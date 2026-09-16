@@ -32,9 +32,14 @@ from sqlalchemy.orm import Session as DbSession
 from apps.vps import trang_thai_may
 from apps.vps.cost import CHU_KY_NGAY, credit_thang
 from apps.vps.services.provisioning import ghi_su_kien
-from apps.vps.tables import VpsInstance
+from apps.vps.tables import VpsEvent, VpsInstance
 
 log = logging.getLogger(__name__)
+
+#: Đầu câu lý do của `ThieuCreditError`. Là mốc DUY NHẤT phân biệt "treo vì hết
+#: credit" (được tự mở khi nạp tiền) với mọi kiểu treo khác. Dùng ở cả chỗ ném
+#: lẫn chỗ đọc để hai nơi không thể lệch nhau.
+_TIEN_TO_THIEU_CREDIT = "can "
 
 #: Treo bao lâu trước khi xoá vĩnh viễn (V8).
 AN_HAN_TRUOC_KHI_XOA_NGAY = 7
@@ -102,7 +107,7 @@ def thu_mot_chu_ky(db: DbSession, may: VpsInstance, *,
     so_du = credit.so_du(db, may.user_id)
     if so_du < gia:
         raise ThieuCreditError(
-            f"can {gia} credit cho chu ky toi, so du con {so_du}")
+            f"{_TIEN_TO_THIEU_CREDIT}{gia} credit cho chu ky toi, so du con {so_du}")
 
     credit.tru(db, may.user_id, gia, kind=KIND,
                note=f"VPS {may.plan_id} — {CHU_KY_NGAY} ngay")
@@ -201,6 +206,48 @@ def den_han_thu(db: DbSession, *, now: datetime | None = None) -> list:
     ]
 
 
+def _treo_vi_thieu_credit(db: DbSession, may: VpsInstance) -> bool:
+    """Lần treo gần nhất có phải do `ThieuCreditError` của chính module này không.
+
+    Chỉ những máy đó mới được tự mở lại khi có tiền. Treo vì lạm dụng hay vì
+    người vận hành quyết định là một quyết định khác, không được hoàn tác ngầm.
+    """
+    ev = db.execute(
+        select(VpsEvent).where(VpsEvent.instance_id == may.id, VpsEvent.loai == "bi_treo")
+        .order_by(VpsEvent.created_at.desc()).limit(1)).scalar_one_or_none()
+    ly_do = str(((ev.chi_tiet or {}) if ev is not None else {}).get("ly_do") or "")
+    return ly_do.startswith(_TIEN_TO_THIEU_CREDIT)
+
+
+def mo_lai_may_treo(db: DbSession, *, now: datetime | None = None) -> int:
+    """Máy treo vì hết credit, còn trong hạn giữ dữ liệu, nay đủ tiền ⇒ thu và gỡ treo.
+
+    Điều khoản hứa "dữ liệu giữ trong 7 ngày… nạp credit và dùng tiếp", nhưng
+    `den_han_thu` bỏ qua máy `bi_treo` và không có đường nào đưa nó về hoạt động:
+    khách nạp tiền đúng hạn vẫn mất máy (R15, rà 16/09). Máy được đưa về trạng
+    thái **đã tắt**; bật lên là việc của khách (`dieu_khien` cho phép `da_tat`).
+    """
+    thoi_diem = now or _now()
+    da_mo = 0
+    for may in list(db.execute(select(VpsInstance).where(
+            VpsInstance.trang_thai == "bi_treo")).scalars()):
+        han_xoa = _aware(may.xoa_sau)
+        if han_xoa is None or han_xoa <= thoi_diem or not _treo_vi_thieu_credit(db, may):
+            continue
+        try:
+            thu_mot_chu_ky(db, may, now=thoi_diem)
+        except ThieuCreditError:
+            continue
+        trang_thai_may.dat(may, vong_doi=trang_thai_may.HOAT_DONG,
+                           dien_mong_muon=trang_thai_may.TAT,
+                           dien_quan_sat=trang_thai_may.KHONG_RO, ly_do="")
+        ghi_su_kien(db, may.id, "go_treo", boi="he_thong",
+                    den=may.paid_until.isoformat())
+        db.commit()
+        da_mo += 1
+    return da_mo
+
+
 def den_han_xoa(db: DbSession, *, now: datetime | None = None) -> list:
     """Những máy đã treo quá hạn ân hạn và phải xoá vĩnh viễn (V8)."""
     thoi_diem = now or _now()
@@ -231,6 +278,8 @@ def thu_phi_dinh_ky(db: DbSession, *, now: datetime | None = None,
     """
     thoi_diem = now or _now()
     dat_treo = khi_treo or (lambda may, ly_do: treo(db, may, ly_do, now=thoi_diem))
+    # Trước: máy treo vì hết credit mà nay đã nạp đủ thì được thu và mở lại (R15).
+    mo_lai_may_treo(db, now=thoi_diem)
     da_thu = da_treo = 0
     for may in den_han_thu(db, now=thoi_diem):
         try:
