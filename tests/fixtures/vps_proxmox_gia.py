@@ -102,7 +102,9 @@ class ProxmoxGia:
                 return {"status": "running", "upid": upid}
             # Vua ve 0: tac vu ket thuc, va **chi toi luc nay** the gioi that moi
             # doi. Truoc do, moi thu van y nguyen.
-            if tv.khi_xong is not None and tv.exitstatus == "OK":
+            # pve-common: "WARNINGS: n" is success with warnings (exitcode 0).
+            if tv.khi_xong is not None and (tv.exitstatus == "OK"
+                                            or tv.exitstatus.startswith("WARNINGS:")):
                 tv.khi_xong()
         return {"status": "stopped", "exitstatus": tv.exitstatus, "upid": upid}
 

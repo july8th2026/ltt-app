@@ -22,7 +22,7 @@ không đẻ luật mới, chỉ sắp lại việc theo phụ thuộc và bằn
 | D10 | Trần IP live | Tối đa 1 |
 | C01 | Mở hợp đồng admin chung | Đồng ý (13/09) |
 | Q124 | Va chạm nhãn quyết định khi gộp | Xử theo nội dung, không ours/theirs cả tệp |
-| Q125 | Mua IP OVH | Web job tự mua, không duyệt từng đơn; báo giá bất thường thì dừng |
+| Q130 (Q125 trên nhánh VPS trước khi gộp) | Mua IP OVH | Web job tự mua, không duyệt từng đơn; báo giá bất thường thì dừng |
 | Cleanup | Sau nghiệm thu | Giữ VM stopped, IP BOUND, không xoá |
 
 ### Trong phiên 16/09
@@ -60,10 +60,12 @@ downgrade migration để lại dòng IP OVH; IP giao muộn sau timeout cần s
 
 ## 3. Hệ quả vận hành
 
-- **Giỏ `f99ebe5c` sẽ hết hạn 16/09 18:54 (giờ máy) trước khi bản sửa lên
-  production an toàn.** Không mua trên code đang có R2–R4 và không thể tạo máy
-  vì R1. Sau deploy, job tự chuẩn bị giỏ mới (chưa thanh toán, miễn phí) và
-  fingerprint được xác minh lại trước khi bật; không tái dùng giỏ hết hạn.
+- **Giỏ `f99ebe5c` hết hạn 16/09 18:54 (giờ máy).** Không mua trên code đang có
+  R2–R4, và không tạo được máy vì R1. Nếu bản sửa lên production kịp trước hạn
+  thì dùng chính giỏ đó. Nếu lỡ hạn: health `ip` tự CRITICAL (thiết kế chỉ mua
+  qua giỏ đã chấp nhận, `public_ip.py:104-127`), nên phải chuẩn bị một giỏ mới
+  chưa thanh toán rồi cập nhật `adopt_ip_cart_id` và fingerprint qua cấu hình
+  admin có audit. Không tái dùng giỏ hết hạn, không tự tạo giỏ trong job.
 - Production đang chạy `d9a48535` (nhánh `codex/cli-compat-final-audit`, chứa VPS
   tới `8b63fccc`). `main` chưa có cả hai nhánh. Bản release sửa lỗi phải dựng từ
   dòng mã production đang chạy, không từ `main`, để không lùi code cli-compat.
@@ -73,13 +75,16 @@ downgrade migration để lại dòng IP OVH; IP giao muộn sau timeout cần s
 | Phase | Việc | Kiểm | Trạng thái |
 |---|---|---|---|
 | F0 | Rà soát + plan này | — | XONG |
-| F1 | R1: tách nhịp làm mới health khỏi nhịp bảo trì nặng; ngưỡng tươi theo nhịp đo được (2× chu kỳ) cho health và cho generation Máy B; bảo trì tự làm mới preflight profile ACTIVE; Scheduled Task đồng bộ bản sao Máy B | test tập trung `-n ≤ 6` | ĐANG LÀM |
-| F2 | R2–R5, R7: khôi phục đơn qua `/me/order` theo đúng giỏ (tra GitHub/OVH trước), chặn checkout lần 2 theo claim giỏ, guard hoàn tiền, phân loại lỗi trước POST, rollback trước review | test tập trung | |
-| F3 | R6: `ensure` từ chối IP protected (RC 5) + khẳng định mọi dòng protected còn trong bảng mới; cài lại helper sau deploy, đo SHA trước/sau | test shell tĩnh + lệnh `health` live | |
-| F4 | R8–R10 | test tập trung | |
-| F5 | Hỏi phiên cli-compat/phiên khác; dựng release độc lập từ `d9a48535` + commit sửa; `alembic heads` một head; build + secret scan | build_release | |
-| F6 | Deploy theo `docs/16_CAP_NHAT_VA_DEPLOY.md` trong cửa sổ không có job LLM dài; `/health/version` đúng SHA | nghiệm thu 3 chiều | |
-| F7 | E2E live qua `vps-v4-cdp.mjs`: chủ dự án đăng nhập Chrome thật; bước 1–2 (đã PASS 16/09 trên UI); **GO** trước "Tạo máy"; bước 3–9; cleanup giữ stopped | trình duyệt thật | |
+| F1 | R1: ngưỡng tươi theo nhịp đo được; bảo trì làm mới health mỗi 10 phút, không hạ profile; script Scheduled Task đồng bộ Máy B (thử thật: bản sinh `09:06:29Z`, đo `09:08:53Z`) | 102 passed/5 skipped | **XONG** `030d51b5` |
+| F2 | R2–R5, R7. Tra `ovh/order-cart-examples`: `GET /order/cart/{id}/checkout` là **dry-run quotation**; OVH không có liên kết giỏ → đơn ⇒ mất phản hồi = NEEDS_REVIEW trung thực, một lần mua cho mỗi máy, chặn máy lỗi/đã hoàn, lỗi trước POST trả claim, rollback trước review | 102 passed | **XONG** `448c162f` |
+| F3 | R6: helper từ chối địa chỉ protected và mọi thay đổi làm rơi dòng protected. Test chạy helper thật dưới Git Bash; đối chứng bản cũ `e5b72562` trượt đúng 3 rào mới | 5 passed; đối chứng 3 failed | **XONG** `0e5adf0f`; cài lên gateway: **chờ chủ dự án** (auto mode chặn ghi máy từ xa) |
+| F4 | R8, R10 (R9 gộp vào F1) | 93 passed | **XONG** `3a468834` |
+| F5 | Release `codex/vps-v4-release-r1` = `d723c79d` (dòng production) + nhánh VPS; xung đột duy nhất ở `08_LIVE_ACCEPTANCE.md`, xử theo nội dung (Q130). VPS diện rộng trên cây gộp 819 passed/7 skipped; một Alembic head `f4a7c2d9e610`; repo release độc lập `release-b1593e3c-lf` sạch; build 4486 tệp/146,5 MB, SHA-256 `89aa2c41…b262`, secret scan 0 | build_release PASS | **XONG** `b1593e3c` |
+| F6 | Phiên Voice "OK deploy"; kiểm chỉ đọc 0 job running/0 lease sống ngay trước khi bấm; helper gateway cài live (SHA `eb612fd8…`→`2e98dddd…`, mapping/protected giữ `5ebaf20b…`, ensure IP protected trả **RC 5** live); deploy 16:29–16:31 exit 0; `/health/version` = `b1593e3ce90e`, `/health/ready` 200; `nghiem_thu_deploy.py` **ĐẠT 0/0/0**, đường lùi `d9a48535`; worker 7 năng lực `['api','voice']` | nghiệm thu 3 chiều | **XONG** |
+| F6b | Sau deploy, health tươi 13 s và profile **không bị hạ** (R1 chạy đúng) nhưng chưa bán được vì hai lỗi mới đo được: **R11** Scheduled Task đồng bộ Máy B rc=1 — script tính gốc repo bằng `..\..\..` nên bản chép ngoài repo từ chối mọi đích (sửa `e15530e4`, task rc=0); **R12** worker `LocalSystem` SSH tới gateway OVH rc=255 — `ltt_ovh_gateway` owner là người dùng, Win32-OpenSSH dưới SYSTEM báo "UNPROTECTED PRIVATE KEY… bad permissions"; các khoá chạy được (`ltt_pve`, `ltt_gateway`) owner `BUILTIN\Administrators` ⇒ đổi owner về Administrators, ACL giữ nguyên (Administrators + SYSTEM); SYSTEM xác thực được, helper `ok` rc=0. `network` DEGRADED do `wireguard.gateway.tx_dropped` delta 18 (0,01/s) từ collector — tín hiệu thật, không nới ngưỡng, chờ bản sinh kế | đo dưới SYSTEM | **XONG R11/R12; network chờ Máy B** |
+| F7 | E2E live qua `vps-v4-cdp.mjs` (Chrome thật, chủ dự án đăng nhập). Bước 1–2 PASS. **Lượt 1** (GO, 16:54:16, Nhỏ + Server 2022 Core): trừ 1.490 credit, `VM_CREATE` hỏng — task PVE `qmcreate`: *volume 'local:iso/windows-server-2022-eval-en-us.iso' does not exist*; không có `OVH_IP_ACQUIRE` ⇒ **không tốn tiền OVH**; VM 203 không được tạo. **ISO:** kho chỉ còn Win10 LTSC + virtio (bản 2022 tải 23/08 đã mất khỏi `local`); nới `local` bằng thin pool `pve/data` rỗng (26→41 G, quy trình cộng đồng Proxmox), node tự tải từ CDN Microsoft, khớp byte: 2022 = 5.044.094.976, 2016 = 6.972.221.440. **Lượt 2** (17:23:45): trang từ chối "Đã hết chỗ" trước khi trừ tiền ⇒ **R14**. Chủ dự án: chỉ tạo **1** VPS và giữ lại để dùng | trình duyệt thật | **ĐANG LÀM** — chờ bảo trì hoàn tiền + xoá máy lỗi `f072f952` để trả suất IP |
+| F7b | **R13** health gateway chỉ đo một lần: một lượt hỏng thoáng (17:14, sau đó 5/5 HEALTHY dưới SYSTEM, 1,4–2,1 s) đóng bán 10 phút ⇒ thử lại có giới hạn trước khi ghi CRITICAL. **R14** admission đếm máy `loi` chưa từng mua IP là đang giữ suất IPv4 ⇒ một lượt tạo lỗi chặn mọi lượt bán (sửa `5b9d3d64`, 16 passed; chưa deploy vì phiên khác đang chạy gate đầy đủ) | test tập trung | R14 code **XONG**; R13 **CHƯA** |
+| F7c | Gia hạn (rà `release-b1593e3c`): **R15 P0** máy `bi_treo` không có đường gia hạn lại khi nạp credit, trong khi Điều khoản hứa 7 ngày để nạp và dùng tiếp; **R16 P1** không có code nào điều khiển gia hạn/huỷ dịch vụ IP ở OVH — IP P1M tự gia hạn USD 2,39/tháng kể cả khi rỗi trong kho, không có đối soát IP rỗi; **R17 P2** `inventory_sync` ghi đè `billing_mode`/`provider_metadata` làm mất `order_id` | quyết định chủ sản phẩm cho R16 (trần IP rỗi, `deleteAtExpiration`) | **CHƯA** |
 | F8 | Cập nhật `05`/`08`/`09`/`10`, `NHAT_KY.md`; chấm điểm 3 chiều | — | |
 | F9 | Đóng băng, **một** `python tools\gate.py`; gộp main theo `QUY_TRINH_WORKTREE.md` §5; retire worktree | L3 | |
 

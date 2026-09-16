@@ -53,6 +53,30 @@ def sellable_slots(compute: capacity.SucChua, plan_id: str, *,
                             compute_limit, ip_limit, gateway_limit)
 
 
+def promised_without_ip(db, profile_id: str) -> int:
+    """Instances that will still consume an eventual public IP.
+
+    A queued/creating VPS without an address holds a promise. A failed (`loi`)
+    VPS does not — unless an IP acquisition for it may still deliver a paid
+    address (any OVH_IP_ACQUIRE journal row not FAILED/COMPENSATED). Counting
+    every failed VPS let one failed create block all sales (R14, 16/09).
+    """
+    from sqlalchemy import and_, exists, not_
+
+    from apps.vps.tables import VpsExternalMutation, VpsIp
+
+    acquisition_open = exists().where(
+        VpsExternalMutation.instance_id == VpsInstance.id,
+        VpsExternalMutation.step == "OVH_IP_ACQUIRE",
+        VpsExternalMutation.state.not_in(("FAILED", "COMPENSATED")))
+    return int(db.execute(select(func.count()).select_from(VpsInstance).where(
+        VpsInstance.infrastructure_profile_id == profile_id,
+        VpsInstance.trang_thai != "da_xoa",
+        ~select(VpsIp.id).where(VpsIp.instance_id == VpsInstance.id).exists(),
+        not_(and_(VpsInstance.trang_thai == "loi", ~acquisition_open)),
+    )).scalar_one())
+
+
 def available_gateway_slots(db, profile_id: str) -> int:
     """Count all promises, including queued VMs without an address yet."""
     from apps.vps.services import mang
