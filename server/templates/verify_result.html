@@ -7,10 +7,13 @@
   <div class="card">
     {% if ok %}
       <p class="auth-state success" role="status">{{ _("Xác thực email thành công. Tài khoản của bạn đã kích hoạt.") }}</p>
-      <p class="hint"><a href="{{ u('/login') }}">{{ _("Đăng nhập ngay") }}</a></p>
+      <a class="btn auth-action" href="{{ u('/login') }}">{{ _("Đăng nhập ngay") }}</a>
     {% else %}
       <p class="error" role="alert">{{ _("Liên kết xác thực không hợp lệ hoặc đã hết hạn.") }}</p>
-      <p class="hint"><a href="{{ u('/register') }}">{{ _("Đăng ký lại") }}</a></p>
+      {#- Golden UI C3: chưa có route gửi lại thư xác thực ⇒ hành động chính là
+          đăng ký lại (nút), đường phụ về đăng nhập cho người đã xác thực trước đó. #}
+      <a class="btn auth-action" href="{{ u('/register') }}">{{ _("Đăng ký lại") }}</a>
+      <p class="hint"><a href="{{ u('/login') }}">{{ _("Về trang đăng nhập") }}</a></p>
     {% endif %}
   </div>
 {% endblock %}

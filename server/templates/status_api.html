@@ -2,44 +2,74 @@
 {% block title %}{{ _("Tình trạng API") }} — LTT AI Studio{% endblock %}
 {# Golden UI 17/09: bỏ `topbar_title` — nó in "Tình trạng API" lần thứ hai ở dải
    trên, lệch trái so với cột nội dung 820px, ngay phía trên chính `h1` đó. #}
+{#- Golden UI C3: giờ hiện dd/mm/yyyy HH:MM theo giờ địa phương. Máy chủ đổi
+    datetime CÓ múi giờ sang giờ máy; script cuối trang đổi tiếp sang giờ của
+    người xem. Datetime không múi giờ (sqlite dev) giữ nguyên. Chỉ trình bày. -#}
+{%- macro gio(dt) -%}
+<time class="tnum" datetime="{{ dt.isoformat() }}" data-gio-dia-phuong>{{ (dt.astimezone() if dt.tzinfo else dt).strftime('%d/%m/%Y %H:%M') }}</time>
+{%- endmacro %}
 {% block content %}
 <div class="tt-api">
 
   <div class="pagehead"><div><h1>{{ _("Tình trạng API") }}</h1>
-    <p class="page-sub">{{ _("Cập nhật lúc") }} {{ report.checked_at.strftime('%Y-%m-%d %H:%M') }} UTC</p></div></div>
+    <p class="page-sub">{{ _("Cập nhật lúc") }} {{ gio(report.checked_at) }}</p></div></div>
 
   {%- set _lop_tt = {'operational': 'ok', 'degraded': 'warn', 'maintenance': 'warn', 'outage': 'err'} %}
+  {% if report.capabilities %}
   <div class="ui-card tt-api-tong tt-api-{{ _lop_tt.get(report.overall, 'grey') }}">
     <div class="dim">{{ _("Tổng thể") }}</div>
     <div class="tt-api-tong-chu">{{ report.overall_wording }}</div>
   </div>
 
-  <div class="tablewrap" tabindex="0">
+  <div class="tablewrap tt-api-bang" tabindex="0" role="region" aria-label="{{ _('Tình trạng theo năng lực') }}">
     <table class="ui-table">
       <thead><tr>
-        <th>{{ _("Năng lực") }}</th><th>{{ _("Tình trạng") }}</th><th>{{ _("Ghi chú") }}</th>
+        <th scope="col">{{ _("Năng lực") }}</th><th scope="col">{{ _("Tình trạng") }}</th><th scope="col">{{ _("Ghi chú") }}</th>
       </tr></thead>
       <tbody>
         {% for row in report.capabilities %}
           <tr>
-            <td><b>{{ row.capability }}</b><br>
+            <td data-nhan="{{ _('Năng lực') }}"><b>{{ row.capability }}</b><br>
               <span class="muted u-fs11">
                 {% for name in row.tools %}<code>{{ name }}</code> {% endfor %}</span></td>
-            <td><span class="badge b-{{ _lop_tt.get(row.state, 'grey') }}"><span class="dot" aria-hidden="true"></span>{{ row.wording }}</span></td>
-            <td class="muted">
+            <td data-nhan="{{ _('Tình trạng') }}"><span class="badge b-{{ _lop_tt.get(row.state, 'grey') }}"><span class="dot" aria-hidden="true"></span>{{ row.wording }}</span></td>
+            <td class="muted" data-nhan="{{ _('Ghi chú') }}">
               {{ row.note or "—" }}
-              {% if row.since %}<br><small>{{ _("từ") }} {{ row.since.strftime('%Y-%m-%d %H:%M') }} UTC</small>{% endif %}
+              {% if row.since %}<br><small>{{ _("từ") }} {{ gio(row.since) }}</small>{% endif %}
             </td>
           </tr>
-        {% else %}
-          <tr><td colspan="3" class="muted">{{ _("Chưa mở năng lực nào ra API công khai.") }}</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+  {% else %}
+  {#- Golden UI C3: trước đây thẻ "Hoạt động bình thường." đứng cạnh bảng rỗng
+      "Chưa mở năng lực nào" — tự mâu thuẫn. Không có năng lực ⇒ không có gì để
+      báo "bình thường"; nói thẳng trạng thái rỗng. -#}
+  <section class="ui-state ui-state--inline tt-api-rong" aria-labelledby="tt-api-rong">
+    <h2 id="tt-api-rong" class="ui-state-title">{{ _("Chưa mở năng lực nào ra API công khai.") }}</h2>
+    <p class="ui-state-body">{{ _("Khi một năng lực được mở, tình trạng của nó sẽ hiện ở đây.") }}</p>
+    <div class="ui-state-actions"><a class="btn ghost" href="{{ u('/huong-dan') }}">{{ _("Hướng dẫn API") }}</a></div>
+  </section>
+  {% endif %}
 
   <p class="muted u-mt18">
     {{ _("Trang này nói theo NĂNG LỰC, không theo hạ tầng bên trong — cố ý như vậy. Muốn biết một lời gọi cụ thể của bạn hỏng ở đâu thì xem Nhật ký request trong khu API của bạn; correlation id trên phản hồi là thứ hỗ trợ cần.") }}
   </p>
 </div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var hai = function (n) { return (n < 10 ? "0" : "") + n; };
+  document.querySelectorAll("time[data-gio-dia-phuong]").forEach(function (t) {
+    var s = t.getAttribute("datetime") || "";
+    if (!/(Z|[+-]\d\d:\d\d)$/.test(s)) return;
+    var d = new Date(s);
+    if (isNaN(d.getTime())) return;
+    t.textContent = hai(d.getDate()) + "/" + hai(d.getMonth() + 1) + "/" + d.getFullYear() +
+      " " + hai(d.getHours()) + ":" + hai(d.getMinutes());
+  });
+})();
+</script>
 {% endblock %}

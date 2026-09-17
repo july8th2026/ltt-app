@@ -10,7 +10,7 @@
   400: (_("Yêu cầu chưa đúng"), _("Dữ liệu gửi lên thiếu hoặc không hợp lệ. Quay lại trang trước, kiểm tra thông tin rồi thử lại.")),
   401: (_("Cần đăng nhập"), _("Phiên đăng nhập đã hết hoặc bạn chưa đăng nhập. Đăng nhập để tiếp tục đúng trang này.")),
   403: (_("Chưa có quyền truy cập"), _("Tài khoản hiện tại không được mở trang này. Nếu bạn nghĩ đây là nhầm lẫn, gửi mã tra cứu bên dưới cho bộ phận hỗ trợ.")),
-  404: (_("Không tìm thấy trang"), _("Đường dẫn có thể đã đổi, đã bị xoá, hoặc bạn không có quyền xem nội dung này.")),
+  404: (_("Không tìm thấy trang"), _("Kiểm tra lại địa chỉ, hoặc mở trang từ menu phía trên. Nếu bạn đến đây từ một liên kết trong hệ thống, gửi mã tra cứu bên dưới cho bộ phận hỗ trợ.")),
   405: (_("Thao tác không được hỗ trợ"), _("Trang này không nhận kiểu yêu cầu vừa gửi. Mở lại trang từ menu rồi thử lại.")),
   413: (_("Tệp quá lớn"), _("Tệp hoặc dữ liệu gửi lên vượt giới hạn cho phép. Thử lại với tệp nhỏ hơn.")),
   429: (_("Thao tác quá nhanh"), _("Hệ thống tạm giới hạn để bảo vệ tài khoản. Chờ khoảng một phút rồi thử lại.")),
@@ -21,16 +21,31 @@
 } -%}
 {%- set muc = bang.get(code, (_("Đã có lỗi xảy ra"), _("Thử lại hoặc quay về trang chính."))) -%}
 {%- set thu_lai = code in (429, 500, 502, 503, 504) -%}
-{%- set muc_do = 'warn' if code in (401, 403, 429) else ('err' if code >= 500 else 'neutral') -%}
+{#- Golden UI C3: mọi mã 4xx dùng `ui-state--warn` (cùng viền với 404 đơn nạp
+    `nap_khong_thay.html`); trước đây 404 rơi vào `neutral` — biến thể KHÔNG tồn
+    tại trong CSS nên viền là màu xám-nâu mặc định, lệch với 404 đơn nạp. -#}
+{%- set muc_do = 'err' if code >= 500 else 'warn' -%}
+{%- set an_danh = not da_dang_nhap(request) -%}
+{#- Câu dẫn của backend cho 404 chỉ nhắc lại tiêu đề ("Không tìm thấy trang bạn
+    yêu cầu.") ⇒ thay bằng câu có ích. Thông điệp 404 CỤ THỂ khác vẫn hiện nguyên. -#}
+{%- set lead_404_chung = code == 404 and message in ("Không tìm thấy trang bạn yêu cầu.", _("Không tìm thấy trang bạn yêu cầu.")) -%}
 {% block title %}{{ muc[0] }} ({{ code }}) — LTT AI Studio{% endblock %}
 {% block content %}
   <section class="ui-state ui-state--{{ muc_do }}" aria-labelledby="loi-tieu-de">
     <p class="ui-state-eyebrow">{{ _("Lỗi %(ma)s", ma=code) }}</p>
     <h1 id="loi-tieu-de" class="ui-state-title">{{ muc[0] }}</h1>
-    <p class="ui-state-lead">{{ message }}</p>
-    <p class="ui-state-body">{{ muc[1] }}</p>
+    {% if lead_404_chung %}
+      <p class="ui-state-lead">{{ _("Đường dẫn có thể đã gõ sai, đã đổi, hoặc nội dung đã bị xoá.") }}</p>
+    {% else %}
+      <p class="ui-state-lead">{{ message }}</p>
+    {% endif %}
+    {% if code in (403, 404) and an_danh %}
+      <p class="ui-state-body">{{ _("Một số trang chỉ mở sau khi đăng nhập. Đăng nhập rồi thử lại, hoặc quay về trang chính.") }}</p>
+    {% else %}
+      <p class="ui-state-body">{{ muc[1] }}</p>
+    {% endif %}
     <div class="ui-state-actions">
-      {% if code == 401 %}
+      {% if code == 401 or (code in (403, 404) and an_danh) %}
         <a class="btn" href="{{ u('/login') }}?next={{ request.url.path | urlencode }}">{{ _("Đăng nhập") }}</a>
         <a class="btn ghost error-home-link" href="{{ u('/') }}">{{ _("Về trang chính") }}</a>
       {% elif thu_lai %}
@@ -39,7 +54,7 @@
       {% else %}
         <a class="btn error-home-link" href="{{ u('/') }}">{{ _("Về trang chính") }}</a>
       {% endif %}
-      {% if code in (403, 500, 502, 503, 504) %}
+      {% if code in (403, 404, 500, 502, 503, 504) %}
         <a class="btn ghost" href="{{ public_links.support }}" rel="noopener">{{ _("Liên hệ hỗ trợ") }}</a>
       {% endif %}
     </div>
