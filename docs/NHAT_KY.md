@@ -60,6 +60,7 @@
   theo tag (`10.50.0.1` cho OVH). Lần đầu dnsmasq chết vì bản `.bak` đặt trong
   `/etc/dnsmasq.d` (dnsmasq đọc mọi tệp ở đó) — chuyển ra ngoài, chạy lại ngay.
 - **Kết quả**: 06:21:39 UTC `DHCPACK 10.50.0.50`; từ Internet TCP `51.79.202.1:3389` mở.
+- Chủ dự án RDP vào máy được ⇒ **G7c ĐẠT**. Router: tắt quản lý mạng của cloud-init (`99-disable-network-config.cfg`) để `10.50.0.2` còn sau reboot (`a4a1e6d3`).
 - Ghim vào `tools/vps_gateway/cai-dat-router.sh` + `tests/test_1032_vps_router_dai_ovh.py`
   (đối chứng script cũ: 8 đỏ).
 
