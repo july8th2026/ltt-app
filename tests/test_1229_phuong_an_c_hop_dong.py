@@ -453,3 +453,47 @@ def test_O05_cua_JOB_mang_dung_so_dat_cho_cua_lease(db_c, monkeypatch, app_thu):
     assert len(thay.get("lease", [])) == 1 and thay["lease"][0] > 0, thay
     assert thay["ngu_canh"] == thay["lease"][0], thay
     assert dieu_phoi.TOKEN_DAT_TRUOC.get() == 0
+
+
+# ── Mục 2b (nghiệm thu 17/09): cờ whale chỉ xoá khi có DỮ LIỆU thật, không ở nhịp tim ──
+
+def _chay_phat(monkeypatch, cac_khoi):
+    """Chạy `luong._phat` với luồng giả; trả (thời điểm xoá cờ tính theo số khối đã phát)."""
+    from types import SimpleNamespace
+
+    from platform_core.llm import admission
+    from platform_core.runtime_noi_bo import luong
+
+    da_phat: list[bytes] = []
+    xoa_luc: list[int] = []
+    monkeypatch.setattr(admission, "xoa_co_whale",
+                        lambda lease_id: xoa_luc.append(len(da_phat)) or True)
+    monkeypatch.setattr(admission, "keep_alive", lambda *a, **k: __import__("contextlib").nullcontext())
+    monkeypatch.setattr(luong, "quyet_toan", lambda *a, **k: None)
+    cb = SimpleNamespace(la_whale=True, lease_id="L1", request_id="r-12345678",
+                         user_id="u", da_giu=0, model_alias="ltt-3.8", waiter_id=None)
+    luot = SimpleNamespace(chuan_bi=cb, dem=SimpleNamespace(nhin=lambda k: None, token_ra=0),
+                           luc_khoi_cuoi=0.0, ket_thuc=None, da_quyet_toan=False, ket_qua=None)
+    mo = SimpleNamespace(luong=iter(cac_khoi), hong=lambda e: None, xong=lambda tokens: None)
+    for khoi in luong._phat(mo, luot):
+        da_phat.append(khoi)
+    return xoa_luc, da_phat
+
+
+def test_2b_nhip_tim_SSE_KHONG_xoa_co_whale(monkeypatch):
+    """B gửi `: ping` mỗi 15 s trong lúc PREFILL. Xoá cờ ở khối đầu tiên (nhịp tim)
+    cho whale thứ hai vào prefill chồng (đo production 17/09: chồng 24,9 s)."""
+    khoi = [b": ping\n\n", b": ping\n\n", b'data: {"type":"message_start"}\n\n', b"data: x\n\n"]
+    xoa_luc, da_phat = _chay_phat(monkeypatch, khoi)
+    assert da_phat == khoi, "nhịp tim vẫn phải chuyển nguyên xi cho khách"
+    assert xoa_luc == [2], f"cờ phải xoá ở khối dữ liệu thật đầu tiên (chỉ số 2), thấy {xoa_luc}"
+
+
+def test_2b_khoi_tron_nhip_tim_va_du_lieu_xoa_co(monkeypatch):
+    xoa_luc, _ = _chay_phat(monkeypatch, [b': ping\n\ndata: {"a":1}\n\n'])
+    assert xoa_luc == [0]
+
+
+def test_2b_chi_nhip_tim_thi_KHONG_xoa_co(monkeypatch):
+    xoa_luc, _ = _chay_phat(monkeypatch, [b": ping\n\n", b"\n"])
+    assert xoa_luc == []

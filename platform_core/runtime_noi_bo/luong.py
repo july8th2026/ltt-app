@@ -1337,6 +1337,15 @@ def mo_luong_tho(db, *, user_id: str, tool_name: str, than: dict, duong: str,
 
 # ── Bước 3: chuyển byte, đếm, quyết toán ─────────────────────────────────────
 
+def _co_du_lieu_sse(khoi: bytes) -> bool:
+    """Khối có ít nhất một dòng SSE không phải chú thích (`:` đầu dòng) và không rỗng.
+
+    Nhịp tim của cổng B là dòng chú thích — nó nói "luồng còn sống", không nói
+    "prefill đã xong". Mảnh giữa dòng (không bắt đầu bằng `:`) tính là dữ liệu.
+    """
+    return any(d.strip() and not d.startswith(b":") for d in khoi.splitlines())
+
+
 def _phat(mo, luot: LuotLuong, *, trang_thai=None) -> Generator[bytes, None, None]:
     """Chuyển byte nguyên xi, đếm token dọc đường, quyết toán khi hết.
 
@@ -1365,10 +1374,13 @@ def _phat(mo, luot: LuotLuong, *, trang_thai=None) -> Generator[bytes, None, Non
     with keeper:
         try:
             for khoi in mo.luong:
-                if t_byte_dau is None:
+                if t_byte_dau is None and _co_du_lieu_sse(khoi):
                     t_byte_dau = time.monotonic() - t0
                     if cb.la_whale:
                         # Prefill xong ⇒ thôi là whale (luật ≤1 whale nói về PREFILL).
+                        # ⛔ Chỉ khối có DỮ LIỆU: B gửi `: ping` mỗi 15 s TRONG lúc
+                        #    prefill — xoá cờ ở nhịp tim cho whale thứ hai prefill
+                        #    chồng (nghiệm thu production 17/09: chồng 24,9 s).
                         admission.xoa_co_whale(cb.lease_id)
                 n_khoi += 1
                 luot.luc_khoi_cuoi = time.monotonic()   # lời khai của LỚP 2

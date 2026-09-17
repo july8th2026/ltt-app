@@ -750,8 +750,11 @@ thì ngừng backfill sau nó.
   còn số gõ tay trong script.
 - **Giữ:** 429 (không 5xx) cho tràn vật lý — A xếp hàng lại (bước 1 ở trên, O-04); lưới thu
   hồi suất treo; sàn VRAM opt-in (L-21); trọng tài RAM/python 3090.
-- **Còn mở:** O-19 `--no-cache-idle-slots` (có trên máy B, không có trong kho) — hoà
-  giải ở bước 4 theo m6; `deploy.ps1` dừng ở bước 1c khi yaml trên B lệch kho.
+- **O-19 đóng (17/09):** `--no-cache-idle-slots` trên máy B là phép đo C1 tạm thời của
+  phiên Serving V2 (đã hoàn nguyên), không phải cấu hình — kho đúng, không hoà giải.
+- **Nghiệm thu production 17/09** (`artifacts/NGHIEM_THU_PHUONG_AN_C_17_09.md`): 6/7 đạt;
+  lỗi 2b — cờ whale xoá ở nhịp tim `: ping` của B (prefill chồng 24,9 s) ⇒ sửa: chỉ
+  khối SSE có dữ liệu mới xoá cờ (`luong._co_du_lieu_sse`, test_1229 mục 2b).
 - **Thứ tự deploy tổng quát** (thay R21 một chiều): TĂNG sức chứa ⇒ B trước; GIẢM ⇒ A
   trước bằng env `LTT_ADMISSION_*` (`RUNBOOK.md` §2.1).
 

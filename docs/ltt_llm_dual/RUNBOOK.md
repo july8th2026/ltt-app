@@ -290,12 +290,11 @@ curl http://127.0.0.1:8299/health    # vat_ly.nguon = H:\LTT_LLM\gateway\llama-s
 - Cổng không đọc được yaml ⇒ **từ chối khởi động** (mã thoát 4, log nói lý do).
   Lùi: bản chụp `releases/auto-*` của `deploy.ps1` + `Restart-Service LTTLlmGateway`.
 
-🔴 **O-19 — `--no-cache-idle-slots` (còn mở, bước 4).** `/running` máy B 17/09 có cờ
-này; `llm_gateway/deploy/llama-swap.yaml` **không có**. Không sửa máy B ở bước 3.
-Bước 4 phải hoà giải theo kết quả phép đo **m6** (`--cache-ram` 8192 vs 0): đưa cờ
-vào yaml trong kho, hoặc gỡ nó trên máy B. Tới lúc đó `deploy.ps1` (không
-`-BoQuaYaml`) **dừng ở bước 1c** khi yaml trên B lệch kho — đừng vượt bằng
-`-GhiDeYamlLech` trừ khi đã chủ ý bỏ cờ.
+✅ **O-19 — đóng 17/09.** Cờ `--no-cache-idle-slots` từng thấy trên `/running` máy B là
+phép đo ma trận cache C1 **tạm thời** của phiên Serving V2, không phải cấu hình
+production; phiên đó đã hoàn nguyên yaml trên B về bản gốc (cờ trùng kho). Còn đúng
+luật chung: `deploy.ps1` (không `-BoQuaYaml`) **dừng ở bước 1c** khi yaml trên B lệch
+kho — đổi yaml trên B để đo thì báo trước và hoàn nguyên ngay sau đo.
 
 Script **chụp bản đang chạy trước khi ghi** (đó là điểm lùi của bạn) và **không tự
 restart** — vì restart `llama-swap` là **unload model**, tức một quyết định vận

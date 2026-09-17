@@ -554,11 +554,10 @@ groups:
 #   => doi ho so may A cung changeset; TANG thi may B truoc, GIAM thi may A truoc
 #   (`docs/ltt_llm_dual/RUNBOOK.md` muc 2.1).
 #
-# !! TODO(O-19, buoc 4 phuong an C): may B THAT dang chay `--no-cache-idle-slots`
-#    (`/running` 17/09) nhung tep nay KHONG co co do. KHONG sua o buoc 3. Buoc 4
-#    phai HOA GIAI theo ket qua phep do m6 (`--cache-ram` 8192 vs 0): dua co vao
-#    tung ho so o day, hoac go no tren may B. Truoc khi hoa giai, `deploy.ps1`
-#    buoc 1c DUNG LAI khi yaml tren may B lech kho (khong ghi de am tham).
+# !! O-19 (DONG 17/09): `--no-cache-idle-slots` tung thay tren `/running` may B la
+#    phep do ma tran cache C1 TAM THOI cua phien Serving V2, KHONG phai cau hinh
+#    production; phien do da hoan nguyen yaml tren B ve ban goc (co trung kho).
+#    Tep nay dung. Doi yaml tren B de do: bao truoc, hoan nguyen ngay sau do.
 #
 # !! KHONG khai `--cache-ram`. Ke hoach Task 3.3 viet `--cache-ram <so chot o
 #    3.2>`, nhung cong 3.2 (G1..G5) KHONG chot con so nao - khong mot phep do
