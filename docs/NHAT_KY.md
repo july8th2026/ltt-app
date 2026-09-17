@@ -1203,6 +1203,18 @@ nhóm bánh cóc ruff (nhóm phải sinh tiến trình con). `check_ruff.py` ch�
 
 Chủ dự án chốt: LTTCODE chạy phiên ~150K token, lượt lớn **chờ** thay vì 429.
 
+> **HANDOFF (phiên dừng vì đóng app):** mã ở commit `b8cfe212` trên
+> `phien/llm-hang-cho-lon` (worktree `D:\LTTSTUDIOSAPP-llm-hang-cho`). Test nhắm
+> **xanh** (416 passed, 4 skipped, 19 tệp). Gate **chưa có**: L1 `--doi` bị
+> `gate.py` từ chối vì `platform_core/runtime_noi_bo/luong.py` không có thành
+> phần sở hữu (tự nâng lên L3). L2 `core:provider` bị dừng giữa chừng (không có
+> bản ghi ⇒ chạy lại được), khoá đã nhả. Còn phải chạy, sau `cua_so_yen.py
+> trang-thai` + `tai_may.py`: `python tools\gate.py --pham-vi core:provider` rồi
+> `python tools\gate.py --pham-vi core:nen`. Chưa gộp `main`, chưa deploy.
+> Deploy khi gate xanh: chỉ dịch vụ web máy A (`setup\2-cai-dat.ps1`); máy B
+> không đổi; env mới đều tuỳ chọn (có mặc định).
+
+
 - Kiểm trên `main` c80876a3: một whale 68K đang chờ làm lượt **10 token** 429
   (`phong_day_token_prefill`) — trần 57.000 của phòng chờ là luật thứ hai cho câu
   "có vừa không" mà `luat_nhan` luật 2 (Σ đặt chỗ đang chạy + lượt ≤ pool `-kvu`)
