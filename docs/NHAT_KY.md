@@ -12,6 +12,25 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-17 — LTT LLM phương án C bước 1 + 2 (máy A): một hồ sơ theo model, A chịu 429 của B
+
+Nhánh `phien/llm-hang-cho-lon`, **chưa gate, chưa gộp, chưa deploy** (phiên điều phối
+chạy L1 sau khi gộp với bước 3 `phien/llm-gateway-vat-ly`). Chi tiết: `DECISION_LOG.md`
+L-23 (nháp, phần máy A).
+
+- Hồ sơ `ngan_sach.HO_SO` → `AdmissionModel(nguong_whale, dem_uoc, token_giu_moi_anh)`
+  → `luat_cho` (một chỗ, mọi cửa). Số chốt: whale 9 s ⇒ 10.752 / 18.944 (đường cong),
+  pool `-c` − 8.192 ⇒ 212.992 / 253.952. Gỡ 3 env, 6 bí danh, `X-LTT-Whale` phía A.
+- B 429 sau khi A nhận ⇒ xếp lại (giữ `created_at`, ≤3 lần, trong hạn), giữ tiền theo
+  lượt; `X-LTT-Token-Dat` ở đồng bộ/job/planner.
+- Test: mới `tests/test_1229_phuong_an_c_hop_dong.py`; sửa 1201/1203/1204/1205/1208/
+  1210/1214/1215/1217/1219/250/272/313/334/600/603/800/986. Chạy nhắm `core:provider`
+  + `app:ltt_llm` (124 tệp) và `core:nen` + `core:job` + `server:api` (318 tệp còn lại):
+  xanh, trừ `test_1259::test_BAN_SAO_khop_may_B` (đòi `LTT_LLM_BASE_URL`/máy B sống —
+  môi trường).
+- ⚠️ Điểm gộp với bước 3: `test_1223::_a_dat_cho` gọi `luat_cho(pool_int, …)` — chữ ký
+  mới nhận `AdmissionModel`; `test_1201`/`test_250`/`test_334` hai nhánh cùng sửa.
+
 ## 2026-09-17 — Deploy LTTCODE `8a96453e` (updater + đăng nhập + tìm web)
 
 - Gate: L1 `--doi --tu de2c1e9c` (bản đang chạy) **PASS** — `test-results/gates/20260916T231329Z-29080.json`.

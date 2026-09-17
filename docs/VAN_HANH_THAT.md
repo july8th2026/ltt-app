@@ -101,7 +101,7 @@ kịch bản của `bench.py`**, và chỉ làm khi chủ dự án chốt.
 | Bảng cổng A…Q, cổng nào đóng/hoãn và vì sao | `docs/ltt_llm_dual/BANG_DOI_SOAT.md` |
 | **Đường đi một lượt, ai gác chặng nào** | `docs/ltt_llm_dual/BAN_DO_DUONG_DI.md` |
 | Sổ lỗi của hệ con | `docs/ltt_llm_dual/SO_LOI_DO_TAI.md` |
-| Số suất · pool KV · ngưỡng whale | `apps/ltt_llm/ngan_sach.py` |
+| Số suất · pool KV · ngưỡng whale · đệm ước (theo model) | `apps/ltt_llm/ngan_sach.py::HO_SO` (đường thật đọc qua `AdmissionModel` — phương án C, 17/09) |
 
 🔑 **Đừng gõ lại một con số nào vào tệp này.** Đó chính xác là cơ chế đã làm
 bảng ở kho này nói sai năm lần, và ngày 13/09 làm ~40 tài liệu khai sai số suất
