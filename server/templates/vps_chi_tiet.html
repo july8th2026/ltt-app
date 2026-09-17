@@ -107,6 +107,11 @@
           không trả phần trăm hay ETA. Ảnh tham chiếu có, backend thì không. #}
     <div class="alert alert-warn u-mb16">{{ _(buoc_tiep) }}</div>
   {% else %}
+    {# C3 17/09 — THỨ BẬC: đúng MỘT nút chính (nền đỏ) và nó luôn đứng ĐẦU dải.
+       Máy tắt → "Bật"; máy chạy → "Console" (việc khách tới trang này để làm).
+       Nút phụ (viền) theo sau; nhóm NGUỒN (khởi động lại / tắt / tắt cứng) tách
+       sang phải thành một cụm riêng có nhãn, vì đó là việc làm gián đoạn máy.
+       Trước: Console đỏ kẹp giữa các nút viền, trông như một nút ngẫu nhiên. #}
     <div class="vps-hd">
       {% if may.trang_thai == "da_tat" %}
         {# Máy đã tắt: "Bật" là việc duy nhất đáng làm, nên nó là nút CHÍNH. #}
@@ -114,7 +119,12 @@
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <button class="btn btn-may" type="submit">{{ _("Bật") }}</button>
         </form>
+        <a class="btn btn-ghost"
+           href="{{ app.route_prefix }}/{{ may.id }}/console">{{ _("Console") }}</a>
       {% else %}
+        <a class="btn btn-may"
+           href="{{ app.route_prefix }}/{{ may.id }}/console">{{ _("Console") }}</a>
+        <div class="vps-hd-nguon" role="group" aria-label="{{ _('Nguồn máy') }}">
         {# `_("Tắt máy")` chứ không phải `_("Tắt")`: msgid trần dùng chung với
            nút vô hiệu hoá webhook ở khu API, nơi bản dịch đúng là "Disable" —
            sai hẳn nghĩa với một cái máy. Cùng lớp lỗi với `"Cấu hình"` bị dịch
@@ -132,13 +142,12 @@
         <form method="post" action="{{ app.route_prefix }}/{{ may.id }}/tat-cung"
               onsubmit="return confirm('{{ _("Tắt cứng giống rút điện: dữ liệu chưa ghi xuống đĩa có thể mất. Tiếp tục?") }}');">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <button class="btn btn-ghost" type="submit">{{ _("Tắt cứng") }}</button>
+          <button class="btn btn-ghost vps-nut-nguy" type="submit">{{ _("Tắt cứng") }}</button>
         </form>
         {% endif %}
+        </div>
       {% endif %}
-      <a class="btn {{ 'btn-ghost' if may.trang_thai == 'da_tat' else 'btn-may' }}"
-         href="{{ app.route_prefix }}/{{ may.id }}/console">{{ _("Console") }}</a>
-      <a class="btn btn-ghost"
+      <a class="btn btn-ghost vps-hd-phu"
          href="{{ app.route_prefix }}/{{ may.id }}/cai-dat">{{ _("Cài Windows") }}</a>
     </div>
   {% endif %}
@@ -327,7 +336,7 @@
   {% if may.trang_thai != "da_xoa" and not viec %}
   <div class="vps-nguy">
     <h2>{{ _("Nguy hiểm") }}</h2>
-    <p>{{ _("Ba việc dưới đây không hoàn tác được. Gõ đúng tên máy để xác nhận — cùng khuôn với GitHub, và cùng lý do: chúng phải khó bấm nhầm hơn một cú click.") }}</p>
+    <p>{{ _("Ba việc dưới đây không hoàn tác được. Hãy gõ đúng tên máy để xác nhận — bước này có chủ ý, để không ai lỡ tay bấm nhầm.") }}</p>
 
     <div class="vps-nguy-luoi">
       {# Khôi phục đứng ĐẦU: khách vào khối này vì máy hỏng, và quay về ảnh chụp

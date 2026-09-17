@@ -226,7 +226,8 @@
       <select id="us-status" name="status">
         <option value="">{{ _("Mọi trạng thái") }}</option>
         {% for value in statuses %}
-          <option value="{{ value }}" {% if value == filters.status %}selected{% endif %}>{{ value }}</option>
+          {% set _n = dtt.nghia(value, 'so' if value in ('held', 'settled', 'refunded') else 'job') | trim %}
+          <option value="{{ value }}" {% if value == filters.status %}selected{% endif %}>{% if _n %}{{ _n }} ({{ value }}){% else %}{{ value }}{% endif %}</option>
         {% endfor %}
       </select>
     </div>
@@ -239,26 +240,36 @@
       <p>{{ _("Mỗi lời gọi có tính tiền sẽ thành một dòng ở đây, kèm khóa nào gọi và đã tính bao nhiêu.") }}</p>
     </div>
   {% else %}
+    {# C3 17/09: cột Công cụ/Khóa mà KHÔNG dòng nào có giá trị thì bỏ hẳn cột
+       (trước đây cả cột là "—", đọc như dữ liệu hỏng). Chỉ cần một dòng có là
+       cột quay lại, các dòng trống vẫn in "—". #}
+    {% set co_tool = lines | selectattr('tool') | list | length > 0 %}
+    {% set co_khoa = (lines | selectattr('key_id') | list | length > 0) or (lines | selectattr('mode', 'equalto', 'test') | list | length > 0) %}
     <div class="dev-bang" tabindex="0">
       <table class="table">
         <thead><tr>
-          <th scope="col">{{ _("Lúc") }}</th><th scope="col">{{ _("Công cụ") }}</th><th scope="col">{{ _("Khóa") }}</th>
-          <th scope="col">{{ _("Trạng thái") }}</th><th scope="col">{{ _("Đã tính") }}</th>
+          <th scope="col">{{ _("Lúc") }}</th>
+          {% if co_tool %}<th scope="col">{{ _("Công cụ") }}</th>{% endif %}
+          {% if co_khoa %}<th scope="col">{{ _("Khóa") }}</th>{% endif %}
+          <th scope="col">{{ _("Trạng thái") }}</th><th scope="col" class="dev-so-phai">{{ _("Đã tính") }}</th>
         </tr></thead>
         <tbody>
           {% for line in lines %}
             <tr>
               <td class="tnum">{{ line.created_at[:16].replace("T", " ") if line.created_at else "" }}</td>
-              <td class="{% if not line.tool %}dev-trong-o{% endif %}">{{ line.tool or "—" }}</td>
-              <td class="{% if not line.key_id %}dev-trong-o{% endif %}">{% if line.key_id %}<code class="dev-id">{{ line.key_id[:12] }}</code>{% else %}—{% endif %}
-                {% if line.mode == 'test' %}<span class="chip v">{{ _("Test") }}</span>{% endif %}</td>
+              {% if co_tool %}<td class="{% if not line.tool %}dev-trong-o{% endif %}">{{ line.tool or "—" }}</td>{% endif %}
+              {% if co_khoa %}<td class="{% if not line.key_id %}dev-trong-o{% endif %}">{% if line.key_id %}<code class="dev-id">{{ line.key_id[:12] }}</code>{% else %}—{% endif %}
+                {% if line.mode == 'test' %}<span class="chip v">{{ _("Test") }}</span>{% endif %}</td>{% endif %}
               <td>{{ dtt.tt(line.status, 'so' if line.status in ('held', 'settled', 'refunded') else 'job') }}</td>
-              <td class="tnum">{{ line.credit.net_charged }}</td>
+              <td class="tnum dev-so-phai">{{ line.credit.net_charged }}</td>
             </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
+    {% if not co_tool or not co_khoa %}
+      <p class="muted dev-ghi-bang">{{ _("Các lời gọi ở đây chưa gắn công cụ hoặc khóa nào, nên cột đó được ẩn.") }}</p>
+    {% endif %}
   {% endif %}
   <p class="muted">{{ _("Cùng dữ liệu có ở") }} <code>GET /api/v1/usage</code>.</p>
 </div>

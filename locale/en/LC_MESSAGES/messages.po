@@ -18953,3 +18953,93 @@ msgstr "Waiting for its turn"
 msgid "Dừng do lỗi"
 msgstr "Stopped with an error"
 
+msgid "Thuộc dự án"
+msgstr "Project"
+
+msgid "Mỗi tích hợp một dự án thì báo cáo chi tiêu tách được."
+msgstr "One project per integration keeps spending reports separate."
+
+msgid "Các lời gọi ở đây chưa gắn công cụ hoặc khóa nào, nên cột đó được ẩn."
+msgstr "These calls are not tied to a tool or key yet, so that column is hidden."
+
+msgid "Nguồn máy"
+msgstr "Machine power"
+
+msgid "Ba việc dưới đây không hoàn tác được. Hãy gõ đúng tên máy để xác nhận — bước này có chủ ý, để không ai lỡ tay bấm nhầm."
+msgstr "The three actions below cannot be undone. Type the machine name exactly to confirm — this step is deliberate, so nobody clicks by accident."
+
+msgid "Đang chuẩn bị — sẽ có sớm"
+msgstr "In preparation — coming soon"
+
+msgid "Mở bằng Safari trên iPhone/iPad để cài."
+msgstr "Open in Safari on iPhone/iPad to install."
+
+msgid "Cài qua SideStore hoặc Sideloadly (bản chưa lên App Store)."
+msgstr "Install with SideStore or Sideloadly (not on the App Store yet)."
+
+msgid "Sẵn sàng để tải"
+msgstr "Ready to download"
+
+msgid "Điều khiển máy tính từ xa — an toàn, do LTT vận hành."
+msgstr "Remote computer control — secure, operated by LTT."
+
+msgid "Mở App Store"
+msgstr "Open App Store"
+
+msgid "Cài đặt & an toàn"
+msgstr "Installation & safety"
+
+msgid "Sau khi tải, đối chiếu SHA-256 (ghi ở mỗi nền tảng) với file bạn tải — khớp mới chạy."
+msgstr "After downloading, compare the SHA-256 (listed for each platform) with your file — run it only if they match."
+
+msgid "Windows có thể hiện cảnh báo SmartScreen (bản chưa ký): bấm More info → Run anyway, chỉ khi hash đúng."
+msgstr "Windows may show a SmartScreen warning (unsigned build): click More info → Run anyway, only if the hash matches."
+
+msgid "Mở app, đăng nhập tài khoản LTT. Máy sẽ gắn vào tài khoản của bạn."
+msgstr "Open the app and sign in with your LTT account. The machine is linked to your account."
+
+msgid "Muốn điều khiển máy khi vắng người: bấm Install trong app (nâng quyền một lần)."
+msgstr "To control the machine when nobody is there: click Install in the app (one-time elevation)."
+
+msgid "LTT Nexus dựa trên RustDesk (AGPL-3.0); mã nguồn bản sửa được công bố công khai."
+msgstr "LTT Nexus is based on RustDesk (AGPL-3.0); the modified source code is published."
+
+msgid "Đã trả phí"
+msgstr "Paid"
+
+msgid "Chưa trả phí"
+msgstr "Unpaid"
+
+msgid "Thấy lần cuối"
+msgstr "Last seen"
+
+msgid "Chưa từng kết nối"
+msgstr "Never connected"
+
+msgid "Lưu tên"
+msgstr "Save name"
+
+msgid "Nhật ký truy cập"
+msgstr "Access log"
+
+msgid "Ai đã điều khiển máy của bạn, lúc nào. Bản ghi này không sửa được và không mất khi thu hồi máy."
+msgstr "Who controlled your machines, and when. This record cannot be edited and is kept when a machine is revoked."
+
+msgid "Chưa có phiên điều khiển nào."
+msgstr "No control sessions yet."
+
+msgid "Khi có ai điều khiển một máy của bạn, lúc bắt đầu, địa chỉ IP và thời lượng sẽ ghi ở đây."
+msgstr "When someone controls one of your machines, the start time, IP address and duration are recorded here."
+
+msgid "Từ IP"
+msgstr "From IP"
+
+msgid "Kéo dài"
+msgstr "Duration"
+
+msgid "(máy đã xoá)"
+msgstr "(machine deleted)"
+
+msgid "Đang mở"
+msgstr "Open"
+

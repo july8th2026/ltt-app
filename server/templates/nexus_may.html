@@ -9,9 +9,8 @@
         {{ _("Các máy đã gắn vào tài khoản LTT của bạn. Mất máy thì thu hồi ngay để cắt quyền truy cập.") }}
       </p>
     </div>
-    {% if so_du is not none %}
-      <div class="cbadge badge b-ok">{{ so_du | so }} credit</div>
-    {% endif %}
+    {# C3 17/09: bỏ viên số dư ở đầu trang — header chung đã hiện đúng con số
+       đó ngay phía trên. Số dư chỉ còn nói ở dòng thuê bao, nơi nó có nghĩa. #}
   </div>
 
   {% if request.query_params.get('ok') == 'thu-hoi' %}
@@ -38,6 +37,7 @@
     {% if gia_thang > 0 %}
       <p class="dim u-mb10">
         {{ _("Thuê bao") }}: <b>{{ gia_thang }}</b> {{ _("credit mỗi máy mỗi tháng") }}.
+        {% if so_du is not none %}{{ _("Số dư") }}: <b>{{ so_du | so }}</b> credit.{% endif %}
       </p>
     {% endif %}
 
@@ -50,33 +50,40 @@
               {% if m.ten %}<b>{{ m.ten }}</b>
               {% else %}<b>{{ _("(chưa đặt tên)") }}</b>{% endif %}
               {% if m.online %}
-                <span class="badge b-ok">{{ _("đang bật") }}</span>
+                <span class="badge b-ok">{{ _("Đang bật") }}</span>
               {% else %}
-                <span class="badge b-grey">{{ _("tắt") }}</span>
+                <span class="badge b-grey">{{ _("Đang tắt") }}</span>
               {% endif %}
               {% if gia_thang > 0 %}
                 {% if m.da_tra %}
-                  <span class="badge b-ok">{{ _("đã trả phí") }}</span>
+                  <span class="badge b-ok">{{ _("Đã trả phí") }}</span>
                 {% else %}
-                  <span class="badge b-err">{{ _("chưa trả phí") }}</span>
+                  <span class="badge b-err">{{ _("Chưa trả phí") }}</span>
                 {% endif %}
               {% endif %}
             </div>
             <p class="dim nx-may-meta">
               {% if m.rustdesk_id %}ID: <code>{{ m.rustdesk_id }}</code> · {% endif %}
-              {% if m.platform %}{{ m.platform }} · {% endif %}
-              {% if m.last_seen_at %}{{ _("thấy lần cuối") }}: {{ m.last_seen_at.strftime('%d/%m/%Y %H:%M') }}{% else %}{{ _("chưa từng kết nối") }}{% endif %}
+              {% if m.platform %}{{ {'windows': 'Windows', 'macos': 'macOS', 'ios': 'iOS', 'android': 'Android', 'linux': 'Linux'}.get(m.platform | lower, m.platform | capitalize) }} · {% endif %}
+              {% if m.last_seen_at %}{{ _("Thấy lần cuối") }}: {{ m.last_seen_at.strftime('%d/%m/%Y %H:%M') }}{% else %}{{ _("Chưa từng kết nối") }}{% endif %}
             </p>
           </div>
 
           <div class="actions nx-may-tac-vu">
-            <form method="post" action="/may-cua-toi/{{ m.id }}/doi-ten"
-                  class="nx-may-doi-ten">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-              <input type="text" name="ten" value="{{ m.ten }}" maxlength="120"
-                     aria-label="{{ _('Tên máy') }}" class="nx-may-o-ten">
-              <button class="btn ghost sm" type="submit">{{ _("Đổi tên") }}</button>
-            </form>
+            {# C3 17/09: ô đổi tên KHÔNG bày sẵn trên mỗi dòng (tên dài bị cắt trong
+               ô, và cả danh sách trông như một biểu mẫu). Tên hiện ở trên; nút
+               "Đổi tên" mở ô. `<details>` nên không cần JS; form giữ nguyên
+               action/name/CSRF. #}
+            <details class="nx-may-doi">
+              <summary class="btn ghost sm">{{ _("Đổi tên") }}</summary>
+              <form method="post" action="/may-cua-toi/{{ m.id }}/doi-ten"
+                    class="nx-may-doi-ten">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="text" name="ten" value="{{ m.ten }}" maxlength="120"
+                       aria-label="{{ _('Tên máy') }}" class="nx-may-o-ten">
+                <button class="btn sm" type="submit">{{ _("Lưu tên") }}</button>
+              </form>
+            </details>
             <form method="post" action="/may-cua-toi/{{ m.id }}/thu-hoi"
                   onsubmit="return confirm('{{ _("Thu hồi máy này? Máy đó sẽ không kết nối được nữa.") }}')">
               <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -94,8 +101,10 @@
       {{ _("Ai đã điều khiển máy của bạn, lúc nào. Bản ghi này không sửa được và không mất khi thu hồi máy.") }}
     </p>
     {% if not nhat_ky %}
-      <div class="appcard nx-may-rong">
-        <p class="dim u-m0">{{ _("Chưa có phiên điều khiển nào.") }}</p>
+      {# C3 17/09: cùng MỘT kiểu trạng thái rỗng với "Chưa có máy nào" ở trên. #}
+      <div class="appcard nx-may-trong">
+        <h3>{{ _("Chưa có phiên điều khiển nào.") }}</h3>
+        <p class="dim">{{ _("Khi có ai điều khiển một máy của bạn, lúc bắt đầu, địa chỉ IP và thời lượng sẽ ghi ở đây.") }}</p>
       </div>
     {% else %}
       <div class="appcard nx-nhat-ky" tabindex="0" role="region" aria-label="{{ _('Nhật ký truy cập') }}">
@@ -111,13 +120,13 @@
           <tbody>
             {% for d in nhat_ky %}
             <tr>
-              <td class="u-nowrap">{{ d.luc.strftime('%d/%m/%Y %H:%M') }}</td>
-              <td>
+              <td class="u-nowrap" data-nhan="{{ _('Lúc') }}">{{ d.luc.strftime('%d/%m/%Y %H:%M') }}</td>
+              <td data-nhan="{{ _('Máy') }}">
                 {% if d.may %}{{ d.may }}{% else %}<span class="dim">{{ _("(máy đã xoá)") }}</span>{% endif %}
               </td>
-              <td><code>{% if d.ip %}{{ d.ip }}{% else %}—{% endif %}</code></td>
-              <td class="u-nowrap">
-                {% if d.dang_mo %}<span class="badge b-ok">{{ _("đang mở") }}</span>
+              <td data-nhan="{{ _('Từ IP') }}"><code>{% if d.ip %}{{ d.ip }}{% else %}—{% endif %}</code></td>
+              <td class="u-nowrap" data-nhan="{{ _('Kéo dài') }}">
+                {% if d.dang_mo %}<span class="badge b-ok">{{ _("Đang mở") }}</span>
                 {% elif d.keo_dai_giay is none %}—
                 {% elif d.keo_dai_giay < 60 %}{{ d.keo_dai_giay }} {{ _("giây") }}
                 {% else %}{{ (d.keo_dai_giay // 60) }} {{ _("phút") }}{% endif %}

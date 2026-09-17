@@ -55,8 +55,9 @@ def test_moi_enum_co_lop_mau_va_nghia(dtt, loai, gia_tri):
     assert lop and lop.group(1) in {"ok", "canh", "loi", "tat", "tin"}, (loai, gia_tri, html)
     # Chữ thật vẫn là enum nguyên văn — đó là giá trị API.
     assert f">{gia_tri}<" in html
-    # Và có nghĩa cho người đọc: title + chữ ẩn cho trình đọc màn hình.
-    assert 'title="' in html and 'class="sr-only"' in html, html
+    # Và có nghĩa cho người đọc — HIỆN RÕ (C3 17/09), không chỉ title/sr-only:
+    # người chấm độc lập ghi cột trạng thái chỉ thấy mã tiếng Anh.
+    assert re.search(r'class="dev-tt-nghia">[^<]+<', html), html
 
 
 def test_trang_thai_ket_thuc_khac_mau_nhau(dtt):

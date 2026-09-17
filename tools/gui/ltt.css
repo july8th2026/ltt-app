@@ -1604,10 +1604,10 @@ code.to-dam{font-weight:600;color:var(--text-primary)}
 .vps-do-so b{font-variant-numeric:tabular-nums;font-weight:600}
 .vps-do-thanh{height:5px;border-radius:3px;background:var(--surface-interactive);
   overflow:hidden}
-.vps-do-thanh>span{display:block;height:100%;border-radius:3px;
-  background:var(--vps-teal-hover)}
-.vps-do-thanh>span.gan-han{background:var(--status-warning)}
-.vps-do-thanh>span.qua-han{background:var(--status-danger)}
+.vps-do-thanh>.vps-do-svg{display:block;width:100%;height:100%}
+.vps-do-thanh rect{fill:var(--vps-teal-hover)}
+.vps-do-thanh rect.gan-han{fill:var(--status-warning)}
+.vps-do-thanh rect.qua-han{fill:var(--status-danger)}
 
 /* ── Hàng nhãn / giá trị có nút chép (macro `o_sao_chep`) ────────────────*/
 .vps-doi{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;
@@ -4424,3 +4424,141 @@ input[type=hidden]+.af-step{margin-top:0}
 .job-state-done .job-timeline li.event-end .job-event-dot{background:var(--ok)}
 .billing-package{display:flex;flex-direction:column}.billing-package .in{display:flex;flex:1;flex-direction:column}
 .billing-package form{margin-top:auto}
+/* === C3: DEV-VPS-NEXUS === */
+/* Chiến dịch Golden UI 17/09 — khu API (.khu-dev), VPS (.vps-*/.goi-*), Nexus (.nx-*).
+   Chỉ trình bày: không đổi luồng, không đổi dữ liệu. Token, không hex mới. */
+
+/* ── Khu API · viên trạng thái: nghĩa Việt HIỆN RÕ + mã API nguyên văn ── */
+.dev-tt .dev-tt-nghia{font-family:inherit;font-weight:600;letter-spacing:0}
+.dev-tt .dev-tt-cham{opacity:.6;font-weight:400}
+.dev-tt code.dev-tt-ma{padding:0;border:0;background:none;color:inherit;
+  font-family:var(--mono);font-size:10.5px;font-weight:500}
+.dev-tt{font-family:inherit;font-size:12px}
+.khu-dev .dev-so-phai{text-align:right}
+.khu-dev .dev-ghi-bang{margin:8px 0 0;font-size:12px}
+
+/* ── Khu API · vùng chạm ≥ 24px (WCAG 2.5.8) ── */
+.khu-dev .dev-chon input[type=checkbox],.khu-dev .dev-chon input[type=radio]{
+  width:24px;height:24px;margin:0;flex:0 0 auto;accent-color:var(--brand-fill)}
+.khu-dev .dev-chon>label{min-height:40px}
+.dev-topbar>a{display:inline-flex;align-items:center;min-height:32px}
+.dev-topbar .dev-chuong{min-width:32px;justify-content:center}
+.khu-dev .dev-field>label[for]{display:inline-block;min-height:24px;line-height:24px}
+.khu-dev .dev-panel>header>a{display:inline-flex;align-items:center;min-height:32px}
+
+/* ── Khu API · màn hẹp: điều hướng là MỘT dải cuộn ngang, mép mờ ──
+   Trước: ba nhóm `ul` xếp ba hàng, mục cuối bị cắt, rồi thêm hàng tab con
+   ⇒ hai tầng tab chồng. Nay mọi mục trên một dải (như `.apptabs`), tab con
+   là viên nhỏ nằm trong nội dung — khác kiểu nên không đọc như tầng thứ hai. */
+@media (max-width:820px){
+  .khu-dev .app-side{display:flex;flex-wrap:nowrap;gap:2px;overflow-x:auto;
+    overscroll-behavior-x:contain;padding-bottom:0;
+    -webkit-mask-image:linear-gradient(90deg,transparent 0,black 14px,black calc(100% - 28px),transparent);
+    mask-image:linear-gradient(90deg,transparent 0,black 14px,black calc(100% - 28px),transparent)}
+  .khu-dev .app-side ul{flex:0 0 auto}
+  .khu-dev .app-side ul+.nhom+ul{margin-left:0}
+  .khu-dev .app-side a{padding:10px 12px;min-height:44px;display:flex;align-items:center}
+  .khu-dev .app-side ul:last-child{padding-right:24px}
+  .khu-dev .dev-sub{border-bottom:0}
+  .khu-dev .dev-sub ul{flex-wrap:nowrap;overflow-x:auto;gap:6px;scrollbar-width:none}
+  .khu-dev .dev-sub a{min-height:32px;padding:5px 12px;border:1px solid var(--border-subtle);
+    border-radius:99px;white-space:nowrap}
+  .khu-dev .dev-sub a.active{border-color:var(--brand-primary);background:var(--brand-soft)}
+}
+
+/* ── VPS · menu trái: tiêu đề nhóm cách mục phía trên ──
+   Ở khu VPS tiêu đề nhóm nằm TRONG `li` nên luật `.nhom:first-child` (margin 0)
+   luôn khớp ⇒ "MÁY CỦA TÔI" dính sát "Điều khoản". */
+.app-side li:not(:first-child)>.nhom{margin-top:18px;padding-top:12px;
+  border-top:1px solid var(--border-subtle)}
+
+/* ── VPS · mã máy: một dòng, cắt "…", nút Chép chép mã đủ ── */
+.vps-dinh-o .vps-ma-may{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  word-break:normal;min-width:0;max-width:100%}
+@media (max-width:560px){.vps-dinh-o{grid-template-columns:minmax(0,max-content) auto}}
+
+/* ── VPS · gói hết chỗ: không tô nổi bật kiểu lỗi, "nên chọn" giảm nhấn ── */
+.goi-the.goi-chon.goi-het{border-color:var(--border-subtle);background:transparent}
+.goi-the.goi-het .goi-ten .pill{border-color:var(--border-subtle);background:transparent;
+  color:var(--text-muted)}
+.goi-the.goi-het .goi-trangthai{color:var(--status-warning)}
+.vps-thieu[hidden]{display:none}
+
+/* ── VPS · dải hành động: nút chính đầu dải, nhóm nguồn tách sang phải ── */
+.vps-hd{align-items:center}
+.vps-hd .vps-hd-phu{order:1}
+.vps-hd .vps-hd-nguon{order:2;display:flex;flex-wrap:wrap;gap:8px;margin-left:auto;
+  padding-left:12px;border-left:1px solid var(--border-subtle)}
+.vps-hd .vps-nut-nguy{border-color:var(--status-danger-border);color:var(--status-danger)}
+@media (max-width:560px){
+  .vps-hd>.btn,.vps-hd>form{flex:1 1 calc(50% - 4px)}
+  .vps-hd>form .btn,.vps-hd>.btn{width:100%;min-width:0;display:inline-flex;justify-content:center;text-align:center}
+  .vps-hd .vps-hd-nguon{flex:1 1 100%;margin-left:0;padding-left:0;border-left:0;
+    padding-top:8px;border-top:1px solid var(--border-subtle)}
+  .vps-hd .vps-hd-nguon>form{flex:1 1 calc(50% - 4px)}
+  .vps-hd .vps-hd-nguon .btn{width:100%;min-width:0}
+}
+
+/* ── Nexus · MỘT component thẻ tải (`_nexus_tai.html`) cho /nexus và /tai-xuong ── */
+.nx-tai-luoi{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}
+.nx-tai-luoi>.nx-tai-the{flex:0 1 clamp(150px,22vw,200px)}
+.nx-tai-luoi--rong>.nx-tai-the{flex:0 1 280px}
+@media (min-width:1000px){
+  .nx-tai-luoi:not(.nx-tai-luoi--rong){display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
+}
+@media (max-width:420px){.nx-tai-luoi--rong>.nx-tai-the{flex:1 1 100%}}
+.nx-tai-the{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;
+  min-width:0;padding:20px 14px 16px;border:1px solid var(--border-subtle);
+  border-radius:14px;background:var(--surface-raised)}
+.nx-tai-the .nx-tai-ic{width:28px;height:28px;color:var(--brand-hover)}
+.nx-tai-the.nx-tai-chua .nx-tai-ic{color:var(--text-muted)}
+.nx-tai-the .nx-tai-ten{margin:0;font-size:14px;font-weight:600;line-height:1.35;
+  min-height:2.7em;display:flex;align-items:center;color:var(--text-primary)}
+.nx-tai-the .nx-tai-mo{margin:0;font-size:12px;line-height:1.5;color:var(--text-secondary);flex:1}
+.nx-tai-the .nx-tai-nut{width:100%;justify-content:center;min-height:40px;margin-top:4px}
+.nx-tai-the .nx-tai-tt{margin-top:4px}
+.nx-tai-hanh-dong{display:flex;flex-direction:column;align-items:stretch;gap:6px;width:100%}
+.nx-tai-sha{margin:0;font-size:10.5px;color:var(--text-muted);overflow-wrap:anywhere}
+.nx-tai-sha code{font-size:10.5px;color:inherit;background:none;padding:0;border:0}
+.nx-tai-phu{display:inline-flex;align-items:center;justify-content:center;min-height:32px;font-size:12.5px;color:var(--text-secondary)}
+.nx-tai-ghi{margin:10px 0 0;font-size:12.5px;color:var(--text-secondary)}
+.nx-tai-ghi--canh{margin:0;color:var(--status-warning)}
+/* Trang /tai-xuong: đầu trang cùng nhịp eyebrow · tiêu đề · lời dẫn với /nexus. */
+.nx-tai-trang{max-width:960px;margin:0 auto;padding:clamp(20px,4vw,40px) 0 40px}
+.nx-tai-dau-trang{margin:0 0 24px}
+.nx-tai-dau-trang h1{margin:10px 0 8px;font-size:clamp(26px,3.6vw,36px);line-height:1.15;letter-spacing:-.02em}
+.nx-tai-dan{margin:0 0 12px;max-width:62ch;color:var(--text-secondary);font-size:14.5px;line-height:1.7}
+.nx-tai-huong-dan{margin-top:28px;padding:18px 20px;border:1px solid var(--border-subtle);
+  border-radius:14px;background:var(--surface-raised)}
+.nx-tai-huong-dan h2{margin:0 0 10px;font-size:15px}
+.nx-tai-huong-dan ol{margin:0;padding-left:20px;font-size:13.5px;line-height:1.7}
+
+/* ── Nexus · Máy của tôi ── */
+.nx-may-doi{position:relative}
+.nx-may-doi>summary{list-style:none;cursor:pointer}
+.nx-may-doi>summary::-webkit-details-marker{display:none}
+.nx-may-doi[open]>summary{border-color:var(--brand-primary)}
+.nx-may-doi[open]>.nx-may-doi-ten{margin-top:8px}
+.nx-may-doi .nx-may-o-ten{width:240px}
+@media (min-width:561px){
+  .nx-may-doi[open]{display:flex;flex-direction:row-reverse;gap:6px;align-items:center}
+  .nx-may-doi[open]>.nx-may-doi-ten{margin-top:0}
+}
+.nx-may-ten b{overflow-wrap:anywhere}
+/* Nhật ký ở màn hẹp: mỗi dòng thành một thẻ nhãn/giá trị — không cột nào mất. */
+@media (max-width:560px){
+  .nx-may-tac-vu>.nx-may-doi,.nx-may-tac-vu>form{flex:1 1 calc(50% - 4px);min-width:0}
+  .nx-may-tac-vu>.nx-may-doi[open]{flex-basis:100%}
+  .nx-may-doi>summary,.nx-may-tac-vu>form>.btn{display:flex;justify-content:center;width:100%;min-height:40px;align-items:center}
+  .nx-may-doi .nx-may-o-ten{width:auto}
+  .nx-nhat-ky{overflow:visible}
+  .nx-nhat-ky table{min-width:0}
+  .nx-nhat-ky thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+  .nx-nhat-ky table,.nx-nhat-ky tbody,.nx-nhat-ky tr,.nx-nhat-ky td{display:block}
+  .nx-nhat-ky tbody tr{padding:10px 14px}
+  .nx-nhat-ky td{display:grid;grid-template-columns:7.5em minmax(0,1fr);gap:8px;padding:3px 0;
+    white-space:normal;border:0}
+  .nx-nhat-ky td>*{justify-self:start}
+  .nx-nhat-ky td::before{content:attr(data-nhan);color:var(--text-muted);font-size:12px}
+}
+/* === HET C3: DEV-VPS-NEXUS === */

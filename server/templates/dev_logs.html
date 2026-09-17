@@ -17,7 +17,7 @@
 
 <form method="get" action="/developers/logs" role="search" class="dev-loc">
   <div class="dev-field rong">
-    <label for="lg-request">request_id</label>
+    <label for="lg-request">{{ _("Mã yêu cầu") }} (<code translate="no">request_id</code>)</label>
     <input id="lg-request" type="search" name="request_id" value="{{ filters.request_id }}"
            placeholder="{{ _('dán request_id từ phản hồi hoặc ticket') }}">
   </div>
@@ -80,7 +80,7 @@
       <thead><tr>
         <th scope="col">{{ _("Lúc") }}</th><th scope="col">{{ _("Lời gọi") }}</th>
         <th scope="col">{{ _("Kết quả") }}</th><th scope="col">{{ _("Công cụ") }}</th>
-        <th scope="col">{{ _("Độ trễ") }}</th><th scope="col">Credit</th><th scope="col">request_id</th>
+        <th scope="col">{{ _("Độ trễ") }}</th><th scope="col">Credit</th><th scope="col">{{ _("Mã yêu cầu") }}</th>
       </tr></thead>
       <tbody>
         {% for row in rows %}

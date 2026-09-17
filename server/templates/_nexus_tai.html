@@ -1,0 +1,52 @@
+{#- _nexus_tai.html — MỘT thẻ tải LTT Nexus cho mọi màn (Golden UI C3, 17/09/2026).
+
+    {% import "_nexus_tai.html" as nxt with context %}
+    {{ nxt.the(p, href=u('/tai-xuong')) }}            thẻ gọn: nút dẫn sang trang tải
+    {% call nxt.the(p, muc='h2') %}...{% endcall %}    thẻ đủ: phần nút/SHA do trang tải tự điền
+
+    🔴 Trước 17/09 `/nexus` (thẻ nhỏ "Tải về") và `/tai-xuong` (thẻ to "Tải xuống",
+       nút giả "Đang chuẩn bị") là HAI component cho cùng một việc — khách đi từ
+       trang này sang trang kia thấy như hai sản phẩm. Nay cùng khung, cùng nhãn,
+       cùng biểu tượng, cùng cách nói "chưa có".
+
+    ⚠️ Mô tả iOS: dữ liệu phát hành (`note`) đang là chuỗi KHÔNG DẤU (OOS-10).
+       Thẻ nói câu tiếng Việt cố định theo `signed` — không in `note` thô cho iOS.
+-#}
+
+{%- macro icon(key) -%}
+{%- if key == 'windows' -%}
+<svg class="nx-tai-ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M3 5.5l7-1v7H3zM11 4.4L21 3v9.5H11zM3 12.5h7v6l-7-1zM11 12.5h10V21l-10-1.4z"/></svg>
+{%- elif key == 'android' -%}
+<svg class="nx-tai-ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M6 9h12v8a2 2 0 01-2 2h-1v3h-2v-3h-2v3H9v-3H8a2 2 0 01-2-2zM4 9h1.5v6H4a1 1 0 01-1-1v-4a1 1 0 011-1zm16 0a1 1 0 011 1v4a1 1 0 01-1 1h-1.5V9zM8 3l1.2 2M16 3l-1.2 2M6.5 7.5C6.5 5.5 8.8 4 12 4s5.5 1.5 5.5 3.5z"/></svg>
+{%- else -%}
+<svg class="nx-tai-ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M16 3c0 1.4-1.2 3-2.7 3 0-1.5 1.3-3 2.7-3zM19 17c-.6 1.4-1.6 3-3 3-1 0-1.4-.6-2.6-.6s-1.7.6-2.6.6c-1.5 0-2.6-1.7-3.2-3.1C5.4 14 5 10.5 7 8.6c.9-.9 2-1 2.8-1 1 0 1.7.6 2.5.6.7 0 1.4-.7 2.7-.7.8 0 2 .2 2.9 1.4-2.5 1.4-2.1 5 .6 6.1z"/></svg>
+{%- endif -%}
+{%- endmacro -%}
+
+{%- macro co_tai(p) -%}{{ 'y' if (p.available and p.url) else '' }}{%- endmacro -%}
+
+{%- macro mo_ta(p) -%}
+{%- if not (p.available and p.url) -%}{{ _("Đang chuẩn bị — sẽ có sớm") }}
+{%- elif p.key == 'ios' -%}
+  {%- if p.signed -%}{{ _("Mở bằng Safari trên iPhone/iPad để cài.") }}
+  {%- else -%}{{ _("Cài qua SideStore hoặc Sideloadly (bản chưa lên App Store).") }}{%- endif -%}
+{%- elif p.note -%}{{ p.note }}
+{%- else -%}{{ _("Sẵn sàng để tải") }}
+{%- endif -%}
+{%- endmacro -%}
+
+{%- macro the(p, href=None, muc='h3') -%}
+{%- set san = co_tai(p) -%}
+<div class="nx-tai-the{{ '' if san else ' nx-tai-chua' }}" data-nen-tang="{{ p.key }}">
+  {{ icon(p.key) }}
+  <{{ muc }} class="nx-tai-ten">{{ p.label }}</{{ muc }}>
+  <p class="nx-tai-mo">{{ mo_ta(p) }}</p>
+  {%- if not san %}
+  <span class="badge b-grey nx-tai-tt"><span class="dot"></span>{{ _("Đang chuẩn bị") }}</span>
+  {%- elif href %}
+  <a class="btn nx-tai-nut" href="{{ href }}">{{ _("Tải xuống") }}</a>
+  {%- elif caller is defined %}
+  <div class="nx-tai-hanh-dong">{{ caller() }}</div>
+  {%- endif %}
+</div>
+{%- endmacro -%}

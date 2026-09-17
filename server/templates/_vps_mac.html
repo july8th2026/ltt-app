@@ -42,7 +42,10 @@
    `phan_tram` do `bang_thong.phan_tram()` tính (trần 999 để không vỡ bố cục);
    ở đây chỉ kẹp bề rộng thanh về 100%. #}
 {% macro do_bang_thong(bt, rong='100%') %}
-  <div class="vps-do" style="max-width:{{ rong }};">
+  {# C3 17/09: không `style=""` cho giá trị mặc định (mọi nơi gọi đều dùng mặc
+     định); bề rộng thanh đi bằng THUỘC TÍNH `width` của SVG, không phải CSS nội
+     tuyến — cùng con số, không lệch. #}
+  <div class="vps-do"{% if rong != '100%' %} style="max-width:{{ rong }};"{% endif %}>
     <div class="vps-do-so">
       <b>{{ bt.da_dung }}</b>
       {% if bt.han_muc_gb %}<span class="muted">/ {{ bt.han_muc_gb }} GB</span>{% endif %}
@@ -54,8 +57,9 @@
     {# `aria-*` để bộ đọc màn hình đọc được con số, không chỉ thấy một thanh màu. #}
     <div class="vps-do-thanh" role="img"
          aria-label="{{ _('Đã dùng %(n)s phần trăm hạn mức băng thông') % {'n': bt.phan_tram} }}">
-      <span class="{{ 'qua-han' if bt.phan_tram >= 100 else ('gan-han' if bt.phan_tram >= 80 else '') }}"
-            style="width:{{ [bt.phan_tram, 100] | min }}%;"></span>
+      <svg class="vps-do-svg" aria-hidden="true" focusable="false" preserveAspectRatio="none"><rect
+           class="{{ 'qua-han' if bt.phan_tram >= 100 else ('gan-han' if bt.phan_tram >= 80 else '') }}"
+           x="0" y="0" height="100%" width="{{ [bt.phan_tram, 100] | min }}%"></rect></svg>
     </div>
     {% endif %}
   </div>
@@ -114,7 +118,10 @@
     </div>
     <div class="vps-dinh-o">
       <span class="nhan">{{ _("Mã máy") }}</span>
-      <code class="gt" data-chep>{{ may.id }}</code>
+      {# C3 17/09: UUID dài bẻ giữa chuỗi ở màn hẹp (ký tự cuối rơi dòng riêng).
+         Hiện một dòng, cắt bằng dấu "…" khi thiếu chỗ; `title` giữ đủ mã, và nút
+         Chép đọc `innerText` — vẫn là mã ĐẦY ĐỦ, không phải bản cắt. #}
+      <code class="gt vps-ma-may" data-chep title="{{ may.id }}" translate="no">{{ may.id }}</code>
     </div>
   </div>
 {%- endmacro %}
