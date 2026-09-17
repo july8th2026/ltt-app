@@ -1,27 +1,69 @@
 {# Fragment progress. Job detail owns adaptive polling and replaces this node. #}
 {% import "_ui.html" as ui %}
 {% set running = job.status in ('queued','running') %}
-<div id="job-progress"
+{#- Golden UI C3 (17/09):
+    * thanh tiến độ mang màu theo trạng thái (`job-state-*`) — 100% hoàn tất
+      không còn đỏ như lỗi;
+    * câu "mở Tệp kết quả bên dưới" chỉ hiện khi trang THẬT có phần đó
+      (`artifacts` chỉ có ở trang chi tiết, fragment poll không có);
+    * lý do lỗi lấy từ sự kiện công khai cấp `error` gần nhất — KHÔNG in
+      `job.error` (chuỗi thô nội bộ, chốt ở test_107);
+    * lịch sử xử lý luôn có mặt: việc chưa ghi sự kiện nào vẫn có mốc "Đã tạo
+      việc", và việc đã kết thúc mà sự kiện cuối chưa nói điều đó thì có thêm
+      mốc kết thúc — trước đây trang lỗi/hủy dừng ở "Bắt đầu xử lý". -#}
+{% set ma_ket_thuc = ('completed', 'failed', 'cancelled', 'ambiguous_provider') %}
+{% set su_kien_cuoi = events[-1] if events else none %}
+{% set thieu_moc_cuoi = not running and (su_kien_cuoi is none or su_kien_cuoi.event_code not in ma_ket_thuc) %}
+{% set loi_cong_khai = (events or []) | selectattr('level', 'equalto', 'error') | list %}
+<div id="job-progress" class="job-state-{{ job.status }}"
      role="status" aria-live="polite"
      data-running="{{ 'true' if running else 'false' }}"
      data-poll-url="/jobs/{{ job.id }}/progress">
   <div class="job-progress-head">
     {{ ui.nhan_trang_thai(job.status) }}
-    <span class="muted">{{ job.progress }}%{% if job.progress_msg %} — {{ _(job.progress_msg) }}{% endif %}</span>
+    <span class="muted">{{ job.progress }}%{% if running and job.progress_msg %} — {{ _(job.progress_msg) }}{% endif %}</span>
   </div>
   {{ ui.thanh_tien_do(job.progress, _("Tiến độ việc")) }}
-  {% if job.status == 'done' and job.result %}
+  {% if job.status == 'done' %}
     <div class="alert alert-ok"><strong>{{ _("Kết quả đã sẵn sàng.") }}</strong>
-      {{ _("Mở phần “Tệp kết quả” bên dưới; tải lại trang nếu job vừa hoàn tất.") }}</div>
+      {% if artifacts is defined and artifacts %}{{ _("Tải tệp ở phần “Tệp kết quả” bên dưới.") }}
+      {%- else %}{{ _("Mở lại %(app)s để xem và dùng kết quả.", app=ten_app(job.app_slug)) }}{% endif %}</div>
   {% elif job.status == 'error' %}
-    <div class="alert alert-err"><strong>{{ _("Không thể hoàn tất.") }}</strong> {{ _("Bạn có thể thử lại hoặc gửi mã hỗ trợ cho đội vận hành.") }}</div>
+    <div class="alert alert-err"><strong>{{ _("Không thể hoàn tất.") }}</strong>
+      {% if loi_cong_khai %}<span class="job-reason">{{ _("Lý do:") }} {{ _(loi_cong_khai[-1].public_message) }}</span>{% endif %}
+      {{ _("Bạn có thể thử lại hoặc gửi mã hỗ trợ cho đội vận hành.") }}</div>
+  {% elif job.status == 'cancelled' %}
+    <div class="alert alert-warn"><strong>{{ _("Việc đã hủy.") }}</strong>
+      {{ _("Việc dừng theo yêu cầu hủy và không được xử lý tiếp; credit giữ cho việc này được hoàn lại. Bấm “Thử lại” nếu muốn chạy lại.") }}</div>
   {% endif %}
-  {% if events %}<section class="job-timeline" aria-label="{{ _('Lịch sử xử lý') }}">
+  <section class="job-timeline" aria-label="{{ _('Lịch sử xử lý') }}">
     <h2>{{ _("Lịch sử xử lý") }}</h2>
-    <ol>{% for event in events %}<li class="event-{{ event.level }}">
+    <ol>
+    {%- if not events %}<li class="event-info">
+      <span class="job-event-dot" aria-hidden="true"></span>
+      <div><strong>{{ _("Đã tạo việc") }}</strong></div>
+      <time datetime="{{ job.created_at.isoformat() }}">{{ job.created_at.strftime('%H:%M:%S %d/%m') }}</time>
+    </li>
+    {%- if running %}<li class="event-info event-now">
+      <span class="job-event-dot" aria-hidden="true"></span>
+      <div><strong>{{ _("Đang xử lý.") if job.status == 'running' else _("Đang chờ đến lượt xử lý") }}</strong>{% if job.progress %}<small>{{ job.progress }}%</small>{% endif %}</div>
+      {% if job.started_at %}<time datetime="{{ job.started_at.isoformat() }}">{{ job.started_at.strftime('%H:%M:%S %d/%m') }}</time>{% endif %}
+    </li>{% endif %}
+    {%- endif %}
+    {%- for event in events %}<li class="event-{{ event.level }}">
       <span class="job-event-dot" aria-hidden="true"></span>
       <div><strong>{{ _(event.public_message) }}</strong>{% if event.details.percent is defined %}<small>{{ event.details.percent }}%</small>{% endif %}</div>
       <time datetime="{{ event.created_at.isoformat() }}">{{ event.created_at.strftime('%H:%M:%S %d/%m') }}</time>
-    </li>{% endfor %}</ol>
-  </section>{% endif %}
+    </li>{% endfor %}
+    {%- if thieu_moc_cuoi %}<li class="event-{{ 'error' if job.status == 'error' else ('warning' if job.status == 'cancelled' else 'info') }} event-end">
+      <span class="job-event-dot" aria-hidden="true"></span>
+      <div><strong>
+        {%- if job.status == 'done' %}{{ _("Đã hoàn tất.") }}
+        {%- elif job.status == 'cancelled' %}{{ _("Đã hủy theo yêu cầu.") }}
+        {%- else %}{{ _("Dừng do lỗi") }}{% endif -%}
+      </strong></div>
+      {% if job.finished_at %}<time datetime="{{ job.finished_at.isoformat() }}">{{ job.finished_at.strftime('%H:%M:%S %d/%m') }}</time>{% endif %}
+    </li>{% endif %}
+    </ol>
+  </section>
 </div>

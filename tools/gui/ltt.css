@@ -4275,3 +4275,51 @@ input[type=hidden]+.af-step{margin-top:0}
 /* DL-005: icon SVG ở catalog ẩn danh (trước còn emoji manifest). */
 .appcard h2 .catalog-ic{display:inline-grid;place-items:center;color:var(--brand-hover)}
 .appcard h2 .catalog-ic .ui-ic{width:18px;height:18px}
+/* === C3: BILLING-JOBS === */
+/* Golden UI C3 (17/09) — họ Billing + Jobs. Một khối, chỉ token.
+   Thẻ gói nạp: bỏ dải bìa 72px (ba gói xếp dọc trên điện thoại vượt 900px);
+   biểu tượng, tên gói và nhãn bonus nằm chung một hàng. */
+.billing-package-top{display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);flex-wrap:wrap;margin-bottom:var(--space-1)}
+.billing-package-top h2{min-width:0}
+.billing-package .billing-cover-ico{display:inline-grid;place-items:center;flex:0 0 auto;width:30px;height:30px;
+  border-radius:var(--radius-sm);background:var(--brand-soft);color:var(--brand-hover);font-size:16px}
+/* Trang đơn: badge trạng thái dưới tiêu đề; khối đơn đã chết mỗi trạng thái một lời. */
+.billing-order-state{margin:6px 0 4px}
+.billing-dead-title{display:block}
+.billing-dead-body{margin:6px 0 0}
+/* Danh sách thẻ thay bảng ở màn hẹp (lịch sử đơn nạp, danh sách việc). Bảng
+   giữ nguyên ở màn rộng; mỗi lúc chỉ một bản hiện nên trình đọc màn hình không
+   đọc hai lần (display:none rời cây truy cập). */
+.billing-history-list,.job-list{display:none;list-style:none;margin:0;padding:0}
+.billing-history-item,.job-card{display:grid;gap:var(--space-2);min-width:0;padding:var(--space-3) var(--space-4);
+  border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}
+.billing-history-row,.job-card-top{display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);
+  flex-wrap:wrap;min-width:0}
+@media(max-width:640px){
+  .billing-history .billing-history-table,.job-table{display:none}
+  .billing-history-list,.job-list{display:grid;gap:var(--space-2)}
+}
+/* Bộ lọc việc thu gọn được: <details>, mở sẵn ở màn rộng (JS một dòng) và khi đang lọc. */
+.job-filter-box{margin:14px 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}
+.job-filter-box>summary{display:flex;align-items:center;gap:var(--space-2);min-height:44px;padding:0 var(--space-4);
+  cursor:pointer;font-weight:600;list-style:none}
+.job-filter-box>summary::-webkit-details-marker{display:none}
+.job-filter-box>summary::after{content:"";width:7px;height:7px;margin-left:auto;border-right:2px solid var(--muted);
+  border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform var(--motion-normal)}
+.job-filter-box[open]>summary::after{transform:rotate(-135deg)}
+.job-filter-box .job-filters{margin:0;border:0;border-top:1px solid var(--line);border-radius:0 0 var(--radius) var(--radius);
+  background:transparent}
+/* Dòng/thẻ việc: tên ứng dụng là liên kết, mã + thời điểm là dòng phụ. */
+.job-row-link{font-weight:700}
+.job-row-meta{display:block;margin:2px 0 0;color:var(--muted);font-size:12px}
+.job-card .job-row-meta{margin:0}
+.job-row-progress{min-width:140px}
+.job-row-progress .ui-progress{margin:4px 0}
+.job-row-progress .tnum{color:var(--muted);font-size:12px}
+.job-card .job-row-progress{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:var(--space-2);min-width:0}
+/* Màu thanh tiến độ theo trạng thái — 100% hoàn tất không còn đỏ như lỗi. */
+.job-state-done .ui-progress>i{background:var(--ok)}
+.job-state-error .ui-progress>i{background:var(--err)}
+.job-state-cancelled .ui-progress>i{background:var(--grey)}
+.job-timeline li.event-now .job-event-dot{background:var(--warn)}
+.job-reason{display:block;margin:4px 0}

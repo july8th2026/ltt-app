@@ -45,12 +45,24 @@
 </div>
 
 {% elif order.status in ('expired', 'cancelled', 'failed') %}
-<div id="tt" class="billing-status" role="alert">
-  <div class="alert alert-err billing-alert-flush">
-    <strong>{{ _("Đơn không hoàn tất hoặc đã hết hạn.") }}</strong>
-    {{ _("Nếu bạn đã chuyển tiền cho đơn này, đừng chuyển lại — gửi quản trị mã giao dịch ngân hàng để được đối soát.") }}
+<div id="tt" class="billing-status" role="alert" data-trang-thai="{{ order.status }}">
+  {#- Golden UI C3 (17/09): ba trạng thái từng chung MỘT câu "không hoàn tất hoặc
+      đã hết hạn" — khách không biết đơn mình hết hạn, bị hủy hay bị ngân hàng
+      từ chối. Mỗi trạng thái một tiêu đề, lời giải thích và nút riêng. -#}
+  <div class="alert {{ 'alert-err' if order.status == 'failed' else 'alert-warn' }} billing-alert-flush billing-dead">
+    {% if order.status == 'expired' %}
+      <strong class="billing-dead-title">{{ _("Đơn đã hết hạn thanh toán.") }}</strong>
+      <p class="billing-dead-body">{{ _("Mã thanh toán của đơn này không còn dùng được. Tạo đơn mới để nhận mã mới.") }}</p>
+    {% elif order.status == 'cancelled' %}
+      <strong class="billing-dead-title">{{ _("Đơn đã bị hủy.") }}</strong>
+      <p class="billing-dead-body">{{ _("Đơn hủy không cộng credit. Muốn nạp tiếp, hãy tạo đơn mới.") }}</p>
+    {% else %}
+      <strong class="billing-dead-title">{{ _("Thanh toán không thành công.") }}</strong>
+      <p class="billing-dead-body">{{ _("Cổng thanh toán từ chối giao dịch. Kiểm tra số dư hoặc hạn mức tài khoản ngân hàng rồi thử lại với đơn mới.") }}</p>
+    {% endif %}
+    <p class="billing-dead-body">{{ _("Nếu bạn đã chuyển tiền cho đơn này, đừng chuyển lại — gửi quản trị mã giao dịch ngân hàng để được đối soát.") }}</p>
     <div class="actions billing-actions-sm">
-      <a class="btn sm" href="/nap">{{ _("Tạo đơn mới") }}</a>
+      <a class="btn sm" href="/nap">{{ _("Thử lại với đơn mới") if order.status == 'failed' else _("Tạo đơn mới") }}</a>
     </div>
   </div>
 </div>

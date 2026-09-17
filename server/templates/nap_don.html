@@ -1,14 +1,37 @@
 {% extends "base.html" %}
+{% import "_ui.html" as ui %}
 {% block title %}{{ _("Đơn nạp #%(ma)s", ma=order.order_code) }} — LTT AI Studio{% endblock %}
 {% block content %}
   <script src="/static/htmx.min.js?v={{ asset_ver }}"></script>
+  {#- Golden UI C3 (17/09): mỗi trạng thái đơn một câu giải thích + badge riêng.
+      Hướng dẫn chuyển khoản, nút mở cổng và cảnh báo "cổng chưa cấu hình" CHỈ
+      hiện khi đơn còn `pending` — đơn đã chết mà còn mời chuyển tiền là mời
+      khách mất tiền. `vua_ve` nhận thêm `?ve=1` (cùng tham số mà fragment
+      `/trangthai` đã dùng) để trang và fragment nói cùng một câu. -#}
+  {% set dang_cho = order.status == 'pending' %}
+  {% set vua_ve = dang_cho and (vua_ve or request.query_params.get('ve') == '1') %}
 
   <div class="pagehead">
     <div>
       <h1>{{ _("Đơn nạp #%(ma)s", ma=order.order_code) }}</h1>
+      <p class="billing-order-state">
+        {%- if vua_ve -%}
+          <span class="badge b-warn" data-trang-thai="dang-xac-nhan"><span class="dot" aria-hidden="true"></span>{{ _("Đang xác nhận thanh toán") }}</span>
+        {%- else -%}
+          {{ ui.nhan_trang_thai(order.status, 'don') }}
+        {%- endif -%}
+      </p>
       <p class="page-sub">
         {%- if order.status == 'paid' -%}
           {{ _("Đơn đã hoàn tất — credit đã vào tài khoản của bạn.") }}
+        {%- elif vua_ve -%}
+          {{ _("Cổng thanh toán đã báo nhận tiền — đang chờ ngân hàng xác nhận để cộng credit. Bạn không cần chuyển lại.") }}
+        {%- elif order.status == 'expired' -%}
+          {{ _("Đơn đã quá thời hạn thanh toán nên không còn nhận chuyển khoản.") }}
+        {%- elif order.status == 'cancelled' -%}
+          {{ _("Đơn đã bị hủy nên không thể thanh toán tiếp.") }}
+        {%- elif order.status == 'failed' -%}
+          {{ _("Cổng thanh toán báo giao dịch không thành công; credit chưa được cộng.") }}
         {%- else -%}
           {{ _("Chuyển khoản đúng số tiền — credit cộng tự động khi nhận được.") }}
         {%- endif -%}
@@ -18,7 +41,7 @@
   </div>
 
   <div class="ui-card billing-order">
-    {% if da_huy and order.status != 'paid' %}
+    {% if da_huy and dang_cho %}
       <div class="alert alert-warn billing-alert-top">
         {{ _("Bạn đã huỷ ở bước thanh toán —") }} <strong>{{ _("chưa trừ tiền") }}</strong>.
         {{ _("Đơn vẫn còn hiệu lực, mở lại link bên dưới nếu muốn tiếp tục.") }}
@@ -33,15 +56,17 @@
       {%- if order.bonus_percent %} <span class="billing-bonus billing-bonus-soft">(+{{ order.bonus_percent }}%)</span>{% endif %}</strong></div>
     <div class="billing-line">
       <span class="dim">{{ _("Mã đơn") }}</span><span class="mono">{{ order.order_code }}</span></div>
-    {% if order.status != 'paid' %}
+    {% if dang_cho or order.status == 'expired' %}
       {# Đơn đã trả thì hạn thanh toán vô nghĩa — để lại chỉ làm khách tưởng
-         credit sẽ hết hạn theo. #}
+         credit sẽ hết hạn theo. Đơn hủy/lỗi cũng không còn hạn nào để chờ. #}
       <div class="billing-line">
-        <span class="dim">{{ _("Hết hạn") }}</span><span class="tnum">{{ order.expires_at.strftime('%d/%m/%Y %H:%M') if order.expires_at else '—' }}</span></div>
+        <span class="dim">{{ _("Hết hạn") if dang_cho else _("Hết hạn lúc") }}</span><span class="tnum">{{ order.expires_at.strftime('%d/%m/%Y %H:%M') if order.expires_at else '—' }}</span></div>
     {% endif %}
 
-    {% if order.status == 'paid' %}
-      {# Đơn đã trả: giấu nút mở cổng, kẻo khách bấm lại rồi chuyển tiền lần hai. #}
+    {% if not dang_cho or vua_ve %}
+      {# Đơn đã trả / đã chết: giấu nút mở cổng, kẻo khách bấm lại rồi chuyển
+         tiền lần hai. Vừa về từ cổng với status=PAID cũng vậy — đang chờ
+         ngân hàng xác nhận, không phải lúc mời trả lần nữa. #}
     {% elif order.checkout_url %}
       <a class="btn billing-cta-full" href="{{ order.checkout_url }}" target="_blank" rel="noopener">{{ _("Mở PayOS / VietQR") }} <span aria-hidden="true">↗</span></a>
     {% else %}
