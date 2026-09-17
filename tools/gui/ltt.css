@@ -4322,3 +4322,51 @@ input[type=hidden]+.af-step{margin-top:0}
   .c3-bang-xep td:nth-child(2) code{white-space:nowrap}
   .c3-bang-xep td:nth-child(3){grid-column:1/-1;color:var(--text-secondary)}
 }
+/* === C3: AUTH-ERROR-STATUS === */
+/* Auth (base_plain.html). Tiêu đề/phụ đề cân dòng: hết chữ mồ côi kiểu
+   "…LTT AI / Studio." ở 390px lẫn 1440px. */
+.box .auth-brand h1,.box .auth-brand p{text-wrap:balance}
+/* Hành động chính/phục hồi trong thẻ auth là NÚT (reset hết hạn, verify). */
+.box .card .auth-action{display:flex;width:100%;min-height:44px;justify-content:center;
+  font-size:var(--fs-body);font-weight:700}
+.box .card .auth-action+.hint{margin-top:var(--space-4)}
+/* Footer trong hộp auth: luật chung <=640px đổi footer thành cột căn TRÁI, nên
+   nav thứ hai (pháp lý) lệch trái dưới hai hàng căn giữa. Vùng chạm 44px. */
+@media(max-width:640px){
+  .box>.platform-footer{align-items:center;gap:0;padding-left:0;padding-right:0}
+  .box>.platform-footer nav{gap:0 var(--space-1)}
+  .box>.platform-footer a{min-height:44px;padding:0 var(--space-2)}
+  .box .hint a{display:inline-flex;align-items:center;min-height:44px}
+}
+@media(pointer:coarse){.box>.platform-footer a{min-height:44px;padding:0 var(--space-2)}}
+
+/* Error (error.html): nút phục hồi đủ vùng chạm trên điện thoại. */
+@media(max-width:640px){.ui-state-actions .btn{min-height:44px}}
+
+/* Status API (status_api.html): cùng khung `.page` như mọi trang (lề 24px,
+   rộng ~1130px) thay vì cột 820px + lề thêm 16px. */
+.tt-api{max-width:none;margin:0;padding:0}
+.tt-api-rong{margin:var(--space-4) 0}
+/* <=640px: bảng thành thẻ dọc có nhãn thay vì cắt cột "Tình trạng". */
+@media(max-width:640px){
+  .tt-api-bang .ui-table{min-width:0}
+  .tt-api-bang thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+  .tt-api-bang tbody tr{display:block;padding:var(--space-3) var(--space-4);border-top:1px solid var(--border-subtle)}
+  .tt-api-bang tbody tr:first-child{border-top:0}
+  /* td là khối (không grid): <br>/<small> bên trong không bị tách thành ô lưới. */
+  .tt-api-bang tbody td{display:block;position:relative;padding:var(--space-1) 0 var(--space-1) 96px;border:0}
+  .tt-api-bang tbody td::before{content:attr(data-nhan);position:absolute;left:0;top:var(--space-1);
+    color:var(--text-muted);font-size:var(--fs-caption)}
+}
+
+/* Status admin (status.html): nhãn trạng thái chữ + danh sách có nhãn. */
+.status-check-dau{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--space-2)}
+.status-nexus .status-check-dau{margin:0 0 var(--space-3)}
+.status-nexus .status-check-dau h2{margin:0}
+.status-kv{display:grid;gap:var(--space-2);margin:var(--space-3) 0 0}
+.status-kv>div{display:grid;grid-template-columns:minmax(120px,180px) minmax(0,1fr);gap:var(--space-1) var(--space-3);
+  align-items:baseline}
+.status-kv dt{color:var(--text-muted);font-size:var(--fs-helper)}
+.status-kv dd{margin:0;min-width:0}
+.status-kv code{font-family:var(--mono);font-size:var(--fs-helper);color:var(--text-primary);overflow-wrap:anywhere}
+@media(max-width:640px){.status-kv>div{grid-template-columns:minmax(0,1fr)}}

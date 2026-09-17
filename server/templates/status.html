@@ -17,24 +17,43 @@
     </div>
   {% endif %}
 
+  {#- Golden UI C3: nhãn trạng thái bằng CHỮ (badge) thay ký hiệu ✓/!/×; chi tiết
+      dạng `khoa=gia_tri` mỗi dòng hiện thành danh sách có nhãn. Dữ liệu giữ
+      nguyên — dòng nào không theo dạng đó thì cả khối rơi về <pre> như cũ. -#}
+  {%- set _nhan_moi_truong = {'profile': _('Hồ sơ môi trường'), 'data': _('Thư mục dữ liệu'), 'logs': _('Thư mục nhật ký')} %}
   {% for s in sections %}
+    {%- set _tt = {'blocker': (_('Lỗi chặn'), 'err'), 'warning': (_('Cảnh báo'), 'warn')}.get(s.status, (_('Đạt'), 'ok')) %}
     <div class="card status-check status-{{ s.status }}">
-      <strong><span aria-hidden="true">{% if s.status == 'blocker' %}×{% elif s.status == 'warning' %}!{% else %}✓{% endif %}</span> {{ s.check }}</strong>
-      {% if s.detail %}<pre tabindex="0">{{ s.detail }}</pre>{% endif %}
+      <div class="status-check-dau"><strong>{{ s.check }}</strong>
+        <span class="badge b-{{ _tt[1] }}"><span class="dot" aria-hidden="true"></span>{{ _tt[0] }}</span></div>
+      {%- set _dong = (s.detail or '').splitlines() %}
+      {%- set ns = namespace(kv=_dong|length > 0) %}
+      {%- for d in _dong %}{% if '=' not in d %}{% set ns.kv = false %}{% endif %}{% endfor %}
+      {% if ns.kv %}
+        <dl class="status-kv">
+          {% for d in _dong %}{% set k, v = d.split('=', 1) %}
+          <div><dt>{{ _nhan_moi_truong.get(k.strip(), k.strip()) }}</dt><dd><code>{{ v.strip() }}</code></dd></div>
+          {% endfor %}
+        </dl>
+      {% elif s.detail %}<pre tabindex="0">{{ s.detail }}</pre>{% endif %}
       {% if s.fix %}<p class="status-fix">{{ _("Cách sửa:") }} {{ s.fix }}</p>{% endif %}
     </div>
   {% endfor %}
 
+  {#- Golden UI C3: bỏ ô "Kiểm tra cả Google Sheet" — route đã bỏ tham số
+      `check_sheet` từ 25/08 (xem server/routes/status.py), ô đó không làm gì. -#}
   <form method="get" action="/status" class="status-recheck">
     <button class="btn" type="submit">{{ _("Kiểm tra lại") }}</button>
-    <label class="check muted">
-      <input type="checkbox" name="check_sheet" value="1" {% if checked_sheet %}checked{% endif %}> {{ _("Kiểm tra cả Google Sheet (chậm hơn)") }}
-    </label>
   </form>
 
   {% if nexus %}
     <section class="ui-card status-nexus" aria-labelledby="status-nexus-title">
-      <h2 id="status-nexus-title">LTT Nexus</h2>
+      <div class="status-check-dau"><h2 id="status-nexus-title">LTT Nexus</h2>
+        {%- if nexus.loi %}<span class="badge b-err"><span class="dot" aria-hidden="true"></span>{{ _("Không đọc được số liệu") }}</span>
+        {%- elif nexus.may is defined and nexus.may == 0 %}<span class="badge b-grey"><span class="dot" aria-hidden="true"></span>{{ _("Chưa có máy nào ghép") }}</span>
+        {%- elif nexus.may is defined and nexus.online > 0 %}<span class="badge b-ok"><span class="dot" aria-hidden="true"></span>{{ _("Có máy đang bật") }}</span>
+        {%- elif nexus.may is defined %}<span class="badge b-warn"><span class="dot" aria-hidden="true"></span>{{ _("Không máy nào đang bật") }}</span>
+        {%- endif %}</div>
       {% if nexus.loi %}
         <p class="dim">{{ _("Không đọc được số liệu:") }} {{ nexus.loi }}</p>
       {% endif %}

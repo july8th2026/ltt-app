@@ -18835,3 +18835,49 @@ msgstr "Generate images with models running on LTT Studios machines. Create imag
 
 msgid "Sinh ảnh nền thumbnail YouTube từ mô tả, bằng model nội bộ. Ảnh KHÔNG có chữ — chữ thêm bằng công cụ chỉnh sửa của bạn."
 msgstr "Generate YouTube thumbnail backgrounds from a description, using an in-house model. Images contain NO text — add text with your own editing tool."
+
+msgid "Kiểm tra lại địa chỉ, hoặc mở trang từ menu phía trên. Nếu bạn đến đây từ một liên kết trong hệ thống, gửi mã tra cứu bên dưới cho bộ phận hỗ trợ."
+msgstr "Check the address, or open the page from the menu above. If you followed a link inside the platform, send the reference code below to support."
+
+msgid "Đường dẫn có thể đã gõ sai, đã đổi, hoặc nội dung đã bị xoá."
+msgstr "The link may be mistyped or changed, or the content may have been deleted."
+
+msgid "Một số trang chỉ mở sau khi đăng nhập. Đăng nhập rồi thử lại, hoặc quay về trang chính."
+msgstr "Some pages only open after you sign in. Sign in and try again, or go back to the home page."
+
+msgid "Tình trạng theo năng lực"
+msgstr "Status by capability"
+
+msgid "Khi một năng lực được mở, tình trạng của nó sẽ hiện ở đây."
+msgstr "When a capability is opened, its status will appear here."
+
+msgid "Hồ sơ môi trường"
+msgstr "Environment profile"
+
+msgid "Thư mục dữ liệu"
+msgstr "Data directory"
+
+msgid "Thư mục nhật ký"
+msgstr "Log directory"
+
+msgid "Lỗi chặn"
+msgstr "Blocker"
+
+msgid "Cảnh báo"
+msgstr "Warning"
+
+msgid "Đạt"
+msgstr "Passed"
+
+msgid "Không đọc được số liệu"
+msgstr "Could not read metrics"
+
+msgid "Chưa có máy nào ghép"
+msgstr "No paired devices yet"
+
+msgid "Có máy đang bật"
+msgstr "Devices online"
+
+msgid "Không máy nào đang bật"
+msgstr "No devices online"
+
