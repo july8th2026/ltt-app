@@ -49,7 +49,7 @@
   </div>
   {% for b in cac_bang %}
   <p class="muted"><code>{{ b.model }}</code> ({{ _("phiên bản giá") }}
-    <code>{{ b.phien_ban_gia }}</code>): {# C4: ghi chú đến từ `gia_token` (ngoài phạm vi UI) có chữ in hoa nhấn mạnh — hiện bằng chữ đậm thay vì in hoa. #}{{ (b.ghi_chu|e)|replace("GIỮ LẠI", "<strong>giữ lại</strong>"|safe)|replace("KEPT", "<strong>kept</strong>"|safe) }}</p>
+    <code>{{ b.phien_ban_gia }}</code>): {# C4: ghi chú đến từ `gia_token` (ngoài phạm vi UI) có chữ in hoa nhấn mạnh — hiện bằng chữ đậm thay vì in hoa. #}{{ (b.ghi_chu|e)|replace("GIỮ LẠI", ("<strong>%s</strong>"|format(_("giữ lại")))|safe)|replace("KEPT", "<strong>kept</strong>"|safe) }}</p>
   {% endfor %}
   <p><a href="/gia-api">{{ _("Xem bảng giá đầy đủ kèm ví dụ chi phí thật") }}</a></p>
 </div>

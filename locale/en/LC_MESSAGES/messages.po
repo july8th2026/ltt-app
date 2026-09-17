@@ -19304,3 +19304,6 @@ msgstr "Aerial"
 msgid "Cầm tay (handheld)"
 msgstr "Handheld"
 
+
+msgid "giữ lại"
+msgstr "kept"

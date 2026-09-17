@@ -355,7 +355,7 @@ def _ten_app(slug: str) -> str:
             if a.manifest.slug == slug:
                 return _i18n._(a.manifest.display_name)
     except Exception:
-        pass
+        log.debug("_ten_app: khong tra duoc manifest cho %s", slug, exc_info=True)
     return slug
 
 

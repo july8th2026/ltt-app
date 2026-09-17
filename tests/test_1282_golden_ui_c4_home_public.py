@@ -139,7 +139,8 @@ def test_gia_api_cta_va_ghi_chu_gom():
 def test_api_dieu_khoan_khong_in_hoa_het():
     src = _doc(TPL / "api_dieu_khoan.html")
     assert "CHƯA đầy đủ" not in src and '_("Bản này chưa đầy đủ")' in src
-    assert '"<strong>giữ lại</strong>"|safe' in src
+    # 17/09 (L3 check_i18n): chữ đậm qua _() để bánh cóc i18n không tăng.
+    assert '("<strong>%s</strong>"|format(_("giữ lại")))|safe' in src
 
 
 # ── HTML render thật ─────────────────────────────────────────────────────────
