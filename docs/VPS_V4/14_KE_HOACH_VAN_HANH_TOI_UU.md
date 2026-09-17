@@ -132,6 +132,13 @@ bản production đang chạy phải là tổ tiên của SHA deploy.
 | R24 | Trang `/vps` "còn chỗ" chỉ theo RAM/đĩa, lúc tạo mới kiểm IPv4/cổng | Sửa `75e1e0a5` + `test_1031` (đối chứng mã cũ 7 đỏ); chờ L2 + deploy |
 | — | Đổi default OVH→Vultr→OVH | Không chạy live: tài khoản thử là khách (403 admin) và Vultr 0401 chưa từng có health; đã có test tự động giữ ghim profile |
 
+### Bán lại (17/09 chiều)
+
+| # | Việc | Bằng chứng |
+|---|---|---|
+| R22 | health đọc giá catalog OVH, bỏ phụ thuộc giỏ adopt; deploy `b621cb1e`; `auto_acquire=true` (config v5) | `test_1030` (+ đối chứng), L1 PASS, health `ip`/`capacity` HEALTHY |
+| R23 | collector Máy B chấp nhận mapping `LTTMANAGED` hợp lệ | LTT-VM-Promox `4778e02`, unittest Máy B 31/31, `gateway.public_mapping` pass |
+
 ### Còn lại
 
 | # | Việc | Chặn bởi |

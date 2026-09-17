@@ -2,6 +2,11 @@
 
 ## Active blockers
 
+### Cập nhật 2026-09-17 (chiều) — bán VPS MỞ LẠI
+
+- R22 và R23 đã sửa và chạy trên production/Máy B; profile OVH 0402 `auto_acquire=true`,
+  health 6/6 HEALTHY. Mục "tạm dừng" bên dưới chỉ còn giá trị lịch sử.
+
 ### Cập nhật 2026-09-17 — bán VPS mới TẠM DỪNG (chủ dự án chốt)
 
 - Deploy `ee5a5ef9` đạt; E2E console/vòng đời đạt trên `d96b66f3`.

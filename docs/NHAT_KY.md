@@ -46,6 +46,22 @@
   nhập mật khẩu) + kiểm sau khởi động lại máy (chủ dự án báo khi có dịp).
 - Test nhắm: `test_1302` (12) + `test_1303` (7); cả app `1300–1303` = 39 xanh.
 
+## 2026-09-17 (chiều) — VPS bán lại: hệ thống tự mua IP OVH cho mỗi VPS (R22, R23)
+
+- **Mô hình chủ dự án chốt**: khách chỉ tạo VPS; hệ thống tự mua 1 IPv4 OVH cho mỗi
+  VPS mới. Lệnh "tạm dừng bán" buổi sáng được gỡ.
+- **R22** (`224b2b91`): health đọc giá catalog `GET /order/catalog/formatted/ip`
+  (chỉ đọc) thay vì giỏ adopt đã hết hạn; worker vẫn tạo giỏ mới và kiểm preview,
+  hợp đồng, trần trước checkout. Đối chứng mã cũ đỏ. L1 `--doi --tu a5f4d492` PASS.
+- **R23** (repo LTT-VM-Promox `4778e02`): collector Máy B chấp nhận mapping
+  `LTTMANAGED` hợp lệ. Chép lên `H:\PROXMOX` (sao lưu `.bak-r23-20260917`), unittest
+  trên Máy B 31/31; lượt 05:06Z `public_ip_count`/`public_mapping` pass.
+- **Deploy `b621cb1e`** 12:39 trong khoảng trống 0 job/0 lease (chờ ~10 phút vì chat
+  LLM liên tục); nghiệm thu 0/0/0, `/health/ready` 200. Profile OVH v5
+  `auto_acquire=true`, trần 239 (bản lùi `ovh-profile-provider_config-before-resume-20260917.json`).
+- Health profile OVH: 6/6 HEALTHY; hàm trang `/vps` trả 1 chỗ mỗi gói (IPv4 1,
+  cổng 150). Chrome chủ dự án cần đăng nhập lại để kiểm bằng mắt trên URL công khai.
+
 ## 2026-09-17 — VPS V4 lên production, E2E vòng đời đạt, tạm dừng bán VPS mới
 
 - **Gate + deploy**: L3 `d8b02cd7` đỏ 12 test + 2 bánh cóc ⇒ sửa tại chỗ, khép
