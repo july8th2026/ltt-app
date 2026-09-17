@@ -388,8 +388,10 @@ def test_hai_cot_admission_mang_suc_chua_CUA_MODEL_da_nop(db_nop):
     ba_tam = _nop_chat("ltt-3.8")
     ba_nam = _nop_chat("ltt-3.5")
 
-    assert ba_tam == (ngan_sach.TAI_NGUYEN_38, ngan_sach.SO_SLOT), ba_tam
-    assert ba_nam == (ngan_sach.TAI_NGUYEN_35, ngan_sach.SO_SLOT), ba_nam
+    assert ba_tam == (ngan_sach.TAI_NGUYEN_38,
+                      ngan_sach.HO_SO["qwen38-api"].seq_cap), ba_tam
+    assert ba_nam == (ngan_sach.TAI_NGUYEN_35,
+                      ngan_sach.HO_SO["qwen35-api"].seq_cap), ba_nam
     assert ba_tam[0] != ba_nam[0], (
         "hai model dung CHUNG mot ten tai nguyen — hang doi dang gop hai card "
         "lam mot va khong ai thay")

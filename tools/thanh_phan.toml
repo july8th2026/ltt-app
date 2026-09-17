@@ -185,7 +185,11 @@ tai_nguyen = ["postgres_test"]
 mo_ta = "Pool khoa API, phan bo, cooldown, cascade da-provider."
 duong = ["platform_core/api_keys.py", "platform_core/api_pool.py",
          "platform_core/providers.py", "platform_core/providers_live.py",
-         "platform_core/llm/", "platform_core/image_gen/"]
+         "platform_core/llm/", "platform_core/image_gen/",
+         # Khach noi bo cua duong LLM (goi model theo luot, dem token, giu/hoan tien qua
+         # runtime) — cung duong voi `platform_core/llm/`; truoc 17/09 khong co chu nen
+         # moi thay doi o day day gate --doi len L3.
+         "platform_core/runtime_noi_bo/"]
 he_trong = "thi_hanh"
 
 [thanh_phan."core:api_cong_khai"]

@@ -263,13 +263,22 @@ def _chay_mot_job(worker_id: str, *, capabilities=None) -> bool:
 
     # 1b. Giành slot của tài nguyên từ xa TRƯỚC GPU cục bộ. Nếu máy B đang bận,
     # không được giữ card trên worker chỉ để ngồi chờ một tài nguyên khác.
-    from platform_core.llm import admission
+    from platform_core.llm import admission, dieu_phoi, tham_so_da_luot
     from contextlib import nullcontext
+    try:
+        luat = (_luat_cho_job(job_type, params, suc)
+                if admission_resource and admission_slots > 0 else {})
+    except tham_so_da_luot.DatChoVuotPool as e:
+        # Phương án C bất biến 1: đặt chỗ vượt cả pool KV thì KHÔNG BAO GIỜ được
+        # nhận — hỏng hẳn + hoàn tiền; không hoãn lại mãi, không kẹp im lặng.
+        _hong_khai_bao_model(job_id, job_type, str(e),
+                             thong_diep="Job vuot ngan sach ngu canh cua model.")
+        return True
     execution = (
         admission.hold_persisted(
             resource=admission_resource, slots=admission_slots,
             user_id=user_id, mode="job", holder_id=job_id, job_id=job_id,
-            **_luat_cho_job(job_type, params, suc))
+            **luat)
         if admission_resource and admission_slots > 0
         else nullcontext(True)
     )
@@ -290,7 +299,10 @@ def _chay_mot_job(worker_id: str, *, capabilities=None) -> bool:
             ctx = JobContext(job_id, gpu_uuid=(lease.gpu_uuid if lease else ""))
             from platform_core.job_ingress import trusted_scope
 
-            with trusted_scope("worker", "internal"):
+            # O-05: số đặt chỗ của lease đi lên máy B (`X-LTT-Token-Dat`) cùng
+            # mọi lời gọi `dieu_phoi` của handler — cùng số hai sổ đếm.
+            with trusted_scope("worker", "internal"), dieu_phoi.mang_dat_cho(
+                    int(getattr(execution_lease, "token_dat_truoc", 0) or 0)):
                 return _chay_handler(worker_id, job_id, job_type, params, ctx)
 
 
@@ -326,7 +338,8 @@ def _suc_chua_job(job_type: str, params: dict):
     return tool.admission_cho(str((params or {}).get("model") or ""))
 
 
-def _hong_khai_bao_model(job_id: str, job_type: str, ly_do: str) -> None:
+def _hong_khai_bao_model(job_id: str, job_type: str, ly_do: str, *,
+                         thong_diep: str = "Job xin mot model tool khong khai.") -> None:
     """Job xin một model tool không khai ⇒ hỏng hẳn (`retry=False`) + hoàn tiền.
 
     ⛔ KHÔNG `_tra_ve_hang_doi`: đây không phải "tài nguyên đang bận" mà là bản
@@ -339,7 +352,7 @@ def _hong_khai_bao_model(job_id: str, job_type: str, ly_do: str) -> None:
     for db in _one_session():
         job = db.get(Job, job_id)
         if job is not None and job.status not in (JOB_CANCELLED,):
-            jobq.fail(db, job, "Job xin mot model tool khong khai.", retry=False)
+            jobq.fail(db, job, thong_diep, retry=False)
             db.commit()
             _hoan_tien_neu_can(db, job)
 
@@ -378,12 +391,19 @@ def _luat_cho_job(job_type: str, params: dict, suc=None) -> dict:
         cong_cu = (params or {}).get("tools")
         vao = int(ex.estimate_input(tin, cong_cu) if cong_cu else ex.estimate_input(tin))
         ra = int((params or {}).get("max_tokens") or ex.mac_dinh_cho("job"))
-        ra = min(ra, int(ex.context_output_cap(vao)))
-        return tham_so_da_luot.luat_cho(pool, lop=luat_nhan.NEN, token_vao_uoc=vao,
-                                        xin_ra=ra)
+        # O-24 (17/09): kẹp theo cửa sổ của ĐÚNG model (bí danh), không theo cửa
+        # sổ hẹp nhất; và đếm ảnh vào đặt chỗ như mọi cửa khác.
+        alias = str((params or {}).get("model") or "") or None
+        ra = min(ra, int(ex.context_output_cap(vao, alias)))
+        from platform_core.runtime_noi_bo.luong import dem_anh
+        so_anh = dem_anh(params or {})
     except Exception:  # noqa: BLE001 - đặt chỗ cả pool là đường an toàn
         log.exception("khong uoc duoc token cua job %s — dat cho CA POOL", job_type)
         return dict(lop=luat_nhan.NEN, token_pool=pool, token_dat_truoc=pool)
+    # Ngoài `try`: `DatChoVuotPool` (và bản khai thiếu đệm ước) là LỖI THẬT, không
+    # phải "ước hỏng" — đặt chỗ cả pool ở đây là kẹp im lặng (phương án C).
+    return tham_so_da_luot.luat_cho(suc, lop=luat_nhan.NEN, token_vao_uoc=vao,
+                                    xin_ra=ra, so_anh=so_anh)
 
 
 def _vram_can(job_type: str) -> int:

@@ -59,15 +59,33 @@ LTTComfyUI         ComfyUI
 
 ## 2. Deploy
 
-### 2.1 Thứ tự là **ràng buộc cứng**, không phải quy ước
+### 2.1 Thứ tự là **ràng buộc cứng**, không phải quy ước — theo HƯỚNG thay đổi
+
+(Phương án C, 17/09 — thay dạng một chiều cũ `yaml → cổng B → A` của R21.)
 
 ```
-llama-swap.yaml  →  hai cổng máy B  →  máy A
+TĂNG sức chứa (-c, -np, max_out/DEM_UOC nới)   :  máy B TRƯỚC  (yaml + cổng)  →  máy A
+GIẢM sức chứa                                  :  máy A TRƯỚC  →  máy B
+                                                  (A hạ bằng env, KHÔNG cần deploy mã:
+                                                   LTT_ADMISSION_SO_SUAT__<resource>,
+                                                   LTT_ADMISSION_POOL__<resource>
+                                                   + setup\nap_lai_env.ps1)
 ```
 
-**Vì sao (R21, đo được):** trần input máy A khai **rộng hơn** `-c` đang chạy trên
-máy B. Máy A đi trước ⇒ khách gửi được một prompt mà engine không chứa nổi ⇒ lỗi
-nổ ở **tầng dưới cùng**, sau khi đã qua mọi cửa kiểm. Cùng lý do với số slot.
+**Vì sao:** máy A là người quyết định nhận; cổng máy B là **rào vật lý** đọc `-c`/`-np`
+từ `llama-swap.yaml` (`llm_gateway/vat_ly.py`). Bất biến cần giữ trong mọi khe
+chuyển tiếp: *A không bao giờ khai rộng hơn thứ B đang chạy* (A ⊆ B).
+
+- Tăng mà A đi trước ⇒ A nhận lượt B chưa chứa nổi ⇒ B 413/429 **sau 200** (R21,
+  đo được: trần input A rộng hơn `-c` đang chạy ⇒ lỗi nổ ở tầng dưới cùng).
+- Giảm mà B đi trước ⇒ cùng hậu quả theo chiều ngược: A còn khai số cũ, lớn hơn.
+- Rào B vẫn giữ nếu đi sai thứ tự (engine không tràn KV), và từ bước 1 A **xếp
+  hàng lại** khi B 429 — nên sai thứ tự thành chậm, không thành mất lượt. Nhưng
+  413 sau 200 thì không cứu được: vẫn phải đúng thứ tự.
+
+⚠️ Cổng B đọc yaml **lúc khởi động**. Đổi `-c`/`-np` = restart `LTTLlamaSwap` (nạp
+yaml) **rồi** restart `LTTLlmGateway` (đọc lại rào) — đảo lại thì cổng giữ số của
+tệp mới trong khi engine còn chạy số cũ.
 
 ### 2.1b ⛔ R27 — trên **cùng máy A**, Task 5.3 và 5.5 là MỘT đơn vị deploy
 
@@ -253,6 +271,32 @@ Cùng lần deploy đó, **năm** việc phải làm **tay** (không script nào
 powershell -ExecutionPolicy Bypass -File llm_gateway\deploy\deploy.ps1
 ```
 
+**Phương án C — bước 3 (chỉ đổi MÃ cổng, yaml không đổi số):**
+
+```powershell
+powershell -ExecutionPolicy Bypass -File llm_gateway\deploy\deploy.ps1 -BoQuaYaml
+ssh ... "powershell -c Restart-Service LTTLlmGateway"   # CHỈ cổng — KHÔNG LTTLlamaSwap
+curl http://127.0.0.1:8299/health    # vat_ly.nguon = H:\LTT_LLM\gateway\llama-swap.yaml
+                                     # vat_ly.theo_model = -c/-np khớp /running
+                                     # tran.input_tokens là dict THEO MODEL
+```
+
+- Điều kiện trước: **bước 1 đã deploy ở máy A** (A xếp hàng lại khi B 429).
+- `-BoQuaYaml`: không chép, không đối chiếu `llama-swap.yaml`; cổng đọc tệp **đang
+  có** trên máy B (cạnh gói `llm_gateway`). Log khởi động in `rao vat ly tu ...`.
+- `LTTLlamaSwap` **không** restart ở bước này (không unload model).
+- Log cảnh báo `BIEN DA GO ... van con dat` là vô hại (nssm nướng env lúc cài);
+  muốn sạch: `cai_dat_dich_vu.ps1` trên máy B.
+- Cổng không đọc được yaml ⇒ **từ chối khởi động** (mã thoát 4, log nói lý do).
+  Lùi: bản chụp `releases/auto-*` của `deploy.ps1` + `Restart-Service LTTLlmGateway`.
+
+🔴 **O-19 — `--no-cache-idle-slots` (còn mở, bước 4).** `/running` máy B 17/09 có cờ
+này; `llm_gateway/deploy/llama-swap.yaml` **không có**. Không sửa máy B ở bước 3.
+Bước 4 phải hoà giải theo kết quả phép đo **m6** (`--cache-ram` 8192 vs 0): đưa cờ
+vào yaml trong kho, hoặc gỡ nó trên máy B. Tới lúc đó `deploy.ps1` (không
+`-BoQuaYaml`) **dừng ở bước 1c** khi yaml trên B lệch kho — đừng vượt bằng
+`-GhiDeYamlLech` trừ khi đã chủ ý bỏ cờ.
+
 Script **chụp bản đang chạy trước khi ghi** (đó là điểm lùi của bạn) và **không tự
 restart** — vì restart `llama-swap` là **unload model**, tức một quyết định vận
 hành. Nó phát hiện và **nói**: nếu `llama-swap` khởi động trước lúc bạn chép thì
@@ -413,9 +457,10 @@ R21. Lùi theo **thứ tự ngược**: máy A trước, rồi cổng, rồi yam
 2. ⛔ Gọi `unload` thủ công của llama-swap khi còn lượt đang chạy. Drain do LTT
    làm: ngừng nhận → chờ in-flight = 0 → mới nhả (TD-D5).
 3. ⛔ Coi `/free` của ComfyUI là "đã trả card" (R22).
-4. ⛔ Đổi `-np`/`-c` ở một nơi. Ba nơi phải khớp:
-   `apps/ltt_llm/ngan_sach.py`, env cổng, `llama-swap.yaml` — `tests/test_1201` và
-   `tests/test_334` chốt điều đó.
+4. ⛔ Đổi `-np`/`-c` ở một nơi. **Hai** nơi phải khớp (từ phương án C bước 3 cổng
+   không còn env số — nó đọc yaml): `apps/ltt_llm/ngan_sach.py` và
+   `llama-swap.yaml` — `tests/test_1201`, `tests/test_334`, `tests/test_1223`
+   chốt điều đó. Thứ tự deploy theo §2.1.
 5. ⛔ Bật `--load-mode none|dio` (hay `--no-mmap` trên bản cũ): mỗi lần nạp thành
    một lần đọc đĩa, và `dio` phá luôn kho ấm. `tests/test_637` canh.
 6. ⛔ Mở `groups` cho hai hồ sơ **cùng một card**. Một group `swap:false` chỉ hợp lệ

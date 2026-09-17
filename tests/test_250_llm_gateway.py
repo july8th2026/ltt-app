@@ -21,33 +21,36 @@ import pytest
 from fastapi.testclient import TestClient
 
 from llm_gateway.api import create_app
-from llm_gateway.config import Config
+from llm_gateway.config import DEM_UOC_MAC_DINH, Config
 from llm_gateway.trong_tai import TrongTai
+from llm_gateway.vat_ly import VatLy
 
 
-def test_config_mac_dinh_khoa_public_input_KHOP_NGAN_SACH(monkeypatch):
-    """Cap public phải sống trong source, không phụ thuộc một gateway.env cũ.
+def test_config_mac_dinh_tran_vao_THEO_MODEL_KHOP_NGAN_SACH(monkeypatch):
+    """Trần vào phải sống trong source, không phụ thuộc một gateway.env cũ.
 
-    ⭐ VÀ PHẢI **KHỚP** `apps/ltt_llm/ngan_sach.py`, không phải là một con số gõ
-       tay thứ hai. Nền tảng (máy A) từ chối ở `TOKEN_VAO_TRAN`; cổng (máy B)
-       từ chối ở `max_input_tokens`. Hai con số lệch nhau thì một trong hai
-       tầng trở thành trần ẩn — đúng lớp lỗi mà cả đợt dọn 29-30/08 nhắm vào.
+    ⭐ VÀ PHẢI **KHỚP** `apps/ltt_llm/ngan_sach.py` **cho từng model**, không phải
+       một con số gõ tay thứ hai. Nền tảng (máy A) từ chối ở `tran_vao_cua(m)`;
+       cổng (máy B) từ chối ở `vat_ly.tran_vao(-c của yaml, max_out, DEM_UOC)`.
+       Hai con số lệch nhau thì một trong hai tầng trở thành trần ẩn — và trước
+       phương án C bước 3 chúng lệch thật cho 3.5 (O-02: 186.368 cho cả hai).
 
     ⚠️ `llm_gateway` **không** import `apps.ltt_llm` (nó chạy trên máy B, không
        có cây nền tảng). Việc đối chiếu là của TEST, không phải của mã chạy.
     """
     from apps.ltt_llm import ngan_sach
+    from llm_gateway.vat_ly import tran_vao
 
-    monkeypatch.delenv("LTT_LLM_MAX_INPUT_TOKENS", raising=False)
     monkeypatch.delenv("LTT_LLM_MAX_OUTPUT_TOKENS", raising=False)
-    monkeypatch.delenv("LTT_LLM_MAX_DONG_THOI", raising=False)
+    monkeypatch.delenv("LTT_LLM_DEM_UOC", raising=False)
     cfg = Config.from_env()
-    assert cfg.max_input_tokens == ngan_sach.TOKEN_VAO_TRAN, (
-        f"cong (may B) chan o {cfg.max_input_tokens}, nen tang chan o "
-        f"{ngan_sach.TOKEN_VAO_TRAN} — mot trong hai la tran an.")
     assert cfg.max_output_tokens == ngan_sach.TOKEN_RA_TRAN
-    assert cfg.max_dong_thoi == ngan_sach.DONG_THOI_MAY_B, (
-        "parallel=1 thi gateway khong duoc tao hidden queue")
+    for m in ("qwen38-api", "qwen35-api"):
+        b = tran_vao(cfg.vat_ly[m], cfg.max_output_tokens, cfg.dem_uoc)
+        assert b == ngan_sach.tran_vao_cua(m), (
+            f"cong (may B) chan {m} o {b}, nen tang chan o "
+            f"{ngan_sach.tran_vao_cua(m)} — mot trong hai la tran an.")
+    assert not hasattr(cfg, "max_input_tokens"), "tran vao chung cho moi model quay lai"
 
 
 #: Đường dẫn upstream **chạm model**. Mọi thứ khác (`/running`, `/tokenize`,
@@ -86,7 +89,7 @@ def _chi_sieu_du_lieu(up) -> None:
 
 def test_public_cap_chan_TRUOC_thuong_nguon():
     """Q116: vượt trần theo bộ ước phải bị chặn trước khi chạm upstream/GPU."""
-    c, up = _client(_cfg(max_input_tokens=65_000))
+    c, up = _client(_cfg(tran_vao=65_000))
     r = c.post("/v1/chat/completions", json={
         "model": "qwen38-api",
         "messages": [{"role": "user", "content": "x" * 162_500}],
@@ -142,7 +145,20 @@ class FakeUpstream:
         return self.ma, "text/event-stream", iter(self.khoi_stream)
 
 
-def _cfg(**ghi_de) -> Config:
+def _vat_ly(tran_vao: int = 200_000, *, max_out: int = 16_384, np: int = 64,
+            dem_uoc: int = DEM_UOC_MAC_DINH) -> dict:
+    """Rào vật lý giả cho CẢ HAI hồ sơ, dựng NGƯỢC từ trần vào muốn đo.
+
+    ⭐ Phương án C bước 3 gỡ `max_input_tokens`: trần vào nay là
+       `-c − max_out − DEM_UOC`. Nên muốn "trần vào 20.000" thì dựng `-c` sao
+       cho công thức ra đúng 20.000 — phép kiểm vẫn đo đúng điều nó đo, chỉ đổi
+       chỗ con số được khai.
+    """
+    ctx = int(tran_vao) + int(max_out) + int(dem_uoc)
+    return {m: VatLy(ctx=ctx, np=np, kvu=True) for m in ("qwen38-api", "qwen35-api")}
+
+
+def _cfg(tran_vao: int = 200_000, np: int = 64, **ghi_de) -> Config:
     mac_dinh = dict(
         vram_sach_mb=2500,
         upstream_url="http://127.0.0.1:8280",
@@ -152,19 +168,22 @@ def _cfg(**ghi_de) -> Config:
         # dong duoc no (Task 3.3), nen giu ten cu o day la do mot thu khong
         # ton tai.
         models_mo=("qwen38-api", "qwen35-api"),
-        max_input_tokens=200_000, max_output_tokens=16_384,
+        max_output_tokens=16_384,
         max_images=4, max_image_bytes=12 * 1024 * 1024,
         upstream_timeout_s=600.0, stream_timeout_s=900.0,
         ram_trong_toi_thieu_gb=48.0, trong_tai_bat=True,
-        # Hang rao V9: mo rong trong bo test nay de no tiep tuc do dung thu no do
-        # (ngan sach, trong tai, don dep). Hang rao co bo test rieng: test_258.
-        max_dong_thoi=64, rpm=0,
         # Tat nhip tim trong bo test nay: no do NGAN SACH/TRONG TAI/DON DEP,
         # va mot nhip chen vao giua se lam cac phep so byte lech. Nhip tim co
         # bo test rieng.
         nhip_tim_giay=0.0,
+        nguon_vat_ly="test",
     )
     mac_dinh.update(ghi_de)
+    if "vat_ly" not in ghi_de:
+        # Rao vat ly (-np) mo rong trong bo test nay de no tiep tuc do dung thu
+        # no do (ngan sach, trong tai). Rao co bo test rieng: test_258, test_1221.
+        mac_dinh["vat_ly"] = _vat_ly(tran_vao, max_out=int(mac_dinh["max_output_tokens"]),
+                                     np=np)
     return Config(**mac_dinh)
 
 
@@ -235,7 +254,7 @@ def test_than_duoc_chuyen_tiep_nguyen_ven():
 # ── 3. Ngân sách chặn TRƯỚC khi chạm GPU ─────────────────────────────────────
 
 def test_dau_vao_qua_dai_thi_413_va_khong_cham_thuong_nguon():
-    c, up = _client(_cfg(max_input_tokens=100))
+    c, up = _client(_cfg(tran_vao=100))
     r = c.post("/v1/chat/completions", json={
         "model": "qwen38-api",
         "messages": [{"role": "user", "content": "x" * 100_000}]})
@@ -268,7 +287,7 @@ def test_uoc_vuot_nhung_THAT_vua_thi_duoc_nhan():
     của nó, không có cách nào biết vì sao: nó thấy 5.000 token trên một cửa sổ
     ta công bố rộng hơn thế nhiều.
     """
-    c, up = _client(_cfg(max_input_tokens=20_000))
+    c, up = _client(_cfg(tran_vao=20_000))
     up.dat_running("qwen38-api")          # ho so DA nap => dem that duoc
     up.dat_tokenize(5_000)
     r = c.post("/v1/chat/completions", json={
@@ -294,7 +313,7 @@ def test_duong_tokenize_PHAI_qua_upstream_cua_tung_model():
 
     ⭐ Nên chốt phải là đường ĐẦY ĐỦ, không phải một chuỗi con.
     """
-    c, up = _client(_cfg(max_input_tokens=20_000))
+    c, up = _client(_cfg(tran_vao=20_000))
     up.dat_running("qwen38-api")
     up.dat_tokenize(5_000)
     c.post("/v1/chat/completions", json={
@@ -315,7 +334,7 @@ def test_uoc_vuot_va_THAT_cung_vuot_thi_413_bao_so_THAT():
     ⛔ Trả về số ước ở đây thì khách đọc một con số không khớp với bất cứ thứ gì
        họ đo được, và không có đường nào lần ra.
     """
-    c, up = _client(_cfg(max_input_tokens=20_000))
+    c, up = _client(_cfg(tran_vao=20_000))
     up.dat_running("qwen38-api")
     up.dat_tokenize(30_000)
     r = c.post("/v1/chat/completions", json={
@@ -334,7 +353,7 @@ def test_ho_so_CHUA_nap_thi_khong_hoi_tokenize():
     phục vụ nó — 2,5 phút và một lần chiếm card, cho một yêu cầu ta đang định
     từ chối.
     """
-    c, up = _client(_cfg(max_input_tokens=20_000))
+    c, up = _client(_cfg(tran_vao=20_000))
     up.dat_running("")                    # khong ho so nao ready
     r = c.post("/v1/chat/completions", json={
         "model": "qwen38-api",
@@ -350,7 +369,7 @@ def test_thuong_nguon_chet_thi_van_413_theo_uoc():
        với `timeout=2.0` chứ không phải 5, vì năm giây cho một yêu cầu chắc chắn
        bị từ chối là một hồi quy so với bản trước.
     """
-    c, up = _client(_cfg(max_input_tokens=20_000), up=FakeUpstream(ma=599))
+    c, up = _client(_cfg(tran_vao=20_000), up=FakeUpstream(ma=599))
     r = c.post("/v1/chat/completions", json={
         "model": "qwen38-api",
         "messages": [{"role": "user", "content": "x" * 100_000}]})
@@ -431,24 +450,40 @@ def test_vao_cong_ra_vuot_cua_so_ngu_canh_thi_413():
     ⭐ Một phép kiểm về "vào + ra vượt cửa sổ" mà gõ tay hai con số thì nó
        thật ra đang chốt *một cửa sổ cụ thể*, không phải *bất biến*. Dẫn xuất
        thì lần nâng cửa sổ kế tiếp không ai phải sửa nó.
-    """
-    from llm_gateway.catalog import HO_SO
 
-    cua_so = {m.ten: m.max_context for m in HO_SO}["qwen35-api"]
+    🔵 PHƯƠNG ÁN C (bước 3): trần vào nay là `-c − max_out − DEM_UOC`, nên qua
+       cửa HTTP nhánh "context" **không còn tới được** — trần vào đã chứa nó
+       (vào ≤ -c − max_out − DEM ⇒ vào + ra ≤ -c − DEM). Phép kiểm tách hai
+       vế: (1) chốt `kiem_tra` vẫn bắn khi được gọi với hai trần độc lập; (2)
+       qua HTTP, mọi lượt vừa trần vào đều vừa cửa sổ — đó là bất biến thật.
+    """
+    from llm_gateway import ngan_sach as NS
+    from llm_gateway.vat_ly import doc_tep, tim_yaml, tran_vao
+
+    cua_so = doc_tep(tim_yaml())["qwen35-api"].ctx
     # Vào ~55 % cửa sổ, ra ~55 % cửa sổ: mỗi cái vừa trần của nó, cộng lại tràn.
     token_vao = int(cua_so * 0.55)
     token_ra = int(cua_so * 0.55)
     ky_tu = int(token_vao * 2.5)               # KY_TU_MOI_TOKEN cua ngan_sach
+    than = {"model": "qwen35-api",
+            "messages": [{"role": "user", "content": "x" * ky_tu}],
+            "max_tokens": token_ra}
 
-    c, _ = _client(_cfg(max_input_tokens=cua_so * 2, max_output_tokens=cua_so))
-    r = c.post("/v1/chat/completions", json={
-        "model": "qwen35-api",
-        "messages": [{"role": "user", "content": "x" * ky_tu}],
-        "max_tokens": token_ra})
+    with pytest.raises(NS.VuotNganSach) as e:
+        NS.kiem_tra(than, max_input_tokens=cua_so * 2, max_output_tokens=cua_so,
+                    max_images=4, max_image_bytes=1 << 20, max_context=cua_so,
+                    co_vision=True)
+    assert e.value.truong == "context" and e.value.tran == cua_so
+
+    cfg = _cfg(max_output_tokens=token_ra,
+               vat_ly={"qwen35-api": VatLy(ctx=cua_so, np=3, kvu=True)},
+               models_mo=("qwen35-api",))
+    tran = tran_vao(cfg.vat_ly["qwen35-api"], cfg.max_output_tokens, cfg.dem_uoc)
+    assert tran + token_ra < cua_so, "tran vao khong con chua canh cua so"
+    c, _ = _client(cfg)
+    r = c.post("/v1/chat/completions", json=than)
     assert r.status_code == 413, r.text
-    d = r.json()["detail"]
-    assert d["truong"] == "context", d
-    assert d["tran"] == cua_so, d
+    assert r.json()["detail"]["truong"] == "input_tokens", r.json()
 
 
 def test_anh_kieu_anthropic_va_responses_deu_dem_duoc():
@@ -492,7 +527,7 @@ def test_ram_duoi_nguong_thi_ban():
 def test_yeu_cau_hong_van_413_ke_ca_khi_card_ban():
     """Thứ tự có chủ ý: một yêu cầu không bao giờ chạy được phải bị từ chối dứt
     khoát, chứ không phải lúc 429 lúc 413 tuỳ card bận hay rảnh."""
-    c, _ = _client(_cfg(max_input_tokens=100), tt=_tt_ban())
+    c, _ = _client(_cfg(tran_vao=100), tt=_tt_ban())
     r = c.post("/v1/chat/completions", json={
         "model": "qwen38-api",
         "messages": [{"role": "user", "content": "x" * 100_000}]})
@@ -555,7 +590,8 @@ def test_health_bao_du_thu_can_de_chan_doan():
     assert d["models_mo"] == ["qwen35-api", "qwen38-api"]
     assert d["thuong_nguon"]["song"] is True
     assert d["trong_tai"]["ban"] is False
-    assert d["tran"]["input_tokens"] == 200_000
+    # Theo MODEL (phuong an C, O-02) — khong con mot tran chung.
+    assert d["tran"]["input_tokens"] == {"qwen35-api": 200_000, "qwen38-api": 200_000}
 
 
 def test_health_bao_ban_khi_ban():

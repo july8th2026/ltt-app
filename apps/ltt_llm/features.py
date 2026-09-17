@@ -101,7 +101,7 @@ def _ky_tu_noi_dung(noi_dung) -> int:
     Anthropic đặt ``tool_use``/``tool_result`` thành dict lồng trong ``content``.
     Chỉ đọc khóa ``text`` làm máy A ước thiếu đúng ở những phiên Claude Code dài,
     trong khi máy B vẫn đếm các chuỗi lồng và từ chối vì pool KV. Ảnh được giữ
-    riêng theo ``token_moi_anh`` nên không đếm chuỗi base64 ở đây.
+    riêng theo ``AdmissionModel.token_giu_moi_anh`` nên không đếm chuỗi base64 ở đây.
     """
     if isinstance(noi_dung, str):
         return len(noi_dung)

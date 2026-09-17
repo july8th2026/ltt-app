@@ -118,16 +118,29 @@ def chup_nguoi_cho(db: Session, *, resource: str,
     return ra
 
 
-def kiem_phong(db: Session, *, resource: str, token_prefill_moi: int,
-               so_nguoi_toi_da: int, token_prefill_toi_da: int,
+def kiem_phong(db: Session, *, resource: str, so_nguoi_toi_da: int,
+               la_whale: bool, so_ca_voi_toi_da: int,
                now: datetime | None = None) -> None:
     """Ném `PhongDay` nếu phòng chờ đã chạm trần. Chạy TRƯỚC khi gửi 200.
 
-    Hai trần độc lập (nguyên tắc vLLM `max_num_queued_reqs`/`_tokens`):
-      * số người chờ — không có hàng vô hạn;
-      * tổng token cần prefill MỚI đang chờ — hàng 30 người nhẹ khác hàng 3 whale.
-    Phòng TRỐNG thì luôn nhận: nếu không, một whale lớn hơn trần token sẽ không
-    bao giờ vào được hàng.
+    Phòng chờ CHỈ trả lời *"hàng có vô hạn không"* — bằng SỐ NGƯỜI:
+      * số người chờ còn sống — không có hàng vô hạn;
+      * số WHALE chờ còn sống — whale chạy nối tiếp (≤1 mỗi tài nguyên), nên hàng
+        whale dài bao nhiêu là chờ bấy nhiêu lượt 150K; chặn nó để 429 đến TRƯỚC
+        200 thay vì hết trần chờ giữa SSE.
+
+    🔴 L-12b (17/09/2026): phòng chờ KHÔNG còn trần TOKEN. Câu *"có vừa không"*
+       có đúng MỘT người trả lời — `luat_nhan.xet` luật 2: Σ token đặt chỗ của
+       lượt ĐANG CHẠY + lượt này ≤ pool KV của model (`-kvu`: một bể `-c` chung
+       cho mọi slot). Lượt chưa vừa thì CHỜ trong hàng, có nhịp tim, có backfill
+       có chặn; không bị đuổi.
+
+       Trần cũ (`token_prefill_cho_toi_da` 57.000 trên Σ token MỚI của người
+       CHỜ) là luật thứ hai cho cùng câu hỏi, và đo được nó đuổi oan:
+         * 13/09 J10: lượt 67.989 token → 429 khi có người chờ, 200 khi phòng
+           trống (bản vá 13/09 chỉ nới cho MỘT món lớn);
+         * sau bản vá: một whale 68K đang chờ ⇒ MỌI lượt mới, kể cả 10 token, 429
+           (`68K + x > 57K`) — `test_1250::test_mot_whale_dang_cho_khong_duoi_luot_nho`.
     """
     now = now or _bay_gio()
     song = [w for w in (db.query(LlmWaiter)
@@ -136,37 +149,9 @@ def kiem_phong(db: Session, *, resource: str, token_prefill_moi: int,
             if (now - _aware(w.heartbeat_at)).total_seconds() <= HAN_NHIP_CHO_S]
     if len(song) >= so_nguoi_toi_da:
         raise PhongDay("phong_day_so_nguoi")
-
-    # 🔴 L-12 (13/09/2026): MỘT TRẦN TỔNG KHÔNG ĐƯỢC LOẠI TRỪ VĨNH VIỄN MỘT MÓN
-    #    ĐƠN LẺ VỐN HỢP LỆ.
-    #
-    #    Đo được ở kịch bản J10, cùng MỘT request prefill 67.989 token (dưới trần
-    #    vào 171.458 của `ltt-3.8`, nên `tien_kiem` đã cho qua):
-    #
-    #        phòng chờ TRỐNG      -> 200, chạy trọn, TTFB 71,3 s
-    #        phòng chờ CÓ NGƯỜI   -> 429 sau 0,48 s
-    #
-    #    Vì `sum(...) + token_prefill_moi` luôn vượt ngay khi món ấy **tự nó** lớn
-    #    hơn trần phòng. Chờ bao lâu cũng vô ích, và câu chữ trả về nói *"busy,
-    #    retry later"* — một lời khuyên **không bao giờ đúng** cho ca này.
-    #
-    # ⭐ Đây là cùng bài toán vLLM giải bằng **chunked prefill**: chẻ prefill ra
-    #    nhiều vòng để một prompt dài không phải vừa một ngân sách. Ta không chẻ
-    #    được ở tầng này, nên áp đúng nguyên lý ấy ở dạng nhận/không-nhận: món
-    #    lớn hơn cả trần vẫn được **xếp hàng**, nhưng tối đa MỘT món như thế cùng
-    #    lúc — nếu không, hàng chờ thành chỗ chứa prefill không giới hạn.
-    #
-    # ⚠️ Nó vẫn phải chờ theo luật whale ở `luat_nhan.xet`; đây chỉ là quyền VÀO
-    #    HÀNG, không phải quyền được phục vụ trước.
-    lon_hon_tran = int(token_prefill_moi) > token_prefill_toi_da
-    if lon_hon_tran:
-        if any(int(w.token_prefill_moi or 0) > token_prefill_toi_da for w in song):
-            raise PhongDay("phong_day_mot_mon_lon")
-        return
-
-    if song and sum(int(w.token_prefill_moi or 0) for w in song) + int(
-            token_prefill_moi) > token_prefill_toi_da:
-        raise PhongDay("phong_day_token_prefill")
+    if la_whale and sum(1 for w in song if bool(getattr(w, "la_whale", False))) >= max(
+            1, int(so_ca_voi_toi_da)):
+        raise PhongDay("phong_day_ca_voi")
 
 
 def vao(db: Session, yc: YeuCauCho, *, now: datetime | None = None) -> str:
@@ -219,8 +204,8 @@ def cong_cho_residency(w, giay: float) -> bool:
     return True
 
 
-def _mot_nhip(yc: YeuCauCho, waiter_id: str, dong_ho: Callable[[], datetime],
-              cho_whale_toi_da_s: float) -> tuple[str, str]:
+def _mot_nhip(yc: YeuCauCho, waiter_id: str,
+              dong_ho: Callable[[], datetime]) -> tuple[str, str]:
     """Đập nhịp + hỏi luật nhận một lần, trong một transaction. Trả `(lease_id, lý do)`."""
     from platform_core.llm import admission, luat_nhan
 
@@ -246,7 +231,7 @@ def _mot_nhip(yc: YeuCauCho, waiter_id: str, dong_ho: Callable[[], datetime],
             token_dat_truoc=yc.token_dat_truoc, token_prefill_moi=yc.token_prefill_moi,
             la_whale=yc.la_whale, token_pool=yc.token_pool, waiter_id=waiter_id,
             tuoi_cho_s=max(0.0, (now - _aware(w.created_at)).total_seconds()),
-            cho_whale_toi_da_s=cho_whale_toi_da_s, now=now)
+            now=now)
         if lease is not None:
             w.trang_thai = "nhan"
             w.lease_id = lease.id
@@ -282,7 +267,7 @@ def _chot(waiter_id: str, trang_thai: str, ket_qua: str,
 
 
 def cho_nhan(yc: YeuCauCho, *, waiter_id: str, han_s: float,
-             cho_whale_toi_da_s: float = 30.0, moi_nhip_s: float = MOI_NHIP_S,
+             moi_nhip_s: float = MOI_NHIP_S,
              dong_ho: Callable[[], datetime] = _dong_ho_that,
              ngu: Callable[[float], None] = time.sleep,
              ) -> Generator[str, None, str]:
@@ -306,7 +291,7 @@ def cho_nhan(yc: YeuCauCho, *, waiter_id: str, han_s: float,
     xong = False
     try:
         while True:
-            lease_id, ly_do = _mot_nhip(yc, waiter_id, dong_ho, cho_whale_toi_da_s)
+            lease_id, ly_do = _mot_nhip(yc, waiter_id, dong_ho)
             if lease_id:
                 xong = True
                 return lease_id
@@ -341,6 +326,44 @@ def cho_nhan_chan(yc: YeuCauCho, *, waiter_id: str, han_s: float,
         if ngat_chua is not None and ngat_chua():
             g.close()
             raise KhachDi(waiter_id)
+
+
+#: Mã lý do ghi vào `llm_waiters.ly_do_cho` khi một lượt ĐÃ nhận bị máy B trả 429
+#: và quay lại hàng (phương án C bước 1, O-04). Nhịp chờ kế tiếp ghi đè bằng lý
+#: do của `luat_nhan`; dấu vết bền là dòng log `XEP LAI` + bộ đếm `llm:xep_lai`.
+LY_DO_MAY_B_TU_CHOI = "may_b_tu_choi"
+
+
+def xep_lai(waiter_id: str, *, now: datetime | None = None) -> bool:
+    """Dòng `nhan` quay lại `cho` — GIỮ `created_at` (tuổi chờ không đặt lại).
+
+    ⭐ Vì sao giữ tuổi: lượt này đã chờ đúng lượt; máy B từ chối nó vì hai sổ
+       nhả lệch nhịp (O-04), không phải vì nó đến muộn. Đặt lại tuổi là đẩy nó
+       xuống cuối hàng cho một lỗi không phải của nó.
+    ⛔ Chỉ đụng dòng đang `nhan`. Trả `False` khi không đổi gì (dòng đã chốt,
+       không tồn tại) — bên gọi coi như không xếp lại được.
+    """
+    if not waiter_id:
+        return False
+    gen, db = _phien()
+    try:
+        w = db.get(LlmWaiter, waiter_id)
+        if w is None or w.trang_thai != "nhan":
+            return False
+        bay_gio = now or _bay_gio()
+        w.trang_thai = "cho"
+        w.lease_id = ""
+        w.admitted_at = None
+        w.ly_do_cho = LY_DO_MAY_B_TU_CHOI
+        w.heartbeat_at = bay_gio
+        db.commit()
+        return True
+    except Exception:  # noqa: BLE001 - so luot khong duoc lam hong luot that
+        db.rollback()
+        log.exception("khong xep lai duoc dong cho %s", waiter_id)
+        return False
+    finally:
+        _dong(gen)
 
 
 def ghi_ket_thuc(waiter_id: str, ket_qua: str, *, now: datetime | None = None) -> None:

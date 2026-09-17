@@ -38,9 +38,12 @@ from types import SimpleNamespace
 import pytest
 from sqlalchemy import update
 
-from apps.ltt_llm.ngan_sach import NHOM_CU_TRU_38, POOL_38, SO_SLOT, TAI_NGUYEN_38
+from apps.ltt_llm.ngan_sach import HO_SO, NHOM_CU_TRU_38, POOL_38, TAI_NGUYEN_38
 from platform_core.llm import luat_nhan as L
 from platform_core.llm import residency as R
+
+#: Số suất của 3.8 — đọc hồ sơ (bí danh `ngan_sach.SO_SLOT` đã gỡ, phương án C).
+SO_SLOT = HO_SO["qwen38-api"].seq_cap
 
 GOC = pathlib.Path(__file__).resolve().parents[1]
 NGUON = GOC / "platform_core" / "llm" / "residency.py"

@@ -33,6 +33,8 @@ Bảy chỗ chồng chéo đo được hôm đó ghi ở
 """
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 # ══════════════════════════════════════════════════════════════════════════
 #  SỐ GÕ TAY — mọi thứ dưới đây tính ra từ chúng
 # ══════════════════════════════════════════════════════════════════════════
@@ -42,54 +44,286 @@ from __future__ import annotations
 #: con số (bộ cài client, `LTT_LLM_MAX_INPUT_TOKENS` của máy B…) lấy của model này.
 MODEL_MAC_DINH = "qwen38-api"
 
-#: 🔑 CỬA SỔ ENGINE THEO **ID MODEL NỘI BỘ** — hai model, hai card, hai con số.
+#: Trần token ra cứng cho một lượt. Khớp `LTT_LLM_MAX_OUTPUT_TOKENS` của máy B.
+#: ⭐ Phải ≥ 32.000: Claude Code gửi `max_tokens: 32000` mặc định và khách gần
+#:    như không đổi được — trần thấp hơn khiến Claude Code không dùng được (H38/L2).
+TOKEN_RA_TRAN = 32_768
+
+#: 🔑 ĐỆM ƯỚC — MỘT con số cho câu hỏi *"phép ước token vào lệch tối đa bao nhiêu"*.
+#:
+#: Chừa cho khuôn chat, định nghĩa tool và sai số của phép **ước** token vào
+#: (`uoc_token_vao` là ước chứ không phải đếm thật). Dùng ở HAI chỗ và phải là
+#: CÙNG một số ở cả hai, vì bất biến `vào ≤ tran_vao ⇒ đặt chỗ ≤ -c` dựa trên nó:
+#:   * trần vào  `tran_vao_cua(m) = -c − TOKEN_RA_TRAN − DEM_UOC` (413 trước 200);
+#:   * đặt chỗ   `vào + ra + DEM_UOC + ảnh × TOKEN_GIU_MOI_ANH` (`luat_nhan` luật 2).
+#:
+#: 🔴 PHƯƠNG ÁN C bước 2 (O-08, 17/09/2026): THAY hai tên cũ trả lời cùng câu
+#:    hỏi — `LE` (ở đây, 30/08) và `dem_dat_truoc` (env `LTT_LLM_DEM_DAT_TRUOC`
+#:    của `platform_core/llm/tham_so_da_luot.py`, 11/09, ĐÃ GỠ). Đổi một cái mà
+#:    quên cái kia thì bất biến trên gãy IM LẶNG (`luat_cho` từng kẹp về pool).
+DEM_UOC = 2_048
+
+#: Token ĐẶT CHỖ cho mỗi ảnh (sổ KV, không phải hoá đơn).
+#:
+#: ⛔ KHÁC `TOKEN_MOI_ANH` (770, số ĐO cho ảnh 1024×768, dùng cho hoá đơn/tài
+#:    liệu). Đặt chỗ phải phủ ảnh LỚN NHẤT được phép, và chưa ai đo ảnh ấy —
+#:    nên giữ 2.048 (bằng `llm_gateway/ngan_sach.TOKEN_MOI_ANH` của máy B) cho tới
+#:    khi đo. Đặt chỗ thừa chỉ tốn suất; đặt thiếu là tràn `-kvu`.
+#: 🔴 O-11 (17/09): thay env `LTT_LLM_TOKEN_MOI_ANH` (ĐÃ GỠ).
+TOKEN_GIU_MOI_ANH = 2_048
+
+#: Biên bể KV (token) A không cho đặt chỗ — `token_budget = -c − BIEN_POOL_TOKEN`.
+#:
+#: 🔴 17/09/2026 `KET_QUA_DO_17_09.md` (`da153d40`): trên b10883 tràn `-kvu` giết
+#:    các luồng GIỮA CHỪNG, sau khi đã trả 200; draft MTP (`--spec-draft-n-max 2`)
+#:    và sai số ước chiếm KV mà phép đặt chỗ không đếm. Đề xuất `-c − 8.192`.
+#: ✅ CHỦ DỰ ÁN CHỐT 17/09/2026: `token_budget = -c − 8.192`, `-np 3` và `-c`
+#:    giữ nguyên (3.8 ⇒ 212.992, 3.5 ⇒ 253.952).
+#: ⚠️ Hệ quả phải biết (`test_1229`): với LTTCODE gửi `max_tokens` 24.000 (chốt cùng
+#:    ngày), ví dụ 15K+100K chạy / 110K chờ / 55K backfill KHÔNG đạt trên 3.8 —
+#:    55K cần 81.048, hai lượt đang chạy giữ 167.096 ⇒ 248.144 > 212.992. Backfill
+#:    ở ví dụ ấy chỉ có khi giữ chỗ đầu ra ≤ 12.282 token.
+BIEN_POOL_TOKEN = 8_192
+
+
+# ══════════════════════════════════════════════════════════════════════════
+#  SỐ ĐO THEO MODEL — đo ở đúng cấu hình sẽ triển khai (G4, 12/09)
+# ══════════════════════════════════════════════════════════════════════════
+#
+# ⛔ Bốn hằng dưới đây là **số đo**, nguồn `docs/ltt_llm_dual/10_BENCHMARK_P3.md`
+#    §G4. Chúng ở đây chứ không ở chỗ dùng, vì mỗi cái đã có sẵn một bản sao gõ
+#    tay ở nơi khác và đó chính là lớp lỗi tệp này sinh ra để dẹp.
+
+#: Prefill tok/s theo **độ dài prompt**, từng model — đo ở cấu hình L-14 + L-16.
+#: Đây là đường cong, không phải một con số: 3.8 tụt từ 1.239 xuống 646 tok/s
+#: giữa 6,7K và 163K, nên "prefill bao lâu" không suy ra được từ một điểm.
+DUONG_PREFILL_TOK_S = {
+    "qwen38-api": ((786, 977.0), (6_700, 1_239.0), (32_600, 1_132.0),
+                   (98_000, 842.0), (163_000, 646.0)),
+    "qwen35-api": ((786, 1_765.0), (6_700, 2_238.0), (32_600, 2_059.0),
+                   (98_000, 1_630.0), (163_000, 1_350.0)),
+}
+
+#: Token ngữ cảnh một ảnh 1024×768 ăn. Đo bằng **hiệu** `n_prompt_tokens` giữa
+#: cùng một câu hỏi có ảnh và không ảnh (17 → 787), nên phần chữ triệt tiêu.
+#: Giống nhau ở cả hai model. ⛔ Không ước bằng công thức patch: mỗi bản mmproj
+#: băm ảnh một kiểu, và con số này **đi thẳng vào hoá đơn**.
+TOKEN_MOI_ANH = 770
+
+#: 🔴 TRẦN ẢNH — cưỡng chế ở **cổng máy B**, công bố ở đây. Thêm 14/09/2026.
+#:
+#:    Đo 14/09 trên production: gửi **4** ảnh → 200; gửi **5** → 400. Tức trần
+#:    có thật và đang chạy — nhưng **không chỗ nào công bố nó**. Khách chỉ biết
+#:    khi đã đâm vào, và trước bản vá P0-2 cùng ngày thì thông điệp còn là
+#:    *"yeu cau vuot tran cua cong"*, không nói trần nào hay bao nhiêu.
+#:
+#: ⛔ HAI SỐ NÀY LÀ **BẢN SAO** CỦA `llm_gateway/config.py` TRÊN MÁY B
+#:    (`LTT_LLM_MAX_IMAGES`, `LTT_LLM_MAX_IMAGE_BYTES`). Máy A **không** cưỡng
+#:    chế chúng — nó chỉ *đếm* ảnh để tính ngân sách KV (`luong.dem_anh`), còn
+#:    người từ chối vẫn là cổng máy B. Giữ đúng một người cưỡng chế là có chủ ý:
+#:    hai nơi cùng chặn là hai nơi sẽ lệch nhau.
+#:
+#: ⚠️ Nên bản sao này **phải có người canh**: `test_1259` đối chiếu nó với
+#:    `llama-swap`/cổng máy B. Một con số chép sang mà không ai đối chiếu chính
+#:    là cơ chế đã làm bảng ở kho này nói sai **năm lần**.
+SO_ANH_TOI_DA = 4
+ANH_BYTE_TOI_DA = 12 * 1024 * 1024
+
+#: Thời gian nạp model từ **kho ấm** (tệp vừa đọc ở lượt trước), giây.
+#: ⚠️ Máy trạng thái residency (Task 5.2) đang giả định 45,0 — gấp 2,8 lần thực
+#:    tế, tức trọng tài ngần ngại đổi cư trú và 3090 nằm sai chỗ lâu hơn cần.
+#:    Task 5.2 phải **đọc hằng này**, không gõ lại một con số thứ hai.
+NAP_KHO_AM_S = {"qwen38-api": 16.3, "qwen35-api": 12.1}
+
+#: ⭐ THỜI GIAN CHẶN TỐI ĐA TA TUYÊN BỐ LÀ CHẤP NHẬN ĐƯỢC, giây.
+#:
+#: Đây là một **tuyên bố**, không phải một phép đo — và nó phải nói ra như vậy:
+#: *"prefill của một lượt được làm nghèo các lượt khác tối đa bao lâu"*. Ngưỡng
+#: whale theo đường cong (`nguong_whale_theo_chan`) là ƯỚC cho mục tiêu này; số ĐANG
+#: CHẠY là số chủ dự án chọn (`NGUONG_WHALE`, dưới).
+#:
+#: 🔴 KHÔNG còn buộc bằng `LTT_LLM_CHO_WHALE_S` (phương án C bước 2, 17/09). Giá
+#:    trị 30 lấy từ đó lúc 12/09, nhưng đó là câu hỏi KHÁC ("whale đứng nhường lượt
+#:    tương tác bao lâu", `luat_nhan` luật 5); buộc hai số bằng nhau là chặn đúng
+#:    lần đổi số đo đề xuất dưới đây.
+#:
+#: ✅ CHỦ DỰ ÁN CHỐT 17/09/2026: mục tiêu **9 s** (trước đó 30 s).
+#:    `KET_QUA_DO_17_09.md` (nhánh `phien/bench-may-b`, `da153d40`) đo được lượt
+#:    đang decode tụt còn ~1,5–2 tok/s SUỐT prefill của lượt khác. Đường cong §G4
+#:    ở 9 s cho 10.752 / 18.944 — chỉ là GHI CHÚ; ngưỡng đang chạy là số chủ dự
+#:    án chọn tường minh 8.192 / 16.384 (`NGUONG_WHALE`).
+WHALE_CHAN_TOI_DA_S = 9.0
+
+
+def thoi_gian_prefill_s(model_id: str, token_vao: int) -> float:
+    """Prefill của `token_vao` token trên `model_id` mất bao nhiêu giây.
+
+    Nội suy tuyến tính giữa các điểm đo; ngoài dải thì kẹp về điểm đầu/cuối
+    (⛔ **không** ngoại suy — đường cong này không có dạng hàm nào được đo).
+    """
+    diem = DUONG_PREFILL_TOK_S[model_id]
+    n = max(1, int(token_vao))
+    if n <= diem[0][0]:
+        toc = diem[0][1]
+    elif n >= diem[-1][0]:
+        toc = diem[-1][1]
+    else:
+        toc = diem[-1][1]
+        for (a, ra), (b, rb) in zip(diem, diem[1:], strict=False):
+            if a <= n <= b:
+                toc = ra + (n - a) * (rb - ra) / (b - a)
+                break
+    return n / toc
+
+
+def nguong_whale_theo_chan(model_id: str, chan_toi_da_s: float) -> int:
+    """Độ dài prompt dài nhất còn prefill **trong** `chan_toi_da_s` giây trên `model_id`.
+
+    `chan_toi_da_s` là MỤC TIÊU "một lượt prefill được làm nghèo lượt khác bao
+    lâu" — một TUYÊN BỐ, truyền vào tường minh (phương án C bước 2). Hồ sơ dùng
+    `WHALE_CHAN_TOI_DA_S`; đổi mục tiêu (vd 9 s theo `KET_QUA_DO_17_09.md`) là
+    đổi MỘT dòng ấy, ngưỡng hai model tự dịch theo đường cong của từng model.
+
+    ⭐ DẪN XUẤT, KHÔNG CHÉP. Bước 512 = `-ub` mặc định của llama-server (§G1b) —
+       đơn vị prefill thật sự tiến theo, nên làm tròn xuống bội của 512 là làm
+       tròn xuống một mốc **có nghĩa cơ học**, không phải cho tròn mắt.
+    """
+    n = 512
+    while thoi_gian_prefill_s(model_id, n + 512) <= float(chan_toi_da_s):
+        n += 512
+    return n
+
+
+#: 🔑 NGƯỠNG "CÁ VOI" — từ độ dài nào thì một lượt đủ làm nghèo slot người khác.
+#:
+#: ⛔ PHẢI KHÁC NHAU THEO MODEL, VÀ ĐÂY LÀ PHÉP ĐO NÓI THẾ, không phải sở thích:
+#:    một lượt 163K token chặn prefill **257 s trên 3.8** nhưng chỉ **125 s trên
+#:    3.5** (§G4). Chép một con số từ model này sang model kia là tuyên bố hai
+#:    card có cùng đường cong — và bảng §G4 bác bỏ điều đó ở **mọi** độ dài.
+#:
+#: ✅ CHỦ DỰ ÁN CHỌN TƯỜNG MINH 17/09/2026 (DECISION_LOG L-23): **3.8 = 8.192**,
+#:    **3.5 = 16.384** token prefill mới. Đây là số GÕ TAY CÓ CHỦ Ý — quyết định
+#:    của chủ dự án, không phải kết quả đường cong. Trên đường cong §G4 hai số
+#:    này prefill ~6,6 s (3.8) và ~7,6 s (3.5): đều DƯỚI mục tiêu
+#:    `WHALE_CHAN_TOI_DA_S` (test_1214 buộc điều đó, không buộc bằng nhau).
+#:
+#: 📝 Ghi chú — ước theo đường cong (`nguong_whale_theo_chan`): giải
+#:    `token / prefill_tok_s(token) = mục tiêu` trên đường cong ĐO của TỪNG model,
+#:    làm tròn xuống bội 512 (`-ub`). Ở 9 s: 10.752 · 18.944 (KHÔNG dùng). Ở 30 s
+#:    (12/09–17/09, chưa từng chạy trên đường thật): 33.792 · 56.832.
+#:
+#: 🔴 PHƯƠNG ÁN C bước 2 (O-06, 17/09/2026): TỪ NAY LÀ SỐ ĐANG CHẠY. Trước đó
+#:    đường thật dùng một ngưỡng chung 16.384 (env `LTT_LLM_NGUONG_WHALE`, ĐÃ
+#:    GỠ) và bảng này chỉ có phép kiểm đọc. Nay `HO_SO[m].nguong_whale` →
+#:    `AdmissionModel.nguong_whale` → `tham_so_da_luot.luat_cho` gắn cờ cho MỌI
+#:    cửa (stream, đồng bộ, job, nội bộ).
+NGUONG_WHALE = {"qwen38-api": 8_192, "qwen35-api": 16_384}
+
+
+@dataclass(frozen=True)
+class HoSoModel:
+    """Hồ sơ nhận MỘT model — mọi con số admission của model ấy, một chỗ (phương án C).
+
+    ⭐ Bản khai admission (`manifest.py` → `platform_core.registry.AdmissionModel`)
+       đọc **chỉ** từ đây. Đổi `-c`/`-np` của engine (bước 4, số đo) là sửa đúng
+       một dòng `HO_SO` + `llm_gateway/deploy/llama-swap.yaml`; `test_1229` đối
+       chiếu hai bên.
+
+    ⛔ `__post_init__` NÉM khi hồ sơ tự mâu thuẫn. Một hồ sơ sai phải đỏ ở lúc
+       NẠP APP, không phải thành một lượt tràn KV lúc 3 giờ sáng.
+    """
+
+    model_id: str
+    #: `-c` của hồ sơ trong `llama-swap.yaml`. Với `-kvu`: bể KV CHUNG mọi slot.
+    engine_ctx: int
+    #: `-np` của hồ sơ — số chuỗi engine chạy song song.
+    np: int
+    #: Trần số lượt A cho chạy đồng thời (chính sách, ≤ `np`).
+    seq_cap: int
+    #: Token bể KV A KHÔNG cho đặt chỗ — biên cho thứ engine dùng mà phép đặt chỗ
+    #: không đếm (draft MTP, sai số ước). Đơn vị TOKEN, không phải tỉ lệ.
+    #: `token_budget = engine_ctx − bien_pool_token`. Xem `BIEN_POOL_TOKEN`.
+    bien_pool_token: int
+    #: Đệm ước mỗi lượt — xem `DEM_UOC`.
+    dem_uoc: int
+    #: Token đặt chỗ mỗi ảnh — xem `TOKEN_GIU_MOI_ANH`.
+    token_giu_moi_anh: int
+    #: Token prefill MỚI từ mức này lượt là whale — `NGUONG_WHALE[model_id]`
+    #: (số chủ dự án chọn 17/09, L-23).
+    nguong_whale: int
+
+    def __post_init__(self) -> None:
+        if min(self.engine_ctx, self.np, self.seq_cap, self.dem_uoc,
+               self.token_giu_moi_anh, self.nguong_whale) <= 0:
+            raise ValueError(f"ho so {self.model_id}: moi so phai > 0: {self}")
+        if self.seq_cap > self.np:
+            raise ValueError(f"ho so {self.model_id}: seq_cap {self.seq_cap} > "
+                             f"-np {self.np} — engine khong co chuoi thu {self.np + 1}")
+        # ⛔ Biên phải NHỎ HƠN một lượt ra dài nhất: `tran_vao_cua` chừa trọn
+        #    `TOKEN_RA_TRAN`, nên lượt vào dài nhất hợp lệ vẫn còn ≥ 1 token ra
+        #    trong ngân sách (`tran_theo_ngu_canh` kẹp theo ngân sách). Biên lớn
+        #    hơn thế thì lượt qua được 413 lại không bao giờ đặt chỗ vừa.
+        if not 0 <= self.bien_pool_token < TOKEN_RA_TRAN:
+            raise ValueError(f"ho so {self.model_id}: bien_pool_token "
+                             f"{self.bien_pool_token} ngoai [0; {TOKEN_RA_TRAN})")
+
+    @property
+    def token_budget(self) -> int:
+        """Pool KV A cho phép đặt chỗ: `engine_ctx − bien_pool_token`."""
+        return self.engine_ctx - self.bien_pool_token
+
+
+#: 🔑 HỒ SƠ THEO **ID MODEL NỘI BỘ** — hai model, hai card, hai hồ sơ.
 #:
 #: Khoá là id của máy B, không phải bí danh công khai (bí danh không bao giờ rời
-#: máy A — INV-015). Đây là **số ĐO**, đo từ `-c` của llama-server ở đúng cấu
-#: hình sẽ triển khai, không phải số mong muốn:
+#: máy A — INV-015). `engine_ctx`/`np` là **số ĐO** ở đúng cấu hình triển khai:
 #:
-#:   * `qwen38-api` (RTX 3090) **221_184** — `docs/ltt_llm_dual/10_BENCHMARK_P3.md`
+#:   * `qwen38-api` (RTX 3090) `-c` **221_184** — `docs/ltt_llm_dual/10_BENCHMARK_P3.md`
 #:     §G1b, chốt ở `DECISION_LOG.md` L-14. Mốc **cao nhất còn sạch** ở `-ub` mặc
 #:     định với `-np 3` + mmproj trên GPU: VRAM 24.131 MiB, `Shared` 568 (nằm
 #:     trong dải sàn 526–568 ⇒ **không tràn**), biên 445 MiB. Bước lên 229.376 là
-#:     `Shared` đã vượt sàn ~140 MiB. 262.144 (điều `constraints.md` viết ban đầu)
-#:     **không vừa card** cùng mmproj — đo được ~25,2 GB.
-#:   * `qwen35-api` (RTX 5060 Ti) **262_144** — §G3: VRAM 13.423 MiB, `Shared`
-#:     354 (không tràn), biên 2.888 MiB ngay ở **4** slot. Card này không bị ràng
-#:     buộc như 3090; 262.144 là ngữ cảnh đầy đủ của model.
+#:     `Shared` đã vượt sàn ~140 MiB. 262.144 **không vừa card** cùng mmproj.
+#:     `-np 3`, KHÔNG 4: 4 slot ở ngữ cảnh đã chốt **tràn** sang RAM chủ.
+#:   * `qwen35-api` (RTX 5060 Ti) `-c` **262_144** — §G3: VRAM 13.423 MiB, `Shared`
+#:     354, biên 2.888 MiB ngay ở **4** slot. `-np 3` ở đây là **lựa chọn** của
+#:     chủ dự án cho nhất quán hai card (12/09), không phải giới hạn phần cứng.
 #:
-#: ⛔ Đổi `-c` của một hồ sơ bên B thì đổi đúng khoá của nó ở đây — và **chỉ**
-#:    khoá đó. Một con số dùng cho hai model là một con số sai cho ít nhất một
-#:    trong hai (khuyết tật F-02).
+#: 🔴 LÝ DO CŨ "1 slot vì speculative decoding chỉ tối ưu một luồng" ĐÃ ĐO LẠI VÀ
+#:    KHÔNG ĐÚNG TRÊN 3090 (multijob M-1, 11/09) — `docs/multijob/00_BASELINE.md`.
 #:
-#: ⚠️ VÀ MỘT CẢNH BÁO CHO NGƯỜI SỬA TIẾP: đổi số ở đây **không đủ** để máy B đổi
-#:    theo. `llm_gateway/deploy/deploy.ps1` ghi đè `LTT_LLM_MAX_INPUT_TOKENS`
-#:    bằng số gõ tay, và nó chép `llama-swap.yaml` mà **không** restart
-#:    `LTTLlamaSwap`. Thứ tự deploy nằm ở §7 của
-#:    `docs/VLM_NOI_BO/NGU_CANH_DAI_2026-09-03.md` và nó **không hoán vị được**.
-#:    `test_334` chốt các bản sao đó.
-CUA_SO_THEO_MODEL = {
-    "qwen38-api": 221_184,
-    "qwen35-api": 262_144,
+#: ⛔ Đổi `-c`/`-np` của một hồ sơ bên B thì đổi đúng hồ sơ ấy ở đây — và **chỉ**
+#:    hồ sơ đó (khuyết tật F-02). `-kvu` + nhiều slot mà thiếu ngân sách KV thì
+#:    một lần tràn giết MỌI slot (llama.cpp b10689).
+#:
+#: 🔴 PHƯƠNG ÁN C bước 2 (O-12, 17/09/2026): thay `CUA_SO_THEO_MODEL` gõ tay,
+#:    `SO_SLOT_MAY_B` và các bí danh `DONG_THOI_MAY_B`, `POOL_KV_MAY_B`, `SO_SLOT`,
+#:    `POOL_KV` (ĐÃ GỠ). Hỏi `HO_SO[m]`.
+HO_SO = {
+    "qwen38-api": HoSoModel(
+        "qwen38-api", engine_ctx=221_184, np=3, seq_cap=3,
+        bien_pool_token=BIEN_POOL_TOKEN, dem_uoc=DEM_UOC,
+        token_giu_moi_anh=TOKEN_GIU_MOI_ANH,
+        nguong_whale=NGUONG_WHALE["qwen38-api"]),
+    "qwen35-api": HoSoModel(
+        "qwen35-api", engine_ctx=262_144, np=3, seq_cap=3,
+        bien_pool_token=BIEN_POOL_TOKEN, dem_uoc=DEM_UOC,
+        token_giu_moi_anh=TOKEN_GIU_MOI_ANH,
+        nguong_whale=NGUONG_WHALE["qwen35-api"]),
 }
 
-#: Cửa sổ ngữ cảnh của model **mặc định** — bí danh của một ô trong bảng trên.
-#: ⛔ ĐỪNG gõ một con số vào đây: hai nơi khai cùng một điều là hai nơi lệch nhau.
+#: Cửa sổ engine theo model — DẪN XUẤT từ `HO_SO`, giữ tên vì rất nhiều nơi đọc.
+#: ⛔ ĐỪNG gõ số vào đây: số nằm ở `HO_SO`.
+CUA_SO_THEO_MODEL = {m: h.engine_ctx for m, h in HO_SO.items()}
+
+#: Cửa sổ ngữ cảnh của model **mặc định** — một ô của bảng trên.
 #:
-#: 📈 03/09: 131.072 → 204.800, kèm KV cache `q8_0` → `q4_0` (bắt buộc: `q8_0`
-#:    ở 204.800 không vừa card 24 GB). 12/09: 204.800 → **221.184** (L-14, §G1b) —
-#:    cùng lúc `qwen38-vision` biến mất, vì hồ sơ mới mang mmproj trên GPU nên
-#:    **một hồ sơ text+vision duy nhất** là đủ.
+#: 📈 03/09: 131.072 → 204.800, kèm KV cache `q8_0` → `q4_0`. 12/09: 204.800 →
+#:    **221.184** (L-14, §G1b) — cùng lúc `qwen38-vision` biến mất, vì hồ sơ mới
+#:    mang mmproj trên GPU nên **một hồ sơ text+vision duy nhất** là đủ.
 #:
-#: 🔴 `CUA_SO_MODEL_VISION` ĐÃ ĐƯỢC GỠ Ở ĐÂY (dual-model 2.6) — và nó đáng được
-#:    ghi lại, vì sự tồn tại của nó từng là một lời hứa sai. Trước 01/09 hai
-#:    alias `ltt_llm`/`ltt_llm_vision` dùng **chung** một con số công bố, nên
-#:    `/api/v1/models` nói vision có *"same 89K usable input context"* trong khi
-#:    máy B chặn nó ở 65.536 (đo thật: `413 {"tran":65536,"thay":71281}`). Cách
-#:    chữa hồi ấy là **thêm một cửa sổ thứ hai**; cách chữa bây giờ là **xoá cả
-#:    hồ sơ**: `qwen38-api` tự nạp mmproj nên không còn model vision riêng để nói
-#:    sai về. Nguồn lỗi `ConnectionReset` do llama-swap đổi hồ sơ giữa chừng cũng
-#:    biến mất cùng nó (L-14 hệ quả 4).
+#: 🔴 `CUA_SO_MODEL_VISION` ĐÃ ĐƯỢC GỠ (dual-model 2.6): trước 01/09 hai alias
+#:    dùng chung một con số công bố, nên `/api/v1/models` hứa vision *"same 89K"*
+#:    trong khi máy B chặn ở 65.536 (`413 {"tran":65536,"thay":71281}`).
 CUA_SO_MODEL = CUA_SO_THEO_MODEL[MODEL_MAC_DINH]
 
 #: Cửa sổ **hẹp nhất** trong các model đang bán. Mọi chỗ phải kẹp một con số mà
@@ -98,14 +332,9 @@ CUA_SO_MODEL = CUA_SO_THEO_MODEL[MODEL_MAC_DINH]
 #: sạch và rất khó truy.
 CUA_SO_HEP_NHAT = min(CUA_SO_THEO_MODEL.values())
 
-#: Trần token ra cứng cho một lượt. Khớp `LTT_LLM_MAX_OUTPUT_TOKENS` của máy B.
-#: ⭐ Phải ≥ 32.000: Claude Code gửi `max_tokens: 32000` mặc định và khách gần
-#:    như không đổi được — trần thấp hơn khiến Claude Code không dùng được (H38/L2).
-TOKEN_RA_TRAN = 32_768
-
-#: Biên cho khuôn chat, định nghĩa tool và sai số của phép **ước** token vào.
-#: `uoc_token_vao` là ước chứ không phải đếm thật, nên phải chừa.
-LE = 2_048
+#: Ngân sách đặt chỗ **hẹp nhất** — cùng lý lẽ với `CUA_SO_HEP_NHAT`, cho phép kẹp
+#: token ra khi chưa biết model (`tran_theo_ngu_canh(vao)`).
+NGAN_SACH_HEP_NHAT = min(h.token_budget for h in HO_SO.values())
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -116,7 +345,7 @@ LE = 2_048
 #: câu trả lời dài nhất. Đây là số máy B phải khai ở `LTT_LLM_MAX_INPUT_TOKENS`.
 #: ⛔ Một con số, nên nó chỉ đúng cho MỘT model. Đường theo-model là
 #:    `tran_vao_cua(model_id)` — cùng công thức, khác cửa sổ.
-TOKEN_VAO_TRAN = CUA_SO_MODEL - TOKEN_RA_TRAN - LE           # 186_368
+TOKEN_VAO_TRAN = CUA_SO_MODEL - TOKEN_RA_TRAN - DEM_UOC      # 186_368
 
 #: Số byte JSON cho mỗi token khi hội thoại đi trên dây. Đo 30/08 trên thân
 #: request thật của Codex (kể cả dấu ngoặc, escape và định nghĩa tool).
@@ -134,7 +363,7 @@ BYTE_MOI_TOKEN_JSON = 4.5
 #:    của NÓ phải lọt qua. Lấy theo model mặc định (hẹp hơn) là dựng lại đúng
 #:    lỗi "hai trần không biết nhau" cho model kia.
 BODY_BYTES_TOI_THIEU = int(
-    (max(CUA_SO_THEO_MODEL.values()) - TOKEN_RA_TRAN - LE)
+    (max(CUA_SO_THEO_MODEL.values()) - TOKEN_RA_TRAN - DEM_UOC)
     * BYTE_MOI_TOKEN_JSON)                                        # ~999 KB
 
 #: Cửa sổ **công bố** cho client agentic (Codex, Claude Code) để chúng nén hội
@@ -150,7 +379,7 @@ CONG_BO_CHO_CLIENT = int(TOKEN_VAO_TRAN * 0.92)                   # 171_458
 #    nhất một trong hai.
 #
 # ⛔ Công thức phải GIỐNG HỆT đường text ở trên (chừa `TOKEN_RA_TRAN` cho câu
-#    trả lời dài nhất, chừa `LE` cho sai số ước, rồi bớt 8 % lệch tokenizer).
+#    trả lời dài nhất, chừa `DEM_UOC` cho sai số ước, rồi bớt 8 % lệch tokenizer).
 #    Nếu một model được một công thức "nới tay" riêng thì con số công bố của hai
 #    model không còn mang **cùng một lời hứa**, và khách không có cách nào biết
 #    lời hứa nào áp cho model nào.
@@ -170,7 +399,8 @@ def tran_vao_cua(model_id: str) -> int:
     if model_id not in CUA_SO_THEO_MODEL:
         raise KeyError(f"model khong biet: {model_id!r}; "
                        f"phai la mot trong {sorted(CUA_SO_THEO_MODEL)}")
-    return CUA_SO_THEO_MODEL[model_id] - TOKEN_RA_TRAN - LE
+    h = HO_SO[model_id]
+    return h.engine_ctx - TOKEN_RA_TRAN - h.dem_uoc
 
 
 def cong_bo_cua(model_id: str) -> int:
@@ -412,59 +642,20 @@ KY_TU_MOI_TOKEN = 2.5
 
 
 # ══════════════════════════════════════════════════════════════════════════
-#  ĐỒNG THỜI — trần của ta phải biết trần của máy B
+#  SỨC CHỨA THEO MODEL — dẫn xuất từ `HO_SO`
 # ══════════════════════════════════════════════════════════════════════════
-
-#: Số slot song song của `llama-server` trên máy B (`--parallel`). **MỘT nguồn**:
-#: manifest `admission_slots`, env gateway `LTT_LLM_MAX_DONG_THOI` và cờ
-#: `--parallel` trong `llm_gateway/deploy/llama-swap.yaml` đều phải bằng số này
-#: (`tests/test_1201`, `tests/test_334`).
-#:
-#: 🔴 LÝ DO CŨ "1 vì speculative decoding chỉ tối ưu một luồng; `--parallel 2`
-#:    thấp ~20%" ĐÃ ĐO LẠI VÀ KHÔNG ĐÚNG TRÊN 3090 (multijob M-1, 11/09): con số
-#:    −20% đo trên RTX 5090; trên máy B `-np 4 -kvu` giữ C1 60–63 tok/s và gấp
-#:    đôi C4. Xem `docs/multijob/00_BASELINE.md`.
-#:
-#: ⛔ Đổi số này KHÔNG an toàn một mình: `-kvu` + nhiều slot mà thiếu admission
-#:    ngân sách KV thì một lần tràn pool giết MỌI slot (llama.cpp b10689,
-#:    `server-context.cpp:3661-3708`). Ngân sách nằm ở `POOL_KV_MAY_B` bên dưới.
-#:
-#: 📈 12/09: 1 → **3** (L-14, §G1b). ⛔ **3, KHÔNG PHẢI 4** — và lý do khác nhau
-#:    ở hai card, nên đừng đọc con số này là "giới hạn phần cứng":
-#:
-#:      * `qwen38-api` / 3090: 4 slot ở ngữ cảnh đã chốt **tràn** sang RAM chủ.
-#:        3 là trần thật. Mọi chỗ plan/spec viết "C4" đọc lại là **C3**.
-#:      * `qwen35-api` / 5060 Ti: §G3 đo 262.144 × **4** slot vừa thoải mái (VRAM
-#:        13.423 MiB, biên 2.888 MiB). 3 ở đây là **lựa chọn** của chủ dự án cho
-#:        nhất quán hai card (12/09: *"cứ để 3 cho nhất quán 2 card"*), không phải
-#:        giới hạn. Muốn nâng 3.5 lên 4 thì chỉ cần đổi một con số —
-#:        `admission_theo_model` khai số suất theo TỪNG model, hai card không
-#:        buộc bằng nhau.
-SO_SLOT_MAY_B = 3
-
-#: Tên cũ, giữ làm **bí danh** (cùng một số, không phải số thứ hai) cho mã và
-#: phép kiểm đang đọc nó.
-DONG_THOI_MAY_B = SO_SLOT_MAY_B
-
-#: Pool KV **theo model** khi `-kvu`: chính là cửa sổ engine của từng hồ sơ.
-#: Nền tảng nhận nó qua `ToolSpec.admission_theo_model` (không import app).
-POOL_KV = dict(CUA_SO_THEO_MODEL)
-
-#: Tên cũ, giữ làm **bí danh** cho model mặc định (một số, không phải số thứ hai).
-POOL_KV_MAY_B = CUA_SO_MODEL
-
-# ── Sức chứa THEO MODEL (dual-model 2.3 nối dây, 2.6 chốt số ĐO) ─────────────
 #
 # 🔑 Hai model công khai chạy trên **hai card khác nhau** của máy B, nên mỗi cái
-#    có pool KV riêng. Bản khai admission ở `manifest.py` đọc đúng ba hằng dưới
-#    đây — **đừng gõ số vào manifest** (test_1201 chốt điều đó).
+#    có pool KV và số slot riêng. Bản khai admission ở `manifest.py` đọc `HO_SO`
+#    — **đừng gõ số vào manifest** (test_1201 chốt điều đó).
+#
+# 🔴 ĐÃ GỠ 17/09/2026 (phương án C bước 2, O-12): `SO_SLOT_MAY_B` (một số cho
+#    HAI card), bí danh `DONG_THOI_MAY_B`, `SO_SLOT`, `POOL_KV`, `POOL_KV_MAY_B`.
+#    Số slot là `HO_SO[m].np` (engine) / `HO_SO[m].seq_cap` (chính sách A).
 
-#: Số slot song song cho MỖI model. Bí danh của `SO_SLOT_MAY_B`.
-SO_SLOT = SO_SLOT_MAY_B
-
-#: Ngân sách KV của `ltt-3.8` (3090) và `ltt-3.5` (5060 Ti).
-POOL_38 = POOL_KV["qwen38-api"]
-POOL_35 = POOL_KV["qwen35-api"]
+#: Ngân sách KV A cho phép đặt chỗ của `ltt-3.8` (3090) và `ltt-3.5` (5060 Ti).
+POOL_38 = HO_SO["qwen38-api"].token_budget
+POOL_35 = HO_SO["qwen35-api"].token_budget
 
 #: Tên tài nguyên admission của từng model. Chúng phải **khác nhau**: hai card
 #: khác nhau thì một suất giành trên card này không nói gì về card kia, và gộp
@@ -495,123 +686,13 @@ def tran_theo_ngu_canh(token_vao_uoc: int, model_id: str | None = None) -> int:
        khác (`tran_vao_cua` đã trừ sẵn `TOKEN_RA_TRAN`) — loại "đúng nhờ hằng số
        bên cạnh", mất đi mà không có gì kêu.
     """
-    cua_so = (CUA_SO_HEP_NHAT if model_id is None
-              else CUA_SO_THEO_MODEL[model_id])
-    con_lai = cua_so - int(token_vao_uoc or 0) - LE
+    # 🔴 PHƯƠNG ÁN C bước 2: chỗ còn lại tính trên NGÂN SÁCH ĐẶT CHỖ
+    #    (`token_budget` = `-c` − biên), không trên `-c` trần. Đặt chỗ của lượt là
+    #    `vào + ra + đệm`; kẹp `ra` theo `-c` thì lượt vào dài nhất đặt chỗ VƯỢT
+    #    ngân sách và `luat_cho` ném `DatChoVuotPool` — một 413 cho lượt đã qua
+    #    trần vào. Kẹp theo ngân sách giữ bất biến `vào ≤ tran_vao ⇒ đặt chỗ ≤ pool`.
+    ngan_sach = (NGAN_SACH_HEP_NHAT if model_id is None
+                 else HO_SO[model_id].token_budget)
+    dem = DEM_UOC if model_id is None else HO_SO[model_id].dem_uoc
+    con_lai = ngan_sach - int(token_vao_uoc or 0) - dem
     return max(1, min(TOKEN_RA_TRAN, con_lai))
-
-
-# ══════════════════════════════════════════════════════════════════════════
-#  SỐ ĐO THEO MODEL — đo ở đúng cấu hình sẽ triển khai (G4, 12/09)
-# ══════════════════════════════════════════════════════════════════════════
-#
-# ⛔ Bốn hằng dưới đây là **số đo**, nguồn `docs/ltt_llm_dual/10_BENCHMARK_P3.md`
-#    §G4. Chúng ở đây chứ không ở chỗ dùng, vì mỗi cái đã có sẵn một bản sao gõ
-#    tay ở nơi khác và đó chính là lớp lỗi tệp này sinh ra để dẹp.
-
-#: Prefill tok/s theo **độ dài prompt**, từng model — đo ở cấu hình L-14 + L-16.
-#: Đây là đường cong, không phải một con số: 3.8 tụt từ 1.239 xuống 646 tok/s
-#: giữa 6,7K và 163K, nên "prefill bao lâu" không suy ra được từ một điểm.
-DUONG_PREFILL_TOK_S = {
-    "qwen38-api": ((786, 977.0), (6_700, 1_239.0), (32_600, 1_132.0),
-                   (98_000, 842.0), (163_000, 646.0)),
-    "qwen35-api": ((786, 1_765.0), (6_700, 2_238.0), (32_600, 2_059.0),
-                   (98_000, 1_630.0), (163_000, 1_350.0)),
-}
-
-#: Token ngữ cảnh một ảnh 1024×768 ăn. Đo bằng **hiệu** `n_prompt_tokens` giữa
-#: cùng một câu hỏi có ảnh và không ảnh (17 → 787), nên phần chữ triệt tiêu.
-#: Giống nhau ở cả hai model. ⛔ Không ước bằng công thức patch: mỗi bản mmproj
-#: băm ảnh một kiểu, và con số này **đi thẳng vào hoá đơn**.
-TOKEN_MOI_ANH = 770
-
-#: 🔴 TRẦN ẢNH — cưỡng chế ở **cổng máy B**, công bố ở đây. Thêm 14/09/2026.
-#:
-#:    Đo 14/09 trên production: gửi **4** ảnh → 200; gửi **5** → 400. Tức trần
-#:    có thật và đang chạy — nhưng **không chỗ nào công bố nó**. Khách chỉ biết
-#:    khi đã đâm vào, và trước bản vá P0-2 cùng ngày thì thông điệp còn là
-#:    *"yeu cau vuot tran cua cong"*, không nói trần nào hay bao nhiêu.
-#:
-#: ⛔ HAI SỐ NÀY LÀ **BẢN SAO** CỦA `llm_gateway/config.py` TRÊN MÁY B
-#:    (`LTT_LLM_MAX_IMAGES`, `LTT_LLM_MAX_IMAGE_BYTES`). Máy A **không** cưỡng
-#:    chế chúng — nó chỉ *đếm* ảnh để tính ngân sách KV (`luong.dem_anh`), còn
-#:    người từ chối vẫn là cổng máy B. Giữ đúng một người cưỡng chế là có chủ ý:
-#:    hai nơi cùng chặn là hai nơi sẽ lệch nhau.
-#:
-#: ⚠️ Nên bản sao này **phải có người canh**: `test_1259` đối chiếu nó với
-#:    `llama-swap`/cổng máy B. Một con số chép sang mà không ai đối chiếu chính
-#:    là cơ chế đã làm bảng ở kho này nói sai **năm lần**.
-SO_ANH_TOI_DA = 4
-ANH_BYTE_TOI_DA = 12 * 1024 * 1024
-
-#: Thời gian nạp model từ **kho ấm** (tệp vừa đọc ở lượt trước), giây.
-#: ⚠️ Máy trạng thái residency (Task 5.2) đang giả định 45,0 — gấp 2,8 lần thực
-#:    tế, tức trọng tài ngần ngại đổi cư trú và 3090 nằm sai chỗ lâu hơn cần.
-#:    Task 5.2 phải **đọc hằng này**, không gõ lại một con số thứ hai.
-NAP_KHO_AM_S = {"qwen38-api": 16.3, "qwen35-api": 12.1}
-
-#: ⭐ THỜI GIAN CHẶN TỐI ĐA TA TUYÊN BỐ LÀ CHẤP NHẬN ĐƯỢC, giây.
-#:
-#: Đây là một **tuyên bố**, không phải một phép đo — và nó phải nói ra như vậy.
-#: Con số lấy từ `LTT_LLM_CHO_WHALE_S` mặc định của
-#: `platform_core/llm/tham_so_da_luot.py`: kho này đã tuyên bố 30 s là mức lâu
-#: nhất một lượt tương tác bị bắt nhường. Dùng lại chính nó thay vì đẻ ra một
-#: ngưỡng thứ hai cho cùng một câu hỏi.
-WHALE_CHAN_TOI_DA_S = 30.0
-
-
-def thoi_gian_prefill_s(model_id: str, token_vao: int) -> float:
-    """Prefill của `token_vao` token trên `model_id` mất bao nhiêu giây.
-
-    Nội suy tuyến tính giữa các điểm đo; ngoài dải thì kẹp về điểm đầu/cuối
-    (⛔ **không** ngoại suy — đường cong này không có dạng hàm nào được đo).
-    """
-    diem = DUONG_PREFILL_TOK_S[model_id]
-    n = max(1, int(token_vao))
-    if n <= diem[0][0]:
-        toc = diem[0][1]
-    elif n >= diem[-1][0]:
-        toc = diem[-1][1]
-    else:
-        toc = diem[-1][1]
-        for (a, ra), (b, rb) in zip(diem, diem[1:], strict=False):
-            if a <= n <= b:
-                toc = ra + (n - a) * (rb - ra) / (b - a)
-                break
-    return n / toc
-
-
-def _nguong_whale(model_id: str) -> int:
-    """Độ dài prompt dài nhất còn prefill **trong** `WHALE_CHAN_TOI_DA_S`.
-
-    ⭐ DẪN XUẤT, KHÔNG CHÉP. Bước 512 = `-ub` mặc định của llama-server (§G1b) —
-       đơn vị prefill thật sự tiến theo, nên làm tròn xuống bội của 512 là làm
-       tròn xuống một mốc **có nghĩa cơ học**, không phải cho tròn mắt.
-    """
-    n = 512
-    while thoi_gian_prefill_s(model_id, n + 512) <= WHALE_CHAN_TOI_DA_S:
-        n += 512
-    return n
-
-
-#: 🔑 NGƯỠNG "CÁ VOI" — từ độ dài nào thì một lượt đủ làm nghèo slot người khác.
-#:
-#: ⛔ PHẢI KHÁC NHAU THEO MODEL, VÀ ĐÂY LÀ PHÉP ĐO NÓI THẾ, không phải sở thích:
-#:    một lượt 163K token chặn prefill **257 s trên 3.8** nhưng chỉ **125 s trên
-#:    3.5** (§G4). Chép một con số từ model này sang model kia là tuyên bố hai
-#:    card có cùng đường cong — và bảng §G4 bác bỏ điều đó ở **mọi** độ dài.
-#:
-#: ⭐ CÁCH DẪN XUẤT (tái hiện được bằng `_nguong_whale` ngay trên):
-#:      1. Tuyên bố mức chặn không chấp nhận được: **30 s** (`WHALE_CHAN_TOI_DA_S`,
-#:         chính là `LTT_LLM_CHO_WHALE_S` kho này đã dùng).
-#:      2. Giải `token / prefill_tok_s(token) = 30` trên đường cong ĐO của TỪNG
-#:         model (nội suy tuyến tính giữa các điểm), làm tròn xuống bội 512.
-#:      3. Kết quả: `qwen38-api` **33.792** (29,99 s) · `qwen35-api` **56.832**
-#:         (29,91 s). Bước tiếp theo của mỗi cái đã vượt 30 s.
-#:
-#: 🔴 SỐ NÀY KHÔNG PHẢI SỐ TRONG PLAN, VÀ ĐÓ LÀ CÓ CHỦ Ý. Plan ghi tạm
-#:    `16_384 / 32_768`; đường cong đo cho hai con số đó **13,7 s** và **15,9 s**
-#:    — tức chúng gắn cờ "cá voi" cho những lượt chặn chưa tới một nửa ngưỡng ta
-#:    tuyên bố. Chúng không sai về hướng (3.5 phải cao hơn 3.8), chúng chỉ không
-#:    **dẫn xuất từ** cái gì cả. Tỉ lệ đúng theo đo là 1,68× chứ không phải 2×.
-NGUONG_WHALE = {m: _nguong_whale(m) for m in DUONG_PREFILL_TOK_S}

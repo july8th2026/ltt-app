@@ -121,6 +121,21 @@ class AdmissionModel:
     residency_group: str = ""
     #: "mac_dinh" | "theo_lo" | "" — vai trò của model trong nhóm cư trú.
     vai_tro: str = ""
+    # ── Hồ sơ nhận theo ngân sách token (phương án C bước 2, 17/09/2026) ─────
+    #
+    # ⭐ Ba số dưới đây là của MODEL, không của nền tảng: app khai (vd hồ sơ
+    #    `HO_SO` của app LLM), `tham_so_da_luot.luat_cho` đọc — MỘT chỗ cho mọi
+    #    cửa (stream, đồng bộ, job, nội bộ). Trước 17/09 chúng là env chung của
+    #    nền tảng (`LTT_LLM_NGUONG_WHALE` 16.384, `LTT_LLM_DEM_DAT_TRUOC`,
+    #    `LTT_LLM_TOKEN_MOI_ANH` — ĐÃ GỠ), tức một số cho hai model khác đường cong.
+    # ⛔ 0 = "không khai" và CHỈ hợp lệ khi `token_pool` = 0 (tool không có ngân
+    #    sách KV: ảnh, tiếng…). `luat_cho` NÉM khi pool > 0 mà thiếu `dem_uoc`.
+    #: Token prefill MỚI từ mức này trở lên là whale. 0 = không có khái niệm whale.
+    nguong_whale: int = 0
+    #: Đệm ước token vào cộng vào MỖI đặt chỗ (≙ phần chừa trong trần vào).
+    dem_uoc: int = 0
+    #: Token đặt chỗ cho mỗi ảnh đầu vào.
+    token_giu_moi_anh: int = 0
 
 
 def suc_chua_admission(tool, model: str = "") -> "AdmissionModel | None":
@@ -148,15 +163,69 @@ def suc_chua_admission(tool, model: str = "") -> "AdmissionModel | None":
     m = tool.admission_theo_model
     if m:
         if model in m:
-            return m[model]
+            return ap_cau_hinh_admission(m[model])
         if "*" in m:
-            return m["*"]
+            return ap_cau_hinh_admission(m["*"])
         raise KeyError(
             f"{tool.name}: model {model!r} khong co trong admission_theo_model")
     if tool.admission_resource and tool.admission_slots > 0:
-        return AdmissionModel(tool.admission_resource, tool.admission_slots,
-                              int(getattr(tool, "admission_token_pool", 0) or 0))
+        return ap_cau_hinh_admission(AdmissionModel(
+            tool.admission_resource, tool.admission_slots,
+            int(getattr(tool, "admission_token_pool", 0) or 0)))
     return None
+
+
+#: Tiền tố env ghi đè sức chứa THEO TÀI NGUYÊN (L-12b, 17/09/2026).
+ENV_SO_SUAT = "LTT_ADMISSION_SO_SUAT__"
+ENV_POOL = "LTT_ADMISSION_POOL__"
+
+
+def _env_int(ten: str) -> int | None:
+    import os
+
+    tho = (os.environ.get(ten) or "").strip()
+    if not tho:
+        return None
+    try:
+        return int(tho)
+    except ValueError:
+        return None
+
+
+def ap_cau_hinh_admission(am: AdmissionModel) -> AdmissionModel:
+    """Áp hai núm cấu hình ĐỘC LẬP lên sức chứa bản khai của app — chỉ được HẠ.
+
+    Hai câu hỏi, hai tham số, không cái nào suy ra từ cái kia:
+
+      * `token_pool` — **luật nhận chính**: Σ token đặt chỗ lượt đang chạy + lượt
+        xin ≤ pool (`luat_nhan` luật 2). `LTT_ADMISSION_POOL__<resource>`.
+      * `slots` — trần số chuỗi chạy đồng thời (`luat_nhan` luật 1).
+        `LTT_ADMISSION_SO_SUAT__<resource>`.
+
+    ⛔ KẸP VỀ BẢN KHAI, KHÔNG BAO GIỜ NÂNG. Bản khai là TRẦN VẬT LÝ của engine:
+       `slots` = `-np` và `token_pool` = `-c` của hồ sơ llama-server
+       (`apps/ltt_llm/ngan_sach.py`, bị `test_1201`/`test_334` buộc khớp
+       `llm_gateway/deploy/llama-swap.yaml`). Engine chỉ có `-np` chuỗi; lượt thứ
+       `-np + 1` không chạy song song mà xếp hàng ẩn trong llama-server — đúng thứ
+       phòng chờ sinh ra để thay. Muốn NÂNG trần là đổi `-np`/`-c` của engine (máy
+       B) cùng hằng ở `ngan_sach.py`, rồi env ở đây chọn mức dưới trần mới.
+    ⚠️ Env đọc MỖI LẦN hỏi (đổi `app.env` rồi nạp lại env dịch vụ là đủ, không
+       deploy mã) — nhưng nssm nướng env lúc cài: `setup/nap_lai_env.ps1`.
+    """
+    from dataclasses import replace
+
+    if not am.resource:
+        return am
+    slots, token_pool = int(am.slots), int(am.token_pool)
+    so_suat = _env_int(ENV_SO_SUAT + am.resource)
+    if so_suat is not None and am.slots > 0:
+        slots = max(1, min(int(am.slots), so_suat))
+    pool = _env_int(ENV_POOL + am.resource)
+    if pool is not None and am.token_pool > 0:
+        token_pool = max(1, min(int(am.token_pool), pool))
+    if (slots, token_pool) == (am.slots, am.token_pool):
+        return am
+    return replace(am, slots=slots, token_pool=token_pool)
 
 
 def admission_luc_nop(tool, params, *, mac_dinh: str = "") -> tuple[str, int]:

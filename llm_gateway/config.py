@@ -52,25 +52,14 @@ class Config:
     models_mo: tuple[str, ...]
 
     # ── Ngân sách ────────────────────────────────────────────────────────────
-    #: Trần token đầu vào public API.
-    #:
-    #: ⛔ ĐỪNG GÕ LẠI CON SỐ VÀO CHÚ THÍCH NÀY. Giá trị mặc định nằm ở
-    #:    `from_env()` bên dưới và nó là **bản sao dẫn xuất** của
-    #:    `apps/ltt_llm/ngan_sach.py::TOKEN_VAO_TRAN`; muốn biết số hôm nay thì
-    #:    đọc ở đó, hoặc hỏi máy B bằng `GET /health` → `tran.input_tokens`.
-    #:
-    #: 🔴 CHỖ NÀY TỪNG GHI *"Engine có cửa sổ 131.072; public giữ 65.000 theo
-    #:    Q116"*. Cả ba mệnh đề đều đã hết đúng: engine lên 204.800 ngày 03/09,
-    #:    trần public thành số **dẫn xuất** chứ không còn gõ tay, và Q116 đã bị
-    #:    Q120 thay (`tests/test_604_q120_tran_ngu_canh_mot_nguon.py`).
-    #:
-    #: ⭐ Nó sai **không phải vì người viết cẩu thả** — nó đúng vào ngày viết rồi
-    #:    hết đúng, y như chú thích `qwen38-ops` ở `catalog.py`. Một chú thích
-    #:    chép lại giá trị sẽ trôi mỗi lần giá trị đổi; một chú thích chỉ *tên
-    #:    nguồn* thì không bao giờ trôi. Đó là lý do đoạn trên nói tên chứ không
-    #:    nói số.
-    max_input_tokens: int
-    #: Trần token sinh ra mỗi yêu cầu.
+    #
+    # ⛔ KHÔNG CÒN `max_input_tokens` (phương án C bước 3, O-02). Trần vào là
+    #    **theo model** và **dẫn xuất**: `vat_ly.tran_vao(-c, max_out, DEM_UOC)`,
+    #    cùng công thức với `apps/ltt_llm/ngan_sach.tran_vao_cua(m)`. Env cũ
+    #    `LTT_LLM_MAX_INPUT_TOKENS` ép một số cho CẢ HAI model — sai cho 3.5.
+    #
+    #: Trần token sinh ra mỗi yêu cầu (= `ngan_sach.TOKEN_RA_TRAN` của máy A;
+    #: `deploy.ps1` ghi nó vào `gateway.env` bằng cách ĐỌC ngan_sach, không gõ).
     max_output_tokens: int
     #: Trần số ảnh mỗi yêu cầu. Mỗi ảnh nuốt hàng nghìn token ngữ cảnh.
     max_images: int
@@ -110,15 +99,6 @@ class Config:
     #:    máy A qua `POST /v1/nha_comfy` của cổng render (D01 B, TD-D10).
     vram_sach_mb: int
 
-    # ── Hàng rào của riêng cổng (V9) ─────────────────────────────────────────
-    #: Số lượt được chạy CÙNG LÚC. `llama-server` chạy `--parallel 1`, nên nhiều
-    #: hơn 1 chỉ thành kết nối treo và một hàng đợi vô hình trong llama.cpp.
-    #: Hàng đợi thật phải sống ở admission plane, có trạng thái/fairness/hủy;
-    #: gateway này chỉ cho đúng một lượt chạm vào engine.
-    max_dong_thoi: int
-    #: Trần lượt mỗi phút. 0 = tắt. Chốt phụ — đồng thời mới là chốt chính.
-    rpm: int
-
     # ── Nhịp tim SSE ─────────────────────────────────────────────────────────
     #: Chèn một dòng chú thích SSE mỗi khi luồng lặng quá số giây này. 0 = tắt.
     #:
@@ -134,26 +114,26 @@ class Config:
     #    một trường bắt buộc mới làm mọi bộ đó vỡ cùng lúc vì một lý do không liên
     #    quan đến thứ chúng đo.
 
-    #: Trần đồng thời **riêng cho từng model**, ghi đè `max_dong_thoi`.
-    #: `LTT_LLM_MAX_DONG_THOI__<model>`. Trống = mọi model dùng số chung.
-    #:
-    #: ⭐ Tồn tại vì hai card **không buộc bằng nhau**: §G3 đo 5060 Ti thừa sức 4
-    #:    slot ở ngữ cảnh đầy, còn 3090 chỉ vừa 3 (L-14). Hôm nay chủ dự án chọn
-    #:    3 cho cả hai "cho nhất quán", nên map này thường **rỗng** — nó là chỗ
-    #:    đổi một con số khi muốn, không phải một con số thứ hai.
-    dong_thoi_rieng: dict = field(default_factory=dict)
+    # ⛔ ĐÃ GỠ (phương án C bước 3): `max_dong_thoi`/`LTT_LLM_MAX_DONG_THOI[__m]`,
+    #    `rpm`/`LTT_LLM_RPM` (O-03), `token_pool_rieng`/`LTT_LLM_TOKEN_POOL[__m]`.
+    #    Số chuỗi và bể KV là `-np`/`-c` của **từng** hồ sơ, đọc thẳng từ
+    #    `llama-swap.yaml` (`vat_ly`). Nhịp/tần suất/công bằng là việc của máy A.
+    #    Biến cũ còn đặt trong `gateway.env` chỉ sinh một dòng cảnh báo lúc khởi
+    #    động (`bien_da_go_con_dat`), không còn tác dụng.
 
-    #: Bể KV **theo model**, tính bằng token. `LTT_LLM_TOKEN_POOL` (chung) và
-    #: `LTT_LLM_TOKEN_POOL__<model>` (riêng) ghi đè; mặc định **dẫn xuất từ
-    #: `catalog.HO_SO[*].max_context`**.
+    #: Biên ước token vào (`DEM_UOC`) — cùng số máy A cộng vào đặt chỗ và trừ ra
+    #: khỏi trần vào. Nguồn chân lý là `apps/ltt_llm/ngan_sach.py`; `deploy.ps1`
+    #: ghi `LTT_LLM_DEM_UOC` bằng cách ĐỌC nó, và `test_1223` đối chiếu mặc định.
+    dem_uoc: int = 2_048                     # = DEM_UOC_MAC_DINH (duoi day)
+
+    #: `{hồ sơ: VatLy}` đọc từ `llama-swap.yaml` (`vat_ly.tim_yaml`).
     #:
-    #: 🔴 DẪN XUẤT, KHÔNG GÕ. Với `-kvu` thì bể KV **chính là** `-c` của hồ sơ, và
-    #:    `catalog` đã khai `-c` (và `test_334` đã buộc nó khớp `llama-swap.yaml`).
-    #:    Gõ một con số thứ hai vào đây là mở lại đúng cái khe đã nói sai năm lần
-    #:    ở dự án này — và lần này nó sai theo chiều nguy hiểm: bể của 3090 nhỏ
-    #:    hơn bể của 5060 Ti **40.960 token**, nên một con số chung sẽ để 3090
-    #:    nhận quá tay, KV cạn, và llama.cpp huỷ **mọi** slot.
-    token_pool_rieng: dict = field(default_factory=dict)
+    #: ⭐ Mặc định **đọc tệp**, không phải dict rỗng: `Config(**...)` dựng tay ở
+    #:    nhiều bộ test, và một rào vật lý rỗng là một cổng không mở model nào —
+    #:    đúng lớp lỗi "xanh vì lý do sai".
+    vat_ly: dict = field(default_factory=lambda: _vat_ly_mac_dinh()[1])
+    #: Tệp yaml đã đọc — cho `/health`, để người trực biết cổng tin tệp nào.
+    nguon_vat_ly: str = field(default_factory=lambda: _vat_ly_mac_dinh()[0])
 
     #: Sàn VRAM trống theo model, MiB: `LTT_LLM_VRAM_TRONG_TOI_THIEU_MB__<model>`.
     #: Dưới sàn ⇒ **429 bận**, không nhận lượt mới (không giết lượt đang chạy).
@@ -172,6 +152,7 @@ class Config:
 
     @staticmethod
     def from_env() -> "Config":
+        nguon, vat_ly = _vat_ly_mac_dinh()
         return Config(
             upstream_url=(os.environ.get("LTT_LLM_UPSTREAM_URL")
                           or "http://127.0.0.1:8280").rstrip("/"),
@@ -179,25 +160,11 @@ class Config:
             port=_int("LTT_LLM_PORT", 8299),
             token=(os.environ.get("LTT_LLM_TOKEN") or "").strip(),
             models_mo=_danh_sach("LTT_LLM_MODELS"),
-            # 🔴 NGUỒN CHÂN LÝ là `apps/ltt_llm/ngan_sach.py::TOKEN_VAO_TRAN`
-            #    (= CUA_SO_MODEL − TOKEN_RA_TRAN − LE = 221184 − 32768 − 2048).
-            #    Kho này deploy sang máy B nên **không import được** từ đó; số ở
-            #    đây là bản sao, và hai phép kiểm đỏ ngay khi hai bên lệch:
-            #    `tests/test_334_ngan_sach_ltt_llm.py` và
-            #    `tests/test_250_llm_gateway.py`.
-            #
-            # ⛔ CHÚ THÍCH NÀY TỪNG GHI `tests/test_312`, VÀ ĐÓ LÀ MỘT LỜI HỨA
-            #    TRỎ NHẦM CHỖ. `tests/test_312_vps_khoa_dich_vu.py` là khoá dịch
-            #    vụ VPS — hai phiên từng cấp trùng số hiệu ấy
-            #    (`docs/VLM_NOI_BO/RA_SOAT_THAM_SO_LTT_LLM.md` §559 đã ghi nhận,
-            #    nhưng bản vá lúc đó chỉ sửa tài liệu, bỏ quên chú thích này).
-            #
-            # ⭐ Nên từ nay **viện dẫn bằng TÊN TỆP, không bằng số hiệu**: số
-            #    hiệu test là thứ hai phiên có thể cùng cấp phát, tên tệp thì
-            #    không. `tests/test_980_vien_dan_phep_kiem.py` cưỡng chế điều này.
-            #    ⛔ 65.000 cũ là con số gõ tay không dẫn xuất từ đâu, và nó đã
-            #       khiến ta phí 25% cửa sổ model suốt nhiều ngày.
-            max_input_tokens=_int("LTT_LLM_MAX_INPUT_TOKENS", 186_368),
+            # 🔴 NGUỒN CHÂN LÝ là `apps/ltt_llm/ngan_sach.py::TOKEN_RA_TRAN`. Kho
+            #    này deploy sang máy B nên **không import được** từ đó; mặc định ở
+            #    đây là bản sao, `deploy.ps1` ghi giá trị ĐỌC từ ngan_sach vào
+            #    `gateway.env`, và `tests/test_334_ngan_sach_ltt_llm.py` +
+            #    `tests/test_1223_phuong_an_c_rao_vat_ly_b.py` đỏ khi lệch.
             max_output_tokens=_int("LTT_LLM_MAX_OUTPUT_TOKENS", 32_768),
             max_images=_int("LTT_LLM_MAX_IMAGES", 4),
             max_image_bytes=_int("LTT_LLM_MAX_IMAGE_BYTES", 12 * 1024 * 1024),
@@ -206,39 +173,37 @@ class Config:
             ram_trong_toi_thieu_gb=_float("LTT_LLM_RAM_TRONG_GB", 48.0),
             trong_tai_bat=(os.environ.get("LTT_LLM_TRONG_TAI") or "1").strip() != "0",
             vram_sach_mb=_int("LTT_LLM_VRAM_SACH_MB", 2500),
-            # 📈 12/09: 1 -> 3, khop `ngan_sach.SO_SLOT_MAY_B` (L-14 §G1b).
-            #    ⛔ `deploy.ps1` VAN ghim 1 vao gateway.env cho toi Task 4.1, va
-            #       do la co y: llama-swap con chay `--parallel 1` cho toi khi
-            #       Task 3.3 thay yaml. Mac dinh nay chi co hieu luc khi
-            #       gateway.env khong khai - `tests/test_1201` doi chieu no.
-            max_dong_thoi=_int("LTT_LLM_MAX_DONG_THOI", 3),
-            rpm=_int("LTT_LLM_RPM", 120),
             nhip_tim_giay=_float("LTT_LLM_NHIP_TIM_S", 15.0),
-            dong_thoi_rieng=_theo_model("LTT_LLM_MAX_DONG_THOI__"),
-            token_pool_rieng=_pool_theo_model(),
             vram_trong_toi_thieu_mb=_san_vram(),
+            dem_uoc=_int("LTT_LLM_DEM_UOC", DEM_UOC_MAC_DINH),
+            vat_ly=vat_ly,
+            nguon_vat_ly=nguon,
         )
 
 
-def _theo_model(tien_to: str) -> dict:
-    """Mọi biến `<tien_to><model>` thành `{model: int}`.
+#: Bản sao của `DEM_UOC` máy A (`apps/ltt_llm/ngan_sach.py`, trước bước 2 tên
+#: `LE`). `tests/test_1223_phuong_an_c_rao_vat_ly_b.py` đối chiếu nó VÀ mặc định
+#: của trường `Config.dem_uoc`.
+DEM_UOC_MAC_DINH = 2_048
 
-    ⛔ TÊN MODEL LẤY TỪ CHÍNH BIẾN MÔI TRƯỜNG, không từ một danh sách cứng: một
-       hồ sơ mới thêm vào `catalog` phải cấu hình được **ngay**, không phải sau
-       khi ai đó nhớ ra còn một danh sách nữa cần sửa.
-    """
-    ra: dict = {}
-    for ten, gt in os.environ.items():
-        model = _duoi_ten_model(ten, tien_to)
-        if model is None:
-            continue
-        try:
-            so = int((gt or "").strip())
-        except ValueError:
-            continue
-        if so > 0:
-            ra[model] = so
-    return ra
+#: Biến môi trường ĐÃ GỠ ở phương án C bước 3. Khớp theo TIỀN TỐ để bắt cả dạng
+#: `__<model>`. Còn đặt ⇒ cảnh báo lúc khởi động (không còn tác dụng).
+BIEN_DA_GO = ("LTT_LLM_MAX_INPUT_TOKENS", "LTT_LLM_MAX_DONG_THOI",
+              "LTT_LLM_TOKEN_POOL", "LTT_LLM_RPM")
+
+
+def bien_da_go_con_dat() -> list[str]:
+    """Tên các biến đã gỡ nhưng vẫn còn trong môi trường tiến trình."""
+    return sorted(ten for ten in os.environ
+                  if any(ten.upper().startswith(g) for g in BIEN_DA_GO))
+
+
+def _vat_ly_mac_dinh() -> tuple[str, dict]:
+    """`(đường tệp, {hồ sơ: VatLy})` — ném `vat_ly.YamlHong` khi không dựng được."""
+    from . import vat_ly as VL
+
+    p = VL.tim_yaml()
+    return str(p), VL.doc_tep(p)
 
 
 def _duoi_ten_model(ten_bien: str, tien_to: str) -> "str | None":
@@ -258,27 +223,6 @@ def _duoi_ten_model(ten_bien: str, tien_to: str) -> "str | None":
         return None
     duoi = ten_bien[len(tien_to):].strip().lower()
     return duoi or None
-
-
-def _pool_theo_model() -> dict:
-    """Bể KV theo model: **dẫn xuất** từ `catalog`, rồi mới cho env ghi đè.
-
-    Thứ tự: `catalog.HO_SO[*].max_context` (số `-c` thật của hồ sơ, đã bị
-    `test_334` buộc khớp `llama-swap.yaml`) → `LTT_LLM_TOKEN_POOL` (chung, cho
-    **mọi** model) → `LTT_LLM_TOKEN_POOL__<model>` (riêng).
-
-    ⭐ Ghi đè chung đứng TRƯỚC ghi đè riêng, nên một lần "hạ tạm cả hai bể" vẫn
-       giữ được một ngoại lệ cho một model. Nếu đảo lại thì biến chung sẽ xoá
-       biến riêng một cách vô hình.
-    """
-    from .catalog import HO_SO
-
-    ra = {m.ten: int(m.max_context) for m in HO_SO}
-    chung = _int("LTT_LLM_TOKEN_POOL", 0)
-    if chung > 0:
-        ra = {ten: chung for ten in ra}
-    ra.update(_theo_model("LTT_LLM_TOKEN_POOL__"))
-    return ra
 
 
 def _san_vram() -> dict:

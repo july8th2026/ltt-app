@@ -200,8 +200,8 @@ def tool_nha():
 def tai_nguyen_nha(model: str) -> AdmissionModel:
     """`AdmissionModel` để giành suất admission trước khi chạm máy B.
 
-    🔴 **MỌI đường tới máy B phải giành suất.** Máy B chỉ có **một** suất đồng
-    thời (`DONG_THOI_MAY_B=1`), nên một đường quên `admission` không chỉ chen
+    🔴 **MỌI đường tới máy B phải giành suất.** Máy B có số suất hữu hạn mỗi
+    model (ngày viết là một), nên một đường quên `admission` không chỉ chen
     hàng — nó làm chính cơ chế đếm suất **sai**.
 
     ⚠️ Lỗ đó đã có thật một lần: tới 01/09 `agent/planner.py` là **đường duy

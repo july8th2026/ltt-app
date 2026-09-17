@@ -34,8 +34,10 @@ dieu_phoi.py — MỘT đường gọi model ngôn ngữ cho toàn nền tảng.
 """
 from __future__ import annotations
 
+import contextvars
 import logging
-from typing import Any, Optional, Sequence
+from contextlib import contextmanager
+from typing import Any, Iterator, Optional, Sequence
 
 from platform_core.llm.cong_vlm import (AmbiguousProviderError, BanError,
                                         CongVlm, CongVlmError, HuyError,
@@ -71,6 +73,32 @@ class KhongCoProviderNao(RuntimeError):
         self.chi_tiet = list(chi_tiet)
         self.busy_only = bool(self.chi_tiet) and all(
             item.rstrip().endswith(": ban") for item in self.chi_tiet)
+
+
+#: Số token ĐẶT CHỖ của lượt đang chạy trong ngữ cảnh này — đúng số lease máy A
+#: đang giữ (`ExecutionLease.token_dat_truoc`). 0 = không có lease ngân sách KV.
+#:
+#: 🔴 PHƯƠNG ÁN C bước 1 (O-05, 17/09/2026). Cửa stream đã gửi số này lên máy B
+#:    (`luong_vlm.mo` → `X-LTT-Token-Dat`) từ 15/09; cửa ĐỒNG BỘ và JOB đi qua
+#:    đây thì không, nên máy B tự ước `in + out` (thiếu đệm ước) — hai sổ đếm
+#:    HAI số cho cùng một lượt, và lượt A đã nhận có thể bị B 429.
+#:
+#: ⭐ Vì sao `ContextVar` chứ không thêm tham số: `executor.run(db, params, *,
+#:    timeout_s)` là hợp đồng APP — cùng lý do `ngat.SO_DONG` (xem `ngat.py`).
+#:    Cửa giữ lease bọc lời gọi trong `mang_dat_cho(so)`; `ngat.chay_canh_ngat`
+#:    chép ngữ cảnh sang luồng gọi nên `_goi_openai` đọc được.
+TOKEN_DAT_TRUOC: contextvars.ContextVar[int] = contextvars.ContextVar(
+    "ltt_llm_token_dat_truoc", default=0)
+
+
+@contextmanager
+def mang_dat_cho(so_token: int) -> Iterator[None]:
+    """Khai số token đặt chỗ của lượt sắp gọi — đi lên máy B trong `X-LTT-Token-Dat`."""
+    moc = TOKEN_DAT_TRUOC.set(max(0, int(so_token or 0)))
+    try:
+        yield
+    finally:
+        TOKEN_DAT_TRUOC.reset(moc)
 
 
 #: Trần thời gian cho lời gọi `POST /v1/huy` lên máy B. Ngắn có chủ ý — xem
@@ -156,12 +184,17 @@ def _goi_openai(base_url: str, credential: str, than: dict, timeout_s: float,
 
     def goi(method, path, *, json=None, timeout=None):
         headers = {"Authorization": f"Bearer {credential}"} if credential else {}
-        # ⛔ `X-LTT-Request-Id` VÀ KHÔNG GÌ KHÁC. Tuyệt đối **không**
+        # ⛔ HAI header nội bộ và KHÔNG GÌ KHÁC. Tuyệt đối **không**
         #    `X-Conversation-Id`: cộng đồng cảnh báo rõ (bằng chứng §1) và cổng
-        #    máy B cũng không chuyển header nào lên llama-server. Mã lượt đi lên
-        #    chỉ để hai máy nối được log **và** để `/v1/huy` có cái tên để tra.
+        #    máy B cũng không chuyển header nào lên llama-server.
+        #    * `X-LTT-Request-Id` — hai máy nối được log, `/v1/huy` có tên để tra;
+        #    * `X-LTT-Token-Dat`  — CÙNG số đặt chỗ với lease máy A (O-05), để
+        #      rào vật lý của B đếm đúng số A đã đếm (`TOKEN_DAT_TRUOC`).
         if ma_luot:
             headers["X-LTT-Request-Id"] = ma_luot
+        dat_cho = int(TOKEN_DAT_TRUOC.get() or 0)
+        if dat_cho > 0:
+            headers["X-LTT-Token-Dat"] = str(dat_cho)
         try:
             r = client.request(method, base_url.rstrip("/") + path, json=json,
                                headers=headers, timeout=timeout or timeout_s)

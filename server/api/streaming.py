@@ -251,7 +251,6 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
             f"`model` {ten!r} is not served here. Call GET /api/v1/models for "
             f"the names in service.", than, dung=model_not_found) from None
     tai_nguyen = str(suc.resource or "") if suc else ""
-    so_suat = int(suc.slots or 0) if suc else 0
     pool = int(suc.token_pool or 0) if suc else 0
 
     request_id = thanh_toan.ma_luot("ms")
@@ -277,7 +276,7 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
 
     try:
         suat = cua_luong.cho_suat_dong_bo(
-            tai_nguyen=tai_nguyen, so_suat=so_suat, token_pool=pool,
+            suc=suc,
             user_id=principal.user_id, request_id=request_id, cua="sync",
             token_vao_uoc=int(vao_uoc), xin_ra=int(xin_ra),
             so_anh=cua_luong.dem_anh(than),
@@ -300,6 +299,12 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
     except phong_cho.KhachDi:
         return JSONResponse(_KHACH_NGAT, status_code=MA_KHACH_NGAT,
                             headers=_NO_STORE)
+    except cua_luong.KhongMoDuoc:
+        # Đặt chỗ vượt cả pool KV (phương án C bất biến 1) — quá dài, 0 khoản giữ.
+        raise payload_too_large(
+            "The input exceeds the model's context limit. Drop or summarise "
+            "older turns and retry with a shorter conversation.",
+            limit_name="input_tokens", limit_value=pool) from None
 
     def _release_ticket(ket_qua: str = "loi") -> None:
         """Nhả suất + ghi KẾT CỤC THẬT vào sổ lượt 30 ngày.
@@ -377,9 +382,17 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         #    phòng chờ, nên thời gian đã chờ bị trừ đi ở đây — hai chỗ (trần chờ
         #    và trần gọi) phải cùng ăn MỘT ngân sách, nếu không chúng chia nhau
         #    một ngân sách tưởng tượng và tổng vượt đồng hồ Cloudflare.
-        kq = ngat.chay_canh_ngat(
-            lambda: executor.run(db, sach,
-                                 timeout_s=_con_lai_s(t0, float(_tran_giay()))),
+        # ⭐ Máy B 429 cho lượt đã nhận ⇒ xếp lại trong phần còn lại của ngân
+        #    sách cửa (phương án C bước 1); mỗi lần gọi mang `X-LTT-Token-Dat`.
+        #    `_release_ticket` đọc `suat.lease_id` lúc nhả ⇒ nhả đúng suất mới.
+        kq = cua_luong.goi_dong_bo_co_xep_lai(
+            lambda: ngat.chay_canh_ngat(
+                lambda: executor.run(db, sach,
+                                     timeout_s=_con_lai_s(t0, float(_tran_giay()))),
+                ngat_chua=ngat.do_ngat(request)),
+            suat,
+            han_s=lambda: cua_luong.han_cho_dong_bo(
+                ngan_sach_s=float(_tran_giay()), da_tieu_s=time.monotonic() - t0),
             ngat_chua=ngat.do_ngat(request))
     except ngat.KhachNgat as e:
         # Quyết toán theo `usage` nếu lời gọi kịp về; không thì hoàn trọn.
@@ -896,9 +909,17 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     def _ket_thuc() -> None:
         """Hai việc phải chạy kể cả khi thân chưa từng được đọc: TIỀN và SUẤT."""
         luot = so_tay.get("luot")
+        cb = so_tay.get("cb")
         try:
             if luot is not None:
                 cua_luong.dam_bao_quyet_toan(luot)
+            elif cb is not None:
+                # 💰 Đã giành suất + giữ tiền mà luồng CHƯA từng mở (khách đi
+                #    trong lúc xếp lại sau 429 của máy B — phương án C bước 1 —
+                #    hoặc trong lúc đang mở). Generator có thể bị bỏ rơi giữa
+                #    chừng nên `finally` của nó không phải đường chắc chắn; hoàn ở
+                #    đây. Idempotent: đường nào đã kết sổ rồi thì là no-op.
+                cua_luong.hoan(cb.user_id, cb.request_id)
         finally:
             _nha_suat()
 
@@ -996,7 +1017,9 @@ def _max_tokens(than: dict, token_vao_uoc: int = 0, executor=None) -> int:
        truyền số vào. Vào và ra chia nhau cùng một cửa sổ 65.536.
     """
     executor = executor or for_tool_name(TOOL_CHAT)
-    tran = executor.context_output_cap(token_vao_uoc)
+    # Theo cửa sổ của ĐÚNG model khách xin (O-24 cùng lớp), không cửa sổ hẹp nhất.
+    tran = executor.context_output_cap(token_vao_uoc,
+                                       str(than.get("model") or "") or None)
     for ten in ("max_tokens", "max_output_tokens"):
         gt = than.get(ten)
         if isinstance(gt, (int, float)) and not isinstance(gt, bool):

@@ -1221,7 +1221,7 @@ def _nguoi_cho_llm(db: Any, resource: str, now: datetime) -> tuple[int, float | 
         so += 1
         tao = _aware(w.created_at) or now
         tran = (ts.cho_dong_bo_toi_da_s if str(w.cua or "") == CUA_DONG_BO
-                else ts.cho_stream_toi_da_s)
+                else ts.han_cho_stream(bool(getattr(w, "la_whale", False))))
         con = (tao - now).total_seconds() + tran
         som_nhat = con if som_nhat is None else min(som_nhat, con)
     return so, som_nhat

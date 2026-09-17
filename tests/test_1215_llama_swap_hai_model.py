@@ -294,7 +294,7 @@ def test_ttl_la_MOT_nguon_cho_moi_ho_so(cfg):
 # ── Số suất: llama-swap không được giữ hàng đợi của engine ─────────────────
 
 def test_concurrencyLimit_it_nhat_HAI_LAN_so_slot(cfg):
-    """`concurrencyLimit` ≥ 2 × `-np`, và `-np` = `SO_SLOT_MAY_B`.
+    """`concurrencyLimit` ≥ 2 × `-np`, và `-np` = `ngan_sach.HO_SO[hồ sơ].np`.
 
     llama-swap đếm ở `concurrencyLimit` số request nó **chuyển vào**; `-np` là số
     slot engine có. Để bằng nhau thì request thứ 4 bị llama-swap giữ lại và máy A
@@ -307,8 +307,8 @@ def test_concurrencyLimit_it_nhat_HAI_LAN_so_slot(cfg):
         dong_lenh = _khai_trien(cfg, ten)
         np = _tham_so(dong_lenh, "-np") or _tham_so(dong_lenh, "--parallel")
         assert np is not None, f"{ten} khong khai `-np`"
-        assert int(np) == ngan_sach.SO_SLOT_MAY_B, (
-            f"{ten} chay -np {np} nhung ngan_sach khai {ngan_sach.SO_SLOT_MAY_B}")
+        assert int(np) == ngan_sach.HO_SO[ten].np, (
+            f"{ten} chay -np {np} nhung ngan_sach.HO_SO khai {ngan_sach.HO_SO[ten].np}")
         gioi_han = cfg["models"][ten]["concurrencyLimit"]
         assert gioi_han >= 2 * int(np), (
             f"{ten} concurrencyLimit={gioi_han} < 2 x {np} => llama-swap se giu "

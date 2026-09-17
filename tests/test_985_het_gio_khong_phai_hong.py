@@ -56,7 +56,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from llm_gateway.api import create_app
-from llm_gateway.config import Config
+from llm_gateway.config import DEM_UOC_MAC_DINH, Config
+from llm_gateway.vat_ly import VatLy
 from llm_gateway.upstream import MA_HET_GIO, MA_KHONG_VOI_TOI
 from platform_core.llm.cong_vlm import (AmbiguousProviderError, BanError,
                                         CongVlm, CongVlmError)
@@ -65,11 +66,13 @@ from platform_core.llm.cong_vlm import (AmbiguousProviderError, BanError,
 def _cfg(**doi) -> Config:
     goc = dict(
         upstream_url="http://127.0.0.1:8280", host="127.0.0.1", port=8299, token="",
-        models_mo=("qwen38-api",), max_input_tokens=10_000, max_output_tokens=100,
+        models_mo=("qwen38-api",), max_output_tokens=100,
         max_images=1, max_image_bytes=1024, upstream_timeout_s=1.0,
         stream_timeout_s=1.0, ram_trong_toi_thieu_gb=1.0, trong_tai_bat=False,
         vram_sach_mb=1,
-        max_dong_thoi=1, rpm=0, nhip_tim_giay=0.0)
+        nhip_tim_giay=0.0, nguon_vat_ly="test",
+        # Rao vat ly: tran vao = ctx - max_out(100) - DEM_UOC = 10_000.
+        vat_ly={"qwen38-api": VatLy(ctx=10_000 + 100 + DEM_UOC_MAC_DINH, np=1, kvu=True)})
     goc.update(doi)
     return Config(**goc)
 

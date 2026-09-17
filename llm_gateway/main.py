@@ -107,7 +107,29 @@ def main() -> None:
     if n:
         log.info("nap %d bien tu %s", n, TEP_ENV)
 
-    cfg = Config.from_env()
+    # 🔴 RÀO VẬT LÝ ĐỌC TỪ `llama-swap.yaml` (phương án C bước 3). Không đọc được ⇒
+    #    KHÔNG khởi động: một cổng không biết `-c`/`-np` của card thì không có
+    #    gì để chặn tràn KV. Chết lúc khởi động, to tiếng — cùng lý lẽ chốt token.
+    from .config import bien_da_go_con_dat
+    from .vat_ly import YamlHong
+    try:
+        cfg = Config.from_env()
+    except YamlHong as e:
+        log.error("TU CHOI KHOI DONG: khong dung duoc rao vat ly tu "
+                  "llama-swap.yaml: %s", e)
+        log.error("Xu ly: chay llm_gateway\\deploy\\deploy.ps1 tu may A (chep "
+                  "yaml canh goi llm_gateway), hoac dat LTT_LLM_SWAP_YAML.")
+        raise SystemExit(4) from None
+    log.info("rao vat ly tu %s: %s", cfg.nguon_vat_ly,
+             ", ".join(f"{m} -c {v.ctx} -np {v.np}"
+                       for m, v in sorted(cfg.vat_ly.items())))
+    con = bien_da_go_con_dat()
+    if con:
+        # Không chết: biến cũ vô hại (không ai đọc). Nhưng người trực đang tin
+        # nó có tác dụng — phải nói.
+        log.warning("BIEN DA GO (phuong an C) van con dat, KHONG con tac dung: %s. "
+                    "Xoa khoi %s; neu van con (nssm nuong env luc CAI) thi chay "
+                    "lai llm_gateway/deploy/cai_dat_dich_vu.ps1.", ", ".join(con), TEP_ENV)
 
     if not cfg.models_mo:
         # Không phải lỗi — fail-closed của Q92 đang làm đúng việc. Nhưng phải nói

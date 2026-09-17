@@ -101,14 +101,28 @@ from apps.ltt_llm import features as _features
 #:    dựng lại đúng cái chồng chéo mà `ngan_sach.py` sinh ra để dẹp.
 from apps.ltt_llm.ngan_sach import (CONG_BO_CHO_CLIENT,
                                     CUA_SO_MODEL as CUA_SO_NGU_CANH,
-                                    LE as LE_NGU_CANH,
+                                    HO_SO,
                                     NHOM_CU_TRU_38,
-                                    POOL_35, POOL_38, SO_SLOT,
                                     TAI_NGUYEN_35, TAI_NGUYEN_38,
                                     TOKEN_RA_TRAN as MAX_TOKENS_TRAN,
                                     ANH_BYTE_TOI_DA, SO_ANH_TOI_DA,
                                     cong_bo_cua, mac_dinh_cho,
                                     tran_theo_ngu_canh)
+
+def _khai_admission(model_id: str, tai_nguyen: str, nhom_cu_tru: str = "",
+                    vai_tro: str = "") -> AdmissionModel:
+    """Bản khai admission của MỘT model — chép NGUYÊN hồ sơ `ngan_sach.HO_SO`.
+
+    ⭐ Một hàm, không phải hai lời gọi `AdmissionModel(...)` tự điền: mỗi trường
+       của hồ sơ (slot, pool, ngưỡng whale, đệm ước, token mỗi ảnh) đi qua đúng
+       một chỗ, nên thêm trường vào hồ sơ mà quên một model là không thể.
+    """
+    h = HO_SO[model_id]
+    return AdmissionModel(tai_nguyen, h.seq_cap, h.token_budget, nhom_cu_tru,
+                          vai_tro, nguong_whale=h.nguong_whale,
+                          dem_uoc=h.dem_uoc,
+                          token_giu_moi_anh=h.token_giu_moi_anh)
+
 
 #: Token ra mặc định của **cửa job** (manifest phục vụ đường job).
 MAX_TOKENS_MAC_DINH = mac_dinh_cho("job")
@@ -266,11 +280,11 @@ MANIFEST = AppManifest(
         #    `Job.admission_resource/slots`, vì `jobs.claim` và `job_scheduler`
         #    gác hàng đợi bằng đúng hai cột đó (R20).
         #
-        # Số lấy từ `ngan_sach.py` — đừng gõ số ở đây (test_1201).
+        # Số lấy từ `ngan_sach.HO_SO` — đừng gõ số ở đây (test_1201, test_1229).
         admission_theo_model={
-            "ltt-3.8": AdmissionModel(TAI_NGUYEN_38, SO_SLOT, POOL_38,
-                                      NHOM_CU_TRU_38, "mac_dinh"),
-            "ltt-3.5": AdmissionModel(TAI_NGUYEN_35, SO_SLOT, POOL_35),
+            "ltt-3.8": _khai_admission("qwen38-api", TAI_NGUYEN_38,
+                                       NHOM_CU_TRU_38, "mac_dinh"),
+            "ltt-3.5": _khai_admission("qwen35-api", TAI_NGUYEN_35),
         },
         sync_executor="apps.ltt_llm.executor:EXECUTOR",
         params_schema={

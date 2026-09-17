@@ -19,14 +19,18 @@ from server.api.auth import require_scope
 
 _NO_STORE = {"Cache-Control": "no-store"}
 
-#: Cửa sổ ngữ cảnh **CÔNG BỐ** cho client agentic, khi model không tự khai.
+#: Cửa sổ ngữ cảnh **CÔNG BỐ** cho client agentic — CHỈ khi model KHÔNG tự khai.
 #:
-#: ⚠️ Đây phải là con số **NHỎ HƠN trần đầu-vào thật của thượng nguồn**, không
-#:    phải cửa sổ lý thuyết của model. Máy B nạp `qwen38-api` với `-c 131072`
-#:    nhưng cổng của nó chặn ở `LTT_LLM_MAX_INPUT_TOKENS` (65.000 lúc đo 29/08).
-#:    Công bố 131072 thì Codex nén quá muộn và đâm thẳng vào 413 của B.
+#: ⭐ Hôm nay là đường CHẾT: mọi alias của model nhà tự khai
+#:    `constraints.context_window` = `apps/ltt_llm/ngan_sach.cong_bo_cua(m)`
+#:    (`test_334::test_MOI_alias_tu_khai_context_window` chốt). Số này chỉ là lưới
+#:    cho một model mới quên khai, nên nó phải THẤP hơn mọi cửa sổ công bố thật
+#:    (`test_334::test_hang_so_lui_KHONG_hua_nhieu_hon_model_that`): công bố cao
+#:    hơn trần vào thật thì client nén quá muộn và đâm vào 413.
 #:
-#: ⭐ Đổi trần bên B thì đổi luôn số này — chúng là **một** phép hứa, kể ở hai nơi.
+#: 🔴 O-14 (phương án C, 17/09/2026): chú thích cũ dẫn `-c 131072` và trần cổng
+#:    B 65.000 (đo 29/08) — cả hai đã sai từ 03/09. Giá trị GIỮ NGUYÊN (bước 2
+#:    không đổi số); đừng "đồng bộ" nó với cửa sổ engine.
 CUA_SO_CONG_BO_MAC_DINH = 60_000
 
 #: Trần token ra, khớp `MAX_TOKENS_TRAN` của app `ltt_llm`.

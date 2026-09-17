@@ -136,27 +136,45 @@ def test_khach_di_giua_luc_cho_thi_roi_hang(db):
     assert w.trang_thai == "roi" and w.ket_qua == "khach_di"
 
 
-def test_phong_day_theo_so_nguoi_va_theo_token_prefill(db):
+def _yc_whale(rid, user):
+    from dataclasses import replace
+
+    return replace(_yc(rid, user=user, prefill=150_000, tok=180_000), la_whale=True)
+
+
+def test_phong_day_theo_so_nguoi_va_theo_so_whale(db):
+    """L-12b (17/09/2026): phòng chờ chặn ĐỘ DÀI HÀNG bằng số người, không bằng token.
+
+    Trần token cũ (`phong_day_token_prefill`) đã gỡ — "có vừa pool KV không" là
+    việc của `luat_nhan` luật 2, lượt chưa vừa thì CHỜ chứ không 429.
+    """
     from platform_core.llm import phong_cho
 
     dh = DongHo()
-    _vao(db, _yc("a", user="a", prefill=50_000), dh)
-    _vao(db, _yc("b", user="b", prefill=1_000), dh)
+    _vao(db, _yc_whale("a", user="a"), dh)
+    _vao(db, _yc("b", user="b", prefill=50_000), dh)
     with pytest.raises(phong_cho.PhongDay) as e:
-        phong_cho.kiem_phong(db, resource="llm_remote", token_prefill_moi=10,
-                             so_nguoi_toi_da=2, token_prefill_toi_da=10**9, now=dh())
+        phong_cho.kiem_phong(db, resource="llm_remote", so_nguoi_toi_da=2,
+                             la_whale=False, so_ca_voi_toi_da=2, now=dh())
     assert e.value.ly_do == "phong_day_so_nguoi"
+    # Σ token mới đang chờ 200K: lượt thường VẪN vào hàng (trước 17/09: 429).
+    phong_cho.kiem_phong(db, resource="llm_remote", so_nguoi_toi_da=32,
+                         la_whale=False, so_ca_voi_toi_da=2, now=dh())
+    # Whale thứ hai vào được khi trần là 2; whale thứ hai ĐANG CHỜ thì whale thứ ba 429.
+    phong_cho.kiem_phong(db, resource="llm_remote", so_nguoi_toi_da=32,
+                         la_whale=True, so_ca_voi_toi_da=2, now=dh())
+    _vao(db, _yc_whale("c", user="c"), dh)
     with pytest.raises(phong_cho.PhongDay) as e:
-        phong_cho.kiem_phong(db, resource="llm_remote", token_prefill_moi=10_000,
-                             so_nguoi_toi_da=32, token_prefill_toi_da=57_000, now=dh())
-    assert e.value.ly_do == "phong_day_token_prefill"
+        phong_cho.kiem_phong(db, resource="llm_remote", so_nguoi_toi_da=32,
+                             la_whale=True, so_ca_voi_toi_da=2, now=dh())
+    assert e.value.ly_do == "phong_day_ca_voi"
 
 
 def test_phong_trong_thi_whale_lon_van_vao_duoc_hang(db):
     from platform_core.llm import phong_cho
 
-    phong_cho.kiem_phong(db, resource="llm_remote", token_prefill_moi=150_000,
-                         so_nguoi_toi_da=32, token_prefill_toi_da=57_000, now=T0)
+    phong_cho.kiem_phong(db, resource="llm_remote", so_nguoi_toi_da=32,
+                         la_whale=True, so_ca_voi_toi_da=2, now=T0)
 
 
 def test_fcfs_nguoi_vao_truoc_duoc_nhan_truoc(db):

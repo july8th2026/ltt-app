@@ -1,35 +1,31 @@
 """
-gioi_han.py — hàng rào của riêng cổng VLM: đồng thời và tần suất. (H38, V9)
+gioi_han.py — rào VẬT LÝ của một engine: số chuỗi và bể KV. (H38, V9 → phương án C)
 
-⭐ VÌ SAO CỔNG CẦN HÀNG RÀO RIÊNG, DÙ NỀN TẢNG ĐÃ CÓ:
+⭐ MÁY A QUYẾT ĐỊNH, CỔNG NÀY CHỈ CHẶN THỨ ENGINE KHÔNG TỰ CHẶN ĐƯỢC
+   (`docs/ltt_llm_dual/KE_HOACH_PHUONG_AN_C.md` §3, bước 3). Hai bất biến:
 
-   `public_api/limits.py` bảo vệ **nền tảng** khỏi khách. Cổng này nằm ở máy B và
-   chỉ nghe LAN từ một IP — nó không sợ khách, nó sợ **chính máy A**: một vòng thử
-   lại hỏng, một worker nhân đôi, một script ai đó chạy tay.
+     số lượt đang chạy ≤ `-np`      — quá thì llama.cpp xếp một hàng đợi vô hình
+     Σ token đặt chỗ   ≤ `-c`       — quá thì KV `-kvu` cạn và engine huỷ MỌI slot
 
-   Và nó sợ theo một kiểu khác. `llama-server` chạy `--parallel 1`, nên **50 yêu
-   cầu đồng thời không thành 50 lượt song song** — chúng thành 50 kết nối treo và
-   một hàng đợi không ai nhìn thấy. Người gọi thứ 50 chờ 50 lượt mà không có cách
-   nào biết. Chờ vô hình còn tệ hơn một cái 429 rõ ràng.
+   Hai con số đến từ `llama-swap.yaml` (`vat_ly.py`), không từ env.
 
-⭐ ĐỒNG THỜI QUAN TRỌNG HƠN TẦN SUẤT ở đây, ngược với một API web thường:
-   một lượt LLM kéo dài hàng chục giây, nên "20 lượt mỗi phút" gần như không chặn
-   gì, còn "3 lượt cùng lúc" thì chặn đúng thứ cần chặn.
+⛔ KHÔNG CÒN LUẬT CÔNG BẰNG/NHỊP Ở ĐÂY. Đã gỡ ở bước 3:
+     · khoá whale "một lượt cá voi một lúc" (O-01) — A tắt cờ khi byte đầu về,
+       B giữ tới hết lượt ⇒ 429 sau 200 cho whale thứ hai A đã cho chờ tới 900 s;
+     · RPM 120 lượt/phút (O-03) — sinh từ thời `--parallel 1`, A không có luật
+       tương ứng ⇒ lượt thứ 121 bị 429 sau 200.
+   Công bằng prefill và hạn mức theo khách là việc của máy A (`luat_nhan`,
+   `public_api/limits.py`). Hai nơi cùng quyết một điều thì chúng lệch nhau.
 
-   `render_gateway` đã chốt cùng ý: *"Một GPU = một việc. Đổi số này là mời OOM."*
-    Không mượn hàng đợi ẩn của `llama-swap`/llama.cpp: hàng đợi thật phải có
-    trạng thái, vị trí, fairness và hủy ở admission plane của nền tảng.
-
-⛔ ĐẦY THÌ TRẢ **429**, KHÔNG PHẢI 503. Bên gọi (`dieu_phoi`) coi 429 là *bận* và
-   đi tiếp; coi 5xx là *hỏng* và đánh dấu lỗi cho khoá. Nhầm chỗ này thì khoá model
-   nhà tự tắt sau 5 lần đông khách — cùng cái bẫy D-005.
+⛔ ĐẦY THÌ TRẢ **429**, KHÔNG PHẢI 503. Máy A đọc 429 là *bận* và XẾP HÀNG LẠI
+   lượt đó (O-04, bước 1); đọc 5xx là *hỏng* và đánh dấu lỗi cho khoá. Nhầm chỗ
+   này thì khoá model nhà tự tắt sau 5 lần đông khách — cùng cái bẫy D-005.
 """
 from __future__ import annotations
 
 import logging
 import threading
 import time
-from collections import deque
 from dataclasses import dataclass
 from typing import Callable, Optional
 
@@ -38,8 +34,9 @@ log = logging.getLogger("llm_gateway.gioi_han")
 #: Hạn giữ một suất trước khi coi nó là suất chết.
 #:
 #: 1.200 giây = 20 phút, rộng hơn `stream_timeout_s` (900) một biên dày. Phải
-#: rộng hơn: thu hồi một suất **đang chạy thật** là cho phép lượt thứ hai vào
-#: cùng một GPU `--parallel 1`, tức đổi một sự cố tự khỏi lấy một sự cố tệ hơn.
+#: rộng hơn: thu hồi một suất **đang chạy thật** là cho thêm một lượt vào engine
+#: đã đủ `-np` chuỗi (và trả lại phần KV nó vẫn đang chiếm), tức đổi một sự cố
+#: tự khỏi lấy một sự cố tệ hơn.
 #:
 #: ⛔ Đừng hạ số này để "phát hiện sớm hơn". Muốn phát hiện sớm thì đọc
 #:    `giu_lau_nhat_giay` ở `/health` — nó báo **ngay**, mà không đụng gì tới
@@ -93,17 +90,17 @@ class Suat:
 
 
 class GioiHan:
-    """Đếm đồng thời + tần suất. An toàn khi nhiều luồng gọi (uvicorn dùng threadpool).
+    """Đếm chuỗi + bể KV của MỘT engine. An toàn khi nhiều luồng gọi (threadpool).
 
-    `now` tiêm được để test không phải ngủ thật.
+    `max_dong_thoi` = `-np`, `token_pool` = `-c` (đường thật dựng qua
+    `SoTheoModel.tu_vat_ly`). `now` tiêm được để test không phải ngủ thật.
     """
 
-    def __init__(self, *, max_dong_thoi: int = 1, rpm: int = 120,
+    def __init__(self, *, max_dong_thoi: int = 1,
                  token_pool: int = 0,
                  han_giu_s: float = HAN_GIU_MAC_DINH_S,
                  now: Callable[[], float] = time.monotonic):
         self.max_dong_thoi = max(1, int(max_dong_thoi))
-        self.rpm = max(0, int(rpm))          # 0 = tắt chốt tần suất
         #: Ngân sách KV **tính bằng token** của engine này. 0 = tắt.
         #:
         #: 🔴 VÌ SAO ĐẾM TOKEN CHỨ KHÔNG CHỈ ĐẾM SUẤT. `llama-server` chạy `-kvu`
@@ -116,7 +113,7 @@ class GioiHan:
         self.han_giu_s = float(han_giu_s)
         self._now = now
         self._khoa = threading.Lock()
-        #: mã suất → `(thời điểm cấp, token đặt trước, có phải whale)`.
+        #: mã suất → `(thời điểm cấp, token đặt trước)`.
         #: **Không phải một bộ đếm.** Một con số chỉ nói "đang giữ mấy suất";
         #: map này còn nói *từ bao giờ* (⇒ thu hồi suất treo, xem
         #: `_thu_hoi_qua_han`) và *chiếm bao nhiêu token* (⇒ trả lại phần đặt
@@ -124,25 +121,20 @@ class GioiHan:
         self._dang_giu: dict[int, tuple] = {}
         self._ma_ke = 0
         self._da_thu_hoi = 0
-        self._moc: deque = deque()
 
     # ── đọc trạng thái, cho `/health` ────────────────────────────────────────
     def trang_thai(self) -> dict:
         with self._khoa:
             t = self._now()
-            self._cuon(t)
             gia_nhat = max((t - g[0] for g in self._dang_giu.values()), default=0.0)
             return {"dang_chay": len(self._dang_giu),
                     "max_dong_thoi": self.max_dong_thoi,
-                    "trong_phut_qua": len(self._moc),
-                    "rpm": self.rpm,
                     # Token ĐANG đặt trước / bể KV của engine. Hai số này là thứ
                     # duy nhất nói được "còn nhận nổi một prompt dài nữa không" —
                     # `dang_chay` thì không, vì ba lượt ngắn và ba lượt 70K token
                     # cho cùng một con số 3.
                     "token_dat": sum(g[1] for g in self._dang_giu.values()),
                     "token_pool": self.token_pool,
-                    "whale": any(g[2] for g in self._dang_giu.values()),
                     # 🔴 HAI SỐ NÀY LÀ CẢ LÝ DO SỰ CỐ 31/08 KÉO SÁU GIỜ.
                     #
                     #    Hôm đó `/health` trả `dang_chay: 1` — đúng, đầy đủ, và
@@ -159,18 +151,8 @@ class GioiHan:
                     # đổi một sự cố nhìn thấy được lấy một sự cố vô hình.
                     "da_thu_hoi": self._da_thu_hoi}
 
-    def _cuon(self, t: float) -> None:
-        """Bỏ các mốc cũ hơn 60 giây. Cửa sổ trượt, không phải ô cố định.
-
-        Ô cố định cho phép gấp đôi hạn mức quanh ranh giới phút — chuyện nhỏ với
-        một API web, chuyện thật với một GPU chỉ chạy được một lượt một lúc.
-        """
-        while self._moc and t - self._moc[0] > 60.0:
-            self._moc.popleft()
-
     # ── cổng vào ─────────────────────────────────────────────────────────────
-    def _xin_vao(self, token_dat_truoc: int = 0,
-                 la_whale: bool = False) -> PhanXuGioiHan:
+    def _xin_vao(self, token_dat_truoc: int = 0) -> PhanXuGioiHan:
         """Hỏi VÀ chiếm chỗ trong cùng một lần giữ khoá.
 
         ⛔ RIÊNG TƯ CÓ CHỦ Ý. Nó tăng bộ đếm nhưng không giao lại thứ gì để trả
@@ -180,7 +162,6 @@ class GioiHan:
         t = self._now()
         token_dat_truoc = max(0, int(token_dat_truoc))
         with self._khoa:
-            self._cuon(t)
             self._thu_hoi_qua_han(t)
 
             if len(self._dang_giu) >= self.max_dong_thoi:
@@ -191,11 +172,6 @@ class GioiHan:
                     False,
                     f"dang chay {len(self._dang_giu)}/{self.max_dong_thoi} luot",
                     thu_lai_sau_s=15)
-
-            if self.rpm and len(self._moc) >= self.rpm:
-                cho = max(1, int(61.0 - (t - self._moc[0])))
-                return PhanXuGioiHan(
-                    False, f"vuot {self.rpm} luot moi phut", thu_lai_sau_s=cho)
 
             if self.token_pool > 0:
                 # 🔴 MỘT SUẤT KHÔNG KHAI TOKEN LÀ MỘT SUẤT **VÔ HÌNH** VỚI NGÂN
@@ -222,19 +198,8 @@ class GioiHan:
                         f"> {self.token_pool} token",
                         thu_lai_sau_s=15)
 
-            if la_whale and any(g[2] for g in self._dang_giu.values()):
-                # ⭐ MỘT WHALE MỘT LÚC. Một prompt cỡ whale chặn prefill hàng chục
-                #    giây (§G4: 163K token = 257 s trên 3.8); hai cái cùng lúc
-                #    biến mọi lượt ngắn còn lại thành hàng đợi vô hình sau chúng.
-                #    Đây là chốt **công bằng**, không phải chốt dung lượng — nên nó
-                #    đứng riêng khỏi bể token ở trên.
-                return PhanXuGioiHan(
-                    False, "da co mot luot ca voi (whale) dang chay",
-                    thu_lai_sau_s=30)
-
             self._ma_ke += 1
-            self._dang_giu[self._ma_ke] = (t, token_dat_truoc, bool(la_whale))
-            self._moc.append(t)
+            self._dang_giu[self._ma_ke] = (t, token_dat_truoc)
             return PhanXuGioiHan(True, ma=self._ma_ke)
 
     def _thu_hoi_qua_han(self, t: float) -> None:
@@ -272,22 +237,18 @@ class GioiHan:
                 "dang tu cuu. Tong so lan thu hoi: %d",
                 ma, tuoi, self.han_giu_s, self._da_thu_hoi)
 
-    def cap_suat(self, token_dat_truoc: int = 0,
-                 la_whale: bool = False) -> tuple[PhanXuGioiHan, Optional[Suat]]:
+    def cap_suat(self, token_dat_truoc: int = 0) -> tuple[PhanXuGioiHan, Optional[Suat]]:
         """Xin và cấp trong một nhịp. Được thì trả `(cho_qua, Suat)`.
 
-        `token_dat_truoc` = số token KV lượt này sẽ chiếm ở **đỉnh** (vào + ra
-        tối đa). `la_whale` = lượt đủ dài để chặn prefill của người khác quá
-        ngưỡng (máy A tính theo `ngan_sach.NGUONG_WHALE` của **từng** model và
-        khai qua header; cổng chỉ tôn trọng cờ, không tự tính lại — hai chỗ cùng
-        tính một điều thì chúng sẽ lệch).
+        `token_dat_truoc` = số token KV lượt này sẽ chiếm ở **đỉnh** (số máy A
+        khai qua `X-LTT-Token-Dat`, xem `vat_ly.token_giu`).
 
         ⛔ Với phản hồi streaming, gọi `suat.tra()` khi **luồng kết thúc**, không
            phải khi hàm xử lý trả về — `StreamingResponse` về ngay lập tức trong
            khi token còn chảy hàng chục giây sau đó. Phần token đặt trước được
            nhả **cùng lúc** với suất, vì nó nằm trong cùng một bản ghi.
         """
-        px = self._xin_vao(token_dat_truoc, la_whale)
+        px = self._xin_vao(token_dat_truoc)
         return (px, Suat(self, px.ma) if px.cho_qua else None)
 
     def _nha(self, ma: int) -> None:

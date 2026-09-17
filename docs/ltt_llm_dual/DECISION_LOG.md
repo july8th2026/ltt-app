@@ -636,3 +636,126 @@ Chủ dự án xác nhận card 5060 chưa từng tràn VRAM. Vì vậy mặc đ
 `LTT_LLM_VRAM_TRONG_TOI_THIEU_MB__qwen35-api=0`. Cơ chế sàn vẫn được giữ và có
 thể bật lại bằng env nếu sau này có bằng chứng OOM. Engine 3.5 giữ nguyên
 context, KV q8_0, sampling và reasoning; thay đổi này chỉ bỏ một cửa từ chối giả.
+
+---
+
+## L-22 — Nhận theo NGÂN SÁCH KV, backfill có chặn, gỡ trần token phòng chờ (2026-09-17)
+
+> ⚠️ Trùng mã: `L-12` của bảng trên (dọn VRAM 3090) **khác** `L-12` của
+> `SO_LOI_DO_TAI.md` (request prefill lớn bị đuổi). Mục này đóng cái thứ hai
+> (`SO_LOI_DO_TAI.md` §L-12b).
+
+Chủ dự án chốt 17/09: LTTCODE chạy phiên tới ~150K token; lượt lớn **chờ trong
+hàng** (có nhịp tim, công bằng) thay vì 429; *"chấp nhận chậm để lấy chất lượng"*.
+Luật: Σ token đặt chỗ của lượt ĐANG CHẠY + lượt xin ≤ pool KV của model (`-kvu`);
+lượt chưa vừa thì chờ, lượt sau vừa thì vào trước (backfill), chờ quá một cửa sổ
+thì ngừng backfill sau nó.
+
+- Gỡ `token_prefill_cho_toi_da` (57.000, `LTT_LLM_TOKEN_PREFILL_CHO`). Nguồn gốc
+  thật (spec multijob §9/§12): trần **backpressure** "≈ 60 s × ~950 tok/s" trên
+  Σ token MỚI của người CHỜ, không phải chia cửa sổ cho 3 suất — nhưng nó là luật
+  thứ hai cho câu "có vừa không" và đuổi oan (đo được, `SO_LOI_DO_TAI.md`).
+- Phòng chờ chỉ chặn độ dài hàng: 32 người, **2 whale** (`LTT_LLM_SO_CA_VOI_CHO`).
+- `luat_nhan` 6a/6b: backfill trong `LTT_LLM_CHO_BACKFILL_S` (120 s), quá thì
+  `nhuong_luot_lon`. Whale kẹt sau whale đang chạy không chặn ai.
+- Whale chờ tối đa `LTT_LLM_CHO_STREAM_WHALE_S` (900 s) ở cửa stream.
+- Số suất và pool là **hai núm độc lập theo tài nguyên**:
+  `LTT_ADMISSION_SO_SUAT__<resource>`, `LTT_ADMISSION_POOL__<resource>` — chỉ HẠ
+  dưới bản khai (`apps/ltt_llm/ngan_sach.py`: `SO_SLOT` = `-np`, `POOL_KV` = `-c`).
+  Nâng trên trần = đổi engine máy B + hằng `ngan_sach.py` (test_1201/test_334 buộc).
+- Giữ: ≤1 whale chạy (công bằng prefill, cả máy A và cổng máy B), 413 trước 200,
+  giữ tiền SAU khi được nhận (INV-MJ-1), ba lớp nhả suất.
+  (⚠️ vế "cổng máy B" của khoá whale ĐÃ GỠ ở L-23 bước 3; ngưỡng whale theo model — xem L-23.)
+
+---
+
+## ✅ L-23 — Phương án C: máy A quyết định nhận, máy B là rào vật lý (2026-09-17)
+
+> Gộp hai bản nháp (bước 1+2 máy A `phien/llm-hang-cho-lon`, bước 3 máy B
+> `phien/llm-gateway-vat-ly`) thành một mục. Kế hoạch:
+> `docs/ltt_llm_dual/KE_HOACH_PHUONG_AN_C.md` §2, §3, §5. Số đo:
+> `KET_QUA_DO_17_09.md` (nhánh `phien/bench-may-b`).
+
+**Chủ dự án chốt 17/09:**
+- **Máy A là người quyết định nhận duy nhất**; cổng máy B chỉ giữ giới hạn vật lý của
+  engine; dẹp mọi luật chồng lấn; chuẩn hoá tham số về một hồ sơ theo model.
+- **Ngưỡng whale — số chủ dự án CHỌN TƯỜNG MINH: 3.8 = 8.192, 3.5 = 16.384 token
+  prefill mới** (`ngan_sach.NGUONG_WHALE`, gõ tay có chủ ý). Mục tiêu chặn tuyên bố
+  **9 s** (`WHALE_CHAN_TOI_DA_S`, trước: 30 s, chưa từng chạy trên đường thật); hai số
+  chọn prefill ~6,6 s / ~7,6 s trên đường cong §G4 — dưới mục tiêu. ≤1 whale **đang
+  prefill** mỗi model.
+  - 📝 Ghi chú: ước theo đường cong ở 9 s (`nguong_whale_theo_chan`) là
+    **10.752 / 18.944** — **không dùng**; chỉ giữ làm rào trên trong `test_1214`.
+- Ngân sách đặt chỗ = `-c` − **8.192** (draft MTP + sai số ước; tràn `-kvu` trên b10883
+  giết luồng SAU 200) ⇒ 3.8 212.992, 3.5 253.952; `-np 3`, `-c` giữ.
+- LTTCODE gửi `max_tokens` **24.000**; đặt chỗ = vào ước + max_tokens + DEM_UOC + ảnh.
+
+**Bước 2 — một hồ sơ theo model (O-06…O-12, O-24):**
+- `apps/ltt_llm/ngan_sach.HO_SO[id]` (dataclass đóng băng, ném khi tự mâu thuẫn):
+  `engine_ctx`, `np`, `seq_cap`, `bien_pool_token`, `dem_uoc`, `token_giu_moi_anh`,
+  `nguong_whale` (= `NGUONG_WHALE[m]`, số chủ dự án chọn — xem trên),
+  `token_budget`. `CUA_SO_THEO_MODEL`, `POOL_38/35`, `tran_vao_cua` dẫn xuất từ nó.
+- `registry.AdmissionModel` thêm `nguong_whale`, `dem_uoc`, `token_giu_moi_anh`;
+  manifest khai qua `_khai_admission(id, …)`.
+- `tham_so_da_luot.luat_cho(AdmissionModel, …)` — MỘT phép tính đặt chỗ + MỘT chỗ gắn
+  cờ whale cho mọi cửa (stream dùng `uoc_moi`; đồng bộ/job/planner dùng vào ước).
+  **Không kẹp**: đặt chỗ > pool ⇒ `DatChoVuotPool` ⇒ 413 / job hỏng không thử lại.
+  `tran_theo_ngu_canh` kẹp đầu ra theo **pool** ⇒ `vào ≤ tran_vao ⇒ đặt chỗ ≤ pool`.
+- `luat_nhan.ThamSo` không còn mặc định số; `tham_so_da_luot.tham_so_nhan()` là ánh xạ
+  duy nhất; `xet_va_giu` truyền đủ (O-09: `LTT_LLM_LAO_HOA_S` trước đó chết).
+- Job: kẹp đầu ra theo bí danh + đếm ảnh (O-24); cùng lớp lỗi sửa ở `tran_token_ra`
+  (stream), `_max_tokens` (một-cục), planner.
+- **Gỡ:** env `LTT_LLM_NGUONG_WHALE`, `LTT_LLM_DEM_DAT_TRUOC`, `LTT_LLM_TOKEN_MOI_ANH`;
+  `ngan_sach.LE` (→ `DEM_UOC`), `SO_SLOT_MAY_B`, `DONG_THOI_MAY_B`, `POOL_KV`,
+  `POOL_KV_MAY_B`, `SO_SLOT`, `manifest.LE_NGU_CANH`; mặc định số trùng ở
+  `phong_cho.kiem_phong/cho_nhan`, `admission.xet_va_giu`; header `X-LTT-Whale` phía A
+  (`luong_vlm.mo`). Chuỗi sai O-13 (`providers.py` "131K/96.256") gỡ; chú thích O-14,
+  O-20 sửa (giá trị `CUA_SO_CONG_BO_MAC_DINH` giữ 60.000).
+
+**Bước 1 — A chịu 429 của B (O-04, O-05):**
+- Stream (`/api/v1` + ChatLTT): `mo_co_xep_lai` — B 429 ⇒ nhả suất, `phong_cho.xep_lai`
+  (dòng `nhan` → `cho`, **giữ `created_at`**, `ly_do_cho = may_b_tu_choi`), nghỉ
+  `cho_xep_lai_s`, chờ lại trong phần còn lại của hạn chờ, ≤ `so_lan_xep_lai_toi_da`
+  (3; env `LTT_LLM_SO_LAN_XEP_LAI`, `LTT_LLM_CHO_XEP_LAI_S`). Đồng bộ:
+  `goi_dong_bo_co_xep_lai` (trong ngân sách thời gian cửa). Job: như trước
+  (`BanError` ⇒ `defer_resource`). Quá lần/hạn ⇒ kết cục bận cũ, 0 khoản giữ.
+- 💰 **Tiền theo lượt, không theo lần thử**: xếp lại GIỮ khoản giữ (vì `credit.hoan`
+  kết sổ vĩnh viễn theo mã lượt); một lượt = một `hold` + một `settle`/`refund`. Ngoại
+  lệ có tên duy nhất của INV-MJ-1.
+- `X-LTT-Token-Dat` ở cửa đồng bộ/job/planner: `dieu_phoi.mang_dat_cho(lease)` (ContextVar,
+  chép sang luồng gọi bởi `ngat.chay_canh_ngat`) — cùng số với lease.
+
+**Bước 3 — cổng máy B là rào vật lý (O-01, O-02, O-03, O-16…O-18):**
+- **Gỡ ở cổng B:** khoá "≤1 whale suốt lượt" + header `X-LTT-Whale` (O-01 — A tắt cờ
+  khi byte đầu về, B giữ tới hết ⇒ 429 sau 200); RPM 120/phút (O-03 — sinh từ thời
+  `--parallel 1`, A không có luật tương ứng); nhóm đếm `ban_whale`.
+- **Gỡ env:** `LTT_LLM_MAX_INPUT_TOKENS` (O-02 — một trần cho CẢ HAI model, sai cho
+  3.5), `LTT_LLM_MAX_DONG_THOI[__m]`, `LTT_LLM_TOKEN_POOL[__m]`, `LTT_LLM_RPM`. Còn
+  đặt ⇒ cổng chỉ cảnh báo lúc khởi động.
+- **Gỡ bản sao:** `catalog.ModelSpec.max_context` (O-16); `so_theo_model.token_dat_truoc`.
+- **Rào vật lý** (`llm_gateway/vat_ly.py`): đọc `-c`/`-np`/`--reasoning-budget`/`-kvu`
+  của từng hồ sơ từ `llama-swap.yaml` lúc khởi động (bộ đọc hẹp, không PyYAML — venv
+  B không có; phép kiểm buộc khớp `yaml.safe_load`). Tệp: `<gốc cài>/llama-swap.yaml`
+  (máy B: `H:\LTT_LLM\gateway\llama-swap.yaml`, đúng tệp `LTTLlamaSwap --config`),
+  lùi về `llm_gateway/deploy/llama-swap.yaml`; env đường dẫn `LTT_LLM_SWAP_YAML`.
+  Không đọc được ⇒ cổng **không khởi động** (fail-closed).
+  - chuỗi ≤ `-np` · Σ đặt chỗ ≤ `-c` (bể là `-c`, không phải `token_budget` của A);
+  - trần vào theo model = `-c − max_out − DEM_UOC`, cùng công thức `tran_vao_cua(m)`;
+  - giữ chỗ: có `X-LTT-Token-Dat` ⇒ **đúng số A** (sàn ở token vào B đo); vắng ⇒ cùng
+    công thức `luat_cho` (`vào + min(ra, -c − vào − DEM) + DEM`). Bản cũ lấy
+    `max(B ước, header)` — B ước ra không kẹp nên có thể > A ⇒ 429 sau 200.
+  - bộ ước token vào của B đổi cho khớp A: tools đếm nguyên JSON, làm tròn một lần.
+- **Tham số chính sách ở B** (`max_out`, `DEM_UOC`): `deploy.ps1` ghi vào `gateway.env`
+  bằng cách **đọc** `apps/ltt_llm/ngan_sach.py` (`deploy/xuat_tham_so_a.py`); không
+  còn số gõ tay trong script.
+- **Giữ:** 429 (không 5xx) cho tràn vật lý — A xếp hàng lại (bước 1 ở trên, O-04); lưới thu
+  hồi suất treo; sàn VRAM opt-in (L-21); trọng tài RAM/python 3090.
+- **Còn mở:** O-19 `--no-cache-idle-slots` (có trên máy B, không có trong kho) — hoà
+  giải ở bước 4 theo m6; `deploy.ps1` dừng ở bước 1c khi yaml trên B lệch kho.
+- **Thứ tự deploy tổng quát** (thay R21 một chiều): TĂNG sức chứa ⇒ B trước; GIẢM ⇒ A
+  trước bằng env `LTT_ADMISSION_*` (`RUNBOOK.md` §2.1).
+
+**Hệ quả chủ dự án cần biết:** ví dụ 15K+100K chạy / 110K chờ / 55K backfill **không
+đạt** trên 3.8 với chốt hôm nay: đang giữ 41.048 + 126.048 = 167.096; 55K cần 81.048
+⇒ 248.144 > 212.992. Backfill trong ví dụ ấy cần giữ chỗ đầu ra ≤ 12.282. 110K vẫn
+chờ đúng (không 429) và chạy khi 100K xong (177.096 ≤ 212.992). `test_1229` chốt.

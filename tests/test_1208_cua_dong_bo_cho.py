@@ -825,8 +825,127 @@ def test_so_luot_ghi_KET_CUC_THAT_khong_phai_luon_luon_xong(api, monkeypatch):
     r = api.post(DUONG, json=_than(), headers=_h(token))
 
     assert r.status_code == 503, r.text
-    assert _dong_cho(user_id) == [("xong", "ban", "", "sync", "tuong_tac")], (
+    # Phương án C bước 1: máy B bận MÃI ⇒ cửa xếp lại (≤ `so_lan_xep_lai_toi_da`)
+    # rồi mới trả bận; `ly_do_cho` giữ dấu vết lần xếp lại cuối.
+    assert _dong_cho(user_id) == [("xong", "ban", "may_b_tu_choi", "sync",
+                                   "tuong_tac")], (
         "so luot ghi ket cuc SAI — mot luot BAN vao so duoi chu 'xong'")
+
+
+# ── Phương án C bước 1 (O-04, O-05): máy B 429 SAU khi A đã nhận ⇒ XẾP LẠI ──
+
+def _dat_model_ban(monkeypatch, *, so_lan_ban: int):
+    """`features.chay` giả: `so_lan_ban` lần đầu ném `BanError` (máy B 429), rồi
+    trả lời. Ghi số đặt chỗ trong ngữ cảnh (`X-LTT-Token-Dat`) ở MỖI lần gọi."""
+    from apps.ltt_llm import features
+    from platform_core.llm import dieu_phoi
+    from platform_core.llm.cong_vlm import BanError
+
+    goi: list[int] = []
+
+    def gia(db, params, *, timeout_s=300.0, **_):
+        goi.append(int(dieu_phoi.TOKEN_DAT_TRUOC.get()))
+        if len(goi) <= so_lan_ban:
+            raise BanError("3/3 suat dang dung")
+        return features.KetQua(
+            noi_dung="chao ban", suy_nghi="", tool_calls=(), finish_reason="stop",
+            model=params["model"], token_vao=100, token_ra=50,
+            token_vao_cache=0, do_duoc=True)
+
+    monkeypatch.setattr(features, "chay", gia)
+    return goi
+
+
+def _kieu_but_toan_luot(user_id: str) -> list[str]:
+    """Kiểu bút toán (trừ `grant`) của một khách, theo thời gian — MỘT giữ, MỘT kết sổ."""
+    from platform_core.models import CreditEntry
+    from platform_core.db import get_session
+    gen = get_session()
+    db = next(gen)
+    try:
+        return [e.kind for e in db.query(CreditEntry)
+                .filter(CreditEntry.user_id == user_id)
+                .order_by(CreditEntry.created_at.asc()).all()
+                if e.kind in ("hold", "settle", "refund")]
+    finally:
+        db.close()
+
+
+def _dong_cho_day_du(user_id: str):
+    from platform_core.models import LlmWaiter
+    gen, db = _session()
+    try:
+        return [(w.trang_thai, w.ket_qua, int(w.token_dat_truoc or 0), w.created_at,
+                 w.admitted_at) for w in db.query(LlmWaiter)
+                .filter(LlmWaiter.user_id == user_id).all()]
+    finally:
+        _close(gen)
+
+
+@pytest.mark.parametrize("duong", [DUONG, MSG])
+def test_may_B_429_MOT_LAN_thi_XEP_LAI_va_khach_NHAN_noi_dung(api, monkeypatch, duong):
+    """Trước 17/09: 503 ngay dù lượt đã chờ đúng lượt. Nay: xếp lại, gọi lại, 200.
+
+    ⭐ Và hai sổ đếm CÙNG một số: mỗi lần gọi mang `X-LTT-Token-Dat` bằng đúng
+       `token_dat_truoc` của dòng chờ/lease (O-05)."""
+    goi = _dat_model_ban(monkeypatch, so_lan_ban=1)
+    user_id, token = _account()
+    truoc = _so_du(user_id)
+    _tiem_dong_ho(monkeypatch, DongHoGia())
+
+    than = _than() if duong == DUONG else {
+        "model": MODEL, "max_tokens": 200,
+        "messages": [{"role": "user", "content": "hi"}]}
+    r = api.post(duong, json=than, headers=_h(token))
+
+    assert r.status_code == 200, r.text
+    assert len(goi) == 2, f"khong goi lai sau 429: {goi}"
+    dong = _dong_cho_day_du(user_id)
+    assert len(dong) == 1, "xep lai phai GIU dong cho cu, khong tao dong moi"
+    trang_thai, ket_qua, dat, tao_luc, nhan_luc = dong[0]
+    assert (trang_thai, ket_qua) == ("xong", "xong")
+    assert dat > 0 and goi == [dat, dat], (
+        f"X-LTT-Token-Dat {goi} khac dat cho cua lease {dat}")
+    assert nhan_luc >= tao_luc
+    assert _dem_lease() == 0, "lease ro sau khi xep lai"
+    # 💰 Tiền theo LƯỢT, không theo lần thử: MỘT khoản giữ, MỘT lần quyết toán
+    #    (không phải giữ–hoàn–giữ: `credit.hoan` kết sổ vĩnh viễn theo mã lượt).
+    assert _kieu_but_toan_luot(user_id) == ["hold", "settle"], (
+        _kieu_but_toan_luot(user_id))
+    assert _so_du(user_id) <= truoc
+
+
+def test_may_B_429_MAI_thi_503_sau_so_lan_xep_lai_va_0_khoan_giu(api, monkeypatch):
+    from platform_core.llm import tham_so_da_luot
+
+    goi = _dat_model_ban(monkeypatch, so_lan_ban=10**6)
+    user_id, token = _account()
+    truoc = _so_du(user_id)
+    _tiem_dong_ho(monkeypatch, DongHoGia())
+
+    r = api.post(DUONG, json=_than(), headers=_h(token))
+
+    assert r.status_code == 503, r.text
+    assert len(goi) == 1 + tham_so_da_luot.doc().so_lan_xep_lai_toi_da
+    assert _so_du(user_id) == truoc, "ban mai ma van giu/thu tien"
+    assert _kieu_but_toan_luot(user_id) == ["hold", "refund"]
+    assert _dem_lease() == 0
+
+
+def test_may_B_429_ma_HET_HAN_cho_luc_xep_lai_thi_503_va_0_khoan_giu(api, monkeypatch):
+    """Hạn chờ của cửa là trần cứng: xếp lại không được kéo lượt quá đồng hồ."""
+    monkeypatch.setenv("LTT_LLM_CHO_DONG_BO_S", "0")
+    goi = _dat_model_ban(monkeypatch, so_lan_ban=1)
+    user_id, token = _account()
+    truoc = _so_du(user_id)
+    _tiem_dong_ho(monkeypatch, DongHoGia())
+
+    r = api.post(DUONG, json=_than(), headers=_h(token))
+
+    assert r.status_code in (429, 503), r.text
+    assert len(goi) == 1, "het han ma van goi lai may B"
+    assert _so_du(user_id) == truoc
+    assert _dem_lease() == 0
 
 
 # ── Nhánh không-stream của `/messages` đi cùng một trình tự ──────────────────
@@ -879,25 +998,49 @@ def test_mot_cuc_het_tran_cho_thi_429_khong_but_toan(api, monkeypatch):
 
 # ── `luat_cho`: MỘT phép tính đặt chỗ cho năm chỗ gọi ───────────────────────
 
-def test_luat_cho_kep_ve_pool_va_tra_rong_khi_khong_co_pool():
+def test_luat_cho_doc_so_CUA_MODEL_va_tra_rong_khi_khong_co_pool():
+    """Phương án C bước 2: đệm ước, token mỗi ảnh, ngưỡng whale là số của MODEL
+    (`AdmissionModel`), không phải env chung của nền tảng."""
     from platform_core.llm import luat_nhan, tham_so_da_luot
+    from platform_core.registry import AdmissionModel
 
-    assert tham_so_da_luot.luat_cho(0, lop=luat_nhan.TUONG_TAC,
+    assert tham_so_da_luot.luat_cho(None, lop=luat_nhan.TUONG_TAC,
                                     token_vao_uoc=10, xin_ra=10) == {}
-    ts = tham_so_da_luot.doc()
-    ra = tham_so_da_luot.luat_cho(100_000, lop=luat_nhan.NEN,
-                                  token_vao_uoc=10, xin_ra=20)
+    assert tham_so_da_luot.luat_cho(AdmissionModel("x", 1, 0), lop=luat_nhan.TUONG_TAC,
+                                    token_vao_uoc=10, xin_ra=10) == {}
+    suc = AdmissionModel("x", 3, 100_000, nguong_whale=500, dem_uoc=7,
+                         token_giu_moi_anh=11)
+    ra = tham_so_da_luot.luat_cho(suc, lop=luat_nhan.NEN, token_vao_uoc=10, xin_ra=20)
     assert ra["lop"] == luat_nhan.NEN and ra["token_pool"] == 100_000
-    assert ra["token_dat_truoc"] == 30 + ts.dem_dat_truoc
+    assert ra["token_dat_truoc"] == 30 + 7
     # Ảnh cũng vào phép tính, cùng một chỗ.
-    co_anh = tham_so_da_luot.luat_cho(100_000, lop=luat_nhan.NEN,
-                                      token_vao_uoc=10, xin_ra=20, so_anh=2)
-    assert co_anh["token_dat_truoc"] == 30 + ts.dem_dat_truoc + 2 * ts.token_moi_anh
-    # ⛔ Kẹp về pool: một lượt dùng trọn cửa sổ + đệm + ảnh KHÔNG BAO GIỜ được
-    #    nhận nếu không kẹp, dù engine phục vụ được nó khi chạy một mình.
-    lon = tham_so_da_luot.luat_cho(1_000, lop=luat_nhan.TUONG_TAC,
-                                   token_vao_uoc=900, xin_ra=900, so_anh=4)
-    assert lon["token_dat_truoc"] == 1_000
+    co_anh = tham_so_da_luot.luat_cho(suc, lop=luat_nhan.NEN, token_vao_uoc=10,
+                                      xin_ra=20, so_anh=2)
+    assert co_anh["token_dat_truoc"] == 30 + 7 + 2 * 11
+
+
+def test_luat_cho_VUOT_pool_thi_NEM_khong_kep_im_lang():
+    """🔴 Bất biến 1 của phương án C: kẹp về pool là CHE LỖI.
+
+    Bản trước trả `min(pool, dat)` — lượt đặt chỗ ÍT hơn thứ nó dùng, Σ đặt chỗ
+    "vừa" pool trong khi engine tràn `-kvu` (giết mọi slot). Nay ném, cửa gọi dịch
+    sang "quá dài".
+    """
+    import pytest
+
+    from platform_core.llm import luat_nhan, tham_so_da_luot
+    from platform_core.registry import AdmissionModel
+
+    suc = AdmissionModel("x", 3, 1_000, nguong_whale=500, dem_uoc=7,
+                         token_giu_moi_anh=11)
+    with pytest.raises(tham_so_da_luot.DatChoVuotPool) as e:
+        tham_so_da_luot.luat_cho(suc, lop=luat_nhan.TUONG_TAC, token_vao_uoc=900,
+                                 xin_ra=900, so_anh=4)
+    assert (e.value.dat, e.value.pool) == (900 + 900 + 7 + 4 * 11, 1_000)
+    # Bản khai pool > 0 mà thiếu đệm ước là bản khai hỏng, không phải "đệm 0".
+    with pytest.raises(ValueError):
+        tham_so_da_luot.luat_cho(AdmissionModel("x", 3, 1_000), lop=luat_nhan.NEN,
+                                 token_vao_uoc=1, xin_ra=1)
 
 
 def test_cua_stream_va_cua_job_dung_CHUNG_phep_tinh_luat_cho():
@@ -911,13 +1054,15 @@ def test_cua_stream_va_cua_job_dung_CHUNG_phep_tinh_luat_cho():
                 "platform_core/agent/planner.py"):
         ma = (goc / ten).read_text(encoding="utf-8")
         assert "luat_cho(" in ma, f"{ten} chua di qua `tham_so_da_luot.luat_cho`"
-    # Và không còn bản sao tự cộng `dem_dat_truoc` ngoài chính `luat_cho`.
-    cay = ast.parse((goc / "platform_core/runtime_noi_bo/luong.py")
-                    .read_text(encoding="utf-8"))
-    thay = [n for n in ast.walk(cay)
-            if isinstance(n, ast.Attribute) and n.attr == "dem_dat_truoc"]
-    assert not thay, ("luong.py van tu cong `dem_dat_truoc` — ban sao thu hai "
-                      "cua phep tinh dat cho")
+    # Và không còn bản sao tự cộng đệm ước / token ảnh ngoài chính `luat_cho`.
+    for ten in ("platform_core/runtime_noi_bo/luong.py",
+                "platform_core/job_runner.py", "platform_core/agent/planner.py"):
+        cay = ast.parse((goc / ten).read_text(encoding="utf-8"))
+        thay = [n.attr for n in ast.walk(cay) if isinstance(n, ast.Attribute)
+                and n.attr in ("dem_dat_truoc", "dem_uoc", "token_giu_moi_anh",
+                               "nguong_whale")]
+        assert not thay, (f"{ten} van tu doc {thay} — ban sao thu hai cua phep "
+                          "tinh dat cho / gan co whale")
 
 
 # ── ĐỐI CHỨNG: đặt điểm chờ TRƯỚC commit thì khoá idempotency bị giữ ────────

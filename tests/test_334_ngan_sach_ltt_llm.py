@@ -29,7 +29,7 @@ class TestNguonChanLy:
 
     def test_tran_vao_la_dan_xuat_khong_phai_go_tay(self):
         assert ngan_sach.TOKEN_VAO_TRAN == (
-            ngan_sach.CUA_SO_MODEL - ngan_sach.TOKEN_RA_TRAN - ngan_sach.LE)
+            ngan_sach.CUA_SO_MODEL - ngan_sach.TOKEN_RA_TRAN - ngan_sach.DEM_UOC)
 
     def test_vao_cong_ra_khong_vuot_cua_so_model(self):
         """Vào và ra chia nhau **một** cửa sổ. Tổng vượt là model tự cắt ngữ cảnh."""
@@ -64,9 +64,9 @@ class TestNguonChanLy:
         #    — la phep kiem nay do ngay.
         for model_id, cua_so in ngan_sach.CUA_SO_THEO_MODEL.items():
             assert (ngan_sach.tran_vao_cua(model_id) + ngan_sach.TOKEN_RA_TRAN
-                    + ngan_sach.LE == cua_so), (
+                    + ngan_sach.DEM_UOC == cua_so), (
                 f"{model_id}: vao {ngan_sach.tran_vao_cua(model_id)} + ra "
-                f"{ngan_sach.TOKEN_RA_TRAN} + le {ngan_sach.LE} != cua so {cua_so}")
+                f"{ngan_sach.TOKEN_RA_TRAN} + le {ngan_sach.DEM_UOC} != cua so {cua_so}")
 
     def test_tran_ra_khong_tran_cua_so_cua_model_NHO_NHAT(self):
         """Chay that `tran_theo_ngu_canh()` o bien, tren model cua so be nhat.
@@ -146,7 +146,6 @@ class TestKhongConChongCheo:
         from apps.ltt_llm import manifest
         assert manifest.CUA_SO_NGU_CANH == ngan_sach.CUA_SO_MODEL
         assert manifest.MAX_TOKENS_TRAN == ngan_sach.TOKEN_RA_TRAN
-        assert manifest.LE_NGU_CANH == ngan_sach.LE
 
     def test_features_chi_la_bi_danh(self):
         from apps.ltt_llm import features
@@ -238,11 +237,18 @@ class TestDoiChieuMayB:
         except Exception as exc:                                  # noqa: BLE001
             pytest.skip(f"khong goi duoc may B: {type(exc).__name__}")
 
-    def test_tran_vao_khop_may_B(self):
-        tran = self._health().get("tran", {})
-        assert tran.get("input_tokens") == ngan_sach.TOKEN_VAO_TRAN, (
-            f"may B dang thuc thi {tran.get('input_tokens')} nhung ta tinh "
-            f"{ngan_sach.TOKEN_VAO_TRAN} — mot trong hai noi sai")
+    def test_tran_vao_khop_may_B_THEO_MODEL(self):
+        """🔵 Phương án C bước 3 (O-02): `/health.tran.input_tokens` là **dict theo
+        model**. Bản trước so một số chung với `TOKEN_VAO_TRAN` — đúng cho 3.8, và
+        chính vì thế nó không bao giờ thấy 3.5 bị chặn ở trần của 3.8."""
+        tran = self._health().get("tran", {}).get("input_tokens")
+        assert isinstance(tran, dict), (
+            f"may B con tran vao CHUNG ({tran}) — ban cong truoc phuong an C buoc 3")
+        for m in ngan_sach.CUA_SO_THEO_MODEL:
+            if m in tran:
+                assert tran[m] == ngan_sach.tran_vao_cua(m), (
+                    f"may B chan {m} o {tran[m]} nhung ta tinh "
+                    f"{ngan_sach.tran_vao_cua(m)} — mot trong hai noi sai")
 
     def test_tran_ra_khop_may_B(self):
         tran = self._health().get("tran", {})
@@ -250,11 +256,17 @@ class TestDoiChieuMayB:
 
     def test_dong_thoi_cua_ta_khong_vuot_may_B(self):
         """Cho nhiều việc song song hơn máy B phục vụ được thì phần dôi ra chắc
-        chắn ăn 429/503 — không phải lỗi của bên nào, là hai trần không biết nhau."""
-        gh = self._health().get("gioi_han", {})
-        assert gh.get("max_dong_thoi") == ngan_sach.DONG_THOI_MAY_B, (
-            f"may B phuc vu {gh.get('max_dong_thoi')} luot cung luc nhung ta "
-            f"khai {ngan_sach.DONG_THOI_MAY_B}")
+        chắn ăn 429 — không phải lỗi của bên nào, là hai trần không biết nhau.
+
+        Rào của B là `-np` từng model (đọc yaml); máy A không được khai hơn."""
+        theo = self._health().get("gioi_han", {}).get("theo_model", {})
+        for m, t in theo.items():
+            if m not in ngan_sach.HO_SO:
+                continue
+            ta = ngan_sach.HO_SO[m].seq_cap
+            assert ta <= t.get("max_dong_thoi", 0), (
+                f"may B phuc vu {t.get('max_dong_thoi')} luot {m} cung luc nhung "
+                f"ta khai {ta}")
 
 
 class TestDoiChieuNenTang:
@@ -278,8 +290,8 @@ class TestDoiChieuNenTang:
             f"token — dat LTT_PUBLIC_API_MAX_BODY_BYTES cho du")
 
     def test_dong_thoi_khai_o_app_khop_hang_so_may_B(self):
-        """Ai đặt trần đồng thời cho `text.chat` phải đọc `DONG_THOI_MAY_B` trước."""
-        assert ngan_sach.DONG_THOI_MAY_B >= 1
+        """Ai đặt trần đồng thời cho `text.chat` phải đọc `HO_SO[m].seq_cap` trước."""
+        assert all(1 <= h.seq_cap <= h.np for h in ngan_sach.HO_SO.values())
 
 
 class TestDoiChieuKhoMayB:
@@ -312,12 +324,20 @@ class TestDoiChieuKhoMayB:
                           "llm_gateway/config.py")
         assert b == ngan_sach.TOKEN_RA_TRAN
 
-    def test_tran_vao_khop_mac_dinh_trong_ma_may_B(self):
-        """⛔ Đây là cặp đã lệch: mã B mặc định 90.000 còn ta tính 96.256."""
-        b = self._hang_so(r'_int\("LTT_LLM_MAX_INPUT_TOKENS", ',
-                          "llm_gateway/config.py")
-        assert b == ngan_sach.TOKEN_VAO_TRAN, (
-            f"ma may B mac dinh {b} nhung ta tinh {ngan_sach.TOKEN_VAO_TRAN}")
+    def test_tran_vao_may_B_DAN_XUAT_theo_model_khop_ta(self):
+        """⛔ Đây là cặp đã lệch hai lần: mã B mặc định 90.000 còn ta tính 96.256;
+        rồi B ép 186.368 cho CẢ HAI model (O-02). Phương án C bước 3 gỡ hẳn mặc
+        định: B dẫn xuất `-c(yaml) − max_out − DEM_UOC` theo từng model."""
+        from llm_gateway.config import DEM_UOC_MAC_DINH
+        from llm_gateway.vat_ly import doc_tep, tim_yaml, tran_vao
+
+        max_out = self._hang_so(r'_int\("LTT_LLM_MAX_OUTPUT_TOKENS", ',
+                                "llm_gateway/config.py")
+        vl = doc_tep(tim_yaml())
+        for m in ngan_sach.CUA_SO_THEO_MODEL:
+            b = tran_vao(vl[m], int(max_out), DEM_UOC_MAC_DINH)
+            assert b == ngan_sach.tran_vao_cua(m), (
+                f"ma may B dan xuat {b} cho {m} nhung ta tinh {ngan_sach.tran_vao_cua(m)}")
 
 
 class TestBanSaoConLai:
@@ -360,12 +380,17 @@ class TestBanSaoConLai:
         assert self._so("TOKEN_RA_TOI_DA",
                         "server/api/tools.py") == ngan_sach.TOKEN_RA_TRAN
 
-    def test_deploy_ps1_KHONG_lui_tran_cua_may_B(self):
+    def test_deploy_ps1_KHONG_chua_so_go_tay(self):
         """🔴 BẢN SAO NGUY HIỂM NHẤT, VÌ NÓ **GHI ĐÈ** CHỨ KHÔNG CHỈ HIỂN THỊ.
 
-        `llm_gateway/deploy/deploy.ps1` viết lại `gateway.env` ở **ba** chỗ:
+        `llm_gateway/deploy/deploy.ps1` từng viết lại `gateway.env` ở **ba** chỗ:
         nhánh migrate (thay dòng cũ), nhánh migrate (thêm nếu thiếu), và nhánh
         sinh mới. Cả ba đều gõ tay con số.
+
+        🔵 Phương án C bước 3: script **không còn gõ số nào** cho trần/slot/bể.
+           `max_out`/`DEM_UOC` đọc từ ngan_sach qua `xuat_tham_so_a.py`; `-c`/`-np`
+           cổng đọc thẳng từ yaml. Phép kiểm đổi từ "số gõ tay phải đúng" thành
+           "không có số gõ tay" — và kiểm luôn rằng script GỌI tệp đọc ngan_sach.
 
         ⛔ Nên đổi `CUA_SO_MODEL` mà quên tệp này thì máy B **chạy đúng cho tới
            lần deploy kế tiếp**, rồi lặng lẽ lùi về trần cũ. Không lỗi, không
@@ -381,17 +406,18 @@ class TestBanSaoConLai:
         goc = pathlib.Path(__file__).resolve().parents[1]
         van = (goc / "llm_gateway" / "deploy" / "deploy.ps1").read_text(
             encoding="utf-8")
-        vao = re.findall(r"LTT_LLM_MAX_INPUT_TOKENS=(\d+)", van)
-        ra = re.findall(r"LTT_LLM_MAX_OUTPUT_TOKENS=(\d+)", van)
-        assert vao, "deploy.ps1 khong con ghi LTT_LLM_MAX_INPUT_TOKENS — phep kiem nay VO"
-        for gt in vao:
-            assert int(gt) == ngan_sach.TOKEN_VAO_TRAN, (
-                f"deploy.ps1 se ghi tran vao {gt} len may B, nhung nguon chan ly "
-                f"la {ngan_sach.TOKEN_VAO_TRAN}")
-        for gt in ra:
-            assert int(gt) == ngan_sach.TOKEN_RA_TRAN, (
-                f"deploy.ps1 se ghi tran ra {gt} len may B, nhung nguon chan ly "
-                f"la {ngan_sach.TOKEN_RA_TRAN}")
+        go_tay = re.findall(
+            r"LTT_LLM_(?:MAX_INPUT_TOKENS|MAX_OUTPUT_TOKENS|DEM_UOC|MAX_DONG_THOI"
+            r"|TOKEN_POOL\w*|RPM)=\d", van)
+        assert not go_tay, f"deploy.ps1 con go tay so len may B: {go_tay}"
+        # Đối chứng: phép dò phải bắt được đúng dòng cũ.
+        assert re.findall(
+            r"LTT_LLM_(?:MAX_INPUT_TOKENS|MAX_OUTPUT_TOKENS)=\d",
+            "'LTT_LLM_MAX_INPUT_TOKENS=186368'")
+        assert "xuat_tham_so_a.py" in van, (
+            "deploy.ps1 khong con doc ngan_sach — tham so gateway.env tu dau ra?")
+        for so in (ngan_sach.TOKEN_RA_TRAN, ngan_sach.CUA_SO_MODEL):
+            assert str(so) not in van, f"deploy.ps1 chua so {so} go tay"
 
     def test_llama_swap_yaml_khop_cua_so_cua_TUNG_ho_so(self):
         """Tệp thật sự quyết định `-c` của mỗi hồ sơ trên máy B.
@@ -419,15 +445,21 @@ class TestBanSaoConLai:
                 f"llama-swap.yaml khoi dong {ho_so} voi -c {m.group(1)} nhung "
                 f"ngan_sach khai {mong}")
 
-    def test_catalog_may_B_khop_cua_so_model(self):
-        """`llm_gateway/catalog.py` công bố `max_context` ở `/v1/models` của B."""
+    def test_catalog_may_B_KHONG_con_go_cua_so(self):
+        """🔵 Phương án C bước 3 (O-16): `catalog.py` từng công bố `max_context` gõ
+        tay — bản sao thứ tư của `-c`. Nay `/v1/models` đọc `-c` từ yaml, nên
+        catalog **không được** khai lại cửa sổ; và cửa sổ B công bố == của ta."""
         import pathlib
         import re
+
+        from llm_gateway.vat_ly import doc_tep, tim_yaml
         goc = pathlib.Path(__file__).resolve().parents[1]
         van = (goc / "llm_gateway" / "catalog.py").read_text(encoding="utf-8")
-        m = re.search(r'ten="qwen38-api".*?max_context=([0-9_]+)', van, re.S)
-        assert m, "khong tim thay max_context cua qwen38-api"
-        assert int(m.group(1).replace("_", "")) == ngan_sach.CUA_SO_MODEL
+        assert not re.search(r"max_context\s*=\s*[0-9]", van), (
+            "catalog.py lai go tay cua so ngu canh")
+        vl = doc_tep(tim_yaml())
+        for m, cua_so in ngan_sach.CUA_SO_THEO_MODEL.items():
+            assert vl[m].ctx == cua_so, (m, vl[m].ctx, cua_so)
 
     def test_KHONG_con_ho_so_vision_rieng_trong_nguon_chan_ly(self):
         """🔴 KẾ THỪA BÁNH CÓC P08 F-02 — nhưng đo **sự vắng mặt** cho đúng.
@@ -1118,6 +1150,23 @@ class TestExamplesKhopNganSach:
                     assert khac not in mo_ta, (
                         f"{alias} dang quang cao {khac} — do la con so cua "
                         f"{id_khac}, khong phai cua no")
+
+    def test_canh_bao_provider_KHONG_go_so_cua_so(self):
+        """🔴 O-13 (phương án C, 17/09): `providers.py` từng mang cảnh báo hiển
+        thị *"engine có cửa sổ 131K; API public giới hạn input 96.256"* — gõ
+        01/09, sai từ 03/09, không phép kiểm nào đọc. Cửa sổ/trần vào công bố
+        THEO MODEL qua `/api/v1/models`; chuỗi hiển thị không được gõ lại số.
+        """
+        import re
+
+        from platform_core import providers
+
+        prov = providers.get("ltt_llm")
+        so = re.compile(r"\d{2,3}[.,]\d{3}|\d+\s*K\b")
+        for m in prov.models:
+            for cau in (m.capabilities or {}).get("canh_bao", []) or []:
+                assert not so.search(str(cau)), (
+                    f"{m.id}: canh bao go so cua so/tran tay: {cau!r}")
 
 
 class TestTaiLieuKhopMayChuThat:

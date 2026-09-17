@@ -78,12 +78,15 @@ ORPHAN_TIMEOUT_JOB = timedelta(seconds=300)
 
 #: Trần im lặng của `keep_alive(con_song=...)` — LỚP 2 của cơ chế nhả suất.
 #:
-#: 🔴 NGUỒN CỦA NGƯỠNG, không phải một con số chọn cho tròn:
-#:    `platform_core/llm/luong_vlm.py:mo(timeout_s=900.0)` dựng
-#:    `httpx.Client(timeout=900.0)`, và ở httpx một số vô hướng đặt **read
-#:    timeout**. Tức 900 s là khoảng lặng HỢP LỆ dài nhất có thể có giữa hai
-#:    byte đến từ máy B — im lâu hơn thì chính lượt đọc đã chết rồi. Đặt trần
-#:    thấp hơn là tự giết một lượt prefill dài đang chạy đúng.
+#: 🔴 NGUỒN CỦA NGƯỠNG, không phải một con số chọn cho tròn: nó phải ≥ MỌI read
+#:    timeout mà một cửa mở luồng tới máy B có thể dùng. Ở httpx một số vô hướng
+#:    đặt **read timeout**, tức khoảng lặng hợp lệ dài nhất giữa hai byte từ máy
+#:    B. Mặc định lớn nhất là `platform_core/llm/luong_vlm.py:mo(timeout_s=900.0)`
+#:    (cửa không truyền `timeout_s`); cửa stream `/api/v1` mở với
+#:    `runtime_noi_bo/luong.py:MO_LUONG_GIAY` = 75 s và sống qua prefill dài nhờ
+#:    nhịp 15 s của cổng B. 900 ≥ cả hai ⇒ trần này không bao giờ giết một lượt
+#:    mà chính lượt đọc còn coi là sống. (Chú thích cũ chỉ dẫn 900 như thể mọi
+#:    cửa mở với 900 — O-20, sửa 17/09/2026.)
 TRAN_IM_LANG_S = 900.0
 log = logging.getLogger(__name__)
 
@@ -297,7 +300,6 @@ def xet_va_giu(
     token_pool: int = 0,
     waiter_id: str = "",
     tuoi_cho_s: float = 0.0,
-    cho_whale_toi_da_s: float = 30.0,
     now: datetime | None = None,
 ) -> tuple[ExecutionLease | None, str]:
     """Xét theo `luat_nhan` rồi giành một slot. Trả `(lease | None, mã lý do)`.
@@ -305,8 +307,11 @@ def xet_va_giu(
     ⭐ Khi `token_pool <= 0` và không khai `lop`: ĐÚNG hành vi cũ "đếm slot" —
        mọi tool không phải model nhà (ảnh, tiếng…) không đổi gì.
     ⛔ Caller giữ quyền commit/rollback, như `acquire` luôn làm.
+    🔴 Không nhận tham số thời gian nào (whale nhường, backfill, lão hoá): chúng
+       đọc ở `tham_so_da_luot.doc()` NGAY TẠI ĐÂY, đủ cả bộ (phương án C, O-09 —
+       trước 17/09 `lao_hoa_s` không được truyền nên env của nó không có hiệu lực).
     """
-    from platform_core.llm import luat_nhan, phong_cho
+    from platform_core.llm import luat_nhan, phong_cho, tham_so_da_luot
 
     resource = resource.strip()
     if not resource or slots <= 0:
@@ -349,9 +354,10 @@ def xet_va_giu(
                         lop=lop or luat_nhan.TUONG_TAC,
                         token_dat_truoc=int(token_dat_truoc), la_whale=bool(la_whale),
                         tuoi_s=float(tuoi_cho_s))
-    px = luat_nhan.xet(yc, giu, cho, luat_nhan.ThamSo(
-        so_slot=slots, pool=int(token_pool), cho_whale_toi_da_s=cho_whale_toi_da_s,
-        residency_mo=residency_mo))
+    # Mọi tham số thời gian đọc ở đây, một lần, đủ bộ — năm cửa gọi (stream,
+    # ChatLTT, đồng bộ, job, planner) không cửa nào tự truyền một số.
+    px = luat_nhan.xet(yc, giu, cho, tham_so_da_luot.tham_so_nhan(
+        so_slot=slots, pool=int(token_pool), residency_mo=residency_mo))
     if not px.nhan:
         from platform_core.public_api import metrics
         metrics.increment(metrics.ADMISSION_REJECTED)

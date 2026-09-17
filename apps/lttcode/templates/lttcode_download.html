@@ -126,6 +126,10 @@
     transform:rotate(45deg);transition:transform var(--motion-normal)}
   .lc-faq details[open] summary::after{transform:rotate(-135deg);margin-top:-2px}
   .lc-faq p{margin:0;padding:0 16px 16px;color:var(--muted);font-size:var(--fs-body);line-height:1.7}
+  .lc-faq ul{margin:0;padding:0 16px 16px 34px;color:var(--muted);font-size:var(--fs-body);line-height:1.7}
+  .lc-faq li+li{margin-top:4px}
+  .lc-faq code{font-family:var(--mono);font-size:12px;color:var(--fg);overflow-wrap:anywhere}
+  .lc-faq h3{margin:22px 0 4px;font-size:15px;letter-spacing:-.01em}
 
   /* ── CTA cuối ─────────────────────────────────────────────────────────── */
   .lc-end{text-align:center;border:1px solid var(--line);border-radius:var(--lc-card);
@@ -268,7 +272,7 @@
       </div>
       <div>
         <b>{{ _("Chỉ kết nối tới LTT") }}</b>
-        <p>{{ _("Ứng dụng gửi yêu cầu tới máy chủ LTT Studios để gọi model và tìm web; nó không tự gửi mã của bạn tới dịch vụ bên thứ ba nào.") }}</p>
+        <p>{{ _("Ứng dụng gửi yêu cầu tới máy chủ LTT Studios để gọi model và tìm web; nó không tự gửi mã của bạn tới dịch vụ bên thứ ba nào. Ngoại lệ duy nhất bật sẵn là máy chủ MCP context7: tên thư viện và câu hỏi tra tài liệu đi tới Upstash — tắt được trong Kết nối MCP.") }}</p>
       </div>
       <div>
         <b>{{ _("Bản cập nhật được kiểm chữ ký") }}</b>
@@ -330,6 +334,70 @@
       <details>
         <summary>{{ _("Yêu cầu hệ thống") }}</summary>
         <p>{{ _("Windows 10 hoặc Windows 11 bản 64-bit (x64), có kết nối Internet và một tài khoản LTT còn credit.") }}</p>
+      </details>
+
+      {# Công cụ mở rộng từ bản 0.1.5. Nội dung đối chiếu LTTCODEAPP
+         docs/LTTCODE/SECURITY_MODEL.md S12c, S19–S23, ADR-005, sao_luu.rs và skill
+         chia-luong-song-song (references/tac-vu-nen.md). Id `faq-*` để app mở thẳng. #}
+      <h3 id="faq-cong-cu">{{ _("Công cụ mở rộng (từ bản 0.1.5)") }}</h3>
+      <details id="faq-mcp">
+        <summary>{{ _("Kết nối MCP: bật, tắt và dữ liệu nào được gửi đi") }}</summary>
+        <p>{{ _("Mở menu Công cụ › Kết nối MCP… (Ctrl+Shift+M) để thêm, bật, tắt, thử máy chủ MCP hoặc nhập cấu hình từ Claude Desktop. Lưu thay đổi thì trợ lý tự khởi động lại để áp dụng. Token và khoá bạn nhập được giữ trong Windows Credential Manager, không ghi vào tệp cấu hình.") }}</p>
+        <ul>
+          <li>{{ _("context7 bật sẵn: khi trợ lý tra tài liệu thư viện, tên thư viện và câu hỏi được gửi tới dịch vụ Context7 của Upstash. Không muốn gửi thì tắt nó trong cửa sổ này.") }}</li>
+          <li>{{ _("github chỉ chạy khi bạn đã lưu token, và chỉ có 8 công cụ đọc — không tạo, sửa hay xoá gì trên GitHub.") }}</li>
+          <li>{{ _("memory, playwright và chrome-devtools tắt sẵn; bật khi bạn cần.") }}</li>
+        </ul>
+        <p>{{ _("Máy chủ MCP bạn tự thêm là chương trình tuỳ ý chạy trên máy bạn, ngoài giới hạn workspace của trợ lý — chỉ thêm máy chủ bạn tin. Một máy chủ lỗi không làm trợ lý ngừng khởi động.") }}</p>
+      </details>
+      <details id="faq-plugin">
+        <summary>{{ _("Cài plugin") }}</summary>
+        <p>{{ _("Trang Cài đặt › Plugin liệt kê plugin đang có. Bộ cài LTTCODE không kèm npm hay pnpm, nên để cài plugin bạn cần tự cài Node.js và pnpm, chạy lệnh dưới đây với biến DSH_HOME trỏ tới thư mục dữ liệu của trợ lý, rồi khởi động lại ứng dụng.") }}</p>
+        <ul>
+          <li><code>dsh plugin --profile lttcode add &lt;{{ _("tên gói") }}&gt;</code></li>
+          <li>DSH_HOME: <code>%APPDATA%\com.lttstudios.lttcode\dsh-home</code></li>
+          <li>{{ _("Runtime đi kèm:") }} <code>%LOCALAPPDATA%\LTTCODE\sidecar</code></li>
+        </ul>
+        <p>{{ _("Plugin là mã tuỳ ý chạy ngay trong tiến trình của trợ lý và đọc được khoá LTT của máy này. Chỉ cài plugin từ nguồn bạn tin; nếu nghi ngờ, gỡ plugin và thu hồi khoá máy ở Developers › Keys.") }}</p>
+      </details>
+      <details id="faq-hooks">
+        <summary>{{ _("Hooks: chạy lệnh của bạn ở mỗi sự kiện") }}</summary>
+        <p>{{ _("Menu Công cụ › Mở tệp hooks.json mở tệp cấu hình hook (mặc định rỗng, không hook nào chạy):") }} <code>%APPDATA%\com.lttstudios.lttcode\hooks.json</code></p>
+        <p>{{ _("Tệp theo định dạng hooks của Claude Code, chỉ loại command, với 7 sự kiện: SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, Stop, SubagentStart, SubagentStop.") }}</p>
+        <ul>
+          <li>{{ _("Lệnh hook thoát với mã 2 là chặn: ví dụ PreToolUse chặn một công cụ, UserPromptSubmit chặn tin nhắn.") }}</li>
+          <li>{{ _("Hook chạy trong cùng sandbox với trợ lý nên không ghi được tệp; dùng hook để chặn hoặc thêm ngữ cảnh.") }}</li>
+          <li>{{ _("Tệp chỉ được đọc lúc khởi động: sửa xong hãy khởi động lại ứng dụng. Tệp sai JSON thì không hook nào chạy, trợ lý vẫn hoạt động.") }}</li>
+        </ul>
+      </details>
+      <details id="faq-terminal">
+        <summary>{{ _("Terminal") }}</summary>
+        <p>{{ _("Trợ lý có terminal giữ phiên shell (pwsh) sống qua nhiều lượt, chạy dưới cùng sandbox và cùng quy tắc duyệt lệnh như các lệnh khác. Ô terminal ở thanh bên là của bạn: nếu máy không khai shell mặc định nó mở cmd.exe; chọn pwsh hoặc powershell trong bộ chọn và lựa chọn được nhớ. Thư mục làm việc là workspace của phiên.") }}</p>
+        <p>{{ _("Tiến trình chạy lâu (dev server, REPL) giữ tài nguyên tới khi bạn đóng terminal. Nội dung ô terminal của bạn không được gửi cho trợ lý.") }}</p>
+      </details>
+      <details id="faq-lich-hen">
+        <summary>{{ _("Lịch hẹn không chạy") }}</summary>
+        <p>{{ _("Lịch hẹn chỉ nhắc trợ lý làm tiếp trong phiên đang mở. Nó không phải tác vụ nền: đóng ứng dụng là lịch hẹn mất và không chạy lại khi mở lần sau.") }}</p>
+      </details>
+      <details id="faq-skill">
+        <summary>{{ _("Skill và Playwright CLI") }}</summary>
+        <p>{{ _("LTTCODE kèm sẵn một bộ skill tiếng Việt. Skill bạn tự thêm trong dự án hoặc thư mục người dùng mà trùng tên sẽ được dùng thay skill đi kèm. Skill là văn bản đưa vào ngữ cảnh của trợ lý — cẩn thận với skill trong kho mã lạ.") }}</p>
+        <p>{{ _("Skill playwright-cli điều khiển trình duyệt Microsoft Edge có sẵn trên máy để mở trang, bấm, chụp màn hình, đọc console: Playwright CLI đã đi kèm, không cần npm install hay playwright install. Script của skill chỉ chạy khi trợ lý gọi lệnh, dưới cùng sandbox và quy tắc duyệt lệnh.") }}</p>
+      </details>
+      <details id="faq-song-song">
+        <summary>{{ _("Điều phối song song: agent và lệnh nền đang ở đâu") }}</summary>
+        <ul>
+          <li>{{ _("Nút lệnh nền trên thanh đầu phiên hiện khi có lệnh chạy nền; số trên nút là số lệnh đang chạy. Danh sách chỉ để xem: muốn dừng, nhắn trợ lý dừng job đó hoặc bấm Stop cả lượt.") }}</li>
+          <li>{{ _("Nút cây subagent / N cạnh tên phiên mở cây agent con: chế độ, trạng thái, token đã dùng. Chọn một dòng để mở hội thoại của agent con; con chạy tiếp được thì bạn nhắn thêm được, nút Stop chỉ dừng lượt hiện tại của nó.") }}</li>
+          <li>{{ _("Mỗi lần trợ lý chạy workflow có một khối riêng trong khung chat, mở ra thấy các pha và thành viên. Trong lúc workflow chạy, phiên cha chờ tới khi xong.") }}</li>
+        </ul>
+        <p>{{ _("Giới hạn: tối đa 3 yêu cầu tới model LTT cùng lúc tính cả agent cha (phần vượt tự xếp hàng, không phải lỗi), nên chỉ nên có tối đa 2 agent con sửa mã chạy song song. Agent con chỉ đọc/tìm chạy trên LTT-3.8, không ghi và không chạy lệnh. Agent con không xin duyệt được — bước cần duyệt do agent cha làm. Đóng ứng dụng thì lệnh nền và workflow mất; chỉ agent con chạy tiếp được còn lại để mở lại.") }}</p>
+      </details>
+      <details id="faq-sao-luu">
+        <summary>{{ _("Sao lưu phiên khi cập nhật") }}</summary>
+        <p>{{ _("Khi bản cập nhật đổi phiên bản runtime, trước lần khởi động đầu tiên ứng dụng sao lưu phiên làm việc, cài đặt, skill và preset của bạn vào thư mục backups trong DSH_HOME:") }} <code>%APPDATA%\com.lttstudios.lttcode\dsh-home\backups</code></p>
+        <p>{{ _("Chỉ giữ một bản sao lưu gần nhất; bản mới thay bản cũ.") }}</p>
+        <p>{{ _("Khoá và tệp bí mật không được chép vào bản sao lưu. Nếu đĩa thiếu chỗ hoặc sao lưu lỗi, ứng dụng ghi cảnh báo vào nhật ký và vẫn khởi động.") }}</p>
       </details>
     </div>
   </section>

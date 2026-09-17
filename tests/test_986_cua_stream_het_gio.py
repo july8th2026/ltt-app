@@ -171,8 +171,16 @@ def test_moi_nhanh_KhongMoDuocLuong_deu_duoc_HOAN_tien():
             continue
         if "KhongMoDuocLuong" not in ast.dump(xu.type):
             continue
-        # `hoan(...)` phải là lệnh đầu tiên, trước mọi `if`.
-        dau = xu.body[0]
+        # `hoan(...)` phải là lệnh đầu tiên, trước mọi `if` — TRỪ đúng một ngoại
+        # lệ có tên (phương án C bước 1, 17/09/2026): nhánh `e.ban and not
+        # hoan_khi_ban` GIỮ tiền vì lượt sắp xếp lại; `mo_co_xep_lai` hoàn ở mọi
+        # đường ra (đo bằng hành vi: `test_600`/`test_1208` "429 MAI ⇒ hold, refund").
+        than = list(xu.body)
+        if (isinstance(than[0], ast.If)
+                and "hoan_khi_ban" in ast.dump(than[0].test)
+                and isinstance(than[0].body[-1], ast.Raise)):
+            than = than[1:]
+        dau = than[0]
         assert isinstance(dau, ast.Expr) and isinstance(dau.value, ast.Call), \
             "lenh dau cua nhanh khong phai mot loi goi"
         assert "hoan" in ast.dump(dau.value.func), (
