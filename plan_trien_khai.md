@@ -32,20 +32,20 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 | Bộ quét | `node tools/golden_ui_quet.mjs --cau-hinh routes.json --ra <dir> [--khung ...]` — HTTP, ảnh toàn trang, console, request hỏng, tràn ngang, axe WCAG 2.2 AA, h1/main/lang, ô chạm, ô nhập <16px |
 
 ## Overall Progress
-89%
+90%
 
-(Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính 17/09 tối sau B1–B4 + đo lại `sau/v5`: 5 + 10 + 90%·15 + 75%·15 + 80%·20 + 97%·15 + 95%·10 + 75%·10 = 5+10+13,5+11,25+16+14,55+9,5+7,5 = **87%**. Còn: C1 chấm lại 13 họ, C2 regression ảnh + vân tay CSS, D1 L3 → gộp `main` → deploy → nghiệm thu công khai.)
+(Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính 17/09 tối sau B1–B4 + đo lại `sau/v5`: 5 + 10 + 90%·15 + 75%·15 + 80%·20 + 97%·15 + 95%·10 + 75%·10 = 5+10+13,5+11,25+16+14,55+9,5+7,5 = **87%**. Cập nhật 17/09 khuya sau C4 + V3 + chốt pha: 5 + 10 + 92%·15 + 80%·15 + 85%·20 + 97%·15 + 95%·10 + 80%·10 = 5+10+13,8+12+17+14,55+9,5+8 = **≈ 90%**. Mọi pha xây dựng ĐÓNG; nợ còn lại chuyển *Remaining UI debt* có lý do. Còn duy nhất: D1 L3 → gộp `main` → deploy → nghiệm thu công khai.)
 
 | Phase | % | Trạng thái |
 |---|---|---|
 | 0 Discovery & Tooling | 100 | ✅ |
 | 1 Baseline Audit | 100 | ✅ |
-| 2 Golden Design System | 90 | ✅ token · tiện ích · link/rỗng/chuyển động · DL-005 icon · `.chip.*` token · SPA canvas/AutoSub xám lạnh → token · ⏭ Prompt AI theme sáng riêng (nợ có lý do) |
-| 3 Shared UI Components | 75 | 🟡 `_ui` · `_icon` · `_menu_tai_khoan` · `.ui-state` · `o_chon_tep` · huy hiệu số bước chung (B1) ✅ · ⏭ SPA chưa dùng component Jinja chung (kiến trúc React riêng) |
-| 4 Critical Pages | 80 | 🟡 Error/Jobs/Billing/Auth/Workspace xong ở dev · còn: nghiệm thu trên URL công khai (cần deploy) |
+| 2 Golden Design System | 92 | ✅ token · tiện ích · link/rỗng/chuyển động · DL-005 icon · `.chip.*` token · SPA canvas/AutoSub xám lạnh → token · ⏭ Prompt AI theme sáng riêng (nợ có lý do) |
+| 3 Shared UI Components | 80 | ✅ đóng · `_app_head.html` (C4, 15 app) · `bang_trang_thai_js` · `_ui` · `_icon` · `_menu_tai_khoan` · `.ui-state` · `o_chon_tep` · huy hiệu số bước chung (B1) ✅ · ⏭ SPA chưa dùng component Jinja chung (kiến trúc React riêng) |
+| 4 Critical Pages | 85 | ✅ đóng phần xây (V3: Auth 92 · Billing 91 · Jobs 89 · Error 90) · Error/Jobs/Billing/Auth/Workspace xong ở dev · còn: nghiệm thu trên URL công khai (cần deploy) |
 | 5 Remaining Pages & Apps | 95 | ✅ Apps · VPS (màn máy/cài đặt/console) · Admin · Dev/Public — đủ 3 nhánh song song đã gộp và đo lại |
 | 6 Responsive & Accessibility | 95 | ✅ `sau/v4` 448 phép đo 4 khung: axe 0 · tràn 0 · console 0 · request hỏng 0 · h1/main 0 · còn: đo trên URL công khai |
-| 7 Visual Regression & Final QA | 75 | 🟡 `sau/v5` 448 phép đo sạch (axe 0 · tràn 0 · console 0 · hỏng 0 · h1/main 0) · Final Report ✅ · ⏳ C1 chấm lại · C2 regression ảnh · D1 L3 + deploy + công khai |
+| 7 Visual Regression & Final QA | 80 | 🟡 `sau/v7` sạch · 28 ảnh mẫu PASS · V3 chấm xong · `sau/v5` 448 phép đo sạch (axe 0 · tràn 0 · console 0 · hỏng 0 · h1/main 0) · Final Report ✅ · ⏳ C1 chấm lại · C2 regression ảnh · D1 L3 + deploy + công khai |
 
 ## Current Baseline
 
@@ -93,23 +93,23 @@ Critical flows baseline: Auth 84 · Billing 81 · Jobs 75 · Error 65 ⇒ **76**
 
 ### Điểm chấm độc lập (người chấm không xem bảng điểm cũ)
 
-| Họ | Baseline | V1 `sau/v5` | V2 `sau/v6` (sau C3) |
-|---|---|---|---|
-| Auth | 84 | 87 | **91** |
-| Billing | 81 | 83 | **89** |
-| Jobs | 75 | 83 | **88** |
-| Error | 65 | 88 | **90** |
-| Workspace | 73 | 79 | **83** |
-| Public | 76 | 80 | **84** |
-| Status | 71 | 80 | **85** |
-| Developer | 80 | 87 | **89** |
-| VPS | 77 | 85 | **87** |
-| Nexus | 70 | 82 | **87** |
-| Admin tự dựng | 73 | 81 | **85** |
-| sqladmin | 49 | 74 | **84** |
-| Apps | 69 | 76 | **79** |
+| Họ | Baseline | V1 `sau/v5` | V2 `sau/v6` (sau C3) | V3 `sau/v7` (sau C4) |
+|---|---|---|---|---|
+| Auth | 84 | 87 | **91** | **92** |
+| Billing | 81 | 83 | **89** | **91** |
+| Jobs | 75 | 83 | **88** | **89** |
+| Error | 65 | 88 | **90** | **90** |
+| Workspace | 73 | 79 | **83** | **84** |
+| Public | 76 | 80 | **84** | **86** |
+| Status | 71 | 80 | **85** | **88** |
+| Developer | 80 | 87 | **89** | **88** |
+| VPS | 77 | 85 | **87** | **86** |
+| Nexus | 70 | 82 | **87** | **86** |
+| Admin tự dựng | 73 | 81 | **85** | **84** |
+| sqladmin | 49 | 74 | **84** | **83** |
+| Apps | 69 | 76 | **79** | **80** |
 
-**V1: Overall ≈ 81,9 · Critical 85,25 → V2: Overall ≈ 86,2 · Critical 89,5.** Chưa đạt ≥ 93 / ≥ 95 / sàn 88 (dưới sàn: Workspace, Public, Status, VPS, Nexus, Admin, sqladmin, Apps). Bảng *Điểm hiện tại* bên dưới là ước lượng của người sửa — không dùng làm phán quyết.
+**V1: Overall ≈ 81,9 · Critical 85,25 → V2: Overall ≈ 86,2 · Critical 89,5 → V3: Overall ≈ 86,7 · Critical 90,5.** V2→V3 chỉ +0,5/+1 dù C4 gộp 6 nhánh ⇒ **bình nguyên**: khiếm khuyết V3 còn lại phần lớn cần build lại SPA (Apps), dữ liệu/enum từ backend, tài sản thiết kế (ảnh bìa riêng từng app, cờ `featured` gói nạp) hoặc đụng quyết định đã khoá — ngoài tầm template của vòng này. Quyết định 17/09: đóng pha, ghi nợ vòng sau (Remaining UI debt), không đẩy thêm đợt sửa trang trí. Chưa đạt ≥ 93 / ≥ 95 / sàn 88 (dưới sàn: Workspace, Public, Status, VPS, Nexus, Admin, sqladmin, Apps). Bảng *Điểm hiện tại* bên dưới là ước lượng của người sửa — không dùng làm phán quyết.
 
 ### Điểm hiện tại — 17/09 (E3 `sau/v3`: 448 phép đo 112 route × 390/768/1440/1920)
 
@@ -118,19 +118,19 @@ Máy đo toàn hệ: axe serious/critical **0** · tràn ngang **0** · console 
 
 | Họ trang | Baseline | Hiện tại | Còn thiếu gì để ≥ 93 |
 |---|---|---|---|
-| Auth | 84 | **93** | — |
-| Billing | 81 | **92** | chưa đo trên URL công khai (cần deploy) |
-| Jobs | 75 | **91** | chi tiết job còn ít ngữ cảnh đầu vào |
-| Error | 65 | **92** | OOS-01 nuốt `detail` của route |
-| Public | 76 | **88** | tài liệu dev tiếng Anh trên `/huong-dan` (OOS-09) |
-| Workspace | 73 | **88** | P2-04 emoji lẫn SVG ở rail/thẻ |
-| Status | 71 | **88** | trang kỹ thuật dày chữ |
+| Auth | 84 | **93** | — | **92** |
+| Billing | 81 | **92** | chưa đo trên URL công khai (cần deploy) | **91** |
+| Jobs | 75 | **91** | chi tiết job còn ít ngữ cảnh đầu vào | **89** |
+| Error | 65 | **92** | OOS-01 nuốt `detail` của route | **90** |
+| Public | 76 | **88** | tài liệu dev tiếng Anh trên `/huong-dan` (OOS-09) | **86** |
+| Workspace | 73 | **88** | P2-04 emoji lẫn SVG ở rail/thẻ | **84** |
+| Status | 71 | **88** | trang kỹ thuật dày chữ | **88** |
 | Developer portal | 80 | **87** | OOS-09 nội dung tiếng Anh; enum API giữ nguyên văn (cố ý) |
-| VPS | 77 | **88** | màn chi tiết/console/cài đặt KHÔNG soi được (seed không có máy VPS) — chưa có bằng chứng E3 |
-| Nexus | 70 | **89** | — |
-| Admin tự dựng | 73 | **87** | 17/09: link mặc định về token (trước: tím-xanh mặc định Chromium), số kiểu Việt ở tài chính/đơn/gói (P1-08 xong), tab API tiếng Việt, lưới chỉ số 2 cột; còn bảng dày, chữ admin chưa qua `_()` (admin chỉ tiếng Việt) |
-| sqladmin | 49 | **86** | edit/create/details/modal xoá đã override 17/09 (nút `<button name=save value=…>` giữ giao thức, E2E lưu thật); còn nhãn trường thô + OOS-07 lỗi JS gói + OOS-12 |
-| Apps | 69 | **85** | mỗi SPA vẫn một ngôn ngữ thị giác riêng; preset font thiếu glyph Việt (OOS-11) |
+| VPS | 77 | **88** | màn chi tiết/console/cài đặt KHÔNG soi được (seed không có máy VPS) — chưa có bằng chứng E3 | **86** |
+| Nexus | 70 | **89** | — | **86** |
+| Admin tự dựng | 73 | **87** | 17/09: link mặc định về token (trước: tím-xanh mặc định Chromium), số kiểu Việt ở tài chính/đơn/gói (P1-08 xong), tab API tiếng Việt, lưới chỉ số 2 cột; còn bảng dày, chữ admin chưa qua `_()` (admin chỉ tiếng Việt) | **84** |
+| sqladmin | 49 | **86** | edit/create/details/modal xoá đã override 17/09 (nút `<button name=save value=…>` giữ giao thức, E2E lưu thật); còn nhãn trường thô + OOS-07 lỗi JS gói + OOS-12 | **83** |
+| Apps | 69 | **85** | mỗi SPA vẫn một ngôn ngữ thị giác riêng; preset font thiếu glyph Việt (OOS-11) | **80** |
 
 **Overall ≈ 88,6 → ≈ 90** sau 3 nhánh song song 17/09 (Apps ≈ 87 · VPS ≈ 91 · Admin ≈ 90 · Dev/Public ≈ 89, chưa chấm lại bằng vòng ảnh đầy đủ) — trước đó ≈ 88,6 (trung bình 13 họ) · **Critical ≈ 92** (Auth 93 · Billing 92 · Jobs 91 · Error 92) · họ thấp nhất **Admin tự dựng / Apps 85**.
 ⇒ Chưa đạt Overall ≥ 93 / Critical ≥ 95 / không họ nào < 88.
@@ -438,6 +438,9 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | EV-33 | E3 | Ba nhánh song song (worktree riêng, gộp tay): `phien/golden-ui-apps` (7 commit, `test_1271`), `phien/golden-ui-vps` (2 commit, seed máy VPS 4 trạng thái, `test_1273`), `phien/golden-ui-dev` (1 commit, `_dev_tt.html`, `test_1272`; agent dừng vì hết hạn mức tuần — soát + test 910 xanh + ảnh trước khi gộp) |
 | EV-34 | E3 | `sau/v4`: 448 phép đo 4 khung sau khi gộp đủ — axe serious/critical 0, tràn 0, console 0, request hỏng 0, h1/main lệch 0; `style` render @1440 921 → **104** |
 | EV-35 | E2+E3 | `golden_ui_anh_mau.py`: 3 ảnh lệch (`home-khach` ×2, `nap@390`) đúng vùng icon DL-005 → cập nhật đúng 3 mẫu, chạy lại PASS; `test_975` cập nhật vân tay `shared_ltt_css` |
+| EV-36 | E3 | `sau/v7` sau gộp C4: 112 route × 4 khung — axe serious/critical 0 (một lỗi thật Voice@768 target-size do nút sticky `.lv-st-nut` che bộ lọc → `scroll-padding-bottom`, đo lại 0), tràn 0, console 0, hỏng 0, h1/main 0 |
+| EV-37 | E3 | V3 chấm độc lập (2 agent chỉ đọc, không xem điểm cũ, cảnh báo hiện vật ảnh toàn trang): 86,7 / 90,5 — bảng *Điểm chấm độc lập* |
+| EV-38 | E2+E3 | Lỗi chung V3 "footer trôi giữa trang ngắn": khung nhìn thật — đáy footer = chiều cao khung, main 1180, không tràn; regression 6 ảnh lệch 0,711% đúng vùng footer → cập nhật mẫu; thanh tiến độ cột phải trang chủ: `getComputedStyle` = `rgb(239,184,79)` (`--warn`), regression PASS; `test_975`/`test_1270`/`test_1282` 118 passed |
 
 ## Sai quy tắc đã ghi nhận (17/09)
 
@@ -466,7 +469,7 @@ Thứ tự theo luật 17/09 — **L3 ở cuối cùng, sau khi mọi pha dướ
 | B4 | SPA về token chung | vitest + build + trình duyệt | ✅ canvas + AutoSub: xám lạnh trần trong theme TỐI → token ấm (canvas 51, AutoSub 103; giữ màu bão hoà/alpha/fallback/định nghĩa biến/`.theme-light`); build + `build-meta` khớp; vitest 62/15; axe 0 cả hai theme × 390/1440. **Kèm lỗi thật có sẵn**: canvas theme sáng `--text-muted #737d89` 4,14:1 (đối chứng CSS HEAD cho cùng 4 lỗi) → `#5f6874` ≥4,9:1. Lần thử đầu map cả theme sáng + định nghĩa biến (đỏ thay xám sáng, biến tự tham chiếu) — phát hiện khi soát bảng, đã hoàn tác trước khi build. ⏭ Prompt AI (SPA + classic) có theme sáng riêng — nợ vòng sau. chatltt đã token (1 hex) |
 | C1 | Chấm lại 13 họ (2 agent chỉ đọc, KHÔNG xem bảng điểm cũ) | E3 | ✅ chấm xong — **điểm thấp hơn ước lượng**: Auth 87 · Billing 83 · Jobs 83 · Error 88 · Workspace 79 · Public 80 · Status 80 · Dev 87 · VPS 85 · Nexus 82 · Admin 81 · sqladmin 74 · Apps 76 ⇒ **TB ≈ 81,9 · critical 85,25**. Ước lượng trước đó (≈ 88,6 / 92) do chính người sửa chấm — BỎ. Kiểm chứng ngay 2 phát hiện: catalog ẩn danh còn emoji manifest (test DL-005 cũ bỏ sót) + ô đăng nhập ghi "Tên đăng nhập" dù nhận email → đã sửa. ⚠️ Vài phát hiện có thể là hiện vật ảnh toàn trang (sticky/khung cuộn — P1-13): phải xác minh trên khung nhìn thật trước khi sửa |
 | C3 | Đợt sửa song song theo họ (V1) | test nhắm + trình duyệt + chấm lại | ✅ 6/6 nhánh gộp (`5d31ea42`…`b057b854`), `sau/v6` 452 phép đo sạch, regression 27 ảnh lệch đều cố ý (đã soát) → cập nhật mẫu PASS; V2 = 86,2 / 89,5 |
-| C4 | **Đợt sửa song song lần 2** theo khiếm khuyết V2 (bỏ qua mục cần tài sản thiết kế/quyết định: ảnh bìa riêng từng app, nội dung OOS-09) | test nhắm + trình duyệt + chấm V3 | 🔄 |
+| C4 | **Đợt sửa song song lần 2** theo khiếm khuyết V2 (bỏ qua mục cần tài sản thiết kế/quyết định: ảnh bìa riêng từng app, nội dung OOS-09) | test nhắm + trình duyệt + chấm V3 | ✅ 6/6 nhánh gộp (`35d2b3ab` dev · `9d761651` bill · `b9246370` home · `9239734c` auth · `0e23796d` admin · `21f56e5c` apps; test `1280–1285`) + dùng chung `00f3a957` (10 icon, textarea sans) · `sau/v7` sạch + Voice@768 `scroll-padding-bottom` (`7f3b9891`) · ảnh mẫu `65b2fdb5` · V3 = 86,7 / 90,5 · sửa lỗi chung V3: footer dính đáy trang ngắn (`aee65ca4`), thanh tiến độ cột phải trang chủ cùng màu cảnh báo /jobs (`4f668369`) |
 | C2 | Đo lại toàn hệ + regression ảnh | E3 | ✅ `sau/v5` 448 phép đo: axe 0 · tràn 0 · console 0 · hỏng 0 · h1/main 0 · `style` @1440 106. Regression: `home-an-danh@1440` 6,9% / `home-khach@1440` 8,1% — do `main` thêm card app LTTCODE (vị trí 3) + nhóm menu, không phải UI; cập nhật đúng 2 mẫu → PASS. `test_975` vân tay `ltt.css` cập nhật |
 | D1 | Hết mọi pha ⇒ **L3 MỘT lần** → đỏ thì khép `--doi --tu <sha L3>` → gộp `main` → deploy phần còn lại (nếu có) → nghiệm thu → Final Report + `docs/NHAT_KY.md` | L3 | ⏳ |
 
@@ -491,11 +494,11 @@ Không deploy giữa phiên cho changeset này (A1). Nghiệm thu URL công khai
 | Business behavior preserved | ✅ | form/hx/route/`value` giữ nguyên — chốt test (billing, sqladmin `save`, upload `name/accept/required`) |
 | Gate L3 trên HEAD | ⏳ | chỉ ở bước D1 — sau khi mọi pha đóng (xem V-1) |
 | Xác minh trên URL công khai | ⏳ | sau deploy ở D1 — L1 giữa phiên bị máy từ chối vì chạm tệp dùng chung (A1) |
-| Overall ≥ 93 · critical ≥ 95 · không họ < 88 | ❌ | **≈ 88,6 · ≈ 92 · 4 họ < 88** (Dev 87, Admin 87, sqladmin 86, Apps 85) |
+| Overall ≥ 93 · critical ≥ 95 · không họ < 88 | ❌ | V3 chấm độc lập: **≈ 86,7 · 90,5 · 7 họ < 88** (Workspace 84, Public 86, VPS 86, Nexus 86, Admin 84, sqladmin 83, Apps 80) |
 
 ## Baseline score → Final score
 
-**Overall 72 → ≈ 88,6** · **Critical 76 → ≈ 92** — bảng từng họ ở mục *Điểm hiện tại — 17/09* (Current Baseline). Chấm bảo thủ: A11y/Responsive theo số đo máy (E3), còn lại theo ảnh chụp; không làm tròn lên để chạm mục tiêu.
+**Overall 72 → ≈ 86,7** · **Critical 76 → 90,5** (V3 chấm độc lập — người chấm không xem điểm cũ; ước lượng tự chấm ≈ 88,6 trước đó đã BỎ) — bảng từng họ ở *Điểm chấm độc lập* (Current Baseline). Chấm bảo thủ: A11y/Responsive theo số đo máy (E3), còn lại theo ảnh chụp; không làm tròn lên để chạm mục tiêu.
 
 ## What changed (`phien/golden-ui`, BASE `efa9188c`)
 
@@ -533,13 +536,15 @@ Không deploy giữa phiên cho changeset này (A1). Nghiệm thu URL công khai
 
 ## Remaining UI debt (vòng sau)
 
-| Hạng mục | Họ | Ghi chú |
+| Hạng mục | Họ | Vì sao chưa làm ở vòng này |
 |---|---|---|
-| P2-04 emoji lẫn SVG trong thẻ app/menu | Workspace, Apps | cần chọn MỘT bộ icon — đáng một Decision Lock |
-| Mỗi SPA một ngôn ngữ thị giác | Apps | gom về token/component chung |
-| Bảng admin dày, admin chưa qua `_()` | Admin | admin chỉ tiếng Việt — ưu tiên thấp |
-| Màn máy VPS (chi tiết/cài đặt/console) chưa soi | VPS | seed máy chủ soi chưa có máy VPS |
-| Nhãn trường sqladmin thô | sqladmin | `server/admin.py` (OOS-12) |
+| Mỗi SPA React một ngôn ngữ thị giác, chưa dùng component chung | Apps (80) | cần build lại 4 SPA + thiết kế component React — một vòng riêng |
+| Ảnh bìa riêng từng app, minh hoạ workspace | Workspace (84), Public (86) | tài sản thiết kế chưa có |
+| Gói nạp nổi bật | Billing | cần cờ `featured` từ dữ liệu gói (quyết định sản phẩm) |
+| Enum/chuỗi thô từ dữ liệu backend (nhãn trường, `progress_msg`) | Admin (84), sqladmin (83), Nexus (86) | nguồn dữ liệu, không phải template; `password_hash` = OOS-12 |
+| Prompt AI (SPA + classic) theme sáng riêng `--o-*` | Apps | token Golden chỉ có bản tối — thay sẽ hỏng theme sáng |
+| Nội dung tài liệu dev tiếng Anh | Developer (88) | OOS-09 (`examples.py`) |
+| Màn máy VPS: chi tiết mạng/băng thông | VPS (86) | dữ liệu seed hạn chế; phần hiển thị đã soát 4 trạng thái |
 
 ## Out-of-scope issues (chi tiết ở mục Out-of-Scope Findings)
 
