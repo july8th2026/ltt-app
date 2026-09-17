@@ -117,8 +117,10 @@ def test_quality_lab_ui_exposes_paired_inputs_without_release_claim():
 
     page = Path("apps/qualitylab/templates/qualitylab.html").read_text(encoding="utf-8")
     registry = Path("apps/qualitylab/registry.py").read_text(encoding="utf-8")
-    assert 'name="reference_file"' in page
-    assert 'name="low_input_file"' in page
+    # Upload đi qua macro dùng chung `o_chon_tep(id, name, ...)` (Golden UI) —
+    # tên trường gửi lên là đối số thứ hai, không còn `name="..."` trần.
+    assert '"ql-reference", "reference_file"' in page
+    assert '"ql-low", "low_input_file"' in page
     assert "upscale_paired_diagnostic" in registry
     assert "chưa human-calibrated" in registry
 

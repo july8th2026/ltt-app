@@ -1,60 +1,82 @@
 {% extends "base.html" %}
-{% block title %}Tình trạng hệ thống — LTT AI Studio{% endblock %}
-{% block topbar_title %}<strong>Tình trạng hệ thống</strong>{% endblock %}
+{% block title %}{{ _("Tình trạng hệ thống") }} — LTT AI Studio{% endblock %}
 {% block content %}
+  <div class="pagehead"><div><h1>{{ _("Tình trạng hệ thống") }}</h1>
+    <p class="page-sub">{{ _("Kiểm tra cấu hình và dịch vụ phụ thuộc của nền tảng.") }}</p></div>
+    {#- Golden UI C3: bỏ ô "Kiểm tra cả Google Sheet" — route đã bỏ tham số
+        `check_sheet` từ 25/08 (xem server/routes/status.py), ô đó không làm gì.
+        Golden UI C4: nút gắn vào tiêu đề trang, là nút phụ (không đỏ lơ lửng). -#}
+    <form method="get" action="/status" class="status-recheck">
+      <button class="btn ghost" type="submit">{{ _("Kiểm tra lại") }}</button>
+    </form></div>
   
   {% if blockers %}
     <div class="alert alert-err" role="alert">
-      <strong>Hệ thống có {{ blockers|length }} lỗi chặn</strong>
-      <ul style="margin-bottom:0;">
+      <strong>{{ _("Hệ thống có %(so)s lỗi chặn", so=blockers|length) }}</strong>
+      <ul class="status-list">
         {% for b in blockers %}<li>{{ b.check }}</li>{% endfor %}
       </ul>
     </div>
   {% else %}
     <div class="alert alert-ok" role="status">
-      <strong>Không có lỗi chặn</strong>
+      <strong>{{ _("Không có lỗi chặn") }}</strong>
     </div>
   {% endif %}
 
+  {#- Golden UI C3: nhãn trạng thái bằng CHỮ (badge) thay ký hiệu ✓/!/×; chi tiết
+      dạng `khoa=gia_tri` mỗi dòng hiện thành danh sách có nhãn. Dữ liệu giữ
+      nguyên — dòng nào không theo dạng đó thì cả khối rơi về <pre> như cũ. -#}
+  {%- set _nhan_moi_truong = {'profile': _('Hồ sơ môi trường'), 'data': _('Thư mục dữ liệu'), 'logs': _('Thư mục nhật ký')} %}
+  {#- Golden UI C4: giá trị hồ sơ có nhãn Việt, giá trị gốc giữ bên cạnh. -#}
+  {%- set _nhan_ho_so = {'development': _('Phát triển'), 'production': _('Chính thức'), 'staging': _('Thử nghiệm'), 'test': _('Kiểm thử')} %}
   {% for s in sections %}
+    {%- set _tt = {'blocker': (_('Lỗi chặn'), 'err'), 'warning': (_('Cảnh báo'), 'warn')}.get(s.status, (_('Đạt'), 'ok')) %}
     <div class="card status-check status-{{ s.status }}">
-      <strong><span aria-hidden="true">{% if s.status == 'blocker' %}×{% elif s.status == 'warning' %}!{% else %}✓{% endif %}</span> {{ s.check }}</strong>
-      {% if s.detail %}<pre>{{ s.detail }}</pre>{% endif %}
-      {% if s.fix %}<p class="status-fix">Cách sửa: {{ s.fix }}</p>{% endif %}
+      <div class="status-check-dau"><strong>{{ s.check }}</strong>
+        <span class="badge b-{{ _tt[1] }}"><span class="dot" aria-hidden="true"></span>{{ _tt[0] }}</span></div>
+      {%- set _dong = (s.detail or '').splitlines() %}
+      {%- set ns = namespace(kv=_dong|length > 0) %}
+      {%- for d in _dong %}{% if '=' not in d %}{% set ns.kv = false %}{% endif %}{% endfor %}
+      {% if ns.kv %}
+        <dl class="status-kv">
+          {% for d in _dong %}{% set k, v = d.split('=', 1) %}
+          <div><dt>{{ _nhan_moi_truong.get(k.strip(), k.strip()) }}</dt><dd>{% if k.strip() == 'profile' and v.strip() in _nhan_ho_so %}<span class="status-kv-nhan">{{ _nhan_ho_so[v.strip()] }}</span> {% endif %}<code>{{ v.strip() }}</code></dd></div>
+          {% endfor %}
+        </dl>
+      {% elif s.detail %}<pre tabindex="0">{{ s.detail }}</pre>{% endif %}
+      {% if s.fix %}<p class="status-fix">{{ _("Cách sửa:") }} {{ s.fix }}</p>{% endif %}
     </div>
   {% endfor %}
 
-  <form method="get" action="/status" style="max-width:none; flex-direction:row; gap:10px; align-items:center;">
-    <button class="btn" type="submit">Kiểm tra lại</button>
-    <label class="check muted">
-      <input type="checkbox" name="check_sheet" value="1" {% if checked_sheet %}checked{% endif %}
-             style="width:auto;"> Kiểm tra cả Google Sheet (chậm hơn)
-    </label>
-  </form>
 
   {% if nexus %}
-    <div class="appcard" style="margin:14px 0">
-      <h3 style="margin:0 0 8px">LTT Nexus</h3>
+    <section class="ui-card status-nexus" aria-labelledby="status-nexus-title">
+      <div class="status-check-dau"><h2 id="status-nexus-title">LTT Nexus</h2>
+        {%- if nexus.loi %}<span class="badge b-err"><span class="dot" aria-hidden="true"></span>{{ _("Không đọc được số liệu") }}</span>
+        {%- elif nexus.may is defined and nexus.may == 0 %}<span class="badge b-grey status-trung-tinh"><span class="dot" aria-hidden="true"></span>{{ _("Chưa có máy nào ghép") }}</span>
+        {%- elif nexus.may is defined and nexus.online > 0 %}<span class="badge b-ok"><span class="dot" aria-hidden="true"></span>{{ _("Có máy đang bật") }}</span>
+        {%- elif nexus.may is defined %}<span class="badge b-warn"><span class="dot" aria-hidden="true"></span>{{ _("Không máy nào đang bật") }}</span>
+        {%- endif %}</div>
       {% if nexus.loi %}
-        <p class="dim" style="margin:0">Khong doc duoc so lieu: {{ nexus.loi }}</p>
+        <p class="dim">{{ _("Không đọc được số liệu:") }} {{ nexus.loi }}</p>
       {% endif %}
       {% if nexus.may is defined %}
-      <div style="display:flex;gap:18px;flex-wrap:wrap">
-        <div><b style="font-size:20px">{{ nexus.may }}</b><div class="dim" style="font-size:12px">may da ghep</div></div>
-        <div><b style="font-size:20px">{{ nexus.online }}</b><div class="dim" style="font-size:12px">dang bat</div></div>
-        <div><b style="font-size:20px">{{ nexus.phien }}</b><div class="dim" style="font-size:12px">phien</div></div>
-        <div><b style="font-size:20px">{{ nexus.thu_hoi }}</b><div class="dim" style="font-size:12px">da thu hoi</div></div>
+      <div class="status-stats">
+        <div><b class="tnum">{{ nexus.may }}</b><span>{{ _("máy đã ghép") }}</span></div>
+        <div><b class="tnum">{{ nexus.online }}</b><span>{{ _("đang bật") }}</span></div>
+        <div><b class="tnum">{{ nexus.phien }}</b><span>{{ _("phiên") }}</span></div>
+        <div><b class="tnum">{{ nexus.thu_hoi }}</b><span>{{ _("đã thu hồi") }}</span></div>
         {% if nexus.gia_thang > 0 %}
-        <div><b style="font-size:20px;color:{{ "#c2453f" if nexus.chua_tra else "inherit" }}">{{ nexus.chua_tra }}</b><div class="dim" style="font-size:12px">chua tra phi</div></div>
-        <div><b style="font-size:20px">{{ nexus.gia_thang }}</b><div class="dim" style="font-size:12px">credit/may/thang</div></div>
+        <div{% if nexus.chua_tra %} class="is-warn"{% endif %}><b class="tnum">{{ nexus.chua_tra }}</b><span>{{ _("chưa trả phí") }}</span></div>
+        <div><b class="tnum">{{ nexus.gia_thang }}</b><span>{{ _("credit/máy/tháng") }}</span></div>
         {% endif %}
       </div>
       {% if nexus.dem_24h %}
-        <p class="dim" style="margin:10px 0 0;font-size:12.5px">24h:
+        <p class="dim status-24h">24h:
         {% for k, v in nexus.dem_24h.items() %}<code>{{ k }}={{ v }}</code>{% if not loop.last %} · {% endif %}{% endfor %}</p>
       {% endif %}
       {% endif %}
-    </div>
+    </section>
   {% endif %}
 
 {% endblock %}

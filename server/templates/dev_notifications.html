@@ -1,4 +1,5 @@
 {% extends "developers_base.html" %}
+{% block dev_phu_de %}{{ _("Cảnh báo về số dư, ngân sách, khóa và webhook của khu API.") }}{% endblock %}
 {% block section %}
 
 <div class="card">
@@ -8,11 +9,11 @@
       <p>{{ _("Cảnh báo xuất hiện ở đây khi số dư xuống thấp, ngân sách chạm ngưỡng, khóa sắp hết hạn hoặc webhook bỏ cuộc. Không có gì ở đây là một tin tốt.") }}</p>
     </div>
   {% else %}
-    <form method="post" action="/developers/notifications/read">
+    <form method="post" action="/developers/notifications/read" class="u-mb12">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <button type="submit" class="btn">{{ _("Đánh dấu đã đọc") }}</button>
     </form>
-    <div class="dev-bang">
+    <div class="dev-bang" tabindex="0">
       <table class="table">
         <thead><tr>
           <th scope="col">{{ _("Lúc") }}</th><th scope="col">{{ _("Việc") }}</th><th scope="col">{{ _("Chi tiết") }}</th>

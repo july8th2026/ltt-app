@@ -1,10 +1,11 @@
 {% extends "vps_base.html" %}
+{% import "_icon.html" as ic %}
 {# `with context`: macro dung `_()` va cac bien cua trang. Thieu no thi
    moi chuoi ben trong macro ra tieng Viet tren ban EN — va khong phep kiem
    `.po` nao bat duoc, vi chuoi CO trong catalog va DA dich. #}
 {% import "_vps_mac.html" as mac with context %}
 {% block title %}{{ _(app.display_name) }} — LTT AI Studio{% endblock %}
-{% block topbar_title %}<strong>{{ app.icon }} {{ _(app.display_name) }}</strong>{% endblock %}
+{% block topbar_title %}<strong>{{ ic.icon_app(app.icon) }} {{ _(app.display_name) }}</strong>{% endblock %}
 {% block noi_dung %}
 
 {# ── Thẻ gói ───────────────────────────────────────────────────────────────
@@ -91,7 +92,7 @@
    ⚠️ **TOÀN VĂN LÀ RÀNG BUỘC.** `test_298` đối chiếu **từng con số** ở đây với
       hằng số thật trong mã. Đợt 2 chỉ đổi CÁCH BÀY (một dòng dọc → lưới hai
       cột), không đổi một chữ nào — và tuyệt đối không rút gọn để trang gọn hơn. #}
-<div class="alert alert-warn" style="margin:0 0 16px;">
+<div class="alert alert-warn u-mb16">
   <strong>{{ _("Đọc trước khi thuê") }}</strong>
   <ul class="vps-doc-truoc">
     <li><span class="ico" aria-hidden="true">•</span><span>{{ _("Dịch vụ chạy theo chế độ best effort — chúng tôi không cam kết thời gian hoạt động. Máy chủ có thể khởi động lại để bảo trì.") }}</span></li>
@@ -123,10 +124,10 @@
   {# `<h1>` DUY NHAT cua trang. Truoc 25/08 trang khong co cai nao: nhay thang
      tu thanh tieu de xuong hai `<h2>`. Do la loi cau truc, khong phai loi kieu
      dang — mot trang khong co `h1` la mot trang khong noi duoc no ve cai gi. #}
-  <h1 class="sr-title" style="font-size:1.35rem;margin:0 0 14px;">
+  <h1 class="sr-title vps-h1">
     {{ _("Máy chủ ảo Windows, trả bằng credit") }}</h1>
 
-  {% if loi %}<div class="alert alert-err" style="margin:0 0 12px;">{{ loi }}</div>{% endif %}
+  {% if loi %}<div class="alert alert-err u-mb12">{{ loi }}</div>{% endif %}
 
   {% if not da_dang_nhap %}
   {# ══ MÀN A · STOREFRONT CÔNG KHAI (Đợt 2) ═══════════════════════════════
@@ -148,10 +149,10 @@
   {% set re_nhat = goi | map(attribute="plan") | map(attribute="gia_thang_vnd") | min %}
 
   <div class="card">
-    <div class="card-accent" style="background:{{ app.accent }};"></div>
+    <div class="card-accent card-accent--khu" aria-hidden="true"></div>
     <div class="vps-hero">
       <div class="vps-hero-chu">
-        <h2 style="margin-top:0;">{{ _("Thuê một máy Windows trong khoảng 20 giây") }}</h2>
+        <h2 class="u-mt0">{{ _("Thuê một máy Windows trong khoảng 20 giây") }}</h2>
         <p>
           {{ _("Mỗi máy có một địa chỉ IP riêng ở Singapore, dùng được mọi cổng. Bạn vào máy bằng Remote Desktop như một máy Windows bình thường, hoặc bằng console ngay trong trình duyệt khi cần cứu hộ.") }}
         </p>
@@ -167,15 +168,14 @@
           <b>{{ re_nhat | tien_vnd }}</b>
           <span class="nhan">/ {{ _("30 ngày") }}</span>
         </p>
-        <p style="margin:16px 0 0;">
+        <p class="vps-mt16">
           {# Nút CHÍNH là "Tạo tài khoản": người đang đọc trang này phần lớn
              CHƯA có tài khoản. Trước 25/08 nút chính là "Đăng nhập" — mời một
              người chưa có tài khoản đi đăng nhập. #}
           <a class="btn btn-goi" href="/register">{{ _("Tạo tài khoản để thuê máy") }}</a>
-          <a class="btn btn-ghost" href="/login?next={{ app.route_prefix }}"
-             style="margin-left:8px;">{{ _("Tôi đã có tài khoản") }}</a>
+          <a class="btn btn-ghost vps-ml8" href="/login?next={{ app.route_prefix }}">{{ _("Tôi đã có tài khoản") }}</a>
         </p>
-        <p class="muted" style="margin:10px 0 0;font-size:.9em;">
+        <p class="muted u-mt10 vps-chu-nho">
           {{ _("Đọc") }}
           <a href="{{ app.route_prefix }}/dieu-khoan" target="_blank" rel="noopener">{{ _("Điều khoản LTT VPS") }}</a>
           {{ _("trước khi thuê — nó nói rõ những gì dịch vụ này KHÔNG cam kết.") }}
@@ -245,8 +245,8 @@
         nói thứ dịch vụ **không** hứa. Đừng trộn hai loại đó — trộn rồi thì một
         trong hai sẽ bị đọc lướt. #}
   <div class="vps-ban">
-    <div class="card" style="margin:0;">
-      <h2 style="margin-top:0;">{{ _("Bảng giá") }}</h2>
+    <div class="card u-m0">
+      <h2 class="u-mt0">{{ _("Bảng giá") }}</h2>
       <div class="goi-luoi">
         {% for g in goi %}
           {{ the_goi(g, goi | selectattr("con_cho") | selectattr("os")
@@ -254,8 +254,8 @@
         {% endfor %}
       </div>
       <details>
-        <summary class="muted" style="cursor:pointer;font-size:.9em;">{{ _("So sánh ba gói") }}</summary>
-        <table class="tbl" style="width:100%;margin-top:10px;">
+        <summary class="muted vps-tom-tat">{{ _("So sánh ba gói") }}</summary>
+        <table class="tbl vps-bang-so-sanh">
           <thead><tr>
             <th scope="col">{{ _("Gói") }}</th>
             <th scope="col">{{ _("Cấu hình máy") }}</th>
@@ -265,7 +265,7 @@
           <tbody>
             {% for g in goi %}
             <tr>
-              <th scope="row" style="font-weight:600;text-align:left;">{{ _(g.plan.ten) }}</th>
+              <th scope="row">{{ _(g.plan.ten) }}</th>
               <td>{{ g.plan.vcpu }} vCPU · {{ (g.plan.ram_mb / 1024) | int }} GB RAM
                   · {{ g.plan.disk_gb }} GB</td>
               <td>{{ g.plan.bang_thong_gb }} GB</td>
@@ -299,7 +299,7 @@
   {# CTA cuối: người đọc hết sáu dòng hạn chế mà vẫn còn ở đây là người sẵn
      sàng nhất trên trang này — và trước Đợt 2 họ phải cuộn ngược lên đầu để
      tìm một cái nút. #}
-  <div class="vps-cta" style="margin:0 0 16px;">
+  <div class="vps-cta u-mb16">
     <div>
       <h2>{{ _("Sẵn sàng bắt đầu?") }}</h2>
       <p>{{ _("Tạo tài khoản, nạp credit, rồi tạo máy. Không hợp đồng, không phí khởi tạo.") }}</p>
@@ -317,7 +317,7 @@
      hiện ra tên biến môi trường nội bộ và cả chữ "Proxmox", thứ mà chính
      `services/proxmox.py` nói khách không bao giờ được thấy. Xem `_suc_chua`. #}
   {% if loi_ha_tang %}
-    <div class="alert alert-err" style="margin:0 0 16px;">{{ loi_ha_tang }}</div>
+    <div class="alert alert-err u-mb16">{{ loi_ha_tang }}</div>
   {% endif %}
 
 
@@ -333,7 +333,7 @@
   {# Bốn ô để QUÉT, không phải để đọc: số to, nhãn nhỏ. Đếm ở `routes._thong_ke`
      chứ không trong Jinja — một vòng lặp đếm trong template là logic không test
      được, và bốn con số này là thứ khách nhìn đầu tiên. #}
-  <ul class="chi-so-luoi" style="list-style:none;padding:0;">
+  <ul class="chi-so-luoi vps-chi-so-ds">
     <li class="chi-so">
       <span class="chi-so-nhan">{{ _("Tổng số máy") }}</span>
       <span class="chi-so-gt">{{ thong_ke.tong }}</span></li>
@@ -357,14 +357,19 @@
 
   <div class="vps-nha">
     <div>
-      <h2 style="margin:0 0 10px;font-size:1.05rem;">{{ _("Máy của tôi") }}</h2>
+      <h2 class="vps-h2">{{ _("Máy của tôi") }}</h2>
 
       {% if not may_cua_toi %}
       {# Trạng thái rỗng: một lời mời, không phải một bảng trống. Người vừa tạo
          tài khoản xong mà thấy "Chưa có gì" thì không biết bước tiếp là gì. #}
       <div class="vps-rong">
         <h3>{{ _("Bạn chưa có máy nào") }}</h3>
+        {% if goi_ban_duoc and suc_chua %}
         <p>{{ _("Chọn một gói ở bên và bấm “Tạo máy”. Máy sẵn sàng trong khoảng 20 giây, rồi bạn tự cài Windows qua console.") }}</p>
+        {% else %}
+        {# Đang không nhận máy mới: đừng mời bấm một nút không có trên trang. #}
+        <p>{{ _("Hiện chưa nhận máy mới. Khi mở lại, bạn chọn gói ở bảng giá và bấm “Tạo máy”.") }}</p>
+        {% endif %}
       </div>
       {% else %}
 
@@ -380,7 +385,7 @@
             {# Địa chỉ là thứ khách tới trang này để lấy — nên nó đứng ngay dưới
                tên, có nút chép, và KHÔNG bị chôn trong một cột thứ tư. #}
             {{ mac.o_sao_chep(_("Địa chỉ"), m.dia_chi) }}
-            <div class="vps-may-phu" style="margin-top:6px;">
+            <div class="vps-may-phu vps-mt6">
               {{ _(m.plan.ten) if m.plan else m.may.plan_id }} ·
               {% if m.plan %}{{ m.plan.vcpu }} vCPU · {{ (m.plan.ram_mb / 1024) | int }} GB RAM ·
               {{ m.plan.disk_gb }} GB{% endif %}<br>
@@ -391,21 +396,21 @@
                **không** đổi ngay khi bấm (ADR-03), nên nếu chỗ này im thì thẻ
                máy trông y hệt lúc chưa bấm. #}
             {% if m.viec %}
-            <p class="muted" style="margin:6px 0 0;font-size:12px;">
+            <p class="muted u-mt6 u-fs12">
               <b>{{ _(m.viec.loai) }}…</b>{% if m.viec.buoc %} {{ _(m.viec.buoc) }}{% endif %}
             </p>
             {% elif m.may.ly_do %}
-            <p class="muted" style="margin:6px 0 0;font-size:12px;">{{ m.may.ly_do }}</p>
+            <p class="muted u-mt6 u-fs12">{{ m.may.ly_do }}</p>
             {% elif m.buoc_tiep %}
             {# Nhãn trạng thái nói máy đang ở đâu; câu này nói khách phải làm gì
                tiếp. `bi_treo` là ví dụ rõ nhất — "Bị tạm dừng" không cho biết
                dữ liệu còn hay mất. Nguồn: `apps/vps/nhan.py:BUOC_TIEP`. #}
-            <p class="muted" style="margin:6px 0 0;font-size:12px;">{{ _(m.buoc_tiep) }}</p>
+            <p class="muted u-mt6 u-fs12">{{ _(m.buoc_tiep) }}</p>
             {% endif %}
           </div>
 
           <div class="vps-may-phu">
-            <div style="margin:0 0 8px;">
+            <div class="vps-mb8">
               <span class="vps-doi-nhan">{{ _("Băng thông chu kỳ này") }}</span>
               {{ mac.do_bang_thong(m.bang_thong) }}
             </div>
@@ -423,8 +428,7 @@
             {% if m.may.trang_thai in ("dang_chay", "da_tat") %}
             <a class="btn btn-ghost" href="{{ app.route_prefix }}/{{ m.may.id }}/console">{{ _("Console") }}</a>
             {% else %}
-            <span class="btn btn-ghost" aria-disabled="true"
-                  style="opacity:.45;cursor:not-allowed;text-align:center;"
+            <span class="btn btn-ghost vps-nut-khoa" aria-disabled="true"
                   title="{{ _('Máy phải đang chạy hoặc đã tắt thì mới mở được console.') }}">{{ _("Console") }}</span>
             {% endif %}
           </div>
@@ -432,6 +436,17 @@
         {% endfor %}
       </div>
       {% endif %}
+
+      {# Chủ máy đã đồng ý sáu dòng này một lần, lúc bấm "Tạo máy". Đặt chúng ở đầu
+         trang của người đang muốn xem máy mình là bắt họ đọc lại mỗi ngày một thứ họ
+         đã quyết. Nhưng KHÔNG bỏ hẳn: chúng vẫn là thứ trả lời "vì sao máy tôi chậm"
+         và "ảnh chụp có phải sao lưu không". Gấp lại, mở được.
+         C4 (Golden UI): nằm CUỐI CỘT TRÁI, ngay dưới thẻ máy — đặt dưới cả lưới thì
+         nó rơi xuống sau cột bảng giá cao hơn, để lại một khoảng trống lớn. #}
+      <details class="vps-can-biet">
+        <summary class="muted vps-tom-tat">{{ _("Điều cần biết về dịch vụ") }}</summary>
+        <div class="vps-mt10">{{ doc_truoc() }}</div>
+      </details>
     </div>
 
     <div>
@@ -467,8 +482,8 @@
      về giá, dù nó chỉ tình cờ đứng dưới. Cả hai gọi cùng macro `the_goi`, nên
      con số vẫn là một nguồn. #}
   {% set ban_duoc = da_dang_nhap and goi_ban_duoc and suc_chua %}
-  <div class="card" style="margin:0;">
-    <div class="card-accent" style="background:{{ app.accent }};"></div>
+  <div class="card u-m0">
+    <div class="card-accent card-accent--khu" aria-hidden="true"></div>
     <h2>{{ _("Tạo máy mới") if ban_duoc else _("Bảng giá") }}</h2>
 
     {% if not ban_duoc %}
@@ -489,8 +504,8 @@
     </div>
 
     <details>
-      <summary class="muted" style="cursor:pointer;font-size:.9em;">{{ _("So sánh ba gói") }}</summary>
-      <table class="tbl" style="width:100%;margin-top:10px;">
+      <summary class="muted vps-tom-tat">{{ _("So sánh ba gói") }}</summary>
+      <table class="tbl vps-bang-so-sanh">
         <thead><tr>
           <th scope="col">{{ _("Gói") }}</th>
           <th scope="col">{{ _("Cấu hình máy") }}</th>
@@ -500,7 +515,7 @@
         <tbody>
           {% for g in goi %}
           <tr>
-            <th scope="row" style="font-weight:600;text-align:left;">{{ _(g.plan.ten) }}</th>
+            <th scope="row">{{ _(g.plan.ten) }}</th>
             <td>{{ g.plan.vcpu }} vCPU · {{ (g.plan.ram_mb / 1024) | int }} GB RAM
                 · {{ g.plan.disk_gb }} GB</td>
             <td>{{ g.plan.bang_thong_gb }} GB</td>
@@ -514,7 +529,7 @@
 
     {% else %}
     <form method="post" action="{{ app.route_prefix }}/tao" id="vps-tao"
-          style="max-width:none;">
+          class="vps-form-rong">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       {% if vung %}<input type="hidden" name="vung" value="{{ vung[0][0] }}">{% endif %}
 
@@ -537,7 +552,7 @@
             {% endfor %}
           </div>
 
-          <div class="vps-chang" style="margin-top:18px;">
+          <div class="vps-chang u-mt18">
             <span class="so" aria-hidden="true">2</span>
             <h3>{{ _("Chọn hệ điều hành") }}</h3></div>
           <p class="vps-chang-mo-ta">{{ _("Đĩa cài được gắn sẵn; bạn tự chạy trình cài đặt. Cài lại được bất cứ lúc nào.") }}</p>
@@ -550,13 +565,13 @@
             <input type="radio" name="os_id" value="{{ o.id }}"
                    {% if loop.first %}checked{% endif %}>
             {{ _(o.ten) }}
-            {% if o.ghi_chu %}<br><span class="muted" style="font-size:.9em;">{{ _(o.ghi_chu) }}</span>{% endif %}
+            {% if o.ghi_chu %}<br><span class="muted vps-chu-nho">{{ _(o.ghi_chu) }}</span>{% endif %}
           </label>
           {% endfor %}
         </div>
 
         {# ── Chặng 3 · Tên máy + tóm tắt tiền ───────────────────────────── #}
-          <div class="vps-chang" style="margin-top:18px;">
+          <div class="vps-chang u-mt18">
             <span class="so" aria-hidden="true">3</span>
             <h3>{{ _("Đặt tên và xác nhận") }}</h3></div>
           <p class="vps-chang-mo-ta">{{ _("Tên chỉ để bạn nhận ra máy trong danh sách. Đổi được bất cứ lúc nào.") }}</p>
@@ -569,19 +584,19 @@
                 rỗng và nhánh thật đang chạy là `may.id[:8]` — tức để xoá máy,
                 khách phải chép tay một chuỗi hex 8 ký tự. Chép–dán không có
                 khoảnh khắc dừng lại mà rào chắn đó dựa vào. #}
-          <div class="field" style="margin:0 0 12px;">
+          <div class="field u-mb12">
             <label for="vps-ten">{{ _("Tên máy") }}</label>
             <input class="inp" id="vps-ten" name="ten" type="text"
                    maxlength="40" autocomplete="off"
                    placeholder="{{ ten_goi_y }}"
                    aria-describedby="vps-ten-gt">
-            <p id="vps-ten-gt" class="muted" style="margin:4px 0 0;font-size:.85em;">
+            <p id="vps-ten-gt" class="muted vps-mt4 vps-chu-85">
               {{ _("Bỏ trống thì chúng tôi đặt là “%(ten)s”.") % {"ten": ten_goi_y} }}
             </p>
           </div>
 
-          <div class="card" style="margin:0;">
-            <h3 style="margin-top:0;">{{ _("Tóm tắt") }}</h3>
+          <div class="card u-m0">
+            <h3 class="u-mt0">{{ _("Tóm tắt") }}</h3>
             {# Các Ô có viền, không phải bảng hai cột chữ nhỏ đều nhau.
                Trước 25/08 `SẼ TRỪ 1.490 credit` trông ngang hàng với
                `BĂNG THÔNG 300 GB` — một cái là SỐ TIỀN, cái kia là thông số.
@@ -602,23 +617,21 @@
               <dd><strong id="tt-gia">—</strong> credit
                   <small class="muted">/ {{ _("30 ngày") }}</small></dd>
               {% if so_du is not none %}
-              <p class="muted" style="margin:6px 0 0;font-size:.85em;">
+              <p class="muted u-mt6 vps-chu-85">
                 {{ _("Số dư") }} {{ so_du | so }} ·
                 {{ _("Còn lại") }} <span id="tt-conlai" data-sodu="{{ so_du }}">—</span>
               </p>
               {% endif %}
             </div>
 
-            <p id="tt-thieu" class="alert-err" style="display:none;padding:6px 10px;
-               border-radius:4px;margin:10px 0 0;">
+            <p id="tt-thieu" class="alert-err vps-thieu" hidden>
               {{ _("Không đủ credit.") }} <a href="/nap">{{ _("Nạp thêm") }}</a>
             </p>
 
-            <button type="submit" id="tt-nut" style="background:{{ app.accent }};
-                    width:100%;margin-top:12px;">{{ _("Tạo máy") }}</button>
+            <button type="submit" id="tt-nut" class="btn-goi vps-tao-may">{{ _("Tạo máy") }}</button>
             {# Clickwrap: bam la dong y. Dat NGAY duoi nut, khong o chan trang —
                mot lien ket dieu khoan o cuoi trang la mot lien ket khong ai bam. #}
-            <p class="muted" style="margin:8px 0 0;font-size:.85em;">
+            <p class="muted vps-mt8 vps-chu-85">
               {{ _("Bấm “Tạo máy” là bạn đồng ý với") }}
               <a href="{{ app.route_prefix }}/dieu-khoan" target="_blank" rel="noopener">{{ _("Điều khoản LTT VPS") }}</a>.
             </p>
@@ -670,11 +683,11 @@
           var soDu = parseInt(oConLai.dataset.sodu, 10) || 0;
           var conLai = soDu - gia;
           oConLai.textContent = conLai.toLocaleString('vi-VN') + ' credit';
-          oConLai.style.color = conLai < 0 ? '#c92a2a' : '';
+          oConLai.style.color = conLai < 0 ? 'var(--status-danger)' : '';
           // KHONG khoa nut khi thieu credit: may chu van tu choi va tra ve mot
           // cau ro rang. Khoa o day thi khach thieu mot credit se thay mot nut
           // chet ma khong biet vi sao.
-          $('tt-thieu').style.display = conLai < 0 ? '' : 'none';
+          $('tt-thieu').hidden = conLai >= 0;
         }
       }
 
@@ -686,14 +699,6 @@
   </div>
     </div>{# cột phải của .vps-nha #}
   </div>{# .vps-nha #}
-  {# Chủ máy đã đồng ý sáu dòng này một lần, lúc bấm "Tạo máy". Đặt chúng ở đầu
-     trang của người đang muốn xem máy mình là bắt họ đọc lại mỗi ngày một thứ họ
-     đã quyết. Nhưng KHÔNG bỏ hẳn: chúng vẫn là thứ trả lời "vì sao máy tôi chậm"
-     và "ảnh chụp có phải sao lưu không". Gấp lại, ở cuối, mở được. #}
-  <details style="margin:0 0 16px;">
-    <summary class="muted" style="cursor:pointer;font-size:.9em;">{{ _("Điều cần biết về dịch vụ") }}</summary>
-    <div style="margin-top:10px;">{{ doc_truoc() }}</div>
-  </details>
   {% endif %}{# da_dang_nhap — MÀN B #}
 
   {% if suc_chua %}
@@ -701,7 +706,7 @@
      NGƯỜI VẬN HÀNH, không phải của họ: nó nói cả hệ thống nhỏ cỡ nào, trong khi
      câu họ cần là "gói tôi muốn còn chỗ không" — và câu đó đã có ở từng gói. #}
   {% if da_dang_nhap %}
-  <p class="muted" style="font-size:.9em;">
+  <p class="muted vps-chu-nho">
     {# `dia_gb_con_that`, KHÔNG phải `dia_gb_con` — thuộc tính sau không tồn tại,
        và Jinja in thuộc tính không tồn tại thành CHUỖI RỖNG thay vì báo lỗi. Câu
        này từng hiện ra trước mặt khách là "44.5 GB RAM · GB đĩa". #}

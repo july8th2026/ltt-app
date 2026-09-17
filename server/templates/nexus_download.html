@@ -1,116 +1,68 @@
 {% extends "base_public.html" %}
-{% block title %}Tải LTT Nexus{% endblock %}
+{% import "_nexus_tai.html" as nxt with context %}
+{% block title %}{{ _("Tải LTT Nexus") }}{% endblock %}
 {% block content %}
-<style>
-  .nx-wrap{max-width:940px;margin:0 auto;padding:8px 4px 40px}
-  .nx-hero{text-align:center;padding:14px 0 28px}
-  .nx-mark{width:64px;height:64px;margin:0 auto 14px;display:block}
-  .nx-hero h1{margin:0 0 6px;font-size:30px;letter-spacing:-.02em}
-  .nx-hero p{margin:0;color:var(--fg-muted,#927f79);font-size:15px}
-  .nx-ver{display:inline-block;margin-top:10px;padding:3px 10px;border-radius:99px;
-    background:var(--brand-soft,#421511);color:#ffd0cc;border:1px solid var(--brand-border,#8f2c24);
-    font-size:12px}
-  .nx-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:8px}
-  @media(max-width:640px){.nx-grid{grid-template-columns:1fr}}
-  .nx-card{border:1px solid var(--line,#40201c);border-radius:14px;padding:18px 18px 16px;
-    background:var(--panel,#151111);display:flex;flex-direction:column;gap:6px}
-  .nx-card .os{display:flex;align-items:center;gap:10px}
-  .nx-card .os svg{width:26px;height:26px;flex:0 0 auto}
-  .nx-card h2{margin:0;font-size:16px}
-  .nx-card .sub{color:var(--fg-muted,#927f79);font-size:12px;min-height:16px}
-  .nx-btn{margin-top:8px;display:inline-flex;align-items:center;justify-content:center;
-    gap:8px;padding:10px 14px;border-radius:9px;background:var(--brand-primary,#ef3731);
-    color:#fff;text-decoration:none;font-weight:600;font-size:14px;border:0}
-  .nx-btn:hover{background:var(--brand-hover,#ff514a)}
-  .nx-btn.soon{background:transparent;color:var(--fg-muted,#927f79);
-    border:1px solid var(--line,#40201c);font-weight:500;cursor:default}
-  .nx-alt{display:inline-block;margin-top:8px;font-size:12.5px;color:var(--fg-muted,#927f79);
-    text-decoration:underline}
-  .nx-alt:hover{color:var(--fg,#f0e9e6)}
-  .nx-sha{font-family:ui-monospace,monospace;font-size:10.5px;color:var(--fg-muted,#927f79);
-    word-break:break-all;margin-top:6px}
-  .nx-guide{margin-top:26px;border:1px solid var(--line,#40201c);border-radius:14px;
-    padding:18px 20px;background:var(--panel,#151111)}
-  .nx-guide h3{margin:0 0 10px;font-size:15px}
-  .nx-guide ol{margin:0;padding-left:20px;color:var(--fg,#f0e9e6);font-size:13.5px;line-height:1.7}
-  .nx-guide .warn{margin-top:10px;color:#e2ae55;font-size:12.5px}
-</style>
+{#
+  Trang tải LTT Nexus.
 
-<div class="nx-wrap">
-  <div class="nx-hero">
-    <svg class="nx-mark" viewBox="0 0 24 24" aria-hidden="true">
-      <defs><linearGradient id="ltm" x1="0.15" y1="0.15" x2="0.85" y2="0.85">
-        <stop offset="0" stop-color="#ff514a"/><stop offset="1" stop-color="#b92520"/></linearGradient></defs>
-      <path d="M12 0.8 L23.2 12 L12 23.2 L0.8 12 Z" fill="url(#ltm)"/>
-      <path d="M12 6.4 L17.6 12 L12 17.6 L6.4 12 Z" fill="#0d0a0a" opacity="0.16"/>
-    </svg>
-    <h1>Tải LTT Nexus</h1>
-    <p>Điều khiển máy tính từ xa — an toàn, do LTT vận hành.</p>
-    {% if version %}<span class="nx-ver">Phiên bản {{ version }}</span>{% endif %}
-  </div>
+  C3 17/09/2026: bỏ khối <style> riêng (màu hex dự phòng, nút giả "Đang chuẩn bị")
+  — thẻ đi qua `_nexus_tai.html`, cùng component với lưới "Tải về" của `/nexus`;
+  đầu trang cùng nhịp eyebrow · tiêu đề · lời dẫn của trang giới thiệu. Kiểu ở
+  `ltt.css` (khối C3, `.nx-tai-*`). Mọi chữ qua `_()` — trước đây bản /en vẫn
+  hiện tiếng Việt.
+#}
+<div class="nx-tai-trang">
+  <header class="nx-tai-dau-trang">
+    <span class="eyebrow">LTT Nexus</span>
+    <h1>{{ _("Tải LTT Nexus") }}</h1>
+    <p class="nx-tai-dan">{{ _("Điều khiển máy tính từ xa — an toàn, do LTT vận hành.") }}
+      {{ _("Cài lên máy cần điều khiển từ xa, rồi cài lên máy hoặc điện thoại bạn đang ngồi.") }}</p>
+    {% if version %}<span class="badge b-grey nx-tai-ban">{{ _("Phiên bản") }} {{ version }}</span>{% endif %}
+  </header>
 
-  <div class="nx-grid">
+  <div class="nx-tai-luoi nx-tai-luoi--rong">
     {% for p in platforms %}
-    <div class="nx-card">
-      <div class="os">
-        {% if p.key == 'windows' %}<svg viewBox="0 0 24 24" fill="#ef3731"><path d="M3 5.5l7-1v7H3zM11 4.4L21 3v9.5H11zM3 12.5h7v6l-7-1zM11 12.5h10V21l-10-1.4z"/></svg>
-        {% elif p.key == 'macos' %}<svg viewBox="0 0 24 24" fill="#ef3731"><path d="M16 3c0 1.4-1.2 3-2.7 3 0-1.5 1.3-3 2.7-3zM19 17c-.6 1.4-1.6 3-3 3-1 0-1.4-.6-2.6-.6s-1.7.6-2.6.6c-1.5 0-2.6-1.7-3.2-3.1C5.4 14 5 10.5 7 8.6c.9-.9 2-1 2.8-1 1 0 1.7.6 2.5.6.7 0 1.4-.7 2.7-.7.8 0 2 .2 2.9 1.4-2.5 1.4-2.1 5 .6 6.1z"/></svg>
-        {% elif p.key == 'macos_intel' or p.key == 'ios' %}<svg viewBox="0 0 24 24" fill="#ef3731"><path d="M16 3c0 1.4-1.2 3-2.7 3 0-1.5 1.3-3 2.7-3zM19 17c-.6 1.4-1.6 3-3 3-1 0-1.4-.6-2.6-.6s-1.7.6-2.6.6c-1.5 0-2.6-1.7-3.2-3.1C5.4 14 5 10.5 7 8.6c.9-.9 2-1 2.8-1 1 0 1.7.6 2.5.6.7 0 1.4-.7 2.7-.7.8 0 2 .2 2.9 1.4-2.5 1.4-2.1 5 .6 6.1z"/></svg>
-        {% else %}<svg viewBox="0 0 24 24" fill="#ef3731"><path d="M6 9h12v8a2 2 0 01-2 2h-1v3h-2v-3h-2v3H9v-3H8a2 2 0 01-2-2zM4 9h1.5v6H4a1 1 0 01-1-1v-4a1 1 0 011-1zm16 0h0a1 1 0 011 1v4a1 1 0 01-1 1h-1.5V9zM8 3l1.2 2M16 3l-1.2 2M6.5 7.5C6.5 5.5 8.8 4 12 4s5.5 1.5 5.5 3.5z"/></svg>
-        {% endif %}
-        <h2>{{ p.label }}</h2>
-      </div>
-      {% if p.available and p.url %}
-        {% if p.note %}
-          <div class="sub">{{ p.note }}</div>
-        {% else %}
-          <div class="sub">Sẵn sàng để tải</div>
-        {% endif %}
+      {% call nxt.the(p, muc='h2') %}
         {% if p.key == 'ios' and p.signed %}
           {# Ky Ad Hoc/Enterprise roi thi Safari cai thang duoc qua itms-services.
              Chua ky thi KHONG hien nut nay: bam vao se khong co gi xay ra. #}
-          <a class="nx-btn" href="itms-services://?action=download-manifest&amp;url={{ request.base_url|string|trim('/') }}/nexus/ios-manifest.plist">
+          <a class="btn nx-tai-nut" href="itms-services://?action=download-manifest&amp;url={{ request.base_url|string|trim('/') }}/nexus/ios-manifest.plist">
             {{ _("Cài lên iPhone") }}
           </a>
-          <div class="nx-sha" style="color:#e2ae55">{{ _("Mở trang này bằng Safari — trình duyệt khác sẽ không cài được.") }}</div>
+          <p class="nx-tai-ghi nx-tai-ghi--canh">{{ _("Mở trang này bằng Safari — trình duyệt khác sẽ không cài được.") }}</p>
         {% elif p.setup_url %}
           {# Co file cai MOT-FILE thi moi cai do TRUOC. Ban zip bat nguoi dung tu
-             giai nen dung cho, va do cung la thu khong tu cap nhat sach duoc —
-             de nguoi dung tu chon giua hai thu ma khong noi ro khac nhau cho nao
-             la day viec cho ho. #}
-          <a class="nx-btn" href="{{ p.setup_url }}" download>{{ _("Tải file cài") }}</a>
-          <div class="nx-sha">SHA-256: {{ p.setup_sha256 }}</div>
-          {# Chi moi ban ZIP khi no THAT SU la mot file khac. macOS dung cung mot
-             `.dmg` cho ca hai (khong co khai niem "chay-khong-cai" tach roi), nen
-             hien them mot link tro dung file vua moi la noi vo nghia — nguoi doc
-             se tuong do la hai lua chon khac nhau. #}
+             giai nen dung cho, va do cung la thu khong tu cap nhat sach duoc. #}
+          {# C4 (Golden UI): MỘT nhãn nút cho mọi thẻ ("Tải xuống") — trước là "Tải file
+             cài" cạnh "Tải xuống" cho cùng một việc. Mã SHA-256 một dòng, cắt "…",
+             `title` + nút Chép (`sao_chep.js`, đọc innerText) vẫn cho mã ĐỦ. #}
+          <a class="btn nx-tai-nut" href="{{ p.setup_url }}" download>{{ _("Tải xuống") }}</a>
+          {% if p.setup_sha256 %}<p class="nx-tai-sha"><span class="nx-tai-sha-nhan">SHA-256</span><code class="nx-tai-sha-ma" data-chep title="{{ p.setup_sha256 }}" translate="no">{{ p.setup_sha256 }}</code></p>{% endif %}
+          {# Chi moi ban ZIP khi no THAT SU la mot file khac (macOS dung cung mot
+             `.dmg` cho ca hai). #}
           {% if p.url and p.url != p.setup_url %}
-            <a class="nx-alt" href="{{ p.url }}" download>{{ _("Hoặc tải bản zip chạy-không-cài") }}</a>
-            {% if p.sha256 %}<div class="nx-sha">SHA-256 (zip): {{ p.sha256 }}</div>{% endif %}
+            <a class="nx-tai-phu" href="{{ p.url }}" download>{{ _("Hoặc tải bản zip chạy-không-cài") }}</a>
+            {% if p.sha256 %}<p class="nx-tai-sha"><span class="nx-tai-sha-nhan">SHA-256 (zip)</span><code class="nx-tai-sha-ma" data-chep title="{{ p.sha256 }}" translate="no">{{ p.sha256 }}</code></p>{% endif %}
           {% endif %}
         {% else %}
-          <a class="nx-btn" href="{{ p.url }}"{% if p.kind != 'appstore' %} download{% endif %}>
+          <a class="btn nx-tai-nut" href="{{ p.url }}"{% if p.kind != 'appstore' %} download{% endif %}>
             {% if p.kind == 'appstore' %}{{ _("Mở App Store") }}{% else %}{{ _("Tải xuống") }}{% endif %}
           </a>
-          {% if p.sha256 %}<div class="nx-sha">SHA-256: {{ p.sha256 }}</div>{% endif %}
+          {% if p.sha256 %}<p class="nx-tai-sha"><span class="nx-tai-sha-nhan">SHA-256</span><code class="nx-tai-sha-ma" data-chep title="{{ p.sha256 }}" translate="no">{{ p.sha256 }}</code></p>{% endif %}
         {% endif %}
-      {% else %}
-        <div class="sub">Đang chuẩn bị — sẽ có sớm</div>
-        <span class="nx-btn soon">Đang chuẩn bị</span>
-      {% endif %}
-    </div>
+      {% endcall %}
     {% endfor %}
   </div>
 
-  <div class="nx-guide">
-    <h3>Cài đặt &amp; an toàn</h3>
+  <section class="nx-tai-huong-dan" aria-labelledby="nx-tai-an-toan">
+    <h2 id="nx-tai-an-toan">{{ _("Cài đặt & an toàn") }}</h2>
     <ol>
-      <li>Sau khi tải, <b>đối chiếu SHA-256</b> (ghi ở mỗi nền tảng) với file bạn tải — khớp mới chạy.</li>
-      <li>Windows có thể hiện cảnh báo SmartScreen (bản chưa ký): bấm <b>More info → Run anyway</b>, chỉ khi hash đúng.</li>
-      <li>Mở app, <b>đăng nhập tài khoản LTT</b>. Máy sẽ gắn vào tài khoản của bạn.</li>
-      <li>Muốn điều khiển máy khi vắng người: bấm <b>Install</b> trong app (nâng quyền một lần).</li>
+      <li>{{ _("Sau khi tải, đối chiếu SHA-256 (ghi ở mỗi nền tảng) với file bạn tải — khớp mới chạy.") }}</li>
+      <li>{{ _("Windows có thể hiện cảnh báo SmartScreen (bản chưa ký): bấm More info → Run anyway, chỉ khi hash đúng.") }}</li>
+      <li>{{ _("Mở app, đăng nhập tài khoản LTT. Máy sẽ gắn vào tài khoản của bạn.") }}</li>
+      <li>{{ _("Muốn điều khiển máy khi vắng người: bấm Install trong app (nâng quyền một lần).") }}</li>
     </ol>
-    <div class="warn">LTT Nexus dựa trên RustDesk (AGPL-3.0); mã nguồn bản sửa được công bố công khai.</div>
-  </div>
+    <p class="nx-tai-ghi">{{ _("LTT Nexus dựa trên RustDesk (AGPL-3.0); mã nguồn bản sửa được công bố công khai.") }}</p>
+  </section>
 </div>
 {% endblock %}

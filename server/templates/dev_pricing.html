@@ -14,6 +14,11 @@
         <div class="dev-field">
           <label for="pr-tool">{{ _("Công cụ") }}</label>
           <select id="pr-tool" name="tool">
+            {# C4: ô chọn không bao giờ trống không chữ — khi chưa có công cụ nào đang
+               bật, dòng gợi ý nói rõ điều đó thay vì một hộp rỗng. #}
+            <option value="" disabled{% if not chosen %} selected{% endif %}>
+              {%- if tools %}{{ _("Chọn công cụ…") }}{% else %}{{ _("Chưa có công cụ nào đang bật") }}{% endif -%}
+            </option>
             {% for name in tools %}
               <option value="{{ name }}" {% if name == chosen %}selected{% endif %}>{{ name }}</option>
             {% endfor %}
@@ -21,8 +26,7 @@
         </div>
         <div class="dev-field">
           <label for="pr-input">{{ _("Đầu vào (JSON)") }}</label>
-          <textarea id="pr-input" name="input" rows="10"
-                    style="width:100%;font-family:var(--mono);font-size:12.5px;">{{ input_json }}</textarea>
+          <textarea id="pr-input" name="input" rows="10" class="dev-o-json">{{ input_json }}</textarea>
         </div>
         <button type="submit" class="btn">{{ _("Tính thử") }}</button>
       </form>
@@ -33,7 +37,8 @@
     <header><h2>{{ _("Kết quả ước tính") }}</h2></header>
     <div class="dev-panel-than">
       {% if error %}
-        <p class="badge b-err" style="display:block;padding:10px;margin:0;">{{ error }}</p>
+        {# role=alert da co o developers_base (cung `error`); ban o day chi dat loi canh o nhap. #}
+        <p class="alert alert-err u-m0">{{ error }}</p>
       {% elif result %}
         <div class="dev-uoc-tinh">
           <strong class="so tnum">{{ result.credit | so }}</strong>
@@ -42,7 +47,7 @@
         {# 1 credit = 100đ (Q31). Con so tham chieu, khong phai hoa don. #}
         <p class="dev-vnd tnum">≈ {{ (result.credit * 100) | so }} VND</p>
 
-        <dl class="dev-han-muc" style="margin-top:14px;">
+        <dl class="dev-han-muc u-mt14">
           <div><dt>{{ _("Phiên bản giá") }}</dt><dd><code>{{ result.pricing_version }}</code></dd></div>
           {% if result.bounded %}
           <div><dt>{{ _("Công thức app tính") }}</dt>
@@ -70,7 +75,7 @@
 
 </div>
 
-<p class="muted" style="margin-top:14px;">{{ _("Mô phỏng KHÔNG sinh báo giá và KHÔNG trừ credit, nên không dùng nó để gọi POST /jobs được — báo giá phải được ký, còn đây chỉ là câu trả lời.") }}</p>
-<p class="muted" style="margin-top:6px;">{{ _("Nếu con số ở đây khác con số khi gọi /api/v1/quotes thì đó là lỗi của chúng tôi, không phải khác biệt cố ý — cùng một hàm sinh cả hai.") }}</p>
+<p class="muted u-mt14">{{ _("Mô phỏng KHÔNG sinh báo giá và KHÔNG trừ credit, nên không dùng nó để gọi POST /jobs được — báo giá phải được ký, còn đây chỉ là câu trả lời.") }}</p>
+<p class="muted u-mt6">{{ _("Nếu con số ở đây khác con số khi gọi /api/v1/quotes thì đó là lỗi của chúng tôi, không phải khác biệt cố ý — cùng một hàm sinh cả hai.") }}</p>
 
 {% endblock %}

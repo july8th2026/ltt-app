@@ -146,7 +146,7 @@ def test_edit_handoff_is_owner_scoped(tmp_path, monkeypatch):
         login("owner-edit@test.com")
         page = client.get(f"/taoanh/edit/{job_id}/0")
         assert page.status_code == 200 and 'name="saved_source_key"' in page.text
-        assert "Đã nạp output làm ảnh nguồn" in page.text
+        assert "Đã nạp kết quả làm ảnh nguồn" in page.text
         logout_token = re.search(r'name="csrf_token" value="([^"]+)"', page.text).group(1)
         client.post("/logout", data={"csrf_token": logout_token})
         login("other-edit@test.com")

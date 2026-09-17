@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Lượt Agent · LTT AI Studio{% endblock %}
 {% block content %}
-<script src="/static/htmx.min.js"></script>
+<script src="/static/htmx.min.js?v={{ asset_ver }}"></script>
 <a href="/agent" class="muted">{{ _("← Mục tiêu mới") }}</a>
-<h1 style="margin-top:10px">{{ _("Kế hoạch Agent") }}</h1>
+<h1 class="u-mt10">{{ _("Kế hoạch Agent") }}</h1>
 <p class="page-sub">{{ run.goal }}</p>
 {% if error %}<div class="alert alert-err" role="alert">{{ error }}</div>{% endif %}
 <div class="card">

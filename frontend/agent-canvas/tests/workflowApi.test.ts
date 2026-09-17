@@ -111,6 +111,21 @@ describe('canvas v3', () => {
     expect(lai.pages[0].edges[0].targetHandle).toBe('van_ban_vao')
   })
 
+  it('trang v3 THIEU truong trinh bay (tai lieu rong cua may chu) van dung duoc', () => {
+    // Dung hinh dang `apps/agent/routes/drafts_v3.py::_tai_lieu_rong()`: trang
+    // khong co viewport/frames/notes/comments/view. Truoc ban sua, `CanvasShell`
+    // goi `page.frames.map` tren `undefined` va ca canvas thanh man den.
+    const rong = { version: 3 as const, goal: '', budget_max_credit: 0,
+      active_page_id: 'p1',
+      pages: [{ id: 'p1', name: '', nodes: [], edges: [] }] }
+    const page = fromV3(rong as unknown as Parameters<typeof fromV3>[0]).pages[0]
+    expect(page.frames).toEqual([])
+    expect(page.notes).toEqual([])
+    expect(page.comments).toEqual([])
+    expect(page.viewport).toEqual({ x: 0, y: 0, zoom: 1 })
+    expect(page.nodes).toEqual([])
+  })
+
   it('toV3 tren mot tai lieu DA la v3 tra ve nguyen (luy dang)', () => {
     const ba = toV3(v2)
     expect(toV3(ba)).toBe(ba)

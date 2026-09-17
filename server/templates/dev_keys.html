@@ -1,9 +1,13 @@
 {% extends "developers_base.html" %}
+{% import "_dev_tt.html" as dtt %}
 
 {% block dev_phu_de %}{{ _("Khóa là thứ duy nhất đứng giữa tài khoản của bạn và người khác. Mỗi tích hợp một khóa, và thu hồi được riêng từng cái.") }}{% endblock %}
 
 {# Nút chính về đầu trang (ảnh demo). Mở khối tạo khóa ở cuối trang. #}
-{% block dau_hanh_dong %}<a class="btn" href="#tao-khoa">+ {{ _("Tạo khóa mới") }}</a>{% endblock %}
+{# C3 17/09: MỘT đường tạo khóa. Chưa có khóa thì biểu mẫu đã mở sẵn ngay dưới
+   trạng thái rỗng — thêm nút đầu trang và nút trong trạng thái rỗng là ba nút
+   cho cùng một việc. Có khóa rồi (biểu mẫu gập) thì nút đầu trang là đường vào. #}
+{% block dau_hanh_dong %}{% if keys %}<a class="btn" href="#tao-khoa">+ {{ _("Tạo khóa mới") }}</a>{% endif %}{% endblock %}
 
 {% block section %}
 
@@ -20,7 +24,7 @@
     <h2>{{ _("Khóa mới — chỉ hiện một lần") }}</h2>
     <p>{{ _("Chép và cất ngay bây giờ. Tải lại trang là mất, và không ai lấy lại được (máy chủ chỉ giữ dấu vân tay một chiều của nó).") }}</p>
     <pre class="chuoi"><code>{{ revealed_secret }}</code></pre>
-    <p class="muted" style="margin:0;">{{ _("Mã khóa công khai:") }}
+    <p class="muted u-m0">{{ _("Mã khóa công khai:") }}
        <code class="dev-id">{{ created_key }}</code> —
        {{ _("dùng mã này khi cần hỗ trợ; đừng gửi chuỗi bí mật ở trên cho ai.") }}</p>
   </div>
@@ -47,7 +51,6 @@
       <div class="dev-trong">
         <strong>{{ _("Chưa có khóa API nào.") }}</strong>
         <p>{{ _("Khóa là thứ xác thực lời gọi tới /api/v1. Tạo một khóa ở khối bên dưới, chép chuỗi bí mật, rồi gọi thử.") }}</p>
-        <a class="btn" href="#tao-khoa">{{ _("Tạo khóa đầu tiên") }}</a>
       </div>
     </div>
   {% elif not keys_hien %}
@@ -59,11 +62,11 @@
       </div>
     </div>
   {% else %}
-    <div class="dev-bang">
+    <div class="dev-bang" tabindex="0">
       <table class="table">
         <thead><tr>
           <th scope="col">{{ _("Mã khóa") }}</th><th scope="col">{{ _("Tên") }}</th>
-          <th scope="col">{{ _("Project") }}</th><th scope="col">{{ _("Môi trường") }}</th>
+          <th scope="col">{{ _("Dự án") }}</th><th scope="col">{{ _("Môi trường") }}</th>
           <th scope="col">{{ _("Trạng thái") }}</th><th scope="col">{{ _("Giới hạn") }}</th>
           <th scope="col">{{ _("Dùng lần cuối") }}</th><th scope="col"></th>
         </tr></thead>
@@ -72,7 +75,7 @@
           <tr>
             <td><code class="dev-id">{{ key.key_id }}</code></td>
             <td>{{ key.name or '—' }}</td>
-            <td>{{ key.project or '—' }}</td>
+            <td>{% if key.project %}{{ dtt.du_an(key.project) }}{% else %}—{% endif %}</td>
             <td>
               {% if key.mode == 'test' %}
                 <span class="dev-chip-mt test">Test</span>
@@ -84,7 +87,7 @@
               {# ⚠️ CHU van la chu that (`active`, `revoked`) — mau chi them
                  vao. Truoc day trang in `active` va `revoked` bang cung mot
                  kieu, nen phai DOC moi phan biet duoc. #}
-              <span class="dev-tt {{ {'active':'ok','expired':'canh','disabled':'tat'}.get(key.status,'loi') }}">{{ key.status }}</span>
+              {{ dtt.tt(key.status, 'khoa') }}
             </td>
             <td>
               {# Gop bon rang buoc vao MOT cot "Gioi han": pham vi, cong cu, IP,
@@ -136,7 +139,7 @@
         </tbody>
       </table>
     </div>
-    <p class="dev-panel-than" style="padding-top:0;color:var(--text-secondary);font-size:12px;margin:0;">{{ _("Tổng cộng %(n)s khóa. Thu hồi không đảo ngược được — muốn thay khóa mà không gián đoạn: tạo khóa thứ hai, chuyển ứng dụng sang, rồi thu hồi khóa cũ.")|format(n=keys|length) }}</p>
+    <p class="dev-panel-than dev-panel-chu">{{ _("Tổng cộng %(n)s khóa. Thu hồi không đảo ngược được — muốn thay khóa mà không gián đoạn: tạo khóa thứ hai, chuyển ứng dụng sang, rồi thu hồi khóa cũ.")|format(n=keys|length) }}</p>
   {% endif %}
 </section>
 
@@ -157,19 +160,19 @@
         <span class="goi-y">{{ _("Chỉ để bạn nhận ra khóa nào là khóa nào.") }}</span>
       </div>
       <div class="dev-field">
-        <label for="key-project">{{ _("Thuộc project") }}</label>
+        <label for="key-project">{{ _("Thuộc dự án") }}</label>
         <select id="key-project" name="project_id">
           {# Chỉ hiện lựa chọn rỗng khi CHƯA có project nào: khi đã có, project
              mặc định đã nằm trong danh sách, và hai dòng cùng tên "Default" làm
              người dùng tưởng có hai project. #}
           {% if not projects %}
-            <option value="">{{ _("Default") }}</option>
+            <option value="">{{ _("Mặc định") }}</option>
           {% endif %}
           {% for project in projects %}
-            <option value="{{ project.id }}">{{ project.name }}</option>
+            <option value="{{ project.id }}">{{ dtt.du_an(project.name) }}</option>
           {% endfor %}
         </select>
-        <span class="goi-y">{{ _("Mỗi tích hợp một project thì báo cáo chi tiêu tách được.") }}</span>
+        <span class="goi-y">{{ _("Mỗi tích hợp một dự án thì báo cáo chi tiêu tách được.") }}</span>
       </div>
     </div>
 
@@ -244,7 +247,7 @@
     </fieldset>
 
     <button type="submit" class="btn">{{ _("Tạo khóa") }}</button>
-    <span class="muted" style="margin-left:10px;font-size:12px;">{{ _("Chuỗi bí mật sẽ hiện đúng một lần ở màn hình tiếp theo.") }}</span>
+    <span class="muted dev-canh-nut">{{ _("Chuỗi bí mật sẽ hiện đúng một lần ở màn hình tiếp theo.") }}</span>
   </form>
   </div>
 </details>

@@ -4,41 +4,45 @@
    `vua_ve` = người dùng vừa được cổng đưa về kèm status=PAID. Lúc đó webhook có
    thể chưa tới (đo thật: 40 giây), nên chờ ở đây là BÌNH THƯỜNG — phải nói
    "đang xác nhận" chứ không phải "đang chờ thanh toán", kẻo khách tưởng hỏng và
-   chuyển tiền lần nữa. #}
+   chuyển tiền lần nữa.
+
+   Golden UI (16/09): chỉ đổi TRÌNH BÀY (lớp thay inline style, định dạng số
+   kiểu Việt). Nhánh trạng thái, `hx-*`, `id="tt"`, `role`/`aria-live` giữ nguyên.
+
+   Golden UI C4 (17/09): fragment nằm ĐẦU thẻ đơn (một chỗ cho mọi thông báo).
+   Nhánh đang chờ không lặp badge của tiêu đề trang — chỉ một dòng "đang theo
+   dõi"; đơn không có link cổng không nói "tự kiểm tra mỗi 4 giây" mà nói credit
+   hiện khi quản trị xác nhận. Nút trong khối đơn đã chết cùng cỡ nút chính. #}
 {% if order.status == 'paid' %}
-<div id="tt" style="margin-top:18px" role="status" aria-live="polite">
-  <div style="border:1px solid var(--ok-line);background:var(--ok-bg);
-              border-radius:var(--radius);padding:16px">
-    <div style="display:flex;align-items:center;gap:10px">
-      <span aria-hidden="true"
-            style="width:26px;height:26px;border-radius:50%;flex:0 0 auto;
-                   background:var(--ok);color:#fff;display:flex;
-                   align-items:center;justify-content:center;font-size:15px">✓</span>
-      <strong style="color:var(--ok);font-size:16px">{{ _("Thanh toán thành công") }}</strong>
+<div id="tt" class="billing-status" role="status" aria-live="polite">
+  <div class="billing-paid">
+    <div class="billing-paid-head">
+      <span class="billing-paid-icon" aria-hidden="true">✓</span>
+      <strong class="billing-paid-title">{{ _("Thanh toán thành công") }}</strong>
     </div>
 
-    <div class="billing-line" style="margin-top:14px">
+    <div class="billing-line billing-line-first">
       <span class="dim">{{ _("Credit đã cộng") }}</span>
-      <strong>+{{ '{:,}'.format(order.credits) }}</strong>
+      <strong class="tnum">+{{ order.credits | so }}</strong>
     </div>
     {% if so_du is not none %}
     <div class="billing-line">
       <span class="dim">{{ _("Số dư hiện tại") }}</span>
-      <strong class="tnum">{{ '{:,}'.format(so_du) }} credit</strong>
+      <strong class="tnum">{{ so_du | so }} credit</strong>
     </div>
     {% endif %}
     <div class="billing-line">
       <span class="dim">{{ _("Thời điểm") }}</span>
-      <span>{{ order.paid_at.strftime('%H:%M %d/%m/%Y') if order.paid_at else '—' }}</span>
+      <span class="tnum">{{ order.paid_at.strftime('%H:%M %d/%m/%Y') if order.paid_at else '—' }}</span>
     </div>
     {% if order.gateway_ref %}
     <div class="billing-line">
       <span class="dim">{{ _("Mã giao dịch") }}</span>
-      <span class="mono" style="font-size:12px">{{ order.gateway_ref }}</span>
+      <span class="mono billing-ref">{{ order.gateway_ref }}</span>
     </div>
     {% endif %}
 
-    <div class="actions" style="margin-top:16px">
+    <div class="actions billing-actions">
       <a class="btn" href="/">{{ _("Bắt đầu dùng công cụ") }}</a>
       <a class="btn ghost" href="/nap">{{ _("Nạp thêm") }}</a>
     </div>
@@ -46,29 +50,44 @@
 </div>
 
 {% elif order.status in ('expired', 'cancelled', 'failed') %}
-<div id="tt" style="margin-top:18px" role="alert">
-  <div class="alert alert-err" style="margin:0">
-    <strong>{{ _("Đơn không hoàn tất hoặc đã hết hạn.") }}</strong>
-    {{ _("Nếu bạn đã chuyển tiền cho đơn này, đừng chuyển lại — gửi quản trị mã giao dịch ngân hàng để được đối soát.") }}
-    <div class="actions" style="margin-top:12px">
-      <a class="btn sm" href="/nap">{{ _("Tạo đơn mới") }}</a>
+<div id="tt" class="billing-status" role="alert" data-trang-thai="{{ order.status }}">
+  {#- Golden UI C3 (17/09): ba trạng thái từng chung MỘT câu "không hoàn tất hoặc
+      đã hết hạn" — khách không biết đơn mình hết hạn, bị hủy hay bị ngân hàng
+      từ chối. Mỗi trạng thái một tiêu đề, lời giải thích và nút riêng. -#}
+  <div class="alert {{ 'alert-err' if order.status == 'failed' else 'alert-warn' }} billing-alert-flush billing-dead">
+    {% if order.status == 'expired' %}
+      <strong class="billing-dead-title">{{ _("Đơn đã hết hạn thanh toán.") }}</strong>
+      <p class="billing-dead-body">{{ _("Mã thanh toán của đơn này không còn dùng được. Tạo đơn mới để nhận mã mới.") }}</p>
+    {% elif order.status == 'cancelled' %}
+      <strong class="billing-dead-title">{{ _("Đơn đã bị hủy.") }}</strong>
+      <p class="billing-dead-body">{{ _("Đơn hủy không cộng credit. Muốn nạp tiếp, hãy tạo đơn mới.") }}</p>
+    {% else %}
+      <strong class="billing-dead-title">{{ _("Thanh toán không thành công.") }}</strong>
+      <p class="billing-dead-body">{{ _("Cổng thanh toán từ chối giao dịch. Kiểm tra số dư hoặc hạn mức tài khoản ngân hàng rồi thử lại với đơn mới.") }}</p>
+    {% endif %}
+    <p class="billing-dead-body">{{ _("Nếu bạn đã chuyển tiền cho đơn này, đừng chuyển lại — gửi quản trị mã giao dịch ngân hàng để được đối soát.") }}</p>
+    <div class="actions billing-dead-actions">
+      <a class="btn" href="/nap">{{ _("Thử lại với đơn mới") if order.status == 'failed' else _("Tạo đơn mới") }}</a>
     </div>
   </div>
 </div>
 
 {% else %}
-<div id="tt" style="margin-top:18px" role="status" aria-live="polite"
+<div id="tt" class="billing-status billing-waiting" role="status" aria-live="polite"
      hx-get="/nap/don/{{ order.id }}/trangthai{% if vua_ve %}?ve=1{% endif %}"
      hx-trigger="every 4s" hx-swap="outerHTML">
   {% if vua_ve %}
-    <span class="badge b-warn"><span class="dot"></span>{{ _("Đang xác nhận với ngân hàng…") }}</span>
-    <p class="dim" style="font-size:12px;margin:8px 0 0">
+    <p class="billing-waiting-line"><span class="billing-pulse" aria-hidden="true"></span><strong>{{ _("Đang xác nhận với ngân hàng…") }}</strong></p>
+    <p class="dim billing-hint">
       {{ _("Ngân hàng thường báo về trong vòng một phút. Cứ để trang này mở — credit sẽ tự hiện, bạn") }}
       <strong>{{ _("không cần chuyển lại") }}</strong>.
     </p>
+  {% elif not order.checkout_url %}
+    <p class="billing-waiting-line"><span class="billing-pulse" aria-hidden="true"></span><strong>{{ _("Đang chờ thanh toán…") }}</strong></p>
+    <p class="dim billing-hint">{{ _("Credit hiện ở đây ngay khi quản trị xác nhận và cộng cho đơn này.") }}</p>
   {% else %}
-    <span class="badge b-warn"><span class="dot"></span>{{ _("Đang chờ thanh toán…") }}</span>
-    <p class="dim" style="font-size:12px;margin:8px 0 0">{{ _("Tự kiểm tra mỗi 4 giây.") }}</p>
+    <p class="billing-waiting-line"><span class="billing-pulse" aria-hidden="true"></span><strong>{{ _("Đang chờ thanh toán…") }}</strong></p>
+    <p class="dim billing-hint">{{ _("Trang tự cập nhật khi nhận được tiền.") }}</p>
   {% endif %}
 </div>
 {% endif %}

@@ -1,4 +1,5 @@
 {% extends "developers_base.html" %}
+{% import "_dev_tt.html" as dtt %}
 
 {% block dev_phu_de %}{{ _("Sự kiện nền tảng đẩy tới máy chủ của bạn khi job xong hoặc hỏng. Mỗi sự kiện được ký và có id riêng — giao trùng là an toàn nếu bên nhận khử trùng theo id đó.") }}{% endblock %}
 
@@ -60,7 +61,7 @@
 </div>
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Điểm nhận") }}</h2>
+  <h2 class="u-mt0">{{ _("Điểm nhận") }}</h2>
   {% if not subscriptions %}
     <div class="dev-trong">
       <strong>{{ _("Chưa đăng ký điểm nhận nào.") }}</strong>
@@ -68,7 +69,7 @@
       <a class="btn btn-ghost" href="/developers/docs">{{ _("Xem tài liệu webhook") }}</a>
     </div>
   {% else %}
-    <div class="dev-bang">
+    <div class="dev-bang" tabindex="0">
       <table class="table">
         <thead><tr>
           <th scope="col">URL</th><th scope="col">{{ _("Sự kiện") }}</th><th scope="col">{{ _("Trạng thái") }}</th>
@@ -115,14 +116,14 @@
 </div>
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Lần giao gần đây") }}</h2>
+  <h2 class="u-mt0">{{ _("Lần giao gần đây") }}</h2>
   {% if not deliveries %}
     <div class="dev-trong">
       <strong>{{ _("Chưa có lần giao nào.") }}</strong>
       <p>{{ _("Lịch sử giao xuất hiện sau job đầu tiên kết thúc, hoặc ngay bây giờ nếu bạn bấm Gửi thử ở khối trên.") }}</p>
     </div>
   {% else %}
-    <div class="dev-bang">
+    <div class="dev-bang" tabindex="0">
       <table class="table">
         <thead><tr>
           <th scope="col">{{ _("Lúc") }}</th><th scope="col">{{ _("Sự kiện") }}</th><th scope="col">Job</th>
@@ -137,7 +138,7 @@
                   <span class="muted"><code>{{ item.event_id[:12] }}</code></span></td>
               <td class="{% if not item.job_id %}dev-trong-o{% endif %}">{%- if item.job_id %}<code class="dev-id">{{ item.job_id[:12] }}</code>{% else %}—{% endif %}</td>
               <td>
-                <span class="dev-tt {{ {'delivered':'ok','pending':'canh','sending':'canh','failed':'canh','dead':'loi'}.get(item.status,'') }}">{{ item.status }}</span>
+                {{ dtt.tt(item.status, 'giao') }}
                 {% if item.last_error %}<span class="dev-ma-loi">{{ item.last_error[:80] }}</span>{% endif %}</td>
               <td class="tnum">{{ item.attempts }}</td>
               <td class="tnum {% if not item.last_status_code %}dev-trong-o{% endif %}">{{ item.last_status_code or "—" }}</td>
@@ -159,8 +160,8 @@
 </div>
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Danh mục sự kiện") }}</h2>
-  <div class="dev-bang">
+  <h2 class="u-mt0">{{ _("Danh mục sự kiện") }}</h2>
+  <div class="dev-bang" tabindex="0">
     <table class="table">
       <thead><tr><th scope="col">{{ _("Loại") }}</th><th scope="col">{{ _("Khi nào") }}</th></tr></thead>
       <tbody>
@@ -174,7 +175,7 @@
 </div>
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Kiểm chữ ký") }}</h2>
+  <h2 class="u-mt0">{{ _("Kiểm chữ ký") }}</h2>
   <p>{{ _("Mỗi request mang ba header:") }}
     <code>{{ headers.signature }}</code>,
     <code>{{ headers.timestamp }}</code>,

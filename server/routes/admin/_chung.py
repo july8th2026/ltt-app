@@ -182,11 +182,11 @@ MUC_CON = {
         ("goi_nap", "Gói nạp"),
     ),
     "api_overview": (
-        ("api_overview", "Overview"),
-        ("api_access", "Access"),
-        ("api_governance", "Governance"),
-        ("api_ops", "Operations"),
-        ("api_economics", "Economics"),
+        ("api_overview", "Tổng quan"),
+        ("api_access", "Truy cập"),
+        ("api_governance", "Quản trị"),
+        ("api_ops", "Vận hành"),
+        ("api_economics", "Kinh tế"),
     ),
     "van_hanh": (
         ("van_hanh", "Provider Credentials"),

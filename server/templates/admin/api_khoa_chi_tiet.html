@@ -8,15 +8,14 @@
 {# Mot nut thao tac tren khoa. Khac `m.nut_kem_ly_do` o cho: thao tac NGUY HIEM
    o day con doi mot o tich xac nhan, vi no lam hong tich hop DANG CHAY. #}
 {% macro nut(op, nhan, nguy_hiem) %}
-<form method="post" action="/admin/api-khoa-action"
-      style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px">
+<form method="post" action="/admin/api-khoa-action" class="adm-form-hang">
   <input type="hidden" name="csrf_token" value="{{ token }}">
   <input type="hidden" name="key_id" value="{{ k.key_id }}">
   <input type="hidden" name="op" value="{{ op }}">
   <input name="reason" placeholder="Lý do (bắt buộc, ≥ {{ min_reason }} ký tự)"
          minlength="{{ min_reason }}" required aria-label="Lý do cho thao tác {{ nhan }}">
   {%- if nguy_hiem %}
-  <label class="muted" style="display:block;margin:6px 0">
+  <label class="muted adm-xac-nhan">
     <input type="checkbox" name="confirm" value="1"> Tôi hiểu thao tác này
     không đảo ngược được và sẽ làm hỏng tích hợp đang chạy của khách.</label>
   {%- endif %}
@@ -47,8 +46,8 @@
   </div>
 
   <section>
-    <h2 style="margin:22px 0 10px">Thông tin</h2>
-    <div class="tablewrap"><table class="ui-table"><tbody>
+    <h2 class="u-tieu-muc">Thông tin</h2>
+    <div class="tablewrap" tabindex="0"><table class="ui-table"><tbody>
       <tr><th>Phạm vi</th><td>{{ the(k.scopes) }}</td></tr>
       <tr><th>Giới hạn công cụ</th><td>{{ the(k.allowed_tools) }}</td></tr>
       <tr><th>Giới hạn IP</th><td>{{ the(k.allowed_ips) }}</td></tr>
@@ -59,7 +58,7 @@
   </section>
 
   <section>
-    <h2 style="margin:22px 0 10px">Thao tác</h2>
+    <h2 class="u-tieu-muc">Thao tác</h2>
     {% if trang_thai == "revoked" %}
     <p class="muted">Khoá đã thu hồi. Không còn thao tác nào — thu hồi là một chiều.</p>
     {% elif trang_thai == "disabled" %}
@@ -70,8 +69,8 @@
   </section>
 
   <section>
-    <h2 style="margin:22px 0 10px">10 lời gọi gần nhất</h2>
-    <div class="tablewrap"><table class="ui-table">
+    <h2 class="u-tieu-muc">10 lời gọi gần nhất</h2>
+    <div class="tablewrap" tabindex="0"><table class="ui-table">
       <thead><tr><th>Lúc</th><th>Route</th><th>HTTP</th><th>Mã</th></tr></thead>
       <tbody>
         {% for r in dung.recent %}
@@ -82,7 +81,7 @@
           <td class="mono muted">{{ r.code or "" }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="4" class="muted">Khoá này chưa có lời gọi nào được ghi.</td></tr>
+        <tr><td colspan="4" class="muted o-trong"><span class="o-trong-chu">Khoá này chưa có lời gọi nào được ghi.</span></td></tr>
         {% endfor %}
       </tbody>
     </table></div>

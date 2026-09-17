@@ -1,13 +1,14 @@
 {% extends "developers_base.html" %}
+{% block dev_phu_de %}{{ _("Trang này gọi thẳng /api/v1 bằng khóa của bạn — cùng xác thực, cùng phạm vi, cùng hạn mức, cùng sổ credit. Chạy được ở đây thì chạy được từ máy chủ của bạn; bị từ chối ở đây thì cũng bị từ chối ở đó.") }}{% endblock %}
 {% block section %}
 
 {% if not catalog %}
-  <div class="card">
-    <p class="muted">{{ _("Máy chủ này chưa mở công cụ nào ra API, nên chưa có gì để thử.") }}</p>
+  <div class="dev-trong">
+    <strong>{{ _("Chưa có công cụ nào để thử.") }}</strong>
+    <p>{{ _("Máy chủ này chưa mở công cụ nào ra API, nên chưa có gì để thử.") }}</p>
   </div>
 {% else %}
-<div class="card">
-  <p class="muted">{{ _("Trang này gọi thẳng /api/v1 bằng khóa của bạn — cùng xác thực, cùng phạm vi, cùng hạn mức, cùng sổ credit. Chạy được ở đây thì chạy được từ máy chủ của bạn; bị từ chối ở đây thì cũng bị từ chối ở đó.") }}</p>
+<div>
   <p class="alert alert-warn" role="status">
     <strong>{{ _("Khóa live ở đây tiêu credit thật.") }}</strong>
     {{ _("Không có chế độ chạy thử miễn phí — nếu có, nó sẽ không còn là cùng một đường đi.") }}
@@ -30,13 +31,13 @@
     <p class="muted">{{ _("Trang này không tự điền khóa hộ bạn được — máy chủ chỉ giữ dấu vân tay một chiều, nên chính chúng tôi cũng không đọc lại được khóa đã cấp.") }}</p>
     <p>
       <a class="btn" href="/developers/keys">{{ _("Tạo một khóa Test") }}</a>
-      <span class="muted" style="margin-left:10px;">{{ _("chọn Môi trường = Test — không tốn credit nào.") }}</span>
+      <span class="muted dev-canh-nut">{{ _("chọn Môi trường = Test — không tốn credit nào.") }}</span>
     </p>
   </div>
 {% else %}
   <div class="card">
-    <p class="muted" style="margin:0 0 6px;">{{ _("Khóa đang dùng được của bạn — dán chuỗi bí mật của một trong số này:") }}</p>
-    <ul style="margin:0;">
+    <p class="muted u-mb10">{{ _("Khóa đang dùng được của bạn — dán chuỗi bí mật của một trong số này:") }}</p>
+    <ul class="u-m0">
       {% for k in khoa_dung_duoc %}
         <li><code>{{ k.key_id }}</code>
           {% if k.name %}— {{ k.name }}{% endif %}
@@ -45,7 +46,7 @@
         </li>
       {% endfor %}
     </ul>
-    <p class="muted" style="margin:8px 0 0;font-size:.9em;">
+    <p class="muted u-mt10 u-fs12">
       {{ _("Không nhớ chuỗi bí mật? Nó chỉ hiện một lần lúc tạo —") }}
       <a href="/developers/keys">{{ _("tạo khóa mới") }}</a>
       {{ _("rồi thu hồi khóa cũ.") }}
@@ -57,15 +58,16 @@
      data-need-key="{{ _('Dán khóa API vào ô bên trên trước đã.') }}"
      data-working="{{ _('Đang gọi…') }}"
      data-costs="{{ _('Báo giá: {n} credit') }}">
-  <p>
-    <label for="pg-key">{{ _("Khóa API") }}</label><br>
+  <div class="dev-field">
+    <label for="pg-key">{{ _("Khóa API") }}</label>
     <input id="pg-key" type="password" autocomplete="off" spellcheck="false"
-           placeholder="ltt_sk_…" style="width:min(560px,100%)">
-    <br><small class="muted">{{ _("Chỉ nằm trong tab này: không lưu vào trình duyệt, không gửi đi đâu ngoài chính API này. Máy chủ không đọc lại được khóa đã cấp, nên bạn phải dán khóa mình đang giữ.") }}</small>
-  </p>
+           placeholder="ltt_sk_…" class="dev-o-khoa" aria-describedby="pg-key-goi-y">
+    <small class="goi-y" id="pg-key-goi-y">{{ _("Chỉ nằm trong tab này: không lưu vào trình duyệt, không gửi đi đâu ngoài chính API này. Máy chủ không đọc lại được khóa đã cấp, nên bạn phải dán khóa mình đang giữ.") }}</small>
+  </div>
 
-  <p>
-    <label for="pg-tool">{{ _("Công cụ") }}</label><br>
+  <div class="dev-field">
+    <label for="pg-tool">{{ _("Công cụ") }}</label>
+    <div class="dev-hang-nut">
     {# `?tool=` cho phep mot the trong danh muc tro THANG vao day voi dung
        cong cu do da chon. Do la cho plenxai dat nut "thu ngay" — quyet dinh
        thu mot API xay ra luc dang doc hop dong cua no, khong phai sau khi tim
@@ -77,16 +79,17 @@
       {% endfor %}
     </select>
     <button type="button" id="pg-raw-toggle" class="btn btn-ghost">{{ _("JSON thô") }}</button>
-  </p>
+    </div>
+  </div>
 
   <div id="pg-form"></div>
 
   <p id="pg-raw-wrap" hidden>
     <label for="pg-raw">{{ _("Input dạng JSON") }}</label><br>
-    <textarea id="pg-raw" rows="8" style="width:min(720px,100%);font-family:monospace"></textarea>
+    <textarea id="pg-raw" rows="8" class="dev-o-json"></textarea>
   </p>
 
-  <p>
+  <p class="dev-hang-nut">
     <button type="button" id="pg-quote" class="btn">{{ _("Kiểm & báo giá") }}</button>
     <button type="button" id="pg-run" class="btn">{{ _("Chạy thật") }}</button>
     <strong id="pg-cost"></strong>
@@ -100,7 +103,7 @@
 </div>
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Chế độ chạy khác") }}</h2>
+  <h2 class="u-mt0">{{ _("Chế độ chạy khác") }}</h2>
   <ul>
     <li><code>ASYNC_JOB</code> — {{ _("mọi công cụ đang mở đều chạy kiểu này: báo giá → job → theo dõi → artifact.") }}</li>
     <li><code>SYNC</code> — {{ _("chỉ dành cho thao tác đọc; không công cụ nào tiêu credit theo kiểu này.") }}</li>

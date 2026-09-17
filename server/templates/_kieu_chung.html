@@ -58,7 +58,9 @@
     input::placeholder, textarea::placeholder { color:var(--dim); }
     input:disabled, select:disabled, textarea:disabled { opacity:.55; cursor:not-allowed; }
     input[aria-invalid=true], select[aria-invalid=true], textarea[aria-invalid=true] { border-color:var(--err); }
-    textarea { min-height:74px; resize:vertical; font-family:Consolas,monospace; font-size:12px; }
+    textarea { min-height:74px; resize:vertical; font-family:inherit; font-size:13px; }
+    /* C4 17/09: ô mô tả tự nhiên dùng chữ thường; ô JSON/mã tự khai `.mono` hoặc `data-mono`. */
+    textarea.mono, textarea[data-mono] { font-family:Consolas,monospace; font-size:12px; }
 
     /* Checkbox/radio: chi doi MAU DAU, khong thay the bang phan tu tu ve —
        giu nguyen ngu nghia va dieu khien ban phim cua native.
@@ -67,7 +69,7 @@
        lai mot bo chip rieng — nam lan dung mot thu la mot primitive con
        thieu, khong phai nam app cau tha). */
     input[type=checkbox], input[type=radio] {
-      width:16px; height:16px; accent-color:var(--accent); flex:0 0 auto;
+      width:18px; height:18px; accent-color:var(--brand-fill); flex:0 0 auto;
     }
 
     /* `fieldset` mac dinh cua trinh duyet la `2px groove` mau xam — mot cai
@@ -99,13 +101,16 @@
           o lop `.dev-*`, dung ep ca nen tang. */
     button, .btn {
       padding:9px 14px; border-radius:6px; border:1px solid transparent;
-      background:var(--accent); color:#fff; cursor:pointer; font-size:13px;
+      background:var(--brand-fill); color:#fff; cursor:pointer; font-size:13px;
       font-family:inherit; text-decoration:none; display:inline-block;
     }
-    button:hover, .btn:hover { filter:brightness(1.12); }
+    /* Golden UI: hover TOI HON (`--brand-fill-hover`), khong `brightness` — sang
+       hon lam chu trang tren nen do tut duoi AA. */
+    button:hover { filter:brightness(1.12); }
+    button:not([class]):hover, .btn:hover { filter:none; background:var(--brand-fill-hover); }
     button:disabled, .btn[disabled], .btn.disabled { opacity:.55; cursor:not-allowed; filter:none; }
     .btn-ghost { background:var(--panel2); border-color:var(--line2); color:var(--fg); }
-    .btn-ghost:hover { background:var(--panel3); filter:none; }
+    .btn-ghost:hover, .btn.ghost:hover { background:var(--panel3); filter:none; }
     /* Nguy hiem = VIEN, khong phai nen dac. Mot bang co sau hang thi sau nut
        do dac la sau lan mat nhin thay canh bao — den luc can canh bao that thi
        no khong con noi len duoc gi. Nen chi to len khi ro chuot. */
@@ -114,7 +119,8 @@
     .btn-sm { padding:5px 10px; font-size:12px; }
 
     .check { display:flex; align-items:center; gap:8px; color:var(--fg); }
-    .check input { width:auto; }
+    /* Golden UI: 18px + le 3px thay `width:auto` (tra ve 13px — duoi san o cham). */
+    .check input { width:18px; height:18px; margin:3px; }
 
     table { width:100%; border-collapse:collapse; font-size:13px; }
     th { text-align:left; color:var(--dim); font-weight:500; padding:6px 8px 6px 0; font-size:11px;

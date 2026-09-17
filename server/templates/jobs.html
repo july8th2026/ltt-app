@@ -1,9 +1,21 @@
 {% extends "base.html" %}
-{% block title %}Việc của tôi — LTT AI Studio{% endblock %}
+{% import "_ui.html" as ui %}
+{% block title %}{{ _("Việc của tôi") }} — LTT AI Studio{% endblock %}
 {% block content %}
-  <div class="pagehead"><div><h1>{{ _("Việc của tôi") }}</h1><p class="page-sub">{{ _("Theo dõi, lọc và mở kết quả từ mọi app.") }}</p></div>
-    {% if co_user_csdl %}<a class="pill" href="/nap">{{ so_du }} credit</a>{% endif %}</div>
+  {#- Golden UI C3 (17/09): bộ lọc gói trong <details> (mở sẵn ở màn rộng và khi
+      đang lọc) để trên điện thoại danh sách không bị đẩy khỏi màn đầu; danh sách
+      là bảng ở màn rộng, thẻ ở màn hẹp. Mỗi dòng nhận diện bằng tên ứng dụng,
+      thời điểm tạo đầy đủ, trạng thái và thông điệp tiến độ công khai — KHÔNG in
+      params/result/error (hợp đồng History, xem `/api/jobs`).
+      Golden UI C4 (17/09): số dư đã có ở thanh trên cùng nên tiêu đề không in lại;
+      việc lỗi/đã hủy không vẽ thanh tiến độ (thanh 10%/30% đọc như "đang dở"),
+      chỉ ghi "Dừng ở N%"; bộ lọc là lưới cân ở màn vừa; danh sách trống thì
+      "Áp dụng" là nút phụ để nút mở kho ứng dụng là nút chính duy nhất. -#}
+  <div class="pagehead"><div><h1>{{ _("Việc của tôi") }}</h1><p class="page-sub">{{ _("Theo dõi, lọc và mở kết quả từ mọi app.") }}</p></div></div>
+  {% set so_loc = [status_filter, app_filter, date_from, date_to] | select | list | length %}
   {% if co_user_csdl %}
+    <details class="job-filter-box" data-job-filter-box{% if so_loc %} open{% endif %}>
+      <summary><span>{{ _("Bộ lọc") }}</span>{% if so_loc %}<span class="badge b-warn"><span class="dot" aria-hidden="true"></span>{{ _("%(n)s đang áp dụng", n=so_loc) }}</span>{% endif %}</summary>
     <form class="job-filters" method="get" action="/jobs" aria-label="{{ _('Lọc việc') }}">
       <label>{{ _("Trạng thái") }}<select name="status"><option value="">{{ _("Tất cả") }}</option>
         <option value="queued" {% if status_filter=='queued' %}selected{% endif %}>{{ _("Đang chờ") }}</option>
@@ -11,39 +23,58 @@
         <option value="done" {% if status_filter=='done' %}selected{% endif %}>{{ _("Hoàn tất") }}</option>
         <option value="error" {% if status_filter=='error' %}selected{% endif %}>{{ _("Lỗi") }}</option>
         <option value="cancelled" {% if status_filter=='cancelled' %}selected{% endif %}>{{ _("Đã hủy") }}</option></select></label>
-      <label>App<select name="app"><option value="">{{ _("Tất cả") }}</option>{% for slug in app_options %}<option value="{{ slug }}" {% if app_filter==slug %}selected{% endif %}>{{ slug }}</option>{% endfor %}</select></label>
+      <label>{{ _("Ứng dụng") }}<select name="app"><option value="">{{ _("Tất cả") }}</option>{% for slug in app_options %}<option value="{{ slug }}" {% if app_filter==slug %}selected{% endif %}>{{ ten_app(slug) }}</option>{% endfor %}</select></label>
       <label>{{ _("Từ ngày") }}<input type="date" name="date_from" value="{{ date_from }}"></label>
       <label>{{ _("Đến ngày") }}<input type="date" name="date_to" value="{{ date_to }}"></label>
-      <button class="btn" type="submit">{{ _("Áp dụng") }}</button>{% if status_filter or app_filter %}<a class="btn ghost" href="/jobs">{{ _("Xóa lọc") }}</a>{% endif %}
+      <div class="job-filter-actions"><button class="btn{% if not jobs and not so_loc %} ghost{% endif %}" type="submit">{{ _("Áp dụng") }}</button>{% if so_loc %}<a class="btn ghost" href="/jobs">{{ _("Xóa lọc") }}</a>{% endif %}</div>
     </form>
+    </details>
+    <script>(function(){var d=document.querySelector('[data-job-filter-box]');if(d&&window.matchMedia&&window.matchMedia('(min-width: 641px)').matches)d.open=true})();</script>
   {% else %}
-    <div class="alert alert-warn">Tài khoản quản trị nội bộ không chạy job.
-      Đăng nhập bằng tài khoản người dùng để tạo và xem việc.</div>
+    <div class="alert alert-warn">{{ _("Tài khoản quản trị nội bộ không chạy job. Đăng nhập bằng tài khoản người dùng để tạo và xem việc.") }}</div>
   {% endif %}
   {% if jobs %}
-  <div class="tablewrap job-table"><table class="ui-table">
-      <thead><tr><th>Job</th><th>App</th><th>{{ _("Loại") }}</th><th>{{ _("Trạng thái") }}</th><th>{{ _("Tiến độ") }}</th><th>{{ _("Lúc") }}</th></tr></thead>
+  <div class="tablewrap job-table" tabindex="0" role="region" aria-label="{{ _('Danh sách việc') }}"><table class="ui-table">
+      <thead><tr><th>{{ _("Việc") }}</th><th>{{ _("Trạng thái") }}</th><th>{{ _("Tiến độ") }}</th><th>{{ _("Tạo lúc") }}</th></tr></thead>
       <tbody>
       {% for j in jobs %}
-        <tr>
-          <td><a href="/jobs/{{ j.id }}">{{ j.id[:8] }}</a></td>
-          <td>{{ j.app_slug }}</td>
-          <td class="mono">{{ j.job_type }}</td>
-          <td>
-            {% if j.status == 'done' %}<span class="badge b-ok"><span class="dot"></span>{{ _("Hoàn tất") }}</span>
-            {% elif j.status == 'error' %}<span class="badge b-err"><span class="dot"></span>{{ _("Lỗi") }}</span>
-            {% elif j.status == 'cancelled' %}<span class="badge b-grey"><span class="dot"></span>{{ _("Đã hủy") }}</span>
-            {% elif j.status == 'running' %}<span class="badge b-warn"><span class="dot"></span>{{ _("Đang chạy") }}</span>
-            {% else %}<span class="badge b-warn"><span class="dot"></span>{{ _("Đang chờ") }}</span>{% endif %}
-          </td>
-          <td>{{ j.progress }}%</td>
-          <td class="dim">{{ j.created_at.strftime('%H:%M %d/%m') }}</td>
+        <tr class="job-state-{{ j.status }}">
+          <td><a class="job-row-link" href="/jobs/{{ j.id }}">{{ ten_app(j.app_slug) }}<span class="sr-only"> {{ j.id[:8] }}</span></a>
+            <span class="job-row-meta"><span class="mono">{{ j.id[:8] }}</span>{% if j.retry_of_id %} · {{ _("Lần thử lại") }}{% endif %}</span></td>
+          <td>{{ ui.nhan_trang_thai(j.status) }}{% if j.status in ('queued','running') and j.progress_msg %}<span class="job-row-meta">{{ _(j.progress_msg) }}</span>{% endif %}</td>
+          <td>{% if j.status in ('error','cancelled') %}<span class="job-row-dung tnum">{{ _("Dừng ở") }} {{ j.progress }}%</span>{% else %}<div class="job-row-progress">{{ ui.thanh_tien_do(j.progress, _("Tiến độ việc")) }}<span class="tnum">{{ j.progress }}%</span></div>{% endif %}</td>
+          <td class="tnum"><time datetime="{{ j.created_at.isoformat() }}">{{ j.created_at.strftime('%H:%M %d/%m/%Y') }}</time></td>
         </tr>
       {% endfor %}
       </tbody>
     </table></div>
+  <ul class="job-list" aria-label="{{ _('Danh sách việc') }}">
+    {% for j in jobs %}
+    <li class="job-card job-state-{{ j.status }}">
+      <div class="job-card-top">
+        <a class="job-row-link" href="/jobs/{{ j.id }}">{{ ten_app(j.app_slug) }}<span class="sr-only"> {{ j.id[:8] }}</span></a>
+        {{ ui.nhan_trang_thai(j.status) }}
+      </div>
+      <p class="job-row-meta"><time class="tnum" datetime="{{ j.created_at.isoformat() }}">{{ j.created_at.strftime('%H:%M %d/%m/%Y') }}</time> · <span class="mono">{{ j.id[:8] }}</span>{% if j.retry_of_id %} · {{ _("Lần thử lại") }}{% endif %}</p>
+      {% if j.status in ('error','cancelled') %}<p class="job-row-dung tnum">{{ _("Dừng ở") }} {{ j.progress }}%</p>{% else %}<div class="job-row-progress">{{ ui.thanh_tien_do(j.progress, _("Tiến độ việc")) }}<span class="tnum">{{ j.progress }}%</span></div>{% endif %}
+      {% if j.status in ('queued','running') and j.progress_msg %}<p class="job-row-meta">{{ _(j.progress_msg) }}</p>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
   {% else %}
-    <div class="card"><p class="muted">{{ _("Chưa có việc nào.") }}</p></div>
+    {% if so_loc %}
+    <section class="ui-state ui-state--inline" aria-labelledby="jobs-rong">
+      <h2 id="jobs-rong" class="ui-state-title">{{ _("Không có việc khớp bộ lọc") }}</h2>
+      <p class="ui-state-body">{{ _("Đổi trạng thái, ứng dụng hoặc khoảng ngày để xem thêm.") }}</p>
+      <div class="ui-state-actions"><a class="btn ghost" href="{{ u('/jobs') }}">{{ _("Xóa lọc") }}</a></div>
+    </section>
+    {% else %}
+    <section class="ui-state ui-state--inline" aria-labelledby="jobs-rong">
+      <h2 id="jobs-rong" class="ui-state-title">{{ _("Chưa có việc nào") }}</h2>
+      <p class="ui-state-body">{{ _("Mở một công cụ trong kho ứng dụng; mọi việc bạn chạy sẽ hiện ở đây kèm tiến độ và kết quả.") }}</p>
+      <div class="ui-state-actions"><a class="btn" href="{{ u('/') }}">{{ _("Mở kho ứng dụng") }}</a></div>
+    </section>
+    {% endif %}
   {% endif %}
   {% if next_cursor %}<div class="job-pagination"><a class="btn ghost" href="/jobs?status={{ status_filter }}&amp;app={{ app_filter }}&amp;date_from={{ date_from }}&amp;date_to={{ date_to }}&amp;cursor={{ next_cursor }}">{{ _("Xem thêm") }}</a></div>{% endif %}
 {% endblock %}

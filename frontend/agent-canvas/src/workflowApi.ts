@@ -144,8 +144,17 @@ export function toV3(canvas: CanvasDocument | LegacyCanvasDocument | CanvasDocum
  *    Plan v1.
  */
 export function fromV3(canvas: CanvasDocumentV3): CanvasDocument {
+  // ⚠️ Trang v3 do may chu tao moi (`drafts_v3.py::_tai_lieu_rong`) chi co
+  //    id/name/nodes/edges. Cac truong TRINH BAY (viewport, frames, notes,
+  //    comments) la tuy chon o ranh gioi nay: thieu thi dien mac dinh, neu
+  //    khong `page.frames.map` nem va ca canvas thanh man den.
   return { ...canvas, version: 2,
-    pages: canvas.pages.map(page => ({ ...page, edges: page.edges.map(edgeFromV3) })) }
+    pages: canvas.pages.map(page => ({
+      ...page,
+      nodes: page.nodes ?? [],
+      viewport: page.viewport ?? { x: 0, y: 0, zoom: 1 },
+      frames: page.frames ?? [], notes: page.notes ?? [], comments: page.comments ?? [],
+      edges: (page.edges ?? []).map(edgeFromV3) })) }
 }
 
 function normalizeWorkflow(workflow: Workflow): Workflow {

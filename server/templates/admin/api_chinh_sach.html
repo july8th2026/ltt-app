@@ -3,6 +3,13 @@
    🔴 O TRONG nghia la KE THUA buoc truoc, khong phai 0. `0` la mot han muc that
       (nhip 0 = tu choi tat ca). Dung "don dep" bang cach dien 0 vao o trong. #}
 {% import "admin/_macro_api.html" as m %}
+{#- Nhãn tiếng Việt cho tên trường kỹ thuật; tên thật vẫn hiện nhỏ trong <code>
+    vì đó là thứ người vận hành gõ khi tra log / tài liệu API. -#}
+{%- set NHAN = {"rpm_read": "Nhịp đọc / phút", "rpm_write": "Nhịp ghi / phút",
+                "rpm_create": "Nhịp tạo / phút", "max_active_jobs": "Job chạy đồng thời",
+                "daily_credit": "Credit mỗi ngày", "max_upload_bytes": "Tải lên tối đa (byte)"} %}
+{%- set NGUON = {"global": "Mặc định hệ thống", "tier": "Gói (tier)", "user": "Người dùng", "project": "Dự án",
+                 "credential": "Khoá API", "tool": "Công cụ"} %}
 
 <div class="adm-content">
   <div class="pagehead"><div>
@@ -15,17 +22,19 @@
   {{ m.loi_sau_chuyen_huong(loi) }}
 
   <section>
-    <h2 style="margin:22px 0 10px">Mức nền đang áp dụng</h2>
+    <h2 class="u-tieu-muc">Mức nền đang áp dụng</h2>
     {# Muc nen khi KHONG co ai cu the: do la con so moi tai khoan nhan duoc, va
        la thu dau tien nguoi van hanh can thay. #}
-    <div class="tablewrap"><table class="ui-table">
+    <div class="tablewrap" tabindex="0"><table class="ui-table">
       <thead><tr><th>Hạn mức</th><th>Giá trị</th><th>Đến từ</th></tr></thead>
       <tbody>
         {% for f in truong %}
         <tr>
-          <td class="mono">{{ f }}</td>
-          <td class="tnum">{{ nen[f] }}</td>
-          <td class="muted">{{ nen.sources.get(f, "") }}</td>
+          {#- C4: bảng hiện byte thành MB/GB (ô nhập bên dưới vẫn nhận byte); nguồn enum → nhãn Việt kèm mã. -#}
+          {%- set v = nen[f] %}{% set nguon = nen.sources.get(f, "") %}
+          <td>{{ NHAN.get(f, f) | replace(" (byte)", "") }} <code class="adm-ten-ky-thuat">{{ f }}</code></td>
+          <td class="tnum">{% if f == "max_upload_bytes" and v is number and v >= 1048576 %}<span title="{{ '{:,}'.format(v) | replace(',', '.') }} byte">{{ '%g' % ((v / 1073741824) | round(1)) ~ ' GB' if v >= 1073741824 else '%g' % ((v / 1048576) | round(1)) ~ ' MB' }}</span>{% elif v is number %}{{ '{:,}'.format(v) | replace(',', '.') }}{% else %}{{ v if v is not none else "—" }}{% endif %}</td>
+          <td>{% if nguon %}{{ NGUON.get(nguon.split(":")[0], "Nguồn") }} <code class="adm-ten-ky-thuat">{{ nguon }}</code>{% else %}<span class="muted">—</span>{% endif %}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -33,11 +42,11 @@
   </section>
 
   <section>
-    <h2 style="margin:22px 0 10px">Chính sách</h2>
-    <div class="tablewrap"><table class="ui-table">
+    <h2 class="u-tieu-muc">Chính sách</h2>
+    <div class="tablewrap" tabindex="0"><table class="ui-table">
       <thead><tr>
-        <th>Tên</th><th>rpm read</th><th>rpm write</th><th>rpm create</th>
-        <th>job đồng thời</th><th>credit/ngày</th><th>Đã gán</th><th></th>
+        <th>Tên</th><th>Đọc / phút</th><th>Ghi / phút</th><th>Tạo / phút</th>
+        <th>Job đồng thời</th><th>Credit / ngày</th><th>Đã gán</th><th>Thao tác</th>
       </tr></thead>
       <tbody>
         {% for it in data %}
@@ -73,53 +82,61 @@
                                  them={"policy_id": p.id}) }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="8" class="muted" style="padding:26px;text-align:center">Chưa có chính sách nào — mọi tài khoản dùng mức nền của deployment.</td></tr>
+        <tr><td colspan="8" class="muted o-trong"><span class="o-trong-chu">Chưa có chính sách nào — mọi tài khoản dùng mức nền của deployment.</span></td></tr>
         {% endfor %}
       </tbody>
     </table></div>
   </section>
 
   <section>
-    <h2 style="margin:22px 0 10px">Tạo chính sách</h2>
+    <h2 class="u-tieu-muc">Tạo chính sách</h2>
     <form method="post" action="/admin/api-chinh-sach-action">
       <input type="hidden" name="csrf_token" value="{{ token }}">
       <input type="hidden" name="op" value="create">
-      <p>
-        <input name="name" placeholder="tên (vd: pro)" required>
-        <input name="description" placeholder="mô tả" size="40">
-        <label><input type="checkbox" name="is_default" value="1"> dùng làm tier mặc định</label>
+      <p class="adm-form-luoi">
+        <label class="adm-truong adm-truong-rong">Tên chính sách
+          <input name="name" placeholder="vd: pro" required></label>
+        <label class="adm-truong adm-truong-rong">Mô tả
+          <input name="description" placeholder="Không bắt buộc"></label>
+        <label class="adm-chon"><input type="checkbox" name="is_default" value="1"> Dùng làm tier mặc định</label>
       </p>
-      <p>
+      <p class="adm-form-luoi">
         {%- for f in truong %}
-        <label style="display:inline-block;margin:0 12px 8px 0">{{ f }}<br>
-          <input name="{{ f }}" inputmode="numeric" placeholder="kế thừa" style="width:130px"></label>
+        <label class="adm-truong"><span>{{ NHAN.get(f, f) }} <code class="adm-ten-ky-thuat">{{ f }}</code></span>
+          <input name="{{ f }}" inputmode="numeric" placeholder="kế thừa" class="adm-w130"></label>
         {%- endfor %}
       </p>
-      <p>
-        <input name="reason" size="46" required minlength="{{ min_reason }}"
-               placeholder="Lý do (bắt buộc, ≥ {{ min_reason }} ký tự)">
-        <button class="btn btn-primary sm">Tạo</button>
+      <p class="adm-form-luoi adm-form-gui">
+        <label class="adm-truong adm-truong-rong">Lý do (bắt buộc, ≥ {{ min_reason }} ký tự)
+          <input name="reason" required minlength="{{ min_reason }}"
+                 placeholder="vd: gói thương mại mới đã chốt"></label>
+        <button class="btn btn-primary">Tạo chính sách</button>
       </p>
     </form>
   </section>
 
   <section>
-    <h2 style="margin:22px 0 10px">Gán chính sách</h2>
+    <h2 class="u-tieu-muc">Gán chính sách</h2>
     <form method="post" action="/admin/api-chinh-sach-action">
       <input type="hidden" name="csrf_token" value="{{ token }}">
       <input type="hidden" name="op" value="assign">
-      <p>
-        <select name="policy_id" aria-label="Chính sách">
-          {% for it in data %}<option value="{{ it.policy.id }}">{{ it.policy.name }}</option>{% endfor %}
-        </select>
-        <select name="scope" aria-label="Phạm vi công tắc">
-          <option value="user">user</option>
-          <option value="project">project</option>
-          <option value="key">key</option>
-        </select>
-        <input name="subject_id" placeholder="id của đối tượng" required>
-        <input name="reason" required minlength="{{ min_reason }}" placeholder="Lý do (≥ {{ min_reason }})">
-        <button class="btn sm">Gán</button>
+      <p class="adm-form-luoi adm-form-gui">
+        <label class="adm-truong">Chính sách
+          <select name="policy_id" required>
+            {% for it in data %}<option value="{{ it.policy.id }}">{{ it.policy.name }}</option>
+            {% else %}<option value="" disabled selected>Chưa có chính sách — tạo ở trên trước</option>{% endfor %}
+          </select></label>
+        <label class="adm-truong">Phạm vi
+          <select name="scope">
+            <option value="user">Người dùng (user)</option>
+            <option value="project">Dự án (project)</option>
+            <option value="key">Khoá API (key)</option>
+          </select></label>
+        <label class="adm-truong adm-truong-rong">ID đối tượng
+          <input name="subject_id" placeholder="User ID, project ID hoặc key ID" required></label>
+        <label class="adm-truong adm-truong-rong">Lý do (≥ {{ min_reason }} ký tự)
+          <input name="reason" required minlength="{{ min_reason }}"></label>
+        <button class="btn">Gán chính sách</button>
       </p>
     </form>
   </section>

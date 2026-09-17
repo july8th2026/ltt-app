@@ -1,4 +1,5 @@
 {% extends "developers_base.html" %}
+{% block dev_phu_de %}{{ _("Đây là những gì máy chủ này đang mở cho tài khoản của bạn. Giá của một lời gọi lấy từ POST /api/v1/quotes — giá phụ thuộc toàn bộ input, nên không có con số cố định theo model.") }}{% endblock %}
 {% block section %}
 
 {# 🔴 DANH MUC = THE GAP, khong phai bang phang.
@@ -16,14 +17,16 @@
       va no tu co dung ngu nghia cho trinh doc man hinh. Mot ban tu viet bang
       JS se mat ca ba thu do. #}
 
-<div class="card">
-  <p class="muted">{{ _("Đây là những gì máy chủ này đang mở cho tài khoản của bạn. Giá của một lời gọi lấy từ POST /api/v1/quotes — giá phụ thuộc toàn bộ input, nên không có con số cố định theo model.") }}</p>
-
-  <form method="get" action="/developers/tools" role="search">
-    <label for="tool-q" class="sr-only">{{ _("Tìm công cụ") }}</label>
+{# Golden UI 17/09: dải lọc dùng CÙNG khuôn `.dev-loc` với nhật ký và chi tiêu
+   (một hàng, nhãn nhìn thấy được) thay vì ba ô xếp chồng giãn hết bề ngang. #}
+<form method="get" action="/developers/tools" role="search" class="dev-loc">
+  <div class="dev-field rong">
+    <label for="tool-q">{{ _("Tìm công cụ") }}</label>
     <input id="tool-q" type="search" name="q" value="{{ query }}"
            placeholder="{{ _('tìm theo tên, mô tả hoặc tên tham số') }}">
-    <label for="tool-cap" class="sr-only">{{ _("Nhóm") }}</label>
+  </div>
+  <div class="dev-field">
+    <label for="tool-cap">{{ _("Nhóm") }}</label>
     <select id="tool-cap" name="capability">
       <option value="">{{ _("Mọi nhóm") }}</option>
       {% for item in capabilities %}
@@ -31,26 +34,28 @@
                 {% if item == capability %}selected{% endif %}>{{ item }}</option>
       {% endfor %}
     </select>
+  </div>
+  <div class="dev-nut">
     <button type="submit" class="btn">{{ _("Lọc") }}</button>
     {% if query or capability %}
       <a class="btn btn-ghost" href="/developers/tools">{{ _("Bỏ lọc") }}</a>
     {% endif %}
-  </form>
-</div>
+  </div>
+</form>
 
 {% if not catalog %}
-  <div class="card">
+  <div class="dev-trong">
     {% if query or capability %}
-      <p class="muted">{{ _("Không công cụ nào khớp.") }}</p>
+      <strong>{{ _("Không công cụ nào khớp.") }}</strong>
     {% else %}
       {# ⛔ Danh muc rong KHONG phai loi — do la fail-closed cua Q92 dang lam
          dung viec: `LTT_PUBLIC_API_TOOLS` mac dinh rong, nen bat co API mot
          minh khong mo tool nao. Noi thang de khong ai di sua nham cho khac. #}
-      <p class="muted">{{ _("Máy chủ này chưa mở công cụ nào ra API. Đây là trạng thái mặc định, không phải lỗi — quản trị viên mở từng công cụ một bằng LTT_PUBLIC_API_TOOLS.") }}</p>
+      <p>{{ _("Máy chủ này chưa mở công cụ nào ra API. Đây là trạng thái mặc định, không phải lỗi — quản trị viên mở từng công cụ một bằng LTT_PUBLIC_API_TOOLS.") }}</p>
     {% endif %}
   </div>
 {% else %}
-  <p class="muted" style="margin:0 0 10px;">{{ catalog | length }}
+  <p class="muted u-mb10">{{ catalog | length }}
     {{ _("công cụ đang mở — bấm một thẻ để xem hợp đồng đầy đủ.") }}</p>
 
   {# Lưới thẻ 3 cột (ảnh demo). Mỗi thẻ vẫn là `<details>` — mở ra xem hợp đồng
@@ -59,6 +64,12 @@
   {% for tool in catalog %}
     {%- set cap = tool.capability | lower -%}
     {%- set cap_cls = cap if cap in ('image','text','vision','audio','video','code') else 'other' -%}
+    {# 🔴 Golden UI 17/09 — axe `nested-interactive` (serious): hai liên kết
+       "Docs"/"Thử ngay" từng nằm TRONG `<summary>`, tức một control nằm trong
+       một control. Trình đọc màn hình đọc cả thẻ thành một nút, và hai liên
+       kết không với tới được bằng phím. Chân thẻ nay là anh em của `<details>`
+       trong một khung chung — nhìn vẫn là một thẻ. #}
+    <div class="dev-tool-o">
     <details class="tool-the">
       <summary>
         <span class="tool-dau">
@@ -70,15 +81,10 @@
           <span class="the-che-do che-do-{{ tool.execution_mode | lower }}">{{ tool.execution_mode }}</span>
         </span>
         <span class="the-mo-ta">{{ tool.description }}</span>
-        <span class="tool-chan">
-          {% if tool.model_count %}<span>{{ tool.model_count }} model</span>{% else %}<span>{{ tool.capability }}</span>{% endif %}
-          <a href="/developers/tools/{{ tool.name }}" onclick="event.stopPropagation()">Docs</a>
-          <a href="/developers/playground?tool={{ tool.name }}" onclick="event.stopPropagation()" class="day">{{ _("Thử ngay") }} →</a>
-        </span>
       </summary>
 
       <div class="tool-than">
-        <p class="muted" style="margin-top:0;">{{ _("Phạm vi cần:") }}
+        <p class="muted u-mt0">{{ _("Phạm vi cần:") }}
           {% for scope in tool.scopes %}<code>{{ scope }}</code> {% endfor %}
           · <a href="/gia-api">{{ _("Xem giá") }} →</a>
           · <a href="/developers/playground?tool={{ tool.name }}">{{ _("Chạy thử công cụ này") }} →</a>
@@ -87,7 +93,7 @@
         <h4>{{ _("Tham số") }}</h4>
         {# ⛔ Bang nay SINH tu `input_schema` (xem `_tham_so`). Go tay la tao ban
            sao thu hai cua hop dong, va ban sao do lech AM THAM. #}
-        <div class="dev-bang">
+        <div class="dev-bang" tabindex="0">
           <table class="table">
             <thead><tr>
               <th scope="col">{{ _("Tên") }}</th><th scope="col">{{ _("Kiểu") }}</th>
@@ -98,9 +104,9 @@
                 <tr>
                   <td><code>{{ p.name }}</code></td>
                   <td><code>{{ p.type }}</code>
-                      {%- if p.enum %}<br><span class="muted" style="font-size:11px;">
+                      {%- if p.enum %}<br><span class="muted u-fs11">
                         {% for v in p.enum %}<code>{{ v }}</code> {% endfor %}</span>{% endif %}
-                      {%- if p.bounds %}<br><span class="muted" style="font-size:11px;">{{ p.bounds }}</span>{% endif %}</td>
+                      {%- if p.bounds %}<br><span class="muted u-fs11">{{ p.bounds }}</span>{% endif %}</td>
                   <td>{% if p.required %}<strong>{{ _("có") }}</strong>
                       {%- else %}<span class="muted">{{ _("không") }}
                         {%- if p.default is not none %} · {{ _("mặc định") }}
@@ -121,24 +127,30 @@
         </div>
 
         <h4>{{ _("Ví dụ gửi đi") }}</h4>
-        <pre style="overflow-x:auto;"><code>{{ tool.example_request }}</code></pre>
+        <pre class="u-cuon-ngang"><code>{{ tool.example_request }}</code></pre>
 
         <h4>{{ _("Kết quả trả về") }}</h4>
         {# 🔴 Doan nay ton tai vi mot loi THAT ngay 25/08: khach doc bang "Ket
            qua" roi di tim `result.<ten truong>` — cho do KHONG CO GI. Artifact
            nam o `outputs[]`. Kich ban gia lap da dung lai dung o day, SAU khi
            job xong va tien da bi thu. #}
-        <pre style="overflow-x:auto;"><code>{{ tool.outputs }}</code></pre>
+        <pre class="u-cuon-ngang"><code>{{ tool.outputs }}</code></pre>
       </div>
     </details>
+    <div class="tool-chan">
+      {% if tool.model_count %}<span>{{ tool.model_count }} model</span>{% else %}<span>{{ tool.capability }}</span>{% endif %}
+      <a href="/developers/tools/{{ tool.name }}" aria-label="{{ _('Tài liệu') }} {{ tool.name }}">{{ _("Tài liệu") }}</a>
+      <a href="/developers/playground?tool={{ tool.name }}" class="day" aria-label="{{ _('Thử ngay') }} {{ tool.name }}">{{ _("Thử ngay") }} →</a>
+    </div>
+    </div>{# /dev-tool-o #}
   {% endfor %}
   </div>{# /dev-tool-luoi #}
 {% endif %}
 
 {% if models %}
-  <div class="card" style="margin-top:16px;">
-    <h2 style="margin-top:0;">Model</h2>
-    <div class="dev-bang">
+  <div class="card dev-cach-tren">
+    <h2 class="u-mt0">Model</h2>
+    <div class="dev-bang" tabindex="0">
       <table class="table">
         <thead><tr>
           <th scope="col">Alias</th><th scope="col">{{ _("Nhóm") }}</th><th scope="col">{{ _("Độ ổn định") }}</th>

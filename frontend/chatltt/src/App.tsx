@@ -628,7 +628,7 @@ export function App({ api }: AppProps) {
                        onDong={() => datMoNghienCuu(false)} />
       )}
 
-      <main className="ltc-chinh">
+      <section className="ltc-chinh">
         <header className="ltc-dinh">
           <label className="ltc-model">
             <span>Model</span>
@@ -753,7 +753,7 @@ export function App({ api }: AppProps) {
           onTaiAnh={taiAnh}
           hoiThoai={convId}
         />
-      </main>
+      </section>
     </div>
   )
 }

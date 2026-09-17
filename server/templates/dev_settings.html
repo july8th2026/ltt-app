@@ -1,10 +1,9 @@
 {% extends "developers_base.html" %}
+{% block dev_phu_de %}{{ _("Những gì nền tảng đảm bảo về khóa của bạn, và bạn nên làm gì khi một khóa bị lộ.") }}{% endblock %}
 {% block section %}
 
-<p class="dev-dan">{{ _("Những gì nền tảng đảm bảo về khóa của bạn, và bạn nên làm gì khi một khóa bị lộ.") }}</p>
-
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("An toàn khóa") }}</h2>
+  <h2 class="u-mt0">{{ _("An toàn khóa") }}</h2>
   <ul>
     <li>{{ _("Chuỗi bí mật chỉ hiện một lần, lúc tạo. Máy chủ giữ dấu vân tay một chiều nên không ai lấy lại được — kể cả quản trị viên.") }}</li>
     <li>{{ _("Thu hồi có hiệu lực ở request kế tiếp và không đảo ngược được.") }}</li>
@@ -21,9 +20,9 @@
    di lien he ho tro de lam mot viec ho tu bam duoc la mot loi NOI DUNG,
    khong phai mot loi trinh bay — va no khong test nao bat duoc. #}
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Dữ liệu của bạn") }}</h2>
+  <h2 class="u-mt0">{{ _("Dữ liệu của bạn") }}</h2>
   <p>{{ _("Bạn tải được toàn bộ dữ liệu khu API của mình dưới dạng JSON, và xem được từng nơi lưu giữ gì trong bao lâu.") }}</p>
-  <p style="margin-bottom:0;"><a class="btn btn-ghost" href="/developers/privacy">{{ _("Dữ liệu &amp; lưu trữ") }}</a></p>
+  <p class="u-mb0"><a class="btn btn-ghost" href="/developers/privacy">{{ _("Dữ liệu &amp; lưu trữ") }}</a></p>
 </div>
 
 {% endblock %}

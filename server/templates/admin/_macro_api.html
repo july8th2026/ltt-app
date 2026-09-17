@@ -18,8 +18,8 @@
 {% macro o_chi_so(nhan, gia_tri, goi_y="", mau="", href="") %}
   {%- set than %}
     <div class="dim">{{ nhan }}</div>
-    <div class="tnum" style="font-size:24px;font-weight:700{% if mau %};color:{{ mau }}{% endif %}">{{ gia_tri }}</div>
-    {%- if goi_y %}<div class="dim" style="font-size:11px">{{ goi_y }}</div>{% endif -%}
+    <div class="tnum adm-o-so"{% if mau %} style="color:{{ mau }}"{% endif %}>{{ gia_tri }}</div>
+    {%- if goi_y %}<div class="dim adm-o-goi-y">{{ goi_y }}</div>{% endif -%}
   {% endset -%}
   {%- if href -%}
     <a class="ui-card adm-o-link" href="{{ href }}">{{ than }}</a>
@@ -28,8 +28,8 @@
   {%- endif -%}
 {% endmacro %}
 
-{% macro mo_luoi_o() %}<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:12px">{% endmacro %}
-{% macro mo_luoi_cot() %}<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">{% endmacro %}
+{% macro mo_luoi_o() %}<div class="grid adm-luoi-o">{% endmacro %}
+{% macro mo_luoi_cot() %}<div class="grid adm-luoi-cot">{% endmacro %}
 
 {# ── Phân trang ──────────────────────────────────────────────────────────────
    Tổng số là con số quyết định hành động: "12 khoá" và "50 khoá đầu của 4.000"
@@ -39,7 +39,7 @@
     <p class="muted">{{ page.total }} dòng.</p>
   {%- else -%}
     {%- set noi = "&" if "?" in base else "?" -%}
-    <div class="rowactions" style="margin-top:12px">
+    <div class="rowactions adm-mt12">
       {%- if page.offset %}<a class="btn ghost sm" href="{{ base }}{{ noi }}offset={{ page.prev_offset }}">← Trước</a>{% endif -%}
       {%- if page.has_more %}<a class="btn ghost sm" href="{{ base }}{{ noi }}offset={{ page.next_offset }}">Sau →</a>{% endif -%}
       <span class="muted">{{ (page.offset + 1) if page.rows else 0 }}–{{ page.offset + page.rows|length }} / {{ page.total }}</span>
@@ -64,7 +64,7 @@
 
 {% macro loi_sau_chuyen_huong(thong_bao) %}
   {%- if thong_bao -%}
-    <p class="badge b-err" style="display:block;padding:10px">{{ thong_bao }}</p>
+    <p class="badge b-err adm-thong-bao">{{ thong_bao }}</p>
   {%- endif -%}
 {% endmacro %}
 
@@ -74,7 +74,7 @@
       SERVICE — một nút không có ô lý do sẽ **luôn thất bại**, và ảnh mockup vẽ
       đúng như vậy. Xem `06_VISUAL_REFERENCE_CONTRACT.md` §3e. #}
 {% macro nut_kem_ly_do(action, token, op, nhan, min_reason, nguy_hiem=False, them={}) %}
-<form method="post" action="{{ action }}" style="display:flex;gap:6px;align-items:center">
+<form method="post" action="{{ action }}" class="adm-form-dong">
   <input type="hidden" name="csrf_token" value="{{ token }}">
   <input type="hidden" name="op" value="{{ op }}">
   {%- for ten, gt in them.items() %}<input type="hidden" name="{{ ten }}" value="{{ gt }}">{% endfor %}

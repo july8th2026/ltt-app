@@ -1,0 +1,96 @@
+{#- Golden UI DL-004 (16/09/2026): ban sao `sqladmin/layout.html` cua goi sqladmin 0.20.1,
+    CHI doi chuoi hien thi (qua `_()`) va a11y. Nang cap sqladmin => doi chieu lai
+    voi tep goi. Hanh vi (URL, form, data-*) giu nguyen tung ky tu. -#}
+{% extends "sqladmin/base.html" %}
+{% from 'sqladmin/_macros.html' import menu_item, menu_category %}
+{#- Golden UI C3: vỏ SQLAdmin cùng ngôn ngữ thị giác với vỏ quản trị tự dựng (`admin/_vo.html`):
+    khối thương hiệu + mục menu có ô icon + viền trái đỏ khi mở, mẩu bánh mì + tiêu đề trang.
+    Dưới 768px thanh bên Tabler ẩn; điều hướng đi qua nút "Menu" ở thanh trên (`base.html`). -#}
+{% block body_class %}co-aside{% endblock %}
+{% block menu_phu %}
+<span class="grp">{{ _("Bảng dữ liệu") }}</span>
+{% for item in admin._menu.items %}{% if item.type_ == "View" and item.is_visible(request) and item.is_accessible(request) %}<a href="{{ item.url(request) }}"{% if item.is_active(request) %} class="on"{% endif %}>{{ item.display_name }}</a>{% endif %}{% endfor %}
+{% if admin.authentication_backend %}<a href="{{ request.url_for('admin:logout') }}">{{ _("Đăng xuất") }}</a>{% endif %}
+{% endblock %}
+{% block body %}
+{%- set _IC_SQA = {"fa-user": "users", "fa-coins": "gem", "fa-clipboard-list": "clipboard-list", "fa-key": "code", "fa-lock": "shield",
+    "fa-list-check": "workflow", "fa-circle-info": "monitor", "Phiên đăng nhập": "clock"} -%}
+<div class="wrapper">
+  <aside class="navbar navbar-expand-lg navbar-vertical navbar-expand-md navbar-dark">
+    <div class="container-fluid">
+      <a class="ltt-sidebrand" href="{{ url_for('admin:index') }}">
+        <span class="mark" aria-hidden="true">LTT</span>
+        <span><b>LTT AI Studio</b><small>{{ _("quản trị · bảng dữ liệu") }}</small></span>
+      </a>
+      <nav class="navbar navbar-expand-sm" id="navbar-menu">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+          aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="{{ _("Mở điều hướng") }}">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav">
+            {% for item in admin._menu.items %}
+            {#- C4 (DL-005): icon line SVG `_icon.html` thay icon Font Awesome đặc; ánh xạ theo lớp fa của view.
+                Cùng markup `menu_item` của gói sqladmin 0.20.1, chỉ khác phần tử icon. -#}
+            {% if item.type_ == "View" %}{% if item.is_visible(request) and item.is_accessible(request) %}
+            <li class="nav-item">
+              <a class="nav-link {% if item.is_active(request) %}active{% endif %}" href="{{ item.url(request) }}">
+                <span class="nav-link-icon d-md-none d-lg-inline-block" aria-hidden="true">{{ ic.icon(_IC_SQA.get(item.display_name) or _IC_SQA.get((item.icon or "").split(" ")[-1], "layers")) }}</span>
+                <span class="nav-link-title">{{ item.display_name }}</span>
+              </a>
+            </li>{% endif %}
+            {% elif item.type_ == "Category" %}{{ menu_category(item, request) }}{% endif %}
+            {% endfor %}
+          </ul>
+        </div>
+      </nav>
+      {% if admin.authentication_backend %}
+      <a href="{{ request.url_for('admin:logout') }}" class="ltt-dangxuat">
+        {{ ic.icon("log-out") }}
+        <span>{{ _("Đăng xuất") }}</span>
+      </a>
+      {% endif %}
+    </div>
+  </aside>
+  <div class="page-wrapper">
+    <div class="container-fluid">
+      <div class="page-header d-print-none">
+        {% block content_header %}
+        <nav class="ltt-banhmi" aria-label="{{ _("Đường dẫn") }}">
+          <a href="/admin/">{{ _("Quản trị") }}</a><span aria-hidden="true">/</span>
+          <a href="/admin/nang-cao">{{ _("Bảng dữ liệu") }}</a>
+          {%- if model_view is defined and model_view %}<span aria-hidden="true">/</span>
+          {%- if request.url.path.endswith("/list") %}<span>{{ model_view.name_plural }}</span>
+          {%- else %}<a href="{{ url_for('admin:list', identity=model_view.identity) }}">{{ model_view.name_plural }}</a>{% endif %}
+          {%- endif %}
+        </nav>
+        <h1 class="ltt-h1">{% if title %}{{ title }}{% elif model_view is defined and model_view %}{{ model_view.name_plural }}{% else %}{{ _("Bảng dữ liệu") }}{% endif %}</h1>
+        {% if subtitle %}<p class="ltt-dan">{{ subtitle }}</p>{% endif %}
+        {% endblock %}
+      </div>
+    </div>
+    <div class="page-body flex-grow-1">
+      <div class="container-fluid">
+        <div class="row row-deck row-cards">
+          {% block content %} {% endblock %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{#- Bảng hẹp (< 768px) → thẻ nhãn: giá trị. Chỉ chép chữ tiêu đề cột sang `data-nhan`. -#}
+<script>
+(function(){
+  Array.prototype.forEach.call(document.querySelectorAll(".table-responsive>table.table"), function(t){
+    if (!t.tHead || !t.tHead.rows.length) return;
+    var nhan = Array.prototype.map.call(t.tHead.rows[0].cells, function(c){ return (c.textContent || "").replace(/\s+/g, " ").trim(); });
+    Array.prototype.forEach.call(t.tBodies, function(tb){
+      Array.prototype.forEach.call(tb.rows, function(r){
+        Array.prototype.forEach.call(r.cells, function(c, i){ if (nhan[i]) c.setAttribute("data-nhan", nhan[i]); });
+      });
+    });
+    t.classList.add("ltt-the");
+  });
+})();
+</script>
+{% endblock %}

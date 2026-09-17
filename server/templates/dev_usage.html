@@ -1,4 +1,5 @@
 {% extends "developers_base.html" %}
+{% import "_dev_tt.html" as dtt %}
 
 {% block dev_phu_de %}{{ _("Credit đã tiêu qua API, và ngân sách bạn tự đặt để không tiêu quá tay. Ngân sách quan sát chi tiêu — nó không bao giờ đổi sổ credit.") }}{% endblock %}
 
@@ -122,11 +123,11 @@
 </div>
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Ngân sách của bạn") }}</h2>
+  <h2 class="u-mt0">{{ _("Ngân sách của bạn") }}</h2>
   <p class="muted">{{ _("Ngân sách quan sát chi tiêu qua API và không bao giờ đổi sổ credit. Ngân sách mềm chỉ cảnh báo; ngân sách cứng từ chối lời gọi kế tiếp. Nếu máy chủ đã đặt trần thấp hơn thì trần đó vẫn thắng — luôn lấy cái chặt hơn.") }}</p>
 
   {% if budgets %}
-    <div class="dev-bang">
+    <div class="dev-bang" tabindex="0">
       <table class="table">
         <thead><tr>
           <th scope="col">{{ _("Phạm vi") }}</th><th scope="col">{{ _("Kỳ") }}</th>
@@ -181,25 +182,25 @@
         <select id="bg-project" name="project_id">
           <option value="">{{ _("cả tài khoản") }}</option>
           {% for project in projects %}
-            <option value="{{ project.id }}">{{ project.name }}</option>
+            <option value="{{ project.id }}">{{ dtt.du_an(project.name) }}</option>
           {% endfor %}
         </select>
       </div>
     </div>
-    <div class="dev-chon" style="margin-bottom:13px;">
+    <div class="dev-chon dev-cach-duoi">
       <label>
         <input type="checkbox" name="hard_cap" value="1">
         <span>{{ _("Chặn lời gọi khi vượt (ngân sách cứng)") }}</span>
       </label>
     </div>
-    <p class="muted" style="margin:0 0 13px;">{{ _("Không chọn = chỉ gửi cảnh báo ở 50%, 80% và 100%.") }}</p>
+    <p class="muted dev-ghi-form">{{ _("Không chọn = chỉ gửi cảnh báo ở 50%, 80% và 100%.") }}</p>
     <button type="submit" class="btn">{{ _("Đặt ngân sách") }}</button>
   </form>
   {% if error %}{% endif %}
 </div>
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Chi tiêu theo lời gọi") }}</h2>
+  <h2 class="u-mt0">{{ _("Chi tiêu theo lời gọi") }}</h2>
   <form method="get" action="/developers/usage" class="dev-loc">
     <div class="dev-field">
       <label for="us-tool">{{ _("Công cụ") }}</label>
@@ -225,7 +226,8 @@
       <select id="us-status" name="status">
         <option value="">{{ _("Mọi trạng thái") }}</option>
         {% for value in statuses %}
-          <option value="{{ value }}" {% if value == filters.status %}selected{% endif %}>{{ value }}</option>
+          {% set _n = dtt.nghia(value, 'so' if value in ('held', 'settled', 'refunded') else 'job') | trim %}
+          <option value="{{ value }}" {% if value == filters.status %}selected{% endif %}>{% if _n %}{{ _n }} ({{ value }}){% else %}{{ value }}{% endif %}</option>
         {% endfor %}
       </select>
     </div>
@@ -238,26 +240,36 @@
       <p>{{ _("Mỗi lời gọi có tính tiền sẽ thành một dòng ở đây, kèm khóa nào gọi và đã tính bao nhiêu.") }}</p>
     </div>
   {% else %}
-    <div class="dev-bang">
+    {# C3 17/09: cột Công cụ/Khóa mà KHÔNG dòng nào có giá trị thì bỏ hẳn cột
+       (trước đây cả cột là "—", đọc như dữ liệu hỏng). Chỉ cần một dòng có là
+       cột quay lại, các dòng trống vẫn in "—". #}
+    {% set co_tool = lines | selectattr('tool') | list | length > 0 %}
+    {% set co_khoa = (lines | selectattr('key_id') | list | length > 0) or (lines | selectattr('mode', 'equalto', 'test') | list | length > 0) %}
+    <div class="dev-bang" tabindex="0">
       <table class="table">
         <thead><tr>
-          <th scope="col">{{ _("Lúc") }}</th><th scope="col">{{ _("Công cụ") }}</th><th scope="col">{{ _("Khóa") }}</th>
-          <th scope="col">{{ _("Trạng thái") }}</th><th scope="col">{{ _("Đã tính") }}</th>
+          <th scope="col">{{ _("Lúc") }}</th>
+          {% if co_tool %}<th scope="col">{{ _("Công cụ") }}</th>{% endif %}
+          {% if co_khoa %}<th scope="col">{{ _("Khóa") }}</th>{% endif %}
+          <th scope="col">{{ _("Trạng thái") }}</th><th scope="col" class="dev-so-phai">{{ _("Đã tính") }}</th>
         </tr></thead>
         <tbody>
           {% for line in lines %}
             <tr>
               <td class="tnum">{{ line.created_at[:16].replace("T", " ") if line.created_at else "" }}</td>
-              <td class="{% if not line.tool %}dev-trong-o{% endif %}">{{ line.tool or "—" }}</td>
-              <td><code class="dev-id">{{ (line.key_id or "")[:12] }}</code>
-                {% if line.mode == 'test' %}<span class="chip v">{{ _("Test") }}</span>{% endif %}</td>
-              <td><span class="dev-tt {{ {'settled':'ok','held':'canh','refunded':'tat'}.get(line.status,'') }}">{{ line.status }}</span></td>
-              <td class="tnum">{{ line.credit.net_charged }}</td>
+              {% if co_tool %}<td class="{% if not line.tool %}dev-trong-o{% endif %}">{{ line.tool or "—" }}</td>{% endif %}
+              {% if co_khoa %}<td class="{% if not line.key_id %}dev-trong-o{% endif %}">{% if line.key_id %}<code class="dev-id">{{ line.key_id[:12] }}</code>{% else %}—{% endif %}
+                {% if line.mode == 'test' %}<span class="chip v">{{ _("Test") }}</span>{% endif %}</td>{% endif %}
+              <td>{{ dtt.tt(line.status, 'so' if line.status in ('held', 'settled', 'refunded') else 'job') }}</td>
+              <td class="tnum dev-so-phai">{{ line.credit.net_charged }}</td>
             </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
+    {% if not co_tool or not co_khoa %}
+      <p class="muted dev-ghi-bang">{{ _("Các lời gọi ở đây chưa gắn công cụ hoặc khóa nào, nên cột đó được ẩn.") }}</p>
+    {% endif %}
   {% endif %}
   <p class="muted">{{ _("Cùng dữ liệu có ở") }} <code>GET /api/v1/usage</code>.</p>
 </div>

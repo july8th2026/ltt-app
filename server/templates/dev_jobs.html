@@ -1,4 +1,5 @@
 {% extends "developers_base.html" %}
+{% import "_dev_tt.html" as dtt %}
 
 {% block dev_phu_de %}{{ _("Mười job gần nhất tạo qua API. Đây là bản tóm để liếc nhanh — danh sách đầy đủ nằm ở %(route)s.")|format(route="GET /api/v1/jobs") }}{% endblock %}
 
@@ -12,7 +13,7 @@
       <a class="btn btn-ghost" href="/developers/logs">{{ _("Xem nhật ký request") }}</a>
     </div>
   {% else %}
-    <div class="dev-bang">
+    <div class="dev-bang" tabindex="0">
       <table class="table">
         <thead><tr>
           <th scope="col">Job</th><th scope="col">{{ _("Công cụ") }}</th><th scope="col">{{ _("Khóa") }}</th>
@@ -27,7 +28,7 @@
               <td>
                 {# Cung luat voi bang nhat ky: chu van la chu that, mau chi
                    them vao. `done` va `error` truoc day in giong het nhau. #}
-                <span class="dev-tt {{ {'succeeded':'ok','done':'ok','running':'canh','queued':'canh','failed':'loi','error':'loi','cancelled':'tat'}.get(job.status,'') }}">{{ job.status }}</span></td>
+                {{ dtt.tt(job.status) }}</td>
               <td class="tnum">{{ job.created_at.strftime("%Y-%m-%d %H:%M") if job.created_at else "" }}</td>
             </tr>
           {% endfor %}

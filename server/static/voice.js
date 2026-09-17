@@ -751,12 +751,16 @@
       var laToi = d.loai === "toi";
       var ct = chiTiet[d.ma] || {};
 
+      // `aria-pressed` nam tren nut "Chi tiet" cua moi the (Golden UI 16/09) —
+      // the khong con la mot nut nen khong mang trang thai nhan.
       for (var k = 0; k < the.length; k++) {
         the[k].classList.remove("chon");
-        the[k].setAttribute("aria-pressed", "false");
+        var xemK = the[k].querySelector(".lv-the-xem");
+        if (xemK) xemK.setAttribute("aria-pressed", "false");
       }
       t.classList.add("chon");
-      t.setAttribute("aria-pressed", "true");
+      var xemT = t.querySelector(".lv-the-xem");
+      if (xemT) xemT.setAttribute("aria-pressed", "true");
 
       dat("lv-ct-ten", d.ten);
       dat("lv-ct-loai", laMau ? chu.mau
@@ -906,16 +910,10 @@
           if (trong && trong !== t && !trong.classList.contains("lv-the-xem")) return;
           moChiTiet(t);
         });
-        // The mang `role="button"` nen ban phim phai nhan ca Enter lan Space.
-        t.addEventListener("keydown", function (e) {
-          // ⛔ Phim go TRONG mot nut/o nhap ben trong la cua no, khong phai
-          //    cua the. Nuot o day la nuot Enter cua chinh nut nghe thu.
-          if (e.target !== t) return;
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            moChiTiet(t);
-          }
-        });
+        // ⛔ Khong con handler `keydown` tren the: the khong focus duoc nua
+        //    (bo `role=button`/`tabindex`), nen lop loi "the nuot Enter cua nut
+        //    ben trong" (02/09) khong con cho de xay ra. Enter/Space di vao nut
+        //    "Chi tiet" — hanh vi mac dinh cua `<button>`.
       })(the[m]);
     }
 

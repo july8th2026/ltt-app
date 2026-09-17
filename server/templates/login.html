@@ -1,16 +1,16 @@
 {% extends "base_plain.html" %}
-{% block title %}Đăng nhập — LTT AI Studio{% endblock %}
+{% block title %}{{ _("Đăng nhập") }} — LTT AI Studio{% endblock %}
 {% block content %}
-  {% set auth_title = 'Đăng nhập LTT AI Studio' %}
-  {% set auth_subtitle = 'Một tài khoản cho toàn bộ công cụ AI và lịch sử công việc của bạn.' %}
+  {% set auth_title = _('Đăng nhập') %}
+  {% set auth_subtitle = _('Một tài khoản cho toàn bộ công cụ AI và lịch sử công việc của bạn.') %}
   {% include "_auth_brand.html" %}
   <div class="card">
     {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
     <form method="post" action="/login">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <input type="hidden" name="next" value="{{ next|default('')|e }}">
-      <div class="auth-field"><label for="login-username">{{ _("Tên đăng nhập") }}</label>
-        <input id="login-username" type="text" name="username" placeholder="{{ _('Nhập tên đăng nhập') }}" required autofocus autocomplete="username"></div>
+      <div class="auth-field"><label for="login-username">{{ _("Email hoặc tên đăng nhập") }}</label>
+        <input id="login-username" type="text" name="username" placeholder="{{ _('Nhập email hoặc tên đăng nhập') }}" required autofocus autocomplete="username"></div>
       <div class="auth-field"><label for="login-password">{{ _("Mật khẩu") }}</label>
         <input id="login-password" type="password" name="password" placeholder="{{ _('Nhập mật khẩu') }}" required autocomplete="current-password"></div>
       {% if turnstile_site_key %}
@@ -22,8 +22,8 @@
       <button type="submit">{{ _("Đăng nhập") }}</button>
     </form>
     <p class="hint">
-      <a href="/register">{{ _("Tạo tài khoản") }}</a><span class="auth-sep">·</span>
-      <a href="/forgot-password">{{ _("Quên mật khẩu?") }}</a>
+      <a href="{{ u('/register') }}">{{ _("Tạo tài khoản") }}</a><span class="auth-sep">·</span>
+      <a href="{{ u('/forgot-password') }}">{{ _("Quên mật khẩu?") }}</a>
     </p>
   </div>
 {% endblock %}

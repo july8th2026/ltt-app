@@ -1,26 +1,24 @@
 {% extends "base.html" %}
+{% from "_o_chon_tep.html" import o_chon_tep %}
+{% import "_ui.html" as ui %}
+{% import "_app_head.html" as ah %}
 {% block title %}{{ _("Phiên âm có dòng thời gian") }} — LTT AI Studio{% endblock %}
-{% block topbar_title %}<strong>{{ _("Phiên âm có dòng thời gian") }}</strong>{% endblock %}
 
 {% block content %}
-<section class="ts-wrap" aria-labelledby="ts-title">
-  <header class="ts-head">
-    <h1 id="ts-title">{{ _("Phiên âm có dòng thời gian") }}</h1>
-    <p>{{ _("Tải lên một tệp âm thanh. Kết quả là bản ghi lời có mốc thời gian, đã chia đoạn theo độ dài bạn đặt, kèm các khoảng lặng.") }}</p>
-    <a class="btn ghost" href="/jobs">{{ _("Việc của tôi") }}</a>
-  </header>
+<section class="ts-wrap af-page" aria-labelledby="ts-title">
+  {{ ah.dau_trang(_("Workflow"), _("Phiên âm có dòng thời gian"), _("Tải lên một tệp âm thanh. Kết quả là bản ghi lời có mốc thời gian, đã chia đoạn theo độ dài bạn đặt, kèm các khoảng lặng."), id_tieu_de="ts-title", lop="ts-head") }}
 
-  {% if loi %}<p class="alert error" role="alert">{{ loi }}</p>{% endif %}
+  {% if loi %}<p class="alert alert-err" role="alert">{{ loi }}</p>{% endif %}
 
-  <form class="ts-form" method="post" action="/transcript/tao" enctype="multipart/form-data">
+  <form class="ts-form af-card" method="post" action="/transcript/tao" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="af-step"><span>01</span><h2>{{ _("Nguồn") }}</h2></div>
 
-    <label class="field">
-      <span>{{ _("Tệp âm thanh") }}</span>
-      <input type="file" name="audio" accept="audio/*" required>
-      <small>{{ _("WAV, MP3, M4A, AAC, FLAC, OGG, Opus, WebM — tối đa 95 MB.") }}</small>
-    </label>
+    <div class="field">
+      {{ o_chon_tep('tr-audio', 'audio', _("Tệp âm thanh"), goi_y=_("WAV, MP3, M4A, AAC, FLAC, OGG, Opus, WebM — tối đa 95 MB."), accept='audio/*', bat_buoc=true, icon='♫') }}
+    </div>
 
+    <div class="af-step"><span>02</span><h2>{{ _("Thiết lập") }}</h2></div>
     <div class="ts-row">
       <label class="field">
         <span>{{ _("Ngôn ngữ") }}</span>
@@ -41,12 +39,13 @@
       <span>{{ _("Giữ các khoảng lặng thành đoạn riêng") }}</span>
     </label>
 
-    <button class="btn primary" type="submit">{{ _("Phiên âm") }}</button>
+    <div class="af-actions"><button class="btn" type="submit">{{ _("Phiên âm") }}</button></div>
   </form>
 
-  <h2>{{ _("Lượt gần đây") }}</h2>
+  <section class="af-card af-history" aria-labelledby="ts-history-title">
+  <h2 id="ts-history-title">{{ _("Lượt gần đây") }}</h2>
   {% if jobs %}
-  <table class="ts-jobs">
+  <div class="af-table-wrap"><table class="ts-jobs af-table">
     <thead><tr>
       <th>{{ _("Lúc") }}</th><th>{{ _("Trạng thái") }}</th>
       <th>{{ _("Tiến độ") }}</th><th>{{ _("Số đoạn") }}</th><th></th>
@@ -54,17 +53,19 @@
     <tbody>
       {% for j in jobs %}
       <tr>
-        <td>{{ j.created_at }}</td>
-        <td>{{ j.status }}</td>
+        <td class="tnum">{{ j.created_at.strftime('%H:%M %d/%m/%Y') if j.created_at else '' }}</td>
+        <td>{{ ui.nhan_trang_thai(j.status) }}</td>
         <td>{{ j.progress or 0 }}%</td>
         <td>{{ (j.result or {}).get("transcript", []) | length }}</td>
         <td><a href="/transcript/ket-qua/{{ j.id }}">{{ _("Xem") }}</a></td>
       </tr>
       {% endfor %}
     </tbody>
-  </table>
+  </table></div>
   {% else %}
-  <p class="muted">{{ _("Chưa có lượt nào.") }}</p>
+  <div class="af-empty"><strong>{{ _("Chưa có lượt nào.") }}</strong><span>{{ _("Kết quả sẽ hiện ở đây sau lượt đầu tiên.") }}</span></div>
   {% endif %}
+  </section>
 </section>
+<script src="/static/chon_tep.js?v={{ asset_ver }}" defer></script>
 {% endblock %}

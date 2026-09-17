@@ -1,14 +1,97 @@
 {% extends "base.html" %}
-{% block title %}{{ code }} — LTT AI Studio{% endblock %}
+{#- Golden UI (16/09) — trang lỗi theo MÃ.
+
+    Backend vẫn quyết `code` + `message` (server/app.py::http_error,
+    access_middleware::_trang_loi). Template chỉ thêm TIÊU ĐỀ, GỢI Ý và ĐƯỜNG
+    PHỤC HỒI phù hợp từng mã — không đổi mã trạng thái, không đổi thông điệp.
+    `message` giữ vai giải thích chính vì nó có thể cụ thể hơn bảng dưới
+    (vd LOCKED: "Công cụ này chưa mở cho tài khoản của bạn."). -#}
+{% import "_icon.html" as ic %}
+{%- set bang = {
+  400: (_("Yêu cầu chưa đúng"), _("Dữ liệu gửi lên thiếu hoặc không hợp lệ. Quay lại trang trước, kiểm tra thông tin rồi thử lại.")),
+  401: (_("Cần đăng nhập"), _("Phiên đăng nhập đã hết hoặc bạn chưa đăng nhập. Đăng nhập để tiếp tục đúng trang này.")),
+  403: (_("Chưa có quyền truy cập"), _("Tài khoản hiện tại không được mở trang này. Nếu bạn nghĩ đây là nhầm lẫn, gửi mã tra cứu bên dưới cho bộ phận hỗ trợ.")),
+  404: (_("Không tìm thấy trang"), _("Kiểm tra lại địa chỉ, hoặc mở trang từ menu phía trên. Nếu bạn đến đây từ một liên kết trong hệ thống, gửi mã tra cứu bên dưới cho bộ phận hỗ trợ.")),
+  405: (_("Thao tác không được hỗ trợ"), _("Trang này không nhận kiểu yêu cầu vừa gửi. Mở lại trang từ menu rồi thử lại.")),
+  413: (_("Tệp quá lớn"), _("Tệp hoặc dữ liệu gửi lên vượt giới hạn cho phép. Thử lại với tệp nhỏ hơn.")),
+  429: (_("Thao tác quá nhanh"), _("Hệ thống tạm giới hạn để bảo vệ tài khoản. Chờ khoảng một phút rồi thử lại.")),
+  500: (_("Máy chủ gặp sự cố"), _("Lỗi nằm ở phía chúng tôi, không phải do bạn. Thử lại sau ít phút; nếu vẫn lỗi, gửi mã tra cứu cho bộ phận hỗ trợ.")),
+  502: (_("Dịch vụ tạm gián đoạn"), _("Một dịch vụ phía sau chưa phản hồi. Thử lại sau ít phút.")),
+  503: (_("Dịch vụ đang bảo trì hoặc quá tải"), _("Tính năng này tạm chưa sẵn sàng. Thử lại sau ít phút.")),
+  504: (_("Phản hồi quá lâu"), _("Máy chủ không phản hồi kịp. Thử lại sau ít phút.")),
+} -%}
+{%- set muc = bang.get(code, (_("Đã có lỗi xảy ra"), _("Thử lại hoặc quay về trang chính."))) -%}
+{%- set thu_lai = code in (429, 500, 502, 503, 504) -%}
+{#- Golden UI C3: mọi mã 4xx dùng `ui-state--warn` (cùng viền với 404 đơn nạp
+    `nap_khong_thay.html`); trước đây 404 rơi vào `neutral` — biến thể KHÔNG tồn
+    tại trong CSS nên viền là màu xám-nâu mặc định, lệch với 404 đơn nạp. -#}
+{%- set muc_do = 'err' if code >= 500 else 'warn' -%}
+{%- set an_danh = not da_dang_nhap(request) -%}
+{#- Golden UI C4: biểu tượng theo MÃ — 403 và 404 cùng viền cảnh báo nên cần dấu
+    hiệu riêng (khiên = quyền, kính lúp = không tìm thấy). -#}
+{%- set bieu_tuong = {401: 'shield', 403: 'shield', 404: 'search', 429: 'clock'}.get(code, 'activity' if code >= 500 else 'layout-grid') -%}
+{%- set co_ho_tro = code in (403, 404, 500, 502, 503, 504) -%}
+{%- set moi_dang_nhap = code == 401 or (code in (403, 404) and an_danh) -%}
+{#- Câu dẫn của backend cho 404 chỉ nhắc lại tiêu đề ("Không tìm thấy trang bạn
+    yêu cầu.") ⇒ thay bằng câu có ích. Thông điệp 404 CỤ THỂ khác vẫn hiện nguyên. -#}
+{%- set lead_404_chung = code == 404 and message in ("Không tìm thấy trang bạn yêu cầu.", _("Không tìm thấy trang bạn yêu cầu.")) -%}
+{% block title %}{{ muc[0] }} ({{ code }}) — LTT AI Studio{% endblock %}
 {% block content %}
-  <div class="card">
-    <h1 style="margin-top:0;">{{ code }}</h1>
-    <p>{{ message }}</p>
-    <p><a class="error-home-link" href="/">{{ _("← Về trang chính") }}</a></p>
-    {% if correlation_id %}
-      <p style="color:var(--dim); font-size:12px; margin-bottom:0;">
-        Mã tra cứu: <code>{{ correlation_id }}</code>
-      </p>
+  <section class="ui-state ui-state--{{ muc_do }} loi-ma-{{ code }}{% if moi_dang_nhap %} loi-moi-dang-nhap{% endif %}" aria-labelledby="loi-tieu-de">
+    <p class="ui-state-eyebrow loi-eyebrow"><span class="loi-bieu-tuong">{{ ic.icon(bieu_tuong) }}</span>{{ _("Lỗi %(ma)s", ma=code) }}</p>
+    <h1 id="loi-tieu-de" class="ui-state-title">{{ muc[0] }}</h1>
+    {% if lead_404_chung %}
+      <p class="ui-state-lead">{{ _("Đường dẫn có thể đã gõ sai, đã đổi, hoặc nội dung đã bị xoá.") }}</p>
+    {% else %}
+      <p class="ui-state-lead">{{ message }}</p>
     {% endif %}
-  </div>
+    {% if code in (403, 404) and an_danh %}
+      <p class="ui-state-body">{{ _("Một số trang chỉ mở sau khi đăng nhập. Đăng nhập rồi thử lại, hoặc quay về trang chính.") }}</p>
+    {% else %}
+      <p class="ui-state-body">{{ muc[1] }}</p>
+    {% endif %}
+    <div class="ui-state-actions">
+      {% if moi_dang_nhap %}
+        <a class="btn" href="{{ u('/login') }}?next={{ request.url.path | urlencode }}">{{ _("Đăng nhập") }}</a>
+        <a class="btn ghost error-home-link" href="{{ u('/') }}">{{ _("Về trang chính") }}</a>
+      {% elif thu_lai %}
+        <a class="btn" href="{{ request.url.path }}">{{ _("Thử lại") }}</a>
+        <a class="btn ghost error-home-link" href="{{ u('/') }}">{{ _("Về trang chính") }}</a>
+      {% else %}
+        <a class="btn error-home-link" href="{{ u('/') }}">{{ _("Về trang chính") }}</a>
+      {% endif %}
+    </div>
+    {#- Golden UI C4: tối đa HAI nút (một chính); hỗ trợ là liên kết cạnh mã tra
+        cứu — hai thứ khách cần cùng lúc. Mã UUID không ngắt giữa chuỗi. -#}
+    {% if correlation_id or co_ho_tro %}
+      <div class="ui-state-meta loi-meta">
+        {% if correlation_id %}
+          <p class="loi-ma-nhan">{{ _("Mã tra cứu") }}</p>
+          <div class="loi-ma">
+            <code class="ui-state-id" tabindex="0" title="{{ correlation_id }}">{{ correlation_id }}</code>
+            <button type="button" class="btn ghost loi-ma-chep" data-chep="{{ correlation_id }}" data-da-chep="{{ _('Đã chép') }}" hidden>{{ _("Chép mã") }}</button>
+          </div>
+        {% endif %}
+        {% if co_ho_tro %}
+          <p class="loi-ho-tro">{{ _("Cần giúp?") }} <a href="{{ public_links.support }}" rel="noopener">{{ _("Liên hệ hỗ trợ") }}</a>{% if correlation_id %} {{ _("và gửi kèm mã tra cứu.") }}{% endif %}</p>
+        {% endif %}
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var nut = document.querySelector(".loi-ma-chep");
+  if (!nut || !navigator.clipboard) return;
+  nut.hidden = false;
+  var goc = nut.textContent;
+  nut.addEventListener("click", function () {
+    navigator.clipboard.writeText(nut.getAttribute("data-chep")).then(function () {
+      nut.textContent = nut.getAttribute("data-da-chep");
+      setTimeout(function () { nut.textContent = goc; }, 2000);
+    });
+  });
+})();
+</script>
 {% endblock %}

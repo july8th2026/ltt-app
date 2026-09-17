@@ -1,0 +1,41 @@
+{#- Golden UI DL-004 (17/09/2026): ban sao `sqladmin/edit.html` cua goi sqladmin 0.20.1,
+    CHI doi chuoi hien thi (qua `_()`), vai tro nut va a11y. Nang cap sqladmin => doi chieu lai.
+    ⛔ Nut luu: `<input value="Save">` -> `<button name="save" value="Save">` — trinh duyet gui
+    CUNG `save=Save` (application.py so chuoi nay), chi chu hien thi doi. -#}
+{% extends "sqladmin/layout.html" %}
+{% from 'sqladmin/_macros.html' import render_form_fields %}
+{% block content %}
+<div class="col-12">
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">{{ _("Sửa %(ten)s", ten=model_view.name) }}</h3>
+    </div>
+    <div class="card-body border-bottom py-3">
+      <form action="{{ model_view._build_url_for('admin:edit', request, obj) }}" method="POST"
+        enctype="multipart/form-data">
+        <div class="row">
+          {% if error %}
+          <div class="alert alert-danger" role="alert">{{ error }}</div>
+          {% endif %}
+        </div>
+        <fieldset class="form-fieldset">
+          {{ render_form_fields(form, form_opts=form_opts) }}
+        </fieldset>
+        {#- Golden UI C3: Huỷ đứng CÙNG cụm với các nút lưu (trước: cột riêng, cách xa). Giá trị `save` giữ nguyên. -#}
+        <div class="ltt-form-nut">
+          <button type="submit" name="save" value="Save" class="btn btn-primary">{{ _("Lưu") }}</button>
+          <button type="submit" name="save" value="Save and continue editing" class="btn btn-secondary">{{ _("Lưu và sửa tiếp") }}</button>
+          {% if model_view.can_create %}
+          {% if model_view.save_as %}
+          <button type="submit" name="save" value="Save as new" class="btn btn-secondary">{{ _("Lưu thành bản mới") }}</button>
+          {% else %}
+          <button type="submit" name="save" value="Save and add another" class="btn btn-secondary">{{ _("Lưu và thêm bản khác") }}</button>
+          {% endif %}
+          {% endif %}
+          <a href="{{ url_for('admin:list', identity=model_view.identity) }}" class="btn ltt-huy">{{ _("Huỷ") }}</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

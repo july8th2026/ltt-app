@@ -379,7 +379,7 @@ def test_image_route_chan_cross_user(tmp_path, monkeypatch):
         remix_fragment = c.get(
             f"/thumbnail/studio-fragment?remix_job_id={seeded_id}&image_index=0")
         assert (remix_fragment.status_code == 200 and
-                "Đang remix từ output đã chọn" in remix_fragment.text)
+                "Đang phối lại từ kết quả đã chọn" in remix_fragment.text)
         assert "NOI_DUNG_CUA_A" in remix_fragment.text
         remix_csrf = _re.search(
             r'name="csrf_token" value="([^"]+)"', remix_fragment.text).group(1)

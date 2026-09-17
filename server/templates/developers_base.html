@@ -27,7 +27,11 @@
    mot con so moi o mot cho moi. Bang 8 cot cua trang khoa can no. #}
 {% block page_mode %}wide{% endblock %}
 
-{% block title %}{{ section_title }} — {{ _("API cho lập trình viên") }} — LTT AI Studio{% endblock %}
+{# C3 17/09: nhãn mục "Project" (msgid trong `server/routes/developer/_chung.py`)
+   hiện tiếng Anh giữa khu tiếng Việt. Đổi tại lớp trình bày, không sửa route. #}
+{% macro ten_muc(label) %}{{ _("Dự án") if label == _("Project") else label }}{% endmacro %}
+
+{% block title %}{{ ten_muc(section_title) }} — {{ _("API cho lập trình viên") }} — LTT AI Studio{% endblock %}
 {% block topbar_title %}<strong>{{ _("API cho lập trình viên") }}</strong>{% endblock %}
 {# Thanh trên riêng của khu: liên kết phụ + viên trạng thái hệ thống + chuông.
    Nằm trong `.pagebar` của base.html (ngoài .app-shell) nên tự mang token qua
@@ -77,7 +81,7 @@
                ben la cap trong cung, va no lay lai `page`. #}
             <a href="{{ item.href }}"
                {% if item.active %}aria-current="{{ 'true' if muc_con else 'page' }}" class="active"{% endif %}>
-              {{ item.label }}{% if item.badge %} <span class="pill">{{ item.badge }}</span>{% endif %}
+              {{ ten_muc(item.label) }}{% if item.badge %} <span class="pill">{{ item.badge }}</span>{% endif %}
             </a>
           </li>
         {% endfor %}
@@ -108,7 +112,7 @@
        phần phải trống và tiêu đề vẫn đúng chỗ. #}
     <div class="dev-dau">
       <div>
-        <h1 class="dev-h1">{{ section_title }}</h1>
+        <h1 class="dev-h1">{{ ten_muc(section_title) }}</h1>
         {% set _phu %}{% block dev_phu_de %}{% endblock %}{% endset %}
         {% if _phu|trim %}<p class="dev-dan">{{ _phu|safe }}</p>{% endif %}
       </div>
@@ -121,11 +125,11 @@
        va tin nhan ho tro thi 404 la thiet hai that, con roi khoi thanh dieu
        huong thi khong. #}
     {% if muc_con %}
-      <nav class="dev-sub" aria-label="{{ section_title }}">
+      <nav class="dev-sub" aria-label="{{ ten_muc(section_title) }}">
         <ul>
           {% for s in muc_con %}
             <li><a href="{{ s.href }}"
-                   {% if s.active %}aria-current="page" class="active"{% endif %}>{{ s.label }}</a></li>
+                   {% if s.active %}aria-current="page" class="active"{% endif %}>{{ ten_muc(s.label) }}</a></li>
           {% endfor %}
         </ul>
       </nav>
@@ -139,15 +143,14 @@
 
        Dat o day, MOT cho, cho MOI trang cong khai: them trang thu ba vao
        `TRANG_CONG_KHAI` thi no co loi moi nay ngay, khong phai nho chep sang. #}
-    <div class="card" style="margin-bottom:16px;">
-      <p style="margin:0 0 10px;">
+    <div class="card u-mb16">
+      <p class="u-mb10">
         {{ _("Trang này đọc được không cần tài khoản. Để gọi thật, bạn cần một khóa API — và khóa thì cần tài khoản.") }}
       </p>
-      <p style="margin:0;">
+      <p class="u-m0 dev-hang-nut">
         <a class="btn" href="/register">{{ _("Đăng ký lấy khóa") }}</a>
-        <a class="btn btn-ghost" href="/login?next={{ request.url.path }}"
-           style="margin-left:8px;">{{ _("Tôi đã có tài khoản") }}</a>
-        <a href="/gia-api" style="margin-left:12px;">{{ _("Xem giá") }}</a>
+        <a class="btn btn-ghost" href="/login?next={{ request.url.path }}">{{ _("Tôi đã có tài khoản") }}</a>
+        <a href="/gia-api">{{ _("Xem giá") }}</a>
       </p>
     </div>
     {% endif %}
@@ -169,6 +172,34 @@
    Dung chung dung tep ma trang cong khai dung (`sao_chep.js`), va kieu cua nut
    da co san vi `base.html` include `_kieu_chung.html`. Khong dung ban thu hai. #}
 {% block scripts %}
+{# C3 17/09: ở màn hẹp thanh bên thành MỘT dải cuộn ngang; mục đang mở có thể
+   nằm ngoài khung (vd "Cài đặt & bảo mật"). Cuộn nó vào giữa dải — chỉ cuộn
+   dải, không cuộn trang. #}
+<script>
+(function () {
+  {# C4: mép mờ chỉ hiện ở phía CÒN nội dung để cuộn (data-mep-trai/phai), và
+     mục đang mở cuộn vào giữa theo toạ độ khung nhìn — offsetLeft đo theo
+     offsetParent nên lệch khi dải không phải offsetParent của mục. #}
+  function mep(el) {
+    if (!el) return;
+    var cap = function () {
+      var du = el.scrollWidth - el.clientWidth;
+      el.toggleAttribute('data-mep-trai', du > 2 && el.scrollLeft > 2);
+      el.toggleAttribute('data-mep-phai', du > 2 && el.scrollLeft < du - 2);
+    };
+    var mo = el.querySelector('a.active');
+    if (mo && el.scrollWidth > el.clientWidth) {
+      var a = mo.getBoundingClientRect(), b = el.getBoundingClientRect();
+      el.scrollLeft += (a.left - b.left) - (el.clientWidth - a.width) / 2;
+    }
+    cap();
+    el.addEventListener('scroll', cap, { passive: true });
+    window.addEventListener('resize', cap);
+  }
+  mep(document.querySelector('.khu-dev .app-side'));
+  mep(document.querySelector('.khu-dev .dev-sub ul'));
+})();
+</script>
 <script src="/static/sao_chep.js?v={{ asset_ver }}" defer></script>
 <script src="/static/cam_chon.js?v={{ asset_ver }}" defer></script>
 {% endblock %}

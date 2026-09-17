@@ -44,7 +44,7 @@
     </div>
     <div>
       <span class="eyebrow">Vai trò</span>
-      <strong>{{ u.role or 'user' }}</strong>
+      <strong>{{ {'admin': 'Quản trị viên', 'user': 'Thành viên'}.get(u.role or 'user', u.role) }}</strong>
     </div>
     <div>
       <span class="eyebrow">Số dư</span>
@@ -65,13 +65,13 @@
         <a href="/admin/credit-entry/list">Sổ đầy đủ →</a>
       </header>
       {% if ho_so.but_toan %}
-      <div class="dev-bang">
+      <div class="dev-bang" tabindex="0">
         <table class="table">
           <thead><tr><th>Lúc</th><th>Loại</th><th class="tnum">Δ</th><th>Ghi chú</th></tr></thead>
           <tbody>
             {% for b in ho_so.but_toan %}
             <tr>
-              <td class="tnum">{{ b.created_at.strftime('%d/%m %H:%M') if b.created_at else '—' }}</td>
+              <td class="tnum">{{ b.created_at.strftime('%d/%m/%Y %H:%M') if b.created_at else '—' }}</td>
               <td>{{ b.kind }}</td>
               <td class="tnum">{{ '{:+,}'.format(b.delta) }}</td>
               <td>{{ (b.note or '')[:70] }}</td>
@@ -92,7 +92,7 @@
         <a href="/admin/don">Tất cả đơn →</a>
       </header>
       {% if ho_so.don %}
-      <div class="dev-bang">
+      <div class="dev-bang" tabindex="0">
         <table class="table">
           <thead><tr><th>Mã đơn</th><th class="tnum">Tiền</th><th class="tnum">Credit</th><th>Trạng thái</th><th>Tạo lúc</th></tr></thead>
           <tbody>
@@ -107,7 +107,7 @@
                 {% elif d.status == 'pending' %}<span class="dev-tt canh">Đang chờ</span>
                 {% else %}<span class="dev-tt tat">{{ d.status }}</span>{% endif %}
               </td>
-              <td class="tnum">{{ d.created_at.strftime('%d/%m %H:%M') if d.created_at else '—' }}</td>
+              <td class="tnum">{{ d.created_at.strftime('%d/%m/%Y %H:%M') if d.created_at else '—' }}</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -128,13 +128,13 @@
         {% if ho_so.viec_hong %}
         <p><span class="dev-tt loi">{{ ho_so.viec_hong }}</span> việc hỏng trong {{ ho_so.viec|length }} việc gần nhất.</p>
         {% endif %}
-        <div class="dev-bang">
+        <div class="dev-bang" tabindex="0">
           <table class="table">
             <thead><tr><th>Lúc</th><th>App</th><th>Loại</th><th>Trạng thái</th></tr></thead>
             <tbody>
               {% for j in ho_so.viec %}
               <tr>
-                <td class="tnum">{{ j.created_at.strftime('%d/%m %H:%M') if j.created_at else '—' }}</td>
+                <td class="tnum">{{ j.created_at.strftime('%d/%m/%Y %H:%M') if j.created_at else '—' }}</td>
                 <td>{{ j.app_slug or '—' }}</td>
                 <td>{{ j.job_type or '—' }}</td>
                 <td>
@@ -195,7 +195,7 @@
         <a href="/admin/session/list">Bảng thô →</a>
       </header>
       {% if ho_so.phien %}
-      <div class="dev-bang">
+      <div class="dev-bang" tabindex="0">
         <table class="table">
           {# ⛔ KHONG hien `DbSession.id`: no CHINH LA token cookie phien (dung
              lam khoa chinh). Render no ra day la ai xem/chup man hinh trang nay
@@ -208,8 +208,8 @@
           <tbody>
             {% for p in ho_so.phien %}
             <tr>
-              <td class="tnum">{{ p.created_at.strftime('%d/%m %H:%M') if p.created_at else '—' }}</td>
-              <td class="tnum">{{ p.expires_at.strftime('%d/%m %H:%M') if p.expires_at else '—' }}</td>
+              <td class="tnum">{{ p.created_at.strftime('%d/%m/%Y %H:%M') if p.created_at else '—' }}</td>
+              <td class="tnum">{{ p.expires_at.strftime('%d/%m/%Y %H:%M') if p.expires_at else '—' }}</td>
               <td class="tnum">{{ p.ip or '—' }}</td>
               <td>{{ (p.user_agent or '—')[:60] }}</td>
             </tr>

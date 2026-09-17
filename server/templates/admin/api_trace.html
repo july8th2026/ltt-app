@@ -26,15 +26,15 @@
   {% if not q %}
   {# Chua tra gi thi khong hien gi — mot bang rong o day doc nhu "khong tim thay". #}
   {% elif not found.found %}
-  <p class="muted" style="padding:26px">Không tìm thấy gì khớp. Correlation id chỉ
+  <p class="muted o-trong">Không tìm thấy gì khớp. Correlation id chỉ
     được lưu cho lời gọi hỏng và lời gọi ghi dữ liệu (EXT-09).</p>
   {% else %}
   <p class="muted">Khớp theo <code>{{ found.matched_by }}</code>.</p>
 
   {% if found.user or found.project or found.key %}
   <section>
-    <h2 style="margin:22px 0 10px">Ai</h2>
-    <div class="tablewrap"><table class="ui-table"><tbody>
+    <h2 class="u-tieu-muc">Ai</h2>
+    <div class="tablewrap" tabindex="0"><table class="ui-table"><tbody>
       {% if found.user %}
       <tr><th>Tài khoản</th><td><a href="/admin/api-tai-khoan?user={{ found.user.id }}">{{ found.user.email }}</a></td></tr>
       {% endif %}
@@ -53,8 +53,8 @@
   {% set j = found.job %}
   {% if found.request or j or found.credit or found.webhooks %}
   <section>
-    <h2 style="margin:22px 0 10px">Dòng thời gian</h2>
-    <div class="tablewrap"><table class="ui-table">
+    <h2 class="u-tieu-muc">Dòng thời gian</h2>
+    <div class="tablewrap" tabindex="0"><table class="ui-table">
       <thead><tr><th>Bước</th><th></th><th></th><th>Lúc</th></tr></thead>
       <tbody>
         {% if found.request %}
@@ -88,10 +88,10 @@
 
   {% if j %}
   <section>
-    <h2 style="margin:22px 0 10px">Sự kiện job (gồm cả nội bộ)</h2>
+    <h2 class="u-tieu-muc">Sự kiện job (gồm cả nội bộ)</h2>
     <p class="muted">Trang của khách chỉ hiện dòng <i>khách</i>. Chỗ này hiện cả
       hai — đó là toàn bộ lý do có một trang truy vết cho người vận hành.</p>
-    <div class="tablewrap"><table class="ui-table">
+    <div class="tablewrap" tabindex="0"><table class="ui-table">
       <thead><tr><th>#</th><th>Mã</th><th>Mức</th><th>Ai thấy</th><th>Chi tiết</th></tr></thead>
       <tbody>
         {% for e in found.events %}
@@ -103,24 +103,24 @@
           <td class="muted">{{ ((e.details or "")|string)[:160] }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="5" class="muted">Không có sự kiện.</td></tr>
+        <tr><td colspan="5" class="muted o-trong"><span class="o-trong-chu">Không có sự kiện.</span></td></tr>
         {% endfor %}
       </tbody>
     </table></div>
   </section>
   {% if j.error %}
   <section>
-    <h2 style="margin:22px 0 10px">Lỗi thô</h2>
+    <h2 class="u-tieu-muc">Lỗi thô</h2>
     <p class="muted">Khách được xem một bản đã làm sạch (Q76). Bản gốc ở đây.</p>
-    <pre class="mono" style="white-space:pre-wrap">{{ j.error[:2000] }}</pre>
+    <pre class="mono u-pre-wrap">{{ j.error[:2000] }}</pre>
   </section>
   {% endif %}
   {% endif %}
 
   {% if found.requests %}
   <section>
-    <h2 style="margin:22px 0 10px">Lời gọi gần đây</h2>
-    <div class="tablewrap"><table class="ui-table">
+    <h2 class="u-tieu-muc">Lời gọi gần đây</h2>
+    <div class="tablewrap" tabindex="0"><table class="ui-table">
       <thead><tr><th>Lúc</th><th>Route</th><th>HTTP</th><th>Mã</th><th>Correlation</th></tr></thead>
       <tbody>
         {% for r in found.requests %}
@@ -139,8 +139,8 @@
 
   {% if found.security %}
   <section>
-    <h2 style="margin:22px 0 10px">Sự kiện bảo mật</h2>
-    <div class="tablewrap"><table class="ui-table">
+    <h2 class="u-tieu-muc">Sự kiện bảo mật</h2>
+    <div class="tablewrap" tabindex="0"><table class="ui-table">
       <thead><tr><th>Lúc</th><th>Loại</th><th>IP</th><th>Khoá</th></tr></thead>
       <tbody>
         {% for r in found.security %}

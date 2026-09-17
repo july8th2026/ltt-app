@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% import "_icon.html" as ic %}
 {% block title %}{{ _("Nhật ký") }} — {{ _(app.display_name) }}{% endblock %}
-{% block topbar_title %}<strong>{{ app.icon }} {{ _(app.display_name) }}</strong>{% endblock %}
+{% block topbar_title %}<strong>{{ ic.icon_app(app.icon) }} {{ _(app.display_name) }}</strong>{% endblock %}
 {#
   `_(app.display_name)`: manifest da danh dau ten app bang `N_()` (chi trich,
   khong dich), nen chuoi CO trong catalog; `_()` o day moi la cho no duoc dich
@@ -13,7 +14,7 @@
 {% block content %}
 
   <div class="card">
-    <div class="card-accent" style="background:{{ app.accent }};"></div>
+    <div class="card-accent card-accent--khu" aria-hidden="true"></div>
     <h2>{{ _("Ai đã vào máy của bạn") }}</h2>
     <p class="muted">
       {# Q93 rang buoc 5: hanh dong cua admin phai de lai dau CHU THIET BI doc
@@ -28,10 +29,10 @@
       <table style="width:100%;border-collapse:collapse;">
         <thead>
           <tr>
-            <th style="text-align:left;">{{ _("Lúc") }}</th>
-            <th style="text-align:left;">{{ _("Việc") }}</th>
-            <th style="text-align:left;">{{ _("Ai") }}</th>
-            <th style="text-align:left;">{{ _("Chi tiết") }}</th>
+            <th class="u-trai">{{ _("Lúc") }}</th>
+            <th class="u-trai">{{ _("Việc") }}</th>
+            <th class="u-trai">{{ _("Ai") }}</th>
+            <th class="u-trai">{{ _("Chi tiết") }}</th>
           </tr>
         </thead>
         <tbody>

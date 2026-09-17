@@ -12,6 +12,15 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-18 — Golden UI: đóng mọi pha xây dựng, L3 + lượt khép (chưa deploy)
+
+- Nhánh `phien/golden-ui`. C4 (6 nhánh song song) gộp xong; sửa chung sau chấm V3: footer dính đáy trang ngắn (`aee65ca4`), thanh tiến độ cột phải trang chủ về màu cảnh báo như `/jobs` (`4f668369`).
+- Chấm độc lập V3 (2 agent chỉ đọc, không xem điểm cũ): **86,7 tổng · 90,5 luồng quan trọng** — bình nguyên so với V2 (86,2/89,5). Nợ còn lại cần build lại SPA, dữ liệu backend, tài sản thiết kế ⇒ ghi *Remaining UI debt*, không kéo thêm đợt sửa trang trí. **Chưa đạt** mốc đề bài (≥93 / ≥95 / sàn 88) ⇒ Final Report giữ **NOT READY**.
+- **L3** (`159f3b0d`, 14,3 phút): FAIL 4/33 — `check_silent_except` (+1: `_ten_app` nuốt lỗi), `check_so_test` (số 1280 trùng tệp mới của `main`), `check_i18n` (+1 ở `api_dieu_khoan.html`), `test_145` + `test_1259`. Sửa tại chỗ 3 lỗi mã (`c7660cd3`), hoà `main` 14 commit (`daf60ff5`).
+- **Lượt khép** `gate.py --doi --tu 159f3b0d`: **28/29 xanh** (`test-results/gates/20260917T174136Z-7552.json`), đỏ đúng `test_1259::test_BAN_SAO_khop_may_B` — đòi `LTT_LLM_BASE_URL`/`LTT_LLM_TOKEN` máy B, y như L3 16/09. Phiên giao diện không có quyền đọc token (hệ thống quyền chặn) ⇒ **không gộp `main`, không deploy**: điểm dừng đúng luật (gate đỏ).
+- Việc còn lại cho phiên có quyền máy B: chạy `test_1259` với env máy B → khép → gộp `main` → deploy → nghiệm thu `https://app.lttstudios.com`.
+- Thư mục thừa `D:\LTTSTUDIOSAPP-c4-bill` (worktree C4 đã gộp): xoá bị hệ thống quyền từ chối, chủ dự án xoá tay.
+
 ## 2026-09-17 — Phương án C: gộp bước 1+2 (máy A) với bước 3 (máy B), chốt ngưỡng whale
 
 Nhánh `phien/llm-hang-cho-lon` gộp `phien/llm-gateway-vat-ly`. Chưa deploy.

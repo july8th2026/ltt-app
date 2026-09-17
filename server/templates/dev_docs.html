@@ -1,4 +1,6 @@
 {% extends "developers_base.html" %}
+{% import "_icon.html" as ic %}
+{% block dev_phu_de %}{{ _("Hướng dẫn, đặc tả OpenAPI và SDK — mọi mục ở đây mở hoặc tải được ngay.") }}{% endblock %}
 {% block section %}
 
 {# 🔴 BẢN TRƯỚC CỦA TRANG NÀY LIỆT KÊ CHO KHÁCH CÁC ĐƯỜNG DẪN TỆP TRONG KHO MÃ
@@ -9,49 +11,79 @@
 
    ⭐ Luật từ nay: trang cho khách chỉ được trỏ tới **URL tải được**. #}
 
-<div class="card">
-  <h2 style="margin-top:0;">{{ _("Bắt đầu") }}</h2>
-  <ul>
-    <li><a href="/huong-dan">{{ _("Hướng dẫn cắm vào công cụ của bạn") }}</a>
-        — {{ _("Codex, Claude Code, hai tiện ích VS Code, Claude Desktop. Công khai, chia sẻ được cho đồng nghiệp chưa có tài khoản.") }}</li>
-    <li><a href="/huong-dan/cong-cu">{{ _("Công cụ cắm tự động") }}</a>
-        — {{ _("ghi hộ cấu hình cho cả năm bề mặt, gỡ ra trả lại nguyên trạng.") }}</li>
-    <li><a href="/gia-api">{{ _("Bảng giá") }}</a>
-        — {{ _("số lấy từ chính hàm ra hoá đơn, kèm ví dụ chi phí thật.") }}</li>
+{# C4 (Golden UI): mỗi nhóm là một panel có tiêu đề; mỗi tài liệu là một ô —
+   liên kết là tiêu đề ô (chữ đậm, nổi), lời mô tả nằm dưới. Bản trước là bốn
+   danh sách chữ dày, không có điểm nhấn nào để mắt dừng. Ô đầu tiên (hướng dẫn
+   cắm) là cửa vào chính nên được tô nhấn. Mọi href giữ nguyên. #}
+<section class="dev-panel dev-tl-nhom">
+  <header><h2>{{ _("Bắt đầu") }}</h2></header>
+  <ul class="dev-tl-luoi">
+    <li class="dev-tl-the dev-tl-chinh">
+      {{ ic.icon('square-terminal', 'dev-tl-ic') }}
+      <a class="dev-tl-ten" href="/huong-dan">{{ _("Hướng dẫn cắm vào công cụ của bạn") }}</a>
+      <p>{{ _("Codex, Claude Code, hai tiện ích VS Code, Claude Desktop. Công khai, chia sẻ được cho đồng nghiệp chưa có tài khoản.") }}</p>
+    </li>
+    <li class="dev-tl-the">
+      {{ ic.icon('workflow', 'dev-tl-ic') }}
+      <a class="dev-tl-ten" href="/huong-dan/cong-cu">{{ _("Công cụ cắm tự động") }}</a>
+      <p>{{ _("ghi hộ cấu hình cho cả năm bề mặt, gỡ ra trả lại nguyên trạng.") }}</p>
+    </li>
+    <li class="dev-tl-the">
+      {{ ic.icon('gem', 'dev-tl-ic') }}
+      <a class="dev-tl-ten" href="/gia-api">{{ _("Bảng giá") }}</a>
+      <p>{{ _("số lấy từ chính hàm ra hoá đơn, kèm ví dụ chi phí thật.") }}</p>
+    </li>
   </ul>
-</div>
+</section>
 
-<div class="card">
-  <h2 style="margin-top:0;">{{ _("Đặc tả và thư viện") }}</h2>
-  <ul>
-    <li><a href="/api/v1/openapi.json">{{ _("Đặc tả OpenAPI") }}</a>
-        — {{ _("mô tả máy đọc được, kèm schema của từng công cụ.") }}</li>
-    <li><a href="/developers/openapi/download">{{ _("Tải OpenAPI (có số phiên bản trong tên)") }}</a>
-        — {{ _("để sáu tháng sau còn biết client nào sinh từ bản nào.") }}</li>
-    <li><a href="/tai/ltt_public_api.py">ltt_public_api.py</a>
-        — {{ _("SDK Python một tệp, không phụ thuộc ngoài.") }}</li>
-    <li><a href="/tai/ltt-public-api.ts">ltt-public-api.ts</a>
-        — {{ _("SDK TypeScript một tệp.") }}</li>
-    <li><a href="/tai/ltt-public-api.postman_collection.json">Postman collection</a>
-        {{ _("và") }} <a href="/tai/ltt-public-api.postman_environment.json">environment</a>
-        — {{ _("SINH từ OpenAPI. Đừng sửa tay: lần sinh sau ghi đè, và một bản sao thứ hai của hợp đồng luôn là bản trôi dạt.") }}</li>
+<section class="dev-panel dev-tl-nhom">
+  <header><h2>{{ _("Đặc tả và thư viện") }}</h2></header>
+  <ul class="dev-tl-luoi">
+    <li class="dev-tl-the">
+      {{ ic.icon('clipboard-list', 'dev-tl-ic') }}
+      <a class="dev-tl-ten" href="/api/v1/openapi.json">{{ _("Đặc tả OpenAPI") }}</a>
+      <p>{{ _("mô tả máy đọc được, kèm schema của từng công cụ.") }}</p>
+      <a class="dev-tl-phu" href="/developers/openapi/download">{{ _("Tải OpenAPI (có số phiên bản trong tên)") }}</a>
+    </li>
+    <li class="dev-tl-the">
+      {{ ic.icon('code', 'dev-tl-ic') }}
+      <a class="dev-tl-ten" href="/tai/ltt_public_api.py"><code>ltt_public_api.py</code></a>
+      <p>{{ _("SDK Python một tệp, không phụ thuộc ngoài.") }}</p>
+    </li>
+    <li class="dev-tl-the">
+      {{ ic.icon('code', 'dev-tl-ic') }}
+      <a class="dev-tl-ten" href="/tai/ltt-public-api.ts"><code>ltt-public-api.ts</code></a>
+      <p>{{ _("SDK TypeScript một tệp.") }}</p>
+    </li>
+    <li class="dev-tl-the">
+      {{ ic.icon('folder', 'dev-tl-ic') }}
+      <a class="dev-tl-ten" href="/tai/ltt-public-api.postman_collection.json">{{ _("Bộ sưu tập Postman") }}</a>
+      <p>{{ _("SINH từ OpenAPI. Đừng sửa tay: lần sinh sau ghi đè, và một bản sao thứ hai của hợp đồng luôn là bản trôi dạt.") }}</p>
+      <a class="dev-tl-phu" href="/tai/ltt-public-api.postman_environment.json">{{ _("Tệp môi trường Postman") }}</a>
+    </li>
   </ul>
-</div>
+</section>
 
-<div class="card">
-  <h2 style="margin-top:0;">{{ _("Gọi thử") }}</h2>
-  <pre style="overflow-x:auto;"><code>curl -H "Authorization: Bearer $LTT_API_KEY" \
+<div class="dev-luoi dev-luoi-1-1">
+  <section class="dev-panel">
+    <header><h2>{{ _("Gọi thử") }}</h2></header>
+    <div class="dev-panel-than">
+      <pre class="u-cuon-ngang u-m0"><code>curl -H "Authorization: Bearer $LTT_API_KEY" \
      {{ base_url }}/api/v1/me</code></pre>
-  <p class="muted">{{ _("Mọi lời gọi tốn credit đều cần một báo giá đã ký và một Idempotency-Key.") }}</p>
-</div>
+      <p class="muted">{{ _("Mọi lời gọi tốn credit đều cần một báo giá đã ký và một Idempotency-Key.") }}</p>
+    </div>
+  </section>
 
-<div class="card">
-  <h2 style="margin-top:0;">{{ _("Môi trường test") }}</h2>
-  <p>{{ _("Khóa test bắt đầu bằng ltt_tk. Nó đi qua đúng chuỗi mà khóa live đi qua — xác thực, phạm vi, kiểm tham số, báo giá, Idempotency-Key, job, webhook và chữ ký — chỉ khác đúng một mắt xích: không gọi nhà cung cấp, mà trả kết quả mẫu theo đúng output_schema đã công bố.") }}</p>
-  <ul>
-    <li>{{ _("Khóa test KHÔNG tiêu được credit. Không phải tiêu ít — là không chạm vào sổ credit, nên lộ ra cũng không mất tiền.") }}</li>
-    <li>{{ _("Dùng nó để dựng và chạy CI mà không đốt tiền, rồi đổi sang khóa live khi đã chắc.") }}</li>
-  </ul>
+  <section class="dev-panel">
+    <header><h2>{{ _("Môi trường test") }}</h2></header>
+    <div class="dev-panel-than dev-tl-van">
+      <p class="u-mt0">{{ _("Khóa test bắt đầu bằng ltt_tk. Nó đi qua đúng chuỗi mà khóa live đi qua — xác thực, phạm vi, kiểm tham số, báo giá, Idempotency-Key, job, webhook và chữ ký — chỉ khác đúng một mắt xích: không gọi nhà cung cấp, mà trả kết quả mẫu theo đúng output_schema đã công bố.") }}</p>
+      <ul>
+        <li>{{ _("Khóa test KHÔNG tiêu được credit. Không phải tiêu ít — là không chạm vào sổ credit, nên lộ ra cũng không mất tiền.") }}</li>
+        <li>{{ _("Dùng nó để dựng và chạy CI mà không đốt tiền, rồi đổi sang khóa live khi đã chắc.") }}</li>
+      </ul>
+    </div>
+  </section>
 </div>
 
 {% endblock %}

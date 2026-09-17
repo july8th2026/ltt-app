@@ -1,4 +1,5 @@
 {% extends "developers_base.html" %}
+{% import "_dev_tt.html" as dtt %}
 
 {# Phụ đề về đầu trang (ảnh demo: ngay dưới tiêu đề), không nằm trong thân. #}
 {% block dev_phu_de %}{{ _("Tình trạng tài khoản API của bạn và bước tiếp theo để gọi được.") }}{% endblock %}
@@ -31,7 +32,7 @@
   <div class="chi-so{% if counts.active_keys == 0 %} canh-bao{% endif %}">
     <span class="chi-so-nhan">{{ _("Khóa đang hoạt động") }}</span>
     <strong class="chi-so-gt tnum">{{ counts.active_keys }}</strong>
-    <span class="chi-so-phu">{{ counts.projects }} project ·
+    <span class="chi-so-phu">{{ counts.projects }} {{ _("dự án") }} ·
       <a href="/developers/keys">{{ _("quản lý") }}</a></span>
     <span class="chi-so-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="15" r="4"/><path d="M11 12l7-7 3 3M15 8l2 2"/></svg>
@@ -65,7 +66,7 @@
 {# ── Hàng: Biểu đồ 7 ngày (trái) · Bắt đầu / checklist (phải) — ảnh demo ───
    Biểu đồ sinh phía máy chủ (SVG, không JS, không thư viện). `chart` là None
    khi chưa có gì để vẽ ⇒ trạng thái rỗng, KHÔNG vẽ đường phẳng qua các số 0. #}
-<div class="dev-luoi dev-luoi-2-1">
+<div class="dev-luoi dev-luoi-2-1 dev-luoi-gian">
 
   <section class="dev-panel">
     <header>
@@ -112,7 +113,7 @@
       {% set tat_ca_xong  = xong_project and xong_khoa and xong_goi %}
 
       {% if tat_ca_xong %}
-        <p class="muted" style="margin-top:0;">{{ _("Bạn đã gọi được. Những nơi hay dùng:") }}</p>
+        <p class="muted u-mt0">{{ _("Bạn đã gọi được. Những nơi hay dùng:") }}</p>
         <p class="dev-tat">
           <a class="btn" href="/developers/logs">{{ _("Nhật ký request") }}</a>
           <a class="btn btn-ghost" href="/developers/keys">{{ _("Khóa API") }}</a>
@@ -146,11 +147,13 @@
             {% endif %}
           </li>
         </ol>
-        <p class="muted" style="margin:10px 0 0;">
-          <a href="/developers/quickstart">{{ _("Hướng dẫn đầy đủ") }}</a> ·
-          <a href="/developers/tools">{{ _("Xem có những công cụ gì") }}</a> ·
-          <a href="/developers/playground">{{ _("Chạy thử") }}</a>
-        </p>
+        {# C4: mỗi liên kết là một mục KHÔNG ngắt dòng — dãy "a · b · c" từng tách
+           "Chạy / thử" sang hai dòng ở cột hẹp. #}
+        <ul class="dev-lien-ket u-mt10">
+          <li><a href="/developers/quickstart">{{ _("Hướng dẫn đầy đủ") }}</a></li>
+          <li><a href="/developers/tools">{{ _("Xem có những công cụ gì") }}</a></li>
+          <li><a href="/developers/playground">{{ _("Chạy thử") }}</a></li>
+        </ul>
       {% endif %}
     </div>
   </section>
@@ -167,7 +170,7 @@
       <a href="/developers/logs">{{ _("Xem tất cả") }}</a>
     </header>
     {% if recent %}
-    <div class="dev-bang">
+    <div class="dev-bang" tabindex="0">
       <table class="table">
         <thead><tr>
           <th>{{ _("Lúc") }}</th><th>{{ _("Trạng thái") }}</th><th>{{ _("Công cụ / tuyến") }}</th>
@@ -178,8 +181,7 @@
           <tr>
             <td class="tnum">{{ r.created_at.strftime('%H:%M:%S') }}</td>
             <td>
-              {%- set cls = 'ok' if r.status < 400 else ('canh' if r.status < 500 else 'loi') -%}
-              <span class="dev-tt {{ cls }}">{{ r.status }}</span>
+              {{ dtt.http(r.status) }}
             </td>
             <td>{% if r.tool %}<code>{{ r.tool }}</code>{% else %}<span class="dev-id">{{ r.route }}</span>{% endif %}</td>
             <td class="tnum">{{ r.latency_ms }}ms</td>

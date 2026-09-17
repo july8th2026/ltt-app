@@ -31,14 +31,14 @@
 
   {{ m.mo_luoi_cot() }}
     <section>
-      <h2 style="margin:22px 0 10px">Dấu hiệu bất thường</h2>
+      <h2 class="u-tieu-muc">Dấu hiệu bất thường</h2>
       {# 🔴 Mot khoa bi LO van goi dung scope va dung nhip, nen no khong cham vao
          bat ky hang rao nao — cho toi khi het tien. Ba cau hoi duoi day nhin vao
          THOI QUEN thay vi vao luat; do la ly do chung ton tai. #}
       <p class="muted">Một khoá bị lộ vẫn gọi đúng scope và đúng nhịp, nên nó
         không chạm vào bất kỳ hàng rào nào — cho tới khi hết tiền. Ba câu hỏi này
         nhìn vào <b>thói quen</b> thay vì vào luật.</p>
-      <div class="tablewrap"><table class="ui-table">
+      <div class="tablewrap" tabindex="0"><table class="ui-table">
         <thead><tr><th>Dấu hiệu</th><th>Đối tượng</th><th>Số</th><th>Nghĩa là gì</th></tr></thead>
         <tbody>
           {% for r in bat_thuong.khoa_thu_hoi %}
@@ -70,33 +70,33 @@
           {% endfor %}
           {% if not (bat_thuong.khoa_thu_hoi or bat_thuong.chi_tieu_vot
                      or bat_thuong.scope_bi_tu_choi) %}
-          <tr><td colspan="4" class="muted">Không có dấu hiệu bất thường nào trong khoảng này.</td></tr>
+          <tr><td colspan="4" class="muted o-trong"><span class="o-trong-chu">Không có dấu hiệu bất thường nào trong khoảng này.</span></td></tr>
           {% endif %}
         </tbody>
       </table></div>
     </section>
 
     <section>
-      <h2 style="margin:22px 0 10px">IP ồn nhất</h2>
+      <h2 class="u-tieu-muc">IP ồn nhất</h2>
       {# ⭐ Cung mot TONG SO, hai viec khac nhau — day la ly do bang nay ton tai
          canh o "Lan bi tu choi" chu khong thay the no. #}
       <p class="muted">Một IP hỏng 400 lần là một con bot; 400 IP hỏng mỗi cái một
         lần là một bản phát hành lỗi. Cùng một tổng số, hai việc khác nhau.</p>
-      <div class="tablewrap"><table class="ui-table">
+      <div class="tablewrap" tabindex="0"><table class="ui-table">
         <thead><tr><th>IP</th><th>Số lần</th></tr></thead>
         <tbody>
           {% for ip, so in data.top_ips %}
           <tr><td class="mono">{{ ip }}</td><td class="tnum">{{ so }}</td></tr>
           {% else %}
-          <tr><td colspan="2" class="muted">Không có.</td></tr>
+          <tr><td colspan="2" class="muted o-trong"><span class="o-trong-chu">Không có.</span></td></tr>
           {% endfor %}
         </tbody>
       </table></div>
     </section>
 
     <section>
-      <h2 style="margin:22px 0 10px">Theo loại</h2>
-      <div class="tablewrap"><table class="ui-table">
+      <h2 class="u-tieu-muc">Theo loại</h2>
+      <div class="tablewrap" tabindex="0"><table class="ui-table">
         <thead><tr><th>Loại</th><th>Số lần</th></tr></thead>
         <tbody>
           {% for k, v in data.by_kind|dictsort %}
@@ -113,11 +113,11 @@
       <option value="{{ k }}"{{ " selected" if k == kind }}>{{ k }}</option>
       {% endfor %}
     </select>
-    <input name="hours" value="{{ hours }}" style="width:90px" aria-label="Số giờ gần nhất">
+    <input name="hours" value="{{ hours }}" class="adm-w90" aria-label="Số giờ gần nhất">
     <button class="btn ghost sm">Lọc</button>
   </form>
 
-  <div class="tablewrap"><table class="ui-table">
+  <div class="tablewrap" tabindex="0"><table class="ui-table">
     <thead><tr>
       <th>Lúc</th><th>Loại</th><th>IP</th><th>Khoá đã thử</th>
       <th>Route</th><th>Correlation</th>
@@ -133,7 +133,7 @@
         <td class="mono muted"><a href="/admin/api-trace?q={{ r.request_id }}">{{ r.request_id[:12] }}</a></td>
       </tr>
       {% else %}
-      <tr><td colspan="6" class="muted" style="padding:26px;text-align:center">Không có sự kiện nào. Đó là trạng thái bình thường.</td></tr>
+      <tr><td colspan="6" class="muted o-trong"><span class="o-trong-chu">Không có sự kiện nào. Đó là trạng thái bình thường.</span></td></tr>
       {% endfor %}
     </tbody>
   </table></div>

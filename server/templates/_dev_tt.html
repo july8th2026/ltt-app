@@ -1,0 +1,78 @@
+{#- _dev_tt.html — viên trạng thái của khu API (Golden UI, 17/09/2026).
+
+    {% import "_dev_tt.html" as dtt %}
+    {{ dtt.tt(job.status) }}                 job (queued/running/done/error/cancelled + succeeded/failed)
+    {{ dtt.tt(line.status, 'so') }}          bút toán credit (held/settled/refunded)
+    {{ dtt.tt(key.status, 'khoa') }}         khóa (active/expired/disabled/revoked)
+    {{ dtt.tt(item.status, 'giao') }}        lần giao webhook (pending/sending/delivered/failed/dead)
+    {{ dtt.http(row.status) }}               mã HTTP của nhật ký request
+
+    ⭐ Khu API giữ NGUYÊN VĂN enum (`running`, `succeeded`) — đó là giá trị khách
+       sẽ đọc lại trong JSON của /api/v1. Macro chỉ THÊM hai thứ: lớp màu đúng cho
+       MỌI giá trị (trước đây `dev_usage.html` chỉ biết held/settled/refunded nên
+       job `error` và `done` cùng một màu xám), và nghĩa tiếng Việt HIỆN RÕ
+       trước mã ("Đang chạy · `running`"). C3 17/09: trước đó nghĩa chỉ nằm
+       trong title/sr-only nên người nhìn chỉ thấy mã tiếng Anh.
+
+    ⚠️ Bảng nằm TRONG macro (cùng lý do `_ui.html`): `_()` ở cấp đầu một tệp
+       được import sẽ bị đóng băng ở ngôn ngữ của lượt render đầu tiên.
+
+    ⛔ Giá trị lạ rơi về viên xám mang chính giá trị đó, không bị giấu. -#}
+
+{%- macro _lop(v, loai) -%}
+{%- if loai == 'so' -%}
+{{- {'settled': 'ok', 'held': 'canh', 'refunded': 'tat'}.get(v, '') -}}
+{%- elif loai == 'khoa' -%}
+{{- {'active': 'ok', 'expired': 'canh', 'disabled': 'tat', 'revoked': 'loi'}.get(v, 'loi') -}}
+{%- elif loai == 'giao' -%}
+{{- {'delivered': 'ok', 'pending': 'canh', 'sending': 'tin', 'failed': 'canh', 'dead': 'loi'}.get(v, '') -}}
+{%- else -%}
+{{- {'done': 'ok', 'succeeded': 'ok', 'queued': 'canh', 'running': 'tin', 'error': 'loi', 'failed': 'loi', 'cancelled': 'tat'}.get(v, '') -}}
+{%- endif -%}
+{%- endmacro -%}
+
+{%- macro _nghia(v, loai) -%}
+{%- if loai == 'so' -%}
+  {%- if v == 'settled' -%}{{ _("Đã quyết toán") }}
+  {%- elif v == 'held' -%}{{ _("Đang giữ chỗ") }}
+  {%- elif v == 'refunded' -%}{{ _("Đã hoàn") }}{%- endif -%}
+{%- elif loai == 'khoa' -%}
+  {%- if v == 'active' -%}{{ _("Đang hoạt động") }}
+  {%- elif v == 'expired' -%}{{ _("Hết hạn") }}
+  {%- elif v == 'disabled' -%}{{ _("Đã tắt") }}
+  {%- elif v == 'revoked' -%}{{ _("Đã thu hồi") }}{%- endif -%}
+{%- elif loai == 'giao' -%}
+  {%- if v == 'delivered' -%}{{ _("Đã giao") }}
+  {%- elif v == 'pending' -%}{{ _("Chờ gửi") }}
+  {%- elif v == 'sending' -%}{{ _("Đang gửi") }}
+  {%- elif v == 'failed' -%}{{ _("Lỗi — sẽ thử lại") }}
+  {%- elif v == 'dead' -%}{{ _("Đã bỏ cuộc") }}{%- endif -%}
+{%- else -%}
+  {%- if v == 'queued' -%}{{ _("Đang chờ") }}
+  {%- elif v == 'running' -%}{{ _("Đang chạy") }}
+  {%- elif v in ('done', 'succeeded') -%}{{ _("Hoàn tất") }}
+  {%- elif v in ('error', 'failed') -%}{{ _("Lỗi") }}
+  {%- elif v == 'cancelled' -%}{{ _("Đã hủy") }}{%- endif -%}
+{%- endif -%}
+{%- endmacro -%}
+
+{#- Nghĩa tiếng Việt trần (cho <option> của ô lọc) — cùng một bảng với viên. -#}
+{%- macro nghia(value, loai='job') -%}{{ _nghia(value | string, loai) | trim }}{%- endmacro -%}
+
+{%- macro tt(value, loai='job') -%}
+{%- set v = value | string -%}
+{%- set nghia = _nghia(v, loai) | trim -%}
+<span class="dev-tt {{ _lop(v, loai) }}" data-trang-thai="{{ v }}">{% if nghia %}<span class="dev-tt-nghia">{{ nghia }}</span><span class="dev-tt-cham" aria-hidden="true">·</span>{% endif %}<code class="dev-tt-ma" translate="no">{{ v }}</code></span>
+{%- endmacro -%}
+
+{%- macro http(code) -%}
+{%- set c = code | int -%}
+{%- set lop = 'ok' if c < 400 else ('canh' if c < 500 else 'loi') -%}
+{%- set nghia = _("Thành công") if c < 400 else (_("Yêu cầu bị từ chối") if c < 500 else _("Lỗi phía máy chủ")) -%}
+<span class="dev-tt {{ lop }}" title="{{ nghia }}">{{ code }}<span class="sr-only"> ({{ nghia }})</span></span>
+{%- endmacro -%}
+
+{# C4: tên project. Project tự sinh mang tên dữ liệu "Default" (`DEFAULT_PROJECT_NAME`,
+   không đổi được vì là khoá tra) — trang tiếng Việt hiện "Mặc định". Tên khách đặt
+   giữ nguyên văn. #}
+{%- macro du_an(ten) -%}{% if ten == 'Default' %}{{ _("Mặc định") }}{% else %}{{ ten }}{% endif %}{%- endmacro -%}

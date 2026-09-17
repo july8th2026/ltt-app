@@ -1,3 +1,4 @@
+{% import "_icon.html" as ic %}
 <header class="hdr">
   <a class="hdr-logo" href="/"><span class="mark">LTT</span> LTT AI Studio</a>
 
@@ -8,7 +9,7 @@
         <summary>{{ _(group) }} <span class="caret">▾</span></summary>
         <div class="dropdown">
           {% for a in apps %}
-            <a href="{{ a.manifest.route_prefix }}"><span class="ic">{{ a.manifest.icon }}</span> {{ _(a.manifest.display_name) }}</a>
+            <a href="{{ a.manifest.route_prefix }}"><span class="ic">{{ ic.icon_app(a.manifest.icon) }}</span> {{ _(a.manifest.display_name) }}</a>
           {% endfor %}
         </div>
       </details>
@@ -17,11 +18,11 @@
 
   {# Mobile: gộp mọi nhóm vào ☰ #}
   <details class="menu hdr-burger">
-    <summary aria-label="{{ _('Mở danh sách ứng dụng') }}">☰</summary>
+    <summary aria-label="{{ _('Mở danh sách ứng dụng') }}">{{ ic.icon("menu") }}</summary>
     <div class="dropdown">
       {% for group, apps in _groups.items() %}
-        <div class="acc-head" style="padding:8px 11px 3px"><small style="margin:0">{{ _(group) }}</small></div>
-        {% for a in apps %}<a href="{{ a.manifest.route_prefix }}"><span class="ic">{{ a.manifest.icon }}</span> {{ _(a.manifest.display_name) }}</a>{% endfor %}
+        <div class="acc-head hdr-nhom"><small class="u-m0">{{ _(group) }}</small></div>
+        {% for a in apps %}<a href="{{ a.manifest.route_prefix }}"><span class="ic">{{ ic.icon_app(a.manifest.icon) }}</span> {{ _(a.manifest.display_name) }}</a>{% endfor %}
       {% endfor %}
     </div>
   </details>
@@ -35,28 +36,13 @@
     <a class="hdr-link" href="/huong-dan">API</a>
     <a class="hdr-link pricing" href="/nap">{{ _("Bảng giá") }}</a>
     {% set _bal = so_du_credit(request) %}
-    {% if _bal is not none %}<a class="pill" href="/nap" title="{{ _('Số dư credit') }}">💎 {{ _bal | so }} credit</a>{% endif %}
+    {% if _bal is not none %}<a class="pill" href="/nap" title="{{ _('Số dư credit') }}">{{ ic.icon("gem") }} {{ _bal | so }} credit</a>{% endif %}
     {% set _acc = tai_khoan(request) %}
     {% if _acc %}
       <details class="menu avatar">
-        <summary><span class="ava">{{ _acc.initial }}</span></summary>
+        <summary aria-label="{{ _('Mở menu tài khoản') }}"><span class="ava">{{ _acc.initial }}</span></summary>
         <div class="dropdown right">
-          <div class="acc-head"><b>{{ _acc.name }}</b><small>{{ _acc.email }}</small>
-            <span class="badge b-grey"><span class="dot"></span>{{ _acc.role }}</span></div>
-          <a href="/jobs"><span class="ic">📋</span> {{ _("Việc của tôi") }}</a>
-          <a href="/developers"><span class="ic">🔌</span> {{ _("API cho lập trình viên") }}</a>
-          {% if nexus_bat() %}<a href="/may-cua-toi"><span class="ic">🖥️</span> {{ _("Máy của tôi") }}</a>{% endif %}
-          {# `/settings` GO 2026-08-26: route cua no (`server/routes/settings.py`)
-             da di cung app socialbot o Q108, nen link nay tra 404 cho MOI admin
-             tu do toi nay. Cung lop loi voi `/ltt-llm`. #}
-          {% if is_admin(request) %}<a href="/status"><span class="ic">🩺</span> {{ _("Tình trạng hệ thống") }}</a>
-          <a href="/admin/apikeys"><span class="ic">🛡️</span> {{ _("Quản trị") }}</a>{% endif %}
-          {% if _bal is not none %}<div class="acc-credit">💎 {{ _bal | so }} credit <a href="/nap">{{ _("Nạp thêm") }}</a></div>{% endif %}
-          <div class="sep"></div>
-          <form method="post" action="/logout" style="margin:0">
-            <input type="hidden" name="csrf_token" value="{{ phien_csrf(request) }}">
-            <button type="submit" class="logout-btn"><span class="ic">⟵</span> {{ _("Đăng xuất") }}</button>
-          </form>
+          {% include "_menu_tai_khoan.html" %}
         </div>
       </details>
     {% else %}

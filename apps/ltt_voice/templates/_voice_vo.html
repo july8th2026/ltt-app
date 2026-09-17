@@ -27,16 +27,14 @@
      `Storage 256 GB / 1 TB`. Chip thứ ba không được vẽ: nền tảng **không có**
      hạn mức dung lượng cho khách, nên con số đó sẽ phải bịa. Một con số bịa
      trong vỏ giao diện là một lời hứa bịa, và nó sẽ sống lâu hơn người đặt nó.
-#}
-<header class="lv-vo">
-  <div class="lv-vo-chu">
-    {% if quay_lai %}
-      <p class="lv-mda-quay"><a href="{{ quay_lai.href }}">← {{ quay_lai.nhan }}</a></p>
-    {% endif %}
-    <h1{% if id_tieu_de %} id="{{ id_tieu_de }}"{% endif %}>{{ tieu_de }}</h1>
-    {% if dong_so %}<p>{{ dong_so }}</p>{% elif mo_ta %}<p>{{ mo_ta }}</p>{% endif %}
-  </div>
 
+  ⭐ C4 (17/09/2026): dải này giờ là MỘT lần gọi macro chung `_app_head.html`
+     (eyebrow nhóm + h1 + mô tả) — cùng mẫu đầu trang với mọi app khác. Hai chip
+     tình trạng là `caller()` của macro; `lv-vo` giữ làm lớp phụ cho luật riêng Voice.
+#}
+{% import "_app_head.html" as ah %}
+{% call ah.dau_trang(_("Âm thanh") ~ " · " ~ _("Giọng nói LTT"), tieu_de, dong_so or mo_ta,
+     id_tieu_de=id_tieu_de, viec=false, kieu="studio", lop="lv-vo", quay_lai=quay_lai) %}
   <div class="lv-vo-chip">
     {% if cong_san_sang %}
       <span class="badge b-ok" title="{{ _('Máy tạo tiếng nói đã sẵn sàng.') }}">
@@ -54,4 +52,4 @@
         <span class="dot"></span>{{ _("Đang chạy") }} {{ hang_doi }}</a>
     {% endif %}
   </div>
-</header>
+{% endcall %}

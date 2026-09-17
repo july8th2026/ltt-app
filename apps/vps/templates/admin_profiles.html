@@ -62,7 +62,7 @@
     <details><summary>Kho IPv4 ({{ profile.ips|length }})</summary>
       {% if profile.ips %}
       <p class="muted">{{ _('Mapping mong đợi từ DB; bấm Run Reconciliation để đọc trạng thái gateway thật.') }}</p>
-      <div style="overflow-x:auto"><table><thead><tr><th>IPv4</th><th>Private</th><th>State</th><th>Instance</th></tr></thead><tbody>
+      <div class="u-cuon-ngang"><table><thead><tr><th>IPv4</th><th>Private</th><th>State</th><th>Instance</th></tr></thead><tbody>
       {% for ip in profile.ips %}<tr><td>{{ ip.address }}</td><td>{{ ip.private_ip or '—' }}</td><td>{{ ip.state }}</td><td>{{ ip.instance_id or '—' }}</td></tr>{% endfor %}
       </tbody></table></div>
       {% else %}<p class="muted">{{ _('Chưa có IPv4 đã kiểm kê. Không tự mua IP trong luồng tạo máy.') }}</p>{% endif %}

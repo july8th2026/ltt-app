@@ -1,33 +1,28 @@
 {% extends "base.html" %}
-{% block page_mode %}wide{% endblock %}
+{% from "_o_chon_tep.html" import o_chon_tep %}
+{% import "_ui.html" as ui %}
+{% import "_app_head.html" as ah %}
 {% block title %}{{ _("Dựng video từ clip") }} — LTT AI Studio{% endblock %}
-{% block topbar_title %}<strong>{{ _("Dựng video từ clip") }}</strong>{% endblock %}
 
 {% block content %}
-<section class="va-wrap" aria-labelledby="va-title">
-  <header class="va-head">
-    <h1 id="va-title">{{ _("Dựng video từ clip") }}</h1>
-    <p>{{ _("Tải lên các clip thô và một bản nhạc. Hệ thống phiên âm, chọn clip khớp lời, ghép, tách nhạc nền, trộn tiếng và cháy phụ đề thành một video hoàn chỉnh.") }}</p>
-    <a class="btn ghost" href="/jobs">{{ _("Việc của tôi") }}</a>
-  </header>
+<section class="va-wrap af-page" aria-labelledby="va-title">
+  {{ ah.dau_trang(_("Workflow"), _("Dựng video từ clip"), _("Tải lên các clip thô và một bản nhạc. Hệ thống phiên âm, chọn clip khớp lời, ghép, tách nhạc nền, trộn tiếng và cháy phụ đề thành một video hoàn chỉnh."), id_tieu_de="va-title", lop="va-head") }}
 
-  {% if loi %}<p class="alert error" role="alert">{{ loi }}</p>{% endif %}
+  {% if loi %}<p class="alert alert-err" role="alert">{{ loi }}</p>{% endif %}
 
-  <form class="va-form" method="post" action="/video-assembly/tao" enctype="multipart/form-data">
+  <form class="va-form af-card" method="post" action="/video-assembly/tao" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="af-step"><span>01</span><h2>{{ _("Nguồn") }}</h2></div>
 
-    <label class="field">
-      <span>{{ _("Clip thô") }}</span>
-      <input type="file" name="clips" accept="video/*" multiple required>
-      <small>{{ _("MP4, MOV, MKV, WebM, AVI. Tổng tất cả tệp trong một lượt tối đa 95 MB.") }}</small>
-    </label>
+    <div class="field">
+      {{ o_chon_tep('va-clips', 'clips', _("Clip thô"), goi_y=_("MP4, MOV, MKV, WebM, AVI. Tổng tất cả tệp trong một lượt tối đa 95 MB."), accept='video/*', nhieu=true, bat_buoc=true, icon='▶') }}
+    </div>
 
-    <label class="field">
-      <span>{{ _("Nhạc nền") }}</span>
-      <input type="file" name="music" accept="audio/*">
-      <small>{{ _("Không bắt buộc.") }}</small>
-    </label>
+    <div class="field">
+      {{ o_chon_tep('va-music', 'music', _("Nhạc nền"), goi_y=_("Không bắt buộc."), accept='audio/*', icon='♫') }}
+    </div>
 
+    <div class="af-step"><span>02</span><h2>{{ _("Thiết lập") }}</h2></div>
     <div class="va-row">
       <label class="field">
         <span>{{ _("Cách khớp clip với lời") }}</span>
@@ -54,12 +49,13 @@
       <p class="muted">{{ _("Để trống để dùng cấu hình đang chạy. Ba ô tick ở trên luôn thắng giá trị trong JSON.") }}</p>
     </details>
 
-    <button class="btn primary" type="submit">{{ _("Dựng video") }}</button>
+    <div class="af-actions"><button class="btn" type="submit">{{ _("Dựng video") }}</button></div>
   </form>
 
-  <h2>{{ _("Lượt gần đây") }}</h2>
+  <section class="af-card af-history" aria-labelledby="va-history-title">
+  <h2 id="va-history-title">{{ _("Lượt gần đây") }}</h2>
   {% if jobs %}
-  <table class="va-jobs">
+  <div class="af-table-wrap"><table class="va-jobs af-table">
     <thead><tr>
       <th>{{ _("Lúc") }}</th><th>{{ _("Trạng thái") }}</th><th>{{ _("Tiến độ") }}</th>
       <th>{{ _("Số đoạn") }}</th><th>{{ _("Cách khớp") }}</th><th></th>
@@ -67,18 +63,21 @@
     <tbody>
       {% for j in jobs %}
       <tr>
-        <td>{{ j.created_at }}</td>
-        <td>{{ j.status }}</td>
+        <td class="tnum">{{ j.created_at.strftime('%H:%M %d/%m/%Y') if j.created_at else '' }}</td>
+        <td>{{ ui.nhan_trang_thai(j.status) }}</td>
         <td>{{ j.progress or 0 }}%</td>
         <td>{{ (j.result or {}).get("segments", "—") }}</td>
-        <td>{{ (j.result or {}).get("timeline_mode", "—") }}</td>
+        {% set _khop = (j.result or {}).get("timeline_mode") %}
+        <td>{{ {"sequential": _("Theo tên tệp"), "semantic": _("Theo nội dung")}.get(_khop, _khop or "—") }}</td>
         <td><a href="/video-assembly/ket-qua/{{ j.id }}">{{ _("Xem") }}</a></td>
       </tr>
       {% endfor %}
     </tbody>
-  </table>
+  </table></div>
   {% else %}
-  <p class="muted">{{ _("Chưa có lượt nào.") }}</p>
+  <div class="af-empty"><strong>{{ _("Chưa có lượt nào.") }}</strong><span>{{ _("Kết quả sẽ hiện ở đây sau lượt đầu tiên.") }}</span></div>
   {% endif %}
+  </section>
 </section>
+<script src="/static/chon_tep.js?v={{ asset_ver }}" defer></script>
 {% endblock %}

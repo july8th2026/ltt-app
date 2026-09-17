@@ -1,15 +1,14 @@
 {% extends "base.html" %}
 {% block title %}Quality report — LTT Studios{% endblock %}
 {% block page_mode %}wide{% endblock %}
-{% block topbar_title %}<strong>Quality report · {{ job.id[:8] }}</strong>{% endblock %}
+{% import "_app_head.html" as ah %}
 {% block content %}
 <style>
   .ql-dims{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;max-width:1500px}
   .ql-metric{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--line)}
   .ql-value{text-align:right;font-variant-numeric:tabular-nums}.ql-result{display:block}.ql-json{max-height:420px;overflow:auto}
 </style>
-<p><a href="/qualitylab">{{ _("← Quality Lab") }}</a></p>
-<p><a href="/jobs/{{ job.id }}">{{ _("Mở timeline kỹ thuật của job") }}</a></p>
+{% call ah.dau_trang(_("Vận hành") ~ " · Quality Lab", _("Báo cáo chất lượng") ~ " · " ~ job.id[:8], "", viec=false, kieu="studio", lop="ql-head") %}<a class="btn ghost" href="/jobs/{{ job.id }}">{{ _("Mở timeline kỹ thuật của job") }}</a><a class="btn ghost" href="/qualitylab">{{ _("← Quality Lab") }}</a>{% endcall %}
 {% if not report %}
   <div class="alert {{ 'alert-err' if job.status in ['error', 'cancelled'] else 'alert-warn' }}" role="status">{{ _("Job đang ở trạng thái") }} {{ job.status }}. {{ _("Report chưa sẵn sàng.") }}{% if job.status in ['queued', 'running'] %} {{ _("Trang sẽ tự làm mới.") }}{% endif %}</div>
 {% else %}

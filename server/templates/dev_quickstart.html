@@ -1,8 +1,9 @@
 {% extends "developers_base.html" %}
+{% block dev_phu_de %}{{ _("Từ project đầu tiên tới lời gọi đầu tiên — kèm ví dụ sinh từ chính hợp đồng của công cụ.") }}{% endblock %}
 {% block section %}
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Bảy bước tới lời gọi đầu tiên") }}</h2>
+  <h2 class="u-mt0">{{ _("Bảy bước tới lời gọi đầu tiên") }}</h2>
   <ol>
     <li><a href="/developers/projects">{{ _("Tạo project") }}</a>
         — {{ _("mỗi tích hợp một project.") }}</li>
@@ -28,8 +29,8 @@
 </div>
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Biến môi trường") }}</h2>
-  <div class="dev-bang">
+  <h2 class="u-mt0">{{ _("Biến môi trường") }}</h2>
+  <div class="dev-bang" tabindex="0">
     <table class="table">
       <thead><tr>
         <th scope="col">{{ _("Tên") }}</th><th scope="col">{{ _("Ví dụ") }}</th><th scope="col">{{ _("Để làm gì") }}</th>
@@ -46,15 +47,15 @@
     </table>
   </div>
   {% for shell, snippet in shells %}
-    <p class="muted" style="margin-bottom:2px;">{{ shell }}</p>
-    <pre style="overflow-x:auto;"><code>{{ snippet }}</code></pre>
+    <p class="muted dev-nhan-ma">{{ shell }}</p>
+    <pre class="u-cuon-ngang"><code>{{ snippet }}</code></pre>
   {% endfor %}
   <p class="muted">{{ _("Đừng viết khóa thẳng vào mã nguồn: nó sẽ đi theo mã vào git, vào log và vào ảnh chụp màn hình.") }}</p>
 </div>
 
 {% if tool %}
   <div class="card">
-    <h2 style="margin-top:0;">{{ _("Ví dụ chạy được") }}
+    <h2 class="u-mt0">{{ _("Ví dụ chạy được") }}
       — <code>{{ tool.name }}</code></h2>
     <p class="muted">{{ _("Sinh từ chính hợp đồng của công cụ, nên không lệch với thứ máy chủ nhận. Đổi công cụ:") }}
       {% for name in tool_names %}
@@ -63,25 +64,25 @@
     </p>
     {% for label, snippet in snippets %}
       <h3>{{ label }}</h3>
-      <pre style="overflow-x:auto;"><code>{{ snippet }}</code></pre>
+      <pre class="u-cuon-ngang"><code>{{ snippet }}</code></pre>
     {% endfor %}
   </div>
 {% endif %}
 
 {% if chat_snippets %}
   <div class="card" id="cua-chat">
-    <h2 style="margin-top:0;">{{ _("Gọi model ngôn ngữ — trả lời ngay trong request") }}
+    <h2 class="u-mt0">{{ _("Gọi model ngôn ngữ — trả lời ngay trong request") }}
       — <code>POST /api/v1/chat/completions</code></h2>
     <p>{{ _("Đây là cửa MỘT bước, khác cửa job ba bước ở trên: không báo giá, không hàng đợi, không hỏi kết quả. Câu trả lời và hoá đơn về cùng lúc.") }}</p>
     <p class="muted">{{ _("Tương thích SDK OpenAI: chỉ cần trỏ base_url vào /api/v1. Một chỗ duy nhất phải thêm là header Idempotency-Key — SDK của OpenAI không tự gửi nó, và ví dụ dưới đây đã có sẵn.") }}</p>
     {% for label, snippet in chat_snippets %}
       <h3>{{ label }}</h3>
-      <pre style="overflow-x:auto;"><code>{{ snippet }}</code></pre>
+      <pre class="u-cuon-ngang"><code>{{ snippet }}</code></pre>
     {% endfor %}
   </div>
 
   <div class="card">
-    <h2 style="margin-top:0;">{{ _("Cửa chat khác cửa job ở đâu") }}</h2>
+    <h2 class="u-mt0">{{ _("Cửa chat khác cửa job ở đâu") }}</h2>
     <p class="muted">{{ _("Sáu chỗ. Viết ra đây thay vì để bạn tự vấp:") }}</p>
     {% for name, how in chat_khac_biet %}
       <h3>{{ name }}</h3>
@@ -91,7 +92,7 @@
 {% endif %}
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Không viết mã") }}</h2>
+  <h2 class="u-mt0">{{ _("Không viết mã") }}</h2>
   {% for name, how in no_code %}
     <h3>{{ name }}</h3>
     <p>{{ how }}</p>
@@ -99,9 +100,9 @@
 </div>
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Thử lại cho đúng") }}</h2>
+  <h2 class="u-mt0">{{ _("Thử lại cho đúng") }}</h2>
   <p>{{ _("Chỉ một quy tắc, và nó là quy tắc giữ tiền:") }}</p>
-  <pre style="overflow-x:auto;"><code>{{ retry_snippet }}</code></pre>
+  <pre class="u-cuon-ngang"><code>{{ retry_snippet }}</code></pre>
   <p class="muted">{{ _("Timeout mạng là ca nguy hiểm nhất: request có thể đã thành công. Thử lại với ĐÚNG Idempotency-Key cũ thì kết quả xấu nhất là nhận lại câu trả lời đầu tiên, thay vì mua lần thứ hai. Bảng lỗi đầy đủ nằm trong trang từng công cụ.") }}</p>
 </div>
 

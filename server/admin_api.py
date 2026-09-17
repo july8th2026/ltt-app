@@ -96,7 +96,7 @@ def _int(request: Request, name: str, default: int) -> int:
 
 
 def _when(value) -> str:
-    return value.strftime("%Y-%m-%d %H:%M") if value else "—"
+    return value.strftime("%d/%m/%Y %H:%M") if value else "—"
 
 
 def _render(ten: str, **bien) -> str:
@@ -364,7 +364,7 @@ class ApiPolicyView(_AnTrongMenuSqlAdmin, BaseView):
             _close(gen)
 
         return HTMLResponse(_admin_shell(
-            "API - Chinh sach", "api_policy",
+            "API — Chính sách", "api_policy",
             _render("admin/api_chinh_sach.html",
                     data=data, nen=baseline, truong=policy.LIMIT_FIELDS,
                     token=issue_csrf_token(request),
@@ -452,7 +452,7 @@ class ApiKillSwitchView(_AnTrongMenuSqlAdmin, BaseView):
             _close(gen)
 
         return HTMLResponse(_admin_shell(
-            "API - Kill switch", "api_kill",
+            "API — Kill switch", "api_kill",
             _render("admin/api_kill_switch.html",
                     rows=rows, pham_vi=KILL_SCOPES, luc=_when,
                     token=issue_csrf_token(request),
@@ -546,7 +546,7 @@ class ApiPricingView(_AnTrongMenuSqlAdmin, BaseView):
             _close(gen)
 
         return HTMLResponse(_admin_shell(
-            "API - Gia", "api_economics",
+            "API — Giá", "api_economics",
             _render("admin/api_gia.html",
                     catalog=catalog, tool=tool, line=line, preview=preview,
                     luc=_when, che_do_tron=pricing.ROUNDING_MODES,
@@ -665,7 +665,7 @@ class ApiMarginView(_AnTrongMenuSqlAdmin, BaseView):
             _close(gen)
 
         return HTMLResponse(_admin_shell(
-            "API - Margin", "api_margin",
+            "API — Margin", "api_margin",
             _render("admin/api_margin.html",
                     hours=hours, window=window, by_tool=by_tool,
                     tien=lambda micros: f"{micros / costing.MICROS:.2f}",
@@ -700,7 +700,7 @@ class ApiRequestsView(_AnTrongMenuSqlAdmin, BaseView):
             _close(gen)
 
         return HTMLResponse(_admin_shell(
-            "API - Request", "api_ops",
+            "API — Request", "api_ops",
             _render("admin/api_request.html",
                     page=page, query=query, status=status, code=code,
                     hours=hours, luc=_when,
@@ -734,7 +734,7 @@ class ApiJobsView(_AnTrongMenuSqlAdmin, BaseView):
             _close(gen)
 
         return HTMLResponse(_admin_shell(
-            "API - Job", "api_job",
+            "API — Job", "api_job",
             _render("admin/api_job.html",
                     page=page, failing=failing, status=status, tool=tool,
                     hours=hours, luc=_when,
@@ -769,7 +769,7 @@ class ApiSecurityView(_AnTrongMenuSqlAdmin, BaseView):
             _close(gen)
 
         return HTMLResponse(_admin_shell(
-            "API - Bao mat", "api_security",
+            "API — Bảo mật", "api_security",
             _render("admin/api_bao_mat.html",
                     data=data, rows=rows, bat_thuong=bat_thuong,
                     hours=hours, kind=kind, luc=_when,
@@ -796,7 +796,7 @@ class ApiTraceView(_AnTrongMenuSqlAdmin, BaseView):
             _close(gen)
 
         return HTMLResponse(_admin_shell(
-            "API - Truy vet", "api_trace",
+            "API — Truy vết", "api_trace",
             _render("admin/api_trace.html", found=found, q=query, luc=_when,
                     ms=lambda v: "—" if v is None else f"{v:,} ms")))
 

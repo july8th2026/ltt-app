@@ -1,0 +1,50 @@
+{#- _app_head.html — MỘT mẫu đầu trang cho mọi app (Golden UI C4, 17/09/2026).
+
+    {% import "_app_head.html" as ah %}
+    {{ ah.dau_trang(_("Workflow"), _("Phiên âm có dòng thời gian"), _("Mô tả một câu."), id_tieu_de="ts-title") }}
+
+    {% call ah.dau_trang(_("Âm thanh"), tieu_de, mo_ta, kieu="studio", viec=false) %}
+      …chip trạng thái / nút phụ riêng của app…
+    {% endcall %}
+
+    Cấu trúc (một thứ tự, mọi app):
+      eyebrow  = nhóm trên thanh điều hướng (Ảnh · Video · Workflow · Âm thanh · AI Studio ·
+                 Vận hành), có thể kèm tên sản phẩm: "Ảnh · Image Studio".
+      h1       = tên việc khách đang làm, tiếng Việt.
+      mô tả    = MỘT câu tiếng Việt (tên sản phẩm tiếng Anh như "Upscale Video" phải có câu này).
+      hành động phụ = "Việc của tôi" (/jobs) + nội dung `caller()` nếu có.
+
+    ⭐ QUY ƯỚC ĐỘ RỘNG — do `page_mode` của trang quyết, macro không tự ép:
+      · kieu="form"   — app MỘT cột form (transcript, audio-pause, video-assembly,
+                        prompt-canh, Lồng tiếng Việt, Agent): `page_mode` standard,
+                        khối nội dung 1120px căn giữa (`.app-head--form` cùng trần).
+      · kieu="studio" — không gian làm việc NHIỀU cột (form + thư viện kết quả, rail,
+                        so sánh trước/sau): Tạo ảnh, Thumbnail, Clip, Upscale, Voice,
+                        Quality Lab dùng `wide`/`immersive` — rộng theo khung nhìn.
+                        Seedance / LTT Video giữ bố cục riêng, chỉ dùng chung lớp
+                        `.app-eyebrow` + `.app-head-h1` cho eyebrow/h1.
+
+    ⛔ Không đặt thêm `topbar_title` khi đã dùng macro này: dải tiêu đề đó lặp y nguyên
+       tên trang (lỗi "Lồng tiếng Việt lặp tiêu đề", "Image Studio" hai tầng).
+    ⛔ Chuỗi `_()` nằm TRONG macro (Jinja cache template được import không kèm context). -#}
+
+{%- macro dau_trang(nhom, tieu_de, mo_ta='', id_tieu_de='', viec=true, kieu='form', lop='', quay_lai=none) -%}
+<header class="app-head app-head--{{ kieu }}{% if lop %} {{ lop }}{% endif %}">
+  <div class="app-head-chu">
+    {%- if quay_lai %}
+    <p class="app-head-quay"><a href="{{ quay_lai.href }}">← {{ quay_lai.nhan }}</a></p>
+    {%- endif %}
+    <span class="app-eyebrow">{{ nhom }}</span>
+    <h1 class="app-head-h1"{% if id_tieu_de %} id="{{ id_tieu_de }}"{% endif %}>{{ tieu_de }}</h1>
+    {%- if mo_ta %}
+    <p class="app-head-mota">{{ mo_ta }}</p>
+    {%- endif %}
+  </div>
+  {%- if caller is defined or viec %}
+  <div class="app-head-hd">
+    {%- if caller is defined %}{{ caller() }}{% endif %}
+    {%- if viec %}<a class="btn ghost" href="/jobs">{{ _("Việc của tôi") }}</a>{% endif %}
+  </div>
+  {%- endif %}
+</header>
+{%- endmacro -%}

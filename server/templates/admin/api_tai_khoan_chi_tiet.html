@@ -30,8 +30,8 @@
   </div>
 
   <section>
-    <h2 style="margin:22px 0 10px">Project</h2>
-    <div class="tablewrap"><table class="ui-table">
+    <h2 class="u-tieu-muc">Project</h2>
+    <div class="tablewrap" tabindex="0"><table class="ui-table">
       <thead><tr><th>Tên</th><th>Slug</th><th>Trạng thái</th><th>Tạo lúc</th></tr></thead>
       <tbody>
         {% for p in data.projects %}
@@ -42,15 +42,15 @@
           <td class="muted">{{ luc(p.created_at) }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="4" class="muted">Chưa có project.</td></tr>
+        <tr><td colspan="4" class="muted o-trong"><span class="o-trong-chu">Chưa có project.</span></td></tr>
         {% endfor %}
       </tbody>
     </table></div>
   </section>
 
   <section>
-    <h2 style="margin:22px 0 10px">Khoá</h2>
-    <div class="tablewrap"><table class="ui-table">
+    <h2 class="u-tieu-muc">Khoá</h2>
+    <div class="tablewrap" tabindex="0"><table class="ui-table">
       <thead><tr><th>Mã khoá</th><th>Tên</th><th>Môi trường</th><th>Trạng thái</th><th>Dùng lần cuối</th></tr></thead>
       <tbody>
         {% for k in data["keys"] %}
@@ -62,15 +62,15 @@
           <td class="muted">{{ luc(k.last_used_at) }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="5" class="muted">Chưa có khoá.</td></tr>
+        <tr><td colspan="5" class="muted o-trong"><span class="o-trong-chu">Chưa có khoá.</span></td></tr>
         {% endfor %}
       </tbody>
     </table></div>
   </section>
 
   <section>
-    <h2 style="margin:22px 0 10px">Ngân sách khách tự đặt</h2>
-    <div class="tablewrap"><table class="ui-table">
+    <h2 class="u-tieu-muc">Ngân sách khách tự đặt</h2>
+    <div class="tablewrap" tabindex="0"><table class="ui-table">
       <thead><tr><th>Phạm vi</th><th>Mức</th><th>Chu kỳ</th><th>Kiểu</th></tr></thead>
       <tbody>
         {% for b in data.budgets %}
@@ -81,15 +81,15 @@
           <td>{{ "cứng" if b.hard_cap else "mềm" }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="4" class="muted">Khách chưa đặt ngân sách nào.</td></tr>
+        <tr><td colspan="4" class="muted o-trong"><span class="o-trong-chu">Khách chưa đặt ngân sách nào.</span></td></tr>
         {% endfor %}
       </tbody>
     </table></div>
   </section>
 
   <section>
-    <h2 style="margin:22px 0 10px">Webhook</h2>
-    <div class="tablewrap"><table class="ui-table">
+    <h2 class="u-tieu-muc">Webhook</h2>
+    <div class="tablewrap" tabindex="0"><table class="ui-table">
       <thead><tr><th>URL</th><th>Trạng thái</th><th>Tạo lúc</th></tr></thead>
       <tbody>
         {% for s in data.subscriptions %}
@@ -99,15 +99,15 @@
           <td class="muted">{{ luc(s.created_at) }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="3" class="muted">Không có webhook.</td></tr>
+        <tr><td colspan="3" class="muted o-trong"><span class="o-trong-chu">Không có webhook.</span></td></tr>
         {% endfor %}
       </tbody>
     </table></div>
   </section>
 
   <section>
-    <h2 style="margin:22px 0 10px">20 lời gọi gần nhất được ghi</h2>
-    <div class="tablewrap"><table class="ui-table">
+    <h2 class="u-tieu-muc">20 lời gọi gần nhất được ghi</h2>
+    <div class="tablewrap" tabindex="0"><table class="ui-table">
       <thead><tr><th>Lúc</th><th>Route</th><th>HTTP</th><th>Mã</th><th>Correlation ID</th></tr></thead>
       <tbody>
         {% for r in data.recent_requests %}
@@ -119,7 +119,7 @@
           <td class="mono muted"><a href="/admin/api-trace?q={{ r.request_id }}">{{ r.request_id[:12] }}</a></td>
         </tr>
         {% else %}
-        <tr><td colspan="5" class="muted">Chưa có lời gọi nào được ghi.</td></tr>
+        <tr><td colspan="5" class="muted o-trong"><span class="o-trong-chu">Chưa có lời gọi nào được ghi.</span></td></tr>
         {% endfor %}
       </tbody>
     </table></div>

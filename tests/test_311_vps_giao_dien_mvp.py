@@ -251,8 +251,9 @@ def test_luat_nut_cua_khu_du_DAC_HIEU_de_thang_kieu_chung():
 
     # Luật của _kieu_chung.html vẫn còn ⇒ cái bẫy vẫn còn ⇒ phép kiểm còn ý nghĩa.
     chung = (TEMPLATES / "_kieu_chung.html").read_text(encoding="utf-8")
-    assert re.search(r"button,\s*\.btn\s*\{[^}]*background:var\(--accent\)"
-                     r"|button,\s*\.btn\s*\{[^}]*background:\s*var\(--accent\)",
+    # Golden UI 16/09: nen do dac cua `.btn` doi tu `--accent` sang `--brand-fill`
+    # (chu trang dat AA). Bay van y nguyen — chot "CO dat nen do", khong chot ten bien.
+    assert re.search(r"button,\s*\.btn\s*\{[^}]*background:\s*var\(--(?:accent|brand-fill)\)",
                      chung.replace("\n", " ")), (
         "`_kieu_chung.html` khong con dat background cho .btn — doc lai phep "
         "kiem nay truoc khi xoa no")
@@ -447,7 +448,7 @@ def test_CTA_cuoi_co_CA_HAI_loi_ra():
     nhưng người đã có thì không được rơi vào đường tạo tài khoản mới.
     """
     t = _vps_html()
-    i = t.index('class="vps-cta"')
+    i = t.index('class="vps-cta')  # lop tien ich P1-14 co the di kem (vd `u-mb16`)
     khoi = t[i:t.index("</div>", t.index('class="nut"', i))]
     assert 'href="/register"' in khoi, "CTA cuoi thieu duong tao tai khoan"
     assert "/login?next=" in khoi, "CTA cuoi thieu duong dang nhap"

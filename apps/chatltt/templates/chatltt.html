@@ -3,13 +3,15 @@
 {% block page_mode %}immersive{% endblock %}
 {% block content %}
 {% for href in chatltt_css %}<link rel="stylesheet" href="{{ href }}">{% endfor %}
+{# Golden UI: h1 cho trinh doc man hinh — giao dien React khong co tieu de trang. #}
+<h1 class="sr-only">ChatLTT</h1>
 <div id="chatltt-root"
      data-csrf="{{ csrf_token }}"
      data-api="/chatltt/api"
      class="chatltt-root">
   <noscript>{{ _('ChatLTT cần JavaScript.') }}</noscript>
   {% if not chatltt_js %}
-  <section class="ltt-card" style="max-width:720px;margin:2rem auto">
+  <section class="ltt-card ct-chua-build">
     <h1>ChatLTT</h1>
     <p>{{ _('Giao diện chưa được build (thiếu bundle frontend/chatltt). API vẫn hoạt động tại /chatltt/api.') }}</p>
   </section>

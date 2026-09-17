@@ -24,11 +24,11 @@
       <option value="ok" {{ 'selected' if status == 'ok' }}>chỉ thành công</option>
     </select>
     <input name="code" value="{{ code }}" placeholder="mã lỗi" aria-label="Lọc theo mã lỗi">
-    <input name="hours" value="{{ hours }}" style="width:90px" aria-label="Số giờ gần nhất">
+    <input name="hours" value="{{ hours }}" class="adm-w90" aria-label="Số giờ gần nhất">
     <button class="btn ghost sm">Lọc</button>
   </form>
 
-  <div class="tablewrap"><table class="ui-table">
+  <div class="tablewrap" tabindex="0"><table class="ui-table">
     <thead><tr>
       <th>Lúc</th><th>Correlation</th><th>Tài khoản</th><th>Route</th>
       <th>HTTP</th><th>Mã</th><th>ms</th><th>Credit</th>
@@ -45,7 +45,7 @@
         {% if it.email %}
         <td>
           <a href="/admin/nguoi-dung?q={{ r.user_id }}">{{ it.email }}</a>
-          <a class="muted" style="font-size:11px" href="/admin/api-tai-khoan?user={{ r.user_id }}">(API)</a>
+          <a class="muted u-fs11" href="/admin/api-tai-khoan?user={{ r.user_id }}">(API)</a>
         </td>
         {% else %}<td class="muted">—</td>{% endif %}
         <td class="mono">{{ r.method }} {{ r.route }}</td>
@@ -59,7 +59,7 @@
         <td class="tnum">{{ r.credit_delta }}</td>
       </tr>
       {% else %}
-      <tr><td colspan="8" class="muted" style="padding:26px;text-align:center">Không có lời gọi nào khớp.</td></tr>
+      <tr><td colspan="8" class="muted o-trong"><span class="o-trong-chu">Không có lời gọi nào khớp.</span></td></tr>
       {% endfor %}
     </tbody>
   </table></div>

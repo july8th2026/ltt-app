@@ -1,10 +1,11 @@
 {% extends "base.html" %}
+{% import "_icon.html" as ic %}
 {% block title %}{{ _("Điều khiển") }} — {{ _(app.display_name) }}{% endblock %}
-{% block topbar_title %}<strong>{{ app.icon }} {{ _(app.display_name) }}</strong>{% endblock %}
+{% block topbar_title %}<strong>{{ ic.icon_app(app.icon) }} {{ _(app.display_name) }}</strong>{% endblock %}
 {% block content %}
 
   <div class="card">
-    <div class="card-accent" style="background:{{ app.accent }};"></div>
+    <div class="card-accent card-accent--khu" aria-hidden="true"></div>
     <h2>{{ _("Điều khiển") }} {{ ten_may }}</h2>
 
     {# Trang thai CHO: may dich chua bao engine. Poll cho toi khi san sang. #}

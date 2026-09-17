@@ -55,8 +55,8 @@
 
   {{ m.mo_luoi_cot() }}
     <section>
-      <h2 style="margin:22px 0 10px">Vận hành</h2>
-      <p class="muted" style="margin:0 0 10px">Cộng từ mọi tiến trình web và
+      <h2 class="u-tieu-muc">Vận hành</h2>
+      <p class="muted u-mb10">Cộng từ mọi tiến trình web và
         worker. Bộ đếm sống trong tiến trình và được xả xuống CSDL mỗi phút, nên
         số ở đây tồn tại qua khởi động lại.</p>
       {{ m.mo_luoi_o() }}
@@ -91,8 +91,8 @@
     </section>
 
     <section>
-      <h2 style="margin:22px 0 10px">Mã lỗi hay gặp</h2>
-      <div class="tablewrap"><table class="ui-table">
+      <h2 class="u-tieu-muc">Mã lỗi hay gặp</h2>
+      <div class="tablewrap" tabindex="0"><table class="ui-table">
         <thead><tr><th>Mã</th><th>Số lần</th></tr></thead>
         <tbody>
           {% for ma, so in data.failures_by_code %}
@@ -101,20 +101,20 @@
             <td class="tnum">{{ so }}</td>
           </tr>
           {% else %}
-          <tr><td colspan="2" class="muted">Không có lời gọi nào hỏng trong khoảng này.</td></tr>
+          <tr><td colspan="2" class="muted o-trong"><span class="o-trong-chu">Không có lời gọi nào hỏng trong khoảng này.</span></td></tr>
           {% endfor %}
         </tbody>
       </table></div>
     </section>
 
     <section>
-      <h2 style="margin:22px 0 10px">Job theo loại</h2>
+      <h2 class="u-tieu-muc">Job theo loại</h2>
       {# ⚠️ Bảng NÀY gom theo `Job.job_type` (toàn nền tảng), khác hai ô "Job
          API" ở trên. `jobs_page(tool=)` lọc theo TÊN TOOL API trong
          `params._api.tool` — hai định danh khác nhau, nên `?tool=<job_type>` sẽ
          luôn ra danh sách rỗng. Đích đúng là bảng job của nền tảng, nơi
          `job_type` là cột tìm được. #}
-      <div class="tablewrap"><table class="ui-table">
+      <div class="tablewrap" tabindex="0"><table class="ui-table">
         <thead><tr><th>Loại job</th><th>Tổng</th><th>Hỏng</th></tr></thead>
         <tbody>
           {% for r in by_tool %}
@@ -124,7 +124,7 @@
             <td class="tnum" style="color:{{ ERR if r.error else OK }}">{{ r.error }}</td>
           </tr>
           {% else %}
-          <tr><td colspan="3" class="muted">Chưa có job nào trong khoảng này.</td></tr>
+          <tr><td colspan="3" class="muted o-trong"><span class="o-trong-chu">Chưa có job nào trong khoảng này.</span></td></tr>
           {% endfor %}
         </tbody>
       </table></div>

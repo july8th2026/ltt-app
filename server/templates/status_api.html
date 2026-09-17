@@ -1,43 +1,87 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Tình trạng API") }} — LTT AI Studio{% endblock %}
-{% block topbar_title %}<strong>{{ _("Tình trạng API") }}</strong>{% endblock %}
+{# Golden UI 17/09: bỏ `topbar_title` — nó in "Tình trạng API" lần thứ hai ở dải
+   trên, lệch trái so với cột nội dung 820px, ngay phía trên chính `h1` đó. #}
+{#- Golden UI C3: giờ hiện dd/mm/yyyy HH:MM theo giờ địa phương. Máy chủ đổi
+    datetime CÓ múi giờ sang giờ máy; script cuối trang đổi tiếp sang giờ của
+    người xem. Datetime không múi giờ (sqlite dev) giữ nguyên. Chỉ trình bày. -#}
+{%- macro gio(dt) -%}
+<time class="tnum" datetime="{{ dt.isoformat() }}" data-gio-dia-phuong>{{ (dt.astimezone() if dt.tzinfo else dt).strftime('%d/%m/%Y %H:%M') }}</time>
+{%- endmacro %}
 {% block content %}
-<div class="wrap" style="max-width:820px;margin:0 auto;padding:24px 16px;">
+<div class="tt-api">
 
-  <h1 style="margin-bottom:4px;">{{ _("Tình trạng API") }}</h1>
-  <p class="muted">{{ _("Cập nhật lúc") }} {{ report.checked_at.strftime('%Y-%m-%d %H:%M') }} UTC</p>
+  <div class="pagehead"><div><h1>{{ _("Tình trạng API") }}</h1>
+    <p class="page-sub">{{ _("Cập nhật lúc") }} {{ gio(report.checked_at) }}</p></div></div>
 
-  <div class="ui-card" style="margin:16px 0;">
+  {%- set _lop_tt = {'operational': 'ok', 'degraded': 'warn', 'maintenance': 'warn', 'outage': 'err'} %}
+  {% if report.capabilities %}
+  <div class="ui-card tt-api-tong tt-api-{{ _lop_tt.get(report.overall, 'grey') }}">
     <div class="dim">{{ _("Tổng thể") }}</div>
-    <div style="font-size:22px;font-weight:700;">{{ report.overall_wording }}</div>
+    <div class="tt-api-tong-chu">{{ report.overall_wording }}</div>
   </div>
 
-  <div class="tablewrap">
+  <div class="tablewrap tt-api-bang" tabindex="0" role="region" aria-label="{{ _('Tình trạng theo dịch vụ') }}">
     <table class="ui-table">
       <thead><tr>
-        <th>{{ _("Năng lực") }}</th><th>{{ _("Tình trạng") }}</th><th>{{ _("Ghi chú") }}</th>
+        <th scope="col">{{ _("Dịch vụ") }}</th><th scope="col">{{ _("Tình trạng") }}</th><th scope="col">{{ _("Ghi chú") }}</th>
       </tr></thead>
       <tbody>
         {% for row in report.capabilities %}
           <tr>
-            <td><b>{{ row.capability }}</b><br>
-              <span class="muted" style="font-size:11px;">
+            <td data-nhan="{{ _('Dịch vụ') }}"><b>{{ row.capability }}</b><br>
+              <span class="muted u-fs11">
                 {% for name in row.tools %}<code>{{ name }}</code> {% endfor %}</span></td>
-            <td>{{ row.wording }}</td>
-            <td class="muted">
+            <td data-nhan="{{ _('Tình trạng') }}"><span class="badge b-{{ _lop_tt.get(row.state, 'grey') }}"><span class="dot" aria-hidden="true"></span>{{ row.wording }}</span></td>
+            <td class="muted" data-nhan="{{ _('Ghi chú') }}">
               {{ row.note or "—" }}
-              {% if row.since %}<br><small>{{ _("từ") }} {{ row.since.strftime('%Y-%m-%d %H:%M') }} UTC</small>{% endif %}
+              {% if row.since %}<br><small>{{ _("từ") }} {{ gio(row.since) }}</small>{% endif %}
             </td>
           </tr>
-        {% else %}
-          <tr><td colspan="3" class="muted">{{ _("Chưa mở năng lực nào ra API công khai.") }}</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+  {% else %}
+  {#- Golden UI C3: trước đây thẻ "Hoạt động bình thường." đứng cạnh bảng rỗng
+      "Chưa mở năng lực nào" — tự mâu thuẫn. Không có năng lực ⇒ không có gì để
+      báo "bình thường"; nói thẳng trạng thái rỗng. -#}
+  {#- Golden UI C4: khối TỔNG THỂ vẫn có khi rỗng — chỉ báo trung tính "Chưa mở",
+      lời văn cho khách (dịch vụ, không "năng lực"). -#}
+  <section class="ui-card tt-api-tong tt-api-grey tt-api-rong" aria-labelledby="tt-api-rong">
+    <div class="tt-api-tong-dau">
+      <span class="tt-api-nhan">{{ _("Tổng thể") }}</span>
+      <span class="badge b-grey status-trung-tinh"><span class="dot" aria-hidden="true"></span>{{ _("Chưa mở") }}</span>
+    </div>
+    <h2 id="tt-api-rong" class="tt-api-rong-tieu-de">{{ _("Chưa có dịch vụ API công khai nào đang mở.") }}</h2>
+    <p class="tt-api-rong-mo-ta">{{ _("Vì vậy hiện không có sự cố hay bảo trì nào để báo. Khi một dịch vụ được mở cho khách, tình trạng của nó sẽ hiện ngay tại đây.") }}</p>
+    <div class="ui-state-actions"><a class="btn ghost" href="{{ u('/huong-dan') }}">{{ _("Hướng dẫn API") }}</a></div>
+  </section>
+  {% endif %}
 
-  <p class="muted" style="margin-top:18px;">
-    {{ _("Trang này nói theo NĂNG LỰC, không theo hạ tầng bên trong — cố ý như vậy. Muốn biết một lời gọi cụ thể của bạn hỏng ở đâu thì xem Nhật ký request trong khu API của bạn; correlation id trên phản hồi là thứ hỗ trợ cần.") }}
-  </p>
+  {#- Golden UI C4: đoạn giải thích thành thẻ có tiêu đề + ba ý, từ ngữ khách hiểu. -#}
+  <section class="ui-card tt-api-ve" aria-labelledby="tt-api-ve">
+    <h2 id="tt-api-ve">{{ _("Về trang này") }}</h2>
+    <ul class="tt-api-ve-ds">
+      <li><strong>{{ _("Theo dịch vụ, không theo máy chủ.") }}</strong> {{ _("Trang báo tình trạng từng dịch vụ bạn gọi qua API (capability), không liệt kê hạ tầng bên trong.") }}</li>
+      <li><strong>{{ _("Một lời gọi bị lỗi?") }}</strong> {{ _("Mở %(lien_ket)s trong khu API để xem lời gọi hỏng ở bước nào.", lien_ket=('<a href="%s">%s</a>'|safe) % (u('/developers/logs'), _("Nhật ký request"))) }}</li>
+      <li><strong>{{ _("Cần hỗ trợ?") }}</strong> {{ _("Gửi kèm mã tra cứu (correlation id) có trong phản hồi lỗi.") }}</li>
+    </ul>
+  </section>
 </div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var hai = function (n) { return (n < 10 ? "0" : "") + n; };
+  document.querySelectorAll("time[data-gio-dia-phuong]").forEach(function (t) {
+    var s = t.getAttribute("datetime") || "";
+    if (!/(Z|[+-][0-9]{2}:[0-9]{2})$/.test(s)) return;
+    var d = new Date(s);
+    if (isNaN(d.getTime())) return;
+    t.textContent = hai(d.getDate()) + "/" + hai(d.getMonth() + 1) + "/" + d.getFullYear() +
+      " " + hai(d.getHours()) + ":" + hai(d.getMinutes());
+  });
+})();
+</script>
 {% endblock %}

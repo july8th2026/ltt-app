@@ -15,11 +15,11 @@
   <form method="get" class="job-filters">
     <input name="status" value="{{ status }}" placeholder="trạng thái" aria-label="Lọc theo trạng thái">
     <input name="tool" value="{{ tool }}" placeholder="tool" aria-label="Lọc theo tool">
-    <input name="hours" value="{{ hours }}" style="width:90px" aria-label="Số giờ gần nhất">
+    <input name="hours" value="{{ hours }}" class="adm-w90" aria-label="Số giờ gần nhất">
     <button class="btn ghost sm">Lọc</button>
   </form>
 
-  <div class="tablewrap"><table class="ui-table">
+  <div class="tablewrap" tabindex="0"><table class="ui-table">
     <thead><tr>
       <th>Job</th><th>Tài khoản</th><th>Tool</th><th>Trạng thái</th>
       <th>Chờ (ms)</th><th>Chạy (ms)</th><th>Worker</th><th>Lần</th><th>Đã giữ</th>
@@ -43,7 +43,7 @@
         <td class="tnum">{{ it.held }}</td>
       </tr>
       {% else %}
-      <tr><td colspan="9" class="muted" style="padding:26px;text-align:center">Không có job API nào trong khoảng này.</td></tr>
+      <tr><td colspan="9" class="muted o-trong"><span class="o-trong-chu">Không có job API nào trong khoảng này.</span></td></tr>
       {% endfor %}
     </tbody>
   </table></div>
@@ -51,13 +51,13 @@
   {{ m.phan_trang(page, base) }}
 
   <section>
-    <h2 style="margin:22px 0 10px">Webhook hỏng</h2>
+    <h2 class="u-tieu-muc">Webhook hỏng</h2>
     {# Phan biet nay quan trong: `failed` se duoc thu lai, `dead` thi khong — va
        chi cai thu hai la mot khach dang LANG LE mat callback. #}
     <p class="muted">Dòng <b>dead</b> đứng trước: một delivery <i>failed</i> sẽ
       được thử lại, một <i>dead</i> thì không — và chỉ cái thứ hai là một khách
       đang lặng lẽ mất callback.</p>
-    <div class="tablewrap"><table class="ui-table">
+    <div class="tablewrap" tabindex="0"><table class="ui-table">
       <thead><tr>
         <th>Trạng thái</th><th>Tài khoản</th><th>Sự kiện</th>
         <th>Lần</th><th>HTTP cuối</th><th>Lúc</th>
@@ -74,7 +74,7 @@
           <td class="muted">{{ luc(r.created_at) }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="6" class="muted">Không có webhook nào hỏng trong khoảng này.</td></tr>
+        <tr><td colspan="6" class="muted o-trong"><span class="o-trong-chu">Không có webhook nào hỏng trong khoảng này.</span></td></tr>
         {% endfor %}
       </tbody>
     </table></div>

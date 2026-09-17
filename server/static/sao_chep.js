@@ -23,9 +23,19 @@
    *    chung một tên thuộc tính: một cái là "hãy gắn nút cho tôi", cái kia là
    *    "tôi gắn rồi". Trộn chúng là tự tạo một ô vừa-là-yêu-cầu-vừa-là-đã-xong.
    */
+  /* Golden UI 16/09: chữ nút theo `<html lang>` — trước đây bản EN vẫn hiện
+   * "Sao chép". Không cần catalog: bốn cụm cố định, hai ngôn ngữ. */
+  var EN = /^en/i.test(document.documentElement.lang || "");
+  var T = EN
+    ? { chep: "Copy", chepKhoi: "Copy code block", daChep: "Copied", tuChon: "Select it, then Ctrl+C", chepNgan: "Copy" }
+    : { chep: "Sao chép", chepKhoi: "Sao chép khối mã", daChep: "Đã chép", tuChon: "Hãy tự chọn rồi Ctrl+C", chepNgan: "Chép" };
+
   function gan(pre) {
     if (!pre || pre.dataset.chepXong === "1") return;
     pre.dataset.chepXong = "1";
+    // Khối mã cuộn ngang phải tới được bằng bàn phím (axe
+    // `scrollable-region-focusable`, 35 nút ở baseline).
+    if (!pre.hasAttribute("tabindex")) pre.tabIndex = 0;
 
     var boc = document.createElement("div");
     boc.className = "khoi-ma";
@@ -35,25 +45,25 @@
     var nut = document.createElement("button");
     nut.type = "button";
     nut.className = "nut-chep";
-    nut.textContent = "Sao chép";
+    nut.textContent = T.chep;
     // Người dùng bàn phím và trình đọc màn hình cũng phải dùng được.
-    nut.setAttribute("aria-label", "Sao chép khối mã");
+    nut.setAttribute("aria-label", T.chepKhoi);
     boc.appendChild(nut);
 
     nut.addEventListener("click", function () {
       var chu = pre.innerText;
       var xong = function () {
-        nut.textContent = "Đã chép";
+        nut.textContent = T.daChep;
         nut.classList.add("xong");
         setTimeout(function () {
-          nut.textContent = "Sao chép";
+          nut.textContent = T.chep;
           nut.classList.remove("xong");
         }, 1600);
       };
       var hong = function () {
         // Nói thật là không chép được, thay vì im lặng như chưa bấm.
-        nut.textContent = "Hãy tự chọn rồi Ctrl+C";
-        setTimeout(function () { nut.textContent = "Sao chép"; }, 2600);
+        nut.textContent = T.tuChon;
+        setTimeout(function () { nut.textContent = T.chep; }, 2600);
       };
       if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(chu).then(xong, hong);
@@ -80,27 +90,27 @@
     var nut = document.createElement("button");
     nut.type = "button";
     nut.className = "nut-chep nut-chep-o";
-    nut.textContent = "Chép";
+    nut.textContent = T.chepNgan;
     // Nhãn phải nói CHÉP CÁI GÌ: một trang có nhiều ô, và "Chép" trần thì
     // trình đọc màn hình đọc ra bốn nút giống hệt nhau.
     var nhan = o.previousElementSibling;
     nut.setAttribute("aria-label",
-      "Sao chép " + ((nhan && nhan.textContent) || o.textContent || "").trim());
+      T.chep + " " + ((nhan && nhan.textContent) || o.textContent || "").trim());
     o.parentNode.insertBefore(nut, o.nextSibling);
 
     nut.addEventListener("click", function () {
       var chu = o.innerText;
       var xong = function () {
-        nut.textContent = "Đã chép";
+        nut.textContent = T.daChep;
         nut.classList.add("xong");
         setTimeout(function () {
-          nut.textContent = "Chép";
+          nut.textContent = T.chepNgan;
           nut.classList.remove("xong");
         }, 1600);
       };
       var hong = function () {
-        nut.textContent = "Tự chọn rồi Ctrl+C";
-        setTimeout(function () { nut.textContent = "Chép"; }, 2600);
+        nut.textContent = T.tuChon;
+        setTimeout(function () { nut.textContent = T.chepNgan; }, 2600);
       };
       if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(chu).then(xong, hong);

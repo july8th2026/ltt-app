@@ -13,7 +13,7 @@
   </div></div>
 
   <section>
-    <h2 style="margin:22px 0 10px">Allowlist của deployment này</h2>
+    <h2 class="u-tieu-muc">Allowlist của deployment này</h2>
     <p>
       {%- for ten in mo_san %}<code>{{ ten }}</code> {% else %}<em>rỗng</em>{% endfor -%}
     </p>
@@ -23,8 +23,8 @@
   </section>
 
   <section>
-    <h2 style="margin:22px 0 10px">Tool ({{ hours }} giờ gần nhất)</h2>
-    <div class="tablewrap"><table class="ui-table">
+    <h2 class="u-tieu-muc">Tool ({{ hours }} giờ gần nhất)</h2>
+    <div class="tablewrap" tabindex="0"><table class="ui-table">
       <thead><tr>
         <th>Tên công khai</th><th>App</th><th>Chế độ chạy</th>
         <th>Phơi bày</th><th>Lời gọi</th><th>Hỏng</th>
@@ -62,7 +62,7 @@
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="6" class="muted" style="padding:26px;text-align:center">Chưa app nào khai tool ra API công khai.</td></tr>
+        <tr><td colspan="6" class="muted o-trong"><span class="o-trong-chu">Chưa app nào khai tool ra API công khai.</span></td></tr>
         {% endfor %}
       </tbody>
     </table></div>

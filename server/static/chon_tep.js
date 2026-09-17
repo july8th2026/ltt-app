@@ -54,7 +54,10 @@
 
   // htmx thay noi dung tai cho o vai trang (vd `/taoanh/thumbnail`), nen phai
   // gan lai cho phan vua duoc thay — neu khong, o chon tep moi se im lang.
-  document.body && document.body.addEventListener('htmx:afterSwap', function (e) {
-    gan(e.target);
+  // ⛔ KHONG gan(e.target): voi `hx-swap="outerHTML"` (vd `/taoanh/thumbnail`)
+  // e.target la phan tu CU da bi thay ra khoi DOM, nen o chon tep moi im lang.
+  // Quet ca tai lieu la an toan: `daGan` chan gan hai lan.
+  document.body && document.body.addEventListener('htmx:afterSwap', function () {
+    gan();
   });
 })();

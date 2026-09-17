@@ -1,8 +1,8 @@
 {% extends "base_plain.html" %}
-{% block title %}Đăng ký — LTT AI Studio{% endblock %}
+{% block title %}{{ _("Đăng ký") }} — LTT AI Studio{% endblock %}
 {% block content %}
-  {% set auth_title = 'Tạo tài khoản' %}
-  {% set auth_subtitle = 'Bắt đầu bảo mật; chi phí luôn được báo trước mỗi tác vụ.' %}
+  {% set auth_title = _('Tạo tài khoản') %}
+  {% set auth_subtitle = _('Bắt đầu bảo mật; chi phí luôn được báo trước mỗi tác vụ.') %}
   {% include "_auth_brand.html" %}
   <div class="card">
     {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
@@ -13,14 +13,14 @@
                autocomplete="email" value="{{ email }}"></div>
       <div class="auth-field"><label for="register-password">{{ _("Mật khẩu") }}</label>
         <input id="register-password" type="password" name="password" placeholder="{{ _('Tối thiểu 8 ký tự') }}"
-               required minlength="8" autocomplete="new-password">
-        <small>{{ _("Dùng ít nhất 8 ký tự và không dùng lại mật khẩu ở dịch vụ khác.") }}</small></div>
+               required minlength="8" autocomplete="new-password" aria-describedby="register-password-goi-y">
+        <small id="register-password-goi-y">{{ _("Dùng ít nhất 8 ký tự và không dùng lại mật khẩu ở dịch vụ khác.") }}</small></div>
       {% if turnstile_site_key %}
       <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}"></div>
       <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
       {% endif %}
       <button type="submit">{{ _("Đăng ký") }}</button>
     </form>
-    <p class="hint"><a href="/login">{{ _("Đã có tài khoản? Đăng nhập") }}</a></p>
+    <p class="hint"><a href="{{ u('/login') }}">{{ _("Đã có tài khoản? Đăng nhập") }}</a></p>
   </div>
 {% endblock %}

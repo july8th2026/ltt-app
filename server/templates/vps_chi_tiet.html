@@ -1,10 +1,11 @@
 {% extends "vps_base.html" %}
+{% import "_icon.html" as ic %}
 {# `with context`: macro dùng `_()` và các biến của trang. Thiếu nó thì mọi chuỗi
    bên trong macro ra tiếng Việt trên bản EN — và không phép kiểm `.po` nào bắt
    được, vì chuỗi CÓ trong catalog và ĐÃ dịch. #}
 {% import "_vps_mac.html" as mac with context %}
 {% block title %}{{ may.ten or may.id[:8] }} — {{ _(app.display_name) }}{% endblock %}
-{% block topbar_title %}<strong><a href="/vps" style="color:inherit;text-decoration:none;opacity:.7;">{{ app.icon }} VPS</a> <span style="opacity:.45;">›</span> {{ may.ten or may.id[:8] }}</strong>{% endblock %}
+{% block topbar_title %}<strong><a class="vps-vet-goc" href="/vps">{{ ic.icon_app(app.icon) }} VPS</a> <span class="vps-vet-ngan" aria-hidden="true">›</span> {{ may.ten or may.id[:8] }}</strong>{% endblock %}
 {# `vps-may` là MÓC PHẠM VI, không phải class kiểu — xem `ltt.css`. #}
 {% block body_class %}vps-may{% endblock %}
 {% block noi_dung %}
@@ -26,7 +27,7 @@
      ④ "Snapshot tự động hàng ngày" — thật là **hằng tuần, giữ 1 bản**.
    Xem `docs/VPS/UI_MVP_V2/00_KE_HOACH_GIAO_DIEN.md` §2.1. #}
 
-  {% if loi %}<div class="alert alert-err" style="margin:0 0 12px;">{{ loi }}</div>{% endif %}
+  {% if loi %}<div class="alert alert-err u-mb12">{{ loi }}</div>{% endif %}
 
   {{ mac.dinh_may(may, trang_thai_nhan, badge, plan, os, dia_chi) }}
 
@@ -35,7 +36,7 @@
      trang này với một câu hỏi cụ thể, và câu trả lời phải là thứ họ thấy trước
      tiên chứ không phải thứ họ phải đi tìm. #}
   {% if may.ly_do %}
-  <div class="alert alert-err" style="margin:0 0 14px;">
+  <div class="alert alert-err u-mb14">
     <strong>{{ _("Lý do") }}:</strong> {{ may.ly_do }}
   </div>
   {% endif %}
@@ -45,7 +46,7 @@
      cắt. Khách vào bằng Console để dọn. Nói đúng cả ba điều đó, vì mỗi điều
      đều là một câu hỏi họ sắp gửi tới hỗ trợ. #}
   {% if bi_cach_ly %}
-  <div class="alert alert-err" style="margin:0 0 14px;">
+  <div class="alert alert-err u-mb14">
     <strong>{{ _("Máy đang bị cách ly mạng") }}</strong><br>
     {{ _("Đường ra Internet của máy đã bị cắt vì nghi lạm dụng. Dữ liệu và đĩa còn nguyên, và bạn vẫn vào được bằng Console. Liên hệ hỗ trợ để gỡ.") }}
     {% if may.cach_ly_ly_do %}<br><span class="ct">{{ may.cach_ly_ly_do }}</span>{% endif %}
@@ -60,14 +61,19 @@
      lượt. Một trạng thái không có tuổi là một trạng thái khách không đánh giá
      được — đó là lý do khối này tồn tại. #}
   {% if mat_lien_lac %}
-  <div class="alert alert-warn" style="margin:0 0 14px;">
+  <div class="alert alert-warn u-mb14">
     <strong>{{ _("Chưa hỏi được máy chủ") }}</strong><br>
     {{ _("Trạng thái bên dưới là lần đo gần nhất, không phải hiện tại. Chúng tôi đang thử lại.") }}
   </div>
   {% elif quan_sat_cu %}
-  <div class="alert" style="margin:0 0 14px;">
+  {# C4 (Golden UI): "lần đo gần nhất" chỉ có nghĩa khi ĐÃ có một lần đo. Máy
+     đang tạo chưa đo lần nào — câu này chồng lên cảnh báo "Máy đang được tạo"
+     và nói về một con số không tồn tại. #}
+  {% if may.quan_sat_luc %}
+  <div class="alert alert-info u-mb14">
     {{ _("Trạng thái bên dưới là lần đo gần nhất và có thể đã cũ.") }}
   </div>
+  {% endif %}
   {% endif %}
 
   {# ── Dải hành động, THEO TRẠNG THÁI ───────────────────────────────────
@@ -82,7 +88,7 @@
        một thứ mà giao diện trả lời được.
        Console vẫn để: nó không đụng vào máy, và nó là đường khách nhìn thấy
        việc đang xảy ra. #}
-    <div class="alert alert-warn" style="margin:0 0 16px;">
+    <div class="alert alert-warn u-mb16">
       <strong>{{ _(viec.loai) }}…</strong>
       {% if viec.buoc %}<br>{{ _(viec.buoc) }}{% endif %}
       <br><span class="ct">{{ _("Tải lại trang sau ít phút để xem kết quả.") }}</span>
@@ -92,10 +98,10 @@
          href="{{ app.route_prefix }}/{{ may.id }}/console">{{ _("Console") }}</a>
     </div>
   {% elif may.trang_thai == "bi_treo" %}
-    <div class="alert alert-warn" style="margin:0 0 16px;">
+    <div class="alert alert-warn u-mb16">
       <strong>{{ _("Máy đang bị tạm dừng") }}</strong><br>
       {{ _(buoc_tiep) }}
-      <p style="margin:10px 0 0;">
+      <p class="u-mt10">
         <a class="btn btn-may" href="/nap">{{ _("Nạp credit") }}</a>
       </p>
     </div>
@@ -104,8 +110,13 @@
        từ chối — và một nút bị từ chối tệ hơn không có nút.
        ⚠️ KHÔNG hiện "% tiến độ" hay "dự kiến 2–5 phút": job trả **trạng thái**,
           không trả phần trăm hay ETA. Ảnh tham chiếu có, backend thì không. #}
-    <div class="alert alert-warn" style="margin:0 0 16px;">{{ _(buoc_tiep) }}</div>
+    <div class="alert alert-warn u-mb16">{{ _(buoc_tiep) }}</div>
   {% else %}
+    {# C3 17/09 — THỨ BẬC: đúng MỘT nút chính (nền đỏ) và nó luôn đứng ĐẦU dải.
+       Máy tắt → "Bật"; máy chạy → "Console" (việc khách tới trang này để làm).
+       Nút phụ (viền) theo sau; nhóm NGUỒN (khởi động lại / tắt / tắt cứng) tách
+       sang phải thành một cụm riêng có nhãn, vì đó là việc làm gián đoạn máy.
+       Trước: Console đỏ kẹp giữa các nút viền, trông như một nút ngẫu nhiên. #}
     <div class="vps-hd">
       {% if may.trang_thai == "da_tat" %}
         {# Máy đã tắt: "Bật" là việc duy nhất đáng làm, nên nó là nút CHÍNH. #}
@@ -113,7 +124,16 @@
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <button class="btn btn-may" type="submit">{{ _("Bật") }}</button>
         </form>
+        <a class="btn btn-ghost"
+           href="{{ app.route_prefix }}/{{ may.id }}/console">{{ _("Console") }}</a>
+        <a class="btn btn-ghost vps-hd-phu"
+           href="{{ app.route_prefix }}/{{ may.id }}/cai-dat">{{ _("Cài Windows") }}</a>
       {% else %}
+        <a class="btn btn-may"
+           href="{{ app.route_prefix }}/{{ may.id }}/console">{{ _("Console") }}</a>
+        <a class="btn btn-ghost vps-hd-phu"
+           href="{{ app.route_prefix }}/{{ may.id }}/cai-dat">{{ _("Cài Windows") }}</a>
+        <div class="vps-hd-nguon" role="group" aria-label="{{ _('Nguồn máy') }}">
         {# `_("Tắt máy")` chứ không phải `_("Tắt")`: msgid trần dùng chung với
            nút vô hiệu hoá webhook ở khu API, nơi bản dịch đúng là "Disable" —
            sai hẳn nghĩa với một cái máy. Cùng lớp lỗi với `"Cấu hình"` bị dịch
@@ -131,14 +151,11 @@
         <form method="post" action="{{ app.route_prefix }}/{{ may.id }}/tat-cung"
               onsubmit="return confirm('{{ _("Tắt cứng giống rút điện: dữ liệu chưa ghi xuống đĩa có thể mất. Tiếp tục?") }}');">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <button class="btn btn-ghost" type="submit">{{ _("Tắt cứng") }}</button>
+          <button class="btn btn-ghost vps-nut-nguy" type="submit">{{ _("Tắt cứng") }}</button>
         </form>
         {% endif %}
+        </div>
       {% endif %}
-      <a class="btn {{ 'btn-ghost' if may.trang_thai == 'da_tat' else 'btn-may' }}"
-         href="{{ app.route_prefix }}/{{ may.id }}/console">{{ _("Console") }}</a>
-      <a class="btn btn-ghost"
-         href="{{ app.route_prefix }}/{{ may.id }}/cai-dat">{{ _("Cài Windows") }}</a>
     </div>
   {% endif %}
 
@@ -155,10 +172,10 @@
       </ul>
       {# ⛔ KHÔNG có ô "1 Gbps Network" như trong ảnh: không nơi nào trong mã
          khai tốc độ cổng, nên đó là một con số chưa ai đo. #}
-      <p class="muted" style="margin:10px 0 0;font-size:12px;">
+      <p class="muted u-mt10 u-fs12">
         {{ _("Đĩa là hạn mức trên kho lưu trữ dùng chung, không phải ổ cứng cấp riêng.") }}
       </p>
-      {% else %}<p class="muted" style="margin:0;">{{ may.plan_id }}</p>{% endif %}
+      {% else %}<p class="muted u-m0">{{ may.plan_id }}</p>{% endif %}
     </div>
 
     <div class="vps-o">
@@ -174,7 +191,7 @@
       {# ⛔ KHÔNG có nút "Gia hạn ngay": không có route gia hạn. `bao_tri.chay`
          tự thu mỗi chu kỳ dưới lease. Cái khách thật sự cần khi sắp hết hạn là
          **đủ credit**, nên đường đi là `/nap`. #}
-      <p class="muted" style="margin:10px 0 0;font-size:12px;">
+      <p class="muted u-mt10 u-fs12">
         {{ _("Phí tự thu mỗi chu kỳ từ số dư credit. Hết credit thì máy bị tạm dừng, dữ liệu giữ trong %(n)s ngày.") % {"n": an_han_ngay} }}
         <a href="/nap">{{ _("Nạp thêm") }}</a>
       </p>
@@ -184,7 +201,7 @@
       <h3>{{ _("Băng thông chu kỳ này") }}</h3>
       {{ mac.do_bang_thong(bang_thong) }}
       {% if bang_thong.bi_giam_toc %}
-      <p class="muted" style="margin:10px 0 0;font-size:12px;">
+      <p class="muted u-mt10 u-fs12">
         {{ _("Máy đang bị giảm tốc vì đã vượt hạn mức. Không bị tính thêm tiền — tốc độ trở lại bình thường khi sang chu kỳ mới.") }}
       </p>
       {% endif %}
@@ -193,14 +210,14 @@
     <div class="vps-o">
       <h3>{{ _("Ảnh chụp gần nhất") }}</h3>
       {% if sao_luu_luc %}
-        <p style="margin:0;font-size:15px;">{{ sao_luu_luc.strftime('%d/%m/%Y %H:%M') }}</p>
+        <p class="vps-anh-luc">{{ sao_luu_luc.strftime('%d/%m/%Y %H:%M') }}</p>
       {% else %}
-        <p class="muted" style="margin:0;">{{ _("chưa có — bản đầu tiên chụp trong vòng một tuần") }}</p>
+        <p class="muted u-m0">{{ _("chưa có — bản đầu tiên chụp trong vòng một tuần") }}</p>
       {% endif %}
       {# Nói ĐÚNG nhịp và ĐÚNG bản chất. Ảnh tham chiếu ghi "tự động hàng ngày";
          thật là **hằng tuần, giữ 1 bản**, và nó nằm trên **cùng kho** với đĩa
          gốc — pool hỏng là mất cả hai. Xem `services/sao_luu.py`. #}
-      <p class="muted" style="margin:10px 0 0;font-size:12px;">
+      <p class="muted u-mt10 u-fs12">
         {{ _("Ảnh chụp hằng tuần, giữ %(n)s bản, trên cùng kho lưu trữ với máy. Nó KHÔNG thay thế bản sao lưu của riêng bạn.") % {"n": so_anh_giu} }}
       </p>
     </div>
@@ -212,7 +229,7 @@
         tảng **không giữ mật khẩu nào** — khách tự cài Windows và tự đặt tài
         khoản. Vẽ ô đó ra là hứa một thứ không tồn tại, đúng lúc khách đang cần
         nó nhất, và cách duy nhất họ phát hiện ra là bấm vào rồi thấy trống. #}
-  <div class="vps-o vps-o-lon" style="margin:0 0 16px;">
+  <div class="vps-o vps-o-lon u-mb16">
     <h3>{{ _("Thông tin truy cập") }}</h3>
     {{ mac.o_sao_chep(_("Địa chỉ RDP"), (dia_chi ~ ":" ~ cong) if dia_chi else "") }}
     {# Lệnh chép được, không phải một nút "RDP" giả: trang web KHÔNG mở được
@@ -226,7 +243,7 @@
         {{ _("Là của bạn — chúng tôi không giữ bản nào và không đặt lại được.") }}
       </span>
     </div>
-    <p class="muted" style="margin:10px 0 0;font-size:12px;">
+    <p class="muted u-mt10 u-fs12">
       {{ _("Chưa vào được bằng RDP? Bật Remote Desktop trong máy theo") }}
       <a href="{{ app.route_prefix }}/{{ may.id }}/cai-dat">{{ _("hướng dẫn cài Windows") }}</a>,
       {{ _("hoặc dùng console khi đã đổi tường lửa và tự khoá mình ra ngoài.") }}
@@ -237,7 +254,7 @@
      KHÔNG đòi gõ xác nhận: đổi nhãn là việc đảo được, và đặt rào chắn ở việc
      đảo được thì rào chắn ở việc KHÔNG đảo được bị nhờn. #}
   {% if may.trang_thai != "da_xoa" %}
-  <div class="vps-o" style="margin:0 0 16px;">
+  <div class="vps-o u-mb16">
     <h3>{{ _("Tên máy") }}</h3>
     <form class="vps-doi-ten" method="post"
           action="{{ app.route_prefix }}/{{ may.id }}/doi-ten">
@@ -247,7 +264,7 @@
              value="{{ may.ten }}" autocomplete="off">
       <button class="btn btn-ghost" type="submit">{{ _("Đổi tên") }}</button>
     </form>
-    <p class="muted" style="margin:8px 0 0;font-size:12px;">
+    <p class="muted vps-mt8 u-fs12">
       {{ _("Tên chỉ để bạn nhận ra máy trong danh sách. Đây cũng là tên bạn phải gõ để xác nhận các thao tác không hoàn tác được bên dưới.") }}
     </p>
   </div>
@@ -260,12 +277,12 @@
      Tách khỏi nhật ký chung: nhật ký trộn mọi loại sự kiện, còn đây là thứ
      khách cần khi đối chiếu chi tiêu. #}
   {% if sao_ke %}
-  <div class="vps-o vps-o-lon" style="margin:0 0 16px;">
+  <div class="vps-o vps-o-lon u-mb16">
     <h3>{{ _("Sao kê thanh toán") }}</h3>
-    <div class="tablewrap">
-      <table class="tbl" style="width:100%;">
+    <div class="tablewrap" tabindex="0">
+      <table class="tbl vps-bang-rong">
         <thead><tr>
-          <th scope="col" style="width:170px;">{{ _("Thời điểm") }}</th>
+          <th scope="col" class="vps-cot-luc">{{ _("Thời điểm") }}</th>
           <th scope="col">{{ _("Số tiền") }}</th>
           <th scope="col">{{ _("Trả cho tới") }}</th>
         </tr></thead>
@@ -280,7 +297,7 @@
         </tbody>
       </table>
     </div>
-    <p class="muted" style="margin:10px 0 0;font-size:12px;">
+    <p class="muted u-mt10 u-fs12">
       {{ _("Tổng đã trả cho máy này: %(n)s credit.") % {"n": "{:,}".format(tong_da_tra).replace(",", ".")} }}
       {# Noi thang: day KHONG phai hoa don dien tu theo Nghi dinh 123/2020.
          Goi no la "hoa don" khi chua dang ky voi co quan thue la mot cau sai
@@ -290,6 +307,26 @@
   </div>
   {% endif %}
 
+  {# C4 (Golden UI): câu chi tiết do `routes._chi_tiet_doc_duoc` dựng giữ MÃ hệ điều
+     hành/gói ("hệ điều hành: winsrv2016-core · gói: vps-nho"). Trang đã có tên đẹp
+     của chính các mã đó (`os_ban_duoc`, `os`, `plan` — cùng nguồn ô Hệ điều hành/
+     Gói ở đầu trang) nên đổi mã → tên ngay tại đây, chỉ sau đúng nhãn của nó.
+     Mã dài xếp trước để mã là tiền tố của mã khác không bị thay nhầm. Mã không
+     có trong bảng thì giữ nguyên — vẫn tra được khi khách chụp màn hình. #}
+  {% macro doc_chi_tiet(ct) -%}
+    {%- set ns = namespace(ct=ct) -%}
+    {%- set nhan_os = _("hệ điều hành") ~ ": " -%}
+    {%- set ds_os = (os_ban_duoc | list) + ([os] if os else []) -%}
+    {%- for o in ds_os | sort(attribute='id', reverse=True) -%}
+      {%- set ns.ct = ns.ct | replace(nhan_os ~ o.id, nhan_os ~ _(o.ten)) -%}
+    {%- endfor -%}
+    {%- if plan -%}
+      {%- set nhan_goi = _("gói") ~ ": " -%}
+      {%- set ns.ct = ns.ct | replace(nhan_goi ~ plan.id, nhan_goi ~ _(plan.ten)) -%}
+    {%- endif -%}
+    {{ ns.ct }}
+  {%- endmacro %}
+
   {# ── Nhật ký ───────────────────────────────────────────────────────────
      Đây là thứ trả lời "vì sao máy tôi bị tắt" khi khách hỏi sau ba tháng — nên
      nó phải đọc được bởi **khách**, không bởi người vận hành. Trước Đợt 4 nó
@@ -297,7 +334,7 @@
 
      Nhãn từ `apps/vps/nhan.py:SU_KIEN` — một nguồn, không phải một bảng tra
      chép tay trong template. #}
-  <div class="vps-o vps-o-lon" style="margin:0 0 16px;">
+  <div class="vps-o vps-o-lon u-mb16">
     <h3>{{ _("Nhật ký") }}</h3>
     {% if su_kien %}
     <ul class="vps-nhat-ky">
@@ -306,13 +343,13 @@
         <span class="cham" aria-hidden="true"></span>
         <span>
           {{ _(e.nhan) }}{% if e.that_bai %} — <b>{{ _("thất bại") }}</b>{% endif %}
-          {% if e.chi_tiet %}<span class="ct">{{ e.chi_tiet }}</span>{% endif %}
+          {% if e.chi_tiet %}<span class="ct">{{ doc_chi_tiet(e.chi_tiet) }}</span>{% endif %}
         </span>
         <span class="luc">{{ e.luc.strftime('%d/%m/%Y %H:%M') }}</span>
       </li>
       {% endfor %}
     </ul>
-    {% else %}<p class="muted" style="margin:0;">{{ _("Chưa có gì.") }}</p>{% endif %}
+    {% else %}<p class="muted u-m0">{{ _("Chưa có gì.") }}</p>{% endif %}
   </div>
 
   {# ── Nguy hiểm ─────────────────────────────────────────────────────────
@@ -326,7 +363,7 @@
   {% if may.trang_thai != "da_xoa" and not viec %}
   <div class="vps-nguy">
     <h2>{{ _("Nguy hiểm") }}</h2>
-    <p>{{ _("Ba việc dưới đây không hoàn tác được. Gõ đúng tên máy để xác nhận — cùng khuôn với GitHub, và cùng lý do: chúng phải khó bấm nhầm hơn một cú click.") }}</p>
+    <p>{{ _("Ba việc dưới đây không hoàn tác được. Hãy gõ đúng tên máy để xác nhận — bước này có chủ ý, để không ai lỡ tay bấm nhầm.") }}</p>
 
     <div class="vps-nguy-luoi">
       {# Khôi phục đứng ĐẦU: khách vào khối này vì máy hỏng, và quay về ảnh chụp
@@ -345,7 +382,8 @@
         {% if sao_luu_luc %}
         <form method="post" action="{{ app.route_prefix }}/{{ may.id }}/khoi-phuc">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <input class="inp" name="xac_nhan" required
+          <input class="inp" name="xac_nhan" required autocomplete="off"
+                 aria-label="{{ _('Gõ: %(ten)s') % {'ten': may.ten or may.id[:8]} }}"
                  placeholder="{{ _('Gõ: %(ten)s') % {'ten': may.ten or may.id[:8]} }}">
           <button class="btn btn-danger" type="submit">{{ _("Khôi phục") }}</button>
         </form>
@@ -362,7 +400,8 @@
             <option value="">{{ _("Giữ nguyên hệ điều hành") }}</option>
             {% for o in os_ban_duoc %}<option value="{{ o.id }}">{{ _(o.ten) }}</option>{% endfor %}
           </select>
-          <input class="inp" name="xac_nhan" required
+          <input class="inp" name="xac_nhan" required autocomplete="off"
+                 aria-label="{{ _('Gõ: %(ten)s') % {'ten': may.ten or may.id[:8]} }}"
                  placeholder="{{ _('Gõ: %(ten)s') % {'ten': may.ten or may.id[:8]} }}">
           <button class="btn btn-danger" type="submit">{{ _("Cài lại") }}</button>
         </form>
@@ -373,10 +412,10 @@
         <p>{{ _("Xoá vĩnh viễn máy và trả địa chỉ IP về. KHÔNG hoàn tác được và không hoàn tiền chu kỳ đang dùng.") }}</p>
         <form method="post" action="{{ app.route_prefix }}/{{ may.id }}/xoa">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <input class="inp" name="xac_nhan" required
+          <input class="inp" name="xac_nhan" required autocomplete="off"
+                 aria-label="{{ _('Gõ: %(ten)s') % {'ten': may.ten or may.id[:8]} }}"
                  placeholder="{{ _('Gõ: %(ten)s') % {'ten': may.ten or may.id[:8]} }}">
-          <button class="btn" type="submit"
-                  style="background:var(--status-danger);">{{ _("Xoá vĩnh viễn") }}</button>
+          <button class="btn btn-nguy-dac" type="submit">{{ _("Xoá vĩnh viễn") }}</button>
         </form>
       </div>
     </div>

@@ -3,6 +3,7 @@
 {% block page_mode %}immersive{% endblock %}
 {% block title %}Canvas · LTT Agent AI{% endblock %}
 {% block content %}
+<h1 class="sr-only">{{ _("Canvas") }} · LTT Agent AI</h1>
 <div id="agent-canvas-root" aria-busy="true" data-csrf-token="{{ csrf_token }}"
      data-presentation="{{ canvas_presentation }}"><p class="muted">{{ _("Đang tải Canvas…") }}</p></div>
 {% for href in canvas_css %}<link rel="stylesheet" href="{{ href }}">{% endfor %}

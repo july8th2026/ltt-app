@@ -8399,7 +8399,7 @@ msgstr "Connection lost"
 
 #: server/templates/job_detail.html:9
 msgid "Mất kết nối tạm thời. Tiến độ sẽ tự cập nhật khi mạng trở lại."
-msgstr ""
+msgstr "Connection lost temporarily. Progress will update when the network is back."
 
 msgid "Mất kết nối tạm thời. Đang thử lại…"
 msgstr "Connection lost for a moment. Retrying…"
@@ -13541,7 +13541,7 @@ msgid "Video >90MB cần upload trực tiếp; lưu trữ hiện chưa sẵn sà
 msgstr "Videos over 90 MB require direct upload; storage is not ready yet."
 
 msgid "Video AI"
-msgstr "Video AI"
+msgstr "AI Video"
 
 msgid "Video AI (máy nhà)"
 msgstr "Video AI (in-house)"
@@ -15753,7 +15753,7 @@ msgstr "rows in total"
 
 #: server/templates/status_api.html:29
 msgid "từ"
-msgstr ""
+msgstr "since"
 
 msgid "video từ mô tả"
 msgstr "video from a description"
@@ -16418,7 +16418,7 @@ msgstr "Cinematic"
 
 #: apps/qualitylab/manifest.py:17
 msgid "Đo contract và chất lượng đầu ra bằng bằng chứng có phiên bản."
-msgstr ""
+msgstr "Measures contracts and output quality with versioned evidence."
 
 #: apps/qualitylab/templates/qualitylab.html:15
 msgid "Đo theo vector bằng chứng. Foundation chưa calibrated và không được dùng làm release gate."
@@ -18074,6 +18074,454 @@ msgstr "Unusually long wait"
 
 msgstr "Unusually long wait"
 
+msgid "Yêu cầu chưa đúng"
+msgstr "Something is wrong with this request"
+
+msgid "Dữ liệu gửi lên thiếu hoặc không hợp lệ. Quay lại trang trước, kiểm tra thông tin rồi thử lại."
+msgstr "The submitted data is missing or invalid. Go back, check the details and try again."
+
+msgid "Cần đăng nhập"
+msgstr "Sign in required"
+
+msgid "Phiên đăng nhập đã hết hoặc bạn chưa đăng nhập. Đăng nhập để tiếp tục đúng trang này."
+msgstr "Your session has expired or you are not signed in. Sign in to continue to this page."
+
+msgid "Chưa có quyền truy cập"
+msgstr "You don't have access"
+
+msgid "Tài khoản hiện tại không được mở trang này. Nếu bạn nghĩ đây là nhầm lẫn, gửi mã tra cứu bên dưới cho bộ phận hỗ trợ."
+msgstr "This account can't open this page. If you think this is a mistake, send the reference code below to support."
+
+msgid "Không tìm thấy trang"
+msgstr "Page not found"
+
+msgid "Đường dẫn có thể đã đổi, đã bị xoá, hoặc bạn không có quyền xem nội dung này."
+msgstr "The link may have changed or been removed, or you may not have permission to view it."
+
+msgid "Thao tác không được hỗ trợ"
+msgstr "Action not supported"
+
+msgid "Trang này không nhận kiểu yêu cầu vừa gửi. Mở lại trang từ menu rồi thử lại."
+msgstr "This page doesn't accept that kind of request. Open the page again from the menu and retry."
+
+msgid "Tệp quá lớn"
+msgstr "File too large"
+
+msgid "Tệp hoặc dữ liệu gửi lên vượt giới hạn cho phép. Thử lại với tệp nhỏ hơn."
+msgstr "The file or data exceeds the allowed limit. Try again with a smaller file."
+
+msgid "Thao tác quá nhanh"
+msgstr "Too many requests"
+
+msgid "Hệ thống tạm giới hạn để bảo vệ tài khoản. Chờ khoảng một phút rồi thử lại."
+msgstr "We've paused requests briefly to protect your account. Wait about a minute and try again."
+
+msgid "Máy chủ gặp sự cố"
+msgstr "Something went wrong on our side"
+
+msgid "Lỗi nằm ở phía chúng tôi, không phải do bạn. Thử lại sau ít phút; nếu vẫn lỗi, gửi mã tra cứu cho bộ phận hỗ trợ."
+msgstr "This error is on our side, not yours. Try again in a few minutes; if it persists, send the reference code to support."
+
+msgid "Dịch vụ tạm gián đoạn"
+msgstr "Service temporarily unavailable"
+
+msgid "Một dịch vụ phía sau chưa phản hồi. Thử lại sau ít phút."
+msgstr "An upstream service didn't respond. Try again in a few minutes."
+
+msgid "Dịch vụ đang bảo trì hoặc quá tải"
+msgstr "Service under maintenance or overloaded"
+
+msgid "Tính năng này tạm chưa sẵn sàng. Thử lại sau ít phút."
+msgstr "This feature isn't available right now. Try again in a few minutes."
+
+msgid "Phản hồi quá lâu"
+msgstr "The server took too long"
+
+msgid "Máy chủ không phản hồi kịp. Thử lại sau ít phút."
+msgstr "The server didn't respond in time. Try again in a few minutes."
+
+msgid "Đã có lỗi xảy ra"
+msgstr "Something went wrong"
+
+msgid "Thử lại hoặc quay về trang chính."
+msgstr "Try again or go back to the home page."
+
+msgid "Lỗi %(ma)s"
+msgstr "Error %(ma)s"
+
+msgid "Về trang chính"
+msgstr "Back to home"
+
+msgid "Liên hệ hỗ trợ"
+msgstr "Contact support"
+
+msgid "Mã tra cứu:"
+msgstr "Reference code:"
+
+msgid "Đang chờ thanh toán"
+msgstr "Awaiting payment"
+
+msgid "Thanh toán lỗi"
+msgstr "Payment failed"
+
+msgid "Tiến độ việc"
+msgstr "Job progress"
+
+msgid "Mã việc"
+msgstr "Job ID"
+
+msgid "Tài khoản quản trị nội bộ không chạy job. Đăng nhập bằng tài khoản người dùng để tạo và xem việc."
+msgstr "The internal admin account doesn't run jobs. Sign in with a user account to create and view jobs."
+
+msgid "Không có việc khớp bộ lọc"
+msgstr "No jobs match these filters"
+
+msgid "Đổi trạng thái, ứng dụng hoặc khoảng ngày để xem thêm."
+msgstr "Change the status, app or date range to see more."
+
+msgid "Chưa có việc nào"
+msgstr "No jobs yet"
+
+msgid "Mở một công cụ trong kho ứng dụng; mọi việc bạn chạy sẽ hiện ở đây kèm tiến độ và kết quả."
+msgstr "Open a tool from the app catalog; every job you run appears here with its progress and results."
+
+msgid "Mở kho ứng dụng"
+msgstr "Open app catalog"
+
+msgid "Tạo đơn %(gia)s"
+msgstr "Create order %(gia)s"
+
+msgid "Chưa có gói nạp"
+msgstr "No credit packages yet"
+
+msgid "Thao tác"
+msgstr "Actions"
+
+msgid "Đơn nạp #%(ma)s"
+msgstr "Top-up order #%(ma)s"
+
+msgid "Đăng nhập LTT AI Studio"
+msgstr "Sign in to LTT AI Studio"
+
+msgid "Một tài khoản cho toàn bộ công cụ AI và lịch sử công việc của bạn."
+msgstr "One account for every AI tool and your whole job history."
+
+msgid "Bắt đầu bảo mật; chi phí luôn được báo trước mỗi tác vụ."
+msgstr "Start securely; the cost is always shown before each task."
+
+msgid "Kiểm tra email"
+msgstr "Check your email"
+
+msgid "Kiểm tra email của bạn"
+msgstr "Check your email"
+
+msgid "Hoàn tất xác thực để bảo vệ tài khoản trước khi đăng nhập."
+msgstr "Finish verification to protect your account before signing in."
+
+msgid "Nếu %(email)s chưa được đăng ký, chúng tôi vừa gửi một email xác thực tới đó. Mở email và bấm liên kết để kích hoạt tài khoản (liên kết hết hạn sau 24 giờ)."
+msgstr "If %(email)s isn't registered yet, we've just sent a verification email there. Open it and click the link to activate your account (the link expires in 24 hours)."
+
+msgid "Quên mật khẩu"
+msgstr "Forgot password"
+
+msgid "Nhập email đăng ký; chúng tôi sẽ gửi liên kết nếu tài khoản tồn tại."
+msgstr "Enter your account email; we'll send a link if the account exists."
+
+msgid "Nếu email đó có trong hệ thống, chúng tôi vừa gửi một liên kết đặt lại mật khẩu. Liên kết hết hạn sau 1 giờ."
+msgstr "If that email is in our system, we've just sent a password reset link. The link expires in 1 hour."
+
+msgid "Đặt lại mật khẩu"
+msgstr "Reset password"
+
+msgid "Liên kết chỉ dùng một lần và sẽ hết hạn để bảo vệ tài khoản."
+msgstr "The link works once and expires to protect your account."
+
+msgid "Liên kết đặt lại không hợp lệ hoặc đã hết hạn."
+msgstr "This reset link is invalid or has expired."
+
+msgid "Xác thực email"
+msgstr "Email verification"
+
+msgid "Trạng thái kích hoạt tài khoản LTT AI Studio."
+msgstr "Your LTT AI Studio account activation status."
+
+msgid "Nạp credit; số dư %(so)s credit"
+msgstr "Top up credit; balance %(so)s credit"
+
+msgid "%(so)s app nạp lỗi"
+msgstr "%(so)s apps failed to load"
+
+msgid "Khám phá"
+msgstr "Explore"
+
+msgid "Xuất dữ liệu"
+msgstr "Export"
+
+msgid "Thêm %(ten)s"
+msgstr "New %(ten)s"
+
+msgid "Xoá các mục đã chọn"
+msgstr "Delete selected items"
+
+msgid "Tìm:"
+msgstr "Search:"
+
+msgid "Tìm kiếm"
+msgstr "Search"
+
+msgid "Tìm"
+msgstr "Search"
+
+msgid "Xoá tìm kiếm"
+msgstr "Clear search"
+
+msgid "Chọn tất cả"
+msgstr "Select all"
+
+msgid "Chọn mục"
+msgstr "Select item"
+
+msgid "Sửa"
+msgstr "Edit"
+
+msgid "Hiển thị %(tu)s–%(den)s trên %(tong)s mục"
+msgstr "Showing %(tu)s–%(den)s of %(tong)s items"
+
+msgid "Hiện"
+msgstr "Show"
+
+msgid "%(so)s / trang"
+msgstr "%(so)s / page"
+
+msgid "Kiểm tra cấu hình và dịch vụ phụ thuộc của nền tảng."
+msgstr "Checks the platform's configuration and dependent services."
+
+msgid "Hệ thống có %(so)s lỗi chặn"
+msgstr "The system has %(so)s blocking issues"
+
+msgid "Cách sửa:"
+msgstr "How to fix:"
+
+msgid "Kiểm tra lại"
+msgstr "Check again"
+
+msgid "Kiểm tra cả Google Sheet (chậm hơn)"
+msgstr "Also check Google Sheet (slower)"
+
+msgid "Không đọc được số liệu:"
+msgstr "Couldn't read metrics:"
+
+msgid "máy đã ghép"
+msgstr "paired machines"
+
+msgid "phiên"
+msgstr "sessions"
+
+msgid "đã thu hồi"
+msgstr "revoked"
+
+msgid "credit/máy/tháng"
+msgstr "credit/machine/month"
+
+msgid "Chọn video để nâng cấp"
+msgstr "Choose a video to upscale"
+
+msgid "Tạo ảnh bằng AI"
+msgstr "AI image generation"
+
+msgid "Ảnh tham chiếu & chỉnh sửa"
+msgstr "Reference & edit"
+
+msgid "Lịch sử kết quả"
+msgstr "Output history"
+
+msgid "Studio sáng tạo AI · Thumbnail"
+msgstr "AI creative studio · Thumbnail"
+
+msgid "Tham chiếu & bộ nhận diện"
+msgstr "Reference & brand kit"
+
+msgid "Xu hướng thumbnail"
+msgstr "Thumbnail trends"
+
+msgid "Lịch sử thumbnail"
+msgstr "Thumbnail history"
+
+msgid "Không gian clip ngắn AI"
+msgstr "AI short-form workspace"
+
+msgid "Thư viện kết quả"
+msgstr "Output library"
+
+msgid "Không gian làm việc"
+msgstr "Workspace"
+
+msgid "Thuộc tính"
+msgstr "Inspector"
+
+msgid "Tiện ích"
+msgstr "Utilities"
+
+msgid "Tự động hoá"
+msgstr "Automation"
+
+msgid "Ảnh AI"
+msgstr "AI Image"
+
+msgid "Văn bản AI"
+msgstr "AI Text"
+
+msgid "Canvas"
+msgstr "Canvas"
+
+msgid "Quản trị viên"
+msgstr "Administrator"
+
+msgid "Hiện chưa nhận máy mới. Khi mở lại, bạn chọn gói ở bảng giá và bấm “Tạo máy”."
+msgstr "We are not taking new machines right now. When we reopen, pick a plan from the price list and press “Create machine”."
+
+msgid "Lưu và sửa tiếp"
+msgstr "Save and continue editing"
+
+msgid "Lưu thành bản mới"
+msgstr "Save as new"
+
+msgid "Lưu và thêm bản khác"
+msgstr "Save and add another"
+
+msgid "Sửa %(ten)s"
+msgstr "Edit %(ten)s"
+
+msgid "Xác nhận xoá"
+msgstr "Confirm deletion"
+
+msgid "Kết quả sẽ hiện ở đây sau lượt đầu tiên."
+msgstr "Results will appear here after your first run."
+
+msgid "Theo tên tệp"
+msgstr "By file name"
+
+msgid "Theo nội dung"
+msgstr "By content"
+
+msgid "Đánh giá mới"
+msgstr "New evaluation"
+
+msgid "Danh mục bộ đo"
+msgstr "Evaluator registry"
+
+msgid "Đánh giá gần đây"
+msgstr "Recent evaluations"
+
+msgid "Tạo job đánh giá"
+msgstr "Create evaluation job"
+
+msgid "Chưa có lượt đánh giá."
+msgstr "No evaluations yet."
+
+msgid "Báo cáo chất lượng"
+msgstr "Quality report"
+
+msgid "Biến mô tả thành tối đa bốn ảnh, theo dõi tiến độ và so sánh kết quả thật."
+msgstr "Turn a prompt into up to four images, follow the progress and compare the real outputs."
+
+msgid "Đã nạp kết quả làm ảnh nguồn"
+msgstr "Loaded the output as the source image"
+
+msgid "Kết quả thật sẽ xuất hiện ở đây sau lượt đầu tiên."
+msgstr "Real outputs will appear here after your first job."
+
+msgid "Chọn nguồn, cấu hình đoạn nổi bật, theo dõi bản ghi lời và so sánh kết quả thật."
+msgstr "Choose a source, configure highlights, follow the transcript and compare the real outputs."
+
+msgid "Tải lên mới hoặc dùng lại tệp nguồn của bạn"
+msgstr "Upload new files or reuse your assets"
+
+msgid "MP4, MOV, MKV… · video lớn tải thẳng lên kho lưu trữ"
+msgstr "MP4, MOV, MKV… · large videos upload straight to Storage"
+
+msgid "tệp nguồn"
+msgstr "source files"
+
+msgid "Chi phí theo phút nguồn + số clip ra"
+msgstr "Cost by source minute plus number of outputs"
+
+msgid "Kết quả dùng làm tham chiếu"
+msgstr "Outputs used as references"
+
+msgid "Đang phối lại từ kết quả đã chọn"
+msgstr "Remixing from the selected output"
+
+msgid "Chọn tối đa hai kết quả thật trong lịch sử"
+msgstr "Pick up to two real outputs from your history"
+
+msgid "Khắc phụ đề"
+msgstr "Burn subtitles"
+
+msgid "Phiên console đã đóng. Kết nối lại để xin một vé mới."
+msgstr "The console session has closed. Reconnect to get a new ticket."
+
+# Golden UI 17/09 — khu API + trang tài liệu công khai
+msgid "Chưa có công cụ nào để thử."
+msgstr "No tools to try yet."
+
+msgid "Chờ gửi"
+msgstr "Waiting to send"
+
+msgid "Cảnh báo về số dư, ngân sách, khóa và webhook của khu API."
+msgstr "Alerts about your API balance, budgets, keys and webhooks."
+
+msgid "Hướng dẫn, đặc tả OpenAPI và SDK — mọi mục ở đây mở hoặc tải được ngay."
+msgstr "Guides, the OpenAPI spec and SDKs — everything here opens or downloads right away."
+
+msgid "Không có timeline job."
+msgstr "No job timeline."
+
+msgid "Lỗi phía máy chủ"
+msgstr "Server error"
+
+msgid "Lỗi — sẽ thử lại"
+msgstr "Failed — will retry"
+
+msgid "More info"
+msgstr "More info"
+
+msgid "Một lời gọi API: kết quả, khóa đã dùng và dấu vết job nếu có."
+msgstr "One API call: its result, the key used and the job trail if there is one."
+
+msgid "Run anyway"
+msgstr "Run anyway"
+
+msgid "Thay"
+msgstr "Replace"
+
+msgid "Thành công"
+msgstr "Succeeded"
+
+msgid "Từ project đầu tiên tới lời gọi đầu tiên — kèm ví dụ sinh từ chính hợp đồng của công cụ."
+msgstr "From your first project to your first call — with examples generated from the tool contract itself."
+
+msgid "Yêu cầu bị từ chối"
+msgstr "Request rejected"
+
+msgid "Đang gửi"
+msgstr "Sending"
+
+msgid "Đang hoạt động"
+msgstr "Active"
+
+msgid "Đã bỏ cuộc"
+msgstr "Gave up"
+
+msgid "Đã hoàn"
+msgstr "Refunded"
+
+msgid "Đã quyết toán"
+msgstr "Settled"
+
+msgid "Đã thu hồi"
+msgstr "Revoked"
+
 msgid "LTTCODE — tải về và cập nhật"
 msgstr "LTTCODE — download and updates"
 
@@ -18357,6 +18805,507 @@ msgstr "Ready to try LTTCODE?"
 msgid "Tải bộ cài, đăng nhập tài khoản LTT và mở thư mục dự án đầu tiên của bạn."
 msgstr "Download the installer, sign in to your LTT account and open your first project folder."
 
+msgid "Mục trong ứng dụng"
+msgstr "Sections in this app"
+
+msgid "Email hoặc tên đăng nhập"
+msgstr "Email or username"
+
+msgid "Nhập email của bạn"
+msgstr "Enter your email"
+
+msgid "Mở ứng dụng"
+msgstr "Open app"
+
+msgid "Tìm ứng dụng…"
+msgstr "Search apps…"
+
+msgid "Điều khiển máy tính của bạn từ xa — không mở cổng, không cần IP tĩnh. Cài ứng dụng, đăng nhập cùng tài khoản, máy hiện ra là bấm vào dùng."
+msgstr "Control your computer remotely — no open ports, no static IP. Install the app, sign in with the same account, and your machine shows up ready to use."
+
+msgid "Studio AI biến brief và tài sản tham chiếu thành prompt nhiều cảnh, storyboard và gói sản xuất nhất quán."
+msgstr "An AI studio that turns briefs and reference assets into multi-scene prompts, storyboards and consistent production packs."
+
+msgid "Ảnh nội bộ (máy nhà)"
+msgstr "In-house images (home machine)"
+
+msgid "Tạo ảnh bằng model chạy trên máy của LTT Studios. Sinh ảnh từ mô tả, sửa ảnh theo lệnh, giữ nhân vật nhất quán qua nhiều ảnh."
+msgstr "Generate images with models running on LTT Studios machines. Create images from a description, edit images by instruction, and keep a character consistent across images."
+
+msgid "Sinh ảnh nền thumbnail YouTube từ mô tả, bằng model nội bộ. Ảnh KHÔNG có chữ — chữ thêm bằng công cụ chỉnh sửa của bạn."
+msgstr "Generate YouTube thumbnail backgrounds from a description, using an in-house model. Images contain NO text — add text with your own editing tool."
+
+msgid "Kiểm tra lại địa chỉ, hoặc mở trang từ menu phía trên. Nếu bạn đến đây từ một liên kết trong hệ thống, gửi mã tra cứu bên dưới cho bộ phận hỗ trợ."
+msgstr "Check the address, or open the page from the menu above. If you followed a link inside the platform, send the reference code below to support."
+
+msgid "Đường dẫn có thể đã gõ sai, đã đổi, hoặc nội dung đã bị xoá."
+msgstr "The link may be mistyped or changed, or the content may have been deleted."
+
+msgid "Một số trang chỉ mở sau khi đăng nhập. Đăng nhập rồi thử lại, hoặc quay về trang chính."
+msgstr "Some pages only open after you sign in. Sign in and try again, or go back to the home page."
+
+msgid "Tình trạng theo năng lực"
+msgstr "Status by capability"
+
+msgid "Khi một năng lực được mở, tình trạng của nó sẽ hiện ở đây."
+msgstr "When a capability is opened, its status will appear here."
+
+msgid "Hồ sơ môi trường"
+msgstr "Environment profile"
+
+msgid "Thư mục dữ liệu"
+msgstr "Data directory"
+
+msgid "Thư mục nhật ký"
+msgstr "Log directory"
+
+msgid "Lỗi chặn"
+msgstr "Blocker"
+
+msgid "Cảnh báo"
+msgstr "Warning"
+
+msgid "Đạt"
+msgstr "Passed"
+
+msgid "Không đọc được số liệu"
+msgstr "Could not read metrics"
+
+msgid "Chưa có máy nào ghép"
+msgstr "No paired devices yet"
+
+msgid "Có máy đang bật"
+msgstr "Devices online"
+
+msgid "Không máy nào đang bật"
+msgstr "No devices online"
+
+msgid "Đang xác nhận thanh toán"
+msgstr "Confirming payment"
+
+msgid "Cổng thanh toán đã báo nhận tiền — đang chờ ngân hàng xác nhận để cộng credit. Bạn không cần chuyển lại."
+msgstr "The payment gateway reported your payment — waiting for the bank to confirm before adding credit. You do not need to pay again."
+
+msgid "Đơn đã quá thời hạn thanh toán nên không còn nhận chuyển khoản."
+msgstr "This order passed its payment deadline and no longer accepts transfers."
+
+msgid "Đơn đã bị hủy nên không thể thanh toán tiếp."
+msgstr "This order was cancelled and can no longer be paid."
+
+msgid "Cổng thanh toán báo giao dịch không thành công; credit chưa được cộng."
+msgstr "The payment gateway reported the transaction failed; no credit has been added."
+
+msgid "Hết hạn lúc"
+msgstr "Expired at"
+
+msgid "Đơn đã hết hạn thanh toán."
+msgstr "This order has expired."
+
+msgid "Mã thanh toán của đơn này không còn dùng được. Tạo đơn mới để nhận mã mới."
+msgstr "This order's payment code can no longer be used. Create a new order to get a new code."
+
+msgid "Đơn đã bị hủy."
+msgstr "This order was cancelled."
+
+msgid "Đơn hủy không cộng credit. Muốn nạp tiếp, hãy tạo đơn mới."
+msgstr "Cancelled orders do not add credit. To top up, create a new order."
+
+msgid "Thanh toán không thành công."
+msgstr "Payment failed."
+
+msgid "Cổng thanh toán từ chối giao dịch. Kiểm tra số dư hoặc hạn mức tài khoản ngân hàng rồi thử lại với đơn mới."
+msgstr "The payment gateway declined the transaction. Check your bank balance or limit, then try again with a new order."
+
+msgid "Thử lại với đơn mới"
+msgstr "Try again with a new order"
+
+msgid "Bộ lọc"
+msgstr "Filters"
+
+msgid "%(n)s đang áp dụng"
+msgstr "%(n)s active"
+
+msgid "Danh sách việc"
+msgstr "Job list"
+
+msgid "Tải tệp ở phần “Tệp kết quả” bên dưới."
+msgstr "Download files in “Result files” below."
+
+msgid "Mở lại %(app)s để xem và dùng kết quả."
+msgstr "Open %(app)s again to view and use the result."
+
+msgid "Lý do:"
+msgstr "Reason:"
+
+msgid "Việc đã hủy."
+msgstr "Job cancelled."
+
+msgid "Việc dừng theo yêu cầu hủy và không được xử lý tiếp; credit giữ cho việc này được hoàn lại. Bấm “Thử lại” nếu muốn chạy lại."
+msgstr "The job stopped at your cancellation request and will not be processed further; credit held for it is refunded. Press “Retry” to run it again."
+
+msgid "Đã tạo việc"
+msgstr "Job created"
+
+msgid "Đang chờ đến lượt xử lý"
+msgstr "Waiting for its turn"
+
+msgid "Dừng do lỗi"
+msgstr "Stopped with an error"
+
+msgid "Thuộc dự án"
+msgstr "Project"
+
+msgid "Mỗi tích hợp một dự án thì báo cáo chi tiêu tách được."
+msgstr "One project per integration keeps spending reports separate."
+
+msgid "Các lời gọi ở đây chưa gắn công cụ hoặc khóa nào, nên cột đó được ẩn."
+msgstr "These calls are not tied to a tool or key yet, so that column is hidden."
+
+msgid "Nguồn máy"
+msgstr "Machine power"
+
+msgid "Ba việc dưới đây không hoàn tác được. Hãy gõ đúng tên máy để xác nhận — bước này có chủ ý, để không ai lỡ tay bấm nhầm."
+msgstr "The three actions below cannot be undone. Type the machine name exactly to confirm — this step is deliberate, so nobody clicks by accident."
+
+msgid "Đang chuẩn bị — sẽ có sớm"
+msgstr "In preparation — coming soon"
+
+msgid "Mở bằng Safari trên iPhone/iPad để cài."
+msgstr "Open in Safari on iPhone/iPad to install."
+
+msgid "Cài qua SideStore hoặc Sideloadly (bản chưa lên App Store)."
+msgstr "Install with SideStore or Sideloadly (not on the App Store yet)."
+
+msgid "Sẵn sàng để tải"
+msgstr "Ready to download"
+
+msgid "Điều khiển máy tính từ xa — an toàn, do LTT vận hành."
+msgstr "Remote computer control — secure, operated by LTT."
+
+msgid "Mở App Store"
+msgstr "Open App Store"
+
+msgid "Cài đặt & an toàn"
+msgstr "Installation & safety"
+
+msgid "Sau khi tải, đối chiếu SHA-256 (ghi ở mỗi nền tảng) với file bạn tải — khớp mới chạy."
+msgstr "After downloading, compare the SHA-256 (listed for each platform) with your file — run it only if they match."
+
+msgid "Windows có thể hiện cảnh báo SmartScreen (bản chưa ký): bấm More info → Run anyway, chỉ khi hash đúng."
+msgstr "Windows may show a SmartScreen warning (unsigned build): click More info → Run anyway, only if the hash matches."
+
+msgid "Mở app, đăng nhập tài khoản LTT. Máy sẽ gắn vào tài khoản của bạn."
+msgstr "Open the app and sign in with your LTT account. The machine is linked to your account."
+
+msgid "Muốn điều khiển máy khi vắng người: bấm Install trong app (nâng quyền một lần)."
+msgstr "To control the machine when nobody is there: click Install in the app (one-time elevation)."
+
+msgid "LTT Nexus dựa trên RustDesk (AGPL-3.0); mã nguồn bản sửa được công bố công khai."
+msgstr "LTT Nexus is based on RustDesk (AGPL-3.0); the modified source code is published."
+
+msgid "Đã trả phí"
+msgstr "Paid"
+
+msgid "Chưa trả phí"
+msgstr "Unpaid"
+
+msgid "Thấy lần cuối"
+msgstr "Last seen"
+
+msgid "Chưa từng kết nối"
+msgstr "Never connected"
+
+msgid "Lưu tên"
+msgstr "Save name"
+
+msgid "Nhật ký truy cập"
+msgstr "Access log"
+
+msgid "Ai đã điều khiển máy của bạn, lúc nào. Bản ghi này không sửa được và không mất khi thu hồi máy."
+msgstr "Who controlled your machines, and when. This record cannot be edited and is kept when a machine is revoked."
+
+msgid "Chưa có phiên điều khiển nào."
+msgstr "No control sessions yet."
+
+msgid "Khi có ai điều khiển một máy của bạn, lúc bắt đầu, địa chỉ IP và thời lượng sẽ ghi ở đây."
+msgstr "When someone controls one of your machines, the start time, IP address and duration are recorded here."
+
+msgid "Từ IP"
+msgstr "From IP"
+
+msgid "Kéo dài"
+msgstr "Duration"
+
+msgid "(máy đã xoá)"
+msgstr "(machine deleted)"
+
+msgid "Đang mở"
+msgstr "Open"
+
+msgid "Model AI"
+msgstr "AI model"
+
+msgid "Video Seedance của tôi"
+msgstr "My Seedance videos"
+
+msgid "Tạo thumbnail YouTube"
+msgstr "Create YouTube thumbnails"
+
+msgid "Lưu làm bộ nhận diện thương hiệu mặc định của tôi"
+msgstr "Save as my default brand kit"
+
+msgid "Đang lấy mẫu phong cách, bộ nhận diện thương hiệu và lịch sử của tài khoản."
+msgstr "Loading style presets, brand kit and account history."
+
+msgid "Danh sách mốc ngắt"
+msgstr "Pause markers"
+
+msgid "Mỗi mốc là một chỗ cần ngắt trong bài, gồm ba phần:"
+msgstr "Each marker is one place to pause in the recording, with three parts:"
+
+msgid "số thứ tự của mốc (1, 2, 3…)"
+msgstr "the marker number (1, 2, 3…)"
+
+msgid "câu ngay TRƯỚC chỗ cần ngắt, chép đúng như trong bản thu"
+msgstr "the sentence right BEFORE the pause, exactly as spoken in the recording"
+
+msgid "độ dài khoảng lặng, tính bằng mili-giây (1000 = 1 giây)"
+msgstr "pause length in milliseconds (1000 = 1 second)"
+
+msgid "Chèn ví dụ mẫu"
+msgstr "Insert example"
+
+msgid "Bấm “Chèn ví dụ mẫu” rồi sửa câu và thời lượng cho khớp bài của bạn."
+msgstr "Click “Insert example”, then edit the sentences and durations to match your recording."
+
+msgid "Xin chào các bạn."
+msgstr "Hello everyone."
+
+msgid "Hôm nay chúng ta nói về Hà Nội."
+msgstr "Today we talk about Hanoi."
+
+msgid "Thay nội dung đang có bằng ví dụ mẫu?"
+msgstr "Replace the current content with the example?"
+
+msgid "Đúng định dạng:"
+msgstr "Valid format:"
+
+msgid "mốc."
+msgstr "markers."
+
+msgid "Chưa đúng định dạng — mỗi mốc cần đủ id, anchor_text và pause_ms. Bấm “Chèn ví dụ mẫu” để xem cách viết."
+msgstr "Invalid format — each marker needs id, anchor_text and pause_ms. Click “Insert example” to see how."
+
+msgid "Bảng dữ liệu"
+msgstr "Data tables"
+
+msgid "quản trị · bảng dữ liệu"
+msgstr "admin · data tables"
+
+msgid "Đường dẫn"
+msgstr "Breadcrumb"
+
+msgid "Chọn công cụ…"
+msgstr "Choose a tool…"
+
+msgid "Chưa có công cụ nào đang bật"
+msgstr "No tools are enabled yet"
+
+msgid "Thực hiện yêu cầu đầu tiên"
+msgstr "Make your first request"
+
+msgid "Bộ sưu tập Postman"
+msgstr "Postman collection"
+
+msgid "Tệp môi trường Postman"
+msgstr "Postman environment file"
+
+msgid "Không bắt buộc phải tạo trước: khóa đầu tiên của bạn sẽ tự sinh một project tên “Mặc định”. Tạo project riêng khi bạn có từ hai tích hợp trở lên."
+msgstr "You don't have to create one first: your first key creates a project named “Default”. Create separate projects once you have two or more integrations."
+
+msgid "Đơn này chưa thanh toán tự động được — quản trị sẽ hướng dẫn chuyển khoản và cộng credit thủ công."
+msgstr "This order cannot be paid automatically yet — an administrator will send transfer instructions and add credit manually."
+
+msgid "Cách thanh toán"
+msgstr "How to pay"
+
+msgid "Bấm “Mở PayOS / VietQR” để mở trang thanh toán."
+msgstr "Press “Open PayOS / VietQR” to open the payment page."
+
+msgid "Quét mã bằng ứng dụng ngân hàng, giữ nguyên số tiền và nội dung chuyển khoản."
+msgstr "Scan the code with your banking app and keep the amount and transfer note unchanged."
+
+msgid "Để trang này mở — trạng thái tự cập nhật khi ngân hàng báo về."
+msgstr "Keep this page open — the status updates by itself when the bank confirms."
+
+msgid "Thanh toán thủ công"
+msgstr "Manual payment"
+
+msgid "Liên hệ quản trị và gửi mã đơn %(ma)s."
+msgstr "Contact an administrator and send order code %(ma)s."
+
+msgid "Chuyển khoản theo hướng dẫn quản trị gửi, đúng số tiền của đơn."
+msgstr "Transfer as instructed by the administrator, for the exact order amount."
+
+msgid "Quản trị xác nhận rồi cộng credit; trang này tự cập nhật."
+msgstr "The administrator confirms and adds credit; this page updates by itself."
+
+msgid "Liên hệ quản trị"
+msgstr "Contact an administrator"
+
+msgid "Cần hỗ trợ?"
+msgstr "Need help?"
+
+msgid "Gửi quản trị mã đơn %(ma)s kèm mã giao dịch ngân hàng (nếu có) để được đối soát nhanh."
+msgstr "Send an administrator order code %(ma)s with your bank transaction code (if any) for a quick reconciliation."
+
+msgid "Credit hiện ở đây ngay khi quản trị xác nhận và cộng cho đơn này."
+msgstr "Credit appears here as soon as an administrator confirms and adds it to this order."
+
+msgid "Trang tự cập nhật khi nhận được tiền."
+msgstr "This page updates by itself when the payment arrives."
+
+msgid "Dừng ở"
+msgstr "Stopped at"
+
+msgid "Mở %(app)s"
+msgstr "Open %(app)s"
+
+msgid "Xem tệp kết quả"
+msgstr "View result files"
+
+msgid "Việc đã dừng theo yêu cầu của bạn. Số credit tạm giữ cho việc này đã được hoàn về tài khoản. Bấm “Thử lại” nếu muốn chạy lại."
+msgstr "The job stopped at your request. The credit held for it has been refunded to your account. Press “Retry” to run it again."
+
+msgid "Một tài khoản cho mọi công cụ."
+msgstr "One account for every tool."
+
+msgid "Trả theo lượt dùng, không thuê bao."
+msgstr "Pay per use, no subscription."
+
+msgid "%(so)s công cụ trong kho, lọc theo nhóm bên dưới."
+msgstr "%(so)s tools in the catalog — filter by group below."
+
+msgid "Dùng thử"
+msgstr "Try it"
+
+msgid "Bản này chưa đầy đủ"
+msgstr "This version is not complete yet"
+
+msgid "Nút Tải cho Windows sẽ hiện ở đầu trang khi bản ổn định đầu tiên phát hành. Cần Windows 10 hoặc 11 bản 64-bit."
+msgstr "The Download for Windows button appears at the top of this page once the first stable release ships. Requires 64-bit Windows 10 or 11."
+
+msgid "Nhập email hoặc tên đăng nhập"
+msgstr "Enter your email or username"
+
+msgid "Trạng thái kích hoạt tài khoản của bạn."
+msgstr "Your account activation status."
+
+msgid "Liên kết không còn hiệu lực"
+msgstr "This link is no longer valid"
+
+msgid "Mỗi liên kết chỉ dùng được một lần và có thời hạn."
+msgstr "Each link works only once and expires."
+
+msgid "Mã tra cứu"
+msgstr "Reference ID"
+
+msgid "Đã chép"
+msgstr "Copied"
+
+msgid "Chép mã"
+msgstr "Copy ID"
+
+msgid "Cần giúp?"
+msgstr "Need help?"
+
+msgid "và gửi kèm mã tra cứu."
+msgstr "and include the reference ID."
+
+msgid "Phát triển"
+msgstr "Development"
+
+msgid "Chính thức"
+msgstr "Production"
+
+msgid "Thử nghiệm"
+msgstr "Staging"
+
+msgid "Kiểm thử"
+msgstr "Test"
+
+msgid "Tình trạng theo dịch vụ"
+msgstr "Status by service"
+
+msgid "Dịch vụ"
+msgstr "Service"
+
+msgid "Chưa mở"
+msgstr "Not open yet"
+
+msgid "Chưa có dịch vụ API công khai nào đang mở."
+msgstr "No public API services are open yet."
+
+msgid "Vì vậy hiện không có sự cố hay bảo trì nào để báo. Khi một dịch vụ được mở cho khách, tình trạng của nó sẽ hiện ngay tại đây."
+msgstr "So there are no incidents or maintenance to report. Once a service opens to customers, its status will appear here."
+
+msgid "Về trang này"
+msgstr "About this page"
+
+msgid "Theo dịch vụ, không theo máy chủ."
+msgstr "By service, not by server."
+
+msgid "Trang báo tình trạng từng dịch vụ bạn gọi qua API (capability), không liệt kê hạ tầng bên trong."
+msgstr "This page reports the status of each service you call through the API (capability), not internal infrastructure."
+
+msgid "Một lời gọi bị lỗi?"
+msgstr "A call failed?"
+
+msgid "Mở %(lien_ket)s trong khu API để xem lời gọi hỏng ở bước nào."
+msgstr "Open %(lien_ket)s in the API area to see where the call failed."
+
+msgid "Gửi kèm mã tra cứu (correlation id) có trong phản hồi lỗi."
+msgstr "Include the reference ID (correlation id) from the error response."
+
+msgid "Chi tiết %(ten)s"
+msgstr "%(ten)s details"
+
+msgid "Workflow"
+msgstr "Workflow"
+
+msgid "Nâng độ nét video lên 1080p, 2K hoặc 4K và so sánh trước/sau ngay trên trang."
+msgstr "Sharpen video to 1080p, 2K or 4K and compare before/after right on the page."
+
+msgid "Bắt đầu xử lý"
+msgstr "Start processing"
+
+msgid "Chọn tối đa 3 video; cả lô được gửi cùng lúc, lỗi một video thì không video nào bị gửi."
+msgstr "Pick up to 3 videos; the batch is submitted together — if one video fails, none are submitted."
+
+msgid "Máy quay"
+msgstr "Camera"
+
+msgid "Theo mô tả"
+msgstr "Follow the prompt"
+
+msgid "Tiến máy (dolly in)"
+msgstr "Dolly in"
+
+msgid "Bám theo (tracking)"
+msgstr "Tracking"
+
+msgid "Xoay quanh (orbit)"
+msgstr "Orbit"
+
+msgid "Góc cao (aerial)"
+msgstr "Aerial"
+
+msgid "Cầm tay (handheld)"
+msgstr "Handheld"
+
+msgid "giữ lại"
+msgstr "kept"
+
 # LTTCODE — FAQ cong cu mo rong 0.1.5 (17/09)
 msgid "Ứng dụng gửi yêu cầu tới máy chủ LTT Studios để gọi model và tìm web; nó không tự gửi mã của bạn tới dịch vụ bên thứ ba nào. Ngoại lệ duy nhất bật sẵn là máy chủ MCP context7: tên thư viện và câu hỏi tra tài liệu đi tới Upstash — tắt được trong Kết nối MCP."
 msgstr "The app sends requests to LTT Studios servers to call models and search the web; it does not send your code to any third-party service on its own. The only exception enabled by default is the context7 MCP server: library names and documentation questions go to Upstash — you can turn it off in MCP connections."
@@ -18465,3 +19414,4 @@ msgstr "Only the most recent backup is kept; a new one replaces the old one."
 
 msgid "Khoá và tệp bí mật không được chép vào bản sao lưu. Nếu đĩa thiếu chỗ hoặc sao lưu lỗi, ứng dụng ghi cảnh báo vào nhật ký và vẫn khởi động."
 msgstr "Keys and secret files are not copied into the backup. If disk space is short or the backup fails, the app logs a warning and still starts."
+

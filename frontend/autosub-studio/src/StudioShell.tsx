@@ -14,8 +14,8 @@ import { useProjectHistory } from './useProjectHistory'
 import './studio.css'
 
 const steps = [
-  ['upload', '1', 'Upload'], ['transcript', '2', 'Transcript'],
-  ['style', '3', 'Style'], ['render', '4', 'Render'],
+  ['upload', '1', 'Tải lên'], ['transcript', '2', 'Transcript'],
+  ['style', '3', 'Kiểu chữ'], ['render', '4', 'Xuất video'],
 ] as const
 
 export function friendlyStudioError(error: unknown) {
@@ -179,13 +179,13 @@ export function StudioShell({ csrfToken }: { csrfToken: string }) {
   const mergeNext=()=>{if(!selectedTrack||!selectedCue)return;const index=selectedTrack.cues.findIndex(c=>c.id===selectedCue.id);const next=selectedTrack.cues[index+1];if(!next)return;mutate(d=>{const track=d.payload.tracks.find(t=>t.id===selectedTrack.id);const cue=track?.cues.find(c=>c.id===selectedCue.id);if(!track||!cue)return;cue.end=next.end;cue.text=`${cue.text} ${next.text}`.trim();cue.words=[];track.cues=track.cues.filter(c=>c.id!==next.id)})}
   const seek=(time:number)=>{setCurrentTime(time);if(videoRef.current)videoRef.current.currentTime=time}
 
-  return <main className="studio-shell" data-save-state={state}>
+  return <section className="studio-shell" data-save-state={state}>
     <header className="studio-topbar"><div className="studio-brand"><span className="studio-mark">LTT</span><strong>AUTO SUB VIDEO</strong></div>
       <ol className="studio-steps">{steps.map(([id,n,label])=><li key={id} className={project.payload.active_step===id?'active':''}><button type="button" aria-current={project.payload.active_step===id?'step':undefined} onClick={()=>mutate(d=>{d.payload.active_step=id})}><span>{n}</span>{label}</button></li>)}</ol>
       <div className="history-tools"><button aria-label="Hoàn tác" disabled={!history.canUndo} onClick={()=>history.undo(projectRef.current)}>↶</button><button aria-label="Làm lại" disabled={!history.canRedo} onClick={()=>history.redo(projectRef.current)}>↷</button><span className={`studio-save ${state}`} role="status" aria-live="polite">{message}</span></div></header>
     <section className="studio-grid">
-      <aside className="studio-left"><label className="project-label">PROJECT<input aria-label="Tên project" value={project.name} onChange={event=>mutate(d=>{d.name=event.target.value})}/></label>
-        <section><h2>FILES</h2><label className="drop-zone"><input type="file" accept="video/*" onChange={onVideo}/><span>＋</span><strong>Kéo thả hoặc chọn video</strong><small>MP4, MOV, MKV · tối đa 120 phút</small></label>{upload>0&&upload<100&&<progress value={upload} max="100"/>}{source.key&&<article className="source-file"><strong>{source.filename}</strong><small>{Math.round(source.duration_s)}s · {source.width}×{source.height}</small></article>}</section>
+      <aside className="studio-left"><label className="project-label">DỰ ÁN<input aria-label="Tên project" value={project.name} onChange={event=>mutate(d=>{d.name=event.target.value})}/></label>
+        <section><h2>TỆP</h2><label className="drop-zone"><input type="file" accept="video/*" onChange={onVideo}/><span>＋</span><strong>Kéo thả hoặc chọn video</strong><small>MP4, MOV, MKV · tối đa 120 phút</small></label>{upload>0&&upload<100&&<progress value={upload} max="100"/>}{source.key&&<article className="source-file"><strong>{source.filename}</strong><small>{Math.round(source.duration_s)}s · {source.width}×{source.height}</small></article>}</section>
         <section className="transcript-panel"><h2>TRANSCRIPT</h2><div className="quick-actions"><label className="subtle-button">Nhập SRT/VTT/ASS<input type="file" accept=".srt,.vtt,.ass,.ssa,.json" onChange={onTranscript}/></label><button type="button" onClick={transcribe} disabled={!source.key}>WhisperX · 0 credit</button></div>
           <div className="track-tools"><select aria-label="Track phụ đề" value={selectedTrack?.id||''} onChange={e=>{setSelectedTrackId(e.target.value);setSelectedCueId('')}}>{project.payload.tracks.map(track=><option key={track.id} value={track.id}>{track.name} · {track.language}</option>)}</select><button onClick={addTrack} aria-label="Thêm track">＋ Track</button>{selectedTrack&&<button aria-label="Ẩn hiện track" onClick={()=>mutate(d=>{const track=d.payload.tracks.find(t=>t.id===selectedTrack.id);if(track)track.visible=!track.visible})}>{selectedTrack.visible?'◉':'○'}</button>}</div>
           <div className="capability-list" aria-label="Trạng thái công cụ AI"><Capability name="WhisperX" ready={capabilities?.whisperx} detail="Transcript và word timing"/><Capability name="Pyannote" ready={capabilities?.diarization} detail="Phân vai ẩn danh"/><Capability name="LTT LLM" ready={capabilities?.translation} detail="Dịch transcript theo cue"/></div>
@@ -196,7 +196,7 @@ export function StudioShell({ csrfToken }: { csrfToken: string }) {
         <JobHistory jobs={jobHistory} onSelect={job=>job.type==='autosubvideo.render'?setRenderJob(job):setAuxJob(job)}/>
       </aside>
       <section className="studio-stage"><div className="preview-toolbar"><span>Fit (100%)</span><span>{source.width&&source.height?`${source.width}:${source.height}`:'16:9'}</span></div>
-        <div className="video-canvas">{source.key?<><video ref={videoRef} controls playsInline preload="metadata" src={sourceUrl} onTimeUpdate={e=>setCurrentTime(e.currentTarget.currentTime)}/>{selectedCue&&currentTime>=selectedCue.start&&currentTime<=selectedCue.end&&<SubtitlePreview cue={selectedCue} currentTime={currentTime} rawStyle={project.payload.style}/>}</>:<div className="empty-preview"><span>▶</span><strong>Video preview</strong><small>Upload video để bắt đầu</small></div>}</div>
+        <div className="video-canvas">{source.key?<><video ref={videoRef} controls playsInline preload="metadata" src={sourceUrl} onTimeUpdate={e=>setCurrentTime(e.currentTarget.currentTime)}/>{selectedCue&&currentTime>=selectedCue.start&&currentTime<=selectedCue.end&&<SubtitlePreview cue={selectedCue} currentTime={currentTime} rawStyle={project.payload.style}/>}</>:<div className="empty-preview"><span>▶</span><strong>Xem trước video</strong><small>Upload video để bắt đầu</small></div>}</div>
         <div className="transport"><button aria-label="Về đầu" onClick={()=>seek(0)}>|◀</button><button aria-label="Phát hoặc dừng" onClick={()=>videoRef.current?.paused?void videoRef.current.play():videoRef.current?.pause()}>▶</button><button aria-label="Tới cuối" onClick={()=>seek(source.duration_s)}>▶|</button><span>{formatTime(currentTime)} / {formatTime(source.duration_s)}</span></div>
         <EditorTimeline tracks={project.payload.tracks} duration={source.duration_s} currentTime={currentTime} sourceUrl={sourceUrl} selectedCueId={selectedCueId} onSelect={setSelectedCueId} onSeek={seek} onCueChange={cueChange}/>
         <div className="cue-editor"><div className="cue-editor-tools"><button onClick={addCue} disabled={!selectedTrack}>＋ Cue</button><button onClick={splitCue} disabled={!selectedCue}>Tách</button><button onClick={mergeNext} disabled={!selectedCue}>Gộp sau</button><button onClick={removeCue} disabled={!selectedCue}>Xóa</button></div>{selectedCue?<><textarea aria-label="Nội dung cue" value={selectedCue.text} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{text:e.target.value})}/><div className="timing-inputs"><label>Bắt đầu<input aria-label="Thời gian bắt đầu" type="number" inputMode="decimal" min="0" step="0.01" value={selectedCue.start} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{start:Number(e.target.value)})}/></label><label>Kết thúc<input aria-label="Thời gian kết thúc" type="number" inputMode="decimal" min="0.05" step="0.01" value={selectedCue.end} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{end:Number(e.target.value)})}/></label><label>Speaker<input aria-label="Speaker" value={selectedCue.speaker} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{speaker:e.target.value})}/></label></div>
@@ -219,7 +219,7 @@ export function StudioShell({ csrfToken }: { csrfToken: string }) {
         onPreset={preset=>mutate(d=>{d.payload.style=normalizeStyle({preset:preset.id,...preset.config,highlight_mode:preset.highlight_mode,highlight_color:preset.highlight_color});d.payload.active_step='style'})}
         onStyle={patch=>mutate(d=>{d.payload.style=normalizeStyle({...d.payload.style,...patch,preset:'custom'});d.payload.active_step='style'})}/>}</aside>
     </section>
-  </main>
+  </section>
 }
 
 function findCue(project:StudioProject,trackId:string,cueId:string){return project.payload.tracks.find(track=>track.id===trackId)?.cues.find(cue=>cue.id===cueId)}

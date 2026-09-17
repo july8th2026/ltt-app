@@ -23,14 +23,14 @@
                                      dùng quen nền tảng sẽ tưởng 30
 #}
 
+{% import "_icon.html" as ic %}
 {% block content %}
 <div class="tv-studio">
 
   <aside class="tv-nav" aria-label="{{ _('Điều hướng Video AI') }}">
-    <b>◉ LTT</b>
-    <a class="on" href="{{ app.route_prefix }}" aria-current="page">▶<small>{{ _('Tạo') }}</small></a>
-    <a href="/jobs?app=lttvideo">▣<small>{{ _('Lịch sử') }}</small></a>
-    <a href="#tv-assets" data-open-assets>▦<small>{{ _('Tài sản') }}</small></a>
+    <a class="on" href="{{ app.route_prefix }}" aria-current="page">{{ ic.icon("clapperboard") }}<small>{{ _('Tạo') }}</small></a>
+    <a href="/jobs?app=lttvideo">{{ ic.icon("clock") }}<small>{{ _('Lịch sử') }}</small></a>
+    <a href="#tv-assets" data-open-assets>{{ ic.icon("folder") }}<small>{{ _('Tài sản') }}</small></a>
   </aside>
 
   <button class="tv-drawer" type="button" aria-controls="tv-compose" aria-expanded="false"
@@ -59,7 +59,8 @@
            quyet dinh co duoc dinh kem khong va toi da may tep. Dat no trong muc
            "dinh kem" (ban truoc) lam no trong nhu mot tuy chon con cua dinh kem
            — nguoc voi thu tu that cua quyet dinh. #}
-        <div class="tv-section"><h2><strong>01</strong> {{ _('Loại tác vụ') }}</h2>
+        {%- set buoc = namespace(n=0) -%}
+        {%- set buoc.n = buoc.n + 1 %}<div class="tv-section"><h2><strong>{{ "%02d" % buoc.n }}</strong> {{ _('Loại tác vụ') }}</h2>
           {# ⭐ Dung lai `.tv-models` — khuon DA CO cua chinh app nay (luoi 2
              cot, vien, `:has(input:checked)` lam noi o dang chon). De tu che
              mot lop moi la de mot khoi trong cung mot man hinh trong khac
@@ -77,7 +78,7 @@
           </div>
         </div>
 
-        <div class="tv-section"><h2><strong>02</strong> {{ _('Mô tả') }}</h2>
+        {%- set buoc.n = buoc.n + 1 %}<div class="tv-section"><h2><strong>{{ "%02d" % buoc.n }}</strong> {{ _('Mô tả') }}</h2>
           <label class="sr-only" for="tv-prompt">{{ _('Mô tả video') }}</label>
           <textarea id="tv-prompt" name="prompt" rows="4" class="ltt-input" required
                     maxlength="10000" aria-describedby="tv-prompt-hint"
@@ -107,7 +108,7 @@
            `i2v_2_2` chua tai ve thi tac vu anh dong lai, va o chon tep phai
            bien theo. Moi tep no van moi la moi nguoi vao mot canh cua khoa. #}
         {% if tac_vu | selectattr('so_tep_toi_da') | list %}
-        <div class="tv-section"><h2><strong>03</strong> {{ _('Đính kèm') }}</h2>
+        {%- set buoc.n = buoc.n + 1 %}<div class="tv-section"><h2><strong>{{ "%02d" % buoc.n }}</strong> {{ _('Đính kèm') }}</h2>
           {# ⭐ Khuon `tv-ref-pickers` cua `taovideo`, khong dung macro
              `o_chon_tep`: macro dung mot hop gach dut CAO, con day la mot the
              GON — cung ngon ngu hinh anh voi cac studio khac cua LTT.
@@ -164,7 +165,7 @@
         {% endif %}
         {% endif %}
 
-        <fieldset class="tv-fieldset"><legend><strong>04</strong> {{ _('Thiết lập') }}</legend>
+        <fieldset class="tv-fieldset">{%- set buoc.n = buoc.n + 1 %}<legend><strong>{{ "%02d" % buoc.n }}</strong> {{ _('Thiết lập') }}</legend>
           <div class="tv-selects">
             <label>{{ _('Tỉ lệ khung hình') }}
               <select name="ti_le" id="tv-tile">
@@ -236,24 +237,25 @@
         <div class="tv-cost" aria-live="polite">
           <span>{{ _('Giữ chỗ') }}</span> <b id="tv-gia">{{ uoc_gia[do_dai[0]] }} credit</b>
         </div>
-        <button class="tv-create" type="submit">✦ {{ _('Tạo video') }}</button>
+        <button class="tv-create" type="submit">{{ ic.icon("sparkles") }} {{ _('Tạo video') }}</button>
       </div>
     </form>
     {% endif %}
   </section>
 
   {# ───────────────────────── THƯ VIỆN ───────────────────────── #}
-  <main class="tv-library">
+  {# Golden UI: <section>, khong <main> — base.html da mo <main>; hai landmark main la loi a11y. #}
+  <section class="tv-library">
     <header>
       <div>
         {# ⭐ Muon `sdv-strip-info` cua bot van hanh: giai thich man lam gi ma
            khong ton mot dong nao tren be mat. #}
-        <span class="eyebrow">LTT Video Studio
+        <span class="eyebrow app-eyebrow">{{ _("Video") }} · LTT Video Studio
           <span title="{{ _('Tả video bạn muốn bằng lời, hoặc đính một ảnh làm khung mở đầu. Video dựng trên máy thuê của LTT Studios, tính 30 credit mỗi giây, và giữ lại 3 ngày.') }}"
                 aria-label="{{ _('Giới thiệu màn này') }}" tabindex="0"
                 style="cursor:help">ⓘ</span>
         </span>
-        <h1>{{ _('Video của tôi') }}</h1>
+        <h1 class="app-head-h1">{{ _('Video của tôi') }}</h1>
         {# ⭐ Dai so lieu THAT, khong phai trang tri. Mo tu bot van hanh: dat
            SO do duoc canh nhau, va phan giai thich thi day vao tooltip. #}
         <small class="dim" title="{{ _('Chỉ đếm video đã hoàn tất. Credit là khoản đã quyết toán, không phải khoản giữ chỗ.') }}">
@@ -266,8 +268,8 @@
         </small>
       </div>
       <div class="tv-view-toggle" role="group" aria-label="{{ _('Kiểu hiển thị') }}">
-        <button type="button" data-view="grid" aria-pressed="true" aria-label="{{ _('Dạng lưới') }}">▦</button>
-        <button type="button" data-view="list" aria-pressed="false" aria-label="{{ _('Dạng danh sách') }}">☷</button>
+        <button type="button" data-view="grid" aria-pressed="true" aria-label="{{ _('Dạng lưới') }}">{{ ic.icon("layout-grid") }}</button>
+        <button type="button" data-view="list" aria-pressed="false" aria-label="{{ _('Dạng danh sách') }}">{{ ic.icon("menu") }}</button>
       </div>
     </header>
 
@@ -295,7 +297,7 @@
     </form>
 
     {% include "_tv_luoi.html" %}
-  </main>
+  </section>
 </div>
 
 {# Nâng nét: báo giá TRƯỚC khi xác nhận — mượn đúng khuôn của Seedance. Một
@@ -314,6 +316,6 @@
   </form>
 </dialog>
 
-<script src="/static/htmx.min.js"></script>
+<script src="/static/htmx.min.js?v={{ asset_ver }}"></script>
 <script src="/static/lttvideo.js?v={{ asset_ver }}"></script>
 {% endblock %}
