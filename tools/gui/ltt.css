@@ -4649,6 +4649,9 @@ input[type=hidden]+.af-step{margin-top:0}
 textarea:focus,select:focus{border-color:var(--text-secondary)}
 .job-state-running .ui-progress>i,.job-state-queued .ui-progress>i{background:var(--warn)}
 /* === C4: AUTH-ERROR-STATUS === */
+/* Auth: phụ đề dùng cả bề rộng hộp 420px (một dòng ở desktop) và ngắt kiểu
+   `pretty` — `balance` + 34ch làm dòng hẹp, cắt giữa cụm ("công / cụ AI"). */
+.box .auth-brand p{max-width:none;text-wrap:pretty}
 /* Error (error.html). Biểu tượng theo mã: 403 (khiên) và 404 (kính lúp) cùng
    viền cảnh báo nhưng không còn giống hệt nhau. */
 .loi-eyebrow{display:flex;align-items:center;gap:var(--space-2)}
@@ -4666,7 +4669,9 @@ textarea:focus,select:focus{border-color:var(--text-secondary)}
   white-space:nowrap;overflow-wrap:normal;overflow-x:auto}
 .loi-ma .loi-ma-chep{flex:0 0 auto;min-height:36px;padding:6px 12px;font-size:var(--fs-label)}
 .loi-ho-tro{margin:var(--space-1) 0 0;color:var(--text-secondary);font-size:var(--fs-label);line-height:1.6}
-@media(max-width:640px){.loi-ma .loi-ma-chep{min-height:44px}}
+/* <=640px: mã một hàng riêng đủ chỗ cho cả 36 ký tự; nút chép xuống dưới. */
+@media(max-width:640px){.loi-ma{flex-wrap:wrap}.loi-ma .ui-state-id{flex-basis:100%;padding:var(--space-2)}
+  .loi-ma .loi-ma-chep{min-height:44px}}
 /* 403/404 cho người chưa đăng nhập: thẻ đã có nút chính "Đăng nhập" ⇒ nút
    "Đăng ký" của thanh đầu lùi về kiểu phụ trên TRANG NÀY — một điểm nhấn đỏ. */
 body:has(.loi-moi-dang-nhap) .hdr-right a.btn[href="/register"]{background:var(--panel2);border-color:var(--line2);color:var(--fg)}

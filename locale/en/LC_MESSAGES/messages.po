@@ -19116,8 +19116,8 @@ msgstr "Your account activation status."
 msgid "Liên kết không còn hiệu lực"
 msgstr "This link is no longer valid"
 
-msgid "Mỗi liên kết chỉ dùng được một lần và có thời hạn. Yêu cầu liên kết mới để đặt lại mật khẩu."
-msgstr "Each link works only once and expires. Request a new link to reset your password."
+msgid "Mỗi liên kết chỉ dùng được một lần và có thời hạn."
+msgstr "Each link works only once and expires."
 
 msgid "Mã tra cứu"
 msgstr "Reference ID"
