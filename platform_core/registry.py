@@ -216,14 +216,16 @@ def ap_cau_hinh_admission(am: AdmissionModel) -> AdmissionModel:
 
     if not am.resource:
         return am
-    moi = {}
+    slots, token_pool = int(am.slots), int(am.token_pool)
     so_suat = _env_int(ENV_SO_SUAT + am.resource)
     if so_suat is not None and am.slots > 0:
-        moi["slots"] = max(1, min(int(am.slots), so_suat))
+        slots = max(1, min(int(am.slots), so_suat))
     pool = _env_int(ENV_POOL + am.resource)
     if pool is not None and am.token_pool > 0:
-        moi["token_pool"] = max(1, min(int(am.token_pool), pool))
-    return replace(am, **moi) if moi else am
+        token_pool = max(1, min(int(am.token_pool), pool))
+    if (slots, token_pool) == (am.slots, am.token_pool):
+        return am
+    return replace(am, slots=slots, token_pool=token_pool)
 
 
 def admission_luc_nop(tool, params, *, mac_dinh: str = "") -> tuple[str, int]:
