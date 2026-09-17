@@ -19106,3 +19106,15 @@ msgstr "admin · data tables"
 msgid "Đường dẫn"
 msgstr "Breadcrumb"
 
+
+msgid "Workflow"
+msgstr "Workflow"
+
+msgid "Nâng độ nét video lên 1080p, 2K hoặc 4K và so sánh trước/sau ngay trên trang."
+msgstr "Sharpen video to 1080p, 2K or 4K and compare before/after right on the page."
+
+msgid "Bắt đầu xử lý"
+msgstr "Start processing"
+
+msgid "Chọn tối đa 3 video; cả lô được gửi cùng lúc, lỗi một video thì không video nào bị gửi."
+msgstr "Pick up to 3 videos; the batch is submitted together — if one video fails, none are submitted."
