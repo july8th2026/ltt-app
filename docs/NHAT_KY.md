@@ -46,6 +46,21 @@
   nhập mật khẩu) + kiểm sau khởi động lại máy (chủ dự án báo khi có dịp).
 - Test nhắm: `test_1302` (12) + `test_1303` (7); cả app `1300–1303` = 39 xanh.
 
+## 2026-09-17 — Ghi chú tránh nhầm: cụm Proxmox có 10 VM
+
+| VMID | Tên | Là gì | Địa chỉ |
+|---|---|---|---|
+| 100–107 | VM100–VM107 | 8 máy nội bộ được bảo vệ (không bán, không đụng) | `10.50.0.11–18` + IP công khai riêng |
+| 199 | `ltt-router-sgp` | **Hạ tầng VPS — router DHCP**, không phải máy khách, không có IP công khai riêng | `192.168.2.2` (LAN, SSH), `10.51.0.1` (dải Vultr cũ), `10.50.0.2` (dải OVH, R25), `wg0 10.51.255.2` → gateway Vultr `45.32.114.249` |
+| 204 | `vps-d96b66f3` | VPS khách đầu tiên (tài khoản chủ dự án) | `10.50.0.50`, công khai `51.79.202.1` |
+
+- VM199 đang làm **DHCP cho VPS OVH** (tắt ⇒ VPS OVH mới không có mạng). Lưu lượng VPS
+  OVH không đi qua nó: gateway `10.50.0.1` là host Proxmox, IP công khai ở gateway OVH.
+- Đường Vultr qua VM199 (`10.51.0.0/24` → WireGuard) hiện **không có khách nào**.
+- Khi ngừng Vultr: **giữ VM199**; gỡ hầm WireGuard và dải `10.51` khỏi dnsmasq, xoá
+  gateway trên Vultr. Muốn bỏ VM199 thì chuyển DHCP OVH sang chỗ khác trước.
+- Reboot host = tắt cả 10 VM, kể cả VM199 (DHCP) — nó `onboot=1` nên tự lên lại.
+
 ## 2026-09-17 — Cập nhật host Proxmox (Máy B) 9.2.2 → 9.2.20, chưa khởi động lại
 
 - Chủ dự án chọn "cài gói, chưa reboot". Mô phỏng trước (chỉ đọc): 179 nâng cấp + 2 mới,
