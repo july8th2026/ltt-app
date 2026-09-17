@@ -20,7 +20,7 @@
         "server/static/ltt.css",
         "tools/gui/ltt.css"
       ],
-      "sha256": "870170625b92af2a16edc9f243401e2a9ff083588b87401b12b6b4e99525ccc2",
+      "sha256": "e1fdde26a9ccab2b41b1cc5d45643b3f941d201de4fe44418b65e7623fe99870",
       "disposition": "INTENTIONAL_DUPLICATE",
       "reason": "tools/dong_goi_gui.py atomically derives the WebView copy from the server source."
     },

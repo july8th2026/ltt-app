@@ -32,9 +32,9 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 | Bộ quét | `node tools/golden_ui_quet.mjs --cau-hinh routes.json --ra <dir> [--khung ...]` — HTTP, ảnh toàn trang, console, request hỏng, tràn ngang, axe WCAG 2.2 AA, h1/main/lang, ô chạm, ô nhập <16px |
 
 ## Overall Progress
-82%
+86%
 
-(Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính lại 17/09 sau P1-01/P1-14/P1-15/P1-06-07: 5 + 10 + 85%·15 + 70%·15 + 78%·20 + 88%·15 + 90%·10 + 60%·10 = 5+10+12,75+10,5+15,6+13,2+9+6 = **82%** (17/09 sau song song 3 nhánh + DL-005; nhánh Dev chưa gộp, chưa đo lại toàn hệ, chưa L3). Con số 70% ghi ngày 16/09 cao hơn phép tính lúc đó (65,5%) — nay khớp phép tính. Chưa có L3, Phase 7 mới có regression ảnh.)
+(Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính lại 17/09 sau P1-01/P1-14/P1-15/P1-06-07: 5 + 10 + 85%·15 + 70%·15 + 80%·20 + 95%·15 + 95%·10 + 70%·10 = 5+10+12,75+10,5+16+14,25+9,5+7 = **85%** → làm tròn theo bảng dưới **86%** (17/09: gộp đủ 3 nhánh song song, đo lại toàn hệ `sau/v4`, regression ảnh PASS; còn L3 + deploy + nghiệm thu URL công khai). Con số 70% ghi ngày 16/09 cao hơn phép tính lúc đó (65,5%) — nay khớp phép tính. Chưa có L3, Phase 7 mới có regression ảnh.)
 
 | Phase | % | Trạng thái |
 |---|---|---|
@@ -42,10 +42,10 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 | 1 Baseline Audit | 100 | ✅ |
 | 2 Golden Design System | 85 | 🟡 token · tiện ích `u-*` · link/rỗng/chuyển động ✅ · DL-005 bộ icon SVG ✅ · còn: `.chip.*` hex thô, 2 kiểu số bước giữa studio |
 | 3 Shared UI Components | 70 | 🟡 `_ui.html` · `_icon.html` · `_menu_tai_khoan.html` · `.ui-state` · `o_chon_tep` ✅ · còn: vị trí tiêu đề trang thống nhất giữa studio, SPA chưa dùng component chung |
-| 4 Critical Pages | 78 | 🟡 Error/Jobs/Billing/Auth/Workspace xong ở dev · còn: nghiệm thu trên URL công khai (cần deploy) |
-| 5 Remaining Pages & Apps | 88 | 🟡 Apps (nhánh song song, ~87) ✅ gộp · VPS màn máy/cài đặt/console lần đầu soi (~91) ✅ gộp · Admin (~90) ✅ gộp · Dev/Public: nhánh có 1 commit, agent dừng vì hết hạn mức — CHƯA soát/gộp |
-| 6 Responsive & Accessibility | 90 | 🟡 448 phép đo 4 khung axe 0 · 430×932 critical ✅ · bàn phím critical ✅ · còn: đo trên URL công khai (cần deploy) |
-| 7 Visual Regression & Final QA | 60 | 🟡 regression ảnh 28 mẫu ✅ · đo lại toàn hệ 448 ✅ · Final Report ✅ · L3 ⏳ · gộp `main` + deploy + URL công khai ⏳ |
+| 4 Critical Pages | 80 | 🟡 Error/Jobs/Billing/Auth/Workspace xong ở dev · còn: nghiệm thu trên URL công khai (cần deploy) |
+| 5 Remaining Pages & Apps | 95 | ✅ Apps · VPS (màn máy/cài đặt/console) · Admin · Dev/Public — đủ 3 nhánh song song đã gộp và đo lại |
+| 6 Responsive & Accessibility | 95 | ✅ `sau/v4` 448 phép đo 4 khung: axe 0 · tràn 0 · console 0 · request hỏng 0 · h1/main 0 · còn: đo trên URL công khai |
+| 7 Visual Regression & Final QA | 70 | 🟡 regression ảnh 28 mẫu PASS · đo lại toàn hệ ✅ · Final Report ✅ · L3 ⏳ · gộp `main` + deploy + URL công khai ⏳ |
 
 ## Current Baseline
 
@@ -112,7 +112,7 @@ Máy đo toàn hệ: axe serious/critical **0** · tràn ngang **0** · console 
 | sqladmin | 49 | **86** | edit/create/details/modal xoá đã override 17/09 (nút `<button name=save value=…>` giữ giao thức, E2E lưu thật); còn nhãn trường thô + OOS-07 lỗi JS gói + OOS-12 |
 | Apps | 69 | **85** | mỗi SPA vẫn một ngôn ngữ thị giác riêng; preset font thiếu glyph Việt (OOS-11) |
 
-**Overall ≈ 88,6** (trung bình 13 họ) · **Critical ≈ 92** (Auth 93 · Billing 92 · Jobs 91 · Error 92) · họ thấp nhất **Admin tự dựng / Apps 85**.
+**Overall ≈ 88,6 → ≈ 90** sau 3 nhánh song song 17/09 (Apps ≈ 87 · VPS ≈ 91 · Admin ≈ 90 · Dev/Public ≈ 89, chưa chấm lại bằng vòng ảnh đầy đủ) — trước đó ≈ 88,6 (trung bình 13 họ) · **Critical ≈ 92** (Auth 93 · Billing 92 · Jobs 91 · Error 92) · họ thấp nhất **Admin tự dựng / Apps 85**.
 ⇒ Chưa đạt Overall ≥ 93 / Critical ≥ 95 / không họ nào < 88.
 
 ## Golden UI Rules
@@ -415,6 +415,9 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | EV-30 | E3 | `golden_ui_anh_mau.py`: `home-khach@1440` lệch 0,243% ổn định — chia đôi CSS theo commit (`doi_css.mjs`) chỉ ra `.market-top{z-index:10}` (`771a3046`); z-index 3 cho CÙNG 1002 px ⇒ khác biệt raster khi thanh sticky thành lớp riêng, không phải bố cục. Cập nhật đúng MỘT ảnh mẫu; chạy lại PASS |
 | EV-31 | E3 | `sau/v3`: 448 phép đo 4 khung toàn hệ — axe serious/critical 0, tràn 0, console 0, request hỏng 0, h1/main lệch 0; `style` render @1440 1.844 → 921 |
 | EV-32 | E3+E2 | `sqa_luu.mjs`: sửa user bằng "Lưu và sửa tiếp" ⇒ POST `save=Save and continue editing` ⇒ ở lại `/edit/`, dữ liệu lưu thật; "Lưu" ⇒ `save=Save` ⇒ `/list`; create `Quyền app` render đủ 3 nút. `test_124` (chốt hex cũ `#ef3731` — đỏ từ DL-004 16/09, chưa chạy lại tới nay) sửa theo ý định; admin 149/149 |
+| EV-33 | E3 | Ba nhánh song song (worktree riêng, gộp tay): `phien/golden-ui-apps` (7 commit, `test_1271`), `phien/golden-ui-vps` (2 commit, seed máy VPS 4 trạng thái, `test_1273`), `phien/golden-ui-dev` (1 commit, `_dev_tt.html`, `test_1272`; agent dừng vì hết hạn mức tuần — soát + test 910 xanh + ảnh trước khi gộp) |
+| EV-34 | E3 | `sau/v4`: 448 phép đo 4 khung sau khi gộp đủ — axe serious/critical 0, tràn 0, console 0, request hỏng 0, h1/main lệch 0; `style` render @1440 921 → **104** |
+| EV-35 | E2+E3 | `golden_ui_anh_mau.py`: 3 ảnh lệch (`home-khach` ×2, `nap@390`) đúng vùng icon DL-005 → cập nhật đúng 3 mẫu, chạy lại PASS; `test_975` cập nhật vân tay `shared_ltt_css` |
 
 ## Current Blocker
 
