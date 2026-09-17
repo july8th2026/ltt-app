@@ -1,6 +1,7 @@
 {% extends "base_public.html" %}
 {% block title %}{{ _("Hướng dẫn cắm API") }} · LTT AI Studio{% endblock %}
 {% block content %}
+<div class="c4-tai-lieu">{# C4 Golden UI: phạm vi thang chữ tài liệu công khai (h2 > h3) + bảng không ngắt giữa số/đường dẫn. #}
 {% import "_icon.html" as ic %}
 {# C3 Golden UI: dữ liệu `examples.py` (OOS-09) viết `tên` kiểu markdown. Chỉ đổi CÁCH
    HIỆN — cắt theo dấu backtick, đoạn lẻ thành <code>; autoescape vẫn giữ nguyên. #}
@@ -8,6 +9,10 @@
 {%- for doan in (van|string).split('`') -%}
 {%- if loop.index is even %}<code>{{ doan }}</code>{% else %}{{ doan }}{% endif -%}
 {%- endfor -%}
+{%- endmacro %}
+{# C4: đường dẫn chỉ được ngắt NGAY SAU dấu "/" (trước: "completi/ons"). #}
+{% macro duong_ngat(van) -%}
+{%- for doan in (van|string).split('/') -%}{{ doan }}{% if not loop.last %}/<wbr>{% endif %}{%- endfor -%}
 {%- endmacro %}
 
 {# 🔴 TRANG NÀY CÔNG KHAI — KHÔNG ĐẶT SAU `require_account`.
@@ -96,7 +101,7 @@
     </tr></thead>
     <tbody>
     {% for duong, kieu, khi_nao in ba_cua %}
-      <tr role="row"><td role="cell"><code>{{ duong }}</code></td><td role="cell">{{ kieu }}</td><td role="cell">{{ ma_nho(khi_nao) }}</td></tr>
+      <tr role="row"><td role="cell"><code class="c4-duong">{{ duong_ngat(duong) }}</code></td><td role="cell">{{ kieu }}</td><td role="cell">{{ ma_nho(khi_nao) }}</td></tr>
     {% endfor %}
     </tbody>
   </table>
@@ -123,7 +128,7 @@
     </tr></thead>
     <tbody>
     {% for ten, gia_tri, nghia in ngu_canh_nam_so %}
-      <tr role="row"><td role="cell">{{ ten }}</td><td role="cell"><code>{{ gia_tri }}</code></td><td role="cell">{{ ma_nho(nghia) }}</td></tr>
+      <tr role="row"><td role="cell">{{ ten }}</td><td role="cell" class="c4-so"><code>{{ gia_tri }}</code></td><td role="cell">{{ ma_nho(nghia) }}</td></tr>
     {% endfor %}
     </tbody>
   </table>
@@ -196,4 +201,5 @@
   <p><a class="btn" href="/register">{{ _("Đăng ký") }}</a></p>
 </div>
 
+</div>
 {% endblock %}

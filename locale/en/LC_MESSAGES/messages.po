@@ -19178,3 +19178,21 @@ msgstr "View result files"
 msgid "Việc đã dừng theo yêu cầu của bạn. Số credit tạm giữ cho việc này đã được hoàn về tài khoản. Bấm “Thử lại” nếu muốn chạy lại."
 msgstr "The job stopped at your request. The credit held for it has been refunded to your account. Press “Retry” to run it again."
 
+msgid "Một tài khoản cho mọi công cụ."
+msgstr "One account for every tool."
+
+msgid "Trả theo lượt dùng, không thuê bao."
+msgstr "Pay per use, no subscription."
+
+msgid "%(so)s công cụ trong kho, lọc theo nhóm bên dưới."
+msgstr "%(so)s tools in the catalog — filter by group below."
+
+msgid "Dùng thử"
+msgstr "Try it"
+
+msgid "Bản này chưa đầy đủ"
+msgstr "This version is not complete yet"
+
+msgid "Nút Tải cho Windows sẽ hiện ở đầu trang khi bản ổn định đầu tiên phát hành. Cần Windows 10 hoặc 11 bản 64-bit."
+msgstr "The Download for Windows button appears at the top of this page once the first stable release ships. Requires 64-bit Windows 10 or 11."
+

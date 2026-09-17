@@ -2,11 +2,14 @@
 {# Golden UI 17/09: trước đây tab trình duyệt chỉ ghi "LTT AI Studio". #}
 {% block title %}{{ _("Giá API") }} · LTT AI Studio{% endblock %}
 {% block content %}
+<div class="c4-tai-lieu">{# C4 Golden UI: phạm vi thang chữ tài liệu công khai (h2 > h3) + bảng không ngắt giữa số/tên model. #}
 
 <div class="card">
   <h1 class="u-mt0 tl-h1">{{ _("Giá API model ngôn ngữ") }}</h1>
   <p>{{ _("Tính theo token, trả theo lượng dùng thật. Không thuê bao, không phí tối thiểu hằng tháng.") }}</p>
   <p class="muted">1 credit = 100₫</p>
+  {# C4 Golden UI: trang giá có hành động ngay đầu trang (trước: chỉ bảng, không nút). #}
+  <p class="c4-cta"><a class="btn" href="/register">{{ _("Tạo tài khoản") }}</a><a class="btn ghost" href="/huong-dan">{{ _("Xem cách cắm") }}</a></p>
 </div>
 {# C3 Golden UI: mọi h2 thẻ cùng cỡ `tl-muc` — trước "Bảng giá ltt-3.8" nhỏ hơn hẳn "Giá API tạo ảnh". #}
 
@@ -46,18 +49,16 @@
 {% endfor %}
 
 <div class="card">
-  {# Cau nay la DIEU KHOAN CONG BO — phai theo chinh sach dang chay, khong
-     duoc chep lai no. Xem `dieu_khoan._muc_lam_tron()`. #}
-  {% if bang.toi_thieu_moi_luot_credit %}
-  <p class="muted">{{ _("Mỗi lượt gọi làm tròn LÊN credit nguyên, tối thiểu 1 credit. Nên một lượt rất nhỏ trả nhiều hơn giá niêm yết — xem ví dụ đầu bảng dưới.") }}</p>
-  {% else %}
-  <p class="muted">{{ _("Phần lẻ dưới một credit không bị làm tròn lên mà được cộng dồn sang lượt sau, nên số tiền thực trả bám sát giá niêm yết kể cả với những lượt gọi rất nhỏ.") }}</p>
-  {% endif %}
-</div>
-
-<div class="card">
   <h2 class="u-mt0 tl-muc">{{ _("Ba ví dụ chi phí thật") }}</h2>
   <p class="muted">{{ _("Tính bằng đúng hàm ra hoá đơn, không phải bằng một phép nhân riêng.") }}</p>
+  {# C4 Golden UI: ghi chú làm tròn gom vào đây (trước: một thẻ riêng chỉ một câu).
+     Cau nay la DIEU KHOAN CONG BO — phai theo chinh sach dang chay, khong
+     duoc chep lai no. Xem `dieu_khoan._muc_lam_tron()`. #}
+  {% if bang.toi_thieu_moi_luot_credit %}
+  <p class="muted c4-ghi-chu">{{ _("Mỗi lượt gọi làm tròn LÊN credit nguyên, tối thiểu 1 credit. Nên một lượt rất nhỏ trả nhiều hơn giá niêm yết — xem ví dụ đầu bảng dưới.") }}</p>
+  {% else %}
+  <p class="muted c4-ghi-chu">{{ _("Phần lẻ dưới một credit không bị làm tròn lên mà được cộng dồn sang lượt sau, nên số tiền thực trả bám sát giá niêm yết kể cả với những lượt gọi rất nhỏ.") }}</p>
+  {% endif %}
   <div class="tl-bang" tabindex="0">
   <table class="table">
     <thead><tr>
@@ -212,6 +213,7 @@
     <a href="/register">{{ _("tạo tài khoản") }}</a> →
     <a href="/developers/keys">{{ _("tạo khoá API") }}</a>
   </p>
+  <p class="c4-cta"><a class="btn" href="/huong-dan">{{ _("Xem cách cắm") }}</a><a class="btn ghost" href="/register">{{ _("Tạo tài khoản") }}</a></p>
   <p class="muted"><a href="/huong-dan/cong-cu">{{ _("Hoặc dùng công cụ cắm tự động cho Windows") }} →</a></p>
   <p class="muted">{{ _("Khoá dùng được ngay với thư viện OpenAI, Codex CLI, Claude Code và Claude Desktop — không cần thư viện riêng.") }}</p>
   {# Trang gia noi TINH BAO NHIEU; trang dieu khoan noi TINH THE NAO (giu cho,
@@ -220,4 +222,5 @@
   <p class="muted"><a href="/api-dieu-khoan">{{ _("Điều khoản dịch vụ API — cách tính tiền, hoàn tiền và giới hạn") }} →</a></p>
 </div>
 
+</div>
 {% endblock %}

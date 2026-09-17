@@ -74,9 +74,12 @@ def test_global_navigation_khong_con_link_gia():
     assert "_('Thư viện mẫu toàn nền tảng chưa được phát hành')" in home
     assert "_('Kho tài nguyên cá nhân chưa được phát hành')" in home
     assert home.count('class="market-deferred" disabled aria-disabled="true"') == 3
+    # C4 Golden UI 17/09: ba muc gom vao MOT nhom "Sap co" (nhan nhom thay cho
+    # ba nhan "Chua co" lap lai) — y dinh giu nguyen: nut vo hieu, co giai thich.
+    nhom = home.split('<div class="c4-sap-co" role="group"', 1)[1].split("</div>", 1)[0]
+    assert '{{ _("Sắp có") }}' in nhom
     for nhan in ("Mẫu", "Tài nguyên", "Cộng đồng"):
-        assert f'_("{nhan}") }}}} <small>' in home, nhan
-    assert home.count('<small>{{ _("Chưa có") }}</small>') == 3
+        assert f'_("{nhan}") }}}}</button>' in nhom, nhan
 
 
 def test_my_apps_co_empty_state_rieng():

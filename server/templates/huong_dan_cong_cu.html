@@ -1,6 +1,7 @@
 {% extends "base_public.html" %}
 {% block title %}{{ _("Công cụ cắm API") }} · LTT AI Studio{% endblock %}
 {% block content %}
+<div class="c4-tai-lieu">{# C4 Golden UI: phạm vi thang chữ tài liệu công khai (h2 > h3) + bảng không ngắt giữa số/đường dẫn. #}
 {% import "_icon.html" as ic %}
 
 <div class="card">
@@ -44,7 +45,7 @@ LTTStudios-CamCLI-Console.exe cam --muc codex-cli --muc claude-desktop
 LTTStudios-CamCLI-Console.exe kiem
 LTTStudios-CamCLI-Console.exe go</code></pre>
 
-  <table class="table u-mt14">
+  <div class="tl-bang u-mt14" tabindex="0" role="region" aria-label="{{ _('Cờ') }}"><table class="table">
     <thead><tr><th>{{ _("Cờ") }}</th><th>{{ _("Khi nào dùng") }}</th><th>{{ _("Đánh đổi") }}</th></tr></thead>
     <tbody>
       <tr><td><code>--muc codex-cli</code></td><td>{{ _("Codex CLI qua profile ltt") }}</td><td>{{ _("không đổi mặc định Codex") }}</td></tr>
@@ -56,12 +57,12 @@ LTTStudios-CamCLI-Console.exe go</code></pre>
           <td>{{ _("tiện ích Claude Code") }}</td>
           <td><span class="badge b-warn">{{ _("Lưu ý") }}</span> {{ _("ghi ~/.claude/settings.json — MỌI phiên Claude Code trên máy đi qua LTT") }}</td></tr>
     </tbody>
-  </table>
+  </table></div>
 </div>
 
 <div class="card">
   <h2 class="u-mt0">{{ _("Nó chạm vào đúng những chỗ này") }}</h2>
-  <table class="table">
+  <div class="tl-bang" tabindex="0" role="region" aria-label="{{ _('Nơi') }}"><table class="table">
     <thead><tr><th>{{ _("Nơi") }}</th><th>{{ _("Làm gì") }}</th></tr></thead>
     <tbody>
       <tr><td><code>~/.codex/config.toml</code></td><td>{{ _("chèn một khối có mốc mở/đóng — phần còn lại của tệp không bị chạm") }}</td></tr>
@@ -72,7 +73,7 @@ LTTStudios-CamCLI-Console.exe go</code></pre>
       <tr><td><code>HKCU\SOFTWARE\Policies\Claude</code></td><td>{{ _("chính sách cho Claude Desktop") }}</td></tr>
       <tr><td>{{ _("biến môi trường cấp người dùng") }}</td><td><code>LTT_API_KEY</code>, <code>ANTHROPIC_AUTH_TOKEN</code>, <code>ANTHROPIC_BASE_URL</code>…</td></tr>
     </tbody>
-  </table>
+  </table></div>
   <p class="muted u-mt14 c3-ghi-chu">{{ ic.icon("shield") }} {{ _("Khoá KHÔNG bao giờ được ghi vào tệp cấu hình. Tệp cấu hình bị đồng bộ giữa máy, bị commit, bị chụp màn hình — khoá thì không nên nằm ở đó. Nó chỉ vào biến môi trường và chính sách registry.") }}</p>
   <p class="muted">{{ _("Lệnh") }} <code>go</code> {{ _("trả lại đúng giá trị cũ của từng khoá nó đã đổi, và chỉ xoá những khoá do chính nó thêm.") }}</p>
 </div>
@@ -87,4 +88,5 @@ LTTStudios-CamCLI-Console.exe go</code></pre>
   <p class="muted"><a href="/huong-dan">{{ _("Giải thích đầy đủ ở trang hướng dẫn") }} →</a></p>
 </div>
 
+</div>
 {% endblock %}
