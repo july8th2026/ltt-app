@@ -4486,8 +4486,8 @@ input[type=hidden]+.af-step{margin-top:0}
 
 /* ── VPS · dải hành động: nút chính đầu dải, nhóm nguồn tách sang phải ── */
 .vps-hd{align-items:center}
-.vps-hd .vps-hd-phu{order:1}
-.vps-hd .vps-hd-nguon{order:2;display:flex;flex-wrap:wrap;gap:8px;margin-left:auto;
+
+.vps-hd .vps-hd-nguon{display:flex;flex-wrap:wrap;gap:8px;margin-left:auto;
   padding-left:12px;border-left:1px solid var(--border-subtle)}
 .vps-hd .vps-nut-nguy{border-color:var(--status-danger-border);color:var(--status-danger)}
 @media (max-width:560px){

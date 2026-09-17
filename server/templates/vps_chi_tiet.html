@@ -121,9 +121,13 @@
         </form>
         <a class="btn btn-ghost"
            href="{{ app.route_prefix }}/{{ may.id }}/console">{{ _("Console") }}</a>
+        <a class="btn btn-ghost vps-hd-phu"
+           href="{{ app.route_prefix }}/{{ may.id }}/cai-dat">{{ _("Cài Windows") }}</a>
       {% else %}
         <a class="btn btn-may"
            href="{{ app.route_prefix }}/{{ may.id }}/console">{{ _("Console") }}</a>
+        <a class="btn btn-ghost vps-hd-phu"
+           href="{{ app.route_prefix }}/{{ may.id }}/cai-dat">{{ _("Cài Windows") }}</a>
         <div class="vps-hd-nguon" role="group" aria-label="{{ _('Nguồn máy') }}">
         {# `_("Tắt máy")` chứ không phải `_("Tắt")`: msgid trần dùng chung với
            nút vô hiệu hoá webhook ở khu API, nơi bản dịch đúng là "Disable" —
@@ -147,8 +151,6 @@
         {% endif %}
         </div>
       {% endif %}
-      <a class="btn btn-ghost vps-hd-phu"
-         href="{{ app.route_prefix }}/{{ may.id }}/cai-dat">{{ _("Cài Windows") }}</a>
     </div>
   {% endif %}
 
