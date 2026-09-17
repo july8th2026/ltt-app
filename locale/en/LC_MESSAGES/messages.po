@@ -19097,3 +19097,12 @@ msgstr "markers."
 msgid "Chưa đúng định dạng — mỗi mốc cần đủ id, anchor_text và pause_ms. Bấm “Chèn ví dụ mẫu” để xem cách viết."
 msgstr "Invalid format — each marker needs id, anchor_text and pause_ms. Click “Insert example” to see how."
 
+msgid "Bảng dữ liệu"
+msgstr "Data tables"
+
+msgid "quản trị · bảng dữ liệu"
+msgstr "admin · data tables"
+
+msgid "Đường dẫn"
+msgstr "Breadcrumb"
+

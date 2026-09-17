@@ -44,7 +44,7 @@
     </div>
     <div>
       <span class="eyebrow">Vai trò</span>
-      <strong>{{ u.role or 'user' }}</strong>
+      <strong>{{ {'admin': 'Quản trị viên', 'user': 'Thành viên'}.get(u.role or 'user', u.role) }}</strong>
     </div>
     <div>
       <span class="eyebrow">Số dư</span>

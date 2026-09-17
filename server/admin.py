@@ -25,9 +25,10 @@ from urllib.parse import quote_plus
 import logging
 
 from markupsafe import Markup, escape
+from datetime import datetime
 from sqladmin import Admin, BaseView, ModelView, expose
-from sqladmin.authentication import AuthenticationBackend
-from sqladmin.authentication import login_required as _login_required
+from sqladmin.authentication import AuthenticationBackend, login_required as _login_required
+from sqladmin.formatters import BASE_FORMATTERS
 
 from server.routes.admin._chung import (
     AnTrongMenuSqlAdmin as _AnTrongMenuSqlAdmin)
@@ -40,6 +41,8 @@ from platform_core.models import (ApiKey, AppAccess, CreditEntry, Job,
                                   Session as DbSession, User)
 
 _log = logging.getLogger(__name__)
+_DINH_DANG_SQLADMIN: dict = BASE_FORMATTERS  # Golden UI C3: ngày giờ list/details dd/mm/yyyy HH:MM, không ISO kèm micro giây
+_DINH_DANG_SQLADMIN[datetime] = lambda v: v.strftime("%d/%m/%Y %H:%M")
 
 
 def _is_admin(request: Request) -> bool:
@@ -103,12 +106,9 @@ class AdminAuth(AuthenticationBackend):
 
 # ── Vỏ quản trị dùng chung ───────────────────────────────────────────────────
 #
-# 🔴 `_ADM_NAV` ĐÃ BỊ GỠ. Nó là một trong BA danh sách điều hướng từng sống song
-#    song cho cùng một cây (hai cái kia: `server/admin_api.NAV` và năm thẻ <a>
-#    viết tay trong `server/admin_templates/sqladmin/base.html`). Ba danh sách
-#    cho một cây nghĩa là hai trong ba luôn là bản bị quên khi thêm trang — và
-#    trang SQLAdmin thật sự đã có bộ điều hướng khác hẳn 25 mục của trang tự
-#    viết.
+# 🔴 `_ADM_NAV` ĐÃ BỊ GỠ — một trong BA danh sách điều hướng từng sống song song cho cùng một cây
+#    (cùng `server/admin_api.NAV` và năm thẻ <a> viết tay trong `sqladmin/base.html`): hai trong ba
+#    luôn là bản bị quên khi thêm trang, và nửa SQLAdmin từng có bộ điều hướng khác hẳn.
 #
 #    Nguồn duy nhất bây giờ: `server/routes/admin/_chung.py`.
 #    Bố cục đã đóng băng ở `docs/admin_mvp_v3/03_IA_FREEZE.md`; hợp đồng thêm
@@ -124,8 +124,8 @@ class AdminAuth(AuthenticationBackend):
 _PROVCOL = {"gemini": ("#1a73e8", "G"), "apiai": ("#15803d", "AI"),
             "cheapkeyai": ("#0369a1", "CK"), "byteplus": ("#7c3aed", "BP"),
             "plenx": ("#be185d", "PX")}
-_CAT_ICON = {"model_control": ("🧭", "m"), "chat": ("💬", ""),
-             "image": ("🖼️", "i"), "video": ("🎬", "v")}
+_CAT_ICON = {"model_control": ("Điều khiển", "m"), "chat": ("Chat", ""),
+             "image": ("Ảnh", "i"), "video": ("Video", "v")}
 _STATUS = {"active": ("b-ok", "hoạt động"), "cooldown": ("b-warn", "nghỉ (cooldown)"),
            "exhausted": ("b-warn", "hết quota"), "error": ("b-err", "lỗi"),
            "disabled": ("b-err", "vô hiệu")}
@@ -314,9 +314,9 @@ class ApiKeysConsole(_AnTrongMenuSqlAdmin, BaseView):
             on = "on" if cat == c else ""
             return (f'<a class="{on}" href="/admin/apikeys?cat={c}">{label} '
                     f'<span class="n">{cnt.get(c, 0)}</span></a>')
-        tabs = (tab("all", "Tất cả") + tab("model_control", "🧭 Điều khiển model")
-                + tab("chat", "💬 Chat") + tab("image", "🖼️ Ảnh")
-                + tab("video", "🎬 Video"))
+        tabs = (tab("all", "Tất cả") + tab("model_control", "Điều khiển model")
+                + tab("chat", "Chat") + tab("image", "Ảnh")
+                + tab("video", "Video"))
 
         def act_form(k, op, label):
             return (f'<form method="post" action="/admin/api-key-action" class="adm-form-inline">'
@@ -358,7 +358,7 @@ class ApiKeysConsole(_AnTrongMenuSqlAdmin, BaseView):
                 f'{refresh}{toggle}{act_form(k, "reset", "Reset")}</div></td></tr>')
         if not shown:
             rows = ('<tr><td colspan="9" class="muted o-trong"><span class="o-trong-chu">'
-                    'Chưa có key nào ở mục này. Bấm “＋ Thêm key”.</span></td></tr>')
+                    'Chưa có key nào ở mục này. Bấm “＋ Thêm credential”.</span></td></tr>')
 
         active_cnt = sum(1 for k in keys if k.enabled and k.status == "active")
         body = (
@@ -375,8 +375,8 @@ class ApiKeysConsole(_AnTrongMenuSqlAdmin, BaseView):
             f'<p><span class="pill"><span class="dot" style="background:var(--ok);'
             f'width:7px;height:7px;border-radius:50%"></span> '
             f'{active_cnt}/{len(keys)} key hoạt động</span></p></div>'
-            f'<div class="actions"><a class="btn ghost" href="/admin/api-models">🧩 Models</a>'
-            f'<a class="btn" href="/admin/api-key-them">＋ Thêm key</a></div></div>'
+            f'<div class="actions"><a class="btn ghost" href="/admin/api-models">Nhà cung cấp &amp; model</a>'
+            f'<a class="btn" href="/admin/api-key-them">＋ Thêm credential</a></div></div>'
             f'<div class="tabs">{tabs}</div>'
             f'<div class="tablewrap" tabindex="0"><table class="ui-table"><thead><tr>'
             f'<th>Provider</th><th>Tên</th><th>Preview</th><th>Loại</th><th>Trạng thái</th>'
@@ -389,13 +389,12 @@ class UserAdmin(ModelView, model=User):
     name = "Người dùng"
     name_plural = "Người dùng"
     icon = "fa-solid fa-user"
-    # F-04 (audit 2026-08-07): SO DU phai co o day. Truoc day danh sach nguoi
-    # dung khong hien so du — con so van hanh quan trong nhat ve mot nguoi lai
-    # khong nam o cho quan ly nguoi, phai sang trang So credit loc bang UUID.
+    # F-04 (audit 2026-08-07): SO DU phai co o day — con so van hanh quan trong nhat ve mot nguoi.
     column_list = [User.email, "so_du_credit", User.display_name, User.role,
-                   User.is_active, User.is_verified, User.created_at,
-                   User.last_login_at]
-    column_labels = {"so_du_credit": "Số dư"}
+                   User.is_active, User.is_verified, User.created_at, User.last_login_at]
+    column_labels = {"so_du_credit": "Số dư", User.email: "Email", User.display_name: "Tên hiển thị",
+                     User.role: "Vai trò", User.is_active: "Đang hoạt động", User.is_verified: "Đã xác thực email",
+                     User.created_at: "Tạo lúc", User.last_login_at: "Đăng nhập cuối", "id": "User ID", "email_chuan": "Email chuẩn hoá", "registration_ip": "IP đăng ký"}
 
     async def on_model_change(self, data, model, is_created, request) -> None:
         """F-06: doi vai tro / vo hieu hoa tai khoan phai de lai dau vet.
@@ -426,16 +425,17 @@ class UserAdmin(ModelView, model=User):
     column_searchable_list = [User.email, User.display_name]
     column_sortable_list = [User.email, User.created_at, User.last_login_at]
     column_default_sort = [(User.created_at, True)]
-    # KHÔNG cho sửa email hay password_hash qua form (email là danh tính; mật
-    # khẩu chỉ đổi qua luồng đổi-mật-khẩu đã băm đúng cách).
+    column_formatters = column_formatters_detail = {User.role: lambda m, a: {"admin": "Quản trị viên", "user": "Thành viên"}.get(getattr(m, "role", ""), getattr(m, "role", ""))}
+    # KHÔNG cho sửa email hay password_hash qua form (email là danh tính; mật khẩu chỉ đổi qua luồng đổi-mật-khẩu đã băm).
     form_columns = [User.display_name, User.role, User.is_active, User.is_verified]
+    form_overrides = {"role": __import__("wtforms").SelectField}; form_args = {"role": {"choices": [("user", "Thành viên"), ("admin", "Quản trị viên")]}}  # ô chọn thay ô gõ; giá trị lưu giữ nguyên (sqladmin 0.20 KHÔNG có form_choices)
     can_create = False   # user tạo qua đăng ký; tạo admin-trong-DB làm ở bước sau
     can_delete = False   # giữ dấu vết + sổ credit gắn user_id
 
 
 class CreditEntryAdmin(ModelView, model=CreditEntry):
-    name = "Bút toán credit"
-    name_plural = "Sổ credit"
+    name, name_plural = "Bút toán credit", "Sổ credit"
+    column_labels = {"created_at": "Lúc", "user_id": "User ID", "kind": "Loại", "delta": "Biến động", "job_id": "Job ID", "note": "Ghi chú"}
     icon = "fa-solid fa-coins"
     column_list = [CreditEntry.created_at, CreditEntry.user_id, CreditEntry.kind,
                    CreditEntry.delta, CreditEntry.job_id, CreditEntry.note]
@@ -449,8 +449,8 @@ class CreditEntryAdmin(ModelView, model=CreditEntry):
 
 
 class AppAccessAdmin(ModelView, model=AppAccess):
-    name = "Quyền app"
-    name_plural = "Quyền app"
+    name, name_plural = "Quyền app", "Quyền app"
+    column_labels = {"user_id": "User ID", "app_slug": "App", "level": "Mức quyền"}
     icon = "fa-solid fa-lock"
     column_list = [AppAccess.user_id, AppAccess.app_slug, AppAccess.level]
     column_searchable_list = [AppAccess.user_id, AppAccess.app_slug]
@@ -489,7 +489,7 @@ class JobAdmin(ModelView, model=Job):
     icon = "fa-solid fa-list-check"
     column_list = [Job.created_at, Job.user_id, Job.app_slug, Job.job_type,
                    Job.status, Job.error, Job.attempts]
-    column_labels = {Job.error: "Lỗi"}
+    column_labels = {Job.error: "Lỗi", "created_at": "Tạo lúc", "user_id": "Khách", "app_slug": "App", "job_type": "Loại job", "status": "Trạng thái", "attempts": "Số lần thử", "progress": "Tiến độ", "updated_at": "Cập nhật lúc"}
     column_searchable_list = [Job.user_id, Job.app_slug, Job.status, Job.job_type]
     column_sortable_list = [Job.created_at, Job.status]
     column_default_sort = [(Job.created_at, True)]
@@ -516,8 +516,8 @@ class JobAdmin(ModelView, model=Job):
 
 
 class SessionAdmin(ModelView, model=DbSession):
-    name = "Phiên"
-    name_plural = "Phiên đăng nhập"
+    name, name_plural = "Phiên", "Phiên đăng nhập"
+    column_labels = {"user_id": "User ID", "created_at": "Tạo lúc", "expires_at": "Hết hạn lúc", "ip": "IP", "user_agent": "Trình duyệt"}
     icon = "fa-solid fa-key"
     # KHÔNG hiển thị DbSession.id: nó CHÍNH LÀ token cookie phiên (thô, dùng làm
     # PK — users.py:tao_phien). Render nó ra trang admin = ai xem/chụp màn hình
@@ -536,8 +536,8 @@ class SessionAdmin(ModelView, model=DbSession):
 
 
 class PlatformInfoAdmin(ModelView, model=PlatformInfo):
-    name = "Thông tin nền tảng"
-    name_plural = "Nền tảng"
+    name, name_plural = "Thông tin nền tảng", "Nền tảng"
+    column_labels = {"id": "ID", "app_version": "Phiên bản", "installed_at": "Cài lúc", "note": "Ghi chú"}
     icon = "fa-solid fa-circle-info"
     column_list = [PlatformInfo.id, PlatformInfo.app_version,
                    PlatformInfo.installed_at, PlatformInfo.note]
@@ -657,8 +657,8 @@ class NhatKyAdminView(ModelView, model=NhatKyAdmin):
     không còn là nhật ký.
     """
 
-    name = "Nhật ký admin"
-    name_plural = "Nhật ký admin"
+    name, name_plural = "Nhật ký admin", "Nhật ký admin"
+    column_labels = {"created_at": "Lúc", "admin_email": "Admin", "hanh_dong": "Hành động", "doi_tuong": "Đối tượng", "chi_tiet": "Chi tiết"}
     icon = "fa-solid fa-clipboard-list"
     column_list = [NhatKyAdmin.created_at, NhatKyAdmin.admin_email,
                    NhatKyAdmin.hanh_dong, NhatKyAdmin.doi_tuong, NhatKyAdmin.chi_tiet]
@@ -680,8 +680,8 @@ class ApiKeyAdmin(ModelView, model=ApiKey):
     #    Đây là bảng dữ liệu thô để tra cứu và xoá. Chỗ làm việc là
     #    `/admin/apikeys`.
     name_plural = "APIKEYS (bảng thô)"
-    # sqladmin tự đặt identity = slugify(ApiKey) = "api-key" → URL /admin/api-key/...
-    icon = "fa-solid fa-key"
+    icon = "fa-solid fa-key"  # sqladmin tự đặt identity = slugify(ApiKey) = "api-key" → URL /admin/api-key/...
+    column_labels = {"provider": "Nhà cung cấp", "name": "Tên", "key_preview": "Xem trước", "categories": "Loại", "status": "Trạng thái", "enabled": "Bật", "priority": "Ưu tiên", "health_score": "Sức khoẻ", "last_used_at": "Dùng lần cuối", "created_at": "Tạo lúc", "base_url": "Base URL", "default_model": "Model mặc định", "supported_models": "Model hỗ trợ", "last_error": "Lỗi gần nhất", "cooldown_until": "Nghỉ tới"}
     # TUYỆT ĐỐI không hiện credential_enc (secret). Chỉ preview 4 số cuối (H8).
     column_list = [ApiKey.provider, ApiKey.name, ApiKey.key_preview,
                    ApiKey.categories, ApiKey.status, ApiKey.enabled,
@@ -759,16 +759,16 @@ class AddApiKeyView(_AnTrongMenuSqlAdmin, BaseView):
             f'[{escape(p.auth_style)}]</option>' for p in providers.list_all())
         # Bản đồ provider -> category nó phục vụ, cho đoạn script tick sẵn bên dưới.
         cat_map = json.dumps({p.id: list(p.categories or ()) for p in providers.list_all()})
-        _catlbl = {APIKEY_CAT_MODEL: "🧭 Điều khiển model", APIKEY_CAT_CHAT: "💬 Chat",
-                   APIKEY_CAT_IMAGE: "🖼️ Ảnh", APIKEY_CAT_VIDEO: "🎬 Video"}
+        _catlbl = {APIKEY_CAT_MODEL: "Điều khiển model", APIKEY_CAT_CHAT: "Chat",
+                   APIKEY_CAT_IMAGE: "Ảnh", APIKEY_CAT_VIDEO: "Video"}
         cat_boxes = "".join(
             f'<label><input type="checkbox" name="categories" value="{c}"> {_catlbl[c]}</label>'
             for c in (APIKEY_CAT_MODEL, APIKEY_CAT_CHAT, APIKEY_CAT_IMAGE, APIKEY_CAT_VIDEO))
         body = f"""<div class="adm-content adm-hep-640">
 <div class="pagehead"><div><h1>Thêm API key</h1>
 <p>Credential nhập vào sẽ được <b>mã hoá</b> trước khi lưu; chỉ 4 số cuối hiện lại.</p></div>
-<div class="actions"><a class="btn ghost" href="/admin/apikeys">&larr; APIKEYS</a>
-<a class="btn ghost" href="/admin/api-models">🧩 Models</a></div></div>
+<div class="actions"><a class="btn ghost" href="/admin/apikeys">&larr; Provider Credentials</a>
+<a class="btn ghost" href="/admin/api-models">Nhà cung cấp &amp; model</a></div></div>
 {msg}
 <div class="ui-card"><form method="post">
   <input type="hidden" name="csrf_token" value="{escape(token)}">
@@ -940,7 +940,7 @@ def _sua_key_html(key, boxes: str, goi_y: str, token: str, msg: str) -> str:
     return """<div class="adm-content adm-hep-640">
 <div class="pagehead"><div><h1>Sua API key</h1>
 <p>Id va lich su <b>giu nguyen</b>: {lich_su}.</p></div>
-<div class="actions"><a class="btn ghost" href="/admin/apikeys">&larr; APIKEYS</a></div></div>
+<div class="actions"><a class="btn ghost" href="/admin/apikeys">&larr; Provider Credentials</a></div></div>
 {msg}
 <div class="ui-card"><form method="post">
   <input type="hidden" name="csrf_token" value="{token}">
@@ -1000,7 +1000,7 @@ class ApiKeyActionView(_AnTrongMenuSqlAdmin, BaseView):
         body = f"""<div class="adm-content adm-hep-640">
 <div class="pagehead"><div><h1>Test key</h1>
 <p>{_prov_dot(key.provider)} {escape(key.provider)} · <span class="mono">{escape(key.key_preview)}</span></p></div>
-<div class="actions"><a class="btn ghost" href="/admin/apikeys">&larr; APIKEYS</a></div></div>
+<div class="actions"><a class="btn ghost" href="/admin/apikeys">&larr; Provider Credentials</a></div></div>
 <div class="ui-card"><p class="adm-mb8">{badge}</p>
 <p class="muted mono adm-chi-tiet-loi">{escape(str(detail))}</p></div></div>"""
         return HTMLResponse(_admin_shell("Test key", "provider_test", body))
@@ -1075,8 +1075,8 @@ class ModelsView(_AnTrongMenuSqlAdmin, BaseView):
                 f'<span class="chip {"adm-chip-model" if m.is_active else "m"}">{escape(m.id)}'
                 f'{"" if m.is_active else " · Soon"}</span>' for m in p.models
             ) or '<span class="muted u-fs12">chưa khai model — key nhận mọi model</span>'
-            kind = ('<span class="badge b-grey"><span class="dot"></span>async</span>'
-                    if p.async_poll else '<span class="badge b-ok"><span class="dot"></span>sync</span>')
+            kind = ('<span class="badge b-grey"><span class="dot"></span>Bất đồng bộ</span>'
+                    if p.async_poll else '<span class="badge b-ok"><span class="dot"></span>Đồng bộ</span>')
             refresh = (f'<a class="btn ghost sm" href="/admin/api-models-refresh?provider={escape(p.id)}">Làm mới</a>'
                        if p.list_models_path else '<span class="muted u-fs12">—</span>')
             rows += (f'<tr><td><span class="prov">{_prov_dot(p.id)}{escape(p.id)}</span></td>'
@@ -1084,15 +1084,15 @@ class ModelsView(_AnTrongMenuSqlAdmin, BaseView):
                      f'<td>{escape(", ".join(p.categories))}</td>'
                      f'<td class="adm-o-chip">{ms}</td><td>{kind}</td><td>{refresh}</td></tr>')
         body = f"""<div class="adm-content">
-<div class="pagehead"><div><h1>Provider &amp; Models</h1>
-<p>Registry: <code>platform_core/providers.py</code>. Thêm provider/model = sửa file này.
+<div class="pagehead"><div><h1>Nhà cung cấp &amp; model</h1>
+<p>Danh mục khai sẵn trong mã nguồn (<code>platform_core/providers.py</code>) — thêm nhà cung cấp hoặc model cần một bản cập nhật.
 “Làm mới” gọi endpoint sống của provider (dùng key ưu tiên nhất) để lấy model thật.</p></div>
-<div class="actions"><a class="btn ghost" href="/admin/apikeys">&larr; APIKEYS</a>
-<a class="btn" href="/admin/api-key-them">＋ Thêm key</a></div></div>
+<div class="actions"><a class="btn ghost" href="/admin/apikeys">&larr; Provider Credentials</a>
+<a class="btn" href="/admin/api-key-them">＋ Thêm credential</a></div></div>
 <div class="tablewrap" tabindex="0"><table class="ui-table"><thead><tr>
-<th>Provider</th><th>Auth</th><th>Category</th><th>Models (registry)</th><th>Kiểu</th><th>Sống</th></tr></thead>
+<th>Nhà cung cấp</th><th>Xác thực</th><th>Loại</th><th>Model khai sẵn</th><th>Kiểu gọi</th><th>Model sống</th></tr></thead>
 <tbody>{rows}</tbody></table></div></div>"""
-        return HTMLResponse(_admin_shell("Models", "models", body))
+        return HTMLResponse(_admin_shell("Nhà cung cấp & model", "models", body))
 
     @expose("/api-models-refresh", methods=["GET"])
     async def refresh(self, request: Request):
@@ -1124,7 +1124,7 @@ class ModelsView(_AnTrongMenuSqlAdmin, BaseView):
             or '<span class="muted u-fs12">—</span>'
         body = f"""<div class="adm-content adm-hep-760">
 <div class="pagehead"><div><h1>Model sống — {escape(prov_id)}</h1><p>{note}</p></div>
-<div class="actions"><a class="btn ghost" href="/admin/api-models">&larr; Models</a></div></div>
+<div class="actions"><a class="btn ghost" href="/admin/api-models">&larr; Nhà cung cấp &amp; model</a></div></div>
 <div class="ui-card adm-o-chip-rong">{chips}</div></div>"""
         return HTMLResponse(_admin_shell("Model sống", "models", body))
 
@@ -1230,10 +1230,10 @@ class RevenueView(_AnTrongMenuSqlAdmin, BaseView):
             f'<div class="tnum adm-so-lon">{_vnd(dt["orders"], "")}</div></div></div>')
         body = (f'<div class="adm-content"><div class="pagehead"><div>'
                 f'<h1>Tổng quan tài chính</h1>'
-                f'<p>Chỉ tính đơn đã trả (đi qua sổ credit H3). Tiền hiện bằng đ, '
+                f'<p>Chỉ tính đơn đã trả (đã ghi vào sổ credit). Tiền hiện bằng đ, '
                 f'credit hiện bằng credit — hai đơn vị, không trộn.</p></div>'
-                f'<div class="actions"><a class="btn ghost" href="/admin/goi">💠 Gói nạp</a>'
-                f'<a class="btn ghost" href="/admin/don">🧾 Đơn hàng</a></div></div>'
+                f'<div class="actions"><a class="btn ghost" href="/admin/goi">Gói nạp</a>'
+                f'<a class="btn ghost" href="/admin/don">Đơn hàng</a></div></div>'
                 f'{cards}'
                 f'<h2 class="u-tieu-muc">Đơn cần xử lý</h2>'
                 f'<p class="adm-dan">Đơn đang chờ cổng thanh toán xác nhận. Xác '
@@ -1333,8 +1333,8 @@ class PackagesView(_AnTrongMenuSqlAdmin, BaseView):
             f'<button class="btn">＋ Thêm gói</button></form></div>')
         body = (f'<div class="adm-content"><div class="pagehead"><div><h1>Gói nạp</h1>'
                 f'<p>Khách thấy gói bật ở trang <code>/nap</code>. Đổi giá không ảnh hưởng đơn cũ.</p></div>'
-                f'<div class="actions"><a class="btn ghost" href="/admin/doanh-thu">📈 Doanh thu</a>'
-                f'<a class="btn ghost" href="/admin/don">🧾 Đơn hàng</a></div></div>{msg}{form_html}'
+                f'<div class="actions"><a class="btn ghost" href="/admin/doanh-thu">Doanh thu</a>'
+                f'<a class="btn ghost" href="/admin/don">Đơn hàng</a></div></div>{msg}{form_html}'
                 f'<div class="tablewrap" tabindex="0"><table class="ui-table"><thead><tr>'
                 f'<th>#</th><th>Tên</th><th>Giá</th><th>Gốc</th><th>Bonus</th><th>Tổng</th>'
                 f'<th>Trạng thái</th><th class="u-phai">Thao tác</th></tr></thead>'
@@ -1440,8 +1440,8 @@ class OrdersView(_AnTrongMenuSqlAdmin, BaseView):
                 + tab("expired", "Hết hạn") + tab("cancelled", "Huỷ") + tab("failed", "Lỗi"))
         body = (f'<div class="adm-content"><div class="pagehead"><div><h1>Đơn hàng</h1>'
                 f'<p>“Đã trả” = xác nhận tay khi webhook lỗi (vẫn idempotent, cộng credit đúng một lần).</p></div>'
-                f'<div class="actions"><a class="btn ghost" href="/admin/doanh-thu">📈 Doanh thu</a>'
-                f'<a class="btn ghost" href="/admin/goi">💠 Gói nạp</a></div></div>'
+                f'<div class="actions"><a class="btn ghost" href="/admin/doanh-thu">Doanh thu</a>'
+                f'<a class="btn ghost" href="/admin/goi">Gói nạp</a></div></div>'
                 f'<div class="tabs">{tabs}</div>'
                 f'<div class="tablewrap" tabindex="0"><table class="ui-table"><thead><tr>'
                 f'<th>Mã đơn</th><th>User</th><th>Tiền</th><th>Credit</th><th>Trạng thái</th>'

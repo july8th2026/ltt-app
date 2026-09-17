@@ -92,7 +92,7 @@
                  (1 credit = 100 đ) — ảnh mockup ghi số dư kèm "đ", và bê nguyên
                  nhãn đó vào là sai số hiển thị 100 lần. #}
               <td class="tnum">{{ "{:,}".format(d.so_du) }} credit</td>
-              <td>{{ d.user.role or 'user' }}</td>
+              <td>{{ {'admin': 'Quản trị viên', 'user': 'Thành viên'}.get(d.user.role or 'user', d.user.role) }}</td>
               <td>
                 {% if not d.user.is_active %}
                   <span class="dev-tt loi">Vô hiệu hoá</span>
