@@ -4562,3 +4562,43 @@ input[type=hidden]+.af-step{margin-top:0}
   .nx-nhat-ky td::before{content:attr(data-nhan);color:var(--text-muted);font-size:12px}
 }
 /* === HET C3: DEV-VPS-NEXUS === */
+/* === C3: APPS === (Golden UI 17/09 — chỉ trình bày, họ trang app) */
+/* Voice @≤820: cột thiết lập xếp trên Kết quả; đệm 64px dành cho nút ghim ở bố cục 3 cột
+   thành khoảng trống thật trước "Kết quả" (đo khung nhìn 390, cuộn hết trang). */
+@media(max-width:820px){.lv-studio .lv-st-trai{padding-bottom:0}}
+/* Voice: tiêu đề trang cùng thang với các app khác (trước 15px). */
+:is(.lv-giong,.lv-studio,.lv-api,.lv-da,.lv-mda,.lv-ls)>.lv-vo .lv-vo-chu h1{font-size:var(--fs-section);letter-spacing:-.1px}
+/* Ô chọn ẩn (opacity:0) trong chip: phủ kín chip để vùng chạm = cả chip, không còn ô 18px. */
+:is(.th-chip,.im-chips label,.clip-chips label,.clip-platforms label,.clip-package fieldset label,.up-options label):has(>input[type=radio],>input[type=checkbox]){position:relative}
+:is(.th-chip,.im-chips label,.clip-chips label,.clip-platforms label,.clip-package fieldset label,.up-options label)>input:is([type=radio],[type=checkbox]){inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+/* Ô chọn hiện (radio/checkbox gốc) trong app: 24px — WCAG 2.5.8. */
+:is(.lv-chon-muc,.asv-chon,.up-mode,.th-save-brand,.tv-audio,.tv-models label,.va-wrap .check,.ts-wrap .check,.lv-giong label)>input:is([type=radio],[type=checkbox]){width:24px;height:24px}
+/* Upscale: công tắc bị luật chung input[type=checkbox]{18px} ép vỡ thành hai hình tròn. */
+.up-switch input[type=checkbox]{position:relative;flex:0 0 auto;width:44px;height:24px;margin:0;border-radius:12px}
+.up-switch input[type=checkbox]::after{width:18px;height:18px;margin:3px}
+.up-switch input[type=checkbox]:checked::after{transform:translateX(20px)}
+.up-switch input[type=checkbox]:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+/* Upscale: chữ điều khiển 8–10px -> tối thiểu 12px (nút), 11px (chú thích). */
+.up-job-filters button,.up-view-toggle button,.up-job-sort select,.up-history-link,.up-job-actions a,.up-job-actions button,.up-watch-actions button{font-size:12px}
+.up-switch strong{font-size:13px}
+.up-mode small,.up-switch small,.up-queue>header small,.up-compare-panel header span,.up-before,.up-after,.up-batch-files>span,.up-watch p,.up-watch>small,.up-telemetry,.up-job-tags span{font-size:11px}
+.up-mode em{font-size:10px}
+/* Seedance @hẹp: hàng lọc cuộn ngang — mép phải mờ báo "còn mục" thay vì cắt cụt. */
+@media(max-width:640px){
+  .tv-tabs{-webkit-mask-image:linear-gradient(90deg,black calc(100% - 32px),transparent);mask-image:linear-gradient(90deg,black calc(100% - 32px),transparent)}
+  .tv-tabs a:last-child{margin-right:32px}
+}
+/* Seedance: nút đóng ngăn kéo — tách biểu tượng khỏi chữ. */
+.tv-compose-close{gap:6px;align-items:center}
+/* Video AI: link "Làm mới" cao 19px cạnh nút lọc 34px — cùng chiều cao, đủ vùng chạm. */
+.tv-library-filters .ltt-btn{display:inline-flex;align-items:center;min-height:34px;padding:6px 12px;border:1px solid var(--border-subtle);border-radius:5px;text-decoration:none}
+.tv-compose-close span{font-size:12px}
+/* Chèn khoảng lặng: trợ giúp danh sách mốc. */
+.ap-plan-giai{margin:0;color:var(--text-secondary);font-size:13px}
+.ap-plan-khoa{margin:0;padding-left:18px;color:var(--text-secondary);font-size:13px;line-height:1.6}
+.ap-plan-khoa code{color:var(--text-primary)}
+.ap-plan-cong-cu{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.ap-plan-cong-cu .btn{min-height:40px}
+.ap-plan-kiem{flex:1 1 220px}
+.ap-plan-kiem--ok{color:var(--status-success)}
+.ap-plan-kiem--loi{color:var(--status-danger)}

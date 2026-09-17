@@ -19043,3 +19043,57 @@ msgstr "(machine deleted)"
 msgid "Đang mở"
 msgstr "Open"
 
+msgid "Model AI"
+msgstr "AI model"
+
+msgid "Video Seedance của tôi"
+msgstr "My Seedance videos"
+
+msgid "Tạo thumbnail YouTube"
+msgstr "Create YouTube thumbnails"
+
+msgid "Lưu làm bộ nhận diện thương hiệu mặc định của tôi"
+msgstr "Save as my default brand kit"
+
+msgid "Đang lấy mẫu phong cách, bộ nhận diện thương hiệu và lịch sử của tài khoản."
+msgstr "Loading style presets, brand kit and account history."
+
+msgid "Danh sách mốc ngắt"
+msgstr "Pause markers"
+
+msgid "Mỗi mốc là một chỗ cần ngắt trong bài, gồm ba phần:"
+msgstr "Each marker is one place to pause in the recording, with three parts:"
+
+msgid "số thứ tự của mốc (1, 2, 3…)"
+msgstr "the marker number (1, 2, 3…)"
+
+msgid "câu ngay TRƯỚC chỗ cần ngắt, chép đúng như trong bản thu"
+msgstr "the sentence right BEFORE the pause, exactly as spoken in the recording"
+
+msgid "độ dài khoảng lặng, tính bằng mili-giây (1000 = 1 giây)"
+msgstr "pause length in milliseconds (1000 = 1 second)"
+
+msgid "Chèn ví dụ mẫu"
+msgstr "Insert example"
+
+msgid "Bấm “Chèn ví dụ mẫu” rồi sửa câu và thời lượng cho khớp bài của bạn."
+msgstr "Click “Insert example”, then edit the sentences and durations to match your recording."
+
+msgid "Xin chào các bạn."
+msgstr "Hello everyone."
+
+msgid "Hôm nay chúng ta nói về Hà Nội."
+msgstr "Today we talk about Hanoi."
+
+msgid "Thay nội dung đang có bằng ví dụ mẫu?"
+msgstr "Replace the current content with the example?"
+
+msgid "Đúng định dạng:"
+msgstr "Valid format:"
+
+msgid "mốc."
+msgstr "markers."
+
+msgid "Chưa đúng định dạng — mỗi mốc cần đủ id, anchor_text và pause_ms. Bấm “Chèn ví dụ mẫu” để xem cách viết."
+msgstr "Invalid format — each marker needs id, anchor_text and pause_ms. Click “Insert example” to see how."
+
