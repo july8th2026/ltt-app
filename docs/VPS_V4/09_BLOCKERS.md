@@ -2,6 +2,21 @@
 
 ## Active blockers
 
+### Việc mở cho phiên sau (ghi 17/09 cuối ngày)
+
+- **R26 — đo băng thông VPS OVH chưa chạy**: bộ đếm/hãm tốc nằm trên router VM199,
+  nhưng lưu lượng VPS OVH không đi qua VM199 (gateway `10.50.0.1` là host Proxmox, NAT
+  ở gateway OVH) ⇒ `d96b66f3` luôn "0 KB / 300 GB", vượt hạn mức không bị giảm tốc.
+  Cần chọn điểm đo (gateway OVH hoặc host Proxmox) rồi mới sửa.
+- **Dọn Vultr khi chủ dự án ngừng tài khoản**: app — Disable profile 0401 (bảo trì đang
+  ghi `reconciliation unavailable` mỗi lượt), đóng gateway `sgp-1` (10.51,
+  `dang_nhan_may_moi=true`), gỡ `LTT_VULTR_API_KEY`/`LTT_VPS_GATEWAY_*`/`LTT_VPS_ROUTER_*`;
+  VM199 — tắt `wg0`, bỏ dải `10.51` khỏi dnsmasq, **giữ** `10.50.0.2` + DHCP OVH.
+- **Admin chưa sửa được chính sách mua IP** (`auto_acquire`, trần giá, fingerprint hợp
+  đồng) — hiện chỉ sửa qua CSDL. Trang `/vps/admin/cong-ha-tang` chỉ nhận tên biến, không
+  nhận bí mật (cố ý).
+- **Reboot host Proxmox** để dùng kernel 7.0.14 — chờ cửa sổ bảo trì.
+
 ### Tổng kết phiên 2026-09-17 — không còn blocker phần mềm
 
 - OVH 0402 là mặc định (ACTIVE, default); Vultr 0401 STANDBY. Chủ dự án: **Vultr sắp
