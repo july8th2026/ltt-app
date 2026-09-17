@@ -563,3 +563,13 @@ def test_model_khong_co_so_thi_tu_choi_chu_khong_no():
 def test_moi_model_mo_deu_co_so(m):
     s = _so()
     assert m in s.models()
+
+
+# ── Cách ly: cổng dựng trong test KHÔNG mang token máy B thật ───────────────
+
+@pytest.fixture(autouse=True)
+def _khong_token_cong_that(monkeypatch):
+    """Gate chạy các ca đối chiếu máy B với `LTT_LLM_TOKEN` thật trong env. Cổng dựng
+    bằng `Config.from_env()` ở đây sẽ nhận token đó và `/health` đòi Bearer ⇒ ca cục
+    bộ đọc nhầm `{"detail": ...}` (KeyError). Ca cục bộ phải độc lập với env máy B."""
+    monkeypatch.delenv("LTT_LLM_TOKEN", raising=False)

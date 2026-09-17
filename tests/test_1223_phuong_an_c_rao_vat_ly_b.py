@@ -350,3 +350,13 @@ def test_bien_da_go_duoc_BAO_khi_con_dat(monkeypatch):
     con = bien_da_go_con_dat()
     assert any(t.upper() == "LTT_LLM_RPM" for t in con)
     assert any(t.upper().startswith("LTT_LLM_TOKEN_POOL__") for t in con)
+
+
+# ── Cách ly: cổng dựng trong test KHÔNG mang token máy B thật ───────────────
+
+@pytest.fixture(autouse=True)
+def _khong_token_cong_that(monkeypatch):
+    """Gate chạy các ca đối chiếu máy B với `LTT_LLM_TOKEN` thật trong env. Cổng dựng
+    bằng `Config.from_env()` ở đây sẽ nhận token đó và `/health` đòi Bearer ⇒ ca cục
+    bộ đọc nhầm `{"detail": ...}` (KeyError). Ca cục bộ phải độc lập với env máy B."""
+    monkeypatch.delenv("LTT_LLM_TOKEN", raising=False)
