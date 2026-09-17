@@ -1,10 +1,11 @@
 {% extends "vps_base.html" %}
+{% import "_icon.html" as ic %}
 {# `with context`: macro dùng `_()` và các biến của trang. Thiếu nó thì mọi chuỗi
    bên trong macro ra tiếng Việt trên bản EN — và không phép kiểm `.po` nào bắt
    được, vì chuỗi CÓ trong catalog và ĐÃ dịch. #}
 {% import "_vps_mac.html" as mac with context %}
 {% block title %}{{ may.ten or may.id[:8] }} — {{ _(app.display_name) }}{% endblock %}
-{% block topbar_title %}<strong><a class="vps-vet-goc" href="/vps">{{ app.icon }} VPS</a> <span class="vps-vet-ngan" aria-hidden="true">›</span> {{ may.ten or may.id[:8] }}</strong>{% endblock %}
+{% block topbar_title %}<strong><a class="vps-vet-goc" href="/vps">{{ ic.icon_app(app.icon) }} VPS</a> <span class="vps-vet-ngan" aria-hidden="true">›</span> {{ may.ten or may.id[:8] }}</strong>{% endblock %}
 {# `vps-may` là MÓC PHẠM VI, không phải class kiểu — xem `ltt.css`. #}
 {% block body_class %}vps-may{% endblock %}
 {% block noi_dung %}

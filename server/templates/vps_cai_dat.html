@@ -1,7 +1,8 @@
 {% extends "vps_base.html" %}
+{% import "_icon.html" as ic %}
 {% import "_vps_mac.html" as mac with context %}
 {% block title %}{{ _("Cài Windows") }} — {{ may.ten or may.id[:8] }} — {{ _(app.display_name) }}{% endblock %}
-{% block topbar_title %}<strong><a class="vps-vet-goc" href="/vps">{{ app.icon }} VPS</a> <span class="vps-vet-ngan" aria-hidden="true">›</span> 💿 {{ _("Cài Windows") }} — {{ may.ten or may.id[:8] }}</strong>{% endblock %}
+{% block topbar_title %}<strong><a class="vps-vet-goc" href="/vps">{{ ic.icon_app(app.icon) }} VPS</a> <span class="vps-vet-ngan" aria-hidden="true">›</span> {{ _("Cài Windows") }} — {{ may.ten or may.id[:8] }}</strong>{% endblock %}
 {% block noi_dung %}
 
 {# ══ MÀN D · HƯỚNG DẪN CÀI WINDOWS (Đợt 5, ảnh 4) ══════════════════════════

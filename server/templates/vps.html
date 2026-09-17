@@ -1,10 +1,11 @@
 {% extends "vps_base.html" %}
+{% import "_icon.html" as ic %}
 {# `with context`: macro dung `_()` va cac bien cua trang. Thieu no thi
    moi chuoi ben trong macro ra tieng Viet tren ban EN — va khong phep kiem
    `.po` nao bat duoc, vi chuoi CO trong catalog va DA dich. #}
 {% import "_vps_mac.html" as mac with context %}
 {% block title %}{{ _(app.display_name) }} — LTT AI Studio{% endblock %}
-{% block topbar_title %}<strong>{{ app.icon }} {{ _(app.display_name) }}</strong>{% endblock %}
+{% block topbar_title %}<strong>{{ ic.icon_app(app.icon) }} {{ _(app.display_name) }}</strong>{% endblock %}
 {% block noi_dung %}
 
 {# ── Thẻ gói ───────────────────────────────────────────────────────────────
