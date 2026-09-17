@@ -206,7 +206,7 @@ def _app_cong(up):
     from llm_gateway.api import create_app
     from tests.test_250_llm_gateway import _cfg, _tt_ranh
 
-    return create_app(_cfg(models_mo=(M38,), max_dong_thoi=4, rpm=0),
+    return create_app(_cfg(models_mo=(M38,), np=4),
                       up, trong_tai=_tt_ranh())
 
 

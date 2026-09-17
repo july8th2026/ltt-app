@@ -39,7 +39,8 @@ import logging
 
 import pytest
 
-from llm_gateway.config import Config
+from llm_gateway.config import DEM_UOC_MAC_DINH, Config
+from llm_gateway.vat_ly import VatLy
 from llm_gateway.main import LOOPBACK
 
 
@@ -47,11 +48,13 @@ def _cfg(host: str, token: str) -> Config:
     """Một `Config` tối thiểu. Chỉ `host`/`token` có ý nghĩa ở đây."""
     return Config(
         upstream_url="http://127.0.0.1:8280", host=host, port=8299, token=token,
-        models_mo=("qwen38-api",), max_input_tokens=1000, max_output_tokens=100,
+        models_mo=("qwen38-api",), max_output_tokens=100,
         max_images=1, max_image_bytes=1024, upstream_timeout_s=1.0,
         stream_timeout_s=1.0, ram_trong_toi_thieu_gb=1.0, trong_tai_bat=False,
         vram_sach_mb=1,
-        max_dong_thoi=1, rpm=0, nhip_tim_giay=0.0)
+        nhip_tim_giay=0.0, nguon_vat_ly="test",
+        # Rao vat ly: tran vao = ctx - max_out(100) - DEM_UOC = 1000.
+        vat_ly={"qwen38-api": VatLy(ctx=1000 + 100 + DEM_UOC_MAC_DINH, np=1, kvu=True)})
 
 
 def _chay_chot(monkeypatch, host: str, token: str):

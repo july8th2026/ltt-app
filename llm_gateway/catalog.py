@@ -4,8 +4,13 @@ catalog.py — model nào được mở, và mỗi model chịu được gì.
 ⭐ HAI HỒ SƠ, HAI MODEL, HAI CARD (từ 12/09 — Dual-model). Mỗi hồ sơ nạp cả
    `mmproj`, nên **không còn hồ sơ vision riêng**:
 
-     qwen38-api   Qwen3.8-27B  221K ngữ cảnh, KV q4_0, text+ảnh   RTX 3090
-     qwen35-api   Qwen3.5-9B   262K ngữ cảnh, KV q8_0, text+ảnh   RTX 5060 Ti
+     qwen38-api   Qwen3.8-27B  KV q4_0, text+ảnh   RTX 3090
+     qwen35-api   Qwen3.5-9B   KV q8_0, text+ảnh   RTX 5060 Ti
+
+🔴 NGỮ CẢNH KHÔNG KHAI Ở ĐÂY NỮA (phương án C bước 3, O-16). `ModelSpec` từng
+   mang `max_context` gõ tay — bản sao thứ tư của `-c`. Nay `/v1/models` và mọi
+   trần đọc `-c` thẳng từ `llama-swap.yaml` (`vat_ly.py`). Tệp này chỉ còn trả
+   lời *model nào có thể mở, có nhìn ảnh không, mô tả gì*.
 
    `llama-swap` định tuyến theo tên model client gọi. Hai hồ sơ này ở **hai card
    khác nhau** nên chúng nằm trong VRAM **cùng lúc** — khác hẳn thời hai hồ sơ
@@ -45,8 +50,10 @@ catalog.py — model nào được mở, và mỗi model chịu được gì.
    mở khi tên nó nằm trong `LTT_LLM_MODELS`. Thêm một dòng vào đây **không** mở
    thêm gì cả.
 
-✅ `qwen38-api` 204800 / KV q4_0 — đo thật 03/09 trên đúng card đang phục vụ
-   (build 10689, prompt ngẫu nhiên nên không tái dùng prompt cache):
+✅ (LỊCH SỬ 03/09 — hồ sơ khi ấy chạy `-c 204800`, trần công bố khi ấy 169.984;
+   cả hai số đã đổi ở L-14 và KHÔNG còn là số đang chạy. `-c` hôm nay: đọc
+   `llama-swap.yaml`.) `qwen38-api` KV q4_0 — đo thật 03/09 trên đúng card đang
+   phục vụ (build 10689, prompt ngẫu nhiên nên không tái dùng prompt cache):
 
      50.000 tok  →  999,9 tok/s   ·  100.000  →  805,3  ·  130.000  →  726,5
     150.000      →  672,4         ·  165.000  →  639,1  ·  180.000  →  616,7
@@ -85,6 +92,7 @@ catalog.py — model nào được mở, và mỗi model chịu được gì.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Iterable, Optional
 
 
 @dataclass(frozen=True)
@@ -94,14 +102,8 @@ class ModelSpec:
     ten: str
     #: Hồ sơ này có nạp `mmproj` không. Quyết định request có ảnh có được nhận không.
     co_vision: bool
-    #: Trần ngữ cảnh của hồ sơ — phải bằng đúng `-c` mà `llama-swap.yaml` truyền
-    #: cho `llama-server`. Đây chỉ là chỗ **công bố**; tệp kia mới là chỗ **khởi
-    #: động tiến trình**, và `test_334_ngan_sach_ltt_llm.py` buộc hai bên khớp
-    #: (lệch thì `/v1/models` nói một đằng, model chạy một nẻo).
-    #:
-    #: ⛔ "CHỜ P5 xác nhận" là câu cũ ở đây; P5 đã đo xong 03/09 và số đã chốt.
-    max_context: int
     #: Mô tả ngắn, trả trong `/v1/models` để người dùng chọn đúng hồ sơ.
+    #: ⛔ Không ghi cỡ ngữ cảnh vào đây — `context_window` đi kèm đọc từ yaml.
     mo_ta: str
 
 
@@ -124,22 +126,12 @@ HO_SO: tuple[ModelSpec, ...] = (
     ModelSpec(
         ten="qwen38-api",
         co_vision=True,
-        # 📈 12/09: 204.800 -> 221.184 (L-14, 10_BENCHMARK_P3 §G1b). Nguon
-        #    chan ly `apps/ltt_llm/ngan_sach.CUA_SO_THEO_MODEL`; kho nay deploy
-        #    sang may B nen khong import duoc, `test_334` buoc hai dau lai.
-        max_context=221_184,
-        mo_ta="Qwen3.8-27B - coding, chat, agent, tom tat, doc anh. Ngu canh 221K.",
+        mo_ta="Qwen3.8-27B - coding, chat, agent, tom tat, doc anh.",
     ),
     ModelSpec(
         ten="qwen35-api",
         co_vision=True,
-        # 📈 12/09: ho so moi (D06/L-14). 262.144 x 3 slot VUA THOAI MAI tren
-        #    5060 Ti (§G3: VRAM 13.423, bien 2.888; §G3b voi MTP: 15.309, bien
-        #    1.002) — khac 3090, noi cung con so ay tran. Nguon chan ly
-        #    `apps/ltt_llm/ngan_sach.CUA_SO_THEO_MODEL`; kho nay deploy sang may B
-        #    nen khong import duoc, `test_334` buoc hai dau lai.
-        max_context=262_144,
-        mo_ta="Qwen3.5-9B Q6_K - nhanh, re, doc anh. Ngu canh 262K.",
+        mo_ta="Qwen3.5-9B Q6_K - nhanh, re, doc anh.",
     ),
 )
 
@@ -148,7 +140,8 @@ class KhongCoModel(LookupError):
     """Tên model không có trong danh mục, hoặc có nhưng chưa được mở."""
 
 
-def nap_catalog(models_mo: tuple[str, ...]) -> dict[str, ModelSpec]:
+def nap_catalog(models_mo: tuple[str, ...],
+                co_vat_ly: "Optional[Iterable[str]]" = None) -> dict[str, ModelSpec]:
     """Danh mục **thật sự đang mở**.
 
     `models_mo` rỗng → trả dict rỗng. Đó là hành vi đúng, không phải lỗi cấu hình:
@@ -158,9 +151,15 @@ def nap_catalog(models_mo: tuple[str, ...]) -> dict[str, ModelSpec]:
     Tên lạ trong `models_mo` bị **bỏ qua trong im lặng có chủ ý**: một lỗi chính tả
     trong biến môi trường không được phép làm cổng không khởi động nổi. Nhưng nó
     hiện ra ở `/health` (`models_la`) để người vận hành thấy.
+
+    `co_vat_ly` — tên các hồ sơ `llama-swap.yaml` khởi động được. Hồ sơ không có
+    trong đó **không mở** (fail-closed: không biết `-c`/`-np` thì không có rào
+    vật lý), và hiện ở `/health` (`models_thieu_vat_ly`).
     """
     theo_ten = {m.ten: m for m in HO_SO}
-    return {ten: theo_ten[ten] for ten in models_mo if ten in theo_ten}
+    duoc = None if co_vat_ly is None else set(co_vat_ly)
+    return {ten: theo_ten[ten] for ten in models_mo
+            if ten in theo_ten and (duoc is None or ten in duoc)}
 
 
 def ten_la(models_mo: tuple[str, ...]) -> tuple[str, ...]:

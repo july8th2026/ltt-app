@@ -67,7 +67,7 @@ def test_generator_CHUA_CHAY_LAN_NAO_thi_finally_KHONG_tra_suat():
     Python đổi hành vi này thì lớp `BackgroundTask` thành thừa, và ta muốn biết
     điều đó qua một phép kiểm đỏ chứ không qua việc đọc lại tài liệu.
     """
-    gh = GioiHan(max_dong_thoi=1, rpm=0)
+    gh = GioiHan(max_dong_thoi=1)
     suat = gh.cap_suat()[1]
     g = boc_luong(iter([b"a"] * 10), suat)
     g.close()                     # dong khi CHUA he `next()`
@@ -80,7 +80,7 @@ def test_generator_CHUA_CHAY_LAN_NAO_thi_finally_KHONG_tra_suat():
 def test_han_giu_THU_HOI_duoc_dung_cai_suat_treo_do():
     """Lưới cuối phải cứu được **chính** tình huống trên."""
     dh = Dongho()
-    gh = GioiHan(max_dong_thoi=1, rpm=0, han_giu_s=1200.0, now=dh)
+    gh = GioiHan(max_dong_thoi=1, han_giu_s=1200.0, now=dh)
     suat = gh.cap_suat()[1]
     boc_luong(iter([b"a"] * 10), suat).close()      # ro y het su co that
 
@@ -94,7 +94,7 @@ def test_han_giu_THU_HOI_duoc_dung_cai_suat_treo_do():
 def test_thu_hoi_KHONG_dung_toi_luot_dang_chay_that():
     """Chiều nguy hiểm hơn: thu hồi nhầm là cho hai lượt vào một GPU `--parallel 1`."""
     dh = Dongho()
-    gh = GioiHan(max_dong_thoi=1, rpm=0, han_giu_s=1200.0, now=dh)
+    gh = GioiHan(max_dong_thoi=1, han_giu_s=1200.0, now=dh)
     suat = gh.cap_suat()[1]
     dh.t += 600                                   # mot luot dai NHUNG THAT
     assert not _co_cho(gh)
@@ -111,7 +111,7 @@ def test_tra_suat_DA_BI_THU_HOI_khong_lam_am_bo_dem():
     âm-bộ-đếm mà `Suat` sinh ra để chặn, chỉ là quay lại bằng cửa sau.
     """
     dh = Dongho()
-    gh = GioiHan(max_dong_thoi=2, rpm=0, han_giu_s=100.0, now=dh)
+    gh = GioiHan(max_dong_thoi=2, han_giu_s=100.0, now=dh)
     cu = gh.cap_suat()[1]
     dh.t += 200
     gh.cap_suat()[1]                              # kich thu hoi + chiem 1 suat
@@ -128,7 +128,7 @@ def test_health_noi_duoc_suat_TREO_bao_lau():
     """🔴 Vì sao sự cố kéo sáu giờ: `/health` nói `dang_chay: 1` — đúng, đầy đủ,
     và **không phân biệt** một lượt chạy 3 giây với một suất treo sáu tiếng."""
     dh = Dongho()
-    gh = GioiHan(max_dong_thoi=1, rpm=0, now=dh)
+    gh = GioiHan(max_dong_thoi=1, now=dh)
     gh.cap_suat()
     dh.t += 3
     assert gh.trang_thai()["giu_lau_nhat_giay"] == pytest.approx(3.0, abs=0.2)
@@ -144,7 +144,7 @@ def test_tu_lanh_phai_ON_AO_chu_khong_im_lang(caplog):
     import logging
 
     dh = Dongho()
-    gh = GioiHan(max_dong_thoi=1, rpm=0, han_giu_s=10.0, now=dh)
+    gh = GioiHan(max_dong_thoi=1, han_giu_s=10.0, now=dh)
     gh.cap_suat()
     dh.t += 20
     with caplog.at_level(logging.WARNING, logger="llm_gateway.gioi_han"):
@@ -159,7 +159,7 @@ def test_tu_lanh_phai_ON_AO_chu_khong_im_lang(caplog):
 def test_dem_thu_hoi_KHONG_tu_reset():
     """Bộ đếm là dấu vết của bug. Reset nó là xoá bằng chứng."""
     dh = Dongho()
-    gh = GioiHan(max_dong_thoi=1, rpm=0, han_giu_s=10.0, now=dh)
+    gh = GioiHan(max_dong_thoi=1, han_giu_s=10.0, now=dh)
     for _ in range(3):
         gh.cap_suat()
         dh.t += 20

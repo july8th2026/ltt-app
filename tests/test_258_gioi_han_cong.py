@@ -1,5 +1,8 @@
 """
-test_258_gioi_han_cong — hàng rào đồng thời/tần suất của cổng VLM. (H38, V9)
+test_258_gioi_han_cong — rào đồng thời của cổng VLM. (H38, V9 → phương án C)
+
+⛔ Phần TẦN SUẤT (RPM) đã gỡ cùng chốt RPM ở cổng (phương án C bước 3, O-03):
+   hạn mức theo khách là việc của máy A. `test_1223` chốt sự vắng mặt ấy.
 
 Bốn tính chất neo ở đây, và cả bốn đều hỏng **câm**:
 
@@ -19,16 +22,11 @@ import pytest
 from llm_gateway.gioi_han import GioiHan, boc_luong
 
 
-class Dongho:
-    def __init__(self): self.t = 1000.0
-    def __call__(self): return self.t
-
-
 # ── 1. Đồng thời ────────────────────────────────────────────────────────────
 
 def test_mac_dinh_chi_mot_suat_khop_parallel_1():
     """Không giao request thứ hai cho hàng đợi vô hình của llama.cpp."""
-    gh = GioiHan(rpm=0)
+    gh = GioiHan()
     first = gh.cap_suat()[1]
     second = gh.cap_suat()[1]
     assert first is not None
@@ -36,7 +34,7 @@ def test_mac_dinh_chi_mot_suat_khop_parallel_1():
 
 
 def test_day_thi_tu_choi():
-    gh = GioiHan(max_dong_thoi=2, rpm=0)
+    gh = GioiHan(max_dong_thoi=2)
     a = gh.cap_suat()[1]
     b = gh.cap_suat()[1]
     px, c = gh.cap_suat()
@@ -47,7 +45,7 @@ def test_day_thi_tu_choi():
 
 
 def test_tra_suat_thi_mo_lai_ngay():
-    gh = GioiHan(max_dong_thoi=1, rpm=0)
+    gh = GioiHan(max_dong_thoi=1)
     a = gh.cap_suat()[1]
     assert gh.cap_suat()[1] is None
     a.tra()
@@ -67,7 +65,7 @@ def test_tra_HAI_LAN_khong_lam_hong_bo_dem():
 
     Neu bo dem tut duoi so that, cong nhan NHIEU hon han muc va chot ngung chot —
     khong loi nao duoc nem ra, no chi thoi bao ve."""
-    gh = GioiHan(max_dong_thoi=1, rpm=0)
+    gh = GioiHan(max_dong_thoi=1)
     a = gh.cap_suat()[1]
     a.tra(); a.tra(); a.tra()
     assert gh.trang_thai()["dang_chay"] == 0
@@ -77,7 +75,7 @@ def test_tra_HAI_LAN_khong_lam_hong_bo_dem():
 
 
 def test_suat_biet_no_da_tra_chua():
-    gh = GioiHan(max_dong_thoi=1, rpm=0)
+    gh = GioiHan(max_dong_thoi=1)
     a = gh.cap_suat()[1]
     assert a.da_tra is False
     a.tra()
@@ -89,63 +87,24 @@ def test_khong_co_cua_nao_khac_de_chiem_suat():
     assert not hasattr(GioiHan(max_dong_thoi=1), "xin_vao")
 
 
-# ── 3. Tần suất: cửa sổ TRƯỢT ───────────────────────────────────────────────
+# ── 3. Không còn chốt tần suất: nhiều lượt NỐI TIẾP không bao giờ bị 429 ─────
 
-def test_vuot_rpm_thi_tu_choi():
-    dh = Dongho()
-    gh = GioiHan(max_dong_thoi=99, rpm=3, now=dh)
-    for _ in range(3):
-        gh.cap_suat()[1].tra()
-    px, s = gh.cap_suat()
-    assert s is None and "moi phut" in px.ly_do
-
-
-def test_cua_so_TRUOT_chu_khong_phai_o_co_dinh():
-    """O co dinh cho phep gap doi han muc quanh ranh gioi phut — chuyen nho voi
-    mot API web, chuyen that voi mot GPU chi chay duoc mot luot mot luc."""
-    dh = Dongho()
-    gh = GioiHan(max_dong_thoi=99, rpm=2, now=dh)
-    gh.cap_suat()[1].tra()          # t=1000
-    dh.t += 30
-    gh.cap_suat()[1].tra()          # t=1030
-    assert gh.cap_suat()[1] is None
-    dh.t += 31                      # t=1061: moc t=1000 da qua 60s, moc t=1030 chua
-    assert gh.cap_suat()[1] is not None
-    assert gh.cap_suat()[1] is None, "chi mot moc het han, khong phai ca hai"
-
-
-def test_rpm_0_la_tat_chot_tan_suat():
-    gh = GioiHan(max_dong_thoi=99, rpm=0)
+def test_KHONG_con_chot_tan_suat_luot_noi_tiep_luon_qua():
+    """O-03: RPM 120 ở cổng làm lượt thứ 121 trong 60 s ăn 429 SAU 200 (máy A
+    không có luật tương ứng). Rào vật lý chỉ đếm lượt ĐANG chạy."""
+    gh = GioiHan(max_dong_thoi=1)
     for _ in range(500):
-        gh.cap_suat()[1].tra()
-
-
-def test_thu_lai_sau_khop_voi_luc_moc_het_han():
-    dh = Dongho()
-    gh = GioiHan(max_dong_thoi=99, rpm=1, now=dh)
-    gh.cap_suat()[1].tra()
-    dh.t += 20
-    px, _ = gh.cap_suat()
-    assert 35 <= px.thu_lai_sau_s <= 45, px.thu_lai_sau_s
-
-
-# ── 4. Đồng thời chặn TRƯỚC tần suất ────────────────────────────────────────
-
-def test_day_dong_thoi_KHONG_dot_han_muc_phut():
-    """Bi tu choi vi day thi khong duoc tinh la mot luot da dung."""
-    gh = GioiHan(max_dong_thoi=1, rpm=10)
-    a = gh.cap_suat()[1]
-    for _ in range(50):
-        assert gh.cap_suat()[1] is None
-    a.tra()
-    assert gh.trang_thai()["trong_phut_qua"] == 1, "50 lan bi tu choi da dot han muc"
+        s = gh.cap_suat()[1]
+        assert s is not None, "luot noi tiep bi tu choi - con chot tan suat"
+        s.tra()
+    assert "rpm" not in gh.trang_thai() and "trong_phut_qua" not in gh.trang_thai()
 
 
 # ── 5. An toàn khi nhiều luồng ──────────────────────────────────────────────
 
 def test_nhieu_luong_khong_cap_qua_han_muc():
     import threading
-    gh = GioiHan(max_dong_thoi=4, rpm=0)
+    gh = GioiHan(max_dong_thoi=4)
     duoc = []
     khoa = threading.Lock()
 
@@ -196,14 +155,14 @@ def _than(**ghi_de):
         json=_than(messages=[{"role": "user", "content": "x" * 4_000_000}]))),
 ])
 def test_moi_duong_ra_deu_tra_suat(mo_ta, goi):
-    gh = GioiHan(max_dong_thoi=1, rpm=0)
+    gh = GioiHan(max_dong_thoi=1)
     c, _ = _client(gh=gh)
     goi(c)
     assert _co_cho(gh), f"duong ra {mo_ta!r} quen tra suat -> 429 vinh vien"
 
 
 def test_duong_502_thuong_nguon_hong_cung_tra_suat():
-    gh = GioiHan(max_dong_thoi=1, rpm=0)
+    gh = GioiHan(max_dong_thoi=1)
     c, _ = _client(up=FakeUpstream(ma=503, than=b"chet"), gh=gh)
     assert c.post("/v1/chat/completions", json=_than()).status_code == 502
     assert _co_cho(gh)
@@ -211,7 +170,7 @@ def test_duong_502_thuong_nguon_hong_cung_tra_suat():
 
 def test_duong_429_ban_cung_tra_suat():
     """Bi trong tai tu choi thi suat da cap phai duoc nha ra."""
-    gh = GioiHan(max_dong_thoi=1, rpm=0)
+    gh = GioiHan(max_dong_thoi=1)
     c, _ = _client(tt=_tt_ban(), gh=gh)
     assert c.post("/v1/chat/completions", json=_than()).status_code == 429
     assert _co_cho(gh), "429 ban khong tra suat -> lan sau 429 vi mot ly do KHAC"
@@ -220,7 +179,7 @@ def test_duong_429_ban_cung_tra_suat():
 def test_cong_day_tra_429_chu_KHONG_phai_5xx():
     """⛔ D-005: may A coi 429 la *ban* va di tiep; coi 5xx la *hong* va danh dau
     loi cho khoa. Nham cho nay thi khoa `ltt_llm` tu tat sau 5 lan dong khach."""
-    gh = GioiHan(max_dong_thoi=1, rpm=0)
+    gh = GioiHan(max_dong_thoi=1)
     gh.cap_suat()                      # chiem het, khong tra
     c, up = _client(gh=gh)
     r = c.post("/v1/chat/completions", json=_than())
@@ -240,7 +199,7 @@ def test_cong_day_tra_429_chu_KHONG_phai_5xx():
 
 def test_boc_luong_GIU_suat_toi_khi_luong_het():
     """🔴 `StreamingResponse` trả về NGAY; token còn chảy hàng chục giây sau đó."""
-    gh = GioiHan(max_dong_thoi=1, rpm=0)
+    gh = GioiHan(max_dong_thoi=1)
     suat = gh.cap_suat()[1]
     g = boc_luong(iter([b"a", b"b", b"c"]), suat)
 
@@ -259,7 +218,7 @@ def test_boc_luong_khach_NGAT_giua_chung_van_tra_suat():
     Khách đóng kết nối giữa chừng thì Starlette gọi `.aclose()`, Python ném
     `GeneratorExit` vào ngay chỗ `yield`, và nhánh sau vòng lặp KHÔNG chạy. Một
     khách hay bấm Stop sẽ rò hết số suất trong vài phút — 429 vĩnh viễn, GPU rảnh."""
-    gh = GioiHan(max_dong_thoi=1, rpm=0)
+    gh = GioiHan(max_dong_thoi=1)
     g = boc_luong(iter([b"a"] * 500), gh.cap_suat()[1])
     next(g)
     assert not _co_cho(gh)
@@ -273,7 +232,7 @@ def test_boc_luong_thuong_nguon_no_giua_chung_van_tra_suat():
         yield b"a"
         raise ConnectionError("thuong nguon dut")
 
-    gh = GioiHan(max_dong_thoi=1, rpm=0)
+    gh = GioiHan(max_dong_thoi=1)
     g = boc_luong(vo(), gh.cap_suat()[1])
     next(g)
     with pytest.raises(ConnectionError):
@@ -284,7 +243,7 @@ def test_boc_luong_thuong_nguon_no_giua_chung_van_tra_suat():
 def test_sse_qua_HTTP_tra_suat_sau_khi_xong():
     """Đo được gì thì neo nấy: qua HTTP chỉ khẳng định được "xong thì sạch".
     Phần "giữa luồng" do ba test ngay trên lo."""
-    gh = GioiHan(max_dong_thoi=1, rpm=0)
+    gh = GioiHan(max_dong_thoi=1)
     c, _ = _client(gh=gh)
     r = c.post("/v1/chat/completions", json=_than(stream=True))
     assert r.status_code == 200
@@ -292,7 +251,7 @@ def test_sse_qua_HTTP_tra_suat_sau_khi_xong():
 
 
 def test_health_bao_trang_thai_hang_rao():
-    gh = GioiHan(max_dong_thoi=3, rpm=7)
+    gh = GioiHan(max_dong_thoi=3)
     c, _ = _client(gh=gh)
     g = c.get("/health").json()["gioi_han"]
-    assert g["max_dong_thoi"] == 3 and g["rpm"] == 7 and g["dang_chay"] == 0
+    assert g["max_dong_thoi"] == 3 and g["dang_chay"] == 0 and "rpm" not in g

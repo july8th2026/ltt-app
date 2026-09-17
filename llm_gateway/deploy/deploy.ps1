@@ -18,7 +18,13 @@ param(
     [string]$User    = "lengo",
     [string]$Khoa    = "$env:USERPROFILE\.ssh\nexus_b",
     [string]$Goc     = "H:/LTT_LLM",
-    [switch]$BoQuaVenv                      # chi chep ma, khong dung venv lai
+    [switch]$BoQuaVenv,                     # chi chep ma, khong dung venv lai
+    # Cho phep ghi de llama-swap.yaml tren may B khi no LECH ban trong kho
+    # (vd co sua tay chua dua vao kho). Mac dinh: DUNG LAI va noi ro.
+    [switch]$GhiDeYamlLech,
+    # Chi deploy MA cong, KHONG cham llama-swap.yaml tren may B (phuong an C buoc 3:
+    # yaml khong doi so; cong doc tep DANG co tren B). Bo qua ca buoc 1c.
+    [switch]$BoQuaYaml
 )
 
 $ErrorActionPreference = "Stop"
@@ -115,6 +121,62 @@ if (($coBan -join "") -match "CO") {
     Dat "chua co ban nao tren may B - khong can chup"
 }
 
+# --- 1c. llama-swap.yaml tren may B co LECH kho khong (TRUOC khi chep gi) -----
+#
+# !! YAML TREN MAY B LECH KHO = DUNG LAI (phuong an C, R-8 / O-19).
+#
+#    17/09: `/running` may B co `--no-cache-idle-slots` ma yaml trong kho KHONG co.
+#    Chep de len la XOA co do tren dia AM THAM - co hieu luc o lan restart
+#    LTTLlamaSwap ke tiep, khong ai noi voi lan deploy nay. Va tu buoc 3 cong LLM
+#    DOC tep nay luc khoi dong (`llm_gateway/vat_ly.py`), nen tep tren dia la ca
+#    rao vat ly cua cong. Lech thi phai co nguoi quyet: dua thay doi vao kho
+#    (buoc 4) hoac chay lai voi -GhiDeYamlLech.
+#
+# ! Dat TRUOC buoc 2 co chu y: dung lai o day thi chua tep nao tren B bi doi.
+$yamlKho = Join-Path $PSScriptRoot "llama-swap.yaml"
+$hashYamlKho = (Get-FileHash -Algorithm SHA256 -LiteralPath $yamlKho).Hash.ToLower()
+$yamlB = "$gW\gateway\llama-swap.yaml"
+if ($BoQuaYaml) {
+    Buoc "1c. llama-swap.yaml - BO QUA (-BoQuaYaml): khong doi chieu, khong chep"
+    $coYamlB = @("BO_QUA")
+} else {
+    Buoc "1c. Doi chieu llama-swap.yaml tren may B voi kho"
+    $coYamlB = ChayTrenB "if exist $yamlB (echo CO) else (echo KHONG)"
+}
+if ($BoQuaYaml) {
+    $kiemYamlB = ChayTrenB "if exist $yamlB (echo CO) else (echo KHONG)"
+    if (-not (($kiemYamlB -join "") -match "CO")) {
+        # Cong doc tep nay luc khoi dong; khong co thi cong TU CHOI KHOI DONG.
+        Loi "-BoQuaYaml nhung may B KHONG co $yamlB - cong se khong khoi dong duoc"; exit 1
+    }
+    Dat "may B co $yamlB - cong se doc tep nay"
+} elseif (($coYamlB -join "") -match "CO") {
+    $raHash = ChayTrenB "certutil -hashfile $yamlB SHA256"
+    $hashYamlB = ""
+    foreach ($d in $raHash) {
+        $s = ($d -replace '\s', '').ToLower()
+        if ($s -match '^[0-9a-f]{64}$') { $hashYamlB = $s }
+    }
+    if (-not $hashYamlB) {
+        Loi "khong doc duoc hash llama-swap.yaml tren may B"; exit 1
+    }
+    if ($hashYamlB -ne $hashYamlKho) {
+        if ($GhiDeYamlLech) {
+            Canh "llama-swap.yaml tren may B LECH kho - GHI DE theo -GhiDeYamlLech (ban cu nam trong ban chup 1b)."
+        } else {
+            Loi "llama-swap.yaml tren may B LECH kho (B $hashYamlB, kho $hashYamlKho)."
+            Note "    Co the co sua tay tren may B chua dua vao kho (vd --no-cache-idle-slots, O-19)."
+            Note "    So: ssh ... type $yamlB  voi  llm_gateway\deploy\llama-swap.yaml"
+            Note "    Dua thay doi vao kho, hoac chay lai voi -GhiDeYamlLech neu chu y ghi de."
+            exit 1
+        }
+    } else {
+        Dat "llama-swap.yaml tren may B khop kho"
+    }
+} else {
+    Dat "chua co llama-swap.yaml tren may B"
+}
+
 # --- 2. Chep ma nguon ----------------------------------------------------------
 # `llm_gateway` can `render_gateway.busy` (D-013/D-022 - khong chep lai 275 dong do).
 # Hai goi nay deploy CUNG NHAU, do la giao uoc.
@@ -205,10 +267,15 @@ if ($hashTemplateThuc -ne $hashTemplate) {
 if ($LASTEXITCODE -ne 0) { Loi "scp chat template that bai"; exit 1 }
 Dat "chat template v22.5 (hash da khoa)"
 
-& scp.exe -i $Khoa -o BatchMode=yes -q (Join-Path $PSScriptRoot "llama-swap.yaml") `
-    "${User}@${MayB}:$Goc/gateway/llama-swap.yaml"
-if ($LASTEXITCODE -ne 0) { Loi "scp llama-swap.yaml that bai"; exit 1 }
-Dat "llama-swap.yaml"
+# Da doi chieu o buoc 1c: toi day tep tren B khop kho, chua co, hoac duoc phep ghi de.
+if ($BoQuaYaml) {
+    Note "    llama-swap.yaml KHONG chep (-BoQuaYaml)."
+} else {
+    & scp.exe -i $Khoa -o BatchMode=yes -q $yamlKho `
+        "${User}@${MayB}:$Goc/gateway/llama-swap.yaml"
+    if ($LASTEXITCODE -ne 0) { Loi "scp llama-swap.yaml that bai"; exit 1 }
+    Dat "llama-swap.yaml"
+}
 
 # !! CHEP MOT TEP CAU HINH MA KHONG RESTART THI TEP AY KHONG PHAI CAU HINH.
 #
@@ -272,6 +339,38 @@ Buoc "5. C:\ProgramData\LTTLlm\gateway.env"
 $envDir = "C:\ProgramData\LTTLlm"
 ChayTrenB "if not exist $envDir mkdir $envDir" | Out-Null
 
+# !! HAI SO CHINH SACH DOC TU `apps/ltt_llm/ngan_sach.py`, KHONG GO TAY (phuong an C).
+#
+#    Tran vao cua cong = `-c(llama-swap.yaml) - max_out - DEM_UOC`, cung cong thuc
+#    voi may A. `-c`/`-np` cong doc thang tu yaml; `max_out`/`DEM_UOC` la chinh
+#    sach cua may A, nen script nay HOI ngan_sach qua `xuat_tham_so_a.py` (mot tep
+#    .py - CLAUDE.md luat 6) thay vi go so. Ban truoc go tay tran vao cua 3.8 cho
+#    CA HAI model (O-02, sai cho 3.5) va tran ra o ba cho.
+$pyA = (Get-Command python -ErrorAction SilentlyContinue)
+if (-not $pyA) { Loi "khong thay python tren may A de doc ngan_sach"; exit 1 }
+$cu = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+try {
+    $raA = & $pyA.Source (Join-Path $PSScriptRoot "xuat_tham_so_a.py") 2>&1
+} finally {
+    $ErrorActionPreference = $cu
+}
+if ($LASTEXITCODE -ne 0) { Loi "xuat_tham_so_a.py that bai"; $raA | Write-Host; exit 1 }
+$thamSoA = @{}
+foreach ($d in $raA) {
+    if ("$d" -match '^(LTT_LLM_MAX_OUTPUT_TOKENS|LTT_LLM_DEM_UOC)=([0-9]+)$') {
+        $thamSoA[$Matches[1]] = $Matches[2]
+    }
+}
+if ($thamSoA.Count -ne 2) { Loi "xuat_tham_so_a.py khong in du hai tham so"; $raA | Write-Host; exit 1 }
+Note ("    tu ngan_sach: " + (($thamSoA.GetEnumerator() | Sort-Object Key | ForEach-Object { "$($_.Key)=$($_.Value)" }) -join ", "))
+
+# !! BIEN DA GO (phuong an C buoc 3): cong khong con doc. Xoa khoi gateway.env de
+#    tep khong noi mot dieu ma ma khong lam. Khop TIEN TO de bat ca dang `__<model>`.
+#    Lich su: MAX_DONG_THOI ghim bang 1 tung bop may B con mot phan ba nang luc sau
+#    khi yaml len `-np 3` (Dual-model 4.2); nay so chuoi la `-np` doc tu yaml.
+$tienToDaGo = '^(LTT_LLM_MAX_INPUT_TOKENS|LTT_LLM_MAX_DONG_THOI|LTT_LLM_TOKEN_POOL|LTT_LLM_RPM)'
+
 $co = ChayTrenB "if exist $envDir\gateway.env (echo CO) else (echo KHONG)"
 if (($co -join "") -match "CO") {
     # Cap van hanh khong phai bi mat: migrate tai cho, giu nguyen token/model.
@@ -281,40 +380,31 @@ if (($co -join "") -match "CO") {
     & scp.exe -i $Khoa -o BatchMode=yes -q "${User}@${MayB}:C:/ProgramData/LTTLlm/gateway.env" $tamEnv
     if ($LASTEXITCODE -ne 0) { Loi "scp gateway.env ve de migrate that bai"; exit 1 }
     $dong = [IO.File]::ReadAllLines($tamEnv)
-    $daInput = $false
-    $daOutput = $false
-    # !! GO HAN `LTT_LLM_MAX_DONG_THOI` KHOI gateway.env (Dual-model 4.2).
-    #
-    #    Truoc 12/09 script nay ghim `=1`, va do la DUNG luc ay: llama-swap chay
-    #    `--parallel 1`, nen luot thu hai chi thanh mot ket noi treo trong mot
-    #    hang doi khong ai nhin thay. Task 3.3 doi yaml sang `-np 3` cho CA HAI
-    #    ho so, nen tu luc ay con `=1` bop may B xuong mot phan ba nang luc - im
-    #    lang, vi khong gi bao loi.
-    #
-    #    ! Va no GHI DE ca cau hinh dung: `config.py` mac dinh 3, khop
-    #      `ngan_sach.SO_SLOT_MAY_B` (test_1201 chot dieu do). Mot dong trong
-    #      gateway.env thang mot mac dinh dung la mot nguon chan ly thu hai, nen
-    #      cach sua khong phai doi `1` thanh `3` ma la XOA dong do: so nay chi
-    #      con MOT cho khai.
+    $daGhi = @{}
+    $daGo = @()
     $dong = @($dong | ForEach-Object {
-        if ($_ -match '^LTT_LLM_MAX_INPUT_TOKENS=') {
-            $daInput = $true
-            'LTT_LLM_MAX_INPUT_TOKENS=186368'
-        } elseif ($_ -match '^LTT_LLM_MAX_OUTPUT_TOKENS=') {
-            $daOutput = $true
-            'LTT_LLM_MAX_OUTPUT_TOKENS=32768'
-        } elseif ($_ -match '^LTT_LLM_MAX_DONG_THOI=') {
-            # Bo dong nay: so slot doc tu `config.py` (nguon chan ly duy nhat).
+        if ($_ -match $tienToDaGo) {
+            $daGo += ($_ -split '=', 2)[0]
+        } elseif ($_ -match '^(LTT_LLM_MAX_OUTPUT_TOKENS|LTT_LLM_DEM_UOC)=') {
+            $k = $Matches[1]
+            $daGhi[$k] = $true
+            "$k=$($thamSoA[$k])"
         } else { $_ }
     })
-    if (-not $daInput) { $dong += 'LTT_LLM_MAX_INPUT_TOKENS=186368' }
-    if (-not $daOutput) { $dong += 'LTT_LLM_MAX_OUTPUT_TOKENS=32768' }
+    foreach ($k in ($thamSoA.Keys | Sort-Object)) {
+        if (-not $daGhi.ContainsKey($k)) { $dong += "$k=$($thamSoA[$k])" }
+    }
     [IO.File]::WriteAllText($tamEnv, ($dong -join "`n") + "`n", (New-Object Text.UTF8Encoding($false)))
     & scp.exe -i $Khoa -o BatchMode=yes -q $tamEnv "${User}@${MayB}:C:/ProgramData/LTTLlm/gateway.env"
     $rc = $LASTEXITCODE
     Remove-Item $tamEnv -Force -ErrorAction SilentlyContinue
     if ($rc -ne 0) { Loi "scp gateway.env da migrate that bai"; exit 1 }
-    Dat "gateway.env da migrate input 186368, output 32768, GO MAX_DONG_THOI (giu token/model)"
+    Dat "gateway.env da migrate (giu token/model); tham so tu ngan_sach da ghi"
+    if ($daGo.Count -gt 0) {
+        Canh ("da GO bien khong con tac dung: " + ($daGo -join ", "))
+        Note "    nssm NUONG env luc CAI: cac bien nay con trong moi truong dich vu (vo hai,"
+        Note "    cong chi canh bao). Muon sach han: chay lai cai_dat_dich_vu.ps1 tren may B."
+    }
 } else {
     # Token sinh mot lan, ngau nhien. No KHONG phai bi mat cua nen tang - no chi
     # bao ve cong VLM tren LAN. Nhung van khong duoc in ra log.
@@ -330,12 +420,11 @@ if (($co -join "") -match "CO") {
         "LTT_LLM_UPSTREAM_URL=http://127.0.0.1:8280",
         "# Fail-closed (Q92): rong = KHONG mo model nao. Mo bang cach liet ke ten.",
         "LTT_LLM_MODELS=",
-        "# Tran do duoc o P5 (SO_DO_P2_P6.md). Doi thi phai do lai.",
-        "LTT_LLM_MAX_INPUT_TOKENS=186368",
-        "LTT_LLM_MAX_OUTPUT_TOKENS=32768",
-        "# So slot: KHONG khai o day. Nguon chan ly la `llm_gateway/config.py`",
-        "# (mac dinh 3, khop `ngan_sach.SO_SLOT_MAY_B` - test_1201 chot). Mot dong",
-        "# o day se thang mac dinh do va thanh nguon chan ly thu hai.",
+        "# Hai so duoi day doc tu apps/ltt_llm/ngan_sach.py luc deploy - KHONG sua tay.",
+        "LTT_LLM_MAX_OUTPUT_TOKENS=$($thamSoA['LTT_LLM_MAX_OUTPUT_TOKENS'])",
+        "LTT_LLM_DEM_UOC=$($thamSoA['LTT_LLM_DEM_UOC'])",
+        "# So chuoi (-np) va be KV (-c): KHONG khai o day. Cong doc thang tu",
+        "# llama-swap.yaml canh goi llm_gateway (llm_gateway/vat_ly.py).",
         "LTT_LLM_MAX_IMAGES=4",
         "# Nen do duoc: desktop 1515-1612 MiB, ComfyUI thuong tru 6211-16620 MiB.",
         "LTT_LLM_VRAM_SACH_MB=2500",

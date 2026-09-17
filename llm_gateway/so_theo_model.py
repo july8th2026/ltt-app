@@ -4,8 +4,10 @@ so_theo_model.py — **một sổ cho MỖI model**. Tải 3.8 không bao giờ 
 🔴 VÌ SAO KHÔNG THỂ DÙNG MỘT `GioiHan` CHUNG. Từ 09/2026 cổng này phục vụ hai
    model chạy trên **hai card khác nhau** của máy B:
 
-     qwen38-api   RTX 3090     -c 221184  -np 3   (mmproj + draft-mtp)
-     qwen35-api   RTX 5060 Ti  -c 262144  -np 3   (mmproj + draft-mtp)
+     qwen38-api   RTX 3090     `-c`/`-np` của hồ sơ trong `llama-swap.yaml`
+     qwen35-api   RTX 5060 Ti  `-c`/`-np` của hồ sơ trong `llama-swap.yaml`
+
+   (⛔ không chép số vào đây — `SoTheoModel.tu_vat_ly` đọc thẳng tệp đó.)
 
    Một sổ chung nói *"đang chạy 3/3, đầy"* trong khi **cả ba** lượt ấy nằm trên
    3090 và 5060 Ti hoàn toàn rảnh. Tức nó từ chối một lượt mà phần cứng dư sức
@@ -13,7 +15,7 @@ so_theo_model.py — **một sổ cho MỖI model**. Tải 3.8 không bao giờ 
    đám mây trong khi card thứ hai ngồi không.
 
    Chiều ngược lại tệ hơn: gộp hai bể KV thành một con số thì bể của 3090
-   (221.184) được tính bằng bể lớn hơn, và khi KV cạn thì
+   (nhỏ hơn) được tính bằng bể lớn hơn, và khi KV cạn thì
    `server-context.cpp:3688-3724` **huỷ MỌI slot** chứ không chỉ slot gây ra —
    một khách làm rơi lượt của hai khách khác. Xem `gioi_han.token_pool`.
 
@@ -47,7 +49,6 @@ class SoTheoModel:
     """
 
     def __init__(self, models: tuple, *, max_dong_thoi: int, token_pool: int,
-                 rpm: int = 120,
                  dong_thoi_rieng: Optional[dict] = None,
                  pool_rieng: Optional[dict] = None,
                  san_vram_mb: Optional[dict] = None,
@@ -60,11 +61,29 @@ class SoTheoModel:
         for m in models:
             self._so[m] = GioiHan(
                 max_dong_thoi=int(dong_thoi_rieng.get(m, max_dong_thoi)),
-                rpm=rpm,
                 token_pool=int(pool_rieng.get(m, token_pool)),
                 han_giu_s=han_giu_s, now=now)
         self._san = {k: int(v) for k, v in (san_vram_mb or {}).items()}
         self._doc_vram = doc_vram_trong
+
+    # ── Đường phục vụ thật: dựng thẳng từ `llama-swap.yaml` ─────────────────
+    @classmethod
+    def tu_vat_ly(cls, vat_ly: dict, *,
+                  san_vram_mb: Optional[dict] = None,
+                  doc_vram_trong: Optional[Callable[[str], Optional[int]]] = None,
+                  han_giu_s: float = HAN_GIU_MAC_DINH_S,
+                  now: Callable[[], float] = time.monotonic) -> "SoTheoModel":
+        """Một sổ mỗi hồ sơ: số chuỗi = `-np`, bể KV = `-c` (phương án C, bước 3).
+
+        ⭐ Bể là `-c`, KHÔNG phải `token_budget` của máy A: cổng là **rào vật
+           lý**. Biên chính sách (`bien_pool`) thuộc máy A; lặp lại nó ở đây là
+           hai nơi quyết một điều (kế hoạch §3.3 mục 2).
+        """
+        return cls(tuple(vat_ly), max_dong_thoi=1, token_pool=0,
+                   dong_thoi_rieng={m: int(v.np) for m, v in vat_ly.items()},
+                   pool_rieng={m: int(v.ctx) for m, v in vat_ly.items()},
+                   san_vram_mb=san_vram_mb, doc_vram_trong=doc_vram_trong,
+                   han_giu_s=han_giu_s, now=now)
 
     # ── Dựng từ một sổ CHUNG — chỉ để làm ĐỐI CHỨNG ─────────────────────────
     @classmethod
@@ -89,8 +108,8 @@ class SoTheoModel:
         return s
 
     # ── Cổng vào ────────────────────────────────────────────────────────────
-    def cap_suat(self, model: str, token_dat_truoc: int = 0,
-                 la_whale: bool = False) -> tuple[PhanXuGioiHan, Optional[Suat]]:
+    def cap_suat(self, model: str,
+                 token_dat_truoc: int = 0) -> tuple[PhanXuGioiHan, Optional[Suat]]:
         """Xin suất **trên sổ của đúng model này**.
 
         Thứ tự: sàn VRAM ⇒ rồi mới tới sổ. Đảo lại là chiếm một suất rồi từ chối,
@@ -108,15 +127,16 @@ class SoTheoModel:
         if px_san is not None:
             return (px_san, None)
 
-        return gh.cap_suat(token_dat_truoc, la_whale)
+        return gh.cap_suat(token_dat_truoc)
 
     def _kiem_san_vram(self, model: str) -> Optional[PhanXuGioiHan]:
         """Sàn VRAM của card chạy `model`. `None` = qua cửa.
 
         🔴 SÀN VRAM LÀ OPT-IN (spec §22, D06). L-21 đã tắt mặc định cho 5060 Ti
            sau khi số đo production chứng minh nó tự khóa Qwen 3.5 mà không có
-           OOM. 3090 cũng không có sàn: nó đã có `don_dep` + trọng tài riêng cho
-           cuộc tranh với ComfyUI, nên thêm sàn ở đó là ba chốt cho một card.
+           OOM. 3090 cũng không có sàn: cuộc tranh với ComfyUI do trọng tài
+           residency ở máy A phân xử (D01 B; `don_dep.py` đã xoá ở 5.4b), và
+           chốt VRAM của nó là `Config.vram_sach_mb` tại `/v1/residency/nap`.
 
            ⛔ Con số nằm ở `config.py` và lý lẽ nằm ở L-18. Đừng chép sang đây.
 
@@ -152,7 +172,7 @@ class SoTheoModel:
         return tuple(sorted(self._so))
 
     def trang_thai(self) -> dict:
-        """`{model: {dang_chay, max_dong_thoi, token_dat, token_pool, whale, …}}`.
+        """`{model: {dang_chay, max_dong_thoi, token_dat, token_pool, …}}`.
 
         Tên khoá giữ đúng tên của `GioiHan.trang_thai()` — `/health` của cổng đã
         công bố chúng và `tools/soi_su_co.py` cùng `test_334` đang đọc. Thêm một
@@ -169,8 +189,8 @@ class SoTheoModel:
     def trang_thai_chung(self) -> dict:
         """Khối `gioi_han` của `/health`: tổng + khối theo model.
 
-        ⚠️ `max_dong_thoi`/`rpm` là `None` khi các model **không** khai cùng một
-           số. Một con số gộp ở đó sẽ trả lời sai đúng câu mà `test_334` hỏi
+        ⚠️ `max_dong_thoi` là `None` khi các model **không** khai cùng một số
+           `-np`. Một con số gộp ở đó sẽ trả lời sai đúng câu mà `test_334` hỏi
            ("máy A có cho nhiều việc song song hơn máy B phục vụ được không"):
            trần là trần **của từng model**, nên khi hai model khác nhau thì không
            tồn tại một con số đúng — và bịa ra một con số thì tệ hơn là nói
@@ -178,13 +198,11 @@ class SoTheoModel:
         """
         theo = self.trang_thai()
         maxs = {t["max_dong_thoi"] for t in theo.values()}
-        rpms = {t["rpm"] for t in theo.values()}
         return {
             # Tổng: dùng để bắt SUẤT RÒ (`soi_su_co.py`) — hết việc mà không về 0
             # thì có suất treo, và câu đó đúng với cả hai model cộng lại.
             "dang_chay": sum(t["dang_chay"] for t in theo.values()),
             "max_dong_thoi": maxs.pop() if len(maxs) == 1 else None,
-            "rpm": rpms.pop() if len(rpms) == 1 else None,
             "giu_lau_nhat_giay": max((t["giu_lau_nhat_giay"] for t in theo.values()),
                                      default=0.0),
             "da_thu_hoi": sum(t["da_thu_hoi"] for t in theo.values()),
@@ -192,17 +210,7 @@ class SoTheoModel:
         }
 
 
-def token_dat_truoc(token_vao: int, token_ra: int) -> int:
-    """Token KV một lượt chiếm ở **ĐỈNH** = vào + ra tối đa.
-
-    🔴 PHẢI LÀ ĐỈNH, KHÔNG PHẢI ĐẦU VÀO. KV lớn dần theo từng token sinh ra, nên
-       một lượt "vào 200K, xin ra 32K" chiếm 232K token **trước khi nó xong**.
-       Đặt chỗ theo đầu vào thôi là để bể vỡ ở giữa lượt — và lúc bể vỡ thì
-       llama.cpp huỷ **mọi** slot, kể cả các lượt đã vào từ trước và đang gần
-       xong.
-
-    ⭐ Tối thiểu 1: một yêu cầu rỗng vẫn chiếm một slot thật, và 0 sẽ rơi vào
-       nhánh "suất vô hình" của `gioi_han._xin_vao` ⇒ 429 cho một yêu cầu hợp lệ.
-       Đường ấy dành cho **nối dây sai**, không dành cho một prompt ngắn.
-    """
-    return max(1, int(token_vao) + max(0, int(token_ra)))
+# ⛔ `token_dat_truoc(vào, ra)` ĐÃ GỠ (phương án C, bước 3). Phép giữ chỗ nay là
+#    `vat_ly.token_giu` — CÙNG công thức với `tham_so_da_luot.luat_cho` của máy A
+#    (có DEM_UOC, kẹp ra theo chỗ còn), và dùng nguyên số `X-LTT-Token-Dat` khi A
+#    khai. Hai hàm cho cùng một câu hỏi là đúng khuôn "hai chỗ khai một điều".

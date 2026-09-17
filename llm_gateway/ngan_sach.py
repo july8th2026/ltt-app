@@ -71,7 +71,7 @@ model đang nạp, năm loại nội dung:
 """
 from __future__ import annotations
 
-import base64
+import json
 import re
 from dataclasses import dataclass, replace
 from typing import Any
@@ -162,10 +162,11 @@ class KetQuaDo:
         return self.token_van_ban + self.token_anh
 
 
-def _uoc_token(s: str) -> int:
-    if not s:
+def _uoc_token_tong(doan: "list[str] | tuple[str, ...]") -> int:
+    ky_tu = sum(len(s) for s in doan if s)
+    if not ky_tu:
         return 0
-    return int(len(s) / KY_TU_MOI_TOKEN) + 1
+    return int(ky_tu / KY_TU_MOI_TOKEN) + 1
 
 
 def _do_anh(url: str) -> int:
@@ -259,18 +260,28 @@ def do_yeu_cau(body: dict[str, Any]) -> KetQuaDo:
                     _duyet_noi_dung(tin, van_ban, anh)
 
     # Mô tả tool cũng chiếm ngữ cảnh, và với Codex thì chúng **không nhỏ**.
+    #
+    # ⭐ ĐẾM NGUYÊN JSON, CÙNG CÁCH MÁY A (`runtime_noi_bo/luong.uoc_tin_nhan`:
+    #    `json.dumps(tools, ensure_ascii=False)`). Bản cũ chỉ gom CHUỖI trong schema
+    #    — bỏ khoá, ngoặc, dấu phẩy — nên với vài chục schema của một CLI agent B
+    #    ước thấp hơn A hàng nghìn token. Vắng `X-LTT-Token-Dat` thì phép giữ chỗ
+    #    của B phải ≥ A − DEM_UOC (kế hoạch §3.3 mục 3); hai bộ ước khác hình dạng
+    #    thì bất đẳng thức ấy chỉ đúng tình cờ.
     for khoa in ("tools", "functions"):
         gt = body.get(khoa)
-        if isinstance(gt, list):
-            for t in gt:
-                _duyet_noi_dung(t, van_ban, anh)
+        if isinstance(gt, list) and gt:
+            van_ban.append(json.dumps(gt, ensure_ascii=False))
 
     byte_lon_nhat = max((_do_anh(u) for u in anh), default=0)
     # Ảnh nào KHÔNG mở đầu bằng `data:...;base64,` thì là một địa chỉ để ai đó đi
     # tải — và bên đi tải sẽ là máy B. Gom lại để `kiem_tra` từ chối.
     tu_xa = tuple(u for u in anh if u and not _DATA_URL.match(u))
     return KetQuaDo(
-        token_van_ban=sum(_uoc_token(s) for s in van_ban),
+        # ⭐ Làm tròn MỘT lần trên tổng ký tự — cùng cách máy A
+        #    (`apps/ltt_llm/features.uoc_token_vao`). Làm tròn từng đoạn cộng thêm
+        #    +1 mỗi đoạn, tức B ước CAO hơn A đúng bằng số đoạn — và một lượt A vừa
+        #    kiểm dưới trần có thể bị B trả 413 sau 200 (A ⊆ B, kế hoạch §3.1).
+        token_van_ban=_uoc_token_tong(van_ban),
         so_anh=len(anh),
         token_anh=len(anh) * TOKEN_MOI_ANH,
         byte_anh_lon_nhat=byte_lon_nhat,

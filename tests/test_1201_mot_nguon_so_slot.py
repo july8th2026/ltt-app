@@ -94,12 +94,22 @@ def test_yaml_so_slot_cua_TUNG_ho_so_khop_so_slot():
             f"{ngan_sach.SO_SLOT_MAY_B}")
 
 
-def test_gateway_mac_dinh_khop_so_slot():
-    """`llm_gateway` deploy sang máy B nên không import được `ngan_sach` — đọc mã nguồn."""
+def test_gateway_so_slot_DOC_tu_yaml_khong_con_mac_dinh_go_tay():
+    """🔵 Phương án C bước 3: cổng không còn `LTT_LLM_MAX_DONG_THOI` (mặc định gõ
+    tay trong `config.py`, bản sao thứ ba của `-np`). Nó đọc `-np` của TỪNG hồ
+    sơ thẳng từ `llama-swap.yaml` — nên đối chiếu với chính yaml (đọc bằng
+    PyYAML, độc lập với bộ đọc của cổng), không với một mặc định."""
+    from llm_gateway.vat_ly import doc_tep
+
     van = (GOC / "llm_gateway" / "config.py").read_text(encoding="utf-8")
-    m = re.search(r'_int\("LTT_LLM_MAX_DONG_THOI",\s*(\d+)\)', van)
-    assert m, "khong thay mac dinh LTT_LLM_MAX_DONG_THOI trong llm_gateway/config.py"
-    assert int(m.group(1)) == ngan_sach.SO_SLOT_MAY_B
+    assert not re.search(r'_int\("LTT_LLM_MAX_DONG_THOI', van), (
+        "config.py lai go tay mot so slot cho cong")
+    tep = GOC / "llm_gateway" / "deploy" / "llama-swap.yaml"
+    cfg = yaml.safe_load(tep.read_text(encoding="utf-8"))
+    cong = doc_tep(tep)
+    for ten, m in (cfg.get("models") or {}).items():
+        tach = str(m["cmd"]).split()
+        assert cong[ten].np == int(tach[tach.index("-np") + 1]), ten
 
 
 def test_chieu_catalog_mang_pool_nhung_khong_lo_ra_khach():
