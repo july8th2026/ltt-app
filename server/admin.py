@@ -124,8 +124,8 @@ class AdminAuth(AuthenticationBackend):
 _PROVCOL = {"gemini": ("#1a73e8", "G"), "apiai": ("#15803d", "AI"),
             "cheapkeyai": ("#0369a1", "CK"), "byteplus": ("#7c3aed", "BP"),
             "plenx": ("#be185d", "PX")}
-_CAT_ICON = {"model_control": ("🧭", "m"), "chat": ("💬", ""),
-             "image": ("🖼️", "i"), "video": ("🎬", "v")}
+_CAT_ICON = {"model_control": ("Điều khiển", "m"), "chat": ("Chat", ""),
+             "image": ("Ảnh", "i"), "video": ("Video", "v")}
 _STATUS = {"active": ("b-ok", "hoạt động"), "cooldown": ("b-warn", "nghỉ (cooldown)"),
            "exhausted": ("b-warn", "hết quota"), "error": ("b-err", "lỗi"),
            "disabled": ("b-err", "vô hiệu")}
@@ -314,9 +314,9 @@ class ApiKeysConsole(_AnTrongMenuSqlAdmin, BaseView):
             on = "on" if cat == c else ""
             return (f'<a class="{on}" href="/admin/apikeys?cat={c}">{label} '
                     f'<span class="n">{cnt.get(c, 0)}</span></a>')
-        tabs = (tab("all", "Tất cả") + tab("model_control", "🧭 Điều khiển model")
-                + tab("chat", "💬 Chat") + tab("image", "🖼️ Ảnh")
-                + tab("video", "🎬 Video"))
+        tabs = (tab("all", "Tất cả") + tab("model_control", "Điều khiển model")
+                + tab("chat", "Chat") + tab("image", "Ảnh")
+                + tab("video", "Video"))
 
         def act_form(k, op, label):
             return (f'<form method="post" action="/admin/api-key-action" class="adm-form-inline">'
@@ -375,8 +375,8 @@ class ApiKeysConsole(_AnTrongMenuSqlAdmin, BaseView):
             f'<p><span class="pill"><span class="dot" style="background:var(--ok);'
             f'width:7px;height:7px;border-radius:50%"></span> '
             f'{active_cnt}/{len(keys)} key hoạt động</span></p></div>'
-            f'<div class="actions"><a class="btn ghost" href="/admin/api-models">🧩 Models</a>'
-            f'<a class="btn" href="/admin/api-key-them">＋ Thêm key</a></div></div>'
+            f'<div class="actions"><a class="btn ghost" href="/admin/api-models">Nhà cung cấp &amp; model</a>'
+            f'<a class="btn" href="/admin/api-key-them">＋ Thêm credential</a></div></div>'
             f'<div class="tabs">{tabs}</div>'
             f'<div class="tablewrap" tabindex="0"><table class="ui-table"><thead><tr>'
             f'<th>Provider</th><th>Tên</th><th>Preview</th><th>Loại</th><th>Trạng thái</th>'
@@ -759,16 +759,16 @@ class AddApiKeyView(_AnTrongMenuSqlAdmin, BaseView):
             f'[{escape(p.auth_style)}]</option>' for p in providers.list_all())
         # Bản đồ provider -> category nó phục vụ, cho đoạn script tick sẵn bên dưới.
         cat_map = json.dumps({p.id: list(p.categories or ()) for p in providers.list_all()})
-        _catlbl = {APIKEY_CAT_MODEL: "🧭 Điều khiển model", APIKEY_CAT_CHAT: "💬 Chat",
-                   APIKEY_CAT_IMAGE: "🖼️ Ảnh", APIKEY_CAT_VIDEO: "🎬 Video"}
+        _catlbl = {APIKEY_CAT_MODEL: "Điều khiển model", APIKEY_CAT_CHAT: "Chat",
+                   APIKEY_CAT_IMAGE: "Ảnh", APIKEY_CAT_VIDEO: "Video"}
         cat_boxes = "".join(
             f'<label><input type="checkbox" name="categories" value="{c}"> {_catlbl[c]}</label>'
             for c in (APIKEY_CAT_MODEL, APIKEY_CAT_CHAT, APIKEY_CAT_IMAGE, APIKEY_CAT_VIDEO))
         body = f"""<div class="adm-content adm-hep-640">
 <div class="pagehead"><div><h1>Thêm API key</h1>
 <p>Credential nhập vào sẽ được <b>mã hoá</b> trước khi lưu; chỉ 4 số cuối hiện lại.</p></div>
-<div class="actions"><a class="btn ghost" href="/admin/apikeys">&larr; APIKEYS</a>
-<a class="btn ghost" href="/admin/api-models">🧩 Models</a></div></div>
+<div class="actions"><a class="btn ghost" href="/admin/apikeys">&larr; Provider Credentials</a>
+<a class="btn ghost" href="/admin/api-models">Nhà cung cấp &amp; model</a></div></div>
 {msg}
 <div class="ui-card"><form method="post">
   <input type="hidden" name="csrf_token" value="{escape(token)}">
@@ -940,7 +940,7 @@ def _sua_key_html(key, boxes: str, goi_y: str, token: str, msg: str) -> str:
     return """<div class="adm-content adm-hep-640">
 <div class="pagehead"><div><h1>Sua API key</h1>
 <p>Id va lich su <b>giu nguyen</b>: {lich_su}.</p></div>
-<div class="actions"><a class="btn ghost" href="/admin/apikeys">&larr; APIKEYS</a></div></div>
+<div class="actions"><a class="btn ghost" href="/admin/apikeys">&larr; Provider Credentials</a></div></div>
 {msg}
 <div class="ui-card"><form method="post">
   <input type="hidden" name="csrf_token" value="{token}">
@@ -1000,7 +1000,7 @@ class ApiKeyActionView(_AnTrongMenuSqlAdmin, BaseView):
         body = f"""<div class="adm-content adm-hep-640">
 <div class="pagehead"><div><h1>Test key</h1>
 <p>{_prov_dot(key.provider)} {escape(key.provider)} · <span class="mono">{escape(key.key_preview)}</span></p></div>
-<div class="actions"><a class="btn ghost" href="/admin/apikeys">&larr; APIKEYS</a></div></div>
+<div class="actions"><a class="btn ghost" href="/admin/apikeys">&larr; Provider Credentials</a></div></div>
 <div class="ui-card"><p class="adm-mb8">{badge}</p>
 <p class="muted mono adm-chi-tiet-loi">{escape(str(detail))}</p></div></div>"""
         return HTMLResponse(_admin_shell("Test key", "provider_test", body))
@@ -1075,8 +1075,8 @@ class ModelsView(_AnTrongMenuSqlAdmin, BaseView):
                 f'<span class="chip {"adm-chip-model" if m.is_active else "m"}">{escape(m.id)}'
                 f'{"" if m.is_active else " · Soon"}</span>' for m in p.models
             ) or '<span class="muted u-fs12">chưa khai model — key nhận mọi model</span>'
-            kind = ('<span class="badge b-grey"><span class="dot"></span>async</span>'
-                    if p.async_poll else '<span class="badge b-ok"><span class="dot"></span>sync</span>')
+            kind = ('<span class="badge b-grey"><span class="dot"></span>Bất đồng bộ</span>'
+                    if p.async_poll else '<span class="badge b-ok"><span class="dot"></span>Đồng bộ</span>')
             refresh = (f'<a class="btn ghost sm" href="/admin/api-models-refresh?provider={escape(p.id)}">Làm mới</a>'
                        if p.list_models_path else '<span class="muted u-fs12">—</span>')
             rows += (f'<tr><td><span class="prov">{_prov_dot(p.id)}{escape(p.id)}</span></td>'
@@ -1084,15 +1084,15 @@ class ModelsView(_AnTrongMenuSqlAdmin, BaseView):
                      f'<td>{escape(", ".join(p.categories))}</td>'
                      f'<td class="adm-o-chip">{ms}</td><td>{kind}</td><td>{refresh}</td></tr>')
         body = f"""<div class="adm-content">
-<div class="pagehead"><div><h1>Provider &amp; Models</h1>
-<p>Registry: <code>platform_core/providers.py</code>. Thêm provider/model = sửa file này.
+<div class="pagehead"><div><h1>Nhà cung cấp &amp; model</h1>
+<p>Danh mục khai sẵn trong mã nguồn (<code>platform_core/providers.py</code>) — thêm nhà cung cấp hoặc model cần một bản cập nhật.
 “Làm mới” gọi endpoint sống của provider (dùng key ưu tiên nhất) để lấy model thật.</p></div>
-<div class="actions"><a class="btn ghost" href="/admin/apikeys">&larr; APIKEYS</a>
-<a class="btn" href="/admin/api-key-them">＋ Thêm key</a></div></div>
+<div class="actions"><a class="btn ghost" href="/admin/apikeys">&larr; Provider Credentials</a>
+<a class="btn" href="/admin/api-key-them">＋ Thêm credential</a></div></div>
 <div class="tablewrap" tabindex="0"><table class="ui-table"><thead><tr>
-<th>Provider</th><th>Auth</th><th>Category</th><th>Models (registry)</th><th>Kiểu</th><th>Sống</th></tr></thead>
+<th>Nhà cung cấp</th><th>Xác thực</th><th>Loại</th><th>Model khai sẵn</th><th>Kiểu gọi</th><th>Model sống</th></tr></thead>
 <tbody>{rows}</tbody></table></div></div>"""
-        return HTMLResponse(_admin_shell("Models", "models", body))
+        return HTMLResponse(_admin_shell("Nhà cung cấp & model", "models", body))
 
     @expose("/api-models-refresh", methods=["GET"])
     async def refresh(self, request: Request):
@@ -1124,7 +1124,7 @@ class ModelsView(_AnTrongMenuSqlAdmin, BaseView):
             or '<span class="muted u-fs12">—</span>'
         body = f"""<div class="adm-content adm-hep-760">
 <div class="pagehead"><div><h1>Model sống — {escape(prov_id)}</h1><p>{note}</p></div>
-<div class="actions"><a class="btn ghost" href="/admin/api-models">&larr; Models</a></div></div>
+<div class="actions"><a class="btn ghost" href="/admin/api-models">&larr; Nhà cung cấp &amp; model</a></div></div>
 <div class="ui-card adm-o-chip-rong">{chips}</div></div>"""
         return HTMLResponse(_admin_shell("Model sống", "models", body))
 
@@ -1230,10 +1230,10 @@ class RevenueView(_AnTrongMenuSqlAdmin, BaseView):
             f'<div class="tnum adm-so-lon">{_vnd(dt["orders"], "")}</div></div></div>')
         body = (f'<div class="adm-content"><div class="pagehead"><div>'
                 f'<h1>Tổng quan tài chính</h1>'
-                f'<p>Chỉ tính đơn đã trả (đi qua sổ credit H3). Tiền hiện bằng đ, '
+                f'<p>Chỉ tính đơn đã trả (đã ghi vào sổ credit). Tiền hiện bằng đ, '
                 f'credit hiện bằng credit — hai đơn vị, không trộn.</p></div>'
-                f'<div class="actions"><a class="btn ghost" href="/admin/goi">💠 Gói nạp</a>'
-                f'<a class="btn ghost" href="/admin/don">🧾 Đơn hàng</a></div></div>'
+                f'<div class="actions"><a class="btn ghost" href="/admin/goi">Gói nạp</a>'
+                f'<a class="btn ghost" href="/admin/don">Đơn hàng</a></div></div>'
                 f'{cards}'
                 f'<h2 class="u-tieu-muc">Đơn cần xử lý</h2>'
                 f'<p class="adm-dan">Đơn đang chờ cổng thanh toán xác nhận. Xác '
@@ -1333,8 +1333,8 @@ class PackagesView(_AnTrongMenuSqlAdmin, BaseView):
             f'<button class="btn">＋ Thêm gói</button></form></div>')
         body = (f'<div class="adm-content"><div class="pagehead"><div><h1>Gói nạp</h1>'
                 f'<p>Khách thấy gói bật ở trang <code>/nap</code>. Đổi giá không ảnh hưởng đơn cũ.</p></div>'
-                f'<div class="actions"><a class="btn ghost" href="/admin/doanh-thu">📈 Doanh thu</a>'
-                f'<a class="btn ghost" href="/admin/don">🧾 Đơn hàng</a></div></div>{msg}{form_html}'
+                f'<div class="actions"><a class="btn ghost" href="/admin/doanh-thu">Doanh thu</a>'
+                f'<a class="btn ghost" href="/admin/don">Đơn hàng</a></div></div>{msg}{form_html}'
                 f'<div class="tablewrap" tabindex="0"><table class="ui-table"><thead><tr>'
                 f'<th>#</th><th>Tên</th><th>Giá</th><th>Gốc</th><th>Bonus</th><th>Tổng</th>'
                 f'<th>Trạng thái</th><th class="u-phai">Thao tác</th></tr></thead>'
@@ -1440,8 +1440,8 @@ class OrdersView(_AnTrongMenuSqlAdmin, BaseView):
                 + tab("expired", "Hết hạn") + tab("cancelled", "Huỷ") + tab("failed", "Lỗi"))
         body = (f'<div class="adm-content"><div class="pagehead"><div><h1>Đơn hàng</h1>'
                 f'<p>“Đã trả” = xác nhận tay khi webhook lỗi (vẫn idempotent, cộng credit đúng một lần).</p></div>'
-                f'<div class="actions"><a class="btn ghost" href="/admin/doanh-thu">📈 Doanh thu</a>'
-                f'<a class="btn ghost" href="/admin/goi">💠 Gói nạp</a></div></div>'
+                f'<div class="actions"><a class="btn ghost" href="/admin/doanh-thu">Doanh thu</a>'
+                f'<a class="btn ghost" href="/admin/goi">Gói nạp</a></div></div>'
                 f'<div class="tabs">{tabs}</div>'
                 f'<div class="tablewrap" tabindex="0"><table class="ui-table"><thead><tr>'
                 f'<th>Mã đơn</th><th>User</th><th>Tiền</th><th>Credit</th><th>Trạng thái</th>'

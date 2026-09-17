@@ -19,6 +19,9 @@
 
    Hợp đồng: `docs/admin_mvp_v3/04_EXTENSION_CONTRACT.md`,
              `docs/admin_mvp_v3/06_VISUAL_REFERENCE_CONTRACT.md`. #}
+{% import "_icon.html" as ic %}
+{#- Icon thanh bên theo KHOÁ mục (không theo nhãn): chữ viết tắt "Tổ/Kh/Tà" cũ không nói gì. -#}
+{%- set _IC_NAV = {"tong_quan": "layout-grid", "khach_hang": "users", "tai_chinh": "gem", "api_overview": "code", "van_hanh": "activity", "he_thong": "shield"} -%}
 <!doctype html>
 <html lang="vi">
 <head>
@@ -70,7 +73,7 @@ document.documentElement.setAttribute("data-adm-side","hep")}catch(e){}</script>
            thật), còn thanh bên chỉ nói "nhánh này đang mở" bằng `true`. #}
         <a href="{{ m.href }}"{% if m.active %} class="on"
            aria-current="{{ 'true' if nav.co_tab_hoac_con else 'page' }}"{% endif %}>
-          <span class="ic" aria-hidden="true">{{ m.nhan[:2] }}</span>{{ m.nhan }}
+          <span class="ic" aria-hidden="true">{{ ic.icon(_IC_NAV.get(m.khoa) or ("monitor" if "vps" in m.khoa else "layers")) }}</span>{{ m.nhan }}
         </a>
       {% endfor %}
     </nav>
@@ -145,12 +148,15 @@ document.documentElement.setAttribute("data-adm-side","hep")}catch(e){}</script>
 
        `.adm-chrome + .adm-content{padding-top:0}` trong `ltt.css` gộp hai khối
        lại thành một nhịp dọc. #}
-    {% if nav.banh_mi or nav.muc_con or nav.tab or tieu_de or canh_bao or loi or thanh_cong %}
+    {#- Mẩu bánh mì có mặt ở MỌI trang trừ Tổng quan (trước chỉ trang con có — doanh-thu thì không). -#}
+    {%- set _co_banh_mi = nav.nhan_trang and not (nav.thanh_ben and nav.thanh_ben[0].active and not nav.banh_mi) %}
+    {% if _co_banh_mi or nav.banh_mi or nav.muc_con or nav.tab or tieu_de or canh_bao or loi or thanh_cong %}
     <div class="adm-content adm-chrome">
 
-      {% if nav.banh_mi %}
+      {% if _co_banh_mi %}
       <nav class="adm-banhmi" aria-label="Đường dẫn">
-        {% for b in nav.banh_mi %}<a href="{{ b.href }}">{{ b.nhan }}</a><span aria-hidden="true">/</span>{% endfor %}
+        <a href="/admin/">Quản trị</a><span aria-hidden="true">/</span>
+        {%- for b in nav.banh_mi %}<a href="{{ b.href }}">{{ b.nhan }}</a><span aria-hidden="true">/</span>{% endfor %}
         <span>{{ nav.nhan_trang }}</span>
       </nav>
       {% endif %}
@@ -223,6 +229,31 @@ document.documentElement.setAttribute("data-adm-side","hep")}catch(e){}</script>
     ve();
   });
   ve();
+})();
+</script>
+{# Bảng hẹp → thẻ nhãn: giá trị (≤ 640px, luật `.adm-the` trong khối C3 của `ltt.css`).
+   Chỉ CHÉP chữ tiêu đề cột sang `data-nhan` của từng ô; bố cục thuần CSS. Ô gộp
+   cột (trạng thái rỗng) không nhận nhãn. Bảng thiếu `<thead>` thì để nguyên (cuộn). #}
+<script>
+(function(){
+  var bang = document.querySelectorAll(".adm-main .tablewrap>table,.adm-main .dev-bang>table");
+  Array.prototype.forEach.call(bang, function(t){
+    var th = t.tHead && t.tHead.rows.length ? t.tHead.rows[t.tHead.rows.length - 1].cells : null;
+    if (!th || !th.length) return;
+    var nhan = Array.prototype.map.call(th, function(c){
+      return (c.textContent || "").replace(/[▲▼]/g, "").replace(/\s+/g, " ").trim();
+    });
+    Array.prototype.forEach.call(t.tBodies, function(tb){
+      Array.prototype.forEach.call(tb.rows, function(r){
+        var i = 0;
+        Array.prototype.forEach.call(r.cells, function(c){
+          if (c.colSpan === 1 && nhan[i]) c.setAttribute("data-nhan", nhan[i]);
+          i += c.colSpan || 1;
+        });
+      });
+    });
+    t.classList.add("adm-the");
+  });
 })();
 </script>
 </body>

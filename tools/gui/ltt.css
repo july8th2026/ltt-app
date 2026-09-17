@@ -4275,3 +4275,42 @@ input[type=hidden]+.af-step{margin-top:0}
 /* DL-005: icon SVG ở catalog ẩn danh (trước còn emoji manifest). */
 .appcard h2 .catalog-ic{display:inline-grid;place-items:center;color:var(--brand-hover)}
 .appcard h2 .catalog-ic .ui-ic{width:18px;height:18px}
+/* === C3: ADMIN === */
+/* Thanh bên: icon SVG (`_icon.html`) thay chữ viết tắt "Tổ/Kh/Tà". */
+.adm-nav a .ic .ui-ic{width:14px;height:14px;vertical-align:0}
+/* Tên kỹ thuật đứng CẠNH nhãn Việt (rpm_read…) — nhỏ, mờ, không viết hoa. */
+.adm-ten-ky-thuat{font-size:var(--fs-caption);color:var(--text-muted);text-transform:none;letter-spacing:0;white-space:nowrap}
+/* Form hành động admin (api-chinh-sach…): hàng trường có nhãn, khoảng cách đều, nút đủ cao. */
+.adm-content .adm-form-luoi{display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:flex-end;margin:0 0 var(--space-4)}
+.adm-content .adm-form-luoi>.adm-truong{margin:0}
+.adm-content .adm-form-luoi>.adm-truong>span{display:flex;flex-wrap:wrap;gap:0 6px;align-items:baseline}
+.adm-content .adm-form-luoi>.adm-truong-rong{flex:1 1 280px;min-width:0}
+.adm-content .adm-form-luoi>.adm-truong-rong>input{width:100%}
+.adm-content .adm-form-luoi>.adm-truong>select{min-width:220px}
+.adm-content .adm-form-luoi input:not([type=checkbox]),.adm-content .adm-form-luoi select,.adm-content .adm-form-luoi>.btn{min-height:40px}
+.adm-content .adm-form-luoi>.adm-chon{display:flex;align-items:center;gap:8px;min-height:40px;font-size:var(--fs-label);color:var(--text-secondary)}
+.adm-content .adm-form-gui>.btn{padding-inline:var(--space-4)}
+/* Dải lọc Khách hàng: nhãn trần (không `.dev-field`) — giãn đều, hẹp thì mỗi ô một hàng. */
+.adm-content .dev-loc>label{display:flex;flex-direction:column;gap:4px;flex:1 1 180px;min-width:0;font-size:var(--fs-label);color:var(--text-secondary)}
+.adm-content .dev-loc>label>input,.adm-content .dev-loc>label>select{width:100%;min-height:40px}
+.adm-content .dev-loc>.btn{min-height:40px}
+@media (max-width:640px){
+  .adm-content form>p>.adm-truong-rong{flex-basis:100%}
+  .adm-content form>p>.adm-truong>select{width:100%;min-width:0}
+  .adm-content .dev-loc>label{flex-basis:100%}
+  .adm-content .dev-loc>.btn{flex:1 1 auto;min-height:44px}
+  /* Bảng hẹp thành THẺ nhãn: giá trị. `data-nhan` do script cuối `_vo.html` chép từ
+     `<th>`; không có JS thì bảng vẫn cuộn ngang như cũ (không có lớp `.adm-the`). */
+  .adm-main table.adm-the{display:block;min-width:0;font-size:13px}
+  .adm-main table.adm-the>thead{display:none}
+  .adm-main table.adm-the>tbody{display:block}
+  .adm-main table.adm-the>tbody>tr{display:block;padding:var(--space-2) 0;border-top:1px solid var(--border-subtle)}
+  .adm-main table.adm-the>tbody>tr:first-child{border-top:0}
+  .adm-main table.adm-the>tbody>tr>td{display:block;position:relative;min-height:28px;border:0;
+    padding:5px var(--space-3) 5px calc(38% + var(--space-3));text-align:left;white-space:normal;overflow-wrap:anywhere}
+  .adm-main table.adm-the>tbody>tr>td[data-nhan]::before{content:attr(data-nhan);position:absolute;left:var(--space-3);top:7px;
+    width:calc(38% - var(--space-3));color:var(--text-muted);font-size:var(--fs-caption);line-height:1.3}
+  .adm-main table.adm-the>tbody>tr>td:not([data-nhan]){padding-left:var(--space-3)}
+  .adm-main table.adm-the .rowactions,.adm-main table.adm-the .dev-hanh-dong{justify-content:flex-start;flex-wrap:wrap}
+  .adm-main table.adm-the .adm-form-dong{flex-wrap:wrap}
+}
