@@ -1,13 +1,11 @@
 {% extends "base.html" %}
 {% import "_ui.html" as ui %}
+{% import "_app_head.html" as ah %}
 {% from "_o_chon_tep.html" import o_chon_tep %}
 {% block title %}Quality Lab — LTT Studios{% endblock %}
 {% block page_mode %}wide{% endblock %}
 {% block content %}
-<header class="af-head ql-head"><div><span class="af-kicker">Quality Lab</span>
-<h1>{{ _("Bộ đo chất lượng đầu ra") }}</h1>
-<p>{{ _("Đo theo vector bằng chứng. Foundation chưa calibrated và không được dùng làm release gate.") }}</p></div>
-<a class="btn ghost" href="/jobs?app=qualitylab">{{ _("Việc của tôi") }}</a></header>
+{% call ah.dau_trang(_("Vận hành") ~ " · Quality Lab", _("Bộ đo chất lượng đầu ra"), _("Đo theo vector bằng chứng. Foundation chưa calibrated và không được dùng làm release gate."), viec=false, kieu="studio", lop="ql-head") %}<a class="btn ghost" href="/jobs?app=qualitylab">{{ _("Việc của tôi") }}</a>{% endcall %}
 {% if error %}<div class="alert alert-err" role="alert">{{ error }}</div>{% endif %}
 <div class="ql-grid">
   <section class="card">
