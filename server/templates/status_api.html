@@ -64,7 +64,7 @@
   var hai = function (n) { return (n < 10 ? "0" : "") + n; };
   document.querySelectorAll("time[data-gio-dia-phuong]").forEach(function (t) {
     var s = t.getAttribute("datetime") || "";
-    if (!/(Z|[+-]\d\d:\d\d)$/.test(s)) return;
+    if (!/(Z|[+-][0-9]{2}:[0-9]{2})$/.test(s)) return;
     var d = new Date(s);
     if (isNaN(d.getTime())) return;
     t.textContent = hai(d.getDate()) + "/" + hai(d.getMonth() + 1) + "/" + d.getFullYear() +
