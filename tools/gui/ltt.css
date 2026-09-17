@@ -4297,7 +4297,8 @@ input[type=hidden]+.af-step{margin-top:0}
 @media (max-width:640px){
   .adm-content form>p>.adm-truong-rong{flex-basis:100%}
   .adm-content .adm-form-luoi{gap:8px}
-  .adm-content form>p>.adm-truong>select{width:100%;min-width:0}
+  .adm-content .adm-form-luoi>.adm-truong>select{width:100%;min-width:0}
+  .adm-content .adm-form-luoi>.adm-truong{min-width:0}
   .adm-content .dev-loc>label{flex-basis:100%}
   .adm-content .dev-loc>.btn{flex:1 1 auto;min-height:44px}
   /* Bảng hẹp thành THẺ nhãn: giá trị. `data-nhan` do script cuối `_vo.html` chép từ

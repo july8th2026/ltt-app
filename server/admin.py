@@ -394,7 +394,7 @@ class UserAdmin(ModelView, model=User):
                    User.is_active, User.is_verified, User.created_at, User.last_login_at]
     column_labels = {"so_du_credit": "Số dư", User.email: "Email", User.display_name: "Tên hiển thị",
                      User.role: "Vai trò", User.is_active: "Đang hoạt động", User.is_verified: "Đã xác thực email",
-                     User.created_at: "Tạo lúc", User.last_login_at: "Đăng nhập cuối"}
+                     User.created_at: "Tạo lúc", User.last_login_at: "Đăng nhập cuối", "id": "User ID", "email_chuan": "Email chuẩn hoá", "registration_ip": "IP đăng ký"}
 
     async def on_model_change(self, data, model, is_created, request) -> None:
         """F-06: doi vai tro / vo hieu hoa tai khoan phai de lai dau vet.
@@ -425,10 +425,10 @@ class UserAdmin(ModelView, model=User):
     column_searchable_list = [User.email, User.display_name]
     column_sortable_list = [User.email, User.created_at, User.last_login_at]
     column_default_sort = [(User.created_at, True)]
-    column_formatters = {User.role: lambda m, a: {"admin": "Quản trị viên", "user": "Thành viên"}.get(getattr(m, "role", ""), getattr(m, "role", ""))}
+    column_formatters = column_formatters_detail = {User.role: lambda m, a: {"admin": "Quản trị viên", "user": "Thành viên"}.get(getattr(m, "role", ""), getattr(m, "role", ""))}
     # KHÔNG cho sửa email hay password_hash qua form (email là danh tính; mật khẩu chỉ đổi qua luồng đổi-mật-khẩu đã băm).
     form_columns = [User.display_name, User.role, User.is_active, User.is_verified]
-    form_choices = {"role": [("user", "Thành viên"), ("admin", "Quản trị viên")]}  # chỉ đổi ô gõ -> ô chọn; giá trị lưu giữ nguyên
+    form_overrides = {"role": __import__("wtforms").SelectField}; form_args = {"role": {"choices": [("user", "Thành viên"), ("admin", "Quản trị viên")]}}  # ô chọn thay ô gõ; giá trị lưu giữ nguyên (sqladmin 0.20 KHÔNG có form_choices)
     can_create = False   # user tạo qua đăng ký; tạo admin-trong-DB làm ở bước sau
     can_delete = False   # giữ dấu vết + sổ credit gắn user_id
 

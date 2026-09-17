@@ -32,7 +32,7 @@
           <button type="submit" name="save" value="Save and add another" class="btn btn-secondary">{{ _("Lưu và thêm bản khác") }}</button>
           {% endif %}
           {% endif %}
-          <a href="{{ url_for('admin:list', identity=model_view.identity) }}" class="btn btn-ghost-secondary">{{ _("Huỷ") }}</a>
+          <a href="{{ url_for('admin:list', identity=model_view.identity) }}" class="btn ltt-huy">{{ _("Huỷ") }}</a>
         </div>
       </form>
     </div>
