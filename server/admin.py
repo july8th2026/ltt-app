@@ -358,7 +358,7 @@ class ApiKeysConsole(_AnTrongMenuSqlAdmin, BaseView):
                 f'{refresh}{toggle}{act_form(k, "reset", "Reset")}</div></td></tr>')
         if not shown:
             rows = ('<tr><td colspan="9" class="muted o-trong"><span class="o-trong-chu">'
-                    'Chưa có key nào ở mục này. Bấm “＋ Thêm key”.</span></td></tr>')
+                    'Chưa có key nào ở mục này. Bấm “＋ Thêm credential”.</span></td></tr>')
 
         active_cnt = sum(1 for k in keys if k.enabled and k.status == "active")
         body = (
@@ -434,8 +434,8 @@ class UserAdmin(ModelView, model=User):
 
 
 class CreditEntryAdmin(ModelView, model=CreditEntry):
-    name = "Bút toán credit"
-    name_plural = "Sổ credit"
+    name, name_plural = "Bút toán credit", "Sổ credit"
+    column_labels = {"created_at": "Lúc", "user_id": "User ID", "kind": "Loại", "delta": "Biến động", "job_id": "Job ID", "note": "Ghi chú"}
     icon = "fa-solid fa-coins"
     column_list = [CreditEntry.created_at, CreditEntry.user_id, CreditEntry.kind,
                    CreditEntry.delta, CreditEntry.job_id, CreditEntry.note]
@@ -449,8 +449,8 @@ class CreditEntryAdmin(ModelView, model=CreditEntry):
 
 
 class AppAccessAdmin(ModelView, model=AppAccess):
-    name = "Quyền app"
-    name_plural = "Quyền app"
+    name, name_plural = "Quyền app", "Quyền app"
+    column_labels = {"user_id": "User ID", "app_slug": "App", "level": "Mức quyền"}
     icon = "fa-solid fa-lock"
     column_list = [AppAccess.user_id, AppAccess.app_slug, AppAccess.level]
     column_searchable_list = [AppAccess.user_id, AppAccess.app_slug]
@@ -489,7 +489,7 @@ class JobAdmin(ModelView, model=Job):
     icon = "fa-solid fa-list-check"
     column_list = [Job.created_at, Job.user_id, Job.app_slug, Job.job_type,
                    Job.status, Job.error, Job.attempts]
-    column_labels = {Job.error: "Lỗi"}
+    column_labels = {Job.error: "Lỗi", "created_at": "Tạo lúc", "user_id": "Khách", "app_slug": "App", "job_type": "Loại job", "status": "Trạng thái", "attempts": "Số lần thử", "progress": "Tiến độ", "updated_at": "Cập nhật lúc"}
     column_searchable_list = [Job.user_id, Job.app_slug, Job.status, Job.job_type]
     column_sortable_list = [Job.created_at, Job.status]
     column_default_sort = [(Job.created_at, True)]
@@ -516,8 +516,8 @@ class JobAdmin(ModelView, model=Job):
 
 
 class SessionAdmin(ModelView, model=DbSession):
-    name = "Phiên"
-    name_plural = "Phiên đăng nhập"
+    name, name_plural = "Phiên", "Phiên đăng nhập"
+    column_labels = {"user_id": "User ID", "created_at": "Tạo lúc", "expires_at": "Hết hạn lúc", "ip": "IP", "user_agent": "Trình duyệt"}
     icon = "fa-solid fa-key"
     # KHÔNG hiển thị DbSession.id: nó CHÍNH LÀ token cookie phiên (thô, dùng làm
     # PK — users.py:tao_phien). Render nó ra trang admin = ai xem/chụp màn hình
@@ -536,8 +536,8 @@ class SessionAdmin(ModelView, model=DbSession):
 
 
 class PlatformInfoAdmin(ModelView, model=PlatformInfo):
-    name = "Thông tin nền tảng"
-    name_plural = "Nền tảng"
+    name, name_plural = "Thông tin nền tảng", "Nền tảng"
+    column_labels = {"id": "ID", "app_version": "Phiên bản", "installed_at": "Cài lúc", "note": "Ghi chú"}
     icon = "fa-solid fa-circle-info"
     column_list = [PlatformInfo.id, PlatformInfo.app_version,
                    PlatformInfo.installed_at, PlatformInfo.note]
@@ -657,8 +657,8 @@ class NhatKyAdminView(ModelView, model=NhatKyAdmin):
     không còn là nhật ký.
     """
 
-    name = "Nhật ký admin"
-    name_plural = "Nhật ký admin"
+    name, name_plural = "Nhật ký admin", "Nhật ký admin"
+    column_labels = {"created_at": "Lúc", "admin_email": "Admin", "hanh_dong": "Hành động", "doi_tuong": "Đối tượng", "chi_tiet": "Chi tiết"}
     icon = "fa-solid fa-clipboard-list"
     column_list = [NhatKyAdmin.created_at, NhatKyAdmin.admin_email,
                    NhatKyAdmin.hanh_dong, NhatKyAdmin.doi_tuong, NhatKyAdmin.chi_tiet]
@@ -680,8 +680,8 @@ class ApiKeyAdmin(ModelView, model=ApiKey):
     #    Đây là bảng dữ liệu thô để tra cứu và xoá. Chỗ làm việc là
     #    `/admin/apikeys`.
     name_plural = "APIKEYS (bảng thô)"
-    # sqladmin tự đặt identity = slugify(ApiKey) = "api-key" → URL /admin/api-key/...
-    icon = "fa-solid fa-key"
+    icon = "fa-solid fa-key"  # sqladmin tự đặt identity = slugify(ApiKey) = "api-key" → URL /admin/api-key/...
+    column_labels = {"provider": "Nhà cung cấp", "name": "Tên", "key_preview": "Xem trước", "categories": "Loại", "status": "Trạng thái", "enabled": "Bật", "priority": "Ưu tiên", "health_score": "Sức khoẻ", "last_used_at": "Dùng lần cuối", "created_at": "Tạo lúc", "base_url": "Base URL", "default_model": "Model mặc định", "supported_models": "Model hỗ trợ", "last_error": "Lỗi gần nhất", "cooldown_until": "Nghỉ tới"}
     # TUYỆT ĐỐI không hiện credential_enc (secret). Chỉ preview 4 số cuối (H8).
     column_list = [ApiKey.provider, ApiKey.name, ApiKey.key_preview,
                    ApiKey.categories, ApiKey.status, ApiKey.enabled,
