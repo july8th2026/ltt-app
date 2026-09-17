@@ -46,6 +46,21 @@
   nhập mật khẩu) + kiểm sau khởi động lại máy (chủ dự án báo khi có dịp).
 - Test nhắm: `test_1302` (12) + `test_1303` (7); cả app `1300–1303` = 39 xanh.
 
+## 2026-09-17 — Cập nhật host Proxmox (Máy B) 9.2.2 → 9.2.20, chưa khởi động lại
+
+- Chủ dự án chọn "cài gói, chưa reboot". Mô phỏng trước (chỉ đọc): 179 nâng cấp + 2 mới,
+  0 gỡ — bản vá trong dòng PVE 9.2 (pve-manager 9.2.20, qemu-server 9.2.7,
+  pve-qemu-kvm 11.0.3, kernel 7.0.14-17, openssl/libc6 bảo mật).
+- Trước cài: 0 job VPS, đĩa host còn 18 G, `dpkg --audit` sạch, danh sách gói cũ lưu
+  `/root/pve-pkg-before-20260917.txt`. Chạy `apt-get dist-upgrade` qua `systemd-run`
+  (SSH rớt không bỏ dở dpkg), log `/root/pve-upgrade-20260917.log`, `EXIT=0`, 181 gói.
+- Sau cài: 10/10 VM vẫn chạy, dịch vụ pve-* active (`corosync` inactive là bình thường —
+  node đơn, không `corosync.conf`), 0 tệp cấu hình bị thay, app gọi API PVE qua TLS
+  thấy 9.2.20, RDP `51.79.202.1:3389` mở, health IP OVH HEALTHY.
+- **Còn chờ**: kernel đang chạy vẫn `7.0.2-6-pve`; `7.0.14-17-pve` chỉ có hiệu lực sau
+  khi reboot host — cả 10 VM tắt ~5–10 phút, cần cửa sổ bảo trì do chủ dự án hẹn.
+  VM đang chạy dùng QEMU cũ tới lần tắt/bật kế tiếp.
+
 ## 2026-09-17 — Kết phiên VPS V4: đóng kế hoạch
 
 - Chủ dự án chốt: **OVH là mặc định**, Vultr sắp ngừng (giữ STANDBY, không đầu tư thêm).

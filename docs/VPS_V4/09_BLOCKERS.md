@@ -7,7 +7,7 @@
 - OVH 0402 là mặc định (ACTIVE, default); Vultr 0401 STANDBY. Chủ dự án: **Vultr sắp
   ngừng**, không đầu tư thêm (không thử đổi default, không preflight Vultr).
 - Còn mở, **ngoài phạm vi phần mềm** (cần mua/dựng hoặc cửa sổ bảo trì): Backup V2
-  CAPACITY_BLOCKED, diễn tập khôi phục, dual-WAN, 179 gói cập nhật PVE chờ cổng thay đổi.
+  CAPACITY_BLOCKED, diễn tập khôi phục, dual-WAN; cập nhật PVE đã CÀI 17/09 (9.2.20), còn **reboot host** để dùng kernel 7.0.14 — chờ cửa sổ bảo trì.
 
 ### Cập nhật 2026-09-17 (chiều) — bán VPS MỞ LẠI
 
