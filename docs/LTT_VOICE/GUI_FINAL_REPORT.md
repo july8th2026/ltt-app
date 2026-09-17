@@ -46,8 +46,8 @@ Cache-bust `aa4194b6` · số đếm 45/20/25/0 · chi tiết kho chung không q
 | 1 | ~~E2E góc nhìn chủ 25 giọng~~ | **XONG 23:5x** — chủ thấy 29 "Của tôi" + Tắt/Xoá; khách thứ hai thấy 25 kho chung, không quản lý |
 | 2 | Phiên VPS phải **hoà `main` `d5bd7b07`** trước khi đẩy/deploy nhánh của họ | đã nhắn; nếu không, deploy của họ lùi bản Voice |
 | 3 | ~~Chạy lại `dung_lai_giong_kho_chung` nộp trùng~~ | **ĐÃ SỬA** — bỏ qua giọng đã có job `done` cùng khoá dựng lại (đối chứng production: bỏ qua 25/25) |
-| 4 | Worker khởi động tải `yolov8s.pt` từ GitHub | có sẵn trước V2, ngoài phạm vi Voice |
-| 5 | Cửa `/nghe-thu-van-ban` không có nút GUI nào gọi | ghi nhận |
+| 4 | ~~`yolov8s.pt` tải lại từ GitHub~~ | **ĐÃ SỬA 17/09 (`dc555d41`)** — thật ra tải ở job `taoclipngan` đầu tiên sau MỖI deploy (cwd `app\` bị thay); trọng số nay ở `data\models\yolo\`, tải một lần |
+| 5 | ~~Cửa `/nghe-thu-van-ban` không có nút GUI~~ | **ĐÃ SỬA 17/09 (`bba7f7b1`)** — nút "Nghe thử câu đầu (miễn phí)" trong Studio, chỉ giọng mẫu, ≤160 ký tự; kiểm dev Playwright; production kiểm sau deploy |
 
 ## G. Điểm (§32, tự chấm có căn cứ)
 
@@ -64,3 +64,20 @@ Cache-bust `aa4194b6` · số đếm 45/20/25/0 · chi tiết kho chung không q
 `khach1/2/3.thu@lttstudios.local` (5.000 credit mỗi tài khoản, bút toán `grant`) + `thu.giongnoi@…local`.
 Mật khẩu chỉ ở `C:\LTTPlatform\secrets\tai_khoan_thu.json`; phiên nào cần đăng nhập gọi
 `tools/tai_khoan_thu.py --cookie <email>`. Hướng dẫn: `docs/TAI_KHOAN_THU.md`.
+
+## I. Đợt 17/09 — hai hạng mục "ngoài phạm vi" + hai lỗi bắt được trên đường
+
+| # | Việc | Kết quả |
+|---|---|---|
+| 1 | `yolov8s.pt` tải lại từ GitHub | `dc555d41` — trọng số ở `data\models\yolo\`, tải một lần (tra mã ultralytics 8.4.115) |
+| 2 | Nút cho cửa `/nghe-thu-van-ban` (U-13) | `bba7f7b1` — Studio, chỉ giọng mẫu, ≤160 ký tự, báo lượt còn lại |
+| 3 | **Lỗi E2E production:** nút không phát — CSP `media-src 'self' blob:` chặn `data:` | `9e07fbf2` — phát qua `blob:`; đối chứng dưới CSP thật: `data:` MediaError 4, `blob:` 2,4 s |
+| 4 | **Lỗi công cụ:** `test_nhanh.py` pha 2 chạy LẠI cả danh sách tệp ⇒ L2 `--pham-vi` lâu hơn L3 | `935f9bba` + `test_537` |
+
+Cổng: L2 `engine:cutclipshort,app:ltt_voice,server:web,cong_cu` trên `935f9bba` — bộ test PASS (464 tệp);
+bước `check_multiproc` đỏ vì một gate khác chạy `--khong-khoa` cùng CSDL `postgres_test`, chạy lại
+có khoá: 7 passed. Deploy `935f9bba` 03:14 — `nghiem_thu_deploy` 0/0/0, `/health/ready` 200.
+
+Deploy cuối **`a3de7c97`** 04:33 (sau L1 `--doi --tu 8c84d83f` PASS): `nghiem_thu_deploy` 0/0/0, `/health/ready` 200;
+E2E production nút nghe thử: 200, âm thanh `blob:` 4,3 s, 0 lỗi console/network (`GUI_BROWSER_ACCEPTANCE.md` §C).
+**Toàn bộ plan Voice GUI V2 + hai hạng mục 17/09 đã xong trên production.**

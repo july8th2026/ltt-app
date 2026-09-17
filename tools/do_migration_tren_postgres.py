@@ -167,7 +167,10 @@ def main() -> int:
         return 0
 
     ten_dang_chay = _ten_csdl(live)
-    ten = f"{ten_dang_chay}{HAU_TO}"
+    # Moi cay mot CSDL test rieng (su co 17/09, tools/pg_ten_cay.py).
+    sys.path.insert(0, str(GOC / "tools"))
+    from pg_ten_cay import ten_csdl_test
+    ten = ten_csdl_test(ten_dang_chay, HAU_TO, GOC)
     url = _url_nhap(live, ten)
     _dung_url(url, ten, ten_dang_chay)
 

@@ -65,8 +65,13 @@ def sync_ovh_static_pool(db, profile, *, provider, gateway) -> InventorySyncResu
             raise InventoryConflict("public IP belongs to another gateway")
         row.backend_resource_id = observation.cidr
         row.last_observed_at = now
-        row.billing_mode = "pre_owned"
+        # Keep acquisition evidence: an address bought by the web job is
+        # `monthly` and its metadata holds the paid `order_id`. Overwriting both
+        # erased the only link from a pool row to its OVH order (R17, 16/09).
+        if row.billing_mode != "monthly":
+            row.billing_mode = "pre_owned"
         row.provider_metadata = {
+            **dict(row.provider_metadata or {}),
             "kind": observation.kind, "country": observation.country,
             "routed_to_expected_service": True,
         }

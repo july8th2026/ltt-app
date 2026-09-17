@@ -92,6 +92,64 @@ downgrade migration để lại dòng IP OVH; IP giao muộn sau timeout cần s
 Gate đầy đủ chỉ chạy ở F9. Giữa các phase chỉ chạy test tập trung của phần vừa
 sửa, sau `python tools\cua_so_yen.py trang-thai`.
 
+## 6. Kế hoạch lại theo luật vận hành 17/09 (thay thứ tự F-phase ở §4)
+
+Luật (`docs/00_LTT_OPERATING_CONTRACT.md` §4, tóm tắt ở `~/.claude/CLAUDE.md`):
+
+```
+TRONG PHIÊN   test nhắm cụm vừa sửa; cần gate thì CHỈ L1 (gate.py --doi) / L2 (--pham-vi <tp>)
+L3            python tools\gate.py MỘT lần ở tổng kết phiên; một L3 mỗi nhánh
+L3 ĐỎ         sửa tại chỗ -> chạy lại đúng phép đỏ -> khép gate.py --doi --tu <sha L3>
+DEPLOY        bất cứ lúc nào việc xây dựng cần, khi có gate XANH trên đúng SHA deploy:
+              giữa phiên L1 (gate.py --doi --tu <sha bản production đang chạy>) / L2;
+              không bấm L3 để deploy; test nhắm một mình không đủ
+GỘP main      main đi tiếp thì hoà + test nhắm (+ L1/L2); chính phiên gộp, deploy, báo
+```
+
+Deploy xuất `HEAD` của cây chính `D:\LTTSTUDIOSAPP` (`setup\deploy_nang_quyen.ps1`
+qua `tools
+ang_quyen.py`, gọi từ **PowerShell** — Git Bash lấy nhầm GNU tar);
+bản production đang chạy phải là tổ tiên của SHA deploy.
+
+### Đã xong (17/09)
+
+| # | Việc | Bằng chứng |
+|---|---|---|
+| R1–R21 | sửa + test nhắm (R16 theo chốt giữ tối đa 1 IP rỗi) | test tập trung + đối chứng |
+| G1–G2 | R16, tài liệu 05/08/09/10, NHAT_KY, memory | commit nhánh |
+| G3 | hoà `main` 1df18b17, origin/main 40ac2848, ASV a0532a6c, prod 80319d0a, main 228f91cf (Voice V2, prod d5bd7b07), main 17759a7b; Q124 GitHub đổi số Q135; test VPS 1029/1030 | tổ tiên đã kiểm |
+| G4 | L3 `d8b02cd7` ĐỎ (12 test + 2 bánh cóc) ⇒ sửa tại chỗ `5abe2ace`; khép `--doi --tu d8b02cd7` trên `de331f8a` **PASS** (test_1259 cần token Máy B trong env) | `test-results/gates/`, `D:\LTTSTUDIOSAPP-runtime\l3-vps-v4-doi2.log` |
+| G5 | L2 xanh trên SHA deploy (`--doi --tu` bị gate từ chối vì delta chạm tệp dùng chung): `app:vps`, `app:auto_scan_video`, `cong_cu` PASS trên `ee5a5ef9`; ff `main` + `origin/main` | `test-results/gates/`, `l2-vps-v4-*.log` |
+| G6 | Deploy `ee5a5ef9` 17/09 03:28 (0 job/0 lease, EXITCODE 0, 83 s); `nghiem_thu_deploy` 0 lệch/0 thiếu/0 thừa; `/health/ready` 200 loopback + công khai; env Voice giữ nguyên; task đồng bộ Máy B đăng ký lại, chạy rc 0 | `C:\LTTPlatform\logs\deploy-20260917-032810.ket.txt` |
+| G7 | E2E live trên `d96b66f3` (Chrome thật qua CDP, chủ dự án đăng nhập): console **ĐẠT** (WS mở ≥30 s, thấy trình cài Windows Server, 0 lỗi console/request); bật trên VM đang chạy đồng bộ lại UI; khởi động lại + tắt mềm khi guest không nhận ACPI ⇒ PVE timeout, UI giữ **Đang chạy** khớp PVE, hiện nút Tắt cứng (R21 **ĐẠT**); tắt cứng có xác nhận ⇒ `qmstop` OK, UI Đã tắt; bật lại `WARNINGS: 1` coi là thành công (R19 **ĐẠT**) | `D:\LTTSTUDIOSAPP-runtime\e2e-shots\g7-*` |
+
+### Phát hiện G7 và quyết định (17/09)
+
+| # | Phát hiện | Xử lý |
+|---|---|---|
+| R22 | Tự mua IP chỉ bật khi có `adopt_ip_cart_id`; giỏ đã checkout ⇒ `404 Cart expired` ⇒ probe `OvhError` mỗi lượt, `ip`/`capacity` CRITICAL | **Chủ dự án chốt: tạm dừng bán VPS mới.** `provider_config.auto_acquire=false`, bỏ `adopt_ip_cart_id` (config v4, bản lùi ở runtime). Mở bán lại cần quyết định mua IP tự động + probe catalog `GET /order/catalog/formatted/ip` (chỉ đọc) |
+| R23 | Collector Máy B coi mapping `LTTMANAGED` là thừa, đòi IP gateway = 8+1 ⇒ `network` CRITICAL sau máy bán đầu tiên | Chặn mở bán lại; bản chạy ở `H:\PROXMOX` không phải git — sửa theo cổng thay đổi Máy B |
+| R24 | Trang `/vps` "còn chỗ" chỉ theo RAM/đĩa, lúc tạo mới kiểm IPv4/cổng | Sửa `75e1e0a5` + `test_1031` (đối chứng mã cũ 7 đỏ); chờ L2 + deploy |
+| — | Đổi default OVH→Vultr→OVH | Không chạy live: tài khoản thử là khách (403 admin) và Vultr 0401 chưa từng có health; đã có test tự động giữ ghim profile |
+
+### Bán lại (17/09 chiều)
+
+| # | Việc | Bằng chứng |
+|---|---|---|
+| R22 | health đọc giá catalog OVH, bỏ phụ thuộc giỏ adopt; deploy `b621cb1e`; `auto_acquire=true` (config v5) | `test_1030` (+ đối chứng), L1 PASS, health `ip`/`capacity` HEALTHY |
+| R23 | collector Máy B chấp nhận mapping `LTTMANAGED` hợp lệ | LTT-VM-Promox `4778e02`, unittest Máy B 31/31, `gateway.public_mapping` pass |
+
+### Còn lại
+
+| # | Việc | Chặn bởi |
+|---|---|---|
+| G7b | **Xong 17/09 05:33**: deploy `de2c1e9c` sau L1 `--doi --tu a3de7c97` PASS (lượt đầu đỏ `test_252` — test RAM chưa cho giới hạn IP/cổng; sửa test, chạy lại xanh); `nghiem_thu_deploy` 0/0/0; `/vps` công khai: 3 gói Hết chỗ, không còn form tạo, 0 lỗi console/request. Worktree `D:\LTTSTUDIOSAPP-vps-v4` đã gỡ | — |
+| G7c | **ĐẠT 17/09**: sau R25 (router DHCP cấp dải 10.50) máy nhận `10.50.0.50`, chủ dự án RDP vào `51.79.202.1` được. Nội dung gốc: mạng trong máy (RDP `51.79.202.1:3389` từ Internet, egress đúng IP OVH, đường `10.50.0.x`) sau khi chủ dự án cài Windows qua console tài khoản sở hữu | chủ dự án |
+| G8 | **Xong 17/09**: gỡ worktree `wt-vps-release`, xoá nhánh `codex/vps-v4-release-r1..r4`, xoá 6 clone/gói release của phiên. Worktree `D:\LTTSTUDIOSAPP-vps-v4` giữ tới khi R24 lên production | G7b |
+
+Tiến độ phần mềm ≈ 98% (còn nợ G7c của chủ dự án). Mở bán lại cần R22 + R23. Sẵn sàng production đầy đủ vẫn
+chặn bởi Backup V2 CAPACITY_BLOCKED, restore drill và dual-WAN chưa kiểm.
+
 ## 5. Bằng chứng E2E đã có (16/09)
 
 - Chrome thật `C:\LTTBrowserProfiles\VPSV4Cdp`, cổng 9222; chủ dự án qua xác minh

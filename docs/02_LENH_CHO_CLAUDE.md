@@ -36,7 +36,8 @@ Làm theo docs/03_THEM_APP_MOI.md. Không sửa file nào trong platform_core/
 hay server/ — nếu buộc phải sửa thì dừng lại và giải thích vì sao, vì đó là
 dấu hiệu hợp đồng app còn thiếu.
 
-Trong phiên chỉ chạy test nhắm của app; L3 một lần khi mọi pha xong (hợp đồng §4).
+Trong phiên chạy test nhắm của app (cần gate thì chỉ L1/L2); L3 một lần ở tổng kết
+phiên; deploy giữa phiên cần L1/L2 xanh (hợp đồng §4, §8).
 Xong thì cho tôi xem app mới đã hiện trên trang chủ.
 ```
 
@@ -79,7 +80,7 @@ Báo lại kết quả từng bước.
 ## Cập nhật code lên máy chủ
 
 ```
-Deploy theo docs/16_CAP_NHAT_VA_DEPLOY.md (có L3 xanh trên đúng SHA deploy,
+Deploy theo docs/16_CAP_NHAT_VA_DEPLOY.md (gate xanh trên đúng SHA deploy — L1/L2 giữa phiên, L3 ở tổng kết —
 báo phiên khác trước khi chép cây).
 Sau đó chạy setup/4-nghiem-thu.ps1, mở https://app.lttstudios.com kiểm tra thật
 từng trang và báo lại nội dung đọc được. Không chỉ dựa vào health check.

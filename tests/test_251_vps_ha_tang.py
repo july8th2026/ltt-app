@@ -816,6 +816,50 @@ def test_may_con_han_thi_khong_bi_thu_lai(db):
     assert billing.thu_phi_dinh_ky(db, now=now) == {"da_thu": 0, "da_treo": 0}
 
 
+def test_nap_credit_trong_han_giu_du_lieu_thi_may_treo_duoc_mo_lai(db):
+    """R15 (rà 16/09): Điều khoản hứa 7 ngày để nạp và dùng tiếp, nhưng máy treo
+    không bao giờ được thu lại — nạp đúng hạn vẫn mất máy."""
+    from sqlalchemy import select
+
+    from apps.vps.services import billing
+    from apps.vps.tables import VpsEvent
+    from platform_core import credit
+    u = _khach(db, 0)
+    g = _gateway(db)
+    m = _may(db, g, user_id=u.id, plan_id="vps-vua", trang_thai="dang_chay")
+    now = datetime(2026, 8, 22, tzinfo=timezone.utc)
+    billing.thu_phi_dinh_ky(db, now=now)
+    assert m.trang_thai == "bi_treo"
+
+    credit.nap(db, u.id, 5000)
+    sau = now + timedelta(days=3)
+    billing.thu_phi_dinh_ky(db, now=sau)
+    assert m.trang_thai == "da_tat" and m.xoa_sau is None
+    assert m.paid_until == sau + timedelta(days=30)
+    assert credit.so_du(db, u.id) == 5000 - 1790
+    loai = [e.loai for e in db.execute(select(VpsEvent).where(
+        VpsEvent.instance_id == m.id).order_by(VpsEvent.created_at)).scalars()]
+    assert "go_treo" in loai
+
+
+def test_may_treo_qua_han_hoac_khong_vi_no_thi_khong_tu_mo(db):
+    from apps.vps.services import billing
+    from platform_core import credit
+    u = _khach(db, 0)
+    g = _gateway(db)
+    no = _may(db, g, user_id=u.id, plan_id="vps-nho", trang_thai="dang_chay")
+    lam_dung = _may(db, g, user_id=u.id, plan_id="vps-nho", trang_thai="dang_chay")
+    now = datetime(2026, 8, 22, tzinfo=timezone.utc)
+    billing.thu_phi_dinh_ky(db, now=now)                 # `no` treo vì thiếu credit
+    billing.treo(db, lam_dung, "Lam dung tai nguyen", now=now)
+    credit.nap(db, u.id, 50000)
+    billing.mo_lai_may_treo(db, now=now + timedelta(days=8))   # quá hạn giữ dữ liệu
+    assert no.trang_thai == "bi_treo"
+    billing.mo_lai_may_treo(db, now=now + timedelta(days=1))
+    assert no.trang_thai == "da_tat"
+    assert lam_dung.trang_thai == "bi_treo", "treo vi ly do khac khong duoc tu mo"
+
+
 def test_su_kien_duoc_ghi_lai_de_tra_loi_khach(db):
     """Nhật ký vòng đời là thứ trả lời "vì sao máy tôi bị tắt", không phải log."""
     from apps.vps.services import billing

@@ -1,6 +1,6 @@
 # VPS V4 — Final Report
 
-Status: **IN PROGRESS — OFFLINE CODE NEAR FREEZE; READ-ONLY LIVE PREFLIGHT PARTIAL; RESOURCE CREATE BLOCKED**
+Status: **CLOSED 17/09/2026 — PRODUCTION; OVH DEFAULT; SALES OPEN (auto-buy one OVH IPv4 per VPS); R1–R25 FIXED; LIVE E2E PASS (create, console, lifecycle, in-guest network, RDP). Vultr retained STANDBY pending retirement (owner). Readiness gates outside software: Backup V2, restore drill, dual-WAN.**
 
 ## Revisions
 
@@ -28,7 +28,7 @@ mutation journal and per-profile health/reconciliation. See `03` and `04`.
 - [x] one-default invariant
 - [x] instance profile pinning
 - [x] Vultr adapter preserved / STANDBY
-- [ ] OVH adapter / ACTIVE / DEFAULT
+- [x] OVH adapter / ACTIVE / DEFAULT
 - [x] OVH credential ownership/read-only inventory and public-IP pool sync
 - [x] race-safe allocation
 - [x] gateway contract + actual `gwnat` adapter/helper installed and refusal-tested live
@@ -36,21 +36,32 @@ mutation journal and per-profile health/reconciliation. See `03` and `04`.
 - [x] Admin profile UI
 - [x] web-only policy
 - [x] owner-only MVP access
-- [ ] one OVH IPv4 live
-- [ ] one OVH VPS live with correct owner
-- [ ] Windows installer/disk visible and console
-- [ ] public/private/WG connectivity
-- [ ] stop/start/restart
-- [ ] cleanup or explicitly retained state
+- [x] one OVH IPv4 live (order 22703620, USD 2.39, BOUND, gwnat mapping observed)
+- [x] one OVH VPS live with correct owner (`d96b66f3`, VM 204, owner D09 account)
+- [x] Windows installer/disk visible and console (17/09) R20 đạt live
+- [x] public/private/WG connectivity (17/09) sau R25 (DHCP dải 10.50): `10.50.0.50`, RDP `51.79.202.1` đạt
+- [x] stop/start/restart (17/09) R21/R19 đạt live; tắt cứng có xác nhận
+- [x] cleanup or explicitly retained state (owner keeps the VPS for real use)
 - [x] default switch preserves existing pin
 - [x] scoped failure injection/security/secret scan
-- [ ] final full gate
+- [x] final full gate (17/09) L3 `d8b02cd7` khép PASS; deploy sau qua L1/L2
 
 ## Live test VPS
 
-NOT CREATED. App instance ID, VMID, profile, canonical owner ID, private/public
-IP and current state are pending live gate. No production resource identifier
-is fabricated here.
+Created 16/09 17:34 (after one failed attempt refunded 17:33:14):
+instance `d96b66f3-3d95-4fa5-8615-5f58801796a7`, VMID 204, profile
+`OVH-SGP-PROD` (0402, PINNED), private `10.50.0.50`, one OVH Additional IPv4
+(order 22703620, redacted in reports), all seven journal steps OBSERVED after two
+guarded operator recoveries (R18 order status, R19 PVE WARNINGS). Kept by the
+owner for real use; not destroyed.
+
+## Scorecard (16/09, three separate dimensions — never averaged)
+
+| Dimension | State | Evidence / blocker |
+|---|---|---|
+| Implementation quality | Strong but not certified | R1–R21 fixed with targeted tests and counterfactuals; static ratchets clean and lowered; **session L3 not yet run** |
+| Live evidence | Partial | real create with real IP purchase, refund path, gateway refusal RC 5; console/lifecycle/default-switch/in-guest network pending re-check after deploy |
+| Production readiness | **Not FULL PRODUCTION READY** | Backup V2 CAPACITY_BLOCKED, restore drill and dual-WAN unverified; release to `main` pending |
 
 ## Tests and evidence
 

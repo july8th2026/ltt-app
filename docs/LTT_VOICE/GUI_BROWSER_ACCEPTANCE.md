@@ -70,3 +70,19 @@ mỗi tài khoản một browser context riêng:
 | `khach2.thu@…local` | 45 / 20 / **25** / 0 | "Adrian" — "Kho chung"; khối quản lý ẩn; chỉ "Dùng giọng này" ✅ | 0 / 0 |
 
 ⇒ D001/V06 PROVEN trên production từ cả hai phía.
+
+## C. Production 17/09/2026 04:3x — nút "Nghe thử câu đầu (miễn phí)" (U-13), deploy `a3de7c97`
+
+Tài khoản `khach2.thu@lttstudios.local` (cookie `tai_khoan_thu.py --cookie`), `https://app.lttstudios.com/ltt-voice`:
+
+| # | Kiểm | Kết quả |
+|---|---|---|
+| 1 | Asset mới | `voice.js?v=ac178854` = `asset_ver` của `/health/version` ✅ |
+| 2 | Giọng mẫu "Adam" + văn bản 2 câu → bấm nút | `POST /nghe-thu-van-ban` **200**, `X-Luot-Con-Lai: 5`; câu "Còn 5 lượt nghe thử miễn phí trong giờ này." ✅ |
+| 3 | Âm thanh phát được | `<audio>` src `blob:https://app.lttstudios.com…`, `duration` **4,3 s** ✅ |
+| 4 | Chọn giọng không phải mẫu → bấm nút | "Nghe thử miễn phí chỉ dùng cho giọng mẫu." — không gửi request ✅ |
+| 5 | Kho chung sau deploy | 45 / 20 / **25** / 0 ✅ |
+| 6 | Console / network | **0 / 0** ✅ |
+
+🔴 Lượt đầu (deploy `935f9bba`) bắt được lỗi: phát `data:audio/wav` bị CSP `media-src 'self' blob:` chặn
+(MediaError 4) — dev không đặt CSP. Sửa `9e07fbf2` (phát qua `blob:`), đối chứng dưới CSP thật trước khi deploy lại.

@@ -13728,6 +13728,13 @@ msgstr ""
 "Tickets that open a VM console. The SHA-256 of the ticket is stored, never the ticket. It expires"
 " after 60 seconds and is deleted the moment it is used."
 
+msgid ""
+"Mã đăng nhập một lần của ứng dụng LTTCODE. Lưu SHA-256 của mã, không lưu mã. Hết hạn sau 120 "
+"giây và bị xoá sau một giờ."
+msgstr ""
+"One-time sign-in codes for the LTTCODE app. The SHA-256 of the code is stored, never the code. "
+"It expires after 120 seconds and is deleted after one hour."
+
 #: platform_core/nexus/sessions.py:124 platform_core/nexus/sessions.py:129
 #: platform_core/nexus/sessions.py:133
 msgid "Vé phiên không dùng được."
@@ -18030,6 +18037,22 @@ msgstr "🧪 Run a test job"
 #~ msgid "✦ Tất cả"
 #~ msgstr "✦ All"
 
+msgid "Đã gia hạn, máy được mở lại"
+msgstr "Renewed, machine reopened"
+
+msgid "Giọng đã chọn không cùng ngôn ngữ với lời lồng tiếng, nên chúng tôi dừng lại trước khi đọc thay vì giao một bản đọc sai giọng. Hãy tạo lần chạy mới với một giọng cùng ngôn ngữ với lời lồng tiếng."
+msgstr "The selected voice is not in the same language as the dubbing script, so we stopped before reading instead of delivering a mismatched voice-over. Create a new run with a voice in the same language as the dubbing script."
+
+msgid "Giọng đã chọn chưa xác định được ngôn ngữ nên chưa dùng để đọc được. Hãy tạo lần chạy mới với một giọng đã ghi rõ Tiếng Việt hoặc Tiếng Anh."
+msgstr "The selected voice has no known language, so it cannot be used for reading yet. Create a new run with a voice marked as Vietnamese or English."
+
+#: server/templates/huong_dan_cong_cu.html
+msgid "profile LTT 3.8; tạo mới hoặc sao lưu trước khi ghi"
+msgstr "LTT 3.8 profile; created fresh or backed up before writing"
+
+#: server/templates/huong_dan_cong_cu.html
+msgid "profile LTT 3.5; được cài cùng lượt với LTT 3.8"
+msgstr "LTT 3.5 profile; installed in the same pass as LTT 3.8"
 
 msgid "Về tốc độ gốc"
 msgstr "Back to original speed"
@@ -18049,11 +18072,7 @@ msgstr "The queue is taking longer than usual. You can keep waiting, or open the
 msgid "Chờ lâu bất thường"
 msgstr "Unusually long wait"
 
-msgid "profile LTT 3.8; tạo mới hoặc sao lưu trước khi ghi"
-msgstr "LTT 3.8 profile; created, or backed up before writing"
-
-msgid "profile LTT 3.5; được cài cùng lượt với LTT 3.8"
-msgstr "LTT 3.5 profile; installed in the same run as LTT 3.8"
+msgstr "Unusually long wait"
 
 msgid "Yêu cầu chưa đúng"
 msgstr "Something is wrong with this request"
@@ -18502,3 +18521,287 @@ msgstr "Settled"
 
 msgid "Đã thu hồi"
 msgstr "Revoked"
+
+msgid "LTTCODE — tải về và cập nhật"
+msgstr "LTTCODE — download and updates"
+
+msgid "Trang tải và kênh cập nhật của ứng dụng LTTCODE cho Windows."
+msgstr "Download page and update channel for the LTTCODE Windows app."
+
+msgid "Tải LTTCODE"
+msgstr "Download LTTCODE"
+
+msgid "Trợ lý lập trình AI chạy trên máy tính của bạn, dùng model của LTT Studios."
+msgstr "An AI coding assistant that runs on your computer, powered by LTT Studios models."
+
+msgid "Tải bản cho Windows"
+msgstr "Download for Windows"
+
+msgid "Bộ cài chưa ký số nên Windows có thể cảnh báo SmartScreen: chọn Thông tin thêm rồi Vẫn chạy."
+msgstr "The installer is not code-signed yet, so Windows SmartScreen may warn you: choose More info, then Run anyway."
+
+msgid "Chưa có bản phát hành."
+msgstr "No release yet."
+
+msgid "Đăng nhập LTTCODE"
+msgstr "Sign in to LTTCODE"
+
+msgid "Cho phép LTTCODE dùng tài khoản của bạn?"
+msgstr "Allow LTTCODE to use your account?"
+
+msgid "Máy:"
+msgstr "Device:"
+
+msgid "Tài khoản:"
+msgstr "Account:"
+
+msgid "LTTCODE sẽ nhận một khoá API riêng cho máy này, dùng credit của tài khoản. Bạn có thể thu hồi khoá bất cứ lúc nào trong Developers › Keys."
+msgstr "LTTCODE will receive an API key for this device only, using your account credits. You can revoke the key at any time in Developers › Keys."
+
+msgid "Từ chối"
+msgstr "Deny"
+
+msgid "Cho phép"
+msgstr "Allow"
+
+msgid "Đã cho phép — đang quay lại LTTCODE"
+msgstr "Allowed — returning to LTTCODE"
+
+msgid "Đã từ chối"
+msgstr "Denied"
+
+msgid "Bấm vào đây nếu LTTCODE chưa nhận được"
+msgstr "Click here if LTTCODE did not receive it"
+
+msgid "Yêu cầu đăng nhập không hợp lệ"
+msgstr "Invalid sign-in request"
+
+msgid "Hãy quay lại LTTCODE và bấm Đăng nhập lần nữa."
+msgstr "Go back to LTTCODE and click Sign in again."
+
+msgid "Nghe thử câu đầu (miễn phí)"
+msgstr "Preview first sentence (free)"
+
+msgid "Nghe thử miễn phí chỉ dùng cho giọng mẫu."
+msgstr "Free preview works with built-in voices only."
+
+msgid "Còn {n} lượt nghe thử miễn phí trong giờ này."
+msgstr "{n} free previews left this hour."
+
+msgid "Đang tạo…"
+msgstr "Generating…"
+
+msgid "Đọc tối đa {n} ký tự đầu bằng giọng mẫu đang chọn — miễn phí, {m} lượt mỗi giờ."
+msgstr "Reads up to the first {n} characters with the selected built-in voice — free, {m} times per hour."
+
+msgid "Không gửi được yêu cầu. Kiểm tra kết nối rồi thử lại."
+msgstr "Could not send the request. Check your connection and try again."
+
+# LTTCODE — trang cong khai /lttcode (17/09)
+msgid "LTTCODE — trợ lý lập trình AI"
+msgstr "LTTCODE — AI coding assistant"
+
+msgid "Ứng dụng Windows giúp đọc, sửa mã và chạy lệnh trong thư mục dự án của bạn, dùng model của LTT Studios và trả bằng credit."
+msgstr "A Windows app that reads and edits code and runs commands in your project folder, using LTT Studios models and paid with credits."
+
+msgid "LTTCODE — trợ lý lập trình AI cho Windows"
+msgstr "LTTCODE — AI coding assistant for Windows"
+
+msgid "Tải cho Windows"
+msgstr "Download for Windows"
+
+msgid "Trợ lý lập trình AI"
+msgstr "AI coding assistant"
+
+msgid "Viết mã cùng AI, ngay trong thư mục dự án của bạn"
+msgstr "Code with AI, right inside your project folder"
+
+msgid "LTTCODE là ứng dụng Windows: trợ lý đọc và sửa mã trong thư mục bạn chọn, chạy lệnh khi bạn cho phép và tìm thông tin trên web — dùng model của LTT Studios, trả bằng credit của tài khoản LTT."
+msgstr "LTTCODE is a Windows app: the assistant reads and edits code in the folder you choose, runs commands when you allow it, and searches the web — using LTT Studios models, paid with the credits of your LTT account."
+
+msgid "Xem cách bắt đầu"
+msgstr "See how to get started"
+
+msgid "Có gì mới trong bản này"
+msgstr "What's new in this version"
+
+msgid "Sắp phát hành"
+msgstr "Coming soon"
+
+msgid "Bản cài ổn định đầu tiên cho Windows đang được hoàn thiện. Nút tải sẽ xuất hiện ở đây ngay khi bản đó phát hành."
+msgstr "The first stable Windows installer is being finished. The download button will appear here as soon as it is released."
+
+msgid "Lệnh ngoài workspace phải được duyệt"
+msgstr "Commands outside the workspace need your approval"
+
+msgid "Bản cập nhật được kiểm chữ ký"
+msgstr "Updates are signature-verified"
+
+msgid "Sửa hàm tính tổng giỏ hàng để bỏ qua sản phẩm số lượng âm, rồi chạy test."
+msgstr "Fix the cart total function to skip items with a negative quantity, then run the tests."
+
+msgid "Đã đọc src/cart.py và sửa một chỗ:"
+msgstr "Read src/cart.py and made one change:"
+
+msgid "Chạy lệnh?"
+msgstr "Run command?"
+
+msgid "Tính năng"
+msgstr "Features"
+
+msgid "LTTCODE làm được gì"
+msgstr "What LTTCODE can do"
+
+msgid "Một trợ lý làm việc trực tiếp trên mã nguồn trong máy bạn, không phải khung chat tách rời dự án."
+msgstr "An assistant that works directly on the source code on your computer — not a chat box detached from your project."
+
+msgid "Đọc và sửa mã trong thư mục bạn chọn"
+msgstr "Reads and edits code in the folder you choose"
+
+msgid "Bạn chọn một thư mục làm workspace. Trợ lý đọc các tệp trong đó, đề xuất và thực hiện thay đổi ngay tại chỗ."
+msgstr "You pick a folder as the workspace. The assistant reads its files, proposes changes and makes them in place."
+
+msgid "Chạy lệnh có phê duyệt"
+msgstr "Runs commands with approval"
+
+msgid "Trợ lý chạy lệnh để kiểm tra kết quả. Lệnh chạm ra ngoài workspace phải được bạn duyệt, và quyền truy cập đầy đủ được hỏi riêng cho từng lệnh."
+msgstr "The assistant runs commands to check its work. Commands that reach outside the workspace need your approval, and full access is requested separately for each command."
+
+msgid "Tìm trên web qua LTT"
+msgstr "Web search through LTT"
+
+msgid "Khi cần tài liệu hay thông tin mới, trợ lý tìm web qua dịch vụ tìm kiếm của LTT — bạn không phải tự cấu hình khoá tìm kiếm nào."
+msgstr "When it needs documentation or fresh information, the assistant searches the web through LTT's search service — no search API key for you to set up."
+
+msgid "Model của LTT Studios"
+msgstr "LTT Studios models"
+
+msgid "Đăng nhập bằng tài khoản LTT là dùng được model của nền tảng, trả bằng cùng ví credit với các công cụ khác."
+msgstr "Sign in with your LTT account to use the platform's models, paid from the same credit wallet as the other tools."
+
+msgid "Mở lại phiên cũ"
+msgstr "Resume earlier sessions"
+
+msgid "Phiên làm việc được lưu trên máy, nên bạn có thể quay lại một phiên trước đó và làm tiếp."
+msgstr "Sessions are saved on your computer, so you can go back to an earlier session and continue."
+
+msgid "Bốn bước để bắt đầu"
+msgstr "Four steps to get started"
+
+msgid "Bấm Tải cho Windows ở đầu trang. Cần Windows 10 hoặc 11 bản 64-bit."
+msgstr "Click Download for Windows at the top of this page. Requires 64-bit Windows 10 or 11."
+
+msgid "Cài đặt"
+msgstr "Install"
+
+msgid "Chạy tệp vừa tải. Bộ cài chưa ký số nên Windows SmartScreen có thể cảnh báo: chọn Thông tin thêm rồi Vẫn chạy."
+msgstr "Run the downloaded file. The installer is not code-signed yet, so Windows SmartScreen may warn you: choose More info, then Run anyway."
+
+msgid "Đăng nhập tài khoản LTT"
+msgstr "Sign in to your LTT account"
+
+msgid "Bấm Đăng nhập trong ứng dụng. Trình duyệt mở trang xác nhận — bấm Cho phép trong vòng 5 phút."
+msgstr "Click Sign in in the app. Your browser opens a confirmation page — click Allow within 5 minutes."
+
+msgid "Mở thư mục dự án"
+msgstr "Open your project folder"
+
+msgid "Chọn thư mục mã nguồn làm workspace rồi bắt đầu trò chuyện với trợ lý."
+msgstr "Choose your source code folder as the workspace and start chatting with the assistant."
+
+msgid "Chưa có tài khoản LTT?"
+msgstr "No LTT account yet?"
+
+msgid "Trợ lý chỉ làm những gì bạn cho phép"
+msgstr "The assistant only does what you allow"
+
+msgid "Một công cụ được sửa tệp và chạy lệnh trên máy bạn nợ bạn câu trả lời rõ ràng về giới hạn của nó."
+msgstr "A tool that edits files and runs commands on your computer owes you a clear answer about its limits."
+
+msgid "Khoá riêng cho từng máy"
+msgstr "A separate key for each device"
+
+msgid "Khi đăng nhập, nền tảng cấp một khoá riêng cho máy này; ứng dụng lưu nó trong Windows Credential Manager. Đăng xuất là khoá bị thu hồi."
+msgstr "When you sign in, the platform issues a key for this device only; the app stores it in Windows Credential Manager. Signing out revokes the key."
+
+msgid "Trợ lý làm việc trong thư mục bạn chọn. Lệnh nào chạm ra ngoài đều chờ bạn đồng ý, và quyền truy cập đầy đủ được hỏi cho từng lệnh."
+msgstr "The assistant works inside the folder you choose. Any command that reaches outside waits for your consent, and full access is requested for each command."
+
+msgid "Chỉ kết nối tới LTT"
+msgstr "Connects only to LTT"
+
+msgid "Ứng dụng gửi yêu cầu tới máy chủ LTT Studios để gọi model và tìm web; nó không tự gửi mã của bạn tới dịch vụ bên thứ ba nào."
+msgstr "The app sends requests to LTT Studios servers to call models and search the web; it does not send your code to any third-party service on its own."
+
+msgid "Trước khi cài bản mới, ứng dụng kiểm chữ ký của gói cập nhật. Gói sai chữ ký bị từ chối."
+msgstr "Before installing a new version, the app verifies the update package's signature. A package with a bad signature is rejected."
+
+msgid "Trả theo lượt dùng model"
+msgstr "Pay per model use"
+
+msgid "Tải và cài LTTCODE không mất phí. Mỗi lượt trợ lý dùng model sẽ trừ credit trong tài khoản LTT của bạn, theo bảng giá model của nền tảng."
+msgstr "Downloading and installing LTTCODE is free. Each time the assistant uses a model, credits are deducted from your LTT account according to the platform's model pricing."
+
+msgid "Xem bảng giá model"
+msgstr "View model pricing"
+
+msgid "Cập nhật & gỡ cài đặt"
+msgstr "Updates & uninstalling"
+
+msgid "Luôn ở bản mới nhất"
+msgstr "Always on the latest version"
+
+msgid "Tự báo khi có bản mới"
+msgstr "Tells you when a new version is out"
+
+msgid "Ứng dụng kiểm tra bản mới khi khởi động và sáu giờ một lần. Khi có bản mới, bấm Cập nhật ngay để tải và cài; gói cập nhật được kiểm chữ ký trước khi cài."
+msgstr "The app checks for a new version at startup and every six hours. When one is available, click Update now to download and install it; the update package is signature-verified before it is installed."
+
+msgid "Gỡ cài đặt"
+msgstr "Uninstall"
+
+msgid "Mở Settings › Apps của Windows (Cài đặt › Ứng dụng), tìm LTTCODE rồi chọn Gỡ cài đặt."
+msgstr "Open Windows Settings › Apps, find LTTCODE and choose Uninstall."
+
+msgid "Xử lý sự cố"
+msgstr "Troubleshooting"
+
+msgid "Windows SmartScreen chặn bộ cài"
+msgstr "Windows SmartScreen blocks the installer"
+
+msgid "Bộ cài hiện chưa được ký số nên SmartScreen chưa nhận ra nó. Chọn Thông tin thêm rồi Vẫn chạy. Muốn chắc tệp không bị thay đổi, so mã SHA-256 ở đầu trang với tệp bạn đã tải."
+msgstr "The installer is not code-signed yet, so SmartScreen does not recognize it. Choose More info, then Run anyway. To make sure the file was not altered, compare the SHA-256 at the top of this page with the file you downloaded."
+
+msgid "Đăng nhập chờ quá lâu rồi thất bại"
+msgstr "Sign-in waited too long and failed"
+
+msgid "Ứng dụng chỉ chờ bạn bấm Cho phép trong trình duyệt tối đa 5 phút. Quá thời gian đó, hoặc lỡ đóng trang, hãy quay lại ứng dụng và bấm Đăng nhập lần nữa."
+msgstr "The app waits at most 5 minutes for you to click Allow in the browser. If that time passes, or you closed the page, go back to the app and click Sign in again."
+
+msgid "Trợ lý không khởi động được"
+msgstr "The assistant does not start"
+
+msgid "Phần runtime của trợ lý (DeepSeek-Harness) chạy ngay trên máy bạn. Nếu nó không khởi động, ứng dụng hiện nút mở nhật ký để bạn xem lỗi cụ thể."
+msgstr "The assistant's runtime (DeepSeek-Harness) runs on your own computer. If it fails to start, the app shows a button to open the log so you can see the exact error."
+
+msgid "Mất máy, hoặc muốn cắt quyền của một máy"
+msgstr "Lost a device, or want to cut off a device's access"
+
+msgid "Đăng nhập trang web, vào Developers › Keys và thu hồi khoá của máy đó. Khoá bị thu hồi thì máy ấy không dùng được tài khoản của bạn nữa."
+msgstr "Sign in on the website, go to Developers › Keys and revoke that device's key. Once the key is revoked, that device can no longer use your account."
+
+msgid "Mở Developers › Keys"
+msgstr "Open Developers › Keys"
+
+msgid "Yêu cầu hệ thống"
+msgstr "System requirements"
+
+msgid "Windows 10 hoặc Windows 11 bản 64-bit (x64), có kết nối Internet và một tài khoản LTT còn credit."
+msgstr "64-bit (x64) Windows 10 or Windows 11, an Internet connection and an LTT account with credits."
+
+msgid "Sẵn sàng thử LTTCODE?"
+msgstr "Ready to try LTTCODE?"
+
+msgid "Tải bộ cài, đăng nhập tài khoản LTT và mở thư mục dự án đầu tiên của bạn."
+msgstr "Download the installer, sign in to your LTT account and open your first project folder."
+

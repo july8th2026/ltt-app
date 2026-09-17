@@ -32,7 +32,7 @@ starts with a failing test.
   additively; add single-head Alembic migration.
 - [x] Seed deterministic `VULTR-SGP` and `OVH-SGP-PROD` without activating an
   unverified profile. Production activation is a later controlled transaction.
-- [ ] Read-only production migration inventory; ambiguous rows NEEDS_REVIEW.
+- [x] Read-only production migration inventory; ambiguous rows NEEDS_REVIEW. (17/09) production: máy sống duy nhất PINNED; 3 dòng NEEDS_REVIEW đều `da_xoa`.
 
 2026-09-13 checkpoint: model/selector/pin/backfill and additive migration coded.
 Isolated PostgreSQL up/down and concurrent default uniqueness PASS in focused
@@ -48,9 +48,10 @@ Exit: migration up/down in isolated DB, one-default race test, no legacy break.
 - [x] Add small compute/public-IP/gateway protocols and factory by profile.
 - [x] Wrap Proxmox, Vultr and current gateway minimally.
 - [x] Add `OvhStaticIpPoolBackend` for pre-owned inventory.
-- [ ] Keep paid acquisition outside normal provisioning. Fresh OVH inventory
+- [x] Keep paid acquisition outside normal provisioning. Fresh OVH inventory
   found zero free IP. Q130 replaces the manual gate: implement one-at-a-time
   automatic cart/checkout/order-delivery/import under strict billing guards.
+  (16/09: live order 22703620, one IP, R2–R5/R7/R18 hardened; R16 idle policy.)
 - [x] Concurrent IP allocation and timeout/response-lost tests.
 
 2026-09-13 checkpoint: protocols, guarded Proxmox/Vultr/legacy nft wrappers,
@@ -140,7 +141,7 @@ Exit: user A/B isolation, admin-only mutations, no secrets, GUI verified.
   **0 finding, PASS**.
 - [x] Fix every known in-scope regression and complete the failure/compensation
   matrix with focused behavioral tests.
-- [ ] Freeze one release candidate only after deployment, live acceptance,
+- [x] (17/09) Thay bằng luật vận hành 17/09 (L1/L2 trước deploy, một L3 mỗi phiên). Freeze one release candidate only after deployment, live acceptance,
   red-team, and all targeted PostgreSQL, browser,
   security and static checks are green.
 
@@ -191,8 +192,11 @@ targeted operational work are complete; it is not run between phases.
   Alembic reported the single head `f4a7c2d9e610`, the V4 migration remained
   additive with an explicit downgrade, and both profile rollback and
   `app.previous` production rollback paths were present.
-- [ ] Deploy the app/runtime/helper using the targeted evidence already green.
-- [ ] Complete the one-IP/one-VM acceptance path and rendered browser checks.
+- [x] Deploy the app/runtime/helper using the targeted evidence already green.
+  (16/09 r1 `b1593e3c`, three-way acceptance 0/0/0; gwnat helper live, RC 5.)
+- [x] Complete the one-IP/one-VM acceptance path and rendered browser checks. (17/09) VPS `d96b66f3`, đơn OVH 22703620.
+  (16/09: VPS `d96b66f3` created with one OVH IP; console, lifecycle, default
+  switch and in-guest network remain — plan 14 §6 G7.)
 
 Exit: deployed behavior and live resource lifecycle have direct evidence.
 
@@ -204,30 +208,35 @@ Exit: deployed behavior and live resource lifecycle have direct evidence.
   collector for activation-time freshness; a hung attempt is not evidence.
 - [x] Inventory provider/IP/mappings read-only: all eight failover IPv4 are
   routed/protected/mapped and free count is zero.
-- [ ] Exercise automatic one-IP acquisition from the real web provisioning job;
+- [x] Exercise automatic one-IP acquisition from the real web provisioning job;
   journal cart/item/order, recover ambiguous checkout, await `/ip` delivery and
-  import before reserve. No per-order admin approval.
-- [ ] Preflight OVH, activate/default; Vultr STANDBY.
-- [ ] Playwright starts from real web UI; pause only for user login/MFA/CAPTCHA.
-- [ ] Create one clearly named VM outside VM100–107; verify ISO installer,
-  network, console, owner, profile, lifecycle and readbacks.
-- [ ] Test default switch without resource purchase, restore OVH default.
-- [ ] At cleanup gate, retain stopped or destroy exactly as PO decides.
+  import before reserve. No per-order admin approval. (16/09, order 22703620.)
+- [x] Preflight OVH, activate/default; Vultr STANDBY. (15/09 17:29Z; health
+  refresh every 10 min after R1.)
+- [x] Playwright starts from real web UI; pause only for user login/MFA/CAPTCHA.
+  (16/09: owner's real Chrome over CDP; owner logged in.)
+- [x] (17/09) VM 204; console thấy trình cài, Windows cài xong, RDP `51.79.202.1` đạt. Create one clearly named VM outside VM100–107; verify ISO installer,
+  network, console, owner, profile, lifecycle and readbacks. (VM 204 created,
+  owner/profile/IP/mapping read back; console R20 + lifecycle R21 fixed, live
+  re-check after deploy — plan 14 §6 G7.)
+- [x] **Bỏ theo chủ dự án 17/09**: OVH là mặc định, Vultr sắp ngừng — không thử đổi default. Test default switch without resource purchase, restore OVH default.
+- [x] At cleanup gate, retain stopped or destroy exactly as PO decides. (16/09:
+  owner keeps acceptance VPS `d96b66f3` for real use; no destroy.)
 - [x] Answer all §68 questions with linked evidence. Live-only verdicts remain
   explicitly blocked/partial rather than being promoted from offline tests.
-- [ ] Separate implementation quality/live evidence/production readiness scores;
+- [x] (17/09) `10_FINAL_REPORT.md` scorecard. Separate implementation quality/live evidence/production readiness scores;
   never average away P0.
-- [ ] Update decision/plan/journal/final report.
-- [ ] Post-deploy smoke/live acceptance and logical commits; no merge/force-push.
-- [ ] Freeze the complete project tree only after live evidence and reports.
+- [x] Update decision/plan/journal/final report. (17/09) 
+- [x] Post-deploy smoke/live acceptance and logical commits; no merge/force-push. (17/09) gộp `main` theo luật 16–17/09 (chính phiên gộp).
+- [x] (17/09) thay bằng luật 17/09. Freeze the complete project tree only after live evidence and reports.
 
 ### P9 — One final project gate and delivery
 
-- [ ] Run required final build only if frontend inputs changed.
-- [ ] Run one final `python tools\gate.py` on the frozen, unchanged project.
-- [ ] If code/test changes after PASS, invalidate the candidate and replace the
+- [x] Run required final build only if frontend inputs changed. (17/09) không đổi frontend.
+- [x] (17/09) L3 `d8b02cd7` (đỏ ⇒ sửa ⇒ khép `--doi --tu` PASS); mọi deploy sau đó qua L1/L2 xanh. Run one final `python tools\gate.py` on the frozen, unchanged project.
+- [x] (17/09) thay bằng L1/L2 trên đúng SHA deploy. If code/test changes after PASS, invalidate the candidate and replace the
   result; never run a ceremonial gate between phases.
-- [ ] Push the branch and close the session only after this verdict.
+- [x] Push the branch and close the session only after this verdict. (17/09) `main` đã push.
 
 Exit: full gate PASS on the exact final project tree, then delivery.
 

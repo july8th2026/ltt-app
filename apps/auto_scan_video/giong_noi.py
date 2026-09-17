@@ -66,6 +66,26 @@ class GiongMoHo(RuntimeError):
     """
 
 
+class GiongKhongHopLe(RuntimeError):
+    """`ltt_voice` TU CHOI yeu cau giong — that bai CUOI CUNG, dung thu lai.
+
+    Boc `features.LoiGiongNoi`: giong khong phai cua nguoi goi, giong da tat,
+    hay **kich ban lech lan voi giong** (`voice_language_mismatch`). Chay lai
+    cung giong + cung kich ban se bi tu choi y het.
+
+    ⛔ Khong ke thua `GiongError`: lop do la `TAM_THOI` trong `loi.phan_loai`,
+       tuc giai doan bi danh dau *thu lai duoc* cho mot viec khong bao gio
+       thanh cong.
+
+    ⭐ `ma_loi` la ma ON DINH cua `ltt_voice` (rong khi no khong khai ma).
+       Man tien do doc ma nay — khong doc cau chu — de noi dung cau cho khach.
+    """
+
+    def __init__(self, thong_diep: str = "", *, ma_loi: str = ""):
+        super().__init__(thong_diep)
+        self.ma_loi = str(ma_loi or "")
+
+
 class MayBan(RuntimeError):
     """May sinh tieng dang ban. **BAN KHONG PHAI HONG.**
 
@@ -123,8 +143,10 @@ def tach_ma_giong(ma: str) -> tuple[str, str]:
     return ("", ma) if hop_le(ma) else (ma, "")
 
 
-def giai_giong(db, *, owner_id: str, voice_id: str = "", preset: str = ""):
-    """`(ref_b64, preset)` cho mot chu so huu. Nem neu giong khong phai cua ho.
+def giai_giong(db, *, owner_id: str, voice_id: str = "", preset: str = "",
+               van_ban: str = "", ngon_ngu: str = ""):
+    """`(ref_b64, preset)` cho mot chu so huu. Nem `GiongKhongHopLe` neu
+    `ltt_voice` tu choi: giong khong phai cua ho, hoac `van_ban` lech lan.
 
     Goi dung mot lan cho ca lan chay, roi dung lai cho moi doan: giai giong la
     mot phep tra CSDL, va lam lai no cho tung doan la N luot tra cho mot cau tra
@@ -132,16 +154,34 @@ def giai_giong(db, *, owner_id: str, voice_id: str = "", preset: str = ""):
 
     ⭐ `voice_id` nhan duoc mot ma giong BAT KY — ke ca ten mot giong dung san —
        va `tach_ma_giong` dat no vao dung o. Nguoi goi khong phai biet luat do.
+
+    🔴 **W4' (doi soat 16/09/2026): `van_ban` la KICH BAN SE DOC, khong phai mot
+       cho giu chan.** Truoc do cho nay dua `text="."`, nen phep chot lan cua
+       `ltt_voice` (`_chot_lan` → `lan_ngon_ngu.quyet_dinh`) chay tren mot dau
+       cham: `doan_ngon_ngu(".")` la `None` ⇒ nhan lan cua giong ⇒ luon cho
+       qua. Mot giong nguon tieng Anh doc tron ban long tieng Viet, va khach
+       tra tien cho dung loi chat luong ma Q121 dung ra de chan.
+
+    ⛔ KHONG tu doan ngon ngu o day. `quyet_dinh` la tham quyen DUY NHAT; ta chi
+       dua cho no dung hai thu no can — van ban that, va `ngon_ngu` (ngon ngu
+       ban long tieng KHAI, di vao nhanh `khai_bao`). Loi khai la bang chung
+       manh nhat: tieng Viet khong dau khong doan duoc, nhung van bi chan.
+
+    ⚠️ `van_ban` rong van giu cho giu chan cu — cho nguoi goi CHI giai giong
+       (`rang_giong`, luc chua co kich ban). Cho do khong phai cua chan lan.
     """
-    from apps.ltt_voice.features import chuan_hoa, giai_giong as _giai
+    from apps.ltt_voice import features as vf
 
     if voice_id and not preset:
         voice_id, preset = tach_ma_giong(voice_id)
 
-    # `chuan_hoa` doi co `text`; o day ta chi giai giong, nen dua mot cho giu chan.
-    yc = chuan_hoa({"text": ".", "voice_id": voice_id, "preset": preset,
-                    "owner_id": owner_id})
-    ref_b64, preset_ra, _canh_bao = _giai(db, yc)
+    try:
+        yc = vf.chuan_hoa({"text": str(van_ban or "").strip() or ".",
+                           "voice_id": voice_id, "preset": preset,
+                           "owner_id": owner_id, "ngon_ngu": ngon_ngu})
+        ref_b64, preset_ra, _canh_bao = vf.giai_giong(db, yc)
+    except vf.LoiGiongNoi as exc:
+        raise GiongKhongHopLe(str(exc), ma_loi=exc.ma) from exc
     return ref_b64, preset_ra
 
 

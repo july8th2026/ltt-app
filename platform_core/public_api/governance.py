@@ -293,6 +293,12 @@ STORES: tuple = (
           N_("Vé mở console máy ảo. Lưu SHA-256 của vé, không lưu vé. Hết hạn "
           "sau 60 giây và bị xoá ngay khi dùng."),
           "console.don_ve_het_han (bao_tri cua app)"),
+    # Mã một lần của "Đăng nhập LTT Studios" trên ứng dụng LTTCODE: sống 120 giây,
+    # bị tiêu bằng UPDATE có điều kiện. Có `user_id` nên phải khai, dù gần như rỗng.
+    Store("lttcode_auth_codes", OPERATIONAL, 1, N_("không ai (nội bộ)"),
+          N_("Mã đăng nhập một lần của ứng dụng LTTCODE. Lưu SHA-256 của mã, không "
+          "lưu mã. Hết hạn sau 120 giây và bị xoá sau một giờ."),
+          "dang_nhap.don_ma_het_han (bao_tri cua app)"),
 
     # ── Content: the customer's own material ─────────────────────────────────
     Store("upload_sessions", CONTENT, 7, N_("chủ tài khoản"),

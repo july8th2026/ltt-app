@@ -272,6 +272,29 @@
           {{ _("Nghe ngay") }}
         </button>
         {% endif %}
+        {#
+          U-13 — nghe thử VĂN BẢN CỦA KHÁCH bằng giọng MẪU (16/09/2026).
+
+          🔴 Cửa `/nghe-thu-van-ban` có từ 08/09 (DV-015) mà không nút nào gọi:
+             backend đủ bốn trần, khách không có đường vào. Trả lời câu hỏi
+             "giọng mẫu này đọc bài CỦA TÔI thế nào" trước khi trả tiền.
+
+          ⛔ Chỉ giọng mẫu (`preset`) — cửa cố ý không nhận giọng nhân bản.
+             Miễn phí, tối đa `nghe_thu_tran` ký tự đầu, `nghe_thu_moi_gio`
+             lượt/giờ, xếp SAU job trả tiền (máy bận thì báo, không chờ).
+        #}
+        <button class="btn sm ghost" type="button" id="lv-nut-nghe-cau"
+                data-tran="{{ nghe_thu_tran }}"
+                data-nhan-dang="{{ _('Đang tạo…') }}"
+                data-nhan-chi-mau="{{ _('Nghe thử miễn phí chỉ dùng cho giọng mẫu.') }}"
+                data-nhan-con="{{ _('Còn {n} lượt nghe thử miễn phí trong giờ này.') }}"
+                data-nhan-loi="{{ _('Không gửi được yêu cầu. Kiểm tra kết nối rồi thử lại.') }}"
+                title="{{ _('Đọc tối đa {n} ký tự đầu bằng giọng mẫu đang chọn — miễn phí, {m} lượt mỗi giờ.').format(n=nghe_thu_tran, m=nghe_thu_moi_gio) }}"
+                {% if not cong_san_sang %}disabled{% endif %}>
+          {{ _("Nghe thử câu đầu (miễn phí)") }}
+        </button>
+        <p class="lv-st-uoc" id="lv-nghe-cau-bao" role="status" aria-live="polite" hidden></p>
+        <audio id="lv-nghe-cau-au" controls hidden></audio>
         <p class="lv-st-uoc" id="lv-uoc-dong" hidden>
           {{ _("Tạm giữ") }} <b id="lv-uoc">0</b> {{ _("credit") }}
           · <span class="dim">{{ _("hoàn phần dư khi xong") }}</span>

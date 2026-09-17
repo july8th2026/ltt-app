@@ -25,6 +25,11 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _renewal_cancelled(row: VpsIp) -> bool:
+    """R16: renewal was switched off at OVH; the address expires with its term."""
+    return bool(dict(row.provider_metadata or {}).get("renewal_cancelled_at"))
+
+
 def _resource(row: VpsIp) -> PublicIpResource:
     return PublicIpResource(
         id=row.id,
@@ -104,8 +109,8 @@ class OvhStaticIpPoolBackend:
         self._acquisition_probe = acquisition_probe
         self._acquisition_ceiling = 0
         self._accepted_contracts = ()
-        # Controlled one-IP rollout uses ONLY the explicitly adopted cart. New
-        # cart creation remains unavailable through production capacity.
+        # Product model (owner, 17/09): customers buy a VPS, never an IP; the
+        # worker buys one OVH IPv4 per new VPS. An adopted cart is optional.
         self.auto_acquire = False
         config = dict(getattr(profile, "provider_config", None) or {})
         network = dict(getattr(profile, "network_config", None) or {})
@@ -114,7 +119,7 @@ class OvhStaticIpPoolBackend:
                            and all(isinstance(value, str)
                                    and re.fullmatch(r"[0-9a-f]{64}", value)
                                    for value in contracts))
-        if (config.get("auto_acquire") is True and config.get("adopt_ip_cart_id")
+        if (config.get("auto_acquire") is True
                 and contracts_valid
                 and network.get("mapping_strategy") == "ovh_gwnat"
                 and getattr(profile, "status", "DISABLED") != "DISABLED"
@@ -156,12 +161,16 @@ class OvhStaticIpPoolBackend:
             )
             .order_by(VpsIp.id)
             .with_for_update(skip_locked=True)
-            .limit(1)
+            .limit(20)
         ).scalars().all()
         now = _now()
         for row_id in candidates:
             candidate = self.db.get(VpsIp, row_id)
             if candidate is None:
+                continue
+            if _renewal_cancelled(candidate):
+                # R16: OVH will reclaim this address at expiration; never hand
+                # it to a machine that is about to start using it.
                 continue
             metadata = {**dict(candidate.provider_metadata or {}),
                         "allocation_label": str(label or "")[:80]}
@@ -237,6 +246,9 @@ class OvhStaticIpPoolBackend:
         row.reservation_token = None
         row.reserved_at = None
         row.instance_id = None
+        # Idle clock for the R16 policy (keep at most one idle paid address).
+        row.provider_metadata = {**dict(row.provider_metadata or {}),
+                                 "free_since": _now().isoformat()}
         self.db.flush()
 
     def get(self, resource_id: str) -> PublicIpResource:
@@ -252,7 +264,10 @@ class OvhStaticIpPoolBackend:
 
     def health(self) -> BackendHealth:
         rows = self.list()
-        free = sum(row.state == "FREE" for row in rows)
+        cancelled = {row.id for row in self.db.execute(select(VpsIp).where(
+            VpsIp.infrastructure_profile_id == self.profile_id,
+            VpsIp.state == "FREE")).scalars() if _renewal_cancelled(row)}
+        free = sum(row.state == "FREE" and row.id not in cancelled for row in rows)
         quarantined = sum(row.state == "QUARANTINED" for row in rows)
         replenishable = 0
         if self.auto_acquire and self._acquisition_probe is not None:
@@ -262,7 +277,9 @@ class OvhStaticIpPoolBackend:
                         and quote.currency == "USD"
                         and type(quote.with_tax_minor) is int
                         and 0 < quote.with_tax_minor <= self._acquisition_ceiling
-                        and quote.contract_fingerprints == self._accepted_contracts):
+                        # Catalog quotes carry no contracts (None); the worker
+                        # checks them on the real cart before any checkout.
+                        and quote.contract_fingerprints in (None, self._accepted_contracts)):
                     replenishable = 1
             except Exception as exc:
                 # Health is a read-only boundary; provider replies can contain

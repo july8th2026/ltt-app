@@ -2,6 +2,51 @@
 
 ## Active blockers
 
+### Việc mở cho phiên sau (ghi 17/09 cuối ngày)
+
+- **R26 — đo băng thông VPS OVH chưa chạy**: bộ đếm/hãm tốc nằm trên router VM199,
+  nhưng lưu lượng VPS OVH không đi qua VM199 (gateway `10.50.0.1` là host Proxmox, NAT
+  ở gateway OVH) ⇒ `d96b66f3` luôn "0 KB / 300 GB", vượt hạn mức không bị giảm tốc.
+  Cần chọn điểm đo (gateway OVH hoặc host Proxmox) rồi mới sửa.
+- **Dọn Vultr khi chủ dự án ngừng tài khoản**: app — Disable profile 0401 (bảo trì đang
+  ghi `reconciliation unavailable` mỗi lượt), đóng gateway `sgp-1` (10.51,
+  `dang_nhan_may_moi=true`), gỡ `LTT_VULTR_API_KEY`/`LTT_VPS_GATEWAY_*`/`LTT_VPS_ROUTER_*`;
+  VM199 — tắt `wg0`, bỏ dải `10.51` khỏi dnsmasq, **giữ** `10.50.0.2` + DHCP OVH.
+- **Admin chưa sửa được chính sách mua IP** (`auto_acquire`, trần giá, fingerprint hợp
+  đồng) — hiện chỉ sửa qua CSDL. Trang `/vps/admin/cong-ha-tang` chỉ nhận tên biến, không
+  nhận bí mật (cố ý).
+- **Reboot host Proxmox** để dùng kernel 7.0.14 — chờ cửa sổ bảo trì.
+
+### Tổng kết phiên 2026-09-17 — không còn blocker phần mềm
+
+- OVH 0402 là mặc định (ACTIVE, default); Vultr 0401 STANDBY. Chủ dự án: **Vultr sắp
+  ngừng**, không đầu tư thêm (không thử đổi default, không preflight Vultr).
+- Còn mở, **ngoài phạm vi phần mềm** (cần mua/dựng hoặc cửa sổ bảo trì): Backup V2
+  CAPACITY_BLOCKED, diễn tập khôi phục, dual-WAN; cập nhật PVE đã CÀI 17/09 (9.2.20), còn **reboot host** để dùng kernel 7.0.14 — chờ cửa sổ bảo trì.
+
+### Cập nhật 2026-09-17 (chiều) — bán VPS MỞ LẠI
+
+- R22 và R23 đã sửa và chạy trên production/Máy B; profile OVH 0402 `auto_acquire=true`,
+  health 6/6 HEALTHY. Mục "tạm dừng" bên dưới chỉ còn giá trị lịch sử.
+
+### Cập nhật 2026-09-17 — bán VPS mới TẠM DỪNG (chủ dự án chốt)
+
+- Deploy `ee5a5ef9` đạt; E2E console/vòng đời đạt trên `d96b66f3`.
+- **Chặn mở bán lại**: R22 (tự mua IP OVH chỉ dùng giỏ adopt đã hết hạn — cần quyết
+  định chi tiêu + probe catalog chỉ đọc), R23 (collector Máy B coi mapping
+  `LTTMANAGED` là thừa ⇒ `network` CRITICAL; sửa qua cổng thay đổi Máy B).
+- Profile OVH 0402: ACTIVE/default, `auto_acquire=false`, không còn `adopt_ip_cart_id`.
+
+### Cập nhật 2026-09-16 (tối)
+
+- B04 **đóng**: mua một IP qua web job thật (đơn 22703620), nhập kho, mapping.
+- B08 **đóng cho r1**: deploy 16:29–16:31 sau khi kiểm 0 job/0 lease.
+- Còn chặn phát hành cuối: L3 phiên (một lần) → gộp `main` (cây chính còn 6
+  docs chưa commit của phiên LTTCODE) → deploy từ `main`. Production đang chạy
+  dòng `codex/cli-compat-final-audit` chưa có ở `main`, nên nhánh VPS phải hoà
+  cả dòng đó trước L3 để deploy từ `main` không lùi mã.
+- Gate sản xuất không phải blocker phần mềm: Backup V2 / restore / dual-WAN.
+
 ### Cập nhật 2026-09-14, sau lựa chọn PO mới nhất
 
 - B04: credit guard, exact delivery attribution, durable checkout/claim, worker

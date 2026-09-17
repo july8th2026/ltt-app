@@ -104,8 +104,46 @@ class YOLOAdapter(BaseAdapter):
             logger.info("Using bundled YOLO model: %s", bundled)
             return str(bundled)
 
-        # Fallback: let ultralytics handle it (download or cache)
-        return model_name
+        return self._persistent_or_name(model_name)
+
+    @staticmethod
+    def _persistent_or_name(model_name: str, env: dict | None = None,
+                            cwd: Path | None = None) -> str:
+        """Weights outside the deploy tree, so they survive `app\\` being replaced.
+
+        🔴 16/09/2026: on production the worker's cwd is `C:\\LTTPlatform\\app`, which
+           every deploy deletes. `yolov8n.pt` is shipped there (VAN_CHUYEN) but
+           `yolov8s.pt` (higher quality tiers) is not, so ultralytics downloaded
+           21.5 MB from GitHub into `app\\` on the first job after EVERY deploy.
+
+        ultralytics 8.4.115 `attempt_download_asset`: an absolute path that does not
+        exist yet is downloaded TO that path (`safe_download(..., file=file)`), so
+        returning `<dir>/<name>` makes the download happen once and persist.
+
+        Order: a copy in cwd (shipped `yolov8n.pt`) wins; then
+        `LTT_YOLO_WEIGHTS_DIR`, else `LTT_DATA_DIR/models/yolo`; no platform env
+        (desktop/dev) keeps the old behaviour and returns the bare name.
+        """
+        import os
+
+        e = os.environ if env is None else env
+        here = Path.cwd() if cwd is None else cwd
+        if (here / model_name).is_file():
+            return model_name
+        weights_dir = (e.get("LTT_YOLO_WEIGHTS_DIR") or "").strip()
+        if not weights_dir and (e.get("LTT_DATA_DIR") or "").strip():
+            weights_dir = str(Path(e["LTT_DATA_DIR"].strip()) / "models" / "yolo")
+        if not weights_dir:
+            return model_name
+        target = Path(weights_dir) / Path(model_name).name
+        try:
+            target.parent.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            logger.warning("YOLO weights dir unusable (%s): %s", type(exc).__name__, target.parent)
+            return model_name
+        if not target.exists():
+            logger.info("YOLO weights not cached, ultralytics will download once to %s", target)
+        return str(target)
 
     def _get_model(self) -> Any:
         """Get or load YOLO model with thread-safe caching."""

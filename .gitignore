@@ -53,6 +53,10 @@ data/nexus_dist/
 # khong nam trong kho ma, no duoc tha vao thu muc van hanh tren may chu.
 data/api_dist/
 data/nexus_versions.json
+# LTTCODE: bo cai da ky + manifest kenh phat hanh, do tools/release.ps1 (kho
+# LTTCODEAPP) ghi vao thu muc du lieu van hanh. Khong commit.
+data/lttcode_dist/
+data/lttcode_releases.json
 
 # ─── H37 bench: so do thi COMMIT, anh va trong so thi KHONG ───────────────────
 # Ly do o bench/README.md. So do la bang chung phai giu; anh sinh ra va file model

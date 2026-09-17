@@ -121,6 +121,43 @@ def _suc_chua(db, profile=None) -> tuple[capacity.SucChua | None, str]:
         return None, _t("Hệ thống đang bảo trì, tạm chưa nhận máy mới.")
 
 
+def _gioi_han_ip_va_cong(db, profile) -> tuple[int, int] | None:
+    """`(IPv4 con ban duoc, cong vao con cho)` cua mot profile; `None` = khong doc duoc.
+
+    Mot nguon cho ca trang ban va luc tao may (R24). Hang doi da hua IP tinh
+    truoc khi provision giu dia chi; khoa dong cua selector tuan tu hoa luot nhan.
+    """
+    from apps.vps.services.sellable_capacity import (
+        available_gateway_slots, effective_ipv4_slots, promised_without_ip)
+    try:
+        ip_details = backend_factory.public_ip_backend(db, profile).health().details
+        free = effective_ipv4_slots(
+            ip_details, promised_without_ip=promised_without_ip(db, profile.id))
+        return free, available_gateway_slots(db, profile.id)
+    except backend_factory.operation_error_types():
+        return None
+
+
+def _gioi_han_ban(db) -> tuple[int, int] | None:
+    """Gioi han IP/cong cua profile se nhan may moi o vung dang mo dau tien."""
+    vung = provisioning.vung_dang_mo(db)
+    if not vung:
+        return None
+    try:
+        profile = profiles.select_profile(db, region=vung[0][0])
+    except profiles.ProfileNotReady:
+        return None
+    return _gioi_han_ip_va_cong(db, profile)
+
+
+def _so_cho_ban(suc_chua, plan_id: str, gioi_han: tuple[int, int], *,
+                dia_them_gb: int = 0) -> int:
+    from apps.vps.services.sellable_capacity import sellable_slots
+    free_ipv4, cong = gioi_han
+    return sellable_slots(suc_chua, plan_id, extra_disk_gb=dia_them_gb,
+                          free_ipv4=free_ipv4, gateway_slots=cong).slots
+
+
 def _viec_dang_chay(db, may) -> dict:
     """Việc đang chạy trên một máy, ở dạng template đọc được. Rỗng = rảnh.
 
@@ -347,11 +384,15 @@ def trang_chinh(request: Request,
     """
     user_id = _chu(request)
     suc_chua, loi_ha_tang = _suc_chua(db)
+    # R24 (17/09): "con cho" tren trang phai la CUNG phep tinh voi luc tao may
+    # (RAM/dia/CPU + IPv4 + gateway). Truoc day trang chi hoi RAM/dia, nen khi
+    # het IP khach van thay "con cho", chon xong moi an "Da het cho".
+    gioi_han = _gioi_han_ban(db)
 
     goi = []
     for p in PLANS:
-        con_cho = (capacity.cho_phep_ban(suc_chua, p.id).cho_phep
-                   if suc_chua is not None else False)
+        con_cho = (suc_chua is not None and gioi_han is not None
+                   and _so_cho_ban(suc_chua, p.id, gioi_han) >= 1)
         goi.append({
             "plan": p,
             "credit": p.credit_thang,
@@ -464,23 +505,10 @@ def tao_may(request: Request,
     suc_chua, loi_ha_tang = _suc_chua(db, profile)
     if suc_chua is None:
         return _ve_trang(_t("Hệ thống đang bận, chưa nhận máy mới. Thử lại sau."))
-    from apps.vps.services.sellable_capacity import (
-        available_gateway_slots,
-        effective_ipv4_slots,
-        promised_without_ip,
-        sellable_slots,
-    )
-    try:
-        ip_details = backend_factory.public_ip_backend(db, profile).health().details
-        # Queued promises already consume an eventual IP even before provision
-        # reserves it. The selector's row lock serializes these admissions.
-        waiting = promised_without_ip(db, profile.id)
-        free = effective_ipv4_slots(ip_details, promised_without_ip=waiting)
-        slots = sellable_slots(suc_chua, plan_id, extra_disk_gb=dia_them_gb,
-                               free_ipv4=free, gateway_slots=available_gateway_slots(db, profile.id))
-    except backend_factory.operation_error_types():
+    gioi_han = _gioi_han_ip_va_cong(db, profile)
+    if gioi_han is None:
         return _ve_trang(_t("Hệ thống đang bận, chưa nhận máy mới. Thử lại sau."))
-    if slots.slots < 1:
+    if _so_cho_ban(suc_chua, plan_id, gioi_han, dia_them_gb=dia_them_gb) < 1:
         return _ve_trang(_t("Đã hết chỗ cho cấu hình này. Vui lòng chọn gói nhỏ hơn."))
 
     # Tên: bỏ trống thì tự sinh. Kiểm TRƯỚC khi ghi gì vào CSDL — một tên trùng
