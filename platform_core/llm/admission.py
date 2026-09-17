@@ -76,6 +76,36 @@ ORPHAN_TIMEOUT_STREAM = timedelta(seconds=180)
 #:    nằm không trong khi có job đang xếp hàng — đo được hôm nay, không phải lo xa.
 ORPHAN_TIMEOUT_JOB = timedelta(seconds=300)
 
+#: Thời hạn mồ côi cho lease `mode='sync'`. 120 s = **2 nhịp tim**.
+#:
+#: 🔴 SỰ CỐ 18/09/2026, cùng họ với L-11 nhưng ở cửa ĐỒNG BỘ. Một phiên khác
+#:    deploy giữa một lượt `/chat/completions` của 3.8; tiến trình web chết ⇒
+#:    nhịp tim chết theo. Đo được (`docs/ltt_llm_dual/artifacts/bench_hang_cho/
+#:    KET_QUA_CACHE_18_09.md` §6):
+#:
+#:        resource='ltt_38_3090' slot=0 mode='sync' token_dat_truoc=14457
+#:        acquired_at = heartbeat_at = 00:54:55   (nhịp KHÔNG bao giờ tiến thêm)
+#:
+#:    ⇒ **mọi** lượt 3.8 nhận `429 reason=het_cho` suốt **20 phút**
+#:    (00:55 → 01:14:55). `stream` và `job` đã có hạn riêng; `sync` rơi vào mặc
+#:    định 1.200 s — **gấp 6,7 lần** cửa stream, dù nó là cửa NGẮN NHẤT.
+#:
+#: 🔑 VÌ SAO 120 — hai chặn, và cả hai đều là số của chính hệ này:
+#:
+#:    * chặn DƯỚI: `SYNC_BILLED_MAX_SECONDS` (90 s). Cửa đồng bộ hứa trả lời
+#:      trong ngân sách ấy và kẹp `max_tokens` theo đúng nó, nên một suất sync
+#:      còn SỐNG không bao giờ vượt được. Hạ dưới 90 là thu suất của người đang
+#:      được phục vụ.
+#:    * chặn TRÊN: 2× `HEARTBEAT_SECONDS` — biên nhỏ nhất mà chú thích của
+#:      `ORPHAN_TIMEOUT_STREAM` cho phép ("⛔ ĐỪNG hạ xuống dưới 2×").
+#:
+#: ⛔ Con số này MỘT MÌNH không sửa được sự cố. Nó chỉ khai hoả khi nhịp tim
+#:    **ngừng nói dối**: `runtime_noi_bo/luong.py::giu_suat_dong_bo` phải truyền
+#:    `con_song` (mốc tiến triển) vào `keep_alive`, y như cửa stream — nếu không
+#:    thì tiến trình còn sống + công việc đã bị bỏ rơi = lease bất tử, đúng L-08
+#:    dưới một con số nhỏ hơn. Hai vế, `tests/test_1251` chốt cả hai.
+ORPHAN_TIMEOUT_SYNC = timedelta(seconds=120)
+
 #: Trần im lặng của `keep_alive(con_song=...)` — LỚP 2 của cơ chế nhả suất.
 #:
 #: 🔴 NGUỒN CỦA NGƯỠNG, không phải một con số chọn cho tròn: nó phải ≥ MỌI read
@@ -114,13 +144,14 @@ def reclaim_expired(
     #    truyền `timeout` ngắn hơn (ví dụ dọn tay) thì ý họ vẫn phải thắng.
     cutoff_stream = _now() - min(timeout, ORPHAN_TIMEOUT_STREAM)
     cutoff_job = _now() - min(timeout, ORPHAN_TIMEOUT_JOB)
+    cutoff_sync = _now() - min(timeout, ORPHAN_TIMEOUT_SYNC)
     query = db.query(ExecutionLease)
     if resource:
         query = query.filter(ExecutionLease.resource == resource)
     leases = query.all()
     #: `min(...)` ở cả hai vế trên, chứ không thay thẳng: người gọi truyền
     #: `timeout` NGẮN hơn (dọn tay) thì ý họ vẫn phải thắng.
-    _han = {"stream": cutoff_stream, "job": cutoff_job}
+    _han = {"stream": cutoff_stream, "job": cutoff_job, "sync": cutoff_sync}
     expired = [lease for lease in leases
                if _aware(lease.heartbeat_at) < _han.get(lease.mode, cutoff)]
     for lease in expired:

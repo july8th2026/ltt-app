@@ -545,6 +545,23 @@ class SuatDongBo:
     token_dat_truoc: int = 0
     #: Yêu cầu chờ đã dùng — cần để XẾP LẠI khi máy B 429. `None` ⇒ không xếp lại.
     yeu_cau: Any = None
+    #: 🔴 LỚP 2 của cơ chế nhả suất ở cửa ĐỒNG BỘ (cùng vai với
+    #: `LuotLuong.luc_khoi_cuoi` của cửa stream): mốc **lần cuối công việc nhúc
+    #: nhích**, theo `time.monotonic()`. `giu_suat_dong_bo` hỏi mốc này trước mỗi
+    #: nhịp; im quá `admission.TRAN_IM_LANG_S` thì luồng nhịp tự nhả.
+    #:
+    #: ⭐ Cửa đồng bộ không có byte chảy dọc đường, nên "nhúc nhích" ở đây là
+    #:    **một lượt gọi máy B được bắt đầu** (`goi_dong_bo_co_xep_lai` gọi
+    #:    `cham()` mỗi lần thử, kể cả sau khi xếp lại). Đó vẫn là lời khai có
+    #:    kiểm chứng: `TRAN_IM_LANG_S` ≥ mọi read timeout đi lên máy B, nên một
+    #:    lượt gọi còn sống không bao giờ im lâu hơn thế mà chính httpx không nổ.
+    #: ⛔ Khởi tạo bằng `monotonic()` chứ không bằng `0.0` — cùng lý do với cửa
+    #:    stream: giữa lúc nhận suất và lượt gọi đầu tiên là một khoảng hợp lệ.
+    luc_khoi_cuoi: float = field(default_factory=time.monotonic)
+
+    def cham(self) -> None:
+        """Ghi nhận công việc vừa nhúc nhích (một lượt gọi máy B bắt đầu)."""
+        self.luc_khoi_cuoi = time.monotonic()
 
 
 def cho_suat_dong_bo(*, suc, user_id: str, request_id: str, cua: str,
@@ -631,12 +648,31 @@ def giu_suat_dong_bo(suat: SuatDongBo) -> Iterator[None]:
        theo id cũ là để suất mới mồ côi tới `ORPHAN_TIMEOUT` (20 phút GPU nằm
        không). Suất mới không được đập nhịp — lượt đồng bộ sống ≤ trần ngân sách
        cửa (~100 s), ngắn hơn thời hạn mồ côi rất nhiều.
+
+    ## 🔴 `con_song` — vì sao nhịp ở đây KHÔNG được vô điều kiện (18/09/2026)
+
+    Bản trước gọi `keep_alive(lease_id)` trần, tức đập nhịp **vô điều kiện** —
+    đúng lời nói dối của L-08 (`admission.keep_alive`, `test_1247`): nó chứng
+    minh *luồng còn sống*, không chứng minh *công việc còn tiến triển*. Chừng
+    nào `ORPHAN_TIMEOUT` của lease sync còn là 20 phút thì lời nói dối ấy vô
+    hại trên thực tế; `ORPHAN_TIMEOUT_SYNC` (120 s) làm nó thành **quyết định**:
+    một tiến trình còn sống ôm một lượt đã bị bỏ rơi sẽ đẩy nhịp mãi, và hạn
+    mới **không bao giờ khai hoả**.
+
+    ⇒ Vị từ ở đây hỏi đúng câu mà cửa stream hỏi, bằng đúng hằng số ấy: *lần
+      cuối công việc nhúc nhích cách đây có quá `TRAN_IM_LANG_S` không*. Mốc là
+      `suat.luc_khoi_cuoi`, do `goi_dong_bo_co_xep_lai` `cham()` mỗi lượt gọi.
+    ⛔ Không đo bằng đồng hồ của lease ("đã giữ suất bao lâu"): một lượt đồng bộ
+       chạy đúng và lâu hơn 120 s sẽ bị chính ta giết.
     """
     from platform_core.llm import admission
 
+    def _con_nhuc_nhich() -> bool:
+        return (time.monotonic() - suat.luc_khoi_cuoi) < admission.TRAN_IM_LANG_S
+
     try:
-        with (admission.keep_alive(suat.lease_id) if suat.lease_id
-              else nullcontext()):
+        with (admission.keep_alive(suat.lease_id, _con_nhuc_nhich)
+              if suat.lease_id else nullcontext()):
             yield
     finally:
         _nha_suat(suat.lease_id)
@@ -673,6 +709,13 @@ def goi_dong_bo_co_xep_lai(goi: Callable[[], Any], suat: Optional[SuatDongBo], *
     lan = 0
     while True:
         try:
+            # ⭐ MỐC TIẾN TRIỂN của lớp 2 (xem `giu_suat_dong_bo`): một lượt gọi
+            #    máy B vừa bắt đầu. Cửa đồng bộ không có byte chảy dọc đường nên
+            #    đây là thứ duy nhất "nhúc nhích" được, và nó phải được ghi cả ở
+            #    lần thử SAU KHI XẾP LẠI — không thì một lượt xếp lại lâu sẽ bị
+            #    chính luồng nhịp của mình nhả suất.
+            if suat is not None:
+                suat.cham()
             with dieu_phoi.mang_dat_cho(suat.token_dat_truoc if suat else 0):
                 return goi()
         except BanError:

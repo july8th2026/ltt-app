@@ -236,8 +236,14 @@ def test_lease_job_chet_duoc_thu_hoi_theo_NHIP_TIM_chu_khong_doi_20_phut(db):
 
     cu = admission._now() - timedelta(seconds=400)   # 6+ nhịp lỡ
     moi = admission._now() - timedelta(seconds=120)  # 2 nhịp lỡ — còn sống
+    # ⚠️ Đối chứng ĐỔI 18/09/2026: trước đây nó là một lease `sync` im 400 s,
+    #    sống được vì `sync` rơi vào `ORPHAN_TIMEOUT` 20 phút. Chính chỗ dựa ấy
+    #    là sự cố 18/09 (`ORPHAN_TIMEOUT_SYNC`, `tests/test_1251`), nên đối
+    #    chứng nay là một lease `sync` CÒN ĐẬP NHỊP (60 s). Vai trò không đổi:
+    #    thiếu nó thì một `reclaim_expired` xoá sạch mọi thứ cũng xanh.
+    song = admission._now() - timedelta(seconds=60)
     for slot, (mode, nhip) in enumerate([("job", cu), ("job", moi),
-                                         ("sync", cu)]):
+                                         ("sync", song)]):
         db.add(ExecutionLease(resource="r_thu", slot=slot, user_id=f"u{slot}",
                               mode=mode, holder_id=f"h{slot}",
                               heartbeat_at=nhip))
@@ -249,5 +255,3 @@ def test_lease_job_chet_duoc_thu_hoi_theo_NHIP_TIM_chu_khong_doi_20_phut(db):
            .filter(ExecutionLease.resource == "r_thu").all()}
     assert con == {("job", 1), ("sync", 2)}, (
         f"phai xoa DUNG lease job chet: con {con}")
-    # đối chứng: `sync` 400 s vẫn sống, vì nó theo `ORPHAN_TIMEOUT` 20 phút —
-    # thiếu vế này thì một `reclaim_expired` xoá sạch mọi thứ cũng xanh.
