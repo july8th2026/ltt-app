@@ -174,3 +174,32 @@ def test_studio_video_so_buoc_lien_mach_va_mot_kieu_huy_hieu():
     assert "03B" not in seed
     css = (GOC / "server/static/ltt.css").read_text(encoding="utf-8")
     assert re.search(r"\.tv-fieldset legend strong,\.tv-section h2 strong\{display:inline-grid;[^}]*border-radius:50%", css)
+
+
+@pytest.mark.parametrize("tep", ["frontend/agent-canvas/src/canvas.css", "frontend/autosub-studio/src/studio.css"])
+def test_B4_spa_khong_con_xam_lanh_tran(tep):
+    """DL-002: xám trung tính lạnh viết trần trong theme TỐI phải đi qua token ấm.
+    Giữ: màu bão hoà (trạng thái/phân loại), hex alpha, fallback `var(--x,#…)`, định
+    nghĩa biến `--x:`, và luật `.theme-light` (token Golden chỉ có bản tối)."""
+    s = re.sub(r"var\(--[a-z0-9-]+,\s*#[0-9a-fA-F]{3,8}\)", "", (GOC / tep).read_text(encoding="utf-8"))
+    lanh = []
+    for sel, than in re.findall(r"([^{}]+)\{([^{}]*)\}", s):
+        if "light" in sel.lower():
+            continue
+        for prop, val in re.findall(r"(-{0,2}[a-z][a-z0-9-]*)\s*:\s*([^;{}]*)", than):
+            if prop.startswith("--"):
+                continue
+            chu = prop in ("color", "fill", "stroke", "caret-color")
+            for h in re.findall(r"#[0-9a-fA-F]{6}", val):
+                r, g, b = (int(h[k:k + 2], 16) for k in (1, 3, 5))
+                sang = (r + g + b) / 3
+                if (max(r, g, b) - min(r, g, b) <= 24 and b >= r + 4
+                        and not (not chu and sang > 150) and not (chu and sang < 70)):
+                    lanh.append(h)
+    assert not lanh, lanh[:10]
+
+
+def test_B4_canvas_theme_sang_chu_muted_dat_AA():
+    """Đo 17/09 (axe, theme sáng): `--text-muted:#737d89` chỉ 4,14–4,18:1 trên nền #f5f6f8."""
+    css = (GOC / "frontend/agent-canvas/src/canvas.css").read_text(encoding="utf-8")
+    assert "#737d89" not in css and "--text-muted:#5f6874" in css
