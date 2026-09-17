@@ -95,7 +95,7 @@
    sidebar cũ; app một trang thì không có thanh này. #}
 {% set _tabs = app_tabs(request) %}
 {% if _tabs %}
-<nav class="apptabs">
+<nav class="apptabs" aria-label="{{ _('Mục trong ứng dụng') }}">
   {% for entry in _tabs %}
     <a href="{{ entry.path }}" class="{{ 'on' if nav==entry.nav_key else '' }}">
       {#- 🔴 `_(entry.label)`, KHONG phai `entry.label` tran.

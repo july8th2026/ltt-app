@@ -18805,3 +18805,6 @@ msgstr "Ready to try LTTCODE?"
 msgid "Tải bộ cài, đăng nhập tài khoản LTT và mở thư mục dự án đầu tiên của bạn."
 msgstr "Download the installer, sign in to your LTT account and open your first project folder."
 
+
+msgid "Mục trong ứng dụng"
+msgstr "Sections in this app"

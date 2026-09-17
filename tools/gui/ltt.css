@@ -4251,3 +4251,24 @@ input[type=hidden]+.af-step{margin-top:0}
    (trước: chữ đỏ trơn "01", và một mục "03B"). */
 .tv-fieldset legend strong,.tv-section h2 strong{display:inline-grid;place-items:center;width:22px;height:22px;margin-right:8px;
   border-radius:50%;background:var(--brand-strong);color:var(--text-primary);font-size:10px;font-weight:700;vertical-align:1px}
+/* B2 (17/09): chữ chờ kết quả Upscale không đè tay kéo so sánh ở khung hẹp. */
+.up-compare-view .up-no-output{box-sizing:border-box;padding:0 12px 0 24px;text-align:center;font-size:13px;line-height:1.4}
+/* B2 (17/09): dải tab app (VPS máy, Voice) cuộn ngang ở khung hẹp — mép phải mờ báo
+   "còn mục", đệm cuối để mục cuối ra khỏi vùng mờ khi cuộn hết. */
+@media (max-width:720px){
+  .apptabs{padding:0 12px;scrollbar-width:none;
+    -webkit-mask-image:linear-gradient(90deg,black calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,black calc(100% - 36px),transparent)}
+  .apptabs::-webkit-scrollbar{display:none}
+  .apptabs a:last-child{margin-right:36px}
+  .apptabs a{white-space:nowrap;flex:0 0 auto}
+}
+/* B2 (17/09): form hành động admin ở khung hẹp — ô số 2 cột, nút đủ vùng chạm và
+   tách khỏi ô trên, nhãn checkbox cùng cỡ chữ với nhãn trường. */
+@media (max-width:640px){
+  .adm-content form>p{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}
+  .adm-content form>p>input:not([type=checkbox]):not([type=hidden]),.adm-content form>p>select{flex:1 1 100%;width:100%}
+  .adm-content form>p>.adm-truong{flex:1 1 calc(50% - 4px);min-width:0;margin-right:0;display:grid;gap:4px}
+  .adm-content form>p>.adm-truong input{width:100%}
+  .adm-content form>p>label:not(.adm-truong){display:flex;align-items:center;gap:8px;font-size:13px}
+  .adm-content form>p>.btn{min-height:44px;flex:1 1 100%;margin-top:4px}
+}

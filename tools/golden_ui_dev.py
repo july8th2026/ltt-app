@@ -21,6 +21,8 @@ này tạo — không mật khẩu thật nào của ai đi qua trình duyệt d
 """
 from __future__ import annotations
 
+from typing import Any
+
 import argparse
 import json
 import os
@@ -193,7 +195,7 @@ def _seed_vps(db, uid: str, bay_gio: datetime) -> dict:
     from apps.vps.tables import VpsEvent, VpsInstance, VpsIp
 
     gw = "golden-gw"
-    mau = [
+    mau: list[tuple[str, dict[str, Any], str]] = [
         ("chay", dict(ten="web-ban-hang", plan_id="vps-vua",
                       os_id="winsrv2022-gui", trang_thai="dang_chay",
                       vmid=9201, ip_noi_bo="10.51.0.50",

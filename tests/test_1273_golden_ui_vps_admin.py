@@ -156,3 +156,15 @@ def test_admin_style_inline_lap_da_thanh_lop():
     for p in (TPL / "admin").glob("*.html"):
         t = p.read_text(encoding="utf-8")
         assert not re.search(r'style="width:\d+px"', t), p.name
+
+
+def test_B2_khung_hep_tab_app_va_form_admin():
+    """B2 17/09: dải tab app cuộn ngang có mép mờ + đệm cuối; form admin 2 cột, nút ≥44px."""
+    import re as _re
+    from pathlib import Path as _P
+    css = (_P(__file__).resolve().parents[1] / "server/static/ltt.css").read_text(encoding="utf-8")
+    assert _re.search(r"\.apptabs\{[^}]*mask-image:linear-gradient", css)
+    assert ".apptabs a:last-child{margin-right:36px}" in css
+    assert ".adm-content form>p>.btn{min-height:44px" in css
+    base = (_P(__file__).resolve().parents[1] / "server/templates/base.html").read_text(encoding="utf-8")
+    assert '<nav class="apptabs" aria-label=' in base
