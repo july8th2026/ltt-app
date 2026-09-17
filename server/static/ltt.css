@@ -4692,4 +4692,27 @@ textarea:focus,select:focus{border-color:var(--text-secondary)}
     -webkit-mask-image:linear-gradient(90deg,transparent 0,black 40px,black calc(100% - 40px),transparent);
     mask-image:linear-gradient(90deg,transparent 0,black 40px,black calc(100% - 40px),transparent)}
 }
+/* ── VPS · hộp thông tin trên trang máy: token ấm Carbon Red ──
+   `.alert-info` chung là xanh-xám (status-info) với viền sáng — lệch bảng màu ấm
+   của mọi hộp khác trên trang. Chỉ đổi trong khu VPS; `.alert-info` gốc giữ nguyên. */
+.vps-may .alert.alert-info{border:1px solid var(--border-strong);border-left:3px solid var(--text-muted);
+  background:var(--surface-overlay);color:var(--text-secondary)}
+
+/* ── VPS · bốn thẻ số liệu: cùng kiểu thẻ số liệu của khu API ──
+   (bo góc đủ, viền trái mảnh, số to đậm) — trước là số mảnh, góc trái vuông. */
+.vps-chi-so-ds{margin:0 0 18px}
+.vps-chi-so-ds .chi-so{gap:3px;padding:14px 16px;border-left:1px solid var(--border-subtle);
+  border-radius:var(--radius-lg);background:var(--surface-raised)}
+.vps-chi-so-ds .chi-so-nhan{opacity:1;color:var(--text-muted)}
+.vps-chi-so-ds .chi-so-gt{font-size:26px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.vps-chi-so-ds .chi-so.co-van-de{border-left:3px solid var(--status-danger)}
+@media (min-width:1100px){.vps-chi-so-ds{grid-template-columns:repeat(4,minmax(0,1fr))}}
+/* Màn hẹp: lưới 2×2 gọn — một cột bốn thẻ đẩy "Máy của tôi" xuống ~450px. */
+@media (max-width:560px){
+  .vps-chi-so-ds{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .vps-chi-so-ds .chi-so{padding:10px 12px}
+  .vps-chi-so-ds .chi-so-gt{font-size:22px}
+}
+/* "Điều cần biết" nằm cuối cột trái, ngay dưới thẻ máy. */
+.vps-can-biet{margin:16px 0 0}
 /* === HET C4: DEV-VPS-NEXUS === */

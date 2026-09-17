@@ -66,9 +66,14 @@
     {{ _("Trạng thái bên dưới là lần đo gần nhất, không phải hiện tại. Chúng tôi đang thử lại.") }}
   </div>
   {% elif quan_sat_cu %}
+  {# C4 (Golden UI): "lần đo gần nhất" chỉ có nghĩa khi ĐÃ có một lần đo. Máy
+     đang tạo chưa đo lần nào — câu này chồng lên cảnh báo "Máy đang được tạo"
+     và nói về một con số không tồn tại. #}
+  {% if may.quan_sat_luc %}
   <div class="alert alert-info u-mb14">
     {{ _("Trạng thái bên dưới là lần đo gần nhất và có thể đã cũ.") }}
   </div>
+  {% endif %}
   {% endif %}
 
   {# ── Dải hành động, THEO TRẠNG THÁI ───────────────────────────────────
@@ -302,6 +307,26 @@
   </div>
   {% endif %}
 
+  {# C4 (Golden UI): câu chi tiết do `routes._chi_tiet_doc_duoc` dựng giữ MÃ hệ điều
+     hành/gói ("hệ điều hành: winsrv2016-core · gói: vps-nho"). Trang đã có tên đẹp
+     của chính các mã đó (`os_ban_duoc`, `os`, `plan` — cùng nguồn ô Hệ điều hành/
+     Gói ở đầu trang) nên đổi mã → tên ngay tại đây, chỉ sau đúng nhãn của nó.
+     Mã dài xếp trước để mã là tiền tố của mã khác không bị thay nhầm. Mã không
+     có trong bảng thì giữ nguyên — vẫn tra được khi khách chụp màn hình. #}
+  {% macro doc_chi_tiet(ct) -%}
+    {%- set ns = namespace(ct=ct) -%}
+    {%- set nhan_os = _("hệ điều hành") ~ ": " -%}
+    {%- set ds_os = (os_ban_duoc | list) + ([os] if os else []) -%}
+    {%- for o in ds_os | sort(attribute='id', reverse=True) -%}
+      {%- set ns.ct = ns.ct | replace(nhan_os ~ o.id, nhan_os ~ _(o.ten)) -%}
+    {%- endfor -%}
+    {%- if plan -%}
+      {%- set nhan_goi = _("gói") ~ ": " -%}
+      {%- set ns.ct = ns.ct | replace(nhan_goi ~ plan.id, nhan_goi ~ _(plan.ten)) -%}
+    {%- endif -%}
+    {{ ns.ct }}
+  {%- endmacro %}
+
   {# ── Nhật ký ───────────────────────────────────────────────────────────
      Đây là thứ trả lời "vì sao máy tôi bị tắt" khi khách hỏi sau ba tháng — nên
      nó phải đọc được bởi **khách**, không bởi người vận hành. Trước Đợt 4 nó
@@ -318,7 +343,7 @@
         <span class="cham" aria-hidden="true"></span>
         <span>
           {{ _(e.nhan) }}{% if e.that_bai %} — <b>{{ _("thất bại") }}</b>{% endif %}
-          {% if e.chi_tiet %}<span class="ct">{{ e.chi_tiet }}</span>{% endif %}
+          {% if e.chi_tiet %}<span class="ct">{{ doc_chi_tiet(e.chi_tiet) }}</span>{% endif %}
         </span>
         <span class="luc">{{ e.luc.strftime('%d/%m/%Y %H:%M') }}</span>
       </li>
