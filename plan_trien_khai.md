@@ -27,7 +27,7 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 | Worktree | `D:\LTTSTUDIOSAPP-golden-ui` |
 | Nhánh | `phien/golden-ui` |
 | BASE_SHA | `efa9188cc9477f50a298892ae0fa01da511b113d` (`main` lúc 16/09/2026) |
-| Nhịp test/gate | Luật chuẩn hoá 16/09 (`docs/00_LTT_OPERATING_CONTRACT.md` §4, đã hoà vào nhánh ở `b090c061`): trong phiên **chỉ test nhắm** (`python -m pytest <tệp> -q`, ≥3 tệp ⇒ `cua_so_yen` + `tai_may`, `-n ≤ 6`); ⛔ **không `gate.py` ở bất kỳ chế độ nào**; **L3 một lần** khi mọi pha xong; L3 đỏ ⇒ sửa tại chỗ + khép `gate.py --doi --tu <sha L3>`; xong ⇒ tự gộp `main`, deploy, báo. ⚠️ Hai lượt `gate.py --quick` ngày 16/09 (trước khi luật mới vào cây) KHÔNG dùng làm bằng chứng. Hồ sơ cây vẫn `FAST_BUILD`/`CERTIFYING` (§4.10). |
+| Nhịp test/gate | **Luật chốt lại 17/09** (`docs/00_LTT_OPERATING_CONTRACT.md` §4.1–§4.2, §7, §8 trên `main`; hoà vào nhánh ở `ca724a38`). Cây: **NORMAL** (tắt `FAST_BUILD` 17/09 — xem *Sai quy tắc đã ghi nhận*). ① Trong phiên: **test nhắm** cụm vừa sửa (`python -m pytest <tệp> -q`; ≥3 tệp ⇒ `cua_so_yen` + `tai_may`, `-n ≤ 6`); cần phán quyết hẹp ⇒ **chỉ L1** `gate.py --doi` hoặc **L2** `gate.py --pham-vi <tp>`. ② ⛔ **Không L3 giữa các pha** — không sau một nhánh con, một hạng mục, hay trước deploy. ③ **Deploy giữa phiên được phép** khi việc xây dựng cần (ở đây: nghiệm thu URL công khai Phase 4/6/7): **L1 xanh** `gate.py --doi --tu <sha bản production>` trên đúng SHA → gộp `main` → báo phiên khác → deploy → nghiệm thu `https://app.lttstudios.com` → làm tiếp. Test nhắm một mình **không đủ** để deploy. ④ **L3 một lần** chỉ khi hết **MỌI** pha của cả phiên (Overall Progress chạm mốc cuối, mọi hạng mục ⏳ đã đóng hoặc chuyển OOS/vòng sau có ghi lý do). L3 đỏ ⇒ sửa tại chỗ + khép `gate.py --doi --tu <sha L3>`. ⑤ Xong phiên: gộp `main` (main đi tiếp ⇒ hoà + `--doi --tu <sha L3>`) → deploy nếu còn thay đổi chưa lên → báo. |
 | Máy chủ soi | `python tools\golden_ui_dev.py --cong 8140` (sqlite dùng một lần ở `tmp/golden_ui/`, 3 tài khoản giả, đủ state đơn nạp/job; bật `LTT_VPS`/`LTT_NEXUS`/`LTT_AUTO_SCAN_VIDEO`; KHÔNG có `secrets/`) |
 | Bộ quét | `node tools/golden_ui_quet.mjs --cau-hinh routes.json --ra <dir> [--khung ...]` — HTTP, ảnh toàn trang, console, request hỏng, tràn ngang, axe WCAG 2.2 AA, h1/main/lang, ô chạm, ô nhập <16px |
 
@@ -419,13 +419,37 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | EV-34 | E3 | `sau/v4`: 448 phép đo 4 khung sau khi gộp đủ — axe serious/critical 0, tràn 0, console 0, request hỏng 0, h1/main lệch 0; `style` render @1440 921 → **104** |
 | EV-35 | E2+E3 | `golden_ui_anh_mau.py`: 3 ảnh lệch (`home-khach` ×2, `nap@390`) đúng vùng icon DL-005 → cập nhật đúng 3 mẫu, chạy lại PASS; `test_975` cập nhật vân tay `shared_ltt_css` |
 
+## Sai quy tắc đã ghi nhận (17/09)
+
+| # | Sai | Luật | Xử lý |
+|---|---|---|---|
+| V-1 | Bấm **L3** trên `ca724a38` khi plan mới **86%** (Phase 2/3/4/7 chưa xong, chưa nghiệm thu URL công khai, nợ UI còn nguyên bảng) — lý do sai: coi "gộp xong 3 nhánh song song" là tổng kết phiên | §4.2: L3 chỉ khi hết mọi pha của **cả phiên**; hết một nhánh/hạng mục không phải tổng kết | Chủ dự án chỉ ra; **dừng ngay** ở bước 22/33, **không có bản ghi** `test-results/gates/*.json` ⇒ chưa phải phán quyết, lượt L3 của nhánh còn nguyên (§4.6) |
+| V-2 | Cây ở `FAST_BUILD/CERTIFYING` nhưng vẫn **xây tính năng** (DL-005, 3 nhánh, sqladmin…) và chạy ≥3 tệp test | §4.10: `CERTIFYING` chỉ kiểm + sửa gốc tối thiểu; xây là `BUILDING` (mà `BUILDING` cấm ≥3 tệp test) | `ho_so_cay.py tat` ⇒ **NORMAL**, nhịp theo §4.1 (test nhắm + L1/L2 khi cần) |
+| V-3 | Kế hoạch cũ gom **deploy** sau L3 cuối | §8 (17/09): deploy giữa phiên sau **L1/L2 xanh**; ⛔ không chạy L3 để deploy | Next Action đổi thứ tự: L1 → gộp `main` → deploy → nghiệm thu công khai → làm tiếp nợ UI → L3 ở cuối |
+| V-4 | Hai lượt gộp `main` giữa phiên (`b090c061`, `ca724a38`) chỉ dựa test nhắm, không L1 dù thay đổi lan nhiều thành phần | §7: gộp giữa phiên lan nhiều thành phần ⇒ thêm L1/L2 | L1 `--doi` sẽ phủ khi chuẩn bị deploy (bước A1) |
+
 ## Current Blocker
 
 Không có.
 
 ## Next Action
 
-L3 MỘT lần trên HEAD sau khi hoà `main` (`5d843ac8`) → đỏ thì sửa tại chỗ + `gate.py --doi --tu <sha L3>` → gộp `main` → báo phiên khác → deploy → nghiệm thu trên `https://app.lttstudios.com` → điền 2 dòng ⏳ của Final Report. Nợ UI còn lại (bảng dưới) là vòng sau, không chặn phát hành phần đã làm.
+Thứ tự theo luật 17/09 — **L3 ở cuối cùng, sau khi mọi pha dưới đây đóng**:
+
+| Bước | Việc | Cổng | Trạng thái |
+|---|---|---|---|
+| A1 | Kiểm máy §4.8 → **L1** `gate.py --doi --tu <sha production>` trên HEAD nhánh (phủ mọi thay đổi kể từ bản đang chạy) | L1 xanh (đỏ ⇒ sửa tại chỗ, chạy lại đúng phép đỏ) | ⏳ |
+| A2 | Gộp `main` (hoà nếu đi tiếp) → báo phiên khác (`ListAgents`) → cây chính sạch → deploy (`docs/16_CAP_NHAT_VA_DEPLOY.md`) | L1 xanh trên đúng SHA deploy | ⏳ |
+| A3 | **Nghiệm thu URL công khai** `https://app.lttstudios.com`: critical flows (auth/billing/jobs/error/workspace) × 390/1440, console, request hỏng, CSP/cache biên, `/health/version` | E3 | ⏳ |
+| B1 | Studio: **vị trí tiêu đề trang** + **một kiểu số bước** (Seedance/LTT Video còn `01` chữ trơn, `03B`) | test nhắm + trình duyệt | ⏳ |
+| B2 | Voice "Giọng nói" hai nút primary · Upscale @390 chồng tay kéo so sánh · menu con máy VPS @390 cắt mục cuối · form admin `api-chinh-sach`/`api-gia` @390 | test nhắm + trình duyệt | ⏳ |
+| B3 | `.chip.*` và Prompt AI classic `<style>` còn hex thô → token | test nhắm + trình duyệt | ⏳ |
+| B4 | 4 SPA về token/component chung (vòng tối thiểu: màu, nút, trạng thái rỗng/lỗi) + build + `build-meta` | vitest + build + trình duyệt | ⏳ |
+| C1 | Chấm điểm lại **đủ 13 họ** bằng vòng ảnh (không lấy số agent tự ước) → cập nhật bảng *Điểm hiện tại* | E3 | ⏳ |
+| C2 | Đo lại toàn hệ 448 + regression ảnh; nếu đã deploy lại thì nghiệm thu công khai lần 2 | E3 | ⏳ |
+| D1 | Hết mọi pha ⇒ **L3 MỘT lần** → đỏ thì khép `--doi --tu <sha L3>` → gộp `main` → deploy phần còn lại (nếu có) → nghiệm thu → Final Report + `docs/NHAT_KY.md` | L3 | ⏳ |
+
+Giữa B1–C2 nếu cần deploy để đo thật: lặp A1–A3 (L1, không L3).
 
 ---
 
@@ -444,8 +468,8 @@ L3 MỘT lần trên HEAD sau khi hoà `main` (`5d843ac8`) → đỏ thì sửa 
 | No critical console errors | ✅ | 0 trên 448 phép đo; OOS-07 lỗi sẵn có của gói sqladmin ở trang edit |
 | Visual regressions reviewed | ✅ | 2 hồi quy thật bắt được và xử lý (`/nap` 2,8%; `home-khach` 0,243% chia đôi tới `z-index`) |
 | Business behavior preserved | ✅ | form/hx/route/`value` giữ nguyên — chốt test (billing, sqladmin `save`, upload `name/accept/required`) |
-| Gate L3 trên HEAD | ⏳ | chạy sau khi ghi báo cáo này |
-| Xác minh trên URL công khai | ⏳ | sau deploy |
+| Gate L3 trên HEAD | ⏳ | chỉ ở bước D1 — sau khi mọi pha đóng (xem V-1) |
+| Xác minh trên URL công khai | ⏳ | bước A3 — deploy giữa phiên sau L1 xanh (§8) |
 | Overall ≥ 93 · critical ≥ 95 · không họ < 88 | ❌ | **≈ 88,6 · ≈ 92 · 4 họ < 88** (Dev 87, Admin 87, sqladmin 86, Apps 85) |
 
 ## Baseline score → Final score
