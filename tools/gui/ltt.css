@@ -4272,3 +4272,6 @@ input[type=hidden]+.af-step{margin-top:0}
   .adm-content form>p>label:not(.adm-truong){display:flex;align-items:center;gap:8px;font-size:13px}
   .adm-content form>p>.btn{min-height:44px;flex:1 1 100%;margin-top:4px}
 }
+/* DL-005: icon SVG ở catalog ẩn danh (trước còn emoji manifest). */
+.appcard h2 .catalog-ic{display:inline-grid;place-items:center;color:var(--brand-hover)}
+.appcard h2 .catalog-ic .ui-ic{width:18px;height:18px}

@@ -9,8 +9,8 @@
     <form method="post" action="/login">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <input type="hidden" name="next" value="{{ next|default('')|e }}">
-      <div class="auth-field"><label for="login-username">{{ _("Tên đăng nhập") }}</label>
-        <input id="login-username" type="text" name="username" placeholder="{{ _('Nhập tên đăng nhập') }}" required autofocus autocomplete="username"></div>
+      <div class="auth-field"><label for="login-username">{{ _("Email hoặc tên đăng nhập") }}</label>
+        <input id="login-username" type="text" name="username" placeholder="{{ _('Nhập email của bạn') }}" required autofocus autocomplete="username"></div>
       <div class="auth-field"><label for="login-password">{{ _("Mật khẩu") }}</label>
         <input id="login-password" type="password" name="password" placeholder="{{ _('Nhập mật khẩu') }}" required autocomplete="current-password"></div>
       {% if turnstile_site_key %}

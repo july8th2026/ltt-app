@@ -551,3 +551,12 @@ def test_moi_icon_manifest_va_nav_deu_co_anh_xa():
                 thieu.add(icon)
     assert not thieu, thieu
     assert ".ui-ic{" in CSS and "stroke:currentColor" in CSS
+
+
+def test_khong_render_tho_icon_emoji_cua_manifest():
+    """C1 17/09: test DL-005 cũ chỉ quét emoji VIẾT trong template, bỏ sót
+    `{{ m.icon }}` ở catalog ẩn danh — emoji đến từ DỮ LIỆU manifest."""
+    tho = re.compile(r"\{\{\s*(?:m|app|a\.manifest|item\.manifest|entry)\.icon\s*\}\}")
+    lech = [str(p.relative_to(GOC)) for p in list((GOC / "server" / "templates").rglob("*.html"))
+            + list((GOC / "apps").rglob("templates/**/*.html")) if tho.search(p.read_text(encoding="utf-8"))]
+    assert not lech, lech

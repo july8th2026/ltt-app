@@ -18808,3 +18808,9 @@ msgstr "Download the installer, sign in to your LTT account and open your first 
 
 msgid "Mục trong ứng dụng"
 msgstr "Sections in this app"
+
+msgid "Email hoặc tên đăng nhập"
+msgstr "Email or username"
+
+msgid "Nhập email của bạn"
+msgstr "Enter your email"

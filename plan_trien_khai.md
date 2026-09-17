@@ -91,6 +91,26 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 
 Critical flows baseline: Auth 84 · Billing 81 · Jobs 75 · Error 65 ⇒ **76**.
 
+### Điểm chấm độc lập — 17/09 tối (C1, `sau/v5`)
+
+| Họ | Baseline | Độc lập 17/09 |
+|---|---|---|
+| Auth | 84 | 87 |
+| Billing | 81 | 83 |
+| Jobs | 75 | 83 |
+| Error | 65 | 88 |
+| Workspace | 73 | 79 |
+| Public | 76 | 80 |
+| Status | 71 | 80 |
+| Developer | 80 | 87 |
+| VPS | 77 | 85 |
+| Nexus | 70 | 82 |
+| Admin tự dựng | 73 | 81 |
+| sqladmin | 49 | 74 |
+| Apps | 69 | 76 |
+
+**Overall ≈ 81,9 · Critical 85,25** (bảng *Điểm hiện tại* bên dưới là ước lượng của người sửa — không dùng làm phán quyết).
+
 ### Điểm hiện tại — 17/09 (E3 `sau/v3`: 448 phép đo 112 route × 390/768/1440/1920)
 
 Máy đo toàn hệ: axe serious/critical **0** · tràn ngang **0** · console **0** · request hỏng **0** · `h1`/`main` lệch **0** ·
@@ -444,7 +464,8 @@ Thứ tự theo luật 17/09 — **L3 ở cuối cùng, sau khi mọi pha dướ
 | B2 | Voice 2 nút chính · Upscale @390 · tab máy VPS @390 · form admin @390 | test nhắm + trình duyệt | ✅ `47f3bb92` — nút toolbar Voice thành ghost; chữ chờ Upscale không đè tay kéo; `.apptabs` có mép mờ + đệm cuối + `aria-label`; form admin ô số 2 cột, nút ≥44px; kèm sửa 3 lỗi mypy ở seed VPS (hạ mốc) |
 | B3 | Hex thô `.chip.*` / Prompt AI classic | test nhắm + trình duyệt | ✅ phần `.chip.i/.v/.m` → token trạng thái (axe 0 ở 3 trang admin). ⏭ Prompt AI classic: trang cũ đã có SPA thay, hệ theme sáng/tối riêng `--o-*` — token Golden chỉ có bản tối, thay sẽ hỏng theme sáng ⇒ **nợ vòng sau có lý do** |
 | B4 | SPA về token chung | vitest + build + trình duyệt | ✅ canvas + AutoSub: xám lạnh trần trong theme TỐI → token ấm (canvas 51, AutoSub 103; giữ màu bão hoà/alpha/fallback/định nghĩa biến/`.theme-light`); build + `build-meta` khớp; vitest 62/15; axe 0 cả hai theme × 390/1440. **Kèm lỗi thật có sẵn**: canvas theme sáng `--text-muted #737d89` 4,14:1 (đối chứng CSS HEAD cho cùng 4 lỗi) → `#5f6874` ≥4,9:1. Lần thử đầu map cả theme sáng + định nghĩa biến (đỏ thay xám sáng, biến tự tham chiếu) — phát hiện khi soát bảng, đã hoàn tác trước khi build. ⏭ Prompt AI (SPA + classic) có theme sáng riêng — nợ vòng sau. chatltt đã token (1 hex) |
-| C1 | Chấm điểm lại **đủ 13 họ** bằng vòng ảnh (không lấy số agent tự ước) → cập nhật bảng *Điểm hiện tại* | E3 | ⏳ |
+| C1 | Chấm lại 13 họ (2 agent chỉ đọc, KHÔNG xem bảng điểm cũ) | E3 | ✅ chấm xong — **điểm thấp hơn ước lượng**: Auth 87 · Billing 83 · Jobs 83 · Error 88 · Workspace 79 · Public 80 · Status 80 · Dev 87 · VPS 85 · Nexus 82 · Admin 81 · sqladmin 74 · Apps 76 ⇒ **TB ≈ 81,9 · critical 85,25**. Ước lượng trước đó (≈ 88,6 / 92) do chính người sửa chấm — BỎ. Kiểm chứng ngay 2 phát hiện: catalog ẩn danh còn emoji manifest (test DL-005 cũ bỏ sót) + ô đăng nhập ghi "Tên đăng nhập" dù nhận email → đã sửa. ⚠️ Vài phát hiện có thể là hiện vật ảnh toàn trang (sticky/khung cuộn — P1-13): phải xác minh trên khung nhìn thật trước khi sửa |
+| C3 | **Đợt sửa song song theo họ** từ danh sách khiếm khuyết C1 (worktree riêng mỗi nhóm, gộp tay) | test nhắm + trình duyệt + chấm lại | ⏳ |
 | C2 | Đo lại toàn hệ + regression ảnh | E3 | ✅ `sau/v5` 448 phép đo: axe 0 · tràn 0 · console 0 · hỏng 0 · h1/main 0 · `style` @1440 106. Regression: `home-an-danh@1440` 6,9% / `home-khach@1440` 8,1% — do `main` thêm card app LTTCODE (vị trí 3) + nhóm menu, không phải UI; cập nhật đúng 2 mẫu → PASS. `test_975` vân tay `ltt.css` cập nhật |
 | D1 | Hết mọi pha ⇒ **L3 MỘT lần** → đỏ thì khép `--doi --tu <sha L3>` → gộp `main` → deploy phần còn lại (nếu có) → nghiệm thu → Final Report + `docs/NHAT_KY.md` | L3 | ⏳ |
 
