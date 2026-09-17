@@ -4498,13 +4498,13 @@ input[type=hidden]+.af-step{margin-top:0}
 }
 
 /* ── Nexus · MỘT component thẻ tải (`_nexus_tai.html`) cho /nexus và /tai-xuong ── */
-.nx-tai-luoi{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}
-.nx-tai-luoi>.nx-tai-the{flex:0 1 clamp(150px,22vw,200px)}
-.nx-tai-luoi--rong>.nx-tai-the{flex:0 1 280px}
+/* C4 17/09: lưới auto-fill cùng trục trái với tiêu đề — flex căn giữa từng vỡ
+   hàng 3+2 lệch trục so với đầu trang căn trái. */
+.nx-tai-luoi{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.nx-tai-luoi--rong{grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr))}
 @media (min-width:1000px){
-  .nx-tai-luoi:not(.nx-tai-luoi--rong){display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
+  .nx-tai-luoi:not(.nx-tai-luoi--rong){grid-template-columns:repeat(5,minmax(0,1fr))}
 }
-@media (max-width:420px){.nx-tai-luoi--rong>.nx-tai-the{flex:1 1 100%}}
 .nx-tai-the{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;
   min-width:0;padding:20px 14px 16px;border:1px solid var(--border-subtle);
   border-radius:14px;background:var(--surface-raised)}
@@ -4516,8 +4516,12 @@ input[type=hidden]+.af-step{margin-top:0}
 .nx-tai-the .nx-tai-nut{width:100%;justify-content:center;min-height:40px;margin-top:4px}
 .nx-tai-the .nx-tai-tt{margin-top:4px}
 .nx-tai-hanh-dong{display:flex;flex-direction:column;align-items:stretch;gap:6px;width:100%}
-.nx-tai-sha{margin:0;font-size:10.5px;color:var(--text-muted);overflow-wrap:anywhere}
-.nx-tai-sha code{font-size:10.5px;color:inherit;background:none;padding:0;border:0}
+/* C4: SHA-256 MỘT dòng — nhãn · mã cắt "…" (title đủ) · nút Chép của sao_chep.js. */
+.nx-tai-sha{display:flex;align-items:center;gap:6px;min-width:0;margin:0;font-size:11px;color:var(--text-muted)}
+.nx-tai-sha-nhan{flex:0 0 auto;white-space:nowrap}
+.nx-tai-sha code.nx-tai-sha-ma{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-size:11px;color:var(--text-secondary);background:none;padding:0;border:0;text-align:left}
+.nx-tai-sha .nut-chep-o{flex:0 0 auto;margin-left:0}
 .nx-tai-phu{display:inline-flex;align-items:center;justify-content:center;min-height:32px;font-size:12.5px;color:var(--text-secondary)}
 .nx-tai-ghi{margin:10px 0 0;font-size:12.5px;color:var(--text-secondary)}
 .nx-tai-ghi--canh{margin:0;color:var(--status-warning)}
@@ -4715,4 +4719,17 @@ textarea:focus,select:focus{border-color:var(--text-secondary)}
 }
 /* "Điều cần biết" nằm cuối cột trái, ngay dưới thẻ máy. */
 .vps-can-biet{margin:16px 0 0}
+/* ── Nexus · Máy của tôi: "Thu hồi" (huỷ quyền) mang kiểu nguy hiểm ── */
+.nx-may-tac-vu .btn.nx-nut-nguy{border-color:var(--status-danger-border);color:var(--err)}
+.nx-may-tac-vu .btn.nx-nut-nguy:hover,.nx-may-tac-vu .btn.nx-nut-nguy:focus-visible{
+  border-color:var(--err);background:var(--status-danger-soft);color:var(--err)}
+/* Nhật ký: phân bổ cột — cột "Máy" không còn nuốt hết chỗ trống. */
+@media (min-width:561px){
+  .nx-nhat-ky--cot table{table-layout:fixed;width:100%}
+  .nx-nhat-ky--cot th:nth-child(1){width:22%}
+  .nx-nhat-ky--cot th:nth-child(2){width:38%}
+  .nx-nhat-ky--cot th:nth-child(3){width:22%}
+  .nx-nhat-ky--cot th:nth-child(4){width:18%}
+  .nx-nhat-ky--cot td:nth-child(2){overflow-wrap:anywhere}
+}
 /* === HET C4: DEV-VPS-NEXUS === */
