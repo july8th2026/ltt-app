@@ -46,6 +46,13 @@
   nhập mật khẩu) + kiểm sau khởi động lại máy (chủ dự án báo khi có dịp).
 - Test nhắm: `test_1302` (12) + `test_1303` (7); cả app `1300–1303` = 39 xanh.
 
+## 2026-09-17 — Kết phiên VPS V4: đóng kế hoạch
+
+- Chủ dự án chốt: **OVH là mặc định**, Vultr sắp ngừng (giữ STANDBY, không đầu tư thêm).
+- Kế hoạch VPS V4 không còn mục phần mềm mở: `05`/`08`/`10` đã đóng theo bằng chứng;
+  `10_FINAL_REPORT.md` = CLOSED. Còn ngoài phần mềm: Backup V2, diễn tập khôi phục,
+  dual-WAN, cập nhật PVE (ghi ở `09_BLOCKERS.md`).
+
 ## 2026-09-17 (tối) — R25: VPS OVH không có mạng vì router DHCP không cấp dải 10.50
 
 - **Triệu chứng**: chủ dự án cài xong Windows trên VM 204, bật Remote Desktop, máy

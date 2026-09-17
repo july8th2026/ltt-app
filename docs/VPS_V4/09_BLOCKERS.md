@@ -2,6 +2,13 @@
 
 ## Active blockers
 
+### Tổng kết phiên 2026-09-17 — không còn blocker phần mềm
+
+- OVH 0402 là mặc định (ACTIVE, default); Vultr 0401 STANDBY. Chủ dự án: **Vultr sắp
+  ngừng**, không đầu tư thêm (không thử đổi default, không preflight Vultr).
+- Còn mở, **ngoài phạm vi phần mềm** (cần mua/dựng hoặc cửa sổ bảo trì): Backup V2
+  CAPACITY_BLOCKED, diễn tập khôi phục, dual-WAN, 179 gói cập nhật PVE chờ cổng thay đổi.
+
 ### Cập nhật 2026-09-17 (chiều) — bán VPS MỞ LẠI
 
 - R22 và R23 đã sửa và chạy trên production/Máy B; profile OVH 0402 `auto_acquire=true`,

@@ -1,8 +1,6 @@
 # VPS V4 — Final Report
 
-Status: **IN PROGRESS (16/09) — r1 DEPLOYED; FIRST REAL VPS LIVE WITH ONE OVH IP;
-R1–R21 FIXED WITH TARGETED TESTS; SESSION L3 + MAIN MERGE + DEPLOY PENDING
-(plan 14 §6 G3–G8)**
+Status: **CLOSED 17/09/2026 — PRODUCTION; OVH DEFAULT; SALES OPEN (auto-buy one OVH IPv4 per VPS); R1–R25 FIXED; LIVE E2E PASS (create, console, lifecycle, in-guest network, RDP). Vultr retained STANDBY pending retirement (owner). Readiness gates outside software: Backup V2, restore drill, dual-WAN.**
 
 ## Revisions
 
@@ -40,13 +38,13 @@ mutation journal and per-profile health/reconciliation. See `03` and `04`.
 - [x] owner-only MVP access
 - [x] one OVH IPv4 live (order 22703620, USD 2.39, BOUND, gwnat mapping observed)
 - [x] one OVH VPS live with correct owner (`d96b66f3`, VM 204, owner D09 account)
-- [ ] Windows installer/disk visible and console (R20 fix awaiting deploy)
-- [ ] public/private/WG connectivity (after owner installs Windows)
-- [ ] stop/start/restart (soft stop failure measured → R21; re-check after deploy)
+- [x] Windows installer/disk visible and console (17/09) R20 đạt live
+- [x] public/private/WG connectivity (17/09) sau R25 (DHCP dải 10.50): `10.50.0.50`, RDP `51.79.202.1` đạt
+- [x] stop/start/restart (17/09) R21/R19 đạt live; tắt cứng có xác nhận
 - [x] cleanup or explicitly retained state (owner keeps the VPS for real use)
 - [x] default switch preserves existing pin
 - [x] scoped failure injection/security/secret scan
-- [ ] final full gate
+- [x] final full gate (17/09) L3 `d8b02cd7` khép PASS; deploy sau qua L1/L2
 
 ## Live test VPS
 
