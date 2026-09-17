@@ -8,12 +8,13 @@
   <p>{{ _("Tính theo token, trả theo lượng dùng thật. Không thuê bao, không phí tối thiểu hằng tháng.") }}</p>
   <p class="muted">1 credit = 100₫</p>
 </div>
+{# C3 Golden UI: mọi h2 thẻ cùng cỡ `tl-muc` — trước "Bảng giá ltt-3.8" nhỏ hơn hẳn "Giá API tạo ảnh". #}
 
 {# Mot BANG cho MOI model (D07). Gia ra chenh nhau 20 lan giua hai model, nen
    mot bang duy nhat tren trang ban hang la mot con so sai cho mot trong hai. #}
 {% for b in cac_bang %}
 <div class="card">
-  <h2 class="u-mt0">{{ _("Bảng giá") }} <code>{{ b.model }}</code></h2>
+  <h2 class="u-mt0 tl-muc">{{ _("Bảng giá") }} <code>{{ b.model }}</code></h2>
   <p class="muted">{{ _("phiên bản giá") }} <code>{{ b.phien_ban_gia }}</code></p>
   <div class="tl-bang" tabindex="0">
   <table class="table">
@@ -55,7 +56,7 @@
 </div>
 
 <div class="card">
-  <h2 class="u-mt0">{{ _("Ba ví dụ chi phí thật") }}</h2>
+  <h2 class="u-mt0 tl-muc">{{ _("Ba ví dụ chi phí thật") }}</h2>
   <p class="muted">{{ _("Tính bằng đúng hàm ra hoá đơn, không phải bằng một phép nhân riêng.") }}</p>
   <div class="tl-bang" tabindex="0">
   <table class="table">
@@ -189,7 +190,7 @@
 </div>
 
 <div class="card">
-  <h2 class="u-mt0">{{ _("Ba điều nên biết trước khi dùng") }}</h2>
+  <h2 class="u-mt0 tl-muc">{{ _("Ba điều nên biết trước khi dùng") }}</h2>
 
   <h3>{{ _("Trả cho thứ đã sinh ra, không trả cho thứ đã xin") }}</h3>
   <p>{{ _("Xin max_tokens 8.000 mà model chỉ trả lời 200 token thì bạn trả cho 200. Hệ thống giữ trước một mức trần rồi hoàn lại phần chênh ngay khi lượt gọi xong.") }}</p>
@@ -202,7 +203,7 @@
 </div>
 
 <div class="card">
-  <h2 class="u-mt0">{{ _("Bắt đầu") }}</h2>
+  <h2 class="u-mt0 tl-muc">{{ _("Bắt đầu") }}</h2>
   {# ⚠️ Bước thứ ba phải trỏ vào trang CÔNG KHAI. Bản trước trỏ
      `/developers/cli`, thứ trả 303 về `/login` — tức trang giá công khai dẫn
      người đọc vào một cánh cửa đóng, đúng ở bước họ muốn xem "cắm thế nào". #}

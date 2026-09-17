@@ -89,8 +89,9 @@ def test_lifecycle_mac_dinh_duoc_xep_phat_hanh_truoc(client):
 def test_tao_anh_mot_entry_hai_mode_va_route_thumbnail_cu_con_hoat_dong(client):
     _login(client, "market-image@example.com")
     home = client.get("/").text
-    assert home.count('href="/taoanh" aria-label="Mở app Tạo ảnh AI"') == 1
-    assert 'href="/thumbnail" aria-label="Mở app' not in home
+    # C3 Golden UI 17/09: "Mở app" -> "Mở ứng dụng" (chữ Việt trọn vẹn); ý định giữ nguyên.
+    assert home.count('href="/taoanh" aria-label="Mở ứng dụng Tạo ảnh AI"') == 1
+    assert 'href="/thumbnail" aria-label="Mở ứng dụng' not in home
     general = client.get("/taoanh")
     assert general.status_code == 200
     assert 'href="/taoanh" aria-current="page"' in general.text

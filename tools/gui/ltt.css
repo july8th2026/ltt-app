@@ -4275,3 +4275,46 @@ input[type=hidden]+.af-step{margin-top:0}
 /* DL-005: icon SVG ở catalog ẩn danh (trước còn emoji manifest). */
 .appcard h2 .catalog-ic{display:inline-grid;place-items:center;color:var(--brand-hover)}
 .appcard h2 .catalog-ic .ui-ic{width:18px;height:18px}
+/* === C3: WORKSPACE-PUBLIC === */
+/* Workspace ≤1100px: cột "Hoạt động / Việc đang chạy / Credit" xuống DƯỚI lưới thay vì ẩn. */
+@media(max-width:1100px){
+  .market-side{grid-row:1/3}
+  .market-rail{display:grid;grid-column:2;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;align-items:start;padding:4px 14px 30px;border-left:0;background:var(--surface-base)}
+  .market-rail section{margin:0}
+}
+@media(max-width:760px){.market-rail{grid-template-columns:minmax(0,1fr);padding:4px 12px 24px}}
+.market-rail header a{display:inline-flex;align-items:center;min-height:24px;padding:0 4px;font-size:11px}
+.activity-list li>span .ui-ic,.running-list li>div>span .ui-ic{width:15px;height:15px;color:var(--brand-hover)}
+.running-list li>div>span{display:inline-grid;place-items:center}
+/* Tên thẻ dài ("LTT Nexus — điều khiển máy từ xa") xuống 2 dòng thay vì cắt 1 dòng. */
+.market-card-title{align-items:flex-start}
+.market-card h2{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;min-height:2.6em;white-space:normal;text-overflow:clip;line-height:1.3;overflow-wrap:anywhere}
+/* Mục sidebar chưa phát hành: bỏ opacity .45 (tương phản thấp), nhãn "Chưa có" đọc được. */
+.market-nav button.market-deferred:disabled{opacity:1;color:var(--text-muted)}
+.market-nav .market-deferred small{padding:2px 6px;border-color:var(--border-strong);color:var(--text-secondary);font-size:10px}
+/* Dải chip lọc cuộn ngang: mép phải mờ khi còn mục bên phải (JS gắn .c3-con-tiep). */
+.market-categories.c3-con-tiep{-webkit-mask-image:linear-gradient(90deg,black calc(100% - 40px),transparent);mask-image:linear-gradient(90deg,black calc(100% - 40px),transparent)}
+@media(max-width:1100px){.market-categories>button:last-child{margin-right:28px}}
+/* Catalog ẩn danh: nhãn vòng đời có nền + viền, không chữ trơn trên ảnh. */
+#catalog-grid .appcard .cover .cbadge{z-index:2;display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border:1px solid;border-radius:999px;font-size:11.5px;font-weight:600;line-height:1.4}
+#catalog-grid .appcard .cover .cbadge .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+/* Trang công khai: mục lục neo, ghi chú có icon, bảng xếp thẻ ở khung hẹp. */
+.c3-muc-luc{margin-top:var(--space-4,16px);padding-top:var(--space-4,16px);border-top:1px solid var(--border-subtle)}
+.c3-muc-luc-ten{margin:0 0 10px;color:var(--text-muted);font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.c3-muc-luc ol{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
+.c3-muc-luc a{display:inline-flex;align-items:center;min-height:32px;padding:4px 12px;border:1px solid var(--border-subtle);border-radius:999px;background:var(--surface-raised);color:var(--text-secondary);font-size:13px;text-decoration:none}
+.c3-muc-luc a:hover{border-color:var(--brand-border);color:var(--text-primary)}
+.c3-muc-luc a:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+.card[id]{scroll-margin-top:76px}
+.c3-ghi-chu .ui-ic{width:16px;height:16px;margin-right:2px;vertical-align:-3px;color:var(--brand-hover)}
+.tl-muc code{font-size:.85em}
+@media(max-width:640px){
+  .c3-bang-xep thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .c3-bang-xep,.c3-bang-xep tbody{display:block;width:100%}
+  .c3-bang-xep tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:12px 0;border-bottom:1px solid var(--border-subtle)}
+  .c3-bang-xep td{display:block;padding:0;border:0}
+  .c3-bang-xep td:first-child{font-weight:600;color:var(--text-primary);overflow-wrap:anywhere}
+  .c3-bang-xep td:nth-child(2){text-align:right}
+  .c3-bang-xep td:nth-child(2) code{white-space:nowrap}
+  .c3-bang-xep td:nth-child(3){grid-column:1/-1;color:var(--text-secondary)}
+}

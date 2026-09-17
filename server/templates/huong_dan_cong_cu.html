@@ -1,6 +1,7 @@
 {% extends "base_public.html" %}
 {% block title %}{{ _("Công cụ cắm API") }} · LTT AI Studio{% endblock %}
 {% block content %}
+{% import "_icon.html" as ic %}
 
 <div class="card">
   <h1 class="u-mt0 tl-h1">{{ _("Ba cách cắm API — Windows") }}</h1>
@@ -30,7 +31,7 @@
      <em>{{ _("More info") }}</em> → <em>{{ _("Run anyway") }}</em>.</p>
   <p>{{ _("Trước khi mở, bạn nên tự kiểm băm — nó khớp thì tệp đúng là bản chúng tôi dựng:") }}</p>
   <pre class="u-cuon-ngang"><code>Get-FileHash .\{{ bo_cai.ten }} -Algorithm SHA256</code></pre>
-  <p class="muted">⛔ {{ _("Chúng tôi KHÔNG bao giờ đề nghị bạn tắt phần mềm diệt virus. Nếu bạn không yên tâm thì cấu hình tay — hướng dẫn đầy đủ, không thiếu bước nào.") }}</p>
+  <p class="muted c3-ghi-chu">{{ ic.icon("shield") }} {{ _("Chúng tôi KHÔNG bao giờ đề nghị bạn tắt phần mềm diệt virus. Nếu bạn không yên tâm thì cấu hình tay — hướng dẫn đầy đủ, không thiếu bước nào.") }}</p>
 </div>
 {% endif %}
 
@@ -53,7 +54,7 @@ LTTStudios-CamCLI-Console.exe go</code></pre>
       <tr><td><code>--muc claude-desktop</code></td><td>{{ _("Claude Desktop") }}</td><td>{{ _("chính sách HKCU; phải thoát hẳn app") }}</td></tr>
       <tr><td><code>--toan-cuc</code></td>
           <td>{{ _("tiện ích Claude Code") }}</td>
-          <td>⚠️ {{ _("ghi ~/.claude/settings.json — MỌI phiên Claude Code trên máy đi qua LTT") }}</td></tr>
+          <td><span class="badge b-warn">{{ _("Lưu ý") }}</span> {{ _("ghi ~/.claude/settings.json — MỌI phiên Claude Code trên máy đi qua LTT") }}</td></tr>
     </tbody>
   </table>
 </div>
@@ -72,7 +73,7 @@ LTTStudios-CamCLI-Console.exe go</code></pre>
       <tr><td>{{ _("biến môi trường cấp người dùng") }}</td><td><code>LTT_API_KEY</code>, <code>ANTHROPIC_AUTH_TOKEN</code>, <code>ANTHROPIC_BASE_URL</code>…</td></tr>
     </tbody>
   </table>
-  <p class="muted u-mt14"><span aria-hidden="true">⭐</span> {{ _("Khoá KHÔNG bao giờ được ghi vào tệp cấu hình. Tệp cấu hình bị đồng bộ giữa máy, bị commit, bị chụp màn hình — khoá thì không nên nằm ở đó. Nó chỉ vào biến môi trường và chính sách registry.") }}</p>
+  <p class="muted u-mt14 c3-ghi-chu">{{ ic.icon("shield") }} {{ _("Khoá KHÔNG bao giờ được ghi vào tệp cấu hình. Tệp cấu hình bị đồng bộ giữa máy, bị commit, bị chụp màn hình — khoá thì không nên nằm ở đó. Nó chỉ vào biến môi trường và chính sách registry.") }}</p>
   <p class="muted">{{ _("Lệnh") }} <code>go</code> {{ _("trả lại đúng giá trị cũ của từng khoá nó đã đổi, và chỉ xoá những khoá do chính nó thêm.") }}</p>
 </div>
 

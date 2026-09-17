@@ -16418,7 +16418,7 @@ msgstr "Cinematic"
 
 #: apps/qualitylab/manifest.py:17
 msgid "Đo contract và chất lượng đầu ra bằng bằng chứng có phiên bản."
-msgstr ""
+msgstr "Measures contracts and output quality with versioned evidence."
 
 #: apps/qualitylab/templates/qualitylab.html:15
 msgid "Đo theo vector bằng chứng. Foundation chưa calibrated và không được dùng làm release gate."
@@ -18814,3 +18814,24 @@ msgstr "Email or username"
 
 msgid "Nhập email của bạn"
 msgstr "Enter your email"
+
+msgid "Mở ứng dụng"
+msgstr "Open app"
+
+msgid "Tìm ứng dụng…"
+msgstr "Search apps…"
+
+msgid "Điều khiển máy tính của bạn từ xa — không mở cổng, không cần IP tĩnh. Cài ứng dụng, đăng nhập cùng tài khoản, máy hiện ra là bấm vào dùng."
+msgstr "Control your computer remotely — no open ports, no static IP. Install the app, sign in with the same account, and your machine shows up ready to use."
+
+msgid "Studio AI biến brief và tài sản tham chiếu thành prompt nhiều cảnh, storyboard và gói sản xuất nhất quán."
+msgstr "An AI studio that turns briefs and reference assets into multi-scene prompts, storyboards and consistent production packs."
+
+msgid "Ảnh nội bộ (máy nhà)"
+msgstr "In-house images (home machine)"
+
+msgid "Tạo ảnh bằng model chạy trên máy của LTT Studios. Sinh ảnh từ mô tả, sửa ảnh theo lệnh, giữ nhân vật nhất quán qua nhiều ảnh."
+msgstr "Generate images with models running on LTT Studios machines. Create images from a description, edit images by instruction, and keep a character consistent across images."
+
+msgid "Sinh ảnh nền thumbnail YouTube từ mô tả, bằng model nội bộ. Ảnh KHÔNG có chữ — chữ thêm bằng công cụ chỉnh sửa của bạn."
+msgstr "Generate YouTube thumbnail backgrounds from a description, using an in-house model. Images contain NO text — add text with your own editing tool."

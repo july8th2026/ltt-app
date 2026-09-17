@@ -1,6 +1,14 @@
 {% extends "base_public.html" %}
 {% block title %}{{ _("Hướng dẫn cắm API") }} · LTT AI Studio{% endblock %}
 {% block content %}
+{% import "_icon.html" as ic %}
+{# C3 Golden UI: dữ liệu `examples.py` (OOS-09) viết `tên` kiểu markdown. Chỉ đổi CÁCH
+   HIỆN — cắt theo dấu backtick, đoạn lẻ thành <code>; autoescape vẫn giữ nguyên. #}
+{% macro ma_nho(van) -%}
+{%- for doan in (van|string).split('`') -%}
+{%- if loop.index is even %}<code>{{ doan }}</code>{% else %}{{ doan }}{% endif -%}
+{%- endfor -%}
+{%- endmacro %}
 
 {# 🔴 TRANG NÀY CÔNG KHAI — KHÔNG ĐẶT SAU `require_account`.
 
@@ -23,6 +31,21 @@
     <a href="/status/api">{{ _("Tình trạng API") }}</a> ·
     <a href="/register">{{ _("Đăng ký lấy khoá") }}</a>
   </p>
+  {# C3 Golden UI: trang dài ~6.600px (10.400px ở 390) — mục lục neo từ các h2 sẵn có. #}
+  <nav class="c3-muc-luc" aria-labelledby="c3-muc-luc-ten">
+    <h2 id="c3-muc-luc-ten" class="c3-muc-luc-ten">{{ _("Mục lục") }}</h2>
+    <ol>
+      <li><a href="#cong-cu">{{ _("Ba cách cắm API") }}</a></li>
+      <li><a href="#cau-hinh-tay">{{ _("Bạn cắm vào công cụ nào?") }}</a></li>
+      <li><a href="#hay-vap">{{ _("Những chỗ hay vấp — chung cho mọi công cụ") }}</a></li>
+      <li><a href="#goi-thu">{{ _("Gọi thử bằng cURL") }}</a></li>
+      <li><a href="#ba-cua">{{ _("Ba cửa — chọn theo thứ client của bạn nói") }}</a></li>
+      <li><a href="#ngu-canh">{{ _("Hội thoại dài: sáu con số, và vì sao chúng khác nhau") }}</a></li>
+      <li><a href="#tao-anh">{{ _("Tạo ảnh bằng model của LTT Studios") }}</a></li>
+      <li><a href="#thu-vien">{{ _("Thư viện một tệp, không phụ thuộc") }}</a></li>
+      <li><a href="#dang-ky">{{ _("Chưa có tài khoản?") }}</a></li>
+    </ol>
+  </nav>
 </div>
 
 
@@ -65,15 +88,15 @@
 <div class="card" id="ba-cua">
   <h2 class="u-mt0">{{ _("Ba cửa — chọn theo thứ client của bạn nói") }}</h2>
   <p>{{ _("Cùng một model, cùng một khoá, cùng một sổ tiền. Khác nhau ở hình dạng request và ở chỗ có stream hay không.") }}</p>
-  <table class="table">
-    <thead><tr>
-      <th scope="col">{{ _("Cửa") }}</th>
-      <th scope="col">{{ _("Kiểu") }}</th>
-      <th scope="col">{{ _("Khi nào dùng") }}</th>
+  <table class="table c3-bang-xep" role="table">
+    <thead><tr role="row">
+      <th scope="col" role="columnheader">{{ _("Cửa") }}</th>
+      <th scope="col" role="columnheader">{{ _("Kiểu") }}</th>
+      <th scope="col" role="columnheader">{{ _("Khi nào dùng") }}</th>
     </tr></thead>
     <tbody>
     {% for duong, kieu, khi_nao in ba_cua %}
-      <tr><td><code>{{ duong }}</code></td><td>{{ kieu }}</td><td>{{ khi_nao }}</td></tr>
+      <tr role="row"><td role="cell"><code>{{ duong }}</code></td><td role="cell">{{ kieu }}</td><td role="cell">{{ ma_nho(khi_nao) }}</td></tr>
     {% endfor %}
     </tbody>
   </table>
@@ -92,15 +115,15 @@
 <div class="card" id="ngu-canh">
   <h2 class="u-mt0">{{ _("Hội thoại dài: sáu con số, và vì sao chúng khác nhau") }}</h2>
   <p>{{ _("Codex và Claude Code tự nén hội thoại khi nó dài ra. Chúng chỉ nén ĐÚNG LÚC nếu bạn nói thật cho chúng biết cửa sổ của model này — công cụ cắm ở trên làm việc đó cho bạn.") }}</p>
-  <table class="table">
-    <thead><tr>
-      <th scope="col">{{ _("Con số") }}</th>
-      <th scope="col">{{ _("Giá trị") }}</th>
-      <th scope="col">{{ _("Nó là gì") }}</th>
+  <table class="table c3-bang-xep" role="table">
+    <thead><tr role="row">
+      <th scope="col" role="columnheader">{{ _("Con số") }}</th>
+      <th scope="col" role="columnheader">{{ _("Giá trị") }}</th>
+      <th scope="col" role="columnheader">{{ _("Nó là gì") }}</th>
     </tr></thead>
     <tbody>
     {% for ten, gia_tri, nghia in ngu_canh_nam_so %}
-      <tr><td>{{ ten }}</td><td><code>{{ gia_tri }}</code></td><td>{{ nghia }}</td></tr>
+      <tr role="row"><td role="cell">{{ ten }}</td><td role="cell"><code>{{ gia_tri }}</code></td><td role="cell">{{ ma_nho(nghia) }}</td></tr>
     {% endfor %}
     </tbody>
   </table>
@@ -109,8 +132,8 @@
   <h3>{{ _("Nếu bạn ăn 413 giữa chừng") }}</h3>
   <dl>
   {% for tieu_de, cach_sua in loi_413 %}
-    <dt><strong>{{ tieu_de }}</strong></dt>
-    <dd class="muted tl-dd">{{ cach_sua }}</dd>
+    <dt><strong>{{ ma_nho(tieu_de) }}</strong></dt>
+    <dd class="muted tl-dd">{{ ma_nho(cach_sua) }}</dd>
   {% endfor %}
   </dl>
 </div>
@@ -150,14 +173,14 @@
   <h3>{{ _("Ba lời gọi") }}</h3>
   <pre class="u-cuon-ngang"><code>{{ curl_anh }}</code></pre>
 
-  <p class="muted">⏱️ {{ _("Đo thật ngày 25/08 từ một máy ngoài, qua Internet: một ảnh mất") }}
+  <p class="muted c3-ghi-chu">{{ ic.icon("clock") }} {{ _("Đo thật ngày 25/08 từ một máy ngoài, qua Internet: một ảnh mất") }}
      <strong>{{ _("138 giây") }}</strong>{{ _(". Vì vượt xa trần 100 giây của Cloudflare nên đường ảnh BẮT BUỘC là bất đồng bộ — gửi rồi hỏi lại, hoặc đăng ký webhook. Đặt timeout của bạn theo con số đó.") }}</p>
-  <p class="muted">💰 {{ _("Giá phụ thuộc số ảnh và chế độ, nên") }} <code>POST /quotes</code>
+  <p class="muted c3-ghi-chu">{{ ic.icon("gem") }} {{ _("Giá phụ thuộc số ảnh và chế độ, nên") }} <code>POST /quotes</code>
      {{ _("là nơi duy nhất nói giá — và báo giá được ký, nên lúc chạy không ai đổi được con số.") }}
      <a href="/gia-api">{{ _("Xem bảng giá") }} →</a></p>
 </div>
 
-<div class="card">
+<div class="card" id="thu-vien">
   <h2 class="u-mt0">{{ _("Thư viện một tệp, không phụ thuộc") }}</h2>
   <p>{{ _("Không bắt buộc — API là HTTP thuần. Nhưng nếu muốn nhanh:") }}</p>
   <ul>
@@ -167,7 +190,7 @@
   </ul>
 </div>
 
-<div class="card">
+<div class="card" id="dang-ky">
   <h2 class="u-mt0">{{ _("Chưa có tài khoản?") }}</h2>
   <p>{{ _("Đăng ký, nạp credit, tạo khoá — rồi quay lại trang này chép cấu hình.") }}</p>
   <p><a class="btn" href="/register">{{ _("Đăng ký") }}</a></p>
