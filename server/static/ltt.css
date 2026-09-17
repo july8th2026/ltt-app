@@ -4247,3 +4247,7 @@ input[type=hidden]+.af-step{margin-top:0}
 .tt-api-tong.tt-api-warn{border-left-color:var(--status-warning)}
 .tt-api-tong.tt-api-err{border-left-color:var(--status-danger)}
 .tt-api-tong-chu{font-size:22px;font-weight:700}
+/* B1 (17/09): studio video dùng CÙNG huy hiệu số bước tròn như Ảnh/Clip/Upscale/Voice
+   (trước: chữ đỏ trơn "01", và một mục "03B"). */
+.tv-fieldset legend strong,.tv-section h2 strong{display:inline-grid;place-items:center;width:22px;height:22px;margin-right:8px;
+  border-radius:50%;background:var(--brand-strong);color:var(--text-primary);font-size:10px;font-weight:700;vertical-align:1px}

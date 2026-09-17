@@ -162,3 +162,15 @@ def test_ommi_classic_nen_toi_dung_token_am():
     src = _doc("apps/prompt_ai_ommi/templates/prompt_ai_ommi.html")
     assert ".ommi.dark{--o-bg:var(--surface-canvas)" in src
     assert "#090a0c" not in src
+
+
+def test_studio_video_so_buoc_lien_mach_va_mot_kieu_huy_hieu():
+    """B1 17/09: LTT Video ẩn mục Đính kèm theo tác vụ ⇒ số viết cứng để lại 01·02·04.
+    Đếm bằng biến Jinja; Seedance bỏ mục "03B"; hai studio dùng huy hiệu tròn chung."""
+    ltt = (GOC / "apps/lttvideo/templates/lttvideo.html").read_text(encoding="utf-8")
+    assert not re.search(r"<strong>0\d</strong>", ltt)
+    assert ltt.count('{{ "%02d" % buoc.n }}') == 4
+    seed = (GOC / "apps/taovideo/templates/taovideo.html").read_text(encoding="utf-8")
+    assert "03B" not in seed
+    css = (GOC / "server/static/ltt.css").read_text(encoding="utf-8")
+    assert re.search(r"\.tv-fieldset legend strong,\.tv-section h2 strong\{display:inline-grid;[^}]*border-radius:50%", css)

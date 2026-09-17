@@ -59,7 +59,8 @@
            quyet dinh co duoc dinh kem khong va toi da may tep. Dat no trong muc
            "dinh kem" (ban truoc) lam no trong nhu mot tuy chon con cua dinh kem
            — nguoc voi thu tu that cua quyet dinh. #}
-        <div class="tv-section"><h2><strong>01</strong> {{ _('Loại tác vụ') }}</h2>
+        {%- set buoc = namespace(n=0) -%}
+        {%- set buoc.n = buoc.n + 1 %}<div class="tv-section"><h2><strong>{{ "%02d" % buoc.n }}</strong> {{ _('Loại tác vụ') }}</h2>
           {# ⭐ Dung lai `.tv-models` — khuon DA CO cua chinh app nay (luoi 2
              cot, vien, `:has(input:checked)` lam noi o dang chon). De tu che
              mot lop moi la de mot khoi trong cung mot man hinh trong khac
@@ -77,7 +78,7 @@
           </div>
         </div>
 
-        <div class="tv-section"><h2><strong>02</strong> {{ _('Mô tả') }}</h2>
+        {%- set buoc.n = buoc.n + 1 %}<div class="tv-section"><h2><strong>{{ "%02d" % buoc.n }}</strong> {{ _('Mô tả') }}</h2>
           <label class="sr-only" for="tv-prompt">{{ _('Mô tả video') }}</label>
           <textarea id="tv-prompt" name="prompt" rows="4" class="ltt-input" required
                     maxlength="10000" aria-describedby="tv-prompt-hint"
@@ -107,7 +108,7 @@
            `i2v_2_2` chua tai ve thi tac vu anh dong lai, va o chon tep phai
            bien theo. Moi tep no van moi la moi nguoi vao mot canh cua khoa. #}
         {% if tac_vu | selectattr('so_tep_toi_da') | list %}
-        <div class="tv-section"><h2><strong>03</strong> {{ _('Đính kèm') }}</h2>
+        {%- set buoc.n = buoc.n + 1 %}<div class="tv-section"><h2><strong>{{ "%02d" % buoc.n }}</strong> {{ _('Đính kèm') }}</h2>
           {# ⭐ Khuon `tv-ref-pickers` cua `taovideo`, khong dung macro
              `o_chon_tep`: macro dung mot hop gach dut CAO, con day la mot the
              GON — cung ngon ngu hinh anh voi cac studio khac cua LTT.
@@ -164,7 +165,7 @@
         {% endif %}
         {% endif %}
 
-        <fieldset class="tv-fieldset"><legend><strong>04</strong> {{ _('Thiết lập') }}</legend>
+        <fieldset class="tv-fieldset">{%- set buoc.n = buoc.n + 1 %}<legend><strong>{{ "%02d" % buoc.n }}</strong> {{ _('Thiết lập') }}</legend>
           <div class="tv-selects">
             <label>{{ _('Tỉ lệ khung hình') }}
               <select name="ti_le" id="tv-tile">
