@@ -204,7 +204,7 @@ html{background:var(--surface-canvas)}
 .field label{font-size:12px;color:var(--muted)}
 .inp,.ui-input{padding:11px 12px;border-radius:8px;border:1px solid var(--line2);background:var(--panel2);
   color:var(--fg);font:inherit;font-size:14px;width:100%}
-.inp:focus,.ui-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--focus-shadow)}
+.inp:focus,.ui-input:focus{border-color:var(--text-secondary);box-shadow:0 0 0 3px var(--focus-shadow)}
 .inp:focus-visible,.ui-input:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
 
 /* ── Table ── */
@@ -4643,3 +4643,8 @@ input[type=hidden]+.af-step{margin-top:0}
   .adm-main table.adm-the .rowactions,.adm-main table.adm-the .dev-hanh-dong{justify-content:flex-start;flex-wrap:wrap}
   .adm-main table.adm-the .adm-form-dong{flex-wrap:wrap}
 }
+/* V2 (17/09): ô đang focus KHÔNG dùng viền đỏ (đọc như lỗi) — viền sáng trung tính + quầng mờ;
+   lỗi vẫn là --status-danger. Thanh tiến độ ĐANG CHẠY/CHỜ màu cảnh báo (khớp badge "Đang chạy"),
+   đỏ chỉ còn cho lỗi. */
+textarea:focus,select:focus{border-color:var(--text-secondary)}
+.job-state-running .ui-progress>i,.job-state-queued .ui-progress>i{background:var(--warn)}
