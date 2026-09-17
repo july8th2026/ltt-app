@@ -21,25 +21,18 @@
         <fieldset class="form-fieldset">
           {{ render_form_fields(form, form_opts=form_opts) }}
         </fieldset>
-        <div class="row">
-          <div class="col-md-2">
-            <a href="{{ url_for('admin:list', identity=model_view.identity) }}" class="btn btn-secondary">
-              {{ _("Huỷ") }}
-            </a>
-          </div>
-          <div class="col-md-6">
-            <div class="btn-group flex-wrap" data-toggle="buttons">
-              <button type="submit" name="save" value="Save" class="btn btn-primary">{{ _("Lưu") }}</button>
-              <button type="submit" name="save" value="Save and continue editing" class="btn btn-secondary">{{ _("Lưu và sửa tiếp") }}</button>
-              {% if model_view.can_create %}
-              {% if model_view.save_as %}
-              <button type="submit" name="save" value="Save as new" class="btn btn-secondary">{{ _("Lưu thành bản mới") }}</button>
-              {% else %}
-              <button type="submit" name="save" value="Save and add another" class="btn btn-secondary">{{ _("Lưu và thêm bản khác") }}</button>
-              {% endif %}
-              {% endif %}
-            </div>
-          </div>
+        {#- Golden UI C3: Huỷ đứng CÙNG cụm với các nút lưu (trước: cột riêng, cách xa). Giá trị `save` giữ nguyên. -#}
+        <div class="ltt-form-nut">
+          <button type="submit" name="save" value="Save" class="btn btn-primary">{{ _("Lưu") }}</button>
+          <button type="submit" name="save" value="Save and continue editing" class="btn btn-secondary">{{ _("Lưu và sửa tiếp") }}</button>
+          {% if model_view.can_create %}
+          {% if model_view.save_as %}
+          <button type="submit" name="save" value="Save as new" class="btn btn-secondary">{{ _("Lưu thành bản mới") }}</button>
+          {% else %}
+          <button type="submit" name="save" value="Save and add another" class="btn btn-secondary">{{ _("Lưu và thêm bản khác") }}</button>
+          {% endif %}
+          {% endif %}
+          <a href="{{ url_for('admin:list', identity=model_view.identity) }}" class="btn btn-ghost-secondary">{{ _("Huỷ") }}</a>
         </div>
       </form>
     </div>

@@ -18814,3 +18814,12 @@ msgstr "Email or username"
 
 msgid "Nhập email của bạn"
 msgstr "Enter your email"
+
+msgid "Bảng dữ liệu"
+msgstr "Data tables"
+
+msgid "quản trị · bảng dữ liệu"
+msgstr "admin · data tables"
+
+msgid "Đường dẫn"
+msgstr "Breadcrumb"

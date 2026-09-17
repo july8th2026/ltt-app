@@ -4296,6 +4296,7 @@ input[type=hidden]+.af-step{margin-top:0}
 .adm-content .dev-loc>.btn{min-height:40px}
 @media (max-width:640px){
   .adm-content form>p>.adm-truong-rong{flex-basis:100%}
+  .adm-content .adm-form-luoi{gap:8px}
   .adm-content form>p>.adm-truong>select{width:100%;min-width:0}
   .adm-content .dev-loc>label{flex-basis:100%}
   .adm-content .dev-loc>.btn{flex:1 1 auto;min-height:44px}

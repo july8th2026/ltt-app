@@ -46,7 +46,7 @@
     .page-item.active .page-link{background:var(--brand-fill);border-color:var(--brand-fill);color:#fff}
     .btn-light,.btn-secondary{--tblr-btn-bg:var(--surface-overlay);--tblr-btn-color:var(--text-primary);
       --tblr-btn-border-color:var(--border-strong);--tblr-btn-hover-bg:var(--surface-interactive);--tblr-btn-hover-color:var(--text-primary)}
-    .form-check-input{width:20px;height:20px}
+    .form-check-input{width:20px;height:20px;flex:0 0 auto;aspect-ratio:1/1}
     .table .text-end a{display:inline-grid;place-items:center;min-width:28px;min-height:28px}
     /* Tabler dat mau bang `[data-bs-theme=dark] .x` — cung tien to o day de thang ma khong can !important. */
     [data-bs-theme=dark] .navbar-vertical .navbar,[data-bs-theme=dark] .navbar-vertical .navbar-collapse{background:transparent}
@@ -64,33 +64,107 @@
     .table-responsive{border:1px solid var(--border-subtle);border-radius:var(--radius-md)}
     .table thead th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)}
     .table td,.table th{padding:.58rem .75rem;vertical-align:middle}
-    .ltt-adminbar{position:sticky;top:0;z-index:1030;display:flex;gap:6px;align-items:center;
-      min-height:52px;padding:7px 16px;background:var(--surface-raised);border-bottom:1px solid var(--border-subtle);
-      font-size:13px;backdrop-filter:blur(12px);overflow-x:auto}
-    .ltt-adminbar a{display:inline-flex;align-items:center;min-height:36px;padding:7px 10px;border-radius:6px;
-      color:var(--text-secondary);text-decoration:none;white-space:nowrap}
-    .ltt-adminbar a:hover{color:var(--text-primary);background:var(--surface-overlay)}
-    .ltt-adminbar .brand{display:flex;align-items:center;gap:9px;font-weight:700;color:var(--text-primary);
-      margin-right:8px;white-space:nowrap}.ltt-adminbar .mark{width:28px;height:28px;font-size:10px}
-    .ltt-back{margin-left:auto}
-    @media(max-width:700px){.ltt-adminbar{padding-inline:10px}.ltt-adminbar .brand span:last-child{display:none}
-      .ltt-back{margin-left:0}.container-xl{padding-left:12px;padding-right:12px}.table{min-width:680px}}
+    /* ── Golden UI C3: vỏ SQLAdmin = vỏ quản trị tự dựng (`.adm-top`, `.adm-side`, `.adm-banhmi`) ── */
+    .ltt-adminhead{position:sticky;top:0;z-index:1030;display:flex;align-items:center;gap:12px;min-height:60px;
+      padding:10px 22px;background:var(--surface-raised);border-bottom:1px solid var(--border-subtle)}
+    .ltt-adminbar{display:flex;align-items:center;gap:8px;flex:1;min-width:0;font-size:13px}
+    .ltt-adminbar .brand{display:flex;align-items:center;gap:9px;font-weight:700;color:var(--text-primary);margin-right:6px;white-space:nowrap}
+    .ltt-adminbar .mark{width:28px;height:28px;font-size:10px}
+    .ltt-adminbar-links{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+    .ltt-adminbar-links a{display:inline-flex;align-items:center;min-height:32px;padding:5px 12px;border:1px solid var(--border-subtle);
+      border-radius:var(--radius-pill);color:var(--text-secondary);text-decoration:none;white-space:nowrap}
+    .ltt-adminbar-links a:hover{color:var(--text-primary);border-color:var(--border-strong)}
+    .ltt-back{margin-left:auto;display:inline-flex;align-items:center;min-height:32px;padding:5px 12px;border:1px solid var(--border-strong);
+      border-radius:var(--radius-sm);color:var(--text-primary);text-decoration:none;white-space:nowrap;font-size:13px}
+    .ltt-back:hover{background:var(--surface-overlay);color:var(--text-primary)}
+    .ltt-adminmenu{display:none;position:relative;margin-left:auto}
+    .ltt-adminmenu summary{list-style:none;cursor:pointer;border:1px solid var(--border-strong);border-radius:var(--radius-sm);
+      padding:8px 12px;color:var(--text-primary);background:var(--surface-overlay);font-size:13px}
+    .ltt-adminmenu summary::-webkit-details-marker{display:none}
+    .ltt-adminmenu nav{position:absolute;right:0;top:calc(100% + 8px);width:min(280px,calc(100vw - 28px));max-height:70vh;overflow:auto;
+      padding:7px;background:var(--surface-raised);border:1px solid var(--border-strong);border-radius:var(--radius-md);box-shadow:var(--shadow-lg,0 16px 48px rgba(0,0,0,.6))}
+    .ltt-adminmenu nav a{display:block;padding:11px 12px;border-radius:6px;color:var(--text-secondary);text-decoration:none}
+    .ltt-adminmenu nav a:hover,.ltt-adminmenu nav a.on{color:var(--text-primary);background:var(--surface-overlay)}
+    .ltt-adminmenu nav a.on{box-shadow:inset 3px 0 var(--brand-fill)}
+    .ltt-adminmenu nav .grp{display:block;margin:8px 12px 4px;padding-top:8px;border-top:1px solid var(--border-subtle);
+      color:var(--text-muted);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase}
+    /* Thanh bên Tabler → `.adm-side` */
+    .navbar-vertical .container-fluid{flex-direction:column;align-items:stretch;flex-wrap:nowrap;padding:0;min-height:100%}
+    .ltt-sidebrand{display:flex;gap:11px;align-items:center;padding:16px 18px;border-bottom:1px solid var(--border-subtle);
+      color:var(--text-primary);text-decoration:none}
+    .ltt-sidebrand:hover{color:var(--text-primary);text-decoration:none}
+    .ltt-sidebrand b{display:block;font-size:14.5px}.ltt-sidebrand small{display:block;color:var(--text-muted);font-size:10.5px}
+    .navbar-vertical #navbar-menu{flex:1;align-items:flex-start;padding:8px 0}
+    .navbar-vertical .navbar-nav{width:100%;margin:0}
+    [data-bs-theme=dark] .navbar-vertical .nav-link{display:flex;align-items:center;gap:10px;padding:9px 18px;border-left:3px solid transparent;
+      border-radius:0;font-size:13.5px;color:var(--text-primary)}
+    [data-bs-theme=dark] .navbar-vertical .nav-link:hover{background:var(--surface-overlay)}
+    [data-bs-theme=dark] .navbar-vertical .nav-link.active{background:linear-gradient(90deg,var(--brand-soft),var(--surface-overlay));
+      border-left-color:var(--brand-fill);color:var(--text-primary)}
+    [data-bs-theme=dark] .navbar-vertical .nav-link-icon{display:inline-grid!important;place-items:center;width:24px;height:22px;margin:0;
+      border:1px solid var(--border-strong);border-radius:5px;font-size:10px;color:var(--text-muted)}
+    [data-bs-theme=dark] .navbar-vertical .nav-link.active .nav-link-icon{border-color:var(--brand-border);color:var(--brand-hover);background:var(--brand-soft)}
+    .ltt-dangxuat{display:flex;align-items:center;gap:10px;padding:11px 18px;border-top:1px solid var(--border-subtle);
+      color:var(--text-secondary);font-size:12.5px;text-decoration:none}
+    .ltt-dangxuat:hover{background:var(--surface-overlay);color:var(--text-primary)}
+    .ltt-dangxuat i{width:24px;text-align:center}
+    /* Đầu trang: mẩu bánh mì + H1 (trước: `<h2>` rỗng = khoảng trống lớn trên thẻ) */
+    .page-wrapper .page-header{margin:0;padding:18px 0 12px;min-height:0}
+    .ltt-banhmi{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-bottom:8px;color:var(--text-muted);font-size:12px}
+    .ltt-banhmi a{color:var(--text-secondary);text-decoration:none}.ltt-banhmi a:hover{color:var(--text-primary)}
+    .ltt-h1{margin:0;font-size:24px;font-weight:650;letter-spacing:-.01em;color:var(--text-primary)}
+    .ltt-dan{margin:4px 0 0;color:var(--text-secondary);font-size:13px}
+    /* Nút form: Lưu · Lưu và sửa tiếp · … · Huỷ trên MỘT cụm */
+    .ltt-form-nut{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:16px}
+    .ltt-form-nut .btn{min-height:40px}
+    @media(min-width:768px){.co-aside .ltt-adminhead{margin-left:15rem}.co-aside .ltt-adminbar .brand{display:none}}
+    @media(max-width:767.98px){
+      .navbar-vertical{display:none!important}
+      .ltt-adminhead{padding:10px 14px}
+      .ltt-adminbar-links,.ltt-back{display:none}
+      .ltt-adminmenu{display:block}
+      .container-xl,.container-fluid{padding-left:12px;padding-right:12px}
+      .ltt-form-nut .btn{flex:1 1 100%}
+      /* Bảng → thẻ nhãn: giá trị (`data-nhan` do script cuối `layout.html` chép từ `<th>`). */
+      .table.ltt-the{display:block;min-width:0}
+      .table.ltt-the>thead{display:none}
+      .table.ltt-the>tbody{display:block}
+      .table.ltt-the>tbody>tr{display:block;padding:8px 0;border-top:1px solid var(--border-subtle)}
+      .table.ltt-the>tbody>tr:first-child{border-top:0}
+      .table.ltt-the>tbody>tr>td{display:block;position:relative;min-height:28px;border:0;padding:5px 12px 5px calc(38% + 12px);
+        white-space:normal;overflow-wrap:anywhere;text-align:left}
+      .table.ltt-the>tbody>tr>td[data-nhan]::before{content:attr(data-nhan);position:absolute;left:12px;top:7px;width:calc(38% - 12px);
+        color:var(--text-muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+      .table.ltt-the>tbody>tr>td:nth-child(-n+2){display:inline-flex;align-items:center;gap:6px;padding:4px 0 4px 12px;min-height:40px}
+      .card-footer{flex-wrap:wrap}
+    }
   </style>
   {% block head %}
   {% endblock %}
   <title>{{ admin.title }}</title>
 </head>
 
-<body class="theme-dark">
+<body class="theme-dark {% block body_class %}{% endblock %}">
   <a class="skip-link" href="#sqladmin-content">Bỏ qua điều hướng</a>
+  <header class="ltt-adminhead">
   <nav class="ltt-adminbar" aria-label="Điều hướng quản trị nhanh">
-    <span class="brand"><span class="mark">LTT</span><span>LTT · Quản trị</span></span>
+    <span class="brand"><span class="mark">LTT</span><span>Quản trị</span></span>
     {# Dieu huong lay tu MOT nguon: `server/routes/admin/_chung.py`.
        Truoc day day la nam the <a> viet tay — danh sach thu BA cho cung
        mot cay, va la danh sach khong ai dong bo khi them trang. #}
-    {% for m in adm_nav %}<a href="{{ m.href }}">{{ m.nhan }}</a>{% endfor %}
+    <span class="ltt-adminbar-links">{% for m in adm_nav %}<a href="{{ m.href }}">{{ m.nhan }}</a>{% endfor %}</span>
     <a class="ltt-back" href="/">Về nền tảng</a>
   </nav>
+  {#- Dưới 768px: thanh bên Tabler ẩn, mọi điều hướng (mục cha + bảng dữ liệu + đăng xuất) vào MỘT menu. -#}
+  <details class="ltt-adminmenu">
+    <summary aria-label="Mở điều hướng">Menu</summary>
+    <nav aria-label="Điều hướng mobile">
+      {% for m in adm_nav %}<a href="{{ m.href }}">{{ m.nhan }}</a>{% endfor %}
+      {% block menu_phu %}{% endblock %}
+      <a href="/">Về nền tảng</a>
+    </nav>
+  </details>
+  </header>
   <main id="sqladmin-content">
   {% block body %}
     {% block main %}

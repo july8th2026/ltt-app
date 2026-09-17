@@ -6,7 +6,7 @@
 <div class="col-12">
   <div class="card">
     <div class="card-header">
-      <h3 class="card-title">{{ model_view.name_plural }}</h3>
+      <h2 class="card-title">{{ _("Danh sách") }}</h2>{#- C3: tên bảng đã là H1 của trang (layout) -#}
       <div class="ms-auto">
         {% if model_view.can_export %}
         {% if model_view.export_types | length > 1 %}

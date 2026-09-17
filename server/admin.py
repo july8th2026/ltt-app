@@ -25,9 +25,10 @@ from urllib.parse import quote_plus
 import logging
 
 from markupsafe import Markup, escape
+from datetime import datetime
 from sqladmin import Admin, BaseView, ModelView, expose
-from sqladmin.authentication import AuthenticationBackend
-from sqladmin.authentication import login_required as _login_required
+from sqladmin.authentication import AuthenticationBackend, login_required as _login_required
+from sqladmin.formatters import BASE_FORMATTERS
 
 from server.routes.admin._chung import (
     AnTrongMenuSqlAdmin as _AnTrongMenuSqlAdmin)
@@ -40,6 +41,8 @@ from platform_core.models import (ApiKey, AppAccess, CreditEntry, Job,
                                   Session as DbSession, User)
 
 _log = logging.getLogger(__name__)
+_DINH_DANG_SQLADMIN: dict = BASE_FORMATTERS  # Golden UI C3: ngày giờ list/details dd/mm/yyyy HH:MM, không ISO kèm micro giây
+_DINH_DANG_SQLADMIN[datetime] = lambda v: v.strftime("%d/%m/%Y %H:%M")
 
 
 def _is_admin(request: Request) -> bool:
@@ -103,12 +106,9 @@ class AdminAuth(AuthenticationBackend):
 
 # ── Vỏ quản trị dùng chung ───────────────────────────────────────────────────
 #
-# 🔴 `_ADM_NAV` ĐÃ BỊ GỠ. Nó là một trong BA danh sách điều hướng từng sống song
-#    song cho cùng một cây (hai cái kia: `server/admin_api.NAV` và năm thẻ <a>
-#    viết tay trong `server/admin_templates/sqladmin/base.html`). Ba danh sách
-#    cho một cây nghĩa là hai trong ba luôn là bản bị quên khi thêm trang — và
-#    trang SQLAdmin thật sự đã có bộ điều hướng khác hẳn 25 mục của trang tự
-#    viết.
+# 🔴 `_ADM_NAV` ĐÃ BỊ GỠ — một trong BA danh sách điều hướng từng sống song song cho cùng một cây
+#    (cùng `server/admin_api.NAV` và năm thẻ <a> viết tay trong `sqladmin/base.html`): hai trong ba
+#    luôn là bản bị quên khi thêm trang, và nửa SQLAdmin từng có bộ điều hướng khác hẳn.
 #
 #    Nguồn duy nhất bây giờ: `server/routes/admin/_chung.py`.
 #    Bố cục đã đóng băng ở `docs/admin_mvp_v3/03_IA_FREEZE.md`; hợp đồng thêm
@@ -389,13 +389,12 @@ class UserAdmin(ModelView, model=User):
     name = "Người dùng"
     name_plural = "Người dùng"
     icon = "fa-solid fa-user"
-    # F-04 (audit 2026-08-07): SO DU phai co o day. Truoc day danh sach nguoi
-    # dung khong hien so du — con so van hanh quan trong nhat ve mot nguoi lai
-    # khong nam o cho quan ly nguoi, phai sang trang So credit loc bang UUID.
+    # F-04 (audit 2026-08-07): SO DU phai co o day — con so van hanh quan trong nhat ve mot nguoi.
     column_list = [User.email, "so_du_credit", User.display_name, User.role,
-                   User.is_active, User.is_verified, User.created_at,
-                   User.last_login_at]
-    column_labels = {"so_du_credit": "Số dư"}
+                   User.is_active, User.is_verified, User.created_at, User.last_login_at]
+    column_labels = {"so_du_credit": "Số dư", User.email: "Email", User.display_name: "Tên hiển thị",
+                     User.role: "Vai trò", User.is_active: "Đang hoạt động", User.is_verified: "Đã xác thực email",
+                     User.created_at: "Tạo lúc", User.last_login_at: "Đăng nhập cuối"}
 
     async def on_model_change(self, data, model, is_created, request) -> None:
         """F-06: doi vai tro / vo hieu hoa tai khoan phai de lai dau vet.
@@ -426,9 +425,10 @@ class UserAdmin(ModelView, model=User):
     column_searchable_list = [User.email, User.display_name]
     column_sortable_list = [User.email, User.created_at, User.last_login_at]
     column_default_sort = [(User.created_at, True)]
-    # KHÔNG cho sửa email hay password_hash qua form (email là danh tính; mật
-    # khẩu chỉ đổi qua luồng đổi-mật-khẩu đã băm đúng cách).
+    column_formatters = {User.role: lambda m, a: {"admin": "Quản trị viên", "user": "Thành viên"}.get(getattr(m, "role", ""), getattr(m, "role", ""))}
+    # KHÔNG cho sửa email hay password_hash qua form (email là danh tính; mật khẩu chỉ đổi qua luồng đổi-mật-khẩu đã băm).
     form_columns = [User.display_name, User.role, User.is_active, User.is_verified]
+    form_choices = {"role": [("user", "Thành viên"), ("admin", "Quản trị viên")]}  # chỉ đổi ô gõ -> ô chọn; giá trị lưu giữ nguyên
     can_create = False   # user tạo qua đăng ký; tạo admin-trong-DB làm ở bước sau
     can_delete = False   # giữ dấu vết + sổ credit gắn user_id
 
