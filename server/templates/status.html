@@ -2,7 +2,13 @@
 {% block title %}{{ _("Tình trạng hệ thống") }} — LTT AI Studio{% endblock %}
 {% block content %}
   <div class="pagehead"><div><h1>{{ _("Tình trạng hệ thống") }}</h1>
-    <p class="page-sub">{{ _("Kiểm tra cấu hình và dịch vụ phụ thuộc của nền tảng.") }}</p></div></div>
+    <p class="page-sub">{{ _("Kiểm tra cấu hình và dịch vụ phụ thuộc của nền tảng.") }}</p></div>
+    {#- Golden UI C3: bỏ ô "Kiểm tra cả Google Sheet" — route đã bỏ tham số
+        `check_sheet` từ 25/08 (xem server/routes/status.py), ô đó không làm gì.
+        Golden UI C4: nút gắn vào tiêu đề trang, là nút phụ (không đỏ lơ lửng). -#}
+    <form method="get" action="/status" class="status-recheck">
+      <button class="btn ghost" type="submit">{{ _("Kiểm tra lại") }}</button>
+    </form></div>
   
   {% if blockers %}
     <div class="alert alert-err" role="alert">
@@ -21,6 +27,8 @@
       dạng `khoa=gia_tri` mỗi dòng hiện thành danh sách có nhãn. Dữ liệu giữ
       nguyên — dòng nào không theo dạng đó thì cả khối rơi về <pre> như cũ. -#}
   {%- set _nhan_moi_truong = {'profile': _('Hồ sơ môi trường'), 'data': _('Thư mục dữ liệu'), 'logs': _('Thư mục nhật ký')} %}
+  {#- Golden UI C4: giá trị hồ sơ có nhãn Việt, giá trị gốc giữ bên cạnh. -#}
+  {%- set _nhan_ho_so = {'development': _('Phát triển'), 'production': _('Chính thức'), 'staging': _('Thử nghiệm'), 'test': _('Kiểm thử')} %}
   {% for s in sections %}
     {%- set _tt = {'blocker': (_('Lỗi chặn'), 'err'), 'warning': (_('Cảnh báo'), 'warn')}.get(s.status, (_('Đạt'), 'ok')) %}
     <div class="card status-check status-{{ s.status }}">
@@ -32,7 +40,7 @@
       {% if ns.kv %}
         <dl class="status-kv">
           {% for d in _dong %}{% set k, v = d.split('=', 1) %}
-          <div><dt>{{ _nhan_moi_truong.get(k.strip(), k.strip()) }}</dt><dd><code>{{ v.strip() }}</code></dd></div>
+          <div><dt>{{ _nhan_moi_truong.get(k.strip(), k.strip()) }}</dt><dd>{% if k.strip() == 'profile' and v.strip() in _nhan_ho_so %}<span class="status-kv-nhan">{{ _nhan_ho_so[v.strip()] }}</span> {% endif %}<code>{{ v.strip() }}</code></dd></div>
           {% endfor %}
         </dl>
       {% elif s.detail %}<pre tabindex="0">{{ s.detail }}</pre>{% endif %}
@@ -40,17 +48,12 @@
     </div>
   {% endfor %}
 
-  {#- Golden UI C3: bỏ ô "Kiểm tra cả Google Sheet" — route đã bỏ tham số
-      `check_sheet` từ 25/08 (xem server/routes/status.py), ô đó không làm gì. -#}
-  <form method="get" action="/status" class="status-recheck">
-    <button class="btn" type="submit">{{ _("Kiểm tra lại") }}</button>
-  </form>
 
   {% if nexus %}
     <section class="ui-card status-nexus" aria-labelledby="status-nexus-title">
       <div class="status-check-dau"><h2 id="status-nexus-title">LTT Nexus</h2>
         {%- if nexus.loi %}<span class="badge b-err"><span class="dot" aria-hidden="true"></span>{{ _("Không đọc được số liệu") }}</span>
-        {%- elif nexus.may is defined and nexus.may == 0 %}<span class="badge b-grey"><span class="dot" aria-hidden="true"></span>{{ _("Chưa có máy nào ghép") }}</span>
+        {%- elif nexus.may is defined and nexus.may == 0 %}<span class="badge b-grey status-trung-tinh"><span class="dot" aria-hidden="true"></span>{{ _("Chưa có máy nào ghép") }}</span>
         {%- elif nexus.may is defined and nexus.online > 0 %}<span class="badge b-ok"><span class="dot" aria-hidden="true"></span>{{ _("Có máy đang bật") }}</span>
         {%- elif nexus.may is defined %}<span class="badge b-warn"><span class="dot" aria-hidden="true"></span>{{ _("Không máy nào đang bật") }}</span>
         {%- endif %}</div>

@@ -115,8 +115,9 @@ def test_404_da_dang_nhap_khong_moi_dang_nhap_nhung_co_hai_loi():
                          message="Không tìm thấy trang bạn yêu cầu.",
                          correlation_id="cid"))
     assert "/login?next=" not in html
-    assert html.count('class="btn') >= 2
-    assert "Về trang chính" in html and "Liên hệ hỗ trợ" in html
+    # C4 (17/09): lối hỗ trợ là LIÊN KẾT cạnh mã tra cứu (không phải nút thứ ba).
+    assert 'class="btn error-home-link"' in html
+    assert re.search(r'<p class="loi-ho-tro">[^<]*<a href="[^"]+" rel="noopener">Liên hệ hỗ trợ</a>', html)
 
 
 def test_404_thong_diep_cu_the_van_hien_nguyen():
@@ -158,8 +159,11 @@ def test_status_api_rong_khong_bao_hoat_dong_binh_thuong():
     html = _main(_render("status_api.html", request=_request("/status/api"),
                          report=_bao_cao([])))
     assert "Hoạt động bình thường." not in html
-    assert "ui-state ui-state--inline" in html
-    assert "Chưa mở năng lực nào ra API công khai." in html
+    # C4 (17/09): trạng thái rỗng thành khối TỔNG THỂ trung tính (chỉ báo "Chưa
+    # mở"), lời văn "dịch vụ" thay "năng lực" — ý định giữ nguyên: không báo
+    # "bình thường" khi không có gì để theo dõi.
+    assert "tt-api-tong tt-api-grey tt-api-rong" in html
+    assert "Chưa có dịch vụ API công khai nào đang mở." in html
     assert "<table" not in html
 
 

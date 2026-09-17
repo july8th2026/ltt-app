@@ -6,6 +6,7 @@
     PHỤC HỒI phù hợp từng mã — không đổi mã trạng thái, không đổi thông điệp.
     `message` giữ vai giải thích chính vì nó có thể cụ thể hơn bảng dưới
     (vd LOCKED: "Công cụ này chưa mở cho tài khoản của bạn."). -#}
+{% import "_icon.html" as ic %}
 {%- set bang = {
   400: (_("Yêu cầu chưa đúng"), _("Dữ liệu gửi lên thiếu hoặc không hợp lệ. Quay lại trang trước, kiểm tra thông tin rồi thử lại.")),
   401: (_("Cần đăng nhập"), _("Phiên đăng nhập đã hết hoặc bạn chưa đăng nhập. Đăng nhập để tiếp tục đúng trang này.")),
@@ -26,13 +27,18 @@
     tại trong CSS nên viền là màu xám-nâu mặc định, lệch với 404 đơn nạp. -#}
 {%- set muc_do = 'err' if code >= 500 else 'warn' -%}
 {%- set an_danh = not da_dang_nhap(request) -%}
+{#- Golden UI C4: biểu tượng theo MÃ — 403 và 404 cùng viền cảnh báo nên cần dấu
+    hiệu riêng (khiên = quyền, kính lúp = không tìm thấy). -#}
+{%- set bieu_tuong = {401: 'shield', 403: 'shield', 404: 'search', 429: 'clock'}.get(code, 'activity' if code >= 500 else 'layout-grid') -%}
+{%- set co_ho_tro = code in (403, 404, 500, 502, 503, 504) -%}
+{%- set moi_dang_nhap = code == 401 or (code in (403, 404) and an_danh) -%}
 {#- Câu dẫn của backend cho 404 chỉ nhắc lại tiêu đề ("Không tìm thấy trang bạn
     yêu cầu.") ⇒ thay bằng câu có ích. Thông điệp 404 CỤ THỂ khác vẫn hiện nguyên. -#}
 {%- set lead_404_chung = code == 404 and message in ("Không tìm thấy trang bạn yêu cầu.", _("Không tìm thấy trang bạn yêu cầu.")) -%}
 {% block title %}{{ muc[0] }} ({{ code }}) — LTT AI Studio{% endblock %}
 {% block content %}
-  <section class="ui-state ui-state--{{ muc_do }}" aria-labelledby="loi-tieu-de">
-    <p class="ui-state-eyebrow">{{ _("Lỗi %(ma)s", ma=code) }}</p>
+  <section class="ui-state ui-state--{{ muc_do }} loi-ma-{{ code }}{% if moi_dang_nhap %} loi-moi-dang-nhap{% endif %}" aria-labelledby="loi-tieu-de">
+    <p class="ui-state-eyebrow loi-eyebrow"><span class="loi-bieu-tuong">{{ ic.icon(bieu_tuong) }}</span>{{ _("Lỗi %(ma)s", ma=code) }}</p>
     <h1 id="loi-tieu-de" class="ui-state-title">{{ muc[0] }}</h1>
     {% if lead_404_chung %}
       <p class="ui-state-lead">{{ _("Đường dẫn có thể đã gõ sai, đã đổi, hoặc nội dung đã bị xoá.") }}</p>
@@ -45,7 +51,7 @@
       <p class="ui-state-body">{{ muc[1] }}</p>
     {% endif %}
     <div class="ui-state-actions">
-      {% if code == 401 or (code in (403, 404) and an_danh) %}
+      {% if moi_dang_nhap %}
         <a class="btn" href="{{ u('/login') }}?next={{ request.url.path | urlencode }}">{{ _("Đăng nhập") }}</a>
         <a class="btn ghost error-home-link" href="{{ u('/') }}">{{ _("Về trang chính") }}</a>
       {% elif thu_lai %}
@@ -54,14 +60,38 @@
       {% else %}
         <a class="btn error-home-link" href="{{ u('/') }}">{{ _("Về trang chính") }}</a>
       {% endif %}
-      {% if code in (403, 404, 500, 502, 503, 504) %}
-        <a class="btn ghost" href="{{ public_links.support }}" rel="noopener">{{ _("Liên hệ hỗ trợ") }}</a>
-      {% endif %}
     </div>
-    {% if correlation_id %}
-      <p class="ui-state-meta">
-        {{ _("Mã tra cứu:") }} <code class="ui-state-id" tabindex="0">{{ correlation_id }}</code>
-      </p>
+    {#- Golden UI C4: tối đa HAI nút (một chính); hỗ trợ là liên kết cạnh mã tra
+        cứu — hai thứ khách cần cùng lúc. Mã UUID không ngắt giữa chuỗi. -#}
+    {% if correlation_id or co_ho_tro %}
+      <div class="ui-state-meta loi-meta">
+        {% if correlation_id %}
+          <p class="loi-ma-nhan">{{ _("Mã tra cứu") }}</p>
+          <div class="loi-ma">
+            <code class="ui-state-id" tabindex="0" title="{{ correlation_id }}">{{ correlation_id }}</code>
+            <button type="button" class="btn ghost loi-ma-chep" data-chep="{{ correlation_id }}" data-da-chep="{{ _('Đã chép') }}" hidden>{{ _("Chép mã") }}</button>
+          </div>
+        {% endif %}
+        {% if co_ho_tro %}
+          <p class="loi-ho-tro">{{ _("Cần giúp?") }} <a href="{{ public_links.support }}" rel="noopener">{{ _("Liên hệ hỗ trợ") }}</a>{% if correlation_id %} {{ _("và gửi kèm mã tra cứu.") }}{% endif %}</p>
+        {% endif %}
+      </div>
     {% endif %}
   </section>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var nut = document.querySelector(".loi-ma-chep");
+  if (!nut || !navigator.clipboard) return;
+  nut.hidden = false;
+  var goc = nut.textContent;
+  nut.addEventListener("click", function () {
+    navigator.clipboard.writeText(nut.getAttribute("data-chep")).then(function () {
+      nut.textContent = nut.getAttribute("data-da-chep");
+      setTimeout(function () { nut.textContent = goc; }, 2000);
+    });
+  });
+})();
+</script>
 {% endblock %}
