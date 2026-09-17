@@ -366,6 +366,8 @@
         <p>{{ _("Tệp theo định dạng hooks của Claude Code, chỉ loại command, với 7 sự kiện: SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, Stop, SubagentStart, SubagentStop.") }}</p>
         <ul>
           <li>{{ _("Lệnh hook thoát với mã 2 là chặn: ví dụ PreToolUse chặn một công cụ, UserPromptSubmit chặn tin nhắn.") }}</li>
+          <li>{{ _("matcher của PreToolUse/PostToolUse khớp TÊN CÔNG CỤ (pwsh, write, edit, read, terminal_*…), không khớp nội dung lệnh. Mẫu chỉ gồm chữ cái, số và gạch dưới là khớp đúng tên, ngăn nhiều tên bằng dấu |; mẫu khác là biểu thức chính quy; bỏ trống hoặc * là khớp tất cả. UserPromptSubmit và Stop bỏ qua matcher.") }}</li>
+          <li>{{ _("Lệnh hook chạy bằng PowerShell. Nếu hook gọi chương trình ngoài (node, python, git…) thì mã thoát của chương trình đó KHÔNG tự thành mã thoát của hook: phải kết thúc bằng ; exit $LASTEXITCODE, nếu không exit 2 bị nuốt và hook không chặn.") }}</li>
           <li>{{ _("Hook chạy trong cùng sandbox với trợ lý nên không ghi được tệp; dùng hook để chặn hoặc thêm ngữ cảnh.") }}</li>
           <li>{{ _("Tệp chỉ được đọc lúc khởi động: sửa xong hãy khởi động lại ứng dụng. Tệp sai JSON thì không hook nào chạy, trợ lý vẫn hoạt động.") }}</li>
         </ul>

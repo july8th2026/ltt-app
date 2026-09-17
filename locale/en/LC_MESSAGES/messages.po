@@ -19415,3 +19415,10 @@ msgstr "Only the most recent backup is kept; a new one replaces the old one."
 msgid "Khoá và tệp bí mật không được chép vào bản sao lưu. Nếu đĩa thiếu chỗ hoặc sao lưu lỗi, ứng dụng ghi cảnh báo vào nhật ký và vẫn khởi động."
 msgstr "Keys and secret files are not copied into the backup. If disk space is short or the backup fails, the app logs a warning and still starts."
 
+# LTTCODE - FAQ hooks: matcher = ten cong cu, ma thoat chuong trinh ngoai (18/09)
+
+msgid "matcher của PreToolUse/PostToolUse khớp TÊN CÔNG CỤ (pwsh, write, edit, read, terminal_*…), không khớp nội dung lệnh. Mẫu chỉ gồm chữ cái, số và gạch dưới là khớp đúng tên, ngăn nhiều tên bằng dấu |; mẫu khác là biểu thức chính quy; bỏ trống hoặc * là khớp tất cả. UserPromptSubmit và Stop bỏ qua matcher."
+msgstr "The matcher on PreToolUse/PostToolUse matches the TOOL NAME (pwsh, write, edit, read, terminal_*…), not the content of the command. A pattern made only of letters, digits and underscores matches that exact name, and several names are separated by a |; any other pattern is a regular expression; an empty matcher or * matches everything. UserPromptSubmit and Stop ignore the matcher."
+
+msgid "Lệnh hook chạy bằng PowerShell. Nếu hook gọi chương trình ngoài (node, python, git…) thì mã thoát của chương trình đó KHÔNG tự thành mã thoát của hook: phải kết thúc bằng ; exit $LASTEXITCODE, nếu không exit 2 bị nuốt và hook không chặn."
+msgstr "Hook commands run through PowerShell. If a hook calls an external program (node, python, git…), that program's exit code does NOT automatically become the hook's exit code: the command has to end with ; exit $LASTEXITCODE, otherwise exit 2 is swallowed and the hook does not block."

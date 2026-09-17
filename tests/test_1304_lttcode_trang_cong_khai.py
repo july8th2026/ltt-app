@@ -156,6 +156,39 @@ def test_faq_cong_cu_mo_rong_hien_trong_muc_su_co(may):
     assert "context7" in an_toan and "Upstash" in an_toan
 
 
+def _muc_hooks(html: str) -> str:
+    return html.split('<details id="faq-hooks">', 1)[1].split("</details>", 1)[0]
+
+
+def test_faq_hooks_noi_ca_hai_bay_da_do_18_09(may):
+    """Hai bẫy đo được trên payload đã cài (LTTCODEAPP 76903c3, H3 6/6 PASS):
+
+    1. `matcher` của PreToolUse/PostToolUse khớp TÊN CÔNG CỤ, không khớp nội dung lệnh
+       (ca A3: matcher "Remove-Item" không bao giờ nổ) — `dsh-hook-protocol::matchesMatcher`.
+    2. Hook chạy qua `pwsh … -Command`, nên mã thoát của chương trình NGOÀI không thành
+       mã thoát của hook (ca A5 `node … process.exit(2)` KHÔNG chặn; A6 thêm
+       `; exit $LASTEXITCODE` thì chặn).
+
+    Cả hai là lý do người dùng viết hook đúng mà tưởng sản phẩm hỏng — rơi chữ là
+    trả lại đúng kết luận sai của 17/09.
+    """
+    client, _ = may
+    hooks = _muc_hooks(client.get("/lttcode").text)
+    for chu in ("TÊN CÔNG CỤ", "không khớp nội dung lệnh",
+                "UserPromptSubmit và Stop bỏ qua matcher",
+                "; exit $LASTEXITCODE", "exit 2 bị nuốt"):
+        assert chu in hooks, f"FAQ hooks thiếu: {chu}"
+
+
+def test_faq_hooks_ban_tieng_anh_khong_con_tieng_viet(may):
+    client, _ = may
+    hooks = _muc_hooks(client.get("/en/lttcode").text)
+    assert "TOOL NAME" in hooks and "not the content of the command" in hooks
+    assert "; exit $LASTEXITCODE" in hooks and "exit 2 is swallowed" in hooks
+    con_tieng_viet = VN.findall(hooks)
+    assert con_tieng_viet == [], f"mục hooks bản EN còn tiếng Việt: {hooks}"
+
+
 def test_faq_cong_cu_ban_tieng_anh_da_dich(may):
     client, _ = may
     su_co = _muc_su_co(client.get("/en/lttcode").text)
