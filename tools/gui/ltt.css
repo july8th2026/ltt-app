@@ -4370,3 +4370,5 @@ input[type=hidden]+.af-step{margin-top:0}
 .status-kv dd{margin:0;min-width:0}
 .status-kv code{font-family:var(--mono);font-size:var(--fs-helper);color:var(--text-primary);overflow-wrap:anywhere}
 @media(max-width:640px){.status-kv>div{grid-template-columns:minmax(0,1fr)}}
+/* C3 (17/09): link footer chung đủ vùng chạm 44px trên màn cảm ứng/hẹp (trước 24px). */
+@media (max-width:640px),(pointer:coarse){.platform-footer a{display:inline-flex;align-items:center;min-height:44px}}
