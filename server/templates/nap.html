@@ -3,15 +3,16 @@
 {% import "_ui.html" as ui %}
 {% block title %}{{ _("Nạp credit") }} — LTT AI Studio{% endblock %}
 {% block content %}
+  {#- Golden UI C3 (17/09): số dư đã có ở thanh trên cùng nên trang không in lại;
+      thẻ gói bỏ dải trang trí 72px (ba gói xếp dọc trên điện thoại dài quá
+      900px); lịch sử đơn là bảng ở màn rộng, danh sách thẻ ở màn hẹp. Form
+      `/nap/tao`, tên trường và CSRF giữ nguyên. -#}
 
   <div class="pagehead billing-head">
     <div>
       <h1>{{ _("Nạp credit") }}</h1>
       <p class="page-sub">{{ _("Xem trước đầy đủ số tiền và credit nhận; hệ thống chỉ cộng credit sau khi xác nhận thanh toán.") }}</p>
     </div>
-    {% if so_du is not none %}
-      <div class="actions"><span class="pill">{{ ic.icon("gem") }} {{ so_du | so }} credit</span></div>
-    {% endif %}
   </div>
 
   {% if not co_user_csdl %}
@@ -24,18 +25,20 @@
       {% set bonus = g.credits_base * g.bonus_percent // 100 %}
       {% set total = g.credits_base + bonus %}
       <article class="appcard billing-package">
-        <div class="cover billing-cover">
-          <span class="billing-cover-ico">{{ ic.icon("gem") }}</span>
-          {% if g.bonus_percent %}<span class="cbadge badge b-ok"><span class="dot" aria-hidden="true"></span>+{{ g.bonus_percent }}%</span>{% endif %}
-        </div>
         <div class="in">
-          <h2>{{ g.name }}</h2>
+          <div class="billing-package-top">
+            <h2><span class="billing-cover-ico">{{ ic.icon("gem") }}</span>{{ g.name }}</h2>
+            {% if g.bonus_percent %}<span class="badge b-ok"><span class="dot" aria-hidden="true"></span>+{{ g.bonus_percent }}%</span>{% endif %}
+          </div>
           <p class="eyebrow billing-eyebrow">{{ _("Báo giá trọn gói") }}</p>
           <p class="billing-price tnum">{{ g.price_vnd | tien_vnd }}</p>
           <div class="billing-credit tnum">
-            {{ g.credits_base | so }} credit
-            {%- if bonus %} <span class="billing-bonus">+ {{ bonus | so }} bonus</span>{% endif %}
+            {%- if bonus %}
+            {{ g.credits_base | so }} credit <span class="billing-bonus">+ {{ bonus | so }} bonus</span>
             <br><strong class="billing-total">= {{ total | so }} credit</strong>
+            {%- else %}
+            <strong class="billing-total">{{ total | so }} credit</strong>
+            {%- endif %}
           </div>
           <form method="post" action="/nap/tao">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -57,16 +60,34 @@
     <div class="pagehead billing-history-head"><div><h2 id="billing-history-title">{{ _("Đơn nạp gần đây") }}</h2>
       <p class="dim">{{ _("Tối đa 10 đơn mới nhất của tài khoản này.") }}</p></div></div>
     {% if don_gan_day %}
-    <div class="tablewrap" tabindex="0" role="region" aria-labelledby="billing-history-title"><table class="ui-table">
+    <div class="tablewrap billing-history-table" tabindex="0" role="region" aria-labelledby="billing-history-title"><table class="ui-table">
       <thead><tr><th>{{ _("Mã đơn") }}</th><th>{{ _("Thời gian") }}</th><th>{{ _("Số tiền") }}</th><th>Credit</th><th>{{ _("Trạng thái") }}</th><th><span class="sr-only">{{ _("Thao tác") }}</span></th></tr></thead>
       <tbody>{% for order in don_gan_day %}<tr>
         <td class="mono">{{ order.order_code }}</td>
         <td class="tnum">{{ order.created_at.strftime('%d/%m/%Y %H:%M') if order.created_at else '—' }}</td>
         <td class="tnum">{{ order.price_vnd | tien_vnd }}</td><td class="tnum">{{ order.credits | so }}</td>
         <td>{{ ui.nhan_trang_thai(order.status, 'don') }}</td>
-        <td><a class="btn ghost sm" href="/nap/don/{{ order.id }}">{{ _("Xem đơn") }}</a></td>
+        <td><a class="btn ghost sm" href="/nap/don/{{ order.id }}">{{ _("Xem đơn") }}<span class="sr-only"> #{{ order.order_code }}</span></a></td>
       </tr>{% endfor %}</tbody>
     </table></div>
+    <ul class="billing-history-list" aria-labelledby="billing-history-title">
+      {% for order in don_gan_day %}
+      <li class="billing-history-item">
+        <div class="billing-history-row">
+          <span class="mono">#{{ order.order_code }}</span>
+          {{ ui.nhan_trang_thai(order.status, 'don') }}
+        </div>
+        <div class="billing-history-row">
+          <strong class="tnum">{{ order.price_vnd | tien_vnd }}</strong>
+          <span class="tnum">{{ order.credits | so }} credit</span>
+        </div>
+        <div class="billing-history-row">
+          <span class="tnum dim">{{ order.created_at.strftime('%d/%m/%Y %H:%M') if order.created_at else '—' }}</span>
+          <a class="btn ghost sm" href="/nap/don/{{ order.id }}">{{ _("Xem đơn") }}<span class="sr-only"> #{{ order.order_code }}</span></a>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
     {% else %}
     <section class="ui-state ui-state--inline" aria-labelledby="billing-empty-title">
       <h3 id="billing-empty-title" class="ui-state-title">{{ _("Chưa có đơn nạp.") }}</h3>

@@ -166,7 +166,6 @@ TRONG	MIME video không khớp định dạng được hỗ trợ.
 TRONG	Media contract
 TRONG	Media giải mã được
 TRONG	Meta Director đã chọn không còn khả dụng.
-TRONG	Mất kết nối tạm thời. Tiến độ sẽ tự cập nhật khi mạng trở lại.
 TRONG	Một khối prompt đã chọn không còn khả dụng.
 TRONG	Một rater chỉ được chấm một lần mỗi case.
 TRONG	Mở report
@@ -262,13 +261,11 @@ TRONG	media_kind chưa được hỗ trợ.
 TRONG	metric_value phải hữu hạn.
 TRONG	tag rỗng, trùng hoặc quá dài.
 TRONG	tags phải là list tối đa 12 mục.
-TRONG	từ
 TRONG	Đang kiểm tra contract
 TRONG	Đang tổng hợp bằng chứng
 TRONG	Đang đọc artifact
 TRONG	Đang đọc artifact để đánh giá.
 TRONG	Điểm rubric phải nằm trong 1..5.
-TRONG	Đo contract và chất lượng đầu ra bằng bằng chứng có phiên bản.
 TRONG	Đo theo vector bằng chứng. Foundation chưa calibrated và không được dùng làm release gate.
 TRONG	Đã tạo report chất lượng.
 TRONG	Đã đánh giá xong
@@ -304,7 +301,6 @@ VANG	LTT Studios — model ngôn ngữ tại nhà
 VANG	LTT Studios — máy nhà (RTX 3090)
 VANG	LTT nội bộ (HiDream-O1)
 VANG	Model nội bộ chưa được cấu hình trên máy chủ này (thiếu LTT_RENDER_BASE_URL).
-VANG	More info
 VANG	Máy này đã đăng ký ở tài khoản khác.
 VANG	Máy tạo ảnh báo lỗi: {ma} {loi}
 VANG	Máy tạo ảnh báo thành công nhưng không trả về ảnh nào.
@@ -315,12 +311,9 @@ VANG	Mở App Store
 VANG	Nhật ký truy cập
 VANG	Phiên không còn mở.
 VANG	Quá {phut:.0f} phút mà chưa xong — đã huỷ.
-VANG	Run anyway
-VANG	Thay
 VANG	Thiếu mã phiên.
 VANG	Thiếu thông tin kết nối.
 VANG	Thiếu thông tin người dùng để kiểm ảnh tham chiếu.
-VANG	Tạo ảnh bằng model chạy trên máy của LTT Studios. Sinh ảnh từ mô tả, sửa ảnh theo lệnh, giữ nhân vật nhất quán qua nhiều ảnh.
 VANG	Tạo ảnh bằng model nội bộ của LTT Studios.
 VANG	Tối đa {n} ảnh tham chiếu.
 VANG	Từ IP
@@ -332,6 +325,4 @@ VANG	[{slug}] tool {tool!r} params[{param!r}].only_when[{k!r}] phải là danh s
 VANG	chữ tiếng Việt CÓ DẤU vẽ trong ảnh bị sai dấu
 VANG	máy B dùng chung GPU với việc ảnh và video — bận thì trả 429, không phải lỗi
 VANG	prompt phải là tiếng Anh — nền tảng tự dịch
-VANG	Điều khiển máy tính của bạn từ xa — không mở cổng, không cần IP tĩnh. Cài ứng dụng, đăng nhập cùng tài khoản, máy hiện ra là bấm vào dùng.
 VANG	đang mở
-VANG	Ảnh nội bộ (máy nhà)
