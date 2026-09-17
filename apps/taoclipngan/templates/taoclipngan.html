@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block page_mode %}wide{% endblock %}
 {% block title %}{{ app.display_name }} — LTT AI Studio{% endblock %}
-{% block topbar_title %}<strong>Clip Studio</strong>{% endblock %}
+{% import "_app_head.html" as ah %}
 
 {% macro chipgroup(name, items, default) %}
   <div class="clip-chips">
@@ -12,10 +12,7 @@
 {% block content %}
 <script src="/static/htmx.min.js?v={{ asset_ver }}"></script>
 <div class="clip-studio">
-  <header class="clip-heading">
-    <div><span class="clip-kicker">{{ _("Không gian clip ngắn AI") }}</span><h1>{{ _("Tạo Clip ngắn") }}</h1><p>{{ _("Chọn nguồn, cấu hình đoạn nổi bật, theo dõi bản ghi lời và so sánh kết quả thật.") }}</p></div>
-    <a class="btn ghost" href="/jobs">{{ _("Việc của tôi") }}</a>
-  </header>
+  {{ ah.dau_trang(_("Video") ~ " · Clip Studio", _("Tạo Clip ngắn"), _("Chọn nguồn, cấu hình đoạn nổi bật, theo dõi bản ghi lời và so sánh kết quả thật."), kieu="studio", lop="clip-heading") }}
   {% if error %}<div class="alert alert-err" role="alert">{{ error }}</div>{% endif %}
 
   <div class="clip-layout">

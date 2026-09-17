@@ -1,18 +1,13 @@
 {% extends "base.html" %}
 {% block page_mode %}wide{% endblock %}
 {% block title %}{{ _("Tạo ảnh AI") }} — LTT AI Studio{% endblock %}
-{% block topbar_title %}<strong>Image Studio</strong>{% endblock %}
+{% import "_app_head.html" as ah %}
 {% block content %}
 <script src="/static/htmx.min.js?v={{ asset_ver }}"></script>
 <script src="/static/chon_tep.js?v={{ asset_ver }}" defer></script>
 <section class="image-unified-shell" aria-labelledby="image-shell-title">
+  {{ ah.dau_trang(_("Ảnh") ~ " · Image Studio", _("Tạo thumbnail YouTube"), _("Thiết kế nhiều biến thể từ prompt thật, theo dõi lịch sử và so sánh kết quả trước khi tải."), id_tieu_de="image-shell-title", kieu="studio", lop="image-shell-heading") }}
   {% set image_mode = 'thumbnail' %}{% include "_image_mode_nav.html" %}
-  <header class="image-shell-heading">
-    <div><span class="image-shell-kicker">{{ _("Tạo ảnh bằng AI") }} · Thumbnail</span>
-      <h1 id="image-shell-title">{{ _("Tạo thumbnail YouTube") }}</h1>
-      <p>{{ _("Tạo ảnh tổng quát hoặc Thumbnail trong cùng một không gian làm việc.") }}</p></div>
-    <a class="btn ghost" href="/jobs">{{ _("Việc của tôi") }}</a>
-  </header>
   <div id="image-mode-panel" class="image-mode-loading" role="status" aria-live="polite" aria-busy="true"
        hx-get="{{ fragment_url }}" hx-trigger="load" hx-swap="outerHTML">
     <strong>{{ _("Đang tải công cụ Thumbnail…") }}</strong>

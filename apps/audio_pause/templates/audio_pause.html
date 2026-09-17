@@ -1,16 +1,12 @@
 {% extends "base.html" %}
 {% from "_o_chon_tep.html" import o_chon_tep %}
 {% import "_ui.html" as ui %}
+{% import "_app_head.html" as ah %}
 {% block title %}{{ _("Chèn khoảng lặng theo lời") }} — LTT AI Studio{% endblock %}
 
 {% block content %}
 <section class="ap-wrap af-page" aria-labelledby="ap-title">
-  <header class="ap-head af-head">
-    <div><span class="af-kicker">Workflow</span>
-    <h1 id="ap-title">{{ _("Chèn khoảng lặng theo lời") }}</h1>
-    <p>{{ _("Tải lên bản thu và danh sách mốc. Mỗi mốc là một câu trong bài; hệ thống tìm câu đó trong bản ghi lời, rồi chèn khoảng lặng tại chỗ im gần nhất — không cắt giữa từ.") }}</p></div>
-    <a class="btn ghost" href="/jobs">{{ _("Việc của tôi") }}</a>
-  </header>
+  {{ ah.dau_trang(_("Workflow"), _("Chèn khoảng lặng theo lời"), _("Tải lên bản thu và danh sách mốc. Mỗi mốc là một câu trong bài; hệ thống tìm câu đó trong bản ghi lời, rồi chèn khoảng lặng tại chỗ im gần nhất — không cắt giữa từ."), id_tieu_de="ap-title", lop="ap-head") }}
 
   {% if loi %}<p class="alert alert-err" role="alert">{{ loi }}</p>{% endif %}
 

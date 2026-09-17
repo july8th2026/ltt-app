@@ -1,16 +1,12 @@
 {% extends "base.html" %}
 {% from "_o_chon_tep.html" import o_chon_tep %}
 {% import "_ui.html" as ui %}
+{% import "_app_head.html" as ah %}
 {% block title %}{{ _("Phiên âm có dòng thời gian") }} — LTT AI Studio{% endblock %}
 
 {% block content %}
 <section class="ts-wrap af-page" aria-labelledby="ts-title">
-  <header class="ts-head af-head">
-    <div><span class="af-kicker">Workflow</span>
-    <h1 id="ts-title">{{ _("Phiên âm có dòng thời gian") }}</h1>
-    <p>{{ _("Tải lên một tệp âm thanh. Kết quả là bản ghi lời có mốc thời gian, đã chia đoạn theo độ dài bạn đặt, kèm các khoảng lặng.") }}</p></div>
-    <a class="btn ghost" href="/jobs">{{ _("Việc của tôi") }}</a>
-  </header>
+  {{ ah.dau_trang(_("Workflow"), _("Phiên âm có dòng thời gian"), _("Tải lên một tệp âm thanh. Kết quả là bản ghi lời có mốc thời gian, đã chia đoạn theo độ dài bạn đặt, kèm các khoảng lặng."), id_tieu_de="ts-title", lop="ts-head") }}
 
   {% if loi %}<p class="alert alert-err" role="alert">{{ loi }}</p>{% endif %}
 

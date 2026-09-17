@@ -5,31 +5,25 @@
 #}
 {% extends "base.html" %}
 {% block title %}{{ _("Lần chạy") }} — LTT AI Studio{% endblock %}
-{% block topbar_title %}<strong>{{ _("Lồng tiếng Việt") }}</strong>{% endblock %}
+{% import "_app_head.html" as ah %}
 
 {% block content %}
 <script src="/static/htmx.min.js?v={{ asset_ver }}"></script>
 <section class="asv-trang" aria-labelledby="asv-ct">
 
-  <header class="asv-dau">
-    <div>
+  {# Đầu trang dùng macro chung `_app_head.html`; tiêu đề đổi theo trạng thái. #}
       {# 🔴 Bon trang thai, bon tieu de. Ban dau cho nay chi phan biet `done` voi
          "moi thu con lai", nen mot lan chay **da hong** van doi tieu de "Dang
          long tieng" — khach doc mot dong noi viec dang chay ben tren mot khung
          do noi viec da dung. `R4` bat duoc dieu nay, va no chi lo ra khi co du
          lieu THAT o tung trang thai. #}
-      <h1 id="asv-ct">
-        {% if run.status == "done" %}{{ _("Video đã lồng tiếng") }}
-        {% elif run.status == "error" %}{{ _("Lần chạy chưa hoàn tất") }}
-        {% elif run.status == "cancelled" %}{{ _("Lần chạy đã huỷ") }}
-        {% else %}{{ _("Đang lồng tiếng") }}{% endif %}
-      </h1>
-      <p class="asv-ghi-chu">
-        {{ _("Bắt đầu") }}: {{ run.created_at.strftime("%d/%m/%Y %H:%M") if run.created_at else "—" }}
-      </p>
-    </div>
-    <a class="btn ghost" href="{{ app.route_prefix }}">{{ _("Về danh sách") }}</a>
-  </header>
+  {% if run.status == "done" %}{% set _td = _("Video đã lồng tiếng") %}
+  {% elif run.status == "error" %}{% set _td = _("Lần chạy chưa hoàn tất") %}
+  {% elif run.status == "cancelled" %}{% set _td = _("Lần chạy đã huỷ") %}
+  {% else %}{% set _td = _("Đang lồng tiếng") %}{% endif %}
+  {% call ah.dau_trang(_("Video") ~ " · " ~ _("Lồng tiếng Việt"), _td,
+       _("Bắt đầu") ~ ": " ~ (run.created_at.strftime("%d/%m/%Y %H:%M") if run.created_at else "—"),
+       id_tieu_de="asv-ct", viec=false, lop="asv-dau") %}<a class="btn ghost" href="{{ app.route_prefix }}">{{ _("Về danh sách") }}</a>{% endcall %}
 
   {% include "asv_tien_do.html" %}
   {# ── Chi phi (V6 pha 30) ──────────────────────────────────────────────────

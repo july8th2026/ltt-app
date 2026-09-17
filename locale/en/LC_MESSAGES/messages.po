@@ -19271,3 +19271,36 @@ msgstr "Include the reference ID (correlation id) from the error response."
 msgid "Chi tiết %(ten)s"
 msgstr "%(ten)s details"
 
+msgid "Workflow"
+msgstr "Workflow"
+
+msgid "Nâng độ nét video lên 1080p, 2K hoặc 4K và so sánh trước/sau ngay trên trang."
+msgstr "Sharpen video to 1080p, 2K or 4K and compare before/after right on the page."
+
+msgid "Bắt đầu xử lý"
+msgstr "Start processing"
+
+msgid "Chọn tối đa 3 video; cả lô được gửi cùng lúc, lỗi một video thì không video nào bị gửi."
+msgstr "Pick up to 3 videos; the batch is submitted together — if one video fails, none are submitted."
+
+msgid "Máy quay"
+msgstr "Camera"
+
+msgid "Theo mô tả"
+msgstr "Follow the prompt"
+
+msgid "Tiến máy (dolly in)"
+msgstr "Dolly in"
+
+msgid "Bám theo (tracking)"
+msgstr "Tracking"
+
+msgid "Xoay quanh (orbit)"
+msgstr "Orbit"
+
+msgid "Góc cao (aerial)"
+msgstr "Aerial"
+
+msgid "Cầm tay (handheld)"
+msgstr "Handheld"
+

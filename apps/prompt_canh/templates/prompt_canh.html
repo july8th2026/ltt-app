@@ -1,15 +1,11 @@
 {% extends "base.html" %}
 {% import "_ui.html" as ui %}
+{% import "_app_head.html" as ah %}
 {% block title %}{{ _("Kịch bản → prompt cảnh") }} — LTT AI Studio{% endblock %}
 
 {% block content %}
 <section class="pc-wrap af-page" aria-labelledby="pc-title">
-  <header class="pc-head af-head">
-    <div><span class="af-kicker">Workflow</span>
-    <h1 id="pc-title">{{ _("Kịch bản → prompt cảnh") }}</h1>
-    <p>{{ _("Ba bước: khoá đặc điểm nhân vật, chia kịch bản thành danh sách cảnh, rồi sinh prompt JSON cho từng cảnh. Mỗi lô giữ lại 5 cảnh gần nhất làm ngữ cảnh để nhân vật không trôi qua hàng trăm cảnh.") }}</p></div>
-    <a class="btn ghost" href="/jobs">{{ _("Việc của tôi") }}</a>
-  </header>
+  {{ ah.dau_trang(_("Workflow"), _("Kịch bản → prompt cảnh"), _("Ba bước: khoá đặc điểm nhân vật, chia kịch bản thành danh sách cảnh, rồi sinh prompt JSON cho từng cảnh. Mỗi lô giữ lại 5 cảnh gần nhất làm ngữ cảnh để nhân vật không trôi qua hàng trăm cảnh."), id_tieu_de="pc-title", lop="pc-head") }}
 
   {% if loi %}<p class="alert alert-err" role="alert">{{ loi }}</p>{% endif %}
 

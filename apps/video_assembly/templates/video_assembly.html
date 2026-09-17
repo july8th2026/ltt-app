@@ -1,17 +1,12 @@
 {% extends "base.html" %}
 {% from "_o_chon_tep.html" import o_chon_tep %}
 {% import "_ui.html" as ui %}
-{% block page_mode %}wide{% endblock %}
+{% import "_app_head.html" as ah %}
 {% block title %}{{ _("Dựng video từ clip") }} — LTT AI Studio{% endblock %}
 
 {% block content %}
 <section class="va-wrap af-page" aria-labelledby="va-title">
-  <header class="va-head af-head">
-    <div><span class="af-kicker">Workflow</span>
-    <h1 id="va-title">{{ _("Dựng video từ clip") }}</h1>
-    <p>{{ _("Tải lên các clip thô và một bản nhạc. Hệ thống phiên âm, chọn clip khớp lời, ghép, tách nhạc nền, trộn tiếng và cháy phụ đề thành một video hoàn chỉnh.") }}</p></div>
-    <a class="btn ghost" href="/jobs">{{ _("Việc của tôi") }}</a>
-  </header>
+  {{ ah.dau_trang(_("Workflow"), _("Dựng video từ clip"), _("Tải lên các clip thô và một bản nhạc. Hệ thống phiên âm, chọn clip khớp lời, ghép, tách nhạc nền, trộn tiếng và cháy phụ đề thành một video hoàn chỉnh."), id_tieu_de="va-title", lop="va-head") }}
 
   {% if loi %}<p class="alert alert-err" role="alert">{{ loi }}</p>{% endif %}
 
