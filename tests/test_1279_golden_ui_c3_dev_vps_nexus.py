@@ -85,7 +85,10 @@ def test_dieu_huong_man_hep_la_mot_dai_cuon_co_mep_mo():
     assert m, "thieu khoi man hep cua khu API"
     than = m.group(1)
     assert re.search(r"\.khu-dev \.app-side\{[^}]*flex-wrap:nowrap[^}]*overflow-x:auto", than)
-    assert "mask-image:linear-gradient" in than
+    # C4 (17/09): mép mờ tĩnh hai phía → mép mờ THEO VỊ TRÍ CUỘN (khối C4,
+    # `data-mep-trai/phai`); ý định giữ nguyên: dải cuộn có dấu hiệu cuộn.
+    assert "mask-image:linear-gradient" in than or re.search(
+        r"\.khu-dev \.app-side\[data-mep-phai\][^{]*\{[^}]*mask-image:linear-gradient", CSS)
     # Mục đang mở được cuộn vào giữa dải (không cuộn trang).
     assert "scrollLeft" in _doc("developers_base.html")
 

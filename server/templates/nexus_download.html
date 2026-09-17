@@ -33,19 +33,22 @@
         {% elif p.setup_url %}
           {# Co file cai MOT-FILE thi moi cai do TRUOC. Ban zip bat nguoi dung tu
              giai nen dung cho, va do cung la thu khong tu cap nhat sach duoc. #}
-          <a class="btn nx-tai-nut" href="{{ p.setup_url }}" download>{{ _("Tải file cài") }}</a>
-          <p class="nx-tai-sha">SHA-256: <code translate="no">{{ p.setup_sha256 }}</code></p>
+          {# C4 (Golden UI): MỘT nhãn nút cho mọi thẻ ("Tải xuống") — trước là "Tải file
+             cài" cạnh "Tải xuống" cho cùng một việc. Mã SHA-256 một dòng, cắt "…",
+             `title` + nút Chép (`sao_chep.js`, đọc innerText) vẫn cho mã ĐỦ. #}
+          <a class="btn nx-tai-nut" href="{{ p.setup_url }}" download>{{ _("Tải xuống") }}</a>
+          {% if p.setup_sha256 %}<p class="nx-tai-sha"><span class="nx-tai-sha-nhan">SHA-256</span><code class="nx-tai-sha-ma" data-chep title="{{ p.setup_sha256 }}" translate="no">{{ p.setup_sha256 }}</code></p>{% endif %}
           {# Chi moi ban ZIP khi no THAT SU la mot file khac (macOS dung cung mot
              `.dmg` cho ca hai). #}
           {% if p.url and p.url != p.setup_url %}
             <a class="nx-tai-phu" href="{{ p.url }}" download>{{ _("Hoặc tải bản zip chạy-không-cài") }}</a>
-            {% if p.sha256 %}<p class="nx-tai-sha">SHA-256 (zip): <code translate="no">{{ p.sha256 }}</code></p>{% endif %}
+            {% if p.sha256 %}<p class="nx-tai-sha"><span class="nx-tai-sha-nhan">SHA-256 (zip)</span><code class="nx-tai-sha-ma" data-chep title="{{ p.sha256 }}" translate="no">{{ p.sha256 }}</code></p>{% endif %}
           {% endif %}
         {% else %}
           <a class="btn nx-tai-nut" href="{{ p.url }}"{% if p.kind != 'appstore' %} download{% endif %}>
             {% if p.kind == 'appstore' %}{{ _("Mở App Store") }}{% else %}{{ _("Tải xuống") }}{% endif %}
           </a>
-          {% if p.sha256 %}<p class="nx-tai-sha">SHA-256: <code translate="no">{{ p.sha256 }}</code></p>{% endif %}
+          {% if p.sha256 %}<p class="nx-tai-sha"><span class="nx-tai-sha-nhan">SHA-256</span><code class="nx-tai-sha-ma" data-chep title="{{ p.sha256 }}" translate="no">{{ p.sha256 }}</code></p>{% endif %}
         {% endif %}
       {% endcall %}
     {% endfor %}

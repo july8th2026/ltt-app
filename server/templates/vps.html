@@ -436,6 +436,17 @@
         {% endfor %}
       </div>
       {% endif %}
+
+      {# Chủ máy đã đồng ý sáu dòng này một lần, lúc bấm "Tạo máy". Đặt chúng ở đầu
+         trang của người đang muốn xem máy mình là bắt họ đọc lại mỗi ngày một thứ họ
+         đã quyết. Nhưng KHÔNG bỏ hẳn: chúng vẫn là thứ trả lời "vì sao máy tôi chậm"
+         và "ảnh chụp có phải sao lưu không". Gấp lại, mở được.
+         C4 (Golden UI): nằm CUỐI CỘT TRÁI, ngay dưới thẻ máy — đặt dưới cả lưới thì
+         nó rơi xuống sau cột bảng giá cao hơn, để lại một khoảng trống lớn. #}
+      <details class="vps-can-biet">
+        <summary class="muted vps-tom-tat">{{ _("Điều cần biết về dịch vụ") }}</summary>
+        <div class="vps-mt10">{{ doc_truoc() }}</div>
+      </details>
     </div>
 
     <div>
@@ -688,14 +699,6 @@
   </div>
     </div>{# cột phải của .vps-nha #}
   </div>{# .vps-nha #}
-  {# Chủ máy đã đồng ý sáu dòng này một lần, lúc bấm "Tạo máy". Đặt chúng ở đầu
-     trang của người đang muốn xem máy mình là bắt họ đọc lại mỗi ngày một thứ họ
-     đã quyết. Nhưng KHÔNG bỏ hẳn: chúng vẫn là thứ trả lời "vì sao máy tôi chậm"
-     và "ảnh chụp có phải sao lưu không". Gấp lại, ở cuối, mở được. #}
-  <details class="u-mb16">
-    <summary class="muted vps-tom-tat">{{ _("Điều cần biết về dịch vụ") }}</summary>
-    <div class="vps-mt10">{{ doc_truoc() }}</div>
-  </details>
   {% endif %}{# da_dang_nhap — MÀN B #}
 
   {% if suc_chua %}

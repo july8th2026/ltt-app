@@ -182,7 +182,7 @@
         <select id="bg-project" name="project_id">
           <option value="">{{ _("cả tài khoản") }}</option>
           {% for project in projects %}
-            <option value="{{ project.id }}">{{ project.name }}</option>
+            <option value="{{ project.id }}">{{ dtt.du_an(project.name) }}</option>
           {% endfor %}
         </select>
       </div>

@@ -19106,3 +19106,20 @@ msgstr "admin · data tables"
 msgid "Đường dẫn"
 msgstr "Breadcrumb"
 
+msgid "Chọn công cụ…"
+msgstr "Choose a tool…"
+
+msgid "Chưa có công cụ nào đang bật"
+msgstr "No tools are enabled yet"
+
+msgid "Thực hiện yêu cầu đầu tiên"
+msgstr "Make your first request"
+
+msgid "Bộ sưu tập Postman"
+msgstr "Postman collection"
+
+msgid "Tệp môi trường Postman"
+msgstr "Postman environment file"
+
+msgid "Không bắt buộc phải tạo trước: khóa đầu tiên của bạn sẽ tự sinh một project tên “Mặc định”. Tạo project riêng khi bạn có từ hai tích hợp trở lên."
+msgstr "You don't have to create one first: your first key creates a project named “Default”. Create separate projects once you have two or more integrations."

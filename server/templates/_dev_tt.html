@@ -71,3 +71,8 @@
 {%- set nghia = _("Thành công") if c < 400 else (_("Yêu cầu bị từ chối") if c < 500 else _("Lỗi phía máy chủ")) -%}
 <span class="dev-tt {{ lop }}" title="{{ nghia }}">{{ code }}<span class="sr-only"> ({{ nghia }})</span></span>
 {%- endmacro -%}
+
+{# C4: tên project. Project tự sinh mang tên dữ liệu "Default" (`DEFAULT_PROJECT_NAME`,
+   không đổi được vì là khoá tra) — trang tiếng Việt hiện "Mặc định". Tên khách đặt
+   giữ nguyên văn. #}
+{%- macro du_an(ten) -%}{% if ten == 'Default' %}{{ _("Mặc định") }}{% else %}{{ ten }}{% endif %}{%- endmacro -%}

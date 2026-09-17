@@ -177,10 +177,27 @@
    dải, không cuộn trang. #}
 <script>
 (function () {
-  var dai = document.querySelector('.khu-dev .app-side');
-  var mo = dai && dai.querySelector('a.active');
-  if (!mo || dai.scrollWidth <= dai.clientWidth) return;
-  dai.scrollLeft = mo.offsetLeft - dai.offsetLeft - (dai.clientWidth - mo.offsetWidth) / 2;
+  {# C4: mép mờ chỉ hiện ở phía CÒN nội dung để cuộn (data-mep-trai/phai), và
+     mục đang mở cuộn vào giữa theo toạ độ khung nhìn — offsetLeft đo theo
+     offsetParent nên lệch khi dải không phải offsetParent của mục. #}
+  function mep(el) {
+    if (!el) return;
+    var cap = function () {
+      var du = el.scrollWidth - el.clientWidth;
+      el.toggleAttribute('data-mep-trai', du > 2 && el.scrollLeft > 2);
+      el.toggleAttribute('data-mep-phai', du > 2 && el.scrollLeft < du - 2);
+    };
+    var mo = el.querySelector('a.active');
+    if (mo && el.scrollWidth > el.clientWidth) {
+      var a = mo.getBoundingClientRect(), b = el.getBoundingClientRect();
+      el.scrollLeft += (a.left - b.left) - (el.clientWidth - a.width) / 2;
+    }
+    cap();
+    el.addEventListener('scroll', cap, { passive: true });
+    window.addEventListener('resize', cap);
+  }
+  mep(document.querySelector('.khu-dev .app-side'));
+  mep(document.querySelector('.khu-dev .dev-sub ul'));
 })();
 </script>
 <script src="/static/sao_chep.js?v={{ asset_ver }}" defer></script>

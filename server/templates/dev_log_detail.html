@@ -18,7 +18,7 @@
     <dd class="tnum">{{ row.created_at.strftime("%Y-%m-%d %H:%M:%S") }} UTC · {{ row.latency_ms }} ms</dd>
     <dt>{{ _("Khóa") }}</dt>
     <dd>{% if row.key_id %}<code class="dev-id">{{ row.key_id }}</code>{% else %}<span class="dev-trong-o">—</span>{% endif %}
-        {% if project_name %} · {{ _("project") }} {{ project_name }}{% endif %}</dd>
+        {% if project_name %} · {{ _("project") }} {{ dtt.du_an(project_name) }}{% endif %}</dd>
     <dt>request_id</dt>
     <dd><code class="dev-id">{{ row.request_id }}</code>
         <span class="muted">{{ _("— chính là X-Correlation-ID trong phản hồi; gửi kèm khi cần hỗ trợ.") }}</span></dd>

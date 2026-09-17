@@ -87,7 +87,8 @@
             <form method="post" action="/may-cua-toi/{{ m.id }}/thu-hoi"
                   onsubmit="return confirm('{{ _("Thu hồi máy này? Máy đó sẽ không kết nối được nữa.") }}')">
               <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-              <button class="btn ghost sm" type="submit">{{ _("Thu hồi") }}</button>
+              {# C4: thu hồi là huỷ quyền, không đảo được — kiểu nguy hiểm, khác "Đổi tên". #}
+              <button class="btn ghost sm nx-nut-nguy" type="submit">{{ _("Thu hồi") }}</button>
             </form>
           </div>
         </div>
@@ -107,7 +108,7 @@
         <p class="dim">{{ _("Khi có ai điều khiển một máy của bạn, lúc bắt đầu, địa chỉ IP và thời lượng sẽ ghi ở đây.") }}</p>
       </div>
     {% else %}
-      <div class="appcard nx-nhat-ky" tabindex="0" role="region" aria-label="{{ _('Nhật ký truy cập') }}">
+      <div class="appcard nx-nhat-ky nx-nhat-ky--cot" tabindex="0" role="region" aria-label="{{ _('Nhật ký truy cập') }}">
         <table>
           <thead>
             <tr>

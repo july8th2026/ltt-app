@@ -4452,9 +4452,7 @@ input[type=hidden]+.af-step{margin-top:0}
    là viên nhỏ nằm trong nội dung — khác kiểu nên không đọc như tầng thứ hai. */
 @media (max-width:820px){
   .khu-dev .app-side{display:flex;flex-wrap:nowrap;gap:2px;overflow-x:auto;
-    overscroll-behavior-x:contain;padding-bottom:0;
-    -webkit-mask-image:linear-gradient(90deg,transparent 0,black 14px,black calc(100% - 28px),transparent);
-    mask-image:linear-gradient(90deg,transparent 0,black 14px,black calc(100% - 28px),transparent)}
+    overscroll-behavior-x:contain;padding-bottom:0}
   .khu-dev .app-side ul{flex:0 0 auto}
   .khu-dev .app-side ul+.nhom+ul{margin-left:0}
   .khu-dev .app-side a{padding:10px 12px;min-height:44px;display:flex;align-items:center}
@@ -4500,13 +4498,13 @@ input[type=hidden]+.af-step{margin-top:0}
 }
 
 /* ── Nexus · MỘT component thẻ tải (`_nexus_tai.html`) cho /nexus và /tai-xuong ── */
-.nx-tai-luoi{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}
-.nx-tai-luoi>.nx-tai-the{flex:0 1 clamp(150px,22vw,200px)}
-.nx-tai-luoi--rong>.nx-tai-the{flex:0 1 280px}
+/* C4 17/09: lưới auto-fill cùng trục trái với tiêu đề — flex căn giữa từng vỡ
+   hàng 3+2 lệch trục so với đầu trang căn trái. */
+.nx-tai-luoi{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.nx-tai-luoi--rong{grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr))}
 @media (min-width:1000px){
-  .nx-tai-luoi:not(.nx-tai-luoi--rong){display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
+  .nx-tai-luoi:not(.nx-tai-luoi--rong){grid-template-columns:repeat(5,minmax(0,1fr))}
 }
-@media (max-width:420px){.nx-tai-luoi--rong>.nx-tai-the{flex:1 1 100%}}
 .nx-tai-the{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;
   min-width:0;padding:20px 14px 16px;border:1px solid var(--border-subtle);
   border-radius:14px;background:var(--surface-raised)}
@@ -4518,8 +4516,12 @@ input[type=hidden]+.af-step{margin-top:0}
 .nx-tai-the .nx-tai-nut{width:100%;justify-content:center;min-height:40px;margin-top:4px}
 .nx-tai-the .nx-tai-tt{margin-top:4px}
 .nx-tai-hanh-dong{display:flex;flex-direction:column;align-items:stretch;gap:6px;width:100%}
-.nx-tai-sha{margin:0;font-size:10.5px;color:var(--text-muted);overflow-wrap:anywhere}
-.nx-tai-sha code{font-size:10.5px;color:inherit;background:none;padding:0;border:0}
+/* C4: SHA-256 MỘT dòng — nhãn · mã cắt "…" (title đủ) · nút Chép của sao_chep.js. */
+.nx-tai-sha{display:flex;align-items:center;gap:6px;min-width:0;margin:0;font-size:11px;color:var(--text-muted)}
+.nx-tai-sha-nhan{flex:0 0 auto;white-space:nowrap}
+.nx-tai-sha code.nx-tai-sha-ma{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-size:11px;color:var(--text-secondary);background:none;padding:0;border:0;text-align:left}
+.nx-tai-sha .nut-chep-o{flex:0 0 auto;margin-left:0}
 .nx-tai-phu{display:inline-flex;align-items:center;justify-content:center;min-height:32px;font-size:12.5px;color:var(--text-secondary)}
 .nx-tai-ghi{margin:10px 0 0;font-size:12.5px;color:var(--text-secondary)}
 .nx-tai-ghi--canh{margin:0;color:var(--status-warning)}
@@ -4648,3 +4650,86 @@ input[type=hidden]+.af-step{margin-top:0}
    đỏ chỉ còn cho lỗi. */
 textarea:focus,select:focus{border-color:var(--text-secondary)}
 .job-state-running .ui-progress>i,.job-state-queued .ui-progress>i{background:var(--warn)}
+/* === C4: DEV-VPS-NEXUS === */
+/* Golden UI V2 (17/09) — khiếm khuyết người chấm độc lập ghi cho khu API, VPS, Nexus.
+   Chỉ trình bày. Token, không hex mới. */
+
+/* ── Khu API · Tổng quan: dãy liên kết là danh sách, mỗi mục KHÔNG ngắt dòng ── */
+.khu-dev .dev-lien-ket{display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:0;padding:0;
+  list-style:none;font-size:13px}
+.khu-dev .dev-lien-ket li{white-space:nowrap}
+/* Hàng biểu đồ | bắt đầu: panel giãn cùng chiều cao, ô trống lấp thân panel —
+   không còn khoảng đen thừa dưới "Chưa có lưu lượng để vẽ". */
+.khu-dev .dev-luoi-gian>.dev-panel{display:flex;flex-direction:column}
+.khu-dev .dev-luoi-gian>.dev-panel>.dev-panel-than{flex:1;display:flex;flex-direction:column}
+.khu-dev .dev-luoi-gian>.dev-panel>.dev-panel-than>.dev-trong{flex:1;align-content:center}
+
+/* ── Khu API · Tài liệu & SDK: nhóm = panel có tiêu đề, tài liệu = ô ── */
+.khu-dev .dev-tl-nhom{margin:0 0 16px}
+.khu-dev .dev-tl-luoi{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+  gap:12px;margin:0;padding:14px 16px 16px;list-style:none}
+.khu-dev .dev-tl-the{position:relative;display:flex;flex-direction:column;gap:6px;min-width:0;
+  padding:14px 16px;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);
+  background:var(--surface-overlay)}
+.khu-dev .dev-tl-the.dev-tl-chinh{border-color:var(--brand-border);background:var(--brand-soft)}
+.khu-dev .dev-tl-ic{width:20px;height:20px;color:var(--brand-hover)}
+.khu-dev .dev-tl-ten{font-size:14.5px;font-weight:600;line-height:1.4;color:var(--text-primary);
+  text-decoration:none;overflow-wrap:anywhere}
+.khu-dev .dev-tl-ten::after{content:" →";color:var(--brand-hover)}
+.khu-dev .dev-tl-ten:hover{text-decoration:underline}
+.khu-dev .dev-tl-ten code{font-size:13px;background:none;border:0;padding:0;color:inherit}
+.khu-dev .dev-tl-the p{flex:1;margin:0;font-size:12.5px;line-height:1.6;color:var(--text-secondary)}
+.khu-dev .dev-tl-phu{align-self:flex-start;display:inline-flex;align-items:center;min-height:28px;
+  font-size:12.5px}
+.khu-dev .dev-tl-van ul{margin:10px 0 0;padding-left:20px}
+
+/* ── Khu API · màn hẹp: dải tab cuộn ngang, mép mờ ĐÚNG phía còn nội dung ──
+   `data-mep-trai/phai` do script ở `developers_base.html` đặt theo vị trí cuộn. */
+@media (max-width:820px){
+  .khu-dev .app-side[data-mep-trai],.khu-dev .dev-sub ul[data-mep-trai]{
+    -webkit-mask-image:linear-gradient(90deg,transparent 0,black 40px);
+    mask-image:linear-gradient(90deg,transparent 0,black 40px)}
+  .khu-dev .app-side[data-mep-phai],.khu-dev .dev-sub ul[data-mep-phai]{
+    -webkit-mask-image:linear-gradient(90deg,black calc(100% - 40px),transparent);
+    mask-image:linear-gradient(90deg,black calc(100% - 40px),transparent)}
+  .khu-dev .app-side[data-mep-trai][data-mep-phai],.khu-dev .dev-sub ul[data-mep-trai][data-mep-phai]{
+    -webkit-mask-image:linear-gradient(90deg,transparent 0,black 40px,black calc(100% - 40px),transparent);
+    mask-image:linear-gradient(90deg,transparent 0,black 40px,black calc(100% - 40px),transparent)}
+}
+/* ── VPS · hộp thông tin trên trang máy: token ấm Carbon Red ──
+   `.alert-info` chung là xanh-xám (status-info) với viền sáng — lệch bảng màu ấm
+   của mọi hộp khác trên trang. Chỉ đổi trong khu VPS; `.alert-info` gốc giữ nguyên. */
+.vps-may .alert.alert-info{border:1px solid var(--border-strong);border-left:3px solid var(--text-muted);
+  background:var(--surface-overlay);color:var(--text-secondary)}
+
+/* ── VPS · bốn thẻ số liệu: cùng kiểu thẻ số liệu của khu API ──
+   (bo góc đủ, viền trái mảnh, số to đậm) — trước là số mảnh, góc trái vuông. */
+.vps-chi-so-ds{margin:0 0 18px}
+.vps-chi-so-ds .chi-so{gap:3px;padding:14px 16px;border-left:1px solid var(--border-subtle);
+  border-radius:var(--radius-lg);background:var(--surface-raised)}
+.vps-chi-so-ds .chi-so-nhan{opacity:1;color:var(--text-muted)}
+.vps-chi-so-ds .chi-so-gt{font-size:26px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.vps-chi-so-ds .chi-so.co-van-de{border-left:3px solid var(--status-danger)}
+@media (min-width:1100px){.vps-chi-so-ds{grid-template-columns:repeat(4,minmax(0,1fr))}}
+/* Màn hẹp: lưới 2×2 gọn — một cột bốn thẻ đẩy "Máy của tôi" xuống ~450px. */
+@media (max-width:560px){
+  .vps-chi-so-ds{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .vps-chi-so-ds .chi-so{padding:10px 12px}
+  .vps-chi-so-ds .chi-so-gt{font-size:22px}
+}
+/* "Điều cần biết" nằm cuối cột trái, ngay dưới thẻ máy. */
+.vps-can-biet{margin:16px 0 0}
+/* ── Nexus · Máy của tôi: "Thu hồi" (huỷ quyền) mang kiểu nguy hiểm ── */
+.nx-may-tac-vu .btn.nx-nut-nguy{border-color:var(--status-danger-border);color:var(--err)}
+.nx-may-tac-vu .btn.nx-nut-nguy:hover,.nx-may-tac-vu .btn.nx-nut-nguy:focus-visible{
+  border-color:var(--err);background:var(--status-danger-soft);color:var(--err)}
+/* Nhật ký: phân bổ cột — cột "Máy" không còn nuốt hết chỗ trống. */
+@media (min-width:561px){
+  .nx-nhat-ky--cot table{table-layout:fixed;width:100%}
+  .nx-nhat-ky--cot th:nth-child(1){width:22%}
+  .nx-nhat-ky--cot th:nth-child(2){width:38%}
+  .nx-nhat-ky--cot th:nth-child(3){width:22%}
+  .nx-nhat-ky--cot th:nth-child(4){width:18%}
+  .nx-nhat-ky--cot td:nth-child(2){overflow-wrap:anywhere}
+}
+/* === HET C4: DEV-VPS-NEXUS === */
