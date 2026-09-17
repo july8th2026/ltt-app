@@ -4677,7 +4677,7 @@ textarea:focus,select:focus{border-color:var(--text-secondary)}
 .billing-steps li::before{content:counter(buoc);position:absolute;left:0;top:0;display:grid;place-items:center;width:24px;height:24px;
   border:1px solid var(--line2);border-radius:50%;color:var(--text-primary);font-size:12px;font-weight:700}
 .billing-aside-body{margin:0;color:var(--text-secondary);font-size:var(--fs-label);line-height:1.55}
-.billing-aside-cta{width:100%;justify-content:center;margin-top:var(--space-4)}
+.billing-order-aside .billing-aside-cta{display:flex;width:100%;justify-content:center;text-align:center;margin-top:var(--space-4)}
 /* Mọi thông báo ở ĐẦU thẻ đơn; fragment trạng thái cách bảng tóm tắt một nhịp. */
 .billing-order .billing-status-slot:empty{display:none}
 .billing-order .billing-status{margin:0 0 var(--space-4)}
@@ -4690,6 +4690,7 @@ textarea:focus,select:focus{border-color:var(--text-secondary)}
 /* Nút mở cổng: chữ căn giữa như mọi nút chính, cách dòng cuối bảng một nhịp. */
 .billing-order .billing-cta-full{display:flex;width:100%;justify-content:center;text-align:center;margin-top:var(--space-4)}
 .billing-order .billing-line:last-of-type{margin-bottom:0}
+.billing-order>.billing-line:last-child{border-bottom:0;padding-bottom:0}
 .billing-dead-actions{margin-top:var(--space-3)}
 /* Trang đơn ngắn: chân trang dính đáy khung nhìn thay vì lơ lửng giữa màn. */
 body:has(.billing-order-page){display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
@@ -4703,6 +4704,7 @@ body:has(.billing-order-page)>main{flex:1 0 auto}
 /* Việc dừng (lỗi/hủy): không thanh tiến độ, chỉ chữ. */
 .job-row-dung{display:block;margin:0;color:var(--muted);font-size:12px}
 .job-done-actions{margin-top:var(--space-3)}
+#job-progress .job-progress-head+.alert{margin-top:var(--space-3)}
 /* Bộ lọc việc: lưới cân — màn vừa bốn ô một hàng, nút xuống hàng riêng. */
 .job-filter-actions{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
 @media(min-width:641px){

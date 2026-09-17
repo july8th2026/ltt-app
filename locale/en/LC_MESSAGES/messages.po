@@ -19106,3 +19106,57 @@ msgstr "admin · data tables"
 msgid "Đường dẫn"
 msgstr "Breadcrumb"
 
+
+msgid "Đơn này chưa thanh toán tự động được — quản trị sẽ hướng dẫn chuyển khoản và cộng credit thủ công."
+msgstr "This order cannot be paid automatically yet — an administrator will send transfer instructions and add credit manually."
+
+msgid "Cách thanh toán"
+msgstr "How to pay"
+
+msgid "Bấm “Mở PayOS / VietQR” để mở trang thanh toán."
+msgstr "Press “Open PayOS / VietQR” to open the payment page."
+
+msgid "Quét mã bằng ứng dụng ngân hàng, giữ nguyên số tiền và nội dung chuyển khoản."
+msgstr "Scan the code with your banking app and keep the amount and transfer note unchanged."
+
+msgid "Để trang này mở — trạng thái tự cập nhật khi ngân hàng báo về."
+msgstr "Keep this page open — the status updates by itself when the bank confirms."
+
+msgid "Thanh toán thủ công"
+msgstr "Manual payment"
+
+msgid "Liên hệ quản trị và gửi mã đơn %(ma)s."
+msgstr "Contact an administrator and send order code %(ma)s."
+
+msgid "Chuyển khoản theo hướng dẫn quản trị gửi, đúng số tiền của đơn."
+msgstr "Transfer as instructed by the administrator, for the exact order amount."
+
+msgid "Quản trị xác nhận rồi cộng credit; trang này tự cập nhật."
+msgstr "The administrator confirms and adds credit; this page updates by itself."
+
+msgid "Liên hệ quản trị"
+msgstr "Contact an administrator"
+
+msgid "Cần hỗ trợ?"
+msgstr "Need help?"
+
+msgid "Gửi quản trị mã đơn %(ma)s kèm mã giao dịch ngân hàng (nếu có) để được đối soát nhanh."
+msgstr "Send an administrator order code %(ma)s with your bank transaction code (if any) for a quick reconciliation."
+
+msgid "Credit hiện ở đây ngay khi quản trị xác nhận và cộng cho đơn này."
+msgstr "Credit appears here as soon as an administrator confirms and adds it to this order."
+
+msgid "Trang tự cập nhật khi nhận được tiền."
+msgstr "This page updates by itself when the payment arrives."
+
+msgid "Dừng ở"
+msgstr "Stopped at"
+
+msgid "Mở %(app)s"
+msgstr "Open %(app)s"
+
+msgid "Xem tệp kết quả"
+msgstr "View result files"
+
+msgid "Việc đã dừng theo yêu cầu của bạn. Số credit tạm giữ cho việc này đã được hoàn về tài khoản. Bấm “Thử lại” nếu muốn chạy lại."
+msgstr "The job stopped at your request. The credit held for it has been refunded to your account. Press “Retry” to run it again."
