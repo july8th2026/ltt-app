@@ -435,7 +435,7 @@ class UserAdmin(ModelView, model=User):
 
 class CreditEntryAdmin(ModelView, model=CreditEntry):
     name, name_plural = "Bút toán credit", "Sổ credit"
-    column_labels = {"created_at": "Lúc", "user_id": "User ID", "kind": "Loại", "delta": "Biến động", "job_id": "Job ID", "note": "Ghi chú"}; column_formatters = column_formatters_detail = {"kind": lambda m, a: Markup(f'{escape({"topup": "Nạp tiền", "grant": "Cấp tay", "hold": "Giữ chỗ", "settle": "Quyết toán", "refund": "Hoàn trả"}.get(m.kind, ""))} <span class="adm-ten-ky-thuat">{escape(m.kind)}</span>') if m.kind else "—"}  # C4: nhãn Việt kèm mã (mã lạ — kind do nơi gọi truyền — chỉ hiện mã)
+    column_labels = {"created_at": "Lúc", "user_id": "User ID", "kind": "Loại", "delta": "Biến động", "job_id": "Job ID", "note": "Ghi chú"}; column_formatters = column_formatters_detail = {"kind": lambda m, a: Markup(f'{escape({"topup": "Nạp tiền", "grant": "Cấp tay", "hold": "Giữ chỗ", "settle": "Quyết toán", "refund": "Hoàn trả"}.get(getattr(m, "kind", ""), ""))} <span class="adm-ten-ky-thuat">{escape(getattr(m, "kind", ""))}</span>') if getattr(m, "kind", "") else "—"}  # C4: nhãn Việt kèm mã (mã lạ — kind do nơi gọi truyền — chỉ hiện mã)
     icon = "fa-solid fa-coins"
     column_list = [CreditEntry.created_at, CreditEntry.user_id, CreditEntry.kind,
                    CreditEntry.delta, CreditEntry.job_id, CreditEntry.note]
@@ -497,7 +497,7 @@ class JobAdmin(ModelView, model=Job):
     # thì phần trăm tiến độ của nó không dẫn tới hành động nào, còn thông báo
     # lỗi thì có. Cả hai vẫn còn ở trang chi tiết.
     column_details_exclude_list = []
-    column_formatters = {Job.status: lambda m, a: Markup(f'{escape({"queued": "Đang chờ", "running": "Đang chạy", "done": "Hoàn tất", "error": "Lỗi", "cancelled": "Đã hủy"}.get(m.status, ""))} <span class="adm-ten-ky-thuat">{escape(m.status)}</span>') if m.status else "—",  # C4: nhãn Việt kèm mã
+    column_formatters = {Job.status: lambda m, a: Markup(f'{escape({"queued": "Đang chờ", "running": "Đang chạy", "done": "Hoàn tất", "error": "Lỗi", "cancelled": "Đã hủy"}.get(getattr(m, "status", ""), ""))} <span class="adm-ten-ky-thuat">{escape(getattr(m, "status", ""))}</span>') if getattr(m, "status", "") else "—",  # C4: nhãn Việt kèm mã
         # `user_id` thành liên kết sang Hồ sơ 360. Đây là chỗ luồng copy-UUID
         # cuối cùng còn sót lại sau đợt `admin_mvp_v3`.
         Job.user_id: lambda m, a: Markup(
