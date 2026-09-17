@@ -27,7 +27,11 @@
    mot con so moi o mot cho moi. Bang 8 cot cua trang khoa can no. #}
 {% block page_mode %}wide{% endblock %}
 
-{% block title %}{{ section_title }} — {{ _("API cho lập trình viên") }} — LTT AI Studio{% endblock %}
+{# C3 17/09: nhãn mục "Project" (msgid trong `server/routes/developer/_chung.py`)
+   hiện tiếng Anh giữa khu tiếng Việt. Đổi tại lớp trình bày, không sửa route. #}
+{% macro ten_muc(label) %}{{ _("Dự án") if label == _("Project") else label }}{% endmacro %}
+
+{% block title %}{{ ten_muc(section_title) }} — {{ _("API cho lập trình viên") }} — LTT AI Studio{% endblock %}
 {% block topbar_title %}<strong>{{ _("API cho lập trình viên") }}</strong>{% endblock %}
 {# Thanh trên riêng của khu: liên kết phụ + viên trạng thái hệ thống + chuông.
    Nằm trong `.pagebar` của base.html (ngoài .app-shell) nên tự mang token qua
@@ -77,7 +81,7 @@
                ben la cap trong cung, va no lay lai `page`. #}
             <a href="{{ item.href }}"
                {% if item.active %}aria-current="{{ 'true' if muc_con else 'page' }}" class="active"{% endif %}>
-              {{ item.label }}{% if item.badge %} <span class="pill">{{ item.badge }}</span>{% endif %}
+              {{ ten_muc(item.label) }}{% if item.badge %} <span class="pill">{{ item.badge }}</span>{% endif %}
             </a>
           </li>
         {% endfor %}
@@ -108,7 +112,7 @@
        phần phải trống và tiêu đề vẫn đúng chỗ. #}
     <div class="dev-dau">
       <div>
-        <h1 class="dev-h1">{{ section_title }}</h1>
+        <h1 class="dev-h1">{{ ten_muc(section_title) }}</h1>
         {% set _phu %}{% block dev_phu_de %}{% endblock %}{% endset %}
         {% if _phu|trim %}<p class="dev-dan">{{ _phu|safe }}</p>{% endif %}
       </div>
@@ -121,11 +125,11 @@
        va tin nhan ho tro thi 404 la thiet hai that, con roi khoi thanh dieu
        huong thi khong. #}
     {% if muc_con %}
-      <nav class="dev-sub" aria-label="{{ section_title }}">
+      <nav class="dev-sub" aria-label="{{ ten_muc(section_title) }}">
         <ul>
           {% for s in muc_con %}
             <li><a href="{{ s.href }}"
-                   {% if s.active %}aria-current="page" class="active"{% endif %}>{{ s.label }}</a></li>
+                   {% if s.active %}aria-current="page" class="active"{% endif %}>{{ ten_muc(s.label) }}</a></li>
           {% endfor %}
         </ul>
       </nav>
@@ -168,6 +172,17 @@
    Dung chung dung tep ma trang cong khai dung (`sao_chep.js`), va kieu cua nut
    da co san vi `base.html` include `_kieu_chung.html`. Khong dung ban thu hai. #}
 {% block scripts %}
+{# C3 17/09: ở màn hẹp thanh bên thành MỘT dải cuộn ngang; mục đang mở có thể
+   nằm ngoài khung (vd "Cài đặt & bảo mật"). Cuộn nó vào giữa dải — chỉ cuộn
+   dải, không cuộn trang. #}
+<script>
+(function () {
+  var dai = document.querySelector('.khu-dev .app-side');
+  var mo = dai && dai.querySelector('a.active');
+  if (!mo || dai.scrollWidth <= dai.clientWidth) return;
+  dai.scrollLeft = mo.offsetLeft - dai.offsetLeft - (dai.clientWidth - mo.offsetWidth) / 2;
+})();
+</script>
 <script src="/static/sao_chep.js?v={{ asset_ver }}" defer></script>
 <script src="/static/cam_chon.js?v={{ asset_ver }}" defer></script>
 {% endblock %}
