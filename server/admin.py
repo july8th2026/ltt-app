@@ -497,7 +497,7 @@ class JobAdmin(ModelView, model=Job):
     # thì phần trăm tiến độ của nó không dẫn tới hành động nào, còn thông báo
     # lỗi thì có. Cả hai vẫn còn ở trang chi tiết.
     column_details_exclude_list = []
-    column_formatters = {
+    column_formatters = {Job.status: lambda m, a: Markup(f'{escape({"queued": "Đang chờ", "running": "Đang chạy", "done": "Hoàn tất", "error": "Lỗi", "cancelled": "Đã hủy"}.get(m.status, ""))} <span class="adm-ten-ky-thuat">{escape(m.status)}</span>') if m.status else "—",  # C4: nhãn Việt kèm mã
         # `user_id` thành liên kết sang Hồ sơ 360. Đây là chỗ luồng copy-UUID
         # cuối cùng còn sót lại sau đợt `admin_mvp_v3`.
         Job.user_id: lambda m, a: Markup(

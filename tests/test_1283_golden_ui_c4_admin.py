@@ -195,3 +195,12 @@ def test_sqladmin_icon_map_chi_dung_icon_co_that():
     ban_do = re.search(r"_IC_SQA = \{(.*?)\}", lay, re.S).group(1)
     for ten in re.findall(r':\s*"([a-z-]+)"', ban_do):
         assert f"'{ten}':" in icon, ten
+
+
+def test_sqladmin_trang_thai_job_nhan_viet_kem_ma():
+    from server.admin import Job, JobAdmin
+
+    f = JobAdmin.column_formatters[Job.status]
+    ra = str(f(SimpleNamespace(status="error"), "status"))
+    assert ra.startswith("Lỗi ") and '<span class="adm-ten-ky-thuat">error</span>' in ra
+    assert f(SimpleNamespace(status=""), "status") == "—"
