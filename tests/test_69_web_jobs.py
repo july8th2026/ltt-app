@@ -72,10 +72,14 @@ def test_job_hien_o_trang_viec_cua_toi(env):
     client, _ = env
     _login(client, "a@x.com")
     tok = _appthu_csrf(client)
-    client.post("/appthu/queue", data={"text": "abc", "csrf_token": tok},
-                follow_redirects=False)
+    r = client.post("/appthu/queue", data={"text": "abc", "csrf_token": tok},
+                    follow_redirects=False)
+    job_id = r.headers["location"].rsplit("/", 1)[-1]
     html = client.get("/jobs").text
-    assert "appthu.dao_nguoc" in html
+    # Golden UI (16-17/09): trang khach khong in job_type ("appthu.dao_nguoc",
+    # chot o test_1270) - viec nhan dien bang lien ket + ma ngan cua chinh no.
+    assert f'href="/jobs/{job_id}"' in html and job_id[:8] in html
+    assert "appthu.dao_nguoc" not in html
     assert 'name="date_from"' in html and 'name="date_to"' in html
 
 
