@@ -4648,3 +4648,76 @@ input[type=hidden]+.af-step{margin-top:0}
    đỏ chỉ còn cho lỗi. */
 textarea:focus,select:focus{border-color:var(--text-secondary)}
 .job-state-running .ui-progress>i,.job-state-queued .ui-progress>i{background:var(--warn)}
+/* === C4: WORKSPACE-PUBLIC === */
+/* Golden UI C4 (17/09) — Workspace (trang chủ đã đăng nhập) + Public. Một khối, chỉ token.
+ * Chốt: tests/test_1282_golden_ui_c4_home_public.py */
+/* Thẻ kho ứng dụng: chân thẻ canh đáy (nút thẳng hàng giữa thẻ 1 nhãn và 2–3 nhãn),
+ * mô tả cắt 2 dòng CÓ dấu "…", nhãn/nút ≥ 11–12px. */
+#market-grid .market-card{display:flex;flex-direction:column}
+#market-grid .market-card-body{display:flex;flex:1 1 auto;flex-direction:column}
+#market-grid .market-card-body>p{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;height:auto;min-height:2.9em;margin:8px 0 10px;overflow:hidden;text-overflow:ellipsis;font-size:12px;line-height:1.45}
+#market-grid .market-card-foot{margin-top:auto;align-items:flex-end;font-size:11px}
+#market-grid .market-card-foot i{padding:2px 7px;font-size:11px;line-height:1.4}
+#market-grid .market-card-foot strong{padding:6px 9px;font-size:12px;white-space:nowrap}
+#market-grid .market-badge{font-size:11px}
+@media(max-width:760px){#market-grid .market-card-body>p{-webkit-line-clamp:3;min-height:0}}
+/* App chưa phát hành: nút PHỤ (viền, không nền đỏ) — cùng quyền truy cập, khác cách trình bày. */
+#market-grid .market-card-foot strong.c4-nut-phu{border-color:var(--border-strong);background:transparent;color:var(--text-secondary)}
+#market-grid .market-card:hover strong.c4-nut-phu,#market-grid .market-card:focus-visible strong.c4-nut-phu{border-color:var(--brand-border);color:var(--text-primary)}
+/* Bìa nền sọc (nhóm chưa có ảnh riêng): icon lớn của app làm điểm nhận diện. */
+.c4-bia-ic{display:none}
+#market-grid .market-cover:not(.cover-ai-image,.cover-ai-video,.cover-chat-and-prompt,.cover-automation,.cover-utilities,.cover-video,.cover-chat,.cover-ai-text) .c4-bia-ic,
+#catalog-grid .appcard .cover:not(.cover-ai-image,.cover-ai-video,.cover-chat-and-prompt,.cover-automation,.cover-utilities,.cover-video,.cover-chat,.cover-ai-text) .c4-bia-ic{
+  position:relative;z-index:1;display:grid;place-items:center;width:60px;height:60px;border:1px solid var(--brand-border);border-radius:16px;background:var(--surface-raised);color:var(--brand-hover);filter:none;font-size:0}
+.c4-bia-ic .ui-ic{width:30px;height:30px}
+/* Thanh bên: ba mục chưa phát hành gom vào MỘT nhóm "Sắp có" nhỏ ở cuối. */
+.c4-sap-co{display:grid;gap:2px;margin-top:8px;padding-top:10px;border-top:1px solid var(--border-subtle)}
+.c4-sap-co-ten{padding:0 4px 2px;color:var(--text-muted);font-size:11px;font-weight:700;text-align:center}
+.market-nav .c4-sap-co button.market-deferred{min-height:30px;flex-direction:row;justify-content:center;gap:6px;padding:4px 6px;font-size:11px;color:var(--text-muted)}
+.market-nav .c4-sap-co button.market-deferred>.ui-ic{width:14px;height:14px}
+@media(max-width:760px){
+  .c4-sap-co-ten{padding:0 16px 2px;text-align:left}
+  .market-nav .c4-sap-co button.market-deferred{min-height:36px;justify-content:flex-start;padding:4px 16px;font-size:12px}
+}
+/* Dải chip cuộn ngang: ngoài mép mờ (C3), hiện mũi tên "›" ngay khi tải trang nếu còn mục bên phải. */
+.market-filter-group{position:relative}
+.market-categories.c3-con-tiep{-webkit-mask-image:linear-gradient(90deg,black calc(100% - 72px),transparent);mask-image:linear-gradient(90deg,black calc(100% - 72px),transparent)}
+.market-filter-group.c4-con-tiep::after{content:"›";position:absolute;right:0;bottom:3px;display:grid;width:28px;height:44px;place-items:center;color:var(--text-primary);font-size:24px;line-height:1;pointer-events:none}
+/* Hoạt động gần đây: trạng thái có màu phân biệt (Lỗi = --err). */
+.activity-list small.c4-tt{font-size:11px}
+.activity-list small.c4-tt::before{content:"";display:inline-block;width:6px;height:6px;margin-right:5px;border-radius:50%;background:currentColor;vertical-align:1px}
+.activity-list small.c4-tt[data-trang-thai=error]{color:var(--err)}
+.activity-list small.c4-tt[data-trang-thai=done]{color:var(--ok)}
+.activity-list small.c4-tt[data-trang-thai=running],.activity-list small.c4-tt[data-trang-thai=queued]{color:var(--warn)}
+.market-rail .running-list small{font-size:11px}
+/* Trang chủ ẩn danh: phần mở đầu có CTA + ba bước (hết nửa phải trống). */
+.c4-hero{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:24px 40px;align-items:center}
+.c4-hero-chu{position:relative;z-index:1;min-width:0}
+.c4-hero-cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.c4-hero-cta .btn{min-height:44px;padding:10px 20px;font-size:var(--fs-body)}
+.c4-hero-buoc{position:relative;z-index:1;display:grid;gap:10px;margin:0;padding:0;list-style:none;counter-reset:c4b}
+.c4-hero-buoc li{display:grid;grid-template-columns:32px minmax(0,1fr);gap:2px 12px;align-items:center;padding:10px 14px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--surface-raised)}
+.c4-hero-buoc li::before{content:counter(c4b);counter-increment:c4b;grid-row:1/3;display:grid;width:32px;height:32px;place-items:center;border:1px solid var(--brand-border);border-radius:50%;background:var(--brand-soft);color:var(--text-primary);font-size:13px;font-weight:700}
+.c4-hero-buoc b{font-size:var(--fs-body)}
+.c4-hero-buoc span{color:var(--text-secondary);font-size:13px}
+@media(max-width:760px){.c4-hero{grid-template-columns:minmax(0,1fr)}}
+/* Thẻ catalog ẩn danh: vạch đầu thẻ token ấm (trước: `app.accent` xanh ngọc/tím/xanh dương),
+ * nút trong thẻ là nút PHỤ viền, chân thẻ canh đáy. */
+#catalog-grid .appcard{display:flex;flex-direction:column}
+#catalog-grid .appcard .accent.c4-vach{background:var(--brand-border)}
+#catalog-grid .appcard .in{display:flex;flex:1 1 auto;flex-direction:column;align-items:flex-start}
+#catalog-grid .appcard .in .sum{min-height:0}
+#catalog-grid .appcard .c4-nut-the{margin-top:auto;min-height:40px}
+/* Tài liệu công khai (/huong-dan, /huong-dan/cong-cu, /gia-api, /api-dieu-khoan):
+ * thứ bậc đúng thang chữ — h2 mục (18) > h3 tiêu đề con (15). */
+.c4-tai-lieu h2:not(.c3-muc-luc-ten){font-size:var(--fs-section)}
+.c4-tai-lieu h3{font-size:var(--fs-card)}
+.c4-tai-lieu h2 code{font-size:.85em;white-space:nowrap}
+/* Bảng: không ngắt giữa số ("221,1/84") hay giữa tên model ("ltt-/3.8"); đường dẫn chỉ ngắt tại "/" (<wbr>). */
+.c4-tai-lieu td.c4-so,.c4-tai-lieu td.c4-so code,.c4-tai-lieu td.u-phai,.c4-tai-lieu th code{white-space:nowrap;overflow-wrap:normal}
+.c4-tai-lieu td code.c4-duong{overflow-wrap:normal;word-break:normal}
+.c4-tai-lieu .tl-bang td code{white-space:nowrap;overflow-wrap:normal}
+.c4-cta{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 0}
+.c4-cta .btn{min-height:44px;padding:10px 18px;font-size:var(--fs-body)}
+.c4-ghi-chu{padding:10px 12px;border-left:3px solid var(--border-strong);border-radius:var(--radius-sm);background:var(--surface-interactive)}
+/* === HET C4: WORKSPACE-PUBLIC === */

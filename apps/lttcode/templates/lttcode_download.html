@@ -17,7 +17,7 @@
   .lc{--lc-gap:clamp(52px,7vw,84px);--lc-card:14px}
   .lc section{margin-top:var(--lc-gap);scroll-margin-top:72px}
   .lc h2{margin:0 0 6px;font-size:clamp(19px,2.2vw,23px);letter-spacing:-.015em}
-  .lc .lead{margin:0 0 20px;color:var(--muted);font-size:14.5px;line-height:1.7;max-width:62ch}
+  .lc .lead{margin:0 0 20px;color:var(--muted);font-size:15px;line-height:1.7;max-width:62ch}
 
   /* ── Hero ─────────────────────────────────────────────────────────────── */
   .lc-hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);
@@ -31,15 +31,15 @@
   .lc-cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}
   .lc-cta .btn{padding:11px 20px;font-size:14.5px;border-radius:var(--radius-md)}
   .lc-cta .btn svg{width:16px;height:16px}
-  .lc-meta{margin-top:12px;color:var(--dim);font-size:12.5px;font-variant-numeric:tabular-nums}
+  .lc-meta{margin-top:12px;color:var(--dim);font-size:13px;font-variant-numeric:tabular-nums}
   .lc-sha{margin-top:6px;font-family:var(--mono);font-size:10.5px;color:var(--dim);
     overflow-wrap:anywhere}
   .lc-soon{margin-top:22px;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
-  .lc-soon p{margin:0;color:var(--muted);font-size:13.5px;line-height:1.65;max-width:52ch}
+  .lc-soon p{margin:0;color:var(--muted);font-size:var(--fs-body);line-height:1.65;max-width:52ch}
   .lc-notes{margin-top:12px;max-width:54ch}
-  .lc-notes summary{cursor:pointer;font-size:13px;color:var(--muted)}
-  .lc-notes div{white-space:pre-wrap;font-size:13px;color:var(--muted);line-height:1.6;padding-top:6px}
-  .lc-trust{display:flex;gap:8px 20px;flex-wrap:wrap;margin-top:22px;color:var(--dim);font-size:12.5px}
+  .lc-notes summary{cursor:pointer;font-size:var(--fs-body);color:var(--muted)}
+  .lc-notes div{white-space:pre-wrap;font-size:var(--fs-body);color:var(--muted);line-height:1.6;padding-top:6px}
+  .lc-trust{display:flex;gap:8px 20px;flex-wrap:wrap;margin-top:22px;color:var(--muted);font-size:13px}
   .lc-trust span{display:inline-flex;align-items:center;gap:7px}
   .lc-trust svg{width:14px;height:14px;flex:0 0 auto;color:var(--ok)}
 
@@ -84,20 +84,20 @@
   .lc-feat .ico{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;
     background:var(--accent-soft);border:1px solid var(--brand-border);margin-bottom:12px}
   .lc-feat .ico svg{width:17px;height:17px;color:#ffd0cc}
-  .lc-feat h3{margin:0 0 6px;font-size:15px;letter-spacing:-.01em}
-  .lc-feat p{margin:0;color:var(--muted);font-size:13.5px;line-height:1.65}
+  .lc-feat h3{margin:0 0 6px;font-size:var(--fs-card);letter-spacing:-.01em}
+  .lc-feat p{margin:0;color:var(--muted);font-size:var(--fs-body);line-height:1.65}
 
   /* ── Bốn bước ─────────────────────────────────────────────────────────── */
   .lc-steps{list-style:none;margin:0;padding:0;counter-reset:s;display:grid;grid-template-columns:1fr;gap:14px}
   @media(min-width:620px){.lc-steps{grid-template-columns:repeat(2,1fr)}}
   @media(min-width:1080px){.lc-steps{grid-template-columns:repeat(4,1fr)}}
   .lc-steps li{padding:18px 18px 20px;border:1px solid var(--line);border-radius:var(--lc-card);
-    background:var(--panel);font-size:13.5px;line-height:1.65;color:var(--muted)}
-  .lc-steps li b{display:block;color:var(--fg);font-size:14px;margin:10px 0 5px}
+    background:var(--panel);font-size:var(--fs-body);line-height:1.65;color:var(--muted)}
+  .lc-steps li b{display:block;color:var(--fg);font-size:var(--fs-card);margin:10px 0 5px}
   .lc-steps li::before{counter-increment:s;content:counter(s);display:grid;place-items:center;
     width:24px;height:24px;border-radius:7px;background:var(--accent-soft);
     border:1px solid var(--brand-border);color:#ffd0cc;font-size:12px;font-weight:700}
-  .lc-note{margin:14px 0 0;color:var(--dim);font-size:13px}
+  .lc-note{margin:14px 0 0;color:var(--muted);font-size:var(--fs-body)}
 
   /* ── Lưới ô (an toàn, cập nhật) ───────────────────────────────────────── */
   .lc-grid{display:grid;grid-template-columns:1fr;gap:1px;background:var(--line);
@@ -105,27 +105,27 @@
   @media(min-width:620px){.lc-grid{grid-template-columns:repeat(2,1fr)}}
   @media(min-width:1080px){.lc-grid.four{grid-template-columns:repeat(4,1fr)}}
   .lc-grid div{background:var(--panel);padding:18px 20px}
-  .lc-grid b{display:block;font-size:14px;margin-bottom:5px}
-  .lc-grid p{margin:0;color:var(--muted);font-size:13px;line-height:1.65}
+  .lc-grid b{display:block;font-size:var(--fs-card);margin-bottom:5px}
+  .lc-grid p{margin:0;color:var(--muted);font-size:var(--fs-body);line-height:1.65}
 
   /* ── Chi phí ──────────────────────────────────────────────────────────── */
   .lc-price{display:flex;align-items:center;gap:clamp(18px,3vw,40px);flex-wrap:wrap;
     border:1px solid var(--brand-border);border-radius:var(--lc-card);
     padding:clamp(20px,3vw,28px);background:linear-gradient(180deg,var(--accent-soft),var(--panel))}
-  .lc-price p{margin:0;color:#f2d9d6;font-size:13.5px;line-height:1.7;flex:1 1 300px}
+  .lc-price p{margin:0;color:var(--text-primary);font-size:var(--fs-body);line-height:1.7;flex:1 1 300px}
   .lc-price .lc-cta{margin-top:0}
 
   /* ── Sự cố (FAQ) ──────────────────────────────────────────────────────── */
   .lc-faq{display:grid;gap:8px}
   .lc-faq details{border:1px solid var(--line);border-radius:11px;background:var(--panel)}
   .lc-faq summary{cursor:pointer;list-style:none;padding:14px 46px 14px 16px;
-    font-size:14px;font-weight:600;position:relative}
+    font-size:var(--fs-card);font-weight:600;position:relative}
   .lc-faq summary::-webkit-details-marker{display:none}
   .lc-faq summary::after{content:"";position:absolute;right:18px;top:50%;width:9px;height:9px;
     margin-top:-7px;border-right:2px solid var(--dim);border-bottom:2px solid var(--dim);
     transform:rotate(45deg);transition:transform var(--motion-normal)}
   .lc-faq details[open] summary::after{transform:rotate(-135deg);margin-top:-2px}
-  .lc-faq p{margin:0;padding:0 16px 16px;color:var(--muted);font-size:13.5px;line-height:1.7}
+  .lc-faq p{margin:0;padding:0 16px 16px;color:var(--muted);font-size:var(--fs-body);line-height:1.7}
 
   /* ── CTA cuối ─────────────────────────────────────────────────────────── */
   .lc-end{text-align:center;border:1px solid var(--line);border-radius:var(--lc-card);
@@ -243,7 +243,8 @@
     <span class="eyebrow">{{ _("Bắt đầu") }}</span>
     <h2>{{ _("Bốn bước để bắt đầu") }}</h2>
     <ol class="lc-steps">
-      <li><b>{{ _("Tải bộ cài") }}</b>{{ _("Bấm Tải cho Windows ở đầu trang. Cần Windows 10 hoặc 11 bản 64-bit.") }}</li>
+      {# C4 Golden UI: câu bước 1 theo trạng thái — chưa có bản stable thì KHÔNG có nút "Tải cho Windows" để bấm. #}
+      <li><b>{{ _("Tải bộ cài") }}</b>{% if ban %}{{ _("Bấm Tải cho Windows ở đầu trang. Cần Windows 10 hoặc 11 bản 64-bit.") }}{% else %}{{ _("Nút Tải cho Windows sẽ hiện ở đầu trang khi bản ổn định đầu tiên phát hành. Cần Windows 10 hoặc 11 bản 64-bit.") }}{% endif %}</li>
       <li><b>{{ _("Cài đặt") }}</b>{{ _("Chạy tệp vừa tải. Bộ cài chưa ký số nên Windows SmartScreen có thể cảnh báo: chọn Thông tin thêm rồi Vẫn chạy.") }}</li>
       <li><b>{{ _("Đăng nhập tài khoản LTT") }}</b>{{ _("Bấm Đăng nhập trong ứng dụng. Trình duyệt mở trang xác nhận — bấm Cho phép trong vòng 5 phút.") }}</li>
       <li><b>{{ _("Mở thư mục dự án") }}</b>{{ _("Chọn thư mục mã nguồn làm workspace rồi bắt đầu trò chuyện với trợ lý.") }}</li>

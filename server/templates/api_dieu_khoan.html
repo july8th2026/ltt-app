@@ -1,6 +1,7 @@
 {% extends "base_public.html" %}
 {% block title %}{{ _("Điều khoản dịch vụ API") }} · LTT AI Studio{% endblock %}
 {% block content %}
+<div class="c4-tai-lieu">{# C4 Golden UI: phạm vi thang chữ tài liệu công khai (h2 > h3) + bảng không ngắt giữa số/tên model. #}
 
 <div class="card">
   <h1 class="u-mt0 tl-h1">{{ _("Điều khoản dịch vụ API") }}</h1>
@@ -16,7 +17,7 @@
 {% if not san_sang %}
 {# Golden UI 17/09: viền trái hex thô `#d97706` → token cảnh báo. #}
 <div class="card tl-canh" role="note">
-  <h2 class="u-mt0"><span class="badge b-warn">{{ _("Lưu ý") }}</span> {{ _("Bản này CHƯA đầy đủ") }}</h2>
+  <h2 class="u-mt0"><span class="badge b-warn">{{ _("Lưu ý") }}</span> {{ _("Bản này chưa đầy đủ") }}</h2>
   <p>
     {{ _("Những gì viết dưới đây là chính xác — mỗi mục đều mô tả hành vi đã đo trên hệ thống đang chạy. Nhưng bản điều khoản đầy đủ còn thiếu các phần về giới hạn trách nhiệm, cam kết mức độ sẵn sàng, hoàn tiền phần credit chưa dùng và chấm dứt tài khoản.") }}
   </p>
@@ -48,7 +49,7 @@
   </div>
   {% for b in cac_bang %}
   <p class="muted"><code>{{ b.model }}</code> ({{ _("phiên bản giá") }}
-    <code>{{ b.phien_ban_gia }}</code>): {{ b.ghi_chu }}</p>
+    <code>{{ b.phien_ban_gia }}</code>): {# C4: ghi chú đến từ `gia_token` (ngoài phạm vi UI) có chữ in hoa nhấn mạnh — hiện bằng chữ đậm thay vì in hoa. #}{{ (b.ghi_chu|e)|replace("GIỮ LẠI", "<strong>giữ lại</strong>"|safe)|replace("KEPT", "<strong>kept</strong>"|safe) }}</p>
   {% endfor %}
   <p><a href="/gia-api">{{ _("Xem bảng giá đầy đủ kèm ví dụ chi phí thật") }}</a></p>
 </div>
@@ -94,4 +95,5 @@
   <p><a href="/developers/du-lieu">{{ _("Xem chi tiết từng nhóm và thời hạn lưu") }}</a></p>
 </div>
 
+</div>
 {% endblock %}
