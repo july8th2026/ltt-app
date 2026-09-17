@@ -5023,3 +5023,8 @@ code.adm-ten-ky-thuat{background:transparent;border:0;padding:0;font-family:var(
 /* v7 (17/09): thanh nút dính đáy của Voice (`.lv-st-nut`, ~108px) che nút ngay trên nó
    khi cuộn/focus bằng bàn phím (WCAG 2.4.11) — chừa khoảng cuộn đáy bằng chiều cao thanh. */
 html:has(.lv-st-nut){scroll-padding-bottom:128px}
+/* V3 (17/09): footer DÍNH ĐÁY trên trang ngắn (lỗi chung nhiều họ: dải trống dưới footer).
+   `width:100%` giữ `.page{max-width;margin:auto}` không co theo nội dung trong flex cột. */
+body:has(> footer.platform-footer){min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+body:has(> footer.platform-footer) > main{flex:1 0 auto;width:100%;box-sizing:border-box}
+body:has(> footer.platform-footer) > footer.platform-footer{flex-shrink:0}
