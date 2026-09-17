@@ -75,7 +75,7 @@
           <tr>
             <td><code class="dev-id">{{ key.key_id }}</code></td>
             <td>{{ key.name or '—' }}</td>
-            <td>{{ key.project or '—' }}</td>
+            <td>{% if key.project %}{{ dtt.du_an(key.project) }}{% else %}—{% endif %}</td>
             <td>
               {% if key.mode == 'test' %}
                 <span class="dev-chip-mt test">Test</span>
@@ -166,10 +166,10 @@
              mặc định đã nằm trong danh sách, và hai dòng cùng tên "Default" làm
              người dùng tưởng có hai project. #}
           {% if not projects %}
-            <option value="">{{ _("Default") }}</option>
+            <option value="">{{ _("Mặc định") }}</option>
           {% endif %}
           {% for project in projects %}
-            <option value="{{ project.id }}">{{ project.name }}</option>
+            <option value="{{ project.id }}">{{ dtt.du_an(project.name) }}</option>
           {% endfor %}
         </select>
         <span class="goi-y">{{ _("Mỗi tích hợp một dự án thì báo cáo chi tiêu tách được.") }}</span>

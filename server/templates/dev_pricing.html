@@ -14,6 +14,11 @@
         <div class="dev-field">
           <label for="pr-tool">{{ _("Công cụ") }}</label>
           <select id="pr-tool" name="tool">
+            {# C4: ô chọn không bao giờ trống không chữ — khi chưa có công cụ nào đang
+               bật, dòng gợi ý nói rõ điều đó thay vì một hộp rỗng. #}
+            <option value="" disabled{% if not chosen %} selected{% endif %}>
+              {%- if tools %}{{ _("Chọn công cụ…") }}{% else %}{{ _("Chưa có công cụ nào đang bật") }}{% endif -%}
+            </option>
             {% for name in tools %}
               <option value="{{ name }}" {% if name == chosen %}selected{% endif %}>{{ name }}</option>
             {% endfor %}

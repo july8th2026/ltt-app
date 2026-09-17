@@ -66,7 +66,7 @@
 {# ── Hàng: Biểu đồ 7 ngày (trái) · Bắt đầu / checklist (phải) — ảnh demo ───
    Biểu đồ sinh phía máy chủ (SVG, không JS, không thư viện). `chart` là None
    khi chưa có gì để vẽ ⇒ trạng thái rỗng, KHÔNG vẽ đường phẳng qua các số 0. #}
-<div class="dev-luoi dev-luoi-2-1">
+<div class="dev-luoi dev-luoi-2-1 dev-luoi-gian">
 
   <section class="dev-panel">
     <header>
@@ -147,11 +147,13 @@
             {% endif %}
           </li>
         </ol>
-        <p class="muted u-mt10">
-          <a href="/developers/quickstart">{{ _("Hướng dẫn đầy đủ") }}</a> ·
-          <a href="/developers/tools">{{ _("Xem có những công cụ gì") }}</a> ·
-          <a href="/developers/playground">{{ _("Chạy thử") }}</a>
-        </p>
+        {# C4: mỗi liên kết là một mục KHÔNG ngắt dòng — dãy "a · b · c" từng tách
+           "Chạy / thử" sang hai dòng ở cột hẹp. #}
+        <ul class="dev-lien-ket u-mt10">
+          <li><a href="/developers/quickstart">{{ _("Hướng dẫn đầy đủ") }}</a></li>
+          <li><a href="/developers/tools">{{ _("Xem có những công cụ gì") }}</a></li>
+          <li><a href="/developers/playground">{{ _("Chạy thử") }}</a></li>
+        </ul>
       {% endif %}
     </div>
   </section>

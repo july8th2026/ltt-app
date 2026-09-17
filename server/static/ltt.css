@@ -4452,9 +4452,7 @@ input[type=hidden]+.af-step{margin-top:0}
    là viên nhỏ nằm trong nội dung — khác kiểu nên không đọc như tầng thứ hai. */
 @media (max-width:820px){
   .khu-dev .app-side{display:flex;flex-wrap:nowrap;gap:2px;overflow-x:auto;
-    overscroll-behavior-x:contain;padding-bottom:0;
-    -webkit-mask-image:linear-gradient(90deg,transparent 0,black 14px,black calc(100% - 28px),transparent);
-    mask-image:linear-gradient(90deg,transparent 0,black 14px,black calc(100% - 28px),transparent)}
+    overscroll-behavior-x:contain;padding-bottom:0}
   .khu-dev .app-side ul{flex:0 0 auto}
   .khu-dev .app-side ul+.nhom+ul{margin-left:0}
   .khu-dev .app-side a{padding:10px 12px;min-height:44px;display:flex;align-items:center}
@@ -4648,3 +4646,50 @@ input[type=hidden]+.af-step{margin-top:0}
    đỏ chỉ còn cho lỗi. */
 textarea:focus,select:focus{border-color:var(--text-secondary)}
 .job-state-running .ui-progress>i,.job-state-queued .ui-progress>i{background:var(--warn)}
+/* === C4: DEV-VPS-NEXUS === */
+/* Golden UI V2 (17/09) — khiếm khuyết người chấm độc lập ghi cho khu API, VPS, Nexus.
+   Chỉ trình bày. Token, không hex mới. */
+
+/* ── Khu API · Tổng quan: dãy liên kết là danh sách, mỗi mục KHÔNG ngắt dòng ── */
+.khu-dev .dev-lien-ket{display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:0;padding:0;
+  list-style:none;font-size:13px}
+.khu-dev .dev-lien-ket li{white-space:nowrap}
+/* Hàng biểu đồ | bắt đầu: panel giãn cùng chiều cao, ô trống lấp thân panel —
+   không còn khoảng đen thừa dưới "Chưa có lưu lượng để vẽ". */
+.khu-dev .dev-luoi-gian>.dev-panel{display:flex;flex-direction:column}
+.khu-dev .dev-luoi-gian>.dev-panel>.dev-panel-than{flex:1;display:flex;flex-direction:column}
+.khu-dev .dev-luoi-gian>.dev-panel>.dev-panel-than>.dev-trong{flex:1;align-content:center}
+
+/* ── Khu API · Tài liệu & SDK: nhóm = panel có tiêu đề, tài liệu = ô ── */
+.khu-dev .dev-tl-nhom{margin:0 0 16px}
+.khu-dev .dev-tl-luoi{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+  gap:12px;margin:0;padding:14px 16px 16px;list-style:none}
+.khu-dev .dev-tl-the{position:relative;display:flex;flex-direction:column;gap:6px;min-width:0;
+  padding:14px 16px;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);
+  background:var(--surface-overlay)}
+.khu-dev .dev-tl-the.dev-tl-chinh{border-color:var(--brand-border);background:var(--brand-soft)}
+.khu-dev .dev-tl-ic{width:20px;height:20px;color:var(--brand-hover)}
+.khu-dev .dev-tl-ten{font-size:14.5px;font-weight:600;line-height:1.4;color:var(--text-primary);
+  text-decoration:none;overflow-wrap:anywhere}
+.khu-dev .dev-tl-ten::after{content:" →";color:var(--brand-hover)}
+.khu-dev .dev-tl-ten:hover{text-decoration:underline}
+.khu-dev .dev-tl-ten code{font-size:13px;background:none;border:0;padding:0;color:inherit}
+.khu-dev .dev-tl-the p{flex:1;margin:0;font-size:12.5px;line-height:1.6;color:var(--text-secondary)}
+.khu-dev .dev-tl-phu{align-self:flex-start;display:inline-flex;align-items:center;min-height:28px;
+  font-size:12.5px}
+.khu-dev .dev-tl-van ul{margin:10px 0 0;padding-left:20px}
+
+/* ── Khu API · màn hẹp: dải tab cuộn ngang, mép mờ ĐÚNG phía còn nội dung ──
+   `data-mep-trai/phai` do script ở `developers_base.html` đặt theo vị trí cuộn. */
+@media (max-width:820px){
+  .khu-dev .app-side[data-mep-trai],.khu-dev .dev-sub ul[data-mep-trai]{
+    -webkit-mask-image:linear-gradient(90deg,transparent 0,black 40px);
+    mask-image:linear-gradient(90deg,transparent 0,black 40px)}
+  .khu-dev .app-side[data-mep-phai],.khu-dev .dev-sub ul[data-mep-phai]{
+    -webkit-mask-image:linear-gradient(90deg,black calc(100% - 40px),transparent);
+    mask-image:linear-gradient(90deg,black calc(100% - 40px),transparent)}
+  .khu-dev .app-side[data-mep-trai][data-mep-phai],.khu-dev .dev-sub ul[data-mep-trai][data-mep-phai]{
+    -webkit-mask-image:linear-gradient(90deg,transparent 0,black 40px,black calc(100% - 40px),transparent);
+    mask-image:linear-gradient(90deg,transparent 0,black 40px,black calc(100% - 40px),transparent)}
+}
+/* === HET C4: DEV-VPS-NEXUS === */
