@@ -32,7 +32,7 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 | Bộ quét | `node tools/golden_ui_quet.mjs --cau-hinh routes.json --ra <dir> [--khung ...]` — HTTP, ảnh toàn trang, console, request hỏng, tràn ngang, axe WCAG 2.2 AA, h1/main/lang, ô chạm, ô nhập <16px |
 
 ## Overall Progress
-87%
+89%
 
 (Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính 17/09 tối sau B1–B4 + đo lại `sau/v5`: 5 + 10 + 90%·15 + 75%·15 + 80%·20 + 97%·15 + 95%·10 + 75%·10 = 5+10+13,5+11,25+16+14,55+9,5+7,5 = **87%**. Còn: C1 chấm lại 13 họ, C2 regression ảnh + vân tay CSS, D1 L3 → gộp `main` → deploy → nghiệm thu công khai.)
 
@@ -91,25 +91,25 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 
 Critical flows baseline: Auth 84 · Billing 81 · Jobs 75 · Error 65 ⇒ **76**.
 
-### Điểm chấm độc lập — 17/09 tối (C1, `sau/v5`)
+### Điểm chấm độc lập (người chấm không xem bảng điểm cũ)
 
-| Họ | Baseline | Độc lập 17/09 |
-|---|---|---|
-| Auth | 84 | 87 |
-| Billing | 81 | 83 |
-| Jobs | 75 | 83 |
-| Error | 65 | 88 |
-| Workspace | 73 | 79 |
-| Public | 76 | 80 |
-| Status | 71 | 80 |
-| Developer | 80 | 87 |
-| VPS | 77 | 85 |
-| Nexus | 70 | 82 |
-| Admin tự dựng | 73 | 81 |
-| sqladmin | 49 | 74 |
-| Apps | 69 | 76 |
+| Họ | Baseline | V1 `sau/v5` | V2 `sau/v6` (sau C3) |
+|---|---|---|---|
+| Auth | 84 | 87 | **91** |
+| Billing | 81 | 83 | **89** |
+| Jobs | 75 | 83 | **88** |
+| Error | 65 | 88 | **90** |
+| Workspace | 73 | 79 | **83** |
+| Public | 76 | 80 | **84** |
+| Status | 71 | 80 | **85** |
+| Developer | 80 | 87 | **89** |
+| VPS | 77 | 85 | **87** |
+| Nexus | 70 | 82 | **87** |
+| Admin tự dựng | 73 | 81 | **85** |
+| sqladmin | 49 | 74 | **84** |
+| Apps | 69 | 76 | **79** |
 
-**Overall ≈ 81,9 · Critical 85,25** (bảng *Điểm hiện tại* bên dưới là ước lượng của người sửa — không dùng làm phán quyết).
+**V1: Overall ≈ 81,9 · Critical 85,25 → V2: Overall ≈ 86,2 · Critical 89,5.** Chưa đạt ≥ 93 / ≥ 95 / sàn 88 (dưới sàn: Workspace, Public, Status, VPS, Nexus, Admin, sqladmin, Apps). Bảng *Điểm hiện tại* bên dưới là ước lượng của người sửa — không dùng làm phán quyết.
 
 ### Điểm hiện tại — 17/09 (E3 `sau/v3`: 448 phép đo 112 route × 390/768/1440/1920)
 
@@ -465,7 +465,8 @@ Thứ tự theo luật 17/09 — **L3 ở cuối cùng, sau khi mọi pha dướ
 | B3 | Hex thô `.chip.*` / Prompt AI classic | test nhắm + trình duyệt | ✅ phần `.chip.i/.v/.m` → token trạng thái (axe 0 ở 3 trang admin). ⏭ Prompt AI classic: trang cũ đã có SPA thay, hệ theme sáng/tối riêng `--o-*` — token Golden chỉ có bản tối, thay sẽ hỏng theme sáng ⇒ **nợ vòng sau có lý do** |
 | B4 | SPA về token chung | vitest + build + trình duyệt | ✅ canvas + AutoSub: xám lạnh trần trong theme TỐI → token ấm (canvas 51, AutoSub 103; giữ màu bão hoà/alpha/fallback/định nghĩa biến/`.theme-light`); build + `build-meta` khớp; vitest 62/15; axe 0 cả hai theme × 390/1440. **Kèm lỗi thật có sẵn**: canvas theme sáng `--text-muted #737d89` 4,14:1 (đối chứng CSS HEAD cho cùng 4 lỗi) → `#5f6874` ≥4,9:1. Lần thử đầu map cả theme sáng + định nghĩa biến (đỏ thay xám sáng, biến tự tham chiếu) — phát hiện khi soát bảng, đã hoàn tác trước khi build. ⏭ Prompt AI (SPA + classic) có theme sáng riêng — nợ vòng sau. chatltt đã token (1 hex) |
 | C1 | Chấm lại 13 họ (2 agent chỉ đọc, KHÔNG xem bảng điểm cũ) | E3 | ✅ chấm xong — **điểm thấp hơn ước lượng**: Auth 87 · Billing 83 · Jobs 83 · Error 88 · Workspace 79 · Public 80 · Status 80 · Dev 87 · VPS 85 · Nexus 82 · Admin 81 · sqladmin 74 · Apps 76 ⇒ **TB ≈ 81,9 · critical 85,25**. Ước lượng trước đó (≈ 88,6 / 92) do chính người sửa chấm — BỎ. Kiểm chứng ngay 2 phát hiện: catalog ẩn danh còn emoji manifest (test DL-005 cũ bỏ sót) + ô đăng nhập ghi "Tên đăng nhập" dù nhận email → đã sửa. ⚠️ Vài phát hiện có thể là hiện vật ảnh toàn trang (sticky/khung cuộn — P1-13): phải xác minh trên khung nhìn thật trước khi sửa |
-| C3 | **Đợt sửa song song theo họ** từ danh sách khiếm khuyết C1 | test nhắm + trình duyệt + chấm lại | 🔄 6 nhánh đang chạy 17/09 tối — `c3-auth` (Auth/Error/Status, :8151) · `c3-bill` (Billing/Jobs, :8152) · `c3-home` (Workspace/Public, :8153) · `c3-admin` (Admin/sqladmin, :8154) · `c3-apps` (Apps templates, :8155) · `c3-dev` (Dev/VPS/Nexus, :8156). Tệp dùng chung (`base/_header/_ui/_icon/_menu_tai_khoan/templating`) giữ ở nhánh chính; mỗi nhánh một khối CSS cuối `ltt.css`; gộp tay + chấm lại độc lập lần 2 |
+| C3 | Đợt sửa song song theo họ (V1) | test nhắm + trình duyệt + chấm lại | ✅ 6/6 nhánh gộp (`5d31ea42`…`b057b854`), `sau/v6` 452 phép đo sạch, regression 27 ảnh lệch đều cố ý (đã soát) → cập nhật mẫu PASS; V2 = 86,2 / 89,5 |
+| C4 | **Đợt sửa song song lần 2** theo khiếm khuyết V2 (bỏ qua mục cần tài sản thiết kế/quyết định: ảnh bìa riêng từng app, nội dung OOS-09) | test nhắm + trình duyệt + chấm V3 | 🔄 |
 | C2 | Đo lại toàn hệ + regression ảnh | E3 | ✅ `sau/v5` 448 phép đo: axe 0 · tràn 0 · console 0 · hỏng 0 · h1/main 0 · `style` @1440 106. Regression: `home-an-danh@1440` 6,9% / `home-khach@1440` 8,1% — do `main` thêm card app LTTCODE (vị trí 3) + nhóm menu, không phải UI; cập nhật đúng 2 mẫu → PASS. `test_975` vân tay `ltt.css` cập nhật |
 | D1 | Hết mọi pha ⇒ **L3 MỘT lần** → đỏ thì khép `--doi --tu <sha L3>` → gộp `main` → deploy phần còn lại (nếu có) → nghiệm thu → Final Report + `docs/NHAT_KY.md` | L3 | ⏳ |
 
