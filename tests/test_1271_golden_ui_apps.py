@@ -203,3 +203,9 @@ def test_B4_canvas_theme_sang_chu_muted_dat_AA():
     """Đo 17/09 (axe, theme sáng): `--text-muted:#737d89` chỉ 4,14–4,18:1 trên nền #f5f6f8."""
     css = (GOC / "frontend/agent-canvas/src/canvas.css").read_text(encoding="utf-8")
     assert "#737d89" not in css and "--text-muted:#5f6874" in css
+
+
+def test_lttcode_nut_do_chu_trang_dung_brand_fill():
+    """Trang công khai LTTCODE (vào từ `main` 17/09): `#fff` trên `--accent` #ef3731 = 3,99:1 (axe)."""
+    src = (GOC / "apps/lttcode/templates/lttcode_download.html").read_text(encoding="utf-8")
+    assert not re.search(r"background:var\(--accent\)[^}]*color:#fff", src)
