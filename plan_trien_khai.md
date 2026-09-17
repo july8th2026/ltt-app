@@ -32,18 +32,18 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 | Bộ quét | `node tools/golden_ui_quet.mjs --cau-hinh routes.json --ra <dir> [--khung ...]` — HTTP, ảnh toàn trang, console, request hỏng, tràn ngang, axe WCAG 2.2 AA, h1/main/lang, ô chạm, ô nhập <16px |
 
 ## Overall Progress
-77%
+82%
 
-(Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính lại 17/09 sau P1-01/P1-14/P1-15/P1-06-07: 5 + 10 + 75%·15 + 60%·15 + 75%·20 + 80%·15 + 90%·10 + 60%·10 = 5+10+11,25+9+15+12+9+6 = **77%** (sau đo lại toàn hệ + Final Report, trước L3). Con số 70% ghi ngày 16/09 cao hơn phép tính lúc đó (65,5%) — nay khớp phép tính. Chưa có L3, Phase 7 mới có regression ảnh.)
+(Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính lại 17/09 sau P1-01/P1-14/P1-15/P1-06-07: 5 + 10 + 85%·15 + 70%·15 + 78%·20 + 88%·15 + 90%·10 + 60%·10 = 5+10+12,75+10,5+15,6+13,2+9+6 = **82%** (17/09 sau song song 3 nhánh + DL-005; nhánh Dev chưa gộp, chưa đo lại toàn hệ, chưa L3). Con số 70% ghi ngày 16/09 cao hơn phép tính lúc đó (65,5%) — nay khớp phép tính. Chưa có L3, Phase 7 mới có regression ảnh.)
 
 | Phase | % | Trạng thái |
 |---|---|---|
 | 0 Discovery & Tooling | 100 | ✅ |
 | 1 Baseline Audit | 100 | ✅ |
-| 2 Golden Design System | 75 | 🟡 token màu/chữ/khoảng/bóng ✅ · lớp tiện ích `u-*`/`o-trong` thay 261 `style=""` ✅ · P2-02/05/06 ✅ · còn P2-04 (emoji lẫn SVG) |
-| 3 Shared UI Components | 60 | 🟡 `_ui.html` (trạng thái/tiến độ/thể loại + `bang_trang_thai_js`) ✅ · `_menu_tai_khoan.html` ✅ · `.ui-state` ✅ · `o_chon_tep` phủ mọi upload hướng khách còn trần ✅ · còn thẻ/biến thể nút-badge theo trang |
-| 4 Critical Pages | 75 | 🟡 Error ✅ · Jobs 🟡 · Billing 🟡 · Auth 🟡 · Shell/Workspace 🟡 · Public ⏳ |
-| 5 Remaining Pages & Apps | 80 | 🟡 Admin ✅ · sqladmin ✅ · Status ✅ · Apps a11y ✅ · VPS/Nexus tương phản ✅ · chip thể loại + ảnh bìa ✅ · Máy của tôi ✅ · nhãn tiếng Anh SPA/canvas ✅ · còn tài liệu dev tiếng Anh (OOS-09) |
+| 2 Golden Design System | 85 | 🟡 token · tiện ích `u-*` · link/rỗng/chuyển động ✅ · DL-005 bộ icon SVG ✅ · còn: `.chip.*` hex thô, 2 kiểu số bước giữa studio |
+| 3 Shared UI Components | 70 | 🟡 `_ui.html` · `_icon.html` · `_menu_tai_khoan.html` · `.ui-state` · `o_chon_tep` ✅ · còn: vị trí tiêu đề trang thống nhất giữa studio, SPA chưa dùng component chung |
+| 4 Critical Pages | 78 | 🟡 Error/Jobs/Billing/Auth/Workspace xong ở dev · còn: nghiệm thu trên URL công khai (cần deploy) |
+| 5 Remaining Pages & Apps | 88 | 🟡 Apps (nhánh song song, ~87) ✅ gộp · VPS màn máy/cài đặt/console lần đầu soi (~91) ✅ gộp · Admin (~90) ✅ gộp · Dev/Public: nhánh có 1 commit, agent dừng vì hết hạn mức — CHƯA soát/gộp |
 | 6 Responsive & Accessibility | 90 | 🟡 448 phép đo 4 khung axe 0 · 430×932 critical ✅ · bàn phím critical ✅ · còn: đo trên URL công khai (cần deploy) |
 | 7 Visual Regression & Final QA | 60 | 🟡 regression ảnh 28 mẫu ✅ · đo lại toàn hệ 448 ✅ · Final Report ✅ · L3 ⏳ · gộp `main` + deploy + URL công khai ⏳ |
 
