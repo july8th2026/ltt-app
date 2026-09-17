@@ -46,6 +46,23 @@
   nhập mật khẩu) + kiểm sau khởi động lại máy (chủ dự án báo khi có dịp).
 - Test nhắm: `test_1302` (12) + `test_1303` (7); cả app `1300–1303` = 39 xanh.
 
+## 2026-09-17 (tối) — R25: VPS OVH không có mạng vì router DHCP không cấp dải 10.50
+
+- **Triệu chứng**: chủ dự án cài xong Windows trên VM 204, bật Remote Desktop, máy
+  không có mạng.
+- **Đo, không đoán**: card `e1000`/`vmbr1` giống máy đang chạy; router `ltt-router-sgp`
+  (VM 199) nhận `DHCPDISCOVER` của `bc:24:11:8c:0f:14` và trả **`no address available`**:
+  dnsmasq chỉ có `dhcp-range=10.51.0.0` và `eth1` chỉ mang `10.51.0.1`, trong khi máy
+  OVH được đặt chỗ `10.50.0.50` (gateway dải này là host Proxmox `vmbr1` `10.50.0.1`).
+  `man dnsmasq` (`--dhcp-range`): mạng nối trực tiếp phải có địa chỉ trên card.
+- **Sửa live** (sao lưu trong `/root` trên router): `eth1` thêm `10.50.0.2/24` (runtime
+  + netplan, không `netplan apply`), `dhcp-range` có tag `vultr`/`ovh`, router option
+  theo tag (`10.50.0.1` cho OVH). Lần đầu dnsmasq chết vì bản `.bak` đặt trong
+  `/etc/dnsmasq.d` (dnsmasq đọc mọi tệp ở đó) — chuyển ra ngoài, chạy lại ngay.
+- **Kết quả**: 06:21:39 UTC `DHCPACK 10.50.0.50`; từ Internet TCP `51.79.202.1:3389` mở.
+- Ghim vào `tools/vps_gateway/cai-dat-router.sh` + `tests/test_1032_vps_router_dai_ovh.py`
+  (đối chứng script cũ: 8 đỏ).
+
 ## 2026-09-17 (chiều) — VPS bán lại: hệ thống tự mua IP OVH cho mỗi VPS (R22, R23)
 
 - **Mô hình chủ dự án chốt**: khách chỉ tạo VPS; hệ thống tự mua 1 IPv4 OVH cho mỗi

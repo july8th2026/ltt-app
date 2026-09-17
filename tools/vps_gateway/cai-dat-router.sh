@@ -41,6 +41,14 @@ MANG_KHACH="10.51.0.0/24"
 # may va vao RDP, cham ro rang khi tai file -- dung y do cua "giam toc".
 TOC_GIAM="1048576"
 CUA_KHACH="10.51.0.1"
+# R25 (17/09): VPS ban tren profile OVH o dai 10.50.0.0/24, cung bridge vmbr1.
+# Gateway cua dai do la HOST Proxmox (vmbr1 10.50.0.1), khong phai router nay.
+# dnsmasq chi cap DHCP cho mang ma card co dia chi (man dnsmasq, --dhcp-range:
+# "directly connected networks"), nen eth1 mang them dia chi phu DIA_CHI_OVH.
+# Thieu buoc nay: Windows gui DHCPDISCOVER va nhan "no address available".
+MANG_OVH="10.50.0.0"
+CUA_OVH="10.50.0.1"
+DIA_CHI_OVH="10.50.0.2/24"
 NIC_KHACH="eth1"
 NIC_NHA="eth0"
 THU_MUC="/etc/ltt-vps"
@@ -67,6 +75,29 @@ chown ltt:ltt "$THU_MUC" "$TEP_MAC" 2>/dev/null || true
 chmod 755 "$THU_MUC"; chmod 644 "$TEP_MAC"
 
 echo "== 3/5 dnsmasq =="
+# Dia chi phu cho dai OVH: gan ngay, va ghi vao netplan de con sau reboot.
+# KHONG 'netplan apply' -- no dung lai card va cat SSH quan tri tren eth0.
+ip -4 addr show dev "$NIC_KHACH" | grep -q " ${DIA_CHI_OVH} " || ip addr add "$DIA_CHI_OVH" dev "$NIC_KHACH"
+for np in /etc/netplan/*.yaml; do
+  [ -f "$np" ] || continue
+  if grep -q "${CUA_KHACH}/24" "$np" && ! grep -q "$DIA_CHI_OVH" "$np"; then
+    cp -a "$np" "/root/$(basename "$np").bak-r25"
+    # Them mot dong ngay duoi dia chi 10.51, giu dung thut le cua dong do.
+    python3 - "$np" "${CUA_KHACH}/24" "$DIA_CHI_OVH" <<'PY'
+import sys
+path, anchor, extra = sys.argv[1:4]
+lines = open(path).read().split("\n")
+out = []
+for line in lines:
+    out.append(line)
+    if line.strip() == "- " + anchor:
+        out.append(line[:len(line) - len(line.lstrip())] + "- " + extra)
+open(path, "w").write("\n".join(out))
+PY
+  fi
+done
+# Ban sao luu KHONG duoc nam trong /etc/dnsmasq.d: dnsmasq doc MOI tep o do va tu
+# choi khoi dong vi "illegal repeated keyword" (do that 17/09).
 cat > /etc/dnsmasq.d/ltt-vps.conf <<EOF
 # Sinh boi tools/vps_gateway/cai-dat-router.sh -- dung sua tay.
 
@@ -98,8 +129,10 @@ no-dhcp-interface=wg0
 # available': may len nhung khong co mang, va khong loi nao chi vao day.
 #
 # Lease 1 gio la cai luoi do: te nhat thi no tu lanh sau mot gio.
-dhcp-range=10.51.0.0,static,255.255.255.0,1h
-dhcp-option=option:router,$CUA_KHACH
+dhcp-range=set:vultr,10.51.0.0,static,255.255.255.0,1h
+dhcp-range=set:ovh,$MANG_OVH,static,255.255.255.0,1h
+dhcp-option=tag:vultr,option:router,$CUA_KHACH
+dhcp-option=tag:ovh,option:router,$CUA_OVH
 dhcp-option=option:dns-server,1.1.1.1,8.8.8.8
 # Windows bo qua option nay; no o day cho khach Linux. Duong bao that la MSS
 # clamp trong nftables ben duoi.
