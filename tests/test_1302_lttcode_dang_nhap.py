@@ -161,6 +161,7 @@ def test_cho_phep_roi_doi_ma_lay_khoa_dung_nguoi_dung_scope(may):
     assert r.status_code == 200, r.text
     body = r.json()
     assert body["api_key"].startswith("ltt_sk_") and body["name"] == "LTTCODE – LAPTOP-01"
+    assert body["account"] == "dev@example.com" and body["device"] == "LAPTOP-01"
     assert "no-store" in r.headers["cache-control"]
 
     gen = _db()

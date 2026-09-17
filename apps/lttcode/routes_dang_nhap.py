@@ -28,6 +28,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Resp
 from sqlalchemy.orm import Session
 
 from apps.lttcode import dang_nhap
+from platform_core.models import User
 from platform_core.public_api import keys as devkeys
 from platform_core.public_api import projects
 from platform_core.public_api.scopes import ScopeError
@@ -137,8 +138,13 @@ async def doi_ma(request: Request, db: Session = Depends(get_db)):
         return JSONResponse({"error": "cannot_issue_key", "message": str(exc)}, status_code=400,
                             headers=_KHONG_LUU)
     log.info("lttcode: issued device key %s", row.key_id)
+    # `account` + `device`: để ứng dụng hiện "Đã đăng nhập: <email> · máy <tên>" thay
+    # cho một chuỗi khoá che mặt nạ — người dùng vừa đăng nhập TÀI KHOẢN, không nhập khoá.
+    user = db.get(User, user_id)
     return JSONResponse({"api_key": token, "key_id": row.key_id, "name": row.name,
-                         "expires_at": row.expires_at.isoformat() if row.expires_at else None},
+                         "expires_at": row.expires_at.isoformat() if row.expires_at else None,
+                         "account": user.email if user is not None else "",
+                         "device": may},
                         headers=_KHONG_LUU)
 
 
