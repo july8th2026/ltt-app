@@ -438,9 +438,8 @@ Thứ tự theo luật 17/09 — **L3 ở cuối cùng, sau khi mọi pha dướ
 
 | Bước | Việc | Cổng | Trạng thái |
 |---|---|---|---|
-| A1 | Kiểm máy §4.8 → **L1** `gate.py --doi --tu <sha production>` trên HEAD nhánh (phủ mọi thay đổi kể từ bản đang chạy) | L1 xanh (đỏ ⇒ sửa tại chỗ, chạy lại đúng phép đỏ) | ⏳ |
-| A2 | Gộp `main` (hoà nếu đi tiếp) → báo phiên khác (`ListAgents`) → cây chính sạch → deploy (`docs/16_CAP_NHAT_VA_DEPLOY.md`) | L1 xanh trên đúng SHA deploy | ⏳ |
-| A3 | **Nghiệm thu URL công khai** `https://app.lttstudios.com`: critical flows (auth/billing/jobs/error/workspace) × 390/1440, console, request hỏng, CSP/cache biên, `/health/version` | E3 | ⏳ |
+| A1 | ~~L1 `gate.py --doi --tu 2d9b95a22743` (production)~~ | — | ⛔ **máy từ chối** 17/09: 268 đường dẫn đổi, chạm tệp DÙNG CHUNG (`ltt.css`, `base.html`, `_header.html`…) ⇒ `thanh_phan.py --doi --goc-so` = *phải chạy TẤT CẢ*; L2 từng thành phần cũng thành chạy toàn bộ (trả tiền hai lần). **Không có cổng hẹp hợp lệ cho deploy giữa phiên** ⇒ deploy dời về sau L3 tổng kết (D1) |
+| A2–A3 | Gộp `main` → báo phiên → deploy → nghiệm thu URL công khai | L3 tổng kết | dời vào D1 |
 | B1 | Studio: **vị trí tiêu đề trang** + **một kiểu số bước** (Seedance/LTT Video còn `01` chữ trơn, `03B`) | test nhắm + trình duyệt | ⏳ |
 | B2 | Voice "Giọng nói" hai nút primary · Upscale @390 chồng tay kéo so sánh · menu con máy VPS @390 cắt mục cuối · form admin `api-chinh-sach`/`api-gia` @390 | test nhắm + trình duyệt | ⏳ |
 | B3 | `.chip.*` và Prompt AI classic `<style>` còn hex thô → token | test nhắm + trình duyệt | ⏳ |
@@ -449,7 +448,7 @@ Thứ tự theo luật 17/09 — **L3 ở cuối cùng, sau khi mọi pha dướ
 | C2 | Đo lại toàn hệ 448 + regression ảnh; nếu đã deploy lại thì nghiệm thu công khai lần 2 | E3 | ⏳ |
 | D1 | Hết mọi pha ⇒ **L3 MỘT lần** → đỏ thì khép `--doi --tu <sha L3>` → gộp `main` → deploy phần còn lại (nếu có) → nghiệm thu → Final Report + `docs/NHAT_KY.md` | L3 | ⏳ |
 
-Giữa B1–C2 nếu cần deploy để đo thật: lặp A1–A3 (L1, không L3).
+Không deploy giữa phiên cho changeset này (A1). Nghiệm thu URL công khai là bước bắt buộc NGAY SAU deploy ở D1; lỗi phát hiện ở đó sửa tại chỗ + khép `gate.py --doi --tu <sha L3>` rồi deploy lại.
 
 ---
 
@@ -469,7 +468,7 @@ Giữa B1–C2 nếu cần deploy để đo thật: lặp A1–A3 (L1, không L3
 | Visual regressions reviewed | ✅ | 2 hồi quy thật bắt được và xử lý (`/nap` 2,8%; `home-khach` 0,243% chia đôi tới `z-index`) |
 | Business behavior preserved | ✅ | form/hx/route/`value` giữ nguyên — chốt test (billing, sqladmin `save`, upload `name/accept/required`) |
 | Gate L3 trên HEAD | ⏳ | chỉ ở bước D1 — sau khi mọi pha đóng (xem V-1) |
-| Xác minh trên URL công khai | ⏳ | bước A3 — deploy giữa phiên sau L1 xanh (§8) |
+| Xác minh trên URL công khai | ⏳ | sau deploy ở D1 — L1 giữa phiên bị máy từ chối vì chạm tệp dùng chung (A1) |
 | Overall ≥ 93 · critical ≥ 95 · không họ < 88 | ❌ | **≈ 88,6 · ≈ 92 · 4 họ < 88** (Dev 87, Admin 87, sqladmin 86, Apps 85) |
 
 ## Baseline score → Final score
