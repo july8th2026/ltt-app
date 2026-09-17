@@ -97,3 +97,11 @@ def test_doan_sua_netplan_them_dung_mot_dong_giu_thut_le(tmp_path):
 def test_bien_moi_duoc_khai_truoc_khi_dung(bien):
     s = _script()
     assert s.index(f'{bien}="') < s.index(f"${bien}")
+
+
+def test_cloud_init_khong_duoc_sinh_lai_netplan_xoa_dia_chi_OVH():
+    """Router co cloud-init: khong tat thi reboot sinh lai 50-cloud-init.yaml (do 17/09)."""
+    s = _script()
+    assert ("echo 'network: {config: disabled}' > "
+            "/etc/cloud/cloud.cfg.d/99-disable-network-config.cfg") in s
+    assert s.index("99-disable-network-config.cfg") < s.index("for np in /etc/netplan/*.yaml")

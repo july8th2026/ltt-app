@@ -78,6 +78,10 @@ echo "== 3/5 dnsmasq =="
 # Dia chi phu cho dai OVH: gan ngay, va ghi vao netplan de con sau reboot.
 # KHONG 'netplan apply' -- no dung lai card va cat SSH quan tri tren eth0.
 ip -4 addr show dev "$NIC_KHACH" | grep -q " ${DIA_CHI_OVH} " || ip addr add "$DIA_CHI_OVH" dev "$NIC_KHACH"
+# Netplan cua VM sinh boi cloud-init: "Changes to it will not persist across an
+# instance reboot" (dau tep 50-cloud-init.yaml). Tat quan ly mang cua cloud-init
+# theo dung huong dan trong tep do, neu khong reboot router se xoa DIA_CHI_OVH.
+echo 'network: {config: disabled}' > /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
 for np in /etc/netplan/*.yaml; do
   [ -f "$np" ] || continue
   if grep -q "${CUA_KHACH}/24" "$np" && ! grep -q "$DIA_CHI_OVH" "$np"; then
