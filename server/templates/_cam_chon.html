@@ -142,7 +142,7 @@
     {% for ma_buoc, tep, doan in b.buoc %}
       <h4>{{ loop.index }}.
         {%- if tep %} <code>{{ tep }}</code>{% endif %}
-        {%- if nhan_buoc.get(ma_buoc) %} <span class="muted" style="font-weight:400;">{{ nhan_buoc[ma_buoc] }}</span>{% endif %}</h4>
+        {%- if nhan_buoc.get(ma_buoc) %} <span class="muted cam-nhan-phu">{{ nhan_buoc[ma_buoc] }}</span>{% endif %}</h4>
       {% if ma_buoc == "codex-catalog" %}<details><summary>{{ _("Mở JSON catalog để sao chép toàn bộ") }}</summary>{% endif %}
       <pre class="u-cuon-ngang"><code>{{ doan }}</code></pre>
       {% if ma_buoc == "codex-catalog" %}</details>{% endif %}
@@ -165,7 +165,7 @@
     </ol>
     {% for ma_buoc, tep, doan in b.buoc %}
       <h4>{{ loop.index + 3 }}. <code>{{ tep }}</code>
-        {% if nhan_buoc.get(ma_buoc) %}<span class="muted" style="font-weight:400;">{{ nhan_buoc[ma_buoc] }}</span>{% endif %}</h4>
+        {% if nhan_buoc.get(ma_buoc) %}<span class="muted cam-nhan-phu">{{ nhan_buoc[ma_buoc] }}</span>{% endif %}</h4>
       {% if ma_buoc == "codex-catalog" %}<details><summary>{{ _("Mở JSON catalog để sao chép toàn bộ") }}</summary>{% endif %}
       <pre class="u-cuon-ngang"><code>{{ doan }}</code></pre>
       {% if ma_buoc == "codex-catalog" %}</details>{% endif %}
@@ -256,7 +256,7 @@ codex --profile ltt-fast</code></pre>
     <table class="table">
       <tbody>
         {% for ten, gt in desktop %}
-          <tr><th scope="row" style="width:45%;white-space:normal;">{{ ten }}</th><td><code>{{ gt }}</code></td></tr>
+          <tr><th scope="row" class="cam-th-ten">{{ ten }}</th><td><code>{{ gt }}</code></td></tr>
         {% endfor %}
       </tbody>
     </table>

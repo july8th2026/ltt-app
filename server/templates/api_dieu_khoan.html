@@ -1,8 +1,9 @@
 {% extends "base_public.html" %}
+{% block title %}{{ _("Điều khoản dịch vụ API") }} · LTT AI Studio{% endblock %}
 {% block content %}
 
 <div class="card">
-  <h1 class="u-mt0">{{ _("Điều khoản dịch vụ API") }}</h1>
+  <h1 class="u-mt0 tl-h1">{{ _("Điều khoản dịch vụ API") }}</h1>
   <p>{{ _("Trang này mô tả cách API tính tiền và phục vụ — bằng đúng những gì hệ thống đang làm.") }}</p>
   <p class="muted">
     {{ _("phiên bản") }} <code>{{ phien_ban }}</code>
@@ -13,8 +14,9 @@
 </div>
 
 {% if not san_sang %}
-<div class="card" style="border-left:4px solid #d97706;">
-  <h2 class="u-mt0">⚠️ {{ _("Bản này CHƯA đầy đủ") }}</h2>
+{# Golden UI 17/09: viền trái hex thô `#d97706` → token cảnh báo. #}
+<div class="card tl-canh" role="note">
+  <h2 class="u-mt0"><span aria-hidden="true">⚠️</span> {{ _("Bản này CHƯA đầy đủ") }}</h2>
   <p>
     {{ _("Những gì viết dưới đây là chính xác — mỗi mục đều mô tả hành vi đã đo trên hệ thống đang chạy. Nhưng bản điều khoản đầy đủ còn thiếu các phần về giới hạn trách nhiệm, cam kết mức độ sẵn sàng, hoàn tiền phần credit chưa dùng và chấm dứt tài khoản.") }}
   </p>
@@ -26,9 +28,10 @@
 
 <div class="card">
   <h2 class="u-mt0">{{ _("Cách tính tiền") }}</h2>
+  <div class="tl-bang" tabindex="0">
   <table class="table">
     <thead><tr>
-      <th>{{ _("Loại token") }}</th>
+      <th scope="col">{{ _("Loại token") }}</th>
       {% for b in cac_bang %}
       <th class="u-phai">{{ _("credit / 1 triệu token") }} <code>{{ b.model }}</code></th>
       {% endfor %}
@@ -42,6 +45,7 @@
         {% for b in cac_bang %}<td class="u-phai">{{ b.token_ra }}</td>{% endfor %}</tr>
     </tbody>
   </table>
+  </div>
   {% for b in cac_bang %}
   <p class="muted"><code>{{ b.model }}</code> ({{ _("phiên bản giá") }}
     <code>{{ b.phien_ban_gia }}</code>): {{ b.ghi_chu }}</p>
@@ -53,8 +57,8 @@
   <h2 class="u-mt0">{{ _("Chúng tôi cam kết những gì") }}</h2>
   <p class="muted">{{ _("Mỗi mục dưới đây mô tả hành vi đã đo được, không phải ý định.") }}</p>
   {% for m in muc %}
-  <h3 style="margin-bottom:.25rem;">{{ _(m.tieu_de) }}</h3>
-  <p style="margin-top:.25rem;">{{ _(m.noi_dung) }}</p>
+  <h3 class="tl-muc-nho">{{ _(m.tieu_de) }}</h3>
+  <p class="tl-muc-than">{{ _(m.noi_dung) }}</p>
   {% endfor %}
 </div>
 
@@ -70,8 +74,8 @@
       {% for ten, v in tran.items() %}
       <tr>
         <td><code>{{ ten }}</code></td>
-        <td class="u-phai">{{ "{:,}".format(v.cong_bo) }}</td>
-        <td class="u-phai">{{ "{:,}".format(v.tran_ra) }}</td>
+        <td class="u-phai">{{ v.cong_bo | so }}</td>
+        <td class="u-phai">{{ v.tran_ra | so }}</td>
       </tr>
       {% endfor %}
     </tbody>

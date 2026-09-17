@@ -1,4 +1,5 @@
 {% extends "developers_base.html" %}
+{% import "_dev_tt.html" as dtt %}
 
 {% block dev_phu_de %}{{ _("Credit đã tiêu qua API, và ngân sách bạn tự đặt để không tiêu quá tay. Ngân sách quan sát chi tiêu — nó không bao giờ đổi sổ credit.") }}{% endblock %}
 
@@ -186,13 +187,13 @@
         </select>
       </div>
     </div>
-    <div class="dev-chon" style="margin-bottom:13px;">
+    <div class="dev-chon dev-cach-duoi">
       <label>
         <input type="checkbox" name="hard_cap" value="1">
         <span>{{ _("Chặn lời gọi khi vượt (ngân sách cứng)") }}</span>
       </label>
     </div>
-    <p class="muted" style="margin:0 0 13px;">{{ _("Không chọn = chỉ gửi cảnh báo ở 50%, 80% và 100%.") }}</p>
+    <p class="muted dev-ghi-form">{{ _("Không chọn = chỉ gửi cảnh báo ở 50%, 80% và 100%.") }}</p>
     <button type="submit" class="btn">{{ _("Đặt ngân sách") }}</button>
   </form>
   {% if error %}{% endif %}
@@ -249,9 +250,9 @@
             <tr>
               <td class="tnum">{{ line.created_at[:16].replace("T", " ") if line.created_at else "" }}</td>
               <td class="{% if not line.tool %}dev-trong-o{% endif %}">{{ line.tool or "—" }}</td>
-              <td><code class="dev-id">{{ (line.key_id or "")[:12] }}</code>
+              <td class="{% if not line.key_id %}dev-trong-o{% endif %}">{% if line.key_id %}<code class="dev-id">{{ line.key_id[:12] }}</code>{% else %}—{% endif %}
                 {% if line.mode == 'test' %}<span class="chip v">{{ _("Test") }}</span>{% endif %}</td>
-              <td><span class="dev-tt {{ {'settled':'ok','held':'canh','refunded':'tat'}.get(line.status,'') }}">{{ line.status }}</span></td>
+              <td>{{ dtt.tt(line.status, 'so' if line.status in ('held', 'settled', 'refunded') else 'job') }}</td>
               <td class="tnum">{{ line.credit.net_charged }}</td>
             </tr>
           {% endfor %}

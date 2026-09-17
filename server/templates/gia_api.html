@@ -1,8 +1,10 @@
 {% extends "base_public.html" %}
+{# Golden UI 17/09: trước đây tab trình duyệt chỉ ghi "LTT AI Studio". #}
+{% block title %}{{ _("Giá API") }} · LTT AI Studio{% endblock %}
 {% block content %}
 
 <div class="card">
-  <h1 class="u-mt0">{{ _("Giá API model ngôn ngữ") }}</h1>
+  <h1 class="u-mt0 tl-h1">{{ _("Giá API model ngôn ngữ") }}</h1>
   <p>{{ _("Tính theo token, trả theo lượng dùng thật. Không thuê bao, không phí tối thiểu hằng tháng.") }}</p>
   <p class="muted">1 credit = 100₫</p>
 </div>
@@ -13,9 +15,10 @@
 <div class="card">
   <h2 class="u-mt0">{{ _("Bảng giá") }} <code>{{ b.model }}</code></h2>
   <p class="muted">{{ _("phiên bản giá") }} <code>{{ b.phien_ban_gia }}</code></p>
+  <div class="tl-bang" tabindex="0">
   <table class="table">
     <thead><tr>
-      <th>{{ _("Loại token") }}</th>
+      <th scope="col">{{ _("Loại token") }}</th>
       <th class="u-phai">{{ _("credit / 1 triệu token") }}</th>
       <th class="u-phai">{{ _("tương đương") }}</th>
     </tr></thead>
@@ -23,20 +26,21 @@
       <tr>
         <td>{{ _("Token vào") }} <span class="muted">({{ _("câu hỏi, ngữ cảnh, định nghĩa tool") }})</span></td>
         <td class="u-phai"><strong>{{ b.token_vao }}</strong></td>
-        <td class="muted u-phai">{{ "{:,}".format(b.token_vao * 100) }}{{ _("đ") }}</td>
+        <td class="muted u-phai">{{ (b.token_vao * 100) | so }}{{ _("đ") }}</td>
       </tr>
       <tr>
         <td>{{ _("Token vào lấy lại từ cache") }}</td>
         <td class="u-phai"><strong>{{ b.token_vao_cache }}</strong></td>
-        <td class="muted u-phai">{{ "{:,}".format(b.token_vao_cache * 100) }}{{ _("đ") }}</td>
+        <td class="muted u-phai">{{ (b.token_vao_cache * 100) | so }}{{ _("đ") }}</td>
       </tr>
       <tr>
         <td>{{ _("Token ra") }} <span class="muted">({{ _("câu trả lời, kể cả phần suy nghĩ") }})</span></td>
         <td class="u-phai"><strong>{{ b.token_ra }}</strong></td>
-        <td class="muted u-phai">{{ "{:,}".format(b.token_ra * 100) }}{{ _("đ") }}</td>
+        <td class="muted u-phai">{{ (b.token_ra * 100) | so }}{{ _("đ") }}</td>
       </tr>
     </tbody>
   </table>
+  </div>
 </div>
 {% endfor %}
 
@@ -53,9 +57,10 @@
 <div class="card">
   <h2 class="u-mt0">{{ _("Ba ví dụ chi phí thật") }}</h2>
   <p class="muted">{{ _("Tính bằng đúng hàm ra hoá đơn, không phải bằng một phép nhân riêng.") }}</p>
+  <div class="tl-bang" tabindex="0">
   <table class="table">
     <thead><tr>
-      <th>{{ _("Lượt gọi") }}</th>
+      <th scope="col">{{ _("Lượt gọi") }}</th>
       <th class="u-phai">{{ _("token vào") }}</th>
       <th class="u-phai">{{ _("token ra") }}</th>
       {% for b in cac_bang %}
@@ -66,16 +71,17 @@
       {% for v in vi_du %}
         <tr>
           <td>{{ v.ten }}</td>
-          <td class="muted u-phai">{{ "{:,}".format(v.vao) }}</td>
-          <td class="muted u-phai">{{ "{:,}".format(v.ra) }}</td>
+          <td class="muted u-phai">{{ v.vao | so }}</td>
+          <td class="muted u-phai">{{ v.ra | so }}</td>
           {% for g in v.theo_model %}
           <td class="u-phai"><strong>{{ g.credit }}</strong>
-            <span class="muted">({{ "{:,}".format(g.dong) }}{{ _("đ") }})</span></td>
+            <span class="muted">({{ g.dong | so }}{{ _("đ") }})</span></td>
           {% endfor %}
         </tr>
       {% endfor %}
     </tbody>
   </table>
+  </div>
 </div>
 
 <div class="card">
@@ -83,7 +89,7 @@
      nói được nó nói về cái gì: trình đọc màn hình và công cụ tìm kiếm đều đọc
      `h1` như "chủ đề của trang", nên hai cái là hai chủ đề ngang hàng. Đây là
      trang **giá**, và tạo ảnh là một mục của nó. #}
-  <h2 style="margin-top:0;font-size:20px;">{{ _("Giá API tạo ảnh") }}</h2>
+  <h2 class="u-mt0 tl-muc">{{ _("Giá API tạo ảnh") }}</h2>
   <p>{{ _("Model ảnh chạy trên máy của chúng tôi. Tính theo ảnh, và chỉ tính những ảnh thật sự sinh ra được.") }}</p>
   <p class="muted">1 credit = 100₫ · {{ _("phiên bản giá") }} <code>{{ bang_anh.phien_ban_gia }}</code></p>
 
@@ -97,12 +103,12 @@
       <tr>
         <td>{{ _("Ảnh từ mô tả") }} <span class="muted">(t2i)</span></td>
         <td class="u-phai"><strong>{{ bang_anh.anh_thuong }}</strong></td>
-        <td class="muted u-phai">{{ "{:,}".format(bang_anh.anh_thuong * 100) }}{{ _("đ") }}</td>
+        <td class="muted u-phai">{{ (bang_anh.anh_thuong * 100) | so }}{{ _("đ") }}</td>
       </tr>
       <tr>
         <td>{{ _("Ảnh có ảnh tham chiếu") }} <span class="muted">(edit, subject)</span></td>
         <td class="u-phai"><strong>{{ bang_anh.anh_tham_chieu }}</strong></td>
-        <td class="muted u-phai">{{ "{:,}".format(bang_anh.anh_tham_chieu * 100) }}{{ _("đ") }}</td>
+        <td class="muted u-phai">{{ (bang_anh.anh_tham_chieu * 100) | so }}{{ _("đ") }}</td>
       </tr>
     </tbody>
   </table>
@@ -119,7 +125,7 @@
         <tr>
           <td>{{ v.ten }}</td>
           <td class="u-phai"><strong>{{ v.credit }}</strong></td>
-          <td class="u-phai">{{ "{:,}".format(v.dong) }}{{ _("đ") }}</td>
+          <td class="u-phai">{{ v.dong | so }}{{ _("đ") }}</td>
         </tr>
       {% endfor %}
     </tbody>
@@ -133,7 +139,7 @@
   {# Giọng nói — đơn vị THỨ BA của trang này (token · ảnh · giây tiếng). Mọi số
      dưới đây đến từ `apps.ltt_voice.gia.bang_gia()`, tức chính hàm ra hoá đơn;
      không con số nào gõ lại ở đây. #}
-  <h2 style="margin-top:0;font-size:20px;">{{ _("Giá tạo giọng nói") }}</h2>
+  <h2 class="u-mt0 tl-muc">{{ _("Giá tạo giọng nói") }}</h2>
   <p>{{ _("Model giọng tiếng Việt chạy trên máy của chúng tôi. Tính theo giây tiếng nói thật sự sinh ra, không theo số ký tự bạn gửi lên.") }}</p>
   <p class="muted">1 credit = 100₫ · {{ _("phiên bản giá") }} <code>{{ bang_tieng.phien_ban }}</code></p>
 
@@ -172,7 +178,7 @@
           <tr>
             <td>{{ v.mo_ta }}</td>
             <td class="u-phai"><strong>{{ v.credit }}</strong></td>
-            <td class="u-phai">{{ "{:,}".format(v.credit * 100) }}{{ _("đ") }}</td>
+            <td class="u-phai">{{ (v.credit * 100) | so }}{{ _("đ") }}</td>
           </tr>
         {% endfor %}
       </tbody>

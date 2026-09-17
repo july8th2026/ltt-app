@@ -1,22 +1,30 @@
 {% extends "developers_base.html" %}
+{% import "_dev_tt.html" as dtt %}
+{% block dev_phu_de %}{{ _("Một lời gọi API: kết quả, khóa đã dùng và dấu vết job nếu có.") }}{% endblock %}
 {% block section %}
 
-<p><a href="/developers/logs">← {{ _("Tất cả request") }}</a></p>
+<p class="dev-quay-lai"><a href="/developers/logs">← {{ _("Tất cả request") }}</a></p>
 
 <div class="card">
-  <ul>
-    <li><code>{{ row.method }} {{ row.route }}</code> →
-        <strong>{{ row.status }}</strong>
-        {% if row.code %}<code>{{ row.code }}</code>{% endif %}</li>
-    <li>{{ _("Lúc:") }} {{ row.created_at.strftime("%Y-%m-%d %H:%M:%S") }} UTC
-        · {{ row.latency_ms }} ms</li>
-    <li>{{ _("Khóa:") }} <code>{{ row.key_id or "—" }}</code>
-        {% if project_name %} · {{ _("project") }} {{ project_name }}{% endif %}</li>
-    <li>request_id: <code>{{ row.request_id }}</code>
-        <span class="muted">{{ _("— chính là X-Correlation-ID trong phản hồi; gửi kèm khi cần hỗ trợ.") }}</span></li>
-  </ul>
+  {# Golden UI 17/09: danh sách chấm đầu dòng → lưới nhãn/giá trị. Bốn dòng
+     `<li>` không nói được đâu là NHÃN, đâu là GIÁ TRỊ, nên mắt phải đọc cả câu. #}
+  <dl class="dev-dl">
+    <dt>{{ _("Lời gọi") }}</dt>
+    <dd><code>{{ row.method }} {{ row.route }}</code></dd>
+    <dt>{{ _("Kết quả") }}</dt>
+    <dd>{{ dtt.http(row.status) }}
+        {% if row.code %}<code>{{ row.code }}</code>{% endif %}</dd>
+    <dt>{{ _("Lúc") }}</dt>
+    <dd class="tnum">{{ row.created_at.strftime("%Y-%m-%d %H:%M:%S") }} UTC · {{ row.latency_ms }} ms</dd>
+    <dt>{{ _("Khóa") }}</dt>
+    <dd>{% if row.key_id %}<code class="dev-id">{{ row.key_id }}</code>{% else %}<span class="dev-trong-o">—</span>{% endif %}
+        {% if project_name %} · {{ _("project") }} {{ project_name }}{% endif %}</dd>
+    <dt>request_id</dt>
+    <dd><code class="dev-id">{{ row.request_id }}</code>
+        <span class="muted">{{ _("— chính là X-Correlation-ID trong phản hồi; gửi kèm khi cần hỗ trợ.") }}</span></dd>
+  </dl>
   {% if advice %}
-    <p class="alert alert-warn" role="status">
+    <p class="alert alert-warn dev-cach-tren" role="status">
       <strong><code>{{ row.code }}</code></strong> — {{ advice.action }}
       <br><span class="muted">{{ _("Thử lại:") }} <code>{{ advice.retry }}</code>{% if advice.reuse_idempotency_key %} · {{ _("dùng lại Idempotency-Key cũ") }}{% endif %}</span>
     </p>
@@ -27,7 +35,7 @@
   <div class="card">
     <h2 class="u-mt0">Job</h2>
     <ul>
-      <li><code>{{ timeline.job.id }}</code> — {{ timeline.job.status }}</li>
+      <li><code>{{ timeline.job.id }}</code> — {{ dtt.tt(timeline.job.status) }}</li>
       <li>{{ _("Tạo:") }} {{ timeline.job.created_at.strftime("%H:%M:%S") if timeline.job.created_at else "—" }}
           · {{ _("bắt đầu:") }} {{ timeline.job.started_at.strftime("%H:%M:%S") if timeline.job.started_at else "—" }}
           · {{ _("kết thúc:") }} {{ timeline.job.finished_at.strftime("%H:%M:%S") if timeline.job.finished_at else "—" }}</li>
@@ -101,7 +109,7 @@
             {% for delivery in timeline.webhooks %}
               <tr>
                 <td><code>{{ delivery.event_type }}</code></td>
-                <td>{{ delivery.status }}</td>
+                <td>{{ dtt.tt(delivery.status, 'giao') }}</td>
                 <td>{{ delivery.attempts }}</td>
                 <td>{{ delivery.last_status_code or "—" }}</td>
               </tr>
@@ -112,8 +120,9 @@
     </div>
   {% endif %}
 {% else %}
-  <div class="card">
-    <p class="muted">{{ _("Lời gọi này không tạo job — nên không có timeline job, và đó thường chính là câu trả lời: request bị từ chối trước khi chạm tới hàng đợi.") }}</p>
+  <div class="dev-trong">
+    <strong>{{ _("Không có timeline job.") }}</strong>
+    <p>{{ _("Lời gọi này không tạo job — nên không có timeline job, và đó thường chính là câu trả lời: request bị từ chối trước khi chạm tới hàng đợi.") }}</p>
   </div>
 {% endif %}
 

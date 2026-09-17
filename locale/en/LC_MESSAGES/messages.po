@@ -15746,7 +15746,7 @@ msgstr "rows in total"
 
 #: server/templates/status_api.html:29
 msgid "từ"
-msgstr ""
+msgstr "since"
 
 msgid "video từ mô tả"
 msgstr "video from a description"
@@ -18441,3 +18441,64 @@ msgstr "Burn subtitles"
 
 msgid "Phiên console đã đóng. Kết nối lại để xin một vé mới."
 msgstr "The console session has closed. Reconnect to get a new ticket."
+
+# Golden UI 17/09 — khu API + trang tài liệu công khai
+msgid "Chưa có công cụ nào để thử."
+msgstr "No tools to try yet."
+
+msgid "Chờ gửi"
+msgstr "Waiting to send"
+
+msgid "Cảnh báo về số dư, ngân sách, khóa và webhook của khu API."
+msgstr "Alerts about your API balance, budgets, keys and webhooks."
+
+msgid "Hướng dẫn, đặc tả OpenAPI và SDK — mọi mục ở đây mở hoặc tải được ngay."
+msgstr "Guides, the OpenAPI spec and SDKs — everything here opens or downloads right away."
+
+msgid "Không có timeline job."
+msgstr "No job timeline."
+
+msgid "Lỗi phía máy chủ"
+msgstr "Server error"
+
+msgid "Lỗi — sẽ thử lại"
+msgstr "Failed — will retry"
+
+msgid "More info"
+msgstr "More info"
+
+msgid "Một lời gọi API: kết quả, khóa đã dùng và dấu vết job nếu có."
+msgstr "One API call: its result, the key used and the job trail if there is one."
+
+msgid "Run anyway"
+msgstr "Run anyway"
+
+msgid "Thay"
+msgstr "Replace"
+
+msgid "Thành công"
+msgstr "Succeeded"
+
+msgid "Từ project đầu tiên tới lời gọi đầu tiên — kèm ví dụ sinh từ chính hợp đồng của công cụ."
+msgstr "From your first project to your first call — with examples generated from the tool contract itself."
+
+msgid "Yêu cầu bị từ chối"
+msgstr "Request rejected"
+
+msgid "Đang gửi"
+msgstr "Sending"
+
+msgid "Đang hoạt động"
+msgstr "Active"
+
+msgid "Đã bỏ cuộc"
+msgstr "Gave up"
+
+msgid "Đã hoàn"
+msgstr "Refunded"
+
+msgid "Đã quyết toán"
+msgstr "Settled"
+
+msgid "Đã thu hồi"
+msgstr "Revoked"

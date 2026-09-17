@@ -1,15 +1,17 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Tình trạng API") }} — LTT AI Studio{% endblock %}
-{% block topbar_title %}<strong>{{ _("Tình trạng API") }}</strong>{% endblock %}
+{# Golden UI 17/09: bỏ `topbar_title` — nó in "Tình trạng API" lần thứ hai ở dải
+   trên, lệch trái so với cột nội dung 820px, ngay phía trên chính `h1` đó. #}
 {% block content %}
-<div class="wrap" style="max-width:820px;margin:0 auto;padding:24px 16px;">
+<div class="tt-api">
 
-  <h1 style="margin-bottom:4px;">{{ _("Tình trạng API") }}</h1>
-  <p class="muted">{{ _("Cập nhật lúc") }} {{ report.checked_at.strftime('%Y-%m-%d %H:%M') }} UTC</p>
+  <div class="pagehead"><div><h1>{{ _("Tình trạng API") }}</h1>
+    <p class="page-sub">{{ _("Cập nhật lúc") }} {{ report.checked_at.strftime('%Y-%m-%d %H:%M') }} UTC</p></div></div>
 
-  <div class="ui-card" style="margin:16px 0;">
+  {%- set _lop_tt = {'operational': 'ok', 'degraded': 'warn', 'maintenance': 'warn', 'outage': 'err'} %}
+  <div class="ui-card tt-api-tong tt-api-{{ _lop_tt.get(report.overall, 'grey') }}">
     <div class="dim">{{ _("Tổng thể") }}</div>
-    <div style="font-size:22px;font-weight:700;">{{ report.overall_wording }}</div>
+    <div class="tt-api-tong-chu">{{ report.overall_wording }}</div>
   </div>
 
   <div class="tablewrap" tabindex="0">
@@ -23,7 +25,7 @@
             <td><b>{{ row.capability }}</b><br>
               <span class="muted u-fs11">
                 {% for name in row.tools %}<code>{{ name }}</code> {% endfor %}</span></td>
-            <td>{{ row.wording }}</td>
+            <td><span class="badge b-{{ _lop_tt.get(row.state, 'grey') }}"><span class="dot" aria-hidden="true"></span>{{ row.wording }}</span></td>
             <td class="muted">
               {{ row.note or "—" }}
               {% if row.since %}<br><small>{{ _("từ") }} {{ row.since.strftime('%Y-%m-%d %H:%M') }} UTC</small>{% endif %}

@@ -2121,14 +2121,19 @@ code.vps-doi-gt{padding:2px 7px;border:1px solid var(--border-subtle);
 /* Hàng đầu thẻ: ô biểu tượng màu + tên + nhãn chế độ chạy dồn phải. */
 .khu-dev .tool-dau{display:flex;align-items:center;gap:10px}
 .khu-dev .tool-icon{display:grid;place-items:center;width:34px;height:34px;
-  border-radius:9px;font-size:14px;font-weight:800;color:#fff;flex:none}
-.khu-dev .tool-icon.cap-image{background:#3b82c4}
-.khu-dev .tool-icon.cap-text{background:#0f9d8a}
-.khu-dev .tool-icon.cap-vision{background:#8b5cc8}
-.khu-dev .tool-icon.cap-audio{background:#d08a2c}
-.khu-dev .tool-icon.cap-video{background:#c8548f}
-.khu-dev .tool-icon.cap-code{background:#4a9d5a}
-.khu-dev .tool-icon.cap-other{background:var(--dev-cyan-line)}
+  border:1px solid var(--border-strong);border-radius:9px;font-size:14px;font-weight:800;
+  background:var(--surface-interactive);color:var(--text-primary);flex:none}
+/* Golden UI 17/09 (DL-002): bảy hex thô xanh dương/teal/tím → token ngữ nghĩa.
+   Ô vẫn khác màu theo nhóm, nhưng trong CÙNG bảng màu với phần còn lại. */
+.khu-dev .tool-icon.cap-image,.khu-dev .tool-icon.cap-vision{border-color:var(--status-info-border);
+  background:var(--status-info-soft);color:var(--status-info)}
+.khu-dev .tool-icon.cap-text{border-color:var(--brand-border);background:var(--brand-soft);color:var(--brand-hover)}
+.khu-dev .tool-icon.cap-audio{border-color:var(--status-warning-border);
+  background:var(--status-warning-soft);color:var(--status-warning)}
+.khu-dev .tool-icon.cap-video{border-color:var(--status-danger-border);
+  background:var(--status-danger-soft);color:var(--status-danger)}
+.khu-dev .tool-icon.cap-code{border-color:var(--status-success-border);
+  background:var(--status-success-soft);color:var(--status-success)}
 .khu-dev .dev-tool-luoi .the-ten{flex:1;min-width:0;font-size:13.5px;
   overflow:hidden;text-overflow:ellipsis}
 /* Mô tả HAI dòng trong lưới (khác danh sách một-dòng). */
@@ -4157,3 +4162,88 @@ input[type=hidden]+.af-step{margin-top:0}
 .adm-form-hang{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px}
 .adm-xac-nhan{display:block;margin:6px 0}
 @media (max-width:560px){.adm-truong{margin-right:8px}.adm-w180,.adm-w190{width:100%}}
+
+/* === Golden UI song song: DEV === */
+/* Khu API (/developers/*) + trang tài liệu công khai (/huong-dan, /gia-api,
+ * /api-dieu-khoan, /status/api). Chỉ token, không hex mới. */
+
+/* Viên trạng thái: thêm sắc "đang xử lý" (running/sending) — trước đây mọi
+ * trạng thái chưa kết thúc cùng màu cảnh báo với `queued`. */
+.dev-tt.tin{border-color:var(--status-info-border);background:var(--status-info-soft);
+  color:var(--status-info)}
+
+/* Định danh trong bảng cuộn ngang KHÔNG bị ngắt giữa chữ. Luật chung
+ * `:not(pre)>code{overflow-wrap:anywhere}` cho bảng quyền co cột định danh về
+ * vài ký tự: đo 17/09 `reason ing_ef fort`, `after_del ay`, key id 32 ký tự
+ * vỡ thành năm dòng. Bảng đã nằm trong `.dev-bang` cuộn được, nên cột rộng ra
+ * là đúng hành vi. */
+.dev-bang td:first-child>code,.dev-bang td:first-child>.dev-id,
+.dev-bang td>code:only-child{white-space:nowrap;overflow-wrap:normal}
+/* Mã trong tiêu đề cột không bị viết hoa (`LTT-3.8` là sai tên model). */
+.table th code,.dev-bang th code{text-transform:none;letter-spacing:0}
+/* ...nhưng cột định danh không co nữa thì cột VĂN XUÔI phải có chỗ: ở 390px bảng
+ * Model thành hàng cao ~200px vì ô ghi chú bị ép còn vài chữ. Bảng vốn đã cuộn
+ * ngang trong .dev-bang, nên cho nó một bề ngang tối thiểu đọc được. */
+@media (max-width:640px){.dev-bang>table{min-width:600px}}
+
+/* Thẻ công cụ: khung ngoài mang viền; `<details>` và chân thẻ là anh em. */
+.khu-dev .dev-tool-luoi .dev-tool-o{display:flex;flex-direction:column;min-width:0;
+  border:1px solid var(--border-subtle);border-radius:10px;background:var(--surface-raised)}
+.khu-dev .dev-tool-luoi .dev-tool-o:hover{border-color:var(--border-strong)}
+.khu-dev .dev-tool-luoi .dev-tool-o>.tool-the,
+.khu-dev .dev-tool-luoi .dev-tool-o>.tool-the:hover{border:0;border-radius:10px;background:transparent}
+.khu-dev .dev-tool-o>.tool-chan{margin:auto 14px 0;padding:6px 0 8px}
+.khu-dev .tool-chan a{display:inline-flex;align-items:center;min-height:24px;min-width:24px}
+
+/* Nhịp khoảng cách thay inline style. */
+.dev-cach-tren{margin-top:var(--space-4)}
+.dev-cach-duoi{margin-bottom:13px}
+.dev-ghi-form{margin:0 0 13px}
+.dev-ghi-cuoi{margin:12px 0 0}
+.dev-quay-lai{margin:0 0 var(--space-3)}
+.dev-trong+form{margin-top:var(--space-4)}
+.dev-nhan-ma{margin:var(--space-3) 0 2px}
+.dev-panel-chu{margin:0;padding-top:0;color:var(--text-secondary);font-size:12px}
+.dev-canh-nut{margin-left:10px;font-size:12px}
+.dev-hang-nut{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.dev-hang-nut>select{flex:1 1 240px;min-width:0;width:auto}
+.dev-field-hep{max-width:420px}
+.dev-o-json{width:100%;font-family:var(--mono);font-size:12.5px}
+.dev-o-khoa{width:min(560px,100%)}
+.dev-chi-khi{margin-bottom:6px}
+
+/* Chi tiết một request: lưới nhãn / giá trị thay danh sách chấm. */
+.dev-dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:8px 18px;margin:0}
+.dev-dl dt{color:var(--text-muted);font-size:var(--fs-label)}
+.dev-dl dd{margin:0;min-width:0;overflow-wrap:anywhere}
+@media (max-width:560px){.dev-dl{grid-template-columns:1fr;gap:2px}.dev-dl dd{margin-bottom:8px}}
+
+/* Mục lục trong trang chi tiết công cụ: các liên kết là chip chạm được. */
+.dev-muc-luc{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}
+.dev-muc-luc a{display:inline-flex;align-items:center;min-height:30px;padding:4px 11px;
+  border:1px solid var(--border-subtle);border-radius:var(--radius-pill);
+  background:var(--surface-overlay);color:var(--text-secondary);font-size:12.5px;text-decoration:none}
+.dev-muc-luc a:hover{border-color:var(--border-strong);color:var(--text-primary)}
+
+/* _cam_chon.html (dùng chung /huong-dan và /developers/cli). */
+.cam-nhan-phu{font-weight:400}
+.cam-th-ten{width:45%;white-space:normal}
+
+/* Trang tài liệu công khai: một thang tiêu đề cho cả họ. */
+.tl-h1{font-size:var(--fs-page);line-height:var(--lh-tight);margin-bottom:var(--space-2)}
+.tl-muc{font-size:var(--fs-section)}
+.tl-muc-nho{margin:var(--space-5) 0 var(--space-1);font-size:var(--fs-card)}
+.tl-muc-than{margin:var(--space-1) 0 0}
+.tl-dd{margin:0 0 .6rem}
+.tl-nut-tai{margin:18px 0 8px}
+.tl-bang{position:relative;max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain}
+.tl-bang>.table{margin:0}
+.tl-canh{border-left:4px solid var(--status-warning)}
+
+/* /status/api */
+.tt-api{max-width:820px;margin:0 auto;padding:var(--space-6) var(--space-4)}
+.tt-api-tong{margin:var(--space-4) 0;border-left:4px solid var(--border-strong)}
+.tt-api-tong.tt-api-ok{border-left-color:var(--status-success)}
+.tt-api-tong.tt-api-warn{border-left-color:var(--status-warning)}
+.tt-api-tong.tt-api-err{border-left-color:var(--status-danger)}
+.tt-api-tong-chu{font-size:22px;font-weight:700}

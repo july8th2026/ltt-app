@@ -757,7 +757,9 @@ def test_bad_json_is_reported_rather_than_swallowed(portal):
     _issue(portal)
     page = portal.get("/developers/pricing",
                       params={"tool": TOOL, "input": "{not json"}).text
-    assert "b-err" in page
+    # Golden UI 17/09: loi hien bang khoi canh bao chung (`alert-err`, role=alert)
+    # thay cho mot `badge` keo gian thanh khoi. Y dinh giu nguyen: loi phai HIEN RA.
+    assert "alert-err" in page and 'role="alert"' in page
 
 
 def test_the_portal_page_says_a_simulation_is_not_a_quote(portal):
