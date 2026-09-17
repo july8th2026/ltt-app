@@ -21,15 +21,15 @@
     <div class="tt-api-tong-chu">{{ report.overall_wording }}</div>
   </div>
 
-  <div class="tablewrap tt-api-bang" tabindex="0" role="region" aria-label="{{ _('Tình trạng theo năng lực') }}">
+  <div class="tablewrap tt-api-bang" tabindex="0" role="region" aria-label="{{ _('Tình trạng theo dịch vụ') }}">
     <table class="ui-table">
       <thead><tr>
-        <th scope="col">{{ _("Năng lực") }}</th><th scope="col">{{ _("Tình trạng") }}</th><th scope="col">{{ _("Ghi chú") }}</th>
+        <th scope="col">{{ _("Dịch vụ") }}</th><th scope="col">{{ _("Tình trạng") }}</th><th scope="col">{{ _("Ghi chú") }}</th>
       </tr></thead>
       <tbody>
         {% for row in report.capabilities %}
           <tr>
-            <td data-nhan="{{ _('Năng lực') }}"><b>{{ row.capability }}</b><br>
+            <td data-nhan="{{ _('Dịch vụ') }}"><b>{{ row.capability }}</b><br>
               <span class="muted u-fs11">
                 {% for name in row.tools %}<code>{{ name }}</code> {% endfor %}</span></td>
             <td data-nhan="{{ _('Tình trạng') }}"><span class="badge b-{{ _lop_tt.get(row.state, 'grey') }}"><span class="dot" aria-hidden="true"></span>{{ row.wording }}</span></td>
@@ -46,16 +46,28 @@
   {#- Golden UI C3: trước đây thẻ "Hoạt động bình thường." đứng cạnh bảng rỗng
       "Chưa mở năng lực nào" — tự mâu thuẫn. Không có năng lực ⇒ không có gì để
       báo "bình thường"; nói thẳng trạng thái rỗng. -#}
-  <section class="ui-state ui-state--inline tt-api-rong" aria-labelledby="tt-api-rong">
-    <h2 id="tt-api-rong" class="ui-state-title">{{ _("Chưa mở năng lực nào ra API công khai.") }}</h2>
-    <p class="ui-state-body">{{ _("Khi một năng lực được mở, tình trạng của nó sẽ hiện ở đây.") }}</p>
+  {#- Golden UI C4: khối TỔNG THỂ vẫn có khi rỗng — chỉ báo trung tính "Chưa mở",
+      lời văn cho khách (dịch vụ, không "năng lực"). -#}
+  <section class="ui-card tt-api-tong tt-api-grey tt-api-rong" aria-labelledby="tt-api-rong">
+    <div class="tt-api-tong-dau">
+      <span class="tt-api-nhan">{{ _("Tổng thể") }}</span>
+      <span class="badge b-grey status-trung-tinh"><span class="dot" aria-hidden="true"></span>{{ _("Chưa mở") }}</span>
+    </div>
+    <h2 id="tt-api-rong" class="tt-api-rong-tieu-de">{{ _("Chưa có dịch vụ API công khai nào đang mở.") }}</h2>
+    <p class="tt-api-rong-mo-ta">{{ _("Vì vậy hiện không có sự cố hay bảo trì nào để báo. Khi một dịch vụ được mở cho khách, tình trạng của nó sẽ hiện ngay tại đây.") }}</p>
     <div class="ui-state-actions"><a class="btn ghost" href="{{ u('/huong-dan') }}">{{ _("Hướng dẫn API") }}</a></div>
   </section>
   {% endif %}
 
-  <p class="muted u-mt18">
-    {{ _("Trang này nói theo NĂNG LỰC, không theo hạ tầng bên trong — cố ý như vậy. Muốn biết một lời gọi cụ thể của bạn hỏng ở đâu thì xem Nhật ký request trong khu API của bạn; correlation id trên phản hồi là thứ hỗ trợ cần.") }}
-  </p>
+  {#- Golden UI C4: đoạn giải thích thành thẻ có tiêu đề + ba ý, từ ngữ khách hiểu. -#}
+  <section class="ui-card tt-api-ve" aria-labelledby="tt-api-ve">
+    <h2 id="tt-api-ve">{{ _("Về trang này") }}</h2>
+    <ul class="tt-api-ve-ds">
+      <li><strong>{{ _("Theo dịch vụ, không theo máy chủ.") }}</strong> {{ _("Trang báo tình trạng từng dịch vụ bạn gọi qua API (capability), không liệt kê hạ tầng bên trong.") }}</li>
+      <li><strong>{{ _("Một lời gọi bị lỗi?") }}</strong> {{ _("Mở %(lien_ket)s trong khu API để xem lời gọi hỏng ở bước nào.", lien_ket=('<a href="%s">%s</a>'|safe) % (u('/developers/logs'), _("Nhật ký request"))) }}</li>
+      <li><strong>{{ _("Cần hỗ trợ?") }}</strong> {{ _("Gửi kèm mã tra cứu (correlation id) có trong phản hồi lỗi.") }}</li>
+    </ul>
+  </section>
 </div>
 {% endblock %}
 {% block scripts %}

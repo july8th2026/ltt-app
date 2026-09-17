@@ -1,7 +1,7 @@
 {% extends "base_plain.html" %}
 {% block title %}{{ _("Đăng nhập") }} — LTT AI Studio{% endblock %}
 {% block content %}
-  {% set auth_title = _('Đăng nhập LTT AI Studio') %}
+  {% set auth_title = _('Đăng nhập') %}
   {% set auth_subtitle = _('Một tài khoản cho toàn bộ công cụ AI và lịch sử công việc của bạn.') %}
   {% include "_auth_brand.html" %}
   <div class="card">
@@ -10,7 +10,7 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <input type="hidden" name="next" value="{{ next|default('')|e }}">
       <div class="auth-field"><label for="login-username">{{ _("Email hoặc tên đăng nhập") }}</label>
-        <input id="login-username" type="text" name="username" placeholder="{{ _('Nhập email của bạn') }}" required autofocus autocomplete="username"></div>
+        <input id="login-username" type="text" name="username" placeholder="{{ _('Nhập email hoặc tên đăng nhập') }}" required autofocus autocomplete="username"></div>
       <div class="auth-field"><label for="login-password">{{ _("Mật khẩu") }}</label>
         <input id="login-password" type="password" name="password" placeholder="{{ _('Nhập mật khẩu') }}" required autocomplete="current-password"></div>
       {% if turnstile_site_key %}

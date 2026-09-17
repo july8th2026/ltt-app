@@ -19106,3 +19106,78 @@ msgstr "admin · data tables"
 msgid "Đường dẫn"
 msgstr "Breadcrumb"
 
+
+msgid "Nhập email hoặc tên đăng nhập"
+msgstr "Enter your email or username"
+
+msgid "Trạng thái kích hoạt tài khoản của bạn."
+msgstr "Your account activation status."
+
+msgid "Liên kết không còn hiệu lực"
+msgstr "This link is no longer valid"
+
+msgid "Mỗi liên kết chỉ dùng được một lần và có thời hạn. Yêu cầu liên kết mới để đặt lại mật khẩu."
+msgstr "Each link works only once and expires. Request a new link to reset your password."
+
+msgid "Mã tra cứu"
+msgstr "Reference ID"
+
+msgid "Đã chép"
+msgstr "Copied"
+
+msgid "Chép mã"
+msgstr "Copy ID"
+
+msgid "Cần giúp?"
+msgstr "Need help?"
+
+msgid "và gửi kèm mã tra cứu."
+msgstr "and include the reference ID."
+
+msgid "Phát triển"
+msgstr "Development"
+
+msgid "Chính thức"
+msgstr "Production"
+
+msgid "Thử nghiệm"
+msgstr "Staging"
+
+msgid "Kiểm thử"
+msgstr "Test"
+
+msgid "Tình trạng theo dịch vụ"
+msgstr "Status by service"
+
+msgid "Dịch vụ"
+msgstr "Service"
+
+msgid "Chưa mở"
+msgstr "Not open yet"
+
+msgid "Chưa có dịch vụ API công khai nào đang mở."
+msgstr "No public API services are open yet."
+
+msgid "Vì vậy hiện không có sự cố hay bảo trì nào để báo. Khi một dịch vụ được mở cho khách, tình trạng của nó sẽ hiện ngay tại đây."
+msgstr "So there are no incidents or maintenance to report. Once a service opens to customers, its status will appear here."
+
+msgid "Về trang này"
+msgstr "About this page"
+
+msgid "Theo dịch vụ, không theo máy chủ."
+msgstr "By service, not by server."
+
+msgid "Trang báo tình trạng từng dịch vụ bạn gọi qua API (capability), không liệt kê hạ tầng bên trong."
+msgstr "This page reports the status of each service you call through the API (capability), not internal infrastructure."
+
+msgid "Một lời gọi bị lỗi?"
+msgstr "A call failed?"
+
+msgid "Mở %(lien_ket)s trong khu API để xem lời gọi hỏng ở bước nào."
+msgstr "Open %(lien_ket)s in the API area to see where the call failed."
+
+msgid "Cần hỗ trợ?"
+msgstr "Need support?"
+
+msgid "Gửi kèm mã tra cứu (correlation id) có trong phản hồi lỗi."
+msgstr "Include the reference ID (correlation id) from the error response."
