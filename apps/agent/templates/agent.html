@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% block title %}LTT Agent AI{% endblock %}
+{% import "_app_head.html" as ah %}
 {% block content %}
-<h1>✦ LTT Agent AI</h1>
-<p class="page-sub">{{ _("Mô tả kết quả bạn muốn. Agent lập kế hoạch và báo giá trước; chưa duyệt sẽ không giữ credit hay chạy công cụ.") }}</p>
+{{ ah.dau_trang("AI Studio", "LTT Agent AI", _("Mô tả kết quả bạn muốn. Agent lập kế hoạch và báo giá trước; chưa duyệt sẽ không giữ credit hay chạy công cụ."), lop="ag-head") }}
 {% if error %}<div class="alert alert-err" role="alert">{{ error }}</div>{% endif %}
-<form method="post" action="/agent/plan" class="card" aria-label="{{ _('Lập kế hoạch Agent') }}">
+<form method="post" action="/agent/plan" class="card ag-form" aria-label="{{ _('Lập kế hoạch Agent') }}">
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
   <div class="field">
     <label for="goal">{{ _("Mục tiêu") }}</label>

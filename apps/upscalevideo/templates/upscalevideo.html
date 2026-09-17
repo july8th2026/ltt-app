@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 {% block page_mode %}immersive{% endblock %}
 {% block title %}Upscale Video — LTT Studios{% endblock %}
-{% block topbar_title %}<h1 class="app-bar-title">Upscale Video</h1>{% endblock %}
+{% import "_app_head.html" as ah %}
+{% import "_icon.html" as ic %}
 {% block content %}
+{% call ah.dau_trang(_("Video"), "Upscale Video", _("Nâng độ nét video lên 1080p, 2K hoặc 4K và so sánh trước/sau ngay trên trang."), viec=false, kieu="studio", lop="up-head") %}<a class="btn ghost" href="/jobs?app=upscalevideo">{{ _("Việc của tôi") }}</a>{% endcall %}
 <div class="up-studio">
   <button class="up-settings-toggle" id="up-settings-toggle" type="button" aria-controls="upform" aria-expanded="false">{{ _("Thiết lập nâng cấp") }} <span aria-hidden="true">⌄</span></button>
   <form id="upform" class="up-settings" enctype="multipart/form-data" aria-label="{{ _('Thiết lập nâng cấp video') }}">
@@ -13,9 +15,9 @@
     <section class="up-step">
       <h2><b>01</b> {{ _("Chế độ nâng cấp") }}</h2>
       <label class="up-mode"><input type="radio" name="preset" value="fast" checked>
-        <span><strong>⚡ {{ _("Nhanh") }}</strong><small>{{ _("Xử lý nhanh, phù hợp video thường.") }}</small></span></label>
+        <span><strong>{{ ic.icon("activity") }} {{ _("Nhanh") }}</strong><small>{{ _("Xử lý nhanh, phù hợp video thường.") }}</small></span></label>
       <label class="up-mode"><input type="radio" name="preset" value="quality">
-        <span><strong>◇ {{ _("Chất lượng") }}</strong><small>{{ _("Chi tiết cao hơn, xử lý chậm hơn nhiều.") }}</small></span></label>
+        <span><strong>{{ ic.icon("sparkles") }} {{ _("Chất lượng") }}</strong><small>{{ _("Chi tiết cao hơn, xử lý chậm hơn nhiều.") }}</small></span></label>
     </section>
 
     <section class="up-step">
@@ -39,7 +41,7 @@
       <label class="up-switch"><span><strong>{{ _("Xem thử 8 giây") }}</strong><small>{{ _("Kiểm chất lượng với chi phí thấp.") }}</small></span><input id="preview" name="preview" type="checkbox"></label>
       <label class="up-switch"><span><strong>{{ _("Chống rung") }}</strong><small>{{ _("Ổn định hai pass bằng libvidstab · +20%.") }}</small></span><input id="stabilize" name="stabilize" type="checkbox"></label>
       <label class="up-switch"><span><strong>{{ _("Mượt chuyển động 2×") }}</strong><small>{{ _("Nội suy 48/60 FPS rồi upscale · +120%.") }}</small></span><input id="smooth_motion" name="smooth_motion" type="checkbox"></label>
-      <label class="up-switch"><span><strong>{{ _("Xử lý hàng loạt") }}</strong><small>{{ _("Chọn tối đa 3 video; submit nguyên tử.") }}</small></span><input id="batch_mode" type="checkbox"></label>
+      <label class="up-switch"><span><strong>{{ _("Xử lý hàng loạt") }}</strong><small>{{ _("Chọn tối đa 3 video; cả lô được gửi cùng lúc, lỗi một video thì không video nào bị gửi.") }}</small></span><input id="batch_mode" type="checkbox"></label>
     </section>
 
     {% if is_admin(request) %}
@@ -52,7 +54,7 @@
     {% endif %}
 
     <div class="up-cost"><span>{{ _("Chi phí ước tính") }}</span><strong id="est">{{ _("Chọn video") }}</strong></div>
-    <button class="up-start" type="submit" id="submitbtn">{{ _("✦ Bắt đầu xử lý") }}</button>
+    <button class="up-start" type="submit" id="submitbtn">{{ ic.icon("sparkles") }} {{ _("Bắt đầu xử lý") }}</button>
     <div id="upstatus" class="up-status" role="status" aria-live="polite"></div>
   </form>
 
@@ -82,7 +84,7 @@
     </section>
 
     <section class="up-queue">
-      <header><div><h2>{{ _("Hàng đợi xử lý") }} <b>{{jobs|length}}</b></h2><small id="up-queue-count" aria-live="polite"></small></div><div class="up-queue-controls"><a class="up-history-link" href="/jobs?app=upscalevideo">{{ _("Lịch sử") }}</a><div class="up-job-filters" role="group" aria-label="{{ _('Lọc hàng đợi') }}"><button type="button" class="on" data-job-filter="all" aria-pressed="true">{{ _("Tất cả") }}</button><button type="button" data-job-filter="done" aria-pressed="false">{{ _("Hoàn tất") }}</button><button type="button" data-job-filter="processing" aria-pressed="false">{{ _("Đang xử lý") }}</button><button type="button" data-job-filter="cancelled" aria-pressed="false">{{ _("Đã hủy") }}</button><button type="button" data-job-filter="error" aria-pressed="false">{{ _("Lỗi") }}</button></div><label class="up-job-sort"><span class="sr-only">{{ _("Sắp xếp hàng đợi") }}</span><select id="up-job-sort"><option value="newest">{{ _("Mới nhất") }}</option><option value="oldest">{{ _("Cũ nhất") }}</option></select></label><div class="up-view-toggle" role="group" aria-label="{{ _('Kiểu hiển thị') }}"><button type="button" data-job-view="list" aria-pressed="true" title="{{ _('Danh sách') }}">☷</button><button type="button" data-job-view="grid" aria-pressed="false" title="{{ _('Lưới') }}">▦</button></div></div></header>
+      <header><div><h2>{{ _("Hàng đợi xử lý") }} <b>{{jobs|length}}</b></h2><small id="up-queue-count" aria-live="polite"></small></div><div class="up-queue-controls"><a class="up-history-link" href="/jobs?app=upscalevideo">{{ _("Lịch sử") }}</a><div class="up-job-filters" role="group" aria-label="{{ _('Lọc hàng đợi') }}"><button type="button" class="on" data-job-filter="all" aria-pressed="true">{{ _("Tất cả") }}</button><button type="button" data-job-filter="done" aria-pressed="false">{{ _("Hoàn tất") }}</button><button type="button" data-job-filter="processing" aria-pressed="false">{{ _("Đang xử lý") }}</button><button type="button" data-job-filter="cancelled" aria-pressed="false">{{ _("Đã hủy") }}</button><button type="button" data-job-filter="error" aria-pressed="false">{{ _("Lỗi") }}</button></div><label class="up-job-sort"><span class="sr-only">{{ _("Sắp xếp hàng đợi") }}</span><select id="up-job-sort"><option value="newest">{{ _("Mới nhất") }}</option><option value="oldest">{{ _("Cũ nhất") }}</option></select></label><div class="up-view-toggle" role="group" aria-label="{{ _('Kiểu hiển thị') }}"><button type="button" data-job-view="list" aria-pressed="true" title="{{ _('Danh sách') }}" aria-label="{{ _('Danh sách') }}">{{ ic.icon("menu") }}</button><button type="button" data-job-view="grid" aria-pressed="false" title="{{ _('Lưới') }}" aria-label="{{ _('Lưới') }}">{{ ic.icon("layout-grid") }}</button></div></div></header>
       <div class="up-job-list" id="up-job-list">
         {% for j in jobs %}
         <article class="up-job" data-job-id="{{j.id}}" data-state="{{j.status}}" data-state-group="{% if j.status in ('queued','running') %}processing{% else %}{{j.status}}{% endif %}" data-created="{{j.created_at}}" aria-labelledby="up-job-title-{{j.id}}">

@@ -1,13 +1,14 @@
 {% extends "base.html" %}
 {% block page_mode %}immersive{% endblock %}
 {% block title %}{{ _("Tạo Video Seedance") }} — LTT AI Studio{% endblock %}
+{% import "_icon.html" as ic %}
 {% block content %}
 <script src="/static/htmx.min.js?v={{ asset_ver }}"></script>
 <div class="tv-studio">
   <aside class="tv-nav" aria-label="{{ _('Điều hướng Tạo video') }}">
-    <a class="on" href="/taovideo" aria-current="page">▶<small>Seedance</small></a>
-    <a href="/jobs?app=taovideo">▣<small>{{ _("Lịch sử") }}</small></a>
-    <a href="#tv-assets" data-open-assets>▦<small>{{ _("Tài sản") }}</small></a>
+    <a class="on" href="/taovideo" aria-current="page">{{ ic.icon("clapperboard") }}<small>Seedance</small></a>
+    <a href="/jobs?app=taovideo">{{ ic.icon("clock") }}<small>{{ _("Lịch sử") }}</small></a>
+    <a href="#tv-assets" data-open-assets>{{ ic.icon("folder") }}<small>{{ _("Tài sản") }}</small></a>
     {% if is_admin(request) %}<a href="/settings">⚙<small>{{ _("Cấu hình") }}</small></a>{% endif %}
   </aside>
 
@@ -63,7 +64,7 @@
       </div>
       <div class="tv-submit-dock">
         <div class="tv-cost" aria-live="polite"><span>{{ _("Chi phí trước khi chạy") }}</span><b id="est">…</b></div>
-        <button class="tv-create" type="submit">✦ {{ _("Tạo Video Seedance") }}</button>
+        <button class="tv-create" type="submit">{{ ic.icon("sparkles") }} {{ _("Tạo Video Seedance") }}</button>
         <div id="est-wrap" hx-post="/taovideo/estimate" hx-include="#sdform" hx-params="not ref_images, ref_videos, ref_audios, ref_roles, ref_handles" hx-target="#est" hx-trigger="load, change from:#sdform"></div>
       </div>
     </form>
@@ -71,7 +72,7 @@
 
   {# Golden UI: <section>, khong <main> — base.html da mo <main>; hai landmark main la loi a11y. #}
   <section class="tv-library">
-    <header><div><span class="eyebrow">Seedance Studio</span><h1>{{ _("Video Seedance của tôi") }}</h1><small>{{ job_counts.all|default(0) }} {{ _("kết quả phù hợp") }}</small></div><div class="tv-view-toggle" role="group" aria-label="{{ _('Kiểu hiển thị') }}"><button type="button" data-view="grid" aria-pressed="true" aria-label="{{ _('Dạng lưới') }}">▦</button><button type="button" data-view="list" aria-pressed="false" aria-label="{{ _('Dạng danh sách') }}">☷</button></div></header>
+    <header><div><span class="eyebrow app-eyebrow">{{ _("Video") }} · Seedance Studio</span><h1 class="app-head-h1">{{ _("Video Seedance của tôi") }}</h1><small>{{ job_counts.all|default(0) }} {{ _("kết quả phù hợp") }}</small></div><div class="tv-view-toggle" role="group" aria-label="{{ _('Kiểu hiển thị') }}"><button type="button" data-view="grid" aria-pressed="true" aria-label="{{ _('Dạng lưới') }}">{{ ic.icon("layout-grid") }}</button><button type="button" data-view="list" aria-pressed="false" aria-label="{{ _('Dạng danh sách') }}">{{ ic.icon("menu") }}</button></div></header>
     <nav class="tv-tabs" aria-label="{{ _('Lọc video') }}">{% for key,label in [('all','Tất cả'),('running','Đang xử lý'),('done','Hoàn tất'),('error','Lỗi'),('cancelled','Đã hủy')] %}<a class="{{'on' if active_status|default('all')==key}}" {% if active_status|default('all')==key %}aria-current="page"{% endif %} href="?status={{key}}&sort={{active_sort|default('newest')}}&model={{active_model|default('')}}&aspect={{active_aspect|default('')}}">{{ _(label) }} <b>{{job_counts[key]|default(0)}}</b></a>{% endfor %}</nav>
     <form class="tv-library-filters" method="get"><input type="hidden" name="status" value="{{active_status|default('all')}}"><label><span class="sr-only">{{ _("Model") }}</span><select name="model" aria-label="{{ _('Model') }}"><option value="">{{ _("Tất cả model") }}</option>{% for id,label in models %}<option value="{{id}}" {% if active_model|default('')==id %}selected{% endif %}>{{label}}</option>{% endfor %}</select></label><label><span class="sr-only">{{ _("Tỉ lệ") }}</span><select name="aspect" aria-label="{{ _('Tỉ lệ') }}"><option value="">{{ _("Tất cả tỉ lệ") }}</option>{% for ratio in ['16:9','9:16','1:1','4:3','3:4','21:9'] %}<option value="{{ratio}}" {% if active_aspect|default('')==ratio %}selected{% endif %}>{{ratio}}</option>{% endfor %}</select></label><label><span class="sr-only">{{ _("Sắp xếp") }}</span><select name="sort" aria-label="{{ _('Sắp xếp') }}"><option value="newest" {% if active_sort|default('newest')=='newest' %}selected{% endif %}>{{ _("Mới nhất") }}</option><option value="oldest" {% if active_sort=='oldest' %}selected{% endif %}>{{ _("Cũ nhất") }}</option></select></label><button type="submit">{{ _("Áp dụng") }}</button></form>
     {% if error %}<p class="alert alert-err" role="alert">{{error}}</p>{% endif %}

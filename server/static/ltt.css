@@ -4648,3 +4648,38 @@ input[type=hidden]+.af-step{margin-top:0}
    đỏ chỉ còn cho lỗi. */
 textarea:focus,select:focus{border-color:var(--text-secondary)}
 .job-state-running .ui-progress>i,.job-state-queued .ui-progress>i{background:var(--warn)}
+/* === C4: APPS === (Golden UI 17/09 — một mẫu đầu trang app, một kiểu chip lọc, chữ ô mô tả) */
+/* Đầu trang app: macro server/templates/_app_head.html. Eyebrow nhóm -> h1 -> một câu mô tả,
+   hành động phụ bên phải. Form một cột: khối 1120px căn giữa; studio nhiều cột: rộng theo trang. */
+.app-head{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--space-4);min-width:0;margin:0 0 var(--space-4)}
+.app-head-chu{display:flex;flex-direction:column;gap:4px;min-width:0}
+.app-eyebrow,.tv-library .app-eyebrow{display:block;margin:0;color:var(--brand-hover);font-size:var(--fs-caption);font-weight:700;letter-spacing:.12em;line-height:1.3;text-transform:uppercase}
+.app-head .app-head-h1,.tv-library .app-head-h1{margin:0;font-size:var(--fs-page);line-height:var(--lh-tight);font-weight:700;letter-spacing:-.2px}
+.app-head .app-head-mota{margin:2px 0 0;max-width:72ch;color:var(--text-secondary);font-size:var(--fs-body);line-height:var(--lh-body)}
+.app-head-hd{display:flex;flex:0 0 auto;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:var(--space-2)}
+.app-head-hd .btn{min-height:44px;justify-content:center}
+.app-head .app-head-quay{margin:0 0 2px;font-size:var(--fs-label)}
+.app-head--studio{margin-bottom:var(--space-3)}
+.page--standard:has(>.af-page>.app-head--form,>.asv-trang>.app-head--form,>.app-head--form){max-width:calc(1120px + 48px)}
+.af-page>.app-head{margin-bottom:0}
+@media(max-width:560px){
+  .app-head{flex-direction:column;align-items:stretch;gap:var(--space-3)}
+  .app-head-hd{justify-content:flex-start}
+  .app-head-hd .btn{flex:1}
+}
+/* Một kiểu chip lọc cho mọi app: viền mảnh, bo tròn; đang chọn = nền --brand-soft + viền --brand-border.
+   Trước: đặc đỏ (Lồng tiếng Việt), viền đỏ (Voice/Seedance), nút vuông nền cam (Upscale). */
+:is(.asv-loc>button[data-nguon-giong],.lv-loc-nut,.tv-tabs a,.up-job-filters button){display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:6px 12px;border:1px solid var(--border-subtle);border-radius:var(--radius-pill);background:transparent;color:var(--text-secondary);font-size:var(--fs-label);font-weight:500;line-height:1.2;text-decoration:none;box-shadow:none;white-space:nowrap}
+:is(.asv-loc>button[data-nguon-giong],.lv-loc-nut,.tv-tabs a,.up-job-filters button):hover{border-color:var(--border-strong);color:var(--text-primary);background:transparent}
+:is(.asv-loc>button[data-nguon-giong][aria-pressed=true],.lv-loc-nut.on,.tv-tabs a.on,.up-job-filters button[aria-pressed=true]){border-color:var(--brand-border);background:var(--brand-soft);color:var(--text-primary)}
+.lv-loc-nhom{gap:6px;padding:0;border:0;background:none}
+.lv-loc-nut .dim{color:inherit;opacity:.75}
+@media(max-width:760px){:is(.asv-loc>button[data-nguon-giong],.lv-loc-nut,.tv-tabs a,.up-job-filters button){min-height:44px}}
+/* Ô mô tả tự nhiên (prompt, ý tưởng, kịch bản, mục tiêu): chữ sans như Voice. Monospace chỉ cho JSON. */
+:is(#im-prompt,#tv-prompt,#tv-negative,.th-field textarea,#goal,.pc-form textarea,#asv-tu-dien,#ql-truth){font-family:var(--font);font-size:var(--fs-body);line-height:var(--lh-body)}
+:is(.va-adv textarea,#ap-plan){font-family:var(--mono)}
+/* Icon line SVG thay ký tự ▶ ▣ ▦ ☷ ⚡ ◇ ✦ trong rail/nút app. */
+.tv-nav a>.ui-ic{display:block;width:20px;height:20px;margin:0 auto}
+.tv-view-toggle button>.ui-ic,.up-view-toggle button>.ui-ic{width:16px;height:16px;vertical-align:middle}
+.tv-create>.ui-ic,.up-start>.ui-ic{width:16px;height:16px;vertical-align:-3px}
+.up-mode strong>.ui-ic{width:14px;height:14px;vertical-align:-2px;color:var(--brand-hover)}
