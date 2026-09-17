@@ -58,7 +58,9 @@
     input::placeholder, textarea::placeholder { color:var(--dim); }
     input:disabled, select:disabled, textarea:disabled { opacity:.55; cursor:not-allowed; }
     input[aria-invalid=true], select[aria-invalid=true], textarea[aria-invalid=true] { border-color:var(--err); }
-    textarea { min-height:74px; resize:vertical; font-family:Consolas,monospace; font-size:12px; }
+    textarea { min-height:74px; resize:vertical; font-family:inherit; font-size:13px; }
+    /* C4 17/09: ô mô tả tự nhiên dùng chữ thường; ô JSON/mã tự khai `.mono` hoặc `data-mono`. */
+    textarea.mono, textarea[data-mono] { font-family:Consolas,monospace; font-size:12px; }
 
     /* Checkbox/radio: chi doi MAU DAU, khong thay the bang phan tu tu ve —
        giu nguyen ngu nghia va dieu khien ban phim cua native.
