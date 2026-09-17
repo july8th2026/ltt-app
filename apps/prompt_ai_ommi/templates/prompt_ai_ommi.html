@@ -69,7 +69,7 @@
           <label class="field"><span>{{ _("Thời lượng") }}</span><select id="brief-duration"><option value="15">{{ _("15 giây") }}</option><option value="30">{{ _("30 giây") }}</option><option value="60">{{ _("60 giây") }}</option><option value="90">{{ _("90 giây") }}</option><option value="120">{{ _("120 giây") }}</option></select></label>
           <label class="field"><span>{{ _("Số cảnh") }}</span><input id="brief-scenes" type="number" inputmode="numeric" min="1" max="20"></label>
           <label class="field"><span>{{ _("Tỉ lệ") }}</span><select id="brief-aspect">{% for value in ['16:9','9:16','1:1','4:3','3:4','21:9'] %}<option>{{ value }}</option>{% endfor %}</select></label>
-          <label class="field"><span>{{ _("Ngôn ngữ") }}</span><select id="brief-language"><option value="vi">{{ _("Tiếng Việt") }}</option><option value="en">English</option></select></label>
+          <label class="field"><span>{{ _("Ngôn ngữ") }}</span><select id="brief-language"><option value="vi">{{ _("Tiếng Việt") }}</option><option value="en">{{ _("Tiếng Anh") }}</option></select></label>
           <label class="field span-2"><span>{{ _("Phong cách hình ảnh") }}</span><div id="style-picker" class="style-picker"></div><textarea id="style-custom" maxlength="500" rows="2" placeholder="{{ _('Hoặc mô tả phong cách riêng...') }}"></textarea></label>
         </div>
       </section>

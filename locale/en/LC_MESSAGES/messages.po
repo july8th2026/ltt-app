@@ -19118,3 +19118,24 @@ msgstr "Start processing"
 
 msgid "Chọn tối đa 3 video; cả lô được gửi cùng lúc, lỗi một video thì không video nào bị gửi."
 msgstr "Pick up to 3 videos; the batch is submitted together — if one video fails, none are submitted."
+
+msgid "Máy quay"
+msgstr "Camera"
+
+msgid "Theo mô tả"
+msgstr "Follow the prompt"
+
+msgid "Tiến máy (dolly in)"
+msgstr "Dolly in"
+
+msgid "Bám theo (tracking)"
+msgstr "Tracking"
+
+msgid "Xoay quanh (orbit)"
+msgstr "Orbit"
+
+msgid "Góc cao (aerial)"
+msgstr "Aerial"
+
+msgid "Cầm tay (handheld)"
+msgstr "Handheld"
