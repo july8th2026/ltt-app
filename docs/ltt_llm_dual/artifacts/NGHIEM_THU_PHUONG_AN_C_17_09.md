@@ -97,3 +97,26 @@ nhịp `: ...` trước khối `data:`.
 Kịch bản trong scratchpad phiên (không commit): `nt_c/kh.py` (client SSE, khoá đọc trong tiến
 trình), `kb.py` (dựng prompt theo ước của A), `s1.py`…`s4.py`, `b_health.py` (thăm `/health` B mỗi
 0,2–0,25 s qua `chay_voi_may_b.py`), `db_doc.py` (SELECT `llm_waiters`, `credit_entries`).
+
+## 5. Đo lại 2b sau bản sửa — 18/09/2026 00:23–00:29 (máy A `26ed94e5`, deploy 00:22)
+
+Bản sửa: cờ whale chỉ xoá ở khối SSE có dữ liệu thật, không ở dòng `: ping` của B. Kịch bản
+`s5.py`: W1 whale, W2 whale gửi sau 3 s, S nhỏ gửi sau 6 s; `max_tokens` 1.500 để W1 còn decode
+khi W2 được nhận. Trước phép đo không có khách trên LTT LLM (B `dang_chay` 0).
+
+| model | W1 vào thật | W1 nội dung đầu (client) | W1 `ttfb` log A | W2 nhận (`llm_waiters`) | W2 chờ | S nhận |
+|---|---|---|---|---|---|---|
+| 3.8 (ước 100.002, đặt 103.550) | 49.757 | 00:24:01,282 (TTFT 53,6 s) | **49,7 s** (trước: 15,0) | 00:24:01,718 (**+0,44 s**) | 50,4 s `whale_nhuong` | sau 9 ms, `dat` 3.084 |
+| 3.5 (ước 120.001, đặt 123.549) | 59.606 | 00:27:06,798 (TTFT 47,9 s) | **33,5 s** | 00:27:06,839 (**+0,04 s**) | 44,3 s `whale_nhuong` | sau 6 ms, `dat` 3.084 |
+
+**2b: PASS cả hai model — theo tiêu chí "nhận sau nội dung thật đầu tiên của W1"**, không phải theo
+trần chờ 30 s: W2 đã quá 30 s tuổi (50,4 s / 44,3 s) mà vẫn chờ tới khi W1 có dữ liệu thật. B
+`/health` xác nhận: 3.8 lên `dang_chay` 3 / 210.183 lúc 00:24:04; 3.5 lên 3 / 250.183 lúc 00:27:08 —
+không có lúc nào hai whale cùng prefill. `ttfb` trong `ltt-server.jsonl` nay là thời điểm dữ liệu
+thật (3.8: t0 A 00:23:11,56 + 49,7 s = 00:24:01,26 ≈ client 01,282). W2 TTFT: 3.8 122,9 s; 3.5 93,9 s.
+
+Còn lại (ngoài phạm vi C, như §3): lượt nhỏ chen cạnh prefill 50K trên 3.8 decode **1,6 tok/s**
+(178 token trong ~112 s), 3.5 **9,1 tok/s** — khựng decode trong prefill lớn (m3, `-b/-ub`).
+
+Tiền: 6 lượt ⇒ 6 × (`hold`, `settle`), tiêu 8 credit (4.985 → 4.977). B `tu_choi` 0, 6/6 luồng kết
+thúc `end_turn`/`max_tokens`, 0 khối lỗi.
