@@ -39,7 +39,7 @@
           <td><a class="job-row-link" href="/jobs/{{ j.id }}">{{ ten_app(j.app_slug) }}<span class="sr-only"> {{ j.id[:8] }}</span></a>
             <span class="job-row-meta"><span class="mono">{{ j.id[:8] }}</span>{% if j.retry_of_id %} · {{ _("Lần thử lại") }}{% endif %}</span></td>
           <td>{{ ui.nhan_trang_thai(j.status) }}{% if j.status in ('queued','running') and j.progress_msg %}<span class="job-row-meta">{{ _(j.progress_msg) }}</span>{% endif %}</td>
-          <td class="job-row-progress">{{ ui.thanh_tien_do(j.progress, _("Tiến độ việc")) }}<span class="tnum">{{ j.progress }}%</span></td>
+          <td><div class="job-row-progress">{{ ui.thanh_tien_do(j.progress, _("Tiến độ việc")) }}<span class="tnum">{{ j.progress }}%</span></div></td>
           <td class="tnum"><time datetime="{{ j.created_at.isoformat() }}">{{ j.created_at.strftime('%H:%M %d/%m/%Y') }}</time></td>
         </tr>
       {% endfor %}

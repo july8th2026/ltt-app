@@ -11,7 +11,7 @@
   {% set dang_cho = order.status == 'pending' %}
   {% set vua_ve = dang_cho and (vua_ve or request.query_params.get('ve') == '1') %}
 
-  <div class="pagehead">
+  <div class="pagehead billing-head billing-order-head">
     <div>
       <h1>{{ _("Đơn nạp #%(ma)s", ma=order.order_code) }}</h1>
       <p class="billing-order-state">
