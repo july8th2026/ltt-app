@@ -61,6 +61,16 @@ class OvhPreparedIpCart:
     contract_fingerprints: tuple[str, ...] = ()
 
 
+@dataclass(frozen=True)
+class OvhCatalogIpQuote:
+    """Read-only catalog price; carries no contracts (checked at cart preview)."""
+
+    quantity: int
+    with_tax_minor: int
+    currency: str
+    contract_fingerprints: None = None
+
+
 Transport = Callable[..., Any]
 
 
