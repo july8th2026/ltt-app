@@ -19268,3 +19268,6 @@ msgstr "Open %(lien_ket)s in the API area to see where the call failed."
 msgid "Gửi kèm mã tra cứu (correlation id) có trong phản hồi lỗi."
 msgstr "Include the reference ID (correlation id) from the error response."
 
+msgid "Chi tiết %(ten)s"
+msgstr "%(ten)s details"
+

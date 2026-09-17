@@ -33,7 +33,7 @@
             {# Nhãn sống ở ĐÂY, không ở read-model: một read-model mang chuỗi
                hiển thị thì chuỗi đó nằm ngoài tầm với của bộ dịch. #}
             {% set NHAN = {
-              'viec_hong': ('Việc chạy hỏng', 'Job ở trạng thái error.'),
+              'viec_hong': ('Việc chạy hỏng', 'Job ở trạng thái Lỗi.'),
               'don_cho': ('Đơn nạp đang chờ', 'Chưa nhận được xác nhận từ cổng thanh toán.'),
               'tk_vo_hieu': ('Tài khoản bị vô hiệu hoá', 'Khách không đăng nhập được.')} %}
             {% for m in hang_doi %}
@@ -80,7 +80,7 @@
         <ul class="adm-dongthoigian">
           {% for n in nhat_ky %}
           <li>
-            <span class="tnum">{{ n.created_at.strftime('%d/%m %H:%M') if n.created_at else '—' }}</span>
+            <span class="tnum">{{ n.created_at.strftime('%d/%m/%Y %H:%M') if n.created_at else '—' }}</span>
             <div>
               <strong>{{ n.hanh_dong }}</strong>
               <small>{{ n.admin_email }}{% if n.doi_tuong %} · {{ n.doi_tuong[:28] }}{% endif %}</small>

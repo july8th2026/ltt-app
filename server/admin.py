@@ -42,7 +42,7 @@ from platform_core.models import (ApiKey, AppAccess, CreditEntry, Job,
 
 _log = logging.getLogger(__name__)
 _DINH_DANG_SQLADMIN: dict = BASE_FORMATTERS  # Golden UI C3: ngày giờ list/details dd/mm/yyyy HH:MM, không ISO kèm micro giây
-_DINH_DANG_SQLADMIN[datetime] = lambda v: v.strftime("%d/%m/%Y %H:%M")
+_DINH_DANG_SQLADMIN.update({datetime: lambda v: v.strftime("%d/%m/%Y %H:%M"), type(None): lambda v: "—", str: lambda v: v if v.strip() else "—", int: lambda v: f"{v:,}".replace(",", ".")})  # C4: ô trống "—", số kiểu Việt 1.250 (chỉ list/details; export đọc giá trị thô)
 
 
 def _is_admin(request: Request) -> bool:
@@ -394,7 +394,7 @@ class UserAdmin(ModelView, model=User):
                    User.is_active, User.is_verified, User.created_at, User.last_login_at]
     column_labels = {"so_du_credit": "Số dư", User.email: "Email", User.display_name: "Tên hiển thị",
                      User.role: "Vai trò", User.is_active: "Đang hoạt động", User.is_verified: "Đã xác thực email",
-                     User.created_at: "Tạo lúc", User.last_login_at: "Đăng nhập cuối", "id": "User ID", "email_chuan": "Email chuẩn hoá", "registration_ip": "IP đăng ký"}
+                     User.created_at: "Tạo lúc", User.last_login_at: "Đăng nhập cuối", "id": "User ID", "email_chuan": "Email chuẩn hoá", "registration_ip": "IP đăng ký", "mcredit_du": "Số dư (mcredit)"}
 
     async def on_model_change(self, data, model, is_created, request) -> None:
         """F-06: doi vai tro / vo hieu hoa tai khoan phai de lai dau vet.
@@ -435,7 +435,7 @@ class UserAdmin(ModelView, model=User):
 
 class CreditEntryAdmin(ModelView, model=CreditEntry):
     name, name_plural = "Bút toán credit", "Sổ credit"
-    column_labels = {"created_at": "Lúc", "user_id": "User ID", "kind": "Loại", "delta": "Biến động", "job_id": "Job ID", "note": "Ghi chú"}
+    column_labels = {"created_at": "Lúc", "user_id": "User ID", "kind": "Loại", "delta": "Biến động", "job_id": "Job ID", "note": "Ghi chú"}; column_formatters = column_formatters_detail = {"kind": lambda m, a: Markup(f'{escape({"topup": "Nạp tiền", "grant": "Cấp tay", "hold": "Giữ chỗ", "settle": "Quyết toán", "refund": "Hoàn trả"}.get(getattr(m, "kind", ""), ""))} <span class="adm-ten-ky-thuat">{escape(getattr(m, "kind", ""))}</span>') if getattr(m, "kind", "") else "—"}  # C4: nhãn Việt kèm mã (mã lạ — kind do nơi gọi truyền — chỉ hiện mã)
     icon = "fa-solid fa-coins"
     column_list = [CreditEntry.created_at, CreditEntry.user_id, CreditEntry.kind,
                    CreditEntry.delta, CreditEntry.job_id, CreditEntry.note]
@@ -497,7 +497,7 @@ class JobAdmin(ModelView, model=Job):
     # thì phần trăm tiến độ của nó không dẫn tới hành động nào, còn thông báo
     # lỗi thì có. Cả hai vẫn còn ở trang chi tiết.
     column_details_exclude_list = []
-    column_formatters = {
+    column_formatters = {Job.status: lambda m, a: Markup(f'{escape({"queued": "Đang chờ", "running": "Đang chạy", "done": "Hoàn tất", "error": "Lỗi", "cancelled": "Đã hủy"}.get(getattr(m, "status", ""), ""))} <span class="adm-ten-ky-thuat">{escape(getattr(m, "status", ""))}</span>') if getattr(m, "status", "") else "—",  # C4: nhãn Việt kèm mã
         # `user_id` thành liên kết sang Hồ sơ 360. Đây là chỗ luồng copy-UUID
         # cuối cùng còn sót lại sau đợt `admin_mvp_v3`.
         Job.user_id: lambda m, a: Markup(
@@ -755,8 +755,8 @@ class AddApiKeyView(_AnTrongMenuSqlAdmin, BaseView):
 
         token = issue_csrf_token(request)
         opts = "".join(
-            f'<option value="{escape(p.id)}">{escape(p.display_name)} '
-            f'[{escape(p.auth_style)}]</option>' for p in providers.list_all())
+            f'<option value="{escape(p.id)}">{escape(p.display_name.replace("(da xoa)", "(đã xoá)"))}'  # C4: nhãn có dấu
+            f'{f" [{escape(p.auth_style)}]" if p.auth_style else ""}</option>' for p in providers.list_all())
         # Bản đồ provider -> category nó phục vụ, cho đoạn script tick sẵn bên dưới.
         cat_map = json.dumps({p.id: list(p.categories or ()) for p in providers.list_all()})
         _catlbl = {APIKEY_CAT_MODEL: "Điều khiển model", APIKEY_CAT_CHAT: "Chat",
@@ -778,11 +778,11 @@ class AddApiKeyView(_AnTrongMenuSqlAdmin, BaseView):
     <input id="f-credential" class="inp" name="credential" type="password" required autocomplete="off" placeholder="AIza••••••"></div>
   <div class="field"><label>Loại (năng lực)</label>
     <div class="catpick">{cat_boxes}</div></div>
-  <div class="field"><label for="f-base-url">base_url (để trống = mặc định provider)</label><input id="f-base-url" class="inp" name="base_url"></div>
-  <div class="field"><label for="f-supported-models">supported_models (phẩy phân cách, trống = mọi model)</label>
+  <div class="field"><label for="f-base-url">Địa chỉ gốc API <code class="adm-ten-ky-thuat">base_url</code> — để trống = mặc định provider</label><input id="f-base-url" class="inp" name="base_url"></div>
+  <div class="field"><label for="f-supported-models">Model hỗ trợ <code class="adm-ten-ky-thuat">supported_models</code> — phân cách bằng dấu phẩy, trống = mọi model</label>
     <input id="f-supported-models" class="inp mono" name="supported_models" placeholder="hidream-o1, ..."></div>
-  <div class="field"><label for="f-default-model">default_model</label><input id="f-default-model" class="inp mono" name="default_model"></div>
-  <div class="field"><label for="f-priority">priority (cao = ưu tiên)</label><input id="f-priority" class="inp tnum" name="priority" type="number" value="100"></div>
+  <div class="field"><label for="f-default-model">Model mặc định <code class="adm-ten-ky-thuat">default_model</code></label><input id="f-default-model" class="inp mono" name="default_model"></div>
+  <div class="field"><label for="f-priority">Độ ưu tiên <code class="adm-ten-ky-thuat">priority</code> — số cao dùng trước</label><input id="f-priority" class="inp tnum" name="priority" type="number" value="100"></div>
   <button class="btn" type="submit">Lưu API key</button>
 </form></div></div>
 <style>.catpick{{display:flex;gap:8px;flex-wrap:wrap}}.catpick label{{display:flex;gap:6px;align-items:center;
@@ -951,11 +951,11 @@ def _sua_key_html(key, boxes: str, goi_y: str, token: str, msg: str) -> str:
     <input id="f-credential" class="inp" name="credential" type="password" autocomplete="off"
            placeholder="de trong neu khong xoay"></div>
   <div class="field"><label>Loai (nang luc)</label><div class="catpick">{boxes}</div>{goi_y}</div>
-  <div class="field"><label for="f-base-url">base_url</label><input id="f-base-url" class="inp" name="base_url" value="{base}"></div>
-  <div class="field"><label for="f-supported-models">supported_models (phay phan cach)</label>
+  <div class="field"><label for="f-base-url">Địa chỉ gốc API <code class="adm-ten-ky-thuat">base_url</code></label><input id="f-base-url" class="inp" name="base_url" value="{base}"></div>
+  <div class="field"><label for="f-supported-models">Model hỗ trợ <code class="adm-ten-ky-thuat">supported_models</code> — phân cách bằng dấu phẩy</label>
     <input id="f-supported-models" class="inp mono" name="supported_models" value="{sup}"></div>
-  <div class="field"><label for="f-default-model">default_model</label><input id="f-default-model" class="inp mono" name="default_model" value="{dm}"></div>
-  <div class="field"><label for="f-priority">priority</label><input id="f-priority" class="inp tnum" name="priority" type="number" value="{pri}"></div>
+  <div class="field"><label for="f-default-model">Model mặc định <code class="adm-ten-ky-thuat">default_model</code></label><input id="f-default-model" class="inp mono" name="default_model" value="{dm}"></div>
+  <div class="field"><label for="f-priority">Độ ưu tiên <code class="adm-ten-ky-thuat">priority</code></label><input id="f-priority" class="inp tnum" name="priority" type="number" value="{pri}"></div>
   <button class="btn" type="submit">Luu</button>
 </form></div></div>
 <style>.catpick{{display:flex;gap:8px;flex-wrap:wrap}}.catpick label{{display:flex;gap:6px;
@@ -1205,14 +1205,14 @@ class RevenueView(_AnTrongMenuSqlAdmin, BaseView):
                         f'<td class="tnum">{_vnd(o.credits, " credit")}</td>'
                         f'<td class="muted u-fs12">{cot_cuoi}</td></tr>')
 
-            rows = "".join(_dong(o, f"{o.paid_at:%d/%m %H:%M}")
+            rows = "".join(_dong(o, f"{o.paid_at:%d/%m/%Y %H:%M}")
                            for o in gan_day if o.paid_at)
-            rows_cho = "".join(_dong(o, f"{o.created_at:%d/%m %H:%M}")
+            rows_cho = "".join(_dong(o, f"{o.created_at:%d/%m/%Y %H:%M}")
                                for o in cho_xu)
             rows_tien = "".join(
                 f'<tr><td class="muted u-fs12">'
-                f'{n.created_at:%d/%m %H:%M}</td>'
-                f'<td>{escape(n.hanh_dong)}</td>'
+                f'{n.created_at:%d/%m/%Y %H:%M}</td>'
+                f'<td>{escape({"cap_credit": "Cấp credit", "xac_nhan_don_da_tra": "Xác nhận đơn đã trả"}.get(n.hanh_dong, n.hanh_dong))}</td>'
                 f'<td class="mono muted u-fs12">'
                 f'{escape((n.doi_tuong or "")[:40])}</td>'
                 f'<td class="muted u-fs12">'
@@ -1423,8 +1423,8 @@ class OrdersView(_AnTrongMenuSqlAdmin, BaseView):
                          f'<td class="tnum">{_vnd(o.price_vnd)}</td>'
                          f'<td class="tnum">{_vnd(o.credits, "")}{(" +%d%%" % o.bonus_percent) if o.bonus_percent else ""}</td>'
                          f'<td>{_order_badge(o.status)}</td>'
-                         f'<td class="muted u-fs12">{escape(o.gateway or "-")}</td>'
-                         f'<td class="muted u-fs12">{o.created_at:%m-%d %H:%M}</td>'
+                         f'<td class="muted u-fs12">{escape({"payos": "PayOS"}.get(o.gateway or "", o.gateway or "—"))}</td>'
+                         f'<td class="muted u-fs12">{o.created_at:%d/%m/%Y %H:%M}</td>'
                          f'<td><div class="rowactions">{markpaid}'
                          + (f'<a class="btn ghost sm" href="/admin/credit-entry/list'
                             f'?search={escape(o.user_id)}">Sổ credit</a>'
@@ -1444,7 +1444,7 @@ class OrdersView(_AnTrongMenuSqlAdmin, BaseView):
                 f'<a class="btn ghost" href="/admin/goi">Gói nạp</a></div></div>'
                 f'<div class="tabs">{tabs}</div>'
                 f'<div class="tablewrap" tabindex="0"><table class="ui-table"><thead><tr>'
-                f'<th>Mã đơn</th><th>User</th><th>Tiền</th><th>Credit</th><th>Trạng thái</th>'
+                f'<th>Mã đơn</th><th>Khách</th><th>Tiền</th><th>Credit</th><th>Trạng thái</th>'
                 f'<th>Cổng</th><th>Tạo lúc</th><th class="u-phai">Thao tác</th></tr></thead>'
                 f'<tbody>{rows or "<tr><td colspan=8 class='muted o-trong'><span class=o-trong-chu>Chưa có đơn.</span></td></tr>"}'
                 f'</tbody></table></div></div>')
@@ -1588,7 +1588,7 @@ def setup_admin(app, *, session_secret: str) -> bool:
     # cũ tới hết TTL của Cloudflare (CLAUDE.md quy tắc 6).
     from server.routes.admin._chung import dieu_huong as _dh
     admin.templates.env.globals.update(asset_ver=_asset_ver(), _=__import__("server.templating").templating.templates.env.globals["_"],
-                                       adm_nav=_dh("tong_quan", apps=getattr(app.state, "loaded_apps", ()))["thanh_ben"], sqladmin_ver=__import__("sqladmin").__version__)
+                                       adm_nav=_dh("tong_quan", apps=getattr(app.state, "loaded_apps", ()))["thanh_ben"], sqladmin_ver=__import__("sqladmin").__version__, ic=__import__("server.templating").templating.templates.env.get_template("_icon.html").module)  # C4: icon line SVG (DL-005) cho thanh bên SQLAdmin
     admin.add_view(UserAdmin)
     admin.add_view(CreditEntryAdmin)
     admin.add_view(GrantCreditView)

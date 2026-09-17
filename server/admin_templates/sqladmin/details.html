@@ -7,14 +7,12 @@
 <div class="col-12">
   <div class="card">
     <div class="card-header">
-      <h3 class="card-title">
-        {% for pk in model_view.pk_columns -%}
-        {{ pk.name }}
-        {%- if not loop.last %};{% endif -%}
-        {% endfor %}: {{ get_object_identifier(model) }}</h3>
+      {#- C4: tiêu đề có nghĩa ("Chi tiết Người dùng") thay "id: <uuid>"; khoá chính vẫn hiện, nhỏ và mờ. -#}
+      <h3 class="card-title ltt-chitiet-tieude">{{ _("Chi tiết %(ten)s", ten=model_view.name) }}
+        <small class="ltt-khoa-chinh">{% for pk in model_view.pk_columns %}{{ model_view._column_labels.get(pk.name, pk.name) }}{% if not loop.last %}; {% endif %}{% endfor %}: <code>{{ get_object_identifier(model) }}</code></small></h3>
     </div>
     <div class="card-body border-bottom py-3">
-      <div class="table-responsive">
+      <div class="table-responsive" tabindex="0">
         <table class="table card-table table-vcenter text-nowrap table-hover table-bordered">
           <thead>
             <tr>

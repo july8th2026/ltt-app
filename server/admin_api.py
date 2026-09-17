@@ -96,7 +96,7 @@ def _int(request: Request, name: str, default: int) -> int:
 
 
 def _when(value) -> str:
-    return value.strftime("%Y-%m-%d %H:%M") if value else "—"
+    return value.strftime("%d/%m/%Y %H:%M") if value else "—"
 
 
 def _render(ten: str, **bien) -> str:

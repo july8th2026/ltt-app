@@ -96,16 +96,16 @@
             <th class="w-1"></th>
             {% for name in model_view._list_prop_names %}
             {% set label = model_view._column_labels.get(name, name) %}
-            <th>
+            {#- C4: cột sắp xếp được = cùng màu tiêu đề + mũi tên (▲▼ mờ khi chưa sắp); `aria-sort` cho cột đang sắp. -#}
+            {%- set _sap = request.query_params.get("sort") if request.query_params.get("sortBy") == name else "" %}
+            <th{% if _sap == "asc" %} aria-sort="ascending"{% elif _sap == "desc" %} aria-sort="descending"{% endif %}>
               {% if name in model_view._sort_fields %}
-              {% if request.query_params.get("sortBy") == name and request.query_params.get("sort") == "asc" %}
-              <a href="{{ request.url.include_query_params(sort='desc') }}"><i class="fa-solid fa-arrow-up"></i> {{
-                label }}</a>
-              {% elif request.query_params.get("sortBy") == name and request.query_params.get("sort") == "desc" %}
-              <a href="{{ request.url.include_query_params(sort='asc') }}"><i class="fa-solid fa-arrow-down"></i> {{ label
-                }}</a>
+              {% if _sap == "asc" %}
+              <a class="ltt-sapxep on" href="{{ request.url.include_query_params(sort='desc') }}">{{ label }} <i class="fa-solid fa-arrow-up" aria-hidden="true"></i></a>
+              {% elif _sap == "desc" %}
+              <a class="ltt-sapxep on" href="{{ request.url.include_query_params(sort='asc') }}">{{ label }} <i class="fa-solid fa-arrow-down" aria-hidden="true"></i></a>
               {% else %}
-              <a href="{{ request.url.include_query_params(sortBy=name, sort='asc') }}">{{ label }}</a>
+              <a class="ltt-sapxep" href="{{ request.url.include_query_params(sortBy=name, sort='asc') }}">{{ label }} <i class="fa-solid fa-sort" aria-hidden="true"></i></a>
               {% endif %}
               {% else %}
               {{ label }}
@@ -125,20 +125,20 @@
               {% if model_view.can_view_details %}
               <a href="{{ model_view._build_url_for('admin:details', request, row) }}" data-bs-toggle="tooltip"
                 data-bs-placement="top" title="{{ _("Xem") }}" aria-label="{{ _("Xem") }}">
-                <span class="me-1"><i class="fa-solid fa-eye"></i></span>
+                <span class="me-1"><i class="fa-regular fa-eye" aria-hidden="true"></i></span>
               </a>
               {% endif %}
               {% if model_view.can_edit %}
               <a href="{{ model_view._build_url_for('admin:edit', request, row) }}" data-bs-toggle="tooltip"
                 data-bs-placement="top" title="{{ _("Sửa") }}" aria-label="{{ _("Sửa") }}">
-                <span class="me-1"><i class="fa-solid fa-pen-to-square"></i></span>
+                <span class="me-1"><i class="fa-regular fa-pen-to-square" aria-hidden="true"></i></span>
               </a>
               {% endif %}
               {% if model_view.can_delete %}
               <a href="#" data-name="{{ model_view.name }}" data-pk="{{ get_object_identifier(row) }}"
                 data-url="{{ model_view._url_for_delete(request, row) }}" data-bs-toggle="modal"
                 data-bs-target="#modal-delete" title="{{ _("Xoá") }}" aria-label="{{ _("Xoá") }}">
-                <span class="me-1"><i class="fa-solid fa-trash"></i></span>
+                <span class="me-1"><i class="fa-regular fa-trash-can" aria-hidden="true"></i></span>
               </a>
               {% endif %}
             </td>
@@ -168,7 +168,7 @@
         tu=((pagination.page - 1) * pagination.page_size) + 1,
         den=min(pagination.page * pagination.page_size, pagination.count),
         tong=pagination.count) }}</p>
-      <ul class="pagination m-0 ms-auto">
+      <ul class="pagination m-0 ms-auto ltt-phantrang">
         <li class="page-item {% if not pagination.has_previous %}disabled{% endif %}">
           {% if pagination.has_previous %}
           <a class="page-link" href="{{ pagination.previous_page.url }}">
@@ -194,10 +194,10 @@
             </a>
         </li>
       </ul>
-      <div class="dropdown text-muted sqladmin-page-size">
-        {{ _("Hiện") }}
+      <div class="dropdown text-muted sqladmin-page-size ltt-cotrang">
+        <span id="ltt-cotrang-nhan">{{ _("Hiện") }}</span>
         <a href="#" class="btn btn-sm btn-light dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
-          aria-expanded="false">
+          aria-expanded="false" aria-describedby="ltt-cotrang-nhan">
           {{ _("%(so)s / trang", so=request.query_params.get("pageSize") or model_view.page_size) }}
         </a>
         <div class="dropdown-menu">
