@@ -13,6 +13,8 @@
 {% if admin.authentication_backend %}<a href="{{ request.url_for('admin:logout') }}">{{ _("Đăng xuất") }}</a>{% endif %}
 {% endblock %}
 {% block body %}
+{%- set _IC_SQA = {"fa-user": "users", "fa-coins": "gem", "fa-clipboard-list": "clipboard-list", "fa-key": "code", "fa-lock": "shield",
+    "fa-list-check": "workflow", "fa-circle-info": "monitor", "Phiên đăng nhập": "clock"} -%}
 <div class="wrapper">
   <aside class="navbar navbar-expand-lg navbar-vertical navbar-expand-md navbar-dark">
     <div class="container-fluid">
@@ -28,7 +30,15 @@
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
           <ul class="navbar-nav">
             {% for item in admin._menu.items %}
-            {% if item.type_ == "View" %}{{ menu_item(item, request) }}
+            {#- C4 (DL-005): icon line SVG `_icon.html` thay icon Font Awesome đặc; ánh xạ theo lớp fa của view.
+                Cùng markup `menu_item` của gói sqladmin 0.20.1, chỉ khác phần tử icon. -#}
+            {% if item.type_ == "View" %}{% if item.is_visible(request) and item.is_accessible(request) %}
+            <li class="nav-item">
+              <a class="nav-link {% if item.is_active(request) %}active{% endif %}" href="{{ item.url(request) }}">
+                <span class="nav-link-icon d-md-none d-lg-inline-block" aria-hidden="true">{{ ic.icon(_IC_SQA.get(item.display_name) or _IC_SQA.get((item.icon or "").split(" ")[-1], "layers")) }}</span>
+                <span class="nav-link-title">{{ item.display_name }}</span>
+              </a>
+            </li>{% endif %}
             {% elif item.type_ == "Category" %}{{ menu_category(item, request) }}{% endif %}
             {% endfor %}
           </ul>
@@ -36,7 +46,7 @@
       </nav>
       {% if admin.authentication_backend %}
       <a href="{{ request.url_for('admin:logout') }}" class="ltt-dangxuat">
-        <i class="fa fa-sign-out" aria-hidden="true"></i>
+        {{ ic.icon("log-out") }}
         <span>{{ _("Đăng xuất") }}</span>
       </a>
       {% endif %}
