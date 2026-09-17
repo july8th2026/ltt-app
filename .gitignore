@@ -124,6 +124,7 @@ env/
 .vscode/
 .idea/
 .claude/
+.codex/
 *.sublime-project
 *.sublime-workspace
 

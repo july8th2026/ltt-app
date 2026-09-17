@@ -66,6 +66,10 @@ EXCLUDED_DIR_NAMES = {
     "tmp",
     "test-results",
     ".claude",
+    # Cay lam viec cua phien Codex (.codex/worktrees/*): la BAN SAO cua chinh kho
+    # nay, da duoc quet o cay goc; giu lai chi lam may quet bao trung + trip vi
+    # file vendor (pako/zlib). Doi xung voi ".claude" ngay tren.
+    ".codex",
     # Engine vendored tu D:/FULL AUTO VIDEO (Tao Clip ngan). Ma van hanh cua ben thu
     # ba (khong chua secret cua ta — luong lam-file-truc-tiep khong can key); co chuoi
     # hex 32 ky tu trong VI DU tai lieu (sha256 rut gon) lam trip may quet.
