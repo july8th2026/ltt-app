@@ -7,14 +7,20 @@
 #   nha38       nha qwen38-api (TU CHOI neu con slot dang chay).
 #   dung_comfy  Stop-Service LTTComfyUI (giai phong ngu canh CUDA ~223 MiB tren 3090).
 #   don_dep     giet llama-server tren CONG THU 8290/8292/8294 (khong cham 8281/8282).
-#   khoi_phuc   don_dep -> nap qwen38-api (ComfyUI con tat) -> nap qwen35-api -> kiem tran
-#               -> Start-Service LTTComfyUI neu truoc cua so no chay -> mot luot chat that
-#               moi model qua 8280, content khong rong -> so VRAM voi anh chup.
+#   comfy_manual  (17/09, chu du an duyet) LTTComfyUI -> start Manual (sc config start= demand)
+#               roi THU sc start / Stop-Service khi 3090 CON TRONG (truoc khoi_phuc nap 3.8):
+#               doi thay tien trinh ComfyUI that (Python312 con cua stub venv) va VRAM tang,
+#               dung, doi VRAM 3090 tut ve nen. Trong tai residency o may A moi la ke bat
+#               ComfyUI (trang thai `anh`); cua so LLM thi ComfyUI TAT.
+#   khoi_phuc   don_dep -> nap qwen38-api (ComfyUI TAT) -> nap qwen35-api -> kiem tran
+#               -> KHONG bat LTTComfyUI (trang thai residency `llm`; ComfyUI am giu ~223 MiB
+#               ngu canh CUDA, day 3.8 xuong duoi cong 300 MiB) -> mot luot chat that moi
+#               model qua 8280 -> RenderGateway /live -> nen VRAM 3090 voi 3.8 va ComfyUI tat.
 #
 # !! unload cua llama-swap KHONG drain (llm_gateway/api.py residency_nha, fifo.go) =>
 #    buoc nha* tu kiem /slots truoc; chi goi khi da dung luu luong o may A.
 
-param([Parameter(Mandatory = $true)][ValidateSet('kiem', 'nha35', 'nha38', 'dung_comfy', 'don_dep', 'khoi_phuc')][string]$Buoc)
+param([Parameter(Mandatory = $true)][ValidateSet('kiem', 'nha35', 'nha38', 'dung_comfy', 'don_dep', 'khoi_phuc', 'comfy_manual')][string]$Buoc)
 $ErrorActionPreference = 'Stop'
 $Swap = 'http://127.0.0.1:8280'
 $Goc = 'E:\AI\ltt_dual\bench_hang_cho'
@@ -68,6 +74,10 @@ function Tran([string]$ten) {
     $d = (Get-Counter "\GPU Process Memory(pid_$($p.ProcessId)_*)\Dedicated Usage").CounterSamples | Measure-Object CookedValue -Sum
     "$ten pid $($p.ProcessId) dedicated=$([math]::Round($d.Sum/1MB)) MiB shared=$([math]::Round($s.Sum/1MB)) MiB (production 17/09: shared ~674 o 3.5 la muc nen, khong phai tran)"
 }
+function ComfyTien {
+    @(Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'main\.py --port 8188' })
+}
+function Vram3090 { [int]((Gpu | Where-Object { $_.ten -match '3090' }).used) }
 function ChatThat([string]$ten) {
     $body = @{ model = $ten; max_tokens = 2048; messages = @(@{ role = 'user'; content = 'Tinh 12 * 17 va giai thich ngan gon.' }) } | ConvertTo-Json -Depth 5
     $r = Invoke-RestMethod -Method Post "$Swap/v1/chat/completions" -Body $body -ContentType 'application/json' -TimeoutSec 600
@@ -106,8 +116,9 @@ switch ($Buoc) {
         Tran 'qwen35-api'
         $truoc = $null
         if (Test-Path $Anh) { $truoc = Get-Content $Anh -Raw | ConvertFrom-Json }
-        $comfy_truoc = if ($truoc) { ($truoc.dich_vu | Where-Object { $_.ten -eq 'LTTComfyUI' }).trang_thai } else { 'Running' }
-        if ($comfy_truoc -eq 'Running' -and (Get-Service LTTComfyUI).Status -ne 'Running') { Start-Service LTTComfyUI; Start-Sleep -Seconds 15; 'da bat lai LTTComfyUI' }
+        # 17/09: KHONG bat lai LTTComfyUI - cua so LLM (residency `llm`) thi ComfyUI tat;
+        # trong tai residency tu bat o trang thai `anh`. Anh chup 'Running' truoc cua so la lo hong.
+        'LTTComfyUI=' + (Get-Service LTTComfyUI).Status + ' StartType=' + (Get-Service LTTComfyUI).StartType + ' tien_trinh_comfy=' + (ComfyTien).Count + ' (co y KHONG bat)'
         ChatThat 'qwen38-api'
         ChatThat 'qwen35-api'
         Get-Service LTTComfyUI, LTTLlamaSwap, LTTLlmGateway, LTTRenderGateway | ForEach-Object { $_.Name + '=' + $_.Status }
@@ -115,5 +126,32 @@ switch ($Buoc) {
         Gpu | ForEach-Object { '  ' + $_.ten + ' used=' + $_.used + ' util=' + $_.util }
         if ($truoc) { 'VRAM truoc cua so:'; $truoc.gpu | ForEach-Object { '  ' + $_.ten + ' used=' + $_.used } }
         'running: ' + ((Running | ForEach-Object { $_.model + ':' + $_.state }) -join ', ')
+        try { 'RenderGateway /live: ' + (Invoke-WebRequest -UseBasicParsing 'http://127.0.0.1:8199/live' -TimeoutSec 10).StatusCode } catch { 'RenderGateway /live LOI: ' + $_.Exception.Message }
+        'NEN production 3090 (3.8 nap, ComfyUI tat): used=' + (Vram3090) + ' MiB'
+    }
+    'comfy_manual' {
+        if (@(Running).Count -gt 0) { throw 'con model llama-swap dang nap - chi thu comfy khi ca hai card trong' }
+        if (@(Get-CimInstance Win32_Process -Filter "Name='llama-server.exe'").Count -gt 0) { throw 'con llama-server - chi thu khi card trong' }
+        & sc.exe config LTTComfyUI start= demand
+        'StartType=' + (Get-Service LTTComfyUI).StartType
+        $nen = Vram3090
+        'VRAM 3090 truoc thu: ' + $nen
+        & sc.exe start LTTComfyUI | Select-String 'STATE|FAILED'
+        $len = 0
+        for ($i = 0; $i -lt 90; $i++) {
+            Start-Sleep -Seconds 2
+            $len = (Vram3090) - $nen
+            if ((ComfyTien).Count -gt 0 -and $len -gt 100) { break }
+        }
+        'sau sc start: dich vu=' + (Get-Service LTTComfyUI).Status + ' tien_trinh=' + ((ComfyTien | ForEach-Object { [string]$_.ProcessId + ':' + $_.ExecutablePath }) -join ',') + ' VRAM 3090 +' + $len + ' MiB'
+        try { 'comfy 8188 /system_stats: ' + (Invoke-WebRequest -UseBasicParsing 'http://127.0.0.1:8188/system_stats' -TimeoutSec 10).StatusCode } catch { 'comfy 8188 chua tra loi: ' + $_.Exception.Message }
+        Stop-Service LTTComfyUI
+        for ($i = 0; $i -lt 30; $i++) {
+            Start-Sleep -Seconds 2
+            if ((ComfyTien).Count -eq 0 -and ((Vram3090) - $nen) -lt 50) { break }
+        }
+        'sau Stop-Service: dich vu=' + (Get-Service LTTComfyUI).Status + ' tien_trinh_con=' + (ComfyTien).Count + ' VRAM 3090=' + (Vram3090) + ' (nen ' + $nen + ')'
+        if ((ComfyTien).Count -gt 0) { throw 'ComfyUI that van song sau Stop-Service - khong tin SCM' }
+        'RenderGateway=' + (Get-Service LTTRenderGateway).Status
     }
 }
