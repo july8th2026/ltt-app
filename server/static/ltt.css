@@ -4657,7 +4657,7 @@ textarea:focus,select:focus{border-color:var(--text-secondary)}
 .app-head .app-head-h1,.tv-library .app-head-h1{margin:0;font-size:var(--fs-page);line-height:var(--lh-tight);font-weight:700;letter-spacing:-.2px}
 .app-head .app-head-mota{margin:2px 0 0;max-width:72ch;color:var(--text-secondary);font-size:var(--fs-body);line-height:var(--lh-body)}
 .app-head-hd{display:flex;flex:0 0 auto;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:var(--space-2)}
-.app-head-hd .btn{min-height:44px;justify-content:center}
+.app-head-hd .btn{display:inline-flex;align-items:center;min-height:44px;justify-content:center}
 .app-head .app-head-quay{margin:0 0 2px;font-size:var(--fs-label)}
 .app-head--studio{margin-bottom:var(--space-3)}
 .page--standard:has(>.af-page>.app-head--form,>.asv-trang>.app-head--form,>.app-head--form){max-width:calc(1120px + 48px)}
@@ -4683,3 +4683,10 @@ textarea:focus,select:focus{border-color:var(--text-secondary)}
 .tv-view-toggle button>.ui-ic,.up-view-toggle button>.ui-ic{width:16px;height:16px;vertical-align:middle}
 .tv-create>.ui-ic,.up-start>.ui-ic{width:16px;height:16px;vertical-align:-3px}
 .up-mode strong>.ui-ic{width:14px;height:14px;vertical-align:-2px;color:var(--brand-hover)}
+/* Voice: luật cũ `.lv-studio>.lv-vo{align-items:center}` (0,2,0) căn giữa chip trạng thái ở 390px. */
+:is(.lv-giong,.lv-studio,.lv-api,.lv-da,.lv-mda,.lv-ls,.lv-cx)>.app-head{align-items:flex-end;gap:var(--space-4);margin-bottom:var(--space-3)}
+@media(max-width:560px){:is(.lv-giong,.lv-studio,.lv-api,.lv-da,.lv-mda,.lv-ls,.lv-cx)>.app-head{align-items:stretch;gap:var(--space-2)}}
+/* Voice: bốn chip nguồn giọng xuống dòng thay vì tràn ngang bị cắt. */
+.lv-chon-loc .lv-loc-nhom{flex-wrap:wrap;overflow:visible}
+.lv-chon-loc .lv-loc-nut{flex:1 1 auto}
+.lv-chon-loc .lv-loc-nhom:has(>.lv-loc-nut:nth-child(4))>.lv-loc-nut{flex-basis:40%}
