@@ -5020,3 +5020,6 @@ code.adm-ten-ky-thuat{background:transparent;border:0;padding:0;font-family:var(
 .lv-chon-loc .lv-loc-nhom{flex-wrap:wrap;overflow:visible}
 .lv-chon-loc .lv-loc-nut{flex:1 1 auto}
 .lv-chon-loc .lv-loc-nhom:has(>.lv-loc-nut:nth-child(4))>.lv-loc-nut{flex-basis:40%}
+/* v7 (17/09): thanh nút dính đáy của Voice (`.lv-st-nut`, ~108px) che nút ngay trên nó
+   khi cuộn/focus bằng bàn phím (WCAG 2.4.11) — chừa khoảng cuộn đáy bằng chiều cao thanh. */
+html:has(.lv-st-nut){scroll-padding-bottom:128px}
