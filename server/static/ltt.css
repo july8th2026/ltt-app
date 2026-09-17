@@ -1604,10 +1604,10 @@ code.to-dam{font-weight:600;color:var(--text-primary)}
 .vps-do-so b{font-variant-numeric:tabular-nums;font-weight:600}
 .vps-do-thanh{height:5px;border-radius:3px;background:var(--surface-interactive);
   overflow:hidden}
-.vps-do-thanh>span{display:block;height:100%;border-radius:3px;
-  background:var(--vps-teal-hover)}
-.vps-do-thanh>span.gan-han{background:var(--status-warning)}
-.vps-do-thanh>span.qua-han{background:var(--status-danger)}
+.vps-do-thanh>.vps-do-svg{display:block;width:100%;height:100%}
+.vps-do-thanh rect{fill:var(--vps-teal-hover)}
+.vps-do-thanh rect.gan-han{fill:var(--status-warning)}
+.vps-do-thanh rect.qua-han{fill:var(--status-danger)}
 
 /* ── Hàng nhãn / giá trị có nút chép (macro `o_sao_chep`) ────────────────*/
 .vps-doi{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;
@@ -4314,5 +4314,38 @@ input[type=hidden]+.af-step{margin-top:0}
   .khu-dev .dev-sub a{min-height:32px;padding:5px 12px;border:1px solid var(--border-subtle);
     border-radius:99px;white-space:nowrap}
   .khu-dev .dev-sub a.active{border-color:var(--brand-primary);background:var(--brand-soft)}
+}
+
+/* ── VPS · menu trái: tiêu đề nhóm cách mục phía trên ──
+   Ở khu VPS tiêu đề nhóm nằm TRONG `li` nên luật `.nhom:first-child` (margin 0)
+   luôn khớp ⇒ "MÁY CỦA TÔI" dính sát "Điều khoản". */
+.app-side li:not(:first-child)>.nhom{margin-top:18px;padding-top:12px;
+  border-top:1px solid var(--border-subtle)}
+
+/* ── VPS · mã máy: một dòng, cắt "…", nút Chép chép mã đủ ── */
+.vps-dinh-o .vps-ma-may{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  word-break:normal;min-width:0;max-width:100%}
+@media (max-width:560px){.vps-dinh-o{grid-template-columns:minmax(0,max-content) auto}}
+
+/* ── VPS · gói hết chỗ: không tô nổi bật kiểu lỗi, "nên chọn" giảm nhấn ── */
+.goi-the.goi-chon.goi-het{border-color:var(--border-subtle);background:transparent}
+.goi-the.goi-het .goi-ten .pill{border-color:var(--border-subtle);background:transparent;
+  color:var(--text-muted)}
+.goi-the.goi-het .goi-trangthai{color:var(--status-warning)}
+.vps-thieu[hidden]{display:none}
+
+/* ── VPS · dải hành động: nút chính đầu dải, nhóm nguồn tách sang phải ── */
+.vps-hd{align-items:center}
+.vps-hd .vps-hd-phu{order:1}
+.vps-hd .vps-hd-nguon{order:2;display:flex;flex-wrap:wrap;gap:8px;margin-left:auto;
+  padding-left:12px;border-left:1px solid var(--border-subtle)}
+.vps-hd .vps-nut-nguy{border-color:var(--status-danger-border);color:var(--status-danger)}
+@media (max-width:560px){
+  .vps-hd>.btn,.vps-hd>form{flex:1 1 calc(50% - 4px)}
+  .vps-hd>form .btn,.vps-hd>.btn{width:100%;min-width:0;display:inline-flex;justify-content:center;text-align:center}
+  .vps-hd .vps-hd-nguon{flex:1 1 100%;margin-left:0;padding-left:0;border-left:0;
+    padding-top:8px;border-top:1px solid var(--border-subtle)}
+  .vps-hd .vps-hd-nguon>form{flex:1 1 calc(50% - 4px)}
+  .vps-hd .vps-hd-nguon .btn{width:100%;min-width:0}
 }
 /* === HET C3: DEV-VPS-NEXUS === */
