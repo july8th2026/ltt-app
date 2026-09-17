@@ -6,8 +6,8 @@ import json
 from uuid import UUID
 from urllib.parse import urlencode
 
-from apps.vps.services.ovh import (CheckoutNotSent, OvhClient, OvhError,
-                                   OvhPreparedIpCart)
+from apps.vps.services.ovh import (CheckoutNotSent, OvhCatalogIpQuote, OvhClient,
+                                   OvhError, OvhPreparedIpCart)
 
 
 class OvhOrderingClient(OvhClient):
@@ -72,6 +72,45 @@ class OvhOrderingClient(OvhClient):
                 contracts=contracts, contract_fingerprints=tuple(fingerprints))
         except (KeyError, TypeError, ValueError, InvalidOperation):
             raise OvhError("OVH cart preview has invalid shape") from None
+
+    def catalog_additional_ipv4_quote(self, *, ip_plan_code, ip_country, ip_datacenter,
+                                      ip_duration, ip_currency):
+        """Read-only list price for ONE Additional IPv4 (R22, 17/09).
+
+        Health must answer "can the worker buy an IP for the next VPS?" without
+        creating carts every refresh. `GET /order/catalog/formatted/ip` is the
+        public catalog (measured 17/09: ip-failover-arin, SG/SGP, USD 2.39/month,
+        `priceInUcents` 239000000). Contracts are NOT in the catalog; the worker
+        still validates the real cart preview and contract fingerprints before
+        checkout, so this quote only opens capacity, never pays.
+        """
+        if (ip_plan_code != "ip-failover-arin" or ip_duration != "P1M"
+                or ip_country != "SG" or ip_datacenter != "SGP" or ip_currency != "USD"):
+            raise OvhError("unsupported OVH Additional IP catalog query")
+        catalog = self.get("/order/catalog/formatted/ip?" + urlencode({"ovhSubsidiary": "ASIA"}))
+        try:
+            plans = [plan for plan in catalog["plans"] if plan.get("planCode") == ip_plan_code]
+            if len(plans) != 1:
+                raise OvhError("OVH catalog plan is missing or ambiguous")
+            details = plans[0]["details"]
+            options = {item["name"]: item["values"]
+                       for item in details["product"]["configurations"]}
+            if (ip_country not in options.get("country", ())
+                    or ip_datacenter not in options.get("datacenter", ())):
+                raise OvhError("OVH catalog no longer offers the configured location")
+            monthly = [price for price in details["pricings"]["default"]
+                       if price.get("intervalUnit") == "month" and price.get("interval") == 1
+                       and "renew" in price.get("capacities", ())
+                       and price["price"]["currencyCode"] == ip_currency]
+            if len(monthly) != 1:
+                raise OvhError("OVH catalog monthly price is missing or ambiguous")
+            ucents = monthly[0]["priceInUcents"]
+            if type(ucents) is not int or ucents <= 0 or ucents % 1_000_000:
+                raise OvhError("OVH catalog price has invalid precision")
+        except (KeyError, TypeError, AttributeError):
+            raise OvhError("OVH catalog has invalid shape") from None
+        return OvhCatalogIpQuote(quantity=1, with_tax_minor=ucents // 1_000_000,
+                                 currency=ip_currency)
 
     def adopt_prepared_cart(self, cart_id):
         """Explicit operator-configured predecessor: GET only, no replacement."""

@@ -837,3 +837,136 @@ def test_bounded_capacity_rejects_quote_drift(db, monkeypatch, change):
     health = pool.health()
     assert health.details["replenishable"] == 0 and health.status == "CRITICAL"
     assert len(reads) == 1
+
+
+# ── R22 (17/09): khach mua VPS, he thong tu mua IP — health doc gia CATALOG ──────
+def _catalog(**change):
+    price = {"capacities": ["installation", "renew"], "interval": 1,
+             "intervalUnit": "month", "price": {"currencyCode": "USD", "value": 2.39},
+             "priceInUcents": 239000000}
+    price.update(change.get("price", {}))
+    plan = {"planCode": "ip-failover-arin", "details": {
+        "pricings": {"default": change.get("pricings", [price])},
+        "product": {"configurations": [
+            {"name": "country", "values": change.get("countries", ["AU", "SG"])},
+            {"name": "datacenter", "values": change.get("datacenters", ["SGP", "SYD"])}]}}}
+    return {"catalogId": 1, "merchantCode": "ASIA", "plans": change.get("plans", [plan])}
+
+
+def _catalog_driver(payload):
+    from apps.vps.services.ovh import OvhConfig
+    from apps.vps.services.ovh_ordering import OvhOrderingClient
+
+    calls = []
+
+    def transport(method, url, headers, body=None):
+        calls.append((method, url))
+        if url.endswith("/auth/time"):
+            return 2000000000
+        return payload
+
+    driver = OvhOrderingClient(OvhConfig(
+        application_key="fixture-ak", application_secret="fixture-as",
+        consumer_key="fixture-ck", service_name="fixture-service"), transport=transport)
+    return driver, calls
+
+
+_QUERY = {"ip_plan_code": "ip-failover-arin", "ip_country": "SG", "ip_datacenter": "SGP",
+          "ip_duration": "P1M", "ip_currency": "USD"}
+
+
+def test_catalog_quote_reads_monthly_usd_price_with_GET_only():
+    driver, calls = _catalog_driver(_catalog())
+    quote = driver.catalog_additional_ipv4_quote(**_QUERY)
+    assert (quote.quantity, quote.with_tax_minor, quote.currency) == (1, 239, "USD")
+    assert quote.contract_fingerprints is None
+    assert {method for method, _ in calls} == {"GET"}
+    assert any("/order/catalog/formatted/ip?ovhSubsidiary=ASIA" in url for _, url in calls)
+
+
+@pytest.mark.parametrize("change", [
+    {"countries": ["AU"]}, {"datacenters": ["SYD"]}, {"plans": []},
+    {"price": {"price": {"currencyCode": "EUR", "value": 2.39}}},
+    {"price": {"priceInUcents": 239500000}}, {"price": {"priceInUcents": True}},
+    {"price": {"interval": 12}},
+    {"pricings": [{"capacities": ["renew"], "interval": 1, "intervalUnit": "month",
+                   "price": {"currencyCode": "USD"}, "priceInUcents": 239000000}] * 2},
+    {"plans": [{"planCode": "ip-failover-arin"}]},
+])
+def test_catalog_quote_fails_closed_on_drift(change):
+    from apps.vps.services.ovh import OvhError
+
+    driver, _ = _catalog_driver(_catalog(**change))
+    with pytest.raises(OvhError):
+        driver.catalog_additional_ipv4_quote(**_QUERY)
+
+
+def test_catalog_quote_refuses_unsupported_query_before_any_request():
+    from apps.vps.services.ovh import OvhError
+
+    driver, calls = _catalog_driver(_catalog())
+    with pytest.raises(OvhError):
+        driver.catalog_additional_ipv4_quote(**{**_QUERY, "ip_country": "CA"})
+    assert calls == []
+
+
+def _profile_without_adopted_cart(db, **config):
+    profile, _, _ = _domain(db)
+    profile.provider_config = {**profile.provider_config, "max_ip_with_tax_minor": 239,
+                               "accepted_contract_fingerprints": ["a" * 64], **config}
+    profile.network_config = {"mapping_strategy": "ovh_gwnat"}
+    db.commit()
+    return profile
+
+
+def test_without_adopted_cart_capacity_comes_from_catalog_not_a_new_cart(db, monkeypatch):
+    from apps.vps.services import backend_factory
+    from apps.vps.services.ovh import OvhCatalogIpQuote
+
+    profile = _profile_without_adopted_cart(db)
+    asked = []
+
+    def catalog(**query):
+        asked.append(query)
+        return OvhCatalogIpQuote(quantity=1, with_tax_minor=239, currency="USD")
+
+    def forbidden(*a, **k):
+        raise AssertionError("health must never create or adopt a cart")
+
+    monkeypatch.setattr(backend_factory, "ovh_ordering_client", lambda _: SimpleNamespace(
+        catalog_additional_ipv4_quote=catalog, adopt_prepared_cart=forbidden,
+        prepare_additional_ipv4=forbidden))
+    pool = backend_factory.public_ip_backend(db, profile)
+    assert pool.capabilities().dynamic_acquisition is True
+    health = pool.health()
+    assert health.status == "HEALTHY" and health.details["replenishable"] == 1
+    assert asked == [_QUERY]
+
+
+@pytest.mark.parametrize("quote", [
+    {"with_tax_minor": 240}, {"currency": "EUR"}, {"quantity": 2},
+])
+def test_catalog_price_above_ceiling_or_drifted_never_opens_capacity(db, monkeypatch, quote):
+    from apps.vps.services import backend_factory
+    from apps.vps.services.ovh import OvhCatalogIpQuote
+
+    profile = _profile_without_adopted_cart(db)
+    values = {"quantity": 1, "with_tax_minor": 239, "currency": "USD", **quote}
+    monkeypatch.setattr(backend_factory, "ovh_ordering_client", lambda _: SimpleNamespace(
+        catalog_additional_ipv4_quote=lambda **q: OvhCatalogIpQuote(**values)))
+    health = backend_factory.public_ip_backend(db, profile).health()
+    assert health.status == "CRITICAL" and health.details["replenishable"] == 0
+
+
+def test_auto_acquire_off_never_calls_the_provider(db, monkeypatch):
+    from apps.vps.services import backend_factory
+
+    profile = _profile_without_adopted_cart(db, auto_acquire=False)
+
+    def forbidden(_):
+        raise AssertionError("paused acquisition must not touch OVH")
+
+    monkeypatch.setattr(backend_factory, "ovh_ordering_client", forbidden)
+    pool = backend_factory.public_ip_backend(db, profile)
+    assert pool.capabilities().dynamic_acquisition is False
+    assert pool.health().details["replenishable"] == 0

@@ -40,8 +40,20 @@ def public_ip_backend(db, profile):
     kind = str(getattr(profile, "public_ip_backend_type", "vultr_reserved_ip") or "")
     if kind == "ovh_static_pool":
         config = dict(getattr(profile, "provider_config", None) or {})
-        return OvhStaticIpPoolBackend(db, profile, acquisition_probe=lambda:
-            ovh_ordering_client(profile).adopt_prepared_cart(config.get("adopt_ip_cart_id")))
+
+        def probe():
+            # An operator-prepared cart (controlled rollout) is read as-is. Without
+            # one, the worker creates a fresh cart per VPS at purchase time, so
+            # health only needs the read-only catalog price (R22, 17/09).
+            client = ovh_ordering_client(profile)
+            if config.get("adopt_ip_cart_id"):
+                return client.adopt_prepared_cart(config.get("adopt_ip_cart_id"))
+            return client.catalog_additional_ipv4_quote(**{
+                key: config.get(key) for key in (
+                    "ip_plan_code", "ip_country", "ip_datacenter",
+                    "ip_duration", "ip_currency")})
+
+        return OvhStaticIpPoolBackend(db, profile, acquisition_probe=probe)
     if kind == "vultr_reserved_ip":
         from apps.vps.services import vultr
         reference = str(getattr(profile, "credential_ref", "") or "LTT_VULTR")

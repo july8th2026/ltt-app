@@ -109,8 +109,8 @@ class OvhStaticIpPoolBackend:
         self._acquisition_probe = acquisition_probe
         self._acquisition_ceiling = 0
         self._accepted_contracts = ()
-        # Controlled one-IP rollout uses ONLY the explicitly adopted cart. New
-        # cart creation remains unavailable through production capacity.
+        # Product model (owner, 17/09): customers buy a VPS, never an IP; the
+        # worker buys one OVH IPv4 per new VPS. An adopted cart is optional.
         self.auto_acquire = False
         config = dict(getattr(profile, "provider_config", None) or {})
         network = dict(getattr(profile, "network_config", None) or {})
@@ -119,7 +119,7 @@ class OvhStaticIpPoolBackend:
                            and all(isinstance(value, str)
                                    and re.fullmatch(r"[0-9a-f]{64}", value)
                                    for value in contracts))
-        if (config.get("auto_acquire") is True and config.get("adopt_ip_cart_id")
+        if (config.get("auto_acquire") is True
                 and contracts_valid
                 and network.get("mapping_strategy") == "ovh_gwnat"
                 and getattr(profile, "status", "DISABLED") != "DISABLED"
@@ -277,7 +277,9 @@ class OvhStaticIpPoolBackend:
                         and quote.currency == "USD"
                         and type(quote.with_tax_minor) is int
                         and 0 < quote.with_tax_minor <= self._acquisition_ceiling
-                        and quote.contract_fingerprints == self._accepted_contracts):
+                        # Catalog quotes carry no contracts (None); the worker
+                        # checks them on the real cart before any checkout.
+                        and quote.contract_fingerprints in (None, self._accepted_contracts)):
                     replenishable = 1
             except Exception as exc:
                 # Health is a read-only boundary; provider replies can contain
