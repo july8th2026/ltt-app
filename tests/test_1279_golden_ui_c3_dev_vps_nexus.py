@@ -104,6 +104,20 @@ def test_mot_duong_tao_khoa_va_du_an(portal):  # noqa: F811
         "tab con van ghi 'Project'")
 
 
+def test_co_khoa_roi_thi_nut_dau_trang_la_duong_vao(portal):  # noqa: F811
+    from tests.test_197_developer_api_tab import _csrf
+    _register(portal, f"c3k2-{uuid.uuid4().hex[:6]}@example.com")
+    page = portal.get("/developers/keys").text
+    r = portal.post("/developers/keys", data={"name": "c3", "csrf_token": _csrf(page),
+                                              "scopes": ["tools:read"]})
+    assert r.status_code == 200
+    html = portal.get("/developers/keys").text
+    # Biểu mẫu gập lại ⇒ nút đầu trang là đường vào DUY NHẤT.
+    assert html.count('href="#tao-khoa"') == 1
+    assert not re.search(r'<details class="dev-tao" id="tao-khoa"\s+open', html)
+    assert re.search(r'<th scope="col">Dự án</th>', html)
+
+
 def test_nhan_o_loc_request_id_co_nghia():
     t = _doc("dev_logs.html")
     assert '<label for="lg-request">request_id</label>' not in t
