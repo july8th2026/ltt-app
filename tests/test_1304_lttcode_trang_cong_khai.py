@@ -129,6 +129,44 @@ def test_ban_tieng_anh_co_tieu_de_tieng_anh(may):
     assert f'href="/en/lttcode/dl/{TEP}"' in r.text
 
 
+FAQ_CONG_CU = ("faq-mcp", "faq-plugin", "faq-hooks", "faq-terminal", "faq-lich-hen",
+               "faq-skill", "faq-song-song", "faq-sao-luu")
+
+
+def _muc_su_co(html: str) -> str:
+    return html.split('id="su-co"', 1)[1].split('class="lc-end"', 1)[0]
+
+
+def test_faq_cong_cu_mo_rong_hien_trong_muc_su_co(may):
+    """FAQ 0.1.5 (G7): mỗi mục là <details> có <summary> trong #su-co, id `faq-*` ổn định,
+    và các cam kết rủi ro/giới hạn đã đối chiếu LTTCODEAPP không bị rơi khi sửa chữ."""
+    client, _ = may
+    html = client.get("/lttcode").text
+    su_co = _muc_su_co(html)
+    for neo in FAQ_CONG_CU:
+        m = re.search(rf'<details id="{neo}">\s*<summary>[^<]+</summary>', su_co)
+        assert m, f"thiếu mục FAQ #{neo}"
+    for chu in ("Upstash", "8 công cụ đọc", "Node.js và pnpm", "đọc được khoá LTT",
+                "hooks.json", "7 sự kiện", "mã 2", "pwsh", "phiên đang mở",
+                "playwright-cli", "tối đa 3 yêu cầu", "tối đa 2 agent con", "LTT-3.8",
+                r"dsh-home\backups", "Chỉ giữ một bản sao lưu"):
+        assert chu in su_co, f"FAQ thiếu: {chu}"
+    # Mục an toàn không còn nói "chỉ LTT" mà giấu context7.
+    an_toan = html.split('id="an-toan"', 1)[1].split('id="chi-phi"', 1)[0]
+    assert "context7" in an_toan and "Upstash" in an_toan
+
+
+def test_faq_cong_cu_ban_tieng_anh_da_dich(may):
+    client, _ = may
+    su_co = _muc_su_co(client.get("/en/lttcode").text)
+    assert "Extension tools (since 0.1.5)" in su_co
+    tom_tat = re.findall(r"<summary>([^<]+)</summary>", su_co)
+    assert len(tom_tat) >= 5 + len(FAQ_CONG_CU)
+    con_tieng_viet = [t for t in tom_tat if VN.search(t)]
+    assert con_tieng_viet == [], con_tieng_viet
+    assert "Upstash" in su_co and "LTT-3.8" in su_co
+
+
 def test_chi_phi_tro_trang_gia_va_khong_anh_ngoai(may):
     client, _ = may
     html = client.get("/lttcode").text

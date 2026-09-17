@@ -18356,3 +18356,112 @@ msgstr "Ready to try LTTCODE?"
 
 msgid "Tải bộ cài, đăng nhập tài khoản LTT và mở thư mục dự án đầu tiên của bạn."
 msgstr "Download the installer, sign in to your LTT account and open your first project folder."
+
+# LTTCODE — FAQ cong cu mo rong 0.1.5 (17/09)
+msgid "Ứng dụng gửi yêu cầu tới máy chủ LTT Studios để gọi model và tìm web; nó không tự gửi mã của bạn tới dịch vụ bên thứ ba nào. Ngoại lệ duy nhất bật sẵn là máy chủ MCP context7: tên thư viện và câu hỏi tra tài liệu đi tới Upstash — tắt được trong Kết nối MCP."
+msgstr "The app sends requests to LTT Studios servers to call models and search the web; it does not send your code to any third-party service on its own. The only exception enabled by default is the context7 MCP server: library names and documentation questions go to Upstash — you can turn it off in MCP connections."
+
+msgid "Công cụ mở rộng (từ bản 0.1.5)"
+msgstr "Extension tools (since 0.1.5)"
+
+msgid "Kết nối MCP: bật, tắt và dữ liệu nào được gửi đi"
+msgstr "MCP connections: turning them on or off, and what gets sent"
+
+msgid "Mở menu Công cụ › Kết nối MCP… (Ctrl+Shift+M) để thêm, bật, tắt, thử máy chủ MCP hoặc nhập cấu hình từ Claude Desktop. Lưu thay đổi thì trợ lý tự khởi động lại để áp dụng. Token và khoá bạn nhập được giữ trong Windows Credential Manager, không ghi vào tệp cấu hình."
+msgstr "Open Tools › MCP connections… (Ctrl+Shift+M) to add, enable, disable or test MCP servers, or import a Claude Desktop configuration. Saving restarts the assistant so the change applies. Tokens and keys you enter are kept in Windows Credential Manager, not written to the configuration file."
+
+msgid "context7 bật sẵn: khi trợ lý tra tài liệu thư viện, tên thư viện và câu hỏi được gửi tới dịch vụ Context7 của Upstash. Không muốn gửi thì tắt nó trong cửa sổ này."
+msgstr "context7 is on by default: when the assistant looks up library documentation, the library name and your question are sent to Upstash's Context7 service. Turn it off in this window if you do not want that."
+
+msgid "github chỉ chạy khi bạn đã lưu token, và chỉ có 8 công cụ đọc — không tạo, sửa hay xoá gì trên GitHub."
+msgstr "github only runs after you save a token, and exposes only 8 read tools — it cannot create, change or delete anything on GitHub."
+
+msgid "memory, playwright và chrome-devtools tắt sẵn; bật khi bạn cần."
+msgstr "memory, playwright and chrome-devtools are off by default; turn them on when you need them."
+
+msgid "Máy chủ MCP bạn tự thêm là chương trình tuỳ ý chạy trên máy bạn, ngoài giới hạn workspace của trợ lý — chỉ thêm máy chủ bạn tin. Một máy chủ lỗi không làm trợ lý ngừng khởi động."
+msgstr "An MCP server you add yourself is an arbitrary program running on your machine, outside the assistant's workspace limits — only add servers you trust. A failing server does not stop the assistant from starting."
+
+msgid "Cài plugin"
+msgstr "Installing plugins"
+
+msgid "Trang Cài đặt › Plugin liệt kê plugin đang có. Bộ cài LTTCODE không kèm npm hay pnpm, nên để cài plugin bạn cần tự cài Node.js và pnpm, chạy lệnh dưới đây với biến DSH_HOME trỏ tới thư mục dữ liệu của trợ lý, rồi khởi động lại ứng dụng."
+msgstr "Settings › Plugin lists the installed plugins. The LTTCODE installer does not include npm or pnpm, so to install a plugin you need to install Node.js and pnpm yourself, run the command below with DSH_HOME pointing at the assistant's data folder, then restart the app."
+
+msgid "tên gói"
+msgstr "package name"
+
+msgid "Runtime đi kèm:"
+msgstr "Bundled runtime:"
+
+msgid "Plugin là mã tuỳ ý chạy ngay trong tiến trình của trợ lý và đọc được khoá LTT của máy này. Chỉ cài plugin từ nguồn bạn tin; nếu nghi ngờ, gỡ plugin và thu hồi khoá máy ở Developers › Keys."
+msgstr "A plugin is arbitrary code running inside the assistant's process and can read this machine's LTT key. Only install plugins from sources you trust; if in doubt, remove the plugin and revoke the machine key under Developers › Keys."
+
+msgid "Hooks: chạy lệnh của bạn ở mỗi sự kiện"
+msgstr "Hooks: run your own commands on events"
+
+msgid "Menu Công cụ › Mở tệp hooks.json mở tệp cấu hình hook (mặc định rỗng, không hook nào chạy):"
+msgstr "Tools › Open hooks.json opens the hook configuration file (empty by default, so no hook runs):"
+
+msgid "Tệp theo định dạng hooks của Claude Code, chỉ loại command, với 7 sự kiện: SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, Stop, SubagentStart, SubagentStop."
+msgstr "The file uses the Claude Code hooks format, command hooks only, with 7 events: SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, Stop, SubagentStart, SubagentStop."
+
+msgid "Lệnh hook thoát với mã 2 là chặn: ví dụ PreToolUse chặn một công cụ, UserPromptSubmit chặn tin nhắn."
+msgstr "A hook command that exits with code 2 blocks: for example PreToolUse blocks a tool, UserPromptSubmit blocks a message."
+
+msgid "Hook chạy trong cùng sandbox với trợ lý nên không ghi được tệp; dùng hook để chặn hoặc thêm ngữ cảnh."
+msgstr "Hooks run in the same sandbox as the assistant, so they cannot write files; use hooks to block or to add context."
+
+msgid "Tệp chỉ được đọc lúc khởi động: sửa xong hãy khởi động lại ứng dụng. Tệp sai JSON thì không hook nào chạy, trợ lý vẫn hoạt động."
+msgstr "The file is read only at startup: restart the app after editing it. If the file is not valid JSON, no hook runs and the assistant keeps working."
+
+msgid "Terminal"
+msgstr "Terminal"
+
+msgid "Trợ lý có terminal giữ phiên shell (pwsh) sống qua nhiều lượt, chạy dưới cùng sandbox và cùng quy tắc duyệt lệnh như các lệnh khác. Ô terminal ở thanh bên là của bạn: nếu máy không khai shell mặc định nó mở cmd.exe; chọn pwsh hoặc powershell trong bộ chọn và lựa chọn được nhớ. Thư mục làm việc là workspace của phiên."
+msgstr "The assistant has a terminal that keeps a shell session (pwsh) alive across turns, under the same sandbox and command-approval rules as other commands. The sidebar terminal is yours: if the machine declares no default shell it opens cmd.exe; pick pwsh or powershell in the selector and the choice is remembered. The working folder is the session's workspace."
+
+msgid "Tiến trình chạy lâu (dev server, REPL) giữ tài nguyên tới khi bạn đóng terminal. Nội dung ô terminal của bạn không được gửi cho trợ lý."
+msgstr "Long-running processes (dev servers, REPLs) hold resources until you close the terminal. What you do in your sidebar terminal is not sent to the assistant."
+
+msgid "Lịch hẹn không chạy"
+msgstr "Scheduled reminders do not run"
+
+msgid "Lịch hẹn chỉ nhắc trợ lý làm tiếp trong phiên đang mở. Nó không phải tác vụ nền: đóng ứng dụng là lịch hẹn mất và không chạy lại khi mở lần sau."
+msgstr "A schedule only reminds the assistant to continue within the session that is open. It is not a background task: closing the app drops the schedule and it does not run the next time you open the app."
+
+msgid "Skill và Playwright CLI"
+msgstr "Skills and Playwright CLI"
+
+msgid "LTTCODE kèm sẵn một bộ skill tiếng Việt. Skill bạn tự thêm trong dự án hoặc thư mục người dùng mà trùng tên sẽ được dùng thay skill đi kèm. Skill là văn bản đưa vào ngữ cảnh của trợ lý — cẩn thận với skill trong kho mã lạ."
+msgstr "LTTCODE ships with a set of Vietnamese skills. A skill you add in your project or user folder with the same name is used instead of the bundled one. Skills are text placed into the assistant's context — be careful with skills inside unfamiliar repositories."
+
+msgid "Skill playwright-cli điều khiển trình duyệt Microsoft Edge có sẵn trên máy để mở trang, bấm, chụp màn hình, đọc console: Playwright CLI đã đi kèm, không cần npm install hay playwright install. Script của skill chỉ chạy khi trợ lý gọi lệnh, dưới cùng sandbox và quy tắc duyệt lệnh."
+msgstr "The playwright-cli skill drives the Microsoft Edge browser already on your machine to open pages, click, take screenshots and read the console: Playwright CLI is bundled, no npm install or playwright install needed. The skill's scripts only run when the assistant runs a command, under the same sandbox and approval rules."
+
+msgid "Điều phối song song: agent và lệnh nền đang ở đâu"
+msgstr "Parallel work: where agents and background commands are"
+
+msgid "Nút lệnh nền trên thanh đầu phiên hiện khi có lệnh chạy nền; số trên nút là số lệnh đang chạy. Danh sách chỉ để xem: muốn dừng, nhắn trợ lý dừng job đó hoặc bấm Stop cả lượt."
+msgstr "The background-commands button in the session header appears once a command runs in the background; its number is how many are running. The list is view-only: to stop one, ask the assistant to stop that job or press Stop for the whole turn."
+
+msgid "Nút cây subagent / N cạnh tên phiên mở cây agent con: chế độ, trạng thái, token đã dùng. Chọn một dòng để mở hội thoại của agent con; con chạy tiếp được thì bạn nhắn thêm được, nút Stop chỉ dừng lượt hiện tại của nó."
+msgstr "The subagent tree button / N next to the session name opens the tree of child agents: mode, status, tokens used. Select a row to open that child's conversation; if it can continue you can message it, and its Stop button only stops its current turn."
+
+msgid "Mỗi lần trợ lý chạy workflow có một khối riêng trong khung chat, mở ra thấy các pha và thành viên. Trong lúc workflow chạy, phiên cha chờ tới khi xong."
+msgstr "Each time the assistant runs a workflow it gets its own block in the chat, which opens into phases and members. While a workflow runs, the parent session waits until it finishes."
+
+msgid "Giới hạn: tối đa 3 yêu cầu tới model LTT cùng lúc tính cả agent cha (phần vượt tự xếp hàng, không phải lỗi), nên chỉ nên có tối đa 2 agent con sửa mã chạy song song. Agent con chỉ đọc/tìm chạy trên LTT-3.8, không ghi và không chạy lệnh. Agent con không xin duyệt được — bước cần duyệt do agent cha làm. Đóng ứng dụng thì lệnh nền và workflow mất; chỉ agent con chạy tiếp được còn lại để mở lại."
+msgstr "Limits: at most 3 requests to LTT models at once, counting the parent agent (extra requests queue automatically, not an error), so keep at most 2 code-editing child agents running in parallel. Read/search-only child agents run on LTT-3.8 and cannot write or run commands. Child agents cannot ask for approval — steps that need approval are done by the parent agent. Closing the app loses background commands and workflows; only continuable child agents remain to reopen."
+
+msgid "Sao lưu phiên khi cập nhật"
+msgstr "Session backup on update"
+
+msgid "Khi bản cập nhật đổi phiên bản runtime, trước lần khởi động đầu tiên ứng dụng sao lưu phiên làm việc, cài đặt, skill và preset của bạn vào thư mục backups trong DSH_HOME:"
+msgstr "When an update changes the runtime version, before its first start the app backs up your sessions, settings, skills and presets into the backups folder inside DSH_HOME:"
+
+msgid "Chỉ giữ một bản sao lưu gần nhất; bản mới thay bản cũ."
+msgstr "Only the most recent backup is kept; a new one replaces the old one."
+
+msgid "Khoá và tệp bí mật không được chép vào bản sao lưu. Nếu đĩa thiếu chỗ hoặc sao lưu lỗi, ứng dụng ghi cảnh báo vào nhật ký và vẫn khởi động."
+msgstr "Keys and secret files are not copied into the backup. If disk space is short or the backup fails, the app logs a warning and still starts."
