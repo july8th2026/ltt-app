@@ -12,6 +12,15 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-18 — Golden UI: gộp `main`, deploy `d38ee328`, nghiệm thu công khai
+
+- Gộp `phien/golden-ui` → `main` (`82850b47`). Chủ dự án chỉ đạo deploy dù lượt khép còn đỏ đúng một phép `test_1259` (đòi env cổng LLM máy B — ngoài phạm vi phiên giao diện; 28/29 xanh, `test-results/gates/20260917T174136Z-7552.json`).
+- **Bẫy bắt được TRƯỚC khi chép** (`d38ee328`): `.codex/worktrees/*` — cây làm việc đầy đủ của phiên Codex nằm trong kho — KHÔNG có trong `/XD` của `setup/2-cai-dat.ps1` (chỉ có `.claude`), nên bản sao đó sẽ lên production; `scan_source_secrets.py` cũng báo trip ở vendor pako/zlib của nó. Thêm `.codex` vào cả ba chỗ đối xứng với `.claude`: `/XD` robocopy, `EXCLUDED_DIRS` máy quét, `.gitignore`. Không xoá gì của phiên khác. Test: `test_33`, `test_362`, `cay_nguon_deploy` + 3 tệp liên quan — 86 passed.
+- Báo hai phiên đang chạy (LTTCODE, LTT LLM Duo) trước khi deploy. Còn một dòng `??` rỗng 0 byte `tests/StudioShell.test.tsx` không rõ chủ — không xoá, đã báo.
+- Deploy máy A: `EXITCODE=0` (00:54→00:55), `nghiem_thu_deploy` **0 lệch / 0 thiếu / 0 thừa**, `/health/ready` 200, `/health/version` = `d38ee328cd12`, `asset_ver` `e5821373`.
+- Nghiệm thu giao diện công khai 390 + 1440 trên `https://app.lttstudios.com`: `/`, `/huong-dan`, `/lttcode`, `/gia-api`, `/api-dieu-khoan`, `/status/api`, `/khong-co-trang-nay` — axe serious/critical **0**, tràn ngang 0, `h1`=1, `main`=1, console 0, request hỏng 0. `/register` 200, phông `"Segoe UI"` đúng DL-003, `ltt.css?v=e5821373` 200.
+- ⚠️ Hai bẫy đo, KHÔNG phải lỗi sản phẩm: ① `waitUntil:'networkidle'` treo ở nhóm trang có Turnstile (asset thử thách chỉ có AAAA, máy không IPv6) ⇒ dùng `domcontentloaded` + chờ; ② đo phông ngay lúc `domcontentloaded` cho ra `Times New Roman` vì CSS chưa áp — đo lại sau khi áp: đúng `Segoe UI`. `/login`, `/forgot-password`, `/status` trả **403 cho trình duyệt tự động** (Cloudflare chặn bot) ⇒ nghiệm thu qua loopback: 200, `h1`=1, nhãn "Email hoặc tên đăng nhập", gợi ý "Nhập email hoặc tên đăng nhập" (đúng bản C4).
+
 ## 2026-09-18 — Golden UI: đóng mọi pha xây dựng, L3 + lượt khép (chưa deploy)
 
 - Nhánh `phien/golden-ui`. C4 (6 nhánh song song) gộp xong; sửa chung sau chấm V3: footer dính đáy trang ngắn (`aee65ca4`), thanh tiến độ cột phải trang chủ về màu cảnh báo như `/jobs` (`4f668369`).
