@@ -29,7 +29,7 @@ class TestNguonChanLy:
 
     def test_tran_vao_la_dan_xuat_khong_phai_go_tay(self):
         assert ngan_sach.TOKEN_VAO_TRAN == (
-            ngan_sach.CUA_SO_MODEL - ngan_sach.TOKEN_RA_TRAN - ngan_sach.LE)
+            ngan_sach.CUA_SO_MODEL - ngan_sach.TOKEN_RA_TRAN - ngan_sach.DEM_UOC)
 
     def test_vao_cong_ra_khong_vuot_cua_so_model(self):
         """Vào và ra chia nhau **một** cửa sổ. Tổng vượt là model tự cắt ngữ cảnh."""
@@ -64,9 +64,9 @@ class TestNguonChanLy:
         #    — la phep kiem nay do ngay.
         for model_id, cua_so in ngan_sach.CUA_SO_THEO_MODEL.items():
             assert (ngan_sach.tran_vao_cua(model_id) + ngan_sach.TOKEN_RA_TRAN
-                    + ngan_sach.LE == cua_so), (
+                    + ngan_sach.DEM_UOC == cua_so), (
                 f"{model_id}: vao {ngan_sach.tran_vao_cua(model_id)} + ra "
-                f"{ngan_sach.TOKEN_RA_TRAN} + le {ngan_sach.LE} != cua so {cua_so}")
+                f"{ngan_sach.TOKEN_RA_TRAN} + le {ngan_sach.DEM_UOC} != cua so {cua_so}")
 
     def test_tran_ra_khong_tran_cua_so_cua_model_NHO_NHAT(self):
         """Chay that `tran_theo_ngu_canh()` o bien, tren model cua so be nhat.
@@ -146,7 +146,6 @@ class TestKhongConChongCheo:
         from apps.ltt_llm import manifest
         assert manifest.CUA_SO_NGU_CANH == ngan_sach.CUA_SO_MODEL
         assert manifest.MAX_TOKENS_TRAN == ngan_sach.TOKEN_RA_TRAN
-        assert manifest.LE_NGU_CANH == ngan_sach.LE
 
     def test_features_chi_la_bi_danh(self):
         from apps.ltt_llm import features
@@ -252,9 +251,10 @@ class TestDoiChieuMayB:
         """Cho nhiều việc song song hơn máy B phục vụ được thì phần dôi ra chắc
         chắn ăn 429/503 — không phải lỗi của bên nào, là hai trần không biết nhau."""
         gh = self._health().get("gioi_han", {})
-        assert gh.get("max_dong_thoi") == ngan_sach.DONG_THOI_MAY_B, (
+        ta = max(h.seq_cap for h in ngan_sach.HO_SO.values())
+        assert gh.get("max_dong_thoi") == ta, (
             f"may B phuc vu {gh.get('max_dong_thoi')} luot cung luc nhung ta "
-            f"khai {ngan_sach.DONG_THOI_MAY_B}")
+            f"khai {ta}")
 
 
 class TestDoiChieuNenTang:
@@ -278,8 +278,8 @@ class TestDoiChieuNenTang:
             f"token — dat LTT_PUBLIC_API_MAX_BODY_BYTES cho du")
 
     def test_dong_thoi_khai_o_app_khop_hang_so_may_B(self):
-        """Ai đặt trần đồng thời cho `text.chat` phải đọc `DONG_THOI_MAY_B` trước."""
-        assert ngan_sach.DONG_THOI_MAY_B >= 1
+        """Ai đặt trần đồng thời cho `text.chat` phải đọc `HO_SO[m].seq_cap` trước."""
+        assert all(1 <= h.seq_cap <= h.np for h in ngan_sach.HO_SO.values())
 
 
 class TestDoiChieuKhoMayB:
@@ -1118,6 +1118,23 @@ class TestExamplesKhopNganSach:
                     assert khac not in mo_ta, (
                         f"{alias} dang quang cao {khac} — do la con so cua "
                         f"{id_khac}, khong phai cua no")
+
+    def test_canh_bao_provider_KHONG_go_so_cua_so(self):
+        """🔴 O-13 (phương án C, 17/09): `providers.py` từng mang cảnh báo hiển
+        thị *"engine có cửa sổ 131K; API public giới hạn input 96.256"* — gõ
+        01/09, sai từ 03/09, không phép kiểm nào đọc. Cửa sổ/trần vào công bố
+        THEO MODEL qua `/api/v1/models`; chuỗi hiển thị không được gõ lại số.
+        """
+        import re
+
+        from platform_core import providers
+
+        prov = providers.get("ltt_llm")
+        so = re.compile(r"\d{2,3}[.,]\d{3}|\d+\s*K\b")
+        for m in prov.models:
+            for cau in (m.capabilities or {}).get("canh_bao", []) or []:
+                assert not so.search(str(cau)), (
+                    f"{m.id}: canh bao go so cua so/tran tay: {cau!r}")
 
 
 class TestTaiLieuKhopMayChuThat:

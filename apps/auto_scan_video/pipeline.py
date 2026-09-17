@@ -174,8 +174,8 @@ CHUOI: tuple[GiaiDoan, ...] = (
     #    ra dai qua khe — `ai.RUT_NGAN_CHO_VUA`, mot thao tac van ban thuan
     #    (`can_thi_giac=False` -> `qwen38-api`, khong phai ban thi giac).
     #
-    # ⚠️ Khai `llm_remote` o day se giu suat DUY NHAT cua may B
-    #    (`ltt_llm.ngan_sach.DONG_THOI_MAY_B = 1`) suot ca giai doan DAI NHAT
+    # ⚠️ Khai `llm_remote` o day se giu mot suat cua may B (ngay viet: suat
+    #    DUY NHAT; nay so suat theo model o `ltt_llm.ngan_sach.HO_SO`) suot ca giai doan DAI NHAT
     #    cua chuoi — chan `edit_plan`/`content_process`/`qc_ai` cua moi lan chay
     #    khac, de tra gia cho mot loi goi THINH THOANG moi xay ra.
     #

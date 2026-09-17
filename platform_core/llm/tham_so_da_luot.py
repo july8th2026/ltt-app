@@ -4,8 +4,19 @@
    chốt 11/09: mở vận hành trước, phân tích sổ lượt (`llm_waiters`) sau rồi mới
    tối ưu — nên mọi ngưỡng ở đây phải **đổi được bằng cấu hình**, không bằng deploy.
 
-⛔ Số slot và pool KV KHÔNG ở đây: chúng thuộc từng tool (`ToolSpec.admission_slots`,
-   `admission_token_pool`) và nguồn chân lý là `apps/ltt_llm/ngan_sach.py`.
+⭐ PHƯƠNG ÁN C (bước 2, 17/09/2026) — hai loại số, hai nơi, không chồng nhau:
+
+   * **số của MODEL** (slot, pool KV, ngưỡng whale, đệm ước, token đặt chỗ mỗi
+     ảnh) — app khai trong `AdmissionModel` (`platform_core/registry.py`), nguồn
+     chân lý là hồ sơ của app (`apps/ltt_llm/ngan_sach.HO_SO`). ⛔ KHÔNG ở đây.
+   * **số THỜI GIAN / HÀNG** (trần chờ, backfill, lão hoá, whale nhường, nhịp,
+     trần người chờ, số lần xếp lại) — env đọc ở `doc()`, mặc định **chỉ ở
+     `doc()`**. Không chữ ký hàm nào khác được mang mặc định số của chúng
+     (`luat_nhan.ThamSo`, `admission.xet_va_giu`, `phong_cho` đều bắt truyền).
+
+   🔴 ĐÃ GỠ (17/09): `LTT_LLM_NGUONG_WHALE` (16.384 chung cho hai model — O-06),
+      `LTT_LLM_DEM_DAT_TRUOC` (trùng nghĩa `LE` — O-08), `LTT_LLM_TOKEN_MOI_ANH`
+      (O-11). Đặt chúng trong `app.env` nay KHÔNG có tác dụng gì.
 
 ⚠️ Dịch vụ Windows (nssm) nướng env lúc CÀI — đổi `app.env` rồi restart là KHÔNG đủ,
    phải `setup/nap_lai_env.ps1` (memory "nssm nướng ENV lúc CÀI").
@@ -14,6 +25,11 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:  # pragma: no cover - chỉ cho kiểu
+    from platform_core.llm.luat_nhan import ThamSo
+    from platform_core.registry import AdmissionModel
 
 
 def _so(ten: str, mac_dinh: float) -> float:
@@ -25,9 +41,6 @@ def _so(ten: str, mac_dinh: float) -> float:
 
 @dataclass(frozen=True)
 class ThamSoDaLuot:
-    #: Token cần prefill MỚI từ mức này trở lên là "whale" (D-05). 16.384 ⇒ 7,6 %
-    #: lượt thật 22/08–11/09 (`docs/multijob/00_BASELINE.md` §3).
-    nguong_whale: int
     #: Whale nhường lượt tương tác đang chạy tối đa bấy nhiêu giây, rồi thành "chặn".
     cho_whale_toi_da_s: float
     #: Cửa stream chờ trong SSE tối đa (D-06).
@@ -48,10 +61,6 @@ class ThamSoDaLuot:
     #:    NGƯỜI, không bằng token: 2 ≈ hai lượt 150K (~4,5 phút mỗi lượt) nằm trong
     #:    `cho_stream_whale_toi_da_s`. Quá ⇒ 429 TRƯỚC 200, khách thử lại được.
     so_ca_voi_cho_toi_da: int
-    #: Đệm đặt chỗ mỗi lượt (≈ `n_batch` của llama.cpp, như patch 0011 của lab).
-    dem_dat_truoc: int
-    #: Token đặt chỗ thêm cho mỗi ảnh (M-2: ảnh 1024×768 ≈ 800 token prompt).
-    token_moi_anh: int
     #: Nhịp tim SSE trong lúc chờ (dưới đồng hồ im lặng 100 s của Cloudflare).
     nhip_tim_cho_s: float
     #: Chờ quá bấy nhiêu giây thì được xếp lên trước (chống đói — như `jobs.FAIR_AGING`).
@@ -60,52 +69,113 @@ class ThamSoDaLuot:
     #: một lượt 150K trên 3.8 prefill ~230 s (`apps/ltt_llm/ngan_sach.py`
     #: `DUONG_PREFILL_TOK_S`) — 300 s chung sẽ đuổi whale thứ hai GIỮA SSE.
     #: ⛔ An toàn chỉ vì nhịp SSE `nhip_tim_cho_s` giữ Cloudflare (100 s) sống.
-    cho_stream_whale_toi_da_s: float = 900.0
+    cho_stream_whale_toi_da_s: float
     #: BACKFILL có chặn (L-12b, chủ dự án chốt 17/09): lượt đứng trước chưa vừa
     #: NGÂN SÁCH KV được nhường lượt sau VỪA ngân sách tối đa bấy nhiêu giây; quá
     #: thì nó CHẶN mọi lượt trẻ hơn tới khi đủ chỗ (chống bỏ đói lượt lớn).
-    cho_backfill_toi_da_s: float = 120.0
+    cho_backfill_toi_da_s: float
+    #: Máy B trả 429 cho một lượt A ĐÃ nhận (phương án C bước 1, O-04): A nhả
+    #: suất và XẾP LẠI dòng chờ (giữ `created_at`) tối đa bấy nhiêu lần, trong
+    #: hạn chờ của cửa. Quá ⇒ kết cục bận cũ (`overloaded`/503), 0 khoản giữ.
+    #: ⭐ Vì sao có: hai sổ slot/pool (A nhả ~0,05 s, B nhả khi luồng đóng) lệch
+    #:    nhịp — một khe ngắn mà trước đây thành "429 SAU 200", khách mất lượt chờ.
+    so_lan_xep_lai_toi_da: int
+    #: Nghỉ bấy nhiêu giây trước khi xếp lại — cho máy B kịp nhả suất cũ, không
+    #: thì A nhận lại ngay nửa giây sau và B 429 lần nữa vì cùng một khe.
+    cho_xep_lai_s: float
 
     def han_cho_stream(self, la_whale: bool) -> float:
         """Trần chờ cửa stream của MỘT lượt — một chỗ tính, mọi cửa đọc."""
         return self.cho_stream_whale_toi_da_s if la_whale else self.cho_stream_toi_da_s
 
 
-def luat_cho(pool: int, *, lop: str, token_vao_uoc: int, xin_ra: int,
-             so_anh: int = 0, token_prefill_moi: int = 0,
-             la_whale: bool = False) -> dict:
+class DatChoVuotPool(ValueError):
+    """Một lượt đặt chỗ NHIỀU HƠN cả pool KV — không bao giờ nhận được.
+
+    🔴 THAY phép KẸP IM LẶNG cũ (`min(pool, dat)`, phương án C bất biến 1). Kẹp
+       che lỗi: đặt chỗ nhỏ hơn thứ lượt thật dùng ⇒ Σ đặt chỗ "vừa" pool trong
+       khi engine tràn `-kvu` và giết MỌI slot (llama.cpp b10689). Và nó che luôn
+       chính lỗi cấu hình gây ra nó (đệm ước lệch trần vào — O-08).
+    ⭐ Cửa gọi dịch sang lỗi "quá dài" (413 trước 200 / job hỏng không thử lại):
+       lượt này quá lớn với model ở cấu hình hiện tại, thử lại không bao giờ được.
+    """
+
+    def __init__(self, dat: int, pool: int):
+        super().__init__(f"dat cho {dat} token vuot pool KV {pool}")
+        self.dat = int(dat)
+        self.pool = int(pool)
+
+
+def luat_cho(suc: "AdmissionModel | None", *, lop: str, token_vao_uoc: int,
+             xin_ra: int, so_anh: int = 0,
+             token_prefill_moi: int | None = None) -> dict:
     """Tham số đa lượt cho `admission.acquire`/`xet_va_giu` — MỘT phép tính đặt chỗ.
 
-    `pool <= 0` ⇒ `{}` ⇒ đúng hành vi cũ (tool không khai ngân sách KV).
+    `suc` là `AdmissionModel` ĐÃ giải theo model (`tool.admission_cho(alias)`);
+    `None` hoặc `token_pool <= 0` ⇒ `{}` ⇒ đúng hành vi cũ (tool không khai
+    ngân sách KV — đếm slot).
 
-    ⛔ Kẹp về `pool`: một lượt dùng trọn cửa sổ + đệm + ảnh vượt pool và sẽ KHÔNG
-       BAO GIỜ được nhận, trong khi engine vẫn phục vụ được nó khi chạy một mình.
-    ⭐ Năm chỗ gọi (stream, ChatLTT, đồng bộ ×2, job, planner) cùng đi qua đây —
-       năm bản sao của phép tính này là năm chỗ lệch nhau (memory "hai chỗ khai
-       cùng một điều").
+        dat_cho = vào_ước + xin_ra + dem_uoc + so_anh × token_giu_moi_anh
+        whale   = token_prefill_moi ≥ nguong_whale   (nguong_whale > 0)
+
+    ⭐ MỘT chỗ gắn cờ whale cho MỌI cửa (O-07): stream/ChatLTT truyền
+       `token_prefill_moi` ước qua tiền tố (`uoc_moi`); đồng bộ, job, planner
+       không có lịch sử tiền tố nên để `None` ⇒ dùng `token_vao_uoc` (ước CAO —
+       hướng an toàn: nghi là whale thì chỉ chờ lâu hơn, không tràn).
+    ⛔ NÉM `DatChoVuotPool` thay vì kẹp về pool — xem lớp ấy.
+    ⛔ NÉM `ValueError` khi pool > 0 mà thiếu `dem_uoc`: bản khai ngân sách KV
+       không có đệm ước là bản khai hỏng, không phải "đệm 0".
     """
-    if int(pool or 0) <= 0:
+    pool = int(getattr(suc, "token_pool", 0) or 0) if suc is not None else 0
+    if pool <= 0:
         return {}
-    ts = doc()
-    dat = int(token_vao_uoc) + int(xin_ra) + ts.dem_dat_truoc + int(so_anh) * ts.token_moi_anh
-    return dict(lop=lop, token_pool=int(pool), token_dat_truoc=min(int(pool), dat),
-                token_prefill_moi=int(token_prefill_moi), la_whale=bool(la_whale))
+    dem = int(getattr(suc, "dem_uoc", 0) or 0)
+    if dem <= 0:
+        raise ValueError(f"tai nguyen {getattr(suc, 'resource', '')!r} khai pool {pool} "
+                         f"ma khong khai dem_uoc")
+    anh = max(0, int(so_anh))
+    giu_anh = int(getattr(suc, "token_giu_moi_anh", 0) or 0)
+    if anh and giu_anh <= 0:
+        raise ValueError(f"tai nguyen {getattr(suc, 'resource', '')!r} nhan anh ma "
+                         f"khong khai token_giu_moi_anh")
+    dat = int(token_vao_uoc) + int(xin_ra) + dem + anh * giu_anh
+    if dat > pool:
+        raise DatChoVuotPool(dat, pool)
+    moi = int(token_vao_uoc) if token_prefill_moi is None else int(token_prefill_moi)
+    nguong = int(getattr(suc, "nguong_whale", 0) or 0)
+    return dict(lop=lop, token_pool=pool, token_dat_truoc=dat,
+                token_prefill_moi=moi, la_whale=bool(nguong > 0 and moi >= nguong))
+
+
+def tham_so_nhan(*, so_slot: int, pool: int, residency_mo: bool,
+                 ts: ThamSoDaLuot | None = None) -> "ThamSo":
+    """`luat_nhan.ThamSo` dựng từ MỘT `ThamSoDaLuot` — ánh xạ DUY NHẤT.
+
+    🔴 O-09 (17/09): `admission.xet_va_giu` từng dựng `ThamSo` tay và quên
+       `lao_hoa_s` ⇒ env `LTT_LLM_LAO_HOA_S` không có hiệu lực, luôn là mặc định
+       300 nằm trong chữ ký `luat_nhan.ThamSo`. Nay `ThamSo` không còn mặc định
+       số và mọi trường thời gian đi qua đây.
+    """
+    from platform_core.llm.luat_nhan import ThamSo
+
+    ts = ts or doc()
+    return ThamSo(so_slot=int(so_slot), pool=int(pool),
+                  cho_whale_toi_da_s=ts.cho_whale_toi_da_s, lao_hoa_s=ts.lao_hoa_s,
+                  cho_backfill_toi_da_s=ts.cho_backfill_toi_da_s,
+                  residency_mo=bool(residency_mo))
 
 
 def doc() -> ThamSoDaLuot:
     return ThamSoDaLuot(
-        nguong_whale=int(_so("LTT_LLM_NGUONG_WHALE", 16_384)),
         cho_whale_toi_da_s=_so("LTT_LLM_CHO_WHALE_S", 30.0),
         cho_stream_toi_da_s=_so("LTT_LLM_CHO_STREAM_S", 300.0),
         cho_dong_bo_toi_da_s=_so("LTT_LLM_CHO_DONG_BO_S", 60.0),
         so_nguoi_cho_toi_da=int(_so("LTT_LLM_SO_NGUOI_CHO", 32)),
         so_ca_voi_cho_toi_da=max(1, int(_so("LTT_LLM_SO_CA_VOI_CHO", 2))),
-        dem_dat_truoc=int(_so("LTT_LLM_DEM_DAT_TRUOC", 2_048)),
-        # Khớp phép giữ chỗ của máy B (`llm_gateway.ngan_sach.TOKEN_MOI_ANH`).
-        # Máy A thấp hơn máy B làm một lượt có ảnh qua hàng chờ rồi bị B từ chối.
-        token_moi_anh=int(_so("LTT_LLM_TOKEN_MOI_ANH", 2_048)),
         nhip_tim_cho_s=_so("LTT_LLM_NHIP_TIM_CHO_S", 15.0),
         lao_hoa_s=_so("LTT_LLM_LAO_HOA_S", 300.0),
         cho_stream_whale_toi_da_s=_so("LTT_LLM_CHO_STREAM_WHALE_S", 900.0),
         cho_backfill_toi_da_s=_so("LTT_LLM_CHO_BACKFILL_S", 120.0),
+        so_lan_xep_lai_toi_da=max(0, int(_so("LTT_LLM_SO_LAN_XEP_LAI", 3))),
+        cho_xep_lai_s=max(0.0, _so("LTT_LLM_CHO_XEP_LAI_S", 1.0)),
     )

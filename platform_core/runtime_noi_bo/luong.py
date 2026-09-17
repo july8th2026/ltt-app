@@ -29,7 +29,7 @@ from __future__ import annotations
 import json
 import logging
 import time
-from contextlib import nullcontext
+from contextlib import contextmanager, nullcontext
 from dataclasses import dataclass, field
 from typing import Any, AsyncIterator, Callable, Generator, Iterator, Optional
 
@@ -148,7 +148,10 @@ def tran_token_ra(than: dict, token_vao_uoc: int, executor) -> int:
     phải của cửa đồng bộ. Lấy nhầm 1.024 của cửa đồng bộ là gốc của lỗi "hỏi
     dài thì im lặng" đo được 30/08.
     """
-    tran = int(executor.context_output_cap(token_vao_uoc))
+    # O-24 cùng lớp (17/09): kẹp theo cửa sổ của ĐÚNG model khách xin, không theo
+    # cửa sổ hẹp nhất — không thì một lượt 3.5 dài bị bóp đầu ra theo cửa sổ 3.8.
+    tran = int(executor.context_output_cap(token_vao_uoc,
+                                           str(than.get("model") or "") or None))
     for ten in ("max_tokens", "max_output_tokens"):
         gt = than.get(ten)
         if isinstance(gt, (int, float)) and not isinstance(gt, bool):
@@ -252,8 +255,12 @@ class TienKiem:
         return bool(self.tai_nguyen) and self.so_suat > 0 and self.token_pool > 0
 
 
-def _suc_chua(tool, model: str) -> tuple[str, int, int]:
-    """`(tài nguyên, số suất, pool KV)` của `tool` cho ĐÚNG `model` này. (multijob 2.2)
+def _suc_chua(tool, model: str):
+    """`AdmissionModel | None` của `tool` cho ĐÚNG `model` này. (multijob 2.2)
+
+    ⭐ Trả NGUYÊN bản khai (phương án C bước 2), không bóc thành bộ ba: ngưỡng
+       whale, đệm ước và token mỗi ảnh là số của MODEL, và `luat_cho` đọc chúng
+       từ chính đối tượng này. Bóc ra là mở chỗ cho một cửa quên một trường.
 
     🔴 MỘT tool, NHIỀU pool. `text.chat` phục vụ `ltt-3.8` và `ltt-3.5` trên hai
        pool KV khác nhau, nên `admission_resource/slots/token_pool` tĩnh không
@@ -270,9 +277,34 @@ def _suc_chua(tool, model: str) -> tuple[str, int, int]:
         suc = tool.admission_cho(model)
     except KeyError as e:
         raise ThamSoSai(f"model {model!r} khong duoc phuc vu o cua nay: {e}") from None
+    return suc
+
+
+def _bo_ba(suc) -> tuple[str, int, int]:
+    """`(tài nguyên, số suất, pool KV)` của một bản khai — `None` ⇒ không giành gì."""
     if suc is None:
         return ("", 0, 0)
     return (str(suc.resource or ""), int(suc.slots or 0), int(suc.token_pool or 0))
+
+
+def _dat_cho(suc, *, lop: str, token_vao_uoc: int, xin_ra: int, so_anh: int = 0,
+             token_prefill_moi: int | None = None) -> dict:
+    """`tham_so_da_luot.luat_cho` + dịch `DatChoVuotPool` sang lỗi "quá dài".
+
+    ⛔ Lượt đặt chỗ vượt cả pool KV không bao giờ được nhận (phương án C bất biến
+       1 — không còn kẹp im lặng). Với khách đó là một yêu cầu QUÁ DÀI cho cấu
+       hình hiện tại (ảnh cộng vào vượt cửa sổ, hoặc pool đang bị hạ khẩn cấp):
+       413 trước 200 để client tự nén, không phải chờ hết hạn rồi `overloaded`.
+    """
+    from platform_core.llm import tham_so_da_luot
+
+    try:
+        return tham_so_da_luot.luat_cho(
+            suc, lop=lop, token_vao_uoc=token_vao_uoc, xin_ra=xin_ra,
+            so_anh=so_anh, token_prefill_moi=token_prefill_moi)
+    except tham_so_da_luot.DatChoVuotPool as e:
+        raise KhongMoDuoc(f"dau vao + dau ra + anh {e.dat} token vuot ngan sach "
+                          f"KV {e.pool} cua model", qua_dai=True) from None
 
 
 def tien_kiem(db, *, user_id: str, tool_name: str, than: dict, duong: str,
@@ -284,7 +316,8 @@ def tien_kiem(db, *, user_id: str, tool_name: str, than: dict, duong: str,
     `DangBan(nguon="phong_day")` — cả bốn đều TRƯỚC 200, nên client nhận đúng mã
     HTTP (Codex/Claude Code dựa vào 413 để tự nén hội thoại).
     """
-    from platform_core.llm import phong_cho, tham_so_da_luot, thanh_toan, uoc_moi
+    from platform_core.llm import (luat_nhan, phong_cho, tham_so_da_luot, thanh_toan,
+                                   uoc_moi)
     from platform_core.public_api import metrics
 
     _manifest, tool = (tim or tim_tool)(tool_name)
@@ -337,12 +370,12 @@ def tien_kiem(db, *, user_id: str, tool_name: str, than: dict, duong: str,
                               qua_dai=True)
 
     ts = tham_so_da_luot.doc()
-    tai_nguyen, so_suat, pool = _suc_chua(tool, ten)
-    # Kẹp về pool nằm trong `luat_cho` — MỘT phép tính đặt chỗ cho mọi cửa.
-    dat = tham_so_da_luot.luat_cho(pool, lop="", token_vao_uoc=vao_uoc,
-                                   xin_ra=xin_ra,
-                                   so_anh=dem_anh(than)).get("token_dat_truoc", 0)
+    suc = _suc_chua(tool, ten)
+    tai_nguyen, so_suat, pool = _bo_ba(suc)
     moi = uoc_moi.uoc_token_moi(user_id, tin, executor.estimate_input)
+    # MỘT phép tính đặt chỗ + MỘT chỗ gắn cờ whale (ngưỡng THEO MODEL) cho mọi cửa.
+    luat = _dat_cho(suc, lop=luat_nhan.TUONG_TAC, token_vao_uoc=vao_uoc,
+                    xin_ra=xin_ra, so_anh=dem_anh(than), token_prefill_moi=int(moi))
 
     if not thanh_toan.du_so_du(db, user_id=user_id, token_vao_uoc=vao_uoc,
                                max_tokens=xin_ra, model=ten):
@@ -352,8 +385,10 @@ def tien_kiem(db, *, user_id: str, tool_name: str, than: dict, duong: str,
     tk = TienKiem(user_id=user_id, tool_name=tool_name, duong=duong, than_gui=gui,
                   request_id=request_id, token_vao_uoc=vao_uoc, xin_ra=xin_ra,
                   model_alias=ten, executor=executor, tai_nguyen=tai_nguyen,
-                  so_suat=so_suat, token_pool=pool, token_dat_truoc=int(dat),
-                  token_prefill_moi=int(moi), la_whale=int(moi) >= ts.nguong_whale,
+                  so_suat=so_suat, token_pool=pool,
+                  token_dat_truoc=int(luat.get("token_dat_truoc", 0)),
+                  token_prefill_moi=int(luat.get("token_prefill_moi", moi)),
+                  la_whale=bool(luat.get("la_whale", False)),
                   cua=cua, correlation_id=correlation_id)
     if tk.dung_phong_cho:
         try:
@@ -369,19 +404,11 @@ def tien_kiem(db, *, user_id: str, tool_name: str, than: dict, duong: str,
     return tk
 
 
-def vao_va_cho(tk: TienKiem, *, db_luong, han_s: float, dong_ho=None, ngu=None):
-    """GENERATOR: vào phòng chờ → `yield` lý do mỗi nhịp → được nhận → GIỮ TIỀN → `return ChuanBi`.
+def _yeu_cau_cho(tk: TienKiem):
+    """`phong_cho.YeuCauCho` của một lượt stream — dựng MỘT chỗ (vào hàng, xếp lại)."""
+    from platform_core.llm import luat_nhan, phong_cho
 
-    ⛔ GIỮ TIỀN SAU KHI ĐƯỢC NHẬN (D-06, INV-MJ-1): trong suốt lúc chờ, lượt này
-       không có dòng giữ chỗ nào. Hết trần chờ / khách ngắt ⇒ không có gì phải hoàn.
-    `db_luong` là phiên sống suốt luồng (luong_vlm cần nó để đánh dấu khoá).
-    """
-    from platform_core import credit
-    from platform_core.llm import luat_nhan, phong_cho, tham_so_da_luot, thanh_toan
-    from platform_core.public_api import metrics
-
-    ts = tham_so_da_luot.doc()
-    yc = phong_cho.YeuCauCho(
+    return phong_cho.YeuCauCho(
         resource=tk.tai_nguyen, slots=tk.so_suat, token_pool=tk.token_pool,
         user_id=tk.user_id, mode="stream", holder_id=tk.request_id,
         request_id=tk.request_id, cua=tk.cua, lop=luat_nhan.TUONG_TAC,
@@ -392,6 +419,20 @@ def vao_va_cho(tk: TienKiem, *, db_luong, han_s: float, dong_ho=None, ngu=None):
         # `tk.model_alias`: bí danh đổi được mà engine không đổi, nên một sổ khoá
         # theo bí danh sẽ nói về hai thứ khác nhau trước và sau một lần đổi tên.
         model=str(tk.than_gui.get("model") or ""))
+
+
+def vao_va_cho(tk: TienKiem, *, db_luong, han_s: float, dong_ho=None, ngu=None):
+    """GENERATOR: vào phòng chờ → `yield` lý do mỗi nhịp → được nhận → GIỮ TIỀN → `return ChuanBi`.
+
+    ⛔ GIỮ TIỀN SAU KHI ĐƯỢC NHẬN (D-06, INV-MJ-1): trong suốt lúc chờ, lượt này
+       không có dòng giữ chỗ nào. Hết trần chờ / khách ngắt ⇒ không có gì phải hoàn.
+    `db_luong` là phiên sống suốt luồng (luong_vlm cần nó để đánh dấu khoá).
+    """
+    from platform_core import credit
+    from platform_core.llm import phong_cho, thanh_toan
+    from platform_core.public_api import metrics
+
+    yc = _yeu_cau_cho(tk)
     gen, db = _phien_moi()
     try:
         waiter_id = phong_cho.vao(db, yc)
@@ -404,9 +445,7 @@ def vao_va_cho(tk: TienKiem, *, db_luong, han_s: float, dong_ho=None, ngu=None):
         kw["dong_ho"] = dong_ho
     if ngu is not None:
         kw["ngu"] = ngu
-    lease_id = yield from phong_cho.cho_nhan(
-        yc, waiter_id=waiter_id, han_s=han_s,
-        cho_whale_toi_da_s=ts.cho_whale_toi_da_s, **kw)
+    lease_id = yield from phong_cho.cho_nhan(yc, waiter_id=waiter_id, han_s=han_s, **kw)
 
     gen, db = _phien_moi()
     try:
@@ -490,36 +529,46 @@ def id_model_noi_bo(executor, alias: str) -> str:
     return str(ra or "")
 
 
-@dataclass(frozen=True)
+@dataclass
 class SuatDongBo:
-    """Kết quả của phòng chờ ở cửa đồng bộ. **Chưa** giữ đồng tiền nào."""
+    """Kết quả của phòng chờ ở cửa đồng bộ. **Chưa** giữ đồng tiền nào.
+
+    ⚠️ KHÔNG `frozen` (phương án C bước 1): máy B 429 ⇒ `goi_dong_bo_co_xep_lai`
+       nhả suất cũ, xếp lại và gán `lease_id` MỚI vào chính đối tượng này. Mọi
+       đường nhả của cửa (`_nha`, `_release_ticket`, `giu_suat_dong_bo`) đọc
+       `suat.lease_id` LÚC NHẢ, nên luôn nhả đúng suất đang giữ.
+    """
 
     lease_id: str
     waiter_id: str
+    #: Số token đặt chỗ của lease — đi lên máy B trong `X-LTT-Token-Dat` (O-05).
+    token_dat_truoc: int = 0
+    #: Yêu cầu chờ đã dùng — cần để XẾP LẠI khi máy B 429. `None` ⇒ không xếp lại.
+    yeu_cau: Any = None
 
 
-def cho_suat_dong_bo(*, tai_nguyen: str, so_suat: int, token_pool: int,
-                     user_id: str, request_id: str, cua: str,
+def cho_suat_dong_bo(*, suc, user_id: str, request_id: str, cua: str,
                      token_vao_uoc: int, xin_ra: int, so_anh: int = 0,
-                     token_prefill_moi: int = 0, la_whale: bool = False,
                      han_s: float, ngat_chua=None, model: str = "") -> SuatDongBo:
     """Vào phòng chờ → chờ chặn ≤ `han_s` → trả suất. **Không** chạm sổ tiền.
 
-    Ném `phong_cho.HetCho` (hết trần ⇒ cửa trả 429) hoặc `phong_cho.KhachDi`
-    (khách đi giữa lúc chờ). Cả hai đường đều để lại **0 khoản giữ** — đó là
-    toàn bộ lý do hàm này không biết gì về tiền (INV-MJ-1, INV-MJ-2).
-    """
-    from platform_core.llm import (admission, luat_nhan, phong_cho,
-                                   tham_so_da_luot)
+    `suc` là `AdmissionModel | None` của ĐÚNG model (`tool.admission_cho(alias)`).
 
+    Ném `phong_cho.HetCho` (hết trần ⇒ cửa trả 429), `phong_cho.KhachDi`
+    (khách đi giữa lúc chờ) hoặc `KhongMoDuoc(qua_dai=True)` (đặt chỗ vượt cả
+    pool KV — không bao giờ nhận được). Mọi đường đều để lại **0 khoản giữ** —
+    đó là toàn bộ lý do hàm này không biết gì về tiền (INV-MJ-1, INV-MJ-2).
+    """
+    from platform_core.llm import admission, luat_nhan, phong_cho
+
+    tai_nguyen, so_suat, token_pool = _bo_ba(suc)
     if not tai_nguyen or so_suat <= 0:
         return SuatDongBo("", "")
 
-    ts = tham_so_da_luot.doc()
-    luat = tham_so_da_luot.luat_cho(
-        token_pool, lop=luat_nhan.TUONG_TAC, token_vao_uoc=token_vao_uoc,
-        xin_ra=xin_ra, so_anh=so_anh, token_prefill_moi=token_prefill_moi,
-        la_whale=la_whale)
+    # ⭐ Không truyền `token_prefill_moi`: cửa đồng bộ không có lịch sử tiền tố,
+    #    `luat_cho` gắn cờ whale theo `token_vao_uoc` (ước CAO — hướng an toàn).
+    luat = _dat_cho(suc, lop=luat_nhan.TUONG_TAC, token_vao_uoc=token_vao_uoc,
+                    xin_ra=xin_ra, so_anh=so_anh)
 
     if not luat:
         # Tool KHÔNG khai ngân sách KV ⇒ đường cũ nguyên vẹn: một lần thử, không
@@ -536,11 +585,7 @@ def cho_suat_dong_bo(*, tai_nguyen: str, so_suat: int, token_pool: int,
             raise phong_cho.HetCho(luat_nhan.CHO_SLOT)
         return SuatDongBo(ve.id, "")
 
-    kw: dict = {}
-    if DONG_HO_CHO is not None:
-        kw["dong_ho"] = DONG_HO_CHO
-    if NGU_CHO is not None:
-        kw["ngu"] = NGU_CHO
+    kw = _seam_cho()
     bay_gio = DONG_HO_CHO() if DONG_HO_CHO is not None else None
 
     yc = phong_cho.YeuCauCho(
@@ -548,7 +593,8 @@ def cho_suat_dong_bo(*, tai_nguyen: str, so_suat: int, token_pool: int,
         user_id=user_id, mode="sync", holder_id=request_id,
         request_id=request_id, cua=cua, lop=luat_nhan.TUONG_TAC,
         token_dat_truoc=int(luat["token_dat_truoc"]),
-        token_prefill_moi=int(token_prefill_moi), la_whale=bool(la_whale),
+        token_prefill_moi=int(luat["token_prefill_moi"]),
+        la_whale=bool(luat["la_whale"]),
         # Id model nội bộ, do cửa gọi khai. Rỗng ⇒ ô `khong_khai` trong sổ, chứ
         # không bị gộp vào model của một tài nguyên nào.
         model=str(model or ""))
@@ -561,9 +607,181 @@ def cho_suat_dong_bo(*, tai_nguyen: str, so_suat: int, token_pool: int,
         _dong_phien(gen)
 
     lease_id = phong_cho.cho_nhan_chan(
-        yc, waiter_id=waiter_id, han_s=float(han_s), ngat_chua=ngat_chua,
-        cho_whale_toi_da_s=ts.cho_whale_toi_da_s, **kw)
-    return SuatDongBo(lease_id, waiter_id)
+        yc, waiter_id=waiter_id, han_s=float(han_s), ngat_chua=ngat_chua, **kw)
+    return SuatDongBo(lease_id, waiter_id, token_dat_truoc=yc.token_dat_truoc,
+                      yeu_cau=yc)
+
+
+def _seam_cho() -> dict:
+    """Đồng hồ/giấc ngủ của phép kiểm (`DONG_HO_CHO`, `NGU_CHO`) — rỗng ở production."""
+    kw: dict = {}
+    if DONG_HO_CHO is not None:
+        kw["dong_ho"] = DONG_HO_CHO
+    if NGU_CHO is not None:
+        kw["ngu"] = NGU_CHO
+    return kw
+
+
+@contextmanager
+def giu_suat_dong_bo(suat: SuatDongBo) -> Iterator[None]:
+    """Đập nhịp suất lúc vào khối, và nhả suất ĐANG GIỮ khi rời khối.
+
+    ⛔ Không phải `admission.keep_alive(suat.lease_id)` trần: hàm ấy chụp id LÚC
+       VÀO. Sau một lần xếp lại (máy B 429) suất đang giữ là suất MỚI, và nhả
+       theo id cũ là để suất mới mồ côi tới `ORPHAN_TIMEOUT` (20 phút GPU nằm
+       không). Suất mới không được đập nhịp — lượt đồng bộ sống ≤ trần ngân sách
+       cửa (~100 s), ngắn hơn thời hạn mồ côi rất nhiều.
+    """
+    from platform_core.llm import admission
+
+    try:
+        with (admission.keep_alive(suat.lease_id) if suat.lease_id
+              else nullcontext()):
+            yield
+    finally:
+        _nha_suat(suat.lease_id)
+
+
+def goi_dong_bo_co_xep_lai(goi: Callable[[], Any], suat: Optional[SuatDongBo], *,
+                           han_s: Callable[[], float],
+                           ngat_chua: Optional[Callable[[], bool]] = None) -> Any:
+    """Chạy `goi()` (lời gọi model của cửa đồng bộ/một-cục); máy B 429 ⇒ XẾP LẠI.
+
+    Phương án C bước 1 (O-04). `goi()` ném `BanError` (máy B trả 429 cho lượt A
+    ĐÃ nhận — hai sổ nhả lệch nhịp) ⇒ nhả suất, dòng chờ quay lại `cho` với
+    `created_at` cũ, nghỉ `cho_xep_lai_s`, chờ lại ≤ `han_s()` giây, rồi gọi lại
+    — tối đa `so_lan_xep_lai_toi_da` lần. Hết lần hoặc hết hạn ⇒ ném lại chính
+    `BanError` cuối, cửa trả kết cục bận cũ (hoàn tiền + 503).
+
+    💰 TIỀN GIỮ NGUYÊN trong lúc xếp lại — CÓ CHỦ Ý. `credit.hoan` kết sổ theo
+       mã lượt (`_da_ket_so`): hoàn rồi giữ lại cùng `request_id` là để khoản giữ
+       mới KHÔNG BAO GIỜ được quyết toán hay hoàn. Nên luật là *"tiền theo LƯỢT,
+       không theo LẦN THỬ"*: một khoản giữ, một lần kết sổ, ở mọi đường ra của
+       cửa (các nhánh `except` sẵn có đều hoàn).
+    ⛔ Hết hạn trong lúc chờ lại ⇒ `BanError` (bận), khách đi ⇒ `ngat.KhachNgat`
+       — đúng hai kết cục cửa đã xử lý, không đẻ nhánh mới.
+    ⭐ Mỗi lần gọi đều bọc `dieu_phoi.mang_dat_cho(suat.token_dat_truoc)` — số
+       đặt chỗ đi lên máy B cùng lượt gọi (O-05).
+    """
+    import time as _time
+
+    from platform_core.llm import dieu_phoi, ngat, phong_cho, tham_so_da_luot
+    from platform_core.llm.cong_vlm import BanError
+    from platform_core.public_api import metrics
+
+    ts = tham_so_da_luot.doc()
+    lan = 0
+    while True:
+        try:
+            with dieu_phoi.mang_dat_cho(suat.token_dat_truoc if suat else 0):
+                return goi()
+        except BanError:
+            con_s = float(han_s())
+            if (suat is None or suat.yeu_cau is None or not suat.waiter_id
+                    or lan >= ts.so_lan_xep_lai_toi_da or con_s <= 0):
+                raise
+            lan += 1
+            metrics.increment("llm:xep_lai")
+            log.warning("XEP LAI dong bo rid=%s lan=%s/%s con=%.0fs (may B 429)",
+                        suat.yeu_cau.request_id[-8:], lan,
+                        ts.so_lan_xep_lai_toi_da, con_s)
+            _nha_suat(suat.lease_id)
+            suat.lease_id = ""
+            if not phong_cho.xep_lai(suat.waiter_id):
+                raise
+            (NGU_CHO or _time.sleep)(ts.cho_xep_lai_s)
+            try:
+                suat.lease_id = phong_cho.cho_nhan_chan(
+                    suat.yeu_cau, waiter_id=suat.waiter_id,
+                    han_s=max(0.0, float(han_s())), ngat_chua=ngat_chua,
+                    **_seam_cho())
+            except phong_cho.HetCho as e:
+                raise BanError(f"het han cho sau khi may B tu choi ({e.ly_do})",
+                               retry_after_s=30) from None
+            except phong_cho.KhachDi:
+                raise ngat.KhachNgat(None) from None
+
+
+def _chen_nhip(nguon: Generator[str, None, Any], moi_nhip_s: float,
+               dang: Callable[[str], Any]) -> Generator[Any, None, Any]:
+    """Chuyển lý do chờ của `nguon` thành nhịp (`dang(ly_do)`) mỗi `moi_nhip_s`; trả giá trị cuối.
+
+    Một vòng cho mọi chỗ chờ có nhịp (vào hàng, xếp lại) — hai cửa (byte SSE của
+    `/api/v1`, sự kiện `response.queued` của sản phẩm) chỉ khác nhau ở `dang`.
+    ⛔ Không đóng `nguon` — bên gọi đóng trong `finally` của nó.
+    """
+    t_nhip = time.monotonic()
+    while True:
+        try:
+            ly_do = next(nguon)
+        except StopIteration as ket:
+            return ket.value
+        if time.monotonic() - t_nhip >= moi_nhip_s:
+            t_nhip = time.monotonic()
+            yield dang(ly_do)
+
+
+def mo_co_xep_lai(tk: TienKiem, cb: ChuanBi, *, han_s: float, bat_dau: float,
+                  timeout_s: float = MO_LUONG_GIAY, trang_thai=None,
+                  dong_ho=None, ngu=None) -> Generator[str, None, "LuotLuong"]:
+    """GENERATOR: mở luồng tới máy B; B 429 ⇒ nhả suất, XẾP LẠI, chờ, mở lại. Trả `LuotLuong`.
+
+    Phương án C bước 1 (O-04). Lượt đã được A nhận (dòng chờ `nhan`, tiền đã
+    giữ) mà máy B trả 429 — vì hai sổ slot/pool nhả lệch nhịp — thì trước 17/09
+    khách nhận NGAY một khối `overloaded` sau khi đã chờ cả hàng. Nay:
+
+      1. nhả suất (KHÔNG hoàn tiền — xem 💰), `cb.lease_id = ""`;
+      2. `phong_cho.xep_lai` — dòng quay lại `cho`, GIỮ `created_at`;
+      3. nghỉ `cho_xep_lai_s`, rồi chờ lại trong phần CÒN LẠI của hạn chờ cửa
+         (`han_s` tính từ `bat_dau`, `time.monotonic()`), `yield` lý do mỗi nhịp;
+      4. được nhận ⇒ `cb.lease_id` mới ⇒ mở lại.
+
+    Tối đa `so_lan_xep_lai_toi_da` lần. Quá lần / hết hạn ⇒ HOÀN TIỀN rồi ném
+    `DangBan` (bên gọi phát `overloaded`), `phong_cho.HetCho` hoặc `KhachDi`.
+
+    💰 TIỀN GIỮ NGUYÊN trong lúc xếp lại — có chủ ý, cùng lý do ở
+       `goi_dong_bo_co_xep_lai`: `credit.hoan` kết sổ theo mã lượt, nên hoàn rồi
+       giữ lại cùng `request_id` là một khoản giữ không bao giờ kết sổ được.
+       Đổi lại, MỌI đường ra khỏi hàm này mà không trả `LuotLuong` đều hoàn —
+       kể cả khách ngắt giữa lúc chờ lại (`GeneratorExit`).
+    ⛔ `cb.waiter_id` rỗng (đường cũ không phòng chờ) ⇒ không xếp lại: không có
+       dòng nào để đưa về hàng, hành vi cũ nguyên vẹn.
+    """
+    from platform_core.llm import phong_cho, tham_so_da_luot
+    from platform_core.public_api import metrics
+
+    ts = tham_so_da_luot.doc()
+    lan = 0
+    while True:
+        try:
+            return mo_thuong_nguon(cb, timeout_s=timeout_s, trang_thai=trang_thai,
+                                   hoan_khi_ban=False)
+        except DangBan:
+            con_s = float(han_s) - (time.monotonic() - float(bat_dau))
+            if (not cb.waiter_id or lan >= ts.so_lan_xep_lai_toi_da or con_s <= 0
+                    or not phong_cho.xep_lai(cb.waiter_id)):
+                hoan(cb.user_id, cb.request_id)
+                raise
+            lan += 1
+            cb.lease_id = ""
+            metrics.increment("llm:xep_lai")
+            log.warning("XEP LAI stream rid=%s lan=%s/%s con=%.0fs (may B 429)",
+                        cb.request_id[-8:], lan, ts.so_lan_xep_lai_toi_da, con_s)
+        try:
+            (ngu or time.sleep)(ts.cho_xep_lai_s)
+            kw = {}
+            if dong_ho is not None:
+                kw["dong_ho"] = dong_ho
+            if ngu is not None:
+                kw["ngu"] = ngu
+            con_s = max(0.0, float(han_s) - (time.monotonic() - float(bat_dau)))
+            cb.lease_id = yield from phong_cho.cho_nhan(
+                _yeu_cau_cho(tk), waiter_id=cb.waiter_id, han_s=con_s, **kw)
+        except BaseException:
+            # Hết hạn, khách đi, khách ngắt (`GeneratorExit`) — lượt kết thúc ở
+            # đây, nên khoản giữ kết thúc cùng nó.
+            hoan(cb.user_id, cb.request_id)
+            raise
 
 
 def luong_co_cho(tk: TienKiem, *, loi_sse: Callable[[str, str, str], bytes],
@@ -575,6 +793,8 @@ def luong_co_cho(tk: TienKiem, *, loi_sse: Callable[[str, str, str], bytes],
 
     Sau 200 thì không còn mã HTTP: mọi kết cục xấu là MỘT khối lỗi đúng khuôn
     giao thức do `loi_sse(duong, ma, thong_diep)` dựng (`server/api/su_kien_loi.py`).
+    Máy B 429 cho lượt đã nhận ⇒ xếp lại trong hạn chờ (`mo_co_xep_lai`), nhịp
+    SSE vẫn chảy; chỉ quá lần/hạn mới thành khối `overloaded`.
     """
     from platform_core.llm import phong_cho, tham_so_da_luot
     from platform_core.public_api import metrics
@@ -582,34 +802,30 @@ def luong_co_cho(tk: TienKiem, *, loi_sse: Callable[[str, str, str], bytes],
     ts = tham_so_da_luot.doc()
     han = ts.han_cho_stream(tk.la_whale) if han_s is None else han_s
     moi_nhip = ts.nhip_tim_cho_s if nhip_s is None else nhip_s
+    bat_dau = time.monotonic()
+
+    def _nhip(ly_do: str) -> bytes:
+        # Chú thích SSE: mọi client bỏ qua, Cloudflare thấy byte.
+        return f": ltt-cho {ly_do}\n\n".encode("ascii", "replace")
+
     gen, db_luong = _phien_moi()
     try:
         cho = vao_va_cho(tk, db_luong=db_luong, han_s=han, dong_ho=dong_ho, ngu=ngu)
-        t_nhip = time.monotonic()
         try:
-            while True:
-                try:
-                    ly_do = next(cho)
-                except StopIteration as ket:
-                    cb = ket.value
-                    # 🔴 CÔNG BỐ SUẤT NGAY KHI VỪA GIÀNH ĐƯỢC (L-08).
-                    #
-                    #    Bên gọi dựng `StreamingResponse` **trước** khi generator
-                    #    này chạy dòng đầu, nên lúc ấy chưa có `lease_id` để chụp
-                    #    vào đường nhả. Ô nhớ này là cách duy nhất để đường nhả
-                    #    (`khi_dut` + `BackgroundTask`) biết phải nhả cái gì.
-                    #
-                    # ⛔ GÁN Ở ĐÂY, KHÔNG SỚM HƠN. Khách cắt lúc còn XẾP HÀNG thì
-                    #    `so_tay` phải vẫn RỖNG — chưa giành được suất nào thì
-                    #    không có gì để nhả, và nhả bừa là nhả **suất của người
-                    #    khác**. `test_1248` chốt đúng ca này.
-                    if so_tay is not None:
-                        so_tay["cb"] = cb
-                    break
-                if time.monotonic() - t_nhip >= moi_nhip:
-                    t_nhip = time.monotonic()
-                    # Chú thích SSE: mọi client bỏ qua, Cloudflare thấy byte.
-                    yield f": ltt-cho {ly_do}\n\n".encode("ascii", "replace")
+            cb = yield from _chen_nhip(cho, moi_nhip, _nhip)
+            # 🔴 CÔNG BỐ SUẤT NGAY KHI VỪA GIÀNH ĐƯỢC (L-08).
+            #
+            #    Bên gọi dựng `StreamingResponse` **trước** khi generator này chạy
+            #    dòng đầu, nên lúc ấy chưa có `lease_id` để chụp vào đường nhả. Ô
+            #    nhớ này là cách duy nhất để đường nhả (`khi_dut` + `BackgroundTask`)
+            #    biết phải nhả cái gì. Sau một lần xếp lại, `cb.lease_id` là suất
+            #    MỚI — cùng đối tượng, nên đường nhả vẫn thấy đúng.
+            #
+            # ⛔ GÁN Ở ĐÂY, KHÔNG SỚM HƠN. Khách cắt lúc còn XẾP HÀNG thì `so_tay`
+            #    phải vẫn RỖNG — chưa giành được suất nào thì không có gì để nhả,
+            #    và nhả bừa là nhả **suất của người khác**. `test_1248` chốt ca này.
+            if so_tay is not None:
+                so_tay["cb"] = cb
         except phong_cho.HetCho as e:
             metrics.increment(metrics.CAPACITY_REFUSED)
             log.warning("HET CHO stream user=%s ly_do=%s", tk.user_id[:8], e.ly_do)
@@ -625,12 +841,24 @@ def luong_co_cho(tk: TienKiem, *, loi_sse: Callable[[str, str, str], bytes],
         finally:
             cho.close()
 
+        mo = mo_co_xep_lai(tk, cb, han_s=han, bat_dau=bat_dau, timeout_s=timeout_s,
+                           trang_thai=trang_thai, dong_ho=dong_ho, ngu=ngu)
         try:
-            luot = mo_thuong_nguon(cb, timeout_s=timeout_s, trang_thai=trang_thai)
+            luot = yield from _chen_nhip(mo, moi_nhip, _nhip)
             # Công bố luồng: `dong_nguon` (đóng cửa ra mạng tới máy B) và
             # `dam_bao_quyet_toan` đều cần chính đối tượng này.
             if so_tay is not None:
                 so_tay["luot"] = luot
+        except phong_cho.HetCho as e:
+            # Hết hạn trong lúc XẾP LẠI — tiền đã hoàn trong `mo_co_xep_lai`.
+            metrics.increment(metrics.CAPACITY_REFUSED)
+            log.warning("HET CHO (xep lai) stream user=%s ly_do=%s",
+                        tk.user_id[:8], e.ly_do)
+            yield loi_sse(tk.duong, "overloaded",
+                          "The model is busy right now. Please retry shortly.")
+            return
+        except phong_cho.KhachDi:
+            return
         except DangBan:
             phong_cho.ghi_ket_thuc(cb.waiter_id, "ban")
             yield loi_sse(tk.duong, "overloaded",
@@ -642,6 +870,8 @@ def luong_co_cho(tk: TienKiem, *, loi_sse: Callable[[str, str, str], bytes],
                           "The input exceeds the model's context limit."
                           if e.qua_dai else "The model could not serve this request.")
             return
+        finally:
+            mo.close()
         yield from luot.luong
     finally:
         _dong_phien(gen)
@@ -712,13 +942,15 @@ def chuan_bi(db, *, user_id: str, tool_name: str, than: dict, duong: str,
 
     lease_id = ""
     token_dat_truoc = 0
-    tai_nguyen, so_suat, pool = _suc_chua(tool, ten)
+    la_whale = False
+    suc = _suc_chua(tool, ten)
+    tai_nguyen, so_suat, _pool = _bo_ba(suc)
     if tai_nguyen and so_suat > 0:
-        from platform_core.llm import luat_nhan, tham_so_da_luot
-        luat = tham_so_da_luot.luat_cho(pool, lop=luat_nhan.TUONG_TAC,
-                                        token_vao_uoc=vao_uoc, xin_ra=xin_ra,
-                                        so_anh=dem_anh(than))
+        from platform_core.llm import luat_nhan
+        luat = _dat_cho(suc, lop=luat_nhan.TUONG_TAC, token_vao_uoc=vao_uoc,
+                        xin_ra=xin_ra, so_anh=dem_anh(than))
         token_dat_truoc = int(luat.get("token_dat_truoc", 0))
+        la_whale = bool(luat.get("la_whale", False))
         ticket = admission.acquire(
             db, resource=tai_nguyen, slots=so_suat, user_id=user_id,
             mode="stream", holder_id=holder_id or request_id, **luat)
@@ -757,7 +989,7 @@ def chuan_bi(db, *, user_id: str, tool_name: str, than: dict, duong: str,
                    da_giu=da_giu, token_vao_uoc=vao_uoc, xin_ra=xin_ra,
                    model_alias=ten, executor=executor,
                    token_dat_truoc=token_dat_truoc,
-                   correlation_id=correlation_id)
+                   correlation_id=correlation_id, la_whale=la_whale)
 
 
 # ── Bước 2: mở luồng tới máy B ───────────────────────────────────────────────
@@ -1031,11 +1263,15 @@ def _nha_suat(lease_id: str) -> None:
 
 
 def mo_thuong_nguon(cb: ChuanBi, *, timeout_s: float = MO_LUONG_GIAY,
-                    trang_thai=None) -> LuotLuong:
+                    trang_thai=None, hoan_khi_ban: bool = True) -> LuotLuong:
     """Mở luồng tới máy B. Hỏng thì **hoàn đủ + nhả suất** rồi ném.
 
     Ném `DangBan(nguon="thuong_nguon")` khi máy B trả 429, `KhongMoDuoc` khi
     khác. Cả hai đều đã hoàn tiền trước khi ném — bên gọi không phải hoàn lại.
+
+    `hoan_khi_ban=False` (chỉ `mo_co_xep_lai`): máy B 429 ⇒ nhả suất nhưng GIỮ
+    tiền, vì lượt sắp xếp lại và `credit.hoan` kết sổ vĩnh viễn theo mã lượt.
+    Bên gọi ấy chịu trách nhiệm hoàn ở mọi đường ra.
     """
     from platform_core.llm import luong_vlm
     from platform_core.public_api import metrics
@@ -1043,9 +1279,17 @@ def mo_thuong_nguon(cb: ChuanBi, *, timeout_s: float = MO_LUONG_GIAY,
     try:
         mo = luong_vlm.mo(
             cb.db, duong=cb.duong, than=cb.than_gui, timeout_s=timeout_s,
-            request_id=cb.request_id, token_dat_truoc=cb.token_dat_truoc,
-            la_whale=cb.la_whale)
+            request_id=cb.request_id, token_dat_truoc=cb.token_dat_truoc)
     except luong_vlm.KhongMoDuocLuong as e:
+        if e.ban and not hoan_khi_ban:
+            # 💰 NGOẠI LỆ DUY NHẤT của "hoàn trước mọi thứ" (phương án C bước 1):
+            #    lượt sắp XẾP LẠI nên GIỮ tiền; `mo_co_xep_lai` hoàn ở mọi đường ra.
+            _nha_suat(cb.lease_id)
+            metrics.increment(metrics.CAPACITY_REFUSED)
+            log.warning("BAN luong (xep lai): user=%s duong=%s ly_do=%s",
+                        cb.user_id[:8], cb.duong, e.ly_do)
+            raise DangBan(e.ly_do, nguon="thuong_nguon",
+                          thu_lai_sau_s=e.thu_lai_sau_s) from None
         hoan(cb.user_id, cb.request_id)
         _nha_suat(cb.lease_id)
         if e.ban:
@@ -1327,31 +1571,28 @@ def mo_luong(db, *, user_id: str, tool_name: str, params: dict,
     # (`llm_waiters.cua`), nen mot ten viet cung nghia la moi app goi ham nay ve
     # sau deu bi ghi nham la "chatltt" trong so — va bao cao nghen se tro sai
     # app. Mac dinh "stream" la mo ta DUNG cho mot nguoi goi chua tu khai.
+    from platform_core.llm import phong_cho, tham_so_da_luot
+
     tk = tien_kiem(db, user_id=user_id, tool_name=tool_name, than=than,
                    duong=DUONG_NOI_BO, correlation_id=correlation_id,
                    tien_to=tien_to, cua=cua)
+    ts = tham_so_da_luot.doc()
+    bat_dau = time.monotonic()
+
+    def _su_kien_cho(ly_do: str) -> dict:
+        return {"type": "response.queued", "ly_do": ly_do}
+
     if tk.dung_phong_cho:
         # multijob D-06: chờ trong phòng chờ, phát `response.queued` theo nhịp
         # (bên tiêu thụ bỏ qua loại lạ; `_p_luot.py` chuyển xuống trình duyệt và
         # nó đồng thời giữ kết nối qua Cloudflare). Hết trần ⇒ `DangBan` — đúng
         # đường ChatLTT đã xử lý bận (`services/luot.py`). Chưa giữ tiền lúc chờ.
-        from platform_core.llm import phong_cho, tham_so_da_luot
-        ts = tham_so_da_luot.doc()
         # Chốt giao dịch của bên gọi trước khi các phiên MỚI ghi dòng chờ — đường
         # cũ `chuan_bi` cũng commit phiên này (sau khi giữ tiền).
         db.commit()
         cho = vao_va_cho(tk, db_luong=db, han_s=ts.han_cho_stream(tk.la_whale))
-        t_nhip = time.monotonic()
         try:
-            while True:
-                try:
-                    ly_do = next(cho)
-                except StopIteration as ket:
-                    cb = ket.value
-                    break
-                if time.monotonic() - t_nhip >= ts.nhip_tim_cho_s:
-                    t_nhip = time.monotonic()
-                    yield {"type": "response.queued", "ly_do": ly_do}
+            cb = yield from _chen_nhip(cho, ts.nhip_tim_cho_s, _su_kien_cho)
         except phong_cho.HetCho as e:
             raise DangBan(f"het tran cho ({e.ly_do})", nguon="het_cho",
                           tai_nguyen=tk.tai_nguyen, thu_lai_sau_s=15) from None
@@ -1364,8 +1605,20 @@ def mo_luong(db, *, user_id: str, tool_name: str, params: dict,
     yield {"type": "response.started", "request_id": cb.request_id,
            "model": cb.model_alias, "credit_giu": cb.da_giu}
 
+    # Máy B 429 cho lượt đã nhận ⇒ xếp lại trong hạn chờ (chỉ khi có dòng chờ —
+    # đường cũ `chuan_bi` không có ⇒ `mo_co_xep_lai` hoàn + ném ngay như trước).
+    mo = mo_co_xep_lai(tk, cb, han_s=ts.han_cho_stream(tk.la_whale),
+                       bat_dau=bat_dau, timeout_s=timeout_s)
     try:
-        luot = mo_thuong_nguon(cb, timeout_s=timeout_s)
+        luot = yield from _chen_nhip(mo, ts.nhip_tim_cho_s, _su_kien_cho)
+    except phong_cho.HetCho as e:
+        yield {"type": "response.failed", "code": "ban",
+               "ly_do": f"het tran cho ({e.ly_do})", "retry_after_s": 15}
+        yield _billing(cb, None)
+        return
+    except phong_cho.KhachDi:
+        yield _billing(cb, None)
+        return
     except DangBan as e:
         yield {"type": "response.failed", "code": "ban", "ly_do": e.ly_do,
                "retry_after_s": e.thu_lai_sau_s}
@@ -1377,6 +1630,8 @@ def mo_luong(db, *, user_id: str, tool_name: str, params: dict,
                "ly_do": e.ly_do}
         yield _billing(cb, None)
         return
+    finally:
+        mo.close()
 
     doc = _DocSSE()
     trang_thai: dict = {}

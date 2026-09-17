@@ -298,7 +298,12 @@ REGISTRY: dict[str, Provider] = {
                     # ⚠️ Giới hạn phải nói ra, không giấu sau giao diện (D-027).
                     "canh_bao": [
                         N_("máy B dùng chung GPU với việc ảnh và video — bận thì trả 429, không phải lỗi"),
-                        N_("engine có cửa sổ 131K; API public giới hạn input 96.256 token để chừa chỗ cho câu trả lời"),
+                        # 🔴 O-13 (phương án C, 17/09/2026): ĐÃ GỠ cảnh báo
+                        #    *"engine có cửa sổ 131K; API public giới hạn input
+                        #    96.256"* (`9359d723`, 01/09) — cả hai số đã sai từ
+                        #    03/09. Cửa sổ/trần vào công bố THEO MODEL qua
+                        #    `/api/v1/models`; đừng gõ lại số vào chuỗi hiển thị
+                        #    (`test_334` chặn).
                     ],
                 },
             ),

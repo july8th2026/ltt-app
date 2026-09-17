@@ -64,7 +64,7 @@ class _ExecutorGia:
     def sync_output_cap(self, token_input, budget_seconds):
         return 1024
 
-    def context_output_cap(self, token_input):
+    def context_output_cap(self, token_input, alias=None):
         return 40000
 
 
@@ -256,10 +256,13 @@ def test_luong_chay_tron_va_sinh_su_kien_canonical(app_luong, monkeypatch):
 
 def test_lease_may_A_truyen_dung_reservation_sang_may_B(app_luong, monkeypatch):
     """Đo quan hệ lease A → header B trên đường stream thật của sản phẩm."""
+    from platform_core.registry import AdmissionModel
     from platform_core.runtime_noi_bo import luong
-    monkeypatch.setenv("LTT_LLM_NGUONG_WHALE", "1")
-    monkeypatch.setattr(luong, "_suc_chua", lambda _tool, _model:
-                        ("thu_gpu", 1, 100_000))
+    # Phương án C bước 2: ngưỡng whale / đệm ước là số của MODEL trong bản khai
+    # (env `LTT_LLM_NGUONG_WHALE` đã gỡ) — ngưỡng 1 ⇒ mọi lượt là whale.
+    monkeypatch.setattr(luong, "_suc_chua", lambda _tool, _model: AdmissionModel(
+        "thu_gpu", 1, 100_000, nguong_whale=1, dem_uoc=2_048,
+        token_giu_moi_anh=2_048))
     da_goi = _dat_luong(monkeypatch)
     u = _user(1000)
     _chay(u, _params(), monkeypatch)
@@ -268,7 +271,9 @@ def test_lease_may_A_truyen_dung_reservation_sang_may_B(app_luong, monkeypatch):
     goi = da_goi[0]
     assert goi["request_id"]
     assert goi["token_dat_truoc"] > 0
-    assert goi["la_whale"] is True
+    # O-01 (phương án C): cờ whale KHÔNG còn đi lên máy B (header `X-LTT-Whale`
+    # đã gỡ) — A là nơi duy nhất quyết định công bằng prefill.
+    assert "la_whale" not in goi
 
 
 def test_response_started_phat_TRUOC_khi_mo_luong(app_luong, monkeypatch):
@@ -333,6 +338,95 @@ def test_may_B_ban_thi_failed_ban_va_hoan_du(app_luong, monkeypatch):
     assert sk[1]["code"] == "ban" and sk[1]["retry_after_s"] == 30
     assert sk[2]["credit_thu"] == 0
     assert _so_du(u) == 1000
+    assert _dem_lease() == 0
+
+
+def _kieu_but_toan_luot(user_id: str) -> list[str]:
+    """Kiểu bút toán (trừ `grant`) của một khách, theo thời gian — MỘT giữ, MỘT kết sổ."""
+    from platform_core.models import CreditEntry
+    from platform_core.db import get_session
+    gen = get_session()
+    db = next(gen)
+    try:
+        return [e.kind for e in db.query(CreditEntry)
+                .filter(CreditEntry.user_id == user_id)
+                .order_by(CreditEntry.created_at.asc()).all()
+                if e.kind in ("hold", "settle", "refund")]
+    finally:
+        db.close()
+
+
+def _mo_ban_n_lan(monkeypatch, n_ban: int):
+    """`luong_vlm.mo` giả: `n_ban` lần đầu máy B trả 429, rồi mở luồng thật giả."""
+    from platform_core.llm import luong_vlm
+
+    da_goi: list[dict] = []
+
+    class Gia:
+        ma = 200
+        content_type = "text/event-stream"
+
+        def __init__(self):
+            self.luong = iter(_khoi_openai("xin chao"))
+
+        def xong(self, tokens=0):
+            pass
+
+        def hong(self, exc):
+            pass
+
+    def mo(db, *, duong, than, timeout_s=900.0, **meta):
+        da_goi.append(dict(meta))
+        if len(da_goi) <= n_ban:
+            raise luong_vlm.KhongMoDuocLuong("may B dang ban", ban=True,
+                                             thu_lai_sau_s=30)
+        return Gia()
+
+    monkeypatch.setattr(luong_vlm, "mo", mo)
+    return da_goi
+
+
+def _co_phong_cho(monkeypatch):
+    from platform_core.registry import AdmissionModel
+    from platform_core.runtime_noi_bo import luong
+
+    monkeypatch.setenv("LTT_LLM_CHO_XEP_LAI_S", "0")
+    monkeypatch.setattr(luong, "_suc_chua", lambda _tool, _model: AdmissionModel(
+        "thu_gpu", 1, 100_000, nguong_whale=90_000, dem_uoc=2_048,
+        token_giu_moi_anh=2_048))
+
+
+def test_may_B_429_MOT_LAN_thi_XEP_LAI_va_van_ra_NOI_DUNG(app_luong, monkeypatch):
+    """Phương án C bước 1 (O-04): lượt đã nhận bị B 429 ⇒ xếp lại, không `failed`."""
+    _co_phong_cho(monkeypatch)
+    da_goi = _mo_ban_n_lan(monkeypatch, 1)
+    u = _user(1000)
+    sk = _chay(u, _params(), monkeypatch)
+    loai = [s["type"] for s in sk]
+    assert "response.failed" not in loai, sk
+    assert "".join(s["text"] for s in sk if s["type"] == "response.delta") == "xin chao"
+    assert len(da_goi) == 2
+    assert da_goi[0]["token_dat_truoc"] == da_goi[1]["token_dat_truoc"] > 0
+    assert sk[-1]["do_duoc"] is True
+    assert _so_du(u) == 1000 - sk[-1]["credit_thu"]
+    # 💰 Một khoản giữ, một lần quyết toán — không giữ–hoàn–giữ.
+    assert _kieu_but_toan_luot(u) == ["hold", "settle"], _kieu_but_toan_luot(u)
+    assert _dem_lease() == 0
+
+
+def test_may_B_429_MAI_thi_failed_ban_sau_so_lan_va_HOAN_DU(app_luong, monkeypatch):
+    from platform_core.llm import tham_so_da_luot
+
+    _co_phong_cho(monkeypatch)
+    da_goi = _mo_ban_n_lan(monkeypatch, 10**6)
+    u = _user(1000)
+    sk = _chay(u, _params(), monkeypatch)
+    loai = [s["type"] for s in sk]
+    assert loai[-2:] == ["response.failed", "billing.updated"], loai
+    assert sk[-2]["code"] == "ban"
+    assert len(da_goi) == 1 + tham_so_da_luot.doc().so_lan_xep_lai_toi_da
+    assert _so_du(u) == 1000, "ban mai ma khoan giu con nam lai"
+    assert _kieu_but_toan_luot(u) == ["hold", "refund"]
     assert _dem_lease() == 0
 
 

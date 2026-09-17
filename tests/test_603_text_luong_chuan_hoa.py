@@ -103,7 +103,7 @@ class _Exec:
     def estimate_input(self, tin, tools=None):
         return 100
 
-    def context_output_cap(self, token_input):
+    def context_output_cap(self, token_input, alias=None):
         return 5000
 
     @staticmethod

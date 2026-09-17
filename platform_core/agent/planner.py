@@ -159,13 +159,16 @@ def _luat_cho_planner(prompt: str) -> dict:
         tin = [{"role": "user", "content": prompt}]
         vao = int(ex.estimate_input(tin))
         ra = int(ex.mac_dinh_cho("job"))
-        ra = min(ra, int(ex.context_output_cap(vao)))
-        return tham_so_da_luot.luat_cho(pool, lop=luat_nhan.NOI_BO,
-                                        token_vao_uoc=vao, xin_ra=ra)
+        # Theo cửa sổ của ĐÚNG model nội bộ (O-24 cùng lớp), không cửa sổ hẹp nhất.
+        ra = min(ra, int(ex.context_output_cap(vao, canonical.MODEL_NOI_BO_MAC_DINH)))
     except Exception:                                          # noqa: BLE001
         logging.getLogger(__name__).exception(
             "khong uoc duoc token cua luot lap ke hoach - dat cho CA POOL")
         return dict(lop=luat_nhan.NOI_BO, token_pool=pool, token_dat_truoc=pool)
+    # Ngoài `try` (phương án C): đặt chỗ vượt pool là LỖI THẬT, không phải "ước
+    # hỏng" — đặt chỗ cả pool ở đây sẽ là kẹp im lặng.
+    return tham_so_da_luot.luat_cho(suc, lop=luat_nhan.NOI_BO,
+                                    token_vao_uoc=vao, xin_ra=ra)
 
 
 def build_prompt(goal: str, *, budget_max_credit: int, input_types: dict | None = None) -> str:
@@ -268,14 +271,16 @@ def _goi_model(db: DbSession, prompt: str) -> str:
             + ". Viec lap ke hoach KHONG co duong lui sang provider ngoai.")
 
     try:
-        kq = dieu_phoi.goi(
-            db,
-            messages=[{"role": "user", "content": prompt}],
-            category=APIKEY_CAT_CHAT,
-            thu_tu_provider=tuple(thu_tu),
-            model_theo_provider=ban_do,
-            timeout_s=120.0,
-        )
+        # O-05: số đặt chỗ của suất vừa giành đi lên máy B (`X-LTT-Token-Dat`).
+        with dieu_phoi.mang_dat_cho(int(getattr(ve, "token_dat_truoc", 0) or 0)):
+            kq = dieu_phoi.goi(
+                db,
+                messages=[{"role": "user", "content": prompt}],
+                category=APIKEY_CAT_CHAT,
+                thu_tu_provider=tuple(thu_tu),
+                model_theo_provider=ban_do,
+                timeout_s=120.0,
+            )
     except dieu_phoi.KhongCoProviderNao as exc:
         # ⛔ Mọi provider đều bận/không cấp được key. KHÔNG phải lỗi provider —
         #    `dieu_phoi` đã lo việc đánh dấu lỗi cho đúng trường hợp rồi.

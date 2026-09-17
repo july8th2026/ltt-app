@@ -28,7 +28,6 @@ from __future__ import annotations
 
 import logging
 import time
-from contextlib import nullcontext
 
 from fastapi import Body, Depends, Header, Request
 from fastapi.responses import JSONResponse
@@ -193,7 +192,7 @@ def register_chat_routes(api, config, tag: str) -> None:
         principal: Principal = Depends(require_scope(SCOPE_JOBS_CREATE)),
         db: Session = Depends(get_db),
     ) -> JSONResponse:
-        from platform_core.llm import admission, ngat, phong_cho, thanh_toan
+        from platform_core.llm import ngat, phong_cho, thanh_toan
         from platform_core.runtime_noi_bo import luong as cua_luong
 
         # Ngân sách thời gian của cửa được tính từ ĐÂY: mọi giây tiêu ở khâu
@@ -380,9 +379,7 @@ def register_chat_routes(api, config, tag: str) -> None:
         # ── Phòng chờ (D04) — CHƯA giữ đồng nào ──────────────────────────────
         try:
             suat = cua_luong.cho_suat_dong_bo(
-                tai_nguyen=(suc.resource if suc else ""),
-                so_suat=(suc.slots if suc else 0),
-                token_pool=(suc.token_pool if suc else 0),
+                suc=suc,
                 user_id=principal.user_id, request_id=request_id, cua="sync",
                 token_vao_uoc=int(token_vao_uoc), xin_ra=int(sach["max_tokens"]),
                 han_s=cua_luong.han_cho_dong_bo(
@@ -410,6 +407,16 @@ def register_chat_routes(api, config, tag: str) -> None:
             _mo_lai_khoa(record, "khach_di_luc_cho")
             return JSONResponse(_KHACH_NGAT, status_code=MA_KHACH_NGAT,
                                 headers=_NO_STORE)
+        except cua_luong.KhongMoDuoc:
+            # Đặt chỗ (vào + ra + đệm + ảnh) vượt cả pool KV — phương án C bất
+            # biến 1, không còn kẹp im lặng. Quá dài với model: 413, 0 khoản giữ,
+            # mở khoá cho lượt đã rút gọn.
+            _mo_lai_khoa(record, "qua_dai")
+            raise payload_too_large(
+                "The input exceeds the model's context limit. Drop or "
+                "summarise older turns and retry with a shorter "
+                "conversation.", limit_name="input_tokens",
+                limit_value=int(suc.token_pool if suc else 0)) from None
 
         # ── Được nhận ⇒ GIỮ TIỀN (và chỉ từ đây trở đi) ─────────────────────
         try:
@@ -437,13 +444,14 @@ def register_chat_routes(api, config, tag: str) -> None:
             raise
 
         try:
-            with admission.keep_alive(suat.lease_id) if suat.lease_id \
-                    else nullcontext():
+            # `giu_suat_dong_bo`, không `keep_alive(suat.lease_id)`: máy B 429 ⇒
+            # xếp lại ⇒ suất MỚI, và đường nhả phải nhả suất ĐANG giữ.
+            with cua_luong.giu_suat_dong_bo(suat):
                 return _finish_chat(
                     db=db, sach=sach, principal=principal, record=record,
                     request_id=request_id, da_giu=da_giu, executor=executor,
                     trang_thai=request.state, request=request,
-                    bat_dau_cua=t0, waiter_id=suat.waiter_id)
+                    bat_dau_cua=t0, waiter_id=suat.waiter_id, suat=suat)
         finally:
             # ⛔ LƯỚI, KHÔNG PHẢI KẾT CỤC. Bản đầu ghi thẳng `"xong"` ở đây —
             #    tức **mọi** đường ra, kể cả lỗi và khách ngắt, vào sổ 30 ngày
@@ -512,7 +520,7 @@ def _nha(suat, ket_qua: str) -> None:
 
 def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
                  trang_thai=None, request=None, bat_dau_cua: float = 0.0,
-                 waiter_id: str = "",
+                 waiter_id: str = "", suat=None,
                  da_giu: int, executor=None) -> JSONResponse:
     """Chạy model và định đoạt tiền; caller giữ execution lease bằng finally.
 
@@ -534,16 +542,29 @@ def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
         #    Khách đi giữa chừng mà ta không biết là một lượt GPU chạy trọn cho
         #    một người đã đóng cửa sổ — và ở cửa đồng bộ thì không có byte nào
         #    chảy để phát hiện chuyện ấy sớm hơn.
-        kq = ngat.chay_canh_ngat(
-            lambda: executor.run(
-                db, sach,
-                timeout_s=_con_lai_s(bat_dau_cua or bat_dau,
-                                     float(SYNC_BILLED_MAX_SECONDS)),
-                # 🔴 TRUYỀN MÃ LƯỢT (L-06). Không có nó, đường hủy chỉ đóng
-                #    socket — và `httpx.Client.close()` không cắt một request
-                #    đang bay ở luồng khác. Máy B sinh chữ tới hết, ta chờ tới
-                #    hết, slot bị giữ 15–32 s, khách vẫn bị tính tiền.
-                ma_luot=request_id),
+        # ⭐ Máy B 429 cho lượt đã nhận ⇒ xếp lại trong phần còn lại của ngân sách
+        #    cửa (phương án C bước 1); mỗi lần gọi mang `X-LTT-Token-Dat` (O-05).
+        from platform_core.runtime_noi_bo import luong as cua_luong
+
+        def _goi():
+            return ngat.chay_canh_ngat(
+                lambda: executor.run(
+                    db, sach,
+                    timeout_s=_con_lai_s(bat_dau_cua or bat_dau,
+                                         float(SYNC_BILLED_MAX_SECONDS)),
+                    # 🔴 TRUYỀN MÃ LƯỢT (L-06). Không có nó, đường hủy chỉ đóng
+                    #    socket — và `httpx.Client.close()` không cắt một
+                    #    request đang bay ở luồng khác. Máy B sinh chữ tới hết,
+                    #    ta chờ tới hết, slot bị giữ 15–32 s, khách vẫn bị tính
+                    #    tiền.
+                    ma_luot=request_id),
+                ngat_chua=ngat.do_ngat(request))
+
+        kq = cua_luong.goi_dong_bo_co_xep_lai(
+            _goi, suat,
+            han_s=lambda: cua_luong.han_cho_dong_bo(
+                ngan_sach_s=float(SYNC_BILLED_MAX_SECONDS),
+                da_tieu_s=time.monotonic() - (bat_dau_cua or bat_dau)),
             ngat_chua=ngat.do_ngat(request))
     except ngat.KhachNgat as e:
         # 🔴 HAI KẾT CỤC KHÁC HẲN NHAU, VÀ CHÚNG ĐỊNH ĐOẠT KHOÁ IDEMPOTENCY

@@ -9,8 +9,18 @@ import pytest
 
 from platform_core.llm import luat_nhan as L
 
+
+def _ts(**kw) -> "L.ThamSo":
+    """`luat_nhan.ThamSo` với số THỜI GIAN của phép kiểm (lớp ấy không còn mặc định số)."""
+    kw.setdefault("pool", 0)
+    kw.setdefault("cho_whale_toi_da_s", 30.0)
+    kw.setdefault("lao_hoa_s", 300.0)
+    kw.setdefault("cho_backfill_toi_da_s", 120.0)
+    return L.ThamSo(**kw)
+
+
 POOL = 204_800
-TS4 = L.ThamSo(so_slot=4, pool=POOL, cho_whale_toi_da_s=30.0, lao_hoa_s=300.0)
+TS4 = _ts(so_slot=4, pool=POOL)
 
 
 def luot(id_, user="u", lop=L.TUONG_TAC, tok=10_000, whale=False, tuoi=0.0):
@@ -44,7 +54,7 @@ def test_vua_khit_pool_thi_nhan():
 
 
 def test_pool_0_la_hanh_vi_cu_chi_dem_slot():
-    ts = L.ThamSo(so_slot=4, pool=0)
+    ts = _ts(so_slot=4, pool=0)
     giu = [luot("dai", user="a", tok=10**9)]
     assert L.xet(luot("y", user="b", tok=10**9), giu, [], ts).nhan
 
@@ -78,7 +88,7 @@ def test_chua_slot_tuong_tac_1_thi_nen_dung_o_n_tru_1():
     Thiếu ca này thì ca trên không chứng minh được gì — một `xet()` luôn trả
     `nhan=True` cho lớp NEN cũng làm nó xanh (memory "số 0 cần đối chứng").
     """
-    ts = L.ThamSo(so_slot=4, pool=POOL, chua_slot_tuong_tac=1)
+    ts = _ts(so_slot=4, pool=POOL, chua_slot_tuong_tac=1)
     giu = [luot(f"n{i}", user=f"u{i}", lop=L.NEN) for i in range(3)]
     assert L.xet(luot("y", user="moi", lop=L.NEN), giu, [], ts) == L.PhanXu(
         False, L.CHO_SLOT)
@@ -94,7 +104,7 @@ def test_nen_nhuong_nguoi_tuong_tac_dang_cho():
 
 def test_n_bang_1_nen_van_chay_duoc_khi_ranh():
     """Ca biên phát hiện khi viết plan: N−1 = 0 sẽ bỏ đói MỌI job ở pha 1."""
-    ts1 = L.ThamSo(so_slot=1, pool=POOL)
+    ts1 = _ts(so_slot=1, pool=POOL)
     assert L.xet(luot("y", lop=L.NEN), [], [], ts1).nhan
     assert L.xet(luot("y", lop=L.NOI_BO), [], [], ts1).nhan
     # ...và vẫn nhường người tương tác đang chờ.
@@ -154,8 +164,7 @@ def test_whale_con_tre_thi_nguoi_nho_duoc_vuot():
 # chặn mọi lượt trẻ hơn tới khi pool rút đủ (chống bỏ đói).
 
 POOL_38 = 221_184                      # `apps/ltt_llm/ngan_sach.py` — 3.8, `-c`
-TS38 = L.ThamSo(so_slot=3, pool=POOL_38, cho_whale_toi_da_s=30.0, lao_hoa_s=300.0,
-                cho_backfill_toi_da_s=120.0)
+TS38 = _ts(so_slot=3, pool=POOL_38)
 
 
 def test_VI_DU_CHU_DU_AN_110K_cho_55K_backfill_roi_110K_chay():
@@ -284,7 +293,7 @@ def test_doi_chung_luat_quen_ngan_sach_se_bi_bat(monkeypatch):
     giu = [luot("dai", user="a", tok=170_000)]
     yc = luot("y", user="b", tok=60_000)
     assert not L.xet(yc, giu, [], TS4).nhan
-    sai = L.ThamSo(so_slot=4, pool=0)            # "quên" pool
+    sai = _ts(so_slot=4, pool=0)                 # "quên" pool
     assert L.xet(yc, giu, [], sai).nhan, "doi chung khong doi ket qua => phep kiem vo dung"
 
 

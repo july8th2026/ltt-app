@@ -77,13 +77,22 @@ CHO_RESIDENCY = "cho_residency"
 NHUONG_LUOT_LON = "nhuong_luot_lon"
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class ThamSo:
+    """Tham số của MỘT lần xét.
+
+    🔴 KHÔNG MẶC ĐỊNH SỐ cho các trường thời gian (phương án C bước 2, O-09/O-10).
+       Mặc định của chúng sống ở đúng một chỗ — `tham_so_da_luot.doc()` — và
+       `tham_so_da_luot.tham_so_nhan()` là ánh xạ duy nhất sang lớp này. Một mặc
+       định thứ hai ở đây đã làm env `LTT_LLM_LAO_HOA_S` chết im lặng: người dựng
+       quên truyền, và lớp này lặng lẽ điền 300.
+    """
+
     so_slot: int
     #: Pool KV dùng chung. 0 = không áp ngân sách token (tool cũ, hành vi cũ).
-    pool: int = 0
-    cho_whale_toi_da_s: float = 30.0
-    lao_hoa_s: float = 300.0
+    pool: int
+    cho_whale_toi_da_s: float
+    lao_hoa_s: float
     #: Số suất GIỮ LẠI cho lượt tương tác, không cho nền/nội bộ chạm tới.
     #: 0 = nền dùng hết slot (mặc định từ 14/09/2026 — xem `tran_nen`).
     chua_slot_tuong_tac: int = 0
@@ -98,8 +107,8 @@ class ThamSo:
     residency_mo: bool = True
     #: Cửa sổ BACKFILL (L-12b): lượt chưa vừa ngân sách KV nhường lượt sau vừa
     #: pool tối đa bấy nhiêu giây, rồi thành chặn. Nguồn: `tham_so_da_luot`
-    #: (`LTT_LLM_CHO_BACKFILL_S`); mặc định ở đây phải bằng mặc định ở đó.
-    cho_backfill_toi_da_s: float = 120.0
+    #: (`LTT_LLM_CHO_BACKFILL_S`) — KHÔNG mặc định ở đây.
+    cho_backfill_toi_da_s: float
 
 
 @dataclass(frozen=True)

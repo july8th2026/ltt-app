@@ -85,7 +85,7 @@ class _ExecutorGia:
     def sync_output_cap(self, token_input, budget_seconds):
         return 1024
 
-    def context_output_cap(self, token_input):
+    def context_output_cap(self, token_input, alias=None):
         return 40000
 
 

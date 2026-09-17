@@ -42,7 +42,8 @@ def dich(prompt: str, target: str = "en") -> str:
 
     🔴 **GIÀNH SUẤT ADMISSION TRƯỚC KHI CHẠM MÁY B.**
 
-       Máy B chỉ có **một** suất đồng thời (`DONG_THOI_MAY_B=1`). Một đường mới
+       Máy B có số suất HỮU HẠN theo model (`apps/ltt_llm/ngan_sach.HO_SO`;
+       ngày viết là 1, nay 3 mỗi model). Một đường mới
        tới nó mà quên `admission` không chỉ chen hàng — nó làm chính cơ chế đếm
        suất **sai**, nên hai đường khác cũng hỏng theo.
 

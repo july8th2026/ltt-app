@@ -4,7 +4,9 @@
 `manifest.py` (`admission_slots=1`), gateway `LTT_LLM_MAX_DONG_THOI` và `--parallel 1`
 trong yaml — và chỉ một cặp có phép kiểm đối chiếu. Đổi một chỗ mà quên chỗ kia thì
 hai trần không biết nhau: máy A nhận 4 lượt, máy B trả 429 cho 3.
-⭐ Nên phép kiểm này đọc CẢ BỐN và bắt chúng đồng ý với `ngan_sach.SO_SLOT_MAY_B`.
+⭐ Nên phép kiểm này đọc mọi chỗ và bắt chúng đồng ý với hồ sơ `ngan_sach.HO_SO[m]`.
+🔴 Phương án C bước 2 (17/09/2026): `SO_SLOT_MAY_B` (một số cho HAI card) và bí danh
+`DONG_THOI_MAY_B`/`POOL_KV_MAY_B`/`SO_SLOT` đã gỡ — số slot/pool là của TỪNG hồ sơ.
 """
 from __future__ import annotations
 
@@ -18,9 +20,11 @@ from apps.ltt_llm import ngan_sach
 GOC = pathlib.Path(__file__).resolve().parents[1]
 
 
-def test_bi_danh_cu_la_cung_mot_so():
-    assert ngan_sach.DONG_THOI_MAY_B == ngan_sach.SO_SLOT_MAY_B
-    assert ngan_sach.POOL_KV_MAY_B == ngan_sach.CUA_SO_MODEL
+def test_bi_danh_cu_DA_GO():
+    """O-12: bí danh là hai tên cho một số — tên thứ hai là chỗ để lệch lần sau."""
+    for ten in ("DONG_THOI_MAY_B", "POOL_KV_MAY_B", "SO_SLOT", "SO_SLOT_MAY_B",
+                "POOL_KV", "LE"):
+        assert not hasattr(ngan_sach, ten), f"ngan_sach con bi danh cu `{ten}`"
 
 
 def test_manifest_doc_tu_nguon():
@@ -36,12 +40,14 @@ def test_manifest_doc_tu_nguon():
     from apps.ltt_llm.manifest import MANIFEST
 
     tool = MANIFEST.tools[0]
-    for model, pool in (("ltt-3.8", ngan_sach.POOL_38),
-                        ("ltt-3.5", ngan_sach.POOL_35)):
+    for model, id_nb in (("ltt-3.8", "qwen38-api"), ("ltt-3.5", "qwen35-api")):
+        h = ngan_sach.HO_SO[id_nb]
         suc = tool.admission_cho(model)
         assert suc is not None, f"{model} khong co trong admission_theo_model"
-        assert suc.slots == ngan_sach.SO_SLOT
-        assert suc.token_pool == pool
+        assert suc.slots == h.seq_cap
+        assert suc.token_pool == h.token_budget
+        assert (suc.nguong_whale, suc.dem_uoc, suc.token_giu_moi_anh) == (
+            h.nguong_whale, h.dem_uoc, h.token_giu_moi_anh), model
 
 
 def test_manifest_khong_go_so_tay():
@@ -55,7 +61,7 @@ def test_yaml_so_slot_cua_TUNG_ho_so_khop_so_slot():
     """🔵 `xfail(strict=True, reason="cho Task 3.3")` đã gỡ ngày 12/09.
 
     Task 3.3 viết lại `llama-swap.yaml` với `-np 3` cho **cả hai** hồ sơ, khớp
-    `SO_SLOT_MAY_B = 3` (L-14, `10_BENCHMARK_P3.md` §G1b: 4 slot ở ngữ cảnh đã
+    `-np 3` (L-14, `10_BENCHMARK_P3.md` §G1b: 4 slot ở ngữ cảnh đã
     chốt tràn ~400 MiB sang RAM chủ trên 3090).
 
     ⚠️ VÀ HÌNH DẠNG CỦA PHÉP ĐO ĐỔI, nên phép kiểm phải đổi theo. Bản cũ đọc
@@ -89,9 +95,9 @@ def test_yaml_so_slot_cua_TUNG_ho_so_khop_so_slot():
         co = "-np" if "-np" in tach else "--parallel"
         assert co in tach, f"{ten} khong khai so slot (`-np`)"
         so = tach[tach.index(co) + 1]
-        assert int(so) == ngan_sach.SO_SLOT_MAY_B, (
-            f"llama-swap chay {ten} voi {co} {so} nhung ngan_sach khai "
-            f"{ngan_sach.SO_SLOT_MAY_B}")
+        assert int(so) == ngan_sach.HO_SO[ten].np, (
+            f"llama-swap chay {ten} voi {co} {so} nhung ngan_sach.HO_SO khai "
+            f"{ngan_sach.HO_SO[ten].np}")
 
 
 def test_gateway_mac_dinh_khop_so_slot():
@@ -99,7 +105,9 @@ def test_gateway_mac_dinh_khop_so_slot():
     van = (GOC / "llm_gateway" / "config.py").read_text(encoding="utf-8")
     m = re.search(r'_int\("LTT_LLM_MAX_DONG_THOI",\s*(\d+)\)', van)
     assert m, "khong thay mac dinh LTT_LLM_MAX_DONG_THOI trong llm_gateway/config.py"
-    assert int(m.group(1)) == ngan_sach.SO_SLOT_MAY_B
+    # Bước 3 (máy B đọc `-np` từ yaml) gỡ hẳn env này; tới lúc đó mặc định phải
+    # phủ hồ sơ rộng nhất.
+    assert int(m.group(1)) == max(h.np for h in ngan_sach.HO_SO.values())
 
 
 def test_chieu_catalog_mang_pool_nhung_khong_lo_ra_khach():

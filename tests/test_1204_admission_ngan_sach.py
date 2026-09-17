@@ -143,7 +143,8 @@ def test_lease_cu_mode_job_duoc_hieu_la_nen(db):
     #    phân biệt được — `chua_slot_tuong_tac=1`, tức hành vi trước 14/09.
     giu = [L.Luot(id=x.holder_id, user_id=x.user_id, lop=admission._lop_cua(x))
            for x in song]
-    ts = L.ThamSo(so_slot=4, chua_slot_tuong_tac=1)
+    ts = L.ThamSo(so_slot=4, pool=0, cho_whale_toi_da_s=30.0, lao_hoa_s=300.0,
+                  cho_backfill_toi_da_s=120.0, chua_slot_tuong_tac=1)
     nen_moi = L.Luot(id="jm", user_id="job-moi", lop=L.NEN)
     assert L.xet(nen_moi, giu, [], ts) == L.PhanXu(False, L.CHO_SLOT)
     # đối chứng: cùng ảnh chụp ấy, lượt TƯƠNG TÁC vào được suất chừa.

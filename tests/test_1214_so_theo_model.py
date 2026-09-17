@@ -74,7 +74,7 @@ class TestTranCongBoLaDANXUAT:
         """
         for model, cua_so in ngan_sach.CUA_SO_THEO_MODEL.items():
             vao = ngan_sach.tran_vao_cua(model)
-            assert vao == cua_so - ngan_sach.TOKEN_RA_TRAN - ngan_sach.LE, model
+            assert vao == cua_so - ngan_sach.TOKEN_RA_TRAN - ngan_sach.DEM_UOC, model
             assert ngan_sach.cong_bo_cua(model) == int(vao * 0.92), model
             nen = ngan_sach.nen_cua(model)
             assert nen == max(
@@ -119,8 +119,14 @@ class TestTranCongBoLaDANXUAT:
                      ngan_sach.nen_cua(m))
                  for m in ngan_sach.CUA_SO_THEO_MODEL}
 
-        bang_moi = dict(ngan_sach.CUA_SO_THEO_MODEL)
-        bang_moi[bi_doi] += 8_192          # một bước `-c` thật, không phải +1
+        from dataclasses import replace
+
+        # Phương án C bước 2: `-c` gõ ở `HO_SO`, `CUA_SO_THEO_MODEL` dẫn xuất từ nó.
+        ho_so_moi = dict(ngan_sach.HO_SO)
+        ho_so_moi[bi_doi] = replace(ho_so_moi[bi_doi],        # một bước `-c` thật
+                                    engine_ctx=ho_so_moi[bi_doi].engine_ctx + 8_192)
+        bang_moi = {m: h.engine_ctx for m, h in ho_so_moi.items()}
+        monkeypatch.setattr(ngan_sach, "HO_SO", ho_so_moi)
         monkeypatch.setattr(ngan_sach, "CUA_SO_THEO_MODEL", bang_moi)
 
         sau = {m: (ngan_sach.tran_vao_cua(m), ngan_sach.cong_bo_cua(m),
@@ -137,21 +143,34 @@ class TestTranCongBoLaDANXUAT:
 
 
 class TestSoSlot:
-    """`SO_SLOT` = 3 (L-14), và pool KV là **của từng model**."""
+    """`-np 3` (L-14) mỗi hồ sơ, và pool KV là **của từng model** (`HO_SO`)."""
 
     def test_ba_slot(self):
-        assert ngan_sach.SO_SLOT_MAY_B == 3
-        assert ngan_sach.SO_SLOT == ngan_sach.SO_SLOT_MAY_B
-        assert ngan_sach.DONG_THOI_MAY_B == ngan_sach.SO_SLOT_MAY_B
+        for model, h in ngan_sach.HO_SO.items():
+            assert (h.np, h.seq_cap) == (3, 3), model
 
     def test_pool_kv_theo_model(self):
-        assert ngan_sach.POOL_KV == ngan_sach.CUA_SO_THEO_MODEL
-        assert ngan_sach.POOL_38 == ngan_sach.CUA_SO_THEO_MODEL["qwen38-api"]
-        assert ngan_sach.POOL_35 == ngan_sach.CUA_SO_THEO_MODEL["qwen35-api"]
+        assert ngan_sach.POOL_38 == ngan_sach.HO_SO["qwen38-api"].token_budget
+        assert ngan_sach.POOL_35 == ngan_sach.HO_SO["qwen35-api"].token_budget
         assert ngan_sach.POOL_38 != ngan_sach.POOL_35
+        # Pool A = `-c` − biên token (phương án C; biên đề xuất 8.192 theo
+        # `KET_QUA_DO_17_09.md`, chờ chốt ở bước 4). Đọc hằng, không gõ số.
+        for model, h in ngan_sach.HO_SO.items():
+            assert h.token_budget == (ngan_sach.CUA_SO_THEO_MODEL[model]
+                                      - h.bien_pool_token), model
+            assert h.bien_pool_token == ngan_sach.BIEN_POOL_TOKEN, model
 
-    def test_bi_danh_pool_cu_van_tro_model_mac_dinh(self):
-        assert ngan_sach.POOL_KV_MAY_B == ngan_sach.CUA_SO_MODEL
+    def test_ho_so_tu_mau_thuan_thi_NEM_luc_nap(self):
+        """Một hồ sơ sai phải đỏ lúc NẠP, không thành một lượt tràn KV lúc chạy."""
+        from dataclasses import replace
+
+        h = ngan_sach.HO_SO["qwen38-api"]
+        with pytest.raises(ValueError):
+            replace(h, seq_cap=h.np + 1)
+        with pytest.raises(ValueError):
+            replace(h, bien_pool_token=ngan_sach.TOKEN_RA_TRAN)
+        with pytest.raises(ValueError):
+            replace(h, dem_uoc=0)
 
 
 class TestNguongWhale:
@@ -200,30 +219,59 @@ class TestNguongWhale:
 
         ⇒ 2.6 dùng số dẫn xuất. Phép kiểm này chốt rằng số của plan **không**
           thoả định nghĩa, để không ai "sửa lại cho khớp plan".
+
+        ⚠️ Phương án C (17/09): mục tiêu chặn có thể đổi (đề xuất 9 s,
+           `KET_QUA_DO_17_09.md`), nên phép kiểm so với MỤC TIÊU đang khai
+           (`WHALE_CHAN_TOI_DA_S`), không với 30 s gõ tay.
         """
-        assert ngan_sach.thoi_gian_prefill_s("qwen38-api", 16_384) < 20
-        assert ngan_sach.thoi_gian_prefill_s("qwen35-api", 32_768) < 20
-        assert ngan_sach.NGUONG_WHALE["qwen38-api"] > 16_384
-        assert ngan_sach.NGUONG_WHALE["qwen35-api"] > 32_768
+        chan = ngan_sach.WHALE_CHAN_TOI_DA_S
+        for model, so_plan in (("qwen38-api", 16_384), ("qwen35-api", 32_768)):
+            if ngan_sach.thoi_gian_prefill_s(model, so_plan) <= chan:
+                assert ngan_sach.NGUONG_WHALE[model] > so_plan, model
+            else:
+                assert ngan_sach.NGUONG_WHALE[model] < so_plan, model
 
-    def test_nguong_chan_la_con_so_kho_nay_DA_tuyen_bo(self):
-        """Ngưỡng chặn là một **tuyên bố**, nên nó phải là tuyên bố đã có, không
-        phải một con số thứ hai cho cùng một câu hỏi."""
-        from platform_core.llm import tham_so_da_luot
-        assert (ngan_sach.WHALE_CHAN_TOI_DA_S
-                == tham_so_da_luot.doc().cho_whale_toi_da_s)
+    def test_nguong_chan_la_MOT_tuyen_bo_mot_cho(self):
+        """Mục tiêu chặn là một **tuyên bố**, khai ĐÚNG MỘT chỗ và hồ sơ đọc nó.
 
-    def test_nen_tang_KHONG_noi_long_hon_model_chat_nhat(self):
-        """Nền tảng không import `apps/`, nên nó giữ **một** ngưỡng chung
-        (`LTT_LLM_NGUONG_WHALE`) cho tới khi admission theo model đi qua đó.
-
-        ⛔ Bất biến trong lúc đó: ngưỡng chung không được **cao hơn** ngưỡng của
-           model chặt nhất — cao hơn là để lọt những lượt mà model ấy coi là cá
-           voi. Thấp hơn thì chỉ là bảo thủ, và bảo thủ ở đây là an toàn.
+        🔴 Phương án C bước 2 (17/09): bản trước chốt nó BẰNG `cho_whale_toi_da_s`
+           (30 s, whale nhường lượt tương tác bao lâu). Hai đại lượng khác nghĩa —
+           một là "prefill được làm nghèo người khác bao lâu", một là "whale đứng
+           chờ nhường bao lâu" — nên buộc chúng bằng nhau là chặn đúng lần đổi mà
+           số đo 17/09 đề xuất (mục tiêu 9 s). Đổi mục tiêu = đổi một dòng
+           `WHALE_CHAN_TOI_DA_S`; phép kiểm này đi theo.
         """
+        for model, h in ngan_sach.HO_SO.items():
+            assert h.nguong_whale == ngan_sach.nguong_whale_theo_chan(
+                model, ngan_sach.WHALE_CHAN_TOI_DA_S), model
+
+    @pytest.mark.parametrize("chan_s", [9.0, 30.0])
+    def test_doi_muc_tieu_chan_thi_nguong_dich_dung_chieu(self, chan_s):
+        """Mục tiêu chặn thấp hơn ⇒ ngưỡng thấp hơn, ở MỌI model (9 s và 30 s)."""
+        for model in ngan_sach.DUONG_PREFILL_TOK_S:
+            n = ngan_sach.nguong_whale_theo_chan(model, chan_s)
+            assert ngan_sach.thoi_gian_prefill_s(model, n) <= chan_s, model
+            assert ngan_sach.thoi_gian_prefill_s(model, n + 512) > chan_s, model
+        assert (ngan_sach.nguong_whale_theo_chan("qwen38-api", 9.0)
+                < ngan_sach.nguong_whale_theo_chan("qwen38-api", 30.0))
+
+    def test_duong_that_doc_nguong_THEO_MODEL(self):
+        """🔴 Cầu nối được hứa ở đây từ 12/09 — nay đã làm (phương án C, O-06).
+
+        Trước 17/09 nền tảng giữ **một** ngưỡng chung 16.384 (env
+        `LTT_LLM_NGUONG_WHALE`) và bảng `NGUONG_WHALE` không ai dùng. Nay ngưỡng đi
+        `HO_SO` → `AdmissionModel.nguong_whale` → `luat_cho`, và env đã gỡ.
+        Phép kiểm hành vi qua đường thật: `tests/test_1229_phuong_an_c_hop_dong.py`.
+        """
+        from apps.ltt_llm.manifest import MANIFEST
         from platform_core.llm import tham_so_da_luot
-        assert (tham_so_da_luot.doc().nguong_whale
-                <= min(ngan_sach.NGUONG_WHALE.values()))
+        from platform_core.llm.canonical import ALIAS_SANG_ID
+
+        assert not hasattr(tham_so_da_luot.doc(), "nguong_whale")
+        tool = MANIFEST.tools[0]
+        for alias, model_id in ALIAS_SANG_ID.items():
+            assert (tool.admission_cho(alias).nguong_whale
+                    == ngan_sach.NGUONG_WHALE[model_id]), alias
 
     # ── ĐỐI CHỨNG: dịch ĐƯỜNG CONG của một model ────────────────────────────
 
@@ -236,17 +284,22 @@ class TestNguongWhale:
         # ⛔ Điều kiện để phần dưới có nghĩa: bảng công bố PHẢI là kết quả của
         #    hàm dẫn xuất. Một `NGUONG_WHALE` gõ tay vượt qua mọi phép kiểm
         #    monkeypatch bên dưới, vì chúng gọi hàm chứ không đọc bảng.
+        chan = ngan_sach.WHALE_CHAN_TOI_DA_S
         assert ngan_sach.NGUONG_WHALE == {
-            m: ngan_sach._nguong_whale(m) for m in ngan_sach.DUONG_PREFILL_TOK_S}
+            m: ngan_sach.nguong_whale_theo_chan(m, chan)
+            for m in ngan_sach.DUONG_PREFILL_TOK_S}
+        assert {m: h.nguong_whale for m, h in ngan_sach.HO_SO.items()} == \
+            ngan_sach.NGUONG_WHALE, "HO_SO phai mang dung nguong dan xuat"
 
-        truoc = {m: ngan_sach._nguong_whale(m) for m in ngan_sach.NGUONG_WHALE}
+        truoc = {m: ngan_sach.nguong_whale_theo_chan(m, chan)
+                 for m in ngan_sach.NGUONG_WHALE}
 
         cong_moi = dict(ngan_sach.DUONG_PREFILL_TOK_S)
         cong_moi[bi_doi] = tuple((n, toc * 2.0)
                                  for n, toc in cong_moi[bi_doi])
         monkeypatch.setattr(ngan_sach, "DUONG_PREFILL_TOK_S", cong_moi)
 
-        sau = {m: ngan_sach._nguong_whale(m) for m in cong_moi}
+        sau = {m: ngan_sach.nguong_whale_theo_chan(m, chan) for m in cong_moi}
         assert sau[bi_doi] > truoc[bi_doi], (
             f"{bi_doi} prefill nhanh gap doi ma nguong ca voi khong nhuc nhich "
             f"— nghia la no khong duoc dan xuat tu duong cong")
@@ -267,12 +320,22 @@ class TestSoDoKhacCuaG4:
     def test_dat_cho_cua_nen_tang_KHONG_uoc_THIEU_cho_moi_anh(self):
         """⛔ Chiều của bất biến quan trọng: đặt chỗ **thừa** là an toàn (chỉ
         tốn suất), đặt chỗ **thiếu** là tràn pool KV — và một lần tràn pool giết
-        MỌI slot khi `-kvu` (llama.cpp b10689). Nên nền tảng được phép chừa cao
+        MỌI slot khi `-kvu` (llama.cpp b10689). Nên hồ sơ được phép chừa cao
         hơn số đo, không được chừa thấp hơn.
+
+        Phương án C (O-11): số đặt chỗ là `HO_SO[m].token_giu_moi_anh`, đi qua
+        `AdmissionModel`; env `LTT_LLM_TOKEN_MOI_ANH` đã gỡ.
         """
+        from apps.ltt_llm.manifest import MANIFEST
         from platform_core.llm import tham_so_da_luot
-        assert (tham_so_da_luot.doc().token_moi_anh
-                >= ngan_sach.TOKEN_MOI_ANH)
+        from platform_core.llm.canonical import ALIAS_SANG_ID
+
+        assert not hasattr(tham_so_da_luot.doc(), "token_moi_anh")
+        tool = MANIFEST.tools[0]
+        for alias, model_id in ALIAS_SANG_ID.items():
+            giu = tool.admission_cho(alias).token_giu_moi_anh
+            assert giu == ngan_sach.HO_SO[model_id].token_giu_moi_anh, alias
+            assert giu >= ngan_sach.TOKEN_MOI_ANH, alias
 
     def test_nap_kho_am_theo_model(self):
         """§G4: 16,3 s (3.8) và 12,1 s (3.5) — **kho ấm**. Task 5.2 còn giả định
@@ -287,15 +350,28 @@ class TestTranRaTheoNguCanh:
 
     def test_khong_neu_model_thi_dung_cua_so_HEP_NHAT(self):
         """⛔ Không rơi về model mặc định, và tuyệt đối không về model rộng
-        nhất: bên gọi không nêu model là bên gọi không biết mình ở model nào."""
-        hep = ngan_sach.CUA_SO_HEP_NHAT
-        vao = hep - ngan_sach.LE - 100
+        nhất: bên gọi không nêu model là bên gọi không biết mình ở model nào.
+
+        Phương án C bước 2: "cửa sổ" ở đây là NGÂN SÁCH ĐẶT CHỖ (`-c` − biên)."""
+        hep = ngan_sach.NGAN_SACH_HEP_NHAT
+        vao = hep - ngan_sach.DEM_UOC - 100
         assert ngan_sach.tran_theo_ngu_canh(vao) == 100
 
     def test_neu_model_thi_dung_cua_so_CUA_NO(self):
-        for model, cua_so in ngan_sach.CUA_SO_THEO_MODEL.items():
-            vao = cua_so - ngan_sach.LE - 100
+        for model, h in ngan_sach.HO_SO.items():
+            vao = h.token_budget - h.dem_uoc - 100
             assert ngan_sach.tran_theo_ngu_canh(vao, model) == 100, model
+
+    def test_luot_vao_dai_nhat_van_dat_cho_VUA_ngan_sach(self):
+        """Bất biến 1 của phương án C: `vào ≤ tran_vao ⇒ đặt chỗ ≤ pool`.
+
+        Kẹp `ra` theo `-c` thay vì theo ngân sách thì lượt vào dài nhất hợp lệ
+        đặt chỗ VƯỢT pool và nhận 413 dù đã qua trần vào."""
+        for model, h in ngan_sach.HO_SO.items():
+            vao = ngan_sach.tran_vao_cua(model)
+            ra = ngan_sach.tran_theo_ngu_canh(vao, model)
+            assert ra >= 1, model
+            assert vao + ra + h.dem_uoc <= h.token_budget, model
 
     def test_model_la_thi_NEM(self):
         with pytest.raises(KeyError):
@@ -312,16 +388,16 @@ class TestTranRaTheoNguCanh:
         from platform_core.llm.canonical import ALIAS_SANG_ID
 
         for alias, model_id in ALIAS_SANG_ID.items():
-            cua_so = ngan_sach.CUA_SO_THEO_MODEL[model_id]
-            vao = cua_so - ngan_sach.LE - 100
+            ngan = ngan_sach.HO_SO[model_id].token_budget
+            vao = ngan - ngan_sach.DEM_UOC - 100
             assert EXECUTOR.context_output_cap(vao, alias) == 100, alias
 
     def test_executor_KHONG_neu_alias_van_chay_va_bao_thu(self):
-        """Bốn chỗ gọi ở nền tảng còn gọi một đối số (planner, job_runner,
-        `runtime_noi_bo/luong.py`, `server/api/streaming.py`). Chúng phải tiếp
-        tục chạy, và phải nhận con số **hẹp nhất**."""
+        """Bên gọi không biết model (không nêu bí danh) phải tiếp tục chạy, và
+        phải nhận con số **hẹp nhất**. (Từ phương án C bước 2 — O-24 — bốn chỗ gọi
+        ở nền tảng đều truyền bí danh; nhánh này là lưới cho bên gọi lạ.)"""
         from apps.ltt_llm.executor import EXECUTOR
-        vao = ngan_sach.CUA_SO_HEP_NHAT - ngan_sach.LE - 100
+        vao = ngan_sach.NGAN_SACH_HEP_NHAT - ngan_sach.DEM_UOC - 100
         assert EXECUTOR.context_output_cap(vao) == 100
 
     def test_bi_danh_la_thi_NEM(self):

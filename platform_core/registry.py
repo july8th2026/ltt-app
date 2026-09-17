@@ -121,6 +121,21 @@ class AdmissionModel:
     residency_group: str = ""
     #: "mac_dinh" | "theo_lo" | "" — vai trò của model trong nhóm cư trú.
     vai_tro: str = ""
+    # ── Hồ sơ nhận theo ngân sách token (phương án C bước 2, 17/09/2026) ─────
+    #
+    # ⭐ Ba số dưới đây là của MODEL, không của nền tảng: app khai (vd hồ sơ
+    #    `HO_SO` của app LLM), `tham_so_da_luot.luat_cho` đọc — MỘT chỗ cho mọi
+    #    cửa (stream, đồng bộ, job, nội bộ). Trước 17/09 chúng là env chung của
+    #    nền tảng (`LTT_LLM_NGUONG_WHALE` 16.384, `LTT_LLM_DEM_DAT_TRUOC`,
+    #    `LTT_LLM_TOKEN_MOI_ANH` — ĐÃ GỠ), tức một số cho hai model khác đường cong.
+    # ⛔ 0 = "không khai" và CHỈ hợp lệ khi `token_pool` = 0 (tool không có ngân
+    #    sách KV: ảnh, tiếng…). `luat_cho` NÉM khi pool > 0 mà thiếu `dem_uoc`.
+    #: Token prefill MỚI từ mức này trở lên là whale. 0 = không có khái niệm whale.
+    nguong_whale: int = 0
+    #: Đệm ước token vào cộng vào MỖI đặt chỗ (≙ phần chừa trong trần vào).
+    dem_uoc: int = 0
+    #: Token đặt chỗ cho mỗi ảnh đầu vào.
+    token_giu_moi_anh: int = 0
 
 
 def suc_chua_admission(tool, model: str = "") -> "AdmissionModel | None":

@@ -46,7 +46,9 @@ def test_config_mac_dinh_khoa_public_input_KHOP_NGAN_SACH(monkeypatch):
         f"cong (may B) chan o {cfg.max_input_tokens}, nen tang chan o "
         f"{ngan_sach.TOKEN_VAO_TRAN} — mot trong hai la tran an.")
     assert cfg.max_output_tokens == ngan_sach.TOKEN_RA_TRAN
-    assert cfg.max_dong_thoi == ngan_sach.DONG_THOI_MAY_B, (
+    # Phương án C bước 2: bí danh `DONG_THOI_MAY_B` đã gỡ; số slot là của TỪNG
+    # hồ sơ. Bước 3 (máy B đọc `-np` từ yaml) gỡ hẳn `LTT_LLM_MAX_DONG_THOI`.
+    assert cfg.max_dong_thoi == max(h.np for h in ngan_sach.HO_SO.values()), (
         "parallel=1 thi gateway khong duoc tao hidden queue")
 
 

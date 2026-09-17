@@ -126,7 +126,7 @@ def _loi_parser_tool_call(than_loi: str) -> bool:
 
 def mo(db, *, duong: str, than: dict, timeout_s: float = 900.0,
        request_id: str = "", token_dat_truoc: int = 0,
-       la_whale: bool = False, _da_thu_lai: bool = False) -> LuongMo:
+       _da_thu_lai: bool = False) -> LuongMo:
     """Mở luồng tới model nhà. `duong` là `/v1/messages` hoặc `/v1/responses`.
 
     ⚠️ **Chưa đọc byte nào khi hàm này trả về.** Nó chỉ chắc rằng thượng nguồn đã
@@ -163,8 +163,9 @@ def mo(db, *, duong: str, than: dict, timeout_s: float = 900.0,
         headers["X-LTT-Request-Id"] = str(request_id)
     if int(token_dat_truoc or 0) > 0:
         headers["X-LTT-Token-Dat"] = str(int(token_dat_truoc))
-    if la_whale:
-        headers["X-LTT-Whale"] = "1"
+    # 🔴 `X-LTT-Whale` ĐÃ GỠ (phương án C, O-01, 17/09/2026): máy B là rào vật lý,
+    #    không còn luật whale riêng (bước 3). Máy A là nơi DUY NHẤT quyết định
+    #    công bằng prefill (`luat_nhan` luật 5).
 
     client = httpx.Client(timeout=timeout_s)
     try:
@@ -253,7 +254,7 @@ def mo(db, *, duong: str, than: dict, timeout_s: float = 900.0,
                     return mo(
                         db, duong=duong, than=than, timeout_s=timeout_s,
                         request_id=request_id, token_dat_truoc=token_dat_truoc,
-                        la_whale=la_whale, _da_thu_lai=True)
+                        _da_thu_lai=True)
                 log.warning("thu lai roi van vo o parser tool-call: %s",
                             than_loi[:300])
             api_pool.danh_dau_loi(db, key, message=f"HTTP {r.status_code}")

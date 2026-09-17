@@ -48,12 +48,12 @@ def test_ltt_llm_khai_resource_theo_model_va_khong_lo_ra_khach():
     tool = MANIFEST.tools[0]
     projected = project_tool(MANIFEST, tool)
     cong_khai = str(projected.to_public_dict())
-    for model, ten_tn in (("ltt-3.8", ngan_sach.TAI_NGUYEN_38),
-                          ("ltt-3.5", ngan_sach.TAI_NGUYEN_35)):
+    for model, ten_tn, id_nb in (("ltt-3.8", ngan_sach.TAI_NGUYEN_38, "qwen38-api"),
+                                 ("ltt-3.5", ngan_sach.TAI_NGUYEN_35, "qwen35-api")):
         for t in (tool, projected):
             suc = t.admission_cho(model)
             assert suc is not None and suc.resource == ten_tn
-            assert suc.slots == ngan_sach.SO_SLOT
+            assert suc.slots == ngan_sach.HO_SO[id_nb].seq_cap
         assert ten_tn not in cong_khai, f"ten tai nguyen {ten_tn} ro ra khach"
     assert "admission_resource" not in projected.to_public_dict()
 

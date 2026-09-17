@@ -119,7 +119,7 @@ def chup_nguoi_cho(db: Session, *, resource: str,
 
 
 def kiem_phong(db: Session, *, resource: str, so_nguoi_toi_da: int,
-               la_whale: bool = False, so_ca_voi_toi_da: int = 2,
+               la_whale: bool, so_ca_voi_toi_da: int,
                now: datetime | None = None) -> None:
     """Ném `PhongDay` nếu phòng chờ đã chạm trần. Chạy TRƯỚC khi gửi 200.
 
@@ -204,8 +204,8 @@ def cong_cho_residency(w, giay: float) -> bool:
     return True
 
 
-def _mot_nhip(yc: YeuCauCho, waiter_id: str, dong_ho: Callable[[], datetime],
-              cho_whale_toi_da_s: float) -> tuple[str, str]:
+def _mot_nhip(yc: YeuCauCho, waiter_id: str,
+              dong_ho: Callable[[], datetime]) -> tuple[str, str]:
     """Đập nhịp + hỏi luật nhận một lần, trong một transaction. Trả `(lease_id, lý do)`."""
     from platform_core.llm import admission, luat_nhan
 
@@ -231,7 +231,7 @@ def _mot_nhip(yc: YeuCauCho, waiter_id: str, dong_ho: Callable[[], datetime],
             token_dat_truoc=yc.token_dat_truoc, token_prefill_moi=yc.token_prefill_moi,
             la_whale=yc.la_whale, token_pool=yc.token_pool, waiter_id=waiter_id,
             tuoi_cho_s=max(0.0, (now - _aware(w.created_at)).total_seconds()),
-            cho_whale_toi_da_s=cho_whale_toi_da_s, now=now)
+            now=now)
         if lease is not None:
             w.trang_thai = "nhan"
             w.lease_id = lease.id
@@ -267,7 +267,7 @@ def _chot(waiter_id: str, trang_thai: str, ket_qua: str,
 
 
 def cho_nhan(yc: YeuCauCho, *, waiter_id: str, han_s: float,
-             cho_whale_toi_da_s: float = 30.0, moi_nhip_s: float = MOI_NHIP_S,
+             moi_nhip_s: float = MOI_NHIP_S,
              dong_ho: Callable[[], datetime] = _dong_ho_that,
              ngu: Callable[[float], None] = time.sleep,
              ) -> Generator[str, None, str]:
@@ -291,7 +291,7 @@ def cho_nhan(yc: YeuCauCho, *, waiter_id: str, han_s: float,
     xong = False
     try:
         while True:
-            lease_id, ly_do = _mot_nhip(yc, waiter_id, dong_ho, cho_whale_toi_da_s)
+            lease_id, ly_do = _mot_nhip(yc, waiter_id, dong_ho)
             if lease_id:
                 xong = True
                 return lease_id
@@ -326,6 +326,44 @@ def cho_nhan_chan(yc: YeuCauCho, *, waiter_id: str, han_s: float,
         if ngat_chua is not None and ngat_chua():
             g.close()
             raise KhachDi(waiter_id)
+
+
+#: Mã lý do ghi vào `llm_waiters.ly_do_cho` khi một lượt ĐÃ nhận bị máy B trả 429
+#: và quay lại hàng (phương án C bước 1, O-04). Nhịp chờ kế tiếp ghi đè bằng lý
+#: do của `luat_nhan`; dấu vết bền là dòng log `XEP LAI` + bộ đếm `llm:xep_lai`.
+LY_DO_MAY_B_TU_CHOI = "may_b_tu_choi"
+
+
+def xep_lai(waiter_id: str, *, now: datetime | None = None) -> bool:
+    """Dòng `nhan` quay lại `cho` — GIỮ `created_at` (tuổi chờ không đặt lại).
+
+    ⭐ Vì sao giữ tuổi: lượt này đã chờ đúng lượt; máy B từ chối nó vì hai sổ
+       nhả lệch nhịp (O-04), không phải vì nó đến muộn. Đặt lại tuổi là đẩy nó
+       xuống cuối hàng cho một lỗi không phải của nó.
+    ⛔ Chỉ đụng dòng đang `nhan`. Trả `False` khi không đổi gì (dòng đã chốt,
+       không tồn tại) — bên gọi coi như không xếp lại được.
+    """
+    if not waiter_id:
+        return False
+    gen, db = _phien()
+    try:
+        w = db.get(LlmWaiter, waiter_id)
+        if w is None or w.trang_thai != "nhan":
+            return False
+        bay_gio = now or _bay_gio()
+        w.trang_thai = "cho"
+        w.lease_id = ""
+        w.admitted_at = None
+        w.ly_do_cho = LY_DO_MAY_B_TU_CHOI
+        w.heartbeat_at = bay_gio
+        db.commit()
+        return True
+    except Exception:  # noqa: BLE001 - so luot khong duoc lam hong luot that
+        db.rollback()
+        log.exception("khong xep lai duoc dong cho %s", waiter_id)
+        return False
+    finally:
+        _dong(gen)
 
 
 def ghi_ket_thuc(waiter_id: str, ket_qua: str, *, now: datetime | None = None) -> None:

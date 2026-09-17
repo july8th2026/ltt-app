@@ -27,11 +27,23 @@ from types import SimpleNamespace
 
 import pytest
 
-from apps.ltt_llm.ngan_sach import (NHOM_CU_TRU_38, POOL_35, POOL_38, SO_SLOT,
+from apps.ltt_llm.ngan_sach import (HO_SO, NHOM_CU_TRU_38, POOL_35, POOL_38,
                                     TAI_NGUYEN_35, TAI_NGUYEN_38)
 from platform_core.llm import luat_nhan as L
 from platform_core.llm import residency as R
 from platform_core.registry import AdmissionModel
+
+#: Số suất của 3.8 — đọc hồ sơ (bí danh `ngan_sach.SO_SLOT` đã gỡ, phương án C).
+SO_SLOT = HO_SO["qwen38-api"].seq_cap
+
+
+def _ts(**kw) -> "L.ThamSo":
+    """`luat_nhan.ThamSo` với số THỜI GIAN của phép kiểm (lớp ấy không còn mặc định số)."""
+    kw.setdefault("pool", 0)
+    kw.setdefault("cho_whale_toi_da_s", 30.0)
+    kw.setdefault("lao_hoa_s", 300.0)
+    kw.setdefault("cho_backfill_toi_da_s", 120.0)
+    return L.ThamSo(**kw)
 
 GOC = pathlib.Path(__file__).resolve().parents[1]
 T0 = datetime(2026, 9, 12, 9, 0, tzinfo=timezone.utc)
@@ -317,7 +329,7 @@ def _xet_sai_thu_tu(yc, giu, cho, ts) -> L.PhanXu:
 def test_luat_0_chay_truoc_luat_slot_va_luat_ngan_sach():
     yc = L.Luot(id="moi", user_id="u", token_dat_truoc=200_000)
     day = [L.Luot(id=f"g{i}", user_id="k", token_dat_truoc=60_000) for i in range(2)]
-    ts = L.ThamSo(so_slot=2, pool=100_000, residency_mo=False)
+    ts = _ts(so_slot=2, pool=100_000, residency_mo=False)
 
     # Lượt này vi phạm CẢ luật slot (2/2) và luật ngân sách (200K > 100K).
     assert L.xet(yc, day, [], ts).ly_do == L.CHO_RESIDENCY
@@ -325,15 +337,15 @@ def test_luat_0_chay_truoc_luat_slot_va_luat_ngan_sach():
     assert _xet_sai_thu_tu(yc, day, [], ts).ly_do == L.CHO_SLOT
 
     # Và chỉ vướng ngân sách: vẫn là cư trú, không phải `cho_ngan_sach`.
-    ts1 = L.ThamSo(so_slot=4, pool=100_000, residency_mo=False)
+    ts1 = _ts(so_slot=4, pool=100_000, residency_mo=False)
     assert L.xet(yc, [], [], ts1).ly_do == L.CHO_RESIDENCY
     assert _xet_sai_thu_tu(yc, [], [], ts1).ly_do == L.CHO_RESIDENCY
 
 
 def test_residency_mo_mac_dinh_la_true():
     """Mặc định là một lời khai, nên nó được kiểm như một lời khai."""
-    assert L.ThamSo(so_slot=1).residency_mo is True
-    assert L.xet(L.Luot(id="a", user_id="u"), [], [], L.ThamSo(so_slot=1)).nhan
+    assert _ts(so_slot=1).residency_mo is True
+    assert L.xet(L.Luot(id="a", user_id="u"), [], [], _ts(so_slot=1)).nhan
 
 
 def test_cho_residency_khong_giu_slot_khong_giu_ngan_sach(db):

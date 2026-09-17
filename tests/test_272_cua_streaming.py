@@ -196,6 +196,21 @@ def _dat_luong(monkeypatch, khoi=None, *, nem=None, ban=False):
     return da_goi
 
 
+def _nguong_whale_1(monkeypatch) -> None:
+    """Hạ `nguong_whale` của mọi model trong bản khai về 1 (mọi lượt là whale)."""
+    from dataclasses import replace
+
+    from platform_core import registry
+
+    goc = registry.suc_chua_admission
+
+    def gia(tool, model=""):
+        suc = goc(tool, model)
+        return replace(suc, nguong_whale=1) if suc is not None else None
+
+    monkeypatch.setattr(registry, "suc_chua_admission", gia)
+
+
 def _giu_execution_slot() -> str:
     """Giữ hết suất của **model mặc định**, đọc tên tài nguyên từ BẢN KHAI.
 
@@ -537,7 +552,9 @@ def test_context_rejections_do_not_consume_create_rate(api, monkeypatch, route):
 
 def test_stream_tron_ven_ghi_so_luot_xong_va_whale(api, monkeypatch):
     """Sổ lượt (chủ dự án: 'log lưu để phân tích sau') ghi đủ một lượt trọn vẹn."""
-    monkeypatch.setenv("LTT_LLM_NGUONG_WHALE", "1")      # mọi lượt đều là whale
+    # Ngưỡng whale là số của MODEL (phương án C bước 2, env đã gỡ): hạ nó trong
+    # bản khai của đúng model phép kiểm gọi ⇒ mọi lượt đều là whale.
+    _nguong_whale_1(monkeypatch)
     _dat_luong(monkeypatch)
     user_id, token = _account()
     r = api.post(MSG, json=_than(), headers=_h(token))
@@ -649,6 +666,52 @@ def test_may_B_ban_sau_200_thi_su_kien_overloaded_va_HOAN_DU(api, monkeypatch):
     assert r.status_code == 200, r.text
     assert b"overloaded_error" in r.content
     assert _so_du(user_id) == truoc, "ban ma van thu tien"
+
+
+def _kieu_but_toan_luot(user_id: str) -> list[str]:
+    """Kiểu bút toán (trừ `grant`) của một khách, theo thời gian — MỘT giữ, MỘT kết sổ."""
+    from platform_core.models import CreditEntry
+    from platform_core.db import get_session
+    gen = get_session()
+    db = next(gen)
+    try:
+        return [e.kind for e in db.query(CreditEntry)
+                .filter(CreditEntry.user_id == user_id)
+                .order_by(CreditEntry.created_at.asc()).all()
+                if e.kind in ("hold", "settle", "refund")]
+    finally:
+        db.close()
+
+
+def test_may_B_429_MOT_LAN_sau_200_thi_XEP_LAI_va_khach_NHAN_noi_dung(api, monkeypatch):
+    """Phương án C bước 1 (O-04): không còn "429 SAU 200" cho khe nhả lệch nhịp."""
+    from platform_core.llm import luong_vlm
+
+    monkeypatch.setenv("LTT_LLM_CHO_XEP_LAI_S", "0")
+    da_goi: list = []
+    goc = _dat_luong(monkeypatch)
+    mo_that = luong_vlm.mo
+
+    def mo(db, **kw):
+        da_goi.append(kw.get("token_dat_truoc"))
+        if len(da_goi) == 1:
+            raise luong_vlm.KhongMoDuocLuong("may B dang ban", ban=True,
+                                             thu_lai_sau_s=30)
+        return mo_that(db, **kw)
+
+    monkeypatch.setattr(luong_vlm, "mo", mo)
+    user_id, token = _account()
+    truoc = _so_du(user_id)
+    r = api.post(MSG, json=_than(), headers=_h(token))
+    assert r.status_code == 200, r.text
+    assert b"overloaded_error" not in r.content
+    assert b"event: error" not in r.content
+    assert len(da_goi) == 2 and da_goi[0] == da_goi[1] > 0
+    assert len(goc) == 1, "luong that chi mo MOT lan"
+    assert _so_du(user_id) <= truoc
+    # 💰 Một khoản giữ, một lần quyết toán — không giữ–hoàn–giữ.
+    assert _kieu_but_toan_luot(user_id) == ["hold", "settle"], (
+        _kieu_but_toan_luot(user_id))
 
 
 # ── 5. Chế độ thử ───────────────────────────────────────────────────────────
