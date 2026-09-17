@@ -4656,9 +4656,10 @@ textarea:focus,select:focus{border-color:var(--text-secondary)}
 #market-grid .market-card{display:flex;flex-direction:column}
 #market-grid .market-card-body{display:flex;flex:1 1 auto;flex-direction:column}
 #market-grid .market-card-body>p{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;height:auto;min-height:2.9em;margin:8px 0 10px;overflow:hidden;text-overflow:ellipsis;font-size:12px;line-height:1.45}
-#market-grid .market-card-foot{margin-top:auto;align-items:flex-end;font-size:11px}
-#market-grid .market-card-foot i{padding:2px 7px;font-size:11px;line-height:1.4}
-#market-grid .market-card-foot strong{padding:6px 9px;font-size:12px;white-space:nowrap}
+#market-grid .market-card-foot{flex-wrap:wrap;margin-top:auto;align-items:flex-end;row-gap:8px;font-size:11px}
+#market-grid .market-card-foot>span{flex:1 1 auto}
+#market-grid .market-card-foot i{padding:2px 7px;font-size:11px;line-height:1.4;white-space:nowrap}
+#market-grid .market-card-foot strong{margin-left:auto;padding:6px 9px;font-size:12px;white-space:nowrap}
 #market-grid .market-badge{font-size:11px}
 @media(max-width:760px){#market-grid .market-card-body>p{-webkit-line-clamp:3;min-height:0}}
 /* App chưa phát hành: nút PHỤ (viền, không nền đỏ) — cùng quyền truy cập, khác cách trình bày. */
@@ -4701,6 +4702,7 @@ textarea:focus,select:focus{border-color:var(--text-secondary)}
 .c4-hero-buoc b{font-size:var(--fs-body)}
 .c4-hero-buoc span{color:var(--text-secondary);font-size:13px}
 @media(max-width:760px){.c4-hero{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:560px){.c4-hero-buoc{display:none}}
 /* Thẻ catalog ẩn danh: vạch đầu thẻ token ấm (trước: `app.accent` xanh ngọc/tím/xanh dương),
  * nút trong thẻ là nút PHỤ viền, chân thẻ canh đáy. */
 #catalog-grid .appcard{display:flex;flex-direction:column}
@@ -4716,6 +4718,7 @@ textarea:focus,select:focus{border-color:var(--text-secondary)}
 /* Bảng: không ngắt giữa số ("221,1/84") hay giữa tên model ("ltt-/3.8"); đường dẫn chỉ ngắt tại "/" (<wbr>). */
 .c4-tai-lieu td.c4-so,.c4-tai-lieu td.c4-so code,.c4-tai-lieu td.u-phai,.c4-tai-lieu th code{white-space:nowrap;overflow-wrap:normal}
 .c4-tai-lieu td code.c4-duong{overflow-wrap:normal;word-break:normal}
+@media(min-width:641px){.c4-tai-lieu td code.c4-duong{white-space:nowrap}}
 .c4-tai-lieu .tl-bang td code{white-space:nowrap;overflow-wrap:normal}
 .c4-cta{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 0}
 .c4-cta .btn{min-height:44px;padding:10px 18px;font-size:var(--fs-body)}
