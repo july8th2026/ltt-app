@@ -1,0 +1,122 @@
+{
+ "nguon": "log may B gateway_err.log (llm_gateway.so)",
+ "tu": "2026-09-10 15:10:57",
+ "so_dong": 8978,
+ "models": {
+  "khong-ton-tai": {
+   "token_ra_reasoning_cong_content": {
+    "n": 0,
+    "p50": null,
+    "p95": null,
+    "p99": null,
+    "max": null
+   },
+   "token_vao": {
+    "n": 0,
+    "p50": null,
+    "p95": null,
+    "p99": null,
+    "max": null
+   },
+   "decode_tps": {
+    "n": 0,
+    "p50": null,
+    "p95": null,
+    "p99": null,
+    "max": null
+   },
+   "ket_thuc": {
+    "tu_choi": 2
+   },
+   "ty_le_cham_tran_length": 0.0,
+   "stream_khong_co_token": 0,
+   "khong_dang_tin": 2,
+   "theo_ngay": {
+    "2026-09-15": 2
+   }
+  },
+  "qwen35-api": {
+   "token_ra_reasoning_cong_content": {
+    "n": 3472,
+    "p50": 1137.0,
+    "p95": 6814.5,
+    "p99": 13501.6,
+    "max": 32768
+   },
+   "token_vao": {
+    "n": 3472,
+    "p50": 2947.0,
+    "p95": 20057.3,
+    "p99": 44634.7,
+    "max": 71147
+   },
+   "decode_tps": {
+    "n": 3467,
+    "p50": 68.4,
+    "p95": 91.2,
+    "p99": 94.7,
+    "max": 98.22
+   },
+   "ket_thuc": {
+    "length": 125,
+    "stop": 3192,
+    "tu_choi": 143,
+    "None": 906,
+    "tool_calls": 155
+   },
+   "ty_le_cham_tran_length": 0.0276,
+   "stream_khong_co_token": 859,
+   "khong_dang_tin": 190,
+   "theo_ngay": {
+    "2026-09-12": 150,
+    "2026-09-13": 605,
+    "2026-09-14": 1045,
+    "2026-09-15": 1256,
+    "2026-09-16": 883,
+    "2026-09-17": 582
+   }
+  },
+  "qwen38-api": {
+   "token_ra_reasoning_cong_content": {
+    "n": 2705,
+    "p50": 1488.0,
+    "p95": 6000.0,
+    "p99": 11605.2,
+    "max": 19267
+   },
+   "token_vao": {
+    "n": 2705,
+    "p50": 3115.0,
+    "p95": 6411.0,
+    "p99": 52408.0,
+    "max": 166707
+   },
+   "decode_tps": {
+    "n": 2670,
+    "p50": 45.5,
+    "p95": 70.9,
+    "p99": 76.7,
+    "max": 79.95
+   },
+   "ket_thuc": {
+    "length": 127,
+    "stop": 2489,
+    "huy": 2,
+    "None": 1687,
+    "tu_choi": 61,
+    "tool_calls": 89
+   },
+   "ty_le_cham_tran_length": 0.0285,
+   "stream_khong_co_token": 1684,
+   "khong_dang_tin": 66,
+   "theo_ngay": {
+    "2026-09-12": 189,
+    "2026-09-13": 474,
+    "2026-09-14": 1015,
+    "2026-09-15": 2073,
+    "2026-09-16": 339,
+    "2026-09-17": 365
+   }
+  }
+ }
+}
