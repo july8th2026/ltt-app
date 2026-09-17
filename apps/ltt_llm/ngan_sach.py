@@ -41,7 +41,7 @@ from dataclasses import dataclass
 
 #: Id model nội bộ **mặc định** — model mọi bí danh cũ đã di trú về (D02).
 #: Mọi hàm theo-model nhận `model_id`; hằng cấp module nào còn phải là **một**
-#: con số (bộ cài client, `LTT_LLM_MAX_INPUT_TOKENS` của máy B…) lấy của model này.
+#: con số (bộ cài client, trần vào của bí danh lạ…) lấy của model này.
 MODEL_MAC_DINH = "qwen38-api"
 
 #: Trần token ra cứng cho một lượt. Khớp `LTT_LLM_MAX_OUTPUT_TOKENS` của máy B.
@@ -342,7 +342,8 @@ NGAN_SACH_HEP_NHAT = min(h.token_budget for h in HO_SO.values())
 # ══════════════════════════════════════════════════════════════════════════
 
 #: Trần đầu vào thật sự dùng được **của model mặc định**: chừa đủ chỗ cho một
-#: câu trả lời dài nhất. Đây là số máy B phải khai ở `LTT_LLM_MAX_INPUT_TOKENS`.
+#: câu trả lời dài nhất. Máy B KHÔNG khai số này: cổng tự tính `-c − max_out − DEM_UOC`
+#: theo từng model từ `llama-swap.yaml` (phương án C bước 3).
 #: ⛔ Một con số, nên nó chỉ đúng cho MỘT model. Đường theo-model là
 #:    `tran_vao_cua(model_id)` — cùng công thức, khác cửa sổ.
 TOKEN_VAO_TRAN = CUA_SO_MODEL - TOKEN_RA_TRAN - DEM_UOC      # 186_368
