@@ -4348,4 +4348,67 @@ input[type=hidden]+.af-step{margin-top:0}
   .vps-hd .vps-hd-nguon>form{flex:1 1 calc(50% - 4px)}
   .vps-hd .vps-hd-nguon .btn{width:100%;min-width:0}
 }
+
+/* ── Nexus · MỘT component thẻ tải (`_nexus_tai.html`) cho /nexus và /tai-xuong ── */
+.nx-tai-luoi{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}
+.nx-tai-luoi>.nx-tai-the{flex:0 1 clamp(150px,22vw,200px)}
+.nx-tai-luoi--rong>.nx-tai-the{flex:0 1 280px}
+@media (min-width:1000px){
+  .nx-tai-luoi:not(.nx-tai-luoi--rong){display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
+}
+@media (max-width:420px){.nx-tai-luoi--rong>.nx-tai-the{flex:1 1 100%}}
+.nx-tai-the{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;
+  min-width:0;padding:20px 14px 16px;border:1px solid var(--border-subtle);
+  border-radius:14px;background:var(--surface-raised)}
+.nx-tai-the .nx-tai-ic{width:28px;height:28px;color:var(--brand-hover)}
+.nx-tai-the.nx-tai-chua .nx-tai-ic{color:var(--text-muted)}
+.nx-tai-the .nx-tai-ten{margin:0;font-size:14px;font-weight:600;line-height:1.35;
+  min-height:2.7em;display:flex;align-items:center;color:var(--text-primary)}
+.nx-tai-the .nx-tai-mo{margin:0;font-size:12px;line-height:1.5;color:var(--text-secondary);flex:1}
+.nx-tai-the .nx-tai-nut{width:100%;justify-content:center;min-height:40px;margin-top:4px}
+.nx-tai-the .nx-tai-tt{margin-top:4px}
+.nx-tai-hanh-dong{display:flex;flex-direction:column;align-items:stretch;gap:6px;width:100%}
+.nx-tai-sha{margin:0;font-size:10.5px;color:var(--text-muted);overflow-wrap:anywhere}
+.nx-tai-sha code{font-size:10.5px;color:inherit;background:none;padding:0;border:0}
+.nx-tai-phu{font-size:12.5px;color:var(--text-secondary)}
+.nx-tai-ghi{margin:10px 0 0;font-size:12.5px;color:var(--text-secondary)}
+.nx-tai-ghi--canh{margin:0;color:var(--status-warning)}
+/* Trang /tai-xuong: đầu trang cùng nhịp eyebrow · tiêu đề · lời dẫn với /nexus. */
+.nx-tai-trang{max-width:960px;margin:0 auto;padding:clamp(20px,4vw,40px) 0 40px}
+.nx-tai-dau-trang{margin:0 0 24px}
+.nx-tai-dau-trang h1{margin:10px 0 8px;font-size:clamp(26px,3.6vw,36px);line-height:1.15;letter-spacing:-.02em}
+.nx-tai-dan{margin:0 0 12px;max-width:62ch;color:var(--text-secondary);font-size:14.5px;line-height:1.7}
+.nx-tai-huong-dan{margin-top:28px;padding:18px 20px;border:1px solid var(--border-subtle);
+  border-radius:14px;background:var(--surface-raised)}
+.nx-tai-huong-dan h2{margin:0 0 10px;font-size:15px}
+.nx-tai-huong-dan ol{margin:0;padding-left:20px;font-size:13.5px;line-height:1.7}
+
+/* ── Nexus · Máy của tôi ── */
+.nx-may-doi{position:relative}
+.nx-may-doi>summary{list-style:none;cursor:pointer}
+.nx-may-doi>summary::-webkit-details-marker{display:none}
+.nx-may-doi[open]>summary{border-color:var(--brand-primary)}
+.nx-may-doi[open]>.nx-may-doi-ten{margin-top:8px}
+.nx-may-doi .nx-may-o-ten{width:240px}
+@media (min-width:561px){
+  .nx-may-doi[open]{display:flex;flex-direction:row-reverse;gap:6px;align-items:center}
+  .nx-may-doi[open]>.nx-may-doi-ten{margin-top:0}
+}
+.nx-may-ten b{overflow-wrap:anywhere}
+/* Nhật ký ở màn hẹp: mỗi dòng thành một thẻ nhãn/giá trị — không cột nào mất. */
+@media (max-width:560px){
+  .nx-may-tac-vu>.nx-may-doi,.nx-may-tac-vu>form{flex:1 1 calc(50% - 4px);min-width:0}
+  .nx-may-tac-vu>.nx-may-doi[open]{flex-basis:100%}
+  .nx-may-doi>summary,.nx-may-tac-vu>form>.btn{display:flex;justify-content:center;width:100%;min-height:40px;align-items:center}
+  .nx-may-doi .nx-may-o-ten{width:auto}
+  .nx-nhat-ky{overflow:visible}
+  .nx-nhat-ky table{min-width:0}
+  .nx-nhat-ky thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+  .nx-nhat-ky table,.nx-nhat-ky tbody,.nx-nhat-ky tr,.nx-nhat-ky td{display:block}
+  .nx-nhat-ky tbody tr{padding:10px 14px}
+  .nx-nhat-ky td{display:grid;grid-template-columns:7.5em minmax(0,1fr);gap:8px;padding:3px 0;
+    white-space:normal;border:0}
+  .nx-nhat-ky td>*{justify-self:start}
+  .nx-nhat-ky td::before{content:attr(data-nhan);color:var(--text-muted);font-size:12px}
+}
 /* === HET C3: DEV-VPS-NEXUS === */
