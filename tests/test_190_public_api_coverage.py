@@ -127,8 +127,11 @@ DISPOSITION = {
     "lttvideo": (INTERNAL_ONLY, ()),
 
     "qualitylab": (INTERNAL_ONLY, ()),
-    # Release channel + sign-in + web search for the LTTCODE desktop app. No
-    # ToolSpec and no Job: LTTCODE calls /api/v1 with the user's own ltt_sk_ key.
+    # Public web page (/lttcode: intro, guide, download) + release channel +
+    # sign-in + web search for the LTTCODE desktop app. The PAGE is public
+    # (surface=customer), but there is no ToolSpec and no Job: LTTCODE calls
+    # /api/v1 with the user's own ltt_sk_ key, so the API disposition stays
+    # INTERNAL_ONLY.
     "lttcode": (INTERNAL_ONLY, ()),
 
     # ── Auto Scan Video (pha 00-14) ──────────────────────────────────────────
