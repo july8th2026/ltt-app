@@ -24,7 +24,12 @@
     {% for g in goi %}
       {% set bonus = g.credits_base * g.bonus_percent // 100 %}
       {% set total = g.credits_base + bonus %}
-      <article class="appcard billing-package">
+      {#- Golden UI C4 (17/09): khi có từ ba gói, gói giữa được nhấn (viền +
+          nút chính), các gói khác nút phụ — ba nút đỏ ngang hàng không cho
+          khách biết bắt đầu từ đâu. Chỉ nhấn bằng trình bày, KHÔNG gắn nhãn
+          khẳng định ("bán chạy nhất") mà dữ liệu không chứng minh. -#}
+      {% set noi_bat = goi | length >= 3 and loop.index == (goi | length + 1) // 2 %}
+      <article class="appcard billing-package{% if noi_bat %} billing-package--noi-bat{% endif %}">
         <div class="in">
           <div class="billing-package-top">
             <h2><span class="billing-cover-ico">{{ ic.icon("gem") }}</span>{{ g.name }}</h2>
@@ -43,7 +48,7 @@
           <form method="post" action="/nap/tao">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <input type="hidden" name="package_id" value="{{ g.id }}">
-            <button class="btn" {% if not co_user_csdl %}disabled{% endif %}>{{ _("Tạo đơn %(gia)s", gia=g.price_vnd | tien_vnd) }}</button>
+            <button class="btn{% if goi | length >= 3 and not noi_bat %} ghost{% endif %}" {% if not co_user_csdl %}disabled{% endif %}>{{ _("Tạo đơn %(gia)s", gia=g.price_vnd | tien_vnd) }}</button>
           </form>
         </div>
       </article>
