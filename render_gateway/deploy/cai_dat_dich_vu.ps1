@@ -131,7 +131,11 @@ if (-not (Get-Service LTTComfyUI -ErrorAction SilentlyContinue)) {
 & $nssm set LTTComfyUI AppStderr "$Goc\logs\comfy_err.log"                     | Out-Null
 & $nssm set LTTComfyUI AppRotateFiles 1                                        | Out-Null
 & $nssm set LTTComfyUI AppRotateBytes 20000000                                 | Out-Null
-& $nssm set LTTComfyUI Start SERVICE_AUTO_START                                | Out-Null
+# ComfyUI chi phuc vu anh (image.ltt). Trong cua so LLM no KHONG duoc chay: mot
+# ComfyUI am giu ~223.5 MiB CUDA context, day bien 3.8 (-c 221184) xuong duoi 300 MiB.
+# Trong tai residency tu `sc start` o trang thai `anh` va dung o `tra_anh`
+# (platform_core/llm/residency.py). Vi vay KHONG tu khoi dong khi boot (17/09).
+& $nssm set LTTComfyUI Start SERVICE_DEMAND_START                              | Out-Null
 # Tran so lan khoi dong lai: khong de roi vao vong lap khoi dong vo han.
 # Sau 3 lan chet trong 90 giay thi dung han va de nguoi doc log.
 # !! KHONG DAT AppThrottle LON HON THOI GIAN CHO CUA SCM (~30 giay).
@@ -202,8 +206,11 @@ if ($BoQuaComfy) {
     & $nssm reset LTTRenderGateway DependOnService 2>$null | Out-Null
     Dat "LTTRenderGateway da cau hinh (KHONG phu thuoc LTTComfyUI)"
 } else {
-    & $nssm set LTTRenderGateway DependOnService LTTComfyUI                | Out-Null
-    Dat "LTTRenderGateway da cau hinh (khoi dong sau LTTComfyUI)"
+    # KHONG phu thuoc LTTComfyUI: cong render chinh la ke ra lenh dung ComfyUI, va
+    # SCM tu choi dung dich vu con dich vu phu thuoc dang chay (loi 1051,
+    # render_gateway/dich_vu_comfy.py). ComfyUI nay khoi dong theo nhu cau (17/09).
+    & $nssm reset LTTRenderGateway DependOnService 2>$null | Out-Null
+    Dat "LTTRenderGateway da cau hinh (KHONG phu thuoc LTTComfyUI; ComfyUI chay theo nhu cau)"
 }
 
 # --- 3. Tuong lua: CHI cho may A ------------------------------------------------
