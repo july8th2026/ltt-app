@@ -62,7 +62,7 @@ UU35 = "GPU-2222bbbb-0000-0000-0000-000000000035"
 # ═════════════════════════════════════════════════════════════════════════════
 
 def _so(**rieng) -> SoTheoModel:
-    return SoTheoModel((M38, M35), max_dong_thoi=3, rpm=0, token_pool=0, **rieng)
+    return SoTheoModel((M38, M35), max_dong_thoi=3, token_pool=0, **rieng)
 
 
 def _the(mib: int) -> dict:

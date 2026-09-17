@@ -42,7 +42,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from llm_gateway.api import create_app
-from llm_gateway.config import Config
+from llm_gateway.config import DEM_UOC_MAC_DINH, Config
+from llm_gateway.vat_ly import VatLy
 from llm_gateway.dem import NHOM, Dem, boc_do_ttft
 from llm_gateway.gioi_han import GioiHan
 
@@ -52,11 +53,13 @@ GOC_YAML = "llm_gateway/deploy/llama-swap.yaml"
 def _cfg(**doi) -> Config:
     goc = dict(
         upstream_url="http://127.0.0.1:8280", host="127.0.0.1", port=8299, token="",
-        models_mo=("qwen38-api",), max_input_tokens=1000, max_output_tokens=100,
+        models_mo=("qwen38-api",), max_output_tokens=100,
         max_images=1, max_image_bytes=1024, upstream_timeout_s=1.0,
         stream_timeout_s=1.0, ram_trong_toi_thieu_gb=1.0, trong_tai_bat=False,
         vram_sach_mb=1,
-        max_dong_thoi=1, rpm=0, nhip_tim_giay=0.0)
+        nhip_tim_giay=0.0, nguon_vat_ly="test",
+        # Rao vat ly: tran vao = ctx - max_out(100) - DEM_UOC = 1000.
+        vat_ly={"qwen38-api": VatLy(ctx=1000 + 100 + DEM_UOC_MAC_DINH, np=1, kvu=True)})
     goc.update(doi)
     return Config(**goc)
 
@@ -94,7 +97,8 @@ def test_404_model_chua_mo_duoc_dem():
 
 
 def test_413_vuot_tran_duoc_dem():
-    c = TestClient(create_app(_cfg(max_input_tokens=1), Up()))
+    c = TestClient(create_app(_cfg(vat_ly={"qwen38-api": VatLy(
+        ctx=1 + 100 + DEM_UOC_MAC_DINH, np=1, kvu=True)}), Up()))
     r = c.post("/v1/chat/completions", json=_than(noi_dung="x" * 100_000))
     assert r.status_code == 413
     assert _dem(c)["theo_nhom"]["qua_tran"] == 1
@@ -102,7 +106,7 @@ def test_413_vuot_tran_duoc_dem():
 
 def test_429_day_suat_duoc_dem_RIENG():
     """Hàng rào đồng thời của chính cổng — nhóm `ban_day`."""
-    gh = GioiHan(max_dong_thoi=1, rpm=0)
+    gh = GioiHan(max_dong_thoi=1)
     gh.cap_suat()                                    # chiem het suat
     c = TestClient(create_app(_cfg(), Up(), gioi_han=gh))
     assert c.post("/v1/chat/completions", json=_than()).status_code == 429

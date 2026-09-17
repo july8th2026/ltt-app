@@ -1,4 +1,9 @@
-"""Task 4.2 (LTT LLM Dual-Model) — sổ slot/token/whale **theo từng model**.
+"""Task 4.2 (LTT LLM Dual-Model) — sổ slot/token **theo từng model**.
+
+🔵 PHƯƠNG ÁN C (bước 3): khoá whale và RPM đã gỡ khỏi cổng (O-01, O-03); số slot
+   và bể KV đọc từ `llama-swap.yaml` (`vat_ly.py`), không còn env
+   `LTT_LLM_MAX_DONG_THOI[__m]`/`LTT_LLM_TOKEN_POOL[__m]`. Hợp đồng hai phía:
+   `tests/test_1223_phuong_an_c_rao_vat_ly_b.py`.
 
 🔴 CÁI PHẢI CHỨNG MINH, VÀ NÓ LÀ MỘT MỆNH ĐỀ ĐỘC LẬP HAI CHIỀU:
 
@@ -29,18 +34,20 @@ import pytest
 from llm_gateway.catalog import HO_SO
 from llm_gateway.config import Config
 from llm_gateway.gioi_han import GioiHan
-from llm_gateway.so_theo_model import SoTheoModel, token_dat_truoc
+from llm_gateway.so_theo_model import SoTheoModel
+from llm_gateway.vat_ly import VatLy, doc_tep, tim_yaml, token_giu
 
 M38 = "qwen38-api"
 M35 = "qwen35-api"
 
-#: Số đo, KHÔNG gõ lại: bể KV với `-kvu` **chính là** `-c` của hồ sơ, và
-#: `catalog` là chỗ công bố `-c` (test_334 buộc nó khớp `llama-swap.yaml`).
-CUA_SO = {m.ten: m.max_context for m in HO_SO}
+#: Số đo, KHÔNG gõ lại: bể KV với `-kvu` **chính là** `-c` của hồ sơ, đọc thẳng
+#: từ `llama-swap.yaml` — đúng tệp llama-swap khởi động và cổng đọc lúc lên.
+VAT_LY = doc_tep(tim_yaml())
+CUA_SO = {m: v.ctx for m, v in VAT_LY.items()}
 
 
 def _so(**ghi_de) -> SoTheoModel:
-    mac_dinh = dict(models=(M38, M35), max_dong_thoi=3, token_pool=0, rpm=0,
+    mac_dinh = dict(models=(M38, M35), max_dong_thoi=3, token_pool=0,
                     pool_rieng=dict(CUA_SO))
     mac_dinh.update(ghi_de)
     return SoTheoModel(**mac_dinh)
@@ -68,7 +75,7 @@ def test_day_slot_cua_38_thi_35_VAN_phuc_vu():
 
 def test_doi_chung_mot_so_chung_thi_DO():
     """Đối chứng: một `GioiHan` cho cả hai model ⇒ lượt 3.5 bị 429 vì 3.8 đầy."""
-    s = SoTheoModel.gop(GioiHan(max_dong_thoi=3, rpm=0), (M38, M35))
+    s = SoTheoModel.gop(GioiHan(max_dong_thoi=3), (M38, M35))
     for _ in range(3):
         assert s.cap_suat(M38, 1_000)[1] is not None
     px, suat = s.cap_suat(M35, 1_000)
@@ -77,7 +84,7 @@ def test_doi_chung_mot_so_chung_thi_DO():
 
 
 def test_pool_token_cung_doc_lap():
-    """Bể KV cũng phải riêng: 3.8 đặt gần kín 221.184 thì 3.5 vẫn còn 262.144."""
+    """Bể KV cũng phải riêng: 3.8 đặt gần kín bể của nó thì bể 3.5 vẫn nguyên."""
     s = _so(max_dong_thoi=9)
     px, suat = s.cap_suat(M38, CUA_SO[M38] - 1_000)
     assert suat is not None, px.ly_do
@@ -86,13 +93,14 @@ def test_pool_token_cung_doc_lap():
     assert s.cap_suat(M35, 200_000)[1] is not None, "be KV cua 3.5 bi tru theo 3.8"
 
 
-def test_hai_be_KV_KHAC_NHAU_va_lay_tu_catalog():
+def test_hai_be_KV_KHAC_NHAU_va_lay_tu_yaml():
     """⛔ Một con số chung cho hai bể là sai **theo chiều nguy hiểm**: bể 3090 nhỏ
-    hơn 40.960 token, nên dùng số của 5060 Ti sẽ để 3090 nhận quá tay."""
-    assert CUA_SO[M38] == 221_184 and CUA_SO[M35] == 262_144
-    t = _so().trang_thai()
-    assert t[M38]["token_pool"] == 221_184
-    assert t[M35]["token_pool"] == 262_144
+    hơn, nên dùng số của 5060 Ti sẽ để 3090 nhận quá tay."""
+    assert CUA_SO[M38] < CUA_SO[M35]
+    t = SoTheoModel.tu_vat_ly(VAT_LY).trang_thai()
+    for m in (M38, M35):
+        assert t[m]["token_pool"] == VAT_LY[m].ctx
+        assert t[m]["max_dong_thoi"] == VAT_LY[m].np
     assert t[M38]["token_pool"] != t[M35]["token_pool"]
 
 
@@ -123,7 +131,7 @@ def test_suat_KHONG_khai_token_bi_TU_CHOI_chu_khong_dem_bang_0():
 def test_pool_tat_thi_khong_doi_khai_token():
     """`token_pool=0` = tắt chốt bể (máy chưa đo được bể, hoặc test hàng rào).
     Lúc đó đòi khai token là bắt bên gọi khai một thứ không ai dùng."""
-    s = SoTheoModel(models=(M38,), max_dong_thoi=2, token_pool=0, rpm=0)
+    s = SoTheoModel(models=(M38,), max_dong_thoi=2, token_pool=0)
     assert s.cap_suat(M38, 0)[1] is not None
 
 
@@ -138,38 +146,27 @@ def test_tra_suat_NHA_luon_phan_token_da_dat():
     assert s.cap_suat(M38, 200_000)[1] is not None
 
 
-def test_token_dat_truoc_la_DINH_vao_cong_ra():
+def test_giu_cho_la_DINH_vao_cong_ra_cong_DEM_UOC():
     """KV lớn dần theo từng token sinh ra, nên đặt chỗ theo đầu vào thôi là để bể
-    vỡ **ở giữa** lượt — lúc tệ nhất, vì các lượt khác đã vào từ trước."""
-    assert token_dat_truoc(200_000, 32_768) == 232_768
-    assert token_dat_truoc(0, 0) == 1, "yeu cau rong van chiem mot slot that"
+    vỡ **ở giữa** lượt — lúc tệ nhất, vì các lượt khác đã vào từ trước.
+
+    Vắng header: cùng công thức `luat_cho` của máy A (ra kẹp theo chỗ còn)."""
+    v = VatLy(ctx=262_144, np=3, kvu=True)
+    assert token_giu(token_vao=200_000, xin_ra=32_768, v=v, dem_uoc=2_048) == \
+        200_000 + min(32_768, 262_144 - 200_000 - 2_048) + 2_048
+    assert token_giu(token_vao=0, xin_ra=0, v=v, dem_uoc=0) == 1, (
+        "yeu cau rong van chiem mot slot that")
 
 
-# ── 3. Whale: một con một lúc, và theo từng model ───────────────────────────
+# ── 3. Whale: ĐÃ GỠ khỏi cổng (O-01) — hai lượt lớn chỉ bị chặn bởi bể ─────
 
-def test_whale_thu_hai_bi_429():
+def test_hai_luot_lon_KHONG_bi_chan_neu_be_con_cho():
+    """Trước bước 3: lượt 'whale' thứ hai bị 429 dù bể KV còn chỗ — A đã tắt cờ
+    whale khi byte đầu về nên cho nó vào, B thì chặn ⇒ 429 sau 200."""
     s = _so()
-    assert s.cap_suat(M38, 60_000, True)[1] is not None
-    px, suat = s.cap_suat(M38, 60_000, True)
-    assert suat is None and "whale" in px.ly_do, px.ly_do
-    # Luot NGAN van vao duoc: chot nay chan ca voi, khong chan moi nguoi.
-    assert s.cap_suat(M38, 1_000, False)[1] is not None
-
-
-def test_whale_cua_38_khong_chan_whale_cua_35():
-    s = _so()
-    assert s.cap_suat(M38, 60_000, True)[1] is not None
-    assert s.cap_suat(M35, 60_000, True)[1] is not None, (
-        "co voi tren 3090 chan co voi tren 5060 Ti — hai card thanh mot")
-
-
-def test_whale_nha_ra_thi_nhan_con_tiep_theo():
-    s = _so()
-    _px, suat = s.cap_suat(M38, 60_000, True)
-    assert s.trang_thai()[M38]["whale"] is True
-    suat.tra()
-    assert s.trang_thai()[M38]["whale"] is False
-    assert s.cap_suat(M38, 60_000, True)[1] is not None
+    assert s.cap_suat(M38, 60_000)[1] is not None
+    assert s.cap_suat(M38, 60_000)[1] is not None, "con khoa whale o cong"
+    assert "whale" not in s.trang_thai()[M38]
 
 
 # ── 4. Sàn VRAM của 5060 Ti (spec §22, D06) ─────────────────────────────────
@@ -231,50 +228,50 @@ def test_san_tat_duoc_bang_0(monkeypatch):
     assert Config.from_env().vram_trong_toi_thieu_mb[M35] == 0
 
 
-# ── 5. Cấu hình: dẫn xuất, không gõ tay ─────────────────────────────────────
+# ── 5. Cấu hình: dẫn xuất từ yaml, env cũ KHÔNG còn tác dụng ────────────────
 
-def test_pool_mac_dinh_DAN_XUAT_tu_catalog(monkeypatch):
-    monkeypatch.delenv("LTT_LLM_TOKEN_POOL", raising=False)
-    cfg = Config.from_env()
-    assert cfg.token_pool_rieng == CUA_SO
+def test_so_slot_va_be_DAN_XUAT_tu_yaml(monkeypatch):
+    monkeypatch.setenv("LTT_LLM_MODELS", f"{M38},{M35}")
+    assert Config.from_env().vat_ly == VAT_LY
 
 
-def test_ghi_de_chung_roi_rieng(monkeypatch):
-    """Ghi đè chung đứng TRƯỚC ghi đè riêng: một lần "hạ tạm cả hai bể" vẫn giữ
-    được ngoại lệ cho một model. Đảo lại thì biến chung xoá biến riêng, vô hình."""
+def test_env_da_go_KHONG_con_doi_duoc_so(monkeypatch):
+    """⛔ `LTT_LLM_TOKEN_POOL[__m]`, `LTT_LLM_MAX_DONG_THOI[__m]`, `LTT_LLM_RPM`
+    từng là bản sao thứ hai/thứ ba của `-c`/`-np`. Đặt chúng nay không đổi được
+    rào — chỉ sinh cảnh báo lúc khởi động (`bien_da_go_con_dat`)."""
+    from fastapi.testclient import TestClient
+
+    from llm_gateway.api import create_app
+    from tests.test_250_llm_gateway import FakeUpstream, _tt_ranh
+
+    monkeypatch.setenv("LTT_LLM_MODELS", f"{M38},{M35}")
     monkeypatch.setenv("LTT_LLM_TOKEN_POOL", "100000")
     monkeypatch.setenv("LTT_LLM_TOKEN_POOL__" + M35, "150000")
-    cfg = Config.from_env()
-    assert cfg.token_pool_rieng[M38] == 100_000
-    assert cfg.token_pool_rieng[M35] == 150_000
-
-
-def test_dong_thoi_rieng_theo_model(monkeypatch):
-    """§G3 đo 5060 Ti thừa sức **4** slot ở ngữ cảnh đầy, 3090 chỉ vừa 3 (L-14).
-    Hôm nay chủ dự án chọn 3 cho cả hai *cho nhất quán* — nên map này thường
-    rỗng, và nó là chỗ đổi MỘT con số khi muốn, không phải con số thứ hai."""
+    monkeypatch.setenv("LTT_LLM_MAX_DONG_THOI", "1")
     monkeypatch.setenv("LTT_LLM_MAX_DONG_THOI__" + M35, "4")
+    monkeypatch.setenv("LTT_LLM_MAX_INPUT_TOKENS", "1000")
+    monkeypatch.setenv("LTT_LLM_RPM", "1")
     cfg = Config.from_env()
-    assert cfg.dong_thoi_rieng == {M35: 4}
-    s = SoTheoModel((M38, M35), max_dong_thoi=cfg.max_dong_thoi, token_pool=0,
-                    rpm=0, dong_thoi_rieng=cfg.dong_thoi_rieng)
-    t = s.trang_thai()
-    assert t[M38]["max_dong_thoi"] == 3 and t[M35]["max_dong_thoi"] == 4
+    c = TestClient(create_app(cfg, FakeUpstream(), trong_tai=_tt_ranh()))
+    theo = c.get("/health").json()["gioi_han"]["theo_model"]
+    for m in (M38, M35):
+        assert theo[m]["token_pool"] == VAT_LY[m].ctx
+        assert theo[m]["max_dong_thoi"] == VAT_LY[m].np
+    for _ in range(3):
+        r = c.post("/v1/chat/completions", json={
+            "model": M38, "messages": [{"role": "user", "content": "x" * 5_000}]})
+        assert r.status_code == 200, r.text
 
 
-def test_mac_dinh_dong_thoi_la_3_khong_phai_1(monkeypatch):
-    """L-14: `-np 3` ở cả hai hồ sơ ⇒ cổng phải nhận 3. `deploy.ps1` từng ép
-    `MAX_DONG_THOI=1` vào `gateway.env` của máy B — đúng khi llama-swap còn
-    `--parallel 1`, và **sai** từ khi Task 3.3 đổi yaml: nó bóp máy B xuống một
-    phần ba năng lực, im lặng."""
-    monkeypatch.delenv("LTT_LLM_MAX_DONG_THOI", raising=False)
-    assert Config.from_env().max_dong_thoi == 3
-
+def test_deploy_ps1_KHONG_ghi_bien_da_go():
     import pathlib
     ps1 = (pathlib.Path(__file__).resolve().parents[1]
            / "llm_gateway" / "deploy" / "deploy.ps1").read_text(encoding="utf-8")
-    assert "LTT_LLM_MAX_DONG_THOI=1" not in ps1, (
-        "deploy.ps1 con ghim MAX_DONG_THOI=1 len may B")
+    import re
+    for ten in ("LTT_LLM_MAX_DONG_THOI", "LTT_LLM_TOKEN_POOL", "LTT_LLM_RPM",
+                "LTT_LLM_MAX_INPUT_TOKENS"):
+        assert not re.search(rf'"{ten}[A-Za-z0-9_-]*=', ps1), (
+            f"deploy.ps1 con ghi {ten} len may B")
 
 
 # ── 6. Catalog: hai hồ sơ, cả hai đọc ảnh ──────────────────────────────────
@@ -301,7 +298,7 @@ def test_ho_so_vision_rieng_da_bien_mat():
 def _client_hai_model(**ghi_de):
     from tests.test_250_llm_gateway import _cfg, _client
 
-    cfg = _cfg(models_mo=(M38, M35), max_dong_thoi=3, rpm=0, **ghi_de)
+    cfg = _cfg(models_mo=(M38, M35), np=3, **ghi_de)
     return _client(cfg)
 
 
@@ -314,8 +311,8 @@ def test_HTTP_day_38_thi_35_van_200():
     from tests.test_250_llm_gateway import FakeUpstream, _cfg, _tt_ranh
 
     up = FakeUpstream()
-    cfg: C = _cfg(models_mo=(M38, M35), max_dong_thoi=1, rpm=0)
-    so = SoTheoModel((M38, M35), max_dong_thoi=1, token_pool=0, rpm=0,
+    cfg: C = _cfg(models_mo=(M38, M35), np=1)
+    so = SoTheoModel((M38, M35), max_dong_thoi=1, token_pool=0,
                      pool_rieng=dict(CUA_SO))
     c = TestClient(create_app(cfg, up, trong_tai=_tt_ranh(), so=so))
 
@@ -339,9 +336,10 @@ def test_health_co_khoi_theo_model():
     assert set(g["theo_model"]) == {M38, M35}
     for m in (M38, M35):
         assert set(g["theo_model"][m]) >= {
-            "dang_chay", "max_dong_thoi", "token_dat", "token_pool", "whale"}
+            "dang_chay", "max_dong_thoi", "token_dat", "token_pool"}
+        assert "whale" not in g["theo_model"][m]
     # Khoa cu con nguyen (test_258, test_334, tools/soi_su_co.py doc chung).
-    assert g["max_dong_thoi"] == 3 and g["dang_chay"] == 0 and "rpm" in g
+    assert g["max_dong_thoi"] == 3 and g["dang_chay"] == 0 and "rpm" not in g
 
 
 def test_health_noi_KHONG_BIET_khi_hai_model_khai_khac_nhau():
@@ -349,7 +347,7 @@ def test_health_noi_KHONG_BIET_khi_hai_model_khai_khac_nhau():
     ("máy A có cho song song nhiều hơn máy B phục vụ được không"): trần là trần
     **của từng model**. Khi hai model khác nhau thì không tồn tại một con số
     đúng — và bịa ra một con số tệ hơn là nói "đọc `theo_model`"."""
-    s = SoTheoModel((M38, M35), max_dong_thoi=3, token_pool=0, rpm=0,
+    s = SoTheoModel((M38, M35), max_dong_thoi=3, token_pool=0,
                     dong_thoi_rieng={M35: 4})
     assert s.trang_thai_chung()["max_dong_thoi"] is None
 
@@ -375,7 +373,7 @@ def test_header_token_dat_duoc_TON_TRONG():
     from fastapi.testclient import TestClient
     from tests.test_250_llm_gateway import FakeUpstream, _cfg, _tt_ranh
 
-    so = SoTheoModel((M38,), max_dong_thoi=3, token_pool=0, rpm=0,
+    so = SoTheoModel((M38,), max_dong_thoi=3, token_pool=0,
                      pool_rieng={M38: 100_000})
     c = TestClient(create_app(_cfg(models_mo=(M38,)), FakeUpstream(),
                               trong_tai=_tt_ranh(), so=so))
@@ -403,7 +401,7 @@ def test_header_token_dat_thap_khong_duoc_HA_phep_do_cua_may_B():
     from fastapi.testclient import TestClient
     from tests.test_250_llm_gateway import FakeUpstream, _cfg, _tt_ranh
 
-    so = SoTheoModel((M38,), max_dong_thoi=3, token_pool=0, rpm=0,
+    so = SoTheoModel((M38,), max_dong_thoi=3, token_pool=0,
                      pool_rieng={M38: 1_000})
     c = TestClient(create_app(_cfg(models_mo=(M38,)), FakeUpstream(),
                               trong_tai=_tt_ranh(), so=so))
@@ -417,22 +415,22 @@ def test_header_token_dat_thap_khong_duoc_HA_phep_do_cua_may_B():
     assert "pool KV" in r.json()["detail"]["chi_tiet"]
 
 
-def test_whale_qua_header():
+def test_header_whale_cu_bi_BO_QUA():
+    """O-01: máy A cũ còn gửi `X-LTT-Whale` — cổng mới không đọc nó. Một lượt lớn
+    đang chạy + một yêu cầu gắn cờ whale ⇒ vẫn 200 khi bể còn chỗ."""
     from llm_gateway.api import create_app
     from fastapi.testclient import TestClient
     from tests.test_250_llm_gateway import FakeUpstream, _cfg, _tt_ranh
 
-    so = SoTheoModel((M38,), max_dong_thoi=3, token_pool=0, rpm=0,
+    so = SoTheoModel((M38,), max_dong_thoi=3, token_pool=0,
                      pool_rieng=dict(CUA_SO))
     c = TestClient(create_app(_cfg(models_mo=(M38,)), FakeUpstream(),
                               trong_tai=_tt_ranh(), so=so))
-    # Chiem mot suat whale bang tay, roi mot yeu cau whale nua phai bi 429.
-    so.cap_suat(M38, 60_000, True)
+    so.cap_suat(M38, 60_000)
     r = c.post("/v1/chat/completions",
                json={"model": M38, "messages": [{"role": "user", "content": "hi"}]},
-               headers={"X-LTT-Whale": "1"})
-    assert r.status_code == 429, r.text
-    assert "whale" in r.json()["detail"]["chi_tiet"]
+               headers={"X-LTT-Whale": "1", "X-LTT-Token-Dat": "40000"})
+    assert r.status_code == 200, r.text
 
 
 def test_ma_luot_duoc_LOC_truoc_khi_doi_lai():
@@ -451,18 +449,20 @@ def test_ma_luot_duoc_LOC_truoc_khi_doi_lai():
     assert r.headers.get("X-LTT-Request-Id") == "rid7script"
 
 
-def test_dem_tach_BA_loai_429_moi():
-    """Ba loại 429 đòi ba hành động khác nhau của người trực; gộp là vứt đi đúng
-    phần trả lời được *"tôi phải làm gì bây giờ"* (lập luận đã ghi ở `dem.NHOM`)."""
+def test_dem_tach_cac_loai_429_moi():
+    """Các loại 429 đòi hành động khác nhau của người trực; gộp là vứt đi đúng
+    phần trả lời được *"tôi phải làm gì bây giờ"* (lập luận đã ghi ở `dem.NHOM`).
+    `ban_whale` đã gỡ cùng khoá whale (O-01)."""
     from llm_gateway.dem import NHOM
-    assert {"ban_pool", "ban_whale", "ban_vram"} <= set(NHOM)
+    assert {"ban_pool", "ban_vram"} <= set(NHOM)
+    assert "ban_whale" not in NHOM
 
     from llm_gateway.dem import Dem
     d = Dem()
-    for n in ("ban_pool", "ban_whale", "ban_vram"):
+    for n in ("ban_pool", "ban_vram"):
         d.cong(n)
     t = d.trang_thai()
-    assert t["tu_choi"] == 3, (
+    assert t["tu_choi"] == 2, (
         "nhom 429 moi khong vao tong `tu_choi` — mot ti le tu choi thap GIA")
 
 
@@ -471,7 +471,7 @@ def test_dem_ghi_dung_nhom_khi_pool_day():
     from fastapi.testclient import TestClient
     from tests.test_250_llm_gateway import FakeUpstream, _cfg, _tt_ranh
 
-    so = SoTheoModel((M38,), max_dong_thoi=3, token_pool=0, rpm=0,
+    so = SoTheoModel((M38,), max_dong_thoi=3, token_pool=0,
                      pool_rieng={M38: 1_000})
     c = TestClient(create_app(_cfg(models_mo=(M38,)), FakeUpstream(),
                               trong_tai=_tt_ranh(), so=so))

@@ -12,14 +12,35 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-17 — Phương án C: gộp bước 1+2 (máy A) với bước 3 (máy B), chốt ngưỡng whale
+
+Nhánh `phien/llm-hang-cho-lon` gộp `phien/llm-gateway-vat-ly`. Chưa deploy.
+
+- Xung đột: `test_1201`/`test_250` lấy bản bước 3 (đọc `-np`/trần vào từ yaml) + đối
+  chiếu `HO_SO`; `test_334` đọc `HO_SO[m].seq_cap`; `BAN_DO_DUONG_DI.md` gộp luồng
+  xếp lại (A) với rào vật lý (B); `DECISION_LOG.md` hai nháp L-23 thành MỘT L-23.
+- Hợp đồng đổi: `test_1223::_a_dat_cho` đi `luong._dat_cho(tool.admission_cho(alias))`;
+  `xuat_tham_so_a.py` chỉ đọc `DEM_UOC` (`LE` đã gỡ). Grep tên đã gỡ: chỉ còn ghi chú.
+- ✅ Chủ dự án chọn tường minh ngưỡng whale **3.8 = 8.192, 3.5 = 16.384**
+  (`ngan_sach.NGUONG_WHALE`); ước đường cong ở 9 s (10.752 / 18.944) chỉ là ghi chú.
+  `test_1214`/`test_1229` sửa theo.
+- `test_1222` đỏ 2 ca dưới `-n 6` — nguyên nhân gốc (tái hiện tất định bằng hai
+  test liền nhau): `_vao_ltt_llm` vá `platform_core.db.get_session` thành `iter([None])`,
+  và `jobs.handle` nạp `platform_core.job_runner` BÊN TRONG hàm; `job_runner` chép
+  `get_session` lúc nạp ⇒ worker nào để test đó nạp `job_runner` đầu tiên thì bản giả
+  dính vĩnh viễn ⇒ `_chay_mot_job` sau đó `claim(db=None)`. Không liên quan test_272
+  (chỉ là thứ tự xdist). Sửa: `_phien_csdl_rong` nạp `job_runner`/`admission` trước khi
+  vá + fixture `db_huy` canh bản chép là hàm thật.
+
 ## 2026-09-17 — LTT LLM phương án C bước 1 + 2 (máy A): một hồ sơ theo model, A chịu 429 của B
 
 Nhánh `phien/llm-hang-cho-lon`, **chưa gate, chưa gộp, chưa deploy** (phiên điều phối
 chạy L1 sau khi gộp với bước 3 `phien/llm-gateway-vat-ly`). Chi tiết: `DECISION_LOG.md`
-L-23 (nháp, phần máy A).
+L-23 (phần máy A).
 
 - Hồ sơ `ngan_sach.HO_SO` → `AdmissionModel(nguong_whale, dem_uoc, token_giu_moi_anh)`
-  → `luat_cho` (một chỗ, mọi cửa). Số chốt: whale 9 s ⇒ 10.752 / 18.944 (đường cong),
+  → `luat_cho` (một chỗ, mọi cửa). Số chốt: whale 9 s ⇒ 10.752 / 18.944 (đường cong —
+  lúc gộp chủ dự án thay bằng 8.192 / 16.384, xem mục gộp phía trên),
   pool `-c` − 8.192 ⇒ 212.992 / 253.952. Gỡ 3 env, 6 bí danh, `X-LTT-Whale` phía A.
 - B 429 sau khi A nhận ⇒ xếp lại (giữ `created_at`, ≤3 lần, trong hạn), giữ tiền theo
   lượt; `X-LTT-Token-Dat` ở đồng bộ/job/planner.
@@ -30,6 +51,30 @@ L-23 (nháp, phần máy A).
   môi trường).
 - ⚠️ Điểm gộp với bước 3: `test_1223::_a_dat_cho` gọi `luat_cho(pool_int, …)` — chữ ký
   mới nhận `AdmissionModel`; `test_1201`/`test_250`/`test_334` hai nhánh cùng sửa.
+
+## 2026-09-17 — Phương án C bước 3: cổng LLM máy B thành rào vật lý (chưa gate, chưa deploy)
+
+- Nhánh `phien/llm-gateway-vat-ly` (từ `phien/llm-hang-cho-lon`), chỉ `llm_gateway/**` +
+  test cổng + tài liệu. Đóng trong mã: O-01 (gỡ khoá whale + `X-LTT-Whale`), O-02 (trần
+  vào theo model), O-03 (gỡ RPM), O-16 (`-c`/`-np` đọc từ `llama-swap.yaml`, gỡ
+  `catalog.max_context`), O-17/O-18 (chú thích `--parallel 1`, 204.800, `don_dep`,
+  `SO_SLOT_MAY_B`). Env gỡ: `LTT_LLM_MAX_INPUT_TOKENS`, `LTT_LLM_MAX_DONG_THOI[__m]`,
+  `LTT_LLM_TOKEN_POOL[__m]`, `LTT_LLM_RPM`. Mới: `llm_gateway/vat_ly.py`,
+  `llm_gateway/deploy/xuat_tham_so_a.py`, `tests/test_1223_phuong_an_c_rao_vat_ly_b.py`.
+- `deploy.ps1`: không còn số gõ tay (đọc `ngan_sach` qua `xuat_tham_so_a.py`, ghi
+  `LTT_LLM_MAX_OUTPUT_TOKENS`/`LTT_LLM_DEM_UOC`, xoá biến đã gỡ); bước 1c mới **dừng**
+  khi `llama-swap.yaml` trên máy B lệch kho; `-BoQuaYaml` cho deploy chỉ mã cổng.
+  Script mới chỉ được kiểm cú pháp + ASCII — **chưa chạy thật**.
+- Test nhắm: `thanh_phan.py --test gateway:llm` + test_1201/1223/980/981/1249/1215/637/
+  1200/1214/272 — xanh (test_1222 đỏ 2 ca khi chạy chung `-n 6` với test_272 vì
+  `DatabaseNotConfigured`, chạy riêng 17/17 xanh). ruff/mypy sạch trên tệp đã chạm.
+- O-19 **còn mở**: máy B chạy `--no-cache-idle-slots`, kho không có — TODO trong yaml
+  và `RUNBOOK.md` §2.3, hoà giải ở bước 4 theo m6. Máy B không bị chạm.
+- Điểm gộp với bước 2 (máy A): `test_1223` đọc `ngan_sach.DEM_UOC` (lùi `LE`),
+  `tran_vao_cua`, `tham_so_da_luot.luat_cho`; `xuat_tham_so_a.py` đọc `DEM_UOC`/`LE`.
+  A (`platform_core/llm/luong_vlm.py`) vẫn gửi `X-LTT-Whale` — B mới bỏ qua; gỡ ở bước 2.
+- Deploy bước 3 chỉ **sau** bước 1 ở máy A; `deploy.ps1 -BoQuaYaml` rồi restart
+  **chỉ** `LTTLlmGateway`.
 
 ## 2026-09-17 — Deploy LTTCODE `8a96453e` (updater + đăng nhập + tìm web)
 

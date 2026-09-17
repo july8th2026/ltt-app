@@ -174,7 +174,11 @@ class TestSoSlot:
 
 
 class TestNguongWhale:
-    """🔑 `NGUONG_WHALE` phải **dẫn xuất từ đường cong prefill ĐO ĐƯỢC**."""
+    """🔑 `NGUONG_WHALE` = số CHỦ DỰ ÁN CHỌN 17/09 (L-23): 3.8 8.192 · 3.5 16.384.
+
+    Đường cong prefill đo được (`nguong_whale_theo_chan`) chỉ còn là ƯỚC/ghi chú
+    (ở 9 s: 10.752 / 18.944) và là rào trên: số chọn không được prefill lâu hơn
+    mục tiêu chặn `WHALE_CHAN_TOI_DA_S`."""
 
     def test_hai_nguong_KHAC_NHAU(self):
         """⛔ Phép đo §G4 nói thế: một lượt 163K token chặn prefill **257 s trên
@@ -195,55 +199,46 @@ class TestNguongWhale:
         assert 245 <= t38 <= 270, t38          # §G4 ghi 257 s
         assert 118 <= t35 <= 132, t35          # §G4 ghi 125 s
 
-    def test_nguong_la_MOC_CAO_NHAT_con_trong_ngan_sach_cho(self):
-        """Định nghĩa của ngưỡng, đo thẳng: ở ngưỡng thì còn kịp, bước tiếp thì
-        không. ⛔ Không kiểm "bằng 33.792" — kiểm **tính chất**, để đổi phép đo
-        là ngưỡng tự đi theo mà phép kiểm vẫn đúng."""
+    def test_nguong_la_SO_CHU_DU_AN_CHON(self):
+        """🔴 Chủ dự án chọn TƯỜNG MINH 17/09: 8.192 / 16.384 — không phải số đường
+        cong. Đổi số này là một quyết định mới (ghi DECISION_LOG), không phải
+        "sửa cho khớp đường cong"."""
+        assert ngan_sach.NGUONG_WHALE == {"qwen38-api": 8_192,
+                                          "qwen35-api": 16_384}
+
+    def test_nguong_KHONG_vuot_muc_tieu_chan(self):
+        """Tính chất còn giữ: ở ngưỡng đã chọn, prefill vẫn trong mục tiêu chặn
+        đã tuyên bố — số chọn nằm DƯỚI ước đường cong, không trên."""
         for model, nguong in ngan_sach.NGUONG_WHALE.items():
             tai_nguong = ngan_sach.thoi_gian_prefill_s(model, nguong)
-            buoc_tiep = ngan_sach.thoi_gian_prefill_s(model, nguong + 512)
             assert tai_nguong <= ngan_sach.WHALE_CHAN_TOI_DA_S, (
                 f"{model}: {nguong} token prefill {tai_nguong:.1f}s, qua "
                 f"nguong chan {ngan_sach.WHALE_CHAN_TOI_DA_S}s")
-            assert buoc_tiep > ngan_sach.WHALE_CHAN_TOI_DA_S, (
-                f"{model}: con cho them duoc ma da goi la ca voi")
+            assert nguong <= ngan_sach.nguong_whale_theo_chan(
+                model, ngan_sach.WHALE_CHAN_TOI_DA_S), model
             assert nguong % 512 == 0, "buoc phai la boi cua `-ub` mac dinh"
 
-    def test_so_trong_PLAN_khong_theo_duoc_duong_cong(self):
+    def test_uoc_duong_cong_o_9s_chi_la_GHI_CHU(self):
         """🔴 GHI LẠI MỘT SỰ LỆCH CÓ CHỦ Ý, để nó không bị đọc là lỗi đánh máy.
 
-        Plan ghi tạm `16_384 / 32_768`. Đường cong đo cho hai con số ấy **13,7 s**
-        và **15,9 s** — chưa tới một nửa ngưỡng chặn ta tuyên bố (30 s). Chúng
-        không sai về hướng (3.5 phải cao hơn 3.8) nhưng chúng **không dẫn xuất
-        từ** cái gì: tỉ lệ theo đo là ~1,68× chứ không phải 2×.
-
-        ⇒ 2.6 dùng số dẫn xuất. Phép kiểm này chốt rằng số của plan **không**
-          thoả định nghĩa, để không ai "sửa lại cho khớp plan".
-
-        ⚠️ Phương án C (17/09): mục tiêu chặn có thể đổi (đề xuất 9 s,
-           `KET_QUA_DO_17_09.md`), nên phép kiểm so với MỤC TIÊU đang khai
-           (`WHALE_CHAN_TOI_DA_S`), không với 30 s gõ tay.
+        Đường cong §G4 ở mục tiêu 9 s cho 10.752 / 18.944. Chủ dự án chọn
+        8.192 / 16.384 (L-23) — thấp hơn ước, tức gọi whale SỚM hơn. Phép kiểm
+        chốt rằng hai bộ số khác nhau, để không ai "sửa lại cho khớp đường cong".
         """
-        chan = ngan_sach.WHALE_CHAN_TOI_DA_S
-        for model, so_plan in (("qwen38-api", 16_384), ("qwen35-api", 32_768)):
-            if ngan_sach.thoi_gian_prefill_s(model, so_plan) <= chan:
-                assert ngan_sach.NGUONG_WHALE[model] > so_plan, model
-            else:
-                assert ngan_sach.NGUONG_WHALE[model] < so_plan, model
+        uoc = {m: ngan_sach.nguong_whale_theo_chan(m, 9.0)
+               for m in ngan_sach.DUONG_PREFILL_TOK_S}
+        assert uoc == {"qwen38-api": 10_752, "qwen35-api": 18_944}
+        assert uoc != ngan_sach.NGUONG_WHALE
 
     def test_nguong_chan_la_MOT_tuyen_bo_mot_cho(self):
-        """Mục tiêu chặn là một **tuyên bố**, khai ĐÚNG MỘT chỗ và hồ sơ đọc nó.
+        """Ngưỡng khai ĐÚNG MỘT chỗ (`NGUONG_WHALE`) và hồ sơ đọc nó.
 
-        🔴 Phương án C bước 2 (17/09): bản trước chốt nó BẰNG `cho_whale_toi_da_s`
-           (30 s, whale nhường lượt tương tác bao lâu). Hai đại lượng khác nghĩa —
-           một là "prefill được làm nghèo người khác bao lâu", một là "whale đứng
-           chờ nhường bao lâu" — nên buộc chúng bằng nhau là chặn đúng lần đổi mà
-           số đo 17/09 đề xuất (mục tiêu 9 s). Đổi mục tiêu = đổi một dòng
-           `WHALE_CHAN_TOI_DA_S`; phép kiểm này đi theo.
+        🔴 Phương án C bước 2 (17/09): mục tiêu chặn KHÔNG còn buộc bằng
+           `cho_whale_toi_da_s` (hai đại lượng khác nghĩa). Ngưỡng đang chạy là
+           số chủ dự án chọn; hồ sơ không được tự tính lại.
         """
         for model, h in ngan_sach.HO_SO.items():
-            assert h.nguong_whale == ngan_sach.nguong_whale_theo_chan(
-                model, ngan_sach.WHALE_CHAN_TOI_DA_S), model
+            assert h.nguong_whale == ngan_sach.NGUONG_WHALE[model], model
 
     @pytest.mark.parametrize("chan_s", [9.0, 30.0])
     def test_doi_muc_tieu_chan_thi_nguong_dich_dung_chieu(self, chan_s):
@@ -280,16 +275,12 @@ class TestNguongWhale:
                               ("qwen35-api", "qwen38-api")])
     def test_doi_duong_cong_MOT_model_thi_CHI_nguong_do_dich(
             self, monkeypatch, bi_doi, giu_nguyen):
-        """Ngưỡng phải đi ra **từ đường cong**, không phải nằm cạnh nó."""
-        # ⛔ Điều kiện để phần dưới có nghĩa: bảng công bố PHẢI là kết quả của
-        #    hàm dẫn xuất. Một `NGUONG_WHALE` gõ tay vượt qua mọi phép kiểm
-        #    monkeypatch bên dưới, vì chúng gọi hàm chứ không đọc bảng.
+        """ƯỚC đường cong (`nguong_whale_theo_chan`) đi ra từ đường cong của đúng
+        model; còn ngưỡng ĐANG CHẠY (số chủ dự án chọn) không tự dịch theo."""
         chan = ngan_sach.WHALE_CHAN_TOI_DA_S
-        assert ngan_sach.NGUONG_WHALE == {
-            m: ngan_sach.nguong_whale_theo_chan(m, chan)
-            for m in ngan_sach.DUONG_PREFILL_TOK_S}
         assert {m: h.nguong_whale for m, h in ngan_sach.HO_SO.items()} == \
-            ngan_sach.NGUONG_WHALE, "HO_SO phai mang dung nguong dan xuat"
+            ngan_sach.NGUONG_WHALE, "HO_SO phai mang dung nguong chu du an chon"
+        dang_chay = dict(ngan_sach.NGUONG_WHALE)
 
         truoc = {m: ngan_sach.nguong_whale_theo_chan(m, chan)
                  for m in ngan_sach.NGUONG_WHALE}
@@ -306,6 +297,8 @@ class TestNguongWhale:
         assert sau[giu_nguyen] == truoc[giu_nguyen], (
             f"doi duong cong cua {bi_doi} lam dich luon nguong cua "
             f"{giu_nguyen} — hai model dang dung chung MOT duong cong")
+        assert ngan_sach.NGUONG_WHALE == dang_chay, (
+            "nguong dang chay la so chu du an chon, khong tu dich theo duong cong")
 
 
 class TestSoDoKhacCuaG4:

@@ -56,7 +56,7 @@ NHOM = (
     "ban_trong_tai",  # 429 — trọng tài nói máy B bận
     "ban_card",       # 429 — dọn card không đạt ngưỡng sạch
     "ban_pool",       # 429 - be KV cua model day (hoac luot khong khai token)
-    "ban_whale",      # 429 - da co mot luot ca voi dang chay tren model do
+    # "ban_whale" DA GO (phuong an C buoc 3, O-01): cong khong con khoa whale.
     "ban_vram",       # 429 - VRAM trong cua card duoi san (5060 Ti, D06)
     "qua_tran",       # 413 — vượt ngân sách token/ảnh
     "khong_co_model", # 404 — model không mở (fail-closed)
@@ -129,7 +129,8 @@ class Dem:
             so = dict(self._so)
             dem, tong, cao = self._ttft_dem, self._ttft_tong, self._ttft_max
         # ⛔ ĐỪNG LIỆT KÊ LẠI TAY. Bản cũ gõ bảy tên ở đây, và ngày thêm ba nhóm
-        #    429 (`ban_pool`/`ban_whale`/`ban_vram`, Dual-model 4.2) thì `tu_choi`
+        #    429 (`ban_pool`/`ban_whale`/`ban_vram`, Dual-model 4.2 — `ban_whale`
+        #    đã gỡ ở phương án C) thì `tu_choi`
         #    sẽ **đếm thiếu** — một tỉ lệ từ chối thấp giả, tức đúng chiều làm
         #    người trực yên tâm sai. Suy ra từ `NHOM`: phục vụ là `ok*`, còn lại
         #    là từ chối, nên một nhóm mới không thể lọt khỏi tổng.

@@ -13,10 +13,9 @@ MÁY A tự trả lời được, đọc NGUỒN THẬT (không bản sao):
      chỗ đầu ra là THAM SỐ (chính sách `max_tokens` đang chờ chủ dự án — §4.3).
   O-05. `X-LTT-Token-Dat` đi lên máy B ở cửa đồng bộ/job, cùng số với lease.
 
-⚠️ Số đo 17/09 (`KET_QUA_DO_17_09.md`, nhánh `phien/bench-may-b`) đề xuất mục tiêu
-   chặn whale ~9 s và biên pool 8.192 token — CHƯA CHỐT. Các phép kiểm ở đây đọc
-   `WHALE_CHAN_TOI_DA_S` / `BIEN_POOL_TOKEN`, không gõ 33.792 hay 212.992, nên
-   đổi mục tiêu là đổi một dòng ở `ngan_sach.py`.
+✅ Chủ dự án chốt 17/09 (L-23): ngưỡng whale 3.8 = 8.192, 3.5 = 16.384 (số chọn
+   tường minh, không phải ước đường cong 10.752/18.944), biên pool 8.192 token. Các
+   phép kiểm ở đây đọc `NGUONG_WHALE` / `BIEN_POOL_TOKEN`, không gõ lại số.
 """
 from __future__ import annotations
 
@@ -115,7 +114,7 @@ def test_bat_bien_1_vao_hop_le_dai_nhat_dat_cho_VUA_pool_that():
 
 # ── Mục 6: ngưỡng whale THEO MODEL, gắn ở MỘT chỗ cho mọi cửa ────────────────
 
-def test_6_ban_khai_mang_nguong_whale_DAN_XUAT():
+def test_6_ban_khai_mang_nguong_whale_CHU_DU_AN_CHON():
     from apps.ltt_llm.manifest import MANIFEST
     from platform_core.llm.canonical import ALIAS_SANG_ID
 
@@ -123,8 +122,7 @@ def test_6_ban_khai_mang_nguong_whale_DAN_XUAT():
     for alias, id_nb in ALIAS_SANG_ID.items():
         am = tool.admission_cho(alias)
         assert am.nguong_whale == ngan_sach.NGUONG_WHALE[id_nb], alias
-        assert am.nguong_whale == ngan_sach.nguong_whale_theo_chan(
-            id_nb, ngan_sach.WHALE_CHAN_TOI_DA_S), alias
+        assert am.nguong_whale == ngan_sach.HO_SO[id_nb].nguong_whale, alias
         assert (am.dem_uoc, am.token_giu_moi_anh) == (
             ngan_sach.HO_SO[id_nb].dem_uoc, ngan_sach.HO_SO[id_nb].token_giu_moi_anh)
 

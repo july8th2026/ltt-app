@@ -199,7 +199,8 @@ def mo(db, *, duong: str, than: dict, timeout_s: float = 900.0,
     if r.status_code >= 400:
         than_loi = _doc_het(r, ctx, client)
         if r.status_code == 413:
-            # Đầu vào vượt trần token của máy B (LTT_LLM_MAX_INPUT_TOKENS). Lỗi
+            # Đầu vào vượt trần token của máy B (`-c − max_out − DEM_UOC` theo model,
+            # `llm_gateway/vat_ly.py`). Lỗi
             # CLIENT, không phải hỏng: đánh dấu `qua_dai` để bên gọi trả 413 và
             # client tự nén hội thoại. Từng bị dịch nhầm sang 503 → Codex retry
             # → bão, và khách thấy "im lặng" ở phản hồi/hội thoại dài (đo 27/08).

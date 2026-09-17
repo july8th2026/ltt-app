@@ -206,7 +206,7 @@ def _app_cong(up):
     from llm_gateway.api import create_app
     from tests.test_250_llm_gateway import _cfg, _tt_ranh
 
-    return create_app(_cfg(models_mo=(M38,), max_dong_thoi=4, rpm=0),
+    return create_app(_cfg(models_mo=(M38,), np=4),
                       up, trong_tai=_tt_ranh())
 
 
@@ -546,6 +546,29 @@ class _CtxGia:
         return self._huy_luc is not None and time.monotonic() >= self._huy_luc
 
 
+def _phien_csdl_rong(monkeypatch) -> None:
+    """Cho `jobs.handle` một phiên CSDL rỗng — KHÔNG đầu độc module nạp sau.
+
+    🔴 BẪY ĐÃ DÍNH (17/09/2026, gộp phương án C): `platform_core.job_runner` và
+       `platform_core.llm.admission` viết `from platform_core.db import get_session`
+       ở ĐẦU MODULE, tức chép tên hàm vào module của chúng LÚC NẠP. `jobs.handle`
+       nạp `job_runner` bên TRONG thân hàm. Nếu lần nạp đầu tiên của tiến trình
+       rơi vào lúc `platform_core.db.get_session` đang bị vá thành `iter([None])`,
+       `job_runner.get_session` giữ bản giả MÃI MÃI — monkeypatch hoàn lại
+       `platform_core.db` nhưng không biết bản chép kia. Phép kiểm sau trong cùng
+       worker gọi `_chay_mot_job` ⇒ `claim(db=None)` ⇒ `AttributeError`.
+       Chỉ lộ dưới `-n 6` khi xdist xếp test này làm người nạp `job_runner` đầu
+       tiên của worker (chạy riêng thì `test_job_bi_huy_thi_ket_noi...` đã nạp
+       trước) — nên trông như "xung đột với test_272".
+    ⭐ Nạp mọi module có bản chép TRƯỚC khi vá, rồi mới vá.
+    """
+    import platform_core.job_runner  # noqa: F401  (chép get_session lúc nạp)
+    import platform_core.llm.admission  # noqa: F401  (như trên)
+
+    monkeypatch.setattr("platform_core.db.get_session",
+                        lambda: iter([None]), raising=False)
+
+
 def _vao_ltt_llm(monkeypatch, url: str):
     """Cho `features.chay` gọi **`dieu_phoi._goi_openai` thật** tới `url`.
 
@@ -571,8 +594,7 @@ def _vao_ltt_llm(monkeypatch, url: str):
     # `jobs.handle` mở một phiên CSDL rồi đưa xuống `features.chay`; bản giả ở
     # trên không dùng tới `db`, nên một phiên rỗng là đủ và ta không kéo cả CSDL
     # vào một phép kiểm đo **socket**.
-    monkeypatch.setattr("platform_core.db.get_session",
-                        lambda: iter([None]), raising=False)
+    _phien_csdl_rong(monkeypatch)
     return get_session
 
 
@@ -649,8 +671,7 @@ def test_499_tu_cong_cung_thanh_JobCancelled_chu_khong_phai_job_ERROR(monkeypatc
         return SimpleNamespace(as_result=lambda: {"noi_dung": kq.noi_dung})
 
     monkeypatch.setattr(features, "chay", _chay)
-    monkeypatch.setattr("platform_core.db.get_session",
-                        lambda: iter([None]), raising=False)
+    _phien_csdl_rong(monkeypatch)
     with pytest.raises(JobCancelled):
         ltt_jobs.handle({"model": M38}, _CtxGia("j-3", huy_sau_s=None))
 
@@ -666,6 +687,13 @@ def db_huy(tmp_path, monkeypatch):
     dbmod.reset_engine()
     import platform_core.models  # noqa: F401
     dbmod.Base.metadata.create_all(dbmod.get_engine())
+    # Canh bẫy `_phien_csdl_rong`: bản chép `get_session` phải là hàm thật.
+    import platform_core.job_runner as jr
+    import platform_core.llm.admission as adm
+    for mod in (jr, adm):
+        assert mod.get_session is dbmod.get_session, (
+            f"{mod.__name__}.get_session bi dau doc boi mot ban va luc nap — "
+            f"xem _phien_csdl_rong")
     from tests.conftest import mo_cu_tru_3090
     mo_cu_tru_3090()
     gen = dbmod.get_session()

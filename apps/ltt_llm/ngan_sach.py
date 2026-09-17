@@ -139,20 +139,19 @@ NAP_KHO_AM_S = {"qwen38-api": 16.3, "qwen35-api": 12.1}
 #:
 #: Đây là một **tuyên bố**, không phải một phép đo — và nó phải nói ra như vậy:
 #: *"prefill của một lượt được làm nghèo các lượt khác tối đa bao lâu"*. Ngưỡng
-#: whale của từng hồ sơ dẫn xuất từ nó (`nguong_whale_theo_chan`).
+#: whale theo đường cong (`nguong_whale_theo_chan`) là ƯỚC cho mục tiêu này; số ĐANG
+#: CHẠY là số chủ dự án chọn (`NGUONG_WHALE`, dưới).
 #:
 #: 🔴 KHÔNG còn buộc bằng `LTT_LLM_CHO_WHALE_S` (phương án C bước 2, 17/09). Giá
 #:    trị 30 lấy từ đó lúc 12/09, nhưng đó là câu hỏi KHÁC ("whale đứng nhường lượt
 #:    tương tác bao lâu", `luat_nhan` luật 5); buộc hai số bằng nhau là chặn đúng
 #:    lần đổi số đo đề xuất dưới đây.
 #:
-#: ✅ CHỦ DỰ ÁN CHỐT 17/09/2026: **9 s** (trước đó 30 s). `KET_QUA_DO_17_09.md`
-#:    (nhánh `phien/bench-may-b`, `da153d40`) đo được lượt đang decode tụt còn
-#:    ~1,5–2 tok/s SUỐT prefill của lượt khác. Chủ dự án nêu ngưỡng "3.8 > 8.192,
-#:    3.5 > 16.384"; đường cong §G4 ở 9 s cho **10.752** (8,80 s) và **18.944**
-#:    (8,80 s) — dùng số của đường cong (8.192 prefill 6,64 s trên 3.8, 16.384 là
-#:    7,55 s trên 3.5: cả hai dưới mục tiêu). Đo lại đường cong (am35/am38) là
-#:    ngưỡng tự dịch.
+#: ✅ CHỦ DỰ ÁN CHỐT 17/09/2026: mục tiêu **9 s** (trước đó 30 s).
+#:    `KET_QUA_DO_17_09.md` (nhánh `phien/bench-may-b`, `da153d40`) đo được lượt
+#:    đang decode tụt còn ~1,5–2 tok/s SUỐT prefill của lượt khác. Đường cong §G4
+#:    ở 9 s cho 10.752 / 18.944 — chỉ là GHI CHÚ; ngưỡng đang chạy là số chủ dự
+#:    án chọn tường minh 8.192 / 16.384 (`NGUONG_WHALE`).
 WHALE_CHAN_TOI_DA_S = 9.0
 
 
@@ -202,25 +201,23 @@ def nguong_whale_theo_chan(model_id: str, chan_toi_da_s: float) -> int:
 #:    3.5** (§G4). Chép một con số từ model này sang model kia là tuyên bố hai
 #:    card có cùng đường cong — và bảng §G4 bác bỏ điều đó ở **mọi** độ dài.
 #:
-#: ⭐ CÁCH DẪN XUẤT (tái hiện được bằng `nguong_whale_theo_chan` ngay trên):
-#:      1. Tuyên bố mức chặn không chấp nhận được: `WHALE_CHAN_TOI_DA_S`.
-#:      2. Giải `token / prefill_tok_s(token) = mục tiêu` trên đường cong ĐO của
-#:         TỪNG model (nội suy tuyến tính giữa các điểm), làm tròn xuống bội 512.
-#:      3. Kết quả ở 9 s (chốt 17/09): `qwen38-api` **10.752** (8,80 s) ·
-#:         `qwen35-api` **18.944** (8,80 s). Ở 30 s (12/09–17/09, chưa từng chạy
-#:         trên đường thật): 33.792 · 56.832.
+#: ✅ CHỦ DỰ ÁN CHỌN TƯỜNG MINH 17/09/2026 (DECISION_LOG L-23): **3.8 = 8.192**,
+#:    **3.5 = 16.384** token prefill mới. Đây là số GÕ TAY CÓ CHỦ Ý — quyết định
+#:    của chủ dự án, không phải kết quả đường cong. Trên đường cong §G4 hai số
+#:    này prefill ~6,6 s (3.8) và ~7,6 s (3.5): đều DƯỚI mục tiêu
+#:    `WHALE_CHAN_TOI_DA_S` (test_1214 buộc điều đó, không buộc bằng nhau).
 #:
-#: 🔴 SỐ NÀY KHÔNG PHẢI SỐ GÕ TAY, VÀ ĐÓ LÀ CÓ CHỦ Ý. Plan 12/09 ghi tạm
-#:    `16_384 / 32_768` (13,7 s và 15,9 s trên đường cong) — không dẫn xuất từ
-#:    mục tiêu nào. Tỉ lệ đúng theo đo khác 2× và đổi theo độ dài.
+#: 📝 Ghi chú — ước theo đường cong (`nguong_whale_theo_chan`): giải
+#:    `token / prefill_tok_s(token) = mục tiêu` trên đường cong ĐO của TỪNG model,
+#:    làm tròn xuống bội 512 (`-ub`). Ở 9 s: 10.752 · 18.944 (KHÔNG dùng). Ở 30 s
+#:    (12/09–17/09, chưa từng chạy trên đường thật): 33.792 · 56.832.
 #:
 #: 🔴 PHƯƠNG ÁN C bước 2 (O-06, 17/09/2026): TỪ NAY LÀ SỐ ĐANG CHẠY. Trước đó
 #:    đường thật dùng một ngưỡng chung 16.384 (env `LTT_LLM_NGUONG_WHALE`, ĐÃ
 #:    GỠ) và bảng này chỉ có phép kiểm đọc. Nay `HO_SO[m].nguong_whale` →
 #:    `AdmissionModel.nguong_whale` → `tham_so_da_luot.luat_cho` gắn cờ cho MỌI
 #:    cửa (stream, đồng bộ, job, nội bộ).
-NGUONG_WHALE = {m: nguong_whale_theo_chan(m, WHALE_CHAN_TOI_DA_S)
-                for m in DUONG_PREFILL_TOK_S}
+NGUONG_WHALE = {"qwen38-api": 8_192, "qwen35-api": 16_384}
 
 
 @dataclass(frozen=True)
@@ -251,8 +248,8 @@ class HoSoModel:
     dem_uoc: int
     #: Token đặt chỗ mỗi ảnh — xem `TOKEN_GIU_MOI_ANH`.
     token_giu_moi_anh: int
-    #: Token prefill MỚI từ mức này lượt là whale — DẪN XUẤT bằng
-    #: `nguong_whale_theo_chan(model_id, WHALE_CHAN_TOI_DA_S)`, không gõ tay.
+    #: Token prefill MỚI từ mức này lượt là whale — `NGUONG_WHALE[model_id]`
+    #: (số chủ dự án chọn 17/09, L-23).
     nguong_whale: int
 
     def __post_init__(self) -> None:
@@ -306,12 +303,12 @@ HO_SO = {
         "qwen38-api", engine_ctx=221_184, np=3, seq_cap=3,
         bien_pool_token=BIEN_POOL_TOKEN, dem_uoc=DEM_UOC,
         token_giu_moi_anh=TOKEN_GIU_MOI_ANH,
-        nguong_whale=nguong_whale_theo_chan("qwen38-api", WHALE_CHAN_TOI_DA_S)),
+        nguong_whale=NGUONG_WHALE["qwen38-api"]),
     "qwen35-api": HoSoModel(
         "qwen35-api", engine_ctx=262_144, np=3, seq_cap=3,
         bien_pool_token=BIEN_POOL_TOKEN, dem_uoc=DEM_UOC,
         token_giu_moi_anh=TOKEN_GIU_MOI_ANH,
-        nguong_whale=nguong_whale_theo_chan("qwen35-api", WHALE_CHAN_TOI_DA_S)),
+        nguong_whale=NGUONG_WHALE["qwen35-api"]),
 }
 
 #: Cửa sổ engine theo model — DẪN XUẤT từ `HO_SO`, giữ tên vì rất nhiều nơi đọc.
