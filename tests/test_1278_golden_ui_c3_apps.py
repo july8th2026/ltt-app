@@ -85,7 +85,9 @@ def test_h1_moi_trang_rieng():
     for tep in ("apps/taoanh/templates/image.html", "apps/taoanh/templates/image_thumbnail_shell.html",
                 "apps/thumbnail/templates/thumbnail.html", "apps/taovideo/templates/taovideo.html",
                 "apps/lttvideo/templates/lttvideo.html"):
-        m = re.search(r"<h1[^>]*>(.*?)</h1>", _doc(tep), re.S)
+        # C4 17/09: Tạo ảnh/Thumbnail vẽ h1 qua macro `ah.dau_trang(eyebrow, TIÊU_ĐỀ, ...)`.
+        m = (re.search(r"<h1[^>]*>(.*?)</h1>", _doc(tep), re.S)
+             or re.search(r'ah\.dau_trang\(_\("[^"]*"\)(?: ~ "[^"]*")?,\s*(_\("[^"]*"\))', _doc(tep)))
         assert m, tep
         h1[tep] = m.group(1).strip()
     assert h1["apps/taoanh/templates/image_thumbnail_shell.html"] != h1["apps/taoanh/templates/image.html"]
