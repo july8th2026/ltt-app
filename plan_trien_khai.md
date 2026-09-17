@@ -32,20 +32,20 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 | Bộ quét | `node tools/golden_ui_quet.mjs --cau-hinh routes.json --ra <dir> [--khung ...]` — HTTP, ảnh toàn trang, console, request hỏng, tràn ngang, axe WCAG 2.2 AA, h1/main/lang, ô chạm, ô nhập <16px |
 
 ## Overall Progress
-86%
+87%
 
-(Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính lại 17/09 sau P1-01/P1-14/P1-15/P1-06-07: 5 + 10 + 85%·15 + 70%·15 + 80%·20 + 95%·15 + 95%·10 + 70%·10 = 5+10+12,75+10,5+16+14,25+9,5+7 = **85%** → làm tròn theo bảng dưới **86%** (17/09: gộp đủ 3 nhánh song song, đo lại toàn hệ `sau/v4`, regression ảnh PASS; còn L3 + deploy + nghiệm thu URL công khai). Con số 70% ghi ngày 16/09 cao hơn phép tính lúc đó (65,5%) — nay khớp phép tính. Chưa có L3, Phase 7 mới có regression ảnh.)
+(Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính 17/09 tối sau B1–B4 + đo lại `sau/v5`: 5 + 10 + 90%·15 + 75%·15 + 80%·20 + 97%·15 + 95%·10 + 75%·10 = 5+10+13,5+11,25+16+14,55+9,5+7,5 = **87%**. Còn: C1 chấm lại 13 họ, C2 regression ảnh + vân tay CSS, D1 L3 → gộp `main` → deploy → nghiệm thu công khai.)
 
 | Phase | % | Trạng thái |
 |---|---|---|
 | 0 Discovery & Tooling | 100 | ✅ |
 | 1 Baseline Audit | 100 | ✅ |
-| 2 Golden Design System | 85 | 🟡 token · tiện ích `u-*` · link/rỗng/chuyển động ✅ · DL-005 bộ icon SVG ✅ · còn: `.chip.*` hex thô, 2 kiểu số bước giữa studio |
-| 3 Shared UI Components | 70 | 🟡 `_ui.html` · `_icon.html` · `_menu_tai_khoan.html` · `.ui-state` · `o_chon_tep` ✅ · còn: vị trí tiêu đề trang thống nhất giữa studio, SPA chưa dùng component chung |
+| 2 Golden Design System | 90 | ✅ token · tiện ích · link/rỗng/chuyển động · DL-005 icon · `.chip.*` token · SPA canvas/AutoSub xám lạnh → token · ⏭ Prompt AI theme sáng riêng (nợ có lý do) |
+| 3 Shared UI Components | 75 | 🟡 `_ui` · `_icon` · `_menu_tai_khoan` · `.ui-state` · `o_chon_tep` · huy hiệu số bước chung (B1) ✅ · ⏭ SPA chưa dùng component Jinja chung (kiến trúc React riêng) |
 | 4 Critical Pages | 80 | 🟡 Error/Jobs/Billing/Auth/Workspace xong ở dev · còn: nghiệm thu trên URL công khai (cần deploy) |
 | 5 Remaining Pages & Apps | 95 | ✅ Apps · VPS (màn máy/cài đặt/console) · Admin · Dev/Public — đủ 3 nhánh song song đã gộp và đo lại |
 | 6 Responsive & Accessibility | 95 | ✅ `sau/v4` 448 phép đo 4 khung: axe 0 · tràn 0 · console 0 · request hỏng 0 · h1/main 0 · còn: đo trên URL công khai |
-| 7 Visual Regression & Final QA | 70 | 🟡 regression ảnh 28 mẫu PASS · đo lại toàn hệ ✅ · Final Report ✅ · L3 ⏳ · gộp `main` + deploy + URL công khai ⏳ |
+| 7 Visual Regression & Final QA | 75 | 🟡 `sau/v5` 448 phép đo sạch (axe 0 · tràn 0 · console 0 · hỏng 0 · h1/main 0) · Final Report ✅ · ⏳ C1 chấm lại · C2 regression ảnh · D1 L3 + deploy + công khai |
 
 ## Current Baseline
 
