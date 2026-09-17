@@ -4286,7 +4286,7 @@ input[type=hidden]+.af-step{margin-top:0}
 /* Footer trong hộp auth: luật chung <=640px đổi footer thành cột căn TRÁI, nên
    nav thứ hai (pháp lý) lệch trái dưới hai hàng căn giữa. Vùng chạm 44px. */
 @media(max-width:640px){
-  .box>.platform-footer{align-items:center;padding-left:0;padding-right:0}
+  .box>.platform-footer{align-items:center;gap:0;padding-left:0;padding-right:0}
   .box>.platform-footer nav{gap:0 var(--space-1)}
   .box>.platform-footer a{min-height:44px;padding:0 var(--space-2)}
   .box .hint a{display:inline-flex;align-items:center;min-height:44px}
@@ -4320,5 +4320,5 @@ input[type=hidden]+.af-step{margin-top:0}
   align-items:baseline}
 .status-kv dt{color:var(--text-muted);font-size:var(--fs-helper)}
 .status-kv dd{margin:0;min-width:0}
-.status-kv code{font-family:var(--mono);color:var(--text-primary);overflow-wrap:anywhere}
+.status-kv code{font-family:var(--mono);font-size:var(--fs-helper);color:var(--text-primary);overflow-wrap:anywhere}
 @media(max-width:640px){.status-kv>div{grid-template-columns:minmax(0,1fr)}}
