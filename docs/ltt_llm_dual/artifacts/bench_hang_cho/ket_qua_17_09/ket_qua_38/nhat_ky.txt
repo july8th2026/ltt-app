@@ -1,0 +1,36 @@
+16:51:39  ctrl38  bat dau
+16:51:39  ctrl38  preflight
+16:51:45  ctrl38  nap np3
+16:52:09  ctrl38  don 0
+16:52:18  ctrl38  don 1
+16:52:28  ctrl38  don 2
+16:52:38  ctrl38  prefill 32k
+16:53:17  m3_38  bat dau
+16:53:17  m3_38  preflight
+16:53:23  m3_38  nap b2048
+16:53:49  m3_38  b2048 hai_job a_ngan_1k
+16:54:32  m3_38  b2048 hai_job b_dai_32k
+16:55:48  m3_38  b2048 prefill 32000
+16:56:47  m3_38  b2048 prefill 128000
+17:00:20  m3_38  preflight
+17:00:26  m3_38  nap b512
+17:00:52  m3_38  b512 hai_job a_ngan_1k
+17:01:32  m3_38  b512 hai_job b_dai_32k
+17:02:52  m3_38  b512 prefill 32000
+17:03:56  m3_38  b512 prefill 128000
+17:07:48  m2  bat dau
+17:07:48  m2  preflight
+17:07:54  m2  nap np3_c221184
+17:08:46  m2  np3_c221184 k=1
+17:08:54  m2  np3_c221184 k=2
+17:09:13  m2  np3_c221184 k=3
+17:10:28  m2  preflight
+17:10:34  m2  nap np4_c200704
+17:11:38  m2  preflight
+17:11:44  m2  nap np5_c184320
+17:12:37  m2  np5_c184320 k=1
+17:12:45  m2  np5_c184320 k=2
+17:13:04  m2  np5_c184320 k=3
+17:14:03  m2  np5_c184320 k=4
+17:15:19  m2  np5_c184320 k=5
+17:17:09  lo  KET THUC ma=0 sau 25.5 phut
