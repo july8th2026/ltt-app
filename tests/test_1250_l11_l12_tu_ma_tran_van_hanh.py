@@ -25,6 +25,15 @@ Cung MOT request 67.989 token (duoi tran vao 171.458):
 Vi `sum(...) + moi` luon vuot ngay khi mon ay TU NO lon hon tran phong. Cho bao
 lau cung vo ich, va cau chu "busy, retry later" la mot loi khuyen khong bao gio
 dung cho ca nay.
+
+## L-12b (17/09/2026) — go HAN tran token cua phong cho
+
+Ban va 13/09 chi noi cho MOT mon lon. Tran 57.000 tren tong token MOI cua nguoi
+CHO la luat thu hai cho cung cau hoi ma `luat_nhan` luat 2 (tong token dat cho
+cua luot DANG CHAY + luot nay <= pool KV) da tra loi — va no con duoi oan: mot
+whale 68K dang cho lam MOI luot moi 429. Chu du an chot 17/09: nhan theo NGAN
+SACH, luot chua vua thi CHO. Phong cho chi con chan DO DAI HANG (so nguoi, so
+whale). Cac ve luat nhan (backfill, chong bo doi) o `test_1203`.
 """
 from datetime import datetime, timedelta, timezone
 
@@ -88,13 +97,14 @@ def test_reclaim_don_lease_STREAM_som_hon_lease_NEN(monkeypatch):
     assert n == 1
 
 
-# ── L-12 ──────────────────────────────────────────────────────────────────
-def _waiter(prefill: int, nhip: datetime):
+# ── L-12 / L-12b ──────────────────────────────────────────────────────────
+def _waiter(prefill: int, nhip: datetime, whale: bool = False):
     class _W:
         token_prefill_moi = prefill
         heartbeat_at = nhip
         trang_thai = "cho"
         resource = "r"
+        la_whale = whale
     return _W()
 
 
@@ -114,48 +124,111 @@ class _Phong:
         return self._d
 
 
-TRAN = 57_000
-
-
-def _goi(dang_cho, moi):
+def _goi(dang_cho, *, whale=False, so_nguoi=32, so_ca_voi=2):
+    """`dang_cho`: danh sach `(prefill, la_whale)`."""
     gio = datetime.now(timezone.utc)
     phong_cho.kiem_phong(
-        _Phong([_waiter(p, gio) for p in dang_cho]), resource="r",
-        token_prefill_moi=moi, so_nguoi_toi_da=32,
-        token_prefill_toi_da=TRAN, now=gio)
+        _Phong([_waiter(p, gio, w) for p, w in dang_cho]), resource="r",
+        so_nguoi_toi_da=so_nguoi, la_whale=whale, so_ca_voi_toi_da=so_ca_voi, now=gio)
 
 
-def test_mon_LON_HON_TRAN_van_duoc_vao_hang_du_co_nguoi_cho():
-    """🔴 Ve chinh cua L-12 — va no DO tren ban truoc ban va."""
-    _goi(dang_cho=[10_000], moi=68_000)      # khong duoc nem
+def test_mon_LON_van_duoc_vao_hang_du_co_nguoi_cho():
+    """🔴 Ve chinh cua L-12 — va no DO tren ban truoc ban va 13/09."""
+    _goi([(10_000, False)], whale=True)      # 68K: khong duoc nem
 
 
 def test_mon_lon_van_vao_duoc_khi_phong_TRONG():
-    _goi(dang_cho=[], moi=68_000)
+    _goi([], whale=True)
 
 
-def test_CHI_MOT_mon_lon_cung_luc():
-    """Quyen vao hang cho mon lon khong duoc bien hang cho thanh kho prefill."""
+def test_mot_whale_dang_cho_khong_duoi_luot_nho():
+    """🔴 L-12b: ban va 13/09 cong CA whale dang cho vao tran 57K — mot whale 68K
+    trong phong lam luot 10 token 429 (`phong_day_token_prefill`). Ve nay DO tren
+    ban 13/09."""
+    _goi([(68_000, True)], whale=False)
+
+
+def test_luot_THU_HAI_lon_hon_57K_cung_vao_hang():
+    """🔴 L-12b: ban 13/09 chi cho MOT mon >57K (`phong_day_mot_mon_lon`)."""
+    _goi([(68_000, True)], whale=True)
+
+
+def test_so_WHALE_cho_co_tran_va_429_TRUOC_200():
+    """Whale chay NOI TIEP; hang whale khong chan thi whale cuoi het trần chờ
+    GIUA SSE. Tran so whale bien ca ay thanh 429 truoc 200."""
     with pytest.raises(phong_cho.PhongDay) as e:
-        _goi(dang_cho=[68_000], moi=70_000)
-    assert e.value.ly_do == "phong_day_mot_mon_lon"
+        _goi([(68_000, True), (150_000, True)], whale=True, so_ca_voi=2)
+    assert e.value.ly_do == "phong_day_ca_voi"
 
 
-def test_tran_TONG_cho_mon_thuong_VAN_GIU_NGUYEN():
-    """⛔ DOI CHUNG cho chinh ban va: no khong duoc noi long luat cu.
-
-    Thieu ve nay thi mot ban va "cho tat ca qua" cung se XANH o ba ve tren.
-    """
-    with pytest.raises(phong_cho.PhongDay) as e:
-        _goi(dang_cho=[30_000, 20_000], moi=10_000)   # 60.000 > 57.000
-    assert e.value.ly_do == "phong_day_token_prefill"
+def test_tran_so_whale_KHONG_chan_luot_thuong():
+    """Doi chung: cung phong day whale, luot thuong van vao hang."""
+    _goi([(68_000, True), (150_000, True)], whale=False, so_ca_voi=2)
 
 
 def test_tran_SO_NGUOI_van_giu_nguyen():
-    gio = datetime.now(timezone.utc)
     with pytest.raises(phong_cho.PhongDay) as e:
-        phong_cho.kiem_phong(
-            _Phong([_waiter(1, gio) for _ in range(3)]), resource="r",
-            token_prefill_moi=1, so_nguoi_toi_da=3,
-            token_prefill_toi_da=TRAN, now=gio)
+        _goi([(1, False)] * 3, so_nguoi=3)
     assert e.value.ly_do == "phong_day_so_nguoi"
+
+
+def test_phong_cho_KHONG_con_tran_token():
+    """⛔ Chot bat bien chu du an 17/09: "co vua khong" chi co MOT nguoi tra loi.
+
+    Tong token MOI dang cho vuot xa 57K ma luot thuong van vao hang — viec cua
+    no la CHO toi khi `luat_nhan` luat 2 thay vua pool.
+    """
+    _goi([(30_000, False), (20_000, False), (40_000, False)], whale=False)
+    import inspect
+    assert "token_prefill_toi_da" not in inspect.signature(phong_cho.kiem_phong).parameters
+
+
+def test_whale_duoc_cho_LAU_HON_luot_thuong_o_cua_stream(monkeypatch):
+    from platform_core.llm import tham_so_da_luot
+    for k in ("LTT_LLM_CHO_STREAM_S", "LTT_LLM_CHO_STREAM_WHALE_S"):
+        monkeypatch.delenv(k, raising=False)
+    ts = tham_so_da_luot.doc()
+    assert ts.han_cho_stream(True) > ts.han_cho_stream(False)
+    # Mot luot 150K tren 3.8 prefill ~230 s: whale thu hai xep sau no phai cho
+    # duoc tron luot ay + phan sinh — 300 s chung la khong du.
+    assert ts.han_cho_stream(True) >= 600
+
+
+# ── L-12b: so suat va pool KV la HAI num cau hinh DOC LAP (chu du an 17/09) ─
+def test_so_suat_va_pool_la_hai_num_doc_lap_va_CHI_HA(monkeypatch):
+    from platform_core.registry import (ENV_POOL, ENV_SO_SUAT, AdmissionModel,
+                                        ap_cau_hinh_admission)
+
+    khai = AdmissionModel("ltt_38_3090", 3, 221_184, "rtx3090", "mac_dinh")
+    for k in (ENV_SO_SUAT + "ltt_38_3090", ENV_POOL + "ltt_38_3090"):
+        monkeypatch.delenv(k, raising=False)
+    assert ap_cau_hinh_admission(khai) == khai, "khong env => dung ban khai"
+
+    monkeypatch.setenv(ENV_SO_SUAT + "ltt_38_3090", "2")
+    am = ap_cau_hinh_admission(khai)
+    assert (am.slots, am.token_pool) == (2, 221_184), "doi so suat KHONG duoc cham pool"
+
+    monkeypatch.delenv(ENV_SO_SUAT + "ltt_38_3090")
+    monkeypatch.setenv(ENV_POOL + "ltt_38_3090", "200000")
+    am = ap_cau_hinh_admission(khai)
+    assert (am.slots, am.token_pool) == (3, 200_000), "doi pool KHONG duoc cham so suat"
+    assert (am.resource, am.residency_group, am.vai_tro) == ("ltt_38_3090", "rtx3090", "mac_dinh")
+
+    # ⛔ Khong bao gio vuot tran engine (`-np`, `-c`): env chi HA.
+    monkeypatch.setenv(ENV_SO_SUAT + "ltt_38_3090", "8")
+    monkeypatch.setenv(ENV_POOL + "ltt_38_3090", "999999")
+    am = ap_cau_hinh_admission(khai)
+    assert (am.slots, am.token_pool) == (3, 221_184)
+
+
+def test_num_cau_hinh_di_qua_DUONG_THAT_cua_tool_ltt_llm(monkeypatch):
+    """Doi chung duong goi: env phai toi `tool.admission_cho(model)` — cua ma
+    `tien_kiem`, `job` va `admission_luc_nop` cung doc."""
+    from platform_core.registry import ENV_SO_SUAT
+    from apps.ltt_llm.manifest import MANIFEST
+
+    tool = next(t for t in MANIFEST.tools if t.admission_theo_model)
+    goc = tool.admission_cho("ltt-3.8")
+    monkeypatch.setenv(ENV_SO_SUAT + goc.resource, "1")
+    assert tool.admission_cho("ltt-3.8").slots == 1
+    assert tool.admission_cho("ltt-3.5").slots == goc.slots, "num cua 3.8 lan sang 3.5"

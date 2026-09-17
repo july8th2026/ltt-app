@@ -66,6 +66,8 @@ cửa thứ ba mà quên bảo vệ ⇒ gate đỏ. Đó là chủ ý: thêm c�
 ```
 streaming.py
   └─ tien_kiem()                     alias · đầu vào · trần 413 · số dư 402 · phòng đầy 429
+     │                               (phòng đầy = SỐ người/whale, KHÔNG token — L-12b;
+     │                                "có vừa pool KV" chỉ hỏi ở luat_nhan luật 2)
      │                               ⭐ MỌI lỗi ở đây là MÃ HTTP THẬT (trước 200)
      └─ luong_co_cho()               ← thân phản hồi, là generator ĐỒNG BỘ
         ├─ vao_va_cho()
@@ -116,7 +118,9 @@ Hai đường **độc lập**, `da_quyet_toan` bảo đảm chỉ một đườ
 | muốn biết | nguồn chân lý |
 |---|---|
 | suất · pool · tài nguyên | `apps/ltt_llm/ngan_sach.py` → `manifest.py` |
-| luật nhận ai trước | `platform_core/llm/luat_nhan.py` |
+| luật nhận ai trước (ngân sách KV · backfill có chặn · whale) | `platform_core/llm/luat_nhan.py` |
+| núm sức chứa theo tài nguyên (số suất, pool — chỉ hạ) | `platform_core/registry.py::ap_cau_hinh_admission` |
+| trần chờ, trần hàng, cửa sổ backfill (env) | `platform_core/llm/tham_so_da_luot.py` |
 | hàng đợi + sổ từng lượt | `platform_core/llm/phong_cho.py` (`llm_waiters`) |
 | cấp/nhả suất | `platform_core/llm/admission.py` |
 | cư trú model trên card | `platform_core/llm/residency.py` |

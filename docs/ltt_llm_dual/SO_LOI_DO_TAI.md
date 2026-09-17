@@ -162,6 +162,71 @@ canh duoc **ben goi**. Them `test_255::test_ma_thuong_nguon_di_toi_danh_dau_loi`
 ⛔ Bai hoc: mot phep kiem cho `danh_dau_loi` khong the canh duoc loi cua NGUOI
    GOI no. Loi o day chua bao gio nam trong `danh_dau_loi`.
 
+## L-12b -- DONG (ma) 17/09/2026: tran TOKEN cua phong cho CHONG len luat ngan sach
+
+Chu du an chot 17/09: LTTCODE phai chay phien ~150K token, *"chap nhan cham de lay
+chat luong"*. Ban va 13/09 duoi day chi noi cho MOT mon lon; tran 57.000 van la
+luat THU HAI cho cung cau hoi *"co vua khong"*.
+
+### Do / kiem duoc tren ma `main` (c80876a3), khong phai suy
+
+| phong cho dang co | luot moi | ket qua cu |
+|---|---|---|
+| mot whale 68K dang cho | **10 token** | **429** `phong_day_token_prefill` |
+| mot whale 68K dang cho | 70K | **429** `phong_day_mot_mon_lon` |
+
+Va hai ca o luat nhan (`luat_nhan.xet`):
+
+- **Khong co backfill**: luot dung truoc chua vua pool KV thi `XEP_SAU` chan MOI
+  luot sau, ke ca luot vua pool (vi du chu du an: 15K+100K dang chay, 110K cho,
+  55K toi sau -> cu: 55K cung cho).
+- **Whale ket sau whale** cho >30 s thi `WHALE_CHAN` MOI luot khac suot luot whale
+  dang chay (~4,5 phut cho 150K) — chan khong mua duoc gi.
+
+### Ban do cac luat (truoc -> sau)
+
+| cau hoi | noi | truoc | sau |
+|---|---|---|---|
+| vua cua so model? | `luong.tien_kiem` (413) | `input_cap` 171.458 | giu nguyen |
+| hang co vo han? | `phong_cho.kiem_phong` (429 truoc 200) | so nguoi 32 **+ Σ token MOI dang cho ≤ 57.000** | so nguoi 32 + **so whale cho ≤ 2** |
+| vua pool KV (`-kvu`)? | `luat_nhan` luat 2 | Σ `token_dat_truoc` dang chay + luot ≤ pool | giu nguyen — **luat nhan chinh** |
+| so chuoi dong thoi | `luat_nhan` luat 1 | 3 (= `-np`) | 3, **env ha duoc** `LTT_ADMISSION_SO_SUAT__<resource>` |
+| cong bang prefill | `luat_nhan` luat 5 + cong may B | ≤1 whale chay | giu nguyen; whale ket sau whale khong chan ai |
+| thu tu | `luat_nhan` luat 6 | FCFS chat | FCFS + **backfill co chan** 120 s (`LTT_LLM_CHO_BACKFILL_S`), qua thi `NHUONG_LUOT_LON` |
+| cho toi da cua stream | `luong_co_cho` | 300 s moi luot | 300 s thuong / **900 s whale** (`LTT_LLM_CHO_STREAM_WHALE_S`) |
+
+⭐ `token_dat_truoc` = token vao uoc (uoc CAO: 2,5 ky tu/token) + `max_tokens` da
+   kep + 2.048 dem + anh. `max_tokens` bao ca token suy nghi (`--reasoning-budget`
+   chi cat BEN TRONG `n_predict`: `server-context.cpp` `has_budget()` dem `n_gen`),
+   nen khong cong them budget suy nghi lan nua. Pool = `-c` cua engine; bien an
+   toan nam o tung luot (dem + uoc cao), va ha pool duoc bang
+   `LTT_ADMISSION_POOL__<resource>` khong can deploy ma.
+⭐ `-kvu` that su cho mot chuoi dung toi ca `-c`: `llama-context.cpp`
+   `if (cparams.kv_unified) n_ctx_seq = n_ctx` (ggml-org/llama.cpp master).
+
+### Chot bang phep kiem, co doi chung
+
+`test_1203`: vi du chu du an; doi chung 110K sau khong backfill; chong bo doi
+(ca bo chan backfill ⇒ luot lon CHET DOI, co chan ⇒ nhan trong 120 + 100 s);
+khong bao gio nhan vuot pool/so suat tren 3 mo phong. 4 ca DO tren luat cu.
+`test_1250`: phong cho khong con tran token; tran so whale; hai num cau hinh doc lap.
+
+### Con mo — KHONG nam trong ma nay
+
+1. 🔴 **Adapter LTTCODE (`D:\LTTCODEAPP\plugins\llm-ltt\src\adapter.ts:285`)
+   khong thay nhip tim.** `withIdleTimeout` dem SU KIEN tu `EventSourceParserStream`
+   (eventsource-parser 3.1.1), ma dong chu thich SSE (`: ltt-cho`, `: keep-alive`)
+   di vao `onComment`, KHONG duoc `enqueue`. Cho hang + prefill 150K (~230 s) de
+   vuot 300 s ⇒ adapter tu cat. Sua ben LTTCODE: truyen `onComment` de dat lai
+   dong ho (hoac do dong ho tren byte tho).
+2. Tai su dung cache prompt: llama.cpp da tu chon slot theo LCP
+   (`--slot-prompt-similarity` mac dinh 0,1) va co cache RAM (`--cache-ram` mac
+   dinh 8.192 MiB, PR #16391). **Khong** ghim `id_slot`: ggml-org/llama.cpp#28139
+   (ghim vao slot rong bo qua cache), #27148 (cache RAM khoi phuc noi dung hoi
+   thoai KHAC duoi tai dong thoi — can doi chieu ban b10883 dang chay).
+3. `uoc_moi` (ai la whale) nho trong tien trinh; slot bi thay thi prefill that
+   150K ma may A tuong nho — chi lech THU TU, khong lech an toan KV.
+
 ## L-12 -- MO 13/09/2026: request PREFILL LON bi DUOI khi co nguoi khac cho
 
 Tim ra o kich ban J10 cua ma tran test job dai.

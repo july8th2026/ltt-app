@@ -118,16 +118,29 @@ def chup_nguoi_cho(db: Session, *, resource: str,
     return ra
 
 
-def kiem_phong(db: Session, *, resource: str, token_prefill_moi: int,
-               so_nguoi_toi_da: int, token_prefill_toi_da: int,
+def kiem_phong(db: Session, *, resource: str, so_nguoi_toi_da: int,
+               la_whale: bool = False, so_ca_voi_toi_da: int = 2,
                now: datetime | None = None) -> None:
     """Ném `PhongDay` nếu phòng chờ đã chạm trần. Chạy TRƯỚC khi gửi 200.
 
-    Hai trần độc lập (nguyên tắc vLLM `max_num_queued_reqs`/`_tokens`):
-      * số người chờ — không có hàng vô hạn;
-      * tổng token cần prefill MỚI đang chờ — hàng 30 người nhẹ khác hàng 3 whale.
-    Phòng TRỐNG thì luôn nhận: nếu không, một whale lớn hơn trần token sẽ không
-    bao giờ vào được hàng.
+    Phòng chờ CHỈ trả lời *"hàng có vô hạn không"* — bằng SỐ NGƯỜI:
+      * số người chờ còn sống — không có hàng vô hạn;
+      * số WHALE chờ còn sống — whale chạy nối tiếp (≤1 mỗi tài nguyên), nên hàng
+        whale dài bao nhiêu là chờ bấy nhiêu lượt 150K; chặn nó để 429 đến TRƯỚC
+        200 thay vì hết trần chờ giữa SSE.
+
+    🔴 L-12b (17/09/2026): phòng chờ KHÔNG còn trần TOKEN. Câu *"có vừa không"*
+       có đúng MỘT người trả lời — `luat_nhan.xet` luật 2: Σ token đặt chỗ của
+       lượt ĐANG CHẠY + lượt này ≤ pool KV của model (`-kvu`: một bể `-c` chung
+       cho mọi slot). Lượt chưa vừa thì CHỜ trong hàng, có nhịp tim, có backfill
+       có chặn; không bị đuổi.
+
+       Trần cũ (`token_prefill_cho_toi_da` 57.000 trên Σ token MỚI của người
+       CHỜ) là luật thứ hai cho cùng câu hỏi, và đo được nó đuổi oan:
+         * 13/09 J10: lượt 67.989 token → 429 khi có người chờ, 200 khi phòng
+           trống (bản vá 13/09 chỉ nới cho MỘT món lớn);
+         * sau bản vá: một whale 68K đang chờ ⇒ MỌI lượt mới, kể cả 10 token, 429
+           (`68K + x > 57K`) — `test_1250::test_mot_whale_dang_cho_khong_duoi_luot_nho`.
     """
     now = now or _bay_gio()
     song = [w for w in (db.query(LlmWaiter)
@@ -136,37 +149,9 @@ def kiem_phong(db: Session, *, resource: str, token_prefill_moi: int,
             if (now - _aware(w.heartbeat_at)).total_seconds() <= HAN_NHIP_CHO_S]
     if len(song) >= so_nguoi_toi_da:
         raise PhongDay("phong_day_so_nguoi")
-
-    # 🔴 L-12 (13/09/2026): MỘT TRẦN TỔNG KHÔNG ĐƯỢC LOẠI TRỪ VĨNH VIỄN MỘT MÓN
-    #    ĐƠN LẺ VỐN HỢP LỆ.
-    #
-    #    Đo được ở kịch bản J10, cùng MỘT request prefill 67.989 token (dưới trần
-    #    vào 171.458 của `ltt-3.8`, nên `tien_kiem` đã cho qua):
-    #
-    #        phòng chờ TRỐNG      -> 200, chạy trọn, TTFB 71,3 s
-    #        phòng chờ CÓ NGƯỜI   -> 429 sau 0,48 s
-    #
-    #    Vì `sum(...) + token_prefill_moi` luôn vượt ngay khi món ấy **tự nó** lớn
-    #    hơn trần phòng. Chờ bao lâu cũng vô ích, và câu chữ trả về nói *"busy,
-    #    retry later"* — một lời khuyên **không bao giờ đúng** cho ca này.
-    #
-    # ⭐ Đây là cùng bài toán vLLM giải bằng **chunked prefill**: chẻ prefill ra
-    #    nhiều vòng để một prompt dài không phải vừa một ngân sách. Ta không chẻ
-    #    được ở tầng này, nên áp đúng nguyên lý ấy ở dạng nhận/không-nhận: món
-    #    lớn hơn cả trần vẫn được **xếp hàng**, nhưng tối đa MỘT món như thế cùng
-    #    lúc — nếu không, hàng chờ thành chỗ chứa prefill không giới hạn.
-    #
-    # ⚠️ Nó vẫn phải chờ theo luật whale ở `luat_nhan.xet`; đây chỉ là quyền VÀO
-    #    HÀNG, không phải quyền được phục vụ trước.
-    lon_hon_tran = int(token_prefill_moi) > token_prefill_toi_da
-    if lon_hon_tran:
-        if any(int(w.token_prefill_moi or 0) > token_prefill_toi_da for w in song):
-            raise PhongDay("phong_day_mot_mon_lon")
-        return
-
-    if song and sum(int(w.token_prefill_moi or 0) for w in song) + int(
-            token_prefill_moi) > token_prefill_toi_da:
-        raise PhongDay("phong_day_token_prefill")
+    if la_whale and sum(1 for w in song if bool(getattr(w, "la_whale", False))) >= max(
+            1, int(so_ca_voi_toi_da)):
+        raise PhongDay("phong_day_ca_voi")
 
 
 def vao(db: Session, yc: YeuCauCho, *, now: datetime | None = None) -> str:

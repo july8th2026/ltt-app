@@ -1199,6 +1199,22 @@ nhóm bánh cóc ruff (nhóm phải sinh tiến trình con). `check_ruff.py` ch�
 **Repo** `22841303..294fa798` · **Production** `294fa798`, ba chiều 0/0/0.
 
 ---
+## 2026-09-17 — LTT LLM: nhận theo NGÂN SÁCH KV, backfill có chặn (L-12b, nhánh `phien/llm-hang-cho-lon`)
+
+Chủ dự án chốt: LTTCODE chạy phiên ~150K token, lượt lớn **chờ** thay vì 429.
+
+- Kiểm trên `main` c80876a3: một whale 68K đang chờ làm lượt **10 token** 429
+  (`phong_day_token_prefill`) — trần 57.000 của phòng chờ là luật thứ hai cho câu
+  "có vừa không" mà `luat_nhan` luật 2 (Σ đặt chỗ đang chạy + lượt ≤ pool `-kvu`)
+  đã trả lời. Gỡ; phòng chờ chỉ chặn số người (32) và số whale (2).
+- `luat_nhan`: backfill 120 s rồi `nhuong_luot_lon`; whale kẹt sau whale không
+  chặn ai. Ví dụ chủ dự án (15K+100K chạy, 110K chờ, 55K vào trước) có phép kiểm,
+  kèm đối chứng chết đói khi bỏ chặn backfill.
+- Số suất và pool: hai núm env độc lập theo tài nguyên, chỉ hạ dưới `-np`/`-c`.
+- 🔴 Ngoài kho: adapter LTTCODE không đếm dòng chú thích SSE ⇒ tự cắt ở 300 s
+  dù nền tảng đập nhịp. Chi tiết và nguồn: `docs/ltt_llm_dual/SO_LOI_DO_TAI.md` §L-12b.
+
+---
 ## 2026-09-14 — VẬN HÀNH THẬT: xoá bộ đo tự xây (lần hai), và L-12 được xác nhận trên tải thật
 
 ### 🔴 Sai lầm của phiên, ghi trước kết quả

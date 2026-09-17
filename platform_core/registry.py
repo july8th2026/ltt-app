@@ -148,15 +148,67 @@ def suc_chua_admission(tool, model: str = "") -> "AdmissionModel | None":
     m = tool.admission_theo_model
     if m:
         if model in m:
-            return m[model]
+            return ap_cau_hinh_admission(m[model])
         if "*" in m:
-            return m["*"]
+            return ap_cau_hinh_admission(m["*"])
         raise KeyError(
             f"{tool.name}: model {model!r} khong co trong admission_theo_model")
     if tool.admission_resource and tool.admission_slots > 0:
-        return AdmissionModel(tool.admission_resource, tool.admission_slots,
-                              int(getattr(tool, "admission_token_pool", 0) or 0))
+        return ap_cau_hinh_admission(AdmissionModel(
+            tool.admission_resource, tool.admission_slots,
+            int(getattr(tool, "admission_token_pool", 0) or 0)))
     return None
+
+
+#: Tiền tố env ghi đè sức chứa THEO TÀI NGUYÊN (L-12b, 17/09/2026).
+ENV_SO_SUAT = "LTT_ADMISSION_SO_SUAT__"
+ENV_POOL = "LTT_ADMISSION_POOL__"
+
+
+def _env_int(ten: str) -> int | None:
+    import os
+
+    tho = (os.environ.get(ten) or "").strip()
+    if not tho:
+        return None
+    try:
+        return int(tho)
+    except ValueError:
+        return None
+
+
+def ap_cau_hinh_admission(am: AdmissionModel) -> AdmissionModel:
+    """Áp hai núm cấu hình ĐỘC LẬP lên sức chứa bản khai của app — chỉ được HẠ.
+
+    Hai câu hỏi, hai tham số, không cái nào suy ra từ cái kia:
+
+      * `token_pool` — **luật nhận chính**: Σ token đặt chỗ lượt đang chạy + lượt
+        xin ≤ pool (`luat_nhan` luật 2). `LTT_ADMISSION_POOL__<resource>`.
+      * `slots` — trần số chuỗi chạy đồng thời (`luat_nhan` luật 1).
+        `LTT_ADMISSION_SO_SUAT__<resource>`.
+
+    ⛔ KẸP VỀ BẢN KHAI, KHÔNG BAO GIỜ NÂNG. Bản khai là TRẦN VẬT LÝ của engine:
+       `slots` = `-np` và `token_pool` = `-c` của hồ sơ llama-server
+       (`apps/ltt_llm/ngan_sach.py`, bị `test_1201`/`test_334` buộc khớp
+       `llm_gateway/deploy/llama-swap.yaml`). Engine chỉ có `-np` chuỗi; lượt thứ
+       `-np + 1` không chạy song song mà xếp hàng ẩn trong llama-server — đúng thứ
+       phòng chờ sinh ra để thay. Muốn NÂNG trần là đổi `-np`/`-c` của engine (máy
+       B) cùng hằng ở `ngan_sach.py`, rồi env ở đây chọn mức dưới trần mới.
+    ⚠️ Env đọc MỖI LẦN hỏi (đổi `app.env` rồi nạp lại env dịch vụ là đủ, không
+       deploy mã) — nhưng nssm nướng env lúc cài: `setup/nap_lai_env.ps1`.
+    """
+    from dataclasses import replace
+
+    if not am.resource:
+        return am
+    moi = {}
+    so_suat = _env_int(ENV_SO_SUAT + am.resource)
+    if so_suat is not None and am.slots > 0:
+        moi["slots"] = max(1, min(int(am.slots), so_suat))
+    pool = _env_int(ENV_POOL + am.resource)
+    if pool is not None and am.token_pool > 0:
+        moi["token_pool"] = max(1, min(int(am.token_pool), pool))
+    return replace(am, **moi) if moi else am
 
 
 def admission_luc_nop(tool, params, *, mac_dinh: str = "") -> tuple[str, int]:

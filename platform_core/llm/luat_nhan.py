@@ -19,9 +19,15 @@ mã lý do đó đi vào sổ lượt để phân tích sau):
   5. whale: ≤1 whale; whale nhường lượt tương tác   · WHALE_NHUONG / WHALE_CHAN
      đang chạy tối đa `cho_whale_toi_da_s`, quá thì
      whale thành CHẶN: không nhận lượt nào khác
-  6. FCFS chặt: người chờ đứng TRƯỚC chặn lượt này  · XEP_SAU
-     (trừ người chỉ vướng trần tài khoản, và whale
-     đang nhường) — chống bỏ đói phiên dài
+  6. FCFS có BACKFILL CHẶN (L-12b, 17/09/2026):     · NHUONG_LUOT_LON / XEP_SAU
+     a. người chờ lâu hơn `cho_backfill_toi_da_s` mà
+        chưa vừa ngân sách ⇒ CHẶN mọi lượt trẻ hơn
+        (chống bỏ đói lượt lớn — cận trên có số);
+     b. người đứng TRƯỚC chặn lượt này, TRỪ người chỉ
+        vướng trần tài khoản, whale đang nhường, whale
+        đang kẹt sau whale khác, và người chưa vừa
+        ngân sách còn trong cửa sổ backfill
+        (⇒ lượt sau VỪA pool được vào trước — backfill)
 
 ⛔ llama.cpp KHÔNG preempt được lượt đang chạy (b10689). Nên thứ tự hàng một mình
    không cứu người đang chờ màn hình. Đòn bẩy TỪNG là chừa slot; từ 14/09/2026
@@ -66,6 +72,9 @@ WHALE_CHAN = "whale_chan"
 XEP_SAU = "xep_sau"
 #: Nhóm GPU đang cư trú cho thành viên KHÁC (D01 B) — xem `llm/residency.py`.
 CHO_RESIDENCY = "cho_residency"
+#: Có lượt chờ LÂU HƠN cửa sổ backfill mà chưa vừa ngân sách KV — mọi lượt trẻ
+#: hơn nhường để pool rút về cho nó (L-12b, chống bỏ đói lượt lớn).
+NHUONG_LUOT_LON = "nhuong_luot_lon"
 
 
 @dataclass(frozen=True)
@@ -87,6 +96,10 @@ class ThamSo:
     #:    nền tảng chứ không riêng 3090. `admission.xet_va_giu` chỉ hạ nó xuống
     #:    khi bản khai của app nói tài nguyên này CÓ nhóm cư trú.
     residency_mo: bool = True
+    #: Cửa sổ BACKFILL (L-12b): lượt chưa vừa ngân sách KV nhường lượt sau vừa
+    #: pool tối đa bấy nhiêu giây, rồi thành chặn. Nguồn: `tham_so_da_luot`
+    #: (`LTT_LLM_CHO_BACKFILL_S`); mặc định ở đây phải bằng mặc định ở đó.
+    cho_backfill_toi_da_s: float = 120.0
 
 
 @dataclass(frozen=True)
@@ -176,6 +189,24 @@ def _whale_dang_nhuong(l: Luot, ts: ThamSo) -> bool:
     return l.la_whale and l.tuoi_s < ts.cho_whale_toi_da_s
 
 
+def _vua_ngan_sach(l: Luot, dang_giu: list[Luot], ts: ThamSo) -> bool:
+    """`l` có vừa pool KV NGAY BÂY GIỜ không (bỏ qua mọi luật hàng). pool 0 ⇒ luôn vừa."""
+    return ts.pool <= 0 or sum(g.token_dat_truoc for g in dang_giu) + l.token_dat_truoc <= ts.pool
+
+
+def _ket_sau_whale(l: Luot, dang_giu: list[Luot]) -> bool:
+    """Whale đang chờ trong khi một whale KHÁC đang chạy: nó không thể được nhận
+    cho tới khi whale kia xong, bất kể ai khác làm gì.
+
+    🔴 L-12b: trước 17/09 một whale như thế, chờ quá 30 s, CHẶN mọi lượt khác
+       (luật 5 `WHALE_CHAN` và luật 6 `XEP_SAU`) — suốt cả lượt whale đang chạy
+       (~4,5 phút cho 150K). Chặn không mua được gì cho nó: slot và pool nhường ra
+       không làm whale đang chạy xong sớm hơn. Nay nó đứng ngoài phép chặn cho tới
+       khi whale kia xong; từ lúc đó luật 5/6 thường áp lại — cận trên vẫn có số.
+    """
+    return l.la_whale and any(g.la_whale for g in dang_giu)
+
+
 def xet(yc: Luot, dang_giu: Iterable[Luot], dang_cho: Iterable[Luot],
         ts: ThamSo) -> PhanXu:
     """Có nhận `yc` ngay bây giờ không. `dang_cho` có thể chứa chính `yc`."""
@@ -210,14 +241,31 @@ def xet(yc: Luot, dang_giu: Iterable[Luot], dang_cho: Iterable[Luot],
             return PhanXu(False, WHALE_NHUONG)
         if yc.tuoi_s < ts.cho_whale_toi_da_s and any(g.lop == TUONG_TAC for g in giu):
             return PhanXu(False, WHALE_NHUONG)
-    elif any(c.la_whale and c.tuoi_s >= ts.cho_whale_toi_da_s for c in cho_khac):
+    elif any(c.la_whale and c.tuoi_s >= ts.cho_whale_toi_da_s
+             and not _ket_sau_whale(c, giu) for c in cho_khac):
         return PhanXu(False, WHALE_CHAN)
-    # 6. FCFS chặt giữa những người chờ
+    # 6a. chống bỏ đói lượt lớn: ai chờ LÂU HƠN yc, quá cửa sổ backfill, mà chưa
+    #     vừa pool ⇒ yc nhường. Chỉ người LÂU HƠN mới chặn — hai lượt lớn không
+    #     bao giờ chặn lẫn nhau (người chờ lâu nhất không có ai chặn nó), và chỉ
+    #     lớp cao hơn hoặc bằng — job nền không chặn khách đang ngồi đợi.
+    hang_yc = _HANG.get(yc.lop, 9)
+    for c in cho_khac:
+        if (_HANG.get(c.lop, 9) <= hang_yc and c.tuoi_s >= ts.cho_backfill_toi_da_s
+                and (c.tuoi_s, c.id) > (yc.tuoi_s, yc.id)
+                and not _vua_ngan_sach(c, giu, ts) and not _ket_sau_whale(c, giu)):
+            return PhanXu(False, NHUONG_LUOT_LON)
+    # 6b. FCFS, có backfill: yc đã qua luật 1–2 nên VỪA slot và pool.
     ds = cho_tat_ca if any(c.id == yc.id for c in cho_tat_ca) else cho_tat_ca + [yc]
     for c in sap_xep_cho(ds, giu, ts):
         if c.id == yc.id:
             break
         if _vuong_tran_tai_khoan(c, giu, cho_tat_ca, ts) or _whale_dang_nhuong(c, ts):
+            continue
+        if _ket_sau_whale(c, giu):
+            continue
+        # BACKFILL: người trước chưa vừa pool, còn trong cửa sổ ⇒ yc vừa thì vào.
+        # Quá cửa sổ thì 6a đã chặn yc ở trên (nếu người ấy lâu hơn yc).
+        if c.tuoi_s < ts.cho_backfill_toi_da_s and not _vua_ngan_sach(c, giu, ts):
             continue
         return PhanXu(False, XEP_SAU)
     return PhanXu(True)

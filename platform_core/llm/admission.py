@@ -298,6 +298,7 @@ def xet_va_giu(
     waiter_id: str = "",
     tuoi_cho_s: float = 0.0,
     cho_whale_toi_da_s: float = 30.0,
+    cho_backfill_toi_da_s: float | None = None,
     now: datetime | None = None,
 ) -> tuple[ExecutionLease | None, str]:
     """Xét theo `luat_nhan` rồi giành một slot. Trả `(lease | None, mã lý do)`.
@@ -349,9 +350,14 @@ def xet_va_giu(
                         lop=lop or luat_nhan.TUONG_TAC,
                         token_dat_truoc=int(token_dat_truoc), la_whale=bool(la_whale),
                         tuoi_s=float(tuoi_cho_s))
+    if cho_backfill_toi_da_s is None:
+        # Cửa sổ backfill (L-12b) đọc cấu hình ở đây để năm cửa gọi (stream,
+        # ChatLTT, đồng bộ, job, planner) không phải mỗi cửa tự truyền một số.
+        from platform_core.llm import tham_so_da_luot
+        cho_backfill_toi_da_s = tham_so_da_luot.doc().cho_backfill_toi_da_s
     px = luat_nhan.xet(yc, giu, cho, luat_nhan.ThamSo(
         so_slot=slots, pool=int(token_pool), cho_whale_toi_da_s=cho_whale_toi_da_s,
-        residency_mo=residency_mo))
+        residency_mo=residency_mo, cho_backfill_toi_da_s=float(cho_backfill_toi_da_s)))
     if not px.nhan:
         from platform_core.public_api import metrics
         metrics.increment(metrics.ADMISSION_REJECTED)

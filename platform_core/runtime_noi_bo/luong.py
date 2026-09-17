@@ -357,9 +357,12 @@ def tien_kiem(db, *, user_id: str, tool_name: str, than: dict, duong: str,
                   cua=cua, correlation_id=correlation_id)
     if tk.dung_phong_cho:
         try:
-            phong_cho.kiem_phong(db, resource=tai_nguyen, token_prefill_moi=tk.token_prefill_moi,
+            # L-12b: phòng chờ chỉ chặn ĐỘ DÀI HÀNG; "có vừa pool KV không" là
+            # việc của `luat_nhan` luật 2 lúc xét nhận — lượt chưa vừa thì CHỜ.
+            phong_cho.kiem_phong(db, resource=tai_nguyen,
                                  so_nguoi_toi_da=ts.so_nguoi_cho_toi_da,
-                                 token_prefill_toi_da=ts.token_prefill_cho_toi_da)
+                                 la_whale=tk.la_whale,
+                                 so_ca_voi_toi_da=ts.so_ca_voi_cho_toi_da)
         except phong_cho.PhongDay as e:
             raise DangBan(e.ly_do, nguon="phong_day", tai_nguyen=tai_nguyen,
                           thu_lai_sau_s=15) from None
@@ -577,7 +580,7 @@ def luong_co_cho(tk: TienKiem, *, loi_sse: Callable[[str, str, str], bytes],
     from platform_core.public_api import metrics
 
     ts = tham_so_da_luot.doc()
-    han = ts.cho_stream_toi_da_s if han_s is None else han_s
+    han = ts.han_cho_stream(tk.la_whale) if han_s is None else han_s
     moi_nhip = ts.nhip_tim_cho_s if nhip_s is None else nhip_s
     gen, db_luong = _phien_moi()
     try:
@@ -1337,7 +1340,7 @@ def mo_luong(db, *, user_id: str, tool_name: str, params: dict,
         # Chốt giao dịch của bên gọi trước khi các phiên MỚI ghi dòng chờ — đường
         # cũ `chuan_bi` cũng commit phiên này (sau khi giữ tiền).
         db.commit()
-        cho = vao_va_cho(tk, db_luong=db, han_s=ts.cho_stream_toi_da_s)
+        cho = vao_va_cho(tk, db_luong=db, han_s=ts.han_cho_stream(tk.la_whale))
         t_nhip = time.monotonic()
         try:
             while True:

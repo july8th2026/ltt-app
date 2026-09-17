@@ -146,12 +146,112 @@ def test_whale_con_tre_thi_nguoi_nho_duoc_vuot():
 
 # ── 6. FCFS chặt ─────────────────────────────────────────────────────────────
 
-def test_nguoi_dung_truoc_chua_vua_thi_nguoi_sau_cho():
-    """Chống bỏ đói phiên dài: lượt nhỏ không được chen mãi qua lượt lớn."""
-    giu = [luot("g", user="x", tok=120_000)]
-    lon = luot("lon", user="a", tok=100_000, tuoi=10)   # 220K > pool: chưa vừa
-    nho = luot("nho", user="b", tok=5_000, tuoi=1)
-    assert L.xet(nho, giu, [lon, nho], TS4) == L.PhanXu(False, L.XEP_SAU)
+# ── 6. BACKFILL có chặn — L-12b, chủ dự án chốt 17/09/2026 ─────────────────
+#
+# Luật: Σ token đặt chỗ của lượt ĐANG CHẠY + lượt xin ≤ pool KV (`-kvu`: một bể
+# `-c` chung cho mọi slot). Lượt chưa vừa thì CHỜ; lượt sau vừa pool thì được vào
+# trước (backfill) — nhưng chỉ trong `cho_backfill_toi_da_s`; quá thì lượt lớn
+# chặn mọi lượt trẻ hơn tới khi pool rút đủ (chống bỏ đói).
+
+POOL_38 = 221_184                      # `apps/ltt_llm/ngan_sach.py` — 3.8, `-c`
+TS38 = L.ThamSo(so_slot=3, pool=POOL_38, cho_whale_toi_da_s=30.0, lao_hoa_s=300.0,
+                cho_backfill_toi_da_s=120.0)
+
+
+def test_VI_DU_CHU_DU_AN_110K_cho_55K_backfill_roi_110K_chay():
+    """Ví dụ nguyên văn của chủ dự án (17/09).
+
+    job1 15K + job2 100K đang chạy; job3 110K ⇒ 225K > pool ⇒ CHỜ (không 429).
+    job4 55K tới sau ⇒ 170K ≤ pool ⇒ được phục vụ TRƯỚC job3. Nhả ngân sách ⇒ job3 chạy.
+    """
+    job1, job2 = luot("j1", user="a", tok=15_000), luot("j2", user="b", tok=100_000)
+    job3 = luot("j3", user="c", tok=110_000, tuoi=20)
+    job4 = luot("j4", user="d", tok=55_000, tuoi=1)
+    giu, cho = [job1, job2], [job3, job4]
+
+    assert L.xet(job3, giu, cho, TS38) == L.PhanXu(False, L.CHO_NGAN_SACH)
+    assert L.xet(job4, giu, cho, TS38).nhan, "backfill: 55K vua pool phai vao truoc 110K"
+
+    # job4 chạy; job2 xong ⇒ 15K + 55K + 110K = 180K ≤ pool ⇒ job3 được nhận.
+    giu2 = [job1, luot("j4", user="d", tok=55_000)]
+    assert L.xet(luot("j3", user="c", tok=110_000, tuoi=200), giu2, [job3], TS38).nhan
+
+
+def test_DOI_CHUNG_luot_sau_KHONG_vua_pool_thi_khong_backfill():
+    """Đối chứng cho ca trên: backfill chỉ dành cho lượt VỪA, không phải "ai sau cũng vào"."""
+    giu = [luot("j1", user="a", tok=15_000), luot("j2", user="b", tok=100_000)]
+    job3 = luot("j3", user="c", tok=110_000, tuoi=20)
+    job4 = luot("j4", user="d", tok=110_000, tuoi=1)
+    assert L.xet(job4, giu, [job3, job4], TS38) == L.PhanXu(False, L.CHO_NGAN_SACH)
+
+
+def test_CHONG_BO_DOI_qua_cua_so_backfill_luot_lon_chan_luot_tre_hon():
+    """Cận trên có số: chờ quá `cho_backfill_toi_da_s` thì không ai trẻ hơn chen nữa.
+
+    Sau đó lượt lớn chờ tối đa bằng thời gian các lượt ĐANG CHẠY nhả đủ pool.
+    """
+    giu = [luot("j1", user="a", tok=15_000), luot("j2", user="b", tok=100_000)]
+    job3 = luot("j3", user="c", tok=110_000, tuoi=121)
+    job4 = luot("j4", user="d", tok=55_000, tuoi=1)
+    assert L.xet(job4, giu, [job3, job4], TS38) == L.PhanXu(False, L.NHUONG_LUOT_LON)
+
+
+def test_chong_bo_doi_chan_ca_nguoi_xep_TRUOC_theo_so_giu():
+    """`sap_xep_cho` đặt người giữ ít suất hơn lên trước tuổi chờ. Luật 6a phải chặn
+    theo TUỔI, không theo thứ tự xếp — nếu không, khách mới của tài khoản rảnh
+    chen mãi qua lượt lớn của tài khoản đang giữ một suất."""
+    giu = [luot("j1", user="c", tok=15_000), luot("j2", user="b", tok=100_000)]
+    job3 = luot("j3", user="c", tok=110_000, tuoi=121)      # user c đang giữ j1
+    job4 = luot("j4", user="d", tok=5_000, tuoi=1)
+    assert L.xet(job4, giu, [job3, job4], TS38) == L.PhanXu(False, L.NHUONG_LUOT_LON)
+
+
+def test_hai_luot_lon_qua_cua_so_KHONG_chan_lan_nhau():
+    """Deadlock nếu luật 6a đối xứng: người chờ lâu nhất không bị ai chặn."""
+    giu = [luot("g", user="x", tok=100_000)]
+    a = luot("a", user="a", tok=150_000, tuoi=500)
+    b = luot("b", user="b", tok=150_000, tuoi=300)
+    cho = [a, b]
+    # `a` bị ngân sách giữ lại (đúng), không bị `b` chặn.
+    assert L.xet(a, giu, cho, TS38) == L.PhanXu(False, L.CHO_NGAN_SACH)
+    # Pool rút ⇒ `a` vào; `b` (trẻ hơn) không được chen trước `a`.
+    assert L.xet(a, [], cho, TS38).nhan
+    assert L.xet(b, [], cho, TS38) == L.PhanXu(False, L.XEP_SAU)
+
+
+def test_job_nen_qua_cua_so_khong_chan_khach_tuong_tac():
+    giu = [luot("g", user="x", tok=100_000)]
+    nen = luot("n", user="job", lop=L.NEN, tok=150_000, tuoi=500)
+    khach = luot("k", user="k", tok=5_000, tuoi=1)
+    assert L.xet(khach, giu, [nen, khach], TS38).nhan
+
+
+def test_whale_ket_sau_whale_dang_chay_KHONG_chan_luot_nho():
+    """🔴 L-12b: trước 17/09 whale thứ hai chờ >30 s ⇒ `WHALE_CHAN` mọi lượt khác
+    SUỐT lượt whale đang chạy (~4,5 phút cho 150K) — mà chặn không làm whale kia
+    xong sớm hơn. Ca này ĐỎ trên luật cũ."""
+    giu = [luot("w1", user="a", tok=150_000, whale=True)]
+    w2 = luot("w2", user="b", tok=30_000, whale=True, tuoi=200)
+    nho = luot("nho", user="c", tok=5_000, tuoi=1)
+    assert L.xet(w2, giu, [w2, nho], TS38) == L.PhanXu(False, L.WHALE_NHUONG)
+    assert L.xet(nho, giu, [w2, nho], TS38).nhan
+
+
+def test_whale_ket_sau_whale_CHAN_lai_khi_whale_kia_xong():
+    """Đối chứng chống bỏ đói whale: whale đang chạy xong ⇒ whale đã chờ lâu lại chặn."""
+    w2 = luot("w2", user="b", tok=150_000, whale=True, tuoi=200)
+    nho = luot("nho", user="c", tok=5_000, tuoi=1)
+    giu = [luot("t", user="a", tok=100_000)]              # w2 chưa vừa pool
+    assert L.xet(nho, giu, [w2, nho], TS38) == L.PhanXu(False, L.WHALE_CHAN)
+
+
+def test_whale_moi_VAN_nhuong_whale_dang_chay_cong_bang_prefill():
+    """Luật ≤1 whale là luật CÔNG BẰNG PREFILL, không phải luật ngân sách: một
+    prompt 55K MỚI (không cache) vẫn chờ whale đang chạy dù vừa pool. Phiên dài
+    gửi lượt tiếp (tiền tố đã cache, `uoc_moi`) KHÔNG là whale nên vẫn backfill."""
+    giu = [luot("j2", user="b", tok=100_000, whale=True)]
+    assert L.xet(luot("j4", user="d", tok=55_000, whale=True, tuoi=40), giu, [], TS38)         == L.PhanXu(False, L.WHALE_NHUONG)
+    assert L.xet(luot("j4", user="d", tok=55_000, tuoi=1), giu, [], TS38).nhan
 
 
 def test_nguoi_truoc_chi_vuong_tran_tai_khoan_thi_khong_chan():
@@ -196,3 +296,79 @@ def test_tran_tai_khoan_va_tran_nen_hop_ly_moi_n(n):
     assert L.tran_nen(n) == n
     #: chừa 1 ⇒ hành vi cũ, và sàn `max(1, …)` giữ cho N = 1 vẫn chạy được nền.
     assert L.tran_nen(n, 1) == max(1, n - 1)
+
+
+# ── Tính chất trên MÔ PHỎNG hàng đợi (L-12b) ────────────────────────────────
+
+def _chay(ts, den, so_giay):
+    """Mô phỏng theo giây. `den`: danh sách `(giây tới, id, token, thời lượng)`.
+
+    Mỗi giây mọi người chờ hỏi `xet` theo thứ tự tới (như nhịp 0,5 s của
+    `phong_cho`); lượt xong được nhả đúng một lần. Trả `(vi_pham, giây_nhận)`.
+    """
+    giu: list[tuple[L.Luot, int]] = []
+    cho: list[tuple[str, str, int, int, int]] = []
+    nhan: dict[str, int] = {}
+    vi_pham = []
+    den = sorted(den)
+    for t in range(so_giay):
+        giu = [(g, het) for g, het in giu if het > t]
+        while den and den[0][0] <= t:
+            toi, rid, tok, dai = den.pop(0)
+            cho.append((rid, f"u-{rid}", tok, dai, toi))
+        for rid, _uid, _tok, dai, _toi in list(cho):
+            ds = [L.Luot(id=c[0], user_id=c[1], token_dat_truoc=c[2], tuoi_s=float(t - c[4]))
+                  for c in cho]
+            ban = next(x for x in ds if x.id == rid)
+            if L.xet(ban, [g for g, _ in giu], ds, ts).nhan:
+                giu.append((ban, t + dai))
+                cho = [c for c in cho if c[0] != rid]
+                nhan[rid] = t
+                if (sum(g.token_dat_truoc for g, _ in giu) > ts.pool
+                        or len(giu) > ts.so_slot):
+                    vi_pham.append((t, [g.token_dat_truoc for g, _ in giu]))
+    return vi_pham, nhan
+
+
+@pytest.mark.parametrize("seed", [1, 7, 42])
+def test_KHONG_BAO_GIO_nhan_vuot_pool_hay_vuot_so_suat(seed):
+    """Bất biến an toàn: `-kvu` tràn pool thì llama.cpp huỷ MỌI slot đang chạy.
+    Tải gần bão hoà, đa số lượt nhỏ, 8 % lượt 100–185K."""
+    import random
+
+    rng = random.Random(seed)
+    den = []
+    for i in range(160):
+        lon = rng.random() < 0.08
+        den.append((rng.randint(0, 3_000), f"r{i:04d}",
+                    rng.randint(100_000, 185_000) if lon else rng.randint(2_000, 40_000),
+                    rng.randint(5, 120)))
+    vi_pham, nhan = _chay(TS38, den, 4_000)
+    assert not vi_pham, f"nhan vuot pool/so suat: {vi_pham[:3]}"
+    assert len(nhan) > 100, "mo phong khong phuc vu duoc ai => phep kiem vo dung"
+
+
+def _dong_nho_lien_tuc():
+    """Hai lượt 60K đang chạy lúc 0; lượt LỚN 185K tới ở giây 1; từ giây 2 cứ 20 s
+    một lượt 50K chạy 100 s. Luôn có ≥1 lượt nhỏ chạy ⇒ 185K + 50K > pool: nếu
+    backfill không có chặn, lượt lớn KHÔNG BAO GIỜ vừa."""
+    den = [(0, "a", 60_000, 100), (0, "b", 60_000, 150), (1, "LON", 185_000, 60)]
+    den += [(2 + 20 * k, f"n{k:03d}", 50_000, 100) for k in range(80)]
+    return den
+
+
+def test_CHONG_BO_DOI_luot_lon_duoc_nhan_trong_can_tren():
+    """Cận trên: cửa sổ backfill (120 s) + lượt nhỏ dài nhất đang chạy (100 s)."""
+    _, nhan = _chay(TS38, _dong_nho_lien_tuc(), 1_700)
+    assert "LON" in nhan, "luot lon bi bo doi"
+    assert nhan["LON"] - 1 <= 120 + 100 + 2, nhan["LON"]
+    assert sum(1 for k in nhan if k.startswith("n")) >= 3, "khong backfill luot nao"
+
+
+def test_DOI_CHUNG_bo_chan_backfill_thi_luot_lon_bi_bo_doi():
+    """Cùng dòng khách, cửa sổ backfill vô hạn ⇒ lượt lớn chết đói. Ca này là lý do
+    ca trên chứng minh được gì (memory "số 0 cần đối chứng")."""
+    from dataclasses import replace
+
+    _, nhan = _chay(replace(TS38, cho_backfill_toi_da_s=10**9), _dong_nho_lien_tuc(), 1_700)
+    assert "LON" not in nhan

@@ -636,3 +636,33 @@ Chủ dự án xác nhận card 5060 chưa từng tràn VRAM. Vì vậy mặc đ
 `LTT_LLM_VRAM_TRONG_TOI_THIEU_MB__qwen35-api=0`. Cơ chế sàn vẫn được giữ và có
 thể bật lại bằng env nếu sau này có bằng chứng OOM. Engine 3.5 giữ nguyên
 context, KV q8_0, sampling và reasoning; thay đổi này chỉ bỏ một cửa từ chối giả.
+
+---
+
+## L-22 — Nhận theo NGÂN SÁCH KV, backfill có chặn, gỡ trần token phòng chờ (2026-09-17)
+
+> ⚠️ Trùng mã: `L-12` của bảng trên (dọn VRAM 3090) **khác** `L-12` của
+> `SO_LOI_DO_TAI.md` (request prefill lớn bị đuổi). Mục này đóng cái thứ hai
+> (`SO_LOI_DO_TAI.md` §L-12b).
+
+Chủ dự án chốt 17/09: LTTCODE chạy phiên tới ~150K token; lượt lớn **chờ trong
+hàng** (có nhịp tim, công bằng) thay vì 429; *"chấp nhận chậm để lấy chất lượng"*.
+Luật: Σ token đặt chỗ của lượt ĐANG CHẠY + lượt xin ≤ pool KV của model (`-kvu`);
+lượt chưa vừa thì chờ, lượt sau vừa thì vào trước (backfill), chờ quá một cửa sổ
+thì ngừng backfill sau nó.
+
+- Gỡ `token_prefill_cho_toi_da` (57.000, `LTT_LLM_TOKEN_PREFILL_CHO`). Nguồn gốc
+  thật (spec multijob §9/§12): trần **backpressure** "≈ 60 s × ~950 tok/s" trên
+  Σ token MỚI của người CHỜ, không phải chia cửa sổ cho 3 suất — nhưng nó là luật
+  thứ hai cho câu "có vừa không" và đuổi oan (đo được, `SO_LOI_DO_TAI.md`).
+- Phòng chờ chỉ chặn độ dài hàng: 32 người, **2 whale** (`LTT_LLM_SO_CA_VOI_CHO`).
+- `luat_nhan` 6a/6b: backfill trong `LTT_LLM_CHO_BACKFILL_S` (120 s), quá thì
+  `nhuong_luot_lon`. Whale kẹt sau whale đang chạy không chặn ai.
+- Whale chờ tối đa `LTT_LLM_CHO_STREAM_WHALE_S` (900 s) ở cửa stream.
+- Số suất và pool là **hai núm độc lập theo tài nguyên**:
+  `LTT_ADMISSION_SO_SUAT__<resource>`, `LTT_ADMISSION_POOL__<resource>` — chỉ HẠ
+  dưới bản khai (`apps/ltt_llm/ngan_sach.py`: `SO_SLOT` = `-np`, `POOL_KV` = `-c`).
+  Nâng trên trần = đổi engine máy B + hằng `ngan_sach.py` (test_1201/test_334 buộc).
+- Giữ: ≤1 whale chạy (công bằng prefill, cả máy A và cổng máy B), 413 trước 200,
+  giữ tiền SAU khi được nhận (INV-MJ-1), ba lớp nhả suất.
+
