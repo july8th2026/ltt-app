@@ -4689,7 +4689,7 @@ code.adm-ten-ky-thuat{background:transparent;border:0;padding:0;font-family:var(
 /* Chi tiết: tiêu đề có nghĩa + khoá chính nhỏ, mờ. */
 .ltt-chitiet-tieude{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
 .ltt-khoa-chinh{font-size:var(--fs-caption);font-weight:400;color:var(--text-muted);overflow-wrap:anywhere}
-.ltt-khoa-chinh code{background:transparent;padding:0;color:var(--text-secondary)}
+.ltt-khoa-chinh code{background:transparent;padding:0;color:var(--text-secondary);font-size:var(--fs-helper)}
 /* Huỷ: màu chữ phụ theo token (không xanh-xám của Tabler). */
 [data-bs-theme=dark] .ltt-form-nut a.btn.ltt-huy,[data-bs-theme=dark] .ltt-form-nut a.btn.ltt-huy:visited{color:var(--text-secondary);--tblr-btn-color:var(--text-secondary)}
 [data-bs-theme=dark] .ltt-form-nut a.btn.ltt-huy:hover{color:var(--text-primary)}

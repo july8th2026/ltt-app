@@ -19106,3 +19106,6 @@ msgstr "admin · data tables"
 msgid "Đường dẫn"
 msgstr "Breadcrumb"
 
+msgid "Chi tiết %(ten)s"
+msgstr "%(ten)s details"
+

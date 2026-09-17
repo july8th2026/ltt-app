@@ -1212,7 +1212,7 @@ class RevenueView(_AnTrongMenuSqlAdmin, BaseView):
             rows_tien = "".join(
                 f'<tr><td class="muted u-fs12">'
                 f'{n.created_at:%d/%m/%Y %H:%M}</td>'
-                f'<td>{escape(n.hanh_dong)}</td>'
+                f'<td>{escape({"cap_credit": "Cấp credit", "xac_nhan_don_da_tra": "Xác nhận đơn đã trả"}.get(n.hanh_dong, n.hanh_dong))}</td>'
                 f'<td class="mono muted u-fs12">'
                 f'{escape((n.doi_tuong or "")[:40])}</td>'
                 f'<td class="muted u-fs12">'
