@@ -37,7 +37,7 @@ function DonDep {
     Get-CimInstance Win32_Process -Filter "Name='llama-server.exe'" |
         Where-Object { $_.CommandLine -match '--port (8290|8292|8294)(\s|$)' } |
         ForEach-Object { Stop-Process -Id $_.ProcessId -Force; 'da giet server thu pid ' + $_.ProcessId }
-    Get-ScheduledTask -TaskName 'LTT_BenchHangCho' -ErrorAction SilentlyContinue | ForEach-Object { 'task bench State=' + $_.State }
+    Get-ScheduledTask -TaskName 'LTT_BenchHangCho*' -ErrorAction SilentlyContinue | ForEach-Object { 'task bench ' + $_.TaskName + ' State=' + $_.State }
 }
 function Nha([string]$ten) {
     $m = @(Running | Where-Object { $_.model -eq $ten })
@@ -98,8 +98,8 @@ switch ($Buoc) {
     'khoi_phuc' {
         DonDep
         Start-Sleep -Seconds 3
-        $t = Get-ScheduledTask -TaskName 'LTT_BenchHangCho' -ErrorAction SilentlyContinue
-        if ($t -and $t.State -eq 'Running') { throw 'task bench con chay - Stop-ScheduledTask LTT_BenchHangCho truoc' }
+        $t = @(Get-ScheduledTask -TaskName 'LTT_BenchHangCho*' -ErrorAction SilentlyContinue | Where-Object { $_.State -eq 'Running' })
+        if ($t.Count -gt 0) { throw 'task bench con chay - Stop-ScheduledTask LTT_BenchHangCho* truoc' }
         Nap 'qwen38-api'
         Nap 'qwen35-api'
         Tran 'qwen38-api'

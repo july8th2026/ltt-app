@@ -14,10 +14,13 @@ param(
     [switch]$Go,
     [string]$Goc = 'E:\AI\ltt_dual\bench_hang_cho',
     [string]$Python = 'C:\Python313\pythonw.exe',
-    [string]$TenTask = 'LTT_BenchHangCho'
+    [string]$TenTask = 'LTT_BenchHangCho',
+    # Song song (17/09): moi tien trinh mot thu muc ket qua + mot ten task rieng.
+    [string]$Ra = '',
+    [string]$Them = ''
 )
 $ErrorActionPreference = 'Stop'
-$Ra = Join-Path $Goc 'ket_qua'
+if (-not $Ra) { $Ra = Join-Path $Goc 'ket_qua' }
 
 if ($XemTrangThai) {
     $t = Get-ScheduledTask -TaskName $TenTask -ErrorAction SilentlyContinue
@@ -44,7 +47,7 @@ $cu = Get-ScheduledTask -TaskName $TenTask -ErrorAction SilentlyContinue
 if ($cu -and $cu.State -eq 'Running') { throw 'task ' + $TenTask + ' dang chay - doi xong hoac dung truoc' }
 New-Item -ItemType Directory -Force -Path $Ra | Out-Null
 
-$doi = '"' + (Join-Path $Goc 'do_b.py') + '" --do ' + $Do + ' --han-phut ' + $HanPhut + ' --ra "' + $Ra + '"'
+$doi = '"' + (Join-Path $Goc 'do_b.py') + '" --do ' + $Do + ' --han-phut ' + $HanPhut + ' --ra "' + $Ra + '" ' + $Them
 $act = New-ScheduledTaskAction -Execute $Python -Argument $doi -WorkingDirectory $Goc
 # Tran cua Task Scheduler = ngan sach + 10 phut (do_b.py tu gac o ngan sach + 2 phut).
 $set = New-ScheduledTaskSettingsSet -DontStopOnIdleEnd -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `

@@ -28,6 +28,15 @@ NGAN SACH: --han-phut la tran CUNG cho ca lo; moi phep co tran rieng (HAN_PHEP).
   Mot luong gac: qua han + 120 s => giet server thu va os._exit(3).
 DON DEP: finally + luong gac giet MOI llama-server co `--port 829x` (chi cong thu).
 KET QUA: <ra>\\<do>.jsonl tung dong ngay khi co; nhip tim <ra>\\trang_thai.json.
+
+SONG SONG (them 17/09 theo chu du an - production chay HAI card cung luc):
+  --song-song  preflight chi xet util card DICH (card kia ghi lai de doi chieu);
+               moi tien trinh chi quet/giet CONG CUA MINH (tinh tu --do); moi tien
+               trinh dung --ra rieng (trang_thai.json/nhat_ky.txt khong dung chung).
+  ctrl35/ctrl38  doi chung: np3 production, 3 luot don 1k->512 + 1 prefill 32k.
+               Chay co lap (card kia ranh) roi chay song song de do nhieu cheo.
+  --m1-np 4,6  chi chay cac np nay trong m1 (tiep tuc sau khi np3 da do).
+  he_thong.jsonl  CPU% va RAM may B moi 10 s (ctypes, khong sinh tien trinh con).
 """
 from __future__ import annotations
 
@@ -81,12 +90,18 @@ def args38(port, np_=3, c=221184, them=()):
 
 
 # Tran rieng tung phep (phut) - uoc luong x ~1,4.
-HAN_PHEP = {"m1": 45, "m3_35": 26, "m5": 10, "m6": 12, "m3_38": 32, "m2": 35}
+HAN_PHEP = {"m1": 45, "m3_35": 26, "m5": 10, "m6": 12, "m3_38": 32, "m2": 35,
+            "ctrl35": 6, "ctrl38": 7}
 # VRAM toi da cua card dich de coi la "production da nha" (MiB; desktop giu ~0,3-0,9 GB).
 VRAM_SACH = {UUID35: 1500, UUID38: 1200}
 
 RA = "."
 HAN = 0.0
+SONG_SONG = False
+CONG_CUA_TOI: tuple = CONG_THU
+M1_NP: tuple = (3, 4, 6)
+CONG_PHEP = {"m1": P35, "m3_35": P35, "m6": P35, "ctrl35": P35, "m5": PTRAN,
+             "m3_38": P38, "m2": P38, "ctrl38": P38}
 DANG_CHAY: list = []          # Popen server thu dang song
 _khoa = threading.Lock()
 
@@ -314,6 +329,52 @@ def nvsmi() -> dict:
     return ra
 
 
+_CPU_TRUOC: list = []
+
+
+def he_thong() -> dict:
+    """CPU% (tu lan goi truoc) va RAM may B qua ctypes - khong sinh tien trinh con."""
+    import ctypes
+    from ctypes import wintypes
+
+    class MS(ctypes.Structure):
+        _fields_ = [("dwLength", wintypes.DWORD), ("dwMemoryLoad", wintypes.DWORD),
+                    ("ullTotalPhys", ctypes.c_ulonglong), ("ullAvailPhys", ctypes.c_ulonglong),
+                    ("ullTotalPageFile", ctypes.c_ulonglong), ("ullAvailPageFile", ctypes.c_ulonglong),
+                    ("ullTotalVirtual", ctypes.c_ulonglong), ("ullAvailVirtual", ctypes.c_ulonglong),
+                    ("ullAvailExtendedVirtual", ctypes.c_ulonglong)]
+    try:
+        ms = MS()
+        ms.dwLength = ctypes.sizeof(MS)
+        ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(ms))
+        i, k, u = wintypes.FILETIME(), wintypes.FILETIME(), wintypes.FILETIME()
+        ctypes.windll.kernel32.GetSystemTimes(ctypes.byref(i), ctypes.byref(k), ctypes.byref(u))
+        v = [(x.dwHighDateTime << 32) | x.dwLowDateTime for x in (i, k, u)]
+        cpu = None
+        if _CPU_TRUOC:
+            di, dk, du = (v[n] - _CPU_TRUOC[n] for n in range(3))
+            if dk + du > 0:
+                cpu = round(100.0 * (dk + du - di) / (dk + du), 1)
+        _CPU_TRUOC[:] = v
+        return {"cpu_pct": cpu, "ram_dung_gb": round((ms.ullTotalPhys - ms.ullAvailPhys) / 2 ** 30, 1),
+                "ram_trong_gb": round(ms.ullAvailPhys / 2 ** 30, 1), "ram_tai_pct": ms.dwMemoryLoad}
+    except Exception as e:                                   # noqa: BLE001
+        return {"loi": str(e)}
+
+
+def lay_mau_he_thong() -> None:
+    while True:
+        try:
+            d = he_thong()
+            d["gpu"] = {u[-6:]: g for u, g in nvsmi().items()}
+            d["luc"] = time.strftime("%Y-%m-%dT%H:%M:%S")
+            with _khoa, open(os.path.join(RA, "he_thong.jsonl"), "a", encoding="utf-8") as f:
+                f.write(json.dumps(d) + "\n")
+        except Exception:                                    # noqa: BLE001
+            pass
+        time.sleep(10)
+
+
 def bo_nho_tien_trinh(pid: int) -> dict:
     ps = ("$d=0;$s=0;foreach($c in (Get-Counter '\\GPU Process Memory(pid_%d_*)\\Dedicated Usage',"
           "'\\GPU Process Memory(pid_%d_*)\\Shared Usage' -ErrorAction Stop).CounterSamples)"
@@ -362,6 +423,8 @@ def preflight(do: str, uuid_dich: str) -> None:
             mau.setdefault(u, []).append(g["util"])
         time.sleep(0.5)
     for u, ds in mau.items():
+        if SONG_SONG and u != uuid_dich:
+            continue
         if statistics.mean(ds) > 10:
             ly_do.append("GPU %s util trung binh %.1f%% > 10%%" % (u[-6:], statistics.mean(ds)))
     g = nvsmi().get(uuid_dich)
@@ -372,6 +435,7 @@ def preflight(do: str, uuid_dich: str) -> None:
                      "xem cua_so_b.ps1 -Buoc nha35/nha38/dung_comfy)" % (uuid_dich[-6:], g["used"],
                                                                           VRAM_SACH[uuid_dich]))
     ghi(do, {"su_kien": "preflight", "dat": not ly_do, "ly_do": ly_do,
+             "song_song": SONG_SONG, "he_thong": he_thong(),
              "util_tb": {u[-6:]: round(statistics.mean(v), 1) for u, v in mau.items()}})
     if ly_do:
         raise HuyLo("; ".join(ly_do))
@@ -379,8 +443,10 @@ def preflight(do: str, uuid_dich: str) -> None:
 
 # ---------------------------------------------------------------- server thu
 def quet_cong_thu() -> None:
+    # Chi cong cua CHINH tien trinh nay (song song: tien trinh kia co cong rieng).
+    cong = "|".join(str(c) for c in CONG_CUA_TOI)
     ps = ("Get-CimInstance Win32_Process -Filter \"Name='llama-server.exe'\" | Where-Object { "
-          "$_.CommandLine -match '--port (8290|8292|8294)(\\s|$)' } | ForEach-Object { "
+          "$_.CommandLine -match '--port (" + cong + ")(\\s|$)' } | ForEach-Object { "
           "Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }")
     subprocess.run(["powershell", "-NoProfile", "-Command", ps], capture_output=True,
                    timeout=60, creationflags=0x08000000)
@@ -544,7 +610,7 @@ def hai_job(do, port, nhan, max1=8000):
 # ================================================================ PHEP DO
 def m1():
     do = "m1"
-    for np_ in (3, 4, 6):
+    for np_ in M1_NP:
         if not con(8 * 60):
             ghi(do, {"su_kien": "bo_qua_het_gio", "np": np_})
             break
@@ -792,7 +858,49 @@ def m2():
             tat_server(p)
 
 
-PHEP = {"m1": m1, "m3_35": m3_35, "m5": m5, "m6": m6, "m3_38": m3_38, "m2": m2}
+def _ctrl(do, uuid, port, mk_args):
+    """Doi chung nhieu cheo: np3 production, 3 luot don 1k->512 lien tiep + 1 prefill 32k.
+    Chay co lap (card kia ranh) roi chay song song; so decode_tps/prefill_tps."""
+    preflight(do, uuid)
+    nhip(do, "nap np3")
+    p, xanh, _ = bat_server(do, "np3", mk_args(port), uuid, port)
+    try:
+        if not xanh:
+            return
+        for lan in range(3):
+            if not con(90):
+                raise HetGio()
+            nhip(do, "don %d" % lan)
+            g0 = {u[-6:]: g for u, g in nvsmi().items()}
+            h0 = he_thong()
+            k = luong(port, body_tp(port, 1000, 512), {}, None, 600)
+            ghi(do, {"su_kien": "ctrl_don", "lan": lan, "song_song": SONG_SONG, "gpu_truoc": g0,
+                     "he_thong_truoc": h0, "he_thong_sau": he_thong(),
+                     "gpu_sau": {u[-6:]: g for u, g in nvsmi().items()},
+                     "t_dau": k.get("t_dau"), "t_cuoi": k.get("t_cuoi"), "luot": gon(k)})
+        if con(3 * 60):
+            nhip(do, "prefill 32k")
+            k = luong(port, {"model": "x", "max_tokens": 8, "ignore_eos": True,
+                             "messages": [{"role": "user", "content": prompt(port, 32000, nonce())}]},
+                      {}, None, 900)
+            ghi(do, {"su_kien": "ctrl_prefill_32k", "song_song": SONG_SONG, "he_thong": he_thong(),
+                     "gpu": {u[-6:]: g for u, g in nvsmi().items()},
+                     "t_gui": k.get("t_gui"), "t_cuoi": k.get("t_cuoi"), "luot": gon(k)})
+        ghi(do, dict({"su_kien": "vram_sau_tai", "nhan": "np3"}, **anh_vram(uuid, p.pid)))
+    finally:
+        tat_server(p)
+
+
+def ctrl35():
+    _ctrl("ctrl35", UUID35, P35, args35)
+
+
+def ctrl38():
+    _ctrl("ctrl38", UUID38, P38, args38)
+
+
+PHEP = {"m1": m1, "m3_35": m3_35, "m5": m5, "m6": m6, "m3_38": m3_38, "m2": m2,
+        "ctrl35": ctrl35, "ctrl38": ctrl38}
 
 
 def gac(han_cung):
@@ -810,17 +918,29 @@ def gac(han_cung):
 
 
 def main() -> int:
-    global RA, HAN
+    global RA, HAN, SONG_SONG, CONG_CUA_TOI, M1_NP
     ap = argparse.ArgumentParser()
     ap.add_argument("--do", required=True)
     ap.add_argument("--ra", default=r"E:\AI\ltt_dual\bench_hang_cho\ket_qua")
     ap.add_argument("--han-phut", type=float, required=True)
+    ap.add_argument("--song-song", action="store_true")
+    ap.add_argument("--m1-np", default="3,4,6")
     a = ap.parse_args()
     RA = a.ra
+    SONG_SONG = a.song_song
+    M1_NP = tuple(int(x) for x in a.m1_np.split(",") if x.strip())
+    ds_do = [x.strip() for x in a.do.split(",") if x.strip()]
+    if SONG_SONG:
+        # Chi cham cong cua cac phep minh chay - tien trinh song song co cong khac.
+        CONG_CUA_TOI = tuple(sorted({CONG_PHEP[x] for x in ds_do if x in CONG_PHEP}))
     os.makedirs(RA, exist_ok=True)
     t_lo = time.time()
     han_lo = t_lo + a.han_phut * 60
     threading.Thread(target=gac, args=(han_lo + 120,), daemon=True).start()
+    he_thong()
+    threading.Thread(target=lay_mau_he_thong, daemon=True).start()
+    ghi("lo", {"su_kien": "bat_dau_lo", "do": ds_do, "song_song": SONG_SONG,
+               "cong_cua_toi": list(CONG_CUA_TOI), "m1_np": list(M1_NP), "pid": os.getpid()})
     ma = 0
     try:
         quet_cong_thu()
