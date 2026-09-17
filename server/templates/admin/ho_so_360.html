@@ -71,7 +71,7 @@
           <tbody>
             {% for b in ho_so.but_toan %}
             <tr>
-              <td class="tnum">{{ b.created_at.strftime('%d/%m %H:%M') if b.created_at else '—' }}</td>
+              <td class="tnum">{{ b.created_at.strftime('%d/%m/%Y %H:%M') if b.created_at else '—' }}</td>
               <td>{{ b.kind }}</td>
               <td class="tnum">{{ '{:+,}'.format(b.delta) }}</td>
               <td>{{ (b.note or '')[:70] }}</td>
@@ -107,7 +107,7 @@
                 {% elif d.status == 'pending' %}<span class="dev-tt canh">Đang chờ</span>
                 {% else %}<span class="dev-tt tat">{{ d.status }}</span>{% endif %}
               </td>
-              <td class="tnum">{{ d.created_at.strftime('%d/%m %H:%M') if d.created_at else '—' }}</td>
+              <td class="tnum">{{ d.created_at.strftime('%d/%m/%Y %H:%M') if d.created_at else '—' }}</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -134,7 +134,7 @@
             <tbody>
               {% for j in ho_so.viec %}
               <tr>
-                <td class="tnum">{{ j.created_at.strftime('%d/%m %H:%M') if j.created_at else '—' }}</td>
+                <td class="tnum">{{ j.created_at.strftime('%d/%m/%Y %H:%M') if j.created_at else '—' }}</td>
                 <td>{{ j.app_slug or '—' }}</td>
                 <td>{{ j.job_type or '—' }}</td>
                 <td>
@@ -208,8 +208,8 @@
           <tbody>
             {% for p in ho_so.phien %}
             <tr>
-              <td class="tnum">{{ p.created_at.strftime('%d/%m %H:%M') if p.created_at else '—' }}</td>
-              <td class="tnum">{{ p.expires_at.strftime('%d/%m %H:%M') if p.expires_at else '—' }}</td>
+              <td class="tnum">{{ p.created_at.strftime('%d/%m/%Y %H:%M') if p.created_at else '—' }}</td>
+              <td class="tnum">{{ p.expires_at.strftime('%d/%m/%Y %H:%M') if p.expires_at else '—' }}</td>
               <td class="tnum">{{ p.ip or '—' }}</td>
               <td>{{ (p.user_agent or '—')[:60] }}</td>
             </tr>

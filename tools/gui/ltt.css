@@ -4648,3 +4648,55 @@ input[type=hidden]+.af-step{margin-top:0}
    đỏ chỉ còn cho lỗi. */
 textarea:focus,select:focus{border-color:var(--text-secondary)}
 .job-state-running .ui-progress>i,.job-state-queued .ui-progress>i{background:var(--warn)}
+/* === C4: ADMIN === */
+/* Vỏ quản trị tràn viền như SQLAdmin: bỏ lề 8px mặc định của <body>. */
+body.adm-body{margin:0}
+/* Tab cấp 3 (dưới dải mục con dạng pill) = gạch chân: hai hàng pill chồng nhau làm mất thứ bậc. */
+.adm-chrome .dev-sub.adm-tab{margin-top:0;border-bottom:1px solid var(--border-subtle)}
+.adm-chrome .dev-sub.adm-tab ul{gap:2px}
+.adm-chrome .dev-sub.adm-tab a{min-height:36px;padding:7px 14px;margin-bottom:-1px;border:0;border-bottom:2px solid transparent;
+  border-radius:0;background:transparent;color:var(--text-secondary);font-size:13px}
+.adm-chrome .dev-sub.adm-tab a:hover{background:transparent;color:var(--text-primary)}
+.adm-chrome .dev-sub.adm-tab a.active{border-bottom-color:var(--brand-fill);background:transparent;color:var(--text-primary);font-weight:600}
+/* Đoạn mô tả dưới tiêu đề mục không dính sát bảng. */
+.adm-content .u-tieu-muc+.adm-dan{margin:0 0 var(--space-3)}
+/* Một kiểu thẻ số liệu: Tài chính dùng cùng lưới + cỡ số + cỡ nhãn với API Tổng quan. */
+.adm-luoi-tai-chinh{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.adm-luoi-tai-chinh .adm-so-lon{font-size:24px;font-weight:700}
+.adm-luoi-tai-chinh .ui-card>.dim:first-child,.adm-luoi-o .ui-card>.dim:first-child{font-size:var(--fs-label);color:var(--text-secondary)}
+/* Tên kỹ thuật trong <code> cạnh nhãn Việt: không nền khối code. */
+code.adm-ten-ky-thuat{background:transparent;border:0;padding:0;font-family:var(--mono)}
+@media (max-width:640px){
+  .adm-chrome .dev-sub.adm-tab ul{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  .adm-chrome .dev-sub.adm-tab a{white-space:nowrap}
+}
+/* ── SQLAdmin (DL-004 lớp phủ) ── */
+/* Tiêu đề cột: MỘT màu; cột sắp xếp được mang mũi tên (mờ khi chưa sắp, sáng khi đang sắp). */
+[data-bs-theme=dark] .table thead th a.ltt-sapxep{display:inline-flex;align-items:center;gap:6px;color:var(--text-muted);text-decoration:none}
+[data-bs-theme=dark] .table thead th a.ltt-sapxep:hover,[data-bs-theme=dark] .table thead th a.ltt-sapxep.on{color:var(--text-primary)}
+.table thead th a.ltt-sapxep i{font-size:10px;opacity:.55}
+.table thead th a.ltt-sapxep.on i{opacity:1;color:var(--brand-hover)}
+/* Icon hàng (xem/sửa/xoá): nét viền, màu chữ phụ — không đỏ đặc. */
+[data-bs-theme=dark] .table .text-end a{color:var(--text-secondary);border-radius:var(--radius-sm)}
+[data-bs-theme=dark] .table .text-end a:hover{color:var(--text-primary);background:var(--surface-overlay)}
+/* Thanh bên: icon SVG `_icon.html` trong ô viền. */
+.navbar-vertical .nav-link-icon .ui-ic{width:14px;height:14px}
+.ltt-dangxuat .ui-ic{width:16px;height:16px}
+/* Phân trang: nút tách nhau; nhãn "Hiện" gom sát ô cỡ trang. */
+.pagination.ltt-phantrang{gap:4px}
+.pagination.ltt-phantrang .page-link{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:4px 10px;border-radius:var(--radius-sm)}
+.ltt-cotrang{display:inline-flex;align-items:center;gap:8px;margin-left:var(--space-3)}
+/* Chi tiết: tiêu đề có nghĩa + khoá chính nhỏ, mờ. */
+.ltt-chitiet-tieude{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
+.ltt-khoa-chinh{font-size:var(--fs-caption);font-weight:400;color:var(--text-muted);overflow-wrap:anywhere}
+.ltt-khoa-chinh code{background:transparent;padding:0;color:var(--text-secondary)}
+/* Huỷ: màu chữ phụ theo token (không xanh-xám của Tabler). */
+[data-bs-theme=dark] .ltt-form-nut a.btn.ltt-huy,[data-bs-theme=dark] .ltt-form-nut a.btn.ltt-huy:visited{color:var(--text-secondary);--tblr-btn-color:var(--text-secondary)}
+[data-bs-theme=dark] .ltt-form-nut a.btn.ltt-huy:hover{color:var(--text-primary)}
+@media (max-width:767.98px){
+  /* Dải "Thao tác" + ô tìm: ô tìm xuống hàng riêng, đủ rộng để gợi ý không bị cắt. */
+  .card-body>.d-flex.justify-content-between{flex-wrap:wrap;gap:8px}
+  .card-body>.d-flex.justify-content-between>.col-md-4{flex:1 1 100%;max-width:100%}
+  .card-body>.d-flex.justify-content-between>.sqladmin-actions{flex:0 0 auto;width:auto}
+  .ltt-cotrang{margin-left:0}
+}

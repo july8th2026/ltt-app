@@ -8,6 +8,8 @@
 {%- set NHAN = {"rpm_read": "Nhịp đọc / phút", "rpm_write": "Nhịp ghi / phút",
                 "rpm_create": "Nhịp tạo / phút", "max_active_jobs": "Job chạy đồng thời",
                 "daily_credit": "Credit mỗi ngày", "max_upload_bytes": "Tải lên tối đa (byte)"} %}
+{%- set NGUON = {"global": "Mặc định hệ thống", "tier": "Gói (tier)", "user": "Người dùng", "project": "Dự án",
+                 "credential": "Khoá API", "tool": "Công cụ"} %}
 
 <div class="adm-content">
   <div class="pagehead"><div>
@@ -28,9 +30,11 @@
       <tbody>
         {% for f in truong %}
         <tr>
-          <td>{{ NHAN.get(f, f) }} <code class="adm-ten-ky-thuat">{{ f }}</code></td>
-          <td class="tnum">{{ nen[f] }}</td>
-          <td class="muted">{{ nen.sources.get(f, "") }}</td>
+          {#- C4: bảng hiện byte thành MB/GB (ô nhập bên dưới vẫn nhận byte); nguồn enum → nhãn Việt kèm mã. -#}
+          {%- set v = nen[f] %}{% set nguon = nen.sources.get(f, "") %}
+          <td>{{ NHAN.get(f, f) | replace(" (byte)", "") }} <code class="adm-ten-ky-thuat">{{ f }}</code></td>
+          <td class="tnum">{% if f == "max_upload_bytes" and v is number and v >= 1048576 %}<span title="{{ '{:,}'.format(v) | replace(',', '.') }} byte">{{ '%g' % ((v / 1073741824) | round(1)) ~ ' GB' if v >= 1073741824 else '%g' % ((v / 1048576) | round(1)) ~ ' MB' }}</span>{% elif v is number %}{{ '{:,}'.format(v) | replace(',', '.') }}{% else %}{{ v if v is not none else "—" }}{% endif %}</td>
+          <td>{% if nguon %}{{ NGUON.get(nguon.split(":")[0], "Nguồn") }} <code class="adm-ten-ky-thuat">{{ nguon }}</code>{% else %}<span class="muted">—</span>{% endif %}</td>
         </tr>
         {% endfor %}
       </tbody>

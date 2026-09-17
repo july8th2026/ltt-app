@@ -1205,13 +1205,13 @@ class RevenueView(_AnTrongMenuSqlAdmin, BaseView):
                         f'<td class="tnum">{_vnd(o.credits, " credit")}</td>'
                         f'<td class="muted u-fs12">{cot_cuoi}</td></tr>')
 
-            rows = "".join(_dong(o, f"{o.paid_at:%d/%m %H:%M}")
+            rows = "".join(_dong(o, f"{o.paid_at:%d/%m/%Y %H:%M}")
                            for o in gan_day if o.paid_at)
-            rows_cho = "".join(_dong(o, f"{o.created_at:%d/%m %H:%M}")
+            rows_cho = "".join(_dong(o, f"{o.created_at:%d/%m/%Y %H:%M}")
                                for o in cho_xu)
             rows_tien = "".join(
                 f'<tr><td class="muted u-fs12">'
-                f'{n.created_at:%d/%m %H:%M}</td>'
+                f'{n.created_at:%d/%m/%Y %H:%M}</td>'
                 f'<td>{escape(n.hanh_dong)}</td>'
                 f'<td class="mono muted u-fs12">'
                 f'{escape((n.doi_tuong or "")[:40])}</td>'
@@ -1423,8 +1423,8 @@ class OrdersView(_AnTrongMenuSqlAdmin, BaseView):
                          f'<td class="tnum">{_vnd(o.price_vnd)}</td>'
                          f'<td class="tnum">{_vnd(o.credits, "")}{(" +%d%%" % o.bonus_percent) if o.bonus_percent else ""}</td>'
                          f'<td>{_order_badge(o.status)}</td>'
-                         f'<td class="muted u-fs12">{escape(o.gateway or "-")}</td>'
-                         f'<td class="muted u-fs12">{o.created_at:%m-%d %H:%M}</td>'
+                         f'<td class="muted u-fs12">{escape({"payos": "PayOS"}.get(o.gateway or "", o.gateway or "—"))}</td>'
+                         f'<td class="muted u-fs12">{o.created_at:%d/%m/%Y %H:%M}</td>'
                          f'<td><div class="rowactions">{markpaid}'
                          + (f'<a class="btn ghost sm" href="/admin/credit-entry/list'
                             f'?search={escape(o.user_id)}">Sổ credit</a>'
@@ -1444,7 +1444,7 @@ class OrdersView(_AnTrongMenuSqlAdmin, BaseView):
                 f'<a class="btn ghost" href="/admin/goi">Gói nạp</a></div></div>'
                 f'<div class="tabs">{tabs}</div>'
                 f'<div class="tablewrap" tabindex="0"><table class="ui-table"><thead><tr>'
-                f'<th>Mã đơn</th><th>User</th><th>Tiền</th><th>Credit</th><th>Trạng thái</th>'
+                f'<th>Mã đơn</th><th>Khách</th><th>Tiền</th><th>Credit</th><th>Trạng thái</th>'
                 f'<th>Cổng</th><th>Tạo lúc</th><th class="u-phai">Thao tác</th></tr></thead>'
                 f'<tbody>{rows or "<tr><td colspan=8 class='muted o-trong'><span class=o-trong-chu>Chưa có đơn.</span></td></tr>"}'
                 f'</tbody></table></div></div>')
