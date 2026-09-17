@@ -183,9 +183,9 @@ html{background:var(--surface-canvas)}
 /* ── Chip (nhãn loại/giá trị) ── */
 .chip{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:6px;font-size:11px;
   background:var(--accent-soft);color:#ffd0cc;border:1px solid var(--brand-border)}
-.chip.i{background:#1e2a1c;color:#a7d6a0;border-color:#2e4a2a}
-.chip.v{background:#2a1e2e;color:#d6a7cf;border-color:#4a2e46}
-.chip.m{background:#22262e;color:#aeb7c6;border-color:#343a46}
+.chip.i{background:var(--status-success-soft);color:var(--status-success);border-color:var(--status-success-border)}
+.chip.v{background:var(--status-warning-soft);color:var(--status-warning);border-color:var(--status-warning-border)}
+.chip.m{background:var(--surface-interactive);color:var(--text-secondary);border-color:var(--border-strong)}
 
 /* ── Health bar ── */
 .health{height:6px;width:74px;border-radius:4px;background:#242833;overflow:hidden;display:inline-block;vertical-align:middle}
@@ -630,7 +630,7 @@ html{background:var(--surface-canvas)}
 .chip-opt span{display:inline-block;border:1px solid var(--line2);background:var(--panel2);
   color:var(--muted);font-size:12.5px;padding:6px 12px;border-radius:20px;transition:var(--motion-fast)}
 .chip-opt:hover span{border-color:var(--accent)}
-.chip-opt input:checked+span{background:var(--brand-fill);border-color:var(--accent);color:#fff}
+.chip-opt input:checked+span{background:var(--brand-fill);border-color:var(--accent);color:var(--text-on-brand,#fff)}
 .chip-opt input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
 .prompt-preview{white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,monospace;
   font-size:12.5px;line-height:1.6;background:var(--panel2);border:1px solid var(--line);

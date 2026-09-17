@@ -168,3 +168,12 @@ def test_B2_khung_hep_tab_app_va_form_admin():
     assert ".adm-content form>p>.btn{min-height:44px" in css
     base = (_P(__file__).resolve().parents[1] / "server/templates/base.html").read_text(encoding="utf-8")
     assert '<nav class="apptabs" aria-label=' in base
+
+
+def test_B3_chip_dung_token_trang_thai():
+    import re as _re
+    from pathlib import Path as _P
+    css = (_P(__file__).resolve().parents[1] / "server/static/ltt.css").read_text(encoding="utf-8")
+    for bien in ("i", "v", "m"):
+        luat = _re.search(r"\.chip\." + bien + r"\{([^}]*)\}", css).group(1)
+        assert "#" not in luat and "var(--" in luat, bien

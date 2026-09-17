@@ -440,9 +440,9 @@ Thứ tự theo luật 17/09 — **L3 ở cuối cùng, sau khi mọi pha dướ
 |---|---|---|---|
 | A1 | ~~L1 `gate.py --doi --tu 2d9b95a22743` (production)~~ | — | ⛔ **máy từ chối** 17/09: 268 đường dẫn đổi, chạm tệp DÙNG CHUNG (`ltt.css`, `base.html`, `_header.html`…) ⇒ `thanh_phan.py --doi --goc-so` = *phải chạy TẤT CẢ*; L2 từng thành phần cũng thành chạy toàn bộ (trả tiền hai lần). **Không có cổng hẹp hợp lệ cho deploy giữa phiên** ⇒ deploy dời về sau L3 tổng kết (D1) |
 | A2–A3 | Gộp `main` → báo phiên → deploy → nghiệm thu URL công khai | L3 tổng kết | dời vào D1 |
-| B1 | Studio: **vị trí tiêu đề trang** + **một kiểu số bước** (Seedance/LTT Video còn `01` chữ trơn, `03B`) | test nhắm + trình duyệt | ⏳ |
-| B2 | Voice "Giọng nói" hai nút primary · Upscale @390 chồng tay kéo so sánh · menu con máy VPS @390 cắt mục cuối · form admin `api-chinh-sach`/`api-gia` @390 | test nhắm + trình duyệt | ⏳ |
-| B3 | `.chip.*` và Prompt AI classic `<style>` còn hex thô → token | test nhắm + trình duyệt | ⏳ |
+| B1 | Studio: vị trí tiêu đề + một kiểu số bước | test nhắm + trình duyệt | ✅ `dd613889` — studio video dùng huy hiệu tròn chung; LTT Video đánh số theo mục đang hiện (trước 01·02·04); bỏ `03B`. Quyết định: studio immersive giữ khối eyebrow + h1 ở cột kết quả (giống nhau giữa hai studio video) |
+| B2 | Voice 2 nút chính · Upscale @390 · tab máy VPS @390 · form admin @390 | test nhắm + trình duyệt | ✅ `47f3bb92` — nút toolbar Voice thành ghost; chữ chờ Upscale không đè tay kéo; `.apptabs` có mép mờ + đệm cuối + `aria-label`; form admin ô số 2 cột, nút ≥44px; kèm sửa 3 lỗi mypy ở seed VPS (hạ mốc) |
+| B3 | Hex thô `.chip.*` / Prompt AI classic | test nhắm + trình duyệt | ✅ phần `.chip.i/.v/.m` → token trạng thái (axe 0 ở 3 trang admin). ⏭ Prompt AI classic: trang cũ đã có SPA thay, hệ theme sáng/tối riêng `--o-*` — token Golden chỉ có bản tối, thay sẽ hỏng theme sáng ⇒ **nợ vòng sau có lý do** |
 | B4 | 4 SPA về token/component chung (vòng tối thiểu: màu, nút, trạng thái rỗng/lỗi) + build + `build-meta` | vitest + build + trình duyệt | ⏳ |
 | C1 | Chấm điểm lại **đủ 13 họ** bằng vòng ảnh (không lấy số agent tự ước) → cập nhật bảng *Điểm hiện tại* | E3 | ⏳ |
 | C2 | Đo lại toàn hệ 448 + regression ảnh; nếu đã deploy lại thì nghiệm thu công khai lần 2 | E3 | ⏳ |
