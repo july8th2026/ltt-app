@@ -81,7 +81,7 @@ def args38(port, np_=3, c=221184, them=()):
 
 
 # Tran rieng tung phep (phut) - uoc luong x ~1,4.
-HAN_PHEP = {"m1": 40, "m3_35": 20, "m5": 10, "m6": 12, "m3_38": 25, "m2": 35}
+HAN_PHEP = {"m1": 45, "m3_35": 26, "m5": 10, "m6": 12, "m3_38": 32, "m2": 35}
 # VRAM toi da cua card dich de coi la "production da nha" (MiB; desktop giu ~0,3-0,9 GB).
 VRAM_SACH = {UUID35: 1500, UUID38: 1200}
 
@@ -389,6 +389,7 @@ def quet_cong_thu() -> None:
 def bat_server(do, nhan, args, uuid, port, han_nap=600):
     quet_cong_thu()
     time.sleep(3)
+    nen = nvsmi().get(uuid, {})
     env = dict(os.environ)
     env["CUDA_VISIBLE_DEVICES"] = uuid
     out = open(os.path.join(RA, "%s_%s.log" % (do, nhan)), "wb")
@@ -408,8 +409,16 @@ def bat_server(do, nhan, args, uuid, port, han_nap=600):
             pass
         time.sleep(1)
     d = {"su_kien": "nap", "nhan": nhan, "xanh": xanh, "giay_nap": round(time.time() - t0, 1),
-         "args": " ".join(args)}
+         "bin": BIN, "args": " ".join(args), "cuda_visible_devices": uuid,
+         "vram_nen_truoc_nap_mib": nen.get("used"), "util_truoc_nap": nen.get("util")}
     if xanh:
+        try:
+            pr = hj("GET", "http://127.0.0.1:%d/props" % port, timeout=10)[1]
+            d["build_info"] = pr.get("build_info")
+            d["n_ctx"] = (pr.get("default_generation_settings") or {}).get("n_ctx")
+            d["total_slots"] = pr.get("total_slots")
+        except Exception as e:                               # noqa: BLE001
+            d["build_info"] = "loi %s" % e
         time.sleep(2)
         d.update(anh_vram(uuid, p.pid))
     else:
@@ -491,6 +500,47 @@ def cap_slot(do, port, nhan, cap_list):
                  "tung_luong": [gon(x) for x in kqs]})
 
 
+def hai_job(do, port, nhan, max1=8000):
+    """Cau hoi chu san pham: job 1 dang decode on dinh MOT MINH, job 2 vao (a) prompt
+    ngan, (b) prompt 32k. Ghi moc tung khoi cua job 1 (tuong doi, ms) va toc do job 1
+    trong tung pha: truoc | job 2 prefill | job 2 decode | sau; va toc do job 2."""
+    for loai, n2 in (("a_ngan_1k", 1000), ("b_dai_32k", 32000)):
+        if not con(4 * 60):
+            raise HetGio()
+        nhip(do, "%s hai_job %s" % (nhan, loai))
+        huy = threading.Event()
+        j1: dict = {}
+        t1 = threading.Thread(target=luong, args=(port, body_tp(port, 1000, max1), j1, huy, 1800), daemon=True)
+        t1.start()
+        t_bd = time.time()
+        while time.time() - t_bd < 120 and not j1.get("t_dau"):
+            time.sleep(0.1)
+        time.sleep(15)
+        t2_gui = time.time()
+        j2 = luong(port, body_tp(port, n2, 500), {}, None, 900)
+        t2_dau = j2.get("t_dau") or j2.get("t_cuoi")
+        t2_cuoi = j2.get("t_cuoi")
+        time.sleep(10)
+        t_het = time.time()
+        huy.set()
+        t1.join(60)
+        g = t2_gui
+        moc1 = [round((t - g) * 1000) for t in (j1.get("moc") or []) if g - 15 <= t <= t_het]
+        he_so = round(token_ra(j1) / max(1, len(j1.get("moc") or [])), 3)
+        ghi(do, {"su_kien": "hai_job", "nhan": nhan, "loai": loai, "prompt_job2": n2,
+                 "job1_tok_s_truoc": toc_do_cua_so([j1], g - 12, g),
+                 "job1_tok_s_trong_prefill_job2": toc_do_cua_so([j1], g + 0.3, t2_dau),
+                 "job1_tok_s_trong_decode_job2": toc_do_cua_so([j1], t2_dau + 0.3, t2_cuoi),
+                 "job1_tok_s_sau_job2": toc_do_cua_so([j1], t2_cuoi + 0.5, t_het),
+                 "job1_khoang_lang_max_trong_prefill_s": gap_max(j1, g, t2_dau),
+                 "job2_ttft_s": round(t2_dau - g, 3), "job2": gon(j2),
+                 "job2_tok_s_decode": toc_do_cua_so([j2], t2_dau + 0.3, t2_cuoi),
+                 "moc_job1_ms_tuong_doi_luc_gui_job2": moc1, "token_moi_khoi_job1": he_so,
+                 "moc_job2_ms": {"dau": round((t2_dau - g) * 1000), "cuoi": round((t2_cuoi - g) * 1000)},
+                 "job1": gon(j1)})
+        time.sleep(3)
+
+
 # ================================================================ PHEP DO
 def m1():
     do = "m1"
@@ -505,6 +555,8 @@ def m1():
         try:
             if not xanh:
                 continue
+            if np_ == 3:
+                hai_job(do, P35, nhan)
             nhip(do, nhan + " cap slot")
             cap = [(0,), (2,), (0, 1), (1, 2), (0, 2)] + ([(1, 3), (0, 3)] if np_ >= 4 else [])
             cap_slot(do, P35, nhan, cap)
@@ -534,6 +586,7 @@ def _m3(do, uuid, port, mk_args, dai):
         try:
             if not xanh:
                 continue
+            hai_job(do, port, nhan)
             for n_dai in (32000, dai):
                 if not con(4 * 60):
                     raise HetGio()

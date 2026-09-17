@@ -97,3 +97,42 @@ Giới hạn: `token_ra` = suy nghĩ + nội dung gộp (không nơi nào tách)
 (tỷ lệ chạm trần = `ket_thuc=length`); lượt stream không có token; log gồm cả eval/bench nội bộ
 (15/09 đột biến). Đo theo `max_tokens` thật: `do4_do_dai_dau_ra.py --nguon csdl` (bảng `jobs`, cần
 quyền đọc `C:\LTTPlatform\secrets` — phiên này bị chặn, chưa chạy).
+
+## Trạng thái 17/09 (bàn giao — app Claude sắp đóng)
+
+**Chưa phép đo nào chạy trên máy B.** Lệnh GO đến rồi bị thay ngay bằng lệnh khôi phục trước khi eval
+H13.6 dừng, nên chưa có `nha35`/`nha38`/`dung_comfy`, chưa đăng ký task, chưa có server thử nào.
+Không có JSONL kết quả (thư mục `ket_qua` trên máy B chưa được tạo). Đã chạy `-Buoc kiem` (chỉ đọc, ghi
+`truoc_cua_so.json`) và `-Buoc khoi_phuc` (không nạp lại gì vì cả hai đã sẵn sàng).
+
+Bằng chứng khôi phục (15:3x, máy B):
+- `/running`: `qwen35-api:ready, qwen38-api:ready`. PID 21056 (:8281) và 4136 (:8282) **trùng PID lúc
+  15:0x** ⇒ không model nào từng bị nhả.
+- dedicated/shared: 3.8 24007/614 MiB · 3.5 15375/674 MiB, bằng mức nền đo trước đó ⇒ không tràn.
+- Chat thật qua 8280: 3.8 `finish=stop token_ra=154 content_rong=False` · 3.5 `finish=stop token_ra=1658
+  content_rong=False`.
+- Dịch vụ LTTComfyUI, LTTLlamaSwap, LTTLlmGateway, LTTRenderGateway đều Running.
+- VRAM 3090 24273 / 5060 Ti 15810 MiB = ảnh chụp trước cửa sổ. Không có task `LTT_BenchHangCho`, không
+  có llama-server nào ngoài 8281/8282.
+- Util 5060 Ti 86 % lúc chụp = eval/lượt thật đang chạy trên 3.5 ⇒ preflight sẽ chặn cho tới khi nó dừng.
+
+Đã thêm vào `do_b.py` (bản trên máy B cùng commit này):
+- `hai_job`: job 1 decode một mình, sau đó job 2 vào với (a) prompt 1k, (b) prompt 32k. Ghi mốc từng
+  khối của job 1 và tốc độ theo pha (trước / prefill job 2 / decode job 2 / sau), cùng tốc độ và TTFT
+  của job 2. Chạy ở m1 np3 và ở m3 cho cả -b 2048 lẫn -b 512 trên cả hai card.
+- Mỗi lần nạp ghi `build_info`, `n_ctx`, `total_slots`, VRAM nền trước khi nạp.
+- Trần m1 45, m3_35 26, m3_38 32 phút.
+
+**Làm tiếp (một lượt, đúng thứ tự)**, trên máy B qua `ssh -i ~/.ssh/nexus_b -o BatchMode=yes lengo@192.168.2.66`,
+`PS=powershell -NoProfile -ExecutionPolicy Bypass -File E:\AI\ltt_dual\bench_hang_cho\`:
+0. Máy A không còn tiến trình `chay.py`/`lay_mau.py`; 2 phút không có `POST` mới trong `H:\LTT_LLM\logs\gateway_err.log`;
+   `%PS%cua_so_b.ps1 -Buoc kiem` ⇒ không slot bận, util ≈ 0.
+1. `%PS%cua_so_b.ps1 -Buoc nha35`
+2. `%PS%khoi_dong_b.ps1 -Do m1,m3_35,m5,m6 -HanPhut 100` · theo dõi `%PS%khoi_dong_b.ps1 -XemTrangThai` (~65 phút)
+3. `%PS%khoi_dong_b.ps1 -Go` · `%PS%cua_so_b.ps1 -Buoc nha38` · `%PS%cua_so_b.ps1 -Buoc dung_comfy`
+4. `%PS%khoi_dong_b.ps1 -Do m3_38,m2 -HanPhut 70` (~50 phút)
+5. `%PS%cua_so_b.ps1 -Buoc khoi_phuc` · `%PS%khoi_dong_b.ps1 -Go`
+6. Kéo kết quả về: `scp -r -i ~/.ssh/nexus_b lengo@192.168.2.66:E:/AI/ltt_dual/bench_hang_cho/ket_qua ./ket_qua_<ngay>`, commit.
+
+Nếu phiên đo bị cắt giữa chừng: `Stop-ScheduledTask LTT_BenchHangCho` → `%PS%cua_so_b.ps1 -Buoc khoi_phuc`
+(tự giết server thử, nạp lại model thiếu, bật ComfyUI, chat thật kiểm tra).
