@@ -44,7 +44,7 @@
                                "Bật lại", min_reason, them={"switch_id": r.id}) }}</td>
       </tr>
       {% else %}
-      <tr><td colspan="7" class="muted o-trong">Không có công tắc nào đang bật. Đó là trạng thái bình thường.</td></tr>
+      <tr><td colspan="7" class="muted o-trong"><span class="o-trong-chu">Không có công tắc nào đang bật. Đó là trạng thái bình thường.</span></td></tr>
       {% endfor %}
     </tbody>
   </table></div>
@@ -63,7 +63,7 @@
       <p>
         <input name="reason" size="60" required minlength="{{ min_reason }}"
                placeholder="Lý do (bắt buộc, ≥ {{ min_reason }} ký tự) — sẽ hiện cho khách">
-        <input name="minutes" inputmode="numeric" style="width:180px" placeholder="tự tắt sau (phút)">
+        <input name="minutes" inputmode="numeric" class="adm-w180" aria-label="Tự tắt sau (phút)" placeholder="tự tắt sau (phút)">
       </p>
       <p><label><input type="checkbox" name="confirm" value="1">
         Tôi hiểu thao tác này chặn lời gọi của khách hàng thật ngay lập tức.</label></p>

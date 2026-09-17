@@ -96,7 +96,7 @@
 {% macro dinh_may(may, nhan_tt, cls, plan, os, dia_chi) %}
   <div class="vps-dinh">
     <div class="vps-dinh-ten">
-      {{ may.ten or may.id[:8] }}
+      <h1 class="vps-dinh-h1">{{ may.ten or may.id[:8] }}</h1>
       {{ badge_trang_thai(nhan_tt, cls) }}
     </div>
     <div class="vps-dinh-o">

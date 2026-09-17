@@ -32,7 +32,7 @@
           {% else %}
             {# Chưa có route. Hiện tên là thông tin — nó nói khu này đang đi
                đâu; một liên kết 404 thì không nói gì ngoài sự cẩu thả. #}
-            <span class="sap-co" title="{{ _('Sắp có') }}">{{ m.nhan }}</span>
+            <span class="sap-co">{{ m.nhan }} <span class="sap-co-nhan">{{ _('Sắp có') }}</span></span>
           {% endif %}
         </li>
       {% endfor %}

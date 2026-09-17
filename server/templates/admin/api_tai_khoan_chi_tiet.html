@@ -42,7 +42,7 @@
           <td class="muted">{{ luc(p.created_at) }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="4" class="muted">Chưa có project.</td></tr>
+        <tr><td colspan="4" class="muted o-trong"><span class="o-trong-chu">Chưa có project.</span></td></tr>
         {% endfor %}
       </tbody>
     </table></div>
@@ -62,7 +62,7 @@
           <td class="muted">{{ luc(k.last_used_at) }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="5" class="muted">Chưa có khoá.</td></tr>
+        <tr><td colspan="5" class="muted o-trong"><span class="o-trong-chu">Chưa có khoá.</span></td></tr>
         {% endfor %}
       </tbody>
     </table></div>
@@ -81,7 +81,7 @@
           <td>{{ "cứng" if b.hard_cap else "mềm" }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="4" class="muted">Khách chưa đặt ngân sách nào.</td></tr>
+        <tr><td colspan="4" class="muted o-trong"><span class="o-trong-chu">Khách chưa đặt ngân sách nào.</span></td></tr>
         {% endfor %}
       </tbody>
     </table></div>
@@ -99,7 +99,7 @@
           <td class="muted">{{ luc(s.created_at) }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="3" class="muted">Không có webhook.</td></tr>
+        <tr><td colspan="3" class="muted o-trong"><span class="o-trong-chu">Không có webhook.</span></td></tr>
         {% endfor %}
       </tbody>
     </table></div>
@@ -119,7 +119,7 @@
           <td class="mono muted"><a href="/admin/api-trace?q={{ r.request_id }}">{{ r.request_id[:12] }}</a></td>
         </tr>
         {% else %}
-        <tr><td colspan="5" class="muted">Chưa có lời gọi nào được ghi.</td></tr>
+        <tr><td colspan="5" class="muted o-trong"><span class="o-trong-chu">Chưa có lời gọi nào được ghi.</span></td></tr>
         {% endfor %}
       </tbody>
     </table></div>

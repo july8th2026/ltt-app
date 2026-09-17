@@ -30,12 +30,12 @@
 {% endmacro %}
 
 {% if not q %}
-<div class="ui-card" style="padding:26px">
+<div class="ui-card adm-the-trong">
   <p class="muted u-m0">Gõ vào ô ở thanh trên để tìm.</p>
 </div>
 
 {% elif tong == 0 %}
-<div class="ui-card" style="padding:26px">
+<div class="ui-card adm-the-trong">
   <p class="u-mb10">Không có gì khớp <b class="mono">{{ q }}</b>.</p>
   {# Khong dung o day mot cau "khong tim thay" tran. Nguoi dang xu su co can
      biet HO VUA TIM O DAU, de con biet cho tiep theo phai tim o dau. #}
@@ -44,7 +44,7 @@
     mã khoá của khách. Nó <b>không</b> tìm toàn văn trong nội dung job hay trong
     nhật ký admin.</p>
   {% if q|length < toi_thieu %}
-  <p class="muted" style="margin:8px 0 0">⚠️ Chuỗi ngắn hơn {{ toi_thieu }} ký tự
+  <p class="muted adm-mt8">⚠️ Chuỗi ngắn hơn {{ toi_thieu }} ký tự
     nên job, lời gọi và khoá <b>không</b> được tra theo tiền tố — một tiền tố
     quá ngắn quét gần như toàn bảng mà không thu hẹp được gì.</p>
   {% endif %}
@@ -59,7 +59,7 @@
   {% for g in nhom %}
   <section class="ui-card adm-timkq-nhom">
     <h2>{{ NHAN.get(g.loai, g.loai) }}
-      <span class="muted" style="font-weight:400">({{ g.dong|length }})</span></h2>
+      <span class="muted adm-chu-thuong">({{ g.dong|length }})</span></h2>
     <div class="adm-timkq-ds">
       {% for d in g.dong %}
       <a href="{{ d.href }}">

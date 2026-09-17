@@ -18438,3 +18438,6 @@ msgstr "Pick up to two real outputs from your history"
 
 msgid "Khắc phụ đề"
 msgstr "Burn subtitles"
+
+msgid "Phiên console đã đóng. Kết nối lại để xin một vé mới."
+msgstr "The console session has closed. Reconnect to get a new ticket."

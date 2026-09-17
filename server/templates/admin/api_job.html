@@ -15,7 +15,7 @@
   <form method="get" class="job-filters">
     <input name="status" value="{{ status }}" placeholder="trạng thái" aria-label="Lọc theo trạng thái">
     <input name="tool" value="{{ tool }}" placeholder="tool" aria-label="Lọc theo tool">
-    <input name="hours" value="{{ hours }}" style="width:90px" aria-label="Số giờ gần nhất">
+    <input name="hours" value="{{ hours }}" class="adm-w90" aria-label="Số giờ gần nhất">
     <button class="btn ghost sm">Lọc</button>
   </form>
 
@@ -43,7 +43,7 @@
         <td class="tnum">{{ it.held }}</td>
       </tr>
       {% else %}
-      <tr><td colspan="9" class="muted o-trong">Không có job API nào trong khoảng này.</td></tr>
+      <tr><td colspan="9" class="muted o-trong"><span class="o-trong-chu">Không có job API nào trong khoảng này.</span></td></tr>
       {% endfor %}
     </tbody>
   </table></div>
@@ -74,7 +74,7 @@
           <td class="muted">{{ luc(r.created_at) }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="6" class="muted">Không có webhook nào hỏng trong khoảng này.</td></tr>
+        <tr><td colspan="6" class="muted o-trong"><span class="o-trong-chu">Không có webhook nào hỏng trong khoảng này.</span></td></tr>
         {% endfor %}
       </tbody>
     </table></div>

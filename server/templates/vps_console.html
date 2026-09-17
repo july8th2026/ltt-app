@@ -1,7 +1,7 @@
 {% extends "vps_base.html" %}
 {% import "_vps_mac.html" as mac with context %}
 {% block title %}{{ _("Console") }} — {{ may.ten or may.id[:8] }}{% endblock %}
-{% block topbar_title %}<strong><a href="/vps" style="color:inherit;text-decoration:none;opacity:.7;">{{ app.icon }} VPS</a> <span style="opacity:.45;">›</span> {{ _("Console") }} — {{ may.ten or may.id[:8] }}</strong>{% endblock %}
+{% block topbar_title %}<strong><a class="vps-vet-goc" href="/vps">{{ app.icon }} VPS</a> <span class="vps-vet-ngan" aria-hidden="true">›</span> {{ _("Console") }} — {{ may.ten or may.id[:8] }}</strong>{% endblock %}
 {% block noi_dung %}
 
 {# ══ MÀN E · CONSOLE TRONG TRÌNH DUYỆT (Đợt 6, ảnh 5) ══════════════════════
@@ -38,15 +38,25 @@
            giao thức, không chạm phiên — nên nó an toàn để thêm. #}
         <button class="btn btn-ghost" id="nut-toan-man" type="button">{{ _("Toàn màn hình") }}</button>
         <a class="btn btn-ghost" href="{{ app.route_prefix }}/{{ may.id }}">{{ _("Về trang máy") }}</a>
-        <span class="tt" id="tt"></span>
+        <span class="tt" id="tt" role="status" aria-live="polite"></span>
       </div>
 
       {# `tabindex` để khung nhận được phím; thiếu nó thì chuột chạy mà bàn phím
          không, và triệu chứng là "gõ không lên chữ" — rất khó đoán ra. #}
-      <div id="khung" class="vps-cs-khung" tabindex="0"
-           aria-label="{{ _('Màn hình máy %(ten)s') % {'ten': may.ten or may.id[:8]} }}"></div>
+      <div class="vps-cs-boc">
+        <div id="khung" class="vps-cs-khung" tabindex="0" role="application"
+             aria-label="{{ _('Màn hình máy %(ten)s') % {'ten': may.ten or may.id[:8]} }}"></div>
+        {# Golden UI: khung đen trống khi mất kết nối không nói gì — lớp phủ này
+           nói trạng thái và bước tiếp ngay TRÊN khung. Chỉ trình bày: không nối
+           lại, không chạm vé. #}
+        <div class="vps-cs-bao" id="cs-bao" hidden>
+          <p class="vps-cs-bao-chu" id="cs-bao-chu"></p>
+          <p class="muted u-fs12 u-m0">{{ _("Phiên console đã đóng. Kết nối lại để xin một vé mới.") }}</p>
+          <button class="btn" id="nut-noi-lai-khung" type="button">{{ _("Kết nối lại") }}</button>
+        </div>
+      </div>
 
-      <p class="muted" style="margin:8px 0 0;font-size:12px;">
+      <p class="muted vps-mt8 u-fs12">
         {{ _("Bấm vào khung rồi gõ như trên máy thật. Console dùng để cứu hộ — nó chậm hơn RDP và không hỗ trợ copy/paste hay kéo-thả.") }}
       </p>
     </div>
@@ -99,7 +109,12 @@
 
     // Trạng thái thành BADGE, cùng ngôn ngữ với phần còn lại của khu VPS:
     // chấm + chữ, không bao giờ chỉ màu.
+    const baoKhung = document.getElementById("cs-bao");
+    const baoChu = document.getElementById("cs-bao-chu");
     function bao(chu, lop) {
+      // Lớp phủ trên khung chỉ hiện khi KHÔNG có hình (lỗi / đã ngắt).
+      baoKhung.hidden = !(lop === "b-err" || lop === "b-grey");
+      baoChu.textContent = chu;
       tt.className = "tt badge " + lop;
       tt.innerHTML = '<span class="dot"></span>';
       tt.appendChild(document.createTextNode(chu));
@@ -148,6 +163,8 @@
         khung.focus();
       });
     nutNoiLai.addEventListener("click", () => location.reload());
+    document.getElementById("nut-noi-lai-khung")
+      .addEventListener("click", () => location.reload());
     noi();
   </script>
 

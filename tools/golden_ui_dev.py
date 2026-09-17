@@ -170,6 +170,7 @@ def seed() -> dict:
         db.add(con)
         db.flush()
         ids["jobs"]["retry_child"] = con.id
+        ids["vps"] = _seed_vps(db, uid, bay_gio)
         db.commit()
     finally:
         try:
@@ -179,6 +180,68 @@ def seed() -> dict:
     with open(IDS, "w", encoding="utf-8") as f:
         json.dump(ids, f, ensure_ascii=False, indent=2)
     print(f"  [OK] seed xong: {THU_MUC}")
+    return ids
+
+
+def _seed_vps(db, uid: str, bay_gio: datetime) -> dict:
+    """Chèn máy VPS ở nhiều trạng thái cho khách — CHỈ ghi hàng CSDL.
+
+    Không gọi provider/Proxmox/Vultr nào: máy không ghim hồ sơ hạ tầng
+    (`profile_resolution_state` mặc định `NEEDS_REVIEW`) nên mọi đường điều
+    khiển thật từ chối trước khi chạm mạng.
+    """
+    from apps.vps.tables import VpsEvent, VpsInstance, VpsIp
+
+    gw = "golden-gw"
+    mau = [
+        ("chay", dict(ten="web-ban-hang", plan_id="vps-vua",
+                      os_id="winsrv2022-gui", trang_thai="dang_chay",
+                      vmid=9201, ip_noi_bo="10.51.0.50",
+                      paid_until=bay_gio + timedelta(days=21),
+                      bang_thong_byte=180 * 1024 ** 3,
+                      sao_luu_luc=bay_gio - timedelta(hours=9),
+                      quan_sat_luc=bay_gio - timedelta(minutes=2)),
+         "203.0.113.10"),
+        ("tat", dict(ten="may-thu-nghiem", plan_id="vps-nho", os_id="win10",
+                     trang_thai="da_tat", vmid=9202, ip_noi_bo="10.51.0.51",
+                     paid_until=bay_gio + timedelta(days=2),
+                     bang_thong_byte=3 * 1024 ** 3,
+                     quan_sat_luc=bay_gio - timedelta(minutes=4)),
+         "203.0.113.11"),
+        ("tao", dict(ten="may-moi-tao", plan_id="vps-nho",
+                     os_id="winsrv2016-core", trang_thai="dang_tao"), ""),
+        ("loi", dict(ten="may-bi-loi", plan_id="vps-lon",
+                     os_id="winsrv2022-core", trang_thai="loi",
+                     ly_do="Không tạo được máy trên máy chủ. Credit đã được hoàn lại.",
+                     paid_until=bay_gio + timedelta(days=29)), ""),
+    ]
+    ids: dict = {}
+    for i, (khoa, cot, ip) in enumerate(mau):
+        m = VpsInstance(user_id=uid, gateway_id=gw,
+                        created_at=bay_gio - timedelta(days=10 - i), **cot)
+        db.add(m)
+        db.flush()
+        ids[khoa] = m.id
+        if ip:
+            db.add(VpsIp(gateway_id=gw, dia_chi=ip, state="BOUND",
+                         instance_id=m.id, nhan="golden"))
+        su_kien = [("tao_moi", {"plan_id": cot["plan_id"], "os_id": cot["os_id"]}, 10)]
+        if khoa in ("chay", "tat"):
+            su_kien += [
+                ("tao_xong", {}, 9),
+                ("thu_phi", {"credit": 900, "den": (bay_gio + timedelta(days=21)).isoformat()}, 9),
+                ("doi_ten", {"cu": "vps-3f9a", "moi": cot["ten"]}, 5),
+                ("sao_luu", {}, 1),
+            ]
+        if khoa == "tat":
+            su_kien += [("xin_tat", {}, 0), ("tat", {}, 0)]
+        if khoa == "loi":
+            su_kien += [("loi", {"ma_loi": "tac_vu_that_bai"}, 9),
+                        ("hoan_tien", {"credit": 2400}, 9)]
+        for loai, ct, ngay in su_kien:
+            db.add(VpsEvent(instance_id=m.id, loai=loai, boi=uid, chi_tiet=ct,
+                            created_at=bay_gio - timedelta(days=ngay, minutes=len(loai))))
+    db.flush()
     return ids
 
 
