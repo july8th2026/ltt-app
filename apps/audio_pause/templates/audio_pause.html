@@ -22,12 +22,23 @@
       {{ o_chon_tep('ap-audio', 'audio', _("Bản thu"), goi_y=_("WAV, MP3, M4A, AAC, FLAC, OGG, Opus, WebM — tối đa 95 MB."), accept='audio/*', bat_buoc=true, icon='♫') }}
     </div>
 
-    <label class="field">
-      <span>{{ _("Danh sách mốc (JSON)") }}</span>
-      <textarea name="pause_plan" rows="8" required
+    {# Golden UI C3: khach khong phai tu doan cu phap JSON. Dinh dang gui di GIU NGUYEN
+       (textarea `pause_plan`, cung mot chuoi JSON); phan duoi chi giai thich + chen mau. #}
+    <div class="field ap-plan">
+      <label for="ap-plan">{{ _("Danh sách mốc ngắt") }}</label>
+      <p class="ap-plan-giai" id="ap-plan-giai">{{ _("Mỗi mốc là một chỗ cần ngắt trong bài, gồm ba phần:") }}</p>
+      <ul class="ap-plan-khoa">
+        <li><code>id</code> — {{ _("số thứ tự của mốc (1, 2, 3…)") }}</li>
+        <li><code>anchor_text</code> — {{ _("câu ngay TRƯỚC chỗ cần ngắt, chép đúng như trong bản thu") }}</li>
+        <li><code>pause_ms</code> — {{ _("độ dài khoảng lặng, tính bằng mili-giây (1000 = 1 giây)") }}</li>
+      </ul>
+      <textarea id="ap-plan" name="pause_plan" rows="8" required aria-describedby="ap-plan-giai ap-plan-kiem"
         placeholder='{{ _('[{"id": 1, "anchor_text": "Hà Nội. Những ngày", "pause_ms": 1800}]') }}'></textarea>
-      <small>{{ _("Mỗi mốc cần `id`, `anchor_text` và `pause_ms`.") }}</small>
-    </label>
+      <div class="ap-plan-cong-cu">
+        <button type="button" class="btn ghost sm" id="ap-chen-mau">{{ _("Chèn ví dụ mẫu") }}</button>
+        <small id="ap-plan-kiem" class="ap-plan-kiem" role="status" aria-live="polite">{{ _("Bấm “Chèn ví dụ mẫu” rồi sửa câu và thời lượng cho khớp bài của bạn.") }}</small>
+      </div>
+    </div>
 
     <div class="af-step"><span>02</span><h2>{{ _("Thiết lập") }}</h2></div>
     <div class="ap-row">
@@ -89,4 +100,38 @@
   </section>
 </section>
 <script src="/static/chon_tep.js?v={{ asset_ver }}" defer></script>
+<script>
+(function () {
+  /* Chi trinh bay: chen mau + bao hop le. Khong chan submit, khong doi du lieu gui di. */
+  var o = document.getElementById('ap-plan'), nut = document.getElementById('ap-chen-mau'),
+      bao = document.getElementById('ap-plan-kiem');
+  if (!o || !nut || !bao) return;
+  var MAU = [
+    {id: 1, anchor_text: {{ _("Xin chào các bạn.")|tojson }}, pause_ms: 1000},
+    {id: 2, anchor_text: {{ _("Hôm nay chúng ta nói về Hà Nội.")|tojson }}, pause_ms: 1800}
+  ];
+  nut.addEventListener('click', function () {
+    if (o.value.trim() && !window.confirm({{ _("Thay nội dung đang có bằng ví dụ mẫu?")|tojson }})) return;
+    o.value = JSON.stringify(MAU, null, 2);
+    kiem(); o.focus();
+  });
+  function kiem() {
+    var t = o.value.trim();
+    bao.classList.remove('ap-plan-kiem--loi', 'ap-plan-kiem--ok');
+    if (!t) { bao.textContent = {{ _("Bấm “Chèn ví dụ mẫu” rồi sửa câu và thời lượng cho khớp bài của bạn.")|tojson }}; return; }
+    try {
+      var d = JSON.parse(t);
+      if (!Array.isArray(d) || !d.length) throw 0;
+      var thieu = d.some(function (m) { return !m || typeof m !== 'object' || !('id' in m) || !m.anchor_text || !('pause_ms' in m); });
+      if (thieu) throw 0;
+      bao.textContent = {{ _("Đúng định dạng:")|tojson }} + ' ' + d.length + ' ' + {{ _("mốc.")|tojson }};
+      bao.classList.add('ap-plan-kiem--ok');
+    } catch (e) {
+      bao.textContent = {{ _("Chưa đúng định dạng — mỗi mốc cần đủ id, anchor_text và pause_ms. Bấm “Chèn ví dụ mẫu” để xem cách viết.")|tojson }};
+      bao.classList.add('ap-plan-kiem--loi');
+    }
+  }
+  o.addEventListener('blur', kiem);
+})();
+</script>
 {% endblock %}

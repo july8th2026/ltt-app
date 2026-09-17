@@ -9,14 +9,14 @@
   {% set image_mode = 'thumbnail' %}{% include "_image_mode_nav.html" %}
   <header class="image-shell-heading">
     <div><span class="image-shell-kicker">{{ _("Tạo ảnh bằng AI") }} · Thumbnail</span>
-      <h1 id="image-shell-title">{{ _("Tạo ảnh AI") }}</h1>
+      <h1 id="image-shell-title">{{ _("Tạo thumbnail YouTube") }}</h1>
       <p>{{ _("Tạo ảnh tổng quát hoặc Thumbnail trong cùng một không gian làm việc.") }}</p></div>
     <a class="btn ghost" href="/jobs">{{ _("Việc của tôi") }}</a>
   </header>
   <div id="image-mode-panel" class="image-mode-loading" role="status" aria-live="polite" aria-busy="true"
        hx-get="{{ fragment_url }}" hx-trigger="load" hx-swap="outerHTML">
     <strong>{{ _("Đang tải công cụ Thumbnail…") }}</strong>
-    <span>{{ _("Đang lấy preset, Brand Kit và lịch sử của tài khoản.") }}</span>
+    <span>{{ _("Đang lấy mẫu phong cách, bộ nhận diện thương hiệu và lịch sử của tài khoản.") }}</span>
   </div>
 </section>
 <script>

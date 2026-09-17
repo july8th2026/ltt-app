@@ -20,7 +20,7 @@
         <div class="th-two"><label class="th-field">{{ _("Tên thương hiệu") }}<input name="brand_name" maxlength="80" value="{{ brand.name }}" placeholder="LTT Studios"></label><label class="th-field">{{ _("Font thương hiệu") }}<input name="brand_font" maxlength="80" value="{{ brand.font }}" placeholder="Barlow Condensed"></label></div>
         <div class="th-brand-colors"><label>{{ _("Màu chính") }} <input type="color" name="brand_primary" value="{{ brand.primary_color or '#E53935' }}"></label><label>{{ _("Màu phụ") }} <input type="color" name="brand_secondary" value="{{ brand.secondary_color or '#111111' }}"></label></div>
         <label class="th-field">{{ _("Giọng thương hiệu") }}<input name="brand_tone" maxlength="160" value="{{ brand.tone }}" placeholder="{{ _('Mạnh mẽ, công nghệ, rõ ràng') }}"></label>
-        <label class="th-save-brand"><input type="checkbox" name="save_brand" value="1"><span>{{ _("Lưu làm Brand Kit mặc định của tôi") }}</span></label>
+        <label class="th-save-brand"><input type="checkbox" name="save_brand" value="1"><span>{{ _("Lưu làm bộ nhận diện thương hiệu mặc định của tôi") }}</span></label>
       </fieldset>
       <fieldset class="th-group"><legend>{{ _("Phong cách ảnh") }}</legend>{{ chipgroup('phong_cach', catalog['phong_cach'], form_values.phong_cach or defaults['phong_cach']) }}</fieldset>
       <fieldset class="th-group"><legend>{{ _("Xu hướng thumbnail") }}</legend>{{ chipgroup('kieu_trend', catalog['kieu_trend'], form_values.kieu_trend or defaults['kieu_trend']) }}</fieldset>
