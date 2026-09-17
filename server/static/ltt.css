@@ -4325,3 +4325,5 @@ input[type=hidden]+.af-step{margin-top:0}
 .job-reason{display:block;margin:4px 0}
 .billing-order-head{align-items:flex-start}
 .job-state-done .job-timeline li.event-end .job-event-dot{background:var(--ok)}
+.billing-package{display:flex;flex-direction:column}.billing-package .in{display:flex;flex:1;flex-direction:column}
+.billing-package form{margin-top:auto}

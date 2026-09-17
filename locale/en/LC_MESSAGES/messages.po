@@ -8399,7 +8399,7 @@ msgstr "Connection lost"
 
 #: server/templates/job_detail.html:9
 msgid "Mất kết nối tạm thời. Tiến độ sẽ tự cập nhật khi mạng trở lại."
-msgstr ""
+msgstr "Connection lost temporarily. Progress will update when the network is back."
 
 msgid "Mất kết nối tạm thời. Đang thử lại…"
 msgstr "Connection lost for a moment. Retrying…"
@@ -18814,3 +18814,75 @@ msgstr "Email or username"
 
 msgid "Nhập email của bạn"
 msgstr "Enter your email"
+
+msgid "Đang xác nhận thanh toán"
+msgstr "Confirming payment"
+
+msgid "Cổng thanh toán đã báo nhận tiền — đang chờ ngân hàng xác nhận để cộng credit. Bạn không cần chuyển lại."
+msgstr "The payment gateway reported your payment — waiting for the bank to confirm before adding credit. You do not need to pay again."
+
+msgid "Đơn đã quá thời hạn thanh toán nên không còn nhận chuyển khoản."
+msgstr "This order passed its payment deadline and no longer accepts transfers."
+
+msgid "Đơn đã bị hủy nên không thể thanh toán tiếp."
+msgstr "This order was cancelled and can no longer be paid."
+
+msgid "Cổng thanh toán báo giao dịch không thành công; credit chưa được cộng."
+msgstr "The payment gateway reported the transaction failed; no credit has been added."
+
+msgid "Hết hạn lúc"
+msgstr "Expired at"
+
+msgid "Đơn đã hết hạn thanh toán."
+msgstr "This order has expired."
+
+msgid "Mã thanh toán của đơn này không còn dùng được. Tạo đơn mới để nhận mã mới."
+msgstr "This order's payment code can no longer be used. Create a new order to get a new code."
+
+msgid "Đơn đã bị hủy."
+msgstr "This order was cancelled."
+
+msgid "Đơn hủy không cộng credit. Muốn nạp tiếp, hãy tạo đơn mới."
+msgstr "Cancelled orders do not add credit. To top up, create a new order."
+
+msgid "Thanh toán không thành công."
+msgstr "Payment failed."
+
+msgid "Cổng thanh toán từ chối giao dịch. Kiểm tra số dư hoặc hạn mức tài khoản ngân hàng rồi thử lại với đơn mới."
+msgstr "The payment gateway declined the transaction. Check your bank balance or limit, then try again with a new order."
+
+msgid "Thử lại với đơn mới"
+msgstr "Try again with a new order"
+
+msgid "Bộ lọc"
+msgstr "Filters"
+
+msgid "%(n)s đang áp dụng"
+msgstr "%(n)s active"
+
+msgid "Danh sách việc"
+msgstr "Job list"
+
+msgid "Tải tệp ở phần “Tệp kết quả” bên dưới."
+msgstr "Download files in “Result files” below."
+
+msgid "Mở lại %(app)s để xem và dùng kết quả."
+msgstr "Open %(app)s again to view and use the result."
+
+msgid "Lý do:"
+msgstr "Reason:"
+
+msgid "Việc đã hủy."
+msgstr "Job cancelled."
+
+msgid "Việc dừng theo yêu cầu hủy và không được xử lý tiếp; credit giữ cho việc này được hoàn lại. Bấm “Thử lại” nếu muốn chạy lại."
+msgstr "The job stopped at your cancellation request and will not be processed further; credit held for it is refunded. Press “Retry” to run it again."
+
+msgid "Đã tạo việc"
+msgstr "Job created"
+
+msgid "Đang chờ đến lượt xử lý"
+msgstr "Waiting for its turn"
+
+msgid "Dừng do lỗi"
+msgstr "Stopped with an error"
