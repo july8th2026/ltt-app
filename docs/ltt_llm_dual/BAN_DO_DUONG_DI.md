@@ -76,8 +76,30 @@ streaming.py
         ├─ thanh_toan.giu_cho_luot()  giữ tiền SAU khi được nhận
         ├─ mo_thuong_nguon()
         │  └─ luong_vlm.mo()          mở httpx tới máy B (read timeout 900 s)
+        │     └─ máy B `llm_gateway/api.py`   RÀO VẬT LÝ (phương án C, bước 3):
+        │        ├─ 413  vào > `-c − max_out − DEM_UOC` của ĐÚNG model
+        │        └─ 429  chuỗi đang chạy = `-np`, hoặc Σ đặt chỗ + lượt này > `-c`
+        │           (`llm_gateway/vat_ly.py` đọc `-c`/`-np` từ `llama-swap.yaml`)
         └─ _phat()                    `with keep_alive(...)` rồi `yield` từng khối
 ```
+
+### 3b. Máy B = rào vật lý, KHÔNG phải bộ nhận thứ hai
+
+⭐ **Máy A là người quyết định nhận DUY NHẤT** (`docs/ltt_llm_dual/KE_HOACH_PHUONG_AN_C.md`
+§3). Cổng máy B không có luật công bằng, nhịp hay hạn mức riêng — khoá whale
+(O-01), RPM (O-03), trần vào chung cho hai model (O-02) và env
+`LTT_LLM_MAX_DONG_THOI`/`LTT_LLM_TOKEN_POOL`/`LTT_LLM_MAX_INPUT_TOKENS`/`LTT_LLM_RPM`
+**đã gỡ**. Nó chỉ chặn điều engine không tự chặn được:
+
+| chốt ở B | số lấy từ đâu | vượt thì |
+|---|---|---|
+| chuỗi đang chạy ≤ `-np` | `llama-swap.yaml`, từng hồ sơ | 429 |
+| Σ token đặt chỗ ≤ `-c` (`-kvu`: một bể) | `llama-swap.yaml`; đặt chỗ = header `X-LTT-Token-Dat` của A | 429 |
+| token vào ≤ `-c − max_out − DEM_UOC` | yaml + `gateway.env` (ghi từ `apps/ltt_llm/ngan_sach.py` lúc deploy) | 413 |
+
+🔑 **B 429 ⇒ A XẾP HÀNG LẠI**, không trả lỗi cho khách (bước 1 của phương án C,
+O-04): 429 của B chỉ còn nghĩa là tràn vật lý thật trong khe nhả suất A/B. Hợp
+đồng hai phía có phép kiểm: `tests/test_1223_phuong_an_c_rao_vat_ly_b.py`.
 
 ⚠️ **Sau khi đã trả 200 thì không còn mã HTTP.** Mọi kết cục xấu từ đó là một
 khối lỗi SSE đúng khuôn. Đi tìm "vì sao khách nhận 500" mà lượt đã stream rồi
@@ -90,6 +112,12 @@ là đi nhầm tầng.
 | **1 chính** | `khi_dut` → `_nha_suat` | `streaming.py`, gọi từ `finally` của `bat_dong_bo_hoa` | ~0,05 s |
 | **2 lưới** | nhịp tim chỉ đập khi **có byte đi qua**; im quá trần thì luồng nhịp tự nhả | `admission.keep_alive(con_song=...)` | `TRAN_IM_LANG_S` |
 | **3 chặn cuối** | `reclaim_expired` | `admission.py`, chạy khi có ai `acquire` | 20 phút |
+
+⚠️ **Máy B có sổ suất riêng** (`llm_gateway/gioi_han.py`), nhả khi luồng đóng ở
+B — có thể **sau** khi A đã nhả lease. Trong khe đó một lượt A vừa nhận có thể
+ăn 429 của B; đường đúng là A **xếp lượt ấy lại hàng chờ** (O-04), không phải
+thêm một lớp nhả thứ tư. B còn một lưới thu hồi suất treo riêng
+(`gioi_han.HAN_GIU_MAC_DINH_S`).
 
 🔑 **Vì sao cần cả ba** — và đây là bài học đắt nhất của hạng mục này:
 
@@ -124,6 +152,8 @@ Hai đường **độc lập**, `da_quyet_toan` bảo đảm chỉ một đườ
 | hàng đợi + sổ từng lượt | `platform_core/llm/phong_cho.py` (`llm_waiters`) |
 | cấp/nhả suất | `platform_core/llm/admission.py` |
 | cư trú model trên card | `platform_core/llm/residency.py` |
+| rào vật lý máy B (`-c`, `-np`, trần vào theo model, giữ chỗ) | `llm_gateway/vat_ly.py` ← `llama-swap.yaml` |
+| thứ tự deploy khi đổi sức chứa (tăng ⇒ B trước, giảm ⇒ A trước) | `docs/ltt_llm_dual/RUNBOOK.md` §2.1 |
 | tiền | `platform_core/llm/thanh_toan.py` |
 | sổ lỗi đã đóng/còn mở | `docs/ltt_llm_dual/SO_LOI_DO_TAI.md` |
 
@@ -131,6 +161,8 @@ Hai đường **độc lập**, `da_quyet_toan` bảo đảm chỉ một đườ
 
 1. **Vá nhầm cửa.** Hỏi *"lượt thật đi đường nào"* **trước** khi đọc mã. Cách
    hỏi rẻ nhất: `tool.admission_cho(model)` — có khai ⇒ đi phòng chờ.
+   ⛔ Và đừng thêm luật nhận vào cổng máy B: hai bộ nhận chồng nhau chính là
+   nguồn 429/413 **sau 200** mà phương án C dẹp (§3b).
 2. **Bản giả tự mở trói.** Bộ kiểm cũ của L-08 xanh suốt vì nguồn giả tự tỉnh
    dậy khi bị đóng; máy B không làm thế. Bản giả phải khác vật thật ở **mọi**
    chiều **trừ** chiều đang đo.

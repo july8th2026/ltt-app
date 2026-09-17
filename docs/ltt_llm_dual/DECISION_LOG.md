@@ -665,4 +665,45 @@ thì ngừng backfill sau nó.
   Nâng trên trần = đổi engine máy B + hằng `ngan_sach.py` (test_1201/test_334 buộc).
 - Giữ: ≤1 whale chạy (công bằng prefill, cả máy A và cổng máy B), 413 trước 200,
   giữ tiền SAU khi được nhận (INV-MJ-1), ba lớp nhả suất.
+  (⚠️ vế "cổng máy B" của khoá whale ĐÃ GỠ ở L-23 bước 3 — xem dưới.)
+
+---
+
+## L-23 (nháp) — Phương án C — bước 3: cổng máy B là RÀO VẬT LÝ (2026-09-17)
+
+> Nháp của phiên bước 3 (nhánh `phien/llm-gateway-vat-ly`). Bước 1+2 (máy A) ghi
+> phần của chúng vào cùng mục L-23 khi gộp. Kế hoạch:
+> `docs/ltt_llm_dual/KE_HOACH_PHUONG_AN_C.md` §3, §5.
+
+Chủ dự án chốt 17/09: **máy A là người quyết định nhận duy nhất**; cổng máy B chỉ
+giữ giới hạn vật lý của engine; dẹp mọi luật chồng lấn; chuẩn hoá tham số.
+
+- **Gỡ ở cổng B:** khoá "≤1 whale suốt lượt" + header `X-LTT-Whale` (O-01 — A tắt cờ
+  khi byte đầu về, B giữ tới hết ⇒ 429 sau 200); RPM 120/phút (O-03 — sinh từ thời
+  `--parallel 1`, A không có luật tương ứng); nhóm đếm `ban_whale`.
+- **Gỡ env:** `LTT_LLM_MAX_INPUT_TOKENS` (O-02 — một trần cho CẢ HAI model, sai cho
+  3.5), `LTT_LLM_MAX_DONG_THOI[__m]`, `LTT_LLM_TOKEN_POOL[__m]`, `LTT_LLM_RPM`. Còn
+  đặt ⇒ cổng chỉ cảnh báo lúc khởi động.
+- **Gỡ bản sao:** `catalog.ModelSpec.max_context` (O-16); `so_theo_model.token_dat_truoc`.
+- **Rào vật lý** (`llm_gateway/vat_ly.py`): đọc `-c`/`-np`/`--reasoning-budget`/`-kvu`
+  của từng hồ sơ từ `llama-swap.yaml` lúc khởi động (bộ đọc hẹp, không PyYAML — venv
+  B không có; phép kiểm buộc khớp `yaml.safe_load`). Tệp: `<gốc cài>/llama-swap.yaml`
+  (máy B: `H:\LTT_LLM\gateway\llama-swap.yaml`, đúng tệp `LTTLlamaSwap --config`),
+  lùi về `llm_gateway/deploy/llama-swap.yaml`; env đường dẫn `LTT_LLM_SWAP_YAML`.
+  Không đọc được ⇒ cổng **không khởi động** (fail-closed).
+  - chuỗi ≤ `-np` · Σ đặt chỗ ≤ `-c` (bể là `-c`, không phải `token_budget` của A);
+  - trần vào theo model = `-c − max_out − DEM_UOC`, cùng công thức `tran_vao_cua(m)`;
+  - giữ chỗ: có `X-LTT-Token-Dat` ⇒ **đúng số A** (sàn ở token vào B đo); vắng ⇒ cùng
+    công thức `luat_cho` (`vào + min(ra, -c − vào − DEM) + DEM`). Bản cũ lấy
+    `max(B ước, header)` — B ước ra không kẹp nên có thể > A ⇒ 429 sau 200.
+  - bộ ước token vào của B đổi cho khớp A: tools đếm nguyên JSON, làm tròn một lần.
+- **Tham số chính sách ở B** (`max_out`, `DEM_UOC`): `deploy.ps1` ghi vào `gateway.env`
+  bằng cách **đọc** `apps/ltt_llm/ngan_sach.py` (`deploy/xuat_tham_so_a.py`); không
+  còn số gõ tay trong script.
+- **Giữ:** 429 (không 5xx) cho tràn vật lý — A xếp hàng lại (bước 1, O-04); lưới thu
+  hồi suất treo; sàn VRAM opt-in (L-21); trọng tài RAM/python 3090.
+- **Còn mở:** O-19 `--no-cache-idle-slots` (có trên máy B, không có trong kho) — hoà
+  giải ở bước 4 theo m6; `deploy.ps1` dừng ở bước 1c khi yaml trên B lệch kho.
+- **Thứ tự deploy tổng quát** (thay R21 một chiều): TĂNG sức chứa ⇒ B trước; GIẢM ⇒ A
+  trước bằng env `LTT_ADMISSION_*` (`RUNBOOK.md` §2.1).
 
