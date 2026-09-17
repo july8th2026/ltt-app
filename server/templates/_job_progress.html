@@ -10,31 +10,44 @@
       trường lỗi thô của việc (chuỗi nội bộ, chốt ở test_107);
     * lịch sử xử lý luôn có mặt: việc chưa ghi sự kiện nào vẫn có mốc "Đã tạo
       việc", và việc đã kết thúc mà sự kiện cuối chưa nói điều đó thì có thêm
-      mốc kết thúc — trước đây trang lỗi/hủy dừng ở "Bắt đầu xử lý". -#}
+      mốc kết thúc — trước đây trang lỗi/hủy dừng ở "Bắt đầu xử lý".
+    Golden UI C4 (17/09):
+    * chấm dòng thời gian trung tính theo mốc; mốc đang diễn ra màu cảnh báo,
+      hoàn tất màu thành công, đỏ CHỈ cho lỗi (trước đây mọi mốc đều đỏ);
+    * việc lỗi/đã hủy không vẽ thanh tiến độ — chỉ ghi "Dừng ở N%";
+    * việc hoàn tất có nút mở ứng dụng (đường dẫn lấy từ manifest qua
+      `nav_apps`, chỉ khi app còn hiện với người này) và nút tới tệp kết quả. -#}
 {% set ma_ket_thuc = ('completed', 'failed', 'cancelled', 'ambiguous_provider') %}
 {% set su_kien_cuoi = events[-1] if events else none %}
 {% set thieu_moc_cuoi = not running and (su_kien_cuoi is none or su_kien_cuoi.event_code not in ma_ket_thuc) %}
 {% set loi_cong_khai = (events or []) | selectattr('level', 'equalto', 'error') | list %}
+{% set dung = job.status in ('error', 'cancelled') %}
 <div id="job-progress" class="job-state-{{ job.status }}"
      role="status" aria-live="polite"
      data-running="{{ 'true' if running else 'false' }}"
      data-poll-url="/jobs/{{ job.id }}/progress">
   <div class="job-progress-head">
     {{ ui.nhan_trang_thai(job.status) }}
-    <span class="muted">{{ job.progress }}%{% if running and job.progress_msg %} — {{ _(job.progress_msg) }}{% endif %}</span>
+    <span class="muted">{% if dung %}{{ _("Dừng ở") }} {% endif %}{{ job.progress }}%{% if running and job.progress_msg %} — {{ _(job.progress_msg) }}{% endif %}</span>
   </div>
-  {{ ui.thanh_tien_do(job.progress, _("Tiến độ việc")) }}
+  {% if not dung %}{{ ui.thanh_tien_do(job.progress, _("Tiến độ việc")) }}{% endif %}
   {% if job.status == 'done' %}
-    <div class="alert alert-ok"><strong>{{ _("Kết quả đã sẵn sàng.") }}</strong>
-      {% if artifacts is defined and artifacts %}{{ _("Tải tệp ở phần “Tệp kết quả” bên dưới.") }}
-      {%- else %}{{ _("Mở lại %(app)s để xem và dùng kết quả.", app=ten_app(job.app_slug)) }}{% endif %}</div>
+    {% set co_tep = artifacts is defined and artifacts %}
+    {% set app_mo = (nav_apps(request) | selectattr('manifest.slug', 'equalto', job.app_slug) | first) if request is defined else none %}
+    <div class="alert alert-ok job-done"><strong>{{ _("Kết quả đã sẵn sàng.") }}</strong>
+      {% if co_tep %}{{ _("Tải tệp ở phần “Tệp kết quả” bên dưới.") }}
+      {%- else %}{{ _("Mở lại %(app)s để xem và dùng kết quả.", app=ten_app(job.app_slug)) }}{% endif %}
+      {% if app_mo or co_tep %}<div class="actions job-done-actions">
+        {%- if app_mo %}<a class="btn" href="{{ app_mo.manifest.route_prefix }}">{{ _("Mở %(app)s", app=ten_app(job.app_slug)) }}</a>{% endif %}
+        {%- if co_tep %}<a class="btn ghost" href="#job-artifacts">{{ _("Xem tệp kết quả") }}</a>{% endif %}
+      </div>{% endif %}</div>
   {% elif job.status == 'error' %}
     <div class="alert alert-err"><strong>{{ _("Không thể hoàn tất.") }}</strong>
       {% if loi_cong_khai %}<span class="job-reason">{{ _("Lý do:") }} {{ _(loi_cong_khai[-1].public_message) }}</span>{% endif %}
       {{ _("Bạn có thể thử lại hoặc gửi mã hỗ trợ cho đội vận hành.") }}</div>
   {% elif job.status == 'cancelled' %}
     <div class="alert alert-warn"><strong>{{ _("Việc đã hủy.") }}</strong>
-      {{ _("Việc dừng theo yêu cầu hủy và không được xử lý tiếp; credit giữ cho việc này được hoàn lại. Bấm “Thử lại” nếu muốn chạy lại.") }}</div>
+      {{ _("Việc đã dừng theo yêu cầu của bạn. Số credit tạm giữ cho việc này đã được hoàn về tài khoản. Bấm “Thử lại” nếu muốn chạy lại.") }}</div>
   {% endif %}
   <section class="job-timeline" aria-label="{{ _('Lịch sử xử lý') }}">
     <h2>{{ _("Lịch sử xử lý") }}</h2>
@@ -50,7 +63,7 @@
       {% if job.started_at %}<time datetime="{{ job.started_at.isoformat() }}">{{ job.started_at.strftime('%H:%M:%S %d/%m') }}</time>{% endif %}
     </li>{% endif %}
     {%- endif %}
-    {%- for event in events %}<li class="event-{{ event.level }}">
+    {%- for event in events %}<li class="event-{{ event.level }} ma-{{ event.event_code }}{% if running and loop.last %} event-now{% endif %}">
       <span class="job-event-dot" aria-hidden="true"></span>
       <div><strong>{{ _(event.public_message) }}</strong>{% if event.details.percent is defined %}<small>{{ event.details.percent }}%</small>{% endif %}</div>
       <time datetime="{{ event.created_at.isoformat() }}">{{ event.created_at.strftime('%H:%M:%S %d/%m') }}</time>

@@ -4733,3 +4733,71 @@ textarea:focus,select:focus{border-color:var(--text-secondary)}
   .nx-nhat-ky--cot td:nth-child(2){overflow-wrap:anywhere}
 }
 /* === HET C4: DEV-VPS-NEXUS === */
+/* === C4: BILLING-JOBS === */
+/* Golden UI C4 (17/09) — họ Billing + Jobs, vòng hai theo người chấm V2. Chỉ token.
+   Gói nạp: gói giữa (khi có từ ba gói) nhấn viền + nền thương hiệu, nút các gói
+   khác là nút phụ; màn vừa (641–1023px) ba cột cân thay vì 2 + 1 lẻ hàng. */
+.billing-package--noi-bat{border-color:var(--brand-border);background:linear-gradient(180deg,var(--brand-soft),var(--panel) 55%);
+  box-shadow:inset 0 0 0 1px var(--brand-border)}
+@media(min-width:641px){
+  .billing-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .billing-grid:has(>.billing-package:only-child){grid-template-columns:minmax(0,420px)}
+  .billing-grid:has(>.billing-package:nth-child(2):last-child){grid-template-columns:repeat(2,minmax(0,1fr))}
+  .billing-grid:has(>.billing-package:nth-child(4)){grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+}
+@media(min-width:641px) and (max-width:1023px){
+  .billing-grid{gap:var(--space-3)}
+  .billing-package .in{padding:var(--space-4)}
+  .billing-package .billing-price{font-size:20px}
+  .billing-package form .btn{padding-inline:var(--space-2)}
+}
+/* Trang đơn: thẻ đơn + khối hướng dẫn/hỗ trợ; màn rộng hai cột, hẹp xếp dọc.
+   Nút "← Gói nạp" ở mép phải tiêu đề thẳng trục với mép phải khối bên. */
+.billing-order-layout{display:grid;gap:var(--space-4);margin-top:14px;align-items:start}
+.billing-order-layout .billing-order{max-width:none;margin-top:0}
+@media(min-width:1024px){.billing-order-layout{grid-template-columns:minmax(0,1fr) minmax(280px,360px)}}
+.billing-order-aside h2{margin:0 0 var(--space-3);font-size:15px}
+.billing-steps{display:grid;gap:var(--space-3);margin:0;padding:0;list-style:none;counter-reset:buoc}
+.billing-steps li{position:relative;padding-left:34px;color:var(--text-secondary);font-size:var(--fs-label);line-height:1.55;counter-increment:buoc}
+.billing-steps li::before{content:counter(buoc);position:absolute;left:0;top:0;display:grid;place-items:center;width:24px;height:24px;
+  border:1px solid var(--line2);border-radius:50%;color:var(--text-primary);font-size:12px;font-weight:700}
+.billing-aside-body{margin:0;color:var(--text-secondary);font-size:var(--fs-label);line-height:1.55}
+.billing-order-aside .billing-aside-cta{display:flex;width:100%;justify-content:center;text-align:center;margin-top:var(--space-4)}
+/* Mọi thông báo ở ĐẦU thẻ đơn; fragment trạng thái cách bảng tóm tắt một nhịp. */
+.billing-order .billing-status-slot:empty{display:none}
+.billing-order .billing-status{margin:0 0 var(--space-4)}
+.billing-order .billing-alert-top+.billing-alert-top{margin-top:calc(-1 * var(--space-1))}
+.billing-waiting-line{display:flex;align-items:center;gap:var(--space-2);margin:0}
+.billing-waiting .billing-hint{margin:var(--space-1) 0 0 18px}
+.billing-pulse{flex:0 0 auto;width:10px;height:10px;border-radius:50%;background:var(--warn);box-shadow:0 0 0 3px var(--warn-bg)}
+@media(prefers-reduced-motion:no-preference){.billing-pulse{animation:billing-nhip 1.6s ease-in-out infinite}}
+@keyframes billing-nhip{50%{opacity:.45}}
+/* Nút mở cổng: chữ căn giữa như mọi nút chính, cách dòng cuối bảng một nhịp. */
+.billing-order .billing-cta-full{display:flex;width:100%;justify-content:center;text-align:center;margin-top:var(--space-4)}
+.billing-order .billing-line:last-of-type{margin-bottom:0}
+.billing-order>.billing-line:last-child{border-bottom:0;padding-bottom:0}
+.billing-dead-actions{margin-top:var(--space-3)}
+/* Trang đơn ngắn: chân trang dính đáy khung nhìn thay vì lơ lửng giữa màn. */
+body:has(.billing-order-page){display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
+body:has(.billing-order-page)>main{flex:1 0 auto}
+/* Jobs: chấm dòng thời gian trung tính; mốc đang diễn ra cảnh báo; hoàn tất
+   thành công; đỏ chỉ cho lỗi. */
+.job-timeline .job-event-dot{background:var(--text-muted)}
+.job-timeline li.event-now .job-event-dot,.job-timeline li.event-warning .job-event-dot{background:var(--warn)}
+.job-timeline li.ma-completed .job-event-dot,.job-state-done .job-timeline li.event-end .job-event-dot{background:var(--ok)}
+.job-timeline li.event-error .job-event-dot{background:var(--err)}
+/* Việc dừng (lỗi/hủy): không thanh tiến độ, chỉ chữ. */
+.job-row-dung{display:block;margin:0;color:var(--muted);font-size:12px}
+.job-done-actions{margin-top:var(--space-3)}
+#job-progress .job-progress-head+.alert{margin-top:var(--space-3)}
+/* Bộ lọc việc: lưới cân — màn vừa bốn ô một hàng, nút xuống hàng riêng. */
+.job-filter-actions{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
+@media(min-width:641px){
+  .job-filter-box .job-filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) auto;align-items:end}
+  .job-filter-box .job-filters select,.job-filter-box .job-filters input{min-width:0;width:100% !important}
+}
+@media(min-width:641px) and (max-width:1023px){
+  .job-filter-box .job-filters{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .job-filter-actions{grid-column:1/-1;justify-content:flex-end}
+}
+@media(max-width:640px){.job-filter-actions,.job-filter-actions .btn{width:100%}}
