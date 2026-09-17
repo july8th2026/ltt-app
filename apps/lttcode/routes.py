@@ -44,8 +44,20 @@ def _goc(request: Request) -> str:
 
 @router.get("")
 async def trang_tai(request: Request):
+    """Trang giới thiệu + hướng dẫn + tải công khai. Nút tải chỉ phát kênh `stable`."""
     ban = phat_hanh.ban_moi_nhat(phat_hanh.doc_manifest(), "stable")
-    return templates.TemplateResponse(request, "lttcode_download.html", {"ban": ban})
+    return templates.TemplateResponse(request, "lttcode_download.html", {
+        "ban": ban, "kich_thuoc": _kich_thuoc(ban["file"]) if ban else None})
+
+
+def _kich_thuoc(filename: str) -> int | None:
+    """Số byte của bộ cài trong `lttcode_dist`; `None` nếu tên lạ hoặc tệp chưa có."""
+    if not phat_hanh.TEN_TEP.match(filename):
+        return None
+    try:
+        return (Path(data_path(phat_hanh.THU_MUC_DIST)) / filename).stat().st_size
+    except OSError:
+        return None
 
 
 @router.get("/update/{channel}/{target}/{arch}/{current_version}")
