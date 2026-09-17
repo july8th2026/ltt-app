@@ -91,7 +91,7 @@ def args38(port, np_=3, c=221184, them=()):
 
 # Tran rieng tung phep (phut) - uoc luong x ~1,4.
 HAN_PHEP = {"m1": 45, "m3_35": 26, "m5": 10, "m6": 12, "m3_38": 32, "m2": 35,
-            "ctrl35": 6, "ctrl38": 7}
+            "ctrl35": 6, "ctrl38": 7, "am35": 50, "am38": 55}
 # VRAM toi da cua card dich de coi la "production da nha" (MiB; desktop giu ~0,3-0,9 GB).
 VRAM_SACH = {UUID35: 1500, UUID38: 1200}
 
@@ -100,8 +100,8 @@ HAN = 0.0
 SONG_SONG = False
 CONG_CUA_TOI: tuple = CONG_THU
 M1_NP: tuple = (3, 4, 6)
-CONG_PHEP = {"m1": P35, "m3_35": P35, "m6": P35, "ctrl35": P35, "m5": PTRAN,
-             "m3_38": P38, "m2": P38, "ctrl38": P38}
+CONG_PHEP = {"m1": P35, "m3_35": P35, "m6": P35, "ctrl35": P35, "am35": P35, "m5": PTRAN,
+             "m3_38": P38, "m2": P38, "ctrl38": P38, "am38": P38}
 DANG_CHAY: list = []          # Popen server thu dang song
 _khoa = threading.Lock()
 
@@ -891,6 +891,76 @@ def _ctrl(do, uuid, port, mk_args):
         tat_server(p)
 
 
+def _vong_am(do, port, pha):
+    """Lap 3 lan: dong thoi k=1(1k), k=1(32k), k=2(1k,8k), k=3(1k,8k,32k); roi 3 lan hai_job."""
+    for lap in range(3):
+        for k, kt in [(1, [1000]), (1, [32000]), (2, [1000, 8000]), (3, [1000, 8000, 32000])]:
+            if not con(2 * 60):
+                raise HetGio()
+            nhip(do, "%s lap%d k=%d %s" % (pha, lap, k, kt))
+            dot_dong_thoi(do, port, "%s|lap%d" % (pha, lap), k, kt)
+    for lap in range(3):
+        hai_job(do, port, "%s|lap%d" % (pha, lap))
+
+
+def _tai_on_dinh(do, port, giay=600):
+    """Tai tron lien tuc 3 luong: prompt 1k/3k/8k/20k, dau ra 200..1500 token."""
+    dung = time.time() + giay
+    tk = {"luot": 0, "token_ra": 0, "loi": 0, "rong": 0}
+    khoa = threading.Lock()
+
+    def tho(seed):
+        rng = random.Random(seed)
+        while time.time() < dung and con(5 * 60):
+            b = body_tp(port, rng.choice([1000, 1000, 3000, 8000, 20000]), rng.randint(200, 1500))
+            b.pop("ignore_eos", None)
+            k = luong(port, b, {}, None, 900)
+            with khoa:
+                tk["luot"] += 1
+                tk["token_ra"] += token_ra(k)
+                tk["loi"] += 1 if k.get("loi") else 0
+                tk["rong"] += 1 if (k.get("noi_dung_ky_tu") or 0) == 0 else 0
+
+    t0 = time.time()
+    ts = [threading.Thread(target=tho, args=(s,), daemon=True) for s in range(3)]
+    for t in ts:
+        t.start()
+    for t in ts:
+        t.join()
+    ghi(do, dict({"su_kien": "tai_on_dinh", "giay": round(time.time() - t0, 1),
+                  "he_thong": he_thong()}, **tk))
+
+
+def _am(do, uuid, port, mk_args):
+    """Chay AM (17/09, chu du an): cau hinh production np3 (-b mac dinh), mot server duy nhat.
+    Nap -> 2 luot khoi dong BO (ngan + 32k) -> vong do lap 3 -> 10 phut tai tron -> vong do lap 3."""
+    preflight(do, uuid)
+    nhip(do, "nap np3")
+    p, xanh, _ = bat_server(do, "np3_am", mk_args(port), uuid, port)
+    try:
+        if not xanh:
+            return
+        for nhan, n in (("ngan", 200), ("32k", 32000)):
+            nhip(do, "khoi dong bo " + nhan)
+            k = luong(port, body_tp(port, n, 64), {}, None, 900)
+            ghi(do, {"su_kien": "khoi_dong_bo", "nhan": nhan, "luot": gon(k)})
+        _vong_am(do, port, "am_moi")
+        nhip(do, "tai on dinh 10 phut")
+        _tai_on_dinh(do, port, 600)
+        _vong_am(do, port, "sau_10_phut_tai")
+        ghi(do, dict({"su_kien": "vram_sau_tai", "nhan": "np3_am"}, **anh_vram(uuid, p.pid)))
+    finally:
+        tat_server(p)
+
+
+def am35():
+    _am("am35", UUID35, P35, args35)
+
+
+def am38():
+    _am("am38", UUID38, P38, args38)
+
+
 def ctrl35():
     _ctrl("ctrl35", UUID35, P35, args35)
 
@@ -900,7 +970,7 @@ def ctrl38():
 
 
 PHEP = {"m1": m1, "m3_35": m3_35, "m5": m5, "m6": m6, "m3_38": m3_38, "m2": m2,
-        "ctrl35": ctrl35, "ctrl38": ctrl38}
+        "ctrl35": ctrl35, "ctrl38": ctrl38, "am35": am35, "am38": am38}
 
 
 def gac(han_cung):
