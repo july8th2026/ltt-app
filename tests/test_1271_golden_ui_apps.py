@@ -48,9 +48,11 @@ FORM_NHO = {
 def test_form_app_nho_dung_khung_chung(tep):
     src = _doc(tep)
     tien_to, _action, _ten = FORM_NHO[tep]
-    assert 'class="%s-head af-head"' % tien_to in src
-    assert '<span class="af-kicker">' in src
-    assert 'href="/jobs"' in src
+    # C4 17/09: đầu trang đi qua macro chung `_app_head.html` (eyebrow + h1 + "Việc của tôi"
+    # do macro vẽ) — trước là `<header class="xx-head af-head">` chép tay ở bốn tệp.
+    assert '{% import "_app_head.html" as ah %}' in src
+    assert re.search(r'ah\.dau_trang\(_\("Workflow"\).*lop="%s-head"' % tien_to, src)
+    assert '<span class="af-kicker">' not in src
     assert 'class="%s-form af-card"' % tien_to in src
     so = re.findall(r'<div class="af-step"><span>0(\d)</span>', src)
     assert so == ["1", "2"], so
@@ -107,15 +109,18 @@ def test_quality_lab_upload_chung_tieng_viet_khong_teal():
     assert "ui.nhan_trang_thai(job.status)" in src
     assert "#0e7c86" not in re.sub(r"/\*.*?\*/", "", CSS, flags=re.S).lower()
     report = _doc("apps/qualitylab/templates/qualitylab_report.html")
-    assert report.count("<h1") == 1
+    # C4 17/09: h1 duy nhất của báo cáo do macro đầu trang chung vẽ.
+    assert report.count("<h1") == 0 and report.count("ah.dau_trang(") == 1
 
 
 # ── 3. Upscale / Voice ───────────────────────────────────────────────────────
 
 def test_upscale_h1_la_ten_trang_va_so_buoc_hai_chu_so():
     src = _doc("apps/upscalevideo/templates/upscalevideo.html")
-    assert src.count("<h1") == 1
-    assert '<h1 class="app-bar-title">Upscale Video</h1>' in src
+    # C4 17/09: h1 "Upscale Video" do macro đầu trang chung vẽ (kèm mô tả tiếng Việt),
+    # không còn nằm trong dải `topbar_title`.
+    assert "<h1" not in src and "topbar_title" not in src
+    assert 'ah.dau_trang(_("Video"), "Upscale Video", _("Nâng độ nét video' in src
     so = re.findall(r"<h2><b>(\d+)</b>", src)
     assert so == ["01", "02", "03", "04", "05"], so
     assert ".up-start{text-transform:none" in CSS
@@ -130,9 +135,12 @@ def test_voice_so_buoc_hai_chu_so_va_khong_ky_tu_dieu_khien():
 # ── 4. Thống nhất chữ và style ───────────────────────────────────────────────
 
 def test_hai_tab_image_studio_cung_dai_tieu_de():
+    # C4 17/09: "Image Studio" chuyển từ dải topbar_title (lặp tầng) vào eyebrow của macro chung.
     for tep in ("apps/taoanh/templates/image.html", "apps/taoanh/templates/image_thumbnail_shell.html",
                 "apps/thumbnail/templates/thumbnail.html"):
-        assert "{% block topbar_title %}<strong>Image Studio</strong>{% endblock %}" in _doc(tep), tep
+        src = _doc(tep)
+        assert "topbar_title" not in src, tep
+        assert 'ah.dau_trang(_("Ảnh") ~ " · Image Studio"' in src, tep
 
 
 @pytest.mark.parametrize("tep", [
