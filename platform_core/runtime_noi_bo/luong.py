@@ -234,11 +234,13 @@ def _dong_phien(gen) -> None:
 #:    = JSON {`device_id` (ổn định THEO MÁY), `session_id`}, Codex gửi
 #:    `client_metadata` {`x-codex-installation-id`, `session_id`, `thread_id`} và
 #:    `prompt_cache_key` = thread id. `user` / `safety_identifier` là trường định
-#:    danh người dùng cuối của giao thức OpenAI. llama.cpp không đọc trường nào
-#:    trong số này (`search_code prompt_cache_key repo:ggml-org/llama.cpp` = 0) ⇒
-#:    gỡ không đổi hành vi sinh, chỉ bớt dữ liệu nằm ở một máy không có chính
-#:    sách lưu giữ và trái luật "B không biết khách" (Q102). Phiên khách dừng ở A
-#:    (`public_api_requests`, P1).
+#:    danh người dùng cuối của giao thức OpenAI. Không trường nào ảnh hưởng việc
+#:    sinh chữ (`search_code prompt_cache_key repo:ggml-org/llama.cpp` = 0) —
+#:    nhưng llama.cpp CÓ đọc `metadata.user_id` ở cửa Anthropic và chép vào
+#:    `__metadata_user_id` (`tools/server/server-chat.cpp`, @ec928150, 19/09) ⇒
+#:    định danh máy khách thật sự vào tới tiến trình B. Gỡ không đổi hành vi sinh,
+#:    chỉ bớt dữ liệu nằm ở một máy không có chính sách lưu giữ và trái luật "B
+#:    không biết khách" (Q102). Phiên khách dừng ở A (`public_api_requests`, P1).
 TRUONG_DINH_DANH_KHACH = ("metadata", "client_metadata", "prompt_cache_key",
                           "user", "safety_identifier")
 
@@ -247,6 +249,128 @@ def _go_dinh_danh_khach(gui: dict) -> None:
     """Gỡ `TRUONG_DINH_DANH_KHACH` khỏi BẢN SAO thân gửi B (tại chỗ)."""
     for ten in TRUONG_DINH_DANH_KHACH:
         gui.pop(ten, None)
+
+
+def _kiem_sinh_boc(kiem, executor, than: dict) -> dict:
+    """Gọi bộ kiểm tham số sinh của app, ĐỔI lỗi của app sang `ThamSoSai` của cửa.
+
+    🔴 Lỗi của app (`executor.parameter_error`, ở `ltt_llm` là
+       `features.ThamSoSai`) KHÔNG phải `ThamSoSai` của module này; cửa HTTP chỉ
+       bắt cái sau ⇒ trước 19/09 `top_p=5` trên `/messages` stream thoát thành
+       **500** thay vì 400 (test_1522).
+
+    ⛔ `tool_choice` KHÔNG đưa qua bộ kiểm của app: nó kiểm khuôn
+       `/chat/completions` (chỉ chuỗi), còn hai cửa stream nói giao thức khác —
+       `chuan_hoa_tool_choice` lo phần đó theo đúng `duong`.
+    """
+    loi_app = getattr(executor, "parameter_error", None)
+    try:
+        return kiem({k: v for k, v in than.items() if k != "tool_choice"})
+    except Exception as e:
+        if isinstance(loi_app, type) and isinstance(e, loi_app):
+            raise ThamSoSai(str(e)) from None
+        raise
+
+
+def _ten_tool(t) -> str:
+    return str(t.get("name") or "") if isinstance(t, dict) else ""
+
+
+def _thu_tools(gui: dict, ten: set[str], nguon: str) -> None:
+    """Giữ trong `tools` đúng các tool tên `ten` (theo thứ tự khách gửi)."""
+    tools = gui.get("tools") or []
+    con = [t for t in tools if _ten_tool(t) in ten]
+    thieu = ten - {_ten_tool(t) for t in con}
+    if thieu:
+        raise ThamSoSai(f"`{nguon}` names {sorted(thieu)!r}, which is not in `tools`")
+    gui["tools"] = con
+
+
+_MAU_FN = '{"type": "function", "name": ...}'
+
+
+def chuan_hoa_tool_choice(gui: dict, duong: str) -> None:
+    """Dịch `tool_choice` của khách sang dạng máy B LÀM ĐÚNG, tại chỗ, trên bản sao `gui`.
+
+    Nguồn (llama.cpp @ ec928150, tra 19/09):
+      * `/v1/messages` — `server_chat_convert_anthropic_to_oai`
+        (`tools/server/server-chat.cpp`) chỉ đọc ĐỐI TƯỢNG: `auto`→"auto",
+        `any`/`tool`→"required" (**mất tên tool**), `none` không ánh xạ (⇒ mặc
+        định auto), `disable_parallel_tool_use` bị bỏ.
+      * `/v1/responses` — `tool_choice` chép nguyên sang chat; đối tượng gặp
+        `json_value<std::string>` ⇒ cảnh báo rồi dùng "auto" (**ép tool mất im lặng**).
+
+    Nên A:
+      * ép MỘT tool (`{"type":"tool","name"}` / `{"type":"function","name"}`) ⇒
+        thu `tools` còn đúng tool đó + "bắt buộc" — đúng nghĩa, B làm được;
+      * `none` ở `/messages` ⇒ gỡ `tools` (không tool thì không gọi được);
+      * thứ B không làm được (`disable_parallel_tool_use: true`, tool dựng sẵn
+        của hãng) ⇒ `ThamSoSai` (400) nói rõ — không nuốt im lặng.
+    """
+    if gui.get("tool_choice") is None:
+        gui.pop("tool_choice", None)
+        return
+    tc = gui["tool_choice"]
+    co_tools = bool(gui.get("tools"))
+    if duong == "/v1/messages":
+        if not isinstance(tc, dict):
+            raise ThamSoSai('`tool_choice` must be an object: '
+                            '{"type": "auto"|"any"|"tool"|"none"}')
+        loai = tc.get("type")
+        khong_song_song = tc.get("disable_parallel_tool_use")
+        if khong_song_song is not None and not isinstance(khong_song_song, bool):
+            raise ThamSoSai("`tool_choice.disable_parallel_tool_use` must be a boolean")
+        if khong_song_song and loai != "none":
+            raise ThamSoSai("`tool_choice.disable_parallel_tool_use: true` is not "
+                            "supported by this model server; omit it or set false")
+        if loai == "auto":
+            gui["tool_choice"] = {"type": "auto"}
+        elif loai == "none":
+            gui.pop("tool_choice", None)
+            gui.pop("tools", None)
+        elif loai in ("any", "tool"):
+            if not co_tools:
+                raise ThamSoSai(f"`tool_choice` {loai!r} requires non-empty `tools`")
+            if loai == "tool":
+                ten = tc.get("name")
+                if not isinstance(ten, str) or not ten:
+                    raise ThamSoSai('`tool_choice` of type "tool" requires `name`')
+                _thu_tools(gui, {ten}, "tool_choice.name")
+            gui["tool_choice"] = {"type": "any"}
+        else:
+            raise ThamSoSai(f"`tool_choice.type` {loai!r} must be one of "
+                            "auto|any|tool|none")
+        return
+    # /v1/responses (OpenAI Responses)
+    if isinstance(tc, str):
+        if tc not in ("none", "auto", "required"):
+            raise ThamSoSai(f"`tool_choice` {tc!r} must be none|auto|required "
+                            f"or {_MAU_FN}")
+        if tc == "required" and not co_tools:
+            raise ThamSoSai('`tool_choice` "required" requires non-empty `tools`')
+        return
+    loai = tc.get("type") if isinstance(tc, dict) else None
+    if loai == "function":
+        ten = tc.get("name")
+        if not isinstance(ten, str) or not ten:
+            raise ThamSoSai('`tool_choice` of type "function" requires `name`')
+        _thu_tools(gui, {ten}, "tool_choice.name")
+        gui["tool_choice"] = "required"
+    elif loai == "allowed_tools":
+        che_do = tc.get("mode", "auto")
+        ds = tc.get("tools")
+        if che_do not in ("auto", "required") or not isinstance(ds, list) or not ds:
+            raise ThamSoSai("`tool_choice` allowed_tools needs `mode` auto|required "
+                            "and a non-empty `tools` list")
+        ten_ds = {_ten_tool(t) for t in ds}
+        if "" in ten_ds or any(not isinstance(t, dict) or t.get("type") != "function"
+                               for t in ds):
+            raise ThamSoSai(f"`tool_choice.tools` may only list {_MAU_FN}")
+        _thu_tools(gui, ten_ds, "tool_choice.tools")
+        gui["tool_choice"] = che_do
+    else:
+        raise ThamSoSai(f"`tool_choice` type {loai!r} is not supported here; use "
+                        f"none|auto|required or {_MAU_FN}")
 
 
 def _kep_tran_gui(gui: dict, duong: str, xin_ra: int) -> None:
@@ -602,7 +726,8 @@ def tien_kiem(db, *, user_id: str, tool_name: str, than: dict, duong: str,
     #    Anthropic van di qua duoc.
     _kiem_sinh = getattr(executor, "validate_generation", None)
     if callable(_kiem_sinh):
-        gui.update(_kiem_sinh(than))
+        gui.update(_kiem_sinh_boc(_kiem_sinh, executor, than))
+    chuan_hoa_tool_choice(gui, duong)  # theo giao thức của cửa (test_1522)
     # Suy nghĩ do máy chủ quyết (L-26): gỡ ghi đè budget/bật-tắt, chuẩn hoá effort.
     gui, effort_bo_qua = chuan_hoa_suy_nghi(gui, ten)
     dat_effort_cho_engine(gui, duong)  # T1c: đúng trường llama.cpp của cửa đọc
@@ -1229,7 +1354,8 @@ def chuan_bi(db, *, user_id: str, tool_name: str, than: dict, duong: str,
     #    Anthropic van di qua duoc.
     _kiem_sinh = getattr(executor, "validate_generation", None)
     if callable(_kiem_sinh):
-        gui.update(_kiem_sinh(than))
+        gui.update(_kiem_sinh_boc(_kiem_sinh, executor, than))
+    chuan_hoa_tool_choice(gui, duong)  # theo giao thức của cửa (test_1522)
     gui, _bo_qua = chuan_hoa_suy_nghi(gui, ten)  # L-26, cùng hàm với `tien_kiem`
     dat_effort_cho_engine(gui, duong)  # T1c
     gui["model"] = executor.model_id(ten)

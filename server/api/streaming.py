@@ -781,6 +781,9 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     #    ta trả 400 → lượt đó chết lặng (model đã chạy trên GPU nhưng bị vứt), và
     #    khách thấy "GPU dừng mà không có gì xảy ra". (Đo 2026-08-27.)
     #
+    #    (19/09: "nguyên xi" nay là "đã chuẩn hoá theo giao thức" —
+    #    `luong.chuan_hoa_tool_choice`, vì B làm mất tên tool bị ép; test_1522.)
+    #
     # ⭐ `auto` bỏ qua được ở cả hai vì nó **đã là** mặc định của thượng nguồn.
     _chon = than.get("tool_choice")
     if _chon is not None and not than.get("stream"):
