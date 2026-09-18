@@ -888,8 +888,9 @@ CLAUDE_LOCAL_COMMON_ENV: tuple[tuple[str, str], ...] = (
     ("CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS", "1"),
     ("CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH", "1"),
     ("CLAUDE_CODE_SUBAGENT_MODEL_FORCE", "1"),
-    # Claude mặc định thử lại 10 lần. LTT dùng 3: đủ vượt một race/transient
-    # sau hàng chờ nhưng không khuếch đại hai phiên dài thành bão request.
+    # Claude mặc định thử lại 10 lần và LTT GIỮ 10 (mặc định của client): hàng
+    # chờ máy A trả 429 + Retry-After, nên thử lại theo nhịp đó không thành bão.
+    # (Chú thích cũ ghi "LTT dùng 3" trong khi giá trị là 10 — sửa 18/09.)
     ("CLAUDE_CODE_MAX_RETRIES", "10"),
     ("API_TIMEOUT_MS", "600000"),
     ("CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK", "1"),
@@ -903,11 +904,20 @@ def claude_local_env(model: str = CLI_MODEL) -> tuple[tuple[str, str], ...]:
     Hai dòng đầu đổi theo model; chín dòng sau là hợp đồng dùng chung. Tên lạ
     ném `KeyError` thay vì rơi về 3.8, vì một preset mang ngân sách của model
     khác sẽ chỉ lộ ra bằng lỗi 413 giữa một phiên dài.
+
+    🔴 `CLAUDE_CODE_AUTO_COMPACT_WINDOW` = CỬA SỔ CÔNG BỐ, không phải ngưỡng nén
+       kiểu Codex (18/09, plan v2 Task 9, nhánh `phien/nen-claude-codex` 1b143291).
+       Đo Claude Code 2.1.274: nó nén ở
+       `min(AUTO_COMPACT_WINDOW, ctx) − min(MAX_OUTPUT_TOKENS, 20000) − 13000`
+       — tức TỰ trừ phần ra và biên. Đưa nó ngưỡng Codex (`cửa sổ − 32.768`) là
+       trừ phần ra HAI lần ⇒ nén sớm ~33K token. Codex giữ nguyên
+       `model_auto_compact_token_limit` (= phần tử thứ hai của
+       `CODEX_MODEL_LIMITS`), vì Codex dùng con số ấy trực tiếp.
     """
-    context, compact = CODEX_MODEL_LIMITS[model]
+    context, _nen_codex = CODEX_MODEL_LIMITS[model]
     return (
         ("CLAUDE_CODE_MAX_CONTEXT_TOKENS", str(context)),
-        ("CLAUDE_CODE_AUTO_COMPACT_WINDOW", str(compact)),
+        ("CLAUDE_CODE_AUTO_COMPACT_WINDOW", str(context)),
         *CLAUDE_LOCAL_COMMON_ENV,
     )
 
