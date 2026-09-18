@@ -1,0 +1,4 @@
+PROC model=qwen38 pid=16800 np=3 c=221184 b=2048 ub=512 dedicated_mib=23971 shared_mib=568
+PROC model=qwen35 pid=18356 np=4 c=262144 b=512 ub=512 dedicated_mib=15407 shared_mib=644
+GPU 0, NVIDIA GeForce RTX 3090, 24036, 24576, 0
+GPU 1, NVIDIA GeForce RTX 5060 Ti, 15794, 16311, 0

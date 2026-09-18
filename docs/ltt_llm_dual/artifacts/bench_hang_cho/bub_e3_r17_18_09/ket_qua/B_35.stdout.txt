@@ -1,0 +1,25 @@
+OK
+RUNNING [('qwen35-api', 'ready')]
+VRAM_TRUOC qwen35-api B_b1024ub512
+PROC model=qwen35 pid=13552 np=4 c=262144 b=1024 ub=512 dedicated_mib=15515 shared_mib=660
+GPU 0, NVIDIA GeForce RTX 3090, 66, 24576, 1
+GPU 1, NVIDIA GeForce RTX 5060 Ti, 15902, 16311, 0
+===== qwen35-api B_b1024ub512 np=4 =====
+  warm-up 32K: prompt_n=32928 16.2 s -> ky_tu=99514
+  prefill32k #0: n=32737 16.09 s (2035 tok/s)
+  prefill32k #1: n=32725 16.10 s (2032 tok/s)
+  prefill32k #2: n=32763 16.14 s (2030 tok/s)
+  1 luong #0: 75.9 tok/s ra=1024 finish=length ttft=1.43
+  1 luong #1: 75.7 tok/s ra=1024 finish=length ttft=1.02
+  1 luong #2: 78.2 tok/s ra=1024 finish=length ttft=1.01
+  4 luong dot 0: moi luong 43.4/42.6/42.9/45.2 | tong 164.1 tok/s (4096 tok)
+  4 luong dot 1: moi luong 41.3/42.1/43.4/43.4 | tong 157.9 tok/s (4096 tok)
+  4 luong dot 2: moi luong 40.0/43.4/42.8/44.0 | tong 158.7 tok/s (4096 tok)
+  lang dot 0 (3 nho + 32K): lang max 0.68 s | nho trong prefill 4.1 (min 3.9) tok/s, truoc 43.9 | prefill 32K 19.1 s
+  lang dot 1 (3 nho + 32K): lang max 0.65 s | nho trong prefill 4.1 (min 3.9) tok/s, truoc 46.0 | prefill 32K 19.1 s
+  lang dot 2 (3 nho + 32K): lang max 0.67 s | nho trong prefill 3.9 (min 3.6) tok/s, truoc 44.4 | prefill 32K 19.0 s
+TONG_HOP {"model": "qwen35-api", "nhan": "B_b1024ub512", "np": 4, "warm": {"status": 200, "loi": null, "finish": "length", "huy": false, "prompt_n": 32928, "prompt_ms": 16169.098, "prompt_tps": 2036.4772357740674, "pred_n": 1, "pred_ms": 0.001, "pred_tps": 0.0, "draft_n": null, "draft_acc": null, "content_kt": 0, "reasoning_kt": 8, "ttft": 16.32758855819702, "giay": 16.377803564071655}, "prefill32k_s": 16.1, "prefill32k_tps": 2032.18, "don_tps": 75.86, "don_ttft": 1.02, "tong_n": 4, "tong_tps": 158.69, "moi_luong_tps": 43.15, "moi_luong_min": 40.0, "lang_n_nho": 3, "lang_max_s": 0.67, "lang_trong_tps": 4.07, "lang_truoc_tps": 44.4, "lang_prefill_s": 19.06, "rong_27572_tat_ca": 0, "luot_tat_ca": 23, "giay": 300}
+VRAM_SAU qwen35-api B_b1024ub512
+PROC model=qwen35 pid=13552 np=4 c=262144 b=1024 ub=512 dedicated_mib=15525 shared_mib=668
+GPU 0, NVIDIA GeForce RTX 3090, 66, 24576, 0
+GPU 1, NVIDIA GeForce RTX 5060 Ti, 15912, 16311, 0

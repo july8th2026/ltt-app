@@ -1,0 +1,57 @@
+{
+ "on": {
+  "cong_luot": 48,
+  "cong_loai": {
+   "ok": 48
+  },
+  "cong_rong": [],
+  "cong_W5": "9/9 dung",
+  "cong_cham_dung": "35/36",
+  "kim_luot": 48,
+  "kim_finish": {
+   "stop": 48
+  },
+  "kim_rong_stop": 0,
+  "kim_rong_length": 0,
+  "kim_dung": 48,
+  "kim_ctx10_rong_stop": "0/38",
+  "kim_rong_stop_theo_kieu": {
+   "nguyen": 0,
+   "lanh": 0
+  },
+  "tong_rong_stop": 0,
+  "tong_luot": 96,
+  "wilson_rong_stop": [
+   0,
+   0.038
+  ]
+ },
+ "off": {
+  "cong_luot": 48,
+  "cong_loai": {
+   "ok": 48
+  },
+  "cong_rong": [],
+  "cong_W5": "9/9 dung",
+  "cong_cham_dung": "36/36",
+  "kim_luot": 48,
+  "kim_finish": {
+   "stop": 48
+  },
+  "kim_rong_stop": 0,
+  "kim_rong_length": 0,
+  "kim_dung": 48,
+  "kim_ctx10_rong_stop": "0/38",
+  "kim_rong_stop_theo_kieu": {
+   "nguyen": 0,
+   "lanh": 0
+  },
+  "tong_rong_stop": 0,
+  "tong_luot": 96,
+  "wilson_rong_stop": [
+   0,
+   0.038
+  ]
+ },
+ "fisher_p_rong_stop_on_vs_off": 1.0
+}
