@@ -820,6 +820,56 @@ CODEX_MODEL_REASONING_LEVELS = {
     "ltt-3.5": ("medium",),
 }
 
+# ── ⭐ NGUỒN DUY NHẤT về mức suy nghĩ theo model (L-26, 18/09/2026) ───────────
+#
+# Catalog `/api/v1/models` (`server/api/tools._dang_codex`), catalog Codex cài
+# trên máy khách (`codex_catalog`) và hàm chuẩn hoá mọi cửa
+# (`runtime_noi_bo.luong.chuan_hoa_suy_nghi`) đều đọc ba bảng dưới + hai bảng
+# trên. LTTCODE (Task 13) đọc danh sách mức từ `/api/v1/models`, không gõ cứng.
+#
+# Căn cứ (chủ dự án chốt 18/09: "giá trị theo khuyến nghị chính thức của model"):
+#   * HF model card Qwen/Qwen3.8-27B: ba mức `xhigh` (mặc định), `medium`,
+#     `low`, truyền qua `reasoning_effort`. Không có `high`.
+#   * HF model card Qwen/Qwen3.5-9B: suy nghĩ BẬT mặc định, chỉ bật/tắt qua
+#     `chat_template_kwargs.enable_thinking` — KHÔNG có mức effort.
+#   * Template `llm_gateway/deploy/chat_template_v22.5.jinja` dòng 17-30: không
+#     gửi effort ⇒ `medium` (prompt chính thức); `minimal`→low, `high|max`→xhigh.
+#
+# ⭐ CÁCH CLIENT HIỂN THỊ: model nằm trong `CODEX_MODEL_REASONING_CO_DINH` khai
+#    đúng MỘT mức (`medium`, mô tả "Thinking on"). Đó là NHÃN CỐ ĐỊNH "Suy
+#    nghĩ", không phải bộ chọn: client nên hiện một nhãn tĩnh và KHÔNG gửi
+#    `reasoning_effort`. Gửi thì máy chủ vẫn nhận (Codex luôn gửi), gỡ trước
+#    máy B và trả header `X-LTT-Effort-Bo-Qua: 1`.
+
+#: Model chỉ có MỘT chế độ (suy nghĩ BẬT): effort được nhận rồi bỏ qua công khai.
+CODEX_MODEL_REASONING_CO_DINH = frozenset({"ltt-3.5"})
+
+#: Tên effort client hay gửi mà model không khai ⇒ mức gần nhất ĐÚNG CHIỀU,
+#: cùng ánh xạ template v22.5 dòng 23-27 tự làm. Chỉ áp cho model có nấc.
+REASONING_EFFORT_ALIASES = {"minimal": "low", "high": "xhigh", "max": "xhigh"}
+
+#: Model cố định chấp nhận (rồi bỏ qua) đúng tập giá trị của model có nấc này,
+#: để một client gửi cùng một effort cho hai model không nhận hai câu trả lời.
+MODEL_EFFORT_THAM_CHIEU = "ltt-3.8"
+
+#: Giá trị có nghĩa "tắt suy nghĩ" (template dòng 21-23) — bị CẤM ở mọi model:
+#: đo 14/09 tắt suy nghĩ cho 2 token thay vì ~1.180 (L-02, `features.kiem_tham_so`).
+REASONING_EFFORT_TAT = frozenset({"none", "off"})
+
+_MO_TA_MUC = {"low": "Fast", "medium": "Balanced", "xhigh": "Deepest"}
+
+
+def muc_suy_nghi(slug: str) -> list[dict]:
+    """`supported_reasoning_levels` của một model — MỘT bản cho mọi catalog.
+
+    Model cố định: một mục duy nhất mô tả "Thinking on" (hiển thị như nhãn,
+    không phải bộ chọn — xem khối chú thích trên). Ném `KeyError` với slug lạ.
+    """
+    co_dinh = slug in CODEX_MODEL_REASONING_CO_DINH
+    return [{"effort": effort,
+             "description": "Thinking on" if co_dinh else _MO_TA_MUC[effort]}
+            for effort in CODEX_MODEL_REASONING_LEVELS[slug]]
+
 #: Bộ biến CHUẨN cho một phiên Claude Code Local chạy qua LTT Gateway.
 #:
 #: 🔴 Vì sao phải gom thành dữ liệu thay vì một khối chữ trong template. Danh
@@ -897,12 +947,7 @@ def codex_catalog() -> str:
             "slug": slug, "display_name": CODEX_MODEL_LABELS[slug],
             "description": f"{CODEX_MODEL_LABELS[slug]} — LTT Studios",
             "default_reasoning_level": CODEX_MODEL_REASONING[slug],
-            "supported_reasoning_levels": [
-                {"effort": effort,
-                 "description": ("Thinking on" if slug == "ltt-3.5" else
-                                 {"low": "Fast", "medium": "Balanced",
-                                  "xhigh": "Deepest"}[effort])}
-                for effort in CODEX_MODEL_REASONING_LEVELS[slug]],
+            "supported_reasoning_levels": muc_suy_nghi(slug),
             "shell_type": "unified_exec", "visibility": "list",
             "supported_in_api": True, "priority": 1,
             "additional_speed_tiers": [], "service_tiers": [],
