@@ -502,7 +502,7 @@ def test_stream_qua_tran_vao_van_413_TRUOC_200(api, monkeypatch):
     #    trần 169.984 của hồ sơ 204.800 nhưng **lọt** trần 186.368 của hồ sơ
     #    221.184 (dual-model 2.6) — phép kiểm sẽ thôi đo 413 mà vẫn trông như đo.
     from apps.ltt_llm import ngan_sach
-    qua_tran = int((ngan_sach.TOKEN_VAO_TRAN + 5_000) * ngan_sach.KY_TU_MOI_TOKEN)
+    qua_tran = ngan_sach.TOKEN_VAO_TRAN + 5_000  # "x" liền = 1 token/ký tự trong uoc_token (từ con không nguyên âm = cận byte)
     than = _than(messages=[{"role": "user", "content": "x" * qua_tran}])
     r = api.post(MSG, json=than, headers=_h(token))
     assert r.status_code == 413, r.text
@@ -528,7 +528,7 @@ def test_context_rejections_do_not_consume_create_rate(api, monkeypatch, route):
 
     monkeypatch.setattr(streaming.limits, "enforce_create_rate", limited)
     from apps.ltt_llm import ngan_sach
-    large = "x" * int((ngan_sach.TOKEN_VAO_TRAN + 5000) * ngan_sach.KY_TU_MOI_TOKEN)
+    large = "x" * (ngan_sach.TOKEN_VAO_TRAN + 5000)  # "x" liền = 1 token/ký tự trong uoc_token (từ con không nguyên âm = cận byte)
     body = (_than(messages=[{"role": "user", "content": large}]) if route == MSG
             else {"model": MODEL, "stream": True, "input": large})
     for _ in range(3):

@@ -115,29 +115,34 @@ def uoc_tin_nhan(than: dict) -> list:
     `tools`) — KHÔNG được đem danh sách này đi gọi model.
     """
     ra: list = []
-    he_thong = than.get("system")
-    if isinstance(he_thong, str):
-        ra.append({"content": he_thong})
-    elif isinstance(he_thong, list):
-        ra.extend({"content": (m or {}).get("text", "")} for m in he_thong
-                  if isinstance(m, dict))
+    # ⭐ Mỗi khối ngoài `messages`/`input` được BỌC NGUYÊN (`{"content": khối}`), không
+    #    rút riêng `text`: phép ước (`platform_core/llm/uoc_token`) đi mọi chuỗi của
+    #    khối đúng như máy B đi body gốc. Rút một phần là A ước thấp hơn B (A ⊆ B gãy).
+    for khoa in ("system", "instructions"):
+        gt = than.get(khoa)
+        if isinstance(gt, (str, list)) and gt:
+            ra.append({"content": gt})
 
     tin = than.get("messages")
     if isinstance(tin, list):
-        ra.extend(m for m in tin if isinstance(m, dict))
+        ra.extend(m if isinstance(m, dict) else {"content": m} for m in tin)
 
     # Responses gọi nó là `input`, và nó có thể là chuỗi trần.
     vao = than.get("input")
     if isinstance(vao, str):
         ra.append({"content": vao})
     elif isinstance(vao, list):
-        ra.extend(m for m in vao if isinstance(m, dict))
+        ra.extend(m if isinstance(m, dict) else {"content": m} for m in vao)
 
     # Định nghĩa tool đi kèm mỗi lượt và **không hề nhỏ**: đo thật 23/08, prompt
     # hệ thống của Codex là ~21.936 token. Bỏ qua nó là ước thiếu rất nhiều.
-    cong_cu = than.get("tools")
-    if isinstance(cong_cu, list) and cong_cu:
-        ra.append({"content": json.dumps(cong_cu, ensure_ascii=False)})
+    # `so_tool` cho khuôn chat (64 token/tool, `uoc_token.khuon`) — cùng dạng JSON gọn
+    # máy B đếm (`uoc_token.json_tool`).
+    from platform_core.llm.uoc_token import KhoiTool, json_tool
+    for khoa in ("tools", "functions"):
+        cong_cu = than.get(khoa)
+        if isinstance(cong_cu, list) and cong_cu:
+            ra.append(KhoiTool(content=json_tool(cong_cu), so_tool=len(cong_cu)))
     return ra
 
 

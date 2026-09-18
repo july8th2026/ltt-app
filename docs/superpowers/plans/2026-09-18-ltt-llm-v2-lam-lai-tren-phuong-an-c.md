@@ -252,7 +252,14 @@ def test_messages_cache_hit_van_tinh_token_moi():
 | R-20 | **Bỏ** — "MTP trả rỗng" thực ra là hết `max_tokens` (Task 4 Step 3 sửa sàn) |
 | R-21 | Task 7 |
 | R-22 | Task 4 |
-| R-06, R-07, R-10, R-11, R-14, R-16, R-17, R-18, R-23 | **Chưa xác minh** — Task 1 Step 0 của vòng sau: đọc `docs/ltt_llm_dual/serving_v2/01_EVIDENCE_MATRIX.md` trên tag `luu-tru/serving-v2/claude-ltt-llm-duo-serving-v2-a1c85c`, đánh dấu từng mục bỏ / hoãn / đã làm, trước khi gộp plan này |
+| R-06, R-07 | **Hoãn** (xác minh 18/09 chiều) — chưa đọc header phiên của client (grep 0); sổ B cho stream chỉ có TTFT + mã kết thúc (`llm_gateway/so_luot.py:50-54`, cố ý). Việc sau plan: A ghi id phiên vào sổ lượt (không chuyển xuống B) + nối sổ B với usage của A qua `X-LTT-Request-Id` |
+| R-10 | **Cần đo** — vẫn `base_instructions: ""` (`sdk/ltt_cai_dat_cli.py:264`, `tools/cam_cli.py:682`, `examples.py:988`). Đo A/B ở Task 12, kết quả ghi L-xx |
+| R-11 | Bổ sung Task 9 (giao cùng Task 11) — profile Codex thêm `web_search = "disabled"` (SDK + `cam_cli`), kiểm bằng request bắt thật |
+| R-14 | **Hoãn** (dự án riêng) — `ENABLE_TOOL_SEARCH=false`, chưa xử lý `defer_loading`/`tool_reference` |
+| R-16 | Task 10 — công cụ p95 TTFT từ sổ lượt + cảnh báo nạp lạnh (`ttl: 1800`) |
+| R-17 | **Cần đo** — Task 12: `preserve_thinking:false` cho `qwen35-api` (template mặc định `true`); so chất lượng, token, tỉ lệ trúng cache |
+| R-18 | Một phần đã làm ở LTTCODE (trần in-flight `146d479`, nay theo model ở Task 14; retry riêng); tương quan phiên làm cùng R-06 |
+| R-23 | **Đã làm** — `b1593e3` là tổ tiên của `main` (merge `30f1acbb`) |
 
 ## Thứ tự và song song
 

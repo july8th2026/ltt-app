@@ -74,6 +74,9 @@ EXCLUDED_DIR_NAMES = {
     # ba (khong chua secret cua ta — luong lam-file-truc-tiep khong can key); co chuoi
     # hex 32 ky tu trong VI DU tai lieu (sha256 rut gon) lam trip may quet.
     "cutclipshort",
+    # Ngu lieu do token (Task 7, tests/fixtures/ngu_lieu_token): hex.json CO Y la
+    # chuoi hex 32 ky tu ngau nhien do sinh.py tao, so voi dem that cua engine.
+    "ngu_lieu_token",
 }
 
 EXCLUDED_DIR_PREFIXES = (".backup_",)

@@ -479,7 +479,7 @@ def test_qua_TRAN_VAO_thi_413_TRUOC_ca_phong_cho_lan_tien(api, monkeypatch):
     #    **lọt**, và 413 đổi thành 400 của ngân sách thời gian. Phép kiểm không
     #    bắt được gì nữa mà vẫn trông như đang bắt.
     from apps.ltt_llm import ngan_sach
-    qua_tran = int((ngan_sach.TOKEN_VAO_TRAN + 5_000) * ngan_sach.KY_TU_MOI_TOKEN)
+    qua_tran = ngan_sach.TOKEN_VAO_TRAN + 5_000  # "x" liền = 1 token/ký tự trong uoc_token (từ con không nguyên âm = cận byte)
     r = api.post(DUONG, json=_than(messages=[{"role": "user",
                                               "content": "x" * qua_tran}],
                                    max_tokens=16),

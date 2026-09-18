@@ -694,10 +694,14 @@ def mac_dinh_cho(cua: str) -> int:
 #  PHÉP ƯỚC TOKEN — một nơi, hai kho cùng đọc
 # ══════════════════════════════════════════════════════════════════════════
 
-#: Tỉ lệ ước ký-tự-sang-token. **Phải khớp `llm_gateway/ngan_sach.py` của máy B**
-#: — lệch nhau là tiền ta giữ trước lệch tiền B tính, và không có gì báo.
-#: Nghiêng về ước CAO cho tiếng Việt có dấu.
-KY_TU_MOI_TOKEN = 2.5
+#: ⭐ Phép ước token vào (CẬN TRÊN có chứng minh, Task 7 18/09/2026) sống ở
+#:    `platform_core/llm/uoc_token.py` — bản giống hệt từng byte của
+#:    `llm_gateway/uoc_token.py` máy B (test_1470). `apps/ltt_llm/features.uoc_token_vao`
+#:    là cửa duy nhất của app gọi nó.
+#:
+#: 🔴 ĐÃ GỠ `KY_TU_MOI_TOKEN = 2.5` (ký tự / 2,5): đo trên engine nó ước THIẾU code
+#:    0,74× · chữ Trung 0,42× · hex 0,45× · emoji 0,16× (giữ chỗ nhỏ hơn thật ⇒ tràn
+#:    KV giết luồng SAU 200) và THỪA văn xuôi Anh 2,25×.
 
 
 # ══════════════════════════════════════════════════════════════════════════
