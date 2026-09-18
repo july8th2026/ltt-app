@@ -100,6 +100,7 @@ Trọng số cố định (không đổi giữa các lần cập nhật): A 20 �
 | 9 | Tách ngưỡng nén Claude Code/Codex; bộ cài cập nhật khoá LTT | ✅ deploy `488a64ed` 11:19 | `1b143291`, `2c3fbebd` (đo Claude Code 2.1.274: trừ 33k; nay nén 138.458/176.141); phần `examples.py` giao Task 3–4 |
 | 10 | Công cụ kiểm định kỳ | 🔵 canary cô lập ✅ 0/432 rò rỉ (216/model, kịch bản #27148 + comment 2) — nhánh `phien/canary-co-lap`, `KIEM_CO_LAP_18_09.md`; còn: needle 100–200K trên 3.8 (#27756), `cong_mtp.py`, bộ chấm A/B | giờ vắng |
 | 11 | Dọn bản sao gõ tay + tài liệu sai | ⬜ | rải theo task |
+| 11b | Công cụ gate: `gate.py --pham-vi` nhận NHIỀU thành phần một lượt (hợp tệp test, chạy bước chung một lần) — đợt 2 phải chạy 5 lượt L2 nối nhau (~75 phút) vì L1 từ chối khi chạm tệp dùng chung | ⬜ | ~2 giờ, có test cho `thanh_phan`/`gate` |
 | 12 | Chất lượng 3.5: áp thông số lấy mẫu theo model card + A/B | ⬜ | sau Task 4, 10 |
 | 13 | LTTCODE chọn mức suy nghĩ theo model (0.1.8) | ⬜ | sau Task 3 |
 | — | R-06, 07, 10, 11, 14, 16, 17, 18, 23 của phiên cũ | ⬜ | xác minh từng mục trên tag lưu trữ |
