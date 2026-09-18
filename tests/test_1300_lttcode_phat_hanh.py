@@ -109,6 +109,71 @@ def test_thieu_install_id_chi_nhan_khi_rollout_du_100():
     assert _hoi(_manifest(_ban("0.2.0", rollout_percent=100)), install_id=None)[0] == 200
 
 
+def _xo(version: str, iid: str = IID) -> int:
+    """Xô rollout (0..99) của máy `iid` với bản `version` — tính tay, cùng công thức spec."""
+    return int(hashlib.sha256(f"{iid}:{version}".encode()).hexdigest()[:8], 16) % 100
+
+
+# --- Lùi về bản trước (sự cố 18/09: kéo 0.1.6 bằng rollout 0 ⇒ cả kênh đứng) ---
+
+def test_ban_moi_nhat_rollout_0_thi_lui_ve_ban_truoc():
+    # Đúng hình dạng kênh dev ngày 18/09 trước khi 0.1.7 lên: 0.1.5 = 100, 0.1.6 = 0.
+    m = _manifest(_ban("0.1.5"), _ban("0.1.6", rollout_percent=0), channel="dev")
+    code, body = _hoi(m, current="0.1.3", channel="dev")
+    assert code == 200 and body["version"] == "0.1.5"
+
+
+def test_ban_moi_nhat_bi_thu_hoi_thi_lui_ve_ban_truoc():
+    m = _manifest(_ban("0.1.5"), _ban("0.1.6", revoked=True), channel="dev")
+    code, body = _hoi(m, current="0.1.3", channel="dev")
+    assert code == 200 and body["version"] == "0.1.5"
+
+
+def test_may_ngoai_xo_ban_moi_nhat_nhung_trong_xo_ban_truoc_thi_nhan_ban_truoc():
+    moi, cu = "0.3.0", "0.2.0"
+    m = _manifest(_ban(cu, rollout_percent=_xo(cu) + 1), _ban(moi, rollout_percent=_xo(moi)))
+    code, body = _hoi(m)
+    assert code == 200 and body["version"] == cu
+    # Đối chứng: vào được xô bản mới ⇒ nhận bản mới (không phải lúc nào cũng lùi).
+    m = _manifest(_ban(cu, rollout_percent=_xo(cu) + 1), _ban(moi, rollout_percent=_xo(moi) + 1))
+    assert _hoi(m)[1]["version"] == moi
+
+
+def test_khong_ban_nao_du_dieu_kien_thi_204():
+    m = _manifest(_ban("0.2.0", rollout_percent=0), _ban("0.3.0", revoked=True),
+                  _ban("0.4.0", rollout_percent=0))
+    assert _hoi(m) == (204, None)
+    # Bản lùi về phải MỚI HƠN bản đang chạy — không bao giờ hạ cấp.
+    m = _manifest(_ban("0.1.0"), _ban("0.2.0", rollout_percent=0))
+    assert _hoi(m, current="0.1.0") == (204, None)
+
+
+def test_bat_buoc_van_lay_ban_moi_nhat_chua_thu_hoi_bo_qua_rollout():
+    m = _manifest(_ban("0.2.0"), _ban("0.3.0", rollout_percent=0), _ban("0.4.0", revoked=True),
+                  min_version="0.2.0")
+    code, body = _hoi(m, current="0.1.0", install_id=None)
+    assert code == 200 and body["version"] == "0.3.0" and body["mandatory"] is True
+
+
+# --- Trang tải: không bao giờ phát bản đã kéo ---
+
+def test_trang_tai_chi_phat_ban_rollout_100_chua_thu_hoi():
+    ds = [_ban("0.1.5"), _ban("0.1.6", rollout_percent=0), _ban("0.1.7", revoked=True)]
+    assert phat_hanh.ban_moi_nhat(_manifest(*ds), "stable")["version"] == "0.1.5"
+    ds = [_ban("0.1.5"), _ban("0.1.6", rollout_percent=50)]
+    assert phat_hanh.ban_moi_nhat(_manifest(*ds), "stable")["version"] == "0.1.5"
+    # Thiếu rollout_percent = 0 (cùng mặc định với updater).
+    thieu = _ban("0.1.6")
+    del thieu["rollout_percent"]
+    assert phat_hanh.ban_moi_nhat(_manifest(_ban("0.1.5"), thieu), "stable")["version"] == "0.1.5"
+
+
+def test_trang_tai_khong_co_ban_100_thi_khong_phat_gi():
+    ds = [_ban("0.2.0", rollout_percent=0), _ban("0.3.0", rollout_percent=50),
+          _ban("0.4.0", revoked=True)]
+    assert phat_hanh.ban_moi_nhat(_manifest(*ds), "stable") is None
+
+
 def test_tham_so_sai_tra_400_kenh_la_tra_404():
     m = _manifest(_ban("0.2.0"))
     assert _hoi(m, target="darwin")[0] == 400

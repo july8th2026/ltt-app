@@ -9,9 +9,22 @@
 3. ứng viên = bản chưa `revoked`, mới hơn bản đang chạy, và **không có
    `session_format` thấp hơn** bản đang chạy: định dạng session của DSH chỉ tiến,
    bản cũ hơn từ chối mở session mới ⇒ người dùng mất quyền vào session của mình;
-4. dưới `min_version` ⇒ bắt buộc, bỏ qua rollout;
-5. rollout: `sha256(install_id:version)` lấy 8 hex đầu, mod 100, so với %.
-   Thiếu install_id chỉ nhận bản 100% — không đoán nhóm từ IP.
+4. dưới `min_version` ⇒ bắt buộc: bản ứng viên MỚI NHẤT, bỏ qua rollout;
+5. còn lại ⇒ bản ứng viên MỚI NHẤT mà máy nằm trong xô rollout của CHÍNH bản đó
+   (duyệt từ mới xuống cũ); không bản nào ⇒ 204. Xô: `sha256(install_id:version)`
+   lấy 8 hex đầu, mod 100, so với %. Thiếu install_id chỉ nhận bản 100% — không
+   đoán nhóm từ IP. Thiếu `rollout_percent` = 0.
+
+   ⭐ Vì sao LÙI chứ không 204 (sự cố 18/09): kéo một bản bằng `rollout_percent: 0`
+   hay `revoked: true` là thao tác KÉO BẢN, không phải thao tác ĐÓNG KÊNH — đóng
+   kênh đã có `kill_switch`. Bản cũ chỉ chọn bản mới nhất rồi 204 nếu máy ngoài
+   xô, nên kéo 0.1.6 (rollout 0) làm cả kênh dev không ai nhận được 0.1.5 nữa.
+
+`ban_moi_nhat` (trang tải công khai, người xem không có install_id) = bản chưa
+`revoked` MỚI NHẤT có `rollout_percent >= 100`; không có ⇒ `None` ("Sắp phát
+hành"). Không lùi về bản đang rollout dở: cùng luật "thiếu install_id chỉ nhận
+bản 100%" của updater — bản rollout < 100 là bản đang thử trên một nhóm máy, phát
+nó cho mọi khách vô danh chính là bỏ qua rollout; và bản rollout 0 là bản đã kéo.
 
 Không ghi log IP hay install_id.
 """
@@ -92,10 +105,12 @@ def _ban_hop_le(r: Any) -> bool:
 
 
 def ban_moi_nhat(manifest: dict | None, channel: str) -> dict | None:
-    """Bản chưa thu hồi cao nhất của kênh — cho trang tải."""
+    """Bản chưa thu hồi, rollout 100%, cao nhất của kênh — cho trang tải (xem docstring module)."""
     kenh = (manifest or {}).get("channels") if isinstance(manifest, dict) else None
     kenh = kenh.get(channel) if isinstance(kenh, dict) else None
-    ds = [r for r in (kenh.get("releases") or []) if _ban_hop_le(r) and r.get("revoked") is not True] \
+    ds = [r for r in (kenh.get("releases") or [])
+          if _ban_hop_le(r) and r.get("revoked") is not True
+          and trong_nhom(None, r["version"], _so_nguyen(r.get("rollout_percent"), 0))] \
         if isinstance(kenh, dict) and isinstance(kenh.get("releases"), list) else []
     return max(ds, key=_khoa) if ds else None
 
@@ -129,12 +144,13 @@ def quyet_dinh(
         and _khoa(r) > cur
         and (format_hien_tai is None or _so_nguyen(r.get("session_format"), 0) >= format_hien_tai)
     ]
-    if not ung_vien:
-        return 204, None
-    chon = max(ung_vien, key=_khoa)
+    ung_vien.sort(key=_khoa, reverse=True)
 
     bat_buoc = cur < (phien_ban(kenh.get("min_version")) or (0, 0, 0))
-    if not bat_buoc and not trong_nhom(install_id, chon["version"], _so_nguyen(chon.get("rollout_percent"), 0)):
+    chon = ung_vien[0] if bat_buoc and ung_vien else next(
+        (r for r in ung_vien
+         if trong_nhom(install_id, r["version"], _so_nguyen(r.get("rollout_percent"), 0))), None)
+    if chon is None:
         return 204, None
 
     return 200, {
