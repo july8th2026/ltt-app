@@ -121,7 +121,9 @@ def _khai_admission(model_id: str, tai_nguyen: str, nhom_cu_tru: str = "",
     return AdmissionModel(tai_nguyen, h.seq_cap, h.token_budget, nhom_cu_tru,
                           vai_tro, nguong_whale=h.nguong_whale,
                           dem_uoc=h.dem_uoc,
-                          token_giu_moi_anh=h.token_giu_moi_anh)
+                          token_giu_moi_anh=h.token_giu_moi_anh,
+                          mot_prefill_dai=h.mot_prefill_dai,
+                          toc_prefill_tok_s=h.toc_prefill_uoc_tok_s)
 
 
 #: Token ra mặc định của **cửa job** (manifest phục vụ đường job).

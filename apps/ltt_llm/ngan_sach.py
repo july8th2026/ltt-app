@@ -220,6 +220,22 @@ def nguong_whale_theo_chan(model_id: str, chan_toi_da_s: float) -> int:
 #:    cửa (stream, đồng bộ, job, nội bộ).
 NGUONG_WHALE = {"qwen38-api": 8_192, "qwen35-api": 16_384}
 
+#: 🔑 "MỘT PREFILL DÀI MỖI LÚC" (L-29, Task 17, 18/09/2026) — hệ số chậm khi prefill
+#: CHỒNG lên luồng đang decode, đo C4 (`KET_QUA_C4_18_09.md` §2, prefill 32K có người
+#: sinh ÷ một mình): 3.8 36,2/29,57 = 1,22 · 3.5 18,2/16,10 = 1,13. Lấy 1,25 phủ cả hai.
+HE_SO_PREFILL_CHONG = 1.25
+
+
+def toc_prefill_uoc(model_id: str) -> float:
+    """Tốc độ prefill BẢO THỦ (tok/s) để A ước "lượt này còn prefill tới bao giờ".
+
+    = điểm CHẬM NHẤT của đường cong đo `DUONG_PREFILL_TOK_S` ÷ `HE_SO_PREFILL_CHONG`
+    (3.8 646/1,25 ≈ 517 · 3.5 1.350/1,25 = 1.080). Chỉ dùng khi A không có tín hiệu
+    byte đầu (cửa đồng bộ/job, và lưới cho cửa stream). ⭐ Chậm hơn thật ⇒ hạn dài
+    hơn thật ⇒ sai về phía whale kế chờ lâu hơn, không về phía hai prefill dài chồng.
+    """
+    return min(v for _, v in DUONG_PREFILL_TOK_S[model_id]) / HE_SO_PREFILL_CHONG
+
 
 @dataclass(frozen=True)
 class HoSoModel:
@@ -252,6 +268,11 @@ class HoSoModel:
     #: Token prefill MỚI từ mức này lượt là whale — `NGUONG_WHALE[model_id]`
     #: (số chủ dự án chọn 17/09, L-23).
     nguong_whale: int
+    #: L-29: whale không vào engine khi lượt khác còn prefill (llama.cpp nhồi prompt
+    #: theo thứ tự slot — lượt ngắn đang prefill chờ hết prefill dài). Mặc định BẬT.
+    mot_prefill_dai: bool = True
+    #: Tốc độ prefill bảo thủ cho hạn ước "còn prefill" — `toc_prefill_uoc(m)`.
+    toc_prefill_uoc_tok_s: float = 0.0
 
     def __post_init__(self) -> None:
         if min(self.engine_ctx, self.np, self.seq_cap, self.dem_uoc,
@@ -264,6 +285,9 @@ class HoSoModel:
         #    `TOKEN_RA_TRAN`, nên lượt vào dài nhất hợp lệ vẫn còn ≥ 1 token ra
         #    trong ngân sách (`tran_theo_ngu_canh` kẹp theo ngân sách). Biên lớn
         #    hơn thế thì lượt qua được 413 lại không bao giờ đặt chỗ vừa.
+        if self.mot_prefill_dai and self.toc_prefill_uoc_tok_s <= 0:
+            raise ValueError(f"ho so {self.model_id}: mot_prefill_dai can "
+                             f"toc_prefill_uoc_tok_s > 0")
         if not 0 <= self.bien_pool_token < TOKEN_RA_TRAN:
             raise ValueError(f"ho so {self.model_id}: bien_pool_token "
                              f"{self.bien_pool_token} ngoai [0; {TOKEN_RA_TRAN})")
@@ -310,12 +334,14 @@ HO_SO = {
         "qwen38-api", engine_ctx=221_184, np=3, seq_cap=3,
         bien_pool_token=BIEN_POOL_TOKEN, dem_uoc=DEM_UOC,
         token_giu_moi_anh=TOKEN_GIU_MOI_ANH,
-        nguong_whale=NGUONG_WHALE["qwen38-api"]),
+        nguong_whale=NGUONG_WHALE["qwen38-api"],
+        toc_prefill_uoc_tok_s=toc_prefill_uoc("qwen38-api")),
     "qwen35-api": HoSoModel(
         "qwen35-api", engine_ctx=262_144, np=4, seq_cap=4,
         bien_pool_token=BIEN_POOL_TOKEN, dem_uoc=DEM_UOC,
         token_giu_moi_anh=TOKEN_GIU_MOI_ANH,
-        nguong_whale=NGUONG_WHALE["qwen35-api"]),
+        nguong_whale=NGUONG_WHALE["qwen35-api"],
+        toc_prefill_uoc_tok_s=toc_prefill_uoc("qwen35-api")),
 }
 
 #: Cửa sổ engine theo model — DẪN XUẤT từ `HO_SO`, giữ tên vì rất nhiều nơi đọc.

@@ -193,8 +193,58 @@ _da_nhac: dict[str, float] = {}
 
 def quen_ban_do_cu_tru() -> None:
     """Xoá bộ nhớ đệm bản đồ cư trú (phép kiểm tiêm bản khai giả gọi hàm này)."""
-    global _BAN_DO_CU_TRU
+    global _BAN_DO_CU_TRU, _BAN_DO_PREFILL
     _BAN_DO_CU_TRU = None
+    _BAN_DO_PREFILL = None
+
+
+#: `{tài nguyên: tốc độ prefill ước (tok/s)}` của mọi `AdmissionModel` bật
+#: `mot_prefill_dai` (L-29). Đệm cả tiến trình như `_BAN_DO_CU_TRU`.
+_BAN_DO_PREFILL: dict[str, float] | None = None
+
+
+def _ban_do_prefill() -> dict[str, float]:
+    """Đọc từ BẢN KHAI của app — cùng khuôn và cùng lý do với `_ban_do_cu_tru`."""
+    global _BAN_DO_PREFILL
+    if _BAN_DO_PREFILL is not None:
+        return _BAN_DO_PREFILL
+    from platform_core.registry import discover
+
+    ban_do: dict[str, set] = {}
+    try:
+        for app in discover():
+            for tool in getattr(app.manifest, "tools", ()) or ():
+                for am in (getattr(tool, "admission_theo_model", {}) or {}).values():
+                    ten = str(getattr(am, "resource", "") or "").strip()
+                    if ten and bool(getattr(am, "mot_prefill_dai", False)):
+                        ban_do.setdefault(ten, set()).add(
+                            float(getattr(am, "toc_prefill_tok_s", 0.0) or 0.0))
+    except Exception:  # noqa: BLE001 - nói ra, đừng đệm lại
+        log.warning("khong doc duoc ban khai mot_prefill_dai; coi nhu tat",
+                    exc_info=True)
+        return {}
+    ra: dict[str, float] = {}
+    for ten, cac_toc in ban_do.items():
+        if len(cac_toc) > 1:
+            # Hai bản khai cùng tài nguyên, hai tốc độ ⇒ tự mâu thuẫn. Tắt luật cho
+            # RIÊNG tài nguyên ấy (hành vi trước L-29) thay vì đoán một số.
+            log.error("tai nguyen %s khai hai toc prefill %s — tat mot_prefill_dai",
+                      ten, sorted(cac_toc))
+            continue
+        toc = next(iter(cac_toc))
+        if toc > 0:
+            ra[ten] = toc
+    _BAN_DO_PREFILL = ra
+    return ra
+
+
+def prefill_theo_tai_nguyen(resource: str) -> float:
+    """Tốc độ prefill ước (tok/s) nếu tài nguyên bật "một prefill dài mỗi lúc"; 0 = tắt.
+
+    ⭐ Tra theo TÊN TÀI NGUYÊN, không thêm tham số cho `xet_va_giu` — đúng lý lẽ của
+       `nhom_cu_tru`: năm cửa gọi, không cửa nào phải biết (và quên) gì.
+    """
+    return float(_ban_do_prefill().get(str(resource).strip(), 0.0))
 
 
 def _ban_do_cu_tru() -> dict[str, set]:
@@ -376,10 +426,30 @@ def xet_va_giu(
 
     _khoa_resource(db, resource)
     reclaim_expired(db, resource=resource, timeout=timeout)
-    song = db.query(ExecutionLease).filter(ExecutionLease.resource == resource).all()
+    # `populate_existing`: phiên có `expire_on_commit=False`; một lease đã nằm trong
+    # bản đồ định danh của phiên này sẽ mang cờ CŨ (`la_whale`, `token_prefill_moi`
+    # do `danh_dau_prefill_xong` đổi ở phiên khác) nếu không đọc lại từ CSDL.
+    song = (db.query(ExecutionLease).filter(ExecutionLease.resource == resource)
+            .populate_existing().all())
+    # L-29 "một prefill dài mỗi lúc": lượt đang giữ CÒN prefill ⇔ chưa có byte dữ
+    # liệu đầu (`danh_dau_prefill_xong` đưa `token_prefill_moi` về 0) VÀ chưa quá
+    # hạn ước — cửa không stream chỉ có hạn ước.
+    toc_prefill = prefill_theo_tai_nguyen(resource)
+    ts_luot = tham_so_da_luot.doc()
+    luc = now or datetime.now(timezone.utc)
+
+    def _con_prefill(l: ExecutionLease) -> bool:
+        moi = int(l.token_prefill_moi or 0)
+        if toc_prefill <= 0 or moi <= 0 or l.acquired_at is None:
+            return False
+        da_qua = (luc - _aware(l.acquired_at)).total_seconds()
+        return da_qua < tham_so_da_luot.han_prefill_s(moi, toc_prefill,
+                                                      ts_luot.san_han_prefill_s)
+
     giu = [luat_nhan.Luot(id=l.id, user_id=l.user_id, lop=_lop_cua(l),
                           token_dat_truoc=int(l.token_dat_truoc or 0),
-                          la_whale=bool(l.la_whale)) for l in song]
+                          la_whale=bool(l.la_whale), dang_prefill=_con_prefill(l))
+           for l in song]
     cho = phong_cho.chup_nguoi_cho(db, resource=resource, now=now)
     yc = luat_nhan.Luot(id=waiter_id or holder_id, user_id=user_id,
                         lop=lop or luat_nhan.TUONG_TAC,
@@ -388,17 +458,22 @@ def xet_va_giu(
     # Mọi tham số thời gian đọc ở đây, một lần, đủ bộ — năm cửa gọi (stream,
     # ChatLTT, đồng bộ, job, planner) không cửa nào tự truyền một số.
     px = luat_nhan.xet(yc, giu, cho, tham_so_da_luot.tham_so_nhan(
-        so_slot=slots, pool=int(token_pool), residency_mo=residency_mo))
+        so_slot=slots, pool=int(token_pool), residency_mo=residency_mo, ts=ts_luot,
+        mot_prefill_dai=toc_prefill > 0))
     if not px.nhan:
         from platform_core.public_api import metrics
         metrics.increment(metrics.ADMISSION_REJECTED)
+        if px.ly_do == luat_nhan.WHALE_CHO_PREFILL:
+            # Đếm theo LẦN XÉT (người chờ hỏi lại ~2 lần/giây), không theo lượt —
+            # số lượt/giây chờ nằm ở `llm_waiters.ly_do_cho`.
+            metrics.increment(metrics.ADMISSION_WHALE_CHO_PREFILL)
         return None, px.ly_do
     lease = _chen_lease(db, resource=resource, slots=slots,
                         taken={l.slot for l in song}, user_id=user_id, mode=mode,
                         holder_id=holder_id, job_id=job_id, lop=yc.lop,
                         token_dat_truoc=int(token_dat_truoc),
                         token_prefill_moi=int(token_prefill_moi),
-                        la_whale=bool(la_whale))
+                        la_whale=bool(la_whale), luc=now)
     return lease, ("" if lease is not None else luat_nhan.CHO_SLOT)
 
 
@@ -472,7 +547,7 @@ def _giu_slot_trong(
 def _chen_lease(db: Session, *, resource: str, slots: int, taken: set,
                 user_id: str, mode: str, holder_id: str, job_id: str,
                 lop: str, token_dat_truoc: int, token_prefill_moi: int,
-                la_whale: bool) -> ExecutionLease | None:
+                la_whale: bool, luc: datetime | None = None) -> ExecutionLease | None:
     """INSERT lease vào slot trống đầu tiên — cùng khuôn savepoint của đường cũ."""
     from platform_core.public_api import metrics
 
@@ -484,6 +559,10 @@ def _chen_lease(db: Session, *, resource: str, slots: int, taken: set,
             holder_id=holder_id, job_id=job_id, lop=lop,
             token_dat_truoc=token_dat_truoc, token_prefill_moi=token_prefill_moi,
             la_whale=la_whale)
+        if luc is not None:
+            # Cùng đồng hồ với ảnh chụp của `xet_va_giu` — hạn ước prefill (L-29)
+            # tính từ `acquired_at` theo đúng đồng hồ ấy.
+            lease.acquired_at = luc
         try:
             with db.begin_nested():
                 db.add(lease)
@@ -498,29 +577,34 @@ def _chen_lease(db: Session, *, resource: str, slots: int, taken: set,
     return None
 
 
-def xoa_co_whale(lease_id: str) -> bool:
-    """Prefill của lượt này đã xong (byte đầu tiên về) ⇒ nó thôi là whale.
+def danh_dau_prefill_xong(lease_id: str) -> bool:
+    """Byte DỮ LIỆU đầu tiên của lượt đã về ⇒ prefill xong. Trả True nếu có đổi.
 
-    ⭐ Luật "≤1 whale" (D-05) nói về PREFILL — thứ làm đói người khác. Phần decode
-       sau đó rẻ (M-1: người mới chạy lại ~46 tok/s cạnh nó). Giữ cờ suốt lượt là
-       bắt whale kế tiếp chờ thêm vài phút vô cớ. Phiên mới, commit riêng; hỏng
-       thì chỉ ghi log — tệ nhất là whale kế chờ lâu hơn, không sai tiền.
+    Hai việc, một lần ghi (L-29, Task 17 — thay `xoa_co_whale`):
+      * `la_whale = False` — luật "≤1 whale" (D-05) nói về PREFILL; phần decode
+        rẻ (M-1: người mới chạy lại ~46 tok/s cạnh nó).
+      * `token_prefill_moi = 0` — lượt thôi "đang prefill" với luật 5b
+        (`WHALE_CHO_PREFILL`): whale đang chờ nó không phải đợi hết hạn ước.
+    ⭐ Gọi cho MỌI lượt stream (không riêng whale): lượt ngắn đang prefill cũng
+       giữ whale ngoài engine. Phiên mới, commit riêng; hỏng thì chỉ ghi log — tệ
+       nhất là whale kế chờ tới hạn ước, không sai tiền.
     """
     if not lease_id:
         return False
 
-    def _xoa(db: Session, lid: str) -> bool:
+    def _danh_dau(db: Session, lid: str) -> bool:
         lease = db.get(ExecutionLease, lid)
-        if lease is None or not lease.la_whale:
+        if lease is None or (not lease.la_whale and not int(lease.token_prefill_moi or 0)):
             return False
         lease.la_whale = False
+        lease.token_prefill_moi = 0
         db.flush()
         return True
 
     try:
-        return _with_fresh_session(_xoa, lease_id)
+        return _with_fresh_session(_danh_dau, lease_id)
     except Exception:  # noqa: BLE001 - chỉ ảnh hưởng thứ tự, không ảnh hưởng tiền
-        log.exception("khong tat duoc co whale cua lease %s", lease_id)
+        log.exception("khong danh dau duoc prefill xong cua lease %s", lease_id)
         return False
 
 

@@ -60,6 +60,9 @@ ADMISSION_ACQUIRED = "admission_acquired"
 ADMISSION_REJECTED = "admission_rejected"
 ADMISSION_RELEASED = "admission_released"
 ADMISSION_EXPIRED = "admission_expired"
+#: Một lần xét whale bị giữ vì lượt khác còn prefill (L-29 "một prefill dài mỗi
+#: lúc", `luat_nhan.WHALE_CHO_PREFILL`). Đếm theo lần xét, không theo lượt.
+ADMISSION_WHALE_CHO_PREFILL = "admission_whale_cho_prefill"
 
 LATENCY_REQUEST = "request_ms"
 LATENCY_QUEUE_PICKUP = "queue_pickup_ms"

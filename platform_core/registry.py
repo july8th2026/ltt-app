@@ -136,6 +136,13 @@ class AdmissionModel:
     dem_uoc: int = 0
     #: Token đặt chỗ cho mỗi ảnh đầu vào.
     token_giu_moi_anh: int = 0
+    #: "Một prefill dài mỗi lúc" (L-29): whale không vào engine khi lượt khác trên
+    #: cùng tài nguyên còn prefill. Cần `toc_prefill_tok_s > 0` (hạn ước prefill
+    #: cho cửa không stream) — `admission._ban_do_prefill` đọc cặp này theo tên
+    #: tài nguyên. `False` = hành vi trước L-29.
+    mot_prefill_dai: bool = False
+    #: Tốc độ prefill BẢO THỦ (tok/s) của model — chỉ để ước hạn "còn prefill".
+    toc_prefill_tok_s: float = 0.0
 
 
 def suc_chua_admission(tool, model: str = "") -> "AdmissionModel | None":
