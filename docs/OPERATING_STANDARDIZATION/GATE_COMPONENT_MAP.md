@@ -72,7 +72,7 @@ chữ** (`chung_minh` / `khong_chung_minh`) in ra ở dòng `RESULT`.
 | **L0** | `gate.py --quick` | **28** bước, bỏ 2 bước nặng | ~40–60 s | không |
 | **L0+** | `gate.py --vong-lap` | **25** bước: tĩnh + `test_nhanh --lf` | 21,4 s *(max 543,7)* | không |
 | **L1** | `gate.py --doi` | tĩnh + test của phần **đã đổi** | *(xem §4)* | ✅ |
-| **L2** | `gate.py --pham-vi <tp>` | tĩnh + test của thành phần chọn tay | — | ✅ |
+| **L2** | `gate.py --pham-vi <tp>[,<tp>…]` | tĩnh (một lần) + HỢP test của các thành phần chọn tay | — | ✅ |
 | **L3** | `gate.py` | tất cả **30** bước | **682,8 s** | ✅ |
 | L3+ | `gate.py --noi-tiep` | L3, một bước một lúc, một tiến trình pytest | ~25–30 phút | ✅ |
 | L3++ | `gate.py --ho-so phat-hanh` | L3 + cài/cập nhật/rollback + quét bí mật | — | ✅ |

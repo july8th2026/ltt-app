@@ -458,8 +458,10 @@ def test_tran_cho_bi_kep_boi_NGAN_SACH_THOI_GIAN_cua_cua():
 def test_qua_TRAN_VAO_thi_413_TRUOC_ca_phong_cho_lan_tien(api, monkeypatch):
     """413 đứng trước mọi thứ (spec §6), kể cả trước lúc giành/chờ suất.
 
-    ⛔ Và nó phải là **mã HTTP 413**: Codex/Claude Code dựa đúng vào mã ấy để
-       TỰ NÉN hội thoại. Một câu 400 chung chung làm client ngừng tự nén.
+    ⛔ Và nó phải là lỗi "quá dài" ĐÚNG KHUÔN OpenAI (`context_length_exceeded`,
+       câu "prompt is too long") — R-08, `tests/test_1480`: client nhận ra bằng
+       khuôn/câu chữ, không bằng mã 413. Một câu 400 chung chung làm client
+       ngừng tự nén.
     """
     lease_id = _giu_het_suat()          # hết suất: nếu 413 đi sau, lượt sẽ CHỜ
     goi = _dat_model(monkeypatch)
@@ -485,7 +487,8 @@ def test_qua_TRAN_VAO_thi_413_TRUOC_ca_phong_cho_lan_tien(api, monkeypatch):
                                    max_tokens=16),
                  headers=_h(token))
 
-    assert r.status_code == 413, r.text
+    assert r.status_code == 400, r.text
+    assert r.json()["error"]["code"] == "context_length_exceeded", r.text
     assert goi == [], "qua tran vao ma van cham model"
     assert _so_du(user_id) == truoc
     assert _dem_but_toan(user_id) == but_toan_truoc, "413 ma da cham so tien"

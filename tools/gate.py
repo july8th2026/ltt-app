@@ -3,7 +3,7 @@ gate.py — MỘT lệnh chạy cổng chất lượng theo hồ sơ tường mi
 
     python tools/gate.py                    # L3 — MOT lan, TONG KET PHIEN
     python tools/gate.py --doi [--tu <sha>] # L1 — giua phien khi can · deploy giua phien · khep sau L3 do · hoa main
-    python tools/gate.py --pham-vi <tp>     # L2 — giua phien khi can · deploy giua phien, mot thanh phan
+    python tools/gate.py --pham-vi <tp>[,<tp>...]  # L2 — giua phien khi can · deploy giua phien; nhieu tp = MOT luot
     python tools/gate.py --quick            # bo hai buoc nang, ~3 phut (khong nam trong nhip)
     python tools/gate.py --vong-lap         # tinh + `--lf` (khong nam trong nhip)
 
@@ -19,7 +19,7 @@ gate.py — MỘT lệnh chạy cổng chất lượng theo hồ sơ tường mi
 |---|---|---|---|
 | day du (L3) | tat ca cac buoc | **~15 phut** | MOT lan, tong ket phien |
 | `--doi [--tu <sha>]` (L1) | thanh phan cham toi diff | tuy diff | giua phien khi can · deploy giua phien · khep sau L3 do · hoa vao main |
-| `--pham-vi <tp>` (L2) | mot thanh phan + nguoi tieu thu | tuy tp | giua phien khi can · deploy giua phien · chung nhan rieng changeset loi |
+| `--pham-vi <tp>[,<tp>...]` (L2) | cac thanh phan chon (hop) + nguoi tieu thu | tuy tp | giua phien khi can · deploy giua phien · chung nhan rieng changeset loi |
 | `--quick` | bo `bo test` + da tien trinh | **~3 phut** | khong nam trong nhip chuan |
 | `--vong-lap` | tinh + `test_nhanh --lf` | **~15 giay** | khong nam trong nhip chuan |
 | `--dung-som` | *(co ghep them)* dung o loi RE dau tien | tiet kiem ~575s | luot khep |
@@ -1630,14 +1630,14 @@ def _thu_hep(steps: list[Step], args, ho_so: str
 
     tat_ca = tp_mod.cac_thanh_phan(ROOT)
     if ho_so == "pham-vi":
-        chon = {t.strip() for t in args.pham_vi.split(",") if t.strip()}
+        # ⭐ Task 11b (18/09): NHIEU thanh phan mot luot (`a,b` hoac lap co) =
+        #    HOP tep test, buoc kiem tinh chung chay MOT lan. Truoc do dot 2 phai
+        #    chay 5 luot L2 noi nhau (~75 phut), moi luot lap lai buoc tinh.
+        chon = set(tp_mod.tach_danh_sach(args.pham_vi))
         la = sorted(chon - set(tat_ca))
         if la:
             return None, f"  [pham vi] khong co thanh phan: {', '.join(la)}"
-        _, tieu_thu = tp_mod.do_thi_phu_thuoc(ROOT, tat_ca)
-        phan = set(chon)
-        for t in chon:
-            phan |= tieu_thu.get(t, set())
+        phan = tp_mod.mo_rong_pham_vi(chon, ROOT, tat_ca)
         nguon = f"chon tay: {', '.join(sorted(chon))}"
     else:
         # 🔴 `--tu <ref>`: MOC SO SANH, khong phai mot che do moi.
@@ -1703,7 +1703,7 @@ def _thu_hep(steps: list[Step], args, ho_so: str
     return ra, ghi_chu
 
 
-def main() -> int:
+def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Chay toan bo cong chat luong.")
     parser.add_argument("--quick", action="store_true",
                         help="bo full pytest (dung cho vong lap ngan)")
@@ -1726,8 +1726,10 @@ def main() -> int:
                         help="so phut chiu xep hang truoc khi chay khong khoa")
     parser.add_argument("--ho-so", default="", choices=["", *HO_SO],
                         help="ho so chay; xem HO_SO trong tep nay")
-    parser.add_argument("--pham-vi", default="",
-                        help="chi kiem mot thanh phan (vd core:tien, app:vps)")
+    parser.add_argument("--pham-vi", action="append", default=[],
+                        help="chi kiem cac thanh phan nay (vd core:tien, app:vps); "
+                             "nhieu: `a,b` hoac lap co -> HOP tep test, buoc "
+                             "chung chay mot lan")
     parser.add_argument("--dung-som", action="store_true",
                         help="chay nhom RE truoc; mot buoc re do thi DUNG, "
                              "khong chay `bo test`/`bat bien`. Cho VONG LAP; "
@@ -1742,6 +1744,21 @@ def main() -> int:
                         help="cho chay L3 khi nhanh DA CO mot luot L3 (vd luot "
                              "truoc bi nhieu vi may qua tai). Mac dinh bi tu "
                              "choi: khep bang --doi --tu <sha L3>")
+    return parser
+
+
+def _thanh_phan_chon(args) -> list[str]:
+    """Thanh phan NGUOI GOI chon cho `--pham-vi` (de ghi vao ban ghi gate)."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    try:
+        import thanh_phan as tp_mod
+    except ImportError:
+        return []
+    return tp_mod.tach_danh_sach(getattr(args, "pham_vi", None))
+
+
+def main() -> int:
+    parser = _parser()
     args = parser.parse_args()
 
     # `--tu` mot minh khong lam gi ca. Noi thang thay vi im lang bo qua: mot co
@@ -2031,14 +2048,15 @@ def main() -> int:
     _ghi_ket_qua(ho_so, steps, ket, tong_s, khoa, cay_da_doi,
                  chay_lai=chay_lai, ha_cap_tu=ha_cap_tu,
                  ly_do_ha_cap=ly_do_ha_cap, l3_lai=bool(args.l3_lai),
-                 sha=sha_dau)
+                 sha=sha_dau, thanh_phan=_thanh_phan_chon(args))
     return 0 if not failed else 1
 
 
 def _ghi_ket_qua(ho_so: str, steps: list[Step], ket: str, tong_s: float,
                  khoa, cay_da_doi: bool, *, chay_lai: list[str] | None = None,
                  ha_cap_tu: str = "", ly_do_ha_cap: str = "",
-                 l3_lai: bool = False, sha: str = "") -> None:
+                 l3_lai: bool = False, sha: str = "",
+                 thanh_phan: list[str] | None = None) -> None:
     """Ghi danh tinh cua luot chay nay vao `test-results/gates/<id>.json`.
 
     ## Vi sao can
@@ -2084,6 +2102,9 @@ def _ghi_ket_qua(ho_so: str, steps: list[Step], ket: str, tong_s: float,
             "ha_cap_tu": ha_cap_tu,
             "ly_do_ha_cap": ly_do_ha_cap,
             "l3_lai": l3_lai,
+            # `--pham-vi` (L2): MOI thanh phan nguoi goi chon (Task 11b); rong
+            # voi cac ho so khac.
+            "thanh_phan": list(thanh_phan or []),
             "lenh_chay_lai": list(chay_lai or []),
             # `CHUA` = `--dung-som` da cat truoc khi buoc nay chay. Bang chung
             # may sinh phai phan biet duoc no voi PASS — xem `NHOM_RE`.
@@ -2239,8 +2260,8 @@ def nang_cap_giua_phien_bi_chan(thu_muc: Path, nhanh: str, ho_so: str,
         "",
         "Giua phien hay dung:",
         "  - test nham: python tools/thanh_phan.py --test <tp>  ->  python -m pytest <tep> -q",
-        "  - hoac L2 cho dung mot thanh phan: python tools/gate.py --pham-vi <tp>",
-        "  - can deploy giua phien: L2 xanh cho tung thanh phan cham (hop dong muc 8)",
+        "  - hoac L2 cho cac thanh phan cham, MOT luot: python tools/gate.py --pham-vi <tp>[,<tp>...]",
+        "  - can deploy giua phien: L2 xanh phu moi thanh phan cham (hop dong muc 8)",
         "Het viec cua phien: python tools/gate.py  (L3, mot lan)",
         "=" * 62,
     ])

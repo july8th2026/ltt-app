@@ -499,6 +499,10 @@ def _profile_codex(hs_codex: HoSoModel, cat: pathlib.Path) -> str:
             'model_auto_compact_token_limit_scope = "total"\n'
             f"tool_output_token_limit = {TRAN_KET_QUA_TOOL}\n"
             f"model_catalog_json = '{cat}'\n"
+            # R-11: LTT khong phuc vu cong cu hosted `web_search`; Codex gui no
+            # thi luot hong. Khoa cua PROFILE LTT (config.toml cua khach khong
+            # cham). Khuon: codex-rs/config/src/profile_toml.rs `WebSearchMode`.
+            'web_search = "disabled"\n'
             "\n[agents]\n"
             f'default_subagent_model = "{hs_codex.ten}"\n'
             f'default_subagent_reasoning_effort = "{hs_codex.reasoning}"\n'

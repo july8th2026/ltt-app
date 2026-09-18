@@ -122,7 +122,7 @@ L3 theo nhánh — §4.6 — đó là cơ chế chặn, không phải định ng
 |---|---|---|---|
 | **T** | `python -m pytest <tệp…> -q` · `python tools\check_<x>.py` | **mọi lúc trong phiên** (§4.1) | không nói gì ngoài cụm đó |
 | **L1** | `python tools\gate.py --doi [--tu <sha>]` | **giữa phiên khi cần** · **deploy giữa phiên** (§8) · **khép** bản sửa sau L3 đỏ (§4.6) · hoà `main` (§7) | phần còn lại. Giữa phiên **không** tự nâng lên L3 — máy từ chối; sau L3 tổng kết thì tự nâng khi không chắc |
-| **L2** | `python tools\gate.py --pham-vi <tp>` | **giữa phiên khi cần** · **deploy giữa phiên** (§8) · chứng nhận riêng một changeset lõi (§4.10) | ⚠️ tin người gọi |
+| **L2** | `python tools\gate.py --pham-vi <tp>[,<tp>…]` (nhiều thành phần = **một** lượt: hợp tệp test, bước tĩnh chạy một lần; lặp cờ cũng được) | **giữa phiên khi cần** · **deploy giữa phiên** (§8) · chứng nhận riêng một changeset lõi (§4.10) | ⚠️ tin người gọi |
 | **L3** | `python tools\gate.py` | **một lần, tổng kết phiên** (§4.2) — phán quyết cho deploy ở tổng kết | production (nghiệm thu thật §9) |
 | — | `--quick` · `--vong-lap` | **không dùng** trong nhịp chuẩn | không phải bằng chứng |
 
@@ -338,7 +338,7 @@ Chính phiên đã gộp `main` deploy khi phạm vi cần, **rồi báo** — k
 - Deploy **bất cứ lúc nào việc xây dựng cần**, kể cả giữa phiên, khi có **gate xanh trên
   đúng SHA được deploy**: giữa phiên **L1** (`gate.py --doi --tu <sha bản đang chạy>` —
   phủ mọi thay đổi kể từ bản production, xem `/health/version`) hoặc **L2**
-  (`--pham-vi <tp>` cho từng thành phần chạm); ở tổng kết phiên là **L3** (xanh/đỏ đã khép).
+  (`--pham-vi <tp>,<tp>…` — MỘT lượt cho mọi thành phần chạm); ở tổng kết phiên là **L3** (xanh/đỏ đã khép).
   ⛔ Không chạy L3 để deploy. ⛔ Test nhắm một mình không đủ để deploy.
 - ⛔ **Deploy chép CẢ CÂY**, không tách được phần một phiên ⇒ trước khi deploy
   **báo** các phiên đang chạy (`ListAgents` → `SendMessage`) — báo, không chờ.
