@@ -28,11 +28,17 @@ import argparse
 import json
 import os
 import pathlib
+import re
 import shutil
 import sys
 import urllib.error
 import urllib.request
 from typing import NamedTuple
+
+try:                                  # Python 3.11+; cu hon thi van cai duoc,
+    import tomllib as _tomllib        # chi mat buoc tu kiem sau khi hop nhat
+except ImportError:                   # pragma: no cover
+    _tomllib = None
 
 MAC_DINH_BASE = "https://app.lttstudios.com"
 MODEL = "ltt-3.8"
@@ -112,29 +118,26 @@ NEN_HOI_THOAI = 138690
 #:    65.536 byte ~ **20.872 token that** — van duoi 32.768, con bien an toan.
 TRAN_KET_QUA_TOOL = TOKEN_RA_TRAN // 2
 
-#: Cua so nen cua Claude Code, do vao `CLAUDE_CODE_AUTO_COMPACT_WINDOW`.
+#: Hai hang cua CHINH Claude Code: no KHONG nen o `CLAUDE_CODE_AUTO_COMPACT_WINDOW`
+#: ma o
 #:
-#: 🔴 TRUOC 04/09 BIEN NAY KHONG DUOC DAT, va do la MOT LOI TIEN — cung ho voi
-#:    `truncation_policy` cua Codex, chi khac ten. Tai lieu chinh thuc
-#:    (`code.claude.com/docs/en/model-config.md`, muc *Default auto-compact
-#:    thresholds*) noi thang:
+#:     min(AUTO_COMPACT_WINDOW, cua so model) - min(MAX_OUTPUT_TOKENS, 20000) - 13000
 #:
-#:        "If you don't set an auto-compact window, Claude Code compacts when
-#:         the conversation reaches the model's context limit"
-#:        "Sessions on a model ID Claude Code doesn't recognize, such as an LLM
-#:         gateway alias, compact at the context window Claude Code assumes"
+#: 🔴 TRUOC 18/09 ta khai AUTO_COMPACT_WINDOW = nguong Codex (138.690) va Claude
+#:    nen o 105.690 — SOM 33.000 token, 76% (R-05). Codex thi nen dung o
+#:    `model_auto_compact_token_limit`; hai client, hai nghia cua "nguong".
 #:
-#: ⇒ Neu chi khai `CLAUDE_CODE_MAX_CONTEXT_TOKENS`, client co the doi toi sat
-#:   cua so moi nen. Ta phai khai ca `AUTO_COMPACT_WINDOW = 138.690`, de chua
-#:   tron mot luot sinh dai nhat 32.768 token va sai khac tokenizer.
+#: ⭐ Nguon, theo thu tu do tin:
+#:    * do that 18/09: Claude Code 2.1.274 tro ve LTT, `/context` voi cua so
+#:      138.7k in "Autocompact buffer 33k"; voi 171.458 va 209.141 cung 33k;
+#:      khai 171.690 thi bi kep ve 171.5k (= MAX_CONTEXT_TOKENS);
+#:    * ma client 2.1.274: `Dz()` = window - min(maxOut, 20000), `KPe()` = Dz - 13000;
+#:    * tai lieu (`model-config.md`): cua so 1M nen "at about 967K" = 1M - 33K.
+#:    Nang Claude Code thi DO LAI (`/context`, dong "Autocompact buffer").
 #:
-#: ⭐ Dung mot con so voi Codex (`NEN_HOI_THOAI`), va vi cung mot ly do: khoang
-#:    trong tu nguong nen len tran phai chua TRON mot luot nua.
-#:
-#: ⚠️ Bien nay chi nhan tu **100.000** den 1.000.000. Hai nguong LTT deu hop le.
-#:    Desktop dung preset 3.8 khi doi qua lai hai model; profile CLI tach rieng
-#:    se dung dung nguong cua tung model.
-CUA_SO_NEN_CLAUDE = NEN_HOI_THOAI
+#: ⚠️ Bien chi nhan tu 100.000 den 1.000.000 (env-vars.md).
+CLAUDE_TRU_RA_TOI_DA = 20_000
+CLAUDE_DEM_NEN = 13_000
 
 #: Cua so cong bo cua MODEL THU HAI (`ltt-3.5`). **Khong dung chung so.**
 #:
@@ -180,6 +183,17 @@ class HoSoModel(NamedTuple):
     reasoning: str
     reasoning_levels: tuple[str, ...]
 
+    @property
+    def cua_so_nen_claude(self) -> int:
+        """`CLAUDE_CODE_AUTO_COMPACT_WINDOW` sao cho Claude nen DUNG o `nen`.
+
+        Kep o `cua_so`: Claude tu kep ve MAX_CONTEXT_TOKENS, nen khai hon la
+        noi mot dang, client lam mot dang. Kep lam Claude nen som hon `nen`
+        dung phan bi kep (3.8: 232 token) — phia an toan.
+        """
+        return min(self.nen + min(TOKEN_RA_TRAN, CLAUDE_TRU_RA_TOI_DA)
+                   + CLAUDE_DEM_NEN, self.cua_so)
+
 
 #: 🔑 HAI MODEL DANG BAN, theo thu tu hien cho khach.
 #:
@@ -194,6 +208,9 @@ HO_SO_MODEL = {
 }
 
 TEN_MODEL = tuple(HO_SO_MODEL)
+
+#: Cua so nen Claude cua model mac dinh — RIENG voi `NEN_HOI_THOAI` cua Codex.
+CUA_SO_NEN_CLAUDE = HO_SO_MODEL[MODEL].cua_so_nen_claude
 
 
 def hs_cua(ten) -> HoSoModel:
@@ -288,6 +305,106 @@ def _sao_luu(p: pathlib.Path) -> None:
         print(f"    sao luu: {bak}")
 
 
+# ── Cap nhat profile da co: khoa LTT moi, khoa nguoi dung giu nguyen (R-13) ──
+#
+# 🔴 VI SAO. Ban truoc gap `ltt.config.toml` da co thi IN "giu nguyen" va di
+#    tiep. Nghe an toan, nhung nghia la nguoi cai MOT LAN khong bao gio nhan
+#    so moi: cua so, nguong nen, duong catalog cu mai — va mot con so cu o day
+#    la mot `413` giua phien, khong phai mot canh bao.
+#
+# ⭐ Luat: moi khoa ta VIET trong profile chuan la khoa LTT so huu va duoc cap
+#    nhat; tru `KHOA_SO_THICH` (lua chon cua nguoi dung) chi them khi thieu.
+#    Moi dong khac — khoa, bang, chu thich cua nguoi dung — giu tung byte.
+#    Ket qua phai parse lai duoc VA khoa cua nguoi dung phai con dung gia tri;
+#    khong thi KHONG ghi.
+
+#: Khoa ta dat mac dinh nhung la LUA CHON cua nguoi dung: chi them khi thieu.
+KHOA_SO_THICH = frozenset({"model_reasoning_effort",
+                           "default_subagent_reasoning_effort"})
+
+_RE_BANG_TOML = re.compile(r"^\s*\[\s*([A-Za-z0-9_.\"' -]+?)\s*\]\s*(?:#.*)?$")
+_RE_KHOA_TOML = re.compile(r"^\s*([A-Za-z0-9_-]+)\s*=")
+
+
+def _gan_nhan_toml(dong: list) -> list:
+    """(bang, khoa|None) cho tung dong. Bang goc la ''."""
+    bang, ra = "", []
+    for d in dong:
+        if d.lstrip().startswith("[["):
+            bang = "\0" + d.strip()               # mang bang: khong bao gio la cua ta
+            ra.append((bang, None))
+            continue
+        m = _RE_BANG_TOML.match(d)
+        if m:
+            bang = m.group(1).strip()
+            ra.append((bang, None))
+            continue
+        k = _RE_KHOA_TOML.match(d)
+        ra.append((bang, k.group(1) if k else None))
+    return ra
+
+
+def hop_nhat_profile(cu: str, chuan: str) -> str:
+    """Tra ve `cu` voi moi khoa cua `chuan` da cap nhat/them. Nem ValueError
+    neu `cu` khong phai TOML hop le hoac ket qua lam hong khoa nguoi dung."""
+    nl = "\r\n" if "\r\n" in cu else "\n"
+    dong = cu.replace("\r\n", "\n").split("\n")
+    if dong and dong[-1] == "":
+        dong.pop()
+    muon: dict = {}                               # bang -> {khoa: dong}
+    dong_chuan = chuan.split("\n")
+    for i, (bang, khoa) in enumerate(_gan_nhan_toml(dong_chuan)):
+        d = dong_chuan[i]
+        if khoa:
+            muon.setdefault(bang, {})[khoa] = d.strip()
+    nhan = _gan_nhan_toml(dong)
+    da_co = set()
+    for i, (bang, khoa) in enumerate(nhan):
+        if khoa and khoa in muon.get(bang, {}):
+            da_co.add((bang, khoa))
+            if khoa not in KHOA_SO_THICH:
+                dong[i] = muon[bang][khoa]
+    for bang, cac_khoa in muon.items():
+        thieu = [d for k, d in cac_khoa.items() if (bang, k) not in da_co]
+        if not thieu:
+            continue
+        nhan = _gan_nhan_toml(dong)
+        vi_tri = [i for i, (b, _) in enumerate(nhan) if b == bang]
+        if bang == "":
+            dau_bang = next((i for i, (b, k) in enumerate(nhan)
+                             if b != "" and k is None), len(dong))
+            chen = dau_bang
+            while chen > 0 and not dong[chen - 1].strip():
+                chen -= 1
+        elif vi_tri:
+            chen = vi_tri[-1] + 1
+            while chen > vi_tri[0] + 1 and not dong[chen - 1].strip():
+                chen -= 1
+        else:
+            if dong and dong[-1].strip():
+                dong.append("")
+            dong.append(f"[{bang}]")
+            chen = len(dong)
+        dong[chen:chen] = thieu
+    moi = nl.join(dong) + nl
+    if _tomllib is not None:
+        truoc = _tomllib.loads(cu)                # hong san -> TOMLDecodeError
+
+        def giu(a: dict, b: dict, bang: str) -> None:
+            ta = muon.get(bang, {})
+            for k, v in a.items():
+                con = k if bang == "" else f"{bang}.{k}"
+                if isinstance(v, dict) and con in muon:
+                    giu(v, b.get(k) or {}, con)
+                elif k in ta and k not in KHOA_SO_THICH:
+                    continue
+                elif b.get(k) != v:
+                    raise ValueError(f"khoa `{con}` cua nguoi dung bi doi")
+
+        giu(truoc, _tomllib.loads(moi), "")
+    return moi
+
+
 # ── Codex ────────────────────────────────────────────────────────────────────
 
 def codex(base: str, goc_codex: pathlib.Path,
@@ -332,18 +449,45 @@ def codex(base: str, goc_codex: pathlib.Path,
 
     # Tao tep catalog TRUOC khi tro toi no: Codex TU CHOI KHOI DONG neu
     # `model_catalog_json` tro toi mot duong dan khong ton tai.
+    # ⭐ Catalog la tep CUA LTT tu dau den cuoi: lan cai sau LAM MOI no (co sao
+    #    luu), khong "giu nguyen" — giu nguyen la giu so cu mai (R-13).
     cat = goc_codex / "ltt_model_catalog.json"
+    moi_cat = _catalog()
     if not cat.exists():
-        cat.write_text(_catalog(), encoding="utf-8")
+        cat.write_text(moi_cat, encoding="utf-8")
         ra.append(f"  + tao {cat}")
+    elif cat.read_text(encoding="utf-8") != moi_cat:
+        _sao_luu(cat)
+        cat.write_text(moi_cat, encoding="utf-8")
+        ra.append(f"  ~ lam moi {cat}")
 
     for ten_tep, hs_codex in (("ltt.config.toml", HO_SO_MODEL[MODEL]),
                               ("ltt-fast.config.toml", HO_SO_MODEL[MODEL_35])):
         pro = goc_codex / ten_tep
-        if pro.exists():
-            ra.append(f"  = da co {pro}, giu nguyen")
+        chuan = _profile_codex(hs_codex, cat)
+        if not pro.exists():
+            pro.write_text(chuan, encoding="utf-8")
+            ra.append(f"  + tao {pro} ({hs_codex.ten})")
             continue
-        pro.write_text(
+        cu_pro = pro.read_bytes().decode("utf-8")
+        try:
+            moi = hop_nhat_profile(cu_pro, chuan)
+        except ValueError as e:
+            ra.append(f"  ! {pro} khong cap nhat duoc ({e}) - KHONG dung toi;"
+                      " xoa tep do roi chay lai de nhan so moi")
+            continue
+        if moi == cu_pro:
+            ra.append(f"  = {pro} da dung so moi")
+            continue
+        _sao_luu(pro)
+        pro.write_bytes(moi.encode("utf-8"))
+        ra.append(f"  ~ cap nhat khoa LTT trong {pro} (khoa cua ban giu nguyen)")
+    return ra
+
+
+def _profile_codex(hs_codex: HoSoModel, cat: pathlib.Path) -> str:
+    """Profile CHUAN. Moi khoa o day la khoa LTT so huu, tru `KHOA_SO_THICH`."""
+    return (
             f'model = "{hs_codex.ten}"\n'
             'model_provider = "ltt"\n'
             "# Model-specific quality default; server thinking remains enabled.\n"
@@ -357,9 +501,7 @@ def codex(base: str, goc_codex: pathlib.Path,
             "\n[agents]\n"
             f'default_subagent_model = "{hs_codex.ten}"\n'
             f'default_subagent_reasoning_effort = "{hs_codex.reasoning}"\n'
-            "max_concurrent_threads_per_session = 1\n", encoding="utf-8")
-        ra.append(f"  + tao {pro} ({hs_codex.ten})")
-    return ra
+            "max_concurrent_threads_per_session = 1\n")
 
 
 # ── Claude Code CLI ──────────────────────────────────────────────────────────
@@ -414,12 +556,10 @@ def claude_code(base: str, goc_claude: pathlib.Path,
         #    kip nen va khach an 413 giua phien.
         "CLAUDE_CODE_MAX_CONTEXT_TOKENS": str(hs.cua_so),
         "CLAUDE_CODE_MAX_OUTPUT_TOKENS": str(TOKEN_RA_TRAN),
-        # 🔴 HAI DONG NAY THEM 04/09, va thieu chung cung la mot loi tien.
-        #    `CLAUDE_CODE_MAX_CONTEXT_TOKENS` chi sua con so Claude GIA DINH;
-        #    no KHONG dat nguong nen. Tai lieu chinh thuc noi ro: khong dat
-        #    cua so nen thi Claude co the doi toi sat cua so da khai. Voi ta,
-        #    171.458 - 138.690 = 32.768: chua tron mot luot sinh dai nhat.
-        "CLAUDE_CODE_AUTO_COMPACT_WINDOW": str(hs.nen),
+        # 🔴 AUTO_COMPACT_WINDOW la CUA SO, khong phai nguong: Claude tu tru
+        #    min(maxOut, 20000) + 13000 (xem `CLAUDE_DEM_NEN`). Ghi `hs.nen`
+        #    vao day (truoc 18/09) lam Claude nen som 33.000 token (R-05).
+        "CLAUDE_CODE_AUTO_COMPACT_WINDOW": str(hs.cua_so_nen_claude),
         "MAX_MCP_OUTPUT_TOKENS": str(TRAN_KET_QUA_TOOL),
     })
     # Khoa KHONG vao day. `settings.json` bi chia se va commit thuong xuyen.

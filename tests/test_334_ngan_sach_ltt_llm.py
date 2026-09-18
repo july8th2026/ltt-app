@@ -896,12 +896,17 @@ class TestCamCliKhopNganSach:
         assert "CLAUDE_CODE_AUTO_COMPACT_WINDOW" in cc.CLAUDE_ENV, (
             "bo cai khong dat cua so nen cho Claude — Claude se nen o 100% "
             "cua so khai bao, khong con cho cho mot luot sinh")
-        assert cc.CUA_SO_NEN_CLAUDE == cc.NEN_HOI_THOAI, (
-            f"cua so nen Claude {cc.CUA_SO_NEN_CLAUDE} != nguong nen Codex "
-            f"{cc.NEN_HOI_THOAI} — hai client, mot may chu, phai MOT con so")
-        con = ngan_sach.tran_vao_cua("qwen38-api") - cc.CUA_SO_NEN_CLAUDE
+        # ⚠️ 18/09 (R-05): AUTO_COMPACT_WINDOW la CUA SO; Claude nen o
+        #    cua so - min(maxOut, 20000) - 13000. Diem nen THAT moi phai bang
+        #    nguong Codex — phep kiem day du o `test_1440`.
+        diem = (cc.CUA_SO_NEN_CLAUDE
+                - min(cc.TOKEN_RA_TRAN, cc.CLAUDE_TRU_RA_TOI_DA)
+                - cc.CLAUDE_DEM_NEN)
+        assert diem <= cc.NEN_HOI_THOAI, (
+            f"Claude nen o {diem} > nguong nen Codex {cc.NEN_HOI_THOAI}")
+        con = ngan_sach.tran_vao_cua("qwen38-api") - diem
         assert con >= ngan_sach.TOKEN_RA_TRAN, (
-            f"nen o {cc.CUA_SO_NEN_CLAUDE} tren tran cung "
+            f"nen o {diem} tren tran cung "
             f"{ngan_sach.tran_vao_cua('qwen38-api')} chi chua {con} token — "
             f"nho hon mot luot sinh dai nhat ({ngan_sach.TOKEN_RA_TRAN})")
 
