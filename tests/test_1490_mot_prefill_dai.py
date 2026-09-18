@@ -316,3 +316,99 @@ def test_phat_danh_dau_prefill_xong_cho_ca_luot_ngan(monkeypatch):
                          hong=lambda e: None, xong=lambda tokens: None)
     list(luong._phat(mo, luot_))
     assert danh_dau == ["L-ngan"]
+
+
+def test_tich_hop_dong_thoi_gian_C4_doi_chung_tat_luat(db, monkeypatch):
+    """Đối chứng của ca trên: tài nguyên không bật luật ⇒ whale vào ngay ở t=30,5
+    dù lượt A còn prefill (đúng hành vi đã gây C4 §5)."""
+    from platform_core.llm import admission
+
+    monkeypatch.setattr(admission, "_BAN_DO_PREFILL", {})
+    dang_chay, _ = _xet(db, "dang_chay", now=_t(-10), moi=500)
+    admission.danh_dau_prefill_xong(dang_chay.id)
+    a, _ = _xet(db, "a", now=_t(28), moi=1_300)
+    assert a is not None
+    w, ly_do = _xet(db, "w", now=_t(30.5), moi=32_000, whale=True, tuoi=30.5)
+    assert w is not None, ly_do
+
+
+# ── 5. B giả mô phỏng llama.cpp: nhồi prompt theo THỨ TỰ SLOT ────────────────
+
+class _BGia:
+    """Engine giả: mỗi nhịp `dt` có `toc × dt` token prompt, chia cho các slot
+    theo THỨ TỰ CHỈ SỐ (như `server-context.cpp` 91f6a6cf3 :3110-3115). Slot của
+    engine do B chọn (LCP/LRU, A không định được) — `thu_tu_chon` là thứ tự B
+    đưa lượt MỚI vào slot; ca xấu C4: whale rơi vào slot chỉ số thấp hơn."""
+
+    def __init__(self, toc: float, thu_tu_chon: list[int]):
+        self.toc = toc
+        self.chon = list(thu_tu_chon)
+        self.con: dict[int, tuple[str, int]] = {}   # slot → (tên, token prompt còn)
+        self.byte_dau: dict[str, float] = {}
+
+    def vao(self, ten: str, token: int) -> None:
+        self.con[self.chon.pop(0)] = (ten, token)
+
+    def nhip(self, t: float, dt: float) -> list[str]:
+        ngan_sach = self.toc * dt
+        xong = []
+        for slot in sorted(self.con):
+            ten, con = self.con[slot]
+            if con <= 0 or ngan_sach <= 0:
+                continue
+            an = min(con, ngan_sach)
+            ngan_sach -= an
+            self.con[slot] = (ten, con - an)
+            if con - an <= 0:
+                self.byte_dau[ten] = t + dt
+                xong.append(ten)
+        return xong
+
+
+def _mo_phong_C4(db) -> tuple[dict[str, float], dict[str, float]]:
+    """Trả (lúc vào engine, lúc byte đầu) theo giây. Lượt `dang_chay` đã decode;
+    whale W1 chờ từ t=0 (luật 5: nhường lượt tương tác 30 s); lượt ngắn A (1.300)
+    tới t=29,5; whale W2 tới t=31. B chọn slot: W1 → 0, A/W2 → 2, 3."""
+    from platform_core.llm import admission
+
+    ts0 = datetime.now(timezone.utc)
+    b = _BGia(toc=1_100.0, thu_tu_chon=[2, 0, 3])
+    dang_chay, _ = _xet(db, "dang_chay", now=ts0 - timedelta(seconds=10), moi=500)
+    admission.danh_dau_prefill_xong(dang_chay.id)
+    lease: dict[str, str] = {}
+    vao_luc: dict[str, float] = {}
+    toi = {"W1": (0.0, 32_000, True), "A": (29.5, 1_300, False),
+           "W2": (31.0, 20_000, True)}
+    dt, t = 0.1, 0.0
+    while t < 90 and len(b.byte_dau) < len(toi):
+        for ten, (luc_toi, tok, whale) in toi.items():
+            if ten in lease or t < luc_toi:
+                continue
+            l, _ly = _xet(db, ten, now=ts0 + timedelta(seconds=t), moi=tok,
+                          whale=whale, tuoi=t - luc_toi)
+            if l is not None:
+                lease[ten], vao_luc[ten] = l.id, t
+                b.vao(ten, tok)
+        for ten in b.nhip(t, dt):                   # byte dữ liệu đầu ⇒ `_phat`
+            admission.danh_dau_prefill_xong(lease[ten])
+        t = round(t + dt, 6)
+    return vao_luc, b.byte_dau
+
+
+def test_mo_phong_B_luot_ngan_khong_cho_het_prefill_32K(db):
+    vao, dau = _mo_phong_C4(db)
+    ttft_a = dau["A"] - 29.5
+    assert ttft_a < 3.0, (vao, dau)                 # ~1,2 s: prefill 1.300 một mình
+    assert vao["W1"] >= dau["A"] - 1e-6             # W1 chờ A xong prefill
+    assert vao["W2"] >= dau["W1"] - 1e-6            # whale thứ hai chờ W1 xong prefill
+
+
+def test_mo_phong_B_doi_chung_tat_luat_thi_luot_ngan_cho_ca_32K(db, monkeypatch):
+    """Tắt luật (tài nguyên không khai) ⇒ W1 vào ở t=30, slot 0, đè A ⇒ TTFT của A
+    ≈ thời gian prefill 32K (~29 s) — đúng số C4 thấy. Luật mà hỏng thì ca trên đỏ."""
+    from platform_core.llm import admission
+
+    monkeypatch.setattr(admission, "_BAN_DO_PREFILL", {})
+    vao, dau = _mo_phong_C4(db)
+    assert dau["A"] - 29.5 > 20.0, (vao, dau)
+    assert vao["W2"] >= dau["W1"] - 1e-6            # ≤1 whale prefill: luật cũ vẫn giữ

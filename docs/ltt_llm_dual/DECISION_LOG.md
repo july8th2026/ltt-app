@@ -940,6 +940,10 @@ luồng ~1,3K còn prefill khi prompt 32K vào ⇒ token đầu ở t=43,9 s = l
   không có ⇒ phần làm được là **không cho whale vào engine lúc lượt khác còn prefill**.
 - Không thấy issue llama.cpp nào về công bằng prefill giữa slot (tìm 18/09: "prefill blocks other
   slots / round robin prompt processing"); #27185 (HIP, slot không bao giờ được prefill) khác nguyên nhân.
+  Tìm lại bằng GitHub MCP (18/09, "chunked prefill … per slot"): lối upstream cho bài "prefill đè
+  decode/lượt khác" là **tách prefill/decode** — #21266 (roadmap, ggerganov, mở, chưa có PR) — tức
+  engine hiện tại chưa có; PR #28532 (`--slot-linger-ms`, mở) chỉ đổi ai được slot TRỐNG, không
+  đổi thứ tự prefill giữa các slot đang bận ⇒ không thay luật này.
 
 **Quyết định** (`HO_SO[m].mot_prefill_dai`, mặc định **bật** cả hai model):
 - `luat_nhan` luật **5b**: whale (`token_prefill_moi ≥ nguong_whale`, số chủ dự án L-23: 8.192 /
