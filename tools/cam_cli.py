@@ -738,7 +738,8 @@ _RE_KHOA_TOML = re.compile(r"^\s*([A-Za-z0-9_-]+)\s*=")
 
 def _gan_nhan_toml(dong: list) -> list:
     """(bang, khoa|None) cho tung dong. Bang goc la ''."""
-    bang, ra = "", []
+    bang = ""
+    ra: list[tuple[str, str | None]] = []
     for d in dong:
         if d.lstrip().startswith("[["):
             bang = "\0" + d.strip()               # mang bang: khong bao gio la cua ta
