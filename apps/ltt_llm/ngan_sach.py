@@ -67,7 +67,7 @@ DEM_UOC = 2_048
 #:
 #: ⛔ KHÁC `TOKEN_MOI_ANH` (770, số ĐO cho ảnh 1024×768, dùng cho hoá đơn/tài
 #:    liệu). Đặt chỗ phải phủ ảnh LỚN NHẤT được phép, và chưa ai đo ảnh ấy —
-#:    nên giữ 2.048 (bằng `llm_gateway/ngan_sach.TOKEN_MOI_ANH` của máy B) cho tới
+#:    nên giữ 2.048 (bằng `llm_gateway/ngan_sach.TOKEN_GIU_MOI_ANH` của máy B) cho tới
 #:    khi đo. Đặt chỗ thừa chỉ tốn suất; đặt thiếu là tràn `-kvu`.
 #: 🔴 O-11 (17/09): thay env `LTT_LLM_TOKEN_MOI_ANH` (ĐÃ GỠ).
 TOKEN_GIU_MOI_ANH = 2_048

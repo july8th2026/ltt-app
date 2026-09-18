@@ -50,6 +50,19 @@ def test_manifest_doc_tu_nguon():
             h.nguong_whale, h.dem_uoc, h.token_giu_moi_anh), model
 
 
+def test_gateway_TOKEN_GIU_MOI_ANH_khop_ho_so():
+    """Task 11 (18/09): bản sao ở máy B mang tên `TOKEN_GIU_MOI_ANH` và bằng
+    `HO_SO[m].token_giu_moi_anh` của MỌI hồ sơ. Tên cũ `TOKEN_MOI_ANH` (2.048)
+    trùng tên với `apps/ltt_llm/ngan_sach.TOKEN_MOI_ANH = 770` (số đo cho hoá
+    đơn) — hai số khác nghĩa, một tên ⇒ đã gỡ ở gateway."""
+    from llm_gateway import ngan_sach as ns_b
+
+    assert not hasattr(ns_b, "TOKEN_MOI_ANH"), "gateway con ten cu TOKEN_MOI_ANH"
+    for m, h in ngan_sach.HO_SO.items():
+        assert ns_b.TOKEN_GIU_MOI_ANH == h.token_giu_moi_anh, m
+    assert ngan_sach.TOKEN_MOI_ANH != ns_b.TOKEN_GIU_MOI_ANH  # hai nghĩa, hai số
+
+
 def test_manifest_khong_go_so_tay():
     """`admission_slots=1` gõ tay là đúng cái chồng chéo phép kiểm này sinh ra để dẹp."""
     van = (GOC / "apps" / "ltt_llm" / "manifest.py").read_text(encoding="utf-8")
