@@ -20,7 +20,7 @@
 | A — Nền tảng LTT LLM (Phương án C) | **100 %** | — |
 | B — LTTCODE build + E2E + phát hành | **95 %** | Đăng nhập/đăng xuất trong app (P04 #8 phần giao diện) |
 | C — Tối ưu máy B | **85 %** | Gộp cache 24G (Task 1 của LLM v2) |
-| E — LLM v2 (làm lại trên Phương án C) | **10 %** | Task 1–13 |
+| E — LLM v2 (làm lại trên Phương án C) | **15 %** | Task 2–13 |
 | D — Tổng kết phiên | **0 %** | L3, gộp, push, nhật ký |
 | **Cả phiên** | **~70 %** | |
 
