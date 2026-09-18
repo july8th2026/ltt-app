@@ -319,7 +319,7 @@ def test_lot_binh_thuong_va_thu_theo_TOKEN_DA_DO(api, monkeypatch):
     truoc = _so_du(user_id)
 
     r = api.post(DUONG, json=_than(
-        messages=[{"role": "user", "content": "x" * 25_000}],
+        messages=[{"role": "user", "content": "word " * 10_000}],
         max_tokens=1_800), headers=_h(token))
     assert r.status_code == 200, r.text
     b = r.json()
@@ -370,7 +370,7 @@ def test_sinh_it_thi_tra_it_KHONG_tra_tron_tran(api, monkeypatch):
     """🔴 Đây đúng là lỗi tiền im lặng đã tìm ra ở cửa job hôm 23/08."""
     user_id, token = _account()
 
-    than = _than(messages=[{"role": "user", "content": "x" * 25_000}],
+    than = _than(messages=[{"role": "user", "content": "word " * 10_000}],
                  max_tokens=1400)
     _dat_model(monkeypatch, token_vao=10_000, token_ra=20)
     a = api.post(DUONG, json=than, headers=_h(token)).json()
@@ -570,13 +570,12 @@ def test_413_dung_TRUOC_san_max_tokens(api, monkeypatch):
     Cung mot su that duoc chot o tang cau truc trong `tests/test_1239`.
     """
     from apps.ltt_llm.executor import EXECUTOR
-    from apps.ltt_llm.ngan_sach import KY_TU_MOI_TOKEN
 
     goi = _dat_model(monkeypatch)
     _user_id, token = _account()
     # DO DAI DAN XUAT TU TRAN, khong go tay: cua so tung duoc nang mot lan roi,
     # va mot hang go tay se am tham thoi vuot tran vao ngay hom ay.
-    qua_dai = "x" * int((EXECUTOR.input_cap(MODEL) + 1_000) * KY_TU_MOI_TOKEN)
+    qua_dai = "x" * (EXECUTOR.input_cap(MODEL) + 1_000)  # "x" liền = 1 token/ký tự trong uoc_token (từ con không nguyên âm = cận byte)
     than = _than(messages=[{"role": "user", "content": qua_dai}],
                  max_tokens=1, reasoning_effort="medium")
 
@@ -616,7 +615,7 @@ def test_schema_tools_lon_cung_phai_tinh_vao_prefill(api, monkeypatch):
         "type": "function",
         "function": {
             "name": "tra_cuu",
-            "description": "x" * 225_000,
+            "description": "x" * 90_000,  # ~90K token uoc: qua ngan sach dong bo, duoi tran vao
             "parameters": {"type": "object", "properties": {}},
         },
     }]

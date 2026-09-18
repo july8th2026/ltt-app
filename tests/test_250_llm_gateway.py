@@ -342,7 +342,9 @@ def test_uoc_vuot_va_THAT_cung_vuot_thi_413_bao_so_THAT():
         "messages": [{"role": "user", "content": "x" * 100_000}]})
     assert r.status_code == 413
     d = r.json()["detail"]
-    assert d["thay"] == 30_000, d
+    # So THAT = dem /tokenize cua van ban + khuon chat (`/tokenize` khong dem khuon).
+    from llm_gateway.uoc_token import khuon
+    assert d["thay"] == 30_000 + khuon(2, 0), d
     assert d["tran"] == 20_000, d
 
 
@@ -374,7 +376,9 @@ def test_thuong_nguon_chet_thi_van_413_theo_uoc():
         "model": "qwen38-api",
         "messages": [{"role": "user", "content": "x" * 100_000}]})
     assert r.status_code == 413
-    assert r.json()["detail"]["thay"] == 40_001      # so UOC, vi khong dem duoc
+    from llm_gateway.ngan_sach import do_yeu_cau
+    uoc = do_yeu_cau({"messages": [{"role": "user", "content": "x" * 100_000}]}).token_vao
+    assert r.json()["detail"]["thay"] == uoc      # so UOC, vi khong dem duoc
 
 
 def test_MOI_ho_so_dang_mo_deu_NHAN_duoc_anh():
@@ -464,7 +468,7 @@ def test_vao_cong_ra_vuot_cua_so_ngu_canh_thi_413():
     # Vào ~55 % cửa sổ, ra ~55 % cửa sổ: mỗi cái vừa trần của nó, cộng lại tràn.
     token_vao = int(cua_so * 0.55)
     token_ra = int(cua_so * 0.55)
-    ky_tu = int(token_vao * 2.5)               # KY_TU_MOI_TOKEN cua ngan_sach
+    ky_tu = token_vao                          # "x" lien = 1 token/ky tu (llm_gateway/uoc_token)
     than = {"model": "qwen35-api",
             "messages": [{"role": "user", "content": "x" * ky_tu}],
             "max_tokens": token_ra}

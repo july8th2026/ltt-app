@@ -149,7 +149,6 @@ class TestKhongConChongCheo:
 
     def test_features_chi_la_bi_danh(self):
         from apps.ltt_llm import features
-        assert features.KY_TU_MOI_TOKEN == ngan_sach.KY_TU_MOI_TOKEN
         assert features.SYNC_MAX_TOKENS_MAC_DINH == ngan_sach.mac_dinh_cho("sync")
 
     def test_may_A_khong_uoc_thieu_tool_use_va_tool_result_so_voi_may_B(self):
@@ -298,8 +297,8 @@ class TestDoiChieuKhoMayB:
     """Mã nguồn của máy B nằm cùng kho này (`llm_gateway/`), nên drift bắt được
     ngay lúc commit chứ không đợi tới lúc chạy.
 
-    ⛔ `KY_TU_MOI_TOKEN` là **phép ước token**, khai ở cả hai kho. Lệch nhau là
-       tiền ta giữ trước lệch tiền máy B tính — và **không có gì báo**.
+    ⛔ Phép ước token (từng là `KY_TU_MOI_TOKEN`, đã gỡ — Task 7) nay là module
+       `uoc_token.py` chép ở cả hai kho; `test_1470` so hai bản từng byte.
     """
 
     @staticmethod
@@ -312,12 +311,6 @@ class TestDoiChieuKhoMayB:
              or re.search(rf"{ten}\s*([0-9_.]+)", van))
         assert m, f"khong tim thay {ten} trong {tep}"
         return float(m.group(1).replace("_", ""))
-
-    def test_uoc_token_khop_giua_hai_kho(self):
-        b = self._hang_so("KY_TU_MOI_TOKEN", "llm_gateway/ngan_sach.py")
-        assert b == ngan_sach.KY_TU_MOI_TOKEN, (
-            f"may B uoc {b} ky tu/token con ta uoc {ngan_sach.KY_TU_MOI_TOKEN} — "
-            f"tien giu truoc se lech tien B tinh")
 
     def test_tran_ra_khop_mac_dinh_trong_ma_may_B(self):
         b = self._hang_so(r'_int\("LTT_LLM_MAX_OUTPUT_TOKENS", ',

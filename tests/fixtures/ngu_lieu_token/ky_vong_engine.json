@@ -1,0 +1,54 @@
+{
+ "base64": {
+  "engine_tokens": 5923,
+  "giao_thuc": "messages"
+ },
+ "cjk_zh": {
+  "engine_tokens": 2497,
+  "giao_thuc": "messages"
+ },
+ "code_py": {
+  "engine_tokens": 4344,
+  "giao_thuc": "messages"
+ },
+ "emoji": {
+  "engine_tokens": 4771,
+  "giao_thuc": "messages"
+ },
+ "en_prose": {
+  "engine_tokens": 1427,
+  "giao_thuc": "messages"
+ },
+ "hex": {
+  "engine_tokens": 7103,
+  "giao_thuc": "messages"
+ },
+ "ja_mixed": {
+  "engine_tokens": 2429,
+  "giao_thuc": "messages"
+ },
+ "json_minified": {
+  "engine_tokens": 6334,
+  "giao_thuc": "messages"
+ },
+ "numbers_csv": {
+  "engine_tokens": 8057,
+  "giao_thuc": "messages"
+ },
+ "stacktrace": {
+  "engine_tokens": 3319,
+  "giao_thuc": "messages"
+ },
+ "tool_calls_history": {
+  "engine_tokens": 983,
+  "giao_thuc": "chat"
+ },
+ "tools_60": {
+  "engine_tokens": 5444,
+  "giao_thuc": "messages"
+ },
+ "vi_markdown": {
+  "engine_tokens": 2291,
+  "giao_thuc": "messages"
+ }
+}
