@@ -1,5 +1,9 @@
 # `test_448` — bảy màu đỏ, và ba nguyên nhân KHÁC NHAU
 
+> ⚠️ **Ảnh chụp 10/09/2026** (tệp này) — không phải hiện trạng. Số đồng thời LLM ở đây
+> (`DONG_THOI_MAY_B=1`, `parallel=1`, một suất máy B…) **đã cũ** → `apps/ltt_llm/ngan_sach.HO_SO`
+> (L-23, L-28 trong `docs/ltt_llm_dual/DECISION_LOG.md`).
+
 > Đo 2026-09-10, nhánh `phien/asv-v6`. Lượt chạy ghi ra **ngoài kho**
 > (`LTT_ASV_E2E_RA=C:\Temp\asv-ui\nghiem_thu_thu.json`) nên bằng chứng đã commit
 > không bị hạ cấp — xem §0.

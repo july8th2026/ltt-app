@@ -1,5 +1,9 @@
 # Phase 03 — `text.chat` qua cửa nội bộ: chuẩn hoá, SLO, và đóng D12
 
+> ⚠️ **Ảnh chụp 03/09/2026** (tệp này) — không phải hiện trạng. Số đồng thời LLM ở đây
+> (`DONG_THOI_MAY_B=1`, `parallel=1`, một suất máy B…) **đã cũ** → `apps/ltt_llm/ngan_sach.HO_SO`
+> (L-23, L-28 trong `docs/ltt_llm_dual/DECISION_LOG.md`).
+
 ## Source
 - worktree: `D:\LTTSTUDIOSAPP\.claude\worktrees\lttchat-autonomous-build-plan-1cf29d`
 - branch: `claude/lttchat-autonomous-build-plan-1cf29d` · base: `bdddeae` (Phase 02)

@@ -1,5 +1,9 @@
 # MIGRATION MAP — pha 03
 
+> ⚠️ **Ảnh chụp 09/09/2026** (tệp này) — không phải hiện trạng. Số đồng thời LLM ở đây
+> (`DONG_THOI_MAY_B=1`, `parallel=1`, một suất máy B…) **đã cũ** → `apps/ltt_llm/ngan_sach.HO_SO`
+> (L-23, L-28 trong `docs/ltt_llm_dual/DECISION_LOG.md`).
+
 > **Pha 03 — MAP ONLY. Không sửa một dòng mã thực thi nào.**
 > Nguồn: `LEGACY_SURFACE_MATRIX.csv` · `OUTBOUND_EGRESS_MATRIX.csv` ·
 > `PRODUCT_DEPENDENCY_MAP.md` · đo log worker production 28 ngày.

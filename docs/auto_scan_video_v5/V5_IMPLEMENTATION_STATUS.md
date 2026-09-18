@@ -1,5 +1,9 @@
 # V5_IMPLEMENTATION_STATUS — đã làm gì, và cái gì còn lại
 
+> ⚠️ **Ảnh chụp 08/09/2026** (tệp này) — không phải hiện trạng. Số đồng thời LLM ở đây
+> (`DONG_THOI_MAY_B=1`, `parallel=1`, một suất máy B…) **đã cũ** → `apps/ltt_llm/ngan_sach.HO_SO`
+> (L-23, L-28 trong `docs/ltt_llm_dual/DECISION_LOG.md`).
+
 > Artifact thứ 6, không nằm trong năm artifact bắt buộc. Nó tồn tại vì §24 đòi
 > một cổng thoát có thể chấm được, và một cổng thoát chấm bằng trí nhớ là một
 > cổng thoát sẽ nói dối.

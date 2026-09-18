@@ -1,5 +1,9 @@
 # VPS V2 — VẬT CẢN CÒN LẠI
 
+> ⚠️ **Ảnh chụp 09/09/2026** (tệp này) — không phải hiện trạng. Số đồng thời LLM ở đây
+> (`DONG_THOI_MAY_B=1`, `parallel=1`, một suất máy B…) **đã cũ** → `apps/ltt_llm/ngan_sach.HO_SO`
+> (L-23, L-28 trong `docs/ltt_llm_dual/DECISION_LOG.md`).
+
 > Ba loại, và trộn chúng vào nhau là cách để không sửa được cái nào:
 >
 > | Loại | Ai gỡ được | Có gỡ bằng mã không |

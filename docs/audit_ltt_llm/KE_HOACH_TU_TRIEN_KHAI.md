@@ -1,5 +1,9 @@
 # Kế hoạch tự triển khai phần còn lại
 
+> ⚠️ **Ảnh chụp 01/09/2026** (cả thư mục `docs/audit_ltt_llm/`) — không phải hiện trạng. Số đồng thời LLM ở đây
+> (`DONG_THOI_MAY_B=1`, `parallel=1`, một suất máy B…) **đã cũ** → `apps/ltt_llm/ngan_sach.HO_SO`
+> (L-23, L-28 trong `docs/ltt_llm_dual/DECISION_LOG.md`).
+
 **01/09/2026.** Chủ dự án cấp quyền chạy đầy đủ và yêu cầu **dọn các cơ chế cần
 họ hỗ trợ**. Tài liệu này làm hai việc: rà xem cái gì *thật sự* cần người, và
 xếp phần còn lại theo thứ tự chạy.
