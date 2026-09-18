@@ -464,28 +464,25 @@ def kiem_san_token_ra(sach: dict) -> None:
        Mot loi bao chi noi "max_tokens qua thap" se day ho di dung huong nguoc
        lai.
     """
-    from apps.ltt_llm.ngan_sach import san_token_ra
+    from apps.ltt_llm.ngan_sach import san_token_ra, san_token_ra_dong_bo
 
+    # Hàm này chỉ cửa ĐỒNG BỘ gọi (`executor.check_output_floor`): model một chế
+    # độ (3.5) được máy chủ đặt budget suy nghĩ theo cửa (L-26) nên sàn thấp hơn.
     xin_ra = int(sach.get("max_tokens") or 0)
-    _san = san_token_ra(sach.get("model"), sach.get("reasoning_effort"))
+    _san = san_token_ra_dong_bo(sach.get("model"), sach.get("reasoning_effort"))
     if xin_ra >= _san:
         return
     from apps.ltt_llm.ngan_sach import nghi_mac_dinh
     from platform_core.public_api.examples import CODEX_MODEL_REASONING_CO_DINH
     if sach.get("model") in CODEX_MODEL_REASONING_CO_DINH:
         # ⛔ Không chỉ sang `low`: model này không có nấc (L-26) — effort bị bỏ
-        #    qua, suy nghĩ luôn tiêu tới budget engine. Đường ra thật là trần
-        #    cao hơn, và nếu cửa đồng bộ không chứa nổi trần đó trong ngân sách
-        #    thời gian của nó thì là stream hoặc job.
+        #    qua. Máy chủ chia `max_tokens` giữa suy nghĩ và trả lời, nên đường
+        #    ra duy nhất là trần cao hơn.
         raise ThamSoSai(
             f"`max_tokens` is {xin_ra}, below the {_san} `{sach.get('model')}` "
-            f"needs: this model always thinks before answering (its thinking "
-            f"budget is set by the server; reasoning_effort is accepted and "
-            f"ignored), and thinking spends the same budget as the answer, so a "
-            f"lower ceiling returns empty content with finish_reason='length'. "
-            f"Set max_tokens to at least {_san}. If this synchronous endpoint "
-            f"cannot fit that in its time budget, use POST /api/v1/messages or "
-            f"/api/v1/responses with stream=true, or POST /api/v1/jobs.")
+            f"needs: this model always thinks before answering (reasoning_effort "
+            f"is accepted and ignored). The server splits max_tokens between "
+            f"thinking and the answer; set max_tokens to at least {_san}.")
     _muc = sach.get("reasoning_effort") or nghi_mac_dinh(sach.get("model"))
     # 🔴 CÂU NÀY TỪNG MÁCH `reasoning_effort='none'` — một giá trị đã bị GỠ khỏi
     #    hợp đồng ngày 14/09/2026. Tức lỗi chỉ khách sang một thứ cửa sẽ từ chối:
@@ -503,8 +500,22 @@ def kiem_san_token_ra(sach: dict) -> None:
         f"to get a shorter reply; that is the other switch.")
 
 
+def _them_may_b(sach: dict, budget_suy_nghi: int | None) -> dict:
+    """Tham số chuyển thẳng lên máy B, cộng budget suy nghĩ MÁY CHỦ đặt (nếu có).
+
+    ⛔ `budget_suy_nghi` KHÔNG BAO GIỜ đọc từ `params`: `kiem_tham_so` đã gỡ mọi
+       budget khách gửi (L-26); chỉ cửa gọi (`server/api/chat.py`, qua
+       `executor.sync_thinking_budget`) được truyền nó bằng đối số có tên.
+    """
+    them = {k: sach[k] for k in THAM_SO_CHUYEN_THANG if k in sach}
+    if budget_suy_nghi is not None:
+        them["reasoning_budget_tokens"] = int(budget_suy_nghi)
+    return them
+
+
 def chay(db, params: dict, *, timeout_s: float = 300.0,
-         on_dispatch=None, on_rejected=None, ma_luot: str = "") -> KetQua:
+         on_dispatch=None, on_rejected=None, ma_luot: str = "",
+         budget_suy_nghi: int | None = None) -> KetQua:
     """Chạy một lượt. Ném `ThamSoSai`, `BanError`, `VuotNganSachError`, `CongVlmError`.
 
     `ma_luot` — mã của lượt, chuyển thẳng xuống `dieu_phoi`. Nó là cái tên để
@@ -535,7 +546,7 @@ def chay(db, params: dict, *, timeout_s: float = 300.0,
             #    dieu_phoi.goi -> than -> may B), va chinh vi the `response_format`
             #    dung o tang mot roi bien mat. `tests/test_1255` chot rang moi khoa
             #    khai trong `params_schema` phai song sot.
-            them={k: sach[k] for k in THAM_SO_CHUYEN_THANG if k in sach},
+            them=_them_may_b(sach, budget_suy_nghi),
             timeout_s=timeout_s,
             on_dispatch=on_dispatch,
             on_rejected=on_rejected,

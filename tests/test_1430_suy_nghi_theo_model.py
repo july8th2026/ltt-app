@@ -384,3 +384,78 @@ def test_catalog_va_ham_chuan_hoa_noi_cung_mot_dieu():
                 assert bo_qua and "reasoning_effort" not in gui
             else:
                 assert gui["reasoning_effort"] == m and not bo_qua
+
+
+# ══ Cửa ĐỒNG BỘ /chat/completions: budget suy nghĩ do máy chủ đặt theo cửa ══
+#
+# Coordinator 18/09 bác "3.5 ở cửa đồng bộ ⇒ 400" (phá khách đang dùng). Thay
+# bằng: máy chủ tự đặt `reasoning_budget_tokens` (llama.cpp 91f6a6cf3
+# server-common.cpp:1366-1369 nhận nó MỖI request) sao cho còn chỗ trả lời
+# trong `max_tokens` của cửa đồng bộ. Budget KHÁCH gửi vẫn bị gỡ.
+
+def _dat_dieu_phoi(monkeypatch, noi_dung="chao ban"):
+    """Giả `dieu_phoi.goi` — tầng NGAY TRƯỚC thân gửi máy B (`them` đi thẳng
+    vào thân). Trả nội dung khác rỗng như một lượt suy nghĩ không cạn trần."""
+    from platform_core.llm import dieu_phoi
+    from platform_core.llm.cong_vlm import KetQuaChat, SuDung
+    goi = []
+
+    def gia(db, **kw):
+        goi.append(kw)
+        return types.SimpleNamespace(
+            noi_dung=noi_dung, suy_nghi="nghi", tool_calls=(),
+            finish_reason="stop", su_dung=SuDung(10, 20, 0, True),
+            ket_qua=KetQuaChat(noi_dung=noi_dung))
+
+    monkeypatch.setattr(dieu_phoi, "goi", gia)
+    return goi
+
+
+def _h_dong_bo(token):
+    import uuid
+    return {**_h(token), "Idempotency-Key": uuid.uuid4().hex}
+
+
+def _than_dong_bo(model: str, **them) -> dict:
+    d = {"model": model, "messages": [{"role": "user", "content": "xin chao"}]}
+    d.update(them)
+    return d
+
+
+@pytest.mark.parametrize("max_tokens", [None, 1024, 2000])
+def test_dong_bo_35_tra_200_va_may_chu_dat_budget(api, monkeypatch, max_tokens):
+    from apps.ltt_llm.ngan_sach import TOKEN_CHO_TRA_LOI
+    goi = _dat_dieu_phoi(monkeypatch)
+    _uid, token = _account()
+    than = _than_dong_bo("ltt-3.5", reasoning_effort="high",
+                         reasoning_budget_tokens=99_999,
+                         thinking={"type": "enabled", "budget_tokens": 50_000})
+    if max_tokens is not None:
+        than["max_tokens"] = max_tokens
+    r = api.post(API_V1_PREFIX + "/chat/completions", headers=_h_dong_bo(token), json=than)
+    assert r.status_code == 200, r.text
+    assert r.json()["choices"][0]["message"]["content"] == "chao ban"
+    assert r.headers.get("X-LTT-Effort-Bo-Qua") == "1"
+    assert goi, "khong goi may B"
+    kw = goi[-1]
+    them_b = kw.get("them") or {}
+    budget = them_b.get("reasoning_budget_tokens")
+    assert budget is not None, f"may chu khong dat budget: {them_b}"
+    # budget của MÁY CHỦ, không phải của khách; chừa chỗ trả lời; ≤ budget engine
+    assert budget != 99_999 and budget <= _budget_yaml("qwen35-api")
+    assert budget + TOKEN_CHO_TRA_LOI <= kw["max_tokens"]
+    assert budget > 0
+    assert "thinking" not in them_b and kw.get("reasoning_effort") is None
+
+
+def test_dong_bo_38_khong_dat_budget_va_khong_header(api, monkeypatch):
+    goi = _dat_dieu_phoi(monkeypatch)
+    _uid, token = _account()
+    r = api.post(API_V1_PREFIX + "/chat/completions", headers=_h_dong_bo(token),
+                 json=_than_dong_bo("ltt-3.8", reasoning_effort="high",
+                                    max_tokens=500, reasoning_budget_tokens=7))
+    assert r.status_code == 200, r.text
+    assert "X-LTT-Effort-Bo-Qua" not in r.headers
+    them_b = goi[-1].get("them") or {}
+    assert "reasoning_budget_tokens" not in them_b, them_b
+    assert goi[-1]["reasoning_effort"] == "xhigh"

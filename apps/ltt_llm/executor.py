@@ -96,7 +96,7 @@ class _Executor:
         return tran_vao_cua(features.ALIAS_SANG_ID[alias])
 
     def run(self, db, params, *, timeout_s, on_dispatch=None, on_rejected=None,
-            ma_luot: str = ""):
+            ma_luot: str = "", budget_suy_nghi=None):
         """Chạy một lượt. `ma_luot` là **tên để cắt lượt này từ ngoài**.
 
         🔴 THIẾU `ma_luot` LÀ ĐƯỜNG HỦY CHỈ LÀM MỘT TRONG BA VIỆC (L-06, 13/09).
@@ -128,7 +128,18 @@ class _Executor:
             kwargs["on_rejected"] = on_rejected
         if ma_luot:
             kwargs["ma_luot"] = ma_luot
+        if budget_suy_nghi is not None:
+            kwargs["budget_suy_nghi"] = budget_suy_nghi
         return features.chay(db, params, **kwargs)
+
+    def sync_thinking_budget(self, params):
+        """Budget suy nghĩ máy chủ đặt cho một lượt cửa ĐỒNG BỘ (L-26), hoặc None.
+
+        Gọi SAU khi `max_tokens` đã qua trần thời gian của cửa. Xem
+        `ngan_sach.budget_suy_nghi_dong_bo`.
+        """
+        from apps.ltt_llm.ngan_sach import budget_suy_nghi_dong_bo
+        return budget_suy_nghi_dong_bo(params.get("model"), params["max_tokens"])
 
     def model_id(self, alias):
         return self.aliases()[alias]

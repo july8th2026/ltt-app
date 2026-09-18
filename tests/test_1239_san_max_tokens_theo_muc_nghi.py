@@ -105,23 +105,17 @@ def test_san_khong_cao_hon_mac_dinh_cua(cua, mac_dinh):
     toàn hợp lệ. Hiện `sync` = 1024 và sàn cao nhất cũng = 1024: sát đúng một
     token, nên hạ mặc định một chút là vỡ.
     """
-    # 🔴 NGOẠI LỆ CÓ CHỦ Ý DUY NHẤT (L-26, chủ dự án 18/09): `ltt-3.5` ở cửa
-    #    `sync`. Sàn 3.5 = budget suy nghĩ engine + 512 (`test_1430`) cao hơn cả
-    #    mặc định 1.024 lẫn trần thời gian ~2.300 của cửa đồng bộ, nên 3.5 ở cửa
-    #    đó bị 400 — thay vì 200 với `content` rỗng. Ngoại lệ chỉ được sống khi
-    #    lời từ chối CHỈ ĐƯỜNG sang stream/job; mọi cặp (cửa, model) khác giữ
-    #    nguyên bất biến.
-    from platform_core.public_api.examples import CODEX_MODEL_REASONING_CO_DINH
-    for model, bang in SAN_TOKEN_RA_THEO_NGHI.items():
-        cao_nhat = max(bang.values())
-        if cao_nhat <= mac_dinh:
-            continue
-        assert cua == "sync" and model in CODEX_MODEL_REASONING_CO_DINH, (
-            f"cua {cua!r} mac dinh {mac_dinh} < san {cao_nhat} cua {model}: "
-            f"luot khong khai max_tokens se bi tu choi het")
-        with pytest.raises(features.ThamSoSai) as e:
-            _cua(_xin(model, mac_dinh))
-        assert "stream=true" in str(e.value) and "/api/v1/jobs" in str(e.value)
+    # L-26 (18/09): cửa đồng bộ dùng sàn RIÊNG cho model một chế độ — máy chủ
+    # đặt budget suy nghĩ theo `max_tokens` (`ngan_sach.budget_suy_nghi_dong_bo`)
+    # — nên đó là sàn phải ≤ mặc định cửa `sync`. Không ngoại lệ.
+    from apps.ltt_llm.ngan_sach import san_token_ra_dong_bo
+    san = san_token_ra_dong_bo if cua == "sync" else None
+    cao_nhat = max((san(m, muc) if san else s)
+                   for m, bang in SAN_TOKEN_RA_THEO_NGHI.items()
+                   for muc, s in bang.items())
+    assert cao_nhat <= mac_dinh, (
+        f"cua {cua!r} mac dinh {mac_dinh} < san cao nhat {cao_nhat}: "
+        f"luot khong khai max_tokens se bi tu choi het")
 
 
 # -- 3. Cua vao thuc su dung san cua DUNG model -----------------------------
@@ -147,7 +141,8 @@ def test_kiem_tham_so_KHONG_duoc_ap_san():
 
 
 def test_cua_vao_tu_choi_tran_duoi_san():
-    _san = san_token_ra("ltt-3.5", "medium")
+    from apps.ltt_llm.ngan_sach import san_token_ra_dong_bo
+    _san = san_token_ra_dong_bo("ltt-3.5", "medium")
     with pytest.raises(features.ThamSoSai) as e:
         _cua(_xin("ltt-3.5", _san - 1, "medium"))
     noi = str(e.value)
@@ -155,12 +150,13 @@ def test_cua_vao_tu_choi_tran_duoi_san():
     #    (L-26) 3.5 KHONG co nac: effort bi bo qua, nen chi sang `low` la chi mot
     #    nut khong lam gi. Loi ra dung: tran cao hon, hoac stream/job.
     assert "reasoning_effort='low'" not in noi, noi
-    assert "always thinks" in noi and "stream=true" in noi, noi
+    assert "always thinks" in noi and "splits max_tokens" in noi, noi
     assert str(_san) in noi
 
 
 def test_cua_vao_nhan_dung_tai_san():
-    _cua(_xin("ltt-3.5", san_token_ra("ltt-3.5", "medium"), "medium"))
+    from apps.ltt_llm.ngan_sach import san_token_ra_dong_bo
+    _cua(_xin("ltt-3.5", san_token_ra_dong_bo("ltt-3.5", "medium"), "medium"))
 
 
 def test_san_theo_model_khong_phat_oan_model_re():

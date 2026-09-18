@@ -563,9 +563,11 @@ TOKEN_RA_MAC_DINH = {
 #    "MTP trả rỗng" thực ra là hết `max_tokens`). `test_1430` đọc budget từ
 #    yaml và chốt `san_token_ra("ltt-3.5", *) >= budget + 512`.
 #
-# ⚠️ Hệ quả có chủ ý: cửa ĐỒNG BỘ `/chat/completions` mặc định 1.024 token ra
-#    và trần theo thời gian ~2.300 ⇒ 3.5 ở cửa đó bị 400 kèm lời chỉ đường sang
-#    stream/job — thay vì 200 với `content` rỗng.
+# ⭐ Cửa ĐỒNG BỘ `/chat/completions` (mặc định 1.024 token ra, trần thời gian
+#    ~2.300) KHÔNG dùng sàn này cho 3.5: máy chủ tự đặt `reasoning_budget_tokens`
+#    của lượt = `max_tokens − TOKEN_CHO_TRA_LOI` (kẹp ≤ budget engine) — xem
+#    `budget_suy_nghi_dong_bo`, `san_token_ra_dong_bo`. Vẫn là "máy chủ quyết
+#    budget" (L-26); chỉ budget KHÁCH gửi bị gỡ.
 #: ⛔ SÀN THEO **MODEL × MỨC**, không phải một bảng chung — và lý do là một
 #: phép đo, không phải sự cẩn thận:
 #:
@@ -638,6 +640,39 @@ def san_token_ra(model: str | None = None, muc_nghi: str | None = None) -> int:
     bang = SAN_TOKEN_RA_THEO_NGHI.get(str(model or ""), _SAN_NHE)
     mac_dinh = nghi_mac_dinh(model)
     return bang.get(str(muc_nghi or mac_dinh), bang.get(mac_dinh, bang["xhigh"]))
+
+
+#: Budget suy nghĩ ENGINE theo bí danh, cho model MỘT chế độ (effort bị gỡ nên
+#: budget là núm duy nhất). Model có nấc (3.8) không có mặt: nấc của nó quyết.
+BUDGET_SUY_NGHI_ENGINE = {"ltt-3.5": BUDGET_SUY_NGHI_35}
+#: Suy nghĩ tối thiểu cửa đồng bộ còn chừa khi tự đặt budget — bằng chỗ trả
+#: lời, nên sàn đồng bộ = 2 × `TOKEN_CHO_TRA_LOI` ≤ mặc định 1.024 của cửa.
+SUY_NGHI_DONG_BO_TOI_THIEU = TOKEN_CHO_TRA_LOI
+
+
+def budget_suy_nghi_dong_bo(model: str | None, max_tokens: int) -> int | None:
+    """`reasoning_budget_tokens` MÁY CHỦ đặt cho một lượt cửa đồng bộ, hoặc None.
+
+    Cửa đồng bộ bị kẹp `max_tokens` (thời gian ~90 s, `features.
+    tran_token_ra_dong_bo` dẫn từ tốc độ decode đo) — thấp hơn budget engine +
+    chỗ trả lời. Để suy nghĩ tiêu hết `max_tokens` là trả `content` rỗng mà vẫn
+    thu tiền. Nên máy chủ chia: suy nghĩ = `max_tokens − TOKEN_CHO_TRA_LOI`, kẹp
+    ≤ budget engine. llama.cpp nhận trường này MỖI request (91f6a6cf3
+    `server-common.cpp:1366-1369`). None ⇒ model có nấc, không đặt gì.
+    """
+    tran = BUDGET_SUY_NGHI_ENGINE.get(str(model or ""))
+    if tran is None:
+        return None
+    return max(0, min(tran, int(max_tokens) - TOKEN_CHO_TRA_LOI))
+
+
+def san_token_ra_dong_bo(model: str | None = None, muc_nghi: str | None = None) -> int:
+    """Sàn `max_tokens` ở cửa ĐỒNG BỘ. Model một chế độ: đủ chỗ cho
+    `SUY_NGHI_DONG_BO_TOI_THIEU` + `TOKEN_CHO_TRA_LOI` (budget do máy chủ đặt);
+    model khác: đúng `san_token_ra`."""
+    if str(model or "") in BUDGET_SUY_NGHI_ENGINE:
+        return SUY_NGHI_DONG_BO_TOI_THIEU + TOKEN_CHO_TRA_LOI
+    return san_token_ra(model, muc_nghi)
 
 
 CAC_CUA = tuple(TOKEN_RA_MAC_DINH)
