@@ -473,11 +473,12 @@ MANIFEST = AppManifest(
                 "reasoning_effort": {
                     "description": (
                         "How much the model thinks before answering. LTT 3.8 "
-                        "offers `low`, `medium` and `xhigh` (default `xhigh`; "
-                        "`high`/`max` are read as `xhigh`, `minimal` as `low`). "
-                        "LTT 3.5 has a single mode with thinking always on: a "
-                        "value is accepted and ignored (response header "
-                        "`X-LTT-Effort-Bo-Qua: 1`). `none` is rejected on both. "
+                        "offers `low`, `medium` and `xhigh`. When omitted, "
+                        "LTT 3.8 uses `xhigh` (`high`/`max` are read as `xhigh`, "
+                        "`minimal` as `low`). LTT 3.5 has a single mode with "
+                        "thinking always on: a value is accepted and ignored "
+                        "(response header `X-LTT-Effort-Bo-Qua: 1`). Turning "
+                        "thinking off is rejected on both. "
                         "The thinking budget is set by the server; budget "
                         "fields sent by a client are dropped. GET "
                         "/api/v1/models lists each model's levels. Use `low` on "

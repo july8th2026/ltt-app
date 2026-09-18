@@ -24,7 +24,7 @@ lần ghi lại đó hiện ra trong diff.
 ## 2026-09-18 — `text.chat`: suy nghĩ do máy chủ quyết, effort theo từng model (FIXED)
 
 - **Cái gì đổi:** (L-26) câu mô tả `reasoning_effort` của `text.chat` — và vì thế
-  `contract_hash` (`9d23c67b17de285f` → `472e9d40dd829e38`); enum giữ nguyên
+  `contract_hash` (`9d23c67b17de285f` → `a0b60eaeb8125988`); enum giữ nguyên
   `low|medium|xhigh`. Hành vi ở mọi cửa (`/chat/completions`, `/messages`,
   `/responses`, job): `ltt-3.8` nhận thêm `high`/`max` (⇒ `xhigh`) và `minimal`
   (⇒ `low`); `ltt-3.5` chỉ có một chế độ (suy nghĩ bật) — effort được nhận và bỏ
