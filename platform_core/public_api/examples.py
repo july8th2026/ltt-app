@@ -922,6 +922,30 @@ def claude_local_env(model: str = CLI_MODEL) -> tuple[tuple[str, str], ...]:
     )
 
 
+#: Claude Code 2.1.274 (ĐO, Task 9, nhánh `phien/nen-claude-codex` 1b143291) nén ở
+#: `min(AUTO_COMPACT_WINDOW, ctx) − min(MAX_OUTPUT_TOKENS, 20000) − 13000`.
+CLAUDE_NEN_TRAN_RA = 20_000
+CLAUDE_NEN_BIEN = 13_000
+
+
+def claude_nguong_nen(model: str = CLI_MODEL) -> int:
+    """Token ngữ cảnh mà Claude Code tự nén, với `claude_local_env(model)`."""
+    env = dict(claude_local_env(model))
+    cua_so = int(env["CLAUDE_CODE_AUTO_COMPACT_WINDOW"])
+    ra = int(env["CLAUDE_CODE_MAX_OUTPUT_TOKENS"])
+    return cua_so - min(ra, CLAUDE_NEN_TRAN_RA) - CLAUDE_NEN_BIEN
+
+
+def claude_local_preset(model: str) -> tuple:
+    """Một hàng bảng preset trang hướng dẫn: `(slug, MAX_CONTEXT, AUTO_COMPACT,
+    nhãn mẫu số Context, % tự nén)` — dẫn xuất hết từ `claude_local_env`."""
+    env = dict(claude_local_env(model))
+    ctx = int(env["CLAUDE_CODE_MAX_CONTEXT_TOKENS"])
+    cua_so = int(env["CLAUDE_CODE_AUTO_COMPACT_WINDOW"])
+    return (model, ctx, cua_so, f"{cua_so / 1000:.1f}k",
+            round(100 * claude_nguong_nen(model) / cua_so))
+
+
 def claude_model_env(model: str = CLI_MODEL) -> tuple[tuple[str, str], ...]:
     """Mọi đường chọn model mà Claude Code 2.1.270 có thể tự dùng.
 
@@ -1385,8 +1409,7 @@ def be_mat_cam(base_url: str) -> tuple:
          "dia_chi": f"{goc}/api", "model": DESKTOP_MODEL,
          "models": tuple((ten, NHAN_DESKTOP[ten]) for ten in DESKTOP_MODELS),
          "local_env": claude_local_env(),
-         "local_presets": tuple(
-             (slug, *CODEX_MODEL_LIMITS[slug]) for slug in CLI_MODELS),
+         "local_presets": tuple(claude_local_preset(slug) for slug in CLI_MODELS),
          # The tool still uses ``claude_desktop_registry`` for repeatable fleet
          # setup.  The customer-facing path is the editor that ships in current
          # Desktop, so this surface has no copyable registry block.

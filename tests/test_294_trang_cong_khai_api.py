@@ -123,7 +123,11 @@ def test_desktop_manual_guide_uses_current_form_and_exact_routes(khach):
     assert "CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK=1" in guide
     assert "ENABLE_TOOL_SEARCH=false" in guide
     assert "CLAUDE_CODE_DISABLE_1M_CONTEXT=1" not in guide
-    assert "… / 138.7k" in guide and "… / 176.4k" in guide
+    # Mẫu số Context = AUTO_COMPACT_WINDOW = cửa sổ công bố (Task 9, 18/09).
+    assert "… / 171.5k" in guide and "… / 209.1k" in guide
+    assert "… / 138.7k" not in guide and "… / 176.4k" not in guide
+    # % tự nén theo công thức đo 2.1.274: (ctx − min(32768, 20000) − 13000)/ctx
+    assert "~81%" in guide and "~84%" in guide
     assert "Permission mode couldn't be changed" in guide
     assert "permissions.disableBypassPermissionsMode" in guide
     assert "131 tool" in guide and "98.678 token" in guide

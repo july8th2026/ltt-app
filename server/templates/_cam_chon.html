@@ -307,8 +307,8 @@ codex --profile ltt-fast</code></pre>
     <table class="table">
       <thead><tr><th>{{ _("Môi trường Local") }}</th><th><code>MAX_CONTEXT</code></th><th><code>AUTO_COMPACT</code></th><th>{{ _("Dấu hiệu trong Context") }}</th></tr></thead>
       <tbody>
-        {% for slug, context, compact in b.local_presets %}
-        <tr><td>{{ _("LTT 3.8 hoặc đổi qua lại hai model") if loop.first else _("Chỉ LTT 3.5") }}</td><td><code>{{ context }}</code></td><td><code>{{ compact }}</code></td><td><code>{{ "… / 138.7k" if loop.first else "… / 176.4k" }}</code> · {{ "~76%" if loop.first else "~81%" }}</td></tr>
+        {% for slug, context, compact, mau_so, phan_tram in b.local_presets %}
+        <tr><td>{{ _("LTT 3.8 hoặc đổi qua lại hai model") if loop.first else _("Chỉ LTT 3.5") }}</td><td><code>{{ context }}</code></td><td><code>{{ compact }}</code></td><td><code>… / {{ mau_so }}</code> · ~{{ phan_tram }}%</td></tr>
         {% endfor %}
       </tbody>
     </table>
