@@ -22,10 +22,10 @@ Trọng số cố định (không đổi giữa các lần cập nhật): A 20 �
 | A — Nền tảng LTT LLM (Phương án C) | 20 | 100 % | 20 | — |
 | B — LTTCODE 0.1.7 build + E2E + phát hành | 25 | 100 % | 25 | (0.1.8 = E Task 13) |
 | C — Tối ưu máy B | 10 | 90 % | 9 | C4 cửa sổ đo số job + `-b/-ub` |
-| E — LLM v2 | 25 | 50 % | 12,5 | 2, 5, 9 đã deploy; 3–4 đang L1 (đợt 2); 10 canary xong, còn needle/MTP; 6, 7, 8, 11, 12, 13 chưa |
+| E — LLM v2 | 25 | 66 % | 16,5 | 2, 3, 4, 5, 9 đã deploy; 7, 8, 13 đang làm; 10 còn needle/MTP; 11, 11b, 12 chưa |
 | F — Dọn tài liệu | 10 | 10 % | 1 | 8 lô (~5 giờ) |
 | D — Tổng kết phiên | 10 | 0 % | 0 | L3, gộp, push, nhật ký, dọn worktree |
-| **Cả phiên** | 100 | | **~67,5 %** | |
+| **Cả phiên** | 100 | | **~71,5 %** | |
 
 > Các lần báo trước (70–74 %) ước không theo trọng số và **cao hơn thực tế**; từ bản này dùng bảng trên.
 
@@ -91,18 +91,18 @@ Trọng số cố định (không đổi giữa các lần cập nhật): A 20 �
 | 0 | Dọn phiên "Serving v2", tag giữ commit, xoá phiên | ✅ | `4074dc02`, tag `luu-tru/serving-v2/*` |
 | 1 | Gộp cấu hình B đang chạy vào `main` (hết DRIFT) | ✅ (trừ làm mới env nssm → D) | `f1d949b5`; `deploy.ps1` nay ghi đè sàn RAM mỗi lần deploy |
 | 2 | Lỗi tính tiền `/messages` khi trúng cache (R-04) | ✅ deploy `488a64ed` 11:19 | `9dc8d6f2` (đỏ→xanh, đối chứng, 1.965 test provider đạt) |
-| 3 | Catalog mức suy nghĩ theo model | 🔵 code xong, chờ đợt 2 | `2d350f49`…`952a792f`; 3.8 low/medium/xhigh mặc định xhigh, 3.5 một mức cố định |
-| 4 | Suy nghĩ do máy chủ quyết, gỡ ghi đè 3 cửa, sàn `max_tokens` 3.5 | 🔵 code xong, chờ đợt 2 | `4eee6881`…`e78e243d`; L-26; 3.5 đồng bộ: máy chủ đặt budget = max_tokens − 512 (≤ 2.048), không trả 400 |
+| 3 | Catalog mức suy nghĩ theo model | ✅ deploy `fba73f1e` 12:43 (catalog live: 3.8 xhigh/3 mức, 3.5 medium/1 mức) | `2d350f49`…`952a792f`; 3.8 low/medium/xhigh mặc định xhigh, 3.5 một mức cố định |
+| 4 | Suy nghĩ do máy chủ quyết, gỡ ghi đè 3 cửa, sàn `max_tokens` 3.5 | ✅ deploy `fba73f1e` 12:43 (L2 5/5 thành phần) | `4eee6881`…`e78e243d`; L-26; 3.5 đồng bộ: máy chủ đặt budget = max_tokens − 512 (≤ 2.048), không trả 400 |
 | 5 | 3.8 khai đọc ảnh; test bản sao `-c` | ✅ deploy `488a64ed` 11:19 | `3f6ad81b` (auto_scan_video ghim 3.5 có lý do; 3.268 test đạt) |
-| 6 | B gia hạn suất theo tiến triển (bỏ thu cứng 1.200 s) | ⬜ | sau Task 1 |
-| 7 | Ước token cận trên (code ×0,74, emoji ×0,16) + overhead template | ⬜ | sau Task 1; deploy theo chiều |
-| 8 | 413 trước 200 đúng câu từng giao thức | ⬜ | sau Task 4 |
+| 6 | B gia hạn suất theo tiến triển (bỏ thu cứng 1.200 s) | ✅ deploy cổng B 13:0x (L2 gateway:llm xanh, `c5f8980c`); /health có han_im_lang_s | sau Task 1 |
+| 7 | Ước token cận trên (code ×0,74, emoji ×0,16) + overhead template | 🔵 đang làm | sau Task 1; deploy theo chiều |
+| 8 | 413 trước 200 đúng câu từng giao thức | 🔵 đang làm | sau Task 4 |
 | 9 | Tách ngưỡng nén Claude Code/Codex; bộ cài cập nhật khoá LTT | ✅ deploy `488a64ed` 11:19 | `1b143291`, `2c3fbebd` (đo Claude Code 2.1.274: trừ 33k; nay nén 138.458/176.141); phần `examples.py` giao Task 3–4 |
 | 10 | Công cụ kiểm định kỳ | 🔵 canary cô lập ✅ 0/432 rò rỉ (216/model, kịch bản #27148 + comment 2) — nhánh `phien/canary-co-lap`, `KIEM_CO_LAP_18_09.md`; còn: needle 100–200K trên 3.8 (#27756), `cong_mtp.py`, bộ chấm A/B | giờ vắng |
 | 11 | Dọn bản sao gõ tay + tài liệu sai | ⬜ | rải theo task |
 | 11b | Công cụ gate: `gate.py --pham-vi` nhận NHIỀU thành phần một lượt (hợp tệp test, chạy bước chung một lần) — đợt 2 phải chạy 5 lượt L2 nối nhau (~75 phút) vì L1 từ chối khi chạm tệp dùng chung | ⬜ | ~2 giờ, có test cho `thanh_phan`/`gate` |
 | 12 | Chất lượng 3.5: áp thông số lấy mẫu theo model card + A/B | ⬜ | sau Task 4, 10 |
-| 13 | LTTCODE chọn mức suy nghĩ theo model (0.1.8) | ⬜ | sau Task 3 |
+| 13 | LTTCODE chọn mức suy nghĩ theo model (0.1.8) | 🔵 đang làm (LTTCODE 0.1.8) | sau Task 3 |
 | — | R-06, 07, 10, 11, 14, 16, 17, 18, 23 của phiên cũ | ⬜ | xác minh từng mục trên tag lưu trữ |
 
 ## F — Dọn tài liệu toàn hệ thống (chủ dự án yêu cầu 18/09; làm SAU khi xong E)
