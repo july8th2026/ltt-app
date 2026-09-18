@@ -38,7 +38,7 @@ from typing import NamedTuple
 try:                                  # Python 3.11+; cu hon thi van cai duoc,
     import tomllib as _tomllib        # chi mat buoc tu kiem sau khi hop nhat
 except ImportError:                   # pragma: no cover
-    _tomllib = None
+    _tomllib = None  # type: ignore[assignment]
 
 MAC_DINH_BASE = "https://app.lttstudios.com"
 MODEL = "ltt-3.8"
@@ -328,7 +328,8 @@ _RE_KHOA_TOML = re.compile(r"^\s*([A-Za-z0-9_-]+)\s*=")
 
 def _gan_nhan_toml(dong: list) -> list:
     """(bang, khoa|None) cho tung dong. Bang goc la ''."""
-    bang, ra = "", []
+    bang = ""
+    ra: list[tuple[str, str | None]] = []
     for d in dong:
         if d.lstrip().startswith("[["):
             bang = "\0" + d.strip()               # mang bang: khong bao gio la cua ta
