@@ -1,5 +1,7 @@
 # Kết quả cửa sổ bảo trì máy B — 18/09/2026
 
+> ⚠️ **Số cache đã thay bằng L-25 (cùng ngày, 09:00):** `--cache-ram 24576` + sàn cổng B 24 — xem phụ lục cuối tệp.
+
 **Một dòng:** giữ `--cache-ram 12288` + `--ctx-checkpoints 8` (cả hai model), `-b 512 -ub 512`
 (chỉ 3.8), `-watch-config` cho `LTTLlamaSwap`. **24576 đề nghị ở `KET_QUA_CACHE_18_09` §7
 đã được bật rồi hạ** — nó làm máy B ngừng bán ~10 phút (§2). `-c`/`-np` không đổi ⇒ máy A
@@ -82,3 +84,41 @@ LTTLlmGateway đã restart theo (phụ thuộc LTTLlamaSwap) — `-c`/`-np` khô
   (`don_het_han` chỉ đóng `cho`, chạy 6 giờ/lần). Vô hại cho admission (lọc nhịp 10 s) nhưng làm sai truy vấn RUNBOOK §4.
 - Máy B còn hai tệp mồ côi đã xoá khỏi kho: `llm_gateway/don_dep.py`, `render_gateway/nhuong_card.py` (`scp` không xoá; bước 2b không bắt tệp thừa).
 - Tài liệu 17/09 (`KET_QUA_DO_17_09.md`, `RUNBOOK_CUA_SO_DO.md`) chỉ nằm trên nhánh `phien/bench-may-b`, chưa vào `main`.
+
+## Phụ lục L-25 — `--cache-ram 24576` + sàn cổng B 24 (08:35–09:16, UTC+7)
+
+Chủ dự án chốt: sàn 48 sai chỗ. Quyết định: `DECISION_LOG.md` L-25. Nhánh `phien/cache-24g`
+(`c3b08e3c`, `96314e56`), L1 `--doi --tu dac815c5` xanh ×2. Deploy `llm_gateway/deploy/deploy.ps1
+-GhiDeYamlLech -BoQuaVenv`; yaml B SHA-256 `168e23c9…dfca` = kho `96314e56`; `gateway.env`
+`LTT_LLM_RAM_TRONG_GB=24`; `-watch-config` nạp lại hai model, `Restart-Service LTTLlmGateway`.
+Điểm lùi trên B: `llama-swap.yaml.cache24-20260918-083543`, `gateway.env.cache24-20260918-083543`,
+`releases/auto-20260918-0846*`. Trước khi đổi: `dang_chay=0`, lượt khách cuối 08:29.
+
+Đo qua production (khoá thử, non-stream), hội thoại ~16K token, 30 mỗi model song song.
+RAM = `\Memory\Available MBytes` (GiB); llama-server = working set / private (GiB).
+
+| thời điểm | RAM trống | llama-server 3.5 / 3.8 | trọng tài |
+|---|---|---|---|
+| hai model vừa nạp, cache rỗng | **84,8** | 7,5/17,2 · 15,7/25,9 | ban=false |
+| sau ~12 hội thoại | 50,6 | 22,6/32,5 · 32,6/42,9 | ban=false |
+| sau 30 (bão hoà, đuổi entry chạy) | **33,2–35,0** | 31,7/41,6 · 39,3–40,5/49,6–50,8 | ban=false, `ban_trong_tai=0` |
+
+- 60/60 hội thoại ok; lượt 2 trúng cache (trung vị 1,8 s 3.5 / 2,1 s 3.8 so với 9,0 / 15,4 s lượt 1).
+- Còn giữ sau bão hoà (gọi lại lượt 2, mới → cũ): 3.5 **30/30** (~1,8 s); 3.8 hội thoại 14–29 trúng
+  (~2,6 s), 0–11 trượt (~15,9 s) ⇒ ~16–19 hội thoại 16K. Log llama-swap: +17 dòng `making room`/`cache size limit` trong phép đo.
+- **Cửa sổ ảnh** (một job `image.ltt` thật `aae3b393`, 3 credit tài khoản thử, cache 3.5 đầy):
+
+| thời điểm | RAM trống | ghi chú |
+|---|---|---|
+| 09:12:44 | 34,2 | job vào, hai model + hai cache đầy |
+| 09:13:01 | **74,7** | 3.8 nhả (cache 3.8 mất theo tiến trình) |
+| 09:13:45–09:15:30 | **57,7–58,4** | ComfyUI + HiDream: ws 16,4 / private 35,2 GiB; cổng render `busy=false` |
+| 09:15:47 | 67,6 | ComfyUI dừng |
+| 09:16:04 | 68,0 → 59,8 | 3.8 nạp lại (PID mới), cả hai `ready`, cache 3.5 còn nguyên |
+
+  Job `succeeded` 171 s (giữ 3 / thu 3). Bước tải ảnh 403 `artifacts:read` là giới hạn scope của
+  khoá thử, không phải lỗi đường ảnh. Biên đáy trên sàn render 48: **~9,7 GiB**.
+
+- Kết luận: 24576/model + sàn 24 **không** tái hiện sự cố sáng nay (biên ~9–11 GiB trên sàn LLM,
+  ~9,7 GiB trên sàn render khi cửa sổ ảnh). Không cần cơ chế an toàn thêm. Điều kiện đo lại: đổi
+  model ảnh lớn hơn HiDream, bật VM/việc thường trú trên B, hoặc nâng cache/ctx.

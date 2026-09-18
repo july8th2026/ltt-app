@@ -785,3 +785,34 @@ Chủ dự án duyệt 18/09. Số đo đầy đủ: `artifacts/bench_hang_cho/K
   lại **cả hai** model ở MỌI lần lưu yaml (kể cả chỉ đổi chú thích: PID cả hai
   llama-server đổi, cache mất) — tiết kiệm restart dịch vụ, **không** tiết kiệm unload.
   Nhả **một** model: `POST /api/models/unload/<model>` (đo: 3.5 nhả, 3.8 giữ PID và vẫn trả lời).
+
+## L-25 — `--cache-ram 24576` mỗi model + sàn RAM cổng B 48 → 24 (thay số của L-24, 2026-09-18)
+
+Chủ dự án chốt 18/09: sàn 48 GB là sai chỗ, giữ cache 24 GiB/model. Đã tra nguồn và đo lại
+trên production trước khi chốt; **không** tìm thấy hỏng hóc cụ thể nào ⇒ áp đúng số của chủ dự án.
+
+- **Sàn 48 từ đâu:** chép từ sàn của dự án video/ComfyUI (`docs/ANH_NOI_BO/CHIA_GPU_VOI_VIDEO.md`
+  §1 — 23 GB trống ⇒ VRAM 98 %, 4 GB ⇒ Windows sập 19/08, thủ phạm là VM VMware 37 GB) vào cổng
+  LLM (`b81b1841`, 24/08). Nó bảo vệ lượt **GPU offload sang RAM** của ComfyUI, không phải
+  `llama-server` (toàn bộ lớp trên VRAM). Cổng render giữ sàn riêng `LTT_RENDER_RAM_TRONG_GB=48` —
+  **không đổi**.
+- **`--cache-ram` bó gì** (llama.cpp `tools/server/server-task.cpp`, `server_prompt_cache::alloc/update`;
+  PR #16391): **một** bộ nhớ đệm mỗi tiến trình, MiB; entry = KV đích + KV draft + checkpoint của
+  entry; đuổi entry cũ nhất trước khi cấp phát. **Ngoài** trần: checkpoint sống của slot (#25437,
+  vá #25647) ⇒ trần là hạn mềm, không phải trần RSS. Giải phóng chỉ khi đuổi entry hoặc tiến trình
+  chết; sàn của cổng chỉ chặn lượt mới.
+- **Đo 18/09 09:00–09:16** (`KET_QUA_BAO_TRI_18_09.md` phụ lục L-25): cache rỗng 84,8 GiB trống;
+  30 hội thoại ~16K token mỗi model ⇒ RAM trống **ổn định 33,2–35,0 GiB** (cache mỗi model ≈ +24 GiB
+  private, đuổi entry chạy đúng), **0 từ chối** (`ban_trong_tai=0`), 60/60 hội thoại trúng ở lượt 2 (theo độ trễ: trung vị 1,8/2,1 s so với
+  9,0/15,4 s lượt đầu, 3.5/3.8 — bản non-stream không trả `cache_read_input_tokens`).
+  Còn giữ: 3.5 **30/30**, 3.8 ~19 hội thoại gần nhất. Biên trên sàn 24: **~9–11 GiB**.
+- **Đường ảnh có cache 3.5 đầy** (một job `image.ltt` thật, khoá thử): 3.8 nhả ⇒ 74,7 GiB; ComfyUI +
+  HiDream ~16,4 GiB ⇒ đáy **57,7 GiB**, trên sàn render 48 ~9,7 GiB; job 171 s, 3.8 nạp lại 09:16.
+- ⛔ Biên còn lại mỏng hơn trước: model ảnh lớn hơn HiDream (Klein ~26 GB) hay một VM bật lên
+  ăn thẳng vào ~10 GiB đó. Đổi model ảnh / bật VM trên B ⇒ đo lại theo phụ lục.
+- Ràng buộc nay là **mã, không phải giao ước**: `deploy.ps1` ghi đè `LTT_LLM_RAM_TRONG_GB` mỗi lần
+  deploy (trước chỉ ghi lúc tạo tệp), `config.py` `RAM_TRONG_GB_MAC_DINH`, và `test_1293` đối chiếu yaml
+  + deploy + config với phép tính ngân sách (có đối chứng: 24576 + sàn 48 ⇒ đỏ).
+- Rủi ro KHÁC, không phụ thuộc cỡ cache: #27148 (mở) — cache RAM có thể khôi phục nội dung của
+  hội thoại khác vào slot mới khi hai slot bị đuổi cùng lúc. Áp cho mọi `--cache-ram > 0` kể cả
+  mặc định 8192; cần phiên riêng theo dõi PR #27624.

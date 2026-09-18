@@ -326,14 +326,23 @@ card vào `NHAT_KY.md`.
 
 ### 2.3b Cửa sổ bảo trì 18/09 — cái gì đã đổi trên máy B (L-24)
 
-- `llama-swap.yaml`: `--cache-ram 12288` + `--ctx-checkpoints 8` cả hai model; `-b 512 -ub 512`
-  chỉ 3.8. `-c`/`-np` không đổi. Số: `artifacts/bench_hang_cho/KET_QUA_BAO_TRI_18_09.md`.
+- `llama-swap.yaml`: `--cache-ram 24576` (L-25, thay 12288 của L-24) + `--ctx-checkpoints 8`
+  cả hai model; `-b 512 -ub 512` chỉ 3.8. `-c`/`-np` không đổi. Số:
+  `artifacts/bench_hang_cho/KET_QUA_BAO_TRI_18_09.md` (§2 + phụ lục L-25).
 - 🔴 **`--cache-ram` ăn RAM hệ thống, và cổng B có sàn RAM.** Trọng tài từ chối **mọi**
-  lượt khi RAM trống < `LTT_LLM_RAM_TRONG_GB` (48). Dấu hiệu: `/health` →
-  `trong_tai.ban=true`, `ly_do "RAM trong ... duoi nguong"`, `dem.ban_trong_tai` tăng, trong
-  khi `/slots` cả hai engine rảnh. Chữa ngay: `Restart-Service LTTLlamaSwap` (xả cache RAM),
-  rồi hạ `--cache-ram` trong kho. Trước khi nâng: (RAM trống lúc cache rỗng − 48) phải
-  ≥ 2 × `--cache-ram` + biên.
+  lượt khi RAM trống < `LTT_LLM_RAM_TRONG_GB` (**24** từ L-25; `deploy.ps1` ghi đè mỗi lần
+  deploy — đừng sửa tay `gateway.env`). Dấu hiệu: `/health` → `trong_tai.ban=true`,
+  `ly_do "RAM trong ... duoi nguong"`, `dem.ban_trong_tai` tăng, trong khi `/slots` cả hai
+  engine rảnh. Chữa ngay: `Restart-Service LTTLlamaSwap` (xả cache RAM). Sàn chỉ **chặn lượt
+  mới**, không xả cache.
+- Mức bình thường sau L-25 (đo 18/09): cache rỗng ~85 GiB trống; hai cache đầy **33–35 GiB**;
+  cửa sổ ảnh (3.8 nhả, cache 3.5 đầy, ComfyUI + HiDream) đáy **~58 GiB** (sàn render 48).
+  Thấp hơn các mức này mà không có tải mới ⇒ có thứ khác ăn RAM trên B (VM VMware, việc AI
+  khác) — tìm nó trước khi đụng cache.
+- Đổi `--cache-ram`, sàn, model, hay bật thứ gì thường trú trên B ⇒ làm lại phép tính trong
+  chú thích yaml; `tests/test_1293_ngan_sach_ram_may_b.py` đỏ khi ba chỗ lệch nhau.
+- Đổi sàn: sửa `llm_gateway/deploy/deploy.ps1` (`$thamSoA['LTT_LLM_RAM_TRONG_GB']`) +
+  `config.py` → deploy → `Restart-Service LTTLlmGateway` (cổng đọc `gateway.env` lúc khởi động).
 - `LTTLlamaSwap` chạy `-watch-config`: lưu yaml ⇒ llama-swap tự nạp lại, **không** restart
   dịch vụ — nhưng v250 **nạp lại cả hai model** (cache mất) ở mọi lần lưu. Vẫn đọc
   `/running` sau khi lưu. Đổi `-c`/`-np` vẫn phải restart `LTTLlmGateway` (§2.1).
