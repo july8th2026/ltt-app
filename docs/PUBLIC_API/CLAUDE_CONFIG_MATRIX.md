@@ -66,11 +66,20 @@ một model ngoài LTT.
 
 ## 3. Local environment: đúng 11 dòng
 
+> ⚠️ **`AUTO_COMPACT_WINDOW` là CỬA SỔ, không phải ngưỡng** (R-05, đo 18/09). Claude Code
+> nén ở `min(AUTO_COMPACT_WINDOW, cửa sổ) − min(MAX_OUTPUT_TOKENS, 20.000) − 13.000`.
+> Đo thật Claude Code 2.1.274 trỏ về LTT: `/context` in `Autocompact buffer 33k` ở mọi
+> cửa sổ; khớp mã client và tài liệu (cửa sổ 1M nén “at about 967K” = 1M − 33K).
+> Trước 18/09 ta khai 138.690 ⇒ Claude nén ở 105.690 (76 %), sớm 33.000 token so với
+> Codex. Giá trị đúng = cửa sổ công bố (171.458 / 209.141) ⇒ nén ở 138.458 / 176.141,
+> ≤ ngưỡng Codex (138.690 / 176.373). Nguồn: `HoSoModel.cua_so_nen_claude` trong hai
+> bộ cài; `tests/test_1440_nen_claude_tach_codex.py`.
+
 Preset dùng chung an toàn khi chuyển qua lại hai model:
 
 ```dotenv
 CLAUDE_CODE_MAX_CONTEXT_TOKENS=171458
-CLAUDE_CODE_AUTO_COMPACT_WINDOW=138690
+CLAUDE_CODE_AUTO_COMPACT_WINDOW=171458
 CLAUDE_CODE_MAX_OUTPUT_TOKENS=32768
 MAX_MCP_OUTPUT_TOKENS=16384
 CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS=1
@@ -86,7 +95,7 @@ Nếu môi trường **chỉ** dùng LTT 3.5, thay đúng hai dòng đầu:
 
 ```dotenv
 CLAUDE_CODE_MAX_CONTEXT_TOKENS=209141
-CLAUDE_CODE_AUTO_COMPACT_WINDOW=176373
+CLAUDE_CODE_AUTO_COMPACT_WINDOW=209141
 ```
 
 Chín dòng còn lại giữ nguyên. Không dùng preset 3.5 rồi đổi sang LTT 3.8 vì khi
@@ -95,7 +104,7 @@ Chín dòng còn lại giữ nguyên. Không dùng preset 3.5 rồi đổi sang 
 | Biến | Vì sao có mặt |
 |---|---|
 | `MAX_CONTEXT_TOKENS` | Sửa cửa sổ 200K mà Claude đoán cho model ID lạ. |
-| `AUTO_COMPACT_WINDOW` | Nén ở 138.690/176.373, chừa trọn 32.768 cho lượt ra kế tiếp. |
+| `AUTO_COMPACT_WINDOW` | Là cửa sổ, không phải ngưỡng: Claude tự trừ 33.000 ⇒ nén ở 138.458/176.141, ≤ ngưỡng Codex 138.690/176.373 (R-05). |
 | `MAX_OUTPUT_TOKENS` | Khớp trần output thật của LTT. |
 | `MAX_MCP_OUTPUT_TOKENS` | Chặn một kết quả MCP nuốt hết vùng dự trữ; không giới hạn schema tool. |
 | `MAX_CONCURRENT_SUBAGENTS` | Chỉ một agent phụ chạy đồng thời; LTT có ba lane chia sẻ. |
@@ -112,7 +121,8 @@ của Claude Code. FORCE cần 2.1.257+, depth/concurrency cần 2.1.217+; engin
 cài là 2.1.270.
 
 Ảnh vận hành ngày 15/09 xác nhận preset 3.8 hiện `46.8k / 138.7k`, sau đó
-`99.6k / 138.7k`, buffer khoảng 33K và tự nén ở 76%. Lỗi đã chụp khác loại:
+`99.6k / 138.7k`, buffer khoảng 33K và tự nén ở 76% — tức preset CŨ nén sớm 33K
+(R-05, sửa 18/09: preset mới hiện `/ 171.5k`, nén ở 138.458). Lỗi đã chụp khác loại:
 fallback `stream:false` mang 98.678 input token vào cửa non-streaming nên nhận
 400. Đây là lý do giữ biến disable fallback.
 
@@ -216,7 +226,7 @@ kiểm chế độ hỏng mà tài liệu chính thức mô tả:
 
 1. `Test connection` xanh với Bearer.
 2. Picker chỉ hiện LTT 3.8 (Mạnh) và LTT 3.5 (Nhanh).
-3. Phiên Local mới dùng preset chung hiện khoảng `/ 138.7k`, không còn `/ 200k`.
+3. Phiên Local mới dùng preset chung hiện khoảng `/ 171.5k` và `Autocompact buffer 33k`, không còn `/ 200k` hay `/ 138.7k`.
 4. Chạy một subagent rồi xem `/tasks`: model phải là model chính đang chọn.
 5. Subagent không thể sinh tầng con và không có hơn một subagent chạy đồng thời.
 6. Một stream lỗi không tạo request tiếp theo với `stream:false`.

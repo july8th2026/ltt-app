@@ -31,7 +31,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Iterator, Optional
+from typing import Iterator
 
 log = logging.getLogger("platform_core.llm.dem_token_luong")
 
@@ -150,8 +150,17 @@ class DemToken:
            tăng dần, không bao giờ giảm.
         """
         self._thay_usage = True
+        # 🔴 (16/09, S4 R-04) Khối có `cache_read_input_tokens` là ngữ nghĩa ANTHROPIC:
+        #    `input_tokens` LOẠI TRỪ cache (đo b10883: input 4 + cache 8826). Responses/Chat
+        #    thì GỒM cache. Quy về một nghĩa — `token_vao` = tổng prompt — tại đây, vì
+        #    `SuDung.token_vao_moi = token_vao - token_vao_cache` giả định nghĩa ấy.
+        la_anthropic = "cache_read_input_tokens" in u
+        cache_a = _so(u.get("cache_read_input_tokens"))
         for ten in VAO:
-            self.token_vao = max(self.token_vao, _so(u.get(ten)))
+            gt = _so(u.get(ten))
+            if la_anthropic and ten == "input_tokens":
+                gt += cache_a
+            self.token_vao = max(self.token_vao, gt)
         for ten in RA:
             self.token_ra = max(self.token_ra, _so(u.get(ten)))
         for ten in CACHE:
@@ -170,7 +179,8 @@ class DemToken:
         from platform_core.llm.cong_vlm import SuDung
 
         return SuDung(token_vao=self.token_vao, token_ra=self.token_ra,
-                      token_vao_cache=self.token_cache, dang_tin=self._thay_usage)
+                      token_vao_cache=min(self.token_cache, self.token_vao),
+                      dang_tin=self._thay_usage)
 
 
 def _so(x) -> int:
