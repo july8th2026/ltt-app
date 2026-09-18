@@ -250,7 +250,7 @@ lượt đầu.
 | Cây riêng | **một** cây: `claude/chatltt-v3-agentic` |
 | Dải test | **800–899** (600–637 đã dùng; 640–699 chừa H43; **700–799 đã nhường VIDEO AI V3**, xem §nhường-dải) |
 | Tài liệu | `docs/CHATLTT_V3/` + `STATE.md` + `state.json` (khuôn H43) |
-| Cổng | theo `docs/00_LTT_OPERATING_CONTRACT.md` §4 — vòng lặp là `gate.py --doi`, đầy đủ trước khi đóng phase |
+| Cổng | theo `docs/00_LTT_OPERATING_CONTRACT.md` §4 (test nhắm trong phiên, L1/L2 khi cần, L3 một lần khi tổng kết phiên) — ~~vòng lặp là `gate.py --doi`, đầy đủ trước khi đóng phase~~ ĐÃ THAY |
 
 ⚠️ **Trước mọi lệnh nặng: `python tools\cua_so_yen.py trang-thai`.** Máy 10 lõi
 vật lý, hiện đã có **4 cây**; cây này là cây thứ 5. `tools/gate.py` của cây
