@@ -157,7 +157,7 @@ def test_bo_cai_mot_tep_ghim_model_context_retry_va_subagent(tmp_path, model):
                 "CLAUDE_CODE_SUBAGENT_MODEL"):
         assert env[key] == model
     assert env["CLAUDE_CODE_MAX_CONTEXT_TOKENS"] == str(hs.cua_so)
-    assert env["CLAUDE_CODE_AUTO_COMPACT_WINDOW"] == str(hs.nen)
+    assert env["CLAUDE_CODE_AUTO_COMPACT_WINDOW"] == str(hs.cua_so_nen_claude)  # R-05, test_1440
     assert env["CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS"] == "1"
     assert env["CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH"] == "1"
     assert env["CLAUDE_CODE_SUBAGENT_MODEL_FORCE"] == "1"
