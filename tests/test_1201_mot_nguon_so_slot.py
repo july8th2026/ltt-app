@@ -99,7 +99,8 @@ def test_yaml_so_slot_cua_TUNG_ho_so_khop_so_slot():
 
     Task 3.3 viết lại `llama-swap.yaml` với `-np 3` cho **cả hai** hồ sơ, khớp
     `-np 3` (L-14, `10_BENCHMARK_P3.md` §G1b: 4 slot ở ngữ cảnh đã
-    chốt tràn ~400 MiB sang RAM chủ trên 3090).
+    chốt tràn ~400 MiB sang RAM chủ trên 3090). 18/09 (C4, L-28) 3.5 lên `-np 4`
+    — phép kiểm này không gõ số, nó chỉ bắt yaml và `HO_SO` bằng nhau.
 
     ⚠️ VÀ HÌNH DẠNG CỦA PHÉP ĐO ĐỔI, nên phép kiểm phải đổi theo. Bản cũ đọc
        `--parallel` trong **macro `CHUNG`** — một con số dùng chung cho mọi hồ sơ.

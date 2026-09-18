@@ -1,0 +1,17 @@
+===== qwen35-api np5 np=5 =====
+  warm-up 32K: prompt_n=32884 21.8 s -> ky_tu=99647
+  prefill32k #0: n=32803 21.66 s (1515 tok/s)
+  prefill32k #1: n=32774 21.70 s (1510 tok/s)
+  prefill32k #2: n=32817 21.69 s (1513 tok/s)
+  1 luong #0: 73.2 tok/s ra=1024 finish=length ttft=2.05
+  1 luong #1: 70.6 tok/s ra=1024 finish=length ttft=1.48
+  1 luong #2: 69.8 tok/s ra=1024 finish=length ttft=1.53
+  5 luong dot 0: moi luong 33.8/32.5/34.4/34.3/33.4 | tong 157.6 tok/s (5120 tok)
+  5 luong dot 1: moi luong 34.0/32.9/33.0/34.0/32.5 | tong 161.3 tok/s (5120 tok)
+  5 luong dot 2: moi luong 33.8/32.9/30.7/33.8/32.7 | tong 153.6 tok/s (5120 tok)
+  lang dot 0 (4 nho + 32K): lang max 1.59 s | nho trong prefill 1.8 (min 1.6) tok/s, truoc 4.4 | prefill 32K 24.5 s
+  lang dot 1 (4 nho + 32K): lang max 1.59 s | nho trong prefill 1.7 (min 1.4) tok/s, truoc 5.6 | prefill 32K 24.5 s
+  lang dot 2 (4 nho + 32K): lang max 1.60 s | nho trong prefill 1.8 (min 1.6) tok/s, truoc 6.7 | prefill 32K 24.6 s
+  mtp dot 0: stop c=74 r=6120 n=16098 acc=833/1290 | stop c=108 r=2258 n=16079 acc=322/482 | stop c=99 r=8425 n=16108 acc=1194/1754 | stop c=89 r=6928 n=16053 acc=993/1466 | stop c=99 r=4843 n=16106 acc=640/956
+  mtp dot 1: stop c=118 r=4614 n=16066 acc=630/902 | stop c=109 r=1931 n=16096 acc=302/436 | stop c=117 r=2027 n=16082 acc=281/442 | stop c=129 r=3857 n=16117 acc=541/826 | stop c=87 r=2385 n=16104 acc=362/532
+TONG_HOP {"model": "qwen35-api", "nhan": "np5", "np": 5, "warm": {"status": 200, "loi": null, "finish": "length", "huy": false, "prompt_n": 32884, "prompt_ms": 21778.992, "prompt_tps": 1509.8954074642206, "pred_n": 1, "pred_ms": 0.001, "pred_tps": 0.0, "draft_n": null, "draft_acc": null, "content_kt": 0, "reasoning_kt": 8, "ttft": 22.0146906375885, "giay": 22.05701994895935}, "prefill32k_s": 21.69, "prefill32k_tps": 1512.76, "don_tps": 70.64, "don_ttft": 1.53, "tong_n": 5, "tong_tps": 157.55, "moi_luong_tps": 33.43, "moi_luong_min": 30.7, "lang_n_nho": 4, "lang_max_s": 1.59, "lang_trong_tps": 1.78, "lang_truoc_tps": 5.55, "lang_prefill_s": 24.51, "mtp_luot": 10, "mtp_rong_stop": 0, "mtp_rong_length": 0, "mtp_acc0": 0, "rong_27572_tat_ca": 0, "luot_tat_ca": 36, "giay": 631}

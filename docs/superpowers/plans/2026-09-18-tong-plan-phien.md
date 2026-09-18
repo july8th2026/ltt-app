@@ -74,7 +74,7 @@ Trọng số cố định (không đổi giữa các lần cập nhật): A 20 �
 | C1 | Đo cache prompt hai model (99,6 %) | ✅ | `990ce48a` |
 | C2 | Bảo trì: `--ctx-checkpoints 8`, `-b 512` (3.8), `-watch-config` | ✅ | `dac815c5` |
 | C3 | Cache 24 GB/model + sàn RAM 24 GB (theo chủ dự án) | ✅ | L-25 (`c3b08e3c`…`cfb9d859`), gộp `main` `f1d949b5`; yaml kho = B `168e23c9`; RAM bão hoà 33–35 GiB, cửa sổ ảnh 57,7 GiB, 0 từ chối |
-| C4 | Cửa sổ đo (một lần nạp lại, ~90 phút): **số job song song với `-c` GIỮ NGUYÊN** — 3.5 np4/5/6 @262.144, 3.8 np4/5 @221.184 (KV dùng chung `-kvu` không đổi theo slot — `llama-context.cpp:290-291`; chỉ trạng thái DeltaNet + nháp MTP tăng theo slot, `llama-memory-recurrent.cpp:101`, đo 3.5 np3→np4 +150 MiB; chỉ giảm `-c` nếu tràn shared) + ma trận `-b/-ub`; tải đo giống thật (agent, prompt trúng cache, ra ngắn) | ⬜ | tiêu chí đặt trước; `TRA_CUU_B_UB_18_09.md`, `KET_QUA_DO_17_09.md` (lưu ý: np4/np5 của 3.8 ở đó đo với `-c` giảm — lựa chọn của phép đo, không phải bắt buộc) |
+| C4 | Cửa sổ đo (một lần nạp lại, ~90 phút): **số job song song với `-c` GIỮ NGUYÊN** — 3.5 np4/5/6 @262.144, 3.8 np4/5 @221.184 (KV dùng chung `-kvu` không đổi theo slot — `llama-context.cpp:290-291`; chỉ trạng thái DeltaNet + nháp MTP tăng theo slot, `llama-memory-recurrent.cpp:101`, đo 3.5 np3→np4 +150 MiB; chỉ giảm `-c` nếu tràn shared) + ma trận `-b/-ub`; tải đo giống thật (agent, prompt trúng cache, ra ngắn) | ✅ đo + mã (chờ gate + deploy B→A) | đo `4b0515c3` (`KET_QUA_C4_18_09.md`); L-28: **3.5 `-np 4` @262.144** (tổng +15 %, mỗi luồng 57,5 % khi đủ 4 — chấp nhận), **3.8 giữ `-np 3` @221.184**; mã `79c0a4a2` nhánh `phien/np4-ltt35` (yaml + `HO_SO` + test); ma trận `-b/-ub` hoãn |
 
 ## E — LLM v2 (plan `2026-09-18-ltt-llm-v2-…`, bản 2)
 
@@ -98,6 +98,7 @@ Trọng số cố định (không đổi giữa các lần cập nhật): A 20 �
 | 14 | LTTCODE: agent `subagent_doc_nhanh` chạy 3.5 (chỉ đọc, không mạng) + trần in-flight theo model (3.8: 3, 3.5: 3) + skill chia việc + eval 20 việc/10 ca chèn lệnh | 🔵 đang làm (chủ dự án duyệt 18/09) | nhánh LTTCODEAPP `phien/subagent-doc-nhanh`; tăng 3 → 6 request song song |
 | 15 | LTTCODE: trần 25k token + ≤ 50/60 công cụ | ✅ mã (chờ eval live) | `phien/tran-so-cong-cu`: `2cf4d25`, `eda8313`, `407ebe7`, `0ae47f7`; mặc định 52 → **49**, đủ MCP **57** nhờ plugin `mcp-resources-ltt` (DIV-003) |
 | 16 | LTTCODE: nâng bộ skill ngang/hơn Claude Code | ✅ mã (nhánh `phien/nang-skill` `4076b19`) | 29 skill (10 cộng đồng ghim commit); 3.8 98,9 %, âm tính 0/24; 3.5 62,1 % (ít tự gọi `skill` — giới hạn model, dòng định tuyến làm tệ hơn ⇒ gỡ); việc sau: harness gợi ý skill theo từ khoá |
+| 17 | Xếp hàng A: một prefill dài mỗi lúc (luồng nhỏ chờ sau prefill 32K ~35 s, C4) | ⬜ | L-28 "phát hiện đi kèm"; đo TTFT người mới đến khi cá voi đang prefill |
 | — | R-06, 07, 10, 11, 14, 16, 17, 18, 23 của phiên cũ | ⬜ | xác minh từng mục trên tag lưu trữ |
 
 ## F — Dọn tài liệu toàn hệ thống (chủ dự án yêu cầu 18/09; làm SAU khi xong E)

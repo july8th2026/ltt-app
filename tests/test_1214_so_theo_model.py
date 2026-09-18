@@ -143,11 +143,25 @@ class TestTranCongBoLaDANXUAT:
 
 
 class TestSoSlot:
-    """`-np 3` (L-14) mỗi hồ sơ, và pool KV là **của từng model** (`HO_SO`)."""
+    """Số slot THEO MODEL (3.8 `-np 3` L-14; 3.5 `-np 4` từ C4 L-28), và pool KV
+    là **của từng model** (`HO_SO`)."""
 
-    def test_ba_slot(self):
+    #: Số chốt ở DECISION_LOG — đổi ở đây là đổi một quyết định đã ghi (L-14, L-28),
+    #: không phải sửa test cho xanh. yaml ↔ HO_SO đối chiếu ở `test_1201`.
+    SLOT_DA_CHOT = {"qwen38-api": 3, "qwen35-api": 4}
+
+    def test_so_slot_theo_model(self):
+        assert set(ngan_sach.HO_SO) == set(self.SLOT_DA_CHOT)
         for model, h in ngan_sach.HO_SO.items():
-            assert (h.np, h.seq_cap) == (3, 3), model
+            so = self.SLOT_DA_CHOT[model]
+            assert (h.np, h.seq_cap) == (so, so), model
+
+    def test_them_slot_khong_doi_ngan_sach_kv(self):
+        """`-kvu`: một bể KV chung mọi slot ⇒ np4 của 3.5 ở CÙNG `-c` giữ nguyên
+        ngân sách đặt chỗ (C4 đo `-c 262144` không đổi)."""
+        h = ngan_sach.HO_SO["qwen35-api"]
+        assert h.engine_ctx == 262_144
+        assert h.token_budget == 262_144 - ngan_sach.BIEN_POOL_TOKEN
 
     def test_pool_kv_theo_model(self):
         assert ngan_sach.POOL_38 == ngan_sach.HO_SO["qwen38-api"].token_budget

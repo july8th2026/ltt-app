@@ -1,0 +1,2 @@
+model=qwen38-api tong=70 ro=0 khong_do_duoc=0 giay=585
+EXIT 0
