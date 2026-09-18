@@ -17,12 +17,14 @@ import time
 
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from platform_core.llm import thanh_toan
 from platform_core.public_api import metrics, protocol
 from platform_core.public_api.config import PublicApiConfig
 from platform_core.public_api.errors import ApiError
 from server.api.context import client_ip, request_id
 from server.api.deps import enforce_body_limit, enforce_read_only
 from server.api.errors import problem_response
+from server.api import phien_khach
 
 log = logging.getLogger("ltt.public_api.access")
 
@@ -44,7 +46,15 @@ class PublicApiGuardMiddleware(BaseHTTPMiddleware):
             self._stamp(response, request, correlation_id)
             self._record(request, response.status_code, started, correlation_id)
             return response
-        response = await call_next(request)
+        # T4 P1: nghe mã lượt mà request này sinh ra (`thanh_toan.ma_luot`) —
+        # xem `_ma_luot` ngay dưới. Bật TRƯỚC `call_next` để task ứng dụng thừa
+        # hưởng sổ; tắt sau đó để request kế trên cùng task không thừa mã cũ.
+        so_ma, token = thanh_toan.nghe_ma_luot()
+        request.state.api_so_ma_luot = so_ma
+        try:
+            response = await call_next(request)
+        finally:
+            thanh_toan.ngung_nghe_ma_luot(token)
         self._stamp(response, request, correlation_id)
         self._record(request, response.status_code, started, correlation_id)
         self._schedule_log(response, request, response.status_code,
@@ -91,9 +101,15 @@ class PublicApiGuardMiddleware(BaseHTTPMiddleware):
         if status == 429:
             metrics.increment(metrics.RATE_LIMITED)
 
+        # Chỉ 8 ký tự đầu của phiên và 8 ký tự CUỐI của mã lượt (phần hex; đầu
+        # là tiền tố `st:`/`ch:` chung): đủ để grep nối, không chép cả id vào
+        # log văn bản vốn không có hạn lưu giữ 30 ngày như bảng.
+        phien = phien_khach.doc(request.headers).phien
+        ma = _ma_luot(request.state)
         log.info(
             "api request_id=%s method=%s route=%s status=%s latency_ms=%.1f "
-            "key_id=%s owner=%s tool=%s job_id=%s credit_delta=%s ip=%s",
+            "key_id=%s owner=%s tool=%s job_id=%s credit_delta=%s ip=%s "
+            "phien=%s ma_luot=%s",
             correlation_id, request.method,
             # The templated path, not the filled-in one: a job id in a log line
             # is fine, but grouping by route is what makes the log usable.
@@ -104,6 +120,7 @@ class PublicApiGuardMiddleware(BaseHTTPMiddleware):
             getattr(request.state, "api_job_id", "-") or "-",
             getattr(request.state, "api_credit_delta", 0) or 0,
             client_ip(request, getattr(self._config, "trusted_proxies", ())),
+            phien[:8] or "-", ma[-8:] or "-",
         )
 
     def _schedule_log(self, response, request, status: int, latency_ms: float,
@@ -122,6 +139,9 @@ class PublicApiGuardMiddleware(BaseHTTPMiddleware):
             return
         if not _worth_recording(request, status):
             return
+        # ⛔ Chỉ bốn chuỗi đã lọc của `phien_khach` — không header thô nào, không
+        #    id máy/cài đặt (xem docstring module đó).
+        pk = phien_khach.doc(request.headers)
         fields = {
             "request_id": correlation_id,
             "user_id": principal.user_id,
@@ -137,6 +157,12 @@ class PublicApiGuardMiddleware(BaseHTTPMiddleware):
             # ⛔ CHO TRONG. Gia tri THAT duoc doc LUC CHAY task, khong phai bay
             #    gio — xem `_write_request_log_muon` ngay duoi.
             "credit_delta": 0,
+            # ⛔ CHO TRONG, doc MUON nhu `credit_delta` (`_write_request_log_muon`).
+            "ma_luot": "",
+            "phien_khach": pk.phien,
+            "nhanh_khach": pk.nhanh,
+            "luot_khach": pk.luot,
+            "ung_dung_khach": pk.ung_dung,
         }
         task = BackgroundTask(_write_request_log_muon, fields, request.state)
         if response.background is None:
@@ -194,7 +220,25 @@ def _write_request_log_muon(fields: dict, state) -> None:      # noqa: ANN001
     # Cửa stream đặt `"cho"` lúc trả phản hồi để dòng log VĂN BẢN không nói dối
     # bằng một số `0`. Tới đây mà vẫn là `"cho"` nghĩa là quyết toán không chạy.
     fields["credit_delta"] = int(gia_tri) if isinstance(gia_tri, int) else 0
+    fields["ma_luot"] = _ma_luot(state)
     _write_request_log(fields)
+
+
+def _ma_luot(state) -> str:                                  # noqa: ANN001
+    """Mã lượt ĐẦU TIÊN request này sinh ra, hoặc `""` (T4 P1).
+
+    Nguồn là sổ nghe `thanh_toan.nghe_ma_luot` bật ở `dispatch` — không phải
+    một thuộc tính mà từng cửa phải nhớ tự gán. Mã sinh ở tiền kiểm, TRƯỚC khi
+    xét số dư và phòng chờ, nên lượt bị 402/429 ở đó vẫn mang mã (và không có
+    dòng tiền/phòng chờ nào để nối — đúng như sự thật). Request không tới chỗ
+    sinh mã (400, 401, GET…) ⇒ `""`.
+
+    Đầu tiên chứ không cuối cùng: lượt bị máy B trả 429 được xếp lại với
+    **cùng** mã (`luong.py`), nên một request = một mã; nếu mai kia có cửa sinh
+    hai, mã đầu là mã khách nhìn thấy trước.
+    """
+    so = getattr(state, "api_so_ma_luot", None) or ()
+    return str(so[0]) if so else ""
 
 
 def _write_request_log(fields: dict) -> None:

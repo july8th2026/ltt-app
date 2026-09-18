@@ -52,6 +52,7 @@ thanh_toan.py — thu tiền một lượt gọi model. Giữ chỗ → chạy �
 from __future__ import annotations
 
 import logging
+from contextvars import ContextVar
 from dataclasses import dataclass
 
 from platform_core import credit
@@ -299,6 +300,33 @@ def quyet_toan_hoac_hoan(db, *, user_id: str, request_id: str,
 
 # ── Mã một lượt gọi, dùng làm khoá giữ chỗ/quyết toán ────────────────────────
 
+#: Sổ nghe mã lượt của REQUEST đang chạy (T4 P1). `None` = không ai nghe.
+#:
+#: `server/api/guard.py` bật sổ này trước khi chuyển request vào ứng dụng, và
+#: đọc lại khi ghi dòng `public_api_requests.ma_luot`. Nghe ở CHỖ SINH MÃ — một
+#: hàm, bốn cửa gọi (`/messages`+`/responses` stream qua `runtime_noi_bo/luong`,
+#: một cục, `/chat/completions`) — thay vì bắt từng cửa tự khai: cửa thứ năm
+#: thêm sau tự có, và không cửa nào có thể quên.
+#:
+#: ⚠️ Là một `list` DÙNG CHUNG, không phải giá trị: task ứng dụng chạy trên BẢN
+#:    CHÉP ngữ cảnh (`BaseHTTPMiddleware.call_next`, luồng `to_thread`), nên
+#:    `ContextVar.set` ở đó không về tới middleware — còn `append` vào cùng một
+#:    đối tượng thì về.
+_SO_NGHE_MA: ContextVar[list | None] = ContextVar("ltt_so_nghe_ma_luot",
+                                                  default=None)
+
+
+def nghe_ma_luot():
+    """Bật sổ nghe cho ngữ cảnh hiện tại. Trả `(so, token)`; `so` nhận mọi mã
+    `ma_luot()` sinh ra trong ngữ cảnh này; `token` để `ngung_nghe_ma_luot`."""
+    so: list[str] = []
+    return so, _SO_NGHE_MA.set(so)
+
+
+def ngung_nghe_ma_luot(token) -> None:
+    _SO_NGHE_MA.reset(token)
+
+
 def _tran_ma() -> int:
     """Đọc trần độ dài từ CHÍNH cột sẽ lưu nó, không gõ lại con số.
 
@@ -344,4 +372,7 @@ def ma_luot(nguon: str) -> str:
     tran = _tran_ma()
     if len(ma) > tran:                      # pragma: no cover - chan phong xa
         raise ValueError(f"ma dai {len(ma)} > tran {tran}: {ma}")
+    so = _SO_NGHE_MA.get()
+    if so is not None:
+        so.append(ma)
     return ma

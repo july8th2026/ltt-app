@@ -291,10 +291,41 @@ class ApiRequestLog(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, nullable=False)
 
+    # ── T4 P1 (R-06/R-07): nối dòng này sang ba sổ kia + phiên của CLIENT ──
+    #
+    # ``ma_luot`` là mã lượt A sinh (``thanh_toan.ma_luot``) — cùng giá trị với
+    # ``credit_entries.job_id``, ``llm_waiters.request_id`` và ``"ma"`` ở sổ lượt
+    # máy B (``X-LTT-Request-Id``). Cùng độ dài ``credit_entries.job_id``.
+    #
+    # Bốn cột ``*_khach`` do ``server/api/phien_khach.py`` đọc từ header client
+    # (Claude Code / Codex): id phiên, nhánh (sub-agent / thread), lượt (turn
+    # Codex), tên/phiên bản ứng dụng. ⛔ KHÔNG có cột nào cho id MÁY/cài đặt,
+    # cả ``User-Agent`` hay JSON metadata — xem docstring module đó.
+    #
+    # ``server_default ''``: mã cũ (không biết cột) vẫn INSERT được, nên
+    # migration chạy được trước khi mã lên (``docs/16_CAP_NHAT_VA_DEPLOY.md``).
+    ma_luot: Mapped[str] = mapped_column(String(36), default="",
+                                         server_default="", nullable=False)
+    phien_khach: Mapped[str] = mapped_column(String(64), default="",
+                                             server_default="", nullable=False)
+    nhanh_khach: Mapped[str] = mapped_column(String(64), default="",
+                                             server_default="", nullable=False)
+    luot_khach: Mapped[str] = mapped_column(String(64), default="",
+                                            server_default="", nullable=False)
+    ung_dung_khach: Mapped[str] = mapped_column(String(48), default="",
+                                                server_default="",
+                                                nullable=False)
+
     __table_args__ = (
         # The two questions the page asks: "my recent calls" and "my failures".
         Index("ix_public_api_requests_owner_time", "user_id", "created_at"),
         Index("ix_public_api_requests_owner_status", "user_id", "status"),
+        # "Mọi lượt của phiên này" — LUÔN kèm `user_id`: id phiên do client đặt,
+        # hai khách trùng chuỗi không được lẫn nhau.
+        Index("ix_public_api_requests_phien",
+              "user_id", "phien_khach", "created_at"),
+        # Từ một dòng sổ B (`"ma": "st:…"`) đi ngược lên khách/phiên.
+        Index("ix_public_api_requests_ma_luot", "ma_luot"),
     )
 
     def __repr__(self) -> str:      # pragma: no cover - debugging aid

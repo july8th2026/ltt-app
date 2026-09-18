@@ -291,7 +291,8 @@ def emails_cua(db, user_ids) -> dict[str, str]:
 #      khách    `users`                    (email chính xác · id · email chứa)
 #      đơn      `payment_orders`           (`order_code`, số nguyên)
 #      job      `jobs`                     (id đầy đủ hoặc tiền tố)
-#      request  `public_api_requests`      (`request_id` — thứ khách dán vào)
+#      request  `public_api_requests`      (`request_id` — thứ khách dán vào;
+#                                           `ma_luot` — thứ sổ máy B ghi)
 #      khoá     `developer_api_keys`       (`key_id` — nửa CÔNG KHAI)
 #    Thêm loại thứ sáu thì phải thêm một bảng, không phải thêm một nhánh `elif`
 #    trả rỗng.
@@ -388,7 +389,13 @@ def tim_lien_thuc_the(db, q: str, *, moi_loai: int = TIM_MOI_LOAI) -> dict:
         goi = db.execute(
             select(ApiRequestLog)
             .where(or_(ApiRequestLog.request_id == q,
-                       ApiRequestLog.request_id.like(f"{q}%")))
+                       ApiRequestLog.request_id.like(f"{q}%"),
+                       # T4: mã lượt (`st:…`/`ch:…`) — thứ đọc được ở dòng sổ
+                       # máy B (`"ma"`). Có chỉ mục riêng. ⛔ KHÔNG thêm
+                       # `phien_khach`: chỉ mục của nó mở đầu bằng `user_id`,
+                       # tìm phiên không kèm khách là quét cả bảng.
+                       ApiRequestLog.ma_luot == q,
+                       ApiRequestLog.ma_luot.like(f"{q}%")))
             .order_by(ApiRequestLog.created_at.desc()).limit(n)).scalars().all()
         _them("request", [
             {"nhan": r.request_id[:16],
