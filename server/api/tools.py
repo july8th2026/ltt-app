@@ -33,7 +33,8 @@ _NO_STORE = {"Cache-Control": "no-store"}
 #:    không đổi số); đừng "đồng bộ" nó với cửa sổ engine.
 CUA_SO_CONG_BO_MAC_DINH = 60_000
 
-#: Trần token ra, khớp `MAX_TOKENS_TRAN` của app `ltt_llm`.
+#: Trần token ra, khớp `apps/ltt_llm/ngan_sach.TOKEN_RA_TRAN` (`test_334` buộc hai đầu;
+#: `MAX_TOKENS_TRAN` chỉ là tên nhập lại trong `manifest.py`).
 TOKEN_RA_TOI_DA = 32_768
 
 
