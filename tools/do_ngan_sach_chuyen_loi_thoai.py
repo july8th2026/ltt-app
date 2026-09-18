@@ -184,7 +184,7 @@ def main() -> int:
             #
             #    Do that 09/09 14:21: ca 6 luot tra `MayBan` trong **0,3 giay**,
             #    va luc do may B dang 88% GPU / 365 W - mot phien khac giu suat
-            #    (`DONG_THOI_MAY_B=1`). THOI LUONG la thu phan biet: mot luot
+            #    (so suat theo `HO_SO[m].seq_cap`). THOI LUONG la thu phan biet: mot luot
             #    thuc su cham may B mat 60-150 giay.
             #
             # ⚠️ Cho roi thu lai DUNG luot ay, khong bo qua no: bo qua se lam
@@ -206,8 +206,8 @@ def main() -> int:
                     break
                 if lan >= args.ban_toi_da:
                     print(f"     [!!] May B BAN sau {lan + 1} lan cho. Dung.")
-                    print("          Chay lai khi no ranh - phep do nay CAN suat")
-                    print("          may B, va `DONG_THOI_MAY_B=1`.")
+                    print("          Chay lai khi no ranh - phep do nay CAN mot suat")
+                    print("          may B cua model dang do.")
                     return 2
                 print(f"     [..] May B BAN ({giay:.1f}s - chua cham mang). "
                       f"Cho {args.cho_ban}s roi thu lai chinh luot nay.")

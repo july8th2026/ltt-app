@@ -91,7 +91,11 @@ from . import uoc_token as UT
 #: Qwen3.8 lấy mẫu ảnh theo ô vá; một ảnh chụp màn hình cỡ 1080p rơi vào khoảng
 #: 1.000–1.600 token. Lấy **2.048** cho chắc — nếu ước cao thì chỉ mất một chỗ
 #: trong ngân sách, còn ước thấp thì tràn ngữ cảnh.
-TOKEN_MOI_ANH = 2048
+#:
+#: Tên `TOKEN_GIU_MOI_ANH` (Task 11, 18/09) — khớp `apps/ltt_llm/ngan_sach.HO_SO[m]
+#: .token_giu_moi_anh` (test `test_1201`), và KHÔNG trùng tên `TOKEN_MOI_ANH = 770`
+#: (số ĐO dùng cho hoá đơn ở máy A).
+TOKEN_GIU_MOI_ANH = 2048
 
 _DATA_URL = re.compile(r"^data:(?P<mime>[\w.+-]+/[\w.+-]+)?;base64,", re.I)
 
@@ -187,7 +191,7 @@ def do_yeu_cau(body: dict[str, Any]) -> KetQuaDo:
     return KetQuaDo(
         token_van_ban=UT.uoc_doan(van_ban) + khuon,
         so_anh=len(anh),
-        token_anh=len(anh) * TOKEN_MOI_ANH,
+        token_anh=len(anh) * TOKEN_GIU_MOI_ANH,
         byte_anh_lon_nhat=byte_lon_nhat,
         url_tu_xa=tu_xa,
         van_ban=tuple(van_ban),
