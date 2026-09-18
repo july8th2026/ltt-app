@@ -21,6 +21,22 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-19 — `ltt-3.8`: `reasoning_effort` có tác dụng ở `/messages` (FIXED)
+
+- **Cái gì đổi:** ở `POST /api/v1/messages` **stream**, `reasoning_effort` của
+  `ltt-3.8` trước đây bị engine vứt im lặng — mọi mức chạy như `xhigh` (đo: cùng
+  số token prompt ở `low` và `xhigh`). Nay tới được model ở mọi cửa. Ba chỗ khai
+  effort (`reasoning_effort`, `reasoning.effort`, `chat_template_kwargs.reasoning_effort`)
+  được nhận như nhau ở mọi cửa (trước: cửa đồng bộ/job bỏ qua hai chỗ sau); khai
+  nhiều chỗ thì `reasoning_effort` > `reasoning.effort` > `chat_template_kwargs`.
+  `chat_template_kwargs` chỉ còn nhận `reasoning_effort`; mọi khoá khác bị gỡ
+  trước máy B (vd `tool_call_format` làm hỏng gọi tool im lặng).
+- **Có phá vỡ tương thích không:** không. Không có khoá `chat_template_kwargs`
+  nào ngoài effort từng được tài liệu hoá.
+- **Phải làm gì:** không gì. Lưu ý: mức effort nằm ở đầu prompt — đổi mức giữa
+  các lượt của cùng hội thoại làm mất prompt cache; giữ một mức cho cả phiên,
+  kể cả request phụ (nén hội thoại, đặt tiêu đề).
+
 ## 2026-09-18 — `text.chat`: suy nghĩ do máy chủ quyết, effort theo từng model (FIXED)
 
 - **Cái gì đổi:** (L-26) câu mô tả `reasoning_effort` của `text.chat` — và vì thế

@@ -123,8 +123,9 @@ def test_go_moi_truong_ghi_de_suy_nghi(dung, model):
     gui, _bo_qua = chuan_hoa_suy_nghi(than, model)
     _sach_ghi_de(gui)
     assert than == goc, "khong duoc sua than dau vao"
-    # Khoa template KHONG phai suy nghi thi giu nguyen.
-    assert gui["chat_template_kwargs"] == {"tool_call_format": "xml"}
+    # T1c: kwargs template cua khach chi con `reasoning_effort` (danh sach cho
+    # phep) — `tool_call_format` bi go, khong con "giu nguyen".
+    assert "chat_template_kwargs" not in gui
     # Chu cua khach giu nguyen, chi mat the.
     assert "xin chao" in json.dumps(gui, ensure_ascii=False)
 
@@ -179,13 +180,14 @@ def test_38_chuan_hoa_effort(vao, ra):
     gui, bo_qua = chuan_hoa_suy_nghi({"model": "ltt-3.8", "reasoning_effort": vao},
                                      "ltt-3.8")
     assert gui["reasoning_effort"] == ra and bo_qua is False
+    # T1c: moi dang khai effort -> MOT truong chuan `reasoning_effort`.
     gui, _ = chuan_hoa_suy_nghi({"model": "ltt-3.8", "reasoning": {"effort": vao}},
                                 "ltt-3.8")
-    assert gui["reasoning"] == {"effort": ra}
+    assert gui["reasoning_effort"] == ra and "reasoning" not in gui
     gui, _ = chuan_hoa_suy_nghi(
         {"model": "ltt-3.8", "chat_template_kwargs": {"reasoning_effort": vao}},
         "ltt-3.8")
-    assert gui["chat_template_kwargs"] == {"reasoning_effort": ra}
+    assert gui["reasoning_effort"] == ra and "chat_template_kwargs" not in gui
 
 
 @pytest.mark.parametrize("model", ["ltt-3.8", "ltt-3.5"])
@@ -251,14 +253,16 @@ def test_cua_stream_tien_kiem_va_chuan_bi_gui_than_sach(db_s, duong, dung, model
     if model == "ltt-3.5":
         assert "reasoning_effort" not in tk.than_gui and tk.effort_bo_qua is True
     else:
-        assert tk.than_gui["reasoning_effort"] == "xhigh"
+        # T1c: dung TRUONG llama.cpp cua cua ay dua toi template.
+        assert _effort_template_thay(duong, tk.than_gui) == "xhigh"
         assert tk.effort_bo_qua is False
     cb = luong.chuan_bi(db_s, user_id=uid, tool_name="text.chat", than=than,
                         duong=duong)
     try:
         _sach_ghi_de(_bo_budget_may_chu(cb.than_gui, duong) if model == "ltt-3.5"
                      else cb.than_gui)
-        assert (("reasoning_effort" in cb.than_gui) == (model == "ltt-3.8"))
+        assert ((_effort_template_thay(duong, cb.than_gui) is not None)
+                == (model == "ltt-3.8"))
     finally:
         luong.hoan(cb.user_id, cb.request_id)
         luong._nha_suat(cb.lease_id)
@@ -321,7 +325,7 @@ def test_http_38_khong_co_header_bo_qua(api, monkeypatch):
                  json=_than_messages("ltt-3.8", reasoning_effort="high"))
     assert r.status_code == 200, r.text
     assert "X-LTT-Effort-Bo-Qua" not in r.headers
-    assert da_goi[-1]["than"]["reasoning_effort"] == "xhigh"
+    assert _effort_template_thay(da_goi[-1]["duong"], da_goi[-1]["than"]) == "xhigh"
 
 
 @pytest.mark.parametrize("duong", ["/messages", "/responses"])
@@ -563,3 +567,204 @@ def test_cua_stream_35_budget_dung_truong_cua_llama(db_s, duong, dung, model):
     finally:
         luong.hoan(cb.user_id, cb.request_id)
         luong._nha_suat(cb.lease_id)
+
+
+# ══ T1c: effort 3.8 tới được TEMPLATE ở mọi cửa (sự cố đo 18/09, lane LTTCODE) ══
+#
+# `/v1/messages` của llama.cpp 91f6a6cf3 (`server-chat.cpp:579`,
+# `server_chat_convert_anthropic_to_oai`) dựng thân OAI MỚI, chỉ chép
+# `temperature|top_p|top_k|stream|chat_template_kwargs` ⇒ `reasoning_effort` cấp
+# cao nhất bị vứt, template chạy mặc định `--reasoning-effort xhigh` của máy B.
+# Đo engine B trực tiếp 19/09, n=5 mỗi ô, cùng prompt:
+#     /v1/messages  reasoning_effort=low (cấp cao nhất)       -> 74 token prompt (= xhigh)
+#     /v1/messages  chat_template_kwargs.reasoning_effort=low -> 62 (medium 36, xhigh 74)
+#     /v1/chat/completions, /v1/responses cấp cao nhất low    -> 62 (tới template)
+
+#: Mô hình converter Anthropic của llama.cpp 91f6a6cf3 (`server-chat.cpp:579`).
+_ANTHROPIC_CHEP = ("temperature", "top_p", "top_k", "stream", "chat_template_kwargs")
+
+
+def _effort_template_thay(duong: str, gui: dict):
+    """Giá trị `reasoning_effort` template NHẬN, theo mã llama.cpp 91f6a6cf3.
+
+    `/messages`: converter chỉ chép `_ANTHROPIC_CHEP`. `/responses`: chép nguyên
+    thân, `reasoning.effort` ⇒ `reasoning_effort` (`server-chat.cpp:286-292`).
+    Rồi `server-common.cpp:1308-1332`: `chat_template_kwargs` gộp trước,
+    `reasoning_effort` cấp cao nhất ghi đè sau. None ⇒ mặc định máy chủ (xhigh).
+    """
+    if duong.endswith("/messages"):
+        oai = {k: gui[k] for k in _ANTHROPIC_CHEP if k in gui}
+    else:
+        oai = dict(gui)
+        if duong.endswith("/responses") and isinstance(oai.get("reasoning"), dict):
+            if "effort" in oai["reasoning"]:
+                oai["reasoning_effort"] = oai["reasoning"]["effort"]
+            oai.pop("reasoning")
+    muc = (oai.get("chat_template_kwargs") or {}).get("reasoning_effort")
+    if oai.get("reasoning_effort"):
+        muc = oai["reasoning_effort"]
+    return muc
+
+
+def test_doi_chung_mo_hinh_converter_bat_duoc_loi_cu():
+    """Đối chứng: hình dạng CŨ (`reasoning_effort` cấp cao nhất ở /messages) phải
+    bị mô hình converter coi là MẤT — nếu không, các test dưới không chứng minh gì."""
+    assert _effort_template_thay("/v1/messages", {"reasoning_effort": "low"}) is None
+    assert _effort_template_thay(
+        "/v1/messages", {"chat_template_kwargs": {"reasoning_effort": "low"}}) == "low"
+    assert _effort_template_thay("/v1/responses", {"reasoning": {"effort": "low"}}) == "low"
+
+
+def _ba_dang_effort(muc: str) -> list[dict]:
+    return [{"reasoning_effort": muc}, {"reasoning": {"effort": muc}},
+            {"chat_template_kwargs": {"reasoning_effort": muc}}]
+
+
+@pytest.mark.parametrize("vao,ra", [("low", "low"), ("medium", "medium"),
+                                    ("high", "xhigh"), ("minimal", "low")])
+def test_t1c_chuan_hoa_mot_dang_duy_nhat(vao, ra):
+    """Ba chỗ khách gửi effort ⇒ MỘT trường chuẩn `reasoning_effort` cấp cao nhất
+    (cửa đồng bộ/job/`_mot_cuc` đọc đúng trường này), không còn bản sao."""
+    for dang in _ba_dang_effort(vao):
+        gui, bo_qua = chuan_hoa_suy_nghi({"model": "ltt-3.8", **dang}, "ltt-3.8")
+        assert gui.get("reasoning_effort") == ra, dang
+        assert "effort" not in (gui.get("reasoning") or {}), dang
+        assert "chat_template_kwargs" not in gui, dang
+        assert bo_qua is False
+
+
+def test_t1c_uu_tien_khi_khach_gui_nhieu_cho():
+    gui, _ = chuan_hoa_suy_nghi(
+        {"model": "ltt-3.8", "reasoning_effort": "low",
+         "reasoning": {"effort": "medium", "summary": "auto"},
+         "chat_template_kwargs": {"reasoning_effort": "xhigh"}}, "ltt-3.8")
+    assert gui["reasoning_effort"] == "low"
+    assert gui["reasoning"] == {"summary": "auto"}
+    gui, _ = chuan_hoa_suy_nghi(
+        {"model": "ltt-3.8", "reasoning": {"effort": "medium"},
+         "chat_template_kwargs": {"reasoning_effort": "low"}}, "ltt-3.8")
+    assert gui["reasoning_effort"] == "medium" and "reasoning" not in gui
+
+
+def test_t1c_none_o_cho_phu_van_400_du_cho_chinh_hop_le():
+    with pytest.raises(ThamSoSai):
+        chuan_hoa_suy_nghi({"model": "ltt-3.8", "reasoning_effort": "low",
+                            "chat_template_kwargs": {"reasoning_effort": "none"}},
+                           "ltt-3.8")
+
+
+@pytest.mark.parametrize("khoa,gt", [("tool_call_format", "json"),
+                                     ("add_vision_id", True),
+                                     ("max_tool_arg_chars", 10),
+                                     ("max_tool_response_chars", 10),
+                                     ("khoa_la", "x")])
+@pytest.mark.parametrize("model", ["ltt-3.8", "ltt-3.5"])
+def test_t1c_khach_khong_tiem_duoc_template_kwargs(khoa, gt, model):
+    """Chỉ `reasoning_effort` (đã kiểm) được đi từ `chat_template_kwargs` của
+    khách. `tool_call_format=json` từng đo: MỌI tool call thành văn bản thường,
+    im lặng (docs/CHATLTT_V3/01_M1_NATIVE_HAY_GENERIC.md §5)."""
+    gui, _ = chuan_hoa_suy_nghi(
+        {"model": model, "chat_template_kwargs": {khoa: gt}}, model)
+    assert "chat_template_kwargs" not in gui
+
+
+@pytest.mark.parametrize("duong", ["/v1/messages", "/v1/responses",
+                                   "/v1/chat/completions"])
+@pytest.mark.parametrize("muc", ["low", "medium", "xhigh"])
+def test_t1c_dat_effort_dung_truong_engine_doc(duong, muc):
+    gui = {"model": "qwen38-api", "reasoning_effort": muc}
+    luong.dat_effort_cho_engine(gui, duong)
+    assert _effort_template_thay(duong, gui) == muc
+    if duong.endswith("/messages"):
+        assert gui == {"model": "qwen38-api",
+                       "chat_template_kwargs": {"reasoning_effort": muc}}
+
+
+@pytest.mark.parametrize("duong", ["/v1/messages", "/v1/responses"])
+def test_t1c_khong_effort_thi_khong_dat_gi(duong):
+    """Khách không gửi ⇒ để mặc định MÁY B (`--reasoning-effort xhigh`, =
+    `NGHI_MAC_DINH_THEO_MODEL`) — máy chủ không bịa một mức."""
+    gui = {"model": "qwen38-api"}
+    luong.dat_effort_cho_engine(gui, duong)
+    assert gui == {"model": "qwen38-api"}
+
+
+def test_t1c_idempotent_qua_chuan_hoa_lan_hai():
+    gui, _ = chuan_hoa_suy_nghi({"model": "ltt-3.8", "reasoning_effort": "low"},
+                                "ltt-3.8")
+    luong.dat_effort_cho_engine(gui, "/v1/messages")
+    gui2, _ = chuan_hoa_suy_nghi(gui, "ltt-3.8")
+    luong.dat_effort_cho_engine(gui2, "/v1/messages")
+    assert gui2 == gui
+
+
+@pytest.mark.parametrize("duong,dung", [("/v1/messages", _than_messages),
+                                        ("/v1/responses", _than_responses)])
+@pytest.mark.parametrize("vao,ra", [("low", "low"), ("high", "xhigh")])
+def test_t1c_cua_stream_38_effort_toi_template(db_s, duong, dung, vao, ra):
+    uid = _nguoi(db_s)
+    for dang in _ba_dang_effort(vao):
+        than = dung("ltt-3.8")
+        than.pop("chat_template_kwargs", None)
+        than.update(copy.deepcopy(dang))
+        tk = luong.tien_kiem(db_s, user_id=uid, tool_name="text.chat", than=than,
+                             duong=duong)
+        assert _effort_template_thay(duong, tk.than_gui) == ra, (dang, tk.than_gui)
+        cb = luong.chuan_bi(db_s, user_id=uid, tool_name="text.chat", than=than,
+                            duong=duong)
+        try:
+            assert _effort_template_thay(duong, cb.than_gui) == ra, (dang, cb.than_gui)
+        finally:
+            luong.hoan(cb.user_id, cb.request_id)
+            luong._nha_suat(cb.lease_id)
+
+
+@pytest.mark.parametrize("duong,dung", [("/v1/messages", _than_messages),
+                                        ("/v1/responses", _than_responses)])
+def test_t1c_cua_stream_35_khong_them_effort(db_s, duong, dung):
+    uid = _nguoi(db_s)
+    than = dung("ltt-3.5", chat_template_kwargs={"reasoning_effort": "low"})
+    tk = luong.tien_kiem(db_s, user_id=uid, tool_name="text.chat", than=than,
+                         duong=duong)
+    assert _effort_template_thay(duong, tk.than_gui) is None
+    assert "chat_template_kwargs" not in tk.than_gui and tk.effort_bo_qua is True
+
+
+def test_t1c_http_stream_messages_38_than_len_may_b(api, monkeypatch):
+    da_goi = _dat_luong(monkeypatch)
+    _uid, token = _account()
+    r = api.post(API_V1_PREFIX + "/messages", headers=_h(token),
+                 json=_than_messages("ltt-3.8", reasoning_effort="low"))
+    assert r.status_code == 200, r.text
+    gui = da_goi[-1]["than"]
+    assert _effort_template_thay(da_goi[-1]["duong"], gui) == "low", gui
+    assert gui["chat_template_kwargs"] == {"reasoning_effort": "low"}
+
+
+@pytest.mark.parametrize("duong,dung", [("/messages", _than_messages),
+                                        ("/responses", _than_responses)])
+@pytest.mark.parametrize("dang", [0, 1, 2])
+def test_t1c_mot_cuc_38_moi_dang_effort_toi_dieu_phoi(api, monkeypatch, duong,
+                                                      dung, dang):
+    """Không stream đi `features.chay` → `/v1/chat/completions`, nơi
+    `reasoning_effort` cấp cao nhất TỚI template (đo: low 62 / xhigh 74)."""
+    goi = _dat_dieu_phoi(monkeypatch)
+    _uid, token = _account()
+    than = dung("ltt-3.8", stream=False)
+    than.pop("chat_template_kwargs", None)
+    than.update(_ba_dang_effort("minimal")[dang])
+    than["max_output_tokens" if duong == "/responses" else "max_tokens"] = 1500
+    r = api.post(API_V1_PREFIX + duong, headers=_h(token), json=than)
+    assert r.status_code == 200, r.text
+    assert goi[-1]["reasoning_effort"] == "low"
+
+
+@pytest.mark.parametrize("dang", [0, 1, 2])
+def test_t1c_cua_job_features_moi_dang_effort(monkeypatch, dang):
+    from apps.ltt_llm import features
+    goi = _dat_dieu_phoi(monkeypatch)
+    features.chay(None, {"model": "ltt-3.8", "max_tokens": 1500,
+                         "messages": [{"role": "user", "content": "xin chao"}],
+                         **_ba_dang_effort("medium")[dang]})
+    assert goi[-1]["reasoning_effort"] == "medium"
+    assert "chat_template_kwargs" not in (goi[-1].get("them") or {})
