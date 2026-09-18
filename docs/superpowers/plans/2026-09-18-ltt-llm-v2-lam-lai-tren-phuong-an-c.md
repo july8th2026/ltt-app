@@ -14,7 +14,7 @@
 
 - Hợp đồng `docs/00_LTT_OPERATING_CONTRACT.md`: trong phiên chỉ test nhắm + L1/L2; **không L3 giữa pha**; deploy chỉ sau L1/L2 xanh trên đúng SHA, qua `setup\deploy_nang_quyen.ps1` từ PowerShell; báo phiên khác trước deploy. `core:provider` có 112 tệp test ⇒ là lệnh nặng: `python tools\cua_so_yen.py trang-thai` + `python tools\tai_may.py` trước.
 - Không gộp nhánh `llm-v2/*`. Commit cũ được giữ bằng tag `luu-tru/serving-v2/*`. Chỉ cherry-pick commit được nêu tên; còn lại viết lại.
-- Không đưa lại tên đã gỡ ở L-23: `LE`, `SO_SLOT_MAY_B`, `DONG_THOI_MAY_B`, `POOL_KV*`, `SO_SLOT`, `LE_NGU_CANH`, `X-LTT-Whale`, env `LTT_LLM_NGUONG_WHALE|DEM_DAT_TRUOC|TOKEN_MOI_ANH|MAX_INPUT_TOKENS|MAX_DONG_THOI|TOKEN_POOL|RPM`, `luat_cho(pool, …)`, `dem_dat_truoc`, `token_moi_anh`.
+- Không đưa lại tên ĐÃ GỠ ở L-23: `LE`, `SO_SLOT_MAY_B`, `DONG_THOI_MAY_B`, `POOL_KV*`, `SO_SLOT`, `LE_NGU_CANH`, `X-LTT-Whale`, env `LTT_LLM_NGUONG_WHALE|DEM_DAT_TRUOC|TOKEN_MOI_ANH|MAX_INPUT_TOKENS|MAX_DONG_THOI|TOKEN_POOL|RPM`, `luat_cho(pool, …)`, `dem_dat_truoc`, `token_moi_anh`.
 - Số theo model chỉ ở `HO_SO`: `engine_ctx` 221184/262144, `np` 3, `seq_cap` 3, `bien_pool_token` 8192, `dem_uoc` 2048, `token_giu_moi_anh` 2048, `nguong_whale` 8192/16384. Bản sao khác phải được test đối chiếu.
 - Chiều deploy (RUNBOOK §2.1): **tăng** sức chứa hoặc **nới** A ⇒ B trước; **giảm**/siết ⇒ A trước; nếu A giữ ít hơn B đếm ⇒ vi phạm "A ⊆ B" ⇒ B trước hoặc đồng thời.
 - Máy B: đổi `llama-swap.yaml` chỉ qua kho + `llm_gateway/deploy/deploy.ps1`; `-watch-config` nạp lại **cả hai** model mỗi lần lưu (mất cache); mọi deploy B phải tách nhánh **sau** khi Task 1 gộp (nếu không sẽ kéo B về cache 12288 / sàn 48).
@@ -207,7 +207,7 @@ def test_messages_cache_hit_van_tinh_token_moi():
 
 - [ ] `llm_gateway/ngan_sach.py:109` đổi `TOKEN_MOI_ANH` → `TOKEN_GIU_MOI_ANH` + test đối chiếu với `HO_SO[m].token_giu_moi_anh` (hết trùng tên với `TOKEN_MOI_ANH = 770` của hoá đơn).
 - [ ] `platform_core/providers.py` `nap_model_s: 18` → dẫn chiếu `ngan_sach.NAP_KHO_AM_S` hoặc bỏ.
-- [ ] `tools/do_ngan_sach_chuyen_loi_thoai.py:187,210` bỏ lời khuyên `DONG_THOI_MAY_B=1`.
+- [x] `tools/do_ngan_sach_chuyen_loi_thoai.py:187,210` — lời khuyên `DONG_THOI_MAY_B=1` ĐÃ GỠ (a749d1ea).
 - [ ] `platform_core/public_api/examples.py:841-842` sửa chú thích "LTT dùng 3" → khớp giá trị 10; `server/api/tools.py:36` chú thích `MAX_TOKENS_TRAN` → `TOKEN_RA_TRAN`.
 - [ ] `docs/VLM_NOI_BO/CAM_CLI.md:255`, `docs/QUYET_DINH_NEN_TANG.md:304-326` gắn "ĐÃ GỠ (L-23)".
 - [ ] LTTCODE `plugins/llm-ltt/src/adapter.ts` `KNOWN_CONTEXT_WINDOWS`: thêm kiểm chéo kho (so với `/api/v1/models` live trong phép kiểm bản cài) — việc ở kho LTTCODEAPP.

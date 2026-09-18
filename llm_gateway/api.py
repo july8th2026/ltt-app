@@ -217,7 +217,7 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
            bằng `chr(10)` rồi đếm một lần: `n` lời gọi cho `n` tin nhắn là `n`
            vòng loopback, và với một phiên agent thì `n` lên tới hàng trăm.
            Sai số của việc nối (vài token ranh giới) nhỏ hơn hai bậc so với
-           chỗ `LE` đã chừa.
+           chỗ `DEM_UOC` đã chừa.
 
         🔴 ĐƯỜNG PHẢI LÀ `/upstream/<model>/tokenize`, KHÔNG PHẢI `/tokenize`.
            `llama-swap` định tuyến theo trường `model` **trong thân**; `/tokenize`

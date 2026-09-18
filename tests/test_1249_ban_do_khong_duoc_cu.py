@@ -151,8 +151,10 @@ def test_banh_coc_HOAN_DOI_mot_doi_mot_van_do():
     """Chot TAP HOP, khong chot SO LUONG: xoa mot dong cu + them mot dong moi
     thi tong khong doi ma van phai do."""
     cc = _cong_cu()
-    moc = cc.doc_moc()
-    assert moc, "moc rong ⇒ ve nay khong do duoc gi (tap rong)"
+    # Moc TONG HOP, khong doc moc that: 18/09 moc that da ve 0 dong (don het),
+    # ma tinh chat "chot tap hop" khong phu thuoc noi dung moc.
+    moc = {cc.Hit("AGENTS.md", "LE", "`LE` cu").khoa(),
+           cc.Hit("CLAUDE.md", "POOL_KV", "`POOL_KV_MAY_B` cu").khoa()}
     bo_mot = sorted(moc)[1:]
     hit = [cc.Hit("CLAUDE.md", "SO_SLOT", "`SO_SLOT` moi them")]
     moi = cc.so_voi_moc(hit, set(bo_mot))

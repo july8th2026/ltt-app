@@ -37,7 +37,7 @@ chốt 17/09: draft MTP + sai số ước chiếm KV mà phép đặt chỗ khô
 Mỗi `AdmissionModel` mang đủ số của model — `slots`, `token_pool`,
 `nguong_whale` (số chủ dự án chọn 17/09, L-23: 3.8 **8.192**, 3.5 **16.384** —
 `ngan_sach.NGUONG_WHALE`; ước đường cong ở 9 s 10.752/18.944 chỉ là ghi chú),
-`dem_uoc`, `token_giu_moi_anh`. ⛔ Không còn env
+`dem_uoc`, `token_giu_moi_anh`. ⛔ ĐÃ GỠ (L-23) env
 `LTT_LLM_NGUONG_WHALE` / `LTT_LLM_DEM_DAT_TRUOC` / `LTT_LLM_TOKEN_MOI_ANH`; env
 thời gian (chờ, backfill, lão hoá, xếp lại) chỉ ở `tham_so_da_luot.doc()`.
 
@@ -45,7 +45,7 @@ thời gian (chờ, backfill, lão hoá, xếp lại) chỉ ở `tham_so_da_luot
 `Σ đặt chỗ ≤ -c`). A ⊆ B: pool A nhỏ hơn `-c` của B, và A gửi CÙNG số đặt chỗ
 lên B (`X-LTT-Token-Dat`) ở mọi cửa.
 
-⚠️ **Tài liệu viết TRƯỚC 11/09/2026 khai `DONG_THOI_MAY_B = 1` / `--parallel 1`.**
+⚠️ **Tài liệu viết TRƯỚC 11/09/2026 khai `DONG_THOI_MAY_B = 1` / `--parallel 1`** (tên ĐÃ GỠ ở L-23; nay `HO_SO[m].np`).
 Con số ấy **đúng tại thời điểm đó** — máy B khi ấy thật sự một suất. Rà 13/09
 thấy ~40 tệp còn mang nó; phần lớn là **bản ghi có ngày** (báo cáo sự cố, audit,
 nhật ký benchmark) nên **cố ý giữ nguyên**: sửa một bản ghi là làm giả bằng
@@ -139,9 +139,9 @@ B 429 ⇒ `BanError` ⇒ `defer_resource` (job về hàng, giữ tiền — như
 
 ⭐ **Máy A là người quyết định nhận DUY NHẤT** (`docs/ltt_llm_dual/KE_HOACH_PHUONG_AN_C.md`
 §3). Cổng máy B không có luật công bằng, nhịp hay hạn mức riêng — khoá whale
-(O-01), RPM (O-03), trần vào chung cho hai model (O-02) và env
-`LTT_LLM_MAX_DONG_THOI`/`LTT_LLM_TOKEN_POOL`/`LTT_LLM_MAX_INPUT_TOKENS`/`LTT_LLM_RPM`
-**đã gỡ**. Nó chỉ chặn điều engine không tự chặn được:
+(O-01), RPM (O-03), trần vào chung cho hai model (O-02) **ĐÃ GỠ** (L-23), cùng env
+`LTT_LLM_MAX_DONG_THOI`/`LTT_LLM_TOKEN_POOL`/`LTT_LLM_MAX_INPUT_TOKENS`/`LTT_LLM_RPM`.
+Nó chỉ chặn điều engine không tự chặn được:
 
 | chốt ở B | số lấy từ đâu | vượt thì |
 |---|---|---|

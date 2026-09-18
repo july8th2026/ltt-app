@@ -12,7 +12,7 @@ vat_ly.py — rào VẬT LÝ của cổng máy B, đọc thẳng từ `llama-swa
    Vượt 1/2 ⇒ 429 (A xếp hàng lại). Vượt 3 ⇒ 413 (cùng trần A đã kiểm trước 200).
 
 🔴 VÌ SAO ĐỌC YAML THAY VÌ GÕ SỐ. Trước bước này `-c`/`-np` sống ở **ba** chỗ trên
-   máy B — `catalog.max_context`, `LTT_LLM_MAX_DONG_THOI[__m]`,
+   máy B — `catalog.max_context`, env nay ĐÃ GỠ `LTT_LLM_MAX_DONG_THOI[__m]`,
    `LTT_LLM_TOKEN_POOL[__m]` — cộng `LTT_LLM_MAX_INPUT_TOKENS` ép **186.368 cho cả
    hai model** (O-02: sai cho 3.5). Tệp yaml là thứ **khởi động tiến trình**; mọi
    bản sao khác chỉ là lời kể về nó.

@@ -10,8 +10,8 @@ In ra dung hai dong `KEY=VALUE`:
 Vi sao (phuong an C buoc 3, `docs/ltt_llm_dual/KE_HOACH_PHUONG_AN_C.md` §3.2):
 tran vao cua may B = `-c(yaml) - max_out - DEM_UOC`, CUNG cong thuc voi may A.
 `-c` doc tu `llama-swap.yaml`; hai so con lai la CHINH SACH cua may A. `deploy.ps1`
-tung GO TAY `LTT_LLM_MAX_INPUT_TOKENS=186368` - ban sao sai cho 3.5 (O-02). Nay no
-goi tep nay va ghi DUNG so ngan_sach dang khai.
+tung GO TAY env (nay DA GO) `LTT_LLM_MAX_INPUT_TOKENS=186368` - ban sao sai cho 3.5
+(O-02). Nay no goi tep nay va ghi DUNG so ngan_sach dang khai.
 
 Mot tep .py chu khong `python -c` (CLAUDE.md luat 6: khong viet Python inline qua
 PowerShell). Tep nay theo goi `llm_gateway` sang may B (scp -r) nhung KHONG chay o
@@ -37,7 +37,7 @@ def tham_so() -> dict[str, int]:
         sys.path.insert(0, str(goc))
     from apps.ltt_llm import ngan_sach as ns
 
-    # Buoc 2 (may A) gom `LE` + `dem_dat_truoc` thanh `DEM_UOC` (ten cu da go).
+    # Buoc 2 (may A) gom `LE` + `dem_dat_truoc` thanh `DEM_UOC` (ten cu DA GO).
     # Khong co la loi - KHONG doan mot so.
     dem = getattr(ns, "DEM_UOC", None)
     if not isinstance(dem, int) or dem <= 0:
