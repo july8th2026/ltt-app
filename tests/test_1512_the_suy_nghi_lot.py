@@ -311,3 +311,54 @@ def test_goi_openai_co_ma_luot_thi_gui_header(monkeypatch):
 def test_doi_chung_goi_openai_khong_ma_luot_thi_KHONG_co_header(monkeypatch):
     """Đối chứng: phép trên đỏ được — thiếu mã thì header vắng, đúng ca trước T1b."""
     assert "X-LTT-Request-Id" not in _goi_openai_ghi_header(monkeypatch, "")
+
+
+# ── 6. Effort ở cửa MỘT CỤC chỉ đọc `reasoning_effort` cấp cao nhất (T1c) ──────
+#
+# `_mot_cuc` từng tự đọc thêm `reasoning.effort`. Sau T1c `chuan_hoa_suy_nghi` (gọi
+# ngay trước `_mot_cuc`) gom mọi chỗ khai về MỘT `reasoning_effort` và gỡ chỗ cũ ⇒
+# nhánh đọc phụ là mã chết, đã gỡ. Phép dưới giữ: khách khai ở bất kỳ chỗ nào thì
+# thân gửi B (qua `features.chay`) vẫn mang đúng mức.
+
+def _bat_params(monkeypatch) -> list:
+    from apps.ltt_llm import features
+    thay: list = []
+
+    def gia(db, params, *, timeout_s=300.0, ma_luot="", **_):
+        thay.append(dict(params))
+        return features.KetQua(
+            noi_dung="Hà Nội", suy_nghi="", tool_calls=(), finish_reason="stop",
+            model=params["model"], token_vao=10, token_ra=5, token_vao_cache=0,
+            do_duoc=True)
+
+    monkeypatch.setattr(features, "chay", gia)
+    return thay
+
+
+@pytest.mark.parametrize("duong,than", [
+    (RSP, {"input": "thủ đô?", "reasoning": {"effort": "low"}}),
+    (RSP, {"input": "thủ đô?", "reasoning_effort": "low"}),
+    (MSG, {"messages": [{"role": "user", "content": "thủ đô?"}],
+           "chat_template_kwargs": {"reasoning_effort": "low"}}),
+])
+def test_mot_cuc_effort_moi_cho_khai_deu_toi_B(api, monkeypatch, duong, than):
+    assert MODEL == "ltt-3.8"          # 3.5 gỡ effort (model cố định) — sai model thì phép rỗng
+    thay = _bat_params(monkeypatch)
+    _uid, token = _account()
+    r = api.post(duong, json={"model": MODEL, "max_tokens": 1500, **than},
+                 headers=_h(token))
+    assert r.status_code == 200, r.text
+    assert r.headers["content-type"].startswith("application/json")
+    assert len(thay) == 1
+    assert thay[0].get("reasoning_effort") == "low"
+    assert "reasoning" not in thay[0] and "chat_template_kwargs" not in thay[0]
+
+
+def test_doi_chung_mot_cuc_khong_khai_effort_thi_khong_gui(api, monkeypatch):
+    """Đối chứng: phép trên đỏ được — không khai thì thân gửi B không có effort."""
+    thay = _bat_params(monkeypatch)
+    _uid, token = _account()
+    r = api.post(RSP, json={"model": MODEL, "max_tokens": 1500, "input": "thủ đô?"},
+                 headers=_h(token))
+    assert r.status_code == 200, r.text
+    assert len(thay) == 1 and "reasoning_effort" not in thay[0]

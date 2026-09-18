@@ -379,10 +379,10 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         #    `role="tool"` riêng, đúng thứ tự.
         sach = {"model": ten, "max_tokens": xin_ra,
                 "messages": tool_dich.sang_openai_messages(_tin_that(than))}
-        # Effort đã chuẩn hoá ở `_cua` (L-26): cửa một cục giữ đúng mức khách chọn.
-        _muc = than.get("reasoning_effort") or (
-            (than.get("reasoning") or {}).get("effort")
-            if isinstance(than.get("reasoning"), dict) else None)
+        # Effort đã chuẩn hoá ở `_cua` (L-26, T1c): `chuan_hoa_suy_nghi` gom mọi
+        # chỗ khai (`reasoning.effort`, kwargs) về MỘT `reasoning_effort` cấp cao
+        # nhất ⇒ chỉ đọc đúng chỗ ấy (test_1512 §6 giữ điều này).
+        _muc = than.get("reasoning_effort")
         if _muc:
             sach["reasoning_effort"] = _muc
         cong_cu = tool_dich.sang_openai_tools(than.get("tools"))
