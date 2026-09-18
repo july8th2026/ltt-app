@@ -762,3 +762,26 @@ thì ngừng backfill sau nó.
 đạt** trên 3.8 với chốt hôm nay: đang giữ 41.048 + 126.048 = 167.096; 55K cần 81.048
 ⇒ 248.144 > 212.992. Backfill trong ví dụ ấy cần giữ chỗ đầu ra ≤ 12.282. 110K vẫn
 chờ đúng (không 429) và chạy khi 100K xong (177.096 ≤ 212.992). `test_1229` chốt.
+
+## L-24 — Cửa sổ bảo trì máy B 18/09: cache RAM, checkpoint, `-b 512` cho 3.8, `-watch-config`
+
+Chủ dự án duyệt 18/09. Số đo đầy đủ: `artifacts/bench_hang_cho/KET_QUA_BAO_TRI_18_09.md`.
+`-c`/`-np` **không đổi** ⇒ rào vật lý cổng B và hồ sơ máy A không đổi, máy A không cần deploy.
+
+- **`--cache-ram 12288`** (cả hai model) — **không phải 24576** như `KET_QUA_CACHE_18_09` §7
+  đề nghị. 24576 đã được bật và **làm máy B ngừng bán ~10 phút**: RAM trống 85,0 → 44,2 GB
+  sau 28 hội thoại ~10K token, dưới sàn `LTT_LLM_RAM_TRONG_GB=48` của trọng tài cổng B ⇒
+  mọi lượt cả hai model 429 (`ban_trong_tai`) trong khi engine rảnh. Ngân sách:
+  (85 − 48) = 37 GB cho **cả hai** cache, trừ biên 13 GB ⇒ 12 GiB/model. Đo: 14/14 hội
+  thoại còn trúng 99,69 %, 0 lần đuổi (mặc định 8192 ≈ 9 hội thoại).
+  ⛔ Hai số `--cache-ram` (yaml) và `LTT_LLM_RAM_TRONG_GB` (gateway.env) là **một ràng buộc**.
+- **`--ctx-checkpoints 8`** — giữ: tỉ lệ trúng 99,69 %, 0 `do_reset`. Nhưng **không chứng
+  minh được** nó làm entry nhỏ lại (~0,82 GB/hội thoại, cũ ~0,87).
+- **`-b 512 -ub 512` chỉ 3.8** — giữ theo luật chủ dự án (phép (d) cải thiện rõ, TTFT < +15 %):
+  lượt đang sinh trong prefill 32K 1,4 → 4,4 tok/s, lặng max 2,08 → 0,75 s; prefill 32K
+  31,13 → 35,02 s (+12,5 %). Giá: tổng 3 luồng 125,3 → 105,0 tok/s (1 lần đo) — đo lại
+  trước khi áp cho 3.5.
+- **`-watch-config`** cho `LTTLlamaSwap` (`cai_dat_dich_vu.ps1`). ⚠️ llama-swap v250 nạp
+  lại **cả hai** model ở MỌI lần lưu yaml (kể cả chỉ đổi chú thích: PID cả hai
+  llama-server đổi, cache mất) — tiết kiệm restart dịch vụ, **không** tiết kiệm unload.
+  Nhả **một** model: `POST /api/models/unload/<model>` (đo: 3.5 nhả, 3.8 giữ PID và vẫn trả lời).

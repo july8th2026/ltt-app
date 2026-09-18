@@ -324,6 +324,25 @@ curl http://127.0.0.1:8299/health                      # cổng LLM thấy gì?
 Hai câu khác nhau — và chính chỗ lệch giữa chúng là thứ ta đi tìm. Ghi VRAM từng
 card vào `NHAT_KY.md`.
 
+### 2.3b Cửa sổ bảo trì 18/09 — cái gì đã đổi trên máy B (L-24)
+
+- `llama-swap.yaml`: `--cache-ram 12288` + `--ctx-checkpoints 8` cả hai model; `-b 512 -ub 512`
+  chỉ 3.8. `-c`/`-np` không đổi. Số: `artifacts/bench_hang_cho/KET_QUA_BAO_TRI_18_09.md`.
+- 🔴 **`--cache-ram` ăn RAM hệ thống, và cổng B có sàn RAM.** Trọng tài từ chối **mọi**
+  lượt khi RAM trống < `LTT_LLM_RAM_TRONG_GB` (48). Dấu hiệu: `/health` →
+  `trong_tai.ban=true`, `ly_do "RAM trong ... duoi nguong"`, `dem.ban_trong_tai` tăng, trong
+  khi `/slots` cả hai engine rảnh. Chữa ngay: `Restart-Service LTTLlamaSwap` (xả cache RAM),
+  rồi hạ `--cache-ram` trong kho. Trước khi nâng: (RAM trống lúc cache rỗng − 48) phải
+  ≥ 2 × `--cache-ram` + biên.
+- `LTTLlamaSwap` chạy `-watch-config`: lưu yaml ⇒ llama-swap tự nạp lại, **không** restart
+  dịch vụ — nhưng v250 **nạp lại cả hai model** (cache mất) ở mọi lần lưu. Vẫn đọc
+  `/running` sau khi lưu. Đổi `-c`/`-np` vẫn phải restart `LTTLlmGateway` (§2.1).
+- Nhả **một** model: `curl -X POST http://127.0.0.1:8280/api/models/unload/<model>`
+  (không dùng `GET /unload` — nhả tất cả). Nạp lại: một lượt gọi model đó (~16 s cho 3.5).
+- `deploy.ps1` bước 1c sẽ dừng khi yaml B lệch kho — kể cả lệch chỉ ở chú thích (18/09
+  trước cửa sổ: B thiếu các chú thích Phương án C/O-19, cờ trùng khít). So cờ trước khi
+  dùng `-GhiDeYamlLech`.
+
 ### 2.4 Máy A
 
 Theo `docs/16_CAP_NHAT_VA_DEPLOY.md`: đồng bộ trunk → gate xanh → ff →

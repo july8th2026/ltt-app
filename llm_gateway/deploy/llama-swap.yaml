@@ -292,6 +292,13 @@ models:
   #   vendor trong repo va deploy theo hash; khong con phu thuoc tep sua tay
   #   tren may B. Q131 dat server default xhigh dung ba muc chinh thuc cua 3.8.
   #
+  # `-b 512 -ub 512` (chi 3.8, cua so bao tri 18/09; `-ub` 512 von la mac dinh,
+  #   nen thay doi that la `-b` 2048 -> 512). Do qua production, prefill 32K chen
+  #   canh mot luot dang sinh chu (`KET_QUA_BAO_TRI_18_09.md`):
+  #     luot dang sinh trong prefill : 1,4 -> 4,4 tok/s ; lang max 2,08 -> 0,75 s
+  #     prefill 32K cua engine       : 31,13 -> 35,02 s (+12,5 %, duoi nguong 15 %)
+  #   ! Gia phai tra: tong 3 luong 125,3 -> 105,0 tok/s (1 lan do, nhieu nhieu) -
+  #     do lai truoc khi mo rong sang 3.5.
   # `--spec-type` dat o TUNG ho so chu khong o macro `CHUNG`: kha nang chay MTP
   # la thuoc tinh cua TEP GGUF (tep lmstudio khong co tensor MTP - G3b), khong
   # phai cua may. De o macro thi ho so thu ba them vao sau se thua huong mot co
@@ -313,7 +320,10 @@ models:
       --temp 1.0
       -c 221184
       -np 3
+      -b 512 -ub 512
       --cache-type-k q4_0 --cache-type-v q4_0
+      --cache-ram 12288
+      --ctx-checkpoints 8
       --spec-type draft-mtp --spec-draft-n-max 2
       --host 127.0.0.1 --port ${PORT}
     env:
@@ -401,6 +411,8 @@ models:
       -c 262144
       -np 3
       --cache-type-k q8_0 --cache-type-v q8_0
+      --cache-ram 12288
+      --ctx-checkpoints 8
       --spec-type draft-mtp --spec-draft-n-max 2
       --host 127.0.0.1 --port ${PORT}
     env:
@@ -559,16 +571,79 @@ groups:
 #    production; phien do da hoan nguyen yaml tren B ve ban goc (co trung kho).
 #    Tep nay dung. Doi yaml tren B de do: bao truoc, hoan nguyen ngay sau do.
 #
-# !! KHONG khai `--cache-ram`. Ke hoach Task 3.3 viet `--cache-ram <so chot o
-#    3.2>`, nhung cong 3.2 (G1..G5) KHONG chot con so nao - khong mot phep do
-#    nao cua no cham vao cache prompt tren RAM. Nen o day giu MAC DINH cua engine
-#    va noi thang ra rang no CHUA DUOC DO.
-#    Chap nhan duoc vi ba le: (1) mac dinh la con so cua chinh engine, khong phai
-#    con so ta bia; (2) no khong an VRAM - thu duy nhat chi con 445 MiB bien tren
-#    3090; (3) thu no doi la ti le tai dung prompt cache GIUA cac luot, va do
-#    duoc tu `/metrics` (`prompt_tokens_cached`) SAU khi deploy, tuc co duong do
-#    lai. Go mot con so bia vao day roi goi no la "chot" la dung cai bay ma tep
-#    nay da bi hai lan - xem hai khoi DINH CHINH o dau tep.
+# !! DINH CHINH 18/09/2026 - `--cache-ram` VA `--ctx-checkpoints` NAY DUOC KHAI.
+#
+#    Khoi cu o day viet: *"KHONG khai `--cache-ram` ... giu MAC DINH cua engine
+#    va noi thang ra rang no CHUA DUOC DO"*, va no liet ke dung dieu kien de doi
+#    y: *"thu no doi la ti le tai dung prompt cache GIUA cac luot, va do duoc ...
+#    SAU khi deploy, tuc co duong do lai"*.
+#
+#    Dieu kien do da THOA. Phep do 18/09 (`docs/ltt_llm_dual/artifacts/
+#    bench_hang_cho/KET_QUA_CACHE_18_09.md`) do tren DUNG cau hinh nay, qua
+#    production, doi chung bang `prompt eval time` cua chinh engine:
+#
+#      * cache tien to CHAY: 99,58-99,64 % token trung, TTFT 5,8-26,6 s -> ~1,0-1,9 s
+#      * va log may B ghi 8 LAN `making room for prompt cache entry, removing
+#        oldest entry` voi `size = 885.686 MiB` (va 410,8 MiB) trong chinh phien
+#        do => o ~886 MiB/hoi thoai, mac dinh 8192 MiB chi chua ~9 hoi thoai.
+#
+#    => `--cache-ram 12288` (12 GiB MOI model, 1,5x mac dinh).
+#
+#    !! VI SAO 12288 CHU KHONG PHAI 24576 - MOT SU CO THAT, DO DUOC 18/09.
+#
+#       Cua so bao tri 18/09 dat 24576 truoc, va no lam MAY B NGUNG BAN trong
+#       ~10 phut. Day khong phai suy dien, day la so do:
+#
+#         RAM may B: 191,9 GiB tong.
+#         hai model vua nap, cache RONG        -> con TRONG 85,0 GB
+#         sau 28 hoi thoai ~10K token (phep b) -> con TRONG 44,2 GB
+#           (llama-server 3.8: 15,7 -> 37,3 GB ; 3.5: 7,5 -> 26,5 GB)
+#
+#       Va `C:\ProgramData\LTTLlm\gateway.env` dat `LTT_LLM_RAM_TRONG_GB=48`:
+#       TRONG TAI cua chinh cong may B TU CHOI MOI LUOT khi RAM trong tut duoi
+#       nguong do. `/health` khai dung ly do: `"ban": true, "ly_do": "RAM trong
+#       44.4 GB duoi nguong 48 GB"`, `dem.ban_trong_tai = 36`. Ca HAI model chet,
+#       trong khi ca sau slot cua engine deu RANH (`/slots` is_processing false).
+#
+#       !! Day la cai bay dang nho: `--cache-ram` KHONG doi VRAM (dung), nen no
+#          bi xep la "rui ro Thap". Nhung no doi RAM HE THONG, va tren may nay RAM
+#          he thong CO MOT SAN CUNG do chinh cong doc. Hai co nam o hai tep khac
+#          nhau (`llama-swap.yaml` va `gateway.env`) va khong tep nao nhac tep kia.
+#
+#       Phep tinh ngan sach, lam lai khi doi mot trong hai so:
+#
+#         tran cho CA HAI cache = (RAM trong luc cache rong) - LTT_LLM_RAM_TRONG_GB
+#                               = 85,0 - 48 = 37 GB
+#         tru bien an toan ~13 GB (ComfyUI bat lai, RDP, viec AI khac tren B)
+#                               => 24 GB cho ca hai => 12 GiB MOI model
+#
+#       Worst case hai cache day: RAM trong >= 85 - 24 = 61 GB, tren san 13 GB.
+#
+#    !! DUNG NANG `--cache-ram` o day ma khong lam lai phep tinh tren, va khong
+#       kiem `LTT_LLM_RAM_TRONG_GB` tren may B. Hai so nay la MOT rang buoc.
+#
+#    => `--ctx-checkpoints 8` (mac dinh 32). Mot entry cache goi ca KV + trang
+#       thai draft MTP + MOI checkpoint; checkpoint model lai do duoc 112-150
+#       MiB/cai (upstream #28194, #24055), tuc 32 checkpoint ~4,8 GiB TRUOC phan
+#       KV - chinh la ly do entry phinh toi 886 MiB. Danh doi: mat do diem lui
+#       thua hon. Ti le trung sau khi doi DA duoc do lai, khong suy:
+#       `docs/ltt_llm_dual/artifacts/bench_hang_cho/KET_QUA_BAO_TRI_18_09.md`.
+#
+#    ! Ten co, doi chieu `llama-server.exe --help` cua chinh build b10883 dang
+#      chay (KHONG lay tu tri nho): `-cram, --cache-ram N` (MiB, mac dinh 8192)
+#      va `-ctxcp, --ctx-checkpoints, --swa-checkpoints N` (mac dinh 32).
+#      DINH CHINH mot cau o KET_QUA_CACHE_18_09 muc 4: `--swa-checkpoints` CO ton
+#      tai - no la BI DANH cua `--ctx-checkpoints`, khong phai mot co khac.
+#
+#    ! Va hai co nay dat o TUNG ho so chu khong o macro `CHUNG`, cung ly do voi
+#      `--spec-type`: muc cache hop ly la thuoc tinh cua tung model (kich thuoc
+#      entry khac nhau), va ho so thu ba them sau khong duoc thua huong mot con
+#      so do cho model khac.
+#
+# !! VAN GIU: KHONG them `--no-cache-idle-slots`. Chinh no tao ra ket luan sai
+#    "3.5 prompt cache 0/30 hits" ngay 17/09 (KET_QUA_CACHE_18_09 muc 4). Mac dinh
+#    cua engine la `--cache-idle-slots` BAT, va no "requires cache-ram" - tuc
+#    `--cache-ram 0` cung tat duong nay. Dung dat 0.
 # ==========================================================================
 
 hooks:

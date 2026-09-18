@@ -75,7 +75,24 @@ if (-not (Get-Service LTTLlamaSwap -ErrorAction SilentlyContinue)) {
     & $nssm install LTTLlamaSwap $swap | Out-Null
 }
 & $nssm set LTTLlamaSwap AppDirectory "$Goc\bin\llamaswap"                      | Out-Null
-& $nssm set LTTLlamaSwap AppParameters "--config `"$yaml`" --listen 127.0.0.1:8280" | Out-Null
+# `-watch-config` (them 18/09/2026, cua so bao tri may B):
+#
+#   Khong co no, llama-swap doc cau hinh DUNG MOT LAN luc khoi dong, nen moi lan
+#   chinh mot con so trong llama-swap.yaml deu phai `Restart-Service LTTLlamaSwap`
+#   - va restart la UNLOAD CA HAI model, ke ca model khong lien quan den thay doi.
+#   Voi co nay, luu tep yaml lam llama-swap nap lai cau hinh tai cho: ho so nao
+#   doi thi ho so do nha, ho so kia VAN DANG PHUC VU.
+#
+#   ! Do la ly do no dang o day chu khong o mot lan chay tay: nssm nuong dong lenh
+#     luc CAI, nen mot co them bang tay se mat AM THAM o lan go-cai-lai ke tiep
+#     (cung ho voi bay `env dich vu mat am tham` ghi trong llama-swap.yaml).
+#   ! Ap co nay can go-cai-lai dich vu tren may B (chinh script nay, quyen
+#     Administrator). Chep tep khong du.
+#   ! `-watch-config` nap lai CAU HINH; no KHONG lam thay doi `-c`/`-np` den duoc
+#     cong LTTLlmGateway - cong doc yaml luc KHOI DONG cua chinh no
+#     (`llm_gateway/vat_ly.py`). Doi `-c`/`-np` van phai restart ca hai dich vu
+#     theo dung thu tu o `docs/ltt_llm_dual/RUNBOOK.md` muc 2.1.
+& $nssm set LTTLlamaSwap AppParameters "--config `"$yaml`" --listen 127.0.0.1:8280 -watch-config" | Out-Null
 & $nssm set LTTLlamaSwap AppStdout "$Goc\logs\llamaswap.log"                    | Out-Null
 & $nssm set LTTLlamaSwap AppStderr "$Goc\logs\llamaswap_err.log"                | Out-Null
 & $nssm set LTTLlamaSwap AppRotateFiles 1                                       | Out-Null
