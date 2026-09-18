@@ -920,3 +920,49 @@ Không do np4 (np3 cũng có đường này; nhiều slot ⇒ xác suất va cao
 ⇒ **Việc tiếp:** xếp hàng phía A "một prefill dài mỗi lúc" (người mới không vào engine khi một
 cá voi đang prefill trên cùng model) — master plan E17. Chưa đo "TTFT người mới đến khi cá voi
 đang prefill" trực tiếp; đo nó khi làm E17.
+
+## L-29 — Một prefill dài mỗi lúc theo model, ở phía máy A (Task 17, 2026-09-18)
+
+Nhánh `phien/mot-prefill-dai`. Đóng "phát hiện đi kèm" của L-28 (`KET_QUA_C4_18_09.md` §5:
+luồng ~1,3K còn prefill khi prompt 32K vào ⇒ token đầu ở t=43,9 s = lúc prefill 32K xong).
+
+**Nguồn (đọc, không suy):**
+- llama.cpp ghim `91f6a6cf3` `tools/server/server-context.cpp`: `iterate(slots, …)` (:2730) đi
+  slot theo **thứ tự chỉ số**, nhồi token prompt tới đủ `n_batch` (:3110-3115, :3524) ⇒ slot đứng
+  trước chiếm cả lô mỗi vòng. Không có cờ chunked prefill/giới hạn prefill mỗi slot
+  (`TRA_CUU_B_UB_18_09.md`). Chọn slot theo LCP/LRU (`get_available_slot` :1547) — A không định được;
+  ghim `id_slot` làm mất prompt cache (#28139, mở) ⇒ loại.
+- Byte dữ liệu đầu từ B = token đầu: bản tin `is_begin` lúc bắt đầu prompt chỉ đẩy header, không có
+  `data` (`server-task.cpp` `to_json()` trả `nullptr`, :1028); `message_start` Anthropic phát ở
+  `n_decoded == 1` (:1325-1332). Cổng B chỉ thêm chú thích `: ping`.
+- vLLM giải cùng bài trong engine bằng chunked prefill: `long_prefill_token_threshold` cắt phần
+  prefill mỗi bước của lượt dài (`vllm/v1/core/sched/scheduler.py`) để lượt ngắn chen vào. llama.cpp
+  không có ⇒ phần làm được là **không cho whale vào engine lúc lượt khác còn prefill**.
+- Không thấy issue llama.cpp nào về công bằng prefill giữa slot (tìm 18/09: "prefill blocks other
+  slots / round robin prompt processing"); #27185 (HIP, slot không bao giờ được prefill) khác nguyên nhân.
+
+**Quyết định** (`HO_SO[m].mot_prefill_dai`, mặc định **bật** cả hai model):
+- `luat_nhan` luật **5b**: whale (`token_prefill_moi ≥ nguong_whale`, số chủ dự án L-23: 8.192 /
+  16.384 — không đổi) **không vào** khi còn lượt nào (mọi lớp) trên cùng tài nguyên chưa xong
+  prefill ⇒ `whale_cho_prefill`. Lượt **ngắn** vẫn vào ngay, kể cả khi whale đang prefill (giữ nó ở
+  A không làm nó nhanh hơn: không preempt được; vào engine còn có cơ may đứng slot trước).
+- "Xong prefill" = byte **dữ liệu** đầu (`luong._phat` → `admission.danh_dau_prefill_xong`, nay cho
+  **mọi** lượt stream: `la_whale=False`, `token_prefill_moi=0`) **hoặc** quá hạn ước
+  `LTT_LLM_SAN_HAN_PREFILL_S` (5) + token mới ÷ `toc_prefill_uoc` — tốc độ bảo thủ = điểm chậm nhất
+  đường cong §G4 ÷ 1,25 (C4: prefill chồng decode chậm 1,22× / 1,13×) ⇒ 3.8 ≈ 517, 3.5 = 1.080 tok/s.
+  Hạn dài hơn thật ⇒ sai về phía whale chờ lâu hơn, không về phía hai prefill dài chồng.
+- Hệ quả cho **cửa đồng bộ/job/planner** (không có byte đầu): whale đang giữ chỉ còn là whale tới hạn
+  ước; trước L-29 nó khoá whale kế **suốt lượt**, kể cả phần decode.
+- Cache: cửa stream dùng `uoc_moi` (phần tiền tố trúng không tính); cửa khác dùng vào ước (cận trên).
+- Không đói: lượt đang prefill là lượt ngắn (whale nối tiếp) nên xong trong vài giây/hạn ước; từ
+  `cho_whale_toi_da_s` (30 s) `WHALE_CHAN` chặn lượt mới ⇒ hàng prefill rút cạn. FIFO giữa whale:
+  whale trẻ không còn vượt whale già đang không bị chặn (luật 6b; lượt ngắn vẫn vượt như cũ).
+- `seq_cap`/ngân sách KV không đổi: 5b xét SAU luật 1–2, chỉ thêm lý do chờ cho whale.
+- Tắt được theo model: `mot_prefill_dai=False` ⇒ đúng hành vi trước L-29 (test_1490 đối chứng).
+- Quan sát: `llm_waiters.ly_do_cho = whale_cho_prefill`, bộ đếm `admission_whale_cho_prefill`
+  (theo lần xét), log `STREAM … ttfb=` sẵn có.
+- Mã: `luat_nhan.py` (5b, `_whale_dang_chay`, FIFO), `admission.py` (`prefill_theo_tai_nguyen` tra
+  theo tên tài nguyên như cư trú, ảnh chụp `dang_prefill`, `populate_existing`, `danh_dau_prefill_xong`
+  thay `xoa_co_whale`), `tham_so_da_luot.han_prefill_s`, `registry.AdmissionModel` (+2 trường),
+  `ngan_sach.HO_SO`/`toc_prefill_uoc`, `manifest._khai_admission`, `luong._phat`. Không đổi máy B,
+  không đổi CSDL (dùng lại `acquired_at`, `token_prefill_moi`). Test: `tests/test_1490_mot_prefill_dai.py`.

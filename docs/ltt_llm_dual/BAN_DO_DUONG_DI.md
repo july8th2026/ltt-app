@@ -1,4 +1,4 @@
-# BẢN ĐỒ ĐƯỜNG ĐI — LLM nội bộ (hai card, sáu suất)
+# BẢN ĐỒ ĐƯỜNG ĐI — LLM nội bộ (hai card, bảy suất)
 
 > **Đọc tệp này TRƯỚC khi sửa bất cứ gì trong đường LLM.** Nó trả lời đúng một
 > câu: *"một lượt thật đi qua những đâu, và mỗi chặng ai gác?"*
@@ -15,18 +15,18 @@
              máy A (nền tảng)                        máy B (GPU)
   khách ──► /api/v1/messages ──► phòng chờ ──► suất ──► llama-server
                                    │                      ├── ltt_38_3090  3 suất
-                                   │                      └── ltt_35_5060  3 suất
-                              người thứ 7
+                                   │                      └── ltt_35_5060  4 suất
+                              người thứ 8
                                xếp hàng
 ```
 
-**6 suất tổng** (3 mỗi model, hai khoá advisory độc lập). Người thứ bảy **xếp
+**7 suất tổng** (3.8: 3, 3.5: 4 từ L-28; hai khoá advisory độc lập). Người thứ tám **xếp
 hàng**, không bị từ chối — trừ khi phòng chờ chạm trần thì mới 429.
 
 | model | tài nguyên | suất | pool KV (A đặt chỗ) |
 |---|---|---|---|
 | `ltt-3.8` | `ltt_38_3090` | 3 | 212.992 |
-| `ltt-3.5` | `ltt_35_5060` | 3 | 253.952 |
+| `ltt-3.5` | `ltt_35_5060` | 4 | 253.952 |
 
 ⚠️ **Đừng gõ lại các con số này ở nơi khác.** Nguồn là **hồ sơ theo model**
 `apps/ltt_llm/ngan_sach.HO_SO[id]` (phương án C, 17/09/2026) → `manifest.py`
@@ -117,6 +117,17 @@ planner dùng `vào_ước`). Đặt chỗ > pool ⇒ **ném** `DatChoVuotPool` 
 job hỏng không thử lại) — không còn kẹp im lặng. Kẹp `max_tokens` theo ngữ cảnh
 (`tran_theo_ngu_canh`) tính trên **pool**, nên mọi lượt qua trần vào đều vừa pool.
 
+**Một prefill dài mỗi lúc (L-29, 18/09)** — `HO_SO[m].mot_prefill_dai` (mặc định bật) →
+`AdmissionModel.mot_prefill_dai/toc_prefill_tok_s` → `admission.prefill_theo_tai_nguyen`
+(tra theo tên tài nguyên, như cư trú). llama.cpp nhồi prompt vào lô theo **thứ tự slot**,
+nên lượt ngắn đang prefill chờ hết prefill của whale. Luật `luat_nhan` 5b: whale **không
+vào** khi còn lượt nào trên cùng tài nguyên chưa xong prefill (`whale_cho_prefill`); lượt
+ngắn vẫn vào ngay kể cả khi whale đang prefill. "Xong prefill" = byte dữ liệu đầu
+(`luong._phat` → `admission.danh_dau_prefill_xong`, MỌI lượt stream: `la_whale=False`,
+`token_prefill_moi=0`) **hoặc** quá hạn ước `san + token_mới / toc_prefill` (cửa đồng bộ/
+job, và lưới). Whale đang decode ở cửa đồng bộ/job thôi khoá whale kế sau hạn ước.
+Không đói: từ `cho_whale_toi_da_s` (30 s) `WHALE_CHAN` chặn lượt mới ⇒ prefill rút cạn.
+
 **Cửa đồng bộ** (`chat.py`, nhánh một-cục `streaming.py`): `cho_suat_dong_bo` →
 giữ tiền → `goi_dong_bo_co_xep_lai` (B 429 ⇒ xếp lại trong ngân sách thời gian
 cửa; mỗi lần gọi bọc `dieu_phoi.mang_dat_cho`) → nhả suất ĐANG giữ
@@ -200,6 +211,7 @@ một lần rồi mới quay lại hàng.
 | ước token vào (cận trên, A và B cùng một hàm; L-27) | `platform_core/llm/uoc_token.py` ≡ `llm_gateway/uoc_token.py` ← A: `apps/ltt_llm/features.uoc_token_vao` (qua `luong.uoc_tin_nhan`); B: `llm_gateway/ngan_sach.do_yeu_cau` · test_1470 |
 | phép tính đặt chỗ + cờ whale (MỘT chỗ, mọi cửa) | `platform_core/llm/tham_so_da_luot.py::luat_cho` |
 | luật nhận ai trước (ngân sách KV · backfill có chặn · whale) | `platform_core/llm/luat_nhan.py` |
+| một prefill dài mỗi lúc (luật 5b, hạn ước prefill, tín hiệu byte đầu; L-29) | `luat_nhan.WHALE_CHO_PREFILL` · `tham_so_da_luot.han_prefill_s` (env `LTT_LLM_SAN_HAN_PREFILL_S`) · `admission.danh_dau_prefill_xong` · `ngan_sach.toc_prefill_uoc` · test_1490 |
 | núm sức chứa theo tài nguyên (số suất, pool — chỉ hạ) | `platform_core/registry.py::ap_cau_hinh_admission` |
 | trần chờ, trần hàng, cửa sổ backfill, lão hoá, xếp lại sau 429 (env) | `platform_core/llm/tham_so_da_luot.py::doc` |
 | B 429 ⇒ xếp lại (stream / đồng bộ) | `runtime_noi_bo/luong.py::mo_co_xep_lai`, `goi_dong_bo_co_xep_lai` |
