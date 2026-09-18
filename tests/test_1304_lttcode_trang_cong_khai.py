@@ -115,6 +115,20 @@ def test_ban_chi_co_o_kenh_dev_khong_lo_ra_trang(may):
     assert "Sắp phát hành" in html
 
 
+def test_ban_da_keo_khong_bao_gio_len_nut_tai(may):
+    client, data = may
+    keo = dict(_ban("0.3.0", "LTTCODE_0.3.0_x64-setup.exe"), rollout_percent=0)
+    thu_hoi = dict(_ban("0.4.0", "LTTCODE_0.4.0_x64-setup.exe"), revoked=True)
+    _ghi(data, stable=[_ban("0.2.0", TEP), keo, thu_hoi])
+    html = client.get("/lttcode").text
+    assert f'href="/lttcode/dl/{TEP}"' in html
+    assert "0.3.0" not in html and "0.4.0" not in html
+    # Chỉ còn bản đã kéo ⇒ "Sắp phát hành", không nút.
+    _ghi(data, stable=[keo, thu_hoi])
+    html = client.get("/lttcode").text
+    assert "Sắp phát hành" in html and "/lttcode/dl/" not in html
+
+
 def test_ban_tieng_anh_co_tieu_de_tieng_anh(may):
     client, data = may
     _ghi(data, stable=[_ban("0.2.0", TEP)])
