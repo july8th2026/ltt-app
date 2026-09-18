@@ -154,11 +154,13 @@ def test_dang_openai_chat_prompt_completion_tokens():
 
 
 def test_cache_anthropic():
+    """Hình dạng THẬT (đo 16/09, b10883): `input_tokens` LOẠI TRỪ cache."""
     d = DemToken()
     d.nhin(_sse("message_start", {"message": {"usage": {
-        "input_tokens": 417, "cache_read_input_tokens": 413,
+        "input_tokens": 4, "cache_read_input_tokens": 413,
         "output_tokens": 0}}}))
-    assert d.su_dung().token_vao_cache == 413
+    u = d.su_dung()
+    assert (u.token_vao_cache, u.token_vao) == (413, 417)
 
 
 # ── 5. Rác không được làm đổ bộ đếm ────────────────────────────────────────
