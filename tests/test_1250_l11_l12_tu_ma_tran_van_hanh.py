@@ -229,6 +229,9 @@ def test_num_cau_hinh_di_qua_DUONG_THAT_cua_tool_ltt_llm(monkeypatch):
 
     tool = next(t for t in MANIFEST.tools if t.admission_theo_model)
     goc = tool.admission_cho("ltt-3.8")
+    # So suat 3.5 lay TRUOC khi num (3.8 np3, 3.5 np4 tu L-28 - hai so khac nhau;
+    # ban cu so voi `goc.slots` cua 3.8 nen chi dung khi hai model trung so slot).
+    goc_35 = tool.admission_cho("ltt-3.5").slots
     monkeypatch.setenv(ENV_SO_SUAT + goc.resource, "1")
     assert tool.admission_cho("ltt-3.8").slots == 1
-    assert tool.admission_cho("ltt-3.5").slots == goc.slots, "num cua 3.8 lan sang 3.5"
+    assert tool.admission_cho("ltt-3.5").slots == goc_35, "num cua 3.8 lan sang 3.5"

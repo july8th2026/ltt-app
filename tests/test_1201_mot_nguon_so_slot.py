@@ -50,6 +50,43 @@ def test_manifest_doc_tu_nguon():
             h.nguong_whale, h.dem_uoc, h.token_giu_moi_anh), model
 
 
+def test_gateway_TOKEN_GIU_MOI_ANH_khop_ho_so():
+    """Task 11 (18/09): bản sao ở máy B mang tên `TOKEN_GIU_MOI_ANH` và bằng
+    `HO_SO[m].token_giu_moi_anh` của MỌI hồ sơ. Tên cũ `TOKEN_MOI_ANH` (2.048)
+    trùng tên với `apps/ltt_llm/ngan_sach.TOKEN_MOI_ANH = 770` (số đo cho hoá
+    đơn) — hai số khác nghĩa, một tên ⇒ đã gỡ ở gateway."""
+    from llm_gateway import ngan_sach as ns_b
+
+    assert not hasattr(ns_b, "TOKEN_MOI_ANH"), "gateway con ten cu TOKEN_MOI_ANH"
+    for m, h in ngan_sach.HO_SO.items():
+        assert ns_b.TOKEN_GIU_MOI_ANH == h.token_giu_moi_anh, m
+    assert ngan_sach.TOKEN_MOI_ANH != ns_b.TOKEN_GIU_MOI_ANH  # hai nghĩa, hai số
+
+
+def test_tools_KHONG_con_khuyen_DONG_THOI_MAY_B():
+    """Task 11 (18/09): `DONG_THOI_MAY_B` đã gỡ (L-23) — công cụ đo không được
+    khuyên người chạy đặt lại nó (`tools/do_ngan_sach_chuyen_loi_thoai.py` từng in
+    *"can ... `DONG_THOI_MAY_B=1`"*). Số suất nay là `HO_SO[m].seq_cap`."""
+    lech = [f"{p.relative_to(GOC)}:{i}"
+            for p in sorted((GOC / "tools").rglob("*.py"))
+            for i, dong in enumerate(p.read_text(encoding="utf-8",
+                                                 errors="replace").splitlines(), 1)
+            if "DONG_THOI_MAY_B" in dong]
+    assert not lech, lech
+
+
+def test_tai_lieu_cu_GAN_da_go_L23():
+    """Task 11 (18/09): tài liệu còn tả env/công thức đã gỡ ở L-23 phải mang nhãn
+    *ĐÃ GỠ (L-23* — không thì người đọc sau đặt lại một biến không còn tác dụng."""
+    cam = (GOC / "docs" / "VLM_NOI_BO" / "CAM_CLI.md").read_text(encoding="utf-8")
+    for dong in cam.splitlines():
+        if "LTT_LLM_MAX_DONG_THOI" in dong:
+            assert "ĐÃ GỠ (L-23" in dong, dong[:120]
+    qd = (GOC / "docs" / "QUYET_DINH_NEN_TANG.md").read_text(encoding="utf-8")
+    i = qd.index("### Q120 ")
+    assert "ĐÃ GỠ (L-23" in qd[i:qd.index("\n###", i + 1)]
+
+
 def test_manifest_khong_go_so_tay():
     """`admission_slots=1` gõ tay là đúng cái chồng chéo phép kiểm này sinh ra để dẹp."""
     van = (GOC / "apps" / "ltt_llm" / "manifest.py").read_text(encoding="utf-8")
@@ -62,7 +99,8 @@ def test_yaml_so_slot_cua_TUNG_ho_so_khop_so_slot():
 
     Task 3.3 viết lại `llama-swap.yaml` với `-np 3` cho **cả hai** hồ sơ, khớp
     `-np 3` (L-14, `10_BENCHMARK_P3.md` §G1b: 4 slot ở ngữ cảnh đã
-    chốt tràn ~400 MiB sang RAM chủ trên 3090).
+    chốt tràn ~400 MiB sang RAM chủ trên 3090). 18/09 (C4, L-28) 3.5 lên `-np 4`
+    — phép kiểm này không gõ số, nó chỉ bắt yaml và `HO_SO` bằng nhau.
 
     ⚠️ VÀ HÌNH DẠNG CỦA PHÉP ĐO ĐỔI, nên phép kiểm phải đổi theo. Bản cũ đọc
        `--parallel` trong **macro `CHUNG`** — một con số dùng chung cho mọi hồ sơ.

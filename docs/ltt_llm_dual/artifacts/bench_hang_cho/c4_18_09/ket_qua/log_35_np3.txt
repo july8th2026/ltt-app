@@ -1,0 +1,17 @@
+===== qwen35-api np3 np=3 =====
+  warm-up 32K: prompt_n=32861 16.0 s -> ky_tu=99716
+  prefill32k #0: n=32791 16.03 s (2046 tok/s)
+  prefill32k #1: n=32840 16.10 s (2040 tok/s)
+  prefill32k #2: n=32830 16.11 s (2038 tok/s)
+  1 luong #0: 77.3 tok/s ra=1024 finish=length ttft=1.42
+  1 luong #1: 74.6 tok/s ra=1024 finish=length ttft=1.02
+  1 luong #2: 75.4 tok/s ra=1024 finish=length ttft=1.02
+  3 luong dot 0: moi luong 50.9/50.7/51.8 | tong 150.9 tok/s (3072 tok)
+  3 luong dot 1: moi luong 49.2/51.3/51.3 | tong 147.8 tok/s (3072 tok)
+  3 luong dot 2: moi luong 50.3/50.2/50.0 | tong 146.8 tok/s (3072 tok)
+  lang dot 0 (2 nho + 32K): lang max 1.25 s | nho trong prefill 2.6 (min 2.6) tok/s, truoc 62.3 | prefill 32K 17.8 s
+  lang dot 1 (2 nho + 32K): lang max 1.24 s | nho trong prefill 2.5 (min 2.3) tok/s, truoc 60.6 | prefill 32K 17.8 s
+  lang dot 2 (2 nho + 32K): lang max 1.20 s | nho trong prefill 2.2 (min 2.1) tok/s, truoc 61.7 | prefill 32K 17.9 s
+  mtp dot 0: stop c=205 r=508 n=16100 acc=72/132 | stop c=106 r=4154 n=16082 acc=597/846 | stop c=85 r=2175 n=16121 acc=315/490
+  mtp dot 1: length c=0 r=5031 n=16058 acc=692/1013 | length c=0 r=5274 n=16127 acc=665/1065 | length c=0 r=5130 n=16119 acc=682/1034
+TONG_HOP {"model": "qwen35-api", "nhan": "np3", "np": 3, "warm": {"status": 200, "loi": null, "finish": "length", "huy": false, "prompt_n": 32861, "prompt_ms": 16026.76, "prompt_tps": 2050.3832340410663, "pred_n": 1, "pred_ms": 0.001, "pred_tps": 0.0, "draft_n": null, "draft_acc": null, "content_kt": 0, "reasoning_kt": 8, "ttft": 16.176002979278564, "giay": 16.22322392463684}, "prefill32k_s": 16.1, "prefill32k_tps": 2040.33, "don_tps": 75.42, "don_ttft": 1.02, "tong_n": 3, "tong_tps": 147.78, "moi_luong_tps": 50.66, "moi_luong_min": 49.2, "lang_n_nho": 2, "lang_max_s": 1.24, "lang_trong_tps": 2.47, "lang_truoc_tps": 61.7, "lang_prefill_s": 17.85, "mtp_luot": 6, "mtp_rong_stop": 0, "mtp_rong_length": 3, "mtp_acc0": 0, "rong_27572_tat_ca": 0, "luot_tat_ca": 26, "giay": 394}

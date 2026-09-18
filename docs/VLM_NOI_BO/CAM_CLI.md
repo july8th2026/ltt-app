@@ -252,7 +252,7 @@ Hoặc bền hơn, trong `~/.claude/settings.json`:
 | `GET /api/hello` → `404` | thăm dò khởi động, tài liệu cho phép từ chối | không |
 | **Khám phá model** (`GET /v1/models`) | Claude Code chỉ giữ những `id` **chứa chữ `claude` hoặc `anthropic`**. `qwen38-api` không khớp ⇒ danh sách rỗng | nhẹ — đã đặt `ANTHROPIC_MODEL` tay rồi |
 | **Tên model trong phản hồi** | Cổng trả nguyên `H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf` | nhẹ ở LAN, **chặn đường B** — xem §6 |
-| **Đồng thời** | Cổng chỉ cho **2 lượt cùng lúc** (`LTT_LLM_MAX_DONG_THOI`). Claude Code chạy subagent song song ⇒ ăn `429` | ⚠️ vừa — xem dưới |
+| **Đồng thời** | ⛔ **ĐÃ GỠ (L-23, 17/09/2026)** — env `LTT_LLM_MAX_DONG_THOI` không còn; số suất là `HO_SO[m].seq_cap` của từng model (`apps/ltt_llm/ngan_sach.py`), máy A giữ hàng chờ. ~~Cổng chỉ cho **2 lượt cùng lúc** (`LTT_LLM_MAX_DONG_THOI`). Claude Code chạy subagent song song ⇒ ăn `429`~~ | lịch sử |
 | `anthropic-beta` | Cổng chuyển tiếp **nguyên xi** vì nó không đọc thân request. Đúng thứ tài liệu đòi | không |
 
 **Về đồng thời.**

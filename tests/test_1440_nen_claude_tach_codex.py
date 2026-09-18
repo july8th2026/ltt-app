@@ -166,6 +166,10 @@ def _kiem_profile_cap_nhat(p: dict, hs, cat: str) -> None:
     assert p["model_auto_compact_token_limit_scope"] == "total"
     assert p["model_catalog_json"] == cat
     assert p["agents"]["max_concurrent_threads_per_session"] == 1
+    # R-11 (18/09): LTT không phục vụ công cụ hosted `web_search` ⇒ profile tắt
+    # nó (`codex-rs/config/src/profile_toml.rs`: `web_search: Option<WebSearchMode>`,
+    # "disabled" | "cached" | "indexed" | "live").
+    assert p["web_search"] == "disabled"
     # Khoá của người dùng: còn nguyên — kể cả lựa chọn effort của họ.
     assert p["approval_policy"] == "never"
     assert p["model_reasoning_effort"] == "low"
@@ -243,3 +247,32 @@ def test_cam_cli_cap_nhat_profile_cu_giu_khoa_nguoi_dung(cc, tmp_path):
     # Chạy lại: không đổi thêm byte nào.
     cc.cam_codex("https://x.test", tt)
     assert prof.read_bytes() == van
+
+
+# ── R-11: profile MỚI cũng tắt `web_search` (cả hai bộ cài) ─────────────────
+
+def test_profile_moi_tat_web_search_sdk_va_cam_cli(cc, tmp_path):
+    for hs in (sdk.HO_SO_MODEL["ltt-3.8"], sdk.HO_SO_MODEL["ltt-3.5"]):
+        assert tomllib.loads(sdk._profile_codex(hs, tmp_path / "c.json"))[
+            "web_search"] == "disabled"
+    for hs in (cc.HO_SO_MODEL["ltt-3.8"], cc.HO_SO_MODEL["ltt-3.5"]):
+        assert tomllib.loads(cc._codex_profile(hs))["web_search"] == "disabled"
+
+
+def test_sdk_KHONG_cham_web_search_trong_config_toml_cua_khach(tmp_path):
+    """`config.toml` là của khách: khoá `web_search` của họ ở đó giữ nguyên;
+    LTT chỉ tắt trong profile LTT của mình."""
+    goc = tmp_path / ".codex"
+    goc.mkdir()
+    cfg = goc / "config.toml"
+    cfg.write_text('web_search = "live"\n', encoding="utf-8")
+    sdk.codex("https://x.test", goc)
+    assert tomllib.loads(cfg.read_text(encoding="utf-8"))["web_search"] == "live"
+
+def test_mau_cau_hinh_codex_trang_tai_lieu_tat_web_search():
+    """Mau xamples.py khach chep tu trang tai lieu cung tat web_search (R-11)."""
+    from platform_core.public_api import examples as ex
+    for m in ex.CODEX_MODEL_LIMITS:
+        for desktop in (False, True):
+            goc = ex._codex_model_root(m, desktop=desktop)
+            assert tomllib.loads(goc)["web_search"] == "disabled"

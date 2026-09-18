@@ -748,7 +748,7 @@ LOI_413 = (
      "gets to check again."),
     ("Your client is using the other model's profile",
      "Both models read images, but `ltt-3.5` has its own window and compact "
-     "threshold, separate from `ltt-3.8`. The 413 body carries the limit that "
+     "threshold, separate from `ltt-3.8`. The context-length error body carries the limit that "
      "actually applied, so read the number in the error rather than assuming."),
 )
 
@@ -1055,6 +1055,8 @@ def _codex_model_root(model: str, *, desktop: bool = False) -> str:
         f"# `Model metadata for {model} not found`, then substitutes an OpenAI\n"
         "# model name on its own internal calls — which our gate rejects.\n"
         f"model_catalog_json = '{TEP_CATALOG_CODEX}'\n"
+        "# LTT does not serve Codex's hosted web_search tool (R-11).\n"
+        'web_search = "disabled"\n'
         "\n[agents]\n"
         f'default_subagent_model = "{model}"\n'
         f'default_subagent_reasoning_effort = "{reasoning}"\n'

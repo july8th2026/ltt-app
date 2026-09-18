@@ -876,3 +876,47 @@ THIẾU ⇒ giữ chỗ nhỏ hơn thật ⇒ tràn KV giết luồng sau 200. A
 - Lớp chưa có trong ngữ liệu (chuỗi chữ thường ngẫu nhiên dài) chưa được đo — thêm vào
   ngữ liệu và đo trước khi tin hệ số của nó.
 - Thứ tự deploy: RUNBOOK §2.1a — B trước, A **ngay** sau.
+
+## L-28 — Số slot sau C4: LTT-3.5 `-np 3 → 4` ở `-c 262144`; LTT-3.8 giữ `-np 3 -c 221184` (2026-09-18)
+
+Phiên chính quyết 18/09 trên số đo cửa sổ C4 máy B (nhánh `phien/do-c4`, `4b0515c3`;
+`artifacts/bench_hang_cho/KET_QUA_C4_18_09.md`). Ấm, trung vị n=3, `timings` của engine,
+build `b10883-91f6a6cf3`, cờ như production, chỉ đổi `-np`/`-c`.
+
+**Số đo (tóm tắt):**
+
+| cấu hình | shared Δ sàn np3 | tổng N=np luồng | mỗi luồng / 1 luồng | lặng max cạnh 32K | prefill 32K | đúng đắn |
+|---|---|---|---|---|---|---|
+| 3.8 np3 c221184 (nền) | 0 | 93,4 | 36,3 / 62,6 = 58 % | 0,75 s | 29,57 s | 0 rỗng / 51 |
+| 3.8 np4 c221184 | **+242 MiB (tràn)** | — | — | — | — | — |
+| 3.8 np4 c204800 | −26 | 106,8 | 31,1 / 64,6 = **48 %** | 0,79 s | 29,95 s | 70 canary 0 rò |
+| 3.5 np3 c262144 (nền) | 0 | 147,8 | 50,7 / 75,4 = 67 % | 1,24 s | 16,10 s | 0 rỗng / 92 |
+| **3.5 np4 c262144** | **+6** | **169,9 (+15 %)** | 43,4 / 75,4 = **57,5 %** | 1,22 s | 16,10 s | 70 canary 0 rò, #27572 8/8 có content |
+| 3.5 np5 / np6 | +142 / +166 (tràn) | 157,6 (np5) | 47 % | 1,59 s | 21,69 s (−26 %) | — |
+
+**Quyết định:**
+- **LTT-3.5 (`qwen35-api`, 5060 Ti): `-np 4 -c 262144`.** VRAM sạch (biên card ~373 MiB),
+  0 rò, 0 rỗng, lặng và prefill không đổi, tổng +15 %. Trượt tiêu chí "mỗi luồng ≥ ~60 % đơn
+  luồng" 2,5 điểm (57,5 %) — **chấp nhận** vì: (1) thêm slot không làm chậm khi ≤ 3 luồng
+  (đơn luồng np4 = np3 = 75,4 tok/s; decode chia theo luồng đang chạy, không theo số slot) —
+  57,5 % chỉ xảy ra khi có người thứ tư; (2) ở np3 người thứ tư **chờ** một lượt đang chạy xong
+  (~1.024 token ở ~50 tok/s ≈ **20 s**) rồi mới có token đầu, tệ hơn nhận ngay 43 tok/s;
+  (3) 43,4 tok/s vẫn cao hơn mỗi luồng của 3.8 ở 3 luồng (36,3).
+- **LTT-3.8 (`qwen38-api`, 3090): giữ `-np 3 -c 221184`.** np4 ở 221.184 tràn shared +242 MiB;
+  np4 ở 204.800 sạch nhưng mỗi luồng còn 48 %, tổng chỉ +14 % và mất 16.384 token ngữ cảnh.
+- Ngân sách KV A không đổi (`-kvu`: một bể chung; `token_budget = -c − 8.192` = 253.952).
+  Thay đổi mã: `llm_gateway/deploy/llama-swap.yaml` (`qwen35-api` `-np 4`) + `apps/ltt_llm/
+  ngan_sach.py` (`HO_SO["qwen35-api"]` `np=4, seq_cap=4`) cùng một commit; `test_1201` đối
+  chiếu yaml ↔ `HO_SO` ↔ bộ đọc của cổng B, `test_1214` chốt số 3/4 theo quyết định này.
+- Ngân sách RAM máy B (chú thích yaml, `test_1293`): checkpoint sống 3.5 tăng 3 → 4 slot ×
+  8 × 0,15 GiB ⇒ biên trên sàn 24 còn ~4,6 GiB (trước ~6); `test_1293` vẫn đòi ≥ 4.
+- Thứ tự deploy: TĂNG sức chứa ⇒ **máy B trước** (yaml + restart cổng), rồi máy A (RUNBOOK §2.1).
+
+**Phát hiện đi kèm — chưa làm ở đây:** một prompt **ngắn còn đang prefill** khi prompt dài đến
+thì chờ **hết** prefill dài: đo ở 3.8 np4 c204800 (đợt 3 phép lặng) một luồng ~1,3K nhận token
+đầu ở t=43,9 s = lúc prefill 32K (~35–37 s) xong. Cơ chế: server nhồi token prompt theo thứ tự
+slot tới đủ `n_batch` — "cá voi" đứng trước chiếm cả lô mỗi vòng (`TRA_CUU_B_UB_18_09.md`).
+Không do np4 (np3 cũng có đường này; nhiều slot ⇒ xác suất va cao hơn), `-b` không cứu.
+⇒ **Việc tiếp:** xếp hàng phía A "một prefill dài mỗi lúc" (người mới không vào engine khi một
+cá voi đang prefill trên cùng model) — master plan E17. Chưa đo "TTFT người mới đến khi cá voi
+đang prefill" trực tiếp; đo nó khi làm E17.

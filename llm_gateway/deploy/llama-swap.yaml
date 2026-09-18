@@ -32,7 +32,7 @@
 #    3. Hai model duoi day la HAI MODEL KHAC NHAU tren HAI CARD KHAC NHAU:
 #
 #         qwen38-api  LTT-3.8  Qwen3.8-27B  RTX 3090     -c 221184 -np 3 KV q4_0
-#         qwen35-api  LTT-3.5  Qwen3.5-9B   RTX 5060 Ti  -c 262144 -np 3 KV q8_0
+#         qwen35-api  LTT-3.5  Qwen3.5-9B   RTX 5060 Ti  -c 262144 -np 4 KV q8_0
 #
 #       Chung KHONG chia nhau mot card, nen chung KHONG phai doi cho nhau - xem
 #       khoi `groups` o duoi de biet CO NAO lam nen dieu do.
@@ -49,7 +49,8 @@
 #        nang `-c` o day ma khong do lai: tran KV sang RAM chu khong bao mot loi
 #        nao, chi tut toc do khi thuc su cham vao phan da tran (xem muc 22/08).
 #
-#   qwen35-api (5060 Ti, 16.311 MiB)  -c 262144 -np 3 -kvu, KV q8_0, mmproj GPU
+#   qwen35-api (5060 Ti, 16.311 MiB)  -c 262144 -np 4 -kvu, KV q8_0, mmproj GPU
+#     (so VRAM ngay duoi la do 12/09 o -np 3; -np 4 do lai 18/09 - xem khoi C4)
 #     VRAM sau nap 13.481 MiB ; Shared 354 ; tran 0 ; bien 2.830 MiB (G3).
 #     Sau khi bat draft-mtp (MTP an 1.828 MiB): bien con 1.002 MiB - tren nguong
 #     700 MiB chu du an chot 12/09 ("may B chi chay he thong AI"; 5060 Ti luc
@@ -58,12 +59,18 @@
 #        1.002 co the tut vai tram MiB khi chu du an dieu khien may B qua RDP -
 #        phai DO, dung suy.
 #
-#   -np 3 cho ca hai, va day la MOT lua chon chu khong phai mot gioi han:
-#     3090 khong con cho cho slot thu 4 (262.144 x 4 tran ~400 MiB, G1), con
-#     5060 Ti thi DU cho 4 slot (bien 2.888 MiB, G3). Chu du an chon 3 cho ca
-#     hai "cho nhat quan 2 card" (12/09). Muon nang 3.5 len 4 thi doi MOT con so
-#     o `apps/ltt_llm/ngan_sach.py` (`admission_theo_model` khai theo tung
-#     model), roi doi `-np` o day - `tests/test_1201` buoc hai ben bang nhau.
+#   -np theo TUNG model (C4, 18/09 - DECISION_LOG L-28; so do:
+#   `docs/ltt_llm_dual/artifacts/bench_hang_cho/KET_QUA_C4_18_09.md`):
+#     qwen38-api -np 3 -c 221184 - GIU. np4 o 221184 tran shared +242 MiB; np4
+#       o 204800 sach nhung moi luong chi 48 % don luong (31,1 / 64,6 tok/s).
+#     qwen35-api -np 4 -c 262144 - NANG tu 3 (12/09 chon 3 "cho nhat quan 2
+#       card", khong phai gioi han). np4: shared +6 MiB (sach, bien card ~373
+#       MiB), 0 ro / 70 canary, 0 rong / 92, lang 1,22 s, prefill 32K 16,10 s
+#       khong doi, tong 147,8 -> 169,9 tok/s. Moi luong khi DU 4 luong 43,4
+#       tok/s = 57,5 % don luong (duoi muc tieu 60 %) - chap nhan vi chi xay ra
+#       khi co nguoi thu tu; o np3 nguoi thu tu CHO ~20 s. np5/np6 tran => bo.
+#     Doi `-np` o day => doi `HO_SO[m].np/seq_cap` o `apps/ltt_llm/ngan_sach.py`
+#     cung changeset - `tests/test_1201` buoc hai ben bang nhau.
 #
 #   --spec-type draft-mtp --spec-draft-n-max 2 - CONG G2 DAT tren ca hai:
 #     201 luot, 3 luong dong thoi, moi luot mot dau rieng => 0 tra loi rong,
@@ -409,7 +416,7 @@ models:
       --reasoning-budget 2048
       --temp 1.0
       -c 262144
-      -np 3
+      -np 4
       --cache-type-k q8_0 --cache-type-v q8_0
       --cache-ram 24576
       --ctx-checkpoints 8
@@ -614,10 +621,11 @@ groups:
 #    Phep tinh ngan sach (GiB, psutil.available; lam lai khi doi MOT trong ba so):
 #
 #      RAM trong luc cache rong (2 model nap)          85,0   (do 18/09)
-#      - 2 x (24 cache + 3 slot x 8 ckpt x 0,15)      -55,0
-#      = RAM trong xau nhat                            ~30
+#      - 3.8: 24 cache + 3 slot x 8 ckpt x 0,15       -27,6
+#      - 3.5: 24 cache + 4 slot x 8 ckpt x 0,15       -28,8   (np4 tu L-28)
+#      = RAM trong xau nhat                            ~28,6
 #      - LTT_LLM_RAM_TRONG_GB                          -24
-#      = bien tren san                                  ~6
+#      = bien tren san                                  ~4,6
 #
 #    `tests/test_1293_ngan_sach_ram_may_b.py` doi chieu yaml + `deploy.ps1` +
 #    `llm_gateway/config.py` bang phep tinh nay.

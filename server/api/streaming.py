@@ -32,7 +32,7 @@ import anyio
 from fastapi import Body, Depends, Request
 from starlette.background import BackgroundTask
 from starlette.concurrency import run_in_threadpool
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, Response, StreamingResponse
 from sqlalchemy.orm import Session
 
 from platform_core.public_api import examples, limits, metrics, policy, sandbox
@@ -42,7 +42,6 @@ from platform_core.public_api.errors import (THIEU_CREDIT_LOI,
                                              insufficient_credit,
                                              invalid_request,
                                              model_not_found,
-                                             payload_too_large,
                                              service_unavailable,
                                              thieu_credit_chi_tiet,
                                              tran_bi_vuot)
@@ -183,7 +182,7 @@ def register_streaming_routes(api, config, tag: str) -> None:
                   "and settled from the tokens actually produced."))
     def messages(request: Request, body: dict = Body(...),
                  principal: Principal = Depends(require_scope(SCOPE_JOBS_CREATE)),
-                 db: Session = Depends(get_db)) -> StreamingResponse:
+                 db: Session = Depends(get_db)) -> Response:
         return _cua("/v1/messages", body or {}, principal, db, config, request)
 
     @api.post("/responses", tags=[tag],
@@ -194,7 +193,7 @@ def register_streaming_routes(api, config, tag: str) -> None:
                   "wire_api = \"responses\". Requires \"stream\": true."))
     def responses(request: Request, body: dict = Body(...),
                   principal: Principal = Depends(require_scope(SCOPE_JOBS_CREATE)),
-                  db: Session = Depends(get_db)) -> StreamingResponse:
+                  db: Session = Depends(get_db)) -> Response:
         return _cua("/v1/responses", body or {}, principal, db, config, request)
 
 
@@ -228,6 +227,13 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         return JSONResponse(_thu_mot_cuc(ten), status_code=200, headers=_NO_STORE)
 
     vao_uoc = executor.estimate_input(tin)
+    # 🔴 "Quá dài" TRƯỚC mọi lỗi khác (spec §6, như `/chat/completions`): lời
+    #    khuyên "giảm max_tokens / dùng stream" vô nghĩa với một hội thoại mà
+    #    model không nhận nổi — và chỉ câu "prompt is too long" làm client tự nén.
+    tran_vao = _tran_vao_cua_model(ten)
+    if vao_uoc > tran_vao:
+        return su_kien_loi.loi_qua_dai_json(duong, token=int(vao_uoc),
+                                            tran=tran_vao, request=request)
     xin_ra = _max_tokens(than, vao_uoc)
     if not any(ten in than for ten in ("max_tokens", "max_output_tokens")):
         xin_ra = min(xin_ra, executor.mac_dinh_cho("sync"))
@@ -301,12 +307,11 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
     except phong_cho.KhachDi:
         return JSONResponse(_KHACH_NGAT, status_code=MA_KHACH_NGAT,
                             headers=_NO_STORE)
-    except cua_luong.KhongMoDuoc:
+    except cua_luong.KhongMoDuoc as e:
         # Đặt chỗ vượt cả pool KV (phương án C bất biến 1) — quá dài, 0 khoản giữ.
-        raise payload_too_large(
-            "The input exceeds the model's context limit. Drop or summarise "
-            "older turns and retry with a shorter conversation.",
-            limit_name="input_tokens", limit_value=pool) from None
+        return su_kien_loi.loi_qua_dai_json(
+            duong, token=e.token, tran=e.tran if e.tran is not None else pool,
+            request=request)
 
     def _release_ticket(ket_qua: str = "loi") -> None:
         """Nhả suất + ghi KẾT CỤC THẬT vào sổ lượt 30 ngày.
@@ -711,7 +716,7 @@ def _tran_vao_cua_model(alias: str) -> int:
 
 
 def _cua(duong: str, than: dict, principal: Principal, db: Session,
-         config, request=None) -> StreamingResponse:
+         config, request=None) -> Response:
     # `text.chat` phải qua đủ ba cổng của Q92. Có route riêng KHÔNG cho nó đi
     # vòng qua công tắc người vận hành — cửa mới không được là cửa sau.
     tool = require_tool(build_catalog(config), TOOL_CHAT, principal)
@@ -845,8 +850,9 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     #    HTTP: dịch bốn lỗi trước-byte-đầu sang mã trạng thái + `problem+json`.
     # ── multijob D-06: tool khai ngân sách KV ⇒ tiền kiểm TRƯỚC 200, rồi chờ trong
     #    SSE (nhịp tim), được nhận mới giữ tiền và mở luồng máy B. Bốn lỗi dưới
-    #    đây vẫn là MÃ HTTP vì chúng xảy ra trước 200 — đặc biệt 413: Codex và
-    #    Claude Code dựa vào nó để TỰ NÉN hội thoại (xem nhánh 413 bên dưới).
+    #    đây vẫn trả TRƯỚC 200 — riêng "quá dài" đi khuôn của từng giao thức
+    #    (`su_kien_loi.loi_qua_dai`, R-08): đó là thứ Codex và Claude Code dò để
+    #    TỰ NÉN hội thoại, không phải mã 413.
     try:
         tk = cua_luong.tien_kiem(
             db, user_id=principal.user_id, tool_name=TOOL_CHAT,
@@ -866,12 +872,13 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
         raise limits.execution_busy(
             e.tai_nguyen, retry_after=e.thu_lai_sau_s,
             reason=e.nguon) from None
-    except cua_luong.KhongMoDuoc:
-        raise payload_too_large(
-            "The input exceeds the model's context limit. Drop or summarise "
-            "older turns and retry with a shorter conversation.",
-            limit_name="input_tokens",
-            limit_value=_tran_vao_cua_model(ten)) from None
+    except cua_luong.KhongMoDuoc as e:
+        # R-08: đúng khuôn + câu của TỪNG giao thức (`su_kien_loi.loi_qua_dai`) —
+        # client nhận ra "quá dài" bằng câu chữ/khuôn, không bằng mã 413.
+        return su_kien_loi.loi_qua_dai(
+            duong, stream=True, token=e.token,
+            tran=e.tran if e.tran is not None else _tran_vao_cua_model(ten),
+            request=request)
     # Chỉ lượt qua tiền kiểm ngữ cảnh/credit/công suất mới tiêu hạn mức tạo.
     limits.enforce_create_rate(key_id=principal.key_id, config=config,
                                limits=resolved, user_id=principal.user_id)
@@ -955,6 +962,7 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     return StreamingResponse(
         cua_luong.bat_dong_bo_hoa(
             cua_luong.luong_co_cho(tk, loi_sse=su_kien_loi.loi_sse,
+                                   nhip_sse=su_kien_loi.bo_nhip(duong),
                                    trang_thai=getattr(request, "state", None),
                                    timeout_s=MO_LUONG_GIAY, so_tay=so_tay),
             _dong_nguon, _nha_suat),

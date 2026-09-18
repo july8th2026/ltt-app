@@ -21,22 +21,14 @@ Trọng số cố định (không đổi giữa các lần cập nhật): A 20 �
 |---|---|---|---|---|
 | A — Nền tảng LTT LLM (Phương án C) | 20 | 100 % | 20 | — |
 | B — LTTCODE 0.1.7/0.1.8 build + E2E + phát hành | 25 | 100 % | 25 | 0.1.8 dev + stable 100 % (18/09 chiều) |
-| C — Tối ưu máy B | 10 | 90 % | 9 | C4 cửa sổ đo số job + `-b/-ub` (chủ dự án cho đo ngay, chờ L2) |
-| E — LLM v2 | 25 | 69 % | 17,3 | 18 task: xong 0–6, 9, 13; gần xong 7 (L2 khép), 14 (còn eval live), 16 (còn eval 3.5); 8 mã xong chờ gate; 10 một phần; 11, 11b, 12, 15 chưa |
+| C — Tối ưu máy B | 10 | 97 % | 9,7 | C4 xong (3.8 giữ np3; 3.5 → np4, L-28); còn deploy np4 + đo `-b/-ub` |
+| E — LLM v2 | 25 | 86 % | 21,6 | 19 task (thêm 17): xong 0–9, 11, 11b, 13; gần xong 14, 15, 16 (đo lại); 10 một phần; 12 đang A/B; 17 chưa |
 | F — Dọn tài liệu | 10 | 10 % | 1 | 8 lô (~5 giờ) + F5 |
 | D — Tổng kết phiên | 10 | 0 % | 0 | L3, gộp, push, nhật ký, dọn worktree |
-| **Cả phiên** | 100 | | **~72,3 %** | |
+| **Cả phiên** | 100 | | **~77,3 %** | |
 
 > Các lần báo trước (70–74 %) ước không theo trọng số và **cao hơn thực tế**; từ bản này dùng bảng trên.
 
----|---|---|
-| A — Nền tảng LTT LLM (Phương án C) | **100 %** | — |
-| B — LTTCODE build + E2E + phát hành | **100 %** (bản 0.1.7) | 0.1.8 chọn mức suy nghĩ = E Task 13 |
-| C — Tối ưu máy B | **95 %** | Nâng số job song song (C4) |
-| E — LLM v2 (làm lại trên Phương án C) | **30 %** | 2, 5, 9 chờ gate/deploy; 3–4, 10 đang chạy; 6, 7, 8, 11, 12, 13 chưa |
-| D — Tổng kết phiên | **0 %** | L3, gộp, push, nhật ký |
-| F — Dọn tài liệu | **10 %** | 8 lô (~5 giờ) |
-| **Cả phiên** | **~74 %** | |
 
 ---
 
@@ -82,7 +74,7 @@ Trọng số cố định (không đổi giữa các lần cập nhật): A 20 �
 | C1 | Đo cache prompt hai model (99,6 %) | ✅ | `990ce48a` |
 | C2 | Bảo trì: `--ctx-checkpoints 8`, `-b 512` (3.8), `-watch-config` | ✅ | `dac815c5` |
 | C3 | Cache 24 GB/model + sàn RAM 24 GB (theo chủ dự án) | ✅ | L-25 (`c3b08e3c`…`cfb9d859`), gộp `main` `f1d949b5`; yaml kho = B `168e23c9`; RAM bão hoà 33–35 GiB, cửa sổ ảnh 57,7 GiB, 0 từ chối |
-| C4 | Cửa sổ đo (một lần nạp lại, ~90 phút): **số job song song với `-c` GIỮ NGUYÊN** — 3.5 np4/5/6 @262.144, 3.8 np4/5 @221.184 (KV dùng chung `-kvu` không đổi theo slot — `llama-context.cpp:290-291`; chỉ trạng thái DeltaNet + nháp MTP tăng theo slot, `llama-memory-recurrent.cpp:101`, đo 3.5 np3→np4 +150 MiB; chỉ giảm `-c` nếu tràn shared) + ma trận `-b/-ub`; tải đo giống thật (agent, prompt trúng cache, ra ngắn) | ⬜ | tiêu chí đặt trước; `TRA_CUU_B_UB_18_09.md`, `KET_QUA_DO_17_09.md` (lưu ý: np4/np5 của 3.8 ở đó đo với `-c` giảm — lựa chọn của phép đo, không phải bắt buộc) |
+| C4 | Cửa sổ đo (một lần nạp lại, ~90 phút): **số job song song với `-c` GIỮ NGUYÊN** — 3.5 np4/5/6 @262.144, 3.8 np4/5 @221.184 (KV dùng chung `-kvu` không đổi theo slot — `llama-context.cpp:290-291`; chỉ trạng thái DeltaNet + nháp MTP tăng theo slot, `llama-memory-recurrent.cpp:101`, đo 3.5 np3→np4 +150 MiB; chỉ giảm `-c` nếu tràn shared) + ma trận `-b/-ub`; tải đo giống thật (agent, prompt trúng cache, ra ngắn) | ✅ đo + mã (chờ gate + deploy B→A) | đo `4b0515c3` (`KET_QUA_C4_18_09.md`); L-28: **3.5 `-np 4` @262.144** (tổng +15 %, mỗi luồng 57,5 % khi đủ 4 — chấp nhận), **3.8 giữ `-np 3` @221.184**; mã `79c0a4a2` nhánh `phien/np4-ltt35` (yaml + `HO_SO` + test); ma trận `-b/-ub` hoãn |
 
 ## E — LLM v2 (plan `2026-09-18-ltt-llm-v2-…`, bản 2)
 
@@ -95,17 +87,18 @@ Trọng số cố định (không đổi giữa các lần cập nhật): A 20 �
 | 4 | Suy nghĩ do máy chủ quyết, gỡ ghi đè 3 cửa, sàn `max_tokens` 3.5 | ✅ deploy `fba73f1e` 12:43 (L2 5/5 thành phần) | `4eee6881`…`e78e243d`; L-26; 3.5 đồng bộ: máy chủ đặt budget = max_tokens − 512 (≤ 2.048), không trả 400 |
 | 5 | 3.8 khai đọc ảnh; test bản sao `-c` | ✅ deploy `488a64ed` 11:19 | `3f6ad81b` (auto_scan_video ghim 3.5 có lý do; 3.268 test đạt) |
 | 6 | B gia hạn suất theo tiến triển (bỏ thu cứng 1.200 s) | ✅ deploy cổng B 13:0x (L2 gateway:llm xanh, `c5f8980c`); /health có han_im_lang_s | sau Task 1 |
-| 7 | Ước token cận trên (code ×0,74, emoji ×0,16) + overhead template | 🔵 L2 (4 thành phần) | `0eb17a3b`…`a2976152`; L2 gateway:llm đỏ (máy quét bí mật bắt hex mẫu) → sửa `6b5f9471`, chạy lại xanh; app:ltt_llm xanh; deploy B trước rồi A |
-| 8 | 413 trước 200 đúng câu từng giao thức | 🔵 mã xong, chờ gate | `ed4cab13` (`phien/loi-413-giao-thuc`); Claude Code 2.1.274 báo "Prompt is too long" 0,7 s, Codex "ran out of room" 1,7 s (máy chủ cục bộ); còn L2 + deploy |
+| 7 | Ước token cận trên (code ×0,74, emoji ×0,16) + overhead template | ✅ deploy B 15:00 + A `51cdd73e` 15:03 | L2 4/4 trên `6b5f9471` (gateway:llm đỏ máy quét bí mật → sửa → xanh), L1 khép trên `51cdd73e`; nghiệm thu A 0 lệch/thiếu/thừa; B /health trần theo model |
+| 8 | 413 trước 200 đúng câu từng giao thức | ✅ deploy A `78100df2` 17:34 (+B cổng) | đợt 3; L1 đỏ `test_1480` (dùng hằng đã gỡ ở Task 7) → sửa `9dc0b1c8` → L1 xanh; production: 200K ký tự ⇒ 400 "prompt is too long: 200289 tokens > 186368" trước khi tới B |
 | 9 | Tách ngưỡng nén Claude Code/Codex; bộ cài cập nhật khoá LTT | ✅ deploy `488a64ed` 11:19 | `1b143291`, `2c3fbebd` (đo Claude Code 2.1.274: trừ 33k; nay nén 138.458/176.141); phần `examples.py` giao Task 3–4 |
-| 10 | Công cụ kiểm định kỳ | 🔵 canary cô lập ✅ 0/432 rò rỉ (216/model, kịch bản #27148 + comment 2) — nhánh `phien/canary-co-lap`, `KIEM_CO_LAP_18_09.md`; còn: needle 100–200K trên 3.8 (#27756), `cong_mtp.py`, bộ chấm A/B | giờ vắng |
-| 11 | Dọn bản sao gõ tay + tài liệu sai | ⬜ | rải theo task |
-| 11b | Công cụ gate: `gate.py --pham-vi` nhận NHIỀU thành phần một lượt (hợp tệp test, chạy bước chung một lần) — đợt 2 phải chạy 5 lượt L2 nối nhau (~75 phút) vì L1 từ chối khi chạm tệp dùng chung | ⬜ | ~2 giờ, có test cho `thanh_phan`/`gate` |
-| 12 | Chất lượng 3.5: áp thông số lấy mẫu theo model card + A/B | ⬜ | sau Task 4, 10 |
+| 10 | Công cụ kiểm định kỳ (+ R-16) | ✅ mã xong (nhánh `phien/kiem-dinh-ky` `19845e9f`, chờ gộp) | canary 0/432 + np4 0/140; needle 100–200K 3.8 đạt 8/8 (#27756); `cong_mtp` 3.5 đạt, 3.8 1/48 rỗng (cần E3 đối chứng — cửa sổ sau); p95 TTFT 32–33 s do prefill dài; RUNBOOK §4b lịch chạy lại |
+| 11 | Dọn bản sao gõ tay + tài liệu sai | ✅ deploy đợt 3 `78100df2` | `0f279550`…`e72b6062`; mục adapter LTTCODE ở Task 15 (`eda8313`) |
+| 11b | `gate.py --pham-vi` nhận NHIỀU thành phần một lượt | ✅ gộp `main` `78100df2` | `ce67afc4`; dùng ngay cho L2 np4 (5 thành phần một lượt) |
+| 12 | Chất lượng 3.5 theo model card + A/B (+ R-10, R-17) | ✅ không đổi production | 402 lượt: presence 1,5 / temp 0,6 / budget 4096 không thắng rõ; **R-10: giữ `base_instructions` rỗng** (58→47, p=0,007); R-17: `preserve_thinking` bị llama.cpp che (`preserve_reasoning`), đo lại với nhiều lượt người dùng |
 | 13 | LTTCODE chọn mức suy nghĩ theo model (0.1.8) | ✅ 0.1.8 dev 100 %, kiểm GUI trên máy thật | LTTCODEAPP `a629cd5`, `a224365`, `299e7d5` |
 | 14 | LTTCODE: agent `subagent_doc_nhanh` chạy 3.5 (chỉ đọc, không mạng) + trần in-flight theo model (3.8: 3, 3.5: 3) + skill chia việc + eval 20 việc/10 ca chèn lệnh | 🔵 đang làm (chủ dự án duyệt 18/09) | nhánh LTTCODEAPP `phien/subagent-doc-nhanh`; tăng 3 → 6 request song song |
-| 15 | LTTCODE: trần phần cố định **giữ 25k token** + trần mới **số công cụ luôn nạp ≤ 50 (mặc định) / ≤ 60 (tối đa)** trong `check_composition`; đo gọi công cụ 3.5/3.8 với bộ 50–60 công cụ thật (gộp eval Task 14) | ⬜ (duyệt 18/09) | lý do: tài liệu Anthropic — chọn công cụ kém đi quá 30–50 công cụ; hiện 49–59; mở rộng bằng skill (0 schema). Ruflo: KHÔNG cài (314 công cụ MCP, nhắm Claude Code không phải DSH, #653/#2968/#2992) |
-| 16 | LTTCODE: rà và nâng bộ skill ngang/hơn Claude Code | 🔵 đang rà (chỉ đọc) | bảng thiếu/thừa + giấy phép + phép đo trúng skill |
+| 15 | LTTCODE: trần 25k token + ≤ 50/60 công cụ | ✅ mã (chờ eval live) | `phien/tran-so-cong-cu`: `2cf4d25`, `eda8313`, `407ebe7`, `0ae47f7`; mặc định 52 → **49**, đủ MCP **57** nhờ plugin `mcp-resources-ltt` (DIV-003) |
+| 16 | LTTCODE: nâng bộ skill ngang/hơn Claude Code | ✅ mã (nhánh `phien/nang-skill` `4076b19`) | 29 skill (10 cộng đồng ghim commit); 3.8 98,9 %, âm tính 0/24; 3.5 62,1 % (ít tự gọi `skill` — giới hạn model, dòng định tuyến làm tệ hơn ⇒ gỡ); việc sau: harness gợi ý skill theo từ khoá |
+| 17 | Xếp hàng A: một prefill dài mỗi lúc (luồng nhỏ chờ sau prefill 32K ~35 s, C4) | ⬜ | L-28 "phát hiện đi kèm"; đo TTFT người mới đến khi cá voi đang prefill |
 | — | R-06, 07, 10, 11, 14, 16, 17, 18, 23 của phiên cũ | ⬜ | xác minh từng mục trên tag lưu trữ |
 
 ## F — Dọn tài liệu toàn hệ thống (chủ dự án yêu cầu 18/09; làm SAU khi xong E)

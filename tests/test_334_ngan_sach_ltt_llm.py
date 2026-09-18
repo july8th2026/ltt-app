@@ -372,6 +372,11 @@ class TestBanSaoConLai:
         (dùng làm giá trị lùi khi client không khai `max_tokens`)."""
         assert self._so("TOKEN_RA_TOI_DA",
                         "server/api/tools.py") == ngan_sach.TOKEN_RA_TRAN
+        # Task 11 (18/09): chú thích phải dẫn đúng nguồn chân lý, không phải tên
+        # nhập lại `MAX_TOKENS_TRAN` của `manifest.py`.
+        van = (pathlib.Path(__file__).resolve().parents[1] / "server" / "api"
+               / "tools.py").read_text(encoding="utf-8")
+        assert "ngan_sach.TOKEN_RA_TRAN" in van
 
     def test_deploy_ps1_KHONG_chua_so_go_tay(self):
         """🔴 BẢN SAO NGUY HIỂM NHẤT, VÌ NÓ **GHI ĐÈ** CHỨ KHÔNG CHỈ HIỂN THỊ.
