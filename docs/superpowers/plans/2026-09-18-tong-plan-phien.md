@@ -90,14 +90,14 @@ Trọng số cố định (không đổi giữa các lần cập nhật): A 20 �
 | 7 | Ước token cận trên (code ×0,74, emoji ×0,16) + overhead template | ✅ deploy B 15:00 + A `51cdd73e` 15:03 | L2 4/4 trên `6b5f9471` (gateway:llm đỏ máy quét bí mật → sửa → xanh), L1 khép trên `51cdd73e`; nghiệm thu A 0 lệch/thiếu/thừa; B /health trần theo model |
 | 8 | 413 trước 200 đúng câu từng giao thức | ✅ deploy A `78100df2` 17:34 (+B cổng) | đợt 3; L1 đỏ `test_1480` (dùng hằng đã gỡ ở Task 7) → sửa `9dc0b1c8` → L1 xanh; production: 200K ký tự ⇒ 400 "prompt is too long: 200289 tokens > 186368" trước khi tới B |
 | 9 | Tách ngưỡng nén Claude Code/Codex; bộ cài cập nhật khoá LTT | ✅ deploy `488a64ed` 11:19 | `1b143291`, `2c3fbebd` (đo Claude Code 2.1.274: trừ 33k; nay nén 138.458/176.141); phần `examples.py` giao Task 3–4 |
-| 10 | Công cụ kiểm định kỳ | 🔵 canary cô lập ✅ 0/432 rò rỉ (216/model, kịch bản #27148 + comment 2) — nhánh `phien/canary-co-lap`, `KIEM_CO_LAP_18_09.md`; còn: needle 100–200K trên 3.8 (#27756), `cong_mtp.py`, bộ chấm A/B | giờ vắng |
+| 10 | Công cụ kiểm định kỳ (+ R-16) | ✅ mã xong (nhánh `phien/kiem-dinh-ky` `19845e9f`, chờ gộp) | canary 0/432 + np4 0/140; needle 100–200K 3.8 đạt 8/8 (#27756); `cong_mtp` 3.5 đạt, 3.8 1/48 rỗng (cần E3 đối chứng — cửa sổ sau); p95 TTFT 32–33 s do prefill dài; RUNBOOK §4b lịch chạy lại |
 | 11 | Dọn bản sao gõ tay + tài liệu sai | ✅ deploy đợt 3 `78100df2` | `0f279550`…`e72b6062`; mục adapter LTTCODE ở Task 15 (`eda8313`) |
 | 11b | `gate.py --pham-vi` nhận NHIỀU thành phần một lượt | ✅ gộp `main` `78100df2` | `ce67afc4`; dùng ngay cho L2 np4 (5 thành phần một lượt) |
-| 12 | Chất lượng 3.5: thông số lấy mẫu theo model card + A/B (+ R-10, R-17) | 🔵 phần offline đang làm | A/B gọi B chờ C4 + eval xong |
+| 12 | Chất lượng 3.5 theo model card + A/B (+ R-10, R-17) | ✅ không đổi production | 402 lượt: presence 1,5 / temp 0,6 / budget 4096 không thắng rõ; **R-10: giữ `base_instructions` rỗng** (58→47, p=0,007); R-17: `preserve_thinking` bị llama.cpp che (`preserve_reasoning`), đo lại với nhiều lượt người dùng |
 | 13 | LTTCODE chọn mức suy nghĩ theo model (0.1.8) | ✅ 0.1.8 dev 100 %, kiểm GUI trên máy thật | LTTCODEAPP `a629cd5`, `a224365`, `299e7d5` |
 | 14 | LTTCODE: agent `subagent_doc_nhanh` chạy 3.5 (chỉ đọc, không mạng) + trần in-flight theo model (3.8: 3, 3.5: 3) + skill chia việc + eval 20 việc/10 ca chèn lệnh | 🔵 đang làm (chủ dự án duyệt 18/09) | nhánh LTTCODEAPP `phien/subagent-doc-nhanh`; tăng 3 → 6 request song song |
 | 15 | LTTCODE: trần 25k token + ≤ 50/60 công cụ | ✅ mã (chờ eval live) | `phien/tran-so-cong-cu`: `2cf4d25`, `eda8313`, `407ebe7`, `0ae47f7`; mặc định 52 → **49**, đủ MCP **57** nhờ plugin `mcp-resources-ltt` (DIV-003) |
-| 16 | LTTCODE: nâng bộ skill ngang/hơn Claude Code | 🔵 mã xong, chờ eval 3.5 | `phien/nang-skill`: 10 skill cộng đồng ghim commit (getsentry, openai, anthropics Apache/MIT) + `pwsh-windows` tự viết; eval 109 câu |
+| 16 | LTTCODE: nâng bộ skill ngang/hơn Claude Code | ✅ mã (nhánh `phien/nang-skill` `4076b19`) | 29 skill (10 cộng đồng ghim commit); 3.8 98,9 %, âm tính 0/24; 3.5 62,1 % (ít tự gọi `skill` — giới hạn model, dòng định tuyến làm tệ hơn ⇒ gỡ); việc sau: harness gợi ý skill theo từ khoá |
 | — | R-06, 07, 10, 11, 14, 16, 17, 18, 23 của phiên cũ | ⬜ | xác minh từng mục trên tag lưu trữ |
 
 ## F — Dọn tài liệu toàn hệ thống (chủ dự án yêu cầu 18/09; làm SAU khi xong E)
