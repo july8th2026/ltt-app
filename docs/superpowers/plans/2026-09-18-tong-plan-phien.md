@@ -69,7 +69,7 @@
 | C1 | Đo cache prompt hai model (99,6 %) | ✅ | `990ce48a` |
 | C2 | Bảo trì: `--ctx-checkpoints 8`, `-b 512` (3.8), `-watch-config` | ✅ | `dac815c5` |
 | C3 | Cache 24 GB/model + sàn RAM 24 GB (theo chủ dự án) | ✅ | L-25 (`c3b08e3c`…`cfb9d859`), gộp `main` `f1d949b5`; yaml kho = B `168e23c9`; RAM bão hoà 33–35 GiB, cửa sổ ảnh 57,7 GiB, 0 từ chối |
-| C4 | Nâng số job song song | ⬜ | sau C3, cần đo lại |
+| C4 | Cửa sổ đo: số job song song (3.5 np3/4/5, 3.8 np3/4 @-c 200.704) + `-b/-ub` (ma trận 4 cấu hình/model) — một lần nạp lại, ~90 phút | ⬜ | tiêu chí đặt trước; căn cứ `TRA_CUU_B_UB_18_09.md`, `KET_QUA_DO_17_09.md` |
 
 ## E — LLM v2 (plan `2026-09-18-ltt-llm-v2-…`, bản 2)
 
