@@ -69,7 +69,7 @@
 | C1 | Đo cache prompt hai model (99,6 %) | ✅ | `990ce48a` |
 | C2 | Bảo trì: `--ctx-checkpoints 8`, `-b 512` (3.8), `-watch-config` | ✅ | `dac815c5` |
 | C3 | Cache 24 GB/model + sàn RAM 24 GB (theo chủ dự án) | ✅ | L-25 (`c3b08e3c`…`cfb9d859`), gộp `main` `f1d949b5`; yaml kho = B `168e23c9`; RAM bão hoà 33–35 GiB, cửa sổ ảnh 57,7 GiB, 0 từ chối |
-| C4 | Cửa sổ đo: số job song song (3.5 np3/4/5, 3.8 np3/4 @-c 200.704) + `-b/-ub` (ma trận 4 cấu hình/model) — một lần nạp lại, ~90 phút | ⬜ | tiêu chí đặt trước; căn cứ `TRA_CUU_B_UB_18_09.md`, `KET_QUA_DO_17_09.md` |
+| C4 | Cửa sổ đo (một lần nạp lại, ~90 phút): **số job song song với `-c` GIỮ NGUYÊN** — 3.5 np4/5/6 @262.144, 3.8 np4/5 @221.184 (KV dùng chung `-kvu` không đổi theo slot — `llama-context.cpp:290-291`; chỉ trạng thái DeltaNet + nháp MTP tăng theo slot, `llama-memory-recurrent.cpp:101`, đo 3.5 np3→np4 +150 MiB; chỉ giảm `-c` nếu tràn shared) + ma trận `-b/-ub`; tải đo giống thật (agent, prompt trúng cache, ra ngắn) | ⬜ | tiêu chí đặt trước; `TRA_CUU_B_UB_18_09.md`, `KET_QUA_DO_17_09.md` (lưu ý: np4/np5 của 3.8 ở đó đo với `-c` giảm — lựa chọn của phép đo, không phải bắt buộc) |
 
 ## E — LLM v2 (plan `2026-09-18-ltt-llm-v2-…`, bản 2)
 
