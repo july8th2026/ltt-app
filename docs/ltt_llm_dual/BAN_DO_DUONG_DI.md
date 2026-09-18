@@ -200,6 +200,9 @@ một lần rồi mới quay lại hàng.
 | rào vật lý máy B (`-c`, `-np`, trần vào theo model, giữ chỗ) | `llm_gateway/vat_ly.py` ← `llama-swap.yaml` |
 | thứ tự deploy khi đổi sức chứa (tăng ⇒ B trước, giảm ⇒ A trước) | `docs/ltt_llm_dual/RUNBOOK.md` §2.1 |
 | tiền | `platform_core/llm/thanh_toan.py` |
+| suy nghĩ: gỡ ghi đè budget/bật-tắt + thẻ `<\|think_*\|>`, chuẩn hoá effort theo model (MỘT hàm, mọi cửa; L-26) | `runtime_noi_bo/luong.py::chuan_hoa_suy_nghi` ← gọi từ `tien_kiem`, `chuan_bi`, `streaming._cua` (một cục), `apps/ltt_llm/features.kiem_tham_so` (đồng bộ/job) |
+| mức suy nghĩ từng model (catalog `/api/v1/models`, catalog Codex, LTTCODE) | `platform_core/public_api/examples.py` (`CODEX_MODEL_REASONING*`, `muc_suy_nghi`) |
+| budget suy nghĩ | chỉ `--reasoning-budget` trong `llama-swap.yaml`; sàn `max_tokens` 3.5 = budget + 512 (`ngan_sach.BUDGET_SUY_NGHI_35`, `test_1430` đối chiếu yaml) |
 | sổ lỗi đã đóng/còn mở | `docs/ltt_llm_dual/SO_LOI_DO_TAI.md` |
 
 ## 7. Ba cái bẫy đã cắn thật — đừng dẫm lại

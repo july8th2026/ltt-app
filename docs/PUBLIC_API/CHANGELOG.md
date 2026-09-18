@@ -21,6 +21,27 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-18 — `text.chat`: suy nghĩ do máy chủ quyết, effort theo từng model (FIXED)
+
+- **Cái gì đổi:** (L-26) câu mô tả `reasoning_effort` của `text.chat` — và vì thế
+  `contract_hash` (`9d23c67b17de285f` → `472e9d40dd829e38`); enum giữ nguyên
+  `low|medium|xhigh`. Hành vi ở mọi cửa (`/chat/completions`, `/messages`,
+  `/responses`, job): `ltt-3.8` nhận thêm `high`/`max` (⇒ `xhigh`) và `minimal`
+  (⇒ `low`); `ltt-3.5` chỉ có một chế độ (suy nghĩ bật) — effort được nhận và bỏ
+  qua, cửa stream/một-cục trả header `X-LTT-Effort-Bo-Qua: 1`; `none`/`off` là 400
+  ở mọi model. Các trường ghi đè budget suy nghĩ (`reasoning_budget_tokens`,
+  `thinking_budget_tokens`, `reasoning_budget_message`, `reasoning_control`,
+  `thinking`, `chat_template_kwargs.enable_thinking|preserve_thinking|…`) và thẻ
+  `<|think_*|>` trong nội dung bị gỡ trước máy B. `GET /api/v1/models` khai
+  `default_reasoning_level`/`supported_reasoning_levels` theo model (3.8: xhigh,
+  ba mức; 3.5: một mức `medium` = "Thinking on", hiển thị như nhãn cố định).
+  Sàn `max_tokens` của `ltt-3.5` = budget suy nghĩ + 512 (2.560).
+- **Có phá vỡ tương thích không:** không với client dùng đúng tài liệu. `ltt-3.5`
+  ở `POST /api/v1/chat/completions` với `max_tokens` mặc định (1.024) nay nhận 400
+  chỉ đường sang stream/job thay vì một câu trả lời có thể rỗng.
+- **Phải làm gì:** client chọn mức đọc danh sách từ `/api/v1/models`; với
+  `ltt-3.5` đừng gửi `reasoning_effort`, và dùng stream hoặc job.
+
 ## 2026-09-16 — `speech.ltt`: mô tả `language` nói đúng hành vi (FIXED)
 
 - **Cái gì đổi:** chỉ câu mô tả trường `language` — và vì thế `contract_hash` của
