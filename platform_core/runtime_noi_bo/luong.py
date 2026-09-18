@@ -300,9 +300,16 @@ def _dat_budget_may_chu(gui: dict, duong: str, executor, ten: str,
 _KHOA_GHI_DE_SUY_NGHI = ("reasoning_budget_tokens", "thinking_budget_tokens",
                          "reasoning_budget_message", "reasoning_control",
                          "thinking")
-#: Khoá `chat_template_kwargs` mà template v22.5 dùng để bật/tắt/giữ suy nghĩ.
-_KHOA_TEMPLATE_SUY_NGHI = ("enable_thinking", "preserve_thinking",
-                           "preserve_reasoning", "auto_disable_thinking_with_tools")
+#: Khoá `chat_template_kwargs` DUY NHẤT khách được gửi (T1c, 19/09) — và nó
+#: cũng chỉ là một chỗ khai effort, được kiểm rồi dời về `reasoning_effort`.
+#: ⛔ DANH SÁCH CHO PHÉP, không phải danh sách cấm: template v22.5 còn đọc
+#:    `enable_thinking`, `preserve_*`, `auto_disable_thinking_with_tools` (bật/tắt
+#:    suy nghĩ — L-26), `tool_call_format` (`json` ⇒ MỌI tool call thành văn bản
+#:    thường, im lặng — docs/CHATLTT_V3/01_M1_NATIVE_HAY_GENERIC.md §5),
+#:    `add_vision_id`, `max_tool_arg_chars`, `max_tool_response_chars` (dòng 2-16).
+#:    Bản trước chỉ cấm bốn khoá suy nghĩ ⇒ `tool_call_format` của khách đi thẳng
+#:    lên máy B. Khoá template mới nào cũng mặc nhiên bị gỡ.
+_KHOA_TEMPLATE_KHACH_DUOC_GUI = ("reasoning_effort",)
 #: Thẻ điều khiển trong NỘI DUNG (template v22.5 dòng 35-77).
 _THE_SUY_NGHI = re.compile(r"<\|think_[a-z]+\|>")
 #: Trường mang nội dung hội thoại của ba giao thức.
@@ -359,12 +366,18 @@ def chuan_hoa_suy_nghi(than: dict, model_id: str) -> tuple[dict, bool]:
     `bo_qua=True` khi khách gửi effort cho model cố định (3.5) và nó đã bị gỡ —
     cửa trả header `X-LTT-Effort-Bo-Qua: 1`.
 
-    1. Gỡ mọi trường ghi đè budget/bật-tắt (`_KHOA_GHI_DE_SUY_NGHI`, khoá template
-       `_KHOA_TEMPLATE_SUY_NGHI`) và thẻ `<|think_*|>` trong nội dung.
+    1. Gỡ mọi trường ghi đè budget/bật-tắt (`_KHOA_GHI_DE_SUY_NGHI`), MỌI khoá
+       `chat_template_kwargs` ngoài `_KHOA_TEMPLATE_KHACH_DUOC_GUI` và thẻ
+       `<|think_*|>` trong nội dung.
     2. Effort (ba chỗ: `reasoning_effort`, Responses `reasoning.effort`,
        `chat_template_kwargs.reasoning_effort`): `none|off` ⇒ `ThamSoSai` (400) ở
        mọi model; 3.8 chuẩn hoá `minimal→low`, `high|max→xhigh`, lạ ⇒ 400; 3.5
        gỡ (template dùng nhánh mặc định = prompt chính thức).
+    3. (T1c) Kết quả mang effort ở MỘT chỗ: `reasoning_effort` cấp cao nhất —
+       trường `/chat/completions` (cửa đồng bộ, job, `_mot_cuc`) đọc. Ưu tiên khi
+       khách khai nhiều chỗ: cấp cao nhất > `reasoning.effort` > kwargs (mọi chỗ
+       vẫn được kiểm). Cửa nào engine đọc chỗ khác thì `dat_effort_cho_engine`
+       dời đi — không cửa nào tự đoán lại từ ba chỗ.
 
     ⛔ Không sửa `than` đầu vào. Idempotent: gọi hai lần cho cùng kết quả.
     """
@@ -375,45 +388,64 @@ def chuan_hoa_suy_nghi(than: dict, model_id: str) -> tuple[dict, bool]:
     for k in _KHOA_NOI_DUNG:
         if k in gui:
             gui[k] = _bo_the(gui[k])
-    bo_qua = False
 
-    ctk = gui.get("chat_template_kwargs")
-    if isinstance(ctk, dict):
-        ctk = {k: v for k, v in ctk.items() if k not in _KHOA_TEMPLATE_SUY_NGHI}
-        if ctk.get("reasoning_effort") is not None:
-            muc = _muc_effort(ctk["reasoning_effort"], alias)
-            if muc is None:
-                ctk.pop("reasoning_effort")
-                bo_qua = True
-            else:
-                ctk["reasoning_effort"] = muc
-        if ctk:
-            gui["chat_template_kwargs"] = ctk
-        else:
-            gui.pop("chat_template_kwargs")
-
+    # Thu effort từ ba chỗ (thứ tự = ưu tiên), gỡ khỏi chỗ cũ.
+    ung_vien: list[Any] = []
     if gui.get("reasoning_effort") is not None:
-        muc = _muc_effort(gui["reasoning_effort"], alias)
-        if muc is None:
-            gui.pop("reasoning_effort")
-            bo_qua = True
-        else:
-            gui["reasoning_effort"] = muc
-
+        ung_vien.append(gui["reasoning_effort"])
+    gui.pop("reasoning_effort", None)
     rs = gui.get("reasoning")
-    if isinstance(rs, dict) and rs.get("effort") is not None:
-        muc = _muc_effort(rs["effort"], alias)
-        rs = dict(rs)
-        if muc is None:
-            rs.pop("effort")
-            bo_qua = True
-        else:
-            rs["effort"] = muc
+    if isinstance(rs, dict) and "effort" in rs:
+        if rs["effort"] is not None:
+            ung_vien.append(rs["effort"])
+        rs = {k: v for k, v in rs.items() if k != "effort"}
         if rs:
             gui["reasoning"] = rs
         else:
             gui.pop("reasoning")
+    ctk = gui.pop("chat_template_kwargs", None)
+    if isinstance(ctk, dict) and ctk.get("reasoning_effort") is not None:
+        ung_vien.append(ctk["reasoning_effort"])
+    # `ctk` KHÔNG quay lại thân: khoá cho phép duy nhất là effort, đã thu ở trên.
+
+    # Kiểm MỌI giá trị (một `none` ở chỗ phụ vẫn là 400), giữ cái ưu tiên nhất.
+    cac_muc = [_muc_effort(gt, alias) for gt in ung_vien]
+    bo_qua = bool(ung_vien) and cac_muc[0] is None
+    if cac_muc and cac_muc[0] is not None:
+        gui["reasoning_effort"] = cac_muc[0]
     return gui, bo_qua
+
+
+def dat_effort_cho_engine(gui: dict, duong: str) -> None:
+    """Dời effort đã chuẩn hoá (`reasoning_effort` cấp cao nhất) vào TRƯỜNG mà
+    llama.cpp của CỬA ấy thật sự đưa tới template. Gọi SAU `chuan_hoa_suy_nghi`.
+
+    🔴 T1c (đo 18-19/09, engine B, n=5/ô, cùng prompt): `/v1/messages` với
+       `reasoning_effort=low` cấp cao nhất ⇒ 74 token prompt, BẰNG xhigh — bộ chọn
+       effort của LTTCODE vô tác dụng. Nguồn, llama.cpp 91f6a6cf3:
+       * `server-chat.cpp:579` `server_chat_convert_anthropic_to_oai` dựng thân
+         MỚI, chỉ chép `temperature|top_p|top_k|stream|chat_template_kwargs` ⇒
+         `reasoning_effort` bị vứt ⇒ template dùng `--reasoning-effort xhigh`
+         (`common/arg.cpp:3695-3704` ghi vào `default_template_kwargs`).
+       * `server-common.cpp:1308-1312` gộp `chat_template_kwargs` của request ĐÈ
+         lên mặc định máy chủ ⇒ `chat_template_kwargs.reasoning_effort=low` ⇒ 62
+         token (medium 36, xhigh 74): TỚI template (v22.5 dòng 19-29, 83-86, 217).
+       * `/v1/responses` chép NGUYÊN thân (`server-chat.cpp:15`) và `/v1/chat/
+         completions` đọc `reasoning_effort` cấp cao nhất (`server-common.cpp:
+         1325-1332`) ⇒ cả hai đã tới template (đo: low 62) — giữ nguyên.
+
+    ⭐ Không effort ⇒ không đặt gì: mặc định của máy B (`--reasoning-effort
+       xhigh`) trùng `NGHI_MAC_DINH_THEO_MODEL` — máy chủ không bịa một mức.
+    ⚠️ Effort nằm ở ĐẦU system prompt (template dòng 217) ⇒ đổi effort giữa các
+       lượt của cùng một phiên là mất prompt cache cả hội thoại. Máy chủ KHÔNG tự
+       đổi effort cho request phụ (nén, tiêu đề…); client phải gửi cùng mức.
+    """
+    if not duong.endswith("/messages"):
+        return
+    muc = gui.pop("reasoning_effort", None)
+    if muc is None:
+        return
+    gui["chat_template_kwargs"] = {"reasoning_effort": muc}
 
 
 @dataclass
@@ -551,6 +583,7 @@ def tien_kiem(db, *, user_id: str, tool_name: str, than: dict, duong: str,
         gui.update(_kiem_sinh(than))
     # Suy nghĩ do máy chủ quyết (L-26): gỡ ghi đè budget/bật-tắt, chuẩn hoá effort.
     gui, effort_bo_qua = chuan_hoa_suy_nghi(gui, ten)
+    dat_effort_cho_engine(gui, duong)  # T1c: đúng trường llama.cpp của cửa đọc
     gui["model"] = executor.model_id(ten)
     request_id = thanh_toan.ma_luot(tien_to)
     vao_uoc = int(executor.estimate_input(tin))
@@ -1175,6 +1208,7 @@ def chuan_bi(db, *, user_id: str, tool_name: str, than: dict, duong: str,
     if callable(_kiem_sinh):
         gui.update(_kiem_sinh(than))
     gui, _bo_qua = chuan_hoa_suy_nghi(gui, ten)  # L-26, cùng hàm với `tien_kiem`
+    dat_effort_cho_engine(gui, duong)  # T1c
     gui["model"] = executor.model_id(ten)
 
     # ⛔ KHÔNG tự ghép chuỗi: `credit_entries.job_id` là VARCHAR(36).
