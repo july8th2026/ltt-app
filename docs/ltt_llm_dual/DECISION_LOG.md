@@ -841,3 +841,38 @@ theo khuyến nghị chính thức của model"*. Plan v2 Task 3 + 4. (L-25 dàn
 - Header `X-LTT-Effort-Bo-Qua: 1` có ở cả ba cửa (`/messages`, `/responses`, `/chat/completions`).
 - Nhánh một cục `/messages|/responses` nay chuyển effort đã chuẩn hoá của 3.8 xuống máy B (trước bị rơi im lặng).
 - `CLAUDE_CODE_AUTO_COMPACT_WINDOW` của Claude Local = cửa sổ công bố (171.458 / 209.141), vì Claude Code 2.1.274 tự trừ `min(MAX_OUTPUT, 20000) + 13000` (đo Task 9); Codex giữ `model_auto_compact_token_limit` 138.690 / 176.373. Bảng preset trang hướng dẫn dẫn xuất từ `examples.claude_local_preset`.
+
+## L-27 — Ước token vào là CẬN TRÊN có chứng minh; A và B cùng một hàm (2026-09-18)
+
+Plan v2 Task 7 (R-2 Phương án C). Nhánh `phien/uoc-token-can-tren`.
+
+**Căn cứ (đo, không suy):** ngữ liệu `tests/fixtures/ngu_lieu_token` (9cc80640, số
+engine = MAX qua qwen38-api/qwen35-api). Bộ ước cũ `ký tự / 2,5` ÷ thật: văn xuôi Anh
+2,25 · Markdown Việt 1,02 · code 0,74 · chữ Trung 0,42 · hex 0,45 · emoji 0,16 — ước
+THIẾU ⇒ giữ chỗ nhỏ hơn thật ⇒ tràn KV giết luồng sau 200. A và B còn bỏ sót
+`tool_calls` / `function_call.arguments`, và không cộng khuôn chat.
+
+**Quyết định:**
+- MỘT hàm `uoc_token.py`, hai bản giống hệt từng byte (`platform_core/llm/`,
+  `llm_gateway/` — B không có `platform_core`, Q102); test_1470 so nguồn. Gỡ
+  `KY_TU_MOI_TOKEN`.
+- Chứng minh (docstring): BPE byte-level ⇒ token ≤ byte UTF-8; chữ số = 1 token; siết
+  theo lớp ký tự không dưới số đo lớn nhất của lớp; mọi hệ số ≤ 1 token/byte.
+- Khuôn chat = 256 + 16/tin (số đo 52 + 7 × ≥ 1,25) + **17/tool**: số đo 17/09 "45/tool"
+  là BYTE; đổi sang token bằng chính hệ số lớp (vỏ tool 35 byte = 13 token ⇒ ⌈45×13/35⌉).
+  Hằng 64/tool cũ vừa lẫn byte với token vừa cộng chồng lên schema ⇒ tools_60 1,79×.
+- A và B gom CẢ tin nhắn; `uoc_tin_nhan` bọc nguyên `system`/`instructions`; khối tool
+  là kiểu `KhoiTool` (khách không giả được). A ≥ B cho cùng body (A ⊆ B).
+- B: số đếm thật `/tokenize` cộng thêm khuôn chat.
+
+**Kết quả (ước ÷ thật):** numbers 1,03 · hex 1,06 · tool_calls_history 1,07 · base64
+1,08 · JSON 1,09 · code 1,20 · stacktrace 1,21 · tools_60 1,27 · emoji 1,30 · Nhật 1,30
+· Việt 1,36 · Trung 1,37 · Anh 1,37.
+
+**Hệ quả cần biết:**
+- Code dày: giữ chỗ ~+54 % so với trước (trước là THIẾU); code kiểu kho này ~+12 %; văn
+  xuôi Anh −39 %. Lượt code ~160K+ token thật nay 413 sớm ở A (client tự nén) thay vì
+  tràn sau 200. Cờ whale (`uoc_moi`) cũng nhận khuôn ⇒ hơi nhiều whale hơn.
+- Lớp chưa có trong ngữ liệu (chuỗi chữ thường ngẫu nhiên dài) chưa được đo — thêm vào
+  ngữ liệu và đo trước khi tin hệ số của nó.
+- Thứ tự deploy: RUNBOOK §2.1a — B trước, A **ngay** sau.

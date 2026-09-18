@@ -233,7 +233,7 @@ def test_6_cua_STREAM_tien_kiem_gan_whale_theo_nguong_CUA_MODEL(db_c):
 
     ket = {}
     for alias in ("ltt-3.8", "ltt-3.5"):
-        noi_dung = "x" * int(muc_tieu * ngan_sach.KY_TU_MOI_TOKEN)
+        noi_dung = "x" * muc_tieu  # "x" liền = 1 token/ký tự trong uoc_token (từ con không nguyên âm = cận byte)
         # Mỗi model một nội dung khác nhau: `uoc_moi` nhớ tiền tố theo người dùng.
         noi_dung = alias + noi_dung
         tk = luong.tien_kiem(db_c, user_id=u.id, tool_name="text.chat",

@@ -71,35 +71,20 @@ model đang nạp, năm loại nội dung:
 """
 from __future__ import annotations
 
-import json
 import re
 from dataclasses import dataclass, replace
 from typing import Any
 
-#: Số ký tự trên một token, dùng để ƯỚC LƯỢNG.
+from . import uoc_token as UT
+
+#: ⭐ PHÉP ƯỚC TOKEN là `llm_gateway/uoc_token.py` — CẬN TRÊN có chứng minh (docstring
+#:    tệp ấy), bản giống hệt từng byte của `platform_core/llm/uoc_token.py` máy A
+#:    (test_1470). A giữ chỗ bằng đúng hàm B đếm ⇒ "A nhận ⇒ B nhận" (A ⊆ B).
 #:
-#: 🔴 LÝ LẼ CHỌN 2,5 ĐÃ ĐƯỢC ĐO, VÀ NÓ SAI. Chú thích cũ ở đây viết: *"Tokenizer
-#:    của Qwen nuốt khoảng 3,5–4 ký tự tiếng Anh cho một token, và **ít hơn hẳn
-#:    với tiếng Việt có dấu**"*. Đo 03/09 bằng `/tokenize` của chính model:
-#:
-#:        tieng Anh van xuoi   5,00 ky tu/token
-#:        JSON kieu Codex      3,55
-#:        ma Python            3,17
-#:        tieng Viet co dau    3,14      <- KHONG "it hon han"
-#:
-#:    Tiếng Việt là **3,14**, không phải dưới 2,5. Nên 2,5 không bảo thủ *vừa
-#:    đủ* cho tiếng Việt — nó bảo thủ **quá** cho mọi thứ, và quá nhất (2,0×) ở
-#:    đúng thứ Codex gửi.
-#:
-#: ⚠️ Đây không phải hằng của model. Nó là một mốc an toàn cho ĐƯỜNG NHANH:
-#:    "ước vừa trần" ⇒ nhận ngay, không cần đếm. Giữ nó THẤP là đúng cho việc
-#:    đó — ước thấp hơn thật thì mới nguy hiểm.
-#:
-#: ⛔ ĐỪNG NÂNG NÓ ĐỂ "LỌT ĐƯỢC NHIỀU YÊU CẦU HƠN". Đó là chọn một con số khác
-#:    cũng chưa ai đo, và nó đổi sai số sang **chiều nguy hiểm** cho mọi loại nội
-#:    dung cùng lúc. Việc cho lọt nhiều hơn thuộc nhánh hai của `kiem_tra` —
-#:    đếm THẬT, chính xác, chỉ khi cần.
-KY_TU_MOI_TOKEN = 2.5
+#: 🔴 ĐÃ GỠ `KY_TU_MOI_TOKEN = 2.5` (Task 7, 18/09/2026). Đoạn cũ ở đây cãi rằng
+#:    2,5 "bảo thủ quá cho mọi thứ" — đúng với văn xuôi Anh (2,25×), SAI với code
+#:    (0,74×), chữ Trung (0,42×), hex (0,45×), emoji (0,16×): ước THIẾU ⇒ đường
+#:    nhanh "ước vừa trần ⇒ nhận ngay" cho lọt yêu cầu tràn KV.
 
 #: Token quy cho MỘT ảnh khi chưa biết độ phân giải thật.
 #:
@@ -147,12 +132,15 @@ class KetQuaDo:
     #:    được" trông y hệt một yêu cầu rỗng — và một yêu cầu rỗng thì vừa mọi
     #:    trần, tức lỗi sẽ nghiêng về chiều nguy hiểm.
     token_that: "int | None" = None
+    #: Token KHUÔN CHAT (đã nằm trong `token_van_ban`). `/tokenize` chỉ đếm các đoạn
+    #: văn bản, không đếm khuôn — nên số THẬT phải cộng lại phần này.
+    token_khuon: int = 0
 
     @property
     def token_vao(self) -> int:
         """Token vào **dùng để phán xử**: số thật nếu đã đếm, không thì số ước."""
         if self.token_that is not None:
-            return self.token_that + self.token_anh
+            return self.token_that + self.token_khuon + self.token_anh
         return self.token_van_ban + self.token_anh
 
     @property
@@ -160,13 +148,6 @@ class KetQuaDo:
         """Số ƯỚC, luôn có. Dùng cho log và header — để đọc log biết được ta
         phán xử bằng số nào."""
         return self.token_van_ban + self.token_anh
-
-
-def _uoc_token_tong(doan: "list[str] | tuple[str, ...]") -> int:
-    ky_tu = sum(len(s) for s in doan if s)
-    if not ky_tu:
-        return 0
-    return int(ky_tu / KY_TU_MOI_TOKEN) + 1
 
 
 def _do_anh(url: str) -> int:
@@ -186,107 +167,31 @@ def _do_anh(url: str) -> int:
     return (len(phan[1]) * 3) // 4
 
 
-def _duyet_noi_dung(noi_dung: Any, ra: list[str], anh: list[str]) -> None:
-    """Gom mọi chuỗi văn bản và mọi ảnh trong một `content` bất kỳ.
-
-    Nhận cả ba hình dạng đang lưu hành, vì cổng phục vụ ba giao thức:
-    OpenAI Chat (`{"type": "image_url", "image_url": {"url": ...}}`),
-    OpenAI Responses (`{"type": "input_image", "image_url": ...}`),
-    Anthropic Messages (`{"type": "image", "source": {"data": ...}}`).
-    """
-    if noi_dung is None:
-        return
-    if isinstance(noi_dung, str):
-        ra.append(noi_dung)
-        return
-    if isinstance(noi_dung, list):
-        for phan in noi_dung:
-            _duyet_noi_dung(phan, ra, anh)
-        return
-    if not isinstance(noi_dung, dict):
-        return
-
-    loai = str(noi_dung.get("type") or "")
-
-    if loai in ("text", "input_text", "output_text"):
-        ra.append(str(noi_dung.get("text") or ""))
-        return
-
-    if loai == "image_url":                       # OpenAI Chat
-        gt = noi_dung.get("image_url")
-        anh.append(str(gt.get("url") if isinstance(gt, dict) else gt or ""))
-        return
-
-    if loai == "input_image":                     # OpenAI Responses
-        anh.append(str(noi_dung.get("image_url") or ""))
-        return
-
-    if loai == "image":                           # Anthropic Messages
-        nguon = noi_dung.get("source") or {}
-        if isinstance(nguon, dict):
-            du_lieu = nguon.get("data")
-            if du_lieu:
-                # Anthropic gửi base64 trần, không có tiền tố `data:`.
-                anh.append("data:;base64," + str(du_lieu))
-            else:
-                anh.append(str(nguon.get("url") or ""))
-        return
-
-    # Kiểu lạ: vẫn gom mọi chuỗi bên trong để không đếm thiếu.
-    for gt in noi_dung.values():
-        if isinstance(gt, (str, list, dict)):
-            _duyet_noi_dung(gt, ra, anh)
-
-
 def do_yeu_cau(body: dict[str, Any]) -> KetQuaDo:
-    """Đo một body của bất kỳ giao thức nào trong ba giao thức cổng phục vụ."""
+    """Đo một body của bất kỳ giao thức nào trong ba giao thức cổng phục vụ.
+
+    ⭐ Gom văn bản bằng `uoc_token.gom_than` — CÙNG hàm máy A dùng (qua bản sao
+       `platform_core/llm/uoc_token.py`): đi mọi chuỗi của mọi tin nhắn (cả
+       `tool_calls`, `tool_use.input`, `function_call.arguments`), khối tool đếm
+       nguyên JSON gọn, ảnh tách riêng. `token_van_ban` = văn bản + khuôn chat.
+    """
     van_ban: list[str] = []
     anh: list[str] = []
-
-    # `system` của Anthropic nằm ngoài `messages`.
-    _duyet_noi_dung(body.get("system"), van_ban, anh)
-    # `instructions` của Responses API cũng vậy.
-    _duyet_noi_dung(body.get("instructions"), van_ban, anh)
-
-    for khoa in ("messages", "input"):
-        gt = body.get(khoa)
-        if isinstance(gt, str):
-            van_ban.append(gt)
-        elif isinstance(gt, list):
-            for tin in gt:
-                if isinstance(tin, dict):
-                    _duyet_noi_dung(tin.get("content", tin), van_ban, anh)
-                else:
-                    _duyet_noi_dung(tin, van_ban, anh)
-
-    # Mô tả tool cũng chiếm ngữ cảnh, và với Codex thì chúng **không nhỏ**.
-    #
-    # ⭐ ĐẾM NGUYÊN JSON, CÙNG CÁCH MÁY A (`runtime_noi_bo/luong.uoc_tin_nhan`:
-    #    `json.dumps(tools, ensure_ascii=False)`). Bản cũ chỉ gom CHUỖI trong schema
-    #    — bỏ khoá, ngoặc, dấu phẩy — nên với vài chục schema của một CLI agent B
-    #    ước thấp hơn A hàng nghìn token. Vắng `X-LTT-Token-Dat` thì phép giữ chỗ
-    #    của B phải ≥ A − DEM_UOC (kế hoạch §3.3 mục 3); hai bộ ước khác hình dạng
-    #    thì bất đẳng thức ấy chỉ đúng tình cờ.
-    for khoa in ("tools", "functions"):
-        gt = body.get(khoa)
-        if isinstance(gt, list) and gt:
-            van_ban.append(json.dumps(gt, ensure_ascii=False))
+    so_tin, so_tool = UT.gom_than(body, van_ban, anh)
+    khuon = UT.khuon(so_tin, so_tool)
 
     byte_lon_nhat = max((_do_anh(u) for u in anh), default=0)
     # Ảnh nào KHÔNG mở đầu bằng `data:...;base64,` thì là một địa chỉ để ai đó đi
     # tải — và bên đi tải sẽ là máy B. Gom lại để `kiem_tra` từ chối.
     tu_xa = tuple(u for u in anh if u and not _DATA_URL.match(u))
     return KetQuaDo(
-        # ⭐ Làm tròn MỘT lần trên tổng ký tự — cùng cách máy A
-        #    (`apps/ltt_llm/features.uoc_token_vao`). Làm tròn từng đoạn cộng thêm
-        #    +1 mỗi đoạn, tức B ước CAO hơn A đúng bằng số đoạn — và một lượt A vừa
-        #    kiểm dưới trần có thể bị B trả 413 sau 200 (A ⊆ B, kế hoạch §3.1).
-        token_van_ban=_uoc_token_tong(van_ban),
+        token_van_ban=UT.uoc_doan(van_ban) + khuon,
         so_anh=len(anh),
         token_anh=len(anh) * TOKEN_MOI_ANH,
         byte_anh_lon_nhat=byte_lon_nhat,
         url_tu_xa=tu_xa,
         van_ban=tuple(van_ban),
+        token_khuon=khuon,
     )
 
 

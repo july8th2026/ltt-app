@@ -70,9 +70,8 @@ def _dong_co(n: int, kim: str, vi_tri: float) -> str:
     return "\n".join(dong)
 
 
-#: 3.000 dong x ~45 ky tu = ~135.000 ky tu. Cong uoc luong 2,5 ky tu/token
-#: (`llm_gateway/ngan_sach.py: KY_TU_MOI_TOKEN`) => ~54.000 token, an toan duoi
-#: tran 96.256.
+#: 3.000 dong x ~45 ky tu = ~131.000 ky tu. Cong uoc (`llm_gateway/uoc_token.py`,
+#: can tren theo lop ky tu, 18/09) => ~58.900 token, an toan duoi tran vao.
 #:
 #: ⛔ DUNG NANG SO NAY DE "do ngu canh dai hon". 6.000 dong = ~108.000 token uoc
 #:    luong => cong tra 413 TRUOC KHI cham model, va ca ba bai ngu canh se do

@@ -1,0 +1,260 @@
+{
+ "giao_thuc": "chat",
+ "than": {
+  "messages": [
+   {
+    "role": "user",
+    "content": "Read files."
+   },
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "c0",
+      "type": "function",
+      "function": {
+       "name": "read",
+       "arguments": "{\"path\": \"a0.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "c0",
+    "content": "print(0)"
+   },
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "c1",
+      "type": "function",
+      "function": {
+       "name": "read",
+       "arguments": "{\"path\": \"a1.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "c1",
+    "content": "print(1)"
+   },
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "c2",
+      "type": "function",
+      "function": {
+       "name": "read",
+       "arguments": "{\"path\": \"a2.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "c2",
+    "content": "print(2)"
+   },
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "c3",
+      "type": "function",
+      "function": {
+       "name": "read",
+       "arguments": "{\"path\": \"a3.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "c3",
+    "content": "print(3)"
+   },
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "c4",
+      "type": "function",
+      "function": {
+       "name": "read",
+       "arguments": "{\"path\": \"a4.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "c4",
+    "content": "print(4)"
+   },
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "c5",
+      "type": "function",
+      "function": {
+       "name": "read",
+       "arguments": "{\"path\": \"a5.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "c5",
+    "content": "print(5)"
+   },
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "c6",
+      "type": "function",
+      "function": {
+       "name": "read",
+       "arguments": "{\"path\": \"a6.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "c6",
+    "content": "print(6)"
+   },
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "c7",
+      "type": "function",
+      "function": {
+       "name": "read",
+       "arguments": "{\"path\": \"a7.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "c7",
+    "content": "print(7)"
+   },
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "c8",
+      "type": "function",
+      "function": {
+       "name": "read",
+       "arguments": "{\"path\": \"a8.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "c8",
+    "content": "print(8)"
+   },
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "c9",
+      "type": "function",
+      "function": {
+       "name": "read",
+       "arguments": "{\"path\": \"a9.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "c9",
+    "content": "print(9)"
+   },
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "c10",
+      "type": "function",
+      "function": {
+       "name": "read",
+       "arguments": "{\"path\": \"a10.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "c10",
+    "content": "print(10)"
+   },
+   {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+     {
+      "id": "c11",
+      "type": "function",
+      "function": {
+       "name": "read",
+       "arguments": "{\"path\": \"a11.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "c11",
+    "content": "print(11)"
+   },
+   {
+    "role": "user",
+    "content": "Done?"
+   }
+  ],
+  "tools": [
+   {
+    "type": "function",
+    "function": {
+     "name": "read",
+     "description": "read file",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "path": {
+        "type": "string"
+       }
+      }
+     }
+    }
+   }
+  ]
+ }
+}

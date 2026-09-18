@@ -43,9 +43,6 @@ from platform_core.llm.canonical import (ALIAS_SANG_ID,  # noqa: F401
                                          THU_TU_PROVIDER)
 
 
-#: ⛔ BÍ DANH, không phải định nghĩa — nguồn chân lý ở `ngan_sach.py`.
-from apps.ltt_llm.ngan_sach import KY_TU_MOI_TOKEN
-
 #: ⛔ BÍ DANH của `ngan_sach.mac_dinh_cho("sync")`.
 #:
 #:    Trước 30/08 đây là một hằng gõ tay `1_024`, và `_max_tokens()` của cửa
@@ -95,49 +92,44 @@ def tran_token_ra_dong_bo(token_vao_uoc: int, ngan_sach_giay: int) -> int:
     return max(0, min(MAX_TOKENS_TRAN, theo_thoi_gian))
 
 
-def _ky_tu_noi_dung(noi_dung) -> int:
-    """Đếm bảo thủ mọi chữ nằm trong một khối nội dung agent.
-
-    Anthropic đặt ``tool_use``/``tool_result`` thành dict lồng trong ``content``.
-    Chỉ đọc khóa ``text`` làm máy A ước thiếu đúng ở những phiên Claude Code dài,
-    trong khi máy B vẫn đếm các chuỗi lồng và từ chối vì pool KV. Ảnh được giữ
-    riêng theo ``AdmissionModel.token_giu_moi_anh`` nên không đếm chuỗi base64 ở đây.
-    """
-    if isinstance(noi_dung, str):
-        return len(noi_dung)
-    if isinstance(noi_dung, list):
-        return sum(_ky_tu_noi_dung(phan) for phan in noi_dung)
-    if not isinstance(noi_dung, dict):
-        return 0
-
-    loai = str(noi_dung.get("type") or "")
-    if loai in ("image", "image_url", "input_image"):
-        return 0
-    if loai in ("text", "input_text", "output_text"):
-        return len(str(noi_dung.get("text") or ""))
-    return sum(_ky_tu_noi_dung(gt) for gt in noi_dung.values())
-
-
 def uoc_token_vao(messages, tools=None) -> int:
-    """Ước số token đầu vào từ `messages` và schema `tools`. **Ước CAO có chủ ý.**
+    """Ước số token đầu vào từ `messages` và schema `tools`. **CẬN TRÊN** (Task 7).
 
-    ⭐ MỘT CHỖ DUY NHẤT. Cả `manifest._cost` (trần của cửa job) lẫn
-       `server/api/chat.py` (giữ chỗ của cửa đồng bộ) đều gọi hàm này. Hai cửa
-       ước khác nhau nghĩa là cùng một yêu cầu bị báo hai giá, và không có cách
-       nào nói cái nào đúng — chính điều mà `public_api/costing.py` gọi là
-       "parallel engines" và cấm.
+    ⭐ MỘT CHỖ DUY NHẤT. Cả `manifest._cost` (trần của cửa job) lẫn cửa stream/đồng
+       bộ (`runtime_noi_bo/luong` qua `executor.estimate_input(uoc_tin_nhan(...))`)
+       đều gọi hàm này. Hai cửa ước khác nhau nghĩa là cùng một yêu cầu bị báo hai
+       giá — chính điều `public_api/costing.py` gọi là "parallel engines" và cấm.
+
+    ⭐ PHÉP ƯỚC là `platform_core/llm/uoc_token.py` — bản giống hệt từng byte của
+       `llm_gateway/uoc_token.py` máy B (test_1470), chứng minh cận trên ở docstring
+       tệp ấy. Ở đây chỉ đếm tin nhắn/tool cho khuôn chat:
+
+    * mỗi phần tử `messages` là một tin (kể cả phần tử bọc không `role` của
+      `uoc_tin_nhan`: lời hệ thống, `instructions`, khối tool) — mỗi phần tử bọc
+      thêm 16 token khuôn, nên A ≥ B cho cùng body (A ⊆ B);
+    * phần tử bọc khối tool là `uoc_token.KhoiTool` mang `so_tool` (số schema) —
+      kiểu riêng, khách không giả được bằng khoá JSON;
+    * ảnh KHÔNG đếm ở đây: đặt chỗ riêng theo `AdmissionModel.token_giu_moi_anh`.
     """
-    ky_tu = 0
-    for tin in messages or []:
-        noi = (tin or {}).get("content")
-        ky_tu += _ky_tu_noi_dung(noi)
+    from platform_core.llm import uoc_token
+
+    van_ban: list = []
+    anh: list = []
+    ds = list(messages or [])
+    so_tool = 0
+    for tin in ds:
+        if isinstance(tin, uoc_token.KhoiTool):
+            so_tool += int(tin.get("so_tool") or 0)
+            uoc_token.gom_van_ban(tin.get("content"), van_ban, anh)
+        else:
+            uoc_token.gom_van_ban(tin, van_ban, anh)
     if isinstance(tools, list) and tools:
         # Tool schema được chèn vào prompt ở mỗi lượt. Codex/Claude agent thường
         # mang hàng chục schema; bỏ nó làm admission và phần giữ tiền cùng ước
         # thiếu đúng trên workload quan trọng nhất của API này.
-        import json
-        ky_tu += len(json.dumps(tools, ensure_ascii=False, separators=(",", ":")))
-    return int(ky_tu / KY_TU_MOI_TOKEN) + 1
+        van_ban.append(uoc_token.json_tool(tools))
+        so_tool += len(tools)
+    return uoc_token.uoc_doan(van_ban) + uoc_token.khuon(len(ds) + 1, so_tool)
 
 
 class ThamSoSai(ValueError):

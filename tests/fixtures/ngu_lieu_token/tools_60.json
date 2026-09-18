@@ -1,0 +1,1154 @@
+{
+ "giao_thuc": "messages",
+ "than": {
+  "max_tokens": 16,
+  "tools": [
+   {
+    "name": "mcp__srv0__op0",
+    "description": "Operation 0 on server 0. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv1__op1",
+    "description": "Operation 1 on server 1. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv2__op2",
+    "description": "Operation 2 on server 2. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv3__op3",
+    "description": "Operation 3 on server 3. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv4__op4",
+    "description": "Operation 4 on server 4. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv5__op5",
+    "description": "Operation 5 on server 5. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv0__op6",
+    "description": "Operation 6 on server 0. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv1__op7",
+    "description": "Operation 7 on server 1. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv2__op8",
+    "description": "Operation 8 on server 2. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv3__op9",
+    "description": "Operation 9 on server 3. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv4__op10",
+    "description": "Operation 10 on server 4. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv5__op11",
+    "description": "Operation 11 on server 5. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv0__op12",
+    "description": "Operation 12 on server 0. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv1__op13",
+    "description": "Operation 13 on server 1. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv2__op14",
+    "description": "Operation 14 on server 2. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv3__op15",
+    "description": "Operation 15 on server 3. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv4__op16",
+    "description": "Operation 16 on server 4. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv5__op17",
+    "description": "Operation 17 on server 5. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv0__op18",
+    "description": "Operation 18 on server 0. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv1__op19",
+    "description": "Operation 19 on server 1. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv2__op20",
+    "description": "Operation 20 on server 2. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv3__op21",
+    "description": "Operation 21 on server 3. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv4__op22",
+    "description": "Operation 22 on server 4. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv5__op23",
+    "description": "Operation 23 on server 5. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv0__op24",
+    "description": "Operation 24 on server 0. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv1__op25",
+    "description": "Operation 25 on server 1. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv2__op26",
+    "description": "Operation 26 on server 2. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv3__op27",
+    "description": "Operation 27 on server 3. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv4__op28",
+    "description": "Operation 28 on server 4. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv5__op29",
+    "description": "Operation 29 on server 5. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv0__op30",
+    "description": "Operation 30 on server 0. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv1__op31",
+    "description": "Operation 31 on server 1. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv2__op32",
+    "description": "Operation 32 on server 2. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv3__op33",
+    "description": "Operation 33 on server 3. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv4__op34",
+    "description": "Operation 34 on server 4. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv5__op35",
+    "description": "Operation 35 on server 5. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv0__op36",
+    "description": "Operation 36 on server 0. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv1__op37",
+    "description": "Operation 37 on server 1. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv2__op38",
+    "description": "Operation 38 on server 2. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv3__op39",
+    "description": "Operation 39 on server 3. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv4__op40",
+    "description": "Operation 40 on server 4. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv5__op41",
+    "description": "Operation 41 on server 5. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv0__op42",
+    "description": "Operation 42 on server 0. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv1__op43",
+    "description": "Operation 43 on server 1. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv2__op44",
+    "description": "Operation 44 on server 2. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv3__op45",
+    "description": "Operation 45 on server 3. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv4__op46",
+    "description": "Operation 46 on server 4. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv5__op47",
+    "description": "Operation 47 on server 5. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv0__op48",
+    "description": "Operation 48 on server 0. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv1__op49",
+    "description": "Operation 49 on server 1. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv2__op50",
+    "description": "Operation 50 on server 2. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv3__op51",
+    "description": "Operation 51 on server 3. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv4__op52",
+    "description": "Operation 52 on server 4. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv5__op53",
+    "description": "Operation 53 on server 5. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv0__op54",
+    "description": "Operation 54 on server 0. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv1__op55",
+    "description": "Operation 55 on server 1. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv2__op56",
+    "description": "Operation 56 on server 2. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv3__op57",
+    "description": "Operation 57 on server 3. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv4__op58",
+    "description": "Operation 58 on server 4. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "mcp__srv5__op59",
+    "description": "Operation 59 on server 5. Returns JSON.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "file path"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   }
+  ],
+  "messages": [
+   {
+    "role": "user",
+    "content": "Pick a tool."
+   }
+  ]
+ }
+}
