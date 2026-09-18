@@ -57,7 +57,7 @@
 | B9 | 0.1.7 stable 100 % + trang tải | ✅ | `d9f7c95`; rollout 100 lúc 10:2x 18/09 |
 | B10 | CI 4/4 xanh | ✅ | `8681126` |
 | B11 | Đăng nhập thật phía máy chủ | ✅ 40/40 | `2e2a06f` |
-| B12 | Đăng nhập/đăng xuất **trong app** | ⏸ | cần đăng xuất máy chủ dự án — chủ dự án quyết thời điểm |
+| B12 | Đăng nhập/đăng xuất **trong app** | 🔵 | 18/09 09:21: đăng xuất trong app ✅, đăng nhập lại bằng `khach1.thu` qua luồng PKCE thật ✅ (`signed_in.json` = khach1, sidecar sẵn sàng); còn: gửi tin + giữ đăng nhập sau khởi động lại (máy vừa khởi động lại — kiểm) |
 | B13 | Chọn mức suy nghĩ theo model trong app (0.1.8) | ⬜ | = E Task 13 |
 | B14 | Chứng chỉ EV, máy ảo sạch | ⛔ | ngoài phiên |
 
@@ -76,7 +76,7 @@
 |---|---|---|---|
 | 0 | Dọn phiên "Serving v2", tag giữ commit, xoá phiên | ✅ | `4074dc02`, tag `luu-tru/serving-v2/*` |
 | 1 | Gộp cấu hình B đang chạy vào `main` (hết DRIFT) | ✅ (trừ làm mới env nssm → D) | `f1d949b5`; `deploy.ps1` nay ghi đè sàn RAM mỗi lần deploy |
-| 2 | Lỗi tính tiền `/messages` khi trúng cache (R-04) | 🔵 | nhánh `phien/llm-r04` |
+| 2 | Lỗi tính tiền `/messages` khi trúng cache (R-04) | 🔵 code xong, chờ gate/deploy | `9dc8d6f2` (đỏ→xanh, đối chứng, 1.965 test provider đạt) |
 | 3 | Catalog mức suy nghĩ theo model | 🔵 | nhánh `phien/suy-nghi-theo-model` |
 | 4 | Suy nghĩ do máy chủ quyết, gỡ ghi đè 3 cửa, sàn `max_tokens` 3.5 | 🔵 | cùng nhánh Task 3 — chủ dự án đã duyệt hướng |
 | 5 | 3.8 khai đọc ảnh; test bản sao `-c` | 🔵 | nhánh `phien/providers-vision` |
@@ -89,6 +89,15 @@
 | 12 | Chất lượng 3.5: áp thông số lấy mẫu theo model card + A/B | ⬜ | sau Task 4, 10 |
 | 13 | LTTCODE chọn mức suy nghĩ theo model (0.1.8) | ⬜ | sau Task 3 |
 | — | R-06, 07, 10, 11, 14, 16, 17, 18, 23 của phiên cũ | ⬜ | xác minh từng mục trên tag lưu trữ |
+
+## F — Dọn tài liệu toàn hệ thống (chủ dự án yêu cầu 18/09; làm SAU khi xong E)
+
+| # | Hạng mục | Trạng thái |
+|---|---|---|
+| F1 | Lập danh sách dọn (chỉ đọc): tài liệu nói như hiện hành mà sai, plan/spec đã xong/bỏ, hai nguồn cùng một chủ đề, ảnh chụp không ghi ngày, memory cũ | 🔵 |
+| F2 | Dọn theo lô (mỗi lô một commit): sửa chữ / gắn "ĐÃ GỠ" / chuyển `docs/_luutru` kèm con trỏ / gộp về tệp chủ | ⬜ |
+| F3 | Phép chặn tái phát: kiểm tài liệu sống không nhắc tên đã gỡ ngoài đoạn "ĐÃ GỠ" | ⬜ |
+| F4 | Dọn memory (chỉ mục + tệp sai) | ⬜ |
 
 ## D — Tổng kết phiên
 
@@ -112,6 +121,7 @@
 | 18/09 07:1x | LTTCODE 0.1.6 "Failed to load plugins" (431 do cookie tích tụ) | rollout 0, xoá cookie, 0.1.7 sửa gốc + cổng chặn |
 | 18/09 | Hộp cập nhật mở khuất sau cửa sổ chính | `2e2a91d` |
 | 18/09 | Suất `sync` mồ côi khoá 3090 20 phút | `a6999888` |
+| 18/09 09:24 | **Máy A treo 13 phút** (4 agent pytest `-n 6` cùng lúc + job realesrgan của bot; RAM trống 10,5 GiB) — chủ dự án khởi động lại | `KHAM.bat` xác nhận; luật mới: lệnh nặng của agent chạy qua trình bọc giữ khoá `cpu_nhieu`, `-n` ≤ 4, 1 lượt nặng toàn máy (memory `agent-song-song-phai-xep-hang-khoa-may`); 4 agent chạy tiếp từ worktree, không mất việc |
 
 ## Rủi ro mới cần xử lý sớm
 
