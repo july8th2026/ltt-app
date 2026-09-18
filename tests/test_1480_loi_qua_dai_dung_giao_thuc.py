@@ -43,9 +43,16 @@ REGEX_CLAUDE = re.compile(r"prompt is too long[^0-9]*(\d+)\s*tokens?\s*>\s*(\d+)
 
 
 def _qua_dai() -> str:
-    from apps.ltt_llm import ngan_sach
+    # Đo bằng CHÍNH hàm ước của cổng (Task 7, `uoc_token`) — không tự quy đổi
+    # ký tự/token, vì hệ số nay theo loại chữ.
     from apps.ltt_llm.executor import EXECUTOR
-    return "x" * int((EXECUTOR.input_cap(MODEL) + 5_000) * ngan_sach.KY_TU_MOI_TOKEN)
+    from platform_core.llm.uoc_token import uoc_chuoi
+    muc_tieu = EXECUTOR.input_cap(MODEL) + 5_000
+    mau = "x"  # ~1 byte/token ước ⇒ vượt trần token mà thân vẫn < 1 MiB
+    s = mau * (muc_tieu // max(1, uoc_chuoi(mau * 1000) // 1000) + 1)
+    while uoc_chuoi(s) <= muc_tieu:
+        s += mau * 1000
+    return s
 
 
 def _tran() -> int:
