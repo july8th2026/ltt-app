@@ -58,6 +58,8 @@ from platform_core.runtime_noi_bo import luong as cua_luong
 log = logging.getLogger("server.api.streaming")
 
 _SSE = {"Cache-Control": "no-store", "X-Accel-Buffering": "no"}
+#: Khách gửi effort cho model chỉ có một chế độ (3.5) — đã nhận và bỏ qua (L-26).
+HEADER_EFFORT_BO_QUA = "X-LTT-Effort-Bo-Qua"
 _NO_STORE = {"Cache-Control": "no-store"}
 TOOL_CHAT = "text.chat"
 
@@ -372,6 +374,12 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         #    `role="tool"` riêng, đúng thứ tự.
         sach = {"model": ten, "max_tokens": xin_ra,
                 "messages": tool_dich.sang_openai_messages(_tin_that(than))}
+        # Effort đã chuẩn hoá ở `_cua` (L-26): cửa một cục giữ đúng mức khách chọn.
+        _muc = than.get("reasoning_effort") or (
+            (than.get("reasoning") or {}).get("effort")
+            if isinstance(than.get("reasoning"), dict) else None)
+        if _muc:
+            sach["reasoning_effort"] = _muc
         cong_cu = tool_dich.sang_openai_tools(than.get("tools"))
         if cong_cu:
             sach["tools"] = cong_cu
@@ -803,9 +811,17 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
         raise invalid_request(vi_tool)
 
     if not than.get("stream"):
-        return _mot_cuc(duong, than, tin, ten, principal, db, config, tool,
-                        trang_thai=getattr(request, "state", None),
-                        request=request)
+        # Suy nghĩ do máy chủ quyết (L-26) — cùng hàm với nhánh stream (`tien_kiem`).
+        try:
+            than, bo_qua = cua_luong.chuan_hoa_suy_nghi(than, ten)
+        except cua_luong.ThamSoSai as e:
+            raise _bao_400(str(e), than) from None
+        tra = _mot_cuc(duong, than, tin, ten, principal, db, config, tool,
+                       trang_thai=getattr(request, "state", None),
+                       request=request)
+        if bo_qua:
+            tra.headers[HEADER_EFFORT_BO_QUA] = "1"
+        return tra
 
     resolved = policy.resolve(db, config=config, principal=principal,
                               tool_name=TOOL_CHAT)
@@ -942,7 +958,8 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
                                    trang_thai=getattr(request, "state", None),
                                    timeout_s=MO_LUONG_GIAY, so_tay=so_tay),
             _dong_nguon, _nha_suat),
-        media_type="text/event-stream", headers=_SSE,
+        media_type="text/event-stream",
+        headers={**_SSE, HEADER_EFFORT_BO_QUA: "1"} if tk.effort_bo_qua else _SSE,
         background=BackgroundTask(_ket_thuc_che_chan))
 
 

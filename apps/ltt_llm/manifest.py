@@ -439,7 +439,7 @@ MANIFEST = AppManifest(
             },
             "enums": {
                 "model": ["ltt-3.8", "ltt-3.5"],
-                "reasoning_effort": ["none", "low", "medium", "xhigh"],
+                "reasoning_effort": ["low", "medium", "xhigh"],
             },
             "params": {
                 "messages": {
@@ -472,11 +472,18 @@ MANIFEST = AppManifest(
                 },
                 "reasoning_effort": {
                     "description": (
-                        "How much the model thinks before answering. Deeper "
-                        "costs more output tokens but can improve hard answers. "
-                        "When omitted, LTT 3.8 uses `xhigh`; LTT 3.5 keeps "
-                        "thinking on with compatible `medium`. Use `low` when you want "
-                        "the shortest answers - do NOT reach for a small "
+                        "How much the model thinks before answering. LTT 3.8 "
+                        "offers `low`, `medium` and `xhigh`. When omitted, "
+                        "LTT 3.8 uses `xhigh` (`high`/`max` are read as `xhigh`, "
+                        "`minimal` as `low`). LTT 3.5 has a single mode with "
+                        "thinking always on: a value is accepted and ignored "
+                        "(response header `X-LTT-Effort-Bo-Qua: 1`). Turning "
+                        "thinking off is rejected on both. "
+                        "The thinking budget is set by the server; budget "
+                        "fields sent by a client are dropped. GET "
+                        "/api/v1/models lists each model's levels. Use `low` on "
+                        "LTT 3.8 when you want the shortest answers - do NOT "
+                        "reach for a small "
                         "`max_tokens` instead: thinking spends that same "
                         "budget, so the model can reason until it is cut off "
                         "and return empty content with finish_reason=length."),

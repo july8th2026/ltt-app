@@ -36,10 +36,26 @@ CUA_SO_CONG_BO_MAC_DINH = 60_000
 #: Trần token ra, khớp `MAX_TOKENS_TRAN` của app `ltt_llm`.
 TOKEN_RA_TOI_DA = 32_768
 
-#: Mức suy luận Codex được phép chọn, khớp enum `reasoning_effort` của app.
-_MUC_SUY_LUAN = ({"effort": "low", "description": "Fast, light reasoning"},
-                 {"effort": "medium", "description": "Balanced"},
-                 {"effort": "xhigh", "description": "Deepest reasoning"})
+
+
+def _muc_suy_nghi(slug: str) -> tuple[str, list[dict]]:
+    """(mức mặc định, danh sách mức) của MỘT model — đọc từ `examples` (L-26).
+
+    ⛔ Trước 18/09 ở đây là một bảng gõ tay `_MUC_SUY_LUAN` áp cho MỌI model,
+       mặc định `medium`: catalog nói 3.8 mặc định `medium` (model card và
+       `--reasoning-effort xhigh` của máy B nói `xhigh`) và 3.5 có ba nấc
+       (model card Qwen3.5-9B không có nấc nào). Nay một nguồn:
+       `platform_core/public_api/examples.py` (`muc_suy_nghi`), cùng nguồn với
+       catalog Codex cài trên máy khách và hàm chuẩn hoá mọi cửa.
+
+    Model chưa khai (alias mới) ⇒ khuôn của model mặc định: Codex bỏ cả mục
+    khi thiếu trường này, nên thiếu dữ liệu không được thành thiếu trường.
+    """
+    from platform_core.llm.canonical import MODEL_MAC_DINH
+    from platform_core.public_api import examples
+
+    khoa = slug if slug in examples.CODEX_MODEL_REASONING_LEVELS else MODEL_MAC_DINH
+    return examples.CODEX_MODEL_REASONING[khoa], examples.muc_suy_nghi(khoa)
 
 
 def _dang_codex(model) -> dict:
@@ -59,6 +75,7 @@ def _dang_codex(model) -> dict:
     # Cùng phép suy với hai bộ cài (`tools/cam_cli.py`), nên ba nơi không lệch
     # được: khoảng trống giữa ngưỡng nén và cửa sổ phải chứa trọn một lượt ra.
     nen = cua_so - ra
+    mac_dinh_nghi, cac_muc_nghi = _muc_suy_nghi(str(model.name))
     d = {
         "slug": model.name,
         "display_name": model.name,
@@ -67,8 +84,8 @@ def _dang_codex(model) -> dict:
         "max_context_window": cua_so,
         "max_output_tokens": int(rang_buoc.get("max_output_tokens")
                                  or TOKEN_RA_TOI_DA),
-        "default_reasoning_level": "medium",
-        "supported_reasoning_levels": [dict(m) for m in _MUC_SUY_LUAN],
+        "default_reasoning_level": mac_dinh_nghi,
+        "supported_reasoning_levels": cac_muc_nghi,
         "shell_type": "unified_exec",
         "apply_patch_tool_type": "freeform",
         "input_modalities": ["text", "image"] if doc_anh else ["text"],

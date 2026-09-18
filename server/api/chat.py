@@ -50,6 +50,7 @@ from platform_core.public_api.principal import Principal
 from platform_core.public_api.protocol import SYNC_BILLED_MAX_SECONDS
 from platform_core.public_api.scopes import SCOPE_JOBS_CREATE
 from server.api.auth import require_scope
+from server.api.streaming import HEADER_EFFORT_BO_QUA
 from server.deps import get_db
 
 log = logging.getLogger("server.api.chat")
@@ -314,6 +315,18 @@ def register_chat_routes(api, config, tag: str) -> None:
                 f"max_tokens, use a streaming endpoint, or submit it to "
                 f"POST /api/v1/jobs.")
 
+        # Suy nghĩ do máy chủ quyết (L-26). Model một chế độ (3.5): budget suy
+        # nghĩ của lượt đặt theo `max_tokens` đã qua trần thời gian, chừa chỗ
+        # trả lời — budget khách gửi đã bị gỡ trong `validate`.
+        _budget_fn = getattr(executor, "sync_thinking_budget", None)
+        budget_suy_nghi = _budget_fn(sach) if callable(_budget_fn) else None
+        _, effort_bo_qua = cua_luong.chuan_hoa_suy_nghi(payload, sach["model"])
+
+        def _gan(tra: JSONResponse) -> JSONResponse:
+            if effort_bo_qua:
+                tra.headers[HEADER_EFFORT_BO_QUA] = "1"
+            return tra
+
         # 🔴 402 TRƯỚC `idempotency.begin` (spec §6). Chỉ ĐỌC số dư — không giữ
         #    đồng nào ở đây, vì lượt này còn có thể phải chờ, và giữ tiền của
         #    một lượt đang chờ là đúng thứ INV-MJ-1 cấm.
@@ -334,8 +347,9 @@ def register_chat_routes(api, config, tag: str) -> None:
             # header này tồn tại, và ở đây nó còn quan trọng hơn ở cửa job vì
             # không có quote nào để đối chiếu.
             metrics.increment(metrics.IDEMPOTENCY_REPLAY)
-            return JSONResponse(record.response, status_code=200,
-                                headers={**_NO_STORE, "Idempotency-Replayed": "true"})
+            return _gan(JSONResponse(
+                record.response, status_code=200,
+                headers={**_NO_STORE, "Idempotency-Replayed": "true"}))
 
         resolved = policy.resolve(db, config=config, principal=principal,
                                   tool_name=TOOL_CHAT)
@@ -352,7 +366,7 @@ def register_chat_routes(api, config, tag: str) -> None:
                                   da_do_duoc=True, che_do_thu=True)
             idempotency.complete(db, record, response=tra_ve)
             db.commit()
-            return JSONResponse(tra_ve, status_code=200, headers=_NO_STORE)
+            return _gan(JSONResponse(tra_ve, status_code=200, headers=_NO_STORE))
 
         # ⛔ KHONG `f"chat:{record.id}"`: 5 + 36 = 41 ky tu, vuot VARCHAR(36)
         #    cua `credit_entries.job_id`. PostgreSQL ep, SQLite khong — nen loi
@@ -447,11 +461,12 @@ def register_chat_routes(api, config, tag: str) -> None:
             # `giu_suat_dong_bo`, không `keep_alive(suat.lease_id)`: máy B 429 ⇒
             # xếp lại ⇒ suất MỚI, và đường nhả phải nhả suất ĐANG giữ.
             with cua_luong.giu_suat_dong_bo(suat):
-                return _finish_chat(
+                return _gan(_finish_chat(
                     db=db, sach=sach, principal=principal, record=record,
                     request_id=request_id, da_giu=da_giu, executor=executor,
                     trang_thai=request.state, request=request,
-                    bat_dau_cua=t0, waiter_id=suat.waiter_id, suat=suat)
+                    bat_dau_cua=t0, waiter_id=suat.waiter_id, suat=suat,
+                    budget_suy_nghi=budget_suy_nghi))
         finally:
             # ⛔ LƯỚI, KHÔNG PHẢI KẾT CỤC. Bản đầu ghi thẳng `"xong"` ở đây —
             #    tức **mọi** đường ra, kể cả lỗi và khách ngắt, vào sổ 30 ngày
@@ -521,7 +536,8 @@ def _nha(suat, ket_qua: str) -> None:
 def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
                  trang_thai=None, request=None, bat_dau_cua: float = 0.0,
                  waiter_id: str = "", suat=None,
-                 da_giu: int, executor=None) -> JSONResponse:
+                 da_giu: int, executor=None,
+                 budget_suy_nghi: int | None = None) -> JSONResponse:
     """Chạy model và định đoạt tiền; caller giữ execution lease bằng finally.
 
     `bat_dau_cua` là `time.monotonic()` lúc **request vào cửa**, không phải lúc
@@ -557,7 +573,9 @@ def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
                     #    request đang bay ở luồng khác. Máy B sinh chữ tới hết,
                     #    ta chờ tới hết, slot bị giữ 15–32 s, khách vẫn bị tính
                     #    tiền.
-                    ma_luot=request_id),
+                    ma_luot=request_id,
+                    **({"budget_suy_nghi": budget_suy_nghi}
+                       if budget_suy_nghi is not None else {})),
                 ngat_chua=ngat.do_ngat(request))
 
         kq = cua_luong.goi_dong_bo_co_xep_lai(

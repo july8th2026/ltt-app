@@ -816,3 +816,28 @@ trên production trước khi chốt; **không** tìm thấy hỏng hóc cụ th
 - Rủi ro KHÁC, không phụ thuộc cỡ cache: #27148 (mở) — cache RAM có thể khôi phục nội dung của
   hội thoại khác vào slot mới khi hai slot bị đuổi cùng lúc. Áp cho mọi `--cache-ram > 0` kể cả
   mặc định 8192; cần phiên riêng theo dõi PR #27624.
+
+## L-26 — Suy nghĩ do máy chủ quyết; effort theo khuyến nghị chính thức của từng model (2026-09-18)
+
+Chủ dự án duyệt 18/09: *"mục tiêu là chất lượng và sức mạnh kết quả cao; giá trị phải
+theo khuyến nghị chính thức của model"*. Plan v2 Task 3 + 4. (L-25 dành cho gộp cache 24G.)
+
+**Nguồn đã đối chiếu (không suy):**
+- HF model card `Qwen/Qwen3.8-27B`: `xhigh` (mặc định) · `medium` · `low`, qua `reasoning_effort`; không có `high`.
+- HF model card `Qwen/Qwen3.5-9B`: suy nghĩ bật mặc định, chỉ tắt qua `chat_template_kwargs.enable_thinking`; **không** có mức effort. Khuyến nghị ra 32.768 token.
+- `llm_gateway/deploy/chat_template_v22.5.jinja` dòng 6-79: đọc `enable_thinking`, `preserve_thinking|preserve_reasoning`, `auto_disable_thinking_with_tools`, `reasoning_effort` (`none|off` tắt; `minimal→low`; `high|max|…→xhigh`; vắng ⇒ `medium` = prompt chính thức) và quét thẻ `<|think_*|>` trong nội dung system/developer/user.
+- llama.cpp ghim `91f6a6cf3` `tools/server/server-common.cpp:1366-1369`: mỗi request ghi đè budget bằng `reasoning_budget_tokens|thinking_budget_tokens` (+ `:1375-1376` `reasoning_budget_message`, `reasoning_control`; `:1308-1331` chép `chat_template_kwargs`, `reasoning_effort` vào template). `server-chat.cpp:586-591`: Anthropic `thinking.type=enabled` không ghi số ⇒ budget **10.000** (vượt `--reasoning-budget` 4096/2048). `:286-292`: Responses `reasoning.effort` ⇒ `reasoning_effort`.
+
+**Quyết định:**
+- `ltt-3.5`: MỘT chế độ, suy nghĩ BẬT. Effort (`low|medium|high|xhigh|minimal|max`, ở `reasoning_effort`, `reasoning.effort` hoặc `chat_template_kwargs.reasoning_effort`) được nhận, **gỡ trước máy B**, cửa trả `X-LTT-Effort-Bo-Qua: 1`. Tắt suy nghĩ (`none|off`) ⇒ 400.
+- `ltt-3.8`: `low|medium|xhigh`, mặc định `xhigh` (`--reasoning-effort xhigh` của B); `high|max→xhigh`, `minimal→low`; `none|off` ⇒ 400; giá trị lạ ⇒ 400.
+- Budget suy nghĩ chỉ `--reasoning-budget` của `llama-swap.yaml` quyết. Gỡ ở cả ba cửa: `reasoning_budget_tokens`, `thinking_budget_tokens`, `reasoning_budget_message`, `reasoning_control`, `thinking` (mọi `type`), `chat_template_kwargs.{enable_thinking, preserve_thinking, preserve_reasoning, auto_disable_thinking_with_tools}`, thẻ `<|think_*|>` trong `messages|system|input|instructions`.
+- MỘT hàm `platform_core/runtime_noi_bo/luong.py::chuan_hoa_suy_nghi(than, model_id) -> (than, bo_qua)`, gọi từ `tien_kiem`, `chuan_bi`, `server/api/streaming._cua` (nhánh một cục) và `apps/ltt_llm/features.kiem_tham_so` (`/chat/completions`, job).
+- Catalog `/api/v1/models` đọc mức từ `platform_core/public_api/examples.py` (bỏ bảng gõ tay `_MUC_SUY_LUAN` mặc định `medium` cho mọi model). 3.8: mặc định `xhigh`, ba mức. 3.5: đúng một mức `medium` mô tả "Thinking on" — client hiện **nhãn cố định**, không bộ chọn, và không gửi `reasoning_effort`. LTTCODE (Task 13) đọc từ đây.
+- Sàn `max_tokens` 3.5 = budget 2.048 + 512 = **2.560** ở mọi mức (`test_1430` đọc budget từ yaml). Bỏ `none` khỏi bảng sàn, `_SAN_NHE` và `enums` của manifest.
+
+**Hệ quả cần biết:**
+- Cửa đồng bộ `POST /api/v1/chat/completions` với `ltt-3.5` (mặc định 1.024 token ra, trần thời gian ~2.300 dẫn từ tốc độ decode đo): máy chủ tự đặt `reasoning_budget_tokens` = `max_tokens − 512`, kẹp ≤ budget engine (`ngan_sach.budget_suy_nghi_dong_bo`; truyền bằng đối số có tên `executor.run(budget_suy_nghi=)` → `features.chay` → `them`, không bao giờ đọc từ thân khách). Sàn đồng bộ 3.5 = 1.024 (`san_token_ra_dong_bo`). Bản đầu trả 400 ở đây; coordinator bác vì phá khách đang dùng. Sàn 2.560 chỉ là sàn "budget đủ" (`SAN_TOKEN_RA_THEO_NGHI`); cửa stream/job hiện KHÔNG áp sàn nào (có từ trước).
+- Header `X-LTT-Effort-Bo-Qua: 1` có ở cả ba cửa (`/messages`, `/responses`, `/chat/completions`).
+- Nhánh một cục `/messages|/responses` nay chuyển effort đã chuẩn hoá của 3.8 xuống máy B (trước bị rơi im lặng).
+- `CLAUDE_CODE_AUTO_COMPACT_WINDOW` của Claude Local = cửa sổ công bố (171.458 / 209.141), vì Claude Code 2.1.274 tự trừ `min(MAX_OUTPUT, 20000) + 13000` (đo Task 9); Codex giữ `model_auto_compact_token_limit` 138.690 / 176.373. Bảng preset trang hướng dẫn dẫn xuất từ `examples.claude_local_preset`.
