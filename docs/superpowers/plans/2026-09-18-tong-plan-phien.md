@@ -22,10 +22,10 @@ Trọng số cố định (không đổi giữa các lần cập nhật): A 20 �
 | A — Nền tảng LTT LLM (Phương án C) | 20 | 100 % | 20 | — |
 | B — LTTCODE 0.1.7 build + E2E + phát hành | 25 | 100 % | 25 | (0.1.8 = E Task 13) |
 | C — Tối ưu máy B | 10 | 90 % | 9 | C4 cửa sổ đo số job + `-b/-ub` |
-| E — LLM v2 | 25 | 62 % | 15,5 | 2, 3, 4, 5, 9 đã deploy; 6 đang gate; 7, 8, 13 đang làm; 10 còn needle/MTP; 11, 11b, 12 chưa |
+| E — LLM v2 | 25 | 66 % | 16,5 | 2, 3, 4, 5, 9 đã deploy; 7, 8, 13 đang làm; 10 còn needle/MTP; 11, 11b, 12 chưa |
 | F — Dọn tài liệu | 10 | 10 % | 1 | 8 lô (~5 giờ) |
 | D — Tổng kết phiên | 10 | 0 % | 0 | L3, gộp, push, nhật ký, dọn worktree |
-| **Cả phiên** | 100 | | **~70,5 %** | |
+| **Cả phiên** | 100 | | **~71,5 %** | |
 
 > Các lần báo trước (70–74 %) ước không theo trọng số và **cao hơn thực tế**; từ bản này dùng bảng trên.
 
@@ -94,7 +94,7 @@ Trọng số cố định (không đổi giữa các lần cập nhật): A 20 �
 | 3 | Catalog mức suy nghĩ theo model | ✅ deploy `fba73f1e` 12:43 (catalog live: 3.8 xhigh/3 mức, 3.5 medium/1 mức) | `2d350f49`…`952a792f`; 3.8 low/medium/xhigh mặc định xhigh, 3.5 một mức cố định |
 | 4 | Suy nghĩ do máy chủ quyết, gỡ ghi đè 3 cửa, sàn `max_tokens` 3.5 | ✅ deploy `fba73f1e` 12:43 (L2 5/5 thành phần) | `4eee6881`…`e78e243d`; L-26; 3.5 đồng bộ: máy chủ đặt budget = max_tokens − 512 (≤ 2.048), không trả 400 |
 | 5 | 3.8 khai đọc ảnh; test bản sao `-c` | ✅ deploy `488a64ed` 11:19 | `3f6ad81b` (auto_scan_video ghim 3.5 có lý do; 3.268 test đạt) |
-| 6 | B gia hạn suất theo tiến triển (bỏ thu cứng 1.200 s) | 🔵 code xong `c5f8980c`, đang L2 gateway:llm → deploy B | sau Task 1 |
+| 6 | B gia hạn suất theo tiến triển (bỏ thu cứng 1.200 s) | ✅ deploy cổng B 13:0x (L2 gateway:llm xanh, `c5f8980c`); /health có han_im_lang_s | sau Task 1 |
 | 7 | Ước token cận trên (code ×0,74, emoji ×0,16) + overhead template | 🔵 đang làm | sau Task 1; deploy theo chiều |
 | 8 | 413 trước 200 đúng câu từng giao thức | 🔵 đang làm | sau Task 4 |
 | 9 | Tách ngưỡng nén Claude Code/Codex; bộ cài cập nhật khoá LTT | ✅ deploy `488a64ed` 11:19 | `1b143291`, `2c3fbebd` (đo Claude Code 2.1.274: trừ 33k; nay nén 138.458/176.141); phần `examples.py` giao Task 3–4 |
