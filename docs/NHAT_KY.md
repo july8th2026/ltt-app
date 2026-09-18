@@ -19445,3 +19445,34 @@ khởi động, trung vị n=3, 10 phút tải trộn). Kết quả và khuyến
 gần đứng (2 tok/s) suốt 18 s (3.5) / 35 s (3.8), `-b 512` giữ ~3× tốc độ đổi TTFT +10–15 %; tràn KV trên b10883
 làm 2/3 luồng lỗi 500 giữa stream (server sống); cache tiền tố LTT-3.5 trúng 0/30. Máy B: LTTComfyUI chuyển
 Manual và để tắt trong cửa sổ LLM (chủ dự án duyệt); cả hai model đã nạp lại, chat thật không rỗng.
+
+## 18/09/2026 — Phiên LTT LLM v2 trên Phương án C + LTTCODE 0.1.8 → 0.1.10 (tổng kết)
+
+Bảng theo dõi duy nhất: `docs/superpowers/plans/2026-09-18-tong-plan-phien.md`. Plan kỹ thuật:
+`2026-09-18-ltt-llm-v2-lam-lai-tren-phuong-an-c.md` (Task 0–17), dọn tài liệu `2026-09-18-don-tai-lieu.md`.
+
+**Đã lên production trong phiên (A + B, mỗi lần gate xanh đúng SHA):**
+- Task 2 (R-04 tính tiền `/messages` trúng cache), 5, 9 — `488a64ed`; Task 3–4 (catalog + suy nghĩ do máy chủ quyết theo
+  model, L-26) — `fba73f1e`; Task 6 (B gia hạn suất theo tiến triển) — cổng B; Task 7 (ước token cận trên, L-27) —
+  B rồi A `51cdd73e`; đợt 3 (Task 8 lỗi quá dài trước 200 đúng khuôn từng giao thức, Task 11 dọn bản sao, 11b
+  `gate --pham-vi a,b`, R-11 Codex tắt `web_search`) — `78100df2`; C4 ⇒ **LTT-3.5 `-np 4`**, 3.8 giữ `-np 3` (L-28) —
+  B + A `9feb97fc`.
+- Kiểm trên production: 200K ký tự ⇒ 400 "prompt is too long: 200289 tokens > 186368" ngay ở A; B `/health`
+  `np35=4 np38=3`.
+
+**LTTCODE:** 0.1.8 (chọn mức suy nghĩ theo model) dev + stable 100 %; 0.1.9 dev (Task 14 `subagent_doc_nhanh` trên
+3.5 chỉ đọc + trần in-flight theo model 3/3; Task 15 trần 50/60 công cụ, plugin `mcp-resources-ltt` DIV-003 ⇒ 49/57;
+Task 16 29 skill gồm 10 skill cộng đồng ghim commit + `pwsh-windows`); 0.1.10 sửa bộ cài NSIS xoá cây `sidecar` cũ
+(0.1.9 để lại skill đã gỡ — `verify_installed` H2 đỏ trên máy thật) ⇒ dev + **stable 100 %**, `verify_installed` PASS.
+
+**Đo và quyết định:** C4 (3.5 np4: tổng +15 %, mỗi luồng 57,5 % — chấp nhận; 3.8 np4 tràn VRAM ở 221K); needle
+100–200K trên 3.8 đạt 8/8 (#27756); A/B 3.5 402 lượt không đổi lấy mẫu; R-10 giữ `base_instructions` rỗng
+(58→47, p=0,007); YaRN/1M không dùng; Ruflo không cài (314 công cụ MCP, nhắm Claude Code); 3.5 ít tự gọi `skill`
+(62 %) — giới hạn model, dòng định tuyến làm tệ hơn ⇒ gỡ.
+
+**Sự cố:** máy A treo hai lần (09:24 do 4 agent pytest -n 6 chồng nhau ⇒ luật khoá `cpu_nhieu` cho agent; 14:30
+CPU không bão hoà, chưa rõ); hai lần chạm giới hạn tài khoản Claude (17:20 phiên, 20:40 tuần) ⇒ agent đứt giữa
+chừng, một lần để lại yaml đo trên B — khôi phục SHA `86CB1EC9…` lúc 21:05.
+
+**Còn mở sang phiên sau:** injection I10 của `subagent_doc_nhanh` (đo lại ×3), harness gợi ý skill theo từ khoá
+cho 3.5, R-06/07 (id phiên), R-14 (tool search), R-17 nhiều lượt, cảnh báo p95 TTFT (R-16), chứng chỉ EV + VM sạch.
