@@ -103,6 +103,8 @@ streaming.py
 **Một chỗ tính đặt chỗ + gắn cờ whale cho MỌI cửa:**
 `tham_so_da_luot.luat_cho(AdmissionModel, …)`:
 `đặt chỗ = vào_ước + max_tokens + dem_uoc + ảnh × token_giu_moi_anh`,
+với `vào_ước` = **cận trên** `platform_core/llm/uoc_token.py` (L-27; máy B đếm bằng bản
+giống hệt từng byte `llm_gateway/uoc_token.py`, nên `vào_ước_A ≥ vào_đo_B`),
 `whale ⇔ token_prefill_mới ≥ nguong_whale` (stream dùng `uoc_moi`; đồng bộ/job/
 planner dùng `vào_ước`). Đặt chỗ > pool ⇒ **ném** `DatChoVuotPool` (cửa trả 413 /
 job hỏng không thử lại) — không còn kẹp im lặng. Kẹp `max_tokens` theo ngữ cảnh
@@ -188,6 +190,7 @@ một lần rồi mới quay lại hàng.
 | muốn biết | nguồn chân lý |
 |---|---|
 | suất · pool · ngưỡng whale · đệm ước · token/ảnh (theo model) | `apps/ltt_llm/ngan_sach.py::HO_SO` → `manifest.py` → `AdmissionModel` |
+| ước token vào (cận trên, A và B cùng một hàm; L-27) | `platform_core/llm/uoc_token.py` ≡ `llm_gateway/uoc_token.py` ← A: `apps/ltt_llm/features.uoc_token_vao` (qua `luong.uoc_tin_nhan`); B: `llm_gateway/ngan_sach.do_yeu_cau` · test_1470 |
 | phép tính đặt chỗ + cờ whale (MỘT chỗ, mọi cửa) | `platform_core/llm/tham_so_da_luot.py::luat_cho` |
 | luật nhận ai trước (ngân sách KV · backfill có chặn · whale) | `platform_core/llm/luat_nhan.py` |
 | núm sức chứa theo tài nguyên (số suất, pool — chỉ hạ) | `platform_core/registry.py::ap_cau_hinh_admission` |

@@ -87,6 +87,22 @@ chuyển tiếp: *A không bao giờ khai rộng hơn thứ B đang chạy* (A �
 yaml) **rồi** restart `LTTLlmGateway` (đọc lại rào) — đảo lại thì cổng giữ số của
 tệp mới trong khi engine còn chạy số cũ.
 
+### 2.1a Đổi PHÉP ƯỚC token (L-27) — một commit đổi CẢ HAI chiều ⇒ B trước, A NGAY sau
+
+`uoc_token.py` (A và B) làm ước **tăng** cho code/CJK/hex/emoji và **giảm** cho văn
+xuôi Anh. B giữ `max(X-LTT-Token-Dat, vào_đo_B)`; A khai `vào_A + max_tokens + DEM_UOC`.
+Không thứ tự nào sạch trong khe giữa hai máy — chọn khe hẹp hơn:
+
+- **B trước (chọn):** B mới đo code dày cao hơn A cũ khai ⇒ B giữ nhiều hơn A tưởng ⇒
+  429 ⇒ A xếp lại (chậm, không mất lượt). Chỉ xảy ra khi code dày > ~83K token thật
+  (chênh 0,41× thật > `max_tokens` + 2.048). Ước B vượt trần vào ⇒ B đếm thật nếu
+  model đã nạp; chưa nạp ⇒ 413 sau 200 (chỉ ca ~160K+ code dày).
+- **A trước (không chọn):** A mới ước văn xuôi thấp hơn B cũ (1,37× vs 2,25×) ⇒ cùng
+  hậu quả từ ~39K token văn xuôi — khe rộng hơn.
+
+⇒ deploy cổng B (`llm_gateway/deploy/deploy.ps1`), rồi deploy A **ngay** sau; khe càng
+ngắn càng tốt, không để qua giờ cao điểm.
+
 ### 2.1b ⛔ R27 — trên **cùng máy A**, Task 5.3 và 5.5 là MỘT đơn vị deploy
 
 `apps/ltt_llm/manifest.py` **đã khai** `residency_group="rtx3090"`, và luật 0
