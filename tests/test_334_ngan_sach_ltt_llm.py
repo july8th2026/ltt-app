@@ -660,15 +660,61 @@ class TestBanSaoConLai:
         assert lui <= rong_nhat, (
             f"hang so lui {lui} hua nhieu hon model rong nhat ({rong_nhat})")
 
-    def test_registry_provider_khop_cua_so_model(self):
-        """`platform_core/providers.py` khai `context_window` cho model nhà."""
-        import pathlib
-        import re
-        goc = pathlib.Path(__file__).resolve().parents[1]
-        van = (goc / "platform_core" / "providers.py").read_text(encoding="utf-8")
-        m = re.search(r'"context_window":\s*([0-9_]+)', van)
-        assert m, "khong tim thay context_window trong providers.py"
-        assert int(m.group(1).replace("_", "")) == ngan_sach.CUA_SO_MODEL
+    @pytest.mark.parametrize("model", sorted(ngan_sach.HO_SO))
+    def test_registry_provider_khop_HO_SO_tung_model(self, model):
+        """`platform_core/providers.py` khai `context_window` + `vision` cho
+        TỪNG model nhà, và phải khớp `HO_SO` (Task 5, plan v2 18/09).
+
+        🔴 Bản trước đọc bằng `re.search` ⇒ chỉ **lần xuất hiện đầu** (3.8)
+           được đối chiếu; bản sao `-c` của 3.5 (`providers.py:326`) không ai
+           canh. Nay hỏi registry theo id, mỗi model một ca.
+
+        ⭐ `vision is True` cho CẢ HAI: `llama-swap.yaml` nạp `--mmproj` cho cả
+           `qwen38-api` (mmproj-F16.gguf) lẫn `qwen35-api`; và LTTCODE live L7
+           (ảnh, `model: 'ltt-3.8'`) PASS trên production 17/09
+           (`D:/LTTCODEAPP/docs/LTTCODE/reports/P03-live-20260917-232947.json`,
+           11/11). Cờ `False` của 3.8 là lời khai sai.
+        """
+        from platform_core import providers
+        ids = {m.id for m in providers.models_for("ltt_llm")}
+        assert model in ids, f"{model} co trong HO_SO nhung khong co trong registry"
+        kn = providers.model_capabilities(model)
+        assert kn.get("context_window") == ngan_sach.HO_SO[model].engine_ctx, (
+            f"providers khai context_window {kn.get('context_window')} cho {model}"
+            f" nhung HO_SO khai {ngan_sach.HO_SO[model].engine_ctx}")
+        assert kn.get("vision") is True, f"{model} nap mmproj ma khai vision={kn.get('vision')!r}"
+
+    @pytest.mark.parametrize("model", sorted(ngan_sach.HO_SO))
+    def test_registry_provider_nap_model_khop_NAP_KHO_AM_S(self, model):
+        """`do_duoc.nap_model_s` trong providers là **bản sao** của
+        `ngan_sach.NAP_KHO_AM_S` (`platform_core` không import `apps/`, nên
+        phép kiểm này buộc hai đầu). Bản cũ gõ `18` — không khớp số đo 16,3 s
+        (`10_BENCHMARK_P3.md` §G4)."""
+        from platform_core import providers
+        do = providers.model_capabilities(model).get("do_duoc") or {}
+        if "nap_model_s" not in do:
+            return
+        assert do["nap_model_s"] == ngan_sach.NAP_KHO_AM_S[model], (
+            f"providers khai nap_model_s {do['nap_model_s']} cho {model} nhung "
+            f"NAP_KHO_AM_S khai {ngan_sach.NAP_KHO_AM_S[model]}")
+
+    def test_ASV_viec_anh_GIU_3_5_tuong_minh_khi_3_8_co_vision(self):
+        """Hệ quả của cờ `vision` thật trên 3.8: trước Task 5, việc ảnh của
+        Auto Scan (`DOC_CANH`, `HO_SO_NOI_DUNG`) rơi về 3.5 **do tình cờ** (3.8
+        khai sai không đọc ảnh). Bật cờ đúng mà không chỉ định thì chúng âm thầm
+        sang 3.8 — đắt hơn nhiều lần mỗi token (`gia_token.BANG_GIA`), chậm hơn,
+        tranh 3090 với job ảnh, và vân tay `EDIT_PLAN` không đổi nên cache không
+        vô hiệu. ⇒ ASV phải chỉ định 3.5 cho việc ảnh ở chính `ai.py`."""
+        from apps.auto_scan_video import ai
+        from platform_core.llm import canonical
+        assert ai.MODEL_THI_GIAC_NOI_BO == "ltt-3.5"
+        mid_35 = canonical.ALIAS_SANG_ID["ltt-3.5"]
+        for t in ai.THAO_TAC:
+            if t.can_thi_giac:
+                assert ai.model_cho(t) == mid_35, t.ma
+            else:
+                assert ai.model_cho(t) == canonical.ALIAS_SANG_ID[
+                    canonical.model_noi_bo_cua(ai.SLUG)], t.ma
 
 
 class TestThuLaiKhiParserVo:
@@ -896,12 +942,17 @@ class TestCamCliKhopNganSach:
         assert "CLAUDE_CODE_AUTO_COMPACT_WINDOW" in cc.CLAUDE_ENV, (
             "bo cai khong dat cua so nen cho Claude — Claude se nen o 100% "
             "cua so khai bao, khong con cho cho mot luot sinh")
-        assert cc.CUA_SO_NEN_CLAUDE == cc.NEN_HOI_THOAI, (
-            f"cua so nen Claude {cc.CUA_SO_NEN_CLAUDE} != nguong nen Codex "
-            f"{cc.NEN_HOI_THOAI} — hai client, mot may chu, phai MOT con so")
-        con = ngan_sach.tran_vao_cua("qwen38-api") - cc.CUA_SO_NEN_CLAUDE
+        # ⚠️ 18/09 (R-05): AUTO_COMPACT_WINDOW la CUA SO; Claude nen o
+        #    cua so - min(maxOut, 20000) - 13000. Diem nen THAT moi phai bang
+        #    nguong Codex — phep kiem day du o `test_1440`.
+        diem = (cc.CUA_SO_NEN_CLAUDE
+                - min(cc.TOKEN_RA_TRAN, cc.CLAUDE_TRU_RA_TOI_DA)
+                - cc.CLAUDE_DEM_NEN)
+        assert diem <= cc.NEN_HOI_THOAI, (
+            f"Claude nen o {diem} > nguong nen Codex {cc.NEN_HOI_THOAI}")
+        con = ngan_sach.tran_vao_cua("qwen38-api") - diem
         assert con >= ngan_sach.TOKEN_RA_TRAN, (
-            f"nen o {cc.CUA_SO_NEN_CLAUDE} tren tran cung "
+            f"nen o {diem} tren tran cung "
             f"{ngan_sach.tran_vao_cua('qwen38-api')} chi chua {con} token — "
             f"nho hon mot luot sinh dai nhat ({ngan_sach.TOKEN_RA_TRAN})")
 

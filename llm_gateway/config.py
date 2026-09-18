@@ -170,7 +170,7 @@ class Config:
             max_image_bytes=_int("LTT_LLM_MAX_IMAGE_BYTES", 12 * 1024 * 1024),
             upstream_timeout_s=_float("LTT_LLM_UPSTREAM_TIMEOUT_S", 600.0),
             stream_timeout_s=_float("LTT_LLM_STREAM_TIMEOUT_S", 900.0),
-            ram_trong_toi_thieu_gb=_float("LTT_LLM_RAM_TRONG_GB", 48.0),
+            ram_trong_toi_thieu_gb=_float("LTT_LLM_RAM_TRONG_GB", RAM_TRONG_GB_MAC_DINH),
             trong_tai_bat=(os.environ.get("LTT_LLM_TRONG_TAI") or "1").strip() != "0",
             vram_sach_mb=_int("LTT_LLM_VRAM_SACH_MB", 2500),
             nhip_tim_giay=_float("LTT_LLM_NHIP_TIM_S", 15.0),
@@ -180,6 +180,15 @@ class Config:
             nguon_vat_ly=nguon,
         )
 
+
+#: Sàn RAM trống (GiB — `psutil.available / 1024**3`) của trọng tài cổng B. L-25
+#: (18/09): 48 → 24. Cùng một ràng buộc với `--cache-ram` của `llama-swap.yaml`:
+#: 2 × cache + sàn + biên ≤ RAM trống lúc cache rỗng (đo 85,0). `deploy.ps1` ghi
+#: đè `gateway.env` bằng đúng số này mỗi lần deploy; `test_1293` đối chiếu cả ba.
+#:
+#: ⚠️ Sàn này chỉ **chặn lượt mới** — nó không xả cache. Và nó KHÔNG phải sàn của
+#:    cổng render (`LTT_RENDER_RAM_TRONG_GB`, vẫn 48): hai cổng, hai phép tính.
+RAM_TRONG_GB_MAC_DINH = 24.0
 
 #: Bản sao của `DEM_UOC` máy A (`apps/ltt_llm/ngan_sach.py`, trước bước 2 tên
 #: `LE`). `tests/test_1223_phuong_an_c_rao_vat_ly_b.py` đối chiếu nó VÀ mặc định

@@ -181,7 +181,7 @@ def test_claude_vscode_standalone_routes_and_context(cc, model):
     assert env["API_TIMEOUT_MS"] == "600000"
     assert env["CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK"] == "1"
     assert env["ENABLE_TOOL_SEARCH"] == "false"
-    assert int(env["CLAUDE_CODE_AUTO_COMPACT_WINDOW"]) == cc.hs_cua(model).nen
+    assert int(env["CLAUDE_CODE_AUTO_COMPACT_WINDOW"]) == cc.hs_cua(model).cua_so_nen_claude  # R-05, test_1440
     assert int(env["MAX_MCP_OUTPUT_TOKENS"]) <= cc.TOKEN_RA_TRAN // 2
     assert cc._env_gia == {}  # Selecting VS Code needs no CLI install.
     cc.go_vscode(tt)

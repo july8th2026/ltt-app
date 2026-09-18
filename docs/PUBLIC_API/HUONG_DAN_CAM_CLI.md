@@ -44,7 +44,8 @@ thử thật, và nó không hiển nhiên từ tài liệu của nhà nào cả
 | | `ltt-3.8` | `ltt-3.5` |
 |---|---|---|
 | Cửa sổ ngữ cảnh công bố | **171.458** token | **209.141** token |
-| Ngưỡng client phải nén | 138.690 | 176.373 |
+| Ngưỡng client phải nén (Codex `auto_compact_token_limit`) | 138.690 | 176.373 |
+| `CLAUDE_CODE_AUTO_COMPACT_WINDOW` (Claude tự trừ 33.000 ⇒ nén ở 138.458 / 176.141) | 171.458 | 209.141 |
 | Trần token **ra** một lượt | 32.768 | 32.768 |
 | Trần đầu vào thật ở cổng | 186.368 | 227.328 |
 | Đọc ảnh | có | có |
@@ -205,6 +206,14 @@ thành `medium`, `model_context_window`
 thành `209141`, `model_auto_compact_token_limit` thành `176373`.
 Chạy `codex --profile ltt-fast`. Không chỉ đổi tên model mà giữ cửa sổ của 3.8.
 
+**Cài lại để nhận số mới (R-13, từ 18/09):** chạy lại bộ cài (`cam` hoặc
+`ltt_cai_dat_cli.py`) khi đã có `ltt.config.toml` / `ltt-fast.config.toml` thì
+bộ cài **chỉ cập nhật khoá LTT sở hữu** (cửa sổ, ngưỡng nén, catalog, subagent,
+…), giữ nguyên khoá, bảng, chú thích và kiểu xuống dòng của bạn; hai trường
+effort là lựa chọn của bạn nên chỉ được thêm khi thiếu. Catalog
+`ltt_model_catalog.json` là tệp của LTT nên được làm mới. Mọi tệp bị sửa có bản
+sao lưu cạnh nó; tệp TOML hỏng thì bộ cài báo và không đụng tới.
+
 `medium` trong profile 3.5 là **nhãn tương thích bắt buộc của Codex**, tương ứng
 với **Thinking on**. Nó không có nghĩa Qwen3.5 sở hữu các mức
 low/medium/high/xhigh. Catalog chỉ cho 3.5 đúng một lựa chọn này; 3.8 mới hiện
@@ -326,7 +335,7 @@ setx ANTHROPIC_DEFAULT_SONNET_MODEL "ltt-3.8"
 setx ANTHROPIC_DEFAULT_FABLE_MODEL "ltt-3.8"
 setx CLAUDE_CODE_SUBAGENT_MODEL "ltt-3.8"
 setx CLAUDE_CODE_MAX_CONTEXT_TOKENS "171458"
-setx CLAUDE_CODE_AUTO_COMPACT_WINDOW "138690"
+setx CLAUDE_CODE_AUTO_COMPACT_WINDOW "171458"
 setx CLAUDE_CODE_MAX_OUTPUT_TOKENS "32768"
 setx MAX_MCP_OUTPUT_TOKENS "16384"
 setx CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS "1"
@@ -343,7 +352,7 @@ setx ENABLE_TOOL_SEARCH "false"
 
 🔴 Đây là **khối đầy đủ**, không phải danh sách gợi ý. Nếu dùng `ltt-3.5`, hãy
 đổi cả bảy dòng model sang `ltt-3.5`, context thành `209141` và compact thành
-`176373`; chín dòng vận hành còn lại giữ nguyên. Bảng giải thích và danh sách
+`209141`; chín dòng vận hành còn lại giữ nguyên. Bảng giải thích và danh sách
 biến không được thêm nằm trong [ma trận cấu hình chuẩn](CLAUDE_CONFIG_MATRIX.md).
 
 Claude Code không biết `ltt-3.8`, nên nó **giả định cửa sổ 200.000 token** và
@@ -384,7 +393,7 @@ Tiện ích **không đọc biến môi trường** như CLI (lỗi đã biết 
     {"name": "ANTHROPIC_DEFAULT_FABLE_MODEL", "value": "ltt-3.8"},
     {"name": "CLAUDE_CODE_SUBAGENT_MODEL", "value": "ltt-3.8"},
     {"name": "CLAUDE_CODE_MAX_CONTEXT_TOKENS", "value": "171458"},
-    {"name": "CLAUDE_CODE_AUTO_COMPACT_WINDOW", "value": "138690"},
+    {"name": "CLAUDE_CODE_AUTO_COMPACT_WINDOW", "value": "171458"},
     {"name": "CLAUDE_CODE_MAX_OUTPUT_TOKENS", "value": "32768"},
     {"name": "MAX_MCP_OUTPUT_TOKENS", "value": "16384"},
     {"name": "CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS", "value": "1"},
@@ -474,7 +483,8 @@ Tắt **Default to 1M context** và **Offer 1M-context variant** cho cả hai mo
 Đây là khai báo khả năng 1M, không phải nút cấp thêm bộ nhớ. **Tắt 1M không tự
 đặt cửa sổ 171K:** trước khi thêm môi trường Local, UI Automation ngày 15/09
 đọc được `Usage: Context 48.1k / 200k (24%)`; ảnh 24/28 sau khi thêm môi trường
-hiện `46.8k / 138.7k`, rồi `99.6k / 138.7k` và tự nén ở 76%.
+hiện `46.8k / 138.7k`, rồi `99.6k / 138.7k` và tự nén ở 76% — đó là preset CŨ
+(`AUTO_COMPACT_WINDOW=138690`, nén sớm 33K, R-05); preset từ 18/09 hiện `/ 171.5k`.
 Form `inferenceModels` bản 1.52386.6 không có trường nhập cửa sổ token tùy ý.
 
 Nếu đang trong hội thoại Code và không thấy ô môi trường: bấm **New** ở thanh
@@ -490,7 +500,7 @@ Desktop 1.52386.6 / Claude Code 2.1.270 với LTT Gateway, không phải một n
 | Biến | Giá trị dùng chung an toàn khi chuyển hai model |
 |---|---:|
 | `CLAUDE_CODE_MAX_CONTEXT_TOKENS` | `171458` |
-| `CLAUDE_CODE_AUTO_COMPACT_WINDOW` | `138690` |
+| `CLAUDE_CODE_AUTO_COMPACT_WINDOW` | `171458` |
 | `CLAUDE_CODE_MAX_OUTPUT_TOKENS` | `32768` |
 | `MAX_MCP_OUTPUT_TOKENS` | `16384` |
 | `CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS` | `1` |
@@ -503,8 +513,8 @@ Desktop 1.52386.6 / Claude Code 2.1.270 với LTT Gateway, không phải một n
 
 | Preset môi trường | `MAX_CONTEXT` | `AUTO_COMPACT` | Dấu hiệu đúng trong Context |
 |---|---:|---:|---|
-| LTT 3.8, hoặc đổi qua lại hai model | 171.458 | 138.690 | `… / 138.7k`, tự nén khoảng 76% |
-| Chỉ LTT 3.5 | 209.141 | 176.373 | `… / 176.4k`, tự nén khoảng 81% |
+| LTT 3.8, hoặc đổi qua lại hai model | 171.458 | 171.458 | `… / 171.5k`, `Autocompact buffer 33k`, nén ở 138.458 (~81%) |
+| Chỉ LTT 3.5 | 209.141 | 209.141 | `… / 209.1k`, `Autocompact buffer 33k`, nén ở 176.141 (~84%) |
 
 Cặp dùng chung lấy model hẹp nhất là **LTT 3.8**: LTT 3.5 nén sớm hơn khả năng
 của nó nhưng không bị khai dư cửa sổ. UI chuyển model không tự đổi các biến.
@@ -525,12 +535,20 @@ hoặc `CLAUDE_STREAM_IDLE_TIMEOUT_MS`. Chúng hoặc dư với hai mã
 LTT không có hậu tố `[1m]`, ghi đè ngưỡng đã tính, có thể đổi chất lượng suy
 luận, hoặc trùng trường **Stream idle timeout = 600 seconds** trong Gateway.
 
-Với preset 3.8, 138.690 là cửa sổ Claude dùng để tính nén; buffer đầu ra 32.768
-được chừa trong tổng công bố 171.458. Vì vậy ảnh 28 hiện `Autocompact buffer 33k`
-và `Compacts automatically at 76%` là **đúng**, không phải bị hụt context.
+> ⚠️ **`AUTO_COMPACT_WINDOW` là CỬA SỔ, không phải ngưỡng** (R-05, đo 18/09). Claude Code
+> nén ở `min(AUTO_COMPACT_WINDOW, cửa sổ) − min(MAX_OUTPUT_TOKENS, 20.000) − 13.000`.
+> Đo thật Claude Code 2.1.274 trỏ về LTT: `/context` in `Autocompact buffer 33k` ở mọi
+> cửa sổ; khớp mã client và tài liệu (cửa sổ 1M nén “at about 967K” = 1M − 33K).
+> Trước 18/09 ta khai 138.690 ⇒ Claude nén ở 105.690 (76 %), sớm 33.000 token so với
+> Codex. Giá trị đúng = cửa sổ công bố (171.458 / 209.141) ⇒ nén ở 138.458 / 176.141,
+> ≤ ngưỡng Codex (138.690 / 176.373). Nguồn: `HoSoModel.cua_so_nen_claude` trong hai
+> bộ cài; `tests/test_1440_nen_claude_tach_codex.py`.
+
+Ảnh 28 cũ (`… / 138.7k`, `Compacts automatically at 76%`) là dấu hiệu của cấu
+hình **trước 18/09**: nén sớm 33.000 token, không phải hành vi mong muốn.
 
 Kiểm `/context` hoặc vòng Usage trong phiên mới: phải thấy cửa sổ đã điều chỉnh;
-nếu còn 200K thì cấu hình chưa có hiệu lực. `/autocompact 138690` là cách chọn
+nếu còn 200K thì cấu hình chưa có hiệu lực. `/autocompact 171458` là cách chọn
 ngưỡng qua lệnh nếu bản engine hỗ trợ; `/compact` chủ động trước khi đọc tệp lớn.
 Biến Local theo tài liệu áp dụng cho **Code local sessions**; chưa nghiệm thu
 việc chúng điều khiển Chat/Cowork trên bản này. Với Chat, dùng hội thoại mới và

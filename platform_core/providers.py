@@ -285,7 +285,16 @@ REGISTRY: dict[str, Provider] = {
                     #    `platform_core` không import `apps/` nên `test_334` là
                     #    thứ buộc hai đầu lại.
                     "context_window": 221_184,
-                    "vision": False,
+                    # ✅ 18/09 (plan v2 Task 5): False → True. Máy B nạp
+                    #    `--mmproj mmproj-F16.gguf` cho hồ sơ này
+                    #    (`llm_gateway/deploy/llama-swap.yaml`), và LTTCODE live
+                    #    L7 (ảnh, `ltt-3.8`) PASS trên production 17/09
+                    #    (`LTTCODEAPP/docs/LTTCODE/reports/P03-live-20260917-*`).
+                    #    Cờ này là LỜI KHAI, không phải bộ định tuyến: app nào
+                    #    muốn việc ảnh ở 3.5 thì tự chỉ định (xem
+                    #    `apps/auto_scan_video/ai.MODEL_THI_GIAC_NOI_BO`).
+                    #    `test_334` đối chiếu cửa sổ + vision với `HO_SO` từng model.
+                    "vision": True,
                     "tool_calling": True,
                     "license": "Apache-2.0",
                     "do_duoc": {
@@ -293,7 +302,9 @@ REGISTRY: dict[str, Provider] = {
                         "decode_khong_mtp_tok_s": 40.0,
                         "prefill_tok_s": 1100,       # 1.050–1.190 ở 4 kích cỡ
                         "vram_dinh_mb": 20_339,
-                        "nap_model_s": 18,
+                        # Bản sao của `ngan_sach.NAP_KHO_AM_S` (kho ấm, §G4);
+                        # `platform_core` không import `apps/` ⇒ `test_334` buộc.
+                        "nap_model_s": 16.3,
                     },
                     # ⚠️ Giới hạn phải nói ra, không giấu sau giao diện (D-027).
                     "canh_bao": [

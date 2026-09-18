@@ -322,7 +322,7 @@ models:
       -np 3
       -b 512 -ub 512
       --cache-type-k q4_0 --cache-type-v q4_0
-      --cache-ram 12288
+      --cache-ram 24576
       --ctx-checkpoints 8
       --spec-type draft-mtp --spec-draft-n-max 2
       --host 127.0.0.1 --port ${PORT}
@@ -411,7 +411,7 @@ models:
       -c 262144
       -np 3
       --cache-type-k q8_0 --cache-type-v q8_0
-      --cache-ram 12288
+      --cache-ram 24576
       --ctx-checkpoints 8
       --spec-type draft-mtp --spec-draft-n-max 2
       --host 127.0.0.1 --port ${PORT}
@@ -587,40 +587,47 @@ groups:
 #        oldest entry` voi `size = 885.686 MiB` (va 410,8 MiB) trong chinh phien
 #        do => o ~886 MiB/hoi thoai, mac dinh 8192 MiB chi chua ~9 hoi thoai.
 #
-#    => `--cache-ram 12288` (12 GiB MOI model, 1,5x mac dinh).
+#    => `--cache-ram 24576` (24 GiB MOI model) - L-25, chu du an chot 18/09,
+#       CUNG LUC ha san RAM cua cong B `LTT_LLM_RAM_TRONG_GB` 48 -> 24.
 #
-#    !! VI SAO 12288 CHU KHONG PHAI 24576 - MOT SU CO THAT, DO DUOC 18/09.
+#    !! LICH SU: L-24 (sang 18/09) da bat 24576 voi san 48 va MAY B NGUNG BAN
+#       ~10 phut: hai model vua nap, cache rong -> RAM trong 85,0 GiB; sau 28
+#       hoi thoai ~10K token -> 44,2 GiB (< 48) => trong tai cong B tu choi MOI
+#       luot ca hai model (`ban_trong_tai=36`) trong khi 6 slot deu ranh. L-24 ha
+#       cache ve 12288. L-25 giu 24576 va sua CHO SAI THAT: san 48 khong phai
+#       rang buoc cua LLM (no chep tu san cua du an VIDEO/ComfyUI, `CHIA_GPU_VOI_
+#       VIDEO.md` muc 1: 23 GB -> VRAM 98 %, 4 GB -> Windows sap 19/08).
 #
-#       Cua so bao tri 18/09 dat 24576 truoc, va no lam MAY B NGUNG BAN trong
-#       ~10 phut. Day khong phai suy dien, day la so do:
+#    ! `--cache-ram` BO GI (llama.cpp, doc ma `tools/server/server-task.cpp`
+#      `server_prompt_cache::alloc/update`, PR #16391):
+#        * MOT bo nho cache cho MOI tien trinh llama-server (khong theo slot);
+#          don vi MiB; -1 = khong gioi han, 0 = tat.
+#        * size moi entry = KV dich + KV draft (MTP) + checkpoint CUA entry do;
+#          truoc khi cap phat, duoi entry cu nhat toi khi vua (`making room`);
+#          entry lon hon ca tran thi bo qua (`exceeds cache size limit`).
+#        * KHONG tinh: checkpoint SONG cua slot (np x ctx-checkpoints x
+#          ~112-150 MiB, #25437/#28194) va bo dem khac cua tien trinh. Het
+#          tran chi la han mem theo tong entry, khong phai tran RSS.
+#        * Giai phong: chi khi duoi entry, hoac tien trinh chet (unload/restart).
+#          San RAM cua cong chi CHAN LUOT MOI - no KHONG xa cache.
 #
-#         RAM may B: 191,9 GiB tong.
-#         hai model vua nap, cache RONG        -> con TRONG 85,0 GB
-#         sau 28 hoi thoai ~10K token (phep b) -> con TRONG 44,2 GB
-#           (llama-server 3.8: 15,7 -> 37,3 GB ; 3.5: 7,5 -> 26,5 GB)
+#    Phep tinh ngan sach (GiB, psutil.available; lam lai khi doi MOT trong ba so):
 #
-#       Va `C:\ProgramData\LTTLlm\gateway.env` dat `LTT_LLM_RAM_TRONG_GB=48`:
-#       TRONG TAI cua chinh cong may B TU CHOI MOI LUOT khi RAM trong tut duoi
-#       nguong do. `/health` khai dung ly do: `"ban": true, "ly_do": "RAM trong
-#       44.4 GB duoi nguong 48 GB"`, `dem.ban_trong_tai = 36`. Ca HAI model chet,
-#       trong khi ca sau slot cua engine deu RANH (`/slots` is_processing false).
+#      RAM trong luc cache rong (2 model nap)          85,0   (do 18/09)
+#      - 2 x (24 cache + 3 slot x 8 ckpt x 0,15)      -55,0
+#      = RAM trong xau nhat                            ~30
+#      - LTT_LLM_RAM_TRONG_GB                          -24
+#      = bien tren san                                  ~6
 #
-#       !! Day la cai bay dang nho: `--cache-ram` KHONG doi VRAM (dung), nen no
-#          bi xep la "rui ro Thap". Nhung no doi RAM HE THONG, va tren may nay RAM
-#          he thong CO MOT SAN CUNG do chinh cong doc. Hai co nam o hai tep khac
-#          nhau (`llama-swap.yaml` va `gateway.env`) va khong tep nao nhac tep kia.
+#    `tests/test_1293_ngan_sach_ram_may_b.py` doi chieu yaml + `deploy.ps1` +
+#    `llm_gateway/config.py` bang phep tinh nay.
 #
-#       Phep tinh ngan sach, lam lai khi doi mot trong hai so:
+#    !! Duong ANH (cong render, `LTT_RENDER_RAM_TRONG_GB` = 48, san RIENG):
+#       khi cu tru 3090 chuyen sang anh, 3.8 bi unload (cache 3.8 mat theo tien
+#       trinh) nhung cache 3.5 (5060 Ti) VAN O LAI toi 24 GiB. So do phep chuyen
+#       + RAM ComfyUI: `KET_QUA_BAO_TRI_18_09.md` phu luc L-25.
 #
-#         tran cho CA HAI cache = (RAM trong luc cache rong) - LTT_LLM_RAM_TRONG_GB
-#                               = 85,0 - 48 = 37 GB
-#         tru bien an toan ~13 GB (ComfyUI bat lai, RDP, viec AI khac tren B)
-#                               => 24 GB cho ca hai => 12 GiB MOI model
-#
-#       Worst case hai cache day: RAM trong >= 85 - 24 = 61 GB, tren san 13 GB.
-#
-#    !! DUNG NANG `--cache-ram` o day ma khong lam lai phep tinh tren, va khong
-#       kiem `LTT_LLM_RAM_TRONG_GB` tren may B. Hai so nay la MOT rang buoc.
+#    !! DUNG NANG `--cache-ram` hay HA san ma khong lam lai phep tinh tren.
 #
 #    => `--ctx-checkpoints 8` (mac dinh 32). Mot entry cache goi ca KV + trang
 #       thai draft MTP + MOI checkpoint; checkpoint model lai do duoc 112-150

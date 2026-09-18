@@ -12,6 +12,13 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-18 — Máy B: `--cache-ram 24576`/model + sàn RAM cổng LLM 48 → 24 (L-25)
+
+- Chủ dự án chốt sàn 48 sai chỗ. Tra nguồn: sàn chép từ dự án video/ComfyUI (`CHIA_GPU_VOI_VIDEO.md` §1) vào cổng LLM (`b81b1841`); `--cache-ram` = một bộ đệm/tiến trình, MiB, checkpoint sống của slot ngoài trần (llama.cpp `server-task.cpp`, PR #16391, #25437).
+- Nhánh `phien/cache-24g` (`c3b08e3c`, `96314e56`): yaml 24576 cả hai model; `deploy.ps1` nay **ghi đè** `LTT_LLM_RAM_TRONG_GB` mỗi lần deploy (trước chỉ lúc tạo tệp); `config.py` `RAM_TRONG_GB_MAC_DINH=24`; `test_1293` đối chiếu ba chỗ với ngân sách RAM. L1 xanh; deploy B, yaml B = kho (`168e23c9…`).
+- Đo production: cache rỗng 84,8 GiB → hai cache bão hoà **33–35 GiB**, 0 từ chối; cửa sổ ảnh thật (cache 3.5 đầy) đáy **57,7 GiB** trên sàn render 48. Số: `KET_QUA_BAO_TRI_18_09.md` phụ lục L-25.
+- ⚠️ Sự cố của phiên: một lệnh `[IO.File]` với đường dẫn tương đối ghi nhầm chú thích yaml vào **cây chính** (.NET không theo `cd` của PowerShell). Đã chuyển sang worktree và `checkout --` tệp ở cây chính (chỉ chứa thay đổi của phiên này). Bài học: `[IO.File]` luôn đường dẫn tuyệt đối.
+- Chưa gộp `main`, chưa deploy máy A (không cần: `-c`/`-np` không đổi).
 ## 2026-09-18 — Golden UI: gộp `main`, deploy `d38ee328`, nghiệm thu công khai
 
 - Gộp `phien/golden-ui` → `main` (`82850b47`). Chủ dự án chỉ đạo deploy dù lượt khép còn đỏ đúng một phép `test_1259` (đòi env cổng LLM máy B — ngoài phạm vi phiên giao diện; 28/29 xanh, `test-results/gates/20260917T174136Z-7552.json`).

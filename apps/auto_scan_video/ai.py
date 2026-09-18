@@ -60,6 +60,26 @@ THU_TU_PROVIDER = ("ltt_llm",)
 #: chuoi nay o `model_cho`: hai ban sao cua mot ten se troi khoi nhau.
 SLUG = "auto_scan_video"
 
+#: 🔑 Bi danh model cho thao tac CAN THI GIAC (`DOC_CANH`, `HO_SO_NOI_DUNG`).
+#:
+#: 🔴 18/09 (plan v2 Task 5): `providers` sua `qwen38-api` `vision` False → True
+#:    (may B nap mmproj cho 3.8; LTTCODE live L7 anh tren `ltt-3.8` PASS 17/09).
+#:    Truoc do viec anh cua ASV roi ve 3.5 **do tinh co** — nhanh `hop[0]` duoi
+#:    `model_cho`, kem mot dong canh bao moi lan goi. Bat co dung ma khong chi
+#:    dinh thi viec anh am tham sang 3.8, va chu app se quan tam vi:
+#:      * gia: 3.8 = 50/10/400 vs 3.5 = 13/3/20 credit / 1M token vao/cache/ra
+#:        (`platform_core/llm/gia_token.BANG_GIA`) — ~4x vao, ~20x ra;
+#:      * do tre: 27B cham hon 9B moi token, va 3.8 tranh RTX 3090 voi job anh;
+#:      * im lang: van tay `EDIT_PLAN` (`thi_hanh.phien_ban_engine`) KHONG chua
+#:        id model ⇒ doi model khong vo hieu cache, va chua ai do lai chat
+#:        luong doc canh tren 3.8.
+#:    ⇒ Giu dung dich den dang chay (3.5), nhung nay la LOI KHAI, khong phai su
+#:      tinh co. Muon doi sang `ltt-3.8`: sua dong nay, dua id model vao van tay
+#:      `EDIT_PLAN`, va do lai nghiem thu doc canh — dung chi lam mot.
+#: ⛔ Rang buoc van giu: neu registry noi model nay khong doc anh thi `model_cho`
+#:    di tim model khac (hoac nem `AiError`), khong tra ve no.
+MODEL_THI_GIAC_NOI_BO = "ltt-3.5"
+
 #: 🔑 **Phien ban PROMPT + LU?C DO, di vao van tay.**
 #:
 #: ⛔ Thieu no thi doi mot cau prompt xong, cache van khop, va lan chay dung lai
@@ -216,6 +236,12 @@ def model_cho(thao_tac: ThaoTac, *, provider: str = "") -> str:
         return bool(kha_nang[mid].get("vision")) or not thao_tac.can_thi_giac
 
     khai = canonical.ALIAS_SANG_ID.get(canonical.model_noi_bo_cua(SLUG), "")
+    if thao_tac.can_thi_giac:
+        # Xem `MODEL_THI_GIAC_NOI_BO`: viec anh chi dinh tuong minh, khong
+        # theo co `vision` cua model app khai.
+        chon = canonical.ALIAS_SANG_ID.get(MODEL_THI_GIAC_NOI_BO, "")
+        if phuc_vu_duoc(chon):
+            return chon
     if phuc_vu_duoc(khai):
         return khai
 
