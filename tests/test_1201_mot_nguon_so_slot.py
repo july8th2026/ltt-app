@@ -75,6 +75,18 @@ def test_tools_KHONG_con_khuyen_DONG_THOI_MAY_B():
     assert not lech, lech
 
 
+def test_tai_lieu_cu_GAN_da_go_L23():
+    """Task 11 (18/09): tài liệu còn tả env/công thức đã gỡ ở L-23 phải mang nhãn
+    *ĐÃ GỠ (L-23* — không thì người đọc sau đặt lại một biến không còn tác dụng."""
+    cam = (GOC / "docs" / "VLM_NOI_BO" / "CAM_CLI.md").read_text(encoding="utf-8")
+    for dong in cam.splitlines():
+        if "LTT_LLM_MAX_DONG_THOI" in dong:
+            assert "ĐÃ GỠ (L-23" in dong, dong[:120]
+    qd = (GOC / "docs" / "QUYET_DINH_NEN_TANG.md").read_text(encoding="utf-8")
+    i = qd.index("### Q120 ")
+    assert "ĐÃ GỠ (L-23" in qd[i:qd.index("\n###", i + 1)]
+
+
 def test_manifest_khong_go_so_tay():
     """`admission_slots=1` gõ tay là đúng cái chồng chéo phép kiểm này sinh ra để dẹp."""
     van = (GOC / "apps" / "ltt_llm" / "manifest.py").read_text(encoding="utf-8")

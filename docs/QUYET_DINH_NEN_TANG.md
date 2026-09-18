@@ -299,6 +299,8 @@ có watermark trong khi mặc định `apply_watermark=True` (upstream #191).
 
 ### Q120 — Trần đầu vào công bố của `ltt_llm` là số DẪN XUẤT từ `ngan_sach.py`, không phải một hằng chốt tay (2026-09-03, H43 Phase 03)
 
+⛔ **ĐÃ GỠ (L-23, 17/09/2026)** — công thức và tên dưới đây là lịch sử: `LE`, `TOKEN_VAO_TRAN = CUA_SO_MODEL − TOKEN_RA_TRAN − LE`, env `LTT_LLM_MAX_INPUT_TOKENS` của máy B và phép so hai bên đã gỡ ở phương án C. Trần vào nay là của TỪNG model, đọc từ `apps/ltt_llm/ngan_sach.HO_SO[m]` (máy A quyết định nhận, máy B là rào vật lý) — xem `docs/ltt_llm_dual/DECISION_LOG.md` L-23 và `docs/ltt_llm_dual/BAN_DO_DUONG_DI.md`.
+
 **Chốt:** một câu hỏi "khách được gửi bao nhiêu token vào" chỉ có **một** câu
 trả lời đang hiệu lực, và nó nằm trong **mã**: `apps/ltt_llm/ngan_sach.py` —
 `TOKEN_VAO_TRAN = CUA_SO_MODEL − TOKEN_RA_TRAN − LE` (= 96.256), **công bố cho
