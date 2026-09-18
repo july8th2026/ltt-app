@@ -494,3 +494,32 @@ R21. Lùi theo **thứ tự ngược**: máy A trước, rồi cổng, rồi yam
    một lần đọc đĩa, và `dio` phá luôn kho ấm. `tests/test_637` canh.
 6. ⛔ Mở `groups` cho hai hồ sơ **cùng một card**. Một group `swap:false` chỉ hợp lệ
    khi mỗi thành viên ghim một UUID riêng (`tests/test_637`).
+
+---
+
+## 7. Cảnh báo R-16 — TTFT stream và nạp nguội theo ngày (`tools/canh_bao_ttft_b.py`)
+
+Chạy trên **máy A**, đọc sổ lượt cổng B (`H:\LTT_LLM\logs\gateway_err*.log`) **chỉ đọc** qua đường vào
+§1, dùng lại bộ đọc/phân vị/TTL của `tools/tong_hop_ttft_b.py`. Ngưỡng = đề xuất R-16 (giữ nguyên):
+TTFT stream **ấm** p95/ngày > 45 s (cần ≥ 20 lượt ấm), hoặc > 5 lượt nạp nguội/ngày/model có TTFT > 20 s
+(chỉ cửa stream — cửa đồng bộ ghi cả lượt). Kênh: thư người trực của `ops_alerts` (`platform_core.mailer`
+→ `LTT_OPS_ALERT_EMAIL`; vắng ⇒ tắt mềm). Mỗi (ngày, model, điều kiện) gửi **một** lần — trạng thái ở
+`data_path("canh_bao", "ttft_b.json")`.
+
+```powershell
+python tools\canh_bao_ttft_b.py                     # hôm qua, CHẠY THỬ: in số, không gửi, không ghi trạng thái
+python tools\canh_bao_ttft_b.py --ngay 2026-09-18   # một ngày (giờ máy B)
+python tools\canh_bao_ttft_b.py --gui               # gửi nếu vượt (bản chạy theo lịch)
+# Đặt lịch (chủ máy làm, công cụ không tự đặt):
+schtasks /Create /TN "LTT canh bao TTFT B" /SC DAILY /ST 07:15 /TR "C:\LTTPlatform\venv\Scripts\python.exe C:\LTTPlatform\app\tools\canh_bao_ttft_b.py --gui"
+```
+
+Mã thoát: 0 không vượt · 1 có vượt (đã gửi / chạy thử / đã gửi trước đó) · 2 không đọc được sổ hoặc gửi thư
+hỏng (chưa ghi trạng thái ⇒ lần sau gửi lại). Tài khoản chạy lịch phải đọc được `secrets\app.env` và có
+`~\.ssh\nexus_b`.
+
+Đọc số đúng: `ttft_s` đo từ lúc **cổng B** nhận lượt ⇒ **không** gồm thời gian chờ ở máy A
+(`llm_waiters`, `whale_cho_prefill` của L-29). Nạp nguội suy từ sổ (khoảng lặng > TTL); `llamaswap.log`
+không đếm theo ngày được vì llama-swap v250 chỉ in giờ khi đặt `logTimeFormat` (mặc định rỗng) — yaml
+của ta không đặt. Số thật 16–18/09 (chạy thử): p95 ấm 31,6/32,9 s → 11,0/11,3 s (18/09); nạp nguội > 20 s
+tối đa 4/ngày (3.8) ⇒ không ngày nào vượt.
