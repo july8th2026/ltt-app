@@ -18,11 +18,12 @@
 | Khối | % | Còn lại |
 |---|---|---|
 | A — Nền tảng LTT LLM (Phương án C) | **100 %** | — |
-| B — LTTCODE build + E2E + phát hành | **95 %** | Đăng nhập/đăng xuất trong app (P04 #8 phần giao diện) |
+| B — LTTCODE build + E2E + phát hành | **100 %** (bản 0.1.7) | 0.1.8 chọn mức suy nghĩ = E Task 13 |
 | C — Tối ưu máy B | **95 %** | Nâng số job song song (C4) |
-| E — LLM v2 (làm lại trên Phương án C) | **15 %** | Task 2–13 |
+| E — LLM v2 (làm lại trên Phương án C) | **30 %** | 2, 5, 9 chờ gate/deploy; 3–4, 10 đang chạy; 6, 7, 8, 11, 12, 13 chưa |
 | D — Tổng kết phiên | **0 %** | L3, gộp, push, nhật ký |
-| **Cả phiên** | **~70 %** | |
+| F — Dọn tài liệu | **10 %** | 8 lô (~5 giờ) |
+| **Cả phiên** | **~74 %** | |
 
 ---
 
@@ -57,7 +58,7 @@
 | B9 | 0.1.7 stable 100 % + trang tải | ✅ | `d9f7c95`; rollout 100 lúc 10:2x 18/09 |
 | B10 | CI 4/4 xanh | ✅ | `8681126` |
 | B11 | Đăng nhập thật phía máy chủ | ✅ 40/40 | `2e2a06f` |
-| B12 | Đăng nhập/đăng xuất **trong app** | 🔵 | 18/09 09:21: đăng xuất trong app ✅, đăng nhập lại bằng `khach1.thu` qua luồng PKCE thật ✅ (`signed_in.json` = khach1, sidecar sẵn sàng); còn: gửi tin + giữ đăng nhập sau khởi động lại (máy vừa khởi động lại — kiểm) |
+| B12 | Đăng nhập/đăng xuất **trong app** | ✅ | 18/09 09:21: đăng xuất trong app ✅, đăng nhập lại bằng `khach1.thu` qua luồng PKCE thật ✅ (`signed_in.json` = khach1, sidecar sẵn sàng); sau khi máy khởi động lại vẫn đăng nhập `khach1`, sidecar sẵn sàng |
 | B13 | Chọn mức suy nghĩ theo model trong app (0.1.8) | ⬜ | = E Task 13 |
 | B14 | Chứng chỉ EV, máy ảo sạch | ⛔ | ngoài phiên |
 
@@ -79,11 +80,11 @@
 | 2 | Lỗi tính tiền `/messages` khi trúng cache (R-04) | 🔵 code xong, chờ gate/deploy | `9dc8d6f2` (đỏ→xanh, đối chứng, 1.965 test provider đạt) |
 | 3 | Catalog mức suy nghĩ theo model | 🔵 | nhánh `phien/suy-nghi-theo-model` |
 | 4 | Suy nghĩ do máy chủ quyết, gỡ ghi đè 3 cửa, sàn `max_tokens` 3.5 | 🔵 | cùng nhánh Task 3 — chủ dự án đã duyệt hướng |
-| 5 | 3.8 khai đọc ảnh; test bản sao `-c` | 🔵 | nhánh `phien/providers-vision` |
+| 5 | 3.8 khai đọc ảnh; test bản sao `-c` | 🔵 code xong, chờ gate/deploy | `3f6ad81b` (auto_scan_video ghim 3.5 có lý do; 3.268 test đạt) |
 | 6 | B gia hạn suất theo tiến triển (bỏ thu cứng 1.200 s) | ⬜ | sau Task 1 |
 | 7 | Ước token cận trên (code ×0,74, emoji ×0,16) + overhead template | ⬜ | sau Task 1; deploy theo chiều |
 | 8 | 413 trước 200 đúng câu từng giao thức | ⬜ | sau Task 4 |
-| 9 | Tách ngưỡng nén Claude Code/Codex; bộ cài cập nhật khoá LTT | 🔵 | nhánh `phien/nen-claude-codex` |
+| 9 | Tách ngưỡng nén Claude Code/Codex; bộ cài cập nhật khoá LTT | 🔵 code xong, chờ gate/deploy | `1b143291`, `2c3fbebd` (đo Claude Code 2.1.274: trừ 33k; nay nén 138.458/176.141); phần `examples.py` giao Task 3–4 |
 | 10 | Công cụ kiểm định kỳ (canary cô lập, MTP, `/slots`, bộ chấm A/B) | ⬜ | sau Task 1, giờ vắng |
 | 11 | Dọn bản sao gõ tay + tài liệu sai | ⬜ | rải theo task |
 | 12 | Chất lượng 3.5: áp thông số lấy mẫu theo model card + A/B | ⬜ | sau Task 4, 10 |
@@ -94,7 +95,7 @@
 
 | # | Hạng mục | Trạng thái |
 |---|---|---|
-| F1 | Lập danh sách dọn (chỉ đọc): tài liệu nói như hiện hành mà sai, plan/spec đã xong/bỏ, hai nguồn cùng một chủ đề, ảnh chụp không ghi ngày, memory cũ | 🔵 |
+| F1 | Lập danh sách dọn (chỉ đọc) | ✅ | `docs/superpowers/plans/2026-09-18-don-tai-lieu.md` — 8 lô, ~5 giờ |
 | F2 | Dọn theo lô (mỗi lô một commit): sửa chữ / gắn "ĐÃ GỠ" / chuyển `docs/_luutru` kèm con trỏ / gộp về tệp chủ | ⬜ |
 | F3 | Phép chặn tái phát: kiểm tài liệu sống không nhắc tên đã gỡ ngoài đoạn "ĐÃ GỠ" | ⬜ |
 | F4 | Dọn memory (chỉ mục + tệp sai) | ⬜ |
