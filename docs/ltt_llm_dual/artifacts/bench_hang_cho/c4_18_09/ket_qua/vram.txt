@@ -1,0 +1,64 @@
+Fri Sep 18 15:07:46 SEAST 2026
+PROC model=qwen38 pid=19352 np=3 c=221184 b=512 ub=512 dedicated_mib=24007 shared_mib=584
+GPU 0, NVIDIA GeForce RTX 3090, 24072, 24576, 0
+GPU 1, NVIDIA GeForce RTX 5060 Ti, 415, 16311, 0
+Fri Sep 18 15:08:16 SEAST 2026
+PROC model=qwen35 pid=8548 np=3 c=262144 b= ub= dedicated_mib=15365 shared_mib=672
+GPU 0, NVIDIA GeForce RTX 3090, 66, 24576, 0
+GPU 1, NVIDIA GeForce RTX 5060 Ti, 15778, 16311, 0
+Fri Sep 18 15:14:57 SEAST 2026
+PROC model=qwen35 pid=8548 np=3 c=262144 b= ub= dedicated_mib=15375 shared_mib=678
+GPU 0, NVIDIA GeForce RTX 3090, 66, 24576, 0
+GPU 1, NVIDIA GeForce RTX 5060 Ti, 15788, 16311, 0
+Fri Sep 18 15:18:30 SEAST 2026
+PROC model=qwen38 pid=17732 np=4 c=221184 b=512 ub=512 dedicated_mib=24169 shared_mib=822
+PROC model=qwen35 pid=17060 np=4 c=262144 b= ub= dedicated_mib=15407 shared_mib=644
+GPU 0, NVIDIA GeForce RTX 3090, 24234, 24576, 0
+GPU 1, NVIDIA GeForce RTX 5060 Ti, 15820, 16311, 0
+Fri Sep 18 15:26:53 SEAST 2026
+PROC model=qwen35 pid=17060 np=4 c=262144 b= ub= dedicated_mib=15525 shared_mib=684
+GPU 0, NVIDIA GeForce RTX 3090, 66, 24576, 0
+GPU 1, NVIDIA GeForce RTX 5060 Ti, 15938, 16311, 0
+Fri Sep 18 15:27:42 SEAST 2026
+PROC model=qwen38 pid=11868 np=4 c=204800 b=512 ub=512 dedicated_mib=23971 shared_mib=540
+PROC model=qwen35 pid=22984 np=5 c=262144 b= ub= dedicated_mib=15495 shared_mib=714
+GPU 0, NVIDIA GeForce RTX 3090, 24036, 24576, 1
+GPU 1, NVIDIA GeForce RTX 5060 Ti, 15908, 16311, 0
+Fri Sep 18 15:38:16 SEAST 2026
+PROC model=qwen38 pid=11868 np=4 c=204800 b=512 ub=512 dedicated_mib=24005 shared_mib=558
+GPU 0, NVIDIA GeForce RTX 3090, 24070, 24576, 0
+GPU 1, NVIDIA GeForce RTX 5060 Ti, 415, 16311, 0
+Fri Sep 18 15:39:08 SEAST 2026
+PROC model=qwen35 pid=9488 np=5 c=262144 b= ub= dedicated_mib=15539 shared_mib=810
+GPU 0, NVIDIA GeForce RTX 3090, 66, 24576, 0
+GPU 1, NVIDIA GeForce RTX 5060 Ti, 15952, 16311, 0
+Fri Sep 18 15:49:47 SEAST 2026
+PROC model=qwen35 pid=9488 np=5 c=262144 b= ub= dedicated_mib=15549 shared_mib=820
+GPU 0, NVIDIA GeForce RTX 3090, 66, 24576, 1
+GPU 1, NVIDIA GeForce RTX 5060 Ti, 15962, 16311, 0
+Fri Sep 18 15:50:57 SEAST 2026
+APPLY v4.yaml
+PROC model=qwen38 pid=9484 np=5 c=221184 b=512 ub=512 dedicated_mib=24184 shared_mib=1266
+PROC model=qwen35 pid=17976 np=6 c=262144 b= ub= dedicated_mib=15527 shared_mib=844
+GPU 0, NVIDIA GeForce RTX 3090, 24248, 24576, 0
+GPU 1, NVIDIA GeForce RTX 5060 Ti, 15940, 16311, 0
+Fri Sep 18 15:51:29 SEAST 2026
+APPLY v5.yaml
+PROC model=qwen38 pid=12944 np=4 c=204800 b=512 ub=512 dedicated_mib=15234 shared_mib=78
+PROC model=qwen35 pid=9440 np=4 c=262144 b= ub= dedicated_mib=15407 shared_mib=644
+GPU 0, NVIDIA GeForce RTX 3090, 24036, 24576, 37
+GPU 1, NVIDIA GeForce RTX 5060 Ti, 15820, 16311, 0
+PROC model=qwen38 pid=12944 np=4 c=204800 b=512 ub=512 dedicated_mib=23971 shared_mib=540
+PROC model=qwen35 pid=9440 np=4 c=262144 b= ub= dedicated_mib=15407 shared_mib=644
+GPU 0, NVIDIA GeForce RTX 3090, 24036, 24576, 0
+GPU 1, NVIDIA GeForce RTX 5060 Ti, 15820, 16311, 0
+PROC model=qwen38 pid=12944 np=4 c=204800 b=512 ub=512 dedicated_mib=24007 shared_mib=558
+PROC model=qwen35 pid=9440 np=4 c=262144 b= ub= dedicated_mib=15525 shared_mib=684
+GPU 0, NVIDIA GeForce RTX 3090, 24072, 24576, 0
+GPU 1, NVIDIA GeForce RTX 5060 Ti, 15926, 16311, 0
+Fri Sep 18 16:02:54 SEAST 2026
+RESTORED
+PROC model=qwen38 pid=21532 np=3 c=221184 b=512 ub=512 dedicated_mib=23993 shared_mib=578
+PROC model=qwen35 pid=19036 np=3 c=262144 b= ub= dedicated_mib=15365 shared_mib=672
+GPU 0, NVIDIA GeForce RTX 3090, 24058, 24576, 0
+GPU 1, NVIDIA GeForce RTX 5060 Ti, 15766, 16311, 0
