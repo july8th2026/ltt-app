@@ -66,9 +66,13 @@ def test_gateway_TOKEN_GIU_MOI_ANH_khop_ho_so():
 def test_tools_KHONG_con_khuyen_DONG_THOI_MAY_B():
     """Task 11 (18/09): `DONG_THOI_MAY_B` đã gỡ (L-23) — công cụ đo không được
     khuyên người chạy đặt lại nó (`tools/do_ngan_sach_chuyen_loi_thoai.py` từng in
-    *"can ... `DONG_THOI_MAY_B=1`"*). Số suất nay là `HO_SO[m].seq_cap`."""
+    *"can ... `DONG_THOI_MAY_B=1`"*). Số suất nay là `HO_SO[m].seq_cap`.
+
+    Ngoại lệ DUY NHẤT: `tools/check_ten_da_go.py` — bộ chặn tên đã gỡ phải gọi
+    đúng tên nó chặn (bảng `TEN_DA_GO`), không phải lời khuyên đặt lại."""
+    mien = {GOC / "tools" / "check_ten_da_go.py"}
     lech = [f"{p.relative_to(GOC)}:{i}"
-            for p in sorted((GOC / "tools").rglob("*.py"))
+            for p in sorted((GOC / "tools").rglob("*.py")) if p not in mien
             for i, dong in enumerate(p.read_text(encoding="utf-8",
                                                  errors="replace").splitlines(), 1)
             if "DONG_THOI_MAY_B" in dong]
