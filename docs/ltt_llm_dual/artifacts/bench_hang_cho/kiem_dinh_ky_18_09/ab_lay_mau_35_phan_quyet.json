@@ -1,0 +1,217 @@
+[
+ {
+  "phep": "presence",
+  "B": "pp15",
+  "cap": 96,
+  "A_dung": 87,
+  "B_dung": 90,
+  "chi_B_dung": 5,
+  "chi_A_dung": 2,
+  "p_mcnemar": 0.4531,
+  "nhom": {
+   "code": {
+    "A": "22/30",
+    "pp15": "25/30",
+    "tut_duoi_wilson_A": false
+   },
+   "vi": {
+    "A": "29/30",
+    "pp15": "29/30",
+    "tut_duoi_wilson_A": false
+   },
+   "tool": {
+    "A": "18/18",
+    "pp15": "18/18",
+    "tut_duoi_wilson_A": false
+   },
+   "agent": {
+    "A": "18/18",
+    "pp15": "18/18",
+    "tut_duoi_wilson_A": false
+   }
+  },
+  "B_thang_ro": false,
+  "B_khong_tut": true,
+  "phu_A": {
+   "rong": 0,
+   "lap": 1,
+   "token_ra_p50": 550,
+   "giay_p50": 13.2,
+   "prompt_tong": 53050,
+   "ti_le_cache": 0.824
+  },
+  "phu_pp15": {
+   "rong": 0,
+   "lap": 1,
+   "token_ra_p50": 625,
+   "giay_p50": 18.3,
+   "prompt_tong": 52768,
+   "ti_le_cache": 0.781
+  }
+ },
+ {
+  "phep": "temp_code",
+  "B": "t06",
+  "cap": 30,
+  "A_dung": 22,
+  "B_dung": 25,
+  "chi_B_dung": 3,
+  "chi_A_dung": 0,
+  "p_mcnemar": 0.25,
+  "nhom": {
+   "code": {
+    "A": "22/30",
+    "t06": "25/30",
+    "tut_duoi_wilson_A": false
+   }
+  },
+  "B_thang_ro": false,
+  "B_khong_tut": true,
+  "phu_A": {
+   "rong": 0,
+   "lap": 1,
+   "token_ra_p50": 2192,
+   "giay_p50": 39.9,
+   "prompt_tong": 2487,
+   "ti_le_cache": 0.0
+  },
+  "phu_t06": {
+   "rong": 0,
+   "lap": 0,
+   "token_ra_p50": 2171,
+   "giay_p50": 40.8,
+   "prompt_tong": 2487,
+   "ti_le_cache": 0.698
+  }
+ },
+ {
+  "phep": "budget",
+  "B": "rb4096",
+  "cap": 96,
+  "A_dung": 87,
+  "B_dung": 88,
+  "chi_B_dung": 3,
+  "chi_A_dung": 2,
+  "p_mcnemar": 1.0,
+  "nhom": {
+   "code": {
+    "A": "22/30",
+    "rb4096": "24/30",
+    "tut_duoi_wilson_A": false
+   },
+   "vi": {
+    "A": "29/30",
+    "rb4096": "28/30",
+    "tut_duoi_wilson_A": false
+   },
+   "tool": {
+    "A": "18/18",
+    "rb4096": "18/18",
+    "tut_duoi_wilson_A": false
+   },
+   "agent": {
+    "A": "18/18",
+    "rb4096": "18/18",
+    "tut_duoi_wilson_A": false
+   }
+  },
+  "B_thang_ro": false,
+  "B_khong_tut": true,
+  "phu_A": {
+   "rong": 0,
+   "lap": 1,
+   "token_ra_p50": 550,
+   "giay_p50": 13.2,
+   "prompt_tong": 53050,
+   "ti_le_cache": 0.824
+  },
+  "phu_rb4096": {
+   "rong": 0,
+   "lap": 1,
+   "token_ra_p50": 580,
+   "giay_p50": 15.7,
+   "prompt_tong": 52536,
+   "ti_le_cache": 0.94
+  }
+ },
+ {
+  "phep": "codex_instr",
+  "B": "codex",
+  "cap": 66,
+  "A_dung": 58,
+  "B_dung": 47,
+  "chi_B_dung": 2,
+  "chi_A_dung": 13,
+  "p_mcnemar": 0.0074,
+  "nhom": {
+   "code": {
+    "A": "22/30",
+    "codex": "17/30",
+    "tut_duoi_wilson_A": false
+   },
+   "tool": {
+    "A": "18/18",
+    "codex": "18/18",
+    "tut_duoi_wilson_A": false
+   },
+   "agent": {
+    "A": "18/18",
+    "codex": "12/18",
+    "tut_duoi_wilson_A": true
+   }
+  },
+  "B_thang_ro": false,
+  "B_khong_tut": false,
+  "phu_A": {
+   "rong": 0,
+   "lap": 1,
+   "token_ra_p50": 455,
+   "giay_p50": 10.8,
+   "prompt_tong": 51460,
+   "ti_le_cache": 0.849
+  },
+  "phu_codex": {
+   "rong": 0,
+   "lap": 0,
+   "token_ra_p50": 211,
+   "giay_p50": 5.3,
+   "prompt_tong": 510567,
+   "ti_le_cache": 0.805
+  }
+ },
+ {
+  "phep": "preserve",
+  "B": "pt_false",
+  "cap": 18,
+  "A_dung": 18,
+  "B_dung": 18,
+  "chi_B_dung": 0,
+  "chi_A_dung": 0,
+  "p_mcnemar": 1.0,
+  "nhom": {
+   "agent": {
+    "A": "18/18",
+    "pt_false": "18/18",
+    "tut_duoi_wilson_A": false
+   }
+  },
+  "B_thang_ro": false,
+  "B_khong_tut": true,
+  "phu_A": {
+   "rong": 0,
+   "lap": 0,
+   "token_ra_p50": 281,
+   "giay_p50": 6.7,
+   "prompt_tong": 39058,
+   "ti_le_cache": 0.94
+  },
+  "phu_pt_false": {
+   "rong": 0,
+   "lap": 0,
+   "token_ra_p50": 265,
+   "giay_p50": 5.8,
+   "prompt_tong": 37686,
+   "ti_le_cache": 0.96
+  }
+ }
+]
