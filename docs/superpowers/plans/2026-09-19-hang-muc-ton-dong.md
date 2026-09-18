@@ -1,4 +1,4 @@
-# Hạng mục tồn đọng sau phiên 17–18/09 — plan (bảng theo dõi riêng)
+# Hạng mục tồn đọng sau phiên 17–18/09 — plan con (tiến độ/% xem ở `2026-09-19-tong-plan.md`)
 
 > Lập 18/09 23:xx sau tổng kết phiên (`2026-09-18-tong-plan-phien.md` ~99,5 %). Quy trình theo
 > `docs/00_LTT_OPERATING_CONTRACT.md` (test nhắm + L1/L2 trong phiên, L3 một lần khi hết mọi hạng mục;
