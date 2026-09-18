@@ -1,0 +1,17 @@
+===== qwen35-api np4 np=4 =====
+  warm-up 32K: prompt_n=32862 16.0 s -> ky_tu=99713
+  prefill32k #0: n=32781 16.05 s (2042 tok/s)
+  prefill32k #1: n=32830 16.10 s (2040 tok/s)
+  prefill32k #2: n=32829 16.12 s (2037 tok/s)
+  1 luong #0: 75.4 tok/s ra=1024 finish=length ttft=1.42
+  1 luong #1: 77.1 tok/s ra=1024 finish=length ttft=1.03
+  1 luong #2: 72.5 tok/s ra=1024 finish=length ttft=1.04
+  4 luong dot 0: moi luong 44.0/42.9/43.2/43.0 | tong 169.9 tok/s (4096 tok)
+  4 luong dot 1: moi luong 41.8/43.8/42.5/43.2 | tong 165.1 tok/s (4096 tok)
+  4 luong dot 2: moi luong 43.6/44.1/44.5/43.8 | tong 172.6 tok/s (4096 tok)
+  lang dot 0 (3 nho + 32K): lang max 1.22 s | nho trong prefill 2.1 (min 1.8) tok/s, truoc 42.9 | prefill 32K 18.2 s
+  lang dot 1 (3 nho + 32K): lang max 1.22 s | nho trong prefill 2.3 (min 2.3) tok/s, truoc 45.8 | prefill 32K 18.2 s
+  lang dot 2 (3 nho + 32K): lang max 1.22 s | nho trong prefill 2.4 (min 2.2) tok/s, truoc 47.5 | prefill 32K 18.2 s
+  mtp dot 0: stop c=117 r=8832 n=16083 acc=1138/1870 | stop c=124 r=7361 n=16093 acc=985/1454 | stop c=114 r=2518 n=16086 acc=333/512 | stop c=123 r=9380 n=16064 acc=1211/1720
+  mtp dot 1: stop c=129 r=113 n=16109 acc=33/44 | stop c=115 r=7108 n=16048 acc=974/1362 | stop c=129 r=7856 n=16117 acc=1014/1552 | stop c=96 r=1731 n=16057 acc=269/372
+TONG_HOP {"model": "qwen35-api", "nhan": "np4", "np": 4, "warm": {"status": 200, "loi": null, "finish": "length", "huy": false, "prompt_n": 32862, "prompt_ms": 16021.927, "prompt_tps": 2051.0641447810867, "pred_n": 1, "pred_ms": 0.001, "pred_tps": 0.0, "draft_n": null, "draft_acc": null, "content_kt": 0, "reasoning_kt": 8, "ttft": 16.1954824924469, "giay": 16.242428064346313}, "prefill32k_s": 16.1, "prefill32k_tps": 2039.56, "don_tps": 75.4, "don_ttft": 1.04, "tong_n": 4, "tong_tps": 169.85, "moi_luong_tps": 43.39, "moi_luong_min": 41.8, "lang_n_nho": 3, "lang_max_s": 1.22, "lang_trong_tps": 2.31, "lang_truoc_tps": 45.8, "lang_prefill_s": 18.19, "mtp_luot": 8, "mtp_rong_stop": 0, "mtp_rong_length": 0, "mtp_acc0": 0, "rong_27572_tat_ca": 0, "luot_tat_ca": 31, "giay": 487}
