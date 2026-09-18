@@ -313,7 +313,7 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
             duong, token=e.token, tran=e.tran if e.tran is not None else pool,
             request=request)
 
-    def _release_ticket(ket_qua: str = "loi") -> None:
+    def _release_ticket(ket_qua: str = "loi", so_do=None) -> None:
         """Nhả suất + ghi KẾT CỤC THẬT vào sổ lượt 30 ngày.
 
         ⛔ Bản đầu ghi cứng `"xong"` ở mọi đường ra — kể cả bận, lỗi và khách
@@ -323,7 +323,7 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         if suat.lease_id:
             admission.release_by_id(suat.lease_id)
         if suat.waiter_id:
-            phong_cho.ghi_ket_thuc(suat.waiter_id, ket_qua)
+            phong_cho.ghi_ket_thuc(suat.waiter_id, ket_qua, so_do=so_do)
 
     # ── Được nhận ⇒ GIỮ TIỀN (và chỉ từ đây trở đi) ─────────────────────────
     try:
@@ -416,19 +416,21 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
             ngat_chua=ngat.do_ngat(request))
     except ngat.KhachNgat as e:
         # Quyết toán theo `usage` nếu lời gọi kịp về; không thì hoàn trọn.
+        _su_dung_ngat = None
         if e.ket_qua is not None:
+            _su_dung_ngat = SuDung(token_vao=e.ket_qua.token_vao,
+                                   token_ra=e.ket_qua.token_ra,
+                                   token_vao_cache=e.ket_qua.token_vao_cache,
+                                   dang_tin=e.ket_qua.do_duoc)
             thanh_toan.quyet_toan_hoac_hoan(
                 db, user_id=principal.user_id, request_id=request_id,
-                su_dung=SuDung(token_vao=e.ket_qua.token_vao,
-                               token_ra=e.ket_qua.token_ra,
-                               token_vao_cache=e.ket_qua.token_vao_cache,
-                               dang_tin=e.ket_qua.do_duoc),
-                model=ten)
+                su_dung=_su_dung_ngat, model=ten)
         else:
             thanh_toan.hoan_luot(db, user_id=principal.user_id,
                                  request_id=request_id)
         db.commit()
-        _release_ticket("khach_ngat")
+        _release_ticket("khach_ngat",
+                        so_do=phong_cho.SoDo.tu_su_dung(_su_dung_ngat))
         return JSONResponse(_KHACH_NGAT, status_code=MA_KHACH_NGAT,
                             headers=_NO_STORE)
     except executor.parameter_error as e:
@@ -524,13 +526,12 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
     #    `KetQuaChat` cua cong (co `.su_dung`). Boc y het `/chat/completions`,
     #    ke ca `dang_tin=kq.do_duoc` - do la co bao "co do duoc token khong", va
     #    `quyet_toan_hoac_hoan` dua vao no de HOAN DU khi khong do duoc.
+    _su_dung = SuDung(token_vao=kq.token_vao, token_ra=kq.token_ra,
+                      token_vao_cache=kq.token_vao_cache, dang_tin=kq.do_duoc)
     try:
         _thu = thanh_toan.quyet_toan_hoac_hoan(
             db, user_id=principal.user_id, request_id=request_id,
-            su_dung=SuDung(token_vao=kq.token_vao, token_ra=kq.token_ra,
-                           token_vao_cache=kq.token_vao_cache,
-                           dang_tin=kq.do_duoc),
-            model=ten)
+            su_dung=_su_dung, model=ten)
         # ⛔ P08 F-01, NHANH KHONG-STREAM. Ban va dau chi cham `_quyet_toan` cua
         #    generator, nen cua nay van ghi `+0` — va do that tren production
         #    ngay sau khi deploy bat duoc: cung mot route `/api/v1/messages`,
@@ -549,7 +550,8 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         _release_ticket("loi")
         raise
     db.commit()
-    _release_ticket("xong")
+    # T4 P2: token vào sổ lượt; TTFB để NULL — cửa một cục không có byte đầu.
+    _release_ticket("xong", so_do=phong_cho.SoDo.tu_su_dung(_su_dung))
     metrics.increment("chat:mot_cuc")
     return JSONResponse(_dang_anthropic(kq, ten, request_id),
                         status_code=200, headers=_NO_STORE)

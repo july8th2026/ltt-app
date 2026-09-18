@@ -227,6 +227,28 @@ def _dong_phien(gen) -> None:
         pass
 
 
+#: Trường THÂN request mang định danh khách/máy khách — gỡ trước khi lên máy B
+#: (T4 P2, `docs/ltt_llm_dual/artifacts/THIET_KE_R06_R07_ID_PHIEN.md` §1a).
+#:
+#: ⛔ `gui = dict(than)` chép CẢ thân; đo 18/09: Claude Code gửi `metadata.user_id`
+#:    = JSON {`device_id` (ổn định THEO MÁY), `session_id`}, Codex gửi
+#:    `client_metadata` {`x-codex-installation-id`, `session_id`, `thread_id`} và
+#:    `prompt_cache_key` = thread id. `user` / `safety_identifier` là trường định
+#:    danh người dùng cuối của giao thức OpenAI. llama.cpp không đọc trường nào
+#:    trong số này (`search_code prompt_cache_key repo:ggml-org/llama.cpp` = 0) ⇒
+#:    gỡ không đổi hành vi sinh, chỉ bớt dữ liệu nằm ở một máy không có chính
+#:    sách lưu giữ và trái luật "B không biết khách" (Q102). Phiên khách dừng ở A
+#:    (`public_api_requests`, P1).
+TRUONG_DINH_DANH_KHACH = ("metadata", "client_metadata", "prompt_cache_key",
+                          "user", "safety_identifier")
+
+
+def _go_dinh_danh_khach(gui: dict) -> None:
+    """Gỡ `TRUONG_DINH_DANH_KHACH` khỏi BẢN SAO thân gửi B (tại chỗ)."""
+    for ten in TRUONG_DINH_DANH_KHACH:
+        gui.pop(ten, None)
+
+
 def _kep_tran_gui(gui: dict, duong: str, xin_ra: int) -> None:
     """Ghi trần ra đã kẹp vào thân gửi, đúng TÊN TRƯỜNG của cửa (H38/L2)."""
     ten_tran = "max_output_tokens" if duong.endswith("/responses") else "max_tokens"
@@ -585,6 +607,7 @@ def tien_kiem(db, *, user_id: str, tool_name: str, than: dict, duong: str,
     gui, effort_bo_qua = chuan_hoa_suy_nghi(gui, ten)
     dat_effort_cho_engine(gui, duong)  # T1c: đúng trường llama.cpp của cửa đọc
     gui["model"] = executor.model_id(ten)
+    _go_dinh_danh_khach(gui)  # T4 P2: B không được biết khách
     request_id = thanh_toan.ma_luot(tien_to)
     vao_uoc = int(executor.estimate_input(tin))
     xin_ra = tran_token_ra(than, vao_uoc, executor)
@@ -1210,6 +1233,7 @@ def chuan_bi(db, *, user_id: str, tool_name: str, than: dict, duong: str,
     gui, _bo_qua = chuan_hoa_suy_nghi(gui, ten)  # L-26, cùng hàm với `tien_kiem`
     dat_effort_cho_engine(gui, duong)  # T1c
     gui["model"] = executor.model_id(ten)
+    _go_dinh_danh_khach(gui)  # T4 P2, cùng hàm với `tien_kiem`
 
     # ⛔ KHÔNG tự ghép chuỗi: `credit_entries.job_id` là VARCHAR(36).
     request_id = thanh_toan.ma_luot(tien_to)
@@ -1693,7 +1717,12 @@ def _phat(mo, luot: LuotLuong, *, trang_thai=None) -> Generator[bytes, None, Non
                 mo.xong(tokens=dem.token_ra)
             if cb.waiter_id:
                 from platform_core.llm import phong_cho
-                phong_cho.ghi_ket_thuc(cb.waiter_id, luot.ket_thuc)
+
+                # T4 P2: số đo vào sổ lượt — token (None nếu chưa thấy `usage`)
+                # và TTFB phía A (None nếu chết trước byte dữ liệu đầu).
+                phong_cho.ghi_ket_thuc(
+                    cb.waiter_id, luot.ket_thuc,
+                    so_do=phong_cho.SoDo.tu_su_dung(dem.su_dung(), ttfb_s=t_byte_dau))
 
 
 def quyet_toan(user_id: str, request_id: str, dem: DemToken, da_giu: int,
