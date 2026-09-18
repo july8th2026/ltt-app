@@ -237,6 +237,35 @@ def _kep_tran_gui(gui: dict, duong: str, xin_ra: int) -> None:
     gui[ten_tran] = xin_ra
 
 
+def _dat_budget_may_chu(gui: dict, duong: str, executor, ten: str,
+                        xin_ra: int) -> None:
+    """Ghi budget suy nghĩ MÁY CHỦ đặt (L-26) vào thân gửi, đúng TRƯỜNG của cửa.
+
+    Gọi SAU `chuan_hoa_suy_nghi` (hàm ấy gỡ mọi trường budget — của khách) và
+    SAU `_kep_tran_gui` (budget tính từ trần ra đã kẹp). Model có nấc (3.8) ⇒
+    executor trả None ⇒ không đặt gì.
+
+    🔴 TÊN TRƯỜNG THEO CỬA của llama.cpp 91f6a6cf3, và nhầm là mất lặng lẽ:
+       * `/v1/responses`: `server-chat.cpp` `server_chat_convert_responses_to_chatcmpl`
+         chép NGUYÊN thân ⇒ `reasoning_budget_tokens` tới `server-common.cpp:1366`.
+       * `/v1/messages`: `server_chat_convert_anthropic_to_oai` dựng thân MỚI, chỉ
+         chép `temperature|top_p|top_k|stream|chat_template_kwargs` và dịch
+         `thinking{type:enabled,budget_tokens}` ⇒ `thinking_budget_tokens`
+         (mặc định 10.000 khi thiếu số). `reasoning_budget_tokens` cấp cao nhất
+         bị VỨT ⇒ phải gửi dạng `thinking`, luôn kèm `budget_tokens`.
+    """
+    fn = getattr(executor, "sync_thinking_budget", None)
+    if not callable(fn):
+        return
+    budget = fn({"model": ten, "max_tokens": int(xin_ra)})
+    if budget is None:
+        return
+    if duong.endswith("/messages"):
+        gui["thinking"] = {"type": "enabled", "budget_tokens": int(budget)}
+    else:
+        gui["reasoning_budget_tokens"] = int(budget)
+
+
 # ══════════════════════════════════════════════════════════════════════════
 #  SUY NGHĨ DO MÁY CHỦ QUYẾT — một hàm, mọi cửa (plan v2 Task 4, L-26)
 # ══════════════════════════════════════════════════════════════════════════
@@ -527,6 +556,7 @@ def tien_kiem(db, *, user_id: str, tool_name: str, than: dict, duong: str,
     vao_uoc = int(executor.estimate_input(tin))
     xin_ra = tran_token_ra(than, vao_uoc, executor)
     _kep_tran_gui(gui, duong, xin_ra)
+    _dat_budget_may_chu(gui, duong, executor, ten, xin_ra)
 
     tran_vao = getattr(executor, "input_cap", None)
     if tran_vao is not None:
@@ -1181,6 +1211,7 @@ def chuan_bi(db, *, user_id: str, tool_name: str, than: dict, duong: str,
     #    (H38/L2). Không khai gì thì tên theo cửa: `/responses` chỉ đọc
     #    `max_output_tokens` — ghi nhầm tên là llama-server dùng mặc định 1.024.
     _kep_tran_gui(gui, duong, xin_ra)
+    _dat_budget_may_chu(gui, duong, executor, ten, xin_ra)
 
     try:
         da_giu = thanh_toan.giu_cho_luot(

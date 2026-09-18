@@ -692,6 +692,11 @@ def budget_suy_nghi_dong_bo(model: str | None, max_tokens: int) -> int | None:
     thu tiền. Nên máy chủ chia: suy nghĩ = `max_tokens − TOKEN_CHO_TRA_LOI`, kẹp
     ≤ budget engine. llama.cpp nhận trường này MỖI request (91f6a6cf3
     `server-common.cpp:1366-1369`). None ⇒ model có nấc, không đặt gì.
+
+    🔴 Dùng ở MỌI cửa, không chỉ cửa đồng bộ (sự cố 18/09 22:45): `features.chay`
+       tự gọi khi bên gọi không truyền (`/messages`/`/responses` không stream, job),
+       cửa stream gọi qua `runtime_noi_bo.luong._dat_budget_may_chu`. Trần lớn
+       ⇒ trả đúng budget engine, tức không đổi hành vi.
     """
     tran = BUDGET_SUY_NGHI_ENGINE.get(str(model or ""))
     if tran is None:
