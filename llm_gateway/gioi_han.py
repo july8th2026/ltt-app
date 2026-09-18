@@ -31,17 +31,33 @@ from typing import Callable, Optional
 
 log = logging.getLogger("llm_gateway.gioi_han")
 
-#: Hạn giữ một suất trước khi coi nó là suất chết.
+#: Hạn IM LẶNG của một suất: quá chừng ấy giây không đẩy nổi một byte nào
+#: (chunk thượng nguồn hay nhịp tim) thì nó là suất chết. (Task 6, 18/09)
 #:
-#: 1.200 giây = 20 phút, rộng hơn `stream_timeout_s` (900) một biên dày. Phải
-#: rộng hơn: thu hồi một suất **đang chạy thật** là cho thêm một lượt vào engine
-#: đã đủ `-np` chuỗi (và trả lại phần KV nó vẫn đang chiếm), tức đổi một sự cố
-#: tự khỏi lấy một sự cố tệ hơn.
+#: 🔴 TRƯỚC 18/09 ĐÂY LÀ HẠN TÍNH TỪ LÚC NHẬN (`HAN_GIU_MAC_DINH_S`, 1.200 s),
+#:    dựa trên giả định "không lượt nào chạy quá 20 phút". Sai: `stream_timeout_s`
+#:    (900) là hạn đọc **giữa hai byte** của httpx, không phải hạn tổng — một
+#:    lượt prefill ~186K rồi sinh 32.768 token trong lúc ba slot khác cùng giải
+#:    mã vượt 20 phút được, và cổng thu **suất đang chạy**, nhận thêm lượt quá
+#:    `-np`/bể KV. Nay mỗi byte đi qua `boc_luong` gia hạn suất (`Suat.gia_han`).
+#:
+#: Phải ≥ `stream_timeout_s`: im lâu hơn thế thì httpx đã tự cắt luồng và
+#: `finally` đã trả suất, nên suất nào còn im quá hạn này chỉ có thể là rò (sự
+#: cố 31/08: generator chưa từng chạy). `han_im_lang_cho` nâng nó theo env.
 #:
 #: ⛔ Đừng hạ số này để "phát hiện sớm hơn". Muốn phát hiện sớm thì đọc
-#:    `giu_lau_nhat_giay` ở `/health` — nó báo **ngay**, mà không đụng gì tới
-#:    một lượt đang chạy.
-HAN_GIU_MAC_DINH_S = 1200.0
+#:    `im_lang_lau_nhat_giay`/`giu_lau_nhat_giay` ở `/health` — chúng báo
+#:    **ngay**, mà không đụng gì tới một lượt đang chạy.
+HAN_IM_LANG_MAC_DINH_S = 1200.0
+
+
+def han_im_lang_cho(stream_timeout_s: float) -> float:
+    """Hạn im lặng thực dùng: không bao giờ hẹp hơn hạn đọc của thượng nguồn.
+
+    Env nâng `LTT_LLM_STREAM_TIMEOUT_S` quá 1.200 mà hạn này đứng yên thì một
+    lượt tắt nhịp tim (`LTT_LLM_NHIP_TIM_S=0`) đang prefill dài bị thu oan.
+    """
+    return max(HAN_IM_LANG_MAC_DINH_S, float(stream_timeout_s))
 
 
 @dataclass(frozen=True)
@@ -82,6 +98,15 @@ class Suat:
     def da_tra(self) -> bool:
         return self._da_tra
 
+    def gia_han(self) -> None:
+        """Báo "còn sống": một byte vừa đi qua. Gọi mỗi chunk/nhịp tim.
+
+        Suất đã trả hoặc đã bị thu hồi thì không làm gì — gia hạn **không bao
+        giờ hồi sinh** một bản ghi (hồi sinh = giữ chỗ hai lần cho một lượt).
+        """
+        if not self._da_tra:
+            self._gh._gia_han(self._ma)
+
     def tra(self) -> None:
         if self._da_tra:
             return
@@ -98,7 +123,7 @@ class GioiHan:
 
     def __init__(self, *, max_dong_thoi: int = 1,
                  token_pool: int = 0,
-                 han_giu_s: float = HAN_GIU_MAC_DINH_S,
+                 han_im_lang_s: float = HAN_IM_LANG_MAC_DINH_S,
                  now: Callable[[], float] = time.monotonic):
         self.max_dong_thoi = max(1, int(max_dong_thoi))
         #: Ngân sách KV **tính bằng token** của engine này. 0 = tắt.
@@ -110,15 +135,16 @@ class GioiHan:
         #:    ra chuyện đó. Tức một khách xin prompt khổng lồ làm rơi lượt của hai
         #:    khách khác. Đếm suất không nhìn thấy điều đó; đếm token thì thấy.
         self.token_pool = max(0, int(token_pool))
-        self.han_giu_s = float(han_giu_s)
+        self.han_im_lang_s = float(han_im_lang_s)
         self._now = now
         self._khoa = threading.Lock()
-        #: mã suất → `(thời điểm cấp, token đặt trước)`.
+        #: mã suất → `[thời điểm cấp, token đặt trước, lần cuối có byte]`.
+        #: `lan_cuoi` (chỉ số 2) quyết thu hồi; thời điểm cấp chỉ để báo.
         #: **Không phải một bộ đếm.** Một con số chỉ nói "đang giữ mấy suất";
         #: map này còn nói *từ bao giờ* (⇒ thu hồi suất treo, xem
         #: `_thu_hoi_qua_han`) và *chiếm bao nhiêu token* (⇒ trả lại phần đặt
         #: chỗ đúng bằng lúc nhả, không phải bằng một phép trừ ở chỗ khác).
-        self._dang_giu: dict[int, tuple] = {}
+        self._dang_giu: dict[int, list] = {}
         self._ma_ke = 0
         self._da_thu_hoi = 0
 
@@ -127,6 +153,7 @@ class GioiHan:
         with self._khoa:
             t = self._now()
             gia_nhat = max((t - g[0] for g in self._dang_giu.values()), default=0.0)
+            im_nhat = max((t - g[2] for g in self._dang_giu.values()), default=0.0)
             return {"dang_chay": len(self._dang_giu),
                     "max_dong_thoi": self.max_dong_thoi,
                     # Token ĐANG đặt trước / bể KV của engine. Hai số này là thứ
@@ -145,7 +172,12 @@ class GioiHan:
                     #    `giu_lau_nhat_giay` biến chuyện đó thành hiển nhiên:
                     #    một lượt thật hiếm khi quá vài phút.
                     "giu_lau_nhat_giay": round(gia_nhat, 1),
-                    "han_giu_s": self.han_giu_s,
+                    # Từ 18/09 thu hồi theo IM LẶNG, không theo tuổi: lượt dài
+                    # thật có `giu_lau_nhat_giay` lớn mà `im_lang_...` ≈ 0; suất
+                    # rò thì hai số cùng lớn. Khoá cũ `han_giu_s` (hạn theo tuổi) đã gỡ
+                    # — giữ tên cũ với nghĩa mới là khai sai.
+                    "im_lang_lau_nhat_giay": round(im_nhat, 1),
+                    "han_im_lang_s": self.han_im_lang_s,
                     # Đếm số lần đã phải tự cứu. **Khác 0 nghĩa là CÓ BUG**, chỉ
                     # là bug đó không còn gây sự cố. Tự lành mà im lặng thì chỉ
                     # đổi một sự cố nhìn thấy được lấy một sự cố vô hình.
@@ -199,11 +231,11 @@ class GioiHan:
                         thu_lai_sau_s=15)
 
             self._ma_ke += 1
-            self._dang_giu[self._ma_ke] = (t, token_dat_truoc)
+            self._dang_giu[self._ma_ke] = [t, token_dat_truoc, t]
             return PhanXuGioiHan(True, ma=self._ma_ke)
 
     def _thu_hoi_qua_han(self, t: float) -> None:
-        """Thu lại suất giữ quá `han_giu_s`. **Gọi khi đã cầm khoá.**
+        """Thu lại suất IM LẶNG quá `han_im_lang_s`. **Gọi khi đã cầm khoá.**
 
         🔴 ĐÂY LÀ LƯỚI CUỐI, KHÔNG PHẢI ĐƯỜNG SỬA CHÍNH.
 
@@ -218,24 +250,30 @@ class GioiHan:
            **sáu giờ** trong khi GPU rảnh và model còn chưa nạp.
 
         ⭐ Nên lưới này KHÔNG cố đoán các đường rò. Nó chỉ khẳng định một điều
-           yếu hơn nhưng đúng với mọi đường: **không lượt nào chạy lâu hơn
-           `han_giu_s`**, nên suất nào giữ lâu hơn thế đều là suất chết.
+           yếu hơn nhưng đúng với mọi đường: **lượt sống đẩy ít nhất một byte
+           (chunk hoặc nhịp tim) mỗi `han_im_lang_s`**, nên suất nào im lâu
+           hơn thế đều là suất chết.
+
+        🔴 KHÔNG tính từ lúc nhận (bản 31/08 làm vậy, 1.200 s): lượt dài thật
+           vượt 20 phút được, và thu nó là nhận quá `-np`/bể KV (Task 6, 18/09).
 
         ⛔ VÀ NÓ PHẢI ỒN ÀO. Thu hồi trong im lặng chỉ đổi một sự cố nhìn thấy
            được lấy một sự cố vô hình — cổng vẫn chạy, không ai biết có bug, và
-           lần rò tiếp theo lại mất đúng `han_giu_s` mỗi lượt.
+           lần rò tiếp theo lại mất đúng `han_im_lang_s` mỗi lượt.
         """
         if not self._dang_giu:
             return
-        chet = [ma for ma, g in self._dang_giu.items() if t - g[0] > self.han_giu_s]
+        chet = [ma for ma, g in self._dang_giu.items()
+                if t - g[2] > self.han_im_lang_s]
         for ma in chet:
-            tuoi = t - self._dang_giu.pop(ma)[0]
+            g = self._dang_giu.pop(ma)
             self._da_thu_hoi += 1
             log.warning(
-                "THU HOI suat treo #%d: giu %.0f giay > han %.0f giay. "
-                "Mot duong ra nao do da KHONG tra suat - day la BUG, cong chi "
-                "dang tu cuu. Tong so lan thu hoi: %d",
-                ma, tuoi, self.han_giu_s, self._da_thu_hoi)
+                "THU HOI suat treo #%d: im lang %.0f giay > han %.0f giay "
+                "(giu %.0f giay, %d token). Mot duong ra nao do da KHONG tra "
+                "suat - day la BUG, cong chi dang tu cuu. Tong so lan thu hoi: %d",
+                ma, t - g[2], self.han_im_lang_s, t - g[0], g[1],
+                self._da_thu_hoi)
 
     def cap_suat(self, token_dat_truoc: int = 0) -> tuple[PhanXuGioiHan, Optional[Suat]]:
         """Xin và cấp trong một nhịp. Được thì trả `(cho_qua, Suat)`.
@@ -250,6 +288,14 @@ class GioiHan:
         """
         px = self._xin_vao(token_dat_truoc)
         return (px, Suat(self, px.ma) if px.cho_qua else None)
+
+    def _gia_han(self, ma: int) -> None:
+        """Chỉ `Suat.gia_han()` gọi. Không còn bản ghi (đã trả/đã thu) ⇒ bỏ qua."""
+        t = self._now()
+        with self._khoa:
+            g = self._dang_giu.get(ma)
+            if g is not None:
+                g[2] = t
 
     def _nha(self, ma: int) -> None:
         """Chỉ `Suat.tra()` được gọi. Gọi thẳng là bỏ qua chốt một-lần.
@@ -278,6 +324,10 @@ def boc_luong(luong, suat: Suat):
     """
     try:
         for phan in luong:
+            # Mỗi khối — chunk thượng nguồn hay nhịp tim của `nhip_tim` — là
+            # bằng chứng lượt còn sống: gia hạn TRƯỚC `yield` (yield có thể
+            # chặn lâu khi khách đọc chậm).
+            suat.gia_han()
             yield phan
     finally:
         suat.tra()

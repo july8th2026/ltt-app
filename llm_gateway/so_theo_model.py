@@ -34,7 +34,7 @@ import logging
 import time
 from typing import Callable, Optional
 
-from .gioi_han import HAN_GIU_MAC_DINH_S, GioiHan, PhanXuGioiHan, Suat
+from .gioi_han import HAN_IM_LANG_MAC_DINH_S, GioiHan, PhanXuGioiHan, Suat
 
 log = logging.getLogger("llm_gateway.so_theo_model")
 
@@ -53,7 +53,7 @@ class SoTheoModel:
                  pool_rieng: Optional[dict] = None,
                  san_vram_mb: Optional[dict] = None,
                  doc_vram_trong: Optional[Callable[[str], Optional[int]]] = None,
-                 han_giu_s: float = HAN_GIU_MAC_DINH_S,
+                 han_im_lang_s: float = HAN_IM_LANG_MAC_DINH_S,
                  now: Callable[[], float] = time.monotonic):
         dong_thoi_rieng = dict(dong_thoi_rieng or {})
         pool_rieng = dict(pool_rieng or {})
@@ -62,7 +62,7 @@ class SoTheoModel:
             self._so[m] = GioiHan(
                 max_dong_thoi=int(dong_thoi_rieng.get(m, max_dong_thoi)),
                 token_pool=int(pool_rieng.get(m, token_pool)),
-                han_giu_s=han_giu_s, now=now)
+                han_im_lang_s=han_im_lang_s, now=now)
         self._san = {k: int(v) for k, v in (san_vram_mb or {}).items()}
         self._doc_vram = doc_vram_trong
 
@@ -71,7 +71,7 @@ class SoTheoModel:
     def tu_vat_ly(cls, vat_ly: dict, *,
                   san_vram_mb: Optional[dict] = None,
                   doc_vram_trong: Optional[Callable[[str], Optional[int]]] = None,
-                  han_giu_s: float = HAN_GIU_MAC_DINH_S,
+                  han_im_lang_s: float = HAN_IM_LANG_MAC_DINH_S,
                   now: Callable[[], float] = time.monotonic) -> "SoTheoModel":
         """Một sổ mỗi hồ sơ: số chuỗi = `-np`, bể KV = `-c` (phương án C, bước 3).
 
@@ -83,7 +83,7 @@ class SoTheoModel:
                    dong_thoi_rieng={m: int(v.np) for m, v in vat_ly.items()},
                    pool_rieng={m: int(v.ctx) for m, v in vat_ly.items()},
                    san_vram_mb=san_vram_mb, doc_vram_trong=doc_vram_trong,
-                   han_giu_s=han_giu_s, now=now)
+                   han_im_lang_s=han_im_lang_s, now=now)
 
     # ── Dựng từ một sổ CHUNG — chỉ để làm ĐỐI CHỨNG ─────────────────────────
     @classmethod
@@ -205,6 +205,8 @@ class SoTheoModel:
             "max_dong_thoi": maxs.pop() if len(maxs) == 1 else None,
             "giu_lau_nhat_giay": max((t["giu_lau_nhat_giay"] for t in theo.values()),
                                      default=0.0),
+            "im_lang_lau_nhat_giay": max(
+                (t["im_lang_lau_nhat_giay"] for t in theo.values()), default=0.0),
             "da_thu_hoi": sum(t["da_thu_hoi"] for t in theo.values()),
             "theo_model": theo,
         }
