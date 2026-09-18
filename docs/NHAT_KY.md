@@ -19436,3 +19436,12 @@ và tài liệu OVH trong https://github.com/ovh/docs. Còn triển khai signed 
 prepare/recover/delivery attribution, gateway secondary-address persistence,
 credit guard và worker integration, GUI thật/regression. Auto-acquire chưa bật,
 chưa checkout và chưa mua thêm IPv4.
+
+## 17/09/2026 — Cửa sổ đo máy B (hàng chờ LLM) đã chạy xong
+
+Đo 16:38–18:04, hai card song song từ 16:51; lượt lạnh (m1/m3/m5/m6/m2, 1 lần) + lượt ấm am35/am38 (bỏ 2 lượt
+khởi động, trung vị n=3, 10 phút tải trộn). Kết quả và khuyến nghị phương án C:
+`docs/ltt_llm_dual/artifacts/bench_hang_cho/KET_QUA_DO_17_09.md`. Điểm chính: prefill 32k làm luồng đang stream
+gần đứng (2 tok/s) suốt 18 s (3.5) / 35 s (3.8), `-b 512` giữ ~3× tốc độ đổi TTFT +10–15 %; tràn KV trên b10883
+làm 2/3 luồng lỗi 500 giữa stream (server sống); cache tiền tố LTT-3.5 trúng 0/30. Máy B: LTTComfyUI chuyển
+Manual và để tắt trong cửa sổ LLM (chủ dự án duyệt); cả hai model đã nạp lại, chat thật không rỗng.

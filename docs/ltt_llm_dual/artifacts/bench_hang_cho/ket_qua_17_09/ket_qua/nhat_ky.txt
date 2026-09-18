@@ -1,0 +1,17 @@
+16:38:49  m1  bat dau
+16:38:49  m1  preflight
+16:38:55  m1  nap np3
+16:39:13  m1  np3 hai_job a_ngan_1k
+16:39:51  m1  np3 hai_job b_dai_32k
+16:40:49  m1  np3 cap slot
+16:41:43  m1  np3 k=1
+16:41:49  m1  np3 k=1
+16:41:59  m1  np3 k=1
+16:42:24  m1  np3 k=2
+16:42:39  m1  np3 k=3
+16:43:14  m1  np3 k=4
+16:43:54  m1  np3 k=5
+16:44:40  m1  np3 k=6
+16:45:53  m1  np3 kiem rong
+16:47:06  m1  preflight
+16:47:12  m1  nap np4

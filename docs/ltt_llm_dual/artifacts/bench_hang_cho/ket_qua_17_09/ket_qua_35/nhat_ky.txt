@@ -1,0 +1,56 @@
+16:51:39  ctrl35  bat dau
+16:51:39  ctrl35  preflight
+16:51:45  ctrl35  nap np3
+16:52:03  ctrl35  don 0
+16:52:11  ctrl35  don 1
+16:52:18  ctrl35  don 2
+16:52:25  ctrl35  prefill 32k
+16:52:49  m1  bat dau
+16:52:49  m1  preflight
+16:52:56  m1  nap np4
+16:53:13  m1  np4 cap slot
+16:54:22  m1  np4 k=1
+16:54:28  m1  np4 k=1
+16:54:39  m1  np4 k=1
+16:55:04  m1  np4 k=2
+16:55:20  m1  np4 k=3
+16:56:07  m1  np4 k=4
+16:56:50  m1  np4 k=5
+16:57:37  m1  np4 k=6
+16:58:53  m1  np4 kiem rong
+17:00:22  m1  preflight
+17:00:28  m1  nap np6
+17:00:48  m1  np6 cap slot
+17:02:01  m1  np6 k=1
+17:02:07  m1  np6 k=1
+17:02:17  m1  np6 k=1
+17:02:43  m1  np6 k=2
+17:03:00  m1  np6 k=3
+17:03:44  m1  np6 k=4
+17:04:33  m1  np6 k=5
+17:05:38  m1  np6 k=6
+17:07:00  m1  np6 kiem rong
+17:09:01  m3_35  bat dau
+17:09:01  m3_35  preflight
+17:09:07  m3_35  nap b2048
+17:09:26  m3_35  b2048 hai_job a_ngan_1k
+17:10:04  m3_35  b2048 hai_job b_dai_32k
+17:11:02  m3_35  b2048 prefill 32000
+17:11:45  m3_35  b2048 prefill 163000
+17:14:30  m3_35  preflight
+17:14:36  m3_35  nap b512
+17:14:56  m3_35  b512 hai_job a_ngan_1k
+17:15:35  m3_35  b512 hai_job b_dai_32k
+17:16:35  m3_35  b512 prefill 32000
+17:17:22  m3_35  b512 prefill 163000
+17:20:28  m5  bat dau
+17:20:28  m5  preflight
+17:20:35  m5  nap c16384
+17:20:52  m5  doi_chung_vua
+17:21:28  m5  tran_co_y
+17:22:50  m6  bat dau
+17:22:50  m6  preflight
+17:22:57  m6  nap cache_ram_mac_dinh
+17:25:33  m6  preflight
+17:25:39  m6  nap cache_ram_0
+17:28:18  lo  KET THUC ma=0 sau 36.7 phut

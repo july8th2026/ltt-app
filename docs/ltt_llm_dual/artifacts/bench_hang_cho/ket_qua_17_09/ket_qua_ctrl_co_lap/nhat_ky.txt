@@ -1,0 +1,15 @@
+16:48:21  ctrl38  bat dau
+16:48:21  ctrl38  preflight
+16:48:27  ctrl38  nap np3
+16:48:51  ctrl38  don 0
+16:49:00  ctrl38  don 1
+16:49:10  ctrl38  don 2
+16:49:21  ctrl38  prefill 32k
+16:49:59  ctrl35  bat dau
+16:49:59  ctrl35  preflight
+16:50:05  ctrl35  nap np3
+16:50:22  ctrl35  don 0
+16:50:30  ctrl35  don 1
+16:50:38  ctrl35  don 2
+16:50:45  ctrl35  prefill 32k
+16:51:10  lo  KET THUC ma=0 sau 2.8 phut
