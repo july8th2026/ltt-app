@@ -72,7 +72,7 @@ Trọng số cố định (không đổi giữa các lần cập nhật): A 20 �
 | B10 | CI 4/4 xanh | ✅ | `8681126` |
 | B11 | Đăng nhập thật phía máy chủ | ✅ 40/40 | `2e2a06f` |
 | B12 | Đăng nhập/đăng xuất **trong app** | ✅ | 18/09 09:21: đăng xuất trong app ✅, đăng nhập lại bằng `khach1.thu` qua luồng PKCE thật ✅ (`signed_in.json` = khach1, sidecar sẵn sàng); sau khi máy khởi động lại vẫn đăng nhập `khach1`, sidecar sẵn sàng |
-| B13 | Chọn mức suy nghĩ theo model trong app (0.1.8) | ⬜ | = E Task 13 |
+| B13 | Chọn mức suy nghĩ theo model trong app (0.1.8) | ✅ dev · stable đang dựng (100 %) | cài lên máy chủ dự án 13:28 18/09; GUI: 3.8 Nhanh/Cân bằng/Sâu nhất, 3.5 "Bật" |
 | B14 | Chứng chỉ EV, máy ảo sạch | ⛔ | ngoài phiên |
 
 ## C — Tối ưu máy B
@@ -95,14 +95,17 @@ Trọng số cố định (không đổi giữa các lần cập nhật): A 20 �
 | 4 | Suy nghĩ do máy chủ quyết, gỡ ghi đè 3 cửa, sàn `max_tokens` 3.5 | ✅ deploy `fba73f1e` 12:43 (L2 5/5 thành phần) | `4eee6881`…`e78e243d`; L-26; 3.5 đồng bộ: máy chủ đặt budget = max_tokens − 512 (≤ 2.048), không trả 400 |
 | 5 | 3.8 khai đọc ảnh; test bản sao `-c` | ✅ deploy `488a64ed` 11:19 | `3f6ad81b` (auto_scan_video ghim 3.5 có lý do; 3.268 test đạt) |
 | 6 | B gia hạn suất theo tiến triển (bỏ thu cứng 1.200 s) | ✅ deploy cổng B 13:0x (L2 gateway:llm xanh, `c5f8980c`); /health có han_im_lang_s | sau Task 1 |
-| 7 | Ước token cận trên (code ×0,74, emoji ×0,16) + overhead template | 🔵 đang làm | sau Task 1; deploy theo chiều |
-| 8 | 413 trước 200 đúng câu từng giao thức | 🔵 đang làm | sau Task 4 |
+| 7 | Ước token cận trên (code ×0,74, emoji ×0,16) + overhead template | 🔵 L2 (4 thành phần) | `0eb17a3b`…`a2976152`; L2 gateway:llm đỏ (máy quét bí mật bắt hex mẫu) → sửa `6b5f9471`, chạy lại xanh; app:ltt_llm xanh; deploy B trước rồi A |
+| 8 | 413 trước 200 đúng câu từng giao thức | 🔵 mã xong, chờ gate | `ed4cab13` (`phien/loi-413-giao-thuc`); Claude Code 2.1.274 báo "Prompt is too long" 0,7 s, Codex "ran out of room" 1,7 s (máy chủ cục bộ); còn L2 + deploy |
 | 9 | Tách ngưỡng nén Claude Code/Codex; bộ cài cập nhật khoá LTT | ✅ deploy `488a64ed` 11:19 | `1b143291`, `2c3fbebd` (đo Claude Code 2.1.274: trừ 33k; nay nén 138.458/176.141); phần `examples.py` giao Task 3–4 |
 | 10 | Công cụ kiểm định kỳ | 🔵 canary cô lập ✅ 0/432 rò rỉ (216/model, kịch bản #27148 + comment 2) — nhánh `phien/canary-co-lap`, `KIEM_CO_LAP_18_09.md`; còn: needle 100–200K trên 3.8 (#27756), `cong_mtp.py`, bộ chấm A/B | giờ vắng |
 | 11 | Dọn bản sao gõ tay + tài liệu sai | ⬜ | rải theo task |
 | 11b | Công cụ gate: `gate.py --pham-vi` nhận NHIỀU thành phần một lượt (hợp tệp test, chạy bước chung một lần) — đợt 2 phải chạy 5 lượt L2 nối nhau (~75 phút) vì L1 từ chối khi chạm tệp dùng chung | ⬜ | ~2 giờ, có test cho `thanh_phan`/`gate` |
 | 12 | Chất lượng 3.5: áp thông số lấy mẫu theo model card + A/B | ⬜ | sau Task 4, 10 |
-| 13 | LTTCODE chọn mức suy nghĩ theo model (0.1.8) | 🔵 đang làm (LTTCODE 0.1.8) | sau Task 3 |
+| 13 | LTTCODE chọn mức suy nghĩ theo model (0.1.8) | ✅ 0.1.8 dev 100 %, kiểm GUI trên máy thật | LTTCODEAPP `a629cd5`, `a224365`, `299e7d5` |
+| 14 | LTTCODE: agent `subagent_doc_nhanh` chạy 3.5 (chỉ đọc, không mạng) + trần in-flight theo model (3.8: 3, 3.5: 3) + skill chia việc + eval 20 việc/10 ca chèn lệnh | 🔵 đang làm (chủ dự án duyệt 18/09) | nhánh LTTCODEAPP `phien/subagent-doc-nhanh`; tăng 3 → 6 request song song |
+| 15 | LTTCODE: trần phần cố định **giữ 25k token** + trần mới **số công cụ luôn nạp ≤ 50 (mặc định) / ≤ 60 (tối đa)** trong `check_composition`; đo gọi công cụ 3.5/3.8 với bộ 50–60 công cụ thật (gộp eval Task 14) | ⬜ (duyệt 18/09) | lý do: tài liệu Anthropic — chọn công cụ kém đi quá 30–50 công cụ; hiện 49–59; mở rộng bằng skill (0 schema). Ruflo: KHÔNG cài (314 công cụ MCP, nhắm Claude Code không phải DSH, #653/#2968/#2992) |
+| 16 | LTTCODE: rà và nâng bộ skill ngang/hơn Claude Code | 🔵 đang rà (chỉ đọc) | bảng thiếu/thừa + giấy phép + phép đo trúng skill |
 | — | R-06, 07, 10, 11, 14, 16, 17, 18, 23 của phiên cũ | ⬜ | xác minh từng mục trên tag lưu trữ |
 
 ## F — Dọn tài liệu toàn hệ thống (chủ dự án yêu cầu 18/09; làm SAU khi xong E)
@@ -113,6 +116,7 @@ Trọng số cố định (không đổi giữa các lần cập nhật): A 20 �
 | F2 | Dọn theo lô (mỗi lô một commit): sửa chữ / gắn "ĐÃ GỠ" / chuyển `docs/_luutru` kèm con trỏ / gộp về tệp chủ | ⬜ |
 | F3 | Phép chặn tái phát: kiểm tài liệu sống không nhắc tên đã gỡ ngoài đoạn "ĐÃ GỠ" | ⬜ |
 | F4 | Dọn memory (chỉ mục + tệp sai) | ⬜ |
+| F5 | Sửa số "≤ ~12k token" cũ ở LTTCODEAPP `plans/2026-09-17-bat-cong-cu-harness.md:62` (đã thay bằng 25k ngày 17/09) | ⬜ |
 
 ## D — Tổng kết phiên
 
