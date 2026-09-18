@@ -1027,3 +1027,44 @@ Nguồn: `artifacts/bench_hang_cho/KET_QUA_BUB_E3_R17_18_09.md` (ma trận `TRA_
   chậm hơn 41 % (tỉ lệ trúng cache 0,79 → 0,51) ⇒ giữ mặc định `true`.
 - Áp dụng: `llm_gateway/deploy/llama-swap.yaml` hồ sơ `qwen35-api` thêm `-b 1024`; deploy B (lưu yaml ⇒ nạp lại cả
   hai model), không đổi máy A (rào B không đọc `-b`).
+
+## L-31 — `--reasoning-budget-message` câu Qwen3 ở cả hai hồ sơ B (T1b, 2026-09-19)
+
+Đóng mục "chưa đo, để ngỏ" số 4 của L-16. Khi budget suy nghĩ cạn, llama.cpp chỉ ép thẻ đóng — cắt cụt
+giữa câu làm parser lệch và `</think>` lọt vào content (llama.cpp#28182; maintainer đóng "not planned":
+model **cần** `--reasoning-budget-message` theo Qwen3 Technical Report, arXiv 2505.09388 mục Thinking
+Budget). Câu: *"Considering the limited time by the user, I have to give the solution based on the thinking
+directly now."* + xuống dòng.
+
+- **Đặt ở engine, không ở thân request**: `/v1/messages` của llama.cpp bỏ `reasoning_budget_message` trong
+  thân khi đổi Anthropic→OAI (T1b đo: thân có câu ⇒ `/chat` stream 0/30 lọt nhưng `/messages` stream vẫn 2/30);
+  mặc định server (`server-common.cpp` `json_value(body, …, opt.reasoning_budget_message)`) phủ mọi cửa.
+- **Xuống dòng phải THẬT** (tra nguồn trước khi viết):
+  - llama.cpp b10883 `common/arg.cpp:3715` gán MESSAGE nguyên văn; `string_process_escapes` chỉ áp cho
+    prompt/in-prefix/in-suffix/antiprompt/dry-breaker (`arg.cpp:917`) ⇒ viết `\n` = hai ký tự `\`+`n`.
+  - llama-swap v250 (`60226b6`) `internal/config/commands.go::SanitizeCommand` tách bằng `shlex.Windows`
+    (billziss-gh/golib): chỉ `"` là ngoặc (nháy đơn KHÔNG), `\` chỉ đặc biệt trước `"`, xuống dòng trong
+    ngoặc thuộc về token; `process_command.go` gọi `exec.CommandContext` thẳng, không qua shell.
+  - ⇒ trong `cmd: |` chuỗi ngoặc kép trải hai dòng, dòng thứ hai chỉ có `"`. Đo trên B: `Win32_Process`
+    CommandLine của cả hai `llama-server` mang `…directly now.<LF>"`.
+- **Đo trên B 19/09 00:27–01:2x** (yaml tạm `DEEFBB9B…` = HEAD nhánh này; bản gốc `1034636E…` sao lưu
+  `llama-swap.yaml.truoc-l31-20260919`, đã trả lại đúng SHA): nạp lại hai model 31 s, `/health` 200 cả hai.
+  Kịch bản T1b (`t1b_do_lot.py`, thân như A gửi: `max_tokens` 700 ⇒ budget 188, 2 luồng song song), n=30/cửa,
+  KHÔNG có câu trong thân:
+
+  | LTT-3.5 | `</think>` lọt content — trước (T1b, không cờ) | sau (có cờ) | cắt budget | câu có trong suy nghĩ (LF thật / `\n` chữ) |
+  |---|---|---|---|---|
+  | `/chat` không stream | 3/30 | **0/30** | 30 | 30 / 0 |
+  | `/chat` stream | 5/30 | **0/30** | 30 | 30 / 0 |
+  | `/messages` stream | 2/30 | **0/30** | 29 | 29 / 0 |
+  | `/responses` stream | 3/30 | **0/30** | 30 | 30 / 0 |
+
+  Cùng lúc: 0 lỗi, 0 content rỗng, 0 chạm trần (trước: 4/30 ở ba cửa đầu). LTT-3.8 cùng kịch bản: 0/120
+  lọt, nhưng budget chỉ cắt 2/120 lượt (3.8 nghĩ < 188 token ở hai câu hỏi này) ⇒ với 3.8 phép đo chỉ
+  chứng minh cờ được nhận và model nạp/chạy đúng, **chưa** chứng minh hiệu quả chống lọt.
+- Lớp lọc thẻ ở A (`platform_core/llm/the_suy_nghi.py`, T1b) **giữ nguyên**: cờ là phòng tuyến đầu, lọc A
+  là lưới — llama.cpp#28182 là lỗi parser, không đảm bảo mọi mẫu cắt.
+- Áp dụng: `llm_gateway/deploy/llama-swap.yaml` (`qwen38-api`, `qwen35-api`, không ở `CHUNG`);
+  `tests/test_1519_thong_diep_het_budget_suy_nghi.py` đọc argv như llama-swap v250 (bản chép `shlex.Windows`,
+  khớp `TestConfig_SanitizeCommand` upstream) + đối chứng `\n` một dòng / nháy đơn / thiếu cờ. Deploy B
+  (lưu yaml ⇒ nạp lại cả hai model) sau gate; không đổi máy A.
