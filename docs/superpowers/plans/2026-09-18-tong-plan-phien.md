@@ -23,9 +23,9 @@ Trọng số cố định (không đổi giữa các lần cập nhật): A 20 �
 | B — LTTCODE 0.1.7→0.1.10 build + E2E + phát hành | 25 | 100 % | 25 | 0.1.9 dev (Task 14/15/16), 0.1.10 dev sửa bộ cài xoá tệp cũ — verify_installed PASS trên máy thật; 0.1.10 stable đang dựng |
 | C — Tối ưu máy B | 10 | 100 % | 10 | C4 → 3.5 np4 (L-28, đã deploy); làn B `-b/-ub` A–D + E3 + R-17 xong → 3.5 `-b 1024` (L-30, deploy cùng tổng kết) |
 | E — LLM v2 | 25 | 100 % | 25 | 19/19 task xong; 17 đo live đạt (lượt ngắn 5–7 s thay vì 9–21 s); 14/15/16 trong LTTCODE 0.1.10 stable |
-| F — Dọn tài liệu | 10 | 95 % | 9,5 | 8/8 lô + F5 xong; chờ gộp `main` qua L3 tổng kết |
-| D — Tổng kết phiên | 10 | 30 % | 3 | ✅ nhánh tích hợp `phien/tong-ket-18-09` (5 nhánh + Task 17 + làn B), nhật ký; 🔵 L3 đang chạy; còn: khép L3, gộp `main`, deploy A + B, push hai kho, dọn 38 worktree, gỡ luật SSH tạm, env nssm B |
-| **Cả phiên** | 100 | | **~92,5 %** | |
+| F — Dọn tài liệu | 10 | 100 % | 10 | 8/8 lô + F5 + dọn triệt để: mốc `check_ten_da_go` 40 → **0** (`4d6d0de1`); gộp `main` `a076a7d3` |
+| D — Tổng kết phiên | 10 | 95 % | 9,5 | ✅ L3 PASS `e7bd30f2` (bộ test đầy đủ 841 s) → khép L1 `a076a7d3` → `main` → deploy B (yaml `1034636E…`, 3.5 `-b 1024`) + A (0 lệch/thiếu/thừa) → push hai kho → gỡ luật SSH tạm → dọn 28 worktree → nướng lại env nssm B (`LTT_LLM_RAM_TRONG_GB` lệch → khớp). 🔵 còn: lỗi 3.5 đồng bộ trả rỗng khi `max_tokens` nhỏ (2/5 lượt, có từ trước — đang điều tra, nhánh `phien/35-rong`); 5 thư mục worktree rỗng bị khoá tiến trình (xoá sau) |
+| **Cả phiên** | 100 | | **~99,5 %** | |
 
 > Các lần báo trước (70–74 %) ước không theo trọng số và **cao hơn thực tế**; từ bản này dùng bảng trên.
 
