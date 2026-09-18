@@ -150,7 +150,7 @@ là đi nhầm tầng.
 B — có thể **sau** khi A đã nhả lease. Trong khe đó một lượt A vừa nhận có thể
 ăn 429 của B; đường đúng là A **xếp lượt ấy lại hàng chờ** (O-04), không phải
 thêm một lớp nhả thứ tư. B còn một lưới thu hồi suất treo riêng
-(`gioi_han.HAN_GIU_MAC_DINH_S`).
+(`gioi_han.HAN_IM_LANG_MAC_DINH_S` — từ 18/09 tính theo IM LẶNG: mỗi chunk/nhịp tim gia hạn suất, không thu lượt dài đang chạy).
 
 🔑 **Vì sao cần cả ba** — và đây là bài học đắt nhất của hạng mục này:
 

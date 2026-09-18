@@ -53,7 +53,7 @@ from .catalog import KhongCoModel, ModelSpec, lay, nap_catalog, ten_la
 from .config import Config
 from . import gpu_uuid as GPU
 from . import residency as RES
-from .gioi_han import GioiHan, boc_luong
+from .gioi_han import GioiHan, boc_luong, han_im_lang_cho
 from . import so_luot as SL
 from .so_theo_model import SoTheoModel
 from . import vat_ly as VL
@@ -142,6 +142,8 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
             # lambda: `_vram_trong_cua_model` định nghĩa bên dưới, tên giải lúc
             # GỌI — cùng khuôn với `model_cua_ta_dang_chay` ở trên.
             doc_vram_trong=lambda m: _vram_trong_cua_model(m),
+            # Hạn IM LẶNG của suất ≥ hạn đọc thượng nguồn (Task 6, 18/09).
+            han_im_lang_s=han_im_lang_cho(cfg.stream_timeout_s),
             now=now)
 
     #: Sổ kết quả của lượt `POST /v1/residency/nap` gần nhất. Một sổ cho mỗi

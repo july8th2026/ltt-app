@@ -34,14 +34,14 @@ mặt thực thi ⇒ suất giữ vĩnh viễn.
   2. `LuongUpstream.dong()` — đóng được **mà không cần lặp**, nên socket và
      `llama-server` không bị bỏ lại.
   3. **Hạn giữ suất** — lưới cuối. Nó không đoán đường rò nào cả; nó chỉ khẳng
-     định "không lượt nào chạy quá `han_giu_s`". Lớp này là thứ duy nhất bảo vệ
+     định "lượt sống đẩy ít nhất một byte mỗi `han_im_lang_s`" (theo im lặng từ 18/09). Lớp này là thứ duy nhất bảo vệ
      được trước đường rò **thứ năm** mà chưa ai nghĩ ra.
 """
 from __future__ import annotations
 
 import pytest
 
-from llm_gateway.gioi_han import (HAN_GIU_MAC_DINH_S, GioiHan, boc_luong)
+from llm_gateway.gioi_han import (HAN_IM_LANG_MAC_DINH_S, GioiHan, boc_luong)
 from llm_gateway.upstream import LuongUpstream
 
 
@@ -80,7 +80,7 @@ def test_generator_CHUA_CHAY_LAN_NAO_thi_finally_KHONG_tra_suat():
 def test_han_giu_THU_HOI_duoc_dung_cai_suat_treo_do():
     """Lưới cuối phải cứu được **chính** tình huống trên."""
     dh = Dongho()
-    gh = GioiHan(max_dong_thoi=1, han_giu_s=1200.0, now=dh)
+    gh = GioiHan(max_dong_thoi=1, han_im_lang_s=1200.0, now=dh)
     suat = gh.cap_suat()[1]
     boc_luong(iter([b"a"] * 10), suat).close()      # ro y het su co that
 
@@ -94,7 +94,7 @@ def test_han_giu_THU_HOI_duoc_dung_cai_suat_treo_do():
 def test_thu_hoi_KHONG_dung_toi_luot_dang_chay_that():
     """Chiều nguy hiểm hơn: thu hồi nhầm là cho hai lượt vào một GPU `--parallel 1`."""
     dh = Dongho()
-    gh = GioiHan(max_dong_thoi=1, han_giu_s=1200.0, now=dh)
+    gh = GioiHan(max_dong_thoi=1, han_im_lang_s=1200.0, now=dh)
     suat = gh.cap_suat()[1]
     dh.t += 600                                   # mot luot dai NHUNG THAT
     assert not _co_cho(gh)
@@ -111,7 +111,7 @@ def test_tra_suat_DA_BI_THU_HOI_khong_lam_am_bo_dem():
     âm-bộ-đếm mà `Suat` sinh ra để chặn, chỉ là quay lại bằng cửa sau.
     """
     dh = Dongho()
-    gh = GioiHan(max_dong_thoi=2, han_giu_s=100.0, now=dh)
+    gh = GioiHan(max_dong_thoi=2, han_im_lang_s=100.0, now=dh)
     cu = gh.cap_suat()[1]
     dh.t += 200
     gh.cap_suat()[1]                              # kich thu hoi + chiem 1 suat
@@ -144,7 +144,7 @@ def test_tu_lanh_phai_ON_AO_chu_khong_im_lang(caplog):
     import logging
 
     dh = Dongho()
-    gh = GioiHan(max_dong_thoi=1, han_giu_s=10.0, now=dh)
+    gh = GioiHan(max_dong_thoi=1, han_im_lang_s=10.0, now=dh)
     gh.cap_suat()
     dh.t += 20
     with caplog.at_level(logging.WARNING, logger="llm_gateway.gioi_han"):
@@ -159,7 +159,7 @@ def test_tu_lanh_phai_ON_AO_chu_khong_im_lang(caplog):
 def test_dem_thu_hoi_KHONG_tu_reset():
     """Bộ đếm là dấu vết của bug. Reset nó là xoá bằng chứng."""
     dh = Dongho()
-    gh = GioiHan(max_dong_thoi=1, han_giu_s=10.0, now=dh)
+    gh = GioiHan(max_dong_thoi=1, han_im_lang_s=10.0, now=dh)
     for _ in range(3):
         gh.cap_suat()
         dh.t += 20
@@ -177,9 +177,9 @@ def test_han_giu_phai_RONG_HON_stream_timeout():
     from llm_gateway import config as cfg_mod
 
     ma = inspect.getsource(cfg_mod)
-    assert HAN_GIU_MAC_DINH_S > 900.0, (
+    assert HAN_IM_LANG_MAC_DINH_S > 900.0, (
         "stream_timeout_s mac dinh la 900; han giu phai rong hon no mot bien day")
-    assert "900" in ma, "stream_timeout_s doi roi — kiem lai HAN_GIU_MAC_DINH_S"
+    assert "900" in ma, "stream_timeout_s doi roi — kiem lai HAN_IM_LANG_MAC_DINH_S"
 
 
 # ── 4. Thượng nguồn cũng phải đóng được mà KHÔNG cần lặp ─────────────────
@@ -408,3 +408,137 @@ def test_LuongUpstream_van_la_mot_Iterator():
     lu = LuongUpstream(iter([b"a", b"b"]), lambda: None)
     assert list(lu) == [b"a", b"b"]
     assert iter(lu) is lu
+
+
+# ── 5. Hạn tính theo IM LẶNG, không theo lúc nhận (kế hoạch 18/09, Task 6) ──
+#
+# 🔴 Bản 31/08 thu mọi suất `han_giu_s` = 1.200 s sau lúc NHẬN, dựa trên giả định
+#    "không lượt nào chạy quá 20 phút". Sai: `stream_timeout_s` 900 là hạn đọc
+#    GIỮA HAI BYTE (httpx), không phải hạn tổng. Một lượt 3.8 prefill ~186K rồi
+#    sinh tới 32.768 token trong lúc ba slot khác cùng giải mã vượt 20 phút được
+#    — và B thu suất ĐANG CHẠY, nhận thêm lượt quá `-np`/bể KV.
+#
+# ⭐ Lưới cuối nay khẳng định điều đúng với mọi đường rò mà vẫn không cắt lượt
+#    sống: *suất nào không đẩy nổi một byte (chunk hay nhịp tim) suốt
+#    `HAN_IM_LANG_MAC_DINH_S` thì là suất chết.*
+
+from llm_gateway.gioi_han import han_im_lang_cho  # noqa: E402
+from llm_gateway.nhip_tim import NHIP_MAC_DINH  # noqa: E402
+
+
+def _co_cho_n(gh: GioiHan, n: int) -> bool:
+    """`_co_cho` cho sổ có bể KV: xin kèm `n` token (không khai thì luôn bị từ chối)."""
+    px, s = gh.cap_suat(n)
+    if s is not None:
+        s.tra()
+    return px.cho_qua
+
+
+def _luong_theo_dong_ho(dh: Dongho, khoi: bytes, so_khoi: int, moi_s: float):
+    """Một luồng đẩy `so_khoi` khối, mỗi khối cách nhau `moi_s` giây giả."""
+    for _ in range(so_khoi):
+        dh.t += moi_s
+        yield khoi
+
+
+@pytest.mark.parametrize("khoi", [b"data: {\"x\":1}\n\n", NHIP_MAC_DINH],
+                         ids=["chunk", "nhip_tim"])
+def test_luong_DEU_DAN_toi_1300s_KHONG_bi_thu_hoi(khoi):
+    """(a) Suất nhận lúc t=0, luồng đẩy chunk/nhịp tim đều mỗi 10 s tới t=1.300 s
+    ⇒ vẫn là của nó. Bản cũ (thu theo lúc nhận, 1.200 s) đỏ ở đây."""
+    dh = Dongho()
+    gh = GioiHan(max_dong_thoi=1, token_pool=1000, now=dh)
+    suat = gh.cap_suat(600)[1]
+    assert suat is not None
+    g = boc_luong(_luong_theo_dong_ho(dh, khoi, 130, 10.0), suat)
+    for _ in range(130):
+        next(g)
+    assert dh.t - 1000.0 == pytest.approx(1300.0)
+    assert not _co_cho_n(gh, 100), "thu hoi mot suat DANG DAY BYTE -> nhan qua -np"
+    tt = gh.trang_thai()
+    assert tt["da_thu_hoi"] == 0 and tt["dang_chay"] == 1
+    assert tt["token_dat"] == 600, "bo KV da tra lai cho mot luot van dang chay"
+    assert tt["giu_lau_nhat_giay"] == pytest.approx(1300.0, abs=0.5)
+    assert tt["im_lang_lau_nhat_giay"] == pytest.approx(0.0, abs=0.5)
+    g.close()
+    assert _co_cho_n(gh, 1000)
+
+
+def test_suat_IM_LANG_bi_thu_hoi_sau_han_im_lang():
+    """(b) Đẩy vài khối rồi câm (không chunk, không nhịp tim) ⇒ thu đúng sau
+    `HAN_IM_LANG_MAC_DINH_S` tính từ khối CUỐI, không sớm hơn một giây."""
+    dh = Dongho()
+    gh = GioiHan(max_dong_thoi=1, now=dh)
+    suat = gh.cap_suat()[1]
+    g = boc_luong(_luong_theo_dong_ho(dh, b"x", 5, 100.0), suat)
+    for _ in range(5):
+        next(g)                                  # khoi cuoi o t0 + 500
+    dh.t += HAN_IM_LANG_MAC_DINH_S - 1
+    assert not _co_cho(gh), "thu truoc han im lang"
+    dh.t += 2
+    assert _co_cho(gh), "im qua han ma khong thu -> 429 vinh vien"
+    assert gh.trang_thai()["da_thu_hoi"] == 1
+
+
+def test_han_im_lang_KHONG_hep_hon_stream_timeout():
+    """(b) Hạn im lặng ≥ hạn đọc giữa hai byte của thượng nguồn — số mặc định
+    đọc thẳng từ `config.py`, và hạn thực dùng đi theo env nếu env nâng nó."""
+    import re
+    import inspect
+
+    from llm_gateway import config as cfg_mod
+
+    m = re.search(r'"LTT_LLM_STREAM_TIMEOUT_S",\s*([0-9.]+)', inspect.getsource(cfg_mod))
+    assert m, "khong con doc duoc stream_timeout_s mac dinh o config.py"
+    mac_dinh = float(m.group(1))
+    assert HAN_IM_LANG_MAC_DINH_S >= mac_dinh
+    assert han_im_lang_cho(mac_dinh) == HAN_IM_LANG_MAC_DINH_S
+    assert han_im_lang_cho(3000.0) == 3000.0, (
+        "env nang stream_timeout_s ma han im lang dung yen -> cat luot prefill dai")
+
+
+def test_thu_hoi_tra_CA_suat_LAN_token_DUNG_MOT_lan():
+    """(c) Thu hồi nhả suất và phần token đặt trước, một lần: trả muộn hay
+    gia hạn muộn sau đó không trừ lần hai, không hồi sinh bản ghi."""
+    dh = Dongho()
+    gh = GioiHan(max_dong_thoi=2, token_pool=1000, now=dh)
+    cu = gh.cap_suat(700)[1]
+    g = boc_luong(_luong_theo_dong_ho(dh, b"x", 3, 0.0), cu)
+    next(g)
+    dh.t += HAN_IM_LANG_MAC_DINH_S + 1
+    moi = gh.cap_suat(900)[1]                    # kich thu hoi + chiem 900
+    assert moi is not None, "700 token cua suat chet chua duoc tra ve be"
+    tt = gh.trang_thai()
+    assert tt["da_thu_hoi"] == 1 and tt["dang_chay"] == 1 and tt["token_dat"] == 900
+
+    next(g)                                      # suat chet bong day tiep 1 byte
+    cu.tra()
+    g.close()
+    tt = gh.trang_thai()
+    assert tt["dang_chay"] == 1 and tt["token_dat"] == 900, (
+        "gia han/tra muon da hoi sinh hoac cat vao suat cua nguoi khac")
+    assert tt["da_thu_hoi"] == 1
+    moi.tra()
+    assert gh.trang_thai()["token_dat"] == 0
+
+
+def test_luot_XONG_binh_thuong_tra_NGAY():
+    """(d) Không đổi: luồng chạy hết thì suất + token về ngay, không chờ hạn."""
+    dh = Dongho()
+    gh = GioiHan(max_dong_thoi=1, token_pool=1000, now=dh)
+    suat = gh.cap_suat(1000)[1]
+    assert list(boc_luong(_luong_theo_dong_ho(dh, b"x", 3, 1.0), suat)) == [b"x"] * 3
+    assert suat.da_tra
+    tt = gh.trang_thai()
+    assert tt["dang_chay"] == 0 and tt["token_dat"] == 0 and tt["da_thu_hoi"] == 0
+    assert _co_cho_n(gh, 1000)
+
+
+def test_health_noi_THAT_ve_han_moi():
+    """`/health` khai hạn im lặng, không còn `han_giu_s` (tên cũ nói "tính từ lúc
+    nhận" — giữ tên đó với nghĩa mới là khai sai)."""
+    gh = GioiHan(max_dong_thoi=1)
+    tt = gh.trang_thai()
+    assert tt["han_im_lang_s"] == HAN_IM_LANG_MAC_DINH_S
+    assert "han_giu_s" not in tt
+    assert "im_lang_lau_nhat_giay" in tt and "giu_lau_nhat_giay" in tt
