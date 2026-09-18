@@ -969,4 +969,27 @@ luồng ~1,3K còn prefill khi prompt 32K vào ⇒ token đầu ở t=43,9 s = l
   theo tên tài nguyên như cư trú, ảnh chụp `dang_prefill`, `populate_existing`, `danh_dau_prefill_xong`
   thay `xoa_co_whale`), `tham_so_da_luot.han_prefill_s`, `registry.AdmissionModel` (+2 trường),
   `ngan_sach.HO_SO`/`toc_prefill_uoc`, `manifest._khai_admission`, `luong._phat`. Không đổi máy B,
-  không đổi CSDL (dùng lại `acquired_at`, `token_prefill_moi`). Test: `tests/test_1490_mot_prefill_dai.py`.
+  không đổi CSDL (dùng lại `acquired_at`, `token_prefill_moi`). Test: `tests/test_1490_mot_prefill_dai.py`
+  (luật thuần + tích hợp CSDL + **B giả nhồi prompt theo thứ tự slot**, mỗi ca có đối chứng tắt luật;
+  gỡ luật 5b ⇒ ca B giả đỏ: TTFT lượt ngắn 30,3 s).
+
+**Đo thật (18/09 tối, máy B `ltt-3.5`, engine b10883-91f6a6cf3).** Luật nhận THẬT của A
+(`admission.xet_va_giu` trên sqlite tạm, `danh_dau_prefill_xong` ở byte dữ liệu đầu) + stream thật
+tới cổng B; `LTT_LLM_CHO_WHALE_S=2` để ca C4 xảy ra trong vài giây. Kịch bản: S ~9K token t=0,
+W ~35K (whale) t=1, S2 ~1K t=9 (tới lúc W đang prefill), W2 ~21K (whale) t=12. TTFT (giây):
+
+| lượt | BẬT (3 vòng) | TẮT (3 vòng hợp lệ) |
+|---|---|---|
+| S — ngắn, còn prefill khi whale tới | **5,3 · 5,8 · 6,6** | 21,2 · 8,9 · 9,8 |
+| W — whale (lý do chờ) | 19,3 · 20,0 · 21,2 (`whale_cho_prefill` ~4–6 s) | 19,2 · 19,8 · 21,1 |
+| S2 — ngắn, tới GIỮA prefill whale | 11,4 · 12,0 · 13,2 | 22,0 · 11,9 · 4,0 |
+| W2 — whale thứ hai | vào engine sau byte đầu W (`whale_nhuong`) | như bật |
+
+- S: bật ⇒ ổn định ~5–6,5 s (prefill của chính nó); tắt ⇒ phụ thuộc slot B chọn (LCP/LRU), tệ nhất
+  21 s = chờ hết prefill 35K. W gần như không mất gì (+0,1 s): prefill của nó vốn bị S chen.
+- S2 **không** được luật này cứu (đúng thiết kế: không preempt được) — tắt còn dao động 4–22 s theo
+  slot; lối chữa thật là tách prefill/decode upstream (#21266).
+- Một vòng TẮT mất vì B trả 502 cho S và W lúc t≈4,9 s (B /health 200 ngay sau đó; chưa rõ nguyên
+  nhân, không gặp ở vòng nào khác) — không tính vào bảng.
+- Không đo qua máy chủ HTTP cục bộ: SQLite báo `database is locked` (phiên request giữ giao dịch ghi
+  suốt luồng; production là PostgreSQL) — nên đi thẳng lớp admission.
