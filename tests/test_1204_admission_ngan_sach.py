@@ -161,10 +161,10 @@ def test_xoa_co_whale_khi_prefill_xong(db):
 
     w, _ = _xet(db, user_id="a", holder_id="w", la_whale=True, tuoi_cho_s=99)
     db.commit()
-    assert admission.xoa_co_whale(w.id) is True
+    assert admission.danh_dau_prefill_xong(w.id) is True
     db.expire_all()
     assert db.get(ExecutionLease, w.id).la_whale is False
-    assert admission.xoa_co_whale(w.id) is False      # idempotent
+    assert admission.danh_dau_prefill_xong(w.id) is False      # idempotent
 
 
 @pytest.mark.skipif(not os.environ.get("LTT_TEST_DATABASE_URL"),

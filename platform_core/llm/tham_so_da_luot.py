@@ -83,6 +83,9 @@ class ThamSoDaLuot:
     #: Nghỉ bấy nhiêu giây trước khi xếp lại — cho máy B kịp nhả suất cũ, không
     #: thì A nhận lại ngay nửa giây sau và B 429 lần nữa vì cùng một khe.
     cho_xep_lai_s: float
+    #: Phần cố định của hạn ước prefill (L-29) — hàng đợi/mạng A→B→engine trước
+    #: token prompt đầu. Xem `han_prefill_s`.
+    san_han_prefill_s: float
 
     def han_cho_stream(self, la_whale: bool) -> float:
         """Trần chờ cửa stream của MỘT lượt — một chỗ tính, mọi cửa đọc."""
@@ -147,8 +150,26 @@ def luat_cho(suc: "AdmissionModel | None", *, lop: str, token_vao_uoc: int,
                 token_prefill_moi=moi, la_whale=bool(nguong > 0 and moi >= nguong))
 
 
+def han_prefill_s(token_moi: int, toc_prefill_tok_s: float, san_s: float) -> float:
+    """Hạn ƯỚC một lượt còn đang prefill, tính từ lúc được nhận (L-29, Task 17).
+
+        hạn = san_s + token_moi / toc_prefill_tok_s
+
+    Dùng khi A KHÔNG có tín hiệu "byte đầu về" (cửa đồng bộ, job, planner) và làm
+    lưới cho cửa stream (mất tín hiệu thì lượt không kẹt "đang prefill" mãi).
+    `toc_prefill_tok_s` là tốc độ BẢO THỦ của hồ sơ model (`HO_SO[m]
+    .toc_prefill_uoc_tok_s` — dưới điểm chậm nhất của đường cong đo) ⇒ hạn dài
+    hơn thật: sai về phía whale chờ lâu hơn, không về phía hai prefill dài chồng.
+    `toc ≤ 0` ⇒ vô hạn (không khai tốc độ ⇒ không có lưới thời gian).
+    """
+    if toc_prefill_tok_s <= 0:
+        return float("inf")
+    return float(san_s) + max(0, int(token_moi)) / float(toc_prefill_tok_s)
+
+
 def tham_so_nhan(*, so_slot: int, pool: int, residency_mo: bool,
-                 ts: ThamSoDaLuot | None = None) -> "ThamSo":
+                 ts: ThamSoDaLuot | None = None,
+                 mot_prefill_dai: bool = False) -> "ThamSo":
     """`luat_nhan.ThamSo` dựng từ MỘT `ThamSoDaLuot` — ánh xạ DUY NHẤT.
 
     🔴 O-09 (17/09): `admission.xet_va_giu` từng dựng `ThamSo` tay và quên
@@ -162,7 +183,8 @@ def tham_so_nhan(*, so_slot: int, pool: int, residency_mo: bool,
     return ThamSo(so_slot=int(so_slot), pool=int(pool),
                   cho_whale_toi_da_s=ts.cho_whale_toi_da_s, lao_hoa_s=ts.lao_hoa_s,
                   cho_backfill_toi_da_s=ts.cho_backfill_toi_da_s,
-                  residency_mo=bool(residency_mo))
+                  residency_mo=bool(residency_mo),
+                  mot_prefill_dai=bool(mot_prefill_dai))
 
 
 def doc() -> ThamSoDaLuot:
@@ -178,4 +200,5 @@ def doc() -> ThamSoDaLuot:
         cho_backfill_toi_da_s=_so("LTT_LLM_CHO_BACKFILL_S", 120.0),
         so_lan_xep_lai_toi_da=max(0, int(_so("LTT_LLM_SO_LAN_XEP_LAI", 3))),
         cho_xep_lai_s=max(0.0, _so("LTT_LLM_CHO_XEP_LAI_S", 1.0)),
+        san_han_prefill_s=max(0.0, _so("LTT_LLM_SAN_HAN_PREFILL_S", 5.0)),
     )

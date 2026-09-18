@@ -1592,12 +1592,14 @@ def _phat(mo, luot: LuotLuong, *, trang_thai=None) -> Generator[bytes, None, Non
             for khoi in mo.luong:
                 if t_byte_dau is None and _co_du_lieu_sse(khoi):
                     t_byte_dau = time.monotonic() - t0
-                    if cb.la_whale:
-                        # Prefill xong ⇒ thôi là whale (luật ≤1 whale nói về PREFILL).
+                    if cb.lease_id:
+                        # Prefill xong ⇒ thôi là whale (luật ≤1 whale nói về PREFILL)
+                        # và thôi "đang prefill" (L-29: whale chờ MỌI lượt còn
+                        # prefill — lượt ngắn cũng phải báo, không riêng whale).
                         # ⛔ Chỉ khối có DỮ LIỆU: B gửi `: ping` mỗi 15 s TRONG lúc
                         #    prefill — xoá cờ ở nhịp tim cho whale thứ hai prefill
                         #    chồng (nghiệm thu production 17/09: chồng 24,9 s).
-                        admission.xoa_co_whale(cb.lease_id)
+                        admission.danh_dau_prefill_xong(cb.lease_id)
                 n_khoi += 1
                 luot.luc_khoi_cuoi = time.monotonic()   # lời khai của LỚP 2
                 dem.nhin(khoi)

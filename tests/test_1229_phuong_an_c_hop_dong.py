@@ -466,7 +466,7 @@ def _chay_phat(monkeypatch, cac_khoi):
 
     da_phat: list[bytes] = []
     xoa_luc: list[int] = []
-    monkeypatch.setattr(admission, "xoa_co_whale",
+    monkeypatch.setattr(admission, "danh_dau_prefill_xong",
                         lambda lease_id: xoa_luc.append(len(da_phat)) or True)
     monkeypatch.setattr(admission, "keep_alive", lambda *a, **k: __import__("contextlib").nullcontext())
     monkeypatch.setattr(luong, "quyet_toan", lambda *a, **k: None)

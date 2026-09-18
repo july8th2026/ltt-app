@@ -19,6 +19,11 @@ mã lý do đó đi vào sổ lượt để phân tích sau):
   5. whale: ≤1 whale; whale nhường lượt tương tác   · WHALE_NHUONG / WHALE_CHAN
      đang chạy tối đa `cho_whale_toi_da_s`, quá thì
      whale thành CHẶN: không nhận lượt nào khác
+     5b. (L-29, `mot_prefill_dai`) whale không vào  · WHALE_CHO_PREFILL
+     khi còn lượt nào CHƯA xong prefill — llama.cpp
+     nhồi prompt theo thứ tự slot, lượt ngắn đang
+     prefill sẽ chờ hết prefill dài. "Whale đang
+     giữ" chỉ còn tính khi nó CÒN prefill.
   6. FCFS có BACKFILL CHẶN (L-12b, 17/09/2026):     · NHUONG_LUOT_LON / XEP_SAU
      a. người chờ lâu hơn `cho_backfill_toi_da_s` mà
         chưa vừa ngân sách ⇒ CHẶN mọi lượt trẻ hơn
@@ -72,6 +77,8 @@ WHALE_CHAN = "whale_chan"
 XEP_SAU = "xep_sau"
 #: Nhóm GPU đang cư trú cho thành viên KHÁC (D01 B) — xem `llm/residency.py`.
 CHO_RESIDENCY = "cho_residency"
+#: Whale chờ lượt khác (mọi lớp) xong PREFILL trước khi vào engine (L-29, Task 17).
+WHALE_CHO_PREFILL = "whale_cho_prefill"
 #: Có lượt chờ LÂU HƠN cửa sổ backfill mà chưa vừa ngân sách KV — mọi lượt trẻ
 #: hơn nhường để pool rút về cho nó (L-12b, chống bỏ đói lượt lớn).
 NHUONG_LUOT_LON = "nhuong_luot_lon"
@@ -109,6 +116,11 @@ class ThamSo:
     #: pool tối đa bấy nhiêu giây, rồi thành chặn. Nguồn: `tham_so_da_luot`
     #: (`LTT_LLM_CHO_BACKFILL_S`) — KHÔNG mặc định ở đây.
     cho_backfill_toi_da_s: float
+    #: "Một prefill dài mỗi lúc" (L-29): số của MODEL (`HO_SO[m].mot_prefill_dai`),
+    #: `admission.xet_va_giu` bật khi tài nguyên khai tốc độ prefill. `False` =
+    #: đúng hành vi trước L-29 (cờ whale của lượt đang giữ tính suốt lượt, whale
+    #: không chờ ai xong prefill).
+    mot_prefill_dai: bool = False
 
 
 @dataclass(frozen=True)
@@ -121,6 +133,9 @@ class Luot:
     token_dat_truoc: int = 0
     la_whale: bool = False
     tuoi_s: float = 0.0
+    #: Lượt ĐANG GIỮ chưa xong prefill: chưa có byte dữ liệu đầu tiên VÀ chưa quá
+    #: hạn ước `tham_so_da_luot.han_prefill_s`. Chỉ có nghĩa với lượt đang giữ.
+    dang_prefill: bool = False
 
 
 @dataclass(frozen=True)
@@ -203,7 +218,26 @@ def _vua_ngan_sach(l: Luot, dang_giu: list[Luot], ts: ThamSo) -> bool:
     return ts.pool <= 0 or sum(g.token_dat_truoc for g in dang_giu) + l.token_dat_truoc <= ts.pool
 
 
-def _ket_sau_whale(l: Luot, dang_giu: list[Luot]) -> bool:
+def _whale_dang_chay(g: Luot, ts: ThamSo) -> bool:
+    """Lượt ĐANG GIỮ có còn tính là whale không.
+
+    Trước L-29 (và khi tắt `mot_prefill_dai`): cờ `la_whale` của lease — cửa stream
+    xoá ở byte đầu, cửa đồng bộ/job giữ SUỐT lượt (whale kế chờ cả phần decode).
+    Bật: whale chỉ còn là whale khi CÒN prefill (`dang_prefill` có hạn ước).
+    """
+    return g.la_whale and (g.dang_prefill or not ts.mot_prefill_dai)
+
+
+def _whale_bi_chan(c: Luot, dang_giu: list[Luot], ts: ThamSo) -> bool:
+    """Whale đang chờ `c` lúc này có bị luật 5/5b giữ lại không (bỏ qua hàng)."""
+    if any(_whale_dang_chay(g, ts) for g in dang_giu):
+        return True
+    if ts.mot_prefill_dai and any(g.dang_prefill for g in dang_giu):
+        return True
+    return c.tuoi_s < ts.cho_whale_toi_da_s and any(g.lop == TUONG_TAC for g in dang_giu)
+
+
+def _ket_sau_whale(l: Luot, dang_giu: list[Luot], ts: ThamSo) -> bool:
     """Whale đang chờ trong khi một whale KHÁC đang chạy: nó không thể được nhận
     cho tới khi whale kia xong, bất kể ai khác làm gì.
 
@@ -213,7 +247,7 @@ def _ket_sau_whale(l: Luot, dang_giu: list[Luot]) -> bool:
        không làm whale đang chạy xong sớm hơn. Nay nó đứng ngoài phép chặn cho tới
        khi whale kia xong; từ lúc đó luật 5/6 thường áp lại — cận trên vẫn có số.
     """
-    return l.la_whale and any(g.la_whale for g in dang_giu)
+    return l.la_whale and any(_whale_dang_chay(g, ts) for g in dang_giu)
 
 
 def xet(yc: Luot, dang_giu: Iterable[Luot], dang_cho: Iterable[Luot],
@@ -246,12 +280,18 @@ def xet(yc: Luot, dang_giu: Iterable[Luot], dang_cho: Iterable[Luot],
         return PhanXu(False, TRAN_TAI_KHOAN)
     # 5. whale
     if yc.la_whale:
-        if any(g.la_whale for g in giu):
+        if any(_whale_dang_chay(g, ts) for g in giu):
             return PhanXu(False, WHALE_NHUONG)
+        # 5b. L-29: lượt khác còn prefill ⇒ whale vào là đè nó (thứ tự slot). Cận
+        #     trên: lượt đang prefill là lượt NGẮN (whale nối tiếp), xong trong vài
+        #     giây hoặc hết hạn ước; và từ `cho_whale_toi_da_s` WHALE_CHAN chặn lượt
+        #     mới nên hàng prefill rút cạn — whale không đói.
+        if ts.mot_prefill_dai and any(g.dang_prefill for g in giu):
+            return PhanXu(False, WHALE_CHO_PREFILL)
         if yc.tuoi_s < ts.cho_whale_toi_da_s and any(g.lop == TUONG_TAC for g in giu):
             return PhanXu(False, WHALE_NHUONG)
     elif any(c.la_whale and c.tuoi_s >= ts.cho_whale_toi_da_s
-             and not _ket_sau_whale(c, giu) for c in cho_khac):
+             and not _ket_sau_whale(c, giu, ts) for c in cho_khac):
         return PhanXu(False, WHALE_CHAN)
     # 6a. chống bỏ đói lượt lớn: ai chờ LÂU HƠN yc, quá cửa sổ backfill, mà chưa
     #     vừa pool ⇒ yc nhường. Chỉ người LÂU HƠN mới chặn — hai lượt lớn không
@@ -261,16 +301,22 @@ def xet(yc: Luot, dang_giu: Iterable[Luot], dang_cho: Iterable[Luot],
     for c in cho_khac:
         if (_HANG.get(c.lop, 9) <= hang_yc and c.tuoi_s >= ts.cho_backfill_toi_da_s
                 and (c.tuoi_s, c.id) > (yc.tuoi_s, yc.id)
-                and not _vua_ngan_sach(c, giu, ts) and not _ket_sau_whale(c, giu)):
+                and not _vua_ngan_sach(c, giu, ts) and not _ket_sau_whale(c, giu, ts)):
             return PhanXu(False, NHUONG_LUOT_LON)
     # 6b. FCFS, có backfill: yc đã qua luật 1–2 nên VỪA slot và pool.
     ds = cho_tat_ca if any(c.id == yc.id for c in cho_tat_ca) else cho_tat_ca + [yc]
     for c in sap_xep_cho(ds, giu, ts):
         if c.id == yc.id:
             break
-        if _vuong_tran_tai_khoan(c, giu, cho_tat_ca, ts) or _whale_dang_nhuong(c, ts):
+        if _vuong_tran_tai_khoan(c, giu, cho_tat_ca, ts):
             continue
-        if _ket_sau_whale(c, giu):
+        if _whale_dang_nhuong(c, ts):
+            # FIFO giữa whale (L-29): whale trẻ không vượt whale già đang KHÔNG
+            # bị luật 5/5b giữ — trước đây mọi whale < 30 s bị coi là "đang
+            # nhường" nên whale trẻ vượt được. Lượt ngắn vẫn vượt như cũ.
+            if not (ts.mot_prefill_dai and yc.la_whale and not _whale_bi_chan(c, giu, ts)):
+                continue
+        if _ket_sau_whale(c, giu, ts):
             continue
         # BACKFILL: người trước chưa vừa pool, còn trong cửa sổ ⇒ yc vừa thì vào.
         # Quá cửa sổ thì 6a đã chặn yc ở trên (nếu người ấy lâu hơn yc).
