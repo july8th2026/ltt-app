@@ -20,12 +20,12 @@ Trọng số cố định (không đổi giữa các lần cập nhật): A 20 �
 | Khối | Trọng số | % xong | Đóng góp | Còn lại |
 |---|---|---|---|---|
 | A — Nền tảng LTT LLM (Phương án C) | 20 | 100 % | 20 | — |
-| B — LTTCODE 0.1.7 build + E2E + phát hành | 25 | 100 % | 25 | (0.1.8 = E Task 13) |
-| C — Tối ưu máy B | 10 | 90 % | 9 | C4 cửa sổ đo số job + `-b/-ub` |
-| E — LLM v2 | 25 | 66 % | 16,5 | 2, 3, 4, 5, 9 đã deploy; 7, 8, 13 đang làm; 10 còn needle/MTP; 11, 11b, 12 chưa |
-| F — Dọn tài liệu | 10 | 10 % | 1 | 8 lô (~5 giờ) |
+| B — LTTCODE 0.1.7/0.1.8 build + E2E + phát hành | 25 | 100 % | 25 | 0.1.8 dev + stable 100 % (18/09 chiều) |
+| C — Tối ưu máy B | 10 | 90 % | 9 | C4 cửa sổ đo số job + `-b/-ub` (chủ dự án cho đo ngay, chờ L2) |
+| E — LLM v2 | 25 | 69 % | 17,3 | 18 task: xong 0–6, 9, 13; gần xong 7 (L2 khép), 14 (còn eval live), 16 (còn eval 3.5); 8 mã xong chờ gate; 10 một phần; 11, 11b, 12, 15 chưa |
+| F — Dọn tài liệu | 10 | 10 % | 1 | 8 lô (~5 giờ) + F5 |
 | D — Tổng kết phiên | 10 | 0 % | 0 | L3, gộp, push, nhật ký, dọn worktree |
-| **Cả phiên** | 100 | | **~71,5 %** | |
+| **Cả phiên** | 100 | | **~72,3 %** | |
 
 > Các lần báo trước (70–74 %) ước không theo trọng số và **cao hơn thực tế**; từ bản này dùng bảng trên.
 
