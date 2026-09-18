@@ -26,6 +26,29 @@ def test_ca_production_18_09_tach_ve_suy_nghi():
     assert nghi == "Người dùng hỏi thủ đô\nHà Nội"
 
 
+def test_ca_do_lai_19_09_engine_B_responses_stream():
+    """Đo lại engine B 19/09 (`/v1/responses` stream, budget 988 cắt ở 986 token):
+    suy nghĩ dở nhiều đoạn, có cả chữ trong nháy, rồi `\\n</think>\\n\\n` + câu đáp."""
+    goc = ('is "thu do Viet Nam", which is three words.\n\nWait, maybe "dùng một '
+           'từ" is a typo.\n\nSo the answer is: "Thủ đô Việt Nam là Hà Nội."'
+           "\n</think>\n\nThủ đô Việt Nam là Hà Nội.")
+    noi, nghi = tach_the_lot(goc, "The user asks")
+    assert noi == "Thủ đô Việt Nam là Hà Nội."
+    assert nghi.startswith("The user asks\nis \"thu do Viet Nam\"")
+    assert nghi.endswith('"Thủ đô Việt Nam là Hà Nội."')
+
+
+def test_budget_cat_giua_khoi_ma_cua_suy_nghi_rao_ho_van_tach():
+    """Đo 19/09 (budget 188, `/v1/messages` stream): phần lọt mở bằng "```" không
+    bao giờ đóng — rào hở — rồi `\\n</think>\\n\\n` + câu đáp."""
+    goc = ("```\n        $17 \\times 3 = 51$\n        $340 + 51 = 391$\n"
+           "    *   Result: 391\n\n5.  **Final Output Generation:** 17 x 23 = 391.cw"
+           "\n</think>\n\n17 x 23 = 391.")
+    noi, nghi = tach_the_lot(goc, "")
+    assert noi == "17 x 23 = 391."
+    assert nghi.startswith("```") and nghi.endswith("391.cw")
+
+
 def test_ca_llama_cpp_28182_the_dinh_lien_cau_tra_loi_khong_co_xuong_dong():
     """#28182: `' ... </think>I can help'` — chữ liền sau thẻ, KHÔNG phải hình thẻ
     máy của template Qwen ⇒ luật chọn không đoán (ghi rõ để ai đổi luật biết)."""

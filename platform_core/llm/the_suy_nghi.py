@@ -23,7 +23,8 @@
       **hình thẻ máy** — liền sau là xuống dòng hoặc hết văn bản (template Qwen
       sinh ``</think>\\n\\n``). Văn xuôi "thẻ </think> đóng" có chữ liền sau ⇒
       giữ. Lọc tham làm MẤT chữ của khách — LiteLLM#10702, vLLM#56658 — nên luật
-      chọn bỏ sót một ca hiếm hơn là cắt nhầm.
+      chọn bỏ sót một ca hiếm hơn là cắt nhầm. Ngoại lệ đo được: rào mã HỞ (budget
+      cắt giữa khối mã của suy nghĩ) — trong rào hở chỉ nhận `\\n</think>\\n\\n`.
    2. Phần TRƯỚC thẻ là suy nghĩ dở ⇒ nối vào `suy_nghi`; phần SAU là câu trả
       lời. Bỏ thẻ và khoảng trắng đầu phần sau.
    3. Phần sau RỖNG (thẻ ở đuôi) ⇒ chỉ bỏ thẻ, giữ phần trước làm câu trả lời —
@@ -51,12 +52,13 @@ _TRICH = set("`\"'«»“”‘’<>/\\")
 _SAU_THE_MAY = ("", "\n", "\r")
 
 
-def _vung_ma(van_ban: str) -> list[tuple[int, int]]:
-    vung = [(m.start(), m.end()) for m in _RAO.finditer(van_ban)]
+def _vung_ma(van_ban: str) -> list[tuple[int, int, bool]]:
+    """(đầu, cuối, rào_hở) — `rào_hở`: khối rào không đóng, kéo tới hết văn bản."""
+    vung = [(m.start(), m.end(), not m.group(3)) for m in _RAO.finditer(van_ban)]
     rao = list(vung)
     for m in _SPAN.finditer(van_ban):
-        if not any(a <= m.start() < b for a, b in rao):
-            vung.append((m.start(), m.end()))
+        if not any(a <= m.start() < b for a, b, _ in rao):
+            vung.append((m.start(), m.end(), False))
     return vung
 
 
@@ -70,7 +72,15 @@ def _vi_tri_the(van_ban: str, the: str) -> int:
         j = i + len(the)
         truoc = van_ban[i - 1] if i > 0 else ""
         sau = van_ban[j] if j < len(van_ban) else ""
-        trong_ma = any(a <= i < b for a, b in vung)
+        o = [(a, b, ho) for a, b, ho in vung if a <= i < b]
+        # 🔴 RÀO HỞ ≠ MÃ CHẮC CHẮN. Đo engine B 19/09 (budget 188): budget cắt
+        #    GIỮA một khối mã của suy nghĩ ⇒ phần lọt mở đầu bằng "```" không bao
+        #    giờ đóng, rồi `\n</think>\n\n` + câu đáp. Trong rào hở chỉ nhận ĐÚNG
+        #    hình template (`</think>` đứng riêng dòng, liền sau `\n\n`) — thẻ
+        #    trích trong mã bị cắt cụt (một `\n`) vẫn giữ nguyên.
+        trong_ma = bool(o) and not (
+            all(ho for _, _, ho in o) and truoc == "\n"
+            and van_ban[j:j + 2] == "\n\n")
         bi_trich = truoc in _TRICH or sau in _TRICH
         if not trong_ma and not bi_trich and sau in _SAU_THE_MAY:
             return i
