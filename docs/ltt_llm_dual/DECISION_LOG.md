@@ -1047,8 +1047,8 @@ directly now."* + xuống dòng.
     ngoặc thuộc về token; `process_command.go` gọi `exec.CommandContext` thẳng, không qua shell.
   - ⇒ trong `cmd: |` chuỗi ngoặc kép trải hai dòng, dòng thứ hai chỉ có `"`. Đo trên B: `Win32_Process`
     CommandLine của cả hai `llama-server` mang `…directly now.<LF>"`.
-- **Đo trên B 19/09 00:27–01:2x** (yaml tạm `DEEFBB9B…` = HEAD nhánh này; bản gốc `1034636E…` sao lưu
-  `llama-swap.yaml.truoc-l31-20260919`, đã trả lại đúng SHA): nạp lại hai model 31 s, `/health` 200 cả hai.
+- **Đo trên B 19/09 00:27–00:35** (yaml tạm `DEEFBB9B…` = HEAD nhánh này; bản gốc `1034636E…` sao lưu
+  `llama-swap.yaml.truoc-l31-20260919`, trả lại đúng SHA lúc 01:52): nạp lại hai model 31 s, `/health` 200 cả hai.
   Kịch bản T1b (`t1b_do_lot.py`, thân như A gửi: `max_tokens` 700 ⇒ budget 188, 2 luồng song song), n=30/cửa,
   KHÔNG có câu trong thân:
 
