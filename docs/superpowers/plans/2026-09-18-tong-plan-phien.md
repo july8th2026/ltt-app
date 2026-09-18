@@ -85,7 +85,7 @@
 | 7 | Ước token cận trên (code ×0,74, emoji ×0,16) + overhead template | ⬜ | sau Task 1; deploy theo chiều |
 | 8 | 413 trước 200 đúng câu từng giao thức | ⬜ | sau Task 4 |
 | 9 | Tách ngưỡng nén Claude Code/Codex; bộ cài cập nhật khoá LTT | 🔵 code xong, chờ gate/deploy | `1b143291`, `2c3fbebd` (đo Claude Code 2.1.274: trừ 33k; nay nén 138.458/176.141); phần `examples.py` giao Task 3–4 |
-| 10 | Công cụ kiểm định kỳ (canary cô lập, MTP, `/slots`, bộ chấm A/B) | ⬜ | sau Task 1, giờ vắng |
+| 10 | Công cụ kiểm định kỳ (canary cô lập, MTP, `/slots`, bộ chấm A/B) | ⬜ | sau Task 1, giờ vắng + **needle 100–200K trên 3.8** (llama.cpp #27756: 3.8 EOS rỗng khi prompt > ~98–130K; phiên LTTCODE 18/09 lên 157K vẫn trả lời bình thường — chưa phải phép đo) |
 | 11 | Dọn bản sao gõ tay + tài liệu sai | ⬜ | rải theo task |
 | 12 | Chất lượng 3.5: áp thông số lấy mẫu theo model card + A/B | ⬜ | sau Task 4, 10 |
 | 13 | LTTCODE chọn mức suy nghĩ theo model (0.1.8) | ⬜ | sau Task 3 |
@@ -123,6 +123,10 @@
 | 18/09 | Hộp cập nhật mở khuất sau cửa sổ chính | `2e2a91d` |
 | 18/09 | Suất `sync` mồ côi khoá 3090 20 phút | `a6999888` |
 | 18/09 09:24 | **Máy A treo 13 phút** (4 agent pytest `-n 6` cùng lúc + job realesrgan của bot; RAM trống 10,5 GiB) — chủ dự án khởi động lại | `KHAM.bat` xác nhận; luật mới: lệnh nặng của agent chạy qua trình bọc giữ khoá `cpu_nhieu`, `-n` ≤ 4, 1 lượt nặng toàn máy (memory `agent-song-song-phai-xep-hang-khoa-may`); 4 agent chạy tiếp từ worktree, không mất việc |
+
+## Quyết định 18/09 — YaRN / ngữ cảnh 1M: KHÔNG dùng
+
+Không vừa VRAM (3.8 @262K cần ~25,2 GB/24; 1M cần 44 GB; 3.5 @524K thiếu 4,8–7 GB), không có nhu cầu (phiên nén ở 138–176K), llama.cpp còn lỗi mở với qwen35 (#27090, #27756), YaRN tĩnh làm kém văn bản ngắn (Qwen tự cảnh báo). Xem lại khi: có khách cần > 262K + card ≥ 48 GB riêng + hai lỗi đã sửa ⇒ hồ sơ riêng YaRN ×2 (524K) + RULER trước khi mở. Không nâng 3.8 lên 262.144 (tràn VRAM, lợi 18,5 % ngữ cảnh không phiên nào dùng).
 
 ## Rủi ro mới cần xử lý sớm
 
