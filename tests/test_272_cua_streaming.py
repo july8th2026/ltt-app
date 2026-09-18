@@ -416,7 +416,7 @@ def test_so_REQUEST_ghi_dung_so_tien_o_nhanh_KHONG_STREAM(api, monkeypatch):
     # Dùng nhầm bộ giả là đo một đường khác và nhận `ThieuKeyError`.
     from apps.ltt_llm import features
 
-    def _gia(db, params, *, timeout_s=300.0):
+    def _gia(db, params, *, timeout_s=300.0, **_):   # `ma_luot` từ T1b
         return features.KetQua(
             noi_dung="chao ban", suy_nghi="", tool_calls=(), finish_reason="stop",
             # ⚠️ Đủ lớn để vượt 1 credit — để phép kiểm đúng cả khi bật C3

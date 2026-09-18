@@ -32,6 +32,8 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
 
+from platform_core.llm.the_suy_nghi import tach_the_lot
+
 log = logging.getLogger(__name__)
 
 #: Không biết còn bao lâu thì coi như LÂU. Không bao giờ lạc quan.
@@ -399,10 +401,16 @@ def _boc(than: dict) -> KetQuaChat:
     lua = (than.get("choices") or [{}])[0] or {}
     tin = lua.get("message") or {}
     goi_tool = tin.get("tool_calls") or []
+    # `--reasoning-format deepseek` tách khối <think> ra `reasoning_content` —
+    # nhưng chỉ ở `</think>` ĐẦU TIÊN. Budget cắt ngang ⇒ thẻ thứ hai lọt vào
+    # `content` (llama.cpp#28182, T1b): trả phần lọt về suy nghĩ tại MỘT chỗ bóc
+    # này, nên mọi cửa đồng bộ (`/chat/completions`, `/messages`, `/responses`
+    # không stream, job) cùng sạch.
+    noi_dung, suy_nghi = tach_the_lot(str(tin.get("content") or ""),
+                                      str(tin.get("reasoning_content") or ""))
     return KetQuaChat(
-        noi_dung=str(tin.get("content") or ""),
-        # `--reasoning-format deepseek` tách khối <think> ra đây.
-        suy_nghi=str(tin.get("reasoning_content") or ""),
+        noi_dung=noi_dung,
+        suy_nghi=suy_nghi,
         tool_calls=tuple(goi_tool),
         finish_reason=str(lua.get("finish_reason") or ""),
         model=str(than.get("model") or ""),

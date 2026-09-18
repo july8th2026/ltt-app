@@ -401,7 +401,14 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         kq = cua_luong.goi_dong_bo_co_xep_lai(
             lambda: ngat.chay_canh_ngat(
                 lambda: executor.run(db, sach,
-                                     timeout_s=_con_lai_s(t0, float(_tran_giay()))),
+                                     timeout_s=_con_lai_s(t0, float(_tran_giay())),
+                                     # 🔴 MÃ LƯỢT XUỐNG MÁY B (L-06, như
+                                     #    `/chat/completions`). Thiếu nó: B không
+                                     #    nhận `X-LTT-Request-Id` ⇒ sổ lượt B
+                                     #    không nối được sổ A, và đường huỷ khi
+                                     #    khách đi chỉ đóng socket — B sinh
+                                     #    chữ tới hết (T4 P1 phát hiện).
+                                     ma_luot=request_id),
                 ngat_chua=ngat.do_ngat(request)),
             suat,
             han_s=lambda: cua_luong.han_cho_dong_bo(
@@ -586,6 +593,24 @@ def _dang_anthropic(kq, ten: str, request_id: str) -> dict:
 
     khoi = tool_dich.sang_anthropic_content(kq.noi_dung,
                                             getattr(kq, "tool_calls", ()))
+
+    # ⭐ KHỐI `thinking` ĐỨNG ĐẦU, như đường stream (T1b). Trước đây hàm này không
+    #    đọc `kq.suy_nghi` ⇒ `/messages` không stream vứt trọn suy nghĩ, trong khi
+    #    cùng lượt ấy qua stream thì khách thấy nó — một route, hai hình dạng.
+    #
+    #    Hình dạng theo tài liệu Anthropic (extended thinking): `{"type":
+    #    "thinking", "thinking": …, "signature": …}`, đứng TRƯỚC `text`/`tool_use`.
+    #    `signature` RỖNG — đúng thứ llama.cpp đã phát ở đường stream mà Claude
+    #    Code đang dùng (`server-task.cpp`: "empty signature since we can't
+    #    generate a cryptographic signature for local models"). Khách gửi lại khối
+    #    này ở lượt sau thì `tool_dich._chu` chỉ lấy `text` ⇒ không có gì để kiểm.
+    suy_nghi = getattr(kq, "suy_nghi", "") or ""
+    if suy_nghi.strip():
+        khoi = [{"type": "thinking", "thinking": suy_nghi, "signature": ""}] + [
+            k for k in khoi
+            # Chỉ có suy nghĩ, không chữ: bỏ khối `text` rỗng lót đáy của
+            # `sang_anthropic_content` — đã có một khối có nghĩa.
+            if not (k.get("type") == "text" and not (k.get("text") or "").strip())]
 
     # 🔴 KHÔNG ĐƯỢC KHAI `tool_use` KHI KHÔNG CÓ KHỐI `tool_use` NÀO.
     #
