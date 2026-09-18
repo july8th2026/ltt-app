@@ -21,11 +21,11 @@ Trọng số cố định (không đổi giữa các lần cập nhật): A 20 �
 |---|---|---|---|---|
 | A — Nền tảng LTT LLM (Phương án C) | 20 | 100 % | 20 | — |
 | B — LTTCODE 0.1.7→0.1.10 build + E2E + phát hành | 25 | 100 % | 25 | 0.1.9 dev (Task 14/15/16), 0.1.10 dev sửa bộ cài xoá tệp cũ — verify_installed PASS trên máy thật; 0.1.10 stable đang dựng |
-| C — Tối ưu máy B | 10 | 98 % | 9,8 | 3.5 np4 deploy A+B 19:05 (L-28); `-b/-ub` hàng A–C đã đo, còn hàng D + báo cáo (làn B) |
-| E — LLM v2 | 25 | 97 % | 24,3 | 19 task: xong 0–13 (10, 12 gộp `main` `a292382b`); 14/15/16 đã phát trong LTTCODE 0.1.9–0.1.10; 17 mã xong (`13b4c71f`, L-29) đang kiểm + đo live |
-| F — Dọn tài liệu | 10 | 85 % | 8,5 | lô 1, 2, 4, 5, 8 xong (nhánh `phien/don-tai-lieu`, chờ gate cùng Task 17); lô 6 (LTTCODE `ece09d2`), lô 7 (memory), F5 xong |
-| D — Tổng kết phiên | 10 | 0 % | 0 | L3, gộp, push, nhật ký, dọn worktree |
-| **Cả phiên** | 100 | | **~87,6 %** | |
+| C — Tối ưu máy B | 10 | 100 % | 10 | C4 → 3.5 np4 (L-28, đã deploy); làn B `-b/-ub` A–D + E3 + R-17 xong → 3.5 `-b 1024` (L-30, deploy cùng tổng kết) |
+| E — LLM v2 | 25 | 100 % | 25 | 19/19 task xong; 17 đo live đạt (lượt ngắn 5–7 s thay vì 9–21 s); 14/15/16 trong LTTCODE 0.1.10 stable |
+| F — Dọn tài liệu | 10 | 95 % | 9,5 | 8/8 lô + F5 xong; chờ gộp `main` qua L3 tổng kết |
+| D — Tổng kết phiên | 10 | 30 % | 3 | ✅ nhánh tích hợp `phien/tong-ket-18-09` (5 nhánh + Task 17 + làn B), nhật ký; 🔵 L3 đang chạy; còn: khép L3, gộp `main`, deploy A + B, push hai kho, dọn 38 worktree, gỡ luật SSH tạm, env nssm B |
+| **Cả phiên** | 100 | | **~92,5 %** | |
 
 > Các lần báo trước (70–74 %) ước không theo trọng số và **cao hơn thực tế**; từ bản này dùng bảng trên.
 
