@@ -1027,3 +1027,41 @@ Nguồn: `artifacts/bench_hang_cho/KET_QUA_BUB_E3_R17_18_09.md` (ma trận `TRA_
   chậm hơn 41 % (tỉ lệ trúng cache 0,79 → 0,51) ⇒ giữ mặc định `true`.
 - Áp dụng: `llm_gateway/deploy/llama-swap.yaml` hồ sơ `qwen35-api` thêm `-b 1024`; deploy B (lưu yaml ⇒ nạp lại cả
   hai model), không đổi máy A (rào B không đọc `-b`).
+
+## L-32 — Nấc effort LTT-3.8 THẬT: máy chủ đặt budget suy nghĩ theo mức, ở mọi cửa (T1c, 2026-09-19)
+
+Chủ dự án duyệt 19/09. Bổ sung L-26 (không thay): effort vẫn đi tới template, nay mỗi mức mang thêm một **trần suy nghĩ do máy chủ đặt**.
+
+**Vì sao (đo T1c, 18–19/09, engine B, n=5/ô):**
+- Trước T1c, `/v1/messages` VỨT `reasoning_effort` cấp cao nhất (llama.cpp `91f6a6cf3` `server-chat.cpp:579`, converter Anthropic chỉ chép `temperature|top_p|top_k|stream|chat_template_kwargs`) ⇒ mọi mức chạy như `xhigh` (`--reasoning-effort xhigh`, `common/arg.cpp:3695-3704`). Prompt: 74 token ở cả low lẫn xhigh; qua `chat_template_kwargs.reasoning_effort`: low 62 / medium 36 / xhigh 74. T1c (`f4533907`) sửa đường đi.
+- Nhưng khi effort đã tới template, độ dài suy nghĩ KHÔNG theo mức: effort của template v22.5 chỉ là một câu ở đầu system prompt (dòng 83–86, 217). Median token ra low/xhigh: lát domino 3×8 4.695/4.855 (`/messages`) và 4.240/4.610 (`/responses`), bài tàu hoả 385/245 (low dài hơn), bài dễ 423/434.
+
+**Quyết định:**
+- `ltt-3.8`: budget suy nghĩ máy chủ đặt = `min(mức, max_tokens − 512)`, không âm; **low 1.024 · medium 2.048 · xhigh 4.096**. `xhigh` = `--reasoning-budget` của `qwen38-api` (`test_1430` đọc yaml chốt) ⇒ mức mặc định (không gửi effort ⇒ xhigh) y như trước, trừ phần kẹp chừa chỗ trả lời khi `max_tokens` < 4.608.
+- Một hàm: `apps/ltt_llm/ngan_sach.budget_suy_nghi_dong_bo(model, max_tokens, muc_nghi)` + bảng `BUDGET_SUY_NGHI_THEO_MUC`. Mọi cửa đi qua nó: `/chat/completions` (`executor.sync_thinking_budget`), `/messages`+`/responses` không stream và job (`features.chay`), stream (`luong._dat_budget_may_chu`, sau `dat_effort_cho_engine`).
+- Trường theo cửa (bài học T1): `/v1/messages` chỉ đọc `thinking{type:enabled,budget_tokens}`; `/v1/responses` và `/v1/chat/completions` đọc `reasoning_budget_tokens`. Budget khách gửi vẫn bị gỡ (L-26).
+- `ltt-3.5` không đổi (một chế độ, 2.048, effort bị gỡ).
+
+**Đo sau sửa (engine B trực tiếp, thân do mã nhánh `phien/t1c-effort` dựng, `max_tokens` 8.000, 2 luồng song song; token suy nghĩ đếm bằng `/tokenize` của chính engine):**
+
+| Cửa | Bài | Mức | n | Suy nghĩ (median / max) | Token ra median | Trễ median | Đúng |
+|---|---|---|---|---|---|---|---|
+| `/messages` | domino 3×8 (=153) | low | 5 | 1.023 / 1.023 | 1.593 | 36,5 s | 3/5 |
+| `/messages` | domino | medium | 5 | 2.047 / 2.047 | 3.067 | 67,2 s | 3/5 |
+| `/messages` | domino | xhigh | 5 | 4.095 / 4.095 | 4.942 | 119,6 s | 4/5 |
+| `/messages` | 17×23 | low · medium · xhigh | 5 mỗi mức | 57 · 57 · 27 (max 57 · 184 · 46) | 63 · 63 · 33 | 1,7 · 2,0 · 1,1 s | 5/5 mỗi mức |
+| `/messages` | thủ đô Úc | low · medium · xhigh | 5 mỗi mức | 25 · 36 · 32 (max 40 · 51 · 33) | 30 · 41 · 37 | 1,5 · 1,5 · 1,3 s | 5/5 mỗi mức |
+| `/responses` | domino | low · medium · xhigh | 2 mỗi mức | 1.023 · 2.047 · 4.095 | 1.738 · 2.891 · 4.759 | 38 · 64 · 116 s | 2/2 · 1/2 · 2/2 |
+| `/chat/completions` | domino | low · medium · xhigh | 2 mỗi mức | 1.023 · 2.047 · 4.095 | 1.850 · 3.736 · 4.532 | 43 · 78 · 110 s | 1/2 · 0/2 · 2/2 |
+
+Đọc bảng:
+- Budget có tác dụng ở cả ba cửa: bài khó chạm đúng trần của mức (1.023/2.047/4.095); trễ giảm ~3,3× từ xhigh xuống low.
+- Bài dễ không bao giờ chạm trần ⇒ mức không đổi gì (đúng 30/30).
+- Chất lượng bài khó theo mức (gộp ba cửa, n=9): low 6/9 · medium 4/9 · xhigh 8/9. n nhỏ, medium thấp hơn low nằm trong nhiễu; kết luận chắc được: **low/medium đổi độ chính xác lấy độ trễ ở bài khó**, xhigh giữ chất lượng. 1 lượt xhigh sai vì chạm `max_tokens` 8.000 (model tiếp tục suy luận trong phần trả lời) — không liên quan budget.
+- Khi budget cắt, model vẫn tiếp tục lập luận trong phần trả lời (550–2.300 token) — token ra thật ≈ budget + 500–1.700 ở bài khó. Không phải lỗi rò thẻ (T1b là việc riêng).
+- xhigh sau L-32 khớp số T1c trước L-32 (median token ra 4.942 vs 4.855) ⇒ mặc định không đổi hành vi.
+
+**Hệ quả cần biết:**
+- Cửa đồng bộ/một cục có trần ~2.355 token ra (90 s) ⇒ medium/xhigh ở đó bị kẹp về `max_tokens − 512` (≤ ~1.843); `max_tokens` ≤ 512 ⇒ budget 0 = kết thúc suy nghĩ ngay (trước: suy nghĩ có thể nuốt hết trần ⇒ `content` rỗng).
+- Effort nằm ở đầu prompt ⇒ đổi mức giữa các lượt = mất prompt cache. Máy chủ không tự đổi mức cho request phụ; LTTCODE nên dùng mức của phiên cả cho nén hội thoại (bỏ `compaction` khỏi `LOWEST_EFFORT_PURPOSES` — việc làn harness).
+- Artifacts: `artifacts/l32_effort_budget_19_09/` (script `do_l32.py`, jsonl từng lượt, số đo T1c trước/sau).

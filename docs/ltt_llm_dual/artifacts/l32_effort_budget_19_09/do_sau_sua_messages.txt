@@ -1,0 +1,2 @@
+messages low    field={'chat_template_kwargs': {'reasoning_effort': 'low'}} prompt=[80] output_tokens=[4695, 5394, 3423, 4634, 5600] median=4695 dung_153=4/5
+messages xhigh  field={'chat_template_kwargs': {'reasoning_effort': 'xhigh'}} prompt=[92] output_tokens=[4475, 4855, 4847, 5087, 5295] median=4855 dung_153=5/5

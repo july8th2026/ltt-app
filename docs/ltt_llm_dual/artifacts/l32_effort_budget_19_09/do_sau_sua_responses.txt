@@ -1,0 +1,2 @@
+responses low    field={'reasoning': {'summary': 'auto'}, 'reasoning_effort': 'low'} prompt=[80] output_tokens=[4291, 4240, 3114, 4564, 3860] median=4240 dung_153=5/5
+responses xhigh  field={'reasoning': {'summary': 'auto'}, 'reasoning_effort': 'xhigh'} prompt=[92] output_tokens=[4921, 4479, 4473, 4720, 4610] median=4610 dung_153=5/5

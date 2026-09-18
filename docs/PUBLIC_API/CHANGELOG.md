@@ -21,7 +21,7 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
-## 2026-09-19 — `ltt-3.8`: `reasoning_effort` có tác dụng ở `/messages` (FIXED)
+## 2026-09-19 — `ltt-3.8`: `reasoning_effort` có tác dụng — ở mọi cửa, và có đo được (FIXED)
 
 - **Cái gì đổi:** ở `POST /api/v1/messages` **stream**, `reasoning_effort` của
   `ltt-3.8` trước đây bị engine vứt im lặng — mọi mức chạy như `xhigh` (đo: cùng
@@ -31,9 +31,17 @@ lần ghi lại đó hiện ra trong diff.
   nhiều chỗ thì `reasoning_effort` > `reasoning.effort` > `chat_template_kwargs`.
   `chat_template_kwargs` chỉ còn nhận `reasoning_effort`; mọi khoá khác bị gỡ
   trước máy B (vd `tool_call_format` làm hỏng gọi tool im lặng).
+  Mỗi mức nay còn mang một **trần suy nghĩ do máy chủ đặt** (L-32), ở mọi cửa
+  (`/chat/completions`, `/messages`, `/responses`, stream, không stream, job):
+  `low` 1.024 · `medium` 2.048 · `xhigh` 4.096 token, kẹp `≤ max_tokens − 512`
+  để luôn còn chỗ trả lời. Đo trên bài khó (lát domino 3×8): suy nghĩ đúng trần
+  của mức, độ trễ median 36 s · 67 s · 120 s, đúng 6/9 · 4/9 · 8/9; câu dễ không
+  chạm trần nên không đổi (đúng 30/30). Không gửi effort ⇒ `xhigh` như trước.
 - **Có phá vỡ tương thích không:** không. Không có khoá `chat_template_kwargs`
-  nào ngoài effort từng được tài liệu hoá.
-- **Phải làm gì:** không gì. Lưu ý: mức effort nằm ở đầu prompt — đổi mức giữa
+  nào ngoài effort từng được tài liệu hoá. Client đang gửi `low`/`medium` sẽ
+  thấy câu trả lời nhanh hơn và ngắn hơn ở bài khó — đúng nghĩa đã công bố.
+- **Phải làm gì:** không gì; muốn chất lượng cao nhất ở bài khó thì dùng `xhigh`
+  (mặc định). Lưu ý: mức effort nằm ở đầu prompt — đổi mức giữa
   các lượt của cùng hội thoại làm mất prompt cache; giữ một mức cho cả phiên,
   kể cả request phụ (nén hội thoại, đặt tiêu đề).
 

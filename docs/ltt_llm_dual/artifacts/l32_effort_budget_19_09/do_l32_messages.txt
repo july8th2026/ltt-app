@@ -1,0 +1,9 @@
+messages  domino  low    budget={'type': 'enabled', 'budget_tokens': 1024} nghi=[1023, 1023, 1023, 1023, 1023] max=1023 med_nghi=1023 med_ra=1593 med_tre=36.5s dung=3/5
+messages  domino  medium budget={'type': 'enabled', 'budget_tokens': 2048} nghi=[2047, 2047, 2047, 2047, 2047] max=2047 med_nghi=2047 med_ra=3067 med_tre=67.2s dung=3/5
+messages  domino  xhigh  budget={'type': 'enabled', 'budget_tokens': 4096} nghi=[4095, 4095, 4095, 4095, 4095] max=4095 med_nghi=4095 med_ra=4942 med_tre=119.6s dung=4/5
+messages  nhan    low    budget={'type': 'enabled', 'budget_tokens': 1024} nghi=[57, 57, 48, 57, 57] max=57 med_nghi=57 med_ra=63 med_tre=1.7s dung=5/5
+messages  nhan    medium budget={'type': 'enabled', 'budget_tokens': 2048} nghi=[184, 57, 57, 55, 57] max=184 med_nghi=57 med_ra=63 med_tre=2.0s dung=5/5
+messages  nhan    xhigh  budget={'type': 'enabled', 'budget_tokens': 4096} nghi=[46, 24, 26, 27, 28] max=46 med_nghi=27 med_ra=33 med_tre=1.1s dung=5/5
+messages  thu_do  low    budget={'type': 'enabled', 'budget_tokens': 1024} nghi=[25, 25, 34, 40, 25] max=40 med_nghi=25 med_ra=30 med_tre=1.5s dung=5/5
+messages  thu_do  medium budget={'type': 'enabled', 'budget_tokens': 2048} nghi=[36, 51, 31, 34, 47] max=51 med_nghi=36 med_ra=41 med_tre=1.5s dung=5/5
+messages  thu_do  xhigh  budget={'type': 'enabled', 'budget_tokens': 4096} nghi=[32, 33, 33, 17, 30] max=33 med_nghi=32 med_ra=37 med_tre=1.3s dung=5/5
