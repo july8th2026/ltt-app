@@ -1,0 +1,101 @@
+# LTT private SearXNG - backend cua POST /lttcode/search (LTTSTUDIOSAPP apps/lttcode).
+# Rendered by tools/lttcode_searxng/cai_dat.sh into /etc/searxng/settings.yml.
+# __PORT__ and __SECRET_KEY__ are filled in at install; the secret never lives in git.
+#
+# Engine choice (H9, measured 17/09/2026 from this machine's IP, one engine at a time):
+#   web, relevant + reachable : google, yahoo, resulthunter (Brave index, searxng#6229),
+#                               swisscows, yep, brave (429 often, searxng#6402 -> kept, low
+#                               weight; resulthunter covers the same index)
+#   dropped                   : duckduckgo (CAPTCHA, searxng#6596), wikipedia (access
+#                               denied), startpage (CAPTCHA, searxng#6520), qwant (CAPTCHA;
+#                               garbage when blocked, searxng#6358), mojeek + lib.rs (access
+#                               denied), bing (off-topic results for code queries), seznam
+#                               (timeout), docker hub/npm/pypi/microsoft learn (noise or empty)
+#   it, down-weighted         : mdn matched single words ("Plugin", "join") and pushed on-topic
+#                               web results down; kept at weight 0.3.
+# Engine options: docs.searxng.org/admin/settings/settings_engines.html (weight, timeout).
+use_default_settings:
+  engines:
+    keep_only:
+      - google
+      - yahoo
+      - resulthunter
+      - swisscows
+      - yep
+      - brave
+      - github
+      - stackoverflow
+      - askubuntu
+      - superuser
+      - mdn
+      - arch linux wiki
+      - crates.io
+
+general:
+  instance_name: "LTT private search"
+  enable_metrics: false
+
+server:
+  port: __PORT__
+  bind_address: "127.0.0.1"
+  secret_key: "__SECRET_KEY__"
+  limiter: false
+  public_instance: false
+  image_proxy: false
+
+search:
+  safe_search: 0
+  formats:
+    - html
+    - json
+
+outgoing:
+  request_timeout: 4.0
+  max_request_timeout: 10.0
+
+valkey:
+  url: false
+
+engines:
+  - name: google
+    disabled: false
+    weight: 1.3
+  - name: yahoo
+    disabled: false
+    weight: 1.0
+  - name: resulthunter
+    disabled: false
+    weight: 1.0
+    timeout: 6.0
+  - name: swisscows
+    # upstream default is inactive: true (no reason given); worked in the H9 probe
+    disabled: false
+    inactive: false
+    weight: 1.0
+  - name: yep
+    disabled: false
+    weight: 0.8
+  - name: brave
+    disabled: false
+    weight: 0.8
+  - name: github
+    disabled: false
+    weight: 0.6
+  - name: stackoverflow
+    disabled: false
+    weight: 0.8
+  - name: askubuntu
+    disabled: false
+    weight: 0.5
+  - name: superuser
+    disabled: false
+    weight: 0.5
+  - name: mdn
+    disabled: false
+    weight: 0.3
+  - name: arch linux wiki
+    disabled: false
+    weight: 0.4
+  - name: crates.io
+    disabled: false
+    weight: 0.3

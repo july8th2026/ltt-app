@@ -4,6 +4,12 @@
 #   wsl.exe -d Ubuntu -u root -- bash /mnt/d/<cay>/tools/lttcode_searxng/cai_dat.sh
 #
 # Idempotent: chay lai = cap nhat ma SearXNG (git pull) + pip, GIU secret_key.
+# settings.yml duoc DUNG LAI tu settings.template.yml (cung thu muc) moi lan chay; ban cu
+# (neu khac) duoc giu o settings.yml.bak-<UTC time>. Chi ap cau hinh, bo qua apt/git/pip:
+#   wsl.exe -d Ubuntu -u root -- env CHI_CAU_HINH=1 bash /mnt/d/<cay>/tools/lttcode_searxng/cai_dat.sh
+# roi khoi dong lai: Stop-ScheduledTask "LTT SearXNG (LTTCODE search)"; Stop-ScheduledTask chi giet
+# wsl.exe, uWSGI trong distro VAN SONG (do 17/09) -> wsl.exe -d Ubuntu -u root -- pkill -TERM -x uwsgi,
+# doi het tien trinh uwsgi, roi Start-ScheduledTask. Khong giet thi task moi thoat ngay (cong 8888 dang bi giu).
 # Chi nghe 127.0.0.1:8888 trong WSL2 (localhostForwarding) - khong mo ra LAN/Internet.
 # Theo tai lieu chinh thuc: docs.searxng.org/admin/installation-searxng.html (step by step,
 # uWSGI). Khong bat systemd va khong sua /etc/wsl.conf: tools/lttcode_searxng/chay.sh
@@ -16,9 +22,12 @@ SRC="$HOME_DIR/searxng-src"
 VENV="$HOME_DIR/searx-pyenv"
 CONF=/etc/searxng
 REPO=https://github.com/searxng/searxng
+TEMPLATE="$(cd "$(dirname "$0")" && pwd)/settings.template.yml"
+[ -f "$TEMPLATE" ] || { echo "missing $TEMPLATE" >&2; exit 1; }
 
 as_searxng() { runuser -u searxng -- "$@"; }
 
+if [ "${CHI_CAU_HINH:-0}" != "1" ]; then
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
 apt-get install -y -qq python3-dev python3-babel python3-venv python-is-python3 \
@@ -41,60 +50,22 @@ fi
 as_searxng "$VENV/bin/pip" install -q -U pip setuptools wheel pyyaml msgspec typing-extensions pybind11
 as_searxng bash -c "cd '$SRC' && '$VENV/bin/pip' install -q --use-pep517 --no-build-isolation -e ."
 
-mkdir -p "$CONF"
-if [ ! -f "$CONF/settings.yml" ]; then
-  SECRET="$(openssl rand -hex 32)"
-  cat > "$CONF/settings.yml" <<EOF
-# LTT private SearXNG - backend cua POST /lttcode/search (LTTSTUDIOSAPP apps/lttcode).
-use_default_settings:
-  engines:
-    keep_only:
-      - brave
-      - duckduckgo
-      - wikipedia
-      - github
-      - stackoverflow
-      - askubuntu
-      - superuser
-      - mdn
-      - pypi
-      - docker hub
-      - arch linux wiki
-      - npm
-      - crates.io
-
-general:
-  instance_name: "LTT private search"
-  enable_metrics: false
-
-server:
-  port: ${PORT}
-  bind_address: "127.0.0.1"
-  secret_key: "${SECRET}"
-  limiter: false
-  public_instance: false
-  image_proxy: false
-
-search:
-  safe_search: 0
-  formats:
-    - html
-    - json
-
-outgoing:
-  request_timeout: 4.0
-  max_request_timeout: 10.0
-
-valkey:
-  url: false
-
-engines:
-  - name: npm
-    disabled: false
-  - name: crates.io
-    disabled: false
-EOF
 fi
+
+mkdir -p "$CONF"
+SECRET=""
+if [ -f "$CONF/settings.yml" ]; then
+  SECRET="$( { grep -oE '^[[:space:]]*secret_key:[[:space:]]*"?[0-9a-fA-F]{32,}' "$CONF/settings.yml" || true; } | grep -oE '[0-9a-fA-F]{32,}$' | head -n 1 || true)"
+fi
+[ -n "$SECRET" ] || SECRET="$(openssl rand -hex 32)"
+NEW="$(mktemp)"
+sed -e "s/__PORT__/${PORT}/" -e "s/__SECRET_KEY__/${SECRET}/" "$TEMPLATE" > "$NEW"
+if [ -f "$CONF/settings.yml" ] && ! cmp -s "$NEW" "$CONF/settings.yml"; then
+  cp -p "$CONF/settings.yml" "$CONF/settings.yml.bak-$(date -u +%Y%m%dT%H%M%SZ)"
+fi
+install -m 640 "$NEW" "$CONF/settings.yml"
+rm -f "$NEW"
+unset SECRET
 
 cat > "$CONF/uwsgi.ini" <<EOF
 [uwsgi]
@@ -124,11 +95,15 @@ chown root:searxng "$CONF/settings.yml" "$CONF/uwsgi.ini"
 chmod 640 "$CONF/settings.yml" "$CONF/uwsgi.ini"
 
 # Ban chay nam TRONG distro: Scheduled Task tro vao day, khong phu thuoc cay ma nguon.
-install -m 755 /dev/stdin "$HOME_DIR/chay.sh" <<'EOF'
+# cat + chmod, not "install /dev/stdin <<EOF": that exits 1 (ENOENT) in this WSL Ubuntu (seen 17/09).
+cat > "$HOME_DIR/chay.sh" <<'EOF'
 #!/usr/bin/env bash
 # LTT private SearXNG, foreground (keeps the WSL distro alive). Started by the
 # Windows Scheduled Task "LTT SearXNG (LTTCODE search)".
 set -euo pipefail
 exec /usr/bin/uwsgi --ini /etc/searxng/uwsgi.ini
 EOF
-echo "SEARXNG_INSTALL_OK $(as_searxng git -C "$SRC" log -1 --format='%h %cs')"
+chmod 755 "$HOME_DIR/chay.sh"
+if [ "${CHI_CAU_HINH:-0}" = "1" ]; then echo "SEARXNG_CONFIG_OK"; else
+  echo "SEARXNG_INSTALL_OK $(as_searxng git -C "$SRC" log -1 --format='%h %cs')"
+fi
