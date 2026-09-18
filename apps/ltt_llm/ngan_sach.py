@@ -78,7 +78,8 @@ TOKEN_GIU_MOI_ANH = 2_048
 #:    các luồng GIỮA CHỪNG, sau khi đã trả 200; draft MTP (`--spec-draft-n-max 2`)
 #:    và sai số ước chiếm KV mà phép đặt chỗ không đếm. Đề xuất `-c − 8.192`.
 #: ✅ CHỦ DỰ ÁN CHỐT 17/09/2026: `token_budget = -c − 8.192`, `-np 3` và `-c`
-#:    giữ nguyên (3.8 ⇒ 212.992, 3.5 ⇒ 253.952).
+#:    giữ nguyên (3.8 ⇒ 212.992, 3.5 ⇒ 253.952). 18/09 (L-28) 3.5 lên `-np 4`
+#:    ở cùng `-c` ⇒ ngân sách KV không đổi (`-kvu`: một bể chung mọi slot).
 #: ⚠️ Hệ quả phải biết (`test_1229`): với LTTCODE gửi `max_tokens` 24.000 (chốt cùng
 #:    ngày), ví dụ 15K+100K chạy / 110K chờ / 55K backfill KHÔNG đạt trên 3.8 —
 #:    55K cần 81.048, hai lượt đang chạy giữ 167.096 ⇒ 248.144 > 212.992. Backfill
@@ -285,8 +286,14 @@ class HoSoModel:
 #:     `Shared` đã vượt sàn ~140 MiB. 262.144 **không vừa card** cùng mmproj.
 #:     `-np 3`, KHÔNG 4: 4 slot ở ngữ cảnh đã chốt **tràn** sang RAM chủ.
 #:   * `qwen35-api` (RTX 5060 Ti) `-c` **262_144** — §G3: VRAM 13.423 MiB, `Shared`
-#:     354, biên 2.888 MiB ngay ở **4** slot. `-np 3` ở đây là **lựa chọn** của
-#:     chủ dự án cho nhất quán hai card (12/09), không phải giới hạn phần cứng.
+#:     354, biên 2.888 MiB ngay ở **4** slot. `-np 3` (12/09) từng là **lựa chọn**
+#:     cho nhất quán hai card, không phải giới hạn phần cứng.
+#:     ✅ **`-np 4` từ C4 (18/09, `DECISION_LOG.md` L-28)** — đo lại trên production
+#:     (`artifacts/bench_hang_cho/KET_QUA_C4_18_09.md`): shared +6 MiB (sạch), 0 rò,
+#:     0 rỗng, lặng 1,22 s và prefill 32K không đổi, tổng 147,8 → 169,9 tok/s. Mỗi
+#:     luồng khi ĐỦ 4 luồng = 57,5 % đơn luồng (dưới mục tiêu 60 %) — phiên chính
+#:     chấp nhận vì chỉ xảy ra khi có người thứ tư; ở np3 người đó chờ ~20 s.
+#:     3.8 giữ `-np 3`: np4 tràn ở 221.184, và ở 204.800 mỗi luồng còn 48 %.
 #:
 #: 🔴 LÝ DO CŨ "1 slot vì speculative decoding chỉ tối ưu một luồng" ĐÃ ĐO LẠI VÀ
 #:    KHÔNG ĐÚNG TRÊN 3090 (multijob M-1, 11/09) — `docs/multijob/00_BASELINE.md`.
@@ -305,7 +312,7 @@ HO_SO = {
         token_giu_moi_anh=TOKEN_GIU_MOI_ANH,
         nguong_whale=NGUONG_WHALE["qwen38-api"]),
     "qwen35-api": HoSoModel(
-        "qwen35-api", engine_ctx=262_144, np=3, seq_cap=3,
+        "qwen35-api", engine_ctx=262_144, np=4, seq_cap=4,
         bien_pool_token=BIEN_POOL_TOKEN, dem_uoc=DEM_UOC,
         token_giu_moi_anh=TOKEN_GIU_MOI_ANH,
         nguong_whale=NGUONG_WHALE["qwen35-api"]),
