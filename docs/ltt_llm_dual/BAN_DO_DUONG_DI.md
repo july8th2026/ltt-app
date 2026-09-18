@@ -81,10 +81,17 @@ streaming.py
   └─ tien_kiem()                     alias · đầu vào · trần 413 · số dư 402 · phòng đầy 429
      │                               (phòng đầy = SỐ người/whale, KHÔNG token — L-12b;
      │                                "có vừa pool KV" chỉ hỏi ở luat_nhan luật 2)
-     │                               ⭐ MỌI lỗi ở đây là MÃ HTTP THẬT (trước 200)
+     │                               ⭐ MỌI lỗi ở đây trả TRƯỚC 200. "Quá dài" (R-08)
+     │                                đi khuôn từng giao thức — `su_kien_loi.loi_qua_dai`:
+     │                                Messages 400 "prompt is too long: N tokens > M
+     │                                maximum" · Responses stream 200 + một
+     │                                `response.failed` `context_length_exceeded` ·
+     │                                chat/completions 400 OpenAI (test_1480)
      └─ luong_co_cho()               ← thân phản hồi, là generator ĐỒNG BỘ
         ├─ vao_va_cho()
-        │  └─ phong_cho.cho_nhan()   xếp hàng, nhả nhịp SSE `: ltt-cho ...`
+        │  └─ phong_cho.cho_nhan()   xếp hàng, nhả nhịp `su_kien_loi.bo_nhip`: Responses
+        │                            = `response.created` rồi `response.in_progress`;
+        │                            cửa khác = chú thích `: ltt-cho ...`
         │     └─ admission.xet_va_giu()   ← **suất sinh ra ở đây**
         ├─ thanh_toan.giu_cho_luot()  giữ tiền SAU khi được nhận
         ├─ mo_co_xep_lai()            ⭐ B 429 ⇒ nhả suất, XẾP LẠI dòng chờ

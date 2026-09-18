@@ -748,7 +748,7 @@ LOI_413 = (
      "gets to check again."),
     ("Your client is using the other model's profile",
      "Both models read images, but `ltt-3.5` has its own window and compact "
-     "threshold, separate from `ltt-3.8`. The 413 body carries the limit that "
+     "threshold, separate from `ltt-3.8`. The context-length error body carries the limit that "
      "actually applied, so read the number in the error rather than assuming."),
 )
 

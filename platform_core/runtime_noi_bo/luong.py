@@ -98,10 +98,14 @@ class ThieuCredit(LoiCuaLuong):
 class KhongMoDuoc(LoiCuaLuong):
     """Không mở được luồng vì lý do khác bận. `qua_dai` = 413 (lỗi của đầu vào)."""
 
-    def __init__(self, ly_do: str, *, qua_dai: bool = False):
+    def __init__(self, ly_do: str, *, qua_dai: bool = False,
+                 token: Optional[int] = None, tran: Optional[int] = None):
         super().__init__(ly_do)
         self.ly_do = ly_do
         self.qua_dai = qua_dai
+        #: Số cho câu "prompt is too long: N tokens > M maximum" (R-08), khi biết.
+        self.token = token
+        self.tran = tran
 
 
 # ── Ước lượng đầu vào / trần đầu ra (hạ từ `server/api/streaming.py`) ────────
@@ -458,7 +462,8 @@ def _dat_cho(suc, *, lop: str, token_vao_uoc: int, xin_ra: int, so_anh: int = 0,
             so_anh=so_anh, token_prefill_moi=token_prefill_moi)
     except tham_so_da_luot.DatChoVuotPool as e:
         raise KhongMoDuoc(f"dau vao + dau ra + anh {e.dat} token vuot ngan sach "
-                          f"KV {e.pool} cua model", qua_dai=True) from None
+                          f"KV {e.pool} cua model", qua_dai=True,
+                          token=int(e.dat), tran=int(e.pool)) from None
 
 
 def tien_kiem(db, *, user_id: str, tool_name: str, than: dict, duong: str,
@@ -523,7 +528,7 @@ def tien_kiem(db, *, user_id: str, tool_name: str, than: dict, duong: str,
         cap = int(tran_vao(ten))
         if vao_uoc > cap:
             raise KhongMoDuoc(f"dau vao uoc {vao_uoc} token vuot tran {cap}",
-                              qua_dai=True)
+                              qua_dai=True, token=vao_uoc, tran=cap)
 
     ts = tham_so_da_luot.doc()
     suc = _suc_chua(tool, ten)
@@ -988,7 +993,8 @@ def luong_co_cho(tk: TienKiem, *, loi_sse: Callable[[str, str, str], bytes],
                  trang_thai=None, timeout_s: float = MO_LUONG_GIAY,
                  han_s: Optional[float] = None, nhip_s: Optional[float] = None,
                  dong_ho=None, ngu=None,
-                 so_tay: Optional[dict] = None) -> Iterator[bytes]:
+                 so_tay: Optional[dict] = None,
+                 nhip_sse: Optional[Callable[[str], bytes]] = None) -> Iterator[bytes]:
     """Byte của cửa `/api/v1` stream: nhịp tim khi chờ → luồng máy B → quyết toán.
 
     Sau 200 thì không còn mã HTTP: mọi kết cục xấu là MỘT khối lỗi đúng khuôn
@@ -1005,7 +1011,11 @@ def luong_co_cho(tk: TienKiem, *, loi_sse: Callable[[str, str, str], bytes],
     bat_dau = time.monotonic()
 
     def _nhip(ly_do: str) -> bytes:
-        # Chú thích SSE: mọi client bỏ qua, Cloudflare thấy byte.
+        # Chú thích SSE: mọi client bỏ qua, Cloudflare thấy byte. `nhip_sse` (bên
+        # gọi dựng theo giao thức — `su_kien_loi.bo_nhip`) thay khi có: Codex chỉ
+        # nạp lại đồng hồ im lặng SSE bằng SỰ KIỆN, không bằng chú thích (R-08).
+        if nhip_sse is not None:
+            return nhip_sse(ly_do)
         return f": ltt-cho {ly_do}\n\n".encode("ascii", "replace")
 
     gen, db_luong = _phien_moi()

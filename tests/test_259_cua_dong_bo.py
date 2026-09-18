@@ -582,8 +582,12 @@ def test_413_dung_TRUOC_san_max_tokens(api, monkeypatch):
 
     r = api.post(DUONG, json=than, headers=_h(token))
 
-    assert r.status_code == 413, r.text[:400]
-    assert "context limit" in r.text
+    # R-08 (`tests/test_1480`): "quá dài" = 400 `context_length_exceeded` +
+    # câu "prompt is too long" — thứ client dò, không phải mã 413. Điều phép
+    # kiểm này đo không đổi: lỗi QUÁ DÀI đứng trước lỗi sàn `max_tokens`.
+    assert r.status_code == 400, r.text[:400]
+    assert r.json()["error"]["code"] == "context_length_exceeded", r.text[:400]
+    assert "prompt is too long" in r.text
     assert goi == [], "admission phai tu choi truoc khi cham model/GPU"
 
 
