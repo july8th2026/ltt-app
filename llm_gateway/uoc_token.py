@@ -44,15 +44,23 @@ CHỨNG MINH CẬN TRÊN
     của một chuỗi không bao giờ vượt cận (1) (test_1470 kiểm ``uoc_chuoi(s) ≤ byte(s)``).
 
     Kết quả trên ngữ liệu (ước kể cả khuôn ÷ thật): numbers_csv 1,03 · hex 1,06 ·
-    base64 1,08 · json_minified 1,09 · tool_calls_history 1,12 · code_py 1,20 ·
-    stacktrace 1,21 · emoji 1,30 · ja_mixed 1,30 · vi_markdown 1,36 · cjk_zh 1,37 ·
-    en_prose 1,37 · tools_60 1,79 (64 token khuôn/tool là trần đo theo BYTE — thừa khi
-    tính theo token, cố ý giữ vì chưa đo lại theo token).
+    tool_calls_history 1,07 · base64 1,08 · json_minified 1,09 · code_py 1,20 ·
+    stacktrace 1,21 · tools_60 1,27 · emoji 1,30 · ja_mixed 1,30 · vi_markdown 1,36 ·
+    cjk_zh 1,37 · en_prose 1,37.
 
 (3) Khuôn chat (``khuon``): token đặc biệt ``<|im_start|>``, vai, vỏ tool_call, lời
     mở đầu hệ thống — template render thêm, không nằm trong chuỗi khách. Đo trên
-    engine b10883 (17/09, cả hai model, ba giao thức, mọi nấc effort): cố định 52,
-    mỗi tin nhắn 7, mỗi tool tới 45. Hằng = trần đo × ≥ 1,25: **256 + 16/tin + 64/tool**.
+    engine b10883 (17/09, cả hai model, ba giao thức, mọi nấc effort): cố định 52
+    token, mỗi tin nhắn 7 token ⇒ hằng = đo × ≥ 1,25: **256 + 16/tin**.
+
+    Mỗi tool: số đo 17/09 là **45 BYTE** template render thêm so với JSON gọn (vỏ
+    ``{"type": "function", "function": …}``, khoảng trắng sau ``:``/``,``) — byte, không
+    phải token. Hằng cũ 64/tool lấy byte làm token VÀ cộng chồng lên phần schema đã
+    ước theo lớp ⇒ tools_60 ra 1,79×. Nay đổi byte sang token bằng CHÍNH hệ số lớp ở
+    (2): vỏ ``'{"type": "function", "function": }\n'`` = 35 byte ⇒ ``uoc_chuoi`` = 13
+    token ⇒ 45 byte ⇒ ⌈45 × 13/35⌉ = **17 token/tool**. Vẫn ≤ 45 (cận byte (1)).
+    Đối chứng: bỏ hẳn phần này, tools_60 vẫn 1,09× — tức 17 là biên, không phải chỗ
+    phép ước dựa vào.
 
     Kiểm: ``uoc_than(x) ≥ engine(x)`` với mọi mẫu (test_1470); văn xuôi Anh và
     Markdown tiếng Việt ≤ 1,5 × thật (không lãng phí suất).
@@ -68,10 +76,10 @@ import json
 import math
 import re
 
-#: Khuôn chat — hằng số đo × ≥ 1,25 (docstring (3)).
+#: Khuôn chat — docstring (3): 256/16 = số đo × ≥ 1,25; 17/tool = 45 byte đổi theo hệ số lớp.
 KHUON_CO_DINH = 256
 KHUON_MOI_TIN = 16
-KHUON_MOI_TOOL = 64
+KHUON_MOI_TOOL = 17
 
 #: Siết theo lớp — docstring (2).
 CHU_ASCII_MOI_TOKEN = 5

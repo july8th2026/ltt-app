@@ -154,7 +154,25 @@ def test_chu_so_dung_mot_token_moi_chu_so():
 def test_khuon_la_so_do_nhan_bien():
     from platform_core.llm.uoc_token import khuon
     assert khuon(1, 0) == 256 + 16
-    assert khuon(3, 2) == 256 + 16 * 3 + 64 * 2
+    assert khuon(3, 2) == 256 + 16 * 3 + 17 * 2
+
+
+def test_khuon_moi_tool_la_45_byte_doi_theo_he_so_lop():
+    """17/tool không gõ tay: 45 byte template thêm (đo 17/09) × tỉ lệ token/byte mà
+    chính ``uoc_chuoi`` gán cho vỏ tool — và ≤ 45 (cận byte)."""
+    import math
+    from platform_core.llm.uoc_token import KHUON_MOI_TOOL, uoc_chuoi
+    vo = '{"type": "function", "function": }\n'
+    assert KHUON_MOI_TOOL == math.ceil(45 * uoc_chuoi(vo) / len(vo.encode("utf-8")))
+    assert KHUON_MOI_TOOL <= 45
+
+
+@pytest.mark.parametrize("ten", ["tools_60", "tool_calls_history"])
+def test_duong_tool_khong_qua_1_3_lan(ten):
+    """Schema tool đi theo MỌI lượt agent — ước thừa ở đây ăn sức chứa của lưu lượng chính."""
+    for duong, ham in DUONG.items():
+        uoc = ham(_than(ten))
+        assert uoc <= 1.3 * _that(ten), f"{duong} {ten} {uoc / _that(ten):.2f}×"
 
 
 def test_khach_khong_gia_duoc_khoi_tool_de_A_bo_dem():
