@@ -1,8 +1,8 @@
 # RUNBOOK — LTT LLM Dual-Model (máy A + máy B)
 
 Tệp này dành cho **lúc đang trực**: một việc cần làm, hoặc một thứ vừa hỏng. Nó
-không giải thích kiến trúc — kiến trúc ở `DECISION_LOG.md` và
-`docs/superpowers/specs/2026-09-11-ltt-llm-dual-model-design.md`.
+không giải thích kiến trúc — một lượt đi qua đâu ở `BAN_DO_DUONG_DI.md` (đọc TRƯỚC khi
+sửa), quyết định ở `DECISION_LOG.md`.
 
 > ⛔ **Không con số nào của hệ thống được gõ lại vào tệp này.** Cửa sổ ngữ cảnh,
 > số slot, ngân sách KV, giá, ngưỡng VRAM — mỗi cái có đúng một nguồn chân lý và
@@ -119,47 +119,10 @@ nên triệu chứng nhìn như *"3.8 bị bận mãi"* — một câu trỏ sai
    fail. Và trọng tài phải tạo được dòng đó **ngay cả khi máy B im lặng**, nếu
    không thì một lần máy B không trả lời biến thành một lần LLM ngừng bán.
 
-## 2.0 🔴 BIÊN BẢN DEPLOY 12/09/2026 — MÁY B XONG, MÁY A BỊ CHẶN
+## 2.0 Biên bản deploy 12/09/2026 — đã chuyển
 
-Chủ sản phẩm cấp quyền deploy máy A + máy B (12/09, chiều), **đè** lệnh cấm
-deploy trong prompt chiến dịch LTT-CMC. Ghi lại để CMC đọc được đây là quyết
-định của chủ sản phẩm.
-
-### ✅ Máy B — đã xong, đã nghiệm thu
-
-Mã hai cổng + `llama-swap.yaml` từ commit `54cac32d`; **hash khớp 39 tệp**.
-Bốn việc tay ở §2.2 đều đã làm và đã đo lại:
-
-| | Trước | Sau |
-|---|---|---|
-| `LTT_LLM_MODELS` | `qwen38-api,qwen38-vision` | `qwen38-api,qwen35-api` |
-| `LTT_LLM_MAX_DONG_THOI=1` | còn | đã xoá |
-| `LTT_HO_DUNG_CARD` / `LTT_TRA_CARD_GIAY` | còn | đã gỡ |
-| `DependOnService: LTTComfyUI` | còn | rỗng |
-| `gpu_may_b.json` (bản cài render) | **THIẾU** | có |
-
-Nghiệm thu: `/v1/models` → `['qwen35-api','qwen38-api']`; `/health` → `models_la: []`,
-trọng tài `bat=true`. **Rollback:** `H:/LTT_LLM/releases/auto-20260912-184817`.
-
-Sổ khoá production: `ltt_llm.supported_models` `['qwen38-api','qwen38-vision']`
-→ `['qwen38-api','qwen35-api']` (mục 2 của §2.2 — **đã gỡ chặn**). Bản rollback
-ở `%TEMP%\claude\rollback_so_khoa.json`.
-
-### ⛔ Máy A — KHÔNG deploy được từ nhánh này
-
-    CSDL production : d9a1f6c2b3e5
-    alembic của ta  : a3f7c214e8b9
-    => CommandError: Can't locate revision identified by 'd9a1f6c2b3e5'
-
-Alembic chỉ là triệu chứng. `git rev-list --count 54cac32d..main` = **59 commit**,
-**191 tệp mã chạy** khác nhau, trong đó có **ba migration Voice RC1**.
-⇒ Deploy nhánh này lên máy A sẽ **gỡ Voice RC1 khỏi production**.
-
-⚠️ Đã thử và đã trả giá: production tắt ~4 phút (19:05–19:09). Bản hỏng giữ ở
-   `C:\LTTPlatform\app.that-bai-20260912-190903`; CSDL **không** bị chạm; lăn lại
-   bằng `app.previous`.
-
-⇒ Máy A chờ `cmc/llm-dual-reconcile`. Toàn văn: `CMC_SOURCE_STATE.md`.
+Biên bản (máy B xong, máy A bị chặn vì alembic) là **lịch sử**, đã chuyển sang
+`NHAT_KY_TRIEN_KHAI.md` mục *"2026-09-12 — Biên bản deploy"*. Còn ở đây phần là **thao tác**:
 
 ### ⚠️ Xoay `LTT_RENDER_TOKEN` (12/09)
 
