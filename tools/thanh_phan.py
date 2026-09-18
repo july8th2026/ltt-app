@@ -489,6 +489,38 @@ def bi_anh_huong(duong: set[str], root: Path = ROOT, *,
     return ra
 
 
+def tach_danh_sach(gia_tri: "str | list[str] | tuple[str, ...] | None") -> list[str]:
+    """`--pham-vi`/`--test` nhan NHIEU thanh phan: phay (`a,b`) va/hoac lap co.
+
+    Giu thu tu xuat hien, bo trung va bo rong. Mot thanh phan -> `[tp]`, y het
+    hanh vi cu (Task 11b, 18/09).
+    """
+    if not gia_tri:
+        return []
+    manh = [gia_tri] if isinstance(gia_tri, str) else list(gia_tri)
+    ra: list[str] = []
+    for m in manh:
+        for t in str(m).split(","):
+            t = t.strip()
+            if t and t not in ra:
+                ra.append(t)
+    return ra
+
+
+def mo_rong_pham_vi(chon: set[str], root: Path = ROOT,
+                    tp: dict[str, dict] | None = None) -> set[str]:
+    """Cac thanh phan duoc chon + nguoi tieu thu TRUC TIEP cua tung cai (HOP).
+
+    Mot nguon cho `--pham-vi` cua ca `thanh_phan.py` va `gate.py` (L2).
+    """
+    tp = tp if tp is not None else cac_thanh_phan(root)
+    _, tieu_thu = do_thi_phu_thuoc(root, tp)
+    ca = set(chon)
+    for t in chon:
+        ca |= tieu_thu.get(t, set())
+    return ca
+
+
 def test_can_chay(phan: set[str], root: Path = ROOT) -> set[str]:
     bang = test_cua_thanh_phan(root)
     ra: set[str] = set()
@@ -504,8 +536,10 @@ def test_can_chay(phan: set[str], root: Path = ROOT) -> set[str]:
 def main() -> int:
     p = argparse.ArgumentParser(description="Do thi thanh phan cua kho.")
     p.add_argument("--doi", action="store_true", help="thanh phan bi cay hien tai anh huong")
-    p.add_argument("--pham-vi", default="", help="mot thanh phan + nguoi tieu thu")
-    p.add_argument("--test", default="", help="test can chay cho mot thanh phan")
+    p.add_argument("--pham-vi", action="append", default=[],
+                   help="thanh phan + nguoi tieu thu; nhieu: `a,b` hoac lap co")
+    p.add_argument("--test", action="append", default=[],
+                   help="test can chay cho thanh phan; nhieu: `a,b` hoac lap co")
     p.add_argument("--do-thi", default="", help="phu thuoc va nguoi tieu thu")
     p.add_argument("--goc-so", default="", help="so voi commit nay thay vi HEAD")
     a = p.parse_args()
@@ -521,20 +555,24 @@ def main() -> int:
         return 0
 
     if a.test:
-        if a.test not in tp:
-            print(f"Khong co thanh phan {a.test!r}"); return 2
-        ds = sorted(test_cua_thanh_phan()[a.test])
-        print(f"{a.test}: {len(ds)} tep test")
+        chon = tach_danh_sach(a.test)
+        la = [t for t in chon if t not in tp]
+        if la:
+            print(f"Khong co thanh phan {', '.join(map(repr, la))}"); return 2
+        bang = test_cua_thanh_phan()
+        ds = sorted(set().union(*(bang[t] for t in chon)))
+        print(f"{', '.join(chon)}: {len(ds)} tep test")
         for t in ds:
             print(f"  {t}")
         return 0
 
     if a.pham_vi:
-        if a.pham_vi not in tp:
-            print(f"Khong co thanh phan {a.pham_vi!r}"); return 2
-        _, tt = do_thi_phu_thuoc()
-        ca = {a.pham_vi} | tt[a.pham_vi]
-        print(f"Pham vi {a.pham_vi}: {len(ca)} thanh phan")
+        chon = tach_danh_sach(a.pham_vi)
+        la = [t for t in chon if t not in tp]
+        if la:
+            print(f"Khong co thanh phan {', '.join(map(repr, la))}"); return 2
+        ca = mo_rong_pham_vi(set(chon), tp=tp)
+        print(f"Pham vi {', '.join(chon)}: {len(ca)} thanh phan")
         for t in sorted(ca):
             print(f"  {t}")
         print(f"=> {len(test_can_chay(ca))} tep test")

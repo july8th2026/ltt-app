@@ -34,7 +34,7 @@ git -C D:\LTTSTUDIOSAPP status --porcelain    # phải RỖNG
 - **Báo** các phiên đang chạy rằng bạn sắp deploy (deploy chép cả cây, mang cả mã của
   họ đã vào `main`) — báo, không chờ.
 - Có **gate xanh** trên **đúng SHA** của `main` sắp deploy (hợp đồng §8): giữa phiên
-  L1 `gate.py --doi --tu <sha bản đang chạy>` hoặc L2 `--pham-vi <tp>`; tổng kết phiên L3
+  L1 `gate.py --doi --tu <sha bản đang chạy>` hoặc L2 `--pham-vi <tp>[,<tp>…]` (một lượt cho mọi thành phần chạm); tổng kết phiên L3
   (xanh/đỏ đã khép). ⛔ Không chạy L3 chỉ để deploy; test nhắm một mình không đủ.
 - Migration: `main` mới có head alembic khác bản đang chạy? Đọc trước khi chép.
 - Production có tệp mà `main` không có? Deploy chép cả cây nên tệp ấy bị **xoá lặng lẽ**
