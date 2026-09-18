@@ -400,6 +400,8 @@ models:
   #
   # LTT-3.5 nhanh HON LTT-3.8 (76,21 so 63,01 tok/s) du card yeu hon, vi giai ma
   # bi chan boi bang thong bo nho: 7,3 GB trong so/token so voi 16,5 GB. (G3b)
+  # -b 1024 (lan B 18/09, KET_QUA_BUB_E3_R17_18_09.md): luong nho canh prefill 32K khung
+  # 1,23 -> 0,67 s, 2,4 -> 4,1 tok/s; prefill 32K khi co nguoi sinh +4 %. -ub mac dinh 512.
   qwen35-api:
     name: "LTT-3.5"
     description: "Qwen3.5-9B. Nhanh, re, doc anh. Ngu canh 262K."
@@ -417,6 +419,7 @@ models:
       --temp 1.0
       -c 262144
       -np 4
+      -b 1024
       --cache-type-k q8_0 --cache-type-v q8_0
       --cache-ram 24576
       --ctx-checkpoints 8

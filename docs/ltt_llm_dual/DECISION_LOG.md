@@ -987,3 +987,18 @@ luồng ~1,3K còn prefill khi prompt 32K vào ⇒ token đầu ở t=43,9 s = l
   thay `xoa_co_whale`), `tham_so_da_luot.han_prefill_s`, `registry.AdmissionModel` (+2 trường),
   `ngan_sach.HO_SO`/`toc_prefill_uoc`, `manifest._khai_admission`, `luong._phat`. Không đổi máy B,
   không đổi CSDL (dùng lại `acquired_at`, `token_prefill_moi`). Test: `tests/test_1490_mot_prefill_dai.py`.
+
+## L-30 — `-b/-ub` sau lần đo làn B: LTT-3.5 `-b 1024` (ub 512); LTT-3.8 giữ `-b 512 -ub 512`; giữ MTP; giữ `preserve_reasoning` (2026-09-18)
+
+Nguồn: `artifacts/bench_hang_cho/KET_QUA_BUB_E3_R17_18_09.md` (ma trận `TRA_CUU_B_UB_18_09.md` hàng A–D, ấm, n=3).
+- **3.5 `-b 2048 → 1024`**: luồng nhỏ cạnh prefill 32K khựng 1,23 → 0,67 s, giữ 4,1 tok/s thay vì 2,4; prefill 32K khi
+  có người sinh +4 %. `-b 512` còn tốt hơn cho luồng nhỏ (0,47 s) nhưng prefill 32K +15 % và tổng 4 luồng giảm
+  (165 → 150 tok/s, chưa giải thích — có thể nhiễu) ⇒ chọn 1024.
+- **3.8 giữ `-b 512 -ub 512`**: khựng 0,77 s so với 2,25 s ở b2048; prefill 32K một mình không đổi (~29,5 s).
+- **Hàng D (ub 1024) loại**: tràn shared +904 MiB (3.8) / +1.030 MiB (3.5).
+- **E3**: MTP bật (3 slot) và tắt (1 slot) đều 0/96 lượt 200 rỗng, gồm 38 lượt đúng prompt ~54K từng rỗng ⇒ giữ
+  MTP; vẫn chặn "200 + content rỗng" ở cổng. Giới hạn: hai nhánh khác cả MTP lẫn số slot.
+- **R-17**: `preserve_reasoning=false` với hội thoại nhiều lượt (3.5, 210 lượt): đúng 85 vs 89/105 (p = 0,48),
+  chậm hơn 41 % (tỉ lệ trúng cache 0,79 → 0,51) ⇒ giữ mặc định `true`.
+- Áp dụng: `llm_gateway/deploy/llama-swap.yaml` hồ sơ `qwen35-api` thêm `-b 1024`; deploy B (lưu yaml ⇒ nạp lại cả
+  hai model), không đổi máy A (rào B không đọc `-b`).
