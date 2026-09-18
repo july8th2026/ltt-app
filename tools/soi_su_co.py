@@ -90,7 +90,7 @@ def phan_cong_tac(db) -> None:
 
 # ── 2. So request — ban ghi co tham quyen ──────────────────────────────────
 
-def phan_so_request(db, email: str, gio: int) -> None:
+def phan_so_request(db, email: str, gio: int, phien: str = "") -> None:
     from sqlalchemy import func, select
 
     from platform_core.models import User
@@ -120,13 +120,23 @@ def phan_so_request(db, email: str, gio: int) -> None:
                      .where(R.user_id == u.id, R.status >= 400)).scalar_one()
     print(f"     tong={tong}  loi(>=400)={loi}")
 
-    print("\n  c) 25 luot gan nhat cua tai khoan do:")
-    gan = db.execute(select(R).where(R.user_id == u.id)
+    # T4: `--phien <id>` loc theo phien Claude Code/Codex — LUON kem `user_id`
+    # (chi muc `ix_public_api_requests_phien` mo dau bang no; id phien do client
+    # dat, hai khach trung chuoi khong duoc lan nhau).
+    dk = [R.user_id == u.id]
+    if phien:
+        dk.append(R.phien_khach == phien)
+        print(f"\n  c) 25 luot gan nhat cua PHIEN {phien[:8]}... cua tai khoan do:")
+    else:
+        print("\n  c) 25 luot gan nhat cua tai khoan do:")
+    gan = db.execute(select(R).where(*dk)
                      .order_by(R.created_at.desc()).limit(25)).scalars().all()
     for r in reversed(gan):
         print(f"    {r.created_at:%m-%d %H:%M:%S}  {r.status} "
               f"{(r.code or '-'):22s} {r.route:24s} tool={(r.tool or '(RONG)'):12s} "
-              f"{r.latency_ms:6d}ms credit={r.credit_delta:+d}")
+              f"{r.latency_ms:6d}ms credit={r.credit_delta:+d} "
+              f"phien={(r.phien_khach or '-')[:8]} nhanh={(r.nhanh_khach or '-')[:8]} "
+              f"ma={r.ma_luot or '-'} app={r.ung_dung_khach or '-'}")
 
 
 # ── 3. May B ───────────────────────────────────────────────────────────────
@@ -219,6 +229,9 @@ def main() -> int:
     p.add_argument("--email", default="dungnv.forwork@gmail.com")
     p.add_argument("--gio", type=int, default=24)
     p.add_argument("--khong-goi-thu", action="store_true")
+    p.add_argument("--phien", default="",
+                   help="chi cac luot cua MOT phien client (X-Claude-Code-"
+                        "Session-Id / session-id) cua tai khoan --email")
     a = p.parse_args()
 
     from platform_core.db import get_session
@@ -227,7 +240,7 @@ def main() -> int:
     db = next(gen)
     try:
         phan_cong_tac(db)
-        phan_so_request(db, a.email, a.gio)
+        phan_so_request(db, a.email, a.gio, a.phien)
         phan_may_b(db, not a.khong_goi_thu)
         print("\n" + "=" * 70)
         return 0

@@ -51,16 +51,28 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _cat(cot: str, gia_tri) -> str:
+    """Cut to the declared length of ``public_api_requests.<cot>``."""
+    tran = getattr(ApiRequestLog.__table__.c[cot].type, "length", None)
+    return str(gia_tri or "")[:tran] if tran else str(gia_tri or "")
+
+
 def record(db, *, request_id: str, user_id: str, key_id: str = "",
            project_id: str = "", method: str = "", route: str = "",
            status: int = 0, code: str = "", latency_ms: float = 0.0,
            tool: str = "", job_id: str = "", credit_delta: int = 0,
+           ma_luot: str = "", phien_khach: str = "", nhanh_khach: str = "",
+           luot_khach: str = "", ung_dung_khach: str = "",
            now: datetime | None = None) -> ApiRequestLog:
     """Write one request row. Caller commits.
 
     Deliberately tolerant about missing pieces: an unauthenticated failure has
     no key, no project and no tool, and it is precisely the row a developer
     needs most.
+
+    The five T4 columns are cut to the column's OWN length (read from the
+    table, not retyped): PostgreSQL rejects an over-long value where SQLite
+    silently keeps it, and a bookkeeping row must never fail on that.
     """
     row = ApiRequestLog(
         id=str(uuid.uuid4()),
@@ -76,6 +88,11 @@ def record(db, *, request_id: str, user_id: str, key_id: str = "",
         tool=str(tool or "")[:64],
         job_id=str(job_id or "")[:36],
         credit_delta=int(credit_delta or 0),
+        ma_luot=_cat("ma_luot", ma_luot),
+        phien_khach=_cat("phien_khach", phien_khach),
+        nhanh_khach=_cat("nhanh_khach", nhanh_khach),
+        luot_khach=_cat("luot_khach", luot_khach),
+        ung_dung_khach=_cat("ung_dung_khach", ung_dung_khach),
         created_at=now or _now(),
     )
     db.add(row)
