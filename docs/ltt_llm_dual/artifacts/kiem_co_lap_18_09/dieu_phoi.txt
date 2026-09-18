@@ -1,0 +1,30 @@
+09:58:28 khuc 0: 0 khach -> chay lan=3
+10:07:29 khuc 0: tong=36 ro=0 khong_do_duoc=0
+10:07:31 khuc 1: 0 khach -> chay lan=3
+10:17:49 khuc 1: tong=36 ro=0 khong_do_duoc=0
+10:17:50 khuc 2: ket noi khach 8299 = 1 -> cho
+10:18:22 khuc 2: 0 khach -> chay lan=3
+10:28:08 khuc 2: tong=36 ro=0 khong_do_duoc=0
+10:28:09 khuc 3: 0 khach -> chay lan=3
+10:37:10 khuc 3: tong=36 ro=0 khong_do_duoc=0
+10:37:12 khuc 4: ket noi khach 8299 = 1 -> cho
+10:37:43 khuc 4: ket noi khach 8299 = 1 -> cho
+10:38:15 khuc 4: 0 khach -> chay lan=3
+10:47:27 khuc 4: tong=36 ro=0 khong_do_duoc=0
+10:47:28 khuc 5: 0 khach -> chay lan=3
+10:56:44 khuc 5: tong=36 ro=0 khong_do_duoc=0
+--- qwen35
+09:58:28 khuc 0: 0 khach -> chay lan=3
+10:06:33 khuc 0: tong=36 ro=0 khong_do_duoc=0
+10:06:34 khuc 1: ket noi khach 8299 = 1 -> cho
+10:07:06 khuc 1: 0 khach -> chay lan=3
+10:15:57 khuc 1: tong=36 ro=0 khong_do_duoc=0
+10:15:58 khuc 2: 0 khach -> chay lan=3
+10:23:59 khuc 2: tong=36 ro=0 khong_do_duoc=0
+10:24:01 khuc 3: 0 khach -> chay lan=3
+10:32:31 khuc 3: tong=36 ro=0 khong_do_duoc=0
+10:32:32 khuc 4: ket noi khach 8299 = 1 -> cho
+10:33:04 khuc 4: 0 khach -> chay lan=3
+10:41:20 khuc 4: tong=36 ro=0 khong_do_duoc=0
+10:41:22 khuc 5: 0 khach -> chay lan=3
+10:49:27 khuc 5: tong=36 ro=0 khong_do_duoc=0

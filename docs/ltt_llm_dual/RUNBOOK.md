@@ -479,6 +479,27 @@ không"*. Hai câu khác nhau, và kho này đã rút sai một lần (`CLAUDE.m
 
 ---
 
+## 4b. Kiểm định kỳ — chạy lại sau MỖI lần nâng llama.cpp (plan v2 Task 10)
+
+**Khi nào:** ngay sau mỗi lần đổi bản ghim `llm_gateway/deploy/phien_ban_ghim.json` (`nang_llamacpp.ps1`) —
+trước khi mở lại cho khách hoặc trong cửa sổ vắng đầu tiên; và sau mỗi lần đổi `-np`/`-kvu`/`--cache-ram`/
+`--spec-type` trong `llama-swap.yaml`. Ngoài ra `tong_hop_ttft_b.py` mỗi tuần.
+
+Đường vào chung: `ssh -N -L <cổng>:127.0.0.1:8280 lengo@192.168.2.66` (gọi thẳng llama-swap, **không** qua
+8299, không tốn credit). Trước mỗi khúc đếm kết nối khách vào 8299 (ngoài loopback) — > 0 thì chờ. Không đổi cờ.
+
+| # | công cụ | lỗi thượng nguồn nó canh | đạt | lần gốc |
+|---|---|---|---|---|
+| 1 | `tools/kiem_co_lap_llm.py` (≥ 200 lượt/model, cả `dong_thoi_lru_27148`) | #27148 rò nội dung giữa phiên (pool RAM + LRU), #28286/#26425 MTP × np | 0 rò | `artifacts/KIEM_CO_LAP_18_09.md` |
+| 2 | `tools/kim_ngu_canh_dai.py --model qwen38-api` ở **đúng các độ sâu phục vụ** (100K → trần vào `tran_vao_cua`) | #27756 EOS im lặng / quên sự kiện ở ngữ cảnh dài (GDN 48 lớp); lỗ **không đơn điệu** ⇒ đo nhiều độ sâu | 4/4 sự kiện mọi độ sâu | `artifacts/bench_hang_cho/KET_QUA_NEEDLE_MTP_18_09.md` |
+| 3 | `tools/cong_mtp.py` mỗi model, `--song-song 2` | MTP × np trả rỗng/hỏng nội dung, rò slot, deadlock | cổng `dat` | như trên |
+| 4 | `tools/ab_lay_mau_35.py chay` (chỉ biến thể A đủ làm mốc) | tụt chất lượng 3.5 do engine đổi | A không tụt so với mốc | `artifacts/bench_hang_cho/SAMPLING_35_MODEL_CARD_18_09.md` |
+| 5 | `tools/tong_hop_ttft_b.py` trên `H:\LTT_LLM\logs\gateway_err*.log` + `llamaswap*.log` | TTFT p95 trôi, nạp nguội (TTL `llama-swap.yaml`) | so với lần trước (chưa có ngưỡng) | R-16, cùng tệp needle |
+
+Một mục đỏ ⇒ không mở bản llama.cpp mới cho khách; lùi bản ghim (`nang_llamacpp.ps1 -Ban <bản cũ>`, tường minh).
+
+---
+
 ## 5. Điểm lùi từng pha
 
 | pha | điểm lùi | chi phí |

@@ -1,0 +1,1 @@
+{"dat": true, "rong_khong_giai_thich": 0, "hong_noi_dung": 0, "rong_giai_thich": 15, "ok": 33, "deadlock": 0, "ro_slot": 0, "tong": 48, "khong_do_duoc": 0}
