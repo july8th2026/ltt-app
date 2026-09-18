@@ -1,5 +1,8 @@
 # BẢNG ĐỐI SOÁT — hệ ltt_llm dual-model
 
+> ⚠️ **Ảnh chụp 13/09** — trước Phương án C (L-23). Đối soát hiện hành trên production:
+> `artifacts/NGHIEM_THU_PHUONG_AN_C_17_09.md`; số theo model: `apps/ltt_llm/ngan_sach.HO_SO`.
+
 > Lập **2026-09-13**. Mọi dòng **đo được trong ngày**, bằng lệnh trên production
 > và trên cây này. Không dòng nào chép lại từ hồ sơ cũ.
 >

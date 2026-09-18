@@ -1,11 +1,3 @@
-# 10 — Rollback
-
-| Pha | Rollback | Thời gian | Kiểm sau lui |
-|---|---|---|---|
-| 0 GPU pin | yaml trước (`deploy.ps1` chụp-trước-khi-đè, `llm_gateway/deploy/deploy.ps1`) + restart `LTTLlamaSwap` | < 1 phút (đã diễn tập 18,9 s — audit `06`) | `/running` + log nạp |
-| 1 control plane (N=1) | `git revert` + deploy máy A theo `docs/16_CAP_NHAT_VA_DEPLOY.md`; migration alembic **thêm cột/bảng**, không xoá — bản cũ bỏ qua cột mới | theo đường ray deploy máy A (`app.previous`) | `/health/version`; cửa stream trả 429 như cũ |
-| 2 engine N=4 | **một giá trị**: `SO_SLOT_MAY_B = 1` (kéo theo manifest, env gateway, `--parallel`) + yaml hồ sơ trước | deploy máy B + máy A | C1 như mốc; `requests_deferred` = 0 |
-| Khẩn cấp không deploy | gateway env `LTT_LLM_MAX_DONG_THOI=1` + `setup/nap_lai_env.ps1` (memory "nssm nướng ENV"), engine vẫn 4 slot nhưng chỉ nhận 1 | vài phút | 429 xuất hiện đúng |
-
-Nguyên tắc: pha 1 **đúng ở N = 1**, nên lui pha 2 không kéo lùi pha 1. Không bước nào xoá dữ liệu tiền;
-mọi thay đổi tiền đi kèm phép kiểm bất biến ở `09` §A.
+# 10_ROLLBACK_PLAN.md — đã chuyển vào lưu trữ (18/09/2026)
+Toàn văn: `docs/_luutru/multijob_2026-09/10_ROLLBACK_PLAN.md` — chương trình Multi-Job (11/09) đã hợp nhất vào LTT LLM Dual-Model rồi Phương án C (L-23).
+Hiện hành: `docs/ltt_llm_dual/DECISION_LOG.md` (L-22…L-28), `docs/ltt_llm_dual/BAN_DO_DUONG_DI.md`.

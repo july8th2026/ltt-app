@@ -1,5 +1,11 @@
 # KẾ HOẠCH PHƯƠNG ÁN C — nhận theo ngân sách token (giữ chỗ đầu ra) + trần chuỗi độc lập
 
+> ⚠️ **ĐÃ THỰC THI 17/09 (L-23).** §1–§2 và các ô trống §4 là **ảnh chụp TRƯỚC khi sửa** (tên
+> như `SO_SLOT_MAY_B`, `KY_TU_MOI_TOKEN`, `--no-cache-idle-slots`, `-np 3` cho 3.5 ở đó là lịch sử).
+> §3 là mô hình hiện hành. Số sau đó: cache RAM **L-25** (24576/model, sàn 24), số slot **L-28**
+> (3.5 `-np 4`, 3.8 `-np 3`), ước token **L-27** (đóng R-2 ở §6). Số theo model chỉ ở
+> `apps/ltt_llm/ngan_sach.HO_SO`; đường đi: `BAN_DO_DUONG_DI.md`.
+
 > Soạn 17/09/2026 trên `phien/llm-hang-cho-lon` (đỉnh `d635b695`), **chỉ đọc** — không
 > đổi mã, không gate, không deploy. Mục tiêu: khi số đo `KET_QUA_DO_17_09.md` (nhánh
 > `phien/bench-may-b`) về, áp **một lượt** theo §4–§5.
@@ -65,8 +71,8 @@ Ký hiệu cột "loại": **G** = gõ tay (nguồn) · **D** = dẫn xuất · 
 | `--reasoning-budget` | 3.8 **4096** · 3.5 **2048** | trần token suy nghĩ, **nằm trong** `n_predict` (`server-context.cpp has_budget()` đếm `n_gen` — `SO_LOI_DO_TAI.md` §L-12b) | yaml `:312,:399` | `test_1215:64-70` (`CO_RIENG_Q131`) | G |
 | `concurrencyLimit` | 8 | llama-swap chuyển vào tối đa 8 | yaml `:336,:410` | `test_1215:313` (≥ 2×np) | G — không bao giờ chạm (cổng B chặn ở 3) |
 | `ttl` / `unloadTimeout` / `healthCheckTimeout` | 1800 / 30 / 600 | nhả model khi rảnh | yaml `:335,:337,:125` | `test_1215:221-293`; `tests/test_637_nha_ve_ram.py:142-207` | G (ngoài phạm vi C) |
-| `--cache-ram` | **mặc định 8192 MiB, chưa đo** | cache prompt trên RAM | cố ý không khai, yaml `:551-560` | — | chờ m6 |
-| `--no-cache-idle-slots` | **có trên máy thật, không có trong kho** | không giữ cache slot rảnh trong bể `-kvu` | chỉ ở `/running` máy B | — | ⛔ lệch kho |
+| `--cache-ram` | ~~**mặc định 8192 MiB, chưa đo**~~ ĐÃ THAY: **24576 MiB/model** (L-25) | cache prompt trên RAM | cố ý không khai, yaml `:551-560` | — | chờ m6 |
+| `--no-cache-idle-slots` | ~~**có trên máy thật, không có trong kho**~~ ĐÃ GỠ: phép đo tạm, đã hoàn nguyên (O-19 đóng 17/09) | không giữ cache slot rảnh trong bể `-kvu` | chỉ ở `/running` máy B | — | ⛔ lệch kho |
 | `--reserve-vram` (ComfyUI) | 3 GB | chừa VRAM 3090 | `render_gateway/deploy/cai_dat_dich_vu.ps1:101`; `render_gateway/ngan_sach.py:61` `VRAM_CHUA_LAI_GB` | `tests/test_245_render_gateway.py:1458` | G + S |
 | ComfyUI khởi động | `SERVICE_DEMAND_START` | theo nhu cầu (d635b695) | `render_gateway/deploy/cai_dat_dich_vu.ps1:138` | **không có** | G |
 | biên VRAM 3.8 ở `-c 221184 -np 3` | 445 MiB | giả định cư trú 3090 | `platform_core/llm/residency.py:51,674` (chú thích); `ngan_sach.py:51-56` | — | ghi chú — **đổi `-np/-c` 3.8 là đổi giả định này** |
@@ -335,7 +341,7 @@ Loại bỏ hẳn: `LTT_LLM_NGUONG_WHALE`, `LTT_LLM_DEM_DAT_TRUOC`, `LTT_LLM_TOK
 | **m2** (3.8 `-np 4/5`, `-c` hạ 16.384/slot thêm) | tràn VRAM, cổng decode đơn ≥ 60 tok/s, tok/s dưới tải | `np[qwen38-api]`, `engine_ctx[qwen38-api]` | đổi chỉ khi: không tràn (`shared ≤ gốc+64`, biên ≥ 300 MiB) **và** cổng 60 **và** tổng tok/s ở k=np > k=3 ít nhất 15 % **và** `tran_vao` mới ≥ 150K + 32.768 (phiên LTTCODE ~150K phải còn chạy — `-c` 204.800 ⇒ tran_vao 169.984 ✔; 188.416 ⇒ 153.600 ✔ sát) **và** biên VRAM với ComfyUI (residency, `residency.py:51`) còn đúng | ✅ **có** |
 | **m3_35 / m3_38** (`-b 2048` vs `512`, prefill 32K/163K/128K) | tốc độ decode người khác trong lúc 1 lượt prefill | `-b/-ub` yaml; `nguong_whale` (đổi định nghĩa "chặn") | nếu `-b 512` giữ decode người khác ≥ 50 % tốc độ nền mà prefill chậm ≤ 15 % ⇒ khai `-b 512 -ub 512` ở yaml, **cập nhật** `DUONG_PREFILL_TOK_S` theo số mới; nếu decode người khác gần như không khựng ở cả hai ⇒ đề xuất **nới** whale (30 s → 60 s) | có (đổi yaml engine) |
 | **hai_job** (a 1K / b 32K chen vào job đang decode) | khoảng lặng tối đa của job 1, TTFT job 2 | `whale_nhuong_T` (30 s), `nhip` 15 s đủ không | khoảng lặng job 1 trong prefill 32K > 15 s ⇒ nhịp B phải chèn trong **lượt đang decode** (hôm nay chỉ chèn khi im) — kiểm `nhip_tim.py` bao khoảng lặng giữa hai khối; > 100 s ⇒ Cloudflare cắt ⇒ bắt buộc `-b` nhỏ hơn | không (trừ khi đổi `-b`) |
-| **m6** (`--cache-ram` 8192 vs 0, tải 6 hội thoại tranh 3 slot) | tỉ lệ trúng cache `prompt_tokens_cached_total` | `--cache-ram`, `--no-cache-idle-slots` vào yaml; `uoc_moi` có ý nghĩa không | trúng cache với 8192 cao hơn 0 ≥ 10 điểm % ⇒ khai `--cache-ram 8192` tường minh; đồng thời đưa `--no-cache-idle-slots` (đang chạy thật) vào yaml nếu m6 dùng nó làm nền (O-19) | không |
+| ~~**m6**~~ (ĐÃ THAY bởi L-24/L-25: `--cache-ram` 24576, O-19 đóng) (`--cache-ram` 8192 vs 0, tải 6 hội thoại tranh 3 slot) | tỉ lệ trúng cache `prompt_tokens_cached_total` | `--cache-ram`, `--no-cache-idle-slots` vào yaml; `uoc_moi` có ý nghĩa không | trúng cache với 8192 cao hơn 0 ≥ 10 điểm % ⇒ khai `--cache-ram 8192` tường minh; đồng thời đưa `--no-cache-idle-slots` (đang chạy thật) vào yaml nếu m6 dùng nó làm nền (O-19) | không |
 | **am35 / am38** (ấm, lặp 3, 10 phút tải rồi đo lại) | prefill/decode ổn định, k=1..3, 1K/8K/32K | `DUONG_PREFILL_TOK_S` (`ngan_sach.py:515-520`) ⇒ `NGUONG_WHALE` tự dịch; `NAP_KHO_AM_S` | lệch > 10 % so với bảng §G4 ở bất kỳ điểm nào ⇒ thay điểm bằng số ấm (trung vị 3 lặp, **sau 10 phút tải**) | không |
 | **ctrl35 / ctrl38** (song song hai card) | nhiễu chéo CPU/PCIe | chỉ xác nhận hai tài nguyên độc lập | tok/s song song ≥ 90 % cô lập ⇒ giữ hai tài nguyên độc lập; < 90 % ⇒ ghi rủi ro, **không** gộp hàng | không |
 | **phép 4** (`do4_log_20260917.json`, đã có) | token ra p50/p95/p99/max: 3.5 1137/6815/13502/32768 · 3.8 1488/6000/11605/19267; `length` 2,8–2,9 % | `out_giu` mặc định cho **agent client** | xem §4.3 | ✅ **có** (hợp đồng API) |
@@ -353,7 +359,7 @@ Loại bỏ hẳn: `LTT_LLM_NGUONG_WHALE`, `LTT_LLM_DEM_DAT_TRUOC`, `LTT_LLM_TOK
 | `DUONG_PREFILL_TOK_S` | §G4 | am35/am38 | `____` | `ngan_sach.py:515-520` |
 | `NGUONG_WHALE` | 33.792 / 56.832 | dẫn xuất | (tự) | — |
 | `whale_nhuong_T` | 30 s | hai_job, m3 | `____` | `tham_so_da_luot.py:98` (+ `ngan_sach.WHALE_CHAN_TOI_DA_S:560` — gộp thành một) |
-| `--cache-ram` / `--no-cache-idle-slots` | ngầm / chỉ máy thật | m6 | `____` | yaml |
+| `--cache-ram` / `--no-cache-idle-slots` | ngầm / chỉ máy thật | m6 | ĐÃ THAY: `24576` (L-25) / gỡ (O-19) | yaml |
 | `out_giu` mặc định agent | 32.768 | phép 4 | `____` (§4.3) | `ngan_sach.TOKEN_RA_MAC_DINH` hoặc bộ cài LTTCODE |
 
 ### 4.3 Quyết định cần chủ dự án — giữ chỗ đầu ra (ví dụ 15K+100K / 110K / 55K)
@@ -434,7 +440,7 @@ theo §4.3, `reasoning_effort=low` để lượt ngắn kết thúc nhanh; ghi `
 | # | rủi ro / câu hỏi | cách chặn |
 |---|---|---|
 | R-1 | "Suy nghĩ nằm trong `max_tokens`" (không cộng `reasoning_budget`) dựa trên đọc `server-context.cpp` (L-12b), chưa đo trên bản b10883 đang chạy | Bước 4: một lượt `max_tokens=512`, `reasoning_effort=xhigh` (budget 4096) ⇒ `token_ra ≤ 512`. Nếu vượt ⇒ `out_giu = max(max_tokens, budget) + max_tokens` và cập nhật §3.1 |
-| R-2 | Ước 2,5 ký tự/token có thể **thấp** với một số nội dung (base64, CJK) ⇒ đặt chỗ thiếu ⇒ tràn `-kvu` | rào B giữ; `bien_pool` từ số đo; B đã `/tokenize` khi ước vượt trần — cân nhắc `/tokenize` thật cho lượt > `nguong_whale` (thêm ~1 round-trip cho lượt lớn, không cho lượt nhỏ) |
+| R-2 | ✅ ĐÃ ĐÓNG ở L-27 (`uoc_token.py`, cận trên có chứng minh). ~~Ước 2,5 ký tự/token có thể **thấp** với một số nội dung (base64, CJK) ⇒ đặt chỗ thiếu ⇒ tràn `-kvu`~~ | rào B giữ; `bien_pool` từ số đo; B đã `/tokenize` khi ước vượt trần — cân nhắc `/tokenize` thật cho lượt > `nguong_whale` (thêm ~1 round-trip cho lượt lớn, không cho lượt nhỏ) |
 | R-3 | Đổi `-np`/`-c` 3.8 đổi biên VRAM mà residency/ComfyUI giả định (445 MiB, `residency.py:51,674`) | bước 4 chạy lại kiểm cư trú (một job ảnh sau khi 3.8 nạp) trước khi mở cửa sổ ảnh |
 | R-4 | `uoc_moi` nhớ trong tiến trình (nhiều worker web) ⇒ cờ whale lệch giữa worker | chỉ lệch thứ tự (đã ghi `uoc_moi.py:9-13`); sau O-01 B không còn dùng cờ ⇒ không thành 429 |
 | R-5 | Khe nhả lease A/B (O-04) có thể thành vòng thử lại nếu B kẹt suất (rò) | trần 3 lần + hạn chờ; `CAPACITY_REFUSED` + log lý do B; B thu hồi 1.200 s vẫn còn |

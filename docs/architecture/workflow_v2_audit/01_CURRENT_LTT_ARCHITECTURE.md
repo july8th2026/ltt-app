@@ -1,5 +1,9 @@
 # 01 — KIẾN TRÚC LTTSTUDIOSAPP HIỆN TẠI (đo thật, không đọc tài liệu)
 
+> ⚠️ **Ảnh chụp 08/09/2026** (tệp này) — không phải hiện trạng. Số đồng thời LLM ở đây
+> (`DONG_THOI_MAY_B=1`, `parallel=1`, một suất máy B…) **đã cũ** → `apps/ltt_llm/ngan_sach.HO_SO`
+> (L-23, L-28 trong `docs/ltt_llm_dual/DECISION_LOG.md`).
+
 > **Phạm vi.** Đây là bước 1 của cuộc khảo sát *LTT WORKFLOW V2*. Tài liệu này
 > KHÔNG so sánh với dự án mã nguồn mở nào, KHÔNG đề xuất kiến trúc mới, và
 > KHÔNG sửa một dòng mã sản phẩm nào. Nó chỉ trả lời một câu: **hôm nay hệ

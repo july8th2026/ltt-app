@@ -9,6 +9,13 @@
 > Bằng chứng: `00`–`06` trong thư mục này.
 
 ## Trạng thái
+
+> **Hiện hành (18/09):** quyết định mới nhất **L-28** (3.5 `-np 4`, 3.8 `-np 3`); cache RAM/sàn
+> RAM theo **L-25**; suy nghĩ theo **L-26**; ước token theo **L-27**. Plan hiện hành:
+> `docs/superpowers/plans/2026-09-18-ltt-llm-v2-lam-lai-tren-phuong-an-c.md`. Bản đồ đường đi
+> (đọc trước khi sửa): `docs/ltt_llm_dual/BAN_DO_DUONG_DI.md`. Số theo model chỉ ở
+> `apps/ltt_llm/ngan_sach.HO_SO`. Các gạch đầu dòng dưới đây là **ảnh chụp 11/09**.
+
 - Gate R0–R5: XONG 2026-09-11.
 - Brainstorming: đã invoke (đường **Architectural**).
 - Đã khoá: D01 B · D02 C · D03 (đầy đủ, dự phòng C) · D04 B · D05 A · D06 B · D07 A · D08 A-rút-gọn. **DECISION LOCK Spec 1.** Spec 1 đã viết:
@@ -316,6 +323,10 @@ nặng nhất là `presence-penalty 0` (chính là phanh chống lặp).
    nay đã đo — nhưng **trên một model khác**, nên là bằng chứng mạnh, chưa phải kết luận.
 4. `--reasoning-budget` là cờ **server-global**, không gửi được per-request — nên nó là một
    thuộc tính của hồ sơ, và mọi khách của hồ sơ đó chịu chung.
+   ⚠️ **Đính chính 18/09:** vế "không gửi được per-request" **SAI** — llama.cpp cho mỗi request
+   ghi đè budget (`reasoning_budget_tokens|thinking_budget_tokens`, `server-common.cpp:1366-1369`).
+   Máy A nay gỡ mọi trường ghi đè đó trước máy B, nên budget vẫn chỉ do yaml quyết —
+   theo **L-26**, không phải theo cơ chế nêu ở đây. Số budget hiện hành: L-20 (4096/2048).
 5. Chưa đo: `--chat-template-kwargs '{"enable_thinking":false}'` (lượt thử hỏng vì lỗi truyền
    tham số qua PowerShell, không phải vì cờ). Không cần cho bản vá này.
 
@@ -368,6 +379,8 @@ LTT-3.5 ở cấu hình này: **76,21 tok/s** (dải 74,1–84,8).
 
 1. `llama-swap.yaml` (Task 3.3) dùng bộ cờ B cho **cả hai** hồ sơ. `--reasoning-budget`
    là cờ **server-global** nên nó là thuộc tính của hồ sơ, mọi khách chịu chung.
+   ⚠️ Đính chính 18/09: request **ghi đè được** budget (xem đính chính ở L-15 mục 4); budget
+   chỉ do yaml quyết là nhờ máy A gỡ trường ghi đè (**L-26**).
 2. Mốc tốc độ mới cho nghiệm thu: **LTT-3.8 63,01** · **LTT-3.5 76,21** (c1, trung vị 5 lượt).
 3. ⚠️ Biên của 3.8 mỏng: trung vị 63,01 vượt ngưỡng 60,0 nhưng **2/5 lượt riêng lẻ rơi
    xuống 57,8 và 58,7**. Trung vị là thước của R18 nên nó ĐẠT, nhưng cổng nghiệm thu D
@@ -661,7 +674,8 @@ thì ngừng backfill sau nó.
 - Whale chờ tối đa `LTT_LLM_CHO_STREAM_WHALE_S` (900 s) ở cửa stream.
 - Số suất và pool là **hai núm độc lập theo tài nguyên**:
   `LTT_ADMISSION_SO_SUAT__<resource>`, `LTT_ADMISSION_POOL__<resource>` — chỉ HẠ
-  dưới bản khai (`apps/ltt_llm/ngan_sach.py`: `SO_SLOT` = `-np`, `POOL_KV` = `-c`).
+  dưới bản khai (`apps/ltt_llm/ngan_sach.py`: `SO_SLOT` = `-np`, `POOL_KV` = `-c` —
+  **ĐÃ GỠ ở L-23**, nay là `HO_SO[m].np` / `HO_SO[m].engine_ctx`).
   Nâng trên trần = đổi engine máy B + hằng `ngan_sach.py` (test_1201/test_334 buộc).
 - Giữ: ≤1 whale chạy (công bằng prefill, cả máy A và cổng máy B), 413 trước 200,
   giữ tiền SAU khi được nhận (INV-MJ-1), ba lớp nhả suất.
@@ -765,10 +779,13 @@ chờ đúng (không 429) và chạy khi 100K xong (177.096 ≤ 212.992). `test_
 
 ## L-24 — Cửa sổ bảo trì máy B 18/09: cache RAM, checkpoint, `-b 512` cho 3.8, `-watch-config`
 
+> ⚠️ **Phần `--cache-ram 12288` + sàn RAM 48 ĐÃ THAY bởi L-25** (cache 24576/model, sàn 24).
+> Phần checkpoint, `-b 512 -ub 512` cho 3.8 và `-watch-config` **vẫn hiện hành**.
+
 Chủ dự án duyệt 18/09. Số đo đầy đủ: `artifacts/bench_hang_cho/KET_QUA_BAO_TRI_18_09.md`.
 `-c`/`-np` **không đổi** ⇒ rào vật lý cổng B và hồ sơ máy A không đổi, máy A không cần deploy.
 
-- **`--cache-ram 12288`** (cả hai model) — **không phải 24576** như `KET_QUA_CACHE_18_09` §7
+- ~~**`--cache-ram 12288`** (cả hai model)~~ (**ĐÃ THAY bởi L-25**) — **không phải 24576** như `KET_QUA_CACHE_18_09` §7
   đề nghị. 24576 đã được bật và **làm máy B ngừng bán ~10 phút**: RAM trống 85,0 → 44,2 GB
   sau 28 hội thoại ~10K token, dưới sàn `LTT_LLM_RAM_TRONG_GB=48` của trọng tài cổng B ⇒
   mọi lượt cả hai model 429 (`ban_trong_tai`) trong khi engine rảnh. Ngân sách:

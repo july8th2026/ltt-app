@@ -1,5 +1,9 @@
 # PRODUCT DEPENDENCY MAP — pha 02
 
+> ⚠️ **Ảnh chụp 08/09/2026** (tệp này) — không phải hiện trạng. Số đồng thời LLM ở đây
+> (`DONG_THOI_MAY_B=1`, `parallel=1`, một suất máy B…) **đã cũ** → `apps/ltt_llm/ngan_sach.HO_SO`
+> (L-23, L-28 trong `docs/ltt_llm_dual/DECISION_LOG.md`).
+
 > Sản phẩm nào đang đứng trên động cơ nào, và nó sẽ đứng trên gì sau chiến dịch.
 > Nguồn: `LEGACY_SURFACE_MATRIX.csv` (520 dòng) · `OUTBOUND_EGRESS_MATRIX.csv` (8 lối ra).
 

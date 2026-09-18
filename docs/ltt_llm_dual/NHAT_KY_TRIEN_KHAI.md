@@ -233,3 +233,48 @@ cần `schtasks /run`.
 Cả 4 tệp: số byte khớp, sha256 khớp oid. 16,9 GB trong 8,7 phút (~32 MB/s). `H:` còn 507 GB trống.
 
 ⇒ Task 3.1 xong. Cổng đo Task 3.2 đã có đủ tệp để chạy G3 (hai ứng viên) và G1 (bản 27B sẵn có).
+
+## 2026-09-12 — Biên bản deploy: máy B xong, máy A bị chặn
+
+> Chuyển nguyên văn từ `RUNBOOK.md` §2.0 ngày 18/09 (dọn tài liệu). `LTT_LLM_MAX_DONG_THOI`
+> nhắc bên dưới **ĐÃ GỠ** ở L-23. "§2.2" là `RUNBOOK.md` §2.2.
+
+Chủ sản phẩm cấp quyền deploy máy A + máy B (12/09, chiều), **đè** lệnh cấm
+deploy trong prompt chiến dịch LTT-CMC. Ghi lại để CMC đọc được đây là quyết
+định của chủ sản phẩm.
+
+### ✅ Máy B — đã xong, đã nghiệm thu
+
+Mã hai cổng + `llama-swap.yaml` từ commit `54cac32d`; **hash khớp 39 tệp**.
+Bốn việc tay ở §2.2 đều đã làm và đã đo lại:
+
+| | Trước | Sau |
+|---|---|---|
+| `LTT_LLM_MODELS` | `qwen38-api,qwen38-vision` | `qwen38-api,qwen35-api` |
+| `LTT_LLM_MAX_DONG_THOI=1` | còn | đã xoá |
+| `LTT_HO_DUNG_CARD` / `LTT_TRA_CARD_GIAY` | còn | đã gỡ |
+| `DependOnService: LTTComfyUI` | còn | rỗng |
+| `gpu_may_b.json` (bản cài render) | **THIẾU** | có |
+
+Nghiệm thu: `/v1/models` → `['qwen35-api','qwen38-api']`; `/health` → `models_la: []`,
+trọng tài `bat=true`. **Rollback:** `H:/LTT_LLM/releases/auto-20260912-184817`.
+
+Sổ khoá production: `ltt_llm.supported_models` `['qwen38-api','qwen38-vision']`
+→ `['qwen38-api','qwen35-api']` (mục 2 của §2.2 — **đã gỡ chặn**). Bản rollback
+ở `%TEMP%\claude\rollback_so_khoa.json`.
+
+### ⛔ Máy A — KHÔNG deploy được từ nhánh này
+
+    CSDL production : d9a1f6c2b3e5
+    alembic của ta  : a3f7c214e8b9
+    => CommandError: Can't locate revision identified by 'd9a1f6c2b3e5'
+
+Alembic chỉ là triệu chứng. `git rev-list --count 54cac32d..main` = **59 commit**,
+**191 tệp mã chạy** khác nhau, trong đó có **ba migration Voice RC1**.
+⇒ Deploy nhánh này lên máy A sẽ **gỡ Voice RC1 khỏi production**.
+
+⚠️ Đã thử và đã trả giá: production tắt ~4 phút (19:05–19:09). Bản hỏng giữ ở
+   `C:\LTTPlatform\app.that-bai-20260912-190903`; CSDL **không** bị chạm; lăn lại
+   bằng `app.previous`.
+
+⇒ Máy A chờ `cmc/llm-dual-reconcile`. Toàn văn: `CMC_SOURCE_STATE.md`.

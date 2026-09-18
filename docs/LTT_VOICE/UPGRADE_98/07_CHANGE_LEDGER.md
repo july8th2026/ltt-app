@@ -1,5 +1,9 @@
 # 07_CHANGE_LEDGER — mọi thay đổi mã, kèm bằng chứng
 
+> ⚠️ **Ảnh chụp 10/09/2026** (tệp này) — không phải hiện trạng. Số đồng thời LLM ở đây
+> (`DONG_THOI_MAY_B=1`, `parallel=1`, một suất máy B…) **đã cũ** → `apps/ltt_llm/ngan_sach.HO_SO`
+> (L-23, L-28 trong `docs/ltt_llm_dual/DECISION_LOG.md`).
+
 Một dòng cho một thay đổi. Không có mục nào ở đây mà không có **kiểm đột biến**
 (§15 STEP 7): tiêm lại lỗi cũ, test phải ĐỎ. Test không đỏ khi bỏ bản sửa là
 test không chứng minh được gì.

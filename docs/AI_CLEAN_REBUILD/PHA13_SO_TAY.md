@@ -1,5 +1,9 @@
 # Pha 13 — sổ tay thi hành (soạn trong lúc gate chạy)
 
+> ⚠️ **Ảnh chụp 09/09/2026** (tệp này) — không phải hiện trạng. Số đồng thời LLM ở đây
+> (`DONG_THOI_MAY_B=1`, `parallel=1`, một suất máy B…) **đã cũ** → `apps/ltt_llm/ngan_sach.HO_SO`
+> (L-23, L-28 trong `docs/ltt_llm_dual/DECISION_LOG.md`).
+
 **Chỉ bắt đầu khi:** gate lượt xác nhận xong, và 9 lỗi rút còn **7** (đúng nợ
 `test_448` của trunk, không thêm gì).
 

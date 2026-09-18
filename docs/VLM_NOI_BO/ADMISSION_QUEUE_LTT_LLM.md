@@ -1,5 +1,9 @@
 # Hợp đồng admission/queue cho LTT LLM
 
+> ⚠️ **ĐÃ THAY bởi L-22/L-23** (`docs/ltt_llm_dual/DECISION_LOG.md`) — ảnh chụp 28/08, thời
+> `parallel=1`. Nhận theo ngân sách KV, máy A quyết định nhận, cổng máy B là rào vật lý;
+> đường đi hiện hành: `docs/ltt_llm_dual/BAN_DO_DUONG_DI.md`; số theo model: `ngan_sach.HO_SO`.
+
 Trạng thái: Q0–Q3 của H41.9 đã triển khai ngày 2026-08-28 theo Q114. Số đo GPU
 Q111/Q112 vẫn là nguồn cho cấu hình `parallel=1`, không chạy lại ở pha
 CPU/CSDL/mock.

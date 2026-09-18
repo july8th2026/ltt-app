@@ -646,8 +646,9 @@ chiến dịch này sinh ra để phơi bày.
 
 ## Ràng buộc mang theo suốt chiến dịch
 
-- **Cấp test** (`00_LTT_OPERATING_CONTRACT.md` §4): vòng lặp **L1** (`gate --doi`);
-  L2 khi chốt pha; **L3 chỉ ở checkpoint**. ⛔ Không `test_nhanh.py` rồi `gate.py`.
+- **Cấp test**: theo `00_LTT_OPERATING_CONTRACT.md` §4 — test nhắm trong phiên, L1/L2 khi
+  cần, L3 MỘT lần khi tổng kết phiên (~~vòng lặp L1, L2 khi chốt pha, L3 ở checkpoint~~
+  ĐÃ THAY). ⛔ Không `test_nhanh.py` rồi `gate.py`.
 - 🔴 **Trước mọi lệnh nặng: kiểm HAI vế, không phải một.**
   `cua_so_yen trang-thai` là **điều kiện cần, không đủ** — đo 17:13 nó trả
   `RANH` trong khi **5 tiến trình `python -u -c` chạy ~100% CPU mỗi cái**

@@ -11,6 +11,22 @@
 
 ---
 
+## Lô 2026-09-18 — plan/spec LLM đã xong hoặc đã thay (dọn tài liệu Lô 4)
+
+Mỗi tệp chuyển đi **để lại tệp con trỏ 3 dòng ở chỗ cũ** (docstring test 1203, 1218, 1227,
+980–988 và nhiều tài liệu còn nhắc tên cũ). Plan: `docs/superpowers/plans/2026-09-18-don-tai-lieu.md`.
+
+| Thư mục | Nội dung | Vì sao chuyển |
+|---|---|---|
+| `multijob_2026-09/` | `docs/multijob/*` + spec `2026-09-11-ltt-llm-multijob-design.md` | Multi-Job (57k/171k chia đều) đã thay bởi L-22/L-23 |
+| `ltt_llm_dual_2026-09/` | Spec 1 + plan Dual-Model 11/09 | đã thực thi; số đổi ở L-14…L-28 |
+| `cmc_2026-09/` | 5 plan + spec LTT-CMC | chiến dịch đã đóng (Q135) |
+| `llm_upgrade_2026-09/` | bộ nâng cấp LLM 09/09 (`LLM_*`) | trùng `ltt_llm_dual/RUNBOOK.md`, `BAN_DO_DUONG_DI.md` |
+| `vlm_noi_bo_2026-09/` | `KE_HOACH_TRIEN_KHAI_MAY_B.md` | thời VLM một model |
+| `operating_standardization_2026-09/` | `SESSION_MIGRATION_NOTE.md` | nhịp gate cũ, trùng hợp đồng |
+
+---
+
 ## Lô 2026-09-04 — bốn kế hoạch đã hoàn tất
 
 Chuyển vào cùng ngày dọn kho. Tiêu chí: **không tệp nào trong kho trỏ tới**, và
