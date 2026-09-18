@@ -9,7 +9,7 @@
 - Phương án C: `docs/ltt_llm_dual/KE_HOACH_PHUONG_AN_C.md`
 - LTTCODE: `D:\LTTCODEAPP\docs\LTTCODE\plans\2026-09-17-ke-hoach-tong-phien.md`, `…\2026-09-17-truoc-build-0.1.5.md`, `…\KIEM_CUOI.md` §10
 
-**Production lúc cập nhật bảng (18/09 ~10:30):** máy A chạy `2b3977ad` (`main` = `88a7910f`, khác production chỉ ở tài liệu); máy B cổng Phương án C bước 3 + engine theo nhánh `phien/cache-24g` (**chưa gộp**); LTTCODE 0.1.7 dev 100 %, stable 100 %.
+**Production lúc cập nhật bảng (18/09 ~10:30):** máy A chạy `2b3977ad` (`main` = `88a7910f`, khác production chỉ ở tài liệu); máy B cổng Phương án C bước 3 + engine L-25 (đã gộp `main` `f1d949b5`); LTTCODE 0.1.7 dev 100 %, stable 100 %.
 
 ---
 
@@ -19,7 +19,7 @@
 |---|---|---|
 | A — Nền tảng LTT LLM (Phương án C) | **100 %** | — |
 | B — LTTCODE build + E2E + phát hành | **95 %** | Đăng nhập/đăng xuất trong app (P04 #8 phần giao diện) |
-| C — Tối ưu máy B | **85 %** | Gộp cache 24G (Task 1 của LLM v2) |
+| C — Tối ưu máy B | **95 %** | Nâng số job song song (C4) |
 | E — LLM v2 (làm lại trên Phương án C) | **15 %** | Task 2–13 |
 | D — Tổng kết phiên | **0 %** | L3, gộp, push, nhật ký |
 | **Cả phiên** | **~70 %** | |
@@ -67,7 +67,7 @@
 |---|---|---|---|
 | C1 | Đo cache prompt hai model (99,6 %) | ✅ | `990ce48a` |
 | C2 | Bảo trì: `--ctx-checkpoints 8`, `-b 512` (3.8), `-watch-config` | ✅ | `dac815c5` |
-| C3 | Cache 24 GB/model + sàn RAM 24 GB (theo chủ dự án) | 🔵 | nhánh `phien/cache-24g` — **B đang chạy, main chưa có** |
+| C3 | Cache 24 GB/model + sàn RAM 24 GB (theo chủ dự án) | ✅ | L-25 (`c3b08e3c`…`cfb9d859`), gộp `main` `f1d949b5`; yaml kho = B `168e23c9`; RAM bão hoà 33–35 GiB, cửa sổ ảnh 57,7 GiB, 0 từ chối |
 | C4 | Nâng số job song song | ⬜ | sau C3, cần đo lại |
 
 ## E — LLM v2 (plan `2026-09-18-ltt-llm-v2-…`, bản 2)
@@ -75,7 +75,7 @@
 | Task | Hạng mục | Trạng thái | Ghi chú |
 |---|---|---|---|
 | 0 | Dọn phiên "Serving v2", tag giữ commit, xoá phiên | ✅ | `4074dc02`, tag `luu-tru/serving-v2/*` |
-| 1 | Gộp cấu hình B đang chạy vào `main` (hết DRIFT) | 🔵 chờ C3 | chặn mọi deploy B khác |
+| 1 | Gộp cấu hình B đang chạy vào `main` (hết DRIFT) | ✅ (trừ làm mới env nssm → D) | `f1d949b5`; `deploy.ps1` nay ghi đè sàn RAM mỗi lần deploy |
 | 2 | Lỗi tính tiền `/messages` khi trúng cache (R-04) | 🔵 | nhánh `phien/llm-r04` |
 | 3 | Catalog mức suy nghĩ theo model | 🔵 | nhánh `phien/suy-nghi-theo-model` |
 | 4 | Suy nghĩ do máy chủ quyết, gỡ ghi đè 3 cửa, sàn `max_tokens` 3.5 | 🔵 | cùng nhánh Task 3 — chủ dự án đã duyệt hướng |
@@ -113,7 +113,10 @@
 | 18/09 | Hộp cập nhật mở khuất sau cửa sổ chính | `2e2a91d` |
 | 18/09 | Suất `sync` mồ côi khoá 3090 20 phút | `a6999888` |
 
+## Rủi ro mới cần xử lý sớm
+
+- **llama.cpp #27148 (đang mở):** cache prompt trên RAM có thể lẫn hội thoại của người khác vào slot mới khi tải đồng thời — áp dụng mọi `--cache-ram` khác 0 (kể cả mặc định 8192). ⇒ **E Task 10 (canary cô lập) chạy ngay giờ vắng**; nếu thấy rò rỉ: `--cache-ram 0` cho tới khi có bản vá.
+
 ## Chờ chủ dự án
 
-1. Thời điểm đăng xuất app để kiểm đăng nhập/đăng xuất trong giao diện (B12).
-2. Kết quả C3 (cache 24G + sàn 24G) trước khi gộp — agent đang đo.
+- (không còn) — B12: chủ dự án cho dùng tài khoản thử `tai_khoan_thu.py` để đăng nhập lại (18/09).
