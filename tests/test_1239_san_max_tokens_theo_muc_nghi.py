@@ -105,8 +105,14 @@ def test_san_khong_cao_hon_mac_dinh_cua(cua, mac_dinh):
     toàn hợp lệ. Hiện `sync` = 1024 và sàn cao nhất cũng = 1024: sát đúng một
     token, nên hạ mặc định một chút là vỡ.
     """
-    cao_nhat = max(s for bang in SAN_TOKEN_RA_THEO_NGHI.values()
-                   for s in bang.values())
+    # L-26 (18/09): cửa đồng bộ dùng sàn RIÊNG cho model một chế độ — máy chủ
+    # đặt budget suy nghĩ theo `max_tokens` (`ngan_sach.budget_suy_nghi_dong_bo`)
+    # — nên đó là sàn phải ≤ mặc định cửa `sync`. Không ngoại lệ.
+    from apps.ltt_llm.ngan_sach import san_token_ra_dong_bo
+    san = san_token_ra_dong_bo if cua == "sync" else None
+    cao_nhat = max((san(m, muc) if san else s)
+                   for m, bang in SAN_TOKEN_RA_THEO_NGHI.items()
+                   for muc, s in bang.items())
     assert cao_nhat <= mac_dinh, (
         f"cua {cua!r} mac dinh {mac_dinh} < san cao nhat {cao_nhat}: "
         f"luot khong khai max_tokens se bi tu choi het")
@@ -135,21 +141,22 @@ def test_kiem_tham_so_KHONG_duoc_ap_san():
 
 
 def test_cua_vao_tu_choi_tran_duoi_san():
-    _san = san_token_ra("ltt-3.5", "medium")
+    from apps.ltt_llm.ngan_sach import san_token_ra_dong_bo
+    _san = san_token_ra_dong_bo("ltt-3.5", "medium")
     with pytest.raises(features.ThamSoSai) as e:
         _cua(_xin("ltt-3.5", _san - 1, "medium"))
     noi = str(e.value)
-    # ⛔ Ca nay TUNG doi chuoi `reasoning_effort='none'`. `none` bi go khoi hop
-    #    dong 14/09/2026, nen doi no la ep thong diep chi khach sang mot gia tri
-    #    cua se TU CHOI. `low` la muc thap nhat con phuc vu.
-    assert "reasoning_effort='low'" in noi, (
-        "thong bao phai chi ra LOI RA: ha max_tokens la nut SAI, "
-        "ha muc nghi moi la nut dung")
+    # ⛔ Ca nay TUNG doi chuoi `reasoning_effort='none'`, roi `'low'`. Tu 18/09
+    #    (L-26) 3.5 KHONG co nac: effort bi bo qua, nen chi sang `low` la chi mot
+    #    nut khong lam gi. Loi ra dung: tran cao hon, hoac stream/job.
+    assert "reasoning_effort='low'" not in noi, noi
+    assert "always thinks" in noi and "splits max_tokens" in noi, noi
     assert str(_san) in noi
 
 
 def test_cua_vao_nhan_dung_tai_san():
-    _cua(_xin("ltt-3.5", san_token_ra("ltt-3.5", "medium"), "medium"))
+    from apps.ltt_llm.ngan_sach import san_token_ra_dong_bo
+    _cua(_xin("ltt-3.5", san_token_ra_dong_bo("ltt-3.5", "medium"), "medium"))
 
 
 def test_san_theo_model_khong_phat_oan_model_re():
@@ -196,7 +203,9 @@ def test_none_bi_TU_CHOI_va_loi_noi_ro_dung_cai_gi_thay_the():
             _cua(_xin(m, thap, "none"))
         loi = str(e.value)
         assert "none" in loi, loi
-        assert "low" in loi, f"loi khong chi duong sang muc thay the: {loi}"
+        # 3.8 co nac => chi sang `low`; 3.5 mot che do (L-26) => bo effort di.
+        duong = "omit reasoning_effort" if m == "ltt-3.5" else "low"
+        assert duong in loi, f"loi khong chi duong sang muc thay the: {loi}"
 
     # doi chung: ba muc con lai VAN di duoc, neu khong thi ca tren vo nghia
     # (mot `kiem_tham_so` tu choi TAT CA cung lam no xanh).

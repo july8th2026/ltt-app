@@ -820,6 +820,56 @@ CODEX_MODEL_REASONING_LEVELS = {
     "ltt-3.5": ("medium",),
 }
 
+# ── ⭐ NGUỒN DUY NHẤT về mức suy nghĩ theo model (L-26, 18/09/2026) ───────────
+#
+# Catalog `/api/v1/models` (`server/api/tools._dang_codex`), catalog Codex cài
+# trên máy khách (`codex_catalog`) và hàm chuẩn hoá mọi cửa
+# (`runtime_noi_bo.luong.chuan_hoa_suy_nghi`) đều đọc ba bảng dưới + hai bảng
+# trên. LTTCODE (Task 13) đọc danh sách mức từ `/api/v1/models`, không gõ cứng.
+#
+# Căn cứ (chủ dự án chốt 18/09: "giá trị theo khuyến nghị chính thức của model"):
+#   * HF model card Qwen/Qwen3.8-27B: ba mức `xhigh` (mặc định), `medium`,
+#     `low`, truyền qua `reasoning_effort`. Không có `high`.
+#   * HF model card Qwen/Qwen3.5-9B: suy nghĩ BẬT mặc định, chỉ bật/tắt qua
+#     `chat_template_kwargs.enable_thinking` — KHÔNG có mức effort.
+#   * Template `llm_gateway/deploy/chat_template_v22.5.jinja` dòng 17-30: không
+#     gửi effort ⇒ `medium` (prompt chính thức); `minimal`→low, `high|max`→xhigh.
+#
+# ⭐ CÁCH CLIENT HIỂN THỊ: model nằm trong `CODEX_MODEL_REASONING_CO_DINH` khai
+#    đúng MỘT mức (`medium`, mô tả "Thinking on"). Đó là NHÃN CỐ ĐỊNH "Suy
+#    nghĩ", không phải bộ chọn: client nên hiện một nhãn tĩnh và KHÔNG gửi
+#    `reasoning_effort`. Gửi thì máy chủ vẫn nhận (Codex luôn gửi), gỡ trước
+#    máy B và trả header `X-LTT-Effort-Bo-Qua: 1`.
+
+#: Model chỉ có MỘT chế độ (suy nghĩ BẬT): effort được nhận rồi bỏ qua công khai.
+CODEX_MODEL_REASONING_CO_DINH = frozenset({"ltt-3.5"})
+
+#: Tên effort client hay gửi mà model không khai ⇒ mức gần nhất ĐÚNG CHIỀU,
+#: cùng ánh xạ template v22.5 dòng 23-27 tự làm. Chỉ áp cho model có nấc.
+REASONING_EFFORT_ALIASES = {"minimal": "low", "high": "xhigh", "max": "xhigh"}
+
+#: Model cố định chấp nhận (rồi bỏ qua) đúng tập giá trị của model có nấc này,
+#: để một client gửi cùng một effort cho hai model không nhận hai câu trả lời.
+MODEL_EFFORT_THAM_CHIEU = "ltt-3.8"
+
+#: Giá trị có nghĩa "tắt suy nghĩ" (template dòng 21-23) — bị CẤM ở mọi model:
+#: đo 14/09 tắt suy nghĩ cho 2 token thay vì ~1.180 (L-02, `features.kiem_tham_so`).
+REASONING_EFFORT_TAT = frozenset({"none", "off"})
+
+_MO_TA_MUC = {"low": "Fast", "medium": "Balanced", "xhigh": "Deepest"}
+
+
+def muc_suy_nghi(slug: str) -> list[dict]:
+    """`supported_reasoning_levels` của một model — MỘT bản cho mọi catalog.
+
+    Model cố định: một mục duy nhất mô tả "Thinking on" (hiển thị như nhãn,
+    không phải bộ chọn — xem khối chú thích trên). Ném `KeyError` với slug lạ.
+    """
+    co_dinh = slug in CODEX_MODEL_REASONING_CO_DINH
+    return [{"effort": effort,
+             "description": "Thinking on" if co_dinh else _MO_TA_MUC[effort]}
+            for effort in CODEX_MODEL_REASONING_LEVELS[slug]]
+
 #: Bộ biến CHUẨN cho một phiên Claude Code Local chạy qua LTT Gateway.
 #:
 #: 🔴 Vì sao phải gom thành dữ liệu thay vì một khối chữ trong template. Danh
@@ -838,8 +888,9 @@ CLAUDE_LOCAL_COMMON_ENV: tuple[tuple[str, str], ...] = (
     ("CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS", "1"),
     ("CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH", "1"),
     ("CLAUDE_CODE_SUBAGENT_MODEL_FORCE", "1"),
-    # Claude mặc định thử lại 10 lần. LTT dùng 3: đủ vượt một race/transient
-    # sau hàng chờ nhưng không khuếch đại hai phiên dài thành bão request.
+    # Claude mặc định thử lại 10 lần và LTT GIỮ 10 (mặc định của client): hàng
+    # chờ máy A trả 429 + Retry-After, nên thử lại theo nhịp đó không thành bão.
+    # (Chú thích cũ ghi "LTT dùng 3" trong khi giá trị là 10 — sửa 18/09.)
     ("CLAUDE_CODE_MAX_RETRIES", "10"),
     ("API_TIMEOUT_MS", "600000"),
     ("CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK", "1"),
@@ -853,13 +904,46 @@ def claude_local_env(model: str = CLI_MODEL) -> tuple[tuple[str, str], ...]:
     Hai dòng đầu đổi theo model; chín dòng sau là hợp đồng dùng chung. Tên lạ
     ném `KeyError` thay vì rơi về 3.8, vì một preset mang ngân sách của model
     khác sẽ chỉ lộ ra bằng lỗi 413 giữa một phiên dài.
+
+    🔴 `CLAUDE_CODE_AUTO_COMPACT_WINDOW` = CỬA SỔ CÔNG BỐ, không phải ngưỡng nén
+       kiểu Codex (18/09, plan v2 Task 9, nhánh `phien/nen-claude-codex` 1b143291).
+       Đo Claude Code 2.1.274: nó nén ở
+       `min(AUTO_COMPACT_WINDOW, ctx) − min(MAX_OUTPUT_TOKENS, 20000) − 13000`
+       — tức TỰ trừ phần ra và biên. Đưa nó ngưỡng Codex (`cửa sổ − 32.768`) là
+       trừ phần ra HAI lần ⇒ nén sớm ~33K token. Codex giữ nguyên
+       `model_auto_compact_token_limit` (= phần tử thứ hai của
+       `CODEX_MODEL_LIMITS`), vì Codex dùng con số ấy trực tiếp.
     """
-    context, compact = CODEX_MODEL_LIMITS[model]
+    context, _nen_codex = CODEX_MODEL_LIMITS[model]
     return (
         ("CLAUDE_CODE_MAX_CONTEXT_TOKENS", str(context)),
-        ("CLAUDE_CODE_AUTO_COMPACT_WINDOW", str(compact)),
+        ("CLAUDE_CODE_AUTO_COMPACT_WINDOW", str(context)),
         *CLAUDE_LOCAL_COMMON_ENV,
     )
+
+
+#: Claude Code 2.1.274 (ĐO, Task 9, nhánh `phien/nen-claude-codex` 1b143291) nén ở
+#: `min(AUTO_COMPACT_WINDOW, ctx) − min(MAX_OUTPUT_TOKENS, 20000) − 13000`.
+CLAUDE_NEN_TRAN_RA = 20_000
+CLAUDE_NEN_BIEN = 13_000
+
+
+def claude_nguong_nen(model: str = CLI_MODEL) -> int:
+    """Token ngữ cảnh mà Claude Code tự nén, với `claude_local_env(model)`."""
+    env = dict(claude_local_env(model))
+    cua_so = int(env["CLAUDE_CODE_AUTO_COMPACT_WINDOW"])
+    ra = int(env["CLAUDE_CODE_MAX_OUTPUT_TOKENS"])
+    return cua_so - min(ra, CLAUDE_NEN_TRAN_RA) - CLAUDE_NEN_BIEN
+
+
+def claude_local_preset(model: str) -> tuple:
+    """Một hàng bảng preset trang hướng dẫn: `(slug, MAX_CONTEXT, AUTO_COMPACT,
+    nhãn mẫu số Context, % tự nén)` — dẫn xuất hết từ `claude_local_env`."""
+    env = dict(claude_local_env(model))
+    ctx = int(env["CLAUDE_CODE_MAX_CONTEXT_TOKENS"])
+    cua_so = int(env["CLAUDE_CODE_AUTO_COMPACT_WINDOW"])
+    return (model, ctx, cua_so, f"{cua_so / 1000:.1f}k",
+            round(100 * claude_nguong_nen(model) / cua_so))
 
 
 def claude_model_env(model: str = CLI_MODEL) -> tuple[tuple[str, str], ...]:
@@ -897,12 +981,7 @@ def codex_catalog() -> str:
             "slug": slug, "display_name": CODEX_MODEL_LABELS[slug],
             "description": f"{CODEX_MODEL_LABELS[slug]} — LTT Studios",
             "default_reasoning_level": CODEX_MODEL_REASONING[slug],
-            "supported_reasoning_levels": [
-                {"effort": effort,
-                 "description": ("Thinking on" if slug == "ltt-3.5" else
-                                 {"low": "Fast", "medium": "Balanced",
-                                  "xhigh": "Deepest"}[effort])}
-                for effort in CODEX_MODEL_REASONING_LEVELS[slug]],
+            "supported_reasoning_levels": muc_suy_nghi(slug),
             "shell_type": "unified_exec", "visibility": "list",
             "supported_in_api": True, "priority": 1,
             "additional_speed_tiers": [], "service_tiers": [],
@@ -1330,8 +1409,7 @@ def be_mat_cam(base_url: str) -> tuple:
          "dia_chi": f"{goc}/api", "model": DESKTOP_MODEL,
          "models": tuple((ten, NHAN_DESKTOP[ten]) for ten in DESKTOP_MODELS),
          "local_env": claude_local_env(),
-         "local_presets": tuple(
-             (slug, *CODEX_MODEL_LIMITS[slug]) for slug in CLI_MODELS),
+         "local_presets": tuple(claude_local_preset(slug) for slug in CLI_MODELS),
          # The tool still uses ``claude_desktop_registry`` for repeatable fleet
          # setup.  The customer-facing path is the editor that ships in current
          # Desktop, so this surface has no copyable registry block.

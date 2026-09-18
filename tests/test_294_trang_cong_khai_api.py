@@ -111,7 +111,10 @@ def test_desktop_manual_guide_uses_current_form_and_exact_routes(khach):
     windows = [ngan_sach.cong_bo_cua(model) for model in ngan_sach.CUA_SO_THEO_MODEL]
     compacts = [ngan_sach.nen_cua(model) for model in ngan_sach.CUA_SO_THEO_MODEL]
     assert f"CLAUDE_CODE_MAX_CONTEXT_TOKENS={min(windows)}" in guide
-    assert f"CLAUDE_CODE_AUTO_COMPACT_WINDOW={min(compacts)}" in guide
+    # Claude tự trừ phần ra + biên khỏi AUTO_COMPACT_WINDOW (đo 2.1.274, Task 9)
+    # ⇒ cửa sổ nén của Claude = cửa sổ CÔNG BỐ, không phải ngưỡng Codex.
+    assert f"CLAUDE_CODE_AUTO_COMPACT_WINDOW={min(windows)}" in guide
+    assert f"CLAUDE_CODE_AUTO_COMPACT_WINDOW={min(compacts)}" not in guide
     assert f"CLAUDE_CODE_MAX_OUTPUT_TOKENS={ngan_sach.TOKEN_RA_TRAN}" in guide
     assert "MAX_MCP_OUTPUT_TOKENS=16384" in guide
     assert "CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS=1" in guide
@@ -120,7 +123,11 @@ def test_desktop_manual_guide_uses_current_form_and_exact_routes(khach):
     assert "CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK=1" in guide
     assert "ENABLE_TOOL_SEARCH=false" in guide
     assert "CLAUDE_CODE_DISABLE_1M_CONTEXT=1" not in guide
-    assert "… / 138.7k" in guide and "… / 176.4k" in guide
+    # Mẫu số Context = AUTO_COMPACT_WINDOW = cửa sổ công bố (Task 9, 18/09).
+    assert "… / 171.5k" in guide and "… / 209.1k" in guide
+    assert "… / 138.7k" not in guide and "… / 176.4k" not in guide
+    # % tự nén theo công thức đo 2.1.274: (ctx − min(32768, 20000) − 13000)/ctx
+    assert "~81%" in guide and "~84%" in guide
     assert "Permission mode couldn't be changed" in guide
     assert "permissions.disableBypassPermissionsMode" in guide
     assert "131 tool" in guide and "98.678 token" in guide
@@ -156,8 +163,16 @@ def test_desktop_local_env_la_danh_sach_chuan_du_10_bien():
     assert dict(examples.claude_local_env("ltt-3.5")) == {
         **env,
         "CLAUDE_CODE_MAX_CONTEXT_TOKENS": "209141",
-        "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "176373",
+        "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "209141",
     }
+    from apps.ltt_llm import ngan_sach
+    for alias, mid in (("ltt-3.8", "qwen38-api"), ("ltt-3.5", "qwen35-api")):
+        e = dict(examples.claude_local_env(alias))
+        assert (e["CLAUDE_CODE_AUTO_COMPACT_WINDOW"]
+                == e["CLAUDE_CODE_MAX_CONTEXT_TOKENS"]
+                == str(ngan_sach.cong_bo_cua(mid)))
+        # Codex giữ ngưỡng nén trực tiếp của nó — không đổi.
+        assert examples.CODEX_MODEL_LIMITS[alias][1] == ngan_sach.nen_cua(mid)
 
 
 def test_claude_cli_ghim_du_moi_duong_chon_model():

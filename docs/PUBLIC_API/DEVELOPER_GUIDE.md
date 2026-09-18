@@ -687,7 +687,7 @@ Input:
 - `max_tokens` — integer, min 1, max 32768, default 32768, Ceiling on generated tokens. Credit is held against this and refunded down to what was actually generated.
 - `temperature` — number, min 0.0, max 2.0, Sampling temperature.
 - `tools` — array, Function definitions, OpenAI format. The model may answer with `tool_calls`.
-- `reasoning_effort` — string, one of `low`, `medium`, `xhigh`, How much the model thinks before answering. Deeper costs more output tokens but can improve hard answers. When omitted, LTT 3.8 uses `xhigh`; LTT 3.5 keeps thinking on with compatible `medium`. Use `low` when you want the shortest answers - do NOT reach for a small `max_tokens` instead: thinking spends that same budget, so the model can reason until it is cut off and return empty content with finish_reason=length.
+- `reasoning_effort` — string, one of `low`, `medium`, `xhigh`, How much the model thinks before answering. LTT 3.8 offers `low`, `medium` and `xhigh`. When omitted, LTT 3.8 uses `xhigh` (`high`/`max` are read as `xhigh`, `minimal` as `low`). LTT 3.5 has a single mode with thinking always on: a value is accepted and ignored (response header `X-LTT-Effort-Bo-Qua: 1`). Turning thinking off is rejected on both. The thinking budget is set by the server; budget fields sent by a client are dropped. GET /api/v1/models lists each model's levels. Use `low` on LTT 3.8 when you want the shortest answers - do NOT reach for a small `max_tokens` instead: thinking spends that same budget, so the model can reason until it is cut off and return empty content with finish_reason=length.
 - `response_format` — object, Constrain the answer's shape. `{"type":"json_object"}` returns bare JSON; `{"type":"json_schema","json_schema":{"name":...,"schema":{...}}} ` forces the answer to match that schema. The constraint is enforced by the decoder, not by prompting, so the output cannot drift out of shape.
 - `tool_choice` — string, one of `none`, `auto`, `required`, Whether the model may, must, or must not call a tool: `none`, `auto` or `required`. Without it `tools` is only ever a suggestion.
 - `parallel_tool_calls` — boolean, Allow several tool calls in one turn. Support depends on the model's own template.
@@ -697,7 +697,7 @@ Input:
 
 Output: `content` (string), `tool_calls` (array), `usage` (object)
 
-Contract hash: `9d23c67b17de285f`
+Contract hash: `a0b60eaeb8125988`
 
 ### `text.prompt_package`
 

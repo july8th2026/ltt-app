@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 from contextlib import contextmanager, nullcontext
 from dataclasses import dataclass, field
@@ -227,6 +228,156 @@ def _kep_tran_gui(gui: dict, duong: str, xin_ra: int) -> None:
     gui[ten_tran] = xin_ra
 
 
+# ══════════════════════════════════════════════════════════════════════════
+#  SUY NGHĨ DO MÁY CHỦ QUYẾT — một hàm, mọi cửa (plan v2 Task 4, L-26)
+# ══════════════════════════════════════════════════════════════════════════
+#
+# Chủ dự án chốt 18/09/2026: "mục tiêu là chất lượng và sức mạnh kết quả cao;
+# giá trị phải theo khuyến nghị chính thức của model". Căn cứ đã đối chiếu:
+#
+#   * HF model card Qwen/Qwen3.8-27B — mức `xhigh` (mặc định) · `medium` · `low`,
+#     truyền qua `reasoning_effort`; KHÔNG có `high`.
+#   * HF model card Qwen/Qwen3.5-9B — suy nghĩ BẬT mặc định, chỉ tắt được bằng
+#     `chat_template_kwargs.enable_thinking=false`; KHÔNG có mức effort.
+#   * `llm_gateway/deploy/chat_template_v22.5.jinja` dòng 6-79 (dùng chung hai
+#     model): đọc `enable_thinking`, `preserve_thinking|preserve_reasoning`,
+#     `auto_disable_thinking_with_tools`, `reasoning_effort` (none/off ⇒ TẮT;
+#     minimal→low; high|max|ultracode|extreme→xhigh) và quét nội dung
+#     system/developer/user tìm thẻ `<|think_off|>`, `<|think_on|>`,
+#     `<|think_low|>`… — tức nội dung tin nhắn cũng là một cửa ghi đè.
+#   * llama.cpp ghim 91f6a6cf3 `tools/server/server-common.cpp:1366-1369`: MỖI
+#     request ghi đè budget bằng `reasoning_budget_tokens|thinking_budget_tokens`
+#     (và 1375-1376 `reasoning_budget_message`, `reasoning_control`);
+#     `:1308-1331` chép `chat_template_kwargs` và `reasoning_effort` vào template.
+#   * cùng commit `server-chat.cpp:586-591`: Anthropic `thinking.type=enabled`
+#     không ghi số ⇒ budget **10.000** (vượt `--reasoning-budget` 4096/2048);
+#     `:286-292`: Responses `reasoning.effort` ⇒ `reasoning_effort`.
+#
+# ⇒ Budget suy nghĩ chỉ `--reasoning-budget` của `llama-swap.yaml` quyết. Mọi
+#   trường trên bị gỡ ở CẢ BA cửa (`/chat/completions` qua
+#   `features.kiem_tham_so`; `/messages`, `/responses` qua `tien_kiem`/`chuan_bi`
+#   và nhánh không-stream `_mot_cuc`).
+
+#: Trường thân request mà llama.cpp dùng để ghi đè / điều khiển budget suy nghĩ.
+_KHOA_GHI_DE_SUY_NGHI = ("reasoning_budget_tokens", "thinking_budget_tokens",
+                         "reasoning_budget_message", "reasoning_control",
+                         "thinking")
+#: Khoá `chat_template_kwargs` mà template v22.5 dùng để bật/tắt/giữ suy nghĩ.
+_KHOA_TEMPLATE_SUY_NGHI = ("enable_thinking", "preserve_thinking",
+                           "preserve_reasoning", "auto_disable_thinking_with_tools")
+#: Thẻ điều khiển trong NỘI DUNG (template v22.5 dòng 35-77).
+_THE_SUY_NGHI = re.compile(r"<\|think_[a-z]+\|>")
+#: Trường mang nội dung hội thoại của ba giao thức.
+_KHOA_NOI_DUNG = ("messages", "system", "input", "instructions")
+
+
+def _bo_the(x: Any) -> Any:
+    """Bản sao của `x` với mọi thẻ `<|think_*|>` trong chuỗi đã gỡ."""
+    if isinstance(x, str):
+        return _THE_SUY_NGHI.sub("", x) if "<|think_" in x else x
+    if isinstance(x, list):
+        return [_bo_the(v) for v in x]
+    if isinstance(x, dict):
+        return {k: _bo_the(v) for k, v in x.items()}
+    return x
+
+
+def _muc_effort(gt: Any, alias: str) -> Optional[str]:
+    """Chuẩn hoá MỘT giá trị effort cho model có nấc. Ném `ThamSoSai`.
+
+    Trả None cho model cố định (effort bị bỏ qua công khai).
+    """
+    from platform_core.public_api import examples as E
+
+    muc = str(gt).strip().lower()
+    if muc in E.REASONING_EFFORT_TAT:
+        raise ThamSoSai(
+            f"`reasoning_effort={gt!r}` is not served: these models run with "
+            f"thinking-mode sampling parameters, and disabling thinking against "
+            f"them collapses output quality (measured: 2 tokens instead of "
+            f"~1180 on a long-generation prompt). "
+            + ("`ltt-3.5` always thinks; omit reasoning_effort."
+               if alias in E.CODEX_MODEL_REASONING_CO_DINH else
+               "Use `low` for the shortest answers."))
+    cac_muc = E.CODEX_MODEL_REASONING_LEVELS.get(alias)
+    if cac_muc is None:
+        return str(gt)
+    co_dinh = alias in E.CODEX_MODEL_REASONING_CO_DINH
+    # Model cố định nhận đúng tập giá trị model có nấc nhận (Codex gửi mọi mức).
+    goc = E.CODEX_MODEL_REASONING_LEVELS[E.MODEL_EFFORT_THAM_CHIEU] if co_dinh else cac_muc
+    muc = E.REASONING_EFFORT_ALIASES.get(muc, muc)
+    if muc not in goc:
+        hop_le = sorted(set(goc) | set(E.REASONING_EFFORT_ALIASES))
+        raise ThamSoSai(
+            f"`reasoning_effort` must be one of {hop_le} for `{alias}`"
+            + (" (accepted and ignored: this model always thinks)" if co_dinh else ""))
+    return None if co_dinh else muc
+
+
+def chuan_hoa_suy_nghi(than: dict, model_id: str) -> tuple[dict, bool]:
+    """Thân gửi máy B với suy nghĩ do MÁY CHỦ quyết. Trả `(thân mới, bo_qua)`.
+
+    `model_id` nhận bí danh công khai (`ltt-3.8`) hoặc id nội bộ (`qwen38-api`).
+    `bo_qua=True` khi khách gửi effort cho model cố định (3.5) và nó đã bị gỡ —
+    cửa trả header `X-LTT-Effort-Bo-Qua: 1`.
+
+    1. Gỡ mọi trường ghi đè budget/bật-tắt (`_KHOA_GHI_DE_SUY_NGHI`, khoá template
+       `_KHOA_TEMPLATE_SUY_NGHI`) và thẻ `<|think_*|>` trong nội dung.
+    2. Effort (ba chỗ: `reasoning_effort`, Responses `reasoning.effort`,
+       `chat_template_kwargs.reasoning_effort`): `none|off` ⇒ `ThamSoSai` (400) ở
+       mọi model; 3.8 chuẩn hoá `minimal→low`, `high|max→xhigh`, lạ ⇒ 400; 3.5
+       gỡ (template dùng nhánh mặc định = prompt chính thức).
+
+    ⛔ Không sửa `than` đầu vào. Idempotent: gọi hai lần cho cùng kết quả.
+    """
+    from platform_core.llm.canonical import ALIAS_SANG_ID
+
+    alias = next((a for a, i in ALIAS_SANG_ID.items() if i == model_id), model_id)
+    gui = {k: v for k, v in than.items() if k not in _KHOA_GHI_DE_SUY_NGHI}
+    for k in _KHOA_NOI_DUNG:
+        if k in gui:
+            gui[k] = _bo_the(gui[k])
+    bo_qua = False
+
+    ctk = gui.get("chat_template_kwargs")
+    if isinstance(ctk, dict):
+        ctk = {k: v for k, v in ctk.items() if k not in _KHOA_TEMPLATE_SUY_NGHI}
+        if ctk.get("reasoning_effort") is not None:
+            muc = _muc_effort(ctk["reasoning_effort"], alias)
+            if muc is None:
+                ctk.pop("reasoning_effort")
+                bo_qua = True
+            else:
+                ctk["reasoning_effort"] = muc
+        if ctk:
+            gui["chat_template_kwargs"] = ctk
+        else:
+            gui.pop("chat_template_kwargs")
+
+    if gui.get("reasoning_effort") is not None:
+        muc = _muc_effort(gui["reasoning_effort"], alias)
+        if muc is None:
+            gui.pop("reasoning_effort")
+            bo_qua = True
+        else:
+            gui["reasoning_effort"] = muc
+
+    rs = gui.get("reasoning")
+    if isinstance(rs, dict) and rs.get("effort") is not None:
+        muc = _muc_effort(rs["effort"], alias)
+        rs = dict(rs)
+        if muc is None:
+            rs.pop("effort")
+            bo_qua = True
+        else:
+            rs["effort"] = muc
+        if rs:
+            gui["reasoning"] = rs
+        else:
+            gui.pop("reasoning")
+    return gui, bo_qua
+
+
 @dataclass
 class TienKiem:
     """Mọi thứ đã kiểm TRƯỚC khi gửi 200. Chưa ghi gì, chưa giữ tiền, chưa giành slot."""
@@ -248,6 +399,9 @@ class TienKiem:
     la_whale: bool
     cua: str = "stream"
     correlation_id: str = ""
+    #: Khách gửi effort cho model cố định (3.5) và nó đã bị gỡ trước máy B
+    #: (`chuan_hoa_suy_nghi`) ⇒ cửa trả header `X-LTT-Effort-Bo-Qua: 1`.
+    effort_bo_qua: bool = False
 
     @property
     def dung_phong_cho(self) -> bool:
@@ -356,6 +510,8 @@ def tien_kiem(db, *, user_id: str, tool_name: str, than: dict, duong: str,
     _kiem_sinh = getattr(executor, "validate_generation", None)
     if callable(_kiem_sinh):
         gui.update(_kiem_sinh(than))
+    # Suy nghĩ do máy chủ quyết (L-26): gỡ ghi đè budget/bật-tắt, chuẩn hoá effort.
+    gui, effort_bo_qua = chuan_hoa_suy_nghi(gui, ten)
     gui["model"] = executor.model_id(ten)
     request_id = thanh_toan.ma_luot(tien_to)
     vao_uoc = int(executor.estimate_input(tin))
@@ -389,7 +545,8 @@ def tien_kiem(db, *, user_id: str, tool_name: str, than: dict, duong: str,
                   token_dat_truoc=int(luat.get("token_dat_truoc", 0)),
                   token_prefill_moi=int(luat.get("token_prefill_moi", moi)),
                   la_whale=bool(luat.get("la_whale", False)),
-                  cua=cua, correlation_id=correlation_id)
+                  cua=cua, correlation_id=correlation_id,
+                  effort_bo_qua=effort_bo_qua)
     if tk.dung_phong_cho:
         try:
             # L-12b: phòng chờ chỉ chặn ĐỘ DÀI HÀNG; "có vừa pool KV không" là
@@ -972,6 +1129,7 @@ def chuan_bi(db, *, user_id: str, tool_name: str, than: dict, duong: str,
     _kiem_sinh = getattr(executor, "validate_generation", None)
     if callable(_kiem_sinh):
         gui.update(_kiem_sinh(than))
+    gui, _bo_qua = chuan_hoa_suy_nghi(gui, ten)  # L-26, cùng hàm với `tien_kiem`
     gui["model"] = executor.model_id(ten)
 
     # ⛔ KHÔNG tự ghép chuỗi: `credit_entries.job_id` là VARCHAR(36).
