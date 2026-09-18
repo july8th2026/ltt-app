@@ -63,6 +63,18 @@ def test_gateway_TOKEN_GIU_MOI_ANH_khop_ho_so():
     assert ngan_sach.TOKEN_MOI_ANH != ns_b.TOKEN_GIU_MOI_ANH  # hai nghĩa, hai số
 
 
+def test_tools_KHONG_con_khuyen_DONG_THOI_MAY_B():
+    """Task 11 (18/09): `DONG_THOI_MAY_B` đã gỡ (L-23) — công cụ đo không được
+    khuyên người chạy đặt lại nó (`tools/do_ngan_sach_chuyen_loi_thoai.py` từng in
+    *"can ... `DONG_THOI_MAY_B=1`"*). Số suất nay là `HO_SO[m].seq_cap`."""
+    lech = [f"{p.relative_to(GOC)}:{i}"
+            for p in sorted((GOC / "tools").rglob("*.py"))
+            for i, dong in enumerate(p.read_text(encoding="utf-8",
+                                                 errors="replace").splitlines(), 1)
+            if "DONG_THOI_MAY_B" in dong]
+    assert not lech, lech
+
+
 def test_manifest_khong_go_so_tay():
     """`admission_slots=1` gõ tay là đúng cái chồng chéo phép kiểm này sinh ra để dẹp."""
     van = (GOC / "apps" / "ltt_llm" / "manifest.py").read_text(encoding="utf-8")
