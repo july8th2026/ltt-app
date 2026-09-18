@@ -268,3 +268,11 @@ def test_sdk_KHONG_cham_web_search_trong_config_toml_cua_khach(tmp_path):
     cfg.write_text('web_search = "live"\n', encoding="utf-8")
     sdk.codex("https://x.test", goc)
     assert tomllib.loads(cfg.read_text(encoding="utf-8"))["web_search"] == "live"
+
+def test_mau_cau_hinh_codex_trang_tai_lieu_tat_web_search():
+    """Mau xamples.py khach chep tu trang tai lieu cung tat web_search (R-11)."""
+    from platform_core.public_api import examples as ex
+    for m in ex.CODEX_MODEL_LIMITS:
+        for desktop in (False, True):
+            goc = ex._codex_model_root(m, desktop=desktop)
+            assert tomllib.loads(goc)["web_search"] == "disabled"
