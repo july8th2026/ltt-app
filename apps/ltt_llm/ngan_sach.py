@@ -549,9 +549,23 @@ TOKEN_RA_MAC_DINH = {
 #    ra cho hầu hết truy vấn — sàn ở đây chỉ là mức tối thiểu để lượt gọi có cơ
 #    hội trả lời, không phải mức nên dùng.
 #
-# ⭐ Và luôn có **đường thoát**: `reasoning_effort="none"` hạ sàn xuống 64, vì
-#    khi tắt suy nghĩ thì model trả lời ngay (đo: 4 token). Khách cần câu trả
-#    lời ngắn đi đường đó — **không** phải bóp `max_tokens`.
+# 🔴 ĐÃ GỠ 18/09/2026 (L-26): "đường thoát `reasoning_effort="none"` hạ sàn
+#    xuống 64". `none` bị từ chối từ 14/09 (tắt suy nghĩ hỏng chất lượng: 2
+#    token thay vì ~1.180), nên dòng `none` của bảng sàn là một lời hứa chết.
+#    Hàng `none` trong bảng đo ngay trên giữ lại vì nó là SỐ ĐO lịch sử.
+#
+# 🔴 SÀN 3.5 = BUDGET SUY NGHĨ ENGINE + CHỖ TRẢ LỜI (L-26, chủ dự án 18/09).
+#    3.5 chỉ có MỘT chế độ, suy nghĩ BẬT; effort khách gửi bị gỡ trước máy B
+#    (`runtime_noi_bo.luong.chuan_hoa_suy_nghi`), nên suy nghĩ tiêu tới
+#    `--reasoning-budget` của hồ sơ `qwen35-api` trong `llama-swap.yaml` ở MỌI
+#    mức. Sàn thấp hơn budget + 512 là cho phép một lượt tiêu hết trần vào suy
+#    nghĩ rồi trả `content` rỗng mà vẫn thu tiền (R-20 của phiên Serving v2:
+#    "MTP trả rỗng" thực ra là hết `max_tokens`). `test_1430` đọc budget từ
+#    yaml và chốt `san_token_ra("ltt-3.5", *) >= budget + 512`.
+#
+# ⚠️ Hệ quả có chủ ý: cửa ĐỒNG BỘ `/chat/completions` mặc định 1.024 token ra
+#    và trần theo thời gian ~2.300 ⇒ 3.5 ở cửa đó bị 400 kèm lời chỉ đường sang
+#    stream/job — thay vì 200 với `content` rỗng.
 #: ⛔ SÀN THEO **MODEL × MỨC**, không phải một bảng chung — và lý do là một
 #: phép đo, không phải sự cẩn thận:
 #:
@@ -577,12 +591,21 @@ TOKEN_RA_MAC_DINH = {
 #:    400. Đó đúng là hình dạng lỗi đã ghi: *một cái phanh đặt dưới nhu cầu
 #:    thật còn tệ hơn không có phanh*. Biên chỉ được trả bằng lượt hợp lệ khi
 #:    ta ĐÃ thấy thiệt hại nó ngăn.
-_SAN_NHE = {"none": 64, "low": 64, "medium": 64, "xhigh": 64}
+_SAN_NHE = {"low": 64, "medium": 64, "xhigh": 64}
+
+#: `--reasoning-budget` của hồ sơ `qwen35-api` trong `llm_gateway/deploy/
+#: llama-swap.yaml`. Bản sao CÓ ĐỐI CHIẾU: `test_1430` đọc yaml và chốt sàn
+#: dưới đây ≥ budget + `TOKEN_CHO_TRA_LOI` — đổi budget bên B mà quên ở đây thì đỏ.
+BUDGET_SUY_NGHI_35 = 2_048
+#: Chỗ tối thiểu cho câu trả lời sau khi suy nghĩ dùng hết budget (L-26).
+TOKEN_CHO_TRA_LOI = 512
+_SAN_35 = BUDGET_SUY_NGHI_35 + TOKEN_CHO_TRA_LOI
 
 SAN_TOKEN_RA_THEO_NGHI = {
-    # Model ĐO ĐƯỢC là tiêu nhiều (13/09): sàn theo chính phép đo đó.
-    #   none 4 -> 64 | low max 350 -> 512 | medium max 517 -> 1024
-    "ltt-3.5": {"none": 64, "low": 512, "medium": 1024, "xhigh": 1024},
+    # 3.5: một chế độ, suy nghĩ BẬT tới hết budget engine ⇒ một sàn cho mọi mức
+    # (effort bị gỡ trước máy B). Số đo 13/09 cũ (low 512 / medium 1024) thấp
+    # hơn budget 2.048 ⇒ lượt khó vẫn rỗng; thay bằng budget + chỗ trả lời.
+    "ltt-3.5": {"low": _SAN_35, "medium": _SAN_35, "xhigh": _SAN_35},
     # Đo 13/09: 63 token ở MỌI mức, đúng ngay ở max_tokens=100 — chưa từng
     # thấy trả rỗng, nên lấy sàn "đo được", không nhân biên.
     "ltt-3.8": dict(_SAN_NHE),

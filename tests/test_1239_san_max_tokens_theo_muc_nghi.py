@@ -105,11 +105,23 @@ def test_san_khong_cao_hon_mac_dinh_cua(cua, mac_dinh):
     toàn hợp lệ. Hiện `sync` = 1024 và sàn cao nhất cũng = 1024: sát đúng một
     token, nên hạ mặc định một chút là vỡ.
     """
-    cao_nhat = max(s for bang in SAN_TOKEN_RA_THEO_NGHI.values()
-                   for s in bang.values())
-    assert cao_nhat <= mac_dinh, (
-        f"cua {cua!r} mac dinh {mac_dinh} < san cao nhat {cao_nhat}: "
-        f"luot khong khai max_tokens se bi tu choi het")
+    # 🔴 NGOẠI LỆ CÓ CHỦ Ý DUY NHẤT (L-26, chủ dự án 18/09): `ltt-3.5` ở cửa
+    #    `sync`. Sàn 3.5 = budget suy nghĩ engine + 512 (`test_1430`) cao hơn cả
+    #    mặc định 1.024 lẫn trần thời gian ~2.300 của cửa đồng bộ, nên 3.5 ở cửa
+    #    đó bị 400 — thay vì 200 với `content` rỗng. Ngoại lệ chỉ được sống khi
+    #    lời từ chối CHỈ ĐƯỜNG sang stream/job; mọi cặp (cửa, model) khác giữ
+    #    nguyên bất biến.
+    from platform_core.public_api.examples import CODEX_MODEL_REASONING_CO_DINH
+    for model, bang in SAN_TOKEN_RA_THEO_NGHI.items():
+        cao_nhat = max(bang.values())
+        if cao_nhat <= mac_dinh:
+            continue
+        assert cua == "sync" and model in CODEX_MODEL_REASONING_CO_DINH, (
+            f"cua {cua!r} mac dinh {mac_dinh} < san {cao_nhat} cua {model}: "
+            f"luot khong khai max_tokens se bi tu choi het")
+        with pytest.raises(features.ThamSoSai) as e:
+            _cua(_xin(model, mac_dinh))
+        assert "stream=true" in str(e.value) and "/api/v1/jobs" in str(e.value)
 
 
 # -- 3. Cua vao thuc su dung san cua DUNG model -----------------------------
@@ -139,12 +151,11 @@ def test_cua_vao_tu_choi_tran_duoi_san():
     with pytest.raises(features.ThamSoSai) as e:
         _cua(_xin("ltt-3.5", _san - 1, "medium"))
     noi = str(e.value)
-    # ⛔ Ca nay TUNG doi chuoi `reasoning_effort='none'`. `none` bi go khoi hop
-    #    dong 14/09/2026, nen doi no la ep thong diep chi khach sang mot gia tri
-    #    cua se TU CHOI. `low` la muc thap nhat con phuc vu.
-    assert "reasoning_effort='low'" in noi, (
-        "thong bao phai chi ra LOI RA: ha max_tokens la nut SAI, "
-        "ha muc nghi moi la nut dung")
+    # ⛔ Ca nay TUNG doi chuoi `reasoning_effort='none'`, roi `'low'`. Tu 18/09
+    #    (L-26) 3.5 KHONG co nac: effort bi bo qua, nen chi sang `low` la chi mot
+    #    nut khong lam gi. Loi ra dung: tran cao hon, hoac stream/job.
+    assert "reasoning_effort='low'" not in noi, noi
+    assert "always thinks" in noi and "stream=true" in noi, noi
     assert str(_san) in noi
 
 
@@ -196,7 +207,9 @@ def test_none_bi_TU_CHOI_va_loi_noi_ro_dung_cai_gi_thay_the():
             _cua(_xin(m, thap, "none"))
         loi = str(e.value)
         assert "none" in loi, loi
-        assert "low" in loi, f"loi khong chi duong sang muc thay the: {loi}"
+        # 3.8 co nac => chi sang `low`; 3.5 mot che do (L-26) => bo effort di.
+        duong = "omit reasoning_effort" if m == "ltt-3.5" else "low"
+        assert duong in loi, f"loi khong chi duong sang muc thay the: {loi}"
 
     # doi chung: ba muc con lai VAN di duoc, neu khong thi ca tren vo nghia
     # (mot `kiem_tham_so` tu choi TAT CA cung lam no xanh).

@@ -366,6 +366,19 @@ def kiem_tham_so(params: dict) -> dict:
     if model not in MODEL_HOP_LE:
         raise ThamSoSai(f"`model` phai la mot trong {list(MODEL_HOP_LE)}")
 
+    # ⭐ Suy nghĩ do MÁY CHỦ quyết (L-26) — CÙNG hàm với cửa stream
+    #    (`runtime_noi_bo.luong.tien_kiem`/`chuan_bi`): gỡ trường ghi đè budget/
+    #    bật-tắt và thẻ `<|think_*|>` trong nội dung, chuẩn hoá effort theo model
+    #    (3.8: minimal→low, high|max→xhigh; 3.5: gỡ; none|off: 400 mọi model).
+    #    Nguồn và lý do ở docstring của hàm; không viết lại luật ở đây.
+    from platform_core.runtime_noi_bo.luong import ThamSoSai as _LoiLuong
+    from platform_core.runtime_noi_bo.luong import chuan_hoa_suy_nghi
+    try:
+        p, _bo_qua = chuan_hoa_suy_nghi(p, model)
+    except _LoiLuong as e:
+        raise ThamSoSai(str(e)) from None
+    messages = p["messages"]
+
     from apps.ltt_llm.manifest import MAX_TOKENS_MAC_DINH, MAX_TOKENS_TRAN
     xin_ra = p.get("max_tokens")
     xin_ra = int(xin_ra) if isinstance(xin_ra, (int, float)) else MAX_TOKENS_MAC_DINH
@@ -412,15 +425,9 @@ def kiem_tham_so(params: dict) -> dict:
         # ⭐ Loi bao phai NOI DUONG RA. Khach muon cau tra loi ngan van co duong:
         #    `low` nghi it nhat trong ba muc con lai (do 13/09: 3.5 = 206 token,
         #    3.8 = 63 token).
-        if re_ == "none":
-            raise ThamSoSai(
-                "`reasoning_effort=\"none\"` is no longer served: these models "
-                "run with thinking-mode sampling parameters, and disabling "
-                "thinking against them collapses output quality (measured: 2 "
-                "tokens instead of ~1180 on a long-generation prompt). Use "
-                "`low` for the shortest answers.")
-        if re_ not in ("low", "medium", "xhigh"):
-            raise ThamSoSai("`reasoning_effort` phai la low|medium|xhigh")
+        #
+        # ⭐ Từ 18/09 (L-26) luật đã chạy ở `chuan_hoa_suy_nghi` phía trên: tới
+        #    đây `none|off` đã thành 400 và giá trị đã là mức của model.
         sach["reasoning_effort"] = re_
 
     sach = kiem_tham_so_sinh(p, sach)
@@ -464,6 +471,21 @@ def kiem_san_token_ra(sach: dict) -> None:
     if xin_ra >= _san:
         return
     from apps.ltt_llm.ngan_sach import nghi_mac_dinh
+    from platform_core.public_api.examples import CODEX_MODEL_REASONING_CO_DINH
+    if sach.get("model") in CODEX_MODEL_REASONING_CO_DINH:
+        # ⛔ Không chỉ sang `low`: model này không có nấc (L-26) — effort bị bỏ
+        #    qua, suy nghĩ luôn tiêu tới budget engine. Đường ra thật là trần
+        #    cao hơn, và nếu cửa đồng bộ không chứa nổi trần đó trong ngân sách
+        #    thời gian của nó thì là stream hoặc job.
+        raise ThamSoSai(
+            f"`max_tokens` is {xin_ra}, below the {_san} `{sach.get('model')}` "
+            f"needs: this model always thinks before answering (its thinking "
+            f"budget is set by the server; reasoning_effort is accepted and "
+            f"ignored), and thinking spends the same budget as the answer, so a "
+            f"lower ceiling returns empty content with finish_reason='length'. "
+            f"Set max_tokens to at least {_san}. If this synchronous endpoint "
+            f"cannot fit that in its time budget, use POST /api/v1/messages or "
+            f"/api/v1/responses with stream=true, or POST /api/v1/jobs.")
     _muc = sach.get("reasoning_effort") or nghi_mac_dinh(sach.get("model"))
     # 🔴 CÂU NÀY TỪNG MÁCH `reasoning_effort='none'` — một giá trị đã bị GỠ khỏi
     #    hợp đồng ngày 14/09/2026. Tức lỗi chỉ khách sang một thứ cửa sẽ từ chối:
