@@ -187,3 +187,108 @@ def test_tep_anh_huong_MOI_test_van_chay_tat_ca(tep):
 
 def test_ma_khong_ai_so_huu_van_fail_open():
     assert tp.bi_anh_huong({"mot/duong/khong/ton/tai.py"}, GOC) is None
+
+
+# ── 6. L2 NHIỀU thành phần một lượt (Task 11b, 18/09) ───────────────────────
+#
+# Đợt 2 (18/09) phải chạy 5 lượt L2 nối nhau (~75 phút) vì L1 từ chối khi chạm
+# tệp dùng chung: mỗi lượt lặp lại toàn bộ bước kiểm tĩnh và bỏ sót giao nhau.
+# Một lượt `--pham-vi a,b` (hoặc lặp cờ) = HỢP tệp test, bước chung chạy MỘT lần,
+# bản ghi liệt kê MỌI thành phần.
+
+HAI_TP = ("gateway:llm", "app:ltt_llm")
+
+_NHO: dict = {}
+
+
+@pytest.fixture
+def do_thi_nho(monkeypatch):
+    """Đồ thị kho đọc AST mất vài giây mỗi lần; các phép dưới đây hỏi CÙNG một
+    kho nhiều lần ⇒ nhớ theo khoá, chỉ trong tệp này (không đổi hành vi)."""
+    for ten in ("do_thi_phu_thuoc", "test_cua_thanh_phan", "cac_thanh_phan"):
+        goc = getattr(tp, ten)
+
+        def boc(root=tp.ROOT, *a, _goc=goc, _ten=ten, **kw):
+            khoa = (_ten, str(root))
+            if khoa not in _NHO:
+                _NHO[khoa] = _goc(root, *a, **kw)
+            return _NHO[khoa]
+        monkeypatch.setattr(tp, ten, boc)
+
+
+def test_tach_danh_sach_pham_vi_phay_va_lap_co():
+    assert tp.tach_danh_sach("app:vps") == ["app:vps"]
+    assert tp.tach_danh_sach("") == []
+    assert tp.tach_danh_sach(["a,b", " c ", "b", ""]) == ["a", "b", "c"]
+    assert tp.tach_danh_sach("a, b ,,a") == ["a", "b"]
+
+
+def test_mo_rong_pham_vi_la_HOP_cua_tung_thanh_phan(do_thi_nho):
+    a, b = HAI_TP
+    ca = tp.mo_rong_pham_vi({a, b}, GOC)
+    assert ca == tp.mo_rong_pham_vi({a}, GOC) | tp.mo_rong_pham_vi({b}, GOC)
+    assert {a, b} <= ca
+    assert (tp.test_can_chay(ca, GOC)
+            == tp.test_can_chay(tp.mo_rong_pham_vi({a}, GOC), GOC)
+            | tp.test_can_chay(tp.mo_rong_pham_vi({b}, GOC), GOC))
+
+
+def test_gate_nhan_pham_vi_lap_co_va_phay():
+    import gate
+    p = gate._parser()
+    assert tp.tach_danh_sach(p.parse_args(["--pham-vi", "a,b", "--pham-vi", "c"]).pham_vi) \
+        == ["a", "b", "c"]
+    assert tp.tach_danh_sach(p.parse_args(["--pham-vi", "app:vps"]).pham_vi) == ["app:vps"]
+    assert not p.parse_args([]).pham_vi
+
+
+def _thu_hep_voi(monkeypatch, pham_vi):
+    import argparse
+
+    import gate
+    monkeypatch.setattr(gate, "loi_cho_bo_test", lambda **_: 4)
+    args = argparse.Namespace(pham_vi=pham_vi, tu="")
+    return gate._thu_hep(gate._steps(False), args, "pham-vi")
+
+
+def test_gate_pham_vi_nhieu_HOP_test_va_buoc_chung_MOT_lan(monkeypatch, do_thi_nho):
+    a, b = HAI_TP
+    ra, ghi_chu = _thu_hep_voi(monkeypatch, [f"{a},{b}"])
+    assert ra is not None, ghi_chu
+    ten = [s.name for s in ra]
+    assert len(ten) == len(set(ten)), f"buoc lap lai: {ten}"
+    [buoc] = [s for s in ra if s.name == "bo test (pham vi)"]
+    tep = {x for x in buoc.argv if x.startswith("tests/")}
+    mong = tp.test_can_chay(tp.mo_rong_pham_vi({a, b}, GOC), GOC)
+    assert tep == mong
+    ra_a, _ = _thu_hep_voi(monkeypatch, [a])
+    ra_b, _ = _thu_hep_voi(monkeypatch, [b])
+    tep_a = {x for s in ra_a if s.name == "bo test (pham vi)" for x in s.argv if x.startswith("tests/")}
+    tep_b = {x for s in ra_b if s.name == "bo test (pham vi)" for x in s.argv if x.startswith("tests/")}
+    assert tep == tep_a | tep_b
+    assert a in ghi_chu and b in ghi_chu
+
+
+def test_gate_pham_vi_mot_thanh_phan_GIU_NGUYEN(monkeypatch, do_thi_nho):
+    """Một thành phần: dạng chuỗi cũ và dạng danh sách mới cho cùng kết quả."""
+    ra_moi, gc_moi = _thu_hep_voi(monkeypatch, ["app:ltt_llm"])
+    ra_cu, gc_cu = _thu_hep_voi(monkeypatch, "app:ltt_llm")
+    assert [(s.name, s.argv) for s in ra_moi] == [(s.name, s.argv) for s in ra_cu]
+    assert gc_moi == gc_cu
+
+
+def test_gate_pham_vi_co_thanh_phan_la_thi_KHONG_thu_hep(monkeypatch, do_thi_nho):
+    ra, ghi_chu = _thu_hep_voi(monkeypatch, ["app:ltt_llm", "khong:ton_tai"])
+    assert ra is None and "khong:ton_tai" in ghi_chu
+
+
+def test_ban_ghi_gate_liet_ke_MOI_thanh_phan(tmp_path, monkeypatch):
+    import json
+
+    import gate
+    monkeypatch.setattr(gate, "ROOT", tmp_path)
+    gate._ghi_ket_qua("pham-vi", [], "PASS", 1.0, None, False, sha="abc",
+                      thanh_phan=["gateway:llm", "app:ltt_llm"])
+    [tep] = (tmp_path / "test-results" / "gates").glob("*.json")
+    ban_ghi = json.loads(tep.read_text(encoding="utf-8"))
+    assert ban_ghi["thanh_phan"] == ["gateway:llm", "app:ltt_llm"]

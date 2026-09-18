@@ -827,6 +827,9 @@ def _codex_profile(hs: HoSoModel | None = None) -> str:
             f'model_auto_compact_token_limit_scope = "total"\n'
             f'tool_output_token_limit = {TRAN_KET_QUA_TOOL}\n'
             f"model_catalog_json = '{TEP_CATALOG}'\n"
+            # R-11: LTT khong phuc vu cong cu hosted `web_search` -> tat trong
+            # profile LTT (khuon: codex-rs/config/src/profile_toml.rs).
+            'web_search = "disabled"\n'
             f'\n[agents]\n'
             f'default_subagent_model = "{hs.ten}"\n'
             f'default_subagent_reasoning_effort = "{hs.reasoning}"\n'
