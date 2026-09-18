@@ -490,10 +490,10 @@ def test_stream_het_slot_CHO_trong_SSE_roi_bao_overloaded_khong_giu_tien(api, mo
 
 
 def test_stream_qua_tran_vao_van_413_TRUOC_200(api, monkeypatch):
-    """multijob D-06: 200 nay gửi trước khi chạm máy B — nhưng 413 phải vẫn là MÃ HTTP.
+    """multijob D-06: 200 nay gửi trước khi chạm máy B — nhưng "quá dài" của cửa
+    Messages vẫn là MÃ HTTP (400 khuôn Anthropic, R-08), trước phòng chờ và tiền.
 
-    Codex/Claude Code dựa vào HTTP 413 để tự nén hội thoại (`streaming.py`, nhánh
-    413). Nếu "quá dài" chỉ tới dưới dạng sự kiện sau 200, client ngừng tự nén.
+    (Tên hàm giữ số 413 cũ để tra lịch sử; hợp đồng mới ở `tests/test_1480`.)
     """
     called = _dat_luong(monkeypatch)
     user_id, token = _account()
@@ -505,7 +505,10 @@ def test_stream_qua_tran_vao_van_413_TRUOC_200(api, monkeypatch):
     qua_tran = ngan_sach.TOKEN_VAO_TRAN + 5_000  # "x" liền = 1 token/ký tự trong uoc_token (từ con không nguyên âm = cận byte)
     than = _than(messages=[{"role": "user", "content": "x" * qua_tran}])
     r = api.post(MSG, json=than, headers=_h(token))
-    assert r.status_code == 413, r.text
+    # R-08 (`tests/test_1480`): Claude Code nhận ra "quá dài" bằng câu
+    # "prompt is too long" (khuôn Anthropic, HTTP 400), không bằng mã 413.
+    assert r.status_code == 400, r.text
+    assert "prompt is too long" in r.json()["error"]["message"]
     assert called == []
     assert _so_du(user_id) == truoc
 
@@ -533,8 +536,14 @@ def test_context_rejections_do_not_consume_create_rate(api, monkeypatch, route):
             else {"model": MODEL, "stream": True, "input": large})
     for _ in range(3):
         response = api.post(route, json=body, headers=_h(token))
-        assert response.status_code == 413, response.text
-        assert response.json()["limit_name"] == "input_tokens"
+        # R-08: Messages ⇒ 400 khuôn Anthropic; Responses stream ⇒ 200 + một
+        # `response.failed` `context_length_exceeded` (`tests/test_1480`).
+        if route == MSG:
+            assert response.status_code == 400, response.text
+            assert response.json()["limit_name"] == "input_tokens"
+        else:
+            assert response.status_code == 200, response.text
+            assert b"context_length_exceeded" in response.content
     assert creates == []
     assert called == []
     assert _so_du(user_id) == balance

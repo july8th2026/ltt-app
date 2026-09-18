@@ -42,13 +42,13 @@ from platform_core.public_api.errors import (THIEU_CREDIT_LOI,
                                              insufficient_credit,
                                              invalid_request,
                                              model_not_found,
-                                             payload_too_large,
                                              service_unavailable,
                                              thieu_credit_chi_tiet,
                                              tran_bi_vuot)
 from platform_core.public_api.principal import Principal
 from platform_core.public_api.protocol import SYNC_BILLED_MAX_SECONDS
 from platform_core.public_api.scopes import SCOPE_JOBS_CREATE
+from server.api import su_kien_loi
 from server.api.auth import require_scope
 from server.api.streaming import HEADER_EFFORT_BO_QUA
 from server.deps import get_db
@@ -262,11 +262,11 @@ def register_chat_routes(api, config, tag: str) -> None:
         if _tran_vao is not None:
             _cap = int(_tran_vao(sach["model"]))
             if token_vao_uoc > _cap:
-                raise payload_too_large(
-                    "The input exceeds the model's context limit. Drop or "
-                    "summarise older turns and retry with a shorter "
-                    "conversation.",
-                    limit_name="input_tokens", limit_value=_cap)
+                # R-08: khuôn OpenAI `context_length_exceeded` + câu "prompt is
+                # too long" (`su_kien_loi` — một chỗ dựng cho mọi cửa).
+                return su_kien_loi.loi_qua_dai_json(
+                    "/v1/chat/completions", token=int(token_vao_uoc), tran=_cap,
+                    request=request)
 
         # ⛔ SAU 413, khong truoc. Mot tran ra thap den muc chac chan tra ve
         #    RONG cung la mot yeu cau hong, nhung no la hong ve NGAN SACH — con
@@ -421,16 +421,17 @@ def register_chat_routes(api, config, tag: str) -> None:
             _mo_lai_khoa(record, "khach_di_luc_cho")
             return JSONResponse(_KHACH_NGAT, status_code=MA_KHACH_NGAT,
                                 headers=_NO_STORE)
-        except cua_luong.KhongMoDuoc:
+        except cua_luong.KhongMoDuoc as e:
             # Đặt chỗ (vào + ra + đệm + ảnh) vượt cả pool KV — phương án C bất
-            # biến 1, không còn kẹp im lặng. Quá dài với model: 413, 0 khoản giữ,
-            # mở khoá cho lượt đã rút gọn.
+            # biến 1, không còn kẹp im lặng. Quá dài với model: 400
+            # `context_length_exceeded` (R-08), 0 khoản giữ, mở khoá cho lượt đã
+            # rút gọn.
             _mo_lai_khoa(record, "qua_dai")
-            raise payload_too_large(
-                "The input exceeds the model's context limit. Drop or "
-                "summarise older turns and retry with a shorter "
-                "conversation.", limit_name="input_tokens",
-                limit_value=int(suc.token_pool if suc else 0)) from None
+            return su_kien_loi.loi_qua_dai_json(
+                "/v1/chat/completions", token=e.token,
+                tran=(e.tran if e.tran is not None
+                      else int(suc.token_pool if suc else 0)),
+                request=request)
 
         # ── Được nhận ⇒ GIỮ TIỀN (và chỉ từ đây trở đi) ─────────────────────
         try:
