@@ -15,8 +15,21 @@
 
 ## Tiến độ tổng
 
-| Khối | % | Còn lại |
-|---|---|---|
+Trọng số cố định (không đổi giữa các lần cập nhật): A 20 · B 25 · C 10 · E 25 · F 10 · D 10.
+
+| Khối | Trọng số | % xong | Đóng góp | Còn lại |
+|---|---|---|---|---|
+| A — Nền tảng LTT LLM (Phương án C) | 20 | 100 % | 20 | — |
+| B — LTTCODE 0.1.7 build + E2E + phát hành | 25 | 100 % | 25 | (0.1.8 = E Task 13) |
+| C — Tối ưu máy B | 10 | 90 % | 9 | C4 cửa sổ đo số job + `-b/-ub` |
+| E — LLM v2 | 25 | 40 % | 10 | 2, 5, 9 đang L1 (đợt 1); 3–4 chờ đợt 2; 10 đang chạy; 6, 7, 8, 11, 12, 13 chưa |
+| F — Dọn tài liệu | 10 | 10 % | 1 | 8 lô (~5 giờ) |
+| D — Tổng kết phiên | 10 | 0 % | 0 | L3, gộp, push, nhật ký, dọn worktree |
+| **Cả phiên** | 100 | | **~65 %** | |
+
+> Các lần báo trước (70–74 %) ước không theo trọng số và **cao hơn thực tế**; từ bản này dùng bảng trên.
+
+---|---|---|
 | A — Nền tảng LTT LLM (Phương án C) | **100 %** | — |
 | B — LTTCODE build + E2E + phát hành | **100 %** (bản 0.1.7) | 0.1.8 chọn mức suy nghĩ = E Task 13 |
 | C — Tối ưu máy B | **95 %** | Nâng số job song song (C4) |
