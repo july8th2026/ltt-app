@@ -1,0 +1,16 @@
+hieu chinh: 27.000 token/doan, khung 120
+{"dich": 100000, "prompt_n": 100021, "loai": "dat", "su_kien": 4, "token_ra": 195, "finish": "stop", "giay": 124.9, "prefill_tok_s": 835.2}
+hieu chinh: 27.000 token/doan, khung 120
+{"dich": 115000, "prompt_n": 115033, "loai": "dat", "su_kien": 4, "token_ra": 295, "finish": "stop", "giay": 155.3, "prefill_tok_s": 787.5}
+hieu chinh: 27.000 token/doan, khung 120
+{"dich": 130000, "prompt_n": 130018, "loai": "dat", "su_kien": 4, "token_ra": 255, "finish": "stop", "giay": 183.2, "prefill_tok_s": 748.9}
+hieu chinh: 27.000 token/doan, khung 120
+{"dich": 145000, "prompt_n": 145030, "loai": "dat", "su_kien": 4, "token_ra": 195, "finish": "stop", "giay": 210.9, "prefill_tok_s": 712.9}
+hieu chinh: 27.000 token/doan, khung 120
+{"dich": 160000, "prompt_n": 160015, "loai": "dat", "su_kien": 4, "token_ra": 208, "finish": "stop", "giay": 243.4, "prefill_tok_s": 682.6}
+hieu chinh: 27.000 token/doan, khung 120
+{"dich": 175000, "prompt_n": 175026, "loai": "dat", "su_kien": 4, "token_ra": 306, "finish": "stop", "giay": 280.4, "prefill_tok_s": 653.1}
+hieu chinh: 27.000 token/doan, khung 120
+{"dich": 186368, "prompt_n": 186394, "loai": "dat", "su_kien": 4, "token_ra": 189, "finish": "stop", "giay": 304.7, "prefill_tok_s": 632.1}
+hieu chinh: 27.000 token/doan, khung 120
+{"dich": 200000, "prompt_n": 200029, "loai": "dat", "su_kien": 4, "token_ra": 253, "finish": "stop", "giay": 390.7, "prefill_tok_s": 543.5}
