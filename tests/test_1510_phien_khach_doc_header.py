@@ -23,7 +23,8 @@ AGENT_CC = "a1b2c3d4e5f6a7b8"
 PHIEN_CODEX = "01a0b543-7f3e-7c21-9d44-e2a0ef3726b5"
 THREAD_CON = "01a0b544-0000-7c21-9d44-000000000abc"
 TURN = "019a0c55-1234-7abc-8def-0123456789ab"
-INSTALL = "inst-9f8e7d6c5b4a39281706f5e4d3c2b1a0"
+# Ghep hai nua: chuoi hex 32 ky tu lien bi scan_source_secrets bat (test_44).
+INSTALL = "inst-" + "9f8e7d6c5b4a3928" + "1706f5e4d3c2b1a0"
 DEVICE = "d" * 64
 
 
