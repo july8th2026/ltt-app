@@ -1,0 +1,21 @@
+# Row D (b1024/ub1024 both models), applied 21:06:18 B-time, yaml SHA f60fbb33..., backup llama-swap.yaml.laneb-20260918-210618
+# BASELINE (production 86CB1EC9, both loaded, 21:05 restore):
+PROC model=qwen38 pid=7752 np=3 c=221184 b=512 ub=512 dedicated_mib=23971 shared_mib=568
+PROC model=qwen35 pid=14020 np=4 c=262144 b= ub= dedicated_mib=15407 shared_mib=644
+GPU 0, NVIDIA GeForce RTX 3090, 24036, 24576, 0
+GPU 1, NVIDIA GeForce RTX 5060 Ti, 15794, 16311, 0
+# LOG after apply:
+[INFO] reloading configuration
+[INFO] preloading model: qwen38-api
+0.01.821.807 W common_fit_params: failed to fit params to free device memory: n_gpu_layers already set by user to 999, abort
+[INFO] configuration reloaded
+0.20.382.292 I srv  llama_server: model loaded
+[INFO] preloading model: qwen35-api
+0.02.115.765 W common_fit_params: failed to fit params to free device memory: n_gpu_layers already set by user to 999, abort
+0.15.201.617 I srv  llama_server: model loaded
+# D after load (sampled twice, identical):
+PROC model=qwen38 pid=20008 np=3 c=221184 b=1024 ub=1024 dedicated_mib=24121 shared_mib=1472
+PROC model=qwen35 pid=4296 np=4 c=262144 b=1024 ub=1024 dedicated_mib=15535 shared_mib=1674
+GPU 0, NVIDIA GeForce RTX 3090, 24184, 24576, 0
+GPU 1, NVIDIA GeForce RTX 5060 Ti, 15920, 16311, 0
+# log has no 'compute buffer size' lines (llama-swap log verbosity) -> buffer size not measurable from log

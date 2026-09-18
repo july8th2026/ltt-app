@@ -1,0 +1,7 @@
+21:34:23 B-time: applied goc_86CB.yaml -> SHA 86cb1ec93fc48b27aef9bad96f25c00c24ae0c7386572422b640f6b93a935d67 (backup of E3 yaml: llama-swap.yaml.laneb-20260918-213423)
+running: qwen35-api ready np=4 MTP; qwen38-api ready np=3 b=512 ub=512 MTP
+PROC model=qwen38 np=3 dedicated_mib=23971 shared_mib=568
+PROC model=qwen35 np=4 dedicated_mib=15407 shared_mib=644
+gateway /health 200 (token read on B, not printed)
+qwen35-api finish=stop answer Paris 9.7s; qwen38-api finish=stop answer Paris 1.7s
+services LTTLlamaSwap/LTTLlmGateway/LTTRenderGateway Running

@@ -1,0 +1,8 @@
+[INFO] reloading configuration
+[INFO] preloading model: qwen38-api
+0.02.128.460 W common_fit_params: failed to fit params to free device memory: n_gpu_layers already set by user to 999, abort
+[INFO] configuration reloaded
+0.20.239.675 I srv  llama_server: model loaded
+[INFO] preloading model: qwen35-api
+0.01.721.288 W common_fit_params: failed to fit params to free device memory: n_gpu_layers already set by user to 999, abort
+0.08.489.894 I srv  llama_server: model loaded

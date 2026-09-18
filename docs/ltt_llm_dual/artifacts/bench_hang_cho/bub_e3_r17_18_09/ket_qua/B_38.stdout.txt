@@ -1,0 +1,25 @@
+OK
+RUNNING [('qwen38-api', 'ready')]
+VRAM_TRUOC qwen38-api B_b1024ub512
+PROC model=qwen38 pid=17432 np=3 c=221184 b=1024 ub=512 dedicated_mib=23989 shared_mib=588
+GPU 0, NVIDIA GeForce RTX 3090, 24054, 24576, 0
+GPU 1, NVIDIA GeForce RTX 5060 Ti, 389, 16311, 0
+===== qwen38-api B_b1024ub512 np=3 =====
+  warm-up 32K: prompt_n=32923 29.3 s -> ky_tu=99529
+  prefill32k #0: n=32773 29.47 s (1112 tok/s)
+  prefill32k #1: n=32785 29.59 s (1108 tok/s)
+  prefill32k #2: n=32739 29.47 s (1111 tok/s)
+  1 luong #0: 60.3 tok/s ra=1024 finish=length ttft=2.26
+  1 luong #1: 64.4 tok/s ra=677 finish=stop ttft=1.92
+  1 luong #2: 64.7 tok/s ra=1024 finish=length ttft=1.91
+  3 luong dot 0: moi luong 35.9/41.7/35.5 | tong 91.7 tok/s (2257 tok)
+  3 luong dot 1: moi luong 40.7/37.1/38.1 | tong 98.3 tok/s (2711 tok)
+  3 luong dot 2: moi luong 35.4/42.2/40.9 | tong 97.6 tok/s (2509 tok)
+  lang dot 0 (2 nho + 32K): lang max 1.14 s | nho trong prefill 2.5 (min 2.5) tok/s, truoc 24.5 | prefill 32K 33.2 s
+  lang dot 1 (2 nho + 32K): lang max 1.19 s | nho trong prefill 2.3 (min 2.3) tok/s, truoc 29.7 | prefill 32K 33.5 s
+  lang dot 2 (2 nho + 32K): lang max 1.14 s | nho trong prefill 2.5 (min 2.3) tok/s, truoc 26.1 | prefill 32K 33.4 s
+TONG_HOP {"model": "qwen38-api", "nhan": "B_b1024ub512", "np": 3, "warm": {"status": 200, "loi": null, "finish": "length", "huy": false, "prompt_n": 32923, "prompt_ms": 29322.587, "prompt_tps": 1122.7863353257337, "pred_n": 1, "pred_ms": 0.001, "pred_tps": 0.0, "draft_n": null, "draft_acc": null, "content_kt": 0, "reasoning_kt": 3, "ttft": 29.602774620056152, "giay": 29.696388483047485}, "prefill32k_s": 29.47, "prefill32k_tps": 1110.87, "don_tps": 64.35, "don_ttft": 1.92, "tong_n": 3, "tong_tps": 97.58, "moi_luong_tps": 38.06, "moi_luong_min": 35.4, "lang_n_nho": 2, "lang_max_s": 1.14, "lang_trong_tps": 2.5, "lang_truoc_tps": 26.1, "lang_prefill_s": 33.36, "rong_27572_tat_ca": 0, "luot_tat_ca": 20, "giay": 413}
+VRAM_SAU qwen38-api B_b1024ub512
+PROC model=qwen38 pid=17432 np=3 c=221184 b=1024 ub=512 dedicated_mib=24003 shared_mib=594
+GPU 0, NVIDIA GeForce RTX 3090, 24068, 24576, 1
+GPU 1, NVIDIA GeForce RTX 5060 Ti, 389, 16311, 0
