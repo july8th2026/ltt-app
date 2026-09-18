@@ -88,11 +88,11 @@ Trọng số cố định (không đổi giữa các lần cập nhật): A 20 �
 | 5 | 3.8 khai đọc ảnh; test bản sao `-c` | ✅ deploy `488a64ed` 11:19 | `3f6ad81b` (auto_scan_video ghim 3.5 có lý do; 3.268 test đạt) |
 | 6 | B gia hạn suất theo tiến triển (bỏ thu cứng 1.200 s) | ✅ deploy cổng B 13:0x (L2 gateway:llm xanh, `c5f8980c`); /health có han_im_lang_s | sau Task 1 |
 | 7 | Ước token cận trên (code ×0,74, emoji ×0,16) + overhead template | ✅ deploy B 15:00 + A `51cdd73e` 15:03 | L2 4/4 trên `6b5f9471` (gateway:llm đỏ máy quét bí mật → sửa → xanh), L1 khép trên `51cdd73e`; nghiệm thu A 0 lệch/thiếu/thừa; B /health trần theo model |
-| 8 | 413 trước 200 đúng câu từng giao thức | 🔵 gộp đợt tích hợp 3, chờ gate | `ed4cab13` → `phien/tich-hop-dot-3` (`41585755`); gate tự chạy sau C4 |
+| 8 | 413 trước 200 đúng câu từng giao thức | ✅ deploy A `78100df2` 17:34 (+B cổng) | đợt 3; L1 đỏ `test_1480` (dùng hằng đã gỡ ở Task 7) → sửa `9dc0b1c8` → L1 xanh; production: 200K ký tự ⇒ 400 "prompt is too long: 200289 tokens > 186368" trước khi tới B |
 | 9 | Tách ngưỡng nén Claude Code/Codex; bộ cài cập nhật khoá LTT | ✅ deploy `488a64ed` 11:19 | `1b143291`, `2c3fbebd` (đo Claude Code 2.1.274: trừ 33k; nay nén 138.458/176.141); phần `examples.py` giao Task 3–4 |
 | 10 | Công cụ kiểm định kỳ | 🔵 canary cô lập ✅ 0/432 rò rỉ (216/model, kịch bản #27148 + comment 2) — nhánh `phien/canary-co-lap`, `KIEM_CO_LAP_18_09.md`; còn: needle 100–200K trên 3.8 (#27756), `cong_mtp.py`, bộ chấm A/B | giờ vắng |
-| 11 | Dọn bản sao gõ tay + tài liệu sai | 🔵 xong mã, chờ gate (đợt 3) | `0f279550`…`e72b6062`; mục adapter LTTCODE làm ở Task 15 (`eda8313`) |
-| 11b | `gate.py --pham-vi` nhận NHIỀU thành phần một lượt | 🔵 xong mã, chờ gate (đợt 3) | `ce67afc4`; 7 test đỏ→xanh; một thành phần giữ y hệt |
+| 11 | Dọn bản sao gõ tay + tài liệu sai | ✅ deploy đợt 3 `78100df2` | `0f279550`…`e72b6062`; mục adapter LTTCODE ở Task 15 (`eda8313`) |
+| 11b | `gate.py --pham-vi` nhận NHIỀU thành phần một lượt | ✅ gộp `main` `78100df2` | `ce67afc4`; dùng ngay cho L2 np4 (5 thành phần một lượt) |
 | 12 | Chất lượng 3.5: thông số lấy mẫu theo model card + A/B (+ R-10, R-17) | 🔵 phần offline đang làm | A/B gọi B chờ C4 + eval xong |
 | 13 | LTTCODE chọn mức suy nghĩ theo model (0.1.8) | ✅ 0.1.8 dev 100 %, kiểm GUI trên máy thật | LTTCODEAPP `a629cd5`, `a224365`, `299e7d5` |
 | 14 | LTTCODE: agent `subagent_doc_nhanh` chạy 3.5 (chỉ đọc, không mạng) + trần in-flight theo model (3.8: 3, 3.5: 3) + skill chia việc + eval 20 việc/10 ca chèn lệnh | 🔵 đang làm (chủ dự án duyệt 18/09) | nhánh LTTCODEAPP `phien/subagent-doc-nhanh`; tăng 3 → 6 request song song |
