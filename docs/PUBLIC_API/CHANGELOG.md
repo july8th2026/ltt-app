@@ -35,12 +35,14 @@ lần ghi lại đó hiện ra trong diff.
   `<|think_*|>` trong nội dung bị gỡ trước máy B. `GET /api/v1/models` khai
   `default_reasoning_level`/`supported_reasoning_levels` theo model (3.8: xhigh,
   ba mức; 3.5: một mức `medium` = "Thinking on", hiển thị như nhãn cố định).
-  Sàn `max_tokens` của `ltt-3.5` = budget suy nghĩ + 512 (2.560).
-- **Có phá vỡ tương thích không:** không với client dùng đúng tài liệu. `ltt-3.5`
-  ở `POST /api/v1/chat/completions` với `max_tokens` mặc định (1.024) nay nhận 400
-  chỉ đường sang stream/job thay vì một câu trả lời có thể rỗng.
+  Ở `POST /api/v1/chat/completions` với `ltt-3.5`, máy chủ chia `max_tokens` giữa
+  suy nghĩ và trả lời (budget suy nghĩ = `max_tokens − 512`, tối đa budget
+  engine), sàn `max_tokens` 1.024 — để suy nghĩ không nuốt hết trần rồi trả rỗng.
+- **Có phá vỡ tương thích không:** không với client dùng đúng tài liệu. Một
+  lượt `ltt-3.5` đồng bộ với `max_tokens` < 1.024 nay là 400 (trước: có thể 200
+  với `content` rỗng).
 - **Phải làm gì:** client chọn mức đọc danh sách từ `/api/v1/models`; với
-  `ltt-3.5` đừng gửi `reasoning_effort`, và dùng stream hoặc job.
+  `ltt-3.5` đừng gửi `reasoning_effort`.
 
 ## 2026-09-16 — `speech.ltt`: mô tả `language` nói đúng hành vi (FIXED)
 

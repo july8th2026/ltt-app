@@ -806,6 +806,7 @@ theo khuyến nghị chính thức của model"*. Plan v2 Task 3 + 4. (L-25 dàn
 - Sàn `max_tokens` 3.5 = budget 2.048 + 512 = **2.560** ở mọi mức (`test_1430` đọc budget từ yaml). Bỏ `none` khỏi bảng sàn, `_SAN_NHE` và `enums` của manifest.
 
 **Hệ quả cần biết:**
-- `ltt-3.5` ở `POST /api/v1/chat/completions` (mặc định 1.024, trần thời gian ~2.300 token) nay 400 chỉ đường sang stream/job thay vì 200 có thể rỗng. `test_1239` ghi ngoại lệ này; đảo lại cần trần thời gian theo model (đo tốc độ giải mã 3.5).
-- Header `X-LTT-Effort-Bo-Qua` có ở `/messages`, `/responses` (stream + một cục); cửa `/chat/completions` (`server/api/chat.py`, ngoài phạm vi thay đổi này) gỡ effort nhưng chưa gắn header.
+- Cửa đồng bộ `POST /api/v1/chat/completions` với `ltt-3.5` (mặc định 1.024 token ra, trần thời gian ~2.300 dẫn từ tốc độ decode đo): máy chủ tự đặt `reasoning_budget_tokens` = `max_tokens − 512`, kẹp ≤ budget engine (`ngan_sach.budget_suy_nghi_dong_bo`; truyền bằng đối số có tên `executor.run(budget_suy_nghi=)` → `features.chay` → `them`, không bao giờ đọc từ thân khách). Sàn đồng bộ 3.5 = 1.024 (`san_token_ra_dong_bo`). Bản đầu trả 400 ở đây; coordinator bác vì phá khách đang dùng. Sàn 2.560 chỉ là sàn "budget đủ" (`SAN_TOKEN_RA_THEO_NGHI`); cửa stream/job hiện KHÔNG áp sàn nào (có từ trước).
+- Header `X-LTT-Effort-Bo-Qua: 1` có ở cả ba cửa (`/messages`, `/responses`, `/chat/completions`).
 - Nhánh một cục `/messages|/responses` nay chuyển effort đã chuẩn hoá của 3.8 xuống máy B (trước bị rơi im lặng).
+- `CLAUDE_CODE_AUTO_COMPACT_WINDOW` của Claude Local = cửa sổ công bố (171.458 / 209.141), vì Claude Code 2.1.274 tự trừ `min(MAX_OUTPUT, 20000) + 13000` (đo Task 9); Codex giữ `model_auto_compact_token_limit` 138.690 / 176.373. Bảng preset trang hướng dẫn dẫn xuất từ `examples.claude_local_preset`.
