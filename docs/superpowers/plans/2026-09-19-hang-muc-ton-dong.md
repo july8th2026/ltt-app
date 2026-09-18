@@ -22,9 +22,9 @@
 | # | Hạng mục | Thuộc | Trạng thái | Ghi chú |
 |---|---|---|---|---|
 | T1 | 3.5 gọi không stream trả 200 rỗng khi `max_tokens` nhỏ (2/5 lượt, `stop=max_tokens`, không text/thinking) | A + engine B | 🔵 điều tra (`phien/35-rong`) | có từ trước 18/09; nghi ngân sách máy chủ đặt (L-26, `max_tokens−512`) không tới engine |
-| T2 | Harness gợi ý skill theo từ khoá cho LTT-3.5 (3.5 chỉ tự gọi `skill` 62 %) | LTTCODE | ⬜ | tra cách cộng đồng Claude Code làm (hook UserPromptSubmit + luật từ khoá), cơ chế DSH; eval 109 câu đã có |
+| T2 | Harness gợi ý skill theo từ khoá cho LTT-3.5 (3.5 chỉ tự gọi `skill` 62 %) | LTTCODE | ⏸ HOÃN (chủ dự án 18/09: phân tích thêm, cập nhật harness một lượt) | tra cách cộng đồng Claude Code làm (hook UserPromptSubmit + luật từ khoá), cơ chế DSH; eval 109 câu đã có |
 | T3 | R-14 tool search cho client Claude Code/Codex (`defer_loading`/`tool_reference`, hiện `ENABLE_TOOL_SEARCH=false`) | A (dịch giao thức) | ⬜ thiết kế | tài liệu Anthropic tool search, Codex tương đương, cách làm với Qwen |
-| T4 | R-06/07 nối id phiên client (`X-Claude-Code-Session-Id`, Codex `session-id`/`thread-id`) vào sổ lượt A + nối sổ B qua `X-LTT-Request-Id`; LTTCODE gửi header phiên | A + B + LTTCODE | ⬜ thiết kế → mã sau T1 | không chuyển header xuống B (X-Conversation-Id tắt huỷ) |
+| T4 | R-06/07 nối id phiên client (`X-Claude-Code-Session-Id`, Codex `session-id`/`thread-id`) vào sổ lượt A + nối sổ B qua `X-LTT-Request-Id`; LTTCODE gửi header phiên | A + B (+ LTTCODE ⏸ hoãn cùng harness) | ⬜ thiết kế → mã phía A/B sau T1 | không chuyển header xuống B (X-Conversation-Id tắt huỷ) |
 | T5 | R-16 cảnh báo: p95 TTFT stream theo ngày (> 45 s) + nạp lạnh (> 5/ngày/model, TTFT > 20 s) từ `tools/tong_hop_ttft_b.py` | A (vận hành) | ⬜ | ngưỡng từ số đo 12–18/09 |
 | T6 | Chứng chỉ Authenticode EV + E2E trên máy ảo sạch (B2/B-VM) | chủ dự án | ⛔ ngoài agent | cần mua chứng chỉ |
 | T7 | 5 thư mục worktree rỗng bị khoá tiến trình (`D:\LTTSTUDIOSAPP-{kiem-dinh-ky,np4-35,t17,tich-hop-2,tong-ket}`) | dọn | ⬜ | xoá sau khi tiến trình nhả |
