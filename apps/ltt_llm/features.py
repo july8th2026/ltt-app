@@ -496,8 +496,8 @@ def _them_may_b(sach: dict, budget_suy_nghi: int | None) -> dict:
     """Tham số chuyển thẳng lên máy B, cộng budget suy nghĩ MÁY CHỦ đặt (nếu có).
 
     ⛔ `budget_suy_nghi` KHÔNG BAO GIỜ đọc từ `params`: `kiem_tham_so` đã gỡ mọi
-       budget khách gửi (L-26); chỉ cửa gọi (`server/api/chat.py`, qua
-       `executor.sync_thinking_budget`) được truyền nó bằng đối số có tên.
+       budget khách gửi (L-26); nó đến từ đối số có tên (`server/api/chat.py`
+       qua `executor.sync_thinking_budget`) hoặc `chay` tự tính từ `max_tokens`.
     """
     them = {k: sach[k] for k in THAM_SO_CHUYEN_THANG if k in sach}
     if budget_suy_nghi is not None:
@@ -522,6 +522,18 @@ def chay(db, params: dict, *, timeout_s: float = 300.0,
     from platform_core.llm import dieu_phoi
 
     sach = kiem_tham_so(params)
+    # 🔴 BUDGET SUY NGHĨ MÁY CHỦ ĐẶT Ở **MỌI** CỬA ĐI QUA ĐÂY, không chỉ
+    #    `/chat/completions` (sự cố 18/09 22:45: `/messages` không stream, 3.5,
+    #    `max_tokens=1500` ⇒ 2/5 lượt HTTP 200 rỗng, `stop_reason=max_tokens`).
+    #    Bản L-26 đầu chỉ `server/api/chat.py` truyền `budget_suy_nghi`; `_mot_cuc`
+    #    (`/messages`, `/responses` không stream) và cửa job gọi hàm này KHÔNG
+    #    truyền ⇒ engine dùng `--reasoning-budget` 2.048 > `max_tokens` ⇒ suy nghĩ
+    #    ăn hết trần. Đo trực tiếp engine B, n=10: không budget 5/10 rỗng; có
+    #    `reasoning_budget_tokens=988` 0/10 rỗng, suy nghĩ ≤ 987 token.
+    #    Tính từ `max_tokens` đã kiểm — không bao giờ từ budget khách gửi (L-26).
+    if budget_suy_nghi is None:
+        from apps.ltt_llm.ngan_sach import budget_suy_nghi_dong_bo
+        budget_suy_nghi = budget_suy_nghi_dong_bo(sach["model"], sach["max_tokens"])
     try:
         kq = dieu_phoi.goi(
             db,
