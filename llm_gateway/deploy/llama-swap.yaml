@@ -235,6 +235,25 @@ macros:
   # thinking, dung temp 1.0 cho ho so general. Budget 4096/2048 la tran van hanh
   # cua LTT (khong phai so Qwen cong bo), tang 8x/4x so voi moc an toan 512.
   # `--reasoning-budget` la co server-global, nen khong duoc dat trong CHUNG.
+  # --reasoning-budget-message (L-31, T1b): cau "dung suy nghi" cua Qwen3
+  # Technical Report (arXiv 2505.09388, muc Thinking Budget), llama.cpp tiem no
+  # TRUOC the </think> khi budget can. Nguon: llama.cpp#28182 (aldehir): khong co
+  # cau nay, budget cat ngang lam parser lech va `</think>` lot vao content.
+  # Dat o ENGINE (khong chi o than request) vi /v1/messages cua llama.cpp bo
+  # truong `reasoning_budget_message` cua than khi doi Anthropic->OAI.
+  # !! Dau xuong dong cuoi cau la xuong dong THAT: chuoi trong ngoac kep trai
+  #    qua hai dong, dong thu hai chi co `"`. Hai ly do, ca hai doc tu nguon:
+  #    - llama.cpp b10883 common/arg.cpp:3715 gan MESSAGE nguyen van, KHONG qua
+  #      string_process_escapes (chi prompt/in-prefix/in-suffix/antiprompt/
+  #      dry-breaker duoc giai escape, arg.cpp:917). Viet `\n` trong cmd = hai
+  #      ky tu `\` + `n` di thang vao suy nghi cua model.
+  #    - llama-swap v250 internal/config/commands.go SanitizeCommand tach bang
+  #      shlex.Windows (billziss-gh/golib): chi `"` la ngoac (dau nhay don KHONG
+  #      phai ngoac tren Windows), `\n` khong phai escape, con xuong dong that
+  #      nam trong ngoac kep thuoc ve token. YAML `|` cat indent cua dong `"`,
+  #      nen token ket thuc dung bang "now." + LF. Go exec truyen argv thang,
+  #      khong qua shell (internal/process/process_command.go).
+  #    Da do tren may B 19/09 (L-31 trong DECISION_LOG).
   CHUNG: >-
     --jinja
     --reasoning-format deepseek
@@ -324,6 +343,8 @@ models:
       ${CHUNG}
       --reasoning-effort xhigh
       --reasoning-budget 4096
+      --reasoning-budget-message "Considering the limited time by the user, I have to give the solution based on the thinking directly now.
+      "
       --temp 1.0
       -c 221184
       -np 3
@@ -416,6 +437,8 @@ models:
       ${CHUNG}
       --reasoning on
       --reasoning-budget 2048
+      --reasoning-budget-message "Considering the limited time by the user, I have to give the solution based on the thinking directly now.
+      "
       --temp 1.0
       -c 262144
       -np 4
