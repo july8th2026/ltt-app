@@ -165,10 +165,12 @@ Cùng lần deploy đó, **năm** việc phải làm **tay** (không script nào
    | thiếu `qwen35-api` | **LTT-3.5 không mở được**: llama-swap chạy hai model, cổng chỉ bán một. Khách không thấy lỗi nào — họ chỉ không thấy model. |
    | còn `qwen38-vision` | cổng quảng cáo một model mà llama-swap **không còn hồ sơ nào khởi động được** (yaml mới chỉ có hai). |
 
-   ⚠️ `LTT_LLM_MAX_DONG_THOI=1` cũ cũng còn trong tệp đó. Task 4.2 đã sửa
-      `deploy.ps1` để nó **không ép** giá trị 1 nữa và tự di trú — nhưng hãy
-      **đọc lại tệp sau khi chạy** thay vì tin rằng nó đã di trú: một tiến trình
-      đang chạy vẫn giữ giá trị cũ tới khi restart (xem §2.3).
+   ⚠️ Env ĐÃ GỠ (L-23, phương án C bước 3) — `LTT_LLM_MAX_DONG_THOI`,
+      `LTT_LLM_TOKEN_POOL`, `LTT_LLM_RPM`, `LTT_LLM_MAX_INPUT_TOKENS` (cả dạng
+      `__<model>`) — có thể còn trong tệp đó. `deploy.ps1` tự xoá theo tiền tố
+      (`$tienToDaGo`) — nhưng hãy **đọc lại tệp sau khi chạy** thay vì tin rằng nó
+      đã sạch: một tiến trình đang chạy vẫn giữ env cũ tới khi restart (xem §2.3);
+      cổng còn thấy chúng thì chỉ log `BIEN DA GO ... van con dat` (vô hại).
 2. 🔴 **Sổ khoá: `supported_models` của khoá `ltt_llm` phải có `qwen35-api`.**
 
    Đo trên CSDL production 12/09 (chỉ đọc) — khoá `ltt_llm` **duy nhất** khai:
@@ -269,7 +271,7 @@ curl http://127.0.0.1:8299/health    # vat_ly.nguon = H:\LTT_LLM\gateway\llama-s
 - Cổng không đọc được yaml ⇒ **từ chối khởi động** (mã thoát 4, log nói lý do).
   Lùi: bản chụp `releases/auto-*` của `deploy.ps1` + `Restart-Service LTTLlmGateway`.
 
-✅ **O-19 — đóng 17/09.** Cờ `--no-cache-idle-slots` từng thấy trên `/running` máy B là
+✅ **O-19 — đóng 17/09.** Cờ `--no-cache-idle-slots` (không thuộc cấu hình — ĐÃ GỠ khỏi B) từng thấy trên `/running` máy B là
 phép đo ma trận cache C1 **tạm thời** của phiên Serving V2, không phải cấu hình
 production; phiên đó đã hoàn nguyên yaml trên B về bản gốc (cờ trùng kho). Còn đúng
 luật chung: `deploy.ps1` (không `-BoQuaYaml`) **dừng ở bước 1c** khi yaml trên B lệch

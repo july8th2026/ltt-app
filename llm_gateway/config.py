@@ -53,7 +53,7 @@ class Config:
 
     # ── Ngân sách ────────────────────────────────────────────────────────────
     #
-    # ⛔ KHÔNG CÒN `max_input_tokens` (phương án C bước 3, O-02). Trần vào là
+    # ⛔ ĐÃ GỠ `max_input_tokens` (phương án C bước 3, O-02). Trần vào là
     #    **theo model** và **dẫn xuất**: `vat_ly.tran_vao(-c, max_out, DEM_UOC)`,
     #    cùng công thức với `apps/ltt_llm/ngan_sach.tran_vao_cua(m)`. Env cũ
     #    `LTT_LLM_MAX_INPUT_TOKENS` ép một số cho CẢ HAI model — sai cho 3.5.
@@ -191,7 +191,7 @@ class Config:
 RAM_TRONG_GB_MAC_DINH = 24.0
 
 #: Bản sao của `DEM_UOC` máy A (`apps/ltt_llm/ngan_sach.py`, trước bước 2 tên
-#: `LE`). `tests/test_1223_phuong_an_c_rao_vat_ly_b.py` đối chiếu nó VÀ mặc định
+#: `LE`, ĐÃ THAY). `tests/test_1223_phuong_an_c_rao_vat_ly_b.py` đối chiếu nó VÀ mặc định
 #: của trường `Config.dem_uoc`.
 DEM_UOC_MAC_DINH = 2_048
 
@@ -220,7 +220,7 @@ def _duoi_ten_model(ten_bien: str, tien_to: str) -> "str | None":
 
     🔴 WINDOWS **VIẾT HOA** TÊN BIẾN MÔI TRƯỜNG. `os.environ` trên Windows không
        phân biệt hoa thường và trả khoá đã viết hoa, nên
-       `LTT_LLM_TOKEN_POOL__qwen35-api` đọc ra thành `..._POOL__QWEN35-API` —
+       `LTT_LLM_VRAM_TRONG_TOI_THIEU_MB__qwen35-api` đọc ra thành `..._MB__QWEN35-API` —
        khớp tiền tố vẫn đúng, nhưng tên model thì **không** khớp `catalog`, và
        hậu quả là một ghi đè cấu hình **im lặng không có tác dụng**.
 

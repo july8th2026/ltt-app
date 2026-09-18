@@ -57,7 +57,7 @@ TOKEN_RA_TRAN = 32_768
 #:   * trần vào  `tran_vao_cua(m) = -c − TOKEN_RA_TRAN − DEM_UOC` (413 trước 200);
 #:   * đặt chỗ   `vào + ra + DEM_UOC + ảnh × TOKEN_GIU_MOI_ANH` (`luat_nhan` luật 2).
 #:
-#: 🔴 PHƯƠNG ÁN C bước 2 (O-08, 17/09/2026): THAY hai tên cũ trả lời cùng câu
+#: 🔴 PHƯƠNG ÁN C bước 2 (O-08, 17/09/2026): ĐÃ THAY hai tên cũ trả lời cùng câu
 #:    hỏi — `LE` (ở đây, 30/08) và `dem_dat_truoc` (env `LTT_LLM_DEM_DAT_TRUOC`
 #:    của `platform_core/llm/tham_so_da_luot.py`, 11/09, ĐÃ GỠ). Đổi một cái mà
 #:    quên cái kia thì bất biến trên gãy IM LẶNG (`luat_cho` từng kẹp về pool).
@@ -214,8 +214,8 @@ def nguong_whale_theo_chan(model_id: str, chan_toi_da_s: float) -> int:
 #:    (12/09–17/09, chưa từng chạy trên đường thật): 33.792 · 56.832.
 #:
 #: 🔴 PHƯƠNG ÁN C bước 2 (O-06, 17/09/2026): TỪ NAY LÀ SỐ ĐANG CHẠY. Trước đó
-#:    đường thật dùng một ngưỡng chung 16.384 (env `LTT_LLM_NGUONG_WHALE`, ĐÃ
-#:    GỠ) và bảng này chỉ có phép kiểm đọc. Nay `HO_SO[m].nguong_whale` →
+#:    đường thật dùng một ngưỡng chung 16.384 (env `LTT_LLM_NGUONG_WHALE`, ĐÃ GỠ)
+#:    và bảng này chỉ có phép kiểm đọc. Nay `HO_SO[m].nguong_whale` →
 #:    `AdmissionModel.nguong_whale` → `tham_so_da_luot.luat_cho` gắn cờ cho MỌI
 #:    cửa (stream, đồng bộ, job, nội bộ).
 NGUONG_WHALE = {"qwen38-api": 8_192, "qwen35-api": 16_384}
@@ -326,7 +326,7 @@ class HoSoModel:
 #:    hồ sơ đó (khuyết tật F-02). `-kvu` + nhiều slot mà thiếu ngân sách KV thì
 #:    một lần tràn giết MỌI slot (llama.cpp b10689).
 #:
-#: 🔴 PHƯƠNG ÁN C bước 2 (O-12, 17/09/2026): thay `CUA_SO_THEO_MODEL` gõ tay,
+#: 🔴 PHƯƠNG ÁN C bước 2 (O-12, 17/09/2026): ĐÃ THAY `CUA_SO_THEO_MODEL` gõ tay,
 #:    `SO_SLOT_MAY_B` và các bí danh `DONG_THOI_MAY_B`, `POOL_KV_MAY_B`, `SO_SLOT`,
 #:    `POOL_KV` (ĐÃ GỠ). Hỏi `HO_SO[m]`.
 HO_SO = {
