@@ -164,3 +164,16 @@ def test_so_marker_voi_moi_marker_cua_ca_luot_chay(tmp_path):
     a, b = so.moi("QX"), so.moi("ZT")
     assert so.cua_nguoi_khac({b}) == {a}
     assert so.cua_nguoi_khac(set()) == {a, b}
+
+
+def test_engine_sach_tra_dung_ma_cua_chinh_minh_khong_bi_tinh_la_ro(tmp_path):
+    """Hồi quy 18/09: sổ marker toàn cục từng tính mã CỦA CHÍNH phiên (câu trả lời đúng) là rò ở `dong_thoi`."""
+    srv, _ = _engine_dem("sach")
+    try:
+        base = f"http://127.0.0.1:{srv.server_address[1]}"
+        kq = K.chay(base, "qwen38-api", 2, list(K.KICH_BAN), tmp_path / "ra.jsonl", doc_ky_tu=400)
+        assert K.ma_thoat(kq) == 0, kq
+        dong = [json.loads(x) for x in (tmp_path / "ra.jsonl").read_text("utf-8").splitlines()]
+        assert all(d.get("marker_minh") for d in dong if d["kich_ban"] in ("dong_thoi", "dong_thoi_lru_27148"))
+    finally:
+        srv.shutdown()

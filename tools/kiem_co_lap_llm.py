@@ -176,6 +176,7 @@ def chay(base: str, model: str, lan: int, kich_ban: list[str], ra: pathlib.Path,
             k = blob.find(thay[0])
             trich = blob[max(0, k - 200):k + 200]
         _ghi(ra, khoa, kich_ban=kb, pha=pha, lan=i, model=model, ro=bool(thay), marker_ro=thay or None,
+             marker_minh=sorted(minh) or None,
              trich_ro=trich, dung_ma=(any(tim_ro(m, cua.get("text") or "") for m in minh) if minh else None),
              status=cua.get("status"), finish_reason=cua.get("finish"),
              reasoning_ky_tu=len(cua.get("reasoning") or ""), content_ky_tu=len(cua.get("text") or ""),
@@ -210,7 +211,7 @@ def chay(base: str, model: str, lan: int, kich_ban: list[str], ra: pathlib.Path,
             [t.start() for t in ths]
             [t.join() for t in ths]
             for k in range(3):
-                cham("dong_thoi", i, ra_[k], [m for n, m in enumerate(mks) if n != k])
+                cham("dong_thoi", i, ra_[k], [m for n, m in enumerate(mks) if n != k], {mks[k]})
         if "sentinel_tien_to_chung" in kich_ban:
             chung = [{"role": "system", "content": "You are careful. " + _tai_lieu(doc_ky_tu // 2, 777)}]
             mk = _marker("KP")
