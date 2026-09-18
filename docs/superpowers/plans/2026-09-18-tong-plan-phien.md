@@ -21,11 +21,11 @@ Trọng số cố định (không đổi giữa các lần cập nhật): A 20 �
 |---|---|---|---|---|
 | A — Nền tảng LTT LLM (Phương án C) | 20 | 100 % | 20 | — |
 | B — LTTCODE 0.1.7/0.1.8 build + E2E + phát hành | 25 | 100 % | 25 | 0.1.8 dev + stable 100 % (18/09 chiều) |
-| C — Tối ưu máy B | 10 | 93 % | 9,3 | C4 đang đo trên B (yaml đã sao lưu 14:58) |
-| E — LLM v2 | 25 | 88 % | 21,9 | 18 task: xong 0–7, 9, 13; mã xong chờ gate/eval 8, 11, 11b, 14, 15, 16; 10 một phần; 12 đang làm |
+| C — Tối ưu máy B | 10 | 97 % | 9,7 | C4 xong (3.8 giữ np3; 3.5 → np4, L-28); còn deploy np4 + đo `-b/-ub` |
+| E — LLM v2 | 25 | 86 % | 21,6 | 19 task (thêm 17): xong 0–9, 11, 11b, 13; gần xong 14, 15, 16 (đo lại); 10 một phần; 12 đang A/B; 17 chưa |
 | F — Dọn tài liệu | 10 | 10 % | 1 | 8 lô (~5 giờ) + F5 |
 | D — Tổng kết phiên | 10 | 0 % | 0 | L3, gộp, push, nhật ký, dọn worktree |
-| **Cả phiên** | 100 | | **~77 %** | |
+| **Cả phiên** | 100 | | **~77,3 %** | |
 
 > Các lần báo trước (70–74 %) ước không theo trọng số và **cao hơn thực tế**; từ bản này dùng bảng trên.
 
