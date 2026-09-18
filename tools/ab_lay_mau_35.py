@@ -14,7 +14,7 @@ Năm phép, mỗi phép MỘT biến (so với A):
   temp_code    `temperature`      1,0 → 0,6 (card 3.5 thinking-coding: 0,6)  — chỉ nhóm `code`
   budget       `reasoning_budget_tokens` 2048 → 4096                         — mọi nhóm
   codex_instr  (R-10) system = base instructions mặc định của Codex thay vì rỗng — `code`, `tool`, `agent`
-  preserve     (R-17) `chat_template_kwargs.preserve_thinking` true → false  — chỉ `agent` (có lịch sử);
+  preserve     (R-17) `chat_template_kwargs.preserve_reasoning` true → false  — chỉ `agent` (có lịch sử);
                ghi thêm `cache_n`/`prompt_n` từng lượt để đo tỉ lệ trúng cache tiền tố
 
 Bộ đề (khoá TRƯỚC khi đo; đổi đề = mất so sánh): `code` 10 bài chấm bằng CHẠY THẬT, `vi` 10 bài tiếng
@@ -63,8 +63,11 @@ BIEN_THE: dict[str, dict] = {
     #: R-10: system = base instructions mặc định của Codex (`codex-rs/models-manager/prompt.md`) thay cho
     #: `base_instructions: ""` LTT khai. Không phải tham số engine — `mot_luot` chèn thành tin nhắn system.
     "codex": {"_system": "codex"},
-    #: R-17: bỏ suy nghĩ cũ khỏi lịch sử (template v22.5:8-14 mặc định `preserve_thinking` = true).
-    "pt_false": {"chat_template_kwargs": {"preserve_thinking": False}},
+    #: R-17: bỏ suy nghĩ cũ khỏi lịch sử. ⚠️ Phải là `preserve_reasoning`, KHÔNG `preserve_thinking`: llama.cpp
+    #: (`common/arg.cpp:958-960`) tự nạp `preserve_reasoning="true"` vào kwargs mặc định, và template v22.5:8-14 đọc
+    #: `preserve_reasoning` TRƯỚC ⇒ `preserve_thinking: false` theo request bị che, không có tác dụng (đo 18/09
+    #: bằng `/apply-template`: 235 ký tự cả hai; `preserve_reasoning: false` → 137, mất khối suy nghĩ).
+    "pt_false": {"chat_template_kwargs": {"preserve_reasoning": False}},
 }
 #: phép -> (biến thể B, các nhóm áp dụng)
 PHEP: dict[str, tuple[str, tuple[str, ...]]] = {
