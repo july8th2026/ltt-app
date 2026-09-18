@@ -78,8 +78,8 @@
 | 0 | Dọn phiên "Serving v2", tag giữ commit, xoá phiên | ✅ | `4074dc02`, tag `luu-tru/serving-v2/*` |
 | 1 | Gộp cấu hình B đang chạy vào `main` (hết DRIFT) | ✅ (trừ làm mới env nssm → D) | `f1d949b5`; `deploy.ps1` nay ghi đè sàn RAM mỗi lần deploy |
 | 2 | Lỗi tính tiền `/messages` khi trúng cache (R-04) | 🔵 code xong, chờ gate/deploy | `9dc8d6f2` (đỏ→xanh, đối chứng, 1.965 test provider đạt) |
-| 3 | Catalog mức suy nghĩ theo model | 🔵 | nhánh `phien/suy-nghi-theo-model` |
-| 4 | Suy nghĩ do máy chủ quyết, gỡ ghi đè 3 cửa, sàn `max_tokens` 3.5 | 🔵 | cùng nhánh Task 3 — chủ dự án đã duyệt hướng |
+| 3 | Catalog mức suy nghĩ theo model | 🔵 code xong, chờ đợt 2 | `2d350f49`…`952a792f`; 3.8 low/medium/xhigh mặc định xhigh, 3.5 một mức cố định |
+| 4 | Suy nghĩ do máy chủ quyết, gỡ ghi đè 3 cửa, sàn `max_tokens` 3.5 | 🔵 code xong, chờ đợt 2 | `4eee6881`…`e78e243d`; L-26; 3.5 đồng bộ: máy chủ đặt budget = max_tokens − 512 (≤ 2.048), không trả 400 |
 | 5 | 3.8 khai đọc ảnh; test bản sao `-c` | 🔵 code xong, chờ gate/deploy | `3f6ad81b` (auto_scan_video ghim 3.5 có lý do; 3.268 test đạt) |
 | 6 | B gia hạn suất theo tiến triển (bỏ thu cứng 1.200 s) | ⬜ | sau Task 1 |
 | 7 | Ước token cận trên (code ×0,74, emoji ×0,16) + overhead template | ⬜ | sau Task 1; deploy theo chiều |
