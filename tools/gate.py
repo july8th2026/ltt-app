@@ -666,6 +666,11 @@ def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
         # ⛔ Khong ai co y viet sai. Cai sai la khong co CHO NAO de tra loi, nen
         #    ai can mot cadence thi tu viet mot cai. Buoc nay giu cho do duy nhat.
         Step("luat van hanh", [sys.executable, "tools/check_luat_van_hanh.py"], ROOT),
+        # 🔴 Ten da go (L-23: `SO_SLOT_MAY_B`, env `LTT_LLM_MAX_DONG_THOI`...; L-25:
+        #    `--cache-ram 12288`, san 48; hop dong: "canonical integrator") khong
+        #    duoc moc lai trong tai lieu SONG va chu thich duong LLM. Banh coc:
+        #    chot tap dong cu 18/09 (`tools/check_ten_da_go.moc`), do khi co dong MOI.
+        Step("ten da go", [sys.executable, "tools/check_ten_da_go.py"], ROOT),
         # 🔴 `ruff` đã nằm sẵn trong máy nhiều tháng mà **không có cấu hình** và
         #    không nằm trong gate. Đo 06/09 nó bắt một bộ phát hiện lớn với bộ luật
         #    `F,B` (đã bỏ `B008` vì nó là `Depends()` của FastAPI) — trong đó có
