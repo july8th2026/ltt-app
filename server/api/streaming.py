@@ -401,7 +401,14 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         kq = cua_luong.goi_dong_bo_co_xep_lai(
             lambda: ngat.chay_canh_ngat(
                 lambda: executor.run(db, sach,
-                                     timeout_s=_con_lai_s(t0, float(_tran_giay()))),
+                                     timeout_s=_con_lai_s(t0, float(_tran_giay())),
+                                     # 🔴 MÃ LƯỢT XUỐNG MÁY B (L-06, như
+                                     #    `/chat/completions`). Thiếu nó: B không
+                                     #    nhận `X-LTT-Request-Id` ⇒ sổ lượt B
+                                     #    không nối được sổ A, và đường huỷ khi
+                                     #    khách đi chỉ đóng socket — B sinh
+                                     #    chữ tới hết (T4 P1 phát hiện).
+                                     ma_luot=request_id),
                 ngat_chua=ngat.do_ngat(request)),
             suat,
             han_s=lambda: cua_luong.han_cho_dong_bo(

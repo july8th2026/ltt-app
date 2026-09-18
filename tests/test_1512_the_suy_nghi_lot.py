@@ -190,3 +190,101 @@ def test_khoi_thinking_gui_lai_o_luot_sau_khong_lot_vao_prompt():
             {"type": "text", "text": "Hà Nội"}]},
         {"role": "user", "content": "cảm ơn"}])
     assert ra[1] == {"role": "assistant", "content": "Hà Nội"}
+
+
+# ── 5. Mã lượt xuống máy B ở cửa MỘT CỤC (`X-LTT-Request-Id`) ─────────────────
+#
+# T4 P1 (`10c01059`, test_1511) phát hiện: `_mot_cuc` gọi `executor.run` KHÔNG có
+# `ma_luot` ⇒ `/messages` và `/responses` không stream không gửi `X-LTT-Request-Id`
+# ⇒ sổ lượt B không nối được sổ A, và huỷ-khi-khách-đi chỉ đóng socket (L-06).
+# Ba mắt xích, mỗi mắt một phép: cửa → `features.chay` (dưới đây), `executor.run`
+# → `features.chay` (test_1241), `dieu_phoi._goi_openai` → header (dưới đây).
+
+from tests import test_272_cua_streaming as _t272  # noqa: E402
+
+MODEL, MSG, RSP, _account, _h = (_t272.MODEL, _t272.MSG, _t272.RSP,
+                                 _t272._account, _t272._h)
+#: Giàn CSDL + app của test_272 (cùng khuôn), dùng lại thay vì chép.
+api = _t272.api
+
+
+def _bat_ma_luot(monkeypatch) -> list:
+    from apps.ltt_llm import features
+    thay: list = []
+
+    def gia(db, params, *, timeout_s=300.0, ma_luot="", **_):
+        thay.append(ma_luot)
+        return features.KetQua(
+            noi_dung="Hà Nội", suy_nghi="", tool_calls=(), finish_reason="stop",
+            model=params["model"], token_vao=10, token_ra=5, token_vao_cache=0,
+            do_duoc=True)
+
+    monkeypatch.setattr(features, "chay", gia)
+    return thay
+
+
+def _job_id_credit(user_id: str) -> set:
+    from platform_core.db import get_session
+    from platform_core.models import CreditEntry
+    gen = get_session()
+    db = next(gen)
+    try:
+        return {e.job_id for e in db.query(CreditEntry).filter_by(user_id=user_id)}
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@pytest.mark.parametrize("duong,than", [
+    (MSG, {"messages": [{"role": "user", "content": "thủ đô?"}]}),
+    (RSP, {"input": "thủ đô?"}),
+])
+def test_mot_cuc_truyen_ma_luot_xuong_may_B(api, monkeypatch, duong, than):
+    thay = _bat_ma_luot(monkeypatch)
+    user_id, token = _account()
+    r = api.post(duong, json={"model": MODEL, "max_tokens": 1500, **than},
+                 headers=_h(token))
+    assert r.status_code == 200, r.text
+    assert r.headers["content-type"].startswith("application/json"), (
+        "khong phai nhanh mot-cuc -> phep kiem dang do nham duong")
+    assert len(thay) == 1 and thay[0], (
+        "cua mot cuc khong truyen ma luot => may B khong nhan X-LTT-Request-Id")
+    # Cùng MỘT khoá với sổ tiền: mã gửi B = `credit_entries.job_id` của lượt.
+    assert thay[0] in _job_id_credit(user_id)
+
+
+def _goi_openai_ghi_header(monkeypatch, ma_luot: str) -> dict:
+    import httpx
+
+    from platform_core.llm import dieu_phoi
+    thay: dict = {}
+
+    class _Tra:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {"model": "qwen35-api",
+                    "choices": [{"message": {"content": "ok"}, "finish_reason": "stop"}],
+                    "usage": {"prompt_tokens": 1, "completion_tokens": 1}}
+
+    def gia(self, method, url, *, json=None, headers=None, timeout=None):
+        thay.update(headers or {})
+        return _Tra()
+
+    monkeypatch.setattr(httpx.Client, "request", gia)
+    dieu_phoi._goi_openai("http://b.invalid", "k", {
+        "model": "qwen35-api", "messages": [{"role": "user", "content": "?"}]},
+        5.0, ma_luot=ma_luot)
+    return thay
+
+
+def test_goi_openai_co_ma_luot_thi_gui_header(monkeypatch):
+    assert _goi_openai_ghi_header(monkeypatch, "ms-abc")["X-LTT-Request-Id"] == "ms-abc"
+
+
+def test_doi_chung_goi_openai_khong_ma_luot_thi_KHONG_co_header(monkeypatch):
+    """Đối chứng: phép trên đỏ được — thiếu mã thì header vắng, đúng ca trước T1b."""
+    assert "X-LTT-Request-Id" not in _goi_openai_ghi_header(monkeypatch, "")
