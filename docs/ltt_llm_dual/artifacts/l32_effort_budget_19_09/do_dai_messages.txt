@@ -1,0 +1,4 @@
+messages top  low    prompt=[96] output_tokens=[379, 478, 522, 451, 564] median=478
+messages top  xhigh  prompt=[96] output_tokens=[453, 410, 444, 438, 428] median=438
+messages ctk  low    prompt=[84] output_tokens=[500, 423, 353, 461, 421] median=423
+messages ctk  xhigh  prompt=[96] output_tokens=[386, 400, 485, 442, 434] median=434

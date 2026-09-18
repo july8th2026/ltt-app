@@ -139,7 +139,8 @@ class _Executor:
         `ngan_sach.budget_suy_nghi_dong_bo`.
         """
         from apps.ltt_llm.ngan_sach import budget_suy_nghi_dong_bo
-        return budget_suy_nghi_dong_bo(params.get("model"), params["max_tokens"])
+        return budget_suy_nghi_dong_bo(params.get("model"), params["max_tokens"],
+                                       params.get("reasoning_effort"))
 
     def model_id(self, alias):
         return self.aliases()[alias]

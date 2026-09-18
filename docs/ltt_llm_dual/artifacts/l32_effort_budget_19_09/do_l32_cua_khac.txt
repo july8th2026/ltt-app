@@ -1,0 +1,6 @@
+responses domino  low    budget=1024 nghi=[1023, 1023] max=1023 med_nghi=1023.0 med_ra=1737.5 med_tre=38.2s dung=2/2
+responses domino  medium budget=2048 nghi=[2047, 2047] max=2047 med_nghi=2047.0 med_ra=2890.5 med_tre=63.55s dung=1/2
+responses domino  xhigh  budget=4096 nghi=[4095, 4095] max=4095 med_nghi=4095.0 med_ra=4759.0 med_tre=115.85s dung=2/2
+chat      domino  low    budget=1024 nghi=[1023, 1023] max=1023 med_nghi=1023.0 med_ra=1849.5 med_tre=43.05s dung=1/2
+chat      domino  medium budget=2048 nghi=[2047, 2047] max=2047 med_nghi=2047.0 med_ra=3736.0 med_tre=78.35s dung=0/2
+chat      domino  xhigh  budget=4096 nghi=[4095, 4095] max=4095 med_nghi=4095.0 med_ra=4532.0 med_tre=109.5s dung=2/2

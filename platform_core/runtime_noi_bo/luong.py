@@ -242,8 +242,10 @@ def _dat_budget_may_chu(gui: dict, duong: str, executor, ten: str,
     """Ghi budget suy nghĩ MÁY CHỦ đặt (L-26) vào thân gửi, đúng TRƯỜNG của cửa.
 
     Gọi SAU `chuan_hoa_suy_nghi` (hàm ấy gỡ mọi trường budget — của khách) và
-    SAU `_kep_tran_gui` (budget tính từ trần ra đã kẹp). Model có nấc (3.8) ⇒
-    executor trả None ⇒ không đặt gì.
+    SAU `_kep_tran_gui` (budget tính từ trần ra đã kẹp) và SAU
+    `dat_effort_cho_engine`. Model có nấc (3.8, L-32): budget theo MỨC đã chuẩn
+    hoá — đọc ở `reasoning_effort` hoặc, ở `/messages`, nơi `dat_effort_cho_engine`
+    đã dời nó (`chat_template_kwargs.reasoning_effort`).
 
     🔴 TÊN TRƯỜNG THEO CỬA của llama.cpp 91f6a6cf3, và nhầm là mất lặng lẽ:
        * `/v1/responses`: `server-chat.cpp` `server_chat_convert_responses_to_chatcmpl`
@@ -257,7 +259,10 @@ def _dat_budget_may_chu(gui: dict, duong: str, executor, ten: str,
     fn = getattr(executor, "sync_thinking_budget", None)
     if not callable(fn):
         return
-    budget = fn({"model": ten, "max_tokens": int(xin_ra)})
+    ctk = gui.get("chat_template_kwargs")
+    muc = gui.get("reasoning_effort") or (
+        ctk.get("reasoning_effort") if isinstance(ctk, dict) else None)
+    budget = fn({"model": ten, "max_tokens": int(xin_ra), "reasoning_effort": muc})
     if budget is None:
         return
     if duong.endswith("/messages"):

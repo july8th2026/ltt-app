@@ -67,7 +67,8 @@ def _sach_ghi_de(gui: dict) -> None:
         assert "<|think_" not in s, f"the suy nghi con trong noi dung: {s!r}"
 
 
-def _bo_budget_may_chu(gui: dict, duong: str, max_ra: int = 4000) -> dict:
+def _bo_budget_may_chu(gui: dict, duong: str, max_ra: int = 4000,
+                       tran: int | None = None) -> dict:
     """Bản sao `gui` đã tách budget MÁY CHỦ đặt cho 3.5 (sự cố 18/09 22:45).
 
     Chốt nó là của máy chủ (`min(budget engine, max_ra − 512)`), không phải số
@@ -76,7 +77,8 @@ def _bo_budget_may_chu(gui: dict, duong: str, max_ra: int = 4000) -> dict:
     """
     from apps.ltt_llm.ngan_sach import BUDGET_SUY_NGHI_35, TOKEN_CHO_TRA_LOI
     gui = dict(gui)
-    mong = min(BUDGET_SUY_NGHI_35, max_ra - TOKEN_CHO_TRA_LOI)
+    tran = BUDGET_SUY_NGHI_35 if tran is None else tran
+    mong = max(0, min(tran, max_ra - TOKEN_CHO_TRA_LOI))
     if duong.endswith("/messages"):
         assert gui.pop("thinking", None) == {"type": "enabled", "budget_tokens": mong}
         assert "reasoning_budget_tokens" not in gui
@@ -249,7 +251,7 @@ def test_cua_stream_tien_kiem_va_chuan_bi_gui_than_sach(db_s, duong, dung, model
     tk = luong.tien_kiem(db_s, user_id=uid, tool_name="text.chat", than=than,
                          duong=duong)
     _sach_ghi_de(_bo_budget_may_chu(tk.than_gui, duong) if model == "ltt-3.5"
-                 else tk.than_gui)
+                 else _bo_budget_may_chu(tk.than_gui, duong, tran=4096))
     if model == "ltt-3.5":
         assert "reasoning_effort" not in tk.than_gui and tk.effort_bo_qua is True
     else:
@@ -260,7 +262,7 @@ def test_cua_stream_tien_kiem_va_chuan_bi_gui_than_sach(db_s, duong, dung, model
                         duong=duong)
     try:
         _sach_ghi_de(_bo_budget_may_chu(cb.than_gui, duong) if model == "ltt-3.5"
-                     else cb.than_gui)
+                     else _bo_budget_may_chu(cb.than_gui, duong, tran=4096))
         assert ((_effort_template_thay(duong, cb.than_gui) is not None)
                 == (model == "ltt-3.8"))
     finally:
@@ -473,17 +475,25 @@ def test_dong_bo_35_tra_200_va_may_chu_dat_budget(api, monkeypatch, max_tokens):
     assert "thinking" not in them_b and kw.get("reasoning_effort") is None
 
 
-def test_dong_bo_38_khong_dat_budget_va_khong_header(api, monkeypatch):
+@pytest.mark.parametrize("muc,max_tokens,mong", [
+    ("high", 500, 0), ("low", 2000, 1024), ("medium", 2000, 1488),
+    ("medium", 2300, 1788), (None, 2000, 1488)])
+def test_dong_bo_38_may_chu_dat_budget_theo_muc(api, monkeypatch, muc,
+                                               max_tokens, mong):
+    """L-32: 3.8 cũng do máy chủ đặt budget — theo MỨC, kẹp chừa chỗ trả lời;
+    budget khách (7) vẫn bị gỡ."""
     goi = _dat_dieu_phoi(monkeypatch)
     _uid, token = _account()
+    than = _than_dong_bo("ltt-3.8", max_tokens=max_tokens, reasoning_budget_tokens=7)
+    if muc:
+        than["reasoning_effort"] = muc
     r = api.post(API_V1_PREFIX + "/chat/completions", headers=_h_dong_bo(token),
-                 json=_than_dong_bo("ltt-3.8", reasoning_effort="high",
-                                    max_tokens=500, reasoning_budget_tokens=7))
+                 json=than)
     assert r.status_code == 200, r.text
     assert "X-LTT-Effort-Bo-Qua" not in r.headers
     them_b = goi[-1].get("them") or {}
-    assert "reasoning_budget_tokens" not in them_b, them_b
-    assert goi[-1]["reasoning_effort"] == "xhigh"
+    assert them_b.get("reasoning_budget_tokens") == mong, them_b
+    assert goi[-1]["reasoning_effort"] == ({"high": "xhigh"}.get(muc, muc))
 
 
 # ══ Sự cố 18/09 22:45: 3.5 trả 200 RỖNG ở cửa KHÁC `/chat/completions` ════════
@@ -512,14 +522,24 @@ def test_mot_cuc_35_may_chu_dat_budget(api, monkeypatch, duong, dung):
     assert budget + TOKEN_CHO_TRA_LOI <= kw["max_tokens"]
 
 
-def test_mot_cuc_38_khong_dat_budget(api, monkeypatch):
+@pytest.mark.parametrize("duong,dung", [("/messages", _than_messages),
+                                        ("/responses", _than_responses)])
+@pytest.mark.parametrize("muc,mong", [("low", 1024), ("medium", 2048),
+                                      ("xhigh", 4096), (None, 4096)])
+def test_mot_cuc_38_may_chu_dat_budget_theo_muc(api, monkeypatch, duong, dung,
+                                               muc, mong):
     goi = _dat_dieu_phoi(monkeypatch)
     _uid, token = _account()
-    than = _than_messages("ltt-3.8", stream=False)
-    than["max_tokens"] = 1500
-    r = api.post(API_V1_PREFIX + "/messages", headers=_h(token), json=than)
+    than = dung("ltt-3.8", stream=False)
+    # Trần cửa một cục ~2.355 (90 s) ⇒ medium/xhigh bị kẹp về max_tokens − 512.
+    than["max_output_tokens" if duong == "/responses" else "max_tokens"] = 2300
+    if muc:
+        than["reasoning_effort"] = muc
+    r = api.post(API_V1_PREFIX + duong, headers=_h(token), json=than)
     assert r.status_code == 200, r.text
-    assert "reasoning_budget_tokens" not in (goi[-1].get("them") or {})
+    budget = (goi[-1].get("them") or {}).get("reasoning_budget_tokens")
+    assert budget == max(0, min(mong, goi[-1]["max_tokens"] - 512)), goi[-1].get("them")
+    assert budget > 0
 
 
 @pytest.mark.parametrize("max_tokens,mong", [(1500, 988), (600, 88), (400, 0),
@@ -534,12 +554,20 @@ def test_features_chay_35_tu_dat_budget_khi_ben_goi_khong_truyen(monkeypatch,
     assert goi[-1]["them"].get("reasoning_budget_tokens") == mong
 
 
-def test_features_chay_38_khong_dat_budget(monkeypatch):
+@pytest.mark.parametrize("muc,max_tokens,mong", [
+    ("low", 32_768, 1024), ("medium", 32_768, 2048), ("xhigh", 32_768, 4096),
+    (None, 32_768, 4096), ("low", 1500, 988), ("xhigh", 1500, 988),
+    ("low", 400, 0)])
+def test_features_chay_38_tu_dat_budget_theo_muc(monkeypatch, muc, max_tokens, mong):
+    """Cửa job (và `_mot_cuc`) — `features.chay` tự tính khi bên gọi không truyền."""
     from apps.ltt_llm import features
     goi = _dat_dieu_phoi(monkeypatch)
-    features.chay(None, {"model": "ltt-3.8", "max_tokens": 1500,
-                         "messages": [{"role": "user", "content": "xin chao"}]})
-    assert "reasoning_budget_tokens" not in (goi[-1].get("them") or {})
+    p = {"model": "ltt-3.8", "max_tokens": max_tokens,
+         "messages": [{"role": "user", "content": "xin chao"}]}
+    if muc:
+        p["reasoning_effort"] = muc
+    features.chay(None, p)
+    assert goi[-1]["them"].get("reasoning_budget_tokens") == mong
 
 
 @pytest.mark.parametrize("duong,dung", [("/v1/messages", _than_messages),
@@ -560,10 +588,9 @@ def test_cua_stream_35_budget_dung_truong_cua_llama(db_s, duong, dung, model):
                         duong=duong)
     try:
         for gui in (tk.than_gui, cb.than_gui):
-            if model == "ltt-3.5":
-                _sach_ghi_de(_bo_budget_may_chu(gui, duong, max_ra=1500))
-            else:
-                _sach_ghi_de(gui)
+            _sach_ghi_de(_bo_budget_may_chu(
+                gui, duong, max_ra=1500,
+                tran=None if model == "ltt-3.5" else 4096))
     finally:
         luong.hoan(cb.user_id, cb.request_id)
         luong._nha_suat(cb.lease_id)
@@ -768,3 +795,94 @@ def test_t1c_cua_job_features_moi_dang_effort(monkeypatch, dang):
                          **_ba_dang_effort("medium")[dang]})
     assert goi[-1]["reasoning_effort"] == "medium"
     assert "chat_template_kwargs" not in (goi[-1].get("them") or {})
+
+
+# ══ L-32 (chủ dự án duyệt 19/09): nấc effort 3.8 THẬT — máy chủ đặt budget ═══
+#
+# Đo T1c: effort của template v22.5 chỉ là MỘT câu ở đầu system prompt; độ dài
+# suy nghĩ không theo mức (median token ra low/xhigh 4695/4855, 385/245). Nên
+# mỗi mức mang budget suy nghĩ do máy chủ đặt: low 1.024 · medium 2.048 ·
+# xhigh 4.096 (= `--reasoning-budget` của `qwen38-api` ⇒ mặc định y như trước).
+
+from apps.ltt_llm import ngan_sach as NS  # noqa: E402
+
+
+def test_l32_xhigh_bang_budget_engine_yaml():
+    """Đối chứng: mức mặc định phải đúng số engine đang chạy — nếu không, 'xhigh
+    y như trước' là lời hứa sai."""
+    assert NS.BUDGET_SUY_NGHI_THEO_MUC["ltt-3.8"]["xhigh"] == _budget_yaml("qwen38-api")
+    assert NS.nghi_mac_dinh("ltt-3.8") == "xhigh"
+
+
+@pytest.mark.parametrize("muc,mong", [("low", 1024), ("medium", 2048),
+                                      ("xhigh", 4096), (None, 4096)])
+def test_l32_bang_budget_38(muc, mong):
+    assert NS.budget_suy_nghi_dong_bo("ltt-3.8", 32_768, muc) == mong
+    # Kẹp chừa chỗ trả lời: min(mức, max_tokens − 512), không âm.
+    assert NS.budget_suy_nghi_dong_bo("ltt-3.8", 1_000, muc) == min(mong, 488)
+    assert NS.budget_suy_nghi_dong_bo("ltt-3.8", 300, muc) == 0
+
+
+@pytest.mark.parametrize("muc", [None, "low", "medium", "xhigh"])
+def test_l32_35_khong_doi_theo_muc(muc):
+    """3.5 một chế độ: mức (đã bị gỡ) không bao giờ đổi budget của nó."""
+    assert NS.budget_suy_nghi_dong_bo("ltt-3.5", 32_768, muc) == NS.BUDGET_SUY_NGHI_35
+
+
+def test_l32_budget_tang_theo_muc():
+    b = [NS.budget_suy_nghi_dong_bo("ltt-3.8", 32_768, m) for m in ("low", "medium", "xhigh")]
+    assert b == sorted(b) and len(set(b)) == 3
+
+
+def _budget_engine_thay(duong: str, gui: dict):
+    """Budget suy nghĩ llama.cpp 91f6a6cf3 NHẬN. `/messages`: chỉ
+    `thinking{type:enabled,budget_tokens}` ⇒ `thinking_budget_tokens`
+    (`server-chat.cpp:586-591`), mọi trường khác bị vứt. Cửa khác: thân nguyên,
+    `reasoning_budget_tokens` (`server-common.cpp:1366-1369`)."""
+    if duong.endswith("/messages"):
+        th = gui.get("thinking") or {}
+        return th.get("budget_tokens", 10_000) if th.get("type") == "enabled" else None
+    return gui.get("reasoning_budget_tokens")
+
+
+def test_l32_doi_chung_mo_hinh_budget():
+    assert _budget_engine_thay("/v1/messages", {"reasoning_budget_tokens": 1024}) is None
+    assert _budget_engine_thay(
+        "/v1/messages", {"thinking": {"type": "enabled", "budget_tokens": 1024}}) == 1024
+
+
+@pytest.mark.parametrize("duong,dung", [("/v1/messages", _than_messages),
+                                        ("/v1/responses", _than_responses)])
+@pytest.mark.parametrize("muc,mong", [("low", 1024), ("medium", 2048),
+                                      ("xhigh", 4096), (None, 4096)])
+def test_l32_cua_stream_38_budget_theo_muc(db_s, duong, dung, muc, mong):
+    uid = _nguoi(db_s)
+    than = dung("ltt-3.8")  # mang ca budget khach (99999, thinking 10000)
+    than.pop("max_tokens", None)
+    than.pop("max_output_tokens", None)
+    than["max_output_tokens" if duong.endswith("/responses") else "max_tokens"] = 8000
+    if muc:
+        than["reasoning_effort"] = muc
+    tk = luong.tien_kiem(db_s, user_id=uid, tool_name="text.chat", than=than,
+                         duong=duong)
+    cb = luong.chuan_bi(db_s, user_id=uid, tool_name="text.chat", than=than,
+                        duong=duong)
+    try:
+        for gui in (tk.than_gui, cb.than_gui):
+            assert _budget_engine_thay(duong, gui) == mong, gui
+            assert _effort_template_thay(duong, gui) == muc
+    finally:
+        luong.hoan(cb.user_id, cb.request_id)
+        luong._nha_suat(cb.lease_id)
+
+
+def test_l32_http_stream_messages_low_len_may_b(api, monkeypatch):
+    da_goi = _dat_luong(monkeypatch)
+    _uid, token = _account()
+    than = _than_messages("ltt-3.8", reasoning_effort="low")
+    than["max_tokens"] = 8000
+    r = api.post(API_V1_PREFIX + "/messages", headers=_h(token), json=than)
+    assert r.status_code == 200, r.text
+    gui = da_goi[-1]["than"]
+    assert gui["thinking"] == {"type": "enabled", "budget_tokens": 1024}
+    assert "reasoning_budget_tokens" not in gui
