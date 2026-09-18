@@ -14,6 +14,8 @@ tool_calls/tool, rồi bắn `--song-song` hội thoại mới CÙNG LÚC (nhi�
 """
 from __future__ import annotations
 
+from typing import cast
+
 import argparse
 import json
 import pathlib
@@ -84,7 +86,7 @@ def _tai_lieu(ky_tu: int, hat: int) -> str:
     r = random.Random(hat)
     tu = ("request queue worker scheduler latency cache token prompt decode prefill slot "
           "budget fairness cancel stream credit invoice lease retry timeout backoff").split()
-    dong = []
+    dong: list[str] = []
     while sum(len(x) + 1 for x in dong) < ky_tu:
         dong.append("def ham_%d(%s):\n    return %d  # %s" % (
             r.randint(1, 10**6), r.choice(tu), r.randint(0, 999), " ".join(r.sample(tu, 6))))
@@ -118,7 +120,11 @@ def _goi(base: str, model: str, messages: list, max_tokens: int, timeout: float 
     body.update(them or {})
     req = urllib.request.Request(base + "/v1/chat/completions", data=json.dumps(body).encode(),
                                  method="POST", headers={"Content-Type": "application/json"})
-    text, reas, finish, timings, status = [], [], None, {}, None
+    text: list[str] = []
+    reas: list[str] = []
+    finish: str | None = None
+    timings: dict = {}
+    status: int | None = None
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             status = r.status
@@ -208,10 +214,12 @@ def chay(base: str, model: str, lan: int, kich_ban: list[str], ra: pathlib.Path,
                                             {"role": "assistant", "content": "OK."},
                                             {"role": "user", "content": "What is the secret code? Reply only the code."}], 1500)
             ths = [threading.Thread(target=mot, args=(k,)) for k in range(3)]
-            [t.start() for t in ths]
-            [t.join() for t in ths]
+            for t in ths:
+                t.start()
+            for t in ths:
+                t.join()
             for k in range(3):
-                cham("dong_thoi", i, ra_[k], [m for n, m in enumerate(mks) if n != k], {mks[k]})
+                cham("dong_thoi", i, cast(dict, ra_[k]), [m for n, m in enumerate(mks) if n != k], {mks[k]})
         if "sentinel_tien_to_chung" in kich_ban:
             chung = [{"role": "system", "content": "You are careful. " + _tai_lieu(doc_ky_tu // 2, 777)}]
             mk = _marker("KP")
@@ -241,8 +249,10 @@ def chay(base: str, model: str, lan: int, kich_ban: list[str], ra: pathlib.Path,
                 rao.wait()
                 kq_[k] = _goi(base, model, _hoi_thoai_27148(mks[k], hats[k], ky), 800, them=them)
             ths = [threading.Thread(target=mot_lru, args=(k,)) for k in range(song_song)]
-            [t.start() for t in ths]
-            [t.join() for t in ths]
+            for t in ths:
+                t.start()
+            for t in ths:
+                t.join()
             for k in range(song_song):
                 cham("dong_thoi_lru_27148", i, kq_[k], [], {mks[k]}, pha="dong_thoi")
     return kq

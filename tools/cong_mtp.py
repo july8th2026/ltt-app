@@ -13,6 +13,8 @@ Mã thoát: 0 đạt cổng · 3 trượt · 2 không đo được.
 """
 from __future__ import annotations
 
+from typing import cast
+
 import argparse
 import json
 import pathlib
@@ -76,7 +78,7 @@ def _code_blob(chars: int, seed: int) -> str:
     import random
     r = random.Random(seed)
     tu = "request queue worker scheduler latency cache token prompt decode prefill slot budget".split()
-    out = []
+    out: list[str] = []
     while sum(len(x) + 1 for x in out) < chars:
         out.append("def f_%d(%s):\n    return %d  # %s" % (r.randint(1, 10**6), r.choice(tu), r.randint(0, 999),
                                                            " ".join(r.sample(tu, 5))))
@@ -91,7 +93,7 @@ def bo_de() -> list[dict]:
         de.append({"w": "W1", "ma_bai": f"w1-{k}", "max_tokens": 1500, "cham": None, "schema": None,
                    "than": {"messages": [{"role": "user", "content": _code_blob(45000, 900 + k)
                                           + "\n\nExplain what these functions do in 5 bullet points."}]}})
-    for b in G.BO_DE:
+    for b in cast(list[dict], G.BO_DE):
         nhac = b.get("nhac")
         w = "W5" if b["nhom"] == "ngu_canh_dai" else ("W3" if b["cham"] == "json_khop" else "W2")
         if b["nhom"] == "ngu_canh_dai":

@@ -30,6 +30,8 @@ Luật quyết (khoá TRƯỚC khi đo):
 """
 from __future__ import annotations
 
+from typing import cast
+
 import argparse
 import json
 import math
@@ -202,8 +204,8 @@ DE_AGENT = [{"ma": f"a{i:02d}", "kich_ban": i} for i in range(6)]
 
 
 def bo_de() -> list[dict]:
-    return ([{**b, "nhom": "code"} for b in DE_CODE] + [{**b, "nhom": "vi"} for b in DE_VI]
-            + [{**b, "nhom": "tool"} for b in DE_TOOL] + [{**b, "nhom": "agent"} for b in DE_AGENT])
+    nhom: list[tuple[str, list]] = [("code", DE_CODE), ("vi", DE_VI), ("tool", DE_TOOL), ("agent", DE_AGENT)]
+    return [{**cast(dict, b), "nhom": ten} for ten, ds in nhom for b in ds]
 
 
 # ── Chấm (thuần) ─────────────────────────────────────────────────────────────
@@ -436,7 +438,7 @@ def mot_luot(base: str, bai: dict, bien_the: str, timeout: float) -> dict:
         if r["status"] == 200:
             t = r.get("text") or ""
             r["dung"] = (cham_code(bai, t) if bai["nhom"] == "code" else cham_vi(bai, t) if bai["nhom"] == "vi"
-                         else cham_tool(bai, t, r.get("tool_calls")))
+                         else cham_tool(bai, t, r.get("tool_calls") or []))
             r["rong"] = not t.strip() and not r.get("tool_calls")
     if r["status"] != 200:
         r["dung"] = None
