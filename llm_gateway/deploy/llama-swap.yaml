@@ -322,7 +322,7 @@ models:
       -np 3
       -b 512 -ub 512
       --cache-type-k q4_0 --cache-type-v q4_0
-      --cache-ram 12288
+      --cache-ram 24576
       --ctx-checkpoints 8
       --spec-type draft-mtp --spec-draft-n-max 2
       --host 127.0.0.1 --port ${PORT}
@@ -411,7 +411,7 @@ models:
       -c 262144
       -np 3
       --cache-type-k q8_0 --cache-type-v q8_0
-      --cache-ram 12288
+      --cache-ram 24576
       --ctx-checkpoints 8
       --spec-type draft-mtp --spec-draft-n-max 2
       --host 127.0.0.1 --port ${PORT}

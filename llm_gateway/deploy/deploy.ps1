@@ -371,6 +371,13 @@ Note ("    tu ngan_sach: " + (($thamSoA.GetEnumerator() | Sort-Object Key | ForE
 #    khi yaml len `-np 3` (Dual-model 4.2); nay so chuoi la `-np` doc tu yaml.
 $tienToDaGo = '^(LTT_LLM_MAX_INPUT_TOKENS|LTT_LLM_MAX_DONG_THOI|LTT_LLM_TOKEN_POOL|LTT_LLM_RPM)'
 
+# !! SAN RAM TRONG CUA TRONG TAI (L-25, 18/09): kho la nguon, deploy GHI DE moi lan.
+#    No va `--cache-ram` cua `llama-swap.yaml` la MOT rang buoc ngan sach RAM may B
+#    (2 x cache + san + bien <= RAM trong luc cache rong); `test_1293` doi chieu ba
+#    cho: so nay, mac dinh `llm_gateway/config.py`, va yaml. Truoc L-25 so nay chi
+#    duoc ghi khi TAO tep lan dau, nen doi no trong kho khong bao gio toi may B.
+$thamSoA['LTT_LLM_RAM_TRONG_GB'] = '24'
+
 $co = ChayTrenB "if exist $envDir\gateway.env (echo CO) else (echo KHONG)"
 if (($co -join "") -match "CO") {
     # Cap van hanh khong phai bi mat: migrate tai cho, giu nguyen token/model.
@@ -385,7 +392,7 @@ if (($co -join "") -match "CO") {
     $dong = @($dong | ForEach-Object {
         if ($_ -match $tienToDaGo) {
             $daGo += ($_ -split '=', 2)[0]
-        } elseif ($_ -match '^(LTT_LLM_MAX_OUTPUT_TOKENS|LTT_LLM_DEM_UOC)=') {
+        } elseif ($_ -match '^(LTT_LLM_MAX_OUTPUT_TOKENS|LTT_LLM_DEM_UOC|LTT_LLM_RAM_TRONG_GB)=') {
             $k = $Matches[1]
             $daGhi[$k] = $true
             "$k=$($thamSoA[$k])"
@@ -428,7 +435,7 @@ if (($co -join "") -match "CO") {
         "LTT_LLM_MAX_IMAGES=4",
         "# Nen do duoc: desktop 1515-1612 MiB, ComfyUI thuong tru 6211-16620 MiB.",
         "LTT_LLM_VRAM_SACH_MB=2500",
-        "LTT_LLM_RAM_TRONG_GB=48"
+        "LTT_LLM_RAM_TRONG_GB=$($thamSoA['LTT_LLM_RAM_TRONG_GB'])"
     ) -join "`n"
 
     $tam = Join-Path $env:TEMP "gateway.env"
