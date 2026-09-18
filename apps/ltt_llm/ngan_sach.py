@@ -676,14 +676,29 @@ def san_token_ra(model: str | None = None, muc_nghi: str | None = None) -> int:
 
 
 #: Budget suy nghĩ ENGINE theo bí danh, cho model MỘT chế độ (effort bị gỡ nên
-#: budget là núm duy nhất). Model có nấc (3.8) không có mặt: nấc của nó quyết.
+#: budget là núm duy nhất). Model có nấc (3.8) ở `BUDGET_SUY_NGHI_THEO_MUC`.
 BUDGET_SUY_NGHI_ENGINE = {"ltt-3.5": BUDGET_SUY_NGHI_35}
+
+#: `--reasoning-budget` của hồ sơ `qwen38-api` (`llama-swap.yaml`). Bản sao CÓ
+#: ĐỐI CHIẾU: `test_1430` đọc yaml và chốt mức mặc định (`xhigh`) bằng số này.
+BUDGET_SUY_NGHI_38 = 4_096
+
+#: ⭐ L-32 (chủ dự án duyệt 19/09): NẤC EFFORT 3.8 THẬT = budget suy nghĩ MÁY CHỦ
+#: đặt theo mức. Đo T1c (18-19/09, engine B, n=5): effort của template v22.5 chỉ
+#: là MỘT câu ở đầu system prompt — độ dài suy nghĩ KHÔNG theo mức (median token
+#: ra low/xhigh: 4.695/4.855 bài lát domino, 385/245 bài tàu hoả). Nên mỗi mức
+#: mang thêm một trần suy nghĩ; câu effort của template vẫn gửi (định hướng).
+#: `xhigh` = budget engine ⇒ mức mặc định y như trước L-32 (trừ kẹp chỗ trả lời).
+BUDGET_SUY_NGHI_THEO_MUC = {
+    "ltt-3.8": {"low": 1_024, "medium": 2_048, "xhigh": BUDGET_SUY_NGHI_38},
+}
 #: Suy nghĩ tối thiểu cửa đồng bộ còn chừa khi tự đặt budget — bằng chỗ trả
 #: lời, nên sàn đồng bộ = 2 × `TOKEN_CHO_TRA_LOI` ≤ mặc định 1.024 của cửa.
 SUY_NGHI_DONG_BO_TOI_THIEU = TOKEN_CHO_TRA_LOI
 
 
-def budget_suy_nghi_dong_bo(model: str | None, max_tokens: int) -> int | None:
+def budget_suy_nghi_dong_bo(model: str | None, max_tokens: int,
+                            muc_nghi: str | None = None) -> int | None:
     """`reasoning_budget_tokens` MÁY CHỦ đặt cho một lượt cửa đồng bộ, hoặc None.
 
     Cửa đồng bộ bị kẹp `max_tokens` (thời gian ~90 s, `features.
@@ -691,16 +706,27 @@ def budget_suy_nghi_dong_bo(model: str | None, max_tokens: int) -> int | None:
     chỗ trả lời. Để suy nghĩ tiêu hết `max_tokens` là trả `content` rỗng mà vẫn
     thu tiền. Nên máy chủ chia: suy nghĩ = `max_tokens − TOKEN_CHO_TRA_LOI`, kẹp
     ≤ budget engine. llama.cpp nhận trường này MỖI request (91f6a6cf3
-    `server-common.cpp:1366-1369`). None ⇒ model có nấc, không đặt gì.
+    `server-common.cpp:1366-1369`). None ⇒ model không có trong hai bảng.
+
+    Model có nấc (3.8, L-32): trần = `BUDGET_SUY_NGHI_THEO_MUC[model][muc_nghi]`;
+    `muc_nghi` là mức ĐÃ chuẩn hoá (`luong.chuan_hoa_suy_nghi`), None ⇒ mức mặc
+    định của model. Model một chế độ (3.5): `muc_nghi` bị bỏ qua.
 
     🔴 Dùng ở MỌI cửa, không chỉ cửa đồng bộ (sự cố 18/09 22:45): `features.chay`
        tự gọi khi bên gọi không truyền (`/messages`/`/responses` không stream, job),
        cửa stream gọi qua `runtime_noi_bo.luong._dat_budget_may_chu`. Trần lớn
        ⇒ trả đúng budget engine, tức không đổi hành vi.
+    ⚠️ `max_tokens` ≤ 512 ⇒ 0 = kết thúc suy nghĩ ngay (llama.cpp `--reasoning-budget`
+       "0 for immediate end"): chỗ trả lời được ưu tiên hơn suy nghĩ.
     """
-    tran = BUDGET_SUY_NGHI_ENGINE.get(str(model or ""))
+    ten = str(model or "")
+    tran = BUDGET_SUY_NGHI_ENGINE.get(ten)
     if tran is None:
-        return None
+        bang = BUDGET_SUY_NGHI_THEO_MUC.get(ten)
+        if bang is None:
+            return None
+        mac_dinh = nghi_mac_dinh(ten)
+        tran = bang.get(str(muc_nghi or mac_dinh), bang[mac_dinh])
     return max(0, min(tran, int(max_tokens) - TOKEN_CHO_TRA_LOI))
 
 

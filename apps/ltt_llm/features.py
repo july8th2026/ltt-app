@@ -533,7 +533,9 @@ def chay(db, params: dict, *, timeout_s: float = 300.0,
     #    Tính từ `max_tokens` đã kiểm — không bao giờ từ budget khách gửi (L-26).
     if budget_suy_nghi is None:
         from apps.ltt_llm.ngan_sach import budget_suy_nghi_dong_bo
-        budget_suy_nghi = budget_suy_nghi_dong_bo(sach["model"], sach["max_tokens"])
+        # L-32: 3.8 theo MỨC đã chuẩn hoá (`kiem_tham_so` gom ba chỗ khai effort).
+        budget_suy_nghi = budget_suy_nghi_dong_bo(sach["model"], sach["max_tokens"],
+                                                  sach.get("reasoning_effort"))
     try:
         kq = dieu_phoi.goi(
             db,
