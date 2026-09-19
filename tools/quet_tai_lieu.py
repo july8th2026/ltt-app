@@ -1,6 +1,6 @@
 """Quét tài liệu: tham chiếu chết (tệp/lệnh trong `…` không tồn tại) + thuật ngữ đã bị thay.
 Chỉ đọc. Không nối vào gate. Dùng: python tools/quet_tai_lieu.py docs CLAUDE.md --json out.json"""
-import argparse, json, re, sys
+import argparse, json, re, subprocess, sys
 from pathlib import Path
 
 try:
@@ -32,6 +32,22 @@ def main():
     for d in a.dich:
         p = goc / d
         tep += sorted(p.rglob("*.md")) if p.is_dir() else [p]
+    # Tham chieu hop le neu: ton tai tu goc kho, tu thu muc cua tep .md, hoac la DUOI cua mot tep git dang theo doi
+    # (tai lieu hay viet `ltt_llm/ngan_sach.py` thay vi `apps/ltt_llm/ngan_sach.py`) - giam bao chet gia.
+    try:
+        theo_doi = subprocess.run(["git", "-C", str(goc), "ls-files"], capture_output=True, text=True,
+                                  encoding="utf-8", errors="replace").stdout.splitlines()
+    except OSError:
+        theo_doi = []
+    duoi = set()
+    for t in theo_doi:
+        phan = t.split("/")
+        for k in range(len(phan)):
+            duoi.add("/".join(phan[k:]))
+
+    def song(rel, f):
+        return (goc / rel).exists() or (f.parent / rel).exists() or rel in duoi
+
     kq = []
     for f in tep:
         if "_luutru" in f.parts:
@@ -39,7 +55,7 @@ def main():
         for i, dong in enumerate(f.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
             for m in DUONG.finditer(dong):
                 rel = m.group(1).replace("\\", "/")
-                if not (goc / rel).exists():
+                if not song(rel, f):
                     kq.append({"loai": "CHET", "tep": str(f.relative_to(goc)), "dong": i, "mau": rel, "goi_y": ""})
             for cu, moi in tu_dien:
                 if cu.lower() in dong.lower():
