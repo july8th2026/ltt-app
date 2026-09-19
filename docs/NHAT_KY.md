@@ -12,6 +12,20 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-19 — Đóng khối nền tảng máy A/B (tồn đọng LLM), dồn lực LTTCODE
+
+- Production = `ffdb4044` (A) + yaml B `deefbb9b…`; `main` sau đó chỉ đổi tài liệu ⇒ không deploy lại.
+- T3 tool search cho khách Claude Code/Codex: pha 0 đo khung 39,6 % > 35 %; Claude Code 2.1.258+ tự hoãn công cụ phía
+  client (gửi 13 luôn nạp + tên) ⇒ thiết kế R-14 bỏ; theo dõi llama.cpp PR #28292 (`defer_loading`, còn mở 19/09).
+  Khuyến nghị khách 3.5 `ENABLE_TOOL_SEARCH=false` (chế độ chỉ-tên 8/20).
+- T5: tạo lịch Windows "LTT canh bao TTFT B" 07:15 hằng ngày (`C:\LTTPlatform\app\tools\canh_bao_ttft_b.py --gui`);
+  chạy thử từ bản cài: không vượt ngưỡng. `LTT_OPS_ALERT_EMAIL` chưa đặt ⇒ script tắt mềm, không gửi thư.
+- T7: xoá 5 thư mục worktree rỗng bị khoá sau khi máy khởi động lại 08:47 (hộp đen: không quá tải).
+- T8 theo dõi: sau `ffdb4044` log không có `KHOA CUOI` / `APIKEY_ERROR` / `ThieuKey`.
+- Vận hành agent: eval gọi máy B dùng khoá riêng `eval_may_b` (không giữ `cpu_nhieu`); quy tắc agent + tiết kiệm
+  quota Claude và hai wrapper khoá nằm ở `C:\Users\Thang Tuong\.claude\ltt\` (global CLAUDE.md trỏ tới).
+- Còn ngoài agent: T6 chứng chỉ EV + máy sạch (chủ dự án); địa chỉ thư cảnh báo TTFT.
+
 ## 2026-09-19 — N2: tồn đọng LLM lên production (deploy B + hai lượt deploy A)
 
 - **Lượt 1** — nhánh `phien/tich-hop-ton-dong` (T1b lọc `</think>` + cờ B L-31, T4 P1, T5, T1c + L-32 budget suy nghĩ 3.8 theo mức) + hoà `main`. Xung đột duy nhất `DECISION_LOG.md` (giữ L-31 rồi L-32). Test nhắm 1215/1430/1519: 178 xanh.
