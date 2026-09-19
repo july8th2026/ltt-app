@@ -24,7 +24,16 @@
 - T8 theo dõi: sau `ffdb4044` log không có `KHOA CUOI` / `APIKEY_ERROR` / `ThieuKey`.
 - Vận hành agent: eval gọi máy B dùng khoá riêng `eval_may_b` (không giữ `cpu_nhieu`); quy tắc agent + tiết kiệm
   quota Claude và hai wrapper khoá nằm ở `C:\Users\Thang Tuong\.claude\ltt\` (global CLAUDE.md trỏ tới).
-- Còn ngoài agent: T6 chứng chỉ EV + máy sạch (chủ dự án); địa chỉ thư cảnh báo TTFT.
+- T5 (sau): lịch tạo lại với `/RL HIGHEST` (tài khoản thường không đọc được `secrets\app.env` ⇒ không có khoá gửi thư);
+  địa chỉ nhận TTFT do chủ dự án đưa đặt riêng trong lệnh của lịch (`set LTT_OPS_ALERT_EMAIL=…&&`), KHÔNG sửa biến
+  cùng tên trong `app.env` (địa chỉ cảnh báo vận hành API khác). Chạy thử lịch: mã thoát 0, không vượt ngưỡng.
+- **L3 tổng kết nền tảng** trên `91ceccd4` (15,1 phút, ngân sách 8/20 lõi): 32/34 xanh — `bo test` 13 051 passed,
+  1 failed `test_1259::test_BAN_SAO_khop_may_B`; `check_multiproc` đỏ. Cả hai do môi trường (tài khoản thường không
+  đọc `secrets\`, thiếu token máy B), không phải mã. Chạy lại đúng phép đỏ qua `tools\nang_quyen.py`:
+  `check_multiproc` 7 passed; `test_1259` 4 passed (URL từ `app.env`, token đọc qua SSH `gateway.env` máy B, không in).
+  Lượt khép `gate.py --doi --tu 91ceccd4` bị TỪ CHỐI vì cây có tệp `??` của phiên khác (`tests/StudioShell.test.tsx`,
+  không thuộc thành phần nào ⇒ tự nâng L3) — không động vào tệp đó. Không có commit mã sau L3 ⇒ không có gì để deploy.
+- Còn ngoài agent: T6 chứng chỉ EV + máy sạch (chủ dự án, xử lý sau).
 
 ## 2026-09-19 — N2: tồn đọng LLM lên production (deploy B + hai lượt deploy A)
 
