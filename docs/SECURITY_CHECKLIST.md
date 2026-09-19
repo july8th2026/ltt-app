@@ -67,7 +67,7 @@
 | # | Control | Status | Verify |
 |---|---|---|---|
 | 6.1 | No secret value in source control | Implemented | `python tools/scan_source_secrets.py` → 0 findings |
-| 6.2 | Secrets injected from environment, never edited into source | Implemented | `server/settings.py`, `core/runtime_paths.py` |
+| 6.2 | Secrets injected from environment, never edited into source | Implemented | `server/settings.py`, `platform_core/runtime_paths.py` |
 | 6.3 | Config validation errors never echo secret values | Implemented | `test_load_settings_invalid_config_raises_config_validation_error_no_secret_leak` |
 | 6.4 | Token-store failures never print token material | Implemented | `test_unreadable_message_never_contains_token_material`, `test_doctor_output_contains_no_token_material` |
 | 6.5 | Logs redact bearer/access/refresh tokens and client secrets | Implemented | `utils/logger.py::_REDACT_RULES` |

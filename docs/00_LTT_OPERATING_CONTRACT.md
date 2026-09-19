@@ -340,7 +340,7 @@ Chính phiên đã gộp `main` deploy khi phạm vi cần, **rồi báo** — k
   phủ mọi thay đổi kể từ bản production, xem `/health/version`) hoặc **L2**
   (`--pham-vi <tp>,<tp>…` — MỘT lượt cho mọi thành phần chạm); ở tổng kết phiên là **L3** (xanh/đỏ đã khép).
   ⛔ Không chạy L3 để deploy. ⛔ Test nhắm một mình không đủ để deploy.
-- ⛔ **Deploy chép CẢ CÂY**, không tách được phần một phiên ⇒ trước khi deploy
+- ⛔ **Deploy xuất HEAD cây chính** (mọi commit trên `main`), không tách được phần một phiên ⇒ trước khi deploy
   **báo** các phiên đang chạy (`ListAgents` → `SendMessage`) — báo, không chờ.
 - Nâng quyền: `python tools\nang_quyen.py <script.py> [-- <tham số>]` (im lặng, §10b).
 
