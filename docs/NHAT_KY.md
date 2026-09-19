@@ -12,6 +12,20 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-19 (tối) — Dọn đỏ tồn đọng của gate: 4 gốc, không nới phép kiểm nào
+
+Nhánh `phien/sua-test-do` (gốc `b388cd72`). Kiểm kê từ nhật ký + bản ghi phiên (bản ghi gate cũ đã mất theo worktree).
+
+| Đỏ tồn đọng | Lượt | Gốc | Sửa |
+|---|---|---|---|
+| `test_1259::test_BAN_SAO_khop_may_B` | L3 16/09, 17/09, khép 18/09, L3 + L2 19/09 — mỗi lần "khép" bằng script tay đọc token qua SSH | gate không cấp `LTT_LLM_BASE_URL`/`LTT_LLM_TOKEN`; phép kiểm cố ý đỏ khi thiếu | `tools/moi_truong_may_b.py` + `gate._nap_moi_truong_test`: lượt có `bo test` tự đọc token qua `ssh -i ~/.ssh/nexus_b` (chỉ đọc, chỉ trong bộ nhớ, không in). Không có khoá/máy B im ⇒ không đặt gì ⇒ phép kiểm vẫn ĐỎ |
+| `bat bien da tien trinh` (`check_multiproc`) | L3 19/09 `91ceccd4`, khép bằng chạy lại nâng quyền | `secrets\app.env` bản dev của cây chính (07/09) mang mật khẩu `ltt_app` đã cũ; superuser vẫn đúng ⇒ hai bước PostgreSQL kia xanh, bước này `password authentication failed`. Lượt chạy lại thứ hai còn biến đỏ thành BỎ QUA (`CREATE` "already exists") | có mật khẩu superuser ⇒ CSDL vứt đi nối bằng superuser (cùng quy ước `do_migration_tren_postgres`). Tái hiện đúng điều kiện L3: 7 passed |
+| `test_nhanh` pha 1 rỗng ⇒ mã 5 | `--doi --tu 16eed0fc` 19/09 | delta chỉ gồm tệp ghi cây ⇒ pha 1 nhận rồi `--deselect` chính nó | không phóng pha 1 (không phóng pha 1 KHÔNG đường dẫn = cả kho) |
+| `test_505::test_DANH_SACH_VAN_CHUYEN_khop_dung_tap_DO_DUOC` | lộ ở L1 lần này | `.codex/worktrees/` của phiên Codex nằm trong cây chính; `_RAC` chép tay lệch `/XD` của robocopy (đã loại `.codex`) | đọc thẳng `/XD` từ `setup/2-cai-dat.ps1` |
+
+- ⚠️ Còn ngoài mã: `D:\LTTSTUDIOSAPP\secrets\app.env` (dev, không commit) vẫn mang mật khẩu `ltt_app` cũ — không còn ảnh hưởng gate; chủ dự án quyết có đồng bộ không.
+- Không đổi mã production (chỉ `tools/`, `tests/`) ⇒ không cần deploy.
+
 ## 2026-09-19 (tối) — L-33: `ltt-3.8` mặc định `reasoning_effort=medium` toàn nền tảng
 
 Chủ dự án chốt: đảo mức MẶC ĐỊNH của L-26/Q131 (`xhigh` → `medium`); `xhigh` vẫn chọn
