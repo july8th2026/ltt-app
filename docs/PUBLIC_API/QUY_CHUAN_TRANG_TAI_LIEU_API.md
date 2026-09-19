@@ -29,7 +29,9 @@ chốt của chủ sản phẩm (25/08):**
 
 ⚠️ Chốt này đã đi qua hai nhịp, ghi cả hai để không ai đọc nửa chừng: nhịp đầu
 chủ sản phẩm bác riêng `tools`; nhịp sau chốt **cả khu**. Bản đang thi hành là
-nhịp sau. `TRANG_CONG_KHAI` trong `server/routes/developer.py` là **tập rỗng**.
+nhịp sau. `TRANG_CONG_KHAI` trong `server/routes/developer/_chung.py` (tách gói
+thành nhiều tệp sau 25/08, trước đó là một tệp `developer.py` duy nhất) là
+**tập rỗng**.
 
 ⇒ Ranh giới thi hành:
 

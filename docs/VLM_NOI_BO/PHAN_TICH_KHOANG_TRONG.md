@@ -43,7 +43,7 @@ là phần chưa có**, và nó không phải "cắm dây" — nó là một m�
 |---|---|
 | `platform_core/agent/planner.py:41` | `chon_key(category=CHAT, thu_tu_provider=["gemini"])` rồi **tự viết HTTP tới `generativelanguage.googleapis.com`** |
 | `apps/autosubvideo/ai_workflows.py` | tự gọi |
-| `apps/kichban/jobs.py` | tự gọi |
+| `apps/kichban/jobs.py` (app đã gỡ 25/08/2026, Q108/Q109) | tự gọi |
 
 **Hệ quả phải hiểu cho đúng:** thêm `ltt_local_llm` vào `REGISTRY` **sẽ không làm
 app nào dùng nó cả.** Mỗi chỗ gọi đang ghi cứng `thu_tu_provider=["gemini"]` **và**

@@ -124,7 +124,9 @@ không phải phát hiện lại.
    đi `upload_sessions` + presigned PUT (R2 browser-upload còn tắt theo Q48 —
    nhưng client API **không chịu CORS**, nên presigned PUT dùng được như Watch
    Agent).
-7. **Chat không có Job.** `apps/chataistudio/routes.py` giữ/quyết toán credit
+7. **Chat không có Job.** `apps/chataistudio/routes.py` (app đã gỡ 09/09/2026 —
+   xem `apps/chatltt/` cho luồng chat hiện tại, chưa xác minh lại hành vi dưới
+   đây trên app mới) giữ/quyết toán credit
    với `job_id` là **id tin nhắn**, không có dòng `jobs`. Bất cứ ý định public
    hóa chat đều phải migrate sang hợp đồng job trước (xem APP_DISPOSITION).
 
