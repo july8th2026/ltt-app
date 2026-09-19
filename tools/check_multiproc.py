@@ -92,7 +92,25 @@ def _tim_url() -> tuple[str, str]:
     except ImportError:
         return "", "khong co sqlalchemy"
 
-    # Da co san thi dung luon.
+    # 🔴 CO MAT KHAU SUPERUSER THI NOI BANG SUPERUSER — khong bang tai khoan ung
+    #    dung. Do 19/09/2026 (L3 `91ceccd4`): cay chinh co `secrets\app.env` BAN
+    #    DEV (07/09) voi mat khau `ltt_app` DA CU, con mat khau superuser van
+    #    dung. Hai buoc PostgreSQL kia (`do_migration_tren_postgres`,
+    #    `dien_tap_m1_tren_postgres`) dung superuser nen XANH; buoc nay dung
+    #    `ltt_app` nen DO `password authentication failed for user "ltt_app"`
+    #    — va "khep" bang chay lai nang quyen (doc `app.env` production) ba lan.
+    #    Chay lai lan hai con te hon: CSDL da tao o lan dau ⇒ `CREATE` loi
+    #    "already exists" ⇒ tu khai bo qua — do bien thanh bo qua.
+    #
+    # ⭐ Cung quy uoc voi `do_migration_tren_postgres._url_nhap`: CSDL vut di
+    #    (ten chua `test`, rao `tests/pg_scratch.py`) thi superuser AN TOAN hon,
+    #    va phep do khong con phu thuoc mot mat khau thu hai co the lech.
+    pw = _superuser_pw()
+    if pw:
+        dia_chi = base.partition("://")[2].partition("@")[2]
+        return _dung_bang_superuser(sa, pw, dia_chi, scratch_ten)
+
+    # Khong co superuser: CSDL da co san (va tai khoan ung dung noi duoc) thi dung.
     try:
         e = sa.create_engine(scratch, future=True,
                              connect_args={"connect_timeout": 5})
@@ -104,25 +122,30 @@ def _tim_url() -> tuple[str, str]:
         # Khong noi duoc = chua tao, hoac PostgreSQL khong chay. Giu lai ly do
         # de neu buoc duoi cung that bai thi nguoi doc biet vi sao, thay vi chi
         # thay "khong tao duoc" ma khong ro tai buoc nao.
-        vi_sao_khong_noi_duoc = f"{type(exc).__name__}"
-
-    pw = _superuser_pw()
-    if not pw:
-        return "", (f"chua co CSDL {scratch_ten} ({vi_sao_khong_noi_duoc}) va "
+        return "", (f"chua co CSDL {scratch_ten} ({type(exc).__name__}) va "
                     f"khong co mat khau superuser de tao")
+
+
+def _dung_bang_superuser(sa, pw: str, dia_chi: str, scratch_ten: str) -> tuple[str, str]:
+    """URL superuser toi CSDL vut di `scratch_ten`; TAO neu chua co. Khong in mat khau."""
+    scratch = f"postgresql+psycopg://postgres:{pw}@{dia_chi}/{scratch_ten}"
     try:
-        thong_tin, _, dia_chi = base.partition("://")[2].partition("@")
-        # CSDL phai thuoc ve tai khoan cua NEN TANG, khong phai superuser: neu
-        # khong, `ltt_app` khong tao duoc bang trong do va moi test do voi
-        # "permission denied for schema public". Chi lay TEN dang nhap, khong
-        # cham toi mat khau.
-        chu = thong_tin.split(":", 1)[0]
+        e = sa.create_engine(scratch, future=True,
+                             connect_args={"connect_timeout": 5})
+        with e.connect():
+            pass
+        e.dispose()
+        return scratch, ""
+    except Exception as exc:                # noqa: BLE001
+        # Chua tao, hoac PostgreSQL khong chay — buoc duoi se phan xu.
+        vi_sao_khong_noi_duoc = type(exc).__name__
+    try:
         admin_url = f"postgresql+psycopg://postgres:{pw}@{dia_chi}/postgres"
         e = sa.create_engine(admin_url, future=True,
                              isolation_level="AUTOCOMMIT",
                              connect_args={"connect_timeout": 5})
         with e.connect() as c:
-            c.execute(sa.text(f'CREATE DATABASE "{scratch_ten}" OWNER "{chu}"'))
+            c.execute(sa.text(f'CREATE DATABASE "{scratch_ten}"'))
         e.dispose()
         print(f"[i] da tao CSDL test {scratch_ten}")
         return scratch, ""

@@ -384,3 +384,49 @@ def test_nhip_job_js_khong_duoc_dung_defer():
         f"Hoac tep da doi ten (thi SUA mau o day), hoac mot trang thoi hoi "
         f"lai. Ca hai deu phai xem; KHONG duoc de phep kiem nay xanh rong.")
     assert not xau, "nhip_job.js bi `defer`/`async`:\n  " + "\n  ".join(xau)
+
+
+# ── 5. check_multiproc không phụ thuộc mật khẩu tài khoản ứng dụng ──────────
+
+def test_check_multiproc_co_superuser_thi_KHONG_noi_bang_ltt_app(monkeypatch):
+    """🔴 L3 19/09 (`91ceccd4`): `secrets\app.env` bản dev ở cây chính mang mật
+    khẩu `ltt_app` ĐÃ CŨ; superuser vẫn đúng. Hai bước PostgreSQL kia (superuser)
+    xanh, bước này (ltt_app) đỏ `password authentication failed` — "khép" bằng
+    chạy lại nâng quyền ba lượt L3 liền.
+
+    ⭐ Có mật khẩu superuser ⇒ URL CSDL vứt đi dựng bằng `postgres`, không một
+       lần nối nào dùng thông tin đăng nhập của ứng dụng.
+    """
+    import check_multiproc as cm
+    import sqlalchemy as sa
+
+    monkeypatch.delenv("LTT_TEST_DATABASE_URL", raising=False)
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       "postgresql+psycopg://ltt_app:MK_CU@127.0.0.1:5432/lttplatform")
+    monkeypatch.setattr(cm, "_superuser_pw", lambda: "MK_SUPER")
+    noi: list[str] = []
+
+    class E:
+        def __init__(self, url):
+            self.url = url
+
+        def connect(self):
+            noi.append(self.url)
+            if "MK_CU" in self.url:
+                raise RuntimeError("password authentication failed")
+            return self
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_):
+            return None
+
+        def dispose(self):
+            return None
+
+    monkeypatch.setattr(sa, "create_engine", lambda url, **_: E(url))
+    url, ly_do = cm._tim_url()
+    assert ly_do == "" and url.startswith("postgresql+psycopg://postgres:MK_SUPER@127.0.0.1:5432/")
+    assert cm.HAU_TO in url.rsplit("/", 1)[1]
+    assert not [u for u in noi if "ltt_app" in u], f"van noi bang ltt_app: {noi}"
