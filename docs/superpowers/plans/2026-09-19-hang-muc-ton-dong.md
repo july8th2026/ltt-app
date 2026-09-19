@@ -29,7 +29,7 @@
 | T4 | R-06/07 id phiên + bỏ định danh khách khỏi thân gửi B | A (+ LTTCODE ⏸) | ✅ thiết kế `ec046dd3`; mã P1/P2 được làm (T1 đã gộp) | không chuyển header xuống B (X-Conversation-Id tắt huỷ) |
 | T5 | R-16 cảnh báo p95 TTFT + nạp lạnh | A (vận hành) | ✅ mã `3159aa3f` (`tools/canh_bao_ttft_b.py`, 52 test); chờ gộp cùng L3 cuối; lịch chạy do chủ máy tạo | ngưỡng từ số đo 12–18/09 |
 | T6 | Chứng chỉ Authenticode EV + E2E trên máy ảo sạch (B2/B-VM) | chủ dự án | ⛔ ngoài agent | cần mua chứng chỉ |
-| T7 | 5 thư mục worktree rỗng bị khoá tiến trình (`D:\LTTSTUDIOSAPP-{kiem-dinh-ky,np4-35,t17,tich-hop-2,tong-ket}`) | dọn | ⬜ | xoá sau khi tiến trình nhả |
+| T7 | 5 thư mục worktree rỗng bị khoá tiến trình (`D:\LTTSTUDIOSAPP-{kiem-dinh-ky,np4-35,t17,tich-hop-2,tong-ket}`) | dọn | ✅ 19/09 | xoá sau khi máy khởi động lại 08:47 (crash, hộp đen: không quá tải) |
 
 **Tiến độ (19/09 00:1x): ~47 %** — T1 ✅ · T1b 🔵 ~50 % · T1c 🔵 ~10 % · T3 thiết kế ✅ (mã chờ) ~30 % · T4 thiết kế + P1 xong ~55 % · T5 mã xong ~85 % · T7 ⬜ (T2 chuyển sang plan harness H6; T6 thuộc chủ dự án).
 
