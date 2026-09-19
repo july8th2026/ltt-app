@@ -12,6 +12,47 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-19 (tối) — L-33: `ltt-3.8` mặc định `reasoning_effort=medium` toàn nền tảng
+
+Chủ dự án chốt: đảo mức MẶC ĐỊNH của L-26/Q131 (`xhigh` → `medium`); `xhigh` vẫn chọn
+được. Căn cứ: LTTCODE lượt lập plan xhigh 94–99 s, medium 49–81 s, token ra ~½.
+
+- Mã: `runtime_noi_bo.luong.chuan_hoa_suy_nghi` CHÈN `reasoning_effort` mặc định
+  (`examples.CODEX_MODEL_REASONING`, 3.8 = `medium`) khi request model có nấc bỏ trống
+  cả ba chỗ khai ⇒ mọi cửa (đồng bộ/job, `/messages`, `/responses` stream + một cục)
+  nhận medium, budget máy chủ 2.048 (L-32). 3.5 không chèn. Yaml/launcher máy B KHÔNG đổi.
+- Hai chỗ khai → một: `ngan_sach.NGHI_MAC_DINH_THEO_MODEL`, `tools/cam_cli.py`,
+  `sdk/ltt_cai_dat_cli.py` đổi `medium`, `test_1430::test_l33_*` buộc khớp. Mô tả công
+  khai `reasoning_effort`, golden, `CONTRACT_BASELINE.json` (contract_hash `text.chat`
+  đổi, CHANGELOG ghi), DEVELOPER_GUIDE, CODEX_DESKTOP_CONFIG, CLAUDE_CONFIG_MATRIX,
+  HUONG_DAN_CAM_CLI, Q131/Q133, DECISION_LOG L-33.
+- Gate: L2 `--pham-vi core:provider,core:api_cong_khai,app:ltt_llm,sdk,cong_cu`. Lượt 1
+  (`16eed0fc`) bị ngắt do máy A treo 17:28–17:38 — không bản ghi. Lượt 2 (`16eed0fc`)
+  FAIL 2/30: `check_api_compat` + `test_209` (contract_hash đổi CÓ Ý) ⇒ `--accept`
+  (`54ca9d7f`), chạy lại đúng phép đỏ xanh. Lượt 3 (`54ca9d7f`)
+  `test-results/gates/20260919T112630Z-7764.json`: FAIL 1/30 chỉ
+  `test_1259::test_BAN_SAO_khop_may_B` (thiếu `LTT_LLM_BASE_URL`/`TOKEN` — môi trường) ⇒
+  chạy lại qua `nang_quyen` với URL `app.env` + token SSH máy B: 4 passed.
+  ⚠️ `gate.py --doi --tu 16eed0fc` đỏ GIẢ: chỉ còn `test_209` (tệp pha nối tiếp) ⇒
+  pha 1 rỗng, pytest exit 5 bị tính đỏ (35/35 passed) — lỗi `tools/test_nhanh.py`, đã
+  tách task riêng.
+- Deploy `54ca9d7f8950` 18:27–18:29, EXITCODE=0, `nghiem_thu_deploy` 0/0/0,
+  `/health/ready` 200. Còn `?? tests/StudioShell.test.tsx` 0 byte không rõ chủ (không xoá).
+- Production (khoá thử nghiệm, cùng câu hỏi, số token prompt phản ánh câu effort của
+  template): TRƯỚC deploy `/messages` bỏ trống 64 = xhigh 64 (medium 22). SAU deploy
+  bỏ trống 22 = medium 22, xhigh 64 — ở cả `/chat/completions` và `/messages`.
+  `GET /api/v1/models`: `ltt-3.8 default_reasoning_level=medium`.
+
+```text
+PHIEN_XONG
+WORKTREE / BRANCH: D:\LTTSTUDIOSAPP-md38 / phien/md38
+BASE_SHA: 0963fd0d
+SHA_L3 + KET_QUA: không L3 (giữa phiên) — L2 54ca9d7f, phép đỏ môi trường chạy lại xanh
+MAIN_SAU_GOP: 54ca9d7f8950 (+ commit nhật ký này)
+DEPLOY: 54ca9d7f8950, /health/version khớp
+RUI_RO_CON_LAI: client đổi effort giữa lượt mất prompt cache (effort ở đầu prompt)
+```
+
 ## 2026-09-19 — `/lttcode/plugins.json` hết 404: danh mục dshmarket phục vụ tĩnh
 
 `DSHM_REGISTRY_URL` của app LTTCODE trỏ thẳng `https://app.lttstudios.com/lttcode/plugins.json`
