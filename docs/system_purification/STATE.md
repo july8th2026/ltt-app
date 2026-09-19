@@ -20,7 +20,8 @@
 
 ## ⭐ Phase -1 — nen tang nhieu phien (chen truoc, theo yeu cau nguoi dung)
 
-Bao cao: `reports/phase_minus_1_multi_agent_foundation.md`
+Bao cao: `docs/_luutru/2026-09/system_purification/reports/phase_minus_1_multi_agent_foundation.md`
+(da luu tru 19/09 - khong con file/nhanh nao tro toi tru STATE.md nay)
 
 **Vi sao no phai chen truoc:** trong DUNG mot gio dau cua Phase 00 da co **ba**
 su co dieu phoi that giua hai phien cung cay — doi nhanh cua phien khac, gate

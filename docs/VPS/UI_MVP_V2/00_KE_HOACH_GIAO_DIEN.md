@@ -550,7 +550,8 @@ quyết, không phải một phiên Claude.** Đợt 1–7 chạy được đầ
 
 ## 8. Phép kiểm mới sẽ viết
 
-Đặt ở `tests/test_306_vps_giao_dien_mvp.py`. Nguyên tắc từ `test_304`: **chốt
+Đặt ở `tests/test_311_vps_giao_dien_mvp.py` (số hiệu cuối cùng — kế hoạch ghi
+306 lúc viết, đã đổi khi thi hành). Nguyên tắc từ `test_304`: **chốt
 nguyên nhân, không giả vờ chốt kết quả** — ba lỗi nặng nhất của đợt 25/08 đều
 không bắt được bằng cách đọc HTML.
 
