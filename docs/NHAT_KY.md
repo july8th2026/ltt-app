@@ -12,6 +12,26 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-20 (sáng) — C0-34: máy B hết giờ đọc không còn thoát thành 500 / luồng đứt, và không phạt khoá
+
+Lỗi từ LTTCODE 20/09 (`LOI_C0.md` C0-34). Log production 19/09 16:53:18Z: `STREAM LOI rid=5d73ccda
+dur=135.4s ttfb=- khoi=6 token_ra=0` → `unhandled public api error POST /api/v1/messages -> ReadTimeout`.
+Bốn agent con + agent chính cùng gọi `ltt-3.8`; máy B im sau vài nhịp `: ping`.
+
+| | trước | sau |
+|---|---|---|
+| khách | 200 rồi luồng đứt không `message_stop` (LTTCODE: `STREAM_CLOSED`, tự thử lại) | MỘT khối lỗi đúng khuôn: `/messages` `error.type=overloaded_error`, `/responses` `response.failed` `server_is_overloaded` |
+| khoá pool | `_phat` → `mo.hong()` → `api_pool.danh_dau_loi` (5 lần = khoá DUY NHẤT `ltt_llm` sang ERROR — sự cố 19/09) | `httpx.ReadTimeout` KHÔNG phạt khoá, cả giữa luồng lẫn lúc chờ header; `ConnectError` vẫn phạt |
+| tiền | hoàn đủ (đúng sẵn) | giữ nguyên |
+
+- Mã: `luong.luong_co_cho` bắt `httpx.HTTPError` quanh `yield from luot.luong` (khách ngắt `a_da_dong` ⇒ im);
+  `luong._phat` bỏ `mo.hong` khi hết giờ đọc; `luong_vlm.la_het_gio_doc` + nhánh `het_gio` lúc mở;
+  `KhongMoDuoc.het_gio` ⇒ `overloaded`. Cửa đồng bộ đã đúng sẵn (`AmbiguousProviderError` → 503, không phạt).
+- Test: `test_1534` (stream hai cửa + `luong_vlm.mo`, có đối chứng âm `ReadError`/`ConnectError`),
+  `test_1535` (`/chat/completions` 503 + hoàn). Chạy trên mã CŨ: 4 đỏ.
+- Gate L2 `--pham-vi core:provider` PASS trên `42c79a26` (`test-results/gates/20260919T211212Z-13968.json`).
+- Deploy `42c79a26` lúc 04:15 (+07), `nghiem_thu_deploy` DAT (lệch/thiếu/thừa = 0), `/health/ready` 200;
+  lượt stream thật sau deploy: `STREAM XONG` 21:15:45Z.
 ## 2026-09-19 (tối) — Dọn đỏ tồn đọng của gate: 4 gốc, không nới phép kiểm nào
 
 Nhánh `phien/sua-test-do` (gốc `b388cd72`). Kiểm kê từ nhật ký + bản ghi phiên (bản ghi gate cũ đã mất theo worktree).
