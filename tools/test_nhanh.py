@@ -504,7 +504,7 @@ def _la_duong_test(doi_so: str) -> bool:
 
 
 def ke_hoach_pha(con_lai: list[str], n: str, *,
-                 them: tuple[str, ...] | list[str] = ()) -> tuple[list[str], list[str] | None]:
+                 them: tuple[str, ...] | list[str] = ()) -> tuple[list[str] | None, list[str] | None]:
     """`(argv pha 1, argv pha 2 | None)` — MOT cho duy nhat dung hai lenh pytest.
 
     🔴 SU CO 17/09/2026 (tests/test_1500). Ban cu dung `chung = [..., *con_lai]`
@@ -519,6 +519,13 @@ def ke_hoach_pha(con_lai: list[str], n: str, *,
        - Co DANH SACH: pha 1 = danh sach (ba tep ghi cay bi `--deselect`); pha 2 =
          CHI nhung muc ghi cay CO TRONG danh sach. Khong co muc nao ⇒ khong pha 2.
        - Tuy chon pytest (`-x`, `-p ...`) giu nguyen o CA HAI pha.
+       - Danh sach CHI gom tep ghi cay ⇒ pha 1 = None (khong phong).
+
+    🔴 DO GIA 19/09/2026 (`gate.py --doi --tu 16eed0fc`, tests/test_1500): delta
+       chi con `test_209`. Pha 1 nhan dung tep do ROI `--deselect` chinh no ⇒
+       pytest "no tests ran", ma 5 ⇒ `RESULT: FAIL` trong khi pha 2 xanh 35/35.
+       ⛔ Va KHONG duoc "sua" bang cach bo tep khoi pha 1 roi van phong: pytest
+       khong co duong dan = chay CA KHO.
     """
     tuy_chon = [a for a in con_lai if not _la_duong_test(a)]
     duong = [a.replace("\\", "/") for a in con_lai if _la_duong_test(a)]
@@ -534,6 +541,8 @@ def ke_hoach_pha(con_lai: list[str], n: str, *,
         pha1_duong = []
         co = [t for t in TEP_NOI_TIEP if (GOC / t).is_file()]
     loai = [f"--deselect={t}" for t in TEP_NOI_TIEP]
+    if duong and all(ghi_cay(d) for d in duong):
+        return None, [*goc, *co]
     pha1 = [*goc, *pha1_duong, "-n", str(n), "--dist", "loadfile", *loai]
     return pha1, ([*goc, *co] if co else None)
 
@@ -607,8 +616,12 @@ def _than(args, con_lai: list[str]) -> int:
 
     # ── Pha 1: song song, TRU cac tep lam ban cay ────────────────────────────
     pha1, pha2 = ke_hoach_pha(con_lai, args.n, them=them)
-    ma1, t1 = _chay(pha1,
-                    f"PHA 1 - song song ({args.n} worker), tru {len(TEP_NOI_TIEP)} tep")
+    ma1, t1 = (0, 0.0)
+    if pha1 is None:
+        print(NL_IN + "[pha 1] danh sach chi gom tep ghi cay -> khong co gi chay song song.")
+    else:
+        ma1, t1 = _chay(pha1,
+                        f"PHA 1 - song song ({args.n} worker), tru {len(TEP_NOI_TIEP)} tep")
 
     # ── Pha 2: cac tep ghi vao cay kho, noi tiep ─────────────────────────────
     # ⛔ Chay ca khi pha 1 do: bo qua chung se lam bao cao cuoi noi doi ve do phu.

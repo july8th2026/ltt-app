@@ -77,8 +77,11 @@ def test_danh_sach_khong_co_tep_ghi_cay_thi_KHONG_co_pha_2():
 
 
 def test_tuy_chon_pytest_duoc_giu_o_ca_hai_pha_va_khong_bi_coi_la_tep():
+    # Cần một tệp KHÔNG ghi cây: chỉ có `b` thì pha 1 không tồn tại (đỏ giả 19/09,
+    # xem `test_danh_sach_CHI_co_tep_ghi_cay_thi_KHONG_co_pha_1`).
+    a = "tests/test_1300_lttcode_phat_hanh.py"
     b = "tests/test_306_banh_coc_bo_qua_va_dich.py"
-    pha1, pha2 = _ke_hoach(["-x", "-p", "no:cacheprovider", b])
+    pha1, pha2 = _ke_hoach(["-x", "-p", "no:cacheprovider", a, b])
     for pha in (pha1, pha2):
         assert "-x" in pha and "no:cacheprovider" in pha
     assert _tep_trong(pha2) == [b]
@@ -89,6 +92,32 @@ def test_node_id_cua_tep_ghi_cay_di_vao_pha_2():
     pha1, pha2 = _ke_hoach(["tests/test_1300_lttcode_phat_hanh.py", nid])
     assert nid not in pha1
     assert _tep_trong(pha2) == [nid]
+
+
+def test_danh_sach_CHI_co_tep_ghi_cay_thi_KHONG_co_pha_1():
+    """🔴 Đỏ giả 19/09 (`gate.py --doi --tu 16eed0fc`): delta chỉ còn `test_209`.
+
+    Pha 1 nhận đúng tệp đó RỒI `--deselect` chính nó ⇒ pytest "no tests ran",
+    mã 5 ⇒ `RESULT: FAIL` dù pha 2 chạy 35/35 xanh. Không có gì cho pha 1 thì
+    KHÔNG phóng pha 1 — và tuyệt đối không phóng pha 1 KHÔNG đường dẫn (= cả kho).
+    """
+    b = "tests/test_209_versioning_status.py"
+    pha1, pha2 = _ke_hoach([b])
+    assert pha1 is None, f"pha 1 chi deselect chinh no -> ma 5: {pha1}"
+    assert _tep_trong(pha2) == [b]
+
+
+def test_than_pha_1_rong_thi_ma_theo_pha_2(monkeypatch):
+    """Phép kiểm HÀNH VI: chỉ tệp ghi cây ⇒ một lần gọi (pha 2), mã = mã pha 2."""
+    goi: list[list[str]] = []
+    monkeypatch.setattr(tn, "_chay", lambda argv, nhan: (goi.append(list(argv)), (0, 0.0))[1])
+    b = "tests/test_306_banh_coc_bo_qua_va_dich.py"
+
+    class A:
+        n = "3"; lf = False; lf_rong_thi_khong_chay = False; k = ""; noi_tiep = False  # noqa: E702
+
+    assert tn._than(A(), [b]) == 0
+    assert len(goi) == 1 and _tep_trong(goi[0]) == [b] and "-n" not in goi[0], goi
 
 
 def test_than_DUNG_ke_hoach_pha_khi_chay_that(monkeypatch):
