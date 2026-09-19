@@ -1,3 +1,5 @@
+> LƯU TRỮ 2026-09-19 — không còn đúng hệ thống hiện tại; thay bằng: `apps/upscalevideo/`, `apps/autosubvideo/` + `docs/KE_HOACH_TON_DONG.md` (việc hoãn). Chỉ đọc để hiểu lịch sử.
+
 # Kế hoạch xây 2 app: UPSCALE VIDEO + AUTO SUB VIDEO
 
 > Lập 2026-08-01. Theo quy trình mới: **người dùng chỉ định app←module**, Claude

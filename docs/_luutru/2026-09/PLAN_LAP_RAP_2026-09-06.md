@@ -1,3 +1,5 @@
+> LƯU TRỮ 2026-09-19 — không còn đúng hệ thống hiện tại; thay bằng: `docs/KE_HOACH_TRIEN_KHAI.md`. Chỉ đọc để hiểu lịch sử.
+
 # Plan lắp ráp — thay tự suy bằng công cụ cộng đồng
 
 > Lập 2026-09-06 sau khi chủ dự án chỉ ra: quá trình xây dựng **chậm** vì tự suy

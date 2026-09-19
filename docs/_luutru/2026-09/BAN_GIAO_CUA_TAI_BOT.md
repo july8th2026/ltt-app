@@ -1,3 +1,5 @@
+> LƯU TRỮ 2026-09-19 — không còn đúng hệ thống hiện tại; thay bằng: `docs/NHAT_KY.md` (bàn giao một lần cho kho `D:\FULL AUTO VIDEO`). Chỉ đọc để hiểu lịch sử.
+
 # BÀN GIAO — cửa tải cho bot `D:\FULL AUTO VIDEO`
 
 Viết 2026-09-03 bởi phiên `auto-scan-video-v4-mvp` (làm việc ở `D:\LTTSTUDIOSAPP`).

@@ -1,3 +1,5 @@
+> LƯU TRỮ 2026-09-19 — không còn đúng hệ thống hiện tại; thay bằng: `docs/KE_HOACH_TRIEN_KHAI.md`. Chỉ đọc để hiểu lịch sử.
+
 # Kế hoạch hoàn tất — 37 hạng mục còn lại
 
 Viết 07/09/2026, sau khi `PLAN_LAP_RAP_2026-09-06.md` đóng 17/19 hạng mục.

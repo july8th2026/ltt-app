@@ -1,3 +1,5 @@
+> LƯU TRỮ 2026-09-19 — không còn đúng hệ thống hiện tại; thay bằng: mã nguồn hiện tại `server/templates/`, `server/static/`. Chỉ đọc để hiểu lịch sử.
+
 ==============================================================================
 LTTSTUDIOSAPP - TOAN BO MA NGUON GIAO DIEN
 Xuat tu: D:\LTTSTUDIOSAPP
