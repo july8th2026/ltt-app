@@ -126,6 +126,10 @@ Cả sáu đo **tok/s ở N luồng**. Cả sáu đã từng cho ra ít nhất m
 `do_cong_mop.py` · `do_ngat_sync_tra_slot.py` · `go_ket_nha_llm.py` ·
 `kiem_prod_thua_tep.py` · `hoi_alembic.py`
 
+> Kiểm 19/09: cả chín script trên **chưa từng vào git** (`git log --all` rỗng) và không còn
+> trên đĩa — chúng là script scratchpad phiên. "Giữ lại" là phán quyết phân loại, chưa
+> được thực hiện; cần đầu dò nào thì viết lại và commit vào `tools/`.
+
 ⛔ Chúng **không** đo tốc độ. Xoá chúng là mất khả năng trả lời *"sau khi một
 lượt kết thúc bất thường thì còn sót gì"* — câu mà ba cổng M/O/P cùng hỏi và
 không bộ benchmark nào trả lời được.

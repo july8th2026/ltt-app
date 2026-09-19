@@ -76,7 +76,7 @@ không bao giờ thấy.)*
 ⚠️ **Một tồn tại ngoài phạm vi, không phải của tôi:** `/huong-dan/cong-cu` tràn
 ngang ở 390px (tài liệu 420 > 390, thủ phạm là một phần tử `code` rộng 462px).
 Có **trước** mọi thay đổi trong lượt này. Trang công khai, thuộc phạm vi
-`docs/ui_stabilization/` của phiên khác.
+`docs/ui_stabilization/` (nay lưu trữ ở `docs/_luutru/2026-09/ui_stabilization/`) của phiên khác.
 
 ## Ảnh chụp
 

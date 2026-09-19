@@ -61,7 +61,7 @@ phân loại *"hỏi nó trả lời câu gì, đừng nhìn tên nó"* (bộ đ
 |---|---|---|
 | **serving** (cổng D/E/F) | **GuideLLM 0.7.3** + cầu `Idempotency-Key` | `tools/do_thong_luong/chay_guidellm.sh` · `cau_idem.py` |
 | **engine** (máy B) | `bench.py` · `llama-batched-bench` | `docs/ltt_llm_dual/artifacts/bench/bench.py` |
-| **trạng thái** (lease · credit · residency) | đầu dò riêng — GuideLLM không biết lược đồ của ta | `tools/soi_lease_tien.py`, `dem_lease.py`, … |
+| **trạng thái** (lease · credit · residency) | đầu dò riêng — GuideLLM không biết lược đồ của ta | chưa có trong kho — `soi_lease_tien.py`, `dem_lease.py`, … là script scratchpad phiên, chưa từng commit, không còn trên đĩa (kiểm 19/09; `BO_DO_CHUAN.md` §7) |
 
 ## 2b. ⛔ BỘ ĐO LÀ THỨ MƯỢN, KHÔNG PHẢI THỨ TỰ XÂY
 
