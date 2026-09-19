@@ -1619,6 +1619,18 @@ class LuotLuong:
     ket_qua: Any = None
     #: "xong" | "khach_ngat" | "loi" — điền khi luồng kết thúc.
     ket_thuc: str = ""
+    #: 🔴 PHÍA A đã tự đóng cửa ra máy B (`dong_nguon`, đường huỷ khi khách đi).
+    #:
+    #: Sự cố 19/09/2026: khách (qua Cloudflare) huỷ luồng ⇒ `bat_dong_bo_hoa`
+    #: gọi `dong_nguon` ⇒ lượt đọc đang chặn ở luồng threadpool vỡ bằng
+    #: `httpx.ReadError` (tái hiện 5/5, httpx 0.28.1) — **không** phải
+    #: `GeneratorExit`. `_phat` ghi nó thành `STREAM LOI` rồi `mo.hong()` ⇒
+    #: `api_pool.danh_dau_loi` nhánh 5xx/mạng. Năm lượt khách đi liền nhau là
+    #: khoá DUY NHẤT của `ltt_llm` sang `APIKEY_ERROR` và mọi khách nhận 500.
+    #:
+    #: ⇒ Lỗi đọc xảy ra SAU khi cờ này dựng là hệ quả của việc ta đóng, không
+    #:   phải lỗi của thượng nguồn. Test: `test_1523_khach_ngat_khong_phat_khoa`.
+    a_da_dong: bool = False
     #: Đã quyết toán chưa. Cờ này làm việc quyết toán **idempotent** giữa hai
     #: đường độc lập — xem `dam_bao_quyet_toan`.
     da_quyet_toan: bool = False
@@ -1740,6 +1752,12 @@ def mo_thuong_nguon(cb: ChuanBi, *, timeout_s: float = MO_LUONG_GIAY,
 
     metrics.increment("chat:stream")
     luot = LuotLuong(chuan_bi=cb, content_type=mo.content_type)
+    gan_luong(mo, luot, trang_thai=trang_thai)
+    return luot
+
+
+def gan_luong(mo, luot: LuotLuong, *, trang_thai=None) -> None:
+    """Nối một luồng đã mở (`LuongMo`) vào `luot`: `luong` và `dong_nguon`."""
     luot.luong = _phat(mo, luot, trang_thai=trang_thai)
     # Mang theo đường đóng THẲNG tới httpx. Đường huỷ cần nó vì `luong.close()`
     # ném khi luồng đọc còn đang chạy — xem `dong_nguon` ở `LuotLuong`.
@@ -1753,8 +1771,19 @@ def mo_thuong_nguon(cb: ChuanBi, *, timeout_s: float = MO_LUONG_GIAY,
     #    `danh_dau_loi`, bản giả không giữ tham chiếu, `Test-Path` trên thư mục
     #    rỗng). Luật rút ra: **bên tiêu thụ phải khoan dung với bản giả**, y như
     #    một hàm giả nhận `**kw` thay vì liệt kê tham số.
-    luot.dong_nguon = getattr(mo, "dong_nguon", None)
-    return luot
+    dong = getattr(mo, "dong_nguon", None)
+    if not callable(dong):
+        luot.dong_nguon = None
+        return
+
+    def _a_dong_nguon() -> None:
+        # 🔴 DỰNG CỜ TRƯỚC, ĐÓNG SAU (sự cố 19/09). Đóng `httpx.Client` làm lượt
+        #    đọc đang chặn ở luồng kia vỡ bằng `httpx.ReadError`; `_phat` phải
+        #    biết lỗi ấy là do CHÍNH TA đóng — xem `LuotLuong.a_da_dong`.
+        luot.a_da_dong = True
+        dong()
+
+    luot.dong_nguon = _a_dong_nguon
 
 
 def mo_luong_tho(db, *, user_id: str, tool_name: str, than: dict, duong: str,
@@ -1823,7 +1852,12 @@ def _phat(mo, luot: LuotLuong, *, trang_thai=None) -> Generator[bytes, None, Non
             khach_ngat = True
             raise
         except BaseException as e:                              # noqa: BLE001
-            vo = e
+            if luot.a_da_dong:
+                # Ta đóng cửa ra máy B vì khách đi ⇒ lượt đọc vỡ. KHÁCH NGẮT,
+                # không phải thượng nguồn hỏng — xem `LuotLuong.a_da_dong`.
+                khach_ngat = True
+            else:
+                vo = e
             raise
         finally:
             dt = time.monotonic() - t0
