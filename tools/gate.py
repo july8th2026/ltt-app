@@ -499,6 +499,24 @@ def _npm() -> str | None:
     return shutil.which("npm")
 
 
+def _nap_moi_truong_test(steps: list, env=None) -> str:
+    """Cap moi truong ma bo test CAN nhung luot gate chua tung cap (may B).
+
+    🔴 `test_1259::test_BAN_SAO_khop_may_B` co y DO khi thieu
+       `LTT_LLM_BASE_URL`/`LTT_LLM_TOKEN`. Gate khong cap hai bien do ⇒ L3
+       16/09, 17/09, 18/09 va 19/09 deu do dung phep nay, roi "khep" bang mot
+       script tay doc token qua SSH. Nay gate tu nap (chi trong bo nho, tien
+       trinh con thua ke `os.environ`), xem `tools/moi_truong_may_b.py`.
+
+    Tra dong trang thai ASCII (khong chua token), hoac "" khi luot khong co
+    buoc bo test.
+    """
+    if not any(s.name.startswith("bo test") for s in steps):
+        return ""
+    from moi_truong_may_b import nap_env_may_b
+    return nap_env_may_b(os.environ if env is None else env)
+
+
 def _ap_ngan_sach_thuc(steps: list, phien: str) -> None:
     """Sua lai `-n` cua buoc `bo test` theo ngan sach THUC, sau khi da giu khoa.
 
@@ -1906,6 +1924,9 @@ def main() -> int:
             print("  [cua so yen] dang CHEN - ngan sach se tu tut xuong theo "
                   "phan luot kia dang giu (B3, xem cua_so_yen.chay_khong_khoa)")
         _ap_ngan_sach_thuc(steps, phien)
+        _may_b = _nap_moi_truong_test(steps)
+        if _may_b:
+            print(f"  [may B] {_may_b}")
 
         cay_dau = _anh_chup_cay()
         dong = f"Gate [{ho_so}]: {len(steps)} buoc"

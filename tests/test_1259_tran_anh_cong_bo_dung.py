@@ -130,3 +130,68 @@ def test_BAN_SAO_khop_may_B():
         assert int(that["max_image_bytes"]) == ANH_BYTE_TOI_DA, (
             f"may B cuong che {that['max_image_bytes']} byte nhung ta cong bo "
             f"{ANH_BYTE_TOI_DA}")
+
+
+# ── Gate CAP moi truong cho phep doi chieu tren (do ton dong L3 16-19/09) ────
+
+def _nap():
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
+    import moi_truong_may_b as m
+    return m
+
+
+def _ssh_gia(stdout: str, ma: int = 0):
+    goi: list = []
+
+    def chay(argv, **kw):
+        import subprocess
+        goi.append(argv)
+        return subprocess.CompletedProcess(argv, ma, stdout=stdout, stderr="")
+    return chay, goi
+
+
+def test_nap_env_may_b_dat_ca_hai_bien_va_KHONG_lo_token(tmp_path):
+    m = _nap()
+    khoa = tmp_path / "nexus_b"
+    khoa.write_text("x")
+    chay, goi = _ssh_gia("LTT_LLM_TOKEN=bi-mat-123\r\n")
+    env: dict = {}
+    dong = m.nap_env_may_b(env, chay=chay, khoa=khoa)
+    assert env == {"LTT_LLM_TOKEN": "bi-mat-123", "LTT_LLM_BASE_URL": m.URL_CONG_LLM_B}
+    assert "bi-mat-123" not in dong and dong.isascii()
+    assert "BatchMode=yes" in goi[0] and m.MAY_B in goi[0]
+
+
+def test_nap_env_may_b_khong_hoi_duoc_thi_KHONG_dat_gi(tmp_path):
+    """Không nới phép kiểm: không có token ⇒ env nguyên vẹn ⇒ test_BAN_SAO vẫn ĐỎ."""
+    m = _nap()
+    env: dict = {}
+    assert "khong co khoa" in m.nap_env_may_b(env, khoa=tmp_path / "vang")
+    khoa = tmp_path / "nexus_b"
+    khoa.write_text("x")
+    chay, _ = _ssh_gia("", ma=255)
+    assert "DO" in m.nap_env_may_b(env, chay=chay, khoa=khoa)
+    assert env == {}
+
+
+def test_nap_env_may_b_giu_bien_da_dat_san(tmp_path):
+    m = _nap()
+    chay, goi = _ssh_gia("LTT_LLM_TOKEN=khac\n")
+    env = {"LTT_LLM_BASE_URL": "http://tu-cap:1", "LTT_LLM_TOKEN": "tu-cap"}
+    m.nap_env_may_b(env, chay=chay, khoa=tmp_path / "nexus_b")
+    assert env == {"LTT_LLM_BASE_URL": "http://tu-cap:1", "LTT_LLM_TOKEN": "tu-cap"} and goi == []
+
+
+def test_gate_nap_moi_truong_KHI_VA_CHI_KHI_luot_co_bo_test(monkeypatch):
+    """Hành vi, không phải hình dạng mã: gate gọi bộ nạp đúng lúc có `bo test`."""
+    m = _nap()
+    import gate
+    goi: list = []
+    monkeypatch.setattr(m, "nap_env_may_b", lambda env: (goi.append(env), "ok")[1])
+    env: dict = {}
+    assert gate._nap_moi_truong_test([gate.Step("ruff", ["x"], ".")], env) == ""
+    assert goi == []
+    assert gate._nap_moi_truong_test([gate.Step("bo test (song song)", ["x"], ".")], env) == "ok"
+    assert goi == [env]
