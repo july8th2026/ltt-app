@@ -113,7 +113,7 @@ nói nó đã thay thế mã cũ. Sửa là một câu, nhưng nó chạm nội 
 **để chủ sản phẩm quyết**, không tự làm.
 
 **3. `/huong-dan/cong-cu` tràn ngang ở 390 px.** Có trước lượt này, trang công
-khai, thuộc phạm vi phiên khác (đã lưu trữ: `docs/_luutru/2026-09/ui_stabilization/`).
+khai, thuộc phạm vi phiên khác (`docs/ui_stabilization/`).
 
 **4. Cache của Cloudflare.** `ltt.css` đổi ⇒ `asset_ver` (hash nội dung) đổi ⇒
 URL đổi ⇒ tới người dùng ngay. Nhưng **trang HTML** phải giữ `Cache-Control:
