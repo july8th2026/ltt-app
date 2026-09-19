@@ -12,6 +12,16 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-19 — N2: tồn đọng LLM lên production (deploy B + hai lượt deploy A)
+
+- **Lượt 1** — nhánh `phien/tich-hop-ton-dong` (T1b lọc `</think>` + cờ B L-31, T4 P1, T5, T1c + L-32 budget suy nghĩ 3.8 theo mức) + hoà `main`. Xung đột duy nhất `DECISION_LOG.md` (giữ L-31 rồi L-32). Test nhắm 1215/1430/1519: 178 xanh.
+  - L2 10 thành phần trên `7664624c`: 29/30, đỏ `bo qua im lang` — chỗ bỏ qua mới `test_1511::test_postgres_migration_len_xuong_trong_schema_rieng` (cần PG vứt đi, cùng loại test_179/test_73); `check_bo_qua.py --accept` (+ gỡ `test_1025` đã hết bỏ qua) `704c5ef9`; khép `gate.py --doi --tu 7664624c` xanh; hoà `main` + `--doi --tu 704c5ef9` xanh trên `6dba96da`.
+  - Deploy B: `deploy.ps1 -GhiDeYamlLech -BoQuaVenv` (yaml B trước = `main` cũ `1034636e…`, chụp ở `releases/auto-20260919-074004`); yaml B = kho `deefbb9b…`; llama-swap tự nạp lại, hai model `ready`, `/upstream/*/health` 200, cờ `--reasoning-budget-message` có trong `/running`. Không restart dịch vụ. Dọn `llama-swap.yaml.l31-tam`, `l31_b.ps1`.
+  - Deploy A `6dba96da` 07:43, `nghiem_thu_deploy` DAT (0 lệch/thiếu/thừa). Production: 3.5 bốn cửa × max 400/1500 × n=2 — 0 rỗng, 0 lọt thẻ (`/chat/completions` max 400 trả 400 "dưới 1024" đúng thiết kế); 3.8 `/messages` bài domino: low 3,3k ký tự nghĩ/32 s, xhigh 10,7k/83 s, cả hai ra 153.
+- **Lượt 2** — gộp `phien/sua-khoa-pool` @ `33526c07` (chứa T4 P2 + sửa `tool_choice` cửa stream + sửa gốc sự cố khoá `ltt_llm` 06:54–07:10). Một head alembic `e4a19c07b5d2` ← `b7d41e2c9a05`. Test nhắm 10 tệp: 315 xanh. L2 6 thành phần trên `ffdb4044` xanh. Deploy **chỉ A** `ffdb4044` 08:12, migration chạy, `nghiem_thu_deploy` DAT.
+  - Production: `/messages` stream `tool_choice` `{type:tool}` và `{type:auto}` 200 (ra `tool_use`), tên tool lạ 400, `/responses` stream `{type:function}` 200 — cả 3.8 và 3.5. Khách ngắt giữa luồng ⇒ `ltt-server.jsonl` có `STREAM KHACH_NGAT`; khoá `ltt_llm` giữ `active`, `error_count=0` sau mỗi lượt nghiệm thu.
+- Còn lại: gỡ `DUNG_EVAL.txt` (phiên chính); T3 pha 0 + mã; T7.
+
 ## 2026-09-18 — Máy B: `--cache-ram 24576`/model + sàn RAM cổng LLM 48 → 24 (L-25)
 
 - Chủ dự án chốt sàn 48 sai chỗ. Tra nguồn: sàn chép từ dự án video/ComfyUI (`CHIA_GPU_VOI_VIDEO.md` §1) vào cổng LLM (`b81b1841`); `--cache-ram` = một bộ đệm/tiến trình, MiB, checkpoint sống của slot ngoài trần (llama.cpp `server-task.cpp`, PR #16391, #25437).
