@@ -61,6 +61,14 @@ trên nhánh admin-mvp-v3 lúc đó"), không phải câu khẳng định LUẬT
 tắc đang áp dụng); đổi tên nhánh trong câu tường thuật lịch sử sẽ SAI sự thật
 (việc đó thật sự chạy trên `admin-mvp-v3`, không phải `main`). Không sửa.
 
+**Con trỏ NGOÀI CỤM L-E — liệt kê cho điều phối/L-C, KHÔNG tự sửa** (luật chống
+dọn nhầm mục 2):
+- `docs/developer_portal_mvp_ui/06_BROWSER_QA.md:79` và
+  `docs/developer_portal_mvp_ui/09_FINAL_MVP_REPORT.md:116` — cả hai trỏ
+  `docs/ui_stabilization/`. Thư mục đó đã lưu trữ 19/09 (L-E) sang
+  `docs/_luutru/2026-09/ui_stabilization/`. `developer_portal_mvp_ui/` thuộc
+  cụm L-C — nhờ L-C hoặc điều phối sửa 2 dòng này khi gộp.
+
 **CHƯA rõ, chưa sửa** (2 dòng, cần chủ dự án hoặc lượt sau):
 - `docs/vps_v2/ADR_INDEX.md:21`, `BASELINE.md:152`, `KNOWN_BLOCKERS.md:30`,
   `RELEASE_SCORECARD.md:3` — đều trỏ `CORE/TARGET_ARCHITECTURE.md` /
