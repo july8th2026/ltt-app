@@ -17,7 +17,7 @@
 | Remote duy nhất | `origin` → `github.com/giaitritruyenthongltt-spec/LTTSTUDIOSAPP` (**riêng tư**) · cấu hình dùng chung mọi worktree · xác thực qua Windows Credential Manager |
 | Trunk | `main` |
 | Deploy đi từ | **cây chính** `D:\LTTSTUDIOSAPP` — `setup\2-cai-dat.ps1` **từ chối** chạy từ worktree |
-| Deploy chép | **cả cây** (trừ danh sách `/XD` trong `setup\2-cai-dat.ps1`) — kể cả `docs/` và tệp chưa theo dõi |
+| Deploy chép | **bản xuất `git archive` của HEAD cây chính** (từ 08/09, `1e520ae0`) — mọi commit trên `main`, kể cả `docs/` — cộng danh sách vận chuyển `$VAN_CHUYEN` (tệp gitignored production đọc lúc chạy: `apps\*\vendor`, `yolov8n.pt`). Tệp chưa commit **không** lên. Không đọc được commit ⇒ đường lùi chép cây sống (script in cảnh báo) |
 
 ⛔ `D:\LTTBackups` **không** phải nơi đẩy mã; ACL chặn ở đó là **cố ý** (W1.5) — đừng
 `icacls`. Bản sao off-site là GitHub riêng tư.
@@ -29,16 +29,18 @@ git -C D:\LTTSTUDIOSAPP status --porcelain    # phải RỖNG
 ```
 
 - ⛔ **Một dòng `??` lạ là một PHIÊN KHÁC đang viết dở**, không phải rác — cho tới khi
-  chứng minh ngược lại. Nó sẽ lên production nguyên trạng. Báo phiên đó, **không xoá**,
-  không `stash`. `ListAgents` chỉ thấy phiên tồn tại **lúc hỏi**.
-- **Báo** các phiên đang chạy rằng bạn sắp deploy (deploy chép cả cây, mang cả mã của
-  họ đã vào `main`) — báo, không chờ.
+  chứng minh ngược lại. Bản xuất chỉ mang commit nên nó không lên production — trừ khi
+  nằm trong `$VAN_CHUYEN` hoặc deploy rơi về đường lùi chép cây sống. Báo phiên đó,
+  **không xoá**, không `stash`. `ListAgents` chỉ thấy phiên tồn tại **lúc hỏi**.
+- **Báo** các phiên đang chạy rằng bạn sắp deploy (deploy xuất HEAD cây chính, mang cả
+  mã của họ đã vào `main`, và khởi động lại dịch vụ) — báo, không chờ.
 - Có **gate xanh** trên **đúng SHA** của `main` sắp deploy (hợp đồng §8): giữa phiên
   L1 `gate.py --doi --tu <sha bản đang chạy>` hoặc L2 `--pham-vi <tp>[,<tp>…]` (một lượt cho mọi thành phần chạm); tổng kết phiên L3
   (xanh/đỏ đã khép). ⛔ Không chạy L3 chỉ để deploy; test nhắm một mình không đủ.
 - Migration: `main` mới có head alembic khác bản đang chạy? Đọc trước khi chép.
-- Production có tệp mà `main` không có? Deploy chép cả cây nên tệp ấy bị **xoá lặng lẽ**
-  — đối chiếu `C:\LTTPlatform\app` với cây trước khi chép.
+- Production có tệp mà `main` không có? `app\` bị thay toàn bộ bằng bản xuất nên tệp ấy
+  bị **xoá lặng lẽ** (trừ `$VAN_CHUYEN`) — đối chiếu `C:\LTTPlatform\app` với commit
+  trước khi chép.
 
 Ba phép kiểm **cố ý không nằm trong gate** (cần mạng / máy chủ đang chạy / phiên trình
 duyệt — đỏ vì môi trường là thứ dạy người ta bỏ qua màu đỏ):
@@ -88,9 +90,9 @@ chuyển động; chỉ commit đứng yên.
 
 Đổi giao diện ⇒ nghiệm thu trên trình duyệt ở URL công khai (hợp đồng §9).
 
-📌 Nợ còn mở **D1**: `/XD` của robocopy lọc theo **tên thư mục**, không theo trạng
-thái git — tệp chưa theo dõi ở thư mục ngoài danh sách vẫn lên production. Vì vậy
-bước `status --porcelain` rỗng ở §1 là bắt buộc.
+📌 Nợ **D1** (`/XD` của robocopy lọc theo tên thư mục, không theo trạng thái git) chỉ
+còn ở **đường lùi** chép cây sống — đường chính chép bản xuất commit. Vì vậy bước
+`status --porcelain` rỗng ở §1 vẫn giữ.
 
 ## 4. Đẩy GitHub
 
@@ -113,7 +115,8 @@ Máy B (`render_gateway`, `llm_gateway`, ComfyUI, llama-swap) **không** nhận 
 
 ## 6. Cây chính là bề mặt deploy của MỌI phiên
 
-Mọi lượt deploy chép từ `D:\LTTSTUDIOSAPP`, nên một tệp sửa dở ở cây chính lên máy
-chủ trong lượt deploy của **người khác**. ⇒ Không làm việc dở ở cây chính; mỗi phiên
+Mọi lượt deploy xuất HEAD của `D:\LTTSTUDIOSAPP`, nên một commit dở trên cây chính
+(hoặc tệp sửa dở, nếu rơi về đường lùi) lên máy chủ trong lượt deploy của **người
+khác**. ⇒ Không làm việc dở ở cây chính; mỗi phiên
 làm trong worktree riêng (hợp đồng §5). Cần một cây sạch để đo:
 `git worktree add --detach <tmp> HEAD` — không `stash` cây dùng chung.

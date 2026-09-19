@@ -57,7 +57,8 @@ docs/00_LTT_OPERATING_CONTRACT.md      ← đọc trước việc thực chất
    `python tools\tai_may.py` (`QUÁ TẢI` → chờ). pytest gõ tay `-n` tối đa 6. Hợp đồng §4.8.
 4. **Dòng `??` lạ trong `git status` là một PHIÊN KHÁC**, không phải rác. Không
    `stash`, `reset`, `checkout --`. `git add` tường minh từng tệp.
-5. **Deploy chép CẢ CÂY nguồn** ⇒ báo các phiên đang chạy trước (`ListAgents`).
+5. **Deploy xuất HEAD cây chính** (`git archive` — mọi commit trên `main` của mọi phiên)
+   ⇒ báo các phiên đang chạy trước (`ListAgents`).
 6. **Ghi cấu hình KHÔNG BOM** · `.ps1` thuần ASCII · không viết Python inline qua
    PowerShell. Cả ba đã làm sập production. Toàn văn: `AGENTS.md` §5.
 

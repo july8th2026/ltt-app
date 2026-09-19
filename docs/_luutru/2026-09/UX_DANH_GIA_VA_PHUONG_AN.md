@@ -1,3 +1,5 @@
+> LƯU TRỮ 2026-09-19 — không còn đúng hệ thống hiện tại; thay bằng: `docs/DESIGN_SYSTEM_LTT.md`. Chỉ đọc để hiểu lịch sử.
+
 # Đánh giá UX/UI + phương án nâng tầm — 2026-08-01
 
 > **✅ Pha UX‑1 ĐÃ XÂY XONG + deploy 2026-08-01** (phương án D). Đã làm: tách
