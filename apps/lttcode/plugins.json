@@ -1,0 +1,157 @@
+{
+  "name": "lttcode-plugins",
+  "url": "https://app.lttstudios.com",
+  "source": "LTTCODE curated subset of awesome-dsh-plugin (CC0-1.0) https://github.com/awesome-dsh-plugin/awesome-dsh-plugin",
+  "updated": "2026-09-19",
+  "count": 6,
+  "categories": {
+    "market": {
+      "en": "Plugin Markets & Managers",
+      "zh": "插件市场与管理"
+    },
+    "tools": {
+      "en": "Tools & Capabilities",
+      "zh": "工具与能力"
+    },
+    "session": {
+      "en": "Sessions & Messages",
+      "zh": "会话与消息"
+    },
+    "security": {
+      "en": "Security & Permissions",
+      "zh": "安全与权限"
+    }
+  },
+  "plugins": [
+    {
+      "name": "dsh-market",
+      "owner": "dsh-market",
+      "url": "https://github.com/dsh-market/dsh-market",
+      "page": "https://awesome-dsh-plugin.com/p/dsh-market/dsh-market/",
+      "category": "market",
+      "description": {
+        "en": "Browse, search and install community plugins from inside DeepSeek Harness settings, with category filters, one-click updates, enable/disable, theme switching and configuration backup.",
+        "zh": "在 DeepSeek Harness 设置页内浏览、搜索并安装社区插件，支持分类筛选、一键更新与停用，以及主题切换与配置备份。"
+      },
+      "npm": "dshmarket",
+      "version": "1.47.0",
+      "stars": 4108,
+      "downloads": 432532,
+      "downloadsStart": "2026-08-19",
+      "downloadsEnd": "2026-09-17",
+      "downloadsCheckedAt": "2026-09-18",
+      "install": "dsh plugin --profile web add dshmarket",
+      "added": "2026-08-14",
+      "screenshots": [
+        "https://raw.githubusercontent.com/dsh-market/dsh-market/main/assets/demo-en.png",
+        "https://raw.githubusercontent.com/dsh-market/dsh-market/main/assets/themes-en.png"
+      ]
+    },
+    {
+      "name": "dsh-agent-plugins-market",
+      "owner": "Sivan757",
+      "url": "https://github.com/Sivan757/dsh-agent-plugins-market",
+      "page": "https://awesome-dsh-plugin.com/p/Sivan757/dsh-agent-plugins-market/",
+      "category": "market",
+      "description": {
+        "en": "Install suites from any Claude Code, Codex, Cursor, Kimi or agent-plugins.org git marketplace repo — skills, MCP servers, hooks and slash commands are injected into DSH sessions at runtime, with a market page in the Web GUI.",
+        "zh": "把任意 Claude Code / Codex / Cursor / Kimi / agent-plugins.org 的 git 市场仓库加为源，套件的技能、MCP 服务器、hooks 与斜杠命令在运行时注入 DSH 会话，并自带 Web 市场页。"
+      },
+      "npm": "dsh-agent-plugins-market",
+      "version": "0.7.0",
+      "stars": 10,
+      "downloads": 3445,
+      "downloadsStart": "2026-08-19",
+      "downloadsEnd": "2026-09-17",
+      "downloadsCheckedAt": "2026-09-18",
+      "install": "dsh plugin --profile web add dsh-agent-plugins-market",
+      "added": "2026-08-20"
+    },
+    {
+      "name": "dsh-checkpoint-rewind",
+      "owner": "PerryLink",
+      "url": "https://github.com/PerryLink/dsh-checkpoint-rewind",
+      "page": "https://awesome-dsh-plugin.com/p/PerryLink/dsh-checkpoint-rewind/",
+      "category": "tools",
+      "description": {
+        "en": "Claude Code /rewind for DeepSeek Harness: git-first workspace snapshots before every mutating tool execution, turn-boundary session forks, and a one-shot /rewind command that restores files and forks the session back to a checkpoint.",
+        "zh": "DeepSeek Harness 的 Claude Code /rewind 等价能力：每次变更型工具执行前捕获 git 优先的工作区文件快照，轮次边界 fork 会话，一条 /rewind 命令恢复文件并把会话回退到检查点。"
+      },
+      "npm": "dsh-checkpoint-rewind",
+      "version": "0.6.11",
+      "stars": 17,
+      "downloads": 3679,
+      "downloadsStart": "2026-08-19",
+      "downloadsEnd": "2026-09-17",
+      "downloadsCheckedAt": "2026-09-18",
+      "install": "dsh plugin --profile web add dsh-checkpoint-rewind",
+      "added": "2026-08-15"
+    },
+    {
+      "name": "dsh-rewind",
+      "owner": "SiriLee",
+      "url": "https://github.com/SiriLee/dsh-rewind",
+      "page": "https://awesome-dsh-plugin.com/p/SiriLee/dsh-rewind/",
+      "category": "session",
+      "description": {
+        "en": "In-place conversation rewind in the same session window without forking (Claude Code /rewind semantics): a per-message ↶ button cuts the model context back to any user message, with an optional Claude-Code-style file restore from disk-persisted before-backups.",
+        "zh": "同一会话窗口内的 in-place 对话回退（不 fork，Claude Code /rewind 语义）：每条消息的 ↶ 按钮把模型上下文回退到任意用户消息，可选用磁盘持久化的 before-backups 还原工作区文件。"
+      },
+      "npm": "dsh-rewind-plugin",
+      "version": "0.12.2",
+      "stars": 75,
+      "downloads": 14186,
+      "downloadsStart": "2026-08-19",
+      "downloadsEnd": "2026-09-17",
+      "downloadsCheckedAt": "2026-09-18",
+      "install": "dsh plugin --profile web add dsh-rewind-plugin",
+      "added": "2026-08-18",
+      "screenshots": [
+        "https://raw.githubusercontent.com/SiriLee/dsh-rewind/HEAD/assets/screenshots/rewind-button.png",
+        "https://raw.githubusercontent.com/SiriLee/dsh-rewind/HEAD/assets/screenshots/mode-popover.png",
+        "https://raw.githubusercontent.com/SiriLee/dsh-rewind/HEAD/assets/screenshots/impact-list.png",
+        "https://raw.githubusercontent.com/SiriLee/dsh-rewind/HEAD/assets/screenshots/rewind-candidates.png"
+      ]
+    },
+    {
+      "name": "dsh-perm-gate",
+      "owner": "drscrewdriver",
+      "url": "https://github.com/drscrewdriver/dsh-perm-gate",
+      "page": "https://awesome-dsh-plugin.com/p/drscrewdriver/dsh-perm-gate/",
+      "category": "security",
+      "description": {
+        "en": "P0–P4 deterministic-first permission gate with permissive tier, learning sedimentation and approval-history UI; hard-deny credentials and protected paths, auto-allow internal read-only tools.",
+        "zh": "P0–P4 确定性优先权限门控，含 Permissive 档位、学习沉淀与审批历史 UI；凭据/受保护路径硬拒绝，内部只读工具自动放行。"
+      },
+      "npm": "dsh-perm-gate",
+      "version": "2.1.2",
+      "stars": 1,
+      "downloads": 1177,
+      "downloadsStart": "2026-08-19",
+      "downloadsEnd": "2026-09-17",
+      "downloadsCheckedAt": "2026-09-18",
+      "install": "dsh plugin --profile web add dsh-perm-gate",
+      "added": "2026-09-10"
+    },
+    {
+      "name": "dsh-defend",
+      "owner": "PerryLink",
+      "url": "https://github.com/PerryLink/dsh-defend",
+      "page": "https://awesome-dsh-plugin.com/p/PerryLink/dsh-defend/",
+      "category": "security",
+      "description": {
+        "en": "Detects prompt-injection, jailbreak, and secret-leak patterns on the agent/pre-step, tools/pre-execute, and tools/post-execute seams with allow/ask/block tiers, sanitized defend/detection audit events, a defend_report tool, and a destructive-delete command guard.",
+        "zh": "在 agent/pre-step、tools/pre-execute、tools/post-execute 三个接缝检测提示词注入、越狱与密钥泄露，按 allow/ask/block 分层拦截，附脱敏 defend/detection 审计事件、defend_report 工具与危险删除命令门禁。"
+      },
+      "npm": "dsh-defend",
+      "version": "0.3.10",
+      "stars": 15,
+      "downloads": 2891,
+      "downloadsStart": "2026-08-19",
+      "downloadsEnd": "2026-09-17",
+      "downloadsCheckedAt": "2026-09-18",
+      "install": "dsh plugin --profile web add dsh-defend",
+      "added": "2026-08-23"
+    }
+  ]
+}

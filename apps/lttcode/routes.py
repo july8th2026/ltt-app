@@ -11,8 +11,10 @@ phiên bản, ghi chú, chữ ký minisign (công khai theo bản chất) và b�
 toàn vẹn của bộ cài do chữ ký kiểm ở phía app, không do đăng nhập.
 
 Các route của tệp này không có POST, không ghi gì; `Cache-Control` giữ mặc định
-`no-store` của nền tảng. Đăng nhập (có POST, có phiên web + CSRF ở `/authorize`)
-nằm riêng ở `routes_dang_nhap.py` và được gắn vào router này ở cuối tệp.
+`no-store` của nền tảng (`server/app.py` ghi đè mọi path ngoài `/static/` và
+`/nexus/dl/` — route ở đây không tự đặt header khác, kể cả `/plugins.json` tuy
+nội dung tĩnh). Đăng nhập (có POST, có phiên web + CSRF ở `/authorize`) nằm
+riêng ở `routes_dang_nhap.py` và được gắn vào router này ở cuối tệp.
 """
 from __future__ import annotations
 
@@ -30,6 +32,10 @@ router = APIRouter(tags=["lttcode"])
 
 _UUID = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
 _MAY_CUC_BO = {"127.0.0.1", "localhost", "::1"}
+
+#: Danh mục plugin `dshmarket` đã tuyển chọn — commit tĩnh vào kho (không qua
+#: thư mục dữ liệu), đi theo bản phát hành nền tảng như mọi mã nguồn khác.
+_PLUGINS_JSON = Path(__file__).with_name("plugins.json")
 
 
 def _goc(request: Request) -> str:
@@ -58,6 +64,23 @@ def _kich_thuoc(filename: str) -> int | None:
         return (Path(data_path(phat_hanh.THU_MUC_DIST)) / filename).stat().st_size
     except OSError:
         return None
+
+
+@router.get("/plugins.json")
+async def danh_muc_plugin():
+    """Danh mục plugin `dshmarket` — app LTTCODE trên máy người dùng trỏ
+    `DSHM_REGISTRY_URL` thẳng vào route này (`sidecar.rs`), y hệt cách nó hỏi
+    cập nhật: trước và độc lập với mọi tài khoản, không cookie, không khoá API.
+    Nội dung tĩnh commit ở `plugins.json` cạnh tệp này — không đọc thư mục dữ
+    liệu như `doc_manifest()`, nhưng vẫn `no-store` mặc định (§ docstring đầu
+    tệp): middleware chung của nền tảng ghi đè mọi `Cache-Control` khác ngoài
+    `/static/`/`/nexus/dl/`, và mở riêng cho một path ở đây đòi sửa
+    `server/app.py` — ngoài phạm vi app này."""
+    try:
+        raw = _PLUGINS_JSON.read_bytes()
+    except OSError:
+        raise HTTPException(status_code=404) from None
+    return Response(raw, media_type="application/json")
 
 
 @router.get("/update/{channel}/{target}/{arch}/{current_version}")
