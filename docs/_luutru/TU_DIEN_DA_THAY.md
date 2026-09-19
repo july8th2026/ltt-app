@@ -16,3 +16,4 @@ chế đổi — tài liệu cũ bị bắt ngay ở lần quét kế tiếp.
 | admin-mvp-v3 | main | git |
 | purification-v1 | main | git |
 | ltt-3.8 mặc định xhigh | ltt-3.8 mặc định medium (L-33) | DECISION_LOG L-33 |
+| apps/chataistudio | apps/chatltt | đổi tên app (xác nhận qua `find apps -maxdepth 1`, L-D 19/09) |
