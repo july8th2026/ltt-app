@@ -529,6 +529,8 @@ def chuan_hoa_suy_nghi(than: dict, model_id: str) -> tuple[dict, bool]:
        khách khai nhiều chỗ: cấp cao nhất > `reasoning.effort` > kwargs (mọi chỗ
        vẫn được kiểm). Cửa nào engine đọc chỗ khác thì `dat_effort_cho_engine`
        dời đi — không cửa nào tự đoán lại từ ba chỗ.
+    4. (L-33) Model có nấc, khách không khai chỗ nào ⇒ chèn
+       `examples.CODEX_MODEL_REASONING[alias]` (3.8: `medium`).
 
     ⛔ Không sửa `than` đầu vào. Idempotent: gọi hai lần cho cùng kết quả.
     """
@@ -564,6 +566,14 @@ def chuan_hoa_suy_nghi(than: dict, model_id: str) -> tuple[dict, bool]:
     bo_qua = bool(ung_vien) and cac_muc[0] is None
     if cac_muc and cac_muc[0] is not None:
         gui["reasoning_effort"] = cac_muc[0]
+    elif not ung_vien:
+        # ⭐ L-33 (chủ dự án 19/09 tối): model có nấc mà khách bỏ trống ⇒ MÁY CHỦ
+        #    chèn mức mặc định của nền tảng (3.8: `medium`), mọi cửa — không để
+        #    `--reasoning-effort xhigh` của máy B quyết. Model cố định: không chèn.
+        from platform_core.public_api import examples as E
+        if (alias in E.CODEX_MODEL_REASONING_LEVELS
+                and alias not in E.CODEX_MODEL_REASONING_CO_DINH):
+            gui["reasoning_effort"] = E.CODEX_MODEL_REASONING[alias]
     return gui, bo_qua
 
 
@@ -585,8 +595,9 @@ def dat_effort_cho_engine(gui: dict, duong: str) -> None:
          completions` đọc `reasoning_effort` cấp cao nhất (`server-common.cpp:
          1325-1332`) ⇒ cả hai đã tới template (đo: low 62) — giữ nguyên.
 
-    ⭐ Không effort ⇒ không đặt gì: mặc định của máy B (`--reasoning-effort
-       xhigh`) trùng `NGHI_MAC_DINH_THEO_MODEL` — máy chủ không bịa một mức.
+    ⭐ Model có nấc luôn có effort ở đây (L-33: `chuan_hoa_suy_nghi` chèn mức
+       mặc định nền tảng khi khách bỏ trống). Không effort (model cố định) ⇒
+       không đặt gì.
     ⚠️ Effort nằm ở ĐẦU system prompt (template dòng 217) ⇒ đổi effort giữa các
        lượt của cùng một phiên là mất prompt cache cả hội thoại. Máy chủ KHÔNG tự
        đổi effort cho request phụ (nén, tiêu đề…); client phải gửi cùng mức.

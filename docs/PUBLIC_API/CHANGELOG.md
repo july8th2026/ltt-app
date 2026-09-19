@@ -21,6 +21,19 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-19 (tối) — `ltt-3.8`: `reasoning_effort` mặc định `xhigh` → `medium` (L-33)
+
+- **Cái gì đổi:** request `ltt-3.8` **không** khai effort ở chỗ nào giờ chạy ở
+  `medium` (máy chủ tự chèn, mọi cửa: `/chat/completions`, `/messages`,
+  `/responses`, job, web app). Budget suy nghĩ máy chủ đặt theo mức `medium`.
+  Catalog `GET /api/v1/models` và catalog Codex công bố `default_reasoning_level`
+  = `medium`. `ltt-3.5` không đổi.
+- **Phá vỡ tương thích?** Không — enum giữ nguyên, `xhigh` vẫn chọn được. Ai gửi
+  effort tường minh không thấy gì khác; ai bỏ trống nhận trả lời nhanh hơn, suy
+  nghĩ ngắn hơn (đo lượt lập plan LTTCODE: xhigh 94–99 s, medium 49–81 s, token
+  ra ~½).
+- **Phải làm gì:** muốn giữ chiều sâu cũ ⇒ gửi `reasoning_effort: "xhigh"`.
+
 ## 2026-09-19 — `ltt-3.8`: `reasoning_effort` có tác dụng — ở mọi cửa, và có đo được (FIXED)
 
 - **Cái gì đổi:** ở `POST /api/v1/messages` **stream**, `reasoning_effort` của

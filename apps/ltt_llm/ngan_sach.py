@@ -647,10 +647,16 @@ SAN_TOKEN_RA_THEO_NGHI = {
 }
 
 #: Mức thực tế khi khách không khai `reasoning_effort` (Q131). Đây là thuộc
-#: tính theo MODEL: 3.8 có enum chính thức và mặc định xhigh; 3.5 chỉ công bố
-#: thinking on/off, còn template tương thích v22.5 dùng medium khi thinking bật.
+#: tính theo MODEL; 3.5 chỉ công bố thinking on/off, template v22.5 dùng medium
+#: khi thinking bật.
+#: ⭐ L-33 (chủ dự án chốt 19/09 tối): 3.8 mặc định `medium` trên TOÀN nền tảng
+#:    (đảo mức mặc định của L-26; `xhigh` vẫn chọn được). Đo LTTCODE lượt lập
+#:    plan: xhigh 94-99 s, medium 49-81 s, token ra ~1/2. Máy chủ CHÈN mức này
+#:    khi request bỏ trống (`runtime_noi_bo.luong.chuan_hoa_suy_nghi`) — không
+#:    còn dựa vào `--reasoning-effort xhigh` của máy B. Bản sao CÓ ĐỐI CHIẾU:
+#:    `examples.CODEX_MODEL_REASONING` (catalog + luong đọc) — `test_1430` buộc bằng nhau.
 NGHI_MAC_DINH_THEO_MODEL = {
-    "ltt-3.8": "xhigh",
+    "ltt-3.8": "medium",
     "ltt-3.5": "medium",
 }
 
@@ -680,7 +686,7 @@ def san_token_ra(model: str | None = None, muc_nghi: str | None = None) -> int:
 BUDGET_SUY_NGHI_ENGINE = {"ltt-3.5": BUDGET_SUY_NGHI_35}
 
 #: `--reasoning-budget` của hồ sơ `qwen38-api` (`llama-swap.yaml`). Bản sao CÓ
-#: ĐỐI CHIẾU: `test_1430` đọc yaml và chốt mức mặc định (`xhigh`) bằng số này.
+#: ĐỐI CHIẾU: `test_1430` đọc yaml và chốt mức `xhigh` bằng số này.
 BUDGET_SUY_NGHI_38 = 4_096
 
 #: ⭐ L-32 (chủ dự án duyệt 19/09): NẤC EFFORT 3.8 THẬT = budget suy nghĩ MÁY CHỦ
@@ -688,7 +694,7 @@ BUDGET_SUY_NGHI_38 = 4_096
 #: là MỘT câu ở đầu system prompt — độ dài suy nghĩ KHÔNG theo mức (median token
 #: ra low/xhigh: 4.695/4.855 bài lát domino, 385/245 bài tàu hoả). Nên mỗi mức
 #: mang thêm một trần suy nghĩ; câu effort của template vẫn gửi (định hướng).
-#: `xhigh` = budget engine ⇒ mức mặc định y như trước L-32 (trừ kẹp chỗ trả lời).
+#: `xhigh` = budget engine. Mức mặc định từ L-33 là `medium` (2.048).
 BUDGET_SUY_NGHI_THEO_MUC = {
     "ltt-3.8": {"low": 1_024, "medium": 2_048, "xhigh": BUDGET_SUY_NGHI_38},
 }

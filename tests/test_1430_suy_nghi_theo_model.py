@@ -143,7 +143,8 @@ def test_than_sach_di_qua_nguyen_ven():
     than = {"model": "ltt-3.8", "messages": [{"role": "user", "content": "a"}],
             "max_tokens": 10, "temperature": 0.5}
     gui, bo_qua = chuan_hoa_suy_nghi(than, "ltt-3.8")
-    assert gui == than and bo_qua is False
+    # L-33: effort bỏ trống ⇒ máy chủ chèn `medium`; phần còn lại nguyên vẹn.
+    assert gui == {**than, "reasoning_effort": "medium"} and bo_qua is False
 
 
 # ══ Task 4 Step 2: effort theo model ═════════════════════════════════════════
@@ -374,10 +375,11 @@ def _mau(ten: str):
                                               "reads_images": True})
 
 
-def test_catalog_38_xhigh_mac_dinh_ba_muc():
+def test_catalog_38_medium_mac_dinh_ba_muc():
+    """L-33 (19/09 tối): mặc định nền tảng của 3.8 là `medium`."""
     from server.api.tools import _dang_codex
     d = _dang_codex(_mau("ltt-3.8"))
-    assert d["default_reasoning_level"] == "xhigh"
+    assert d["default_reasoning_level"] == "medium"
     assert [m["effort"] for m in d["supported_reasoning_levels"]] == [
         "low", "medium", "xhigh"]
 
@@ -493,7 +495,7 @@ def test_dong_bo_38_may_chu_dat_budget_theo_muc(api, monkeypatch, muc,
     assert "X-LTT-Effort-Bo-Qua" not in r.headers
     them_b = goi[-1].get("them") or {}
     assert them_b.get("reasoning_budget_tokens") == mong, them_b
-    assert goi[-1]["reasoning_effort"] == ({"high": "xhigh"}.get(muc, muc))
+    assert goi[-1]["reasoning_effort"] == ({"high": "xhigh", None: "medium"}.get(muc, muc))
 
 
 # ══ Sự cố 18/09 22:45: 3.5 trả 200 RỖNG ở cửa KHÁC `/chat/completions` ════════
@@ -525,7 +527,7 @@ def test_mot_cuc_35_may_chu_dat_budget(api, monkeypatch, duong, dung):
 @pytest.mark.parametrize("duong,dung", [("/messages", _than_messages),
                                         ("/responses", _than_responses)])
 @pytest.mark.parametrize("muc,mong", [("low", 1024), ("medium", 2048),
-                                      ("xhigh", 4096), (None, 4096)])
+                                      ("xhigh", 4096), (None, 2048)])
 def test_mot_cuc_38_may_chu_dat_budget_theo_muc(api, monkeypatch, duong, dung,
                                                muc, mong):
     goi = _dat_dieu_phoi(monkeypatch)
@@ -556,7 +558,7 @@ def test_features_chay_35_tu_dat_budget_khi_ben_goi_khong_truyen(monkeypatch,
 
 @pytest.mark.parametrize("muc,max_tokens,mong", [
     ("low", 32_768, 1024), ("medium", 32_768, 2048), ("xhigh", 32_768, 4096),
-    (None, 32_768, 4096), ("low", 1500, 988), ("xhigh", 1500, 988),
+    (None, 32_768, 2048), ("low", 1500, 988), ("xhigh", 1500, 988),
     ("low", 400, 0)])
 def test_features_chay_38_tu_dat_budget_theo_muc(monkeypatch, muc, max_tokens, mong):
     """Cửa job (và `_mot_cuc`) — `features.chay` tự tính khi bên gọi không truyền."""
@@ -709,8 +711,8 @@ def test_t1c_dat_effort_dung_truong_engine_doc(duong, muc):
 
 @pytest.mark.parametrize("duong", ["/v1/messages", "/v1/responses"])
 def test_t1c_khong_effort_thi_khong_dat_gi(duong):
-    """Khách không gửi ⇒ để mặc định MÁY B (`--reasoning-effort xhigh`, =
-    `NGHI_MAC_DINH_THEO_MODEL`) — máy chủ không bịa một mức."""
+    """Thân không mang effort (model cố định 3.5) ⇒ `dat_effort_cho_engine` không
+    đặt gì. Model có nấc luôn mang effort sau `chuan_hoa_suy_nghi` (L-33)."""
     gui = {"model": "qwen38-api"}
     luong.dat_effort_cho_engine(gui, duong)
     assert gui == {"model": "qwen38-api"}
@@ -808,14 +810,12 @@ from apps.ltt_llm import ngan_sach as NS  # noqa: E402
 
 
 def test_l32_xhigh_bang_budget_engine_yaml():
-    """Đối chứng: mức mặc định phải đúng số engine đang chạy — nếu không, 'xhigh
-    y như trước' là lời hứa sai."""
+    """Đối chứng: mức `xhigh` phải đúng số engine đang chạy."""
     assert NS.BUDGET_SUY_NGHI_THEO_MUC["ltt-3.8"]["xhigh"] == _budget_yaml("qwen38-api")
-    assert NS.nghi_mac_dinh("ltt-3.8") == "xhigh"
 
 
 @pytest.mark.parametrize("muc,mong", [("low", 1024), ("medium", 2048),
-                                      ("xhigh", 4096), (None, 4096)])
+                                      ("xhigh", 4096), (None, 2048)])
 def test_l32_bang_budget_38(muc, mong):
     assert NS.budget_suy_nghi_dong_bo("ltt-3.8", 32_768, muc) == mong
     # Kẹp chừa chỗ trả lời: min(mức, max_tokens − 512), không âm.
@@ -854,7 +854,7 @@ def test_l32_doi_chung_mo_hinh_budget():
 @pytest.mark.parametrize("duong,dung", [("/v1/messages", _than_messages),
                                         ("/v1/responses", _than_responses)])
 @pytest.mark.parametrize("muc,mong", [("low", 1024), ("medium", 2048),
-                                      ("xhigh", 4096), (None, 4096)])
+                                      ("xhigh", 4096), (None, 2048)])
 def test_l32_cua_stream_38_budget_theo_muc(db_s, duong, dung, muc, mong):
     uid = _nguoi(db_s)
     than = dung("ltt-3.8")  # mang ca budget khach (99999, thinking 10000)
@@ -870,7 +870,7 @@ def test_l32_cua_stream_38_budget_theo_muc(db_s, duong, dung, muc, mong):
     try:
         for gui in (tk.than_gui, cb.than_gui):
             assert _budget_engine_thay(duong, gui) == mong, gui
-            assert _effort_template_thay(duong, gui) == muc
+            assert _effort_template_thay(duong, gui) == (muc or "medium")  # L-33
     finally:
         luong.hoan(cb.user_id, cb.request_id)
         luong._nha_suat(cb.lease_id)
@@ -886,3 +886,62 @@ def test_l32_http_stream_messages_low_len_may_b(api, monkeypatch):
     gui = da_goi[-1]["than"]
     assert gui["thinking"] == {"type": "enabled", "budget_tokens": 1024}
     assert "reasoning_budget_tokens" not in gui
+
+
+# ══ L-33 (chủ dự án chốt 19/09 tối): 3.8 mặc định `medium` TOÀN nền tảng ═══════
+#
+# Máy chủ CHÈN `reasoning_effort=medium` khi request 3.8 bỏ trống (mọi cửa đi qua
+# `chuan_hoa_suy_nghi`), không để `--reasoning-effort xhigh` của máy B quyết.
+# Đo LTTCODE lượt lập plan: xhigh 94-99 s, medium 49-81 s, token ra ~1/2.
+
+
+def test_l33_hai_cho_khai_mac_dinh_bang_nhau():
+    from platform_core.public_api import examples as E
+    for slug in E.CODEX_MODEL_REASONING:
+        assert NS.nghi_mac_dinh(slug) == E.CODEX_MODEL_REASONING[slug]
+    assert NS.nghi_mac_dinh("ltt-3.8") == "medium"
+
+
+@pytest.mark.parametrize("model", ["ltt-3.8", "qwen38-api"])
+def test_l33_bo_trong_thi_chen_medium(model):
+    gui, bo_qua = chuan_hoa_suy_nghi({"model": model, "messages": []}, model)
+    assert gui["reasoning_effort"] == "medium" and bo_qua is False
+
+
+@pytest.mark.parametrize("than", [
+    {"reasoning_effort": "xhigh"},
+    {"reasoning": {"effort": "xhigh"}},
+    {"chat_template_kwargs": {"reasoning_effort": "xhigh"}},
+    {"reasoning_effort": "high"},
+])
+def test_l33_gui_xhigh_van_la_xhigh(than):
+    gui, _ = chuan_hoa_suy_nghi({"model": "ltt-3.8", **than}, "ltt-3.8")
+    assert gui["reasoning_effort"] == "xhigh"
+
+
+def test_l33_35_khong_chen():
+    gui, bo_qua = chuan_hoa_suy_nghi({"model": "ltt-3.5"}, "ltt-3.5")
+    assert "reasoning_effort" not in gui and bo_qua is False
+
+
+@pytest.mark.parametrize("duong", ["/v1/messages", "/v1/responses",
+                                   "/v1/chat/completions"])
+def test_l33_bo_trong_toi_template_la_medium_budget_2048(duong):
+    gui, _ = chuan_hoa_suy_nghi({"model": "ltt-3.8"}, "qwen38-api")
+    luong.dat_effort_cho_engine(gui, duong)
+    assert _effort_template_thay(duong, gui) == "medium"
+    assert NS.budget_suy_nghi_dong_bo("ltt-3.8", 32_768, None) == 2048
+
+
+def test_l33_sdk_cai_dat_cli_cung_mac_dinh():
+    """`sdk/ltt_cai_dat_cli.py` chạy trên máy khách nên CHÉP mức — buộc khớp."""
+    import importlib.util
+    import pathlib
+    from platform_core.public_api import examples as E
+    tep = pathlib.Path(__file__).resolve().parent.parent / "sdk" / "ltt_cai_dat_cli.py"
+    spec = importlib.util.spec_from_file_location("_sdk_cai_dat_l33", tep)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    for slug, hs in mod.HO_SO_MODEL.items():
+        assert hs.reasoning == E.CODEX_MODEL_REASONING[slug], slug
+        assert tuple(hs.reasoning_levels) == E.CODEX_MODEL_REASONING_LEVELS[slug]

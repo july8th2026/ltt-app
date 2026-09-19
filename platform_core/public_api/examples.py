@@ -803,12 +803,16 @@ CODEX_MODEL_LABELS = {
     "ltt-3.5": "LTT 3.5 (Fast)",
 }
 
-# Codex requires one of its own effort enum values. Qwen3.8 exposes xhigh
-# officially; Qwen3.5 only exposes thinking on/off, so `medium` is the neutral
-# compatibility value understood by the pinned Froggeric template while the
-# server keeps thinking enabled. These are client defaults, not model limits.
+# Codex requires one of its own effort enum values. Qwen3.5 only exposes
+# thinking on/off, so `medium` is the neutral compatibility value understood by
+# the pinned Froggeric template while the server keeps thinking enabled.
+# ⭐ L-33 (chủ dự án 19/09 tối): 3.8 mặc định `medium` TOÀN nền tảng (model card
+#    mặc định xhigh; đo LTTCODE lượt lập plan: medium ~½ thời gian và token ra).
+#    Bảng này là mức MÁY CHỦ chèn khi request bỏ trống (`luong.chuan_hoa_suy_nghi`)
+#    và mức catalog công bố; `ngan_sach.NGHI_MAC_DINH_THEO_MODEL` là bản sao đối
+#    chiếu (`test_1430` buộc bằng nhau).
 CODEX_MODEL_REASONING = {
-    "ltt-3.8": "xhigh",
+    "ltt-3.8": "medium",
     "ltt-3.5": "medium",
 }
 
@@ -1043,7 +1047,7 @@ def _codex_model_root(model: str, *, desktop: bool = False) -> str:
         header +
         f'model = "{model}"\n'
         'model_provider = "ltt"\n'
-        '# Model-specific quality default: Qwen3.8 officially supports xhigh;\n'
+        '# Platform default: medium (LTT 3.8 also offers low and xhigh);\n'
         '# Qwen3.5 stays in thinking mode through the compatible medium value.\n'
         f'model_reasoning_effort = "{reasoning}"\n'
         'model_reasoning_summary = "none"\n'

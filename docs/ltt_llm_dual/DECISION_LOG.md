@@ -1106,3 +1106,12 @@ Chủ dự án duyệt 19/09. Bổ sung L-26 (không thay): effort vẫn đi t�
 - Cửa đồng bộ/một cục có trần ~2.355 token ra (90 s) ⇒ medium/xhigh ở đó bị kẹp về `max_tokens − 512` (≤ ~1.843); `max_tokens` ≤ 512 ⇒ budget 0 = kết thúc suy nghĩ ngay (trước: suy nghĩ có thể nuốt hết trần ⇒ `content` rỗng).
 - Effort nằm ở đầu prompt ⇒ đổi mức giữa các lượt = mất prompt cache. Máy chủ không tự đổi mức cho request phụ; LTTCODE nên dùng mức của phiên cả cho nén hội thoại (bỏ `compaction` khỏi `LOWEST_EFFORT_PURPOSES` — việc làn harness).
 - Artifacts: `artifacts/l32_effort_budget_19_09/` (script `do_l32.py`, jsonl từng lượt, số đo T1c trước/sau).
+
+## L-33 — LTT-3.8 mặc định `medium` trên TOÀN nền tảng; máy chủ chèn mức khi request bỏ trống (2026-09-19 tối)
+
+**Chủ dự án chốt 19/09 tối.** Đảo mức MẶC ĐỊNH của L-26/Q131 (`xhigh`); enum giữ `low|medium|xhigh`, `xhigh` vẫn chọn được.
+
+- Căn cứ đo: LTTCODE lượt lập plan — xhigh 94–99 s, medium 49–81 s, token ra ~½ (`D:\LTTCODEAPP\docs\LTTCODE\reports\harness-nang-cap\pha-c\md\`).
+- Cơ chế: `runtime_noi_bo.luong.chuan_hoa_suy_nghi` — model có nấc mà khách không khai effort ở cả ba chỗ ⇒ chèn `examples.CODEX_MODEL_REASONING[alias]` (3.8: `medium`). Mọi cửa đi qua hàm này (`/chat/completions` đồng bộ/job qua `features.kiem_tham_so`, `/messages`, `/responses` stream + một cục) ⇒ budget máy chủ theo mức medium (2.048, L-32) và `/messages` nhận `chat_template_kwargs.reasoning_effort=medium`. Không còn dựa vào `--reasoning-effort xhigh` của máy B (yaml KHÔNG đổi).
+- Một nguồn: `examples.CODEX_MODEL_REASONING`; bản sao đối chiếu `ngan_sach.NGHI_MAC_DINH_THEO_MODEL`, `tools/cam_cli.py`, `sdk/ltt_cai_dat_cli.py` — `test_1430::test_l33_*` + `test_275` buộc khớp. Catalog `/api/v1/models`, catalog/profile Codex, mô tả `reasoning_effort` công khai nói `medium`.
+- 3.5 không đổi (không chèn effort).

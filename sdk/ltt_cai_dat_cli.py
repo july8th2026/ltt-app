@@ -201,7 +201,7 @@ class HoSoModel(NamedTuple):
 #:    KHACH, khong co kho ma, nen no CHEP so — va `test_275` doi chieu hai chieu.
 HO_SO_MODEL = {
     MODEL: HoSoModel(MODEL, MODEL_DESKTOP, CUA_SO_NGU_CANH, NEN_HOI_THOAI,
-                     "xhigh", ("low", "medium", "xhigh")),
+                     "medium", ("low", "medium", "xhigh")),  # L-33 (19/09)
     MODEL_35: HoSoModel(MODEL_35, MODEL_DESKTOP_35,
                         CUA_SO_NGU_CANH_35, NEN_HOI_THOAI_35, "medium",
                         ("medium",)),

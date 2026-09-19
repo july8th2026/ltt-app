@@ -186,7 +186,7 @@ nằm trong `config.toml`:
 ```toml
 model = "ltt-3.8"
 model_provider = "ltt"
-model_reasoning_effort = "xhigh"
+model_reasoning_effort = "medium"
 model_reasoning_summary = "none"
 model_context_window = 171458
 model_auto_compact_token_limit = 138690
@@ -194,7 +194,7 @@ model_catalog_json = 'C:\Users\<ban>\.codex\ltt_model_catalog.json'
 
 [agents]
 default_subagent_model = "ltt-3.8"
-default_subagent_reasoning_effort = "xhigh"
+default_subagent_reasoning_effort = "medium"
 max_concurrent_threads_per_session = 1
 ```
 
@@ -307,7 +307,7 @@ Error: legacy `profile = "ltt"` config is no longer supported;
 ```toml
 model = "ltt-3.8"
 model_provider = "ltt"
-model_reasoning_effort = "xhigh"
+model_reasoning_effort = "medium"
 model_context_window = 171458
 model_catalog_json = 'C:\Users\<ban>\.codex\ltt_model_catalog.json'
 

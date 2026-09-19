@@ -109,7 +109,7 @@ def test_enum_va_mac_dinh_di_theo_ra_spec():
     assert "none" not in re_["enum"], (
         "`none` da bi go 14/09 nhung spec van cong bo no")
     # Q131 (f56cfafc, 15/09/2026): KHONG co mot default CHUNG — 3.8 mac dinh
-    # `xhigh`, 3.5 `medium`, so huu o `ngan_sach.nghi_mac_dinh()`. Mot `default`
+    # `medium` (L-33, 19/09), 3.5 `medium`, so huu o `ngan_sach.nghi_mac_dinh()`. Mot `default`
     # trong spec se noi sai cho mot trong hai model; mac dinh THEO MODEL phai
     # doc duoc trong mo ta.
     assert not re_.get("default"), (

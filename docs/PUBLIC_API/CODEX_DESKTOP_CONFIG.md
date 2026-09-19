@@ -26,7 +26,7 @@ Desktop không truyền `--profile`.
 | `request_max_retries` | `1` | Một retry trước stream, không khuếch đại tải |
 | `stream_max_retries` | `0` | Không phát lại stream đã mở |
 | `stream_idle_timeout_ms` | `600000` | Dành 10 phút cho lượt dài |
-| `model_reasoning_effort` | 3.8: `xhigh`; 3.5: `medium` | 3.8 dùng mức native; với 3.5, `medium` chỉ là nhãn wire bắt buộc của Codex cho trạng thái Thinking on |
+| `model_reasoning_effort` | 3.8: `medium`; 3.5: `medium` | 3.8: mặc định nền tảng (L-33, 19/09), chọn `xhigh` khi cần sâu nhất; với 3.5, `medium` chỉ là nhãn wire bắt buộc của Codex cho trạng thái Thinking on |
 | `model_reasoning_summary` | `none` | Cổng không công bố reasoning summary riêng |
 | `model_auto_compact_token_limit_scope` | `total` | Tính trên toàn context |
 | `tool_output_token_limit` | `16384` | Một tool result không ăn hết khoảng dự phòng |
@@ -45,7 +45,7 @@ Vì vậy cấu hình copy không ghi khóa đó: hành vi vẫn false và cùng
 | LTT 3.8 (Strong) | `ltt-3.8` | 171,458 | 138,690 | 32,768 | 16,384 |
 | LTT 3.5 (Fast) | `ltt-3.5` | 209,141 | 176,373 | 32,768 | 16,384 |
 
-LTT 3.8 công bố ba mức `low|medium|xhigh`, nên preset chất lượng dùng `xhigh`.
+LTT 3.8 công bố ba mức `low|medium|xhigh`, preset mặc định là `medium` (L-33, 19/09 — medium ~½ thời gian/token ra so với xhigh); chọn `xhigh` khi cần sâu nhất.
 Qwen3.5 chỉ công bố thinking bật/tắt. Codex yêu cầu catalog có
 `supported_reasoning_levels` và vẫn gửi một giá trị enum trên wire, kể cả khi
 danh sách để rỗng; phép đo bằng Codex CLI 0.145.0 cho thấy giá trị gửi mặc định

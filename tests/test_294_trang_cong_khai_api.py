@@ -217,7 +217,7 @@ def test_codex_manual_profiles_and_catalog_use_each_models_budget(khach):
             for item in catalog] == [["low", "medium", "xhigh"], ["medium"]]
     assert catalog[1]["supported_reasoning_levels"] == [
         {"effort": "medium", "description": "Thinking on"}]
-    efforts = {"ltt-3.8": "xhigh", "ltt-3.5": "medium"}
+    efforts = {"ltt-3.8": "medium", "ltt-3.5": "medium"}  # L-33
     for item, internal in zip(catalog, ["qwen38-api", "qwen35-api"], strict=True):
         profile = tomllib.loads(examples.codex_profile(item["slug"]))
         desktop = tomllib.loads(examples.codex_desktop_config(

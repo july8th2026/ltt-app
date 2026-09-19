@@ -354,11 +354,12 @@ def test_mot_cuc_effort_moi_cho_khai_deu_toi_B(api, monkeypatch, duong, than):
     assert "reasoning" not in thay[0] and "chat_template_kwargs" not in thay[0]
 
 
-def test_doi_chung_mot_cuc_khong_khai_effort_thi_khong_gui(api, monkeypatch):
-    """Đối chứng: phép trên đỏ được — không khai thì thân gửi B không có effort."""
+def test_doi_chung_mot_cuc_khong_khai_effort_thi_gui_medium(api, monkeypatch):
+    """Đối chứng: phép trên đỏ được — không khai thì thân gửi B mang mức mặc định
+    nền tảng `medium` (L-33, máy chủ chèn), không phải `low`."""
     thay = _bat_params(monkeypatch)
     _uid, token = _account()
     r = api.post(RSP, json={"model": MODEL, "max_tokens": 1500, "input": "thủ đô?"},
                  headers=_h(token))
     assert r.status_code == 200, r.text
-    assert len(thay) == 1 and "reasoning_effort" not in thay[0]
+    assert len(thay) == 1 and thay[0].get("reasoning_effort") == "medium"

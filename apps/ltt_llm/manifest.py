@@ -305,7 +305,8 @@ MANIFEST = AppManifest(
             #    Ba nguon doc lap (do 14/09, bang 12/09 trong llama-swap.yaml,
             #    model card Qwen ve tham so lay mau) noi cung mot dieu.
             # Q131: khong khai mot default CHUNG trong schema. Qwen3.8 chinh
-            # thuc co low|medium|xhigh va server mac dinh xhigh; Qwen3.5 chinh
+            # thuc co low|medium|xhigh; nen tang mac dinh medium (L-33, 19/09 -
+            # may chu chen khi bo trong); Qwen3.5 chinh
             # thuc chi co thinking on/off, server giu on va template v22.5 dung
             # medium khi client khong gui effort. `ngan_sach.nghi_mac_dinh()`
             # so huu default theo model de admission khop hanh vi may B.
@@ -476,7 +477,7 @@ MANIFEST = AppManifest(
                     "description": (
                         "How much the model thinks before answering. LTT 3.8 "
                         "offers `low`, `medium` and `xhigh`. When omitted, "
-                        "LTT 3.8 uses `xhigh` (`high`/`max` are read as `xhigh`, "
+                        "LTT 3.8 uses `medium` (`high`/`max` are read as `xhigh`, "
                         "`minimal` as `low`). LTT 3.5 has a single mode with "
                         "thinking always on: a value is accepted and ignored "
                         "(response header `X-LTT-Effort-Bo-Qua: 1`). Turning "
