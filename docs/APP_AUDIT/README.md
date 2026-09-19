@@ -8,7 +8,7 @@ code đổi.
 
 **Trạng thái 2026-09-19:** đã tách theo tệp — 12 audit đã đóng đủ 3 bằng
 chứng (0 blocking thật, nội dung tự thân là audit chốt theo mẫu, sửa cuối
-38–46 ngày) chuyển sang `docs/_luutru/2026-09/docs/APP_AUDIT/…` (có README
+38–46 ngày) chuyển sang `docs/_luutru/2026-09/APP_AUDIT/…` (có README
 đánh dấu). Các audit còn lại **giữ nguyên** vì vẫn được `docs/KE_HOACH_TRIEN_KHAI.md`,
 `docs/QUYET_DINH_NEN_TANG.md`, `tests/test_147_layering.py` hoặc
 `frontend/prompt-ai-ommi/src/OmmiShell.tsx` trích dẫn làm bằng chứng quyết

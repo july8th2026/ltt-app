@@ -18,7 +18,7 @@ là lời nhắn này.
 | 4 tệp `.ps1` (harness canary/bench máy B) | `docs/_luutru/codex_2026-08-27/` |
 | `.codex/launch.json` | `docs/_luutru/codex_2026-08-27/launch.json` (bản gốc vẫn ở `.claude/launch.json`) |
 
-**Kế hoạch đang hiệu lực:** `docs/KE_HOACH_TRIEN_KHAI.md` (bản nối tiếp 29/08 đã lưu trữ ở `docs/_luutru/2026-09/KE_HOACH_NOI_TIEP_2026-08-29.md`).
+**Kế hoạch đang hiệu lực:** `docs/KE_HOACH_TRIEN_KHAI.md` (bản nối tiếp 29/08 đã lưu trữ ở `docs/_luutru/KE_HOACH_NOI_TIEP_2026-08-29.md`).
 
 ## Vì sao lưu trữ chứ không xoá
 

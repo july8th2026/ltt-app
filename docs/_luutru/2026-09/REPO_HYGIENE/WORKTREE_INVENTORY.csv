@@ -1,5 +1,3 @@
-> LƯU TRỮ 2026-09-19 — không còn đúng hệ thống hiện tại; thay bằng: python tools/ho_so_cay.py trang-thai (snapshot một lần, không phải bảng sống). Chỉ đọc để hiểu lịch sử.
-
 Path,Branch,HEAD,Dirty,Ahead,Behind,ActiveSession,UniqueCommits,Upstream,Classification,Action,Evidence
 D:/LTTSTUDIOSAPP,admin-mvp-v3,d83fb7f6,43,258,0,YES,0,(none; equal to origin/admin-mvp-v3),ACTIVE_PROTECT+DIRTY_INVESTIGATE,DO_NOT_TOUCH,HEAD moved 21fa7e2b->b4a71551 (16:27)->d83fb7f6 (16:34) during W0; owner confirmed session running
 D:/LTTSTUDIOSAPP/.claude/worktrees/auto-scan-video-v4-mvp-7173d9,phien/asv-v4,9d7f7044,33,159,0,YES,0,origin/phien/asv-v4 (0/0),ACTIVE_PROTECT+DIRTY_INVESTIGATE,DO_NOT_TOUCH,ASV GUI V5 session; OWNER-CONFIRMED alive at 16:34 despite zero writes since 11:56 (write-cadence false negative)

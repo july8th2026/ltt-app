@@ -358,7 +358,7 @@ thì xoá dòng tương ứng.
 | `docs/AGENT_LTT/03_TOOLSPEC_KHI_PORT.md` | `app/models/video_model_registry.py` | L-E: đường kho ngoài / tên dự kiến / mã đã đổi trong văn bản có ngày — xem mục làn L-E |
 | `docs/AGENT_LTT/03_TOOLSPEC_KHI_PORT.md` | `app/modules/seedance_video/face_detect.py` | L-E: đường kho ngoài / tên dự kiến / mã đã đổi trong văn bản có ngày — xem mục làn L-E |
 | `docs/AI_CLEAN_REBUILD/ADMIN_V3_RECONCILIATION.md` | `admin-mvp-v3` | L-E: tên nhánh lúc viết, văn bản có ngày — đổi là sai lịch sử |
-| `docs/AI_CLEAN_REBUILD/ADMIN_V3_RECONCILIATION.md` | `codex_sidecar/server.py` | L-E: đường kho ngoài / tên dự kiến / mã đã đổi trong văn bản có ngày — xem mục làn L-E |
+| `docs/AI_CLEAN_REBUILD/ADMIN_V3_RECONCILIATION.md` | `codex_sidecar/server.py` | L-E: mã trong kho đã xoá ở Pha 07 (`ac46d371`) |
 | `docs/AI_CLEAN_REBUILD/ADMIN_V3_RECONCILIATION.md` | `docs/OPERATING_STANDARDIZATION/FINAL_REPORT.md` | L-E: đường kho ngoài / tên dự kiến / mã đã đổi trong văn bản có ngày — xem mục làn L-E |
 | `docs/AI_CLEAN_REBUILD/CAMPAIGN_STATE.md` | `admin-mvp-v3` | L-E: tên nhánh lúc viết, văn bản có ngày — đổi là sai lịch sử |
 | `docs/AI_CLEAN_REBUILD/CAMPAIGN_STATE.md` | `apps/chataistudio` | L-E: tên app cũ trong kế hoạch/audit có ngày (app đổi tên `apps/chatltt/`) |
@@ -384,7 +384,7 @@ thì xoá dòng tương ứng.
 | `docs/AI_CLEAN_REBUILD/PRODUCT_DEPENDENCY_MAP.md` | `apps/chataistudio` | L-E: tên app cũ trong kế hoạch/audit có ngày (app đổi tên `apps/chatltt/`) |
 | `docs/AI_CLEAN_REBUILD/PRODUCT_DEPENDENCY_MAP.md` | `apps/chataistudio/sidecar_client.py` | L-E: đường kho ngoài / tên dự kiến / mã đã đổi trong văn bản có ngày — xem mục làn L-E |
 | `docs/AI_CLEAN_REBUILD/PRODUCT_DEPENDENCY_MAP.md` | `codex_sidecar/runtime.py` | L-E: đường kho ngoài / tên dự kiến / mã đã đổi trong văn bản có ngày — xem mục làn L-E |
-| `docs/AI_CLEAN_REBUILD/PRODUCT_DEPENDENCY_MAP.md` | `codex_sidecar/server.py` | L-E: đường kho ngoài / tên dự kiến / mã đã đổi trong văn bản có ngày — xem mục làn L-E |
+| `docs/AI_CLEAN_REBUILD/PRODUCT_DEPENDENCY_MAP.md` | `codex_sidecar/server.py` | L-E: mã trong kho đã xoá ở Pha 07 (`ac46d371`) |
 | `docs/AI_CLEAN_REBUILD/W2_LOCAL_WORKTREE_CLEANUP.md` | `admin-mvp-v3` | L-E: tên nhánh lúc viết, văn bản có ngày — đổi là sai lịch sử |
 | `docs/ANH_NOI_BO/CHAM_DIEM.md` | `script_examples/websockets_api_example.py` | L-E: đường kho ngoài / tên dự kiến / mã đã đổi trong văn bản có ngày — xem mục làn L-E |
 | `docs/ANH_NOI_BO/CHAM_DIEM.md` | `scripts/live_check_control_b.py` | L-E: đường kho ngoài / tên dự kiến / mã đã đổi trong văn bản có ngày — xem mục làn L-E |

@@ -3,12 +3,12 @@
 > **ĐÃ ĐƯỢC TINH CHỈNH BỞI Q64/H18 ngày 2026-08-04.** Điểm dưới đây là kết quả
 > kỹ thuật của H17 trước nghiệm thu chủ sản phẩm; không còn được dùng để kết
 > luận UX đã trình làng. Hồ sơ delta có hiệu lực ở
-> `docs/_luutru/2026-09/docs/APP_AUDIT/agent/2026-08-04-launch-v2/00_DELTA_AUDIT.md` (lưu trữ 2026-09-19).
+> `docs/_luutru/2026-09/APP_AUDIT/agent/2026-08-04-launch-v2/00_DELTA_AUDIT.md` (lưu trữ 2026-09-19).
 
 > **ĐÃ ĐƯỢC TINH CHỈNH BỞI Q64/H18 ngày 2026-08-04.** Điểm dưới đây là kết quả
 > kỹ thuật của H17 trước nghiệm thu chủ sản phẩm; không còn được dùng để kết
 > luận UX đã trình làng. Hồ sơ delta có hiệu lực ở
-> `docs/_luutru/2026-09/docs/APP_AUDIT/agent/2026-08-04-launch-v2/00_DELTA_AUDIT.md` (lưu trữ 2026-09-19).
+> `docs/_luutru/2026-09/APP_AUDIT/agent/2026-08-04-launch-v2/00_DELTA_AUDIT.md` (lưu trữ 2026-09-19).
 
 ## Trạng thái hiện tại
 

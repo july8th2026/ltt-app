@@ -2562,7 +2562,7 @@ chốt **chuỗi hai mắt xích** và bất biến với tên hàm trung gian.
 **Phiên này bị xoá khỏi nhật ký chat theo yêu cầu chủ dự án, nên mục này là bản
 ghi DUY NHẤT.** Viết dài hơn thường lệ vì lý do đó.
 
-**Phạm vi thật:** `docs/_luutru/2026-09/PLAN_LAP_RAP_2026-09-06.md` — 19 hạng mục.
+**Phạm vi thật:** `docs/_luutru/PLAN_LAP_RAP_2026-09-06.md` — 19 hạng mục.
 **Kết:** 17/19 đóng. Hai cái còn lại **không phiên nào làm được**: `S1` cần
 iPhone thật (~30 phút của chủ dự án), `S7` đã bàn giao phiên VIDEO AI.
 
@@ -2745,7 +2745,7 @@ C:\LTTPlatform\logs\deploy-20260907-022113.ket.txt   EXITCODE=0
 
 `app.previous` **là** bản tôi vừa thay. Nó nói thẳng điểm xuất phát.
 
-**Gốc lỗi:** tôi lấy con số từ `docs/_luutru/2026-09/BAN_GIAO_S1_S7_2026-09-07.md` — một tài
+**Gốc lỗi:** tôi lấy con số từ `docs/_luutru/BAN_GIAO_S1_S7_2026-09-07.md` — một tài
 liệu **do chính tôi viết sáng nay** — rồi `git log 9f555599..HEAD` cho ra một
 danh sách 28 commit trông rất thuyết phục. `/health/version` tôi có hỏi, nhưng
 **sau** deploy.
@@ -17315,7 +17315,7 @@ AN TOÀN — chỉ cần NSSM chạy 2-3 worker. Làm trước khi có tải th�
 
 Quy trình mới (user chỉ định app←module, Claude phân tích+lập kế hoạch): user yêu
 cầu 2 app từ BOT GEMINI — **UPSCALE VIDEO** (`video_upscale`) + **AUTO SUB VIDEO**
-(`auto_sub_video`). Lập kế hoạch `docs/_luutru/2026-09/KE_HOACH_2APP_UPSCALE_AUTOSUB.md`, user duyệt:
+(`auto_sub_video`). Lập kế hoạch `docs/_luutru/KE_HOACH_2APP_UPSCALE_AUTOSUB.md`, user duyệt:
 AUTO SUB trước · giữ nguyên (transcript nạp sẵn, KHÔNG Whisper) · làm P1 ngay · đơn
 giá gợi ý (~5 credit/phút sub).
 
@@ -17645,7 +17645,7 @@ tiêu chí + cơ chế PLENX, **không lỗi bố cục**. Deploy production OK.
 
 ## 2026-08-01 — UX Pha 1: nâng tầm giao diện (catalog/login/admin/APIKEYS) — XONG
 
-Từ đánh giá `docs/_luutru/2026-09/UX_DANH_GIA_VA_PHUONG_AN.md` (phương án D, có mockup artifact
+Từ đánh giá `docs/_luutru/UX_DANH_GIA_VA_PHUONG_AN.md` (phương án D, có mockup artifact
 duyệt trước). Vấn đề gốc: BA ngôn ngữ thị giác rời rạc (dark nền tảng / sáng
 sqladmin / trắng-trơn view tự viết).
 

@@ -1044,7 +1044,7 @@ test thật và browser thật theo UI-RD.
     `0ad9c868` — bản **đang chạy trên production** (deploy 07/09 09:13).
   - *viewport* — **xong**, và vừa đo lại: `taovideo` nằm trong lượt quét 24
     route ngày 07/09 (bộ quét lấy route từ **registry**, không chép tay), chạy
-    trên **cả WebKit lẫn Chromium**, 0 tràn ngang — `docs/_luutru/2026-09/BAN_GIAO_S1_S7_2026-09-07.md`.
+    trên **cả WebKit lẫn Chromium**, 0 tràn ngang — `docs/_luutru/BAN_GIAO_S1_S7_2026-09-07.md`.
   - *đa state* (`empty/queued/running/done/error/cancelled`) và *memory* —
     **chưa có phép đo nào từ cây này**. Đó là phần còn lại thật của ô.
 
@@ -3741,7 +3741,7 @@ link 404 `/ltt-llm` **vẫn còn ở đó**, và mọi bản vá của đợt n�
 và E3 đã lấy được — xem hàng H41.2 ở trên.
 
 📌 **Thứ tự làm các hàng còn treo, kèm đường phụ thuộc và tiêu chí nghiệm thu
-từng đợt: `docs/_luutru/2026-09/KE_HOACH_NOI_TIEP_2026-08-29.md` (ảnh chụp 29/08, lưu trữ 19/09).** Điểm mấu chốt của tài liệu đó,
+từng đợt: `docs/_luutru/KE_HOACH_NOI_TIEP_2026-08-29.md` (ảnh chụp 29/08, lưu trữ 19/09).** Điểm mấu chốt của tài liệu đó,
 không thấy được nếu chỉ đọc bảng phẳng này: **H41.5 và H35.10 có chung một nút
 thắt là H35.10a** (đo thời lượng phía máy chủ lúc báo giá) — làm một việc rủi ro
 thấp thì mở khoá cả hai.
