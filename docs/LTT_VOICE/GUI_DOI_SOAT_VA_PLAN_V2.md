@@ -74,7 +74,7 @@ Nguồn luật: `docs/00_LTT_OPERATING_CONTRACT.md` §4, §7–§10b (bản `6a2
 - L3 xanh/khép ⇒ **chính phiên** gộp `main` + deploy, rồi báo. Không dừng giữa pha.
   UAC im lặng qua `tools\nang_quyen.py`. Dừng chỉ khi: gate đỏ · thao tác không đảo
   được · thay đổi chưa commit không rõ của ai · rủi ro bảo mật.
-- Deploy chép cả cây ⇒ báo phiên VPS (VM 204) trước, kiểm 0 job running / 0 lease.
+- Deploy xuất HEAD cây chính (`git archive` + `$VAN_CHUYEN`, `setup/2-cai-dat.ps1`; tệp chưa commit không lên) ⇒ vẫn báo phiên VPS (VM 204) trước, kiểm 0 job running / 0 lease.
 
 | Pha | Việc | Xong khi |
 |---|---|---|

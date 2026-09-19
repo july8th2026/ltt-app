@@ -14,7 +14,7 @@ Chủ quy trình: `docs/16_CAP_NHAT_VA_DEPLOY.md` (thao tác) ·
 1. Đã gộp `main` và có **gate xanh trên đúng SHA deploy** — cấp nào: skill `ltt-gate`
    / hợp đồng §8. Test nhắm một mình không đủ.
 2. `git -C D:\LTTSTUDIOSAPP status --porcelain` **rỗng**. ⛔ Dòng `??` lạ là phiên
-   khác — báo, không xoá, không `stash` (deploy chép CẢ CÂY, kể cả tệp chưa theo dõi).
+   khác — báo, không xoá, không `stash` (deploy xuất HEAD cây chính bằng `git archive` + danh sách `$VAN_CHUYEN` (`setup/2-cai-dat.ps1`), tệp chưa commit KHÔNG lên — nhưng dòng lạ là việc dở của phiên khác, vẫn phải báo).
 3. **Báo** các phiên đang chạy trước khi deploy — báo, không chờ.
 4. Migration: head alembic của `main` khác bản đang chạy thì đọc trước.
 5. Deploy chỉ đi từ **cây chính** `D:\LTTSTUDIOSAPP`; `setup\2-cai-dat.ps1` từ chối

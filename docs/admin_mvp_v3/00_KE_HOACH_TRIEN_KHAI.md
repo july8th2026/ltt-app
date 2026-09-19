@@ -178,7 +178,7 @@ phụ. Và tuyệt đối không sửa `.app-side` để "cho giống ảnh".
 - Máy này **là production** (`Test-Path C:\LTTPlatform`). `/admin` là công cụ hỗ
   trợ khách đang dùng thật; `LTT_PUBLIC_API_TOOLS=text.chat,image.ltt` đang thu
   tiền thật ⇒ hỏng admin = mất khả năng hỗ trợ, không phải "lỗi giao diện".
-- Deploy **chép cả cây**, không tách được phần của một phiên ⇒ kiểm `git status`
+- Deploy **chép cả cây**, không tách được phần của một phiên *(đúng lúc lập 29/08; từ 08/09 deploy xuất HEAD bằng `git archive` + `$VAN_CHUYEN`, tệp chưa commit không lên)* ⇒ kiểm `git status`
   và hỏi phiên khác trước khi deploy.
 - Đổi `ltt.css` **phải cache-bust**; admin đã có đường riêng
   `server/admin.py:135 _asset_ver()` → `server/templating.py ASSET_VER`. Giữ nó.

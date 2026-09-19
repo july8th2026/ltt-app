@@ -411,7 +411,7 @@ tên biến môi trường.**
 
 ### 🔴 Nửa sau chặn ở một chốt vận hành, không phải ở mã
 
-Deploy **chép cả cây nguồn** rồi chạy `alembic upgrade head`. Lúc này trong repo
+Deploy **chép cả cây nguồn** rồi chạy `alembic upgrade head` *(đúng lúc viết, 08/2026; từ 08/09 deploy xuất HEAD bằng `git archive` + `$VAN_CHUYEN` — `setup/2-cai-dat.ps1`, tệp chưa commit không lên)*. Lúc này trong repo
 còn **việc đang dở của một phiên khác** (app `vps`), kèm **ba migration chưa
 commit**:
 

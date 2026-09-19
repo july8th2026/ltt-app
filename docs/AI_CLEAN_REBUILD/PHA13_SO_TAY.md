@@ -49,7 +49,7 @@ worktree/branch → changes → tests → commit → push branch
 
 ## Bước 2 — deploy
 
-⚠️ **Deploy chép CẢ CÂY nguồn.** Hỏi các phiên khác trước (`ListAgents`), và
+⚠️ **Deploy xuất HEAD cây chính** (`git archive` + `$VAN_CHUYEN`, `setup/2-cai-dat.ps1`; tệp chưa commit không lên). Vẫn hỏi các phiên khác trước (`ListAgents`), và
 kiểm `git status` — một dòng `??` lạ là một phiên khác đang làm việc.
 
 ⚠️ Cửa sổ cấm ghi **kéo dài tới hết nghiệm thu**, không dừng ở lúc chép xong.

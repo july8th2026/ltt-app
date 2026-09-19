@@ -17,7 +17,7 @@
 - ⛔ Không viết lại lịch sử git (không rebase/force-push/xoá commit). "Commit cũ" = nhánh + worktree đã gộp/bỏ → dọn nhánh/worktree, không đụng commit.
 - ⛔ Không đụng dòng `??` / tệp chưa commit của phiên khác; `git add` tường minh; tệp cấu hình UTF-8 không BOM.
 - ⛔ `D:\BOT GEMINI` chỉ đọc; memory của dự án khác ngoài LTTSTUDIOSAPP/LTTCODEAPP không đụng.
-- Luật gate: tài liệu thuần ⇒ hook pre-commit + gate L1 (`gate.py --doi`) trước khi gộp `main`; KHÔNG L3; KHÔNG cần deploy (deploy chép cả cây — tài liệu đi theo lần deploy kế).
+- Luật gate: tài liệu thuần ⇒ hook pre-commit + gate L1 (`gate.py --doi`) trước khi gộp `main`; KHÔNG L3; KHÔNG cần deploy (deploy xuất HEAD cây chính bằng `git archive` + `$VAN_CHUYEN` — tài liệu đi theo lần deploy kế).
 - LTTCODEAPP: chỉ làm SAU khi `phien/v2` (Pha C, 0.2.0) gộp `main` — tránh xung đột `docs/LTTCODE/reports/…`.
 - Agent: Sonnet, mỗi làn một worktree + nhánh `phien/don-tl-<làn>`, báo cáo ≤ 250 từ, chờ ở tiền cảnh (`C:\Users\Thang Tuong\.claude\ltt\QUY_TAC_AGENT_VA_TOKEN.md`).
 
