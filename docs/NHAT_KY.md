@@ -12,6 +12,34 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-19 — `/lttcode/plugins.json` hết 404: danh mục dshmarket phục vụ tĩnh
+
+`DSHM_REGISTRY_URL` của app LTTCODE trỏ thẳng `https://app.lttstudios.com/lttcode/plugins.json`
+(`sidecar.rs`) nhưng nền tảng chưa phục vụ ⇒ 404. Thêm route `GET /plugins.json`
+trong `apps/lttcode/routes.py`, đọc tĩnh từ `apps/lttcode/plugins.json` (chép
+byte-for-byte từ `desktop/sidecar/market/plugins.json` ở kho LTTCODEAPP, nhánh
+`phien/v2`) — không qua thư mục dữ liệu, không qua R2, đi theo bản phát hành
+như mọi mã nguồn khác. Không sửa `platform_core/`/`server/`: middleware chung
+(`server/app.py`) ghi đè `Cache-Control` thành `no-store` cho mọi path ngoài
+`/static/`/`/nexus/dl/` — route này chấp nhận mặc định đó thay vì mở ngoại lệ
+riêng (ngoài phạm vi app).
+
+Test nhắm mới: `tests/test_1600_lttcode_plugins_json.py` (200, JSON hợp lệ,
+khớp byte tệp nguồn, cache-control đúng mặc định nền tảng).
+
+```
+WORKTREE / BRANCH: D:\LTTSTUDIOSAPP-lttcode-plugins-json / phien/lttcode-plugins-json
+BASE_SHA:           fd3ce2ad7ecdb97b05a956824e83979123b54645
+L2 (--pham-vi app:lttcode): PASS — test-results/gates/20260919T070539Z-17196.json
+MAIN_SAU_GOP:        11bb134d41e2fc97151ded8cec1f97106ea3078a (fast-forward, main chưa đi tiếp)
+DEPLOY:              11bb134d41e2 — nghiem_thu_deploy.py DAT (khớp tuyệt đối), /health/ready 200,
+                     /health/version = 11bb134d41e2
+KIEM THAT:           curl -A Mozilla/5.0 https://app.lttstudios.com/lttcode/plugins.json → 200,
+                     application/json, byte-identical với desktop/sidecar/market/plugins.json
+RUI_RO_CON_LAI:      Cache-Control là no-store (không cache CDN) — chấp nhận được cho một tệp
+                     nhỏ (~7.6 KB) đọc từ đĩa mỗi request; không đáng sửa server/app.py để đổi.
+```
+
 ## 2026-09-19 — Đóng khối nền tảng máy A/B (tồn đọng LLM), dồn lực LTTCODE
 
 - Production = `ffdb4044` (A) + yaml B `deefbb9b…`; `main` sau đó chỉ đổi tài liệu ⇒ không deploy lại.
