@@ -19,10 +19,23 @@ Phân loại lỗi (học BOT GEMINI, đã kiểm chứng ở đó):
   liên tiếp (chống một key hỏng làm chết mọi request);
 - 429     → cooldown theo retry-after (mặc định `DEFAULT_COOLDOWN_S`);
 - 4xx khác → LỖI CỦA TA (bad request) → KHÔNG phạt key;
-- 5xx/mạng → error; sang trạng thái error sau nhiều lần.
+- 5xx/mạng → error; sang trạng thái error sau nhiều lần — **kèm hạn**
+  (`ERROR_COOLDOWN_S`): hết hạn thì khoá được thử lại (nửa mở), bộ đếm lỗi còn
+  nguyên nên một lỗi nữa là ERROR ngay, một lượt thành công mới xoá về 0.
+
+  🔴 Trước 19/09/2026 ERROR **không tự hồi**. Năm lượt khách ngắt giữa luồng
+     (đọc nhầm thành `ReadError` của thượng nguồn) đưa khoá DUY NHẤT của
+     `ltt_llm` sang ERROR và mọi khách nhận 500 suốt 16 phút, tới khi admin reset
+     tay — trong lúc máy B khoẻ. BOT GEMINI đã học đúng bài này ở nhánh auth
+     (`api_pool_manager.mark_auth_error`: *"transient auth error → recoverable
+     COOLDOWN"*); ở đây áp cùng bài cho 5xx/mạng. DISABLED (401/403 lặp lại)
+     vẫn chờ admin như cũ. Test: `test_1524_khoa_loi_tu_hoi.py`.
+- Khoá CUỐI CÙNG còn dùng được của một provider rời ACTIVE ⇒ log mức ERROR
+  (`_bao_neu_khoa_cuoi`): từ lúc đó mọi lượt của provider ấy là `ThieuKeyError`.
 """
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Sequence
 
@@ -35,7 +48,18 @@ from platform_core.models import (APIKEY_ACTIVE, APIKEY_COOLDOWN,
 AUTH_DISABLE_THRESHOLD = 5
 DEFAULT_COOLDOWN_S = 60
 ERROR_TO_STATUS_THRESHOLD = 5
+#: Hạn của trạng thái ERROR (5xx/mạng). Hết hạn ⇒ khoá được chọn lại một lượt
+#: (nửa mở). Ngắn vì chính nó là giới hạn thời gian mất dịch vụ của một provider
+#: chỉ có một khoá (`ltt_llm`); một thượng nguồn chết thật thì cứ mỗi hạn chỉ tốn
+#: ĐÚNG MỘT lượt thử, vì `error_count` còn ≥ ngưỡng.
+ERROR_COOLDOWN_S = 60
 WINDOW_S = 60          # cửa sổ đo rpm/tpm (giây)
+
+log = logging.getLogger("platform_core.api_pool")
+
+#: Trạng thái có hạn tự hồi qua `cooldown_until`. ERROR chỉ tự hồi khi CÓ hạn:
+#: dòng ERROR không hạn (đặt tay, hoặc từ trước 19/09) vẫn chờ admin.
+_CO_HAN_TU_HOI = (APIKEY_COOLDOWN, APIKEY_ERROR)
 
 
 class ThieuKeyError(Exception):
@@ -238,7 +262,7 @@ def _ung_vien(db: DbSession, now: datetime, *, providers: Optional[Sequence[str]
     out = []
     for k in rows:
         _cd = _aware(k.cooldown_until)
-        het_cooldown = bool(k.status == APIKEY_COOLDOWN and _cd and _cd <= now)
+        het_cooldown = bool(k.status in _CO_HAN_TU_HOI and _cd and _cd <= now)
         if het_cooldown and not chi_doc:
             # Đường cũ (SQLite, `db` giả): ghi ngay tại đây, từng byte như trước.
             k.status = APIKEY_ACTIVE
@@ -333,8 +357,8 @@ def chon_key(db: DbSession, *, category: Optional[str] = None,
     #    viên). Có chủ ý: một hàng ta không dùng thì không có lý do gì để ghi
     #    vào, và nó sẽ được hồi đúng ở lượt nó được chọn.
     moc = now - timedelta(seconds=WINDOW_S)
-    het_cd = ("status = :cd_status AND cooldown_until IS NOT NULL "
-              "AND cooldown_until <= :now")
+    het_cd = ("status IN (:cd_status, :er_status) "
+              "AND cooldown_until IS NOT NULL AND cooldown_until <= :now")
     moi = "window_start IS NULL OR window_start < :moc"
     _ghi_so_pool(
         db, chon,
@@ -345,8 +369,8 @@ def chon_key(db: DbSession, *, category: Optional[str] = None,
         f"window_tokens  = CASE WHEN {moi} THEN 0 ELSE window_tokens END, "
         f"status         = CASE WHEN {het_cd} THEN :cd_active ELSE status END, "
         f"cooldown_until = CASE WHEN {het_cd} THEN NULL ELSE cooldown_until END",
-        {"now": now, "moc": moc,
-         "cd_status": APIKEY_COOLDOWN, "cd_active": APIKEY_ACTIVE},
+        {"now": now, "moc": moc, "cd_status": APIKEY_COOLDOWN,
+         "er_status": APIKEY_ERROR, "cd_active": APIKEY_ACTIVE},
         ("last_used_at", "total_requests", "window_start", "window_requests",
          "window_tokens", "status", "cooldown_until"))
     return chon
@@ -501,7 +525,12 @@ def danh_dau_loi(db: DbSession, key: ApiKey, *, http_status: Optional[int] = Non
         moi["error_count"] = int(key.error_count or 0) + 1
         moi["health_score"] = max(0, int(key.health_score or 0) - 10)
         if moi["error_count"] >= ERROR_TO_STATUS_THRESHOLD:
+            # ERROR CÓ HẠN (19/09): hết hạn thì `_ung_vien`/`chon_key` cho thử
+            # lại. `error_count` giữ nguyên ⇒ lỗi kế tiếp là ERROR ngay.
             moi["status"] = APIKEY_ERROR
+            moi["cooldown_until"] = now + timedelta(seconds=ERROR_COOLDOWN_S)
+
+    _bao_neu_khoa_cuoi(db, key, moi.get("status"), message)
 
     if not _ghi_rieng_duoc(db):
         # Đường cũ — SQLite và `db` giả trong test.
@@ -512,6 +541,46 @@ def danh_dau_loi(db: DbSession, key: ApiKey, *, http_status: Optional[int] = Non
 
     _ghi_so_pool(db, key, ", ".join(f"{c} = :{c}" for c in moi), dict(moi),
                  tuple(moi))
+
+
+def _bao_neu_khoa_cuoi(db: DbSession, key: ApiKey, status_moi: Optional[str],
+                       message: str) -> None:
+    """Log mức ERROR khi khoá **cuối cùng dùng được** của một provider rời ACTIVE.
+
+    🔴 VÌ SAO (sự cố 19/09/2026): khoá duy nhất của `ltt_llm` sang ERROR lúc
+       23:54:47 và dòng log duy nhất là WARNING `khong mo duoc luong ...
+       (ThieuKeyError)` — lặp lại cho từng khách, không dòng nào nói *vì sao* cả
+       provider vừa tắt. Người trực mất 16 phút để thấy.
+
+    Chỉ báo ở CHUYỂN TRẠNG THÁI ACTIVE → không-ACTIVE, không báo mỗi lượt lỗi.
+    Chỉ đọc (một `SELECT`), không ghi gì; không bao giờ ném ra ngoài.
+    """
+    if not status_moi or status_moi == APIKEY_ACTIVE or key.status != APIKEY_ACTIVE:
+        return
+    if getattr(db, "execute", None) is None:
+        return              # `db` giả trong test
+    now = _bay_gio()
+    try:
+        khac = db.execute(
+            select(ApiKey).where(ApiKey.enabled.is_(True),
+                                 ApiKey.provider == key.provider,
+                                 ApiKey.owner_user_id == (key.owner_user_id or ""),
+                                 ApiKey.id != key.id)).scalars().all()
+    except Exception:                                           # noqa: BLE001
+        log.warning("khong dem duoc khoa con lai cua provider=%s", key.provider,
+                    exc_info=True)
+        return
+    for k in khac:
+        _cd = _aware(k.cooldown_until)
+        if k.status == APIKEY_ACTIVE or (k.status in _CO_HAN_TU_HOI and _cd
+                                         and _cd <= now):
+            return          # còn khoá khác dùng được — không phải khoá cuối
+    log.error(
+        "KHOA CUOI cua provider=%s roi ACTIVE -> %s (loi: %s). Moi luot cua "
+        "provider nay se la ThieuKeyError toi khi khoa tu hoi hoac admin reset. "
+        "khoa=%s", key.provider, status_moi, (message or "")[:200],
+        {k: v for k, v in mo_ta_an_toan(key).items()
+         if k in ("key_id", "pham_vi", "preview")})
 
 
 def rpm(key: ApiKey, *, now: Optional[datetime] = None) -> int:

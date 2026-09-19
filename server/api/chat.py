@@ -706,12 +706,11 @@ def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
         phong_cho.ghi_ket_thuc(waiter_id, "loi")
         raise
 
+    su_dung = SuDung(token_vao=kq.token_vao, token_ra=kq.token_ra,
+                     token_vao_cache=kq.token_vao_cache, dang_tin=kq.do_duoc)
     thu = thanh_toan.quyet_toan_hoac_hoan(
         db, user_id=principal.user_id, request_id=request_id,
-        su_dung=SuDung(token_vao=kq.token_vao, token_ra=kq.token_ra,
-                       token_vao_cache=kq.token_vao_cache,
-                       dang_tin=kq.do_duoc),
-        model=sach["model"])
+        su_dung=su_dung, model=sach["model"])
     # ⛔ P08 F-01: cot `credit_delta` cua so request CHI duoc ghi o cua job, nen
     #    hai cua nay doc ra `+0` bat ke thu bao nhieu — va `anomalies.py` dua vao
     #    no de do bat thuong tien. Mot so 0 co cau truc trong o "da thu bao nhieu"
@@ -727,7 +726,8 @@ def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
     idempotency.complete(db, record, response=tra_ve)
     db.commit()
     metrics.increment("chat:completions")
-    phong_cho.ghi_ket_thuc(waiter_id, "xong")
+    # T4 P2: token vào sổ lượt; TTFB NULL (không stream, không có byte đầu).
+    phong_cho.ghi_ket_thuc(waiter_id, "xong", so_do=phong_cho.SoDo.tu_su_dung(su_dung))
     return JSONResponse(tra_ve, status_code=200, headers=_NO_STORE)
 
 

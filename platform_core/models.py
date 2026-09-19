@@ -516,6 +516,22 @@ class LlmWaiter(Base):
     #: Kết cục sau khi được nhận: `xong` | `khach_ngat` | `loi` | `thieu_credit` …
     ket_qua: Mapped[str] = mapped_column(String(32), default="", nullable=False)
     lease_id: Mapped[str] = mapped_column(String(36), default="", nullable=False)
+    #: SỐ ĐO của lượt đã được nhận (T4 P2, `THIET_KE_R06_R07_ID_PHIEN.md` §2.3) —
+    #: A vốn đếm được (`DemToken`, `KetQua` của cửa một cục) nhưng trước đây chỉ
+    #: để trong một dòng log văn bản. Ghi ở `phong_cho.ghi_ket_thuc(so_do=)`.
+    #:
+    #: ⛔ `NULL`, KHÔNG `0`, khi không đo được (luồng vỡ trước `usage`, đường ra
+    #:    bận/lỗi trước lượt) — cùng luật sổ B `llm_gateway/so_luot.py`: 0 là một
+    #:    khẳng định, null là thú nhận. ⛔ Không chép TIỀN vào đây: tiền đọc từ
+    #:    `credit_entries` qua `job_id = request_id` (hai chỗ ghi tiền sẽ lệch).
+    token_vao: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    token_ra: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    #: Phần của `token_vao` lấy lại từ cache prompt (đã NẰM TRONG `token_vao`).
+    token_cache: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    #: Giây từ lúc mở luồng tới byte DỮ LIỆU đầu (bỏ nhịp tim `: ping`), đo ở
+    #: **phía A** — gồm mạng A↔B. TTFT phía B nằm ở sổ lượt B (`ttft_s`). Cửa
+    #: không stream để NULL: không byte nào chảy trước cả lượt.
+    ttfb_s: Mapped[float | None] = mapped_column(Float, nullable=True)
 
 
 class GpuResidency(Base):

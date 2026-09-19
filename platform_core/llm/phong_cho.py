@@ -248,8 +248,32 @@ def _mot_nhip(yc: YeuCauCho, waiter_id: str,
         _dong(gen)
 
 
+@dataclass(frozen=True)
+class SoDo:
+    """Số đo của một lượt đã được nhận, cho `llm_waiters` (T4 P2).
+
+    ⛔ `None` = không đo được; `0` = đo được và bằng không. Đừng gộp hai nghĩa
+       (cùng luật sổ lượt B `llm_gateway/so_luot.py`).
+    """
+
+    token_vao: int | None = None
+    token_ra: int | None = None
+    token_cache: int | None = None
+    ttfb_s: float | None = None
+
+    @classmethod
+    def tu_su_dung(cls, su_dung, *, ttfb_s: float | None = None) -> "SoDo":
+        """Từ `cong_vlm.SuDung`. `dang_tin=False` (không thấy `usage`) ⇒ token `None`."""
+        ttfb = None if ttfb_s is None else round(float(ttfb_s), 3)
+        if su_dung is None or not getattr(su_dung, "dang_tin", False):
+            return cls(ttfb_s=ttfb)
+        return cls(token_vao=int(su_dung.token_vao), token_ra=int(su_dung.token_ra),
+                   token_cache=int(su_dung.token_vao_cache), ttfb_s=ttfb)
+
+
 def _chot(waiter_id: str, trang_thai: str, ket_qua: str,
-          now: datetime | None = None, *, chi_khi: str = "cho") -> None:
+          now: datetime | None = None, *, chi_khi: str = "cho",
+          so_do: SoDo | None = None) -> None:
     """Chốt trạng thái cuối của một dòng (phiên mới). Hỏng thì chỉ ghi log."""
     gen, db = _phien()
     try:
@@ -258,6 +282,11 @@ def _chot(waiter_id: str, trang_thai: str, ket_qua: str,
             w.trang_thai = trang_thai
             w.ket_qua = ket_qua
             w.finished_at = now or _bay_gio()
+            if so_do is not None:
+                w.token_vao = so_do.token_vao
+                w.token_ra = so_do.token_ra
+                w.token_cache = so_do.token_cache
+                w.ttfb_s = so_do.ttfb_s
             db.commit()
     except Exception:  # noqa: BLE001 - sổ lượt không được làm hỏng lượt thật
         db.rollback()
@@ -366,10 +395,14 @@ def xep_lai(waiter_id: str, *, now: datetime | None = None) -> bool:
         _dong(gen)
 
 
-def ghi_ket_thuc(waiter_id: str, ket_qua: str, *, now: datetime | None = None) -> None:
-    """Lượt đã được nhận rồi kết thúc: `xong` + kết cục (`xong`/`khach_ngat`/`loi`…)."""
+def ghi_ket_thuc(waiter_id: str, ket_qua: str, *, now: datetime | None = None,
+                 so_do: SoDo | None = None) -> None:
+    """Lượt đã được nhận rồi kết thúc: `xong` + kết cục (`xong`/`khach_ngat`/`loi`…).
+
+    `so_do` (T4 P2): token + TTFB của lượt. Vắng ⇒ bốn cột để NULL (không đo).
+    """
     if waiter_id:
-        _chot(waiter_id, "xong", ket_qua, now, chi_khi="nhan")
+        _chot(waiter_id, "xong", ket_qua, now, chi_khi="nhan", so_do=so_do)
 
 
 def don_het_han(db: Session, *, now: datetime | None = None) -> int:

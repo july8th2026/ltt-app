@@ -213,8 +213,10 @@ def mo(db, *, duong: str, than: dict, timeout_s: float = 900.0,
             #    Cổng máy B trả 504 khi thượng nguồn không kịp trả lời (tách khỏi
             #    502 ngày 09/09). Không có nhánh này thì 504 rơi xuống `>= 500`
             #    ngay dưới ⇒ `api_pool.danh_dau_loi()` ⇒ sau 5 lần
-            #    `key.status = APIKEY_ERROR`, và `APIKEY_ERROR` **không tự hồi**
-            #    (`api_pool._ung_vien` chỉ tự hồi `COOLDOWN`).
+            #    `key.status = APIKEY_ERROR`. Trước 19/09 trạng thái đó **không
+            #    tự hồi**; nay ERROR có hạn (`api_pool.ERROR_COOLDOWN_S`) rồi thử
+            #    lại, ERROR không hạn vẫn chờ admin — nhưng `error_count` giữ
+            #    nguyên nên mỗi lượt hết giờ kế tiếp lại tắt khoá ngay.
             #
             # ⛔ VÀ ĐÂY LÀ CỬA **STREAMING** — cửa Codex và Claude Code thật sự
             #    dùng, tức cửa của những prompt 100–200K, tức đúng chỗ hết giờ

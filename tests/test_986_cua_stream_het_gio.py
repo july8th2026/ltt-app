@@ -19,7 +19,8 @@ tức không `danh_dau_loi`, không cascade.
 
    `504 >= 500`. Nên sau Phase 5, cửa đồng bộ được bảo vệ còn cửa streaming
    **vẫn phạt khoá y như cũ** — và sau 5 lần thì `key.status = APIKEY_ERROR`,
-   thứ **không tự hồi** (`api_pool._ung_vien` chỉ tự hồi `COOLDOWN`).
+   thứ hồi đó **không tự hồi** (từ 19/09: có hạn rồi thử lại, nhưng lỗi kế tắt
+   lại ngay; ERROR không hạn vẫn chờ admin — `test_1524`).
 
 🔴 VÀ ĐÂY LÀ VẾ ĐÁNG NHỚ: **streaming là cửa hay hết giờ nhất.** Codex và Claude
    Code chỉ nói SSE; chúng là thứ gửi prompt 100–200K. Cửa đồng bộ thì bị
@@ -97,7 +98,7 @@ def test_nhanh_504_KHONG_danh_dau_loi():
     than = ast.dump(ast.Module(body=_nhanh_504().body, type_ignores=[]))
     assert "danh_dau_loi" not in than, (
         "nhanh 504 CO goi danh_dau_loi -> 5 lan het gio la khoa vao "
-        "APIKEY_ERROR, va trang thai do KHONG tu hoi")
+        "APIKEY_ERROR (co han tu 19/09, nhung moi lan het gio ke lai tat khoa)")
 
 
 def test_nhanh_504_KHONG_dat_ban_True():

@@ -584,7 +584,9 @@ def test_migration_mot_head_va_noi_vao_head_truoc():
     from alembic.script import ScriptDirectory
 
     scripts = ScriptDirectory.from_config(_cfg())
-    assert scripts.get_heads() == [REV], scripts.get_heads()
+    # ⚠️ Không `get_heads() == [REV]`: đỏ ngay ở migration kế tiếp (T4 P2 thêm
+    #    `e4a19c07b5d2` nối sau). Hỏi đúng điều cần: một head, REV nằm trong chuỗi.
+    assert len(scripts.get_heads()) == 1, scripts.get_heads()
     rev = scripts.get_revision(REV)
     assert rev.down_revision == "7c2e5a91d4b3"
 
@@ -613,7 +615,7 @@ def test_sqlite_upgrade_head_roi_ma_cu_van_insert_duoc(tmp_path, monkeypatch):
     url = "sqlite:///" + (tmp_path / "mig.db").as_posix()
     monkeypatch.setenv("LTT_DATABASE_URL", url)
     cfg = _cfg()
-    command.upgrade(cfg, "head")
+    command.upgrade(cfg, REV)   # đúng bước này — `-1` bên dưới gỡ đúng nó
     eng = create_engine(url)
     cot = {c["name"] for c in inspect(eng).get_columns("public_api_requests")}
     assert set(COT_MOI) <= cot
