@@ -47,7 +47,7 @@
 - **worktree:** `D:\LTTSTUDIOSAPP\.claude\worktrees\video-v2-wangp`
 - **base_commit (trunk lúc tách):** `06017841` trên `admin-mvp-v3`
 - **head:** ⚙️ hỏi `git -C <worktree> log -1 --format=%h`, đừng chép vào đây
-- **trunk thật:** **`admin-mvp-v3`**, **không** phải `master`
+- **trunk thật:** **`admin-mvp-v3`**, **không** phải `master` *(ghi 07/09; nay trunk là `main` — `admin-mvp-v3` đã gộp và không còn, kiểm 19/09)*
   — đo được: `git rev-list --left-right --count master...admin-mvp-v3` → `0 216`.
   `master` đứng ở `d225a480` (03/09), tụt sau trunk **216 commit**.
   ⇒ Worktree V2 tạo từ `admin-mvp-v3` theo `docs/QUY_TRINH_WORKTREE.md` luật 1.

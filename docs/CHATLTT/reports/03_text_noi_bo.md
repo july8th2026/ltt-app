@@ -47,7 +47,7 @@
 
 ## Changes
 - `platform_core/llm/dem_token_luong.py`: `_quet` đọc `timings.cache_n`.
-- `docs/QUYET_DINH_NEN_TANG.md`: Q120 (+ đánh dấu Q116, header "đến Q120"); `docs/KE_HOACH_NOI_TIEP_2026-08-29.md` (nay ở `docs/_luutru/2026-09/`) hai dòng cap 65K trỏ sang Q120.
+- `docs/QUYET_DINH_NEN_TANG.md`: Q120 (+ đánh dấu Q116, header "đến Q120"); `docs/_luutru/2026-09/KE_HOACH_NOI_TIEP_2026-08-29.md` (lưu trữ 19/09) hai dòng cap 65K trỏ sang Q120.
 - Tests: `test_603_text_luong_chuan_hoa.py` (9), `test_604_q120_tran_ngu_canh_mot_nguon.py` (3).
 
 ## Tests
