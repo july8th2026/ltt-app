@@ -16,3 +16,4 @@ chế đổi — tài liệu cũ bị bắt ngay ở lần quét kế tiếp.
 | admin-mvp-v3 | main | git |
 | purification-v1 | main | git |
 | ltt-3.8 mặc định xhigh | ltt-3.8 mặc định medium (L-33) | DECISION_LOG L-33 |
+| deploy chép cả cây | deploy xuất HEAD cây chính (`git archive`) + danh sách `$VAN_CHUYEN`; tệp chưa commit không lên | `setup/2-cai-dat.ps1` (`1e520ae0`, 08/09) |
