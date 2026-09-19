@@ -124,6 +124,18 @@ def _loi_parser_tool_call(than_loi: str) -> bool:
     return any(d in thap for d in _DAU_HIEU_PARSER)
 
 
+def la_het_gio_doc(exc: BaseException) -> bool:
+    """Máy B nhận kết nối nhưng im quá hạn đọc (`httpx.ReadTimeout`) — C0-34.
+
+    Đó là NGHẼN (lượt khác đang giữ card, prefill dài), không phải khoá hỏng:
+    **không** `danh_dau_loi`. ⛔ Hẹp có chủ ý: `ConnectTimeout`/`ConnectError`
+    (máy B không với tới) vẫn là hỏng thật và vẫn phạt như cũ.
+    """
+    import httpx
+
+    return isinstance(exc, httpx.ReadTimeout)
+
+
 def mo(db, *, duong: str, than: dict, timeout_s: float = 900.0,
        request_id: str = "", token_dat_truoc: int = 0,
        _da_thu_lai: bool = False) -> LuongMo:
@@ -174,6 +186,13 @@ def mo(db, *, duong: str, than: dict, timeout_s: float = 900.0,
         r = ctx.__enter__()
     except httpx.HTTPError as e:
         client.close()
+        if la_het_gio_doc(e):
+            # 🔴 C0-34 (20/09): máy B đã nhận kết nối nhưng không trả header kịp
+            #    = đang nghẽn, KHÔNG phải khoá hỏng. Cùng lý do nhánh 504 bên
+            #    dưới: phạt ở đây là năm lượt nghẽn liền nhau tắt khoá DUY NHẤT
+            #    của `ltt_llm` (sự cố khoá pool 19/09).
+            raise KhongMoDuocLuong(
+                f"may B khong tra loi kip ({type(e).__name__})", het_gio=True) from None
         api_pool.danh_dau_loi(db, key, message=type(e).__name__)
         raise KhongMoDuocLuong(f"khong noi duoc toi may B ({type(e).__name__})") from None
 

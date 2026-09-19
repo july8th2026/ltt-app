@@ -46,6 +46,11 @@ log = logging.getLogger("platform_core.runtime_noi_bo.luong")
 #: không mua thêm thời gian — nó chỉ đổi 503 của ta lấy 524 của Cloudflare.
 MO_LUONG_GIAY = 75.0
 
+#: Câu cho khách khi máy B không trả lời kịp (C0-34). Đi với mã `overloaded`
+#: (Anthropic `overloaded_error`, OpenAI `server_is_overloaded`): client tự thử
+#: lại. ⛔ Không lộ chi tiết nội bộ (tên máy, hạn giây).
+_CAU_HET_GIO = "The model did not respond in time because it is busy. Please retry shortly."
+
 #: Đường của cổng máy B mà client nội bộ dùng. Hình dạng OpenAI chat chunk là
 #: hình dạng **duy nhất** `_su_kien_tu_goi` biết đọc; hai đường kia
 #: (`/v1/messages`, `/v1/responses`) chỉ đi qua `mo_luong_tho` (byte nguyên xi).
@@ -99,10 +104,14 @@ class KhongMoDuoc(LoiCuaLuong):
     """Không mở được luồng vì lý do khác bận. `qua_dai` = 413 (lỗi của đầu vào)."""
 
     def __init__(self, ly_do: str, *, qua_dai: bool = False,
-                 token: Optional[int] = None, tran: Optional[int] = None):
+                 token: Optional[int] = None, tran: Optional[int] = None,
+                 het_gio: bool = False):
         super().__init__(ly_do)
         self.ly_do = ly_do
         self.qua_dai = qua_dai
+        #: Máy B không trả lời kịp (504 hoặc hết hạn đọc — C0-34): nghẽn, khách
+        #: nhận `overloaded` (thử lại được), không phải "không phục vụ được".
+        self.het_gio = het_gio
         #: Số cho câu "prompt is too long: N tokens > M maximum" (R-08), khi biết.
         self.token = token
         self.tran = tran
@@ -1308,13 +1317,38 @@ def luong_co_cho(tk: TienKiem, *, loi_sse: Callable[[str, str, str], bytes],
             return
         except KhongMoDuoc as e:
             phong_cho.ghi_ket_thuc(cb.waiter_id, "qua_dai" if e.qua_dai else "khong_mo_duoc")
+            if e.het_gio and not e.qua_dai:
+                yield loi_sse(tk.duong, "overloaded", _CAU_HET_GIO)
+                return
             yield loi_sse(tk.duong, "context_length" if e.qua_dai else "upstream",
                           "The input exceeds the model's context limit."
                           if e.qua_dai else "The model could not serve this request.")
             return
         finally:
             mo.close()
-        yield from luot.luong
+        # 🔴 C0-34 (20/09): máy B im quá hạn đọc giữa luồng ⇒ `httpx.ReadTimeout`
+        #    thoát khỏi thân phản hồi. 200 đã gửi, nên Starlette không còn trả
+        #    được mã nào: khách thấy luồng đứt không `message_stop`, log ghi
+        #    "unhandled public api error". `_phat` đã quyết toán/hoàn trong
+        #    `finally` của nó; ở đây chỉ còn dựng MỘT khối lỗi đúng khuôn.
+        import httpx
+
+        try:
+            yield from luot.luong
+        except httpx.HTTPError as e:
+            if luot.a_da_dong:
+                # Chính A đóng cửa vì khách đi — không còn ai để nhận khối lỗi.
+                return
+            from platform_core.llm.luong_vlm import la_het_gio_doc
+
+            het_gio = la_het_gio_doc(e)
+            log.warning("STREAM DUT (%s) rid=%s - tra khoi loi %s",
+                        type(e).__name__, cb.request_id[-8:],
+                        "overloaded" if het_gio else "upstream")
+            yield loi_sse(tk.duong, "overloaded" if het_gio else "upstream",
+                          _CAU_HET_GIO if het_gio else
+                          "The connection to the model was interrupted. "
+                          "Please retry.")
     finally:
         _dong_phien(gen)
 
@@ -1760,7 +1794,8 @@ def mo_thuong_nguon(cb: ChuanBi, *, timeout_s: float = MO_LUONG_GIAY,
             raise DangBan(e.ly_do, nguon="thuong_nguon",
                           thu_lai_sau_s=e.thu_lai_sau_s) from None
         log.warning("khong mo duoc luong cho user=%s: %s", cb.user_id[:8], e.ly_do)
-        raise KhongMoDuoc(e.ly_do, qua_dai=bool(getattr(e, "qua_dai", False))) from None
+        raise KhongMoDuoc(e.ly_do, qua_dai=bool(getattr(e, "qua_dai", False)),
+                          het_gio=bool(getattr(e, "het_gio", False))) from None
     except BaseException:
         hoan(cb.user_id, cb.request_id)
         _nha_suat(cb.lease_id)
@@ -1888,7 +1923,15 @@ def _phat(mo, luot: LuotLuong, *, trang_thai=None) -> Generator[bytes, None, Non
             luot.ket_qua = quyet_toan(cb.user_id, cb.request_id, dem, cb.da_giu,
                                       trang_thai, model=cb.model_alias)
             if vo is not None:
-                mo.hong(vo)
+                from platform_core.llm.luong_vlm import la_het_gio_doc
+
+                if la_het_gio_doc(vo):
+                    # C0-34: máy B im quá hạn đọc = nghẽn, không phải khoá
+                    # hỏng. Không `hong`, cũng không `xong` (không có token).
+                    log.warning("STREAM HET GIO DOC rid=%s - khong phat khoa",
+                                cb.request_id[-8:])
+                else:
+                    mo.hong(vo)
             else:
                 mo.xong(tokens=dem.token_ra)
             if cb.waiter_id:
