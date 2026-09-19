@@ -1,7 +1,7 @@
 # A4 — Competitor Benchmark
 
 Snapshot 2026-08-09; official docs/hands-on được ưu tiên. PlenX dùng hồ sơ
-`docs/KHAO_SAT_PLENX_AGENT.md` như evidence lịch sử, không suy ra backend.
+`docs/KHAO_SAT_PLENX_AGENT.md` (nay ở `docs/_luutru/2026-09/`) như evidence lịch sử, không suy ra backend.
 
 | Capability/JTBD | LTT | FLORA | ComfyUI | n8n/Make | Class |
 |---|---:|---:|---:|---:|---|

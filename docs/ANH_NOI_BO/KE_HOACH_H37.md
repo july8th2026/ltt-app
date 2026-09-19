@@ -510,6 +510,10 @@ Rút đường Gemini của `taoanh`/`thumbnail` vào `image_gen` chung, xoá b�
 
 ## 11. Tài liệu sẽ sinh ra
 
+> Kiểm 19/09/2026: `BENCHMARK.md`, `EDIT_REFERENCE.md`, `PERFORMANCE.md`, `DOI_CHUNG_GEMINI.md`,
+> `RUNBOOK.md` (G4–G11) **chưa từng tồn tại** trong `docs/ANH_NOI_BO/` — các tham chiếu tới chúng ở
+> §G2 trở đi là tài liệu dự kiến chưa viết, không phải con trỏ vỡ.
+
 | File | Khi nào |
 |---|---|
 | `docs/ANH_NOI_BO/DECISIONS.md` | ngay từ G1 — khuôn Decision/Reason/Alternatives/Trade-off/Date của pack |

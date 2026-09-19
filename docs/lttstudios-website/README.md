@@ -334,8 +334,9 @@ Tất cả phải **200 OK**. Nếu 403/404 → check permissions hoặc đườ
 ## 🔌 Optional — PHP relay cho TikTok cross-machine OAuth
 
 Nếu host hỗ trợ PHP 7.4+, thêm folder `api/oauth-relay/` với 2 file PHP để bot
-poll OAuth code từ máy khác. Xem section "Optional PHP relay" trong file
-`docs/fb-app-review-submission-plan.md` cho code mẫu.
+poll OAuth code từ máy khác. ⚠️ Kho này **không có** code mẫu PHP relay (kiểm 19/09/2026).
+*(Lịch sử: dòng này từng trỏ `fb-app-review-submission-plan.md` — tệp đó nay ở `docs/_luutru/`
+và không chứa đoạn code nào; cần relay thì phải viết mới.)*
 
 Nếu KHÔNG dùng (most users): không sao — bot vẫn OAuth được trên cùng máy.
 

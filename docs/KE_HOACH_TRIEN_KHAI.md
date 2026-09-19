@@ -3741,7 +3741,7 @@ link 404 `/ltt-llm` **vẫn còn ở đó**, và mọi bản vá của đợt n�
 và E3 đã lấy được — xem hàng H41.2 ở trên.
 
 📌 **Thứ tự làm các hàng còn treo, kèm đường phụ thuộc và tiêu chí nghiệm thu
-từng đợt: `docs/KE_HOACH_NOI_TIEP_2026-08-29.md`.** Điểm mấu chốt của tài liệu đó,
+từng đợt: `docs/_luutru/2026-09/KE_HOACH_NOI_TIEP_2026-08-29.md` (ảnh chụp 29/08, lưu trữ 19/09).** Điểm mấu chốt của tài liệu đó,
 không thấy được nếu chỉ đọc bảng phẳng này: **H41.5 và H35.10 có chung một nút
 thắt là H35.10a** (đo thời lượng phía máy chủ lúc báo giá) — làm một việc rủi ro
 thấp thì mở khoá cả hai.

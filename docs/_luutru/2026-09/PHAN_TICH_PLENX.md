@@ -1,3 +1,5 @@
+> LƯU TRỮ 2026-09-19 — không còn đúng hệ thống hiện tại; thay bằng: `docs/AGENT_LTT/01_DAC_TA_AGENT.md` (đặc tả đã chốt, app `apps/agent/`). Chỉ đọc để hiểu lịch sử.
+
 # Phân tích PLENX (plenxai.com) + đối chiếu, phương án cho nền tảng ta — 2026-08-01
 
 > Quan sát trực tiếp qua trình duyệt (đã đăng nhập tài khoản người dùng cấp).

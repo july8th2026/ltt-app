@@ -1,6 +1,6 @@
 # VPS V2 — BẢNG ĐIỂM PHÁT HÀNH
 
-> Chấm theo `CORE/QUALITY_SCORECARD.md`. **Ba cột riêng, không trung bình.**
+> Chấm theo `CORE/QUALITY_SCORECARD.md` *(tài liệu `CORE/` chưa từng tồn tại trong kho — kiểm 19/09/2026, xem `docs/_luutru/NGOAI_LE_QUET.md`)*. **Ba cột riêng, không trung bình.**
 > Trộn một hạ tầng thiếu vào điểm phần mềm là cách để không ai biết cái nào thiếu.
 
 Ngày: 2026-09-09 · Nhánh `claude/ltt-vps-v2-deployment-plan-2cfc36`

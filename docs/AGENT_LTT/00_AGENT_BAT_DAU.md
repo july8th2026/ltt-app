@@ -4,6 +4,9 @@
 > Mọi thứ khác được file này chỉ đường tới.
 >
 > Lập 2026-08-01. Thuộc bộ `docs/AGENT_LTT/`.
+>
+> **Trạng thái 19/09:** TRA CỨU cho app `apps/agent/` (còn sống); H12 đóng 02/08. Bốn tệp nghiên cứu
+> nền dưới đây đã lưu trữ ở `docs/_luutru/2026-09/`. Không liên quan `docs/nexus/` (app khác).
 
 ---
 
@@ -41,10 +44,10 @@ code** trong khoảng một phút. Chỉ sau khi có kết quả đó mới đ�
 
 | File | Chứa gì |
 |---|---|
-| `../KHAO_SAT_PLENX_AGENT.md` | **mổ PLENX thật** qua trình duyệt: giao thức SSE agent, 5 tool, data model, API job, mô hình giá. Mọi con số đều đo được. |
-| `../PHUONG_AN_AGENT.md` | chấm điểm 5 phương án kiến trúc agent → chọn PA-1+ |
-| `../KIEM_KE_VA_LO_TRINH_AGENT.md` | kiểm kê `D:\BOT GEMINI` (55.925 dòng module) + chấm điểm 5 lộ trình → chọn LT-1 |
-| `../PHAN_TICH_PLENX.md` | bố cục/điều hướng PLENX (đã áp dụng ở UX Pha 2) |
+| `../_luutru/2026-09/KHAO_SAT_PLENX_AGENT.md` | **mổ PLENX thật** qua trình duyệt: giao thức SSE agent, 5 tool, data model, API job, mô hình giá. Mọi con số đều đo được. |
+| `../_luutru/2026-09/PHUONG_AN_AGENT.md` | chấm điểm 5 phương án kiến trúc agent → chọn PA-1+ |
+| `../_luutru/2026-09/KIEM_KE_VA_LO_TRINH_AGENT.md` | kiểm kê `D:\BOT GEMINI` (55.925 dòng module) + chấm điểm 5 lộ trình → chọn LT-1 |
+| `../_luutru/2026-09/PHAN_TICH_PLENX.md` | bố cục/điều hướng PLENX (đã áp dụng ở UX Pha 2) |
 | `../DOI_CHIEU_THUMBNAIL.md` | đối chiếu parity app thumbnail — mẫu cho mọi app di trú |
 
 ### Tài liệu DI TRÚ — chuẩn chính thức, **không** nằm trong bộ này

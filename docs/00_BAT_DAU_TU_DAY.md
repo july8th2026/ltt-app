@@ -31,7 +31,7 @@ gỡ 16/09/2026 — lịch sử nằm trong git.)* Đã chốt gì: `QUYET_DINH_
 | Câu lệnh mẫu để giao việc cho Claude | `02_LENH_CHO_CLAUDE.md` |
 | Thêm một app | `03_THEM_APP_MOI.md` |
 | Dựng Tunnel, xử lý sự cố mạng | `04_CLOUDFLARE_TUNNEL.md` |
-| AI Agent LTT | `AGENT_LTT/00_AGENT_BAT_DAU.md` |
+| AI Agent LTT (app `apps/agent/`) | `AGENT_LTT/00_AGENT_BAT_DAU.md` |
 | Di trú module BOT GEMINI → app | `CONG_THUC_DI_TRU_APP.md` + `KE_HOACH_DI_TRU_MODULE.md` |
 | Audit toàn diện app | `quy_tac_audit.md` |
 | Thiết kế lại UI từ ảnh sau audit | `QUY_TRINH_THIET_KE_LAI_GIAO_DIEN_APP.md` |

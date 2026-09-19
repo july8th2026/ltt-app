@@ -18,7 +18,7 @@ không biết vì sao nó có.
 ## ADR-01 — Giữ `trang_thai` làm cột chiếu {#adr-01}
 
 **Bối cảnh.** `vps_instance.trang_thai` (`String(16)`) hiện gánh năm khái niệm: vòng đời
-nghiệp vụ, điện, treo-vì-tiền, lỗi, đã xoá. `CORE/TARGET_ARCHITECTURE.md` đòi tách.
+nghiệp vụ, điện, treo-vì-tiền, lỗi, đã xoá. `CORE/TARGET_ARCHITECTURE.md` đòi tách. *(tài liệu `CORE/` chưa từng tồn tại trong kho — kiểm 19/09/2026, xem `docs/_luutru/NGOAI_LE_QUET.md`)*
 
 **Quyết định.** Thêm các cột độc lập, và **giữ nguyên `trang_thai`** như một *projection*
 được tính lại từ chúng ở một chỗ duy nhất.

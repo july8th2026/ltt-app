@@ -1,3 +1,5 @@
+> LƯU TRỮ 2026-09-19 — không còn đúng hệ thống hiện tại; thay bằng: `docs/AGENT_LTT/02_LO_TRINH.md` (Q49/Q39, 02/08). Chỉ đọc để hiểu lịch sử.
+
 # Kiểm kê tài sản thật + lộ trình xây agent như PLENX/FLORA — 2026-08-01
 
 > **TÀI LIỆU NGHIÊN CỨU LỊCH SỬ.** Mọi đoạn nói Canvas “để sau/hoãn” đã bị

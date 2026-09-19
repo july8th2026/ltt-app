@@ -3,7 +3,7 @@
 > **Đây là HỢP ĐỒNG.** Nó ít thay đổi. Nếu phải đổi thì đổi có chủ đích, ghi lý do
 > vào `../QUYET_DINH_NEN_TANG.md`, không sửa lặng lẽ.
 >
-> Cơ sở: `../PHUONG_AN_AGENT.md` (chấm điểm → PA-1+) và `../KHAO_SAT_PLENX_AGENT.md`
+> Cơ sở: `../_luutru/2026-09/PHUONG_AN_AGENT.md` (chấm điểm → PA-1+) và `../_luutru/2026-09/KHAO_SAT_PLENX_AGENT.md`
 > (bằng chứng đo từ PLENX thật).
 
 ---

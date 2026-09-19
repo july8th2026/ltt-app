@@ -149,7 +149,7 @@ NỀN: gọi `xoa` ngay sau đó thì Proxmox trả 500"*. Đường khôi phụ
 `tables.py:186` — `trang_thai: String(16)`, giá trị `dang_tao|dang_chay|da_tat|bi_treo|loi|da_xoa`.
 
 Không biểu diễn được: *"nghiệp vụ đang hoạt động · mong muốn tắt · quan sát thấy đang chạy ·
-tác vụ đang tắt"* — tổ hợp mà `CORE/TARGET_ARCHITECTURE.md` bắt buộc phải biểu diễn được.
+tác vụ đang tắt"* — tổ hợp mà `CORE/TARGET_ARCHITECTURE.md` bắt buộc phải biểu diễn được. *(tài liệu `CORE/` chưa từng tồn tại trong kho — kiểm 19/09/2026, xem `docs/_luutru/NGOAI_LE_QUET.md`)*
 
 Và không có mốc **quan sát lần cuối lúc nào**, nên "đang chạy" ghi tuần trước trông
 giống hệt "đang chạy" đo một giây trước.

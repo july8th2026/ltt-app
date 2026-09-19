@@ -1,3 +1,5 @@
+> LƯU TRỮ 2026-09-19 — không còn đúng hệ thống hiện tại; thay bằng: `docs/AGENT_LTT/01_DAC_TA_AGENT.md` (đặc tả đã chốt, app `apps/agent/`). Chỉ đọc để hiểu lịch sử.
+
 # Khảo sát PLENX — canvas workflow + "Workflow Assistant" (agent) — 2026-08-01
 
 > Quan sát **trực tiếp** qua trình duyệt điều khiển bằng Playwright, tài khoản

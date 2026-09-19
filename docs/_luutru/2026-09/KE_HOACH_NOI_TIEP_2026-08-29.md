@@ -1,3 +1,5 @@
+> LƯU TRỮ 2026-09-19 — không còn đúng hệ thống hiện tại; thay bằng: `docs/KE_HOACH_TRIEN_KHAI.md`. Chỉ đọc để hiểu lịch sử.
+
 # Kế hoạch nối tiếp — 2026-08-29
 
 > **Đây là danh sách việc đang hiệu lực sau khi Claude tiếp quản từ Codex.**

@@ -1,3 +1,5 @@
+> LƯU TRỮ 2026-09-19 — không còn đúng hệ thống hiện tại; thay bằng: `docs/AGENT_LTT/01_DAC_TA_AGENT.md` + `02_LO_TRINH.md` (Q49/Q39, 02/08). Chỉ đọc để hiểu lịch sử.
+
 # Phương án xây AI Agent cho LTTSTUDIOSAPP — chấm điểm & đề xuất — 2026-08-01
 
 > **TÀI LIỆU NGHIÊN CỨU LỊCH SỬ.** Kết luận “hoãn/không Canvas ở v1” bên dưới đã

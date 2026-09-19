@@ -27,7 +27,7 @@ Không phải khiếm khuyết của mã: `apps/vps/sao_luu_doc_lap.py` khai đ�
 năng lực và trả `sao_luu_doc_lap=False` đúng sự thật; giao diện nói ra; runbook
 có mục riêng. Thiếu là **đích sao lưu**, và đó là thứ phải mua/dựng.
 
-**Trần điểm mà nó áp** — theo chính `CORE/QUALITY_SCORECARD.md`:
+**Trần điểm mà nó áp** — theo chính `CORE/QUALITY_SCORECARD.md` *(tài liệu `CORE/` chưa từng tồn tại trong kho — kiểm 19/09/2026, xem `docs/_luutru/NGOAI_LE_QUET.md`)*:
 
 > *snapshot on same storage only ⇒ "hardware backup/disaster protection" ≤ 50
 > regardless of code quality*

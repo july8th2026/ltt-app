@@ -209,3 +209,23 @@ L-E: 20 thư mục cấp 1 (kể cả cụm VPS ba tầng vừa gộp thêm `VPS
 CẦN XEM nhất (AGENT_LTT/Plenx, AI_CLEAN_REBUILD, LTT_CMC, VPS_V4, SCHEDULER_V1,
 ui_stabilization, system_purification). Nên tách L-E thành 2 agent con song song
 theo cụm phụ (VPS ba tầng | phần còn lại) nếu thời lượng vượt ước tính của plan.
+
+## Làn tích hợp — quyết định chủ dự án 19/09 + bằng chứng
+
+- **Cụm AGENT_LTT/Plenx.** Chủ dự án: LTT Nexus là app khác, không liên quan — bỏ giả thuyết
+  "`docs/nexus` kế nhiệm". Kiểm độc lập: `apps/agent/` còn sống (commit `7bae0419` 17/09),
+  Canvas `frontend/agent-canvas/` ⇒ `docs/AGENT_LTT/` **GIỮ, TRA CỨU** (README + dòng trạng
+  thái viết lại; con trỏ `00_BAT_DAU_TU_DAY.md` giữ). Bốn tệp nghiên cứu nền đủ 3 bằng chứng ⇒
+  **LƯU TRỮ** `docs/_luutru/2026-09/`: `KHAO_SAT_PLENX_AGENT.md`, `PHAN_TICH_PLENX.md`,
+  `PHUONG_AN_AGENT.md`, `KIEM_KE_VA_LO_TRINH_AGENT.md` — (1) `git grep` ngoài `docs/`: 0 tham
+  chiếu; (2) chương trình H12 đóng 02/08 (`KE_HOACH_TRIEN_KHAI.md` H12 P0–P13 [x]), hai tệp tự
+  gắn "TÀI LIỆU NGHIÊN CỨU LỊCH SỬ", provider PLENX xoá 10/09; (3) sửa cuối 01–04/08 (> 45 ngày).
+  `KE_HOACH_DI_TRU_MODULE.md` GIỮ (còn được `00_BAT_DAU_TU_DAY.md` trỏ cho việc di trú BOT GEMINI).
+- **`KE_HOACH_NOI_TIEP_2026-08-29.md`** — LƯU TRỮ: 0 tham chiếu mã/tools/tests; ảnh chụp 29/08;
+  con trỏ `.codex/README.md` chuyển sang `docs/KE_HOACH_TRIEN_KHAI.md`.
+- **6 tệp `LLM_*` gốc** — GIỮ; đã là tệp trỏ có dòng trạng thái ("đã chuyển vào lưu trữ 18/09"), không cần thêm.
+- **`lttstudios-website/README.md` PHP relay** — sửa câu: kho không có code mẫu; chú thích lịch sử.
+- **`vps_v2` → `CORE/*.md`, `ANH_NOI_BO/KE_HOACH_H37.md` → 5 tệp G4–G11** — tài liệu chưa từng tồn
+  tại: chú thích tại chỗ + bảng máy trong `NGOAI_LE_QUET.md`.
+- **`tools/soi_lease_tien.py` & 8 đầu dò** (`VAN_HANH_THAT.md`, `ltt_llm_dual/BO_DO_CHUAN.md` §7) —
+  chưa từng vào git (`git log --all` rỗng), không có ở cây chính ⇒ sửa câu cho đúng.
