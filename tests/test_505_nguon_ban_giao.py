@@ -220,12 +220,28 @@ _RAC = ("__pycache__", ".ruff_cache", ".mypy_cache", ".import_linter_cache",
         "bench", ".playwright-cli", ".playwright-mcp", "secrets")
 
 
+def _xd_cua_robocopy() -> set:
+    """Thu muc ma robocopy cua `2-cai-dat.ps1` LOAI (`/XD ... /XF`).
+
+    🔴 Do 19/09/2026 (L1 `phien/sua-test-do`): mot phien Codex de
+       `.codex/worktrees/cli-compat-final-audit/` (ca mot ban sao kho) trong cay
+       chinh ⇒ phep kiem nay do voi hang tram tep "chua khai" — trong khi
+       robocopy loai `.codex` tu lau, tep do KHONG BAO GIO len production.
+       `_RAC` chep tay tung thu muc nen lech `/XD`. Doc thang `/XD` tu ma deploy
+       thi hai noi khong the lech nhau nua.
+    """
+    m = re.search(r"/XD\s+(.*?)\s+/XF", NGUON, re.S)
+    assert m, "khong tim thay `/XD ... /XF` cua robocopy trong 2-cai-dat.ps1"
+    return {w for w in m.group(1).replace("`", " ").split() if w}
+
+
 def _gitignored_bi_ma_runtime_nhac() -> set:
     """Tập tệp **gitignored** mà mã chạy trên production có nhắc tên.
 
     Đây là **phép đo**, không phải một danh sách soạn tay — nó là vế đối chứng
     cho `$VAN_CHUYEN`.
     """
+    loai = _xd_cua_robocopy()
     r = subprocess.run(
         ["git", "ls-files", "--others", "--ignored", "--exclude-standard"],
         # Hoi cay NGUON DEPLOY: day la cau "tren dia co gi", va dia co nghia la
@@ -234,7 +250,7 @@ def _gitignored_bi_ma_runtime_nhac() -> set:
     ung_vien = []
     for d in r.stdout.split("\n"):
         d = d.strip()
-        if not d or any(p in _RAC for p in d.split("/")):
+        if not d or any(p in _RAC or p in loai for p in d.split("/")):
             continue
         if d.endswith((".pyc", ".log", ".png", ".jpg", ".mp4", ".json", ".txt",
                        ".md", ".tsbuildinfo", ".ini")):
