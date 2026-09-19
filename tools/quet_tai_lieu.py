@@ -5,10 +5,9 @@ khi tệp tồn tại; `--ngoai-le ""` để tắt) - dòng khớp cả tệp l�
 import argparse, fnmatch, json, re, subprocess, sys
 from pathlib import Path
 
-try:
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-except AttributeError:
-    pass
+_reconf = getattr(sys.stdout, "reconfigure", None)
+if _reconf:
+    _reconf(encoding="utf-8", errors="replace")
 
 DUONG = re.compile(r"`([A-Za-z0-9_.\-]+(?:[/\\][A-Za-z0-9_.\-]+)+\.(?:py|ps1|md|mjs|js|ts|rs|json|yml|yaml|toml|bat))`")
 
