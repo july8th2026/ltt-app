@@ -30,10 +30,10 @@ Ngày snapshot: **2026-08-09**. Nguồn chuẩn: `docs/quy_tac_audit.md` và h�
 | Tạo Clip ngắn | 58 | 56 | 61 | BLOCKED | 0/4/15/5 | `taoclipngan/2026-08-09-deep` |
 | Chat AI Studio | 48 | 42 | 58 | BLOCKED | 0/7/17/5 | `chataistudio/2026-08-09-deep` |
 | LTT Agent AI | 43 | 38 | 61 | BLOCKED | 1/7/18/6 | `agent/2026-08-09-deep` |
-| Socialbot maintenance | 41 | 35* | 60 | BLOCKED | 2/5/8/4 | `socialbot/2026-08-09-maintenance` |
-| Demo hạ tầng | 78 | 70* | 40 | INTERNAL | 0/0/5/2 | `demo/2026-08-09-contract` |
-| Kịch bản/Text runtime | 64 | 50* | 38 | BLOCKED | 0/2/8/3 | `kichban/2026-08-09-contract` |
-| Media Tools runtime | 59 | 47* | 38 | BLOCKED | 0/4/11/4 | `mediatools/2026-08-09-contract` |
+| Socialbot maintenance | 41 | 35* | 60 | BLOCKED | 2/5/8/4 | `_luutru/2026-09/…/socialbot/2026-08-09-maintenance` (lưu trữ) |
+| Demo hạ tầng | 78 | 70* | 40 | INTERNAL | 0/0/5/2 | `_luutru/2026-09/…/demo/2026-08-09-contract` (lưu trữ, app đã gỡ) |
+| Kịch bản/Text runtime | 64 | 50* | 38 | BLOCKED | 0/2/8/3 | `_luutru/2026-09/…/kichban/2026-08-09-contract` (lưu trữ, app đã gỡ) |
+| Media Tools runtime | 59 | 47* | 38 | BLOCKED | 0/4/11/4 | `_luutru/2026-09/…/mediatools/2026-08-09-contract` (lưu trữ) |
 
 `M*` là provisional: benchmark H27 chưa đủ source/snapshot matrix theo A4. M70
 của Demo là độ phù hợp synthetic-canary contract, không phải market score app.
