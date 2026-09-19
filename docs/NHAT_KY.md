@@ -19578,3 +19578,27 @@ chừng, một lần để lại yaml đo trên B — khôi phục SHA `86CB1EC9
 
 **Còn mở sang phiên sau:** injection I10 của `subagent_doc_nhanh` (đo lại ×3), harness gợi ý skill theo từ khoá
 cho 3.5, R-06/07 (id phiên), R-14 (tool search), R-17 nhiều lượt, cảnh báo p95 TTFT (R-16), chứng chỉ EV + VM sạch.
+
+## 2026-09-19 — Dọn sạch tài liệu
+
+Plan: `docs/superpowers/plans/2026-09-19-don-sach-tai-lieu.md` (Task 1–6, 8). Nhánh tích hợp `phien/don-tai-lieu`
+(worktree `D:\LTTSTUDIOSAPP-dtl-tich-hop`) gộp 6 làn: `phien/don-tl-nen` (máy quét `tools/quet_tai_lieu.py` + kiểm kê
+`docs/_luutru/KIEM_KE_TAI_LIEU_2026-09-19.md`), `-la` (docs gốc/CLAUDE.md/AGENTS.md: 7 sửa, 7 lưu trữ), `-lb`
+(ltt_llm_dual/VLM/PUBLIC_API: 4 sửa, 8 mới), `-lc` (APP_AUDIT…: 2 sửa, 86 lưu trữ, 1 xoá — bản trùng byte của
+`APP_AUDIT/_MAU/README.md`), `-ld` (app: 15 mới — README + từ điển), `-le` (phần còn lại: 2 sửa, 36 lưu trữ);
+làn tích hợp: 31 sửa, 5 lưu trữ. Tổng so với `main`: 39 sửa · 134 lưu trữ (`git mv` + dấu đầu tệp) · 49 mới
+(README thư mục, máy quét, kiểm kê) · 1 xoá; ~1.870 tệp `docs/` giữ nguyên. Mọi thư mục cấp 1 của `docs/` có `README.md`.
+
+- **Máy quét:** `python tools/quet_tai_lieu.py docs CLAUDE.md AGENTS.md` ⇒ **0 dòng** (797 dòng khi tắt ngoại lệ bằng
+  `--ngoai-le ""`). Ngoại lệ đã kiểm tay ở `docs/_luutru/NGOAI_LE_QUET.md`: mục từng làn + bảng máy 545 cặp tệp·mẫu
+  (khớp chính xác, tham chiếu vỡ mới trong cùng tệp vẫn bị bắt). Từ điển `docs/_luutru/TU_DIEN_DA_THAY.md`.
+- **Sự thật đã sửa:** deploy xuất HEAD bằng `git archive` + `$VAN_CHUYEN` (không "chép cả cây"; câu có ngày giữ +
+  chú thích); `LEGACY_SURFACE_MATRIX.csv` 29 dòng trỏ bản lưu trữ; 9 đầu dò lease/residency (`soi_lease_tien.py`…)
+  chưa từng vào git; `docs/AGENT_LTT/` là TRA CỨU của `apps/agent/` (không liên quan Nexus — chủ dự án 19/09), 4 tệp
+  nghiên cứu PLENX + `KE_HOACH_NOI_TIEP_2026-08-29.md` lưu trữ; `vps_v2`→`CORE/*` và H37 G4–G11 là tài liệu chưa từng có.
+- **Nhánh/worktree** (`C:\Users\Thang Tuong\.claude\ltt\don_nhanh_2026-09-19.md`): 17 worktree gỡ, 78 nhánh đã gộp
+  xoá (71 `-d` + 3 `-D` sau `is-ancestor` + 4 điều tra từng commit); không đụng remote. **Memory:** 43 giữ, 10 sửa.
+- **Chờ chủ dự án:** 2 thư mục rác khoá tệp (`.codex/worktrees/cli-compat-final-audit`, `D:\LTTSTUDIOSAPP-md38`) dọn
+  tay; chú thích "chép CẢ CÂY" còn trong mã vận hành (`setup/2-cai-dat.ps1`, `tools/cay_rieng.py`, `tools/ho_so_cay.py`,
+  docstring test) — ngoài phạm vi dọn tài liệu; CẦN XEM của làn: `CHATLTT_V3/06_KE_HOACH_P06.md` (features PDF),
+  `LTT_VOICE/UPGRADE_98/06_BLOCKERS.md` (`gate.yml`), số test 958/1512 trong `ltt_llm_dual`. Gộp `main` sau lượt kiểm độc lập.
