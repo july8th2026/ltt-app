@@ -22,14 +22,16 @@ httpx.TimeoutException  (con cua HTTPError)
                     >= ERROR_TO_STATUS_THRESHOLD (5) -> status = APIKEY_ERROR
 ```
 
-🔴 VÀ ĐÂY LÀ VẾ LÀM NÓ NGHIÊM TRỌNG: **`APIKEY_ERROR` KHÔNG TỰ HỒI.**
+🔴 VÀ ĐÂY LÀ VẾ LÀM NÓ NGHIÊM TRỌNG: khi tệp này được viết, **`APIKEY_ERROR`
+KHÔNG TỰ HỒI** — `api_pool._ung_vien()` chỉ tự hồi `COOLDOWN`.
 
-`api_pool._ung_vien()` bỏ mọi khoá `status != APIKEY_ACTIVE`, và chỗ tự hồi duy
-nhất là `if k.status == APIKEY_COOLDOWN and cooldown_until <= now`. Không có
-nhánh nào đưa `APIKEY_ERROR` về `ACTIVE`.
+⇒ Hồi đó **năm lần hết giờ là model nhà tắt, và nó ở lại tắt** cho tới khi có
+  người vào sửa tay. Không cảnh báo, không tự phục hồi.
 
-⇒ **Năm lần hết giờ là model nhà tắt, và nó ở lại tắt** cho tới khi có người vào
-  sửa tay. Không cảnh báo, không tự phục hồi.
+⚠️ Từ 19/09/2026 (`test_1524_khoa_loi_tu_hoi.py`): ERROR 5xx/mạng có hạn
+   `api_pool.ERROR_COOLDOWN_S` rồi được thử lại; ERROR không hạn vẫn chờ admin;
+   khoá cuối rời ACTIVE thì log ERROR. Nhưng `error_count` giữ nguyên, nên phạt
+   nhầm một lượt hết giờ vẫn là tắt model nhà — luật của tệp này vẫn đứng.
 
 ⭐ Mà một prompt 200K prefill mất hàng phút là hành vi **bình thường** của hệ
    này — `catalog.py` đo prefill 616–999 tok/s, tức 180K token ≈ 280 giây; cộng

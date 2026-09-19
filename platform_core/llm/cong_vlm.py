@@ -46,8 +46,9 @@ class CongVlmError(Exception):
     ⭐ `ma` — **mã HTTP thượng nguồn**, thêm 13/09 (L-09). Không có nó thì
        `dieu_phoi` gọi `api_pool.danh_dau_loi(db, key)` mà không nói được lỗi
        thuộc loại nào, và `danh_dau_loi` đọc `http_status=None` thành *"5xx hoặc
-       lỗi mạng"* ⇒ `error_count += 1`. Năm lần là `APIKEY_ERROR`, thứ **không
-       tự hồi**.
+       lỗi mạng"* ⇒ `error_count += 1`. Năm lần là `APIKEY_ERROR` — từ 19/09
+       có hạn `ERROR_COOLDOWN_S` rồi thử lại (nửa mở), nhưng `error_count` giữ
+       nguyên nên lỗi kế là ERROR ngay; trước 19/09 thì **không tự hồi**.
 
     🔴 Hậu quả đo được: một khách gửi **năm ảnh hỏng** là tắt model nhà cho tới
        khi có người sửa tay. Chính `danh_dau_loi` đã có nhánh đúng —
@@ -117,9 +118,11 @@ class HuyError(Exception):
 
     🔴 VÌ SAO KHÔNG PHẢI `CongVlmError`, VÀ ĐÂY LÀ LUẬT THỨ NĂM CỦA TỆP NÀY.
        `CongVlmError` là giấy phép cho bên gọi `api_pool.danh_dau_loi()`; năm lần
-       là `key.status = APIKEY_ERROR`, thứ **không tự hồi** (`_ung_vien` bỏ mọi
-       khoá `status != ACTIVE`, chỉ `COOLDOWN` tự về). Tức **năm lần khách bấm
-       "dừng" là model nhà tắt vĩnh viễn** — đúng thảm hoạ D-005 mà luật 1 đã bịt
+       là `key.status = APIKEY_ERROR`. Trước 19/09 trạng thái đó **không tự
+       hồi**; nay nó có hạn (`api_pool.ERROR_COOLDOWN_S`) rồi thử lại, còn ERROR
+       không hạn (đặt tay/bản cũ) vẫn chờ admin. Dù vậy **năm lần khách bấm
+       "dừng" vẫn là model nhà tắt** (từng hạn một, mỗi lỗi kế lại tắt ngay) —
+       đúng thảm hoạ D-005 mà luật 1 đã bịt
        ở cửa 429 và luật 504 đã bịt ở cửa hết giờ. Đây là cửa thứ ba.
 
     🔴 VÀ VÌ SAO KHÔNG DÙNG LẠI `BanError` cho gọn. `dieu_phoi` đọc `BanError` là
@@ -339,10 +342,11 @@ class CongVlm:
             #    (`CongVlmError`) ⇒ `api_pool.danh_dau_loi()` ⇒ sau **5** lần
             #    `key.status = APIKEY_ERROR`.
             #
-            # ⛔ Và `APIKEY_ERROR` **KHÔNG TỰ HỒI**: `api_pool._ung_vien` bỏ mọi
-            #    khoá `status != ACTIVE`, còn tự hồi thì chỉ có `COOLDOWN`. Tức
-            #    năm lần hết giờ là model nhà tắt và **ở lại tắt** tới khi có
-            #    người vào sửa tay.
+            # ⛔ Và `APIKEY_ERROR` trước 19/09 **KHÔNG TỰ HỒI** (năm lần hết giờ
+            #    là model nhà tắt tới khi có người sửa tay). Từ 19/09 ERROR có
+            #    hạn (`api_pool.ERROR_COOLDOWN_S`) rồi thử lại; ERROR không hạn
+            #    vẫn chờ admin. Nhưng `error_count` giữ nguyên ⇒ mỗi lượt hết
+            #    giờ kế tiếp lại tắt model nhà ngay — phạt nhầm vẫn là mất dịch vụ.
             #
             # ⭐ Đó đúng là D-005 — thảm hoạ mà luật 1 ở đầu tệp này đã bịt rất
             #    kỹ ở cửa **429** — chỉ là nó vào bằng cửa **hết giờ**, cửa chưa

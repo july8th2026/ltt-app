@@ -15,8 +15,9 @@ key)` **khong kem `http_status`**.
 1. Khach nhan `503 retry: after_delay` cho mot yeu cau **khong bao gio** thanh
    cong — thu lai bao nhieu lan cung the.
 2. `danh_dau_loi` doc `http_status=None` thanh *"5xx hoac loi mang"* =>
-   `error_count += 1`. Nam lan la `APIKEY_ERROR`, thu **KHONG TU HOI**
-   (`_ung_vien` bo moi khoa `status != ACTIVE`; chi `COOLDOWN` tu ve).
+   `error_count += 1`. Nam lan la `APIKEY_ERROR`, thu hoi do **KHONG TU HOI**
+   (tu 19/09: co han `ERROR_COOLDOWN_S` roi thu lai, nhung `error_count` giu
+   nguyen nen loi ke tat lai ngay; ERROR khong han van cho admin — `test_1524`).
 
 ⇒ **Mot khach gui nam anh hong la tat model nha** cho toi khi co nguoi sua tay.
   Va bat ky ai co khoa API deu lam duoc, ke ca vo tinh.

@@ -382,9 +382,10 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
             #                    Với model nội bộ còn tệ hơn — danh sách có MỘT
             #                    phần tử, nên cascade = `KhongCoProviderNao`, một
             #                    thông điệp che mất nguyên nhân thật.
-            #    danh_dau_loi -> năm lần là `APIKEY_ERROR`, **không tự hồi**.
-            #                    Khách bấm "dừng" năm lần = tắt vĩnh viễn model
-            #                    nhà (D-005, và đây là cửa thứ ba của nó).
+            #    danh_dau_loi -> năm lần là `APIKEY_ERROR` (từ 19/09 có hạn rồi
+            #                    thử lại; trước đó **không tự hồi**). Khách bấm
+            #                    "dừng" năm lần = tắt model nhà, và mỗi lượt
+            #                    dừng kế tiếp tắt lại ngay (D-005, cửa thứ ba).
             #    on_rejected  -> `jobq.mark_provider_rejected` nói *"provider đã
             #                    trả lời dứt khoát là không"*. Provider không hề
             #                    từ chối; chính ta cắt nó. Ghi nhầm ở đây làm
@@ -405,7 +406,8 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
                 on_rejected(pid)
             # 🔴 TRUYỀN MÃ. Thiếu nó thì `danh_dau_loi` đọc `http_status=None`
             #    thành "5xx hoặc lỗi mạng" ⇒ `error_count += 1` ⇒ năm lần là
-            #    `APIKEY_ERROR`, thứ KHÔNG TỰ HỒI. Chính `danh_dau_loi` đã có
+            #    `APIKEY_ERROR` (có hạn từ 19/09, nhưng lỗi kế là tắt lại ngay;
+            #    trước 19/09 KHÔNG TỰ HỒI). Chính `danh_dau_loi` đã có
             #    nhánh "400 ≤ s < 500: bad request CỦA TA, không phạt" — nhưng
             #    nhánh ấy chỉ chạy khi có người truyền mã vào (L-09).
             api_pool.danh_dau_loi(db, key, http_status=getattr(e, "ma", None),
