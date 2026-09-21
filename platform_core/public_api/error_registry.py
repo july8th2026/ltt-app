@@ -143,8 +143,8 @@ REGISTRY = {spec.code: spec for spec in (
           "Retry with backoff and the same Idempotency-Key.", reuse=True),
 )}
 
-# Lỗi model dùng cùng vocabulary B→A. Với mã đã có ở Public API, status/retry
-# của taxonomy model thắng; action giàu thông tin cũ vẫn được giữ.
+# Lỗi model dùng cùng vocabulary B→A. Trong chu kỳ rollout, registry legacy
+# không bị viết đè: renderer có cờ riêng lấy status/retry đích từ taxonomy model.
 MODEL_REGISTRY = {
     code: ErrorSpec(
         code=code,
@@ -156,6 +156,7 @@ MODEL_REGISTRY = {
         ),
     )
     for code, spec in ERROR_SPECS.items()
+    if code not in REGISTRY
 }
 REGISTRY.update(MODEL_REGISTRY)
 

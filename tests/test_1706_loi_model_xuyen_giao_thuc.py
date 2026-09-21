@@ -9,6 +9,7 @@ from starlette.responses import Response
 from llm_gateway.error_contract import ERROR_SPECS
 from platform_core.llm.model_failure import model_failure
 from platform_core.public_api.config import load_public_api_config
+from platform_core.public_api.error_registry import REGISTRY
 from server.api import su_kien_loi
 
 
@@ -184,6 +185,11 @@ def test_co_cau_truc_mac_dinh_tat_va_doc_tu_env_duoc_tiem():
     assert load_public_api_config(
         {"LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS": "1"}
     ).structured_model_errors
+
+
+def test_rollout_khong_viet_de_hop_dong_public_api_cu():
+    assert REGISTRY["model_not_found"].status == 400
+    assert REGISTRY["quota_exceeded"].retry == "after_delay"
 
 
 def test_co_tat_giu_nguyen_byte_legacy_co_bat_them_ltt_error():

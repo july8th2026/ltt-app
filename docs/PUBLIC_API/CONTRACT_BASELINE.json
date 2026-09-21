@@ -9,6 +9,14 @@
       "retry": "never",
       "status": 409
     },
+    "context_window_exceeded": {
+      "retry": "after_fix",
+      "status": 400
+    },
+    "empty_response": {
+      "retry": "ambiguous",
+      "status": 502
+    },
     "forbidden": {
       "retry": "never",
       "status": 403
@@ -20,6 +28,26 @@
     "idempotency_in_progress": {
       "retry": "after_delay",
       "status": 409
+    },
+    "image_count_exceeded": {
+      "retry": "after_fix",
+      "status": 400
+    },
+    "image_decode_failed": {
+      "retry": "after_fix",
+      "status": 400
+    },
+    "image_too_large": {
+      "retry": "after_fix",
+      "status": 400
+    },
+    "image_url_not_allowed": {
+      "retry": "after_fix",
+      "status": 400
+    },
+    "input_tokens_exceeded": {
+      "retry": "after_fix",
+      "status": 400
     },
     "insufficient_credit": {
       "retry": "after_fix",
@@ -33,6 +61,14 @@
       "retry": "never",
       "status": 400
     },
+    "malformed_upstream_response": {
+      "retry": "ambiguous",
+      "status": 502
+    },
+    "max_output_tokens_exceeded": {
+      "retry": "after_fix",
+      "status": 400
+    },
     "method_not_allowed": {
       "retry": "never",
       "status": 405
@@ -40,6 +76,10 @@
     "missing_scope": {
       "retry": "after_fix",
       "status": 403
+    },
+    "model_loading": {
+      "retry": "after_delay",
+      "status": 503
     },
     "model_not_found": {
       "retry": "after_fix",
@@ -56,6 +96,14 @@
     "price_changed": {
       "retry": "after_fix",
       "status": 409
+    },
+    "provider_oom": {
+      "retry": "after_fix",
+      "status": 503
+    },
+    "provider_overloaded": {
+      "retry": "after_delay",
+      "status": 503
     },
     "quota_exceeded": {
       "retry": "after_delay",
@@ -77,9 +125,33 @@
       "retry": "after_delay",
       "status": 503
     },
+    "request_body_too_large": {
+      "retry": "after_fix",
+      "status": 413
+    },
+    "request_cancelled": {
+      "retry": "never",
+      "status": 499
+    },
     "service_unavailable": {
       "retry": "after_delay",
       "status": 503
+    },
+    "stream_idle_timeout": {
+      "retry": "ambiguous",
+      "status": 504
+    },
+    "stream_truncated": {
+      "retry": "ambiguous",
+      "status": 502
+    },
+    "structured_output_failed": {
+      "retry": "ambiguous",
+      "status": 502
+    },
+    "tool_call_parse_failed": {
+      "retry": "ambiguous",
+      "status": 502
     },
     "tool_not_allowed": {
       "retry": "after_fix",
@@ -92,6 +164,30 @@
     "unprocessable_request": {
       "retry": "never",
       "status": 422
+    },
+    "unsupported_modality": {
+      "retry": "after_fix",
+      "status": 400
+    },
+    "unsupported_parameter": {
+      "retry": "after_fix",
+      "status": 400
+    },
+    "upstream_protocol_error": {
+      "retry": "ambiguous",
+      "status": 502
+    },
+    "upstream_timeout": {
+      "retry": "ambiguous",
+      "status": 504
+    },
+    "upstream_unknown": {
+      "retry": "ambiguous",
+      "status": 502
+    },
+    "upstream_unreachable": {
+      "retry": "after_delay",
+      "status": 502
     }
   },
   "execution_modes_in_use": [

@@ -125,10 +125,19 @@ Mỗi mã trả lời đúng một câu hỏi: **thử lại có ích không, v�
 
 | Code | HTTP | Retry | Reuse Idempotency-Key | What to do |
 |---|---|---|---|---|
+| `context_window_exceeded` | 400 | `after_fix` | no | reduce_input |
+| `image_count_exceeded` | 400 | `after_fix` | no | offload_images |
+| `image_decode_failed` | 400 | `after_fix` | no | replace_image |
+| `image_too_large` | 400 | `after_fix` | no | offload_images |
+| `image_url_not_allowed` | 400 | `after_fix` | no | replace_image |
+| `input_tokens_exceeded` | 400 | `after_fix` | no | reduce_input |
 | `invalid_request` | 400 | `never` | no | Read `detail`; it names the field. Fix the request. |
+| `max_output_tokens_exceeded` | 400 | `after_fix` | no | reduce_output |
 | `model_not_found` | 400 | `after_fix` | no | That `model` is not served here. Call GET /api/v1/models for the names in service and send one of those. |
 | `quote_expired` | 400 | `after_fix` | no | Quotes live 15 minutes. Request a new quote and submit that. |
 | `quote_invalid` | 400 | `never` | no | The quote does not belong to this account/tool/input. Request one for the exact call you are making. |
+| `unsupported_modality` | 400 | `after_fix` | no | choose_model |
+| `unsupported_parameter` | 400 | `after_fix` | no | none |
 | `unauthorized` | 401 | `never` | no | The key is missing, malformed, unknown, revoked or expired — the API will not say which. Check the key in the developer portal. |
 | `forbidden` | 403 | `never` | no | This key may not perform this action. |
 | `missing_scope` | 403 | `after_fix` | no | The key lacks a scope this endpoint needs. `required_scope` names it; issue a key that has it. |
@@ -141,13 +150,28 @@ Mỗi mã trả lời đúng một câu hỏi: **thử lại có ích không, v�
 | `insufficient_credit` | 409 | `after_fix` | yes | Top up credit, then submit again with the same Idempotency-Key. |
 | `price_changed` | 409 | `after_fix` | yes | The price moved between quote and submit. Request a new quote; the old one is refused rather than silently repriced. |
 | `payload_too_large` | 413 | `never` | no | Send large media through the upload endpoints, not in the JSON body. |
+| `request_body_too_large` | 413 | `after_fix` | no | none |
 | `unprocessable_request` | 422 | `never` | no | The body parsed but failed validation. Read `detail`. |
 | `concurrency_limited` | 429 | `after_delay` | yes | Too many of your jobs are running. Wait for one to finish; polling harder will not start it sooner. |
 | `quota_exceeded` | 429 | `after_delay` | yes | The account's daily credit ceiling is reached. It rolls forward continuously, so retry later or raise the ceiling. |
 | `rate_limited` | 429 | `after_delay` | yes | Wait for `Retry-After` seconds, then retry with the same Idempotency-Key if the call was chargeable. |
+| `request_cancelled` | 499 | `never` | no | none |
 | `internal_error` | 500 | `after_delay` | yes | Retry with backoff and the same Idempotency-Key. Quote the X-Correlation-ID if it persists. |
+| `empty_response` | 502 | `ambiguous` | no | report_request_id |
+| `malformed_upstream_response` | 502 | `ambiguous` | no | report_request_id |
+| `stream_truncated` | 502 | `ambiguous` | no | report_request_id |
+| `structured_output_failed` | 502 | `ambiguous` | no | none |
+| `tool_call_parse_failed` | 502 | `ambiguous` | no | none |
+| `upstream_protocol_error` | 502 | `ambiguous` | no | report_request_id |
+| `upstream_unknown` | 502 | `ambiguous` | no | report_request_id |
+| `upstream_unreachable` | 502 | `after_delay` | no | retry_same_request |
+| `model_loading` | 503 | `after_delay` | no | wait |
+| `provider_oom` | 503 | `after_fix` | no | report_request_id |
+| `provider_overloaded` | 503 | `after_delay` | no | wait |
 | `read_only` | 503 | `after_delay` | yes | The API is accepting reads only. Writes resume without any change on your side. |
 | `service_unavailable` | 503 | `after_delay` | yes | Retry with backoff and the same Idempotency-Key. |
+| `stream_idle_timeout` | 504 | `ambiguous` | no | report_request_id |
+| `upstream_timeout` | 504 | `ambiguous` | no | report_request_id |
 
 ### Retry matrix by status
 
