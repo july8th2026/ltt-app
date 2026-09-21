@@ -67,11 +67,9 @@ def _dang_codex(model) -> dict:
     `apply_patch_tool_type`, `input_modalities`. Thiếu `slug` là Codex bỏ cả
     mục; sai `context_window` là nó nén sai lúc.
     """
-    rang_buoc = dict(getattr(model, "constraints", None) or {})
+    rang_buoc = _gioi_han_model(model)
     cua_so = int(rang_buoc.get("context_window") or CUA_SO_CONG_BO_MAC_DINH)
     ra = int(rang_buoc.get("max_output_tokens") or TOKEN_RA_TOI_DA)
-    doc_anh = bool(rang_buoc.get("reads_images")
-                   or "vision" in str(model.name).lower())
     # Ngưỡng nén và trần kết quả tool — **suy ra**, không gõ thêm hằng số.
     # Cùng phép suy với hai bộ cài (`tools/cam_cli.py`), nên ba nơi không lệch
     # được: khoảng trống giữa ngưỡng nén và cửa sổ phải chứa trọn một lượt ra.
@@ -85,11 +83,15 @@ def _dang_codex(model) -> dict:
         "max_context_window": cua_so,
         "max_output_tokens": int(rang_buoc.get("max_output_tokens")
                                  or TOKEN_RA_TOI_DA),
+        "max_input_tokens": int(rang_buoc["max_input_tokens"]),
+        "max_images": int(rang_buoc["max_images"]),
+        "max_image_bytes": int(rang_buoc["max_image_bytes"]),
+        "accepted_image_schemes": list(rang_buoc["accepted_image_schemes"]),
         "default_reasoning_level": mac_dinh_nghi,
         "supported_reasoning_levels": cac_muc_nghi,
         "shell_type": "unified_exec",
         "apply_patch_tool_type": "freeform",
-        "input_modalities": ["text", "image"] if doc_anh else ["text"],
+        "input_modalities": list(rang_buoc["input_modalities"]),
         "visibility": "list",
         "supported_in_api": True,
         "priority": 1,
@@ -121,6 +123,49 @@ def _dang_codex(model) -> dict:
     if nen > 0:
         d["auto_compact_token_limit"] = nen
     return d
+
+
+def _gioi_han_model(model) -> dict:
+    """Một phép chiếu limits cho cả ``items[]`` và ``models[]``.
+
+    Manifest là nguồn số; ``0``/danh sách rỗng là fail-closed cho model text.
+    ``context_window`` hiện là cửa vào an toàn đã trừ đệm, nên cũng chính là
+    ``max_input_tokens`` công bố cho client preflight.
+    """
+    source = dict(getattr(model, "constraints", None) or {})
+    context_window = int(
+        source.get("context_window") or CUA_SO_CONG_BO_MAC_DINH
+    )
+    reads_images = bool(source.get("reads_images"))
+    public = dict(source)
+    public.update(
+        {
+            "context_window": context_window,
+            "max_input_tokens": int(
+                source.get("max_input_tokens") or context_window
+            ),
+            "max_output_tokens": int(
+                source.get("max_output_tokens") or TOKEN_RA_TOI_DA
+            ),
+            "input_modalities": ["text", "image"] if reads_images else ["text"],
+            "max_images": int(source.get("max_images") or 0) if reads_images else 0,
+            "max_image_bytes": (
+                int(source.get("max_image_bytes") or 0) if reads_images else 0
+            ),
+            "accepted_image_schemes": ["data"] if reads_images else [],
+        }
+    )
+    return public
+
+
+def _dang_cong_khai(model) -> dict:
+    body = model.to_public_dict()
+    source = dict(getattr(model, "constraints", None) or {})
+    # Các model ảnh/video có hệ constraints khác; không gắn token mặc định giả
+    # vào chúng. Task này chỉ chuẩn hoá model hội thoại có cửa sổ token.
+    if "context_window" in source or "max_output_tokens" in source:
+        body["constraints"] = _gioi_han_model(model)
+    return body
 
 
 def register_tool_routes(api, config, tag: str) -> None:
@@ -180,7 +225,7 @@ def register_tool_routes(api, config, tag: str) -> None:
                       if model.capability == str(capability)]
         window = models[page_request.offset:
                         page_request.offset + page_request.fetch_limit]
-        page = Page.of([model.to_public_dict() for model in window],
+        page = Page.of([_dang_cong_khai(model) for model in window],
                        page_request)
         body = page.to_dict()
         # Capabilities belong with the models rather than on the anonymous
@@ -213,4 +258,4 @@ def register_tool_routes(api, config, tag: str) -> None:
     ) -> JSONResponse:
         catalog = visible_to(build_catalog(config), principal)
         model = require_model(build_models(catalog), model_name)
-        return JSONResponse(model.to_public_dict(), headers=_NO_STORE)
+        return JSONResponse(_dang_cong_khai(model), headers=_NO_STORE)
