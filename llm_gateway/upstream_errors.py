@@ -9,7 +9,7 @@ import json
 import logging
 import re
 from dataclasses import dataclass
-from collections.abc import Mapping
+from collections.abc import Generator, Mapping
 from typing import Any, Callable, Iterator
 
 from .error_contract import make_error
@@ -323,7 +323,7 @@ class _ObservedStream:
         elif frame.raw:
             yield frame.raw
 
-    def _run(self) -> Iterator[bytes]:
+    def _run(self) -> Generator[bytes, None, None]:
         observer = UpstreamEventObserver(request_id=self._request_id)
         try:
             for chunk in self._source:
