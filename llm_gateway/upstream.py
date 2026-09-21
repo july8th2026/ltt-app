@@ -11,7 +11,7 @@ với `render_gateway/http.py`.
 """
 from __future__ import annotations
 
-from typing import Any, Iterator, Optional, Protocol
+from typing import Any, Iterator, Protocol
 
 #: Mã nội bộ khi lớp vận chuyển hỏng. Không phải mã HTTP thật của thượng nguồn —
 #: `api.py` dịch chúng thành mã cho khách. Chọn ngoài dải HTTP để không bao giờ
@@ -108,7 +108,9 @@ class HttpxUpstream:
 
     def stream(self, method: str, path: str, *, body: Any = None,
                timeout: float = 900.0) -> tuple[int, str, Iterator[bytes]]:
-        """Chuyển tiếp SSE **nguyên xi**, không phân tích, không gom lại.
+        """Lớp vận chuyển trả SSE nguyên byte, không phân tích hay gom lại.
+
+        Việc quan sát terminal frame thuộc `upstream_errors` ở lớp API.
 
         ⛔ TUYỆT ĐỐI KHÔNG tự phân tích rồi dựng lại SSE. Cộng đồng đã mất thời
            gian vì đúng lỗi này: một harness dùng regex cắt delta ở dấu nháy đã

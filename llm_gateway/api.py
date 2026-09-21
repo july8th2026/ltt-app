@@ -34,7 +34,9 @@ api.py — hợp đồng HTTP của cổng VLM.
 ⛔ KHÔNG TỰ ĐỔI SANG MODEL KHÁC khi bận. Cổng này chỉ biết model nhà. Việc "bận thì
    dùng đám mây" là **quyết định của máy A** (D-010), không phải của cổng.
 
-⛔ KHÔNG PHÂN TÍCH RỒI DỰNG LẠI SSE. Xem `upstream.stream`.
+⭐ Luồng thành công được giữ nguyên từng byte. Chỉ terminal error đã có trọn
+   frame mới được thay bằng envelope an toàn; parser tăng dần nằm ở
+   `upstream_errors.UpstreamEventObserver`.
 """
 from __future__ import annotations
 
@@ -60,7 +62,7 @@ from . import so_luot as SL
 from .so_theo_model import SoTheoModel
 from . import vat_ly as VL
 from .upstream import MA_DA_HUY, MA_HET_GIO, MA_KHONG_VOI_TOI
-from .upstream_errors import decode_upstream_http
+from .upstream_errors import decode_upstream_http, observe_upstream_events
 from .nhip_tim import boc_nhip_tim
 from .dem import Dem, boc_do_ttft
 from .to_tien import ToTien
@@ -1081,6 +1083,20 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                         SL.ghi_so(luot)
 
             dem.cong("ok_stream")
+            def _ghi_loi_stream(failure: dict[str, object]) -> None:
+                code = str(failure["canonical_code"])
+                luot.ket_thuc = code
+                log.warning("thuong nguon SSE canonical=%s request_id=%s",
+                            code, request_id)
+
+            # Quan sát TRƯỚC TTFT/nhịp tim: heartbeat do cổng chèn không phải dữ
+            # liệu upstream. Success đi qua nguyên byte; chỉ frame lỗi hoàn chỉnh
+            # được thay bằng envelope không chứa message thô.
+            luong = observe_upstream_events(
+                luong,
+                request_id=request_id,
+                on_failure=_ghi_loi_stream,
+            )
             # ⛔ TTFT bọc TRONG nhip_tim: nhip tim phat byte trong luc prefill,
             #    boc ngoai thi moi luot dai deu ra ~15 giay. Xem `boc_do_ttft`.
             luong = boc_do_ttft(luong, dem, t0, now, luot.ghi_ttft)

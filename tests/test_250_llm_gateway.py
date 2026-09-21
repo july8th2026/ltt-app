@@ -11,7 +11,7 @@ Bốn hành vi được neo ở đây vì mất chúng là mất tiền hoặc m
   2. BẬN ⇒ 429, KHÔNG PHẢI 5xx — nếu trả 5xx, `api_pool` của máy A cooldown rồi
      `disable` key sau 5 lần, và một tối chạy video sẽ tự tắt vĩnh viễn model nhà.
   3. THƯỢNG NGUỒN HỎNG ⇒ 502, KHÔNG PHẢI 429 — hỏng thật thì phải đánh dấu lỗi.
-  4. SSE CHUYỂN TIẾP NGUYÊN XI — không phân tích, không gom lại.
+  4. SSE THÀNH CÔNG GIỮ NGUYÊN BYTE — terminal error được thay bằng envelope.
 """
 from __future__ import annotations
 

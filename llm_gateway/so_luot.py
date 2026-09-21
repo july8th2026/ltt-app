@@ -46,9 +46,8 @@ cảnh nào cả — chỉ chia sẻ một cái tên. Vậy cần hai phép tra,
    định** ("lượt này rỗng"), còn `null` là một câu **thú nhận** ("không đo được").
    Hai câu ấy khác nhau đúng ở chỗ ai đọc sổ để tính tiền.
 
-⛔ VÀ LUỒNG SSE KHÔNG BAO GIỜ CÓ `usage` Ở ĐÂY. Cổng chuyển tiếp SSE **nguyên
-   xi** và tuyệt đối không phân tích lại (`upstream.stream` ghi lý do: một
-   harness cộng đồng cắt delta bằng regex đã làm mất chữ giữa dòng). Nên với
+⛔ VÀ LUỒNG SSE KHÔNG BAO GIỜ CÓ `usage` Ở ĐÂY. Observer chỉ nhận diện terminal
+   frame theo SSE; nó không dựng lại delta và không suy token. Nên với
    `stream=true` dòng sổ mang `so_dang_tin: false` và chỉ có thứ **cổng tự đo
    được**: TTFT và mã kết thúc. Ai cần token của lượt stream thì đọc `usage` ở
    máy A (`dem_token_luong.py`) hoặc `/metrics` của engine — không đọc ở đây.
@@ -207,10 +206,9 @@ class SoLuot:
        nhiều app trong cùng tiến trình, và một sổ dùng chung sẽ để lượt của app
        này hủy được bằng mã của app kia — một phép kiểm xanh vì lý do sai.
 
-    ⚠️ Lượt KHÔNG mang `X-LTT-Request-Id` thì **không vào sổ**, tức không hủy
-       được. Đó là hệ quả trực tiếp của việc cổng **dội lại** mã chứ không tự
-       sinh (`_dau_ra` ghi lý do): một mã cổng tự đặt thì máy A không có gì để
-       gọi `/v1/huy` bằng. Dòng sổ vẫn được ghi — chỉ thiếu `ma`.
+    Mọi lượt model đều có mã: ưu tiên `X-LTT-Request-Id` của máy A, còn client
+    gọi thẳng thì gateway tạo mã `b-*`. Vì vậy lượt luôn vào sổ và response luôn
+    trả lại tay nắm có thể dùng để đối chiếu hoặc gọi `/v1/huy`.
     """
 
     __slots__ = ("_khoa", "_dang")

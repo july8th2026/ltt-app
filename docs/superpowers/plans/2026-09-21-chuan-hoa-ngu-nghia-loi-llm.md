@@ -222,23 +222,23 @@ class UpstreamEventObserver:
         """Flush EOF and classify an incomplete terminal stream if present."""
 ```
 
-- [ ] **Step 1 — test đỏ:** fixtures gồm SSE chuẩn `event:error/data`, OpenAI
+- [x] **Step 1 — test đỏ:** fixtures gồm SSE chuẩn `event:error/data`, OpenAI
   `data:{"error":{"code":"server_error"}}`, Responses `response.failed`,
   llama.cpp raw `error: {"message":"example"}`, event JSON chia tại **mọi byte
   boundary**, CRLF/LF, multi-line
   `data`, comment/heartbeat và UTF-8 chia giữa code point.
-- [ ] Thêm success golden; nối bytes output phải bằng bytes input tuyệt đối.
+- [x] Thêm success golden; nối bytes output phải bằng bytes input tuyệt đối.
   Thêm abrupt EOF trước terminal → `stream_truncated`; terminal `[DONE]`/completed
   không được tạo lỗi; client cancellation → log-only `client_disconnected`.
-- [ ] Chạy test → FAIL.
-- [ ] Cài state machine có buffer bị chặn kích thước, xử lý event/line đầy đủ;
+- [x] Chạy test → FAIL.
+- [x] Cài state machine có buffer bị chặn kích thước, xử lý event/line đầy đủ;
   không parse từng network chunk, không json-load dữ liệu chưa đủ.
-- [ ] Event thành công phát nguyên byte. Event lỗi chưa phát raw; chuyển thành một
+- [x] Event thành công phát nguyên byte. Event lỗi chưa phát raw; chuyển thành một
   gateway terminal envelope có `canonical_code`. Lỗi mã lạ →
   `upstream_unknown`.
-- [ ] Gắn observer vào generator B. Đảm bảo close/cancel giải phóng socket/slot
+- [x] Gắn observer vào generator B. Đảm bảo close/cancel giải phóng socket/slot
   đúng một lần và không chuyển cancellation thành provider failure.
-- [ ] PASS toàn bộ permutation. Chạy test dưới điều kiện chunk một byte và chunk
+- [x] PASS 13 ca/permutation. Chạy test dưới điều kiện chunk một byte và chunk
   nguyên body; kết quả semantic phải giống nhau.
 - [ ] Test nhắm + L2 `gateway:llm`; commit
   `feat(gateway): normalize terminal stream errors`.
