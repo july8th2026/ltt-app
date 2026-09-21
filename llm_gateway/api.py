@@ -60,6 +60,7 @@ from . import so_luot as SL
 from .so_theo_model import SoTheoModel
 from . import vat_ly as VL
 from .upstream import MA_DA_HUY, MA_HET_GIO, MA_KHONG_VOI_TOI
+from .upstream_errors import decode_upstream_http
 from .nhip_tim import boc_nhip_tim
 from .dem import Dem, boc_do_ttft
 from .to_tien import ToTien
@@ -300,7 +301,7 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                 401,
                 request_id=request_id,
                 extra={"ly_do": "token khong dung"},
-            )
+            ) from None
 
     # ── Đọc trạng thái ───────────────────────────────────────────────────────
 
@@ -894,7 +895,7 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                        "available_models": sorted(catalog),
                        "ly_do": "model khong co hoac chua duoc mo",
                        "co_the_dung": sorted(catalog)},
-            )
+            ) from None
 
         vl = cfg.vat_ly[ten]          # nap_catalog chi mo ho so CO vat ly
         try:
@@ -918,7 +919,7 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                 status_code=413,
                 detail=e.as_dict(request_id=request_id),
                 headers={"X-LTT-Request-Id": request_id},
-            )
+            ) from e
 
         # ── Rào vật lý: chuỗi ≤ -np, Σ đặt chỗ ≤ -c (phương án C) ──────────────
         #
@@ -1017,7 +1018,7 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
         if bool(body.get("stream")):
             ma, ct, luong = upstream.stream(
                 "POST", duong, body=body, timeout=cfg.stream_timeout_s)
-            if ma >= 500:
+            if ma >= 400:
                 than = b"".join(luong)
                 suat.tra()
                 # ⛔ Chưa đặt `luot.stream` ⇒ dòng sổ do `_chuyen_tiep` ghi. Ở
@@ -1099,7 +1100,7 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
         luot.ghi_ttft(now() - t0)
         if ma == MA_DA_HUY:
             return _da_huy(luot)
-        if ma >= 500:
+        if ma >= 400:
             return _loi_thuong_nguon(ma, thu, request_id=request_id)
         # ⛔ Bóc số TRƯỚC khi trả: `thu` là thân sẽ đi ra cho khách, và đây là
         #    chỗ duy nhất còn thấy nó. Bóc chỉ đọc, không sửa một byte nào.
@@ -1169,17 +1170,31 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                          "ly_do": "thuong nguon khong tra loi kip",
                          "ma_thuong_nguon": ma},
                 headers={"X-LTT-Request-Id": request_id})
+        if ma == MA_KHONG_VOI_TOI:
+            dem.cong("loi_thuong_nguon")
+            log.error("thuong nguon khong voi toi request_id=%s bytes=%d",
+                      request_id, len(thu))
+            detail = make_error(
+                "upstream_unreachable",
+                request_id=request_id,
+                provider_code=ma,
+            )
+            return JSONResponse(
+                status_code=502,
+                content={"detail": detail,
+                         "ly_do": "thuong nguon khong phuc vu duoc",
+                         "ma_thuong_nguon": ma},
+                headers={"X-LTT-Request-Id": request_id})
         """llama-swap/llama-server hỏng hoặc không với tới được.
 
         ⚠️ Trả **502**, và **không** trả 429. Đây là hỏng thật, máy A **nên** đánh
         dấu lỗi cho key ở đây — khác hẳn trường hợp bận ở trên.
         """
         dem.cong("loi_thuong_nguon")
-        log.error("thuong nguon loi ma=%s request_id=%s bytes=%d",
-                  ma, request_id, len(thu))
-        code = "upstream_unreachable" if ma == MA_KHONG_VOI_TOI else "upstream_unknown"
-        detail = make_error(code, request_id=request_id, provider_code=ma)
-        return JSONResponse(status_code=502,
+        detail = decode_upstream_http(ma, {}, thu, request_id=request_id)
+        log.warning("thuong nguon HTTP ma=%s canonical=%s request_id=%s bytes=%d",
+                    ma, detail["canonical_code"], request_id, len(thu))
+        return JSONResponse(status_code=_ma_cho_khach(ma),
                             content={"detail": detail,
                                      "ly_do": "thuong nguon khong phuc vu duoc",
                                      "ma_thuong_nguon": ma},

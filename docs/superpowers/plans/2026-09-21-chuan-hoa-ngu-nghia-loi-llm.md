@@ -187,21 +187,21 @@ def decode_upstream_http(status: int, headers: Mapping[str, str],
     """Return one sanitized version-1 envelope; never parse prose for meaning."""
 ```
 
-- [ ] **Step 1 — fixtures đỏ:** thêm body theo source llama.cpp cho
+- [x] **Step 1 — fixtures đỏ:** thêm body theo source llama.cpp cho
   `exceed_context_size_error`, `invalid_request_error`, `not_found_error`,
   `unavailable_error`, generic `server_error`; thêm body rỗng, HTML proxy, JSON
   sai, JSON có mã lạ và message chứa giả chữ “context”.
-- [ ] Assert chỉ `exceed_context_size_error` thành
+- [x] Assert chỉ `exceed_context_size_error` thành
   `context_window_exceeded`; message chứa “context” nhưng không có typed code
   phải thành `upstream_unknown`.
-- [ ] Chạy test → FAIL vì decoder chưa có.
-- [ ] Cài decoder ưu tiên typed field (`type`, `code`) theo mapping hữu hạn.
+- [x] Chạy test → FAIL vì decoder chưa có.
+- [x] Cài decoder ưu tiên typed field (`type`, `code`) theo mapping hữu hạn.
   Status chỉ chọn fallback transport chung; không phân loại semantic bằng text.
-- [ ] `provider_type/provider_code/upstream_status` chỉ vào envelope/log đã lọc;
+- [x] `provider_type/provider_code/upstream_status` chỉ vào envelope/log đã lọc;
   giới hạn kích thước body đọc để tránh lỗi proxy lớn làm tăng RAM.
-- [ ] Thay các nhánh `>=500`, 400/404/422 trong `api.py` dùng decoder; giữ quy
+- [x] Thay các nhánh `>=500`, 400/404/422 trong `api.py` dùng decoder; giữ quy
   tắc 597/598/599 nội bộ thành cancel/timeout/unreachable.
-- [ ] PASS; đột biến để status 413 tự thành context phải làm test đỏ.
+- [x] PASS 18 ca; đột biến để status 413 tự thành context làm đúng case đỏ.
 - [ ] Test nhắm + L2 `gateway:llm`; commit
   `feat(gateway): classify llama http errors by typed code`.
 

@@ -49,9 +49,12 @@ Mục tiêu “đúng 100%” được định nghĩa chặt như sau:
   `request_too_large` 413, `invalid_request_error` 400, `rate_limit_error` 429,
   `overloaded_error` 529; lỗi còn có thể tới sau HTTP 200 trong SSE.
 - [llama.cpp server-common.cpp](https://github.com/ggml-org/llama.cpp/blob/master/tools/server/server-common.cpp)
-  có các type riêng như `invalid_request_error`, `unavailable_error`,
+  định nghĩa tám type hiện hành: `invalid_request_error`,
+  `authentication_error`, `not_found_error`, `server_error`,
+  `permission_error`, `not_supported_error`, `unavailable_error` và
   `exceed_context_size_error`; context hiện được trả 400. Vì vậy không được
-  đồng nhất lỗi llama.cpp với status 413 của gateway.
+  đồng nhất lỗi llama.cpp với status 413 của gateway. Adapter B dùng bảng hữu
+  hạn này; `server_error` và type lạ fail closed thành `upstream_unknown`.
 - [llama.cpp issue #14566](https://github.com/ggml-org/llama.cpp/issues/14566)
   cho thấy lỗi có thể xuất hiện sau 200 dưới dạng dòng
   `error: {"message":"example"}` không phải

@@ -548,11 +548,12 @@ def test_thuong_nguon_5xx_thi_502_khong_phai_429():
 
 
 def test_thuong_nguon_4xx_thi_chuyen_tiep_nguyen_ma():
-    """400 của llama-server là thông tin cho client, không phải lỗi của cổng."""
+    """Giữ HTTP 400 nhưng không chuyển tiếp prose không có typed evidence."""
     c, _ = _client(up=FakeUpstream(ma=400, than=b'{"error":"bad template"}'))
     r = c.post("/v1/chat/completions", json={"model": "qwen38-api", "messages": []})
     assert r.status_code == 400
-    assert r.json()["error"] == "bad template"
+    assert r.json()["detail"]["canonical_code"] == "upstream_unknown"
+    assert "bad template" not in r.text
 
 
 # ── 6. SSE chuyển tiếp nguyên xi ─────────────────────────────────────────────
