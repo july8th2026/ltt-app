@@ -280,7 +280,7 @@ def mo(
         if failure.is_cancelled or r.status_code == 499:
             raise KhongMoDuocLuong(failure.message, failure=failure)
 
-        if code == "tool_call_parse_failed":
+        if failure.retry_same_generation:
             if not _da_thu_lai:
                 log.warning(
                     "model_failure action=retry_once code=%s request_id=%s",
@@ -309,37 +309,14 @@ def mo(
                 failure.request_id or "missing",
             )
 
-        # Task 6 centralizes key-health policy. Until then, preserve the old
-        # provider-failure path but exclude all known client/control failures.
-        no_key_penalty = {
-            "invalid_request",
-            "unsupported_parameter",
-            "unsupported_modality",
-            "model_not_found",
-            "request_body_too_large",
-            "image_count_exceeded",
-            "image_too_large",
-            "image_url_not_allowed",
-            "image_decode_failed",
-            "input_tokens_exceeded",
-            "max_output_tokens_exceeded",
-            "context_window_exceeded",
-            "tool_call_parse_failed",
-            "structured_output_failed",
-            "unauthorized",
-            "forbidden",
-            "insufficient_credit",
-            "quota_exceeded",
-            "rate_limited",
-            "concurrency_limited",
-            "model_loading",
-            "provider_overloaded",
-            "upstream_timeout",
-            "request_cancelled",
-            "stream_idle_timeout",
-        }
-        if r.status_code >= 500 and code not in no_key_penalty:
-            api_pool.danh_dau_loi(db, key, message=f"HTTP {r.status_code}")
+        if failure.penalizes_key:
+            api_pool.danh_dau_loi(
+                db,
+                key,
+                http_status=r.status_code,
+                retry_after_s=failure.retry_after_s,
+                message=f"HTTP {r.status_code} code={code}",
+            )
         raise KhongMoDuocLuong(failure.message, failure=failure)
 
     def _di() -> Iterator[bytes]:

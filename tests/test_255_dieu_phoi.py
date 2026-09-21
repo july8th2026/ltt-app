@@ -21,7 +21,14 @@ import types
 import pytest
 
 from platform_core.llm import dieu_phoi as DP
-from platform_core.llm.cong_vlm import BanError, CongVlmError, VuotNganSachError
+from platform_core.llm.cong_vlm import (
+    AmbiguousProviderError,
+    BanError,
+    CongVlmError,
+    ProviderOomError,
+    VuotNganSachError,
+)
+from platform_core.llm.model_failure import model_failure
 
 
 #: Provider thứ hai **không có thật**, chỉ để đo cascade. Xem `GiaLap.cai`.
@@ -223,6 +230,50 @@ def test_loi_that_thi_danh_dau_loi_roi_moi_di_tiep(monkeypatch):
         ("ltt_llm", "dispatched"), ("ltt_llm", "rejected"),
         (PROVIDER_GIA, "dispatched"),
     ], "phan hoi xac dinh phai go ambiguity truoc khi fallback"
+
+
+@pytest.mark.parametrize(
+    ("error", "expected_exception", "expected_marks"),
+    (
+        (
+            ProviderOomError(
+                "safe", ma=503,
+                failure=model_failure("provider_oom", http_status=503),
+            ),
+            ProviderOomError,
+            1,
+        ),
+        (
+            AmbiguousProviderError(
+                "safe", ma=504,
+                failure=model_failure("upstream_timeout", http_status=504),
+            ),
+            AmbiguousProviderError,
+            0,
+        ),
+        (
+            CongVlmError(
+                "safe", ma=502,
+                failure=model_failure("upstream_unknown", http_status=502),
+            ),
+            DP.KhongCoProviderNao,
+            0,
+        ),
+    ),
+)
+def test_dong_bo_chi_phat_khoa_khi_canonical_code_cho_phep(
+    monkeypatch, error, expected_exception, expected_marks
+):
+    gl = GiaLap().cai(monkeypatch)
+    _dat_hanh_vi(monkeypatch, gl, {"ltt_llm": error})
+
+    with pytest.raises(expected_exception):
+        DP.goi(None, messages=TIN, thu_tu_provider=["ltt_llm"])
+
+    assert len(gl.loi) == expected_marks
+    if gl.loi_kw:
+        assert gl.loi_kw[0]["http_status"] == error.failure.http_status
+        assert f"code={error.failure.canonical_code}" in gl.loi_kw[0]["message"]
 
 
 # ── 4. Vượt ngân sách: ném ngay, KHÔNG cascade ───────────────────────────────

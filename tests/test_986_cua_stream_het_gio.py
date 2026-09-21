@@ -83,10 +83,11 @@ def test_typed_504_duoc_nhan_dien_bang_code_khong_bang_status():
 
 
 def test_timeout_nam_trong_nhom_khong_phat_khoa():
-    """Trước Task 6, chốt đường chuyển tiếp không phạt timeout."""
-    source = LUONG_VLM.read_text(encoding="utf-8")
-    assert '"upstream_timeout"' in source
-    assert "code not in no_key_penalty" in source
+    """Policy có tên thay cho phép dò source dễ xanh giả trước Task 6."""
+    from platform_core.llm.model_failure import model_failure
+
+    failure = model_failure("upstream_timeout", http_status=504)
+    assert not failure.penalizes_key
 
 
 def test_413_va_429_khong_bi_gop_nghia():

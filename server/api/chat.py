@@ -664,8 +664,11 @@ def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
         #
         #    Cong may B da gui san `{truong, tran, thay}`; day la cho dich
         #    chung sang ten cong khai MOT LAN.
-        raise invalid_request(str(e),
-                              **tran_bi_vuot(e.chi_tiet)) from None
+        failure = e.failure
+        raise invalid_request(
+            failure.message if failure is not None else "The request exceeds a model limit.",
+            **tran_bi_vuot(failure.as_detail() if failure is not None else e.chi_tiet),
+        ) from e
     except YeuCauSaiError as e:
         # 🔴 LOI CUA KHACH, KHONG PHAI CUA MAY. Do duoc 13/09 (L-09): mot anh
         #    hong lam may B tra dung chuan
@@ -677,13 +680,16 @@ def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
         #    cong, va `danh_dau_loi` phat key nhu mot loi 5xx — nam lan la tat
         #    model nha.
         #
-        # ⭐ Thong diep cua thuong nguon di THANG ra cho khach: "anh hong" la
-        #    thu ho sua duoc, con "The model could not serve this request" thi
-        #    khong noi cho ho biet gi ca.
+        # Thông điệp công khai lấy từ registry của `ModelFailure`, không lấy
+        # `str(e)`: prose thô của thượng nguồn chỉ được giữ trong log nội bộ.
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
         phong_cho.ghi_ket_thuc(waiter_id, "tham_so_sai")
-        raise invalid_request(str(e)) from None
+        raise invalid_request(
+            e.failure.message
+            if e.failure is not None
+            else "The model rejected this request.",
+        ) from e
     except HuyError:
         # ⛔ PHAI dung TRUOC nhanh bat-tat-ca ben duoi. `HuyError` co chu y KHONG
         #    ke thua `CongVlmError`, nen no roi thang vao `except Exception` va

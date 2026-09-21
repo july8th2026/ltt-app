@@ -75,6 +75,26 @@ class ModelFailure:
     def is_cancelled(self) -> bool:
         return self.canonical_code == "request_cancelled"
 
+    @property
+    def penalizes_key(self) -> bool:
+        """Chỉ tín hiệu chứng minh endpoint/credential hỏng mới phạt key."""
+        return self.canonical_code in {
+            "unauthorized",
+            "forbidden",
+            "upstream_unreachable",
+            "provider_oom",
+            "stream_truncated",
+            "malformed_upstream_response",
+            "empty_response",
+            "upstream_protocol_error",
+            "internal_error",
+        }
+
+    @property
+    def retry_same_generation(self) -> bool:
+        """Retry nội bộ duy nhất đã được chứng minh là ngẫu nhiên theo lượt sinh."""
+        return self.canonical_code == "tool_call_parse_failed"
+
     def as_detail(self) -> dict[str, Any]:
         """Dạng an toàn cho lớp tương thích; không chứa prose từ provider."""
         detail: dict[str, Any] = {
@@ -206,10 +226,23 @@ def _build(
 
 
 def model_failure(
-    code: str, *, http_status: int, request_id: str = "", retry_after_s: int | None = None
+    code: str,
+    *,
+    http_status: int,
+    request_id: str = "",
+    field: str | None = None,
+    limit: int | None = None,
+    actual: int | None = None,
+    retry_after_s: int | None = None,
 ) -> ModelFailure:
     """Tạo lỗi nội bộ an toàn khi chưa có body HTTP để decode."""
     candidate: dict[str, Any] = {}
+    if field is not None:
+        candidate["field"] = field
+    if limit is not None:
+        candidate["limit"] = limit
+    if actual is not None:
+        candidate["actual"] = actual
     if retry_after_s is not None:
         candidate["retry_after_s"] = retry_after_s
     return _build(

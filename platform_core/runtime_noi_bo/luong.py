@@ -35,6 +35,7 @@ from dataclasses import dataclass, field
 from typing import Any, AsyncIterator, Callable, Generator, Iterator, Optional
 
 from platform_core.llm.dem_token_luong import DemToken
+from platform_core.llm.model_failure import ModelFailure, model_failure
 from platform_core.public_api.executor import for_tool
 from platform_core.runtime_noi_bo.tim import KhongCoNangLuc, tim_tool  # noqa: F401
 
@@ -73,13 +74,20 @@ class DangBan(LoiCuaLuong):
     ⛔ BẬN ≠ HỎNG. Khách không bị thu tiền; bên gọi trả `Retry-After`.
     """
 
-    def __init__(self, ly_do: str, *, nguon: str = "suat", tai_nguyen: str = "",
-                 thu_lai_sau_s: int = 15):
-        super().__init__(ly_do)
-        self.ly_do = ly_do
+    def __init__(self, ly_do: str = "", *, nguon: str = "suat", tai_nguyen: str = "",
+                 thu_lai_sau_s: int = 15, failure: ModelFailure | None = None):
+        if failure is None:
+            failure = model_failure(
+                "concurrency_limited",
+                http_status=429,
+                retry_after_s=thu_lai_sau_s,
+            )
+        super().__init__(ly_do or failure.message)
+        self.failure = failure
+        self.ly_do = ly_do or failure.message
         self.nguon = nguon
         self.tai_nguyen = tai_nguyen
-        self.thu_lai_sau_s = int(thu_lai_sau_s)
+        self.thu_lai_sau_s = int(failure.retry_after_s or thu_lai_sau_s)
 
 
 class ThieuCredit(LoiCuaLuong):
@@ -103,18 +111,34 @@ class ThieuCredit(LoiCuaLuong):
 class KhongMoDuoc(LoiCuaLuong):
     """Không mở được luồng vì lý do khác bận. `qua_dai` = 413 (lỗi của đầu vào)."""
 
-    def __init__(self, ly_do: str, *, qua_dai: bool = False,
+    def __init__(self, ly_do: str = "", *, qua_dai: bool = False,
                  token: Optional[int] = None, tran: Optional[int] = None,
-                 het_gio: bool = False):
-        super().__init__(ly_do)
-        self.ly_do = ly_do
-        self.qua_dai = qua_dai
+                 het_gio: bool = False, failure: ModelFailure | None = None):
+        if failure is None:
+            code = (
+                "context_window_exceeded"
+                if qua_dai
+                else "upstream_timeout"
+                if het_gio
+                else "upstream_unknown"
+            )
+            failure = model_failure(
+                code,
+                http_status=413 if qua_dai else 504 if het_gio else 502,
+                field="context" if qua_dai else None,
+                limit=tran,
+                actual=token,
+            )
+        super().__init__(ly_do or failure.message)
+        self.failure = failure
+        self.ly_do = ly_do or failure.message
+        self.qua_dai = failure.is_context_limit
         #: Máy B không trả lời kịp (504 hoặc hết hạn đọc — C0-34): nghẽn, khách
         #: nhận `overloaded` (thử lại được), không phải "không phục vụ được".
-        self.het_gio = het_gio
+        self.het_gio = failure.is_timeout
         #: Số cho câu "prompt is too long: N tokens > M maximum" (R-08), khi biết.
-        self.token = token
-        self.tran = tran
+        self.token = token if token is not None else failure.actual
+        self.tran = tran if tran is not None else failure.limit
 
 
 # ── Ước lượng đầu vào / trần đầu ra (hạ từ `server/api/streaming.py`) ────────
@@ -1781,8 +1805,12 @@ def mo_thuong_nguon(cb: ChuanBi, *, timeout_s: float = MO_LUONG_GIAY,
             metrics.increment(metrics.CAPACITY_REFUSED)
             log.warning("BAN luong (xep lai): user=%s duong=%s ly_do=%s",
                         cb.user_id[:8], cb.duong, e.ly_do)
-            raise DangBan(e.ly_do, nguon="thuong_nguon",
-                          thu_lai_sau_s=e.thu_lai_sau_s) from None
+            raise DangBan(
+                e.ly_do,
+                nguon="thuong_nguon",
+                thu_lai_sau_s=e.thu_lai_sau_s,
+                failure=e.failure,
+            ) from e
         hoan(cb.user_id, cb.request_id)
         _nha_suat(cb.lease_id)
         if e.ban:
@@ -1791,11 +1819,14 @@ def mo_thuong_nguon(cb: ChuanBi, *, timeout_s: float = MO_LUONG_GIAY,
             metrics.increment(metrics.CAPACITY_REFUSED)
             log.warning("BAN luong: user=%s duong=%s ly_do=%s",
                         cb.user_id[:8], cb.duong, e.ly_do)
-            raise DangBan(e.ly_do, nguon="thuong_nguon",
-                          thu_lai_sau_s=e.thu_lai_sau_s) from None
+            raise DangBan(
+                e.ly_do,
+                nguon="thuong_nguon",
+                thu_lai_sau_s=e.thu_lai_sau_s,
+                failure=e.failure,
+            ) from e
         log.warning("khong mo duoc luong cho user=%s: %s", cb.user_id[:8], e.ly_do)
-        raise KhongMoDuoc(e.ly_do, qua_dai=bool(getattr(e, "qua_dai", False)),
-                          het_gio=bool(getattr(e, "het_gio", False))) from None
+        raise KhongMoDuoc(e.ly_do, failure=e.failure) from e
     except BaseException:
         hoan(cb.user_id, cb.request_id)
         _nha_suat(cb.lease_id)

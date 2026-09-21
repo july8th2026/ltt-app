@@ -125,6 +125,7 @@ def _stream_http_failure(
     payload: dict,
     headers: dict | None = None,
     calls: list | None = None,
+    key_failures: list | None = None,
 ) -> KhongMoDuocLuong:
     """Đi qua đúng cửa `luong_vlm.mo`, không chỉ gọi decoder trực tiếp."""
     import httpx
@@ -139,7 +140,13 @@ def _stream_http_failure(
         "chon_key",
         lambda db, **kwargs: type("K", (), {"base_url": "http://b"})(),
     )
-    monkeypatch.setattr(api_pool, "danh_dau_loi", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        api_pool,
+        "danh_dau_loi",
+        lambda *args, **kwargs: key_failures.append((args, kwargs))
+        if key_failures is not None
+        else None,
+    )
     monkeypatch.setattr(api_keys, "lay_credential", lambda db, key: "secret")
     monkeypatch.setattr(providers, "get", lambda provider: None)
 
@@ -206,6 +213,34 @@ def test_stream_413_khong_typed_khong_duoc_bien_thanh_context(monkeypatch):
     assert error.failure.canonical_code == "upstream_unknown"
     assert not error.failure.is_context_limit
     assert not error.qua_dai
+
+
+@pytest.mark.parametrize(
+    ("code", "status", "expected_marks"),
+    (
+        ("provider_oom", 503, 1),
+        ("upstream_unreachable", 502, 1),
+        ("concurrency_limited", 429, 0),
+        ("provider_overloaded", 503, 0),
+        ("upstream_timeout", 504, 0),
+        ("request_cancelled", 499, 0),
+        ("upstream_unknown", 502, 0),
+    ),
+)
+def test_stream_chi_phat_khoa_khi_canonical_code_cho_phep(
+    monkeypatch, code, status, expected_marks
+):
+    marks: list = []
+    _stream_http_failure(
+        monkeypatch,
+        status=status,
+        payload={"error": make_error(code, request_id=f"rid-{code}")},
+        key_failures=marks,
+    )
+    assert len(marks) == expected_marks
+    if marks:
+        assert marks[0][1]["http_status"] == status
+        assert f"code={code}" in marks[0][1]["message"]
 
 
 def test_chi_tool_call_parse_failed_typed_moi_duoc_retry_mot_lan(monkeypatch):

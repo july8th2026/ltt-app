@@ -468,6 +468,26 @@ def test_thuong_nguon_hong_thi_HOAN_DU(api, monkeypatch):
     assert _so_du(user_id) == truoc, "loi ma van giu tien cua khach"
 
 
+def test_yeu_cau_sai_giu_ma_typed_khong_lo_prose_va_HOAN_DU(api, monkeypatch):
+    from platform_core.llm.cong_vlm import YeuCauSaiError
+    from platform_core.llm.model_failure import model_failure
+
+    failure = model_failure("image_decode_failed", http_status=400)
+    _dat_model(
+        monkeypatch,
+        nem=YeuCauSaiError("RAW_PROVIDER_PROSE", ma=400, failure=failure),
+    )
+    user_id, token = _account()
+    truoc = _so_du(user_id)
+
+    r = api.post(DUONG, json=_than(), headers=_h(token))
+
+    assert r.status_code == 400, r.text
+    assert failure.message in r.text
+    assert "RAW_PROVIDER_PROSE" not in r.text
+    assert _so_du(user_id) == truoc, "yeu cau sai ma van giu tien cua khach"
+
+
 # ── 4. Idempotency ───────────────────────────────────────────────────────────
 
 def test_thieu_idempotency_key_thi_TU_CHOI(api, monkeypatch):

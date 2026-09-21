@@ -393,13 +393,25 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
             #                    `rejected` ⇒ `fail(retry=False)` — tức một job
             #                    bị hủy sẽ mang trạng thái `error`.
             raise
-        except (AmbiguousProviderError, ProviderOomError, YeuCauSaiError):
+        except (AmbiguousProviderError, ProviderOomError, YeuCauSaiError) as e:
             # Không cascade: timeout sau POST có thể đã tạo side effect; OOM
             # nguyên request sẽ lặp lại y hệt ở sản phẩm không cho fallback.
             #
             # ⭐ `YeuCauSaiError` vào đây 13/09 (L-09) vì cùng một lý do, chỉ
             #    hiển nhiên hơn: gửi lại y hệt một yêu cầu SAI thì nó sai y hệt.
             #    Cascade ở đây chỉ tiêu thêm một provider và một lượt chờ.
+            failure = getattr(e, "failure", None)
+            if failure is not None and failure.penalizes_key:
+                api_pool.danh_dau_loi(
+                    db,
+                    key,
+                    http_status=failure.http_status,
+                    retry_after_s=failure.retry_after_s,
+                    message=(
+                        f"HTTP {failure.http_status} "
+                        f"code={failure.canonical_code}"
+                    ),
+                )
             raise
         except CongVlmError as e:
             if on_rejected is not None:
@@ -410,8 +422,19 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
             #    trước 19/09 KHÔNG TỰ HỒI). Chính `danh_dau_loi` đã có
             #    nhánh "400 ≤ s < 500: bad request CỦA TA, không phạt" — nhưng
             #    nhánh ấy chỉ chạy khi có người truyền mã vào (L-09).
-            api_pool.danh_dau_loi(db, key, http_status=getattr(e, "ma", None),
-                                  message=str(e))
+            failure = getattr(e, "failure", None)
+            if failure is None or failure.penalizes_key:
+                api_pool.danh_dau_loi(
+                    db,
+                    key,
+                    http_status=(failure.http_status if failure is not None else e.ma),
+                    retry_after_s=(failure.retry_after_s if failure is not None else None),
+                    message=(
+                        f"HTTP {failure.http_status} code={failure.canonical_code}"
+                        if failure is not None
+                        else str(e)
+                    ),
+                )
             ly_do.append(f"{pid}: loi ({e})")
             continue
         finally:
