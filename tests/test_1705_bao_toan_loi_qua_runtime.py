@@ -98,7 +98,7 @@ def test_boolean_legacy_khong_duoc_bien_loi_anh_thanh_context():
         ("upstream_timeout", False),
         ("stream_idle_timeout", False),
         ("request_cancelled", False),
-        ("upstream_unknown", False),
+        ("upstream_unknown", True),
     ),
 )
 def test_policy_phat_khoa_chi_theo_canonical_code(code, penalized):

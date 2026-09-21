@@ -88,6 +88,7 @@ class ModelFailure:
             "empty_response",
             "upstream_protocol_error",
             "internal_error",
+            "upstream_unknown",
         }
 
     @property

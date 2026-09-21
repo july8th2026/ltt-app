@@ -309,7 +309,7 @@ def mo(
                 failure.request_id or "missing",
             )
 
-        if failure.penalizes_key:
+        if r.status_code >= 500 and failure.penalizes_key:
             api_pool.danh_dau_loi(
                 db,
                 key,

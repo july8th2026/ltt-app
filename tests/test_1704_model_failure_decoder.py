@@ -224,7 +224,7 @@ def test_stream_413_khong_typed_khong_duoc_bien_thanh_context(monkeypatch):
         ("provider_overloaded", 503, 0),
         ("upstream_timeout", 504, 0),
         ("request_cancelled", 499, 0),
-        ("upstream_unknown", 502, 0),
+        ("upstream_unknown", 502, 1),
     ),
 )
 def test_stream_chi_phat_khoa_khi_canonical_code_cho_phep(

@@ -257,7 +257,7 @@ def test_loi_that_thi_danh_dau_loi_roi_moi_di_tiep(monkeypatch):
                 failure=model_failure("upstream_unknown", http_status=502),
             ),
             DP.KhongCoProviderNao,
-            0,
+            1,
         ),
     ),
 )

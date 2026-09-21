@@ -393,13 +393,17 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
             #                    `rejected` ⇒ `fail(retry=False)` — tức một job
             #                    bị hủy sẽ mang trạng thái `error`.
             raise
-        except (AmbiguousProviderError, ProviderOomError, YeuCauSaiError) as e:
-            # Không cascade: timeout sau POST có thể đã tạo side effect; OOM
-            # nguyên request sẽ lặp lại y hệt ở sản phẩm không cho fallback.
-            #
-            # ⭐ `YeuCauSaiError` vào đây 13/09 (L-09) vì cùng một lý do, chỉ
-            #    hiển nhiên hơn: gửi lại y hệt một yêu cầu SAI thì nó sai y hệt.
-            #    Cascade ở đây chỉ tiêu thêm một provider và một lượt chờ.
+        except AmbiguousProviderError:
+            # Timeout sau POST có thể đã tạo side effect. Không cascade và đặc
+            # biệt không chạm sổ phạt key: kết quả mơ hồ không chứng minh key hỏng.
+            raise
+        except YeuCauSaiError:
+            # Gửi lại y hệt một yêu cầu sai chỉ tiêu thêm provider; đây cũng
+            # không phải tín hiệu sức khỏe của key.
+            raise
+        except ProviderOomError as e:
+            # Không cascade: OOM với nguyên request sẽ lặp lại y hệt ở sản phẩm
+            # không cho fallback. Nhưng đây vẫn là tín hiệu sức khỏe provider.
             failure = getattr(e, "failure", None)
             if failure is not None and failure.penalizes_key:
                 api_pool.danh_dau_loi(
