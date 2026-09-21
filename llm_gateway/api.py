@@ -41,6 +41,7 @@ from __future__ import annotations
 import logging
 import threading
 import time
+import uuid
 from typing import Any, Callable, Optional
 
 from fastapi import Body, Depends, FastAPI, Header, HTTPException
@@ -51,13 +52,14 @@ from . import __version__
 from . import ngan_sach as NS
 from .catalog import KhongCoModel, ModelSpec, lay, nap_catalog, ten_la
 from .config import Config
+from .error_contract import make_error
 from . import gpu_uuid as GPU
 from . import residency as RES
 from .gioi_han import GioiHan, boc_luong, han_im_lang_cho
 from . import so_luot as SL
 from .so_theo_model import SoTheoModel
 from . import vat_ly as VL
-from .upstream import MA_DA_HUY, MA_HET_GIO
+from .upstream import MA_DA_HUY, MA_HET_GIO, MA_KHONG_VOI_TOI
 from .nhip_tim import boc_nhip_tim
 from .dem import Dem, boc_do_ttft
 from .to_tien import ToTien
@@ -96,6 +98,30 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
     #    nhiều app trong cùng tiến trình; một sổ dùng chung sẽ để lượt của app
     #    này hủy được bằng mã của app kia — xanh vì lý do sai.
     so_luot = SL.SoLuot()
+
+    def _id_sach(gt: str) -> str:
+        """Lọc mã lượt trước khi đưa vào header hoặc log."""
+        return "".join(c for c in (gt or "").strip()
+                       if c.isalnum() or c in "-_.:")[:64]
+
+    def _request_id(gt: str) -> str:
+        """Ưu tiên mã từ máy A; tạo mã cục bộ cho client gọi thẳng."""
+        return _id_sach(gt) or f"b-{uuid.uuid4().hex}"
+
+    def _typed_http_error(code: str, status: int, *, request_id: str,
+                          retry_after_s: int | None = None,
+                          extra: Optional[dict[str, Any]] = None) -> HTTPException:
+        """Dựng HTTPException thuộc đường model bằng cùng một phong bì v1."""
+        detail = make_error(
+            code,
+            request_id=request_id,
+            retry_after_s=retry_after_s,
+        )
+        detail.update(extra or {})
+        headers = {"X-LTT-Request-Id": request_id}
+        if retry_after_s is not None:
+            headers["Retry-After"] = str(retry_after_s)
+        return HTTPException(status_code=status, detail=detail, headers=headers)
 
     catalog: dict[str, ModelSpec] = nap_catalog(cfg.models_mo, cfg.vat_ly)
     la = ten_la(cfg.models_mo)
@@ -262,12 +288,19 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
             return None
         return len(toks)
 
-    def auth(authorization: str = Header(default="")) -> None:
+    def auth(authorization: str = Header(default=""),
+             x_ltt_request_id: str = Header(default="")) -> None:
         if not cfg.token:
             return          # dev: chưa đặt token → không chặn (giống render_gateway)
         got = authorization.removeprefix("Bearer ").strip()
         if got != cfg.token:
-            raise HTTPException(status_code=401, detail="token khong dung")
+            request_id = _request_id(x_ltt_request_id)
+            raise _typed_http_error(
+                "unauthorized",
+                401,
+                request_id=request_id,
+                extra={"ly_do": "token khong dung"},
+            )
 
     # ── Đọc trạng thái ───────────────────────────────────────────────────────
 
@@ -761,16 +794,13 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
             return ""
 
     def _dau_ra(do, request_id: str) -> dict:
-        """Header phản hồi. `X-LTT-Request-Id` chỉ dội lại khi bên gọi có gửi.
+        """Header phản hồi, luôn mang mã nối log của lượt.
 
-        ⭐ Dội lại chứ không tự sinh: một mã do cổng tự đặt thì máy A không có gì
-           để nối vào, nên nó chỉ là một chuỗi đẹp trong log. Mã có ích là mã
-           **chung**, và bên bắt đầu lượt là bên duy nhất đặt được nó.
+        Máy A là nguồn ưu tiên. Với client gọi thẳng không gửi mã, B tạo mã để
+        lỗi vẫn có tay nắm hỗ trợ; body và header luôn dùng cùng một giá trị.
         """
-        h = {"X-LTT-Token-Vao": str(do.token_vao)}
-        if request_id:
-            h["X-LTT-Request-Id"] = request_id
-        return h
+        return {"X-LTT-Token-Vao": str(do.token_vao),
+                "X-LTT-Request-Id": request_id}
 
     def _tran_ra_xin(body: dict[str, Any]) -> int:
         """Trần token SINH RA của yêu cầu này, theo cả ba giao thức.
@@ -856,9 +886,15 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
             dem.cong("khong_co_model")
             # 404, không phải 400: model không mở là "không có ở đây", và fail-closed
             # nghĩa là ta **không** tiết lộ model nào tồn tại mà chưa mở.
-            raise HTTPException(status_code=404,
-                                detail={"ly_do": "model khong co hoac chua duoc mo",
-                                        "model": ten, "co_the_dung": sorted(catalog)})
+            raise _typed_http_error(
+                "model_not_found",
+                404,
+                request_id=request_id,
+                extra={"model": ten,
+                       "available_models": sorted(catalog),
+                       "ly_do": "model khong co hoac chua duoc mo",
+                       "co_the_dung": sorted(catalog)},
+            )
 
         vl = cfg.vat_ly[ten]          # nap_catalog chi mo ho so CO vat ly
         try:
@@ -878,7 +914,11 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
         except NS.VuotNganSach as e:
             dem.cong("qua_tran")
             # 413 chứ không phải 400: đây là "to quá", không phải "sai cú pháp".
-            raise HTTPException(status_code=413, detail=e.as_dict())
+            raise HTTPException(
+                status_code=413,
+                detail=e.as_dict(request_id=request_id),
+                headers={"X-LTT-Request-Id": request_id},
+            )
 
         # ── Rào vật lý: chuỗi ≤ -np, Σ đặt chỗ ≤ -c (phương án C) ──────────────
         #
@@ -903,11 +943,13 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
         px_gh, suat = so.cap_suat(ten, dat)
         if suat is None:
             dem.cong(_nhom_tu_choi(px_gh.ly_do))
-            raise HTTPException(
-                status_code=429,
-                detail={"ly_do": "cong dang day", "chi_tiet": px_gh.ly_do,
-                        "model": ten},
-                headers={"Retry-After": str(px_gh.thu_lai_sau_s)})
+            retry_after = int(px_gh.thu_lai_sau_s)
+            raise _typed_http_error(
+                "concurrency_limited", 429,
+                request_id=request_id,
+                retry_after_s=retry_after,
+                extra={"model": ten, "ly_do": "cong dang day"},
+            )
         try:
             return _chay_that(giao_thuc, body, spec, do, suat, t0, luot,
                               request_id=request_id)
@@ -950,10 +992,12 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
         px = tt.phan_xu() if card_cua_comfy else None
         if px is not None and px.ban:
             dem.cong("ban_trong_tai")
-            raise HTTPException(
-                status_code=429,
-                detail={"ly_do": "may B dang ban", "chi_tiet": px.ly_do},
-                headers={"Retry-After": "30"})
+            raise _typed_http_error(
+                "provider_overloaded", 429,
+                request_id=request_id,
+                retry_after_s=30,
+                extra={"ly_do": "may B dang ban"},
+            )
 
         # 🔴 VIỆC "DỌN CARD TRƯỚC KHI NẠP" ĐÃ RỜI KHỎI ĐÂY (5.4b) — và nó không
         #    biến mất, nó **đổi chủ**. Số đo 22/08 vẫn đúng (card bẩn 18,2 tok/s
@@ -985,7 +1029,7 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                 #    thành "khoá hỏng".
                 if ma == MA_DA_HUY:
                     return _da_huy(luot)
-                return _loi_thuong_nguon(ma, than)
+                return _loi_thuong_nguon(ma, than, request_id=request_id)
             # 🔴 SUẤT ĐƯỢC TRẢ KHI LUỒNG HẾT, KHÔNG PHẢI KHI HÀM NÀY VỀ.
             #    `StreamingResponse` trả về ngay lập tức; token còn chảy hàng chục
             #    giây sau đó. Trả suất ở đây là đo đồng thời bằng "số lần bấm nút"
@@ -1056,7 +1100,7 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
         if ma == MA_DA_HUY:
             return _da_huy(luot)
         if ma >= 500:
-            return _loi_thuong_nguon(ma, thu)
+            return _loi_thuong_nguon(ma, thu, request_id=request_id)
         # ⛔ Bóc số TRƯỚC khi trả: `thu` là thân sẽ đi ra cho khách, và đây là
         #    chỗ duy nhất còn thấy nó. Bóc chỉ đọc, không sửa một byte nào.
         luot.doc_than(thu)
@@ -1090,11 +1134,15 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
         """
         dem.cong("huy")
         luot.ket_thuc = luot.ket_thuc or "huy"
+        detail = make_error("request_cancelled", request_id=luot.ma)
+        detail.update({"ly_do": "huy theo yeu cau", "ma": luot.ma or None})
         return JSONResponse(status_code=499,
-                            content={"ly_do": "huy theo yeu cau",
-                                     "ma": luot.ma or None})
+                            content={"detail": detail,
+                                     "ly_do": "huy theo yeu cau",
+                                     "ma": luot.ma or None},
+                            headers={"X-LTT-Request-Id": luot.ma})
 
-    def _loi_thuong_nguon(ma: int, thu: bytes) -> JSONResponse:
+    def _loi_thuong_nguon(ma: int, thu: bytes, *, request_id: str) -> JSONResponse:
         # ⛔ HẾT GIỜ ≠ HỎNG, VÀ SỰ KHÁC BIỆT ẤY TỐN TIỀN THẬT.
         #
         #    Trước 09/09 cả hai đi chung một cửa 502. Máy A đọc 502 thành
@@ -1108,23 +1156,34 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
         #    là hành vi **bình thường** của hệ này, không phải máy B hỏng.
         if ma == MA_HET_GIO:
             dem.cong("het_gio")
-            log.warning("thuong nguon HET GIO: %s", thu[:200])
+            log.warning("thuong nguon HET GIO request_id=%s bytes=%d",
+                        request_id, len(thu))
+            detail = make_error(
+                "upstream_timeout",
+                request_id=request_id,
+                provider_code=ma,
+            )
             return JSONResponse(
                 status_code=504,
-                content={"ly_do": "thuong nguon khong tra loi kip",
-                         "ma_thuong_nguon": ma,
-                         "chi_tiet": thu[:500].decode("utf-8", "replace")})
+                content={"detail": detail,
+                         "ly_do": "thuong nguon khong tra loi kip",
+                         "ma_thuong_nguon": ma},
+                headers={"X-LTT-Request-Id": request_id})
         """llama-swap/llama-server hỏng hoặc không với tới được.
 
         ⚠️ Trả **502**, và **không** trả 429. Đây là hỏng thật, máy A **nên** đánh
         dấu lỗi cho key ở đây — khác hẳn trường hợp bận ở trên.
         """
         dem.cong("loi_thuong_nguon")
-        log.error("thuong nguon loi ma=%s: %s", ma, thu[:300])
+        log.error("thuong nguon loi ma=%s request_id=%s bytes=%d",
+                  ma, request_id, len(thu))
+        code = "upstream_unreachable" if ma == MA_KHONG_VOI_TOI else "upstream_unknown"
+        detail = make_error(code, request_id=request_id, provider_code=ma)
         return JSONResponse(status_code=502,
-                            content={"ly_do": "thuong nguon khong phuc vu duoc",
-                                     "ma_thuong_nguon": ma,
-                                     "chi_tiet": thu[:500].decode("utf-8", "replace")})
+                            content={"detail": detail,
+                                     "ly_do": "thuong nguon khong phuc vu duoc",
+                                     "ma_thuong_nguon": ma},
+                            headers={"X-LTT-Request-Id": request_id})
 
     # ── Ba giao thức, cùng hai header vào ───────────────────────────────────
     #
@@ -1148,16 +1207,6 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
             return max(0, int((gt or "").strip() or 0))
         except ValueError:
             return 0
-
-    def _id_sach(gt: str) -> str:
-        """Mã lượt, đã lọc. Cổng **dội lại** nó để hai máy nối được log.
-
-        ⛔ LỌC CHỨ KHÔNG DỘI THÔ. Đây là chuỗi do bên gọi đặt, và nó đi vào một
-           header phản hồi: một `\\r\\n` trong đó là chèn header (response
-           splitting). Chỉ giữ chữ-số-gạch, cắt 64 ký tự.
-        """
-        return "".join(c for c in (gt or "").strip()
-                       if c.isalnum() or c in "-_.:")[:64]
 
     @app.post("/v1/huy")
     def huy(body: dict = Body(default=None), _: None = Depends(auth),
@@ -1204,7 +1253,7 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
              x_ltt_request_id: str = Header(default="")) -> Response:
         return _chuyen_tiep("chat", body,
                             token_dat_khai=_so_header(x_ltt_token_dat),
-                            request_id=_id_sach(x_ltt_request_id))
+                            request_id=_request_id(x_ltt_request_id))
 
     @app.post("/v1/responses")
     def responses(body: dict = Body(...), _: None = Depends(auth),
@@ -1212,7 +1261,7 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                   x_ltt_request_id: str = Header(default="")) -> Response:
         return _chuyen_tiep("responses", body,
                             token_dat_khai=_so_header(x_ltt_token_dat),
-                            request_id=_id_sach(x_ltt_request_id))
+                            request_id=_request_id(x_ltt_request_id))
 
     @app.post("/v1/messages")
     def messages(body: dict = Body(...), _: None = Depends(auth),
@@ -1220,6 +1269,6 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                  x_ltt_request_id: str = Header(default="")) -> Response:
         return _chuyen_tiep("messages", body,
                             token_dat_khai=_so_header(x_ltt_token_dat),
-                            request_id=_id_sach(x_ltt_request_id))
+                            request_id=_request_id(x_ltt_request_id))
 
     return app

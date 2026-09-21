@@ -98,6 +98,10 @@ trong một chu kỳ phát hành rồi mới bỏ:
     "retry": "after_fix",
     "recovery": "offload_images",
     "request_id": "req_ltt_example_01",
+    "ly_do": "Qua nhieu anh trong mot yeu cau.",
+    "truong": "images",
+    "tran": 4,
+    "thay": 6,
     "legacy": {
       "ly_do": "Qua nhieu anh trong mot yeu cau.",
       "truong": "images",
@@ -118,7 +122,11 @@ trong một chu kỳ phát hành rồi mới bỏ:
   vận hành đã lọc; không đi ra client vì có thể lộ prompt, đường dẫn, VRAM hoặc
   chi tiết hạ tầng.
 - `request_id` do A tạo, B nhận qua `X-LTT-Request-Id`, và cùng giá trị phải có
-  trong header, envelope, log A và log B.
+  trong header, envelope, log A và log B. Client gọi thẳng không gửi mã thì B
+  tạo một mã `b-*` và trả cùng mã ở header/envelope.
+- Trong đúng cửa sổ chuyển tiếp, bốn khoá legacy còn được giữ cả ở tầng
+  `detail` (cho A cũ) và trong object `legacy` (cho việc đo/loại bỏ có kiểm soát).
+  Chúng không phải hợp đồng v1 và sẽ được gỡ ở pha legacy-removal.
 - `retry` thuộc `never | after_fix | after_delay | ambiguous`.
 - `recovery` thuộc `none | reduce_input | reduce_output | offload_images |
   replace_image | choose_model | wait | reauthenticate | top_up |

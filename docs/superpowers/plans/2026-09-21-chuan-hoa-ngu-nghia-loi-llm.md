@@ -127,21 +127,21 @@ def make_error(code: str, *, request_id: str, field: str | None = None,
     """Build v1 using the registry's safe message, never raw exception text."""
 ```
 
-- [ ] **Step 1 — test đỏ:** trong `test_1700`, chép nguyên tập 33 mã ở spec §4
+- [x] **Step 1 — test đỏ:** trong `test_1700`, chép nguyên tập 33 mã ở spec §4
   thành `EXPECTED_CODES`; assert registry không thiếu/thừa, mọi spec có category,
   status, retry, recovery hợp lệ và `make_error()` tạo đủ trường bắt buộc.
-- [ ] Assert riêng `request_body_too_large != context_window_exceeded`,
+- [x] Assert riêng `request_body_too_large != context_window_exceeded`,
   `image_count_exceeded != input_tokens_exceeded`, và unknown code làm
   `error_spec()` ném `KeyError`.
-- [ ] Chạy
+- [x] Chạy
   `python -m pytest tests/test_1700_hop_dong_ma_loi_llm.py -q`; kỳ vọng FAIL vì
   module chưa tồn tại.
-- [ ] Cài đặt dataclass `GatewayErrorSpec`, tuple hằng hợp lệ và registry đúng
+- [x] Cài đặt dataclass `GatewayErrorSpec`, tuple hằng hợp lệ và registry đúng
   spec. `make_error` chỉ nhận mã đăng ký, message mặc định an toàn nằm trong
   registry, không nhận raw exception.
-- [ ] Chạy lại test → PASS. Đột biến bằng tay: tạm đổi recovery của
+- [x] Chạy lại test → PASS. Đột biến bằng tay: tạm đổi recovery của
   `image_count_exceeded` thành `reduce_input`; test phải FAIL; hoàn nguyên.
-- [ ] Chạy test nhắm `gateway:llm`, rồi L2 phạm vi đó;
+- [x] Chạy test nhắm `gateway:llm`, rồi L2 phạm vi đó;
   commit `feat(llm): define versioned model error taxonomy`.
 
 ### Task 2: Máy B phát envelope v1 cho mọi lỗi do gateway sở hữu
@@ -150,25 +150,26 @@ def make_error(code: str, *, request_id: str, field: str | None = None,
 create `tests/test_1701_gateway_error_envelope.py`; extend các test budget/gateway
 đã được `python tools\thanh_phan.py --test gateway:llm` liệt kê.
 
-- [ ] **Step 1 — test đỏ theo bảng:** parameterize từng nhánh thật:
+- [x] **Step 1 — test đỏ theo bảng:** parameterize từng nhánh thật:
   text-model nhận ảnh → `unsupported_modality`; quá số ảnh →
   `image_count_exceeded`; URL ngoài → `image_url_not_allowed`; ảnh byte lớn →
   `image_too_large`; output lớn → `max_output_tokens_exceeded`; input lớn →
   `input_tokens_exceeded`; tổng input+output lớn → `context_window_exceeded`.
   Assert cả `field/limit/actual`, không chỉ code.
-- [ ] Thêm ca 404 model, 429 hết suất, 499 huỷ, 504 timeout, 502 không nối được;
+- [x] Thêm ca 404 model, 429 hết suất, 499 huỷ, 504 timeout, 502 không nối được;
   assert `request_id` ở header và body giống request vào.
-- [ ] Chạy `python -m pytest tests/test_1701_gateway_error_envelope.py -q` → FAIL
+- [x] Chạy `python -m pytest tests/test_1701_gateway_error_envelope.py -q` → FAIL
   vì body hiện chỉ có `ly_do/truong/tran/thay` hoặc prose.
-- [ ] Đổi `VuotNganSach.__init__` nhận `code`; từng nơi raise truyền literal từ
+- [x] Đổi `VuotNganSach.__init__` nhận `code`; từng nơi raise truyền literal từ
   registry. `as_dict` gọi `make_error`, đồng thời kèm object `legacy` trong pha
   tương thích.
-- [ ] Tạo một helper trong `llm_gateway/api.py` để mọi `HTTPException` do gateway
-  sở hữu dùng cùng envelope. Không sửa status hiện tại trong task này.
-- [ ] Log structured fields, không log request body. Nếu caller không gửi
+- [x] Tạo một helper trong `llm_gateway/api.py` để mọi `HTTPException` trên
+  đường model do gateway sở hữu dùng cùng envelope. Không sửa status hiện tại
+  trong task này.
+- [x] Log structured fields, không log request body. Nếu caller không gửi
   `X-LTT-Request-Id`, B tự tạo và trả lại; nếu có thì bảo toàn nguyên giá trị đã
   validate độ dài/ký tự.
-- [ ] PASS test mới và test gateway hiện có. Đột biến `images` thành
+- [x] PASS test mới (16 ca) và test gateway hiện có (57 ca). Đột biến `images` thành
   `context_window_exceeded` phải làm đúng case đỏ.
 - [ ] Test nhắm + L2 `gateway:llm`; commit
   `feat(gateway): emit structured error envelope`.

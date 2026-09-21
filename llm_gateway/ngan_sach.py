@@ -76,6 +76,7 @@ from dataclasses import dataclass, replace
 from typing import Any
 
 from . import uoc_token as UT
+from .error_contract import make_error
 
 #: ⭐ PHÉP ƯỚC TOKEN là `llm_gateway/uoc_token.py` — CẬN TRÊN có chứng minh (docstring
 #:    tệp ấy), bản giống hệt từng byte của `platform_core/llm/uoc_token.py` máy A
@@ -103,16 +104,30 @@ _DATA_URL = re.compile(r"^data:(?P<mime>[\w.+-]+/[\w.+-]+)?;base64,", re.I)
 class VuotNganSach(ValueError):
     """Yêu cầu vượt trần đã đo. Mang theo lý do đọc được cho người dùng."""
 
-    def __init__(self, ly_do: str, *, truong: str = "", tran: int = 0, thay: int = 0):
+    def __init__(self, code: str, ly_do: str, *, truong: str = "", tran: int = 0,
+                 thay: int = 0):
         super().__init__(ly_do)
+        self.code = code
         self.ly_do = ly_do
         self.truong = truong
         self.tran = tran
         self.thay = thay
 
-    def as_dict(self) -> dict[str, Any]:
-        return {"ly_do": self.ly_do, "truong": self.truong,
-                "tran": self.tran, "thay": self.thay}
+    def as_dict(self, *, request_id: str) -> dict[str, Any]:
+        """Phong bì v1, kèm đúng hình dạng cũ trong một chu kỳ chuyển tiếp."""
+        legacy = {"ly_do": self.ly_do, "truong": self.truong,
+                  "tran": self.tran, "thay": self.thay}
+        envelope = make_error(
+            self.code,
+            request_id=request_id,
+            field=self.truong or None,
+            limit=self.tran,
+            actual=self.thay,
+        )
+        # Các khóa legacy ở cả tầng ngoài và `legacy`: máy A hiện hành vẫn đọc
+        # tầng ngoài; máy A mới đọc phong bì v1. Nhờ vậy B có thể đi trước và A
+        # vẫn lùi phiên bản độc lập trong cửa sổ chuyển tiếp.
+        return {**envelope, **legacy, "legacy": legacy}
 
 
 @dataclass(frozen=True)
@@ -217,11 +232,13 @@ def kiem_tra(body: dict[str, Any], *, max_input_tokens: int, max_output_tokens: 
 
     if do.so_anh and not co_vision:
         raise VuotNganSach(
+            "unsupported_modality",
             "Ho so model nay khong nap vision. Goi model co vision thay vi model nay.",
             truong="images", tran=0, thay=do.so_anh)
 
     if do.so_anh > max_images:
-        raise VuotNganSach("Qua nhieu anh trong mot yeu cau.",
+        raise VuotNganSach("image_count_exceeded",
+                           "Qua nhieu anh trong mot yeu cau.",
                            truong="images", tran=max_images, thay=do.so_anh)
 
     # 🔒 CHỈ NHẬN ẢNH `data:` — TỪ CHỐI MỌI URL TỪ XA.
@@ -236,11 +253,12 @@ def kiem_tra(body: dict[str, Any], *, max_input_tokens: int, max_output_tokens: 
     #    đổi ở một bản nâng cấp. Chốt ở đây làm nó thành bảo đảm CỦA TA.
     if do.url_tu_xa:
         raise VuotNganSach(
+            "image_url_not_allowed",
             "Chi nhan anh dang data: URL (base64). URL tu xa bi tu choi.",
             truong="image_url", tran=0, thay=len(do.url_tu_xa))
 
     if do.byte_anh_lon_nhat > max_image_bytes:
-        raise VuotNganSach("Anh qua lon.", truong="image_bytes",
+        raise VuotNganSach("image_too_large", "Anh qua lon.", truong="image_bytes",
                            tran=max_image_bytes, thay=do.byte_anh_lon_nhat)
 
     # `max_tokens` (Chat/Anthropic) và `max_output_tokens` (Responses) là cùng một thứ.
@@ -249,7 +267,8 @@ def kiem_tra(body: dict[str, Any], *, max_input_tokens: int, max_output_tokens: 
         xin_ra = body.get("max_output_tokens")
     xin_ra = int(xin_ra) if isinstance(xin_ra, (int, float)) else max_output_tokens
     if xin_ra > max_output_tokens:
-        raise VuotNganSach("Xin sinh ra qua nhieu token.", truong="max_tokens",
+        raise VuotNganSach("max_output_tokens_exceeded",
+                           "Xin sinh ra qua nhieu token.", truong="max_tokens",
                            tran=max_output_tokens, thay=xin_ra)
 
     # ── NHÁNH HAI: ước đã vượt trần, hỏi số THẬT trước khi từ chối ──────────
@@ -273,13 +292,15 @@ def kiem_tra(body: dict[str, Any], *, max_input_tokens: int, max_output_tokens: 
             do = replace(do, token_that=that)
 
     if do.token_vao > max_input_tokens:
-        raise VuotNganSach("Dau vao vuot tran token.", truong="input_tokens",
+        raise VuotNganSach("input_tokens_exceeded",
+                           "Dau vao vuot tran token.", truong="input_tokens",
                            tran=max_input_tokens, thay=do.token_vao)
 
     # Vào + ra phải cùng nằm trong cửa sổ ngữ cảnh của hồ sơ. Đây là chốt bắt được
     # trường hợp mà hai chốt trên bỏ lọt: mỗi cái vừa trần của nó, cộng lại thì tràn.
     if do.token_vao + xin_ra > max_context:
         raise VuotNganSach(
+            "context_window_exceeded",
             "Dau vao cong dau ra vuot cua so ngu canh cua ho so model.",
             truong="context", tran=max_context, thay=do.token_vao + xin_ra)
 
