@@ -30,6 +30,7 @@ from starlette.responses import JSONResponse
 from platform_core.public_api import errors as api_errors, protocol
 from platform_core.public_api.errors import (ApiError, ApiProblem,
                                              PROBLEM_CONTENT_TYPE)
+from platform_core.llm.model_failure import ModelFailure
 from server.api.context import request_id
 
 
@@ -60,6 +61,14 @@ def api_error_response(request: Request, exc: ApiError) -> JSONResponse:
     request.state.api_error_code = exc.code
     return problem_response(exc.problem(
         instance=request.url.path, request_id=request_id(request)))
+
+
+def model_failure_response(request: Request, failure: ModelFailure) -> JSONResponse:
+    """RFC 9457 typed cho route model generic trước khi header được gửi."""
+    request.state.api_error_code = failure.canonical_code
+    return problem_response(
+        api_errors.model_problem(failure, instance=request.url.path)
+    )
 
 
 def status_problem_response(request: Request, status: int,

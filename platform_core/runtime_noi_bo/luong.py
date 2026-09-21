@@ -1254,7 +1254,7 @@ def mo_co_xep_lai(tk: TienKiem, cb: ChuanBi, *, han_s: float, bat_dau: float,
             raise
 
 
-def luong_co_cho(tk: TienKiem, *, loi_sse: Callable[[str, str, str], bytes],
+def luong_co_cho(tk: TienKiem, *, loi_sse: Callable[..., bytes],
                  trang_thai=None, timeout_s: float = MO_LUONG_GIAY,
                  han_s: Optional[float] = None, nhip_s: Optional[float] = None,
                  dong_ho=None, ngu=None,
@@ -1274,6 +1274,14 @@ def luong_co_cho(tk: TienKiem, *, loi_sse: Callable[[str, str, str], bytes],
     han = ts.han_cho_stream(tk.la_whale) if han_s is None else han_s
     moi_nhip = ts.nhip_tim_cho_s if nhip_s is None else nhip_s
     bat_dau = time.monotonic()
+
+    def _loi_typed(failure: ModelFailure, ma_cu: str, thong_diep_cu: str) -> bytes:
+        return loi_sse(
+            tk.duong,
+            ma_cu,
+            thong_diep_cu,
+            failure=failure,
+        )
 
     def _nhip(ly_do: str) -> bytes:
         # Chú thích SSE: mọi client bỏ qua, Cloudflare thấy byte. `nhip_sse` (bên
@@ -1304,12 +1312,24 @@ def luong_co_cho(tk: TienKiem, *, loi_sse: Callable[[str, str, str], bytes],
         except phong_cho.HetCho as e:
             metrics.increment(metrics.CAPACITY_REFUSED)
             log.warning("HET CHO stream user=%s ly_do=%s", tk.user_id[:8], e.ly_do)
-            yield loi_sse(tk.duong, "overloaded",
-                          "The model is busy right now. Please retry shortly.")
+            yield _loi_typed(
+                model_failure(
+                    "concurrency_limited", http_status=429,
+                    request_id=tk.request_id,
+                ),
+                "overloaded",
+                "The model is busy right now. Please retry shortly.",
+            )
             return
         except ThieuCredit:
-            yield loi_sse(tk.duong, "insufficient_credit",
-                          "Insufficient credit for this request.")
+            yield _loi_typed(
+                model_failure(
+                    "insufficient_credit", http_status=409,
+                    request_id=tk.request_id,
+                ),
+                "insufficient_credit",
+                "Insufficient credit for this request.",
+            )
             return
         except phong_cho.KhachDi:
             return
@@ -1329,24 +1349,37 @@ def luong_co_cho(tk: TienKiem, *, loi_sse: Callable[[str, str, str], bytes],
             metrics.increment(metrics.CAPACITY_REFUSED)
             log.warning("HET CHO (xep lai) stream user=%s ly_do=%s",
                         tk.user_id[:8], e.ly_do)
-            yield loi_sse(tk.duong, "overloaded",
-                          "The model is busy right now. Please retry shortly.")
+            yield _loi_typed(
+                model_failure(
+                    "concurrency_limited", http_status=429,
+                    request_id=tk.request_id,
+                ),
+                "overloaded",
+                "The model is busy right now. Please retry shortly.",
+            )
             return
         except phong_cho.KhachDi:
             return
-        except DangBan:
+        except DangBan as e:
             phong_cho.ghi_ket_thuc(cb.waiter_id, "ban")
-            yield loi_sse(tk.duong, "overloaded",
-                          "The model is busy right now. Please retry shortly.")
+            yield _loi_typed(
+                e.failure,
+                "overloaded",
+                "The model is busy right now. Please retry shortly.",
+            )
             return
         except KhongMoDuoc as e:
             phong_cho.ghi_ket_thuc(cb.waiter_id, "qua_dai" if e.qua_dai else "khong_mo_duoc")
             if e.het_gio and not e.qua_dai:
-                yield loi_sse(tk.duong, "overloaded", _CAU_HET_GIO)
+                yield _loi_typed(e.failure, "overloaded", _CAU_HET_GIO)
                 return
-            yield loi_sse(tk.duong, "context_length" if e.qua_dai else "upstream",
-                          "The input exceeds the model's context limit."
-                          if e.qua_dai else "The model could not serve this request.")
+            yield _loi_typed(
+                e.failure,
+                "context_length" if e.qua_dai else "upstream",
+                "The input exceeds the model's context limit."
+                if e.qua_dai
+                else "The model could not serve this request.",
+            )
             return
         finally:
             mo.close()
@@ -1369,10 +1402,18 @@ def luong_co_cho(tk: TienKiem, *, loi_sse: Callable[[str, str, str], bytes],
             log.warning("STREAM DUT (%s) rid=%s - tra khoi loi %s",
                         type(e).__name__, cb.request_id[-8:],
                         "overloaded" if het_gio else "upstream")
-            yield loi_sse(tk.duong, "overloaded" if het_gio else "upstream",
-                          _CAU_HET_GIO if het_gio else
-                          "The connection to the model was interrupted. "
-                          "Please retry.")
+            failure = model_failure(
+                "stream_idle_timeout" if het_gio else "stream_truncated",
+                http_status=504 if het_gio else 502,
+                request_id=tk.request_id,
+            )
+            yield _loi_typed(
+                failure,
+                "overloaded" if het_gio else "upstream",
+                _CAU_HET_GIO
+                if het_gio
+                else "The connection to the model was interrupted. Please retry.",
+            )
     finally:
         _dong_phien(gen)
 

@@ -25,6 +25,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from llm_gateway.error_contract import error_spec
+from platform_core.llm.model_failure import ModelFailure
+
 PROBLEM_CONTENT_TYPE = "application/problem+json"
 
 # Stable, machine-readable codes. Add here rather than inventing per route.
@@ -202,6 +205,49 @@ def problem_for_status(status: int, detail: object = "", *, instance: str = "",
         detail = GENERIC_INTERNAL_DETAIL
     return ApiProblem(status=int(status), code=code, detail=detail,
                       instance=instance, request_id=request_id)
+
+
+def model_failure_extension(
+    failure: ModelFailure, *, protocol_code: str
+) -> dict:
+    """Extension công khai an toàn; không mang prose hay chi tiết hạ tầng B."""
+    extension = {
+        "schema_version": 1,
+        "canonical_code": failure.canonical_code,
+        "protocol_code": protocol_code,
+        "category": failure.category,
+        "retry": failure.retry,
+        "recovery": failure.recovery,
+        "request_id": failure.request_id,
+    }
+    optional = {
+        "field": failure.field,
+        "limit": failure.limit,
+        "actual": failure.actual,
+        "retry_after_s": failure.retry_after_s,
+    }
+    extension.update({key: value for key, value in optional.items() if value is not None})
+    return extension
+
+
+def model_problem(failure: ModelFailure, *, instance: str) -> ApiProblem:
+    """RFC 9457 cho lỗi model, lấy status public từ registry chứ không từ B."""
+    spec = error_spec(failure.canonical_code)
+    return ApiProblem(
+        status=spec.status,
+        code=failure.canonical_code,
+        title=failure.canonical_code.replace("_", " ").title(),
+        detail=failure.message,
+        instance=instance,
+        request_id=failure.request_id,
+        extra={
+            "retry": failure.retry,
+            "recovery": failure.recovery,
+            "ltt_error": model_failure_extension(
+                failure, protocol_code=failure.canonical_code
+            ),
+        },
+    )
 
 
 #: Câu DUY NHẤT mọi cửa nói khi hết credit. Một câu ⇒ không có hai bản trôi

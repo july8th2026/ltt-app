@@ -24,6 +24,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from llm_gateway.error_contract import ERROR_SPECS
 from platform_core.public_api import errors as E
 
 # ── Retry classes ────────────────────────────────────────────────────────────
@@ -39,8 +40,9 @@ RETRY_AFTER_FIX = "after_fix"
 #: Transient. Retry with exponential backoff, honouring ``Retry-After`` when the
 #: response carries it.
 RETRY_AFTER_DELAY = "after_delay"
+RETRY_AMBIGUOUS = "ambiguous"
 
-RETRY_CLASSES = (RETRY_NEVER, RETRY_AFTER_FIX, RETRY_AFTER_DELAY)
+RETRY_CLASSES = (RETRY_NEVER, RETRY_AFTER_FIX, RETRY_AFTER_DELAY, RETRY_AMBIGUOUS)
 
 
 @dataclass(frozen=True)
@@ -140,6 +142,22 @@ REGISTRY = {spec.code: spec for spec in (
     _spec(E.CODE_SERVICE_UNAVAILABLE, 503, RETRY_AFTER_DELAY,
           "Retry with backoff and the same Idempotency-Key.", reuse=True),
 )}
+
+# Lỗi model dùng cùng vocabulary B→A. Với mã đã có ở Public API, status/retry
+# của taxonomy model thắng; action giàu thông tin cũ vẫn được giữ.
+MODEL_REGISTRY = {
+    code: ErrorSpec(
+        code=code,
+        status=spec.status,
+        retry=spec.retry,
+        action=(REGISTRY[code].action if code in REGISTRY else spec.recovery),
+        reuse_idempotency_key=(
+            REGISTRY[code].reuse_idempotency_key if code in REGISTRY else False
+        ),
+    )
+    for code, spec in ERROR_SPECS.items()
+}
+REGISTRY.update(MODEL_REGISTRY)
 
 
 def spec_for(code: str) -> ErrorSpec:

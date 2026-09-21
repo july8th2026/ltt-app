@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import logging
 import time
+from functools import partial
 from typing import Iterator, Optional
 
 import anyio
@@ -233,8 +234,13 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
     #    model không nhận nổi — và chỉ câu "prompt is too long" làm client tự nén.
     tran_vao = _tran_vao_cua_model(ten)
     if vao_uoc > tran_vao:
-        return su_kien_loi.loi_qua_dai_json(duong, token=int(vao_uoc),
-                                            tran=tran_vao, request=request)
+        return su_kien_loi.loi_qua_dai_json(
+            duong,
+            token=int(vao_uoc),
+            tran=tran_vao,
+            request=request,
+            structured=config.structured_model_errors,
+        )
     xin_ra = _max_tokens(than, vao_uoc)
     if not any(ten in than for ten in ("max_tokens", "max_output_tokens")):
         xin_ra = min(xin_ra, executor.mac_dinh_cho("sync"))
@@ -312,7 +318,8 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         # Đặt chỗ vượt cả pool KV (phương án C bất biến 1) — quá dài, 0 khoản giữ.
         return su_kien_loi.loi_qua_dai_json(
             duong, token=e.token, tran=e.tran if e.tran is not None else pool,
-            request=request)
+            request=request, failure=e.failure,
+            structured=config.structured_model_errors)
 
     def _release_ticket(ket_qua: str = "loi", so_do=None) -> None:
         """Nhả suất + ghi KẾT CỤC THẬT vào sổ lượt 30 ngày.
@@ -487,6 +494,10 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         log.info("mot cuc: yeu cau vuot tran user=%s: %s",
                  principal.user_id[:8], e)
         failure = e.failure
+        if config.structured_model_errors and failure is not None:
+            return su_kien_loi.render_model_failure(
+                duong, failure, phase="before_headers", stream=False
+            )
         raise invalid_request(
             failure.message if failure is not None else "The request exceeds a model limit.",
             **tran_bi_vuot(
@@ -505,6 +516,10 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
         _release_ticket("tham_so_sai")
+        if config.structured_model_errors and e.failure is not None:
+            return su_kien_loi.render_model_failure(
+                duong, e.failure, phase="before_headers", stream=False
+            )
         raise invalid_request(
             e.failure.message
             if e.failure is not None
@@ -923,7 +938,8 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
         return su_kien_loi.loi_qua_dai(
             duong, stream=True, token=e.token,
             tran=e.tran if e.tran is not None else _tran_vao_cua_model(ten),
-            request=request)
+            request=request, failure=e.failure,
+            structured=config.structured_model_errors)
     # Chỉ lượt qua tiền kiểm ngữ cảnh/credit/công suất mới tiêu hạn mức tạo.
     limits.enforce_create_rate(key_id=principal.key_id, config=config,
                                limits=resolved, user_id=principal.user_id)
@@ -1006,7 +1022,12 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
 
     return StreamingResponse(
         cua_luong.bat_dong_bo_hoa(
-            cua_luong.luong_co_cho(tk, loi_sse=su_kien_loi.loi_sse,
+            cua_luong.luong_co_cho(
+                tk,
+                loi_sse=partial(
+                    su_kien_loi.loi_sse,
+                    structured=config.structured_model_errors,
+                ),
                                    nhip_sse=su_kien_loi.bo_nhip(duong),
                                    trang_thai=getattr(request, "state", None),
                                    timeout_s=MO_LUONG_GIAY, so_tay=so_tay),

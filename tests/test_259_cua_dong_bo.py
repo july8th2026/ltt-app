@@ -46,7 +46,7 @@ ALL_SCOPES = (SCOPE_TOOLS_READ, SCOPE_JOBS_CREATE, SCOPE_JOBS_READ)
 # ── Khung ────────────────────────────────────────────────────────────────────
 
 @pytest.fixture()
-def api(tmp_path, monkeypatch):
+def api(tmp_path, monkeypatch, request):
     monkeypatch.setenv("LTT_DATABASE_URL",
                        f"sqlite:///{(tmp_path / 'chat.db').as_posix()}")
     monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
@@ -65,14 +65,16 @@ def api(tmp_path, monkeypatch):
     mo_cu_tru_3090()
     from server.app import create_app
 
-    app = create_app(env={
+    app_env = {
         "LTT_ENV": "local-server-test",
         "LTT_SESSION_SECRET": "chat-secret-value-here",
         "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
         "LTT_CONFIG_PATH": str(tmp_path / "config.json"),
         "LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": TOOL,
         "LTT_PUBLIC_API_RPM": "600",
-    })
+    }
+    app_env.update(getattr(request, "param", {}) or {})
+    app = create_app(env=app_env)
     # ⚠️ `https://` chứ không phải `http://`: cookie phiên đặt cờ `secure`, nên
     #    qua http nó không được gửi lại và mọi trang cần đăng nhập âm thầm
     #    thành trang login — trang vẫn 200, chỉ là trang khác.
@@ -485,7 +487,40 @@ def test_yeu_cau_sai_giu_ma_typed_khong_lo_prose_va_HOAN_DU(api, monkeypatch):
     assert r.status_code == 400, r.text
     assert failure.message in r.text
     assert "RAW_PROVIDER_PROSE" not in r.text
+    assert '"ltt_error"' not in r.text
     assert _so_du(user_id) == truoc, "yeu cau sai ma van giu tien cua khach"
+
+
+@pytest.mark.parametrize(
+    "api", [{"LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS": "1"}], indirect=True
+)
+def test_bat_co_tra_ltt_error_ma_khong_doi_nghia_hay_lo_prose(api, monkeypatch):
+    from platform_core.llm.cong_vlm import YeuCauSaiError
+    from platform_core.llm.model_failure import model_failure
+
+    failure = model_failure(
+        "image_decode_failed",
+        http_status=400,
+        request_id="rid-public-typed",
+        field="image",
+    )
+    _dat_model(
+        monkeypatch,
+        nem=YeuCauSaiError("RAW_PROVIDER_PROSE", ma=400, failure=failure),
+    )
+    user_id, token = _account()
+    truoc = _so_du(user_id)
+
+    r = api.post(DUONG, json=_than(), headers=_h(token))
+
+    assert r.status_code == 400, r.text
+    error = r.json()["error"]
+    assert error["code"] == "image_decode_failed"
+    assert error["ltt_error"]["canonical_code"] == "image_decode_failed"
+    assert error["ltt_error"]["request_id"] == "rid-public-typed"
+    assert error["ltt_error"]["field"] == "image"
+    assert "RAW_PROVIDER_PROSE" not in r.text
+    assert _so_du(user_id) == truoc
 
 
 # ── 4. Idempotency ───────────────────────────────────────────────────────────

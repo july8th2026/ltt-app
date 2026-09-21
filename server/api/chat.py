@@ -266,7 +266,8 @@ def register_chat_routes(api, config, tag: str) -> None:
                 # too long" (`su_kien_loi` — một chỗ dựng cho mọi cửa).
                 return su_kien_loi.loi_qua_dai_json(
                     "/v1/chat/completions", token=int(token_vao_uoc), tran=_cap,
-                    request=request)
+                    request=request,
+                    structured=config.structured_model_errors)
 
         # ⛔ SAU 413, khong truoc. Mot tran ra thap den muc chac chan tra ve
         #    RONG cung la mot yeu cau hong, nhung no la hong ve NGAN SACH — con
@@ -431,7 +432,8 @@ def register_chat_routes(api, config, tag: str) -> None:
                 "/v1/chat/completions", token=e.token,
                 tran=(e.tran if e.tran is not None
                       else int(suc.token_pool if suc else 0)),
-                request=request)
+                request=request, failure=e.failure,
+                structured=config.structured_model_errors)
 
         # ── Được nhận ⇒ GIỮ TIỀN (và chỉ từ đây trở đi) ─────────────────────
         try:
@@ -465,6 +467,7 @@ def register_chat_routes(api, config, tag: str) -> None:
                 return _gan(_finish_chat(
                     db=db, sach=sach, principal=principal, record=record,
                     request_id=request_id, da_giu=da_giu, executor=executor,
+                    config=config,
                     trang_thai=request.state, request=request,
                     bat_dau_cua=t0, waiter_id=suat.waiter_id, suat=suat,
                     budget_suy_nghi=budget_suy_nghi))
@@ -537,7 +540,7 @@ def _nha(suat, ket_qua: str) -> None:
 def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
                  trang_thai=None, request=None, bat_dau_cua: float = 0.0,
                  waiter_id: str = "", suat=None,
-                 da_giu: int, executor=None,
+                 da_giu: int, executor=None, config=None,
                  budget_suy_nghi: int | None = None) -> JSONResponse:
     """Chạy model và định đoạt tiền; caller giữ execution lease bằng finally.
 
@@ -665,6 +668,13 @@ def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
         #    Cong may B da gui san `{truong, tran, thay}`; day la cho dich
         #    chung sang ten cong khai MOT LAN.
         failure = e.failure
+        if getattr(config, "structured_model_errors", False) and failure is not None:
+            return su_kien_loi.render_model_failure(
+                "/v1/chat/completions",
+                failure,
+                phase="before_headers",
+                stream=False,
+            )
         raise invalid_request(
             failure.message if failure is not None else "The request exceeds a model limit.",
             **tran_bi_vuot(failure.as_detail() if failure is not None else e.chi_tiet),
@@ -685,6 +695,13 @@ def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
         phong_cho.ghi_ket_thuc(waiter_id, "tham_so_sai")
+        if getattr(config, "structured_model_errors", False) and e.failure is not None:
+            return su_kien_loi.render_model_failure(
+                "/v1/chat/completions",
+                e.failure,
+                phase="before_headers",
+                stream=False,
+            )
         raise invalid_request(
             e.failure.message
             if e.failure is not None
