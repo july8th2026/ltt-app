@@ -108,9 +108,9 @@ Task 12 + one clean release window ─> Task 13 legacy removal ─> Task 14 clos
 ### Task 1: Khoá taxonomy bằng code registry và contract test
 
 **Files:** Create `llm_gateway/error_contract.py`; create
-`tests/test_1602_hop_dong_ma_loi_llm.py`; modify
-`platform_core/public_api/errors.py`; modify
-`platform_core/public_api/error_registry.py`.
+`tests/test_1700_hop_dong_ma_loi_llm.py`. Public constants/registry are wired at
+Task 7 together with the feature-gated renderer, so Task 1 cannot change the
+live public error table prematurely.
 
 **Interfaces:**
 
@@ -118,39 +118,36 @@ Task 12 + one clean release window ─> Task 13 legacy removal ─> Task 14 clos
 def error_spec(code: str) -> GatewayErrorSpec:
     """Return the registered spec; raise KeyError for an unknown code."""
 
-def make_error(code: str, *, request_id: str, message: str | None = None,
-               field: str | None = None, limit: int | None = None,
+def make_error(code: str, *, request_id: str, field: str | None = None,
+               limit: int | None = None,
                actual: int | None = None, retry_after_s: int | None = None,
                provider_type: str | None = None,
                provider_code: str | int | None = None,
                upstream_status: int | None = None) -> dict[str, object]:
-    """Build the version-1 wire envelope for one registered code."""
+    """Build v1 using the registry's safe message, never raw exception text."""
 ```
 
-- [ ] **Step 1 — test đỏ:** trong `test_1602`, chép nguyên tập 33 mã ở spec §4
+- [ ] **Step 1 — test đỏ:** trong `test_1700`, chép nguyên tập 33 mã ở spec §4
   thành `EXPECTED_CODES`; assert registry không thiếu/thừa, mọi spec có category,
   status, retry, recovery hợp lệ và `make_error()` tạo đủ trường bắt buộc.
 - [ ] Assert riêng `request_body_too_large != context_window_exceeded`,
   `image_count_exceeded != input_tokens_exceeded`, và unknown code làm
   `error_spec()` ném `KeyError`.
 - [ ] Chạy
-  `python -m pytest tests/test_1602_hop_dong_ma_loi_llm.py -q`; kỳ vọng FAIL vì
+  `python -m pytest tests/test_1700_hop_dong_ma_loi_llm.py -q`; kỳ vọng FAIL vì
   module chưa tồn tại.
 - [ ] Cài đặt dataclass `GatewayErrorSpec`, tuple hằng hợp lệ và registry đúng
   spec. `make_error` chỉ nhận mã đăng ký, message mặc định an toàn nằm trong
   registry, không nhận raw exception.
-- [ ] Thêm public constants/spec cho các mã cần xuất qua RFC 9457. Không xoá
-  `payload_too_large`; định nghĩa rõ nó là alias public của
-  `request_body_too_large`, không phải context.
 - [ ] Chạy lại test → PASS. Đột biến bằng tay: tạm đổi recovery của
   `image_count_exceeded` thành `reduce_input`; test phải FAIL; hoàn nguyên.
-- [ ] Chạy test nhắm `gateway:llm` và `core:api_cong_khai`, rồi L2 hai phạm vi;
+- [ ] Chạy test nhắm `gateway:llm`, rồi L2 phạm vi đó;
   commit `feat(llm): define versioned model error taxonomy`.
 
 ### Task 2: Máy B phát envelope v1 cho mọi lỗi do gateway sở hữu
 
 **Files:** Modify `llm_gateway/ngan_sach.py`; modify `llm_gateway/api.py`;
-create `tests/test_1603_gateway_error_envelope.py`; extend các test budget/gateway
+create `tests/test_1701_gateway_error_envelope.py`; extend các test budget/gateway
 đã được `python tools\thanh_phan.py --test gateway:llm` liệt kê.
 
 - [ ] **Step 1 — test đỏ theo bảng:** parameterize từng nhánh thật:
@@ -161,7 +158,7 @@ create `tests/test_1603_gateway_error_envelope.py`; extend các test budget/gate
   Assert cả `field/limit/actual`, không chỉ code.
 - [ ] Thêm ca 404 model, 429 hết suất, 499 huỷ, 504 timeout, 502 không nối được;
   assert `request_id` ở header và body giống request vào.
-- [ ] Chạy `python -m pytest tests/test_1603_gateway_error_envelope.py -q` → FAIL
+- [ ] Chạy `python -m pytest tests/test_1701_gateway_error_envelope.py -q` → FAIL
   vì body hiện chỉ có `ly_do/truong/tran/thay` hoặc prose.
 - [ ] Đổi `VuotNganSach.__init__` nhận `code`; từng nơi raise truyền literal từ
   registry. `as_dict` gọi `make_error`, đồng thời kèm object `legacy` trong pha
@@ -179,7 +176,7 @@ create `tests/test_1603_gateway_error_envelope.py`; extend các test budget/gate
 ### Task 3: Chuẩn hoá lỗi HTTP từ llama.cpp tại biên máy B
 
 **Files:** Create `llm_gateway/upstream_errors.py`; modify
-`llm_gateway/api.py`; create `tests/test_1604_loi_http_llama_cpp.py`.
+`llm_gateway/api.py`; create `tests/test_1702_loi_http_llama_cpp.py`.
 
 **Interface:**
 
@@ -211,7 +208,7 @@ def decode_upstream_http(status: int, headers: Mapping[str, str],
 
 **Files:** Modify `llm_gateway/upstream.py`; modify
 `llm_gateway/upstream_errors.py`; modify `llm_gateway/api.py`; create
-`tests/test_1605_loi_sau_200_may_b.py`.
+`tests/test_1703_loi_sau_200_may_b.py`.
 
 **Interfaces:**
 
@@ -249,7 +246,7 @@ class UpstreamEventObserver:
 
 **Files:** Create `platform_core/llm/model_failure.py`; modify
 `platform_core/llm/cong_vlm.py`; modify `platform_core/llm/luong_vlm.py`; create
-`tests/test_1606_model_failure_decoder.py`; modify `tests/test_251_cong_vlm.py`.
+`tests/test_1704_model_failure_decoder.py`; modify `tests/test_251_cong_vlm.py`.
 
 **Interface:**
 
@@ -264,7 +261,7 @@ def decode_gateway_failure(status: int, headers: Mapping[str, str],
   `image_count_exceeded`; `{truong: context}` mới ra context.
 - [ ] Assert body lạ/status 413 → `upstream_unknown`, **không** context; 429 giữ
   `Retry-After`; request ID ưu tiên body đã validate rồi header.
-- [ ] Chạy `test_1606` + `test_251` → FAIL.
+- [ ] Chạy `test_1704` + `test_251` → FAIL.
 - [ ] Cài dataclass và decoder. Import registry B→A chỉ từ module thuần stdlib;
   thêm test import không kéo FastAPI/httpx để tránh coupling runtime vòng.
 - [ ] `cong_vlm` và `luong_vlm` dùng decoder chung. Thay
@@ -281,7 +278,7 @@ def decode_gateway_failure(status: int, headers: Mapping[str, str],
 
 **Files:** Modify `platform_core/runtime_noi_bo/luong.py`; modify
 `server/api/streaming.py`; modify `server/api/chat.py`; create
-`tests/test_1607_bao_toan_loi_qua_runtime.py`.
+`tests/test_1705_bao_toan_loi_qua_runtime.py`.
 
 - [ ] **Step 1 — test đỏ:** fake `mo_thuong_nguon` ném từng `ModelFailure`; assert
   `luong_co_cho` nhận nguyên object và không đổi code/field/limit/actual/retry.
@@ -303,7 +300,7 @@ def decode_gateway_failure(status: int, headers: Mapping[str, str],
 `platform_core/public_api/errors.py`; modify
 `platform_core/public_api/error_registry.py`; modify
 `platform_core/public_api/config.py`; modify `server/api/errors.py`; create
-`tests/test_1608_loi_model_xuyen_giao_thuc.py`.
+`tests/test_1706_loi_model_xuyen_giao_thuc.py`.
 
 **Interface:**
 
@@ -342,7 +339,7 @@ def render_model_failure(path: str, failure: ModelFailure, *,
 
 **Files:** Modify `server/api/tools.py`; modify
 `tests/golden/public_api_catalog_v1.json`; create
-`tests/test_1609_catalog_gioi_han_model.py`; đọc nguồn từ
+`tests/test_1707_catalog_gioi_han_model.py`; đọc nguồn từ
 `apps/ltt_llm/manifest.py`, không tạo hằng số mới.
 
 - [ ] **Step 1 — test đỏ:** với từng model public, assert `items[].constraints`
@@ -358,7 +355,7 @@ def render_model_failure(path: str, failure: ModelFailure, *,
 ### Task 9: Bộ đo contract hai chiều bằng dữ liệu thật, không gây tải giả
 
 **Files:** Create `tools/kiem_hop_dong_loi_llm.py`; create
-`tests/test_1610_bo_do_hop_dong_loi_llm.py`; create
+`tests/test_1708_bo_do_hop_dong_loi_llm.py`; create
 `docs/ltt_llm_dual/LOI_MODEL_RUNBOOK.md`.
 
 **CLI:**
@@ -383,14 +380,14 @@ python tools\kiem_hop_dong_loi_llm.py inject --base-url <test-url> --output <dir
 - [ ] Test hai chiều lớp C: (1) fixture không đổi dưới tải máy giả lập; (2) tiêm
   decoder cũ 413→context làm report đỏ. Mở tay hai mismatch đầu tiên trước khi
   biến phép đo thành gate.
-- [ ] `test_1610` PASS; test nhắm `gateway:llm`, `core:provider`, `server:api`;
+- [ ] `test_1708` PASS; test nhắm `gateway:llm`, `core:provider`, `server:api`;
   L2; commit `test(llm): add end-to-end error contract monitor`.
 
 ### Task 10: Telemetry và cảnh báo drift
 
 **Files:** Modify logging tại `llm_gateway/api.py`,
 `platform_core/llm/model_failure.py`, `server/api/streaming.py`; extend
-`tests/test_1610_bo_do_hop_dong_loi_llm.py`.
+`tests/test_1708_bo_do_hop_dong_loi_llm.py`.
 
 - [ ] **Step 1 — test đỏ:** capture log cho known, legacy, unknown, mismatch và
   client disconnect; assert đủ trường ở spec §9 và không chứa prompt, data URL,
