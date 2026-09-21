@@ -14,71 +14,57 @@ hổng độc lập cùng gây ra chuyện đó, nên có hai nhóm phép kiểm
    chuyện bình thường và đúng chức năng (D-005). Thứ được chốt ở đây là: khi nó
    bận, ta **biết được vì sao** và **đếm đúng ô**.
 """
+
 from __future__ import annotations
 
 import ast
 import inspect
 import json
 
-from platform_core.llm.luong_vlm import _ly_do_ban
+from llm_gateway.error_contract import make_error
+from platform_core.llm.model_failure import decode_gateway_failure
 
 
-# ── 1. Lý do của máy B phải sống sót chuyến đi ──────────────────────────────
-
-def _than(chi_tiet: dict) -> str:
-    """Đúng hình dạng FastAPI sinh ra từ `HTTPException(detail={...})`."""
-    return json.dumps({"detail": chi_tiet}, ensure_ascii=False)
+# ── 1. Lý do của máy B phải sống sót chuyến đi dưới dạng mã typed ────────────
 
 
-def test_ba_kieu_ban_ra_ba_cau_KHAC_NHAU():
-    """Cả mục đích của bản vá nằm ở đây.
-
-    Ba kiểu bận dẫn tới ba hành động sửa khác hẳn nhau — suất bị rò thì khởi
-    động lại cổng, việc khác giữ card thì đợi hoặc dừng việc kia, ComfyUI không
-    nhả VRAM thì gọi `/free`. Gộp cả ba vào một câu là lấy mất khả năng chọn.
-    """
-    ba = [_ly_do_ban(_than(t)) for t in (
-        {"ly_do": "cong dang day", "chi_tiet": "3/3 suat dang dung"},
-        {"ly_do": "may B dang ban", "chi_tiet": "2 tien trinh python tren card"},
-        {"ly_do": "card chua san sang de nap model",
-         "chi_tiet": "ComfyUI khong nha", "vram_dung_mb": 19837},
-    )]
-    assert len(set(ba)) == 3, f"ba kieu ban phai ra ba cau khac nhau: {ba}"
-    assert "cong dang day" in ba[0] and "3/3" in ba[0]
-    assert "2 tien trinh" in ba[1]
-    assert "19837" in ba[2], "so VRAM la con so DUY NHAT noi card dang bi ai giu"
+def test_ba_kieu_ban_ra_ba_ma_va_hanh_dong_khac_nhau():
+    """Nguyên nhân vận hành đi bằng code hữu hạn, không bằng prose nội bộ."""
+    codes = ("concurrency_limited", "provider_overloaded", "model_loading")
+    failures = [
+        decode_gateway_failure(
+            429 if code == "concurrency_limited" else 503,
+            {},
+            json.dumps({"error": make_error(code, request_id="rid")}).encode(),
+        )
+        for code in codes
+    ]
+    assert [failure.canonical_code for failure in failures] == list(codes)
+    assert len({failure.message for failure in failures}) == 3
+    assert all(failure.is_busy for failure in failures)
+    assert all(failure.recovery == "wait" for failure in failures)
 
 
-def test_khong_doc_duoc_JSON_thi_tra_VAN_BAN_THO_chu_khong_rong():
-    """Đúng lúc hình dạng lạ là lúc cần thông tin nhất.
-
-    Một trang lỗi HTML của Cloudflare, một proxy chen giữa, một bản cổng cũ —
-    cả ba đều trả thứ không phải JSON. Trả rỗng ở đây là tái lập đúng sự cố mà
-    tệp này sinh ra để chặn.
-    """
-    assert "1010" in _ly_do_ban("<html>error code: 1010</html>")
-    assert _ly_do_ban("").strip(), "rong thi phai noi ro la thuong nguon im lang"
+def test_legacy_429_khong_doc_prose_thanh_ngu_nghia():
+    """B cũ vẫn được coi là bận theo status, nhưng nội dung thô không được lộ."""
+    raw = {"detail": {"chi_tiet": "2 tien trinh python tren card", "vram_dung_mb": 19837}}
+    failure = decode_gateway_failure(429, {}, json.dumps(raw).encode())
+    assert failure.canonical_code == "upstream_unknown"
+    assert "python" not in failure.message
+    assert "19837" not in failure.message
 
 
-def test_khong_bao_gio_nem_ra_ngoai():
-    """Nó chạy trên đường xử lý lỗi. Ném ở đây là biến 503 thành 500."""
-    for xau in ("", "null", "[]", "{}", '{"detail": null}', '{"detail": "chuoi"}',
-                '"chi la mot chuoi"', "{khong phai json"):
-        assert isinstance(_ly_do_ban(xau), str)
-
-
-def test_ly_do_di_VAO_ngoai_le_chu_khong_dung_lai_o_bien():
-    """Bản trước gán `than_loi` rồi không dùng — biến sống, thông tin chết."""
+def test_luong_vlm_quyet_dinh_bang_decoder_khong_bang_ly_do_tho():
     from platform_core.llm import luong_vlm
 
-    ma = inspect.getsource(luong_vlm.mo)
-    khuc = ma.split("status_code == 429")[1].split("if r.status_code >= 400")[0]
-    assert "_ly_do_ban(than_loi)" in khuc, (
-        "nhanh 429 doc than loi ra roi phai DUNG no; thay bang chuoi cung la "
-        "quay lai dung cai bug ngay 31/08")
+    source = inspect.getsource(luong_vlm.mo)
+    assert "decode_gateway_failure(" in source
+    assert "_ly_do_ban(" not in source
+    assert 'code == "upstream_unknown" and _loi_parser_tool_call' in source
 
 
 # ── 2. Bận phải đếm vào ô "hết năng lực", không rơi câm vào 5xx ─────────────
+
 
 def test_MOI_nhanh_ban_deu_nuoi_CAPACITY_REFUSED():
     """Bánh cóc: thêm một cửa mới mà quên đếm là hỏng lặng lẽ.
@@ -94,6 +80,7 @@ def test_MOI_nhanh_ban_deu_nuoi_CAPACITY_REFUSED():
 
     MOC = "The model is busy right now"
     thieu = []
+
     # ⛔ ĐỌC AST, KHÔNG QUÉT VĂN BẢN THÔ — sửa 07/09/2026.
     #
     #    Bản cũ `ma.find(MOC)` trên toàn bộ mã nguồn. Nó khớp cả **chú thích**:
@@ -122,8 +109,7 @@ def test_MOI_nhanh_ban_deu_nuoi_CAPACITY_REFUSED():
         a = n.args[0]
         if isinstance(a, ast.Constant):
             return a.value
-        if isinstance(a, ast.JoinedStr) and a.values \
-                and isinstance(a.values[0], ast.Constant):
+        if isinstance(a, ast.JoinedStr) and a.values and isinstance(a.values[0], ast.Constant):
             return a.values[0].value
         return ""
 
@@ -148,30 +134,38 @@ def test_MOI_nhanh_ban_deu_nuoi_CAPACITY_REFUSED():
     facade_dem = any(
         isinstance(m, ast.Attribute) and m.attr == "CAPACITY_REFUSED"
         for kh in ast.walk(ast.parse(inspect.getsource(_facade)))
-        if isinstance(kh, ast.ExceptHandler) for m in ast.walk(kh))
+        if isinstance(kh, ast.ExceptHandler)
+        for m in ast.walk(kh)
+    )
     assert facade_dem, (
         "facade `runtime_noi_bo/luong.py` KHONG con dem CAPACITY_REFUSED trong "
         "nhanh ban — nhanh DangBan cua streaming dang duoc mien tru dua tren "
-        "gia dinh nay, nen mien tru ay nay vo cang.")
+        "gia dinh nay, nen mien tru ay nay vo cang."
+    )
 
     so_khop = 0
     for mod in (chat, streaming):
         for kh in ast.walk(ast.parse(inspect.getsource(mod))):
             if not isinstance(kh, ast.ExceptHandler):
                 continue
-            co_dem = any(isinstance(m, ast.Attribute)
-                         and m.attr == "CAPACITY_REFUSED"
-                         for m in ast.walk(kh))
+            co_dem = any(
+                isinstance(m, ast.Attribute) and m.attr == "CAPACITY_REFUSED" for m in ast.walk(kh)
+            )
             # Bắt `DangBan` nghĩa là ngoại lệ đã qua facade — facade đã đếm.
             bat_dangban = any(
-                (t.attr if isinstance(t, ast.Attribute) else getattr(t, "id", ""))
-                == "DangBan"
-                for t in ((kh.type.elts if isinstance(kh.type, ast.Tuple)
-                           else [kh.type]) if kh.type else []))
+                (t.attr if isinstance(t, ast.Attribute) else getattr(t, "id", "")) == "DangBan"
+                for t in (
+                    (kh.type.elts if isinstance(kh.type, ast.Tuple) else [kh.type])
+                    if kh.type
+                    else []
+                )
+            )
             for n in ast.walk(kh):
-                if not (isinstance(n, ast.Call)
-                        and getattr(n.func, "id", "") == "service_unavailable"
-                        and n.args):
+                if not (
+                    isinstance(n, ast.Call)
+                    and getattr(n.func, "id", "") == "service_unavailable"
+                    and n.args
+                ):
                     continue
                 c = _chuoi_dau(n)
                 if not (isinstance(c, str) and c.startswith(MOC)):
@@ -210,7 +204,8 @@ def test_MOI_nhanh_ban_deu_nuoi_CAPACITY_REFUSED():
         f"chi thay {so_khop} nhanh ban mang chuoi {MOC!r} — mong doi >= 2. "
         f"Hoac cau chu san pham da doi (thi SUA MOC o day), hoac mot nhanh ban "
         f"da bien mat. Ca hai deu phai xem, va KHONG duoc de phep kiem nay "
-        f"xanh rong: xem Bay 31.")
+        f"xanh rong: xem Bay 31."
+    )
 
     # ⭐ VE MOI: cua SONG (phong cho) tra ban bang SSE sau 200. Do la noi luu
     #    luong that di qua, nen no quan trong hon ca hai nhanh dem o tren.
@@ -221,11 +216,13 @@ def test_MOI_nhanh_ban_deu_nuoi_CAPACITY_REFUSED():
     assert so_sse >= 2, (
         f"cua SONG (`luong_co_cho`) chi con {so_sse} cho mang chuoi {MOC!r} — "
         "mong doi >= 2 (het cho, va ban sau 200). Day la cua MOI luot that di "
-        "qua: mat cau chu o day la khach nhan mot khoi loi khong noi len dieu gi.")
+        "qua: mat cau chu o day la khach nhan mot khoi loi khong noi len dieu gi."
+    )
 
     assert not thieu, (
         f"nhanh ban KHONG dem vao CAPACITY_REFUSED o: {thieu} — su co se lai "
-        f"bao 'nen tang hong' trong khi that ra la het nang luc")
+        f"bao 'nen tang hong' trong khi that ra la het nang luc"
+    )
 
 
 def test_than_tra_ve_KHONG_mang_chu_thuong_nguon():
@@ -255,11 +252,15 @@ def test_than_tra_ve_KHONG_mang_chu_thuong_nguon():
     chảy vào đối số đầu của một hàm dựng lỗi HTTP không.**
     """
 
-
     from server.api import chat, streaming
 
-    DUNG_LOI = {"service_unavailable", "payload_too_large", "invalid_request",
-                "insufficient_credit", "_bao_400"}
+    DUNG_LOI = {
+        "service_unavailable",
+        "payload_too_large",
+        "invalid_request",
+        "insufficient_credit",
+        "_bao_400",
+    }
     #: Tên biến ngoại lệ mang văn bản thượng nguồn. `str(e)` của `ThamSoSai` /
     #: `ThieuCredit` là chữ của CHÍNH TA nên không nằm ở đây — phép kiểm chỉ
     #: chặn `DangBan` / `KhongMoDuoc`, hai loại duy nhất bọc thân máy B.
@@ -271,21 +272,28 @@ def test_than_tra_ve_KHONG_mang_chu_thuong_nguon():
         for n in ast.walk(cay):
             if not isinstance(n, ast.ExceptHandler) or not n.name:
                 continue
-            ten_loai = {t.attr if isinstance(t, ast.Attribute) else
-                        getattr(t, "id", "")
-                        for t in (n.type.elts if isinstance(n.type, ast.Tuple)
-                                  else [n.type])} if n.type else set()
+            ten_loai = (
+                {
+                    t.attr if isinstance(t, ast.Attribute) else getattr(t, "id", "")
+                    for t in (n.type.elts if isinstance(n.type, ast.Tuple) else [n.type])
+                }
+                if n.type
+                else set()
+            )
             if not (ten_loai & LOAI_RO):
                 continue
             so_ham_xet += 1
             for m in ast.walk(n):
-                if not (isinstance(m, ast.Call)
-                        and getattr(m.func, "id", "") in DUNG_LOI and m.args):
+                if not (
+                    isinstance(m, ast.Call) and getattr(m.func, "id", "") in DUNG_LOI and m.args
+                ):
                     continue
                 for k in ast.walk(m.args[0]):
                     if isinstance(k, ast.Name) and k.id == n.name:
-                        xau.append(f"{mod.__name__}:{m.lineno} "
-                                   f"{getattr(m.func, 'id', '?')}(...{n.name}...)")
+                        xau.append(
+                            f"{mod.__name__}:{m.lineno} "
+                            f"{getattr(m.func, 'id', '?')}(...{n.name}...)"
+                        )
                     elif isinstance(k, ast.Attribute) and k.attr == "ly_do":
                         xau.append(f"{mod.__name__}:{m.lineno} .ly_do")
 
@@ -299,7 +307,8 @@ def test_than_tra_ve_KHONG_mang_chu_thuong_nguon():
     #    ay o `runtime_noi_bo/luong.py` va tra bang khoi loi SSE.
     assert so_ham_xet >= 3, (
         f"chi thay {so_ham_xet} khoi except thuoc {sorted(LOAI_RO)} — mong doi "
-        f">= 3. Ten loai ngoai le co the da doi; sua LOAI_RO, dung de xanh rong.")
+        f">= 3. Ten loai ngoai le co the da doi; sua LOAI_RO, dung de xanh rong."
+    )
 
     # ⭐ VE MOI di kem viec ha moc: cua SONG phai van bat CA HAI loai ay.
     #    Ha mot moc dem ma khong chot lai cho no chuyen toi la lam yeu banh coc.
@@ -309,17 +318,20 @@ def test_than_tra_ve_KHONG_mang_chu_thuong_nguon():
         (t.attr if isinstance(t, ast.Attribute) else getattr(t, "id", ""))
         for kh in ast.walk(ast.parse(inspect.getsource(_cua_song)))
         if isinstance(kh, ast.ExceptHandler) and kh.type
-        for t in (kh.type.elts if isinstance(kh.type, ast.Tuple) else [kh.type])}
+        for t in (kh.type.elts if isinstance(kh.type, ast.Tuple) else [kh.type])
+    }
     for loai in ("DangBan", "KhongMoDuoc"):
         assert loai in bat_o_cua_song, (
             f"cua SONG khong con bat `{loai}` — luot that se vo ra ngoai thanh "
-            "mot loi khong khuon thay vi mot khoi loi SSE khach doc duoc.")
+            "mot loi khong khuon thay vi mot khoi loi SSE khach doc duoc."
+        )
 
     assert not xau, (
         "than tra ve cho KHACH dang mang van ban cua may B:\n  "
         + "\n  ".join(xau)
         + "\n\nGhi no vao log (da co), dung ghi vao phan hoi. Giu lai nhung "
-          "truong khach HANH DONG DUOC: retry_after, limit_name, limit_value.")
+        "truong khach HANH DONG DUOC: retry_after, limit_name, limit_value."
+    )
 
 
 def test_ba_nhanh_ban_deu_GHI_LOG():
@@ -334,4 +346,5 @@ def test_ba_nhanh_ban_deu_GHI_LOG():
         ma = inspect.getsource(mod)
         assert ma.count('log.warning("BAN') >= so_toi_thieu, (
             f"{mod.__name__}: nhanh ban phai ghi log — im lang la thu da lam "
-            f"su co 31/08 mat nhieu gio moi lan ra")
+            f"su co 31/08 mat nhieu gio moi lan ra"
+        )

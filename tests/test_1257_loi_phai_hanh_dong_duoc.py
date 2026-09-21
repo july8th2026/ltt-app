@@ -28,6 +28,7 @@ vong lap khong bao gio thanh cong.
 No goi thang ham dich va soi nhanh `except`. Mot phep kiem E2E that doi 5 anh
 that va mot GPU ranh; phep kiem nay chot **bat bien**, nen no chay moi lan gate.
 """
+
 from __future__ import annotations
 
 import inspect
@@ -39,10 +40,10 @@ from platform_core.public_api.errors import tran_bi_vuot
 
 # ── (a) Thong tin cong da gui phai di TIEP ra toi khach ──────────────────────
 
+
 def test_dich_du_ba_truong_cong_gui_len():
     """`{truong, tran, thay}` cua cong -> `field`/`limit`/`actual` cong khai."""
-    ra = tran_bi_vuot({"ly_do": "Qua nhieu anh.", "truong": "images",
-                       "tran": 4, "thay": 5})
+    ra = tran_bi_vuot({"ly_do": "Qua nhieu anh.", "truong": "images", "tran": 4, "thay": 5})
     assert ra["field"] == "images", "khach khong biet TRUONG nao sai"
     assert ra["limit"] == 4, "khach khong biet tran la BAO NHIEU"
     assert ra["actual"] == 5, "khach khong biet ho da gui BAO NHIEU"
@@ -71,6 +72,7 @@ def test_gia_tri_vo_nghia_bi_BO_chu_khong_duoc_cong_bo():
 
 # ── (b) Dung LOAI loi: qua lon la 4xx, KHONG phai 503 ────────────────────────
 
+
 def test_cua_STREAM_khong_con_gop_qua_lon_vao_503():
     """🔴 Bat bien chinh. Gop hai loai loi la noi doi voi khach hai lan cung luc."""
     from server.api import streaming
@@ -79,10 +81,11 @@ def test_cua_STREAM_khong_con_gop_qua_lon_vao_503():
     assert "except (VuotNganSachError, CongVlmError)" not in nguon, (
         "cua stream dang gop `VuotNganSachError` vao cung nhanh voi "
         "`CongVlmError` -> tra 503 'thu lai sau' cho mot yeu cau QUA LON, ma "
-        "thu lai bao nhieu lan cung hong")
+        "thu lai bao nhieu lan cung hong"
+    )
     assert "except VuotNganSachError" in nguon, (
-        "cua stream phai bat rieng `VuotNganSachError` de tra 400 kem "
-        "field/limit/actual")
+        "cua stream phai bat rieng `VuotNganSachError` de tra 400 kem field/limit/actual"
+    )
 
 
 @pytest.mark.parametrize("mo_dun", ["server.api.chat", "server.api.streaming"])
@@ -93,17 +96,27 @@ def test_CA_HAI_cua_deu_dich_chi_tiet_tran(mo_dun):
     nguon = inspect.getsource(importlib.import_module(mo_dun))
     assert "tran_bi_vuot(" in nguon, (
         f"`{mo_dun}` khong dich `{{truong, tran, thay}}` sang ten cong khai — "
-        "thong tin cong may B gui len bi vut di")
+        "thong tin cong may B gui len bi vut di"
+    )
 
 
 def test_cong_vlm_GIU_chi_tiet_thay_vi_thay_bang_chuoi_cung():
     """Neu `cong_vlm` vut `chi_tiet` thi hai cua o tren khong co gi de dich."""
+    from llm_gateway.error_contract import make_error
     from platform_core.llm import cong_vlm
 
-    nguon = inspect.getsource(cong_vlm)
-    i = nguon.find("if ma == 413:")
-    assert i > 0, "khong tim thay nhanh 413 trong cong_vlm"
-    khoi = nguon[i:i + 1400]
-    assert "chi_tiet=" in khoi, (
-        "nhanh 413 khong mang `chi_tiet` theo — `{truong, tran, thay}` cua cong "
-        "bi bo lai va khach nhan mot cau vo nghia")
+    payload = {
+        "error": make_error(
+            "image_count_exceeded",
+            request_id="rid",
+            field="images",
+            limit=4,
+            actual=5,
+        )
+    }
+    client = cong_vlm.CongVlm(goi=lambda *args, **kwargs: (400, payload, {}))
+    with pytest.raises(cong_vlm.VuotNganSachError) as caught:
+        client.chat(model="qwen35-api", messages=[])
+    assert caught.value.chi_tiet["truong"] == "images"
+    assert caught.value.chi_tiet["tran"] == 4
+    assert caught.value.chi_tiet["thay"] == 5

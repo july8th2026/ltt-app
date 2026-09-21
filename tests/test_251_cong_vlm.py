@@ -14,21 +14,32 @@ Bốn hành vi neo ở đây vì mất chúng là mất tiền hoặc mất dị
   4. **Không có đường tự đổi model.** D-010: đổi model sau lưng khách là đánh
      tráo sản phẩm — với API bán ra ngoài thì đó là bán sai hàng.
 """
+
 from __future__ import annotations
 
 import pytest
 
-from platform_core.llm.cong_vlm import (AmbiguousProviderError, BanError,
-                                        CongVlm, CongVlmError, ProviderOomError,
-                                        SuDung, VuotNganSachError, doc_su_dung)
+from llm_gateway.error_contract import make_error
+from platform_core.llm.cong_vlm import (
+    AmbiguousProviderError,
+    BanError,
+    CongVlm,
+    CongVlmError,
+    ProviderOomError,
+    VuotNganSachError,
+    YeuCauSaiError,
+    doc_su_dung,
+)
 
 
 def _goi_gia(ma=200, than=None, ghi=None):
     """Hàm HTTP giả. `ghi` là list để test soi lời gọi."""
+
     def goi(method, path, *, json=None, timeout=None):
         if ghi is not None:
             ghi.append((method, path, json))
         return ma, than if than is not None else {}
+
     return goi
 
 
@@ -44,14 +55,17 @@ def _than_ok(noi_dung="xin chao", **them):
 
 # ── 1. Bận là bận, không phải hỏng ───────────────────────────────────────────
 
+
 def test_429_nem_BanError_chu_khong_phai_CongVlmError():
     c = CongVlm(goi=_goi_gia(429, {"detail": {"chi_tiet": "co 1 tien trinh python"}}))
     with pytest.raises(BanError) as e:
         c.chat(model="qwen38-api", messages=[])
-    assert "python" in e.value.ly_do
+    assert e.value.failure.canonical_code == "upstream_unknown"
+    assert "python" not in e.value.ly_do
     # Đây là mấu chốt: `BanError` KHÔNG được là con của `CongVlmError`.
-    assert not isinstance(e.value, CongVlmError), \
+    assert not isinstance(e.value, CongVlmError), (
         "lan hai loai nay se lam api_pool disable key model nha sau 5 lan (D-005)"
+    )
 
 
 def test_dang_ban_khi_khong_lien_lac_duoc_thi_coi_la_ban():
@@ -67,6 +81,7 @@ def test_dang_ban_doc_dung_truong_trong_tai():
 
 
 # ── 2. Vượt ngân sách là loại lỗi RIÊNG ──────────────────────────────────────
+
 
 def test_413_nem_VuotNganSachError_khong_phai_loi_provider():
     c = CongVlm(goi=_goi_gia(413, {"detail": {"truong": "input_tokens", "tran": 65536}}))
@@ -85,13 +100,18 @@ def test_413_nem_VuotNganSachError_khong_phai_loi_provider():
     #   doi: 413 phai MANG CHI TIET di tiep, va khong duoc tinh la loi provider.
     assert e.value.chi_tiet["truong"] == "input_tokens"
     assert e.value.chi_tiet["tran"] == 65536
-    assert not isinstance(e.value, CongVlmError), \
+    assert not isinstance(e.value, CongVlmError), (
         "may B khong hong — khong duoc danh dau loi cho key vi mot yeu cau qua to"
+    )
 
     # Va chi tiet ay phai di duoc toi ten CONG KHAI ma khach doc.
     from platform_core.public_api.errors import tran_bi_vuot
+
     assert tran_bi_vuot(e.value.chi_tiet) == {
-        "field": "input_tokens", "fields": ["input_tokens"], "limit": 65536}
+        "field": "input_tokens",
+        "fields": ["input_tokens"],
+        "limit": 65536,
+    }
 
 
 def test_404_model_chua_mo_thi_la_CongVlmError():
@@ -110,10 +130,26 @@ def test_mat_ket_noi_trong_post_la_ambiguous_khong_duoc_retry_mu():
 
 
 def test_502_bao_oom_la_loi_terminal_co_cau_truc():
-    c = CongVlm(goi=_goi_gia(
-        502, {"error": {"message": "CUDA out of memory while allocating"}}))
-    with pytest.raises(ProviderOomError):
+    c = CongVlm(goi=_goi_gia(503, {"error": make_error("provider_oom", request_id="rid-oom")}))
+    with pytest.raises(ProviderOomError) as e:
         c.chat(model="qwen38-api", messages=[])
+    assert e.value.failure.canonical_code == "provider_oom"
+
+
+def test_prose_oom_khong_du_bang_chung_thi_khong_duoc_doan_provider_oom():
+    c = CongVlm(goi=_goi_gia(502, {"error": {"message": "CUDA out of memory while allocating"}}))
+    with pytest.raises(CongVlmError) as e:
+        c.chat(model="qwen38-api", messages=[])
+    assert not isinstance(e.value, ProviderOomError)
+    assert e.value.failure.canonical_code == "upstream_unknown"
+
+
+def test_413_prose_la_unknown_khong_duoc_doan_thanh_context():
+    c = CongVlm(goi=_goi_gia(413, {"detail": "context window exceeded"}))
+    with pytest.raises(YeuCauSaiError) as e:
+        c.chat(model="qwen38-api", messages=[])
+    assert e.value.failure.canonical_code == "upstream_unknown"
+    assert not e.value.failure.is_context_limit
 
 
 def test_thieu_ten_model_bi_chan_truoc_khi_ra_mang():
@@ -125,6 +161,7 @@ def test_thieu_ten_model_bi_chan_truoc_khi_ra_mang():
 
 
 # ── 3. Đọc usage — đây là hàm tính tiền ──────────────────────────────────────
+
 
 def test_thieu_usage_thi_dang_tin_False():
     """⛔ Luật 3: không đoán. 0 token KHÔNG có nghĩa là miễn phí."""
@@ -174,6 +211,7 @@ def test_so_am_tu_thuong_nguon_bi_kep_ve_0():
 
 # ── 4. Bóc phản hồi ──────────────────────────────────────────────────────────
 
+
 def test_boc_noi_dung_va_usage():
     c = CongVlm(goi=_goi_gia(200, _than_ok("chao ban", timings={"cache_n": 30})))
     kq = c.chat(model="qwen38-api", messages=[{"role": "user", "content": "hi"}])
@@ -196,7 +234,8 @@ def test_suy_nghi_tach_khoi_noi_dung():
 def test_tool_calls_duoc_boc():
     than = _than_ok("")
     than["choices"][0]["message"]["tool_calls"] = [
-        {"id": "c1", "function": {"name": "doc_file", "arguments": '{"p":"a.txt"}'}}]
+        {"id": "c1", "function": {"name": "doc_file", "arguments": '{"p":"a.txt"}'}}
+    ]
     than["choices"][0]["finish_reason"] = "tool_calls"
     c = CongVlm(goi=_goi_gia(200, than))
     kq = c.chat(model="qwen38-api", messages=[], tools=[{"type": "function"}])
@@ -212,12 +251,18 @@ def test_khong_co_choices_thi_khong_no():
 
 # ── 5. Thân gửi đi ───────────────────────────────────────────────────────────
 
+
 def test_than_gui_dung_hinh_dang_openai():
     ghi = []
     c = CongVlm(goi=_goi_gia(200, _than_ok(), ghi))
-    c.chat(model="qwen38-api", messages=[{"role": "user", "content": "a"}],
-           tools=[{"type": "function"}], max_tokens=256, temperature=0.7,
-           reasoning_effort="medium")
+    c.chat(
+        model="qwen38-api",
+        messages=[{"role": "user", "content": "a"}],
+        tools=[{"type": "function"}],
+        max_tokens=256,
+        temperature=0.7,
+        reasoning_effort="medium",
+    )
     method, path, than = ghi[-1]
     assert (method, path) == ("POST", "/v1/chat/completions")
     assert than["model"] == "qwen38-api"
@@ -239,6 +284,7 @@ def test_khong_co_duong_tu_doi_model():
     """⛔ D-010. `chat()` KHÔNG được nhận tham số fallback: chọn model lui là
     quyết định của tầng trên, và nó phải kèm việc tính tiền theo model lui."""
     import inspect
+
     tham_so = set(inspect.signature(CongVlm.chat).parameters)
     for cam in ("fallback", "fallback_model", "thu_tu_provider", "provider"):
         assert cam not in tham_so, f"'{cam}' o day la duong danh trao san pham"

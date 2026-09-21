@@ -26,13 +26,16 @@ cong_vlm.py — client phía MÁY A gọi cổng VLM trên máy B. (H38)
    cùng system prompt; tính đủ giá cho phần đó là **tính tiền khách hai lần cho
    cùng một thứ**.
 """
+
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
 
 from platform_core.llm.the_suy_nghi import tach_the_lot
+from platform_core.llm.model_failure import ModelFailure, decode_gateway_failure
 
 log = logging.getLogger(__name__)
 
@@ -56,10 +59,17 @@ class CongVlmError(Exception):
        chạy khi ai đó **truyền mã vào**.
     """
 
-    def __init__(self, thong_diep: str = "", *, ma: Optional[int] = None):
+    def __init__(
+        self,
+        thong_diep: str = "",
+        *,
+        ma: Optional[int] = None,
+        failure: Optional[ModelFailure] = None,
+    ):
         super().__init__(thong_diep)
         #: Mã HTTP thượng nguồn, `None` khi lỗi không đến từ một phản hồi HTTP.
         self.ma = ma
+        self.failure = failure
 
 
 class AmbiguousProviderError(CongVlmError):
@@ -100,12 +110,18 @@ class YeuCauSaiError(CongVlmError):
 class BanError(Exception):
     """Máy B đang bận. **KHÔNG PHẢI LỖI** — đừng đánh dấu lỗi cho key."""
 
-    def __init__(self, ly_do: str, retry_after_s: Optional[float] = None,
-                 chi_tiet: Optional[dict] = None):
+    def __init__(
+        self,
+        ly_do: str,
+        retry_after_s: Optional[float] = None,
+        chi_tiet: Optional[dict] = None,
+        failure: Optional[ModelFailure] = None,
+    ):
         super().__init__(ly_do or "may B dang ban")
         self.ly_do = ly_do
         self.retry_after_s = retry_after_s
         self.chi_tiet = chi_tiet or {}
+        self.failure = failure
 
 
 #: Cổng trả mã này khi lượt bị **hủy theo yêu cầu**. Quy ước của nginx cho
@@ -135,10 +151,16 @@ class HuyError(Exception):
       đánh dấu lỗi khoá, và bên gọi nhìn tên là biết chuyện gì.
     """
 
-    def __init__(self, ly_do: str = "", chi_tiet: Optional[dict] = None):
+    def __init__(
+        self,
+        ly_do: str = "",
+        chi_tiet: Optional[dict] = None,
+        failure: Optional[ModelFailure] = None,
+    ):
         super().__init__(ly_do or "luot bi huy theo yeu cau")
         self.ly_do = ly_do
         self.chi_tiet = chi_tiet or {}
+        self.failure = failure
 
 
 class VuotNganSachError(Exception):
@@ -148,10 +170,13 @@ class VuotNganSachError(Exception):
     và `api_pool` không được đánh dấu lỗi cho key vì nó.
     """
 
-    def __init__(self, ly_do: str, chi_tiet: Optional[dict] = None):
+    def __init__(
+        self, ly_do: str, chi_tiet: Optional[dict] = None, failure: Optional[ModelFailure] = None
+    ):
         super().__init__(ly_do or "vuot ngan sach")
         self.ly_do = ly_do
         self.chi_tiet = chi_tiet or {}
+        self.failure = failure
 
 
 @dataclass(frozen=True)
@@ -197,6 +222,26 @@ def _int(gt: Any) -> int:
         return 0
 
 
+def _phan_hoi(value: tuple) -> tuple[int, Any, dict[str, str]]:
+    """Nhận cả transport cũ `(status, body)` và mới có thêm headers."""
+    if len(value) >= 3:
+        ma, than, headers = value[:3]
+        return int(ma), than, dict(headers or {})
+    ma, than = value
+    return int(ma), than, {}
+
+
+def _failure_body(than: Any) -> bytes:
+    if isinstance(than, bytes):
+        return than
+    if isinstance(than, str):
+        return than.encode("utf-8", "replace")
+    try:
+        return json.dumps(than, ensure_ascii=False).encode("utf-8")
+    except (TypeError, ValueError):
+        return b""
+
+
 def doc_su_dung(than: dict) -> SuDung:
     """Bóc `usage` + `timings.cache_n` từ thân phản hồi của llama-server.
 
@@ -225,8 +270,7 @@ def doc_su_dung(than: dict) -> SuDung:
 
     # Cache không thể nhiều hơn tổng prompt. Nếu thượng nguồn báo thế thì nó sai,
     # và ta kẹp lại thay vì để nó thành một khoản giảm giá không có thật.
-    return SuDung(token_vao=vao, token_ra=ra,
-                  token_vao_cache=min(cache, vao), dang_tin=True)
+    return SuDung(token_vao=vao, token_ra=ra, token_vao_cache=min(cache, vao), dang_tin=True)
 
 
 @dataclass
@@ -244,13 +288,13 @@ class CongVlm:
 
     # ── đọc trạng thái ───────────────────────────────────────────────────────
     def health(self) -> dict:
-        ma, than = self._goi("GET", "/health")
+        ma, than, _headers = _phan_hoi(self._goi("GET", "/health"))
         if ma != 200:
             raise CongVlmError(f"health tra {ma}")
         return than or {}
 
     def models(self) -> list:
-        ma, than = self._goi("GET", "/v1/models")
+        ma, than, _headers = _phan_hoi(self._goi("GET", "/v1/models"))
         if ma != 200:
             raise CongVlmError(f"/v1/models tra {ma}")
         return list((than or {}).get("data") or [])
@@ -269,10 +313,17 @@ class CongVlm:
         return bool(tt.get("ban")), str(tt.get("ly_do") or "")
 
     # ── gọi model ────────────────────────────────────────────────────────────
-    def chat(self, *, model: str, messages: list, tools: Optional[list] = None,
-             max_tokens: Optional[int] = None, temperature: Optional[float] = None,
-             reasoning_effort: Optional[str] = None,
-             them: Optional[dict] = None) -> KetQuaChat:
+    def chat(
+        self,
+        *,
+        model: str,
+        messages: list,
+        tools: Optional[list] = None,
+        max_tokens: Optional[int] = None,
+        temperature: Optional[float] = None,
+        reasoning_effort: Optional[str] = None,
+        them: Optional[dict] = None,
+    ) -> KetQuaChat:
         """Một lượt chat. Ném `BanError` khi bận, `VuotNganSachError` khi quá trần.
 
         ⛔ Không có tham số `fallback` ở đây, và đó là **có chủ ý** (luật 2). Việc
@@ -297,88 +348,35 @@ class CongVlm:
         # đường vào một hàm là cách chắc chắn nhất để tính tiền sai một trong hai.
         than_gui["stream"] = False
 
-        ma, than = self._goi("POST", "/v1/chat/completions", json=than_gui)
+        ma, than, headers = _phan_hoi(self._goi("POST", "/v1/chat/completions", json=than_gui))
 
-        if ma == 429:
-            # ⛔ ĐÂY là chỗ luật 1 sống. Không nâng thành lỗi, không đổi provider.
-            ct = than if isinstance(than, dict) else {}
-            raise BanError(str((ct.get("detail") or {}).get("chi_tiet")
-                               or ct.get("ly_do") or "may B dang ban"),
-                           chi_tiet=ct)
-        if ma == MA_HUY:
-            # ⛔ ĐỨNG Ở ĐÂY, TRƯỚC nhánh `ma != 200` cuối hàm. Rơi xuống đó là
-            #    `CongVlmError`, tức giấy phép đánh dấu lỗi khoá — xem `HuyError`.
-            ct = than if isinstance(than, dict) else {}
-            raise HuyError(str(ct.get("ly_do") or "huy theo yeu cau"), chi_tiet=ct)
-        if ma == 413:
-            ct = than if isinstance(than, dict) else {}
-            # 🔴 CONG DA GUI DU THONG TIN, TA TUNG VUT NO DI.
-            #
-            #    `llm_gateway/ngan_sach.py` nem kem ba truong va `api.py:855`
-            #    tra chung trong `detail`:
-            #
-            #        {"ly_do": ..., "truong": "images", "tran": 4, "thay": 5}
-            #
-            #    Ban cu thay ca ba bang mot chuoi cung: "yeu cau vuot tran cua
-            #    cong". Do 14/09 tren production, khach gui 5 anh nhan dung cau
-            #    ay — tieng Viet khong dau, tren mot API tieng Anh, va **khong
-            #    noi tran nao, tran bao nhieu, truong nao**. Khach khong the
-            #    sua yeu cau cua ho tu mot thong diep nhu the.
-            #
-            # ⛔ Khong tu dat ten truong moi: giu nguyen ten cong da dung, va
-            #    de tang HTTP dich sang `field`/`limit`/`actual` mot lan o
-            #    `server/api`. Dich hai lan la hai ban dich se troi khoi nhau.
-            chi = ct.get("detail") if isinstance(ct.get("detail"), dict) else ct
-            ly_do = str((chi or {}).get("ly_do") or "").strip()
-            raise VuotNganSachError(ly_do or "yeu cau vuot tran cua cong",
-                                    chi_tiet=chi or ct)
-        if ma == 404:
-            raise CongVlmError(f"model '{model}' khong co hoac chua duoc mo")
-        if ma == 504:
-            # 🔴 HẾT GIỜ Ở THƯỢNG NGUỒN **KHÔNG PHẢI** LỖI CỦA KHOÁ.
-            #
-            #    Cổng trả 504 khi `llama-swap`/`llama-server` không trả lời kịp.
-            #    Trước 09/09 nó nằm chung cửa 502, và 502 rơi vào nhánh cuối
-            #    (`CongVlmError`) ⇒ `api_pool.danh_dau_loi()` ⇒ sau **5** lần
-            #    `key.status = APIKEY_ERROR`.
-            #
-            # ⛔ Và `APIKEY_ERROR` trước 19/09 **KHÔNG TỰ HỒI** (năm lần hết giờ
-            #    là model nhà tắt tới khi có người sửa tay). Từ 19/09 ERROR có
-            #    hạn (`api_pool.ERROR_COOLDOWN_S`) rồi thử lại; ERROR không hạn
-            #    vẫn chờ admin. Nhưng `error_count` giữ nguyên ⇒ mỗi lượt hết
-            #    giờ kế tiếp lại tắt model nhà ngay — phạt nhầm vẫn là mất dịch vụ.
-            #
-            # ⭐ Đó đúng là D-005 — thảm hoạ mà luật 1 ở đầu tệp này đã bịt rất
-            #    kỹ ở cửa **429** — chỉ là nó vào bằng cửa **hết giờ**, cửa chưa
-            #    ai bịt. Một prompt 200K prefill hàng phút là hành vi **bình
-            #    thường** của hệ này, không phải dấu hiệu máy B hỏng.
-            #
-            # ⚠️ Dùng `AmbiguousProviderError` chứ **không** đẻ lớp mới, và đó là
-            #    lựa chọn có lý do: ngữ nghĩa của nó đã đúng y hệt — *"đã gửi đi
-            #    nhưng không biết kết quả"*. `dieu_phoi.goi()` sẵn có nhánh
-            #    `except (AmbiguousProviderError, ProviderOomError): raise` nên
-            #    lượt này **không cascade** (thượng nguồn có thể đã bắt đầu sinh
-            #    chữ, thử lại nơi khác là trả tiền hai lần) và **không**
-            #    `danh_dau_loi`. Thêm một lớp mới sẽ phải chép lại đúng hai hành
-            #    vi ấy, và bản chép sẽ lệch vào một ngày nào đó.
-            raise AmbiguousProviderError(
-                "thuong nguon khong tra loi kip (504) — khong danh dau loi cho khoa")
-        noi_dung_loi = str(than or "").lower()
-        if ma in (500, 502, 503, 507) and any(
-                marker in noi_dung_loi for marker in
-                ("out of memory", "cuda oom", "cuda_error_out_of_memory", "oom")):
-            raise ProviderOomError("provider khong du bo nho cho request")
-        if ma in (400, 422):
-            # ⛔ ĐỨNG TRƯỚC nhánh cuối. Rơi xuống đó là `CongVlmError` trần, tức
-            #    giấy phép phạt key cho một lỗi của khách — xem `YeuCauSaiError`.
-            than_sai = than if isinstance(than, dict) else {}
-            _e = than_sai.get("error")
-            loi_sai = _e if isinstance(_e, dict) else {}
-            raise YeuCauSaiError(
-                str(loi_sai.get("message") or than_sai.get("detail")
-                    or f"thuong nguon tra {ma}"), ma=ma)
         if ma != 200:
-            raise CongVlmError(f"/v1/chat/completions tra {ma}", ma=ma)
+            failure = decode_gateway_failure(ma, headers, _failure_body(than))
+            detail = failure.as_detail()
+            code = failure.canonical_code
+            budget_codes = {
+                "unsupported_modality",
+                "image_count_exceeded",
+                "image_too_large",
+                "image_url_not_allowed",
+                "image_decode_failed",
+                "input_tokens_exceeded",
+                "max_output_tokens_exceeded",
+                "context_window_exceeded",
+            }
+            if failure.is_busy or (ma == 429 and code == "upstream_unknown"):
+                raise BanError(failure.message, failure.retry_after_s, detail, failure=failure)
+            if failure.is_cancelled or ma == MA_HUY:
+                raise HuyError(failure.message, detail, failure=failure)
+            if failure.is_timeout or (ma == 504 and code == "upstream_unknown"):
+                raise AmbiguousProviderError(failure.message, ma=ma, failure=failure)
+            if code == "provider_oom":
+                raise ProviderOomError(failure.message, ma=ma, failure=failure)
+            if code in budget_codes:
+                raise VuotNganSachError(failure.message, detail, failure=failure)
+            if code in {"invalid_request", "unsupported_parameter"} or ma in {400, 413, 422}:
+                raise YeuCauSaiError(failure.message, ma=ma, failure=failure)
+            raise CongVlmError(failure.message, ma=ma, failure=failure)
 
         return _boc(than if isinstance(than, dict) else {})
 
@@ -394,10 +392,11 @@ class CongVlm:
             #    `except Exception` dưới sẽ bọc nó thành `AmbiguousProviderError`,
             #    và một lượt hủy lại trở thành một lượt "không rõ kết quả".
             raise
-        except Exception as e:                       # pragma: no cover
+        except Exception as e:  # pragma: no cover
             if str(method).upper() == "POST":
                 raise AmbiguousProviderError(
-                    f"mat ket noi sau khi bat dau gui: {type(e).__name__}") from None
+                    f"mat ket noi sau khi bat dau gui: {type(e).__name__}"
+                ) from None
             raise CongVlmError(f"loi mang: {type(e).__name__}") from None
 
 
@@ -410,8 +409,9 @@ def _boc(than: dict) -> KetQuaChat:
     # `content` (llama.cpp#28182, T1b): trả phần lọt về suy nghĩ tại MỘT chỗ bóc
     # này, nên mọi cửa đồng bộ (`/chat/completions`, `/messages`, `/responses`
     # không stream, job) cùng sạch.
-    noi_dung, suy_nghi = tach_the_lot(str(tin.get("content") or ""),
-                                      str(tin.get("reasoning_content") or ""))
+    noi_dung, suy_nghi = tach_the_lot(
+        str(tin.get("content") or ""), str(tin.get("reasoning_content") or "")
+    )
     return KetQuaChat(
         noi_dung=noi_dung,
         suy_nghi=suy_nghi,

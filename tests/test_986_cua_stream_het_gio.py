@@ -54,9 +54,11 @@ Ba thứ **thật sự** quan trọng đều đã đúng, và chúng đúng ở 
    chỉ là cái giá của nó cao hơn cái lợi ở hệ nội bộ này. Ngày mở API ra ngoài
    thì đọc lại đoạn này.
 """
+
 from __future__ import annotations
 
 import ast
+import json
 import pathlib
 
 import pytest
@@ -67,83 +69,42 @@ GOC = pathlib.Path(__file__).resolve().parents[1]
 LUONG_VLM = GOC / "platform_core" / "llm" / "luong_vlm.py"
 
 
-def _ham_mo() -> ast.FunctionDef:
-    cay = ast.parse(LUONG_VLM.read_text(encoding="utf-8"))
-    return next(n for n in ast.walk(cay)
-                if isinstance(n, ast.FunctionDef) and n.name == "mo")
+def test_typed_504_duoc_nhan_dien_bang_code_khong_bang_status():
+    from llm_gateway.error_contract import make_error
+    from platform_core.llm.model_failure import decode_gateway_failure
+
+    body = json.dumps({"error": make_error("upstream_timeout", request_id="rid-timeout")}).encode()
+    failure = decode_gateway_failure(504, {}, body)
+    error = KhongMoDuocLuong(failure=failure)
+
+    assert error.het_gio
+    assert not error.ban
+    assert not error.qua_dai
 
 
-def _nhanh_504() -> ast.If:
-    """Nhánh `if r.status_code == 504:` trong `mo()`."""
-    for n in ast.walk(_ham_mo()):
-        if not isinstance(n, ast.If):
-            continue
-        for so in ast.walk(n.test):
-            if isinstance(so, ast.Constant) and so.value == 504:
-                return n
-    pytest.fail("khong tim thay nhanh `status_code == 504` trong luong_vlm.mo()")
+def test_timeout_nam_trong_nhom_khong_phat_khoa():
+    """Trước Task 6, chốt đường chuyển tiếp không phạt timeout."""
+    source = LUONG_VLM.read_text(encoding="utf-8")
+    assert '"upstream_timeout"' in source
+    assert "code not in no_key_penalty" in source
 
 
-def test_co_nhanh_504_rieng():
-    assert _nhanh_504() is not None
+def test_413_va_429_khong_bi_gop_nghia():
+    from llm_gateway.error_contract import make_error
+    from platform_core.llm.model_failure import decode_gateway_failure
 
-
-def test_nhanh_504_KHONG_danh_dau_loi():
-    """🔴 Bất biến trung tâm: hết giờ không được phạt khoá.
-
-    Đọc bằng AST chứ không dựng CSDL — thứ ta chốt là **hình dạng mã**, và một
-    phép kiểm hành vi ở đây sẽ đòi cả `api_pool`, `api_keys`, một CSDL và một
-    khoá thật, để trả lời đúng câu hỏi mà bốn dòng AST trả lời chắc chắn hơn.
-    """
-    than = ast.dump(ast.Module(body=_nhanh_504().body, type_ignores=[]))
-    assert "danh_dau_loi" not in than, (
-        "nhanh 504 CO goi danh_dau_loi -> 5 lan het gio la khoa vao "
-        "APIKEY_ERROR (co han tu 19/09, nhung moi lan het gio ke lai tat khoa)")
-
-
-def test_nhanh_504_KHONG_dat_ban_True():
-    """`ban=True` hứa *"30 giây nữa thử lại là được"* — hết giờ không hứa được thế.
-
-    Một yêu cầu hết giờ vì nó quá lớn sẽ hết giờ y hệt ở lần sau; gắn `ban` vào
-    đây là dựng một vòng thử lại vô ích. Đúng cái bẫy mà chú thích nhánh 413
-    ngay bên trên đã cảnh báo (*"retry vô ích → bão"*).
-    """
-    for kw in [k for n in ast.walk(_nhanh_504())
-               if isinstance(n, ast.Call) for k in n.keywords]:
-        if kw.arg == "ban":
-            assert not (isinstance(kw.value, ast.Constant) and kw.value.value is True), \
-                "nhanh 504 dat ban=True -> bao thu lai"
-
-
-def test_nhanh_504_dat_het_gio_True():
-    co = [k for n in ast.walk(_nhanh_504()) if isinstance(n, ast.Call)
-          for k in n.keywords
-          if k.arg == "het_gio" and isinstance(k.value, ast.Constant)
-          and k.value.value is True]
-    assert co, "nhanh 504 khong danh dau het_gio -> ben goi khong phan biet duoc"
-
-
-def test_nhanh_504_dung_TRUOC_nhanh_500():
-    """⛔ Thứ tự quyết định tất cả: `504 >= 500`.
-
-    Đặt sau thì nhánh `>= 500` nuốt mất và nhánh 504 **chết im lặng** — không
-    lỗi, không cảnh báo, chỉ là khoá lại bị phạt như cũ. Cùng lớp bẫy với thứ
-    tự `except` của `TimeoutException`/`HTTPError` ở `upstream.py`.
-    """
-    van = LUONG_VLM.read_text(encoding="utf-8")
-    i504 = van.find("r.status_code == 504")
-    i500 = van.find("r.status_code >= 500")
-    assert 0 < i504 < i500, (
-        "nhanh `>= 500` dung TRUOC nhanh 504 -> nhanh 504 khong bao gio chay")
-
-
-def test_413_va_429_khong_bi_anh_huong():
-    """Bản vá này **không được** chạm hai cửa vốn đã đúng."""
-    van = LUONG_VLM.read_text(encoding="utf-8")
-    i413 = van.find("r.status_code == 413")
-    i429 = van.find("r.status_code == 429")
-    i504 = van.find("r.status_code == 504")
-    assert 0 < i429 < i413 < i504 < van.find("r.status_code >= 500")
+    unknown_413 = decode_gateway_failure(413, {}, b'{"detail":"context window exceeded"}')
+    busy_429 = decode_gateway_failure(
+        429,
+        {},
+        json.dumps(
+            {"error": make_error("concurrency_limited", request_id="rid-busy", retry_after_s=17)}
+        ).encode(),
+    )
+    assert unknown_413.canonical_code == "upstream_unknown"
+    assert not unknown_413.is_context_limit
+    assert busy_429.is_busy
+    assert busy_429.retry_after_s == 17
 
 
 def test_co_flag_het_gio_tren_ngoai_le():
@@ -165,8 +126,9 @@ def test_moi_nhanh_KhongMoDuocLuong_deu_duoc_HOAN_tien():
     đây vì một bản vá tương lai rất dễ chuyển `hoan()` xuống *sau* một nhánh
     `if`, và lúc đó khách sẽ bị thu tiền cho một lượt hết giờ.
     """
-    cay = ast.parse((GOC / "platform_core" / "runtime_noi_bo"
-                     / "luong.py").read_text(encoding="utf-8"))
+    cay = ast.parse(
+        (GOC / "platform_core" / "runtime_noi_bo" / "luong.py").read_text(encoding="utf-8")
+    )
     for xu in ast.walk(cay):
         if not isinstance(xu, ast.ExceptHandler) or xu.type is None:
             continue
@@ -177,14 +139,18 @@ def test_moi_nhanh_KhongMoDuocLuong_deu_duoc_HOAN_tien():
         # hoan_khi_ban` GIỮ tiền vì lượt sắp xếp lại; `mo_co_xep_lai` hoàn ở mọi
         # đường ra (đo bằng hành vi: `test_600`/`test_1208` "429 MAI ⇒ hold, refund").
         than = list(xu.body)
-        if (isinstance(than[0], ast.If)
-                and "hoan_khi_ban" in ast.dump(than[0].test)
-                and isinstance(than[0].body[-1], ast.Raise)):
+        if (
+            isinstance(than[0], ast.If)
+            and "hoan_khi_ban" in ast.dump(than[0].test)
+            and isinstance(than[0].body[-1], ast.Raise)
+        ):
             than = than[1:]
         dau = than[0]
-        assert isinstance(dau, ast.Expr) and isinstance(dau.value, ast.Call), \
+        assert isinstance(dau, ast.Expr) and isinstance(dau.value, ast.Call), (
             "lenh dau cua nhanh khong phai mot loi goi"
+        )
         assert "hoan" in ast.dump(dau.value.func), (
-            "hoan() khong con la lenh DAU TIEN -> mot nhanh loi moi se quen hoan tien")
+            "hoan() khong con la lenh DAU TIEN -> mot nhanh loi moi se quen hoan tien"
+        )
         return
     pytest.fail("khong tim thay `except KhongMoDuocLuong` trong runtime_noi_bo/luong.py")

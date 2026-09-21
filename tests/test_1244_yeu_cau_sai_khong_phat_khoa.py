@@ -32,6 +32,7 @@ key)` **khong kem `http_status`**.
     ban va 09/09                bit cua 504
     cua 400                     dung mo toi 13/09
 """
+
 import pytest
 
 from platform_core.llm import cong_vlm as CV
@@ -95,8 +96,10 @@ def test_401_403_van_di_duong_auth():
 
 # ── Lop loi: 400/422 phai thanh `YeuCauSaiError`, khong phai `CongVlmError` ──
 
+
 def _chat_tra(ma, than):
     """Dung mot `CongVlm` voi ham HTTP tiem vao, tra ve `(ma, than)` co dinh."""
+
     def goi(method, path, json=None, timeout=None):
         return ma, than
 
@@ -105,14 +108,24 @@ def _chat_tra(ma, than):
 
 @pytest.mark.parametrize("ma", [400, 422])
 def test_400_va_422_thanh_YeuCauSaiError(ma):
-    c = _chat_tra(ma, {"error": {"code": ma, "type": "invalid_request_error",
-                                 "message": "Failed to load image or audio file"}})
+    c = _chat_tra(
+        ma,
+        {
+            "error": {
+                "code": ma,
+                "type": "invalid_request_error",
+                "message": "Failed to load image or audio file",
+            }
+        },
+    )
     with pytest.raises(CV.YeuCauSaiError) as e:
         c.chat(model="qwen35-api", messages=[{"role": "user", "content": "x"}])
     assert e.value.ma == ma
-    assert "Failed to load image" in str(e.value), (
-        "thong diep cua thuong nguon phai di THANG ra cho khach — "
-        "'The model could not serve this request' khong noi cho ho biet gi")
+    assert e.value.failure.canonical_code == "upstream_unknown"
+    assert "Failed to load image" not in str(e.value), (
+        "prose cua provider co the mang prompt/path/VRAM; chi canonical code "
+        "va du kien da validate moi duoc di ra ngoai"
+    )
 
 
 def test_502_van_la_CongVlmError_va_MANG_MA():
