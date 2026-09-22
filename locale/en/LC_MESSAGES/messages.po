@@ -19454,3 +19454,54 @@ msgstr "The video is already in the target language — choose a different targe
 
 msgid "Giọng này đọc {lan}, không đọc được bản {dich}."
 msgstr "This voice reads {lan}; it cannot read a {dich} script."
+
+msgid "Tự động — bản dịch, tránh phụ đề gốc"
+msgstr "Auto — translation, avoids the original subtitles"
+
+msgid "Khắc bản dịch (đúng lời thuyết minh) và tự đặt đè lên dải phụ đề gốc bạn đã đánh dấu."
+msgstr "Burns the translation (the narrated words) and places it over the original-subtitle band you marked."
+
+msgid "Lời gốc"
+msgstr "Original words"
+
+msgid "Khắc lời gốc của video, kiểu chữ chuẩn."
+msgstr "Burns the video's original words in the standard style."
+
+msgid "Bản dịch"
+msgstr "Translation"
+
+msgid "Khắc bản dịch, kiểu chữ chuẩn."
+msgstr "Burns the translation in the standard style."
+
+msgid "Bạn chọn kiểu chữ, tinh chỉnh, và chọn lời gốc hay bản dịch."
+msgstr "You pick and fine-tune the style, and choose original words or translation."
+
+msgid "Chế độ này đã cố định nguồn chữ; chỉ “tự chọn kiểu” mới chọn được lời gốc hay bản dịch."
+msgstr "This mode fixes the text source; only “pick a style” can choose original words or translation."
+
+msgid "Nguồn chữ phụ đề không hợp lệ."
+msgstr "Invalid subtitle text source."
+
+msgid "Nguồn chữ"
+msgstr "Text source"
+
+msgid "Video nguồn thường đã có phụ đề cứng ở dải dưới. Hãy đánh dấu vùng phụ đề gốc ở mục vùng che: dải đó sẽ được làm mờ và phụ đề mới đặt đè lên, không chồng hai lớp chữ."
+msgstr "Source videos often already carry hard subtitles in the bottom band. Mark the original-subtitle region under masked regions: that band is blurred and the new subtitle is placed over it, so two layers of text never overlap."
+
+msgid "Xem trước phụ đề"
+msgstr "Subtitle preview"
+
+msgid "Xem trước phụ đề trên khung hình này"
+msgstr "Preview subtitles on this frame"
+
+msgid "Ảnh khung hình xem trước không đọc được."
+msgstr "The preview frame image could not be read."
+
+msgid "Ảnh khung hình xem trước rỗng hoặc quá lớn."
+msgstr "The preview frame image is empty or too large."
+
+msgid "Dựng khung xem trước quá hạn."
+msgstr "Building the preview frame timed out."
+
+msgid "Không dựng được khung xem trước."
+msgstr "Could not build the preview frame."

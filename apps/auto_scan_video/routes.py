@@ -34,7 +34,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import (HTMLResponse, JSONResponse,
-                               RedirectResponse, StreamingResponse)
+                               RedirectResponse, Response, StreamingResponse)
 from sqlalchemy.orm import Session
 
 from platform_core.i18n import N_, _ as _t
@@ -743,6 +743,25 @@ def uoc_tinh(request: Request, giay: float = 0.0,
         "thoi_gian_giay": gia.uoc_thoi_gian_giay(giay),
         # ⛔ KHONG tra ve cong thuc, he so hay ten bien nao. Khach nhan CON SO.
     })
+
+
+@router.post("/phu-de/xem-truoc")
+def xem_truoc_phu_de(request: Request, anh: UploadFile = File(...),
+                     phu_de: str = Form(""), vung: str = Form(""),
+                     preset: str = Form(""), ngon_ngu_nguon: str = Form(""),
+                     ngon_ngu_dich: str = Form(""), csrf_token: str = Form(""),
+                     _g: None = Depends(_cong_co),
+                     user: str = Depends(require_login)):
+    """Mot khung PNG xem truoc phu de. Duyet + dung o `phu_de.xem_truoc_tu_form`."""
+    if not verify_csrf_token(request, csrf_token):
+        raise HTTPException(status_code=400, detail=_t('Phiên đã hết hạn.'))
+    try:
+        png = phu_de_mod.xem_truoc_tu_form(
+            phu_de, anh=anh.file.read(phu_de_mod.XEM_TRUOC_TRAN_BYTE + 1),
+            vung=vung, preset=preset, nguon=ngon_ngu_nguon, dich=ngon_ngu_dich)
+    except phu_de_mod.PhuDeLoi as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return Response(png, media_type="image/png", headers={"Cache-Control": "no-store"})
 
 
 @router.get("/giong")

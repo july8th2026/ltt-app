@@ -169,6 +169,51 @@ def check_font_with_fallback(
     return result
 
 
+@lru_cache(maxsize=64)
+def _cmap_of(font_name: str) -> Optional[frozenset[int]]:
+    """Code points the INSTALLED font `font_name` maps, or None if unresolved.
+
+    Availability (`is_font_available`) answers "is there a font with this
+    name"; it does not answer "can it draw these characters". Arial exists on
+    every Windows machine and has no Han glyph.
+    """
+    try:
+        from fontTools.ttLib import TTFont
+        from matplotlib.font_manager import FontProperties, findfont
+    except Exception:
+        return None
+    try:
+        path = findfont(FontProperties(family=font_name), fallback_to_default=False)
+    except Exception:
+        return None
+    try:
+        kw = {"fontNumber": 0} if str(path).lower().endswith((".ttc", ".otc")) else {}
+        with TTFont(path, lazy=True, **kw) as f:
+            cmap = f.getBestCmap() or {}
+        return frozenset(cmap)
+    except Exception:
+        return None
+
+
+def missing_glyphs(font_name: str, text: str) -> Optional[str]:
+    """Characters of `text` the installed font `font_name` has no glyph for.
+
+    Returns "" when every visible character is covered, the missing characters
+    (deduplicated, in order) otherwise, or None when the font cannot be
+    resolved/read on this machine (unknown is not the same as "covered").
+    Whitespace and ASS line breaks are ignored.
+    """
+    cmap = _cmap_of(str(font_name or "").strip())
+    if cmap is None:
+        return None
+    seen: list[str] = []
+    for ch in str(text or "").replace("\\N", " "):
+        if ch.isspace() or ord(ch) in cmap or ch in seen:
+            continue
+        seen.append(ch)
+    return "".join(seen)
+
+
 def list_available_fonts() -> list[str]:
     """Return sorted list of all available font family names."""
     return sorted(_get_system_fonts())

@@ -55,4 +55,12 @@ BE_MAT_CONG_KHAI = {
     #    Scan la tao mot ban sao se lech, va lech im lang: hai ban deu "hop
     #    le" theo luat cua chinh minh.
     ("apps.autosubvideo.schemas", "SubtitleStyleConfig"),
+    # ── Phu de nguon tieng Trung (asv-final, lan phu-de, 22/09) ─────────────
+    #
+    # ⭐ MO RONG nang luc cua app nay thay vi chep sang Auto Scan: ngat dong
+    #    chu Han (`_wrap_text` chi ngat theo dau cach, nen mot cau tieng Trung
+    #    ra MOT dong dai vo han) va hoi mot font co VE duoc cac ky tu khong
+    #    (`is_font_available` chi tra loi "co font ten do khong").
+    ("apps.autosubvideo.segmenter", "wrap_lines"),
+    ("apps.autosubvideo.font_checker", "missing_glyphs"),
 }

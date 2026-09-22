@@ -65,13 +65,43 @@ from platform_core.i18n import _ as _t
 
 # ── Che do DOT phu de vao hinh ───────────────────────────────────────────────
 
+#: Nam che do (asv-final, lan phu-de 22/09). Bang day du + ly do:
+#: `docs/auto_scan_video_final/L_PHU_DE.md` §1.
+#:
+#:   che_do    chu tren hinh            vi tri                    kieu chu
+#:   tat       —                        —                         —
+#:   tu_dong   BAN DICH (loi thuyet     tranh dai phu de goc      preset (mac dinh
+#:             minh dang doc)           da danh dau (xem          `default`)
+#:                                      `vi_tri_tu_dong`)
+#:   nguon     LOI GOC (ban ghi chuan   cua preset                preset
+#:             — ASR hay OCR, `goc`)
+#:   dich      BAN DICH                 cua preset                preset
+#:   tu_chon   `chu` = dich | nguon     cua preset + tinh chinh   preset + tinh chinh
+#:
+#: ⛔ "Tu dong" KHONG phai "dich voi ten khac": no la che do DUY NHAT tu quyet
+#:    vi tri. Do 22/09 tren 4 clip `TEST VIDEO`: dai hardsub nam o 0,76–0,98
+#:    chieu cao, va kieu `default` dat o 0,78–0,94 ⇒ chong len hardsub o CA 4.
 CHE_DO_TAT = "tat"
 CHE_DO_TU_DONG = "tu_dong"
+CHE_DO_NGUON = "nguon"
+CHE_DO_DICH = "dich"
 CHE_DO_TU_CHON = "tu_chon"
 
-CHE_DO: tuple[str, ...] = (CHE_DO_TAT, CHE_DO_TU_DONG, CHE_DO_TU_CHON)
+CHE_DO: tuple[str, ...] = (CHE_DO_TAT, CHE_DO_TU_DONG, CHE_DO_NGUON,
+                           CHE_DO_DICH, CHE_DO_TU_CHON)
+
+#: Nhung che do DOT vao hinh — tat ca tru `tat`.
+CHE_DO_DOT: tuple[str, ...] = tuple(c for c in CHE_DO if c != CHE_DO_TAT)
 
 CHE_DO_MAC_DINH = CHE_DO_TAT
+
+#: Nguon CHU cua phu de. Khoa trong tai lieu `CONTENT_PROCESS` (`van_ban.dung`):
+#: `goc` = loi cua ban ghi chuan (ASR hom nay, OCR khi lan L-E them — no ghi
+#: `nguon_loi` o ban ghi, con chu van nam o `goc`), `chu` = ban dich.
+CHU_DICH = "dich"
+CHU_NGUON = "nguon"
+CHU: tuple[str, ...] = (CHU_DICH, CHU_NGUON)
+_KHOA_CHU = {CHU_DICH: "chu", CHU_NGUON: "goc"}
 
 #: ⚠️ Trung voi id `default` cua `style_registry`, va do la ban sao duy nhat
 #:    khong tranh duoc: phai neu duoc mot kieu khoi diem bang ten.
@@ -216,6 +246,76 @@ def cau_hinh_goc(kieu: str):
     return get_config(kieu)
 
 
+def chu_cua(ho_so: dict | None) -> str:
+    """Nguon CHU cua mot ho so: `CHU_DICH` hay `CHU_NGUON`.
+
+    🔑 Mot cho tra loi — ca COMPOSE (dung su kien) lan xem truoc (chon cau mau)
+       deu hoi o day. `tu_dong` la BAN DICH vi Auto Scan luon long tieng: phu de
+       khop voi loi khach dang NGHE. Loi goc thuong da nam tren hinh (hardsub)
+       o chinh video nguon, nen lap lai no la che them hinh ma khong them y.
+    """
+    che_do = (ho_so or {}).get("che_do")
+    if che_do == CHE_DO_NGUON:
+        return CHU_NGUON
+    if che_do in (CHE_DO_TU_CHON, CHE_DO_TAT):
+        return str((ho_so or {}).get("chu") or CHU_DICH)
+    return CHU_DICH
+
+
+# ── Vi tri TU DONG: tranh dai phu de goc ────────────────────────────────────
+
+#: Khoang ho giua phu de moi va dai phu de goc khi dat PHIA TREN no, theo phan
+#: so chieu cao khung. 2% cua 576 = 12 px — vua mot net vien day.
+KHOANG_HO_DAI = 0.02
+
+
+def dai_phu_de_goc(vung) -> dict | None:
+    """Dai phu de goc tu vung khach DANH DAU, hoac `None`.
+
+    ⛔ **`danh_dau_phu_de` la mot tinh nang CO MA KHONG AI DOC truoc lan nay.**
+       `vung_che.LOAI_DANH_DAU_PHU_DE` khai y nghia *"dung ve phu de dich chong
+       len day"*, giao dien cho ve, ban dung luu — va khong mot dong nao doc
+       `loai` do. `tu_dong` la nguoi doc dau tien.
+
+    ⭐ `da_che=True`: `che_do_render._loc_lam_mo` lam mo MOI vung, ke ca vung
+       danh dau (no khong loc theo `loai`). Nen dai da danh dau luon bi che, va
+       phu de moi dat DE LEN no. Mot dai CHUA che (vd. hop OCR cua lan L-E) di
+       nhanh `da_che=False` va phu de dat PHIA TREN.
+    """
+    from .vung_che import LOAI_DANH_DAU_PHU_DE
+
+    ds = [v for v in (vung or ()) if v.get("loai") == LOAI_DANH_DAU_PHU_DE]
+    if not ds:
+        return None
+    return {"y0": round(min(float(v["y0"]) for v in ds), 4),
+            "y1": round(max(float(v["y1"]) for v in ds), 4),
+            "da_che": True}
+
+
+def vi_tri_tu_dong(ho_so: dict | None, *, cao: int) -> dict:
+    """Ghi de vi tri cua che do `tu_dong`. `{}` = giu vi tri cua preset.
+
+    Hai nhanh, mot luat: **khong de chu moi len chu cu con doc duoc.**
+      · dai DA che  -> day chu moi trung day dai: chu moi phu len vet mo
+      · dai CHUA che -> day chu moi o tren dinh dai + `KHOANG_HO_DAI`
+
+    ⚠️ `margin_v` tinh bang pixel cua PlayRes (= khung that, xem
+       `viet_tep_ass`), nen can `cao`. `safe_area_percent` ve 0: `ass_builder`
+       lay `max(margin_v, safe)` va se day chu khoi dai ma khong bao.
+    """
+    if not ho_so or ho_so.get("che_do") != CHE_DO_TU_DONG or cao <= 0:
+        return {}
+    dai = ho_so.get("dai_phu_de_goc") or None
+    if not dai:
+        return {}
+    if dai.get("da_che"):
+        mv = (1.0 - float(dai["y1"])) * cao
+    else:
+        mv = (1.0 - float(dai["y0"]) + KHOANG_HO_DAI) * cao
+    return {"alignment": 2, "margin_v": max(0, int(round(mv))),
+            "safe_area_percent": 0}
+
+
 def nhan_manh(ho_so: dict | None) -> tuple[str, str]:
     """Che do + mau NHAN MANH cuoi cung. Tra `(che_do, mau)`.
 
@@ -250,20 +350,29 @@ def nhan_manh(ho_so: dict | None) -> tuple[str, str]:
             str(tinh.get("highlight_color") or mau))
 
 
-def cau_hinh_kieu(ho_so: dict | None):
-    """Cau hinh CUOI CUNG: preset + tinh chinh cua khach.
+def cau_hinh_kieu(ho_so: dict | None, *, cao: int = 0):
+    """Cau hinh CUOI CUNG: preset + vi tri tu dong + tinh chinh cua khach.
 
-    🔑 Mot cho tinh, va ca giao dien lan trinh render deu goi no. Pha 07 da tra
-       gia cho bai hoc nguoc lai: muoi cho doc `run.settings`, hai cho lech nhau
-       ve mot mac dinh, va mot lan chay **chay** o che do nay trong khi **bang
-       chung QC ghi** che do kia.
+    🔑 Mot cho tinh, va ca xem truoc lan trinh render deu goi no (qua
+       `viet_tep_ass`). Pha 07 da tra gia cho bai hoc nguoc lai: muoi cho doc
+       `run.settings`, hai cho lech nhau ve mot mac dinh, va mot lan chay
+       **chay** o che do nay trong khi **bang chung QC ghi** che do kia.
+
+    Thu tu: preset < vi tri tu dong < tinh chinh cua khach (khach chinh tay
+    `alignment`/`margin_v` thi tay khach thang).
+
+    ⚠️ Vi tri tu dong ap bang `model_copy`, KHONG qua duyet: `margin_v` cua mo
+       hinh chan o 200 (mot tran cho o nhap cua khach), trong khi dai phu de
+       goc o 0,76 tren khung 1080 can 259. Gia tri nay do he thong tinh tu hinh
+       hoc, khong phai khach go.
     """
     kieu = str((ho_so or {}).get("kieu") or KIEU_MAC_DINH)
     goc = cau_hinh_goc(kieu)
     tinh = (ho_so or {}).get("tinh_chinh") or {}
-    if not tinh:
-        return goc
-    return _mo_hinh_kieu()(**{**goc.model_dump(), **tinh})
+    cfg = _mo_hinh_kieu()(**{**goc.model_dump(), **tinh}) if tinh else goc
+    vt = {k: v for k, v in vi_tri_tu_dong(ho_so, cao=cao).items()
+          if k not in tinh}
+    return cfg.model_copy(update=vt) if vt else cfg
 
 
 def luoc_do_tinh_chinh() -> list[dict]:
@@ -341,6 +450,21 @@ def chuan_hoa(tho) -> dict | None:
         raise PhuDeLoi(_t('Cách chia dòng phụ đề không hợp lệ.'))
     ra["phan_doan"] = phan_doan
 
+    # ⭐ `chu` chi o `tu_chon` va `tat` (tep `.srt` rieng cung co nguon chu):
+    #    ba che do con lai da CO DINH nguon chu (xem `chu_cua`). Nhan no o do
+    #    la nhan mot yeu cau mau thuan — `nguon` ma chu = dich — roi lang le
+    #    chon mot ben.
+    chu = tho.get("chu")
+    if chu not in (None, ""):
+        if che_do not in (CHE_DO_TU_CHON, CHE_DO_TAT):
+            raise PhuDeLoi(_t('Chế độ này đã cố định nguồn chữ; chỉ “tự chọn '
+                              'kiểu” mới chọn được lời gốc hay bản dịch.'))
+        if chu not in CHU:
+            raise PhuDeLoi(_t('Nguồn chữ phụ đề không hợp lệ.'))
+        # Giu THUA: `dich` la mac dinh, khong ghi.
+        if chu != CHU_DICH:
+            ra["chu"] = chu
+
     # ⛔ `kieu` CHI co nghia khi dot: `.srt` khong mang kieu chu nao. Ghi no vao
     #    mot ho so chi-xuat-SRT la ghi mot truong khong ai doc — va no lam hai
     #    lan chay giong het nhau co hai van tay khac nhau.
@@ -371,7 +495,7 @@ def co_dot_vao_hinh(ho_so: dict | None) -> bool:
     #    hai nhanh thi ca nguoi doc lan may deu khong phai suy.
     if not ho_so:
         return False
-    return ho_so.get("che_do") in (CHE_DO_TU_DONG, CHE_DO_TU_CHON)
+    return ho_so.get("che_do") in CHE_DO_DOT
 
 
 def _kieu_de_hien() -> list:
@@ -409,13 +533,21 @@ def cho_giao_dien() -> dict:
         "che_do": [
             (CHE_DO_TAT, N_('Không khắc lên hình'),
              N_('Video giữ nguyên. Bạn vẫn có thể xuất tệp phụ đề rời.')),
-            (CHE_DO_TU_DONG, N_('Khắc lên hình — kiểu mặc định'),
-             N_('Phụ đề được khắc thẳng vào video, dùng kiểu chữ chuẩn.')),
+            (CHE_DO_TU_DONG, N_('Tự động — bản dịch, tránh phụ đề gốc'),
+             N_('Khắc bản dịch (đúng lời thuyết minh) và tự đặt đè lên dải '
+                'phụ đề gốc bạn đã đánh dấu.')),
+            (CHE_DO_NGUON, N_('Lời gốc'),
+             N_('Khắc lời gốc của video, kiểu chữ chuẩn.')),
+            (CHE_DO_DICH, N_('Bản dịch'),
+             N_('Khắc bản dịch, kiểu chữ chuẩn.')),
             (CHE_DO_TU_CHON, N_('Khắc lên hình — tự chọn kiểu'),
-             N_('Như trên, nhưng bạn chọn kiểu chữ ở ô bên dưới.')),
+             N_('Bạn chọn kiểu chữ, tinh chỉnh, và chọn lời gốc hay bản dịch.')),
         ],
         "che_do_mac_dinh": CHE_DO_MAC_DINH,
         "che_do_can_kieu": CHE_DO_TU_CHON,
+        "che_do_tu_dong": CHE_DO_TU_DONG,
+        # ⭐ Nguon chu — chi hien o `tu_chon` (xem `chuan_hoa`).
+        "chu": [(CHU_DICH, N_('Bản dịch')), (CHU_NGUON, N_('Lời gốc'))],
         # ⛔ **Nhan, khong phai id.** `tiktok_bold` la mot dinh danh cho MA
         #    doc; dua no ra man hinh la bat khach doc dinh danh. `style_registry`
         #    da co san `label` va `description` — dung chung.
@@ -511,8 +643,14 @@ def ha_ve_srt(ho_so: dict | None) -> dict | None:
         return dict(ho_so)
     if not ho_so.get("xuat_srt"):
         return None
-    ra = {k: v for k, v in ho_so.items() if k != "kieu"}
+    # ⚠️ Giu NGUON CHU: ha `nguon` ve `tat` ma quen `chu` se giao mot `.srt`
+    #    BAN DICH cho nguoi da chon loi goc — dung chu, sai thu tieng.
+    chu = chu_cua(ho_so)
+    ra = {k: v for k, v in ho_so.items()
+          if k not in ("kieu", "tinh_chinh", "chu", "dai_phu_de_goc")}
     ra["che_do"] = CHE_DO_TAT
+    if chu != CHU_DICH:
+        ra["chu"] = chu
     return ra
 
 
@@ -529,26 +667,24 @@ KY_TU_MOI_DONG = 42
 def _ngat_dong(chu: str) -> tuple[str, int]:
     """Chia mot cau thanh toi da `SO_DONG_TOI_DA` dong. Tra (van, so_dong).
 
-    ⚠️ Ngat theo TU, khong theo ky tu: cat giua mot tu tieng Viet co dau cho ra
-       hai manh khong doc duoc, va no chi lo ra khi nhin tep ra.
+    🔑 **Ngat dong la cua `autosubvideo.segmenter.wrap_lines`, khong viet o
+       day.** Ban tu viet cu chi ngat theo dau cach — mot cau tieng Trung (che
+       do `nguon`) ra MOT dong dai vo han. Sua o app chu thi AutoSub huong luon.
+
+    ⚠️ Van ngat theo TU voi chu co dau cach: cat giua mot tu tieng Viet co dau
+       cho ra hai manh khong doc duoc.
     """
-    tu = str(chu or "").split()
-    if not tu:
+    from apps.autosubvideo.segmenter import wrap_lines
+
+    s = " ".join(str(chu or "").split())
+    if not s:
         return "", 0
-    dong: list[str] = []
-    hien = ""
-    for t in tu:
-        thu = (hien + " " + t).strip()
-        if hien and len(thu) > KY_TU_MOI_DONG and len(dong) + 1 < SO_DONG_TOI_DA:
-            dong.append(hien)
-            hien = t
-        else:
-            hien = thu
-    dong.append(hien)
+    dong = wrap_lines(s, KY_TU_MOI_DONG, SO_DONG_TOI_DA)
     return "\\N".join(dong), len(dong)
 
 
-def su_kien_tu_ke_hoach(ke_hoach: dict, van_ban: dict) -> list:
+def su_kien_tu_ke_hoach(ke_hoach: dict, van_ban: dict, *,
+                        chu: str = CHU_DICH) -> list:
     """`ke_hoach` + van ban da xu ly -> `SubtitleEvent` tren TRUC RA.
 
     ⛔ **`van_ban` la tai lieu `CONTENT_PROCESS`, KHONG phai ban ke tieng.**
@@ -571,26 +707,33 @@ def su_kien_tu_ke_hoach(ke_hoach: dict, van_ban: dict) -> list:
 
     ⚠️ Bo qua muc khong co chu: mot doan chua dich xong khong duoc thanh mot o
        phu de rong nhap nhay tren man hinh.
+
+    ⭐ `chu` chon KHOA cua muc: `dich` -> `chu` (ban dich), `nguon` -> `goc`
+       (loi cua ban ghi chuan). Ca hai nam trong CUNG muc, cung `ma`, nen phu de
+       loi goc dung dung moc cua ban dich — khong co truc thoi gian thu hai.
     """
     from apps.autosubvideo.segmenter import SubtitleEvent
 
+    if chu not in _KHOA_CHU:
+        raise PhuDeLoi(_t('Nguồn chữ phụ đề không hợp lệ.'))
+    khoa = _KHOA_CHU[chu]
     chu_theo_ma: dict[str, str] = {}
     for d in (van_ban or {}).get("muc") or []:
         ma = str(d.get("ma") or "")
         if ma:
-            chu_theo_ma[ma] = str(d.get("chu") or "")
+            chu_theo_ma[ma] = str(d.get(khoa) or "")
 
     ra = []
     for i, m in enumerate((ke_hoach or {}).get("doan") or []):
-        chu = chu_theo_ma.get(str(m.get("ma") or ""), "").strip()
-        if not chu:
+        cau = chu_theo_ma.get(str(m.get("ma") or ""), "").strip()
+        if not cau:
             continue
         bat = float(m.get("dat_tai_ms") or 0) / 1000.0
         dai = float(m.get("dai_ms") or 0) / 1000.0
         if dai <= 0:
             continue
-        hien, so_dong = _ngat_dong(chu)
-        ra.append(SubtitleEvent(start=bat, end=bat + dai, text=chu,
+        hien, so_dong = _ngat_dong(cau)
+        ra.append(SubtitleEvent(start=bat, end=bat + dai, text=cau,
                                 display_text=hien, line_count=so_dong,
                                 scene_id=str(m.get("ma") or ""), index=i))
     return ra
@@ -668,14 +811,15 @@ def viet_tep_ass(ho_so, goi_su_kien, thu_muc, *,
     #    ve `default` nhu `get_config`. Chan o day mot lan nua chu khong tin
     #    `chuan_hoa`: hai duong goi khac nhau, va duong nay chay khi `chuan_hoa`
     #    da lui ve qua khu tu lau (ban dung cu).
-    kieu = cau_hinh_kieu(ho_so)
-
     # ⚠️ Truyen HAI tham so ro rang thay vi do mot `**dict`: `build_ass` co
     #    tham so vi tri o dau, nen mypy khop `**dict[str, int]` vao tham so thu
     #    tam (`title: str`) va bao sai kieu. Mot `**dict` cung giau di viec tham
     #    so nao that su duoc truyen.
     rong_ass = int(rong) if rong > 0 and cao > 0 else 1920
     cao_ass = int(cao) if rong > 0 and cao > 0 else 1080
+    # ⭐ `cao` di vao cau hinh: vi tri tu dong tinh `margin_v` bang pixel cua
+    #    PlayRes, va PlayRes chinh la `cao_ass`.
+    kieu = cau_hinh_kieu(ho_so, cao=cao_ass)
     # ⭐ `build_ass` nhan che do nhan manh qua THAM SO, khong doc tu `style` —
     #    nen phai chuyen tay. Doc tu chinh cau hinh cuoi cung de mot tinh chinh
     #    `highlight_mode` co tac dung that, khong chi nam trong ho so.
@@ -704,3 +848,246 @@ def viet_tep_srt(ho_so, goi_su_kien, thu_muc) -> str:
     from apps.autosubvideo.ass_builder import build_srt
 
     return build_srt(su_kien, str(Path(thu_muc) / TEN_TEP_SRT))
+
+
+# ── Chot o COMPOSE: vi tri tu dong + su kien + glyph ───────────────────────
+
+#: Font he thong ma libass tim toi khi font cua kieu thieu glyph (do 22/09 tren
+#: may A: `Montserrat`/`Anton`/`Oswald` KHONG cai, chu Han va tieng Viet van ra
+#: dung — libass tu lui qua DirectWrite). Danh sach nay la phia BAO THU cua
+#: phep kiem: mot ky tu khong font nao o day ve duoc thi rat co the ra o vuong.
+FONT_DU_PHONG_GLYPH: tuple[str, ...] = ("Arial", "Microsoft YaHei", "SimSun")
+
+#: Ho font chung cua CSS/fontconfig — `matplotlib` phan giai chung ra DejaVu
+#: cua CHINH NO, khong phai font libass dung. Hoi chung la hoi sai may.
+_HO_CHUNG = {"sans-serif", "serif", "cursive", "monospace", "fantasy"}
+
+
+def glyph_thieu(ho_so: dict | None, goi_su_kien) -> str | None:
+    """Ky tu cua phu de ma KHONG font nao (kieu -> du phong) ve duoc.
+
+    `""` = du glyph · chuoi = ky tu thieu · `None` = khong phan giai duoc font
+    nao tren may nay (khong biet — khong phai "du").
+
+    ⛔ `font_checker.is_font_available` tra loi *"co font ten do khong"*, khong
+       tra loi *"font do ve duoc chu Han khong"*: Arial co mat moi may Windows
+       va khong co mot glyph Han nao. Nen hoi `missing_glyphs` (mo rong o app
+       chu), tung font mot, chi mang theo phan con thieu.
+    """
+    from apps.autosubvideo.font_checker import missing_glyphs
+
+    tat_ca = "".join(str(g.get("text") or "") for g in (goi_su_kien or ()))
+    if not tat_ca.strip():
+        return ""
+    con: str = tat_ca
+    cfg = cau_hinh_kieu(ho_so)
+    ten = [cfg.font_family, *str(cfg.font_fallback or "").split(","),
+           *FONT_DU_PHONG_GLYPH]
+    da_hoi: set[str] = set()
+    biet = False
+    for f in (t.strip() for t in ten):
+        if not f or f.lower() in _HO_CHUNG or f.lower() in da_hoi:
+            continue
+        da_hoi.add(f.lower())
+        m = missing_glyphs(f, con)
+        if m is None:
+            continue
+        biet, con = True, m
+        if not con:
+            return ""
+    return con if biet else None
+
+
+def chot_o_compose(ho_so: dict, *, ke_hoach: dict, van_ban: dict,
+                   vung=()) -> dict:
+    """Hoan tat ho so o COMPOSE: dai phu de goc, su kien, glyph. Tra CHINH NO.
+
+    🔑 Moi quyet dinh ve NOI DUNG phu de chot o day, mot lan, va di theo ban
+       dung. RENDER va XEM TRUOC chi doc ho so nay qua `viet_tep_ass`.
+    """
+    import logging
+
+    if ho_so.get("che_do") == CHE_DO_TU_DONG:
+        dai = dai_phu_de_goc(vung)
+        if dai:
+            ho_so["dai_phu_de_goc"] = dai
+    ho_so["su_kien"] = su_kien_ra_goi(
+        su_kien_tu_ke_hoach(ke_hoach, van_ban, chu=chu_cua(ho_so)))
+    if co_dot_vao_hinh(ho_so):
+        thieu = glyph_thieu(ho_so, ho_so["su_kien"])
+        if thieu:
+            # ⚠️ Ghi lai, KHONG chan: libass con lui qua DirectWrite rong hon
+            #    danh sach bao thu o tren. Ho so mang no thi QC va nguoi doc
+            #    ban dung thay duoc.
+            ho_so["glyph_thieu"] = thieu[:64]
+            logging.getLogger(__name__).warning(
+                "phu de: %d ky tu khong font nao ve duoc", len(thieu))
+    return ho_so
+
+
+# ── XEM TRUOC: cung ho so, cung `.ass`, cung chuoi loc voi ban render ──────
+#
+# 🔴 **Mot xem truoc chi dang tin khi no KHONG THE lech ban render.** Nen o day
+#    khong co mot dong dung phu de nao cua rieng no:
+#
+#      ho so    <- `tu_form`             (CHINH cua nop that)
+#      .ass     <- `viet_tep_ass`        (CHINH ham RENDER goi)
+#      chuoi loc<- `che_do_render.loc_cat_noi` (CHINH chuoi `ket_xuat` dung,
+#                   ca vung che lan `ass=`)
+#
+#    Khac biet DUY NHAT la dau vao (mot khung hinh thay vi video) va cau mau
+#    thay vi ban dich that. Bang chung do tung diem anh: L_PHU_DE.md §4.
+
+#: Khung xem truoc lay o giay thu may TRONG su kien. Qua hieu ung vao
+#: (`animation_ms` toi da 1000 nhung 9/9 preset <= 300) de khach thay trang thai
+#: DUNG YEN cua chu, khong phai khung dau cua `fade`.
+XEM_TRUOC_GIAY = 1.0
+XEM_TRUOC_DAI_SU_KIEN = 4.0
+XEM_TRUOC_TRAN_BYTE = 8 * 1024 * 1024
+XEM_TRUOC_CANH_TOI_DA = 3840
+
+#: Cau mau theo NGON NGU (khong phai theo che do): che do chon nguon chu, nguon
+#: chu + cap ngon ngu chon cau. Dai du hai dong de khach thay cach ngat dong.
+CAU_MAU = {
+    "zh": "从屠宰场运送过来的牛肠还带着温热，清洗牛肠才是最关键的一步",
+    "en": "The tripe arrives from the slaughterhouse still warm, "
+          "and cleaning it is the most important step",
+    "vi": "Lòng bò chở từ lò mổ về vẫn còn ấm, và rửa sạch "
+          "mới là bước quan trọng nhất",
+}
+
+
+def cau_mau(ho_so: dict | None, *, nguon: str = "", dich: str = "") -> str:
+    """Cau mau cho xem truoc. Nguon `auto`/rong -> `zh` (video nghiem thu)."""
+    from . import ngon_ngu as nn
+
+    if chu_cua(ho_so) == CHU_NGUON:
+        ma = nn.chuan_nguon(nguon)
+        return CAU_MAU.get(ma, CAU_MAU[nn.ZH])
+    return CAU_MAU.get(nn.chuan_dich(dich), CAU_MAU[nn.DICH_MAC_DINH])
+
+
+#: Dinh dang diem anh cua video DUA VAO render (h264 nguon cua khach). Xem
+#: truoc doi khung anh sang dung dinh dang nay TRUOC chuoi loc.
+DINH_DANG_VAO = "yuv420p"
+
+
+def lenh_xem_truoc(*, ffmpeg: str, anh: str, duong_ass: str, vung,
+                   duong_tam: str, duong_ra: str) -> list[list[str]]:
+    """HAI lenh ffmpeg dung MOT khung xem truoc — qua `loc_cat_noi` cua render.
+
+    🔴 **Buoc 1 (khung anh -> video `yuv420p` khong mat) khong phai trang tri.**
+       Do 22/09: cung chuoi loc, cung diem anh, dau vao `rgb24` tu tep PNG va
+       dau vao `rgb24` tu tep MOV cho ra **1.488 diem anh lech** (toi 3 muc) o
+       vung lam mo — ffmpeg thuong luong dinh dang KHAC nhau tuy dau vao (mot
+       ben doi sang `yuva420p` ngay dau, ben kia doi SAU `crop`). Render that doc
+       h264 `yuv420p`; dua xem truoc ve dung dinh dang do thi chuoi loc thuong
+       luong y het, va xem truoc khop render TUNG diem anh (L_PHU_DE.md §4).
+
+    ⚠️ `-ss` dat SAU `-i` (tim o dau RA): bo loc van thay moc that cua tung
+       khung, nen `ass=` ve dung trang thai o giay `XEM_TRUOC_GIAY`. Dat `-ss`
+       truoc `-i` se dat lai moc ve 0 va xem truoc luon la khung dau hieu ung.
+    """
+    from . import che_do_render as cdr
+
+    dai = XEM_TRUOC_GIAY + 0.2
+    chuan = [ffmpeg, "-v", "error", "-nostdin", "-y",
+             "-loop", "1", "-framerate", "25", "-t", f"{dai:.2f}", "-i", anh,
+             "-pix_fmt", DINH_DANG_VAO, "-c:v", "ffv1", duong_tam]
+    loc = cdr.loc_cat_noi([(0.0, dai)], vung=vung, duong_ass=duong_ass)
+    dung = [ffmpeg, "-v", "error", "-nostdin", "-y", "-i", duong_tam,
+            "-filter_complex", loc, "-map", "[ra]",
+            "-ss", f"{XEM_TRUOC_GIAY:.2f}", "-frames:v", "1",
+            "-pix_fmt", "rgb24", duong_ra]
+    return [chuan, dung]
+
+
+def xem_truoc(ho_so: dict | None, anh: bytes, *, vung=(), nguon: str = "",
+              dich: str = "") -> bytes:
+    """Mot khung PNG: `anh` + vung che + phu de theo `ho_so`. Nem `PhuDeLoi`."""
+    import io
+    import subprocess
+    import tempfile
+
+    from PIL import Image
+
+    if not anh or len(anh) > XEM_TRUOC_TRAN_BYTE:
+        raise PhuDeLoi(_t('Ảnh khung hình xem trước rỗng hoặc quá lớn.'))
+    try:
+        with Image.open(io.BytesIO(anh)) as im:
+            dang, (rong, cao) = im.format, im.size
+    except Exception as exc:
+        raise PhuDeLoi(_t('Ảnh khung hình xem trước không đọc được.')) from exc
+    if dang not in ("PNG", "JPEG") or not (
+            16 <= rong <= XEM_TRUOC_CANH_TOI_DA and 16 <= cao <= XEM_TRUOC_CANH_TOI_DA):
+        raise PhuDeLoi(_t('Ảnh khung hình xem trước không đọc được.'))
+
+    # Vung xem truoc ap CA khung: mot khung khong co truc thoi gian.
+    vung_xt = [{k: v[k] for k in ("loai", "x0", "y0", "x1", "y1")}
+               for v in (vung or ())]
+    ho = dict(ho_so) if ho_so else None
+    if ho and ho.get("che_do") == CHE_DO_TU_DONG:
+        dai = dai_phu_de_goc(vung_xt)
+        if dai:
+            ho["dai_phu_de_goc"] = dai
+
+    from apps.autosubvideo.segmenter import SubtitleEvent
+
+    from . import nhap_media
+
+    with tempfile.TemporaryDirectory(prefix="asv_pd_xt_") as tam:
+        duong_anh = str(Path(tam) / ("khung.png" if dang == "PNG" else "khung.jpg"))
+        Path(duong_anh).write_bytes(anh)
+        duong_ass = ""
+        if co_dot_vao_hinh(ho):
+            cau = cau_mau(ho, nguon=nguon, dich=dich)
+            hien, so_dong = _ngat_dong(cau)
+            su_kien = [SubtitleEvent(start=0.0, end=XEM_TRUOC_DAI_SU_KIEN,
+                                     text=cau, display_text=hien,
+                                     line_count=so_dong)]
+            duong_ass = viet_tep_ass(ho, su_kien_ra_goi(su_kien), tam,
+                                     rong=rong, cao=cao)
+        duong_ra = str(Path(tam) / "xem_truoc.png")
+        for cmd in lenh_xem_truoc(ffmpeg=nhap_media.media.ffmpeg_bin(),
+                                  anh=duong_anh, duong_ass=duong_ass,
+                                  vung=vung_xt, duong_ra=duong_ra,
+                                  duong_tam=str(Path(tam) / "khung.mkv")):
+            try:
+                kq = subprocess.run(cmd, capture_output=True, timeout=30,
+                                    check=False)
+            except subprocess.TimeoutExpired as exc:
+                raise PhuDeLoi(_t('Dựng khung xem trước quá hạn.')) from exc
+            if kq.returncode != 0:
+                raise PhuDeLoi(_t('Không dựng được khung xem trước.'))
+        if not Path(duong_ra).is_file():
+            raise PhuDeLoi(_t('Không dựng được khung xem trước.'))
+        return Path(duong_ra).read_bytes()
+
+
+def xem_truoc_tu_form(phu_de: str, *, anh: bytes, vung: str = "",
+                      preset: str = "", nguon: str = "", dich: str = "") -> bytes:
+    """Cua HTTP cua xem truoc. Duyet Y HET nop that (`tu_form`) roi dung khung.
+
+    🔑 Nam o day, khong o `routes.py` (tran 900 dong, `test_423`): route chi
+       doc form va goi mot ham.
+
+    ⭐ Preset giu hinh: vung che KHONG ap (ban dung bo vung o duong sao chep),
+       nen xem truoc cung khong ap — va `tu_form` da tu choi khac vao hinh o do.
+    """
+    import json
+
+    from . import vung_che
+    from .hop_dong_v4 import PRESET_GIU_HINH
+
+    ho_so = tu_form(phu_de, preset=preset)
+    try:
+        tho_vung = json.loads(vung) if (vung or "").strip() else []
+    except (ValueError, TypeError) as exc:
+        raise PhuDeLoi(_t('Vùng che không đọc được.')) from exc
+    try:
+        ds_vung = vung_che.chuan_hoa(tho_vung)
+    except vung_che.VungLoi as exc:
+        raise PhuDeLoi(str(exc)) from exc
+    if preset == PRESET_GIU_HINH:
+        ds_vung = []
+    return xem_truoc(ho_so, anh, vung=ds_vung, nguon=nguon, dich=dich)
