@@ -57,6 +57,7 @@ class LoiCaiDat(features.AsvError):
 KHOA_NHAN = frozenset({
     "timing_mode", "preset", "che_do_giong", "giong_id", "ngon_ngu_nguon",
     "ngon_ngu_dich", "vung", "cat", "lop_phu", "tu_dien", "phu_de", "am_thanh",
+    "bien_tap",
     cai_dat_mod.KHOA_SCHEMA, cai_dat_mod.KHOA_BI_DANH_GIONG,
 })
 

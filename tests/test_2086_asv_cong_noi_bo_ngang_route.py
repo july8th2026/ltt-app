@@ -20,6 +20,7 @@ _LOP = [{"chu": "Dang ky kenh", "x": 0.1, "y": 0.8, "co_chu": 0.06,
          "mau": "trang", "vien": True}]
 _PHU_DE = {"xuat_srt": True}
 _AM = {"nen_db": -12.0}
+_BT = {"toc_do": 1.25}
 
 
 def _id_cua(email: str) -> str:
@@ -72,7 +73,7 @@ def test_route_va_cong_cho_CUNG_ho_so(moi_truong, tmp_path):
         ngon_ngu_nguon="en", ngon_ngu_dich="vi", tu_dien="Huệ = Huê",
         cat=json.dumps([0.1, 0.9]), vung=json.dumps(_VUNG),
         lop_phu=json.dumps(_LOP), phu_de=json.dumps(_PHU_DE),
-        am_thanh=json.dumps(_AM))
+        am_thanh=json.dumps(_AM), bien_tap=json.dumps(_BT))
     assert r.status_code == 200, r.text[:400]
     tu_route = _run_moi_nhat(chu)
 
@@ -80,12 +81,13 @@ def test_route_va_cong_cho_CUNG_ho_so(moi_truong, tmp_path):
         "timing_mode": "fit_original", "preset": "smart_localize",
         "giong_id": "Minh Đức", "ngon_ngu_nguon": "en", "ngon_ngu_dich": "vi",
         "tu_dien": {"Huệ": "Huê"}, "cat": [0.1, 0.9], "vung": _VUNG,
-        "lop_phu": _LOP, "phu_de": _PHU_DE, "am_thanh": _AM})
+        "lop_phu": _LOP, "phu_de": _PHU_DE, "am_thanh": _AM,
+        "bien_tap": _BT})
 
     assert phieu.run_id != tu_route.id
     assert dict(phieu.cai_dat) == dict(tu_route.settings)
     # Va ho so do khong rong: moi tinh nang da thuc su vao.
-    for k in ("cat", "vung", "lop_phu", "phu_de", "am_thanh"):
+    for k in ("cat", "vung", "lop_phu", "phu_de", "am_thanh", "bien_tap"):
         assert k in tu_route.settings, k
     assert tu_route.settings["tu_dien"] == {"Huệ": "Huê"}
 
