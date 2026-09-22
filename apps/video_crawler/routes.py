@@ -147,5 +147,5 @@ def hang_doi(request: Request, user: str = Depends(require_login), db=Depends(ge
     u = user_hien_tai(request)
     return templates.TemplateResponse(request, "vc_hang_doi.html", {
         "lich_su": features.lich_su(db, u.id, gioi_han=20) if u else [],
-        "thong_ke": features.thong_ke(db, u.id) if u else {},
+        "thong_ke": features.thong_ke(db, u.id) if u else {}, "oob": True,
     })

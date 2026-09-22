@@ -13,7 +13,9 @@
       {% for m in muc %}
       <label class="vc-muc">
         <input type="checkbox" name="muc" value="{{ m.id }}" checked>
-        {% if m.anh_bia %}<img src="{{ m.anh_bia }}" alt="" loading="lazy" referrerpolicy="no-referrer">{% else %}<span></span>{% endif %}
+        {#- Ảnh bìa ngoài (i.ytimg.com) bị CSP nền tảng chặn — đúng: không lộ IP khách cho bên thứ ba.
+            Proxy ảnh có allowlist: sổ lỗi SO_LOI.md (S8). -#}
+        <span class="vc-bia" aria-hidden="true">▶ {{ m.id }}</span>
         <span><b>{{ m.tieu_de or m.id }}</b><br><small class="muted">{{ m.tac_gia }}{% if m.thoi_luong_s %} · {{ m.thoi_luong_s // 60 }}:{{ "%02d" | format(m.thoi_luong_s % 60) }}{% endif %}</small></span>
         <input type="hidden" name="url_{{ m.id }}" value="{{ m.url }}">
         <input type="hidden" name="tieu_de_{{ m.id }}" value="{{ m.tieu_de }}">

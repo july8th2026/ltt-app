@@ -1,4 +1,5 @@
 {% import "_ui.html" as ui %}
+{% if oob %}<div class="vc-stats" id="vc-thong-ke" aria-label="Thống kê của bạn" hx-swap-oob="true">{% include "vc_thong_ke.html" %}</div>{% endif %}
 <h2>Hàng đợi &amp; lịch sử của tôi</h2>
 {% if not lich_su %}
   <p class="muted">Chưa có lượt cào nào.</p>

@@ -270,3 +270,59 @@ def test_kham_pha_gioi_han_tan_suat_theo_user(db, kho, nguoi, monkeypatch):
     with pytest.raises(features.QuaTanSuat):
         features.kiem_tan_suat(db, "u1")
     features.kiem_tan_suat(db, "u2")          # user khác không bị ảnh hưởng
+
+
+class _CtxGhi:
+    def __init__(self):
+        self.goi = []
+
+    def progress(self, p, msg=""):
+        self.goi.append(p)
+
+
+def test_tien_do_chi_tang_va_luong_tu_hoa():
+    """Kiểm GUI 22/09: yt-dlp tải luồng hình rồi luồng tiếng, mỗi luồng đếm lại từ 0 ⇒ thanh tiến độ giật lùi
+    (47% → 3%), và mỗi % thành một dòng trong lịch sử job. Tiến độ phải đơn điệu và theo bước."""
+    from apps.video_crawler.jobs import _TienDo
+    ctx = _CtxGhi()
+    td = _TienDo(ctx, 2)
+    for p in (0, 1, 4, 8, 17, 46, 98, 3, 7, 31, 99):      # mục 1: hình rồi tiếng
+        td.bao(p, "đang tải")
+    td.i = 1
+    for p in (0, 50, 100):
+        td.bao(p, "đang tải")
+    assert ctx.goi == sorted(ctx.goi), ctx.goi                 # không bao giờ lùi
+    assert len(ctx.goi) == len(set(ctx.goi))                   # không ghi trùng một mức
+    assert all(p % 5 == 0 for p in ctx.goi), ctx.goi           # bước 5%
+    assert len(ctx.goi) <= 21
+
+
+def test_xong_job_dat_tien_do_100_kem_thong_diep(db, kho, nguoi, monkeypatch):
+    _dung_adapter(monkeypatch, AdapterGia())
+    job = _chay(db, _nop_tai(db, "u1", ["a", "b"]))
+    assert job.progress == 100
+    assert job.progress_msg.startswith("Xong")
+
+
+def test_moi_muc_deu_trung_thi_bao_ro_cho_khach_khong_tru_tien(db, kho, nguoi, monkeypatch):
+    """Kiểm GUI 22/09: nhánh 'mọi mục đều đã tải' hoàn tất im lặng — khách thấy 'tìm thấy 1 video' rồi Done
+    mà không có tệp. Phải báo rõ và không tính tiền."""
+    from apps.video_crawler import features
+    from platform_core import job_events
+    from platform_core.models import JOB_DONE
+
+    _dung_adapter(monkeypatch, AdapterGia())
+    _chay(db, _nop_tai(db, "u1", ["a"]))
+    _dung_adapter(monkeypatch, AdapterGia(muc=[_muc("a")]))
+    params = features.dung_params_tai(owner_id="u1", nen_tang="youtube",
+                                      nguon={"che_do": "tu_khoa", "dau_vao": "meo", "so_luong": 1,
+                                             "khong_trung": True}, phan_giai=_DNS)
+    job = features.nop(db, owner_id="u1", job_type="video_crawler.tai", params=params)
+    db.commit()
+    job = _chay(db, job.id)
+    assert job.status == JOB_DONE
+    assert job.result["bo_qua_trung"] == 1 and job.result["video_keys"] == []
+    assert "Không có video mới" in job.progress_msg
+    ma = [e.event_code for e in job_events.timeline(db, job.id)]
+    assert "bo_qua_trung" in ma
+    assert _so_du(db, "u1") == 99

@@ -25,6 +25,8 @@ JOB_TAI = "video_crawler.tai"
 
 #: Nhịp tim tối thiểu: ngưỡng mồ côi của nền tảng là 5 phút (platform_core/jobs.py ORPHAN_TIMEOUT).
 _NHIP_TIM_S = 30.0
+#: Bước tiến độ (%).
+_BUOC = 5
 
 
 def _adapter(nen_id: str):
@@ -61,14 +63,19 @@ class _TienDo:
         self._luc = 0.0
 
     def bao(self, phan_tram: int, thong_diep: str = "") -> None:
+        """Đơn điệu + bước 5%. yt-dlp tải luồng hình rồi luồng tiếng, mỗi luồng đếm lại từ 0 — không chặn
+        thì thanh tiến độ giật lùi và mỗi % thành một dòng lịch sử job (kiểm GUI 22/09)."""
         if self.ctx is None:
             return
         p = max(0, min(int(phan_tram), 100))
-        tong_pct = int((self.i + p / 100) / self.tong * self.tran)
+        tong_pct = int((self.i + p / 100) / self.tong * self.tran) // _BUOC * _BUOC
         bay_gio = time.monotonic()
-        if tong_pct != self._pct or bay_gio - self._luc >= _NHIP_TIM_S:
+        if tong_pct > self._pct:
             self._pct, self._luc = tong_pct, bay_gio
             self.ctx.progress(tong_pct, thong_diep[:200])
+        elif bay_gio - self._luc >= _NHIP_TIM_S:          # nhịp tim (ngưỡng mồ côi 5 phút), không đổi %
+            self._luc = bay_gio
+            self.ctx.progress(max(self._pct, 0), thong_diep[:200])
 
 
 def _su_kien(ctx, ma: str, thong_diep: str) -> None:
@@ -109,6 +116,8 @@ def _xu_ly_kham_pha(params: dict, ctx) -> dict:
     adapter = _adapter(params["nen_tang"])
     td = _TienDo(ctx, 1)
     muc, bo = _kham_pha(adapter, params["nen_tang"], params, params["owner_id"], td.bao)
+    if ctx is not None:
+        ctx.progress(100, f"Tìm thấy {len(muc)} video")
     return {"muc": [m.to_dict() for m in muc], "bo_qua_trung": bo}
 
 
@@ -125,7 +134,10 @@ def _xu_ly_tai(params: dict, ctx) -> dict:
         muc = [CrawlItem(nen_tang=nen_id, id=m["id"], url=m["url"], tieu_de=m.get("tieu_de", ""))
                for m in params["muc"]]
     if not muc:
-        if bo:
+        if bo:   # mọi mục đều đã tải trước đó: hoàn tất, KHÔNG tính tiền, và nói rõ (kiểm GUI 22/09)
+            _su_kien(ctx, "bo_qua_trung", f"Bỏ qua {bo} video đã tải trước đó")
+            if ctx is not None:
+                ctx.progress(100, f"Không có video mới — bỏ qua {bo} video đã tải trước đó")
             return {"muc": [], "video_keys": [], "loi": [], "bo_qua_trung": bo, "credit_cost": 0}
         from platform_core.jobs import LoiNguoiGoi
         raise LoiNguoiGoi("Không tìm thấy video nào.")
@@ -162,6 +174,8 @@ def _xu_ly_tai(params: dict, ctx) -> dict:
             _su_kien(ctx, "muc_xong", f"Đã tải {item.tieu_de or item.id}")
         if not xong:
             raise _loi_job(loi)
+        if ctx is not None:                    # trong khối dọn: huỷ đúng lúc này vẫn không để tệp mồ côi
+            ctx.progress(100, f"Xong: {len(xong)}/{len(muc)} video")
     except BaseException:
         for k in da_luu:
             try:
