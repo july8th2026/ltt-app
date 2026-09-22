@@ -84,7 +84,7 @@ def _tach_token(url: str) -> str:
 class XiaohongshuAdapter(YtdlpAdapter):
     nen_tang = "xiaohongshu"
     allowed_extractors = EXTRACTOR_CHO_PHEP                                   # spec Sec.21
-    extractor_args: dict = {}                    # khong co extractor_args nao cho nen nay
+    extractor_args = {}                    # khong co extractor_args nao cho nen nay
     ie_key_video = ("XiaoHongShu",)
     impersonate = False        # khong bang chung donor/yt-dlp can impersonate cho xhs
 

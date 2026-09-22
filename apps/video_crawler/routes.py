@@ -8,6 +8,7 @@ Theo dõi tiến độ, huỷ và tải tệp dùng trang job có sẵn của n�
 from __future__ import annotations
 
 import os
+from typing import Any
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
@@ -34,14 +35,14 @@ def _la_htmx(request: Request) -> bool:
 
 
 def _nguoi(request: Request):
-    u = user_hien_tai(request)
+    u: Any = user_hien_tai(request)
     if u is None:
         raise features.LoiDauVao("Cần đăng nhập bằng tài khoản người dùng (không phải quản trị nội bộ).")
     return u
 
 
 def _trang(request: Request, user: str, db, *, loi: str = "", ma: int = 200) -> HTMLResponse:
-    u = user_hien_tai(request)
+    u: Any = user_hien_tai(request)
     return templates.TemplateResponse(request, "video_crawler.html", {
         "user": user, "nav": MANIFEST.slug, "app": MANIFEST,
         "csrf_token": issue_csrf_token(request),
@@ -115,7 +116,7 @@ def _ket_qua(request: Request, db, owner_id: str, job_id: str) -> HTMLResponse:
 
 @router.get("/kham-pha/{job_id}", response_class=HTMLResponse, dependencies=[Depends(_cong_co)])
 def ket_qua_kham_pha(request: Request, job_id: str, user: str = Depends(require_login), db=Depends(get_db)):
-    u = user_hien_tai(request)
+    u: Any = user_hien_tai(request)
     if u is None:
         raise HTTPException(status_code=404)
     return _ket_qua(request, db, u.id, job_id)
@@ -153,7 +154,7 @@ async def tai(request: Request, user: str = Depends(require_login), db=Depends(g
 
 @router.get("/hang-doi", response_class=HTMLResponse, dependencies=[Depends(_cong_co)])
 def hang_doi(request: Request, user: str = Depends(require_login), db=Depends(get_db)):
-    u = user_hien_tai(request)
+    u: Any = user_hien_tai(request)
     return templates.TemplateResponse(request, "vc_hang_doi.html", {
         "lich_su": features.lich_su(db, u.id, gioi_han=20) if u else [],
         "thong_ke": features.thong_ke(db, u.id) if u else {}, "oob": True, "app": MANIFEST,
@@ -169,8 +170,9 @@ async def luu_phien(request: Request, user: str = Depends(require_login), db=Dep
     if not verify_csrf_token(request, str(form.get("csrf_token") or "")):
         return _loi_form(request, user, db, "Phiên đã hết hạn — tải lại trang.")
     noi_dung = form.get("cookies_txt") or ""
+    from starlette.datastructures import UploadFile
     tep = form.get("cookies_tep")
-    if hasattr(tep, "read"):
+    if isinstance(tep, UploadFile):
         du_lieu = await tep.read(phien.TOI_DA_BYTE + 1)
         if du_lieu:
             noi_dung = du_lieu.decode("utf-8", errors="replace")
@@ -189,7 +191,7 @@ def xoa_phien(request: Request, nen_tang_id: str = Form("", alias="nen_tang"), c
               user: str = Depends(require_login), db=Depends(get_db)):
     if not verify_csrf_token(request, csrf_token):
         return _loi_form(request, user, db, "Phiên đã hết hạn — tải lại trang.")
-    u = user_hien_tai(request)
+    u: Any = user_hien_tai(request)
     if u is not None:
         phien.xoa(db, owner_id=u.id, nen_tang=nen_tang_id)
         db.commit()
@@ -208,7 +210,7 @@ def anh_bia_xem_truoc(request: Request, job_id: str, chi_so: int, user: str = De
                       db=Depends(get_db)):
     """Ảnh bìa của mục trong kết quả xem trước CỦA CHÍNH người dùng (SO_LOI L10). Không có ⇒ 404."""
     from apps.video_crawler import anh_bia
-    u = user_hien_tai(request)
+    u: Any = user_hien_tai(request)
     tim = anh_bia.url_cua(db, owner_id=u.id, job_id=job_id, chi_so=chi_so) if u else None
     if tim is None:
         raise HTTPException(status_code=404)

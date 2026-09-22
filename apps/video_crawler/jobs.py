@@ -13,6 +13,7 @@ Thoát bằng exception (kể cả huỷ) ⇒ xoá tệp đã lưu của job nà
 from __future__ import annotations
 
 import contextlib
+import logging
 import tempfile
 import time
 from pathlib import Path
@@ -22,6 +23,7 @@ from apps.video_crawler.adapters.base import CrawlItem, LoiCao, YeuCauCao
 
 JOB_KHAM_PHA = "video_crawler.kham_pha"
 JOB_TAI = "video_crawler.tai"
+_LOG = logging.getLogger(__name__)
 
 #: Nhịp tim tối thiểu: ngưỡng mồ côi của nền tảng là 5 phút (platform_core/jobs.py ORPHAN_TIMEOUT).
 _NHIP_TIM_S = 30.0
@@ -236,8 +238,8 @@ def _tai_voi(adapter, params: dict, ctx) -> dict:
         for k in da_luu:
             try:
                 kho.delete(k)
-            except Exception:  # noqa: BLE001 — dọn best-effort, lỗi gốc mới là thứ cần báo
-                pass
+            except Exception as loi_don:  # noqa: BLE001 — dọn best-effort; lỗi gốc mới là thứ cần báo
+                _LOG.warning("video_crawler: không dọn được tệp %s: %s", k, type(loi_don).__name__)
         raise
     if bo:
         _su_kien(ctx, "bo_qua_trung", f"Bỏ qua {bo} video đã tải trước đó")

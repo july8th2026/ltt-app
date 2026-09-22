@@ -62,7 +62,7 @@ _ID = re.compile(r"[0-9]+")
 class TwitterAdapter(YtdlpAdapter):
     nen_tang = "twitter"
     allowed_extractors = EXTRACTOR_CHO_PHEP
-    extractor_args: dict = {}
+    extractor_args = {}
     ie_key_video = ("Twitter",)
     impersonate = False
 

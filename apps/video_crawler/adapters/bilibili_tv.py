@@ -52,7 +52,7 @@ _ID = re.compile(r"[0-9]+")
 class BilibiliTvAdapter(YtdlpAdapter):
     nen_tang = "bilibili_tv"
     allowed_extractors = EXTRACTOR_CHO_PHEP                       # spec §21
-    extractor_args: dict = {}
+    extractor_args = {}
     ie_key_video = ("BiliIntl",)
     impersonate = True                                            # Y:2126-2135 — thiếu thì bị reset kết nối
 

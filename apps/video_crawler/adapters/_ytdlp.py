@@ -335,16 +335,16 @@ class YtdlpAdapter:
         info = info or {}
         entries = info.get("entries") if "entries" in info else [info]
         ra: list[CrawlItem] = []
-        for e in entries or []:
+        for muc in entries or []:
             if len(ra) >= n:
                 break
-            if not isinstance(e, dict) or not self.id_hop_le(str(e.get("id") or "")):
+            if not isinstance(muc, dict) or not self.id_hop_le(str(muc.get("id") or "")):
                 continue
-            if e.get("ie_key") is not None and e.get("ie_key") not in self.ie_key_video:
+            if muc.get("ie_key") is not None and muc.get("ie_key") not in self.ie_key_video:
                 continue                              # tab/playlist lồng, không phải video
-            if self.ly_do_tu_choi(e) is not None:
+            if self.ly_do_tu_choi(muc) is not None:
                 continue
-            ra.append(self._sang_item(e))
+            ra.append(self._sang_item(muc))
         bao_tien_do(100, f"tìm thấy {len(ra)} video")
         return ra
 

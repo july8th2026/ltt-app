@@ -21,7 +21,7 @@ class UrlKhongAnToan(ValueError):
 
 
 def _phan_giai_mac_dinh(host: str) -> list[str]:
-    return [info[4][0] for info in socket.getaddrinfo(host, None)]
+    return [str(info[4][0]) for info in socket.getaddrinfo(host, None)]
 
 
 def _la_ip_noi_bo(ip_str: str) -> bool:

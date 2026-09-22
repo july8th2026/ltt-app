@@ -85,7 +85,7 @@ class TikTokAdapter(YtdlpAdapter):
     cookie_khi_tai = False
     nen_tang = "tiktok"
     allowed_extractors = EXTRACTOR_CHO_PHEP                    # spec §21
-    extractor_args: dict = {}
+    extractor_args = {}
     ie_key_video = ("TikTok",)
     impersonate = False                                        # Y:2126-2135 — TikTok không impersonate
 
