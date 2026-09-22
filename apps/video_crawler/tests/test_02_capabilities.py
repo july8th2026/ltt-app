@@ -1,5 +1,5 @@
 def test_capabilities_registered():
-    from video_crawler.capabilities import PLATFORM_CAPABILITIES
+    from apps.video_crawler.capabilities import PLATFORM_CAPABILITIES
     
     assert len(PLATFORM_CAPABILITIES) == 2
     youtube_cap = next(c for c in PLATFORM_CAPABILITIES if c.slug == "youtube")
