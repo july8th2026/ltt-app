@@ -18,8 +18,8 @@
 | T13 | không phải khung đen | `signalstats` YAVG < 2/255 tự đặt (`qc.py:162`) | **B** | cổng QC | THAY → ffmpeg `blackdetect` + `freezedetect` (tham số chuẩn của ffmpeg) |
 | T15/T16 | phụ đề trong khung thời gian / hai luồng dài bằng nhau | timestamp | A | cổng QC | GIỮ |
 | C1 | ranh giới cảnh | ffmpeg `select=gt(scene,0.4)`, ngưỡng "CHƯA ĐO" (`canh.py:214`) | **B** (ngưỡng) | hiểu cảnh, bản biên tập | BENCHMARK vs PySceneDetect → thay |
-| S1 | đọc khớp kịch bản | Dice tập từ, ngưỡng 0,80 (`sua_chua.khop_van_ban`) — **không nối** | **B** | (không ai) | THAY → ASR lượt cuối + JiWER WER/CER |
-| S2 | chất lượng tiếng / tự nhiên | không có | — | — | THÊM (model license sạch) |
+| S1 | đọc khớp kịch bản | Dice tập từ, ngưỡng 0,80 (`sua_chua.khop_van_ban`) — **không nối** | **B** | (không ai) | **ĐÃ THAY** (L-GIỌNG 23/09) → `qc_do_luong`: ASR `large-v3` + JiWER; ngưỡng đo thật `vi: WER>0,30 & CER>0,23`, `en: WER>0,15` — 0/50 báo động giả, 49/49 đối chứng nuốt chữ bị bắt (L_GIONG.md §4) |
+| S2 | chất lượng tiếng / tự nhiên | không có | — | — | **ĐÃ THÊM** (L-GIỌNG 23/09) → torchaudio `SQUIM_OBJECTIVE` (CC BY 4.0, docstring bản cài thật đã xác minh, weights ghim sha256). Chỉ CẢNH BÁO (PESQ<2,0 / SI-SDR<10 dB), không sinh việc sửa. ⚠️ không bắt được đứt quãng 0,4 s (L_GIONG.md §5) |
 | X1 | dịch giữ nghĩa | LLM phán `dat`/`do_tin` (`qc_ai.py:60`) | phán xét ngữ nghĩa | vòng sửa | GIỮ làm lớp ngữ nghĩa + THÊM chỉ số QE số |
 | V1 | liên tục hình ở mối cắt | VLM (`qc_ai.py:115`) — **không nối** | phán xét | (không ai) | NỐI vào QC_AI (VLM review) |
 | V2 | chất lượng hình sau mã hoá lại | không có | — | — | THÊM VMAF (libvmaf) |
@@ -37,7 +37,7 @@
 | OCR hardsub | JaidedAI/EasyOCR | — | Apache-2.0 | **CHƯA XÁC MINH** (model hub không ghi license) | ? | Có | GPU/CPU | jaided.ai/easyocr/modelhub | **DO NOT SHIP** |
 | WER/CER | jitsi/jiwer | — (không model) | Apache-2.0 | — | Có | Có | CPU | github.com/jitsi/jiwer | **SHIP** (L-C) |
 | ASR lượt cuối | faster-whisper `large-v3` (đã dùng ở TRANSCRIBE) | whisper large-v3 | MIT | MIT (openai/whisper) | Có | Có | GPU | model card openai/whisper-large-v3 | **SHIP** — cùng engine sản phẩm, không thêm model |
-| Chất lượng tiếng | torchaudio `SQUIM_OBJECTIVE` | `squim_objective_dns2020.pth` (STOI/PESQ/SI-SDR ước lượng, không cần tham chiếu) | BSD-2-Clause | **CC BY 4.0** (docstring `_squim_pipeline.py`) | Có (ghi công) | Có | CPU/GPU | github.com/pytorch/audio/blob/main/src/torchaudio/pipelines/_squim_pipeline.py | **Ứng viên 1** (L-C) — xác minh docstring trong bản torchaudio cài thật |
+| Chất lượng tiếng | torchaudio `SQUIM_OBJECTIVE` | `squim_objective_dns2020.pth` (STOI/PESQ/SI-SDR ước lượng, không cần tham chiếu) | BSD-2-Clause | **CC BY 4.0** (docstring `_squim_pipeline.py`) | Có (ghi công) | Có | CPU/GPU | github.com/pytorch/audio/blob/main/src/torchaudio/pipelines/_squim_pipeline.py | **SHIP** — docstring bản cài thật (torchaudio 2.8.0+cu128, qc-venv) XÁC MINH 23/09; weights sha256 `2c54586f…`; đỉnh VRAM 2,2 GiB |
 | Chất lượng tiếng | torchaudio `SQUIM_SUBJECTIVE` | BVCC+DAPS | BSD-2 | **CC BY-NC 4.0** | **Không** | — | — | cùng tệp | **DO NOT SHIP** |
 | Chất lượng tiếng | NISQA / NISQA-TTS | nisqa*.tar | MIT | **CC BY-NC-SA 4.0** (`weights/LICENSE_model_weights`) | **Không** | — | — | github.com/gabrielmittag/NISQA | **DO NOT SHIP** |
 | Chất lượng tiếng | DNSMOS P.835 (đang dùng OFFLINE ở LTT Voice) | `sig_bak_ovr.onnx` | MIT (code) | **không có tuyên bố riêng** cho .onnx | Chưa rõ | Có | CPU | github.com/microsoft/DNS-Challenge README "Legal Notices" | **DO NOT SHIP** trong runtime; chỉ nghiên cứu nội bộ |

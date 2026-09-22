@@ -122,6 +122,28 @@ APP_DUOC_DUNG_APP: dict = {
         ("apps.auto_scan_video.thi_hanh", "chay_theo_job_type"),
     },
 
+    # ── Auto Scan Video goi SO DANG KY BO DO cua executor GPU (22/09) ──────
+    #
+    # ⭐ Chieu NGUOC cua ba canh tren, va co ly do: bo do bang model (whisper,
+    #    SQUIM, MetricX) chay tren card trong `qc-venv`, nen chung song o
+    #    `asv_gpu` — app khai `requires=("gpu",)` trung thuc. Nhung vong doi giai
+    #    doan (van tay, cache, promote) va viec doc artifact cua run la cua app
+    #    cha, nen giai doan `qc_do_luong` nam o `auto_scan_video` va goi sang.
+    #
+    # ⛔ Chi MOT ten: so dang ky `bo_do`. Tung bo do (giong, squim, metricx) la
+    #    chi tiet cua `asv_gpu`; app cha voi thang vao chung la dung thu canh nay
+    #    sinh ra de chan.
+    ("auto_scan_video", "asv_gpu"): {
+        ("apps.asv_gpu.do_luong", "bo_do"),
+    },
+    # 🔑 Bo do `giong` chuan hoa kich ban va ban ASR bang CHINH ham ASV goi truoc
+    #    khi dua chu cho may doc (`text_pipeline.chuan_hoa`, be mat da khai cua
+    #    `ltt_voice`). Mot ban chep thu hai cua phep doc so/tu dien se lech, va
+    #    WER se do su lech do thay vi do loi doc. Chi DOC, khong goi may.
+    ("asv_gpu", "ltt_voice"): {
+        ("apps.ltt_voice", "text_pipeline"),
+    },
+
     # ── Auto Scan Video BOC duong chep loi cua autosubvideo ─────────────────
     #
     # ⭐ Day la mot canh xuyen-san-pham that, khac hai canh o tren. Ly do no la

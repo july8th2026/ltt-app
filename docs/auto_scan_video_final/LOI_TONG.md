@@ -12,7 +12,9 @@
 | F-05 | cao | Lời nhắc hiểu cảnh ghi cứng "video tiếng Việt" (sai với mọi nguồn zh/en) | `hieu_canh.py` | L-A | **ĐÃ SỬA** — `PHIEN_BAN_HIEU_CANH` 2→3, `HO_SO` 1→2 |
 | F-06 | trung | Khoá cache chung của TRANSCRIBE thiếu ngôn ngữ đích ⇒ dùng lại chéo đích bỏ qua phép chốt F-04 | `cache_chung.dau_vao_noi_dung` | L-A | **ĐÃ SỬA** |
 | F-07 | — | `test_448` đỏ: báo cáo nghiệm thu ghi `chep_loi/1`, mã nay `chep_loi/2` | `tests/test_448` | L-M | CHỜ — lượt thật mới tái sinh báo cáo (đúng thiết kế) |
-| M-01 | cao | Nói–khớp–kịch bản dùng công thức Dice tự chế (ngưỡng 0,80) **và không được nối** vào dây chuyền | `sua_chua.khop_van_ban` | L-C | MỞ — thay bằng ASR lượt cuối + jiwer WER/CER |
+| M-01 | cao | Nói–khớp–kịch bản dùng công thức Dice tự chế (ngưỡng 0,80) **và không được nối** vào dây chuyền | `sua_chua.khop_van_ban` | L-C | **ĐÃ SỬA** — giai đoạn `qc_do_luong` (ASR large-v3 + jiwer WER/CER), ngưỡng hiệu chỉnh trên 50 đoạn tiếng thật; Dice đã xoá; vòng sửa nối `qc_giong` (L_GIONG.md) |
+| M-07 | cao | Giai đoạn giọng dùng lại tệp cũ theo vân tay ⇒ vòng sửa "đọc lại" trả về **đúng bản vừa bị báo sai** (đúng cả với `KHONG_VUA`) | `giai_doan_giong._van_tay` | L-C | **ĐÃ SỬA** — muối vân tay bằng số vòng sửa đã đẩy đoạn về `voice_synthesis` |
+| M-08 | trung | `COMPOSE` ghi trạng thái toàn vẹn (`flush`) rồi gọi `ctx.progress` khi chưa commit ⇒ SQLite `database is locked`, chỉ lộ ở lượt chạy lại sau vòng sửa | `giai_doan_ban_dung.chay` | L-C | **ĐÃ SỬA** — `db.commit()` sau `_khoa_con_dung` |
 | M-02 | cao | QC liên tục cảnh bằng VLM định nghĩa nhưng **không ai gọi** | `qc_ai.py:115` | L-B/L-C | MỞ |
 | M-03 | trung | Cắt cảnh = ffmpeg `select=gt(scene,0.4)`, ngưỡng "CHƯA ĐƯỢC ĐO" | `canh.py:214` | L-B | MỞ — benchmark PySceneDetect |
 | M-04 | trung | Khung đen T13 = YAVG tự đặt ngưỡng 2/255 | `qc.py:162` | L-B | MỞ — `blackdetect`/`freezedetect` chuẩn |

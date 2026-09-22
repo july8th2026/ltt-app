@@ -72,13 +72,30 @@ GIAI_DOAN_SUA = {
 #:    tien de xem model doi y.
 VONG_SUA_TOI_DA = 1
 
-#: Nguong khop giua van ban da viet va thu may doc ra (0-1).
+#: Nguong DOC SAI theo ngon ngu dich: `{ngon_ngu: {"wer": x, "cer": y}}`.
 #:
-#: ⚠️ CHUA DO tren ban ghi that. ASR tren chinh tieng minh vua sinh ra thuong rat
-#:    chinh xac, nhung no van sai o so, ten rieng va tu muon — nen nguong khong
-#:    the la 1,0. 0,80 chon theo huong **it bao dong gia**, vi mot bao dong gia o
-#:    day ton mot lan doc lai co tra tien. Pha 21 do lai.
-NGUONG_KHOP_DOC = 0.80
+#: Phep do: tieng da long cua MOT doan -> ASR (faster-whisper, cung model
+#: TRANSCRIBE) -> WER (+ CER voi tieng Viet) so voi cau may doc da nhan, hai ve
+#: chuan hoa bang CUNG mot ham (`apps/asv_gpu/do_luong/chuan_hoa_loi.py`).
+#: Mot doan la DOC SAI khi vuot MOI nguong khai cho ngon ngu do.
+#:
+#: 🔑 Con so HIEU CHINH tu tieng that cua LTT Voice (:8120), khong tu nghi — so
+#:    lieu, phan bo va doi chung o `docs/auto_scan_video_final/L_GIONG.md`.
+#: ⛔ Ngon ngu KHONG co trong bang = chua hieu chinh ⇒ ket qua do van ghi vao
+#:    bao cao, nhung KHONG sinh viec sua. Mot nguong doan mo sinh viec doc lai
+#:    (co tra tien) tren mot bang chung khong ai do.
+NGUONG_DOC_SAI: dict[str, dict[str, float]] = {
+    # vi: 36 doan THAT (LTT Voice :8120, 4 giong, 4 video zh->vi) — WER am tiet
+    #     cao nhat 0,407 nhung CER cao nhat chi 0,213; doi chung "nuot 1/3
+    #     cuoi" (35 doan) co WER >= 0,308 VA CER >= 0,248. Hai nguong cung
+    #     phai vuot: 0/36 bao dong gia, 35/35 doan thieu chu bi bat.
+    "vi": {"wer": 0.30, "cer": 0.23},
+    # en: 14 doan THAT (giong nhan ban en, muc engine) — WER cao nhat 0,074;
+    #     doi chung nuot chu thap nhat 0,273. 0,15 nam giua, khong sat ben nao.
+    #     ⛔ CER khong khai: chuan hoa en la `EnglishTextNormalizer` (so ->
+    #     chu so), nen CER tren chuoi do khong cung nghia voi CER tieng Viet.
+    "en": {"wer": 0.15},
+}
 
 #: Do tin toi thieu de tin mot phan doan cua model.
 #:
@@ -116,55 +133,68 @@ class KhiemKhuyet:
         return float(self.do_tin) >= DO_TIN_TOI_THIEU
 
 
-def khop_van_ban(a: str, b: str) -> float:
-    """Do khop giua hai chuoi, 0-1. Dung cho QC giong noi.
+def _vuot_nguong(d: dict) -> dict | None:
+    """Nguong da vuot cua MOT ket qua do, hoac None (dat / chua hieu chinh)."""
+    ng = NGUONG_DOC_SAI.get(str(d.get("ngon_ngu") or "").lower())
+    if not ng or "wer" not in d:
+        return None
+    for chi_so, gioi_han in ng.items():
+        gt = d.get(chi_so)
+        if gt is None or float(gt) <= float(gioi_han):
+            return None
+    return dict(ng)
 
-    ⭐ So tren TU da chuan hoa chu khong tren ky tu: ASR viet "hai muoi ba" con
-       ban dich viet "23", va mot phep so ky tu se goi do la lech 100% trong khi
-       tai nguoi nghe thay dung. So theo tu **va** bo dau cham cau la phep xap xi
-       tho nhung no sai theo huong AN TOAN — no bao dong it hon, chu khong nhieu
-       hon.
 
-    ⛔ Khong dung `difflib.SequenceMatcher` tren ca chuoi: no nhay voi thu tu tu
-       den muc mot cau dao hai menh de se bi cham diem rat thap, trong khi ve mat
-       long tieng do van la mot cau doc dung.
+def giong_khong_dat(do_duoc: list[dict]) -> list[dict]:
+    """Loc ket qua do giong: chi giu doan VUOT nguong, kem nguong da ap.
+
+    Dau vao `[{ma, ngon_ngu, wer, cer?, doc_ra, tham_chieu_chuan, ...}]` —
+    dung dang `giai_doan_qc_do_luong` ghi. Dau ra la thu vong sua doc.
     """
-    import re
-
-    def tach(s: str) -> list[str]:
-        s = re.sub(r"[^\w\s]", " ", str(s or "").lower(), flags=re.UNICODE)
-        return [t for t in s.split() if t]
-
-    x, y = tach(a), tach(b)
-    if not x and not y:
-        return 1.0
-    if not x or not y:
-        return 0.0
-    from collections import Counter
-
-    cx, cy = Counter(x), Counter(y)
-    chung = sum((cx & cy).values())
-    return round(2.0 * chung / (len(x) + len(y)), 4)
+    ra = []
+    for d in do_duoc or []:
+        ng = _vuot_nguong(d)
+        if ng is None:
+            continue
+        ra.append({"ma": str(d.get("ma") or ""),
+                   "ngon_ngu": str(d.get("ngon_ngu") or ""),
+                   "wer": d.get("wer"), "cer": d.get("cer"), "nguong": ng,
+                   "doc_ra": str(d.get("doc_ra") or "")[:200],
+                   "tham_chieu": str(d.get("tham_chieu_chuan") or "")[:200]})
+    return ra
 
 
-def tu_qc_giong(doan: list[dict], *, nguong: float | None = None) -> list[KhiemKhuyet]:
-    """Khiem khuyet tu QC GIONG NOI: `[{ma, chu, doc_ra}]`.
+def tu_qc_giong(doan: list[dict]) -> list[KhiemKhuyet]:
+    """Khiem khuyet DOC SAI tu ket qua do giong (ASR + WER/CER).
 
-    ⛔ `nguong=None` chu khong `nguong=NGUONG_KHOP_DOC`: mot mac dinh duoc gan
-       LUC DINH NGHIA HAM thi doi hang so sau do khong doi duoc gi. Bai hoc tra
-       gia o pha 14.
+    ⭐ `do_tin=1.0`: day la mot phep DO (WER tren hai chuoi da chuan hoa), khong
+       phai phan doan cua model. Phan chu quan duy nhat — nguong — la con so
+       hieu chinh o `NGUONG_DOC_SAI`, va no duoc ap LAI o day chu khong tin co
+       `khong_dat` cua nguoi goi: mot chinh sach, mot cho.
     """
-    n = NGUONG_KHOP_DOC if nguong is None else float(nguong)
     ra = []
     for d in doan or []:
-        diem = khop_van_ban(d.get("chu"), d.get("doc_ra"))
-        if diem < n:
-            ra.append(KhiemKhuyet(
-                DOC_SAI, ma=str(d.get("ma") or ""),
-                ly_do=_t('Tiếng đọc ra không khớp lời đã viết.'),
-                do_tin=1.0,   # phep DO, khong phai phan doan
-                bang_chung={"diem_khop": diem, "nguong": n,
-                            "doc_ra": str(d.get("doc_ra") or "")[:200]}))
+        ng = _vuot_nguong(d)
+        if ng is None:
+            continue
+        ra.append(KhiemKhuyet(
+            DOC_SAI, ma=str(d.get("ma") or ""),
+            ly_do=_t('Tiếng đọc ra không khớp lời đã viết.'),
+            do_tin=1.0,
+            bang_chung={"wer": d.get("wer"), "cer": d.get("cer"), "nguong": ng,
+                        "doc_ra": str(d.get("doc_ra") or "")[:200]}))
+    return ra
+
+
+def lan_doc_lai(cac_ke_hoach: list[dict]) -> dict[str, int]:
+    """`{ma: n}` — so ke hoach sua (`KeHoachSua.sang_dict()`) da dua doan `ma`
+    ve `voice_synthesis`. Giai doan giong muoi van tay bang `n` de lay luot doc
+    MOI thay vi tra lai tep cu tu cache (cung van tay = cung khoa = cung tep).
+    """
+    ra: dict[str, int] = {}
+    for ke in cac_ke_hoach or []:
+        for ma in (ke.get("giai_doan_sua") or {}).get("voice_synthesis") or []:
+            ra[str(ma)] = ra.get(str(ma), 0) + 1
     return ra
 
 

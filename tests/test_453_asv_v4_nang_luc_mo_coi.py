@@ -105,10 +105,18 @@ MO_COI_DA_BIET = frozenset({
     #
     #    ⚠️ Bon ten con lai VAN mo coi, va ly do khac han: chung phuc vu QC
     #       **hinh** (`doc_hinh`, `loi_nhac_hinh`, `moc_cho_noi`) va QC **giong**
-    #       (`so_khop_doc`). Hai loai do can them may moc that — rut khung quanh
+    #       (`so_khop_doc` — DA XOA 22/09, thay bang giai doan `qc_do_luong`). Hai loai do can them may moc that — rut khung quanh
     #       moi cho noi, va ASR tren chinh ban da ket xuat — chu khong chi can
     #       mot cong tat. Dieu kien de go: mot giai doan doc duoc chung.
-    "doc_hinh", "loi_nhac_hinh", "moc_cho_noi", "so_khop_doc",
+    "doc_hinh", "loi_nhac_hinh", "moc_cho_noi",
+
+    # ── Giao thuc chay bo do trong `qc-venv` (`do_luong/venv.py`, e84b22a2).
+    #    `la_tien_trinh_con` la mot phep TU KIEM cho runner: "toi co dang chay
+    #    trong venv do luong khong". Hai runner hien co (`giong_runner`,
+    #    `squim_runner`) khong can hoi — chung chi chay khi `venv.chay` goi.
+    #    Dieu kien de go: mot bo do nao do chay duoc o CA HAI phia (worker va
+    #    qc-venv) va phai re nhanh theo cau tra loi do; neu khong, XOA ham.
+    "la_tien_trinh_con",
 
     # ── HO SO NOI DUNG — nang luc nay duoc KHAI CHO KHACH la chua san sang.
     #    `gia.py` bay `CHE_DO_GIONG_TU_KHOP` kem cau "tinh nang nay dang duoc

@@ -98,6 +98,10 @@ def main() -> int:
 
         crlf_cu, lf_cu = _dem_crlf(cu.stdout)
         crlf_moi, lf_moi = _dem_crlf(moi_b)
+        if not crlf_cu and not lf_cu:
+            # Tep cu KHONG co dong nao (rong, vd `__init__.py` trong) thi chua
+            # co kieu nao de lat — ghi noi dung dau tien vao khong phai "lat".
+            continue
         # So KIEU, khong so so luong: them dong that thi ca hai con so deu tang.
         # Kieu doi khi mot tep thuan LF thanh thuan CRLF hoac nguoc lai.
         thuan_cu = "CRLF" if crlf_cu and not lf_cu else ("LF" if lf_cu and not crlf_cu else "tron")

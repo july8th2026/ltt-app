@@ -279,6 +279,11 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     if ctx is not None and getattr(ctx, "progress", None):
         ctx.progress(60, _t('Đang đối chiếu tài nguyên'))
     hop_le = _khoa_con_dung(db, kho, run)
+    # 🔴 `kiem_toan_ven` GHI (`flush`) trang thai toan ven cua artifact da bi vo
+    #    hieu (vong sua). Giu ghi do chua commit roi goi `ctx.progress` (phien
+    #    THU HAI) la tu khoa minh tren SQLite: do that 22/09 o luot sua dau tien
+    #    chay lai `compose` — `database is locked`. Chot trang thai da kiem ngay.
+    db.commit()
     hop_le.add(run.source_key)        # tep nguon khong phai `AsvAsset`
     ban_dung.kiem(ban, khoa_hop_le=hop_le)
 

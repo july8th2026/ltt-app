@@ -71,7 +71,8 @@ MANIFEST = AppManifest(
     enabled=False,
     lifecycle="internal",
 
-    job_types=("asv_gpu.audio_prepare", "asv_gpu.transcribe"),
+    job_types=("asv_gpu.audio_prepare", "asv_gpu.transcribe",
+               "asv_gpu.qc_do_luong"),
     requires=("gpu",),
     credit_cost=_gia,
 
@@ -91,14 +92,23 @@ MANIFEST = AppManifest(
         # ✅ DO THAT pha 13 (03/09): dinh 1.673 MiB, khong doi theo do dai.
         "asv_gpu.audio_prepare": 2200,
         "asv_gpu.transcribe": 6000,      # theo `autosubvideo.transcribe` da do
+        # ✅ DO THAT 23/09 (asv-final, lan `giong`), tung bo do mot tien
+        #    trinh con, chay LAN LUOT tren RTX 5060 Ti dang phuc vu khach:
+        #      ASR faster-whisper large-v3 fp16, beam 5   dinh +4.265 MiB
+        #      SQUIM_OBJECTIVE (lo 4 cua so)              dinh +2.256 MiB
+        #    Card ve dung muc nen sau moi tien trinh con (do: 1.859 MiB
+        #    truoc va sau). Khai = dinh cao nhat + ~20%.
+        "asv_gpu.qc_do_luong": 5200,
     },
     max_runtime_s={
         "asv_gpu.audio_prepare": 3600,
         "asv_gpu.transcribe": 3600,
+        "asv_gpu.qc_do_luong": 3600,
     },
     #: GPU tren may nay dung chung voi ba ho khac (CLAUDE.md). Cho 20 giay giua
     #: hai lan hoi la hop ly cho viec dai hang phut; day khong phai truong hop
     #: cua LTT VOICE (viec 5 giay, phai hoi day hon).
-    cho_tai_nguyen_s={"asv_gpu.audio_prepare": 20, "asv_gpu.transcribe": 20},
+    cho_tai_nguyen_s={"asv_gpu.audio_prepare": 20, "asv_gpu.transcribe": 20,
+                      "asv_gpu.qc_do_luong": 20},
     notes="Pha 05: handler GIA, khong nap model, khong cham GPU that.",
 )
