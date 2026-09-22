@@ -176,12 +176,16 @@ def luu_kham_pha(url: str, *, nen_tang: str, owner_id: str, job_id: str, chi_so:
     return key
 
 
-def doc(gia_tri: str, *, nen_tang: str, kho=None, phan_giai=None, lay=None) -> tuple[bytes, str]:
+def doc(gia_tri: str, *, nen_tang: str, kho=None, phan_giai=None, lay=None,
+        owner_id: str | None = None, job_id: str | None = None) -> tuple[bytes, str]:
     """(bytes, content-type) ảnh bìa của một mục xem trước: ưu tiên đọc từ storage nếu `gia_tri` là
     storage key đã lưu ở bước khám phá (`luu_kham_pha`); ngược lại coi `gia_tri` là URL CDN sống và tải
     như route cũ (`tai`). Ném `AnhKhongHopLe` như `tai()` khi không phục vụ được — route chỉ cần đổi
     lời gọi `anh_bia.tai(...)` thành `anh_bia.doc(...)` (cần điều phối, không thuộc quyền sở hữu tệp)."""
     if gia_tri.startswith(_TIEN_TO_KHO):
+        # Có owner/job (route) ⇒ chỉ đọc key ảnh bìa của ĐÚNG job đó, không phải mọi tệp dưới `video_crawler/`.
+        if owner_id is not None and not gia_tri.startswith(_key_bia(owner_id, job_id or "", 0)[:-1]):
+            raise AnhKhongHopLe(_t("ảnh không tải được"))
         from platform_core.storage import StorageError, get_storage
         try:
             with (kho or get_storage()).open(gia_tri) as f:

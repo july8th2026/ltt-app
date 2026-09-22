@@ -328,7 +328,7 @@ def anh_bia_xem_truoc(request: Request, job_id: str, chi_so: int, user: str = De
     if tim is None:
         raise HTTPException(status_code=404)
     try:
-        du_lieu, loai = anh_bia.tai(tim[1], nen_tang=tim[0])
+        du_lieu, loai = anh_bia.doc(tim[1], nen_tang=tim[0], owner_id=u.id, job_id=job_id)   # kho trước, CDN sau (L8)
     except anh_bia.AnhKhongHopLe:
         raise HTTPException(status_code=404) from None
     return Response(du_lieu, media_type=loai, headers={"X-Content-Type-Options": "nosniff"})

@@ -208,3 +208,19 @@ def test_doc_tep_storage_mat_thi_nem_anh_khong_hop_le(tmp_path):
     kho = LocalStorage(str(tmp_path / "s"))
     with pytest.raises(anh_bia.AnhKhongHopLe):
         anh_bia.doc("video_crawler/u1/j1/bia/0", nen_tang="youtube", kho=kho)
+
+
+def test_doc_chi_doc_key_cua_dung_chu_va_job(tmp_path):
+    """Gộp L8: route truyền owner/job ⇒ key kho ngoài `video_crawler/<chủ>/<job>/bia/` bị từ chối (phòng thủ nhiều
+    lớp — hôm nay `result` do máy chủ ghi, nhưng route không nên đọc được tệp kho khác chỉ vì nó bắt đầu `video_crawler/`)."""
+    from platform_core.storage import LocalStorage
+    from apps.video_crawler import anh_bia
+    kho = LocalStorage(str(tmp_path / "s"))
+    key = anh_bia.luu_kham_pha(_URL_BIA_A, nen_tang="youtube", owner_id="u1", job_id="j1", chi_so=0,
+                               kho=kho, phan_giai=_DNS, lay=lambda url, *, toi_da: (_PNG, "image/png"))
+    assert anh_bia.doc(key, nen_tang="youtube", kho=kho, owner_id="u1", job_id="j1")[0] == _PNG
+    for chu, job in (("u2", "j1"), ("u1", "j2")):
+        with pytest.raises(anh_bia.AnhKhongHopLe):
+            anh_bia.doc(key, nen_tang="youtube", kho=kho, owner_id=chu, job_id=job)
+    with pytest.raises(anh_bia.AnhKhongHopLe):
+        anh_bia.doc("video_crawler/u1/j1/video.mp4", nen_tang="youtube", kho=kho, owner_id="u1", job_id="j1")
