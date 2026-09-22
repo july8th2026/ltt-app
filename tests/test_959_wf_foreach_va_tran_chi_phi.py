@@ -172,7 +172,7 @@ def test_join_ALL_ANY_N_of_M_dung_chung_MOT_co_che_voi_waitpoint(db, run):
     db.commit()
 
     assert a.required_successes == 1
-    assert b.required_successes == 0 and b.sealed is True   # ALL: niem phong ngay
+    assert b.required_successes == 0 and b.so_nguon == 3 and b.sealed is False
     assert c.required_successes == 2
     assert cho_doi.da_mo(db, a.id) is False
 
