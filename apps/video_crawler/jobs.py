@@ -13,7 +13,6 @@ Thoát bằng exception (kể cả huỷ) ⇒ xoá tệp đã lưu của job nà
 from __future__ import annotations
 
 import contextlib
-import importlib
 import tempfile
 import time
 from pathlib import Path
@@ -36,13 +35,9 @@ NGAN_SACH_TAI_S = 6600.0
 
 
 def _adapter(nen_id: str):
-    """Adapter của nền, tra qua registry (`NenTang.adapter` = tên module trong adapters/)."""
-    ten = nen_tang.lay_nen_bat(nen_id).adapter
-    mod = importlib.import_module(f"apps.video_crawler.adapters.{ten}")
-    for v in vars(mod).values():
-        if isinstance(v, type) and getattr(v, "nen_tang", None) == nen_id and hasattr(v, "tai"):
-            return v()
-    raise RuntimeError(f"adapter {ten!r} không khai lớp cho nền {nen_id!r}")
+    """Adapter của nền (test thay hàm này bằng adapter giả)."""
+    from apps.video_crawler import adapters
+    return adapters.tao(nen_id)
 
 
 @contextlib.contextmanager

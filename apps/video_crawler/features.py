@@ -26,7 +26,7 @@ SO_JOB_DEDUP = 500
 
 #: Trần xem trước mỗi phút mỗi user (phản biện #8: tìm dồn dập từ IP máy A ⇒ YouTube bot-check).
 KHAM_PHA_MOI_PHUT = 10
-#: Id khi nền chưa khai `mau_id`: chỉ ký tự an toàn cho khoá storage (chặn `..`, `/`).
+#: Id luôn phải an toàn làm khoá storage (chặn `..`, `/`, `:`), NGOÀI mẫu id riêng của adapter.
 _ID_CHUNG = r"[A-Za-z0-9_-]{1,64}"
 #: Múi giờ của "video hôm nay" — khách ở Việt Nam (review MINOR: trước đếm từ nửa đêm UTC).
 _MUI_GIO = ZoneInfo("Asia/Ho_Chi_Minh")
@@ -106,15 +106,17 @@ def dung_params_tai(*, owner_id: str, nen_tang: str, muc: list | None = None, ng
                           "khong_trung": bool(nguon.get("khong_trung"))}}
     if not isinstance(muc, list) or not 1 <= len(muc) <= SO_MUC_TOI_DA:
         raise LoiDauVao(f"Chọn từ 1 đến {SO_MUC_TOI_DA} video.")
+    from apps.video_crawler import adapters
+    ad = adapters.tao(nen.id)
     sach, da_co = [], set()
     for m in muc:
         vid = str((m or {}).get("id") or "").strip()
-        if not re.fullmatch(nen.mau_id or _ID_CHUNG, vid):
+        if not re.fullmatch(_ID_CHUNG, vid) or not ad.id_hop_le(vid):
             raise LoiDauVao("Mục không hợp lệ.")
         if vid in da_co:                  # trùng trong cùng yêu cầu ⇒ tính một lần (review MAJOR 2)
             continue
         da_co.add(vid)
-        url = nen.mau_url.format(id=vid) if nen.mau_url else _kiem_url(str(m.get("url") or ""), nen, phan_giai)
+        url = ad.url_video(vid)          # dựng lại từ id — URL khách gửi bị BỎ (review BLOCKER)
         sach.append({"id": vid, "url": url, "tieu_de": str(m.get("tieu_de") or "")[:200]})
     return {"owner_id": owner_id, "nen_tang": nen.id, "muc": sach}
 

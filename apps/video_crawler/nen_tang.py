@@ -63,10 +63,6 @@ class NenTang:
     so_luong_toi_da: int
     adapter: str
     gioi_han: tuple
-    #: Mẫu id video (regex fullmatch) và URL chuẩn dựng lại từ id. Có mẫu URL ⇒ URL khách gửi bị BỎ khi tải:
-    #: một id kèm URL playlist/kênh từng tải cả playlist với giá 1 credit (review code 22/09, BLOCKER).
-    mau_id: str = ""
-    mau_url: str = ""
     #: Tên cookie chứng minh ĐÃ đăng nhập (donor `COOKIE_AUTH` W:17772-17796). Rỗng ⇒ nền không nhận phiên.
     cookie_dang_nhap: tuple = ()
     #: Chế độ BẮT BUỘC có phiên (vd TikTok từ khoá — donor Y:1541-1544). Chưa có phiên ⇒ chặn ở cửa vào.
@@ -149,7 +145,6 @@ _NEN: tuple[NenTang, ...] = (
         xem_truoc=True, can_dang_nhap=False, cach_dang_nhap="",
         ten_mien=("youtube.com", "youtu.be"),
         so_luong_toi_da=20, adapter="youtube", gioi_han=(),
-        mau_id=r"[A-Za-z0-9_-]{11}", mau_url="https://www.youtube.com/watch?v={id}",
         cookie_dang_nhap=('SAPISID', 'LOGIN_INFO'),
     ),
     NenTang(
