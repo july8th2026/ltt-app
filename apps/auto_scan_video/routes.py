@@ -271,6 +271,8 @@ async def tao(request: Request,
               #: Cap ngon ngu (22/09): nguon {auto,zh,en,vi}, dich {vi,en}.
               ngon_ngu_nguon: str = Form(""),
               ngon_ngu_dich: str = Form(""),
+              #: Nguon loi thoai: auto|embedded|ocr|asr (`nguon_loi.py`).
+              nguon_loi: str = Form(""),
               tu_dien: str = Form(""),
               #: Vung che, JSON do trinh sua vung dung. Rong = khong co vung nao,
               #: va do la truong hop BINH THUONG cua phan lon lan chay.
@@ -310,7 +312,8 @@ async def tao(request: Request,
             "giong_id": giong_id, "ngon_ngu_nguon": ngon_ngu_nguon,
             "ngon_ngu_dich": ngon_ngu_dich, "vung": vung, "cat": cat,
             "lop_phu": lop_phu, "tu_dien": tu_dien, "phu_de": phu_de,
-            "am_thanh": am_thanh, "bien_tap": bien_tap})
+            "am_thanh": am_thanh, "bien_tap": bien_tap,
+            "nguon_loi": nguon_loi})
     except dich_vu_tao.LoiCaiDat as exc:
         return _lai_voi_loi(request, db, u, str(exc))
     preset = ho_so["preset"]

@@ -63,7 +63,8 @@ def _lam_sach(van_ban: str) -> str:
 
 
 
-def chuan_hoa(thoi: dict, *, thoi_luong_nguon: float = 0.0) -> dict:
+def chuan_hoa(thoi: dict, *, thoi_luong_nguon: float = 0.0,
+              nguon_loi: str = "asr", dinh_tuyen: dict | None = None) -> dict:
     """Ket qua tho cua engine -> ban ghi chinh tac. Nem `BanGhiError` neu khong dat.
 
     Bo doan RONG thay vi giu: mot doan khong co chu la mot doan khong co gi de
@@ -97,7 +98,13 @@ def chuan_hoa(thoi: dict, *, thoi_luong_nguon: float = 0.0) -> dict:
                 continue
             tu.append({"bat": tb, "ket": tk, "chu": chu})
 
-        ra.append({"bat": bat, "ket": ket, "chu": van_ban, "tu": tu})
+        doan = {"bat": bat, "ket": ket, "chu": van_ban, "tu": tu}
+        # Provenance (22/09): do tin 0..1 cua NGUON (OCR: diem nhan dang trung
+        # binh cac khung). ASR (faster-whisper qua autosubvideo) khong tra do
+        # tin theo doan ⇒ vang mat, KHONG bia mot con so.
+        if tho.get("confidence") is not None:
+            doan["do_tin"] = round(float(tho["confidence"]), 4)
+        ra.append(doan)
 
     if not ra:
         raise BanGhiError(_t('Không nghe được lời nói nào trong tệp.'))
@@ -116,8 +123,13 @@ def chuan_hoa(thoi: dict, *, thoi_luong_nguon: float = 0.0) -> dict:
         #    thoi gian ma ta khong co.
         "canh_chinh": str((thoi or {}).get("alignment_status") or ""),
         "thoi_luong_nguon": float(thoi_luong_nguon or 0.0),
+        # 🔑 Nguon goc loi thoai: `embedded` | `ocr` | `asr` (`nguon_loi.py`).
+        #    Ban ghi truoc 22/09 khong co khoa nay = `asr`.
+        "nguon_loi": str(nguon_loi or "asr"),
         "doan": ra,
     }
+    if dinh_tuyen:
+        ban["dinh_tuyen"] = dinh_tuyen
     kiem(ban)
     return ban
 
@@ -166,7 +178,7 @@ def kiem(ban: dict) -> None:
 
 
 def van_tay_ban_ghi(*, checksum_tieng: str, model: str, ngon_ngu: str,
-                    phien_ban_ma: int) -> str:
+                    phien_ban_ma: int, nguon_loi: str = "") -> str:
     """Van tay cua ban ghi (Prompt 10 muc 7).
 
     Bon thanh phan, va ly do tung cai:
@@ -181,6 +193,8 @@ def van_tay_ban_ghi(*, checksum_tieng: str, model: str, ngon_ngu: str,
         "ngon_ngu": ngon_ngu,
         "schema": SCHEMA_BAN_GHI,
         "ma": int(phien_ban_ma),
+        # `che_do:nguon:engine` — cung tieng, khac nguon loi = ban ghi khac.
+        **({"nguon_loi": nguon_loi} if nguon_loi else {}),
     }, sort_keys=True)
     return hashlib.sha256(goi.encode("utf-8")).hexdigest()
 
@@ -198,6 +212,7 @@ def tom_tat(ban: dict) -> dict:
         "ngon_ngu": ban.get("ngon_ngu", ""),
         "engine": ban.get("engine", ""),
         "canh_chinh": ban.get("canh_chinh", ""),
+        "nguon_loi": ban.get("nguon_loi", "asr"),
         "phu_song": round(
             sum(float(d["ket"]) - float(d["bat"]) for d in doan), 2),
     }

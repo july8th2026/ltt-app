@@ -30,6 +30,7 @@ from typing import Mapping
 from platform_core.i18n import _ as _t
 
 from . import (am_thanh as am_thanh_mod, bien_tap as bien_tap_mod,
+               nguon_loi as nguon_loi_mod,
                cai_dat as cai_dat_mod, cat_dau_cuoi,
                features, gia, hop_dong_v4, lop_phu as lop_phu_mod,
                ngon_ngu as ngon_ngu_mod, phu_de as phu_de_mod, rang_giong,
@@ -57,7 +58,7 @@ class LoiCaiDat(features.AsvError):
 KHOA_NHAN = frozenset({
     "timing_mode", "preset", "che_do_giong", "giong_id", "ngon_ngu_nguon",
     "ngon_ngu_dich", "vung", "cat", "lop_phu", "tu_dien", "phu_de", "am_thanh",
-    "bien_tap",
+    "bien_tap", "nguon_loi",
     cai_dat_mod.KHOA_SCHEMA, cai_dat_mod.KHOA_BI_DANH_GIONG,
 })
 
@@ -126,6 +127,11 @@ def dung_cai_dat(db, *, owner_id: str, tho: Mapping) -> dict:
                                             tho.get("ngon_ngu_dich"))
     except ngon_ngu_mod.NgonNguError as exc:
         raise LoiCaiDat(str(exc)) from None
+
+    # Nguon loi thoai (auto|embedded|ocr|asr) — kiem o CUA, truoc credit.
+    nl = str(tho.get("nguon_loi") or "").strip().lower()
+    if nl and nl not in nguon_loi_mod.CHE_DO_HOP_LE:
+        raise LoiCaiDat(_t('Nguồn lời thoại không hợp lệ.'))
 
     che_do_giong = (str(tho.get("che_do_giong") or "")
                     or hop_dong_v4.CHE_DO_GIONG_MAC_DINH)

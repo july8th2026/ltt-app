@@ -49,7 +49,9 @@ from .giai_doan_media import ThieuNguon
 MODEL_ASR = "large-v3"
 #: Doi khi doi cach chuan hoa/goi engine. Cung vao van tay.
 #: 2 (22/09): rut phan vai + ep ngon ngu nguon khach khai vao ASR.
-PHIEN_BAN_MA = 2
+#: 3 (22/09, lan ocr): dinh tuyen nguon loi embedded -> OCR hardsub -> ASR
+#:   (`nguon_loi.py`), ban ghi mang `nguon_loi` + `do_tin`.
+PHIEN_BAN_MA = 3
 
 
 class ThieuBanTieng(ThieuNguon):
@@ -112,14 +114,34 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         if ctx is not None and getattr(ctx, "progress", None):
             ctx.progress(5, _t('Đang chép lời'))
 
-        from . import cai_dat as cd, ngon_ngu as nn
+        from . import cai_dat as cd, ngon_ngu as nn, nguon_loi as nl
         cai = cd.doc(run)
         khai = nn.chuan_nguon(cai.ngon_ngu_nguon)
-        tho = chep_loi(duong, ngon_ngu="" if khai == nn.TU_DOAN else khai,
-                       ctx=ctx)
-
         tt = nhap_media.soi(duong)
-        ban = ban_ghi.chuan_hoa(tho, thoi_luong_nguon=tt["thoi_luong"])
+
+        # 🔑 Dinh tuyen TRUOC ASR: phu de nhung / hardsub la ban loi da bien
+        #    tap — khi co thi khong ton mot luot whisper tren GPU.
+        tho, dinh_tuyen = None, {"che_do": nl.ASR, "nguon_loi": nl.ASR, "ly_do": []}
+        che_do = nl.chuan_che_do(cai.nguon_loi)
+        if che_do != nl.ASR:
+            if not run.source_key:
+                raise ThieuNguon(_t('Phiên chạy không có tệp nguồn.'))
+            from .giai_doan_media import _duong_doc_duoc
+            video = _duong_doc_duoc(kho, run.source_key, thu_muc)
+            try:
+                tho, dinh_tuyen = nl.dinh_tuyen(
+                    video, che_do=che_do,
+                    ngon_ngu_khai="" if khai == nn.TU_DOAN else khai,
+                    thoi_luong=tt["thoi_luong"], ctx=ctx)
+            except nl.KhongCoNguon as exc:
+                raise ban_ghi.BanGhiError(str(exc)) from exc
+        if tho is None:
+            tho = chep_loi(duong, ngon_ngu="" if khai == nn.TU_DOAN else khai,
+                           ctx=ctx)
+
+        ban = ban_ghi.chuan_hoa(tho, thoi_luong_nguon=tt["thoi_luong"],
+                                nguon_loi=dinh_tuyen["nguon_loi"],
+                                dinh_tuyen=dinh_tuyen)
 
         # ⛔ Ban ghi khong duoc keo dai hon chinh ban tieng. Neu co, moc thoi
         #    gian da troi, va TIMING se dat tieng vao mot cho khong co hinh.
@@ -138,7 +160,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             checksum_tieng=assets.bam_tep(duong),
             model=MODEL_ASR,
             ngon_ngu=str(ban.get("ngon_ngu") or ""),
-            phien_ban_ma=PHIEN_BAN_MA)
+            phien_ban_ma=PHIEN_BAN_MA,
+            nguon_loi=f"{che_do}:{dinh_tuyen['nguon_loi']}:{ban.get('engine', '')}")
 
         khoa = assets.khoa_staging(owner_id=run.owner_id, run_id=run.id,
                                    stage=pipeline.TRANSCRIBE, van_tay=vt,
@@ -151,5 +174,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         return {
             "phan": [{"staging_key": khoa, "kind": "json", "duoi": "json",
                       "van_tay": vt}],
-            "tom_tat": ban_ghi.tom_tat(ban),
+            "tom_tat": {**ban_ghi.tom_tat(ban),
+                        # Ly do dinh tuyen (ma, khong chu thoai) cho van hanh.
+                        "dinh_tuyen": {k: dinh_tuyen.get(k) for k in
+                                       ("che_do", "nguon_loi", "ly_do")}},
         }

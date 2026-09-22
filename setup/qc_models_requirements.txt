@@ -14,4 +14,6 @@ jiwer==4.0.0
 faster-whisper==1.2.1
 ctranslate2==4.8.1
 av==18.1.0
-onnxruntime==1.29.0
+# OCR hardsub (dinh tuyen nguon loi, lan ocr 23/09) - chay CPU, khong gianh card.
+rapidocr==3.9.2
+onnxruntime==1.30.0

@@ -72,7 +72,8 @@ def cham(cap: list[dict], *, thiet_bi: str = "auto", lo: int = 16) -> dict:
             ids[j, :len(x)] = torch.tensor(x, dtype=torch.long)
             mask[j, :len(x)] = 1
         du_doan = model(ids.to(thiet_bi), mask.to(thiet_bi)).float().cpu().tolist()
-        for (ma, _), d in zip(khoi, du_doan):
+        # strict: mot diem cho MOI cap da gui — lech do dai la model tra thieu.
+        for (ma, _), d in zip(khoi, du_doan, strict=True):
             diem[ma] = round(float(d), 4)
     if thiet_bi == "cuda":
         torch.cuda.synchronize()

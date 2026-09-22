@@ -174,6 +174,20 @@ def gia_lap_do_luong(monkeypatch):
                        str(Path(__file__).parent / "_khong_co_qc_venv" / "python.exe"))
 
 
+def gia_lap_ocr(monkeypatch):
+    """OCR hardsub (RapidOCR trong venv do luong) ⇒ "khong co hardsub".
+
+    Cung ly do nhu demucs/ASR: TRANSCRIBE o che do `auto` (mac dinh tu 22/09)
+    chay OCR tren video nguon TRUOC ASR. Tren may da cai venv do luong, moi
+    phep kiem chuoi se nap model OCR that — rao lai o day, cung mot cho.
+    Phep kiem cua chinh dinh tuyen (`test_2040+`) truyen `chay=` gia.
+    """
+    from apps.auto_scan_video import nguon_loi
+
+    monkeypatch.setattr(nguon_loi, "doc_hardsub",
+                        lambda *a, **kw: (None, {"gia_lap": True}))
+
+
 @pytest.fixture(autouse=True)
 def demucs_gia_lap(monkeypatch):
     """Fixture AUTOUSE **pham vi tep** — nap vao mot tep test bang mot dong:
@@ -201,4 +215,5 @@ def demucs_gia_lap(monkeypatch):
         return
     gia_lap_demucs(monkeypatch)
     gia_lap_do_luong(monkeypatch)
+    gia_lap_ocr(monkeypatch)
     yield

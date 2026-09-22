@@ -261,7 +261,7 @@ def test_chep_loi_CHI_doc_nhung_thiet_lap_NAM_TRONG_khoa():
     """
     doc = _thuoc_tinh_cua_cai_dat(GOC / "apps/auto_scan_video/giai_doan_chep_loi.py")
     assert doc, "bo phan tich khong thay phep doc thiet lap nao — xanh rong"
-    assert doc <= {"ngon_ngu_nguon", "ngon_ngu_dich"}, doc
+    assert doc <= {"ngon_ngu_nguon", "ngon_ngu_dich", "nguon_loi"}, doc
 
 
 def test_tach_nguon_KHONG_doc_thiet_lap_nao():

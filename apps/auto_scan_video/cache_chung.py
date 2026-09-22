@@ -59,7 +59,7 @@ log = logging.getLogger(__name__)
 
 #: Doi so nay la vo hieu MOI khoa dung chung da ghi. Nang khi doi cach dung khoa
 #: hoac khi mot giai doan duoc chia se bat dau doc them mot dau vao.
-PHIEN_BAN_CACHE_CHUNG = 1
+PHIEN_BAN_CACHE_CHUNG = 2      # 2 (22/09): TRANSCRIBE doc them video nguon (dinh tuyen)
 
 #: Giai doan duoc chia se. Chi nhung giai doan (a) dat — GPU/CPU nang — va (b) co
 #: dau vao noi dung xac dinh duoc. `media_prepare` re va la cho TINH checksum;
@@ -103,17 +103,31 @@ def dau_vao_noi_dung(db, run, ten: str) -> dict | None:
         ck = str(((media.outputs if media else None) or {}).get("checksum_nguon") or "")
         return {"nguon": ck} if ck else None
     if ten == pipeline.TRANSCRIBE:
-        from . import cai_dat as cd
+        from . import cai_dat as cd, nguon_loi as nl
         from .giai_doan_chep_loi import MODEL_ASR
 
         ck = _checksum_tieng_asr(db, run)
         if not ck:
             return None
-        return {"tieng_asr": ck, "model": MODEL_ASR,
-                "ngon_ngu_nguon": str(cd.doc(run).ngon_ngu_nguon or ""),
-                # TRANSCRIBE chot cap ngon ngu (ngon_ngu.kiem_nguon_da_doan);
-                # dung lai cheo dich la bo qua phep chot do.
-                "ngon_ngu_dich": cd.doc(run).ngon_ngu_dich}
+        cai = cd.doc(run)
+        dv = {"tieng_asr": ck, "model": MODEL_ASR,
+              "ngon_ngu_nguon": str(cai.ngon_ngu_nguon or ""),
+              # TRANSCRIBE chot cap ngon ngu (ngon_ngu.kiem_nguon_da_doan);
+              # dung lai cheo dich la bo qua phep chot do.
+              "ngon_ngu_dich": cai.ngon_ngu_dich,
+              # Dinh tuyen nguon loi (22/09): che do + engine OCR.
+              "nguon_loi": nl.chuan_che_do(cai.nguon_loi),
+              "dinh_tuyen": nl.PHIEN_BAN_DINH_TUYEN}
+        if dv["nguon_loi"] != nl.ASR:
+            # 🔑 Dinh tuyen DOC VIDEO (luong phu de, dai hardsub): ban tieng
+            #    trung ma hinh khac (vd. cung am thanh, khac phu de dot) la
+            #    ban ghi khac. Thieu checksum video ⇒ khong chia se.
+            media = features.giai_doan_theo_ten(db, run.id, pipeline.MEDIA_PREPARE)
+            ck_v = str(((media.outputs if media else None) or {}).get("checksum_nguon") or "")
+            if not ck_v:
+                return None
+            dv["video"] = ck_v
+        return dv
     return None
 
 

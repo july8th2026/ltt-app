@@ -2,10 +2,13 @@
 
 #: Be mat ma app KHAC duoc phep import tu app nay.
 #:
-#: ⭐ Chi `auto_scan_video` (app cha) goi, va chi so dang ky bo do: giai doan
-#:    `qc_do_luong` dung `DauVao` roi `chay_tat_ca`, doc `phien_ban()` vao van
-#:    tay, va `BO_DO` de chia vach tien do. Moi bo do cu the (giong, SQUIM,
-#:    MetricX) nam SAU so dang ky — app cha khong biet va khong can biet.
+#: ⭐ Chi `auto_scan_video` (app cha) goi. Ba ten, ba viec khac nhau:
+#:    · `bo_do`  — so dang ky bo do cua `qc_do_luong` (giong, SQUIM,
+#:      MetricX nam SAU no; app cha khong biet va khong can biet);
+#:    · `venv`   — giao thuc chay mot bo do trong `qc-venv`;
+#:    · `ocr_khung` — doc chu dot vao hinh, cho dinh tuyen nguon loi.
 BE_MAT_CONG_KHAI = {
     ("apps.asv_gpu.do_luong", "bo_do"),
+    ("apps.asv_gpu.do_luong", "venv"),
+    ("apps.asv_gpu.do_luong", "ocr_khung"),
 }
