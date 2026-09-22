@@ -78,9 +78,9 @@ MANIFEST = AppManifest(
     table_prefix="vps",
 
     surface="customer",
-    # `development`: hạ tầng mới dựng, chưa có máy khách nào chạy thật. Q73 cấm
-    # dùng nhãn marketing để giả trạng thái — đổi sang `released` khi P1 xanh.
-    lifecycle="development",
+    # `released` 22/09/2026, lệnh chủ sản phẩm: mở bán cho mọi người dùng
+    # (`LTT_VPS_ROLLOUT=public`) ngay sau khi sửa lỗi mua IP OVH khoá tạo máy.
+    lifecycle="released",
     capabilities=("Utilities",),
     # Nhóm RIÊNG trên thanh tiêu đề, ngang hàng với "Ứng dụng" — chốt của chủ
     # sản phẩm 25/08: *"VPS là menu riêng; Ứng dụng là các tiện ích sau này tôi
