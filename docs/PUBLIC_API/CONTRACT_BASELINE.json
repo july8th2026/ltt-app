@@ -188,6 +188,10 @@
     "upstream_unreachable": {
       "retry": "after_delay",
       "status": 502
+    },
+    "workflow_runs_unavailable": {
+      "retry": "never",
+      "status": 501
     }
   },
   "execution_modes_in_use": [

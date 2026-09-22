@@ -63,6 +63,7 @@ CODE_QUOTE_INVALID = "quote_invalid"
 CODE_CONCURRENCY_LIMITED = "concurrency_limited"
 CODE_MODEL_NOT_FOUND = "model_not_found"
 CODE_QUOTA_EXCEEDED = "quota_exceeded"
+CODE_WORKFLOW_RUNS_UNAVAILABLE = "workflow_runs_unavailable"
 
 _TITLES = {
     CODE_INVALID_REQUEST: "Invalid request",
@@ -88,6 +89,7 @@ _TITLES = {
     CODE_CONCURRENCY_LIMITED: "Too many concurrent jobs",
     CODE_MODEL_NOT_FOUND: "Model not found",
     CODE_QUOTA_EXCEEDED: "Quota exceeded",
+    CODE_WORKFLOW_RUNS_UNAVAILABLE: "Workflow runs unavailable",
 }
 
 _STATUS_CODES = {
@@ -101,6 +103,7 @@ _STATUS_CODES = {
     422: CODE_UNPROCESSABLE,
     429: CODE_RATE_LIMITED,
     500: CODE_INTERNAL,
+    501: CODE_WORKFLOW_RUNS_UNAVAILABLE,
     503: CODE_SERVICE_UNAVAILABLE,
 }
 
@@ -445,3 +448,26 @@ def quote_expired(detail: object = "") -> ApiError:
 
 def quote_invalid(detail: object = "") -> ApiError:
     return ApiError(400, CODE_QUOTE_INVALID, detail)
+
+
+def workflow_runs_unavailable(detail: object = "", **extra) -> ApiError:
+    """501: workflow runs are gated off, not merely unavailable right now.
+
+    ⚠️ NAMED FOR THE CODE, NOT GENERICALLY. A first draft called this
+       `feature_unavailable()` and hard-coded `CODE_WORKFLOW_RUNS_UNAVAILABLE`
+       inside it — every other specific-cause helper in this file (`quote_invalid`,
+       `idempotency_conflict`, …) is named after the one code it raises, and a
+       generic name over a hard-coded code is a trap for the next caller: they
+       read the name, assume it takes a code, and ship the wrong one silently.
+       Code review (22/09) caught this before a second caller could.
+
+    Deliberately not `service_unavailable` (503, "operational blip, come back
+    soon") and not `not_found` (404, "this route doesn't exist"). A workflow
+    run endpoint that answers 200/201 with an id but never executes anything —
+    the actual state of `WF-802` before the Workflow V2 engine lands — is worse
+    than either: it *looks* like success. 501 is the RFC 9110 reading of "this
+    server does not support the functionality required to fulfill the
+    request", which is the one honest thing to say here, and it is what tells
+    a client not to retry.
+    """
+    return ApiError(501, CODE_WORKFLOW_RUNS_UNAVAILABLE, detail, extra=extra or None)
