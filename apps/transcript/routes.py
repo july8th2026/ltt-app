@@ -11,7 +11,9 @@ from __future__ import annotations
 
 import io
 import logging
+import tempfile
 import uuid
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -41,6 +43,16 @@ router = APIRouter(tags=["transcript"])
 TRAN_BYTE = 95 * 1024 * 1024
 
 DUOI_NHAN = (".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".webm")
+
+
+def _do_thoi_luong(du_lieu: bytes, duoi: str) -> float:
+    """Thời lượng THẬT của tệp vừa nhận (ffprobe) — giá tính theo con số này."""
+    from platform_core import media
+
+    with tempfile.TemporaryDirectory(prefix="transcript_gia_") as tam:
+        duong = Path(tam) / f"vao{duoi}"
+        duong.write_bytes(du_lieu)
+        return float(media.duration_seconds(str(duong)) or 0.0)
 
 
 def _jobs_cua_toi(request: Request, user: str) -> list:
@@ -115,11 +127,18 @@ async def queue(
     #    cau tra loi tu te, va mot lop phong thu o xa ma App khong duoc dua vao.
     duoi = next(d for d in DUOI_NHAN if ten.endswith(d))
     khoa = f"transcript/{user}/{uuid.uuid4().hex}{duoi}"
+    # Giá theo phút audio đo từ CHÍNH tệp (gia.py). Không đo được = không phải
+    # audio dùng được — từ chối trước khi giữ tiền, thay vì giữ 1 credit sai.
+    thoi_luong = _do_thoi_luong(du_lieu, duoi)
+    if thoi_luong <= 0:
+        return _trang(request, user, status_code=400,
+                      loi=_t("Không đọc được thời lượng tệp âm thanh — tệp hỏng hoặc sai định dạng."))
     try:
         tham_so = {"audio": khoa, "language": language.strip(),
                    "min_s": min_s, "max_s": max_s,
                    "include_silence": bool(include_silence),
-                   "he": he.strip() or he_phien_am.MAC_DINH}
+                   "he": he.strip() or he_phien_am.MAC_DINH,
+                   "duration_s": round(thoi_luong, 3)}
         phien_am.chuan_hoa(tham_so)
     except phien_am.LoiPhienAm as e:
         return _trang(request, user, loi=str(e), status_code=400)

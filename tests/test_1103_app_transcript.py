@@ -45,16 +45,42 @@ def test_manifest_khai_dung_nhung_gi_nen_tang_doc() -> None:
     assert MANIFEST.requires == ("gpu",)
 
 
-def test_bon_cong_deu_DONG_o_V1() -> None:
-    """`public`/`lifecycle`/`api_exposed` đóng là CHỦ Ý, không phải quên.
+def test_bon_cong_MO_sau_doi_soat_quy_tac_legacy() -> None:
+    """Mở 22/09/2026 (chủ dự án chốt): quy tắc đã đối soát với `bot_transcript`
+    (`tests/test_1114_*`), giá đo từ tệp, E2E qua worker. Giá trong mô tả API phải
+    khớp `gia.py` — một con số chỉ ở chuỗi là hai nguồn cho một giá."""
+    from apps.transcript import gia
 
-    Mở một cổng khi parity chưa đóng là mời khách vào một App chưa chứng minh
-    được nó làm đúng việc của bản cũ.
-    """
-    assert MANIFEST.public is False
-    assert MANIFEST.lifecycle == "development"
-    assert _tool().api_exposed is False
-    assert _tool().api_contract == {}
+    assert MANIFEST.public is True
+    assert MANIFEST.lifecycle == "released"
+    assert _tool().customer_visible is True
+    assert _tool().api_exposed is True
+    hop_dong = _tool().api_contract
+    assert hop_dong["hidden"] == ("duration_s",)
+    assert f"{gia.CREDIT_PER_MINUTE} credits per started minute" in hop_dong["description"]
+    assert _tool().params_schema["duration_s"]["measured_from"] == "audio"
+
+
+def test_gia_theo_phut_audio_lam_tron_len_toi_thieu_1() -> None:
+    from apps.transcript import gia
+
+    assert gia.uoc_luong_credit(0) == 1
+    assert gia.uoc_luong_credit(30) == 1        # 0.5 phút × 2 = 1
+    assert gia.uoc_luong_credit(61) == 3        # 1.02 phút × 2 = 2.03 -> 3
+    assert gia.uoc_luong_credit(357.5) == 12
+    assert MANIFEST.credit_cost({"duration_s": 357.5}) == 12
+
+
+def test_quyet_toan_KHONG_vuot_phan_da_giu(monkeypatch) -> None:
+    """Q84: khách không trả hơn phần đã giữ ở báo giá."""
+    from platform_core import credit
+
+    monkeypatch.setattr(credit, "so_da_giu", lambda db, job_id: 4)
+    monkeypatch.setattr("platform_core.db.get_session",
+                        lambda: iter([type("Db", (), {"close": lambda self: None})()]))
+    assert app_jobs._quyet_toan("job-1", 357.5) == 4      # giá thật 12 > giữ 4
+    assert app_jobs._quyet_toan("job-1", 30) == 1         # giá thật 1 < giữ 4
+    assert app_jobs._quyet_toan("", 357.5) == 12          # không có job => giá thật
 
 
 def test_toolspec_va_manifest_KHONG_the_lech_job_type() -> None:
