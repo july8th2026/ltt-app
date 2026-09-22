@@ -668,12 +668,16 @@ def tuyen_desktop_cho(alias: str) -> str:
 #:    sai và chúng mâu thuẫn nhau: `65000` bắt khách tự giới hạn thấp hơn thật
 #:    26 nghìn token, còn `131K` hứa nhiều hơn thật 42 nghìn rồi để họ ăn **413**
 #:    giữa hội thoại. Một con số gõ tay trong tài liệu bán hàng là một lời hứa.
-CUA_SO_CONG_BO = 171_458
+#:
+#: ✅ CHỦ DỰ ÁN CHỐT 22/09/2026: hạ số công bố để khớp TOKEN THẬT — chia cho
+#:    `ngan_sach.HE_SO_UOC_TREN_THAT` thay vì bớt 8% cho lệch tokenizer. Xem
+#:    `ngan_sach.cong_bo_cua` cho nguồn đo và lý do chọn hệ số.
+CUA_SO_CONG_BO = 124_245
 TOKEN_RA_TRAN = 32_768
 
 #: Ngưỡng client **phải nén** hội thoại. Bản sao của `ngan_sach.NEN_CHO_CLIENT`,
 #: cùng lý do và cùng cách đối chiếu như hai con số trên.
-NEN_CLIENT = 138_690
+NEN_CLIENT = 91_477
 
 #: Trần cho **một** kết quả công cụ, công bố vì nó đổi hành vi thấy được.
 #:
@@ -704,13 +708,17 @@ NGU_CANH_NAM_SO = (
      "What the model is loaded with on our GPU. You never send this much: "
      "input and output share this window."),
     ("Hard input limit", "186,368",
-     "The most input we accept. Above it you get 413 — never a silent "
-     "truncation. It is the engine window minus the longest possible answer "
-     "and a margin for token estimation."),
+     "The most input we accept. Above it you get a 400 "
+     "(`context_window_exceeded`) — never a silent truncation; a streaming "
+     "Responses request instead gets a 200 with a terminal `response.failed` "
+     "event (`context_length_exceeded`). It is the engine window minus the "
+     "longest possible answer and a margin for token estimation."),
     ("Advertised context", f"{CUA_SO_CONG_BO:,}",
-     "What you should configure your client with. It is 8% under the hard "
-     "limit because your client counts tokens with its tokenizer and we count "
-     "with the model's; the two never agree exactly."),
+     "What you should configure your client with. It is the hard limit "
+     "divided by 1.5, because the hard limit is computed from our own "
+     "upper-bound token estimate at the gate, while this number must hold in "
+     "REAL tokens as your client and the model count them; 1.5 is the worst "
+     "observed ratio between the estimate and real usage."),
     ("Auto-compact at", f"{NEN_CLIENT:,}",
      "Where your client should summarise the conversation. It leaves room for "
      "one more full-length answer before the advertised ceiling, because a "
@@ -724,7 +732,9 @@ NGU_CANH_NAM_SO = (
      "without this ceiling one turn can outgrow every reserve."),
 )
 
-#: Vì sao một yêu cầu ăn `413`, và **cách sửa đúng chỗ**.
+#: Vì sao một yêu cầu bị từ chối vì vượt trần ngữ cảnh (`400
+#: context_window_exceeded`; Responses stream: `response.failed`), và **cách
+#: sửa đúng chỗ**.
 #:
 #: ⛔ Không khuyên "xoá phiên rồi làm lại". Đó là cách chắc chắn để mất việc
 #:    đang làm mà **không** sửa nguyên nhân — lần sau nó lặp lại y hệt.
@@ -793,7 +803,7 @@ TEP_CATALOG_CODEX = r"C:\Users\YOUR_WINDOWS_USER\.codex\ltt_model_catalog.json"
 # every generated profile/catalog entry against apps/ltt_llm/ngan_sach.py.
 CODEX_MODEL_LIMITS = {
     "ltt-3.8": (CUA_SO_CONG_BO, NEN_CLIENT),
-    "ltt-3.5": (209_141, 176_373),
+    "ltt-3.5": (151_552, 118_784),
 }
 
 # Labels are product names shown to people.  Slugs remain the stable wire names

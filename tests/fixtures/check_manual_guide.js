@@ -31,8 +31,8 @@ async page => {
         'ltt-llm-claude-compat', 'ltt-llm-claude-compat-35',
         'LTT 3.8 (Mạnh)', 'LTT 3.5 (Nhanh)',
         'Calculate 8 * 7', 'Calculate 12 * 12', '56', '144',
-        'CLAUDE_CODE_MAX_CONTEXT_TOKENS=171458',
-        'CLAUDE_CODE_AUTO_COMPACT_WINDOW=138690',
+        'CLAUDE_CODE_MAX_CONTEXT_TOKENS=124245',
+        'CLAUDE_CODE_AUTO_COMPACT_WINDOW=91477',
         'CLAUDE_CODE_MAX_OUTPUT_TOKENS=32768',
         'MAX_MCP_OUTPUT_TOKENS=16384',
         'CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS=1',
@@ -62,7 +62,7 @@ async page => {
       const codex = page.locator('#khu-codex');
       const codexText = await codex.innerText();
       for (const expected of ['0.145.0', 'ltt-fast.config.toml', 'codex --profile ltt-fast',
-                              'YOUR_WINDOWS_USER', '171458', '209141', '138690', '176373']) {
+                              'YOUR_WINDOWS_USER', '124245', '151552', '91477', '118784']) {
         if (!codexText.includes(expected)) throw new Error(`Codex missing ${expected}`);
       }
       const catalog = codex.locator('details').first();

@@ -1115,3 +1115,74 @@ Chủ dự án duyệt 19/09. Bổ sung L-26 (không thay): effort vẫn đi t�
 - Cơ chế: `runtime_noi_bo.luong.chuan_hoa_suy_nghi` — model có nấc mà khách không khai effort ở cả ba chỗ ⇒ chèn `examples.CODEX_MODEL_REASONING[alias]` (3.8: `medium`). Mọi cửa đi qua hàm này (`/chat/completions` đồng bộ/job qua `features.kiem_tham_so`, `/messages`, `/responses` stream + một cục) ⇒ budget máy chủ theo mức medium (2.048, L-32) và `/messages` nhận `chat_template_kwargs.reasoning_effort=medium`. Không còn dựa vào `--reasoning-effort xhigh` của máy B (yaml KHÔNG đổi).
 - Một nguồn: `examples.CODEX_MODEL_REASONING`; bản sao đối chiếu `ngan_sach.NGHI_MAC_DINH_THEO_MODEL`, `tools/cam_cli.py`, `sdk/ltt_cai_dat_cli.py` — `test_1430::test_l33_*` + `test_275` buộc khớp. Catalog `/api/v1/models`, catalog/profile Codex, mô tả `reasoning_effort` công khai nói `medium`.
 - 3.5 không đổi (không chèn effort).
+
+## L-34 — Chuẩn hoá ngữ nghĩa lỗi model: status không phải ngữ nghĩa, canonical/protocol tách, mã lạ fail-closed (2026-09-22)
+
+**Chốt khi rollout A+B của Task 1–11 hoàn tất và deploy `e94dd9a2`/`f587f497`** (bằng chứng: `docs/ltt_llm_dual/LOI_MODEL_RUNBOOK.md` §7). Nguồn thiết kế: `docs/superpowers/specs/2026-09-21-chuan-hoa-ngu-nghia-loi-llm.md`; kế hoạch: `docs/superpowers/plans/2026-09-21-chuan-hoa-ngu-nghia-loi-llm.md`.
+
+- **HTTP status không phải ngữ nghĩa nghiệp vụ.** Hai lỗi khác nhau có thể cùng
+  status (`413` cho cả `request_body_too_large` và một số đường fail-fast
+  nội bộ), và một status không tự nói lỗi nào — action/telemetry/UI phải đọc
+  `canonical_code`, không đọc status, không soi câu chữ message.
+- **`canonical_code` tách khỏi `protocol_code`.** `canonical_code` là sự thật
+  nội bộ, registry `llm_gateway/error_contract.py::ERROR_SPECS` và máy B sở
+  hữu bản gốc. `protocol_code` là lớp adapter tương thích riêng từng giao thức
+  (OpenAI/Anthropic/Responses) ở `llm_gateway/upstream_errors.py`,
+  `platform_core/llm/model_failure.py`. Đổi tương thích wire của một protocol
+  không được phép làm lệch `canonical_code` gốc của lỗi.
+- **Mã lạ fail-closed thành `upstream_unknown`** — body dị dạng, mã không khớp
+  registry, hoặc decode thất bại đều fail-closed, không đoán theo status hay
+  suy diễn từ câu chữ (`platform_core/llm/model_failure.py::decode_gateway_failure`).
+- **Sở hữu tầng:** máy B sở hữu `origin` — envelope `ltt_error` gốc do
+  `platform_core/public_api/errors.py::model_failure_extension` /
+  `server/api/su_kien_loi.py` phát ra; máy A sở hữu **public rendering**. Cờ
+  `LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS` (`platform_core/public_api/config.py`,
+  mặc định `0` trong chu kỳ phát triển) **bật `1` chính thức từ 22/09/2026**
+  sau khi canary A→B 9/9 xanh và snapshot log 10 phút không có
+  unknown/legacy/mismatch (runbook §7).
+- **Client LTTCODE `0.2.5` đọc `ltt_error` v1** (ưu tiên `canonical_code`);
+  client cũ không hiểu `ltt_error` vẫn có shape tương thích để không vỡ.
+- **`request_body_too_large` (413, tổng byte HTTP vượt trần, đo trước khi đếm
+  token) KHÔNG kích hoạt nén ngữ cảnh phía client** — khác hẳn
+  `context_window_exceeded`; hai mã tách rời từ đăng ký gốc
+  (`llm_gateway/error_contract.py:101`) và nay là quyết định chính thức,
+  không còn là chi tiết triển khai có thể trôi.
+
+**Vì sao đổi:** trước Task 1–11, một số nơi (client cũ, renderer legacy) từng
+suy diễn hành động từ `status == 413` hoặc so khớp chuỗi message
+("prompt is too long"...), gán nhầm `request_body_too_large` thành lỗi ngữ
+cảnh và khiến mã lạ bị đoán sai thành một mã đã biết. Runbook §7 ghi lại ca
+thật: inject `model_not_found` từng đi qua `ApiError(400)` cũ ở validator cục
+bộ trước khi vá bằng `e94dd9a2`. `docs/ltt_llm_dual/AUDIT_API_2026-09-14.md`
+(hậu kiểm cuối tệp) và `docs/ltt_llm_dual/LOI_MODEL_RUNBOOK.md` §8 liệt kê các
+chỗ tài liệu còn nói theo lối cũ.
+
+## L-35 — Hạ cửa sổ ngữ cảnh công bố cho khớp token THẬT: bỏ biên 8% lệch tokenizer, chia `HE_SO_UOC_TREN_THAT = 1,5` (2026-09-22)
+
+**Chủ dự án chốt 22/09/2026 (quyết định (b)).** Đo: token ước của A
+(`platform_core/llm/uoc_token.py`, cận trên) chia usage token thật = median
+1,31, max 1,483 trên 1.120 lượt production (`C:\lttc0\logs\he_so_uoc_that.md`).
+Chọn `k = 1,50`, BỎ biên `× 0,92` cũ.
+
+- **Vì sao đổi.** Số công bố cũ bớt 8% với lý do "lệch tokenizer" — sai câu
+  hỏi. Client đếm token bằng bộ đếm của nó, model tính tiền bằng token thật
+  của Qwen; nhưng trần tiền kiểm ở A (`tran_vao_cua`, `TOKEN_VAO_TRAN`) được
+  tính trên token **ước** (cận trên có chứng minh), không phải token thật. Số
+  công bố phải quy đổi ước → thật bằng đúng tỉ lệ đo được giữa hai phép đếm,
+  không phải một biên tuỳ ý cho tokenizer.
+- **Vì sao lấy `max` chứ không `p99`.** k gần như HẰNG trong một phiên (cùng
+  ngôn ngữ, cùng hình dạng nội dung suốt một phiên chat), nên 1.120 lượt gộp
+  lại chỉ tương đương cỡ mẫu **hiệu dụng ~28 phiên độc lập**. Một p99 trên cỡ
+  mẫu nhỏ như vậy không đáng tin — một phiên lệch có thể chiếm cả phần đuôi.
+  `max` đo được (1,483) là biên cứng quan sát trên toàn bộ 1.120 lượt; 1,50
+  nới thêm chút cho phiên chưa thấy.
+- **Trần tiền kiểm thật ở cổng KHÔNG đổi** — `tran_vao_cua`/`TOKEN_VAO_TRAN`
+  (186.368 / 227.328) vẫn tính như cũ; chỉ số **khuyên client cấu hình** đổi.
+- **Con số mới:** `CONG_BO_CHO_CLIENT` 171.458 → **124.245**; `NEN_CHO_CLIENT`
+  138.690 → **91.477**; `ltt-3.5` 209.141/176.373 → **151.552/118.784**.
+- **Một nguồn:** `apps/ltt_llm/ngan_sach.HE_SO_UOC_TREN_THAT`, `cong_bo_cua(m)`,
+  `CONG_BO_CHO_CLIENT`. Bản sao đối chiếu: `platform_core/public_api/examples.py`
+  (`CUA_SO_CONG_BO`, `NEN_CLIENT`, `CODEX_MODEL_LIMITS`), `tools/cam_cli.py`,
+  `sdk/ltt_cai_dat_cli.py` — `test_334`, `test_1214`, `test_294`, `test_1440`
+  buộc khớp; test mới buộc `cong_bo_cua(m) * HE_SO_UOC_TREN_THAT <= tran_vao_cua(m)`
+  (và bác bỏ với hệ số 0,92 cũ).

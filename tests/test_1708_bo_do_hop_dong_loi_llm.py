@@ -4,6 +4,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import logging
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -352,6 +353,37 @@ def test_http_transport_dung_user_agent_ro_rang_cho_cloudflare(monkeypatch):
     assert requests[0][0].get_header("User-agent") == (
         "ltt-llm-contract-monitor/1.0"
     )
+
+
+def test_inject_chat_gui_idempotency_key_rieng_de_toi_duoc_model_guard():
+    tool = _load()
+    calls = []
+
+    def transport(url, *, body, headers):
+        calls.append((url, body, headers))
+        return 404, {
+            "error": {
+                "ltt_error": {
+                    "canonical_code": "model_not_found",
+                    "protocol_code": "model_not_found",
+                    "request_id": "rid-inject-idempotency",
+                    "recovery": "choose_model",
+                }
+            }
+        }
+
+    report = tool.run_inject(
+        "http://127.0.0.1:18100/api",
+        token="test-token",
+        transport=transport,
+    )
+
+    assert report["pass"] is True
+    chat_headers = next(
+        headers for url, _body, headers in calls
+        if url.endswith("/v1/chat/completions")
+    )
+    assert re.fullmatch(r"[0-9a-f]{32}", chat_headers["Idempotency-Key"])
 
 
 def test_inject_loi_mang_van_sinh_report_do_khong_lo_chi_tiet():

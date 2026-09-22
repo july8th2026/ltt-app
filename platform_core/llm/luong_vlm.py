@@ -77,9 +77,10 @@ class KhongMoDuocLuong(Exception):
         #: ⛔ Và khác cả hai ở chỗ quan trọng nhất: **không** `danh_dau_loi`.
         #:    Prefill 200K mất hàng phút là công việc hằng ngày của hệ này, chứ
         #:    không phải dấu hiệu khoá hỏng.
-        #: Đầu vào vượt trần token của máy B (413) — lỗi CLIENT (ngữ cảnh quá
-        #: dài), KHÔNG phải hỏng tạm. Bên gọi phải trả 413 để client NÉN hội
-        #: thoại, KHÔNG được dịch thành 503 (retry vô ích → bão).
+        #: Đầu vào vượt trần token của máy B (máy B trả 413 trên dây trong giai
+        #: đoạn tương thích) — lỗi CLIENT (ngữ cảnh quá dài), KHÔNG phải hỏng
+        #: tạm. Bên gọi trả lỗi quá dài (công khai 400 `context_window_exceeded`,
+        #: L-34) để client NÉN hội thoại, KHÔNG được dịch thành 503 (retry vô ích → bão).
         self.thu_lai_sau_s = int(failure.retry_after_s or thu_lai_sau_s)
 
     @property

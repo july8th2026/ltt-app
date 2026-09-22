@@ -483,7 +483,7 @@
               "ltt-3.5"
             ],
             "default": "ltt-3.8",
-            "description": "`ltt-3.8` is the deepest model and reads images (171K usable input context). `ltt-3.5` answers faster, costs much less and reads images, with 209K usable input context.",
+            "description": "`ltt-3.8` is the deepest model and reads images (124K usable input context). `ltt-3.5` answers faster, costs much less and reads images, with 152K usable input context.",
             "examples": [
               "ltt-3.8"
             ]
@@ -602,7 +602,7 @@
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "1fa09e7adca5e50c"
+      "contract_hash": "fba964038d4be3cd"
     },
     {
       "name": "text.prompt_package",

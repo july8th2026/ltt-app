@@ -12965,8 +12965,8 @@ msgid "Tắt"
 msgstr "Disable"
 
 #: server/templates/_cam_chon.html:226
-msgid "Tắt 1M chưa đặt giới hạn 171K"
-msgstr "Disabling 1M does not set a 171K limit"
+msgid "Tắt 1M chưa đặt giới hạn 124K"
+msgstr "Disabling 1M does not set a 124K limit"
 
 #: server/templates/_cam_chon.html:215
 msgid "Tắt discovery, khai đúng hai Model ID, Apply Changes rồi thoát hẳn và mở lại."
@@ -14023,13 +14023,13 @@ msgid ""
 "Với custom ANTHROPIC_BASE_URL, Claude mặc định tải toàn bộ schema MCP vì Tool Search cần "
 "tool_reference mà nhiều proxy không hỗ trợ. LTT chưa hỗ trợ tool_reference nên giữ "
 "ENABLE_TOOL_SEARCH=false. Tắt Connector/Plugin không dùng; nên giữ mục MCP tools dưới khoảng một "
-"phần mười cửa sổ nén (khoảng 13.9k ở preset 3.8). MAX_MCP_OUTPUT_TOKENS chỉ giới hạn kết quả của "
+"phần mười cửa sổ nén (khoảng 9.1k ở preset 3.8). MAX_MCP_OUTPUT_TOKENS chỉ giới hạn kết quả của "
 "một tool, không làm nhỏ schema của 131 tool."
 msgstr ""
 "With a custom ANTHROPIC_BASE_URL, Claude loads all MCP schemas by default because Tool Search "
 "requires tool_reference blocks that many proxies do not support. LTT does not yet support "
 "tool_reference, so keep ENABLE_TOOL_SEARCH=false. Disable unused Connectors and Plugins; keep MCP"
-" tools below roughly one tenth of the compaction window when practical (about 13.9k with the 3.8 "
+" tools below roughly one tenth of the compaction window when practical (about 9.1k with the 3.8 "
 "preset). MAX_MCP_OUTPUT_TOKENS limits one tool result; it does not shrink the schemas of 131 "
 "tools."
 
@@ -19434,3 +19434,17 @@ msgstr "LTT standard"
 
 msgid "Whisper large-v3 + quy tắc LTT (hệ gốc, mặc định)"
 msgstr "Whisper large-v3 + LTT rules (original engine, default)"
+
+# Docs413 22/09: vuot tran ngu canh cong khai la 400 context_window_exceeded
+# (Responses stream: response.failed), khong con la 413 -- tests/test_1480.
+# Chuoi 413 cu (dieu_khoan.py, huong_dan.html) da doi noi dung nguon; ban dich
+# cu con lai o file nay khong con duoc tham chieu tu ma nguon.
+
+msgid "Mỗi model có trần đầu vào riêng và trần này được công bố ở /api/v1/models. Yêu cầu vượt trần bị từ chối bằng mã 400 (context_window_exceeded; cửa Responses dạng stream báo bằng sự kiện response.failed) kèm con số trần thật, không bị cắt bớt âm thầm."
+msgstr "Each model has its own input ceiling, published at /api/v1/models. A request over the ceiling is refused with a 400 (context_window_exceeded; a streaming Responses call instead reports it with a response.failed event) carrying the real limit; it is never silently truncated."
+
+msgid "Nếu bạn bị từ chối vì vượt trần ngữ cảnh giữa chừng"
+msgstr "If you get rejected for going over the context limit mid-conversation"
+
+msgid "Vượt trần thì bạn nhận mã 400 (context_window_exceeded) kèm đúng con số đã áp cho model bạn gọi — cửa Responses dạng stream báo bằng sự kiện response.failed thay vì đóng kết nối lặng lẽ. Chúng tôi KHÔNG bao giờ lặng lẽ cắt bớt lượt cũ: cắt đi thì thứ mất đầu tiên là chỉ dẫn hệ thống và kết quả tool, và bạn sẽ không biết là mình đã mất."
+msgstr "Go over the limit and you get a 400 (context_window_exceeded) carrying the number that actually applied to the model you called — a streaming Responses call instead reports it with a response.failed event instead of closing silently. We NEVER silently drop older turns: the first things to go would be your system instructions and your tool results, and you would have no way to know they were gone."

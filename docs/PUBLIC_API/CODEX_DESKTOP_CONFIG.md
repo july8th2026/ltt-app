@@ -42,8 +42,8 @@ Vì vậy cấu hình copy không ghi khóa đó: hành vi vẫn false và cùng
 
 | Tên hiển thị | Wire model | Context | Compact | Max output | Một tool result |
 |---|---:|---:|---:|---:|---:|
-| LTT 3.8 (Strong) | `ltt-3.8` | 171,458 | 138,690 | 32,768 | 16,384 |
-| LTT 3.5 (Fast) | `ltt-3.5` | 209,141 | 176,373 | 32,768 | 16,384 |
+| LTT 3.8 (Strong) | `ltt-3.8` | 124,245 | 91,477 | 32,768 | 16,384 |
+| LTT 3.5 (Fast) | `ltt-3.5` | 151,552 | 118,784 | 32,768 | 16,384 |
 
 LTT 3.8 công bố ba mức `low|medium|xhigh`, preset mặc định là `medium` (L-33, 19/09 — medium ~½ thời gian/token ra so với xhigh); chọn `xhigh` khi cần sâu nhất.
 Qwen3.5 chỉ công bố thinking bật/tắt. Codex yêu cầu catalog có

@@ -60,10 +60,11 @@ riêng cho precise coding:
 
 ## Contract sau bản vá
 
-- `ltt-3.8`: context công bố 171.458, compact 138.690, output 32.768, tool/MCP
-  result 16.384; text và image.
-- `ltt-3.5`: context công bố 209.141, compact 176.373, output 32.768, tool/MCP
-  result 16.384; text và image.
+- `ltt-3.8`: context công bố 124.245, compact 91.477, output 32.768, tool/MCP
+  result 16.384; text và image. (Hạ từ 171.458/138.690 ngày 22/09/2026, L-35 —
+  chia `HE_SO_UOC_TREN_THAT` thay vì bớt 8% lệch tokenizer.)
+- `ltt-3.5`: context công bố 151.552, compact 118.784, output 32.768, tool/MCP
+  result 16.384; text và image. (Hạ từ 209.141/176.373 cùng quyết định.)
 - Claude Code 2.1.270 nhận cấu hình output 32.768 nhưng tự báo effective cap
   32.000 cho model ID không nhận diện. Server vẫn giữ contract 32.768; đây là
   giới hạn client đã quan sát, không phải lý do đổi trần server.

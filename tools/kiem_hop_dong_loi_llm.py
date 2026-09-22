@@ -7,6 +7,7 @@ import os
 import sys
 import urllib.error
 import urllib.request
+import uuid
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -391,12 +392,15 @@ def run_inject(
     matrix = []
     for protocol, path, payload in cases:
         body = {"model": "__ltt_contract_missing__", **payload}
+        request_headers = {"Authorization": f"Bearer {token}"}
+        if protocol == "chat":
+            request_headers["Idempotency-Key"] = uuid.uuid4().hex
         transport_failed = False
         try:
             status, response = transport(
                 base_url.rstrip("/") + path,
                 body=body,
-                headers={"Authorization": f"Bearer {token}"},
+                headers=request_headers,
             )
         except (OSError, TimeoutError, ValueError, urllib.error.URLError):
             # Không chép exception: URL/proxy stack có thể mang credential hoặc

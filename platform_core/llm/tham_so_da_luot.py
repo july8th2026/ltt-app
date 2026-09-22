@@ -99,7 +99,7 @@ class DatChoVuotPool(ValueError):
        che lỗi: đặt chỗ nhỏ hơn thứ lượt thật dùng ⇒ Σ đặt chỗ "vừa" pool trong
        khi engine tràn `-kvu` và giết MỌI slot (llama.cpp b10689). Và nó che luôn
        chính lỗi cấu hình gây ra nó (đệm ước lệch trần vào — O-08).
-    ⭐ Cửa gọi dịch sang lỗi "quá dài" (413 trước 200 / job hỏng không thử lại):
+    ⭐ Cửa gọi dịch sang lỗi "quá dài" (trước 200, công khai 400 / job hỏng không thử lại):
        lượt này quá lớn với model ở cấu hình hiện tại, thử lại không bao giờ được.
     """
 

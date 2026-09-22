@@ -148,8 +148,8 @@ def _cua_so_noi_voi_khach(model_id: str) -> str:
 
        "131K" là cửa sổ của **engine**. Trần đầu vào của Public API là
        `TOKEN_VAO_TRAN` (chừa chỗ cho câu trả lời dài nhất và cho sai số của
-       phép ước), còn con số ta **công bố** cho client là `CONG_BO_CHO_CLIENT`
-       (chừa thêm 8 % lệch tokenizer).
+       phép ước, tính theo token ƯỚC), còn con số ta **công bố** cho client là
+       `CONG_BO_CHO_CLIENT` (quy đổi sang token THẬT, chia `HE_SO_UOC_TREN_THAT`).
 
        ⛔ Ba con số ấy **cố ý không gõ ra ở đây** — xem đầu tệp: đúng chỗ này
           từng chép chúng ra và cả ba đã trôi hai lần. Đọc `ngan_sach.py`.

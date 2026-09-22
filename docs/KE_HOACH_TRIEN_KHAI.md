@@ -4171,3 +4171,29 @@ CRLF gốc, lượt cuối `python tools\gate.py` **PASS 33/33**, báo cáo
       vào gói hoặc tham số cập nhật, test hành vi và tài liệu rollback. H55 đã
       ghi marker không BOM từ commit/gói xác định rồi đối chiếu 0/0/0; khoản nợ
       này dành cho lượt sửa hạ tầng riêng, không làm sai bản đang chạy.
+
+## H57 — Chuẩn hoá ngữ nghĩa lỗi model LLM: B→A→client (2026-09-21 → )
+
+Nguồn: spec `docs/superpowers/specs/2026-09-21-chuan-hoa-ngu-nghia-loi-llm.md`,
+plan `docs/superpowers/plans/2026-09-21-chuan-hoa-ngu-nghia-loi-llm.md`. Quyết
+định: `docs/ltt_llm_dual/DECISION_LOG.md` L-34 (22/09/2026) và L-35 (cửa sổ công bố); con trỏ
+ở Q136 `docs/QUYET_DINH_NEN_TANG.md`. Runbook đo: `docs/ltt_llm_dual/LOI_MODEL_RUNBOOK.md`.
+
+- [x] **H57.1 — Task 1–11 (registry `canonical_code`/`protocol_code`, decoder
+      B→A, envelope `ltt_error`, rollout A+B):** XONG, deploy `e94dd9a2`/
+      `f587f497` 22/09/2026; canary A→B 9/9, snapshot log 10 phút 0
+      unknown/legacy/mismatch (runbook §7).
+- [ ] **H57.2 — Task 12 (LTTCODE đọc `ltt_error` v1, bản 0.2.5):** đang phát;
+      12a/12b xong trên nhánh (`D:\LTTCODEAPP-025`, `D:\LTTCODEAPP-025-model35`),
+      12c (PATH-01/TOOL-01) đang rà nguồn, 12d (build + verify) chưa chạy. Theo
+      dõi ở kế hoạch R1–R9 (`docs/superpowers/plans/2026-09-21-chuan-hoa-ngu-nghia-loi-llm.md`
+      mục "Kế hoạch phần còn lại").
+- [ ] **H57.3 — Task 13 (gỡ suy diễn legacy sau khi telemetry chứng minh):**
+      HOÃN có điều kiện — chỉ vào khi một chu kỳ vận hành có traffic đo được
+      `llm_error_legacy_total=0`/`llm_error_contract_mismatch_total=0` sau khi
+      LTTCODE 0.2.5 thay 0.2.4 trên máy dùng.
+- [ ] **H57.4 — Task 14 (đồng bộ tài liệu, quyết định, tổng kết phiên):** tài
+      liệu (quyết định L-34/L-35, hậu kiểm `AUDIT_API_2026-09-14.md`, docs API
+      sinh bằng `tools/build_public_api_docs.py`, rà `git grep` 413/câu chữ ở
+      `docs/ltt_llm_dual/LOI_MODEL_RUNBOOK.md` §8) đang cập nhật trên
+      `phien/llm-loi-nghia`; L3 tổng kết phiên còn ở bước sau (R8 của plan).
