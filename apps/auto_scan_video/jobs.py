@@ -30,7 +30,7 @@ import logging
 from platform_core.db import get_session
 from platform_core.models import JOB_CANCELLED, JOB_DONE, JOB_ERROR, Job
 
-from . import assets, features, pipeline, su_dung, sua_chua, thi_hanh
+from . import assets, features, lat_cat, pipeline, su_dung, sua_chua, thi_hanh
 from .tables import (RUN_DONE, RUN_ERROR, RUN_QUEUED, RUN_RUNNING, RUN_TERMINAL,
                      STAGE_FAILED_RETRYABLE,
                      STAGE_FAILED_TERMINAL, STAGE_PENDING, STAGE_QUEUED,
@@ -448,6 +448,14 @@ def _nop_giai_doan_san_sang(db, run, theo_ten: dict, da_xong: set[str]) -> list[
                 pass
             continue
 
+        # ⭐ Luot NOI TIEP cua mot giai doan dai (`lat_cat.py`): khoa dedupe
+        #    rieng theo so luot — dung lai `a{attempt}` thi `submit` tra ve job
+        #    luot truoc (da xong) va giai doan dung mai. Khong tang `attempt`.
+        tn = (lat_cat.con_tro(stage) if stage.status == STAGE_PENDING else {})
+        khoa_dedupe = f"asv:{run.id}:{g.ten}:a{int(stage.attempt)}"
+        if tn:
+            khoa_dedupe += f":n{int(tn.get('luot') or 0)}"
+
         # ⛔ `jobs.submit`, KHONG BAO GIO `submit_with_credit`. Chi run giu tien
         #    (ADR-001 D4). Doi dong nay la tinh tien khach muoi lan cho mot lan
         #    chay, va so credit van can nen khong co gi trong nhu bi hong.
@@ -456,7 +464,7 @@ def _nop_giai_doan_san_sang(db, run, theo_ten: dict, da_xong: set[str]) -> list[
             params={"run_id": run.id, "owner_id": run.owner_id, "stage": g.ten},
             # Lineage: nen tang da co san ba cot nay cho quan he cha-con.
             plan_id=run.id, step_id=g.ten,
-            dedupe_key=f"asv:{run.id}:{g.ten}:a{int(stage.attempt)}",
+            dedupe_key=khoa_dedupe,
             max_attempts=1,
             # Tai nguyen dung chung duoc CHUP luc nop, khong suy lai luc chay:
             # mot lan deploy doi `pipeline` khong duoc doi hang dang cho sang
@@ -466,7 +474,7 @@ def _nop_giai_doan_san_sang(db, run, theo_ten: dict, da_xong: set[str]) -> list[
             admission_slots=g.tai_nguyen_suat,
         )
         try:
-            features.danh_dau_dang_chay(db, stage, job.id)
+            features.danh_dau_dang_chay(db, stage, job.id, noi_tiep=bool(tn))
         except features.XungDot:
             continue
         da_nop.append(g.ten)

@@ -44,7 +44,7 @@ import os
 from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
 
-from . import ai, assets, pipeline, qc_ai
+from . import ai, assets, lat_cat, pipeline, qc_ai
 from .giai_doan_qc import ThieuBanRa, _doc_json, _khoa_theo_duoi
 
 log = logging.getLogger(__name__)
@@ -157,7 +157,33 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     dich = cd.doc(run).ngon_ngu_dich
     so_lo = len(cac_lo)
     phan: list[dict] = []
-    for i, lo in enumerate(cac_lo):
+
+    # 🔑 LAT CAT (`lat_cat.py`). Truoc 22/09 giai doan nay KHONG co diem chot
+    #    nao: mot job bi giet o lo 90 la mat ca 90 phan quyet. Gio moi lo xong
+    #    ghi phan quyet cua no vao don vi viec `lo_XXX` (dong so cai da tao san
+    #    dong do), kem `phien` cua lat cat.
+    #
+    # ⚠️ Chi luot NOI TIEP cung `phien` moi doc lai phan quyet cu. Thu lai sau
+    #    loi / sau vong sua van soat lai tu dau — dung hanh vi truoc day.
+    lc = lat_cat.mo(db, run, pipeline.QC_AI,
+                    du_phong_s=(lat_cat.timeout_goi_ai(ai.QC_NGU_NGHIA)
+                                + lat_cat.DU_PHONG_NGOAI_GOI_S))
+    bat_dau = 0
+    if lc.noi_tiep:
+        from . import features
+        for j in range(min(lc.vi_tri, so_lo)):
+            it = features.don_vi_theo_khoa(db, run.id, pipeline.QC_AI,
+                                           f"lo_{j:03d}")
+            o = (it.outputs or {}) if it is not None else {}
+            # Lo truoc con tro khong co phan quyet cung phien = lo da hoi va
+            # bo (mo ho / hong) — lan chay mot mach cung bo no.
+            if o.get("phien") == lc.phien:
+                phan.extend(list(o.get("phan") or []))
+        bat_dau = min(lc.vi_tri, so_lo)
+
+    for i in range(bat_dau, so_lo):
+        lo = cac_lo[i]
+        lc.kiem(vi_tri=i)
         ma_lo = f"lo_{i:03d}"
         ma_trong_lo = {str(d["ma"]) for d in lo}
         # 🔑 Giu lai cau nguon/cau dich de dinh vao phan quyet ben duoi.
@@ -168,6 +194,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             kq = ai.goi_tinh_tien(db, run, ai.QC_NGU_NGHIA,
                                   qc_ai.loi_nhac_ngu_nghia(lo, dich),
                                   stage=pipeline.QC_AI, item_key=ma_lo, ctx=ctx)
+            phan_lo: list[dict] = []
             for pq in qc_ai.doc_ngu_nghia(
                     ai.doc_ket_qua(kq, ai.QC_NGU_NGHIA),
                     ma_trong_lo):
@@ -177,13 +204,14 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                 #    khong noi SAI CAI GI — tuc khong ai kiem lai duoc
                 #    phan quyet cua model trong khi chinh no la ben chu quan.
                 g, c = van_ban.get(pq["ma"], ("", ""))
-                phan.append({**pq, "nguon": g, "dich": c})
+                phan_lo.append({**pq, "nguon": g, "dich": c})
         except ai.AiMoHo:
             # ⛔ Mo ho khong duoc nuot va khong duoc thu lai: khong biet model da
             #    chay chua. So cai da ghi `mo_ho`; lo nay khong co phan quyet.
             log.warning("qc ngu nghia lo %s mo ho — lo nay khong co phan quyet",
                         ma_lo)
             db.commit()
+            lc.xong_mot()
             continue
         except Exception as exc:            # noqa: BLE001
             # ⚠️ Mot lo hong khong duoc lam hong ca lan chay — cung nguyen tac
@@ -193,7 +221,14 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             log.warning("qc ngu nghia lo %s hong (%s) — bo lo nay",
                         ma_lo, type(exc).__name__)
             db.commit()
+            lc.xong_mot()
             continue
+        phan.extend(phan_lo)
+        from . import su_dung
+        su_dung.danh_dau_xong(db, run, stage=pipeline.QC_AI, item_key=ma_lo,
+                              outputs={"phien": lc.phien, "phan": phan_lo})
+        db.commit()
+        lc.xong_mot()
         if bao:
             bao(10 + int(80 * (i + 1) / max(1, so_lo)), _t('Đang soát nghĩa bản dịch'))
 

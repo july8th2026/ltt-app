@@ -376,6 +376,10 @@ def test_moi_lop_ngoai_le_cua_app_deu_duoc_phan_loai():
         # 🔑 Chi song trong `giai_doan_giong._viet_lai`, bi bat ngay tai cho de
         #    dung bac thang nan — khong bao gio len toi bien cua nen tang.
         "_KhongNanDuoc",
+        # 🔑 KHONG phai loi: tin hieu nhuong cua lat cat (`lat_cat.py`).
+        #    `thi_hanh.chay_giai_doan` bat no TRUOC nhanh `except Exception`,
+        #    ghi con tro va tra ve binh thuong — khong bao gio len toi bien.
+        "TiepNoi",
     }
 
     # ⚠️ Gom lop cha theo CA HAI dang: `class X(MediaError)` (`ast.Name`) va

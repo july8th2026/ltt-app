@@ -34,7 +34,7 @@ from . import (assets, cache_chung, features, giai_doan_am_thanh, giai_doan_ban_
                giai_doan_ban_bien_tap,
                giai_doan_chep_loi, giai_doan_giong, giai_doan_ket_xuat,
                giai_doan_media, giai_doan_noi_dung, giai_doan_qc, giai_doan_qc_ai,
-               giai_doan_thoi_gian, loi, pipeline)
+               giai_doan_thoi_gian, lat_cat, loi, pipeline)
 from .tables import STAGE_QUEUED, STAGE_RUNNING, STAGE_SUCCEEDED
 
 log = logging.getLogger(__name__)
@@ -244,6 +244,10 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
     if not run_id or not owner_id:
         raise ValueError("thieu run_id/owner_id")
 
+    # 🔑 Dong ho cua lat cat bat tu DAU job (xem `lat_cat.py`): giai doan dai
+    #    nhuong truoc khi cham tran thay vi de `job_runner._het_gio` giet no.
+    lat_cat.bat_dau_luot()
+
     gen = get_session()
     db = next(gen)
     try:
@@ -264,6 +268,7 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
             return {"stage": ten, "ghi_chu": "da huy"}
 
         vt = van_tay(ten, run, _gom_dau_vao(db, run_id, ten))
+        lat_cat.dat_van_tay_giai_doan(vt)
         kho = get_storage()
 
         # ── Cache: van tay khop VA artifact con song (I10) ─────────────────
@@ -381,6 +386,24 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
 
         return {"stage": ten, "fingerprint": vt, "credit_cost": CHI_PHI_GIA,
                 "khoa_asset": khoa_ra}
+    except lat_cat.TiepNoi as tn:
+        # ⭐ KHONG phai loi: giai doan da lam mot phan (diem chot da commit) va
+        #    nhuong phan con lai cho job ke tiep. Ghi con tro, dua ve `pending`;
+        #    job nay ket thuc `done` va `advance` nop luot noi tiep.
+        db.rollback()
+        stage_nt = features.giai_doan_theo_ten(db, run_id, ten)
+        ct: dict = {}
+        if stage_nt is not None and stage_nt.status in (STAGE_QUEUED,
+                                                        STAGE_RUNNING):
+            try:
+                ct = lat_cat.ghi_tiep_noi(db, stage_nt, tn)
+                db.commit()
+            except features.XungDot:
+                db.rollback()   # bi huy/dat lai giua chung — luot sau doc lai
+        log.info("asv %s run %s: nhuong sau %d don vi / %.0fs -> luot %s",
+                 ten, run_id[:8], tn.da_lam, tn.da_troi_s, ct.get("luot"))
+        return {"stage": ten, "tiep_noi": ct.get("luot", 0),
+                "da_lam": tn.da_lam}
     except Exception as exc:
         # 🔑 BIEN. Day la cho duy nhat biet ca ngon ngu loi cua engine lan phan
         #    loai cua nen tang, nen phep dich thuoc ve day (xem `loi.py`).
@@ -429,6 +452,9 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
             raise moi from exc
         raise
     finally:
+        # Moc bat dau chi song trong job nay; de lai thi mot nguoi goi giai doan
+        # TRUC TIEP sau do (script, test) doc phai moc cu va nhuong oan.
+        lat_cat.ket_thuc_luot()
         db.close()
 
 

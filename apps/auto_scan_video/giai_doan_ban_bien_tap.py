@@ -13,7 +13,8 @@ from pathlib import Path
 from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
 
-from . import ai, ban_bien_tap, canh as canh_mod, hieu_canh as hc, hop_dong_v4
+from . import (ai, ban_bien_tap, canh as canh_mod, hieu_canh as hc, hop_dong_v4,
+               lat_cat)
 from .giai_doan_media import ThieuNguon
 
 log = logging.getLogger(__name__)
@@ -58,9 +59,20 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             ghi_chu={"bo_qua_tach_canh": "preset giu nguyen hinh"})
         hieu = ()
     else:
-        duong = _nguon_soi_duoc(db, kho, run)
-        ci = canh_mod.phan_tich(duong, thoi_luong=thoi_luong,
-                                hoi_huy=getattr(ctx, "is_cancelled", None))
+        # 🔑 LAT CAT: luot NOI TIEP dung lai chi muc canh cua luot dau (luu
+        #    trong con tro) thay vi tach canh lai tren ca video 120 phut — vua
+        #    tiet kiem mot lan ffmpeg dai, vua bao dam ma canh KHONG doi giua
+        #    hai luot (diem chot khoa theo ma canh).
+        lc = (lat_cat.mo(db, run, "edit_plan", du_phong_s=0.0)
+              if db is not None and run is not None else None)
+        cu = (lc.trang_thai.get("chi_muc")
+              if lc is not None and lc.noi_tiep else None)
+        if cu:
+            ci = canh_mod.tu_dict(cu)
+        else:
+            duong = _nguon_soi_duoc(db, kho, run)
+            ci = canh_mod.phan_tich(duong, thoi_luong=thoi_luong,
+                                    hoi_huy=getattr(ctx, "is_cancelled", None))
         canh_mod.kiem_chi_muc(ci)
 
     ban_ghi = _ban_ghi(db, kho, run)
@@ -147,9 +159,20 @@ def _doc_cac_canh(db, kho, run, ci, ban_ghi: dict, ctx) -> tuple:
     duong = _nguon_soi_duoc(db, kho, run)
     ra: list = []
 
+    # 🔑 LAT CAT (`lat_cat.py`). Don vi te nhat = rut moi khung (moi khung mot
+    #    `ffmpeg` co tran `CHO_RUT_KHUNG_S`) + mot lan hoi VLM.
+    so_khung_max = max((len(getattr(c, "khung", ()) or ()) for c in canh),
+                       default=0)
+    lc = lat_cat.mo(db, run, pipeline.EDIT_PLAN,
+                    du_phong_s=(so_khung_max * CHO_RUT_KHUNG_S
+                                + lat_cat.timeout_goi_ai(ai.DOC_CANH)
+                                + lat_cat.DU_PHONG_NGOAI_GOI_S))
+    trang_thai = {"chi_muc": _chi_muc_dict(ci)}
+
     for i, c in enumerate(canh):
         if huy is not None and huy():
             raise ThieuChiMuc(_t('Lần chạy đã bị hủy.'))
+        lc.kiem(vi_tri=i, trang_thai=trang_thai)
 
         ngu_canh = hc.ngu_canh_cho_canh(ban_ghi or {}, c.bat, c.ket)
         so_khung = len(getattr(c, "khung", ()) or ())
@@ -161,6 +184,12 @@ def _doc_cac_canh(db, kho, run, ci, ban_ghi: dict, ctx) -> tuple:
         if (cu is not None and str(cu.fingerprint or "") == van_tay
                 and (cu.outputs or {}).get("de_xuat")):
             ra.append(hc.tu_dict(cu.outputs))
+            continue
+        # ⭐ Canh nam TRUOC con tro ma khong co diem chot = canh luot truoc da
+        #    hoi va bo (mo ho / hong / sai luoc do). Lan chay mot mach cung chi
+        #    hoi no MOT lan roi di tiep khong bang chung — luot noi tiep phai
+        #    lam dung nhu vay, khong hoi (va tra tien) lan hai.
+        if lc.noi_tiep and i < lc.vi_tri:
             continue
 
         sd.mo_don_vi(db, run, stage=pipeline.EDIT_PLAN, item_key=c.ma,
@@ -214,11 +243,13 @@ def _doc_cac_canh(db, kho, run, ci, ban_ghi: dict, ctx) -> tuple:
             #    `mo_ho`; canh nay di tiep khong co bang chung.
             log.warning("doc canh %s mo ho — canh nay khong co bang chung", c.ma)
             db.commit()
+            lc.xong_mot()
             continue
         except (ai.AiError, hc.HieuCanhError) as exc:
             log.warning("doc canh %s hong (%s) — giu canh nay",
                         c.ma, type(exc).__name__)
             db.commit()
+            lc.xong_mot()
             continue
 
         sd.danh_dau_xong(db, run, stage=pipeline.EDIT_PLAN, item_key=c.ma,
@@ -226,9 +257,15 @@ def _doc_cac_canh(db, kho, run, ci, ban_ghi: dict, ctx) -> tuple:
         # 🔑 `commit` sau MOI canh, khong doi den cuoi — cung ly do da ghi dai o
         #    `giai_doan_noi_dung`: mot `flush` khong song qua mot lan worker chet.
         db.commit()
+        lc.xong_mot()
         ra.append(h)
 
     return tuple(ra)
+
+
+#: Tran thoi gian cua MOT lenh `ffmpeg` rut khung. Mot nguon cho ca lenh goi
+#: lan phep tinh du phong cua lat cat.
+CHO_RUT_KHUNG_S = 120
 
 
 def _rut_khung(duong: str, moc) -> tuple:
@@ -250,7 +287,8 @@ def _rut_khung(duong: str, moc) -> tuple:
             tep = Path(tam) / f"k{j:02d}.jpg"
             cmd = canh_mod.lenh_rut_khung(duong, float(m), str(tep))
             try:
-                subprocess.run(cmd, capture_output=True, timeout=120, check=False)
+                subprocess.run(cmd, capture_output=True, timeout=CHO_RUT_KHUNG_S,
+                               check=False)
                 if tep.exists() and tep.stat().st_size > 0:
                     ra.append(tep.read_bytes())
             except (OSError, subprocess.SubprocessError) as exc:
