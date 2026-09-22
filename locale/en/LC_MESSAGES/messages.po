@@ -9681,13 +9681,15 @@ msgstr "If the hash does not match, do NOT open the file - delete it and downloa
 #: server/templates/_cam_chon.html:167
 msgid ""
 "Nếu thiếu model metadata: kiểm đường dẫn và JSON catalog. Nếu 401: kiểm biến LTT_API_KEY có trong"
-" tiến trình hiện tại. Nếu 403: kiểm jobs:create và giới hạn công cụ. Nếu 413: dùng đúng profile "
-"theo model hoặc mở phiên mới. Muốn gỡ: xóa khối provider ltt và hai tệp profile/catalog do mình "
+" tiến trình hiện tại. Nếu 403: kiểm jobs:create và giới hạn công cụ. Nếu 400 context_window_exceeded "
+"(ngữ cảnh quá dài): dùng đúng profile theo model hoặc mở phiên mới; 413 chỉ là thân request quá lớn "
+"(bớt tệp đính kèm). Muốn gỡ: xóa khối provider ltt và hai tệp profile/catalog do mình "
 "thêm; phục hồi bản sao lưu nếu đã đổi cấu hình gốc."
 msgstr ""
 "Missing model metadata: check the catalog path and JSON. For 401, check that the current process "
-"has LTT_API_KEY. For 403, check jobs:create and tool restrictions. For 413, use the correct model"
-" profile or start a new session. To disconnect, remove the ltt provider block and the "
+"has LTT_API_KEY. For 403, check jobs:create and tool restrictions. For 400 context_window_exceeded "
+"(context too long), use the correct model profile or start a new session; 413 only means the "
+"request body is too large (remove attachments). To disconnect, remove the ltt provider block and the "
 "profiles/catalog you added; restore your backup if you changed root configuration."
 
 #: server/templates/_cam_chon.html:259
