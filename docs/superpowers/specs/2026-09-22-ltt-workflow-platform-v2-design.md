@@ -136,7 +136,8 @@ Node trong draft:
  "on_error": "fail"}}
 ```
 
-Cạnh trong draft: `{"id","source","source_port","target","target_port","kind"}`,
+Cạnh trong draft: `{"id","source_node","source_port","target_node","target_port","kind"}`
+(khoá v3 hiện có — `di_tru_m1._canh_v3`, `workflowApi.edgeToV3`),
 `kind ∈ {DATA, CONTROL, ERROR}`, thêm `"condition"` (chỉ trên cạnh CONTROL ra từ
 `core.if`/`core.switch`, là tên nhánh — không phải biểu thức; §5.4).
 
@@ -150,7 +151,7 @@ không phải bản sao draft:
  "settings": {"max_concurrency": 4, "timeout_s": 21600, "on_finally": ""},
  "nodes": [ {"id","type","type_version","params","credential_ref","settings",
              "gia_tran": 12, "thi_hanh": "job"} ],
- "edges": [ {"id","source","source_port","target","target_port","kind","condition"} ],
+ "edges": [ {"id","source_node","source_port","target_node","target_port","kind","condition"} ],
  "thu_tu": ["n_trigger", "n_sheet", "…"],
  "bang_gia": {"n_sheet": 2, "n_video": 80}}
 ```
@@ -276,9 +277,14 @@ không ai gọi). Canvas lấy luật từ `GET /agent/api/v3/luat-noi-day`
 ### 5.1 Động cơ
 
 Mô-đun mới `platform_core/workflow/dong_co.py`. Một **job nền đơn** `workflow.dong_co`
-(`app_slug="workflow"`, `dedupe_key="workflow:dong_co"`, lane CPU nhẹ) chạy một
-vòng rồi tự nộp lại với `next_run_at = min(wakeup.due_at kế tiếp, now + 2 s)` — cùng
-khuôn `agent.advance` nhưng **một job cho cả hệ**, không một job mỗi run.
+(khai trong `apps/agent/manifest.py` — app `agent` là chủ UI Canvas và các job điều
+phối; `dedupe_key="workflow:dong_co"`, `origin="workflow"`) chạy một vòng rồi tự nộp
+lại với `next_run_at = min(wakeup.due_at kế tiếp, now + 2 s)` khi còn việc — cùng
+khuôn `agent.advance` nhưng **một job cho cả hệ**, không một job mỗi run. Hết việc thì
+không nộp lại; `tao_run` và `cau_noi.bao_ket_thuc` nộp nó khi có việc mới (khử trùng
+chỉ cho job chưa kết thúc ⇒ luôn tối đa một job chờ). Lưới đỡ: `AppManifest.bao_tri`
+của app `agent` (mỗi 60 s, dưới lease bảo trì) nộp lại job động cơ nếu có wakeup tới
+hạn mà không có job động cơ nào đang chờ/chạy.
 
 Một vòng (`dong_co.mot_vong(db, gioi_han=50)`):
 
