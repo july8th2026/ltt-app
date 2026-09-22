@@ -99,12 +99,12 @@ def _kt(*che_do: str) -> frozenset:
 _NEN: tuple[NenTang, ...] = (
     NenTang(
         id="douyin", ten="Douyin", icon="douyin", bat=True,
-        che_do=_kt("link"),
+        che_do=_kt("tu_khoa", "link", "kenh"),
         xem_truoc=True, can_dang_nhap=True, cach_dang_nhap="qr",
         ten_mien=('douyin.com', 'iesdouyin.com'),
-        so_luong_toi_da=20, adapter="douyin", gioi_han=(N_('Chỉ dán link một video; cần phiên (Douyin đòi cookie mới).'),),
+        so_luong_toi_da=20, adapter="douyin", gioi_han=(N_("Cần phiên Douyin cho mọi cách cào."), N_("Chưa nhận link rút gọn v.douyin.com.")),
         cookie_dang_nhap=('sessionid', 'sessionid_ss', 'sid_tt'),
-        che_do_can_dang_nhap=frozenset({'link'}),
+        che_do_can_dang_nhap=frozenset({'link', 'kenh', 'tu_khoa'}),
     ),
     NenTang(
         id="bilibili_tv", ten=N_("Bilibili quốc tế"), icon="bilibili_tv", bat=True,
@@ -124,11 +124,12 @@ _NEN: tuple[NenTang, ...] = (
     ),
     NenTang(
         id="xiaohongshu", ten="Xiaohongshu", icon="xiaohongshu", bat=True,
-        che_do=_kt("link"),
+        che_do=_kt("tu_khoa", "link", "kenh"),
         xem_truoc=True, can_dang_nhap=True, cach_dang_nhap="qr",
         ten_mien=('xiaohongshu.com', 'xhslink.com'),
-        so_luong_toi_da=20, adapter="xiaohongshu", gioi_han=(N_('Chỉ link bài có xsec_token (copy từ trình duyệt).'), N_('Bài chỉ có ảnh không tải được.')),
+        so_luong_toi_da=20, adapter="xiaohongshu", gioi_han=(N_("Tìm và kênh cần phiên Xiaohongshu."), N_("Link bài phải có xsec_token (copy từ trình duyệt)."), N_("Bài chỉ có ảnh không tải được.")),
         cookie_dang_nhap=('id_token',),
+        che_do_can_dang_nhap=frozenset({'kenh', 'tu_khoa'}),
     ),
     NenTang(
         id="rednote", ten="RedNote", icon="rednote", bat=False,
@@ -193,8 +194,9 @@ _NEN: tuple[NenTang, ...] = (
         che_do=_kt("tu_khoa", "link", "kenh"),
         xem_truoc=False, can_dang_nhap=True, cach_dang_nhap="cookie",
         ten_mien=("kuaishou.com",),
-        so_luong_toi_da=10, adapter="kuaishou", gioi_han=(),
+        so_luong_toi_da=20, adapter="kuaishou", gioi_han=(N_("Tìm và kênh cần phiên Kuaishou."), N_("Chưa nhận link rút gọn v.kuaishou.com.")),
         cookie_dang_nhap=('passToken', 'kuaishou.server.web_st'),
+        che_do_can_dang_nhap=frozenset({'kenh', 'tu_khoa'}),
     ),
     NenTang(
         id="honggo", ten="Honggo", icon="honggo", bat=False,

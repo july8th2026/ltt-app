@@ -150,7 +150,7 @@ def test_tai_muc_da_chon_lay_tu_xem_truoc_bo_url_cua_form(env):
     r = client.post("/video-crawler/tai",
                     data={"nen_tang": "youtube", "xem_truoc": kp, "muc": [a1, b2],
                           f"url_{a1}": "https://www.youtube.com/playlist?list=PLtan_cong",
-                          "csrf_token": _csrf(client)},
+                          "cam_ket": "1", "csrf_token": _csrf(client)},
                     follow_redirects=False)
     assert r.status_code in (204, 303)
     tai = [p for t, p in _jobs(ua) if t == "video_crawler.tai"]
@@ -174,7 +174,7 @@ def test_cao_het_theo_nguon(env):
     _login(client, "a@x.com")
     r = client.post("/video-crawler/tai",
                     data={"nen_tang": "youtube", "che_do": "kenh", "dau_vao": "@abc", "so_luong": "4",
-                          "khong_trung": "1", "csrf_token": _csrf(client)},
+                          "khong_trung": "1", "cam_ket": "1", "csrf_token": _csrf(client)},
                     follow_redirects=False)
     assert r.status_code in (204, 303)
     ((_, params),) = _jobs(ua)

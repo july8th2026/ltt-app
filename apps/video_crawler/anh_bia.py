@@ -30,6 +30,7 @@ CDN_ANH: dict[str, tuple[str, ...]] = {
     "facebook": ("fbcdn.net",),
     "instagram": ("cdninstagram.com", "fbcdn.net"),
     "twitter": ("twimg.com",),
+    "kuaishou": ("kwimgs.com", "yximgs.com", "kwaicdn.com"),
 }
 TOI_DA_BYTE = 2 * 1024 * 1024
 _TIMEOUT_S = 5

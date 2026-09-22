@@ -146,6 +146,10 @@ DISPOSITION = {
     #    chuyện mở qua API là bàn trước một bước.
     "auto_scan_video": (DEFER, ()),
 
+    # Cào video nguồn (22/09). DEFER: app còn `enabled=False`, và cổng pháp lý (cam kết quyền mỗi lượt tải,
+    # trần tải theo tài khoản) đang nằm ở ROUTE web — mở qua API bây giờ là đi vòng qua cổng đó.
+    "video_crawler": (DEFER, ()),
+
     # Ba vỏ thi hành của CÙNG sản phẩm trên, không phải app bán được. Chúng khai
     # `surface="runtime"` + `catalog_parent="auto_scan_video"`: không thẻ
     # catalog, không mục nav, không ToolSpec. Chúng tồn tại vì quyền nhặt job

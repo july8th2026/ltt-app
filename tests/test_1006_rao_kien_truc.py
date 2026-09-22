@@ -105,6 +105,9 @@ MIEN_TRU_HTTP = {
     #   tải thẳng (đúng — không lộ IP khách). Allowlist theo nền + chặn IP nội bộ + không theo redirect + trần 2 MB.
     #   Không phải nhà cung cấp AI, không khoá API. (video_crawler, review 22/09)
     "apps/video_crawler/anh_bia.py",
+    # → kuaishou.com (trang + GraphQL web) và CDN video Kuaishou: yt-dlp không có extractor Kuaishou. Allowlist CDN +
+    #   chặn IP nội bộ kể cả sau redirect + trần dung lượng. Không phải nhà cung cấp AI. (video_crawler, 22/09)
+    "apps/video_crawler/adapters/kuaishou_web.py",
 }
 
 

@@ -42,8 +42,9 @@ _CHE_DO = {
     "bilibili_tv": ({"link"}, set()),
     "bilibili": ({"tu_khoa", "link", "kenh", "bo"}, {"tu_khoa", "link", "kenh", "bo"}),   # smoke: HTTP 412 ẩn danh
     "instagram": ({"link"}, {"link"}),                                  # smoke: "login required"
-    "douyin": ({"link"}, {"link"}),                                     # smoke: "Fresh cookies ... are needed"
-    "xiaohongshu": ({"link"}, set()),
+    # W1 (22/09): tìm + kênh qua client web; smoke ẩn danh: Douyin 2483 "cần đăng nhập", XHS -101.
+    "douyin": ({"tu_khoa", "link", "kenh"}, {"tu_khoa", "link", "kenh"}),
+    "xiaohongshu": ({"tu_khoa", "link", "kenh"}, {"tu_khoa", "kenh"}),
 }
 
 

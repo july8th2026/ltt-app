@@ -141,3 +141,7 @@ không cần thiết cho V1.
   manifest.
 - Ba cổng độc lập vẫn nguyên: disposition app → khai báo tool → công tắc
   operator (`LTT_PUBLIC_API_TOOLS`), rồi `allowed_tools` của từng khoá.
+
+## `video_crawler` — DEFER (22/09/2026)
+
+Cào video nguồn (YouTube, TikTok, Douyin, Bilibili, …). Chưa mở qua Public API: app còn `enabled=False`, và cổng pháp lý (khách cam kết quyền với nội dung ở MỖI lượt tải, trần tải theo tài khoản — `docs/migrations/video_crawler/PHAP_LY_NHAP.md`) đang thi hành ở route web; một `ToolSpec` bây giờ sẽ đi vòng qua nó. Mở khi cổng được chuyển xuống `features.nop` và điều khoản đã chốt.

@@ -23,6 +23,9 @@ from server.deps import get_db, user_hien_tai
 from server.templating import templates
 
 router = APIRouter(tags=["video_crawler"])
+# Trang vận hành (chỉ operator) — mô-đun riêng của làn sức khoẻ; gắn ở đây vì nền tảng chỉ mount `routes.router`.
+from apps.video_crawler import routes_van_hanh as _routes_van_hanh  # noqa: E402
+router.include_router(_routes_van_hanh.router)
 
 CO_MO = "LTT_VIDEO_CRAWLER"
 
