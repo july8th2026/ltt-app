@@ -195,7 +195,8 @@ def _rang_khach_chon(db, *, owner_id: str, giong_id: str,
         lan = str(getattr(tim(giong_id), "ngon_ngu", "") or "")
         if lan and lan != ngon_ngu_dich:
             raise RangGiongError(_t('Giọng này đọc {lan}, không đọc được bản {dich}.').format(
-                lan=ngon_ngu.NHAN.get(lan, lan), dich=ngon_ngu.NHAN.get(ngon_ngu_dich, ngon_ngu_dich)))
+                lan=_t(ngon_ngu.NHAN.get(lan, lan)),
+                dich=_t(ngon_ngu.NHAN.get(ngon_ngu_dich, ngon_ngu_dich))))
         return KetQua(DA_RANG, giong_id, NGUON_KHACH_CHON,
                       {"loai": "giong_mau"})
 

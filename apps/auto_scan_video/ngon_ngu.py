@@ -23,7 +23,7 @@ Khong co giong `zh`, nen `zh` khong bao gio la dich.
 """
 from __future__ import annotations
 
-from platform_core.i18n import _ as _t
+from platform_core.i18n import N_, _ as _t
 
 from apps.ltt_voice.lan_ngon_ngu import LAN_HOP_LE as _LAN_GIONG
 
@@ -38,7 +38,9 @@ NGUON_HOP_LE: tuple[str, ...] = (ZH, EN, VI)
 DICH_HOP_LE: tuple[str, ...] = (VI, EN)
 DICH_MAC_DINH = VI
 
-NHAN = {ZH: "Tiếng Trung", EN: "Tiếng Anh", VI: "Tiếng Việt"}
+#: Nhan cho KHACH doc. `N_` = danh dau de trich, dich o cho dung (cung khuon
+#: `ltt_voice.lan_ngon_ngu.NHAN_LAN`).
+NHAN = {ZH: N_("Tiếng Trung"), EN: N_("Tiếng Anh"), VI: N_("Tiếng Việt")}
 
 #: Cum tu dien vao LOI NHAC (van ASCII khong dau nhu moi loi nhac cua ASV).
 #:
