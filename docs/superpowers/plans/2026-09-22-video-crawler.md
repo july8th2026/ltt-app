@@ -74,14 +74,14 @@ main, message sai) → 79f2a776 (vá, tắt app, thêm spec) → f587f497 (rút 
 | Pha | Nội dung | Làn / agent | Kiểm | Trạng thái |
 |---|---|---|---|---|
 | P0 | Preflight e94dd9a2, worktree mới, bàn giao | điều phối | — | ✅ 22/09 |
-| P1 | Audit: Viral (AUDIT_VIRAL_CAO_NGAY.md, PLATFORM_MATRIX.md) ‖ LTT (ARCHITECTURE_MAP.md) ‖ LICENSE_PROVENANCE.md + CODE_REUSE_MATRIX.md | 2 agent chỉ đọc song song; điều phối kiểm chéo | Mỗi kết luận có tệp:dòng | ⏳ đang chạy |
-| P2 | Spec v1.1: đủ 29 mục §V, registry trong app, sửa license yt-dlp, mô hình dữ liệu/job/dedup/cancel/lỗi; phản biện bởi reviewer độc lập | điều phối + 1 reviewer (Opus) | self-review + adversarial | chưa |
-| P3 | Plan task-level cho S1–S5 (exact paths, RED/GREEN, lệnh, commit) — bổ sung vào tệp này §D | điều phối | — | chưa |
-| S1 | Móng: manifest (tắt, `lifecycle="development"`, `public=False`), registry nền tảng trong app, adapter protocol + DTO, nhận diện URL/nền tảng (characterization theo Viral) | 1 làn tuần tự | test nhắm + `tests/test_60_app_registry.py` | chưa |
-| S2 | Chuỗi job: handler discovery + download, bảng app (+ alembic), events/progress thật, cancel theo job/user, dedup scope user, lỗi → exception (hoàn credit), giá credit | 1 làn tuần tự | test nhắm; L2 `app:video_crawler` | chưa |
-| S3 | Adapter YouTube (yt-dlp Python API, tuỳ chọn an toàn, fixture info-dict), output vào storage, route tải về có kiểm chủ | 1 làn | test nhắm | chưa |
-| S4 | Route + UI Cào ngay slice 1 (capability-driven, CSRF, poll trạng thái job thật) | 1 làn (có thể song song S3 sau khi S2 khoá) | test nhắm + Playwright local | chưa |
-| S5 | Bàn giao output thành input của Auto Scan Video (theo ARCHITECTURE_MAP §5; có thể là CONTRACT GAP) | điều phối | test nhắm | chưa |
+| P1 | Audit: Viral (AUDIT_VIRAL_CAO_NGAY.md, PLATFORM_MATRIX.md) ‖ LTT (ARCHITECTURE_MAP.md) ‖ LICENSE_PROVENANCE.md + CODE_REUSE_MATRIX.md | 2 agent chỉ đọc song song; điều phối kiểm chéo | Mỗi kết luận có tệp:dòng | ✅ `8083d179` (kiểm chéo 4 trích dẫn donor) |
+| P2 | Spec v1.1: đủ 29 mục §V, registry trong app, sửa license yt-dlp, mô hình dữ liệu/job/dedup/cancel/lỗi; phản biện bởi reviewer độc lập | điều phối + 1 reviewer (Opus) | self-review + adversarial | ✅ 10 điểm phản biện (2 BLOCKER) đã áp — `3ffea9ae` |
+| P3 | Plan task-level cho S1–S5 (exact paths, RED/GREEN, lệnh, commit) — bổ sung vào tệp này §D | điều phối | — | ✅ thay bằng contract khoá `adapters/base.py` + chia làn (tệp tách biệt) |
+| S1 | Móng: manifest (tắt, `lifecycle="development"`, `public=False`), registry nền tảng trong app, adapter protocol + DTO, nhận diện URL/nền tảng (characterization theo Viral) | làn A `phien/video-crawler-nen-tang` (sonnet) | test 1900/1901 + test_60 | ✅ `179ccec6` + sửa `ce6f1974` |
+| S2 | Chuỗi job: handler discovery + download, bảng app (+ alembic), events/progress thật, cancel theo job/user, dedup scope user, lỗi → exception (hoàn credit), giá credit | điều phối (tuần tự) | test 1904/1905 (chuỗi job thật qua `_chay_mot_job`) | ✅ `1179eff9` |
+| S3 | Adapter YouTube (yt-dlp Python API, tuỳ chọn an toàn, fixture info-dict), output vào storage, route tải về có kiểm chủ | làn B `phien/video-crawler-youtube` (Opus) | test 1902/1903 + smoke mạng thật | ✅ `dd80072c` |
+| S4 | Route + UI Cào ngay slice 1 (capability-driven, CSRF, poll trạng thái job thật) | điều phối | test 1906 + Playwright dev cô lập (YouTube thật) | ✅ `e4fa4a95`, sửa lỗi GUI `1f356123` |
+| S5 | Bàn giao output thành input của Auto Scan Video (theo ARCHITECTURE_MAP §5; có thể là CONTRACT GAP) | điều phối | — | ⏸ CONTRACT GAP-2 (ASV chỉ nhận upload của chính nó) — trình chủ dự án |
 | D1 | **Mốc deploy giữa phiên**: L2 xanh đúng SHA → gộp main → deploy → E2E thật trên app.lttstudios.com bằng tài khoản test (khach*.thu) | điều phối | L2 + nghiệm thu §9 | chưa |
 | S6 | Slice 2 browser/login (chọn nền tảng theo PLATFORM_MATRIX): định tuyến worker `browser`, session cô lập theo user, QR/login, hết hạn, cancel, dọn browser | 1 làn Opus; CONTRACT GAP nếu cần kho cookie mã hoá | test nhắm + E2E máy residential | chưa |
 | S7 | Adapter còn lại (mỗi nền tảng một làn, song song SAU khi S6 khoá interface) | n làn sonnet | test nhắm mỗi làn | chưa |
@@ -94,4 +94,5 @@ main, message sai) → 79f2a776 (vá, tắt app, thêm spec) → f587f497 (rút 
 
 ## D. Task-level S1–S5
 
-Lập ở P3 sau khi ARCHITECTURE_MAP.md và PLATFORM_MATRIX.md về (cần chữ ký API thật; plan v1 hỏng chính vì đoán chữ ký).
+Đã thi hành (TDD, test viết trước và thấy đỏ). Sổ lỗi + độ phủ: `docs/migrations/video_crawler/SO_LOI.md`.
+Test: `tests/test_1900..1906_video_crawler_*.py` (223 phép cùng test_60/211/308/148, qua `chay_nang.py`).
