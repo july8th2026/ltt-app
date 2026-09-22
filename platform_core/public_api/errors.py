@@ -103,6 +103,7 @@ _STATUS_CODES = {
     422: CODE_UNPROCESSABLE,
     429: CODE_RATE_LIMITED,
     500: CODE_INTERNAL,
+    501: CODE_WORKFLOW_RUNS_UNAVAILABLE,
     503: CODE_SERVICE_UNAVAILABLE,
 }
 
@@ -449,8 +450,16 @@ def quote_invalid(detail: object = "") -> ApiError:
     return ApiError(400, CODE_QUOTE_INVALID, detail)
 
 
-def feature_unavailable(detail: object = "", **extra) -> ApiError:
-    """501: the route exists but the operation behind it is not wired up yet.
+def workflow_runs_unavailable(detail: object = "", **extra) -> ApiError:
+    """501: workflow runs are gated off, not merely unavailable right now.
+
+    ⚠️ NAMED FOR THE CODE, NOT GENERICALLY. A first draft called this
+       `feature_unavailable()` and hard-coded `CODE_WORKFLOW_RUNS_UNAVAILABLE`
+       inside it — every other specific-cause helper in this file (`quote_invalid`,
+       `idempotency_conflict`, …) is named after the one code it raises, and a
+       generic name over a hard-coded code is a trap for the next caller: they
+       read the name, assume it takes a code, and ship the wrong one silently.
+       Code review (22/09) caught this before a second caller could.
 
     Deliberately not `service_unavailable` (503, "operational blip, come back
     soon") and not `not_found` (404, "this route doesn't exist"). A workflow

@@ -136,15 +136,15 @@ REGISTRY = {spec.code: spec for spec in (
     _spec(E.CODE_INTERNAL, 500, RETRY_AFTER_DELAY,
           "Retry with backoff and the same Idempotency-Key. Quote the "
           "X-Correlation-ID if it persists.", reuse=True),
+    _spec(E.CODE_WORKFLOW_RUNS_UNAVAILABLE, 501, RETRY_NEVER,
+          "This platform does not execute workflow runs yet — the feature is "
+          "gated until the Workflow V2 engine is wired up. Do not retry; "
+          "watch the changelog for the flip."),
     _spec(E.CODE_READ_ONLY, 503, RETRY_AFTER_DELAY,
           "The API is accepting reads only. Writes resume without any change "
           "on your side.", reuse=True),
     _spec(E.CODE_SERVICE_UNAVAILABLE, 503, RETRY_AFTER_DELAY,
           "Retry with backoff and the same Idempotency-Key.", reuse=True),
-    _spec(E.CODE_WORKFLOW_RUNS_UNAVAILABLE, 501, RETRY_NEVER,
-          "This platform does not execute workflow runs yet — the feature is "
-          "gated until the Workflow V2 engine is wired up. Do not retry; "
-          "watch the changelog for the flip."),
 )}
 
 # Lỗi model dùng cùng vocabulary B→A. Trong chu kỳ rollout, registry legacy

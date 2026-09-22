@@ -41,10 +41,10 @@ from platform_core.models import (Artifact, NodeRunSnapshot, Workflow,
                                   WorkflowRun, WorkflowVersion)
 from platform_core.public_api import idempotency, quotes
 from platform_core.public_api.errors import (THIEU_CREDIT_LOI, conflict,
-                                             feature_unavailable,
                                              insufficient_credit,
                                              invalid_request, not_found,
-                                             thieu_credit_chi_tiet)
+                                             thieu_credit_chi_tiet,
+                                             workflow_runs_unavailable)
 from platform_core.public_api.principal import Principal
 from platform_core.public_api.scopes import (SCOPE_WORKFLOWS_CANCEL,
                                              SCOPE_WORKFLOWS_READ,
@@ -158,7 +158,7 @@ def register_workflow_routes(api, config, tag: str) -> None:
         db: Session = Depends(get_db),
     ) -> JSONResponse:
         if not _chay_workflow_da_mo():
-            raise feature_unavailable(_LOI_CHUA_MO)
+            raise workflow_runs_unavailable(_LOI_CHUA_MO)
         wf = _cua_toi(db, Workflow, workflow_id, principal)
         ver = _ban_publish(db, wf)
         try:
@@ -201,7 +201,7 @@ def register_workflow_routes(api, config, tag: str) -> None:
         db: Session = Depends(get_db),
     ) -> JSONResponse:
         if not _chay_workflow_da_mo():
-            raise feature_unavailable(_LOI_CHUA_MO)
+            raise workflow_runs_unavailable(_LOI_CHUA_MO)
         key = idempotency.require_key(idempotency_key)
         wf = _cua_toi(db, Workflow, workflow_id, principal)
         ver = _ban_publish(db, wf)

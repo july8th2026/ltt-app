@@ -157,6 +157,16 @@ _THONG_DIEP = ("Chạy workflow trên Canvas đang được nâng cấp sang run
 
 # ── 1. Workflow chỉ tồn tại ở v3 ─────────────────────────────────────────────
 
+def _so_agent_run() -> int:
+    import platform_core.db as dbmod
+    from platform_core.models import AgentRun
+    db = next(dbmod.get_session())
+    try:
+        return db.query(AgentRun).count()
+    finally:
+        db.close()
+
+
 def test_v3_only_bi_chan_tren_ca_validate_va_runs(api):
     a, token_a, *_ = api
     owner_id = _user_id("chan-v3-a@example.com")
@@ -171,6 +181,11 @@ def test_v3_only_bi_chan_tren_ca_validate_va_runs(api):
                  headers={"X-CSRF-Token": token_a}, json={})
     assert run.status_code == 503, run.text
     assert run.json()["detail"] == _THONG_DIEP
+    # 🔴 Không chỉ mã lỗi đúng: một `AgentRun` mồ côi được tạo ra dù bị chặn
+    #    sẽ nằm đó chờ điều phối nhặt lên và chạy — đúng thứ Defect A phải
+    #    ngăn. `_chan_neu_dang_nang_cap_v3` raise TRƯỚC `_prepare_run`, nên
+    #    không có gì ghi vào CSDL để nhặt.
+    assert _so_agent_run() == 0
 
 
 def test_v3_only_cua_NGUOI_KHAC_van_404_khong_lo_su_ton_tai(api):
@@ -178,15 +193,21 @@ def test_v3_only_cua_NGUOI_KHAC_van_404_khong_lo_su_ton_tai(api):
     `WorkflowDraft` — không hoãn việc đó cho `get_owned` phía sau. Không có bài
     này, một bản vá tra thẳng `WorkflowDraft` theo `workflow_id` (bỏ qua chủ sở
     hữu) vẫn làm bài trên xanh, nhưng nó biến 503 thành một cách để một người lạ
-    dò xem `workflow_id` của người khác có tồn tại hay không."""
+    dò xem `workflow_id` của người khác có tồn tại hay không. Cả hai đường —
+    `validate` LẪN `runs` — phải giữ đúng 404, không chỉ một trong hai."""
     a, token_a, b, token_b = api
     owner_id = _user_id("chan-v3-a@example.com")
     wid = _make_v3_only(owner_id)
 
-    foreign = b.post(f"/agent/api/workflows/{wid}/validate",
-                     headers={"X-CSRF-Token": token_b}, json={})
-    assert foreign.status_code == 404
-    assert foreign.json()["detail"] != _THONG_DIEP
+    foreign_validate = b.post(f"/agent/api/workflows/{wid}/validate",
+                              headers={"X-CSRF-Token": token_b}, json={})
+    assert foreign_validate.status_code == 404
+    assert foreign_validate.json()["detail"] != _THONG_DIEP
+
+    foreign_runs = b.post(f"/agent/api/workflows/{wid}/runs",
+                          headers={"X-CSRF-Token": token_b}, json={})
+    assert foreign_runs.status_code == 404
+    assert foreign_runs.json()["detail"] != _THONG_DIEP
 
 
 # ── 2. Workflow đã di trú: có mặt ở CẢ HAI bảng ─────────────────────────────
@@ -207,6 +228,7 @@ def test_da_di_tru_bi_chan_tren_ca_validate_va_runs(api):
         "X-CSRF-Token": token_a, "If-Match": '"1"'}, json={})
     assert run.status_code == 503, run.text
     assert run.json()["detail"] == _THONG_DIEP
+    assert _so_agent_run() == 0
 
 
 # ── 3. Đối chứng: workflow v2 thuần, KHÔNG có draft ─────────────────────────
