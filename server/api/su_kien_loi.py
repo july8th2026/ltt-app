@@ -85,6 +85,15 @@ _MODEL_PROTOCOL = {
     "upstream_unknown": ("api_error", "upstream_unknown"),
 }
 
+
+def model_protocol_code(path: str, canonical_code: str) -> str:
+    """Mã giao thức công khai từ cùng bảng renderer, không sao chép mapping."""
+    if not (path.endswith("/messages") or path.endswith("/responses")
+            or path.endswith("/chat/completions")):
+        return canonical_code
+    anthropic, openai = _MODEL_PROTOCOL[canonical_code]
+    return anthropic if path.endswith("/messages") else openai
+
 #: Tiền tố Claude Code dò (xem docstring tệp). ⛔ Đừng dịch, đừng viết hoa lại.
 CAU_QUA_DAI = "prompt is too long"
 

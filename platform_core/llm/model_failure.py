@@ -7,6 +7,7 @@ gateway. Nó được dùng ở cả đường đồng bộ lẫn streaming mà 
 from __future__ import annotations
 
 import json
+import logging
 import re
 import threading
 from collections.abc import Mapping
@@ -14,6 +15,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from llm_gateway.error_contract import error_spec
+from llm_gateway.error_telemetry import ErrorTelemetry, choose_action
 
 
 MAX_FAILURE_BODY_BYTES = 64 * 1024
@@ -32,6 +34,8 @@ _LEGACY_FIELD_TO_CODE = {
 
 _COUNTER_LOCK = threading.Lock()
 _COUNTERS = {"v1": 0, "legacy": 0, "unknown": 0, "mismatch": 0}
+_TELEMETRY = ErrorTelemetry("A")
+log = logging.getLogger("platform_core.llm.model_failure")
 
 
 @dataclass(frozen=True)
@@ -125,6 +129,62 @@ class ModelFailure:
 def failure_decode_counters() -> dict[str, int]:
     with _COUNTER_LOCK:
         return dict(_COUNTERS)
+
+
+def failure_telemetry_snapshot() -> dict[str, object]:
+    """Snapshot counter A; không chứa request ID, message hay dữ liệu request."""
+    return _TELEMETRY.snapshot()
+
+
+def failure_telemetry_reset_for_tests() -> None:
+    _TELEMETRY.reset_for_tests()
+
+
+def observe_model_failure(
+    failure: "ModelFailure",
+    *,
+    gateway_code: str = "",
+    protocol_code: str = "",
+    protocol: str = "gateway",
+    stream_phase: str = "before_headers",
+    model: str = "",
+    endpoint: str = "gateway",
+    elapsed_ms: int | float = 0,
+    action: str = "",
+    legacy: bool = False,
+    contract_mismatch: bool = False,
+    model_known: bool = False,
+    count: bool = True,
+) -> dict[str, object]:
+    """Ghi lỗi đã chuẩn hoá; caller không thể truyền raw body/message vào đây."""
+    chosen = action or choose_action(
+        canonical_code=failure.canonical_code,
+        retry=failure.retry,
+        legacy=legacy,
+        contract_mismatch=contract_mismatch,
+    )
+    return _TELEMETRY.record(
+        logger=log,
+        request_id=failure.request_id,
+        gateway_code=gateway_code or failure.canonical_code,
+        canonical_code=failure.canonical_code,
+        protocol_code=protocol_code or failure.canonical_code,
+        category=failure.category,
+        http_status=failure.http_status,
+        upstream_status=failure.upstream_status,
+        protocol=protocol,
+        stream_phase=stream_phase,
+        retry=failure.retry,
+        recovery=failure.recovery,
+        model=model,
+        elapsed_ms=elapsed_ms,
+        endpoint=endpoint,
+        action=chosen,
+        legacy=legacy,
+        contract_mismatch=contract_mismatch,
+        model_known=model_known,
+        count=count,
+    )
 
 
 def _count(name: str) -> None:
@@ -263,6 +323,7 @@ def decode_gateway_failure(status: int, headers: Mapping[str, str], body: bytes)
     header_id = _request_id(_header(headers, "x-ltt-request-id"))
     body_id = _request_id(data.get("request_id"))
     request_id = body_id or header_id
+    contract_mismatch = False
 
     if data.get("schema_version") == 1:
         code = str(data.get("canonical_code") or "")
@@ -272,8 +333,10 @@ def decode_gateway_failure(status: int, headers: Mapping[str, str], body: bytes)
             )
         except KeyError:
             _count("mismatch")
+            contract_mismatch = True
         else:
             _count("v1")
+            observe_model_failure(failure, gateway_code=code)
             return failure
 
     legacy_value = data.get("legacy")
@@ -287,15 +350,28 @@ def decode_gateway_failure(status: int, headers: Mapping[str, str], body: bytes)
             "actual": legacy.get("thay"),
         }
         _count("legacy")
-        return _build(
+        failure = _build(
             legacy_code,
             status=status,
             headers=headers,
             candidate=normalized,
             request_id=request_id,
         )
+        observe_model_failure(
+            failure,
+            gateway_code=str(data.get("canonical_code") or "legacy"),
+            legacy=True,
+            contract_mismatch=contract_mismatch,
+        )
+        return failure
 
     _count("unknown")
-    return _build(
+    failure = _build(
         "upstream_unknown", status=status, headers=headers, candidate=data, request_id=request_id
     )
+    observe_model_failure(
+        failure,
+        gateway_code=str(data.get("canonical_code") or "untyped"),
+        contract_mismatch=contract_mismatch,
+    )
+    return failure

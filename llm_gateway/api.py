@@ -55,6 +55,7 @@ from . import ngan_sach as NS
 from .catalog import KhongCoModel, ModelSpec, lay, nap_catalog, ten_la
 from .config import Config
 from .error_contract import make_error
+from .error_telemetry import B_TELEMETRY, choose_action
 from . import gpu_uuid as GPU
 from . import residency as RES
 from .gioi_han import GioiHan, boc_luong, han_im_lang_cho
@@ -78,6 +79,53 @@ DUONG = {
     "responses": "/v1/responses",
     "messages": "/v1/messages",
 }
+
+
+def _observe_gateway_failure(
+    detail: dict[str, object],
+    *,
+    http_status: int,
+    protocol: str,
+    model: str,
+    model_known: bool,
+    request_id: str,
+    stream_phase: str,
+    elapsed_ms: int | float,
+    count: bool = True,
+) -> dict[str, object]:
+    """Ghi duy nhất các field envelope đã lọc; không nhận body request/provider."""
+    canonical = str(detail.get("canonical_code") or "upstream_unknown")
+    retry = str(detail.get("retry") or "ambiguous")
+    upstream_status = detail.get("upstream_status")
+    legacy = bool(detail.get("legacy"))
+    mismatch = bool(detail.get("contract_mismatch"))
+    return B_TELEMETRY.record(
+        logger=log,
+        request_id=str(detail.get("request_id") or request_id),
+        gateway_code=canonical,
+        canonical_code=canonical,
+        protocol_code=canonical,
+        category=str(detail.get("category") or "unknown"),
+        http_status=int(http_status),
+        upstream_status=int(upstream_status) if isinstance(upstream_status, int) else None,
+        protocol=protocol,
+        stream_phase=stream_phase,
+        retry=retry,
+        recovery=str(detail.get("recovery") or "report_request_id"),
+        model=model,
+        elapsed_ms=elapsed_ms,
+        endpoint=protocol,
+        action=choose_action(
+            canonical_code=canonical,
+            retry=retry,
+            legacy=legacy,
+            contract_mismatch=mismatch,
+        ),
+        legacy=legacy,
+        contract_mismatch=mismatch,
+        model_known=model_known,
+        count=count,
+    )
 
 
 def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
@@ -863,6 +911,17 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
         except HTTPException as e:
             luot.ma_http = int(e.status_code)
             luot.ket_thuc = luot.ket_thuc or "tu_choi"
+            if isinstance(e.detail, dict) and e.detail.get("canonical_code"):
+                _observe_gateway_failure(
+                    e.detail,
+                    http_status=int(e.status_code),
+                    protocol=giao_thuc,
+                    model=ten,
+                    model_known=ten in catalog,
+                    request_id=request_id,
+                    stream_phase="before_headers",
+                    elapsed_ms=(now() - t0) * 1000,
+                )
             raise
         except BaseException:
             luot.ket_thuc = luot.ket_thuc or "loi"
@@ -1032,7 +1091,14 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                 #    thành "khoá hỏng".
                 if ma == MA_DA_HUY:
                     return _da_huy(luot)
-                return _loi_thuong_nguon(ma, than, request_id=request_id)
+                return _loi_thuong_nguon(
+                    ma,
+                    than,
+                    request_id=request_id,
+                    protocol=giao_thuc,
+                    model=ten,
+                    elapsed_ms=(now() - t0) * 1000,
+                )
             # 🔴 SUẤT ĐƯỢC TRẢ KHI LUỒNG HẾT, KHÔNG PHẢI KHI HÀM NÀY VỀ.
             #    `StreamingResponse` trả về ngay lập tức; token còn chảy hàng chục
             #    giây sau đó. Trả suất ở đây là đo đồng thời bằng "số lần bấm nút"
@@ -1086,8 +1152,16 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
             def _ghi_loi_stream(failure: dict[str, object]) -> None:
                 code = str(failure["canonical_code"])
                 luot.ket_thuc = code
-                log.warning("thuong nguon SSE canonical=%s request_id=%s",
-                            code, request_id)
+                _observe_gateway_failure(
+                    failure,
+                    http_status=200,
+                    protocol=giao_thuc,
+                    model=ten,
+                    model_known=ten in catalog,
+                    request_id=request_id,
+                    stream_phase="after_headers",
+                    elapsed_ms=(now() - t0) * 1000,
+                )
 
             # Quan sát TRƯỚC TTFT/nhịp tim: heartbeat do cổng chèn không phải dữ
             # liệu upstream. Success đi qua nguyên byte; chỉ frame lỗi hoàn chỉnh
@@ -1096,6 +1170,9 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                 luong,
                 request_id=request_id,
                 on_failure=_ghi_loi_stream,
+                protocol=giao_thuc,
+                model=ten,
+                model_known=ten in catalog,
             )
             # ⛔ TTFT bọc TRONG nhip_tim: nhip tim phat byte trong luc prefill,
             #    boc ngoai thi moi luot dai deu ra ~15 giay. Xem `boc_do_ttft`.
@@ -1117,7 +1194,14 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
         if ma == MA_DA_HUY:
             return _da_huy(luot)
         if ma >= 400:
-            return _loi_thuong_nguon(ma, thu, request_id=request_id)
+            return _loi_thuong_nguon(
+                ma,
+                thu,
+                request_id=request_id,
+                protocol=giao_thuc,
+                model=ten,
+                elapsed_ms=(now() - t0) * 1000,
+            )
         # ⛔ Bóc số TRƯỚC khi trả: `thu` là thân sẽ đi ra cho khách, và đây là
         #    chỗ duy nhất còn thấy nó. Bóc chỉ đọc, không sửa một byte nào.
         luot.doc_than(thu)
@@ -1159,7 +1243,15 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                                      "ma": luot.ma or None},
                             headers={"X-LTT-Request-Id": luot.ma})
 
-    def _loi_thuong_nguon(ma: int, thu: bytes, *, request_id: str) -> JSONResponse:
+    def _loi_thuong_nguon(
+        ma: int,
+        thu: bytes,
+        *,
+        request_id: str,
+        protocol: str,
+        model: str,
+        elapsed_ms: int | float,
+    ) -> JSONResponse:
         # ⛔ HẾT GIỜ ≠ HỎNG, VÀ SỰ KHÁC BIỆT ẤY TỐN TIỀN THẬT.
         #
         #    Trước 09/09 cả hai đi chung một cửa 502. Máy A đọc 502 thành
@@ -1180,6 +1272,16 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                 request_id=request_id,
                 provider_code=ma,
             )
+            _observe_gateway_failure(
+                detail,
+                http_status=504,
+                protocol=protocol,
+                model=model,
+                model_known=model in catalog,
+                request_id=request_id,
+                stream_phase="before_headers",
+                elapsed_ms=elapsed_ms,
+            )
             return JSONResponse(
                 status_code=504,
                 content={"detail": detail,
@@ -1195,6 +1297,16 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                 request_id=request_id,
                 provider_code=ma,
             )
+            _observe_gateway_failure(
+                detail,
+                http_status=502,
+                protocol=protocol,
+                model=model,
+                model_known=model in catalog,
+                request_id=request_id,
+                stream_phase="before_headers",
+                elapsed_ms=elapsed_ms,
+            )
             return JSONResponse(
                 status_code=502,
                 content={"detail": detail,
@@ -1208,8 +1320,16 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
         """
         dem.cong("loi_thuong_nguon")
         detail = decode_upstream_http(ma, {}, thu, request_id=request_id)
-        log.warning("thuong nguon HTTP ma=%s canonical=%s request_id=%s bytes=%d",
-                    ma, detail["canonical_code"], request_id, len(thu))
+        _observe_gateway_failure(
+            detail,
+            http_status=_ma_cho_khach(ma),
+            protocol=protocol,
+            model=model,
+            model_known=model in catalog,
+            request_id=request_id,
+            stream_phase="before_headers",
+            elapsed_ms=elapsed_ms,
+        )
         return JSONResponse(status_code=_ma_cho_khach(ma),
                             content={"detail": detail,
                                      "ly_do": "thuong nguon khong phuc vu duoc",

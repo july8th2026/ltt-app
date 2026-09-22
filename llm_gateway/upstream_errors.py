@@ -13,6 +13,7 @@ from collections.abc import Generator, Mapping
 from typing import Any, Callable, Iterator
 
 from .error_contract import make_error
+from .error_telemetry import B_TELEMETRY
 
 
 # Đủ lớn cho object lỗi thông thường nhưng chặn một trang proxy/body bất thường
@@ -294,10 +295,14 @@ class _ObservedStream:
     """Iterator có close idempotent để cancellation không thành lỗi model."""
 
     def __init__(self, source: Iterator[bytes], *, request_id: str,
-                 on_failure: Callable[[dict[str, object]], None] | None):
+                 on_failure: Callable[[dict[str, object]], None] | None,
+                 protocol: str, model: str, model_known: bool):
         self._source = source
         self._request_id = request_id
         self._on_failure = on_failure
+        self._protocol = protocol
+        self._model = model
+        self._model_known = model_known
         self._source_closed = False
         self._iterator = self._run()
 
@@ -334,7 +339,26 @@ class _ObservedStream:
             for frame in observer.finish():
                 yield from self._emit(frame)
         except GeneratorExit:
-            log.warning("client_disconnected request_id=%s", self._request_id)
+            B_TELEMETRY.record(
+                logger=log,
+                request_id=self._request_id,
+                gateway_code="client_disconnected",
+                canonical_code="client_disconnected",
+                protocol_code="client_disconnected",
+                category="lifecycle",
+                http_status=499,
+                upstream_status=None,
+                protocol=self._protocol,
+                stream_phase="after_headers",
+                retry="never",
+                recovery="none",
+                model=self._model,
+                elapsed_ms=0,
+                endpoint=self._protocol,
+                action="client_disconnected",
+                model_known=self._model_known,
+                count=False,
+            )
             raise
         finally:
             self._close_source()
@@ -349,6 +373,14 @@ class _ObservedStream:
 def observe_upstream_events(
         stream: Iterator[bytes], *, request_id: str,
         on_failure: Callable[[dict[str, object]], None] | None = None,
+        protocol: str = "gateway", model: str = "", model_known: bool = False,
 ) -> Iterator[bytes]:
     """Ẩn raw terminal error, phát một envelope an toàn; success giữ nguyên."""
-    return _ObservedStream(stream, request_id=request_id, on_failure=on_failure)
+    return _ObservedStream(
+        stream,
+        request_id=request_id,
+        on_failure=on_failure,
+        protocol=protocol,
+        model=model,
+        model_known=model_known,
+    )

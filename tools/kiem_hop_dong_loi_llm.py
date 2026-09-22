@@ -217,6 +217,43 @@ def build_fixture_report(*, decoder: Callable = decode_gateway_failure) -> dict:
     }
 
 
+def _event_from_line(line: str) -> dict | None:
+    """Đọc JSONL của A, JSON message của B, không trả phần vỏ có thể chứa secret."""
+    try:
+        outer = json.loads(line)
+    except (TypeError, ValueError):
+        start = str(line).find("{")
+        if start < 0:
+            return None
+        try:
+            outer = json.loads(str(line)[start:])
+        except ValueError:
+            return None
+    if not isinstance(outer, dict):
+        return None
+    message = outer.get("message")
+    if isinstance(message, str):
+        start = message.find("{")
+        if start >= 0:
+            try:
+                nested = json.loads(message[start:])
+            except ValueError:
+                nested = None
+            if isinstance(nested, dict) and (
+                nested.get("event") == "llm_model_error"
+                or "llm_error_total" in nested
+            ):
+                if not any(key in nested for key in ("timestamp", "time", "ts")):
+                    for key in ("timestamp", "time", "ts"):
+                        if key in outer:
+                            nested[key] = outer[key]
+                            break
+                return nested
+    if outer.get("event") == "llm_model_error" or "llm_error_total" in outer:
+        return outer
+    return None
+
+
 def analyze_live(lines: Iterable[str], *, minutes: int) -> dict:
     """Chỉ giữ counter hữu hạn; tuyệt đối không trả raw line/message/token."""
     codes: Counter[str] = Counter()
@@ -224,19 +261,21 @@ def analyze_live(lines: Iterable[str], *, minutes: int) -> dict:
     snapshots: dict[str, dict] = {}
     events = request_ids = unknown = legacy = mismatch = 0
     for line in lines:
-        try:
-            event = json.loads(line)
-        except (TypeError, ValueError):
+        event = _event_from_line(line)
+        if event is None:
             continue
-        if not isinstance(event, dict):
-            continue
-        if "llm_error_total" in event:
+        is_error_event = event.get("event") == "llm_model_error"
+        if "llm_error_total" in event and not is_error_event:
             source = str(event.get("source") or "default")
             snapshots[source] = event
             continue
+        action = str(event.get("action") or "")
+        if not bool(event.get("counted", True)):
+            if action == "client_disconnected":
+                actions[action] += 1
+            continue
         events += 1
         code = str(event.get("canonical_code") or "")
-        action = str(event.get("action") or "")
         if code:
             codes[code] += 1
         if action:
@@ -245,7 +284,11 @@ def analyze_live(lines: Iterable[str], *, minutes: int) -> dict:
         unknown += code == "upstream_unknown"
         legacy += bool(event.get("legacy"))
         mismatch += bool(event.get("contract_mismatch"))
-    if snapshots:
+    # A normal telemetry event also carries a cumulative counter snapshot.  Do
+    # not replace event counts with that value: machine A has multiple worker
+    # processes whose counters all start at zero.  Counter-only records are a
+    # fallback for exporters that do not retain individual events.
+    if snapshots and events == 0:
         def total(key: str) -> int:
             values = []
             for snapshot in snapshots.values():
@@ -390,9 +433,22 @@ def _default_live_paths() -> list[Path]:
         for value in (os.environ.get("LTT_LLM_CONTRACT_LOGS") or "").split(os.pathsep)
         if value.strip()
     ]
-    data_root = Path(os.environ.get("LTT_DATA_DIR") or r"C:\LTTPlatform\data")
-    discovered = sorted((data_root / "logs").glob("*llm*.jsonl"))
-    return configured + [path for path in discovered if path not in configured]
+    explicit_logs = (os.environ.get("LTT_LOGS_DIR") or "").strip()
+    roots = [
+        Path(explicit_logs or (r"C:\LTTPlatform\logs" if os.name == "nt" else ROOT / "logs")),
+        # Compatibility with the short-lived Task 9 default.  Production A
+        # never used this directory, but an operator may have exported logs
+        # there before the correction.
+        Path(os.environ.get("LTT_DATA_DIR") or r"C:\LTTPlatform\data") / "logs",
+    ]
+    patterns = ("ltt-server*.jsonl", "ltt-job-worker*.jsonl", "*llm*.jsonl")
+    discovered: list[Path] = []
+    for root in roots:
+        for pattern in patterns:
+            for path in sorted(root.glob(pattern)):
+                if path not in configured and path not in discovered:
+                    discovered.append(path)
+    return configured + discovered
 
 
 def _timestamp(value) -> datetime | None:
@@ -427,17 +483,14 @@ def _read_live_lines(
         except OSError:
             continue
         for line in candidates:
-            try:
-                event = json.loads(line)
-            except ValueError:
-                continue
-            if not isinstance(event, dict):
+            event = _event_from_line(line)
+            if event is None:
                 continue
             event_time = _timestamp(
                 event.get("timestamp", event.get("time", event.get("ts")))
             )
             if event_time is not None and cutoff <= event_time <= current:
-                lines.append(line)
+                lines.append(json.dumps(event, ensure_ascii=True, separators=(",", ":")))
     return lines
 
 
@@ -480,7 +533,12 @@ def _write_report(output: Path, report: dict) -> None:
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description=__doc__)
+    # Keep help text ASCII: production operators commonly run this command from
+    # Windows PowerShell 5.1, whose stdout can still be strict cp1252.  The
+    # Vietnamese module docstring made ``--help`` fail before parsing any mode.
+    parser = argparse.ArgumentParser(
+        description="Check the LLM error contract with fixtures, logs, or probes."
+    )
     sub = parser.add_subparsers(dest="mode", required=True)
     fixture = sub.add_parser("fixture", help="offline deterministic corpus")
     fixture.add_argument("--output", type=Path, required=True)

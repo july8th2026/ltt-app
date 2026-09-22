@@ -15,7 +15,9 @@
 - Đọc `docs/00_LTT_OPERATING_CONTRACT.md`, `docs/ltt_llm_dual/RUNBOOK.md`,
   `docs/ltt_llm_dual/BAN_DO_DUONG_DI.md` và spec trên trước dòng code đầu tiên.
 - Máy A và B đều là production. Mỗi task làm trên worktree riêng từ `main`, thay
-  đổi nhỏ, test đỏ trước, gộp sau test nhắm/L1-L2 xanh. Không chạy L3 giữa các
+  đổi nhỏ, test đỏ trước và test nhắm đúng cụm vừa sửa. Từ Task 10 trở đi không
+  chạy L2 giữa các phase; chỉ chạy L1 khi cần gate cho deploy/gộp. Các L2 đã ghi
+  ở Task 1-9 là lịch sử thật, không phải nhịp tiếp tục. Không chạy L3 giữa các
   task; một L3 duy nhất sau toàn bộ phiên triển khai.
 - Trước gate, `test_nhanh.py` hoặc pytest từ ba tệp: chạy
   `python tools\cua_so_yen.py trang-thai` và `python tools\tai_may.py`; pytest
@@ -400,7 +402,8 @@ python tools\kiem_hop_dong_loi_llm.py inject --base-url <test-url> --output <dir
 - [ ] Thêm log action ở A/B: retry/terminal/legacy/unknown; không ghi nội dung
   cuộc hội thoại. Action compact/offload của LTTCODE để Task 12 bổ sung sau.
 - [ ] PASS; kiểm một fixture chứa secret giả không xuất hiện trong caplog/report.
-- [ ] Test nhắm + L2 các thành phần; commit
+- [ ] Test nhắm các thành phần; khép riêng mọi phép kiểm đã đỏ. Không chạy lại
+  L2; chỉ dùng L1 nếu cần gate cho deploy/gộp; commit
   `feat(observability): trace model errors across A and B`.
 
 ### Task 11: Hoàn tất và nghiệm thu máy B + máy A trước LTTCODE
@@ -433,6 +436,8 @@ python tools\kiem_hop_dong_loi_llm.py inject --base-url <test-url> --output <dir
 - [ ] Chỉ đánh dấu A+B hoàn tất khi direct API matrix xanh và traffic thật không
   tăng `unknown`, mismatch hay lỗi key. Sau mốc này mới được mở Task 12.
 - [ ] Commit runbook với **lệnh/kết quả thật** sau triển khai, không chép secret.
+- [ ] Trước mỗi deploy chỉ dùng L1 trên đúng SHA theo hợp đồng; không chạy L2
+  giữa các bước rollout. L3 dành duy nhất cho Task 14 sau khi mọi phase kết thúc.
 
 ### Task 12: LTTCODE đọc mã có cấu trúc và kích hoạt đúng recovery — làm cuối
 
@@ -493,7 +498,7 @@ modify LTTCODE `src/errors.ts`; modify `llm_gateway/ngan_sach.py`; modify test
   muốn chuẩn hoá status, mở quyết định/API change riêng.
 - [ ] Chạy toàn ma trận lỗi và LTTCODE. Đột biến đưa nhánh 413 cũ trở lại phải
   làm test đỏ.
-- [ ] Test nhắm/L2; commit riêng từng repo:
+- [ ] Test nhắm đúng cụm; không chạy L2 giữa phase; commit riêng từng repo:
   `refactor(llm): remove legacy error inference`.
 
 ### Task 14: Đồng bộ tài liệu, quyết định và tổng kết phiên
@@ -535,4 +540,5 @@ sử; modify docs API được `tools/build_public_api_docs.py` sinh; modify
 - [ ] Request ID truy được qua client↔A↔B; response không lộ dữ liệu nhạy cảm.
 - [ ] Catalog/preflight và B cùng giới hạn; B vẫn là thẩm quyền cuối.
 - [ ] Rollout/rollback đã được diễn tập, report canary lưu ngoài git.
-- [ ] Test nhắm, L2 từng phạm vi và một L3 cuối phiên đều xanh trên đúng SHA.
+- [ ] Test nhắm từng cụm đều xanh; L1 chỉ khi deploy/gộp cần gate; một L3 duy
+  nhất cuối phiên xanh trên đúng SHA.

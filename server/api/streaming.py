@@ -26,8 +26,7 @@ from __future__ import annotations
 
 import logging
 import time
-from functools import partial
-from typing import Iterator, Optional
+from typing import Iterator
 
 import anyio
 from fastapi import Body, Depends, Request
@@ -53,6 +52,7 @@ from server.api import su_kien_loi, tool_dich
 from server.api.auth import require_scope
 from server.deps import get_db
 from apps.ltt_llm import ngan_sach
+from platform_core.llm.model_failure import ModelFailure, observe_model_failure
 from platform_core.runtime_noi_bo import luong as cua_luong
 
 log = logging.getLogger("server.api.streaming")
@@ -112,6 +112,37 @@ TUYEN_TUONG_THICH = dict(examples.TUYEN_DESKTOP)
 def _giai_ten_model(ten: str) -> str:
     """Tên tuyến tương thích → alias thật. Tên khác giữ nguyên để lỗi ở chỗ cũ."""
     return TUYEN_TUONG_THICH.get(ten, ten)
+
+
+def _observe_public_model_failure(
+    failure: ModelFailure,
+    *,
+    duong: str,
+    model: str,
+    elapsed_ms: int | float,
+    phase: str = "before_headers",
+) -> dict[str, object]:
+    """Bổ sung ngữ cảnh public cho event decoder, không đếm trùng counter A."""
+    protocol = (
+        "messages" if duong.endswith("/messages")
+        else "responses" if duong.endswith("/responses")
+        else "chat" if duong.endswith("/chat/completions")
+        else "rfc9457"
+    )
+    return observe_model_failure(
+        failure,
+        gateway_code=failure.canonical_code,
+        protocol_code=su_kien_loi.model_protocol_code(
+            duong, failure.canonical_code
+        ),
+        protocol=protocol,
+        stream_phase=phase,
+        model=model,
+        endpoint=protocol if protocol != "rfc9457" else "public_api",
+        elapsed_ms=elapsed_ms,
+        model_known=True,
+        count=False,
+    )
 
 #: 🔴 NGÂN SÁCH MỞ LUỒNG — 75 giây, và con số này có lý do.
 #:
@@ -335,7 +366,7 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
 
     # ── Được nhận ⇒ GIỮ TIỀN (và chỉ từ đây trở đi) ─────────────────────────
     try:
-        da_giu = thanh_toan.giu_cho_luot(
+        _da_giu = thanh_toan.giu_cho_luot(
             db, user_id=principal.user_id, request_id=request_id,
             token_vao_uoc=vao_uoc, max_tokens=xin_ra, model=ten)
     except credit.ThieuCreditError as e:
@@ -465,6 +496,11 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         #    làm đúng và thứ hết là năng lực máy B. Chẩn đoán sai ngay từ dòng
         #    tiêu đề, và `CAPACITY_REFUSED` đứng im ở 0 suốt sự cố.
         metrics.increment(metrics.CAPACITY_REFUSED)
+        if e.failure is not None:
+            _observe_public_model_failure(
+                e.failure, duong=duong, model=ten,
+                elapsed_ms=(time.monotonic() - t0) * 1000,
+            )
         log.warning("BAN mot-cuc: user=%s duong=%s ly_do=%s",
                     principal.user_id[:8], duong, e)
         # 🔴 Chỗ rò THỨ TƯ, và không phép quét thủ công nào của tôi thấy nó —
@@ -494,6 +530,11 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         log.info("mot cuc: yeu cau vuot tran user=%s: %s",
                  principal.user_id[:8], e)
         failure = e.failure
+        if failure is not None:
+            _observe_public_model_failure(
+                failure, duong=duong, model=ten,
+                elapsed_ms=(time.monotonic() - t0) * 1000,
+            )
         if config.structured_model_errors and failure is not None:
             return su_kien_loi.render_model_failure(
                 duong, failure, phase="before_headers", stream=False
@@ -504,18 +545,28 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
                 failure.as_detail() if failure is not None else getattr(e, "chi_tiet", None)
             ),
         ) from e
-    except HuyError:
+    except HuyError as e:
         # ⛔ TRUOC `CongVlmError`: `HuyError` khong ke thua no (co chu y), nen
         #    truoc 14/09 no thoat ra thanh 500. Huy khong phai loi cua ai.
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
         _release_ticket("huy")
+        if e.failure is not None:
+            _observe_public_model_failure(
+                e.failure, duong=duong, model=ten,
+                elapsed_ms=(time.monotonic() - t0) * 1000,
+            )
         return JSONResponse(_DA_HUY, status_code=MA_KHACH_NGAT,
                             headers=_NO_STORE)
     except YeuCauSaiError as e:
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
         _release_ticket("tham_so_sai")
+        if e.failure is not None:
+            _observe_public_model_failure(
+                e.failure, duong=duong, model=ten,
+                elapsed_ms=(time.monotonic() - t0) * 1000,
+            )
         if config.structured_model_errors and e.failure is not None:
             return su_kien_loi.render_model_failure(
                 duong, e.failure, phase="before_headers", stream=False
@@ -529,6 +580,11 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
         _release_ticket("loi")
+        if e.failure is not None:
+            _observe_public_model_failure(
+                e.failure, duong=duong, model=ten,
+                elapsed_ms=(time.monotonic() - t0) * 1000,
+            )
         log.warning("mot cuc that bai user=%s: %s", principal.user_id[:8], e)
         raise service_unavailable("The model could not serve this request.") from None
     except BaseException:
@@ -774,6 +830,7 @@ def _tran_vao_cua_model(alias: str) -> int:
 
 def _cua(duong: str, than: dict, principal: Principal, db: Session,
          config, request=None) -> Response:
+    telemetry_started = time.monotonic()
     # `text.chat` phải qua đủ ba cổng của Q92. Có route riêng KHÔNG cho nó đi
     # vòng qua công tắc người vận hành — cửa mới không được là cửa sau.
     tool = require_tool(build_catalog(config), TOOL_CHAT, principal)
@@ -1020,14 +1077,34 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
         with anyio.CancelScope(shield=True):
             await run_in_threadpool(_ket_thuc)
 
+    def _loi_sse_quan_sat(
+        error_path: str,
+        ma: str,
+        thong_diep: str,
+        *,
+        failure: ModelFailure | None = None,
+    ) -> bytes:
+        if failure is not None:
+            _observe_public_model_failure(
+                failure,
+                duong=error_path,
+                model=ten,
+                elapsed_ms=(time.monotonic() - telemetry_started) * 1000,
+                phase="after_headers",
+            )
+        return su_kien_loi.loi_sse(
+            error_path,
+            ma,
+            thong_diep,
+            failure=failure,
+            structured=config.structured_model_errors,
+        )
+
     return StreamingResponse(
         cua_luong.bat_dong_bo_hoa(
             cua_luong.luong_co_cho(
                 tk,
-                loi_sse=partial(
-                    su_kien_loi.loi_sse,
-                    structured=config.structured_model_errors,
-                ),
+                loi_sse=_loi_sse_quan_sat,
                                    nhip_sse=su_kien_loi.bo_nhip(duong),
                                    trang_thai=getattr(request, "state", None),
                                    timeout_s=MO_LUONG_GIAY, so_tay=so_tay),

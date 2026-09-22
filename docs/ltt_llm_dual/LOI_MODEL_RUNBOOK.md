@@ -54,10 +54,13 @@ python tools\kiem_hop_dong_loi_llm.py live --minutes 20 `
 
 Có thể đặt danh sách đường dẫn trong `LTT_LLM_CONTRACT_LOGS`, phân cách theo
 `os.pathsep`; `--log` rõ ràng vẫn là cách nên dùng khi nghiệm thu. Không truyền
-nguồn thì công cụ chỉ dò `*llm*.jsonl` dưới `LTT_DATA_DIR\logs` (mặc định
-`C:\LTTPlatform\data\logs`). Công cụ chỉ đọc file; nó không SSH, không gọi API,
-không gửi prompt và không chạy `nvidia-smi`. Log B phải được operator xuất/copy
-theo đường chỉ-đọc trước khi chạy.
+nguồn thì công cụ dò `ltt-server*.jsonl`, `ltt-job-worker*.jsonl` và
+`*llm*.jsonl` dưới `LTT_LOGS_DIR` (mặc định production A là
+`C:\LTTPlatform\logs`). Nó vẫn đọc thêm vị trí `LTT_DATA_DIR\logs` cũ để không
+làm mất một bản log đã được operator xuất theo hướng dẫn Task 9 trước khi đường
+dẫn được sửa. Công cụ chỉ đọc file; nó không SSH, không gọi API, không gửi prompt
+và không chạy `nvidia-smi`. Log B phải được operator xuất/copy theo đường chỉ-đọc
+trước khi chạy.
 
 Report chỉ giữ:
 
@@ -65,12 +68,15 @@ Report chỉ giữ:
 - số `upstream_unknown`, legacy và contract mismatch;
 - histogram hữu hạn theo `canonical_code` và `action`.
 
-Một dòng snapshot counter được nhận diện bằng `llm_error_total`; bốn counter
+Một dòng snapshot counter **không kèm** `event=llm_model_error` được nhận diện
+bằng `llm_error_total`; bốn counter
 đi kèm là `llm_error_unknown_total`, `llm_error_legacy_total`,
 `llm_error_contract_mismatch_total` và
 `llm_error_request_id_missing_total`. Nhiều snapshot cùng `source` chỉ lấy dòng
-cuối trong cửa sổ; các source hữu hạn khác nhau được cộng lại. Khi có snapshot,
-nó là nguồn tổng số chính để tránh đếm đôi với event log cùng request.
+cuối trong cửa sổ; các source hữu hạn khác nhau được cộng lại. Snapshot chỉ là
+fallback khi cửa sổ không có event riêng lẻ. Nếu có event, công cụ đếm từng event
+thay vì lấy counter cộng dồn: máy A có nhiều process, mỗi process có counter riêng
+nên lấy một snapshot theo nhãn `source=A` sẽ làm thiếu số mà không báo lỗi.
 
 `pass=false` khi không có event hoặc có mismatch. Unknown/legacy được đếm để
 rollout quyết định, không tự biến thành lỗi khác. Trước khi dùng phép đo làm
@@ -117,7 +123,32 @@ Mỗi hàng matrix có `code`, `protocol`, `phase`, `status`, `canonical_code`,
 5. Chạy lại đúng chế độ/phép đo đã đỏ. Không tuyên bố các mã chưa xuất hiện trên
    traffic production là đã được chứng minh bởi `live`.
 
-## 5. Tiêu chí dùng ở mốc A+B
+## 5. Telemetry A/B và giới hạn dữ liệu
+
+Mỗi lỗi model phát một event `llm_model_error`. Event chỉ có trường đã chuẩn
+hoá: `request_id`, `gateway_code`, `canonical_code`, `protocol_code`,
+`category`, `http_status`, `upstream_status`, `protocol`, `stream_phase`,
+`retry`, `recovery`, `model`, `elapsed_ms`, `endpoint`, `action`, `source`,
+`legacy` và `contract_mismatch`. Không có đường truyền raw body, prompt, ảnh,
+Authorization, credential hay message thô của provider vào hàm ghi event.
+
+Năm counter cộng dồn được chụp ngay trong event để sống qua file log:
+`llm_error_total`, `llm_error_unknown_total`, `llm_error_legacy_total`,
+`llm_error_contract_mismatch_total`, `llm_error_request_id_missing_total`.
+Counter chỉ gắn label hữu hạn `canonical_code`, model đã được catalog xác nhận,
+endpoint, phase, protocol và action. Model lạ thành `other`; model trống thành
+`missing`. Request ID và message không bao giờ là label.
+
+Action phía A/B chỉ là `retry`, `terminal`, `legacy`, `unknown` hoặc
+`client_disconnected`. `client_disconnected` là log-only (`counted=false`): nó
+không tăng counter lỗi và không phải bằng chứng để phạt provider/API key. Action
+`compact`/`offload` của LTTCODE chỉ được thêm ở Task 12, tại đúng lớp client.
+
+`live` đọc được cả JSONL của máy A (event nằm trong trường `message`) và JSON
+message của máy B. Nó chỉ giữ histogram/counter; phần vỏ log và prose không được
+chép vào report.
+
+## 6. Tiêu chí dùng ở mốc A+B
 
 Trước khi mở hạng mục LTTCODE, Task 11 phải có đủ ba artifact cùng thời điểm:
 
