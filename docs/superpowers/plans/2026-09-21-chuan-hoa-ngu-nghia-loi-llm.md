@@ -543,6 +543,16 @@ build sớm đã dừng trước khi phát (không có gì lên manifest). Cổn
 (3) sổ lỗi ghi dòng "pass có lý do" cho edit mismatch / tệp không tồn tại / exit code ≠ 0; (4) R4 chạy lại
 một lượt trên cây cuối. `subagent run was cancelled` kiểm ở R9 (cần bản đã cài).
 
+**Hạng mục MỚI đề xuất — ngoài plan này (plan cấm đổi trần/giới hạn):** lệch đơn vị cửa sổ ngữ cảnh ở
+máy A. Nguyên nhân gốc của 9 lỗi `400` trong audit 0.2.4 là tiền kiểm "quá dài" của A
+(`platform_core/runtime_noi_bo/luong.py` `vao_uoc > cap`) tính bằng token ƯỚC cận trên (`uoc_token.py`,
+≈1,33–1,4× usage thật trên 3 phiên), trong khi cửa sổ công bố cho client (`llm_gateway/ngan_sach.py:440-442`,
+tran_vao×0,92) được client so bằng token THẬT ⇒ client không nén chủ động kịp, chỉ nén sau khi đã ăn một
+lỗi (LTTCODE 0.2.5 đã nén đúng sau lỗi đó). Máy B đã có lời giải cho cùng loại lệch: ước trước, vượt trần
+thì đếm thật (`dem_that`, `llm_gateway/api.py`). Bằng chứng: `C:\lttc0\logs	ask12_400_rootcause.md`,
+sổ lỗi LTTCODE V-17. Cần chủ dự án duyệt hướng: (a) A dùng cơ chế ước→đếm thật như B; (b) công bố
+cửa sổ theo token thật (hạ số công bố); (c) giữ nguyên, chấp nhận nén sau lỗi.
+
 Task 13 (gỡ legacy) **không** thuộc phiên này: vào khi đủ một chu kỳ vận hành có traffic với
 `llm_error_legacy_total=0` và `llm_error_contract_mismatch_total=0` (đọc bằng
 `tools/kiem_hop_dong_loi_llm.py live`), sau khi 0.2.5 đã thay 0.2.4 trên máy dùng.
