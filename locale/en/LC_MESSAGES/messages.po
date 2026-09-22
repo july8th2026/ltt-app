@@ -19644,3 +19644,42 @@ msgstr "Aspect-ratio method"
 
 msgid "Tỉ lệ khung hình không có trong danh sách."
 msgstr "That aspect ratio is not in the list."
+
+msgid "Còn thiếu phần, chưa ghép được tệp."
+msgstr "Some parts are still missing; the file cannot be assembled yet."
+
+msgid "Còn thiếu {n} phần, chưa ghép được tệp."
+msgstr "{n} parts are still missing; the file cannot be assembled yet."
+
+msgid "Kho không hỗ trợ tải lên nhiều phần."
+msgstr "This storage backend does not support multipart uploads."
+
+msgid "Kho từ chối phần tải lên."
+msgstr "Storage rejected the uploaded part."
+
+msgid "Kích thước phần không khớp kế hoạch tải lên."
+msgstr "The part size does not match the upload plan."
+
+msgid "Lượt tải lên không còn trên kho. Hãy tải lại từ đầu."
+msgstr "This upload no longer exists in storage. Please start the upload again."
+
+msgid "Lượt tải lên nhiều phần không tồn tại."
+msgstr "That multipart upload does not exist."
+
+msgid "Lượt tải lên đã hết hạn hoặc đã kết thúc."
+msgstr "This upload has expired or has already finished."
+
+msgid "Mã kiểm MD5 của phần không khớp nội dung."
+msgstr "The part's MD5 checksum does not match its contents."
+
+msgid "Phần lớn hơn kích thước cho phép."
+msgstr "The part is larger than the allowed size."
+
+msgid "Số thứ tự phần không hợp lệ."
+msgstr "Invalid part number."
+
+msgid "Thiếu hoặc sai mã kiểm MD5 của phần."
+msgstr "The part's MD5 checksum is missing or malformed."
+
+msgid "Tiếp tục tải lên từ %(pct)s%%…"
+msgstr "Resuming upload from %(pct)s%%…"
