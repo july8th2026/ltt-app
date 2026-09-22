@@ -66,8 +66,41 @@ PHIEN_BAN = 3
 KHOA_SCHEMA = "schema"
 
 #: Nhung khoa CHI ghi khi khach thuc su dung tinh nang. Xem bang o docstring.
+#: ⭐ `ho_so_noi_dung` la ho so ma `AUTO_MATCH` dung ra (bang chung + nguon cua
+#:    tung mat). No nam o day chu khong o `dich_vu_tao.KHOA_NHAN`: cua tao
+#:    **khong** nhan no tu khach — chi `giai_doan_noi_dung` ghi no, mot lan.
 KHOA_THUA = ("cat", "vung", "lop_phu", "logo", "phu_de", "am_thanh",
-             "bien_tap")
+             "bien_tap", "ho_so_noi_dung")
+
+#: 🔴 **Khoa do CHINH HE THONG ghi vao GIUA mot lan chay, khong phai khach nhap.**
+#:
+#:    `thi_hanh.van_tay` gom **ca** `run.settings` vao van tay giai doan, va
+#:    `jobs._vo_hieu_giai_doan_da_lech` dat lai moi giai doan co van tay lech.
+#:    Nen mot dong ghi vao `settings` o giua chuoi se **dat lai media_prepare,
+#:    audio_prepare, transcribe va edit_plan** — do duoc: log
+#:    *"dat lai 5 giai doan do lech van tay"* xuat hien ngay o ban nhap dau cua
+#:    duong `AUTO_MATCH`, tuc demucs + ASR chay lai tu dau. Dung 133 giay ma
+#:    `NEN_V3` luot A da dot, lan nay dot theo mot cach khac.
+#:
+#: ⭐ Nen hai khoa nay bi **loai khoi van tay giai doan**. Dieu do khong lam mat
+#:    mot phep vo hieu nao: giong da chot di vao van tay CUA BAN LONG TIENG
+#:    (`long_tieng.van_tay_long_tieng` co `ma_giong`), va moi giai doan phia sau
+#:    doc giong tu chinh ban long tieng do chu khong doc `settings`.
+#:
+#: ⛔ Chi them khoa vao day khi no do HE THONG sinh ra. Mot khoa KHACH nhap ma
+#:    nam o day se lam mot lan doi cai dat khong vo hieu cache — tuc khach doi
+#:    thong so roi nhan lai y nguyen ban cu.
+KHOA_DAN_XUAT: frozenset = frozenset({"dac_diem_giong", "ho_so_noi_dung"})
+
+
+def cho_van_tay(tho: Mapping | None) -> dict:
+    """Ho so DA BO cac khoa dan xuat — ban di vao van tay giai doan.
+
+    Xem `KHOA_DAN_XUAT` ve ly do. ⚠️ Khong chuan hoa o day: `thi_hanh.van_tay`
+    bam **dung** thu dang nam trong `run.settings`, va chuan hoa o duong doc lam
+    mot ho so cu bong nhien bam ra khac di.
+    """
+    return {k: v for k, v in dict(tho or {}).items() if k not in KHOA_DAN_XUAT}
 
 #: ⛔ `voice_id` la mot BI DANH cu cua `giong_id`, khong phai mot truong thu hai.
 #:    Xem `rang_giong.tu_thiet_lap`: hai khoa nay da song song mot thoi gian va

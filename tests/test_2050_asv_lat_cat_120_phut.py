@@ -82,8 +82,11 @@ def noi_dung_gia(monkeypatch):
                                hieu_canh=(), ban_ghi=goc)
     monkeypatch.setattr(gd, "_doc_ban_ghi", lambda db, kho, run: (goc, "ck-120"))
     monkeypatch.setattr(gd, "_doc_ban_bien_tap", lambda db, kho, run: (ban, ci))
+    # ⭐ Chu ky co `ban_ghi`/`ctx` tu 23/09: `_giong_da_chot` la cho DUNG ho so
+    #    noi dung cho `AUTO_MATCH` (`ho_so_noi_dung.bao_dam`). Bai nay do lat
+    #    cat, khong do rang giong, nen no chan ca duong do bang mot giong co dinh.
     monkeypatch.setattr(gd, "_giong_da_chot",
-                        lambda db, run: ("Minh Đức", {"nguon": "gia"}))
+                        lambda db, run, **kw: ("Minh Đức", {}, "gia"))
 
     dh = DongHoGia()
     monkeypatch.setattr(lat_cat, "dong_ho", dh)

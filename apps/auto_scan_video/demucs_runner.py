@@ -593,8 +593,32 @@ def main(argv: list[str]) -> int:
     kq = tach_theo_khoi(model, torch, vao, thu_muc, thiet_bi=thiet_bi)
     kq.update(bang_chung_thiet_bi(torch, thiet_bi))
     kq["luong_torch"] = luong
+    kq["f0_trung_vi"] = _f0_cua_giong(kq)
     print(json.dumps(kq))
     return 0
+
+
+def _f0_cua_giong(kq: dict) -> float:
+    """Trung vi F0 cua stem `vocals`, do NGAY TAI DAY. `0.0` = khong do duoc.
+
+    🔑 **Do o tien trinh con, khong o worker** — va do khong phai mot toi uu.
+       Hai ly do, ca hai deu cung:
+
+         · `torch` + `torchaudio` da nam san trong bo nho cua tien trinh NAY.
+           Goi phep do tu worker se keo ca hai vao worker — dung thu ma kien
+           truc "demucs chay o tien trinh con" dung de tranh;
+         · `giai_doan_am_thanh` **xoa** `vocals` ngay khi ham nay tra ve (no la
+           giong goc cua khach, ta khong hua se giu). Sau do khong con gi de do.
+
+    ⇒ Thu di len la MOT con so, khong phai mot tep tieng. `ho_so_noi_dung` doc
+      no de `AUTO_MATCH` co mat `gioi` — xem `cao_do.py`.
+    """
+    duong = str((kq.get("duong") or {}).get("vocals") or "")
+    if not duong:
+        return 0.0
+    from . import cao_do
+
+    return cao_do.f0_trung_vi(duong)
 
 
 if __name__ == "__main__":
