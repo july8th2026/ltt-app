@@ -20249,7 +20249,3 @@ msgstr "Go over the limit and you get a 400 (context_window_exceeded) carrying t
 
 msgid "Cần tài khoản người dùng để dùng credit."
 msgstr "A user account is needed to spend credits."
-
-#: apps/agent/routes/_shared.py
-msgid "Chạy workflow trên Canvas đang được nâng cấp sang runtime mới. Bản nháp của bạn vẫn được lưu an toàn."
-msgstr "Running workflows on Canvas is being upgraded to the new runtime. Your draft is still saved safely."
