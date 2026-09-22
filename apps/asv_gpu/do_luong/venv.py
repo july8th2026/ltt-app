@@ -13,7 +13,6 @@ from __future__ import annotations
 import json
 import os
 import subprocess
-import sys
 import tempfile
 import time
 from pathlib import Path
@@ -89,7 +88,3 @@ def chay(tep_script: str | Path, dau_vao: dict, *, timeout_s: int = 1800,
             raise DoLuongLoi(f"thoat {proc.returncode}: {duoi}")
         return json.loads(ra.read_text(encoding="utf-8"))
 
-
-def la_tien_trinh_con() -> bool:
-    """True khi dang chay BEN TRONG venv do luong (script runner goi)."""
-    return Path(sys.executable).resolve() == python_qc().resolve()
