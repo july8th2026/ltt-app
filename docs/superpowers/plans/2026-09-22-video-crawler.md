@@ -96,3 +96,27 @@ main, message sai) → 79f2a776 (vá, tắt app, thêm spec) → f587f497 (rút 
 
 Đã thi hành (TDD, test viết trước và thấy đỏ). Sổ lỗi + độ phủ: `docs/migrations/video_crawler/SO_LOI.md`.
 Test: `tests/test_1900..1906_video_crawler_*.py` (223 phép cùng test_60/211/308/148, qua `chay_nang.py`).
+
+---
+
+## E. "Triển khai full các trang" (chỉ đạo chủ dự án 22/09) — kế hoạch theo đợt
+
+Bằng chứng nền: yt-dlp 2026.03.17 đang cài CÓ extractor cho BiliBili (+ `bilisearch`), BiliIntl, Douyin, TikTok
+(+ user/collection/tag), Facebook (+ reel), Instagram (+ user/tag), Twitter, XiaoHongShu, Weibo (+ user/video);
+KHÔNG có Kuaishou, Honggo. ⇒ phần lớn nền = adapter mỏng trên `adapters/_ytdlp.py` (không đụng MediaCrawler).
+
+| Đợt | Nền | Chế độ mục tiêu | Cần đăng nhập? | Làn | Trạng thái |
+|---|---|---|---|---|---|
+| Móng | `adapters/_ytdlp.py` (tách từ youtube) + nhịp tim, lọc live, trần dung lượng, URL chuẩn | — | — | làn `ytdlp` (Opus) | ⏳ |
+| A1 | bilibili_tv | link | không | 1 làn sonnet | chờ Móng |
+| A2 | tiktok | link, kênh, bộ (tìm từ khoá ⇒ đợt B) | không | 1 làn sonnet | chờ Móng |
+| A3 | facebook | link (kênh/Page ⇒ đợt B) | không | 1 làn sonnet | chờ Móng |
+| A4 | bilibili (.com) | link, từ khoá (`bilisearch`), kênh (space), bộ (ugc_season) — đo xem ẩn danh được tới đâu | tuỳ đo | 1 làn sonnet | chờ Móng |
+| A5 | twitter, instagram, xiaohongshu, weibo, douyin | link — đo ẩn danh; hỏng thì chuyển B | đo | 1 làn / nền (sonnet), smoke thật quyết định | chờ Móng |
+| B0 | Phiên đăng nhập theo user: bảng `vc_phien` (cookie mã hoá `secretbox`), nhập cookies.txt trên UI, worker ghi cookiefile TẠM trong thư mục job | — | — | điều phối (Opus) | CONTRACT GAP: 1 hàng `governance.STORES` + alembic |
+| B1 | Mở các chế độ cần cookie: tiktok từ khoá, facebook Page, instagram, twitter, douyin/xhs/bilibili khi ẩn danh bị chặn | theo donor | có | mỗi nền 1 làn | sau B0 |
+| B2 | QR login (douyin/bilibili/xhs) qua worker `browser` | — | có | app runtime `video_crawler_browser` + làn `browser` trong `LTT_WORKER_POOLS` | chờ chủ dự án bật pool browser |
+| C | kuaishou (CAPTCHA, donor ghi "chưa hứa cào ra video"), honggo (CDN chặn IP datacenter) | — | — | đo; không đạt ⇒ DEFER có bằng chứng | sau B |
+
+Registry (`nen_tang.py`) do điều phối sửa khi gộp từng làn (một tệp chung ⇒ không làn nào sửa).
+Mỗi nền chỉ bật (`bat=True`) khi có: adapter + test fake + smoke thật ghi vào SO_LOI.md.
