@@ -267,7 +267,7 @@ def _tai_voi(adapter, params: dict, ctx) -> dict:
         try:
             _voi_db("nha_cho", owner_id, job_id)
         except Exception as loi_nha:  # noqa: BLE001 — best-effort như dọn tệp; dòng mồ côi hết hạn sau 3 giờ
-            _LOG.warning("video_crawler: không nhả được chỗ của job %s: %s", job_id, type(loi_nha).__name__)
+            _LOG.warning(_t("video_crawler: không nhả được chỗ của job %s: %s"), job_id, type(loi_nha).__name__)
         for k in da_luu:
             try:
                 kho.delete(k)
