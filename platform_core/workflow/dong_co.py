@@ -9,6 +9,7 @@ mới, là thứ giữ cho hai lượt `mot_vong` chồng nhau vẫn an toàn).
 """
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Callable, Optional
 
@@ -16,8 +17,10 @@ from sqlalchemy import select
 
 from platform_core import jobs
 from platform_core.models import Job, Wakeup, WorkflowRun, WorkflowVersion
-from platform_core.workflow import cau_noi, may_trang_thai as mtt, su_kien
+from platform_core.workflow import cau_noi, danh_thuc, may_trang_thai as mtt, su_kien
 from platform_core.workflow.cong_cu import CongCu
+
+log = logging.getLogger(__name__)
 
 #: Trần cứng — PHẢI ngắn hơn `credit.TU_HOAN_SAU` (lập luận ở `dieu_phoi` cũ,
 #: `test_965` ghim quan hệ này).
@@ -41,11 +44,15 @@ def _do_thi(db, version_id: str) -> dict:
     return g
 
 
-def _lan_truyen(db, run: WorkflowRun, g: dict) -> dict[str, str]:
+def _lan_truyen(db, run: WorkflowRun, g: dict) -> tuple[dict[str, str], bool]:
+    """Trả `(trang_thai_moi_node, co_doi)` — `co_doi` cho bên gọi biết pha này
+    có tự chuyển node nào không (SKIPPED/READY), để quyết định có cần ghi một
+    wakeup "tick" hay không (Important #2 — xem `xu_ly_run`)."""
     tt = {n["id"]: mtt.trang_thai_node(db, run.id, n["id"]) for n in g["nodes"]}
     vao: dict[str, list[dict]] = {n["id"]: [] for n in g["nodes"]}
     for e in g["edges"]:
         vao[e["target_node"]].append(e)
+    co_doi = False
     doi = True
     while doi:
         doi = False
@@ -62,11 +69,13 @@ def _lan_truyen(db, run: WorkflowRun, g: dict) -> dict[str, str]:
                                 mo_ta="nguon khong kich hoat")
                 tt[nid] = "SKIPPED"
                 doi = True
+                co_doi = True
             elif all(kich):
                 mtt.chuyen_node(db, run.id, nid, sang="READY", mo_ta="du dau vao")
                 tt[nid] = "READY"
                 doi = True
-    return tt
+                co_doi = True
+    return tt, co_doi
 
 
 def _ket_run(db, run: WorkflowRun, g: dict, tt: dict[str, str]) -> Optional[str]:
@@ -94,7 +103,7 @@ def xu_ly_run(db, run_id: str, *,
         mtt.chuyen_run(db, run.id, sang="RUNNING")
     for n in g["nodes"]:
         cau_noi.ap_ket_qua(db, run, n["id"], cong_cu=cong_cu)
-    tt = _lan_truyen(db, run, g)
+    tt, _ = _lan_truyen(db, run, g)
     ket = _ket_run(db, run, g, tt)
     if ket:
         return ket
@@ -108,12 +117,36 @@ def xu_ly_run(db, run_id: str, *,
         node = next(n for n in g["nodes"] if n["id"] == nid)
         if cau_noi.nop_job(db, run, node, cong_cu=cong_cu):
             dang += 1
-    tt = _lan_truyen(db, run, g)            # node FAILED lúc nộp ⇒ lan tiếp
-    return _ket_run(db, run, g, tt) or run.status
+    tt, co_doi = _lan_truyen(db, run, g)    # node FAILED lúc nộp ⇒ lan tiếp
+    ket = _ket_run(db, run, g, tt)
+    if ket:
+        return ket
+    # ⭐ Important #2 (review round 1): nếu vòng lan truyền THỨ HAI này (chạy
+    # SAU vòng nộp job) vừa tự chuyển một node — vd node bị `nop_job` từ chối
+    # (vượt trần báo giá / tham số không giải được, xem `cau_noi.nop_job`)
+    # làm một cạnh ERROR kích hoạt đích thành READY — thì đích đó KHÔNG được
+    # nộp trong lượt này (vòng nộp đã chạy xong phía trên) và không có job nào
+    # sinh wakeup cho nó. Không có gì khác đưa run này quay lại trước hạn TTL
+    # 20 giờ ⇒ tự ghi một wakeup "tick" ngay bây giờ, trừ khi run đã có sẵn
+    # một wakeup khác đang chờ (mot_vong sẽ tự đến, không cần ghi thêm).
+    if co_doi:
+        con_wakeup = db.execute(select(Wakeup.id).where(
+            Wakeup.run_id == run.id, Wakeup.claimed_at.is_(None))
+            .limit(1)).scalar()
+        if con_wakeup is None:
+            danh_thuc.hen(db, run_id=run.id, kind="tick", due_at=_bay_gio())
+    return run.status
 
 
 def huy_run(db, run_id: str, ly_do: str) -> bool:
-    run = db.get(WorkflowRun, run_id)
+    # ⭐ Important #4 (review round 1): khoá HÀNG run (chặn, không skip_locked)
+    # trước khi soi trạng thái — nếu không, một lượt `mot_vong` đang giữ khoá
+    # này có thể nộp job MỚI ngay sau khi vòng huỷ đã quét xong
+    # `Job.plan_id == run.id`, và job đó sống sót qua lần huỷ (tiền thật chạy
+    # trên một run khách đã huỷ). Khoá tại đây ép `mot_vong` (dùng cùng khoá
+    # `with_for_update` trên hàng run) đợi lượt huỷ xong trước khi nộp job kế.
+    run = db.execute(select(WorkflowRun).where(WorkflowRun.id == run_id)
+                     .with_for_update()).scalars().first()
     if run is None or run.status in mtt.RUN_KET_THUC:
         return False
     g = _do_thi(db, run.version_id)
@@ -157,6 +190,7 @@ def mot_vong(db_factory: Callable, *, gioi_han: int = 50) -> dict:
     finally:
         db.close()
     da = 0
+    loi = 0
     for rid in run_ids:
         db = db_factory()
         try:
@@ -175,20 +209,30 @@ def mot_vong(db_factory: Callable, *, gioi_han: int = 50) -> dict:
             db.commit()
             da += 1
         except Exception:
+            # ⭐ Important #1 (review round 1): MỘT run lỗi không được chặn
+            # những run khác trong cùng lượt — `run_ids` sắp theo `due_at`, nên
+            # nếu ném tiếp thì đúng run hỏng này sẽ luôn đứng đầu mọi lượt sau
+            # (nghẽn vĩnh viễn). Cuộn transaction CỦA RIÊNG run này, ghi log
+            # (không lộ bí mật — chỉ id + tên lỗi), để wakeup của nó CHƯA
+            # CLAIM (thử lại đúng lượt sau), và đếm vào `loi` thay vì `raise`.
             db.rollback()
-            raise
+            loi += 1
+            log.exception("dong co: run %s loi, bo qua luot nay", rid)
         finally:
             db.close()
     db = db_factory()
     try:
+        # ⭐ Important #3 (review round 1): `con_viec` chỉ dựa trên wakeup CHƯA
+        # NHẶN — một run không-kết-thúc nhưng không còn wakeup nào là run
+        # ĐANG ĐỖ có chủ đích (chờ webhook/delay dài); watchdog `bao_tri` (60s)
+        # + wakeup lúc job xong sẽ tự đưa nó về, không cần động cơ tự nộp lại
+        # mỗi 2 giây mãi mãi.
         ke = db.execute(select(Wakeup.due_at).where(Wakeup.claimed_at.is_(None))
                         .order_by(Wakeup.due_at).limit(1)).scalar()
-        con = db.execute(select(WorkflowRun.id).where(WorkflowRun.status.in_(
-            ("QUEUED", "RUNNING", "WAITING"))).limit(1)).scalar() is not None
     finally:
         db.close()
-    return {"run_da_xu_ly": da, "timed_out": so,
-            "con_viec": bool(ke is not None or con), "han_ke_tiep": ke}
+    return {"run_da_xu_ly": da, "timed_out": so, "loi": loi,
+            "con_viec": ke is not None, "han_ke_tiep": ke}
 
 
 __all__ = ["TRAN_RUN", "mot_vong", "xu_ly_run", "huy_run", "ttl"]

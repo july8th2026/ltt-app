@@ -12,7 +12,8 @@ from sqlalchemy.exc import IntegrityError
 
 from platform_core import jobs
 from platform_core.job_scheduler import ORIGIN_WORKFLOW
-from platform_core.models import Workflow, WorkflowRun, WorkflowVersion
+from platform_core.models import (JOB_QUEUED, JOB_RUNNING, Job, Workflow,
+                                  WorkflowRun, WorkflowVersion)
 from platform_core.workflow import (danh_thuc, may_trang_thai, su_kien,
                                     thi_hanh, tien)
 
@@ -40,8 +41,27 @@ def _bay_gio() -> datetime:
 
 
 def danh_thuc_dong_co(db) -> None:
-    """Nộp job động cơ. `jobs.submit` khử trùng job CHƯA kết thúc cùng khoá ⇒
-    tối đa một job động cơ chờ trên toàn hệ."""
+    """Nộp job động cơ — TỐI ĐA MỘT job động cơ chờ/chạy trên toàn hệ.
+
+    ⛔ Review round 1 (Critical #1): `jobs.submit` chỉ khử trùng theo ĐÚNG
+       `dedupe_key`, không theo `job_type`. Job kế tiếp mà `_dong_co` tự nộp
+       (`apps/agent/jobs.py`) dùng một khoá RIÊNG cho từng chuỗi
+       (`workflow:dong_co:sau:<job_id>`, chủ ý — một job đang chạy không tự
+       dedupe được với chính nó qua khoá cố định). Nếu hàm này chỉ gọi thẳng
+       `jobs.submit(..., dedupe_key="workflow:dong_co")` như trước, từ lượt
+       thứ hai trở đi nó không thấy job nào khớp ĐÚNG khoá cố định nữa và nộp
+       thêm một job động cơ MỚI — job đó lại tự nộp chuỗi `:sau:` của riêng
+       nó, nhân bản không giới hạn.
+
+    ⇒ Tự hỏi bằng Ý NGHĨA ("có job động cơ nào CHƯA kết thúc không", bất kể
+       khoá dedupe nào) thay vì dựa vào khớp khoá — rồi mới nộp dưới khoá cố
+       định khi thật sự không có job nào đang sống.
+    """
+    dang_song = db.execute(select(Job.id).where(
+        Job.job_type == DONG_CO_JOB,
+        Job.status.in_((JOB_QUEUED, JOB_RUNNING))).limit(1)).scalar()
+    if dang_song is not None:
+        return
     jobs.submit(db, user_id=DONG_CO_USER, app_slug="agent",
                 job_type=DONG_CO_JOB, params={}, dedupe_key="workflow:dong_co",
                 max_attempts=3, origin=ORIGIN_WORKFLOW,
