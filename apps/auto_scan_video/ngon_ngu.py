@@ -40,22 +40,100 @@ DICH_MAC_DINH = VI
 
 NHAN = {ZH: "Tiếng Trung", EN: "Tiếng Anh", VI: "Tiếng Việt"}
 
+# ══════════════════════════════════════════════════════════════════════════════
+#  NHIP DOC — mot con so, DO DUOC, va moi loi nhac tinh ra tu no
+# ══════════════════════════════════════════════════════════════════════════════
+
+#: Don vi dem do dai cua mot cau, theo lan dich.
+#:
+#: ⭐ Tieng Viet dem **am tiet** vi chinh ta cua no la am tiet roi: moi am tiet
+#:    mot tu, nen "dem tu cach nhau bang khoang trang" va "dem am tiet" la CUNG
+#:    mot phep. Tieng Anh dem **tu**, va do la don vi moi bang nhip thuyet minh
+#:    tieng Anh deu dung.
+DON_VI_DO_DAI = {VI: "am tiet", EN: "tu"}
+
+#: 🔑 **Nhip doc THAT cua may sinh tieng, don vi `DON_VI_DO_DAI` moi giay.**
+#:
+#: 🔴 `vi` = 3,35 — **DO DUOC 23/09/2026**, va con so cu (4,5) da lam hong mot
+#:    lan chay that.
+#:
+#:    `tools/do_toc_do_giong.py --che-do tts` doc sau doan tieng Viet THAT cua
+#:    luot nghiem thu nen v3 bang chinh giong cua luot ay (`Minh Duc`, LTT Voice
+#:    sidecar that):
+#:
+#:        seg_0001 3,04 · seg_0002 3,33 · seg_0003 3,37
+#:        seg_0004 3,42 · seg_0005 3,44 · seg_0006 3,51   am tiet/giay
+#:        trung binh 3,35 · do lech chuan 0,16
+#:
+#:    Loi nhac khi ay noi "khoang 4,5 am tiet/giay". `4,5 / 3,35 = 1,34`, nen
+#:    **moi cau cua luot viet dau deu dai hon khe ~34% theo dung thiet ke** —
+#:    do duoc o sau doan ay: +27,8% · +31,1% · +39,7% · +44,1% · +47,4% · +50,8%.
+#:
+#: ⛔ Hau qua khong phai "hoi dai": no la 11 luot `rut_ngan_cho_vua` (50.144
+#:    token) + 11 luot doc lai, tuc **751 trong 943 giay** cua giai doan GIONG.
+#:    Mot hang so sai 34% o dau chuoi tra gia o cuoi chuoi, nhan len bang tien.
+#:
+#: ⚠️ `en` = 2,6 (155 tu/phut, nhip thuyet minh tieng Anh thong dung) **CHUA DO**
+#:    tren may sinh tieng nay. Giu nguyen so cu va NOI RO no chua do — doi no
+#:    theo cam tinh la lap lai dung cai bay vua go. Do bang cung mot cong cu khi
+#:    duong `en` co mot luot chay that.
+NHIP: dict[str, float] = {VI: 3.35, EN: 2.6}
+
+#: Nham THAP hon khe mot chut, va **mot con so cho ca hai pha**.
+#:
+#: ⭐ Vua khit la vua **du** de mot dao dong nho cua may sinh tieng lam cau tran
+#:    ra lai. Voi `NHIP[vi]` = 3,35 va bien do do duoc 3,04-3,51: mot cau viet
+#:    theo `3,35 x 0,92` doc cham nhat (3,04) ra dai hon khe **1,4%**, doc nhanh
+#:    nhat (3,51) ra ngan hon khe 12% — ca hai deu trong dung sai cua
+#:    `nan_cho_vua` (+8% / -35%). Do la ly do con so la 0,92 chu khong phai 1,0.
+#:
+#: 🔴 Truoc 23/09 con so nay go tay trong `nan_cho_vua.loi_nhac_nan` va pha VIET
+#:    DAU khong he co no. Hai pha nham hai dich khac nhau tren cung mot khe.
+HE_SO_MUC_TIEU = 0.92
+
 #: Cum tu dien vao LOI NHAC (van ASCII khong dau nhu moi loi nhac cua ASV).
 #:
-#: 🔑 Voi `vi`, moi cum GIU DUNG TUNG KY TU cua loi nhac V4-V6 da nghiem thu —
-#:    mo `en` khong duoc doi mot chu nao cua duong `vi` (khong lam troi chat
-#:    luong da do). `test` chot dieu do bang chuoi cu.
-#:
-#: Nhip doc la goi y cho LLM uoc do dai, khong phai phep do: VieNeu doc tieng
-#: Viet ~4,5 am tiet/giay (V4 pha 14); thuyet minh tieng Anh ~155 tu/phut.
-CUM: dict[str, dict[str, str]] = {
-    VI: {"tieng": "tieng Viet", "nguoi": "nguoi Viet",
-         "nhip": "khoang 4,5 am tiet/giay",
-         "nhip_moi_giay": "khoang 4,5 am tiet moi giay"},
-    EN: {"tieng": "tieng Anh", "nguoi": "nguoi noi tieng Anh",
-         "nhip": "khoang 2,6 tu/giay",
-         "nhip_moi_giay": "khoang 2,6 tu moi giay"},
-}
+#: 🔑 `nhip`/`nhip_moi_giay` **TINH RA** tu `NHIP`, khong go tay: mot con so, mot
+#:    cho khai. Truoc 23/09 chung la chuoi go san va `NHIP` khong ton tai, nen
+#:    khong co cach nao tinh mot ngan sach do dai tu chung.
+CUM: dict[str, dict[str, str]] = {}
+
+
+def _so(x: float) -> str:
+    """So thap phan trong loi nhac ASCII — dau phay, kieu Viet."""
+    return f"{x:.2f}".rstrip("0").rstrip(".").replace(".", ",")
+
+
+def _dung_cum() -> None:
+    ten = {VI: ("tieng Viet", "nguoi Viet"), EN: ("tieng Anh", "nguoi noi tieng Anh")}
+    for m in (VI, EN):
+        t, ng = ten[m]
+        dv = DON_VI_DO_DAI[m]
+        n = _so(NHIP[m])
+        CUM[m] = {"tieng": t, "nguoi": ng, "don_vi": dv,
+                  "nhip": f"khoang {n} {dv}/giay",
+                  "nhip_moi_giay": f"khoang {n} {dv} moi giay"}
+
+
+_dung_cum()
+
+
+def ngan_sach_do_dai(giay: float, dich) -> int:
+    """So `DON_VI_DO_DAI[dich]` toi da cho mot cau doc vua `giay`.
+
+    🔑 **Mot so NGUYEN, dem duoc.** Loi nhac cu dua cho model mot nhip
+       ("khoang 4,5 am tiet/giay") va mot khe, roi de no tu nhan — tuc giao cho
+       mot model ngon ngu mot phep tinh, cho moi doan, khong ai kiem lai.
+
+    ⭐ Mot tran DEM DUOC thi model tu kiem duoc truoc khi tra loi, va nguoi doc
+       bao cao cung kiem duoc sau do. Do la khac biet giua mot goi y va mot rang
+       buoc.
+    """
+    d = chuan_dich(dich)
+    if d not in NHIP:
+        raise NgonNguError(f"dich {d!r} khong nam trong hop dong")
+    return max(1, int(round(max(0.0, float(giay)) * NHIP[d] * HE_SO_MUC_TIEU)))
+
 
 #: Ten NGUON trong loi nhac (ASCII).
 TEN_LOI_NHAC = {ZH: "tieng Trung", EN: "tieng Anh", VI: "tieng Viet"}
@@ -140,6 +218,11 @@ def _kiem() -> None:
     for m in DICH_HOP_LE:
         if m not in CUM or m not in NHAN:
             raise ValueError(f"dich {m!r} thieu CUM/NHAN")
+        # ⛔ Mot lan dich khong co nhip la mot lan dich khong tinh duoc ngan
+        #    sach do dai — tuc pha VIET DAU lai quay ve doan mo, va do dung la
+        #    khiem khuyet 23/09. Chan luc nap module.
+        if m not in NHIP or m not in DON_VI_DO_DAI:
+            raise ValueError(f"dich {m!r} thieu NHIP/DON_VI_DO_DAI")
 
 
 _kiem()

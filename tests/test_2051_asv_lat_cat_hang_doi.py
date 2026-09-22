@@ -168,10 +168,23 @@ def test_chuoi_lat_cat_qua_hang_doi_ve_done_va_GIONG_mot_mach(
     from apps.auto_scan_video import features, lat_cat, pipeline
     from apps.auto_scan_video.tables import RUN_DONE
 
+    from apps.auto_scan_video import giai_doan_ban_bien_tap as gdbbt
+
     dh, goi, luot = chuoi_gia
     that = lat_cat.tran_giai_doan
     monkeypatch.setattr(lat_cat, "tran_giai_doan",
                         lambda ten: TRAN_EP.get(ten) or that(ten))
+    # 🔑 **Phep kiem nay noi ve LAT CAT, khong ve chinh sach do phu bang chung.**
+    #
+    #    Kich ban co chu y de `canh_0002` hong (de chung minh luot 3 KHONG hoi
+    #    lai no). Tu 23/09 `smart_localize` tu choi lap ban khi con canh khong
+    #    co bang chung (`gdbbt.PHU_BANG_CHUNG_TOI_THIEU = 1.0`, R-05) — dung
+    #    theo san pham, nhung no se lam lan chay dung o `edit_plan` va moi menh
+    #    de ve hang doi phia duoi khong bao gio duoc chay.
+    #
+    # ⛔ Ha nguong o day la ha cho RIENG phep kiem nay, khong ha o san pham.
+    #    `tests/test_2025_asv_doc_canh_hong.py` moi la noi chot nguong do.
+    monkeypatch.setattr(gdbbt, "PHU_BANG_CHUNG_TOI_THIEU", 0.0)
 
     # ── Lan chay LAT CAT ──
     run = _chay_run(db, kho_tam, "uHd1")

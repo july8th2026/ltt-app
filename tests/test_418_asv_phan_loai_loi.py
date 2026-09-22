@@ -382,6 +382,11 @@ def test_moi_lop_ngoai_le_cua_app_deu_duoc_phan_loai():
         # 🔑 Cung khuon: `ThieuTieng` (qc_do_luong) ke thua `ThieuNguon` — da co
         #    trong BANG; no chi dat ten cho MOT truong hop thieu thuong nguon.
         "ThieuTieng",
+        # 🔑 Cung khuon (23/09): `ThieuBangChungCanh` (edit_plan) ke thua
+        #    `ThieuNguon`. "VLM khong doc duoc het cac canh" DUNG la mot thuong
+        #    nguon thieu, va `THIEU_THUONG_NGUON` cho dung hanh vi — khong thu
+        #    lai o tang job, vi lan hoi lai da xay ra trong chinh giai doan.
+        "ThieuBangChungCanh",
         # 🔑 Chi song trong `giai_doan_giong._viet_lai`, bi bat ngay tai cho de
         #    dung bac thang nan — khong bao gio len toi bien cua nen tang.
         "_KhongNanDuoc",

@@ -38,7 +38,10 @@ from dataclasses import dataclass, field
 from platform_core.i18n import _ as _t
 
 #: Doi bat cu thu gi o duoi thi tang so nay. Vao van tay cua doan.
-PHIEN_BAN_NAN = 1
+#:
+#: 2 (23/09/2026): loi nhac nan mang `do_dai_toi_da` (tran DEM DUOC, cung nguon
+#: voi pha viet dau) va `muc_tieu_giay` lay `ngon_ngu.HE_SO_MUC_TIEU`.
+PHIEN_BAN_NAN = 2
 
 #: Vuot bao nhieu phan khe thi phai nan. Xem ghi chu dau tep ve tinh khong doi xung.
 #:
@@ -201,6 +204,10 @@ def loi_nhac_nan(m: dict, *, chu_hien_tai: str, giay_do_duoc: float,
         "- Khong them thong tin khong co trong cau.\n"
         f"- Van phai la {c['tieng']} noi tu nhien, khong phai van viet rut gon.\n"
         f"- Nham dung `muc_tieu_giay`; {c['nhip_moi_giay']}.\n"
+        # 🔑 Cung mot TRAN DEM DUOC voi pha viet dau (`long_tieng.loi_nhac`).
+        #    Hai pha nham hai dich khac nhau tren cung mot khe la cach chac chan
+        #    nhat de vong hai khong hoi tu.
+        f"- **KHONG QUA `do_dai_toi_da` {c['don_vi']}** — dem lai truoc khi tra ve.\n"
         'Tra ve DUY NHAT: {"doan": {"chu": "..."}}')
     nguoi_dung = json.dumps({
         "ma": str(m.get("ma") or ""),
@@ -210,7 +217,11 @@ def loi_nhac_nan(m: dict, *, chu_hien_tai: str, giay_do_duoc: float,
         "khe_giay": round(float(khe), 2),
         # Nham thap hon khe mot chut: vua khit la vua **du** de mot dao dong nho
         # cua may sinh tieng lam no tran ra lai.
-        "muc_tieu_giay": round(max(0.3, float(khe) * 0.92), 2),
+        #
+        # 🔴 `ngon_ngu.HE_SO_MUC_TIEU`, khong phai mot `0.92` go tay. Truoc
+        #    23/09 con so nay chi ton tai o day, va pha viet dau khong he co no.
+        "muc_tieu_giay": round(max(0.3, float(khe) * ngon_ngu.HE_SO_MUC_TIEU), 2),
+        "do_dai_toi_da": ngon_ngu.ngan_sach_do_dai(khe, ngon_ngu_dich),
     }, ensure_ascii=False, sort_keys=True)
     return [{"role": "system", "content": he_thong},
             {"role": "user", "content": nguoi_dung}]

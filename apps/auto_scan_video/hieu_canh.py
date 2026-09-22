@@ -47,7 +47,10 @@ log = logging.getLogger(__name__)
 #:    GOI; day la phien ban cua NOI DUNG cau hoi — hai thu doi doc lap voi nhau.
 #: 3/2 (22/09): bo "video tieng Viet" khoi loi nhac — nguon la zh/en/vi, va
 #: ngon ngu thoai da hien ngay trong loi thoai dua kem.
-PHIEN_BAN_HIEU_CANH = 3
+#: 4/2 (23/09): loi nhac dua KHUNG JSON (thay vi ke ten khoa) va noi ro `de_xuat`
+#: la MA chep y nguyen. Do 18 canh phim nghiem thu voi loi nhac cu: 8/18 hong —
+#: 5 vi `"giữ"` co dau, 2 vi tra ve MANG, 1 vi boc `{"objects": [...]}`.
+PHIEN_BAN_HIEU_CANH = 4
 PHIEN_BAN_HO_SO = 2
 
 #: Toi da bao nhieu ky tu ban chep loi gui kem MOT canh.
@@ -197,10 +200,30 @@ def loi_nhac_canh(ma_canh: str, ngu_canh: str, so_khung: int,
         f"Co {so_khung} khung hinh dai dien. "
         f"Tin hieu do duoc: {tin}. "
         f"Loi thoai trong canh: {ngu_canh or '(khong co loi thoai)'}\n\n"
-        "Tra ve DUNG mot doi tuong JSON voi cac khoa: "
-        "loai, chu_the (mang), hanh_dong, cam_xuc, quan_trong (0..1), "
-        "de_xuat (giu|bo|khong_chac), do_tin (0..1), ly_do, "
-        "canh_bao (mang). Khong them van ban nao ngoai JSON.")
+        # 🔴 **KHUNG JSON, khong phai mot cau ke ten khoa (do 23/09).**
+        #
+        #    Ban cu ke ten khoa bang van xuoi ("Tra ve DUNG mot doi tuong JSON
+        #    voi cac khoa: loai, chu_the (mang), ..."). Do 18 canh cua phim
+        #    nghiem thu, model that: 2/18 tra ve mot **MANG** doi tuong, 1/18
+        #    boc trong `{"objects": [...]}`. Moi loi nhac khac cua ASV deu dua
+        #    mot khung — chi loi nhac nay ke ten, va chi no bi tra ve sai hinh.
+        "Tra ve DUY NHAT mot doi tuong JSON, DUNG khung nay "
+        "(mot doi tuong, KHONG phai mang, KHONG boc them lop nao):\n"
+        '{"loai": "...", "chu_the": ["..."], "hanh_dong": "...", '
+        '"cam_xuc": "...", "quan_trong": 0.0, '
+        f'"de_xuat": "{GIU}", "do_tin": 0.0, '
+        '"ly_do": "...", "canh_bao": ["..."]}\n'
+        "`quan_trong` va `do_tin` la so trong [0,1].\n"
+        # 🔴 **`de_xuat` la mot MA, khong phai mot tu tieng Viet (do 23/09).**
+        #
+        #    5/18 luot tra ve `"giữ"` (co dau) — cau tra loi DUNG ve nghia, bi
+        #    `doc_hieu_canh` tu choi vi bang ma la ASCII khong dau. Loi nhac
+        #    phai noi ro day la ma chu khong phai chu, va `doc_hieu_canh` con
+        #    bo dau truoc khi doi chieu.
+        f"`de_xuat` phai la DUNG mot trong ba MA sau, chep y nguyen, "
+        f"khong dich, khong them dau tieng Viet: "
+        f'"{GIU}" | "{BO}" | "{KHONG_CHAC}".\n'
+        "Khong them van ban nao ngoai JSON.")
     if not khung:
         return [{"role": "user", "content": van}]
 
@@ -219,6 +242,35 @@ def loi_nhac_canh(ma_canh: str, ngu_canh: str, so_khung: int,
 # ══════════════════════════════════════════════════════════════════════════════
 #  Doc phan hoi — KIEM NGHIEM NGAT
 # ══════════════════════════════════════════════════════════════════════════════
+
+def chuan_de_xuat(gt) -> str:
+    """Mot gia tri `de_xuat` tho -> mot ma trong `DE_XUAT`, hoac `""`.
+
+    🔴 **Bo DAU TIENG VIET truoc khi doi chieu, va do khong phai su chiu dung.**
+
+       `DE_XUAT` la ASCII khong dau (`giu`/`bo`/`khong_chac`) vi moi loi nhac
+       cua ASV viet ASCII. Model thi tra loi bang tieng Viet THAT: do 23/09 tren
+       18 canh cua phim nghiem thu, **5 luot** tra ve `"giữ"` — dung nghia, dung
+       khoa, dung kieu, va bi tu choi vi mot dau ngã.
+
+    ⭐ Day KHONG phai "chiu hai hinh dang" (thu ma `doc_hieu_canh` da go bo mot
+       lan): `giữ` va `giu` la CUNG mot gia tri viet hai cach, con `{"canh":
+       {...}}` va `{...}` la hai luoc do khac nhau. Bo dau la mot phep chuan hoa
+       **mat mat mot chieu va tat dinh**, khong phai mot nhanh thu hai cua hop
+       dong.
+
+    ⛔ Va no khong nuot rac: mot gia tri la (`"bu"` — do duoc 1/18 luot) van ra
+       `""`, tuc van la `HieuCanhError`. Chuan hoa nhan dien, khong doan.
+    """
+    import unicodedata
+
+    s = unicodedata.normalize("NFD", str(gt or "")).strip().lower()
+    s = "".join(c for c in s if not unicodedata.combining(c))
+    # `đ` khong tach duoc bang NFD — mot ky tu rieng trong Unicode.
+    s = s.replace("đ", "d").replace("Đ", "d")
+    s = "_".join(s.replace("-", " ").replace("_", " ").split())
+    return s if s in DE_XUAT else ""
+
 
 def _so_trong_khoang(gt, ten: str) -> float:
     try:
@@ -267,10 +319,11 @@ def doc_hieu_canh(kq: dict, ma_canh: str) -> HieuCanh:
     #   ban mo ta duoc phep lech nhau ma khong ai thay.
     goc = ai.doc_ket_qua(kq, ai.DOC_CANH)
 
-    de_xuat = str(goc.get("de_xuat") or "").strip().lower()
-    if de_xuat not in DE_XUAT:
+    de_xuat = chuan_de_xuat(goc.get("de_xuat"))
+    if not de_xuat:
         raise HieuCanhError(
-            f"{ma_canh}: de_xuat phai la mot trong {DE_XUAT}, nhan {de_xuat!r}")
+            f"{ma_canh}: de_xuat phai la mot trong {DE_XUAT}, nhan "
+            f"{str(goc.get('de_xuat') or '')!r}")
 
     chu_the = goc.get("chu_the") or []
     if not isinstance(chu_the, list):
