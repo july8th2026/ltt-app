@@ -45,7 +45,7 @@
         {% for n in cac_nen %}
         <label class="chip-opt" data-nen="{{ n.id }}" data-che-do="{{ n.che_do | sort | join(',') }}"
                data-can-phien="{{ n.che_do_can_dang_nhap | sort | join(',') }}" data-co-phien="{{ '1' if n.id in phien_cua_toi else '' }}"
-               data-ghi-chu="{{ n.gioi_han | join(' · ') }}">
+               data-ghi-chu="{{ n.gioi_han | join(' · ') }}" data-goi-y='{{ (goi_y_nen.get(n.id) if goi_y_nen else {}) | tojson }}'>
           <input type="radio" name="nen_tang" value="{{ n.id }}" {% if n.id == nen_mac_dinh %}checked{% endif %}><span>{{ _(n.ten) }}</span>
         </label>
         {% endfor %}
@@ -102,6 +102,12 @@
   <div class="card" id="phien" style="margin-top:var(--space-5,20px)">
     <h2>{{ _("Đăng nhập nền tảng") }}</h2>
     <p class="muted">{{ _("Một số cách cào cần tài khoản của chính bạn. Xuất") }} <b>cookies.txt</b> {{ _("(định dạng Netscape) từ trình duyệt khi đang đăng nhập nền đó rồi dán vào đây. Chỉ cookie của đúng nền được giữ, lưu mã hoá, chỉ dùng cho việc cào của bạn; bạn xoá được bất cứ lúc nào.") }}</p>
+    <details class="vc-xuat-cookie">
+      <summary>{{ _("Cách xuất cookies.txt (Chrome, Edge, Firefox)") }}</summary>
+      <p class="muted">{{ _("Cài tiện ích mã nguồn mở") }} <b>Get cookies.txt LOCALLY</b> {{ _("cho Chrome, Edge (cùng kho tiện ích Chrome) hoặc Firefox (kho tiện ích Firefox riêng) — tiện ích này không gửi cookie đi đâu, mã nguồn công khai kiểm được. Không dùng tiện ích chỉ tên") }} <b>cookies.txt</b> {{ _("(không có chữ LOCALLY): bản đó từng bị gỡ khỏi kho vì gửi cookie của bạn ra máy chủ ngoài.") }}</p>
+      <p class="muted">{{ _("Mở trang khi đang đăng nhập nền cần cào, bấm biểu tượng tiện ích, chọn xuất cookie của trang hiện tại (định dạng Netscape/cookies.txt), rồi dán nội dung hoặc chọn tệp vào ô bên dưới.") }}</p>
+      <p class="muted"><b>{{ _("Rủi ro tài khoản:") }}</b> {{ _("nền tảng có thể tạm khoá hoặc yêu cầu xác minh tài khoản nếu phát hiện tải tự động dồn dập từ cookie của bạn. Nên dùng một tài khoản phụ để đăng nhập ở đây, không dùng tài khoản chính bạn đang cần giữ an toàn.") }}</p>
+    </details>
     <div class="tablewrap"><table class="table">
       <thead><tr><th>{{ _("Nền") }}</th><th>{{ _("Trạng thái") }}</th><th></th></tr></thead>
       <tbody>
@@ -153,7 +159,11 @@
     if (!chon || chon.disabled) {
       chon = form.querySelector('input[name="che_do"]:not([disabled])'); if (chon) chon.checked = true;
     }
-    if (chon) dauVao.placeholder = chon.dataset.goiY;
+    if (chon) {
+      var goiYNen = {};
+      try { goiYNen = JSON.parse(the.dataset.goiY || "{}"); } catch (e) { goiYNen = {}; }
+      dauVao.placeholder = goiYNen[chon.value] || chon.dataset.goiY;
+    }
   }
   form.addEventListener("change", capNhat); capNhat();
 })();
