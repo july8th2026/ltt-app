@@ -185,3 +185,35 @@ Giờ Việt Nam (UTC+7). Không có dữ liệu người dùng trong report.
 Ghi nhận ngoài hạng mục: wrapper `chay_nghiem_thu.cmd` trả `rc=255` sau bước dọn
 dù 17/17 hành vi đạt (dọn kill đúng tiến trình nó dựng) — lỗi công cụ, chưa sửa.
 
+## 8. Rà tài liệu 413/câu chữ (Task 14)
+
+`git grep -n` (case-insensitive) trên hai kho cho các mẫu: `413` gần
+`context`/`ngữ cảnh`/`CONTEXT_WINDOW`, `prompt is too long`, "nhận ra bằng câu
+chữ", `payload_too_large`. Phân loại theo quyết định L-34: hợp lệ = fallback
+tương thích có chủ đích, hoặc tài liệu/nhật ký lịch sử tự đóng khung là ảnh
+chụp một thời điểm; chết = mô tả hành vi cũ như đang là hiện hành.
+
+### `D:\LTTSTUDIOSAPP-llm-loi-nghia`
+
+| Tệp | Phân loại | Vì sao |
+|---|---|---|
+| `docs/superpowers/plans/2026-09-21-chuan-hoa-ngu-nghia-loi-llm.md` | Hợp lệ | Chính plan đang thi hành, không phải mô tả cái cũ |
+| `docs/superpowers/specs/2026-09-21-chuan-hoa-ngu-nghia-loi-llm.md` | Hợp lệ | Spec hiện hành của chính chương trình này |
+| `docs/ltt_llm_dual/KE_HOACH_PHUONG_AN_C.md` | Hợp lệ | Tự đóng khung ở đầu tệp: "ĐÃ THỰC THI 17/09 (L-23)... §1–§2 là ảnh chụp TRƯỚC khi sửa"; dòng 413/"context" ở §1.4 là audit lịch sử client trước Task 12, có commit mốc |
+| `docs/_luutru/multijob_2026-09/2026-09-11-ltt-llm-multijob-design.md` | Hợp lệ | Nằm trong `_luutru/` — đã lưu trữ, không phải tài liệu sống |
+| `docs/_luutru/codex_2026-08-27/QUEUE_REVIEW_NHIEU_API.md` | Hợp lệ | Nằm trong `_luutru/` — đã lưu trữ |
+| `docs/VLM_NOI_BO/NGU_CANH_DAI_2026-09-03.md` | Hợp lệ | Nhật ký điều tra có mốc ngày/trạng thái ĐÓNG cho từng phát hiện (N-1…N-15), không phải đặc tả hiện hành |
+| `docs/QUYET_DINH_NEN_TANG.md` (Q120) | Hợp lệ | Mô tả việc dịch 413 khi khách vượt **trần đầu vào đã khai** — một cơ chế cụ thể vẫn đúng, không phải "mọi 413 là context"; đã tự đánh dấu phần số liệu ĐÃ GỠ ở L-23 |
+| `docs/LTT_CLI_COMPAT_DECISIONS.md` (dòng "413 ngữ cảnh không tiêu `create_rpm`") | Hợp lệ | Nói về kế toán RPM/billing khi có 413, không phải cơ chế nhận diện lỗi bằng status/câu chữ |
+| `docs/PUBLIC_API/CHANGELOG.md` (mục "Và `413` vẫn đứng trước") | Hợp lệ | Log thay đổi có mốc ngày, mô tả trạng thái tại thời điểm phát hành đó |
+| `docs/PUBLIC_API/HUONG_DAN_CAM_CLI.md:683` (`413/ngữ cảnh quá dài`) | **Chưa xác định — không sửa** | Registry hiện tại (`llm_gateway/error_contract.py:115`, `docs/PUBLIC_API/PROTOCOL_V1.md:128`) khai `context_window_exceeded` là **400**, nhưng đường fail-fast cục bộ `platform_core/llm/luong_vlm.py` (`KhongMoDuoc`) vẫn tự đặt `http_status=413` cho cùng canonical code này — hai chỗ trong mã đang cho ra status khác nhau cho cùng một lỗi. Sửa dòng hướng dẫn theo phía nào cũng có thể sai; đây là bất nhất **trong mã**, không phải lỗi hành văn — cần đo lại rồi quyết định ở lớp code (ngoài phạm vi tài liệu của Task 14), đã báo bằng việc nền riêng |
+
+### `D:\LTTCODEAPP` — chỉ liệt kê, KHÔNG sửa (làn khác giữ kho này)
+
+| Vị trí | Ghi chú |
+|---|---|
+| `docs/LTTCODE/DANH_MUC_CONG_VIEC.md:280` | `"413 → CONTEXT_WINDOW_EXCEEDED"` ghi như kết quả A3 — đối chiếu lại với `plugins/llm-ltt/CONTRACT.md:137,151,153` (đã cập nhật: `request_body_too_large` là 413/`INVALID_REQUEST`, "413 không còn thành CONTEXT") |
+| `docs/LTTCODE/KE_HOACH_XU_LY_LAI.md:104` | Dòng A3 liệt "413 → `CONTEXT_WINDOW_EXCEEDED`" cạnh cột "trước sửa" — kiểm lại chiều trước/sau còn khớp `errors.ts` hiện tại không |
+| `plugins/llm-ltt/src/errors.ts:82,84` | Regex khớp câu chữ (`"The input exceeds the model's context limit"`, `"prompt is too long"`) → `context_window_exceeded`; là mã nguồn (không sửa qua tài liệu), cần làn giữ kho đó xác nhận đây vẫn là fallback tương thích ngược có chủ đích chứ không phải đường chính |
+| `docs/LTTCODE/reports/self-improve/SO_LOI_VAN_HANH.md`, `AUDIT_DOI_SOAT_2026-09-16.md`, `docs/LTTCODE/_superseded/2026-09-17-truoc-build-0.1.5.md`, `docs/LTTCODE/reports/harness-nang-cap/A_H1_H3.md`, `docs/LTTCODE/reports/H11_headless.md` | Có hit `413`/`payload_too_large`/`prompt is too long`; không đọc sâu trong lượt này — liệt kê để làn LTTCODE tự phân loại |
+
