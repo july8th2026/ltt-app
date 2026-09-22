@@ -50,7 +50,7 @@ from platform_core.public_api.principal import Principal
 from platform_core.public_api.scopes import (SCOPE_WORKFLOWS_CANCEL,
                                              SCOPE_WORKFLOWS_READ,
                                              SCOPE_WORKFLOWS_RUN)
-from platform_core.workflow import bao_gia, may_trang_thai, tao_run
+from platform_core.workflow import bao_gia, dong_co, may_trang_thai, tao_run
 from server.api.auth import require_scope
 # ⛔ DUNG LAI, khong chep. Chu thich cua chinh ham do canh bao dung cai bay
 #    toi vua dinh: `request.app` ben trong mot sub-app la SUB-APP, nen voi
@@ -253,11 +253,12 @@ def register_workflow_routes(api, config, tag: str) -> None:
             if run.status == "CANCELLED":
                 return JSONResponse(_cong_khai_run(run), headers=_NO_STORE)
             raise conflict(f"This run is already {run.status}.")
-        # ⭐ `chuyen_run` kéo theo `ket_so` trong CÙNG transaction — đó chính là
-        #    hình dạng của `M10`. Không có bước "nhớ hoàn tiền" nào ở đây để
-        #    quên, và cũng không có cửa sổ nào cho một lần restart lọt vào.
-        may_trang_thai.chuyen_run(db, run.id, sang="CANCELLED",
-                                  ly_do="huy qua API")
+        # ⭐ `dong_co.huy_run` huỷ mọi node CHƯA kết thúc + job `jobs.cancel`
+        #    tương ứng, rồi mới `chuyen_run` — kéo theo `ket_so` trong CÙNG
+        #    transaction (hình dạng của `M10`). Không có bước "nhớ hoàn tiền"
+        #    nào ở đây để quên, và cũng không có cửa sổ nào cho một lần
+        #    restart lọt vào.
+        dong_co.huy_run(db, run.id, "huy qua API")
         return JSONResponse(_cong_khai_run(run), headers=_NO_STORE)
 
     @api.get("/runs/{run_id}/artifacts", tags=[tag],
