@@ -29,7 +29,7 @@ máy B (card, tác vụ Windows), không sửa mã/cấu hình LTTSTUDIOSAPP.
   Chưa kiểm bằng một lần khởi động lại thật.
 - **Sổ tay vận hành / khôi phục:** `Setup_VGA.md` trên Desktop máy B (`C:\Users\lengo\OneDrive\Desktop\`, bản sao
   `C:\Tools\ModCard\`); kiểm nhanh `C:\Tools\ModCard\venv\Scripts\python.exe C:\Tools\ModCard\kiem_vga.py`.
-  Số đo từng bậc: máy A `C:\Users\Thang Tuong\.claude\ltt\mod_card_may_b\KET_QUA.md`; dữ liệu thô `H:\LTT_MOD_CARD\`.
+  Bản lưu trong kho (sổ tay + script + số đo): **`docs/MAY_B_VGA/`** (mở `README.md`); dữ liệu thô `H:\LTT_MOD_CARD\`.
 - **HyperQwen (vLLM + 38 bản vá, `syv-ai/HyperQwen`) — KHÔNG triển khai:** chỉ Linux/WSL2, mà bật Hyper-V trên máy B
   làm VMware mất VT-x lồng ⇒ cụm Proxmox chứa VPS khách không khởi động (Broadcom KB 389469); không hỗ trợ 3.5/9B;
   không có budget suy nghĩ cứng; issue #147 (3090, tải agent) ngang llama.cpp. ⛔ Không bật WSL2/Hyper-V trên máy B.
