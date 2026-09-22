@@ -344,6 +344,24 @@ def ngan_sach_cho(thao_tac: ThaoTac) -> tuple[int, float | None]:
     return (0, None) if tra is None else (int(tra[0]), float(tra[1]))
 
 
+def timeout_xau_nhat(thao_tac: ThaoTac) -> float:
+    """Thoi gian XAU NHAT (giay) cua MOT lan `goi_tinh_tien(thao_tac)`.
+
+    Khai `NGAN_SACH_RA` thi lay timeout do; khong thi la mac dinh cua
+    `dieu_phoi.goi(timeout_s)` — doc bang `inspect`, khong go lai so. Nhan so
+    provider vi `dieu_phoi` thu lan luot tung cai. `lat_cat` dung de tinh du
+    phong; o day vi chi `ai.py` duoc cham `dieu_phoi` (`test_434`).
+    """
+    import inspect
+
+    from platform_core.llm import dieu_phoi
+
+    _tran, cho = ngan_sach_cho(thao_tac)
+    moi = float(cho) if cho else float(
+        inspect.signature(dieu_phoi.goi).parameters["timeout_s"].default)
+    return moi * max(1, len(THU_TU_PROVIDER))
+
+
 def cua_so_ngu_canh(thao_tac: ThaoTac) -> int:
     """Cua so ngu canh THAT cua model se dung.
 

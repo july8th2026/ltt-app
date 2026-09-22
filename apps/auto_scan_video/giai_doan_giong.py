@@ -39,7 +39,7 @@ from pathlib import Path
 from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
 
-from . import (assets, giong_noi, nan_cho_vua, pipeline,
+from . import (assets, giong_noi, lat_cat, nan_cho_vua, pipeline,
                su_dung, van_ban)
 from .giai_doan_media import ThieuNguon
 
@@ -143,6 +143,17 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     cac_nan: list[nan_cho_vua.KetQuaNan] = []
     da_sinh = 0
 
+    # 🔑 LAT CAT (`lat_cat.py`): ~2.000 doan cua 120 phut video khong vua MOT
+    #    job. Don vi te nhat = (VONG_TOI_DA + 1) luot TTS + VONG_TOI_DA lan xin
+    #    viet lai, moi cai o tran timeout cua lop goi.
+    from . import ai as _ai
+    lc = lat_cat.mo(db, run, pipeline.VOICE_SYNTHESIS,
+                    du_phong_s=((nan_cho_vua.VONG_TOI_DA + 1) * _timeout_tts()
+                                + nan_cho_vua.VONG_TOI_DA
+                                * lat_cat.timeout_goi_ai(_ai.RUT_NGAN_CHO_VUA)
+                                + lat_cat.DU_PHONG_NGOAI_GOI_S))
+    da_lat = _doc_lat(db, run, lc) if lc.noi_tiep else {}
+
     with tempfile.TemporaryDirectory(prefix="asv-voice-") as tam:
         thu_muc = Path(tam)
 
@@ -154,6 +165,23 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                              _t('Đang đọc thành tiếng'))
 
             khe = nan_cho_vua.khe_cua(m)
+
+            # ⭐ Doan DA SINH o luot truoc cua CUNG lat cat: dung lai y nguyen
+            #    ban ke cua luot do (ke ca cau da nan + so vong). Di duong cache
+            #    thuong se tra `tu_cu=True` va — voi doan da nan — tim theo van
+            #    tay cau GOC nen khong thay, sinh lai: ban ra khac lan mot mach.
+            lat = da_lat.get(str(m["ma"])) if (i - 1) < lc.vi_tri else None
+            if lat is not None:
+                kq = nan_cho_vua.ket_luan(
+                    m["ma"], chu=str(lat["chu"]), giay=float(lat["giay"]),
+                    khe=khe, so_vong=int(lat["so_vong"]))
+                cac_nan.append(kq)
+                ban_ke.append(dict(lat["ban_ke"]))
+                if lat.get("phan"):
+                    phan.append(dict(lat["phan"]))
+                da_sinh += int(lat.get("so_luot_doc") or 0)
+                continue
+
             chu = str(m["chu"])
             so_vong = 0
             vt = _van_tay(m["ma"], chu, ma_giong, preset, tu_dien=tu_dien,
@@ -197,6 +225,9 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                                **_ke_nan(kq)})
                 cac_nan.append(kq)
                 continue
+
+            lc.kiem(vi_tri=i - 1)
+            sinh_truoc = da_sinh
 
             # ── Bac thang nan cho vua (pha 15) ────────────────────────────
             #
@@ -248,13 +279,15 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             with open(tep, "rb") as f:
                 kho.put(khoa_tam, f, content_type="audio/wav")
 
-            phan.append({"staging_key": khoa_tam, "kind": "audio", "duoi": "wav",
-                         "van_tay": vt})
+            phan_moi = {"staging_key": khoa_tam, "kind": "audio", "duoi": "wav",
+                        "van_tay": vt}
             # ⭐ `chu` = cau CUOI CUNG may da doc (sau nan). `qc_do_luong` cham
             #    WER so voi chinh cau nay, khong phai cau truoc khi nan.
-            ban_ke.append({"ma": m["ma"], "khoa": khoa_ben, "chu": chu,
-                           "giay": giay,
-                           **_ke_nan(kq)})
+            ke_moi = {"ma": m["ma"], "khoa": khoa_ben, "chu": chu,
+                      "giay": giay,
+                      **_ke_nan(kq)}
+            phan.append(phan_moi)
+            ban_ke.append(ke_moi)
 
             # ⭐ Ghi so cai **mot lan cho moi doan da giao**, kem so giay THAT.
             #    `UNIQUE(run_id, ma_dispatch)` chan lan ghi thu hai neu giai doan
@@ -265,8 +298,19 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                                   item_key=m["ma"], fingerprint=vt,
                                   outputs={"khoa": khoa_ben, "giay": giay,
                                            "trang_thai": kq.trang_thai,
-                                           "so_vong": kq.so_vong})
+                                           "so_vong": kq.so_vong,
+                                           # Du de luot noi tiep dung lai
+                                           # y nguyen (xem `_doc_lat`).
+                                           "lat": {"phien": lc.phien,
+                                                   "chu": chu,
+                                                   "giay": giay,
+                                                   "so_vong": so_vong,
+                                                   "so_luot_doc":
+                                                       da_sinh - sinh_truoc,
+                                                   "phan": phan_moi,
+                                                   "ban_ke": ke_moi}})
             db.commit()
+            lc.xong_mot()
 
         # ── Ban ke: cai TIMING doc de biet doan nao o dau ─────────────────
         goi = json.dumps({"schema": 1, "doan": ban_ke}, sort_keys=True,
@@ -297,6 +341,27 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                 **nan_cho_vua.tom_tat(cac_nan),
             },
         }
+
+
+def _timeout_tts() -> float:
+    """Tran timeout cua MOT luot TTS: mac dinh cua `sidecar_client.noi`, vi
+    `giong_noi.doc_mot_doan` -> `ltt_voice.features.goi_cong` khong truyen
+    `timeout` (xem docstring `goi_cong`)."""
+    from apps.ltt_voice import sidecar_client
+
+    return lat_cat.mac_dinh_tham_so(sidecar_client.noi, "timeout")
+
+
+def _doc_lat(db, run, lc) -> dict:
+    """`{ma_doan: ban ghi lat}` cua cac doan da sinh o luot truoc CUNG phien."""
+    from . import features
+
+    ra: dict = {}
+    for it in features.cac_don_vi(db, run.id, pipeline.VOICE_SYNTHESIS):
+        lat = (it.outputs or {}).get("lat")
+        if isinstance(lat, dict) and lat.get("phien") == lc.phien:
+            ra[str(it.item_key)] = lat
+    return ra
 
 
 class _KhongNanDuoc(RuntimeError):

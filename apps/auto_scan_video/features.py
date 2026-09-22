@@ -182,10 +182,14 @@ def cap_nhat_giai_doan(db: Session, stage: AsvStage, **truong) -> AsvStage:
     return stage
 
 
-def danh_dau_dang_chay(db: Session, stage: AsvStage, job_id: str) -> AsvStage:
+def danh_dau_dang_chay(db: Session, stage: AsvStage, job_id: str, *,
+                       noi_tiep: bool = False) -> AsvStage:
+    """Giai doan da co job. `noi_tiep=True` (luot lat cat ke tiep, `lat_cat.py`)
+    KHONG tang `attempt`: noi tiep khong phai thu lai, va dem no la lan thu se
+    lam mot video dai het `LAN_THU_GIAI_DOAN_TOI_DA` ma khong hong lan nao."""
+    them = {} if noi_tiep else {"attempt": int(stage.attempt) + 1}
     return cap_nhat_giai_doan(db, stage, status=STAGE_QUEUED, job_id=job_id,
-                              attempt=int(stage.attempt) + 1,
-                              started_at=_now())
+                              started_at=_now(), **them)
 
 
 def danh_dau_xong(db: Session, stage: AsvStage, *, outputs: dict,

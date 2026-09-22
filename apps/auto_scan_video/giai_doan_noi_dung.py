@@ -48,7 +48,7 @@ import logging
 from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
 
-from . import (ai, assets, ban_bien_tap, ban_ghi, long_tieng, pipeline,
+from . import (ai, assets, ban_bien_tap, ban_ghi, lat_cat, long_tieng, pipeline,
                rang_giong, su_dung)
 from .giai_doan_media import ThieuNguon
 
@@ -150,9 +150,30 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     chuyen: dict[str, dict] = _lay_lai_doan_da_xong(db, run, xong)
 
     lo_lo = long_tieng.chia_lo(con_lai)
+
+    # 🔑 LAT CAT (`lat_cat.py`): 120 phut video ~ 150 lo x ~142 s — gap ~6 lan
+    #    tran job. Truoc MOI lo hoi co con du cho cho mot lo te nhat khong; het
+    #    thi nhuong, job ke tiep doc diem chot va di tiep. Lo la nguyen tu (thieu
+    #    mot doan thi `doc_chuyen` nem), nen luot sau chia lai `con_lai` ra
+    #    DUNG cac lo con lai cua lan chay mot mach.
+    lc = lat_cat.mo(db, run, pipeline.CONTENT_PROCESS, van_tay=vt,
+                    du_phong_s=(lat_cat.timeout_goi_ai(ai.CHUYEN_LOI_THOAI)
+                                + lat_cat.DU_PHONG_NGOAI_GOI_S))
+    # `so_lo` cua tom tat = so lo DA GUI cua ca giai doan, cong qua cac luot.
+    so_lo_truoc = int(lc.trang_thai.get("so_lo") or 0) if lc.noi_tiep else 0
+    # ⭐ Khoa so cai cua lo theo vi tri TRONG `doan_giu`, khong theo vi tri
+    #    trong `con_lai`: luot noi tiep bat dau lai `i` tu 0, va `lo_000` thu
+    #    hai se dung `UNIQUE(run_id, ma_dispatch)` — `DaGhiRoi` bi nuot va mot
+    #    lan goi DA GIAO bien mat khoi so cai.
+    vi_tri_cua = {str(d.get("ma") or ""): k for k, d in enumerate(doan_giu)}
+    co_lo = max(1, int(long_tieng.DOAN_MOI_LO))
+
     for i, lo in enumerate(lo_lo):
+        lc.kiem(vi_tri=i, trang_thai={"so_lo": so_lo_truoc + i})
+        dau = vi_tri_cua.get(str(lo[0].get("ma") or ""), 0)
         if ctx is not None and getattr(ctx, "progress", None):
-            ctx.progress(5 + int(85 * i / max(1, len(lo_lo))), _t('Đang viết lời thoại'))
+            ctx.progress(5 + int(85 * dau / max(1, len(doan_giu))),
+                         _t('Đang viết lời thoại'))
 
         ma_da_gui = {str(d.get("ma") or "") for d in lo}
         messages = long_tieng.loi_nhac(
@@ -165,7 +186,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             # 🔑 Khoa cua so cai la LO (mot lan goi = mot dong so cai), con diem
             #    chot la DOAN. Hai truc khac nhau va gop chung lai se hong: mot
             #    lo chua 12 doan nhung chi mot lan tinh tien.
-            item_key=f"lo_{i:03d}",
+            item_key=f"lo_{dau // co_lo:03d}",
             ctx=ctx)
 
         # 🔴 **`noi_dung` la MOT CHUOI, khong phai mot dict.** `ai.goi` tra ve
@@ -210,6 +231,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         #    lan dau tien trong ca kho hai duong do chay canh nhau — pha 11 co
         #    `goi_tinh_tien` nhung chua duoc noi vao chuoi.
         db.commit()
+        lc.xong_mot()
 
     tai_lieu = long_tieng.dung(giu, chuyen, ma_giong=ma_giong,
                                van_tay_ban=ban.van_tay(),
@@ -231,7 +253,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                   "van_tay": vt}],
         "tom_tat": {**long_tieng.tom_tat(tai_lieu),
                     "so_doan_goc": len(goc.get("doan") or []),
-                    "so_lo": len(lo_lo),
+                    "so_lo": so_lo_truoc + len(lo_lo),
                     "nguon_giong": str(can_cu.get("nguon") or "")},
     }
 

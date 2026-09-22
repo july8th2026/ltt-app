@@ -39,7 +39,7 @@ from pathlib import Path
 from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
 
-from . import assets, ban_dung, ket_xuat, nhap_media, pipeline
+from . import assets, ban_dung, ket_xuat, lat_cat, nhap_media, pipeline
 from .giai_doan_media import ThieuNguon, _duong_doc_duoc
 from .tables import ASSET_OK
 
@@ -204,7 +204,11 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 
         try:
             duoi = ket_xuat._chay_co_tien_do(
-                cmd, tong_giay=tong_giay, timeout=TIMEOUT_RENDER,
+                # `TIMEOUT_RENDER` BANG tran job render (3.600) — job bi giet
+                # truoc va ffmpeg mo coi. Kep vao ngan sach con lai (`lat_cat`).
+                cmd, tong_giay=tong_giay,
+                timeout=lat_cat.han_tien_trinh_con(pipeline.RENDER,
+                                                   TIMEOUT_RENDER),
                 hoi_huy=hoi_huy,
                 # ⭐ Goi vo dieu kien: khong co card thi `gpu_env` tra ve moi
                 #    truong nguyen ven, nen duong `preserve` khong doi hanh vi.
