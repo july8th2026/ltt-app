@@ -223,6 +223,15 @@ def test_node_thuong_thi_VAN_sinh_job(db):
 
 # ── 4.6 Trần chi phí — 🔴 KHÔNG CÓ ĐỐI CHỨNG NGÀNH ───────────────────────────
 
+def _cc_llm_chat(gia: int = 5):
+    from platform_core.workflow.cong_cu import CongCu
+
+    return {"llm.chat": CongCu(ten="llm.chat", app_slug="ltt_llm",
+                               job_type="ltt_llm.chat", type_version=1,
+                               params_schema={}, side_effect="external",
+                               idempotency_fields=(), tinh_gia=lambda p: gia)}
+
+
 def test_M8_bao_gia_kem_HAI_SO(db):
     """🔴 `M8`: báo giá phải kèm **hai** số — tối đa và ước tính.
 
@@ -232,62 +241,35 @@ def test_M8_bao_gia_kem_HAI_SO(db):
     """
     from platform_core.workflow import bao_gia
 
-    bg = bao_gia.uoc_tinh({"schema_version": 1, "nodes": [
-        {"id": "a", "type": "llm.chat", "params": {}},
-        {"id": "b", "type": "llm.chat", "params": {}},
-    ], "edges": []})
+    bg = bao_gia.bao_gia_do_thi({"schema": "ltt.workflow/3", "nodes": [
+        {"id": "a", "type": "app.llm.chat", "params": {}, "thi_hanh": "job"},
+        {"id": "b", "type": "app.llm.chat", "params": {}, "thi_hanh": "job"},
+    ], "edges": []}, cong_cu=_cc_llm_chat())
     assert bg.toi_da > 0 and bg.uoc_tinh > 0
     assert bg.uoc_tinh <= bg.toi_da
 
 
-def test_tran_ForEach_la_max_items_NHAN_than(db):
-    """`02 §465`: `max_items × max(thân)`. `max_items` bắt buộc hữu hạn."""
-    from platform_core.workflow import bao_gia
-
-    do_thi = {"schema_version": 1, "nodes": [
-        {"id": "fe", "type": "FOREACH", "params": {"max_items": 10},
-         "than": [{"id": "x", "type": "llm.chat", "params": {}}]},
-    ], "edges": []}
-    mot_node = bao_gia.uoc_tinh({"schema_version": 1, "nodes": [
-        {"id": "x", "type": "llm.chat", "params": {}}], "edges": []})
-    assert bao_gia.uoc_tinh(do_thi).toi_da == mot_node.toi_da * 10
-
-
-def test_ForEach_KHONG_khai_max_items_thi_bao_gia_TU_CHOI(db):
-    """⛔ Không chặn trên ⇒ không báo giá được. Từ chối, đừng đoán một con số."""
-    from platform_core.workflow import bao_gia
-
-    with pytest.raises(bao_gia.KhongBaoGiaDuoc, match="max_items"):
-        bao_gia.uoc_tinh({"schema_version": 1, "nodes": [
-            {"id": "fe", "type": "FOREACH", "params": {},
-             "than": [{"id": "x", "type": "llm.chat", "params": {}}]},
-        ], "edges": []})
+# ⭐ Giá FOREACH (`max_items × thân`) chuyển sang plan 04 cùng lúc node
+#    `core.foreach` được viết lại — plan 01a không còn nhánh FOREACH trong
+#    `bao_gia`. Hai bài đã xoá khỏi tệp này (ghi vào ledger kế hoạch 01a):
+#      test_tran_ForEach_la_max_items_NHAN_than
+#      test_ForEach_KHONG_khai_max_items_thi_bao_gia_TU_CHOI
 
 
 def test_node_dieu_khien_khong_cong_vao_tran(db):
-    """Nhất quán với `G15`: không sinh job ⇒ không tốn tiền."""
+    """Nhất quán với `G15`: không sinh job (`thi_hanh != "job"`) ⇒ không tốn tiền."""
     from platform_core.workflow import bao_gia
 
-    chi_dieu_khien = bao_gia.uoc_tinh({"schema_version": 1, "nodes": [
+    chi_dieu_khien = bao_gia.bao_gia_do_thi({"schema": "ltt.workflow/3", "nodes": [
         {"id": "a", "type": "IF", "params": {}},
         {"id": "b", "type": "NOOP", "params": {}},
-    ], "edges": []})
+    ], "edges": []}, cong_cu={})
     assert chi_dieu_khien.toi_da == 0 and chi_dieu_khien.uoc_tinh == 0
 
 
-def test_nhanh_IF_tinh_theo_nhanh_DAT_NHAT(db):
-    """Trần là **chặn trên**: chỉ một nhánh chạy, nhưng ta không biết nhánh nào."""
-    from platform_core.workflow import bao_gia
-
-    bg = bao_gia.uoc_tinh({"schema_version": 1, "nodes": [
-        {"id": "if", "type": "IF", "params": {},
-         "nhanh": [
-             [{"id": "re", "type": "llm.chat", "params": {}}],
-             [{"id": "d1", "type": "llm.chat", "params": {}},
-              {"id": "d2", "type": "llm.chat", "params": {}},
-              {"id": "d3", "type": "llm.chat", "params": {}}],
-         ]},
-    ], "edges": []})
-    mot = bao_gia.uoc_tinh({"schema_version": 1, "nodes": [
-        {"id": "x", "type": "llm.chat", "params": {}}], "edges": []}).toi_da
-    assert bg.toi_da == mot * 3, "phai lay nhanh DAT NHAT, khong phai tong"
+# ⭐ `test_nhanh_IF_tinh_theo_nhanh_DAT_NHAT` (nhánh IF lồng `"nhanh": [...]`)
+#    xoá cùng đợt này: đồ thị đã biên dịch (`ltt.workflow/3`, Task 5) không còn
+#    hình dạng `"nhanh"` lồng nhau — rẽ nhánh biểu diễn bằng `edges` kiểu
+#    `CONTROL`/`condition`. `bao_gia_do_thi` (Task 6) không đọc `"nhanh"`; định
+#    giá một nhánh IF thuộc phạm vi lập lịch điều khiển, cùng nhóm với FOREACH
+#    ở plan 04.

@@ -29,6 +29,7 @@ nhiều node (mỗi node có thể là **20 phút A100**) mà không giữ một
 from __future__ import annotations
 
 import logging
+import math
 from datetime import datetime, timezone
 
 from fastapi import Body, Depends, Header, Path, Request
@@ -41,8 +42,8 @@ from platform_core.models import (Artifact, NodeRunSnapshot, Workflow,
                                   WorkflowRun, WorkflowVersion)
 from platform_core.public_api import idempotency, quotes
 from platform_core.public_api.errors import (THIEU_CREDIT_LOI, conflict,
-                                             insufficient_credit,
-                                             invalid_request, not_found,
+                                             idempotency_conflict,
+                                             insufficient_credit, not_found,
                                              thieu_credit_chi_tiet)
 from platform_core.public_api.principal import Principal
 from platform_core.public_api.scopes import (SCOPE_WORKFLOWS_CANCEL,
@@ -137,19 +138,19 @@ def register_workflow_routes(api, config, tag: str) -> None:
     ) -> JSONResponse:
         wf = _cua_toi(db, Workflow, workflow_id, principal)
         ver = _ban_publish(db, wf)
-        try:
-            gia = bao_gia.uoc_tinh({"nodes": ver.graph.get("nodes", [])})
-        except bao_gia.KhongBaoGiaDuoc as loi:
-            # ⛔ Từ chối, đừng đoán một con số: một trần đoán ra không chặn gì,
-            #    nó chỉ làm người đọc yên tâm.
-            raise invalid_request(str(loi)) from loi
+        # `estimated_max` da bi DONG BANG cung graph luc publish (Task 7) —
+        # khong tinh lai o day, vi tinh lai luc quote/chay nghia la mot lan
+        # publish va mot lan quote co the ra hai tran khac nhau cho CUNG mot
+        # `graph_hash`.
+        toi_da = int(ver.estimated_max or 0)
+        uoc = int(math.ceil(toi_da * bao_gia._TY_LE_UOC_TINH))
 
         token, _ = quotes.issue(
             secret=_quote_secret(request), user_id=principal.user_id,
             key_id=principal.key_id,
             tool_name=f"{_KHOA_BAO_GIA}{wf.id}",
             params={"version_id": ver.id, "graph_hash": ver.graph_hash},
-            credit=gia.toi_da)
+            credit=toi_da)
         return JSONResponse(
             {
                 "quote": token,
@@ -157,8 +158,8 @@ def register_workflow_routes(api, config, tag: str) -> None:
                 "version_id": ver.id,
                 # HAI số (`M8`): trần là thứ được giữ và được ký; ước tính chỉ
                 # để khách biết mình nhiều khả năng trả bao nhiêu.
-                "credit_max": gia.toi_da,
-                "credit_estimate": gia.uoc_tinh,
+                "credit_max": toi_da,
+                "credit_estimate": uoc,
                 "expires_in": quotes.QUOTE_TTL_S,
                 "balance": credit.so_du(db, principal.user_id),
             },
@@ -203,13 +204,18 @@ def register_workflow_routes(api, config, tag: str) -> None:
 
         # Luỹ đẳng do chỉ mục bộ phận `ux_workflow_run_idem` cưỡng chế, không do
         # một SELECT trước INSERT — một SELECT để lại đúng cửa sổ tranh chấp mà
-        # chỉ mục ấy sinh ra để đóng.
+        # chỉ mục ấy sinh ra để đóng. Tra đúng khoá của chỉ mục ấy
+        # `(owner_id, idempotency_key)` — KHÔNG lọc thêm `workflow_id`, vì cùng
+        # một khoá cho hai workflow khác nhau của cùng chủ phải bị bắt là
+        # XUNG ĐỘT (409), không lặng lẽ trôi qua như "không tìm thấy".
         cu = db.execute(
             select(WorkflowRun).where(
                 WorkflowRun.owner_id == principal.user_id,
-                WorkflowRun.workflow_id == wf.id,
                 WorkflowRun.idempotency_key == key)).scalars().first()
         if cu is not None:
+            if cu.workflow_id != wf.id:
+                raise idempotency_conflict(
+                    "Idempotency-Key already used for another workflow.")
             return JSONResponse(_cong_khai_run(cu), status_code=200,
                                 headers=_NO_STORE)
 
@@ -226,10 +232,13 @@ def register_workflow_routes(api, config, tag: str) -> None:
             lai = db.execute(
                 select(WorkflowRun).where(
                     WorkflowRun.owner_id == principal.user_id,
-                    WorkflowRun.workflow_id == wf.id,
                     WorkflowRun.idempotency_key == key)).scalars().first()
             if lai is None:
                 raise
+            if lai.workflow_id != wf.id:
+                raise idempotency_conflict(
+                    "Idempotency-Key already used for another workflow."
+                ) from loi
             # Moi tep khac trong `server/api/` dung `logging`; `print`
             # trong mot bo xu ly request di thang ra stdout, khong mang
             # muc do va khong loc duoc o production.

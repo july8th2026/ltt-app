@@ -106,8 +106,14 @@ def _workflow(owner_id: str, *, so_node: int = 3, publish: bool = True) -> str:
     try:
         wf = dinh_nghia.tao_workflow(db, owner_id=owner_id, name="w")
         if publish:
+            # Quote (Task 7) đọc `version.estimated_max` đã ĐÓNG BĂNG lúc
+            # publish, không tính lại từ `graph["nodes"]` nữa — đồ thị thẳng
+            # `{"nodes": [...]}` của test này không đi qua registry, nên giá
+            # phải khai tường minh ở đây (10 / node, giữ đúng con số các bài
+            # cũ vẫn ngầm dùng qua `_GIA_MAC_DINH`).
             ver = dinh_nghia.xuat_ban(db, wf.id, _do_thi(so_node),
-                                      created_by=owner_id)
+                                      created_by=owner_id,
+                                      estimated_max=so_node * 10)
             wf.published_version_id = ver.id
         db.commit()
         return wf.id
@@ -146,6 +152,42 @@ def test_bao_gia_tra_HAI_so(api):
     assert b["credit_max"] > 0
     assert 0 < b["credit_estimate"] < b["credit_max"]
     assert b["quote"] and b["workflow_id"] == wf
+
+
+def test_bao_gia_doc_estimated_max_cua_version_xuat_ban_qua_xuat_ban_draft(api):
+    """Task 7: quote không tự tính giá nữa — nó đọc `estimated_max` đã đóng
+    băng lúc `xuat_ban_draft` (biên dịch qua registry + `bao_gia.bao_gia_do_thi`).
+    """
+    from platform_core.models import Workflow
+    from platform_core.workflow import dinh_nghia
+    from platform_core.workflow.cong_cu import CongCu
+
+    cc = {"text.chat": CongCu(ten="text.chat", app_slug="ltt_llm",
+                              job_type="ltt_llm.chat", type_version=1,
+                              params_schema={}, side_effect="external",
+                              idempotency_fields=(), tinh_gia=lambda p: 3)}
+    uid, token = _tai_khoan()
+
+    gen, db = _session()
+    try:
+        wf = dinh_nghia.tao_workflow(db, owner_id=uid, name="w")
+        doc = {"version": 3, "pages": [{"id": "p1", "nodes": [
+            {"id": "a", "type": "tool", "position": {"x": 0, "y": 0},
+             "data": {"tool": "text.chat", "params": {}}}],
+            "edges": []}]}
+        dinh_nghia.luu_draft(db, wf.id, document=doc, revision=0)
+        db.commit()
+        ver = dinh_nghia.xuat_ban_draft(db, wf.id, created_by=uid, cong_cu=cc)
+        db.get(Workflow, wf.id).published_version_id = ver.id
+        db.commit()
+        wf_id, estimated_max = wf.id, ver.estimated_max
+    finally:
+        _close(gen)
+
+    r = _bao_gia(api, token, wf_id)
+    assert r.status_code == 200, r.text
+    assert estimated_max > 0
+    assert r.json()["credit_max"] == estimated_max
 
 
 def test_bao_gia_cua_workflow_CHUA_PUBLISH_bi_tu_choi(api):
@@ -288,6 +330,31 @@ def test_huy_thi_HOAN_lai_phan_chua_dung(api):
         assert credit.so_du(db, uid) == 500, "huy khi chua chay gi thi hoan het"
         run = db.get(WorkflowRun, run_id)
         assert run.hold_id == "" and run.ket_so_luc is not None
+    finally:
+        _close(gen)
+
+
+def test_cung_khoa_idempotency_cho_HAI_workflow_KHAC_tra_409(api):
+    """`ux_workflow_run_idem` khoá theo `(owner_id, idempotency_key)`, KHÔNG
+    theo `workflow_id`. Cùng khoá cho hai workflow khác nhau của cùng chủ phải
+    bị chặn bằng 409 — không lặng lẽ trả run của workflow kia, và không 500."""
+    uid, token = _tai_khoan(credits=500)
+    wf_a = _workflow(uid, so_node=2)
+    wf_b = _workflow(uid, so_node=2)
+    q_a = _bao_gia(api, token, wf_a).json()["quote"]
+    q_b = _bao_gia(api, token, wf_b).json()["quote"]
+    khoa = uuid.uuid4().hex
+
+    a = _chay(api, token, wf_a, q_a, idem=khoa)
+    assert a.status_code == 201, a.text
+
+    b = _chay(api, token, wf_b, q_b, idem=khoa)
+    assert b.status_code == 409, b.text
+    assert b.json()["code"] == "idempotency_conflict"
+
+    gen, db = _session()
+    try:
+        assert db.query(WorkflowRun).count() == 1
     finally:
         _close(gen)
 
