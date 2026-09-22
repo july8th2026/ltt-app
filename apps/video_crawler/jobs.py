@@ -27,6 +27,11 @@ JOB_TAI = "video_crawler.tai"
 _NHIP_TIM_S = 30.0
 #: Bước tiến độ (%).
 _BUOC = 5
+#: Hỏi "đã huỷ chưa" ít nhất chừng này giây một lần, kể cả khi % đứng yên (review MAJOR 4).
+_KIEM_HUY_S = 5.0
+#: Ngân sách thời gian job tải: dừng giữa các mục khi quá mốc này, dừng cứng khi quá thêm 300 s.
+#: Trần nền tảng 7200 s; chạm trần thì `_het_gio` GIẾT tiến trình ⇒ khối dọn tệp không chạy (review MAJOR 5).
+NGAN_SACH_TAI_S = 6600.0
 
 
 def _adapter(nen_id: str):
@@ -61,6 +66,8 @@ class _TienDo:
         self.i = 0
         self._pct = -1
         self._luc = 0.0
+        self.bat_dau = time.monotonic()
+        self._luc_huy = self.bat_dau
 
     def bao(self, phan_tram: int, thong_diep: str = "") -> None:
         """Đơn điệu + bước 5%. yt-dlp tải luồng hình rồi luồng tiếng, mỗi luồng đếm lại từ 0 — không chặn
@@ -70,6 +77,14 @@ class _TienDo:
         p = max(0, min(int(phan_tram), 100))
         tong_pct = int((self.i + p / 100) / self.tong * self.tran) // _BUOC * _BUOC
         bay_gio = time.monotonic()
+        if bay_gio - self.bat_dau > NGAN_SACH_TAI_S + 300:
+            from platform_core.jobs import LoiNguoiGoi
+            raise LoiNguoiGoi("Video quá dài để xử lý trong một lượt.")
+        if bay_gio - self._luc_huy >= _KIEM_HUY_S and hasattr(self.ctx, "is_cancelled"):
+            self._luc_huy = bay_gio
+            if self.ctx.is_cancelled():
+                from platform_core.job_runner import JobCancelled
+                raise JobCancelled()
         if tong_pct > self._pct:
             self._pct, self._luc = tong_pct, bay_gio
             self.ctx.progress(tong_pct, thong_diep[:200])
@@ -104,6 +119,7 @@ def _kham_pha(adapter, nen_id: str, nguon: dict, owner_id: str, tien_do) -> tupl
         muc = adapter.kham_pha(yc, bao_tien_do=tien_do)
     except LoiCao as e:
         raise _loi_job([e]) from e
+    muc = list({m.id: m for m in muc}.values())      # trùng id trong kết quả ⇒ một mục (review MAJOR 2)
     bo = 0
     if nguon.get("khong_trung"):
         cu = _da_tai(owner_id, nen_id)
@@ -151,6 +167,12 @@ def _xu_ly_tai(params: dict, ctx) -> dict:
     try:
         for i, item in enumerate(muc):
             td.i = i
+            if time.monotonic() - td.bat_dau > NGAN_SACH_TAI_S:
+                for con in muc[i:]:
+                    loi_muc.append({"id": con.id, "ma": "het_thoi_gian",
+                                    "thong_diep": "Hết thời gian của lượt này, cào lại để lấy phần còn lại."})
+                loi.append(LoiCao("het_thoi_gian", "Hết thời gian xử lý.", tam_thoi=False))
+                break
             if ctx is not None and ctx.is_cancelled():
                 from platform_core.job_runner import JobCancelled
                 raise JobCancelled()

@@ -117,40 +117,40 @@ def _so_du(db, uid):
 def test_tai_hai_muc_luu_storage_va_tru_dung_hai_credit(db, kho, nguoi, monkeypatch):
     from platform_core.models import JOB_DONE
     _dung_adapter(monkeypatch, AdapterGia())
-    jid = _nop_tai(db, "u1", ["a", "b"])
+    jid = _nop_tai(db, "u1", ["aaaaaaaaaaa", "bbbbbbbbbbb"])
     assert _so_du(db, "u1") == 98                       # giữ chỗ 2
 
     job = _chay(db, jid)
     assert job.status == JOB_DONE, job.error
     keys = job.result["video_keys"]
-    assert keys == [f"video_crawler/u1/{jid}/a.mp4", f"video_crawler/u1/{jid}/b.mp4"]
+    assert keys == [f"video_crawler/u1/{jid}/aaaaaaaaaaa.mp4", f"video_crawler/u1/{jid}/bbbbbbbbbbb.mp4"]
     assert all(kho.exists(k) for k in keys)
-    assert [m["id"] for m in job.result["muc"]] == ["a", "b"]
+    assert [m["id"] for m in job.result["muc"]] == ["aaaaaaaaaaa", "bbbbbbbbbbb"]
     assert not any(k.endswith("_key") for m in job.result["muc"] for k in m)   # spec §14: trần 20 artifacts
     assert _so_du(db, "u1") == 98                       # quyết toán = 2
 
 
 def test_mot_phan_loi_thi_xong_va_hoan_phan_loi(db, kho, nguoi, monkeypatch):
     from platform_core.models import JOB_DONE
-    _dung_adapter(monkeypatch, AdapterGia(loi={"b": LoiCao("rieng_tu", "Video riêng tư.", tam_thoi=False)}))
-    jid = _nop_tai(db, "u1", ["a", "b"])
+    _dung_adapter(monkeypatch, AdapterGia(loi={"bbbbbbbbbbb": LoiCao("rieng_tu", "Video riêng tư.", tam_thoi=False)}))
+    jid = _nop_tai(db, "u1", ["aaaaaaaaaaa", "bbbbbbbbbbb"])
     job = _chay(db, jid)
     assert job.status == JOB_DONE
-    assert job.result["video_keys"] == [f"video_crawler/u1/{jid}/a.mp4"]
-    assert job.result["loi"] == [{"id": "b", "ma": "rieng_tu", "thong_diep": "Video riêng tư."}]
+    assert job.result["video_keys"] == [f"video_crawler/u1/{jid}/aaaaaaaaaaa.mp4"]
+    assert job.result["loi"] == [{"id": "bbbbbbbbbbb", "ma": "rieng_tu", "thong_diep": "Video riêng tư."}]
     assert _so_du(db, "u1") == 99
 
 
 def test_moi_muc_loi_phia_khach_thi_error_khong_thu_lai_hoan_du(db, kho, nguoi, monkeypatch):
     from platform_core.models import JOB_ERROR
     loi = LoiCao("khong_ton_tai", "Video không còn tồn tại.", tam_thoi=False)
-    _dung_adapter(monkeypatch, AdapterGia(loi={"a": loi, "b": loi}))
-    jid = _nop_tai(db, "u1", ["a", "b"])
+    _dung_adapter(monkeypatch, AdapterGia(loi={"aaaaaaaaaaa": loi, "bbbbbbbbbbb": loi}))
+    jid = _nop_tai(db, "u1", ["aaaaaaaaaaa", "bbbbbbbbbbb"])
     job = _chay(db, jid)
     assert job.status == JOB_ERROR
     assert job.attempts == 1                            # LoiNguoiGoi: không thử lại
     assert _so_du(db, "u1") == 100
-    assert not kho.exists(f"video_crawler/u1/{jid}/a.mp4")
+    assert not kho.exists(f"video_crawler/u1/{jid}/aaaaaaaaaaa.mp4")
 
 
 def test_huy_giua_chung_thi_cancelled_va_don_tep(db, kho, nguoi, monkeypatch):
@@ -161,7 +161,7 @@ def test_huy_giua_chung_thi_cancelled_va_don_tep(db, kho, nguoi, monkeypatch):
     jid_holder = {}
 
     def huy_truoc_muc_b(item):
-        if item.id != "b":
+        if item.id != "bbbbbbbbbbb":
             return
         gen = get_session(); s = next(gen)
         try:
@@ -171,10 +171,10 @@ def test_huy_giua_chung_thi_cancelled_va_don_tep(db, kho, nguoi, monkeypatch):
             s.close()
 
     _dung_adapter(monkeypatch, AdapterGia(truoc_tai=huy_truoc_muc_b))
-    jid_holder["id"] = jid = _nop_tai(db, "u1", ["a", "b"])
+    jid_holder["id"] = jid = _nop_tai(db, "u1", ["aaaaaaaaaaa", "bbbbbbbbbbb"])
     job = _chay(db, jid)
     assert job.status == JOB_CANCELLED
-    assert not kho.exists(f"video_crawler/u1/{jid}/a.mp4")   # tệp mục a đã lưu phải bị dọn
+    assert not kho.exists(f"video_crawler/u1/{jid}/aaaaaaaaaaa.mp4")   # tệp mục a đã lưu phải bị dọn
     assert _so_du(db, "u1") == 100
 
 
@@ -183,10 +183,10 @@ def test_khong_trung_chi_bo_muc_chinh_user_da_tai(db, kho, nguoi, monkeypatch):
     from platform_core.models import JOB_DONE
 
     _dung_adapter(monkeypatch, AdapterGia())
-    _chay(db, _nop_tai(db, "u1", ["a"]))                 # u1 đã có "a"
-    _chay(db, _nop_tai(db, "u2", ["b"]))                 # u2 có "b" — không được ảnh hưởng u1
+    _chay(db, _nop_tai(db, "u1", ["aaaaaaaaaaa"]))                 # u1 đã có "aaaaaaaaaaa"
+    _chay(db, _nop_tai(db, "u2", ["bbbbbbbbbbb"]))                 # u2 có "bbbbbbbbbbb" — không được ảnh hưởng u1
 
-    adapter = AdapterGia(muc=[_muc("a"), _muc("b"), _muc("c")])
+    adapter = AdapterGia(muc=[_muc("aaaaaaaaaaa"), _muc("bbbbbbbbbbb"), _muc("ccccccccccc")])
     _dung_adapter(monkeypatch, adapter)
     params = features.dung_params_tai(owner_id="u1", nen_tang="youtube",
                                       nguon={"che_do": "tu_khoa", "dau_vao": "meo", "so_luong": 3,
@@ -196,7 +196,7 @@ def test_khong_trung_chi_bo_muc_chinh_user_da_tai(db, kho, nguoi, monkeypatch):
     db.commit()
     job = _chay(db, job.id)
     assert job.status == JOB_DONE
-    assert adapter.da_tai == ["b", "c"]
+    assert adapter.da_tai == ["bbbbbbbbbbb", "ccccccccccc"]
     assert job.result["bo_qua_trung"] == 1
 
 
@@ -204,7 +204,7 @@ def test_kham_pha_mien_phi_tra_danh_sach(db, kho, nguoi, monkeypatch):
     from apps.video_crawler import features
     from platform_core.models import JOB_DONE
 
-    _dung_adapter(monkeypatch, AdapterGia(muc=[_muc("a"), _muc("b")]))
+    _dung_adapter(monkeypatch, AdapterGia(muc=[_muc("aaaaaaaaaaa"), _muc("bbbbbbbbbbb")]))
     params = features.dung_params_kham_pha(owner_id="u1", nen_tang="youtube", che_do="tu_khoa",
                                            dau_vao="meo", so_luong=5, khong_trung=False, phan_giai=_DNS)
     job = features.nop(db, owner_id="u1", job_type="video_crawler.kham_pha", params=params)
@@ -212,7 +212,7 @@ def test_kham_pha_mien_phi_tra_danh_sach(db, kho, nguoi, monkeypatch):
     assert _so_du(db, "u1") == 100
     job = _chay(db, job.id)
     assert job.status == JOB_DONE
-    assert [m["id"] for m in job.result["muc"]] == ["a", "b"]
+    assert [m["id"] for m in job.result["muc"]] == ["aaaaaaaaaaa", "bbbbbbbbbbb"]
     assert "video_keys" not in job.result
     assert _so_du(db, "u1") == 100
 
@@ -220,8 +220,8 @@ def test_kham_pha_mien_phi_tra_danh_sach(db, kho, nguoi, monkeypatch):
 def test_lich_su_chi_thay_job_cua_minh(db, kho, nguoi, monkeypatch):
     from apps.video_crawler import features
     _dung_adapter(monkeypatch, AdapterGia())
-    a = _nop_tai(db, "u1", ["a"])
-    _nop_tai(db, "u2", ["b"])
+    a = _nop_tai(db, "u1", ["aaaaaaaaaaa"])
+    _nop_tai(db, "u2", ["bbbbbbbbbbb"])
     assert [j.id for j in features.lich_su(db, "u1")] == [a]
 
 
@@ -250,7 +250,7 @@ def test_kenh_nhan_handle_tran():
 def test_job_cua_chi_tra_job_cua_chu(db, kho, nguoi, monkeypatch):
     from apps.video_crawler import features
     _dung_adapter(monkeypatch, AdapterGia())
-    a = _nop_tai(db, "u1", ["a"])
+    a = _nop_tai(db, "u1", ["aaaaaaaaaaa"])
     assert features.job_cua(db, "u1", a).id == a
     assert features.job_cua(db, "u2", a) is None
     assert features.job_cua(db, "u1", a, job_type="video_crawler.kham_pha") is None
@@ -299,7 +299,7 @@ def test_tien_do_chi_tang_va_luong_tu_hoa():
 
 def test_xong_job_dat_tien_do_100_kem_thong_diep(db, kho, nguoi, monkeypatch):
     _dung_adapter(monkeypatch, AdapterGia())
-    job = _chay(db, _nop_tai(db, "u1", ["a", "b"]))
+    job = _chay(db, _nop_tai(db, "u1", ["aaaaaaaaaaa", "bbbbbbbbbbb"]))
     assert job.progress == 100
     assert job.progress_msg.startswith("Xong")
 
@@ -312,8 +312,8 @@ def test_moi_muc_deu_trung_thi_bao_ro_cho_khach_khong_tru_tien(db, kho, nguoi, m
     from platform_core.models import JOB_DONE
 
     _dung_adapter(monkeypatch, AdapterGia())
-    _chay(db, _nop_tai(db, "u1", ["a"]))
-    _dung_adapter(monkeypatch, AdapterGia(muc=[_muc("a")]))
+    _chay(db, _nop_tai(db, "u1", ["aaaaaaaaaaa"]))
+    _dung_adapter(monkeypatch, AdapterGia(muc=[_muc("aaaaaaaaaaa")]))
     params = features.dung_params_tai(owner_id="u1", nen_tang="youtube",
                                       nguon={"che_do": "tu_khoa", "dau_vao": "meo", "so_luong": 1,
                                              "khong_trung": True}, phan_giai=_DNS)
@@ -326,3 +326,125 @@ def test_moi_muc_deu_trung_thi_bao_ro_cho_khach_khong_tru_tien(db, kho, nguoi, m
     ma = [e.event_code for e in job_events.timeline(db, job.id)]
     assert "bo_qua_trung" in ma
     assert _so_du(db, "u1") == 99
+
+
+# ── Review code 22/09 ─────────────────────────────────────────────────────────
+
+_A = "a" * 11
+
+
+def test_blocker_url_do_khach_gui_bi_bo_dung_lai_url_chuan():
+    """BLOCKER: `url_<id>` lấy thẳng từ form ⇒ một id kèm URL playlist/kênh tải cả playlist với giá 1 credit.
+    URL tải luôn dựng lại từ id theo mẫu của nền; URL khách gửi bị bỏ."""
+    from apps.video_crawler import features
+    p = features.dung_params_tai(owner_id="u1", nen_tang="youtube",
+                                 muc=[{"id": _A, "url": "https://www.youtube.com/playlist?list=PLxyz"}],
+                                 phan_giai=_DNS)
+    assert p["muc"][0]["url"] == f"https://www.youtube.com/watch?v={_A}"
+
+
+@pytest.mark.parametrize("vid", ["..", "a/b", "short", "x" * 12, ""])
+def test_id_sai_mau_bi_tu_choi(vid):
+    from apps.video_crawler import features
+    with pytest.raises(features.LoiDauVao):
+        features.dung_params_tai(owner_id="u1", nen_tang="youtube",
+                                 muc=[{"id": vid, "url": ""}], phan_giai=_DNS)
+
+
+def test_id_trung_trong_mot_yeu_cau_chi_tinh_mot_lan():
+    """MAJOR 2: `muc=X&muc=X` ⇒ tính 2 credit cho 1 tệp."""
+    from apps.video_crawler import features
+    from apps.video_crawler.manifest import MANIFEST
+    p = features.dung_params_tai(owner_id="u1", nen_tang="youtube",
+                                 muc=[{"id": _A}, {"id": _A}], phan_giai=_DNS)
+    assert [m["id"] for m in p["muc"]] == [_A]
+    assert MANIFEST.credit_cost(p) == 1
+
+
+def test_kham_pha_trung_id_chi_giu_mot(db, kho, nguoi, monkeypatch):
+    from apps.video_crawler import features
+    adapter = AdapterGia(muc=[_muc(_A), _muc(_A), _muc("b" * 11)])
+    _dung_adapter(monkeypatch, adapter)
+    params = features.dung_params_tai(owner_id="u1", nen_tang="youtube",
+                                      nguon={"che_do": "tu_khoa", "dau_vao": "meo", "so_luong": 3}, phan_giai=_DNS)
+    job = features.nop(db, owner_id="u1", job_type="video_crawler.tai", params=params)
+    db.commit()
+    job = _chay(db, job.id)
+    assert adapter.da_tai == [_A, "b" * 11]
+    assert job.result["credit_cost"] == 2
+
+
+def test_muc_lay_tu_ket_qua_xem_truoc_cua_chinh_minh(db, kho, nguoi, monkeypatch):
+    """Đường UI: khách chỉ gửi id đã tick; mục (url, tiêu đề) lấy từ kết quả xem trước của CHÍNH họ."""
+    from apps.video_crawler import features
+    _dung_adapter(monkeypatch, AdapterGia(muc=[_muc(_A), _muc("b" * 11)]))
+    p = features.dung_params_kham_pha(owner_id="u1", nen_tang="youtube", che_do="tu_khoa", dau_vao="meo",
+                                      so_luong=2, khong_trung=False, phan_giai=_DNS)
+    kp = features.nop(db, owner_id="u1", job_type="video_crawler.kham_pha", params=p)
+    db.commit()
+    _chay(db, kp.id)
+    params = features.dung_params_tai_tu_xem_truoc(db, owner_id="u1", kham_pha_id=kp.id, ids=["b" * 11, "z" * 11])
+    assert [m["id"] for m in params["muc"]] == ["b" * 11]              # id không có trong kết quả bị bỏ
+    assert params["muc"][0]["tieu_de"] == f"Video {'b' * 11}"
+    with pytest.raises(features.LoiDauVao):                              # người khác không dùng được xem trước của u1
+        features.dung_params_tai_tu_xem_truoc(db, owner_id="u2", kham_pha_id=kp.id, ids=["b" * 11])
+
+
+class _CtxHuy:
+    def __init__(self):
+        self.goi_huy = 0
+        self.huy = False
+
+    def progress(self, p, msg=""):
+        pass
+
+    def is_cancelled(self):
+        self.goi_huy += 1
+        return self.huy
+
+
+def test_tien_do_kiem_huy_theo_thoi_gian_khong_doi_buoc_5(monkeypatch):
+    """MAJOR 4: chỉ biết huỷ ở bước 5% hoặc sau 30 s. Phải hỏi `is_cancelled` ~ mỗi 5 s kể cả khi % đứng yên."""
+    from apps.video_crawler import jobs as vc_jobs
+    from platform_core.job_runner import JobCancelled
+    dong_ho = [1000.0]
+    monkeypatch.setattr(vc_jobs.time, "monotonic", lambda: dong_ho[0])
+    ctx = _CtxHuy()
+    td = vc_jobs._TienDo(ctx, 1)
+    td.bao(10, "")
+    ctx.huy = True
+    dong_ho[0] += 6
+    with pytest.raises(JobCancelled):
+        td.bao(10, "")                                                    # % không đổi, vẫn phát hiện huỷ
+
+
+def test_het_ngan_sach_thoi_gian_thi_dung_giua_cac_muc_va_giu_phan_da_xong(db, kho, nguoi, monkeypatch):
+    """MAJOR 5: `_het_gio` giết tiến trình ⇒ khối dọn không chạy. Handler tự dừng trước trần và kết thúc phần đã xong."""
+    from apps.video_crawler import jobs as vc_jobs
+    from platform_core.models import JOB_DONE
+    dong_ho = [0.0]
+    monkeypatch.setattr(vc_jobs.time, "monotonic", lambda: dong_ho[0])
+
+    def sau_moi_muc(item):
+        dong_ho[0] += vc_jobs.NGAN_SACH_TAI_S / 2 + 1
+
+    _dung_adapter(monkeypatch, AdapterGia(truoc_tai=sau_moi_muc))
+    job = _chay(db, _nop_tai(db, "u1", [_A, "b" * 11, "c" * 11]))
+    assert job.status == JOB_DONE
+    assert len(job.result["video_keys"]) == 2
+    assert job.result["loi"][-1]["ma"] == "het_thoi_gian"
+    assert _so_du(db, "u1") == 98
+
+
+def test_gioi_han_tan_suat_tinh_ca_cao_het(db, kho, nguoi, monkeypatch):
+    """MINOR: 'Cào hết' (tai + nguon) cũng khám phá miễn phí khi mọi mục trùng ⇒ phải chung trần tần suất."""
+    from apps.video_crawler import features
+    _dung_adapter(monkeypatch, AdapterGia())
+    for i in range(features.KHAM_PHA_MOI_PHUT):
+        p = features.dung_params_tai(owner_id="u1", nen_tang="youtube",
+                                     nguon={"che_do": "tu_khoa", "dau_vao": f"meo {i}", "so_luong": 1},
+                                     phan_giai=_DNS)
+        features.nop(db, owner_id="u1", job_type="video_crawler.tai", params=p)
+        db.commit()
+    with pytest.raises(features.QuaTanSuat):
+        features.kiem_tan_suat(db, "u1")

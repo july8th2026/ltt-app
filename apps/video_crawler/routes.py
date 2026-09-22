@@ -54,7 +54,9 @@ def _trang(request: Request, user: str, db, *, loi: str = "", ma: int = 200) -> 
 
 def _loi_form(request: Request, user: str, db, thong_diep: str, ma: int = 400) -> HTMLResponse:
     if _la_htmx(request):
-        return templates.TemplateResponse(request, "vc_thong_bao.html", {"loi": thong_diep}, status_code=ma)
+        # htmx 2 KHÔNG swap phản hồi 4xx ⇒ trả 200 để khách thấy lỗi (review MAJOR 7). Mã thật ở header.
+        return templates.TemplateResponse(request, "vc_thong_bao.html", {"loi": thong_diep}, status_code=200,
+                                          headers={"X-LTT-Ma-Loi": str(ma)})
     return _trang(request, user, db, loi=thong_diep, ma=ma)
 
 
@@ -116,7 +118,10 @@ def ket_qua_kham_pha(request: Request, job_id: str, user: str = Depends(require_
 
 @router.post("/tai", dependencies=[Depends(_cong_co)])
 async def tai(request: Request, user: str = Depends(require_login), db=Depends(get_db)):
-    """Hai nguồn: `muc` (id đã tick ở xem trước, kèm `url_<id>`/`tieu_de_<id>`) HOẶC nguồn cào hết."""
+    """Hai nguồn: id đã tick trong một lần xem trước (`xem_truoc` + `muc`) HOẶC nguồn cào hết.
+
+    Mục tải lấy từ kết quả xem trước của CHÍNH người dùng; không tin url/tiêu đề trong form (review BLOCKER).
+    """
     from platform_core import credit
     from platform_core.registry import RegistryError
     form = await request.form()
@@ -126,10 +131,9 @@ async def tai(request: Request, user: str = Depends(require_login), db=Depends(g
         u = _nguoi(request)
         nen_id = str(form.get("nen_tang") or "")
         ids = [str(i) for i in form.getlist("muc")]
-        if ids:
-            muc = [{"id": i, "url": str(form.get(f"url_{i}") or ""), "tieu_de": str(form.get(f"tieu_de_{i}") or "")}
-                   for i in ids]
-            params = features.dung_params_tai(owner_id=u.id, nen_tang=nen_id, muc=muc)
+        xem_truoc = str(form.get("xem_truoc") or "")
+        if xem_truoc or ids:
+            params = features.dung_params_tai_tu_xem_truoc(db, owner_id=u.id, kham_pha_id=xem_truoc, ids=ids)
         else:
             params = features.dung_params_tai(owner_id=u.id, nen_tang=nen_id, nguon={
                 "che_do": str(form.get("che_do") or ""), "dau_vao": str(form.get("dau_vao") or ""),

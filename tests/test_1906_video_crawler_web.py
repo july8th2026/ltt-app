@@ -120,19 +120,51 @@ def test_dau_vao_sai_bao_loi_co_ten_khong_tao_job(env):
     assert _jobs(ua) == []
 
 
-def test_tai_muc_da_chon(env):
+def _xem_truoc_xong(client, uid, ids):
+    """Nộp một xem trước qua route thật rồi đánh dấu xong với kết quả giả (web test không có worker)."""
+    client.post("/video-crawler/kham-pha",
+                data={"nen_tang": "youtube", "che_do": "tu_khoa", "dau_vao": "meo", "so_luong": "3",
+                      "csrf_token": _csrf(client)})
+    from platform_core.db import get_session
+    from platform_core.models import JOB_DONE, Job
+    gen = get_session(); s = next(gen)
+    try:
+        j = s.query(Job).filter(Job.user_id == uid, Job.job_type == "video_crawler.kham_pha").one()
+        j.status = JOB_DONE
+        j.result = {"muc": [{"nen_tang": "youtube", "id": i, "url": f"https://www.youtube.com/watch?v={i}",
+                             "tieu_de": f"T {i}"} for i in ids], "bo_qua_trung": 0}
+        s.commit()
+        return j.id
+    finally:
+        s.close()
+
+
+def test_tai_muc_da_chon_lay_tu_xem_truoc_bo_url_cua_form(env):
+    """Review BLOCKER: `url_<id>` do form gửi bị BỎ; mục lấy từ kết quả xem trước của chính người dùng."""
     client, (ua, _) = env
     _login(client, "a@x.com")
+    a1, b2 = "a1aaaaaaaaa", "b2bbbbbbbbb"
+    kp = _xem_truoc_xong(client, ua, [a1, b2])
     r = client.post("/video-crawler/tai",
-                    data={"nen_tang": "youtube", "muc": ["a1", "b2"],
-                          "url_a1": "https://www.youtube.com/watch?v=a1", "tieu_de_a1": "A",
-                          "url_b2": "https://www.youtube.com/watch?v=b2", "tieu_de_b2": "B",
+                    data={"nen_tang": "youtube", "xem_truoc": kp, "muc": [a1, b2],
+                          f"url_{a1}": "https://www.youtube.com/playlist?list=PLtan_cong",
                           "csrf_token": _csrf(client)},
                     follow_redirects=False)
     assert r.status_code in (204, 303)
-    ((loai, params),) = _jobs(ua)
-    assert loai == "video_crawler.tai"
-    assert [m["id"] for m in params["muc"]] == ["a1", "b2"]
+    tai = [p for t, p in _jobs(ua) if t == "video_crawler.tai"]
+    assert [m["id"] for m in tai[0]["muc"]] == [a1, b2]
+    assert tai[0]["muc"][0]["url"] == f"https://www.youtube.com/watch?v={a1}"
+
+
+def test_loi_htmx_tra_200_de_hien_duoc(env):
+    """Review MAJOR 7: htmx 2 không swap phản hồi 4xx ⇒ khách không thấy lỗi (CSRF hết hạn, thiếu credit)."""
+    client, _ = env
+    _login(client, "a@x.com")
+    r = client.post("/video-crawler/kham-pha", headers={"HX-Request": "true"},
+                    data={"nen_tang": "youtube", "che_do": "tu_khoa", "dau_vao": "meo", "so_luong": "3",
+                          "csrf_token": "sai"})
+    assert r.status_code == 200
+    assert "Phiên đã hết hạn" in r.text
 
 
 def test_cao_het_theo_nguon(env):

@@ -4,7 +4,9 @@ Route chỉ gọi vào đây; handler (`jobs.py`) chỉ gọi `da_tai_ids`. Mọ
 """
 from __future__ import annotations
 
+import re
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 
@@ -24,6 +26,10 @@ SO_JOB_DEDUP = 500
 
 #: Trần xem trước mỗi phút mỗi user (phản biện #8: tìm dồn dập từ IP máy A ⇒ YouTube bot-check).
 KHAM_PHA_MOI_PHUT = 10
+#: Id khi nền chưa khai `mau_id`: chỉ ký tự an toàn cho khoá storage (chặn `..`, `/`).
+_ID_CHUNG = r"[A-Za-z0-9_-]{1,64}"
+#: Múi giờ của "video hôm nay" — khách ở Việt Nam (review MINOR: trước đếm từ nửa đêm UTC).
+_MUI_GIO = ZoneInfo("Asia/Ho_Chi_Minh")
 
 
 class LoiDauVao(ValueError):
@@ -95,14 +101,29 @@ def dung_params_tai(*, owner_id: str, nen_tang: str, muc: list | None = None, ng
                           "khong_trung": bool(nguon.get("khong_trung"))}}
     if not isinstance(muc, list) or not 1 <= len(muc) <= SO_MUC_TOI_DA:
         raise LoiDauVao(f"Chọn từ 1 đến {SO_MUC_TOI_DA} video.")
-    sach = []
+    sach, da_co = [], set()
     for m in muc:
         vid = str((m or {}).get("id") or "").strip()
-        if not vid or len(vid) > 64:
+        if not re.fullmatch(nen.mau_id or _ID_CHUNG, vid):
             raise LoiDauVao("Mục không hợp lệ.")
-        sach.append({"id": vid, "url": _kiem_url(str(m.get("url") or ""), nen, phan_giai),
-                     "tieu_de": str(m.get("tieu_de") or "")[:200]})
+        if vid in da_co:                  # trùng trong cùng yêu cầu ⇒ tính một lần (review MAJOR 2)
+            continue
+        da_co.add(vid)
+        url = nen.mau_url.format(id=vid) if nen.mau_url else _kiem_url(str(m.get("url") or ""), nen, phan_giai)
+        sach.append({"id": vid, "url": url, "tieu_de": str(m.get("tieu_de") or "")[:200]})
     return {"owner_id": owner_id, "nen_tang": nen.id, "muc": sach}
+
+
+def dung_params_tai_tu_xem_truoc(db, *, owner_id: str, kham_pha_id: str, ids: list[str]) -> dict:
+    """Đường UI: khách chỉ gửi id đã tick. Mục lấy từ kết quả xem trước (đã xong) của CHÍNH họ — không tin form."""
+    job = job_cua(db, owner_id, kham_pha_id, job_type=JOB_KHAM_PHA)
+    if job is None or job.status != JOB_DONE:
+        raise LoiDauVao("Kết quả xem trước không còn — bấm Xem trước lại.")
+    theo_id = {m.get("id"): m for m in (job.result or {}).get("muc") or []}
+    chon = [theo_id[i] for i in dict.fromkeys(ids) if i in theo_id]
+    if not chon:
+        raise LoiDauVao("Chưa chọn video nào.")
+    return dung_params_tai(owner_id=owner_id, nen_tang=job.params["nen_tang"], muc=chon)
 
 
 def nop(db, *, owner_id: str, job_type: str, params: dict) -> Job:
@@ -135,12 +156,15 @@ def da_tai_ids(db, owner_id: str, nen_id: str) -> set[str]:
 def kiem_tan_suat(db, owner_id: str, *, bay_gio: datetime | None = None) -> None:
     bay_gio = bay_gio or datetime.now(timezone.utc)
     moc = bay_gio - timedelta(minutes=1)
+    # Tính cả "cào hết" (tai + nguon): nó cũng khám phá, và miễn phí khi mọi mục trùng/lỗi (review MINOR).
     gan_day = db.execute(
-        select(Job.created_at).where(Job.user_id == owner_id, Job.app_slug == MANIFEST.slug,
-                                     Job.job_type == JOB_KHAM_PHA)
-        .order_by(Job.created_at.desc()).limit(KHAM_PHA_MOI_PHUT)
-    ).scalars().all()
-    trong_phut = [t for t in gan_day if (t if t.tzinfo else t.replace(tzinfo=timezone.utc)) >= moc]
+        select(Job.created_at, Job.job_type, Job.params).where(
+            Job.user_id == owner_id, Job.app_slug == MANIFEST.slug)
+        .order_by(Job.created_at.desc()).limit(KHAM_PHA_MOI_PHUT * 3)
+    ).all()
+    trong_phut = [t for t, loai, p in gan_day
+                  if (loai == JOB_KHAM_PHA or (p or {}).get("nguon"))
+                  and (t if t.tzinfo else t.replace(tzinfo=timezone.utc)) >= moc]
     if len(trong_phut) >= KHAM_PHA_MOI_PHUT:
         raise QuaTanSuat("Bạn đang xem trước quá nhanh — đợi một phút rồi thử lại.")
 
@@ -164,10 +188,10 @@ def lich_su(db, owner_id: str, *, gioi_han: int = 50) -> list[Job]:
 
 def thong_ke(db, owner_id: str, *, bay_gio: datetime | None = None) -> dict:
     """Bốn ô thống kê — đếm JOB THẬT của user (donor đếm nhầm hàng đợi render, `W:3190`)."""
-    bay_gio = bay_gio or datetime.now(timezone.utc)
+    bay_gio = (bay_gio or datetime.now(timezone.utc)).astimezone(_MUI_GIO)
     dau_ngay = bay_gio.replace(hour=0, minute=0, second=0, microsecond=0)
     kq = {"video_hom_nay": 0, "dang_chay": 0, "xong": 0, "loi": 0}
-    for j in lich_su(db, owner_id, gioi_han=500):
+    for j in lich_su(db, owner_id, gioi_han=200):
         if j.status in (JOB_QUEUED, JOB_RUNNING):
             kq["dang_chay"] += 1
         elif j.status == JOB_DONE:

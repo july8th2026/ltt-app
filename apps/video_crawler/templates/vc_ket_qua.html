@@ -10,6 +10,7 @@
     <form method="post" action="{{ app.route_prefix }}/tai" hx-post="{{ app.route_prefix }}/tai" hx-target="this" hx-swap="outerHTML">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <input type="hidden" name="nen_tang" value="{{ job.params.nen_tang }}">
+      <input type="hidden" name="xem_truoc" value="{{ job.id }}">
       {% for m in muc %}
       <label class="vc-muc">
         <input type="checkbox" name="muc" value="{{ m.id }}" checked>
@@ -17,8 +18,6 @@
             Proxy ảnh có allowlist: sổ lỗi SO_LOI.md (S8). -#}
         <span class="vc-bia" aria-hidden="true">▶ {{ m.id }}</span>
         <span><b>{{ m.tieu_de or m.id }}</b><br><small class="muted">{{ m.tac_gia }}{% if m.thoi_luong_s %} · {{ m.thoi_luong_s // 60 }}:{{ "%02d" | format(m.thoi_luong_s % 60) }}{% endif %}</small></span>
-        <input type="hidden" name="url_{{ m.id }}" value="{{ m.url }}">
-        <input type="hidden" name="tieu_de_{{ m.id }}" value="{{ m.tieu_de }}">
       </label>
       {% endfor %}
       <div class="vc-actions"><button class="btn btn-primary" type="submit">📋 Tải các video đã chọn</button></div>
