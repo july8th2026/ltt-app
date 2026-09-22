@@ -159,9 +159,9 @@ Trước khi mở hạng mục LTTCODE, Task 11 phải có đủ ba artifact cù
   sau probe (chủ dự án chốt 22/09/2026) — "đủ mẫu hoặc đủ thời gian";
 - inject/canary trực tiếp qua API A xanh cả ba protocol, không qua LTTCODE.
 
-Bất kỳ invariant nào đỏ thì dừng rollout và giữ cờ
-`LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS=0` (hoặc trả về 0 nếu vừa bật). Không
-được sửa client để che lỗi server.
+Bất kỳ invariant nào đỏ thì dừng rollout. Từ Task 13 không còn cờ
+`LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS` để tắt — đường lui là bản trước
+(§9). Không được sửa client để che lỗi server.
 
 ## 7. Kết quả Task 11 — rollout A+B 22/09/2026
 
@@ -217,3 +217,45 @@ chụp một thời điểm; chết = mô tả hành vi cũ như đang là hiệ
 | `plugins/llm-ltt/src/errors.ts:82,84` | Regex khớp câu chữ (`"The input exceeds the model's context limit"`, `"prompt is too long"`) → `context_window_exceeded`; là mã nguồn (không sửa qua tài liệu), cần làn giữ kho đó xác nhận đây vẫn là fallback tương thích ngược có chủ đích chứ không phải đường chính |
 | `docs/LTTCODE/reports/self-improve/SO_LOI_VAN_HANH.md`, `AUDIT_DOI_SOAT_2026-09-16.md`, `docs/LTTCODE/_superseded/2026-09-17-truoc-build-0.1.5.md`, `docs/LTTCODE/reports/harness-nang-cap/A_H1_H3.md`, `docs/LTTCODE/reports/H11_headless.md` | Có hit `413`/`payload_too_large`/`prompt is too long`; không đọc sâu trong lượt này — liệt kê để làn LTTCODE tự phân loại |
 
+## 9. Gỡ legacy (Task 13)
+
+Chủ dự án cho làm ngay 22/09 (miễn điều kiện "một chu kỳ"): A+B chạy hợp đồng
+v1 từ 22/09, `kiem_hop_dong_loi_llm.py live --minutes 720` = 7 sự kiện,
+legacy 0, mismatch 0, unknown 0.
+
+**Đã gỡ**
+
+| Máy | Gỡ gì | Giữ lại |
+|---|---|---|
+| B | khoá `ly_do`/`truong`/`tran`/`thay`/`legacy` trong `VuotNganSach.as_dict`; `ly_do`/`co_the_dung`/`ma` trong `detail`; khoá anh em `ly_do`/`ma_thuong_nguon`/`ma` ngoài `detail` (499/502/504) | **HTTP status dây y nguyên** (413 ngân sách, 429, 499, 502, 504 — spec §3/§10.9); `model`/`available_models` ở lỗi 404; trường `legacy` của telemetry (luôn `false`) để bảng đo cũ còn đọc |
+| A decoder | `_LEGACY_FIELD_TO_CODE`, nhánh đọc `{truong,tran,thay}`, counter `legacy`; `as_detail()` hết khoá tiếng Việt | thân không có `schema_version=1` + mã đã đăng ký ⇒ `upstream_unknown` |
+| A cửa stream/đồng bộ | boolean `ban`/`qua_dai`/`het_gio` (kwarg + thuộc tính) của `KhongMoDuocLuong`/`KhongMoDuoc`; suy nghĩa từ status (429⇒bận, 504⇒hết giờ, 499⇒huỷ, 400/413/422⇒yêu cầu sai); dò câu parser tool-call | mọi quyết định đọc `failure.*` |
+| A public | cờ `LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS`, renderer cũ (`_MA`, `_loi_openai`, …), `tran_bi_vuot` | renderer có cấu trúc là đường duy nhất, giữ `ltt_error` |
+
+**Bất biến tự nén giữ nguyên** (`tests/test_1480`, `test_1706`): mã quá dài
+(`context_window_exceeded`, `input_tokens_exceeded`) mang câu
+`prompt is too long: N tokens > M maximum` ở cả ba giao thức, trước lẫn sau 200
+(Claude Code); Responses **stream** trước 200 = 200 + đúng một
+`response.failed` với `code=context_length_exceeded` (Codex); Chat/Responses
+không stream = 400 `{"error": {..., "code": "context_length_exceeded"}}` kèm
+`limit_name`/`limit_value`. Thay đổi dây kèm theo: lỗi Responses **trước 200**
+(không phải quá dài) nay là `{"error": {...}}` khuôn OpenAI thay vì vỏ
+`response.failed` (vỏ đó chỉ còn cho SSE sau 200, spec §7).
+
+**Thứ tự deploy bắt buộc: B trước, A sau.** A hiện hành đã đọc v1 trước nên
+không cần khoá legacy của B; ngược lại A mới coi thân thiếu v1 là
+`upstream_unknown`, nên B cũ (còn đường nào chưa phát v1) phải được thay trước.
+
+**Rollback** (ngược thứ tự: A trước, B sau)
+
+- A: chép lại `C:\LTTPlatform\app.previous\` (xem `app.previous\dau_van_tay.json`
+  trước deploy, `docs/16_CAP_NHAT_VA_DEPLOY.md` §3). Bản trước còn cờ, nhưng
+  production đang đặt `LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS=1` nên hành vi
+  public không đổi.
+- B: `llm_gateway/deploy/deploy.ps1` chụp `H:/LTT_LLM/releases/auto-<giờ>` ở
+  bước 1b trước khi chép; lùi = `xcopy /E /I /Y` bản chụp đó về
+  `H:\LTT_LLM\gateway` rồi `Restart-Service LTTLlmGateway`.
+
+Sau deploy: `python tools/kiem_hop_dong_loi_llm.py fixture` PASS và
+`live --minutes 60` phải giữ mismatch 0; `unknown` tăng ⇒ có đường B chưa phát
+v1 — lùi A trước.
