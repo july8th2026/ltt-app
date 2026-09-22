@@ -12,6 +12,31 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-22 (chiều) — VPS: tạo máy bị khoá vì OVH ngừng liệt kê hợp đồng đã ký; phát hành VPS cho mọi người dùng
+
+Chủ dự án tạo máy trên web không được. Log worker: job `dc93967e` (13:07) và `12984237` (16:25) cùng
+`BackendConflict: OVH acquisition stopped before checkout` ở lượt đầu; các lượt thử lại chỉ là hệ quả
+(`acquisition refused for a failed or deleted VPS`). Hai máy đều được `bao_tri` tự hoàn credit.
+
+- **Gốc** (tái hiện bằng GET chỉ-đọc tới OVH): `GET /order/cart/{id}/checkout` trả `contracts: []`.
+  OVH chỉ liệt kê hợp đồng tài khoản CHƯA ký; `/me/agreements` cho thấy "Specific Conditions for Cloud
+  Base Services" đã ký 16/09 lúc mua IP đầu tiên. `preview_cart` đòi danh sách không rỗng ⇒ mọi lần mua
+  IP thứ hai trở đi chết trước checkout; lỗi thật bị bọc mất trong `BackendConflict ... from exc`.
+- **Sửa** (`43fdd643`): rỗng = không có điều khoản mới ⇒ dấu vân tay `()` được chấp nhận; hợp đồng mới/đổi
+  nội dung vẫn phải khớp `accepted_contract_fingerprints`; giá/số lượng/đích/hạn giỏ giữ nguyên kiểm; bộ
+  bọc trước checkout ghi log nguyên nhân. Nghiệm thu sau deploy: hai giỏ thật từng hỏng nay `preview` OK
+  (239 minor USD, `()`).
+- **Phát hành** (lệnh chủ dự án, chọn "phát hành ngay" không chờ một lần tạo máy thật): manifest
+  `lifecycle="released"` (`98428034`) + `LTT_VPS_ROLLOUT=public` trong `secrets\app.env` (bản lưu
+  `app.env.bak-20260922-vps`), nạp qua deploy. Playwright bằng `khach2` (không nằm trong allowlist):
+  `/vps` 200, có form tạo máy, 0 lỗi console, 0 request hỏng.
+- **Giao diện**: ô "Bạn chưa có máy nào" đọc `goi_ban_duoc` trước khi template gán ⇒ luôn nói "Hiện chưa
+  nhận máy mới" cạnh form đang mở. Chuyển phép gán lên trước (+ test render thật trong `test_311`; `6e6c0dc5`, Playwright production xác nhận).
+- Sự cố riêng đêm 21→22/09: runtime máy B STALE 05:46–11:18, Proxmox probe lỗi 10:39–11:59; tự hồi,
+  6/6 HEALTHY lúc 16:31. Còn tồn: `f072f952 VM_CREATE NEEDS_REVIEW` từ 16/09; bảng thông không đọc được
+  ("VM router trả mã 255") lúc 11:59.
+- ⚠️ Phiên này lỡ in `LTT_VPS_PROXMOX_TOKEN_SECRET` vào bản ghi phiên khi đọc `app.env` ⇒ nên xoay token.
+
 ## 2026-09-20 (sáng) — C0-34: máy B hết giờ đọc không còn thoát thành 500 / luồng đứt, và không phạt khoá
 
 Lỗi từ LTTCODE 20/09 (`LOI_C0.md` C0-34). Log production 19/09 16:53:18Z: `STREAM LOI rid=5d73ccda

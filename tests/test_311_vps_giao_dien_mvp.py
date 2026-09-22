@@ -378,6 +378,63 @@ def trang_nguoi_dung(tmp_path_factory) -> str:
         importlib.reload(apps.vps.manifest)
 
 
+def test_o_TRONG_moi_tao_may_khi_dang_BAN_DUOC(tmp_path, monkeypatch):
+    """22/09: người chưa có máy thấy "Hiện chưa nhận máy mới" NGAY CẠNH form
+    "Tạo máy" đang mở. Ô trống đọc `goi_ban_duoc` trước khi template `set` nó
+    (Jinja coi biến chưa gán là sai) ⇒ câu "đóng cửa" hiện với MỌI người mới.
+    Đo trên HTML đã render, với sức chứa bán được thật sự (giả lập).
+    """
+    import importlib
+    from types import SimpleNamespace
+
+    from fastapi.testclient import TestClient
+
+    monkeypatch.setenv("LTT_DATABASE_URL", f"sqlite:///{(tmp_path / 'x.db').as_posix()}")
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "test-vps-311-trong")
+    monkeypatch.setenv("LTT_VPS", "1")
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models   # noqa: F401
+    import apps.vps.tables        # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    from platform_core.users import tao_nguoi_dung
+    gen = dbmod.get_session()
+    db = next(gen)
+    tao_nguoi_dung(db, email="vps311b@test.com", password="matkhau-tot-12",
+                   is_verified=True)
+    db.commit()
+    gen.close()
+
+    import apps.vps.routes as vps_routes
+    monkeypatch.setattr(vps_routes, "_suc_chua", lambda db, profile=None: (
+        SimpleNamespace(ram_mb_con=53_000, dia_gb_con_that=114), ""))
+    monkeypatch.setattr(vps_routes, "_gioi_han_ban", lambda db: (5, 5))
+    monkeypatch.setattr(vps_routes, "_so_cho_ban", lambda *a, **k: 3)
+
+    from server.app import create_app
+    client = TestClient(create_app(), base_url="https://testserver",
+                        follow_redirects=False)
+    try:
+        login = client.get("/login")
+        token = re.search(r'name="csrf_token" value="([^"]+)"', login.text).group(1)
+        client.post("/login", data={"username": "vps311b@test.com",
+                                    "password": "matkhau-tot-12", "csrf_token": token})
+        html = client.get("/vps").text
+    finally:
+        client.close()
+        dbmod.reset_engine()
+        monkeypatch.undo()
+        import apps.vps
+        import apps.vps.manifest
+        importlib.reload(apps.vps)
+        importlib.reload(apps.vps.manifest)
+
+    assert "Tạo máy mới" in html, "dieu kien gia lap chua mo form tao may"
+    assert "Bạn chưa có máy nào" in html
+    assert "Hiện chưa nhận máy mới" not in html
+
+
 def test_nguoi_dung_chi_thay_MOT_bang_gia(trang_nguoi_dung):
     """🔴 Hai bảng giá trên một trang là hai nguồn cho cùng một con số.
 

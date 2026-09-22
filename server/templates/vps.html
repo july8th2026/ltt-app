@@ -355,6 +355,10 @@
   </ul>
   {% endif %}
 
+  {# Gan TRUOC moi cho dung: o trong "Ban chua co may nao" doc no o duoi day,
+     truoc the Tao may. Gan muon hon (nhu truoc 22/09) thi Jinja coi la chua
+     dinh nghia => o trong bao "chua nhan may moi" canh form dang mo. #}
+  {% set goi_ban_duoc = goi | selectattr("con_cho") | selectattr("os") | list %}
   <div class="vps-nha">
     <div>
       <h2 class="vps-h2">{{ _("Máy của tôi") }}</h2>
@@ -463,7 +467,6 @@
      dư thì chỉ có trên thanh tiêu đề — ba mảnh của cùng một phép tính, và khách
      phải tự cộng. #}
   {% set so_du = so_du_credit(request) %}
-  {% set goi_ban_duoc = goi | selectattr("con_cho") | selectattr("os") | list %}
   {# W1: goi nao con dung duoc — de mot the "het cho" chi ngay sang cai
      con lai, thay vi bo khach o do. #}
   {# `ban_duoc` gop HAI dieu kien, va ca hai deu bat buoc:
