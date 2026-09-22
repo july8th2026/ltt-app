@@ -95,10 +95,19 @@ def test_min_s_mac_dinh_la_cau_hinh_legacy_dang_chay() -> None:
 def test_he_mac_dinh_la_ltt_va_he_la_bi_tu_choi() -> None:
     yc = phien_am.chuan_hoa({"audio": "a.wav"})
     assert (yc.he, yc.model) == ("ltt", "large-v3")
-    yc = phien_am.chuan_hoa({"audio": "a.wav", "he": "ltt_turbo"})
-    assert yc.model == sohe.HE["ltt_turbo"].model
-    with pytest.raises(phien_am.LoiPhienAm):
-        phien_am.chuan_hoa({"audio": "a.wav", "he": "khong_co"})
+    # Chủ dự án gỡ `ltt_turbo` 22/09: chỉ còn hệ chuẩn.
+    assert list(sohe.HE) == ["ltt"]
+    for la in ("ltt_turbo", "khong_co"):
+        with pytest.raises(phien_am.LoiPhienAm):
+            phien_am.chuan_hoa({"audio": "a.wav", "he": la})
+
+
+def test_co_che_so_he_them_mot_muc_la_chon_duoc(monkeypatch) -> None:
+    """Cơ chế mở: thêm MỘT mục vào `HE` là `chuan_hoa` nhận và đổi model."""
+    monkeypatch.setitem(sohe.HE, "he_thu", sohe.He(
+        ma="he_thu", ten="Thu", mo_ta="he thu nghiem", model="model-thu"))
+    yc = phien_am.chuan_hoa({"audio": "a.wav", "he": "he_thu"})
+    assert (yc.he, yc.model) == ("he_thu", "model-thu")
 
 
 def test_manifest_khai_he_va_khoa_idempotency_gom_he() -> None:
@@ -121,7 +130,7 @@ def _gia_moi_truong(monkeypatch, tmp_path, tra_theo_lang: dict) -> tuple[Path, l
     monkeypatch.setattr(phien_am, "audio_duration_seconds", lambda p: 8.0)
 
     def _stt(duong, *, ten_ho_so, model, ngon_ngu):
-        goi.append((model, ngon_ngu))
+        goi.append((model, ngon_ngu, ten_ho_so))
         return copy.deepcopy(tra_theo_lang.get(ngon_ngu, {"segments": []}))
 
     monkeypatch.setattr(phien_am.stt, "phien_am", _stt)
@@ -136,16 +145,29 @@ def test_chay_tu_do_rong_thi_thu_lai_en_roi_vi_va_ap_V5(monkeypatch, tmp_path) -
     audio, goi = _gia_moi_truong(monkeypatch, tmp_path, {"vi": kq_vi})
     kq = phien_am.chay(phien_am.chuan_hoa({"audio": str(audio)}))
     assert [g[1] for g in goi] == [None, "en", "vi"]
+    # Lượt thử lại `vi` đi hồ sơ beam 5 / best_of 3 như bot gốc.
+    assert [g[2] for g in goi] == [phien_am.HO_SO_STT, phien_am.HO_SO_STT,
+                                   phien_am.HO_SO_STT_VI]
     chu = " ".join(d["text"] for d in kq.doan if d["type"] == "speech")
     assert "Trưng Trắc" in chu and "chưng chắc" not in chu
     assert all(set(d) == set(phien_am.KHOA_DAY_DU) for d in kq.doan)
     assert kq.ngon_ngu == "vi"
 
 
-def test_chay_he_turbo_goi_dung_model(monkeypatch, tmp_path) -> None:
-    kq_en = {"language": "en", "language_probability": 0.99, "segments": [
+@pytest.mark.parametrize(("lang", "ho_so"), [
+    ("vi", phien_am.HO_SO_STT_VI), ("en", phien_am.HO_SO_STT)])
+def test_ep_ngon_ngu_chon_ho_so_nhu_bot_goc(monkeypatch, tmp_path, lang, ho_so) -> None:
+    """Ép `vi` ⇒ beam 5/best_of 3 (`whisper_integration.py:283-297`); ép `en` ⇒ beam 1."""
+    kq = {"language": lang, "language_probability": 0.99, "segments": [
         _doan("Grog stands tall with a pickaxe in hand.", 0.5, 0.5)]}
-    audio, goi = _gia_moi_truong(monkeypatch, tmp_path, {"en": kq_en})
-    phien_am.chay(phien_am.chuan_hoa(
-        {"audio": str(audio), "language": "en", "he": "ltt_turbo"}))
-    assert goi == [(sohe.HE["ltt_turbo"].model, "en")]
+    audio, goi = _gia_moi_truong(monkeypatch, tmp_path, {lang: kq})
+    phien_am.chay(phien_am.chuan_hoa({"audio": str(audio), "language": lang}))
+    assert goi == [("large-v3", lang, ho_so)]
+
+
+def test_ho_so_vi_khop_bot_goc() -> None:
+    from platform_core.stt import ho_so
+
+    vi = ho_so.lay(phien_am.HO_SO_STT_VI)
+    assert (vi["beam_size"], vi["best_of"], vi["word_timestamps"]) == (5, 3, True)
+    assert "vad_filter" not in vi and "initial_prompt" not in vi

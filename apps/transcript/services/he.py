@@ -33,15 +33,8 @@ HE: dict[str, He] = {
         mo_ta="Whisper large-v3 + quy tắc LTT (hệ gốc, mặc định)",
         model="large-v3",
     ),
-    # Đo 22/09 trên bộ 2 file thật của chủ dự án (`TestVoice`): EN WER 0.038 so với
-    # 0.064 của hệ gốc, VI 0.040 so với 0.038; nhanh hơn ~4 lần; có mốc từ native.
-    # MIT (deepdml/faster-whisper-large-v3-turbo-ct2).
-    "ltt_turbo": He(
-        ma="ltt_turbo",
-        ten="LTT nhanh",
-        mo_ta="Whisper large-v3-turbo + cùng quy tắc LTT (nhanh hơn, EN tốt hơn)",
-        model="deepdml/faster-whisper-large-v3-turbo-ct2",
-    ),
+    # `ltt_turbo` (large-v3-turbo) đã thử 22/09 và bị chủ dự án GỠ cùng ngày:
+    # giữ một hệ chuẩn. Thêm hệ mới = thêm một mục ở đây (+ test).
 }
 
 

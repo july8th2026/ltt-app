@@ -53,6 +53,8 @@ log = logging.getLogger("apps.transcript")
 #: Hồ sơ STT của App này — tên NĂNG LỰC, không phải tên App.
 #: `moc_tu_vad_ngoai` = có mốc từ, VAD chạy ở tầng trên chứ không trong whisper.
 HO_SO_STT = "moc_tu_vad_ngoai"
+#: Cùng năng lực, ngôn ngữ `vi`: beam 5 / best_of 3 như bot gốc (ép vi và lượt thử lại vi).
+HO_SO_STT_VI = "moc_tu_vad_ngoai_vi"
 
 #: Khoá bắt buộc của MỘT đoạn ở đầu ra — đúng tập mà
 #: `_validate_output_segments_strict` của bot legacy cưỡng chế.
@@ -263,7 +265,8 @@ def _stt_kieu_legacy(duong: Path, yc: YeuCau) -> tuple[dict, list[dict]]:
     kq: dict = {}
     doan: list[dict] = []
     for lang in thu:
-        kq = stt.phien_am(duong, ten_ho_so=HO_SO_STT, model=yc.model,
+        ho_so = HO_SO_STT_VI if lang == "vi" else HO_SO_STT
+        kq = stt.phien_am(duong, ten_ho_so=ho_so, model=yc.model,
                           ngon_ngu=lang)
         doan = chuan_doan_tho(kq.get("segments") or [])
         if doan:
