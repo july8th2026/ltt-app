@@ -12,6 +12,35 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-23 — Task 13: gỡ suy diễn lỗi cũ ở A/B/LTTCODE; 4xx không được phạt khoá
+
+Plan `docs/superpowers/plans/2026-09-21-chuan-hoa-ngu-nghia-loi-llm.md` Task 13 (chủ dự án cho làm ngay,
+miễn điều kiện "một chu kỳ" sau khi đo 12 giờ log: legacy 0, mismatch 0, unknown 0).
+
+- **Gỡ:** B bỏ khoá `ly_do/truong/tran/thay/legacy` khỏi thân lỗi (HTTP status dây giữ nguyên, spec §3);
+  A bỏ decoder legacy, boolean `ban/qua_dai/het_gio`, cờ `LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS` và
+  renderer cũ; LTTCODE 0.2.6 bỏ đoán lỗi theo câu chữ và `error.type` Anthropic.
+- **Hai lỗi bản gỡ tự gây ra, sửa tại chỗ:** (1) 4xx không kèm v1 rơi vào `upstream_unknown`, mà mã đó
+  nằm trong `penalizes_key` ⇒ một khách gửi ảnh hỏng có thể tắt model nhà (D-005/L-09). Chốt lại ranh
+  giới: **status không sinh `canonical_code`, nhưng 4xx vẫn quyết định lớp lỗi + chính sách**; thêm rào
+  `penalizes_key` trả False cho mọi 4xx trừ 401/403 (`e30b95e4`, `e5e0b210`). (2) Test mới của làn T13
+  tự đặt kỳ vọng ngược với phép canh gác L-09 `test_1244` — hợp nhất thay vì xoá luật cũ.
+- **Hồi quy production từ 22/09 được phát hiện và sửa:** sau 200 trên `/v1/messages`, bận/hết giờ đi ra
+  `rate_limit_error`/`api_error`; Claude Code 2.1.275 chỉ tự thử lại khi thấy `overloaded_error` ⇒ khách
+  mất lượt. Renderer khôi phục `overloaded_error` cho `concurrency_limited`, `provider_overloaded`,
+  `model_loading`, `upstream_timeout`, `stream_idle_timeout`; `canonical_code` vẫn giữ nghĩa thật.
+- **Gate/deploy:** 30 tệp test nhắm 863 passed/0 failed; L1 `--doi --tu 24271a8a` PASS; deploy **B trước**
+  (snapshot tự chụp) **rồi A** `b6fbb220` (lệch 0, ready 200). Probe production 3/3; `live --minutes 60`:
+  7 sự kiện, request ID 100%, unknown 0, legacy 0, mismatch 0; fixture 265/265.
+- **LTTCODE 0.2.6** phát dev 100 % (`b1bc1e3`), SHA-256 `11d405557d6f86a4e0e8cd6883b17c7865454b3f61e7c7d2364058b215a759fe`.
+- **Số đo cho phiên VGA máy B:** `llm_gateway/deploy/kiem_tra.ps1` sau deploy = 16 ĐẠT / 1 HỎNG, phép
+  "toc do >= 50 tok/s (card sach)" ra **29,4 tok/s** (model vừa nạp) và **41,3 tok/s** (đã ấm), GPU rảnh
+  (3090: 1%, 118 MiB). Thay đổi máy B của Task 13 chỉ là thân lỗi JSON (9 thêm/30 xoá, không đụng tham số
+  sinh, không chép `llama-swap.yaml`) ⇒ nghi liên quan mod VGA 22/09. Đã nhắn hai lần, tin bị giữ chờ
+  duyệt rồi hết hạn nên ghi ở đây.
+- **Bẫy đo:** `inject --base-url` nhận GỐC; truyền `.../api/v1` làm URL thành `/api/v1/v1/messages` ⇒ 404
+  route-không-tồn-tại trùng status kỳ vọng, report trông như "A mất `ltt_error`". Ghi ở runbook §9.
+
 ## 2026-09-22 (đêm) — App `transcript`: đối soát quy tắc `bot_transcript`, mở cho khách (web + palette + `/api/v1`)
 
 Tiếp quản phiên LTTCODE "Vận hành hệ thống" (bàn giao: `C:\Users\Thang Tuong\.claude\ltt\khoi-phuc-2026-09-22\BAN_GIAO_van-hanh.md`).
