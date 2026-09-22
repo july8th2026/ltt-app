@@ -19454,3 +19454,18 @@ msgstr "The video is already in the target language — choose a different targe
 
 msgid "Giọng này đọc {lan}, không đọc được bản {dich}."
 msgstr "This voice reads {lan}; it cannot read a {dich} script."
+
+msgid "Không chạy được bộ đo hình."
+msgstr "Could not run the picture checker."
+
+msgid "libvmaf không trả về khung nào."
+msgstr "libvmaf returned no frames."
+
+msgid "Không chạy được VMAF."
+msgstr "Could not run VMAF."
+
+msgid "VMAF thất bại: {e}"
+msgstr "VMAF failed: {e}"
+
+msgid "Đang đo chất lượng hình (VMAF)"
+msgstr "Measuring picture quality (VMAF)"

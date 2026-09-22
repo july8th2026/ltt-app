@@ -30,6 +30,7 @@ dieu khac nhau — va tai lieu se thua, vi ma chay con tai lieu thi khong.
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 
 from platform_core import media
@@ -45,21 +46,80 @@ from . import tach_tieng, thoi_gian
 #: ⭐ 2 → 3 o pha 27: bo kiem co them T14/T15/T16. Khong nang so nay thi mot
 #:    lan chay lai se dung lai bao cao cu tu cache — bao cao do mot bo luat
 #:    **chua biet ba phep kiem nay ton tai** lam ra, va no se bao "dat".
-PHIEN_BAN_QC = 3
+PHIEN_BAN_QC = 4
+#: ⭐ 3 → 4 o ASV final (lan ky-thuat): T13 bo YAVG tu dat, thay bang
+#:    `blackdetect` + `freezedetect` cua ffmpeg; them T17 (giai ma ca tep) va
+#:    T18 (VMAF cua lan ma hoa lai). Bang do: `docs/auto_scan_video_final/L_KY_THUAT.md`.
 
-#: T13 — do sang trung binh toi thieu cua ban ra (thang 0-255 tren kenh Y).
-#:
-#: 🔴 Mot tep hop le, dung thoi luong, dung am luong, va **toan mau den** van la
-#:    mot lan giao hong. Truoc pha 18 khong chot nao bat duoc dieu do: T1 chi hoi
-#:    "co luong hinh khong", con luong hinh toan den van la mot luong hinh.
-#:
-#: ⚠️ 2,0 la nguong RAT thap, co y: mot canh dem that co the trung binh duoi 10.
-#:    Ta khong doan chat luong nghe thuat o day — ta chi bat truong hop **khong
-#:    co gi ca**, va bat no bang mot con so khong the nham voi mot canh toi.
-DO_SANG_TOI_THIEU = 2.0
+# ── T13 — khung den / hinh dong bang: bo loc CHUAN cua ffmpeg ─────────────────
+#
+# 🔴 Ban truoc do YAVG trung binh cua 12 khung lay mau voi nguong 2/255 TU DAT.
+#    No khong bat duoc mot ban ra den 40% hay dong bang mot khung suot 30 giay,
+#    va con so 2/255 khong co nguon. Da xoa.
+#
+# ⭐ Tham so = MAC DINH tai lieu ffmpeg (ffmpeg-filters, muc blackdetect /
+#    freezedetect), khong chinh:
+#      blackdetect  d=2.0      do dai toi thieu mot khoang den (giay)
+#                   pic_th=0.98 ti le diem anh "den" de goi ca khung la den
+#                   pix_th=0.10 nguong do sang mot diem anh (0-1)
+#      freezedetect n=-60dB    dung sai nhieu (MAFD) giua hai khung
+#                   d=2        do dai toi thieu mot khoang dong bang (giay)
+#
+# 🔑 **So voi NGUON, khong so voi mot ti le tuyet doi.** Mot nguon hop le co the
+#    dong bang ca video (podcast mot anh tinh, slide) hay co man den mo dau;
+#    ban ra la mot TAP CON thoi gian cua nguon (hai preset), nen render dung thi
+#    so giay den/dong bang cua ban ra KHONG vuot cua nguon. HONG khi phan vuot
+#    > `DEN_DONG_DU_S` — tuc render da TAO RA hinh den / dong bang.
+#    Do tren 4 video that (576p, 107-275 s): nguon 0 s den, 0 s dong bang; ban
+#    ma hoa lai libx264 crf23: 0 s / 0 s ⇒ lan ma hoa khong sinh khoang nao.
+BLACKDETECT = "blackdetect=d=2.0:pic_th=0.98:pix_th=0.10"
+FREEZEDETECT = "freezedetect=n=-60dB:d=2"
+#: Phan vuot cho phep (giay): chi de hap thu rung moc thoi gian o bien khoang.
+#: Moi khoang ffmpeg bao ra da dai >= 2 s (`d`), nen mot khoang MOI bat ky
+#: deu vuot con so nay.
+DEN_DONG_DU_S = 0.5
 
-#: T13 — so khung lay mau de do do sang. Trai deu tren ca ban ra.
-SO_KHUNG_DO_SANG = 12
+# ── T18 — VMAF cua lan MA HOA LAI (chi preset cat) ─────────────────────────────
+#
+# 🔑 Ban ra khac nguon CO CHU DICH (cat, che, logo, chu, phu de), nen VMAF
+#    nguon-vs-ra la sai. Tham chieu = CHINH chuoi loc render (`loc_tham_chieu`)
+#    chay lai tren nguon, KHONG ma hoa, so tung khung voi ban da ma hoa trong
+#    CUNG mot lenh ffmpeg (khong ghi tep tham chieu) ⇒ do DUNG thiet hai cua bo
+#    ma hoa, khong gi khac.
+#
+# ⭐ Mo hinh theo khung (Netflix/vmaf `resource/doc/faq.md`, `models.md`):
+#    `vmaf_v0.6.1` du doan TV 1080p xem o 3H; tinh o 576p goc tuong duong xem o
+#    ~5,6H va che giau loi ⇒ ca hai phia duoc CO GIAN vao khung 1920x1080 (giu ti
+#    le, bicubic) nhu FAQ huong dan. Canh ngan >= 2160 ⇒ `vmaf_4k_v0.6.1` o do
+#    phan giai goc. KHONG bat `phone_model`: san pham chua khai muc tieu dien
+#    thoai, va mo hinh TV la phia NGHIEM hon.
+MO_HINH_VMAF = "vmaf_v0.6.1"
+MO_HINH_VMAF_4K = "vmaf_4k_v0.6.1"
+#: Lay 1 khung / N de tinh (libvmaf `n_subsample`).
+#:
+#: ⭐ Do tren 4 video that: sub5 lech sub1 **0,01-0,10 diem** o diem trung binh,
+#:    ma re hon 3 lan (v1: 318,9 s -> 97,2 s tren 2 luong). Bang do:
+#:    `docs/auto_scan_video_final/L_KY_THUAT.md` §2.
+VMAF_N_SUBSAMPLE = 5
+
+#: Nguong HONG tren diem VMAF TRUNG BINH (khong phai khung te nhat).
+#:
+#: 🔑 **Khong phai mot con so cam giac — no nam giua hai dam may DA DO** (4 video
+#:    that, chuoi loc render that, mo hinh 1080p):
+#:
+#:        bo ma hoa san pham (libx264 veryfast crf23)   86,3 · 87,1 · 88,6 · 90,1
+#:        crf30 (hong nhe)                              62,6 · 67,7 · 68,2 · 68,9
+#:        crf36 / crf45 (hong nang)                     36,7-47,8 / 11,7-17,6
+#:        tham chieu khong mat mat (FFV1) — chieu am     98,2-100,0
+#:
+#: ⇒ 75 cach ban te nhat cua duong SAN XUAT 11,3 diem ve phia duoi va cach ban
+#:   tot nhat cua duong HONG 6,1 diem ve phia tren. Sai so day ve phia KHONG
+#:   hanh dong: mot muc HONG o day chan mot video da render xong.
+#:
+#: ⚠️ Khung te nhat cua mot ban crf23 binh thuong xuong toi 70,2 — nen chot o
+#:    `nho_nhat` se danh hong nhung lan chay hoan toan binh thuong. Bao cao van
+#:    GHI `nho_nhat`/`p5` de nguoi doc thay phan duoi cua phan bo.
+VMAF_TOI_THIEU = 75.0
 
 #: T14 — chinh sach render. Khong co nguong: hoac khop, hoac khong.
 #:
@@ -159,44 +219,166 @@ def bam_luong_hinh(duong: str, *, timeout: int = 600) -> str:
     return ra.split("=", 1)[1] if "=" in ra else ra
 
 
-def do_sang_trung_binh(duong: str, *, so_khung: int = 0,
-                       thoi_luong: float = 0.0, timeout: int = 600) -> float:
-    """Do sang trung binh cua ban ra, lay mau trai deu. -1 neu khong do duoc.
+_RE_DEN = re.compile(r"black_start:\s*([0-9.]+)\s+black_end:\s*([0-9.]+)")
+_RE_DONG_BAT = re.compile(r"freeze_start:\s*([0-9.]+)")
+_RE_DONG_KET = re.compile(r"freeze_end:\s*([0-9.]+)")
 
-    🔑 Lay mau chu khong duyet het: mot video 2 gio co 216.000 khung, va cau hoi
-       "ban ra co phai toan mau den khong" khong can 216.000 phep do. Muoi hai
-       diem trai deu tra loi no, va tra loi trong mot phan giay.
 
-    ⛔ Do tren kenh Y (do choi) chu khong tren mau: mot ban ra hong theo kieu
-       "toan den" thi Y ~ 0 bat ke khong gian mau.
+def lenh_do_hinh(duong: str) -> list[str]:
+    """MOT luot giai ma ca tep: `blackdetect` + `freezedetect` + bat loi giai ma.
+
+    ⭐ Khong `-map`: ffmpeg chon luong hinh VA luong tieng tot nhat, nen T17 giai
+       ma ca hai. `level+info` gan nhan `[error]` cho tung dong — cach duy nhat
+       tach loi giai ma khoi dong bao cua hai bo loc (cung muc info).
     """
-    so_khung = so_khung or SO_KHUNG_DO_SANG
-    dai = float(thoi_luong or 0.0)
-    if dai <= 0 or so_khung <= 0:
-        return -1.0
+    return [media.ffmpeg_bin(), "-hide_banner", "-nostdin",
+            "-loglevel", "level+info", "-i", str(duong),
+            "-vf", f"{BLACKDETECT},{FREEZEDETECT}", "-f", "null", "-"]
 
-    tong, dem = 0.0, 0
-    for i in range(so_khung):
-        # Trai deu, tranh dung sat hai dau (khung dau/cuoi hay la mau den THAT).
-        t = dai * (i + 0.5) / so_khung
-        cmd = [media.ffmpeg_bin(), "-v", "error", "-ss", f"{t:.3f}",
-               "-i", duong, "-frames:v", "1",
-               "-vf", "scale=64:36,format=gray,signalstats",
-               "-f", "null", "-"]
-        try:
-            r = subprocess.run(cmd, capture_output=True, timeout=timeout)
-        except subprocess.TimeoutExpired:
-            continue
-        van = (r.stderr or b"").decode("utf-8", "replace")
-        for khoa in ("lavfi.signalstats.YAVG=", "YAVG:"):
-            if khoa in van:
-                try:
-                    tong += float(van.split(khoa, 1)[1].split()[0])
-                    dem += 1
-                except (IndexError, ValueError):
-                    pass
-                break
-    return round(tong / dem, 3) if dem else -1.0
+
+def doc_do_hinh(stderr: str, *, thoi_luong: float, ma_thoat: int = 0) -> dict:
+    """Doc stderr cua `lenh_do_hinh`. Ham thuan — kiem duoc khong can ffmpeg.
+
+    ⚠️ `freezedetect` khong in `freeze_end` cho mot khoang dong bang keo toi het
+       tep; khi do khoang ket o `thoi_luong`.
+    """
+    van = stderr or ""
+    den = [(float(a), float(b)) for a, b in _RE_DEN.findall(van)]
+    bat = [float(x) for x in _RE_DONG_BAT.findall(van)]
+    ket = [float(x) for x in _RE_DONG_KET.findall(van)]
+    if len(ket) < len(bat):
+        ket.append(max(float(thoi_luong or 0.0), bat[-1]))
+    # ⚠️ Cat cho BANG nhau truoc khi ghep: mot `freeze_end` mo coi (ffmpeg doi
+    #    cach in, tep hong) se lam `zip` cat IM LANG mot khoang dong bang that.
+    ket = ket[:len(bat)]
+    dong = list(zip(bat, ket, strict=True))
+    loi = [dong_log.strip() for dong_log in van.splitlines()
+           if "[error]" in dong_log or "[fatal]" in dong_log]
+    return {
+        "den_s": round(sum(b - a for a, b in den), 3),
+        "dong_s": round(sum(b - a for a, b in dong), 3),
+        "khoang_den": [[round(a, 3), round(b, 3)] for a, b in den][:20],
+        "khoang_dong": [[round(a, 3), round(b, 3)] for a, b in dong][:20],
+        "so_loi_giai_ma": len(loi),
+        "loi_giai_ma": loi[:5],
+        "ma_thoat": int(ma_thoat),
+    }
+
+
+def do_hinh(duong: str, *, thoi_luong: float, timeout: int = 3600) -> dict:
+    """Chay `lenh_do_hinh`. Nem `QcError` khi KHONG CHAY duoc ffmpeg — khac voi
+    ffmpeg chay va bao loi giai ma (do la ket qua do, T17 doc no)."""
+    try:
+        r = subprocess.run(lenh_do_hinh(duong), capture_output=True,
+                           timeout=timeout)
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise QcError(_t('Không chạy được bộ đo hình.')) from exc
+    return doc_do_hinh((r.stderr or b"").decode("utf-8", "replace"),
+                       thoi_luong=thoi_luong, ma_thoat=r.returncode)
+
+
+# ── T18 — VMAF ────────────────────────────────────────────────────────────────
+
+#: Thu tu dau vao cua lenh VMAF. `2..` = logo, TRUNG voi `ket_xuat.dung_lenh`
+#: (o do `1` la ban phoi am — chuoi loc hinh khong doc no), nen chuoi loc render
+#: dung lai NGUYEN VAN duoc: `[0:v]` van la nguon, `[2+i:v]` van la logo.
+CHI_SO_BAN_RA = 1
+CHI_SO_LOGO_DAU = 2
+
+
+def loc_tham_chieu(hinh: dict, *, duong_chu: list[str], duong_ass: str) -> str:
+    """Chuoi loc hinh cua preset cat, dung DUNG tham so `ket_xuat.dung_lenh` dua
+    cho `che_do_render.loc_cat_noi`. `test_2012` chot hai ben bang nhau."""
+    from . import che_do_render as cdr
+
+    khoang = [(float(b), float(k)) for b, k in (hinh.get("khoang_giu") or ())]
+    return cdr.loc_cat_noi(
+        khoang, vung=(hinh.get("vung") or ()),
+        lop_phu=list(hinh.get("lop_phu") or ()), duong_chu=list(duong_chu),
+        cao_khung=int(hinh.get("cao_khung") or 0),
+        ds_logo=list(hinh.get("logo") or ()),
+        rong_khung=int(hinh.get("rong_khung") or 0),
+        chi_so_logo_dau=CHI_SO_LOGO_DAU, duong_ass=duong_ass)
+
+
+def chon_mo_hinh_vmaf(rong: int, cao: int) -> tuple[str, str]:
+    """(mo hinh, bo loc co gian) theo khung ban ra. Xem khoi T18 o dau tep."""
+    if min(int(rong or 0), int(cao or 0)) >= 2160:
+        return MO_HINH_VMAF_4K, ""
+    return MO_HINH_VMAF, ("scale=w=1920:h=1080:force_original_aspect_ratio="
+                          "decrease:flags=bicubic,")
+
+
+def _thoat_duong_loc(duong: str) -> str:
+    return str(duong).replace("\\", "/").replace(":", "\\:")
+
+
+def lenh_vmaf(*, duong_nguon: str, duong_ra: str, loc_hinh: str,
+              duong_logo: list[str], rong: int, cao: int, duong_log: str,
+              n_subsample: int = 0) -> list[str]:
+    """Mot lenh: nguon -> chuoi loc render -> [ref]; ban ra -> [dist]; libvmaf.
+
+    ⚠️ libvmaf: dau vao THU NHAT la ban bi mo (distorted), thu hai la tham
+       chieu. `setpts=PTS-STARTPTS` hai phia + `ts_sync_mode=nearest` ghep khung
+       theo moc thoi gian; `shortest=1` dung khi mot phia het.
+    """
+    mo_hinh, co_gian = chon_mo_hinh_vmaf(rong, cao)
+    n = int(n_subsample or VMAF_N_SUBSAMPLE)
+    loc = (f"{loc_hinh};"
+           f"[ra]setpts=PTS-STARTPTS,{co_gian}format=yuv420p[ref];"
+           f"[{CHI_SO_BAN_RA}:v]setpts=PTS-STARTPTS,{co_gian}format=yuv420p[dist];"
+           f"[dist][ref]libvmaf=model=version={mo_hinh}:n_subsample={n}"
+           f":shortest=1:ts_sync_mode=nearest:log_fmt=json"
+           f":log_path='{_thoat_duong_loc(duong_log)}'")
+    cmd = [media.ffmpeg_bin(), "-hide_banner", "-nostdin", "-v", "error",
+           "-i", str(duong_nguon), "-i", str(duong_ra)]
+    for d in duong_logo:
+        cmd += ["-i", str(d)]
+    return cmd + ["-filter_complex", loc, "-f", "null", "-"]
+
+
+def doc_vmaf(goi: dict, *, mo_hinh: str = MO_HINH_VMAF) -> dict:
+    """Log JSON cua libvmaf -> so tong hop. Ham thuan."""
+    khung = sorted(float(f["metrics"]["vmaf"]) for f in (goi.get("frames") or [])
+                   if "vmaf" in (f.get("metrics") or {}))
+    if not khung:
+        raise QcError(_t('libvmaf không trả về khung nào.'))
+    gop = ((goi.get("pooled_metrics") or {}).get("vmaf") or {})
+    tb = float(gop.get("mean", sum(khung) / len(khung)))
+    return {
+        "mo_hinh": mo_hinh,
+        "trung_binh": round(tb, 3),
+        "trung_binh_dieu_hoa": round(float(gop.get("harmonic_mean", tb)), 3),
+        "nho_nhat": round(khung[0], 3),
+        "p5": round(khung[int(len(khung) * 0.05)], 3),
+        "so_khung": len(khung),
+    }
+
+
+def do_vmaf(*, duong_nguon: str, duong_ra: str, loc_hinh: str,
+            duong_logo: list[str], rong: int, cao: int, thu_muc: str,
+            timeout: int = 7200) -> dict:
+    """Chay `lenh_vmaf`. Nem `QcError` khi khong do duoc (thieu libvmaf, loi
+    ffmpeg) — nguoi goi bien thanh `khong_kha_dung`, KHONG lui ve heuristic."""
+    import os
+    import time
+
+    log = os.path.join(thu_muc, "vmaf.json")
+    cmd = lenh_vmaf(duong_nguon=duong_nguon, duong_ra=duong_ra,
+                    loc_hinh=loc_hinh, duong_logo=duong_logo, rong=rong,
+                    cao=cao, duong_log=log)
+    t0 = time.monotonic()
+    try:
+        r = subprocess.run(cmd, capture_output=True, timeout=timeout)
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise QcError(_t('Không chạy được VMAF.')) from exc
+    if r.returncode != 0 or not os.path.exists(log):
+        raise QcError(_t('VMAF thất bại: {e}').format(
+            e=(r.stderr or b"").decode("utf-8", "replace")[-300:]))
+    with open(log, encoding="utf-8") as f:
+        kq = doc_vmaf(json.load(f), mo_hinh=chon_mo_hinh_vmaf(rong, cao)[0])
+    kq["giay"] = round(time.monotonic() - t0, 2)
+    return kq
 
 
 def kiem(*, tt_ra: dict, tt_nguon: dict, am_luong: dict, ke_hoach: dict,
@@ -204,8 +386,12 @@ def kiem(*, tt_ra: dict, tt_nguon: dict, am_luong: dict, ke_hoach: dict,
          bam_ra: str = "", bam_nguon: str = "",
          che_do_thoi_gian: str = "fit_original",
          che_do_render: str = "", thoi_luong_mong_doi: float = 0.0,
-         do_sang: float | None = None, ban_hinh: dict | None = None) -> dict:
-    """Do het muoi hai dung sai. Tra ve bao cao; KHONG nem khi co muc hong.
+         hinh_ra: dict | None = None, hinh_nguon: dict | None = None,
+         vmaf: dict | None = None, ban_hinh: dict | None = None) -> dict:
+    """Do het cac dung sai T1-T18.
+
+    `hinh_ra`/`hinh_nguon` = `do_hinh(...)` cua ban ra / nguon (T13, T17).
+    `vmaf` = `do_vmaf(...)`, hoac `{"loi": "..."}` khi khong do duoc (T18). Tra ve bao cao; KHONG nem khi co muc hong.
 
     ⭐ Khong nem la mot quyet dinh, khong phai mot thieu sot: mot bao cao QC liet
        ke **moi** muc hong co ich hon mot ngoai le noi ve muc dau tien. Nguoi
@@ -367,29 +553,66 @@ def kiem(*, tt_ra: dict, tt_nguon: dict, am_luong: dict, ke_hoach: dict,
     muc.append(_muc("T12", DAT, "so doan bi cat da duoc bao cao",
                     so_doan_bi_cat=bi_cat))
 
-    # ── T13 — ban ra khong RONG, khong TOAN DEN ────────────────────────────
+    # ── T13 — render khong TAO RA hinh den / dong bang ─────────────────────
     #
-    # 🔴 Mot tep hop le, dung thoi luong, dung am luong, va **toan mau den** van
-    #    la mot lan giao hong — va truoc pha 18 khong chot nao bat duoc: T1 chi
-    #    hoi "co luong hinh khong", ma mot luong hinh toan den van la mot luong
-    #    hinh.
-    #
-    # ⚠️ Nguong RAT thap (2,0/255) co y: mot canh dem that co the trung binh
-    #    duoi 10. Ta khong doan chat luong nghe thuat — ta bat truong hop **khong
-    #    co gi ca**, bang mot con so khong the nham voi mot canh toi.
-    if do_sang is None:
+    # 🔴 Mot tep hop le, dung thoi luong, dung am luong, va **toan mau den** (hay
+    #    dong bang mot khung) van la mot lan giao hong — T1 chi hoi "co luong
+    #    hinh khong". Do bang `blackdetect`/`freezedetect` (tham so mac dinh cua
+    #    ffmpeg, xem dau tep), so PHAN VUOT cua ban ra so voi nguon.
+    if hinh_ra is None or hinh_nguon is None:
         muc.append(_muc("T13", KHONG_AP_DUNG,
-                        "chua do duoc do sang cua ban ra"))
-    elif float(do_sang) < 0:
-        muc.append(_muc("T13", KHONG_AP_DUNG,
-                        "khong lay duoc khung nao de do do sang"))
+                        "chua do duoc khung den / dong bang cua ban ra va nguon"))
     else:
-        t13 = float(do_sang) >= DO_SANG_TOI_THIEU
+        vuot_den = float(hinh_ra["den_s"]) - float(hinh_nguon["den_s"])
+        vuot_dong = float(hinh_ra["dong_s"]) - float(hinh_nguon["dong_s"])
+        t13 = vuot_den <= DEN_DONG_DU_S and vuot_dong <= DEN_DONG_DU_S
         muc.append(_muc("T13", DAT if t13 else HONG,
-                        "ban ra khong rong, khong toan den",
-                        do_sang=round(float(do_sang), 3),
-                        toi_thieu=DO_SANG_TOI_THIEU,
-                        so_khung=SO_KHUNG_DO_SANG))
+                        "render khong tao ra khung den hay hinh dong bang",
+                        den_ra_s=hinh_ra["den_s"], den_nguon_s=hinh_nguon["den_s"],
+                        dong_ra_s=hinh_ra["dong_s"],
+                        dong_nguon_s=hinh_nguon["dong_s"],
+                        ti_le_den_ra=(round(hinh_ra["den_s"] / d_ra, 4)
+                                      if d_ra > 0 else None),
+                        ti_le_dong_ra=(round(hinh_ra["dong_s"] / d_ra, 4)
+                                       if d_ra > 0 else None),
+                        khoang_den=hinh_ra.get("khoang_den") or None,
+                        khoang_dong=hinh_ra.get("khoang_dong") or None,
+                        du_s=DEN_DONG_DU_S))
+
+    # ── T17 — ban ra GIAI MA HET khong loi ──────────────────────────────────
+    #
+    # 🔑 ffprobe (T1) chi doc phan dau container. Mot tep cut cuoi, mot goi hong
+    #    giua chung van qua T1/T2 — chi giai ma ca tep moi thay. Cung luot ffmpeg
+    #    voi T13, nen khong ton them mot lan giai ma.
+    if hinh_ra is None:
+        muc.append(_muc("T17", KHONG_AP_DUNG, "chua giai ma duoc ban ra"))
+    else:
+        so_loi = int(hinh_ra.get("so_loi_giai_ma") or 0)
+        ma_thoat = int(hinh_ra.get("ma_thoat") or 0)
+        muc.append(_muc("T17", DAT if (so_loi == 0 and ma_thoat == 0) else HONG,
+                        "ban ra giai ma het khong loi",
+                        so_loi=so_loi, ma_thoat=ma_thoat,
+                        loi=hinh_ra.get("loi_giai_ma") or None))
+
+    # ── T18 — chat luong hinh sau MA HOA LAI (VMAF) ─────────────────────────
+    if str(che_do_render) != CAT_MA_HOA_LAI:
+        muc.append(_muc("T18", KHONG_AP_DUNG,
+                        "preset giu hinh sao chep luong hinh — T3/T14 da chung "
+                        "minh giong nguon tung bit, VMAF khong co gi de do",
+                        che_do_render=str(che_do_render or SAO_CHEP)))
+    elif vmaf is None:
+        muc.append(_muc("T18", KHONG_AP_DUNG, "chua do VMAF"))
+    elif vmaf.get("loi"):
+        # ⛔ Khong do duoc (thieu libvmaf...) => `khong_kha_dung`, KHONG lui
+        #    ve mot heuristic tu che (luat bo do, BRIEF_CHUNG).
+        muc.append(_muc("T18", KHONG_AP_DUNG, "khong_kha_dung",
+                        ly_do=str(vmaf.get("loi"))[:300]))
+    else:
+        tb = float(vmaf["trung_binh"])
+        muc.append(_muc("T18", DAT if tb >= VMAF_TOI_THIEU else HONG,
+                        "chat luong hinh sau ma hoa lai (VMAF, tham chieu = "
+                        "chuoi loc render khong ma hoa)",
+                        **dict(vmaf), toi_thieu=VMAF_TOI_THIEU))
 
     hinh = dict(ban_hinh or {})
 

@@ -101,10 +101,10 @@ def phien_ban_engine(stage_ten: str) -> str:
     if stage_ten == pipeline.EDIT_PLAN:
         from . import ban_bien_tap, canh, giai_doan_ban_bien_tap
         # 🔑 Ba con so, ba thu doi doc lap: ma cua giai doan, chinh sach cat, va
-        #    nguong tach canh. Thieu bat ky cai nao thi doi no xong cache van
+        #    bo tach canh (PHIEN_BAN_CANH). Thieu bat ky cai nao thi doi no xong cache van
         #    khop, va lan chay dung lai mot ban bien tap sinh boi luat CU.
         return (f"ban_bien_tap/{giai_doan_ban_bien_tap.PHIEN_BAN_MA}"
-                f"/{ban_bien_tap.PHIEN_BAN_BAN}/{canh.NGUONG_DOI_CANH}")
+                f"/{ban_bien_tap.PHIEN_BAN_BAN}/{canh.PHIEN_BAN_CANH}")
     if stage_ten == pipeline.CONTENT_PROCESS:
         from . import ai, van_ban
         # 🔴 **Hai dong nay tung doc mot module DA CHET, va hang so chung doc

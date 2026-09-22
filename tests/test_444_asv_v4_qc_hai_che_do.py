@@ -4,7 +4,7 @@ Bon nhom:
 
   A. T3 theo che do  — bam luong hinh chi co nghia o preset GIU HINH
   B. T2 theo che do  — thoi luong so voi MONG DOI, khong phai voi nguon
-  C. T13             — ban ra hop le nhung TOAN DEN van la mot lan giao hong
+  C. T13             — render TAO RA khung den / dong bang (blackdetect/freezedetect)
   D. Bang chung      — bao cao noi no da do theo luat nao, va song sot khi hong
 """
 from __future__ import annotations
@@ -12,6 +12,11 @@ from __future__ import annotations
 import pytest
 
 from apps.auto_scan_video import che_do_render as cdr, qc
+
+
+def _hinh(den=0.0, dong=0.0):
+    """Ket qua `qc.do_hinh` gia: so giay den / dong bang."""
+    return {"den_s": den, "dong_s": dong, "so_loi_giai_ma": 0, "ma_thoat": 0}
 
 
 def _dau_vao(**doi):
@@ -23,7 +28,8 @@ def _dau_vao(**doi):
         "ke_hoach": {"doan": [], "so_doan_bi_cat": 0, "troi_toi_da_ms": 0},
         "ban_ke_tieng": {"doan": []},
         "ban_dung_lop": [],
-        "do_sang": 40.0,
+        "hinh_ra": _hinh(),
+        "hinh_nguon": _hinh(),
     }
     goc.update(doi)
     return goc
@@ -122,35 +128,30 @@ def test_khong_khai_mong_doi_thi_lui_ve_thoi_luong_NGUON():
 
 def test_ban_ra_TOAN_DEN_bi_CHAN():
     """🔴 Mot tep **hop le, dung thoi luong, dung am luong, va toan mau den** van
-    la mot lan giao hong — va truoc pha 18 khong chot nao bat duoc no.
-
-    T1 chi hoi "co luong hinh khong", ma mot luong hinh toan den van la mot luong
-    hinh.
-    """
-    bc = qc.kiem(**_dau_vao(do_sang=0.4))
+    la mot lan giao hong. T1 chi hoi "co luong hinh khong"."""
+    bc = qc.kiem(**_dau_vao(hinh_ra=_hinh(den=100.0)))
     assert _muc(bc, "T13")["trang_thai"] == qc.HONG
     assert not bc["dat"]
 
 
-def test_canh_TOI_THAT_van_qua_duoc():
-    """⚠️ Nguong RAT thap co y: mot canh dem that co the trung binh duoi 10. Ta
-    khong doan chat luong nghe thuat — ta bat truong hop **khong co gi ca**."""
-    bc = qc.kiem(**_dau_vao(do_sang=8.0))
+def test_render_TAO_RA_hinh_DONG_BANG_bi_CHAN():
+    """Mot khung lap lai 30 giay (vd `-shortest` keo dai khung cuoi) la hong."""
+    bc = qc.kiem(**_dau_vao(hinh_ra=_hinh(dong=30.0)))
+    assert _muc(bc, "T13")["trang_thai"] == qc.HONG
+
+
+def test_NGUON_da_den_dong_bang_thi_ban_ra_giong_the_van_DAT():
+    """🔑 So voi NGUON: podcast mot anh tinh dong bang ca video, va ban ra trung
+    thanh voi no khong phai loi render."""
+    bc = qc.kiem(**_dau_vao(hinh_ra=_hinh(den=3.0, dong=100.0),
+                            hinh_nguon=_hinh(den=3.0, dong=100.0)))
     assert _muc(bc, "T13")["trang_thai"] == qc.DAT
 
 
-def test_khong_do_duoc_do_sang_thi_KHONG_AP_DUNG_chu_khong_HONG():
-    """⛔ Khong do duoc khac han do ra sai. Bien mot phep do that bai thanh mot
-    ket luan "hong" la tu tao ra bao dong gia — va bao dong gia lam nguoi ta
-    ngung doc bao cao."""
-    assert _muc(qc.kiem(**_dau_vao(do_sang=None)), "T13")["trang_thai"] == qc.KHONG_AP_DUNG
-    assert _muc(qc.kiem(**_dau_vao(do_sang=-1.0)), "T13")["trang_thai"] == qc.KHONG_AP_DUNG
-
-
-def test_do_sang_KHONG_duyet_het_khung():
-    """🔑 Mot video 2 gio co 216.000 khung, va cau hoi "co phai toan den khong"
-    khong can 216.000 phep do. Chot rang so mau la HUU HAN va nho."""
-    assert 0 < qc.SO_KHUNG_DO_SANG <= 32
+def test_khong_do_duoc_hinh_thi_KHONG_AP_DUNG_chu_khong_HONG():
+    """⛔ Khong do duoc khac han do ra sai."""
+    assert _muc(qc.kiem(**_dau_vao(hinh_ra=None)), "T13")["trang_thai"] == qc.KHONG_AP_DUNG
+    assert _muc(qc.kiem(**_dau_vao(hinh_nguon=None)), "T13")["trang_thai"] == qc.KHONG_AP_DUNG
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -176,7 +177,7 @@ def test_bao_cao_van_LIET_KE_MOI_muc_hong_chu_khong_nem():
     """Mot bao cao liet ke moi muc hong co ich hon mot ngoai le noi ve muc dau."""
     bc = qc.kiem(**_dau_vao(
         tt_ra={"co_video": False, "co_tieng": False, "thoi_luong": 999.0},
-        do_sang=0.0))
+        hinh_ra=_hinh(den=999.0)))
     assert len(bc["muc_hong"]) >= 3
     assert not bc["dat"]
 
