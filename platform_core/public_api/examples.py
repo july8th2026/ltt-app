@@ -704,9 +704,11 @@ NGU_CANH_NAM_SO = (
      "What the model is loaded with on our GPU. You never send this much: "
      "input and output share this window."),
     ("Hard input limit", "186,368",
-     "The most input we accept. Above it you get 413 — never a silent "
-     "truncation. It is the engine window minus the longest possible answer "
-     "and a margin for token estimation."),
+     "The most input we accept. Above it you get a 400 "
+     "(`context_window_exceeded`) — never a silent truncation; a streaming "
+     "Responses request instead gets a 200 with a terminal `response.failed` "
+     "event (`context_length_exceeded`). It is the engine window minus the "
+     "longest possible answer and a margin for token estimation."),
     ("Advertised context", f"{CUA_SO_CONG_BO:,}",
      "What you should configure your client with. It is 8% under the hard "
      "limit because your client counts tokens with its tokenizer and we count "
@@ -724,7 +726,9 @@ NGU_CANH_NAM_SO = (
      "without this ceiling one turn can outgrow every reserve."),
 )
 
-#: Vì sao một yêu cầu ăn `413`, và **cách sửa đúng chỗ**.
+#: Vì sao một yêu cầu bị từ chối vì vượt trần ngữ cảnh (`400
+#: context_window_exceeded`; Responses stream: `response.failed`), và **cách
+#: sửa đúng chỗ**.
 #:
 #: ⛔ Không khuyên "xoá phiên rồi làm lại". Đó là cách chắc chắn để mất việc
 #:    đang làm mà **không** sửa nguyên nhân — lần sau nó lặp lại y hệt.

@@ -248,10 +248,13 @@ _MUC_DA_DO = (
         "tieu_de": N_("Trần ngữ cảnh khác nhau giữa các model"),
         "noi_dung": N_(
             "Mỗi model có trần đầu vào riêng và trần này được công bố ở "
-            "/api/v1/models. Yêu cầu vượt trần bị từ chối bằng mã 413 kèm con số "
-            "trần thật, không bị cắt bớt âm thầm."),
-        # Do song 01/09: 413 kem limit_value dung cua tung model.
-        "do_bang": "P08/F-02 P08/L3",
+            "/api/v1/models. Yêu cầu vượt trần bị từ chối bằng mã 400 "
+            "(context_window_exceeded; cửa Responses dạng stream báo bằng sự "
+            "kiện response.failed) kèm con số trần thật, không bị cắt bớt âm "
+            "thầm."),
+        # Do song 01/09: 413 kem limit_value dung cua tung model (nhanh cu; da
+        # doi thanh 400 context_window_exceeded, xem test_1480).
+        "do_bang": "P08/F-02 P08/L3 test_1480",
     },
 )
 

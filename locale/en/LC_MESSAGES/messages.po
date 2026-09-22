@@ -19422,3 +19422,17 @@ msgstr "The matcher on PreToolUse/PostToolUse matches the TOOL NAME (pwsh, write
 
 msgid "Lệnh hook chạy bằng PowerShell. Nếu hook gọi chương trình ngoài (node, python, git…) thì mã thoát của chương trình đó KHÔNG tự thành mã thoát của hook: phải kết thúc bằng ; exit $LASTEXITCODE, nếu không exit 2 bị nuốt và hook không chặn."
 msgstr "Hook commands run through PowerShell. If a hook calls an external program (node, python, git…), that program's exit code does NOT automatically become the hook's exit code: the command has to end with ; exit $LASTEXITCODE, otherwise exit 2 is swallowed and the hook does not block."
+
+# Docs413 22/09: vuot tran ngu canh cong khai la 400 context_window_exceeded
+# (Responses stream: response.failed), khong con la 413 -- tests/test_1480.
+# Chuoi 413 cu (dieu_khoan.py, huong_dan.html) da doi noi dung nguon; ban dich
+# cu con lai o file nay khong con duoc tham chieu tu ma nguon.
+
+msgid "Mỗi model có trần đầu vào riêng và trần này được công bố ở /api/v1/models. Yêu cầu vượt trần bị từ chối bằng mã 400 (context_window_exceeded; cửa Responses dạng stream báo bằng sự kiện response.failed) kèm con số trần thật, không bị cắt bớt âm thầm."
+msgstr "Each model has its own input ceiling, published at /api/v1/models. A request over the ceiling is refused with a 400 (context_window_exceeded; a streaming Responses call instead reports it with a response.failed event) carrying the real limit; it is never silently truncated."
+
+msgid "Nếu bạn bị từ chối vì vượt trần ngữ cảnh giữa chừng"
+msgstr "If you get rejected for going over the context limit mid-conversation"
+
+msgid "Vượt trần thì bạn nhận mã 400 (context_window_exceeded) kèm đúng con số đã áp cho model bạn gọi — cửa Responses dạng stream báo bằng sự kiện response.failed thay vì đóng kết nối lặng lẽ. Chúng tôi KHÔNG bao giờ lặng lẽ cắt bớt lượt cũ: cắt đi thì thứ mất đầu tiên là chỉ dẫn hệ thống và kết quả tool, và bạn sẽ không biết là mình đã mất."
+msgstr "Go over the limit and you get a 400 (context_window_exceeded) carrying the number that actually applied to the model you called — a streaming Responses call instead reports it with a response.failed event instead of closing silently. We NEVER silently drop older turns: the first things to go would be your system instructions and your tool results, and you would have no way to know they were gone."
