@@ -30,7 +30,7 @@ import logging
 import time
 
 from fastapi import Body, Depends, Header, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
 from platform_core import credit
@@ -194,7 +194,7 @@ def register_chat_routes(api, config, tag: str) -> None:
         idempotency_key: str = Header(default="", alias="Idempotency-Key"),
         principal: Principal = Depends(require_scope(SCOPE_JOBS_CREATE)),
         db: Session = Depends(get_db),
-    ) -> JSONResponse:
+    ) -> Response:
         from platform_core.llm import ngat, phong_cho, thanh_toan
         from platform_core.runtime_noi_bo import luong as cua_luong
 

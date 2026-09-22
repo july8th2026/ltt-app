@@ -279,7 +279,8 @@ class OvhStaticIpPoolBackend:
                         and 0 < quote.with_tax_minor <= self._acquisition_ceiling
                         # Catalog quotes carry no contracts (None); the worker
                         # checks them on the real cart before any checkout.
-                        and quote.contract_fingerprints in (None, self._accepted_contracts)):
+                        # () = adopted cart offering no new terms (preview_cart).
+                        and quote.contract_fingerprints in (None, (), self._accepted_contracts)):
                     replenishable = 1
             except Exception as exc:
                 # Health is a read-only boundary; provider replies can contain
