@@ -52,6 +52,7 @@ def _phien(adapter, owner_id: str, nen_id: str):
         return
     from apps.video_crawler import phien
     from platform_core.db import get_session
+    phien.don_tam_cu(Path(tempfile.gettempdir()))    # thư mục của job bị `_het_gio` giết (review lần 2)
     with tempfile.TemporaryDirectory(prefix="vc_phien_") as tam:
         gen = get_session(); db = next(gen)
         try:
@@ -143,6 +144,9 @@ def _kham_pha(adapter, nen_id: str, nguon: dict, owner_id: str, tien_do) -> tupl
         muc = adapter.kham_pha(yc, bao_tien_do=tien_do)
     except LoiCao as e:
         raise _loi_job([e]) from e
+    import re
+    from apps.video_crawler.adapters.base import ID_AN_TOAN
+    muc = [m for m in muc if re.fullmatch(ID_AN_TOAN, str(m.id))]   # id làm khoá storage (review lần 2)
     muc = list({m.id: m for m in muc}.values())      # trùng id trong kết quả ⇒ một mục (review MAJOR 2)
     bo = 0
     if nguon.get("khong_trung"):

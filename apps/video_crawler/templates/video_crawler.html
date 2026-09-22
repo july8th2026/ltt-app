@@ -91,6 +91,7 @@
           <td>{{ n.ten }}</td>
           <td>{% if ph %}<span class="badge b-ok" data-phien="{{ n.id }}">Đã có phiên</span>
                 <small class="muted">{{ ph.so_cookie }} cookie · cập nhật {{ ph.cap_nhat_luc.strftime('%d/%m %H:%M') }}{% if ph.het_han_luc %} · hết hạn {{ ph.het_han_luc.strftime('%d/%m/%Y') }}{% endif %}</small>
+              {% elif n.id in phien_hong %}<span class="badge b-err" data-phien-hong="{{ n.id }}">Phiên hỏng — nhập lại</span>
               {% else %}<span class="muted">Chưa đăng nhập</span>{% endif %}</td>
           <td>
             <form method="post" action="{{ app.route_prefix }}/phien" enctype="multipart/form-data" class="vc-row">
@@ -99,7 +100,7 @@
               <label class="field"><span>hoặc chọn tệp</span><input type="file" name="cookies_tep" accept=".txt,text/plain"></label>
               <button class="btn" type="submit">Lưu phiên</button>
             </form>
-            {% if ph %}<form method="post" action="{{ app.route_prefix }}/phien/xoa">
+            {% if ph or n.id in phien_hong %}<form method="post" action="{{ app.route_prefix }}/phien/xoa">
               <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="nen_tang" value="{{ n.id }}">
               <button class="btn" type="submit">Xoá phiên</button></form>{% endif %}
           </td>

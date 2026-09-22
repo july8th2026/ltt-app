@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import contextlib
 import os
+import shutil
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -36,6 +38,7 @@ def _loc(cookies_txt: str, nen) -> tuple[list[str], datetime | None]:
     if not isinstance(cookies_txt, str) or len(cookies_txt.encode("utf-8")) > TOI_DA_BYTE:
         raise PhienKhongHopLe("Tệp cookie quá lớn hoặc không đọc được.")
     giu, ten_co, het_han = [], set(), []
+    cookies_txt = cookies_txt.lstrip("\ufeff")          # tệp xuất có BOM (review lần 2)
     for dong in cookies_txt.splitlines():
         dong = dong.rstrip("\r")
         if not dong or (dong.startswith("#") and not dong.startswith("#HttpOnly_")):
@@ -48,16 +51,22 @@ def _loc(cookies_txt: str, nen) -> tuple[list[str], datetime | None]:
             continue
         giu.append(dong)
         ten_co.add(phan[5])
-        try:
-            if int(phan[4]) > 0:
-                het_han.append(int(phan[4]))
-        except ValueError:
-            pass
+        if phan[5] in nen.cookie_dang_nhap:            # hạn của PHIÊN = hạn cookie xác thực, không cookie phụ
+            try:
+                if int(phan[4]) > 0:
+                    het_han.append(int(phan[4]))
+            except ValueError:
+                pass
     if not giu:
         raise PhienKhongHopLe(f"Không thấy cookie nào của {nen.ten}. Hãy xuất cookies.txt khi đang mở {nen.ten}.")
     if not ten_co & set(nen.cookie_dang_nhap):
         raise PhienKhongHopLe(f"Cookie này chưa đăng nhập {nen.ten} — hãy đăng nhập rồi xuất lại.")
-    moc = datetime.fromtimestamp(min(het_han), tz=timezone.utc) if het_han else None
+    moc = None
+    if het_han:
+        try:
+            moc = datetime.fromtimestamp(min(het_han), tz=timezone.utc)
+        except (OverflowError, OSError, ValueError):   # số hạn khổng lồ (review lần 2) ⇒ coi như không hạn
+            moc = None
     return giu, moc
 
 
@@ -67,17 +76,42 @@ def luu(db, *, owner_id: str, nen_tang: str, cookies_txt: str) -> VcPhien:
     nen = nen_tang_cua(nen_tang)
     dong, het_han = _loc(cookies_txt, nen)
     noi_dung = "# Netscape HTTP Cookie File\n" + "\n".join(dong) + "\n"
-    row = db.execute(select(VcPhien).where(VcPhien.owner_id == owner_id, VcPhien.nen_tang == nen.id)
-                     ).scalar_one_or_none()
-    if row is None:
-        row = VcPhien(owner_id=owner_id, nen_tang=nen.id, cookie_ma_hoa="")
-        db.add(row)
-    row.cookie_ma_hoa = secretbox.ma_hoa(noi_dung)
-    row.so_cookie = len(dong)
-    row.het_han_luc = het_han
-    row.cap_nhat_luc = datetime.now(timezone.utc)
-    db.flush()
-    return row
+    from sqlalchemy.exc import IntegrityError
+    for _lan in range(2):          # hai lượt lưu đồng thời cùng (owner, nền) ⇒ UNIQUE; lượt sau cập nhật (review lần 2)
+        row = db.execute(select(VcPhien).where(VcPhien.owner_id == owner_id, VcPhien.nen_tang == nen.id)
+                         ).scalar_one_or_none()
+        try:
+            with db.begin_nested():
+                if row is None:
+                    row = VcPhien(owner_id=owner_id, nen_tang=nen.id, cookie_ma_hoa="")
+                    db.add(row)
+                row.cookie_ma_hoa = secretbox.ma_hoa(noi_dung)
+                row.so_cookie = len(dong)
+                row.het_han_luc = het_han
+                row.cap_nhat_luc = datetime.now(timezone.utc)
+            return row
+        except IntegrityError:
+            continue
+    raise PhienKhongHopLe("Đang lưu phiên này ở nơi khác — thử lại.")
+
+
+def hop_le(row: VcPhien) -> bool:
+    """Phiên còn giải mã được với khoá hiện tại (khoá xoay ⇒ False ⇒ giao diện báo "phiên hỏng")."""
+    from platform_core import secretbox
+    try:
+        secretbox.giai_ma(row.cookie_ma_hoa)
+        return True
+    except secretbox.SecretBoxError:
+        return False
+
+
+def don_tam_cu(goc: Path, *, tuoi_s: float = 3 * 3600) -> None:
+    """Xoá thư mục cookie tạm `vc_phien_*` cũ hơn `tuoi_s` (job bị giết giữa chừng không dọn được — review lần 2)."""
+    with contextlib.suppress(OSError):
+        for d in Path(goc).glob("vc_phien_*"):
+            with contextlib.suppress(OSError):
+                if d.is_dir() and time.time() - d.stat().st_mtime > tuoi_s:
+                    shutil.rmtree(d, ignore_errors=True)
 
 
 def nen_tang_cua(nen_id: str):

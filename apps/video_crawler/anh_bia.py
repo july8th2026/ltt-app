@@ -9,7 +9,10 @@ Việc nhỏ (< 5 s, vài trăm KB) nên chạy trong request; không phải vi�
 """
 from __future__ import annotations
 
+import threading
+import time
 import urllib.request
+from collections import OrderedDict
 
 from apps.video_crawler import an_toan_url
 
@@ -28,6 +31,20 @@ CDN_ANH: dict[str, tuple[str, ...]] = {
 }
 TOI_DA_BYTE = 2 * 1024 * 1024
 _TIMEOUT_S = 5
+#: Review lần 2: một trang xem trước = tới 20 ảnh ⇒ route đồng bộ vắt kiệt threadpool nếu CDN chậm.
+#: Giới hạn số lượt tải đồng thời (toàn tiến trình), hạn TỔNG mỗi ảnh, và bộ nhớ đệm để hiển thị lại không tải lại.
+_SO_LUONG_DONG_THOI = threading.BoundedSemaphore(4)
+_HAN_TONG_S = 6.0
+#: Khoá đệm = (nền, URL): đệm theo URL thôi thì ảnh đã duyệt cho nền A trả ra cho yêu cầu mang nền B (lách allowlist).
+_DEM: OrderedDict[tuple[str, str], tuple[float, bytes, str]] = OrderedDict()
+_DEM_KHOA = threading.Lock()
+_DEM_TOI_DA = 256
+_DEM_TUOI_S = 3600.0
+
+
+def xoa_dem() -> None:
+    with _DEM_KHOA:
+        _DEM.clear()
 
 
 class AnhKhongHopLe(ValueError):
@@ -42,15 +59,45 @@ class _KhongRedirect(urllib.request.HTTPRedirectHandler):
 def _lay_mac_dinh(url: str, *, toi_da: int) -> tuple[bytes, str]:
     mo = urllib.request.build_opener(_KhongRedirect)
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    han = time.monotonic() + _HAN_TONG_S
     with mo.open(req, timeout=_TIMEOUT_S) as r:
         if getattr(r, "status", 200) != 200:
             raise AnhKhongHopLe("ảnh không tải được")
-        du_lieu = r.read(toi_da + 1)
-        return du_lieu, str(r.headers.get("Content-Type") or "")
+        khoi, co = [], 0
+        while co <= toi_da:                              # đọc từng khối để giữ hạn TỔNG, không chỉ hạn mỗi lượt đọc
+            if time.monotonic() > han:
+                raise AnhKhongHopLe("ảnh tải quá chậm")
+            b = r.read(64 * 1024)
+            if not b:
+                break
+            khoi.append(b)
+            co += len(b)
+        return b"".join(khoi), str(r.headers.get("Content-Type") or "")
 
 
-def tai(url: str, *, nen_tang: str | None = None, phan_giai=None, lay=None) -> tuple[bytes, str]:
-    """(bytes, content-type) của ảnh bìa, hoặc ném `AnhKhongHopLe`."""
+def tai(url: str, *, nen_tang: str | None = None, phan_giai=None, lay=None,
+        cho_s: float = 2.0) -> tuple[bytes, str]:
+    """(bytes, content-type) của ảnh bìa, hoặc ném `AnhKhongHopLe`. Có đệm + giới hạn đồng thời."""
+    khoa = (nen_tang or "*", url)
+    with _DEM_KHOA:
+        hit = _DEM.get(khoa)
+        if hit and time.monotonic() - hit[0] < _DEM_TUOI_S:
+            _DEM.move_to_end(khoa)
+            return hit[1], hit[2]
+    if not _SO_LUONG_DONG_THOI.acquire(timeout=cho_s):
+        raise AnhKhongHopLe("đang bận")
+    try:
+        du_lieu, loai = _tai_that(url, nen_tang=nen_tang, phan_giai=phan_giai, lay=lay)
+    finally:
+        _SO_LUONG_DONG_THOI.release()
+    with _DEM_KHOA:
+        _DEM[khoa] = (time.monotonic(), du_lieu, loai)
+        while len(_DEM) > _DEM_TOI_DA:
+            _DEM.popitem(last=False)
+    return du_lieu, loai
+
+
+def _tai_that(url: str, *, nen_tang: str | None, phan_giai, lay) -> tuple[bytes, str]:
     if nen_tang is not None:
         mien = CDN_ANH.get(nen_tang, ())
     else:

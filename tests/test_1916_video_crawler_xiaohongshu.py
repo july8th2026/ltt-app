@@ -72,12 +72,12 @@ def test_rednote_khong_duoc_yt_dlp_ho_tro():
 
 
 # ---------------------------------------------------------------- id_hop_le / url_video
-def test_id_hop_le_note_thuan_va_note_token():
+def test_id_hop_le_chi_la_note():
+    """Review lần 2 (BLOCKER): id ghép `note:token` bị khoá storage từ chối (`_safe_key` cấm ':') ⇒ id = note."""
     a = XiaohongshuAdapter()
-    assert a.id_hop_le(NOTE_1)
-    assert a.id_hop_le(f"{NOTE_2}:{TOKEN_2}")
-    assert a.id_hop_le(f"{NOTE_3}:{TOKEN_3}")
-    assert a.id_hop_le(f"{NOTE_4}:{TOKEN_4}")
+    for note in (NOTE_1, NOTE_2, NOTE_3, NOTE_4):
+        assert a.id_hop_le(note)
+    assert not a.id_hop_le(f"{NOTE_2}:{TOKEN_2}")
 
 
 @pytest.mark.parametrize("sai", [
@@ -95,13 +95,13 @@ def test_url_video_note_thuan():
     assert re.match(XiaoHongShuIE._VALID_URL, url) is not None
 
 
-def test_url_video_note_va_token_khop_valid_url_va_giu_token():
+def test_url_chuan_giu_token_va_khop_valid_url():
     a = XiaohongshuAdapter()
-    url = a.url_video(f"{NOTE_2}:{TOKEN_2}")
-    assert url == f"https://www.xiaohongshu.com/explore/{NOTE_2}?xsec_token={TOKEN_2}"
-    m = re.match(XiaoHongShuIE._VALID_URL, url)
-    assert m is not None and m.group("id") == NOTE_2
-    assert f"xsec_token={TOKEN_2}" in url
+    for note, tok in ((NOTE_2, TOKEN_2), (NOTE_3, TOKEN_3), (NOTE_4, TOKEN_4)):
+        url = a.url_chuan(note, f"https://www.xiaohongshu.com/discovery/item/{note}?xsec_token={tok}")
+        assert url == f"https://www.xiaohongshu.com/explore/{note}?xsec_token={tok}"
+        m = re.match(XiaoHongShuIE._VALID_URL, url)
+        assert m is not None and m.group("id") == note
 
 
 # ---------------------------------------------------------------- url_kham_pha
@@ -160,7 +160,7 @@ def test_kham_pha_link_gan_token_tu_webpage_url():
     ra = XiaohongshuAdapter(nha).kham_pha(_yc("link", url, 5), bao_tien_do=_khong_bao)
     assert nha.tao[0].urls == [(url, False)]
     assert ra == [CrawlItem(
-        nen_tang="xiaohongshu", id=f"{NOTE_2}:{TOKEN_2}",
+        nen_tang="xiaohongshu", id=NOTE_2,
         url=f"https://www.xiaohongshu.com/explore/{NOTE_2}?xsec_token={TOKEN_2}",
         tieu_de="T", tac_gia="u1", thoi_luong_s=28,
         anh_bia="https://sns-webpic-qc.xhscdn.com/1/a/b",
@@ -182,7 +182,8 @@ def test_kham_pha_link_khong_co_token_trong_url_van_ra_muc_nhung_id_khong_token(
 # ---------------------------------------------------------------- tai (BLOCKER: URL bi sua)
 @pytest.mark.parametrize("item", [
     CrawlItem("xiaohongshu", f"{NOTE_2}:{TOKEN_2}", "https://www.xiaohongshu.com/explore/" + NOTE_3),
-    CrawlItem("xiaohongshu", NOTE_2, f"https://www.xiaohongshu.com/explore/{NOTE_2}?xsec_token={TOKEN_2}"),
+    CrawlItem("xiaohongshu", NOTE_2, f"https://www.xiaohongshu.com/explore/{NOTE_2}"),       # thiếu xsec_token
+    CrawlItem("xiaohongshu", NOTE_2, f"https://www.xiaohongshu.com/explore/{NOTE_3}?xsec_token={TOKEN_2}"),  # note khác
     CrawlItem("xiaohongshu", f"{NOTE_2}:{TOKEN_2}", f"http://www.xiaohongshu.com/explore/{NOTE_2}?xsec_token={TOKEN_2}"),
     CrawlItem("xiaohongshu", f"{NOTE_2}:{TOKEN_2}", "https://www.rednote.com/explore/" + NOTE_2 + "?xsec_token=" + TOKEN_2),
     CrawlItem("xiaohongshu", NOTE_1 + ":bad", f"https://www.xiaohongshu.com/explore/{NOTE_1}?xsec_token=bad"),

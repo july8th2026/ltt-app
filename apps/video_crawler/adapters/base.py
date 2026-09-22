@@ -11,6 +11,10 @@ from typing import Callable, Protocol
 #: Chế độ cào hợp lệ (tên LTT; donor: search/detail/creator/chase).
 CHE_DO = frozenset({"tu_khoa", "link", "kenh", "bo"})
 
+#: Id phải an toàn làm khoá storage (`platform_core/storage.py:_safe_key` cấm `..`, `/`, `:`). Mọi đường vào
+#: (features cho "xem trước", jobs cho "cào hết") đều lọc theo mẫu này — review lần 2 (Xiaohongshu `note:token`).
+ID_AN_TOAN = r"[A-Za-z0-9_-]{1,64}"
+
 #: bao_tien_do(phan_tram_trong_muc_0_100, thong_diep). Nơi DUY NHẤT nối tới ctx.progress + kiểm huỷ.
 BaoTienDo = Callable[[int, str], None]
 

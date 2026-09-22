@@ -47,8 +47,9 @@ _KHAC = "Không tải được video do lỗi không xác định. Vui lòng th�
 def phan_loai(thong_diep: str) -> LoiCao:
     """Văn bản lỗi yt-dlp ⇒ LoiCao có mã, cờ tạm thời và câu báo khách an toàn."""
     low = (thong_diep or "").lower()
-    if "fragment" in low and "403" in low:        # donor W:4930
-        return LoiCao("yt_403", _BANG[4][3], tam_thoi=True)
+    if "fragment" in low and "403" in low:        # donor W:4930 — tra theo MÃ, không theo vị trí (review lần 2)
+        cau = next(c for ma, _t, _tt, c in _BANG if ma == "yt_403")
+        return LoiCao("yt_403", cau, tam_thoi=True)
     for ma, tin_hieu, tam_thoi, cau in _BANG:
         if any(t in low for t in tin_hieu):
             return LoiCao(ma, cau, tam_thoi=tam_thoi)

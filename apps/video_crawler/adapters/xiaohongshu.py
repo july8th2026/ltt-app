@@ -66,15 +66,19 @@ EXTRACTOR_CHO_PHEP = ("xiaohongshu",)
 #: note_id: hex 24 ky tu (`xiaohongshu.py` `_VALID_URL` dong 14: `[\da-f]+`; 4 id mau quan
 #: sat duoc deu dai 24). xsec_token: base64 URL-safe, dai ~44-46 (3 token mau quan sat duoc).
 _NOTE = r"[0-9a-f]{24}"
-_TOKEN = r"[A-Za-z0-9_=-]{40,64}"
-_ID = re.compile(rf"{_NOTE}(?::{_TOKEN})?")
+#: xsec_token trong query: base64 URL-safe, có thể %-mã hoá (`=` ⇒ `%3D`). Review lần 2: id KHÔNG mang token
+#: (khoá storage cấm `:`), token đi theo URL và được kiểm chặt ở `url_chuan`.
+_TOKEN = r"[A-Za-z0-9_=%-]{16,200}"
+_ID = re.compile(_NOTE)
 _TOKEN_TRONG_URL = re.compile(r"[?&]xsec_token=([^&#]+)")
+_URL_NOTE = re.compile(rf"https://(?:www\.)?xiaohongshu\.com/(?:explore|discovery/item)/({_NOTE})(?:[?&#].*)?")
 
 
 def _tach_token(url: str) -> str:
-    """Token trong query cua URL da dung de kham pha ("" khi khong co)."""
+    """Token trong query của URL đã dùng để khám phá ("" khi không có hoặc sai mẫu)."""
     m = _TOKEN_TRONG_URL.search(url or "")
-    return m.group(1) if m else ""
+    tok = m.group(1) if m else ""
+    return tok if re.fullmatch(_TOKEN, tok) else ""
 
 
 class XiaohongshuAdapter(YtdlpAdapter):
@@ -85,12 +89,18 @@ class XiaohongshuAdapter(YtdlpAdapter):
     impersonate = False        # khong bang chung donor/yt-dlp can impersonate cho xhs
 
     def url_video(self, id: str) -> str:
-        note, _, token = str(id).partition(":")
-        base = f"https://www.xiaohongshu.com/explore/{note}"
-        return f"{base}?xsec_token={token}" if token else base
+        return f"https://www.xiaohongshu.com/explore/{id}"
 
     def id_hop_le(self, id: Any) -> bool:
         return isinstance(id, str) and _ID.fullmatch(id) is not None
+
+    def url_chuan(self, id: str, url_goi: str = "") -> str | None:
+        """Chỉ nhận URL của ĐÚNG note `id` trên xiaohongshu.com, có xsec_token hợp lệ (bắt buộc — W:4495-4513)."""
+        m = _URL_NOTE.fullmatch(str(url_goi or ""))
+        tok = _tach_token(url_goi)
+        if not self.id_hop_le(id) or m is None or m.group(1) != id or not tok:
+            return None
+        return f"{self.url_video(id)}?xsec_token={tok}"
 
     def url_kham_pha(self, che_do: str, dau_vao: str, n: int) -> str:
         """Chi "link": URL note nguoi dung dan (yt-dlp/`allowed_extractors` tu chan URL sai)."""
@@ -98,11 +108,10 @@ class XiaohongshuAdapter(YtdlpAdapter):
 
     def _sang_item(self, e: dict) -> CrawlItem:
         note = str(e.get("id") or "")
-        token = _tach_token(str(e.get("webpage_url") or ""))
-        vid = f"{note}:{token}" if token else note
+        url = self.url_chuan(note, str(e.get("webpage_url") or "")) or self.url_video(note)
         dur = e.get("duration")
         return CrawlItem(
-            nen_tang=self.nen_tang, id=vid, url=self.url_video(vid),
+            nen_tang=self.nen_tang, id=note, url=url,
             tieu_de=str(e.get("title") or ""),
             tac_gia=str(e.get("uploader_id") or e.get("uploader") or e.get("channel") or ""),
             thoi_luong_s=int(dur) if isinstance(dur, (int, float)) else None,

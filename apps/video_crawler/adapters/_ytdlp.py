@@ -207,6 +207,11 @@ class YtdlpAdapter:
     def id_hop_le(self, id: Any) -> bool:
         raise NotImplementedError
 
+    def url_chuan(self, id: str, url_goi: str = "") -> str | None:
+        """URL đem tải cho `id`. Mặc định BỎ `url_goi` (khách/kết quả gửi) và dựng lại từ id — chống URL giả mạo.
+        Nền cần dữ liệu ngoài id trong URL (Xiaohongshu `xsec_token`) ghi đè và kiểm chặt; None ⇒ từ chối."""
+        return self.url_video(id)
+
     def url_kham_pha(self, che_do: str, dau_vao: str, n: int) -> str:
         """URL/truy vấn yt-dlp cho từng chế độ (tu_khoa/kenh/bo/link)."""
         raise NotImplementedError
@@ -347,7 +352,7 @@ class YtdlpAdapter:
     def tai(self, item: CrawlItem, thu_muc: Path, *, bao_tien_do: BaoTienDo) -> TepTai:
         from yt_dlp.utils import DownloadCancelled, DownloadError
 
-        if not self.id_hop_le(item.id) or item.url != self.url_video(item.id):
+        if not self.id_hop_le(item.id) or item.url != self.url_chuan(item.id, item.url):
             raise LoiCao("url_khong_ho_tro", "Link không được hỗ trợ cho nền tảng này.", tam_thoi=False)
         thu_muc = Path(thu_muc)
         tt = _TrangThai(bao_tien_do)

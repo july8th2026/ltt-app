@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import select
 
 from apps.video_crawler import an_toan_url, nen_tang
+from apps.video_crawler.adapters.base import ID_AN_TOAN
 from apps.video_crawler.manifest import MANIFEST, SO_MUC_TOI_DA
 from platform_core.models import JOB_DONE, JOB_ERROR, JOB_QUEUED, JOB_RUNNING, Job
 
@@ -26,8 +27,6 @@ SO_JOB_DEDUP = 500
 
 #: Trần xem trước mỗi phút mỗi user (phản biện #8: tìm dồn dập từ IP máy A ⇒ YouTube bot-check).
 KHAM_PHA_MOI_PHUT = 10
-#: Id luôn phải an toàn làm khoá storage (chặn `..`, `/`, `:`), NGOÀI mẫu id riêng của adapter.
-_ID_CHUNG = r"[A-Za-z0-9_-]{1,64}"
 #: Múi giờ của "video hôm nay" — khách ở Việt Nam (review MINOR: trước đếm từ nửa đêm UTC).
 _MUI_GIO = ZoneInfo("Asia/Ho_Chi_Minh")
 
@@ -63,8 +62,11 @@ def _kiem_nguon(nen, che_do: str, dau_vao: str, so_luong, phan_giai, *, db=None,
         raise LoiDauVao(f"{nen.ten} không hỗ trợ cách cào này.")
     if che_do in nen.che_do_can_dang_nhap:
         from apps.video_crawler import phien
-        if db is None or not any(p.nen_tang == nen.id for p in phien.danh_sach(db, owner_id)):
+        co = [p for p in phien.danh_sach(db, owner_id) if p.nen_tang == nen.id] if db is not None else []
+        if not co:
             raise LoiDauVao(f"Cách cào này cần đăng nhập {nen.ten} — thêm phiên đăng nhập trước.")
+        if not phien.hop_le(co[0]):                     # review lần 2: khoá xoay ⇒ phiên không giải mã được
+            raise LoiDauVao(f"Phiên {nen.ten} đã hỏng (không giải mã được) — nhập lại cookies.txt.")
     dau_vao = (dau_vao or "").strip()
     if not dau_vao:
         raise LoiDauVao("Chưa nhập từ khoá hoặc link.")
@@ -111,12 +113,14 @@ def dung_params_tai(*, owner_id: str, nen_tang: str, muc: list | None = None, ng
     sach, da_co = [], set()
     for m in muc:
         vid = str((m or {}).get("id") or "").strip()
-        if not re.fullmatch(_ID_CHUNG, vid) or not ad.id_hop_le(vid):
+        if not re.fullmatch(ID_AN_TOAN, vid) or not ad.id_hop_le(vid):
             raise LoiDauVao("Mục không hợp lệ.")
         if vid in da_co:                  # trùng trong cùng yêu cầu ⇒ tính một lần (review MAJOR 2)
             continue
         da_co.add(vid)
-        url = ad.url_video(vid)          # dựng lại từ id — URL khách gửi bị BỎ (review BLOCKER)
+        url = ad.url_chuan(vid, str(m.get("url") or ""))   # dựng lại từ id — URL khách gửi bị BỎ (review BLOCKER)
+        if url is None:
+            raise LoiDauVao(f"Link {nen.ten} không hợp lệ hoặc thiếu mã cần thiết — dán lại link đầy đủ.")
         sach.append({"id": vid, "url": url, "tieu_de": str(m.get("tieu_de") or "")[:200]})
     return {"owner_id": owner_id, "nen_tang": nen.id, "muc": sach}
 
