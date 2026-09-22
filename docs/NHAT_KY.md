@@ -12,6 +12,40 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-22 (đêm) — App `transcript`: đối soát quy tắc `bot_transcript`, mở cho khách (web + palette + `/api/v1`)
+
+Tiếp quản phiên LTTCODE "Vận hành hệ thống" (bàn giao: `C:\Users\Thang Tuong\.claude\ltt\khoi-phuc-2026-09-22\BAN_GIAO_van-hanh.md`).
+Chủ dự án đổi hướng giữa phiên: **dừng chiến dịch benchmark engine** (nhánh `phien/transcript-v2` giữ làm tham khảo,
+KHÔNG gộp; plan hiện trạng `docs/transcript_v2/PLAN_HIEN_TRANG.md` trên nhánh đó), **giữ hệ LTT = quy tắc bot gốc**,
+gỡ `ltt_turbo`, ép `vi` như bot gốc, mở app, giá khuyến nghị.
+
+- **Lỗi đã sửa + deploy** (theo thứ tự lộ ra):
+  1. `37276535` — timeline rỗng 100 %: service STT trả từ khoá `text`, engine legacy đọc `word` (`flatten_words`).
+     Kèm sửa mypy `main` đỏ 9→11 do `e94dd9a2` (`Response` vs `JSONResponse` ở `server/api/{chat,streaming}.py`).
+  2. `cf8a6984` — khớp quy tắc legacy: fixer V5 chép mà KHÔNG GỌI + 3 từ điển (`vi/en_corrections`, `vi_proper_nouns`)
+     không chép ⇒ nối lại đúng tham số `whisper_integration.py:319-339`; `min_s` 3.0 → **1.5** (config đang chạy);
+     thử lại `en`→`vi` khi rỗng; lùi timeline v1; kiểm mốc từ (mọi đoạn có words, đóng băng ≥20 %); kiểm trùng/schema
+     đúng luật `bot/worker.py`; hồ sơ STT `moc_tu_vad_ngoai_vi` (beam 5/best_of 3, như bot gốc khi `vi`); sổ hệ
+     `apps/transcript/services/he.py` (chỉ `ltt`); tên tệp cache STT an toàn với model có `/`. Mở app: `public`,
+     `released`, `customer_visible`, `api_exposed` + `api_contract`; giá `apps/transcript/gia.py` **2 credit/phút
+     audio** (tối thiểu 1), `duration_s` đo từ tệp (`measured_from=audio`, hidden), quyết toán `min(thật, đã giữ)` (Q84).
+  3. `a9a0238c` — route dùng EMAIL (`require_login`) làm `user_id` ⇒ sổ credit (khoá `User.id`) đọc 0, mọi khách 402.
+  4. `24271a8a` — `vad.py` gọi `ffmpeg`/`ffprobe` trần, dịch vụ worker không có ffmpeg trên PATH ⇒ WinError 2.
+- **Bằng chứng khớp bot gốc** (audio thật chủ dự án `G:\My Drive\AI\A\TestVoice`, chạy cả legacy lẫn LTT, diff từng
+  đoạn): EN 98/98, VI tự dò 154/154, VI ép `vi` 154/154 — **0 chữ khác, 0 ms lệch mốc**. Transcript để chủ nghe:
+  `TestVoice\{EN,VN}\TRANSCRIPT\LTT chuan - da doi soat.{txt,json}`.
+- **E2E thật production** (tài khoản `khach1.thu`, file EN 357.5 s): 202 → worker GPU 100 s → `done`, 98 đoạn 6 khoá khớp
+  bản đối soát, trừ đúng **12 credit** (133 → 121). Giao diện `app.lttstudios.com/transcript` (Chromium, desktop +
+  390 px): 200, 0 lỗi console/mạng, không tràn ngang.
+- **Cổng API:** `setup\cong_tac_tool_api.ps1 -Tool transcript.run -Bat` + `nap_lai_env.ps1` (Web/Worker/Voice nhận ENV);
+  catalog production 6 tool. Tài liệu `docs/PUBLIC_API/{APP_DISPOSITION_V1,APP_API_COVERAGE_FINAL,CHANGELOG}.md`.
+- **Bẫy gặp:** gate `--doi` tự nâng L3 khi cây có tệp không ai sở hữu (`data/stt_cache/` do chính lượt chạy STT ghi theo
+  cwd); `Path.write_text` đổi LF→CRLF trên Windows (hook xuống dòng đỏ); cookie `session` cờ `Secure` không được
+  `httpx` gửi lại qua loopback ⇒ CSRF 400 (tự mang cookie bằng header); so với legacy mà ép ngôn ngữ theo manifest sẽ
+  tạo lệch giả (bot gốc chạy `auto`); chạy python legacy phải `-B` (cây chỉ đọc).
+- **Còn mở:** cùng lỗi email-làm-`user_id` ở `audio_pause`, `prompt_canh`, `video_assembly` (còn đóng với khách; đã tạo
+  việc riêng); nhãn ô "Hệ phiên âm" dài bị cắt trên desktop (thẩm mỹ); L3 tổng kết phiên.
+
 ## 2026-09-22 (tối) — app `video_crawler` ("Cào ngay" từ ViralCrawl): 10 nền, tắt sau cờ `LTT_VIDEO_CRAWLER`
 
 Tiếp quản SUPER PROMPT sau hai phiên LTTCODE hỏng (model lỗi 400, ghi thẳng main, parity ✅ bịa, audit donor chết).
