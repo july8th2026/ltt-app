@@ -28,6 +28,11 @@ _BANG: tuple[tuple[str, tuple[str, ...], bool, str], ...] = (
     # Smoke thật 22/09 (Bilibili 412 = risk control với truy cập ẩn danh từ máy chủ).
     ("nen_chan", ("http error 412", "precondition failed", "http error 461"),
      False, N_("Nền tảng đang chặn truy cập ẩn danh từ máy chủ — thêm phiên ở mục Đăng nhập nền tảng rồi thử lại.")),
+    # N8: extractor yt-dlp hỏng khi nền đổi trang (facebook "Cannot parse data", tiktok "Unexpected response from
+    # webpage request"). Tạm thời: một lượt thử lại (features.SO_LAN_THU = 2), rồi chờ bản yt-dlp mới.
+    # Xét TRƯỚC rieng_tu/khong_ton_tai: id/URL trong câu thô có thể chứa "private", "sign in"...
+    ("trich_xuat_hong", ("cannot parse data", "unexpected response from webpage request"),
+     True, N_("Nền tảng vừa đổi cấu trúc trang, công cụ đang chờ cập nhật. Vui lòng thử lại sau.")),
     ("chi_la_anh", ("no video formats found",),
      False, N_("Bài đăng này không có video (chỉ có ảnh).")),
     ("url_khong_ho_tro", ("unsupported url", "no suitable extractor"),
