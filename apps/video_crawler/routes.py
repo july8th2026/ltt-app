@@ -16,7 +16,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from platform_core.i18n import N_
 from platform_core.i18n import _ as _t
 
-from apps.video_crawler import features, nen_tang, phien
+from apps.video_crawler import features, loi, nen_tang, phien
 from apps.video_crawler.manifest import MANIFEST
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
@@ -175,6 +175,7 @@ def _ket_qua(request: Request, db, owner_id: str, job_id: str) -> HTMLResponse:
         "job": job, "app": MANIFEST, "csrf_token": issue_csrf_token(request), "phap_ly": _phap_ly(),
         "muc": (job.result or {}).get("muc") or [],
         "bo_qua_trung": (job.result or {}).get("bo_qua_trung") or 0,
+        "loi_khach": loi.cho_khach,
     })
 
 

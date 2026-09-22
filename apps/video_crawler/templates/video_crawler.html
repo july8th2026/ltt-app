@@ -67,7 +67,7 @@
         <label class="chip-opt"><input type="checkbox" name="khong_trung" value="1"><span>🆕 {{ _("Cào không trùng") }}</span></label>
       </div>
       {% if bang_gia %}
-      <p class="muted">{{ _('"Không trùng" bỏ qua video bạn đã tải trong 30 ngày gần đây. Xem trước miễn phí; giá mỗi video tải về theo thời lượng:') }}</p>
+      <p class="muted">{{ _('"Không trùng" bỏ qua video bạn đã tải hoặc đang tải. Xem trước miễn phí; giá mỗi video tải về theo thời lượng:') }}</p>
       <div class="tablewrap vc-gia"><table class="table" id="vc-bang-gia">
         <thead><tr><th>{{ _("Thời lượng") }}</th><th>{{ _("Credit / video") }}</th></tr></thead>
         <tbody>
@@ -76,8 +76,6 @@
         {% endfor %}
         </tbody>
       </table></div>
-      {% else %}
-      <p class="muted">{{ _('"Không trùng" bỏ qua video bạn đã tải trong 30 ngày gần đây. Mỗi video tải về tính 1 credit; xem trước miễn phí.') }}</p>
       {% endif %}
 
       <label class="vc-cam-ket"><input type="checkbox" name="cam_ket" value="1" required>

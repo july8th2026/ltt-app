@@ -28,7 +28,7 @@
     </form>
     {% endif %}
   {% elif job.status == "error" %}
-    <div class="alert alert-err" role="alert">{{ _(job.error) if job.error else _("Xem trước thất bại.") }}</div>
+    <div class="alert alert-err" role="alert">{% set cau = loi_khach(job.error) %}{{ _(cau) if cau else _("Xem trước thất bại.") }}</div>
   {% elif job.status == "cancelled" %}
     <p class="muted">{{ _("Đã huỷ.") }}</p>
   {% else %}

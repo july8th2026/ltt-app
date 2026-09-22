@@ -102,3 +102,18 @@ def test_bang_gia_cho_giao_dien_khop_gia_bang():
     bang = routes._bang_gia()
     assert [(b["tu_phut"], b["den_phut"], b["credit"]) for b in bang] == [(0, 10, 3), (10, 30, 6), (30, 60, 10), (60, 180, 15)]
     assert [b["credit"] for b in bang] == [b["gia"] for b in gia.bang()]
+
+
+@pytest.mark.parametrize("error, mong", [
+    ("LoiNguoiGoi: Video không tồn tại hoặc đã bị gỡ.", "Video không tồn tại hoặc đã bị gỡ."),
+    ("RuntimeError: mang: Lỗi mạng khi kết nối tới nền tảng. Vui lòng thử lại sau.",
+     "Lỗi mạng khi kết nối tới nền tảng. Vui lòng thử lại sau."),
+    ("KeyError: 'muc'", None),
+    ("RuntimeError: C:\secret\path boom", None),
+    (None, None),
+])
+def test_loi_job_cho_khach_khong_lo_ten_lop_hay_van_ban_tho(error, mong):
+    """Kiểm GUI sau gộp L7: xem trước lỗi hiện "LoiNguoiGoi: Video không tồn tại…" — `job_runner` ghi
+    `TenLop: thông điệp`. Khách chỉ thấy câu của bảng `loi.py`; lỗi hệ thống lạ ⇒ None (template hiện câu chung)."""
+    from apps.video_crawler import loi
+    assert loi.cho_khach(error) == mong

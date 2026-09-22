@@ -63,3 +63,17 @@ def phan_loai(thong_diep: str) -> LoiCao:
         if any(t in low for t in tin_hieu):
             return LoiCao(ma, cau, tam_thoi=tam_thoi)
     return LoiCao("loi_khac", _KHAC, tam_thoi=True)
+
+
+def cho_khach(error: str | None) -> str | None:
+    """`Job.error` (job_runner ghi `TenLop: thông điệp`) ⇒ câu báo khách thuộc bảng trên (msgid, dịch lúc hiển thị).
+
+    Chỉ trả câu CÓ TRONG bảng — lỗi hệ thống lạ (có thể chứa đường dẫn, văn bản thô) ⇒ None, template hiện câu chung.
+    """
+    cau_hop_le = {c for _ma, _th, _tt, c in _BANG} | {_KHAC}
+    phan = (error or "").split(": ")
+    for i in range(1, len(phan)):             # "LoiNguoiGoi: <câu>" hoặc "RuntimeError: <mã>: <câu>"
+        cau = ": ".join(phan[i:])
+        if cau in cau_hop_le:
+            return cau
+    return None

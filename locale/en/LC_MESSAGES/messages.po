@@ -20126,3 +20126,91 @@ msgstr "video_crawler: could not release the slot of job %s: %s"
 #: apps/video_crawler
 msgid "{ten}: đã hoặc đang được tải ở lượt khác của bạn — bỏ qua"
 msgstr "{ten}: already downloaded or being downloaded in another run of yours — skipped"
+
+#: apps/video_crawler
+msgid "\"Không trùng\" bỏ qua video bạn đã tải hoặc đang tải. Xem trước miễn phí; giá mỗi video tải về theo thời lượng:"
+msgstr "\"No duplicates\" skips videos you have downloaded or are downloading. Preview is free; each downloaded video is priced by duration:"
+
+#: apps/video_crawler
+msgid "(không có chữ LOCALLY): bản đó từng bị gỡ khỏi kho vì gửi cookie của bạn ra máy chủ ngoài."
+msgstr "(without the word LOCALLY): that one was once removed from the store for sending your cookies to an outside server."
+
+#: apps/video_crawler
+msgid "@tenkenh hoặc https://www.youtube.com/@tenkenh"
+msgstr "@channelname or https://www.youtube.com/@channelname"
+
+#: apps/video_crawler
+msgid "Cam kết quyền"
+msgstr "Rights confirmation"
+
+#: apps/video_crawler
+msgid "Cài tiện ích mã nguồn mở"
+msgstr "Install the open-source extension"
+
+#: apps/video_crawler
+msgid "Cách xuất cookies.txt (Chrome, Edge, Firefox)"
+msgstr "How to export cookies.txt (Chrome, Edge, Firefox)"
+
+#: apps/video_crawler
+msgid "Job này không có mục lỗi để tải lại."
+msgstr "This job has no failed items to retry."
+
+#: apps/video_crawler
+msgid "Không có lượt cào nào cho nền này."
+msgstr "No crawls for this platform."
+
+#: apps/video_crawler
+msgid "Lọc theo nền"
+msgstr "Filter by platform"
+
+#: apps/video_crawler
+msgid "Mở trang khi đang đăng nhập nền cần cào, bấm biểu tượng tiện ích, chọn xuất cookie của trang hiện tại (định dạng Netscape/cookies.txt), rồi dán nội dung hoặc chọn tệp vào ô bên dưới."
+msgstr "Open the site while signed in to the platform you want to crawl, click the extension icon, export the current site's cookies (Netscape/cookies.txt format), then paste the content or choose the file in the box below."
+
+#: apps/video_crawler
+msgid "Rủi ro tài khoản:"
+msgstr "Account risk:"
+
+#: apps/video_crawler
+msgid "Tải lại {n} mục lỗi"
+msgstr "Retry {n} failed items"
+
+#: apps/video_crawler
+msgid "Tất cả nền"
+msgstr "All platforms"
+
+#: apps/video_crawler
+msgid "cho Chrome, Edge (cùng kho tiện ích Chrome) hoặc Firefox (kho tiện ích Firefox riêng) — tiện ích này không gửi cookie đi đâu, mã nguồn công khai kiểm được. Không dùng tiện ích chỉ tên"
+msgstr "for Chrome, Edge (same Chrome extension store) or Firefox (separate Firefox add-on store) — this extension sends your cookies nowhere, and its source code is public and auditable. Do not use the extension named only"
+
+#: apps/video_crawler
+msgid "còn {tg}"
+msgstr "{tg} left"
+
+#: apps/video_crawler
+msgid "du lịch Đà Lạt"
+msgstr "Da Lat travel"
+
+#: apps/video_crawler
+msgid "mèo con đáng yêu"
+msgstr "cute kittens"
+
+#: apps/video_crawler
+msgid "nền tảng có thể tạm khoá hoặc yêu cầu xác minh tài khoản nếu phát hiện tải tự động dồn dập từ cookie của bạn. Nên dùng một tài khoản phụ để đăng nhập ở đây, không dùng tài khoản chính bạn đang cần giữ an toàn."
+msgstr "the platform may temporarily lock or ask to verify the account if it detects heavy automated downloads from your cookies. Use a secondary account here, not the main account you need to keep safe."
+
+#: apps/video_crawler
+msgid "review phim"
+msgstr "movie review"
+
+#: apps/video_crawler
+msgid "trend nhảy"
+msgstr "dance trend"
+
+#: apps/video_crawler
+msgid "{n} B/s"
+msgstr "{n} B/s"
+
+#: apps/video_crawler
+msgid "{n} s"
+msgstr "{n} s"
