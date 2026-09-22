@@ -13,6 +13,7 @@ Chi tiết chế độ/login cho các nền chưa bật lấy từ `docs/migrati
 from __future__ import annotations
 
 import re
+import urllib.parse
 from dataclasses import dataclass
 
 from apps.video_crawler.adapters.base import CHE_DO
@@ -83,7 +84,7 @@ _NEN: tuple[NenTang, ...] = (
         id="douyin", ten="Douyin", icon="douyin", bat=False,
         che_do=_kt("tu_khoa", "link", "kenh", "bo"),
         xem_truoc=True, can_dang_nhap=True, cach_dang_nhap="qr",
-        ten_mien=("douyin.com", "v.douyin.com", "iesdouyin"),
+        ten_mien=("douyin.com", "v.douyin.com", "iesdouyin.com"),
         so_luong_toi_da=10, adapter="douyin", gioi_han=(),
     ),
     NenTang(
@@ -104,7 +105,7 @@ _NEN: tuple[NenTang, ...] = (
         id="xiaohongshu", ten="Xiaohongshu", icon="xiaohongshu", bat=False,
         che_do=_kt("tu_khoa", "link", "kenh"),
         xem_truoc=True, can_dang_nhap=True, cach_dang_nhap="qr",
-        ten_mien=("xiaohongshu.com", "xhslink"),
+        ten_mien=("xiaohongshu.com", "xhslink.com"),
         so_luong_toi_da=10, adapter="xiaohongshu", gioi_han=(),
     ),
     NenTang(
@@ -198,11 +199,21 @@ def lay_nen_bat(id: str) -> NenTang:
 
 def nhan_dien(url: str) -> str | None:
     """Nhận nền theo domain trong `url` (port `_LINK_DOM`, giữ thứ tự). None nếu không khớp nền nào."""
-    l = url or ""
-    ll = l.lower()
+    # Function parity, không bug parity: donor so chuỗi con trên CẢ URL nên `netflix.com` khớp `x.com`.
+    # Ở đây so theo HOSTNAME (bằng, hoặc là subdomain của tên miền nền).
+    s = (url or "").strip()
+    if not s:
+        return None
+    if "://" not in s:
+        s = "https://" + s
+    try:
+        host = (urllib.parse.urlparse(s).hostname or "").lower()
+    except ValueError:
+        return None
     for n in _NEN:
         for dom in n.ten_mien:
-            if dom.lower() in ll:
+            dom = dom.lower()
+            if host == dom or host.endswith("." + dom):
                 return n.id
     return None
 

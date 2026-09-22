@@ -83,3 +83,17 @@ def test_doan_che_do_tu_link(url, che_do):
 def test_doan_tu_link_nen_la_tra_none():
     assert nen_tang.doan_tu_link("https://example.com/watch?v=1") is None
     assert nen_tang.doan_tu_link("   ") is None
+
+
+# ── function parity, không bug parity: donor so chuỗi con trên CẢ URL (regex `_LINK_DOM`) ──────────
+# ⇒ `netflix.com` khớp `x\.com` thành Twitter, `evil.io/?u=youtube.com` thành YouTube. LTT so theo HOSTNAME.
+
+@pytest.mark.parametrize("url,nen", [
+    ("https://netflix.com/title/1", None),
+    ("https://evil.io/?u=youtube.com", None),
+    ("https://www.youtube.com.evil.io/watch?v=1", None),
+    ("v.douyin.com/iABCdef/", "douyin"),                  # không scheme vẫn nhận
+    ("youtube.com/@abc", "youtube"),
+])
+def test_nhan_dien_theo_hostname_khong_theo_chuoi_con(url, nen):
+    assert nen_tang.nhan_dien(url) == nen
