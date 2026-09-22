@@ -20,6 +20,7 @@ from apps.auto_scan_video.lop_phu import LopPhuLoi
 from apps.auto_scan_video.phu_de import PhuDeLoi
 from apps.auto_scan_video.logo import LogoLoi
 from apps.auto_scan_video.am_thanh import AmThanhLoi
+from apps.auto_scan_video.bien_tap import BienTapLoi
 from apps.auto_scan_video.tu_dien import TuDienLoi
 from apps.auto_scan_video.vung_che import VungLoi
 from apps.auto_scan_video.ban_ghi import BanGhiError
@@ -118,6 +119,8 @@ BANG = {
     # V6 pha 23 — cung nhom: `am_thanh.tu_cai_dat` duyet lai ho so da luu TRONG
     # job `timing_align`; ho so hong thi ba luot thu lai hong y het.
     AmThanhLoi: loi.NGUOI_DUNG,
+    # asv-final: ho so bien tap khung/toc do — cung nhom, cung ly do.
+    BienTapLoi: loi.NGUOI_DUNG,
     # ⭐ THU LAI la viec dung: nen tang co the cap mot card KHAC lan sau. Truoc
     #    pha 13 truong hop nay khong nem gi ca — no **im lang chay CPU**, cham
     #    hon 9,5 lan, va giu suat `tach_nguon_cuc_bo` suot ~37 phut o tran 2 gio.

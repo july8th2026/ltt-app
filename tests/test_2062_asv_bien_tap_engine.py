@@ -16,7 +16,6 @@ Moi bai render mot nguon tong hop nho (640x360, vai giay) qua CHINH ham san pham
 from __future__ import annotations
 
 import re
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -28,8 +27,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from apps.auto_scan_video import (ban_dung, bien_tap as bt, che_do_render as cdr,
                                   hinh_hoc, ket_xuat, nhap_media, phu_de, qc,
                                   vung_che)
-
-pytestmark = pytest.mark.skipif(not shutil.which("ffmpeg"), reason="can ffmpeg")
 
 W, H = 640, 360
 

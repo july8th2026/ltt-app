@@ -260,6 +260,12 @@ def phan_loai(exc: BaseException) -> str:
     if isinstance(exc, AmThanhLoi):
         return NGUOI_DUNG
 
+    # asv-final: ho so bien tap khung/toc do — cung nhom. `ban_dung.kiem` duyet
+    # lai no trong job COMPOSE/RENDER; hong thi ba luot `retry` hong y het.
+    from .bien_tap import BienTapLoi
+    if isinstance(exc, BienTapLoi):
+        return NGUOI_DUNG
+
     # ── QC bang AI va ke hoach sua (pha 19) ─────────────────────────────────
     #
     # ⛔ `NGUOI_DUNG` — that bai cuoi cung. Ca hai deu la mau thuan trong du lieu
