@@ -16,6 +16,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from apps.asv_gpu.do_luong import _runner  # noqa: E402
 
 SR = 16000
+#: So cua so cham MOT luot. Tran bo nho cua bo do nay tren card dung chung.
+LO_CUA_SO = 4
 
 
 def _sha256(p: Path) -> str:
@@ -85,12 +87,23 @@ def main() -> None:
                  "si_sdr": round(sdr, 2), "giay": round(w.shape[-1] / SR, 3)}
             if w.shape[-1] > cs + buoc:
                 khung = w.unfold(-1, cs, buoc)[0]                  # (n, cs)
-                s2, p2, d2 = model(khung)
-                r.update({"stoi_min_cua_so": round(float(s2.min()), 4),
-                          "pesq_min_cua_so": round(float(p2.min()), 3),
-                          "si_sdr_min_cua_so": round(float(d2.min()), 2),
+                # ⛔ KHONG dua ca khoi cua so vao mot luot: do that 23/09 tren
+                #    doan 18-25 s, torch giu 11,2 GiB tren mot card DUNG CHUNG
+                #    voi Voice/VLM. Chia lo `LO_CUA_SO` giu dinh o muc mot lo.
+                nho = [model(khung[i:i + LO_CUA_SO])
+                       for i in range(0, khung.shape[0], LO_CUA_SO)]
+                s2 = min(float(x[0].min()) for x in nho)
+                p2 = min(float(x[1].min()) for x in nho)
+                d2 = min(float(x[2].min()) for x in nho)
+                r.update({"stoi_min_cua_so": round(s2, 4),
+                          "pesq_min_cua_so": round(p2, 3),
+                          "si_sdr_min_cua_so": round(d2, 2),
                           "so_cua_so": int(khung.shape[0])})
+                del khung, nho
             ket[d["ma"]] = r
+            del w
+            if thiet_bi == "cuda":
+                torch.cuda.empty_cache()
     dh.danh_dau("cham")
     del model
     _runner.ghi(ra, {"ket_qua": ket,

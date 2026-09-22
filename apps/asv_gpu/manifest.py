@@ -92,7 +92,13 @@ MANIFEST = AppManifest(
         # ✅ DO THAT pha 13 (03/09): dinh 1.673 MiB, khong doi theo do dai.
         "asv_gpu.audio_prepare": 2200,
         "asv_gpu.transcribe": 6000,      # theo `autosubvideo.transcribe` da do
-        # __VRAM_DO_LUONG__
+        # ✅ DO THAT 23/09 (asv-final, lan `giong`), tung bo do mot tien
+        #    trinh con, chay LAN LUOT tren RTX 5060 Ti dang phuc vu khach:
+        #      ASR faster-whisper large-v3 fp16, beam 5   dinh +4.265 MiB
+        #      SQUIM_OBJECTIVE (lo 4 cua so)              dinh +2.256 MiB
+        #    Card ve dung muc nen sau moi tien trinh con (do: 1.859 MiB
+        #    truoc va sau). Khai = dinh cao nhat + ~20%.
+        "asv_gpu.qc_do_luong": 5200,
     },
     max_runtime_s={
         "asv_gpu.audio_prepare": 3600,

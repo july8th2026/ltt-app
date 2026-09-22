@@ -50,3 +50,21 @@ def test_bang_nguong_co_tieng_Viet_va_chi_dung_chi_so_da_do():
     for nn, ng in sc.NGUONG_DOC_SAI.items():
         assert set(ng) <= {"wer", "cer"} and "wer" in ng, (nn, ng)
         assert all(0 < v < 1 for v in ng.values()), (nn, ng)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Canh bao chat luong tieng (SQUIM) — GHI, khong sinh viec sua
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_canh_bao_tieng_chi_bao_khi_DUOI_nguong_da_hieu_chinh():
+    from apps.auto_scan_video import giai_doan_qc_do_luong as gd
+
+    ng = gd.NGUONG_CANH_BAO_TIENG
+    sach = {"s1": {"pesq": ng["pesq"] + 0.5, "si_sdr": ng["si_sdr"] + 5}}
+    assert gd.canh_bao_tieng(sach) == []
+    don = {"s2": {"pesq": ng["pesq"] - 0.8, "si_sdr": ng["si_sdr"] + 5}}
+    cb = gd.canh_bao_tieng(don)
+    assert [c["ma"] for c in cb] == ["s2"] and "pesq" in cb[0]
+    # ⛔ Canh bao KHONG duoc bien thanh viec sua: `sua_chua` khong doc khoa nay.
+    assert "canh_bao_tieng" not in str(sc.tu_qc_giong([_kq("vi", wer=0.0, cer=0.0)]))
+    assert gd.canh_bao_tieng({}) == [] and gd.canh_bao_tieng(None) == []

@@ -41,6 +41,11 @@ NGUON = [
     ("v3vi", "深度解析", "vi", ["Minh Đức", "Ngọc Huyền"]),
     ("v2vi", "暴雨天", "vi", ["Thái Sơn", "Thùy Dung"]),
     ("v3en", "深度解析", "en", ["@en:vc_b24b1aee8c4d471186b0e1c1d67d860a"]),
+    # Them mau hieu chinh (khong phai dau vao benchmark 1-3 phut): ASR san pham
+    # gop thanh doan dai 15-25 s, nen hai video 1-3 phut chi cho ~16 doan vi.
+    ("v1vi", "廉价", "vi", ["Mai Anh", "Minh Triết"]),
+    ("v4vi", "真人", "vi", ["Quang Sơn", "Ngọc Trân"]),
+    ("v2en", "暴雨天", "en", ["@en:vc_b24b1aee8c4d471186b0e1c1d67d860a"]),
 ]
 KHO_GIONG_CHUNG = pathlib.Path(r"C:\LTTPlatform\data\voice_goc\kho_chung")
 

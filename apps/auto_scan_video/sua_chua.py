@@ -84,7 +84,18 @@ VONG_SUA_TOI_DA = 1
 #: ⛔ Ngon ngu KHONG co trong bang = chua hieu chinh ⇒ ket qua do van ghi vao
 #:    bao cao, nhung KHONG sinh viec sua. Mot nguong doan mo sinh viec doc lai
 #:    (co tra tien) tren mot bang chung khong ai do.
-NGUONG_DOC_SAI: dict[str, dict[str, float]] = {}
+NGUONG_DOC_SAI: dict[str, dict[str, float]] = {
+    # vi: 36 doan THAT (LTT Voice :8120, 4 giong, 4 video zh->vi) — WER am tiet
+    #     cao nhat 0,407 nhung CER cao nhat chi 0,213; doi chung "nuot 1/3
+    #     cuoi" (35 doan) co WER >= 0,308 VA CER >= 0,248. Hai nguong cung
+    #     phai vuot: 0/36 bao dong gia, 35/35 doan thieu chu bi bat.
+    "vi": {"wer": 0.30, "cer": 0.23},
+    # en: 14 doan THAT (giong nhan ban en, muc engine) — WER cao nhat 0,074;
+    #     doi chung nuot chu thap nhat 0,273. 0,15 nam giua, khong sat ben nao.
+    #     ⛔ CER khong khai: chuan hoa en la `EnglishTextNormalizer` (so ->
+    #     chu so), nen CER tren chuoi do khong cung nghia voi CER tieng Viet.
+    "en": {"wer": 0.15},
+}
 
 #: Do tin toi thieu de tin mot phan doan cua model.
 #:

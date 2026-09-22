@@ -54,6 +54,34 @@ PHIEN_BAN_DO_LUONG_GD = 1
 TAN_SO = 16000
 
 
+#: Nguong CANH BAO chat luong tieng (SQUIM). KHONG sinh viec sua — chi ghi vao
+#: bao cao cho nguoi van hanh, vi mot doan "nghe hoi don" van la mot ban giao
+#: duoc, con doc lai thi ton tien.
+#:
+#: Hieu chinh 23/09 tren 50 doan tieng THAT cua LTT Voice (36 vi + 14 en):
+#:   PESQ ca doan   thap nhat 2,719 · p50 3,28 (vi) / 3,41 (en)
+#:   SI-SDR ca doan thap nhat 15,31 dB
+#:   doi chung nhieu trang SNR ~10 dB: PESQ p50 1,19 (vi) / 1,24 (en)
+#: ⇒ PESQ < 2,0 nam GIUA hai dam, khong sat ben nao; SI-SDR < 10 dB duoi ca
+#:   doan te nhat da do.
+#: ⚠️ DA DO VA KHONG DUNG: SQUIM **khong** thay mot khoang lang 0,4 s chen giua
+#:    cau (SI-SDR cua so thap nhat 15,96 so voi 16,58 cua ban sach). Dut quang
+#:    kieu do phai bat bang phep do khac — dung doc bang chung nay thanh "da co
+#:    cong gac cho dut quang".
+NGUONG_CANH_BAO_TIENG = {"pesq": 2.0, "si_sdr": 10.0}
+
+
+def canh_bao_tieng(ket_qua: dict) -> list[dict]:
+    """Doan co diem SQUIM duoi nguong canh bao (bat ky chi so nao)."""
+    ra = []
+    for ma, r in (ket_qua or {}).items():
+        thap = {k: r[k] for k, v in NGUONG_CANH_BAO_TIENG.items()
+                if r.get(k) is not None and float(r[k]) < v}
+        if thap:
+            ra.append({"ma": ma, **thap, "nguong": dict(NGUONG_CANH_BAO_TIENG)})
+    return ra
+
+
 class ThieuTieng(ThieuNguon):
     """Chua co ban ke doan tieng de do."""
 
@@ -145,6 +173,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                for ma, r in (giong.get("ket_qua") or {}).items()
                if "wer" in r]
     khong_dat = sua_chua.giong_khong_dat(do_duoc)
+    canh_bao = canh_bao_tieng((ket.get("chat_luong_tieng") or {}).get("ket_qua"))
 
     bao_cao = {"phien_ban": PHIEN_BAN_DO_LUONG_GD, "ngon_ngu_dich": nn_dich,
                "so_doan": len(doan), "bo_do": ket}
@@ -160,5 +189,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             "do_luong": {t: r.get("trang_thai") for t, r in ket.items()},
             "so_giong_khong_dat": len(khong_dat),
             "qc_giong_khong_dat": khong_dat,
+            # ⚠️ CANH BAO, khong phai viec sua: khong doan nao bi doc lai vi so
+            #    nay. Nguoi van hanh doc; `sua_chua` khong doc.
+            "canh_bao_tieng": canh_bao,
         },
     }
