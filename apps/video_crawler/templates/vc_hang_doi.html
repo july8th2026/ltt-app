@@ -1,5 +1,8 @@
 {% import "_ui.html" as ui %}
 {% if oob %}<div class="vc-stats" id="vc-thong-ke" aria-label="Thống kê của bạn" hx-swap-oob="true">{% include "vc_thong_ke.html" %}</div>{% endif %}
+{#- Chỉ poll khi còn job chạy (SO_LOI L14); nộp job mới thì trang tải lại (HX-Redirect) nên poll tự bật. -#}
+<div class="card" id="hang-doi" style="margin-top:var(--space-5,20px)"
+     {% if thong_ke.dang_chay %}hx-get="{{ app.route_prefix if app else '/video-crawler' }}/hang-doi" hx-trigger="every 4s" hx-swap="outerHTML"{% endif %}>
 <h2>Hàng đợi &amp; lịch sử của tôi</h2>
 {% if not lich_su %}
   <p class="muted">Chưa có lượt cào nào.</p>
@@ -20,3 +23,4 @@
   </tbody>
 </table></div>
 {% endif %}
+</div>

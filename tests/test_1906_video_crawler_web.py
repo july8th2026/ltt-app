@@ -238,3 +238,34 @@ def test_cookie_khong_hop_le_bao_loi_co_ten(env, monkeypatch):
                                                   "csrf_token": _csrf(client)})
     assert r.status_code == 400
     assert "cookie" in r.text.lower()
+
+
+# ── Ảnh bìa + poll (SO_LOI L10, L14) ────────────────────────────────────────
+
+def test_anh_bia_chi_chu_xem_duoc(env, monkeypatch):
+    from apps.video_crawler import anh_bia
+    monkeypatch.setattr(anh_bia, "_lay_mac_dinh", lambda url, *, toi_da: (b"\xff\xd8\xffJPEG", "image/jpeg"))
+    client, (ua, _) = env
+    _login(client, "a@x.com")
+    vid = "a1aaaaaaaaa"
+    kp = _xem_truoc_xong(client, ua, [vid])
+    from platform_core.db import get_session
+    from platform_core.models import Job
+    gen = get_session(); s = next(gen)
+    j = s.get(Job, kp)
+    j.result = {"muc": [{"id": vid, "anh_bia": "https://i.ytimg.com/vi/x/hq.jpg"}]}
+    s.commit(); s.close()
+    r = client.get(f"/video-crawler/anh-bia/{kp}/0")
+    assert r.status_code == 200 and r.headers["content-type"] == "image/jpeg"
+    assert "public" not in r.headers.get("cache-control", "")          # nền tảng ép no-store cho trang cần đăng nhập
+    _login(client, "b@x.com")
+    assert client.get(f"/video-crawler/anh-bia/{kp}/0").status_code == 404
+
+
+def test_hang_doi_chi_poll_khi_con_job_chay(env):
+    client, (ua, _) = env
+    _login(client, "a@x.com")
+    assert "every 4s" not in client.get("/video-crawler/hang-doi").text     # chưa có job
+    client.post("/video-crawler/kham-pha", data={"nen_tang": "youtube", "che_do": "tu_khoa", "dau_vao": "meo",
+                                                 "so_luong": "3", "csrf_token": _csrf(client)})
+    assert "every 4s" in client.get("/video-crawler/hang-doi").text          # job đang chờ

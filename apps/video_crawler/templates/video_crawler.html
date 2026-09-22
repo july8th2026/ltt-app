@@ -16,6 +16,7 @@
   .vc-row .field{flex:1 1 140px}
   .vc-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
   .vc-muc{display:grid;grid-template-columns:auto 96px minmax(0,1fr);gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+  img.vc-bia{object-fit:cover}
   .vc-bia{width:96px;aspect-ratio:16/9;display:grid;place-items:center;border-radius:var(--radius);background:var(--panel);border:1px solid var(--line);font-size:.7rem;color:var(--grey);overflow:hidden}
   .vc-muc span{overflow-wrap:anywhere}
   .vc-che-do label[hidden]{display:none}
@@ -108,10 +109,7 @@
   </div>
   {% endif %}
 
-  <div class="card" id="hang-doi" style="margin-top:var(--space-5,20px)"
-       hx-get="{{ app.route_prefix }}/hang-doi" hx-trigger="every 4s" hx-swap="innerHTML">
-    {% include "vc_hang_doi.html" %}
-  </div>
+  {% include "vc_hang_doi.html" %}
 </section>
 <script>
 (function () {

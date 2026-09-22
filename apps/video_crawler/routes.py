@@ -153,7 +153,7 @@ def hang_doi(request: Request, user: str = Depends(require_login), db=Depends(ge
     u = user_hien_tai(request)
     return templates.TemplateResponse(request, "vc_hang_doi.html", {
         "lich_su": features.lich_su(db, u.id, gioi_han=20) if u else [],
-        "thong_ke": features.thong_ke(db, u.id) if u else {}, "oob": True,
+        "thong_ke": features.thong_ke(db, u.id) if u else {}, "oob": True, "app": MANIFEST,
     })
 
 
@@ -198,3 +198,19 @@ def _ve_trang(request: Request, neo: str) -> Response:
     if _la_htmx(request):
         return Response(status_code=204, headers={"HX-Redirect": dich})
     return RedirectResponse(dich, status_code=303)
+
+
+@router.get("/anh-bia/{job_id}/{chi_so}", dependencies=[Depends(_cong_co)])
+def anh_bia_xem_truoc(request: Request, job_id: str, chi_so: int, user: str = Depends(require_login),
+                      db=Depends(get_db)):
+    """Ảnh bìa của mục trong kết quả xem trước CỦA CHÍNH người dùng (SO_LOI L10). Không có ⇒ 404."""
+    from apps.video_crawler import anh_bia
+    u = user_hien_tai(request)
+    tim = anh_bia.url_cua(db, owner_id=u.id, job_id=job_id, chi_so=chi_so) if u else None
+    if tim is None:
+        raise HTTPException(status_code=404)
+    try:
+        du_lieu, loai = anh_bia.tai(tim[1], nen_tang=tim[0])
+    except anh_bia.AnhKhongHopLe:
+        raise HTTPException(status_code=404) from None
+    return Response(du_lieu, media_type=loai, headers={"X-Content-Type-Options": "nosniff"})
