@@ -238,7 +238,7 @@ codex --profile ltt-fast</code></pre>
     <p>{{ _("Tiện ích Codex VS Code: biểu tượng bánh răng → Codex Settings → Open config.toml. Đây là cấu hình cấp người dùng. Tiện ích cần nhận được LTT_API_KEY trong môi trường khi VS Code khởi động; đóng toàn bộ VS Code rồi mở từ cửa sổ đã đặt khóa.") }}</p>
     <p>{{ _("Xem cấu hình gốc cho tiện ích ở mục VS Code. Khi đặt model/provider ở gốc config.toml, mặc định lệnh codex cũng đổi. Không coi việc CLI đọc profile là bằng chứng tiện ích tự chọn được profile đó.") }}</p>
     <p>{{ _("Codex Desktop dùng cấu hình gốc thay vì profile CLI; mở mục Codex Desktop ở đầu trang để lấy đúng khối hoàn chỉnh. Không dán khóa LTT vào mục MCP/Connectors.") }}</p>
-    <p>{{ _("Nếu thiếu model metadata: kiểm đường dẫn và JSON catalog. Nếu 401: kiểm biến LTT_API_KEY có trong tiến trình hiện tại. Nếu 403: kiểm jobs:create và giới hạn công cụ. Nếu 413: dùng đúng profile theo model hoặc mở phiên mới. Muốn gỡ: xóa khối provider ltt và hai tệp profile/catalog do mình thêm; phục hồi bản sao lưu nếu đã đổi cấu hình gốc.") }}</p>
+    <p>{{ _("Nếu thiếu model metadata: kiểm đường dẫn và JSON catalog. Nếu 401: kiểm biến LTT_API_KEY có trong tiến trình hiện tại. Nếu 403: kiểm jobs:create và giới hạn công cụ. Nếu 400 context_window_exceeded (ngữ cảnh quá dài): dùng đúng profile theo model hoặc mở phiên mới; 413 chỉ là thân request quá lớn (bớt tệp đính kèm). Muốn gỡ: xóa khối provider ltt và hai tệp profile/catalog do mình thêm; phục hồi bản sao lưu nếu đã đổi cấu hình gốc.") }}</p>
     <p class="muted"><a href="https://developers.openai.com/codex/config-advanced/" target="_blank" rel="noopener">Codex custom providers / profiles</a></p>
   </div>
   {% endif %}
