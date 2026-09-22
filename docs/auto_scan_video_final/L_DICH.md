@@ -71,11 +71,15 @@ Ngưỡng cố định của MetricX (báo nhầm trên 24 bản tốt / lọt t
 | | MetricX-24-Large bf16 (GPU) | MetricX fp32 (CPU, 6 luồng) | COMET-QE wmt20 (GPU, fp32) |
 |---|---|---|---|
 | VRAM đỉnh (torch, lô 16) | 2.435 MB | — | 2.264 MB |
-| Nạp model | 32,6 s (lần đầu, đĩa lạnh) | CPU_NAP | 18,9 s |
-| Chấm 192 cặp | 17,8 s ⇒ 93 ms/cặp | CPU_CHAM | 19,9 s ⇒ 104 ms/cặp |
+| Nạp model | 32,6 s (lần đầu, đĩa lạnh) | 26,3 s | 18,9 s |
+| Chấm | 192 cặp trong 17,8 s ⇒ **93 ms/cặp** (lô 16) | 32 cặp trong 4,4 s ⇒ **139 ms/cặp** (lô 8) | 192 cặp trong 19,9 s ⇒ 104 ms/cặp |
 
 Đo khi GPU đang chạy việc khác (máy production dùng chung) ⇒ độ trễ là cận trên. Đĩa: 2,46 GB
-checkpoint + 4,3 MB tokenizer. CPU_KET_LUAN
+checkpoint + 4,3 MB tokenizer.
+
+**Chạy được trên CPU** (`thiet_bi="cpu"`, fp32, `OMP_NUM_THREADS=6`): chỉ chậm hơn ~1,5 lần trên
+đoạn phụ đề ngắn (RSS không đo; trọng số fp32 ~4,9 GB), và điểm khớp bản GPU bf16 (lệch trung bình 0,064; tối đa 0,17 trên 32
+cặp chung) ⇒ ngưỡng dùng chung cho cả hai đường. Đây là lối lùi khi card bận, không phải mặc định.
 
 ## 5. Cài đặt, lặp lại được
 
