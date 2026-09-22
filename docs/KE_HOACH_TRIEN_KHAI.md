@@ -4176,8 +4176,8 @@ CRLF gốc, lượt cuối `python tools\gate.py` **PASS 33/33**, báo cáo
 
 Nguồn: spec `docs/superpowers/specs/2026-09-21-chuan-hoa-ngu-nghia-loi-llm.md`,
 plan `docs/superpowers/plans/2026-09-21-chuan-hoa-ngu-nghia-loi-llm.md`. Quyết
-định: `docs/ltt_llm_dual/DECISION_LOG.md` L-34 (22/09/2026); con trỏ Q137 ở
-`docs/QUYET_DINH_NEN_TANG.md`. Runbook đo: `docs/ltt_llm_dual/LOI_MODEL_RUNBOOK.md`.
+định: `docs/ltt_llm_dual/DECISION_LOG.md` L-34 (22/09/2026) và L-35 (cửa sổ công bố); con trỏ
+ở Q136 `docs/QUYET_DINH_NEN_TANG.md`. Runbook đo: `docs/ltt_llm_dual/LOI_MODEL_RUNBOOK.md`.
 
 - [x] **H57.1 — Task 1–11 (registry `canonical_code`/`protocol_code`, decoder
       B→A, envelope `ltt_error`, rollout A+B):** XONG, deploy `e94dd9a2`/
@@ -4193,7 +4193,7 @@ plan `docs/superpowers/plans/2026-09-21-chuan-hoa-ngu-nghia-loi-llm.md`. Quyết
       `llm_error_legacy_total=0`/`llm_error_contract_mismatch_total=0` sau khi
       LTTCODE 0.2.5 thay 0.2.4 trên máy dùng.
 - [ ] **H57.4 — Task 14 (đồng bộ tài liệu, quyết định, tổng kết phiên):** tài
-      liệu (quyết định L-34/Q137, hậu kiểm `AUDIT_API_2026-09-14.md`, docs API
+      liệu (quyết định L-34/L-35, hậu kiểm `AUDIT_API_2026-09-14.md`, docs API
       sinh bằng `tools/build_public_api_docs.py`, rà `git grep` 413/câu chữ ở
       `docs/ltt_llm_dual/LOI_MODEL_RUNBOOK.md` §8) đang cập nhật trên
       `phien/llm-loi-nghia`; L3 tổng kết phiên còn ở bước sau (R8 của plan).

@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q138; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số), Q125→Q126→Q128 đã thay)
+## 1. Quyết định đã chốt (đến Q136; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số), Q125→Q126→Q128 đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -154,8 +154,6 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q134 | Một lần cắm Codex tạo bao nhiêu model/profile? | **Luôn cả hai.** Tool và SDK tạo `ltt.config.toml` cho LTT 3.8, `ltt-fast.config.toml` cho LTT 3.5 và một catalog chứa hai model. `--model`/radio chỉ chọn mặc định Claude Code; Codex Desktop/VS Code dùng 3.8 làm root ban đầu. Mỗi profile có backup/rollback độc lập. | Đơn vị cài đặt theo một model khiến người dùng phải cắm lại và radio Claude vô tình loại model còn lại khỏi Codex. Cấu hình Tool 1.9.3 đã qua strict parser và `model/list` của CLI 0.145.0, Desktop 0.146.0-alpha.3.1, VS Code 0.154.0-alpha.6.2; cả ba trả đúng hai slug và nhãn Strong/Fast. Picker custom-provider vẫn là hành vi client, không được Tool hứa thay cho dữ liệu `model/list`. |
 | Q135 | Lịch sử GitHub sau khi LTT-CMC hoàn tất | **Giữ nguyên snapshot canonical mới nhất nhưng thay lịch sử reachable của `main` bằng đúng một root commit không có parent; cập nhật `origin/main` bằng `--force-with-lease` ghim đúng SHA remote cũ.** Trước khi cập nhật ref phải quét bí mật, chạy kiểm tra governance/topology và chứng minh tree hash của root đúng bằng tree đã stage. Sau push phải chứng minh `rev-list --count main = 1`, root không có parent, remote/default vẫn là `main`. Không `git gc`/`git prune`; không sửa hoặc xóa worktree VPS V4 đang HOLD. | Người dùng duyệt rõ ngày 12/09/2026 sau khi CMC đã hợp nhất và dọn mọi nhánh remote cũ: mục tiêu là GitHub chỉ công bố một snapshot chuẩn, không giữ lịch sử/nhánh cạnh tranh gây nhầm lẫn. Force push bình thường bị cấm, nhưng đây là ngoại lệ phá hủy có phạm vi hẹp, có xác nhận riêng và lease chống ghi đè thay đổi remote ngoài dự kiến. GitHub có thể giữ object/cache nội bộ ngoài refs trong một thời gian; quyết định chỉ bảo đảm lịch sử không còn reachable qua refs của repository. Số hợp nhất: nhánh LTT-CMC ghi quyết định này là Q124, trùng Q124 (hai model LTT trên client) đã có trên dòng production. Nhánh VPS V4 local vẫn giữ lineage cũ để không làm mất WIP ngoài phạm vi GitHub. |
 | Q136 | Quyết định LLM nội bộ sau Q132 ghi ở đâu? | **Ở `docs/ltt_llm_dual/DECISION_LOG.md`, không chép lại vào đây:** L-22 (nhận theo ngân sách KV), L-23 (Phương án C: máy A quyết định nhận, máy B là rào vật lý), L-24/L-25 (cache RAM 24576/model, sàn RAM 24), L-26 (suy nghĩ do máy chủ quyết), L-27 (ước token cận trên), L-28 (3.5 `-np 4`, 3.8 `-np 3`). Số theo model chỉ ở `apps/ltt_llm/ngan_sach.HO_SO`. | Một quyết định có một chỗ ghi; bảng này chỉ giữ con trỏ để người tìm theo số Q không dừng ở Q132 cũ. |
-| Q137 | Ngữ nghĩa lỗi model (status/canonical/protocol) chốt ở đâu? | **Ở `docs/ltt_llm_dual/DECISION_LOG.md` L-34** (22/09/2026, theo lệ Q136): HTTP status không phải ngữ nghĩa; `canonical_code` (máy B sở hữu gốc) tách khỏi `protocol_code` (adapter tương thích từng giao thức); mã lạ fail-closed thành `upstream_unknown`; B sở hữu `origin`, A sở hữu **public rendering** qua cờ `LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS=1` (bật chính thức 22/09/2026); client LTTCODE `0.2.5` đọc `ltt_error` v1; `request_body_too_large` (413) không kích hoạt nén ngữ cảnh phía client. | Một quyết định một chỗ ghi (theo lệ Q136); bảng này chỉ giữ con trỏ. |
-| Q138 | Cửa sổ ngữ cảnh công bố cho client hạ theo tiêu chí nào? | **Ở `docs/ltt_llm_dual/DECISION_LOG.md` L-35** (22/09/2026, theo lệ Q136): bỏ biên `× 0,92` cũ ("chừa lệch tokenizer"); công bố = trần tiền kiểm (token ƯỚC ở A) chia `HE_SO_UOC_TREN_THAT = 1,5` để khớp token THẬT. Hệ số đo trên 1.120 lượt production (median 1,31, max 1,483), chọn `max` chứ không `p99` vì cỡ mẫu hiệu dụng chỉ ~28 phiên. Kết quả: `ltt-3.8` 171.458→**124.245**, nén 138.690→**91.477**; `ltt-3.5` 209.141→**151.552**, nén 176.373→**118.784**. Trần tiền kiểm thật ở cổng không đổi. | Một quyết định một chỗ ghi (theo lệ Q136); bảng này chỉ giữ con trỏ. |
 ---
 
 ### Q115 — Public input cap sau benchmark Q4 (2026-08-28)
@@ -593,7 +591,9 @@ Từ 17/09 các quyết định của đường LLM nội bộ được đánh s
 `docs/ltt_llm_dual/DECISION_LOG.md`: L-22 (nhận theo ngân sách KV), L-23 (Phương án C —
 máy A quyết định nhận, cổng máy B là rào vật lý; gỡ trần vào/đồng thời/RPM ở cổng B),
 L-24/L-25 (cache RAM 24576 mỗi model, sàn RAM cổng B 24), L-26 (suy nghĩ do máy chủ
-quyết), L-27 (ước token cận trên), L-28 (3.5 `-np 4`, 3.8 `-np 3`). Số theo model chỉ ở
+quyết), L-27 (ước token cận trên), L-28 (3.5 `-np 4`, 3.8 `-np 3`), L-34 (ngữ nghĩa lỗi model: status không phải
+ngữ nghĩa, canonical/protocol tách, mã lạ fail-closed — 22/09), L-35 (cửa sổ ngữ cảnh công bố
+theo token thật, k = 1,50 — 22/09). Số theo model chỉ ở
 `apps/ltt_llm/ngan_sach.HO_SO`. Mục này chỉ là con trỏ; quyết định mới của đường LLM
 ghi ở DECISION_LOG, không thêm số Q.
 
