@@ -19450,3 +19450,6 @@ msgstr "If you get rejected for going over the context limit mid-conversation"
 
 msgid "Vượt trần thì bạn nhận mã 400 (context_window_exceeded) kèm đúng con số đã áp cho model bạn gọi — cửa Responses dạng stream báo bằng sự kiện response.failed thay vì đóng kết nối lặng lẽ. Chúng tôi KHÔNG bao giờ lặng lẽ cắt bớt lượt cũ: cắt đi thì thứ mất đầu tiên là chỉ dẫn hệ thống và kết quả tool, và bạn sẽ không biết là mình đã mất."
 msgstr "Go over the limit and you get a 400 (context_window_exceeded) carrying the number that actually applied to the model you called — a streaming Responses call instead reports it with a response.failed event instead of closing silently. We NEVER silently drop older turns: the first things to go would be your system instructions and your tool results, and you would have no way to know they were gone."
+
+msgid "Cần tài khoản người dùng để dùng credit."
+msgstr "A user account is needed to spend credits."

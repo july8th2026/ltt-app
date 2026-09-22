@@ -131,6 +131,39 @@ def test_app_khong_import_app_khac() -> None:
                     f"{tep.name}: {d}"
 
 
+def test_route_dung_USER_ID_khong_dung_email_cho_credit_job_kho() -> None:
+    """E2E thật 22/09: `require_login()` trả EMAIL; dùng nó làm `user_id` thì sổ
+    credit (khoá `User.id`) đọc ra 0 ⇒ mọi khách bị 402. Route phải đi qua
+    `_ma_user()` cho giữ tiền, khoá lưu trữ và kiểm chủ job."""
+    import ast
+
+    from apps.transcript import routes
+
+    goc = ast.parse((GOC / "apps" / "transcript" / "routes.py").read_text(encoding="utf-8"))
+    for n in ast.walk(goc):
+        if isinstance(n, ast.Call) and getattr(n.func, "id", "") == "submit_with_credit":
+            kw = {k.arg: k.value for k in n.keywords}
+            assert isinstance(kw["user_id"], ast.Name) and kw["user_id"].id == "uid"
+    van = (GOC / "apps" / "transcript" / "routes.py").read_text(encoding="utf-8")
+    assert 'f"transcript/{uid}/' in van and 'f"transcript/{user}/' not in van
+
+    class _U:
+        id = "u-123"
+
+    class _Req:
+        pass
+
+    import apps.transcript.routes as r
+    goc_fn = r.user_hien_tai
+    try:
+        r.user_hien_tai = lambda req: _U()
+        assert routes._ma_user(_Req()) == "u-123"
+        r.user_hien_tai = lambda req: None
+        assert routes._ma_user(_Req()) == ""
+    finally:
+        r.user_hien_tai = goc_fn
+
+
 def test_router_khong_tu_viet_prefix() -> None:
     """Nền tảng gắn prefix từ `MANIFEST.route_prefix`. Viết tay ở router là hai
     nguồn cho một đường dẫn, và chúng sẽ lệch."""
