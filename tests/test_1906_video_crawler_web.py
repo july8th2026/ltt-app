@@ -269,3 +269,12 @@ def test_hang_doi_chi_poll_khi_con_job_chay(env):
     client.post("/video-crawler/kham-pha", data={"nen_tang": "youtube", "che_do": "tu_khoa", "dau_vao": "meo",
                                                  "so_luong": "3", "csrf_token": _csrf(client)})
     assert "every 4s" in client.get("/video-crawler/hang-doi").text          # job đang chờ
+
+
+def test_nen_mac_dinh_la_nen_cao_an_danh_duoc_nhieu_che_do_nhat(env):
+    """Kiểm GUI 22/09: mặc định là Douyin (đứng đầu thứ tự nhận diện link) — nền cần phiên ⇒ khách bấm là gặp lỗi."""
+    client, _ = env
+    _login(client, "a@x.com")
+    import re as _re
+    m = _re.search(r'value="([a-z_]+)" checked', client.get("/video-crawler").text)
+    assert m and m.group(1) == "youtube"

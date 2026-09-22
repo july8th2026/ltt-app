@@ -37,11 +37,12 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <h2>1 · Nền tảng</h2>
       <div class="chips" role="radiogroup" aria-label="Nền tảng">
+        {#- Mặc định = nền đầu tiên cào được KHÔNG cần phiên (thứ tự registry là thứ tự nhận diện link của donor). -#}
         {% for n in cac_nen %}
         <label class="chip-opt" data-nen="{{ n.id }}" data-che-do="{{ n.che_do | sort | join(',') }}"
                data-can-phien="{{ n.che_do_can_dang_nhap | sort | join(',') }}" data-co-phien="{{ '1' if n.id in phien_cua_toi else '' }}"
                data-ghi-chu="{{ n.gioi_han | join(' · ') }}">
-          <input type="radio" name="nen_tang" value="{{ n.id }}" {% if loop.first %}checked{% endif %}><span>{{ n.ten }}</span>
+          <input type="radio" name="nen_tang" value="{{ n.id }}" {% if n.id == nen_mac_dinh %}checked{% endif %}><span>{{ n.ten }}</span>
         </label>
         {% endfor %}
       </div>

@@ -46,6 +46,8 @@ def _trang(request: Request, user: str, db, *, loi: str = "", ma: int = 200) -> 
         "user": user, "nav": MANIFEST.slug, "app": MANIFEST,
         "csrf_token": issue_csrf_token(request),
         "cac_nen": nen_tang.cac_nen_bat(),
+        # Mặc định = nền có NHIỀU chế độ cào ẩn danh nhất (thứ tự registry là thứ tự nhận diện link của donor).
+        "nen_mac_dinh": max(nen_tang.cac_nen_bat(), key=lambda n: len(n.che_do - n.che_do_can_dang_nhap)).id,
         "nen_dang_nhap": [n for n in nen_tang.cac_nen_bat() if n.cookie_dang_nhap],
         "phien_cua_toi": {p.nen_tang: p for p in phien.danh_sach(db, u.id)} if u else {},
         "thong_ke": features.thong_ke(db, u.id) if u else {},
