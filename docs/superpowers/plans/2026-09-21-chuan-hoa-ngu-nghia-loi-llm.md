@@ -553,6 +553,19 @@ thì đếm thật (`dem_that`, `llm_gateway/api.py`). Bằng chứng: `C:\lttc0
 sổ lỗi LTTCODE V-17. Cần chủ dự án duyệt hướng: (a) A dùng cơ chế ước→đếm thật như B; (b) công bố
 cửa sổ theo token thật (hạ số công bố); (c) giữ nguyên, chấp nhận nén sau lỗi.
 
+**Chủ dự án chốt 22/09: phương án (b)** — hạ cửa sổ công bố cho khớp token thật (ngoại lệ có chủ đích với
+ràng buộc "không đổi trần" của plan; trần tiền kiểm và máy B KHÔNG đổi, chỉ đổi số công bố + ngưỡng nén dẫn xuất).
+Làn:
+- **W1 đo** (Opus, chỉ đọc): phân phối k = token ước A / usage thật trên mọi lượt thành công của session
+  LTTCODE; đề xuất k → `C:\lttc0\logs\he_so_uoc_that.md`.
+- **W2 LTTSTUDIOSAPP** (sau W1 + sau khi gộp R6c): một hằng số k trong `apps/ltt_llm/ngan_sach.py`,
+  `cong_bo_cua` dẫn xuất từ nó; mọi nơi đang chép số (`examples.py`, `cam_cli.py`, `sdk/ltt_cai_dat_cli.py`,
+  `_cam_chon.html`, bản dịch, tài liệu PUBLIC_API, test) đọc từ hàm hoặc cập nhật; test nhắm
+  `thanh_phan.py --test ltt_llm` + các tệp đang khoá số.
+- **W3 LTTCODE**: `KNOWN_CONTEXT_WINDOWS`, ngưỡng nén preset `agent.cordis.yml`, test
+  `context-windows-catalog`/`compaction-cache`/`max-tokens`/`adapter`; rồi R4 lại → build 0.2.5 MỘT lần.
+- Deploy A sau L3 (catalog mới có hiệu lực); build 0.2.5 dùng số mới làm dự phòng.
+
 Task 13 (gỡ legacy) **không** thuộc phiên này: vào khi đủ một chu kỳ vận hành có traffic với
 `llm_error_legacy_total=0` và `llm_error_contract_mismatch_total=0` (đọc bằng
 `tools/kiem_hop_dong_loi_llm.py live`), sau khi 0.2.5 đã thay 0.2.4 trên máy dùng.
