@@ -14,7 +14,7 @@ from apps.video_crawler import an_toan_url, nen_tang
 from apps.video_crawler.adapters.base import ID_AN_TOAN
 from apps.video_crawler.manifest import MANIFEST, SO_MUC_TOI_DA
 from platform_core.i18n import _ as _t
-from platform_core.models import JOB_DONE, JOB_ERROR, JOB_QUEUED, JOB_RUNNING, Job
+from platform_core.models import JOB_CANCELLED, JOB_DONE, JOB_ERROR, JOB_QUEUED, JOB_RUNNING, Job
 
 JOB_KHAM_PHA = "video_crawler.kham_pha"
 JOB_TAI = "video_crawler.tai"
@@ -38,6 +38,101 @@ class LoiDauVao(ValueError):
 
 class QuaTanSuat(LoiDauVao):
     """Quá nhiều lượt xem trước trong một phút."""
+
+
+# ── Lớp pháp lý của lượt tải (PLAN_MVP §C L1; DANH_GIA_MVP N1–N3, N7) ─────────
+# Bản nháp văn bản + nguồn: docs/migrations/video_crawler/PHAP_LY_NHAP.md (chủ dự án duyệt — Q2).
+
+#: Đổi câu cam kết trên UI ⇒ tăng phiên bản (params ghi phiên bản khách đã đồng ý, làm bằng chứng).
+PHIEN_BAN_CAM_KET = "2026-09-22"
+#: `/terms/` chuyển hướng về trang này (kiểm 22/09/2026).
+URL_DIEU_KHOAN = "https://lttstudios.com/dieu-khoan-su-dung/"
+#: Trang /lien-he/ chỉ khách báo vi phạm chính sách/lạm dụng về đây (kiểm 22/09/2026).
+URL_BAO_VI_PHAM = "https://lttstudios.com/bao-cao-lam-dung/"
+#: Tiền lệ hiển thị cho khách: `apps/vps/dieu_khoan.py`.
+EMAIL_HO_TRO = "support@lttstudios.com"
+#: Trần tải theo tài khoản (N7: nền chặn IP/tài khoản khi tải dồn dập). Đếm số MỤC video.
+TAI_MOI_GIO = 60
+TAI_MOI_NGAY = 300
+
+
+class ChuaCamKet(LoiDauVao):
+    """Lượt tải chưa tick ô cam kết quyền."""
+
+
+class QuaTranTai(LoiDauVao):
+    """Vượt trần video tải mỗi giờ / mỗi ngày của tài khoản."""
+
+
+def gan_cam_ket(params: dict, *, dong_y: bool, bay_gio: datetime | None = None) -> dict:
+    """Params tải + bằng chứng cam kết quyền. Chưa đồng ý ⇒ `ChuaCamKet` (xem trước không gọi hàm này)."""
+    if not dong_y:
+        raise ChuaCamKet(_t("Cần tick ô cam kết bạn có quyền tải và sử dụng các video này trước khi tải."))
+    luc = (bay_gio or datetime.now(timezone.utc)).astimezone(timezone.utc).replace(microsecond=0)
+    return {**params, "cam_ket": {"phien_ban": PHIEN_BAN_CAM_KET, "luc": luc.isoformat()}}
+
+
+def khoa_dedupe(job_type: str, params: dict) -> str:
+    """Khoá dedupe bỏ `cam_ket.luc`: bấm đúp cách nhau vài giây vẫn là MỘT job (không trừ tiền hai lần).
+
+    Giữ `phien_ban`: đổi văn bản cam kết là một yêu cầu khác. Params lưu trong job vẫn giữ `luc` đầy đủ.
+    """
+    from platform_core.job_submit import dedupe_key_for
+    ck = params.get("cam_ket")
+    if isinstance(ck, dict):
+        params = {**params, "cam_ket": {k: v for k, v in ck.items() if k != "luc"}}
+    return dedupe_key_for(job_type, params)
+
+
+def so_muc_du_kien(params: dict) -> int:
+    """Số video tối đa một job tải sẽ lấy: số mục đã chọn, hoặc `so_luong` của nguồn cào hết."""
+    if params.get("nguon"):
+        try:
+            return max(0, int(params["nguon"].get("so_luong") or 0))
+        except (TypeError, ValueError):
+            return 0
+    return len(params.get("muc") or [])
+
+
+def _so_muc_da_dung(job: Job) -> int:
+    ket_qua = job.result or {}
+    if job.status in (JOB_DONE, JOB_ERROR, JOB_CANCELLED) and "video_keys" in ket_qua:
+        return len(ket_qua.get("video_keys") or [])            # đã kết thúc: số video tải THẬT
+    if job.status == JOB_CANCELLED and job.started_at is None:
+        return 0                                               # huỷ khi còn chờ: chưa chạm nền nào
+    return so_muc_du_kien(job.params or {})                   # đang chờ/chạy, hoặc lỗi không kết quả: tính đủ
+
+
+def kiem_tran_tai(db, owner_id: str, so_muc_moi: int, *, bay_gio: datetime | None = None) -> None:
+    """Vượt trần video/giờ hoặc video/ngày (tính cả lượt mới) ⇒ `QuaTranTai`. Lọc giờ trong Python như `kiem_tan_suat`."""
+    bay_gio = bay_gio or datetime.now(timezone.utc)
+    moc_gio, moc_ngay = bay_gio - timedelta(hours=1), bay_gio - timedelta(days=1)
+    jobs = db.execute(
+        select(Job).where(Job.user_id == owner_id, Job.app_slug == MANIFEST.slug, Job.job_type == JOB_TAI)
+        .order_by(Job.created_at.desc()).limit(TAI_MOI_NGAY * 2)
+    ).scalars()
+    trong_gio = trong_ngay = 0
+    for j in jobs:
+        tao = j.created_at if j.created_at.tzinfo else j.created_at.replace(tzinfo=timezone.utc)
+        if tao < moc_ngay:
+            break
+        n = _so_muc_da_dung(j)
+        trong_ngay += n
+        if tao >= moc_gio:
+            trong_gio += n
+    if trong_gio + so_muc_moi > TAI_MOI_GIO:
+        raise QuaTranTai(_t("Mỗi tài khoản tải tối đa {n} video mỗi giờ (bạn đã dùng {da}) — đợi rồi thử lại "
+                            "hoặc chọn ít video hơn.").format(n=TAI_MOI_GIO, da=trong_gio))
+    if trong_ngay + so_muc_moi > TAI_MOI_NGAY:
+        raise QuaTranTai(_t("Mỗi tài khoản tải tối đa {n} video mỗi ngày (bạn đã dùng {da}) — thử lại sau.")
+                         .format(n=TAI_MOI_NGAY, da=trong_ngay))
+
+
+def chuan_bi_tai(db, owner_id: str, params: dict, *, dong_y: bool) -> dict:
+    """Cổng pháp lý của MỌI lượt tải: cam kết quyền rồi trần tải. Trả params đã gắn `cam_ket`."""
+    ra = gan_cam_ket(params, dong_y=dong_y)
+    kiem_tran_tai(db, owner_id, so_muc_du_kien(ra))
+    return ra
 
 
 def _nen(nen_id: str):
@@ -140,13 +235,13 @@ def dung_params_tai_tu_xem_truoc(db, *, owner_id: str, kham_pha_id: str, ids: li
 
 def nop(db, *, owner_id: str, job_type: str, params: dict) -> Job:
     """Giữ credit + nộp job. KHÔNG commit (route/`get_db` commit). `owner_id` luôn lấy từ phiên đăng nhập."""
-    from platform_core.job_submit import dedupe_key_for, submit_with_credit
+    from platform_core.job_submit import submit_with_credit
     if job_type not in MANIFEST.job_types:
         raise LoiDauVao(_t("Loại việc không hợp lệ."))
     if params.get("owner_id") != owner_id:
         raise LoiDauVao(_t("Yêu cầu không thuộc tài khoản này."))
     return submit_with_credit(db, user_id=owner_id, app_slug=MANIFEST.slug, job_type=job_type,
-                              params=params, dedupe_key=dedupe_key_for(job_type, params),
+                              params=params, dedupe_key=khoa_dedupe(job_type, params),
                               max_attempts=SO_LAN_THU)
 
 

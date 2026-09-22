@@ -43,9 +43,26 @@ def _nguoi(request: Request):
     return u
 
 
+def _bang_gia() -> list:
+    """Bậc giá ước tính cho UI. CẦN ĐIỀU PHỐI: khi gộp làn L2 (`gia.py`) thì bỏ try/except, gọi thẳng `gia.bang()`."""
+    try:
+        from apps.video_crawler import gia  # type: ignore[attr-defined]
+    except ImportError:
+        return []
+    return list(gia.bang())
+
+
+def _phap_ly() -> dict:
+    """Hằng pháp lý hiển thị trên form tải (một nguồn: `features`)."""
+    return {"url_dieu_khoan": features.URL_DIEU_KHOAN, "url_bao_vi_pham": features.URL_BAO_VI_PHAM,
+            "email_ho_tro": features.EMAIL_HO_TRO, "tai_moi_gio": features.TAI_MOI_GIO,
+            "tai_moi_ngay": features.TAI_MOI_NGAY}
+
+
 def _trang(request: Request, user: str, db, *, loi: str = "", ma: int = 200) -> HTMLResponse:
     u: Any = user_hien_tai(request)
     return templates.TemplateResponse(request, "video_crawler.html", {
+        "phap_ly": _phap_ly(), "bang_gia": _bang_gia(),
         "user": user, "nav": MANIFEST.slug, "app": MANIFEST,
         "csrf_token": issue_csrf_token(request),
         "cac_nen": nen_tang.cac_nen_bat(),
@@ -110,7 +127,7 @@ def _ket_qua(request: Request, db, owner_id: str, job_id: str) -> HTMLResponse:
     if job is None:
         raise HTTPException(status_code=404)
     return templates.TemplateResponse(request, "vc_ket_qua.html", {
-        "job": job, "app": MANIFEST, "csrf_token": issue_csrf_token(request),
+        "job": job, "app": MANIFEST, "csrf_token": issue_csrf_token(request), "phap_ly": _phap_ly(),
         "muc": (job.result or {}).get("muc") or [],
         "bo_qua_trung": (job.result or {}).get("bo_qua_trung") or 0,
     })
@@ -146,8 +163,12 @@ async def tai(request: Request, user: str = Depends(require_login), db=Depends(g
             params = features.dung_params_tai(owner_id=u.id, nen_tang=nen_id, nguon={
                 "che_do": str(form.get("che_do") or ""), "dau_vao": str(form.get("dau_vao") or ""),
                 "so_luong": form.get("so_luong"), "khong_trung": form.get("khong_trung") == "1"}, db=db)
+        params = features.chuan_bi_tai(db, u.id, params, dong_y=form.get("cam_ket") == "1")
         features.nop(db, owner_id=u.id, job_type=features.JOB_TAI, params=params)
         db.commit()
+    except features.QuaTranTai as e:
+        db.rollback()
+        return _loi_form(request, user, db, str(e), ma=429)
     except (features.LoiDauVao, credit.ThieuCreditError, RegistryError) as e:
         db.rollback()
         return _loi_form(request, user, db, str(e))
