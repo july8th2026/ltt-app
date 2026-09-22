@@ -1,0 +1,21 @@
+f2_abogus -- a_bogus request signature for the Douyin web API
+
+This directory contains a Derivative Work of:
+
+    f2 (https://github.com/Johnserf-Seed/f2)
+    file:    f2/utils/abogus.py  (blob 419cf569b3b6252c5d58f6d6fe36f016859446cf)
+    commit:  7dab3e2ffffaa2535834d28fca99dbc2e89fa9d3
+    author:  JohnserfSeed <support@f2.wiki>
+    license: Apache License 2.0 (copy in ./LICENSE, fetched from the same commit)
+
+The upstream repository ships no NOTICE file; the attribution above is taken from
+the header of f2/utils/abogus.py (@Author JohnserfSeed, @License Apache License 2.0).
+
+Modifications by LTT Studios (2026-09-22), see the header of abogus.py:
+  * SM3 comes from Python's hashlib (OpenSSL) instead of the `gmssl` package.
+  * Only the classes needed to sign a request are kept; docstrings, usage
+    examples and the __main__ demo were removed.
+  * `ABogus(options=...)` no longer uses a mutable default argument.
+  * The random source and the clock are injectable (for deterministic tests);
+    with the defaults, behaviour is identical to upstream.
+The algorithm itself (tables, byte layout, salts, alphabets) is unchanged.

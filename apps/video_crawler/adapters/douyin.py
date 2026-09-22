@@ -1,4 +1,4 @@
-"""Adapter Douyin qua yt-dlp (spec §11, §18, §21) — CHỈ chế độ `link`.
+"""Adapter Douyin (spec §11, §18, §21): `link` + `tai` qua yt-dlp; `tu_khoa`/`kenh` qua client web `douyin_web.py`.
 
 Máy móc yt-dlp chung (hook, nhịp tim, huỷ, lọc, tìm tệp) ở `_ytdlp.py`; đây chỉ là cấu hình Douyin.
 yt-dlp được nạp lúc cần — module này import được khi chưa cài yt-dlp.
@@ -23,19 +23,21 @@ Bằng chứng (KHÔNG đọc/copy MediaCrawler — giấy phép NON-COMMERCIAL)
     `yt-dlp/yt-dlp#2120` "Add DouyinUserIE" (vẫn mở, 2026-09-22); cookie "tươi" hỏng theo thời gian:
     `yt-dlp/yt-dlp#16867` "[Douyin] Fresh cookies issue with valid cookies on nightly".
 
-Chế độ hỗ trợ = GIAO của (donor có: search/link/kênh/bộ) ∩ (yt-dlp có extractor thật): chỉ `link`.
-search/kênh/bộ đòi ký request + phân trang riêng của Douyin (donor dùng MediaCrawler, NON-COMMERCIAL,
-không thể tự dùng lại) ⇒ cần viết MỘT client Douyin riêng — việc lớn, để điều phối lên kế hoạch riêng.
+Chế độ: `link` (yt-dlp), `tu_khoa` + `kenh` (client web ký a_bogus — port f2 Apache-2.0, xem `douyin_web.py`;
+chủ dự án chấp nhận rủi ro ToS N10 ngày 22/09). `bo` (collection) chưa làm. Mục tìm được vẫn TẢI qua yt-dlp
+bằng link chuẩn `douyin.com/video/<aweme_id>` với cookie khách.
 """
 from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from platform_core.i18n import _ as _t
 
+from apps.video_crawler.adapters import douyin_web
 from apps.video_crawler.adapters._ytdlp import YtdlpAdapter
+from apps.video_crawler.adapters.base import BaoTienDo, CrawlItem, YeuCauCao
 
 __all__ = ["DouyinAdapter", "chuan_hoa_link_douyin", "tuy_chon"]
 
@@ -79,6 +81,13 @@ class DouyinAdapter(YtdlpAdapter):
     ie_key_video = ("Douyin",)
     impersonate = False                                     # _real_extract không dùng impersonate=True
 
+    def __init__(self, ydl_factory: Callable[[dict], Any] | None = None, *,
+                 van_chuyen_factory: Callable[[str | None], douyin_web.VanChuyen] | None = None,
+                 ky: douyin_web.KyTen | None = None, **kw: Any):
+        super().__init__(ydl_factory, **kw)
+        self._van_chuyen_factory = van_chuyen_factory or douyin_web.van_chuyen_ytdlp
+        self._ky = ky or douyin_web.ky_a_bogus
+
     def url_video(self, id: str) -> str:
         return f"https://www.douyin.com/video/{id}"
 
@@ -86,10 +95,36 @@ class DouyinAdapter(YtdlpAdapter):
         return isinstance(id, str) and _ID.fullmatch(id) is not None
 
     def url_kham_pha(self, che_do: str, dau_vao: str, n: int) -> str:
-        if che_do != "link":
-            raise NotImplementedError(
-                _t("Douyin chưa hỗ trợ chế độ {che_do!r}: cần client Douyin riêng (ký request, phân "
-                   "trang) — donor dựa vào MediaCrawler (NON-COMMERCIAL), không thể tự dùng lại.")
-                .format(che_do=che_do)
-            )
+        if che_do != "link":                      # tu_khoa/kenh đi `kham_pha` riêng (client web), không qua đây
+            raise NotImplementedError(_t("Douyin chưa hỗ trợ chế độ {che_do!r}.").format(che_do=che_do))
         return chuan_hoa_link_douyin(dau_vao)
+
+    # ------------------------------------------------------------ tu_khoa / kenh (client web)
+    def kham_pha(self, yeu_cau: YeuCauCao, *, bao_tien_do: BaoTienDo) -> list[CrawlItem]:
+        che_do = yeu_cau.che_do
+        if che_do not in ("tu_khoa", "kenh"):
+            return super().kham_pha(yeu_cau, bao_tien_do=bao_tien_do)
+        n = int(yeu_cau.so_luong)
+        vao = yeu_cau.dau_vao.strip()
+        sec_uid: str | None = None
+        if che_do == "kenh":
+            sec_uid = douyin_web.sec_uid_tu_link(vao)
+            if sec_uid is None:                   # link rút gọn/không phải trang người dùng — không đọc mạng để giải
+                raise douyin_web.loi_url_sai()
+        elif not self.tep_cookie:                 # donor: tìm Douyin đòi đăng nhập (DOUYIN_NEED_LOGIN 2483)
+            raise douyin_web.loi_can_dang_nhap()
+        bao_tien_do(0, _t("đang tìm video"))
+        web = douyin_web.DouyinWeb(self._van_chuyen_factory(self.tep_cookie),
+                                   ms_token=douyin_web.doc_cookie(self.tep_cookie, "msToken"), ky=self._ky)
+
+        def bao(pct: int) -> None:
+            bao_tien_do(pct, _t("đang tìm video"))
+
+        def nhan(m: dict) -> bool:
+            return self.id_hop_le(m["id"]) and self.ly_do_tu_choi({"duration": m["thoi_luong_s"]}) is None
+
+        tho = (web.tim_video(vao, n, bao=bao, nhan=nhan) if che_do == "tu_khoa"
+               else web.video_cua_nguoi_dung(sec_uid or "", n, bao=bao, nhan=nhan))
+        ra = [CrawlItem(nen_tang=self.nen_tang, url=self.url_video(m["id"]), **m) for m in tho[:n]]
+        bao_tien_do(100, _t("tìm thấy {n} video").format(n=len(ra)))
+        return ra
