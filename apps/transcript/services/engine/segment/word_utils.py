@@ -20,7 +20,8 @@ def extract_words_from_segment(segment: Dict) -> List[Dict]:
 
     result = []
     for w in words:
-        word_text = clean_text(w.get("word", ""))
+        # `word` = legacy dump, `text` = platform_core.stt.service (see flatten_words)
+        word_text = clean_text(w.get("word") or w.get("text") or "")
         if not word_text:
             continue
         try:
