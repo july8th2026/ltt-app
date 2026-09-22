@@ -12,6 +12,7 @@ Chi tiết chế độ/login cho các nền chưa bật lấy từ `docs/migrati
 """
 from __future__ import annotations
 
+import os
 import re
 import urllib.parse
 from dataclasses import dataclass
@@ -20,6 +21,15 @@ from platform_core.i18n import N_
 from platform_core.i18n import _ as _t
 
 from apps.video_crawler.adapters.base import CHE_DO
+
+#: Tắt mềm theo nền (vận hành, không đụng mã) — brief L4-c. Danh sách id phẩy, ví dụ "douyin,weibo".
+#: Đọc MỖI LẦN GỌI (không cache): đổi env + không cần khởi động lại worker web để có hiệu lực ngay.
+CO_TAT_NEN = "LTT_VIDEO_CRAWLER_TAT"
+
+
+def _id_nen_da_tat() -> frozenset[str]:
+    gia_tri = os.environ.get(CO_TAT_NEN, "")
+    return frozenset(s.strip() for s in gia_tri.split(",") if s.strip())
 
 #: search/detail/creator/chase (donor) → tu_khoa/link/kenh/bo (LTT).
 _MODE_MAP = {
@@ -207,14 +217,16 @@ def lay(id: str) -> NenTang:
 
 
 def cac_nen_bat() -> list[NenTang]:
-    """Danh sách nền `bat=True`, giữ thứ tự registry — dùng để dựng lưới UI."""
-    return [n for n in _NEN if n.bat]
+    """Danh sách nền `bat=True` VÀ chưa bị tắt mềm qua `LTT_VIDEO_CRAWLER_TAT`, giữ thứ tự registry —
+    dùng để dựng lưới UI. Nền bị tắt mềm biến mất khỏi đây (khách không thấy, không chọn được)."""
+    tat = _id_nen_da_tat()
+    return [n for n in _NEN if n.bat and n.id not in tat]
 
 
 def lay_nen_bat(id: str) -> NenTang:
-    """Như `lay`, nhưng ném `NenKhongHopLe` nếu nền chưa `bat` (chưa có adapter/test)."""
+    """Như `lay`, nhưng ném `NenKhongHopLe` nếu nền chưa `bat` hoặc đang bị tắt mềm (vận hành, `nen_tang.py`)."""
     n = _THEO_ID.get(id)
-    if n is None or not n.bat:
+    if n is None or not n.bat or n.id in _id_nen_da_tat():
         raise NenKhongHopLe(_t("nền không hợp lệ hoặc chưa bật: {id!r}").format(id=id))
     return n
 

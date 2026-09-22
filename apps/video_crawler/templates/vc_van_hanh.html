@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% import "_app_head.html" as ah %}
+{% block title %}{{ _("Vận hành") }} · {{ _("Cào video nguồn") }} — LTT AI Studio{% endblock %}
+{% block page_mode %}wide{% endblock %}
+{% block content %}
+<style>
+  .vc-vh-table{width:100%;border-collapse:collapse}
+  .vc-vh-table th,.vc-vh-table td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  .vc-vh-table td.num,.vc-vh-table th.num{text-align:right}
+  .vc-vh-ma{display:inline-block;margin:0 6px 4px 0;padding:2px 8px;border-radius:999px;background:var(--panel);border:1px solid var(--line);font-size:.8rem}
+  .vc-vh-tat{color:var(--err,#c0392b);font-weight:600}
+</style>
+<section aria-labelledby="vc-vh-title">
+  {{ ah.dau_trang(_("Vận hành"), _("Sức khoẻ Cào video nguồn"), _("Tỉ lệ thành công/lỗi theo nền trong {gio} giờ gần nhất — đọc từ hàng đợi việc, không phải bảng riêng.").format(gio=cua_so_gio), id_tieu_de="vc-vh-title", viec=false) }}
+
+  {% if co_nen_khuyen_nghi_tat %}
+  <div class="alert alert-err" role="alert">{{ _("Có nền dưới ngưỡng — xem cột Khuyến nghị. Tắt bằng biến môi trường LTT_VIDEO_CRAWLER_TAT (không tự động tắt).") }}</div>
+  {% endif %}
+
+  <div class="card">
+    <table class="vc-vh-table">
+      <thead><tr>
+        <th>{{ _("Nền") }}</th>
+        <th class="num">{{ _("Job tải") }}</th>
+        <th class="num">{{ _("Mục tải xong") }}</th>
+        <th class="num">{{ _("Mục lỗi") }}</th>
+        <th>{{ _("Lỗi theo mã") }}</th>
+        <th class="num">{{ _("Job lỗi toàn phần") }}</th>
+        <th class="num">{{ _("Tỉ lệ thành công") }}</th>
+        <th>{{ _("Khuyến nghị") }}</th>
+      </tr></thead>
+      <tbody>
+        {% for nen_id, sk in thong_ke.items() %}
+        <tr>
+          <td>{{ nen_id }}</td>
+          <td class="num">{{ sk.tong_job }}</td>
+          <td class="num">{{ sk.muc_tai_xong }}</td>
+          <td class="num">{{ sk.muc_loi }}</td>
+          <td>{% for ma, n in sk.muc_loi_theo_ma.items() %}<span class="vc-vh-ma">{{ ma }} × {{ n }}</span>{% else %}—{% endfor %}</td>
+          <td class="num">{{ sk.job_loi_toan_phan }}</td>
+          <td class="num">{{ "%.0f%%"|format(sk.ty_le_thanh_cong * 100) if sk.ty_le_thanh_cong is not none else "—" }}</td>
+          <td>{% if sk.khuyen_nghi_tat %}<span class="vc-vh-tat">{{ _("Nên tắt") }}</span>{% else %}{{ _("Bình thường") }}{% endif %}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" class="muted">{{ _("Chưa có job tải nào trong cửa sổ này.") }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
