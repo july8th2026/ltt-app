@@ -277,7 +277,7 @@ def test_POST_v1_huy_cat_luot_dang_bay_va_luot_ay_tra_499(caplog):
 
     t.join(timeout=5.0)
     assert ket.get("ma") == 499, f"luot bi huy tra {ket.get('ma')}"
-    assert ket["than"]["ly_do"] == "huy theo yeu cau"
+    assert ket["than"]["detail"]["canonical_code"] == "request_cancelled"
 
     dong = _dong_so(caplog)
     assert len(dong) == 1, f"{len(dong)} dong so cho MOT luot: {dong}"

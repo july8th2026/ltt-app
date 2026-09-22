@@ -97,7 +97,6 @@ def _observe_gateway_failure(
     canonical = str(detail.get("canonical_code") or "upstream_unknown")
     retry = str(detail.get("retry") or "ambiguous")
     upstream_status = detail.get("upstream_status")
-    legacy = bool(detail.get("legacy"))
     mismatch = bool(detail.get("contract_mismatch"))
     return B_TELEMETRY.record(
         logger=log,
@@ -118,10 +117,8 @@ def _observe_gateway_failure(
         action=choose_action(
             canonical_code=canonical,
             retry=retry,
-            legacy=legacy,
             contract_mismatch=mismatch,
         ),
-        legacy=legacy,
         contract_mismatch=mismatch,
         model_known=model_known,
         count=count,
@@ -350,7 +347,6 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                 "unauthorized",
                 401,
                 request_id=request_id,
-                extra={"ly_do": "token khong dung"},
             ) from None
 
     # ── Đọc trạng thái ───────────────────────────────────────────────────────
@@ -953,9 +949,7 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                 404,
                 request_id=request_id,
                 extra={"model": ten,
-                       "available_models": sorted(catalog),
-                       "ly_do": "model khong co hoac chua duoc mo",
-                       "co_the_dung": sorted(catalog)},
+                       "available_models": sorted(catalog)},
             ) from None
 
         vl = cfg.vat_ly[ten]          # nap_catalog chi mo ho so CO vat ly
@@ -1010,7 +1004,7 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                 "concurrency_limited", 429,
                 request_id=request_id,
                 retry_after_s=retry_after,
-                extra={"model": ten, "ly_do": "cong dang day"},
+                extra={"model": ten},
             )
         try:
             return _chay_that(giao_thuc, body, spec, do, suat, t0, luot,
@@ -1058,7 +1052,6 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                 "provider_overloaded", 429,
                 request_id=request_id,
                 retry_after_s=30,
-                extra={"ly_do": "may B dang ban"},
             )
 
         # 🔴 VIỆC "DỌN CARD TRƯỚC KHI NẠP" ĐÃ RỜI KHỎI ĐÂY (5.4b) — và nó không
@@ -1236,11 +1229,8 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
         dem.cong("huy")
         luot.ket_thuc = luot.ket_thuc or "huy"
         detail = make_error("request_cancelled", request_id=luot.ma)
-        detail.update({"ly_do": "huy theo yeu cau", "ma": luot.ma or None})
         return JSONResponse(status_code=499,
-                            content={"detail": detail,
-                                     "ly_do": "huy theo yeu cau",
-                                     "ma": luot.ma or None},
+                            content={"detail": detail},
                             headers={"X-LTT-Request-Id": luot.ma})
 
     def _loi_thuong_nguon(
@@ -1284,9 +1274,7 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
             )
             return JSONResponse(
                 status_code=504,
-                content={"detail": detail,
-                         "ly_do": "thuong nguon khong tra loi kip",
-                         "ma_thuong_nguon": ma},
+                content={"detail": detail},
                 headers={"X-LTT-Request-Id": request_id})
         if ma == MA_KHONG_VOI_TOI:
             dem.cong("loi_thuong_nguon")
@@ -1309,9 +1297,7 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
             )
             return JSONResponse(
                 status_code=502,
-                content={"detail": detail,
-                         "ly_do": "thuong nguon khong phuc vu duoc",
-                         "ma_thuong_nguon": ma},
+                content={"detail": detail},
                 headers={"X-LTT-Request-Id": request_id})
         """llama-swap/llama-server hỏng hoặc không với tới được.
 
@@ -1331,9 +1317,7 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
             elapsed_ms=elapsed_ms,
         )
         return JSONResponse(status_code=_ma_cho_khach(ma),
-                            content={"detail": detail,
-                                     "ly_do": "thuong nguon khong phuc vu duoc",
-                                     "ma_thuong_nguon": ma},
+                            content={"detail": detail},
                             headers={"X-LTT-Request-Id": request_id})
 
     # ── Ba giao thức, cùng hai header vào ───────────────────────────────────

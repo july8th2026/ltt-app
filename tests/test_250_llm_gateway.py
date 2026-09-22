@@ -95,7 +95,7 @@ def test_public_cap_chan_TRUOC_thuong_nguon():
         "messages": [{"role": "user", "content": "x" * 162_500}],
     })
     assert r.status_code == 413
-    assert r.json()["detail"]["truong"] == "input_tokens"
+    assert r.json()["detail"]["field"] == "input_tokens"
     _chi_sieu_du_lieu(up)
 
 
@@ -259,7 +259,7 @@ def test_dau_vao_qua_dai_thi_413_va_khong_cham_thuong_nguon():
         "model": "qwen38-api",
         "messages": [{"role": "user", "content": "x" * 100_000}]})
     assert r.status_code == 413
-    assert r.json()["detail"]["truong"] == "input_tokens"
+    assert r.json()["detail"]["field"] == "input_tokens"
     _chi_sieu_du_lieu(up)
 
 
@@ -344,8 +344,8 @@ def test_uoc_vuot_va_THAT_cung_vuot_thi_413_bao_so_THAT():
     d = r.json()["detail"]
     # So THAT = dem /tokenize cua van ban + khuon chat (`/tokenize` khong dem khuon).
     from llm_gateway.uoc_token import khuon
-    assert d["thay"] == 30_000 + khuon(2, 0), d
-    assert d["tran"] == 20_000, d
+    assert d["actual"] == 30_000 + khuon(2, 0), d
+    assert d["limit"] == 20_000, d
 
 
 def test_ho_so_CHUA_nap_thi_khong_hoi_tokenize():
@@ -378,7 +378,7 @@ def test_thuong_nguon_chet_thi_van_413_theo_uoc():
     assert r.status_code == 413
     from llm_gateway.ngan_sach import do_yeu_cau
     uoc = do_yeu_cau({"messages": [{"role": "user", "content": "x" * 100_000}]}).token_vao
-    assert r.json()["detail"]["thay"] == uoc      # so UOC, vi khong dem duoc
+    assert r.json()["detail"]["actual"] == uoc      # so UOC, vi khong dem duoc
 
 
 def test_MOI_ho_so_dang_mo_deu_NHAN_duoc_anh():
@@ -420,7 +420,7 @@ def test_qua_nhieu_anh_thi_413():
     r = c.post("/v1/chat/completions", json={
         "model": "qwen35-api", "messages": [{"role": "user", "content": noi_dung}]})
     assert r.status_code == 413
-    assert r.json()["detail"]["truong"] == "images"
+    assert r.json()["detail"]["field"] == "images"
 
 
 def test_anh_qua_lon_thi_413():
@@ -430,7 +430,7 @@ def test_anh_qua_lon_thi_413():
             {"type": "image_url",
              "image_url": {"url": "data:image/png;base64," + "A" * 8000}}]}]})
     assert r.status_code == 413
-    assert r.json()["detail"]["truong"] == "image_bytes"
+    assert r.json()["detail"]["field"] == "image_bytes"
 
 
 def test_xin_sinh_qua_nhieu_token_thi_413():
@@ -438,7 +438,7 @@ def test_xin_sinh_qua_nhieu_token_thi_413():
     r = c.post("/v1/chat/completions", json={
         "model": "qwen38-api", "messages": [], "max_tokens": 99_999})
     assert r.status_code == 413
-    assert r.json()["detail"]["truong"] == "max_tokens"
+    assert r.json()["detail"]["field"] == "max_tokens"
 
 
 def test_vao_cong_ra_vuot_cua_so_ngu_canh_thi_413():
@@ -487,7 +487,7 @@ def test_vao_cong_ra_vuot_cua_so_ngu_canh_thi_413():
     c, _ = _client(cfg)
     r = c.post("/v1/chat/completions", json=than)
     assert r.status_code == 413, r.text
-    assert r.json()["detail"]["truong"] == "input_tokens", r.json()
+    assert r.json()["detail"]["field"] == "input_tokens", r.json()
 
 
 def test_anh_kieu_anthropic_va_responses_deu_dem_duoc():
@@ -544,7 +544,7 @@ def test_thuong_nguon_5xx_thi_502_khong_phai_429():
     c, _ = _client(up=FakeUpstream(ma=599, than=b"connection refused"))
     r = c.post("/v1/chat/completions", json={"model": "qwen38-api", "messages": []})
     assert r.status_code == 502
-    assert r.json()["ma_thuong_nguon"] == 599
+    assert r.json()["detail"]["provider_code"] == 599
 
 
 def test_thuong_nguon_4xx_thi_chuyen_tiep_nguyen_ma():
@@ -690,7 +690,7 @@ def test_url_anh_tu_xa_bi_tu_choi(url):
         "messages": [{"role": "user", "content": [
             {"type": "image_url", "image_url": {"url": url}}]}]})
     assert r.status_code == 413
-    assert r.json()["detail"]["truong"] == "image_url"
+    assert r.json()["detail"]["field"] == "image_url"
     assert up.goi == [], "khong duoc chuyen tiep xuong thuong nguon"
 
 

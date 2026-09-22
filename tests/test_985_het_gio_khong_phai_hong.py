@@ -101,7 +101,7 @@ def test_het_gio_tra_504_khong_phai_502():
     c = TestClient(create_app(_cfg(), Up(MA_HET_GIO, b"ReadTimeout")))
     r = c.post("/v1/chat/completions", json=THAN)
     assert r.status_code == 504, "het gio van bi tra 502 -> may A se phat khoa"
-    assert r.json()["ma_thuong_nguon"] == MA_HET_GIO
+    assert r.json()["detail"]["provider_code"] == MA_HET_GIO
 
 
 def test_khong_voi_toi_van_tra_502():
