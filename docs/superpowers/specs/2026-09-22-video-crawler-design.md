@@ -5,6 +5,7 @@
 > Sai đã sửa so với v1.0: (1) registry KHÔNG đặt trong `platform_core/registry.py` (trái luật 9 / AGENTS §8.4) mà trong app;
 > (2) yt-dlp là **The Unlicense**, không phải GPL-3.0; (3) bỏ "L3 mỗi phase" — nhịp gate theo hợp đồng §4;
 > (4) job model viết theo API thật (`ARCHITECTURE_MAP.md`), không tự đặt cột; (5) audit Viral làm lại có bằng chứng.
+> Phản biện độc lập 22/09 (10 điểm, 2 BLOCKER) đã áp vào §8, §12, §13, §14, §18, §21, §26.
 > Donor `D:\Viral` @ `368f8be` · LTT `main` @ `e94dd9a2`.
 
 Tài liệu chứng cứ (một nguồn mỗi thứ, spec này không chép lại bảng):
@@ -71,7 +72,9 @@ job.result {"muc": [...], "video_keys": [...]}  → /jobs/{id}/artifacts/{i} (t�
 ```
 **Executor boundary:** `requires` khai theo APP, không theo job type (`registry.py:569-576`). Tiền lệ LTT cho "executor ẩn theo
 năng lực" là app anh em `surface="runtime"` + `catalog_parent` (`apps/asv_media`, `asv_gpu`, `asv_voice` của Auto Scan Video).
-- Slice 1: MỘT app `video_crawler`, `requires=("ffmpeg",)` (yt-dlp ghép audio/video bằng ffmpeg; trần 7200 s).
+- Slice 1: MỘT app `video_crawler`, `requires=("api",)` + `max_runtime_s={"video_crawler.tai": 7200}`.
+  ⚠ Không dùng `("ffmpeg",)`: production `LTT_WORKER_POOLS=api:6, gpu+ffmpeg:1, voice:1` ⇒ app ffmpeg chỉ được làn
+  `gpu+ffmpeg` duy nhất nhận, xếp sau job GPU 2 giờ (`jobs.py:245-250`). ffmpeg vẫn có trên máy A; `requires` chỉ là lịch.
 - Slice 2 (browser): cần executor `requires=("browser",)` ⇒ thêm thư mục app runtime anh em `apps/video_crawler_browser/`
   theo tiền lệ ASV. **Đây là quyết định cần chủ dự án chốt ở S6** (chỉ đạo "thêm app = MỘT thư mục").
   Không sửa `platform_core`.
@@ -108,7 +111,8 @@ class NenTang:
     adapter: str                      # tên module trong adapters/
     gioi_han: tuple[str, ...]         # chú thích hiển thị
 ```
-Validate backend, dựng form UI, nút login và chọn adapter đều đọc registry này. Thêm một nền = một dòng registry + một adapter.
+Validate backend, dựng form UI, nút login và chọn adapter đều đọc registry này.
+Manifest phải khai `capabilities` không rỗng (app customer không có `catalog_parent`, `test_60:62-72`). Thêm một nền = một dòng registry + một adapter.
 
 ## 13. Domain / data model
 
@@ -117,7 +121,7 @@ Validate backend, dựng form UI, nút login và chọn adapter đều đọc re
 | CrawlRequest | `Job` (`video_crawler.kham_pha` / `video_crawler.tai`), `params` | Có sẵn: owner, trạng thái, retry, huỷ, events |
 | CrawlItem | DTO `CrawlItem` (id, url, tieu_de, tac_gia, thoi_luong_s, anh_bia, nen_tang) — lưu trong `job.result["muc"]` | Không cần bảng ở slice 1 |
 | CrawlAsset | Storage key `video_crawler/<owner_id>/<job_id>/<id>.mp4` + `result["video_keys"]` | Tải về qua `/jobs/{id}/artifacts` |
-| CrawlDedupRecord | Suy ra từ job `video_crawler.tai` đã xong của cùng owner (`result["muc"][*].id` theo nền) | Một nguồn: kết quả thật, không đánh dấu trước khi tải xong (sửa lỗi donor `W:7228`) |
+| CrawlDedupRecord | Slice 1: suy ra từ job `video_crawler.tai` đã xong của cùng owner (`result["muc"][*].id`), lọc trong Python (`result` là JSON, không JSONB — `models.py:296`). ⚠ `jobs.result` bị xoá sau 30 ngày (`governance.py:307`, `job_content.py:103`) ⇒ "không trùng" chỉ nhớ **30 ngày**, ghi rõ trên UI. Bền vĩnh viễn + chặn hai job song song tải cùng video cần bảng `vc_da_tai` ⇒ **CONTRACT GAP-1** (một hàng `governance.STORES`) trình chủ dự án | Một nguồn: kết quả thật, không đánh dấu trước khi tải xong (sửa lỗi donor `W:7228`) |
 | CrawlPlatformSession | S6: bảng app `vc_phien` (cookie mã hoá `secretbox`) + governance row ⇒ CONTRACT GAP có chủ đích | |
 | CrawlSource (thư viện nguồn) | DEFER S8 | |
 
@@ -130,7 +134,9 @@ Rủi ro đã biết: dedup quét job cũ của user, chi phí tăng theo lịch
 | `video_crawler.kham_pha` | `owner_id, nen_tang, che_do, dau_vao, so_luong, khong_trung` | `{"muc": [CrawlItem...], "bo_qua_trung": n}` — miễn phí |
 | `video_crawler.tai` | `owner_id, nen_tang, muc: [{id,url,tieu_de}]` (từ xem trước) **hoặc** `nguon: {che_do, dau_vao, so_luong, khong_trung}` (cào hết) | `{"muc": [...+key,size], "video_keys": [...], "loi": [{id, ma, thong_diep}], "bo_qua_trung": n}` |
 
-Nộp bằng `submit_with_credit(..., dedupe_key=dedupe_key_for(...), max_attempts=2)`. Giá: `kham_pha` = 0;
+Nộp bằng `submit_with_credit(..., dedupe_key=dedupe_key_for(...), max_attempts=2)`.
+Trần `so_luong` ≤ 20: `/jobs/{id}/artifacts` chỉ liệt kê 20 tệp (`server/routes/jobs.py:39,45`). Trường của mục trong `muc`
+không được kết thúc bằng `_key` (nếu không, nó bị coi là tệp tải về và chiếm chỗ trong trần 20). Giá: `kham_pha` = 0;
 `tai` = 1 credit × số mục tối đa (giữ chỗ), quyết toán theo số tải được (`result["credit_cost"]`).
 **Giá là quyết định sản phẩm — chờ chủ dự án xác nhận trước khi `lifecycle="released"`.**
 
@@ -152,9 +158,15 @@ Hai tầng khác nhau, không trộn:
    Chỉ tính mục đã tải xong. Scope = user (một user không ảnh hưởng user khác).
 
 ## 18. Cancel / retry model
-Huỷ: `POST /jobs/{id}/cancel` của nền tảng (kiểm chủ, hoàn tiền). Handler dừng hợp tác: hook yt-dlp gọi
-`bao_tien_do` → `ctx.progress` ném `JobCancelled`; và `ctx.is_cancelled()` giữa các mục. Hook phải gọi `ctx.progress` ít nhất
-mỗi 60 s (ngưỡng mồ côi 5 phút). Retry: `max_attempts=2`. Lỗi của khách không retry. Mục đã tải lưu dần; lượt thử lại bỏ qua mục có key.
+Huỷ: `POST /jobs/{id}/cancel` của nền tảng (kiểm chủ, hoàn tiền). Handler dừng hợp tác:
+- Trong hook yt-dlp phải ném **lớp con của `yt_dlp.utils.DownloadCancelled`**, và đặt `ignoreerrors=False`.
+  yt-dlp chỉ ném lại `DownloadCancelled`/`CookieLoadError`; exception khác bị nuốt khi `ignoreerrors` bật
+  (`yt_dlp/YoutubeDL.py:1699,1717-1719`). Donor bật `ignoreerrors` (`Y:2023`) — **không** chép.
+- Giữa các mục: kiểm `ctx.is_cancelled()`.
+- Hook tải và `postprocessor_hooks` (bước ghép ffmpeg không có progress hook) phải gọi `ctx.progress` ít nhất mỗi 60 s
+  (ngưỡng mồ côi 5 phút).
+- Job kết thúc bằng huỷ hoặc lỗi cuối ⇒ xoá tiền tố `video_crawler/<owner>/<job>/`. Việc dọn job hết hạn chỉ quét `result`
+  (`job_content.py:51-74`), nên tệp đã lưu mà chưa vào `result` sẽ mồ côi. Retry: `max_attempts=2`. Lỗi của khách không retry. Mục đã tải lưu dần; lượt thử lại bỏ qua mục có key.
 
 ## 19. Error model (`apps/video_crawler/loi.py`, port bảng `W:4897-5005`)
 
@@ -177,8 +189,11 @@ Thông điệp khách lấy từ bảng này; chi tiết thô chỉ ở event `i
 Event customer: `muc_xong`, `muc_loi`, `bo_qua_trung`. UI poll `/jobs/{id}/progress` của nền tảng. Không progress giả.
 
 ## 21. Security
-- URL: chỉ http(s); domain phải thuộc `ten_mien` của nền; chặn IP private/loopback/link-local sau khi phân giải (port `Y:1608-1626`); `enable_file_urls=False`.
-- yt-dlp: không nhận `cookiefile`, `outtmpl`, `exec`, `netrc` từ người dùng. `outtmpl` do app đặt. Không `remote_components`.
+- URL: chỉ http(s); host phải thuộc `ten_mien` của nền (allowlist). Chặn IP literal nội bộ (port donor `Y:1608-1626`).
+  LTT siết thêm (donor KHÔNG làm): phân giải tên miền và chặn nếu ra IP nội bộ. `enable_file_urls=False`.
+- yt-dlp: `allowed_extractors` chỉ gồm extractor của nền (không `generic`). Không nhận `cookiefile`, `outtmpl`, `exec`, `netrc`
+  từ người dùng; `outtmpl` do app đặt. Không `remote_components`. **Không** chép `nocheckcertificate: True` của donor (`Y:2024`).
+- `kham_pha` miễn phí nhưng giới hạn tần suất theo user, vì tìm kiếm dồn dập từ IP máy A đẩy YouTube vào bot-check.
 - Owner scope: mọi truy vấn lọc `Job.user_id == u.id`; `owner_id` lấy từ phiên, không từ form.
 - CSRF trên mọi POST. Giới hạn `so_luong` theo registry. Kích thước tệp tối đa (cấu hình trong app).
 - Không log URL có token/cookie.
@@ -212,7 +227,8 @@ Plan sống: `docs/superpowers/plans/2026-09-22-video-crawler.md` §C (P0–P3, 
 
 ## 26. Rollback strategy
 Mã chỉ nằm trong `apps/video_crawler/`. Slice 1 không có migration DB. Tắt bằng cờ env `LTT_VIDEO_CRAWLER` (route 404, tiền lệ
-ASV `_cong_co`), vì `enabled=False` không chặn route hay worker. Gỡ hẳn = xoá thư mục + dọn thư mục ma.
+ASV `_cong_co`), vì `enabled=False` không chặn route hay worker. Cờ bật/tắt cho MỌI user; mở thử cho riêng tài khoản test
+thì thêm allowlist trong app. Public API đã bị chặn bởi `enabled=False` (`catalog.py:229`). Gỡ hẳn = xoá thư mục + dọn thư mục ma.
 
 ## 27. Risks
 
