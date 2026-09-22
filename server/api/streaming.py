@@ -50,6 +50,7 @@ from platform_core.public_api.protocol import (STREAM, PublicOperationContract)
 from platform_core.public_api.scopes import SCOPE_JOBS_CREATE
 from server.api import su_kien_loi, tool_dich
 from server.api.auth import require_scope
+from server.api.context import request_id as api_request_id
 from server.deps import get_db
 from apps.ltt_llm import ngan_sach
 from platform_core.llm.model_failure import ModelFailure, observe_model_failure
@@ -293,6 +294,12 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
     except KeyError as e:
         # Cùng mã với tên đã cắt ở `_cua` — D02, Step 2c.
         log.error("ban khai admission thieu model %r: %s", ten, e)
+        if config.structured_model_errors:
+            return su_kien_loi.render_local_model_failure(
+                duong,
+                "model_not_found",
+                request_id=api_request_id(request),
+            )
         raise _bao_400(
             f"`model` {ten!r} is not served here. Call GET /api/v1/models for "
             f"the names in service.", than, dung=model_not_found) from None
@@ -844,6 +851,12 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
         #    `ltt_llm` / `ltt_llm_vision` rơi vào đúng nhánh này từ 11/09/2026,
         #    và khách phải nghe cùng một câu ở mọi cửa: *tên model ấy không còn*,
         #    chứ không phải *yêu cầu của bạn sai hình dạng*.
+        if config.structured_model_errors:
+            return su_kien_loi.render_local_model_failure(
+                duong,
+                "model_not_found",
+                request_id=api_request_id(request),
+            )
         raise _bao_400(
             f"`model` must be one of {list(aliases)}"
             f"{' or ' + str(list(TUYEN_TUONG_THICH)) if TUYEN_TUONG_THICH else ''}. "

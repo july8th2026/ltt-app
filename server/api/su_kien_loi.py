@@ -34,7 +34,8 @@ from typing import Callable, Literal, Optional, overload
 from starlette.responses import JSONResponse, Response, StreamingResponse
 
 from llm_gateway.error_contract import error_spec
-from platform_core.llm.model_failure import ModelFailure, model_failure
+from platform_core.llm.model_failure import (ModelFailure, model_failure,
+                                             observe_model_failure)
 from platform_core.public_api import errors as api_errors
 
 # ma nội bộ → (error.type — Anthropic và OpenAI dùng chung từ vựng, error.code OpenAI)
@@ -93,6 +94,43 @@ def model_protocol_code(path: str, canonical_code: str) -> str:
         return canonical_code
     anthropic, openai = _MODEL_PROTOCOL[canonical_code]
     return anthropic if path.endswith("/messages") else openai
+
+
+def render_local_model_failure(
+    path: str,
+    canonical_code: str,
+    *,
+    request_id: str,
+) -> Response:
+    """Render a model error found by A before any request reaches B."""
+    spec = error_spec(canonical_code)
+    failure = model_failure(
+        canonical_code,
+        http_status=spec.status,
+        request_id=request_id,
+    )
+    protocol = (
+        "messages" if path.endswith("/messages")
+        else "responses" if path.endswith("/responses")
+        else "chat" if path.endswith("/chat/completions")
+        else "rfc9457"
+    )
+    observe_model_failure(
+        failure,
+        gateway_code=canonical_code,
+        protocol_code=model_protocol_code(path, canonical_code),
+        protocol=protocol,
+        stream_phase="before_headers",
+        endpoint=protocol if protocol != "rfc9457" else "public_api",
+        action="terminal",
+        model_known=False,
+    )
+    return render_model_failure(
+        path,
+        failure,
+        phase="before_headers",
+        stream=False,
+    )
 
 #: Tiền tố Claude Code dò (xem docstring tệp). ⛔ Đừng dịch, đừng viết hoa lại.
 CAU_QUA_DAI = "prompt is too long"

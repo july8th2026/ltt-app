@@ -38,7 +38,8 @@ from platform_core.public_api import (idempotency, limits, metrics, policy,
                                       sandbox)
 from platform_core.public_api.catalog import build_catalog, require_tool
 from platform_core.public_api.executor import for_tool, for_tool_name
-from platform_core.public_api.errors import (THIEU_CREDIT_LOI,
+from platform_core.public_api.errors import (THIEU_CREDIT_LOI, ApiError,
+                                             CODE_MODEL_NOT_FOUND,
                                              insufficient_credit,
                                              invalid_request,
                                              model_not_found,
@@ -50,6 +51,7 @@ from platform_core.public_api.protocol import SYNC_BILLED_MAX_SECONDS
 from platform_core.public_api.scopes import SCOPE_JOBS_CREATE
 from server.api import su_kien_loi
 from server.api.auth import require_scope
+from server.api.context import request_id as api_request_id
 from server.api.streaming import HEADER_EFFORT_BO_QUA
 from server.deps import get_db
 
@@ -245,7 +247,19 @@ def register_chat_routes(api, config, tag: str) -> None:
             payload["max_tokens"] = executor.mac_dinh_cho("sync")
         # Tên model TRƯỚC hình dạng: một tên đã cắt phải nghe "model không còn",
         # không phải "yêu cầu sai hình dạng" (D02, Step 2c).
-        kiem_ten_model(tool, payload.get("model"))
+        try:
+            kiem_ten_model(tool, payload.get("model"))
+        except ApiError as exc:
+            if (
+                config.structured_model_errors
+                and exc.code == CODE_MODEL_NOT_FOUND
+            ):
+                return su_kien_loi.render_local_model_failure(
+                    "/v1/chat/completions",
+                    "model_not_found",
+                    request_id=api_request_id(request),
+                )
+            raise
         try:
             sach = executor.validate(payload)
         except executor.parameter_error as e:
@@ -302,6 +316,12 @@ def register_chat_routes(api, config, tag: str) -> None:
             #    Trước 2.3 chỗ này nói `invalid_request`, tức khách nhận hai câu
             #    khác nhau cho cùng một sự thật "model này không phục vụ được".
             log.error("ban khai admission thieu model %r: %s", sach["model"], e)
+            if config.structured_model_errors:
+                return su_kien_loi.render_local_model_failure(
+                    "/v1/chat/completions",
+                    "model_not_found",
+                    request_id=api_request_id(request),
+                )
             raise model_not_found(
                 f"`model` {sach['model']!r} is not served here. Call "
                 f"GET /api/v1/models for the names in service."

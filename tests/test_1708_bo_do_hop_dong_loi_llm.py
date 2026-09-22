@@ -290,6 +290,70 @@ def test_inject_loopback_chi_gui_model_gia_va_khong_lo_token():
     assert "test-token" not in json.dumps(report)
 
 
+def test_inject_doc_duoc_envelope_v1_truc_tiep_cua_gateway_b():
+    tool = _load()
+
+    def transport(_url, *, body, headers):
+        assert body["model"] == "__ltt_contract_missing__"
+        assert headers["Authorization"] == "Bearer test-token"
+        return 404, {
+            "detail": {
+                "schema_version": 1,
+                "canonical_code": "model_not_found",
+                "category": "model",
+                "message": "The requested model is not available.",
+                "retry": "after_fix",
+                "recovery": "choose_model",
+                "request_id": "rid-b-direct",
+            }
+        }
+
+    report = tool.run_inject(
+        "http://127.0.0.1:18100",
+        token="test-token",
+        transport=transport,
+    )
+
+    assert report["pass"] is True
+    assert {row["canonical_code"] for row in report["matrix"]} == {
+        "model_not_found"
+    }
+
+
+def test_http_transport_dung_user_agent_ro_rang_cho_cloudflare(monkeypatch):
+    tool = _load()
+    requests = []
+
+    class Response:
+        status = 404
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        @staticmethod
+        def read():
+            return b'{"detail":{"canonical_code":"model_not_found"}}'
+
+    def urlopen(request, *, timeout):
+        requests.append((request, timeout))
+        return Response()
+
+    monkeypatch.setattr(tool.urllib.request, "urlopen", urlopen)
+    status, _body = tool._http_transport(
+        "https://app.lttstudios.com/api/v1/messages",
+        body={"model": "__ltt_contract_missing__"},
+        headers={"Authorization": "Bearer test-token"},
+    )
+
+    assert status == 404
+    assert requests[0][0].get_header("User-agent") == (
+        "ltt-llm-contract-monitor/1.0"
+    )
+
+
 def test_inject_loi_mang_van_sinh_report_do_khong_lo_chi_tiet():
     tool = _load()
 

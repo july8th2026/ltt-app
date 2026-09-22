@@ -169,7 +169,7 @@ def test_bo_cai_client_va_vi_du_deu_dung_ten_moi():
 
 # ── B. Bốn cửa từ chối tên cũ, CÙNG một mã lỗi ───────────────────────────────
 
-def _moi_truong_cua(tmp_path, monkeypatch):
+def _moi_truong_cua(tmp_path, monkeypatch, *, structured=False):
     """App thật + khoá API thật trên SQLite sạch. Khuôn của `test_1209`."""
     from platform_core.public_api import keys as devkeys, limits
     from platform_core.public_api.scopes import (SCOPE_JOBS_CREATE,
@@ -218,6 +218,7 @@ def _moi_truong_cua(tmp_path, monkeypatch):
         "LTT_CONFIG_PATH": str(tmp_path / "config.json"),
         "LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": "text.chat",
         "LTT_PUBLIC_API_RPM": "600",
+        "LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS": "1" if structured else "0",
     })
     return app, token, uid
 
@@ -241,11 +242,83 @@ def cua(tmp_path, monkeypatch):
         dbmod.reset_engine()
 
 
+@pytest.fixture()
+def cua_structured(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from platform_core.public_api import limits
+
+    app, token, uid = _moi_truong_cua(
+        tmp_path, monkeypatch, structured=True
+    )
+    try:
+        with TestClient(app, base_url="https://testserver",
+                        raise_server_exceptions=False) as client:
+            yield client, token, uid
+    finally:
+        from server.api import deps
+        deps.set_principal_resolver(None)
+        limits.reset()
+        import platform_core.db as dbmod
+        dbmod.reset_engine()
+
+
 def _h(token, idem=True):
     h = {"Authorization": "Bearer " + token}
     if idem:
         h["Idempotency-Key"] = uuid.uuid4().hex
     return h
+
+
+@pytest.mark.parametrize(
+    "duong,than,protocol_code",
+    (
+        (
+            "/chat/completions",
+            {"model": "khong-co", "max_tokens": 1,
+             "messages": [{"role": "user", "content": "?"}]},
+            "model_not_found",
+        ),
+        (
+            "/messages",
+            {"model": "khong-co", "max_tokens": 1, "stream": True,
+             "messages": [{"role": "user", "content": "?"}]},
+            "not_found_error",
+        ),
+        (
+            "/responses",
+            {"model": "khong-co", "max_output_tokens": 1, "stream": True,
+             "input": [{"role": "user", "content": "?"}]},
+            "model_not_found",
+        ),
+    ),
+)
+def test_co_structured_ten_model_sai_giu_nghia_o_ba_giao_thuc(
+    cua_structured, duong, than, protocol_code
+):
+    from server.api.inventory import API_V1_PREFIX
+
+    client, token, _uid = cua_structured
+    response = client.post(
+        API_V1_PREFIX + duong,
+        headers=_h(token, idem=duong == "/chat/completions"),
+        json=than,
+    )
+
+    assert response.status_code == 404, response.text
+    body = response.json()
+    if duong == "/messages":
+        extension = body["error"]["ltt_error"]
+        assert body["error"]["type"] == protocol_code
+    elif duong == "/responses":
+        extension = body["response"]["error"]["ltt_error"]
+        assert body["response"]["error"]["code"] == protocol_code
+    else:
+        extension = body["error"]["ltt_error"]
+        assert body["error"]["code"] == protocol_code
+    assert extension["canonical_code"] == "model_not_found"
+    assert extension["protocol_code"] == protocol_code
+    assert extension["request_id"]
 
 
 def test_danh_muc_cong_khai_liet_ke_dung_hai_ten(cua):

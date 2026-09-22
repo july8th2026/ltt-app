@@ -34,6 +34,7 @@ PHASES: tuple[Literal["before_headers", "after_headers"], ...] = (
     "before_headers",
     "after_headers",
 )
+OPERATOR_USER_AGENT = "ltt-llm-contract-monitor/1.0"
 
 # Golden adapter chép rõ từ spec, độc lập với `_MODEL_PROTOCOL` của renderer.
 EXPECTED_PROTOCOL = {
@@ -104,6 +105,12 @@ def _find_extension(value) -> dict:
         extension = value.get("ltt_error")
         if isinstance(extension, dict):
             return extension
+        if (
+            value.get("schema_version") == 1
+            and isinstance(value.get("canonical_code"), str)
+            and value["canonical_code"].strip()
+        ):
+            return value
         for child in value.values():
             found = _find_extension(child)
             if found:
@@ -347,7 +354,11 @@ def _http_transport(url: str, *, body: dict, headers: dict) -> tuple[int, dict]:
         url,
         data=data,
         method="POST",
-        headers={**headers, "Content-Type": "application/json"},
+        headers={
+            **headers,
+            "Content-Type": "application/json",
+            "User-Agent": OPERATOR_USER_AGENT,
+        },
     )
     try:
         with urllib.request.urlopen(request, timeout=15) as response:
