@@ -45,7 +45,8 @@ from . import tach_tieng, thoi_gian
 #: ⭐ 2 → 3 o pha 27: bo kiem co them T14/T15/T16. Khong nang so nay thi mot
 #:    lan chay lai se dung lai bao cao cu tu cache — bao cao do mot bo luat
 #:    **chua biet ba phep kiem nay ton tai** lam ra, va no se bao "dat".
-PHIEN_BAN_QC = 3
+#: ⭐ 3 → 4 (asv-final): T15 doi moc phu de sang truc BAN RA theo `toc_do`.
+PHIEN_BAN_QC = 4
 
 #: T13 — do sang trung binh toi thieu cua ban ra (thang 0-255 tren kenh Y).
 #:
@@ -479,10 +480,15 @@ def kiem(*, tt_ra: dict, tt_nguon: dict, am_luong: dict, ke_hoach: dict,
         #    `int`). Dung lai no cho mot `float` la dung lai mot ten cho hai
         #    kieu — thu lam moi cong cu kiem kieu mu voi ca doan phia sau.
         tran_phu_de = d_ra + BIEN_PHU_DE_DUNG_SAI_S
+        # 🔑 asv-final: su kien dat tren truc BIEN TAP; `setpts` o cuoi chuoi loc
+        #    nen chung cung he so voi hinh. So voi ban ra thi phai chia — mot cho:
+        #    `bien_tap.moc_ban_ra`.
+        from .bien_tap import moc_ban_ra, toc_do
+        bt = hinh.get("bien_tap")
         ngoai, xuoi_nguoc = [], []
         for i, e in enumerate(su_kien):
-            bat = float(e.get("start") or 0.0)
-            ket = float(e.get("end") or 0.0)
+            bat = moc_ban_ra(float(e.get("start") or 0.0), bt)
+            ket = moc_ban_ra(float(e.get("end") or 0.0), bt)
             if ket <= bat:
                 xuoi_nguoc.append(i)
             if bat < -BIEN_PHU_DE_DUNG_SAI_S or ket > tran_phu_de:
@@ -498,6 +504,7 @@ def kiem(*, tt_ra: dict, tt_nguon: dict, am_luong: dict, ke_hoach: dict,
         muc.append(_muc("T15", DAT if t15 else HONG,
                         "moi dong phu de nam trong ban ra",
                         so_dong=len(su_kien), thoi_luong_ra=round(d_ra, 3),
+                        toc_do=toc_do(bt),
                         dung_sai=BIEN_PHU_DE_DUNG_SAI_S,
                         ngoai_bien=ngoai or None,
                         xuoi_nguoc=xuoi_nguoc or None, so_chong_lan=chong))

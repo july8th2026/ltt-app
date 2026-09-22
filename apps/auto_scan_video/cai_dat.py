@@ -66,7 +66,8 @@ PHIEN_BAN = 3
 KHOA_SCHEMA = "schema"
 
 #: Nhung khoa CHI ghi khi khach thuc su dung tinh nang. Xem bang o docstring.
-KHOA_THUA = ("cat", "vung", "lop_phu", "logo", "phu_de", "am_thanh")
+KHOA_THUA = ("cat", "vung", "lop_phu", "logo", "phu_de", "am_thanh",
+             "bien_tap")
 
 #: ⛔ `voice_id` la mot BI DANH cu cua `giong_id`, khong phai mot truong thu hai.
 #:    Xem `rang_giong.tu_thiet_lap`: hai khoa nay da song song mot thoi gian va
@@ -110,6 +111,8 @@ class CaiDat:
     phu_de: dict | None = None
     #: Ho so am thanh (V6 pha 23), hoac `None` = mac dinh. Xem `am_thanh.py`.
     am_thanh: dict | None = None
+    #: Ho so bien tap khung + toc do (asv-final), hoac `None`. Xem `bien_tap.py`.
+    bien_tap: dict | None = None
 
     @property
     def co_sua_diem_anh(self) -> bool:
@@ -123,7 +126,7 @@ class CaiDat:
         #    lan chay chi-xuat-SRT bi doi xu nhu mot lan ma hoa lai — tuc cam
         #    no o preset giu hinh, dung noi ma no la lua chon DUY NHAT con lai.
         from . import phu_de as _pd
-        return bool(self.vung or self.lop_phu or self.logo
+        return bool(self.vung or self.lop_phu or self.logo or self.bien_tap
                     or _pd.co_dot_vao_hinh(self.phu_de))
 
 
@@ -205,7 +208,8 @@ def tu_ho_so(tho: Mapping | None) -> CaiDat:
         #    khac di — tuc doi van tay cua nhung lan chay da xong. Cung luat ma
         #    `vung` dang theo: *"ban da luu moi la ban that"*.
         phu_de=(dict(tho.get("phu_de")) if tho.get("phu_de") else None),
-        am_thanh=(dict(am) if (am := tho.get("am_thanh")) else None))
+        am_thanh=(dict(am) if (am := tho.get("am_thanh")) else None),
+        bien_tap=(dict(bt) if (bt := tho.get("bien_tap")) else None))
 
 
 def doc(run) -> CaiDat:

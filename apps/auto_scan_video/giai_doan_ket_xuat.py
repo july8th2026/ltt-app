@@ -182,8 +182,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         _goi_su_kien = (_ho_so_pd or {}).get("su_kien") or []
         duong_ass = _pd.viet_tep_ass(
             _ho_so_pd, _goi_su_kien, thu_muc,
-            rong=int((ban.get("hinh") or {}).get("rong_khung") or 0),
-            cao=int((ban.get("hinh") or {}).get("cao_khung") or 0))
+            # ⭐ `PlayRes` = khung BAN RA (asv-final): sau cat khung / doi ti le,
+            #    phu de dat theo man hinh khach xem, khong theo khung nguon.
+            rong=ban_dung.khung_ra(ban.get("hinh") or {})[0],
+            cao=ban_dung.khung_ra(ban.get("hinh") or {})[1])
 
         duong_ra = str(thu_muc / "ra.mp4")
         bo_thuc = ket_xuat.bo_ma_hoa_thuc_te(ban, co_gpu=co_gpu)

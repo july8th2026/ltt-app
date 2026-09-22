@@ -273,10 +273,14 @@ def test_GUI_khong_mo_duoc_thao_tac_dang_bi_CAM():
     """
     from apps.auto_scan_video import hop_dong_v4
 
-    assert "zoom" in hop_dong_v4.CAM_TRONG_MVP
-    assert "crop" in hop_dong_v4.CAM_TRONG_MVP
-    assert "reframe" in hop_dong_v4.CAM_TRONG_MVP
+    # ⭐ asv-final 22/09: `zoom`/`crop`/`reframe` (+ `speed`) DA MO qua dung
+    #    duong bai nay doi — ADR (`ADR_BIEN_TAP.md`), doi hop dong, dong bang
+    #    nang luc. Menh de con lai: nhung gi chua co ADR thi van bi cam.
+    for mo in ("zoom", "crop", "reframe", "speed"):
+        assert mo not in hop_dong_v4.CAM_TRONG_MVP
+        assert mo in hop_dong_v4.NANG_LUC_DOI_DIEM_ANH
     assert "music_replace" in hop_dong_v4.CAM_TRONG_MVP
+    assert "reorder" in hop_dong_v4.CAM_TRONG_MVP
     assert hop_dong_v4.THAO_TAC_CHO_PHEP[hop_dong_v4.PRESET_GIU_HINH] == ()
 
 

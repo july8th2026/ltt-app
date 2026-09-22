@@ -87,6 +87,14 @@
       <li>{{ _("Vùng che") }}:
         {% if cai.vung %}{{ cai.vung | length }}{% else %}{{ _("không có") }}{% endif %}
       </li>
+      {% if cai.bien_tap %}{% set bt = cai.bien_tap %}
+      <li>{{ _("Khung hình và tốc độ") }}:
+        {% if bt.toc_do %}{{ bt.toc_do }}×{% endif %}
+        {% if bt.khung %}· {{ bt.khung.ti_le }}{% endif %}
+        {% if bt.zoom %}· {{ _("phóng to %(z)s×") % {"z": bt.zoom.he_so} }}{% endif %}
+        {% if bt.cat_khung %}· {{ _("cắt mép") }}{% endif %}
+      </li>
+      {% endif %}
       {#- ⭐ Hai dong cho NGUOI VAN HANH, khong phai cho khach doc thuong: hai
           lan chay "trong nhu nhau" ma khac van tay la hai lan chay KHAC nhau,
           va do la cau hoi dau tien khi ai do hoi vi sao hai video khong giong
