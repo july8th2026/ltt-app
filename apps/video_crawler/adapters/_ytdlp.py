@@ -45,6 +45,45 @@ THOI_LUONG_TOI_DA_MAC_DINH = 3 * 3600
 #: Nhịp nghỉ giữa các video nằm ở `jobs._tai_voi` (giữa các MỤC, bỏ mục đầu) — không dùng yt-dlp
 #: `sleep_interval`: nó nghỉ trước MỖI tệp kể cả video đầu và cả luồng hình + tiếng (7,6 s → 24 s).
 
+
+def _dinh_dang_toc_do(byte_s: float) -> str:
+    """'2,3 MB/s' — dấu phẩy thập phân Việt (donor/`_ui` không có tiền lệ byte, viết mới)."""
+    for don_vi, chia in (("GB", 1024 ** 3), ("MB", 1024 ** 2), ("KB", 1024)):
+        if byte_s >= chia:
+            return f"{byte_s / chia:.1f}".replace(".", ",") + f" {don_vi}/s"
+    return _t("{n} B/s").format(n=int(byte_s))
+
+
+def _dinh_dang_eta(giay: float) -> str:
+    """12 -> '12 s'; 90 -> '1:30'; 3700 -> '1:01:40' (mm:ss như `vc_ket_qua.html` hiện `thoi_luong_s`)."""
+    giay = int(giay)
+    if giay < 60:
+        return _t("{n} s").format(n=giay)
+    phut, s = divmod(giay, 60)
+    if phut < 60:
+        return f"{phut}:{s:02d}"
+    gio, phut = divmod(phut, 60)
+    return f"{gio}:{phut:02d}:{s:02d}"
+
+
+def toc_do_eta(d: dict) -> str:
+    """Tốc độ + ETA ngắn cho thông điệp tiến độ lúc tải (PLAN_MVP W2-L7 · parity A20).
+
+    `d` là dict hook TẢI THÔ của yt-dlp: `speed` (byte/giây) và `eta` (giây) được downloader đặt TRƯỚC khi
+    gọi `progress_hooks` (`downloader/http.py:294-310`, nguồn yt-dlp 2026.03.17 đã cài) — không phải
+    `_speed_str`/`_eta_str` (chỉ được `ProgressReporter.report_progress` tính, có thể mang mã màu ANSI cho
+    console, `downloader/common.py:342-404`; hook không đi qua đường đó). Rỗng khi yt-dlp chưa có đủ mẫu
+    (đầu lượt tải) — bên gọi tự bỏ qua phần này.
+    """
+    phan = []
+    speed = d.get("speed")
+    if isinstance(speed, (int, float)) and speed > 0:
+        phan.append(_dinh_dang_toc_do(speed))
+    eta = d.get("eta")
+    if isinstance(eta, (int, float)) and eta >= 0:
+        phan.append(_t("còn {tg}").format(tg=_dinh_dang_eta(eta)))
+    return " · ".join(phan)
+
 #: live_status yt-dlp chưa tải được như một tệp (YoutubeDL.py:2755-2772). `was_live` là VOD bình thường ⇒ cho qua.
 _TRUC_TIEP = frozenset({"is_live", "is_upcoming", "post_live"})
 _TU_CHOI = {
@@ -377,7 +416,9 @@ class YtdlpAdapter:
             tong = d.get("total_bytes") or d.get("total_bytes_estimate")
             xong = d.get("downloaded_bytes")
             pct = max(0, min(98, int(xong * 100 / tong))) if tong and xong is not None else None
-            tt.bao(pct, _t("đang tải"))                   # mọi lần gọi; bên gọi tự bóp theo thời gian
+            them = toc_do_eta(d)
+            msg = f"{_t('đang tải')} · {them}" if them else _t("đang tải")
+            tt.bao(pct, msg)                              # mọi lần gọi; bên gọi tự bóp theo thời gian
 
         def pp_hook(d: dict) -> None:
             tt.kiem_huy()

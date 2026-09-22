@@ -1,23 +1,47 @@
 {% import "_ui.html" as ui %}
+{% set nen_loc = nen_loc if nen_loc is defined else "" %}
+{% set cac_nen = cac_nen if cac_nen is defined else [] %}
 {% if oob %}<div class="vc-stats" id="vc-thong-ke" aria-label="{{ _('Thống kê của bạn') }}" hx-swap-oob="true">{% include "vc_thong_ke.html" %}</div>{% endif %}
 {#- Chỉ poll khi còn job chạy (SO_LOI L14); nộp job mới thì trang tải lại (HX-Redirect) nên poll tự bật. -#}
+{#- Giữ bộ lọc ?nen= qua các lượt poll — không thì mỗi lần poll lại hiện toàn bộ (PLAN_MVP W2-L7 §3). -#}
 <div class="card" id="hang-doi" style="margin-top:var(--space-5,20px)"
-     {% if thong_ke.dang_chay %}hx-get="{{ app.route_prefix if app else '/video-crawler' }}/hang-doi" hx-trigger="every 4s" hx-swap="outerHTML"{% endif %}>
+     {% if thong_ke.dang_chay %}hx-get="{{ (app.route_prefix if app else '/video-crawler') }}/hang-doi{{ '?nen=' + nen_loc if nen_loc else '' }}" hx-trigger="every 4s" hx-swap="outerHTML"{% endif %}>
 <h2>{{ _("Hàng đợi &amp; lịch sử của tôi") }}</h2>
+{% if cac_nen %}
+<form class="vc-row" style="margin-bottom:10px" hx-get="{{ app.route_prefix if app else '/video-crawler' }}/hang-doi"
+      hx-target="#hang-doi" hx-swap="outerHTML" hx-trigger="change">
+  <label class="field"><span>{{ _("Lọc theo nền") }}</span>
+    <select name="nen">
+      <option value="" {% if not nen_loc %}selected{% endif %}>{{ _("Tất cả nền") }}</option>
+      {% for n in cac_nen %}<option value="{{ n.id }}" {% if n.id == nen_loc %}selected{% endif %}>{{ _(n.ten) }}</option>{% endfor %}
+    </select>
+  </label>
+</form>
+{% endif %}
 {% if not lich_su %}
-  <p class="muted">{{ _("Chưa có lượt cào nào.") }}</p>
+  <p class="muted">{{ _("Chưa có lượt cào nào.") if not nen_loc else _("Không có lượt cào nào cho nền này.") }}</p>
 {% else %}
 <div class="tablewrap"><table class="table">
   <thead><tr><th>{{ _("Việc") }}</th><th>{{ _("Nguồn") }}</th><th>{{ _("Trạng thái") }}</th><th>{{ _("Tiến độ") }}</th><th></th></tr></thead>
   <tbody>
   {% for j in lich_su %}
     {% set p = j.params or {} %}{% set ng = p.nguon or p %}
+    {% set loi_muc = (j.result or {}).get("loi") or [] %}
     <tr>
       <td>{{ _("Xem trước") if j.job_type.endswith("kham_pha") else _("Tải") }}</td>
       <td>{% if p.muc %}{{ _("{n} video đã chọn").format(n=p.muc | length) }}{% else %}{{ (ng.dau_vao or "") | truncate(60) }}{% endif %}</td>
       <td>{{ ui.nhan_trang_thai(j.status) }}</td>
       <td>{{ ui.thanh_tien_do(j.progress, _("Tiến độ")) }} <small class="muted">{{ _(j.progress_msg) if j.progress_msg else "" }}</small></td>
-      <td><a href="/jobs/{{ j.id }}">{{ _("Chi tiết · tải về · huỷ") }}</a></td>
+      <td>
+        <a href="/jobs/{{ j.id }}">{{ _("Chi tiết · tải về · huỷ") }}</a>
+        {% if not j.job_type.endswith("kham_pha") and j.status == "done" and loi_muc %}
+        <form method="post" action="{{ app.route_prefix }}/tai/{{ j.id }}/thu-lai-loi" class="vc-row" style="margin-top:6px;gap:6px">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <label class="chip-opt"><input type="checkbox" name="cam_ket" value="1" required><span>{{ _("Cam kết quyền") }}</span></label>
+          <button class="btn" type="submit">↻ {{ _("Tải lại {n} mục lỗi").format(n=loi_muc | length) }}</button>
+        </form>
+        {% endif %}
+      </td>
     </tr>
   {% endfor %}
   </tbody>
