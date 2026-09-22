@@ -115,7 +115,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         # Thoi luong MONG DOI: preset cat ngan hon nguon dung bang phan da cat,
         # va do la muc dich cua san pham chu khong phai mot khiem khuyet.
         bdo = ban_do_thoi_gian.BanDoThoiGian.tu_dict(ke_hoach.get("ban_do") or {})
-        mong_doi = float(bdo.thoi_luong_ra or 0.0)
+        # ⭐ asv-final: truc bien tap -> ban ra la mot phep chia cho `toc_do`.
+        from .bien_tap import moc_ban_ra
+        mong_doi = moc_ban_ra(float(bdo.thoi_luong_ra or 0.0),
+                              (ban_dung.get("hinh") or {}).get("bien_tap"))
 
         bam_ra = bam_nguon = ""
         if cach != cdr.CAT_MA_HOA_LAI:

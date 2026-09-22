@@ -44,6 +44,7 @@ from server.deps import get_db, user_hien_tai
 from server.templating import templates
 
 from . import cat_dau_cuoi, hop_dong_v4, features, gia, pipeline, quan_sat, vung_che, rang_giong
+from . import bien_tap as bien_tap_mod
 from . import (am_thanh as am_thanh_mod, cai_dat as cai_dat_mod, logo as logo_mod,
                ngon_ngu as ngon_ngu_mod,
                lop_phu as lop_phu_mod, phu_de as phu_de_mod, tu_dien as tu_dien_mod)
@@ -212,6 +213,7 @@ def _ngu_canh_studio(db, u, loi: str = "", nap_lai: dict | None = None) -> dict:
         #: Danh sach kieu + che do phu de. Cung ly do voi hai khoi tren.
         "phu_de": phu_de_mod.cho_giao_dien(),
         "am_thanh": am_thanh_mod.cho_giao_dien(),
+        "bien_tap": bien_tap_mod.cho_giao_dien(),
         "logo_toi_da": logo_mod.SO_LOGO_TOI_DA,
         "logo_tran_mb": features.tran_logo_byte() // (1024 * 1024),
         "nhan_trang_thai": NHAN_TRANG_THAI,
@@ -321,6 +323,7 @@ async def tao(request: Request,
               #: Rong = khong phu de, va do la truong hop BINH THUONG.
               phu_de: str = Form(""),
               am_thanh: str = Form(""),  # JSON ho so am thanh (V6 pha 23); rong = mac dinh
+              bien_tap: str = Form(""),  # JSON cat khung/zoom/ti le/toc do (asv-final)
               csrf_token: str = Form(""),
               _g: None = Depends(_cong_co),
                 user: str = Depends(require_login),
@@ -471,12 +474,16 @@ async def tao(request: Request,
     try:
         ho_so_phu_de = phu_de_mod.tu_form(phu_de, preset=preset)
         ho_so_am = am_thanh_mod.tu_form(am_thanh)
-    except (phu_de_mod.PhuDeLoi, am_thanh_mod.AmThanhLoi) as exc:
+        ho_so_bt = bien_tap_mod.tu_form(bien_tap, preset=preset)
+    except (phu_de_mod.PhuDeLoi, am_thanh_mod.AmThanhLoi,
+            bien_tap_mod.BienTapLoi) as exc:
         return _lai_voi_loi(request, db, u, str(exc))
     if ho_so_phu_de:
         cai_dat["phu_de"] = ho_so_phu_de
     if ho_so_am:
         cai_dat["am_thanh"] = ho_so_am
+    if ho_so_bt:
+        cai_dat["bien_tap"] = ho_so_bt
 
     # ── Logo (V6 pha 11b) ───────────────────────────────────────────────────
     #

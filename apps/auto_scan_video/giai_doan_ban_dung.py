@@ -86,7 +86,14 @@ def _co_khung(db, kho: Storage, run) -> tuple[int, int]:
         return (0, 0)
     try:
         ho_so = _doc(kho, khoa) or {}
-        return (int(ho_so.get("rong") or 0), int(ho_so.get("cao") or 0))
+        rong, cao = int(ho_so.get("rong") or 0), int(ho_so.get("cao") or 0)
+        # 🔴 asv-final: `rong`/`cao` cua ffprobe la khung MA HOA. Video dien
+        #    thoai `rotation=90` duoc ffmpeg tu xoay TRUOC chuoi loc, nen bo loc
+        #    thay khung da doi chieu — cat khung / logo tinh tren khung ma hoa la
+        #    cat sai truc.
+        if int(ho_so.get("xoay") or 0) % 180 == 90:
+            rong, cao = cao, rong
+        return (rong, cao)
     except (OSError, ValueError, TypeError):
         return (0, 0)
 
@@ -263,6 +270,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         #    dung MOT truc (doi diem anh); phu de co HAI, va truc `.srt` chay
         #    duoc o CA HAI preset. Xem `_ho_so_phu_de`.
         phu_de=_ho_so_phu_de(db, kho, run, ke_hoach, cai, cach),
+        bien_tap=(cai.bien_tap if cach == cdr.CAT_MA_HOA_LAI else None),
         rong_khung=_rong_khung, cao_khung=_cao_khung)
 
     # 🔑 Muc 5: doi chieu MOI tham chieu TRUOC khi ton mot suat render.

@@ -106,11 +106,12 @@ THAO_TAC_CHO_PHEP: dict[str, tuple[str, ...]] = {
 #:       chi vang mat khoi bang tren, thi "chua khai" va "bi cam" trong giong
 #:       nhau — va mot pha sau chi can them mot dong la du. O day thi them dong
 #:       do lam mot phep kiem do.
+#:
+#: ⭐ 22/09 (asv-final, `ADR_BIEN_TAP.md`): `reframe`, `crop`, `zoom` ROI khoi
+#:    day va sang `NANG_LUC_DOI_DIEM_ANH` — chu du an chot "hoan thien speed,
+#:    zoom, crop, aspect ratio, reframe". Chi o preset `smart_localize`.
 CAM_TRONG_MVP: tuple[str, ...] = (
     "reorder",          # thu tu canh la thu tu goc, moi preset
-    "reframe",          # YOLO / doi khung hinh
-    "crop",
-    "zoom",             # motion / camera path
     "broll",            # sinh canh moi
     "upscale",          # `apps/upscalevideo` da lam viec nay
     "music_replace",
@@ -120,8 +121,6 @@ CAM_TRONG_MVP: tuple[str, ...] = (
 #: Hoan sang sau MVP. Khac `CAM_TRONG_MVP` o cho: cai nay se mo, cai kia thi
 #: khong thuoc san pham. Ca hai deu khong duoc chan release.
 HAU_MVP: tuple[str, ...] = (
-    "reframe",
-    "zoom",
     "upscale",
     "broll",
     "multi_speaker_voice",      # nhieu giong cho nhieu nguoi noi
@@ -167,6 +166,14 @@ NANG_LUC_DOI_DIEM_ANH: tuple[str, ...] = (
     "text_overlay",     # `lop_phu`  — V6 pha 11
     "logo_image",       # `logo`     — V6 pha 08b/11b
     "subtitle_burn",    # `phu_de`   — V6 pha 14
+    # ⭐ asv-final 22/09 (`ADR_BIEN_TAP.md`), `bien_tap.py` + `hinh_hoc.khung_bien_tap`:
+    "crop",             # cat khung hinh (phan so 0..1)
+    "zoom",             # phong tinh quanh mot tam — KHONG phai motion path
+    "reframe",          # doi ti le khung: cat quanh tam, hoac nen mo
+    # ⚠️ `speed` khong doi DIEM ANH ma doi MOC THOI GIAN cua tung khung. Nam o
+    #    bang nay vi cung mot rang buoc: `-c:v copy` khong co bo loc nao de dat
+    #    `setpts` vao, va preset giu hinh hua do dai ra bang do dai vao.
+    "speed",
 )
 
 #: Nang luc KHONG doi diem anh — hop le o MOI preset.

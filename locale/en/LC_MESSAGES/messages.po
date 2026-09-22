@@ -19454,3 +19454,112 @@ msgstr "The video is already in the target language — choose a different targe
 
 msgid "Giọng này đọc {lan}, không đọc được bản {dich}."
 msgstr "This voice reads {lan}; it cannot read a {dich} script."
+
+# asv-final bien-tap 22/09
+msgid "Cắt bớt mép khung hình (%)"
+msgstr "Trim frame edges (%)"
+
+msgid "Cắt khung, phóng to, đổi tỉ lệ và đổi tốc độ chỉ dùng được với kiểu xử lý có biên tập lại hình."
+msgstr "Cropping, zooming, changing the aspect ratio and changing the speed only work with a mode that re-edits the picture."
+
+msgid "Cách đổi tỉ lệ khung hình không hợp lệ."
+msgstr "Invalid aspect-ratio method."
+
+msgid "Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên không thể cắt khung, phóng to, đổi tỉ lệ hay đổi tốc độ. Chọn “Rút gọn có biên tập” nếu bạn muốn biên tập khung hình."
+msgstr "“Keep the picture” copies every pixel unchanged, so it cannot crop, zoom, change the aspect ratio or change the speed. Choose “Shorten with editing” if you want to edit the frame."
+
+msgid "Chưa biết kích thước khung hình nguồn nên không biên tập khung được."
+msgstr "The source frame size is unknown, so the frame cannot be edited."
+
+msgid "Khung cắt quá nhỏ — mỗi cạnh ít nhất {p}% khung hình."
+msgstr "Crop window too small — each side must be at least {p}% of the frame."
+
+msgid "Tâm khung hình phải nằm trong khung (0–100%)."
+msgstr "The frame focus must be inside the frame (0–100%)."
+
+msgid "Biên tập khung hình không đọc được."
+msgstr "Frame edit settings could not be read."
+
+msgid "cắt mép"
+msgstr "edge trim"
+
+msgid "Tâm dọc (%)"
+msgstr "Vertical focus (%)"
+
+msgid "Để mặc định thì giữ nguyên khung hình và tốc độ."
+msgstr "Leave the defaults to keep the original frame and speed."
+
+msgid "Giữ nguyên"
+msgstr "Keep original"
+
+msgid "Cắt quanh tâm"
+msgstr "Crop around focus"
+
+msgid "Mức phóng to phải từ 1× đến {n}×."
+msgstr "Zoom must be between 1× and {n}×."
+
+msgid "Dưới"
+msgstr "Bottom"
+
+msgid "Giá trị biên tập không hợp lệ: {ten}."
+msgstr "Invalid edit value: {ten}."
+
+msgid "Khung hình và tốc độ"
+msgstr "Frame and speed"
+
+msgid "Tốc độ phải từ 1× đến {n}× — video ra không được dài hơn video vào."
+msgstr "Speed must be between 1× and {n}× — the output may not be longer than the input."
+
+msgid "Phóng to (×)"
+msgstr "Zoom (×)"
+
+msgid "Biên tập khung hình có trường lạ: {ds}."
+msgstr "Frame edit settings have unknown fields: {ds}."
+
+msgid "Tốc độ"
+msgstr "Speed"
+
+msgid "Tệp kết quả khung {a}, bản dựng khai {b}."
+msgstr "Output frame is {a}, the render manifest declares {b}."
+
+msgid "Phải"
+msgstr "Right"
+
+#, python-format
+msgid "Cắt mép quá nhiều — mỗi chiều phải còn ít nhất %(p)s%% khung hình."
+msgstr "Too much edge trim — each dimension must keep at least %(p)s%% of the frame."
+
+msgid "Trái"
+msgstr "Left"
+
+msgid "Bản dựng có biên tập khung hình không hợp lệ."
+msgstr "The render manifest has invalid frame edits."
+
+msgid "Tâm ngang (%)"
+msgstr "Horizontal focus (%)"
+
+#, python-format
+msgid "phóng to %(z)s×"
+msgstr "zoom %(z)s×"
+
+msgid "Khung cắt phải nằm trong hình, cạnh đầu trước cạnh cuối."
+msgstr "The crop window must be inside the picture, with the start edge before the end edge."
+
+msgid "Trên"
+msgstr "Top"
+
+#, python-format
+msgid "Sẽ áp dụng: %(ds)s."
+msgstr "Will apply: %(ds)s."
+
+msgid "Kiểu “Giữ nguyên hình ảnh” hứa video ra dài đúng bằng video vào, nên không đổi tốc độ được. Chọn “Rút gọn có biên tập” nếu bạn muốn tăng tốc."
+msgstr "“Keep the picture” promises the output runs exactly as long as the input, so the speed cannot change. Choose “Shorten with editing” if you want to speed up."
+
+msgid "Giữ trọn hình, nền mờ"
+msgstr "Fit whole picture, blurred background"
+
+msgid "Cách đổi tỉ lệ"
+msgstr "Aspect-ratio method"
+
+msgid "Tỉ lệ khung hình không có trong danh sách."
+msgstr "That aspect ratio is not in the list."

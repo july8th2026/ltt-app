@@ -285,6 +285,74 @@
         </div>
       </div>
 
+      {# ── Khung hinh & toc do (asv-final 22/09, `bien_tap.py`) ──────────────
+         Cung khuon `data-preset-can` voi vung che: cat khung / phong / doi ti le
+         la bo loc diem anh (vat ly: `-c:v copy` khong giai ma khung nao); toc do
+         la loi hua do dai cua preset giu hinh. Mien gia tri den TU
+         `bien_tap.cho_giao_dien()` — khong go so vao day. #}
+      <div class="asv-nhom" id="asv-nhom-bien-tap"
+           data-preset-can="{{ preset_can_cho_vung }}"
+           data-canh-min="{{ bien_tap.canh_min_pct }}">
+        <h3>{{ _("Khung hình và tốc độ") }}</h3>
+        <p class="asv-ghi-chu asv-vung-chan" id="asv-bt-chan" hidden>
+          {{ _("Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên không thể cắt khung, phóng to, đổi tỉ lệ hay đổi tốc độ. Chọn “Rút gọn có biên tập” nếu bạn muốn biên tập khung hình.") }}
+        </p>
+        <div class="asv-bt-o">
+          <div class="asv-luoi-tinh-chinh">
+            <label class="asv-o">
+              <span>{{ _("Tốc độ") }}</span>
+              <select id="asv-bt-toc">
+                <option value="1">1×</option>
+                <option value="1.1">1,1×</option>
+                <option value="1.25">1,25×</option>
+                <option value="{{ bien_tap.toc_do_max }}">{{ bien_tap.toc_do_max }}×</option>
+              </select>
+            </label>
+            <label class="asv-o">
+              <span>{{ _("Tỉ lệ khung hình") }}</span>
+              <select id="asv-bt-ti-le">
+                <option value="">{{ _("Giữ nguyên") }}</option>
+                {% for tl in bien_tap.ti_le %}<option value="{{ tl }}">{{ tl }}</option>{% endfor %}
+              </select>
+            </label>
+            <label class="asv-o">
+              <span>{{ _("Cách đổi tỉ lệ") }}</span>
+              <select id="asv-bt-cach">
+                <option value="cat">{{ _("Cắt quanh tâm") }}</option>
+                <option value="nen_mo">{{ _("Giữ trọn hình, nền mờ") }}</option>
+              </select>
+            </label>
+            <label class="asv-o">
+              <span>{{ _("Phóng to (×)") }}</span>
+              <input type="number" id="asv-bt-zoom" min="1" max="{{ bien_tap.zoom_max }}"
+                     step="0.1" value="1" inputmode="decimal">
+            </label>
+            <label class="asv-o">
+              <span>{{ _("Tâm ngang (%)") }}</span>
+              <input type="number" id="asv-bt-tam-x" min="0" max="100" step="1" value="50">
+            </label>
+            <label class="asv-o">
+              <span>{{ _("Tâm dọc (%)") }}</span>
+              <input type="number" id="asv-bt-tam-y" min="0" max="100" step="1" value="50">
+            </label>
+          </div>
+          <p class="asv-nhan">{{ _("Cắt bớt mép khung hình (%)") }}</p>
+          <div class="asv-luoi-tinh-chinh">
+            {% for ma, nhan in [("trai", _("Trái")), ("phai", _("Phải")), ("tren", _("Trên")), ("duoi", _("Dưới"))] %}
+            <label class="asv-o">
+              <span>{{ nhan }}</span>
+              <input type="number" id="asv-bt-cat-{{ ma }}" min="0"
+                     max="{{ 100 - bien_tap.canh_min_pct }}" step="1" value="0">
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+        <input type="hidden" name="bien_tap" id="asv-bien-tap" value="">
+        <p class="asv-ghi-chu" id="asv-bt-tt" aria-live="polite">
+          {{ _("Để mặc định thì giữ nguyên khung hình và tốc độ.") }}
+        </p>
+      </div>
+
       {# 🔴 Vung che chi song duoc o preset CAT, va do la mot rang buoc vat ly
          chu khong phai mot lua chon: preset giu hinh phat `-c:v copy`, tuc byte
          hinh di thang tu nguon sang tep ra ma khong giai ma lan nao — khong co
@@ -684,7 +752,12 @@
   "lg_xoa_mot": {{ _("Xoá logo này")|tojson }},
   "lg_het_cho": {{ _("Tối đa %(n)s logo.")|tojson }},
   "lg_qua_lon": {{ _("Ảnh vượt quá %(mb)s MB.")|tojson }},
-  "lg_sai_kieu": {{ _("Chỉ nhận PNG, JPEG hoặc WebP.")|tojson }}
+  "lg_sai_kieu": {{ _("Chỉ nhận PNG, JPEG hoặc WebP.")|tojson }},
+  "bt_mac_dinh": {{ _("Để mặc định thì giữ nguyên khung hình và tốc độ.")|tojson }},
+  "bt_tom_tat": {{ _("Sẽ áp dụng: %(ds)s.")|tojson }},
+  "bt_cat_mep": {{ _("cắt mép")|tojson }},
+  "bt_phong": {{ _("phóng to %(z)s×")|tojson }},
+  "bt_cat_qua_nhieu": {{ _("Cắt mép quá nhiều — mỗi chiều phải còn ít nhất %(p)s%% khung hình.")|tojson }}
 }
 </script>
 {#- Pha 06: man Studio la TAM module, khong con mot tep phinh.

@@ -62,8 +62,11 @@ def test_preset_thong_minh_CHI_giu_hoac_cat():
     assert set(hd.THAO_TAC_CHO_PHEP[hd.PRESET_CAT_THONG_MINH]) == {"keep", "cut"}
 
 
-@pytest.mark.parametrize("thao_tac", ["reorder", "reframe", "crop", "zoom",
-                                      "broll", "transition"])
+# ⭐ asv-final 22/09 (`ADR_BIEN_TAP.md`): `reframe`/`crop`/`zoom` da ROI bang CAM
+#    sang `NANG_LUC_DOI_DIEM_ANH` — chung la NANG LUC cua khung hinh, khong phai
+#    THAO TAC tren canh, nen van khong nam trong `THAO_TAC_CHO_PHEP`.
+@pytest.mark.parametrize("thao_tac", ["reorder", "broll", "transition",
+                                      "upscale", "music_replace"])
 def test_thao_tac_bi_cam_khong_xuat_hien_o_bat_ky_preset_nao(thao_tac):
     """`reorder` nam trong danh sach CAM chu khong chi vang mat.
 
@@ -140,7 +143,9 @@ def test_hop_dong_tu_no_luc_nap_neu_mau_thuan(monkeypatch):
 def test_hau_mvp_khong_rong_va_khong_chan_release():
     """Danh sach hoan phai la mot DANH SACH, khong phai mot cam giac."""
     assert hd.HAU_MVP
-    assert "reframe" in hd.HAU_MVP
+    assert "upscale" in hd.HAU_MVP
+    # asv-final: reframe/zoom da MO — khong con "hoan", khong duoc o hai bang.
+    assert "reframe" not in hd.HAU_MVP and "zoom" not in hd.HAU_MVP
     assert "multilingual_target" in hd.HAU_MVP
     # Thu da hoan thi khong duoc dong thoi la thu bat buoc.
     for muc in hd.HAU_MVP:
