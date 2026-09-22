@@ -75,7 +75,19 @@ class ModelFailure:
 
     @property
     def penalizes_key(self) -> bool:
-        """Chỉ tín hiệu chứng minh endpoint/credential hỏng mới phạt key."""
+        """Chỉ tín hiệu chứng minh endpoint/credential hỏng mới phạt key.
+
+        ⛔ 4xx KHÔNG BAO GIỜ phạt (trừ auth): một phản hồi 4xx chứng minh YÊU
+           CẦU sai, nó không chứng minh khoá/endpoint hỏng. Thiếu rào này thì
+           mã lạ + 400 (`upstream_unknown`, fail-closed của Task 13) đi thẳng
+           vào `danh_dau_loi` ⇒ năm ảnh hỏng của một khách tắt model nhà
+           (D-005/L-09, `tests/test_1244`, `tests/test_1709`).
+        """
+        if self.canonical_code in {"unauthorized", "forbidden"}:
+            return True
+        status = self.http_status
+        if status is not None and 400 <= int(status) < 500:
+            return False
         return self.canonical_code in {
             "unauthorized",
             "forbidden",

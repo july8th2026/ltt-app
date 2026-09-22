@@ -147,11 +147,15 @@ def test_prose_oom_khong_du_bang_chung_thi_khong_duoc_doan_provider_oom():
 
 
 def test_413_prose_la_unknown_khong_duoc_doan_thanh_context():
-    """Task 13: status 413 không còn sinh lớp lỗi — mã lạ là `CongVlmError`."""
+    """Task 13: status 413 không còn sinh NGỮ NGHĨA (không đoán thành context).
+
+    Lớp lỗi vẫn theo chính sách 4xx (`YeuCauSaiError`, L-09/`test_1244`): yêu
+    cầu sai thì không phạt khoá và khách nhận 400 hành động được.
+    """
     c = CongVlm(goi=_goi_gia(413, {"detail": "context window exceeded"}))
     with pytest.raises(CongVlmError) as e:
         c.chat(model="qwen38-api", messages=[])
-    assert not isinstance(e.value, YeuCauSaiError)
+    assert isinstance(e.value, YeuCauSaiError)
     assert e.value.failure.canonical_code == "upstream_unknown"
     assert not e.value.failure.is_context_limit
 

@@ -173,15 +173,28 @@ def test_A_loi_luong_khong_con_boolean_tuong_thich():
 # ── Máy A: cửa đồng bộ (`CongVlm.chat`) ─────────────────────────────────────
 
 @pytest.mark.parametrize("status", (400, 413, 422, 429, 504))
-def test_A_dong_bo_status_tran_la_loi_cong_chung(status):
+def test_A_dong_bo_status_khong_con_sinh_NGU_NGHIA(status):
+    """Status không sinh `canonical_code`; 4xx vẫn quyết định CHÍNH SÁCH.
+
+    ⛔ Hai việc khác nhau, và gộp chúng đã mở lại cửa thứ tư của D-005: mã lạ
+       + 4xx rơi vào `upstream_unknown`, mà mã ấy nằm trong `penalizes_key`
+       ⇒ khoá API bị phạt vì một yêu cầu sai của khách (L-09,
+       `tests/test_1244`). Nên: ngữ nghĩa fail-closed, còn lớp lỗi của 4xx
+       (trừ 401/403) là `YeuCauSaiError` — `dieu_phoi` bắt nó trước, không
+       cascade, không phạt khoá; cửa công khai trả 400 hành động được.
+    """
     payload = {"detail": {"truong": "context", "tran": 1, "thay": 2}}
     client = CongVlm(goi=lambda *a, **k: (status, payload, {}))
     with pytest.raises(CongVlmError) as caught:
         client.chat(model="m", messages=[])
-    assert type(caught.value) is CongVlmError
-    assert not isinstance(caught.value, (YeuCauSaiError, BanError,
-                                         VuotNganSachError))
     assert caught.value.failure.canonical_code == "upstream_unknown"
+    assert not caught.value.failure.is_context_limit
+    assert not isinstance(caught.value, (BanError, VuotNganSachError))
+    if status < 500:
+        assert isinstance(caught.value, YeuCauSaiError)
+        assert not caught.value.failure.penalizes_key or status in (401, 403)
+    else:
+        assert type(caught.value) is CongVlmError
 
 
 # ── Máy A: bề mặt công khai ─────────────────────────────────────────────────
