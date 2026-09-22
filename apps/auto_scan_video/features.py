@@ -541,40 +541,6 @@ KIEU_VIDEO_HOP_LE = ("video/mp4", "video/quicktime", "video/x-m4v")
 TRAN_BEN_VUNG = 2 * 1024 * 1024 * 1024
 
 
-def tao_ve_tai_len(db: Session, kho, *, owner_id: str, ten_tep: str,
-                   kieu: str, co_du_kien: int) -> dict:
-    """Ve tai len TRUC TIEP browser -> kho. Tra ve mo ta de client tu PUT.
-
-    🔑 Toan bo diem cua ham nay: **tep khong bao gio di qua tien trinh app**.
-       V2 doc `await video.read()` roi giu bytes do trong khi vua ghi mot ban
-       tam vua day len kho — ca video nam trong RAM hai lan, va tran 90 MB ton
-       tai chinh vi dieu do.
-
-    ⭐ Khong co gi moi duoc xay o day. `platform_core.upload_sessions` da lam
-       viec nay, da co mot nguoi goi that (`apps/autosubvideo/services/
-       source_drafts.py:33-49`), va da mang san han muc chong lam dung (20 phien,
-       2 GiB dang bay, 12 ve/phut) cung phep kiem chu ky magic byte.
-
-    Tra `{"mode": "direct", ...}` khi kho cap duoc ve, `{"mode": "local"}` khi
-    khong — luc do client quay ve duong multipart nho.
-    """
-    from platform_core import upload_sessions
-
-    phien = upload_sessions.create(
-        db, user_id=owner_id, app_slug=SLUG, filename=ten_tep,
-        content_type=kieu, expected_size=int(co_du_kien),
-        max_size=TRAN_BEN_VUNG, allowed_types=KIEU_VIDEO_HOP_LE)
-    dich = upload_sessions.upload_target(kho, phien)
-    if dich is None:
-        # Kho khong cap duoc presigned PUT (LocalStorage). Bo ve di thay vi de
-        # lai mot dong `pending` khong bao gio duoc dung.
-        db.delete(phien)
-        db.flush()
-        return {"mode": "local"}
-    return {"mode": "direct", "upload_id": phien.id, "url": dich.url,
-            "method": dich.method, "headers": dich.headers or {}}
-
-
 def tao_run_tu_ve(db: Session, kho, *, owner_id: str, upload_id: str,
                   settings: dict) -> AsvRun:
     """Ve da tai xong -> soi -> chuyen sang khoa ben -> tao run.

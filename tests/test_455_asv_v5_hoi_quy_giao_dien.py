@@ -226,18 +226,15 @@ def test_duong_ve_tai_len_van_cap_duoc_ve(moi_truong):
     from apps.auto_scan_video.manifest import MANIFEST
 
     _app, a, csrf, _b, _cb = moi_truong
-    r = a.post(f"{MANIFEST.route_prefix}/ve",
+    # asv-final L_TAI_LEN: `/ve` (MOT presigned PUT ca tep) thay bang
+    # `/tai-len` (nhieu phan, tiep tuc duoc). Kho cuc bo nay CUNG chay duong do
+    # (phan di qua route cua app), nen khong con `{"mode": "local"}`.
+    r = a.post(f"{MANIFEST.route_prefix}/tai-len",
                data={"csrf_token": csrf, "ten_tep": "a.mp4",
                      "kieu": "video/mp4", "co": 1024})
     assert r.status_code == 200, r.text[:300]
     ra = r.json()
-    # ⚠️ `LocalStorage` KHONG cap duoc presigned PUT, nen o may phat trien va
-    #    trong bo test route nay tra `{"mode": "local"}` — mot cau tra loi THAT,
-    #    khong phai mot loi. Tren R2 no tra `upload_id` + URL.
-    #
-    # ⭐ Chot CA HAI hinh dang la co y: chot mot hinh se lam phep kiem nay do
-    #    tren may co R2, tuc no se do dung o noi no can xanh nhat.
-    assert ra.get("mode") == "local" or ra.get("upload_id"), ra
+    assert ra.get("upload_id") and ra.get("so_phan") == 1, ra
 
 
 def test_tran_90MB_van_tu_choi_bang_MOT_CAU_TIENG_VIET(moi_truong, monkeypatch):
