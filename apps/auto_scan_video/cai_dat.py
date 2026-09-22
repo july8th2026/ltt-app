@@ -47,7 +47,7 @@ import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 
-from . import gia, hop_dong_v4, rang_giong
+from . import gia, hop_dong_v4, ngon_ngu, rang_giong
 
 #: Ten schema. Doi ten nay khi hinh dang doi den muc mot ban doc cu doc sai —
 #: khong phai moi lan them mot truong.
@@ -94,6 +94,9 @@ class CaiDat:
     giong_id: str
     ngon_ngu_nguon: str
     dac_diem: DacDiem
+    #: Ngon ngu DICH (22/09). Ho so cu khong co khoa nay la ho so `vi` — V4-V6
+    #: chi sinh tieng Viet, nen do la mot SU THAT ve chung, khong phai doan.
+    ngon_ngu_dich: str = ngon_ngu.DICH_MAC_DINH
     tu_dien: dict = field(default_factory=dict)
     cat: tuple[float, float] | None = None
     vung: tuple = ()
@@ -154,6 +157,7 @@ def chuan_hoa(tho: Mapping | None) -> dict:
     ra[KHOA_BI_DANH_GIONG] = giong
 
     ra["ngon_ngu_nguon"] = _chuoi(tho, "ngon_ngu_nguon")
+    ra["ngon_ngu_dich"] = ngon_ngu.chuan_dich(tho.get("ngon_ngu_dich"))
     ra["tu_dien"] = dict(tho.get("tu_dien") or {})
 
     dd = tho.get("dac_diem_giong") or {}
@@ -187,6 +191,7 @@ def tu_ho_so(tho: Mapping | None) -> CaiDat:
                             rang_giong.CHE_DO_GIONG_MAC_DINH),
         giong_id=_chuoi(tho, "giong_id") or _chuoi(tho, KHOA_BI_DANH_GIONG),
         ngon_ngu_nguon=_chuoi(tho, "ngon_ngu_nguon"),
+        ngon_ngu_dich=ngon_ngu.chuan_dich(tho.get("ngon_ngu_dich")),
         dac_diem=DacDiem(gioi=str(dd.get("gioi") or ""),
                          vung=str(dd.get("vung") or ""),
                          phong_cach=str(dd.get("phong_cach") or "")),

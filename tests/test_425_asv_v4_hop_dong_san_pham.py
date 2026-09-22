@@ -75,30 +75,28 @@ def test_thao_tac_bi_cam_khong_xuat_hien_o_bat_ky_preset_nao(thao_tac):
         assert thao_tac not in duoc_phep, ten
 
 
-def test_ngon_ngu_dich_chi_co_tieng_viet():
+def test_ngon_ngu_dich_la_vi_va_en_mac_dinh_vi():
+    """Chu du an chot 22/09 (asv-final): dich {vi, en}; ho so cu = `vi`."""
     assert hd.NGON_NGU_DICH == "vi"
-    assert hd.NGON_NGU_DICH_HOP_LE == ("vi",)
+    assert hd.NGON_NGU_DICH_HOP_LE == ("vi", "en")
 
 
-def test_ltt_voice_ho_tro_HAI_lan_nhung_hop_dong_asv_van_chi_mot():
-    """🔴 Phep kiem nay ton tai vi PACK V4 GHI SAI LY DO.
+def test_tap_dich_CHINH_LA_tap_lan_giong_cua_ltt_voice():
+    """🔑 Truoc 22/09 phep kiem nay chot dieu nguoc lai: *"TTS lam duoc, ta van
+    co y khong lam"* (D-V4-02), vi chuoi hieu-va-dich chua co bang chung `en`.
 
-    `V4_MVP_PRODUCT_CONTRACT.md` noi target la tieng Viet *"because the shipped
-    LTT Voice capability is Vietnamese"*. Khong dung: `lan_ngon_ngu.py:6` ghi ro
-    VieNeu-TTS v3 Turbo la song ngu that va `NHAN_LAN` liet ke ca `vi` lan `en`.
+    Chu du an mo `en` ngay 22/09. Bang chung ma D-V4-02 doi — mot lan chay THAT
+    `vi→en` qua ASR, dich, giong, QC — la muc bat buoc cua cong ra
+    `docs/auto_scan_video_final/` (FINAL_REAL_JOB_REPORT), khong phai o day.
 
-    Quyet dinh (chi `vi`) van giu, nhung ly do doi: ca chuoi hieu-va-dich cua V4
-    moi co bang chung cho mot ngon ngu.
-
-    ⇒ Neu mot phien sau mo `en` **vi thay TTS ho tro**, phep kiem nay do. No la
-      cho duy nhat trong kho noi thang: "TTS lam duoc, ta van co y khong lam".
-      Xem `ADR-V4-001` D-V4-02.
+    ⇒ Nay phep kiem chot: dich KHONG vuot tap lan giong. Mot dich khong co lan
+      giong la mot ban long tieng khong ai doc duoc.
     """
     from apps.ltt_voice.lan_ngon_ngu import NHAN_LAN
 
     assert set(NHAN_LAN) == {"vi", "en"}, (
-        "LTT Voice doi lan ngon ngu — doc lai D-V4-02 truoc khi sua so nay")
-    assert set(hd.NGON_NGU_DICH_HOP_LE) == {"vi"}
+        "LTT Voice doi lan ngon ngu — doc lai ngon_ngu.py truoc khi sua so nay")
+    assert set(hd.NGON_NGU_DICH_HOP_LE) <= set(NHAN_LAN)
 
 
 def test_hai_che_do_giong_va_auto_match_khong_phai_gia_tri_mac_dinh():

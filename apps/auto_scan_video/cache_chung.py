@@ -94,14 +94,16 @@ def dau_vao_noi_dung(db, run, ten: str) -> dict | None:
         return {"nguon": ck} if ck else None
     if ten == pipeline.TRANSCRIBE:
         from . import cai_dat as cd
-        from .giai_doan_chep_loi import MODEL_ASR, can_phan_vai
+        from .giai_doan_chep_loi import MODEL_ASR
 
         ck = _checksum_tieng_asr(db, run)
         if not ck:
             return None
         return {"tieng_asr": ck, "model": MODEL_ASR,
                 "ngon_ngu_nguon": str(cd.doc(run).ngon_ngu_nguon or ""),
-                "phan_vai": bool(can_phan_vai(run))}
+                # TRANSCRIBE chot cap ngon ngu (ngon_ngu.kiem_nguon_da_doan);
+                # dung lai cheo dich la bo qua phep chot do.
+                "ngon_ngu_dich": cd.doc(run).ngon_ngu_dich}
     return None
 
 
@@ -143,27 +145,6 @@ def _artifact_song(db, kho: Storage, *, owner_id: str, run_id: str,
     return [hang[k] for k in khoa_asset]
 
 
-def _cho_duoc(kho: Storage, ten: str, hang: list) -> bool:
-    """Mot ket qua HOP LE nhung SUY GIAM thi khong duoc cho lan chay khac.
-
-    🔴 Phan vai la nang luc phu: thieu sidecar thi ban chep loi van ra, gan nhan
-       `khong_kha_dung`. Dung lai no cho mot lan chay sau — khi sidecar da song —
-       la bien mot su co tam thoi cua hom qua thanh ket qua vinh vien cua hom nay.
-    """
-    if ten != pipeline.TRANSCRIBE:
-        return True
-    from . import ban_ghi
-
-    for a in hang:
-        if a.kind != "json":
-            continue
-        with kho.open(a.storage_key) as f:
-            ban = json.loads(f.read().decode("utf-8"))
-        if ban.get("phan_vai") == ban_ghi.PHAN_VAI_KHONG_KHA_DUNG:
-            return False
-    return True
-
-
 def lay(db, kho: Storage, *, run, ten: str, khoa_chung: str) -> dict | None:
     """Ket qua cua mot lan chay KHAC cung khach, cung khoa — dang `{"phan","tom_tat"}`.
 
@@ -185,7 +166,7 @@ def lay(db, kho: Storage, *, run, ten: str, khoa_chung: str) -> dict | None:
             continue
         hang = _artifact_song(db, kho, owner_id=run.owner_id, run_id=gd.run_id,
                               khoa_asset=[str(k) for k in ra.get("khoa_asset") or []])
-        if hang is None or not _cho_duoc(kho, ten, hang):
+        if hang is None:
             continue
         phan = []
         for a in hang:

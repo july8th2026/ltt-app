@@ -26,7 +26,6 @@ from __future__ import annotations
 import ast
 import pathlib
 
-import pytest
 
 from apps.auto_scan_video import ban_ghi, giai_doan_chep_loi as gd
 
@@ -64,11 +63,20 @@ def _ban(n=2) -> dict:
 #  §1  Ranh gioi la ban khai — va no duoc cuong che tu CA HAI phia
 # ══════════════════════════════════════════════════════════════════════════════
 
-def test_hai_ten_moi_nam_trong_BE_MAT_CONG_KHAI_cua_app_CHU():
+def test_phan_vai_DA_RUT_khoi_be_mat_va_khoi_ASV():
+    """⛔ 22/09 (asv-final): MOT giong thuyet minh, khong ai doc `nguoi_noi`.
+
+    Phan vai tung chay pyannote tren GPU o moi lan AUTO_MATCH cho mot ket qua
+    bi vut (TRANG_THAI_V6 pha 20). Chot ca hai phia: be mat khong khai, va ASV
+    khong goi — mo lai la mot ADR da giong, khong phai mot dong khai lai.
+    """
     from apps.autosubvideo import BE_MAT_CONG_KHAI
 
-    assert ("apps.autosubvideo.ai_workflows", "diarize_file") in BE_MAT_CONG_KHAI
-    assert ("apps.autosubvideo.ai_workflows", "assign_speakers") in BE_MAT_CONG_KHAI
+    assert ("apps.autosubvideo.ai_workflows", "diarize_file") not in BE_MAT_CONG_KHAI
+    assert ("apps.autosubvideo.ai_workflows", "assign_speakers") not in BE_MAT_CONG_KHAI
+    assert not hasattr(gd, "can_phan_vai") and not hasattr(gd, "phan_vai")
+    van = (GOC / "apps/auto_scan_video/giai_doan_chep_loi.py").read_text(encoding="utf-8")
+    assert "diarize_file" not in van.split('"""', 2)[2]
 
 
 def test_linter_cho_phep_dung_HAI_ten_do_va_khong_hon():
@@ -129,40 +137,6 @@ def test_them_chu_khong_SUA_hop_dong_cua_app_chu():
 #  §2  Card do NEN TANG cap — khong bao gio tu chon
 # ══════════════════════════════════════════════════════════════════════════════
 
-def test_phan_vai_CHUYEN_TIEP_card_cua_JobContext(monkeypatch):
-    """🔴 Loi that duoc sua o pha nay.
-
-    Truoc do `pyannote_runner.py:20` lay card dau tien `torch.cuda.is_available()`
-    thay, bat ke lease. Phep kiem nay chot rang ASV chuyen tiep dung card duoc
-    cap — va chi chuyen tiep, khong tu chon.
-    """
-    thay = {}
-
-    def _gia(duong, **k):
-        thay.update(k)
-        return [{"start": 0.0, "end": 1.0, "speaker": "S0"}]
-
-    monkeypatch.setattr("apps.autosubvideo.ai_workflows.diarize_file", _gia)
-    gd.phan_vai("a.wav", _ban(), ctx=_Ctx(gpu_uuid="GPU-abc"))
-    assert thay["gpu_uuid"] == "GPU-abc"
-
-
-def test_khong_co_ctx_thi_khong_bia_ra_mot_card(monkeypatch):
-    """⛔ Khong co lease thi truyen rong — de app chu giu nguyen hanh vi cu.
-
-    Bia ra mot card la tu dieu phoi GPU, dung dieu pha nay cam.
-    """
-    thay = {}
-
-    def _gia(duong, **k):
-        thay.update(k)
-        return [{"start": 0.0, "end": 1.0, "speaker": "S0"}]
-
-    monkeypatch.setattr("apps.autosubvideo.ai_workflows.diarize_file", _gia)
-    gd.phan_vai("a.wav", _ban(), ctx=None)
-    assert thay["gpu_uuid"] == ""
-
-
 def test_diarize_file_GHIM_moi_truong_vao_card_duoc_cap(monkeypatch):
     """Chot phia app CHU: tien trinh con phai nhan `CUDA_VISIBLE_DEVICES`.
 
@@ -181,43 +155,8 @@ def test_diarize_file_GHIM_moi_truong_vao_card_duoc_cap(monkeypatch):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  §3  Phan vai la CO DIEU KIEN — khong tra tien GPU mu
+#  §3  Hop dong ban ghi
 # ══════════════════════════════════════════════════════════════════════════════
-
-@pytest.mark.parametrize("che_do, mong_doi", [
-    ("AUTO_MATCH", True),
-    ("USER_SELECTED", False),
-    ("", False),
-])
-def test_chi_AUTO_MATCH_moi_can_bang_chung_nguoi_noi(che_do, mong_doi):
-    assert gd.can_phan_vai(_run(che_do)) is mong_doi
-
-
-def test_mac_dinh_la_KHONG_chay():
-    """⚠️ Mot nang luc ton GPU phai duoc XIN, khong duoc tu bat.
-
-    Thiet lap thieu/hong thi lan chay do khong yeu cau no — fail-closed ve phia
-    KHONG tieu tien.
-    """
-    for xau in (None, {}, {"che_do_giong": None}, {"che_do_giong": "LUNG TUNG"}):
-        class R:
-            settings = xau
-        assert gd.can_phan_vai(R()) is False
-
-
-def test_ban_ghi_KHONG_phan_vai_van_noi_ro_dieu_do():
-    """🔑 Ba gia tri tuong minh, khong phai "co truong hay khong co truong".
-
-    Pha 09 phai phan biet **chua chay** voi **da chay ma khong thay ai** — hai
-    truong hop nay dan toi hai quyet dinh khac nhau ve AUTO_MATCH.
-    """
-    b = ban_ghi.danh_dau_phan_vai(_ban(), ban_ghi.PHAN_VAI_KHONG_CHAY)
-    assert b["phan_vai"] == "khong_chay"
-    assert all("nguoi_noi" not in d for d in b["doan"])
-
-    with pytest.raises(ban_ghi.BanGhiError):
-        ban_ghi.danh_dau_phan_vai(_ban(), "mot gia tri bia ra")
-
 
 def test_KHONG_nang_SCHEMA_BAN_GHI():
     """⛔ `kiem()` so bang DANG THUC. Nang len 2 lam moi ban ghi da luu truot
@@ -232,71 +171,7 @@ def test_KHONG_nang_SCHEMA_BAN_GHI():
 #  §4  Nang luc phu hong thi lan chay khong hong — tru khi bi HUY
 # ══════════════════════════════════════════════════════════════════════════════
 
-def test_phan_vai_khong_kha_dung_thi_DI_TIEP(monkeypatch):
-    def _no(*a, **k):
-        raise RuntimeError("Pyannote chua duoc cau hinh")
-
-    monkeypatch.setattr("apps.autosubvideo.ai_workflows.diarize_file", _no)
-    ra = gd.phan_vai("a.wav", _ban(), ctx=_Ctx())
-    assert ra["phan_vai"] == ban_ghi.PHAN_VAI_KHONG_KHA_DUNG
-    assert len(ra["doan"]) == 2, "khong duoc lam mat doan nao"
-
-
-def test_HUY_thi_NEM_LEN_chu_khong_nuot_thanh_khong_kha_dung(monkeypatch):
-    """⛔ Huy la Y MUON cua nguoi dung, khong phai mot nang luc thieu.
-
-    🔴 Nuot no thanh `khong_kha_dung` se lam vong chay di tiep sau khi khach da
-       bam huy — va khach tra tien cho moi giai doan phia sau.
-    """
-    def _no(*a, **k):
-        raise RuntimeError("Tac vu da bi huy.")
-
-    monkeypatch.setattr("apps.autosubvideo.ai_workflows.diarize_file", _no)
-    with pytest.raises(RuntimeError):
-        gd.phan_vai("a.wav", _ban(), ctx=_Ctx(huy=True))
-
-
 # ══════════════════════════════════════════════════════════════════════════════
 #  §5  Doi chieu (parity): hinh dang ban ghi khong doi
 # ══════════════════════════════════════════════════════════════════════════════
 
-def test_gan_nguoi_noi_KHONG_doi_bat_ky_truong_nao_khac(monkeypatch):
-    """Doi chieu tung truong: chi `nguoi_noi` duoc them, khong gi bi mat."""
-    from apps.autosubvideo.ai_workflows import assign_speakers
-
-    truoc = _ban(3)
-    sau = ban_ghi.gan_nguoi_noi(
-        truoc, [{"start": 0.0, "end": 1.0, "speaker": "S0"}],
-        gan=assign_speakers)
-
-    assert len(sau["doan"]) == len(truoc["doan"])
-    for a, b in zip(truoc["doan"], sau["doan"]):
-        for k in ("bat", "ket", "chu", "ma", "tu"):
-            assert a[k] == b[k], f"truong {k} bi doi"
-    assert sau["doan"][0].get("nguoi_noi") == "S0"
-    # Doan khong chong lan voi luot nao thi KHONG duoc gan bua mot nguoi noi.
-    assert "nguoi_noi" not in sau["doan"][2]
-
-
-def test_ban_ghi_da_phan_vai_van_qua_duoc_kiem():
-    """Truong them khong duoc lam ban ghi mat hop le."""
-    from apps.autosubvideo.ai_workflows import assign_speakers
-
-    b = ban_ghi.gan_nguoi_noi(
-        _ban(2), [{"start": 0.0, "end": 2.0, "speaker": "S0"}],
-        gan=assign_speakers)
-    ban_ghi.kiem(b)
-
-
-def test_thuat_toan_chong_lan_o_lai_app_CHU():
-    """⛔ Chep lai thuat toan sang ASV se tao ban thu hai cua cung mot quy tac.
-
-    `ban_ghi.gan_nguoi_noi` phai NHAN ham gan tu ngoai vao (`gan=`), khong tu
-    tinh chong lan.
-    """
-    import inspect
-
-    ma = inspect.getsource(ban_ghi.gan_nguoi_noi)
-    assert "gan(" in ma, "phai goi ham duoc tiem vao"
-    for cam in ("overlap", "chong_lan", "max(0.0", "min(end"):
-        assert cam not in ma, f"co ve dang tu tinh chong lan: {cam!r}"

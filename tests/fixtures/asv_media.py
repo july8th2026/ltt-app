@@ -120,7 +120,10 @@ def ban_ghi_gia(duration_s: float = DEFAULT_DURATION_S) -> dict:
             "words": [{"start": bat, "end": bat + 0.4, "text": "cau"},
                       {"start": bat + 0.4, "end": ket, "text": f"thu-{i + 1}"}],
         })
-    return {"segments": doan, "language": "vi", "engine": "gia",
+    # `en`, khong `vi`: dich mac dinh la `vi`, va hop dong ngon ngu (22/09) tu
+    # choi nguon trung dich. Loi "cau thu N" khong phai tieng Anh — khong sao,
+    # khong bo phan nao doc lai ngon ngu tu chu.
+    return {"segments": doan, "language": "en", "engine": "gia",
             "alignment_status": "gia"}
 
 

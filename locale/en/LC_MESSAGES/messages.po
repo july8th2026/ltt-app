@@ -19436,3 +19436,21 @@ msgstr "If you get rejected for going over the context limit mid-conversation"
 
 msgid "Vượt trần thì bạn nhận mã 400 (context_window_exceeded) kèm đúng con số đã áp cho model bạn gọi — cửa Responses dạng stream báo bằng sự kiện response.failed thay vì đóng kết nối lặng lẽ. Chúng tôi KHÔNG bao giờ lặng lẽ cắt bớt lượt cũ: cắt đi thì thứ mất đầu tiên là chỉ dẫn hệ thống và kết quả tool, và bạn sẽ không biết là mình đã mất."
 msgstr "Go over the limit and you get a 400 (context_window_exceeded) carrying the number that actually applied to the model you called — a streaming Responses call instead reports it with a response.failed event instead of closing silently. We NEVER silently drop older turns: the first things to go would be your system instructions and your tool results, and you would have no way to know they were gone."
+
+msgid "Ngôn ngữ đích chỉ được là tiếng Việt hoặc tiếng Anh."
+msgstr "The target language can only be Vietnamese or English."
+
+msgid "Ngôn ngữ nguồn chỉ được là tiếng Trung, tiếng Anh hoặc tiếng Việt."
+msgstr "The source language can only be Chinese, English or Vietnamese."
+
+msgid "Ngôn ngữ nguồn và đích trùng nhau — không có gì để dịch."
+msgstr "The source and target languages are the same — there is nothing to translate."
+
+msgid "Video này nói {ma} — Auto Scan chỉ nhận tiếng Trung, tiếng Anh hoặc tiếng Việt."
+msgstr "This video is spoken in {ma} — Auto Scan only accepts Chinese, English or Vietnamese."
+
+msgid "Video đã nói đúng ngôn ngữ đích — hãy chọn ngôn ngữ đích khác."
+msgstr "The video is already in the target language — choose a different target language."
+
+msgid "Giọng này đọc {lan}, không đọc được bản {dich}."
+msgstr "This voice reads {lan}; it cannot read a {dich} script."

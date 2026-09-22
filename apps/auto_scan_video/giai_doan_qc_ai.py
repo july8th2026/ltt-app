@@ -44,7 +44,7 @@ import os
 from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
 
-from . import ai, assets, pipeline, qc_ai, su_dung as sd
+from . import ai, assets, pipeline, qc_ai
 from .giai_doan_qc import ThieuBanRa, _doc_json, _khoa_theo_duoi
 
 log = logging.getLogger(__name__)
@@ -153,6 +153,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     # ⛔ Khong truyen `moi_lo=`: `qc_ai.DOAN_MOI_LO` la cho DUY NHAT quyet
     #    dinh co lo, va chinh `qc_ai` ghi ro dieu do o cho khai bao hang so.
     cac_lo = qc_ai.chia_lo(muc)
+    from . import cai_dat as cd
+    dich = cd.doc(run).ngon_ngu_dich
     so_lo = len(cac_lo)
     phan: list[dict] = []
     for i, lo in enumerate(cac_lo):
@@ -164,7 +166,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         van_ban = {str(d["ma"]): (d["goc"], d["chu"]) for d in lo}
         try:
             kq = ai.goi_tinh_tien(db, run, ai.QC_NGU_NGHIA,
-                                  qc_ai.loi_nhac_ngu_nghia(lo),
+                                  qc_ai.loi_nhac_ngu_nghia(lo, dich),
                                   stage=pipeline.QC_AI, item_key=ma_lo, ctx=ctx)
             for pq in qc_ai.doc_ngu_nghia(
                     ai.doc_ket_qua(kq, ai.QC_NGU_NGHIA),

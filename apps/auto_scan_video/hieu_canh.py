@@ -45,8 +45,10 @@ log = logging.getLogger(__name__)
 #: ⛔ Thieu no thi doi mot cau prompt xong, cache van khop, va lan chay dung lai
 #:    ket qua sinh boi prompt CU. `ai.PHIEN_BAN_PROMPT` la phien ban cua CUA
 #:    GOI; day la phien ban cua NOI DUNG cau hoi — hai thu doi doc lap voi nhau.
-PHIEN_BAN_HIEU_CANH = 2
-PHIEN_BAN_HO_SO = 1
+#: 3/2 (22/09): bo "video tieng Viet" khoi loi nhac — nguon la zh/en/vi, va
+#: ngon ngu thoai da hien ngay trong loi thoai dua kem.
+PHIEN_BAN_HIEU_CANH = 3
+PHIEN_BAN_HO_SO = 2
 
 #: Toi da bao nhieu ky tu ban chep loi gui kem MOT canh.
 #:
@@ -191,7 +193,7 @@ def loi_nhac_canh(ma_canh: str, ngu_canh: str, so_khung: int,
     """
     tin = json.dumps(tin_hieu or {}, ensure_ascii=False, sort_keys=True)
     van = (
-        f"Doc canh {ma_canh} cua mot video tieng Viet. "
+        f"Doc canh {ma_canh} cua mot video. "
         f"Co {so_khung} khung hinh dai dien. "
         f"Tin hieu do duoc: {tin}. "
         f"Loi thoai trong canh: {ngu_canh or '(khong co loi thoai)'}\n\n"
@@ -347,7 +349,7 @@ def loi_nhac_ho_so(cac_canh, tom_tat_ban_ghi: str) -> list:
     return [{
         "role": "user",
         "content": (
-            "Duoi day la bang chung doc tu mot video tieng Viet.\n"
+            "Duoi day la bang chung doc tu mot video.\n"
             f"Cac canh: {json.dumps(bang, ensure_ascii=False)}\n"
             f"Loi thoai (tom tat): {tom_tat_ban_ghi}\n\n"
             "Tra ve DUNG mot doi tuong JSON voi cac khoa: the_loai, giong_dieu, "

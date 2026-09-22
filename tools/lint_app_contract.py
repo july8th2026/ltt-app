@@ -137,11 +137,9 @@ APP_DUOC_DUNG_APP: dict = {
     #    dung dieu O10 va cong thoat pha 10 doi.
     ("auto_scan_video", "autosubvideo"): {
         ("apps.autosubvideo.transcription", "transcribe_file"),
-        # Pha 07: phan vai nguoi noi. Cung ly do BOC nhu tren — `diarize` khai
-        # `gpu_vram_mb=2000` nhung app chu khai `requires=("ffmpeg",)`, nen nop
-        # job sang do la de viec GPU roi vao lan ffmpeg.
-        ("apps.autosubvideo.ai_workflows", "diarize_file"),
-        ("apps.autosubvideo.ai_workflows", "assign_speakers"),
+        # ⛔ `diarize_file`/`assign_speakers` DA RUT (22/09, asv-final): san pham
+        #    la MOT giong thuyet minh, khong ai doc `nguoi_noi` — phan vai chi
+        #    ton GPU. Mo lai = mot ADR cho da giong, khong phai mot dong o day.
         # ── Tang TAC GIA phu de (V6 pha 14) ─────────────────────────────
         #
         # ⭐ Cung khuon BOC nhu ba ten tren, nhung mot ly do khac han: ba ten
@@ -205,6 +203,8 @@ APP_DUOC_DUNG_APP: dict = {
         ("apps.ltt_voice", "features"),
         ("apps.ltt_voice", "sidecar_client"),
         ("apps.ltt_voice.tham_so_cong_khai", "TRAN_MOI_LUOT_SINH"),
+        # Tap lan giong = tap ngon ngu dich (`auto_scan_video/ngon_ngu.py`).
+        ("apps.ltt_voice.lan_ngon_ngu", "LAN_HOP_LE"),
         # 🔴 Chuan hoa van ban truoc khi doc — bo qua no la mot lo da co that:
         #    ngay thang doc thanh chuoi ky tu, URL doc tung chu cai, ky tu vo
         #    hinh thanh token la. Chi `chuan_hoa`, KHONG mo `chuan_bi` (ham do

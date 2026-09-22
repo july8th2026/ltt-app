@@ -56,6 +56,10 @@ BE_MAT_CONG_KHAI = {
     #
     # ⭐ Xuất `loc` chứ không bắt bên gọi tự duyệt `DANH_SACH`: phép lọc là một
     #    quy tắc, và hai bản của một quy tắc là hai bản sẽ lệch nhau.
+    # 🔑 Tap LAN giong la tap ngon ngu DICH cua Auto Scan (chot 22/09):
+    #    `apps/auto_scan_video/ngon_ngu._kiem` doc no de mot dich khong co
+    #    lan giong la loi luc import, khong phai mot lan chay hong o GIONG.
+    ("apps.ltt_voice.lan_ngon_ngu", "LAN_HOP_LE"),
     ("apps.ltt_voice.giong_mau", "loc"),
     ("apps.ltt_voice.giong_mau", "tim"),
     ("apps.ltt_voice.giong_mau", "hop_le"),

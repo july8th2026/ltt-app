@@ -45,6 +45,7 @@ from server.templating import templates
 
 from . import cat_dau_cuoi, hop_dong_v4, features, gia, pipeline, quan_sat, vung_che, rang_giong
 from . import (am_thanh as am_thanh_mod, cai_dat as cai_dat_mod, logo as logo_mod,
+               ngon_ngu as ngon_ngu_mod,
                lop_phu as lop_phu_mod, phu_de as phu_de_mod, tu_dien as tu_dien_mod)
 from .manifest import MANIFEST
 
@@ -299,6 +300,9 @@ async def tao(request: Request,
               preset: str = Form(""),
               che_do_giong: str = Form(""),
               giong_id: str = Form(""),
+              #: Cap ngon ngu (22/09): nguon {auto,zh,en,vi}, dich {vi,en}.
+              ngon_ngu_nguon: str = Form(""),
+              ngon_ngu_dich: str = Form(""),
               tu_dien: str = Form(""),
               #: Vung che, JSON do trinh sua vung dung. Rong = khong co vung nao,
               #: va do la truong hop BINH THUONG cua phan lon lan chay.
@@ -343,6 +347,14 @@ async def tao(request: Request,
     if not gia.preset_hop_le(preset):
         return _lai_voi_loi(request, db, u, _t('Kiểu xử lý không hợp lệ.'))
 
+    # ⭐ Cap ngon ngu kiem o CUA, truoc credit. Nguon `auto` thi TRANSCRIBE
+    #    chot lai sau ASR (`ngon_ngu.kiem_nguon_da_doan`).
+    try:
+        ngon_ngu_nguon, ngon_ngu_dich = ngon_ngu_mod.kiem_cap(ngon_ngu_nguon,
+                                                             ngon_ngu_dich)
+    except ngon_ngu_mod.NgonNguError as exc:
+        return _lai_voi_loi(request, db, u, str(exc))
+
     che_do_giong = che_do_giong or hop_dong_v4.CHE_DO_GIONG_MAC_DINH
     if not gia.che_do_giong_hop_le(che_do_giong):
         return _lai_voi_loi(request, db, u, _t('Cách chọn giọng không hợp lệ.'))
@@ -350,7 +362,8 @@ async def tao(request: Request,
     # ⭐ Bat SOM, TRUOC khi giu credit: giong trong, giong cua nguoi khac, giong da
     #    tat deu bi tu choi o day (V6 pha 19). Xem `rang_giong.kiem_o_cua`.
     try:
-        rang_giong.kiem_o_cua(db, owner_id=str(getattr(u, "id", "")), che_do=che_do_giong, giong_id=giong_id)
+        rang_giong.kiem_o_cua(db, owner_id=str(getattr(u, "id", "")), che_do=che_do_giong, giong_id=giong_id,
+                              ngon_ngu_dich=ngon_ngu_dich)
     except rang_giong.RangGiongError as exc:
         return _lai_voi_loi(request, db, u, str(exc))
 
@@ -430,6 +443,9 @@ async def tao(request: Request,
     #    dinh cua rieng minh va hai trong so do da lech ve `timing_mode`.
     cai_dat = {"timing_mode": che_do, "preset": preset,
                "che_do_giong": che_do_giong, "giong_id": giong_id,
+               "ngon_ngu_nguon": ("" if ngon_ngu_nguon == ngon_ngu_mod.TU_DOAN
+                                  else ngon_ngu_nguon),
+               "ngon_ngu_dich": ngon_ngu_dich,
                "vung": ds_vung,
                "tu_dien": bang_tu_dien,
                # ⚠️ Giu `voice_id` cho tuong thich nguoc: `giai_doan_giong` doc
@@ -468,7 +484,7 @@ async def tao(request: Request,
     #    `run.id`, va `ban_dung.kiem` doi moi khoa la mot `AsvAsset` cua chinh
     #    lan chay do.
     try:
-        ds_logo_hh, anh_logo = await _doc_logo(logo, logo_anh)
+        ds_logo_hh, anh_logo = await logo_mod.doc_tu_bieu_mau(logo, logo_anh)
     except (logo_mod.LogoLoi, ValueError, TypeError) as exc:
         return _lai_voi_loi(request, db, u, str(exc) if isinstance(
             exc, logo_mod.LogoLoi) else _t('Logo không đọc được.'))
@@ -489,7 +505,7 @@ async def tao(request: Request,
             run = features.tao_run_tu_ve(
                 db, _kho, owner_id=u.id, upload_id=upload_id,
                 settings=cai_dat_mod.chuan_hoa(cai_dat))
-            _gan_logo_vao_run(db, _kho, run=run, ds_hinh_hoc=ds_logo_hh,
+            logo_mod.gan_vao_run(db, _kho, run=run, ds_hinh_hoc=ds_logo_hh,
                               anh=anh_logo)
             db.commit()
         except features.AsvError as exc:
@@ -547,7 +563,7 @@ async def tao(request: Request,
                 ten_tep=video.filename or "video.mp4",
                 settings=cai_dat_mod.chuan_hoa(cai_dat))
             from platform_core.storage import get_storage as _lay_kho
-            _gan_logo_vao_run(db, _lay_kho(), run=run, ds_hinh_hoc=ds_logo_hh,
+            logo_mod.gan_vao_run(db, _lay_kho(), run=run, ds_hinh_hoc=ds_logo_hh,
                               anh=anh_logo)
             db.commit()
         except features.AsvError as exc:
@@ -556,67 +572,6 @@ async def tao(request: Request,
 
     return RedirectResponse(f"{MANIFEST.route_prefix}/run/{run.id}",
                             status_code=303)
-
-
-async def _doc_logo(hinh_hoc_json: str, tep: list | None
-                    ) -> tuple[list[dict], list[tuple[bytes, str]]]:
-    """`(hinh hoc da kiem, [(bytes, kieu)])` — CUNG do dai, hoac nem.
-
-    ⛔ **Khong zip mu hai danh sach.** Lech so luong hay lech thu tu deu KHONG
-       lam gi hong — chung chi lam logo thu nhat mang anh cua logo thu hai, dat
-       o toa do cua logo thu nhat. Cung hinh dang loi ma `dung_lenh` da phai
-       tu kiem cho `duong_lop` va `duong_chu`.
-
-    ⚠️ Va tran kich thuoc ap **trong luc doc**, khong sau: mot tep 100 MB khong
-       duoc cap phat 100 MB roi moi bi tu choi.
-    """
-    ds = logo_mod.chuan_hoa(json.loads(hinh_hoc_json) if hinh_hoc_json.strip()
-                            else [])
-    ds_tep = [t for t in (tep or []) if getattr(t, "filename", "")]
-    if len(ds_tep) != len(ds):
-        raise logo_mod.LogoLoi(_t(
-            'Số ảnh logo ({co}) không khớp số logo đã đặt ({can}).').format(
-                co=len(ds_tep), can=len(ds)))
-
-    tran = features.tran_logo_byte()
-    anh: list[tuple[bytes, str]] = []
-    for t in ds_tep:
-        du_lieu = await t.read()
-        if len(du_lieu) > tran:
-            raise logo_mod.LogoLoi(_t('Ảnh logo vượt quá {mb} MB.').format(
-                mb=tran // (1024 * 1024)))
-        if not du_lieu:
-            raise logo_mod.LogoLoi(_t('Ảnh logo rỗng.'))
-        anh.append((du_lieu, (t.content_type or "").split(";")[0].strip().lower()))
-    return ds, anh
-
-
-def _gan_logo_vao_run(db, kho, *, run, ds_hinh_hoc: list[dict],
-                      anh: list[tuple[bytes, str]]) -> None:
-    """Luu anh, gan khoa vao `run.settings["logo"]`, roi ghi lai settings.
-
-    ⭐ Chay SAU `tao_run` va TRUOC `commit`, nen hoac ca run lan logo cung thanh,
-       hoac ca hai cung khong — cung bat bien I2 ma `tao_run` giu cho tien.
-    """
-    if not ds_hinh_hoc:
-        return
-    khoa = features.gan_logo(db, kho, run=run, anh=anh)
-    cai = dict(run.settings or {})
-    # ⛔ `strict=True`: lech do dai o day lam logo thu nhat mang khoa cua
-    #    logo thu hai — khong hong gi ca, chi SAI. `_doc_logo` da doi chieu
-    #    mot lan, va chot nay la lan thu hai o dung cho hai mang gap nhau.
-    #
-    # ⭐ Chinh `ruff B905` bat duoc dong nay, sau khi toi vua viet mot bai
-    #    kiem cam dung viec ay o `_doc_logo`. Mot bo lint doc CU PHAP thay
-    #    duoc thu mot bai kiem doc HANH VI bo sot.
-    cai["logo"] = [dict(h, khoa=k)
-                   for h, k in zip(ds_hinh_hoc, khoa, strict=True)]
-    # ⭐ Chuan hoa LAI sau khi them logo. Mot ho so duoc ghi hai lan ma
-    #    chi chuan hoa mot lan la mot ho so co the ra khoi dang chuan o
-    #    lan thu hai — va `cai_dat.chuan_hoa` luy dang nen goi lai khong
-    #    ton gi.
-    run.settings = cai_dat_mod.chuan_hoa(cai)
-    db.flush()
 
 
 def _lai_voi_loi(request: Request, db, u, thong_bao: str) -> HTMLResponse:

@@ -132,12 +132,14 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             _t('Bản biên tập không giữ lại đoạn thoại nào.'))
 
     ma_giong, can_cu = _giong_da_chot(db, run)
+    from . import cai_dat as cd
+    dich = cd.doc(run).ngon_ngu_dich
     provider = ai.THU_TU_PROVIDER[0]
     model = ai.model_cho(ai.CHUYEN_LOI_THOAI, provider=provider)
 
     vt = long_tieng.van_tay_long_tieng(
         checksum_ban_ghi=checksum, van_tay_ban=ban.van_tay(),
-        ma_giong=ma_giong, provider=provider, model=model)
+        ma_giong=ma_giong, provider=provider, model=model, ngon_ngu_dich=dich)
 
     # ⭐ Diem chot mang van tay nay. Doi giong hay doi ban bien tap => van tay
     #    doi => khong doan nao duoc tinh la da lam roi.
@@ -155,7 +157,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         ma_da_gui = {str(d.get("ma") or "") for d in lo}
         messages = long_tieng.loi_nhac(
             lo, tat_ca=doan_giu, ngon_ngu_goc=str(goc.get("ngon_ngu") or ""),
-            dac_diem_giong=dac_diem)
+            dac_diem_giong=dac_diem, ngon_ngu_dich=dich)
 
         kq = ai.goi_tinh_tien(
             db, run, ai.CHUYEN_LOI_THOAI, messages,
@@ -211,7 +213,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 
     tai_lieu = long_tieng.dung(giu, chuyen, ma_giong=ma_giong,
                                van_tay_ban=ban.van_tay(),
-                               provider=provider, model=model)
+                               provider=provider, model=model,
+                               ngon_ngu_dich=dich)
     long_tieng.kiem(tai_lieu, giu)
 
     goi = json.dumps(tai_lieu, sort_keys=True, ensure_ascii=False).encode("utf-8")

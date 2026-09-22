@@ -57,16 +57,18 @@ class QcAiError(ValueError):
 #  1. QC ngu nghia
 # ══════════════════════════════════════════════════════════════════════════════
 
-def loi_nhac_ngu_nghia(lo: list[dict]) -> list[dict]:
+def loi_nhac_ngu_nghia(lo: list[dict], ngon_ngu_dich: str = "vi") -> list[dict]:
     """Hoi model: ban tieng Viet co giu dung y cua nguon khong.
 
     ⛔ Hoi theo LO nhung tra ve theo MA — cung ly do nhu pha 14: mot lo 10 cau
        tra ve 9 ma ghep theo vi tri se lam moi cau sau do lech mot bac, va tai
        lieu van hop le.
     """
+    from . import ngon_ngu
+    t = ngon_ngu.cum(ngon_ngu_dich)["tieng"]
     he_thong = (
-        "Ban la nguoi soat ban long tieng tieng Viet. Voi moi cap (cau goc, cau "
-        "tieng Viet), hay noi ban tieng Viet co **giu dung y va thai do** cua cau "
+        f"Ban la nguoi soat ban long tieng {t}. Voi moi cap (cau goc, cau "
+        f"{t}), hay noi ban {t} co **giu dung y va thai do** cua cau "
         "goc khong.\n"
         "Quy tac:\n"
         "- `dat=false` CHI khi y nghia bi doi, mat, hoac them.\n"

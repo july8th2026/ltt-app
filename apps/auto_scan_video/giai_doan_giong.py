@@ -39,7 +39,7 @@ from pathlib import Path
 from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
 
-from . import (assets, giong_noi, long_tieng, nan_cho_vua, pipeline,
+from . import (assets, giong_noi, nan_cho_vua, pipeline,
                su_dung, van_ban)
 from .giai_doan_media import ThieuNguon
 
@@ -325,13 +325,14 @@ def _viet_lai(db, run, m: dict, *, chu: str, giay: float, khe: float,
        tai van doc duoc, chi la khong vua — va bac thang con mot nac nua (co
        gian) truoc khi phai bo cuoc. Nen loi o day dung o day.
     """
-    from . import ai
+    from . import ai, cai_dat as cd
 
     try:
         kq = ai.goi_tinh_tien(
             db, run, ai.RUT_NGAN_CHO_VUA,
             nan_cho_vua.loi_nhac_nan(m, chu_hien_tai=chu, giay_do_duoc=giay,
-                                     khe=khe),
+                                     khe=khe,
+                                     ngon_ngu_dich=cd.doc(run).ngon_ngu_dich),
             stage=pipeline.VOICE_SYNTHESIS,
             item_key=f"nan:{m['ma']}:{so_vong}", ctx=ctx)
         # 🔴 Cung mot loi voi `giai_doan_noi_dung`, tim ra o pha 22: `noi_dung`

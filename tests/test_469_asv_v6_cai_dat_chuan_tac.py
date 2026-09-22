@@ -249,7 +249,10 @@ def test_routes_ghi_ho_so_QUA_chuan_hoa_chu_khong_ghi_thang():
     van = (APP / "routes.py").read_bytes().decode("utf-8")
     assert "settings=dict(cai_dat)" not in van, (
         "routes van ghi thang dict tho xuong `settings=`")
-    assert van.count("cai_dat_mod.chuan_hoa(") >= 3, (
+    # Duong gan logo doi sang `logo.gan_vao_run` (22/09: routes chi lo HTTP).
+    logo = (APP / "logo.py").read_bytes().decode("utf-8")
+    assert (van.count("cai_dat_mod.chuan_hoa(")
+            + logo.count("cai_dat_mod.chuan_hoa(")) >= 3, (
         "khong du ba duong ghi (ben vung · multipart · gan logo) di qua "
         "`chuan_hoa`")
 def test_template_KHONG_tu_doc_run_settings():

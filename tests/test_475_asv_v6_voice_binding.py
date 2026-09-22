@@ -83,7 +83,7 @@ def test_loi_HA_TANG_KHONG_bi_doi_thanh_loi_cua_khach(monkeypatch):
     """⭐ Chi bat dung lop loi cua khach. Mot loi CSDL doi thanh "giong khong hop
        le" la bao khach sua mot thu ho khong he lam sai — va giau mat su co.
     """
-    def _sap(db, *, owner_id, voice_id="", preset=""):
+    def _sap(db, *, owner_id, voice_id="", preset="", ngon_ngu=""):
         raise RuntimeError("CSDL mat ket noi")
 
     monkeypatch.setattr(giong_noi, "giai_giong", _sap)

@@ -57,12 +57,14 @@ PHIEN_BAN_BI_THAY_THE = "auto_scan_mvp_v1"
 #:   `DubbingFit` va ba lop QC ngu nghia deu chua co bang chung nao cho `en`.
 #:   Mo them mot lan la mo them mot bo bang chung, khong phai them mot dong
 #:   cau hinh.
+#:
+#: 🔑 22/09 (asv-final, chu du an chot): dich MO THEM `en`. Tap hop le va ly do
+#:    nay song o `ngon_ngu.py` — mot cho; o day chi con MAC DINH cho ho so cu.
 NGON_NGU_DICH = "vi"
 
-#: Tap hop dong. Mot phan tu — co y. Xem giai thich o tren.
-NGON_NGU_DICH_HOP_LE: tuple[str, ...] = (NGON_NGU_DICH,)
+from .ngon_ngu import DICH_HOP_LE as NGON_NGU_DICH_HOP_LE  # noqa: E402
 
-#: Ngon ngu NGUON: tu doan, hoac khach goi y. Khong gioi han.
+#: Ngon ngu NGUON: tu doan, hoac khach khai. Tap hop le: `ngon_ngu.NGUON_HOP_LE`.
 NGON_NGU_NGUON_TU_DOAN = "auto"
 
 
@@ -123,7 +125,7 @@ HAU_MVP: tuple[str, ...] = (
     "upscale",
     "broll",
     "multi_speaker_voice",      # nhieu giong cho nhieu nguoi noi
-    "multilingual_target",      # ngon ngu dich khac `vi`
+    "multilingual_target",      # ngon ngu dich ngoai {vi, en} (`ngon_ngu.py`)
     "social_ingest",
     "social_publish",
 )

@@ -180,7 +180,7 @@ def co_gian_du_khong(giay: float, khe: float) -> tuple[bool, float]:
 # ══════════════════════════════════════════════════════════════════════════════
 
 def loi_nhac_nan(m: dict, *, chu_hien_tai: str, giay_do_duoc: float,
-                 khe: float) -> list[dict]:
+                 khe: float, ngon_ngu_dich: str = "vi") -> list[dict]:
     """Loi nhac cho `ai.RUT_NGAN_CHO_VUA`. MOT doan, khong phai mot lo.
 
     🔑 Dua vao ca **do dai da DO DUOC**, khong chi khe muc tieu. Do la khac biet
@@ -190,15 +190,17 @@ def loi_nhac_nan(m: dict, *, chu_hien_tai: str, giay_do_duoc: float,
     """
     dai_hon = float(giay_do_duoc) > float(khe)
     viec = "RUT NGAN" if dai_hon else "VIET DAY DAN HON"
+    from . import ngon_ngu
+    c = ngon_ngu.cum(ngon_ngu_dich)
     he_thong = (
-        "Ban la bien tap vien long tieng tieng Viet. Mot cau da viet **khong vua**"
+        f"Ban la bien tap vien long tieng {c['tieng']}. Mot cau da viet **khong vua**"
         " khe thoi gian cua no.\n"
         f"Viec cua ban: {viec} cau do, giu NGUYEN y nghia va thai do.\n"
         "Quy tac:\n"
         "- Khong bo mat thong tin nao trong cau.\n"
         "- Khong them thong tin khong co trong cau.\n"
-        "- Van phai la tieng Viet noi tu nhien, khong phai van viet rut gon.\n"
-        "- Nham dung `muc_tieu_giay`; khoang 4,5 am tiet moi giay.\n"
+        f"- Van phai la {c['tieng']} noi tu nhien, khong phai van viet rut gon.\n"
+        f"- Nham dung `muc_tieu_giay`; {c['nhip_moi_giay']}.\n"
         'Tra ve DUY NHAT: {"doan": {"chu": "..."}}')
     nguoi_dung = json.dumps({
         "ma": str(m.get("ma") or ""),

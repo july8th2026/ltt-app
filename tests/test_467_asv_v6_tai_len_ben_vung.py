@@ -359,9 +359,9 @@ def test_hai_danh_sach_logo_KHONG_duoc_zip_mu():
     Cùng hình dạng lỗi mà `dung_lenh` đã phải tự kiểm cho `duong_lop`."""
     import inspect
 
-    from apps.auto_scan_video import routes as r
+    from apps.auto_scan_video import logo as r
 
-    ma = inspect.getsource(r._doc_logo)
+    ma = inspect.getsource(r.doc_tu_bieu_mau)
     assert "len(ds_tep) != len(ds)" in ma, "khong doi chieu do dai hai danh sach"
 
 
@@ -369,9 +369,9 @@ def test_tran_anh_ap_TRONG_luc_doc():
     """⚠️ Một tệp 100 MB không được cấp phát 100 MB rồi mới bị từ chối."""
     import inspect
 
-    from apps.auto_scan_video import routes as r
+    from apps.auto_scan_video import logo as r
 
-    ma = inspect.getsource(r._doc_logo)
+    ma = inspect.getsource(r.doc_tu_bieu_mau)
     assert "tran_logo_byte()" in ma
     assert ma.index("await t.read()") < ma.index("> tran")
 @rao_chan_nang.NANG
