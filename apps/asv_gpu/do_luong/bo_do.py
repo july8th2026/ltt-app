@@ -82,8 +82,12 @@ def _chay_dich(dv: DauVao, *, gpu_uuid: str, is_cancelled=None) -> dict:
         from . import metricx  # type: ignore[attr-defined]
     except ImportError as exc:
         raise KhongKhaDung("chua co bo do dich (do_luong/metricx.py)") from exc
-    diem = metricx.do_dich(dv.cap_dich, dv.ngon_ngu_nguon, dv.ngon_ngu_dich,
-                           gpu_uuid)
+    # ⛔ TU KHOA, khong vi tri: `do_dich` khai `*` sau `cap`. Ban dau cho cam
+    #    nay goi theo vi tri va no se nem `TypeError` o dung luot chay that dau
+    #    tien — mot loi chi lo ra khi HAI lan gap nhau.
+    diem = metricx.do_dich(dv.cap_dich, ngon_ngu_nguon=dv.ngon_ngu_nguon,
+                           ngon_ngu_dich=dv.ngon_ngu_dich, gpu_uuid=gpu_uuid,
+                           is_cancelled=is_cancelled)
     return {"ket_qua": {str(ma): {"metricx": d} for ma, d in (diem or {}).items()}}
 
 
