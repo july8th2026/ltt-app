@@ -1,0 +1,12 @@
+{
+  "___COMMENT___": "English Whisper correction dictionary. Loaded by comprehensive_fixer_v5.py when detected_lang=en.",
+
+  "Croc ": "Grog ",
+  "Croc's": "Grog's",
+  "Croc,": "Grog,",
+  "Croc.": "Grog.",
+  " Croc ": " Grog ",
+  "Frexy": "Rexy",
+  "heavy tent chest": "heavy tan chest",
+  "balmy lambda-tilted": "45-degree-tilted"
+}

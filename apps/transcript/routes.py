@@ -23,6 +23,7 @@ from server.auth.session import require_login
 from server.templating import templates
 
 from .manifest import MANIFEST
+from .services import he as he_phien_am
 from .services import phien_am
 
 log = logging.getLogger("apps.transcript.routes")
@@ -64,6 +65,7 @@ def _trang(request: Request, user: str, *, loi: str = "",
         "user": user, "nav": MANIFEST.slug, "app": MANIFEST,
         "csrf_token": issue_csrf_token(request),
         "loi": loi, "jobs": _jobs_cua_toi(request, user),
+        "cac_he": list(he_phien_am.HE.values()), "he_mac_dinh": he_phien_am.MAC_DINH,
     }, status_code=status_code)
 
 
@@ -78,9 +80,10 @@ async def queue(
     csrf_token: str = Form(...),
     audio: UploadFile = File(...),
     language: str = Form(""),
-    min_s: float = Form(3.0),
+    min_s: float = Form(phien_am.MIN_S_MAC_DINH),
     max_s: float = Form(6.0),
     include_silence: str = Form(""),
+    he: str = Form(he_phien_am.MAC_DINH),
     user: str = Depends(require_login),
 ):
     from platform_core import credit
@@ -115,7 +118,8 @@ async def queue(
     try:
         tham_so = {"audio": khoa, "language": language.strip(),
                    "min_s": min_s, "max_s": max_s,
-                   "include_silence": bool(include_silence)}
+                   "include_silence": bool(include_silence),
+                   "he": he.strip() or he_phien_am.MAC_DINH}
         phien_am.chuan_hoa(tham_so)
     except phien_am.LoiPhienAm as e:
         return _trang(request, user, loi=str(e), status_code=400)

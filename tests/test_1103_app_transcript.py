@@ -179,10 +179,19 @@ def test_dong_thoi_gian_DOC_DUOC_tu_theo_khoa_cua_service_stt() -> None:
 def test_hai_doan_speech_lien_tiep_trung_noi_dung_bi_TU_CHOI() -> None:
     """Lỗi NỘI DUNG, không phải lỗi hình thức: tệp vẫn hợp lệ, khách vẫn đọc
     được, và câu bị lặp nằm giữa một bản dài."""
-    lap = [{"type": "speech", "start": 0, "end": 1, "text": "Xin  chao"},
-           {"type": "speech", "start": 1, "end": 2, "text": "xin chao"}]
+    lap = [{"type": "speech", "start": 0, "end": 1, "text": "Xin  chao."},
+           {"type": "speech", "start": 1, "end": 2, "text": "Xin chao"}]
     with pytest.raises(phien_am.LoiPhienAm):
         phien_am._kiem_khong_trung_lien_tiep(lap)
+    # Legacy `_normalize_for_dedupe` (bot/worker.py:166-170) KHÔNG hạ chữ:
+    # khác hoa/thường là hai câu khác nhau.
+    phien_am._kiem_khong_trung_lien_tiep(
+        [{"type": "speech", "start": 0, "end": 1, "text": "Xin chao"},
+         {"type": "speech", "start": 1, "end": 2, "text": "xin chao"}])
+    # Speech chữ rỗng là lỗi (legacy `speech_missing_text`).
+    with pytest.raises(phien_am.LoiPhienAm):
+        phien_am._kiem_khong_trung_lien_tiep(
+            [{"type": "speech", "start": 0, "end": 1, "text": " . "}])
 
 
 def test_mot_doan_lang_XEN_GIUA_thi_khong_con_la_trung_lien_tiep() -> None:
@@ -207,7 +216,24 @@ def test_schema_nghiem_ngat_bat_dung_nam_ca(doan, vi_sao) -> None:
 
 def test_schema_hop_le_thi_KHONG_nem() -> None:
     phien_am._kiem_schema_nghiem_ngat(
-        [{"type": "speech", "start": 0.0, "end": 3.5, "text": "xin chao"}])
+        [{"type": "speech", "start": 0.0, "end": 3.5, "text": "xin chao",
+          "scene_id": "S0001", "index": 1}])
+
+
+@pytest.mark.parametrize("hong", [
+    {"words": []},                 # khoá thừa
+    {"end": -1.0},                 # end < start
+    {"text": "   "},               # speech chữ rỗng
+    {"scene_id": ""},              # scene_id rỗng
+    {"index": 0},                  # index <= 0
+])
+def test_schema_nghiem_ngat_DU_LUAT_legacy(hong: dict) -> None:
+    """`bot/worker.py::_validate_output_segments_strict` — bản port đầu bỏ sót
+    năm luật này (đối chiếu 22/09)."""
+    doan = {"type": "speech", "start": 0.0, "end": 3.5, "text": "xin chao",
+            "scene_id": "S0001", "index": 1, **hong}
+    with pytest.raises(phien_am.LoiPhienAm):
+        phien_am._kiem_schema_nghiem_ngat([doan])
 
 
 def test_chieu_schema_ra_DUNG_SAU_khoa_va_KHONG_co_words() -> None:

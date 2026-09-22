@@ -65,7 +65,10 @@ def bam_audio(duong: str | Path) -> str:
 
 def _tep_cache(bam: str, model: str, ngon_ngu: str, ten_ho_so: str) -> Path:
     lang = ngon_ngu or "auto"
-    return _thu_muc_cache() / f"{bam}_{model}_{lang}_{ten_ho_so}.json"
+    # Model theo mã Hugging Face (`deepdml/faster-whisper-large-v3-turbo-ct2`) mang
+    # `/` — để nguyên thì tên tệp thành một thư mục con không tồn tại và ghi cache nổ.
+    ten_model = model.replace("/", "__").replace("\\", "__")
+    return _thu_muc_cache() / f"{bam}_{ten_model}_{lang}_{ten_ho_so}.json"
 
 
 def _hop_le(du_lieu: Any) -> bool:

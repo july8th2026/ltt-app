@@ -36,14 +36,17 @@ nhật ký cũ.
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional
 
 from platform_core.stt import service as stt
 
-from .engine.segment.core import make_timeline_v2
+from . import he as _he
+from .engine.segment.core import make_timeline, make_timeline_v2
 from .engine.vad import audio_duration_seconds, vad_speech_segments
+from .sua_chu import LoiMocTu, chuan_doan_tho, kiem_moc_tu, sua_chu_v5
 
 log = logging.getLogger("apps.transcript")
 
@@ -61,6 +64,15 @@ KHOA_DAY_DU = ("start", "end", "text", "type", "scene_id", "index")
 
 LOAI_DOAN = ("speech", "silence")
 
+#: `bot/worker.py:76-77` — chuẩn hoá khi so hai đoạn liên tiếp: gộp khoảng trắng,
+#: bỏ dấu câu ở CUỐI; phân biệt hoa/thường (legacy không hạ chữ).
+_DUOI_DAU_CAU = re.compile(r"""[\s\.\,\!\?\…\:\;\-—"'\)\]\}]+$""", re.UNICODE)
+_KHOANG_TRANG = re.compile(r"\s+")
+
+#: Độ dài đoạn tối thiểu của cấu hình legacy ĐANG CHẠY
+#: (`configs/bot_config_whisper.json` `segment.min_s`). Mặc định mã 3.0 là SAI.
+MIN_S_MAC_DINH = 1.5
+
 
 class LoiPhienAm(ValueError):
     """Đầu vào hoặc kết quả không dùng được. Bên gọi biến nó thành lỗi job."""
@@ -72,12 +84,13 @@ class YeuCau:
 
     duong_audio: str
     ngon_ngu: str = ""
-    min_s: float = 3.0
+    min_s: float = MIN_S_MAC_DINH
     max_s: float = 6.0
     kem_khoang_lang: bool = True
     chu_khoang_lang: str = "[B-ROLL / PAUSE]"
     nguong_khoang_lang: float = 2.0
     model: str = "large-v3"
+    he: str = _he.MAC_DINH
 
 
 @dataclass(frozen=True)
@@ -113,7 +126,7 @@ def chuan_hoa(params: dict) -> YeuCau:
     if not duong:
         raise LoiPhienAm("thieu tham so `audio`")
     try:
-        min_s = float(p.get("min_s", 3.0))
+        min_s = float(p.get("min_s", MIN_S_MAC_DINH))
         max_s = float(p.get("max_s", 6.0))
         nguong = float(p.get("nguong_khoang_lang", 2.0))
     except (TypeError, ValueError) as e:
@@ -124,6 +137,12 @@ def chuan_hoa(params: dict) -> YeuCau:
         raise LoiPhienAm(
             f"`min_s` ({min_s}) phai NHO HON `max_s` ({max_s}) — tu choi truoc "
             "khi chay, khong dung giua chung")
+    try:
+        he = _he.lay(p.get("he"))
+    except KeyError:
+        raise LoiPhienAm(
+            f"he `{p.get('he')}` khong co — chon mot trong: {', '.join(_he.HE)}"
+        ) from None
     return YeuCau(
         duong_audio=duong,
         ngon_ngu=str(p.get("language") or "").strip(),
@@ -131,7 +150,8 @@ def chuan_hoa(params: dict) -> YeuCau:
         kem_khoang_lang=bool(p.get("include_silence", True)),
         chu_khoang_lang=str(p.get("chu_khoang_lang") or "[B-ROLL / PAUSE]"),
         nguong_khoang_lang=nguong,
-        model=str(p.get("model") or "large-v3"),
+        model=he.model,
+        he=he.ma,
     )
 
 
@@ -188,36 +208,84 @@ def _kiem_khong_trung_lien_tiep(doan: list[dict]) -> None:
     Đây là lỗi **nội dung**, không phải lỗi hình thức: tệp vẫn hợp lệ, khách vẫn
     đọc được, và câu bị lặp nằm giữa một bản dài. Bot legacy chặn nó, giữ nguyên.
     """
-    truoc = ""
-    for d in doan:
-        if d.get("type") != "speech":
-            truoc = ""
+    truoc: Optional[str] = None
+    for i, d in enumerate(doan):
+        if str(d.get("type", "")).lower() != "speech":
+            truoc = None
             continue
-        van = " ".join(str(d.get("text") or "").lower().split())
-        if van and van == truoc:
+        van = _KHOANG_TRANG.sub(" ", str(d.get("text") or "").strip())
+        van = _DUOI_DAU_CAU.sub("", van).strip()
+        if not van:
+            raise LoiPhienAm(
+                f"speech_missing_text at index={i + 1} scene_id={d.get('scene_id')}")
+        if truoc is not None and van == truoc:
             raise LoiPhienAm(
                 f"hai doan `speech` lien tiep trung noi dung: {van[:60]!r}")
         truoc = van
 
 
 def _kiem_schema_nghiem_ngat(doan: list[dict]) -> None:
+    """`bot/worker.py::_validate_output_segments_strict` — đủ các luật legacy:
+    khoá thừa, end < start, speech chữ rỗng, scene_id rỗng, index <= 0."""
     if not doan:
         raise LoiPhienAm("dong thoi gian rong")
     for i, d in enumerate(doan):
-        thieu = [k for k in KHOA_DOAN if k not in d]
+        thieu = [k for k in KHOA_DAY_DU if k not in d]
         if thieu:
             raise LoiPhienAm(f"doan {i} thieu khoa {thieu}")
-        if d["type"] not in LOAI_DOAN:
+        thua = sorted(set(d) - set(KHOA_DAY_DU))
+        if thua:
+            raise LoiPhienAm(f"doan {i} co khoa thua {thua}")
+        loai = str(d["type"]).lower().strip()
+        if loai not in LOAI_DOAN:
             raise LoiPhienAm(f"doan {i} co `type` la {d['type']!r}")
         try:
             bat_dau, ket_thuc = float(d["start"]), float(d["end"])
         except (TypeError, ValueError) as e:
             raise LoiPhienAm(f"doan {i} co moc khong phai so: {e}") from e
-        if ket_thuc <= bat_dau:
+        if ket_thuc < bat_dau:
             raise LoiPhienAm(
-                f"doan {i} co end ({ket_thuc}) <= start ({bat_dau})")
+                f"doan {i} co end ({ket_thuc}) < start ({bat_dau})")
+        if loai == "speech" and not str(d["text"]).strip():
+            raise LoiPhienAm(f"doan {i} speech co text rong")
+        if not str(d["scene_id"]).strip():
+            raise LoiPhienAm(f"doan {i} thieu scene_id")
+        if int(d["index"]) <= 0:
+            raise LoiPhienAm(f"doan {i} co index={d['index']} khong hop le")
     if not any(d["type"] == "speech" for d in doan):
         raise LoiPhienAm("dong thoi gian khong co doan `speech` nao")
+
+
+def _stt_kieu_legacy(duong: Path, yc: YeuCau) -> tuple[dict, list[dict]]:
+    """STT + chuẩn đoạn thô. Không chỉ định ngôn ngữ ⇒ tự dò, rỗng thì thử lại
+    `en` rồi `vi` (`whisper_integration.py:230-267`)."""
+    thu = [yc.ngon_ngu or None] + ([] if yc.ngon_ngu else ["en", "vi"])
+    kq: dict = {}
+    doan: list[dict] = []
+    for lang in thu:
+        kq = stt.phien_am(duong, ten_ho_so=HO_SO_STT, model=yc.model,
+                          ngon_ngu=lang)
+        doan = chuan_doan_tho(kq.get("segments") or [])
+        if doan:
+            if lang and lang != yc.ngon_ngu:
+                log.info("stt_retry_lang lang=%s doan=%d", lang, len(doan))
+            break
+    return kq, doan
+
+
+def _canh_bao_chat_luong(doan: list[dict], thoi_luong: float) -> list[str]:
+    """Cảnh báo (không chặn) của legacy: hở mốc > 30 ms giữa hai đoạn
+    (`worker.py:238-242`) và độ phủ < 50 % thời lượng (`worker.py:637-645`)."""
+    ra: list[str] = []
+    ho = sum(1 for a, b in zip(doan, doan[1:], strict=False)
+             if abs(float(a["end"]) - float(b["start"])) > 0.03)
+    if ho:
+        ra.append(f"{ho} cho ho moc > 30 ms giua hai doan")
+    if doan and thoi_luong > 0:
+        phu = max(float(d["end"]) for d in doan) / thoi_luong
+        if phu < 0.5:
+            ra.append(f"do phu chi {phu:.0%} thoi luong audio")
+    return ra
 
 
 # ── Đường chạy ──────────────────────────────────────────────────────────────
@@ -250,20 +318,37 @@ def chay(yc: YeuCau, *, tien_do: Optional[Any] = None) -> KetQua:
                 f"chi {ty_le:.1%} thoi luong co tieng — kiem lai dau vao")
 
     bao(15, "phien am")
-    kq = stt.phien_am(duong, ten_ho_so=HO_SO_STT, model=yc.model,
-                      ngon_ngu=yc.ngon_ngu or None)
-    doan_tho = kq.get("segments") or []
+    kq, doan_tho = _stt_kieu_legacy(duong, yc)
     _kiem_co_mocs_tu(doan_tho)
+    ngon_ngu = str(kq.get("language") or yc.ngon_ngu or "").strip().lower()
+
+    bao(55, "sua chu")
+    doan_tho = sua_chu_v5(doan_tho, ngon_ngu)
+    try:
+        so_do_tu = kiem_moc_tu(doan_tho)
+    except LoiMocTu as e:
+        raise LoiPhienAm(str(e)) from e
+    log.info("v5_done doan=%d tu=%d dong_bang=%.3f", len(doan_tho),
+             so_do_tu["total_words"], so_do_tu["freeze_ratio"])
 
     bao(70, "dung dong thoi gian")
-    dong_thoi_gian = make_timeline_v2(
-        doan_tho,
-        audio_duration=thoi_luong or None,
-        target_min=yc.min_s,
-        target_max=yc.max_s,
-        silence_threshold=yc.nguong_khoang_lang,
-        silence_text=yc.chu_khoang_lang,
-    )
+    try:
+        dong_thoi_gian = make_timeline_v2(
+            doan_tho,
+            audio_duration=thoi_luong or None,
+            target_min=yc.min_s,
+            target_max=yc.max_s,
+            silence_threshold=yc.nguong_khoang_lang,
+            silence_text=yc.chu_khoang_lang,
+        )
+    except Exception as e:  # noqa: BLE001 - legacy worker.py:606-619 lui ve v1
+        log.warning("timeline_v2_failed %s — lui ve make_timeline v1", e)
+        canh_bao.append(f"timeline v2 loi ({e}) — da dung timeline v1")
+        dong_thoi_gian = make_timeline(
+            doan_tho, min_s=yc.min_s, max_s=yc.max_s,
+            speech_segments=vung, audio_duration=thoi_luong or None,
+            include_silence=yc.kem_khoang_lang, silence_text=yc.chu_khoang_lang,
+            min_silence_keep=yc.nguong_khoang_lang)
     if not dong_thoi_gian:
         raise LoiPhienAm("dung dong thoi gian ra ket qua rong")
     if not yc.kem_khoang_lang:
@@ -273,11 +358,12 @@ def chay(yc: YeuCau, *, tien_do: Optional[Any] = None) -> KetQua:
     doan = _chieu_schema(dong_thoi_gian)
     _kiem_khong_trung_lien_tiep(doan)
     _kiem_schema_nghiem_ngat(doan)
+    canh_bao.extend(_canh_bao_chat_luong(doan, thoi_luong))
 
     bao(100, "xong")
     return KetQua(
         doan=doan,
-        ngon_ngu=str(kq.get("language") or yc.ngon_ngu or ""),
+        ngon_ngu=ngon_ngu,
         do_tin_ngon_ngu=float(kq.get("language_probability") or 0.0),
         thoi_luong_s=thoi_luong,
         so_vung_tieng=len(vung),

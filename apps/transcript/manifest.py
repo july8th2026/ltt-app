@@ -20,6 +20,8 @@ from __future__ import annotations
 from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
+from .services.he import HE, MAC_DINH
+
 #: Giá tạm cho V1. App chưa mở cho khách (`public=False`), nên con số này chưa
 #: chạm sổ của ai. Phải đo lại theo thời lượng audio trước khi mở cổng.
 #:
@@ -66,9 +68,12 @@ MANIFEST = AppManifest(
         params_schema={
             "audio": {"type": "audio", "required": True},
             "language": {"type": "string", "required": False, "max_length": 8},
-            "min_s": {"type": "number", "min": 0.5, "max": 30.0, "default": 3.0},
+            # 1.5 = segment.min_s cua cau hinh legacy DANG CHAY (khong phai 3.0).
+            "min_s": {"type": "number", "min": 0.5, "max": 30.0, "default": 1.5},
             "max_s": {"type": "number", "min": 1.0, "max": 60.0, "default": 6.0},
             "include_silence": {"type": "bool", "default": True},
+            # He phien am (services/he.py) — them he = them mot muc o do.
+            "he": {"type": "enum", "values": list(HE), "default": MAC_DINH},
         },
         returns={"transcript": "json"},
 
@@ -96,7 +101,8 @@ MANIFEST = AppManifest(
         # Cung mot audio + cung hai tran do dai => cung mot dong thoi gian.
         # `language` KHONG nam trong khoa: de trong nghia la tu do, va hai lan
         # tu do tren cung tep cho cung ket qua.
-        idempotency={"key_fields": ("audio", "min_s", "max_s")},
+        # `he` doi model STT => ket qua khac: phai nam trong khoa.
+        idempotency={"key_fields": ("audio", "min_s", "max_s", "he")},
         resource={"class": "gpu", "vram_min_mb": 5000, "slots": 1,
                   "est_duration_s": 120},
         admission_resource="gpu_stt",
