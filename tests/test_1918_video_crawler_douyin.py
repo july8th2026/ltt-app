@@ -196,8 +196,8 @@ def test_url_kham_pha_link_khong_khop_giu_nguyen():
 
 @pytest.mark.parametrize("che_do", ["tu_khoa", "kenh", "bo"])
 def test_url_kham_pha_che_do_khac_chua_ho_tro(che_do):
-    """Douyin lane này CHỈ hỗ trợ `link` — search/channel/collection cần client Douyin riêng
-    (MediaCrawler là NON-COMMERCIAL, không thể dùng lại)."""
+    """`url_kham_pha` (đường yt-dlp) chỉ phục vụ `link`; tu_khoa/kenh đi client web riêng
+    (`test_1928_video_crawler_douyin_tim.py`), `bo` chưa làm."""
     with pytest.raises(NotImplementedError):
         DouyinAdapter().url_kham_pha(che_do, "x", 5)
 
