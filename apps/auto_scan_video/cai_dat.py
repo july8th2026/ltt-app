@@ -47,7 +47,7 @@ import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 
-from . import gia, hop_dong_v4, ngon_ngu, rang_giong
+from . import gia, hop_dong_v4, ngon_ngu, nguon_loi, rang_giong
 
 #: Ten schema. Doi ten nay khi hinh dang doi den muc mot ban doc cu doc sai —
 #: khong phai moi lan them mot truong.
@@ -97,6 +97,9 @@ class CaiDat:
     #: Ngon ngu DICH (22/09). Ho so cu khong co khoa nay la ho so `vi` — V4-V6
     #: chi sinh tieng Viet, nen do la mot SU THAT ve chung, khong phai doan.
     ngon_ngu_dich: str = ngon_ngu.DICH_MAC_DINH
+    #: Nguon loi thoai cho TRANSCRIBE (22/09, lan ocr): `auto` | `embedded` |
+    #: `ocr` | `asr`. Xem `nguon_loi.py`. Ho so cu khong co khoa = `auto`.
+    nguon_loi: str = nguon_loi.CHE_DO_MAC_DINH
     tu_dien: dict = field(default_factory=dict)
     cat: tuple[float, float] | None = None
     vung: tuple = ()
@@ -159,6 +162,11 @@ def chuan_hoa(tho: Mapping | None) -> dict:
     ra["ngon_ngu_nguon"] = _chuoi(tho, "ngon_ngu_nguon")
     ra["ngon_ngu_dich"] = ngon_ngu.chuan_dich(tho.get("ngon_ngu_dich"))
     ra["tu_dien"] = dict(tho.get("tu_dien") or {})
+    # THUA nhu `KHOA_THUA`: mac dinh `auto` KHONG ghi — ho so (va van tay) cua
+    # moi lan chay truoc 22/09 giu nguyen.
+    nl = nguon_loi.chuan_che_do(tho.get("nguon_loi"))
+    if nl != nguon_loi.CHE_DO_MAC_DINH:
+        ra["nguon_loi"] = nl
 
     dd = tho.get("dac_diem_giong") or {}
     if dd:
@@ -192,6 +200,7 @@ def tu_ho_so(tho: Mapping | None) -> CaiDat:
         giong_id=_chuoi(tho, "giong_id") or _chuoi(tho, KHOA_BI_DANH_GIONG),
         ngon_ngu_nguon=_chuoi(tho, "ngon_ngu_nguon"),
         ngon_ngu_dich=ngon_ngu.chuan_dich(tho.get("ngon_ngu_dich")),
+        nguon_loi=nguon_loi.chuan_che_do(tho.get("nguon_loi")),
         dac_diem=DacDiem(gioi=str(dd.get("gioi") or ""),
                          vung=str(dd.get("vung") or ""),
                          phong_cach=str(dd.get("phong_cach") or "")),

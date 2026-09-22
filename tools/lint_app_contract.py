@@ -162,6 +162,17 @@ APP_DUOC_DUNG_APP: dict = {
         ("apps.autosubvideo.schemas", "SubtitleStyleConfig"),
     },
 
+    # ── Auto Scan Video chay BO DO / OCR trong venv do luong (22/09) ───────
+    #
+    # ⭐ `apps/asv_gpu/do_luong/` la giao thuc chay mot bo do trong venv rieng
+    #    (qc-venv) — model/goi nang khong vao venv san pham. TRANSCRIBE (lan
+    #    ocr) goi runner OCR hardsub qua `venv.chay`; van tay engine doc
+    #    `ocr_khung.ENGINE` (ban model ghim). Chi hai module, khong ten rieng.
+    ("auto_scan_video", "asv_gpu"): {
+        ("apps.asv_gpu.do_luong", "venv"),
+        ("apps.asv_gpu.do_luong", "ocr_khung"),
+    },
+
     # ── Auto Scan Video doc NGAN SACH TOKEN cua model nha ───────────────────
     #
     # ⭐ `apps/ltt_llm/ngan_sach.py` la **mot nguon chan ly** cho moi ngan sach

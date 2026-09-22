@@ -96,8 +96,13 @@ def phien_ban_engine(stage_ten: str) -> str:
         from . import tach_tieng
         return f"tach/{tach_tieng.PHIEN_BAN_TACH}"
     if stage_ten == pipeline.TRANSCRIBE:
-        from . import giai_doan_chep_loi
-        return f"chep_loi/{giai_doan_chep_loi.PHIEN_BAN_MA}"
+        from . import giai_doan_chep_loi, nguon_loi
+        from apps.asv_gpu.do_luong import ocr_khung
+        # 🔑 Ba thu doi doc lap: ma giai doan, logic dinh tuyen/hardsub, va
+        #    engine+model OCR ghim (22/09, lan ocr).
+        return (f"chep_loi/{giai_doan_chep_loi.PHIEN_BAN_MA}"
+                f"+dinh_tuyen/{nguon_loi.PHIEN_BAN_DINH_TUYEN}"
+                f"+ocr/{ocr_khung.ENGINE}")
     if stage_ten == pipeline.EDIT_PLAN:
         from . import ban_bien_tap, canh, giai_doan_ban_bien_tap
         # 🔑 Ba con so, ba thu doi doc lap: ma cua giai doan, chinh sach cat, va

@@ -303,6 +303,8 @@ async def tao(request: Request,
               #: Cap ngon ngu (22/09): nguon {auto,zh,en,vi}, dich {vi,en}.
               ngon_ngu_nguon: str = Form(""),
               ngon_ngu_dich: str = Form(""),
+              #: Nguon loi thoai: auto|embedded|ocr|asr (`nguon_loi.py`).
+              nguon_loi: str = Form(""),
               tu_dien: str = Form(""),
               #: Vung che, JSON do trinh sua vung dung. Rong = khong co vung nao,
               #: va do la truong hop BINH THUONG cua phan lon lan chay.
@@ -354,6 +356,10 @@ async def tao(request: Request,
                                                              ngon_ngu_dich)
     except ngon_ngu_mod.NgonNguError as exc:
         return _lai_voi_loi(request, db, u, str(exc))
+
+    from . import nguon_loi as nguon_loi_mod
+    if nguon_loi and nguon_loi.strip().lower() not in nguon_loi_mod.CHE_DO_HOP_LE:
+        return _lai_voi_loi(request, db, u, _t('Nguồn lời thoại không hợp lệ.'))
 
     che_do_giong = che_do_giong or hop_dong_v4.CHE_DO_GIONG_MAC_DINH
     if not gia.che_do_giong_hop_le(che_do_giong):
@@ -446,6 +452,7 @@ async def tao(request: Request,
                "ngon_ngu_nguon": ("" if ngon_ngu_nguon == ngon_ngu_mod.TU_DOAN
                                   else ngon_ngu_nguon),
                "ngon_ngu_dich": ngon_ngu_dich,
+               "nguon_loi": nguon_loi,
                "vung": ds_vung,
                "tu_dien": bang_tu_dien,
                # ⚠️ Giu `voice_id` cho tuong thich nguoc: `giai_doan_giong` doc
