@@ -41,7 +41,16 @@ from apps.video_crawler.adapters._ytdlp import (
     THOI_LUONG_TOI_DA_MAC_DINH,
     ten_sach,
 )
-from apps.video_crawler.adapters.base import BaoTienDo, CrawlItem, LoiCao, TepTai, YeuCauCao
+from apps.video_crawler.adapters.base import (
+    BaoTienDo,
+    CrawlItem,
+    KenhItem,
+    LoiCao,
+    TepTai,
+    YeuCauCao,
+    YeuCauTimKenh,
+    loi_chua_ho_tro_tim_kenh,
+)
 from apps.video_crawler.loi import phan_loai
 
 __all__ = ["CDN_VIDEO", "KuaishouAdapter", "doc_apollo"]
@@ -292,6 +301,11 @@ class KuaishouAdapter:
             return an_toan_url.kiem(url, **kw)
         except an_toan_url.UrlKhongAnToan:
             raise LoiCao("cdn_khong_cho_phep", _loi("").thong_diep, tam_thoi=False) from None
+
+    def tim_kenh(self, yeu_cau: YeuCauTimKenh, *, bao_tien_do: BaoTienDo) -> list[KenhItem]:
+        """Kuaishou chưa tìm kênh theo tên được: GraphQL tìm kiếm đòi cookie + CAPTCHA trượt
+        (`PLATFORM_MATRIX.md` dòng `ks`, spike 23/09); nền cũng đang tắt trong registry."""
+        raise loi_chua_ho_tro_tim_kenh()
 
     def tai(self, item: CrawlItem, thu_muc: Path, *, bao_tien_do: BaoTienDo) -> TepTai:
         if not self.id_hop_le(item.id) or item.url != self.url_video(item.id):

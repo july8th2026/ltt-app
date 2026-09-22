@@ -24,7 +24,15 @@ from platform_core.i18n import _ as _t
 
 from apps.video_crawler.adapters import xhs_web
 from apps.video_crawler.adapters._ytdlp import YtdlpAdapter, _anh_bia, _TrangThai
-from apps.video_crawler.adapters.base import BaoTienDo, CrawlItem, LoiCao, YeuCauCao
+from apps.video_crawler.adapters.base import (
+    BaoTienDo,
+    CrawlItem,
+    KenhItem,
+    LoiCao,
+    YeuCauCao,
+    YeuCauTimKenh,
+    tao_kenh,
+)
 
 __all__ = ["XiaohongshuAdapter"]
 
@@ -96,6 +104,49 @@ class XiaohongshuAdapter(YtdlpAdapter):
         if m is None:
             raise LoiCao("url_khong_ho_tro", _t("Link không được hỗ trợ cho nền tảng này."), tam_thoi=False)
         return m.group(1), _tach_token(vao)
+
+    def url_kenh(self, id: str) -> str:
+        """Trang hồ sơ dựng lại từ `user_id` — đúng dạng `tach_kenh` nhận lại khi khách bấm cào.
+        Không có `xsec_token` ở đây: token của trang hồ sơ chỉ có khi khách dán link thật, và
+        `params_kenh` chấp nhận thiếu token."""
+        return f"https://www.xiaohongshu.com/user/profile/{id}"
+
+    # ------------------------------------------------------------ tìm kênh theo TÊN (cần phiên)
+    def tim_kenh(self, yeu_cau: YeuCauTimKenh, *, bao_tien_do: BaoTienDo) -> list[KenhItem]:
+        """`usersearch` đòi phiên như mọi đường tìm/kênh của nền (spike 23/09: không có đường ẩn danh)."""
+        n = max(1, int(yeu_cau.so_luong))
+        bao_tien_do(0, _t("đang tìm kênh"))
+        opts = self._them_chung(self.tuy_chon_goc(), _TrangThai(bao_tien_do), ghi_tu_choi=False)
+        ra: list[KenhItem] = []
+        with self._tao(opts) as ydl:
+            cookies = xhs_web.cookie_phien(ydl.cookiejar) if self.tep_cookie else {}
+            xhs_web.kiem_phien(cookies)
+            ky = self._ky if self._ky is not None else xhs_web.KyXhshow()
+            search_id = ky.search_id()
+            for trang in range(1, TRANG_TOI_DA + 1):
+                if trang > 1:
+                    self._ngu(random.uniform(1.0, 2.0))
+                d = xhs_web.goi(ydl, ky, cookies, "POST", xhs_web.URI_TIM_KENH,
+                                payload=xhs_web.payload_tim_kenh(yeu_cau.tu_khoa.strip(), trang, search_id))
+                self._them_kenh(ra, d.get("users") or [], n)
+                bao_tien_do(min(90, 100 * len(ra) // n), _t("đang tìm kênh"))
+                if len(ra) >= n or d.get("has_more") is not True:
+                    break
+        bao_tien_do(100, _t("tìm thấy {n} kênh").format(n=len(ra)))
+        return ra
+
+    def _them_kenh(self, ra: list[KenhItem], users: list, n: int) -> None:
+        """Chỉ user_id đúng mẫu hex-24 (khác mẫu ⇒ không dựng được URL hồ sơ), không trùng."""
+        for muc in users:
+            if len(ra) >= n:
+                return
+            k = xhs_web.user_tim(muc)
+            if k is None or re.fullmatch(_USER, k["id"]) is None or any(k["id"] == x.id for x in ra):
+                continue
+            it = tao_kenh(self.nen_tang, k["id"], self.url_kenh(k["id"]), ten=k["ten"],
+                          anh_dai_dien=k["anh_dai_dien"], so_video=k["so_video"], mo_ta=k["mo_ta"])
+            if it is not None:
+                ra.append(it)
 
     def kham_pha(self, yeu_cau: YeuCauCao, *, bao_tien_do: BaoTienDo) -> list[CrawlItem]:
         if yeu_cau.che_do == "link":

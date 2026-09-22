@@ -44,13 +44,19 @@ yt-dlp được nạp lúc cần — module này import được khi chưa cài 
 """
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlencode
 
-from apps.video_crawler.adapters._ytdlp import YtdlpAdapter
+from platform_core.i18n import _ as _t
 
-__all__ = ["EXTRACTOR_CHO_PHEP", "BilibiliAdapter", "chuan_hoa_kenh_bilibili", "tuy_chon"]
+from apps.video_crawler.adapters._ytdlp import YtdlpAdapter, _TrangThai, loi_theo_ma
+from apps.video_crawler.adapters.base import BaoTienDo, KenhItem, YeuCauTimKenh, tao_kenh
+
+__all__ = ["API_TIM_KENH", "EXTRACTOR_CHO_PHEP", "TRANG_CHU", "UA", "BilibiliAdapter",
+           "chuan_hoa_kenh_bilibili", "kenh_tu_user_bili", "tuy_chon", "url_kenh_bilibili"]
 
 #: IE_NAME (yt-dlp so `re.fullmatch` với `IE_NAME.lower()`, YoutubeDL.py:922-929). Không generic.
 EXTRACTOR_CHO_PHEP = ("bilibili", "bilibilisearch", "bilibilispacevideo", "bilibilicollectionlist")
@@ -60,6 +66,33 @@ _BVID = re.compile(r"BV[0-9A-Za-z]{10}")
 #: aid — id số trần mà `BiliBiliSearchIE` trả ở dạng flat (xem docstring module).
 _AID = re.compile(r"[0-9]{1,12}")
 _MID = re.compile(r"\d{1,15}")
+
+#: Tìm KÊNH theo tên (smoke thật 23/09): `search_type=bili_user` trên điểm cuối tìm kiếm KHÔNG ký WBI
+#: vẫn trả `code: 0` + `data.result[]` (`mid`/`uname`/`fans`/`videos`/`upic`/`usign`). Bản `wbi/…` chưa ký
+#: `w_rid` chỉ trả `{"v_voucher": …}`, nên dùng bản không WBI. ⚠ Không có cookie `buvid` ẩn danh ⇒ HTTP 412
+#: (đúng dòng `bili` của PLATFORM_MATRIX) ⇒ phải GET trang chủ một lượt để xin cookie trước.
+API_TIM_KENH = "https://api.bilibili.com/x/web-interface/search/type"
+TRANG_CHU = "https://www.bilibili.com/"
+UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+      "Chrome/140.0.0.0 Safari/537.36")
+#: HTTP của risk control Bilibili (412 đo thật 22/09 + 23/09); phần còn lại coi như lỗi chung.
+_HTTP_CHAN = frozenset({403, 412, 429, 461})
+
+
+def url_kenh_bilibili(mid: str) -> str:
+    """Trang space của một UP. `chuan_hoa_kenh_bilibili` thêm `/video` khi khách bấm cào."""
+    return f"https://space.bilibili.com/{mid}"
+
+
+def kenh_tu_user_bili(u: Any) -> KenhItem | None:
+    """Một mục `data.result[]` của `search_type=bili_user` ⇒ KenhItem; mục lạ ⇒ None (không ném)."""
+    if not isinstance(u, dict) or u.get("type") != "bili_user":
+        return None
+    mid = u.get("mid")
+    mid = str(mid) if isinstance(mid, (int, str)) and not isinstance(mid, bool) else ""
+    return tao_kenh("bilibili", mid, url_kenh_bilibili(mid), ten=u.get("uname"),
+                    anh_dai_dien=u.get("upic"), so_theo_doi=u.get("fans"), so_video=u.get("videos"),
+                    mo_ta=u.get("usign"))
 
 
 def chuan_hoa_kenh_bilibili(s: str) -> str:
@@ -102,6 +135,44 @@ class BilibiliAdapter(YtdlpAdapter):
         if not isinstance(id, str) or not id:
             return False
         return _BVID.fullmatch(id) is not None or _AID.fullmatch(id) is not None
+
+    # ------------------------------------------------------------ tìm kênh theo TÊN (ẩn danh)
+    def tim_kenh(self, yeu_cau: YeuCauTimKenh, *, bao_tien_do: BaoTienDo) -> list[KenhItem]:
+        """Không đi qua extractor yt-dlp (không có IE nào tìm UP) — chỉ mượn ngăn xếp mạng + cookiejar
+        của `YoutubeDL.urlopen`, như `douyin_web`/`xhs_web` (tầng app không tự dựng HTTP)."""
+        from yt_dlp.networking import Request
+        from yt_dlp.networking.exceptions import HTTPError, TransportError
+
+        n = max(1, int(yeu_cau.so_luong))
+        opts = self._them_chung(self.tuy_chon_goc(), _TrangThai(bao_tien_do), ghi_tu_choi=False)
+        q = urlencode({"search_type": "bili_user", "keyword": yeu_cau.tu_khoa.strip(), "page": 1})
+        bao_tien_do(0, _t("đang tìm kênh"))
+        with self._tao(opts) as ydl:
+            try:
+                ydl.urlopen(Request(TRANG_CHU, headers={"User-Agent": UA}))     # xin cookie buvid ẩn danh
+                than = ydl.urlopen(Request(f"{API_TIM_KENH}?{q}", headers={
+                    "User-Agent": UA, "Referer": TRANG_CHU,
+                    "Accept": "application/json, text/plain, */*"})).read()
+            except HTTPError as e:
+                raise loi_theo_ma("nen_chan" if e.status in _HTTP_CHAN else "loi_khac") from None
+            except TransportError:
+                raise loi_theo_ma("mang") from None
+        try:
+            d = json.loads(than)
+        except ValueError:
+            raise loi_theo_ma("nen_chan") from None          # trang xác minh/captcha thay vì JSON
+        if not isinstance(d, dict) or d.get("code") != 0:
+            raise loi_theo_ma("nen_chan")
+        data = d.get("data")
+        ra: list[KenhItem] = []
+        for u in ((data if isinstance(data, dict) else {}).get("result") or []):
+            if len(ra) >= n:
+                break
+            k = kenh_tu_user_bili(u)
+            if k is not None and all(k.id != x.id for x in ra):
+                ra.append(k)
+        bao_tien_do(100, _t("tìm thấy {n} kênh").format(n=len(ra)))
+        return ra
 
     def url_kham_pha(self, che_do: str, dau_vao: str, n: int) -> str:
         if che_do == "tu_khoa":

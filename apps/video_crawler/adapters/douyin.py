@@ -37,7 +37,14 @@ from platform_core.i18n import _ as _t
 
 from apps.video_crawler.adapters import douyin_web
 from apps.video_crawler.adapters._ytdlp import YtdlpAdapter
-from apps.video_crawler.adapters.base import BaoTienDo, CrawlItem, YeuCauCao
+from apps.video_crawler.adapters.base import (
+    BaoTienDo,
+    CrawlItem,
+    KenhItem,
+    YeuCauCao,
+    YeuCauTimKenh,
+    tao_kenh,
+)
 
 __all__ = ["DouyinAdapter", "chuan_hoa_link_douyin", "tuy_chon"]
 
@@ -98,6 +105,32 @@ class DouyinAdapter(YtdlpAdapter):
         if che_do != "link":                      # tu_khoa/kenh đi `kham_pha` riêng (client web), không qua đây
             raise NotImplementedError(_t("Douyin chưa hỗ trợ chế độ {che_do!r}.").format(che_do=che_do))
         return chuan_hoa_link_douyin(dau_vao)
+
+    def url_kenh(self, id: str) -> str:
+        """Trang người dùng dựng lại từ `sec_uid` — đúng dạng `sec_uid_tu_link` nhận lại khi khách bấm cào."""
+        return f"https://www.douyin.com/user/{id}"
+
+    # ------------------------------------------------------------ tìm kênh theo TÊN (cần phiên)
+    def tim_kenh(self, yeu_cau: YeuCauTimKenh, *, bao_tien_do: BaoTienDo) -> list[KenhItem]:
+        """Spike 23/09: ẩn danh HTTP 200 thân rỗng ⇒ chặn TRƯỚC khi gọi mạng, không đốt một lượt.
+        Phiên do kho tài khoản (làn L9) hoặc khách cấp, vào qua `self.tep_cookie` như `kham_pha`."""
+        if not self.tep_cookie:
+            raise douyin_web.loi_can_dang_nhap()
+        n = max(1, int(yeu_cau.so_luong))
+        bao_tien_do(0, _t("đang tìm kênh"))
+        web = douyin_web.DouyinWeb(self._van_chuyen_factory(self.tep_cookie),
+                                   ms_token=douyin_web.doc_cookie(self.tep_cookie, "msToken"), ky=self._ky)
+        tho = web.tim_nguoi_dung(yeu_cau.tu_khoa.strip(), n,
+                                 bao=lambda pct: bao_tien_do(pct, _t("đang tìm kênh")))
+        ra: list[KenhItem] = []
+        for m in tho:
+            k = tao_kenh(self.nen_tang, m["id"], self.url_kenh(m["id"]), ten=m["ten"],
+                         anh_dai_dien=m["anh_dai_dien"], so_theo_doi=m["so_theo_doi"],
+                         so_video=m["so_video"], mo_ta=m["mo_ta"])
+            if k is not None:
+                ra.append(k)
+        bao_tien_do(100, _t("tìm thấy {n} kênh").format(n=len(ra)))
+        return ra
 
     # ------------------------------------------------------------ tu_khoa / kenh (client web)
     def kham_pha(self, yeu_cau: YeuCauCao, *, bao_tien_do: BaoTienDo) -> list[CrawlItem]:
