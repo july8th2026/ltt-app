@@ -20,6 +20,10 @@
         <span><b>{{ m.tieu_de or m.id }}</b><br><small class="muted">{{ m.tac_gia }}{% if m.thoi_luong_s %} · {{ m.thoi_luong_s // 60 }}:{{ "%02d" | format(m.thoi_luong_s % 60) }}{% endif %}</small></span>
       </label>
       {% endfor %}
+      <label class="vc-cam-ket"><input type="checkbox" name="cam_ket" value="1" required>
+        <span>{{ _("Tôi cam kết có quyền tải và sử dụng các video này (tôi là chủ sở hữu, được chủ sở hữu cho phép, hoặc thuộc trường hợp pháp luật cho phép) và tự chịu trách nhiệm theo") }} <a href="{{ phap_ly.url_dieu_khoan }}" target="_blank" rel="noopener">{{ _("Điều khoản sử dụng") }}</a>.</span></label>
+      <p class="muted vc-dieu-khoan">{{ _("Chỉ tải nội dung bạn có quyền. Tài khoản vi phạm nhiều lần bị khoá. Mỗi tài khoản tải tối đa {gio} video/giờ, {ngay} video/ngày.").format(gio=phap_ly.tai_moi_gio, ngay=phap_ly.tai_moi_ngay) }}
+        {{ _("Chủ sở hữu nội dung báo vi phạm tại") }} <a href="{{ phap_ly.url_bao_vi_pham }}" target="_blank" rel="noopener">{{ _("Báo cáo lạm dụng") }}</a> {{ _("hoặc") }} <a href="mailto:{{ phap_ly.email_ho_tro }}">{{ phap_ly.email_ho_tro }}</a> — {{ _("chúng tôi gỡ trong 72 giờ.") }}</p>
       <div class="vc-actions"><button class="btn btn-primary" type="submit">📋 {{ _("Tải các video đã chọn") }}</button></div>
     </form>
     {% endif %}

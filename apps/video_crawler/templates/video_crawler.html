@@ -22,6 +22,10 @@
   .vc-che-do label[hidden]{display:none}
   .vc-can-phien span::after{content:" 🔒"}
   .vc-grid .chips{flex-wrap:wrap}
+  .vc-cam-ket{display:flex;gap:8px;align-items:flex-start;margin-top:12px}
+  .vc-cam-ket input{margin-top:.25em;flex:none}
+  .vc-dieu-khoan{font-size:.85rem;margin-top:8px}
+  .vc-gia{margin-top:8px}
 </style>
 <section aria-labelledby="vc-title">
   {{ ah.dau_trang(_("Video · Nguồn"), _("Cào video nguồn"), _("Tìm theo từ khoá, link, kênh hoặc playlist; xem trước, chọn rồi tải vào kho của bạn."), id_tieu_de="vc-title") }}
@@ -62,10 +66,27 @@
         <label class="field"><span>{{ _("Số lượng (tối đa 20)") }}</span><input type="number" name="so_luong" value="10" min="1" max="20" inputmode="numeric"></label>
         <label class="chip-opt"><input type="checkbox" name="khong_trung" value="1"><span>🆕 {{ _("Cào không trùng") }}</span></label>
       </div>
+      {% if bang_gia %}
+      <p class="muted">{{ _('"Không trùng" bỏ qua video bạn đã tải trong 30 ngày gần đây. Xem trước miễn phí; giá mỗi video tải về theo thời lượng:') }}</p>
+      <div class="tablewrap vc-gia"><table class="table" id="vc-bang-gia">
+        <thead><tr><th>{{ _("Thời lượng") }}</th><th>{{ _("Credit / video") }}</th></tr></thead>
+        <tbody>
+        {% for b in bang_gia %}{% set b = b if b is mapping else {"tu_phut": b[0], "den_phut": b[1], "credit": b[2]} %}
+          <tr><td>{% if b.den_phut %}{{ _("{tu}–{den} phút").format(tu=b.tu_phut, den=b.den_phut) }}{% else %}{{ _("trên {tu} phút").format(tu=b.tu_phut) }}{% endif %}</td><td>{{ b.credit }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+      {% else %}
       <p class="muted">{{ _('"Không trùng" bỏ qua video bạn đã tải trong 30 ngày gần đây. Mỗi video tải về tính 1 credit; xem trước miễn phí.') }}</p>
+      {% endif %}
+
+      <label class="vc-cam-ket"><input type="checkbox" name="cam_ket" value="1" required>
+        <span>{{ _("Tôi cam kết có quyền tải và sử dụng các video này (tôi là chủ sở hữu, được chủ sở hữu cho phép, hoặc thuộc trường hợp pháp luật cho phép) và tự chịu trách nhiệm theo") }} <a href="{{ phap_ly.url_dieu_khoan }}" target="_blank" rel="noopener">{{ _("Điều khoản sử dụng") }}</a>.</span></label>
+      <p class="muted vc-dieu-khoan">{{ _("Chỉ tải nội dung bạn có quyền. Tài khoản vi phạm nhiều lần bị khoá. Mỗi tài khoản tải tối đa {gio} video/giờ, {ngay} video/ngày.").format(gio=phap_ly.tai_moi_gio, ngay=phap_ly.tai_moi_ngay) }}
+        {{ _("Chủ sở hữu nội dung báo vi phạm tại") }} <a href="{{ phap_ly.url_bao_vi_pham }}" target="_blank" rel="noopener">{{ _("Báo cáo lạm dụng") }}</a> {{ _("hoặc") }} <a href="mailto:{{ phap_ly.email_ho_tro }}">{{ phap_ly.email_ho_tro }}</a> — {{ _("chúng tôi gỡ trong 72 giờ.") }}</p>
 
       <div class="vc-actions">
-        <button class="btn" type="submit" formaction="{{ app.route_prefix }}/kham-pha"
+        <button class="btn" type="submit" formaction="{{ app.route_prefix }}/kham-pha" formnovalidate
                 hx-post="{{ app.route_prefix }}/kham-pha" hx-target="#vc-ket-qua">👁 {{ _("Xem trước &amp; chọn") }}</button>
         <button class="btn btn-primary" type="submit">🚀 {{ _("Cào hết (thêm vào hàng đợi)") }}</button>
       </div>
