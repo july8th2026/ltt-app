@@ -45,6 +45,11 @@ _KIEM_HUY_S = 5.0
 #: Trần nền tảng 7200 s; chạm trần thì `_het_gio` GIẾT tiến trình ⇒ khối dọn tệp không chạy (review MAJOR 5).
 NGAN_SACH_TAI_S = 6600.0
 
+#: Ngân sách TỔNG cho ảnh bìa của một job khám phá (W2-L8) — một trang có tới 20 mục, CDN chậm không được
+#: kéo dài job khám phá (đã miễn phí, khách chờ trực tiếp). Hết ngân sách ⇒ mục còn lại giữ URL CDN gốc
+#: (route vẫn phục vụ được qua nhánh "cách cũ" của `anh_bia.doc`), không phải lỗi.
+NGAN_SACH_ANH_BIA_S = 20.0
+
 
 def _adapter(nen_id: str):
     """Adapter của nền (test thay hàm này bằng adapter giả)."""
@@ -172,14 +177,37 @@ def _kham_pha(adapter, nen_id: str, nguon: dict, owner_id: str, tien_do,
     return muc[: yc.so_luong], bo
 
 
+def _luu_anh_bia(muc: list[CrawlItem], *, owner_id: str, job_id: str, nen_id: str) -> list[dict]:
+    """`m.to_dict()` của mỗi mục; ảnh bìa (nếu có) đã tải và LƯU vào storage bằng `anh_bia.luu_kham_pha`
+    (W2-L8). Một ảnh lỗi ⇒ mục đó GIỮ url CDN gốc (không hỏng job); tổng thời gian tải ảnh có trần
+    `NGAN_SACH_ANH_BIA_S` — hết ngân sách thì các mục còn lại cũng giữ url gốc, không thử tải nữa."""
+    from apps.video_crawler import anh_bia
+    bat_dau = time.monotonic()
+    ra: list[dict] = []
+    for i, m in enumerate(muc):
+        d = m.to_dict()
+        if d.get("anh_bia") and time.monotonic() - bat_dau < NGAN_SACH_ANH_BIA_S:
+            try:
+                key = anh_bia.luu_kham_pha(d["anh_bia"], nen_tang=nen_id, owner_id=owner_id,
+                                           job_id=job_id, chi_so=i)
+            except Exception:  # noqa: BLE001 — `luu_kham_pha` không tự ném, nhưng phòng lỗi bất ngờ
+                key = None
+            if key:
+                d["anh_bia"] = key
+        ra.append(d)
+    return ra
+
+
 def _xu_ly_kham_pha(params: dict, ctx) -> dict:
     adapter = _adapter(params["nen_tang"])
     td = _TienDo(ctx, 1)
     with _phien(adapter, params["owner_id"], params["nen_tang"]):
         muc, bo = _kham_pha(adapter, params["nen_tang"], params, params["owner_id"], td.bao)
+    job_id = getattr(ctx, "job_id", "") or "khong-ctx"
+    muc_dict = _luu_anh_bia(muc, owner_id=params["owner_id"], job_id=job_id, nen_id=params["nen_tang"])
     if ctx is not None:
         ctx.progress(100, _t("Tìm thấy {n} video").format(n=len(muc)))
-    return {"muc": [m.to_dict() for m in muc], "bo_qua_trung": bo}
+    return {"muc": muc_dict, "bo_qua_trung": bo}
 
 
 def _xu_ly_tai(params: dict, ctx) -> dict:

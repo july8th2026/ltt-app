@@ -128,6 +128,70 @@ def _tai_that(url: str, *, nen_tang: str | None, phan_giai, lay) -> tuple[bytes,
     return du_lieu, loai
 
 
+#: Tiền tố storage key của ảnh bìa đã lưu ở bước khám phá (W2-L8) — phân biệt với URL CDN sống trong
+#: cùng trường `anh_bia` của một mục (route đọc lại qua `doc()`, không phải `tai()` nữa — cần điều phối).
+_TIEN_TO_KHO = "video_crawler/"
+#: Chữ ký đầu tệp để đoán content-type khi đọc lại từ storage (LocalStorage không giữ content-type —
+#: `platform_core/storage.py:LocalStorage.open`). Ảnh đã được `tai()` kiểm `image/*` trước khi lưu nên
+#: chỉ cần phân biệt giữa các định dạng ảnh, không cần bắt loại không phải ảnh ở đây.
+_CHU_KY: tuple[tuple[bytes, str], ...] = (
+    (b"\xff\xd8\xff", "image/jpeg"),
+    (b"\x89PNG\r\n\x1a\n", "image/png"),
+    (b"GIF87a", "image/gif"),
+    (b"GIF89a", "image/gif"),
+    (b"RIFF", "image/webp"),
+)
+
+
+def _doan_loai(du_lieu: bytes) -> str:
+    for chu_ky, loai in _CHU_KY:
+        if du_lieu.startswith(chu_ky):
+            return loai
+    return "image/jpeg"
+
+
+def _key_bia(owner_id: str, job_id: str, chi_so: int) -> str:
+    return f"{_TIEN_TO_KHO}{owner_id}/{job_id}/bia/{chi_so}"
+
+
+def luu_kham_pha(url: str, *, nen_tang: str, owner_id: str, job_id: str, chi_so: int,
+                 kho=None, phan_giai=None, lay=None) -> str | None:
+    """Tải ảnh bìa của một mục khám phá qua ĐÚNG hàm an toàn hiện có (`tai` — allowlist CDN theo nền,
+    trần 2 MB, chặn SVG, hạn giờ, đệm + giới hạn đồng thời) rồi LƯU vào storage tại
+    `video_crawler/<owner>/<job_id>/bia/<chi_so>`. Trả storage key khi thành công, `None` khi lỗi —
+    KHÔNG BAO GIỜ ném: lỗi một ảnh không được làm hỏng job khám phá (brief W2-L8)."""
+    if not url:
+        return None
+    try:
+        du_lieu, loai = tai(url, nen_tang=nen_tang, phan_giai=phan_giai, lay=lay)
+    except AnhKhongHopLe:
+        return None
+    key = _key_bia(owner_id, job_id, chi_so)
+    try:
+        import io
+        from platform_core.storage import get_storage
+        (kho or get_storage()).put(key, io.BytesIO(du_lieu), content_type=loai)
+    except Exception:  # noqa: BLE001 — lỗi storage (đĩa đầy, R2 timeout…) ⇒ như không có ảnh, không hỏng job
+        return None
+    return key
+
+
+def doc(gia_tri: str, *, nen_tang: str, kho=None, phan_giai=None, lay=None) -> tuple[bytes, str]:
+    """(bytes, content-type) ảnh bìa của một mục xem trước: ưu tiên đọc từ storage nếu `gia_tri` là
+    storage key đã lưu ở bước khám phá (`luu_kham_pha`); ngược lại coi `gia_tri` là URL CDN sống và tải
+    như route cũ (`tai`). Ném `AnhKhongHopLe` như `tai()` khi không phục vụ được — route chỉ cần đổi
+    lời gọi `anh_bia.tai(...)` thành `anh_bia.doc(...)` (cần điều phối, không thuộc quyền sở hữu tệp)."""
+    if gia_tri.startswith(_TIEN_TO_KHO):
+        from platform_core.storage import StorageError, get_storage
+        try:
+            with (kho or get_storage()).open(gia_tri) as f:
+                du_lieu = f.read()
+        except StorageError as e:
+            raise AnhKhongHopLe(_t("ảnh không tải được")) from e
+        return du_lieu, _doan_loai(du_lieu)
+    return tai(gia_tri, nen_tang=nen_tang, phan_giai=phan_giai, lay=lay)
+
+
 def url_cua(db, *, owner_id: str, job_id: str, chi_so: int) -> tuple[str, str] | None:
     """(nền, URL ảnh bìa) của mục `chi_so` trong kết quả xem trước CỦA CHÍNH `owner_id`, hoặc None."""
     from apps.video_crawler import features
