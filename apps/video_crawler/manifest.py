@@ -11,6 +11,7 @@ Di trú hành vi từ ViralCrawl (D:/Viral @ 368f8be, CHỈ THAM CHIẾU). Thi�
 """
 from __future__ import annotations
 
+from apps.video_crawler import gia
 from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry
 
@@ -26,14 +27,15 @@ def _so_nguyen(v) -> int:
 
 
 def _gia(params: dict) -> int:
-    """Khám phá miễn phí. Tải: 1 credit mỗi mục xin tải (giữ chỗ); handler báo `credit_cost` = số tải được."""
+    """Khám phá miễn phí. Tải: giữ chỗ `gia.GIA_GIU_CHO` mỗi mục xin tải; handler quyết toán `credit_cost`
+    = tổng `gia.gia_muc(thoi_luong_s thật)` của các mục ĐÃ TẢI (một nguồn giá: `apps/video_crawler/gia.py`)."""
     if isinstance(params.get("muc"), list):
         n = len(params["muc"])
     elif isinstance(params.get("nguon"), dict):
         n = _so_nguyen(params["nguon"].get("so_luong"))
     else:
         return 0
-    return max(0, min(n, SO_MUC_TOI_DA))
+    return max(0, min(n, SO_MUC_TOI_DA)) * gia.GIA_GIU_CHO
 
 
 MANIFEST = AppManifest(

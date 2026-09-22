@@ -20,7 +20,7 @@ from pathlib import Path
 
 from platform_core.i18n import _ as _t
 
-from apps.video_crawler import nen_tang
+from apps.video_crawler import gia, nen_tang
 from apps.video_crawler.adapters.base import CrawlItem, LoiCao, YeuCauCao
 
 JOB_KHAM_PHA = "video_crawler.kham_pha"
@@ -185,7 +185,11 @@ def _tai_voi(adapter, params: dict, ctx) -> dict:
     if params.get("nguon"):
         muc, bo = _kham_pha(adapter, nen_id, params["nguon"], owner_id, _TienDo(ctx, 1, tran=5).bao)
     else:
-        muc = [CrawlItem(nen_tang=nen_id, id=m["id"], url=m["url"], tieu_de=m.get("tieu_de", ""))
+        # `thoi_luong_s` giữ nguyên nếu params đã có (ví dụ mục lấy từ kết quả khám phá) — quyết toán giá
+        # đúng theo thời lượng thật; features.dung_params_tai hiện chưa giữ trường này qua danh sách id
+        # thô của khách (CONTRACT GAP — xem báo cáo), nên đường đó vẫn rơi về bậc rẻ nhất qua `gia.gia_muc`.
+        muc = [CrawlItem(nen_tang=nen_id, id=m["id"], url=m["url"], tieu_de=m.get("tieu_de", ""),
+                         thoi_luong_s=m.get("thoi_luong_s"))
                for m in params["muc"]]
     if not muc:
         if bo:   # mọi mục đều đã tải trước đó: hoàn tất, KHÔNG tính tiền, và nói rõ (kiểm GUI 22/09)
@@ -245,8 +249,11 @@ def _tai_voi(adapter, params: dict, ctx) -> dict:
         raise
     if bo:
         _su_kien(ctx, "bo_qua_trung", _t("Bỏ qua {n} video đã tải trước đó").format(n=bo))
+    # Quyết toán theo thời lượng THẬT của từng mục đã tải (một nguồn giá: apps/video_crawler/gia.py),
+    # không phải số mục — giữ chỗ ở manifest._gia luôn bậc cao nhất, phần chênh nền tảng tự hoàn.
+    tong_gia = sum(gia.gia_muc(m.get("thoi_luong_s")) for m in xong)
     return {"muc": xong, "video_keys": [m["tep"] for m in xong], "loi": loi_muc,
-            "bo_qua_trung": bo, "credit_cost": len(xong)}
+            "bo_qua_trung": bo, "credit_cost": tong_gia}
 
 
 def handle(params: dict, ctx=None) -> dict:
