@@ -3,7 +3,8 @@ video_crawler — chuỗi job thật: nộp (giữ credit) → worker claim → 
 
 Chạy qua `job_runner._chay_mot_job` thật trên SQLite tạm (khuôn `test_67`). Chỉ adapter là giả, để test không
 đọc mạng. Các mệnh đề chốt (spec §14, §17, §18, §19):
-- tải xong N mục ⇒ N tệp trong storage `video_crawler/<owner>/<job>/<id>.mp4`, trừ đúng N credit;
+- tải xong N mục ⇒ N tệp trong storage `video_crawler/<owner>/<job>/<id>.mp4`, trừ đúng Σ `gia.gia_muc`
+  theo thời lượng thật của N mục (giá MỘT nguồn: `apps/video_crawler/gia.py`, DANH_GIA_MVP §3, 22/09);
 - một phần lỗi ⇒ job xong, mục lỗi ghi `loi`, hoàn tiền phần lỗi;
 - lỗi phía khách ở MỌI mục ⇒ job `error`, KHÔNG thử lại, hoàn đủ, không để tệp mồ côi
   (sửa lỗi donor: không đánh "xong" với 0 video, `W:11652`);
@@ -17,6 +18,10 @@ import pytest
 from apps.video_crawler.adapters.base import CrawlItem, LoiCao, TepTai
 
 _DNS = lambda host: ["142.250.66.78"]  # noqa: E731 — DNS giả, test không đọc mạng
+
+#: Giữ chỗ nay là 15 credit/mục (gia.GIA_GIU_CHO) — nạp dư để nhiều mục/nhiều job liên tiếp trong một
+#: test không chạm `ThieuCreditError` (không phải giá trị cần kiểm, chỉ là vốn ban đầu của test).
+NAP_BAN_DAU = 2000
 
 
 @pytest.fixture()
@@ -45,8 +50,9 @@ def kho(tmp_path):
         set_storage(None)
 
 
-def _muc(i: str) -> CrawlItem:
-    return CrawlItem(nen_tang="youtube", id=i, url=f"https://www.youtube.com/watch?v={i}", tieu_de=f"Video {i}")
+def _muc(i: str, thoi_luong_s: int | None = None) -> CrawlItem:
+    return CrawlItem(nen_tang="youtube", id=i, url=f"https://www.youtube.com/watch?v={i}",
+                     tieu_de=f"Video {i}", thoi_luong_s=thoi_luong_s)
 
 
 class AdapterGia:
@@ -79,7 +85,7 @@ def nguoi(db):
     from tests.conftest import bao_dam_user
     for uid in ("u1", "u2"):
         bao_dam_user(db, uid)
-        credit.nap(db, uid, 100)
+        credit.nap(db, uid, NAP_BAN_DAU)
     db.commit()
     return "u1"
 
@@ -114,11 +120,12 @@ def _so_du(db, uid):
     return credit.so_du(db, uid)
 
 
-def test_tai_hai_muc_luu_storage_va_tru_dung_hai_credit(db, kho, nguoi, monkeypatch):
+def test_tai_hai_muc_luu_storage_va_tru_dung_gia_theo_thoi_luong(db, kho, nguoi, monkeypatch):
+    from apps.video_crawler import gia
     from platform_core.models import JOB_DONE
     _dung_adapter(monkeypatch, AdapterGia())
     jid = _nop_tai(db, "u1", ["aaaaaaaaaaa", "bbbbbbbbbbb"])
-    assert _so_du(db, "u1") == 98                       # giữ chỗ 2
+    assert _so_du(db, "u1") == NAP_BAN_DAU - 2 * gia.GIA_GIU_CHO       # giữ chỗ bậc cao nhất × 2 mục
 
     job = _chay(db, jid)
     assert job.status == JOB_DONE, job.error
@@ -127,10 +134,13 @@ def test_tai_hai_muc_luu_storage_va_tru_dung_hai_credit(db, kho, nguoi, monkeypa
     assert all(kho.exists(k) for k in keys)
     assert [m["id"] for m in job.result["muc"]] == ["aaaaaaaaaaa", "bbbbbbbbbbb"]
     assert not any(k.endswith("_key") for m in job.result["muc"] for k in m)   # spec §14: trần 20 artifacts
-    assert _so_du(db, "u1") == 98                       # quyết toán = 2
+    # không rõ thời lượng (mục đến từ danh sách id thô) ⇒ bậc rẻ nhất mỗi mục, phần chênh với giữ chỗ hoàn lại
+    assert job.result["credit_cost"] == 2 * gia.gia_muc(None)
+    assert _so_du(db, "u1") == NAP_BAN_DAU - 2 * gia.gia_muc(None)
 
 
 def test_mot_phan_loi_thi_xong_va_hoan_phan_loi(db, kho, nguoi, monkeypatch):
+    from apps.video_crawler import gia
     from platform_core.models import JOB_DONE
     _dung_adapter(monkeypatch, AdapterGia(loi={"bbbbbbbbbbb": LoiCao("rieng_tu", "Video riêng tư.", tam_thoi=False)}))
     jid = _nop_tai(db, "u1", ["aaaaaaaaaaa", "bbbbbbbbbbb"])
@@ -138,7 +148,8 @@ def test_mot_phan_loi_thi_xong_va_hoan_phan_loi(db, kho, nguoi, monkeypatch):
     assert job.status == JOB_DONE
     assert job.result["video_keys"] == [f"video_crawler/u1/{jid}/aaaaaaaaaaa.mp4"]
     assert job.result["loi"] == [{"id": "bbbbbbbbbbb", "ma": "rieng_tu", "thong_diep": "Video riêng tư."}]
-    assert _so_du(db, "u1") == 99
+    assert job.result["credit_cost"] == gia.gia_muc(None)       # chỉ mục thành công mới bị tính tiền
+    assert _so_du(db, "u1") == NAP_BAN_DAU - gia.gia_muc(None)
 
 
 def test_moi_muc_loi_phia_khach_thi_error_khong_thu_lai_hoan_du(db, kho, nguoi, monkeypatch):
@@ -149,7 +160,7 @@ def test_moi_muc_loi_phia_khach_thi_error_khong_thu_lai_hoan_du(db, kho, nguoi, 
     job = _chay(db, jid)
     assert job.status == JOB_ERROR
     assert job.attempts == 1                            # LoiNguoiGoi: không thử lại
-    assert _so_du(db, "u1") == 100
+    assert _so_du(db, "u1") == NAP_BAN_DAU
     assert not kho.exists(f"video_crawler/u1/{jid}/aaaaaaaaaaa.mp4")
 
 
@@ -175,7 +186,7 @@ def test_huy_giua_chung_thi_cancelled_va_don_tep(db, kho, nguoi, monkeypatch):
     job = _chay(db, jid)
     assert job.status == JOB_CANCELLED
     assert not kho.exists(f"video_crawler/u1/{jid}/aaaaaaaaaaa.mp4")   # tệp mục a đã lưu phải bị dọn
-    assert _so_du(db, "u1") == 100
+    assert _so_du(db, "u1") == NAP_BAN_DAU
 
 
 def test_khong_trung_chi_bo_muc_chinh_user_da_tai(db, kho, nguoi, monkeypatch):
@@ -209,12 +220,12 @@ def test_kham_pha_mien_phi_tra_danh_sach(db, kho, nguoi, monkeypatch):
                                            dau_vao="meo", so_luong=5, khong_trung=False, phan_giai=_DNS)
     job = features.nop(db, owner_id="u1", job_type="video_crawler.kham_pha", params=params)
     db.commit()
-    assert _so_du(db, "u1") == 100
+    assert _so_du(db, "u1") == NAP_BAN_DAU
     job = _chay(db, job.id)
     assert job.status == JOB_DONE
     assert [m["id"] for m in job.result["muc"]] == ["aaaaaaaaaaa", "bbbbbbbbbbb"]
     assert "video_keys" not in job.result
-    assert _so_du(db, "u1") == 100
+    assert _so_du(db, "u1") == NAP_BAN_DAU
 
 
 def test_lich_su_chi_thay_job_cua_minh(db, kho, nguoi, monkeypatch):
@@ -307,12 +318,13 @@ def test_xong_job_dat_tien_do_100_kem_thong_diep(db, kho, nguoi, monkeypatch):
 def test_moi_muc_deu_trung_thi_bao_ro_cho_khach_khong_tru_tien(db, kho, nguoi, monkeypatch):
     """Kiểm GUI 22/09: nhánh 'mọi mục đều đã tải' hoàn tất im lặng — khách thấy 'tìm thấy 1 video' rồi Done
     mà không có tệp. Phải báo rõ và không tính tiền."""
-    from apps.video_crawler import features
+    from apps.video_crawler import features, gia
     from platform_core import job_events
     from platform_core.models import JOB_DONE
 
     _dung_adapter(monkeypatch, AdapterGia())
     _chay(db, _nop_tai(db, "u1", ["aaaaaaaaaaa"]))
+    con_lai = NAP_BAN_DAU - gia.gia_muc(None)          # job đầu: 1 mục thành công, không rõ thời lượng
     _dung_adapter(monkeypatch, AdapterGia(muc=[_muc("aaaaaaaaaaa")]))
     params = features.dung_params_tai(owner_id="u1", nen_tang="youtube",
                                       nguon={"che_do": "tu_khoa", "dau_vao": "meo", "so_luong": 1,
@@ -322,10 +334,11 @@ def test_moi_muc_deu_trung_thi_bao_ro_cho_khach_khong_tru_tien(db, kho, nguoi, m
     job = _chay(db, job.id)
     assert job.status == JOB_DONE
     assert job.result["bo_qua_trung"] == 1 and job.result["video_keys"] == []
+    assert job.result["credit_cost"] == 0
     assert "Không có video mới" in job.progress_msg
     ma = [e.event_code for e in job_events.timeline(db, job.id)]
     assert "bo_qua_trung" in ma
-    assert _so_du(db, "u1") == 99
+    assert _so_du(db, "u1") == con_lai                 # job 2: mọi mục trùng ⇒ giữ chỗ hoàn đủ, không đổi
 
 
 # ── Review code 22/09 ─────────────────────────────────────────────────────────
@@ -352,17 +365,17 @@ def test_id_sai_mau_bi_tu_choi(vid):
 
 
 def test_id_trung_trong_mot_yeu_cau_chi_tinh_mot_lan():
-    """MAJOR 2: `muc=X&muc=X` ⇒ tính 2 credit cho 1 tệp."""
-    from apps.video_crawler import features
+    """MAJOR 2: `muc=X&muc=X` ⇒ tính giữ chỗ 2 lần cho 1 tệp."""
+    from apps.video_crawler import features, gia
     from apps.video_crawler.manifest import MANIFEST
     p = features.dung_params_tai(owner_id="u1", nen_tang="youtube",
                                  muc=[{"id": _A}, {"id": _A}], phan_giai=_DNS)
     assert [m["id"] for m in p["muc"]] == [_A]
-    assert MANIFEST.credit_cost(p) == 1
+    assert MANIFEST.credit_cost(p) == gia.GIA_GIU_CHO
 
 
 def test_kham_pha_trung_id_chi_giu_mot(db, kho, nguoi, monkeypatch):
-    from apps.video_crawler import features
+    from apps.video_crawler import features, gia
     adapter = AdapterGia(muc=[_muc(_A), _muc(_A), _muc("b" * 11)])
     _dung_adapter(monkeypatch, adapter)
     params = features.dung_params_tai(owner_id="u1", nen_tang="youtube",
@@ -371,7 +384,7 @@ def test_kham_pha_trung_id_chi_giu_mot(db, kho, nguoi, monkeypatch):
     db.commit()
     job = _chay(db, job.id)
     assert adapter.da_tai == [_A, "b" * 11]
-    assert job.result["credit_cost"] == 2
+    assert job.result["credit_cost"] == 2 * gia.gia_muc(None)   # 2 mục tải thật, không rõ thời lượng
 
 
 def test_muc_lay_tu_ket_qua_xem_truoc_cua_chinh_minh(db, kho, nguoi, monkeypatch):
@@ -428,12 +441,14 @@ def test_het_ngan_sach_thoi_gian_thi_dung_giua_cac_muc_va_giu_phan_da_xong(db, k
     def sau_moi_muc(item):
         dong_ho[0] += vc_jobs.NGAN_SACH_TAI_S / 2 + 1
 
+    from apps.video_crawler import gia
     _dung_adapter(monkeypatch, AdapterGia(truoc_tai=sau_moi_muc))
     job = _chay(db, _nop_tai(db, "u1", [_A, "b" * 11, "c" * 11]))
     assert job.status == JOB_DONE
     assert len(job.result["video_keys"]) == 2
     assert job.result["loi"][-1]["ma"] == "het_thoi_gian"
-    assert _so_du(db, "u1") == 98
+    assert job.result["credit_cost"] == 2 * gia.gia_muc(None)
+    assert _so_du(db, "u1") == NAP_BAN_DAU - 2 * gia.gia_muc(None)
 
 
 def test_gioi_han_tan_suat_tinh_ca_cao_het(db, kho, nguoi, monkeypatch):
@@ -448,3 +463,34 @@ def test_gioi_han_tan_suat_tinh_ca_cao_het(db, kho, nguoi, monkeypatch):
         db.commit()
     with pytest.raises(features.QuaTanSuat):
         features.kiem_tan_suat(db, "u1")
+
+
+# ── Giá theo thời lượng — L2 GIÁ (22/09) ───────────────────────────────────────
+
+
+def test_doi_soat_gia_giu_bang_quyet_toan_cong_hoan_theo_thoi_luong_thuc(db, kho, nguoi, monkeypatch):
+    """Đối soát giữ = quyết toán + hoàn, ba mục: ngắn (<=10 phút), dài (30-60 phút), không rõ thời lượng.
+    Giữ chỗ khi nộp luôn bậc cao nhất; quyết toán theo `gia.gia_muc` của thời lượng THẬT từng mục đã tải
+    (mục đến từ 'cào hết' giữ nguyên `CrawlItem.thoi_luong_s` của adapter, không bị features cắt bớt)."""
+    from apps.video_crawler import features, gia
+    from apps.video_crawler.manifest import MANIFEST
+    from platform_core.models import JOB_DONE
+
+    ngan, dai = 120, 3_000                       # <= 600s (bậc 3) · 1801-3600s, 30-60 phút (bậc 10)
+    adapter = AdapterGia(muc=[_muc(_A, ngan), _muc("b" * 11, dai), _muc("c" * 11, None)])
+    _dung_adapter(monkeypatch, adapter)
+    params = features.dung_params_tai(owner_id="u1", nen_tang="youtube",
+                                      nguon={"che_do": "tu_khoa", "dau_vao": "meo", "so_luong": 3},
+                                      phan_giai=_DNS)
+    giu = MANIFEST.credit_cost(params)
+    assert giu == 3 * gia.GIA_GIU_CHO                # giữ chỗ luôn bậc cao nhất, không theo thời lượng
+    job = features.nop(db, owner_id="u1", job_type="video_crawler.tai", params=params)
+    db.commit()
+    assert _so_du(db, "u1") == NAP_BAN_DAU - giu
+
+    job = _chay(db, job.id)
+    assert job.status == JOB_DONE
+    ky_vong = gia.gia_muc(ngan) + gia.gia_muc(dai) + gia.gia_muc(None)
+    assert ky_vong == 3 + 10 + 3
+    assert job.result["credit_cost"] == ky_vong
+    assert _so_du(db, "u1") == NAP_BAN_DAU - ky_vong  # giữ chỗ dư so với quyết toán được hoàn lại đúng phần chênh
