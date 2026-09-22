@@ -19724,3 +19724,18 @@ msgstr "We listen to the speaker in your video and read the dialogue to pick the
 
 msgid "Không có giọng nào hợp với nội dung này. Hãy tự chọn một giọng."
 msgstr "No voice fits this content. Please pick a voice yourself."
+
+msgid "Bộ OCR chưa sẵn sàng trên máy chủ."
+msgstr "The OCR engine is not ready on this server."
+
+msgid "Không tìm thấy phụ đề cứng trong hình."
+msgstr "No burned-in subtitles were found in the picture."
+
+msgid "Nguồn lời thoại không hợp lệ."
+msgstr "Invalid dialogue source."
+
+msgid "Video không có phụ đề nhúng dạng chữ."
+msgstr "This video has no text-based embedded subtitle track."
+
+msgid "Tiếng Trung"
+msgstr "Chinese"
