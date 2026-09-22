@@ -42,6 +42,10 @@ CHU_KY_NHIP = 20.0
 TEN_LUONG_NHIP = "video-crawler-nhip"
 MAX_FILESIZE_MAC_DINH = 4 * 1024 ** 3
 THOI_LUONG_TOI_DA_MAC_DINH = 3 * 3600
+#: Nghỉ ngẫu nhiên (giây) trước mỗi lượt tải tệp — yt-dlp `sleep_interval`/`max_sleep_interval`
+#: (downloader/common.py:461-475, `random.uniform`). Donor Y:2096-2104; wiki yt-dlp: 5–10 s giữa các lượt tải,
+#: khách vãng lai ~300 video/giờ (N7). Chỉ áp khi TẢI — khám phá không tải tệp nào.
+NGHI_GIUA_TAI_S = (5.0, 10.0)
 
 #: live_status yt-dlp chưa tải được như một tệp (YoutubeDL.py:2755-2772). `was_live` là VOD bình thường ⇒ cho qua.
 _TRUC_TIEP = frozenset({"is_live", "is_upcoming", "post_live"})
@@ -192,6 +196,8 @@ class YtdlpAdapter:
     #: Gửi cookie phiên của khách khi khám phá / khi tải. TikTok: cookie đăng nhập làm TẢI trả 403 (donor Y:1734-1741).
     cookie_khi_kham_pha: ClassVar[bool] = True
     cookie_khi_tai: ClassVar[bool] = True
+    #: yt-dlp `js_runtimes` (YoutubeDL.py:538-544). Rỗng ⇒ để mặc định yt-dlp. KHÔNG bao giờ `remote_components`.
+    js_runtimes: ClassVar[dict] = {}
 
     def __init__(self, ydl_factory: Callable[[dict], Any] | None = None, *,
                  max_filesize: int = MAX_FILESIZE_MAC_DINH,
@@ -238,12 +244,15 @@ class YtdlpAdapter:
         }
         if cls.extractor_args:
             o["extractor_args"] = {k: {kk: list(vv) for kk, vv in v.items()} for k, v in cls.extractor_args.items()}
+        if cls.js_runtimes:                           # bản sao: yt-dlp sửa tại chỗ (_clean_js_runtimes)
+            o["js_runtimes"] = {k: dict(v or {}) for k, v in cls.js_runtimes.items()}
         if cls.impersonate:
             from yt_dlp.networking.impersonate import ImpersonateTarget
             o["impersonate"] = ImpersonateTarget()
         if thu_muc is not None:
             o["outtmpl"] = str(Path(thu_muc) / "%(id)s.%(ext)s")
             o["noplaylist"] = True
+            o["sleep_interval"], o["max_sleep_interval"] = NGHI_GIUA_TAI_S
         if progress_hooks:
             o["progress_hooks"] = list(progress_hooks)
         if postprocessor_hooks:

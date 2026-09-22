@@ -61,6 +61,10 @@ class YoutubeAdapter(YtdlpAdapter):
     allowed_extractors = EXTRACTOR_CHO_PHEP                                   # spec §21
     extractor_args = {"youtube": {"player_client": ["web_embedded", "default"]}}  # Y:2081-2083
     ie_key_video = ("Youtube",)
+    #: Giải "n challenge"/chữ ký bằng node (máy có sẵn v24) thay vì deno mặc định (N5). Script giải lấy từ gói
+    #: `yt-dlp-ejs` (cùng major.minor với bản vendor của yt-dlp, 2026.03.17 ⇒ 0.8.x); thiếu gói ⇒ yt-dlp chỉ cảnh báo
+    #: "n challenge solving failed" và bớt format, không vỡ. KHÔNG `remote_components` (tải mã JS lúc chạy).
+    js_runtimes = {"node": {}}
 
     def url_video(self, id: str) -> str:
         return f"https://www.youtube.com/watch?v={id}"
