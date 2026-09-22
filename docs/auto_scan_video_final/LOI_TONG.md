@@ -17,6 +17,8 @@
 | M-03 | trung | Cắt cảnh = ffmpeg `select=gt(scene,0.4)`, ngưỡng "CHƯA ĐƯỢC ĐO" | `canh.py:214` | L-B | MỞ — benchmark PySceneDetect |
 | M-04 | trung | Khung đen T13 = YAVG tự đặt ngưỡng 2/255 | `qc.py:162` | L-B | MỞ — `blackdetect`/`freezedetect` chuẩn |
 | M-05 | trung | Không có đo chất lượng hình sau mã hoá lại (VMAF), không có đo chất lượng dịch, không có đo chất lượng tiếng | — | L-B/L-C/L-D | MỞ |
+| F-08 | trung | `expected_size` cua phien tai len la `int4` ⇒ kep o 2 GiB−1; sua that = BigInteger + migration | `platform_core/upload_sessions.py` | tai-len | MỞ |
+| F-09 | trung | Nghia vu ghi cong CC BY 4.0 (SQUIM) chua co cho hien tren san pham | trang Gioi thieu/Giay phep | dieu phoi | MỞ |
 | M-06 | thấp | `tools/do_watermark.py` heuristic tự chế, không app nào gọi (pha 13 đã "để tắt") | `tools/` | L-B | MỞ — xoá hoặc thay |
 
 ## Độ phủ lượt thật
