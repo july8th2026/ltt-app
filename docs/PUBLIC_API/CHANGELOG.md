@@ -21,6 +21,29 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-23 — `/workflows/{id}/quotes` và `/workflows/{id}/runs` tạm khoá (501)
+
+- **Cái gì đổi:** **ADDED** mã lỗi `workflow_runs_unavailable` (501, `retry:
+  never`). `POST /api/v1/workflows/{id}/quotes` và
+  `POST /api/v1/workflows/{id}/runs` giờ trả 501 kèm mã này cho MỌI request,
+  trước khi phát quote token hay tạo `WorkflowRun`/khoản giữ credit nào. Hai
+  route này sống với `chargeable=True` (tạo run thật, giữ credit thật) từ
+  trước khi có engine nào thực thi run — quote luôn báo `0` vì đọc sai hình
+  dạng graph, và một run tạo xong nằm im vĩnh viễn. Khoá lại bằng một câu trả
+  lời trung thực trong lúc chờ Workflow V2 engine (nhánh `phien/wf-v2`) thay
+  thế cả đường tạo run lẫn đường thực thi.
+  `GET /runs/{id}`, `POST /runs/{id}/cancel`, `GET /runs/{id}/artifacts` không
+  đổi.
+- **Phá vỡ tương thích:** không theo hợp đồng đã đóng băng (route/tool/shape
+  không đổi, chỉ thêm một mã lỗi) — nhưng bất kỳ tích hợp nào ĐANG gọi thành
+  công hai route trên sẽ thấy chúng chuyển sang 501. Không có tích hợp thật
+  nào đứng sau hai route này (chưa từng có engine chạy run), nên không có gì
+  để versioning hay lịch ngừng hỗ trợ ở đây.
+- **Phải làm gì:** không gì cho khách đang dùng `/jobs`. Khách đang thử
+  `/workflows/*/quotes` hoặc `/workflows/*/runs`: đọc `code ==
+  "workflow_runs_unavailable"`, đừng thử lại — theo dõi changelog này cho lần
+  mở lại.
+
 ## 2026-09-22 — tool mới `transcript.run` (phiên âm có dòng thời gian)
 
 - **Cái gì đổi:** **ADDED** — `POST /api/v1/jobs` với tool `transcript.run`: một tệp

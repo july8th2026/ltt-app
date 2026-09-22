@@ -1,0 +1,334 @@
+"""HTTP của video_crawler — CHỈ đọc request, kiểm quyền/CSRF, gọi `features`, dựng phản hồi (AGENTS §8.1).
+
+Router không tự viết prefix; nền tảng gắn `/video-crawler` từ manifest.
+Mọi route qua `_cong_co` TRƯỚC `require_login`: cờ tắt ⇒ 404 ngay cả khi chưa đăng nhập (tiền lệ
+`apps/auto_scan_video/routes.py:_cong_co`), vì `enabled=False` không tháo router (spec §26).
+Theo dõi tiến độ, huỷ và tải tệp dùng trang job có sẵn của nền tảng (`/jobs/{id}`), đã kiểm chủ sở hữu.
+"""
+from __future__ import annotations
+
+import os
+from typing import Any
+
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
+
+from platform_core.i18n import N_
+from platform_core.i18n import _ as _t
+
+from apps.video_crawler import features, loi, nen_tang, phien
+from apps.video_crawler.manifest import MANIFEST
+from server.auth.csrf import issue_csrf_token, verify_csrf_token
+from server.auth.session import require_login
+from server.deps import get_db, user_hien_tai
+from server.templating import templates
+
+router = APIRouter(tags=["video_crawler"])
+# Trang vận hành (chỉ operator) — mô-đun riêng của làn sức khoẻ; gắn ở đây vì nền tảng chỉ mount `routes.router`.
+from apps.video_crawler import routes_van_hanh as _routes_van_hanh  # noqa: E402
+router.include_router(_routes_van_hanh.router)
+
+CO_MO = "LTT_VIDEO_CRAWLER"
+
+
+def _cong_co() -> None:
+    if str(os.environ.get(CO_MO, "")).strip() != "1":
+        raise HTTPException(status_code=404)
+
+
+def _la_htmx(request: Request) -> bool:
+    return request.headers.get("HX-Request", "").lower() == "true"
+
+
+def _nguoi(request: Request):
+    u: Any = user_hien_tai(request)
+    if u is None:
+        raise features.LoiDauVao(_t("Cần đăng nhập bằng tài khoản người dùng (không phải quản trị nội bộ)."))
+    return u
+
+
+def _bang_gia() -> list:
+    """Bậc giá cho UI — một nguồn `gia.bang()` (giây) đổi sang phút cho template (kiểm GUI W1)."""
+    from apps.video_crawler import gia
+    return [{"tu_phut": b["tu_s"] // 60, "den_phut": b["den_s"] // 60, "credit": b["gia"]}
+            for b in gia.bang()]
+
+
+#: Ví dụ ô nhập theo (nền, chế độ) — cụ thể hơn placeholder chung `GOI_Y` của template (PLAN_MVP W2-L7 §5,
+#: một bảng thay if rải rác). Chỉ liệt che_do nền đó THẬT có (`_goi_y_nen` lọc lại theo registry). Chuỗi có
+#: dấu tiếng Việt khai báo bằng `N_()` — dịch lúc hiển thị (check_i18n.py đếm theo AST, không theo runtime).
+_GOI_Y_NEN: dict[str, dict[str, str]] = {
+    "douyin": {"link": "https://www.douyin.com/video/7123456789012345678",
+               "kenh": "https://www.douyin.com/user/MS4wLjABAAAA0123456789abcdefghijklmnopqrstuvwxyz",
+               "tu_khoa": N_("mèo con đáng yêu")},
+    "bilibili_tv": {"link": "https://www.bilibili.tv/en/video/2043915874"},
+    "bilibili": {"link": "https://www.bilibili.com/video/BV1xx411c7mD",
+                 "kenh": "https://space.bilibili.com/123456",
+                 "bo": "https://www.bilibili.com/bangumi/play/ss12345",
+                 "tu_khoa": N_("review phim")},
+    "xiaohongshu": {"link": "https://www.xiaohongshu.com/explore/64abc1230000000000123456?xsec_token=ABxxxxxxxxxxxxxxxxxxxxxxxx",
+                    "kenh": "https://www.xiaohongshu.com/user/profile/5f0abc123456789000000000",
+                    "tu_khoa": N_("du lịch Đà Lạt")},
+    "weibo": {"link": "https://weibo.com/1234567890/N1abcDEfg",
+              "kenh": "https://weibo.com/u/1234567890"},
+    "tiktok": {"link": "https://www.tiktok.com/@tenkenh/video/7123456789012345678",
+               "kenh": "https://www.tiktok.com/@tenkenh",
+               "bo": "https://www.tiktok.com/@tenkenh/collection/ten-bo-7123456789012345678",
+               "tu_khoa": N_("trend nhảy")},
+    "youtube": {"link": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                "kenh": N_("@tenkenh hoặc https://www.youtube.com/@tenkenh"),
+                "bo": "https://www.youtube.com/playlist?list=PLxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                "tu_khoa": N_("mèo con đáng yêu")},
+    "facebook": {"link": "https://www.facebook.com/watch/?v=1234567890123456"},
+    "instagram": {"link": "https://www.instagram.com/reel/Cxxxxxxxxxxxxxxxxxx/"},
+    "twitter": {"link": "https://x.com/tenkenh/status/1234567890123456789"},
+}
+
+
+def _goi_y_nen() -> dict:
+    """`{nen_id: {che_do: goi_y}}` — chỉ nền đang tồn tại trong registry, chỉ che_do nền đó thật hỗ trợ."""
+    ra: dict[str, dict[str, str]] = {}
+    for nid, bang in _GOI_Y_NEN.items():
+        try:
+            nen = nen_tang.lay(nid)
+        except nen_tang.NenKhongHopLe:
+            continue
+        ra[nid] = {cd: _t(v) for cd, v in bang.items() if cd in nen.che_do}
+    return ra
+
+
+def _phap_ly() -> dict:
+    """Hằng pháp lý hiển thị trên form tải (một nguồn: `features`)."""
+    return {"url_dieu_khoan": features.URL_DIEU_KHOAN, "url_bao_vi_pham": features.URL_BAO_VI_PHAM,
+            "email_ho_tro": features.EMAIL_HO_TRO, "tai_moi_gio": features.TAI_MOI_GIO,
+            "tai_moi_ngay": features.TAI_MOI_NGAY}
+
+
+def _trang(request: Request, user: str, db, *, loi: str = "", ma: int = 200) -> HTMLResponse:
+    u: Any = user_hien_tai(request)
+    return templates.TemplateResponse(request, "video_crawler.html", {
+        "phap_ly": _phap_ly(), "bang_gia": _bang_gia(), "goi_y_nen": _goi_y_nen(),
+        "user": user, "nav": MANIFEST.slug, "app": MANIFEST,
+        "csrf_token": issue_csrf_token(request),
+        "cac_nen": nen_tang.cac_nen_bat(),
+        # Mặc định = nền có NHIỀU chế độ cào ẩn danh nhất (thứ tự registry là thứ tự nhận diện link của donor).
+        "nen_mac_dinh": max(nen_tang.cac_nen_bat(), key=lambda n: len(n.che_do - n.che_do_can_dang_nhap)).id,
+        "nen_dang_nhap": [n for n in nen_tang.cac_nen_bat() if n.cookie_dang_nhap],
+        "phien_cua_toi": {p.nen_tang: p for p in phien.danh_sach(db, u.id) if phien.hop_le(p)} if u else {},
+        "phien_hong": {p.nen_tang for p in phien.danh_sach(db, u.id) if not phien.hop_le(p)} if u else set(),
+        "thong_ke": features.thong_ke(db, u.id) if u else {},
+        "lich_su": features.lich_su(db, u.id, gioi_han=20) if u else [],
+        "loi": loi,
+    }, status_code=ma)
+
+
+def _loi_form(request: Request, user: str, db, thong_diep: str, ma: int = 400) -> HTMLResponse:
+    if _la_htmx(request):
+        # htmx 2 KHÔNG swap phản hồi 4xx ⇒ trả 200 để khách thấy lỗi (review MAJOR 7). Mã thật ở header.
+        return templates.TemplateResponse(request, "vc_thong_bao.html", {"loi": thong_diep}, status_code=200,
+                                          headers={"X-LTT-Ma-Loi": str(ma)})
+    return _trang(request, user, db, loi=thong_diep, ma=ma)
+
+
+def _ve_hang_doi(request: Request) -> Response:
+    dich = f"{MANIFEST.route_prefix}#hang-doi"
+    if _la_htmx(request):
+        return Response(status_code=204, headers={"HX-Redirect": dich})
+    return RedirectResponse(dich, status_code=303)
+
+
+@router.get("", response_class=HTMLResponse, dependencies=[Depends(_cong_co)])
+def trang(request: Request, user: str = Depends(require_login), db=Depends(get_db)):
+    return _trang(request, user, db)
+
+
+@router.post("/kham-pha", response_class=HTMLResponse, dependencies=[Depends(_cong_co)])
+def kham_pha(request: Request, nen_tang_id: str = Form("", alias="nen_tang"), che_do: str = Form(""),
+             dau_vao: str = Form(""), so_luong: str = Form("10"), khong_trung: str = Form(""),
+             csrf_token: str = Form(""), user: str = Depends(require_login), db=Depends(get_db)):
+    from platform_core import credit
+    from platform_core.registry import RegistryError
+    if not verify_csrf_token(request, csrf_token):
+        return _loi_form(request, user, db, _t("Phiên đã hết hạn — tải lại trang."))
+    try:
+        u = _nguoi(request)
+        features.kiem_tan_suat(db, u.id)
+        params = features.dung_params_kham_pha(owner_id=u.id, nen_tang=nen_tang_id, che_do=che_do,
+                                               dau_vao=dau_vao, so_luong=so_luong,
+                                               khong_trung=khong_trung == "1", db=db)
+        job = features.nop(db, owner_id=u.id, job_type=features.JOB_KHAM_PHA, params=params)
+        db.commit()
+    except features.QuaTanSuat as e:
+        db.rollback()
+        return _loi_form(request, user, db, str(e), ma=429)
+    except (features.LoiDauVao, credit.ThieuCreditError, RegistryError) as e:
+        db.rollback()
+        return _loi_form(request, user, db, str(e))
+    return _ket_qua(request, db, u.id, job.id)
+
+
+def _ket_qua(request: Request, db, owner_id: str, job_id: str) -> HTMLResponse:
+    job = features.job_cua(db, owner_id, job_id, job_type=features.JOB_KHAM_PHA)
+    if job is None:
+        raise HTTPException(status_code=404)
+    return templates.TemplateResponse(request, "vc_ket_qua.html", {
+        "job": job, "app": MANIFEST, "csrf_token": issue_csrf_token(request), "phap_ly": _phap_ly(),
+        "muc": (job.result or {}).get("muc") or [],
+        "bo_qua_trung": (job.result or {}).get("bo_qua_trung") or 0,
+        "loi_khach": loi.cho_khach,
+    })
+
+
+@router.get("/kham-pha/{job_id}", response_class=HTMLResponse, dependencies=[Depends(_cong_co)])
+def ket_qua_kham_pha(request: Request, job_id: str, user: str = Depends(require_login), db=Depends(get_db)):
+    u: Any = user_hien_tai(request)
+    if u is None:
+        raise HTTPException(status_code=404)
+    return _ket_qua(request, db, u.id, job_id)
+
+
+@router.post("/tai", dependencies=[Depends(_cong_co)])
+async def tai(request: Request, user: str = Depends(require_login), db=Depends(get_db)):
+    """Hai nguồn: id đã tick trong một lần xem trước (`xem_truoc` + `muc`) HOẶC nguồn cào hết.
+
+    Mục tải lấy từ kết quả xem trước của CHÍNH người dùng; không tin url/tiêu đề trong form (review BLOCKER).
+    """
+    from platform_core import credit
+    from platform_core.registry import RegistryError
+    form = await request.form()
+    if not verify_csrf_token(request, str(form.get("csrf_token") or "")):
+        return _loi_form(request, user, db, _t("Phiên đã hết hạn — tải lại trang."))
+    try:
+        u = _nguoi(request)
+        nen_id = str(form.get("nen_tang") or "")
+        ids = [str(i) for i in form.getlist("muc")]
+        xem_truoc = str(form.get("xem_truoc") or "")
+        if xem_truoc or ids:
+            params = features.dung_params_tai_tu_xem_truoc(db, owner_id=u.id, kham_pha_id=xem_truoc, ids=ids)
+        else:
+            params = features.dung_params_tai(owner_id=u.id, nen_tang=nen_id, nguon={
+                "che_do": str(form.get("che_do") or ""), "dau_vao": str(form.get("dau_vao") or ""),
+                "so_luong": form.get("so_luong"), "khong_trung": form.get("khong_trung") == "1"}, db=db)
+        params = features.chuan_bi_tai(db, u.id, params, dong_y=form.get("cam_ket") == "1")
+        features.nop(db, owner_id=u.id, job_type=features.JOB_TAI, params=params)
+        db.commit()
+    except features.QuaTranTai as e:
+        db.rollback()
+        return _loi_form(request, user, db, str(e), ma=429)
+    except (features.LoiDauVao, credit.ThieuCreditError, RegistryError) as e:
+        db.rollback()
+        return _loi_form(request, user, db, str(e))
+    return _ve_hang_doi(request)
+
+
+def _nen_cua_job(job) -> str:
+    return str((job.params or {}).get("nen_tang") or "")
+
+
+@router.get("/hang-doi", response_class=HTMLResponse, dependencies=[Depends(_cong_co)])
+def hang_doi(request: Request, nen: str = "", user: str = Depends(require_login), db=Depends(get_db)):
+    """`?nen=<id>` lọc lịch sử theo nền (PLAN_MVP W2-L7 §3) — lọc trong Python, `lich_su` đã giới hạn 20."""
+    u: Any = user_hien_tai(request)
+    nen = nen.strip()
+    lich_su = features.lich_su(db, u.id, gioi_han=20) if u else []
+    if nen:
+        lich_su = [j for j in lich_su if _nen_cua_job(j) == nen]
+    return templates.TemplateResponse(request, "vc_hang_doi.html", {
+        "lich_su": lich_su, "nen_loc": nen, "cac_nen": nen_tang.cac_nen_bat(),
+        "thong_ke": features.thong_ke(db, u.id) if u else {}, "oob": True, "app": MANIFEST,
+        "csrf_token": issue_csrf_token(request),
+    })
+
+
+@router.post("/tai/{job_id}/thu-lai-loi", dependencies=[Depends(_cong_co)])
+async def thu_lai_loi(request: Request, job_id: str, user: str = Depends(require_login), db=Depends(get_db)):
+    """"Tải lại các mục lỗi" của một job tải ĐÃ XONG (PLAN_MVP W2-L7 §2): job mới CHỈ chứa id các mục có
+    trong `job.result.loi` — dùng lại `features.dung_params_tai(muc=[{"id": ...}])` để dựng URL/kiểm id từ
+    adapter (không tin gì khác từ job cũ), và `chuan_bi_tai` để bắt buộc cam kết + trần tải như mọi lượt tải."""
+    from platform_core import credit
+    from platform_core.registry import RegistryError
+    form = await request.form()
+    if not verify_csrf_token(request, str(form.get("csrf_token") or "")):
+        return _loi_form(request, user, db, _t("Phiên đã hết hạn — tải lại trang."))
+    try:
+        u = _nguoi(request)
+        job = features.job_cua(db, u.id, job_id, job_type=features.JOB_TAI)
+        if job is None:
+            raise HTTPException(status_code=404)
+        loi_muc = (job.result or {}).get("loi") or []
+        ids = list(dict.fromkeys(str(m.get("id")) for m in loi_muc if m.get("id")))
+        if not ids:
+            raise features.LoiDauVao(_t("Job này không có mục lỗi để tải lại."))
+        muc = [{"id": i} for i in ids]
+        params = features.dung_params_tai(owner_id=u.id, nen_tang=str(job.params.get("nen_tang") or ""),
+                                          muc=muc, db=db)
+        params = features.chuan_bi_tai(db, u.id, params, dong_y=form.get("cam_ket") == "1")
+        features.nop(db, owner_id=u.id, job_type=features.JOB_TAI, params=params)
+        db.commit()
+    except features.QuaTranTai as e:
+        db.rollback()
+        return _loi_form(request, user, db, str(e), ma=429)
+    except (features.LoiDauVao, credit.ThieuCreditError, RegistryError) as e:
+        db.rollback()
+        return _loi_form(request, user, db, str(e))
+    return _ve_hang_doi(request)
+
+
+# ── Phiên đăng nhập nền tảng (spec §16) ──────────────────────────────────────
+# Giá trị cookie KHÔNG bao giờ quay lại trình duyệt: trang chỉ hiện trạng thái (số cookie, hạn, lúc cập nhật).
+
+@router.post("/phien", dependencies=[Depends(_cong_co)])
+async def luu_phien(request: Request, user: str = Depends(require_login), db=Depends(get_db)):
+    form = await request.form()
+    if not verify_csrf_token(request, str(form.get("csrf_token") or "")):
+        return _loi_form(request, user, db, _t("Phiên đã hết hạn — tải lại trang."))
+    noi_dung = form.get("cookies_txt") or ""
+    from starlette.datastructures import UploadFile
+    tep = form.get("cookies_tep")
+    if isinstance(tep, UploadFile):
+        du_lieu = await tep.read(phien.TOI_DA_BYTE + 1)
+        if du_lieu:
+            noi_dung = du_lieu.decode("utf-8", errors="replace")
+    try:
+        u = _nguoi(request)
+        phien.luu(db, owner_id=u.id, nen_tang=str(form.get("nen_tang") or ""), cookies_txt=str(noi_dung))
+        db.commit()
+    except (phien.PhienKhongHopLe, features.LoiDauVao) as e:
+        db.rollback()
+        return _loi_form(request, user, db, str(e))
+    return _ve_trang(request, "#phien")
+
+
+@router.post("/phien/xoa", dependencies=[Depends(_cong_co)])
+def xoa_phien(request: Request, nen_tang_id: str = Form("", alias="nen_tang"), csrf_token: str = Form(""),
+              user: str = Depends(require_login), db=Depends(get_db)):
+    if not verify_csrf_token(request, csrf_token):
+        return _loi_form(request, user, db, _t("Phiên đã hết hạn — tải lại trang."))
+    u: Any = user_hien_tai(request)
+    if u is not None:
+        phien.xoa(db, owner_id=u.id, nen_tang=nen_tang_id)
+        db.commit()
+    return _ve_trang(request, "#phien")
+
+
+def _ve_trang(request: Request, neo: str) -> Response:
+    dich = f"{MANIFEST.route_prefix}{neo}"
+    if _la_htmx(request):
+        return Response(status_code=204, headers={"HX-Redirect": dich})
+    return RedirectResponse(dich, status_code=303)
+
+
+@router.get("/anh-bia/{job_id}/{chi_so}", dependencies=[Depends(_cong_co)])
+def anh_bia_xem_truoc(request: Request, job_id: str, chi_so: int, user: str = Depends(require_login),
+                      db=Depends(get_db)):
+    """Ảnh bìa của mục trong kết quả xem trước CỦA CHÍNH người dùng (SO_LOI L10). Không có ⇒ 404."""
+    from apps.video_crawler import anh_bia
+    u: Any = user_hien_tai(request)
+    tim = anh_bia.url_cua(db, owner_id=u.id, job_id=job_id, chi_so=chi_so) if u else None
+    if tim is None:
+        raise HTTPException(status_code=404)
+    try:
+        du_lieu, loai = anh_bia.doc(tim[1], nen_tang=tim[0], owner_id=u.id, job_id=job_id)   # kho trước, CDN sau (L8)
+    except anh_bia.AnhKhongHopLe:
+        raise HTTPException(status_code=404) from None
+    return Response(du_lieu, media_type=loai, headers={"X-Content-Type-Options": "nosniff"})

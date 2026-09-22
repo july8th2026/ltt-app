@@ -101,6 +101,13 @@ MIEN_TRU_HTTP = {
     "apps/lttvideo/cong/may_that.py",
     # → SearXNG tự host trên loopback CỦA CHÍNH TA (WSL, 127.0.0.1:8888) — tìm web cho LTTCODE
     "apps/lttcode/tim_kiem.py",
+    # → CDN ảnh bìa CÔNG KHAI của nền video (i.ytimg.com, tiktokcdn…) cho "Xem trước": CSP nền tảng chặn trình duyệt
+    #   tải thẳng (đúng — không lộ IP khách). Allowlist theo nền + chặn IP nội bộ + không theo redirect + trần 2 MB.
+    #   Không phải nhà cung cấp AI, không khoá API. (video_crawler, review 22/09)
+    "apps/video_crawler/anh_bia.py",
+    # → kuaishou.com (trang + GraphQL web) và CDN video Kuaishou: yt-dlp không có extractor Kuaishou. Allowlist CDN +
+    #   chặn IP nội bộ kể cả sau redirect + trần dung lượng. Không phải nhà cung cấp AI. (video_crawler, 22/09)
+    "apps/video_crawler/adapters/kuaishou_web.py",
 }
 
 

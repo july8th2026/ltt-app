@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% import "_app_head.html" as ah %}
+{% block page_mode %}wide{% endblock %}
+{% block title %}{{ _("Cào video nguồn") }} — LTT AI Studio{% endblock %}
+{% set TEN_CHE_DO = {"tu_khoa": "🔍 " ~ _("Theo từ khoá"), "link": "🔗 " ~ _("Theo link"), "kenh": "👤 " ~ _("Theo kênh"), "bo": "📦 " ~ _("Theo bộ / playlist")} %}
+{% set GOI_Y = {"tu_khoa": _("Ví dụ: mèo con đáng yêu"), "link": "https://www.youtube.com/watch?v=…", "kenh": _("@tenkenh hoặc link kênh"), "bo": "https://www.youtube.com/playlist?list=…"} %}
+{% block content %}
+<script src="/static/htmx.min.js?v={{ asset_ver }}"></script>
+<style>
+  .vc-grid{display:grid;gap:var(--space-5,20px);grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  @media (max-width:900px){.vc-grid{grid-template-columns:minmax(0,1fr)}}
+  .vc-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:var(--space-5,20px)}
+  @media (max-width:600px){.vc-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .vc-stat{padding:12px 14px}.vc-stat b{display:block;font-size:1.5rem}
+  .vc-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+  .vc-row .field{flex:1 1 140px}
+  .vc-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .vc-muc{display:grid;grid-template-columns:auto 96px minmax(0,1fr);gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+  img.vc-bia{object-fit:cover}
+  .vc-bia{width:96px;aspect-ratio:16/9;display:grid;place-items:center;border-radius:var(--radius);background:var(--panel);border:1px solid var(--line);font-size:.7rem;color:var(--grey);overflow:hidden}
+  .vc-muc span{overflow-wrap:anywhere}
+  .vc-che-do label[hidden]{display:none}
+  .vc-can-phien span::after{content:" 🔒"}
+  .vc-grid .chips{flex-wrap:wrap}
+  .vc-cam-ket{display:flex;gap:8px;align-items:flex-start;margin-top:12px}
+  .vc-cam-ket input{margin-top:.25em;flex:none}
+  .vc-dieu-khoan{font-size:.85rem;margin-top:8px}
+  .vc-gia{margin-top:8px}
+</style>
+<section aria-labelledby="vc-title">
+  {{ ah.dau_trang(_("Video · Nguồn"), _("Cào video nguồn"), _("Tìm theo từ khoá, link, kênh hoặc playlist; xem trước, chọn rồi tải vào kho của bạn."), id_tieu_de="vc-title") }}
+  {% if loi %}<div class="alert alert-err" role="alert">{{ loi }}</div>{% endif %}
+
+  <div class="vc-stats" id="vc-thong-ke" aria-label="{{ _('Thống kê của bạn') }}">
+    {% include "vc_thong_ke.html" %}
+  </div>
+
+  <div class="vc-grid">
+    <form class="card" id="vc-form" method="post" action="{{ app.route_prefix }}/tai"
+          hx-post="{{ app.route_prefix }}/tai" hx-target="#vc-ket-qua">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <h2>1 · {{ _("Nền tảng") }}</h2>
+      <div class="chips" role="radiogroup" aria-label="{{ _('Nền tảng') }}">
+        {#- Mặc định = nền đầu tiên cào được KHÔNG cần phiên (thứ tự registry là thứ tự nhận diện link của donor). -#}
+        {% for n in cac_nen %}
+        <label class="chip-opt" data-nen="{{ n.id }}" data-che-do="{{ n.che_do | sort | join(',') }}"
+               data-can-phien="{{ n.che_do_can_dang_nhap | sort | join(',') }}" data-co-phien="{{ '1' if n.id in phien_cua_toi else '' }}"
+               data-ghi-chu="{{ n.gioi_han | join(' · ') }}" data-goi-y='{{ (goi_y_nen.get(n.id) if goi_y_nen else {}) | tojson }}'>
+          <input type="radio" name="nen_tang" value="{{ n.id }}" {% if n.id == nen_mac_dinh %}checked{% endif %}><span>{{ _(n.ten) }}</span>
+        </label>
+        {% endfor %}
+      </div>
+
+      <h2>2 · {{ _("Cách cào") }}</h2>
+      <div class="chips vc-che-do" role="radiogroup" aria-label="{{ _('Cách cào') }}">
+        {% for k in ["tu_khoa", "link", "kenh", "bo"] %}
+        <label class="chip-opt" data-che-do-nut="{{ k }}"><input type="radio" name="che_do" value="{{ k }}" {% if loop.first %}checked{% endif %} data-goi-y="{{ GOI_Y[k] }}"><span>{{ TEN_CHE_DO[k] }}</span></label>
+        {% endfor %}
+      </div>
+
+      <p class="muted" id="vc-ghi-chu" aria-live="polite"></p>
+      <label class="field"><span>{{ _("Từ khoá / link") }}</span>
+        <input id="vc-dau-vao" name="dau_vao" required maxlength="500" placeholder="{{ GOI_Y.tu_khoa }}" autocomplete="off">
+      </label>
+      <div class="vc-row">
+        <label class="field"><span>{{ _("Số lượng (tối đa 20)") }}</span><input type="number" name="so_luong" value="10" min="1" max="20" inputmode="numeric"></label>
+        <label class="chip-opt"><input type="checkbox" name="khong_trung" value="1"><span>🆕 {{ _("Cào không trùng") }}</span></label>
+      </div>
+      {% if bang_gia %}
+      <p class="muted">{{ _('"Không trùng" bỏ qua video bạn đã tải hoặc đang tải. Xem trước miễn phí; giá mỗi video tải về theo thời lượng:') }}</p>
+      <div class="tablewrap vc-gia" tabindex="0"><table class="table" id="vc-bang-gia">
+        <thead><tr><th>{{ _("Thời lượng") }}</th><th>{{ _("Credit / video") }}</th></tr></thead>
+        <tbody>
+        {% for b in bang_gia %}{% set b = b if b is mapping else {"tu_phut": b[0], "den_phut": b[1], "credit": b[2]} %}
+          <tr><td>{% if b.den_phut %}{{ _("{tu}–{den} phút").format(tu=b.tu_phut, den=b.den_phut) }}{% else %}{{ _("trên {tu} phút").format(tu=b.tu_phut) }}{% endif %}</td><td>{{ b.credit }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+      {% endif %}
+
+      <label class="vc-cam-ket"><input type="checkbox" name="cam_ket" value="1" required>
+        <span>{{ _("Tôi cam kết có quyền tải và sử dụng các video này (tôi là chủ sở hữu, được chủ sở hữu cho phép, hoặc thuộc trường hợp pháp luật cho phép) và tự chịu trách nhiệm theo") }} <a href="{{ phap_ly.url_dieu_khoan }}" target="_blank" rel="noopener">{{ _("Điều khoản sử dụng") }}</a>.</span></label>
+      <p class="muted vc-dieu-khoan">{{ _("Chỉ tải nội dung bạn có quyền. Tài khoản vi phạm nhiều lần bị khoá. Mỗi tài khoản tải tối đa {gio} video/giờ, {ngay} video/ngày.").format(gio=phap_ly.tai_moi_gio, ngay=phap_ly.tai_moi_ngay) }}
+        {{ _("Chủ sở hữu nội dung báo vi phạm tại") }} <a href="{{ phap_ly.url_bao_vi_pham }}" target="_blank" rel="noopener">{{ _("Báo cáo lạm dụng") }}</a> {{ _("hoặc") }} <a href="mailto:{{ phap_ly.email_ho_tro }}">{{ phap_ly.email_ho_tro }}</a> — {{ _("chúng tôi gỡ trong 72 giờ.") }}</p>
+
+      <div class="vc-actions">
+        <button class="btn" type="submit" formaction="{{ app.route_prefix }}/kham-pha" formnovalidate
+                hx-post="{{ app.route_prefix }}/kham-pha" hx-target="#vc-ket-qua">👁 {{ _("Xem trước &amp; chọn") }}</button>
+        <button class="btn btn-primary" type="submit">🚀 {{ _("Cào hết (thêm vào hàng đợi)") }}</button>
+      </div>
+    </form>
+
+    <div class="card" id="vc-ket-qua" aria-live="polite">
+      <h2>{{ _("Kết quả xem trước") }}</h2>
+      <p class="muted">{{ _('Bấm "Xem trước" để xem danh sách video trước khi tải.') }}</p>
+    </div>
+  </div>
+
+  {% if nen_dang_nhap %}
+  <div class="card" id="phien" style="margin-top:var(--space-5,20px)">
+    <h2>{{ _("Đăng nhập nền tảng") }}</h2>
+    <p class="muted">{{ _("Một số cách cào cần tài khoản của chính bạn. Xuất") }} <b>cookies.txt</b> {{ _("(định dạng Netscape) từ trình duyệt khi đang đăng nhập nền đó rồi dán vào đây. Chỉ cookie của đúng nền được giữ, lưu mã hoá, chỉ dùng cho việc cào của bạn; bạn xoá được bất cứ lúc nào.") }}</p>
+    <details class="vc-xuat-cookie">
+      <summary>{{ _("Cách xuất cookies.txt (Chrome, Edge, Firefox)") }}</summary>
+      <p class="muted">{{ _("Cài tiện ích mã nguồn mở") }} <b>Get cookies.txt LOCALLY</b> {{ _("cho Chrome, Edge (cùng kho tiện ích Chrome) hoặc Firefox (kho tiện ích Firefox riêng) — tiện ích này không gửi cookie đi đâu, mã nguồn công khai kiểm được. Không dùng tiện ích chỉ tên") }} <b>cookies.txt</b> {{ _("(không có chữ LOCALLY): bản đó từng bị gỡ khỏi kho vì gửi cookie của bạn ra máy chủ ngoài.") }}</p>
+      <p class="muted">{{ _("Mở trang khi đang đăng nhập nền cần cào, bấm biểu tượng tiện ích, chọn xuất cookie của trang hiện tại (định dạng Netscape/cookies.txt), rồi dán nội dung hoặc chọn tệp vào ô bên dưới.") }}</p>
+      <p class="muted"><b>{{ _("Rủi ro tài khoản:") }}</b> {{ _("nền tảng có thể tạm khoá hoặc yêu cầu xác minh tài khoản nếu phát hiện tải tự động dồn dập từ cookie của bạn. Nên dùng một tài khoản phụ để đăng nhập ở đây, không dùng tài khoản chính bạn đang cần giữ an toàn.") }}</p>
+    </details>
+    <div class="tablewrap" tabindex="0"><table class="table">
+      <thead><tr><th>{{ _("Nền") }}</th><th>{{ _("Trạng thái") }}</th><th></th></tr></thead>
+      <tbody>
+      {% for n in nen_dang_nhap %}{% set ph = phien_cua_toi.get(n.id) %}
+        <tr>
+          <td>{{ _(n.ten) }}</td>
+          <td>{% if ph %}<span class="badge b-ok" data-phien="{{ n.id }}">{{ _("Đã có phiên") }}</span>
+                <small class="muted">{{ _("{n} cookie · cập nhật {luc}").format(n=ph.so_cookie, luc=ph.cap_nhat_luc.strftime('%d/%m %H:%M')) }}{% if ph.het_han_luc %} · {{ _("hết hạn {ngay}").format(ngay=ph.het_han_luc.strftime('%d/%m/%Y')) }}{% endif %}</small>
+              {% elif n.id in phien_hong %}<span class="badge b-err" data-phien-hong="{{ n.id }}">{{ _("Phiên hỏng — nhập lại") }}</span>
+              {% else %}<span class="muted">{{ _("Chưa đăng nhập") }}</span>{% endif %}</td>
+          <td>
+            <form method="post" action="{{ app.route_prefix }}/phien" enctype="multipart/form-data" class="vc-row">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="nen_tang" value="{{ n.id }}">
+              <label class="field"><span>{{ _("Dán cookies.txt") }}</span><textarea name="cookies_txt" rows="2" autocomplete="off" spellcheck="false"></textarea></label>
+              <label class="field"><span>{{ _("hoặc chọn tệp") }}</span><input type="file" name="cookies_tep" accept=".txt,text/plain"></label>
+              <button class="btn" type="submit">{{ _("Lưu phiên") }}</button>
+            </form>
+            {% if ph or n.id in phien_hong %}<form method="post" action="{{ app.route_prefix }}/phien/xoa">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="nen_tang" value="{{ n.id }}">
+              <button class="btn" type="submit">{{ _("Xoá phiên") }}</button></form>{% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+  {% endif %}
+
+  {% include "vc_hang_doi.html" %}
+</section>
+<script>
+(function () {
+  var form = document.getElementById("vc-form"), dauVao = document.getElementById("vc-dau-vao");
+  function capNhat() {
+    var nen = form.querySelector('input[name="nen_tang"]:checked');
+    if (!nen) return;
+    var the = nen.closest("[data-che-do]"), hoTro = the.dataset.cheDo.split(",");
+    var canPhien = (the.dataset.canPhien || "").split(","), coPhien = the.dataset.coPhien === "1";
+    form.querySelectorAll("[data-che-do-nut]").forEach(function (l) {
+      var ok = hoTro.indexOf(l.dataset.cheDoNut) >= 0;
+      l.hidden = !ok; l.querySelector("input").disabled = !ok;
+      var khoa = ok && canPhien.indexOf(l.dataset.cheDoNut) >= 0 && !coPhien;
+      l.classList.toggle("vc-can-phien", khoa);
+      l.title = khoa ? {{ _("Cần phiên đăng nhập — thêm ở mục Đăng nhập nền tảng bên dưới") | tojson }} : "";
+    });
+    var ghiChu = document.getElementById("vc-ghi-chu");
+    ghiChu.textContent = the.dataset.ghiChu || "";
+    var chon = form.querySelector('input[name="che_do"]:checked');
+    if (!chon || chon.disabled) {
+      chon = form.querySelector('input[name="che_do"]:not([disabled])'); if (chon) chon.checked = true;
+    }
+    if (chon) {
+      var goiYNen = {};
+      try { goiYNen = JSON.parse(the.dataset.goiY || "{}"); } catch (e) { goiYNen = {}; }
+      dauVao.placeholder = goiYNen[chon.value] || chon.dataset.goiY;
+    }
+  }
+  form.addEventListener("change", capNhat); capNhat();
+})();
+</script>
+{% endblock %}

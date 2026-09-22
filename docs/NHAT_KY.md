@@ -46,6 +46,49 @@ gỡ `ltt_turbo`, ép `vi` như bot gốc, mở app, giá khuyến nghị.
 - **Còn mở:** cùng lỗi email-làm-`user_id` ở `audio_pause`, `prompt_canh`, `video_assembly` (còn đóng với khách; đã tạo
   việc riêng); nhãn ô "Hệ phiên âm" dài bị cắt trên desktop (thẩm mỹ); L3 tổng kết phiên.
 
+## 2026-09-22 (tối) — app `video_crawler` ("Cào ngay" từ ViralCrawl): 10 nền, tắt sau cờ `LTT_VIDEO_CRAWLER`
+
+Tiếp quản SUPER PROMPT sau hai phiên LTTCODE hỏng (model lỗi 400, ghi thẳng main, parity ✅ bịa, audit donor chết).
+Rà soát từng hạng mục cũ: không hạng mục mã nào đạt; main đã rút bộ khung (f587f497). Làm lại từ đầu trên nhánh
+`phien/video-crawler` — bàn giao + lý do: `C:\Users\Thang Tuong\.claude\ltt\khoi-phuc-2026-09-22\BAN_GIAO_super-prompt.md`.
+
+- **Tài liệu chứng cứ** `docs/migrations/video_crawler/` (audit donor Viral @ 368f8be có tệp:dòng, ma trận nền, bản đồ
+  API LTT, license, tái sử dụng, parity đo được, truy vết, sổ lỗi). Spec v1.1 + plan v2 (`docs/superpowers/`).
+- **License**: MediaCrawler NON-COMMERCIAL ⇒ không chép; yt-dlp là The Unlicense (kết luận "GPL-3.0" cũ sai).
+- **Kiến trúc**: một app, `requires=("api",)` (KHÔNG ffmpeg — prod chỉ 1 làn gpu+ffmpeg); registry nền trong app;
+  adapter mỏng trên `adapters/_ytdlp.py`; URL tải luôn dựng lại từ id bởi adapter (review BLOCKER: form gửi URL playlist
+  ⇒ tải cả playlist giá 1 credit). Lịch sử/dedup dùng `jobs` (⚠ "không trùng" chỉ nhớ 30 ngày — hạn của `jobs.result`).
+- **Phiên đăng nhập theo user**: bảng `vc_phien` (cookie mã hoá `secretbox`, chỉ cookie đúng tên miền), migration
+  `9c3e5a1d7f20`. **Thay đổi platform_core duy nhất**: một hàng `vc_phien` trong `public_api/governance.py` (test_211 buộc).
+- **Nền bật** (smoke mạng thật trên máy A): YouTube, TikTok, Facebook, Twitter, Weibo, bilibili.tv, Xiaohongshu;
+  Bilibili (HTTP 412 ẩn danh), Instagram (login required), Douyin (fresh cookies) bật nhưng CẦN PHIÊN, chưa nghiệm thu
+  với phiên thật. Tắt: RedNote (yt-dlp#16519), Kuaishou, Honggo. Douyin/XHS tìm kiếm + kênh: DEFER (cần client ký request).
+- **Phụ thuộc mới**: `curl_cffi>=0.10,<0.15` (impersonate cho bilibili.tv/Facebook) — venv prod chưa có.
+- **Kiểm**: test nhắm `tests/test_1900..1919_video_crawler_*` + hợp đồng nền tảng; kiểm GUI trên bản dev cô lập với
+  YouTube thật (xem trước → chọn → tải → artifact `video/mp4` → dedup, ảnh bìa qua proxy allowlist, mobile 375 px).
+- **Tồn / chờ chủ dự án**: bật cờ production; nhập cookies.txt để nghiệm thu nền cần phiên; nối Auto Scan Video
+  (CONTRACT GAP — ASV chỉ nhận upload của chính nó); worker `browser` cho QR login; giá 1 credit/video.
+- `test_211::test_a_decade_of_retention…` đỏ khi chạy RIÊNG (có sẵn trước phiên này — fixture `portal`), ngoài phạm vi.
+- **MVP W1–W2** (sau đánh giá chất lượng; plan `docs/migrations/video_crawler/PLAN_MVP.md`, đánh giá `DANH_GIA_MVP.md`;
+  8 làn agent, mỗi làn một worktree, gộp ở `phien/vcm-tich-hop`). Không nối Auto Scan Video (chủ dự án: sau này qua workflow).
+  - Pháp lý: ô cam kết quyền bắt buộc mọi lượt tải, kênh báo vi phạm, trần 60 video/giờ, 300/ngày (`PHAP_LY_NHAP.md` chờ duyệt).
+  - Giá theo thời lượng (1 credit = 100 đ): ≤10 phút 3 · 10–30 phút 6 · 30–60 phút 10 · 60–180 phút 15; giữ 15/mục, quyết toán
+    theo thời lượng thật (`gia.py` một nguồn). Xem trước miễn phí.
+  - Tin cậy: yt-dlp-ejs + node (n-challenge YouTube — thiếu gói ⇒ MỌI lượt tải YouTube 403), nghỉ 5–10 s giữa các MỤC (không
+    `sleep_interval` — nó nghỉ trước mỗi tệp), mã `trich_xuat_hong`.
+  - Sức khoẻ: `/video-crawler/van-hanh` (operator) + tắt mềm nền qua `LTT_VIDEO_CRAWLER_TAT`.
+  - Douyin/XHS tìm kiếm + kênh (a_bogus vendor f2 Apache-2.0, xhshow MIT; rủi ro ToS chủ dự án chấp nhận), Kuaishou client
+    GraphQL (registry tắt tới khi nghiệm thu có phiên). Đăng nhập QR: chỉ thiết kế (`THIET_KE_QR.md`, chờ quyết định).
+  - Dedup bền: bảng `vc_da_tai` (UNIQUE owner/nền/video, giành chỗ trước khi tải; migration `3b7d2f9e1c48`, hàng governance thứ 2)
+    ⇒ hết giới hạn 30 ngày, hai job cùng video chỉ thu một lần.
+  - UX: tốc độ/ETA, tải lại mục lỗi, lọc lịch sử theo nền, hướng dẫn cookies.txt + cảnh báo rủi ro tài khoản.
+  - Hiệu năng: ảnh bìa lưu kho ở bước xem trước (route đọc kho trước, chỉ key đúng chủ/job). Tải song song: KHÔNG làm
+    (tiến độ/dọn giả định một luồng, chỉ bilibili.tv hưởng lợi).
+  - Lỗi lúc gộp (SO_LOI W2-1..4): tải lại video hết hạn mà lỗi làm mất dấu chống trùng; lỗi lộ tên lớp `LoiNguoiGoi:`
+    (app thumbnail/taoclipngan cũng vậy — đã tách việc riêng); câu "30 ngày"/"1 credit" cũ; máy dev thiếu yt-dlp-ejs.
+  - Phụ thuộc mới: `yt-dlp-ejs>=0.8.0,<0.9` (prod yt-dlp 2026.7.4 cần đúng 0.8.0), `xhshow>=0.2.0,<0.3`.
+  - L3 `phien/video-crawler` 41120e46 đã khép PASS. Chủ dự án cấp quyền bật cờ `LTT_VIDEO_CRAWLER` (22/09).
+
 ## 2026-09-22 (tối) — Chuẩn hoá ngữ nghĩa lỗi LLM B→A→LTTCODE xong; 9 lỗi 400 = quá dài; cửa sổ công bố theo token thật (L-34, L-35)
 
 Plan `docs/superpowers/plans/2026-09-21-chuan-hoa-ngu-nghia-loi-llm.md` (Codex 21–22/09, Claude tiếp quản
