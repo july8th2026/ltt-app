@@ -339,6 +339,10 @@ STORES: tuple = (
           N_("Trần chi khách tự đặt. Chỉ QUAN SÁT, không đổi sổ credit.")),
     Store("app_projects", CONTENT, None, N_("chủ tài khoản"),
           N_("Dự án của các editor có trạng thái. Vòng đời do app quản.")),
+    Store("vc_phien", CONTENT, None, N_("chủ tài khoản"),
+          N_("Cookie đăng nhập nền tảng video khách tự nhập để cào nội dung cần "
+          "đăng nhập, **đã mã hoá**, chỉ giữ cookie của đúng tên miền nền đó. "
+          "Xoá khi khách bấm xoá phiên.")),
 
     # Bảng do APP sở hữu. Tất cả là nội dung của khách, vòng đời đi theo app —
     # nền tảng cố ý không đặt hạn cho chúng: app biết khi nào một cảnh, một

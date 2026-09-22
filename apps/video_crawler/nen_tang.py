@@ -67,6 +67,8 @@ class NenTang:
     #: một id kèm URL playlist/kênh từng tải cả playlist với giá 1 credit (review code 22/09, BLOCKER).
     mau_id: str = ""
     mau_url: str = ""
+    #: Tên cookie chứng minh ĐÃ đăng nhập (donor `COOKIE_AUTH` W:17772-17796). Rỗng ⇒ nền không nhận phiên.
+    cookie_dang_nhap: tuple = ()
 
 
 @dataclass(frozen=True)
@@ -90,6 +92,7 @@ _NEN: tuple[NenTang, ...] = (
         xem_truoc=True, can_dang_nhap=True, cach_dang_nhap="qr",
         ten_mien=("douyin.com", "v.douyin.com", "iesdouyin.com"),
         so_luong_toi_da=10, adapter="douyin", gioi_han=(),
+        cookie_dang_nhap=('sessionid', 'sessionid_ss', 'sid_tt'),
     ),
     NenTang(
         id="bilibili_tv", ten="Bilibili quốc tế", icon="bilibili_tv", bat=False,
@@ -104,6 +107,7 @@ _NEN: tuple[NenTang, ...] = (
         xem_truoc=True, can_dang_nhap=True, cach_dang_nhap="qr",
         ten_mien=("bilibili.com", "b23.tv"),
         so_luong_toi_da=10, adapter="bilibili", gioi_han=(),
+        cookie_dang_nhap=('SESSDATA', 'DedeUserID'),
     ),
     NenTang(
         id="xiaohongshu", ten="Xiaohongshu", icon="xiaohongshu", bat=False,
@@ -111,6 +115,7 @@ _NEN: tuple[NenTang, ...] = (
         xem_truoc=True, can_dang_nhap=True, cach_dang_nhap="qr",
         ten_mien=("xiaohongshu.com", "xhslink.com"),
         so_luong_toi_da=10, adapter="xiaohongshu", gioi_han=(),
+        cookie_dang_nhap=('id_token',),
     ),
     NenTang(
         id="rednote", ten="RedNote", icon="rednote", bat=False,
@@ -118,6 +123,7 @@ _NEN: tuple[NenTang, ...] = (
         xem_truoc=True, can_dang_nhap=True, cach_dang_nhap="qr",
         ten_mien=("rednote.com",),
         so_luong_toi_da=10, adapter="rednote", gioi_han=(),
+        cookie_dang_nhap=('id_token',),
     ),
     NenTang(
         id="weibo", ten="Weibo", icon="weibo", bat=False,
@@ -125,6 +131,7 @@ _NEN: tuple[NenTang, ...] = (
         xem_truoc=False, can_dang_nhap=True, cach_dang_nhap="cookie",
         ten_mien=("weibo.com", "weibo.cn"),
         so_luong_toi_da=10, adapter="weibo", gioi_han=(),
+        cookie_dang_nhap=('SUB', 'SUBP'),
     ),
     NenTang(
         id="tiktok", ten="TikTok", icon="tiktok", bat=False,
@@ -132,6 +139,7 @@ _NEN: tuple[NenTang, ...] = (
         xem_truoc=True, can_dang_nhap=True, cach_dang_nhap="cookie",
         ten_mien=("tiktok.com",),
         so_luong_toi_da=10, adapter="tiktok", gioi_han=(),
+        cookie_dang_nhap=('sessionid', 'sessionid_ss', 'sid_tt'),
     ),
     NenTang(
         id="youtube", ten="YouTube", icon="youtube", bat=True,
@@ -140,6 +148,7 @@ _NEN: tuple[NenTang, ...] = (
         ten_mien=("youtube.com", "youtu.be"),
         so_luong_toi_da=20, adapter="youtube", gioi_han=(),
         mau_id=r"[A-Za-z0-9_-]{11}", mau_url="https://www.youtube.com/watch?v={id}",
+        cookie_dang_nhap=('SAPISID', 'LOGIN_INFO'),
     ),
     NenTang(
         id="facebook", ten="Facebook", icon="facebook", bat=False,
@@ -147,6 +156,7 @@ _NEN: tuple[NenTang, ...] = (
         xem_truoc=True, can_dang_nhap=True, cach_dang_nhap="cookie",
         ten_mien=("facebook.com", "fb.watch"),
         so_luong_toi_da=10, adapter="facebook", gioi_han=(),
+        cookie_dang_nhap=('c_user', 'xs'),
     ),
     NenTang(
         id="instagram", ten="Instagram", icon="instagram", bat=False,
@@ -154,6 +164,7 @@ _NEN: tuple[NenTang, ...] = (
         xem_truoc=True, can_dang_nhap=True, cach_dang_nhap="cookie",
         ten_mien=("instagram.com",),
         so_luong_toi_da=10, adapter="instagram", gioi_han=(),
+        cookie_dang_nhap=('sessionid', 'ds_user_id'),
     ),
     NenTang(
         id="twitter", ten="Twitter (X)", icon="twitter", bat=False,
@@ -161,6 +172,7 @@ _NEN: tuple[NenTang, ...] = (
         xem_truoc=False, can_dang_nhap=True, cach_dang_nhap="cookie",
         ten_mien=("twitter.com", "x.com"),
         so_luong_toi_da=10, adapter="twitter", gioi_han=(),
+        cookie_dang_nhap=('auth_token', 'ct0'),
     ),
     NenTang(
         id="kuaishou", ten="Kuaishou", icon="kuaishou", bat=False,
@@ -168,6 +180,7 @@ _NEN: tuple[NenTang, ...] = (
         xem_truoc=False, can_dang_nhap=True, cach_dang_nhap="cookie",
         ten_mien=("kuaishou.com",),
         so_luong_toi_da=10, adapter="kuaishou", gioi_han=(),
+        cookie_dang_nhap=('passToken', 'kuaishou.server.web_st'),
     ),
     NenTang(
         id="honggo", ten="Honggo", icon="honggo", bat=False,

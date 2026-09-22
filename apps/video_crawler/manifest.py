@@ -48,6 +48,7 @@ MANIFEST = AppManifest(
     requires=("api",),
     credit_cost=_gia,
     max_runtime_s={"video_crawler.tai": 7200},
+    table_prefix="vc",        # bảng riêng: vc_phien (phiên đăng nhập mã hoá, tables.py)
     capabilities=("Video",),
     enabled=False,          # ẩn khỏi nav/catalog tới khi mở thử; Public API cũng bị chặn (catalog.py:229)
     public=False,
