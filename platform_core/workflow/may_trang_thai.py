@@ -31,10 +31,8 @@ RUN_KET_THUC = frozenset({
 RUN_LOI_CUA_TA = frozenset({"SYSTEM_FAILURE"})
 
 RUN_CHUYEN: dict[str, frozenset[str]] = {
-    "queued": frozenset({"VALIDATING", "CANCELLED"}),      # trạng thái khởi tạo
-    "CREATED": frozenset({"VALIDATING", "CANCELLED"}),
-    "VALIDATING": frozenset({"QUEUED", "FAILED", "SYSTEM_FAILURE",
-                             "CANCELLED"}),
+    # Validate chạy lúc PUBLISH (spec §4.2) — tạo run chỉ kiểm tiền + quyền.
+    "CREATED": frozenset({"QUEUED", "FAILED", "CANCELLED"}),
     "QUEUED": frozenset({"RUNNING", "CANCELLED", "TIMED_OUT",
                          "SYSTEM_FAILURE"}),
     # `RUNNING ⇄ WAITING` qua lại được: một run có thể chờ rồi chạy tiếp nhiều lần.
@@ -54,17 +52,23 @@ NODE_KET_THUC = frozenset({
     "SUCCEEDED", "FAILED", "SKIPPED", "ABANDONED", "CANCELLED",
 })
 
+#: Node đang chiếm một suất song song của run (spec §5.9).
+NODE_DANG_CHAY = frozenset({"QUEUED", "RUNNING", "WAITING"})
+
+#: ⭐ `RESUMING` KHÔNG phải trạng thái lưu (spec §5.3): resume là MỘT transaction
+#:    (nhặt wakeup → đọc tín hiệu → chuyển), không có khoảng nào quan sát được.
+#: ⭐ `QUEUED → SUCCEEDED/FAILED/…` hợp lệ: job có thể xong trước khi động cơ kịp
+#:    thấy nó chạy — động cơ không có hook lúc job bắt đầu (spec §5.8).
 NODE_CHUYEN: dict[str, frozenset[str]] = {
     "PENDING": frozenset({"READY", "SKIPPED", "CANCELLED"}),
-    "READY": frozenset({"QUEUED", "SKIPPED", "CANCELLED"}),
-    "QUEUED": frozenset({"RUNNING", "CANCELLED", "ABANDONED"}),
-    # ⭐ *đang chạy* và *đang chờ* KHÔNG loại trừ nhau. Bản nháp `WF-207` viết
-    #   `RUNNING ⇄ WAITING` tách rời, và với ForEach (vài vòng xong, vài vòng
-    #   đang chờ) thì **không biểu đạt được** — một run có thật mà không có tên.
-    "RUNNING": frozenset({"RUNNING_WITH_WAITPOINTS", "SUCCEEDED", "FAILED",
+    "READY": frozenset({"QUEUED", "RUNNING", "WAITING", "SKIPPED",
+                        "CANCELLED"}),
+    "QUEUED": frozenset({"RUNNING", "SUCCEEDED", "FAILED", "ABANDONED",
+                         "RETRY_SCHEDULED", "CANCELLED"}),
+    "RUNNING": frozenset({"SUCCEEDED", "FAILED", "WAITING", "RETRY_SCHEDULED",
                           "ABANDONED", "CANCELLED"}),
-    "RUNNING_WITH_WAITPOINTS": frozenset({"RUNNING", "SUCCEEDED", "FAILED",
-                                          "ABANDONED", "CANCELLED"}),
+    "WAITING": frozenset({"RUNNING", "SUCCEEDED", "FAILED", "CANCELLED"}),
+    "RETRY_SCHEDULED": frozenset({"READY", "CANCELLED"}),
 }
 
 _NODE_BAT_DAU = "PENDING"
@@ -149,5 +153,5 @@ def tong_chi_phi_hop_le(db, run_id: str) -> int:
 
 
 __all__ = ["RUN_CHUYEN", "RUN_KET_THUC", "RUN_LOI_CUA_TA", "NODE_CHUYEN",
-           "NODE_KET_THUC", "chuyen_node", "chuyen_run", "trang_thai_node",
-           "tong_chi_phi_hop_le", "NodeRun"]
+           "NODE_KET_THUC", "NODE_DANG_CHAY", "chuyen_node", "chuyen_run",
+           "trang_thai_node", "tong_chi_phi_hop_le", "NodeRun"]

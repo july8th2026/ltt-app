@@ -11,12 +11,12 @@ lần, hoặc bỏ sót một bước.
 ## Mô hình giết ở đây
 
 Đợt 3 chưa có scheduler, nên thứ đo được là **tầng bền vững**: kịch bản một run
-gồm 10 bước, mỗi bước `commit()` riêng. "Giết ở bước k" = chạy 1..k, `rollback`
+gồm 9 bước, mỗi bước `commit()` riêng. "Giết ở bước k" = chạy 1..k, `rollback`
 phần chưa commit, rồi **phát lại toàn bộ kịch bản từ đầu** — đúng thứ một worker
 mới làm khi nhặt lại một run dở.
 
 ⭐ Bất biến phải giữ: trạng thái cuối, chi phí thật, và giữ chỗ — **giống hệt
-   nhau ở cả 11 lượt** (10 điểm giết + 1 lượt không giết).
+   nhau ở cả 10 lượt** (9 điểm giết + 1 lượt không giết).
 
 ⛔ Và bài này bắt được đúng thứ khó thấy nhất: **phát lại không được cộng tiền
    lần nữa.** Bảng chỉ-thêm khiến sai lầm ấy dễ mắc — hàng cũ vẫn nằm đó.
@@ -67,7 +67,7 @@ def _tao_run(db):
 
 
 def _kich_ban(db, run_id):
-    """10 bước của một lượt chạy. Mỗi bước là một `commit()` riêng.
+    """9 bước của một lượt chạy. Mỗi bước là một `commit()` riêng.
 
     Phát lại **toàn bộ** danh sách này phải luỹ đẳng: bước đã qua bị máy trạng
     thái từ chối (ghi `is_valid=False`, con trỏ đứng yên), bước chưa qua chạy.
@@ -75,7 +75,6 @@ def _kich_ban(db, run_id):
     from platform_core.workflow import may_trang_thai as mts
 
     return [
-        lambda: mts.chuyen_run(db, run_id, sang="VALIDATING"),
         lambda: mts.chuyen_run(db, run_id, sang="QUEUED"),
         lambda: mts.chuyen_run(db, run_id, sang="RUNNING"),
         lambda: mts.chuyen_node(db, run_id, "n0", sang="READY", mo_ta="r"),
@@ -131,7 +130,7 @@ def test_M6_muoi_diem_giet_deu_cho_CUNG_MOT_ket_qua(db):
     chuan = _anh_chup_ket_qua(db, goc.id)
 
     lech = []
-    for k in range(1, 11):
+    for k in range(1, 10):
         r = _tao_run(db)
         buoc = _kich_ban(db, r.id)
         for i in range(k):                       # chay toi buoc k

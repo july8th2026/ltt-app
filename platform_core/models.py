@@ -1276,7 +1276,7 @@ class WorkflowRun(Base):
     owner_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     workflow_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     version_id: Mapped[str] = mapped_column(String(36), nullable=False)
-    status: Mapped[str] = mapped_column(String(24), default="queued",
+    status: Mapped[str] = mapped_column(String(24), default="CREATED",
                                         nullable=False, index=True)
     trigger_kind: Mapped[str] = mapped_column(String(24), default="manual",
                                               nullable=False)

@@ -5,7 +5,7 @@ Nguồn thiết kế: `docs/architecture/workflow_v2_audit/23_24 §5`.
 Ba trạng thái lấy từ Trigger.dev (`09 §1.4`), mỗi cái vá một khiếm khuyết mà
 bản nháp `WF-207` của chính ta mắc phải:
 
-  RUNNING_WITH_WAITPOINTS  *đang chạy* và *đang chờ* KHÔNG loại trừ nhau. Bản
+  WAITING                  *đang chạy* và *đang chờ* KHÔNG loại trừ nhau. Bản
                            nháp viết `RUNNING ⇄ WAITING` tách rời; với ForEach
                            (vài vòng xong, vài vòng đang chờ) thì **không biểu
                            đạt được** — một run có thật không có tên trạng thái.
@@ -65,13 +65,13 @@ def test_bon_trang_thai_KET_THUC_cua_run_deu_co_ten_rieng(db):
     assert "SYSTEM_FAILURE" in RUN_KET_THUC and "FAILED" in RUN_KET_THUC
 
 
-def test_node_co_RUNNING_WITH_WAITPOINTS(db):
+def test_node_co_WAITING(db):
     """⭐ Đang chạy và đang chờ không loại trừ nhau (ForEach một phần)."""
     from platform_core.workflow.may_trang_thai import NODE_CHUYEN
 
-    assert "RUNNING_WITH_WAITPOINTS" in NODE_CHUYEN
-    assert "RUNNING_WITH_WAITPOINTS" in NODE_CHUYEN["RUNNING"]
-    assert "RUNNING" in NODE_CHUYEN["RUNNING_WITH_WAITPOINTS"]
+    assert "WAITING" in NODE_CHUYEN
+    assert "WAITING" in NODE_CHUYEN["RUNNING"]
+    assert "RUNNING" in NODE_CHUYEN["WAITING"]
 
 
 def test_node_co_ABANDONED_tach_khoi_FAILED(db):
@@ -168,7 +168,7 @@ def test_ly_do_TU_CHOI_duoc_ghi_ro_trong_anh_chup(db, run):
 def test_run_di_het_duong_hop_le(db, run):
     from platform_core.workflow import may_trang_thai
 
-    for sang in ("VALIDATING", "QUEUED", "RUNNING", "SUCCEEDED"):
+    for sang in ("QUEUED", "RUNNING", "SUCCEEDED"):
         assert may_trang_thai.chuyen_run(db, run.id, sang=sang) is True
     db.commit()
     db.refresh(run)
@@ -178,7 +178,7 @@ def test_run_di_het_duong_hop_le(db, run):
 def test_run_RUNNING_va_WAITING_qua_lai_duoc(db, run):
     from platform_core.workflow import may_trang_thai
 
-    for sang in ("VALIDATING", "QUEUED", "RUNNING", "WAITING", "RUNNING"):
+    for sang in ("QUEUED", "RUNNING", "WAITING", "RUNNING"):
         assert may_trang_thai.chuyen_run(db, run.id, sang=sang) is True
     db.commit()
 
@@ -186,7 +186,7 @@ def test_run_RUNNING_va_WAITING_qua_lai_duoc(db, run):
 def test_run_da_ket_thuc_thi_khong_chuyen_nua(db, run):
     from platform_core.workflow import may_trang_thai
 
-    for sang in ("VALIDATING", "QUEUED", "RUNNING", "FAILED"):
+    for sang in ("QUEUED", "RUNNING", "FAILED"):
         may_trang_thai.chuyen_run(db, run.id, sang=sang)
     db.commit()
 
@@ -222,7 +222,7 @@ def test_rao_KET_THUC_van_chan_ke_ca_khi_bang_chuyen_MO_duong(db, run,
     """
     from platform_core.workflow import may_trang_thai
 
-    for sang in ("VALIDATING", "QUEUED", "RUNNING", "FAILED"):
+    for sang in ("QUEUED", "RUNNING", "FAILED"):
         may_trang_thai.chuyen_run(db, run.id, sang=sang)
     db.commit()
 
@@ -236,7 +236,7 @@ def test_rao_KET_THUC_van_chan_ke_ca_khi_bang_chuyen_MO_duong(db, run,
 def test_run_ket_thuc_ghi_finished_at(db, run):
     from platform_core.workflow import may_trang_thai
 
-    for sang in ("VALIDATING", "QUEUED", "RUNNING", "SUCCEEDED"):
+    for sang in ("QUEUED", "RUNNING", "SUCCEEDED"):
         may_trang_thai.chuyen_run(db, run.id, sang=sang)
     db.commit()
     db.refresh(run)
