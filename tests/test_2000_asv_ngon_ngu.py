@@ -183,15 +183,27 @@ def test_AUTO_MATCH_loc_ung_vien_THEO_LAN_dich(monkeypatch):
 # ══════════════════════════════════════════════════════════════════════════════
 
 def test_loi_nhac_vi_GIU_cum_da_nghiem_thu():
+    """🔴 **Nhip khong con la mot chuoi go tay — banh coc da DOI CHO (23/09).**
+
+    Ban cu chot dung chuoi `"khoang 4,5 am tiet/giay"`. Con so 4,5 do CHUA TUNG
+    DUOC DO: `tools/do_toc_do_giong.py --che-do tts` doc sau doan tieng Viet
+    that bang giong `Minh Duc` va do duoc **3,35** am tiet/giay (2 vong, 12 luot,
+    do lech chuan 0,15) — tuc moi cau cua luot viet dau dai hon khe ~34% theo
+    dung thiet ke, va luot nghiem thu nen v3 tra gia bang 11 luot viet lai.
+
+    ⇒ Banh coc bay gio chot dieu DUNG: cac cum **tinh ra tu `ngon_ngu.NHIP`**,
+      khong go tay o hai cho. Doi con so la doi MOT cho, va phai co so do moi.
+    """
     d = [{"ma": "a", "chu": "x", "bat": 0, "ket": 1}]
     lt = long_tieng.loi_nhac(d, tat_ca=d, ngon_ngu_goc="zh", dac_diem_giong={})[0]["content"]
     assert lt.startswith("Ban la bien tap vien long tieng tieng Viet. Ban KHONG dich "
                          "tung chu: ban viet lai cau thoai sao cho nguoi Viet nghe")
-    assert "(khoang 4,5 am tiet/giay)" in lt
+    assert f"({nn.CUM['vi']['nhip']})" in lt
+    assert nn.CUM["vi"]["nhip"] == "khoang 3,35 am tiet/giay"
     nan = nan_cho_vua.loi_nhac_nan({"ma": "a", "goc": "x"}, chu_hien_tai="y",
                                    giay_do_duoc=4.0, khe=3.0)[0]["content"]
     assert "Van phai la tieng Viet noi tu nhien" in nan
-    assert "khoang 4,5 am tiet moi giay" in nan
+    assert nn.CUM["vi"]["nhip_moi_giay"] in nan
     qc = qc_ai.loi_nhac_ngu_nghia([{"ma": "a", "goc": "x", "chu": "y"}])[0]["content"]
     assert qc.startswith("Ban la nguoi soat ban long tieng tieng Viet. Voi moi cap "
                          "(cau goc, cau tieng Viet), hay noi ban tieng Viet co")

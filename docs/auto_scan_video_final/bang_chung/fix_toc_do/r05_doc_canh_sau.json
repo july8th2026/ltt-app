@@ -1,0 +1,182 @@
+[
+ {
+  "ma": "canh_0001",
+  "so_khung": 2,
+  "giay": 33.8,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 6740,
+  "noi_dung": "{\n    \"loai\": \"nhom_nhan_vat\",\n    \"chu_the\": [\n        \"nhom_nhan_vat\"\n    ],\n    \"hanh_dong\": \"dang du doan\",\n    \"cam_xuc\": \"bình_thường\",\n    \"quan_trong\": 0.9,\n    \"de_xuat\": \"giu\",\n    \"do_tin\": 0.9,\n    \"ly_do\": \"Khung hinh cho thay nhom_nhan_vat dang du doan nhap khuc va de xuat\",\n    \"canh_bao\": []\n}"
+ },
+ {
+  "ma": "canh_0002",
+  "so_khung": 2,
+  "giay": 24.0,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 5155,
+  "noi_dung": "{\"loai\": \"nhân_vật\", \"chu_the\": [\"nhân_vật_có_tóc_xanh\"], \"hanh_dong\": \"chạy_vào_cửa_tìm_vũ_khí\", \"cam_xuc\": \"khẩn_trang\", \"quan_trong\": 0.9, \"de_xuat\": \"giu\", \"do_tin\": 0.95, \"ly_do\": \"Nhân vật chạy vào nhà và tìm vũ khí phù hợp với phụ đề.\", \"canh_bao\": []}"
+ },
+ {
+  "ma": "canh_0003",
+  "so_khung": 2,
+  "giay": 30.3,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 5940,
+  "noi_dung": "{\n \"loai\": \"nh_an_vat\",\n \"chu_the\": [\n  \"nh_an_vat\"\n ],\n \"hanh_dong\": \"di_chuyen_va_ban\",\n \"cam_xuc\": \"tinh_thien\",\n \"quan_trong\": 0.9,\n \"de_xuat\": \"khong_chac\",\n \"do_tin\": 0.4,\n \"ly_do\": \"nh_an_vat di chuyen vao trong phong va co hanh dong ban\",\n \"canh_bao\": []\n}"
+ },
+ {
+  "ma": "canh_0004",
+  "so_khung": 2,
+  "giay": 28.7,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 6784,
+  "noi_dung": "{\"loai\": \"khói\", \"chu_the\": [\"khói xanh\"], \"hanh_dong\": \"phát khói\", \"cam_xuc\": \"trung thực\", \"quan_trong\": 0.9, \"de_xuat\": \"giu\", \"do_tin\": 0.85, \"ly_do\": \"Là tâm điểm hành động trong khung hình thứ 2, màu sắc nổi bật\", \"canh_bao\": []}"
+ },
+ {
+  "ma": "canh_0005",
+  "so_khung": 2,
+  "giay": 14.9,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 3369,
+  "noi_dung": "{\"loai\": \"Nhân vật\", \"chu_the\": [\"Nhân vật cầm hộp\"], \"hanh_dong\": \"Cầm hộp, tương tác với vật thể\", \"cam_xuc\": \"Hài hước, trêu chọc\", \"quan_trong\": 0.9, \"de_xuat\": \"giu\", \"do_tin\": 0.9, \"ly_do\": \"Nhân vật là tâm điểm của hành động, có dòng thoại giải thích hành động sử dụng hộp.\", \"canh_bao\": [\"Căn phòng\", \"Cửa ra vào\"]}"
+ },
+ {
+  "ma": "canh_0006",
+  "so_khung": 2,
+  "giay": 28.4,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 6377,
+  "noi_dung": "{\"loai\": \"nguoi\", \"chu_the\": [\"nhap vai\"], \"hanh_dong\": \"nuoc\", \"cam_xuc\": \"chua\", \"quan_trong\": 0.9, \"de_xuat\": \"giu\", \"do_tin\": 0.95, \"ly_do\": \"Deo la nhan vat chinh thuc hiem nuoc di san bat\", \"canh_bao\": []}"
+ },
+ {
+  "ma": "canh_0007",
+  "so_khung": 2,
+  "giay": 30.3,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 7149,
+  "noi_dung": "{\"loai\": \"nhau_nuoi\", \"chu_the\": [\"nhau_nuoi_0001\"], \"hanh_dong\": \"quay_dung\", \"cam_xuc\": \"lo_ngan\", \"quan_trong\": 0.8, \"de_xuat\": \"giu\", \"do_tin\": 0.9, \"ly_do\": \"Cua dang quay sang ben trai de xem la ai, tinh trang co the co nguy hiem\", \"canh_bao\": [\"nguoi_ta\", \"khai_song\"]}"
+ },
+ {
+  "ma": "canh_0008",
+  "so_khung": 2,
+  "giay": 30.0,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 6812,
+  "noi_dung": "{\"loai\": \"nhau_thu\", \"chu_the\": [\"nhau_thu\"], \"hanh_dong\": \"tung\", \"cam_xuc\": \"thanh_lam\", \"quan_trong\": 0.8, \"de_xuat\": \"giu\", \"do_tin\": 0.9, \"ly_do\": \"Do_anh_xung\", \"canh_bao\": [\"bo_i\"]}"
+ },
+ {
+  "ma": "canh_0009",
+  "so_khung": 2,
+  "giay": 29.2,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 6737,
+  "noi_dung": "{\"loai\": \"khac\", \"chu_the\": [\"doi_tuong\"], \"hanh_dong\": \"do_chu\", \"cam_xuc\": \"tinh_thanh\", \"quan_trong\": 0.8, \"de_xuat\": \"giu\", \"do_tin\": 0.9, \"ly_do\": \"doi_tuong_nhoi_lap_cua_noi\", \"canh_bao\": []}"
+ },
+ {
+  "ma": "canh_0010",
+  "so_khung": 2,
+  "giay": 12.0,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 2016,
+  "noi_dung": "{\n  \"loai\": \"nhân vật\",\n  \"chu_the\": [\n    \"nhân vật xanh lá\"\n  ],\n  \"hanh_dong\": \"chờ đợi\",\n  \"cam_xuc\": \"trung lập\",\n  \"quan_trong\": 0.85,\n  \"de_xuat\": \"giu\",\n  \"do_tin\": 0.9,\n  \"ly_do\": \"nhân vật đang đứng đợi khi đối thủ bị trúng thương\",\n  \"canh_bao\": [\n    \"đồng đội\"\n  ]\n}"
+ },
+ {
+  "ma": "canh_0011",
+  "so_khung": 2,
+  "giay": 2.8,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 2,
+  "noi_dung": "{\"loai\": \"nhân vật\", \"chu_the\": [\"người chơi\"], \"hanh_dong\": \"bị giết\", \"cam_xuc\": \"căng thẳng\", \"quan_trong\": 0.9, \"de_xuat\": \"bo\", \"do_tin\": 0.9, \"ly_do\": \"nhân vật đã trúng một phát nổ (hoặc đạn) và đứng trước xác nạn nhân\", \"canh_bao\": [\"nhân vật\"]}"
+ },
+ {
+  "ma": "canh_0012",
+  "so_khung": 2,
+  "giay": 29.2,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 7215,
+  "noi_dung": "{\"loai\": \"nhân_vat\", \"chu_the\": [\"nhân_vat\"], \"hanh_dong\": \"ngồi\", \"cam_xuc\": \"thận trọng\", \"quan_trong\": 1.0, \"de_xuat\": \"giu\", \"do_tin\": 0.9, \"ly_do\": \"Nhân vật ở tiền cảnh là chủ thể chính của khung hình, camera tập trung vào nhân vật này.\", \"canh_bao\": []}"
+ },
+ {
+  "ma": "canh_0013",
+  "so_khung": 2,
+  "giay": 25.9,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 5765,
+  "noi_dung": "{\"loai\": \"người chơi\", \"chu_the\": [\"chiến thuật\", \"chiến đấu\"], \"hanh_dong\": \"đứng quan sát\", \"cam_xuc\": \"tự tin\", \"quan_trong\": 0.95, \"de_xuat\": \"giu\", \"do_tin\": 0.9, \"ly_do\": \"Đây là nhân vật chính đang đứng ở vị trí quan trọng trong chiến thuật, giữ nguyên tư thế quan sát.\", \"canh_bao\": []}"
+ },
+ {
+  "ma": "canh_0014",
+  "so_khung": 2,
+  "giay": 19.3,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 4288,
+  "noi_dung": "{\"loai\": \"Nhân vật\", \"chu_the\": [\"Nhân vật\"], \"hanh_dong\": \"Dứng giữ vị trí\", \"cam_xuc\": \"Cẩn thận\", \"quan_trong\": 0.9, \"de_xuat\": \"giu\", \"do_tin\": 0.9, \"ly_do\": \"Nhân vật đang đứng canh góc, có dòng chữ cảnh báo: 'Phản phòng người từ tầng trên nhảy xuống'.\", \"canh_bao\": [\"Vòng tròn đỏ\"]}"
+ },
+ {
+  "ma": "canh_0015",
+  "so_khung": 2,
+  "giay": 28.1,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 6467,
+  "noi_dung": "{\n    \"loai\": \"Nhân vật\",\n    \"chu_the\": [\n        \"người chơi\"\n    ],\n    \"hanh_dong\": \"di chuyển\",\n    \"cam_xuc\": \"tập trung\",\n    \"quan_trong\": 0.9,\n    \"de_xuat\": \"giu\",\n    \"do_tin\": 0.9,\n    \"ly_do\": \"Là nhân vật chính được làm nổi bật\",\n    \"canh_bao\": [\n        \"di chuyển\",\n        \"nhận diện\"\n    ]\n}"
+ },
+ {
+  "ma": "canh_0016",
+  "so_khung": 2,
+  "giay": 30.9,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 7065,
+  "noi_dung": "{\n    \"loai\": \"nhân_vat\",\n    \"chu_the\": [\n        \"kẻ_thù_trên_thang_hai\"\n    ],\n    \"hanh_dong\": \"di_chạy\",\n    \"cam_xuc\": \"không_rõ_ràng\",\n    \"quan_trong\": 0.95,\n    \"de_xuat\": \"giu\",\n    \"do_tin\": 0.95,\n    \"ly_do\": \"Nhân vật là chủ thể được khoanh tròn đỏ và là đối tượng của bình luận 'rushing too fast', quan trọng cho nội dung phân tích lỗi.\",\n    \"canh_bao\": [\n        \"Đang ở vị trí hiểm trở trên cầu thang\",\n        \"Đang mất lợi thế tấn công\"\n    ]\n}"
+ },
+ {
+  "ma": "canh_0017",
+  "so_khung": 2,
+  "giay": 28.4,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 6587,
+  "noi_dung": "{\"loai\": \"ta\", \"chu_the\": [\"con\"], \"hanh_dong\": \"cong tac\", \"cam_xuc\": \"tinh\", \"quan_trong\": 0.9, \"de_xuat\": \"giu\", \"do_tin\": 0.9, \"ly_do\": \"con no se ta bang cong tac\", \"canh_bao\": []}"
+ },
+ {
+  "ma": "canh_0018",
+  "so_khung": 2,
+  "giay": 17.9,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 3211,
+  "noi_dung": "{\"loai\": \"nh_an_vat_tim\", \"chu_the\": [\"tóc_xanh\", \"trang_phi_tim\"], \"hanh_dong\": \"quang_sat\", \"cam_xuc\": \"chi_m_cho\", \"quan_trong\": 0.3, \"de_xuat\": \"giu\", \"do_tin\": 0.8, \"ly_do\": \"Nhan vat dong den chuan bi leo thang, can boi chong tai\", \"canh_bao\": [\"nh_an_vat_phuong_trinh\", \"thang_cao\"]}"
+ }
+]

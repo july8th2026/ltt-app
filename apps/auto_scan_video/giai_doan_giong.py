@@ -34,6 +34,7 @@ import io
 import json
 import logging
 import tempfile
+import time
 from pathlib import Path
 
 from platform_core.i18n import _ as _t
@@ -142,6 +143,16 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     lan_lai = _lan_doc_lai(db, run)
     cac_nan: list[nan_cho_vua.KetQuaNan] = []
     da_sinh = 0
+    # 🔑 **Hai dong ho, va thieu chung thi khong ai sua duoc giai doan nay.**
+    #
+    #    Luot nghiem thu nen v3 (23/09) do duoc `voice_synthesis` = 943 giay cho
+    #    mot phim 107 giay va **khong tach duoc con so ay**: bao cao chi biet
+    #    tong. Phai do lai ngoai duong san pham (`tools/do_toc_do_giong.py`) moi
+    #    biet 751 giay la LLM viet lai chu khong phai may sinh tieng (241 giay).
+    #
+    # ⭐ Hai con so nay di vao `tom_tat`, tuc vao bang chung cua MOI luot chay
+    #    ve sau. "Cham" khong con la mot cam giac.
+    dong_ho = {"giay_tts": 0.0, "giay_llm_nan": 0.0}
 
     # 🔑 LAT CAT (`lat_cat.py`): ~2.000 doan cua 120 phut video khong vua MOT
     #    job. Don vi te nhat = (VONG_TOI_DA + 1) luot TTS + VONG_TOI_DA lan xin
@@ -234,9 +245,11 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             # ⛔ Vong nay co TRAN CUNG. Mot vong lap "sua cho toi khi vua" tren
             #    mot dich vu tra tien la mot hoa don khong co day.
             while True:
+                _t0 = time.monotonic()
                 wav, _headers = giong_noi.doc_mot_doan(
                     chu, ref_b64=ref_b64, preset=preset,
                     tu_dien_rieng=tu_dien or None)
+                dong_ho["giay_tts"] += time.monotonic() - _t0
                 # ⛔ Kiem TRUOC khi coi doan la xong (muc 8). Do tren TEP THAT,
                 #    khong tin header cua may sinh tieng — cung ly do
                 #    `apps/ltt_voice` doi chieu hai phia va ghi log khi lech.
@@ -253,11 +266,14 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                 # ⭐ Chi viet lai MOT doan. Sinh lai ca kich ban vi mot cau khong
                 #    vua la dieu `V4_RESOURCE_CPU_GPU_POLICY` cam dich danh — va
                 #    no cung lam hong hoa don cua ca tram cau con lai.
+                _t0 = time.monotonic()
                 try:
                     moi_chu = _viet_lai(db, run, m, chu=chu, giay=giay, khe=khe,
                                         so_vong=so_vong, ctx=ctx)
                 except _KhongNanDuoc:
+                    dong_ho["giay_llm_nan"] += time.monotonic() - _t0
                     break
+                dong_ho["giay_llm_nan"] += time.monotonic() - _t0
                 if moi_chu == chu:
                     # Model tra ve y nguyen: vong sau se cho ra dung ket qua nay.
                     break
@@ -336,6 +352,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                 "so_luot_doc": da_sinh,
                 "so_doan_dung_lai": sum(1 for d in ban_ke if d.get("tu_cu")),
                 "tong_giay": round(sum(float(d["giay"]) for d in ban_ke), 2),
+                # ⭐ Xem `dong_ho` o dau ham: hai con so nay tra loi *"giai doan
+                #    nay cham vi cai gi"* ma khong phai do lai ngoai san pham.
+                "giay_tts": round(dong_ho["giay_tts"], 2),
+                "giay_llm_nan": round(dong_ho["giay_llm_nan"], 2),
                 "preset": str(preset or ""),
                 "ma_giong": ma_giong,
                 **nan_cho_vua.tom_tat(cac_nan),

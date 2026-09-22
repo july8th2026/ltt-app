@@ -1,0 +1,182 @@
+[
+ {
+  "ma": "canh_0001",
+  "so_khung": 2,
+  "giay": 31.5,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 6316,
+  "noi_dung": "[\n    {\n        \"loai\": \"Nhân vật\",\n        \"chu_the\": [\n            \"Người chơi nhảy dù\"\n        ],\n        \"hanh_dong\": [\n            \"Đang nhảy dù\",\n            \"Bay lượn\"\n        ],\n        \"cam_xuc\": [\n            \"Bình tĩnh\",\n            \"Phân tích tình huống\"\n        ],\n        \"quan_trong\": 0.95,\n        \"de_xuat\": \"giu\",\n        \"do_tin\": 0.98,\n        \"ly_do\": \"Video hiển thị nhân vật đang treo dù hạ cánh xuống nhà. Lời thoại \\\"nếu nhảy dù chậm thì làm sao\\\" xác nhận hành động này là trọng tâm.\",\n        \"canh_bao\": []\n    }\n]"
+ },
+ {
+  "ma": "canh_0002",
+  "so_khung": 2,
+  "giay": 12.3,
+  "loi_goi": "",
+  "doc": "HieuCanhError: canh_0002: de_xuat phai la mot trong ('giu', 'bo', 'khong_chac'), nhan 'giữ'",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 2249,
+  "noi_dung": "{\n  \"loai\": \"gameplay_scene\",\n  \"chu_the\": [\n    \"nhân vật chính\",\n    \"vũ khí\"\n  ],\n  \"hanh_dong\": [\n    \"di chuyển vào trong nhà\",\n    \"nhắm đến và tìm kiếm vũ khí\"\n  ],\n  \"cam_xuc\": [\n    \"khẩn trương\",\n    \"tập trung\"\n  ],\n  \"quan_trong\": 0.85,\n  \"de_xuat\": \"giữ\",\n  \"do_tin\": 0.88,\n  \"ly_do\": \"cảnh quay diễn tả hành động chiến lược của nhân vật: di chuyển vào nhà để tiếp cận vũ khí, thể hiện mục tiêu chuẩn bị cho trận chiến sắp tới trong game\",\n  \"canh_bao\": [\n    \"việc thiếu vũ khí có thể làm nhân vật dễ bị loại khỏi trận đấu\",\n    \"môi trường trong nhà có thể chứa cạm bẫy hoặc kẻ thù ẩn nấp\"\n  ]\n}"
+ },
+ {
+  "ma": "canh_0003",
+  "so_khung": 2,
+  "giay": 30.1,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 6703,
+  "noi_dung": "{\n  \"loai\": \"Game\",\n  \"chu_the\": [\n    \"FPS\",\n    \"Game bắn súng\",\n    \"Canh may man\"\n  ],\n  \"hanh_dong\": [\n    \"Day\",\n    \"Giam\",\n    \"Chen cam thich\"\n  ],\n  \"cam_xuc\": [\n    \"Tiep can\",\n    \"Kien dinh\"\n  ],\n  \"quan_trong\": 0.9,\n  \"de_xuat\": \"giu\",\n  \"do_tin\": 0.95,\n  \"ly_do\": \"Canh chon doi tuong trong cung phong, khong co loi thoai\",\n  \"canh_bao\": [\n    \"Kieu hinh khong tinh\"\n  ]\n}"
+ },
+ {
+  "ma": "canh_0004",
+  "so_khung": 2,
+  "giay": 36.3,
+  "loi_goi": "",
+  "doc": "LuocDoSai: doc_canh: JSON hong (Expecting ',' delimiter: line 9 column 112 (char 393))",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 6357,
+  "noi_dung": "```json\n[\n    {\n        \"loai\": \"nh_an_vat\",\n        \"chu_the\": [\"nguoi_chay_game\", \"nh_an_vat\"],\n        \"hanh_dong\": [\"do_dang\", \"giua_tay_chao_hoi\", \"nhin_vao_khong_gi\"],\n        \"cam_xuc\": [\"hoi_lor\", \"tong_tam\"],\n        \"quan_trong\": 0.95,\n        \"de_xuat\": \"giu\",\n        \"do_tin\": 0.99,\n        \"ly_do\": \"La chui the chinh cua khanh, xuat hien trong ca hai khung hinh va la nguoi chi dinh thieu de\".\n    },\n    {\n        \"loai\": \"bat_vat\",\n        \"chu_the\": [\"ho_p_qua\"],\n        \"hanh_dong\": [\"nam_tran_san\", \"nau_ho\"],\n        \"cam_xuc\": [\"tin\"],\n        \"quan_trong\": 0.7,\n        \"de_xuat\": \"giu\",\n        \"do_tin\": 0.95,\n        \"ly_do\": \"Co bat lien quan den ly do nguoi chay 'lso tay' va co the la mot phat phien quan trong.\"\n    },\n    {\n        \"loai\": \"bat_vat\",\n        \"chu_the\": [\"song\", \"mu_bao_hiem\"],\n        \"hanh_dong\": [\"nam_im\"],\n        \"cam_xuc\": [\"tin\"],\n        \"quan_trong\": 0.5,\n        \"de_xuat\": \"bo\",\n        \"do_tin\": 0.85,\n        \"ly_do\": \"Cac vat pham duoc dat la truoc nhan vat, co the la ket qua cuoi cau chuyen 'lso tay'.\"\n    },\n    {\n        \"loai\": \"hiệu ứng\",\n        \"chu_the\": [\"kong_khe_xanh\"],\n        \"hanh_dong\": [\"tung_thang_thang\"],\n        \"cam_xuc\": [\"tin\"],\n        \"quan_trong\": 0.6,\n        \"de_xuat\": \"giu\",\n        \"do_tin\": 0.9,\n        \"ly_do\": \"Lay nen trong khung hinh 2, co the lien quan den 'thao tac ti'p theo'.\"\n    }\n]\n```"
+ },
+ {
+  "ma": "canh_0005",
+  "so_khung": 2,
+  "giay": 30.0,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 7255,
+  "noi_dung": "{\n  \"loai\": \"gameplay\",\n  \"chu_the\": [\n    \"nhan vat\",\n    \"hộp gỗ\",\n    \"căn phòng\"\n  ],\n  \"hanh_dong\": \"di chuyển hộp\",\n  \"cam_xuc\": \"tĩnh lặng\",\n  \"quan_trong\": 0.5,\n  \"de_xuat\": \"khong_chac\",\n  \"do_tin\": 0.7,\n  \"ly_do\": \"Nhân vật trong game đang đứng bên cạnh một chiếc hộp gỗ. Ở khung hình thứ hai, dòng chữ 'Hộp là không thể dùng làm vật che chắn' xuất hiện dưới cùng, cho thấy nhân vật có thể đang di chuyển hộp này hoặc nhận xét về tính hữu dụng của nó.\",\n  \"canh_bao\": []\n}"
+ },
+ {
+  "ma": "canh_0006",
+  "so_khung": 2,
+  "giay": 27.6,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 5806,
+  "noi_dung": "{\n  \"loai\": \"Chiến thuật che giấu\",\n  \"chu_the\": [\n    \"Người chơi\",\n    \"Vũ khí\",\n    \"Khói che\",\n    \"Phong khách\"\n  ],\n  \"hanh_dong\": [\n    \"Chui rúc\",\n    \"Di chuyển lén\",\n    \"Đặt khói che\",\n    \"Cúi người\"\n  ],\n  \"cam_xuc\": [\n    \"Cẩn trọng\",\n    \"Chiến lược\",\n    \"Nặng nề\"\n  ],\n  \"quan_trong\": 0.85,\n  \"de_xuat\": \"giu\",\n  \"do_tin\": 0.92,\n  \"ly_do\": \"Người chơi sử dụng khói xanh làm che chắn tầm nhìn và chuyển sang tư thế thấp/trườn đi để giảm diện tích cơ thể, tránh bị địch phát hiện. Lời thoại xác nhận mục tiêu là 'không để địch nhìn thấy vị trí'. Tuy nhiên, xuất hiện tia laser đỏ cảnh báo địch có thể đang ngắm bắn hoặc đã phát hiện vị trí.\",\n  \"canh_bao\": [\n    \"Khu vực đang bị ngắm bắn (tia laser đỏ)\",\n    \"Vị trí hiện tại chưa ổn định\"\n  ]\n}"
+ },
+ {
+  "ma": "canh_0007",
+  "so_khung": 2,
+  "giay": 21.2,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 4565,
+  "noi_dung": "{\n    \"loai\": \"Game\",\n    \"chu_the\": [\n        \"Action\",\n        \"Battle Royale\"\n    ],\n    \"hanh_dong\": [\n        \"Looting\",\n        \"Standing\",\n        \"Listening\"\n    ],\n    \"cam_xuc\": [\n        \"Neutral\"\n    ],\n    \"quan_trong\": 0.9,\n    \"de_xuat\": \"giu\",\n    \"do_tin\": 1.0,\n    \"ly_do\": \"Khuang hinh cho thay dau nhap chon trong mot choi bang hinh (khong gian, giao dien UI). Nhap vung co den mot goi thi (crate) va dang thao tac. Co dai thuat tieng Anh tieng Viet 'Listen carefully' va 'No one is coming', cho thay nhan vat dang tai doan hoac thao tac tinh thoan.\",\n    \"canh_bao\": []\n}"
+ },
+ {
+  "ma": "canh_0008",
+  "so_khung": 2,
+  "giay": 20.6,
+  "loi_goi": "",
+  "doc": "HieuCanhError: canh_0008: de_xuat phai la mot trong ('giu', 'bo', 'khong_chac'), nhan 'bu'",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 4194,
+  "noi_dung": "{\n  \"loai\": \"gameplay\",\n  \"chu_the\": [\n    \"nhau\"\n  ],\n  \"hanh_dong\": [\n    \"ngay_ngoai\"\n  ],\n  \"cam_xuc\": \"khong_chu_thuc\",\n  \"quan_trong\": 0.6,\n  \"de_xuat\": \"bu\",\n  \"do_tin\": 0.7,\n  \"ly_do\": \"ngay_ngoai_can_hanh\",\n  \"canh_bao\": []\n}"
+ },
+ {
+  "ma": "canh_0009",
+  "so_khung": 2,
+  "giay": 11.9,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 1778,
+  "noi_dung": "```json\n{\n  \"loai\": \"Game\",\n  \"chu_the\": [\n    \"Game bắn súng\",\n    \"Mobile Legends: Bang Bang\",\n    \"Chiến thuật\",\n    \"Thám sát\"\n  ],\n  \"hanh_dong\": \"Chuẩn bị tấn công\",\n  \"cam_xuc\": \"Tự tin\",\n  \"quan_trong\": 0.8,\n  \"de_xuat\": \"giu\",\n  \"do_tin\": 0.9,\n  \"ly_do\": \"Đoạn video là cảnh quay từ một trò chơi bắn súng. Nhân vật chính đang chuẩn bị tấn công kẻ thù. Đây là một phân cảnh chiến thuật quan trọng. Lời thoại \\\"Cẩn thận bước nhanh\\\" (hoặc tương tự) thể hiện sự cảnh giác. Hành động của nhân vật chính (nhìn lên, di chuyển) phù hợp với ngữ cảnh chiến đấu.\",\n  \"canh_bao\": [\n    {\n      \"loai\": \"Tin nhắn\",\n      \"nội_dung\": \"Cẩn thận bước nhanh\"\n    },\n    {\n      \"loai\": \"Định hướng\",\n      \"nội_dung\": \"Chuẩn bị tấn công\"\n    }\n  ]\n}\n```"
+ },
+ {
+  "ma": "canh_0010",
+  "so_khung": 2,
+  "giay": 120.3,
+  "loi_goi": "AiMoHo: mat ket noi sau khi bat dau gui: AmbiguousProviderError",
+  "doc": "LuocDoSai: doc_canh: model tra ve rong [finish_reason=(cong khong noi)]",
+  "finish_reason": "",
+  "suy_nghi_ky_tu": 0,
+  "noi_dung": ""
+ },
+ {
+  "ma": "canh_0011",
+  "so_khung": 2,
+  "giay": 35.9,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 4637,
+  "noi_dung": "{\n    \"loai\": \"hanh_dong\",\n    \"chu_the\": [\n        \"nhân_vat\",\n        \"pho_mat\"\n    ],\n    \"hanh_dong\": [\n        \"di_chuyen\",\n        \"looting\"\n    ],\n    \"cam_xuc\": [\n        \"tinh_thuoc\"\n    ],\n    \"quan_trong\": 0.8,\n    \"de_xuat\": \"giu\",\n    \"do_tin\": 0.9,\n    \"ly_do\": \"Nhân vật đang di chuyển trong nhà, chuẩn bị sẵn sàng chiến đấu.\",\n    \"canh_bao\": []\n}"
+ },
+ {
+  "ma": "canh_0012",
+  "so_khung": 2,
+  "giay": 9.9,
+  "loi_goi": "",
+  "doc": "HieuCanhError: canh_0012: de_xuat phai la mot trong ('giu', 'bo', 'khong_chac'), nhan 'giữ'",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 896,
+  "noi_dung": "{\n  \"loai\": \"nhân vật game\",\n  \"chu_thể\": [\n    \"nhân vật chính\",\n    \"kẻ thù trên bậc thang\"\n  ],\n  \"hành_dòng\": \"nhân vật chính đứng quan sát kẻ thù ở bậc thang\",\n  \"cảm_xúc\": \"bình tĩnh\",\n  \"quan_trọng\": 0.7,\n  \"de_xuat\": \"giữ\",\n  \"do_tin\": 0.8,\n  \"ly_do\": \"phát hiện kẻ thù đang ở vị trí bậc thang\",\n  \"canh_bao\": [\n    \"kẻ thù xuất hiện trên bậc thang\"\n  ]\n}"
+ },
+ {
+  "ma": "canh_0013",
+  "so_khung": 2,
+  "giay": 26.7,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 3546,
+  "noi_dung": "{\n  \"loai\": \"Trò chơi điện tử\",\n  \"chu_the\": [\n    \"Nhân vật chính\",\n    \"Tường góc\",\n    \"Vũ khí trang trí\"\n  ],\n  \"hanh_dong\": [\n    \"Đứng quan sát\",\n    \"Di chuyển nhẹ\",\n    \"Sẵn sàng chiến đấu\"\n  ],\n  \"cam_xuc\": [\n    \"Cẩn thận\",\n    \"Tỉnh táo\",\n    \"Quyết đoán\"\n  ],\n  \"quan_trong\": 0.85,\n  \"de_xuat\": \"giu\",\n  \"do_tin\": 0.85,\n  \"ly_do\": \"Nhân vật đang đứng tại góc phòng, cầm vũ khí lớn trên lưng, có vẻ đang quan sát tình hình xung quanh mà chưa tấn công ngay.\",\n  \"canh_bao\": [\n    \"Potentially dangerous area (indicated by red mark on wall)\",\n    \"Combat situation ongoing (kill feed visible)\"\n  ]\n}"
+ },
+ {
+  "ma": "canh_0014",
+  "so_khung": 2,
+  "giay": 34.5,
+  "loi_goi": "",
+  "doc": "HieuCanhError: canh_0014: de_xuat phai la mot trong ('giu', 'bo', 'khong_chac'), nhan 'giữ'",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 4642,
+  "noi_dung": "{\n    \"loai\": \"gameplay_tactical\",\n    \"chu_the\": [\n        \"nhân_vật\"\n    ],\n    \"hanh_dong\": [\n        \"cầm_cự\",\n        \"quan_sát\"\n    ],\n    \"cam_xuc\": [\n        \"tĩnh_lặng\",\n        \"cảnh_giác\"\n    ],\n    \"quan_trong\": 0.75,\n    \"de_xuat\": \"giữ\",\n    \"do_tin\": 0.8,\n    \"ly_do\": \"Khung hình thể hiện nhân vật đang đứng ở vị trí chiến thuật trong nhà, chuẩn bị ứng phó với tình huống đối phương nhảy xuống. Không có hành động nổ súng hay di chuyển mạnh, chủ yếu là chờ đợi và canh góc.\",\n    \"canh_bao\": [\n        \"có_khả_năng_xuất_hiện_đối_thủ\"\n    ]\n}"
+ },
+ {
+  "ma": "canh_0015",
+  "so_khung": 2,
+  "giay": 47.5,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 6233,
+  "noi_dung": "{\n    \"loại\": \"Game\",\n    \"chủ đề\": [\n        \"Nhân vật người chơi\",\n        \"Vũ khí bắn súng\",\n        \"Rào chắn gỗ\",\n        \"Game PUBG Mobile/Free Fire\"\n    ],\n    \"hành_dong\": \"Quan sát qua rào chắn, di chuyển gần công sự, thực hiện chiến thuật đánh lừa hoặc chờ đợi\",\n    \"cam_xuc\": \"Cẩn trọng, tập trung\",\n    \"quan_trọng\": 0.7,\n    \"de_xuat\": \"giu\",\n    \"do_tin\": 0.9,\n    \"ly_do\": \"Khung hình thể hiện cảnh quay trong game bắn súng di động. Nhân vật đang đứng cạnh một bức tường chắn thấp, nhìn về phía trước. Có các caption tiếng Trung ('他冲这么快' - 'Anh ta rushes rất nhanh', '假装补人' - 'Giả vờ healing/reload') cho thấy người chơi đang thực hiện chiến thuật đánh lừa hoặc quan sát kẻ địch từ ẩn nấp. Hành động không quá kịch tính (giết hay chết) nhưng quan trọng trong việc mô tả chiến thuật.\",\n    \"canh_bao\": []\n}"
+ },
+ {
+  "ma": "canh_0016",
+  "so_khung": 2,
+  "giay": 36.0,
+  "loi_goi": "",
+  "doc": "LuocDoSai: doc_canh: phan hoi thieu truong bat buoc ['de_xuat', 'do_tin']",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 3916,
+  "noi_dung": "```json\n{\n  \"objects\": [\n    {\n      \"loai\": \"person\",\n      \"chu_thể\": [\n        \"trên_cầu_thang\",\n        \"khu_vực_trung_tâm\"\n      ],\n      \"hanh_dong\": \"chờ_săn\",\n      \"cam_xuc\": \"tập_trung\",\n      \"quan_trong\": 0.9,\n      \"de_xuat\": \"giữ\",\n      \"do_tin\": 0.95,\n      \"ly_do\": \"Nhân vật đang đứng trên cao, chuẩn bị hành động hoặc chờ cơ hội như bình luận video gợi ý 'chờ bắn'.\",\n      \"canh_bao\": [\n        \"có_súng\",\n        \"vị_thế_lợi_hại\"\n      ]\n    },\n    {\n      \"loai\": \"person\",\n      \"chu_thể\": [\n        \"người_quan_sát\",\n        \"gấu_bông\"\n      ],\n      \"hanh_dong\": \"quan_sát\",\n      \"cam_xuc\": \"phán_xét\",\n      \"quan_trong\": 0.7,\n      \"de_xuat\": \"giữ\",\n      \"do_tin\": 0.85,\n      \"ly_do\": \"Người chơi dưới góc nhìn, đang cầm súng và bình luận về đối thủ trên cầu thang.\",\n      \"canh_bao\": []\n    }\n  ]\n}\n```"
+ },
+ {
+  "ma": "canh_0017",
+  "so_khung": 2,
+  "giay": 30.9,
+  "loi_goi": "",
+  "doc": "ok",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 3661,
+  "noi_dung": "```json\n{\n    \"loai\": \"chinh_truong\",\n    \"chu_the\": [\n        {\n            \"vai_tro\": \"vi_dang_hau\",\n            \"mo_ta\": \"Nhan vat chinh, giu ve trong tay\"\n        },\n        {\n            \"vai_tro\": \"cong_danh\",\n            \"mo_ta\": \"Nhan vat do khac o duoi thang thang, dang bao loai\"\n        },\n        {\n            \"vai_tro\": \"cong_hoi\",\n            \"mo_ta\": \"Ngua thang thang va trong trong nha\"\n        }\n    ],\n    \"hanh_dong\": \"chiem_luc\",\n    \"cam_xuc\": \"nhau_buoc\",\n    \"quan_trong\": 0.85,\n    \"de_xuat\": \"giu\",\n    \"do_tin\": 0.95,\n    \"ly_do\": \"Cung cap tin hieu ve thanh cong chinh truc cong danh va tinh hien cung cung\",\n    \"canh_bao\": [\n        \"co_thoi_tao\"\n    ]\n}\n```"
+ },
+ {
+  "ma": "canh_0018",
+  "so_khung": 2,
+  "giay": 19.0,
+  "loi_goi": "",
+  "doc": "HieuCanhError: canh_0018: de_xuat phai la mot trong ('giu', 'bo', 'khong_chac'), nhan 'giữ'",
+  "finish_reason": "stop",
+  "suy_nghi_ky_tu": 2334,
+  "noi_dung": "{\n  \"loai\": \"game_scene\",\n  \"chu_the\": [\"nhân vật chính với trang phục tím và tóc xanh lá\", \"nhân vật trên cầu thang\"],\n  \"hanh_dong\": [\"đang đứng và tương tác qua lời thoại\", \"nhân vật trên cầu thang\"],\n  \"cam_xuc\": [\"tò mò, đặt câu hỏi về cách xử lý tình huống\"],\n  \"quan_trong\": 0.7,\n  \"de_xuat\": \"giữ\",\n  \"do_tin\": 0.9,\n  \"ly_do\": \"Bối cảnh là không gian trong game, có tương tác giữa nhân vật và người chơi qua lời thoại đặt câu hỏi\",\n  \"canh_bao\": []\n}"
+ }
+]

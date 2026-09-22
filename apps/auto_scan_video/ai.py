@@ -130,6 +130,16 @@ class ThaoTac:
     truong_bat_buoc: tuple[str, ...] = ()
     #: Pha nao la nguoi goi dau tien. Chi de tra cuu.
     pha: str = ""
+    #: 🔑 Muc SUY NGHI cua model cho thao tac nay. Rong = de may chu quyet
+    #: (`ngan_sach.nghi_mac_dinh` — `medium` cho ltt-3.8 tu L-33).
+    #:
+    #: ⭐ Khai o BANG THAO TAC chu khong o cho goi, cung ly do voi
+    #:    `can_thi_giac`: "cau hoi nay kho den dau" la mot thuoc tinh cua THAO
+    #:    TAC, khong phai cua mot dong ma goi no.
+    #:
+    #: ⛔ `none` KHONG duoc dung — `ltt_llm` tu choi no tu 14/09 (tat suy nghi
+    #:    lam chat luong sap: 2 token thay vi ~1.180).
+    muc_nghi: str = ""
 
 
 DICH_THUAT = ThaoTac("dich_thuat", False, ("doan",), pha="14")
@@ -159,7 +169,25 @@ DOC_CANH = ThaoTac("doc_canh", True, ("de_xuat", "do_tin"), pha="11")
 #:    Khai sai nay khong lo ra suot ba pha vi thao tac chua co NGUOI GOI nao.
 HO_SO_NOI_DUNG = ThaoTac("ho_so_noi_dung", False, ("the_loai", "nhip"), pha="11")
 CHUYEN_LOI_THOAI = ThaoTac("chuyen_loi_thoai", False, ("doan",), pha="14")
-RUT_NGAN_CHO_VUA = ThaoTac("rut_ngan_cho_vua", False, ("doan",), pha="15")
+#: 🔴 **`muc_nghi="low"`, va no la mot phep do chu khong mot y thich (23/09).**
+#:
+#:    `tools/do_toc_do_giong.py --che-do llm`, sau doan THAT cua luot nen v3,
+#:    mot vong moi muc:
+#:
+#:        medium : 68,3 giay/luot · 4.209 token ra · 11.783 ky tu suy nghi
+#:        low    : 47,7 giay/luot · 3.337 token ra ·  8.652 ky tu suy nghi
+#:
+#:    ⇒ **-30% thoi gian**, cung 6/6 luot `stop`, cung 6/6 cau viet lai NGAN HON
+#:      ban vao (89->66, 73->55, 65->53, 75->61, 115->102, 23->18 am tiet).
+#:
+#: ⭐ Va do la thao tac DE NHAT trong nam thao tac: no khong doc anh, khong dung
+#:    ho so, khong sap lo — no rut ngan MOT cau da viet san. Tra gia suy nghi
+#:    muc `medium` cho no la tra cho mot do kho khong co.
+#:
+#: ⛔ `none` khong phai mot lua chon: `ltt_llm` tu choi no tu 14/09 (tat suy
+#:    nghi lam chat luong sap — 2 token thay vi ~1.180).
+RUT_NGAN_CHO_VUA = ThaoTac("rut_ngan_cho_vua", False, ("doan",), pha="15",
+                           muc_nghi="low")
 #: 🔴 **`("doan",)`, khong phai `("dat", "ly_do")` — va do la B22-01 lan hai.**
 #:
 #:    `qc_ai.loi_nhac_ngu_nghia` doi dung mot hinh dang:
@@ -480,7 +508,7 @@ def doc_json(noi_dung: str, thao_tac: ThaoTac, *,
 
 def goi(db, thao_tac: ThaoTac, messages: list, *, ctx=None,
         max_tokens: int = 0, temperature: float | None = None,
-        timeout_s: float | None = None,
+        timeout_s: float | None = None, muc_nghi: str | None = None,
         on_dispatch=None, on_rejected=None) -> dict:
     """MOT cua goi model. Tra ve `{"noi_dung", "provider", "model", "su_dung"}`.
 
@@ -539,6 +567,20 @@ def goi(db, thao_tac: ThaoTac, messages: list, *, ctx=None,
     them: dict = {}
     if timeout_s is not None:
         them["timeout_s"] = float(timeout_s)
+
+    # 🔑 **Muc suy nghi cua THAO TAC, va no la mot cai van gia.**
+    #
+    #    Do that 23/09 (`docs/auto_scan_video_final/L_FIX_TOC_DO.md`): mot luot
+    #    `rut_ngan_cho_vua` — viet lai MOT cau cho ngan hon — tieu **4.209 token
+    #    ra / 11.783 ky tu suy nghi / 68,3 giay** o muc mac dinh `medium`, trong
+    #    khi ca luot doc cau do bang may sinh tieng chi mat 14,2 giay. Mot cau
+    #    hoi co do kho cua no, va mac dinh cua nen tang khong biet dieu do.
+    #
+    # ⚠️ `None` = **khong khai**, va may chu giu mac dinh cua no
+    #    (`ngan_sach.nghi_mac_dinh`). Khong go lai mot muc o day.
+    nghi = str(muc_nghi if muc_nghi is not None else thao_tac.muc_nghi or "")
+    if nghi:
+        them["reasoning_effort"] = nghi
 
     try:
         kq = dieu_phoi.goi(
