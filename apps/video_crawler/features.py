@@ -4,7 +4,7 @@ Route chỉ gọi vào đây; handler (`jobs.py`) chỉ gọi `da_tai_ids`. Mọ
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
 
@@ -22,8 +22,16 @@ DAU_VAO_TOI_DA = 500
 SO_JOB_DEDUP = 500
 
 
+#: Trần xem trước mỗi phút mỗi user (phản biện #8: tìm dồn dập từ IP máy A ⇒ YouTube bot-check).
+KHAM_PHA_MOI_PHUT = 10
+
+
 class LoiDauVao(ValueError):
     """Yêu cầu không hợp lệ — thông điệp hiển thị được cho khách."""
+
+
+class QuaTanSuat(LoiDauVao):
+    """Quá nhiều lượt xem trước trong một phút."""
 
 
 def _nen(nen_id: str):
@@ -122,6 +130,29 @@ def da_tai_ids(db, owner_id: str, nen_id: str) -> set[str]:
             if m.get("nen_tang") == nen_id and m.get("tep"):
                 ids.add(str(m.get("id")))
     return ids
+
+
+def kiem_tan_suat(db, owner_id: str, *, bay_gio: datetime | None = None) -> None:
+    bay_gio = bay_gio or datetime.now(timezone.utc)
+    moc = bay_gio - timedelta(minutes=1)
+    gan_day = db.execute(
+        select(Job.created_at).where(Job.user_id == owner_id, Job.app_slug == MANIFEST.slug,
+                                     Job.job_type == JOB_KHAM_PHA)
+        .order_by(Job.created_at.desc()).limit(KHAM_PHA_MOI_PHUT)
+    ).scalars().all()
+    trong_phut = [t for t in gan_day if (t if t.tzinfo else t.replace(tzinfo=timezone.utc)) >= moc]
+    if len(trong_phut) >= KHAM_PHA_MOI_PHUT:
+        raise QuaTanSuat("Bạn đang xem trước quá nhanh — đợi một phút rồi thử lại.")
+
+
+def job_cua(db, owner_id: str, job_id: str, *, job_type: str | None = None) -> Job | None:
+    """Job của app này thuộc đúng chủ, hoặc None (route trả 404, không phân biệt "không có" với "không phải của bạn")."""
+    job = db.get(Job, job_id)
+    if job is None or job.user_id != owner_id or job.app_slug != MANIFEST.slug:
+        return None
+    if job_type is not None and job.job_type != job_type:
+        return None
+    return job
 
 
 def lich_su(db, owner_id: str, *, gioi_han: int = 50) -> list[Job]:

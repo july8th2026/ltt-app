@@ -1,0 +1,21 @@
+{% import "_ui.html" as ui %}
+<h2>Hàng đợi &amp; lịch sử của tôi</h2>
+{% if not lich_su %}
+  <p class="muted">Chưa có lượt cào nào.</p>
+{% else %}
+<div class="tablewrap"><table class="table">
+  <thead><tr><th>Việc</th><th>Nguồn</th><th>Trạng thái</th><th>Tiến độ</th><th></th></tr></thead>
+  <tbody>
+  {% for j in lich_su %}
+    {% set p = j.params or {} %}{% set ng = p.nguon or p %}
+    <tr>
+      <td>{{ "Xem trước" if j.job_type.endswith("kham_pha") else "Tải" }}</td>
+      <td>{% if p.muc %}{{ p.muc | length }} video đã chọn{% else %}{{ (ng.dau_vao or "") | truncate(60) }}{% endif %}</td>
+      <td>{{ ui.nhan_trang_thai(j.status) }}</td>
+      <td>{{ ui.thanh_tien_do(j.progress, "Tiến độ") }} <small class="muted">{{ j.progress_msg }}</small></td>
+      <td><a href="/jobs/{{ j.id }}">Chi tiết · tải về · huỷ</a></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endif %}

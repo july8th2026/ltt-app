@@ -245,3 +245,28 @@ def test_kenh_nhan_handle_tran():
     p = features.dung_params_kham_pha(owner_id="u1", nen_tang="youtube", che_do="kenh", dau_vao="@abc",
                                       so_luong=3, khong_trung=False, phan_giai=_DNS)
     assert p["dau_vao"] == "@abc" and p["owner_id"] == "u1"
+
+
+def test_job_cua_chi_tra_job_cua_chu(db, kho, nguoi, monkeypatch):
+    from apps.video_crawler import features
+    _dung_adapter(monkeypatch, AdapterGia())
+    a = _nop_tai(db, "u1", ["a"])
+    assert features.job_cua(db, "u1", a).id == a
+    assert features.job_cua(db, "u2", a) is None
+    assert features.job_cua(db, "u1", a, job_type="video_crawler.kham_pha") is None
+    assert features.job_cua(db, "u1", "khong-co") is None
+
+
+def test_kham_pha_gioi_han_tan_suat_theo_user(db, kho, nguoi, monkeypatch):
+    """Phản biện #8: xem trước miễn phí nhưng tìm dồn dập từ IP máy A đẩy YouTube vào bot-check."""
+    from apps.video_crawler import features
+    _dung_adapter(monkeypatch, AdapterGia())
+    for i in range(features.KHAM_PHA_MOI_PHUT):
+        features.kiem_tan_suat(db, "u1")
+        p = features.dung_params_kham_pha(owner_id="u1", nen_tang="youtube", che_do="tu_khoa",
+                                          dau_vao=f"meo {i}", so_luong=1, khong_trung=False, phan_giai=_DNS)
+        features.nop(db, owner_id="u1", job_type="video_crawler.kham_pha", params=p)
+        db.commit()
+    with pytest.raises(features.QuaTanSuat):
+        features.kiem_tan_suat(db, "u1")
+    features.kiem_tan_suat(db, "u2")          # user khác không bị ảnh hưởng

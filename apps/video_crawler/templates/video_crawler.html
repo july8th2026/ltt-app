@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% import "_app_head.html" as ah %}
+{% block page_mode %}wide{% endblock %}
+{% block title %}Cào video nguồn — LTT AI Studio{% endblock %}
+{% set TEN_CHE_DO = {"tu_khoa": "🔍 Theo từ khoá", "link": "🔗 Theo link", "kenh": "👤 Theo kênh", "bo": "📦 Theo bộ / playlist"} %}
+{% set GOI_Y = {"tu_khoa": "Ví dụ: mèo con đáng yêu", "link": "https://www.youtube.com/watch?v=…", "kenh": "@tenkenh hoặc link kênh", "bo": "https://www.youtube.com/playlist?list=…"} %}
+{% block content %}
+<script src="/static/htmx.min.js?v={{ asset_ver }}"></script>
+<style>
+  .vc-grid{display:grid;gap:var(--space-5,20px);grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  @media (max-width:900px){.vc-grid{grid-template-columns:minmax(0,1fr)}}
+  .vc-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:var(--space-5,20px)}
+  @media (max-width:600px){.vc-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .vc-stat{padding:12px 14px}.vc-stat b{display:block;font-size:1.5rem}
+  .vc-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+  .vc-row .field{flex:1 1 140px}
+  .vc-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .vc-muc{display:grid;grid-template-columns:auto 96px minmax(0,1fr);gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+  .vc-muc img{width:96px;aspect-ratio:16/9;object-fit:cover;border-radius:var(--radius)}
+  .vc-muc span{overflow-wrap:anywhere}
+  .vc-che-do label[hidden]{display:none}
+</style>
+<section aria-labelledby="vc-title">
+  {{ ah.dau_trang("Video · Nguồn", "Cào video nguồn", "Tìm theo từ khoá, link, kênh hoặc playlist; xem trước, chọn rồi tải vào kho của bạn.", id_tieu_de="vc-title") }}
+  {% if loi %}<div class="alert alert-err" role="alert">{{ loi }}</div>{% endif %}
+
+  <div class="vc-stats" id="vc-thong-ke" aria-label="Thống kê của bạn">
+    {% include "vc_thong_ke.html" %}
+  </div>
+
+  <div class="vc-grid">
+    <form class="card" id="vc-form" method="post" action="{{ app.route_prefix }}/tai"
+          hx-post="{{ app.route_prefix }}/tai" hx-target="#vc-ket-qua">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <h2>1 · Nền tảng</h2>
+      <div class="chips" role="radiogroup" aria-label="Nền tảng">
+        {% for n in cac_nen %}
+        <label class="chip-opt" data-nen="{{ n.id }}" data-che-do="{{ n.che_do | sort | join(',') }}">
+          <input type="radio" name="nen_tang" value="{{ n.id }}" {% if loop.first %}checked{% endif %}><span>{{ n.ten }}</span>
+        </label>
+        {% endfor %}
+      </div>
+
+      <h2>2 · Cách cào</h2>
+      <div class="chips vc-che-do" role="radiogroup" aria-label="Cách cào">
+        {% for k in ["tu_khoa", "link", "kenh", "bo"] %}
+        <label class="chip-opt" data-che-do-nut="{{ k }}"><input type="radio" name="che_do" value="{{ k }}" {% if loop.first %}checked{% endif %} data-goi-y="{{ GOI_Y[k] }}"><span>{{ TEN_CHE_DO[k] }}</span></label>
+        {% endfor %}
+      </div>
+
+      <label class="field"><span>Từ khoá / link</span>
+        <input id="vc-dau-vao" name="dau_vao" required maxlength="500" placeholder="{{ GOI_Y.tu_khoa }}" autocomplete="off">
+      </label>
+      <div class="vc-row">
+        <label class="field"><span>Số lượng (tối đa 20)</span><input type="number" name="so_luong" value="10" min="1" max="20" inputmode="numeric"></label>
+        <label class="chip-opt"><input type="checkbox" name="khong_trung" value="1"><span>🆕 Cào không trùng</span></label>
+      </div>
+      <p class="muted">"Không trùng" bỏ qua video bạn đã tải trong 30 ngày gần đây. Mỗi video tải về tính 1 credit; xem trước miễn phí.</p>
+
+      <div class="vc-actions">
+        <button class="btn" type="submit" formaction="{{ app.route_prefix }}/kham-pha"
+                hx-post="{{ app.route_prefix }}/kham-pha" hx-target="#vc-ket-qua">👁 Xem trước &amp; chọn</button>
+        <button class="btn btn-primary" type="submit">🚀 Cào hết (thêm vào hàng đợi)</button>
+      </div>
+    </form>
+
+    <div class="card" id="vc-ket-qua" aria-live="polite">
+      <h2>Kết quả xem trước</h2>
+      <p class="muted">Bấm "Xem trước" để xem danh sách video trước khi tải.</p>
+    </div>
+  </div>
+
+  <div class="card" id="hang-doi" style="margin-top:var(--space-5,20px)"
+       hx-get="{{ app.route_prefix }}/hang-doi" hx-trigger="every 4s" hx-swap="innerHTML">
+    {% include "vc_hang_doi.html" %}
+  </div>
+</section>
+<script>
+(function () {
+  var form = document.getElementById("vc-form"), dauVao = document.getElementById("vc-dau-vao");
+  function capNhat() {
+    var nen = form.querySelector('input[name="nen_tang"]:checked');
+    if (!nen) return;
+    var hoTro = nen.closest("[data-che-do]").dataset.cheDo.split(",");
+    form.querySelectorAll("[data-che-do-nut]").forEach(function (l) {
+      var ok = hoTro.indexOf(l.dataset.cheDoNut) >= 0;
+      l.hidden = !ok; l.querySelector("input").disabled = !ok;
+    });
+    var chon = form.querySelector('input[name="che_do"]:checked');
+    if (!chon || chon.disabled) {
+      chon = form.querySelector('input[name="che_do"]:not([disabled])'); if (chon) chon.checked = true;
+    }
+    if (chon) dauVao.placeholder = chon.dataset.goiY;
+  }
+  form.addEventListener("change", capNhat); capNhat();
+})();
+</script>
+{% endblock %}

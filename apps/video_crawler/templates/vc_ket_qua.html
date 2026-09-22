@@ -1,0 +1,33 @@
+{% import "_ui.html" as ui %}
+{% set xong = job.status in ("done", "error", "cancelled") %}
+<div {% if not xong %}hx-get="{{ app.route_prefix }}/kham-pha/{{ job.id }}" hx-trigger="every 1500ms" hx-swap="outerHTML"{% endif %}>
+  <h2>Kết quả xem trước</h2>
+  {% if job.status == "done" %}
+    {% if bo_qua_trung %}<p class="muted">Đã bỏ qua {{ bo_qua_trung }} video bạn tải trước đó.</p>{% endif %}
+    {% if not muc %}
+      <p class="muted">Không tìm thấy video nào.</p>
+    {% else %}
+    <form method="post" action="{{ app.route_prefix }}/tai" hx-post="{{ app.route_prefix }}/tai" hx-target="this" hx-swap="outerHTML">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="nen_tang" value="{{ job.params.nen_tang }}">
+      {% for m in muc %}
+      <label class="vc-muc">
+        <input type="checkbox" name="muc" value="{{ m.id }}" checked>
+        {% if m.anh_bia %}<img src="{{ m.anh_bia }}" alt="" loading="lazy" referrerpolicy="no-referrer">{% else %}<span></span>{% endif %}
+        <span><b>{{ m.tieu_de or m.id }}</b><br><small class="muted">{{ m.tac_gia }}{% if m.thoi_luong_s %} · {{ m.thoi_luong_s // 60 }}:{{ "%02d" | format(m.thoi_luong_s % 60) }}{% endif %}</small></span>
+        <input type="hidden" name="url_{{ m.id }}" value="{{ m.url }}">
+        <input type="hidden" name="tieu_de_{{ m.id }}" value="{{ m.tieu_de }}">
+      </label>
+      {% endfor %}
+      <div class="vc-actions"><button class="btn btn-primary" type="submit">📋 Tải các video đã chọn</button></div>
+    </form>
+    {% endif %}
+  {% elif job.status == "error" %}
+    <div class="alert alert-err" role="alert">{{ job.error or "Xem trước thất bại." }}</div>
+  {% elif job.status == "cancelled" %}
+    <p class="muted">Đã huỷ.</p>
+  {% else %}
+    {{ ui.thanh_tien_do(job.progress, "Đang tìm") }}
+    <p class="muted">{{ job.progress_msg or "Đang tìm video…" }}</p>
+  {% endif %}
+</div>
