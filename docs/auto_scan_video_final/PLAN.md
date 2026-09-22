@@ -23,23 +23,27 @@
 PRIMARY_REAL_ACCEPTANCE_VIDEO: **v2** (hardsub rõ, lời thuyết minh, cảnh thật,
 190 s) — chốt lại sau lượt nền (L-M).
 
-## Làn (mỗi làn một worktree + nhánh `phien/asv-final-<làn>`)
+## Làn (mỗi làn một worktree `D:\LTTSTUDIOSAPP-asvf-<làn>` + nhánh `phien/asv-final-<làn>`, gốc `e84b22a2`)
 
-| làn | việc | tệp sở hữu chính | trạng thái |
+| làn | việc | dải test | trạng thái |
 |---|---|---|---|
-| L-A hop-dong | đích {vi,en} + nguồn {zh,en,vi}; bỏ phân vai khỏi đường sản phẩm; `rang_giong` lọc làn theo đích | `hop_dong_v4.py`, `cai_dat.py`, `rang_giong.py`, `giai_doan_chep_loi.py`, chỗ hardcode `"vi"` | mở |
-| L-M e2e-nen | lượt thật NỀN trên mã hiện tại (v3, zh→vi) — lấy danh sách hỏng thật | chỉ đọc mã; ghi `bang_chung/` | mở |
-| L-B do-ky-thuat | VMAF/blackdetect/freezedetect/decode-check; PySceneDetect vs `scdet` benchmark | `qc.py`, `canh.py` | chờ L-A |
-| L-C do-giong | ASR lượt cuối + jiwer WER/CER thay Dice; chất lượng tiếng (model license sạch) | `qc_ai.py`, `sua_chua.py`, capability mới | chờ nghiên cứu |
-| L-D do-dich | QE dịch không cần bản tham chiếu, license thương mại | capability mới | chờ nghiên cứu |
-| L-E ocr | phụ đề nhúng → hardsub OCR → ASR, kèm provenance | module mới + định tuyến nguồn lời | chờ L-A |
-| L-F video-dai | chia lô + checkpoint + resume cho mọi giai đoạn gọi mạng/model | `giai_doan_noi_dung.py`, `dich_thuat.py`, `hieu_canh.py` | chờ L-A |
-| L-G bien-tap | crop/zoom/aspect/reframe/speed (ADR gỡ `CAM_TRONG_MVP`) | `che_do_render.py`, `ket_xuat.py` | chờ L-A |
-| L-H phu-de | OFF/AUTO/SOURCE/TRANSLATED + style qua AutoSub | `phu_de.py` | chờ L-A |
-| L-I cache-lease | một tính, nhiều chờ | `cache_chung.py` | chờ L-A |
-| L-J tai-len | resume tải lên | `platform_core/storage.py`?, `assets.py` | nghiên cứu |
-| L-K cong-noi-bo | cổng workflow nội bộ submit/status/cancel/retry/result | module mới | chờ L-A |
-| L-L gui | Studio: mọi điều khiển nối tới tệp ra | `server/static/asv/`, templates | cuối |
+| L-A hop-dong | nguồn {zh,en,vi} → đích {vi,en}; rút phân vai; lọc làn giọng | 2000–2009 | **XONG** `90cfa3f8` (cây asv-final) |
+| L-M e2e-nen | lượt thật NỀN (v3 zh→vi) trên mã gốc | — | đang chạy (cây asv-final, chỉ đọc) |
+| ky-thuat | blackdetect/freezedetect/decode, VMAF, benchmark cắt cảnh, xoá do_watermark | 2010–2019 | đang chạy |
+| giong | bước đo GPU mới; ASR lượt cuối + JiWER; SQUIM_OBJECTIVE; bỏ Dice; sửa đoạn | 2020–2029 | đang chạy |
+| dich | MetricX-24 QE (năng lực `do_luong/metricx.py`), benchmark 4 chiều | 2030–2039 | đang chạy |
+| ocr | định tuyến nguồn lời: nhúng → OCR hardsub → ASR, provenance | 2040–2049 | đang chạy |
+| video-dai | chia lô + checkpoint + resume mọi giai đoạn dài | 2050–2059 | đang chạy |
+| bien-tap | speed/zoom/crop/aspect/reframe (ADR gỡ CAM_TRONG_MVP) | 2060–2069 | đang chạy |
+| phu-de | OFF/AUTO/SOURCE/TRANSLATED/CUSTOM qua AutoSub | 2070–2079 | đang chạy |
+| cache-lease | một tính, nhiều chờ | 2080–2084 | đang chạy |
+| cong-noi-bo | cổng workflow nội bộ submit/status/cancel/retry/result | 2085–2089 | đang chạy |
+| tai-len | resume tải lên (multipart) | 2090–2094 | đang chạy |
+| giong-en | giọng thuyết minh tiếng Anh (kho giọng dùng chung, không lộ cho khách LTT Voice) | 2095–2099 | đang chạy |
+| gui | Studio: mọi điều khiển nối tới tệp ra | — | sau khi gộp |
+| nghiem-thu | lượt thật cuối A/B/C/D, zh→vi + en→vi + vi→en, báo cáo cuối | — | sau khi gộp |
+
+Hạ tầng dùng chung: `C:\LTTPlatform\qc-venv` (`setup/cai_qc_models.ps1`), giao thức `apps/asv_gpu/do_luong/venv.py`.
 
 ## Sổ lỗi + độ phủ
 
