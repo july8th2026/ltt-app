@@ -11,7 +11,6 @@ Chot:
 """
 from __future__ import annotations
 
-import pytest
 
 from apps.auto_scan_video import pipeline, sua_chua
 from tests.rao_chan_nang import demucs_gia_lap  # noqa: F401
@@ -70,8 +69,6 @@ def test_jobs_doc_doan_doc_sai_tu_outputs():
     assert jobs._qc_giong({}) == []
 
 
-@pytest.mark.skipif("vi" not in sua_chua.NGUONG_DOC_SAI,
-                    reason="nguong tieng Viet chua hieu chinh")
 def test_DOC_SAI_doc_lai_DUNG_doan_do_roi_giao(db, kho_tam, tmp_path, asr_gia, dich_gia, giong_gia, monkeypatch):  # noqa: F811, E501
     """E2E tren hang doi that: luot do dau bao `ma[0]` doc sai (WER=CER=1) ->
     vong sua dat lai `voice_synthesis` cho RIENG doan do -> may doc goi lai

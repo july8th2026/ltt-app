@@ -316,21 +316,22 @@ def do(ra: pathlib.Path) -> int:
 
         # ── Doi chung B: THIEU CHU THAT — cat bo 1/3 cuoi tep tieng ─────────
         # ── Doi chung C: nhieu trang SNR 10 dB / khoang lang 0,4 s giua cau ──
-        bien_the = {
-            "cat_1_3_cuoi": lambda g_: f"atrim=0:{g_ * 2 / 3:.3f}",
-            "nhieu_snr10": None,
-            "lang_giua_0.4s": None,
-        }
+        # ⭐ Mot TUPLE ten, khong phai dict {ten: ham|None}: hai trong ba bien
+        #    the dung duong ffmpeg rieng ben duoi, nen o duoi la None — va
+        #    mot dict tron ham voi None lam moi loi goi thanh "None not
+        #    callable" o mypy, cho mot bang ma chi MOT nhanh doc toi.
+        bien_the = ("cat_1_3_cuoi", "nhieu_snr10", "lang_giua_0.4s")
         for ten in bien_the:
             ds2 = []
-            for x, d in zip(ds, doan):
+            for x, d in zip(ds, doan, strict=False):
                 giay = (g.get(x["ma"]) or {}).get("giay") or 0
                 if giay < 1.5:
                     continue
                 dich = tam / f"{ten}_{d['nguon']}_{d['ma']}.wav"
                 if not dich.is_file():
                     if ten == "cat_1_3_cuoi":
-                        _dung_16k(x["tep"], str(dich), bien_the[ten](giay))
+                        _dung_16k(x["tep"], str(dich),
+                                  f"atrim=0:{giay * 2 / 3:.3f}")
                     elif ten == "nhieu_snr10":
                         # anoisesrc bien do 0,1 ~ -20 dBFS; tieng ~ -20..-10 LUFS
                         subprocess.run([_ffmpeg_tho(), "-y", "-loglevel", "error",

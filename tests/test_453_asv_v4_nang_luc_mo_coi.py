@@ -72,6 +72,21 @@ CUA_VAO = frozenset({
 #: Mot ten moi xuat hien nghia la ai do vua viet xong mot nang luc va quen noi
 #: no vao mach — dung luc do, khong phai mot kiem toan sau.
 MO_COI_DA_BIET = frozenset({
+    # ── asv-final (23/09) — CONG WORKFLOW NOI BO chua co nguoi goi.
+    #
+    #    `cong_noi_bo.py` la be mat de agent/workflow NOI BO chay Auto Scan
+    #    ma khong phai biet tung giai doan (de bai 22/09 §11). Hom nay khong
+    #    app nao goi no, nen no dung la hang **CAU** ma
+    #    `MA_TRAN_KHOANG_TRONG.md` mo ta: co duong, chua co xe.
+    #
+    #    ⛔ Va no KHONG duoc khai trong `BE_MAT_CONG_KHAI`: `test_308` do
+    #       khi mot canh lien-app duoc khai ma khong ai di. Nguoi goi DAU
+    #       TIEN phai them CA HAI ban khai trong CUNG mot commit.
+    #
+    #    ⭐ DIEU KIEN GO RA: ngay mot app/workflow noi bo goi `submit_run`,
+    #       bon ten nay ra khoi danh sach — khong phai khi ai do thay danh
+    #       sach dai.
+    "submit_run", "cancel_run", "retry_run", "get_result",   # `get_status` trung ten voi mot ham DA co nguoi goi
     # ── A27-01 (pha 27 phat hien) — QC ngu nghia/thi giac va SUA CHUA chua
     #    tung duoc goi. `loi.py` chi import LOP NGOAI LE cua chung, nen ca hai
     #    tep trong nhu dang duoc dung. Kiem toan pha 26 goi G14 la PARTIAL voi
@@ -116,8 +131,7 @@ MO_COI_DA_BIET = frozenset({
     #    `squim_runner`) khong can hoi — chung chi chay khi `venv.chay` goi.
     #    Dieu kien de go: mot bo do nao do chay duoc o CA HAI phia (worker va
     #    qc-venv) va phai re nhanh theo cau tra loi do; neu khong, XOA ham.
-    "la_tien_trinh_con",
-
+    
     # ── HO SO NOI DUNG — nang luc nay duoc KHAI CHO KHACH la chua san sang.
     #    `gia.py` bay `CHE_DO_GIONG_TU_KHOP` kem cau "tinh nang nay dang duoc
     #    hoan thien — hien tai hay tu chon giong". Tuc mon no nay da duoc noi

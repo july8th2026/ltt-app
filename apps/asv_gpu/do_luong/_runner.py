@@ -58,7 +58,8 @@ def _rss_dinh_mb() -> float:
         psapi.GetProcessMemoryInfo(k32.GetCurrentProcess(), ctypes.byref(pmc), pmc.cb)
         return round(pmc.PeakWorkingSetSize / 2**20, 1)
     import resource  # pragma: no cover - may dev khong phai Windows
-    return round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024, 1)
+    return round(resource.getrusage(  # type: ignore[attr-defined]
+        resource.RUSAGE_SELF).ru_maxrss / 1024, 1)  # type: ignore[attr-defined]
 
 
 class DongHo:
