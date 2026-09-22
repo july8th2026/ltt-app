@@ -16,8 +16,9 @@ from datetime import datetime, timezone
 
 from sqlalchemy import (BigInteger, Boolean, DateTime, Float, ForeignKey, Index,
                         Integer, JSON, String, Text,
-                        UniqueConstraint, text)
+                        UniqueConstraint, event, text)
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Session as _SqlaSession
 
 from platform_core.db import Base
 # Bảng của Public API (Q92) sống ở `platform_core/public_api/tables.py` vì nó là
@@ -1398,6 +1399,9 @@ class Waitpoint(Base):
     # 0 = ALL (chỉ kết luận được sau khi `sealed`). >0 = N-of-M.
     required_successes: Mapped[int] = mapped_column(Integer, default=0,
                                                     nullable=False)
+    #: Số nguồn của một BARRIER (số cạnh vào). ALL = đủ `so_nguon` tín hiệu kết
+    #: thúc (spec §5.7). 0 = barrier động, kết luận bằng `sealed`.
+    so_nguon: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     release_on_first_failure: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False)
     due_at: Mapped[datetime | None] = mapped_column(
@@ -1623,3 +1627,33 @@ class WorkflowTrigger(Base):
               postgresql_where=text("enabled AND next_fire_at IS NOT NULL"),
               sqlite_where=text("enabled = 1 AND next_fire_at IS NOT NULL")),
     )
+
+
+class WorkflowEvent(Base):
+    """Nhật ký cấp run, CHỈ THÊM (spec §5.11). Cấp node là `node_run_snapshot`.
+
+    Cũng là outbox cho trigger `event` (spec §8.4).
+    """
+    __tablename__ = "workflow_event"
+    __table_args__ = (UniqueConstraint("run_id", "seq",
+                                       name="ux_workflow_event_seq"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    run_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    seq: Mapped[int] = mapped_column(Integer, nullable=False)
+    loai: Mapped[str] = mapped_column(String(40), nullable=False)
+    node_id: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    du_lieu: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False, index=True)
+
+
+class SnapshotBatBien(RuntimeError):
+    """Có mã định SỬA một `node_run_snapshot` — bảng chỉ-thêm (spec §5.3)."""
+
+
+@event.listens_for(_SqlaSession, "before_flush")
+def _chan_sua_snapshot(session, _flush_context, _instances):
+    for obj in session.dirty:
+        if isinstance(obj, NodeRunSnapshot) and session.is_modified(obj):
+            raise SnapshotBatBien(
+                f"node_run_snapshot {obj.id} la chi-them; ghi anh chup moi")
