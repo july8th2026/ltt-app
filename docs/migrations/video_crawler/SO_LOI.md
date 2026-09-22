@@ -61,7 +61,17 @@ Một sổ cho cả phiên. Mỗi dòng: tìm thấy ở đâu, bằng chứng, 
 | Douyin | "Fresh cookies needed" | bật; cần phiên — CHƯA nghiệm thu có phiên |
 | RedNote | yt-dlp không hỗ trợ (yt-dlp/yt-dlp#16519 mở) | tắt |
 | Kuaishou, Honggo | không có extractor yt-dlp; donor: CAPTCHA / CDN chặn IP datacenter | tắt (DEFER — cần client riêng + máy IP dân dụng) |
-| Douyin/XHS tìm kiếm + kênh | cần client riêng ký request (X-Bogus/a_bogus) — MediaCrawler cấm thương mại | DEFER, việc lớn riêng |
+| Douyin/XHS tìm kiếm + kênh | W1: client riêng — a_bogus vendor f2 (Apache-2.0), xhshow (MIT); chủ dự án chấp nhận N9/N10 22/09 | bật sau cờ; cần phiên — CHƯA nghiệm thu có phiên |
+| Kuaishou | W1: client GraphQL riêng (`kuaishou_web.py`) | registry `bat=False` tới khi nghiệm thu có phiên |
 
 Nghiệm thu có phiên (Bilibili, Instagram, Douyin, TikTok từ khoá) cần cookies.txt của CHÍNH chủ dự án/tài khoản test
 nhập qua giao diện — tác tử không được nhập thông tin đăng nhập.
+
+## W2 — lỗi phát hiện khi gộp (22/09)
+
+| # | Lỗi | Nguồn | Sửa |
+|---|---|---|---|
+| W2-1 | Tải lại video hết hạn (giành lại dòng 'xong') mà lỗi/huỷ ⇒ dòng bị xoá ⇒ "không trùng" quên video, lượt sau thu tiền lại | rà soát gộp L6 | `features._nha`: dòng còn `tep` cũ quay về 'xong' (test_1925) |
+| W2-2 | Câu "trong 30 ngày gần đây" sai sau L6; nhánh `else` còn "1 credit" (giá cũ) | rà soát gộp L6/L7 | bỏ nhánh, câu mới |
+| W2-3 | Xem trước lỗi hiện "LoiNguoiGoi: …" (job_runner ghi `TenLop: thông điệp`) | kiểm GUI sau gộp L7 | `loi.cho_khach` — chỉ câu trong bảng, lạ ⇒ câu chung (test_1931) |
+| W2-4 | Máy dev thiếu `yt-dlp-ejs` ⇒ YouTube 403 mọi lượt tải (n-challenge không giải) | kiểm GUI | cài theo requirements; production yt-dlp 2026.7.4 cần EJS 0.8.0 — khớp dòng `<0.9` |

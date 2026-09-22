@@ -70,8 +70,8 @@ Khép L3 (`gate.py --doi --tu 41120e46`) → hoà main → `merge --ff-only` →
 
 | Làn | Nhánh | SHA | Test nhắm | GUI | Trạng thái |
 |---|---|---|---|---|---|
-| W0 | phien/video-crawler | 41120e46 (L3) | L3 + khép | — | ⏳ khép đang xếp hàng khoá |
+| W0 | phien/video-crawler | 41120e46 (L3) | L3 + khép PASS (`test-results/gates/20260922T140114Z-13292.json`) | — | ✅ khép; gộp main cùng nhánh tích hợp |
 | L1–L5 + Q5 (douyin/xhs tìm+kênh, kuaishou) | phien/vcm-* → phien/vcm-tich-hop | 4f0c3d81 | 1092 xanh, kiểm tĩnh sạch | cam kết, vận hành 403, bảng giá, tải thật 2 video | ✅ gộp |
 | L6 dedup bền | phien/vcm-dedup | 07265224, 5927559e | test_1925 (+ ca tải lại video hết hạn mà lỗi ⇒ giữ dấu 'xong', sửa khi gộp) | — | ✅ gộp |
-| L7 UX | phien/vcm-ux | | | | ⏳ đang chạy |
-| L8 hiệu năng | phien/vcm-perf | | | | chờ L7 |
+| L7 UX | phien/vcm-ux | bc8d5ced (+ bed424d9 khi gộp) | test_1926 17 xanh; nhóm tích hợp 1114 xanh | tốc độ/ETA, gợi ý nền×chế độ, lọc nền, không trùng, lỗi sạch | ✅ gộp |
+| L8 hiệu năng | phien/vcm-perf | | | | ⏳ đang chạy |
