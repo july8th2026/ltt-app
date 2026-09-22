@@ -44,13 +44,13 @@ from platform_core.public_api import idempotency, quotes
 from platform_core.public_api.errors import (THIEU_CREDIT_LOI, conflict,
                                              idempotency_conflict,
                                              insufficient_credit, not_found,
-                                             quote_invalid,
+                                             quote_invalid, rate_limited,
                                              thieu_credit_chi_tiet)
 from platform_core.public_api.principal import Principal
 from platform_core.public_api.scopes import (SCOPE_WORKFLOWS_CANCEL,
                                              SCOPE_WORKFLOWS_READ,
                                              SCOPE_WORKFLOWS_RUN)
-from platform_core.workflow import bao_gia, may_trang_thai, thi_hanh, tien
+from platform_core.workflow import bao_gia, may_trang_thai, tao_run
 from server.api.auth import require_scope
 # ⛔ DUNG LAI, khong chep. Chu thich cua chinh ham do canh bao dung cai bay
 #    toi vua dinh: `request.app` ben trong mot sub-app la SUB-APP, nen voi
@@ -214,59 +214,19 @@ def register_workflow_routes(api, config, tag: str) -> None:
             bg, tool_name=f"{_KHOA_BAO_GIA}{wf.id}",
             params={"version_id": ver.id, "graph_hash": ver.graph_hash})
 
-        # Luỹ đẳng do chỉ mục bộ phận `ux_workflow_run_idem` cưỡng chế, không do
-        # một SELECT trước INSERT — một SELECT để lại đúng cửa sổ tranh chấp mà
-        # chỉ mục ấy sinh ra để đóng. Tra đúng khoá của chỉ mục ấy
-        # `(owner_id, idempotency_key)` — KHÔNG lọc thêm `workflow_id`, vì cùng
-        # một khoá cho hai workflow khác nhau của cùng chủ phải bị bắt là
-        # XUNG ĐỘT (409), không lặng lẽ trôi qua như "không tìm thấy".
-        cu = db.execute(
-            select(WorkflowRun).where(
-                WorkflowRun.owner_id == principal.user_id,
-                WorkflowRun.idempotency_key == key)).scalars().first()
-        if cu is not None:
-            if cu.workflow_id != wf.id:
-                raise idempotency_conflict(
-                    "Idempotency-Key already used for another workflow.")
-            return JSONResponse(_cong_khai_run(cu), status_code=200,
-                                headers=_NO_STORE)
-
         try:
-            run = thi_hanh.tao_run(
-                db, workflow_id=wf.id, version_id=ver.id,
-                owner_id=principal.user_id, trigger_kind="api",
-                idempotency_key=key, estimated_max=int(bg.get("credit") or 0))
-        except Exception as loi:                             # noqa: BLE001
-            # `tao_run` flush bên trong, nên `IntegrityError` của chỉ mục bộ
-            # phận nổi lên **ở đây**, không ở commit. Thua ở CSDL rồi trả lượt
-            # cũ rẻ hơn thắng ở một câu truy vấn không có khoá.
-            db.rollback()
-            lai = db.execute(
-                select(WorkflowRun).where(
-                    WorkflowRun.owner_id == principal.user_id,
-                    WorkflowRun.idempotency_key == key)).scalars().first()
-            if lai is None:
-                raise
-            if lai.workflow_id != wf.id:
-                raise idempotency_conflict(
-                    "Idempotency-Key already used for another workflow."
-                ) from loi
-            # Moi tep khac trong `server/api/` dung `logging`; `print`
-            # trong mot bo xu ly request di thang ra stdout, khong mang
-            # muc do va khong loc duoc o production.
-            log.info("tao_run dua idempotency: %s", type(loi).__name__)
-            return JSONResponse(_cong_khai_run(lai), status_code=200,
-                                headers=_NO_STORE)
-
-        try:
-            tien.giu_cho_run(db, run)
+            run, moi = tao_run.tao_run(db, workflow=wf,
+                                       owner_id=principal.user_id,
+                                       trigger_kind="api",
+                                       idempotency_key=key)
+        except tao_run.TrungKhoaKhacWorkflow:
+            raise idempotency_conflict() from None
+        except tao_run.QuaHanMuc as loi:
+            raise rate_limited(str(loi)) from loi
         except credit.ThieuCreditError as loi:
-            # Cùng transaction ⇒ run và khoản giữ cùng rollback. Không có lượt
-            # chạy nào tồn tại mà không có tiền đứng sau nó.
             raise insufficient_credit(
                 THIEU_CREDIT_LOI, **thieu_credit_chi_tiet(loi)) from loi
-
-        return JSONResponse(_cong_khai_run(run), status_code=201,
+        return JSONResponse(_cong_khai_run(run), status_code=201 if moi else 200,
                             headers=_NO_STORE)
 
     @api.get("/runs/{run_id}", tags=[tag], summary="Read one workflow run",

@@ -15,7 +15,7 @@ MANIFEST = AppManifest(
     accent="#8B5CF6",
     nav=(NavEntry("LTT Agent AI", "/agent", "✦", "agent"),
          NavEntry("Canvas", "/agent/canvas", "◇", "agent_canvas")),
-    job_types=("agent.advance",),
+    job_types=("agent.advance", "workflow.dong_co"),
     requires=("api",),
     credit_cost=_orchestration_cost,
     enabled=True,
