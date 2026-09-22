@@ -587,22 +587,29 @@ modify `platform_core/public_api/config.py`;
 modify LTTCODE `src/errors.ts`; modify `llm_gateway/ngan_sach.py`; modify test
 1603/1605/1606/1608 và plugin tests.
 
-- [ ] Điều kiện vào task: ít nhất một chu kỳ phát hành có
+- [x] Điều kiện vào task: ít nhất một chu kỳ phát hành có
   `llm_error_legacy_total=0` và `contract_mismatch=0` trong cửa sổ vận hành đã
   chốt; report được lưu và dẫn trong nhật ký.
-- [ ] **Test đỏ chống hồi quy:** assert source/runtime không còn nhánh
+  > 22/09: `live --minutes 720` = 7 sự kiện, legacy 0, mismatch 0, unknown 0 (toàn probe — chủ dự án miễn điều kiện "một chu kỳ").
+- [x] **Test đỏ chống hồi quy:** assert source/runtime không còn nhánh
   `status == 413 => context`, không còn message substring quyết định action và
   B không còn phát khoá legacy. Đây là test hành vi bằng fixture, không chỉ grep.
-- [ ] Xoá property boolean compatibility và legacy decoder/message fallback;
+  > `tests/test_1709_go_legacy_loi_llm.py` (hành vi, không grep); đột biến "413 ⇒ context" làm 7 ca đỏ + fixture đỏ.
+- [x] Xoá property boolean compatibility và legacy decoder/message fallback;
   mã lạ vẫn fail closed thành `upstream_unknown`.
-- [ ] Xoá `LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS` và nhánh renderer cũ; renderer
+  > `37e7cb62`; giữ ranh giới: status không sinh `canonical_code`, nhưng 4xx vẫn quyết định LỚP lỗi/chính sách phạt khoá (`e30b95e4`, `e5e0b210`, L-09).
+- [x] Xoá `LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS` và nhánh renderer cũ; renderer
   structured trở thành đường duy nhất sau khi telemetry chứng minh an toàn.
-- [ ] Xoá `legacy` khỏi envelope B. Không đổi HTTP status trong cùng commit; nếu
+  > `37e7cb62`; giữ tín hiệu tự nén: "prompt is too long" (Claude Code), `context_length_exceeded` (Codex); khôi phục `overloaded_error` sau 200 cho bận/hết giờ — Claude Code chỉ retry mã đó.
+- [x] Xoá `legacy` khỏi envelope B. Không đổi HTTP status trong cùng commit; nếu
   muốn chuẩn hoá status, mở quyết định/API change riêng.
-- [ ] Chạy toàn ma trận lỗi và LTTCODE. Đột biến đưa nhánh 413 cũ trở lại phải
+  > `8da7cc4a`; HTTP status dây giữ nguyên.
+- [x] Chạy toàn ma trận lỗi và LTTCODE. Đột biến đưa nhánh 413 cũ trở lại phải
   làm test đỏ.
-- [ ] Test nhắm đúng cụm; không chạy L2 giữa phase; commit riêng từng repo:
+  > 30 tệp nhắm: 863 passed/0 failed; fixture 265/265; LTTCODE `4915e29` llm-ltt 110 + ui 34, đột biến regex "prompt is too long" đỏ 1 ca.
+- [x] Test nhắm đúng cụm; không chạy L2 giữa phase; commit riêng từng repo:
   `refactor(llm): remove legacy error inference`.
+  > L1 `--doi --tu 24271a8a` PASS; deploy B (`kiem_tra` 16/17 — phép tok/s là việc phiên VGA) rồi A `b6fbb220`; probe production 3/3, live 7 sự kiện mismatch 0.
 
 ### Task 14: Đồng bộ tài liệu, quyết định và tổng kết phiên
 

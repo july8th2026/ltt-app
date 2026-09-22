@@ -256,6 +256,13 @@ không cần khoá legacy của B; ngược lại A mới coi thân thiếu v1 l
   bước 1b trước khi chép; lùi = `xcopy /E /I /Y` bản chụp đó về
   `H:\LTT_LLM\gateway` rồi `Restart-Service LTTLlmGateway`.
 
+⚠️ **Bẫy đo (23/09):** `inject --base-url` nhận GỐC, công cụ tự thêm `/v1/...`.
+Truyền `https://app.lttstudios.com/api/v1` ⇒ URL thành `/api/v1/v1/messages` ⇒ 404
+route-không-tồn-tại, **trùng đúng status kỳ vọng** nên report chỉ đỏ ở `canonical`
+rỗng và dễ bị đọc nhầm thành "A mất `ltt_error`". Đúng: `--base-url
+https://app.lttstudios.com/api`. Đối chứng nhanh: gọi thẳng một request và xem thân
+có `ltt_error` không.
+
 Sau deploy: `python tools/kiem_hop_dong_loi_llm.py fixture` PASS và
 `live --minutes 60` phải giữ mismatch 0; `unknown` tăng ⇒ có đường B chưa phát
 v1 — lùi A trước.
