@@ -124,10 +124,10 @@ def test_desktop_manual_guide_uses_current_form_and_exact_routes(khach):
     assert "ENABLE_TOOL_SEARCH=false" in guide
     assert "CLAUDE_CODE_DISABLE_1M_CONTEXT=1" not in guide
     # Mẫu số Context = AUTO_COMPACT_WINDOW = cửa sổ công bố (Task 9, 18/09).
-    assert "… / 171.5k" in guide and "… / 209.1k" in guide
-    assert "… / 138.7k" not in guide and "… / 176.4k" not in guide
+    assert "… / 124.2k" in guide and "… / 151.6k" in guide
+    assert "… / 91.5k" not in guide and "… / 118.8k" not in guide
     # % tự nén theo công thức đo 2.1.274: (ctx − min(32768, 20000) − 13000)/ctx
-    assert "~81%" in guide and "~84%" in guide
+    assert "~73%" in guide and "~78%" in guide
     assert "Permission mode couldn't be changed" in guide
     assert "permissions.disableBypassPermissionsMode" in guide
     assert "131 tool" in guide and "98.678 token" in guide
@@ -162,8 +162,8 @@ def test_desktop_local_env_la_danh_sach_chuan_du_10_bien():
     assert env["CLAUDE_CODE_SUBAGENT_MODEL_FORCE"] == "1"
     assert dict(examples.claude_local_env("ltt-3.5")) == {
         **env,
-        "CLAUDE_CODE_MAX_CONTEXT_TOKENS": "209141",
-        "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "209141",
+        "CLAUDE_CODE_MAX_CONTEXT_TOKENS": "151552",
+        "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "151552",
     }
     from apps.ltt_llm import ngan_sach
     for alias, mid in (("ltt-3.8", "qwen38-api"), ("ltt-3.5", "qwen35-api")):

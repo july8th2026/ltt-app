@@ -75,7 +75,8 @@ class TestTranCongBoLaDANXUAT:
         for model, cua_so in ngan_sach.CUA_SO_THEO_MODEL.items():
             vao = ngan_sach.tran_vao_cua(model)
             assert vao == cua_so - ngan_sach.TOKEN_RA_TRAN - ngan_sach.DEM_UOC, model
-            assert ngan_sach.cong_bo_cua(model) == int(vao * 0.92), model
+            assert ngan_sach.cong_bo_cua(model) == int(
+                vao / ngan_sach.HE_SO_UOC_TREN_THAT), model
             nen = ngan_sach.nen_cua(model)
             assert nen == max(
                 0, ngan_sach.cong_bo_cua(model) - ngan_sach.TOKEN_RA_TRAN), model
@@ -91,6 +92,30 @@ class TestTranCongBoLaDANXUAT:
         for model in ngan_sach.CUA_SO_THEO_MODEL:
             assert (ngan_sach.cong_bo_cua(model) - ngan_sach.nen_cua(model)
                     >= ngan_sach.TOKEN_RA_TRAN), model
+
+    def test_cong_bo_o_token_that_khong_vuot_tran_tien_kiem_uoc(self):
+        """L-35 (22/09): số công bố tính theo token THẬT không được vượt trần
+        tiền kiểm ở A, vốn tính theo token ƯỚC (cận trên) — nếu vượt, một hội
+        thoại đúng bằng số công bố có thể vẫn ăn `413` ở cổng.
+
+        ⛔ Đối chứng âm: hệ số `0,92` cũ (bớt 8% cho "lệch tokenizer") không giữ
+           được bất biến này — nó chưa từng là một hệ số quy đổi ước↔thật, chỉ
+           tình cờ đủ nhỏ ở cửa sổ rộng của 2.6. Bài kiểm này phải ĐỎ với 0,92.
+        """
+        for model in ngan_sach.CUA_SO_THEO_MODEL:
+            vao = ngan_sach.tran_vao_cua(model)
+            cong_bo = ngan_sach.cong_bo_cua(model)
+            assert cong_bo * ngan_sach.HE_SO_UOC_TREN_THAT <= vao, model
+
+        # Đối chứng âm: hệ số 0,92 cũ không giữ được bất biến trên.
+        vi_pham = [
+            model for model in ngan_sach.CUA_SO_THEO_MODEL
+            if not (int(ngan_sach.tran_vao_cua(model) * 0.92) * 1.5
+                    <= ngan_sach.tran_vao_cua(model))
+        ]
+        assert vi_pham, (
+            "doi chung am khong con do: he so 0,92 cu lai thoa bat bien — "
+            "kiem tra lai cong thuc")
 
     def test_tran_body_du_cho_model_RONG_NHAT(self):
         """🔴 Trần body là MỘT con số của cả cửa `/api/v1`, nên nó phải chừa đủ

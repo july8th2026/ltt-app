@@ -65,7 +65,7 @@ class Handler(BaseHTTPRequestHandler):
                 if MODE == "413":
                     return self._json({"code": "payload_too_large",
                                        "limit_name": "input_tokens",
-                                       "limit_value": 171458}, status=413)
+                                       "limit_value": 124245}, status=413)
                 if MODE == "503":
                     return self._json({"code": "service_unavailable",
                                        "detail": "mock model unavailable"}, status=503,
