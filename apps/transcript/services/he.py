@@ -14,6 +14,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from platform_core.i18n import N_
+
 
 @dataclass(frozen=True)
 class He:
@@ -29,8 +31,8 @@ MAC_DINH = "ltt"
 HE: dict[str, He] = {
     "ltt": He(
         ma="ltt",
-        ten="LTT chuẩn",
-        mo_ta="Whisper large-v3 + quy tắc LTT (hệ gốc, mặc định)",
+        ten=N_("LTT chuẩn"),
+        mo_ta=N_("Whisper large-v3 + quy tắc LTT (hệ gốc, mặc định)"),
         model="large-v3",
     ),
     # `ltt_turbo` (large-v3-turbo) đã thử 22/09 và bị chủ dự án GỠ cùng ngày:

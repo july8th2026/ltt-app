@@ -23,7 +23,7 @@
       <label class="field">
         <span>{{ _("Hệ phiên âm") }}</span>
         <select name="he">
-          {% for h in cac_he %}<option value="{{ h.ma }}" title="{{ h.mo_ta }}"{% if h.ma == he_mac_dinh %} selected{% endif %}>{{ h.ten }} — {{ h.mo_ta }}</option>{% endfor %}
+          {% for h in cac_he %}<option value="{{ h.ma }}" title="{{ _(h.mo_ta) }}"{% if h.ma == he_mac_dinh %} selected{% endif %}>{{ _(h.ten) }} — {{ _(h.mo_ta) }}</option>{% endfor %}
         </select>
       </label>
       <label class="field">

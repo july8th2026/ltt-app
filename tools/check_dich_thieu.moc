@@ -276,11 +276,8 @@ TRONG	Ảnh giải mã được
 TRONG	Ứng viên thương mại; phải provision offline linear weight + torchvision backbone và khóa checksum trước khi bật.
 TRONG	← Quality Lab
 VANG	 — còn khoảng {p} phút
-VANG	(máy đã xoá)
 VANG	(rỗng)
-VANG	Ai đã điều khiển máy của bạn, lúc nào. Bản ghi này không sửa được và không mất khi thu hồi máy.
 VANG	Chưa chọn tệp
-VANG	Chưa có phiên điều khiển nào.
 VANG	Chưa nhập mô tả ảnh.
 VANG	Chế độ không hợp lệ: {ten}
 VANG	Chế độ này cần ít nhất một ảnh tham chiếu.
@@ -295,7 +292,6 @@ VANG	Không cấp được vé tải ảnh lên. Model nội bộ cần lưu tr�
 VANG	Không cấp được đường tải ảnh tham chiếu ({khoa}). Chế độ dùng ảnh tham chiếu cần lưu trữ R2.
 VANG	Không dịch được prompt sang tiếng Anh ({ly_do}). Model tạo ảnh nội bộ chỉ hiểu tiếng Anh và tiếng Trung. Bạn có thể thử lại, hoặc tự viết prompt bằng tiếng Anh để đi thẳng không cần dịch.
 VANG	Không tìm thấy phiên.
-VANG	Kéo dài
 VANG	LTT LLM (coding · chat · agent)
 VANG	LTT Studios — model ngôn ngữ tại nhà
 VANG	LTT Studios — máy nhà (RTX 3090)
@@ -307,8 +303,6 @@ VANG	Máy tạo ảnh báo thành công nhưng không trả về ảnh nào.
 VANG	Máy tạo ảnh đang bận{them}. Bạn có thể thử lại sau, hoặc chọn model đám mây.
 VANG	Máy đích chưa sẵn sàng.
 VANG	Mất liên lạc với máy tạo ảnh: {loi}
-VANG	Mở App Store
-VANG	Nhật ký truy cập
 VANG	Phiên không còn mở.
 VANG	Quá {phut:.0f} phút mà chưa xong — đã huỷ.
 VANG	Thiếu mã phiên.
@@ -316,7 +310,6 @@ VANG	Thiếu thông tin kết nối.
 VANG	Thiếu thông tin người dùng để kiểm ảnh tham chiếu.
 VANG	Tạo ảnh bằng model nội bộ của LTT Studios.
 VANG	Tối đa {n} ảnh tham chiếu.
-VANG	Từ IP
 VANG	[{slug}] tool {tool!r} params[{param!r}].only_when phải là dict không rỗng
 VANG	[{slug}] tool {tool!r} params[{param!r}].only_when trỏ vào tham số không tồn tại: {k!r}
 VANG	[{slug}] tool {tool!r} params[{param!r}].only_when trỏ vào tham số đang ẩn: {k!r}
@@ -325,4 +318,3 @@ VANG	[{slug}] tool {tool!r} params[{param!r}].only_when[{k!r}] phải là danh s
 VANG	chữ tiếng Việt CÓ DẤU vẽ trong ảnh bị sai dấu
 VANG	máy B dùng chung GPU với việc ảnh và video — bận thì trả 429, không phải lỗi
 VANG	prompt phải là tiếng Anh — nền tảng tự dịch
-VANG	đang mở

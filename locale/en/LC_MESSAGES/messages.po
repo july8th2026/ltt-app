@@ -19422,3 +19422,15 @@ msgstr "The matcher on PreToolUse/PostToolUse matches the TOOL NAME (pwsh, write
 
 msgid "Lệnh hook chạy bằng PowerShell. Nếu hook gọi chương trình ngoài (node, python, git…) thì mã thoát của chương trình đó KHÔNG tự thành mã thoát của hook: phải kết thúc bằng ; exit $LASTEXITCODE, nếu không exit 2 bị nuốt và hook không chặn."
 msgstr "Hook commands run through PowerShell. If a hook calls an external program (node, python, git…), that program's exit code does NOT automatically become the hook's exit code: the command has to end with ; exit $LASTEXITCODE, otherwise exit 2 is swallowed and the hook does not block."
+
+msgid "Hệ phiên âm"
+msgstr "Transcription engine"
+
+msgid "Không đọc được thời lượng tệp âm thanh — tệp hỏng hoặc sai định dạng."
+msgstr "Could not read the duration of the audio file — the file is damaged or in an unsupported format."
+
+msgid "LTT chuẩn"
+msgstr "LTT standard"
+
+msgid "Whisper large-v3 + quy tắc LTT (hệ gốc, mặc định)"
+msgstr "Whisper large-v3 + LTT rules (original engine, default)"
