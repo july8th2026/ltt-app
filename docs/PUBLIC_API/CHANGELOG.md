@@ -21,6 +21,29 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-22 — hạ cửa sổ ngữ cảnh công bố cho khớp token THẬT (L-35, BREAKING)
+
+- **Cái gì đổi:** `context_window`/`model_context_window` công bố cho client
+  giảm: `ltt-3.8` 171.458 → **124.245**, `ltt-3.5` 209.141 → **151.552**.
+  Ngưỡng tự nén đi kèm cũng giảm: `ltt-3.8` 138.690 → **91.477**, `ltt-3.5`
+  176.373 → **118.784**. Trần tiền kiểm thật ở cổng (`context_window_exceeded`,
+  186.368 / 227.328) **không đổi** — chỉ số ta khuyên client cấu hình đổi.
+  Lý do: số cũ tính bằng cách bớt 8% cho "lệch tokenizer"; số mới chia cho hệ
+  số đo được giữa phép ước token vào của cổng (cận trên) và token thật máy B
+  tính tiền (median 1,31 · max 1,483 trên 1.120 lượt production,
+  `HE_SO_UOC_TREN_THAT = 1,5` trong `apps/ltt_llm/ngan_sach.py`), để cửa sổ
+  công bố không còn hứa nhiều hơn số token THẬT mà một hội thoại có thể chứa.
+- **Phá vỡ tương thích?** Có — số nhỏ hơn số cũ, nên `contract_hash` của
+  `text.chat` đổi (`input_schema` khai lại con số trong mô tả tham số `model`)
+  và catalog `/api/v1/models`, `codex_catalog`, cấu hình Claude Desktop/Codex
+  sinh từ `cam` cũng đổi theo. Tích hợp đã cấu hình cứng số cũ (171.458/209.141
+  hoặc ngưỡng nén cũ) vẫn gọi được — trần tiền kiểm thật không đổi — nhưng nên
+  cấu hình lại theo số mới để tránh nén muộn hơn cần thiết.
+- **Phải làm gì:** chạy lại `cam` (CLI/SDK cài đặt) hoặc đọc `GET /api/v1/models`
+  để lấy số mới; sửa tay `CLAUDE_CODE_MAX_CONTEXT_TOKENS` /
+  `CLAUDE_CODE_AUTO_COMPACT_WINDOW` / `model_context_window` /
+  `model_auto_compact_token_limit` nếu đã ghim số cũ trong cấu hình.
+
 ## 2026-09-19 (tối) — `ltt-3.8`: `reasoning_effort` mặc định `xhigh` → `medium` (L-33)
 
 - **Cái gì đổi:** request `ltt-3.8` **không** khai effort ở chỗ nào giờ chạy ở

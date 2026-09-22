@@ -79,8 +79,13 @@ BIEN_KHOA = "LTT_API_KEY"
 #:    ve bi bao ngu canh THAP hon that 26%, tuc Codex nen som va vo co.
 #:
 #:    Duong di cua con so: 65.000 -> 88.555 (02/09) -> 156.385 (03/09, khi cua
-#:    so engine len 204.800). Moi lan doi deu phai doi CA HAI bo cai.
-CUA_SO_NGU_CANH = 171458
+#:    so engine len 204.800) -> 171.458 (den 21/09, chua `HE_SO_UOC_TREN_THAT`).
+#:    Moi lan doi deu phai doi CA HAI bo cai.
+#:
+#: ✅ CHU DU AN CHOT 22/09/2026: 171.458 -> 124.245. So cong bo tu nay chia cho
+#:    `ngan_sach.HE_SO_UOC_TREN_THAT` (=1,5) de khop TOKEN THAT, thay vi bot 8%
+#:    cho "lech tokenizer" — xem `ngan_sach.cong_bo_cua` cho nguon do.
+CUA_SO_NGU_CANH = 124245
 
 #: Tran token RA, khop `ngan_sach.TOKEN_RA_TRAN`.
 TOKEN_RA_TRAN = 32768
@@ -92,7 +97,7 @@ TOKEN_RA_TRAN = 32768
 #:    MOT luot sinh dai nhat (32.768) — client chi kiem nguong GIUA hai luot.
 #:    Voi 0,8 khoang do chi con 25.412, thieu, va production da an mot `413` o
 #:    101.938 token vao dung vi vay.
-NEN_HOI_THOAI = 138690
+NEN_HOI_THOAI = 91477
 
 #: Tran token cho MOT ket qua tool, do vao `truncation_policy` cua catalog.
 #:
@@ -110,7 +115,7 @@ NEN_HOI_THOAI = 138690
 #:    ket qua tool **95.901 token trong mot luot**.
 #:
 #: Suy ra, khong bia: khoang trong giua nguong nen va cua so cong bo dung bang
-#: `TOKEN_RA_TRAN` (171.458 - 138.690 = 32.768). Mot ket qua tool khong duoc
+#: `TOKEN_RA_TRAN` (124.245 - 91.477 = 32.768). Mot ket qua tool khong duoc
 #: chiem qua NUA khoang do, de sau no van con cho cho luot sinh ke tiep.
 #:
 #: ⚠️ Don vi o day la token **UOC CUA CODEX** (`len/4`), khong phai token that
@@ -158,14 +163,17 @@ CLAUDE_DEM_NEN = 13_000
 #:    262.144 tren 5060 Ti (§G3). Ho so vision cu (`qwen38-vision`) da bi go.
 #: ⛔ Nguon chan ly la `apps/ltt_llm/ngan_sach.py`; tep nay CHEP theo, va
 #:    `test_334` buoc hai dau lai nen khong lech duoc trong im lang.
-CUA_SO_NGU_CANH_35 = 209141
+#:
+#: ✅ CHU DU AN CHOT 22/09/2026: 209.141 -> 151.552, cung ly do doi
+#:    `CUA_SO_NGU_CANH` (chia `HE_SO_UOC_TREN_THAT`, khong con bot 8%).
+CUA_SO_NGU_CANH_35 = 151552
 #: Nguong nen cua model thu hai, khop `ngan_sach.nen_cua("qwen35-api")`.
 #:
 #: ⭐ TRUOC 03/09 SO NAY LA **0**, va so 0 do la mot cau tra loi that: cua so
 #:    cong bo cua vision khi ay (28.262) HEP HON mot luot sinh dai nhat (32.768),
 #:    nen khong nguong nen nao giu duoc loi hua va bo cai phai bo han truong do.
 #:    Nang cua so len 131K la thu lam cho no dinh nghia duoc tro lai.
-NEN_HOI_THOAI_35 = 176373
+NEN_HOI_THOAI_35 = 118784
 
 
 class HoSoModel(NamedTuple):

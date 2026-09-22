@@ -12965,8 +12965,8 @@ msgid "Tắt"
 msgstr "Disable"
 
 #: server/templates/_cam_chon.html:226
-msgid "Tắt 1M chưa đặt giới hạn 171K"
-msgstr "Disabling 1M does not set a 171K limit"
+msgid "Tắt 1M chưa đặt giới hạn 124K"
+msgstr "Disabling 1M does not set a 124K limit"
 
 #: server/templates/_cam_chon.html:215
 msgid "Tắt discovery, khai đúng hai Model ID, Apply Changes rồi thoát hẳn và mở lại."
@@ -14023,13 +14023,13 @@ msgid ""
 "Với custom ANTHROPIC_BASE_URL, Claude mặc định tải toàn bộ schema MCP vì Tool Search cần "
 "tool_reference mà nhiều proxy không hỗ trợ. LTT chưa hỗ trợ tool_reference nên giữ "
 "ENABLE_TOOL_SEARCH=false. Tắt Connector/Plugin không dùng; nên giữ mục MCP tools dưới khoảng một "
-"phần mười cửa sổ nén (khoảng 13.9k ở preset 3.8). MAX_MCP_OUTPUT_TOKENS chỉ giới hạn kết quả của "
+"phần mười cửa sổ nén (khoảng 9.1k ở preset 3.8). MAX_MCP_OUTPUT_TOKENS chỉ giới hạn kết quả của "
 "một tool, không làm nhỏ schema của 131 tool."
 msgstr ""
 "With a custom ANTHROPIC_BASE_URL, Claude loads all MCP schemas by default because Tool Search "
 "requires tool_reference blocks that many proxies do not support. LTT does not yet support "
 "tool_reference, so keep ENABLE_TOOL_SEARCH=false. Disable unused Connectors and Plugins; keep MCP"
-" tools below roughly one tenth of the compaction window when practical (about 13.9k with the 3.8 "
+" tools below roughly one tenth of the compaction window when practical (about 9.1k with the 3.8 "
 "preset). MAX_MCP_OUTPUT_TOKENS limits one tool result; it does not shrink the schemas of 131 "
 "tools."
 

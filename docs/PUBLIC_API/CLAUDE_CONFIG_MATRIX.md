@@ -71,15 +71,16 @@ một model ngoài LTT.
 > Đo thật Claude Code 2.1.274 trỏ về LTT: `/context` in `Autocompact buffer 33k` ở mọi
 > cửa sổ; khớp mã client và tài liệu (cửa sổ 1M nén “at about 967K” = 1M − 33K).
 > Trước 18/09 ta khai 138.690 ⇒ Claude nén ở 105.690 (76 %), sớm 33.000 token so với
-> Codex. Giá trị đúng = cửa sổ công bố (171.458 / 209.141) ⇒ nén ở 138.458 / 176.141,
-> ≤ ngưỡng Codex (138.690 / 176.373). Nguồn: `HoSoModel.cua_so_nen_claude` trong hai
-> bộ cài; `tests/test_1440_nen_claude_tach_codex.py`.
+> Codex. Giá trị đúng = cửa sổ công bố (124.245 / 151.552, hạ 22/09 — L-35, chia
+> `HE_SO_UOC_TREN_THAT`) ⇒ nén ở 91.245 / 118.552, ≤ ngưỡng Codex (91.477 / 118.784).
+> Nguồn: `HoSoModel.cua_so_nen_claude` trong hai bộ cài;
+> `tests/test_1440_nen_claude_tach_codex.py`.
 
 Preset dùng chung an toàn khi chuyển qua lại hai model:
 
 ```dotenv
-CLAUDE_CODE_MAX_CONTEXT_TOKENS=171458
-CLAUDE_CODE_AUTO_COMPACT_WINDOW=171458
+CLAUDE_CODE_MAX_CONTEXT_TOKENS=124245
+CLAUDE_CODE_AUTO_COMPACT_WINDOW=124245
 CLAUDE_CODE_MAX_OUTPUT_TOKENS=32768
 MAX_MCP_OUTPUT_TOKENS=16384
 CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS=1
@@ -94,8 +95,8 @@ ENABLE_TOOL_SEARCH=false
 Nếu môi trường **chỉ** dùng LTT 3.5, thay đúng hai dòng đầu:
 
 ```dotenv
-CLAUDE_CODE_MAX_CONTEXT_TOKENS=209141
-CLAUDE_CODE_AUTO_COMPACT_WINDOW=209141
+CLAUDE_CODE_MAX_CONTEXT_TOKENS=151552
+CLAUDE_CODE_AUTO_COMPACT_WINDOW=151552
 ```
 
 Chín dòng còn lại giữ nguyên. Không dùng preset 3.5 rồi đổi sang LTT 3.8 vì khi
@@ -104,7 +105,7 @@ Chín dòng còn lại giữ nguyên. Không dùng preset 3.5 rồi đổi sang 
 | Biến | Vì sao có mặt |
 |---|---|
 | `MAX_CONTEXT_TOKENS` | Sửa cửa sổ 200K mà Claude đoán cho model ID lạ. |
-| `AUTO_COMPACT_WINDOW` | Là cửa sổ, không phải ngưỡng: Claude tự trừ 33.000 ⇒ nén ở 138.458/176.141, ≤ ngưỡng Codex 138.690/176.373 (R-05). |
+| `AUTO_COMPACT_WINDOW` | Là cửa sổ, không phải ngưỡng: Claude tự trừ 33.000 ⇒ nén ở 91.245/118.552, ≤ ngưỡng Codex 91.477/118.784 (R-05). |
 | `MAX_OUTPUT_TOKENS` | Khớp trần output thật của LTT. |
 | `MAX_MCP_OUTPUT_TOKENS` | Chặn một kết quả MCP nuốt hết vùng dự trữ; không giới hạn schema tool. |
 | `MAX_CONCURRENT_SUBAGENTS` | Chỉ một agent phụ chạy đồng thời; LTT có ba lane chia sẻ. |
@@ -226,7 +227,7 @@ kiểm chế độ hỏng mà tài liệu chính thức mô tả:
 
 1. `Test connection` xanh với Bearer.
 2. Picker chỉ hiện LTT 3.8 (Mạnh) và LTT 3.5 (Nhanh).
-3. Phiên Local mới dùng preset chung hiện khoảng `/ 171.5k` và `Autocompact buffer 33k`, không còn `/ 200k` hay `/ 138.7k`.
+3. Phiên Local mới dùng preset chung hiện khoảng `/ 124.2k` và `Autocompact buffer 33k`, không còn `/ 200k` hay `/ 171.5k`.
 4. Chạy một subagent rồi xem `/tasks`: model phải là model chính đang chọn.
 5. Subagent không thể sinh tầng con và không có hơn một subagent chạy đồng thời.
 6. Một stream lỗi không tạo request tiếp theo với `stream:false`.

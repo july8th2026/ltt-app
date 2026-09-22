@@ -1062,12 +1062,14 @@ class TestCamCliKhopNganSach:
         # (3) Cấu hình THẬT hôm nay thoả.
         assert cua_so - ngan_sach.NEN_CHO_CLIENT >= ngan_sach.TOKEN_RA_TRAN
 
-        # (4) Và ghi lại phát hiện: ở cửa sổ HÔM NAY, `0,8` lại thoả. Không phải
-        #     lời mời quay về nó — chỉ là bằng chứng cho câu "tỉ lệ không đo
-        #     được cái cần đo": nó đúng/sai tuỳ cửa sổ, còn công thức
-        #     `cửa sổ − TOKEN_RA_TRAN` đúng ở mọi cửa sổ.
-        assert cua_so - int(cua_so * 0.8) >= ngan_sach.TOKEN_RA_TRAN, (
-            "cua so da hep lai duoi muc `0,8` con thoa — doc lai muc (2), va "
+        # (4) Và ghi lại phát hiện: sau khi hạ cửa sổ công bố ngày 22/09 (L-35,
+        #     chia `HE_SO_UOC_TREN_THAT` thay vì bớt 8%), `0,8` LẠI KHÔNG thoả
+        #     ở cửa sổ hôm nay — y hệt sự cố 03/09 ở mục (2). Đây KHÔNG phải hồi
+        #     quy: nó là đúng bằng chứng cho câu "tỉ lệ không đo được cái cần
+        #     đo" — 0,8 đúng/sai tuỳ cửa sổ đang chạy, còn công thức
+        #     `cửa sổ − TOKEN_RA_TRAN` (mục 3) đúng ở MỌI cửa sổ.
+        assert cua_so - int(cua_so * 0.8) < ngan_sach.TOKEN_RA_TRAN, (
+            "cua so da rong lai du muc `0,8` con thoa — doc lai muc (2), va "
             "dung dung `0,8` o bat ky bo cai nao")
 
 
