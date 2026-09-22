@@ -84,7 +84,7 @@ def test_trang_sinh_tu_registry(env):
     r = client.get("/video-crawler")
     assert r.status_code == 200
     assert 'data-nen="youtube"' in r.text
-    assert 'data-nen="douyin"' not in r.text            # nền chưa bật không hiện
+    assert 'data-nen="kuaishou"' not in r.text          # nền chưa bật không hiện
     for che_do in ("tu_khoa", "link", "kenh", "bo"):
         assert f'value="{che_do}"' in r.text
 

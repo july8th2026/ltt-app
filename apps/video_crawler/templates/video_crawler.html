@@ -19,6 +19,8 @@
   .vc-bia{width:96px;aspect-ratio:16/9;display:grid;place-items:center;border-radius:var(--radius);background:var(--panel);border:1px solid var(--line);font-size:.7rem;color:var(--grey);overflow:hidden}
   .vc-muc span{overflow-wrap:anywhere}
   .vc-che-do label[hidden]{display:none}
+  .vc-can-phien span::after{content:" 🔒"}
+  .vc-grid .chips{flex-wrap:wrap}
 </style>
 <section aria-labelledby="vc-title">
   {{ ah.dau_trang("Video · Nguồn", "Cào video nguồn", "Tìm theo từ khoá, link, kênh hoặc playlist; xem trước, chọn rồi tải vào kho của bạn.", id_tieu_de="vc-title") }}
@@ -35,7 +37,9 @@
       <h2>1 · Nền tảng</h2>
       <div class="chips" role="radiogroup" aria-label="Nền tảng">
         {% for n in cac_nen %}
-        <label class="chip-opt" data-nen="{{ n.id }}" data-che-do="{{ n.che_do | sort | join(',') }}">
+        <label class="chip-opt" data-nen="{{ n.id }}" data-che-do="{{ n.che_do | sort | join(',') }}"
+               data-can-phien="{{ n.che_do_can_dang_nhap | sort | join(',') }}" data-co-phien="{{ '1' if n.id in phien_cua_toi else '' }}"
+               data-ghi-chu="{{ n.gioi_han | join(' · ') }}">
           <input type="radio" name="nen_tang" value="{{ n.id }}" {% if loop.first %}checked{% endif %}><span>{{ n.ten }}</span>
         </label>
         {% endfor %}
@@ -48,6 +52,7 @@
         {% endfor %}
       </div>
 
+      <p class="muted" id="vc-ghi-chu" aria-live="polite"></p>
       <label class="field"><span>Từ khoá / link</span>
         <input id="vc-dau-vao" name="dau_vao" required maxlength="500" placeholder="{{ GOI_Y.tu_khoa }}" autocomplete="off">
       </label>
@@ -114,11 +119,17 @@
   function capNhat() {
     var nen = form.querySelector('input[name="nen_tang"]:checked');
     if (!nen) return;
-    var hoTro = nen.closest("[data-che-do]").dataset.cheDo.split(",");
+    var the = nen.closest("[data-che-do]"), hoTro = the.dataset.cheDo.split(",");
+    var canPhien = (the.dataset.canPhien || "").split(","), coPhien = the.dataset.coPhien === "1";
     form.querySelectorAll("[data-che-do-nut]").forEach(function (l) {
       var ok = hoTro.indexOf(l.dataset.cheDoNut) >= 0;
       l.hidden = !ok; l.querySelector("input").disabled = !ok;
+      var khoa = ok && canPhien.indexOf(l.dataset.cheDoNut) >= 0 && !coPhien;
+      l.classList.toggle("vc-can-phien", khoa);
+      l.title = khoa ? "Cần phiên đăng nhập — thêm ở mục Đăng nhập nền tảng bên dưới" : "";
     });
+    var ghiChu = document.getElementById("vc-ghi-chu");
+    ghiChu.textContent = the.dataset.ghiChu || "";
     var chon = form.querySelector('input[name="che_do"]:checked');
     if (!chon || chon.disabled) {
       chon = form.querySelector('input[name="che_do"]:not([disabled])'); if (chon) chon.checked = true;

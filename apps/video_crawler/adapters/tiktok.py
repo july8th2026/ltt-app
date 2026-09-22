@@ -81,6 +81,8 @@ def url_hashtag_tiktok(kw: str) -> str:
 
 
 class TikTokAdapter(YtdlpAdapter):
+    #: Cookie đăng nhập làm TẢI trả 403 (donor Y:1734-1741) — chỉ dùng phiên khi khám phá (tu_khoa).
+    cookie_khi_tai = False
     nen_tang = "tiktok"
     allowed_extractors = EXTRACTOR_CHO_PHEP                    # spec §21
     extractor_args: dict = {}

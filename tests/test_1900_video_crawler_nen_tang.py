@@ -25,13 +25,55 @@ def test_registry_co_youtube_bat_voi_du_bon_che_do():
 
 
 def test_chi_nen_da_bat_moi_duoc_liet_ke_cho_giao_dien():
+    """Nền chỉ bật khi có adapter + test giả + smoke mạng thật (SO_LOI.md, 22/09). Thứ tự registry giữ nguyên.
+    rednote: yt-dlp chưa hỗ trợ (yt-dlp/yt-dlp#16519). kuaishou, honggo: không có extractor."""
     ids = [n.id for n in nen_tang.cac_nen_bat()]
-    assert ids == ["youtube"]            # release 1: chỉ nền có adapter + test
+    assert ids == ["douyin", "bilibili_tv", "bilibili", "xiaohongshu", "weibo", "tiktok", "youtube",
+                   "facebook", "instagram", "twitter"]
+
+
+# Chế độ theo GIAO donor ∩ extractor yt-dlp thật (báo cáo từng làn); chế độ cần phiên theo smoke thật 22/09.
+_CHE_DO = {
+    "youtube": ({"tu_khoa", "link", "kenh", "bo"}, set()),
+    "tiktok": ({"tu_khoa", "link", "kenh", "bo"}, {"tu_khoa"}),        # donor Y:1541-1544
+    "facebook": ({"link"}, set()),
+    "twitter": ({"link"}, set()),
+    "weibo": ({"link", "kenh"}, set()),
+    "bilibili_tv": ({"link"}, set()),
+    "bilibili": ({"tu_khoa", "link", "kenh", "bo"}, {"tu_khoa", "link", "kenh", "bo"}),   # smoke: HTTP 412 ẩn danh
+    "instagram": ({"link"}, {"link"}),                                  # smoke: "login required"
+    "douyin": ({"link"}, {"link"}),                                     # smoke: "Fresh cookies ... are needed"
+    "xiaohongshu": ({"link"}, set()),
+}
+
+
+@pytest.mark.parametrize("nen", sorted(_CHE_DO))
+def test_che_do_moi_nen_dung_bang_chung(nen):
+    n = nen_tang.lay(nen)
+    che_do, can_phien = _CHE_DO[nen]
+    assert n.che_do == frozenset(che_do)
+    assert n.che_do_can_dang_nhap == frozenset(can_phien)
+    assert n.che_do_can_dang_nhap <= n.che_do
+    if n.che_do_can_dang_nhap:
+        assert n.cookie_dang_nhap, "nền cần phiên phải khai tên cookie xác thực"
+
+
+@pytest.mark.parametrize("nen", [n.id for n in nen_tang.cac_nen_bat()])
+def test_moi_nen_bat_co_adapter_that(nen):
+    from apps.video_crawler import adapters
+    ad = adapters.tao(nen)
+    assert ad.nen_tang == nen
+
+
+def test_tiktok_khong_gui_cookie_khi_tai():
+    """Donor Y:1734-1741: cookie đăng nhập làm TikTok trả 403 khi TẢI."""
+    from apps.video_crawler import adapters
+    assert adapters.tao("tiktok").cookie_khi_tai is False
 
 
 def test_nen_chua_bat_hoac_la_bi_tu_choi_co_ten():
     with pytest.raises(nen_tang.NenKhongHopLe):
-        nen_tang.lay_nen_bat("douyin")
+        nen_tang.lay_nen_bat("kuaishou")
     with pytest.raises(nen_tang.NenKhongHopLe):
         nen_tang.lay_nen_bat("khong_co")
 

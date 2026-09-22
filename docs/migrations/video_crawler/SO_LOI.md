@@ -21,6 +21,13 @@ Một sổ cho cả phiên. Mỗi dòng: tìm thấy ở đâu, bằng chứng, 
 | L13 | Kiểm GUI | mọi mục trùng ⇒ Done im lặng, không tệp | sự kiện + thông điệp rõ, credit 0 | ✅ |
 | L14 | Kiểm GUI | poll hàng đợi 4 s cả khi không có job chạy | chỉ poll khi còn job chạy | ⏸ S8 |
 | L15 | Làn B | Không có runtime JS/EJS ⇒ yt-dlp cảnh báo "some formats may be missing" | đo ở D1 trên máy A | ⏸ D1 |
+| L16 | Review code (BLOCKER) | `url_<id>` từ form ⇒ một id tải cả playlist giá 1 credit | URL dựng lại từ id bởi adapter; mục lấy từ kết quả xem trước của chính user | ✅ `256d4c08`, `5d80b1d1`+ |
+| L17 | Review code | id trùng tính 2 lần; huỷ chậm 30 s; `_het_gio` giết tiến trình trước khi dọn; lỗi HTMX 4xx không hiện | dedupe id; kiểm huỷ 5 s; ngân sách 6600 s; HTMX trả 200 | ✅ `256d4c08` |
+| L18 | Review code | nhịp tim phụ thuộc hook; livestream; không trần dung lượng | luồng nhịp tim 20 s, lọc live, `max_filesize` 4 GiB | ✅ `5544692f` |
+| L19 | Smoke thật | Twitter: `id` = id media ≠ id tweet ⇒ tải sai URL, rồi "không thấy tệp" | dùng `display_id`; tìm tệp cuối duy nhất trong thư mục mục | ✅ |
+| L20 | Smoke thật | Instagram "login required", Douyin "Fresh cookies", Bilibili HTTP 412 rơi vào `loi_khac` (retry vô ích) | mã `can_dang_nhap` / `nen_chan`, không retry, thông điệp chỉ tới phiên | ✅ |
+| L21 | Smoke thật | Máy prod thiếu `curl_cffi` ⇒ impersonate (bilibili.tv, Facebook) hỏng | thêm `curl_cffi>=0.10,<0.15` vào requirements-server.txt (yt-dlp chỉ nhận dải này) | ✅ `3b384c7c` — cần cài khi deploy |
+| L22 | Kiểm test | `test_211::test_a_decade_of_retention…` đỏ khi chạy RIÊNG, cả trên cây trước B0 | có sẵn, ngoài phạm vi (fixture `portal` create_all trước load_app_tables) | ⏸ báo phiên chủ |
 
 ## Độ phủ (slice 1 — YouTube)
 
@@ -37,3 +44,24 @@ Một sổ cho cả phiên. Mỗi dòng: tìm thấy ở đâu, bằng chứng, 
 | dedup | `test_1905::test_khong_trung…`; GUI lượt 2 không tải lại, credit hoàn |
 | multi-user | `test_1905::test_lich_su…`, `test_1906::test_nguoi_khac…`, owner lấy từ phiên |
 | production (`app.lttstudios.com`) | ⏸ D1 |
+
+## Smoke mạng thật từng nền (máy A, 22/09, URL mẫu công khai từ `_TESTS` của extractor yt-dlp 2026.03.17)
+
+| Nền | Kết quả | Quyết định registry |
+|---|---|---|
+| YouTube | khám phá + tải (GUI dev) | bật; 4 chế độ ẩn danh |
+| TikTok | khám phá + tải 2,7 MB | bật; từ khoá cần phiên (donor); không gửi cookie khi tải |
+| Facebook | 1/3 URL tải 7,7 MB; 2 URL "Cannot parse data" (lỗi extractor đã biết) | bật; chỉ link |
+| Twitter/X | sau sửa L19: tải 0,5 MB | bật; chỉ link |
+| Weibo | tải 1,8 MB (m.weibo.cn) | bật; link + kênh |
+| bilibili.tv | tải 13,4 MB (`/video/2045730385`) | bật; chỉ link video độc lập |
+| Xiaohongshu | trích xuất chạy; mẫu đều là bài ảnh ⇒ `chi_la_anh` đúng | bật; chỉ link có xsec_token — CHƯA nghiệm thu một bài VIDEO |
+| Bilibili | HTTP 412 ẩn danh | bật; MỌI chế độ cần phiên — CHƯA nghiệm thu có phiên |
+| Instagram | "login required" | bật; cần phiên — CHƯA nghiệm thu có phiên |
+| Douyin | "Fresh cookies needed" | bật; cần phiên — CHƯA nghiệm thu có phiên |
+| RedNote | yt-dlp không hỗ trợ (yt-dlp/yt-dlp#16519 mở) | tắt |
+| Kuaishou, Honggo | không có extractor yt-dlp; donor: CAPTCHA / CDN chặn IP datacenter | tắt (DEFER — cần client riêng + máy IP dân dụng) |
+| Douyin/XHS tìm kiếm + kênh | cần client riêng ký request (X-Bogus/a_bogus) — MediaCrawler cấm thương mại | DEFER, việc lớn riêng |
+
+Nghiệm thu có phiên (Bilibili, Instagram, Douyin, TikTok từ khoá) cần cookies.txt của CHÍNH chủ dự án/tài khoản test
+nhập qua giao diện — tác tử không được nhập thông tin đăng nhập.

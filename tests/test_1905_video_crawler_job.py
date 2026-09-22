@@ -226,7 +226,7 @@ def test_lich_su_chi_thay_job_cua_minh(db, kho, nguoi, monkeypatch):
 
 
 @pytest.mark.parametrize("sai", [
-    dict(nen_tang="douyin", che_do="tu_khoa", dau_vao="meo", so_luong=5),     # nền chưa bật
+    dict(nen_tang="kuaishou", che_do="tu_khoa", dau_vao="meo", so_luong=5),   # nền chưa bật
     dict(nen_tang="youtube", che_do="xyz", dau_vao="meo", so_luong=5),        # chế độ lạ
     dict(nen_tang="youtube", che_do="tu_khoa", dau_vao="", so_luong=5),       # trống
     dict(nen_tang="youtube", che_do="tu_khoa", dau_vao="meo", so_luong=0),

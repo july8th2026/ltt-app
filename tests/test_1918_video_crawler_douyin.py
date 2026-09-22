@@ -234,7 +234,8 @@ def test_kham_pha_download_error_duoc_phan_loai():
     with pytest.raises(LoiCao) as e:
         DouyinAdapter(nha).kham_pha(
             _yc("link", "https://www.douyin.com/video/6961737553342991651", 1), bao_tien_do=_khong_bao)
-    assert e.value.ma == "loi_khac" and e.value.tam_thoi is True
+    # Smoke thật 22/09: thử lại ẩn danh không bao giờ khỏi ⇒ `can_dang_nhap`, không retry (loi.py).
+    assert e.value.ma == "can_dang_nhap" and e.value.tam_thoi is False
 
 
 # ---------------------------------------------------------------- tải
