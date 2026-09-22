@@ -160,6 +160,9 @@ APP_DUOC_DUNG_APP: dict = {
         ("apps.autosubvideo.ass_builder", "build_srt"),
         # Pha 16: mo hinh kieu chu — duyet tinh chinh bang chinh no.
         ("apps.autosubvideo.schemas", "SubtitleStyleConfig"),
+        # asv-final lan phu-de: ngat dong chu Han + kiem glyph that cua font.
+        ("apps.autosubvideo.segmenter", "wrap_lines"),
+        ("apps.autosubvideo.font_checker", "missing_glyphs"),
     },
 
     # ── Auto Scan Video doc NGAN SACH TOKEN cua model nha ───────────────────

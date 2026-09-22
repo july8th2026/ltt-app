@@ -1,0 +1,53 @@
+{
+ "phep_do": "Do dai phu de cung (hardsub) tren 4 clip that. Chi DOC video, ghi JSON bang chung.\n\nPhep do (loai A — hinh hoc tren diem anh, khong phai diem so):\n  diem anh \"chu co vien\" = luma >= 200 VA co diem anh luma <= 60 trong cua so 5x5.\n  Hardsub la chu trang vien den; nen canh (troi, ao trang) sang nhung KHONG co vien toi sat ben.\n  Dai = cac hang ma ti le diem \"chu co vien\" (trung binh 60 khung) >= 25% cua dinh.",
+ "ket_qua": [
+  {
+   "tep": "廉价的牛肠经过复杂的加工后竟然成了韩国人补充能量",
+   "rong": 1024,
+   "cao": 576,
+   "giay": 265.0,
+   "so_khung": 60,
+   "dai_y0": 0.927,
+   "dai_y1": 0.983,
+   "dinh_ti_le": 0.3203,
+   "trung_vi_ti_le": 0.0035,
+   "dinh_tren_nen": 92.2
+  },
+  {
+   "tep": "暴雨天野外露营搭建帐篷生活度过雨天享受户外露营 ",
+   "rong": 864,
+   "cao": 576,
+   "giay": 190.0,
+   "so_khung": 60,
+   "dai_y0": 0.909,
+   "dai_y1": 0.971,
+   "dinh_ti_le": 0.2816,
+   "trung_vi_ti_le": 0.0048,
+   "dinh_tren_nen": 58.9
+  },
+  {
+   "tep": "深度解析丨跳伞慢了该怎么打教你用细节操作来化解危",
+   "rong": 836,
+   "cao": 576,
+   "giay": 106.8,
+   "so_khung": 60,
+   "dai_y0": 0.761,
+   "dai_y1": 0.795,
+   "dinh_ti_le": 0.1385,
+   "trung_vi_ti_le": 0.0043,
+   "dinh_tren_nen": 32.5
+  },
+  {
+   "tep": "真人气枪游戏红蓝双方对决.mp4",
+   "rong": 1024,
+   "cao": 576,
+   "giay": 275.0,
+   "so_khung": 60,
+   "dai_y0": 0.899,
+   "dai_y1": 0.958,
+   "dinh_ti_le": 0.1343,
+   "trung_vi_ti_le": 0.0056,
+   "dinh_tren_nen": 23.8
+  }
+ ]
+}

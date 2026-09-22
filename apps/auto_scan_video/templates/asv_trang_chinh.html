@@ -434,6 +434,21 @@
         <p class="asv-ghi-chu asv-vung-chan" id="asv-phu-de-chan" hidden>
           {{ _("Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên không thể khắc phụ đề lên hình. Bạn vẫn xuất được tệp phụ đề rời ở ngay dưới.") }}
         </p>
+        {# ⭐ Tự động chỉ tránh được dải phụ đề gốc khi khách ĐÃ đánh dấu nó
+           (nút “Đánh dấu phụ đề gốc” ở khối vùng che). Đo 22/09 trên 4 clip
+           thật: dải hardsub nằm ở 76–98% chiều cao, đúng chỗ kiểu mặc định đặt
+           chữ. JS hiện câu này khi chưa có dải nào. #}
+        <p class="asv-ghi-chu" id="asv-phu-de-goi-y" hidden>
+          {{ _("Video nguồn thường đã có phụ đề cứng ở dải dưới. Hãy đánh dấu vùng phụ đề gốc ở mục vùng che: dải đó sẽ được làm mờ và phụ đề mới đặt đè lên, không chồng hai lớp chữ.") }}
+        </p>
+        <label class="asv-o" id="asv-phu-de-chu-o" hidden>
+          <span>{{ _("Nguồn chữ") }}</span>
+          <select id="asv-phu-de-chu">
+            {% for c_ma, c_ten in phu_de.chu %}
+              <option value="{{ c_ma }}">{{ _(c_ten) }}</option>
+            {% endfor %}
+          </select>
+        </label>
         <label class="asv-o" id="asv-phu-de-kieu-o" hidden>
           <span>{{ _("Kiểu chữ") }}</span>
           <select id="asv-phu-de-kieu">
@@ -499,6 +514,19 @@
             <small>{{ _("Tệp tải về được, dùng cho YouTube hay để chỉnh lại về sau. Không đổi một điểm ảnh nào của video.") }}</small></span>
         </label>
         <input type="hidden" name="phu_de" id="asv-phu-de" value="">
+        {# 🔑 Xem trước dựng ở MÁY CHỦ bằng đúng hồ sơ + `.ass` + chuỗi lọc của
+           bản render (`phu_de.xem_truoc`), trên khung hình đang dừng của video
+           bạn chọn. Không vẽ phụ đề bằng CSS: một bản vẽ thứ hai sẽ lệch. #}
+        <div class="asv-phu-de-xem" id="asv-phu-de-xem"
+             data-duong="{{ app.route_prefix }}/phu-de/xem-truoc"
+             data-tu-dong="{{ phu_de.che_do_tu_dong }}">
+          <button type="button" class="btn ghost" id="asv-phu-de-xem-nut" disabled>
+            {{ _("Xem trước phụ đề trên khung hình này") }}
+          </button>
+          <p class="asv-ghi-chu" id="asv-phu-de-xem-loi" hidden></p>
+          <img id="asv-phu-de-xem-anh" alt="{{ _('Xem trước phụ đề') }}" hidden
+               style="max-width:100%;display:block;margin-top:8px">
+        </div>
       </div>
 
       {# 🔑 Âm thanh (V6 pha 23) — MỘT thanh mức, không phải hai.

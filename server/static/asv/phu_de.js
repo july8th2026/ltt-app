@@ -26,6 +26,8 @@
   var oSrt = document.getElementById("asv-phu-de-srt");
   var chanPd = document.getElementById("asv-phu-de-chan");
   var oPd = document.getElementById("asv-phu-de");
+  var oChu = document.getElementById("asv-phu-de-chu");
+  var boChu = document.getElementById("asv-phu-de-chu-o");
   if (!nhomPd || !oCheDo || !oPd) return;
 
   var CAN_KIEU = nhomPd.getAttribute("data-can-kieu") || "";
@@ -112,30 +114,111 @@
     var srt = !!(oSrt && oSrt.checked);
     if (!dangKhac() && !srt) {
       oPd.value = "";
+      veGoiY();
+      henXemTruoc();
       return;
     }
     var ho = { che_do: oCheDo.value, xuat_srt: srt };
-    /* ⛔ Chi gui `kieu` khi that su khac vao hinh: mot `.srt` khong mang kieu
-     *    chu nao, va may chu bo truong do o `chuan_hoa`. Gui thua o day se lam
-     *    hai lan chay giong het nhau co hai van tay khac nhau. */
-    if (dangKhac() && oKieu && oKieu.value) ho.kieu = oKieu.value;
-    /* ⛔ Cung luat voi `kieu`: mot `.srt` khong mang kieu chu nao, nen no cung
-     *    khong mang tinh chinh nao. Va gui mot `{}` rong o moi lan chay se lam
-     *    ho so cua nhung lan khong tinh chinh khac di ma khong vi ly do gi. */
-    if (dangKhac()) {
+    /* ⛔ `kieu`, `tinh_chinh`, `chu` CHI o "tu chon kieu" (asv-final): bon che
+     *    do con lai da co dinh kieu + nguon chu, va may chu tu choi `chu` o do.
+     *    Gui thua se lam hai lan chay giong het nhau co hai van tay khac nhau. */
+    if (tuChon()) {
+      if (oKieu && oKieu.value) ho.kieu = oKieu.value;
       var tc = docTinhChinh();
       if (Object.keys(tc).length) ho.tinh_chinh = tc;
+      if (oChu && oChu.value && oChu.value !== "dich") ho.chu = oChu.value;
     }
     oPd.value = JSON.stringify(ho);
+    veGoiY();
+    henXemTruoc();
   }
 
+  function tuChon() { return oCheDo.value === CAN_KIEU; }
+
   function veKieu() {
-    if (boKieu) boKieu.hidden = oCheDo.value !== CAN_KIEU;
-    /* ⭐ Bang tinh chinh theo `dangKhac()`, KHONG theo `CAN_KIEU`: mot ho so
-     *    "kieu mac dinh" van dot vao hinh, nen no van tinh chinh duoc. Buoc
-     *    bang nay vao o chon kieu se lam mot nua khach khong bao gio thay no. */
-    if (boTC) boTC.hidden = !dangKhac();
+    /* ⭐ Kieu, nguon chu va tinh chinh la MOT nhom: che do "tu chon kieu".
+     *    Bon che do con lai la nhung goi da chot — do chinh la cho chung khac
+     *    nhau tren giao dien, khong chi o ten. */
+    if (boKieu) boKieu.hidden = !tuChon();
+    if (boChu) boChu.hidden = !tuChon();
+    if (boTC) boTC.hidden = !tuChon();
   }
+
+  /* Goi y danh dau dai phu de goc: chi khi "tu dong" va CHUA co dai nao. */
+  var goiY = document.getElementById("asv-phu-de-goi-y");
+  var oVung = document.getElementById("asv-vung");
+  function coDaiGoc() {
+    try {
+      return JSON.parse((oVung && oVung.value) || "[]").some(function (v) {
+        return v && v.loai === "danh_dau_phu_de";
+      });
+    } catch (e) { return false; }
+  }
+  function veGoiY() {
+    if (goiY) goiY.hidden = !(boXem && oCheDo.value === TU_DONG && !coDaiGoc());
+  }
+
+  /* ── Xem truoc: MAY CHU dung khung, bang dung ho so + .ass + chuoi loc
+   *    cua ban render (`phu_de.xem_truoc`). Khong ve phu de bang CSS. ── */
+  var boXem = document.getElementById("asv-phu-de-xem");
+  var nutXem = document.getElementById("asv-phu-de-xem-nut");
+  var anhXem = document.getElementById("asv-phu-de-xem-anh");
+  var loiXem = document.getElementById("asv-phu-de-xem-loi");
+  var video = document.getElementById("asv-xem");
+  var TU_DONG = boXem ? boXem.getAttribute("data-tu-dong") : "";
+  var hen = null;
+
+  function henXemTruoc() {
+    if (!anhXem || anhXem.hidden) return;   /* chi tu lam moi khi dang xem */
+    clearTimeout(hen);
+    hen = setTimeout(xemTruoc, 400);
+  }
+
+  /* ⛔ Hai yeu cau chay song song (doi o -> hen gio, roi bam nut) VE KHONG
+   *    THEO THU TU. Do tren trinh duyet that: khung cua che do TRUOC de len
+   *    che do vua chon. Chi hien phan hoi cua yeu cau MOI NHAT. */
+  var lanXem = 0;
+
+  function xemTruoc() {
+    if (!boXem || !video || video.readyState < 2) return;
+    clearTimeout(hen);
+    var lan = ++lanXem;
+    var cv = document.createElement("canvas");
+    cv.width = video.videoWidth; cv.height = video.videoHeight;
+    cv.getContext("2d").drawImage(video, 0, 0, cv.width, cv.height);
+    cv.toBlob(function (b) {
+      if (!b) return;
+      var fd = new FormData(), f = new FormData(ASV.form);
+      fd.append("anh", b, "khung.png");
+      fd.append("phu_de", oPd.value || "");
+      fd.append("vung", (oVung && oVung.value) || "");
+      ["preset", "ngon_ngu_nguon", "ngon_ngu_dich", "csrf_token"].forEach(function (k) {
+        fd.append(k, f.get(k) || "");
+      });
+      fetch(boXem.getAttribute("data-duong"), {
+        method: "POST", body: fd, credentials: "same-origin"
+      }).then(function (r) {
+        if (r.ok) return r.blob();
+        return r.json().then(function (j) { throw new Error(j.detail || r.status); },
+                             function () { throw new Error(String(r.status)); });
+      }).then(function (png) {
+        if (lan !== lanXem) return;
+        var cu = anhXem.src;
+        anhXem.onload = function () { if (cu) URL.revokeObjectURL(cu); };
+        anhXem.src = URL.createObjectURL(png);
+        anhXem.hidden = false;
+        if (loiXem) loiXem.hidden = true;
+      }).catch(function (e) {
+        if (lan === lanXem && loiXem) { loiXem.textContent = String(e.message || e); loiXem.hidden = false; }
+      });
+    }, "image/png");
+  }
+
+  if (nutXem) nutXem.addEventListener("click", function () { veGoiY(); xemTruoc(); });
+  if (video && nutXem) video.addEventListener("loadeddata", function () {
+    nutXem.disabled = false;
+  });
+  if (video) video.addEventListener("seeked", henXemTruoc);
 
   /* ⛔ CHI o che do bi chan, khong phai ca nhom. Xem dau tep. */
   function capNhatPhuDeTheoPreset() {
@@ -162,6 +245,10 @@
   });
   if (nutTraLai) nutTraLai.addEventListener("click", traVeGoc);
   if (oSrt) oSrt.addEventListener("change", dongBoPhuDe);
+  if (oChu) oChu.addEventListener("change", dongBoPhuDe);
+  /* Vung che doi (ve/xoa dai phu de goc) -> goi y + xem truoc theo. `vung.js`
+   * ghi o an bang `.value`, khong ban su kien, nen nghe o muc form. */
+  ASV.form.addEventListener("click", function () { setTimeout(veGoiY, 0); });
 
   traVeGoc();
   ASV.khiDoiPreset(capNhatPhuDeTheoPreset);

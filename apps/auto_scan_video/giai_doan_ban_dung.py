@@ -151,9 +151,11 @@ def _ho_so_phu_de(db, kho: Storage, run, ke_hoach: dict, cai, cach: str):
     tai_lieu = _doc(kho, khoa)
     van_ban.kiem(tai_lieu)          # doc lai thi kiem lai (I8)
 
-    ho_so["su_kien"] = _pd.su_kien_ra_goi(
-        _pd.su_kien_tu_ke_hoach(ke_hoach, tai_lieu))
-    return ho_so
+    # ⭐ Nguon chu (ban dich / loi goc), dai phu de goc cua `tu_dong` va phep
+    #    kiem glyph deu chot trong `phu_de.chot_o_compose` — mot cho.
+    return _pd.chot_o_compose(ho_so, ke_hoach=ke_hoach, van_ban=tai_lieu,
+                              vung=(cai.vung if cach == _cdr.CAT_MA_HOA_LAI
+                                    else ()))
 
 
 def chay(db, kho: Storage, *, run, ctx=None) -> dict:
