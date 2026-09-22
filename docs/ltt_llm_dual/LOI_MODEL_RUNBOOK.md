@@ -153,10 +153,35 @@ chép vào report.
 Trước khi mở hạng mục LTTCODE, Task 11 phải có đủ ba artifact cùng thời điểm:
 
 - fixture `failed=0`;
-- live 20 phút có request-ID coverage được ghi rõ, mismatch bằng 0, không tăng
-  unknown/legacy so với baseline;
+- live có request-ID coverage được ghi rõ, mismatch bằng 0, không tăng
+  unknown/legacy so với baseline. Quan sát 20 phút chỉ có nghĩa khi có traffic
+  thật; không có traffic thì thay bằng probe/canary chủ động + snapshot log
+  sau probe (chủ dự án chốt 22/09/2026) — "đủ mẫu hoặc đủ thời gian";
 - inject/canary trực tiếp qua API A xanh cả ba protocol, không qua LTTCODE.
 
 Bất kỳ invariant nào đỏ thì dừng rollout và giữ cờ
 `LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS=0` (hoặc trả về 0 nếu vừa bật). Không
 được sửa client để che lỗi server.
+
+## 7. Kết quả Task 11 — rollout A+B 22/09/2026
+
+Giờ Việt Nam (UTC+7). Không có dữ liệu người dùng trong report.
+
+| Bước | Kết quả |
+|---|---|
+| Baseline live A trước deploy (bản `42c79a26`) | 0 event có cấu trúc — đúng dự kiến, bản cũ chưa có telemetry |
+| Baseline B 20 phút | 23 lượt `messages` (19 qwen38, 4 qwen35), 23/23 HTTP 200, 0 ERROR |
+| L1 trên SHA deploy | đỏ 2 phép ngoài LTT LLM (bộ khung `video_crawler` dở + DB migration tạm còn sót) → rút bộ khung khỏi SHA (`f587f497`), khép đúng 2 phép: governance 102 passed, migration PostgreSQL PASS |
+| Deploy A `f587f497` | fingerprint 1.092 tệp lệch 0; `/health/ready` ready; rollback `42c79a26` |
+| Deploy B gateway-only | snapshot `auto-20260922-133432`, hash 45 tệp khớp, YAML/model không đổi, chỉ restart `LTTLlmGateway`; nghiệm thu B 17/17 |
+| Canary thành công A→B | 9/9 (key pool, giải mã credential, sinh thật, usage, tính phí) |
+| Bật `LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS=1` | chỉ nạp lại `LTTStudioWeb` |
+| Inject `model_not_found` | B 3/3; A lộ lỗi thật: lỗi validator cục bộ đi đường `ApiError(400)` cũ → sửa `e94dd9a2` (300/300 test public route + renderer), deploy lại A |
+| Bộ đo | 2 lỗi bộ đo sửa bằng TDD: User-Agent mặc định bị Cloudflare chặn 403; probe Chat thiếu `Idempotency-Key` (`4567a70d`) |
+| Ma trận sau cùng | A 3/3, B 3/3; fixture 265/265 |
+| Snapshot log sau probe (10 phút) | 11 event lỗi có cấu trúc, request ID 11/11, unknown 0, legacy 0, mismatch 0 |
+| Lỗi xuyên tầng thật | `image_count_exceeded` (5 ảnh > trần 4, chặn trước GPU): SSE `event:error` sau 200, `field=images limit=4 actual=5`, cùng request ID ở client, log A, log B |
+
+Ghi nhận ngoài hạng mục: wrapper `chay_nghiem_thu.cmd` trả `rc=255` sau bước dọn
+dù 17/17 hành vi đạt (dọn kill đúng tiến trình nó dựng) — lỗi công cụ, chưa sửa.
+
