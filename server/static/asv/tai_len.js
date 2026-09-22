@@ -4,7 +4,9 @@
  *    **tren duong vao may chu** — mot duong ma tep khong con di khi ta PUT
  *    thang len kho.
  *
- * Ba buoc: xin ve (`/ve`) -> PUT tep -> nop form kem `upload_id`.
+ * Bon buoc: mo/tiep tuc luot tai (`/tai-len`) -> PUT tung phan con thieu
+ * (thang len kho, hoac qua app khi kho cuc bo) -> ghep (`/xong`) -> nop form
+ * kem `upload_id`. Dut giua chung thi lan sau chi gui phan con thieu.
  *
  * ⛔ **Phai TAT o chon tep truoc khi nop.** `routes.tao` uu tien `upload_id`
  *    va tra ve truoc khi cham toi `video` — nhung trinh duyet thi **da gui
@@ -68,21 +70,63 @@
     return !(tran > 0 && f.size > tran * 1024 * 1024);
   }
 
-  function xinVe(f) {
-    var d = new FormData();
-    d.append("csrf_token", form.querySelector('[name="csrf_token"]').value);
-    d.append("ten_tep", f.name);
-    d.append("kieu", f.type);
-    d.append("co", String(f.size));
-    return fetch(oVe.getAttribute("data-url"), {
-      method: "POST", body: d, credentials: "same-origin"
-    }).then(function (r) { return r.ok ? r.json() : null; });
+  /* ── Tai len NHIEU PHAN, tiep tuc duoc (asv-final L_TAI_LEN) ──────────────
+     Mot presigned PUT cho ca tep = dut o 73% gui lai tu 0%. Gio: cat tep thanh
+     phan `co_phan` (may chu quyet), MD5 tung phan (`Content-MD5`, kho kiem),
+     va NHO `upload_id` theo danh tinh tep. Lan sau (nut "Thu tai len lai", hay
+     tai lai trang roi chon lai CUNG tep) hoi may chu phan nao da co roi chi gui
+     phan con thieu. */
+  var goc = oVe ? oVe.getAttribute("data-url") : "";
+  var NHO = "asv-tai-len:";
+  var nhoRam = {};
+
+  function khoaTep(f) {
+    return NHO + [f.name, f.size, f.lastModified, f.type].join("|");
+  }
+  function nhoLay(f) {
+    try { var v = localStorage.getItem(khoaTep(f)); if (v) return v; } catch (e) {}
+    return nhoRam[khoaTep(f)] || "";
+  }
+  function nhoDat(f, id) {
+    nhoRam[khoaTep(f)] = id;
+    try {
+      if (id) localStorage.setItem(khoaTep(f), id);
+      else localStorage.removeItem(khoaTep(f));
+    } catch (e) {}
   }
 
-  function dayLen(ve, f) {
-    // XHR chu khong `fetch`: chi XHR bao duoc tien do TAI LEN. Voi mot tep
-    // hang tram MB, mot thanh tien do khong phai trang tri — khong co no thi
-    // trang dung im vai phut va khach tuong may treo.
+  function gui(url, truong) {
+    var d = new FormData();
+    d.append("csrf_token", form.querySelector('[name="csrf_token"]').value);
+    Object.keys(truong || {}).forEach(function (k) { d.append(k, truong[k]); });
+    return fetch(url, {method: "POST", body: d, credentials: "same-origin"})
+      .then(function (r) { if (!r.ok) throw r.status; return r.json(); });
+  }
+
+  function batDauHoacTiepTuc(f) {
+    function moi() {
+      return gui(goc, {ten_tep: f.name, kieu: f.type, co: String(f.size)})
+        .then(function (mt) { nhoDat(f, mt.upload_id); return mt; });
+    }
+    var id = nhoLay(f);
+    if (!id) return moi();
+    return fetch(goc + "/" + encodeURIComponent(id), {credentials: "same-origin"})
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (mt) {
+        if (mt && mt.co === f.size) return mt;
+        nhoDat(f, "");
+        return moi();
+      }, function () { return moi(); });
+  }
+
+  function md5Phan(phan) {
+    return phan.arrayBuffer().then(function (buf) {
+      return btoa(SparkMD5.ArrayBuffer.hash(buf, true));
+    });
+  }
+
+  function dayLen(ve, phan, daXong, tong) {
+    // XHR chu khong `fetch`: chi XHR bao duoc tien do TAI LEN.
     return new Promise(function (ok, hong) {
       var x = new XMLHttpRequest();
       x.open(ve.method || "PUT", ve.url, true);
@@ -91,36 +135,78 @@
       });
       x.upload.onprogress = function (e) {
         if (e.lengthComputable) {
-          datTienDo(Math.round(e.loaded * 100 / e.total));
+          datTienDo(Math.floor((daXong + e.loaded) * 100 / tong));
         }
       };
       x.onload = function () {
         (x.status >= 200 && x.status < 300) ? ok() : hong(x.status);
       };
       x.onerror = function () { hong(0); };
-      x.send(f);
+      x.send(phan);
     });
+  }
+
+  function guiPhan(mt, f, so, daXong) {
+    var dau = (so - 1) * mt.co_phan;
+    var phan = f.slice(dau, Math.min(dau + mt.co_phan, f.size));
+    return md5Phan(phan).then(function (md5) {
+      return gui(goc + "/" + mt.upload_id + "/phan/" + so + "/ve", {md5: md5});
+    }).then(function (ve) { return dayLen(ve, phan, daXong, f.size); });
   }
 
   var nutTaiLai = document.getElementById("asv-tai-lai");
 
-  /* So lan THU LAI mot PUT hong. Ve presigned con han sau mot lan hong mang,
-     nen thu lai chinh no la phep sua re nhat — khong phai xin ve moi.
+  /* So lan THU LAI MOT PHAN hong. Thu lai trong CUNG luot tai (cung
+     `upload_id`) — khong mo luot moi, khong gui lai phan da co.
 
      ⚠️ Ba lan tong cong, khong nhieu hon: mot loi CO HE THONG (sai chu ky, kho
-        tu choi) se hong y het ca ba lan, va lam khach cho ba luot cho cung mot
-        cau tra loi la dung cai gia ma `loi.py` tu choi tra o tang job. */
+        tu choi) se hong y het ca ba lan. Het ba lan thi dung, NHO luot tai, va
+        nut "Thu tai len lai" tiep tuc tu phan dang do. */
   var LAN_THU_TOI_DA = 3;
   var CHO_THU_LAI_MS = 1500;
 
-  function dayLenCoThuLai(ve, f, lan) {
+  function guiPhanCoThuLai(mt, f, so, daXong, lan) {
     lan = lan || 1;
-    return dayLen(ve, f).catch(function (ma) {
+    return guiPhan(mt, f, so, daXong).catch(function (ma) {
       if (lan >= LAN_THU_TOI_DA) throw ma;
       chu(ttTai, t("tai_thu_lai", {lan: lan + 1}));
       return new Promise(function (ok) {
         setTimeout(ok, CHO_THU_LAI_MS * lan);
-      }).then(function () { return dayLenCoThuLai(ve, f, lan + 1); });
+      }).then(function () { return guiPhanCoThuLai(mt, f, so, daXong, lan + 1); });
+    });
+  }
+
+  function taiNhieuPhan(f) {
+    if (!window.SparkMD5 || !goc) return Promise.reject(new Error("khong-ho-tro"));
+    return batDauHoacTiepTuc(f).then(function (mt) {
+      var co = {};
+      (mt.da_co || []).forEach(function (n) { co[n] = true; });
+      var daXong = 0;
+      for (var n = 1; n <= mt.so_phan; n++) {
+        if (co[n]) daXong += Math.min(mt.co_phan, f.size - (n - 1) * mt.co_phan);
+      }
+      var pct = Math.floor(daXong * 100 / f.size);
+      datTienDo(pct);
+      // Dau vet cho kiem thu trinh duyet: tiep tuc tu dau (0 = tu dau).
+      if (khoiTai) khoiTai.setAttribute("data-tiep-tuc-tu", String(pct));
+      if (daXong > 0) chu(ttTai, t("tai_tiep_tuc", {pct: pct}));
+      var chuoi = Promise.resolve();
+      for (var so = 1; so <= mt.so_phan; so++) {
+        if (co[so]) continue;
+        chuoi = chuoi.then((function (s) {
+          return function () {
+            return guiPhanCoThuLai(mt, f, s, daXong).then(function () {
+              daXong += Math.min(mt.co_phan, f.size - (s - 1) * mt.co_phan);
+            });
+          };
+        })(so));
+      }
+      return chuoi.then(function () {
+        return gui(goc + "/" + mt.upload_id + "/xong", {});
+      }).then(function () {
+        nhoDat(f, "");
+        return mt.upload_id;
+      });
     });
   }
 
@@ -206,19 +292,12 @@
     khoaNut();
     datTienDo(0);
 
-    xinVe(f).then(function (ve) {
-      // `{"mode":"local"}` = kho khong cap presigned duoc (LocalStorage tren
-      // may phat trien va trong bo test). Khong phai loi — lui ve multipart.
-      if (!ve || ve.mode !== "direct" || !ve.url) {
-        throw new Error("khong-co-ve");
-      }
-      return dayLenCoThuLai(ve, f).then(function () {
-        oUploadId.value = ve.upload_id;
-        // ⛔ TAT o chon tep: xem ghi chu dai o dau tep nay.
-        oTep.disabled = true;
-        chu(ttTai, t("tai_xong"));
-        form.submit();
-      });
+    taiNhieuPhan(f).then(function (uploadId) {
+      oUploadId.value = uploadId;
+      // ⛔ TAT o chon tep: xem ghi chu dai o dau tep nay.
+      oTep.disabled = true;
+      chu(ttTai, t("tai_xong"));
+      form.submit();
     }).catch(function () {
       // ⛔ KHONG lui vo dieu kien nua. `taiThatBai` hoi kich thuoc truoc: duoi
       //    tran multipart thi lui (va NOI ra), tren tran thi noi that va cho

@@ -158,7 +158,7 @@ def test_duong_lui_KHONG_con_vo_dieu_kien():
     """🔴 Bản cũ `.catch()` gọi thẳng `form.submit()`. Với tệp trên trần
     multipart, đó là đẩy lại toàn bộ qua một đường **không thể** chở nó."""
     js = _js()
-    i = js.index("xinVe(f).then(")
+    i = js.index("taiNhieuPhan(f).then(")
     khoi = js[i:js.index("})();", i)]
     assert "taiThatBai(f)" in khoi, "duong lui khong hoi kich thuoc"
     # Doi chung: khong con mot `form.submit()` TRAN TRUI trong khoi `.catch`.
@@ -207,10 +207,11 @@ def test_thu_lai_PUT_dung_lai_VE_CU_khong_xin_ve_moi():
     """⭐ Vé presigned còn hạn sau một lần hỏng mạng, nên thử lại chính nó là
     phép sửa rẻ nhất. Xin vé mới mỗi lần là tạo rác `pending` trong CSDL."""
     js = _js()
-    i = js.index("function dayLenCoThuLai(ve, f, lan)")
+    # asv-final L_TAI_LEN: thu lai theo PHAN, trong CUNG luot tai.
+    i = js.index("function guiPhanCoThuLai(mt, f, so, daXong, lan)")
     than = js[i:js.index("\n  }", i)]
-    assert "dayLenCoThuLai(ve, f, lan + 1)" in than
-    assert "xinVe" not in than, "thu lai ma xin ve moi"
+    assert "guiPhanCoThuLai(mt, f, so, daXong, lan + 1)" in than
+    assert "batDauHoacTiepTuc" not in than, "thu lai ma mo luot tai moi"
 
 
 # ══════════════════════════════════════════════════════════════════════════════

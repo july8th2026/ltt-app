@@ -259,39 +259,6 @@ def trang_chinh(request: Request, _g: None = Depends(_cong_co),
                        _ngu_canh_studio(db, u, loi, nap_lai))
 
 
-@router.post("/ve")
-async def cap_ve(request: Request,
-                 ten_tep: str = Form(...),
-                 kieu: str = Form(...),
-                 co: int = Form(...),
-                 csrf_token: str = Form(""),
-                 _g: None = Depends(_cong_co),
-                 user: str = Depends(require_login),
-                 db: Session = Depends(get_db)):
-    """Cap mot ve tai len TRUC TIEP browser -> kho (G6).
-
-    🔑 Tep khong di qua tien trinh nay, va khong di qua Cloudflare. Do la ca ly
-       do tran 90 MB bien mat: `routes.py:79 TRAN_TAI_LEN` ton tai vi Cloudflare
-       cat o 100 MB **tren duong vao may chu** — mot duong ma tep khong con di.
-    """
-    if not verify_csrf_token(request, csrf_token):
-        raise HTTPException(status_code=400, detail=_t('Phiên đã hết hạn.'))
-    u = user_hien_tai(request)
-    if u is None:
-        raise HTTPException(status_code=401)
-    from platform_core import upload_sessions
-    from platform_core.storage import get_storage
-    try:
-        ra = features.tao_ve_tai_len(
-            db, get_storage(), owner_id=u.id, ten_tep=ten_tep, kieu=kieu,
-            co_du_kien=co)
-        db.commit()
-    except upload_sessions.UploadSessionError as exc:
-        db.rollback()
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return JSONResponse(ra)
-
-
 @router.post("/tao", response_class=HTMLResponse)
 async def tao(request: Request,
               upload_id: str = Form(""),
@@ -740,3 +707,12 @@ def _run_cua_toi(db, run_id: str, u):
     except features.AsvError:
         raise HTTPException(status_code=404,
                             detail=_t('Không tìm thấy lần chạy.')) from None
+
+
+# ── Tai len NHIEU PHAN (tiep tuc duoc sau khi dut) ──────────────────────────
+# Thay `/ve` (mot presigned PUT cho ca tep: dut o 73% = gui lai tu 0%). Route o
+# tep rieng vi tran 900 dong cua tep nay (`test_455`). Import o CUOI: tep kia
+# dung `_cong_co` dinh nghia o tren.
+from .routes_tai_len import router as _router_tai_len  # noqa: E402
+
+router.include_router(_router_tai_len)

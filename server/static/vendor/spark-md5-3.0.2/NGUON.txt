@@ -1,0 +1,4 @@
+spark-md5 3.0.2 (npm: spark-md5@3.0.2, https://github.com/satazor/js-spark-md5)
+License: (WTFPL OR MIT) - dung theo MIT.
+sha256(spark-md5.min.js) = d80e84c820cc5587a0ba3c8a20652099ea3fa7fc43944e812e56d449c1d9f1c9
+Dung boi: server/static/asv/tai_len.js (MD5 tung phan cho Content-MD5; WebCrypto khong co MD5).

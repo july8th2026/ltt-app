@@ -54,7 +54,7 @@
           `routes.tao`: no uu tien `upload_id` va se tao mot lan chay tro vao
           mot tep chua ton tai. #}
     <input type="hidden" name="upload_id" id="asv-upload-id" value="">
-    <input type="hidden" id="asv-ve" data-url="{{ app.route_prefix }}/ve"
+    <input type="hidden" id="asv-ve" data-url="{{ app.route_prefix }}/tai-len"
            data-tran-ben-vung="{{ tran_ben_vung_mb }}"
            data-kieu-ben-vung="{{ kieu_ben_vung|join(',') }}">
 
@@ -769,6 +769,7 @@
   "lp_trong": {{ _("Dòng chữ không được để trống.")|tojson }},
   "lp_mot_dong": {{ _("Lớp phủ chữ chỉ nhận MỘT dòng.")|tojson }},
   "tai_thu_lai": {{ _("Đang thử lại lần %(lan)s…")|tojson }},
+  "tai_tiep_tuc": {{ _("Tiếp tục tải lên từ %(pct)s%%…")|tojson }},
   "tai_hong_lon": {{ _("Tải lên bị gián đoạn. Video này lớn hơn %(mb)s MB nên không gửi kèm biểu mẫu được — hãy bấm “Thử tải lên lại”.")|tojson }},
   "tai_hong_nho": {{ _("Tải lên trực tiếp không chạy được. Đang gửi theo đường thường…")|tojson }},
   "vuot_tran_kieu": {{ _("vượt quá %(mb)s MB — định dạng này chỉ gửi được bản nhỏ. Hãy đổi sang MP4 hoặc MOV.")|tojson }},
@@ -797,6 +798,10 @@
 
      `defer` giu nguyen thu tu thuc thi theo thu tu tai lieu, nen `asv/nen.js`
      luon chay truoc. -#}
+{#- MD5 tung phan cho `Content-MD5` (WebCrypto khong co MD5). Thu vien ben
+     thu ba, ten tep MANG phien ban nen khong can `?v=`. Nguon + sha256:
+     `server/static/vendor/spark-md5-3.0.2/NGUON.txt`. -#}
+<script src="/static/vendor/spark-md5-3.0.2/spark-md5.min.js" defer></script>
 {% for tep in asv_studio_js %}
 <script src="/static/{{ tep }}?v={{ asset_ver }}" defer></script>
 {%- endfor %}
