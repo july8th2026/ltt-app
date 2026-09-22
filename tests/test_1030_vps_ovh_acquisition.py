@@ -55,9 +55,11 @@ def _domain(db):
 
 
 class _Provider:
-    def __init__(self, *, quote_minor=239, checkout_error=False, recovered=None):
+    def __init__(self, *, quote_minor=239, checkout_error=False, recovered=None,
+                 fingerprints=("a" * 64,)):
         self.config = SimpleNamespace(service_name="vps-fixture")
         self.quote_minor = quote_minor
+        self.fingerprints = fingerprints
         self.checkout_error = checkout_error
         self.recovered = recovered
         self.calls = []
@@ -80,8 +82,9 @@ class _Provider:
         return OvhPreparedIpCart(
             cart_id="11111111-1111-4111-8111-111111111111", item_id=77,
             quantity=1, with_tax_minor=self.quote_minor, currency="USD",
-            expires="2099-01-01T00:00:00Z", contracts=("Cloud Base",),
-            contract_fingerprints=("a" * 64,),
+            expires="2099-01-01T00:00:00Z",
+            contracts=("Cloud Base",) if self.fingerprints else (),
+            contract_fingerprints=self.fingerprints,
         )
 
     def checkout_cart(self, cart_id, *, expected):
@@ -631,9 +634,9 @@ def _ordering_driver():
             return 2000000000
         if url.endswith("/checkout"):
             return {"prices": {"withTax": {"value": state["price"], "currencyCode": "USD"}},
-                    "contracts": [{"name": "Cloud Base",
-                                   "content": state["contract_content"],
-                                   "url": "https://example.invalid/fixture-contract"}]}
+                    "contracts": [] if state["contract_content"] is None else
+                    [{"name": "Cloud Base", "content": state["contract_content"],
+                      "url": "https://example.invalid/fixture-contract"}]}
         if url.endswith("/item/77"):
             return {"settings": {"quantity": state["quantity"],
                                  "planCode": "ip-failover-arin", "pricingMode": "default"},
@@ -970,3 +973,58 @@ def test_auto_acquire_off_never_calls_the_provider(db, monkeypatch):
     pool = backend_factory.public_ip_backend(db, profile)
     assert pool.capabilities().dynamic_acquisition is False
     assert pool.health().details["replenishable"] == 0
+
+
+# 22/09: after the account agreed "Cloud Base" on the first order (16/09), OVH
+# stops listing that contract in later cart previews (`contracts: []`, read back
+# live with /me/agreements). The guard must treat "no new terms" as acceptable,
+# while any NEW or changed contract still blocks checkout.
+def test_ordering_preview_accepts_no_new_contracts_and_pays_once():
+    driver, cart_id, state, calls = _ordering_driver()
+    state["contract_content"] = None
+    expected = driver.preview_cart(cart_id, 77)
+    assert expected.contracts == () and expected.contract_fingerprints == ()
+    assert driver.checkout_cart(cart_id, expected=expected) == 9001
+    assert sum(method == "POST" for method, _, _ in calls) == 1
+
+
+def test_ordering_checkout_refuses_contract_appearing_after_empty_preview():
+    from apps.vps.services.ovh import OvhError
+
+    driver, cart_id, state, calls = _ordering_driver()
+    state["contract_content"] = None
+    expected = driver.preview_cart(cart_id, 77)
+    state["contract_content"] = "fixture new terms"
+    with pytest.raises(OvhError):
+        driver.checkout_cart(cart_id, expected=expected)
+    assert not any(method == "POST" for method, _, _ in calls)
+
+
+def test_acquisition_with_pinned_contract_accepts_cart_without_new_terms(db):
+    from apps.vps.services.ovh_acquisition import ensure_free_ip
+
+    profile, gateway, instance = _domain(db)
+    profile.provider_config = {**profile.provider_config,
+                               "accepted_contract_fingerprints": ["a" * 64]}
+    db.commit()
+    provider = _Provider(fingerprints=())
+    result = ensure_free_ip(
+        db, profile, instance=instance, gateway_row=gateway,
+        provider=provider, gateway=_Gateway(), operation_id="provision:instance-new")
+    assert result.address == "192.0.2.11"
+    assert [call[0] for call in provider.calls].count("checkout") == 1
+
+
+def test_acquisition_with_pinned_contract_refuses_new_contract_terms(db):
+    from apps.vps.services.ovh_acquisition import UnexpectedBilling, ensure_free_ip
+
+    profile, gateway, instance = _domain(db)
+    profile.provider_config = {**profile.provider_config,
+                               "accepted_contract_fingerprints": ["a" * 64]}
+    db.commit()
+    provider = _Provider(fingerprints=("b" * 64,))
+    with pytest.raises(UnexpectedBilling):
+        ensure_free_ip(
+            db, profile, instance=instance, gateway_row=gateway,
+            provider=provider, gateway=_Gateway(), operation_id="provision:instance-new")
+    assert "checkout" not in [call[0] for call in provider.calls]

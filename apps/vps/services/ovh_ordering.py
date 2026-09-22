@@ -55,8 +55,14 @@ class OvhOrderingClient(OvhClient):
             expire = datetime.fromisoformat(cart["expire"].replace("Z", "+00:00"))
             if expire.tzinfo is None or expire <= datetime.now(timezone.utc):
                 raise OvhError("OVH cart expired")
+            # OVH lists only contracts the account has NOT agreed yet: after the
+            # first order (16/09) later previews return `contracts: []` (22/09,
+            # checked against /me/agreements). Empty = no new terms; a new or
+            # changed contract still yields fingerprints the caller must match.
+            if not isinstance(preview["contracts"], list):
+                raise OvhError("OVH contracts have invalid shape")
             contracts = tuple(contract["name"] for contract in preview["contracts"])
-            if not contracts or any(not isinstance(name, str) for name in contracts):
+            if any(not isinstance(name, str) for name in contracts):
                 raise OvhError("OVH contracts have invalid shape")
             fingerprints = []
             for contract in preview["contracts"]:
