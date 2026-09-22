@@ -68,7 +68,7 @@
       </div>
       {% if bang_gia %}
       <p class="muted">{{ _('"Không trùng" bỏ qua video bạn đã tải hoặc đang tải. Xem trước miễn phí; giá mỗi video tải về theo thời lượng:') }}</p>
-      <div class="tablewrap vc-gia"><table class="table" id="vc-bang-gia">
+      <div class="tablewrap vc-gia" tabindex="0"><table class="table" id="vc-bang-gia">
         <thead><tr><th>{{ _("Thời lượng") }}</th><th>{{ _("Credit / video") }}</th></tr></thead>
         <tbody>
         {% for b in bang_gia %}{% set b = b if b is mapping else {"tu_phut": b[0], "den_phut": b[1], "credit": b[2]} %}
@@ -106,7 +106,7 @@
       <p class="muted">{{ _("Mở trang khi đang đăng nhập nền cần cào, bấm biểu tượng tiện ích, chọn xuất cookie của trang hiện tại (định dạng Netscape/cookies.txt), rồi dán nội dung hoặc chọn tệp vào ô bên dưới.") }}</p>
       <p class="muted"><b>{{ _("Rủi ro tài khoản:") }}</b> {{ _("nền tảng có thể tạm khoá hoặc yêu cầu xác minh tài khoản nếu phát hiện tải tự động dồn dập từ cookie của bạn. Nên dùng một tài khoản phụ để đăng nhập ở đây, không dùng tài khoản chính bạn đang cần giữ an toàn.") }}</p>
     </details>
-    <div class="tablewrap"><table class="table">
+    <div class="tablewrap" tabindex="0"><table class="table">
       <thead><tr><th>{{ _("Nền") }}</th><th>{{ _("Trạng thái") }}</th><th></th></tr></thead>
       <tbody>
       {% for n in nen_dang_nhap %}{% set ph = phien_cua_toi.get(n.id) %}

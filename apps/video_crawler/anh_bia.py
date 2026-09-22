@@ -9,6 +9,7 @@ Việc nhỏ (< 5 s, vài trăm KB) nên chạy trong request; không phải vi�
 """
 from __future__ import annotations
 
+import logging
 import threading
 import time
 import urllib.request
@@ -39,6 +40,7 @@ _TIMEOUT_S = 5
 _SO_LUONG_DONG_THOI = threading.BoundedSemaphore(4)
 _HAN_TONG_S = 6.0
 #: Khoá đệm = (nền, URL): đệm theo URL thôi thì ảnh đã duyệt cho nền A trả ra cho yêu cầu mang nền B (lách allowlist).
+_LOG = logging.getLogger(__name__)
 _DEM: OrderedDict[tuple[str, str], tuple[float, bytes, str]] = OrderedDict()
 _DEM_KHOA = threading.Lock()
 _DEM_TOI_DA = 256
@@ -171,7 +173,8 @@ def luu_kham_pha(url: str, *, nen_tang: str, owner_id: str, job_id: str, chi_so:
         import io
         from platform_core.storage import get_storage
         (kho or get_storage()).put(key, io.BytesIO(du_lieu), content_type=loai)
-    except Exception:  # noqa: BLE001 — lỗi storage (đĩa đầy, R2 timeout…) ⇒ như không có ảnh, không hỏng job
+    except Exception as e:  # noqa: BLE001 — lỗi storage (đĩa đầy, R2 timeout…) ⇒ như không có ảnh, không hỏng job
+        _LOG.warning("video_crawler: khong luu duoc anh bia %s: %s", key, type(e).__name__)
         return None
     return key
 

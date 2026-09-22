@@ -21,7 +21,7 @@
 {% if not lich_su %}
   <p class="muted">{{ _("Chưa có lượt cào nào.") if not nen_loc else _("Không có lượt cào nào cho nền này.") }}</p>
 {% else %}
-<div class="tablewrap"><table class="table">
+<div class="tablewrap" tabindex="0"><table class="table">
   <thead><tr><th>{{ _("Việc") }}</th><th>{{ _("Nguồn") }}</th><th>{{ _("Trạng thái") }}</th><th>{{ _("Tiến độ") }}</th><th></th></tr></thead>
   <tbody>
   {% for j in lich_su %}

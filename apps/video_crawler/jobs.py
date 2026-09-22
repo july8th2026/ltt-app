@@ -190,7 +190,8 @@ def _luu_anh_bia(muc: list[CrawlItem], *, owner_id: str, job_id: str, nen_id: st
             try:
                 key = anh_bia.luu_kham_pha(d["anh_bia"], nen_tang=nen_id, owner_id=owner_id,
                                            job_id=job_id, chi_so=i)
-            except Exception:  # noqa: BLE001 — `luu_kham_pha` không tự ném, nhưng phòng lỗi bất ngờ
+            except Exception as e:  # noqa: BLE001 — `luu_kham_pha` không tự ném, nhưng phòng lỗi bất ngờ
+                _LOG.warning("video_crawler: loi bat ngo khi luu anh bia muc %s: %s", i, type(e).__name__)
                 key = None
             if key:
                 d["anh_bia"] = key
