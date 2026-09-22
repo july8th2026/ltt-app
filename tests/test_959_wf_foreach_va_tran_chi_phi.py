@@ -249,11 +249,15 @@ def test_M8_bao_gia_kem_HAI_SO(db):
     assert bg.uoc_tinh <= bg.toi_da
 
 
-# ⭐ Giá FOREACH (`max_items × thân`) chuyển sang plan 04 cùng lúc node
-#    `core.foreach` được viết lại — plan 01a không còn nhánh FOREACH trong
-#    `bao_gia`. Hai bài đã xoá khỏi tệp này (ghi vào ledger kế hoạch 01a):
+# ⭐ Giá FOREACH (`max_items × thân`) VÀ giá nhánh IF lồng (`"nhanh": [...]`)
+#    chuyển sang plan 04 cùng lúc node `core.foreach`/rẽ nhánh điều khiển được
+#    viết lại — plan 01a không còn hình dạng đó trong `bao_gia` (đồ thị đã
+#    biên dịch `ltt.workflow/3`, Task 5, biểu diễn rẽ nhánh bằng `edges` kiểu
+#    `CONTROL`/`condition`, không phải `"nhanh"` lồng nhau). Ba bài đã xoá
+#    khỏi tệp này (ghi vào ledger kế hoạch 01a — review round 1 22/09):
 #      test_tran_ForEach_la_max_items_NHAN_than
 #      test_ForEach_KHONG_khai_max_items_thi_bao_gia_TU_CHOI
+#      test_nhanh_IF_tinh_theo_nhanh_DAT_NHAT
 
 
 def test_node_dieu_khien_khong_cong_vao_tran(db):
@@ -265,11 +269,3 @@ def test_node_dieu_khien_khong_cong_vao_tran(db):
         {"id": "b", "type": "NOOP", "params": {}},
     ], "edges": []}, cong_cu={})
     assert chi_dieu_khien.toi_da == 0 and chi_dieu_khien.uoc_tinh == 0
-
-
-# ⭐ `test_nhanh_IF_tinh_theo_nhanh_DAT_NHAT` (nhánh IF lồng `"nhanh": [...]`)
-#    xoá cùng đợt này: đồ thị đã biên dịch (`ltt.workflow/3`, Task 5) không còn
-#    hình dạng `"nhanh"` lồng nhau — rẽ nhánh biểu diễn bằng `edges` kiểu
-#    `CONTROL`/`condition`. `bao_gia_do_thi` (Task 6) không đọc `"nhanh"`; định
-#    giá một nhánh IF thuộc phạm vi lập lịch điều khiển, cùng nhóm với FOREACH
-#    ở plan 04.

@@ -59,7 +59,17 @@ async function decode(response: Response) {
   if (response.ok) return response.json()
   if (response.status === 409) throw new WorkflowConflictError('Workflow was updated elsewhere')
   let message = `Request failed (${response.status})`
-  try { message = (await response.json()).detail ?? message } catch { /* non-JSON error */ }
+  try {
+    const detail = (await response.json()).detail
+    if (detail != null) {
+      // Task 7 publish (drafts_v3.py) tra `detail` la dict {ma, node_id,
+      // thong_diep} thay vi chuoi — doc dung truong con nguoi doc duoc, dung
+      // de `new Error({...})` bien no thanh "[object Object]".
+      message = typeof detail === 'object'
+        ? (detail.thong_diep ?? detail.ma ?? JSON.stringify(detail))
+        : detail
+    }
+  } catch { /* non-JSON error */ }
   throw new Error(message)
 }
 

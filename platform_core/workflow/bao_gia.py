@@ -76,7 +76,11 @@ def _ung_vien(khoa: str, schema: dict) -> list:
 def _gia_node(node: dict, cc: dict[str, CongCu]) -> int:
     if node.get("thi_hanh") != "job":
         return 0
-    tool = cc[str(node["type"])[4:]]
+    ten_cong_cu = str(node["type"])[4:]
+    tool = cc.get(ten_cong_cu)
+    if tool is None:
+        raise KhongBaoGiaDuoc(
+            f"{node.get('id')}: khong co cong cu {ten_cong_cu!r} trong registry")
     params = dict(node.get("params") or {})
     dong = [k for k, v in params.items()
             if la_tham_chieu(v) is not None

@@ -44,6 +44,7 @@ from platform_core.public_api import idempotency, quotes
 from platform_core.public_api.errors import (THIEU_CREDIT_LOI, conflict,
                                              idempotency_conflict,
                                              insufficient_credit, not_found,
+                                             quote_invalid,
                                              thieu_credit_chi_tiet)
 from platform_core.public_api.principal import Principal
 from platform_core.public_api.scopes import (SCOPE_WORKFLOWS_CANCEL,
@@ -102,6 +103,17 @@ def _ban_publish(db: Session, wf: Workflow) -> WorkflowVersion:
     ver = db.get(WorkflowVersion, wf.published_version_id)
     if ver is None or ver.workflow_id != wf.id:
         raise conflict("This workflow has no published version to run.")
+    # ⚠️ Task 7 dong bang `estimated_max` VAO graph luc publish, nhung ban
+    #    publish TU TRUOC do (hinh dang `pages`, gia tinh tu `params.gia` cua
+    #    client — dung lo hong ma audit 22/09 chi ra) khong co dau `ltt.workflow/3`
+    #    va khong co `bang_gia`/`gia_tran`. Tin `estimated_max` cua no la giu
+    #    lai chinh lo hong da vua vá o Task 6 cho MOI workflow xuat ban truoc
+    #    ban sua nay. Tu choi ca quote lan chay — khong doan lai gia, doi
+    #    xuat ban lai qua `xuat_ban_draft` (registry).
+    if (ver.graph or {}).get("schema") != "ltt.workflow/3":
+        raise quote_invalid(
+            "This workflow's published version predates registry-based "
+            "pricing. Re-publish it before requesting a quote or a run.")
     return ver
 
 

@@ -76,7 +76,15 @@ def _close(gen):
 
 
 def _do_thi(so_node: int = 3) -> dict:
-    return {"nodes": [{"id": f"n{i}", "type": "tool"} for i in range(so_node)],
+    # `schema: ltt.workflow/3` la dau hieu DUY NHAT ma `_ban_publish` (Task 7
+    # fix round 1) doc de chap nhan mot version cho quote/chay — do thi phang
+    # nay khong di qua compiler that, nhung no KHONG phai thu bi tu choi: gia
+    # duoc khai TUONG MINH qua `estimated_max=` o noi goi (`_workflow()` duoi
+    # day), khong phai mot con so con lai tu `params.gia` cua client thoi ky
+    # truoc audit. Do thi "legacy" that (khong co khoa nay) duoc dung rieng o
+    # `test_quote_va_chay_TU_CHOI_version_legacy_chua_bang_gia`.
+    return {"schema": "ltt.workflow/3",
+            "nodes": [{"id": f"n{i}", "type": "tool"} for i in range(so_node)],
             "edges": []}
 
 
@@ -188,6 +196,44 @@ def test_bao_gia_doc_estimated_max_cua_version_xuat_ban_qua_xuat_ban_draft(api):
     assert r.status_code == 200, r.text
     assert estimated_max > 0
     assert r.json()["credit_max"] == estimated_max
+
+
+def test_quote_va_chay_TU_CHOI_version_legacy_chua_bang_gia(api):
+    """Fix round 1 (review Important #2): một version xuất bản TRƯỚC bản sửa
+    này — đồ thị phẳng, không có `schema: "ltt.workflow/3"`, không có
+    `bang_gia`/`gia_tran` — không còn được tin cho quote/chạy dù
+    `estimated_max` của nó có vẻ hợp lệ; con số ấy có thể đến từ
+    `params.gia` của client thời trước audit (đúng lỗ hổng Task 6 đã vá).
+    Cả `/quotes` lẫn `/runs` đều từ chối bằng `quote_invalid` (400), không
+    phải một trần đoán lại và không phải 500."""
+    from platform_core.workflow import dinh_nghia
+
+    uid, token = _tai_khoan()
+    gen, db = _session()
+    try:
+        wf = dinh_nghia.tao_workflow(db, owner_id=uid, name="w-legacy")
+        # Hình dạng CŨ: không `schema`, giá đến thẳng từ `params.gia` của
+        # client (đúng lỗ hổng audit 22/09) — không đi qua `bao_gia_do_thi`.
+        legacy = {"nodes": [{"id": "n0", "type": "tool",
+                             "params": {"gia": 999}}], "edges": []}
+        ver = dinh_nghia.xuat_ban(db, wf.id, legacy, created_by=uid,
+                                  estimated_max=999)
+        wf.published_version_id = ver.id
+        db.commit()
+        wf_id = wf.id
+    finally:
+        _close(gen)
+
+    r = _bao_gia(api, token, wf_id)
+    assert r.status_code == 400, r.text
+    assert r.json()["code"] == "quote_invalid"
+
+    # `_ban_publish` từ chối TRƯỚC khi xác minh quote, nên một chuỗi quote bịa
+    # cũng đủ để chứng minh route `/runs` chặn version này — không cần một
+    # quote thật (không thể có: `/quotes` đã từ chối ở trên).
+    r2 = _chay(api, token, wf_id, quote="khong-quan-trong")
+    assert r2.status_code == 400, r2.text
+    assert r2.json()["code"] == "quote_invalid"
 
 
 def test_bao_gia_cua_workflow_CHUA_PUBLISH_bi_tu_choi(api):

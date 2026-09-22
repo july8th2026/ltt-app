@@ -55,3 +55,11 @@ def test_khong_tinh_duoc_gia_thi_tu_choi():
         raise RuntimeError("chua khai gia")
     with pytest.raises(bao_gia.KhongBaoGiaDuoc):
         bao_gia.bao_gia_do_thi(_g({}), cong_cu=_cc({}, hong))
+
+
+def test_cong_cu_khong_co_trong_registry_thi_tu_choi_khong_phai_KeyError():
+    """Fix round 1 (review Minor #1): `cc[ten]` cũ ném `KeyError` trần (→ 500
+    nếu lọt tới HTTP); registry thiếu công cụ phải là một câu trả lời báo giá
+    biết được, giống mọi lý do từ chối khác."""
+    with pytest.raises(bao_gia.KhongBaoGiaDuoc):
+        bao_gia.bao_gia_do_thi(_g({}), cong_cu={})
