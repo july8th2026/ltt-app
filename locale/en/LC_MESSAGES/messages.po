@@ -19479,10 +19479,6 @@ msgstr "No crawls yet."
 msgid "Chưa nhập từ khoá hoặc link."
 msgstr "Enter a keyword or link."
 
-#: apps/video_crawler/templates/video_crawler.html:93
-msgid "Chưa đăng nhập"
-msgstr "Not logged in"
-
 #: apps/video_crawler/nen_tang.py:95
 msgid "Chỉ dán link một video; cần phiên (Douyin đòi cookie mới)."
 msgstr "Only single video links; requires a session (Douyin needs fresh cookies)."
@@ -19647,10 +19643,6 @@ msgstr "Invalid job type."
 msgid "Lưu phiên"
 msgstr "Save session"
 
-#: apps/video_crawler/templates/vc_thong_ke.html:4
-msgid "Lỗi"
-msgstr "Error"
-
 #: apps/video_crawler/loi.py:45
 msgid "Lỗi mạng khi kết nối tới nền tảng. Vui lòng thử lại sau."
 msgstr "Network error connecting to the platform. Please try again later."
@@ -19662,10 +19654,6 @@ msgstr "Some crawl methods need your own account. Export"
 #: apps/video_crawler/features.py:118
 msgid "Mục không hợp lệ."
 msgstr "Invalid item."
-
-#: apps/video_crawler/templates/vc_hang_doi.html:11
-msgid "Nguồn"
-msgstr "Source"
 
 #: apps/video_crawler/templates/video_crawler.html:85
 msgid "Nền"
@@ -19703,10 +19691,6 @@ msgstr "Session broken — re-enter"
 msgid "Phiên {ten} đã hỏng (không giải mã được) — nhập lại cookies.txt."
 msgstr "The {ten} session is broken (cannot decrypt) — enter cookies.txt again."
 
-#: apps/video_crawler/routes.py:90
-msgid "Phiên đã hết hạn — tải lại trang."
-msgstr "Session expired — reload the page."
-
 #: apps/video_crawler/templates/video_crawler.html:62
 msgid "Số lượng (tối đa 20)"
 msgstr "Quantity (max 20)"
@@ -19739,14 +19723,6 @@ msgstr "By keyword"
 msgid "Thống kê của bạn"
 msgstr "Your stats"
 
-#: apps/video_crawler/templates/vc_hang_doi.html:11
-msgid "Tiến độ"
-msgstr "Progress"
-
-#: apps/video_crawler/templates/vc_hang_doi.html:11
-msgid "Trạng thái"
-msgstr "Status"
-
 #: apps/video_crawler/nen_tang.py:144
 msgid "Tìm theo từ khoá cần phiên TikTok."
 msgstr "Searching by keyword requires a TikTok session."
@@ -19762,10 +19738,6 @@ msgstr "Found {n} videos"
 #: apps/video_crawler/manifest.py:43
 msgid "Tìm và tải video nguồn (từ khoá, link, kênh, playlist) vào kho của bạn."
 msgstr "Find and download source videos (keyword, link, channel, playlist) into your storage."
-
-#: apps/video_crawler/templates/vc_hang_doi.html:16
-msgid "Tải"
-msgstr "Download"
 
 #: apps/video_crawler/templates/vc_ket_qua.html:23
 msgid "Tải các video đã chọn"
@@ -19823,17 +19795,9 @@ msgstr "This video is a live stream or not yet premiered — it cannot be downlo
 msgid "Video ở chế độ riêng tư hoặc chỉ dành cho thành viên."
 msgstr "This video is private or members-only."
 
-#: apps/video_crawler/templates/vc_hang_doi.html:11
-msgid "Việc"
-msgstr "Job"
-
 #: apps/video_crawler/templates/video_crawler.html:6
 msgid "Ví dụ: mèo con đáng yêu"
 msgstr "Example: cute kitten"
-
-#: apps/video_crawler/templates/vc_hang_doi.html:16
-msgid "Xem trước"
-msgstr "Preview"
 
 #: apps/video_crawler/templates/video_crawler.html:69
 msgid "Xem trước &amp; chọn"
@@ -19947,10 +19911,6 @@ msgstr "{ten} does not use login."
 msgid "{ten} không hỗ trợ cách cào này."
 msgstr "{ten} does not support this crawl method."
 
-#: apps/video_crawler/templates/vc_thong_ke.html:2
-msgid "Đang chạy"
-msgstr "Running"
-
 #: apps/video_crawler/phien.py:97
 msgid "Đang lưu phiên này ở nơi khác — thử lại."
 msgstr "This session is being saved elsewhere — try again."
@@ -19983,10 +19943,6 @@ msgstr "Downloaded {ten}"
 msgid "Đăng nhập nền tảng"
 msgstr "Platform login"
 
-#: apps/video_crawler/anh_bia.py:90
-msgid "đang bận"
-msgstr "busy"
-
 #: apps/video_crawler/adapters/_ytdlp.py:382
 msgid "đang ghép"
 msgstr "merging"
@@ -20014,6 +19970,7 @@ msgstr "image too large"
 #: apps/video_crawler/anh_bia.py:71
 msgid "ảnh tải quá chậm"
 msgstr "image loading too slow"
+
 #: platform_core/public_api/governance.py:343
 msgid "Cookie đăng nhập nền tảng video khách tự nhập để cào nội dung cần đăng nhập, **đã mã hoá**, chỉ giữ cookie của đúng tên miền nền đó. Xoá khi khách bấm xoá phiên."
 msgstr "Video platform login cookies the customer enters themselves to crawl content that needs login, **encrypted**, keeping only cookies for the matching platform domain. Deleted when the customer deletes the session."
