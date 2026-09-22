@@ -537,6 +537,12 @@ R9 [chủ dự án] cập nhật app ─> phiên MỚI: verify_installed + 5 k�
 | R8 | `python tools\gate.py` (L3) một lần trên `phien/llm-loi-nghia` → khép đỏ → ff `main` → NHAT_KY | điều phối | L3 | xanh / đã khép |
 | R9 | Cập nhật app → `verify_installed.ps1` + 5 kịch bản canary (lỗi ảnh không nén, context không offload, output-token không nén, mã lạ không retry, 3.5 con ghi được) | chủ dự án bấm cập nhật; phiên mới chạy | verify_installed PASS | bảng lỗi sau ≤ trước |
 
+**Điều chỉnh 22/09 (chủ dự án):** build CHỈ MỘT LẦN sau khi MỌI hạng mục LTTCODE xong — lượt
+build sớm đã dừng trước khi phát (không có gì lên manifest). Cổng vào R7 = đủ cả: (1) nguyên nhân 9 lỗi
+`400 INVALID_REQUEST` đã kết luận và sửa nếu thuộc LTTCODE; (2) test cố định STREAM_CLOSED giữ requestId;
+(3) sổ lỗi ghi dòng "pass có lý do" cho edit mismatch / tệp không tồn tại / exit code ≠ 0; (4) R4 chạy lại
+một lượt trên cây cuối. `subagent run was cancelled` kiểm ở R9 (cần bản đã cài).
+
 Task 13 (gỡ legacy) **không** thuộc phiên này: vào khi đủ một chu kỳ vận hành có traffic với
 `llm_error_legacy_total=0` và `llm_error_contract_mismatch_total=0` (đọc bằng
 `tools/kiem_hop_dong_loi_llm.py live`), sau khi 0.2.5 đã thay 0.2.4 trên máy dùng.
