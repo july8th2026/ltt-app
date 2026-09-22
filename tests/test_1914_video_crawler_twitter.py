@@ -201,3 +201,14 @@ def test_tai_tu_choi_url_khong_chuan(tmp_path, item):
         TwitterAdapter(nha).tai(item, tmp_path, bao_tien_do=_khong_bao)
     assert e.value.ma == "url_khong_ho_tro" and e.value.tam_thoi is False
     assert nha.tao == []          # không dựng YoutubeDL, không chạm mạng
+
+
+def test_id_la_id_tweet_khong_phai_id_media():
+    """Smoke thật 22/09: TwitterIE trả `id` = id MEDIA (717462543795523584), `display_id` = id TWEET
+    (719944021058060289). Dùng id media dựng `x.com/i/status/<id>` ⇒ tải hỏng. Mục phải mang id tweet."""
+    from apps.video_crawler.adapters.twitter import TwitterAdapter
+    ad = TwitterAdapter()
+    item = ad._sang_item({"id": "717462543795523584", "display_id": "719944021058060289", "title": "T",
+                          "webpage_url": "https://twitter.com/captainamerica/status/719944021058060289"})
+    assert item.id == "719944021058060289"
+    assert item.url == "https://x.com/i/status/719944021058060289"

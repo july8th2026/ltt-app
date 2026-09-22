@@ -363,3 +363,14 @@ def test_tep_cuoi_vuot_gioi_han_thanh_loi_cao(tmp_path):
         NenGia(Nha(kich_ban=lambda y: _ghi(tmp_path / "12345.mp4")), max_filesize=5).tai(
             _ITEM, tmp_path, bao_tien_do=_khong_bao)
     assert e.value.ma == "qua_lon" and not (tmp_path / "12345.mp4").exists()
+
+
+def test_tim_tep_khi_ten_tep_theo_id_khac_id_muc(tmp_path):
+    """Smoke thật 22/09 (Twitter): yt-dlp đặt tên tệp theo id MEDIA, mục mang id TWEET ⇒ 'không thấy tệp'.
+    Thư mục tải là của riêng một mục ⇒ đúng MỘT tệp video cuối thì chính là nó; nhiều tệp ⇒ không đoán."""
+    from apps.video_crawler.adapters._ytdlp import tim_tep
+    (tmp_path / "717462543795523584.f137.mp4").write_bytes(b"x")      # trung gian — không tính
+    (tmp_path / "717462543795523584.mp4").write_bytes(b"x")
+    assert tim_tep("719944021058060289", tmp_path, []) == tmp_path / "717462543795523584.mp4"
+    (tmp_path / "khac.mp4").write_bytes(b"x")
+    assert tim_tep("719944021058060289", tmp_path, []) is None

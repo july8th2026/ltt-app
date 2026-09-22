@@ -69,6 +69,13 @@ class TwitterAdapter(YtdlpAdapter):
     def url_video(self, id: str) -> str:
         return f"https://x.com/i/status/{id}"
 
+    def _sang_item(self, e: dict):
+        """TwitterIE: `id` = id MEDIA, `display_id` = id TWEET (smoke thật 22/09). URL tải cần id tweet."""
+        tweet = str(e.get("display_id") or "")
+        if _ID.fullmatch(tweet):
+            e = {**e, "id": tweet}
+        return super()._sang_item(e)
+
     def id_hop_le(self, id: Any) -> bool:
         return isinstance(id, str) and _ID.fullmatch(id) is not None
 

@@ -63,3 +63,22 @@ def test_thong_diep_khach_khong_lo_url_hay_cookie():
     assert "token" not in loi.thong_diep and "SID" not in loi.thong_diep
     for thong_diep, _, _ in CA:
         assert "http" not in phan_loai(thong_diep).thong_diep
+
+
+# ── Smoke mạng thật 22/09: thông điệp thô yt-dlp 2026.03.17 từng rơi vào `loi_khac` ──────────────────
+
+@pytest.mark.parametrize("tho,ma", [
+    ("ERROR: [Instagram] Chunk8-jurw: Requested content is not available, rate-limit reached or login required. "
+     "Use --cookies-from-browser or --cookies for the authentication.", "can_dang_nhap"),
+    ("ERROR: [Douyin] 6961737553342991651: Fresh cookies (not necessarily logged in) are needed", "can_dang_nhap"),
+    ("ERROR: [BiliBili] 13x41117TL: Unable to download JSON metadata: HTTP Error 412: Precondition Failed", "nen_chan"),
+])
+def test_loi_dang_nhap_va_nen_chan_tu_smoke_that(tho, ma):
+    e = phan_loai(tho)
+    assert e.ma == ma
+    assert e.tam_thoi is False                  # thử lại ẩn danh không bao giờ khỏi — đừng đốt lượt
+    assert "đăng nhập" in e.thong_diep.lower()
+
+
+def test_gioi_han_tuoi_van_thang_dang_nhap():
+    assert phan_loai("Sign in to confirm your age. This video may be inappropriate").ma == "gioi_han_tuoi"

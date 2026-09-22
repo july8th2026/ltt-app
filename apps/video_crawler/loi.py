@@ -18,6 +18,12 @@ _BANG: tuple[tuple[str, tuple[str, ...], bool, str], ...] = (
      False, "Video bị giới hạn tuổi, không tải được."),
     ("yt_bot", ("sign in to confirm", "not a bot"),
      True, "YouTube tạm chặn truy cập tự động. Vui lòng thử lại sau."),
+    # Smoke mạng thật 22/09 (Instagram, Douyin): thử lại ẩn danh không bao giờ khỏi ⇒ tam_thoi=False.
+    ("can_dang_nhap", ("login required", "fresh cookies", "cookies for the authentication"),
+     False, "Nền tảng yêu cầu đăng nhập — thêm phiên ở mục Đăng nhập nền tảng rồi thử lại."),
+    # Smoke thật 22/09 (Bilibili 412 = risk control với truy cập ẩn danh từ máy chủ).
+    ("nen_chan", ("http error 412", "precondition failed", "http error 461"),
+     False, "Nền tảng đang chặn truy cập ẩn danh từ máy chủ — thêm phiên ở mục Đăng nhập nền tảng rồi thử lại."),
     ("chi_la_anh", ("no video formats found",),
      False, "Bài đăng này không có video (chỉ có ảnh)."),
     ("url_khong_ho_tro", ("unsupported url", "no suitable extractor"),

@@ -85,10 +85,14 @@ def tim_tep(vid: str, thu_muc: Path, tep_hook: list[str]) -> Path | None:
             return p
     if not thu_muc.is_dir():
         return None
-    for p in sorted(thu_muc.iterdir()):
-        if p.is_file() and p.stem == vid and p.suffix.lower() in _DUOI_VIDEO:
+    cuoi = [p for p in sorted(thu_muc.iterdir())
+            if p.is_file() and p.suffix.lower() in _DUOI_VIDEO and not re.search(r"\.f\d+$", p.stem)]
+    for p in cuoi:
+        if p.stem == vid:
             return p
-    return None
+    # Tên tệp theo id khác id mục (Twitter: id media ≠ id tweet — smoke thật 22/09). Thư mục là của riêng
+    # một mục ⇒ đúng MỘT tệp video cuối thì chính là nó; nhiều hơn thì không đoán.
+    return cuoi[0] if len(cuoi) == 1 else None
 
 
 class _TrangThai:
