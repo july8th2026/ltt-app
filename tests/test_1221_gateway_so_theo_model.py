@@ -392,7 +392,9 @@ def test_header_token_dat_duoc_TON_TRONG():
     r2 = c.post("/v1/chat/completions", json=than,
                 headers={"X-LTT-Token-Dat": "2000"})
     assert r2.status_code == 429, r2.text
-    assert "pool KV" in r2.json()["detail"]["chi_tiet"]
+    detail = r2.json()["detail"]
+    assert detail["canonical_code"] == "concurrency_limited"
+    assert detail["retry_after_s"] >= 5
 
 
 def test_header_token_dat_thap_khong_duoc_HA_phep_do_cua_may_B():
@@ -412,7 +414,9 @@ def test_header_token_dat_thap_khong_duoc_HA_phep_do_cua_may_B():
         "messages": [{"role": "user", "content": "x" * 1_000}],
     }, headers={"X-LTT-Token-Dat": "1"})
     assert r.status_code == 429, r.text
-    assert "pool KV" in r.json()["detail"]["chi_tiet"]
+    detail = r.json()["detail"]
+    assert detail["canonical_code"] == "concurrency_limited"
+    assert detail["retry_after_s"] >= 5
 
 
 def test_header_whale_cu_bi_BO_QUA():
