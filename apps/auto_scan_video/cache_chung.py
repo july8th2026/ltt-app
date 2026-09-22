@@ -29,18 +29,28 @@ nhat ma khong phu thuoc gi vao nhung thay doi do — chay lai tu dau.
    binh thuong. Hai lan chay giu hai vong doi doc lap: xoa lan chay A
    (`don_theo_run`) khong duoc lam hong lan chay B dang tro vao tep cua A.
 
-⛔ Chua lam: *one-compute-many-wait*. Hai lan chay cung video nop CUNG LUC van
-   tinh hai lan — lan sau chi huong cache khi lan truoc da xong. Xem
-   `PHA25_CACHE_CHUNG.md`.
+⭐ *Mot tinh, cac ben kia cho* (asv-final, `L_CACHE_LEASE.md`): `giu_cho` gianh
+   lease NEN TANG (`platform_core.leases`, bang `singleton_leases`) theo
+   `khoa_chung`. Ben den sau KHONG ngu trong worker: no nem `jobs.DangBan`, worker
+   `defer_resource` job ve hang doi (khong tieu luot thu, khong cham tien), va
+   luot sau no tim thay ket qua qua `lay`. Chu lease chet ⇒ het nhip ⇒ lease het
+   han sau `TTL_GIU_CHO`; chu bi huy ⇒ thoi dap nhip ⇒ nhu chet.
 """
 from __future__ import annotations
 
 import hashlib
 import json
 import logging
+import threading
+import time
+from datetime import timedelta
 
 from sqlalchemy import select
 
+from platform_core import leases
+from platform_core.db import get_session
+from platform_core.jobs import DangBan
+from platform_core.models import SingletonLease
 from platform_core.storage import Storage
 
 from . import assets, features, pipeline
@@ -186,3 +196,122 @@ def lay(db, kho: Storage, *, run, ten: str, khoa_chung: str) -> dict | None:
         log.info("cache chung: %s dung lai %d artifact", ten, len(phan))
         return {"phan": phan, "tom_tat": tom_tat}
     return None
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Mot tinh, cac ben kia cho — lease NEN TANG theo `khoa_chung`
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# 🔑 Dung lai `platform_core.leases` (bang `singleton_leases`, gianh bang INSERT +
+#    UNIQUE, het han theo nhip) — khong co co che khoa thu hai. Chay giong het
+#    tren SQLite va PostgreSQL.
+# 🔑 Ben den sau KHONG ngu trong worker: nem `jobs.DangBan` ⇒ `job_runner`
+#    `defer_resource` (job ve `queued`, `next_run_at` lui, KHONG tang `attempts`,
+#    khong cham so tien). Dong `asv_stage` giu `running` + dung `job_id`, nen dieu
+#    phoi vien khong nop job moi.
+# ⚠️ Lease la TOI UU, khong phai chot dung sai: ket qua van di qua `lay` (chu so
+#    huu trong WHERE + kiem toan ven). Mat lease giua chung chi lam hai ben cung
+#    tinh — ton cong, khong sai. Vi vay loi ha tang lease ⇒ tinh khong lease.
+
+#: Chu lease im nhip qua moc nay thi ben kia duoc thu hoi (crash/kill/mat dien).
+TTL_GIU_CHO = timedelta(minutes=2)
+#: Nhip dap cua chu lease — ngan hon TTL nhieu lan.
+NHIP_GIU_CHO_S = 30.0
+#: Tran thoi gian mot chu duoc giu lease. Handler treo ma tien trinh con song se
+#: khong giu ben kia mai mai: qua moc nay thoi dap nhip, ben kia nhan sau TTL.
+GIU_CHO_TOI_DA_S = 2 * 3600.0
+#: Ben cho quay lai hoi sau bao lau. Re: mot luot hoi = mot claim + vai SELECT.
+CHO_LAI_KHI_BAN_S = 15
+#: `SingletonLease.name` la String(64).
+_TIEN_TO_LEASE = "asvcc:"
+
+
+def ten_lease(khoa_chung: str) -> str:
+    return (_TIEN_TO_LEASE + khoa_chung)[:64]
+
+
+def _phien():
+    gen = get_session()
+    db = next(gen)
+    try:
+        yield db
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+class GiuCho:
+    """Lease dang giu + luong dap nhip. `nha()` idempotent."""
+
+    def __init__(self, ten: str, holder: str, con_song=None):
+        self.ten = ten
+        self.holder = holder
+        self._con_song = con_song
+        self._dung = threading.Event()
+        self._bat_dau = time.monotonic()
+        self.luong = threading.Thread(target=self._nhip, daemon=True,
+                                      name=f"asvcc-hb-{ten[6:14]}")
+
+    def _lease(self) -> SingletonLease:
+        # Doi tuong TAM: `leases.heartbeat/release` chi doc name + holder.
+        return SingletonLease(name=self.ten, holder=self.holder)
+
+    def _nhip(self) -> None:
+        while not self._dung.wait(NHIP_GIU_CHO_S):
+            if time.monotonic() - self._bat_dau > GIU_CHO_TOI_DA_S:
+                log.warning("cache chung: %s giu qua %ss — thoi dap nhip",
+                            self.ten, GIU_CHO_TOI_DA_S)
+                return
+            try:
+                if self._con_song is not None and not self._con_song():
+                    # Job chu da bi huy: thoi dap nhip ⇒ ben cho nhan sau TTL
+                    # ke ca khi engine chua chiu dung.
+                    log.info("cache chung: chu %s da huy — thoi dap nhip", self.ten)
+                    return
+                for db in _phien():
+                    if not leases.heartbeat(db, self._lease()):
+                        log.warning("cache chung: mat lease %s", self.ten)
+                        return
+            except Exception:                   # noqa: BLE001
+                log.exception("cache chung: dap nhip lease %s loi", self.ten)
+
+    def nha(self) -> None:
+        if self._dung.is_set():
+            return
+        self._dung.set()
+        if self.luong.is_alive() and self.luong is not threading.current_thread():
+            self.luong.join(timeout=5)
+        try:
+            for db in _phien():
+                leases.release(db, self._lease())
+        except Exception:                       # noqa: BLE001
+            log.exception("cache chung: khong nha duoc lease %s — het han sau TTL",
+                          self.ten)
+
+
+def giu_cho(khoa_chung: str, *, holder: str, con_song=None) -> GiuCho | None:
+    """Gianh quyen TINH cho `khoa_chung`.
+
+    Tra `GiuCho` (nguoi goi PHAI `nha()` trong `finally`), hoac None khi khong
+    co khoa / ha tang lease loi (tinh khong lease — xem ghi chu dau muc).
+    Nem `DangBan` khi lan chay khac dang tinh dung khoa nay.
+    """
+    if not khoa_chung:
+        return None
+    ten = ten_lease(khoa_chung)
+    holder = str(holder or leases.holder_id())[:160]
+    try:
+        for db in _phien():
+            lease = leases.acquire(db, name=ten, holder=holder, ttl=TTL_GIU_CHO)
+    except Exception:                           # noqa: BLE001
+        log.exception("cache chung: khong gianh duoc lease %s — tinh khong lease", ten)
+        return None
+    if lease is None:
+        log.info("cache chung: %s dang duoc lan chay khac tinh — hoan job", ten)
+        raise DangBan(f"cache chung: dang tinh o lan chay khac ({ten[:18]})",
+                      retry_after_s=CHO_LAI_KHI_BAN_S)
+    g = GiuCho(ten, holder, con_song)
+    g.luong.start()
+    return g
