@@ -343,6 +343,10 @@ STORES: tuple = (
           N_("Cookie đăng nhập nền tảng video khách tự nhập để cào nội dung cần "
           "đăng nhập, **đã mã hoá**, chỉ giữ cookie của đúng tên miền nền đó. "
           "Xoá khi khách bấm xoá phiên.")),
+    Store("vc_da_tai", CONTENT, None, N_("chủ tài khoản"),
+          N_("Danh sách video khách đã tải từ nền tảng video (chỉ nền, mã video, "
+          "đường dẫn tệp), để \"cào không trùng\" không tải và thu tiền lại một "
+          "video. Giữ lâu hơn tệp — tệp đi theo lịch sử việc (30 ngày).")),
 
     # Bảng do APP sở hữu. Tất cả là nội dung của khách, vòng đời đi theo app —
     # nền tảng cố ý không đặt hạn cho chúng: app biết khi nào một cảnh, một

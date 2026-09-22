@@ -9,6 +9,10 @@ Quy tắc tiền của nền tảng (docs/03_THEM_APP_MOI.md §2): thất bại 
 - Lỗi tạm thời ⇒ exception thường (nền tảng thử lại).
 - Xong một phần ⇒ hoàn tất, báo `credit_cost` = số tải được, phần còn lại được hoàn.
 Thoát bằng exception (kể cả huỷ) ⇒ xoá tệp đã lưu của job này: dọn job hết hạn chỉ quét `result` (spec §18).
+
+Dedup bền (Q4, bảng `vc_da_tai`): GIÀNH chỗ (owner, nền, video) trước khi tải từng mục — job khác của cùng user đang
+giữ ⇒ mục đó bỏ qua như "trùng", không tính tiền. Xong ⇒ 'xong' + storage key; thoát bằng exception ⇒ nhả chỗ cùng lúc
+với dọn tệp.
 """
 from __future__ import annotations
 
@@ -132,20 +136,24 @@ def _su_kien(ctx, ma: str, thong_diep: str) -> None:
         ctx.event(ma, thong_diep, visibility=job_events.CUSTOMER)
 
 
-def _da_tai(owner_id: str, nen_id: str) -> set[str]:
+def _voi_db(ham, *args, **kw):
+    """Gọi `ham(db, ...)` của `features` trên một phiên DB riêng, ngắn (worker không giữ phiên suốt job)."""
     from apps.video_crawler import features
     from platform_core.db import get_session
     gen = get_session(); db = next(gen)
     try:
-        return features.da_tai_ids(db, owner_id, nen_id)
+        return getattr(features, ham)(db, *args, **kw)
     finally:
-        try:
+        with contextlib.suppress(StopIteration):
             next(gen)
-        except StopIteration:
-            pass
 
 
-def _kham_pha(adapter, nen_id: str, nguon: dict, owner_id: str, tien_do) -> tuple[list[CrawlItem], int]:
+def _da_tai(owner_id: str, nen_id: str, job_id: str | None = None) -> set[str]:
+    return _voi_db("da_tai_ids", owner_id, nen_id, tru_job_id=job_id)
+
+
+def _kham_pha(adapter, nen_id: str, nguon: dict, owner_id: str, tien_do,
+              job_id: str | None = None) -> tuple[list[CrawlItem], int]:
     yc = YeuCauCao(nen_tang=nen_id, che_do=nguon["che_do"], dau_vao=nguon["dau_vao"],
                    so_luong=int(nguon["so_luong"]))
     try:
@@ -158,7 +166,7 @@ def _kham_pha(adapter, nen_id: str, nguon: dict, owner_id: str, tien_do) -> tupl
     muc = list({m.id: m for m in muc}.values())      # trùng id trong kết quả ⇒ một mục (review MAJOR 2)
     bo = 0
     if nguon.get("khong_trung"):
-        cu = _da_tai(owner_id, nen_id)
+        cu = _da_tai(owner_id, nen_id, job_id)
         giu = [m for m in muc if m.id not in cu]
         bo, muc = len(muc) - len(giu), giu
     return muc[: yc.so_luong], bo
@@ -187,7 +195,7 @@ def _tai_voi(adapter, params: dict, ctx) -> dict:
     job_id = getattr(ctx, "job_id", "") or "khong-ctx"
     bo = 0
     if params.get("nguon"):
-        muc, bo = _kham_pha(adapter, nen_id, params["nguon"], owner_id, _TienDo(ctx, 1, tran=5).bao)
+        muc, bo = _kham_pha(adapter, nen_id, params["nguon"], owner_id, _TienDo(ctx, 1, tran=5).bao, job_id)
     else:
         # `thoi_luong_s` giữ nguyên nếu params đã có (ví dụ mục lấy từ kết quả khám phá) — quyết toán giá
         # đúng theo thời lượng thật; features.dung_params_tai hiện chưa giữ trường này qua danh sách id
@@ -210,6 +218,7 @@ def _tai_voi(adapter, params: dict, ctx) -> dict:
     loi: list[LoiCao] = []
     loi_muc: list[dict] = []
     da_luu: list[str] = []
+    so_da_tai = 0                  # số mục đã thực sự tải (nhịp nghỉ N7 chỉ giữa hai lượt tải thật)
     try:
         for i, item in enumerate(muc):
             td.i = i
@@ -223,10 +232,16 @@ def _tai_voi(adapter, params: dict, ctx) -> dict:
                 from platform_core.job_runner import JobCancelled
                 raise JobCancelled()
             key = f"video_crawler/{owner_id}/{job_id}/{item.id}.mp4"
+            if not _voi_db("gianh_cho", owner_id, nen_id, item.id, job_id, tep_con=kho.exists):
+                bo += 1                         # job khác của chính user này đang/đã tải video này
+                _su_kien(ctx, "muc_trung", _t("{ten}: đã hoặc đang được tải ở lượt khác của bạn — bỏ qua")
+                         .format(ten=item.tieu_de or item.id))
+                continue
             try:
                 if not kho.exists(key):
-                    if i > 0:
+                    if so_da_tai > 0:
                         _ngu(random.uniform(*NGHI_GIUA_MUC_S))          # lượt thử lại: mục đã lưu thì không tải lại
+                    so_da_tai += 1
                     with tempfile.TemporaryDirectory(prefix="vc_") as tam:
                         tep = adapter.tai(item, Path(tam), bao_tien_do=td.bao)
                         with open(tep.duong_dan, "rb") as f:
@@ -242,11 +257,17 @@ def _tai_voi(adapter, params: dict, ctx) -> dict:
                 continue
             xong.append({**item.to_dict(), "tep": key, "ten_tep": ten, "kich_thuoc": kho.size(key)})
             _su_kien(ctx, "muc_xong", _t("Đã tải {ten}").format(ten=item.tieu_de or item.id))
-        if not xong:
+        if not xong and loi:
             raise _loi_job(loi)
         if ctx is not None:                    # trong khối dọn: huỷ đúng lúc này vẫn không để tệp mồ côi
-            ctx.progress(100, f"Xong: {len(xong)}/{len(muc)} video")
+            ctx.progress(100, f"Xong: {len(xong)}/{len(muc)} video" if xong else
+                         _t("Không có video mới — bỏ qua {n} video đã tải trước đó").format(n=bo))
+        _voi_db("danh_dau_xong", owner_id, job_id, {m["id"]: m["tep"] for m in xong})
     except BaseException:
+        try:
+            _voi_db("nha_cho", owner_id, job_id)
+        except Exception as loi_nha:  # noqa: BLE001 — best-effort như dọn tệp; dòng mồ côi hết hạn sau 3 giờ
+            _LOG.warning("video_crawler: không nhả được chỗ của job %s: %s", job_id, type(loi_nha).__name__)
         for k in da_luu:
             try:
                 kho.delete(k)

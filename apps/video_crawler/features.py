@@ -1,6 +1,7 @@
 """CrawlApplicationService (spec §8): validate theo registry, dựng params, nộp job, dedup, lịch sử, thống kê.
 
-Route chỉ gọi vào đây; handler (`jobs.py`) chỉ gọi `da_tai_ids`. Mọi truy vấn lọc theo chủ sở hữu.
+Route chỉ gọi vào đây; handler (`jobs.py`) chỉ gọi nhóm dedup (`da_tai_ids`, `gianh_cho`, `danh_dau_xong`,
+`nha_cho`). Mọi truy vấn lọc theo chủ sở hữu.
 """
 from __future__ import annotations
 
@@ -22,8 +23,8 @@ JOB_TAI = "video_crawler.tai"
 #: Số lượt thử của job tải (nền tảng mặc định 3; route UI phải tự truyền — ARCHITECTURE_MAP §1).
 SO_LAN_THU = 2
 DAU_VAO_TOI_DA = 500
-#: Dedup "không trùng" chỉ nhớ được chừng này: `jobs.result` bị xoá sau 30 ngày (spec §13).
-SO_JOB_DEDUP = 500
+#: Giành chỗ 'dang_tai' cũ hơn mốc này là của job đã chết (trần job 7200 s, `_het_gio` giết không kịp dọn) ⇒ giành lại.
+GIANH_CHO_HET_HAN = timedelta(hours=3)
 
 
 #: Trần xem trước mỗi phút mỗi user (phản biện #8: tìm dồn dập từ IP máy A ⇒ YouTube bot-check).
@@ -255,19 +256,93 @@ def nop(db, *, owner_id: str, job_type: str, params: dict) -> Job:
                               max_attempts=SO_LAN_THU)
 
 
-def da_tai_ids(db, owner_id: str, nen_id: str) -> set[str]:
-    """Id video chính user này đã tải XONG trên nền này (khoá dedup spec §17). Lọc trong Python: `result` là JSON."""
+def da_tai_ids(db, owner_id: str, nen_id: str, *, tru_job_id: str | None = None,
+               bay_gio: datetime | None = None) -> set[str]:
+    """Id video user này đã tải xong, hoặc đang được một job khác của họ tải, trên nền này (khoá dedup spec §17).
+
+    Đọc sổ bền `vc_da_tai` — không giới hạn 30 ngày/500 job như khi suy từ `jobs.result`. Mục của job xong TRƯỚC khi có
+    bảng không được tính (không di trú: app còn sau cờ, chưa có khách — xem migration `vc_da_tai`).
+    `tru_job_id`: bỏ dòng của chính job đang chạy (lượt thử lại sau khi worker chết không tự lọc mục của mình).
+    """
+    from apps.video_crawler.tables import DANG_TAI, XONG, VcDaTai
+    moc = (bay_gio or datetime.now(timezone.utc)) - GIANH_CHO_HET_HAN
     rows = db.execute(
-        select(Job.result).where(Job.user_id == owner_id, Job.app_slug == MANIFEST.slug,
-                                 Job.job_type == JOB_TAI, Job.status == JOB_DONE)
-        .order_by(Job.created_at.desc()).limit(SO_JOB_DEDUP)
-    ).scalars()
-    ids: set[str] = set()
-    for r in rows:
-        for m in (r or {}).get("muc") or []:
-            if m.get("nen_tang") == nen_id and m.get("tep"):
-                ids.add(str(m.get("id")))
-    return ids
+        select(VcDaTai.video_id, VcDaTai.trang_thai, VcDaTai.cap_nhat_luc, VcDaTai.job_id)
+        .where(VcDaTai.owner_id == owner_id, VcDaTai.nen_tang == nen_id)
+    ).all()
+    return {vid for vid, tt, luc, jid in rows
+            if jid != tru_job_id and (tt == XONG or (tt == DANG_TAI and _utc(luc) > moc))}
+
+
+def _utc(t: datetime) -> datetime:
+    return t if t.tzinfo else t.replace(tzinfo=timezone.utc)      # SQLite trả datetime không múi giờ
+
+
+def gianh_cho(db, owner_id: str, nen_id: str, video_id: str, job_id: str, *,
+              bay_gio: datetime | None = None, tep_con=lambda key: True) -> bool:
+    """GIÀNH quyền tải (owner, nền, video) cho `job_id` trước khi tải; COMMIT ngay. True ⇒ được tải.
+
+    UNIQUE của CSDL quyết định giữa hai worker. Dòng sẵn có chỉ được giành lại khi: của chính job này (lượt thử
+    lại), 'dang_tai' quá `GIANH_CHO_HET_HAN` (job chết), hoặc 'xong' mà tệp đã mất (`tep_con(tep)` False — khách
+    chọn đích danh video đã tải từ lâu). Giành lại bằng UPDATE có điều kiện trên giá trị vừa đọc (so-và-đổi) nên
+    hai job cùng giành lại một dòng cũ thì cũng chỉ một thắng.
+    """
+    from sqlalchemy import update
+    from sqlalchemy.exc import IntegrityError
+
+    from apps.video_crawler.tables import DANG_TAI, XONG, VcDaTai
+    bay_gio = bay_gio or datetime.now(timezone.utc)
+    try:
+        db.add(VcDaTai(owner_id=owner_id, nen_tang=nen_id, video_id=video_id, job_id=job_id,
+                       trang_thai=DANG_TAI, tao_luc=bay_gio, cap_nhat_luc=bay_gio))
+        db.commit()
+        return True
+    except IntegrityError:
+        db.rollback()
+    cu = db.execute(select(VcDaTai).where(VcDaTai.owner_id == owner_id, VcDaTai.nen_tang == nen_id,
+                                          VcDaTai.video_id == video_id)).scalar_one_or_none()
+    if cu is None:                       # dòng vừa bị nhả giữa hai lệnh ⇒ thử chèn lại một lần
+        return gianh_cho(db, owner_id, nen_id, video_id, job_id, bay_gio=bay_gio, tep_con=tep_con)
+    duoc = (cu.job_id == job_id
+            or (cu.trang_thai == DANG_TAI and _utc(cu.cap_nhat_luc) <= bay_gio - GIANH_CHO_HET_HAN)
+            or (cu.trang_thai == XONG and not (cu.tep and tep_con(cu.tep))))
+    if not duoc:
+        db.rollback()
+        return False
+    doi = db.execute(update(VcDaTai).where(VcDaTai.id == cu.id, VcDaTai.job_id == cu.job_id,
+                                           VcDaTai.trang_thai == cu.trang_thai,
+                                           VcDaTai.cap_nhat_luc == cu.cap_nhat_luc)
+                     .values(job_id=job_id, trang_thai=DANG_TAI, tep=None, cap_nhat_luc=bay_gio)
+                     .execution_options(synchronize_session=False))
+    db.commit()
+    return doi.rowcount == 1
+
+
+def danh_dau_xong(db, owner_id: str, job_id: str, tep_theo_id: dict[str, str]) -> None:
+    """Chốt job: dòng của mục đã tải ⇒ 'xong' + storage key; dòng 'dang_tai' còn lại (mục lỗi) bị nhả. COMMIT."""
+    from sqlalchemy import delete, update
+
+    from apps.video_crawler.tables import DANG_TAI, XONG, VcDaTai
+    bay_gio = datetime.now(timezone.utc)
+    for vid, tep in tep_theo_id.items():
+        db.execute(update(VcDaTai).where(VcDaTai.owner_id == owner_id, VcDaTai.job_id == job_id,
+                                         VcDaTai.video_id == vid)
+                   .values(trang_thai=XONG, tep=tep, cap_nhat_luc=bay_gio)
+                   .execution_options(synchronize_session=False))
+    db.execute(delete(VcDaTai).where(VcDaTai.owner_id == owner_id, VcDaTai.job_id == job_id,
+                                     VcDaTai.trang_thai == DANG_TAI)
+               .execution_options(synchronize_session=False))
+    db.commit()
+
+
+def nha_cho(db, owner_id: str, job_id: str) -> None:
+    """Xoá mọi dòng của job này (huỷ/lỗi/hết giờ — cùng lúc với dọn storage); COMMIT."""
+    from sqlalchemy import delete
+
+    from apps.video_crawler.tables import VcDaTai
+    db.execute(delete(VcDaTai).where(VcDaTai.owner_id == owner_id, VcDaTai.job_id == job_id)
+               .execution_options(synchronize_session=False))
+    db.commit()
 
 
 def kiem_tan_suat(db, owner_id: str, *, bay_gio: datetime | None = None) -> None:

@@ -9,7 +9,8 @@ Chạy qua `job_runner._chay_mot_job` thật trên SQLite tạm (khuôn `test_67
 - lỗi phía khách ở MỌI mục ⇒ job `error`, KHÔNG thử lại, hoàn đủ, không để tệp mồ côi
   (sửa lỗi donor: không đánh "xong" với 0 video, `W:11652`);
 - huỷ giữa chừng ⇒ job `cancelled`, tệp đã lưu bị dọn;
-- "không trùng" chỉ bỏ mục chính user đó đã tải xong, không bị lịch sử user khác ảnh hưởng.
+- "không trùng" chỉ bỏ mục chính user đó đã tải xong, không bị lịch sử user khác ảnh hưởng
+  (sổ bền `vc_da_tai` — chi tiết ở `test_1925`).
 """
 from __future__ import annotations
 
@@ -31,6 +32,8 @@ def db(tmp_path, monkeypatch):
     import platform_core.db as dbmod
     dbmod.reset_engine()
     import platform_core.models  # noqa: F401
+    from platform_core.registry import load_app_tables
+    load_app_tables()                                   # bảng vc_da_tai: handler giành chỗ trước khi tải
     dbmod.Base.metadata.create_all(dbmod.get_engine())
     gen = dbmod.get_session(); s = next(gen)
     try:
