@@ -110,6 +110,15 @@ def tao_run(db, *, workflow: Workflow, owner_id: str, trigger_kind: str,
                                  "inputs": dict(inputs or {})})
             danh_thuc_dong_co(db)
     except IntegrityError:
+        # ⚠️ Chỉ tra "run cũ" khi CÓ khoá — savepoint bọc CẢ chuỗi (không chỉ
+        # INSERT), nên `IntegrityError` ở đây có thể đến từ BẤT KỲ bước nào
+        # trong chuỗi, không chỉ chỉ mục bộ phận `ux_workflow_run_idem`. Với
+        # `idempotency_key == ""`, `_tim(owner_id, "")` khớp MỌI run trước đó
+        # của owner này tạo bằng khoá rỗng (trigger_kind khác "api" không đòi
+        # khoá) — trả nhầm một run KHÔNG LIÊN QUAN thay vì ném lỗi thật, nuốt
+        # mất một lỗi ở `su_kien.ghi`/`danh_thuc_dong_co`/… mà không ai biết.
+        if not idempotency_key:
+            raise
         cu = _tim(db, owner_id, idempotency_key)
         if cu is None:
             raise

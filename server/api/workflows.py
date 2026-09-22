@@ -220,7 +220,8 @@ def register_workflow_routes(api, config, tag: str) -> None:
                                        trigger_kind="api",
                                        idempotency_key=key)
         except tao_run.TrungKhoaKhacWorkflow:
-            raise idempotency_conflict() from None
+            raise idempotency_conflict(
+                "Idempotency-Key already used for another workflow.") from None
         except tao_run.QuaHanMuc as loi:
             raise rate_limited(str(loi)) from loi
         except credit.ThieuCreditError as loi:
