@@ -42,10 +42,8 @@ CHU_KY_NHIP = 20.0
 TEN_LUONG_NHIP = "video-crawler-nhip"
 MAX_FILESIZE_MAC_DINH = 4 * 1024 ** 3
 THOI_LUONG_TOI_DA_MAC_DINH = 3 * 3600
-#: Nghỉ ngẫu nhiên (giây) trước mỗi lượt tải tệp — yt-dlp `sleep_interval`/`max_sleep_interval`
-#: (downloader/common.py:461-475, `random.uniform`). Donor Y:2096-2104; wiki yt-dlp: 5–10 s giữa các lượt tải,
-#: khách vãng lai ~300 video/giờ (N7). Chỉ áp khi TẢI — khám phá không tải tệp nào.
-NGHI_GIUA_TAI_S = (5.0, 10.0)
+#: Nhịp nghỉ giữa các video nằm ở `jobs._tai_voi` (giữa các MỤC, bỏ mục đầu) — không dùng yt-dlp
+#: `sleep_interval`: nó nghỉ trước MỖI tệp kể cả video đầu và cả luồng hình + tiếng (7,6 s → 24 s).
 
 #: live_status yt-dlp chưa tải được như một tệp (YoutubeDL.py:2755-2772). `was_live` là VOD bình thường ⇒ cho qua.
 _TRUC_TIEP = frozenset({"is_live", "is_upcoming", "post_live"})
@@ -252,7 +250,6 @@ class YtdlpAdapter:
         if thu_muc is not None:
             o["outtmpl"] = str(Path(thu_muc) / "%(id)s.%(ext)s")
             o["noplaylist"] = True
-            o["sleep_interval"], o["max_sleep_interval"] = NGHI_GIUA_TAI_S
         if progress_hooks:
             o["progress_hooks"] = list(progress_hooks)
         if postprocessor_hooks:

@@ -120,21 +120,8 @@ def test_thieu_goi_yt_dlp_ejs_van_chay(monkeypatch):
 
 
 # ---------------------------------------------------------------- (b) nhịp giữa các lượt tải
-@pytest.mark.parametrize("lop", [YoutubeAdapter, _Nen])
-def test_nghi_5_10s_chi_khi_tai(lop, tmp_path):
-    o_tai = lop.tuy_chon_goc(tmp_path)
-    assert (o_tai["sleep_interval"], o_tai["max_sleep_interval"]) == (5.0, 10.0)
-    o_kp = lop.tuy_chon_goc()
-    assert "sleep_interval" not in o_kp and "max_sleep_interval" not in o_kp
-    assert o_tai["sleep_interval_requests"] == o_kp["sleep_interval_requests"] == 1.0
-
-
-@pytest.mark.parametrize("lop", [YoutubeAdapter, _Nen])
-def test_nghi_di_toi_youtubedl_dung_duong(lop, tmp_path):
-    kp, tai = _chay(lop, tmp_path)
-    assert "sleep_interval" not in kp
-    assert (tai["sleep_interval"], tai["max_sleep_interval"]) == (5.0, 10.0)
-
+# Điều phối đổi thiết kế khi gộp W1: nghỉ 5–10 s GIỮA các mục ở `jobs._tai_voi` (tests/test_1931), không dùng
+# yt-dlp `sleep_interval` (nghỉ trước MỖI tệp, cả video đầu và cả luồng hình + tiếng ⇒ 7,6 s → 24 s).
 
 # ---------------------------------------------------------------- (c) extractor hỏng
 @pytest.mark.parametrize("tho", [

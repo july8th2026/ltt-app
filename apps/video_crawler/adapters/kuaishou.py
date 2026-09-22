@@ -300,7 +300,8 @@ class KuaishouAdapter:
         if not self._la_video(anh):
             raise _loi("no video formats found")
         if self._qua_dai(anh):
-            raise LoiCao("qua_dai", _t(_TU_CHOI["qua_dai"]), tam_thoi=False)
+            cau_qua_dai = _TU_CHOI["qua_dai"]   # biến trung gian: babel không trích khoá "qua_dai" làm msgid
+            raise LoiCao("qua_dai", _t(cau_qua_dai), tam_thoi=False)
         dich = Path(thu_muc) / f"{item.id}.mp4"
 
         def moi_khoi(xong: int, tong: int | None) -> None:
@@ -312,6 +313,7 @@ class KuaishouAdapter:
                                    kiem_url=self._kiem_cdn, moi_khoi=moi_khoi)
         except kuaishou_web.QuaLon:
             dich.unlink(missing_ok=True)
-            raise LoiCao("qua_lon", _t(_TU_CHOI["qua_lon"]), tam_thoi=False) from None
+            cau_qua_lon = _TU_CHOI["qua_lon"]   # biến trung gian: babel không trích khoá "qua_lon" làm msgid
+            raise LoiCao("qua_lon", _t(cau_qua_lon), tam_thoi=False) from None
         ten = ten_sach(item.tieu_de or str(anh.get("caption") or "")) or item.id
         return TepTai(duong_dan=dich, kich_thuoc=int(kich_thuoc), ten_hien_thi=f"{ten} [{item.id}].mp4")

@@ -217,8 +217,18 @@ def dung_params_tai(*, owner_id: str, nen_tang: str, muc: list | None = None, ng
         url = ad.url_chuan(vid, str(m.get("url") or ""))   # dựng lại từ id — URL khách gửi bị BỎ (review BLOCKER)
         if url is None:
             raise LoiDauVao(_t("Link {ten} không hợp lệ hoặc thiếu mã cần thiết — dán lại link đầy đủ.").format(ten=nen.ten))
-        sach.append({"id": vid, "url": url, "tieu_de": str(m.get("tieu_de") or "")[:200]})
+        muc_sach = {"id": vid, "url": url, "tieu_de": str(m.get("tieu_de") or "")[:200]}
+        tl = _thoi_luong(m.get("thoi_luong_s"))
+        if tl is not None:                 # giá theo thời lượng thật (gia.gia_muc); lạ ⇒ bỏ ⇒ bậc ≤ 10 phút
+            muc_sach["thoi_luong_s"] = tl
+        sach.append(muc_sach)
     return {"owner_id": owner_id, "nen_tang": nen.id, "muc": sach}
+
+
+def _thoi_luong(v) -> int | None:
+    if isinstance(v, bool) or not isinstance(v, (int, float)):
+        return None
+    return int(v) if 0 < v <= 24 * 3600 else None
 
 
 def dung_params_tai_tu_xem_truoc(db, *, owner_id: str, kham_pha_id: str, ids: list[str]) -> dict:

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import contextlib
 import logging
+import random
 import tempfile
 import time
 from pathlib import Path
@@ -26,6 +27,9 @@ from apps.video_crawler.adapters.base import CrawlItem, LoiCao, YeuCauCao
 JOB_KHAM_PHA = "video_crawler.kham_pha"
 JOB_TAI = "video_crawler.tai"
 _LOG = logging.getLogger(__name__)
+#: Nghỉ ngẫu nhiên GIỮA hai video của một job tải (yt-dlp wiki: 5–10 s giữa lượt tải; N7). Mục đầu không chờ.
+NGHI_GIUA_MUC_S = (5.0, 10.0)
+_ngu = time.sleep          # test thay hàm này
 
 #: Nhịp tim tối thiểu: ngưỡng mồ côi của nền tảng là 5 phút (platform_core/jobs.py ORPHAN_TIMEOUT).
 _NHIP_TIM_S = 30.0
@@ -220,7 +224,9 @@ def _tai_voi(adapter, params: dict, ctx) -> dict:
                 raise JobCancelled()
             key = f"video_crawler/{owner_id}/{job_id}/{item.id}.mp4"
             try:
-                if not kho.exists(key):          # lượt thử lại: mục đã lưu thì không tải lại
+                if not kho.exists(key):
+                    if i > 0:
+                        _ngu(random.uniform(*NGHI_GIUA_MUC_S))          # lượt thử lại: mục đã lưu thì không tải lại
                     with tempfile.TemporaryDirectory(prefix="vc_") as tam:
                         tep = adapter.tai(item, Path(tam), bao_tien_do=td.bao)
                         with open(tep.duong_dan, "rb") as f:

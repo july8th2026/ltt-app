@@ -47,11 +47,8 @@ def _nguoi(request: Request):
 
 
 def _bang_gia() -> list:
-    """Bậc giá ước tính cho UI. CẦN ĐIỀU PHỐI: khi gộp làn L2 (`gia.py`) thì bỏ try/except, gọi thẳng `gia.bang()`."""
-    try:
-        from apps.video_crawler import gia  # type: ignore[attr-defined]
-    except ImportError:
-        return []
+    """Bậc giá ước tính cho UI — một nguồn: `gia.bang()`."""
+    from apps.video_crawler import gia
     return list(gia.bang())
 
 

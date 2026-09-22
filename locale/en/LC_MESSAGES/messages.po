@@ -19974,3 +19974,143 @@ msgstr "image loading too slow"
 #: platform_core/public_api/governance.py:343
 msgid "Cookie đăng nhập nền tảng video khách tự nhập để cào nội dung cần đăng nhập, **đã mã hoá**, chỉ giữ cookie của đúng tên miền nền đó. Xoá khi khách bấm xoá phiên."
 msgstr "Video platform login cookies the customer enters themselves to crawl content that needs login, **encrypted**, keeping only cookies for the matching platform domain. Deleted when the customer deletes the session."
+
+#: apps/video_crawler
+msgid "\"Không trùng\" bỏ qua video bạn đã tải trong 30 ngày gần đây. Xem trước miễn phí; giá mỗi video tải về theo thời lượng:"
+msgstr "\"No duplicates\" skips videos you downloaded in the last 30 days. Preview is free; each downloaded video is priced by duration:"
+
+#: apps/video_crawler
+msgid "Báo cáo lạm dụng"
+msgstr "Report abuse"
+
+#: apps/video_crawler
+msgid "Bình thường"
+msgstr "Normal"
+
+#: apps/video_crawler
+msgid "Chưa có job tải nào trong cửa sổ này."
+msgstr "No download jobs in this window."
+
+#: apps/video_crawler
+msgid "Chưa nhận link rút gọn v.douyin.com."
+msgstr "Short v.douyin.com links are not supported yet."
+
+#: apps/video_crawler
+msgid "Chưa nhận link rút gọn v.kuaishou.com."
+msgstr "Short v.kuaishou.com links are not supported yet."
+
+#: apps/video_crawler
+msgid "Chỉ tải nội dung bạn có quyền. Tài khoản vi phạm nhiều lần bị khoá. Mỗi tài khoản tải tối đa {gio} video/giờ, {ngay} video/ngày."
+msgstr "Only download content you have the rights to. Repeat infringers are banned. Each account can download up to {gio} videos/hour and {ngay} videos/day."
+
+#: apps/video_crawler
+msgid "Chủ sở hữu nội dung báo vi phạm tại"
+msgstr "Content owners can report infringement at"
+
+#: apps/video_crawler
+msgid "Credit / video"
+msgstr "Credits / video"
+
+#: apps/video_crawler
+msgid "Có nền dưới ngưỡng — xem cột Khuyến nghị. Tắt bằng biến môi trường LTT_VIDEO_CRAWLER_TAT (không tự động tắt)."
+msgstr "Some platforms are below the threshold — see the Recommendation column. Disable them with the LTT_VIDEO_CRAWLER_TAT environment variable (nothing is disabled automatically)."
+
+#: apps/video_crawler
+msgid "Cần phiên Douyin cho mọi cách cào."
+msgstr "Every crawl mode needs a Douyin session."
+
+#: apps/video_crawler
+msgid "Cần tick ô cam kết bạn có quyền tải và sử dụng các video này trước khi tải."
+msgstr "Tick the box confirming you have the rights to download and use these videos before downloading."
+
+#: apps/video_crawler
+msgid "Douyin chưa hỗ trợ chế độ {che_do!r}."
+msgstr "Douyin does not support mode {che_do!r} yet."
+
+#: apps/video_crawler
+msgid "Job lỗi toàn phần"
+msgstr "Fully failed jobs"
+
+#: apps/video_crawler
+msgid "Job tải"
+msgstr "Download jobs"
+
+#: apps/video_crawler
+msgid "Khuyến nghị"
+msgstr "Recommendation"
+
+#: apps/video_crawler
+msgid "Link bài phải có xsec_token (copy từ trình duyệt)."
+msgstr "Post links must include xsec_token (copy it from your browser)."
+
+#: apps/video_crawler
+msgid "Lỗi theo mã"
+msgstr "Errors by code"
+
+#: apps/video_crawler
+msgid "Mỗi tài khoản tải tối đa {n} video mỗi giờ (bạn đã dùng {da}) — đợi rồi thử lại hoặc chọn ít video hơn."
+msgstr "Each account can download up to {n} videos per hour (you have used {da}) — wait and try again, or pick fewer videos."
+
+#: apps/video_crawler
+msgid "Mỗi tài khoản tải tối đa {n} video mỗi ngày (bạn đã dùng {da}) — thử lại sau."
+msgstr "Each account can download up to {n} videos per day (you have used {da}) — try again later."
+
+#: apps/video_crawler
+msgid "Mục lỗi"
+msgstr "Failed items"
+
+#: apps/video_crawler
+msgid "Mục tải xong"
+msgstr "Downloaded items"
+
+#: apps/video_crawler
+msgid "Nên tắt"
+msgstr "Should be disabled"
+
+#: apps/video_crawler
+msgid "Nền tảng vừa đổi cấu trúc trang, công cụ đang chờ cập nhật. Vui lòng thử lại sau."
+msgstr "The platform just changed its page structure; the tool is waiting for an update. Please try again later."
+
+#: apps/video_crawler
+msgid "Sức khoẻ Cào video nguồn"
+msgstr "Source video crawler health"
+
+#: apps/video_crawler
+msgid "Tìm và kênh cần phiên Kuaishou."
+msgstr "Search and channel need a Kuaishou session."
+
+#: apps/video_crawler
+msgid "Tìm và kênh cần phiên Xiaohongshu."
+msgstr "Search and channel need a Xiaohongshu session."
+
+#: apps/video_crawler
+msgid "Tôi cam kết có quyền tải và sử dụng các video này (tôi là chủ sở hữu, được chủ sở hữu cho phép, hoặc thuộc trường hợp pháp luật cho phép) và tự chịu trách nhiệm theo"
+msgstr "I confirm I have the rights to download and use these videos (I am the owner, have the owner's permission, or the use is permitted by law) and I take responsibility under the"
+
+#: apps/video_crawler
+msgid "Tỉ lệ thành công"
+msgstr "Success rate"
+
+#: apps/video_crawler
+msgid "Tỉ lệ thành công/lỗi theo nền trong {gio} giờ gần nhất — đọc từ hàng đợi việc, không phải bảng riêng."
+msgstr "Success/failure rate per platform over the last {gio} hours — read from the job queue, not a separate table."
+
+#: apps/video_crawler
+msgid "chúng tôi gỡ trong 72 giờ."
+msgstr "we take it down within 72 hours."
+
+#: apps/video_crawler
+msgid "hoặc"
+msgstr "or"
+
+#: apps/video_crawler
+msgid "trên {tu} phút"
+msgstr "over {tu} min"
+
+#: apps/video_crawler
+msgid "{tu}–{den} phút"
+msgstr "{tu}–{den} min"
+
+#: apps/video_crawler
+msgid "Điều khoản sử dụng"
+msgstr "Terms of use"
