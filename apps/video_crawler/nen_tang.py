@@ -50,10 +50,15 @@ _EP_CHE_DO = {
 _RE_DETAIL_THAM_SO = re.compile(r"[?&](?:vid|modal_id)=\d+")
 _RE_CHASE = re.compile(r"/voddetail/|/collection/|/playlist/|[?&]list=")
 _RE_SEARCH = re.compile(r"/search/|[?&]q=|[?&]keyword=")
+#: Link rút gọn (lane W4-L12, `an_toan_url.theo_chuyen_huong` giải ra URL thật CÓ KIỂM SSRF) luôn là
+#: MỘT video/bài — đoán `detail` (⇒ `link`) giống donor đã làm sẵn cho `b23\.tv`/`v\.douyin\.com` ở
+#: dòng dưới; `xhslink.com`, `v.kuaishou.com`, `vm/vt.tiktok.com` LTT thêm cùng logic (không phải
+#: hành vi donor — donor không có các nền này ở `_LINK_DOM`).
 _RE_DETAIL = re.compile(
     r"/video/|/videos/\d|/note/|/explore/[0-9a-z]{6,}|/discovery/item/|"
     r"/short-video/|/vodplay/|/status/|/reel/|/p/|/photo/|watch/?\?v=|"
-    r"fb\.watch/|/share/[vrp]/|/posts/|youtu\.be/|/shorts/|b23\.tv/|v\.douyin\.com/"
+    r"fb\.watch/|/share/[vrp]/|/posts/|youtu\.be/|/shorts/|b23\.tv/|v\.douyin\.com/|"
+    r"xhslink\.com/|v\.kuaishou\.com/|v[mt]\.tiktok\.com/"
 )
 _RE_CREATOR = re.compile(r"/user/|/space/|space\.bilibili\.com|/profile/|/channel/|/c/|/@|/(?:videos|reels)/?(?:[?#]|$)")
 
@@ -102,7 +107,7 @@ _NEN: tuple[NenTang, ...] = (
         che_do=_kt("tu_khoa", "link", "kenh"),
         xem_truoc=True, can_dang_nhap=True, cach_dang_nhap="qr",
         ten_mien=('douyin.com', 'iesdouyin.com'),
-        so_luong_toi_da=20, adapter="douyin", gioi_han=(N_("Cần phiên Douyin cho mọi cách cào."), N_("Chưa nhận link rút gọn v.douyin.com.")),
+        so_luong_toi_da=20, adapter="douyin", gioi_han=(N_("Cần phiên Douyin cho mọi cách cào."),),
         cookie_dang_nhap=('sessionid', 'sessionid_ss', 'sid_tt'),
         che_do_can_dang_nhap=frozenset({'link', 'kenh', 'tu_khoa'}),
     ),
@@ -118,7 +123,7 @@ _NEN: tuple[NenTang, ...] = (
         che_do=_kt("tu_khoa", "link", "kenh", "bo"),
         xem_truoc=True, can_dang_nhap=True, cach_dang_nhap="qr",
         ten_mien=('bilibili.com', 'b23.tv'),
-        so_luong_toi_da=20, adapter="bilibili", gioi_han=(N_('Cần phiên: Bilibili chặn truy cập ẩn danh từ máy chủ (HTTP 412).'), N_('Không nhận link rút gọn b23.tv.')),
+        so_luong_toi_da=20, adapter="bilibili", gioi_han=(N_('Cần phiên: Bilibili chặn truy cập ẩn danh từ máy chủ (HTTP 412).'),),
         cookie_dang_nhap=('SESSDATA', 'DedeUserID'),
         che_do_can_dang_nhap=frozenset({'link', 'tu_khoa', 'kenh', 'bo'}),
     ),
@@ -194,7 +199,7 @@ _NEN: tuple[NenTang, ...] = (
         che_do=_kt("tu_khoa", "link", "kenh"),
         xem_truoc=False, can_dang_nhap=True, cach_dang_nhap="cookie",
         ten_mien=("kuaishou.com",),
-        so_luong_toi_da=20, adapter="kuaishou", gioi_han=(N_("Tìm và kênh cần phiên Kuaishou."), N_("Chưa nhận link rút gọn v.kuaishou.com.")),
+        so_luong_toi_da=20, adapter="kuaishou", gioi_han=(N_("Tìm và kênh cần phiên Kuaishou."),),
         cookie_dang_nhap=('passToken', 'kuaishou.server.web_st'),
         che_do_can_dang_nhap=frozenset({'kenh', 'tu_khoa'}),
     ),
