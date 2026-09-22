@@ -57,7 +57,7 @@ lỗi, cùng một câu (I6).
 
 ## Thay đổi ngoài tệp mới
 
-- `routes.py`: `tao` gọi `dich_vu_tao.dung_cai_dat` (854 → 721 dòng); `CO_MO` đọc từ `dich_vu_tao`.
+- `routes.py`: `tao` gọi `dich_vu_tao.dung_cai_dat` (854 → 720 dòng); `CO_MO` đọc từ `dich_vu_tao`.
 - Test cũ đọc mã nguồn route được trỏ sang `dich_vu_tao.py`: `test_461`, `test_469`, `test_475`.
 - `locale/en/LC_MESSAGES/messages.po`: +6 msgid mới (bản EN). Mốc `check_dich_thieu` chưa hạ
   (`--accept` để điều phối).
