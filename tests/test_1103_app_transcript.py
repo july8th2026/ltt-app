@@ -157,6 +157,25 @@ def test_thieu_words_bi_bat_o_cho_con_noi_duoc_nguyen_nhan() -> None:
           "words": [{"start": 0, "end": 1, "text": "a"}]}])
 
 
+def test_dong_thoi_gian_DOC_DUOC_tu_theo_khoa_cua_service_stt() -> None:
+    """`platform_core.stt.service` trả mỗi từ `{start, end, text}`; engine
+    legacy đọc `word`. Lệch khoá thì mọi từ bị bỏ, `make_timeline_v2` trả rỗng
+    và MỌI job chết ở "dung dong thoi gian ra ket qua rong" (đo 22/09 trên
+    `en_1500.wav`: STT ra 84 từ, dòng thời gian 0 đoạn)."""
+    from apps.transcript.services.engine.segment.core import make_timeline_v2
+
+    doan_stt = [{"start": 0.0, "end": 2.5, "text": "Xin chào các bạn.",
+                 "words": [{"start": 0.0, "end": 0.6, "text": "Xin"},
+                           {"start": 0.6, "end": 1.2, "text": "chào"},
+                           {"start": 1.2, "end": 1.8, "text": "các"},
+                           {"start": 1.8, "end": 2.5, "text": "bạn."}]}]
+    dong = make_timeline_v2(doan_stt, audio_duration=2.5, target_min=1.5,
+                            target_max=6.0)
+    noi = [d for d in dong if d["type"] == "speech"]
+    assert noi, "dong thoi gian rong — tu theo khoa `text` bi bo"
+    assert " ".join(d["text"] for d in noi) == "Xin chào các bạn."
+
+
 def test_hai_doan_speech_lien_tiep_trung_noi_dung_bi_TU_CHOI() -> None:
     """Lỗi NỘI DUNG, không phải lỗi hình thức: tệp vẫn hợp lệ, khách vẫn đọc
     được, và câu bị lặp nằm giữa một bản dài."""
