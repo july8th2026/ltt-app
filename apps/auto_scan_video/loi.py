@@ -160,6 +160,12 @@ def phan_loai(exc: BaseException) -> str:
     if isinstance(exc, RangGiongError):
         return NGUOI_DUNG
 
+    # 🔑 Cap ngon ngu ngoai hop dong (vd. ASR doan ra tieng Nhat, hoac nguon
+    #    trung dich). Chay lai cung video hong y het ⇒ that bai CUOI CUNG.
+    from .ngon_ngu import NgonNguError
+    if isinstance(exc, NgonNguError):
+        return NGUOI_DUNG
+
     # ── Vung che (V5) ───────────────────────────────────────────────────────
     #
     # 🔑 `VungLoi` la toa do khong hop le: sai dinh dang, ngoai khoang 0..1, ve
