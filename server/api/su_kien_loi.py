@@ -92,13 +92,36 @@ _MODEL_PROTOCOL = {
 }
 
 
-def model_protocol_code(path: str, canonical_code: str) -> str:
+#: Mã mà Anthropic stream SAU 200 phải mang `overloaded_error` để Claude Code
+#: TỰ THỬ LẠI. Sau 200 không còn status: Claude Code 2.1.275 (`claude.exe`, hàm
+#: quyết định retry) chỉ retry lỗi không-status khi thông điệp chứa
+#: ``"type":"overloaded_error"``, còn ``if(!e.status)return!1`` với mọi kiểu khác
+#: — `rate_limit_error` giữa luồng là lỗi chết lượt. Bận/hết giờ là tạm thời ⇒
+#: phải retry được (`test_272`, `test_1534`). `ltt_error.canonical_code` giữ
+#: nguyên nghĩa. Codex KHÔNG cần ngoại lệ này: `response.failed` với
+#: `rate_limit_exceeded` ⇒ `RateLimitExceeded`, `timeout` ⇒ `Retryable`, còn
+#: `server_is_overloaded` ⇒ `ServerOverloaded` KHÔNG retry
+#: (openai/codex@286d4ec `codex-api/src/sse/responses.rs` nhánh
+#: "response.failed", `api_bridge_tests.rs`
+#: `map_api_error_distinguishes_capacity_from_slow_down`).
+_ANTHROPIC_SAU_200_QUA_TAI = frozenset({
+    "concurrency_limited", "provider_overloaded", "model_loading",
+    "upstream_timeout", "stream_idle_timeout",
+})
+
+
+def model_protocol_code(path: str, canonical_code: str, *,
+                        phase: str = "before_headers") -> str:
     """Mã giao thức công khai từ cùng bảng renderer, không sao chép mapping."""
     if not (path.endswith("/messages") or path.endswith("/responses")
             or path.endswith("/chat/completions")):
         return canonical_code
     anthropic, openai = _MODEL_PROTOCOL[canonical_code]
-    return anthropic if path.endswith("/messages") else openai
+    if path.endswith("/messages"):
+        if phase == "after_headers" and canonical_code in _ANTHROPIC_SAU_200_QUA_TAI:
+            return "overloaded_error"
+        return anthropic
+    return openai
 
 
 def render_local_model_failure(
@@ -199,7 +222,10 @@ def _gioi_han(failure: ModelFailure) -> dict:
 
 
 def _model_body(path: str, failure: ModelFailure, *, sse: bool) -> dict:
-    anthropic_type, openai_code = _MODEL_PROTOCOL[failure.canonical_code]
+    _anthropic, openai_code = _MODEL_PROTOCOL[failure.canonical_code]
+    anthropic_type = model_protocol_code(
+        path, failure.canonical_code,
+        phase="after_headers" if sse else "before_headers")
     them = {} if sse else _gioi_han(failure)
     if path.endswith("/messages"):
         error = _model_error(

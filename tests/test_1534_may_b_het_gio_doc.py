@@ -103,7 +103,12 @@ def test_stream_het_gio_doc_tra_khoi_loi_overloaded_khong_phat_khoa_hoan_tien(
         assert cuoi["error"]["type"] == "overloaded_error", cuoi
     else:
         assert cuoi["type"] == "response.failed", cuoi
-        assert cuoi["response"]["error"]["code"] == "server_is_overloaded", cuoi
+        # Codex: `timeout` ⇒ `ApiError::Retryable` (thử lại); còn
+        # `server_is_overloaded` ⇒ `ServerOverloaded` KHÔNG retry ở Codex hiện
+        # hành (openai/codex@286d4ec `sse/responses.rs`, `api_bridge_tests.rs`).
+        assert cuoi["response"]["error"]["code"] == "timeout", cuoi
+        assert cuoi["response"]["error"]["ltt_error"]["canonical_code"] == (
+            "stream_idle_timeout"), cuoi
     assert ("hong", "ReadTimeout") not in tao[0].bao, (
         "het gio doc bi tinh la loi khoa — nam lan la ltt_llm sang ERROR")
     assert _so_du(user_id) == truoc, "het gio ma van thu tien"

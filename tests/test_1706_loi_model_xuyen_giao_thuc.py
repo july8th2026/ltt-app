@@ -53,6 +53,9 @@ _PROTOCOL = {
     "upstream_unknown": ("api_error", "upstream_unknown"),
 }
 
+_SAU_200_QUA_TAI = {"concurrency_limited", "provider_overloaded", "model_loading",
+                    "upstream_timeout", "stream_idle_timeout"}
+
 _PATHS = (
     "/api/v1/jobs",
     "/v1/messages",
@@ -150,6 +153,10 @@ def test_sau_header_la_terminal_sse_nhung_khong_mat_ma(code, path):
     expected = code if path == "/api/v1/jobs" else (
         _PROTOCOL[code][0] if path.endswith("/messages") else _PROTOCOL[code][1]
     )
+    if path.endswith("/messages") and code in _SAU_200_QUA_TAI:
+        # Claude Code chỉ retry lỗi giữa luồng mang `overloaded_error`
+        # (`su_kien_loi._ANTHROPIC_SAU_200_QUA_TAI`); nghĩa ở `canonical_code`.
+        expected = "overloaded_error"
     assert extension["canonical_code"] == code
     assert extension["protocol_code"] == expected
     assert extension["request_id"] == "rid-golden"

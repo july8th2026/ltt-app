@@ -757,7 +757,8 @@ def test_id_noi_bo_KHONG_goi_duoc(api, monkeypatch):
     goi = _dat_luong(monkeypatch)
     _u, token = _account()
     r = api.post(MSG, json=_than(model="qwen38-api"), headers=_h(token))
-    assert r.status_code == 400
+    # `model_not_found` = 404 theo registry (`llm_gateway/error_contract.py`).
+    assert r.status_code == 404
     assert goi == []
 
 

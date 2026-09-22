@@ -133,7 +133,7 @@ def _observe_public_model_failure(
         failure,
         gateway_code=failure.canonical_code,
         protocol_code=su_kien_loi.model_protocol_code(
-            duong, failure.canonical_code
+            duong, failure.canonical_code, phase=phase
         ),
         protocol=protocol,
         stream_phase=phase,

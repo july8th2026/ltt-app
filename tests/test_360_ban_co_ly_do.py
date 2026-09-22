@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import ast
 import inspect
+import textwrap
 import json
 
 from llm_gateway.error_contract import make_error
@@ -210,15 +211,29 @@ def test_MOI_nhanh_ban_deu_nuoi_CAPACITY_REFUSED():
 
     # ⭐ VE MOI: cua SONG (phong cho) tra ban bang SSE sau 200. Do la noi luu
     #    luong that di qua, nen no quan trong hon ca hai nhanh dem o tren.
+    #
+    # Task 13 (23/09): khoi loi SSE nay do renderer co cau truc dung tu MOT
+    # `ModelFailure`; cau chu la cau registry so huu (spec §3), khong con la
+    # chuoi tu do trong `luong.py`. Loi hua giu nguyen: nhanh ban mang MA BAN
+    # (`concurrency_limited`) — Claude Code nhan `overloaded_error` va tu thu
+    # lai (`su_kien_loi._ANTHROPIC_SAU_200_QUA_TAI`), khach doc cau registry.
+    from llm_gateway.error_contract import error_spec
     from platform_core.runtime_noi_bo import luong as _cua_song
 
-    van_song = inspect.getsource(_cua_song)
-    so_sse = van_song.count(MOC)
-    assert so_sse >= 2, (
-        f"cua SONG (`luong_co_cho`) chi con {so_sse} cho mang chuoi {MOC!r} — "
-        "mong doi >= 2 (het cho, va ban sau 200). Day la cua MOI luot that di "
-        "qua: mat cau chu o day la khach nhan mot khoi loi khong noi len dieu gi."
+    van_song = inspect.getsource(_cua_song.luong_co_cho)
+    # AST, khong dem van ban: chot BAT BIEN (loi goi that), khong chot hinh dang.
+    so_sse = sum(
+        1 for n in ast.walk(ast.parse(textwrap.dedent(van_song)))
+        if isinstance(n, ast.Call) and getattr(n.func, "id", "") == "model_failure"
+        and n.args and isinstance(n.args[0], ast.Constant)
+        and n.args[0].value == "concurrency_limited"
     )
+    assert so_sse >= 2, (
+        f"cua SONG (`luong_co_cho`) chi con {so_sse} nhanh phat ma ban "
+        "`concurrency_limited` — mong doi >= 2 (het cho, het cho luc xep lai). "
+        "Day la cua MOI luot that di qua."
+    )
+    assert error_spec("concurrency_limited").message.strip()
 
     assert not thieu, (
         f"nhanh ban KHONG dem vao CAPACITY_REFUSED o: {thieu} — su co se lai "
