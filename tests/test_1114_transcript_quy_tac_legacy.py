@@ -171,3 +171,30 @@ def test_ho_so_vi_khop_bot_goc() -> None:
     vi = ho_so.lay(phien_am.HO_SO_STT_VI)
     assert (vi["beam_size"], vi["best_of"], vi["word_timestamps"]) == (5, 3, True)
     assert "vad_filter" not in vi and "initial_prompt" not in vi
+
+
+def test_vad_goi_ffmpeg_qua_bo_tim_cua_nen_tang(monkeypatch, tmp_path) -> None:
+    """E2E production 22/09: vad.py gọi "ffmpeg" TRẦN, dịch vụ worker không có
+    ffmpeg trên PATH ⇒ WinError 2 ngay bước VAD. Phải dùng `platform_core.media`."""
+    import subprocess
+
+    from apps.transcript.services.engine import vad
+    from platform_core import media
+
+    monkeypatch.setattr(media, "ffmpeg_bin", lambda: r"C:\duong\ffmpeg.exe")
+    monkeypatch.setattr(media, "ffprobe_bin", lambda: r"C:\duong\ffprobe.exe")
+    goi: list = []
+
+    def _run(cmd, **kw):
+        goi.append(cmd[0])
+        raise subprocess.CalledProcessError(1, cmd)
+
+    monkeypatch.setattr(vad.subprocess, "run", _run)
+    with pytest.raises(subprocess.CalledProcessError):
+        vad._ffmpeg_to_wav16k_mono(str(tmp_path / "a.mp3"), str(tmp_path / "a.wav"))
+    try:
+        vad.audio_duration_seconds(str(tmp_path / "a.mp3"))
+    except subprocess.CalledProcessError:
+        pass
+    assert goi[0].endswith("ffmpeg.exe")
+    assert any(g.endswith("ffprobe.exe") for g in goi)

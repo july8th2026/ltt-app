@@ -8,6 +8,8 @@ import math
 from array import array
 from typing import Dict, List, Tuple
 
+from platform_core import media as _media
+
 
 # ===============================
 # Simple VAD (energy-based, ffmpeg-assisted) - OPTIMIZED
@@ -17,7 +19,10 @@ from typing import Dict, List, Tuple
 
 def _ffmpeg_to_wav16k_mono(src_audio: str, out_wav: str) -> None:
     cmd = [
-        "ffmpeg", "-y",
+        # 22/09/2026: ban legacy goi "ffmpeg" TRAN; dich vu worker khong co ffmpeg
+        # tren PATH => WinError 2 ngay buoc VAD. Tim nhi phan nhu ca nen tang
+        # (LTT_FFMPEG -> PATH -> thu muc cai pho bien).
+        _media.ffmpeg_bin(), "-y",
         "-i", src_audio,
         "-ac", "1",
         "-ar", "16000",
@@ -196,7 +201,7 @@ def audio_duration_seconds(audio_path: str) -> float:
     """
     try:
         cmd = [
-            "ffprobe", "-v", "error",
+            _media.ffprobe_bin(), "-v", "error",
             "-show_entries", "format=duration",
             "-of", "default=noprint_wrappers=1:nokey=1",
             audio_path,
