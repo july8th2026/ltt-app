@@ -232,7 +232,7 @@ def register_streaming_routes(api, config, tag: str) -> None:
 
 def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
              principal: Principal, db: Session, config, tool=None,
-             trang_thai=None, request=None) -> JSONResponse:
+             trang_thai=None, request=None) -> Response:
     """Tra loi **mot cuc** cho `/messages` va `/responses`, dung hinh dang
     Anthropic Messages.
 

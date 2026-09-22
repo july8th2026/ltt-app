@@ -90,12 +90,15 @@ def flatten_words(segments: List[Dict]) -> List[Dict]:
     """
     Extract all words from segments into a flat sorted list.
     Each word: {word: str, start: float, end: float}
+
+    Input words may carry the text as `word` (legacy faster-whisper dump) or
+    `text` (`platform_core.stt.service`) — read both, or every word is dropped.
     """
     all_words = []
     for seg in segments:
         words = seg.get("words", [])
         for w in words:
-            word_text = clean_text(str(w.get("word", "")))
+            word_text = clean_text(str(w.get("word") or w.get("text") or ""))
             if not word_text:
                 continue
             try:
