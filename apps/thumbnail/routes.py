@@ -26,6 +26,7 @@ from server.deps import user_hien_tai
 from server.templating import templates
 
 from apps.thumbnail.jobs import NHOM_LUA_CHON as _NHOM_LUA_CHON
+from platform_core.jobs import loi_cho_khach
 
 router = APIRouter(tags=["thumbnail"])
 
@@ -119,7 +120,7 @@ def _jobs_cua_toi(request: Request):
             .order_by(Job.created_at.desc()).limit(12)
         ).scalars().all()
         return [{"id": j.id, "status": j.status, "progress": j.progress,
-                 "progress_msg": j.progress_msg, "error": j.error,
+                 "progress_msg": j.progress_msg, "error": loi_cho_khach(j),
                  "created_at": j.created_at, "finished_at": j.finished_at,
                  "topic": str((j.params or {}).get("topic", ""))[:200],
                  "title": str((j.params or {}).get("title", ""))[:200],

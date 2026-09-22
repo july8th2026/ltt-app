@@ -21,6 +21,7 @@ worker) quyết định ranh giới transaction.
 from __future__ import annotations
 
 import importlib
+import re
 from datetime import datetime, timedelta, timezone
 from typing import Callable, Optional
 
@@ -81,6 +82,38 @@ class LoiNguoiGoi(Exception):
         class LoiGiongNoi(LoiNguoiGoi):
             \"\"\"Thông điệp đưa thẳng cho khách — phải nói được cách sửa.\"\"\"
     """
+
+
+#: Câu chung cho khách khi job hỏng vì lý do KHÔNG phải của họ — cùng câu với sự kiện `failed` (`fail()`).
+LOI_CHUNG_KHACH = N_("Không thể hoàn tất yêu cầu. Bạn có thể thử lại.")
+_LOI_KHACH = re.compile(r"LoiNguoiGoi(?:\(\w+\))?: (.*)\Z", re.S)
+
+
+def mo_ta_loi(exc: BaseException) -> str:
+    """Chuỗi `Job.error` của một ngoại lệ — MỘT nguồn cho `job_runner`.
+
+    `TenLop: thông điệp` cho vận hành. `LoiNguoiGoi` (câu app viết CHO KHÁCH) mang dấu riêng
+    `LoiNguoiGoi(<lớp con>): …` — tên lớp con vẫn còn cho vận hành, còn `loi_cho_khach` nhận ra được
+    mà không cần import module app (lúc hiển thị, `isinstance` không còn: ngoại lệ đã thành chuỗi).
+    """
+    if isinstance(exc, LoiNguoiGoi):
+        nhan = "LoiNguoiGoi" if type(exc) is LoiNguoiGoi else f"LoiNguoiGoi({type(exc).__name__})"
+        return f"{nhan}: {exc}"
+    return f"{type(exc).__name__}: {exc}"
+
+
+def loi_cho_khach(job) -> str:
+    """Câu lỗi được phép hiện cho KHÁCH (đã dịch), `""` nếu job không lỗi.
+
+    Chỉ câu của `LoiNguoiGoi` đi qua nguyên văn; mọi lỗi khác (hạ tầng, provider, bug, hết giờ, định dạng
+    cũ trước dấu `LoiNguoiGoi`) ⇒ `LOI_CHUNG_KHACH` — không bao giờ văn bản thô, như `/api/v1` (Q76).
+    """
+    from platform_core.i18n import _
+
+    if job is None or getattr(job, "status", None) != JOB_ERROR:
+        return ""
+    m = _LOI_KHACH.match(getattr(job, "error", None) or "")
+    return _(m.group(1)) if m and m.group(1).strip() else _(LOI_CHUNG_KHACH)
 
 
 class DangBan(Exception):
@@ -559,7 +592,7 @@ def fail(db: DbSession, job: Job, error: str, *, retry: bool = True) -> None:
         job.finished_at = _bay_gio()
         job_events.append(
             db, job, "failed",
-            public_message=N_("Không thể hoàn tất yêu cầu. Bạn có thể thử lại."),
+            public_message=LOI_CHUNG_KHACH,
             details={"attempt": job.attempts, "max_attempts": job.max_attempts,
                      "status": JOB_ERROR}, level="error", event_key="failed",
         )

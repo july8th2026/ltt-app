@@ -8,6 +8,7 @@ import copy
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from platform_core.jobs import loi_cho_khach
 
 from apps.prompt_ai_ommi.routes._shared import (
     _csrf, _models, _owned_production, _production_rows, _require_run_enabled, _row, _user, router, MANIFEST, require_login, get_db, SCHEMA_VERSION, clean_project, empty_project, prompt_job_params)
@@ -279,7 +280,7 @@ def job_status(request: Request, job_id: str, _identity: str = Depends(require_l
         raise HTTPException(status_code=404, detail=_t('Không tìm thấy job.'))
     return {"id": row.id, "app_slug": row.app_slug, "job_type": row.job_type,
             "status": row.status, "progress": row.progress,
-            "progress_msg": row.progress_msg, "error": row.error,
+            "progress_msg": row.progress_msg, "error": loi_cho_khach(row),
             "result": row.result if row.status == "done" else None}
 
 
