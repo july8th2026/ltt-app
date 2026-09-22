@@ -130,7 +130,7 @@ def test_tuy_chon_port_donor():
 
 
 @pytest.mark.parametrize("khoa", [
-    "ignoreerrors", "nocheckcertificate", "cookiefile", "cookiesfrombrowser", "remote_components",
+    "nocheckcertificate", "cookiefile", "cookiesfrombrowser", "remote_components",
     "download_archive", "exec", "exec_cmd", "netrc", "usenetrc",
 ])
 def test_tuy_chon_khong_co_khoa_cam(khoa):
@@ -183,7 +183,7 @@ def _info(entries):
 
 
 def test_kham_pha_tu_khoa_dung_ytsearch():
-    nha = Nha(info=_info([{"id": "a1"}]))
+    nha = Nha(info=_info([{"id": "a1xxxxxxxxx"}]))
     YoutubeAdapter(nha).kham_pha(_yc("tu_khoa", "meo con", 7), bao_tien_do=_khong_bao)
     y = nha.tao[0]
     assert y.urls == [("ytsearch7:meo con", False)]
@@ -210,33 +210,36 @@ def test_kham_pha_bo_dung_url_playlist():
 
 
 def test_kham_pha_link_tra_mot_muc():
-    url = "https://www.youtube.com/watch?v=vid1"
-    nha = Nha(info={"id": "vid1", "title": "T", "uploader": "U", "duration": 12.7})
+    url = "https://www.youtube.com/watch?v=vid1xxxxxxx"
+    nha = Nha(info={"id": "vid1xxxxxxx", "title": "T", "uploader": "U", "duration": 12.7})
     ra = YoutubeAdapter(nha).kham_pha(_yc("link", url, 5), bao_tien_do=_khong_bao)
     assert nha.tao[0].urls == [(url, False)]
     assert nha.tao[0].params["noplaylist"] is True
-    assert ra == [CrawlItem(nen_tang="youtube", id="vid1", url="https://www.youtube.com/watch?v=vid1",
+    assert ra == [CrawlItem(nen_tang="youtube", id="vid1xxxxxxx", url="https://www.youtube.com/watch?v=vid1xxxxxxx",
                             tieu_de="T", tac_gia="U", thoi_luong_s=12, anh_bia="")]
 
 
 def test_kham_pha_anh_xa_muc():
     nha = Nha(info=_info([
-        {"id": "a", "title": "A", "channel": "Kenh", "uploader": "U", "duration": 61,
+        {"id": "aaaaaaaaaaa", "title": "A", "channel": "Kenh", "uploader": "U", "duration": 61,
          "thumbnail": "https://i.ytimg.com/a.jpg"},
-        {"id": "b", "title": "B", "uploader": "U2", "duration": None,
+        {"id": "bbbbbbbbbbb", "title": "B", "uploader": "U2", "duration": None,
          "thumbnails": [{"url": "https://t/1.jpg"}, {"url": "https://t/2.jpg"}]},
     ]))
     ra = YoutubeAdapter(nha).kham_pha(_yc("tu_khoa", "x", 5), bao_tien_do=_khong_bao)
     assert ra == [
-        CrawlItem("youtube", "a", "https://www.youtube.com/watch?v=a", "A", "Kenh", 61, "https://i.ytimg.com/a.jpg"),
-        CrawlItem("youtube", "b", "https://www.youtube.com/watch?v=b", "B", "U2", None, "https://t/2.jpg"),
+        CrawlItem("youtube", "aaaaaaaaaaa", "https://www.youtube.com/watch?v=aaaaaaaaaaa", "A", "Kenh", 61,
+                  "https://i.ytimg.com/a.jpg"),
+        CrawlItem("youtube", "bbbbbbbbbbb", "https://www.youtube.com/watch?v=bbbbbbbbbbb", "B", "U2", None,
+                  "https://t/2.jpg"),
     ]
 
 
 def test_kham_pha_bo_muc_khong_id_va_cat_n():
-    nha = Nha(info=_info([None, {"title": "khong id"}, {"id": "1"}, {"id": "2"}, {"id": "3"}]))
+    nha = Nha(info=_info([None, {"title": "khong id"}, {"id": "ngan"}, {"id": "1" * 11}, {"id": "2" * 11},
+                          {"id": "3" * 11}]))
     ra = YoutubeAdapter(nha).kham_pha(_yc("kenh", "@abc", 2), bao_tien_do=_khong_bao)
-    assert [m.id for m in ra] == ["1", "2"]
+    assert [m.id for m in ra] == ["1" * 11, "2" * 11]   # id sai dạng bị bỏ ở khâu khám phá
 
 
 def test_kham_pha_download_error_duoc_phan_loai():
@@ -247,7 +250,7 @@ def test_kham_pha_download_error_duoc_phan_loai():
 
 
 # ---------------------------------------------------------------- tải
-_ITEM = CrawlItem("youtube", "vid1", "https://www.youtube.com/watch?v=vid1", tieu_de='Mèo: "con"/<to>?*|')
+_ITEM = CrawlItem("youtube", "vid1xxxxxxx", "https://www.youtube.com/watch?v=vid1xxxxxxx", tieu_de='Mèo: "con"/<to>?*|')
 
 
 def _ghi(p: Path, n=10) -> Path:
@@ -260,49 +263,50 @@ def test_tai_bao_tien_do_theo_byte_va_ghep(tmp_path):
         y.hook({"status": "downloading", "downloaded_bytes": 0, "total_bytes": 200})
         y.hook({"status": "downloading", "downloaded_bytes": 100, "total_bytes": 200})
         y.hook({"status": "downloading", "downloaded_bytes": 30, "total_bytes_estimate": 40})
-        y.hook({"status": "downloading", "downloaded_bytes": 5})       # thiếu tổng ⇒ bỏ qua
+        y.hook({"status": "downloading", "downloaded_bytes": 5})       # thiếu tổng ⇒ % gần nhất
         y.pp_hook({"status": "started", "postprocessor": "Merger", "info_dict": {}})
-        _ghi(tmp_path / "vid1.mp4")
+        _ghi(tmp_path / "vid1xxxxxxx.mp4")
 
     nha = Nha(kich_ban=kb)
     bao = []
     YoutubeAdapter(nha).tai(_ITEM, tmp_path, bao_tien_do=lambda p, m: bao.append((p, m)))
-    assert [p for p, _ in bao] == [0, 50, 75, 99]
+    assert [p for p, _ in bao] == [0, 50, 75, 75, 99]   # mọi lần hook đều báo, không bóp ở đây
     assert bao[-1] == (99, "đang ghép")
     y = nha.tao[0]
-    assert y.urls == [(["https://www.youtube.com/watch?v=vid1"], True)]
+    assert y.urls == [(["https://www.youtube.com/watch?v=vid1xxxxxxx"], True)]
     assert y.params["outtmpl"] == str(tmp_path / "%(id)s.%(ext)s")
 
 
 def test_tai_tra_tep_tu_hook_va_ten_hien_thi_sach(tmp_path):
-    that = tmp_path / "vid1.mp4"
+    that = tmp_path / "vid1xxxxxxx.mp4"
 
     def kb(y):
-        _ghi(tmp_path / "vid1.f137.mp4", 3)
+        _ghi(tmp_path / "vid1xxxxxxx.f137.mp4", 3)
         _ghi(that, 42)
         y.pp_hook({"status": "finished", "postprocessor": "MoveFiles", "info_dict": {"filepath": str(that)}})
 
     tep = YoutubeAdapter(Nha(kich_ban=kb)).tai(_ITEM, tmp_path, bao_tien_do=_khong_bao)
-    assert tep == TepTai(duong_dan=that, kich_thuoc=42, ten_hien_thi="Mèo con to [vid1].mp4")
+    assert tep == TepTai(duong_dan=that, kich_thuoc=42, ten_hien_thi="Mèo con to [vid1xxxxxxx].mp4")
 
 
 def test_tai_tim_tep_trong_thu_muc_bo_tep_trung_gian(tmp_path):
     def kb(y):
-        _ghi(tmp_path / "vid1.f137.mp4")
-        _ghi(tmp_path / "vid1.mp4.part")
-        _ghi(tmp_path / "vid1.mkv", 7)
+        _ghi(tmp_path / "vid1xxxxxxx.f137.mp4")
+        _ghi(tmp_path / "vid1xxxxxxx.mp4.part")
+        _ghi(tmp_path / "vid1xxxxxxx.mkv", 7)
 
     tep = YoutubeAdapter(Nha(kich_ban=kb)).tai(_ITEM, tmp_path, bao_tien_do=_khong_bao)
-    assert tep.duong_dan == tmp_path / "vid1.mkv" and tep.kich_thuoc == 7
+    assert tep.duong_dan == tmp_path / "vid1xxxxxxx.mkv" and tep.kich_thuoc == 7
 
 
 def test_tai_ten_cat_80_ky_tu_va_ky_tu_dieu_khien(tmp_path):
-    item = CrawlItem("youtube", "v2", "https://www.youtube.com/watch?v=v2", tieu_de="a\tb\x01" + "x" * 100)
-    tep = YoutubeAdapter(Nha(kich_ban=lambda y: _ghi(tmp_path / "v2.mp4"))).tai(
+    v2 = "v2xxxxxxxxx"
+    item = CrawlItem("youtube", v2, f"https://www.youtube.com/watch?v={v2}", tieu_de="a\tb\x01" + "x" * 100)
+    tep = YoutubeAdapter(Nha(kich_ban=lambda y: _ghi(tmp_path / f"{v2}.mp4"))).tai(
         item, tmp_path, bao_tien_do=_khong_bao)
     ten = tep.ten_hien_thi
-    assert ten.endswith(" [v2].mp4") and "\t" not in ten and "\x01" not in ten
-    assert len(ten[: -len(" [v2].mp4")]) <= 80
+    assert ten.endswith(f" [{v2}].mp4") and "\t" not in ten and "\x01" not in ten
+    assert len(ten[: -len(f" [{v2}].mp4")]) <= 80
 
 
 def test_tai_khong_thay_tep(tmp_path):
@@ -312,7 +316,7 @@ def test_tai_khong_thay_tep(tmp_path):
 
 
 def test_tai_download_error_duoc_phan_loai(tmp_path):
-    nha = Nha(loi=DownloadError("ERROR: [youtube] vid1: Private video. Sign in if you've been granted access"))
+    nha = Nha(loi=DownloadError("ERROR: [youtube] vid1xxxxxxx: Private video. Sign in if you've been granted access"))
     with pytest.raises(LoiCao) as e:
         YoutubeAdapter(nha).tai(_ITEM, tmp_path, bao_tien_do=_khong_bao)
     assert e.value.ma == "rieng_tu" and e.value.tam_thoi is False
@@ -336,7 +340,7 @@ def test_tai_huy_lan_truyen_dung_ngoai_le_goc(tmp_path):
 
     def kb(y):
         y.hook({"status": "downloading", "downloaded_bytes": 1, "total_bytes": 2})
-        _ghi(tmp_path / "vid1.mp4")
+        _ghi(tmp_path / "vid1xxxxxxx.mp4")
 
     nha = Nha(kich_ban=kb)
     with pytest.raises(HuyViec) as e:
@@ -359,3 +363,34 @@ def test_tai_huy_trong_hook_ghep(tmp_path):
     with pytest.raises(HuyViec) as e:
         YoutubeAdapter(nha).tai(_ITEM, tmp_path, bao_tien_do=bao)
     assert e.value is goc and isinstance(nha.tao[0].thay[0], DownloadCancelled)
+
+
+def test_tuy_chon_ignoreerrors_tuong_minh_false(tmp_path):
+    """spec §18: yt-dlp nuốt exception hook khi ignoreerrors bật — phải đặt False TƯỜNG MINH."""
+    for o in (tuy_chon(), tuy_chon(thu_muc=tmp_path)):
+        assert "ignoreerrors" in o and o["ignoreerrors"] is False
+
+
+# ---------------------------------------------------------------- URL chuẩn (BLOCKER: URL bị sửa)
+def test_url_video_va_id_hop_le():
+    a = YoutubeAdapter()
+    assert a.url_video("dQw4w9WgXcQ") == "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    assert a.id_hop_le("dQw4w9WgXcQ") and a.id_hop_le("a-b_c-d_e-f")
+    for sai in ("", "ngan", "dQw4w9WgXcQx", "dQw4w9WgXc!", "dQw4w9WgXc&", "dQw4w9WgXc" + chr(10), None):
+        assert not a.id_hop_le(sai), sai
+
+
+@pytest.mark.parametrize("item", [
+    CrawlItem("youtube", "vid1xxxxxxx", "https://www.youtube.com/playlist?list=PL123"),
+    CrawlItem("youtube", "vid1xxxxxxx", "https://www.youtube.com/@kenh/videos"),
+    CrawlItem("youtube", "vid1xxxxxxx", "https://www.youtube.com/watch?v=vid1xxxxxxx&list=PL123"),
+    CrawlItem("youtube", "vid1xxxxxxx", "http://www.youtube.com/watch?v=vid1xxxxxxx"),
+    CrawlItem("youtube", "vid1xxxxxxx", "https://www.youtube.com/watch?v=khacxxxxxxx"),
+    CrawlItem("youtube", "x&list=PL12", "https://www.youtube.com/watch?v=x&list=PL12"),
+])
+def test_tai_tu_choi_url_khong_chuan(tmp_path, item):
+    nha = Nha()
+    with pytest.raises(LoiCao) as e:
+        YoutubeAdapter(nha).tai(item, tmp_path, bao_tien_do=_khong_bao)
+    assert e.value.ma == "url_khong_ho_tro" and e.value.tam_thoi is False
+    assert nha.tao == []          # không dựng YoutubeDL, không chạm mạng
