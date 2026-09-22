@@ -216,7 +216,10 @@ def ensure_free_ip(db, profile, *, instance, gateway_row, provider, gateway,
             if (prepared.quantity != 1 or prepared.currency != "USD"
                     or type(prepared.with_tax_minor) is not int
                     or not 0 < prepared.with_tax_minor <= ceiling
+                    # Empty = OVH offers no terms beyond those already agreed
+                    # (see OvhOrderingClient.preview_cart); new terms must match.
                     or ("accepted_contract_fingerprints" in profile.provider_config
+                        and prepared.contract_fingerprints
                         and list(prepared.contract_fingerprints) !=
                         profile.provider_config["accepted_contract_fingerprints"])):
                 journal.failed(db, row, "UNEXPECTED_BILLING")
@@ -227,6 +230,10 @@ def ensure_free_ip(db, profile, *, instance, gateway_row, provider, gateway,
             raise
         except Exception as exc:
             # Everything above is read-only or an unpaid cart: never "ambiguous".
+            # Log the cause: the wrapper below hid a whole outage on 22/09.
+            # OvhError messages carry no response bodies or credentials.
+            log.warning("OVH acquisition stopped before checkout: %s: %s",
+                        type(exc).__name__, exc)
             not_sent(metadata)
             raise BackendConflict("OVH acquisition stopped before checkout") from exc
 
