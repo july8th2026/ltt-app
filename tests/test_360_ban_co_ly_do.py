@@ -45,8 +45,9 @@ def test_ba_kieu_ban_ra_ba_ma_va_hanh_dong_khac_nhau():
     assert all(failure.recovery == "wait" for failure in failures)
 
 
-def test_legacy_429_khong_doc_prose_thanh_ngu_nghia():
-    """B cũ vẫn được coi là bận theo status, nhưng nội dung thô không được lộ."""
+def test_429_khong_typed_la_unknown_va_khong_lo_prose():
+    """Task 13: 429 thiếu mã v1 là `upstream_unknown` (không suy bận từ status),
+    và nội dung thô không được lộ."""
     raw = {"detail": {"chi_tiet": "2 tien trinh python tren card", "vram_dung_mb": 19837}}
     failure = decode_gateway_failure(429, {}, json.dumps(raw).encode())
     assert failure.canonical_code == "upstream_unknown"
@@ -60,7 +61,7 @@ def test_luong_vlm_quyet_dinh_bang_decoder_khong_bang_ly_do_tho():
     source = inspect.getsource(luong_vlm.mo)
     assert "decode_gateway_failure(" in source
     assert "_ly_do_ban(" not in source
-    assert 'code == "upstream_unknown" and _loi_parser_tool_call' in source
+    assert "_loi_parser_tool_call" not in source
 
 
 # ── 2. Bận phải đếm vào ô "hết năng lực", không rơi câm vào 5xx ─────────────

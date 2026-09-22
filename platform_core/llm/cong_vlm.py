@@ -364,17 +364,20 @@ class CongVlm:
                 "max_output_tokens_exceeded",
                 "context_window_exceeded",
             }
-            if failure.is_busy or (ma == 429 and code == "upstream_unknown"):
+            # Chỉ mã có cấu trúc quyết định lớp lỗi (Task 13): status HTTP (429,
+            # 504, 499, 400/413/422) không còn sinh ngữ nghĩa cho mã lạ — mã lạ
+            # rơi xuống `CongVlmError` (`upstream_unknown`, fail-closed).
+            if failure.is_busy:
                 raise BanError(failure.message, failure.retry_after_s, detail, failure=failure)
-            if failure.is_cancelled or ma == MA_HUY:
+            if failure.is_cancelled:
                 raise HuyError(failure.message, detail, failure=failure)
-            if failure.is_timeout or (ma == 504 and code == "upstream_unknown"):
+            if failure.is_timeout:
                 raise AmbiguousProviderError(failure.message, ma=ma, failure=failure)
             if code == "provider_oom":
                 raise ProviderOomError(failure.message, ma=ma, failure=failure)
             if code in budget_codes:
                 raise VuotNganSachError(failure.message, detail, failure=failure)
-            if code in {"invalid_request", "unsupported_parameter"} or ma in {400, 413, 422}:
+            if code in {"invalid_request", "unsupported_parameter"}:
                 raise YeuCauSaiError(failure.message, ma=ma, failure=failure)
             raise CongVlmError(failure.message, ma=ma, failure=failure)
 

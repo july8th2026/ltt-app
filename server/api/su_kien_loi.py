@@ -23,6 +23,17 @@ Tra nguồn client thật 18/09/2026 (`tests/test_1480`):
 
 ⇒ Trước bản này cả ba cửa trả ``413 problem+json`` với câu "exceeds the model's
   context limit" — không client nào trong hai nhận ra, nên không client nào nén.
+
+## Một renderer duy nhất (Task 13, 22/09/2026)
+
+Cờ ``LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS`` và renderer cũ (mã nội bộ
+``overloaded``/``context_length``/``upstream`` + câu tự do) đã gỡ: mọi lỗi model
+đi `render_model_failure` từ một `ModelFailure`. Tín hiệu tự nén ở trên là BẤT
+BIẾN của renderer này, không phải của một nhánh riêng: mã quá dài
+(`is_context_limit`) luôn mang câu ``prompt is too long: N tokens > M maximum``,
+Responses stream trước 200 là 200 + đúng MỘT ``response.failed`` với
+``context_length_exceeded``, và thân HTTP giữ ``limit_name``/``limit_value``
+(`tests/test_1480`).
 """
 from __future__ import annotations
 
@@ -31,20 +42,14 @@ import time
 import uuid
 from typing import Callable, Literal, Optional, overload
 
+from dataclasses import replace
+
 from starlette.responses import JSONResponse, Response, StreamingResponse
 
 from llm_gateway.error_contract import error_spec
 from platform_core.llm.model_failure import (ModelFailure, model_failure,
                                              observe_model_failure)
 from platform_core.public_api import errors as api_errors
-
-# ma nội bộ → (error.type — Anthropic và OpenAI dùng chung từ vựng, error.code OpenAI)
-_MA = {
-    "overloaded": ("overloaded_error", "server_is_overloaded"),
-    "insufficient_credit": ("invalid_request_error", "insufficient_quota"),
-    "context_length": ("invalid_request_error", "context_length_exceeded"),
-    "upstream": ("api_error", "server_error"),
-}
 
 # canonical_code -> (Anthropic error.type, OpenAI-compatible error.code)
 _MODEL_PROTOCOL = {
@@ -146,32 +151,28 @@ def cau_qua_dai(token: Optional[int] = None, tran: Optional[int] = None) -> str:
             f"compact or drop older turns and retry.")
 
 
-def _chuan_thong_diep(ma: str, thong_diep: str) -> str:
-    # Mọi lỗi "quá dài" — kể cả do nơi gọi truyền câu riêng — mang tiền tố client dò.
-    if ma == "context_length" and CAU_QUA_DAI not in thong_diep.lower():
-        return f"{CAU_QUA_DAI}: {thong_diep}"
-    return thong_diep
-
-
-def _loi_anthropic(ma: str, thong_diep: str) -> dict:
-    loai, _ = _MA.get(ma, ("api_error", "server_error"))
-    return {"type": "error", "error": {"type": loai, "message": thong_diep}}
-
-
-def _loi_openai(ma: str, thong_diep: str, param: Optional[str] = None) -> dict:
-    loai, ma_openai = _MA.get(ma, ("api_error", "server_error"))
-    return {"message": thong_diep, "type": loai, "param": param, "code": ma_openai}
-
-
 def _id_response() -> str:
     return "resp_ltt_" + uuid.uuid4().hex[:24]
 
 
-def _model_error(failure: ModelFailure, *, protocol_code: str, error_type: str) -> dict:
+def _thong_diep(failure: ModelFailure) -> str:
+    """Câu công khai: registry, trừ mã quá dài mang câu client dò để TỰ NÉN."""
+    if failure.is_context_limit:
+        return cau_qua_dai(failure.actual, failure.limit)
+    return failure.message
+
+
+def _model_error(
+    failure: ModelFailure,
+    *,
+    protocol_code: str,
+    error_type: str,
+    param: Optional[str] = None,
+) -> dict:
     return {
-        "message": failure.message,
+        "message": _thong_diep(failure),
         "type": error_type,
-        "param": failure.field,
+        "param": param if param is not None else failure.field,
         "code": protocol_code,
         "ltt_error": api_errors.model_failure_extension(
             failure, protocol_code=protocol_code
@@ -179,16 +180,42 @@ def _model_error(failure: ModelFailure, *, protocol_code: str, error_type: str) 
     }
 
 
-def _model_body(path: str, failure: ModelFailure) -> dict:
+def _openai_type(failure: ModelFailure) -> str:
+    if failure.category == "capacity":
+        return "rate_limit_error"
+    if error_spec(failure.canonical_code).status < 500:
+        return "invalid_request_error"
+    return "api_error"
+
+
+def _gioi_han(failure: ModelFailure) -> dict:
+    """`limit_name`/`limit_value` ở thân HTTP quá dài (tài liệu `LOI_413`)."""
+    if not failure.is_context_limit:
+        return {}
+    them: dict = {"limit_name": "input_tokens"}
+    if failure.limit is not None:
+        them["limit_value"] = int(failure.limit)
+    return them
+
+
+def _model_body(path: str, failure: ModelFailure, *, sse: bool) -> dict:
     anthropic_type, openai_code = _MODEL_PROTOCOL[failure.canonical_code]
+    them = {} if sse else _gioi_han(failure)
     if path.endswith("/messages"):
         error = _model_error(
             failure, protocol_code=anthropic_type, error_type=anthropic_type
         )
         error.pop("param")
         error.pop("code")
-        return {"type": "error", "error": error}
+        return {"type": "error", "error": error, **them}
     if path.endswith("/responses"):
+        if not sse:
+            # Trước 200: lỗi HTTP khuôn OpenAI (`{"error": {...}}`), như chat.
+            param = "input" if failure.is_context_limit else None
+            return {"error": _model_error(
+                failure, protocol_code=openai_code,
+                error_type=_openai_type(failure), param=param,
+            ), **them}
         error = _model_error(failure, protocol_code=openai_code, error_type="api_error")
         error.pop("param")
         error.pop("type")
@@ -202,17 +229,31 @@ def _model_body(path: str, failure: ModelFailure) -> dict:
             },
         }
     if path.endswith("/chat/completions"):
-        error_type = (
-            "rate_limit_error"
-            if failure.category == "capacity"
-            else "invalid_request_error"
-            if error_spec(failure.canonical_code).status < 500
-            else "api_error"
-        )
+        param = "messages" if failure.is_context_limit else None
         return {"error": _model_error(
-            failure, protocol_code=openai_code, error_type=error_type
-        )}
+            failure, protocol_code=openai_code,
+            error_type=_openai_type(failure), param=param,
+        ), **them}
     return api_errors.model_problem(failure, instance=path).to_dict()
+
+
+def _khoi_sse(path: str, failure: ModelFailure) -> bytes:
+    payload = json.dumps(_model_body(path, failure, sse=True)).encode("utf-8")
+    if path.endswith("/messages"):
+        return b"event: error\ndata: " + payload + b"\n\n"
+    if path.endswith("/responses"):
+        return b"event: response.failed\ndata: " + payload + b"\n\n"
+    return b"data: " + payload + b"\n\n"
+
+
+@overload
+def render_model_failure(
+    path: str,
+    failure: ModelFailure,
+    *,
+    phase: Literal["before_headers"],
+    stream: Literal[False],
+) -> JSONResponse: ...
 
 
 @overload
@@ -222,7 +263,7 @@ def render_model_failure(
     *,
     phase: Literal["before_headers"],
     stream: bool,
-) -> JSONResponse: ...
+) -> Response: ...
 
 
 @overload
@@ -242,18 +283,24 @@ def render_model_failure(
     phase: Literal["before_headers", "after_headers"],
     stream: bool,
 ) -> Response | bytes:
-    """Render một lỗi typed mà không đổi canonical semantics của nó."""
+    """Render một lỗi typed mà không đổi canonical semantics của nó.
+
+    ⭐ Responses **stream** + mã quá dài, TRƯỚC 200 ⇒ 200 + đúng MỘT
+       ``response.failed`` (``context_length_exceeded``): đường duy nhất Codex
+       hiểu là tràn cửa sổ và tự nén (HTTP 400 là lỗi chết lượt với Codex).
+    """
     if phase not in {"before_headers", "after_headers"}:
         raise ValueError(f"unsupported model failure phase: {phase}")
-    body = _model_body(path, failure)
     if phase == "after_headers":
-        payload = json.dumps(body).encode("utf-8")
-        if path.endswith("/messages"):
-            return b"event: error\ndata: " + payload + b"\n\n"
-        if path.endswith("/responses"):
-            return b"event: response.failed\ndata: " + payload + b"\n\n"
-        return b"data: " + payload + b"\n\n"
+        return _khoi_sse(path, failure)
 
+    if stream and path.endswith("/responses") and failure.is_context_limit:
+        return StreamingResponse(iter([_khoi_sse(path, failure)]),
+                                 media_type="text/event-stream",
+                                 headers={"Cache-Control": "no-store",
+                                          "X-Accel-Buffering": "no"})
+
+    body = _model_body(path, failure, sse=False)
     spec = error_spec(failure.canonical_code)
     status = 529 if path.endswith("/messages") and failure.canonical_code == (
         "provider_overloaded"
@@ -271,104 +318,50 @@ def render_model_failure(
     return JSONResponse(body, status_code=status, media_type=media_type, headers=headers)
 
 
-def loi_sse(
-    duong: str,
-    ma: str,
-    thong_diep: str,
-    *,
-    failure: ModelFailure | None = None,
-    structured: bool = False,
-) -> bytes:
-    """Dựng khối SSE lỗi cho cửa `duong` (`/v1/messages`, `/v1/responses`, còn lại)."""
-    if structured and failure is not None:
-        rendered = render_model_failure(
-            duong, failure, phase="after_headers", stream=True
-        )
-        assert isinstance(rendered, bytes)
-        return rendered
-    thong_diep = _chuan_thong_diep(ma, thong_diep)
-    if duong.endswith("/messages"):
-        than = _loi_anthropic(ma, thong_diep)
-        return b"event: error\ndata: " + json.dumps(than).encode("utf-8") + b"\n\n"
-    if duong.endswith("/responses"):
-        loi = _loi_openai(ma, thong_diep)
-        than = {"type": "response.failed",
-                "response": {"id": _id_response(), "object": "response",
-                             "status": "failed",
-                             "error": {"code": loi["code"], "message": loi["message"]}}}
-        return (b"event: response.failed\ndata: " + json.dumps(than).encode("utf-8")
-                + b"\n\n")
-    than = {"error": _loi_openai(ma, thong_diep)}
-    return b"data: " + json.dumps(than).encode("utf-8") + b"\n\n"
+def loi_sse(duong: str, failure: ModelFailure) -> bytes:
+    """Khối SSE lỗi SAU 200 cho cửa `duong` (`/v1/messages`, `/v1/responses`, còn lại)."""
+    return _khoi_sse(duong, failure)
+
+
+def _qua_dai_typed(failure: ModelFailure | None, *, token: Optional[int],
+                   tran: Optional[int], request) -> ModelFailure:
+    typed = failure or model_failure(
+        "context_window_exceeded",
+        http_status=400,
+        request_id=_request_id(request),
+        field="context",
+    )
+    # Số cho câu "prompt is too long: N tokens > M maximum" khi lỗi chưa mang.
+    if typed.limit is None and tran is not None:
+        typed = replace(typed, limit=int(tran))
+    if typed.actual is None and token is not None:
+        typed = replace(typed, actual=int(token))
+    if request is not None:
+        # Nhật ký request ghi mã ổn định như mọi `ApiError` (`server/api/errors.py`).
+        request.state.api_error_code = model_protocol_code(
+            "/v1/chat/completions", typed.canonical_code)
+    return typed
 
 
 def loi_qua_dai(duong: str, *, stream: bool, token: Optional[int] = None,
                 tran: Optional[int] = None, request=None,
-                failure: ModelFailure | None = None,
-                structured: bool = False) -> Response:
+                failure: ModelFailure | None = None) -> Response:
     """Phản hồi "quá dài" TRƯỚC 200 cho cửa `duong` — 0 khoản giữ, chưa chạm máy B.
 
     `/v1/messages` ⇒ 400 khuôn Anthropic · `/v1/responses` stream ⇒ 200 + MỘT
     `response.failed` (đường duy nhất Codex hiểu là tràn cửa sổ) · còn lại ⇒ 400
     khuôn OpenAI. `limit_name`/`limit_value` giữ ở thân (tài liệu `LOI_413`).
     """
-    if structured:
-        typed = failure or model_failure(
-            "context_window_exceeded",
-            http_status=400,
-            request_id=_request_id(request),
-            field="context",
-            limit=tran,
-            actual=token,
-        )
-        rendered = render_model_failure(
-            duong, typed, phase="before_headers", stream=stream
-        )
-        assert isinstance(rendered, Response)
-        return rendered
-    if duong.endswith("/responses") and stream:
-        if request is not None:
-            request.state.api_error_code = "context_length_exceeded"
-        khoi = loi_sse(duong, "context_length", cau_qua_dai(token, tran))
-        return StreamingResponse(iter([khoi]), media_type="text/event-stream",
-                                 headers={"Cache-Control": "no-store",
-                                          "X-Accel-Buffering": "no"})
-    return loi_qua_dai_json(duong, token=token, tran=tran, request=request)
+    typed = _qua_dai_typed(failure, token=token, tran=tran, request=request)
+    return render_model_failure(duong, typed, phase="before_headers", stream=stream)
 
 
 def loi_qua_dai_json(duong: str, *, token: Optional[int] = None,
                      tran: Optional[int] = None, request=None,
-                     failure: ModelFailure | None = None,
-                     structured: bool = False) -> JSONResponse:
+                     failure: ModelFailure | None = None) -> JSONResponse:
     """Nhánh HTTP 400 của `loi_qua_dai` (mọi cửa trừ Responses stream)."""
-    if structured:
-        typed = failure or model_failure(
-            "context_window_exceeded",
-            http_status=400,
-            request_id=_request_id(request),
-            field="context",
-            limit=tran,
-            actual=token,
-        )
-        rendered = render_model_failure(
-            duong, typed, phase="before_headers", stream=False
-        )
-        assert isinstance(rendered, JSONResponse)
-        return rendered
-    thong_diep = cau_qua_dai(token, tran)
-    if request is not None:
-        # Nhật ký request ghi mã ổn định như mọi `ApiError` (`server/api/errors.py`).
-        request.state.api_error_code = "context_length_exceeded"
-    headers = {"Cache-Control": "no-store"}
-    them: dict = {"limit_name": "input_tokens"}
-    if tran is not None:
-        them["limit_value"] = int(tran)
-    if duong.endswith("/messages"):
-        than = _loi_anthropic("context_length", thong_diep)
-    else:
-        param = "input" if duong.endswith("/responses") else "messages"
-        than = {"error": _loi_openai("context_length", thong_diep, param)}
-    return JSONResponse({**than, **them}, status_code=400, headers=headers)
+    typed = _qua_dai_typed(failure, token=token, tran=tran, request=request)
+    return render_model_failure(duong, typed, phase="before_headers", stream=False)
 
 
 def _request_id(request) -> str:

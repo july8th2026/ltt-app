@@ -77,9 +77,9 @@ def test_typed_504_duoc_nhan_dien_bang_code_khong_bang_status():
     failure = decode_gateway_failure(504, {}, body)
     error = KhongMoDuocLuong(failure=failure)
 
-    assert error.het_gio
-    assert not error.ban
-    assert not error.qua_dai
+    assert error.failure.is_timeout
+    assert not error.failure.is_busy
+    assert not error.failure.is_context_limit
 
 
 def test_timeout_nam_trong_nhom_khong_phat_khoa():
@@ -108,15 +108,17 @@ def test_413_va_429_khong_bi_gop_nghia():
     assert busy_429.retry_after_s == 17
 
 
-def test_co_flag_het_gio_tren_ngoai_le():
-    e = KhongMoDuocLuong("het gio", het_gio=True)
-    assert e.het_gio is True and e.ban is False and e.qua_dai is False
+def test_khong_con_co_boolean_het_gio_tren_ngoai_le():
+    """Task 13: nghĩa nằm ở `failure`; kwarg `het_gio=` đã gỡ."""
+    with pytest.raises(TypeError):
+        KhongMoDuocLuong("het gio", het_gio=True)  # type: ignore[call-arg]
 
 
-def test_mac_dinh_het_gio_la_False():
-    """Thêm một cờ mà mặc định `True` sẽ lặng lẽ đổi nghĩa mọi nhánh cũ."""
+def test_mac_dinh_la_unknown_khong_phai_het_gio():
+    """Không có `failure` ⇒ fail-closed `upstream_unknown`, không đoán hết giờ."""
     e = KhongMoDuocLuong("gi do")
-    assert e.het_gio is False
+    assert e.failure.canonical_code == "upstream_unknown"
+    assert not e.failure.is_timeout
 
 
 def test_moi_nhanh_KhongMoDuocLuong_deu_duoc_HOAN_tien():

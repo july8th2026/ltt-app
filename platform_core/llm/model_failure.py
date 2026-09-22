@@ -1,4 +1,8 @@
-"""Một kiểu lỗi model duy nhất ở máy A, đọc được envelope B mới và legacy.
+"""Một kiểu lỗi model duy nhất ở máy A, đọc đúng envelope v1 của máy B.
+
+Task 13 đã gỡ decoder legacy: thân không mang `schema_version=1` + mã đã đăng ký
+thì fail-closed `upstream_unknown` — HTTP status và câu chữ không bao giờ sinh
+ngữ nghĩa (context/ảnh/bận/hết giờ).
 
 Module này cố ý chỉ phụ thuộc standard library và registry thuần dữ liệu của
 gateway. Nó được dùng ở cả đường đồng bộ lẫn streaming mà không kéo web stack.
@@ -22,18 +26,8 @@ MAX_FAILURE_BODY_BYTES = 64 * 1024
 _SAFE_ID = re.compile(r"^[A-Za-z0-9_.:-]{1,64}$")
 _SAFE_PROVIDER = re.compile(r"^[A-Za-z0-9_.:-]{1,64}$")
 
-_LEGACY_FIELD_TO_CODE = {
-    "images": "image_count_exceeded",
-    "image_url": "image_url_not_allowed",
-    "image_bytes": "image_too_large",
-    "max_tokens": "max_output_tokens_exceeded",
-    "max_output_tokens": "max_output_tokens_exceeded",
-    "input_tokens": "input_tokens_exceeded",
-    "context": "context_window_exceeded",
-}
-
 _COUNTER_LOCK = threading.Lock()
-_COUNTERS = {"v1": 0, "legacy": 0, "unknown": 0, "mismatch": 0}
+_COUNTERS = {"v1": 0, "unknown": 0, "mismatch": 0}
 _TELEMETRY = ErrorTelemetry("A")
 log = logging.getLogger("platform_core.llm.model_failure")
 
@@ -121,8 +115,6 @@ class ModelFailure:
             "upstream_status": self.upstream_status,
         }
         detail.update({key: value for key, value in optional.items() if value is not None})
-        if self.field is not None:
-            detail.update({"truong": self.field, "tran": self.limit, "thay": self.actual})
         return detail
 
 
@@ -151,7 +143,6 @@ def observe_model_failure(
     endpoint: str = "gateway",
     elapsed_ms: int | float = 0,
     action: str = "",
-    legacy: bool = False,
     contract_mismatch: bool = False,
     model_known: bool = False,
     count: bool = True,
@@ -160,7 +151,6 @@ def observe_model_failure(
     chosen = action or choose_action(
         canonical_code=failure.canonical_code,
         retry=failure.retry,
-        legacy=legacy,
         contract_mismatch=contract_mismatch,
     )
     return _TELEMETRY.record(
@@ -180,7 +170,6 @@ def observe_model_failure(
         elapsed_ms=elapsed_ms,
         endpoint=endpoint,
         action=chosen,
-        legacy=legacy,
         contract_mismatch=contract_mismatch,
         model_known=model_known,
         count=count,
@@ -316,7 +305,7 @@ def model_failure(
 
 
 def decode_gateway_failure(status: int, headers: Mapping[str, str], body: bytes) -> ModelFailure:
-    """Decode v1/legacy có giới hạn; dữ liệu thiếu luôn fail closed unknown."""
+    """Decode v1 có giới hạn; thiếu/lạ (kể cả hình dạng legacy) ⇒ `upstream_unknown`."""
     root = _json_object(body)
     candidate = _candidate(root)
     data: Mapping[str, Any] = candidate or {}
@@ -338,32 +327,6 @@ def decode_gateway_failure(status: int, headers: Mapping[str, str], body: bytes)
             _count("v1")
             observe_model_failure(failure, gateway_code=code)
             return failure
-
-    legacy_value = data.get("legacy")
-    legacy: Mapping[str, Any] = legacy_value if isinstance(legacy_value, dict) else data
-    field = str(legacy.get("truong") or "")
-    legacy_code = _LEGACY_FIELD_TO_CODE.get(field)
-    if legacy_code:
-        normalized = {
-            "field": field,
-            "limit": legacy.get("tran"),
-            "actual": legacy.get("thay"),
-        }
-        _count("legacy")
-        failure = _build(
-            legacy_code,
-            status=status,
-            headers=headers,
-            candidate=normalized,
-            request_id=request_id,
-        )
-        observe_model_failure(
-            failure,
-            gateway_code=str(data.get("canonical_code") or "legacy"),
-            legacy=True,
-            contract_mismatch=contract_mismatch,
-        )
-        return failure
 
     _count("unknown")
     failure = _build(

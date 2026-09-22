@@ -2,7 +2,7 @@
 
 ## Vì sao tách khỏi ca "bận"
 
-`test_272` đã chốt ca **bận** (`ban=True`): 503 + `Retry-After` + hoàn đủ. Ca này
+`test_272` đã chốt ca **bận** (`concurrency_limited`): 503 + `Retry-After` + hoàn đủ. Ca này
 khác **cả về đường mã lẫn về ý nghĩa vận hành**:
 
 | | bận | không với tới được |
@@ -42,13 +42,15 @@ _dem_execution_lease = _t272._dem_execution_lease
 
 
 def _may_b_chet(monkeypatch, thong_diep="khong noi duoc toi may B (ConnectError)"):
-    """Máy B không trả lời — `ban=False`, đúng như `luong_vlm.py:152` ném ra."""
+    """Máy B không trả lời — `upstream_unreachable`, đúng như `luong_vlm.mo` ném ra."""
     from platform_core.llm import luong_vlm
     da_goi = []
 
     def gia(db, *, duong, than, timeout_s=900.0, **_meta):
         da_goi.append(duong)
-        raise luong_vlm.KhongMoDuocLuong(thong_diep, ban=False)
+        raise luong_vlm.KhongMoDuocLuong(
+            thong_diep, failure=luong_vlm.model_failure(
+                "upstream_unreachable", http_status=502))
 
     monkeypatch.setattr(luong_vlm, "mo", gia)
     return da_goi
@@ -130,8 +132,10 @@ class TestKhachNhanLoiSach:
 
         # Ca bận, cùng bộ máy, để so.
         def ban(db, *, duong, than, timeout_s=900.0, **_meta):
-            raise luong_vlm.KhongMoDuocLuong("may B dang ban", ban=True,
-                                             thu_lai_sau_s=30)
+            raise luong_vlm.KhongMoDuocLuong(
+                "may B dang ban", failure=luong_vlm.model_failure(
+                    "concurrency_limited", http_status=429,
+                    retry_after_s=30))
         monkeypatch.setattr(luong_vlm, "mo", ban)
         r_ban = api.post(MSG, json=_than(), headers=_h(token))
 

@@ -34,66 +34,36 @@ PROVIDER = "ltt_llm"
 
 
 class KhongMoDuocLuong(Exception):
-    """Không mở được luồng. Bên gọi dịch sang 502/503 tuỳ `ban`."""
+    """Không mở được luồng. Nghĩa nằm DUY NHẤT ở `failure` (`ModelFailure`).
+
+    🔴 Task 13 đã gỡ ba boolean tương thích `ban`/`qua_dai`/`het_gio` (và các
+       kwarg dựng chúng): bên gọi đọc `failure.is_busy` / `is_context_limit` /
+       `is_timeout`. Không có `failure` ⇒ fail-closed `upstream_unknown`.
+
+    ⛔ `failure.is_timeout` KHÁC `failure.is_busy`, và khác một cách quan trọng.
+       Bận nói *"thử lại sau N giây thì được"*; hết giờ **không** hứa điều đó — một
+       yêu cầu hết giờ vì nó quá lớn sẽ hết giờ y hệt ở lần sau. Cả hai đều
+       **không** `danh_dau_loi`: prefill 200K mất hàng phút là công việc hằng
+       ngày của hệ này, không phải dấu hiệu khoá hỏng.
+
+    ⛔ Quá dài (`failure.is_context_limit`) là lỗi CLIENT, không phải hỏng tạm:
+       bên gọi trả lỗi quá dài (công khai 400 `context_window_exceeded`, L-34) để
+       client NÉN hội thoại, KHÔNG được dịch thành 503 (retry vô ích → bão).
+    """
 
     def __init__(
         self,
         ly_do: str = "",
         *,
         failure: Optional[ModelFailure] = None,
-        ban: bool = False,
-        qua_dai: bool = False,
-        het_gio: bool = False,
         thu_lai_sau_s: int = 30,
     ):
         if failure is None:
-            code = (
-                "concurrency_limited"
-                if ban
-                else "context_window_exceeded"
-                if qua_dai
-                else "upstream_timeout"
-                if het_gio
-                else "upstream_unknown"
-            )
-            status = 429 if ban else 413 if qua_dai else 504 if het_gio else 502
-            failure = model_failure(
-                code,
-                http_status=status,
-                retry_after_s=thu_lai_sau_s if ban else None,
-            )
+            failure = model_failure("upstream_unknown", http_status=502)
         super().__init__(ly_do or failure.message)
         self.failure = failure
         self.ly_do = ly_do or failure.message
-        self._ban_legacy = bool(ban)
-        self._qua_dai_legacy = bool(qua_dai)
-        self._het_gio_legacy = bool(het_gio)
-        #: Máy B nhận yêu cầu nhưng không trả lời kịp (cổng trả 504).
-        #:
-        #: ⛔ KHÁC `ban`, và khác một cách quan trọng. `ban` nói *"thử lại sau
-        #:    30 giây thì được"*; `het_gio` **không** hứa điều đó — một yêu cầu
-        #:    hết giờ vì nó quá lớn sẽ hết giờ y hệt ở lần sau.
-        #:
-        #: ⛔ Và khác cả hai ở chỗ quan trọng nhất: **không** `danh_dau_loi`.
-        #:    Prefill 200K mất hàng phút là công việc hằng ngày của hệ này, chứ
-        #:    không phải dấu hiệu khoá hỏng.
-        #: Đầu vào vượt trần token của máy B (máy B trả 413 trên dây trong giai
-        #: đoạn tương thích) — lỗi CLIENT (ngữ cảnh quá dài), KHÔNG phải hỏng
-        #: tạm. Bên gọi trả lỗi quá dài (công khai 400 `context_window_exceeded`,
-        #: L-34) để client NÉN hội thoại, KHÔNG được dịch thành 503 (retry vô ích → bão).
         self.thu_lai_sau_s = int(failure.retry_after_s or thu_lai_sau_s)
-
-    @property
-    def ban(self) -> bool:
-        return self._ban_legacy or self.failure.is_busy
-
-    @property
-    def qua_dai(self) -> bool:
-        return self._qua_dai_legacy or self.failure.is_context_limit
-
-    @property
-    def het_gio(self) -> bool:
-        return self._het_gio_legacy or self.failure.is_timeout
 
 
 @dataclass
@@ -139,27 +109,6 @@ class LuongMo:
             api_pool.danh_dau_loi(self._db, self._key, message=type(exc).__name__)
         except Exception as e:  # noqa: BLE001
             log.info("khong danh dau duoc loi cho khoa: %s", type(e).__name__)
-
-
-#: Dấu hiệu của **đúng một lớp lỗi**: parser tool-call của llama.cpp vỡ.
-#:
-#: ⛔ PHẢI HẸP. Thử lại một lỗi thật của hạ tầng (hết VRAM, model chết, cấu hình
-#:    sai) chỉ đốt GPU thêm một lượt rồi hỏng y hệt, và giấu mất triệu chứng.
-#:    Ba chuỗi này lấy từ thông điệp THẬT máy B trả về (đo 29-30/08), không đoán:
-#:      "Failed to parse tool call arguments as JSON: [json.exception.parse_error.101]"
-#:      "unparsed peg-native output"
-#:      "Failed to parse input at pos"
-_DAU_HIEU_PARSER = (
-    "failed to parse tool call",
-    "peg-native",
-    "failed to parse input at pos",
-)
-
-
-def _loi_parser_tool_call(than_loi: str) -> bool:
-    """Thân lỗi có phải do parser tool-call vỡ không (chứ không phải hỏng thật)."""
-    thap = (than_loi or "").lower()
-    return any(d in thap for d in _DAU_HIEU_PARSER)
 
 
 def la_het_gio_doc(exc: BaseException) -> bool:
@@ -263,22 +212,9 @@ def mo(
         )
         code = failure.canonical_code
 
-        # Status is only a compatibility hint for old B responses. It must not
-        # invent a specific semantic such as "413 means context".
-        if failure.is_busy or (r.status_code == 429 and code == "upstream_unknown"):
-            raise KhongMoDuocLuong(
-                failure.message,
-                failure=failure,
-                ban=code == "upstream_unknown",
-                thu_lai_sau_s=int(failure.retry_after_s or _retry_after(r)),
-            )
-        if failure.is_timeout or (r.status_code == 504 and code == "upstream_unknown"):
-            raise KhongMoDuocLuong(
-                failure.message,
-                failure=failure,
-                het_gio=code == "upstream_unknown",
-            )
-        if failure.is_cancelled or r.status_code == 499:
+        # Chỉ mã có cấu trúc quyết định hành động (Task 13): HTTP status và câu
+        # chữ của thân lỗi không bao giờ sinh ngữ nghĩa bận/hết giờ/quá dài.
+        if failure.is_busy or failure.is_timeout or failure.is_cancelled:
             raise KhongMoDuocLuong(failure.message, failure=failure)
 
         if failure.retry_same_generation:
@@ -299,13 +235,6 @@ def mo(
                 )
             log.warning(
                 "model_failure action=terminal code=%s request_id=%s",
-                code,
-                failure.request_id or "missing",
-            )
-        elif code == "upstream_unknown" and _loi_parser_tool_call(than_loi):
-            # Rollout telemetry only. Unknown prose is never permission to retry.
-            log.warning(
-                "model_failure action=legacy_observed_no_retry code=%s request_id=%s",
                 code,
                 failure.request_id or "missing",
             )
@@ -377,9 +306,3 @@ def _doc_het(r, ctx, client) -> str:
         finally:
             client.close()
 
-
-def _retry_after(r) -> int:
-    try:
-        return max(1, int(r.headers.get("retry-after") or 30))
-    except (TypeError, ValueError):
-        return 30

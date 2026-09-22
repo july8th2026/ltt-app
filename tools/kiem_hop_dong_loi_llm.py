@@ -174,6 +174,11 @@ def _renderer_row(
 
 
 def _decoder_row(decoder: Callable) -> dict:
+    """Thân HÌNH DẠNG legacy ở 413 phải fail-closed `upstream_unknown` (Task 13).
+
+    Đây cũng là phép đột biến: decoder nào còn suy "413 ⇒ context" hay đọc
+    `{truong, tran, thay}` thành mã cụ thể sẽ làm dòng này đỏ.
+    """
     body = json.dumps(
         {
             "detail": {
@@ -185,10 +190,10 @@ def _decoder_row(decoder: Callable) -> dict:
         }
     ).encode("utf-8")
     failure = decoder(413, {"X-LTT-Request-Id": "fixture-request-id"}, body)
-    expected = "image_count_exceeded"
+    expected = "upstream_unknown"
     return {
         "code": expected,
-        "protocol": "gateway_legacy",
+        "protocol": "gateway_legacy_fail_closed",
         "phase": "decode",
         "status": 413,
         "expected_status": 413,

@@ -160,13 +160,13 @@ def _mo_voi_client_nem(monkeypatch, nem):
 def test_mo_het_gio_doc_header_KHONG_phat_khoa_va_danh_dau_het_gio(monkeypatch):
     loi, phat = _mo_voi_client_nem(monkeypatch, httpx.ReadTimeout("timed out"))
     assert phat == [], "cho header qua han bi phat khoa"
-    assert loi.het_gio and not loi.ban
+    assert loi.failure.is_timeout and not loi.failure.is_busy
 
 
 def test_DOI_CHUNG_mo_ConnectError_VAN_phat_khoa(monkeypatch):
     loi, phat = _mo_voi_client_nem(monkeypatch, httpx.ConnectError("refused"))
     assert phat == ["ConnectError"]
-    assert not loi.het_gio
+    assert not loi.failure.is_timeout
 
 
 def test_dieu_phoi_ReadTimeout_thanh_AmbiguousProviderError(monkeypatch):

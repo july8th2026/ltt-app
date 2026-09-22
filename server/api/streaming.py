@@ -41,10 +41,8 @@ from platform_core.public_api.executor import for_tool, for_tool_name
 from platform_core.public_api.errors import (THIEU_CREDIT_LOI,
                                              insufficient_credit,
                                              invalid_request,
-                                             model_not_found,
                                              service_unavailable,
-                                             thieu_credit_chi_tiet,
-                                             tran_bi_vuot)
+                                             thieu_credit_chi_tiet)
 from platform_core.public_api.principal import Principal
 from platform_core.public_api.protocol import (STREAM, PublicOperationContract)
 from platform_core.public_api.scopes import SCOPE_JOBS_CREATE
@@ -53,7 +51,8 @@ from server.api.auth import require_scope
 from server.api.context import request_id as api_request_id
 from server.deps import get_db
 from apps.ltt_llm import ngan_sach
-from platform_core.llm.model_failure import ModelFailure, observe_model_failure
+from platform_core.llm.model_failure import (ModelFailure, model_failure,
+                                             observe_model_failure)
 from platform_core.runtime_noi_bo import luong as cua_luong
 
 log = logging.getLogger("server.api.streaming")
@@ -271,7 +270,6 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
             token=int(vao_uoc),
             tran=tran_vao,
             request=request,
-            structured=config.structured_model_errors,
         )
     xin_ra = _max_tokens(than, vao_uoc)
     if not any(ten in than for ten in ("max_tokens", "max_output_tokens")):
@@ -294,15 +292,11 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
     except KeyError as e:
         # Cùng mã với tên đã cắt ở `_cua` — D02, Step 2c.
         log.error("ban khai admission thieu model %r: %s", ten, e)
-        if config.structured_model_errors:
-            return su_kien_loi.render_local_model_failure(
-                duong,
-                "model_not_found",
-                request_id=api_request_id(request),
-            )
-        raise _bao_400(
-            f"`model` {ten!r} is not served here. Call GET /api/v1/models for "
-            f"the names in service.", than, dung=model_not_found) from None
+        return su_kien_loi.render_local_model_failure(
+            duong,
+            "model_not_found",
+            request_id=api_request_id(request),
+        )
     tai_nguyen = str(suc.resource or "") if suc else ""
     pool = int(suc.token_pool or 0) if suc else 0
 
@@ -356,8 +350,7 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         # Đặt chỗ vượt cả pool KV (phương án C bất biến 1) — quá dài, 0 khoản giữ.
         return su_kien_loi.loi_qua_dai_json(
             duong, token=e.token, tran=e.tran if e.tran is not None else pool,
-            request=request, failure=e.failure,
-            structured=config.structured_model_errors)
+            request=request, failure=e.failure)
 
     def _release_ticket(ket_qua: str = "loi", so_do=None) -> None:
         """Nhả suất + ghi KẾT CỤC THẬT vào sổ lượt 30 ngày.
@@ -542,16 +535,12 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
                 failure, duong=duong, model=ten,
                 elapsed_ms=(time.monotonic() - t0) * 1000,
             )
-        if config.structured_model_errors and failure is not None:
-            return su_kien_loi.render_model_failure(
-                duong, failure, phase="before_headers", stream=False
-            )
-        raise invalid_request(
-            failure.message if failure is not None else "The request exceeds a model limit.",
-            **tran_bi_vuot(
-                failure.as_detail() if failure is not None else getattr(e, "chi_tiet", None)
-            ),
-        ) from e
+        return su_kien_loi.render_model_failure(
+            duong,
+            failure or model_failure("invalid_request", http_status=400,
+                                     request_id=request_id),
+            phase="before_headers", stream=False,
+        )
     except HuyError as e:
         # ⛔ TRUOC `CongVlmError`: `HuyError` khong ke thua no (co chu y), nen
         #    truoc 14/09 no thoat ra thanh 500. Huy khong phai loi cua ai.
@@ -574,15 +563,12 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
                 e.failure, duong=duong, model=ten,
                 elapsed_ms=(time.monotonic() - t0) * 1000,
             )
-        if config.structured_model_errors and e.failure is not None:
-            return su_kien_loi.render_model_failure(
-                duong, e.failure, phase="before_headers", stream=False
-            )
-        raise invalid_request(
-            e.failure.message
-            if e.failure is not None
-            else "The model rejected this request.",
-        ) from e
+        return su_kien_loi.render_model_failure(
+            duong,
+            e.failure or model_failure("invalid_request", http_status=400,
+                                       request_id=request_id),
+            phase="before_headers", stream=False,
+        )
     except CongVlmError as e:
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
@@ -851,18 +837,11 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
         #    `ltt_llm` / `ltt_llm_vision` rơi vào đúng nhánh này từ 11/09/2026,
         #    và khách phải nghe cùng một câu ở mọi cửa: *tên model ấy không còn*,
         #    chứ không phải *yêu cầu của bạn sai hình dạng*.
-        if config.structured_model_errors:
-            return su_kien_loi.render_local_model_failure(
-                duong,
-                "model_not_found",
-                request_id=api_request_id(request),
-            )
-        raise _bao_400(
-            f"`model` must be one of {list(aliases)}"
-            f"{' or ' + str(list(TUYEN_TUONG_THICH)) if TUYEN_TUONG_THICH else ''}. "
-            f"Claude Code sends whatever ANTHROPIC_MODEL is set to, and Codex "
-            f"sends `model` from its profile — set them to one of these."
-            + _goi_y_ten_la(ten), than, dung=model_not_found)
+        return su_kien_loi.render_local_model_failure(
+            duong,
+            "model_not_found",
+            request_id=api_request_id(request),
+        )
 
     tin = _tin_nhan(than)
     if not tin:
@@ -1008,8 +987,7 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
         return su_kien_loi.loi_qua_dai(
             duong, stream=True, token=e.token,
             tran=e.tran if e.tran is not None else _tran_vao_cua_model(ten),
-            request=request, failure=e.failure,
-            structured=config.structured_model_errors)
+            request=request, failure=e.failure)
     # Chỉ lượt qua tiền kiểm ngữ cảnh/credit/công suất mới tiêu hạn mức tạo.
     limits.enforce_create_rate(key_id=principal.key_id, config=config,
                                limits=resolved, user_id=principal.user_id)
@@ -1090,28 +1068,15 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
         with anyio.CancelScope(shield=True):
             await run_in_threadpool(_ket_thuc)
 
-    def _loi_sse_quan_sat(
-        error_path: str,
-        ma: str,
-        thong_diep: str,
-        *,
-        failure: ModelFailure | None = None,
-    ) -> bytes:
-        if failure is not None:
-            _observe_public_model_failure(
-                failure,
-                duong=error_path,
-                model=ten,
-                elapsed_ms=(time.monotonic() - telemetry_started) * 1000,
-                phase="after_headers",
-            )
-        return su_kien_loi.loi_sse(
-            error_path,
-            ma,
-            thong_diep,
-            failure=failure,
-            structured=config.structured_model_errors,
+    def _loi_sse_quan_sat(error_path: str, failure: ModelFailure) -> bytes:
+        _observe_public_model_failure(
+            failure,
+            duong=error_path,
+            model=ten,
+            elapsed_ms=(time.monotonic() - telemetry_started) * 1000,
+            phase="after_headers",
         )
+        return su_kien_loi.loi_sse(error_path, failure)
 
     return StreamingResponse(
         cua_luong.bat_dong_bo_hoa(
