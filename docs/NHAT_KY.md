@@ -12,6 +12,32 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-22 (tối) — Máy B: mod VGA (chỉ xung nhớ) + đánh giá HyperQwen; không đổi mã kho
+
+Chủ dự án hỏi vì sao LTTCODE thấy 3.8 ~34 tok/s, 3.5 ~44 tok/s, và muốn mod card an toàn. Phiên này chỉ đụng
+máy B (card, tác vụ Windows), không sửa mã/cấu hình LTTSTUDIOSAPP.
+
+- **Chẩn đoán:** 34/44 là tốc độ MỖI luồng khi đủ suất chạy cùng lúc (3.8 np3, 3.5 np4) ở ngữ cảnh 40–130K; một
+  luồng ngắn đo được 3.8 67,9 · 3.5 74,6 tok/s. Log llama-server 19–22/09: decode giảm ~45 % từ <8K lên >128K,
+  prefill của lượt khác làm luồng đang sinh khựng xuống 1,5–8 tok/s. Hệ thống chạy đúng thiết kế.
+- **Mod (đang áp):** chỉ offset xung NHỚ — 3090 +750 MHz (P2 9501→10251), 5060 Ti +1000 (P1 13801→14801); nhân,
+  điện áp, power limit 370/180 W, VBIOS mặc định. Soak 30 phút hai card: 292 lượt greedy 0 lệch hash, 0 sự kiện
+  lỗi. So với soak mặc định cùng nhiệt: 3.8 68,4→69,6 (+1,8 %), 3.5 72,9→76,2 (+4,5 %), prefill không đổi.
+  3090 khi chạy LLM luôn chạm trần 370 W (vì vậy OC nhớ chỉ +2 %); hạ 300 W mất 3,3 % decode ⇒ không áp.
+- **Cơ chế:** tác vụ SYSTEM `LTT_ModCard_NVML_KhoiDong` lúc khởi động ⇒ `C:\Tools\ModCard\dat_offset.py 1500 2000`
+  (NVML; đơn vị NVML = 2× Afterburner). Afterburner `[Startup]` không tự áp (đã thử) ⇒ không dùng Afterburner để OC.
+  Chưa kiểm bằng một lần khởi động lại thật.
+- **Sổ tay vận hành / khôi phục:** `Setup_VGA.md` trên Desktop máy B (`C:\Users\lengo\OneDrive\Desktop\`, bản sao
+  `C:\Tools\ModCard\`); kiểm nhanh `C:\Tools\ModCard\venv\Scripts\python.exe C:\Tools\ModCard\kiem_vga.py`.
+  Số đo từng bậc: máy A `C:\Users\Thang Tuong\.claude\ltt\mod_card_may_b\KET_QUA.md`; dữ liệu thô `H:\LTT_MOD_CARD\`.
+- **HyperQwen (vLLM + 38 bản vá, `syv-ai/HyperQwen`) — KHÔNG triển khai:** chỉ Linux/WSL2, mà bật Hyper-V trên máy B
+  làm VMware mất VT-x lồng ⇒ cụm Proxmox chứa VPS khách không khởi động (Broadcom KB 389469); không hỗ trợ 3.5/9B;
+  không có budget suy nghĩ cứng; issue #147 (3090, tải agent) ngang llama.cpp. ⛔ Không bật WSL2/Hyper-V trên máy B.
+- Nhật ký sự kiện System/Application máy B đã sao lưu rồi xoá theo lệnh chủ dự án lúc 18:08
+  (`H:\LTT_MOD_CARD\evtx_truoc_mod\`). Còn tồn phần cứng: hot spot 5060 Ti 98,9 °C ở CẢ mặc định (tản nhiệt),
+  3090 hot spot 94 °C (lệch nhân 22 °C) — nên thay keo. Gợi ý phiên riêng: decode ngữ cảnh dài của 3.8
+  (45 tok/s ở 50K) — nghi KV q4_0.
+
 ## 2026-09-22 (chiều) — VPS: tạo máy bị khoá vì OVH ngừng liệt kê hợp đồng đã ký; phát hành VPS cho mọi người dùng
 
 Chủ dự án tạo máy trên web không được. Log worker: job `dc93967e` (13:07) và `12984237` (16:25) cùng
