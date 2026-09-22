@@ -71,7 +71,8 @@ MANIFEST = AppManifest(
     enabled=False,
     lifecycle="internal",
 
-    job_types=("asv_gpu.audio_prepare", "asv_gpu.transcribe"),
+    job_types=("asv_gpu.audio_prepare", "asv_gpu.transcribe",
+               "asv_gpu.qc_do_luong"),
     requires=("gpu",),
     credit_cost=_gia,
 
@@ -91,14 +92,17 @@ MANIFEST = AppManifest(
         # ✅ DO THAT pha 13 (03/09): dinh 1.673 MiB, khong doi theo do dai.
         "asv_gpu.audio_prepare": 2200,
         "asv_gpu.transcribe": 6000,      # theo `autosubvideo.transcribe` da do
+        # __VRAM_DO_LUONG__
     },
     max_runtime_s={
         "asv_gpu.audio_prepare": 3600,
         "asv_gpu.transcribe": 3600,
+        "asv_gpu.qc_do_luong": 3600,
     },
     #: GPU tren may nay dung chung voi ba ho khac (CLAUDE.md). Cho 20 giay giua
     #: hai lan hoi la hop ly cho viec dai hang phut; day khong phai truong hop
     #: cua LTT VOICE (viec 5 giay, phai hoi day hon).
-    cho_tai_nguyen_s={"asv_gpu.audio_prepare": 20, "asv_gpu.transcribe": 20},
+    cho_tai_nguyen_s={"asv_gpu.audio_prepare": 20, "asv_gpu.transcribe": 20,
+                      "asv_gpu.qc_do_luong": 20},
     notes="Pha 05: handler GIA, khong nap model, khong cham GPU that.",
 )

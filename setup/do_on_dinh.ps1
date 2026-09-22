@@ -43,7 +43,7 @@ param(
     #
     #    Nen tham so nay KHONG nhan mot duong dan. No nhan mot TU KHOA, va bang
     #    anh xa tu khoa -> tep nam ngay duoi day, trong ma nguon nay.
-    [ValidateSet('on-dinh', 'ngan-sach')]
+    [ValidateSet('on-dinh', 'ngan-sach', 'do-giong')]
     [string]$Do = 'on-dinh'
 )
 
@@ -56,6 +56,7 @@ $envFile = Join-Path $Root 'secrets\app.env'
 $bangCongCu = @{
     'on-dinh'   = 'tools\do_on_dinh_chuyen_loi_thoai.py'
     'ngan-sach' = 'tools\do_ngan_sach_chuyen_loi_thoai.py'
+    'do-giong'  = 'tools\do_giong_hieu_chinh.py'
 }
 $congCu = Join-Path $Repo $bangCongCu[$Do]
 

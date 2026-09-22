@@ -136,6 +136,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 
     phan: list[dict] = []
     ban_ke: list[dict] = []
+    # 🔑 Doan bi vong sua goi DOC LAI (doc sai / khong vua): lay mot LUOT DOC
+    #    MOI. Van tay cu = khoa cu = tep cu; khong muoi van tay thi "doc lai" tra
+    #    ve dung ban da bi bao sai. Xem `_lan_doc_lai`.
+    lan_lai = _lan_doc_lai(db, run)
     cac_nan: list[nan_cho_vua.KetQuaNan] = []
     da_sinh = 0
 
@@ -152,7 +156,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             khe = nan_cho_vua.khe_cua(m)
             chu = str(m["chu"])
             so_vong = 0
-            vt = _van_tay(m["ma"], chu, ma_giong, preset, tu_dien=tu_dien)
+            vt = _van_tay(m["ma"], chu, ma_giong, preset, tu_dien=tu_dien,
+                          lan=lan_lai.get(m["ma"], 0))
 
             # ── Phuc hoi o muc DOAN ───────────────────────────────────────
             khoa_ben = assets.dat_khoa(owner_id=run.owner_id, run_id=run.id,
@@ -187,7 +192,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             if cu is not None:
                 kq = nan_cho_vua.ket_luan(m["ma"], chu=chu, giay=float(cu),
                                           khe=khe, so_vong=0)
-                ban_ke.append({"ma": m["ma"], "khoa": khoa_ben,
+                ban_ke.append({"ma": m["ma"], "khoa": khoa_ben, "chu": chu,
                                "giay": float(cu), "tu_cu": True,
                                **_ke_nan(kq)})
                 cac_nan.append(kq)
@@ -228,7 +233,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                 chu = moi_chu
                 so_vong += 1
                 vt = _van_tay(m["ma"], chu, ma_giong, preset,
-                              tu_dien=tu_dien)
+                              tu_dien=tu_dien, lan=lan_lai.get(m["ma"], 0))
 
             kq = nan_cho_vua.ket_luan(m["ma"], chu=chu, giay=giay, khe=khe,
                                       so_vong=so_vong)
@@ -245,7 +250,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 
             phan.append({"staging_key": khoa_tam, "kind": "audio", "duoi": "wav",
                          "van_tay": vt})
-            ban_ke.append({"ma": m["ma"], "khoa": khoa_ben, "giay": giay,
+            # ⭐ `chu` = cau CUOI CUNG may da doc (sau nan). `qc_do_luong` cham
+            #    WER so voi chinh cau nay, khong phai cau truoc khi nan.
+            ban_ke.append({"ma": m["ma"], "khoa": khoa_ben, "chu": chu,
+                           "giay": giay,
                            **_ke_nan(kq)})
 
             # ⭐ Ghi so cai **mot lan cho moi doan da giao**, kem so giay THAT.
@@ -295,17 +303,39 @@ class _KhongNanDuoc(RuntimeError):
     """Khong xin duoc cau viet lai — dung bac thang o day, khong lam hong ca run."""
 
 
+def _lan_doc_lai(db, run) -> dict[str, int]:
+    """`{ma: so vong sua da dat lai doan nay o voice_synthesis}` — tu SO CAI.
+
+    Doc cac dong vong sua (`jobs.NANG_LUC_VONG_SUA`) ma `_sua_chua_neu_can` ghi
+    TRUOC khi dat lai: mot con so ben qua worker chet, va la ham cua du lieu
+    da ghi chu khong phai cua mot bo dem trong bo nho.
+    """
+    from . import sua_chua
+    from .jobs import DON_VI_SUA, NANG_LUC_VONG_SUA
+
+    ke = [dict(getattr(d, "ghi_chu", None) or {})
+          for d in su_dung.cac_dong(db, run, stage=pipeline.QC, item_key=DON_VI_SUA)
+          if d.nang_luc == NANG_LUC_VONG_SUA]
+    return sua_chua.lan_doc_lai(ke)
+
+
 def _van_tay(ma: str, chu: str, ma_giong: str, preset: str, *,
-             tu_dien: dict) -> str:
+             tu_dien: dict, lan: int = 0) -> str:
     """Van tay cua MOT doan tieng.
 
     🔑 Gom **van ban da nan** chu khong phai van ban goc: sau mot vong nan, doan
        nay la ket qua cua mot cau KHAC, va dung lai tep cu la giao mot cau ma ta
        vua quyet dinh la khong vua.
     """
-    return giong_noi.van_tay_doan(ma_doan=ma, chu=chu, voice_id=ma_giong,
-                                  preset=str(preset or ""),
-                                  tu_dien=tu_dien or None)
+    vt = giong_noi.van_tay_doan(ma_doan=ma, chu=chu, voice_id=ma_giong,
+                                preset=str(preset or ""),
+                                tu_dien=tu_dien or None)
+    if not lan:
+        # ⛔ `lan=0` giu NGUYEN van tay cu: moi doan chua tung bi sua dung lai
+        #    cache y nhu truoc.
+        return vt
+    import hashlib
+    return hashlib.sha256(f"{vt}|doc_lai:{int(lan)}".encode()).hexdigest()[:len(vt)]
 
 
 def _ke_nan(kq) -> dict:

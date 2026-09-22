@@ -145,6 +145,13 @@ def phien_ban_engine(stage_ten: str) -> str:
     if stage_ten == pipeline.QC:
         from . import qc
         return f"qc/{qc.PHIEN_BAN_QC}"
+    if stage_ten == pipeline.QC_DO_LUONG:
+        # 🔑 Ma giai doan + phien ban TUNG bo do (model, weights, chuan hoa) +
+        #    model ASR san pham. Nang mot bo do = van tay doi = do lai.
+        from apps.asv_gpu.do_luong import bo_do
+        from . import giai_doan_chep_loi, giai_doan_qc_do_luong
+        return (f"do_luong/{giai_doan_qc_do_luong.PHIEN_BAN_DO_LUONG_GD}"
+                f"/{bo_do.phien_ban()}/asr/{giai_doan_chep_loi.MODEL_ASR}")
     # ⚠️ Giai doan chua co engine that van phai co MOT phien ban, khong duoc tra
     #    chuoi rong. Tra rong nghia la "khong co gi de lam moi cache", va do la
     #    dung mon no ma ham nay sinh ra de tra — chi doi cho.
@@ -315,6 +322,9 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
             ra = giai_doan_ket_xuat.chay(db, kho, run=run, ctx=ctx)
         elif ten == pipeline.QC:
             ra = giai_doan_qc.chay(db, kho, run=run, ctx=ctx)
+        elif ten == pipeline.QC_DO_LUONG:
+            from . import giai_doan_qc_do_luong
+            ra = giai_doan_qc_do_luong.chay(db, kho, run=run, ctx=ctx)
         elif ten == pipeline.QC_AI:
             ra = giai_doan_qc_ai.chay(db, kho, run=run, ctx=ctx)
         else:

@@ -163,28 +163,9 @@ def doc_hinh(goi: dict, *, ma_canh: str, moc_giay: float) -> dict:
     }
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  3. QC giong noi — DO, khong phai phan doan
-# ══════════════════════════════════════════════════════════════════════════════
-
-def so_khop_doc(muc: list[dict], ban_ghi_doc: dict) -> list[dict]:
-    """`[{ma, chu, doc_ra}]` — ghep van ban da viet voi thu ASR nghe duoc.
-
-    ⭐ Day la mot phep **DO**, khong phai mot phan doan cua model: hai chuoi, mot
-       ty le khop. Nen ket qua cua no co `do_tin = 1.0` — ta khong doan gi ca.
-
-    ⛔ ASR o day chay tren chinh tieng ta vua sinh ra, nen no khong the "sai" theo
-       kieu nghe nham mot giong la. Neu no van lech thi hoac may doc sai that,
-       hoac van ban co thu ASR khong doc duoc (so, ten rieng) — va nguong
-       `NGUONG_KHOP_DOC` duoc chon de chiu duoc truong hop thu hai.
-    """
-    doc = {str(d.get("ma") or ""): str(d.get("chu") or "")
-           for d in (ban_ghi_doc.get("doan") or [])}
-    return [{"ma": str(m.get("ma") or ""),
-             "chu": str(m.get("chu") or ""),
-             "doc_ra": doc.get(str(m.get("ma") or ""), "")}
-            for m in (muc or [])]
-
+# 3. QC giong noi DA CHUYEN sang lan `gpu` (22/09): ASR + WER/CER that o
+#    `giai_doan_qc_do_luong` + `apps/asv_gpu/do_luong/giong.py`. Cong thuc
+#    Dice tu che (`sua_chua.khop_van_ban`) va bo ghep cua no da xoa.
 
 # ══════════════════════════════════════════════════════════════════════════════
 

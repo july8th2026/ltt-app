@@ -27,7 +27,6 @@ moi_truong = _mt.moi_truong
 
 #: Nguon CHUA noi vao vong sua, va vi sao. Rong dan theo pha 28 — khong phinh.
 CHUA_NOI = {
-    "qc_giong": "can ASR luot cuoi tren ban long tieng (pha 28 — speech QC)",
     "qc_hinh": "can VLM kiem canh tren ban ket xuat (pha 28 — visual QC)",
 }
 
@@ -48,7 +47,7 @@ def test_TAP_nguon_khiem_khuyet_DA_NOI_va_CHUA_NOI_khop_chu_ky():
     chu_ky = set(inspect.signature(sua_chua.lap_ke_hoach).parameters) - {"vong"}
     da_noi = _doi_so_duoc_truyen() - {"vong"}
     assert da_noi, "khong tim thay loi goi `sua_chua.lap_ke_hoach` nao — xanh rong"
-    assert da_noi == {"cac_nan", "qc_ngu_nghia"}, da_noi
+    assert da_noi == {"cac_nan", "qc_giong", "qc_ngu_nghia"}, da_noi
     assert da_noi | set(CHUA_NOI) == chu_ky
     assert not da_noi & set(CHUA_NOI), "mot nguon vua noi vua ghi CHUA noi"
 

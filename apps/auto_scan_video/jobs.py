@@ -171,6 +171,20 @@ def _qc_ngu_nghia(theo_ten) -> list[dict]:
                 or [])
 
 
+def _qc_giong(theo_ten) -> list[dict]:
+    """Doan DOC SAI (ASR + WER/CER vuot nguong), doc tu `outputs` cua
+    `qc_do_luong` — cung ly do doc CSDL chu khong mo kho nhu `_qc_ngu_nghia`.
+
+    ⚠️ Rong khi bo do `giong` `khong_kha_dung` (thieu qc-venv/model) hoac ngon
+       ngu dich chua hieu chinh nguong: "khong biet", khong phai "dat".
+    """
+    s = theo_ten.get(pipeline.QC_DO_LUONG)
+    if s is None:
+        return []
+    return list((getattr(s, "outputs", None) or {}).get("qc_giong_khong_dat")
+                or [])
+
+
 def _sua_chua_neu_can(db, run, theo_ten) -> list[str]:
     """Thi hanh ke hoach sua. Tra ve danh sach giai doan da dat lai.
 
@@ -234,6 +248,7 @@ def _sua_chua_neu_can(db, run, theo_ten) -> list[str]:
                                             item_key=DON_VI_SUA)
                 if d.nang_luc == NANG_LUC_VONG_SUA])
     ke = sua_chua.lap_ke_hoach(cac_nan=_cac_nan(db, run),
+                               qc_giong=_qc_giong(theo_ten),
                                qc_ngu_nghia=_qc_ngu_nghia(theo_ten),
                                vong=vong)
     if not ke.can_sua:

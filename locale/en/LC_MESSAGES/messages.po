@@ -10781,6 +10781,18 @@ msgstr "The source video has not been uploaded, or does not belong to this user.
 msgid "Source video không thuộc project owner."
 msgstr "The source video does not belong to the project owner."
 
+msgid "Chưa có bản kê đoạn tiếng để đo."
+msgstr "There is no voice segment list to measure yet."
+
+msgid "Đang đo chất lượng"
+msgstr "Measuring quality"
+
+msgid "Đang đo giọng đọc"
+msgstr "Measuring the dubbed voice"
+
+msgid "Nghe lại giọng đọc"
+msgstr "Checking the dubbed voice"
+
 msgid "Soát lại nghĩa bản dịch"
 msgstr "Reviewing the translation"
 
