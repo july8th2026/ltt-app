@@ -28,8 +28,8 @@
 | M-06 | thấp | `tools/do_watermark.py` heuristic tự chế, không app nào gọi | `tools/` | ky-thuat | **ĐÃ XOÁ** (cùng `test_470`, `PHA13_*.md`) |
 
 | R-01 | **chặn phát hành** | AUTO_MATCH là đường CHẾT: không giai đoạn nào sinh `HoSoNoiDung` ⇒ `dac_diem_giong` luôn rỗng ⇒ `ChuaRangError`. Preset giữ hình còn không chạy `edit_plan` (0,0 s) nên không bao giờ có hồ sơ | `rang_giong.py:133`, `giai_doan_noi_dung.py:117` | fix-auto-match | MỞ — lượt thật NEN_V3 lượt A chết ở `content_process` sau 133 s |
-| R-02 | cao | QC **T3** đỏ ở preset giữ hình: chế độ `sao_chep` nhưng MD5 luồng hình ≠ nguồn — nghi so với tệp NGUỒN gốc thay vì bản đã chuẩn hoá | `qc.py:275`, `giai_doan_qc.py:136` | fix-qc-am | MỞ |
-| R-03 | cao | QC **T5** đỏ ở `smart_localize`: đỉnh thật −0,33 dBTP > trần −1,5 sau mã hoá lại | `qc.py:288`, `am_master.py` | fix-qc-am | MỞ |
+| R-02 | cao | QC **T3** đỏ ở preset giữ hình. Giả thuyết "so với tệp nguồn gốc" **SAI**: render đọc đúng `run.source_key` mà QC băm. Nguyên nhân thật là `-shortest` trên đường `-c:v copy` — nó vứt 2 gói hình cuối khi luồng hình nguồn dài hơn bản phối. **Sản phẩm sai, T3 đúng.** | `ket_xuat.dung_lenh` | fix-qc-am | **ĐÃ ĐÓNG** — `test_2014`, đo lại trên 4 phim thật |
+| R-03 | cao | QC **T5** đỏ: đỉnh thoát ở **bộ mã hoá AAC sau chuẩn âm**, và `BIEN_CHO_CODEC_DB` là một hằng số ĐOÁN (vọt lọ đo được 0,00–2,78 dB, tuỳ tín hiệu). Thay bằng hạn đỉnh THẬT (lấy mẫu 4×) + vòng đo trên bản mã hoá thử | `am_master.ghim_tran_phoi` | fix-qc-am | **ĐÃ ĐÓNG** — `test_2015`, vọt lọ 1,31 → 0,61 dB trên phim thật |
 | R-04 | cao | `voice_synthesis` chiếm 937 s / 1191 s (79%) cho phim 107 s, kèm 11 lượt `rut_ngan_cho_vua` (50 653 token): câu tiếng Việt dài hơn tiếng Trung ngay từ lượt viết đầu | `giai_doan_giong.py`, `long_tieng.py` | fix-toc-do | MỞ |
 | R-05 | trung | VLM đọc cảnh hỏng 4/12 lượt (`LuocDoSai`/`HieuCanhError`) ⇒ `so_cat=0/6`: `smart_localize` **không cắt gì** | `giai_doan_ban_bien_tap.py:219` | fix-toc-do | MỞ |
 | R-06 | thấp | Khuôn nghiệm thu `text=True` không khai encoding ⇒ chết với đường dẫn tiếng Trung | `tests/fixtures/asv_e2e.py:840` | điều phối | MỞ |

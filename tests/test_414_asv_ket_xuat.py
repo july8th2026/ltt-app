@@ -41,6 +41,16 @@ def _ban(*, so_lop: int = 2, tong_giay: float = 2.0,
     }
 
 
+def _ban_cat(**kw) -> dict:
+    """Cung ban dung, nhung khai preset CAT (ma hoa lai)."""
+    from apps.auto_scan_video import che_do_render as cdr
+
+    ban = _ban(**kw)
+    ban["hinh"].update({"cach_render": cdr.CAT_MA_HOA_LAI, "bo_ma_hoa": "libx264",
+                        "khoang_giu": [[0.0, 2.0]]})
+    return ban
+
+
 def _lenh(ban, **kw):
     n = len(ban["tieng"]["lop"])
     return ket_xuat.dung_lenh(
@@ -79,10 +89,22 @@ def test_giu_dung_chinh_sach_ma_hoa_cua_ban_di_san():
             f"lech khuon di san, phai la mot lan doi CO Y")
 
 
-def test_co_shortest_de_tieng_tran_khong_keo_dai_video():
+def test_co_shortest_o_preset_CAT_de_tieng_tran_khong_keo_dai_video():
     """`-shortest` cua `replace_audio`: khong co no, mot doan tieng tran qua cuoi
-    se keo dai tep ra bang mot khung hinh dong bang."""
-    assert "-shortest" in _lenh(_ban())
+    se keo dai tep ra bang mot khung hinh dong bang.
+
+    🔴 **Chot nay tung la vo dieu kien, va no lam hong preset GIU HINH.**
+       asv-final R-02: o duong `-c:v copy`, `-shortest` vut bo cac goi hinh cuoi
+       khi luong hinh nguon dai hon luong tieng — do tren phim khach that, mat
+       2 khung, MD5 luong hinh khac nguon, QC T3 hong. Chot duoc **thu hep** ve
+       dung preset can no: `test_2014` giu dau kia.
+    """
+    from apps.auto_scan_video import che_do_render as cdr
+
+    assert "-shortest" in _lenh(_ban_cat())
+    assert "-shortest" not in _lenh(_ban()), (
+        f"preset giu hinh ({cdr.SAO_CHEP}) khong duoc mang -shortest — no cat "
+        f"khung hinh cuoi va pha loi hua 'khong mot diem anh nao doi'")
 
 
 def test_preset_GIU_HINH_khong_bao_gio_ma_hoa_lai():

@@ -5298,6 +5298,13 @@ msgstr ""
 "The infrastructure refused this command. Our operations team has the logs; try again in a few "
 "minutes."
 
+msgid "Hạn đỉnh bản phối quá hạn."
+msgstr "Limiting the audio master peak timed out."
+
+#, python-brace-format
+msgid "Hạn đỉnh bản phối thất bại: {loi}"
+msgstr "Limiting the audio master peak failed: {loi}"
+
 #: platform_core/public_api/policy.py:381
 #, python-brace-format
 msgid "Hạn mức không được âm: {field}"
@@ -7914,6 +7921,13 @@ msgstr "Secondary colour"
 #, fuzzy
 msgid "Màu thương hiệu"
 msgstr "Brand name"
+
+msgid "Mã hoá thử bản giao quá hạn."
+msgstr "The delivery test encode timed out."
+
+#, python-brace-format
+msgid "Mã hoá thử bản giao thất bại: {loi}"
+msgstr "The delivery test encode failed: {loi}"
 
 #: server/templates/nexus_trang_chinh.html:25
 msgid "Máy"
