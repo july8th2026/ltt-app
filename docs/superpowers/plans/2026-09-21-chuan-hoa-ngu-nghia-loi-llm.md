@@ -645,16 +645,26 @@ sử; modify docs API được `tools/build_public_api_docs.py` sinh; modify
 
 ## Definition of Done
 
-- [ ] 33 mã ở spec có registry, test và renderer đầy đủ; không có mã orphan.
-- [ ] Cùng một lỗi giữ nguyên `canonical_code` qua B log/envelope, A log/response
+- [x] 33 mã ở spec có registry, test và renderer đầy đủ; không có mã orphan.
+  > Đo 23/09: registry 33, renderer `_MODEL_PROTOCOL` 33, lệch 0 cả hai chiều; `test_1700` nhắc đủ 33; `LTT_NEUTRAL_CODES` của LTTCODE 33, lệch 0.
+- [x] Cùng một lỗi giữ nguyên `canonical_code` qua B log/envelope, A log/response
   và LTTCODE `lttCode`.
-- [ ] Toàn ma trận protocol × phase × stream qua; byte-boundary stream test qua.
-- [ ] Không có action dựa vào message/status; unknown không bị gắn nhãn giả.
-- [ ] Ảnh chỉ offload, context/input token mới compact, output token chỉ giảm
+  > Lỗi xuyên tầng `image_count_exceeded` (22/09) cùng request ID ở client/A/B; probe production 23/09 3/3 giữ `model_not_found` qua cả ba giao thức. Ở LTTCODE tên canonical nằm ở tiền tố message + badge (LlmFailure chỉ 6 trường).
+- [x] Toàn ma trận protocol × phase × stream qua; byte-boundary stream test qua.
+  > Fixture 265 = 4 giao thức × 2 pha × 33 mã + 1 ca fail-closed, 265/265 PASS; ranh giới byte: `test_1703` (CRLF/comment/UTF-8 chia giữa code point, trần theo frame chứ không theo network chunk).
+- [x] Không có action dựa vào message/status; unknown không bị gắn nhãn giả.
+  > `test_1709` (hành vi) + đột biến "413 ⇒ context" đỏ 7 ca; LTTCODE bỏ regex câu chữ (0.2.6), thân không v1 ⇒ UPSTREAM_UNKNOWN. Ngoại lệ có chủ đích: status 4xx quyết định CHÍNH SÁCH phạt khoá/lớp lỗi, không sinh `canonical_code`.
+- [x] Ảnh chỉ offload, context/input token mới compact, output token chỉ giảm
   output, capacity mới backoff.
-- [ ] Bận/timeout/cancel/disconnect không làm hỏng key; không có retry vô hạn.
-- [ ] Request ID truy được qua client↔A↔B; response không lộ dữ liệu nhạy cảm.
-- [ ] Catalog/preflight và B cùng giới hạn; B vẫn là thẩm quyền cuối.
+  > llm-ltt `error-contract.test.mjs`: 413 `request_body_too_large` và `max_output_tokens_exceeded` không nén; `image_count_exceeded` có actual/limit ⇒ offload đúng `actual-limit`; `capacity` ⇒ RATE_LIMIT theo Retry-After.
+- [x] Bận/timeout/cancel/disconnect không làm hỏng key; không có retry vô hạn.
+  > `test_1244` (4xx không tăng error_count), `penalizes_key` False cho mọi 4xx trừ 401/403, `test_985`/`test_1222` (504/429/499 không cascade, không phạt); retry chỉ theo mã `after_delay` của registry.
+- [x] Request ID truy được qua client↔A↔B; response không lộ dữ liệu nhạy cảm.
+  > Probe 23/09: `ltt_error.request_id` có ở cả ba giao thức; `live` 7/7 sự kiện có request ID; `test_1244` chặn prose provider lọt ra ngoài.
+- [x] Catalog/preflight và B cùng giới hạn; B vẫn là thẩm quyền cuối.
+  > `max_images`/`max_image_bytes` catalog → `requiredImageOffload` (llm-ltt `image-request.test.mjs` Task 12, có đối chứng trong trần); catalog lỗi ⇒ không preflight, B vẫn là thẩm quyền cuối.
 - [ ] Rollout/rollback đã được diễn tập, report canary lưu ngoài git.
-- [ ] Test nhắm từng cụm đều xanh; L1 chỉ khi deploy/gộp cần gate; một L3 duy
+  > CHƯA diễn tập thật: chỉ có sẵn đường lùi (B snapshot `auto-*` do `deploy.ps1` chụp, A `app.previous`) và runbook §9. Report canary/probe nằm ngoài git (`C:\lttc0\logs`, scratchpad).
+- [x] Test nhắm từng cụm đều xanh; L1 chỉ khi deploy/gộp cần gate; một L3 duy
   nhất cuối phiên xanh trên đúng SHA.
+  > 23/09: 30 tệp nhắm 863 passed/0 failed; L1 `--doi --tu 24271a8a` PASS; một L3 duy nhất (`47321f95`) đỏ vì trạng thái ngoài mã, đã khép bằng `--doi --tu`.
