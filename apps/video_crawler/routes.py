@@ -47,9 +47,10 @@ def _nguoi(request: Request):
 
 
 def _bang_gia() -> list:
-    """Bậc giá ước tính cho UI — một nguồn: `gia.bang()`."""
+    """Bậc giá cho UI — một nguồn `gia.bang()` (giây) đổi sang phút cho template (kiểm GUI W1)."""
     from apps.video_crawler import gia
-    return list(gia.bang())
+    return [{"tu_phut": b["tu_s"] // 60, "den_phut": b["den_s"] // 60, "credit": b["gia"]}
+            for b in gia.bang()]
 
 
 def _phap_ly() -> dict:

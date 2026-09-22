@@ -92,3 +92,12 @@ def test_thoi_luong_la_bi_bo_khong_vo(sai):
     p = features.dung_params_tai(owner_id="u1", nen_tang="youtube",
                                  muc=[{"id": "a" * 11, "thoi_luong_s": sai}], phan_giai=_DNS)
     assert p["muc"][0].get("thoi_luong_s") is None
+
+
+def test_bang_gia_cho_giao_dien_khop_gia_bang():
+    """Kiểm GUI W1: `gia.bang()` trả giây ({tu_s, den_s, gia}) còn template đọc phút ({tu_phut, den_phut, credit})
+    ⇒ bảng hiện 'over min' không số. Unit test hai làn đều xanh vì không làn nào kiểm chỗ ghép."""
+    from apps.video_crawler import gia, routes
+    bang = routes._bang_gia()
+    assert [(b["tu_phut"], b["den_phut"], b["credit"]) for b in bang] == [(0, 10, 3), (10, 30, 6), (30, 60, 10), (60, 180, 15)]
+    assert [b["credit"] for b in bang] == [b["gia"] for b in gia.bang()]
