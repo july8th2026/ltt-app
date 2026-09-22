@@ -7,7 +7,7 @@
 |---|---|---|---|---|---|
 | F-01 | cao | Phân vai (pyannote, GPU) chạy ở mọi lần AUTO_MATCH, kết quả `nguoi_noi` không ai đọc | `giai_doan_chep_loi.can_phan_vai` | L-A | **ĐÃ SỬA** — rút khỏi đường sản phẩm + bề mặt liên-app |
 | F-02 | cao | `rang_giong` không lọc giọng theo làn ngôn ngữ đích | `rang_giong._rang_tu_khop` | L-A | **ĐÃ SỬA** — lọc theo `ngon_ngu_dich` của lần chạy; giọng mẫu lệch làn bị từ chối ở cửa; giọng khách đưa lời khai làn cho `ltt_voice` chốt |
-| F-03 | cao | Kho giọng mẫu LTT Voice có **0 giọng làn `en`** (20/20 `vi`) ⇒ đích `en` + AUTO_MATCH luôn `CHUA_RANG` | `apps/ltt_voice/giong_mau.py` | L-V (mới) | MỞ — cần giọng mẫu `en` có giấy phép sạch (clip tham chiếu CC BY/CC0) |
+| F-03 | cao | ASV chỉ khớp 20 giọng mẫu engine (đều `vi`), bỏ qua **17 giọng `en` đã có** trong kho giọng dùng chung | `rang_giong._rang_tu_khop` | giong-en | **ĐÃ SỬA mã** `c871e36b` — ⚠️ còn CHỜ CHỦ DỰ ÁN: cột `gioi` trống ở cả 25 giọng kho chung ⇒ AUTO_MATCH `en` vẫn `CHUA_RANG` trên production tới khi được duyệt điền (16/17, trừ Robin) |
 | F-04 | cao | Không có phép chốt ngôn ngữ nguồn: video ngoài hợp đồng (vd. tiếng Nhật) chạy tiếp tới LLM + giọng | `giai_doan_chep_loi.chay` | L-A | **ĐÃ SỬA** — `ngon_ngu.kiem_nguon_da_doan` ngay sau ASR |
 | F-05 | cao | Lời nhắc hiểu cảnh ghi cứng "video tiếng Việt" (sai với mọi nguồn zh/en) | `hieu_canh.py` | L-A | **ĐÃ SỬA** — `PHIEN_BAN_HIEU_CANH` 2→3, `HO_SO` 1→2 |
 | F-06 | trung | Khoá cache chung của TRANSCRIBE thiếu ngôn ngữ đích ⇒ dùng lại chéo đích bỏ qua phép chốt F-04 | `cache_chung.dau_vao_noi_dung` | L-A | **ĐÃ SỬA** |
