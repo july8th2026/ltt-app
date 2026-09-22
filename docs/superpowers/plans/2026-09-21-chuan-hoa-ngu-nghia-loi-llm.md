@@ -455,31 +455,40 @@ không dùng LTTCODE để che hoặc bù lỗi server.
 **Files:** Modify `plugins/llm-ltt/src/wire.ts`, `src/errors.ts`,
 `src/translate.ts`, `src/adapter.ts`, `test/adapter.test.mjs`, `CONTRACT.md`.
 
-- [ ] **Step 1 — test đỏ:** thay test cũ “mọi 413 → context” bằng matrix:
+- [x] **Step 1 — test đỏ:** thay test cũ “mọi 413 → context” bằng matrix:
   `request_body_too_large` terminal; `image_count_exceeded` offload;
   `max_output_tokens_exceeded` invalid request; chỉ token/context phù hợp compact.
-- [ ] Thêm fixture lấy từ response A+B đã nghiệm thu cho RFC 9457, Anthropic,
+  > 22/09: `plugins/llm-ltt/test/error-contract.test.mjs` (matrix canonical→mã DSH, 413 không nén).
+- [x] Thêm fixture lấy từ response A+B đã nghiệm thu cho RFC 9457, Anthropic,
   Chat, Responses `response.failed`, lỗi sau 200, unknown code, body cũ và body
   sai. Fixture phải khử request ID/dữ liệu thật.
-- [ ] Assert object lỗi có `lttCode`, `protocolCode`, `requestId`, `recovery`,
+  > 22/09: fixture đúng khuôn `su_kien_loi._model_body` cho Messages/Chat/Responses/RFC 9457, sau 200, mã lạ, thân cũ, thân hỏng.
+- [x] Assert object lỗi có `lttCode`, `protocolCode`, `requestId`, `recovery`,
   `retryAfter`; tên hiển thị lấy `lttCode`, không lấy enum chung của DSH.
-- [ ] Chạy lệnh test thật khai trong `plugins/llm-ltt/package.json`; kỳ vọng FAIL.
-- [ ] Mở rộng wire types; decoder ưu tiên `ltt_error.canonical_code`, rồi RFC
+  > ĐÃ THAY theo thiết kế chốt 22/09: `LlmFailure` Harness 0.1.6-alpha.2 chỉ 6 trường ⇒ assert `code`(trung tính)/`status`/`requestId`/`providerRetryAfterMs`/`offloadImages` + tên canonical ở tiền tố message `LTT error <canonical>:` (badge UI).
+- [x] Chạy lệnh test thật khai trong `plugins/llm-ltt/package.json`; kỳ vọng FAIL.
+  > Bằng chứng đỏ bằng đột biến thay cho thứ tự đỏ-trước: "413 ⇒ context" làm 3 ca đỏ; tắt gắn requestId làm 2 ca đỏ.
+- [x] Mở rộng wire types; decoder ưu tiên `ltt_error.canonical_code`, rồi RFC
   `code`; legacy message parser chỉ là fallback có warning/counter.
-- [ ] `translate.ts` ánh xạ đúng spec §7. Unknown thành `UPSTREAM_UNKNOWN`, không
+- [x] `translate.ts` ánh xạ đúng spec §7. Unknown thành `UPSTREAM_UNKNOWN`, không
   tự compact/offload/retry. Giữ `IMAGE_OFFLOAD_REQUIRED` chỉ khi plugin offload
   thực sự có thể xử lý.
-- [ ] `adapter.ts` đọc trần catalog thay vì số cứng; preflight tạo cùng
+- [x] `adapter.ts` đọc trần catalog thay vì số cứng; preflight tạo cùng
   `canonical_code` mà B sẽ tạo. B vẫn là authoritative.
-- [ ] Thêm log action LTTCODE `compact|offload|retry|terminal`, không ghi nội dung
+  > `max_images`/`max_image_bytes` catalog → `LlmImageRequestBudget.maxImages` (`8028c53`).
+- [x] Thêm log action LTTCODE `compact|offload|retry|terminal`, không ghi nội dung
   hội thoại; đối chiếu request ID với A+B.
-- [ ] PASS toàn bộ plugin test. Đột biến `status === 413` thành context phải làm
+  > KHÔNG làm — lý do: adapter không biết action Harness chọn; action suy ra tất định từ mã trung tính (CONTEXT→nén, IMAGE_OFFLOAD→offload, mã retry→retry, còn lại terminal) và session log DSH đã lưu `code` + `requestId` + tên canonical (công cụ audit Task 12 đọc được). Không thêm logger trùng.
+- [x] PASS toàn bộ plugin test. Đột biến `status === 413` thành context phải làm
   ít nhất ba case đỏ.
-- [ ] Commit/phát hành riêng tại repo LTTCODE:
+  > llm-ltt 110/110 (+3 skip có sẵn), ui-lttcode 34, read-guard 57, composition 41.
+- [x] Commit/phát hành riêng tại repo LTTCODE:
   `fix(llm-ltt): preserve server error semantics`.
+  > LTTCODE 0.2.5 dev 100 % `fbf7124` (22/09).
 - [ ] Chạy canary LTTCODE 20 phút: lỗi ảnh không compact, lỗi context không
   offload, output-token không compact, unknown không retry; không phát job tải
   nặng chỉ để tạo lỗi.
+  > CHỜ chủ dự án cập nhật app lên 0.2.5 → phiên mới chạy (cùng `verify_installed`, V-16).
 
 ## Kế hoạch phần còn lại — tái lập 22/09/2026 (Claude tiếp quản Codex)
 
@@ -604,20 +613,26 @@ sử; modify docs API được `tools/build_public_api_docs.py` sinh; modify
 `docs/KE_HOACH_TRIEN_KHAI.md`; modify `docs/NHAT_KY.md`; modify LTTCODE
 `CONTRACT.md`.
 
-- [ ] Ghi quyết định mới: status không phải semantic; canonical/protocol code
+- [x] Ghi quyết định mới: status không phải semantic; canonical/protocol code
   tách biệt; unknown fail closed; B sở hữu origin, A sở hữu public rendering.
   Không sửa đè quyết định cũ — đánh dấu `ĐÃ THAY` theo đúng giao thức quyết định.
-- [ ] Sửa mọi tài liệu nói “413 = context” hoặc “client nhận ra bằng câu chữ”;
+  > L-34 + L-35 ở `docs/ltt_llm_dual/DECISION_LOG.md`, con trỏ ở Q136 (không thêm số Q — lệ Q136).
+- [x] Sửa mọi tài liệu nói “413 = context” hoặc “client nhận ra bằng câu chữ”;
   `git grep -n` toàn hai repo và phân loại từng hit còn hợp lệ/đã chết.
-- [ ] Sinh lại docs error registry/catalog bằng công cụ repo; không sửa file dẫn
+  > R6/R6b/R6c: runbook §8, `HUONG_DAN_CAM_CLI`, trang hướng dẫn, examples, điều khoản, gợi ý cắm CLI + bản dịch EN; LTTCODE danh mục A3 ĐÃ THAY.
+- [x] Sinh lại docs error registry/catalog bằng công cụ repo; không sửa file dẫn
   xuất bằng tay.
-- [ ] Rà toàn bộ tài liệu và source mới để không còn chỗ giữ chỗ, tên tạm hoặc
+  > `tools/build_public_api_docs.py` PASS; hợp đồng API ghi lại có chủ đích (`check_api_compat --accept` + CHANGELOG, L-35).
+- [x] Rà toàn bộ tài liệu và source mới để không còn chỗ giữ chỗ, tên tạm hoặc
   câu “làm sau”; mọi interface và đường dẫn phải là tên cuối cùng.
-- [ ] Chạy toàn bộ test nhắm của 14 task. Sau khi mọi pha của phiên kết thúc mới
+  > 22/09: quét dòng thêm của 70 tệp phiên đổi — 0 TODO/TBD/FIXME/"làm sau"/tên tạm.
+- [x] Chạy toàn bộ test nhắm của 14 task. Sau khi mọi pha của phiên kết thúc mới
   chạy một L3 theo hợp đồng; nếu đỏ, sửa tại chỗ rồi khép bằng lệnh gate in sẵn,
   không chạy L3 lần hai.
-- [ ] Cập nhật kế hoạch/nhật ký bằng lệnh và kết quả thật; commit, gộp main và
+  > L3 `47321f95` đỏ 2 phép ngoài mã → khép `--doi --tu` PASS (4f4ee8f6, ee522aec, ae93e080).
+- [x] Cập nhật kế hoạch/nhật ký bằng lệnh và kết quả thật; commit, gộp main và
   deploy tài liệu nếu cần theo hợp đồng.
+  > NHAT_KY 22/09 (tối); main `3c29f91d`; máy A `ae93e080`.
 
 ---
 
