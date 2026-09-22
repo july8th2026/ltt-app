@@ -176,7 +176,7 @@ def rang(db, *, owner_id: str, yeu_cau: YeuCau) -> KetQua:
     if yeu_cau.che_do == CHE_DO_GIONG_TU_CHON:
         return _rang_khach_chon(db, owner_id=owner_id, giong_id=yeu_cau.giong_id,
                                 ngon_ngu_dich=yeu_cau.ngon_ngu_dich)
-    return _rang_tu_khop(yeu_cau.dac_diem, yeu_cau.ngon_ngu_dich)
+    return _rang_tu_khop(yeu_cau.dac_diem, yeu_cau.ngon_ngu_dich, db=db)
 
 
 def _rang_khach_chon(db, *, owner_id: str, giong_id: str,
@@ -205,8 +205,15 @@ def _rang_khach_chon(db, *, owner_id: str, giong_id: str,
 
 
 def _rang_tu_khop(dac_diem: DacDiemMongMuon,
-                  ngon_ngu_dich: str = ngon_ngu.DICH_MAC_DINH) -> KetQua:
-    """`AUTO_MATCH`. Thieu dac diem => CHUA_RANG, khong phai giong mac dinh."""
+                  ngon_ngu_dich: str = ngon_ngu.DICH_MAC_DINH,
+                  *, db=None) -> KetQua:
+    """`AUTO_MATCH`. Thieu dac diem => CHUA_RANG, khong phai giong mac dinh.
+
+    Hai tang, theo thu tu:
+      1. giong MAU cua lan dich (`giong_mau.loc`) — y nguyen truoc 22/09;
+      2. **chi khi lan dich KHONG co mot giong mau nao** (hom nay: `en`) —
+         kho CHUNG cua LTT Voice (`_rang_kho_chung`). Xem docstring ham do.
+    """
     if not dac_diem.co_du_de_khop:
         # 🔴 Day la ca diem cua pha nay. Xem docstring dau tep.
         return KetQua(CHUA_RANG, can_cu={"ly_do": "chua co ho so noi dung"})
@@ -216,6 +223,11 @@ def _rang_tu_khop(dac_diem: DacDiemMongMuon,
     # 🔑 Lan lay tu DICH cua lan chay, khong go cung `"vi"` (TRANG_THAI_V6 no).
     ung_vien = loc(gioi=dac_diem.gioi, vung=dac_diem.vung,
                    phong_cach=dac_diem.phong_cach, ngon_ngu=ngon_ngu_dich)
+    if not ung_vien and not loc(ngon_ngu=ngon_ngu_dich):
+        # ⭐ Lan nay giong mau KHONG phu (khong phai "phu ma khong khop"). Chi
+        #    khi do moi xuong kho chung — nen duong `vi` giu nguyen tung ket
+        #    qua da nghiem thu (`ngon_ngu.CUM` cung mot luat).
+        return _rang_kho_chung(db, dac_diem, ngon_ngu_dich)
     if not ung_vien:
         # ⚠️ Khong ung vien nao thi cung la CHUA_RANG, khong phai "lay dai mot
         #    cai". Noi long dieu kien la viec cua tang tren — no biet mat nao
@@ -230,10 +242,82 @@ def _rang_tu_khop(dac_diem: DacDiemMongMuon,
     #    ra cung mot giong, neu khong van tay nhay va cache truot vo co.
     chon = sorted(ung_vien, key=lambda g: g.ma)[0]
     return KetQua(DA_RANG, chon.ma, NGUON_TU_KHOP, {
-        "loai": "giong_mau",
+        "loai": LOAI_GIONG_MAU,
         "so_ung_vien": len(ung_vien),
         "dac_diem": {"gioi": dac_diem.gioi, "vung": dac_diem.vung,
                      "phong_cach": dac_diem.phong_cach}})
+
+
+#: Nguon ung vien trong `can_cu["loai"]` — hoa don / man ho tro doc no.
+LOAI_GIONG_MAU = "giong_mau"
+LOAI_KHO_CHUNG = "giong_kho_chung"
+
+#: 🔑 Thu tu UU TIEN trong kho chung, THEO SO DO — khong phai theo cam tinh.
+#:
+#:    `docs/auto_scan_video_final/L_GIONG_EN.md` do ca 17 giong kho chung lan
+#:    `en` tren may sinh tieng THAT (cung mot kich ban thuyet minh, CER/WER bang
+#:    faster-whisper large-v3 + jiwer, do to EBU R128). 15/17 CER = 0, nen
+#:    phan dinh bang nhip gan ~156 tu/phut (`ngon_ngu.CUM`) + du dinh; mot moi gioi.
+#:
+#: ⭐ `public_id` cua LTT Voice "khong bao gio doi" (`tables.VoiceProfile`),
+#:    nen ghim no la ghim mot danh tinh, khong phai mot vi tri trong bang.
+#: ⚠️ Giong nao KHONG con la ung vien (bi tat, bi rut khoi kho chung, license
+#:    doi) thi don gian khong co mat — thu tu roi ve `public_id`, van tat dinh.
+#: ⛔ Day KHONG phai "giong mac dinh": no chi SAP cac ung vien DA khop lan +
+#:    gioi. Khong khop gioi thi khong bao gio duoc chon.
+UU_TIEN_KHO_CHUNG: tuple[str, ...] = (
+    "vc_1b65a9e636a54ab59c6a69b8046d3d0a",  # Douglas — nam, thuyet minh
+    "vc_a55b2ad1646349469d5c5a39d4d20dc0",  # Clara — nu, thuyet minh
+)
+
+
+def _rang_kho_chung(db, dac_diem: DacDiemMongMuon, ngon_ngu_dich: str) -> KetQua:
+    """Tang 2 cua `AUTO_MATCH`: kho CHUNG cua LTT Voice, cho lan giong mau
+    khong phu (asv-final F-03 — 20/20 preset la `vi`, dich `en` khong co ai).
+
+    🔑 Doc qua `tham_chieu.ung_vien_kho_chung` — be mat KHAI cua LTT Voice. Ham
+       do da qua cong license U-05, da bo giong khong `active` va giong chua ro
+       gioi. Chi giong DA o kho chung (khach da thay trong bo chon) moi toi day;
+       ASV khong mo them giong nao cho ai.
+
+    🔴 **GIOI la mat DUY NHAT kho chung khai** (`VoiceProfile.gioi`). `vung` la
+       giong vung mien tieng Viet; `phong_cach` khong phai mot cot cua giong
+       nhan ban. Nen:
+         · thieu `gioi` => CHUA_RANG. Khop "ca lan" roi lay cai dau la dung
+           giong mac dinh doi ten ma D-V4-04 cam;
+         · `vung`/`phong_cach` KHONG rang buoc duoc, va ta GHI ra la da bo qua
+           (`mat_khong_ap_dung`) thay vi im lang gia vo da khop.
+
+    ⛔ Khong phien CSDL (`db is None`) => CHUA_RANG, khong phai "bo qua tang 2
+       roi coi nhu da xet". Duong that luon co `db` (`giai_doan_noi_dung`).
+    """
+    dd = {"gioi": dac_diem.gioi, "vung": dac_diem.vung,
+          "phong_cach": dac_diem.phong_cach}
+    if not dac_diem.gioi:
+        return KetQua(CHUA_RANG, can_cu={
+            "ly_do": "kho chung chi khai gioi — can gioi de khop",
+            "ngon_ngu": ngon_ngu_dich, "dac_diem": dd})
+    if db is None:
+        return KetQua(CHUA_RANG, can_cu={
+            "ly_do": "khong co phien CSDL de doc kho chung",
+            "ngon_ngu": ngon_ngu_dich, "dac_diem": dd})
+
+    from apps.ltt_voice.tham_chieu import ung_vien_kho_chung
+
+    cac = [u for u in ung_vien_kho_chung(db)
+           if u.ngon_ngu == ngon_ngu_dich and u.gioi == dac_diem.gioi]
+    if not cac:
+        return KetQua(CHUA_RANG, can_cu={
+            "ly_do": "khong giong nao khop", "nguon": LOAI_KHO_CHUNG,
+            "ngon_ngu": ngon_ngu_dich, "dac_diem": dd})
+
+    hang = {ma: i for i, ma in enumerate(UU_TIEN_KHO_CHUNG)}
+    chon = sorted(cac, key=lambda u: (hang.get(u.ma, len(hang)), u.ma))[0]
+    return KetQua(DA_RANG, chon.ma, NGUON_TU_KHOP, {
+        "loai": LOAI_KHO_CHUNG,
+        "so_ung_vien": len(cac),
+        "dac_diem": dd,
+        "mat_khong_ap_dung": [m for m in ("vung", "phong_cach") if dd[m]]})
 
 
 def kiem_o_cua(db, *, owner_id: str, che_do: str, giong_id: str,

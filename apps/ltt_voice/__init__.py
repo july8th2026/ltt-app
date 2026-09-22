@@ -67,6 +67,14 @@ BE_MAT_CONG_KHAI = {
     ("apps.ltt_voice.giong_mau", "NHAN_GIOI"),
     ("apps.ltt_voice.giong_mau", "NHAN_VUNG"),
     ("apps.ltt_voice.giong_mau", "NHAN_PHONG_CACH"),
+    # 🔑 Kho CHUNG cho làn mà giọng mẫu không phủ (asv-final F-03, 22/09):
+    #    20/20 preset là làn `vi`, nên đích `en` của `AUTO_MATCH` chỉ còn kho
+    #    chung để khớp vào. Hàm này ĐÃ đi qua cổng license U-05
+    #    (`_dieu_kien_kho_chung`), đã bỏ giọng không `active` và giọng chưa rõ
+    #    giới, và đã sắp tất định — ba việc app khác không được viết lại.
+    # ⚠️ CHỈ ĐỌC, và chỉ ĐỌC giọng ĐÃ ở kho chung (khách đã thấy). Không mở
+    #    thêm giọng nào cho ai; dùng giọng vẫn phải qua `giai_giong`.
+    ("apps.ltt_voice.tham_chieu", "ung_vien_kho_chung"),
 
     # ── Nghe thử TRƯỚC KHI chọn (Auto Scan Video V5) ────────────────────────
     #

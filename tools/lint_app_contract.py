@@ -240,6 +240,13 @@ APP_DUOC_DUNG_APP: dict = {
         ("apps.ltt_voice.giong_mau", "NHAN_GIOI"),
         ("apps.ltt_voice.giong_mau", "NHAN_VUNG"),
         ("apps.ltt_voice.giong_mau", "NHAN_PHONG_CACH"),
+        # ── asv-final F-03: kho CHUNG cho lan giong mau khong phu (`en`) ────
+        #
+        # 🔑 20/20 preset la lan `vi` => dich `en` cua AUTO_MATCH khong con gi
+        #    de khop. Ham nay da qua cong license U-05, da bo giong khong
+        #    `active`/chua ro gioi, va sap tat dinh. Chi DOC giong DA o kho
+        #    chung; dung giong van phai qua `giai_giong`.
+        ("apps.ltt_voice.tham_chieu", "ung_vien_kho_chung"),
         # ── V5 cua Auto Scan: nghe thu giong TRUOC khi chon ─────────────────
         #
         # 🔑 Man chon giong cua Auto Scan hoi dung cau `nghe_thu.py` mo dau:
