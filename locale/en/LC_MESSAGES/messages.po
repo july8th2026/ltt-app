@@ -19425,6 +19425,18 @@ msgstr "The matcher on PreToolUse/PostToolUse matches the TOOL NAME (pwsh, write
 msgid "Lệnh hook chạy bằng PowerShell. Nếu hook gọi chương trình ngoài (node, python, git…) thì mã thoát của chương trình đó KHÔNG tự thành mã thoát của hook: phải kết thúc bằng ; exit $LASTEXITCODE, nếu không exit 2 bị nuốt và hook không chặn."
 msgstr "Hook commands run through PowerShell. If a hook calls an external program (node, python, git…), that program's exit code does NOT automatically become the hook's exit code: the command has to end with ; exit $LASTEXITCODE, otherwise exit 2 is swallowed and the hook does not block."
 
+msgid "Hệ phiên âm"
+msgstr "Transcription engine"
+
+msgid "Không đọc được thời lượng tệp âm thanh — tệp hỏng hoặc sai định dạng."
+msgstr "Could not read the duration of the audio file — the file is damaged or in an unsupported format."
+
+msgid "LTT chuẩn"
+msgstr "LTT standard"
+
+msgid "Whisper large-v3 + quy tắc LTT (hệ gốc, mặc định)"
+msgstr "Whisper large-v3 + LTT rules (original engine, default)"
+
 # Docs413 22/09: vuot tran ngu canh cong khai la 400 context_window_exceeded
 # (Responses stream: response.failed), khong con la 413 -- tests/test_1480.
 # Chuoi 413 cu (dieu_khoan.py, huong_dan.html) da doi noi dung nguon; ban dich
@@ -19438,3 +19450,6 @@ msgstr "If you get rejected for going over the context limit mid-conversation"
 
 msgid "Vượt trần thì bạn nhận mã 400 (context_window_exceeded) kèm đúng con số đã áp cho model bạn gọi — cửa Responses dạng stream báo bằng sự kiện response.failed thay vì đóng kết nối lặng lẽ. Chúng tôi KHÔNG bao giờ lặng lẽ cắt bớt lượt cũ: cắt đi thì thứ mất đầu tiên là chỉ dẫn hệ thống và kết quả tool, và bạn sẽ không biết là mình đã mất."
 msgstr "Go over the limit and you get a 400 (context_window_exceeded) carrying the number that actually applied to the model you called — a streaming Responses call instead reports it with a response.failed event instead of closing silently. We NEVER silently drop older turns: the first things to go would be your system instructions and your tool results, and you would have no way to know they were gone."
+
+msgid "Cần tài khoản người dùng để dùng credit."
+msgstr "A user account is needed to spend credits."

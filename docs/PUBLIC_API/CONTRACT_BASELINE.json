@@ -514,6 +514,16 @@
         "jobs:create"
       ]
     },
+    "transcript.run": {
+      "aliases": [],
+      "contract_hash": "efabeaa63a584c85",
+      "deprecated": "",
+      "execution_mode": "ASYNC_JOB",
+      "models": [],
+      "required_scopes": [
+        "jobs:create"
+      ]
+    },
     "video.generate": {
       "aliases": [],
       "contract_hash": "862ceb0dd1589af9",

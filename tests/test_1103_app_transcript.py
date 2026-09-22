@@ -45,16 +45,42 @@ def test_manifest_khai_dung_nhung_gi_nen_tang_doc() -> None:
     assert MANIFEST.requires == ("gpu",)
 
 
-def test_bon_cong_deu_DONG_o_V1() -> None:
-    """`public`/`lifecycle`/`api_exposed` đóng là CHỦ Ý, không phải quên.
+def test_bon_cong_MO_sau_doi_soat_quy_tac_legacy() -> None:
+    """Mở 22/09/2026 (chủ dự án chốt): quy tắc đã đối soát với `bot_transcript`
+    (`tests/test_1114_*`), giá đo từ tệp, E2E qua worker. Giá trong mô tả API phải
+    khớp `gia.py` — một con số chỉ ở chuỗi là hai nguồn cho một giá."""
+    from apps.transcript import gia
 
-    Mở một cổng khi parity chưa đóng là mời khách vào một App chưa chứng minh
-    được nó làm đúng việc của bản cũ.
-    """
-    assert MANIFEST.public is False
-    assert MANIFEST.lifecycle == "development"
-    assert _tool().api_exposed is False
-    assert _tool().api_contract == {}
+    assert MANIFEST.public is True
+    assert MANIFEST.lifecycle == "released"
+    assert _tool().customer_visible is True
+    assert _tool().api_exposed is True
+    hop_dong = _tool().api_contract
+    assert hop_dong["hidden"] == ("duration_s",)
+    assert f"{gia.CREDIT_PER_MINUTE} credits per started minute" in hop_dong["description"]
+    assert _tool().params_schema["duration_s"]["measured_from"] == "audio"
+
+
+def test_gia_theo_phut_audio_lam_tron_len_toi_thieu_1() -> None:
+    from apps.transcript import gia
+
+    assert gia.uoc_luong_credit(0) == 1
+    assert gia.uoc_luong_credit(30) == 1        # 0.5 phút × 2 = 1
+    assert gia.uoc_luong_credit(61) == 3        # 1.02 phút × 2 = 2.03 -> 3
+    assert gia.uoc_luong_credit(357.5) == 12
+    assert MANIFEST.credit_cost({"duration_s": 357.5}) == 12
+
+
+def test_quyet_toan_KHONG_vuot_phan_da_giu(monkeypatch) -> None:
+    """Q84: khách không trả hơn phần đã giữ ở báo giá."""
+    from platform_core import credit
+
+    monkeypatch.setattr(credit, "so_da_giu", lambda db, job_id: 4)
+    monkeypatch.setattr("platform_core.db.get_session",
+                        lambda: iter([type("Db", (), {"close": lambda self: None})()]))
+    assert app_jobs._quyet_toan("job-1", 357.5) == 4      # giá thật 12 > giữ 4
+    assert app_jobs._quyet_toan("job-1", 30) == 1         # giá thật 1 < giữ 4
+    assert app_jobs._quyet_toan("", 357.5) == 12          # không có job => giá thật
 
 
 def test_toolspec_va_manifest_KHONG_the_lech_job_type() -> None:
@@ -103,6 +129,39 @@ def test_app_khong_import_app_khac() -> None:
                 assert d.startswith(("from apps.transcript",
                                      "import apps.transcript")), \
                     f"{tep.name}: {d}"
+
+
+def test_route_dung_USER_ID_khong_dung_email_cho_credit_job_kho() -> None:
+    """E2E thật 22/09: `require_login()` trả EMAIL; dùng nó làm `user_id` thì sổ
+    credit (khoá `User.id`) đọc ra 0 ⇒ mọi khách bị 402. Route phải đi qua
+    `_ma_user()` cho giữ tiền, khoá lưu trữ và kiểm chủ job."""
+    import ast
+
+    from apps.transcript import routes
+
+    goc = ast.parse((GOC / "apps" / "transcript" / "routes.py").read_text(encoding="utf-8"))
+    for n in ast.walk(goc):
+        if isinstance(n, ast.Call) and getattr(n.func, "id", "") == "submit_with_credit":
+            kw = {k.arg: k.value for k in n.keywords}
+            assert isinstance(kw["user_id"], ast.Name) and kw["user_id"].id == "uid"
+    van = (GOC / "apps" / "transcript" / "routes.py").read_text(encoding="utf-8")
+    assert 'f"transcript/{uid}/' in van and 'f"transcript/{user}/' not in van
+
+    class _U:
+        id = "u-123"
+
+    class _Req:
+        pass
+
+    import apps.transcript.routes as r
+    goc_fn = r.user_hien_tai
+    try:
+        r.user_hien_tai = lambda req: _U()
+        assert routes._ma_user(_Req()) == "u-123"
+        r.user_hien_tai = lambda req: None
+        assert routes._ma_user(_Req()) == ""
+    finally:
+        r.user_hien_tai = goc_fn
 
 
 def test_router_khong_tu_viet_prefix() -> None:
@@ -179,10 +238,19 @@ def test_dong_thoi_gian_DOC_DUOC_tu_theo_khoa_cua_service_stt() -> None:
 def test_hai_doan_speech_lien_tiep_trung_noi_dung_bi_TU_CHOI() -> None:
     """Lỗi NỘI DUNG, không phải lỗi hình thức: tệp vẫn hợp lệ, khách vẫn đọc
     được, và câu bị lặp nằm giữa một bản dài."""
-    lap = [{"type": "speech", "start": 0, "end": 1, "text": "Xin  chao"},
-           {"type": "speech", "start": 1, "end": 2, "text": "xin chao"}]
+    lap = [{"type": "speech", "start": 0, "end": 1, "text": "Xin  chao."},
+           {"type": "speech", "start": 1, "end": 2, "text": "Xin chao"}]
     with pytest.raises(phien_am.LoiPhienAm):
         phien_am._kiem_khong_trung_lien_tiep(lap)
+    # Legacy `_normalize_for_dedupe` (bot/worker.py:166-170) KHÔNG hạ chữ:
+    # khác hoa/thường là hai câu khác nhau.
+    phien_am._kiem_khong_trung_lien_tiep(
+        [{"type": "speech", "start": 0, "end": 1, "text": "Xin chao"},
+         {"type": "speech", "start": 1, "end": 2, "text": "xin chao"}])
+    # Speech chữ rỗng là lỗi (legacy `speech_missing_text`).
+    with pytest.raises(phien_am.LoiPhienAm):
+        phien_am._kiem_khong_trung_lien_tiep(
+            [{"type": "speech", "start": 0, "end": 1, "text": " . "}])
 
 
 def test_mot_doan_lang_XEN_GIUA_thi_khong_con_la_trung_lien_tiep() -> None:
@@ -207,7 +275,24 @@ def test_schema_nghiem_ngat_bat_dung_nam_ca(doan, vi_sao) -> None:
 
 def test_schema_hop_le_thi_KHONG_nem() -> None:
     phien_am._kiem_schema_nghiem_ngat(
-        [{"type": "speech", "start": 0.0, "end": 3.5, "text": "xin chao"}])
+        [{"type": "speech", "start": 0.0, "end": 3.5, "text": "xin chao",
+          "scene_id": "S0001", "index": 1}])
+
+
+@pytest.mark.parametrize("hong", [
+    {"words": []},                 # khoá thừa
+    {"end": -1.0},                 # end < start
+    {"text": "   "},               # speech chữ rỗng
+    {"scene_id": ""},              # scene_id rỗng
+    {"index": 0},                  # index <= 0
+])
+def test_schema_nghiem_ngat_DU_LUAT_legacy(hong: dict) -> None:
+    """`bot/worker.py::_validate_output_segments_strict` — bản port đầu bỏ sót
+    năm luật này (đối chiếu 22/09)."""
+    doan = {"type": "speech", "start": 0.0, "end": 3.5, "text": "xin chao",
+            "scene_id": "S0001", "index": 1, **hong}
+    with pytest.raises(phien_am.LoiPhienAm):
+        phien_am._kiem_schema_nghiem_ngat([doan])
 
 
 def test_chieu_schema_ra_DUNG_SAU_khoa_va_KHONG_co_words() -> None:

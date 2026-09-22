@@ -91,22 +91,8 @@
     "server/routes/auth.py": 6,
     "server/routes/register.py": 13,
     "server/templates/_doi_ngon_ngu.html": 1,
-    "server/templates/error.html": 1,
-    "server/templates/forgot_password.html": 5,
-    "server/templates/home.html": 2,
-    "server/templates/jobs.html": 3,
-    "server/templates/login.html": 3,
-    "server/templates/nap.html": 4,
-    "server/templates/nap_don.html": 2,
-    "server/templates/nap_khong_thay.html": 1,
-    "server/templates/nexus_download.html": 13,
-    "server/templates/register.html": 3,
-    "server/templates/register_sent.html": 5,
-    "server/templates/reset_password.html": 4,
-    "server/templates/status.html": 7,
-    "server/templates/verify_result.html": 3,
     "server/templating.py": 6,
     "server/usage_rate_limit.py": 1
   },
-  "tong": 712
+  "tong": 656
 }

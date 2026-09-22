@@ -21,6 +21,17 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-22 — tool mới `transcript.run` (phiên âm có dòng thời gian)
+
+- **Cái gì đổi:** **ADDED** — `POST /api/v1/jobs` với tool `transcript.run`: một tệp
+  âm thanh (upload đã xác nhận) → dòng thời gian `speech`/`silence`, mỗi đoạn đúng sáu
+  khoá `start/end/text/type/scene_id/index`. Tham số `language` (`vi`/`en`/trống = tự
+  nhận), `min_s` (mặc định 1.5), `max_s` (6.0), `include_silence`, `he` (`ltt`).
+  Giá **2 credit / phút audio bắt đầu tính**, tối thiểu 1 — thời lượng do máy chủ đo
+  từ tệp, không nhận từ client.
+- **Phá vỡ tương thích:** không.
+- **Phải làm gì:** không gì, trừ khi muốn dùng tool mới.
+
 ## 2026-09-22 — hạ cửa sổ ngữ cảnh công bố cho khớp token THẬT (L-35, BREAKING)
 
 - **Cái gì đổi:** `context_window`/`model_context_window` công bố cho client

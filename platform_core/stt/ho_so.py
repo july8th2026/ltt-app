@@ -8,7 +8,7 @@ khác nhau**, và khác biệt ấy **quyết định đầu ra**, không phải
 Bốn trong sáu đến từ bốn bot đang migrate, và chúng nằm ở `HO_SO` dưới đây:
 
 ```
-bot_transcript  engine/stt.py:303       word_ts=True   vad_filter=KHONG  beam=1
+bot_transcript  engine/stt.py:303       word_ts=True   vad_filter=KHONG  beam=1 (tu do/en) · 5+best_of 3 (vi)
 bot_pause       engine/stt.py:337       word_ts=True   vad_filter=True   beam=5(vi)/1(en)
 bot_dungvideo   engine/stt.py:48        word_ts=False  vad_filter=True   beam=5
 bot_dungvideo   evaluation/.../whisper  word_ts=False  vad_filter=False  —
@@ -83,6 +83,17 @@ HO_SO: dict[str, dict[str, Any]] = {
         "word_timestamps": True,          # "HARD RULE" trong mã legacy
         "beam_size": 1,
         "best_of": 1,
+        "temperature": 0.0,
+        "condition_on_previous_text": False,
+    },
+    # bot_transcript khi ngôn ngữ là `vi` (ép hoặc lượt thử lại `vi`):
+    # `engine/whisper_integration.py:188-194,289-297` dùng beam_size_vi=5,
+    # best_of_vi=3 (cấu hình đang chạy không đặt khoá ⇒ mặc định mã 5/3), KHÔNG
+    # initial_prompt (`use_initial_prompt` tắt). VAD vẫn ở tầng trên.
+    "moc_tu_vad_ngoai_vi": {
+        "word_timestamps": True,
+        "beam_size": 5,
+        "best_of": 3,
         "temperature": 0.0,
         "condition_on_previous_text": False,
     },

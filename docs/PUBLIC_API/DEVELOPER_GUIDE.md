@@ -722,6 +722,27 @@ Output: `prompt_package` (object), `master_prompt` (string)
 
 Contract hash: `c55834222a3c4a0c`
 
+### `transcript.run`
+
+Transcribe an audio file into a timeline of speech and silence segments with start and end times, in Vietnamese or English. Costs 2 credits per started minute of audio (minimum 1). The duration is measured from the file you upload, not from anything you send.
+
+Execution mode: `ASYNC_JOB`
+
+Scopes: `jobs:create`
+
+Input:
+
+- `audio` — string, **required**, The audio to transcribe, given as the id of an upload you confirmed or of an artifact from an earlier job.
+- `language` — string, max length 8, `vi` or `en`. Leave empty to detect the language automatically.
+- `min_s` — number, min 0.5, max 30.0, default 1.5, Shortest speech segment you want, in seconds. Segments are cut at sentence ends and pauses.
+- `max_s` — number, min 1.0, max 60.0, default 6.0, Longest speech segment you want, in seconds.
+- `include_silence` — boolean, default True, Keep pauses as separate `silence` segments in the timeline.
+- `he` — string, one of `ltt`, default ltt, Transcription engine. `ltt` is the standard engine and the default.
+
+Output: `transcript` (object)
+
+Contract hash: `efabeaa63a584c85`
+
 ### `video.generate`
 
 Generate video from a text prompt, optionally guided by reference media. Valid resolution, duration and aspect ratio depend on the model — see each model's `constraints` in GET /api/v1/models.
