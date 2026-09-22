@@ -481,6 +481,66 @@ không dùng LTTCODE để che hoặc bù lỗi server.
   offload, output-token không compact, unknown không retry; không phát job tải
   nặng chỉ để tạo lỗi.
 
+## Kế hoạch phần còn lại — tái lập 22/09/2026 (Claude tiếp quản Codex)
+
+Nguồn luật: CLAUDE.md dự án (luật 1–3) · `docs/00_LTT_OPERATING_CONTRACT.md` §4, §7, §8 ·
+`docs/QUY_TAC_CHAY_LENH_NANG.md` · `~/.claude/ltt/QUY_TAC_AGENT_VA_TOKEN.md` · `D:\LTTCODEAPP\AGENTS.md`
++ `docs/LTTCODE/RELEASE_RUNBOOK.md`. Bàn giao: `~/.claude/ltt/khoi-phuc-2026-09-22/BAN_GIAO_may-b.md`.
+
+### Trạng thái thật lúc tái lập
+
+| Hạng mục | Trạng thái | Bằng chứng |
+|---|---|---|
+| Task 1–11 (máy A+B) | XONG, đã deploy | `main` `e94dd9a2`; runbook §7 |
+| Task 12a LTTCODE decoder/adapter/UI | XONG trên nhánh | `D:\LTTCODEAPP-025` `bbc0018`, `8028c53`, `b144a9e` |
+| Task 12b P2 LTT-3.5 full quyền | XONG trên nhánh, **chờ chủ dự án duyệt gộp** (auto-mode chặn [Security Weaken]) | `D:\LTTCODEAPP-025-model35` `6a42cb5` |
+| Task 12c PATH-01 / TOOL-01 | đang nghiên cứu nguồn (agent chỉ đọc) | — |
+| Task 12d build 0.2.5 + verify | CHƯA | — |
+| Task 13 gỡ legacy | HOÃN có điều kiện (xem R9) | plan M5 |
+| Task 14 tài liệu + L3 | CHƯA | — |
+| Nhánh `phien/llm-loi-nghia` | 2 commit chưa gộp main (`4567a70d` test/tool, `dc1c281b` docs) | — |
+
+### Ba quy tắc áp cho mọi bước
+
+- **CPU:** lệnh nặng (≥ 3 tệp test, npm test cả gói, build, `release.ps1`) chỉ qua
+  `python "C:\Users\Thang Tuong\.claude\ltt\chay_nang.py" --phien <làn> -- <lệnh>` (khoá `cpu_agent`, `-n` ≤ 6,
+  một lệnh agent một lúc). Gate tự giữ `cpu_nhieu` và tự in `[tai may]`; trước gate chạy `cua_so_yen.py trang-thai`
+  + `tai_may.py`, `QUÁ TẢI` ⇒ chờ. ≤ 2 tệp test chạy thẳng. Không kill app LTTCODE, không kill tiến trình người khác.
+- **Gate:** trong phiên chỉ test nhắm cụm vừa sửa; đỏ ⇒ sửa tại chỗ, chạy lại đúng phép đỏ. Không L2 giữa pha
+  (chủ dự án 22/09), L1 chỉ khi cần deploy giữa phiên. **Một L3** ở R8 trên `phien/llm-loi-nghia` sau khi mọi việc
+  LTTSTUDIOSAPP của phiên xong; đỏ ⇒ sửa + `gate.py --doi --tu <sha L3>`, không L3 lần hai. Không chạy gate để
+  "xác nhận" từng bản sửa. LTTCODE: test nhắm có đối chứng âm + `verify_installed` trên bản cài (AGENTS.md §3).
+- **Agent:** số làn = số việc độc lập, mỗi làn một worktree + nhánh `phien/<plan>-<làn>`, không hai làn sửa cùng tệp;
+  việc cơ học (gộp, chạy test, build, kiểm kê) ⇒ `model: sonnet`; nghiên cứu/thiết kế/bảo mật ⇒ Opus; brief dán
+  đường dẫn QUY_TAC_AGENT_VA_TOKEN.md mục B; báo cáo ≤ 250 từ; điều phối tự gộp + giải xung đột.
+
+### Thứ tự tối ưu (đường găng = LTTCODE 0.2.5)
+
+```
+R1 [chủ dự án] duyệt gộp P2  ─┐
+R2 [agent Opus, chạy] PATH/TOOL nguồn ─┼─> R3 sửa/ghi sổ ─> R4 một đợt test cuối LTTCODE ─> R5 gộp main LTTCODE
+R6 [agent sonnet] tài liệu Task 14 (LTTSTUDIOSAPP)          │                                   │
+                                                            └───────────────> R7 release 0.2.5 dev (nặng, nền)
+R8 L3 một lần (LTTSTUDIOSAPP) ─> gộp main ─> (deploy chỉ khi có mã phục vụ đổi) ─> NHAT_KY
+R9 [chủ dự án] cập nhật app ─> phiên MỚI: verify_installed + 5 kịch bản canary so bảng lỗi 0.2.4
+```
+
+| # | Việc | Ai / cách chạy | Test / gate | Xong khi |
+|---|---|---|---|---|
+| R1 | Gộp `phien/lttcode-025-model35` vào `phien/lttcode-025-error-contract` | chủ dự án duyệt (lệnh sẵn trong báo cáo) | sau gộp: `node --test tools/check_composition.test.mjs` + `npm test` read-guard-ltt (qua chay_nang) — một lượt | xanh, có đối chứng âm (đã có trong 6a42cb5) |
+| R2 | PATH-01 (ghép `D:\X\D:\…`), TOOL-01 (`ok:false` nhưng `isError=false`) | agent Opus chỉ đọc, GitHub MCP | — | mỗi nhóm kết luận a–e có nguồn |
+| R3 | Chỉ sửa nhóm kết luận (a) (lỗi plugin LTT, seam đúng); (b) nhận bản upstream; (c)/(e) ghi `SO_LOI_VAN_HANH` V-13/V-14 + nháp issue; (d) pass | điều phối | test nhắm gói bị sửa | sổ lỗi ghi đủ |
+| R4 | Một đợt test cuối LTTCODE trên cây gộp: llm-ltt `npm test`, ui-lttcode, read-guard-ltt, `check_composition`, typecheck | agent sonnet, tuần tự qua chay_nang | đỏ ⇒ sửa, chạy lại đúng phép đỏ | tất cả xanh |
+| R5 | `STATE.md` + `RELEASE_NOTES_0.2.5.md`; ff `D:\LTTCODEAPP\main`; gỡ worktree -025/-025-model35 (AGENTS.md §9) | điều phối | `git merge-base --is-ancestor` | main sạch |
+| R7 | `pwsh -File tools\release.ps1 -Version 0.2.5 -Channel dev -Rollout 100 -SessionFormat 3 -VerifyUrl https://app.lttstudios.com` | qua chay_nang, chạy nền, đọc kết quả khi xong | release.ps1 tự kiểm chữ ký + endpoint | endpoint dev trả 0.2.5 |
+| R6 | Task 14: QUYET_DINH_NEN_TANG, DECISION_LOG, hậu kiểm AUDIT_API_2026-09-14, docs API sinh bằng `tools/build_public_api_docs.py`, KE_HOACH, `git grep` "413 = context"/"nhận ra bằng câu chữ" cả hai kho | agent sonnet trên `phien/llm-loi-nghia` (trước R8, không ghi khi L3 chạy) | bước tĩnh liên quan | commit |
+| R8 | `python tools\gate.py` (L3) một lần trên `phien/llm-loi-nghia` → khép đỏ → ff `main` → NHAT_KY | điều phối | L3 | xanh / đã khép |
+| R9 | Cập nhật app → `verify_installed.ps1` + 5 kịch bản canary (lỗi ảnh không nén, context không offload, output-token không nén, mã lạ không retry, 3.5 con ghi được) | chủ dự án bấm cập nhật; phiên mới chạy | verify_installed PASS | bảng lỗi sau ≤ trước |
+
+Task 13 (gỡ legacy) **không** thuộc phiên này: vào khi đủ một chu kỳ vận hành có traffic với
+`llm_error_legacy_total=0` và `llm_error_contract_mismatch_total=0` (đọc bằng
+`tools/kiem_hop_dong_loi_llm.py live`), sau khi 0.2.5 đã thay 0.2.4 trên máy dùng.
+
 ### Task 13: Xoá suy diễn cũ sau khi telemetry chứng minh không còn dùng
 
 **Files:** Modify `platform_core/llm/luong_vlm.py`,
