@@ -431,8 +431,13 @@ def test_chi_MOT_cho_trong_app_goi_giu_cho():
     for t in sorted(APP.glob("*.py")):
         cay = _cay(t.name)
         for n in ast.walk(cay):
-            if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) \
-                    and n.func.attr == "giu_cho":
+            # 🔑 So CA CHU THE, khong chi ten ham. `cache_chung.giu_cho` (23/09)
+            #    giu mot KHOA — lease "mot tinh, cac ben kia cho" — va khong
+            #    cham mot dong nao. Bat bien o day la "chi MOT cho giu TIEN".
+            if (isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+                    and n.func.attr == "giu_cho"
+                    and isinstance(n.func.value, ast.Name)
+                    and n.func.value.id == "credit"):
                 cho.append(t.name)
     assert cho == ["features.py"], cho
 

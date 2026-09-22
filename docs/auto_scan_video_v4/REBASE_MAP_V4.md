@@ -66,6 +66,8 @@ two; translation moved after planning), not the parts that were wrong.
 | `giai_doan_qc_do_luong.py` | — | GPU measurement stage (final closure) | **ADD** | RENDER → QC → **qc_do_luong** → QC_AI, routed to `asv_gpu`: final-pass ASR + JiWER WER/CER against the spoken script (replaces the home-made Dice score), SQUIM_OBJECTIVE speech quality (warn-only), pluggable registry so a new measure is one line | final |
 | `tai_len.py` | — | resumable multipart upload (final closure) | **ADD** | R2/S3 multipart with presigned part URLs; resume = ListParts. Owner-scoped, per-part MD5, sliding expiry | final |
 | `routes_tai_len.py` | — | upload HTTP surface (final closure) | **ADD** | start/status/part-ticket/PUT-part/complete/abort; replaces the old single-PUT `/ve` path | final |
+| `nguon_loi.py` | — | transcript source routing (final closure) | **ADD** | embedded subtitle stream → burned-in OCR → ASR, with provenance (`nguon_loi`) and per-segment confidence. Measured on the real Chinese clips: OCR CER 0.003 vs ASR 0.018, so when a hardsub band exists OCR owns BOTH the text and the timing | final |
+| `phu_de_cung.py` | — | hardsub band detection + OCR timeline (final closure) | **ADD** | finds the subtitle band, samples frames, dedupes, cleans UI text; RapidOCR (Apache-2.0 code + weights) on CPU so it never competes with Voice/VLM for the card | final |
 | `gia.py` | 97 | price estimate | **REFACTOR** | `smart_localize` costs differently — scene analysis + VLM added, discarded scenes subtracted | 06, 12 |
 | `loi.py` | 145 | error taxonomy → platform | **EXTEND** | new typed errors for scene/VLM/binding/fit. The boundary-translation design **kept** | |
 | `quan_sat.py` | 142 | run observability | **EXTEND** | per-item timeline; cost explainability | 20 |

@@ -69,6 +69,12 @@ def chuan_che_do(gia_tri) -> str:
     return v if v in CHE_DO_HOP_LE else CHE_DO_MAC_DINH
 
 
+#: Tran thoi gian cho tien trinh con (test_451: MOI loi goi phai co tran —
+#: mot ffprobe treo tren tep hong se giu mot suat worker vo han).
+TRAN_FFPROBE_S = 120
+TRAN_RUT_SRT_S = 300
+
+
 # ── 1. Phu de nhung ─────────────────────────────────────────────────────────
 
 def luong_phu_de(duong_video: str) -> list[dict]:
@@ -76,7 +82,8 @@ def luong_phu_de(duong_video: str) -> list[dict]:
     r = subprocess.run(
         ["ffprobe", "-v", "error", "-select_streams", "s", "-show_entries",
          "stream=index,codec_name:stream_tags=language", "-of", "json", duong_video],
-        capture_output=True, text=True, encoding="utf-8", errors="replace")
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        timeout=TRAN_FFPROBE_S)
     if r.returncode != 0:
         return []
     ra = []
@@ -126,7 +133,8 @@ def doc_phu_de_nhung(duong_video: str, *, ngon_ngu_khai: str = "") -> dict | Non
     r = subprocess.run(
         ["ffmpeg", "-v", "error", "-nostdin", "-i", duong_video,
          "-map", f"0:s:{s['chi_so']}", "-f", "srt", "-"],
-        capture_output=True, text=True, encoding="utf-8", errors="replace")
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        timeout=TRAN_RUT_SRT_S)
     seg = doc_srt(r.stdout) if r.returncode == 0 else []
     if not seg:
         return None

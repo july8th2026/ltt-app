@@ -66,7 +66,10 @@ def test_CHO_CAM_metricx_mot_module_la_du(monkeypatch):
     Co module ⇒ ket qua vao bao cao, khong sua them dong nao o day."""
     nhan = {}
 
-    def do_dich(cap, ngon_ngu_nguon, ngon_ngu_dich, gpu_uuid):
+    # ⛔ Chu ky nay phai giong `metricx.do_dich` THAT: `*` sau `cap`. Mot ban
+    #    gia de dai hon ham that lam phep kiem xanh trong khi cho noi hong.
+    def do_dich(cap, *, ngon_ngu_nguon, ngon_ngu_dich, gpu_uuid="",
+                is_cancelled=None, **_):
         nhan.update(cap=cap, nguon=ngon_ngu_nguon, dich=ngon_ngu_dich, gpu=gpu_uuid)
         return {"s1": 3.25}
 

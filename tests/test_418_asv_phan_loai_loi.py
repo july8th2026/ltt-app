@@ -47,6 +47,7 @@ from apps.auto_scan_video.giai_doan_ban_bien_tap import ThieuChiMuc
 from apps.auto_scan_video.hieu_canh import HieuCanhError
 from apps.auto_scan_video.rang_giong import ChuaRangError, RangGiongError
 from apps.auto_scan_video.ngon_ngu import NgonNguError
+from apps.auto_scan_video.nguon_loi import KhongCoNguon
 from apps.auto_scan_video.su_dung import DaGhiRoi, DoiSoatLech, SuDungError
 from apps.auto_scan_video.thi_hanh import QcChan
 from apps.auto_scan_video.giai_doan_media import ThieuNguon
@@ -220,6 +221,8 @@ BANG = {
     RangGiongError: loi.NGUOI_DUNG,
     #: Cap ngon ngu ngoai hop dong (22/09) — chay lai hong y het.
     NgonNguError: loi.NGUOI_DUNG,
+    #: Ep mot nguon loi ma video khong co (23/09) — chay lai hong y het.
+    KhongCoNguon: loi.NGUOI_DUNG,
     ChuaRangError: loi.NGUOI_DUNG,
     #: ⭐ `CanhError` la `TAM_THOI`: gan nhu luon la mot lan ffmpeg khong
     #:    chay duoc. No cung dung cho "chi muc sai hinh dang" — thu lai vo
