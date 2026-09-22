@@ -109,7 +109,12 @@ class ThieuCredit(LoiCuaLuong):
 
 
 class KhongMoDuoc(LoiCuaLuong):
-    """Không mở được luồng vì lý do khác bận. `qua_dai` = 413 (lỗi của đầu vào)."""
+    """Không mở được luồng vì lý do khác bận. `qua_dai` = lỗi của đầu vào.
+
+    `failure.http_status=413` là status DÂY như máy B phát trong giai đoạn tương
+    thích (spec chuẩn hoá lỗi §3), dùng cho telemetry/phạt key; status công khai do
+    renderer lấy từ registry (`context_window_exceeded` = 400, L-34).
+    """
 
     def __init__(self, ly_do: str = "", *, qua_dai: bool = False,
                  token: Optional[int] = None, tran: Optional[int] = None,
@@ -713,7 +718,8 @@ def _dat_cho(suc, *, lop: str, token_vao_uoc: int, xin_ra: int, so_anh: int = 0,
     ⛔ Lượt đặt chỗ vượt cả pool KV không bao giờ được nhận (phương án C bất biến
        1 — không còn kẹp im lặng). Với khách đó là một yêu cầu QUÁ DÀI cho cấu
        hình hiện tại (ảnh cộng vào vượt cửa sổ, hoặc pool đang bị hạ khẩn cấp):
-       413 trước 200 để client tự nén, không phải chờ hết hạn rồi `overloaded`.
+       lỗi quá dài trước 200 (công khai 400 `context_window_exceeded`) để
+       client tự nén, không phải chờ hết hạn rồi `overloaded`.
     """
     from platform_core.llm import tham_so_da_luot
 
@@ -730,11 +736,12 @@ def _dat_cho(suc, *, lop: str, token_vao_uoc: int, xin_ra: int, so_anh: int = 0,
 def tien_kiem(db, *, user_id: str, tool_name: str, than: dict, duong: str,
               correlation_id: str = "", tien_to: str = "st", cua: str = "stream",
               tim: Optional[Callable[[str], tuple]] = None) -> TienKiem:
-    """Kiểm alias → đầu vào → trần vào (413) → số dư (402) → phòng chờ (429). CHỈ ĐỌC.
+    """Kiểm alias → đầu vào → trần vào (quá dài) → số dư (402) → phòng chờ (429). CHỈ ĐỌC.
 
     Ném `ThamSoSai` / `KhongMoDuoc(qua_dai=True)` / `ThieuCredit` /
     `DangBan(nguon="phong_day")` — cả bốn đều TRƯỚC 200, nên client nhận đúng mã
-    HTTP (Codex/Claude Code dựa vào 413 để tự nén hội thoại).
+    HTTP (quá dài công khai = 400 đúng khuôn từng giao thức — Codex/Claude Code
+    dựa vào khuôn đó để tự nén hội thoại, `server/api/su_kien_loi.py`).
     """
     from platform_core.llm import (luat_nhan, phong_cho, tham_so_da_luot, thanh_toan,
                                    uoc_moi)

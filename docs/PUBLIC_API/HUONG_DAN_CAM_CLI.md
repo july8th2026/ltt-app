@@ -680,7 +680,8 @@ không được ghi nhận thành một lượt nhập form thủ công đã ch�
 | Vẫn hiện model cũ | Apply Changes, thoát hẳn và mở lại; kiểm profile đang áp |
 | Bấm gửi không có request | Allow Chat bật, chọn Chat, Gateway đang có hiệu lực |
 | 429/công suất đang bận | Đợi theo Retry-After; không gửi lặp nhiều cửa sổ |
-| 413/ngữ cảnh quá dài | Cuộc trò chuyện mới hoặc giảm nội dung; không bật 1M |
+| 400 `context_window_exceeded` / "prompt is too long" (ngữ cảnh quá dài) | Cuộc trò chuyện mới hoặc giảm nội dung; không bật 1M |
+| 413 `request_body_too_large` (thân request quá lớn) | Bớt tệp/ảnh đính kèm; đây không phải lỗi ngữ cảnh |
 | Chỉ có suy nghĩ, thiếu câu trả lời | Không giảm ngân sách đầu ra quá nhỏ; suy nghĩ cũng tiêu token |
 
 Không công bố hỗ trợ prompt caching Anthropic, USD theo bảng giá Anthropic, 1M
