@@ -12,6 +12,30 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-22 (tối) — app `video_crawler` ("Cào ngay" từ ViralCrawl): 10 nền, tắt sau cờ `LTT_VIDEO_CRAWLER`
+
+Tiếp quản SUPER PROMPT sau hai phiên LTTCODE hỏng (model lỗi 400, ghi thẳng main, parity ✅ bịa, audit donor chết).
+Rà soát từng hạng mục cũ: không hạng mục mã nào đạt; main đã rút bộ khung (f587f497). Làm lại từ đầu trên nhánh
+`phien/video-crawler` — bàn giao + lý do: `C:\Users\Thang Tuong\.claude\ltt\khoi-phuc-2026-09-22\BAN_GIAO_super-prompt.md`.
+
+- **Tài liệu chứng cứ** `docs/migrations/video_crawler/` (audit donor Viral @ 368f8be có tệp:dòng, ma trận nền, bản đồ
+  API LTT, license, tái sử dụng, parity đo được, truy vết, sổ lỗi). Spec v1.1 + plan v2 (`docs/superpowers/`).
+- **License**: MediaCrawler NON-COMMERCIAL ⇒ không chép; yt-dlp là The Unlicense (kết luận "GPL-3.0" cũ sai).
+- **Kiến trúc**: một app, `requires=("api",)` (KHÔNG ffmpeg — prod chỉ 1 làn gpu+ffmpeg); registry nền trong app;
+  adapter mỏng trên `adapters/_ytdlp.py`; URL tải luôn dựng lại từ id bởi adapter (review BLOCKER: form gửi URL playlist
+  ⇒ tải cả playlist giá 1 credit). Lịch sử/dedup dùng `jobs` (⚠ "không trùng" chỉ nhớ 30 ngày — hạn của `jobs.result`).
+- **Phiên đăng nhập theo user**: bảng `vc_phien` (cookie mã hoá `secretbox`, chỉ cookie đúng tên miền), migration
+  `9c3e5a1d7f20`. **Thay đổi platform_core duy nhất**: một hàng `vc_phien` trong `public_api/governance.py` (test_211 buộc).
+- **Nền bật** (smoke mạng thật trên máy A): YouTube, TikTok, Facebook, Twitter, Weibo, bilibili.tv, Xiaohongshu;
+  Bilibili (HTTP 412 ẩn danh), Instagram (login required), Douyin (fresh cookies) bật nhưng CẦN PHIÊN, chưa nghiệm thu
+  với phiên thật. Tắt: RedNote (yt-dlp#16519), Kuaishou, Honggo. Douyin/XHS tìm kiếm + kênh: DEFER (cần client ký request).
+- **Phụ thuộc mới**: `curl_cffi>=0.10,<0.15` (impersonate cho bilibili.tv/Facebook) — venv prod chưa có.
+- **Kiểm**: test nhắm `tests/test_1900..1919_video_crawler_*` + hợp đồng nền tảng; kiểm GUI trên bản dev cô lập với
+  YouTube thật (xem trước → chọn → tải → artifact `video/mp4` → dedup, ảnh bìa qua proxy allowlist, mobile 375 px).
+- **Tồn / chờ chủ dự án**: bật cờ production; nhập cookies.txt để nghiệm thu nền cần phiên; nối Auto Scan Video
+  (CONTRACT GAP — ASV chỉ nhận upload của chính nó); worker `browser` cho QR login; giá 1 credit/video.
+- `test_211::test_a_decade_of_retention…` đỏ khi chạy RIÊNG (có sẵn trước phiên này — fixture `portal`), ngoài phạm vi.
+
 ## 2026-09-22 (chiều) — VPS: tạo máy bị khoá vì OVH ngừng liệt kê hợp đồng đã ký; phát hành VPS cho mọi người dùng
 
 Chủ dự án tạo máy trên web không được. Log worker: job `dc93967e` (13:07) và `12984237` (16:25) cùng
