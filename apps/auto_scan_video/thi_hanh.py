@@ -28,6 +28,7 @@ import logging
 
 from platform_core.db import get_session
 from platform_core.i18n import _ as _t
+from platform_core.jobs import DangBan
 from platform_core.storage import get_storage
 
 from . import (assets, cache_chung, features, giai_doan_am_thanh, giai_doan_ban_dung,
@@ -246,6 +247,7 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
 
     gen = get_session()
     db = next(gen)
+    giu = None      # lease "mot tinh, cac ben kia cho" (cache_chung.giu_cho)
     try:
         # 🔑 Doc CO PHAM VI CHU SO HUU, ke ca trong worker. `owner_id` den tu
         #    params do chinh dieu phoi ghi ra, khong phai tu client — nhung phep
@@ -291,6 +293,17 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
         kc = cache_chung.khoa(db, run, ten, engine=phien_ban_engine(ten))
         ra = (cache_chung.lay(db, kho, run=run, ten=ten, khoa_chung=kc)
               if int(stage.attempt or 0) <= 1 else None)
+
+        # ── Mot tinh, cac ben kia cho (asv-final L_CACHE_LEASE) ─────────────
+        # 🔑 Lease NEN TANG theo `kc`. Lan chay khac dang tinh dung khoa nay ⇒
+        #    `giu_cho` nem `DangBan` ⇒ worker hoan job ve hang doi (khong ngu
+        #    trong worker, khong tieu luot thu). Gianh duoc ⇒ HOI LAI cache: ben
+        #    kia co the vua cong bo va nha lease giua lan hoi tren va luc gianh.
+        if ra is None and kc and int(stage.attempt or 0) <= 1:
+            giu = cache_chung.giu_cho(kc, holder=_holder_lease(ctx, run_id),
+                                      con_song=_con_song(ctx))
+            if giu is not None:
+                ra = cache_chung.lay(db, kho, run=run, ten=ten, khoa_chung=kc)
 
         # ── Buoc 1: engine ────────────────────────────────────────────────
         if ra is not None:
@@ -381,6 +394,11 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
 
         return {"stage": ten, "fingerprint": vt, "credit_cost": CHI_PHI_GIA,
                 "khoa_asset": khoa_ra}
+    except DangBan:
+        # ⛔ "Ban" KHONG phai hong: khong cham dong `asv_stage` (giu `running` +
+        #    `job_id`), khong dich loi. `job_runner` hoan job, khong tieu luot thu.
+        db.rollback()
+        raise
     except Exception as exc:
         # 🔑 BIEN. Day la cho duy nhat biet ca ngon ngu loi cua engine lan phan
         #    loai cua nen tang, nen phep dich thuoc ve day (xem `loi.py`).
@@ -429,7 +447,25 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
             raise moi from exc
         raise
     finally:
+        # Nha SAU commit ket qua: ben cho hoi lai la thay ngay.
+        if giu is not None:
+            giu.nha()
         db.close()
+
+
+def _holder_lease(ctx, run_id: str) -> str:
+    """Ai giu lease: may + pid + job (hoac run khi goi tay). Truy duoc khi chan doan."""
+    from platform_core import leases
+    job = str(getattr(ctx, "job_id", "") or "") if ctx is not None else ""
+    return f"{leases.holder_id()}:{job or 'run-' + run_id}"
+
+
+def _con_song(ctx):
+    """Nhip lease chi dap khi job chu CHUA bi huy (None = khong co ctx)."""
+    kiem = getattr(ctx, "is_cancelled", None) if ctx is not None else None
+    if not callable(kiem):
+        return None
+    return lambda: not kiem()
 
 
 def _engine_gia(kho, *, run_id: str, owner_id: str, ten: str, van_tay: str) -> dict:
