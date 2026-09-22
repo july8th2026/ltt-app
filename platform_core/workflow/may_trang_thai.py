@@ -61,8 +61,11 @@ NODE_DANG_CHAY = frozenset({"QUEUED", "RUNNING", "WAITING"})
 #:    thấy nó chạy — động cơ không có hook lúc job bắt đầu (spec §5.8).
 NODE_CHUYEN: dict[str, frozenset[str]] = {
     "PENDING": frozenset({"READY", "SKIPPED", "CANCELLED"}),
+    # ⭐ `READY → FAILED`: cầu nối job có thể từ chối một node TRƯỚC KHI nộp job
+    #    (vượt trần báo giá, tham số không giải được) — node chưa từng vào
+    #    `QUEUED` (spec §5.8, Task 9 `cau_noi.nop_job`).
     "READY": frozenset({"QUEUED", "RUNNING", "WAITING", "SKIPPED",
-                        "CANCELLED"}),
+                        "CANCELLED", "FAILED"}),
     "QUEUED": frozenset({"RUNNING", "SUCCEEDED", "FAILED", "ABANDONED",
                          "RETRY_SCHEDULED", "CANCELLED"}),
     "RUNNING": frozenset({"SUCCEEDED", "FAILED", "WAITING", "RETRY_SCHEDULED",
