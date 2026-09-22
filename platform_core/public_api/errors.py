@@ -63,6 +63,7 @@ CODE_QUOTE_INVALID = "quote_invalid"
 CODE_CONCURRENCY_LIMITED = "concurrency_limited"
 CODE_MODEL_NOT_FOUND = "model_not_found"
 CODE_QUOTA_EXCEEDED = "quota_exceeded"
+CODE_WORKFLOW_RUNS_UNAVAILABLE = "workflow_runs_unavailable"
 
 _TITLES = {
     CODE_INVALID_REQUEST: "Invalid request",
@@ -88,6 +89,7 @@ _TITLES = {
     CODE_CONCURRENCY_LIMITED: "Too many concurrent jobs",
     CODE_MODEL_NOT_FOUND: "Model not found",
     CODE_QUOTA_EXCEEDED: "Quota exceeded",
+    CODE_WORKFLOW_RUNS_UNAVAILABLE: "Workflow runs unavailable",
 }
 
 _STATUS_CODES = {
@@ -445,3 +447,18 @@ def quote_expired(detail: object = "") -> ApiError:
 
 def quote_invalid(detail: object = "") -> ApiError:
     return ApiError(400, CODE_QUOTE_INVALID, detail)
+
+
+def feature_unavailable(detail: object = "", **extra) -> ApiError:
+    """501: the route exists but the operation behind it is not wired up yet.
+
+    Deliberately not `service_unavailable` (503, "operational blip, come back
+    soon") and not `not_found` (404, "this route doesn't exist"). A workflow
+    run endpoint that answers 200/201 with an id but never executes anything —
+    the actual state of `WF-802` before the Workflow V2 engine lands — is worse
+    than either: it *looks* like success. 501 is the RFC 9110 reading of "this
+    server does not support the functionality required to fulfill the
+    request", which is the one honest thing to say here, and it is what tells
+    a client not to retry.
+    """
+    return ApiError(501, CODE_WORKFLOW_RUNS_UNAVAILABLE, detail, extra=extra or None)
