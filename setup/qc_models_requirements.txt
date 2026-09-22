@@ -1,0 +1,12 @@
+# QC models venv (C:\LTTPlatform\qc-venv) - Auto Scan Video final QC.
+# Pinned to the same torch build as whisperx-venv (RTX 50xx needs cu128).
+# Install: setup\cai_qc_models.ps1   Licenses: docs\auto_scan_video_final\THIRD_PARTY_METRICS.md
+--extra-index-url https://download.pytorch.org/whl/cu128
+torch==2.8.0+cu128
+torchaudio==2.8.0+cu128
+transformers==4.57.6
+sentencepiece==0.2.1
+safetensors
+numpy<2.6
+soundfile
+jiwer==4.0.0
