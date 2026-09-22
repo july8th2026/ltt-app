@@ -12,6 +12,35 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-22 (tối) — Chuẩn hoá ngữ nghĩa lỗi LLM B→A→LTTCODE xong; 9 lỗi 400 = quá dài; cửa sổ công bố theo token thật (L-34, L-35)
+
+Plan `docs/superpowers/plans/2026-09-21-chuan-hoa-ngu-nghia-loi-llm.md` (Codex 21–22/09, Claude tiếp quản
+22/09 chiều). Máy A+B (Task 1–11) đã deploy trước đó (`f587f497`, `e94dd9a2`; runbook
+`docs/ltt_llm_dual/LOI_MODEL_RUNBOOK.md` §7).
+
+- **Task 12 — LTTCODE 0.2.5 phát dev 100 %** (`D:\LTTCODEAPP` `fbf7124`): decoder đọc `ltt_error` v1,
+  canonical → mã Harness trung tính theo registry retry, bỏ "mọi 413 = context" / "400 không body =
+  INVALID_REQUEST", requestId từ server; LTT-3.5 agent con đủ quyền như 3.8 (chủ dự án duyệt).
+- **Nguyên nhân 9 lỗi `LTT 400 : Bad Request`** trong audit 5 phiên 0.2.4: tiền kiểm "quá dài" của A
+  (`KhongMoDuoc(qua_dai=True)`) tính token ƯỚC cận trên, ≈1,31× (max 1,483×) usage thật trên 1 120 lượt;
+  0.2.4 không đọc được thân lỗi nên không nén ⇒ lỗi dây chuyền. Giả thuyết dangling tool_call #4549 bị bác.
+- **L-35 (chủ dự án chốt (b), bỏ biên 0,92):** `ngan_sach.HE_SO_UOC_TREN_THAT = 1.5`; cửa sổ công bố
+  ltt-3.8 171 458→**124 245**, ltt-3.5 209 141→**151 552**; ngưỡng nén 91 477 / 118 784. Trần tiền kiểm
+  và máy B không đổi. Khách đã cài bằng `cam` cần chạy lại `cam` để nhận số mới.
+- **413 vs 400 của `context_window_exceeded`:** đo — công khai là 400 ở cả ba giao thức (test_1480);
+  `http_status=413` nội bộ là status dây bắt chước B (spec §3), không phải bug. Văn bản công khai còn hứa
+  "413" đã sửa (trang hướng dẫn, examples, điều khoản, gợi ý cắm CLI, bản dịch EN).
+- **Gate:** một L3 (47321f95) đỏ 2/34 — cả hai ngoài mã: thư mục rác `apps/video_crawler` chỉ `.pyc` sót
+  từ lúc rút app (dọn bằng `git clean -X` giới hạn thư mục), `test_362` đọc worktree đang được phiên
+  video-crawler tạo dở (chạy lại 74 passed). Khép `gate.py --doi --tu 47321f95` PASS trên `4f4ee8f6`.
+  Bản ghi `test-results/gates` của lượt L3 biến mất khỏi worktree sau khi chạy — chưa rõ tiến trình nào
+  xoá; lượt khép vẫn ghi được.
+- **Deploy máy A** `4f4ee8f6`: 1 092 tệp lệch 0, `/health/ready` 200; Playwright `/huong-dan`: số mới có,
+  số cũ không, 0 lỗi console. Câu sót "Nếu 413…" ở gợi ý cắm CLI sửa `ee522aec`; hoà main (tài liệu máy B VGA) → khép `--doi --tu ee522aec` PASS → deploy lại `ae93e080` (lệch 0, ready 200, Playwright: câu mới có, câu cũ không, 0 lỗi console). Tin báo deploy tới 4/5 phiên bị giữ chờ người dùng bên đó duyệt rồi hết hạn — hợp đồng "báo, không chờ" vẫn đạt nhưng các phiên đó không biết máy A đã khởi động lại.
+- **Còn mở:** chủ dự án cập nhật app lên 0.2.5 → phiên mới `verify_installed` + canary + V-16
+  (`subagent run was cancelled`); Task 13 gỡ legacy chờ một chu kỳ có traffic với legacy=0,
+  mismatch=0; V-14 nháp issue upstream `dsh-tool-search` (nuốt `isError`) chờ chủ dự án gửi.
+
 ## 2026-09-22 (tối) — Máy B: mod VGA (chỉ xung nhớ) + đánh giá HyperQwen; không đổi mã kho
 
 Chủ dự án hỏi vì sao LTTCODE thấy 3.8 ~34 tok/s, 3.5 ~44 tok/s, và muốn mod card an toàn. Phiên này chỉ đụng
