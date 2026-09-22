@@ -19454,3 +19454,21 @@ msgstr "The video is already in the target language — choose a different targe
 
 msgid "Giọng này đọc {lan}, không đọc được bản {dich}."
 msgstr "This voice reads {lan}; it cannot read a {dich} script."
+
+msgid "Cài đặt có trường lạ: {ds}."
+msgstr "Settings contain unknown fields: {ds}."
+
+msgid "Từ điển tên riêng không đọc được."
+msgstr "The proper-name dictionary could not be read."
+
+msgid "Tệp nguồn của lần chạy cũ không còn."
+msgstr "The source file of the earlier run is no longer available."
+
+msgid "Auto Scan Video chưa mở."
+msgstr "Auto Scan Video is not open yet."
+
+msgid "Thiếu người dùng đang thực hiện."
+msgstr "Missing the acting user."
+
+msgid "Cần đúng một nguồn: upload_id hoặc nguon_run_id."
+msgstr "Exactly one source is required: upload_id or nguon_run_id."
