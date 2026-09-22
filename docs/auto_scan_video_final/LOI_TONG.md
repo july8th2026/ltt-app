@@ -21,7 +21,11 @@
 | M-05 | trung | Không có đo chất lượng hình sau mã hoá lại (VMAF), không có đo chất lượng dịch, không có đo chất lượng tiếng | — | L-B/L-C/L-D | MỞ |
 | F-08 | trung | `expected_size` cua phien tai len la `int4` ⇒ kep o 2 GiB−1; sua that = BigInteger + migration | `platform_core/upload_sessions.py` | tai-len | MỞ |
 | F-09 | trung | Nghia vu ghi cong CC BY 4.0 (SQUIM) chua co cho hien tren san pham | trang Gioi thieu/Giay phep | dieu phoi | MỞ |
-| M-06 | thấp | `tools/do_watermark.py` heuristic tự chế, không app nào gọi (pha 13 đã "để tắt") | `tools/` | L-B | MỞ — xoá hoặc thay |
+| F-10 | trung | `hieu_canh.van_tay_canh` khoá cache cảnh theo `ma_canh`, KHÔNG theo `[bắt,kết]` ⇒ đổi bộ dò cảnh (PySceneDetect) làm `c1` mang mốc khác nhưng vân tay không đổi | `hieu_canh.py` | điều phối | MỞ — lane ky-thuat phát hiện, không sửa (tệp của lane khác) |
+| M-01b | cao | Dice tự chế ĐÃ XOÁ; WER/CER thật thay thế, ngưỡng đo trên 50 đoạn thật | `sua_chua.NGUONG_DOC_SAI` | giong | **ĐÃ ĐÓNG** |
+| M-03b | trung | Cắt cảnh: PySceneDetect ContentDetector(35) F1 0,95 vs 0,73 của `scdet` cũ | `canh.py` | ky-thuat | **ĐÃ ĐÓNG** |
+| M-04b | trung | Khung đen/đóng băng: `blackdetect`+`freezedetect` so với NGUỒN; thêm T17 giải mã cả tệp, T18 VMAF (ngưỡng 75) | `qc.py` | ky-thuat | **ĐÃ ĐÓNG** |
+| M-06 | thấp | `tools/do_watermark.py` heuristic tự chế, không app nào gọi | `tools/` | ky-thuat | **ĐÃ XOÁ** (cùng `test_470`, `PHA13_*.md`) |
 
 ## Độ phủ lượt thật
 

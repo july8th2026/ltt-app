@@ -140,14 +140,36 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                 bam_ra = bam_nguon = ""
 
         if bao:
-            bao(80, _t('Đang kiểm bản ra có hình'))
+            bao(75, _t('Đang kiểm bản ra có hình'))
+        # ── T13 + T17: MOT luot giai ma ban ra, mot luot giai ma nguon ────────
+        #
+        # ⭐ Nguon chi can do khi luong hinh KHONG giong nguon tung bit: o preset
+        #    giu hinh ma bam khop (T3), luong hinh ra CHINH LA luong hinh nguon,
+        #    nen so do cua nguon = so do cua ban ra — giai ma lan hai la tra
+        #    tien cho mot cau tra loi da biet.
+        hinh_ra = hinh_nguon = None
         try:
-            do_sang = qc.do_sang_trung_binh(
+            hinh_ra = qc.do_hinh(
                 duong_ra, thoi_luong=float(tt_ra.get("thoi_luong") or 0.0))
+            if bam_ra and bam_ra == bam_nguon:
+                hinh_nguon = {"den_s": hinh_ra["den_s"],
+                              "dong_s": hinh_ra["dong_s"]}
+            else:
+                hinh_nguon = qc.do_hinh(
+                    duong_nguon,
+                    thoi_luong=float(tt_nguon.get("thoi_luong") or 0.0))
         except Exception as exc:      # noqa: BLE001 - khong do duoc != do ra sai
-            log.warning("qc: khong do duoc do sang (%s: %s)",
+            log.warning("qc: khong do duoc hinh (%s: %s)",
                         type(exc).__name__, exc)
-            do_sang = None
+
+        # ── T18: VMAF — chi preset cat (ma hoa lai) ──────────────────────────
+        vmaf = None
+        if cach == cdr.CAT_MA_HOA_LAI:
+            if bao:
+                bao(85, _t('Đang đo chất lượng hình (VMAF)'))
+            vmaf = _do_vmaf(kho, ban_dung.get("hinh") or {}, thu_muc,
+                            duong_nguon=duong_nguon, duong_ra=duong_ra,
+                            tt_ra=tt_ra)
 
         bao_cao = qc.kiem(
             tt_ra=tt_ra, tt_nguon=tt_nguon, am_luong=am_luong,
@@ -167,7 +189,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             #    chung thanh dung thay vi thanh khac.
             che_do_thoi_gian=cai_dat.doc(run).timing_mode,
             che_do_render=cach, thoi_luong_mong_doi=mong_doi,
-            do_sang=do_sang,
+            hinh_ra=hinh_ra, hinh_nguon=hinh_nguon, vmaf=vmaf,
             # ⭐ V6 pha 27. T14/T15 doc tu day: chinh sach render da khai va
             #    su kien phu de DA CHOT. Khong truyen thi ca hai luon tra
             #    `KHONG_AP_DUNG` — mot phep kiem ton tai ma khong ai di qua,
@@ -191,6 +213,42 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         #    nem. Nho vay mot lan chay hong van de lai bang chung ve VI SAO.
         "_qc_hong": bao_cao["muc_hong"],
     }
+
+
+def _do_vmaf(kho: Storage, hinh: dict, thu_muc: Path, *, duong_nguon: str,
+             duong_ra: str, tt_ra: dict) -> dict:
+    """Dung lai DUNG tep phu cua RENDER (chu, logo, `.ass`) roi do VMAF.
+
+    ⭐ Ba tep phu di cung ba ham `giai_doan_ket_xuat` dung — cung dau vao, cung
+       chuoi loc (`qc.loc_tham_chieu`, `test_2012` chot bang nhau voi render).
+    ⛔ Khong do duoc => `{"loi": ...}` => T18 `khong_kha_dung`; khong lui ve
+       mot uoc luong tu che.
+    """
+    from . import lop_phu as _lp, phu_de as _pd
+    from .giai_doan_ket_xuat import _tai_ve
+
+    try:
+        tm = thu_muc / "vmaf"
+        tm.mkdir(exist_ok=True)
+        duong_chu = _lp.viet_tep_chu(list(hinh.get("lop_phu") or ()), tm)
+        duong_logo = []
+        for i, lg in enumerate(hinh.get("logo") or ()):
+            khoa = str(lg["khoa"])
+            duong_logo.append(_tai_ve(
+                kho, khoa, tm / f"logo{i}{Path(khoa).suffix or '.png'}"))
+        ho_so_pd = hinh.get("phu_de") or None
+        duong_ass = _pd.viet_tep_ass(
+            ho_so_pd, (ho_so_pd or {}).get("su_kien") or [], tm,
+            rong=int(hinh.get("rong_khung") or 0),
+            cao=int(hinh.get("cao_khung") or 0))
+        loc = qc.loc_tham_chieu(hinh, duong_chu=duong_chu, duong_ass=duong_ass)
+        return qc.do_vmaf(duong_nguon=duong_nguon, duong_ra=duong_ra,
+                          loc_hinh=loc, duong_logo=duong_logo,
+                          rong=int(tt_ra.get("rong") or 0),
+                          cao=int(tt_ra.get("cao") or 0), thu_muc=str(tm))
+    except Exception as exc:          # noqa: BLE001 - khong do duoc != do ra sai
+        log.warning("qc: khong do duoc VMAF (%s: %s)", type(exc).__name__, exc)
+        return {"loi": f"{type(exc).__name__}: {exc}"}
 
 
 def _van_tay(kho: Storage, khoa_ra: str, khoa_kh: str) -> str:
