@@ -120,3 +120,16 @@ KHÔNG có Kuaishou, Honggo. ⇒ phần lớn nền = adapter mỏng trên `adap
 
 Registry (`nen_tang.py`) do điều phối sửa khi gộp từng làn (một tệp chung ⇒ không làn nào sửa).
 Mỗi nền chỉ bật (`bat=True`) khi có: adapter + test fake + smoke thật ghi vào SO_LOI.md.
+
+### Trạng thái thật cuối phiên 22/09 (thắng các ô "chờ"/"⏳" ở bảng trên)
+
+| Pha | Trạng thái | Bằng chứng |
+|---|---|---|
+| Móng `_ytdlp.py` | ✅ | `5544692f` |
+| A1–A5 (9 adapter) | ✅ gộp; bật 10 nền theo smoke thật | `SO_LOI.md` bảng smoke; `abddfb50` |
+| B0 phiên mã hoá + B1 dùng phiên | ✅ | `abfc852f`, migration `9c3e5a1d7f20` |
+| S8 ảnh bìa proxy, poll khi cần, parity + traceability, NHAT_KY | ✅ | `5b2ebc8c`, `70599ff9`, `4ae51a8b` |
+| Review code lần 1 (1 BLOCKER + 6 MAJOR) / lần 2 (1 BLOCKER + 3 MAJOR + 5 MINOR) | ✅ đã sửa hết | `256d4c08`, `f369e4d6` |
+| D1 deploy giữa phiên | ✗ không làm — `requirements-server.txt` thuộc DUNG_CHUNG ⇒ không L1/L2 thu hẹp được | deploy sau L3 tổng kết |
+| B2 QR login (worker `browser`) · S5 nối ASV · Douyin/XHS tìm kiếm+kênh · Kuaishou/Honggo | ⏸ chờ chủ dự án / DEFER | spec §8, §15; SO_LOI bảng smoke |
+| END | L3 một lần → gộp main → deploy (app tắt sau cờ) | — |
