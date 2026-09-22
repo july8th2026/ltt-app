@@ -69,6 +69,8 @@ class NenTang:
     mau_url: str = ""
     #: Tên cookie chứng minh ĐÃ đăng nhập (donor `COOKIE_AUTH` W:17772-17796). Rỗng ⇒ nền không nhận phiên.
     cookie_dang_nhap: tuple = ()
+    #: Chế độ BẮT BUỘC có phiên (vd TikTok từ khoá — donor Y:1541-1544). Chưa có phiên ⇒ chặn ở cửa vào.
+    che_do_can_dang_nhap: frozenset = frozenset()
 
 
 @dataclass(frozen=True)

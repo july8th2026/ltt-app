@@ -12,7 +12,7 @@ import os
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 
-from apps.video_crawler import features, nen_tang
+from apps.video_crawler import features, nen_tang, phien
 from apps.video_crawler.manifest import MANIFEST
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
@@ -46,6 +46,8 @@ def _trang(request: Request, user: str, db, *, loi: str = "", ma: int = 200) -> 
         "user": user, "nav": MANIFEST.slug, "app": MANIFEST,
         "csrf_token": issue_csrf_token(request),
         "cac_nen": nen_tang.cac_nen_bat(),
+        "nen_dang_nhap": [n for n in nen_tang.cac_nen_bat() if n.cookie_dang_nhap],
+        "phien_cua_toi": {p.nen_tang: p for p in phien.danh_sach(db, u.id)} if u else {},
         "thong_ke": features.thong_ke(db, u.id) if u else {},
         "lich_su": features.lich_su(db, u.id, gioi_han=20) if u else [],
         "loi": loi,
@@ -85,7 +87,7 @@ def kham_pha(request: Request, nen_tang_id: str = Form("", alias="nen_tang"), ch
         features.kiem_tan_suat(db, u.id)
         params = features.dung_params_kham_pha(owner_id=u.id, nen_tang=nen_tang_id, che_do=che_do,
                                                dau_vao=dau_vao, so_luong=so_luong,
-                                               khong_trung=khong_trung == "1")
+                                               khong_trung=khong_trung == "1", db=db)
         job = features.nop(db, owner_id=u.id, job_type=features.JOB_KHAM_PHA, params=params)
         db.commit()
     except features.QuaTanSuat as e:
@@ -137,7 +139,7 @@ async def tai(request: Request, user: str = Depends(require_login), db=Depends(g
         else:
             params = features.dung_params_tai(owner_id=u.id, nen_tang=nen_id, nguon={
                 "che_do": str(form.get("che_do") or ""), "dau_vao": str(form.get("dau_vao") or ""),
-                "so_luong": form.get("so_luong"), "khong_trung": form.get("khong_trung") == "1"})
+                "so_luong": form.get("so_luong"), "khong_trung": form.get("khong_trung") == "1"}, db=db)
         features.nop(db, owner_id=u.id, job_type=features.JOB_TAI, params=params)
         db.commit()
     except (features.LoiDauVao, credit.ThieuCreditError, RegistryError) as e:
@@ -153,3 +155,46 @@ def hang_doi(request: Request, user: str = Depends(require_login), db=Depends(ge
         "lich_su": features.lich_su(db, u.id, gioi_han=20) if u else [],
         "thong_ke": features.thong_ke(db, u.id) if u else {}, "oob": True,
     })
+
+
+# ── Phiên đăng nhập nền tảng (spec §16) ──────────────────────────────────────
+# Giá trị cookie KHÔNG bao giờ quay lại trình duyệt: trang chỉ hiện trạng thái (số cookie, hạn, lúc cập nhật).
+
+@router.post("/phien", dependencies=[Depends(_cong_co)])
+async def luu_phien(request: Request, user: str = Depends(require_login), db=Depends(get_db)):
+    form = await request.form()
+    if not verify_csrf_token(request, str(form.get("csrf_token") or "")):
+        return _loi_form(request, user, db, "Phiên đã hết hạn — tải lại trang.")
+    noi_dung = form.get("cookies_txt") or ""
+    tep = form.get("cookies_tep")
+    if hasattr(tep, "read"):
+        du_lieu = await tep.read(phien.TOI_DA_BYTE + 1)
+        if du_lieu:
+            noi_dung = du_lieu.decode("utf-8", errors="replace")
+    try:
+        u = _nguoi(request)
+        phien.luu(db, owner_id=u.id, nen_tang=str(form.get("nen_tang") or ""), cookies_txt=str(noi_dung))
+        db.commit()
+    except (phien.PhienKhongHopLe, features.LoiDauVao) as e:
+        db.rollback()
+        return _loi_form(request, user, db, str(e))
+    return _ve_trang(request, "#phien")
+
+
+@router.post("/phien/xoa", dependencies=[Depends(_cong_co)])
+def xoa_phien(request: Request, nen_tang_id: str = Form("", alias="nen_tang"), csrf_token: str = Form(""),
+              user: str = Depends(require_login), db=Depends(get_db)):
+    if not verify_csrf_token(request, csrf_token):
+        return _loi_form(request, user, db, "Phiên đã hết hạn — tải lại trang.")
+    u = user_hien_tai(request)
+    if u is not None:
+        phien.xoa(db, owner_id=u.id, nen_tang=nen_tang_id)
+        db.commit()
+    return _ve_trang(request, "#phien")
+
+
+def _ve_trang(request: Request, neo: str) -> Response:
+    dich = f"{MANIFEST.route_prefix}{neo}"
+    if _la_htmx(request):
+        return Response(status_code=204, headers={"HX-Redirect": dich})
+    return RedirectResponse(dich, status_code=303)

@@ -31,6 +31,8 @@ def env(tmp_path, monkeypatch):
     import platform_core.db as dbmod
     dbmod.reset_engine()
     import platform_core.models  # noqa: F401
+    from platform_core.registry import load_app_tables
+    load_app_tables()                                   # bảng vc_phien của app
     dbmod.Base.metadata.create_all(dbmod.get_engine())
     from platform_core import credit
     from platform_core.users import tao_nguoi_dung
@@ -193,3 +195,46 @@ def test_nguoi_khac_khong_xem_duoc_ket_qua_xem_truoc(env):
     assert client.get(f"/video-crawler/kham-pha/{jid}").status_code == 200
     _login(client, "b@x.com")
     assert client.get(f"/video-crawler/kham-pha/{jid}").status_code == 404
+
+
+# ── Phiên đăng nhập (B1) ──────────────────────────────────────────────────────
+
+_BI_MAT_WEB = "SAPISID-bi-mat-web-0123456789"
+_COOKIES_WEB = ("# Netscape HTTP Cookie File\n"
+                f".youtube.com\tTRUE\t/\tTRUE\t1893456000\tSAPISID\t{_BI_MAT_WEB}\n")
+
+
+def test_nhap_phien_hien_trang_thai_khong_lo_gia_tri(env, monkeypatch):
+    monkeypatch.setenv("LTT_TOKEN_ENCRYPTION_KEY", "khoa-test-web")
+    client, _ = env
+    _login(client, "a@x.com")
+    r = client.post("/video-crawler/phien", data={"nen_tang": "youtube", "cookies_txt": _COOKIES_WEB,
+                                                  "csrf_token": _csrf(client)}, follow_redirects=False)
+    assert r.status_code in (204, 303)
+    trang = client.get("/video-crawler").text
+    assert 'data-phien="youtube"' in trang
+    assert _BI_MAT_WEB not in trang
+    _login(client, "b@x.com")
+    assert 'data-phien="youtube"' not in client.get("/video-crawler").text     # user khác không thấy
+
+
+def test_xoa_phien_can_csrf(env, monkeypatch):
+    monkeypatch.setenv("LTT_TOKEN_ENCRYPTION_KEY", "khoa-test-web")
+    client, _ = env
+    _login(client, "a@x.com")
+    client.post("/video-crawler/phien", data={"nen_tang": "youtube", "cookies_txt": _COOKIES_WEB,
+                                              "csrf_token": _csrf(client)})
+    assert client.post("/video-crawler/phien/xoa", data={"nen_tang": "youtube"}).status_code == 400
+    assert 'data-phien="youtube"' in client.get("/video-crawler").text
+    client.post("/video-crawler/phien/xoa", data={"nen_tang": "youtube", "csrf_token": _csrf(client)})
+    assert 'data-phien="youtube"' not in client.get("/video-crawler").text
+
+
+def test_cookie_khong_hop_le_bao_loi_co_ten(env, monkeypatch):
+    monkeypatch.setenv("LTT_TOKEN_ENCRYPTION_KEY", "khoa-test-web")
+    client, _ = env
+    _login(client, "a@x.com")
+    r = client.post("/video-crawler/phien", data={"nen_tang": "youtube", "cookies_txt": "xin chao",
+                                                  "csrf_token": _csrf(client)})
+    assert r.status_code == 400
+    assert "cookie" in r.text.lower()

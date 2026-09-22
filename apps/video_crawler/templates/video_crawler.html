@@ -70,6 +70,39 @@
     </div>
   </div>
 
+  {% if nen_dang_nhap %}
+  <div class="card" id="phien" style="margin-top:var(--space-5,20px)">
+    <h2>Đăng nhập nền tảng</h2>
+    <p class="muted">Một số cách cào cần tài khoản của chính bạn. Xuất <b>cookies.txt</b> (định dạng Netscape) từ trình duyệt
+      khi đang đăng nhập nền đó rồi dán vào đây. Chỉ cookie của đúng nền được giữ, lưu mã hoá, chỉ dùng cho việc cào của bạn;
+      bạn xoá được bất cứ lúc nào.</p>
+    <div class="tablewrap"><table class="table">
+      <thead><tr><th>Nền</th><th>Trạng thái</th><th></th></tr></thead>
+      <tbody>
+      {% for n in nen_dang_nhap %}{% set ph = phien_cua_toi.get(n.id) %}
+        <tr>
+          <td>{{ n.ten }}</td>
+          <td>{% if ph %}<span class="badge b-ok" data-phien="{{ n.id }}">Đã có phiên</span>
+                <small class="muted">{{ ph.so_cookie }} cookie · cập nhật {{ ph.cap_nhat_luc.strftime('%d/%m %H:%M') }}{% if ph.het_han_luc %} · hết hạn {{ ph.het_han_luc.strftime('%d/%m/%Y') }}{% endif %}</small>
+              {% else %}<span class="muted">Chưa đăng nhập</span>{% endif %}</td>
+          <td>
+            <form method="post" action="{{ app.route_prefix }}/phien" enctype="multipart/form-data" class="vc-row">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="nen_tang" value="{{ n.id }}">
+              <label class="field"><span>Dán cookies.txt</span><textarea name="cookies_txt" rows="2" autocomplete="off" spellcheck="false"></textarea></label>
+              <label class="field"><span>hoặc chọn tệp</span><input type="file" name="cookies_tep" accept=".txt,text/plain"></label>
+              <button class="btn" type="submit">Lưu phiên</button>
+            </form>
+            {% if ph %}<form method="post" action="{{ app.route_prefix }}/phien/xoa">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="nen_tang" value="{{ n.id }}">
+              <button class="btn" type="submit">Xoá phiên</button></form>{% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+  {% endif %}
+
   <div class="card" id="hang-doi" style="margin-top:var(--space-5,20px)"
        hx-get="{{ app.route_prefix }}/hang-doi" hx-trigger="every 4s" hx-swap="innerHTML">
     {% include "vc_hang_doi.html" %}

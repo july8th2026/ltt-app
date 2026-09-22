@@ -12,6 +12,7 @@ Thoát bằng exception (kể cả huỷ) ⇒ xoá tệp đã lưu của job nà
 """
 from __future__ import annotations
 
+import contextlib
 import importlib
 import tempfile
 import time
@@ -42,6 +43,34 @@ def _adapter(nen_id: str):
         if isinstance(v, type) and getattr(v, "nen_tang", None) == nen_id and hasattr(v, "tai"):
             return v()
     raise RuntimeError(f"adapter {ten!r} không khai lớp cho nền {nen_id!r}")
+
+
+@contextlib.contextmanager
+def _phien(adapter, owner_id: str, nen_id: str):
+    """Đặt `adapter.tep_cookie` = cookies.txt TẠM của đúng chủ job (nếu có phiên) trong suốt job; xoá khi ra.
+
+    Cookie chỉ đi: DB (mã hoá) → tệp tạm quyền 600 trong thư mục job → yt-dlp. Không vào params/result/sự kiện.
+    """
+    nen = nen_tang.lay(nen_id)
+    if not nen.cookie_dang_nhap or not hasattr(adapter, "tep_cookie"):
+        yield
+        return
+    from apps.video_crawler import phien
+    from platform_core.db import get_session
+    with tempfile.TemporaryDirectory(prefix="vc_phien_") as tam:
+        gen = get_session(); db = next(gen)
+        try:
+            ql = phien.tep_cookie_tam(db, owner_id=owner_id, nen_tang=nen_id, thu_muc=Path(tam))
+            duong = ql.__enter__()
+        finally:
+            with contextlib.suppress(StopIteration):
+                next(gen)
+        try:
+            adapter.tep_cookie = str(duong) if duong else None
+            yield
+        finally:
+            adapter.tep_cookie = None
+            ql.__exit__(None, None, None)
 
 
 def _loi_job(ds: list[LoiCao]) -> Exception:
@@ -131,18 +160,24 @@ def _kham_pha(adapter, nen_id: str, nguon: dict, owner_id: str, tien_do) -> tupl
 def _xu_ly_kham_pha(params: dict, ctx) -> dict:
     adapter = _adapter(params["nen_tang"])
     td = _TienDo(ctx, 1)
-    muc, bo = _kham_pha(adapter, params["nen_tang"], params, params["owner_id"], td.bao)
+    with _phien(adapter, params["owner_id"], params["nen_tang"]):
+        muc, bo = _kham_pha(adapter, params["nen_tang"], params, params["owner_id"], td.bao)
     if ctx is not None:
         ctx.progress(100, f"Tìm thấy {len(muc)} video")
     return {"muc": [m.to_dict() for m in muc], "bo_qua_trung": bo}
 
 
 def _xu_ly_tai(params: dict, ctx) -> dict:
+    adapter = _adapter(params["nen_tang"])
+    with _phien(adapter, params["owner_id"], params["nen_tang"]):
+        return _tai_voi(adapter, params, ctx)
+
+
+def _tai_voi(adapter, params: dict, ctx) -> dict:
     from platform_core.storage import get_storage
 
     nen_id, owner_id = params["nen_tang"], params["owner_id"]
     job_id = getattr(ctx, "job_id", "") or "khong-ctx"
-    adapter = _adapter(nen_id)
     bo = 0
     if params.get("nguon"):
         muc, bo = _kham_pha(adapter, nen_id, params["nguon"], owner_id, _TienDo(ctx, 1, tran=5).bao)

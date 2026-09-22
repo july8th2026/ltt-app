@@ -182,6 +182,9 @@ class YtdlpAdapter:
     ie_key_video: ClassVar[tuple[str, ...]] = ()
     #: True ⇒ `impersonate=ImpersonateTarget()` (bất kỳ đích curl_cffi có sẵn).
     impersonate: ClassVar[bool] = False
+    #: Gửi cookie phiên của khách khi khám phá / khi tải. TikTok: cookie đăng nhập làm TẢI trả 403 (donor Y:1734-1741).
+    cookie_khi_kham_pha: ClassVar[bool] = True
+    cookie_khi_tai: ClassVar[bool] = True
 
     def __init__(self, ydl_factory: Callable[[dict], Any] | None = None, *,
                  max_filesize: int = MAX_FILESIZE_MAC_DINH,
@@ -189,6 +192,8 @@ class YtdlpAdapter:
         self._ydl_factory = ydl_factory
         self.max_filesize = int(max_filesize)
         self.thoi_luong_toi_da_s = int(thoi_luong_toi_da_s)
+        #: Đường tới cookies.txt TẠM trong thư mục job (handler đặt, `phien.tep_cookie_tam`). None ⇒ ẩn danh.
+        self.tep_cookie: str | None = None
 
     # ------------------------------------------------------------ lớp con cài đặt
     def url_video(self, id: str) -> str:
@@ -269,6 +274,9 @@ class YtdlpAdapter:
         opts["match_filter"] = self.bo_loc(tt.ghi_tu_choi if ghi_tu_choi else None)
         opts["max_filesize"] = self.max_filesize
         opts["logger"] = _NhatKy(tt)
+        dung_cookie = self.cookie_khi_tai if ghi_tu_choi else self.cookie_khi_kham_pha   # ghi_tu_choi ⇔ đường tải
+        if self.tep_cookie and dung_cookie:
+            opts["cookiefile"] = str(self.tep_cookie)
         return opts
 
     def _sang_item(self, e: dict) -> CrawlItem:

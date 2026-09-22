@@ -57,9 +57,14 @@ def _kiem_url(url: str, nen, phan_giai) -> str:
         raise LoiDauVao(f"Link không hợp lệ cho {nen.ten}.") from e
 
 
-def _kiem_nguon(nen, che_do: str, dau_vao: str, so_luong, phan_giai) -> tuple[str, int]:
+def _kiem_nguon(nen, che_do: str, dau_vao: str, so_luong, phan_giai, *, db=None,
+                owner_id: str = "") -> tuple[str, int]:
     if che_do not in nen.che_do:
         raise LoiDauVao(f"{nen.ten} không hỗ trợ cách cào này.")
+    if che_do in nen.che_do_can_dang_nhap:
+        from apps.video_crawler import phien
+        if db is None or not any(p.nen_tang == nen.id for p in phien.danh_sach(db, owner_id)):
+            raise LoiDauVao(f"Cách cào này cần đăng nhập {nen.ten} — thêm phiên đăng nhập trước.")
     dau_vao = (dau_vao or "").strip()
     if not dau_vao:
         raise LoiDauVao("Chưa nhập từ khoá hoặc link.")
@@ -80,22 +85,22 @@ def _kiem_nguon(nen, che_do: str, dau_vao: str, so_luong, phan_giai) -> tuple[st
 
 
 def dung_params_kham_pha(*, owner_id: str, nen_tang: str, che_do: str, dau_vao: str, so_luong,
-                         khong_trung: bool, phan_giai=None) -> dict:
+                         khong_trung: bool, phan_giai=None, db=None) -> dict:
     nen = _nen(nen_tang)
-    dau_vao, n = _kiem_nguon(nen, che_do, dau_vao, so_luong, phan_giai)
+    dau_vao, n = _kiem_nguon(nen, che_do, dau_vao, so_luong, phan_giai, db=db, owner_id=owner_id)
     return {"owner_id": owner_id, "nen_tang": nen.id, "che_do": che_do, "dau_vao": dau_vao,
             "so_luong": n, "khong_trung": bool(khong_trung)}
 
 
 def dung_params_tai(*, owner_id: str, nen_tang: str, muc: list | None = None, nguon: dict | None = None,
-                    phan_giai=None) -> dict:
+                    phan_giai=None, db=None) -> dict:
     """Tải theo danh sách đã chọn ở xem trước (`muc`) HOẶC cào hết theo nguồn (`nguon`)."""
     nen = _nen(nen_tang)
     if (muc is None) == (nguon is None):
         raise LoiDauVao("Cần đúng một trong hai: danh sách mục hoặc nguồn cào.")
     if nguon is not None:
         dau_vao, n = _kiem_nguon(nen, nguon.get("che_do", ""), nguon.get("dau_vao", ""),
-                                 nguon.get("so_luong"), phan_giai)
+                                 nguon.get("so_luong"), phan_giai, db=db, owner_id=owner_id)
         return {"owner_id": owner_id, "nen_tang": nen.id,
                 "nguon": {"che_do": nguon["che_do"], "dau_vao": dau_vao, "so_luong": n,
                           "khong_trung": bool(nguon.get("khong_trung"))}}
