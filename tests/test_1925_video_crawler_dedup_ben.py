@@ -101,6 +101,24 @@ def test_dong_xong_ma_tep_da_het_han_thi_tai_lai_duoc_khi_chon_tuong_minh(db):
     assert _dong(db) == {(_A, "dang_tai")}
 
 
+
+@pytest.mark.parametrize("ket_thuc", ["nha_cho", "muc_loi"])
+def test_tai_lai_video_het_han_ma_loi_thi_giu_dau_chong_trung(db, ket_thuc):
+    """Rà soát khi gộp L6: giành lại dòng 'xong' (tệp đã mất) rồi lượt tải lại lỗi/huỷ ⇒ dòng phải quay về 'xong'
+    như cũ, không bị xoá — xoá thì "không trùng" quên video khách đã tải và lượt sau thu tiền lại."""
+    from apps.video_crawler import features
+    tep_cu = "video_crawler/u1/job-1/a.mp4"
+    assert features.gianh_cho(db, "u1", "youtube", _A, "job-1")
+    features.danh_dau_xong(db, "u1", "job-1", {_A: tep_cu})
+    assert features.gianh_cho(db, "u1", "youtube", _A, "job-2", tep_con=lambda k: False)
+    if ket_thuc == "nha_cho":
+        features.nha_cho(db, "u1", "job-2")
+    else:
+        features.danh_dau_xong(db, "u1", "job-2", {})
+    assert _dong(db) == {(_A, "xong")}
+    assert _A in features.da_tai_ids(db, "u1", "youtube")
+
+
 # ── Chuỗi job thật ────────────────────────────────────────────────────────────
 
 def test_hai_job_chong_nhau_cung_video_chi_tai_va_thu_tien_mot_lan(db, kho, nguoi, monkeypatch):

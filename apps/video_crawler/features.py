@@ -312,7 +312,7 @@ def gianh_cho(db, owner_id: str, nen_id: str, video_id: str, job_id: str, *,
     doi = db.execute(update(VcDaTai).where(VcDaTai.id == cu.id, VcDaTai.job_id == cu.job_id,
                                            VcDaTai.trang_thai == cu.trang_thai,
                                            VcDaTai.cap_nhat_luc == cu.cap_nhat_luc)
-                     .values(job_id=job_id, trang_thai=DANG_TAI, tep=None, cap_nhat_luc=bay_gio)
+                     .values(job_id=job_id, trang_thai=DANG_TAI, cap_nhat_luc=bay_gio)   # giữ `tep` cũ: nhả ⇒ về 'xong'
                      .execution_options(synchronize_session=False))
     db.commit()
     return doi.rowcount == 1
@@ -320,28 +320,36 @@ def gianh_cho(db, owner_id: str, nen_id: str, video_id: str, job_id: str, *,
 
 def danh_dau_xong(db, owner_id: str, job_id: str, tep_theo_id: dict[str, str]) -> None:
     """Chốt job: dòng của mục đã tải ⇒ 'xong' + storage key; dòng 'dang_tai' còn lại (mục lỗi) bị nhả. COMMIT."""
-    from sqlalchemy import delete, update
+    from sqlalchemy import update
 
-    from apps.video_crawler.tables import DANG_TAI, XONG, VcDaTai
+    from apps.video_crawler.tables import XONG, VcDaTai
     bay_gio = datetime.now(timezone.utc)
     for vid, tep in tep_theo_id.items():
         db.execute(update(VcDaTai).where(VcDaTai.owner_id == owner_id, VcDaTai.job_id == job_id,
                                          VcDaTai.video_id == vid)
                    .values(trang_thai=XONG, tep=tep, cap_nhat_luc=bay_gio)
                    .execution_options(synchronize_session=False))
-    db.execute(delete(VcDaTai).where(VcDaTai.owner_id == owner_id, VcDaTai.job_id == job_id,
-                                     VcDaTai.trang_thai == DANG_TAI)
-               .execution_options(synchronize_session=False))
+    _nha(db, owner_id, job_id, chi_dang_tai=True)
     db.commit()
 
 
-def nha_cho(db, owner_id: str, job_id: str) -> None:
-    """Xoá mọi dòng của job này (huỷ/lỗi/hết giờ — cùng lúc với dọn storage); COMMIT."""
-    from sqlalchemy import delete
+def _nha(db, owner_id: str, job_id: str, *, chi_dang_tai: bool) -> None:
+    """Nhả chỗ của job: dòng giành lại từ 'xong' (còn `tep` cũ) quay về 'xong' — không quên video đã tải và thu
+    tiền lại lượt sau; dòng mới thì xoá."""
+    from sqlalchemy import delete, update
 
-    from apps.video_crawler.tables import VcDaTai
-    db.execute(delete(VcDaTai).where(VcDaTai.owner_id == owner_id, VcDaTai.job_id == job_id)
-               .execution_options(synchronize_session=False))
+    from apps.video_crawler.tables import DANG_TAI, XONG, VcDaTai
+    loc = [VcDaTai.owner_id == owner_id, VcDaTai.job_id == job_id]
+    if chi_dang_tai:
+        loc.append(VcDaTai.trang_thai == DANG_TAI)
+    db.execute(update(VcDaTai).where(*loc, VcDaTai.trang_thai == DANG_TAI, VcDaTai.tep.is_not(None))
+               .values(trang_thai=XONG).execution_options(synchronize_session=False))
+    db.execute(delete(VcDaTai).where(*loc, VcDaTai.tep.is_(None)).execution_options(synchronize_session=False))
+
+
+def nha_cho(db, owner_id: str, job_id: str) -> None:
+    """Nhả mọi dòng của job này (huỷ/lỗi/hết giờ — cùng lúc với dọn storage); COMMIT."""
+    _nha(db, owner_id, job_id, chi_dang_tai=False)
     db.commit()
 
 

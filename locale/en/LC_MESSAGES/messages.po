@@ -20114,3 +20114,15 @@ msgstr "{tu}–{den} min"
 #: apps/video_crawler
 msgid "Điều khoản sử dụng"
 msgstr "Terms of use"
+
+#: apps/video_crawler
+msgid "Danh sách video khách đã tải từ nền tảng video (chỉ nền, mã video, đường dẫn tệp), để \"cào không trùng\" không tải và thu tiền lại một video. Giữ lâu hơn tệp — tệp đi theo lịch sử việc (30 ngày)."
+msgstr "List of videos a customer downloaded from video platforms (platform, video ID, file path only) so \"no duplicates\" crawling does not download and charge for the same video twice. Kept longer than the files — files follow job history (30 days)."
+
+#: apps/video_crawler
+msgid "video_crawler: không nhả được chỗ của job %s: %s"
+msgstr "video_crawler: could not release the slot of job %s: %s"
+
+#: apps/video_crawler
+msgid "{ten}: đã hoặc đang được tải ở lượt khác của bạn — bỏ qua"
+msgstr "{ten}: already downloaded or being downloaded in another run of yours — skipped"

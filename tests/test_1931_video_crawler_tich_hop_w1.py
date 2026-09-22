@@ -54,6 +54,7 @@ def test_nghi_chi_giua_cac_muc_bo_qua_muc_dau(monkeypatch):
     from apps.video_crawler import jobs
     ngu = []
     monkeypatch.setattr(jobs, "_ngu", lambda s: ngu.append(s))
+    monkeypatch.setattr(jobs, "_voi_db", lambda ham, *a, **k: True if ham == "gianh_cho" else None)  # L6: không DB
     kho = _Kho()
     monkeypatch.setattr("platform_core.storage.get_storage", lambda: kho)
     ids = ["a" * 11, "b" * 11, "c" * 11]
