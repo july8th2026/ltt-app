@@ -18,6 +18,8 @@ import tempfile
 import time
 from pathlib import Path
 
+from platform_core.i18n import _ as _t
+
 from apps.video_crawler import nen_tang
 from apps.video_crawler.adapters.base import CrawlItem, LoiCao, YeuCauCao
 
@@ -76,7 +78,7 @@ def _loi_job(ds: list[LoiCao]) -> Exception:
     from platform_core.jobs import LoiNguoiGoi
     if any(e.tam_thoi for e in ds):
         tam = next(e for e in ds if e.tam_thoi)
-        return RuntimeError(f"{tam.ma}: {tam.thong_diep}")
+        return RuntimeError(_t("{ma}: {thong_diep}").format(ma=tam.ma, thong_diep=tam.thong_diep))
     return LoiNguoiGoi(ds[0].thong_diep)
 
 
@@ -106,7 +108,7 @@ class _TienDo:
         bay_gio = time.monotonic()
         if bay_gio - self.bat_dau > NGAN_SACH_TAI_S + 300:
             from platform_core.jobs import LoiNguoiGoi
-            raise LoiNguoiGoi("Video quá dài để xử lý trong một lượt.")
+            raise LoiNguoiGoi(_t("Video quá dài để xử lý trong một lượt."))
         if bay_gio - self._luc_huy >= _KIEM_HUY_S and hasattr(self.ctx, "is_cancelled"):
             self._luc_huy = bay_gio
             if self.ctx.is_cancelled():
@@ -164,7 +166,7 @@ def _xu_ly_kham_pha(params: dict, ctx) -> dict:
     with _phien(adapter, params["owner_id"], params["nen_tang"]):
         muc, bo = _kham_pha(adapter, params["nen_tang"], params, params["owner_id"], td.bao)
     if ctx is not None:
-        ctx.progress(100, f"Tìm thấy {len(muc)} video")
+        ctx.progress(100, _t("Tìm thấy {n} video").format(n=len(muc)))
     return {"muc": [m.to_dict() for m in muc], "bo_qua_trung": bo}
 
 
@@ -187,12 +189,12 @@ def _tai_voi(adapter, params: dict, ctx) -> dict:
                for m in params["muc"]]
     if not muc:
         if bo:   # mọi mục đều đã tải trước đó: hoàn tất, KHÔNG tính tiền, và nói rõ (kiểm GUI 22/09)
-            _su_kien(ctx, "bo_qua_trung", f"Bỏ qua {bo} video đã tải trước đó")
+            _su_kien(ctx, "bo_qua_trung", _t("Bỏ qua {n} video đã tải trước đó").format(n=bo))
             if ctx is not None:
-                ctx.progress(100, f"Không có video mới — bỏ qua {bo} video đã tải trước đó")
+                ctx.progress(100, _t("Không có video mới — bỏ qua {n} video đã tải trước đó").format(n=bo))
             return {"muc": [], "video_keys": [], "loi": [], "bo_qua_trung": bo, "credit_cost": 0}
         from platform_core.jobs import LoiNguoiGoi
-        raise LoiNguoiGoi("Không tìm thấy video nào.")
+        raise LoiNguoiGoi(_t("Không tìm thấy video nào."))
 
     kho = get_storage()
     td = _TienDo(ctx, len(muc))
@@ -206,8 +208,8 @@ def _tai_voi(adapter, params: dict, ctx) -> dict:
             if time.monotonic() - td.bat_dau > NGAN_SACH_TAI_S:
                 for con in muc[i:]:
                     loi_muc.append({"id": con.id, "ma": "het_thoi_gian",
-                                    "thong_diep": "Hết thời gian của lượt này, cào lại để lấy phần còn lại."})
-                loi.append(LoiCao("het_thoi_gian", "Hết thời gian xử lý.", tam_thoi=False))
+                                    "thong_diep": _t("Hết thời gian của lượt này, cào lại để lấy phần còn lại.")})
+                loi.append(LoiCao("het_thoi_gian", _t("Hết thời gian xử lý."), tam_thoi=False))
                 break
             if ctx is not None and ctx.is_cancelled():
                 from platform_core.job_runner import JobCancelled
@@ -229,7 +231,7 @@ def _tai_voi(adapter, params: dict, ctx) -> dict:
                 _su_kien(ctx, "muc_loi", f"{item.tieu_de or item.id}: {e.thong_diep}")
                 continue
             xong.append({**item.to_dict(), "tep": key, "ten_tep": ten, "kich_thuoc": kho.size(key)})
-            _su_kien(ctx, "muc_xong", f"Đã tải {item.tieu_de or item.id}")
+            _su_kien(ctx, "muc_xong", _t("Đã tải {ten}").format(ten=item.tieu_de or item.id))
         if not xong:
             raise _loi_job(loi)
         if ctx is not None:                    # trong khối dọn: huỷ đúng lúc này vẫn không để tệp mồ côi
@@ -239,10 +241,10 @@ def _tai_voi(adapter, params: dict, ctx) -> dict:
             try:
                 kho.delete(k)
             except Exception as loi_don:  # noqa: BLE001 — dọn best-effort; lỗi gốc mới là thứ cần báo
-                _LOG.warning("video_crawler: không dọn được tệp %s: %s", k, type(loi_don).__name__)
+                _LOG.warning(_t("video_crawler: không dọn được tệp %s: %s"), k, type(loi_don).__name__)
         raise
     if bo:
-        _su_kien(ctx, "bo_qua_trung", f"Bỏ qua {bo} video đã tải trước đó")
+        _su_kien(ctx, "bo_qua_trung", _t("Bỏ qua {n} video đã tải trước đó").format(n=bo))
     return {"muc": xong, "video_keys": [m["tep"] for m in xong], "loi": loi_muc,
             "bo_qua_trung": bo, "credit_cost": len(xong)}
 
@@ -253,4 +255,4 @@ def handle(params: dict, ctx=None) -> dict:
         return _xu_ly_kham_pha(params, ctx)
     if loai == JOB_TAI:
         return _xu_ly_tai(params, ctx)
-    raise RuntimeError(f"video_crawler không nhận job_type {loai!r}")
+    raise RuntimeError(_t("video_crawler không nhận job_type {loai!r}").format(loai=loai))

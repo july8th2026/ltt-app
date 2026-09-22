@@ -33,6 +33,8 @@ import re
 from pathlib import Path
 from typing import Any
 
+from platform_core.i18n import _ as _t
+
 from apps.video_crawler.adapters._ytdlp import YtdlpAdapter
 
 __all__ = ["DouyinAdapter", "chuan_hoa_link_douyin", "tuy_chon"]
@@ -86,7 +88,8 @@ class DouyinAdapter(YtdlpAdapter):
     def url_kham_pha(self, che_do: str, dau_vao: str, n: int) -> str:
         if che_do != "link":
             raise NotImplementedError(
-                f"Douyin chưa hỗ trợ chế độ {che_do!r}: cần client Douyin riêng (ký request, phân "
-                "trang) — donor dựa vào MediaCrawler (NON-COMMERCIAL), không thể tự dùng lại."
+                _t("Douyin chưa hỗ trợ chế độ {che_do!r}: cần client Douyin riêng (ký request, phân "
+                   "trang) — donor dựa vào MediaCrawler (NON-COMMERCIAL), không thể tự dùng lại.")
+                .format(che_do=che_do)
             )
         return chuan_hoa_link_douyin(dau_vao)

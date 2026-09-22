@@ -1,11 +1,11 @@
 {% import "_ui.html" as ui %}
 {% set xong = job.status in ("done", "error", "cancelled") %}
 <div {% if not xong %}hx-get="{{ app.route_prefix }}/kham-pha/{{ job.id }}" hx-trigger="every 1500ms" hx-swap="outerHTML"{% endif %}>
-  <h2>Kết quả xem trước</h2>
+  <h2>{{ _("Kết quả xem trước") }}</h2>
   {% if job.status == "done" %}
-    {% if bo_qua_trung %}<p class="muted">Đã bỏ qua {{ bo_qua_trung }} video bạn tải trước đó.</p>{% endif %}
+    {% if bo_qua_trung %}<p class="muted">{{ _("Đã bỏ qua {n} video bạn tải trước đó.").format(n=bo_qua_trung) }}</p>{% endif %}
     {% if not muc %}
-      <p class="muted">Không tìm thấy video nào.</p>
+      <p class="muted">{{ _("Không tìm thấy video nào.") }}</p>
     {% else %}
     <form method="post" action="{{ app.route_prefix }}/tai" hx-post="{{ app.route_prefix }}/tai" hx-target="this" hx-swap="outerHTML">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -20,15 +20,15 @@
         <span><b>{{ m.tieu_de or m.id }}</b><br><small class="muted">{{ m.tac_gia }}{% if m.thoi_luong_s %} · {{ m.thoi_luong_s // 60 }}:{{ "%02d" | format(m.thoi_luong_s % 60) }}{% endif %}</small></span>
       </label>
       {% endfor %}
-      <div class="vc-actions"><button class="btn btn-primary" type="submit">📋 Tải các video đã chọn</button></div>
+      <div class="vc-actions"><button class="btn btn-primary" type="submit">📋 {{ _("Tải các video đã chọn") }}</button></div>
     </form>
     {% endif %}
   {% elif job.status == "error" %}
-    <div class="alert alert-err" role="alert">{{ job.error or "Xem trước thất bại." }}</div>
+    <div class="alert alert-err" role="alert">{{ _(job.error) if job.error else _("Xem trước thất bại.") }}</div>
   {% elif job.status == "cancelled" %}
-    <p class="muted">Đã huỷ.</p>
+    <p class="muted">{{ _("Đã huỷ.") }}</p>
   {% else %}
-    {{ ui.thanh_tien_do(job.progress, "Đang tìm") }}
-    <p class="muted">{{ job.progress_msg or "Đang tìm video…" }}</p>
+    {{ ui.thanh_tien_do(job.progress, _("Đang tìm")) }}
+    <p class="muted">{{ _(job.progress_msg) if job.progress_msg else _("Đang tìm video…") }}</p>
   {% endif %}
 </div>

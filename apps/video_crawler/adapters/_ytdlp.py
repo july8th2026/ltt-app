@@ -23,6 +23,9 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Callable, ClassVar, Iterator
 
+from platform_core.i18n import N_
+from platform_core.i18n import _ as _t
+
 from apps.video_crawler.adapters.base import BaoTienDo, CrawlItem, LoiCao, TepTai, YeuCauCao
 from apps.video_crawler.loi import phan_loai
 
@@ -43,9 +46,9 @@ THOI_LUONG_TOI_DA_MAC_DINH = 3 * 3600
 #: live_status yt-dlp chưa tải được như một tệp (YoutubeDL.py:2755-2772). `was_live` là VOD bình thường ⇒ cho qua.
 _TRUC_TIEP = frozenset({"is_live", "is_upcoming", "post_live"})
 _TU_CHOI = {
-    "khong_ho_tro_truc_tiep": "Video đang phát trực tiếp hoặc chưa công chiếu, chưa tải được.",
-    "qua_dai": "Video dài quá giới hạn cho phép.",
-    "qua_lon": "Tệp video vượt quá dung lượng cho phép.",
+    "khong_ho_tro_truc_tiep": N_("Video đang phát trực tiếp hoặc chưa công chiếu, chưa tải được."),
+    "qua_dai": N_("Video dài quá giới hạn cho phép."),
+    "qua_lon": N_("Tệp video vượt quá dung lượng cho phép."),
 }
 _DAU_QUA_LON = "larger than max-filesize"
 
@@ -59,7 +62,7 @@ def lop_huy() -> type:
     from yt_dlp.utils import DownloadCancelled
 
     class HuyTuBaoTienDo(DownloadCancelled):
-        msg = "Huỷ theo yêu cầu"
+        msg = N_("Huỷ theo yêu cầu")
 
     return HuyTuBaoTienDo
 
@@ -146,7 +149,7 @@ def _nhip_tim(tt: _TrangThai) -> Iterator[None]:
 
     def chay() -> None:
         while not dung.wait(CHU_KY_NHIP):
-            tt.bao(None, "đang xử lý", tu_nhip=True)
+            tt.bao(None, _t("đang xử lý"), tu_nhip=True)
             if tt.giu:
                 return
 
@@ -324,7 +327,7 @@ class YtdlpAdapter:
         else:
             opts["playlistend"] = n
         url = self.url_kham_pha(che_do, vao, n)
-        bao_tien_do(0, "đang tìm video")             # ngoài yt-dlp: để ngoại lệ gốc tự thoát
+        bao_tien_do(0, _t("đang tìm video"))             # ngoài yt-dlp: để ngoại lệ gốc tự thoát
         try:
             with _nhip_tim(tt), self._tao(opts) as ydl:
                 info = ydl.extract_info(url, download=False)
@@ -345,7 +348,7 @@ class YtdlpAdapter:
             if self.ly_do_tu_choi(muc) is not None:
                 continue
             ra.append(self._sang_item(muc))
-        bao_tien_do(100, f"tìm thấy {len(ra)} video")
+        bao_tien_do(100, _t("tìm thấy {n} video").format(n=len(ra)))
         return ra
 
     # ------------------------------------------------------------ tải
@@ -353,7 +356,7 @@ class YtdlpAdapter:
         from yt_dlp.utils import DownloadCancelled, DownloadError
 
         if not self.id_hop_le(item.id) or item.url != self.url_chuan(item.id, item.url):
-            raise LoiCao("url_khong_ho_tro", "Link không được hỗ trợ cho nền tảng này.", tam_thoi=False)
+            raise LoiCao("url_khong_ho_tro", _t("Link không được hỗ trợ cho nền tảng này."), tam_thoi=False)
         thu_muc = Path(thu_muc)
         tt = _TrangThai(bao_tien_do)
 
@@ -368,7 +371,7 @@ class YtdlpAdapter:
             tong = d.get("total_bytes") or d.get("total_bytes_estimate")
             xong = d.get("downloaded_bytes")
             pct = max(0, min(98, int(xong * 100 / tong))) if tong and xong is not None else None
-            tt.bao(pct, "đang tải")                   # mọi lần gọi; bên gọi tự bóp theo thời gian
+            tt.bao(pct, _t("đang tải"))                   # mọi lần gọi; bên gọi tự bóp theo thời gian
 
         def pp_hook(d: dict) -> None:
             tt.kiem_huy()
@@ -376,7 +379,7 @@ class YtdlpAdapter:
             if fp:
                 tt.ghi_tep(fp)
             if d.get("status") == "started":
-                tt.bao(99, "đang ghép")
+                tt.bao(99, _t("đang ghép"))
 
         opts = self._them_chung(self.tuy_chon_goc(thu_muc, progress_hooks=[hook], postprocessor_hooks=[pp_hook]),
                                 tt, ghi_tu_choi=True)
@@ -388,15 +391,16 @@ class YtdlpAdapter:
         if tt.giu:
             raise tt.giu[0]
         if tt.tu_choi:
-            raise LoiCao(tt.tu_choi, _TU_CHOI[tt.tu_choi], tam_thoi=False)
+            raise LoiCao(tt.tu_choi, _t(_TU_CHOI[tt.tu_choi]), tam_thoi=False)
 
         path = tim_tep(item.id, thu_muc, tt.tep_hook)
         if path is None:
-            raise LoiCao("khong_thay_tep", "Tải xong nhưng không tìm thấy tệp video. Vui lòng thử lại.",
+            raise LoiCao("khong_thay_tep", _t("Tải xong nhưng không tìm thấy tệp video. Vui lòng thử lại."),
                          tam_thoi=True)
         kich_thuoc = path.stat().st_size
         if kich_thuoc > self.max_filesize:            # tải phân mảnh (DASH/HLS) không kiểm max_filesize
             path.unlink(missing_ok=True)
-            raise LoiCao("qua_lon", _TU_CHOI["qua_lon"], tam_thoi=False)
+            ma_qua_lon = "qua_lon"
+            raise LoiCao(ma_qua_lon, _t(_TU_CHOI[ma_qua_lon]), tam_thoi=False)
         ten = ten_sach(item.tieu_de) or item.id
         return TepTai(duong_dan=path, kich_thuoc=kich_thuoc, ten_hien_thi=f"{ten} [{item.id}]{path.suffix}")

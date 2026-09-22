@@ -13,6 +13,7 @@ from sqlalchemy import select
 from apps.video_crawler import an_toan_url, nen_tang
 from apps.video_crawler.adapters.base import ID_AN_TOAN
 from apps.video_crawler.manifest import MANIFEST, SO_MUC_TOI_DA
+from platform_core.i18n import _ as _t
 from platform_core.models import JOB_DONE, JOB_ERROR, JOB_QUEUED, JOB_RUNNING, Job
 
 JOB_KHAM_PHA = "video_crawler.kham_pha"
@@ -43,7 +44,7 @@ def _nen(nen_id: str):
     try:
         return nen_tang.lay_nen_bat(nen_id)
     except nen_tang.NenKhongHopLe as e:
-        raise LoiDauVao("Nền tảng này chưa được hỗ trợ.") from e
+        raise LoiDauVao(_t("Nền tảng này chưa được hỗ trợ.")) from e
 
 
 def _kiem_url(url: str, nen, phan_giai) -> str:
@@ -53,32 +54,32 @@ def _kiem_url(url: str, nen, phan_giai) -> str:
     try:
         return an_toan_url.kiem(url, **kw)
     except an_toan_url.UrlKhongAnToan as e:
-        raise LoiDauVao(f"Link không hợp lệ cho {nen.ten}.") from e
+        raise LoiDauVao(_t("Link không hợp lệ cho {ten}.").format(ten=nen.ten)) from e
 
 
 def _kiem_nguon(nen, che_do: str, dau_vao: str, so_luong, phan_giai, *, db=None,
                 owner_id: str = "") -> tuple[str, int]:
     if che_do not in nen.che_do:
-        raise LoiDauVao(f"{nen.ten} không hỗ trợ cách cào này.")
+        raise LoiDauVao(_t("{ten} không hỗ trợ cách cào này.").format(ten=nen.ten))
     if che_do in nen.che_do_can_dang_nhap:
         from apps.video_crawler import phien
         co = [p for p in phien.danh_sach(db, owner_id) if p.nen_tang == nen.id] if db is not None else []
         if not co:
-            raise LoiDauVao(f"Cách cào này cần đăng nhập {nen.ten} — thêm phiên đăng nhập trước.")
+            raise LoiDauVao(_t("Cách cào này cần đăng nhập {ten} — thêm phiên đăng nhập trước.").format(ten=nen.ten))
         if not phien.hop_le(co[0]):                     # review lần 2: khoá xoay ⇒ phiên không giải mã được
-            raise LoiDauVao(f"Phiên {nen.ten} đã hỏng (không giải mã được) — nhập lại cookies.txt.")
+            raise LoiDauVao(_t("Phiên {ten} đã hỏng (không giải mã được) — nhập lại cookies.txt.").format(ten=nen.ten))
     dau_vao = (dau_vao or "").strip()
     if not dau_vao:
-        raise LoiDauVao("Chưa nhập từ khoá hoặc link.")
+        raise LoiDauVao(_t("Chưa nhập từ khoá hoặc link."))
     if len(dau_vao) > DAU_VAO_TOI_DA:
-        raise LoiDauVao("Nội dung nhập quá dài.")
+        raise LoiDauVao(_t("Nội dung nhập quá dài."))
     try:
         n = int(so_luong)
     except (TypeError, ValueError) as e:
-        raise LoiDauVao("Số lượng không hợp lệ.") from e
+        raise LoiDauVao(_t("Số lượng không hợp lệ.")) from e
     tran = min(nen.so_luong_toi_da, SO_MUC_TOI_DA)
     if not 1 <= n <= tran:
-        raise LoiDauVao(f"Số lượng phải từ 1 đến {tran}.")
+        raise LoiDauVao(_t("Số lượng phải từ 1 đến {tran}.").format(tran=tran))
     la_handle = che_do == "kenh" and "/" not in dau_vao and not dau_vao.lower().startswith("http")
     if che_do != "tu_khoa" and not la_handle:
         url = dau_vao if dau_vao.lower().startswith("http") else "https://" + dau_vao
@@ -99,7 +100,7 @@ def dung_params_tai(*, owner_id: str, nen_tang: str, muc: list | None = None, ng
     """Tải theo danh sách đã chọn ở xem trước (`muc`) HOẶC cào hết theo nguồn (`nguon`)."""
     nen = _nen(nen_tang)
     if (muc is None) == (nguon is None):
-        raise LoiDauVao("Cần đúng một trong hai: danh sách mục hoặc nguồn cào.")
+        raise LoiDauVao(_t("Cần đúng một trong hai: danh sách mục hoặc nguồn cào."))
     if nguon is not None:
         dau_vao, n = _kiem_nguon(nen, nguon.get("che_do", ""), nguon.get("dau_vao", ""),
                                  nguon.get("so_luong"), phan_giai, db=db, owner_id=owner_id)
@@ -107,20 +108,20 @@ def dung_params_tai(*, owner_id: str, nen_tang: str, muc: list | None = None, ng
                 "nguon": {"che_do": nguon["che_do"], "dau_vao": dau_vao, "so_luong": n,
                           "khong_trung": bool(nguon.get("khong_trung"))}}
     if not isinstance(muc, list) or not 1 <= len(muc) <= SO_MUC_TOI_DA:
-        raise LoiDauVao(f"Chọn từ 1 đến {SO_MUC_TOI_DA} video.")
+        raise LoiDauVao(_t("Chọn từ 1 đến {n} video.").format(n=SO_MUC_TOI_DA))
     from apps.video_crawler import adapters
     ad = adapters.tao(nen.id)
     sach, da_co = [], set()
     for m in muc:
         vid = str((m or {}).get("id") or "").strip()
         if not re.fullmatch(ID_AN_TOAN, vid) or not ad.id_hop_le(vid):
-            raise LoiDauVao("Mục không hợp lệ.")
+            raise LoiDauVao(_t("Mục không hợp lệ."))
         if vid in da_co:                  # trùng trong cùng yêu cầu ⇒ tính một lần (review MAJOR 2)
             continue
         da_co.add(vid)
         url = ad.url_chuan(vid, str(m.get("url") or ""))   # dựng lại từ id — URL khách gửi bị BỎ (review BLOCKER)
         if url is None:
-            raise LoiDauVao(f"Link {nen.ten} không hợp lệ hoặc thiếu mã cần thiết — dán lại link đầy đủ.")
+            raise LoiDauVao(_t("Link {ten} không hợp lệ hoặc thiếu mã cần thiết — dán lại link đầy đủ.").format(ten=nen.ten))
         sach.append({"id": vid, "url": url, "tieu_de": str(m.get("tieu_de") or "")[:200]})
     return {"owner_id": owner_id, "nen_tang": nen.id, "muc": sach}
 
@@ -129,11 +130,11 @@ def dung_params_tai_tu_xem_truoc(db, *, owner_id: str, kham_pha_id: str, ids: li
     """Đường UI: khách chỉ gửi id đã tick. Mục lấy từ kết quả xem trước (đã xong) của CHÍNH họ — không tin form."""
     job = job_cua(db, owner_id, kham_pha_id, job_type=JOB_KHAM_PHA)
     if job is None or job.status != JOB_DONE:
-        raise LoiDauVao("Kết quả xem trước không còn — bấm Xem trước lại.")
+        raise LoiDauVao(_t("Kết quả xem trước không còn — bấm Xem trước lại."))
     theo_id = {m.get("id"): m for m in (job.result or {}).get("muc") or []}
     chon = [theo_id[i] for i in dict.fromkeys(ids) if i in theo_id]
     if not chon:
-        raise LoiDauVao("Chưa chọn video nào.")
+        raise LoiDauVao(_t("Chưa chọn video nào."))
     return dung_params_tai(owner_id=owner_id, nen_tang=job.params["nen_tang"], muc=chon)
 
 
@@ -141,9 +142,9 @@ def nop(db, *, owner_id: str, job_type: str, params: dict) -> Job:
     """Giữ credit + nộp job. KHÔNG commit (route/`get_db` commit). `owner_id` luôn lấy từ phiên đăng nhập."""
     from platform_core.job_submit import dedupe_key_for, submit_with_credit
     if job_type not in MANIFEST.job_types:
-        raise LoiDauVao("Loại việc không hợp lệ.")
+        raise LoiDauVao(_t("Loại việc không hợp lệ."))
     if params.get("owner_id") != owner_id:
-        raise LoiDauVao("Yêu cầu không thuộc tài khoản này.")
+        raise LoiDauVao(_t("Yêu cầu không thuộc tài khoản này."))
     return submit_with_credit(db, user_id=owner_id, app_slug=MANIFEST.slug, job_type=job_type,
                               params=params, dedupe_key=dedupe_key_for(job_type, params),
                               max_attempts=SO_LAN_THU)
@@ -177,7 +178,7 @@ def kiem_tan_suat(db, owner_id: str, *, bay_gio: datetime | None = None) -> None
                   if (loai == JOB_KHAM_PHA or (p or {}).get("nguon"))
                   and (t if t.tzinfo else t.replace(tzinfo=timezone.utc)) >= moc]
     if len(trong_phut) >= KHAM_PHA_MOI_PHUT:
-        raise QuaTanSuat("Bạn đang xem trước quá nhanh — đợi một phút rồi thử lại.")
+        raise QuaTanSuat(_t("Bạn đang xem trước quá nhanh — đợi một phút rồi thử lại."))
 
 
 def job_cua(db, owner_id: str, job_id: str, *, job_type: str | None = None) -> Job | None:

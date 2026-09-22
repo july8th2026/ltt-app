@@ -1,23 +1,23 @@
 {% import "_ui.html" as ui %}
-{% if oob %}<div class="vc-stats" id="vc-thong-ke" aria-label="Thống kê của bạn" hx-swap-oob="true">{% include "vc_thong_ke.html" %}</div>{% endif %}
+{% if oob %}<div class="vc-stats" id="vc-thong-ke" aria-label="{{ _('Thống kê của bạn') }}" hx-swap-oob="true">{% include "vc_thong_ke.html" %}</div>{% endif %}
 {#- Chỉ poll khi còn job chạy (SO_LOI L14); nộp job mới thì trang tải lại (HX-Redirect) nên poll tự bật. -#}
 <div class="card" id="hang-doi" style="margin-top:var(--space-5,20px)"
      {% if thong_ke.dang_chay %}hx-get="{{ app.route_prefix if app else '/video-crawler' }}/hang-doi" hx-trigger="every 4s" hx-swap="outerHTML"{% endif %}>
-<h2>Hàng đợi &amp; lịch sử của tôi</h2>
+<h2>{{ _("Hàng đợi &amp; lịch sử của tôi") }}</h2>
 {% if not lich_su %}
-  <p class="muted">Chưa có lượt cào nào.</p>
+  <p class="muted">{{ _("Chưa có lượt cào nào.") }}</p>
 {% else %}
 <div class="tablewrap"><table class="table">
-  <thead><tr><th>Việc</th><th>Nguồn</th><th>Trạng thái</th><th>Tiến độ</th><th></th></tr></thead>
+  <thead><tr><th>{{ _("Việc") }}</th><th>{{ _("Nguồn") }}</th><th>{{ _("Trạng thái") }}</th><th>{{ _("Tiến độ") }}</th><th></th></tr></thead>
   <tbody>
   {% for j in lich_su %}
     {% set p = j.params or {} %}{% set ng = p.nguon or p %}
     <tr>
-      <td>{{ "Xem trước" if j.job_type.endswith("kham_pha") else "Tải" }}</td>
-      <td>{% if p.muc %}{{ p.muc | length }} video đã chọn{% else %}{{ (ng.dau_vao or "") | truncate(60) }}{% endif %}</td>
+      <td>{{ _("Xem trước") if j.job_type.endswith("kham_pha") else _("Tải") }}</td>
+      <td>{% if p.muc %}{{ _("{n} video đã chọn").format(n=p.muc | length) }}{% else %}{{ (ng.dau_vao or "") | truncate(60) }}{% endif %}</td>
       <td>{{ ui.nhan_trang_thai(j.status) }}</td>
-      <td>{{ ui.thanh_tien_do(j.progress, "Tiến độ") }} <small class="muted">{{ j.progress_msg }}</small></td>
-      <td><a href="/jobs/{{ j.id }}">Chi tiết · tải về · huỷ</a></td>
+      <td>{{ ui.thanh_tien_do(j.progress, _("Tiến độ")) }} <small class="muted">{{ _(j.progress_msg) if j.progress_msg else "" }}</small></td>
+      <td><a href="/jobs/{{ j.id }}">{{ _("Chi tiết · tải về · huỷ") }}</a></td>
     </tr>
   {% endfor %}
   </tbody>

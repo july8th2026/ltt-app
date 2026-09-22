@@ -36,6 +36,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from platform_core.i18n import _ as _t
+
 from apps.video_crawler.adapters._ytdlp import YtdlpAdapter
 from apps.video_crawler.adapters.base import LoiCao
 
@@ -75,6 +77,6 @@ class BilibiliTvAdapter(YtdlpAdapter):
         m = BiliIntlIE._VALID_URL and re.match(BiliIntlIE._VALID_URL, vao)
         if not m or not m.group("aid"):
             raise LoiCao("url_khong_ho_tro",
-                         "Chỉ hỗ trợ dán link video độc lập bilibili.tv (không hỗ trợ link tập phim/season).",
+                         _t("Chỉ hỗ trợ dán link video độc lập bilibili.tv (không hỗ trợ link tập phim/season)."),
                          tam_thoi=False)
         return vao

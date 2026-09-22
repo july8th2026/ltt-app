@@ -13,6 +13,8 @@ from typing import Any
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 
+from platform_core.i18n import _ as _t
+
 from apps.video_crawler import features, nen_tang, phien
 from apps.video_crawler.manifest import MANIFEST
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
@@ -37,7 +39,7 @@ def _la_htmx(request: Request) -> bool:
 def _nguoi(request: Request):
     u: Any = user_hien_tai(request)
     if u is None:
-        raise features.LoiDauVao("Cần đăng nhập bằng tài khoản người dùng (không phải quản trị nội bộ).")
+        raise features.LoiDauVao(_t("Cần đăng nhập bằng tài khoản người dùng (không phải quản trị nội bộ)."))
     return u
 
 
@@ -85,7 +87,7 @@ def kham_pha(request: Request, nen_tang_id: str = Form("", alias="nen_tang"), ch
     from platform_core import credit
     from platform_core.registry import RegistryError
     if not verify_csrf_token(request, csrf_token):
-        return _loi_form(request, user, db, "Phiên đã hết hạn — tải lại trang.")
+        return _loi_form(request, user, db, _t("Phiên đã hết hạn — tải lại trang."))
     try:
         u = _nguoi(request)
         features.kiem_tan_suat(db, u.id)
@@ -132,7 +134,7 @@ async def tai(request: Request, user: str = Depends(require_login), db=Depends(g
     from platform_core.registry import RegistryError
     form = await request.form()
     if not verify_csrf_token(request, str(form.get("csrf_token") or "")):
-        return _loi_form(request, user, db, "Phiên đã hết hạn — tải lại trang.")
+        return _loi_form(request, user, db, _t("Phiên đã hết hạn — tải lại trang."))
     try:
         u = _nguoi(request)
         nen_id = str(form.get("nen_tang") or "")
@@ -168,7 +170,7 @@ def hang_doi(request: Request, user: str = Depends(require_login), db=Depends(ge
 async def luu_phien(request: Request, user: str = Depends(require_login), db=Depends(get_db)):
     form = await request.form()
     if not verify_csrf_token(request, str(form.get("csrf_token") or "")):
-        return _loi_form(request, user, db, "Phiên đã hết hạn — tải lại trang.")
+        return _loi_form(request, user, db, _t("Phiên đã hết hạn — tải lại trang."))
     noi_dung = form.get("cookies_txt") or ""
     from starlette.datastructures import UploadFile
     tep = form.get("cookies_tep")
@@ -190,7 +192,7 @@ async def luu_phien(request: Request, user: str = Depends(require_login), db=Dep
 def xoa_phien(request: Request, nen_tang_id: str = Form("", alias="nen_tang"), csrf_token: str = Form(""),
               user: str = Depends(require_login), db=Depends(get_db)):
     if not verify_csrf_token(request, csrf_token):
-        return _loi_form(request, user, db, "Phiên đã hết hạn — tải lại trang.")
+        return _loi_form(request, user, db, _t("Phiên đã hết hạn — tải lại trang."))
     u: Any = user_hien_tai(request)
     if u is not None:
         phien.xoa(db, owner_id=u.id, nen_tang=nen_tang_id)

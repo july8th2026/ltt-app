@@ -16,6 +16,9 @@ import re
 import urllib.parse
 from dataclasses import dataclass
 
+from platform_core.i18n import N_
+from platform_core.i18n import _ as _t
+
 from apps.video_crawler.adapters.base import CHE_DO
 
 #: search/detail/creator/chase (donor) → tu_khoa/link/kenh/bo (LTT).
@@ -78,7 +81,7 @@ class DoanLink:
 def _kt(*che_do: str) -> frozenset:
     het = frozenset(che_do)
     thua = het - CHE_DO
-    assert not thua, f"chế độ ngoài hợp đồng: {thua}"
+    assert not thua, _t("chế độ ngoài hợp đồng: {thua}").format(thua=thua)
     return het
 
 
@@ -89,23 +92,23 @@ _NEN: tuple[NenTang, ...] = (
         che_do=_kt("link"),
         xem_truoc=True, can_dang_nhap=True, cach_dang_nhap="qr",
         ten_mien=('douyin.com', 'iesdouyin.com'),
-        so_luong_toi_da=20, adapter="douyin", gioi_han=('Chỉ dán link một video; cần phiên (Douyin đòi cookie mới).',),
+        so_luong_toi_da=20, adapter="douyin", gioi_han=(N_('Chỉ dán link một video; cần phiên (Douyin đòi cookie mới).'),),
         cookie_dang_nhap=('sessionid', 'sessionid_ss', 'sid_tt'),
         che_do_can_dang_nhap=frozenset({'link'}),
     ),
     NenTang(
-        id="bilibili_tv", ten="Bilibili quốc tế", icon="bilibili_tv", bat=True,
+        id="bilibili_tv", ten=N_("Bilibili quốc tế"), icon="bilibili_tv", bat=True,
         che_do=_kt("link"),
         xem_truoc=False, can_dang_nhap=False, cach_dang_nhap="",
         ten_mien=("bilibili.tv",),
-        so_luong_toi_da=20, adapter="bilibili_tv", gioi_han=('Chỉ link video độc lập (/video/…), chưa hỗ trợ link tập phim.',),
+        so_luong_toi_da=20, adapter="bilibili_tv", gioi_han=(N_('Chỉ link video độc lập (/video/…), chưa hỗ trợ link tập phim.'),),
     ),
     NenTang(
         id="bilibili", ten="Bilibili", icon="bilibili", bat=True,
         che_do=_kt("tu_khoa", "link", "kenh", "bo"),
         xem_truoc=True, can_dang_nhap=True, cach_dang_nhap="qr",
         ten_mien=('bilibili.com', 'b23.tv'),
-        so_luong_toi_da=20, adapter="bilibili", gioi_han=('Cần phiên: Bilibili chặn truy cập ẩn danh từ máy chủ (HTTP 412).', 'Không nhận link rút gọn b23.tv.'),
+        so_luong_toi_da=20, adapter="bilibili", gioi_han=(N_('Cần phiên: Bilibili chặn truy cập ẩn danh từ máy chủ (HTTP 412).'), N_('Không nhận link rút gọn b23.tv.')),
         cookie_dang_nhap=('SESSDATA', 'DedeUserID'),
         che_do_can_dang_nhap=frozenset({'link', 'tu_khoa', 'kenh', 'bo'}),
     ),
@@ -114,7 +117,7 @@ _NEN: tuple[NenTang, ...] = (
         che_do=_kt("link"),
         xem_truoc=True, can_dang_nhap=True, cach_dang_nhap="qr",
         ten_mien=('xiaohongshu.com', 'xhslink.com'),
-        so_luong_toi_da=20, adapter="xiaohongshu", gioi_han=('Chỉ link bài có xsec_token (copy từ trình duyệt).', 'Bài chỉ có ảnh không tải được.'),
+        so_luong_toi_da=20, adapter="xiaohongshu", gioi_han=(N_('Chỉ link bài có xsec_token (copy từ trình duyệt).'), N_('Bài chỉ có ảnh không tải được.')),
         cookie_dang_nhap=('id_token',),
     ),
     NenTang(
@@ -130,7 +133,7 @@ _NEN: tuple[NenTang, ...] = (
         che_do=_kt("link", "kenh"),
         xem_truoc=False, can_dang_nhap=True, cach_dang_nhap="cookie",
         ten_mien=("weibo.com", "weibo.cn"),
-        so_luong_toi_da=20, adapter="weibo", gioi_han=('Link video hoặc trang kênh weibo.com/u/…',),
+        so_luong_toi_da=20, adapter="weibo", gioi_han=(N_('Link video hoặc trang kênh weibo.com/u/…'),),
         cookie_dang_nhap=('SUB', 'SUBP'),
     ),
     NenTang(
@@ -138,7 +141,7 @@ _NEN: tuple[NenTang, ...] = (
         che_do=_kt("tu_khoa", "link", "kenh", "bo"),
         xem_truoc=True, can_dang_nhap=True, cach_dang_nhap="cookie",
         ten_mien=("tiktok.com",),
-        so_luong_toi_da=20, adapter="tiktok", gioi_han=('Tìm theo từ khoá cần phiên TikTok.', 'Bài ảnh (slideshow) không có video.'),
+        so_luong_toi_da=20, adapter="tiktok", gioi_han=(N_('Tìm theo từ khoá cần phiên TikTok.'), N_('Bài ảnh (slideshow) không có video.')),
         cookie_dang_nhap=('sessionid', 'sessionid_ss', 'sid_tt'),
         che_do_can_dang_nhap=frozenset({'tu_khoa'}),
     ),
@@ -155,7 +158,7 @@ _NEN: tuple[NenTang, ...] = (
         che_do=_kt("link"),
         xem_truoc=True, can_dang_nhap=True, cach_dang_nhap="cookie",
         ten_mien=('facebook.com', 'fb.watch', 'fb.com'),
-        so_luong_toi_da=20, adapter="facebook", gioi_han=('Chỉ link video/reel đầy đủ (chưa nhận fb.watch, Page).',),
+        so_luong_toi_da=20, adapter="facebook", gioi_han=(N_('Chỉ link video/reel đầy đủ (chưa nhận fb.watch, Page).'),),
         cookie_dang_nhap=('c_user', 'xs'),
     ),
     NenTang(
@@ -163,7 +166,7 @@ _NEN: tuple[NenTang, ...] = (
         che_do=_kt("link"),
         xem_truoc=True, can_dang_nhap=True, cach_dang_nhap="cookie",
         ten_mien=("instagram.com",),
-        so_luong_toi_da=20, adapter="instagram", gioi_han=('Cần phiên Instagram.', 'Bài chỉ có ảnh không tải được.'),
+        so_luong_toi_da=20, adapter="instagram", gioi_han=(N_('Cần phiên Instagram.'), N_('Bài chỉ có ảnh không tải được.')),
         cookie_dang_nhap=('sessionid', 'ds_user_id'),
         che_do_can_dang_nhap=frozenset({'link'}),
     ),
@@ -172,7 +175,7 @@ _NEN: tuple[NenTang, ...] = (
         che_do=_kt("link"),
         xem_truoc=False, can_dang_nhap=True, cach_dang_nhap="cookie",
         ten_mien=("twitter.com", "x.com"),
-        so_luong_toi_da=20, adapter="twitter", gioi_han=('Chỉ link một tweet.',),
+        so_luong_toi_da=20, adapter="twitter", gioi_han=(N_('Chỉ link một tweet.'),),
         cookie_dang_nhap=('auth_token', 'ct0'),
     ),
     NenTang(
@@ -200,7 +203,7 @@ def lay(id: str) -> NenTang:
     try:
         return _THEO_ID[id]
     except KeyError:
-        raise NenKhongHopLe(f"nền không tồn tại: {id!r}") from None
+        raise NenKhongHopLe(_t("nền không tồn tại: {id!r}").format(id=id)) from None
 
 
 def cac_nen_bat() -> list[NenTang]:
@@ -212,7 +215,7 @@ def lay_nen_bat(id: str) -> NenTang:
     """Như `lay`, nhưng ném `NenKhongHopLe` nếu nền chưa `bat` (chưa có adapter/test)."""
     n = _THEO_ID.get(id)
     if n is None or not n.bat:
-        raise NenKhongHopLe(f"nền không hợp lệ hoặc chưa bật: {id!r}")
+        raise NenKhongHopLe(_t("nền không hợp lệ hoặc chưa bật: {id!r}").format(id=id))
     return n
 
 

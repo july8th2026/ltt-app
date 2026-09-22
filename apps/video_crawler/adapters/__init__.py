@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import importlib
 
+from platform_core.i18n import _ as _t
+
 
 def tao(nen_id: str):
     """Instance adapter của nền đã BẬT (`NenTang.adapter` = tên module trong gói này).
@@ -15,4 +17,4 @@ def tao(nen_id: str):
     for v in vars(mod).values():
         if isinstance(v, type) and getattr(v, "nen_tang", None) == nen_id and hasattr(v, "tai"):
             return v()
-    raise RuntimeError(f"adapter {ten!r} không khai lớp cho nền {nen_id!r}")
+    raise RuntimeError(_t("adapter {ten!r} không khai lớp cho nền {nen_id!r}").format(ten=ten, nen_id=nen_id))

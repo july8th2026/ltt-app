@@ -9,39 +9,43 @@ Thông điệp khách là câu cố định — không bao giờ chứa văn b�
 """
 from __future__ import annotations
 
+from platform_core.i18n import N_
+
 from apps.video_crawler.adapters.base import LoiCao
 
 #: (mã, các tín hiệu viết thường, tam_thoi, thông điệp khách) — xét theo thứ tự.
+#: Thông điệp khai báo lúc nạp module ⇒ `N_()` (đánh dấu để trích, dịch lúc hiển thị
+#: — xem `manifest.py`/`platform_core/i18n.py`), không phải `_()`.
 _BANG: tuple[tuple[str, tuple[str, ...], bool, str], ...] = (
     ("gioi_han_tuoi",
      ("confirm your age", "age-restricted", "age restricted", "inappropriate for some users"),
-     False, "Video bị giới hạn tuổi, không tải được."),
+     False, N_("Video bị giới hạn tuổi, không tải được.")),
     ("yt_bot", ("sign in to confirm", "not a bot"),
-     True, "YouTube tạm chặn truy cập tự động. Vui lòng thử lại sau."),
+     True, N_("YouTube tạm chặn truy cập tự động. Vui lòng thử lại sau.")),
     # Smoke mạng thật 22/09 (Instagram, Douyin): thử lại ẩn danh không bao giờ khỏi ⇒ tam_thoi=False.
     ("can_dang_nhap", ("login required", "fresh cookies", "cookies for the authentication"),
-     False, "Nền tảng yêu cầu đăng nhập — thêm phiên ở mục Đăng nhập nền tảng rồi thử lại."),
+     False, N_("Nền tảng yêu cầu đăng nhập — thêm phiên ở mục Đăng nhập nền tảng rồi thử lại.")),
     # Smoke thật 22/09 (Bilibili 412 = risk control với truy cập ẩn danh từ máy chủ).
     ("nen_chan", ("http error 412", "precondition failed", "http error 461"),
-     False, "Nền tảng đang chặn truy cập ẩn danh từ máy chủ — thêm phiên ở mục Đăng nhập nền tảng rồi thử lại."),
+     False, N_("Nền tảng đang chặn truy cập ẩn danh từ máy chủ — thêm phiên ở mục Đăng nhập nền tảng rồi thử lại.")),
     ("chi_la_anh", ("no video formats found",),
-     False, "Bài đăng này không có video (chỉ có ảnh)."),
+     False, N_("Bài đăng này không có video (chỉ có ảnh).")),
     ("url_khong_ho_tro", ("unsupported url", "no suitable extractor"),
-     False, "Link không được hỗ trợ cho nền tảng này."),
+     False, N_("Link không được hỗ trợ cho nền tảng này.")),
     ("yt_403", ("unable to download video data", "http error 403"),
-     True, "YouTube từ chối tải video này lúc này. Vui lòng thử lại sau."),
+     True, N_("YouTube từ chối tải video này lúc này. Vui lòng thử lại sau.")),
     ("rieng_tu", ("private", "members-only", "members only", "join this channel", "sign in"),
-     False, "Video ở chế độ riêng tư hoặc chỉ dành cho thành viên."),
+     False, N_("Video ở chế độ riêng tư hoặc chỉ dành cho thành viên.")),
     ("khong_ton_tai", ("unavailable", "has been removed", "removed by", "does not exist",
                        "no longer available", "http error 404", "been terminated"),
-     False, "Video không tồn tại hoặc đã bị gỡ."),
+     False, N_("Video không tồn tại hoặc đã bị gỡ.")),
     ("mang", ("timed out", "timeout", "connection reset", "connection refused", "connection aborted",
               "forcibly closed", "getaddrinfo failed", "name resolution", "network is unreachable",
               "remote end closed", "incompleteread", "network connection error"),
-     True, "Lỗi mạng khi kết nối tới nền tảng. Vui lòng thử lại sau."),
+     True, N_("Lỗi mạng khi kết nối tới nền tảng. Vui lòng thử lại sau.")),
 )
 
-_KHAC = "Không tải được video do lỗi không xác định. Vui lòng thử lại sau."
+_KHAC = N_("Không tải được video do lỗi không xác định. Vui lòng thử lại sau.")
 
 
 def phan_loai(thong_diep: str) -> LoiCao:

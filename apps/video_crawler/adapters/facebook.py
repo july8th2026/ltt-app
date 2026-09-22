@@ -44,6 +44,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from platform_core.i18n import _ as _t
+
 from apps.video_crawler.adapters._ytdlp import YtdlpAdapter
 
 __all__ = ["EXTRACTOR_CHO_PHEP", "FacebookAdapter"]
@@ -73,7 +75,8 @@ class FacebookAdapter(YtdlpAdapter):
     def url_kham_pha(self, che_do: str, dau_vao: str, n: int) -> str:
         if che_do != "link":
             raise NotImplementedError(
-                f"Facebook: chế độ '{che_do}' chưa hỗ trợ — yt-dlp không liệt kê được Page/kênh Facebook "
-                "(cần trình duyệt đã đăng nhập, donor `_fb_liet_ke_kenh`); chỉ 'Theo link' dùng ẩn danh được."
+                _t("Facebook: chế độ '{che_do}' chưa hỗ trợ — yt-dlp không liệt kê được Page/kênh Facebook "
+                   "(cần trình duyệt đã đăng nhập, donor `_fb_liet_ke_kenh`); chỉ 'Theo link' dùng ẩn danh được.")
+                .format(che_do=che_do)
             )
         return dau_vao         # link: một video/reel, đưa thẳng cho yt-dlp (FacebookIE/FacebookReelIE tự khớp)

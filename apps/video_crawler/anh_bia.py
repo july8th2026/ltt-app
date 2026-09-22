@@ -14,6 +14,8 @@ import time
 import urllib.request
 from collections import OrderedDict
 
+from platform_core.i18n import _ as _t
+
 from apps.video_crawler import an_toan_url
 
 #: CDN ảnh bìa theo nền (hậu tố tên miền). Thêm nền mới ⇒ thêm dòng (test_1919 chốt mọi nền bật đều có).
@@ -62,11 +64,11 @@ def _lay_mac_dinh(url: str, *, toi_da: int) -> tuple[bytes, str]:
     han = time.monotonic() + _HAN_TONG_S
     with mo.open(req, timeout=_TIMEOUT_S) as r:
         if getattr(r, "status", 200) != 200:
-            raise AnhKhongHopLe("ảnh không tải được")
+            raise AnhKhongHopLe(_t("ảnh không tải được"))
         khoi, co = [], 0
         while co <= toi_da:                              # đọc từng khối để giữ hạn TỔNG, không chỉ hạn mỗi lượt đọc
             if time.monotonic() > han:
-                raise AnhKhongHopLe("ảnh tải quá chậm")
+                raise AnhKhongHopLe(_t("ảnh tải quá chậm"))
             b = r.read(64 * 1024)
             if not b:
                 break
@@ -85,7 +87,7 @@ def tai(url: str, *, nen_tang: str | None = None, phan_giai=None, lay=None,
             _DEM.move_to_end(khoa)
             return hit[1], hit[2]
     if not _SO_LUONG_DONG_THOI.acquire(timeout=cho_s):
-        raise AnhKhongHopLe("đang bận")
+        raise AnhKhongHopLe(_t("đang bận"))
     try:
         du_lieu, loai = _tai_that(url, nen_tang=nen_tang, phan_giai=phan_giai, lay=lay)
     finally:
@@ -103,25 +105,25 @@ def _tai_that(url: str, *, nen_tang: str | None, phan_giai, lay) -> tuple[bytes,
     else:
         mien = tuple(sorted({m for ds in CDN_ANH.values() for m in ds}))
     if not mien:
-        raise AnhKhongHopLe("nền không có CDN ảnh")
+        raise AnhKhongHopLe(_t("nền không có CDN ảnh"))
     kw = {"ten_mien": mien}
     if phan_giai is not None:
         kw["phan_giai"] = phan_giai
     try:
         url = an_toan_url.kiem(url, **kw)
     except an_toan_url.UrlKhongAnToan as e:
-        raise AnhKhongHopLe("host ảnh không được phép") from e
+        raise AnhKhongHopLe(_t("host ảnh không được phép")) from e
     try:
         du_lieu, loai = (lay or _lay_mac_dinh)(url, toi_da=TOI_DA_BYTE)
     except AnhKhongHopLe:
         raise
     except Exception as e:  # noqa: BLE001 — mọi lỗi mạng đều thành "không có ảnh", không lộ chi tiết
-        raise AnhKhongHopLe("ảnh không tải được") from e
+        raise AnhKhongHopLe(_t("ảnh không tải được")) from e
     loai = loai.split(";")[0].strip().lower()
     if not loai.startswith("image/") or loai == "image/svg+xml":     # SVG có thể mang script
-        raise AnhKhongHopLe("không phải ảnh")
+        raise AnhKhongHopLe(_t("không phải ảnh"))
     if len(du_lieu) > TOI_DA_BYTE:
-        raise AnhKhongHopLe("ảnh quá lớn")
+        raise AnhKhongHopLe(_t("ảnh quá lớn"))
     return du_lieu, loai
 
 

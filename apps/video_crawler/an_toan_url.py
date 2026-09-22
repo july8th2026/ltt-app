@@ -15,6 +15,8 @@ import ipaddress
 import socket
 import urllib.parse
 
+from platform_core.i18n import _ as _t
+
 
 class UrlKhongAnToan(ValueError):
     """URL không an toàn để cào (SSRF: scheme/host/IP nội bộ/ngoài allowlist)."""
@@ -47,14 +49,14 @@ def kiem(url: str, *, ten_mien: tuple, phan_giai=_phan_giai_mac_dinh) -> str:
     try:
         p = urllib.parse.urlparse(goc)
     except Exception as exc:
-        raise UrlKhongAnToan(f"URL không hợp lệ: {goc!r}") from exc
+        raise UrlKhongAnToan(_t("URL không hợp lệ: {url!r}").format(url=goc)) from exc
 
     if p.scheme not in ("http", "https"):
-        raise UrlKhongAnToan(f"scheme không cho phép: {p.scheme!r}")
+        raise UrlKhongAnToan(_t("scheme không cho phép: {scheme!r}").format(scheme=p.scheme))
 
     host = (p.hostname or "").lower()
     if not host or host == "localhost":
-        raise UrlKhongAnToan("host rỗng hoặc localhost")
+        raise UrlKhongAnToan(_t("host rỗng hoặc localhost"))
 
     # Donor: IP literal ở chính host bị chặn nếu nội bộ (tên miền → ValueError, bỏ qua ở đây).
     try:
@@ -62,21 +64,21 @@ def kiem(url: str, *, ten_mien: tuple, phan_giai=_phan_giai_mac_dinh) -> str:
     except ValueError:
         ip_host = None
     if ip_host is not None and _la_ip_noi_bo(host):
-        raise UrlKhongAnToan(f"IP nội bộ bị chặn: {host}")
+        raise UrlKhongAnToan(_t("IP nội bộ bị chặn: {host}").format(host=host))
 
     # LTT #1: host phải thuộc allowlist tên miền của nền đã chọn.
     if not _thuoc_ten_mien(host, ten_mien):
-        raise UrlKhongAnToan(f"tên miền không thuộc allowlist: {host}")
+        raise UrlKhongAnToan(_t("tên miền không thuộc allowlist: {host}").format(host=host))
 
     # LTT #2: phân giải DNS, chặn DNS rebinding về nội bộ.
     try:
         ips = phan_giai(host)
     except Exception as exc:
-        raise UrlKhongAnToan(f"không phân giải được host: {host}") from exc
+        raise UrlKhongAnToan(_t("không phân giải được host: {host}").format(host=host)) from exc
     if not ips:
-        raise UrlKhongAnToan(f"không phân giải được host: {host}")
+        raise UrlKhongAnToan(_t("không phân giải được host: {host}").format(host=host))
     for ip_str in ips:
         if _la_ip_noi_bo(ip_str):
-            raise UrlKhongAnToan(f"tên miền phân giải ra IP nội bộ: {ip_str}")
+            raise UrlKhongAnToan(_t("tên miền phân giải ra IP nội bộ: {ip}").format(ip=ip_str))
 
     return goc

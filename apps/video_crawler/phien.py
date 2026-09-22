@@ -18,6 +18,8 @@ from pathlib import Path
 
 from sqlalchemy import select
 
+from platform_core.i18n import _ as _t
+
 from apps.video_crawler import nen_tang
 from apps.video_crawler.tables import VcPhien
 
@@ -36,7 +38,7 @@ def _thuoc(domain: str, ten_mien: tuple) -> bool:
 
 def _loc(cookies_txt: str, nen) -> tuple[list[str], datetime | None]:
     if not isinstance(cookies_txt, str) or len(cookies_txt.encode("utf-8")) > TOI_DA_BYTE:
-        raise PhienKhongHopLe("Tệp cookie quá lớn hoặc không đọc được.")
+        raise PhienKhongHopLe(_t("Tệp cookie quá lớn hoặc không đọc được."))
     giu, ten_co, het_han = [], set(), []
     cookies_txt = cookies_txt.lstrip("\ufeff")          # tệp xuất có BOM (review lần 2)
     for dong in cookies_txt.splitlines():
@@ -58,9 +60,9 @@ def _loc(cookies_txt: str, nen) -> tuple[list[str], datetime | None]:
             except ValueError:
                 pass
     if not giu:
-        raise PhienKhongHopLe(f"Không thấy cookie nào của {nen.ten}. Hãy xuất cookies.txt khi đang mở {nen.ten}.")
+        raise PhienKhongHopLe(_t("Không thấy cookie nào của {ten}. Hãy xuất cookies.txt khi đang mở {ten}.").format(ten=nen.ten))
     if not ten_co & set(nen.cookie_dang_nhap):
-        raise PhienKhongHopLe(f"Cookie này chưa đăng nhập {nen.ten} — hãy đăng nhập rồi xuất lại.")
+        raise PhienKhongHopLe(_t("Cookie này chưa đăng nhập {ten} — hãy đăng nhập rồi xuất lại.").format(ten=nen.ten))
     moc = None
     if het_han:
         try:
@@ -92,7 +94,7 @@ def luu(db, *, owner_id: str, nen_tang: str, cookies_txt: str) -> VcPhien:
             return row
         except IntegrityError:
             continue
-    raise PhienKhongHopLe("Đang lưu phiên này ở nơi khác — thử lại.")
+    raise PhienKhongHopLe(_t("Đang lưu phiên này ở nơi khác — thử lại."))
 
 
 def hop_le(row: VcPhien) -> bool:
@@ -118,9 +120,9 @@ def nen_tang_cua(nen_id: str):
     try:
         nen = nen_tang.lay(nen_id)
     except nen_tang.NenKhongHopLe as e:
-        raise PhienKhongHopLe("Nền tảng không hợp lệ.") from e
+        raise PhienKhongHopLe(_t("Nền tảng không hợp lệ.")) from e
     if not nen.cookie_dang_nhap:
-        raise PhienKhongHopLe(f"{nen.ten} không dùng đăng nhập.")
+        raise PhienKhongHopLe(_t("{ten} không dùng đăng nhập.").format(ten=nen.ten))
     return nen
 
 
