@@ -102,17 +102,28 @@ def test_hai_cach_chon_giong_deu_duoc_khai():
     assert not gia.che_do_giong_hop_le("bia dat")
 
 
-def test_AUTO_MATCH_noi_THAT_rang_no_chua_san_sang():
-    """⚠️ Pha 19 ghi lai rang khong giai doan nao sinh `HoSoNoiDung`, nen tu khop
-    se **hoan lai** chu khong chon bua mot giong.
+def test_AUTO_MATCH_noi_THAT_ve_thu_no_lam_duoc():
+    """⭐ **Bai nay da LAT CHIEU 23/09/2026, va do la ca y nghia cua no.**
 
-    ⛔ Bay mot lua chon khong chay duoc ma khong noi gi la dung thu
-       `V4_MVP_PRODUCT_CONTRACT` goi la "false feature".
+    Ban cu doi mo ta phai chua "hoàn thiện"/"chưa": luc do `AUTO_MATCH` that su
+    chua chay duoc — khong giai doan nao sinh `HoSoNoiDung` — va bay mot lua
+    chon chet ma khong noi gi la thu `V4_MVP_PRODUCT_CONTRACT` goi la "false
+    feature".
+
+    `ho_so_noi_dung.py` dong lo hong do, nen **giu cau cu lai la noi doi theo
+    chieu nguoc lai**: khach doc "đang được hoàn thiện" se khong bam mot tinh
+    nang da chay.
+
+    ⛔ Nhung mo ta moi cung khong duoc HUA CHAC: khong du can cu thi lan chay
+       dung lai (`rang_giong.vi_sao_chua_rang`) va khach phai tu chon. Nen bai
+       nay chot CA HAI chieu — khong noi la chua xong, va co noi loi thoat.
     """
     mo_ta = next(m for ma, _, m in gia.CHE_DO_GIONG_BANG
                  if ma == hop_dong_v4.CHE_DO_GIONG_TU_KHOP)
-    assert "hoàn thiện" in mo_ta or "chưa" in mo_ta, (
-        "AUTO_MATCH duoc bay ra nhu mot tinh nang da chay duoc")
+    assert "hoàn thiện" not in mo_ta, (
+        "AUTO_MATCH da chay duoc — mo ta con noi no dang duoc hoan thien")
+    assert "tự chọn" in mo_ta, (
+        "mo ta khong noi cho khach biet chuyen gi xay ra khi khong du can cu")
 
 
 # ══════════════════════════════════════════════════════════════════════════════

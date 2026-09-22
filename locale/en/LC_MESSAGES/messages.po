@@ -19698,3 +19698,15 @@ msgstr "VMAF failed: {e}"
 
 msgid "Đang đo chất lượng hình (VMAF)"
 msgstr "Measuring picture quality (VMAF)"
+
+msgid "Chưa nhận ra giọng người nói trong video nên không tự khớp được. Hãy tự chọn một giọng."
+msgstr "We could not make out the speaker in this video, so we cannot match a voice automatically. Please pick a voice yourself."
+
+msgid "Chưa đủ căn cứ từ nội dung để tự khớp giọng. Hãy tự chọn một giọng."
+msgstr "There is not enough to go on in this video to match a voice automatically. Please pick a voice yourself."
+
+msgid "Hệ thống nghe giọng người nói trong video và đọc lời thoại để chọn giọng hợp nhất. Nếu không đủ căn cứ, hệ thống sẽ báo để bạn tự chọn."
+msgstr "We listen to the speaker in your video and read the dialogue to pick the closest voice. If there is not enough to go on, we will say so and let you pick."
+
+msgid "Không có giọng nào hợp với nội dung này. Hãy tự chọn một giọng."
+msgstr "No voice fits this content. Please pick a voice yourself."

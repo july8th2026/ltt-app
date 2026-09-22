@@ -612,6 +612,15 @@ def _doan_thao_tac(van: str, than: dict) -> str:
     #    va no khong lo ra vi khong nguoi goi nao ton tai de chay no.
     if "co_thoai" in than and "dai_giay" in than:
         return ai.DOC_CANH.ma
+    # ⭐ **Hinh dang goi tin cua `HO_SO_NOI_DUNG`, khong phai mot chu trong
+    #    prompt.** `hieu_canh.loi_nhac_ho_so` gui kem khoi so lieu TAT DINH cua
+    #    `ho_so_noi_dung.bang_chung` — `f0_trung_vi` + `ky_tu_moi_giay` la hai
+    #    khoa khong thao tac nao khac co. Truoc 23/09 nhanh nay chi nhan ra
+    #    `the_loai`/`ho_so` (hai khoa cua PHAN HOI, khong phai cua YEU CAU), nen
+    #    mot loi nhac ho so that se roi xuong `DICH_THUAT` va tra ve mot hinh
+    #    dang `doc_ho_so` khong doc duoc.
+    if "f0_trung_vi" in than or "ky_tu_moi_giay" in than:
+        return ai.HO_SO_NOI_DUNG.ma
     if "the_loai" in than or "ho_so" in than:
         return ai.HO_SO_NOI_DUNG.ma
     if "khe" in than or "giay" in than:
@@ -653,8 +662,26 @@ def _phan_hoi(ma: str, than: dict, long_tieng, su_that) -> dict:
             "canh_bao": [],
         }
     if ma == ai.HO_SO_NOI_DUNG.ma:
+        # 🔴 **Hai loi trong ba dong cu, va ca hai deu im lang.**
+        #    (a) ba mat nam PHANG o goc, nhung `hieu_canh.doc_ho_so` doc chung
+        #        trong `dac_diem_giong` ⇒ ho so ra rong ⇒ `AUTO_MATCH` van
+        #        `CHUA_RANG`, tuc ban thay the "tra loi" ma khong tra loi gi;
+        #    (b) `phong_cach: "than_mat"` khong co trong catalog
+        #        (`giong_mau.NHAN_PHONG_CACH`) ⇒ `giong_mau.loc` tra ve rong.
+        #    Ca hai khong lo ra vi thao tac nay chua tung co nguoi goi.
+        #
+        # ⭐ `vung` de RONG: mot phim tieng Trung khong noi gi ve giong vung
+        #    mien tieng Viet, nen mot ban thay the khai no la dang bia ra mot
+        #    rang buoc ma duong that se phai noi long di.
+        from apps.ltt_voice.giong_mau import UU_TIEN_PHONG_CACH
+
         return {"the_loai": "huong_dan", "nhip": "vua",
-                "gioi": "nam", "vung": "bac", "phong_cach": "than_mat"}
+                "giong_dieu": "than mat", "khan_gia": "nguoi hoc",
+                "tom_tat": "mot buoi huong dan ngan",
+                "dac_diem_giong": {
+                    "gioi": "nam", "vung": "",
+                    "phong_cach": min(UU_TIEN_PHONG_CACH,
+                                      key=UU_TIEN_PHONG_CACH.get)}}
     if ma == ai.RUT_NGAN_CHO_VUA.ma:
         chu = str(than.get("chu") or "")
         # Rut that: bo tu cuoi. Mot ban "rut ngan" tra ve y nguyen se lam bac

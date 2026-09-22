@@ -121,6 +121,12 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                 "so_khoi": ket_qua.get("so_khoi", 0),
                 "khoi_giay": ket_qua.get("khoi_giay", 0),
                 "stem_giu": list(tach_tieng.STEM_GIU),
+                # ⭐ MOT con so thay cho mot tep tieng. `vocals` bi xoa cung thu
+                #    muc tam (dau tep), nhung `AUTO_MATCH` can biet nguoi noi
+                #    goc la nam hay nu — va do la thu duy nhat ta giu lai.
+                #    Do o tien trinh con demucs (`demucs_runner._f0_cua_giong`);
+                #    `0.0` nghia la khong do duoc, khong phai "khong co giong".
+                "f0_trung_vi": float(ket_qua.get("f0_trung_vi") or 0.0),
                 "lufs": am["lufs"],
                 "dinh_that": am["dinh_that"],
                 "thoi_luong": tt["thoi_luong"],

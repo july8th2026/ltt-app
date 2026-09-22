@@ -98,7 +98,7 @@ def _doc_ban_bien_tap(db, kho: Storage, run) -> tuple[object, object]:
             canh_mod.tu_dict(goi.get("chi_muc") or {}))
 
 
-def _giong_da_chot(db, run) -> tuple[str, dict]:
+def _giong_da_chot(db, run, *, ban_ghi: dict, ctx=None) -> tuple[str, dict, str]:
     """Chot VoiceBinding va DONG BANG no vao ban long tieng.
 
     🔑 Pha 09 cho phep `AUTO_MATCH` **hoan lai** khi chua co ho so noi dung. Den
@@ -106,17 +106,46 @@ def _giong_da_chot(db, run) -> tuple[str, dict]:
        xung ho, giong dieu, do trang trong deu bam vao no — nen viet truoc roi
        chon giong sau la viet mu.
 
+    ⇒ Nen day chinh la cho **dung** ho so, ngay truoc khi no het duoc hoan:
+      `ho_so_noi_dung.bao_dam` doc bang chung lan chay DA tra tien (F0 cua stem
+      `vocals` do o `audio_prepare`, ban chep loi cua `transcribe`) va ghi
+      `dac_diem_giong` xuong `run.settings`. Ca hai nguon nam TRUOC `edit_plan`,
+      nen duong nay chay y het nhau o hai preset — ke ca preset giu hinh, cai
+      **khong** chay mot lan `edit_plan` nao co nghia.
+
     ⛔ Nen `ma_giong()` **nem** khi chua chot, thay vi rot ve giong mac dinh. Mot
        giong mac dinh o day khong hong ra loi nao: no cho ra mot ban long tieng
-       nghe duoc, chi la khong phai giong khach dat.
+       nghe duoc, chi la khong phai giong khach dat. Cai doi tu 23/09 la CAU
+       LOI: `vi_sao_chua_rang` noi thieu gi, thay vi mot cau chung chung ve mot
+       "ho so noi dung" ma khach khong biet la thu gi.
     """
     # `tu_thiet_lap` van nhan mot dict — `rang_giong` KHONG duoc import
     # `cai_dat` (vong tron: `cai_dat` doc `CHE_DO_GIONG_MAC_DINH` cua no).
     # Nen ta chuan hoa TRUOC roi dua vao.
-    from . import cai_dat as cd
+    from . import cai_dat as cd, ho_so_noi_dung
+
     yc = rang_giong.tu_thiet_lap(cd.chuan_hoa(run.settings))
-    kq = rang_giong.rang(db, owner_id=run.owner_id, yeu_cau=yc)
-    return kq.ma_giong(), dict(kq.can_cu or {})
+    if rang_giong.can_cho_ho_so(yc):
+        ho_so = ho_so_noi_dung.bao_dam(db, run, ban_ghi=ban_ghi, ctx=ctx)
+        log.info("run %s: ho so noi dung %s", run.id, ho_so_noi_dung.mo_ta(ho_so))
+        # Doc LAI tu thiet lap da ghi: mot duong doc duy nhat cho ca hai luot
+        # (luot dau vua sinh ho so, luot chay lai doc ho so cu) — hai duong doc
+        # la hai co hoi chon ra hai giong khac nhau cho cung mot lan chay.
+        yc = rang_giong.tu_thiet_lap(cd.chuan_hoa(run.settings))
+
+    kq = rang_giong.rang_noi_long(db, owner_id=run.owner_id, yeu_cau=yc)
+    if not kq.da_chot:
+        raise rang_giong.ChuaRangError(rang_giong.vi_sao_chua_rang(kq))
+    # 🔴 **`nguon` tra ve RIENG, khong nhet vao `can_cu`.** No la mot TRUONG cua
+    #    `KetQua`, con `tom_tat` cua giai doan nay lai doc `can_cu["nguon"]` —
+    #    nen truoc 23/09 `nguon_giong` cua MOI lan chay deu la chuoi rong. Mot
+    #    cot bao cao luon rong khong keu len bao gio; no chi tra loi sai cau hoi
+    #    "vi sao giong nay".
+    #
+    # ⛔ Va khong nhet vao `can_cu` vi `can_cu` di THANG vao loi nhac (`dac_diem`
+    #    duoi kia roi ve `can_cu` khi khong co khoa `dac_diem`). Them mot khoa o
+    #    day la doi loi nhac cua duong `USER_SELECTED` da nghiem thu.
+    return kq.ma_giong(), dict(kq.can_cu or {}), kq.nguon
 
 
 def chay(db, kho: Storage, *, run, ctx=None) -> dict:
@@ -131,7 +160,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         raise long_tieng.LongTiengError(
             _t('Bản biên tập không giữ lại đoạn thoại nào.'))
 
-    ma_giong, can_cu = _giong_da_chot(db, run)
+    ma_giong, can_cu, nguon_giong = _giong_da_chot(db, run, ban_ghi=goc, ctx=ctx)
     from . import cai_dat as cd
     dich = cd.doc(run).ngon_ngu_dich
     provider = ai.THU_TU_PROVIDER[0]
@@ -254,7 +283,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         "tom_tat": {**long_tieng.tom_tat(tai_lieu),
                     "so_doan_goc": len(goc.get("doan") or []),
                     "so_lo": so_lo_truoc + len(lo_lo),
-                    "nguon_giong": str(can_cu.get("nguon") or "")},
+                    "nguon_giong": nguon_giong},
     }
 
 

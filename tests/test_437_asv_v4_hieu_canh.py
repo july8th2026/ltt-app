@@ -150,14 +150,14 @@ def test_ho_so_LOC_ve_dung_ba_mat_cua_catalog():
     van = json.dumps({"the_loai": "tai lieu", "nhip": "cham",
                       "dac_diem_giong": {"gioi": "nu", "vung": "bac",
                                          "tuoi": "30", "mau_toc": "den"}})
-    hs = hc.doc_ho_so(van)
+    hs = hc.doc_ho_so(_kq(van))
     assert set(hs.dac_diem_giong) <= {"gioi", "vung", "phong_cach"}
     assert hs.dac_diem_giong["gioi"] == "nu"
 
 
 def test_ho_so_thieu_truong_bat_buoc_thi_NEM():
     with pytest.raises((hc.HieuCanhError, ai.LuocDoSai)):
-        hc.doc_ho_so('{"the_loai": "tai lieu"}')      # thieu `nhip`
+        hc.doc_ho_so(_kq('{"the_loai": "tai lieu"}'))   # thieu `nhip`
 
 
 # ══════════════════════════════════════════════════════════════════════════════

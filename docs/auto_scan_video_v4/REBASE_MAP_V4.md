@@ -108,7 +108,8 @@ two; translation moved after planning), not the parts that were wrong.
 | `canh.py` | shot boundaries + representative frames | **domain policy** — sampling rate, frame choice | 10 |
 | `giai_doan_canh.py` | SCENE_ANALYZE wiring | | 10 |
 | `hieu_canh.py` | VLM prompt + response schema | prompts/schemas are ASV's per A.3; the *model call* stays platform | 11 |
-| `ho_so_noi_dung.py` | `ContentProfile` | | 11 |
+| `ho_so_noi_dung.py` | `ContentProfile` | builds the profile from evidence the run already paid for (23/09: transcript + measured source-speaker F0), so **both** presets can bind a voice | 11 |
+| `cao_do.py` | source-speaker F0 | measurement, not policy — but the *thresholds* (voice range, gender grey band) are ASV's call, and the measurement itself runs inside the demucs subprocess where the `vocals` stem still exists | 11 |
 | `ke_hoach_bien_tap.py` | `EditPlan` + preset policy | keep/cut policy is domain policy | 12 |
 | `rang_buoc_giong.py` | `VoiceBinding` + AUTO_MATCH | binds against `giong_mau` attributes (V4-R14) | 09 |
 | `khop_do_dai.py` | `DubbingFit` bounded loop | | 15 |

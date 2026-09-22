@@ -129,10 +129,17 @@ def preset_mac_dinh() -> str:
 #  Hai cach chon giong
 # ══════════════════════════════════════════════════════════════════════════════
 #
-# ⚠️ `AUTO_MATCH` duoc bay ra nhung **noi that rang no chua san sang**: pha 19 ghi
-#    lai rang khong giai doan nao sinh `HoSoNoiDung`, nen tu khop se hoan lai chu
-#    khong chon bua mot giong. Bay mot lua chon khong chay duoc ma khong noi gi la
-#    dung thu `V4_MVP_PRODUCT_CONTRACT` goi la "false feature".
+# ⭐ **23/09/2026 — `AUTO_MATCH` chay that, nen cau mo ta doi theo.**
+#
+#    Cau cu la *"tinh nang nay dang duoc hoan thien — hien tai hay tu chon
+#    giong"*, va no dung luc viet: pha 19 ghi lai rang khong giai doan nao sinh
+#    `HoSoNoiDung`, nen tu khop chi biet hoan lai roi chet o `content_process`.
+#    `ho_so_noi_dung.py` dong lo hong do (F0 cua giong goc + ban chep loi), nen
+#    giu cau cu lai la noi doi theo chieu nguoc lai.
+#
+# ⚠️ Cau moi van **khong hua** la luon chon duoc: khong du can cu thi lan chay
+#    dung lai voi `rang_giong.vi_sao_chua_rang`, va khach phai tu chon. Mot cau
+#    hua chac chan o day se bien mot trang thai hop le thanh mot loi hua bi be.
 def _giong_bang():
     from .hop_dong_v4 import CHE_DO_GIONG_TU_CHON, CHE_DO_GIONG_TU_KHOP
 
@@ -140,8 +147,8 @@ def _giong_bang():
         (CHE_DO_GIONG_TU_CHON, N_('Tôi tự chọn giọng'),
          N_('Bạn chọn một giọng trong danh sách bên dưới.')),
         (CHE_DO_GIONG_TU_KHOP, N_('Để hệ thống gợi ý giọng'),
-         N_('Hệ thống chọn giọng hợp với nội dung. Tính năng này đang được hoàn '
-            'thiện — hiện tại hãy tự chọn giọng.')),
+         N_('Hệ thống nghe giọng người nói trong video và đọc lời thoại để chọn '
+            'giọng hợp nhất. Nếu không đủ căn cứ, hệ thống sẽ báo để bạn tự chọn.')),
     )
 
 

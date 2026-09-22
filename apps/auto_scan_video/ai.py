@@ -147,7 +147,17 @@ DICH_THUAT = ThaoTac("dich_thuat", False, ("doan",), pha="14")
 #:    thieu chung khong lam quyet dinh sai — con thieu `de_xuat` hay `do_tin`
 #:    thi lam.
 DOC_CANH = ThaoTac("doc_canh", True, ("de_xuat", "do_tin"), pha="11")
-HO_SO_NOI_DUNG = ThaoTac("ho_so_noi_dung", True, ("the_loai", "nhip"), pha="11")
+#: 🔴 **`can_thi_giac=False` tu 23/09/2026, va no la mot phep SUA, khong phai
+#:    mot phep toi uu.** Khai cu la `True`, tuc thao tac nay doi mot model co
+#:    thi giac. Nhung `hieu_canh.loi_nhac_ho_so` **khong gui mot khung hinh
+#:    nao** — no gui bang tom tat canh (van ban) va loi thoai (van ban). Mot
+#:    thao tac thuan van ban khai minh la thi giac se:
+#:      · bat lan chay doi mot model dat hon va hiem hon (`model_cho` loc theo
+#:        dung co nay), va
+#:      · khong bao gio dung duoc o preset `localize_preserve_picture`, cai
+#:        khong doc mot canh nao ca.
+#:    Khai sai nay khong lo ra suot ba pha vi thao tac chua co NGUOI GOI nao.
+HO_SO_NOI_DUNG = ThaoTac("ho_so_noi_dung", False, ("the_loai", "nhip"), pha="11")
 CHUYEN_LOI_THOAI = ThaoTac("chuyen_loi_thoai", False, ("doan",), pha="14")
 RUT_NGAN_CHO_VUA = ThaoTac("rut_ngan_cho_vua", False, ("doan",), pha="15")
 #: 🔴 **`("doan",)`, khong phai `("dat", "ly_do")` — va do la B22-01 lan hai.**

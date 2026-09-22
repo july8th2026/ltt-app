@@ -153,9 +153,21 @@ def phan_loai(exc: BaseException) -> str:
     #    `RangGiongError` — yeu cau khong hop le (che do bia ra, USER_SELECTED
     #      de trong ma giong). Chay lai cung mot thiet lap se hong y het.
     #
-    #    `ChuaRangError` — doc giong tu mot rang buoc chua chot. Do la mot loi
-    #      LAP TRINH o tang goi, khong phai mot truot thoang qua: thu lai khong
-    #      lam `HoSoNoiDung` xuat hien.
+    #    `ChuaRangError` — doc giong tu mot rang buoc chua chot.
+    #
+    #      ⭐ **Cau chu thich cu o day goi day la "mot loi LAP TRINH o tang
+    #         goi", va cau do het dung tu 23/09.** Luc viet no dung: khong giai
+    #         doan nao sinh `HoSoNoiDung`, nen moi lan `AUTO_MATCH` deu chet o
+    #         day va nguyen nhan luon la "chua ai noi mach nay vao".
+    #
+    #      Nay `ho_so_noi_dung.py` da noi vao mach, nen mot `ChuaRangError` la
+    #      mot cau tra loi THAT ve lan chay nay: khong do duoc giong nguoi noi
+    #      VA model khong doc ra du can cu. `giai_doan_noi_dung` nem no kem
+    #      `rang_giong.vi_sao_chua_rang` — mot cau viet cho khach doc, chi ro
+    #      loi ra (tu chon mot giong).
+    #
+    #      ⛔ Van la that bai CUOI CUNG: thu lai cung mot video, cung mot ban
+    #         chep loi se cho ra dung cau tra loi do.
     from .rang_giong import RangGiongError
     if isinstance(exc, RangGiongError):
         return NGUOI_DUNG

@@ -293,9 +293,18 @@ def doc_hieu_canh(kq: dict, ma_canh: str) -> HieuCanh:
         canh_bao=tuple(str(x)[:120] for x in canh_bao[:8]))
 
 
-def doc_ho_so(noi_dung: str) -> HoSoNoiDung:
-    """Phan hoi LLM -> `HoSoNoiDung`. Nem neu thieu truong bat buoc."""
-    ra = ai.doc_json(noi_dung, ai.HO_SO_NOI_DUNG)
+def doc_ho_so(kq: dict) -> HoSoNoiDung:
+    """KET QUA cua `ai.goi` -> `HoSoNoiDung`. Nem neu thieu truong bat buoc.
+
+    🔴 **Tham so la CA KET QUA, khong phai `noi_dung`** — cung ban sua 09/09 ma
+       `doc_hieu_canh` da chiu: boc `noi_dung` ra bang tay vut mat
+       `finish_reason`/`suy_nghi`, tuc vut mat thu duy nhat phan biet "model tra
+       sai luoc do" voi "model het tran token giua khoi suy nghi". Ham nay chua
+       tung co nguoi goi nen no giu chu ky cu toi 23/09.
+       (`test_434::test_KHONG_giai_doan_nao_con_boc_noi_dung_ra_khoi_kq_bang_tay`
+       chot dieu nay bang AST, va no da bat dung luc nguoi goi dau tien xuat hien.)
+    """
+    ra = ai.doc_ket_qua(kq, ai.HO_SO_NOI_DUNG)
     dd = ra.get("dac_diem_giong") or {}
     if not isinstance(dd, dict):
         raise HieuCanhError("dac_diem_giong phai la doi tuong")
@@ -337,24 +346,44 @@ def van_tay_canh(ma_canh: str, ngu_canh: str, so_khung: int,
 #  Gop ho so
 # ══════════════════════════════════════════════════════════════════════════════
 
-def loi_nhac_ho_so(cac_canh, tom_tat_ban_ghi: str) -> list:
+def loi_nhac_ho_so(cac_canh, tom_tat_ban_ghi: str,
+                   *, bang_chung: dict | None = None) -> list:
     """Loi nhac dung ho so tu bang chung canh + ban chep loi.
 
     ⭐ Gui **tom tat** cua tung canh, khong gui lai khung hinh: khung da duoc doc
        roi, va gui lai chung la tra tien lan hai cho cung mot buc anh.
+
+    🔑 **`cac_canh` duoc phep RONG, va do la mot duong chay that chu khong phai
+       mot truong hop bien.** Preset `localize_preserve_picture` khong doc canh
+       nao (khong canh nao bi cat ⇒ khong co gi de hoi VLM), nhung no van can
+       mot ho so de `AUTO_MATCH` chot giong. Khi do bang chung la `bang_chung`
+       — so lieu tat dinh cua ban chep loi — cong chinh loi thoai.
+
+    ⛔ `phong_cach` phai nam trong tu vung CATALOG. Truoc day loi nhac de trong
+       mat do, va mot chu dung tieng Viet nhung khong co trong catalog (vi du
+       "thuyet minh") lam `giong_mau.loc` tra ve rong — tuc ho so co ma van khong
+       rang duoc giong. `ho_so_noi_dung.loc_dac_diem` con chan lan thu hai.
     """
+    from apps.ltt_voice.giong_mau import NHAN_PHONG_CACH
+
     bang = [{"ma": c.ma_canh, "loai": c.loai, "hanh_dong": c.hanh_dong,
              "cam_xuc": c.cam_xuc, "quan_trong": round(c.quan_trong, 2)}
             for c in cac_canh]
+    phong_cach = "|".join(sorted(NHAN_PHONG_CACH))
+    dong_canh = (f"Cac canh: {json.dumps(bang, ensure_ascii=False)}\n"
+                 if bang else "")
+    dong_do = (f"So lieu do duoc: {json.dumps(bang_chung, ensure_ascii=False, sort_keys=True)}\n"
+               if bang_chung else "")
     return [{
         "role": "user",
         "content": (
             "Duoi day la bang chung doc tu mot video.\n"
-            f"Cac canh: {json.dumps(bang, ensure_ascii=False)}\n"
+            f"{dong_canh}{dong_do}"
             f"Loi thoai (tom tat): {tom_tat_ban_ghi}\n\n"
             "Tra ve DUNG mot doi tuong JSON voi cac khoa: the_loai, giong_dieu, "
             "khan_gia, nhip, tom_tat, va dac_diem_giong la mot doi tuong co "
-            "gioi (nam|nu), vung (bac|trung|nam), phong_cach. "
+            f"gioi (nam|nu), vung (bac|trung|nam), phong_cach ({phong_cach}). "
+            "Mat nao khong du can cu thi de chuoi rong, KHONG doan. "
             "Khong them van ban nao ngoai JSON."),
     }]
 

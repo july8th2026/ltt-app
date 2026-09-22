@@ -132,11 +132,18 @@ MO_COI_DA_BIET = frozenset({
     #    Dieu kien de go: mot bo do nao do chay duoc o CA HAI phia (worker va
     #    qc-venv) va phai re nhanh theo cau tra loi do; neu khong, XOA ham.
     
-    # ── HO SO NOI DUNG — nang luc nay duoc KHAI CHO KHACH la chua san sang.
-    #    `gia.py` bay `CHE_DO_GIONG_TU_KHOP` kem cau "tinh nang nay dang duoc
-    #    hoan thien — hien tai hay tu chon giong". Tuc mon no nay da duoc noi
-    #    that voi nguoi tra tien, khac han bon truong hop kia.
-    "doc_ho_so", "loi_nhac_ho_so", "tom_tat_chi_muc", "can_cho_ho_so",
+    # ── HO SO NOI DUNG — ✅ **DA RA KHOI day 23/09/2026 bang cach duoc NOI VAO
+    #    MACH, khong bang cach duoc xoa.** `doc_ho_so`, `loi_nhac_ho_so` va
+    #    `can_cho_ho_so` gio co nguoi goi that: `ho_so_noi_dung.py` dung ho so
+    #    tu F0 cua stem `vocals` + ban chep loi, va `giai_doan_noi_dung` hoi
+    #    `can_cho_ho_so` ngay truoc khi viet loi thoai. Cung luc do, cau "tinh
+    #    nang nay dang duoc hoan thien" o `gia.py` bi go.
+    #
+    #    `tom_tat_chi_muc` o lai: no la so lieu cho NGUOI DOC bao cao hieu vi
+    #    sao ho so lai the nay, va duong ho so moi khong di qua chi muc canh
+    #    (no phai chay duoc ca o preset khong doc canh nao). Dieu kien de go:
+    #    mot man bao cao / mot truong `tom_tat` that su in no ra.
+    "tom_tat_chi_muc",
 
     # ── A26-01 — duong dich thu hai, da chet tu pha 14. Van tay khong con doc
     #    no nua (pha 27), nhung ban than duong thi con. Xoa no keo theo xoa ca

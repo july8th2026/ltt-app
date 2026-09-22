@@ -172,10 +172,16 @@ def van_tay(stage_ten: str, run, dau_vao: dict) -> str:
     dung kieu hong ma O13 sinh ra de chan: "co mot tep ten dung" khong phai la
     mot cache hop le.
     """
+    from . import cai_dat
+
     goi = json.dumps({
         "stage": stage_ten,
         "contract": run.contract_version,
-        "settings": run.settings or {},
+        # 🔴 `cho_van_tay`, khong phai `run.settings` tho. Ho so noi dung do
+        #    CHINH `content_process` ghi vao `settings` giua chuoi, va bam ca
+        #    `settings` bien dong ghi do thanh mot lenh **dat lai demucs + ASR**
+        #    (`jobs._vo_hieu_giai_doan_da_lech`). Xem `cai_dat.KHOA_DAN_XUAT`.
+        "settings": cai_dat.cho_van_tay(run.settings),
         "dau_vao": dau_vao,
         "engine": phien_ban_engine(stage_ten),
     }, sort_keys=True, ensure_ascii=False, default=str)
