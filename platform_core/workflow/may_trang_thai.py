@@ -84,7 +84,7 @@ def trang_thai_node(db, run_id: str, node_id: str) -> str:
 
 
 def chuyen_node(db, run_id: str, node_id: str, *, sang: str, mo_ta: str,
-                **thong_tin) -> bool:
+                error: str = "", **thong_tin) -> bool:
     """Chuyển một node sang trạng thái mới. Trả `False` nếu bị TỪ CHỐI.
 
     ⭐ **Lần chuyển bị từ chối vẫn ghi một ảnh chụp** (`is_valid=False`), đúng
@@ -94,6 +94,13 @@ def chuyen_node(db, run_id: str, node_id: str, *, sang: str, mo_ta: str,
 
     ⛔ Nhưng ghi lại KHÔNG phải chấp nhận — con trỏ `node_run` đứng yên
        (`thi_hanh.ghi_chuyen` lo phần đó).
+
+    `error` — mã lỗi MIỀN (spec §5.6 `NodeError.ma`, vd `vuot_tran_bao_gia`,
+    `bi_huy`) của bên gọi, ghi thẳng vào cột `error` của ảnh chụp KHI chuyển
+    được CHẤP NHẬN. Khi bị TỪ CHỐI, cột `error` luôn là thông điệp từ chối của
+    chính máy trạng thái — `error` của bên gọi bị GHI ĐÈ, vì lý do từ chối
+    (chuyển không nằm trong bảng) quan trọng hơn lý do miền mà bên gọi định
+    ghi cho một chuyển KHÁC (chuyển không xảy ra).
     """
     hien = trang_thai_node(db, run_id, node_id)
     duoc = NODE_CHUYEN.get(hien, frozenset())
@@ -102,7 +109,7 @@ def chuyen_node(db, run_id: str, node_id: str, *, sang: str, mo_ta: str,
     thi_hanh.ghi_chuyen(
         db, run_id, node_id, execution_status=(sang if hop_le else hien),
         description=mo_ta, is_valid=hop_le,
-        error=("" if hop_le else
+        error=(error if hop_le else
                f"chuyen bi tu choi: {hien} -> {sang} khong nam trong bang"),
         **thong_tin)
     return hop_le

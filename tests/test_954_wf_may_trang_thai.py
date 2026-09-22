@@ -151,6 +151,43 @@ def test_lan_chuyen_bi_tu_choi_KHONG_doi_con_tro(db, run):
                   ).execution_status == "READY"
 
 
+def test_chuyen_HOP_LE_ghi_error_tuy_chinh(db, run):
+    """Task 9 fix round 1: chuyen HOP LE ghi thang `error=` cua nguoi goi vao
+    cot `error` cua anh chup (spec Sec5.6 `NodeError.ma`) - khong con phai
+    doc chuoi tien to trong `description`."""
+    from platform_core.models import NodeRunSnapshot
+    from platform_core.workflow import may_trang_thai
+
+    ok = may_trang_thai.chuyen_node(db, run.id, "n0", sang="READY",
+                                    mo_ta="san sang",
+                                    error="vuot_tran_bao_gia: 5 > 3")
+    db.commit()
+    assert ok is True
+
+    row = db.query(NodeRunSnapshot).filter_by(run_id=run.id,
+                                               node_id="n0").one()
+    assert row.error == "vuot_tran_bao_gia: 5 > 3"
+    assert row.description == "san sang"
+
+
+def test_chuyen_TU_CHOI_de_len_error_tuy_chinh(db, run):
+    """Chuyen bi TU CHOI: thong diep tu choi cua may trang thai THANG the
+    `error=` cua nguoi goi - ly do "chuyen khong nam trong bang" quan trong
+    hon ly do mien cua mot chuyen KHONG xay ra."""
+    from platform_core.models import NodeRunSnapshot
+    from platform_core.workflow import may_trang_thai
+
+    ok = may_trang_thai.chuyen_node(db, run.id, "n0", sang="SUCCEEDED",
+                                    mo_ta="nhay coc", error="ma_nao_do")
+    db.commit()
+    assert ok is False
+
+    row = db.query(NodeRunSnapshot).filter_by(run_id=run.id,
+                                               node_id="n0").one()
+    assert "chuyen bi tu choi" in row.error
+    assert "ma_nao_do" not in row.error
+
+
 def test_ly_do_TU_CHOI_duoc_ghi_ro_trong_anh_chup(db, run):
     """Ghi lại mà không nói **vì sao** thì vẫn phải đoán khi điều tra."""
     from platform_core.models import NodeRunSnapshot

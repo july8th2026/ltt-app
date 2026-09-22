@@ -14,8 +14,9 @@ import json
 from typing import Any, Optional
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
-from platform_core import jobs
+from platform_core import jobs, registry
 from platform_core.job_scheduler import ORIGIN_WORKFLOW
 from platform_core.models import (JOB_CANCELLED, JOB_DONE, Job, Waitpoint,
                                   WaitpointSignal, WorkflowRun)
@@ -79,16 +80,20 @@ def nop_job(db, run: WorkflowRun, node: dict, *,
     try:
         params = giai_tham_so(db, run.id, node.get("params") or {})
     except LoiThamSo as loi:
+        # `str(loi)` da la "<ma>: <chi tiet>" (LoiThamSo.__init__) - khong lap
+        # lai `loi.ma` lan nua o day (review round 1: ma "dau_vao_sai" bi lap
+        # ba lan khi ghep them prefix rieng).
         may_trang_thai.chuyen_node(
-            db, run.id, nid, sang="FAILED",
-            mo_ta=f"dau_vao_sai: {loi.ma}: {loi}", attempt_number=lan)
+            db, run.id, nid, sang="FAILED", mo_ta="giai tham so",
+            error=str(loi), attempt_number=lan)
         return None
     gia_that = int(cc.tinh_gia(params))
     tran = int(node.get("gia_tran", 0))
     if gia_that > tran:
         may_trang_thai.chuyen_node(
-            db, run.id, nid, sang="FAILED",
-            mo_ta=f"vuot_tran_bao_gia: {gia_that} > {tran}", attempt_number=lan)
+            db, run.id, nid, sang="FAILED", mo_ta="vuot tran bao gia",
+            error=f"vuot_tran_bao_gia: {gia_that} > {tran}",
+            attempt_number=lan)
         return None
     wp = cho_doi.tao_waitpoint(db, run_id=run.id, owner_id=run.owner_id,
                                kind="JOB", required_successes=1)
@@ -97,10 +102,33 @@ def nop_job(db, run: WorkflowRun, node: dict, *,
     tham_so["owner_id"] = run.owner_id           # như submit_child (v1)
     khoa = _khoa_idem(run, node, lan, cc, params)
     tham_so["_idem"] = khoa
+    # Làn + admission ĐÚNG con đường canonical (`public_api/invocation.py`
+    # `submit()`, dòng ~500-560): làn do `ToolSpec.lane_for` chọn (không cứng
+    # `cc.job_type`), `Job.admission_resource/slots` ghi LÚC NỘP qua
+    # `registry.admission_luc_nop` — thiếu bước này `jobs.claim()` coi mọi
+    # job GPU/LLM là "không giành tài nguyên chia sẻ" và có thể nhận quá số
+    # thẻ (multijob 2.3, R20; review round 1, controller-found). `cc.spec`
+    # rỗng (CongCu giả trong test cũ) ⇒ giữ hành vi cũ y nguyên: làn =
+    # `job_type`, không admission — không tự suy diễn logic của registry ở
+    # đây, chỉ gọi thẳng hai hàm đã có.
+    if cc.spec is not None:
+        lane = cc.spec.lane_for(tham_so)
+        # `mac_dinh="internal"`: nhánh này chỉ chạy khi tool KHÔNG khai admission
+        # nào cả (không `admission_theo_model`, không bộ ba tĩnh) — bản thân
+        # `so_suat` vẫn là 0 trong nhánh đó (xem `admission_luc_nop`), nên nhãn
+        # chỉ phục vụ quan sát/gom nhóm, không đổi quyền giành suất. Job này
+        # đến từ động cơ workflow (không phải Public API, nơi dùng "api"), nên
+        # nhãn "internal" khớp `priority_class="internal"` đã dùng ngay dưới
+        # thay vì mượn nhãn "api" của một cửa khác.
+        tai_nguyen, so_suat = registry.admission_luc_nop(
+            cc.spec, tham_so, mac_dinh="internal")
+    else:
+        lane, tai_nguyen, so_suat = cc.job_type, "", 0
     job = jobs.submit(db, user_id=run.owner_id, app_slug=cc.app_slug,
-                      job_type=cc.job_type, params=tham_so, dedupe_key=khoa,
+                      job_type=lane, params=tham_so, dedupe_key=khoa,
                       max_attempts=3, parent_id=wp.id, plan_id=run.id,
-                      origin=ORIGIN_WORKFLOW, priority_class="internal")
+                      origin=ORIGIN_WORKFLOW, priority_class="internal",
+                      admission_resource=tai_nguyen, admission_slots=so_suat)
     may_trang_thai.chuyen_node(
         db, run.id, nid, sang="QUEUED", mo_ta="da nop job", job_id=job.id,
         attempt_number=lan, output_ref={"_gia_that": gia_that})
@@ -122,8 +150,13 @@ def bao_ket_thuc(db, job: Job) -> None:
         with db.begin_nested():
             cho_doi.ghi_tin_hieu(db, job.parent_id, seq=1, status=trang_thai,
                                  ref_id=job.id, result_ref=ket_qua)
-    except Exception:                                # noqa: BLE001
-        return                                       # tín hiệu đã có: luỹ đẳng
+    except IntegrityError:
+        # `UNIQUE(waitpoint_id, seq)` — tín hiệu đã có: gọi lại luỹ đẳng (job
+        # runner gọi trùng, retry hạ tầng). MỌI lỗi khác (FK thiếu, mất kết
+        # nối, serialization) phải NỔI LÊN — nuốt hết bằng `except Exception`
+        # (review round 1, Important #2) từng khiến job đóng "thành công" mà
+        # node đứng QUEUED mãi mãi, không wakeup, không log.
+        return
     danh_thuc.hen(db, run_id=job.plan_id, kind="job", due_at=_bay_gio(),
                   node_run_id=job.id)
     tao_run.danh_thuc_dong_co(db)
@@ -148,9 +181,11 @@ def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
         gia_that = int((anh.output_ref or {}).get("_gia_that", 0)) if anh else 0
         if sig.status == "SUCCEEDED":
             du_lieu = dict(sig.result_ref or {})
-            if len(json.dumps(du_lieu, default=str)) > GIOI_HAN_DAU_RA:
+            do_dai = len(json.dumps(du_lieu, default=str))
+            if do_dai > GIOI_HAN_DAU_RA:
                 may_trang_thai.chuyen_node(
-                    db, run.id, node_id, sang="FAILED", mo_ta="dau_ra_qua_lon",
+                    db, run.id, node_id, sang="FAILED", mo_ta="dau ra qua lon",
+                    error=f"dau_ra_qua_lon: {do_dai} > {GIOI_HAN_DAU_RA}",
                     attempt_number=lan, job_id=sig.ref_id)
                 return "FAILED"
             bao = du_lieu.get("credit_cost")      # handler báo giá thật (vd theo token)
@@ -169,10 +204,14 @@ def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
         se = cc_all[str(_node_cua(db, run, node_id)["type"])[4:]].side_effect
         sang = "ABANDONED" if (mo_ho and se == "irreversible") else (
             "CANCELLED" if sig.status == "CANCELLED" else "FAILED")
-        ma = "ket_qua_mo_ho" if sang == "ABANDONED" else "provider_loi"
-        mo_ta = f"{ma}: {(sig.result_ref or {}).get('error', '')}"[:2000]
+        # Ba mã riêng (spec §5.6 `NodeError.ma`) — review round 1: CANCELLED
+        # từng bị gắn nhầm mã `provider_loi` (mã của FAILED).
+        ma = {"ABANDONED": "ket_qua_mo_ho", "CANCELLED": "bi_huy"}.get(
+            sang, "provider_loi")
+        chi_tiet = str((sig.result_ref or {}).get("error", ""))
         may_trang_thai.chuyen_node(
-            db, run.id, node_id, sang=sang, mo_ta=mo_ta,
+            db, run.id, node_id, sang=sang, mo_ta="job ket thuc",
+            error=f"{ma}: {chi_tiet}"[:2000],
             attempt_number=lan, job_id=sig.ref_id)
         return sang
     return None
