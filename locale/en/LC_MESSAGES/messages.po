@@ -2413,6 +2413,10 @@ msgstr "Try this tool"
 msgid "Chạy thử ngay trên trình duyệt"
 msgstr "Try it right in the browser"
 
+#: apps/agent/routes/_shared.py
+msgid "Chạy workflow trên Canvas đang được nâng cấp sang runtime mới. Bản nháp của bạn vẫn được lưu an toàn."
+msgstr "Running workflows on Canvas is being upgraded to the new runtime. Your draft is saved safely."
+
 #: apps/ltt_voice/templates/
 #, python-brace-format
 msgid "Chạy xong lô: {x} dòng xong, {e} lỗi."
