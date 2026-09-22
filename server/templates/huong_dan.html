@@ -132,9 +132,9 @@
     {% endfor %}
     </tbody>
   </table>
-  <p class="muted">{{ _("Vượt trần thì bạn nhận 413 kèm đúng con số đã áp cho model bạn gọi. Chúng tôi KHÔNG bao giờ lặng lẽ cắt bớt lượt cũ: cắt đi thì thứ mất đầu tiên là chỉ dẫn hệ thống và kết quả tool, và bạn sẽ không biết là mình đã mất.") }}</p>
+  <p class="muted">{{ _("Vượt trần thì bạn nhận mã 400 (context_window_exceeded) kèm đúng con số đã áp cho model bạn gọi — cửa Responses dạng stream báo bằng sự kiện response.failed thay vì đóng kết nối lặng lẽ. Chúng tôi KHÔNG bao giờ lặng lẽ cắt bớt lượt cũ: cắt đi thì thứ mất đầu tiên là chỉ dẫn hệ thống và kết quả tool, và bạn sẽ không biết là mình đã mất.") }}</p>
 
-  <h3>{{ _("Nếu bạn ăn 413 giữa chừng") }}</h3>
+  <h3>{{ _("Nếu bạn bị từ chối vì vượt trần ngữ cảnh giữa chừng") }}</h3>
   <dl>
   {% for tieu_de, cach_sua in loi_413 %}
     <dt><strong>{{ ma_nho(tieu_de) }}</strong></dt>

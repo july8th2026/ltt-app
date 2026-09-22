@@ -591,7 +591,9 @@ Từ 17/09 các quyết định của đường LLM nội bộ được đánh s
 `docs/ltt_llm_dual/DECISION_LOG.md`: L-22 (nhận theo ngân sách KV), L-23 (Phương án C —
 máy A quyết định nhận, cổng máy B là rào vật lý; gỡ trần vào/đồng thời/RPM ở cổng B),
 L-24/L-25 (cache RAM 24576 mỗi model, sàn RAM cổng B 24), L-26 (suy nghĩ do máy chủ
-quyết), L-27 (ước token cận trên), L-28 (3.5 `-np 4`, 3.8 `-np 3`). Số theo model chỉ ở
+quyết), L-27 (ước token cận trên), L-28 (3.5 `-np 4`, 3.8 `-np 3`), L-34 (ngữ nghĩa lỗi model: status không phải
+ngữ nghĩa, canonical/protocol tách, mã lạ fail-closed — 22/09), L-35 (cửa sổ ngữ cảnh công bố
+theo token thật, k = 1,50 — 22/09). Số theo model chỉ ở
 `apps/ltt_llm/ngan_sach.HO_SO`. Mục này chỉ là con trỏ; quyết định mới của đường LLM
 ghi ở DECISION_LOG, không thêm số Q.
 

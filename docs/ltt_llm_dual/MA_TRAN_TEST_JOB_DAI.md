@@ -86,7 +86,7 @@ Mỗi phát hiện vào **đúng một** ngăn, **trước** khi sửa gì:
 
 ⭐ Ngăn thứ tư dễ bỏ sót nhất và đã xuất hiện thật: một prompt 195.696 token bị
 từ chối, suýt ghi thành *"221K không với tới được"* — trong khi nền tảng khai
-**171.458** và từ chối là **đúng**.
+**124.245** (trước 22/09: 171.458) và từ chối là **đúng**.
 
 ## 6. Ba cái bẫy của chính bộ đo
 

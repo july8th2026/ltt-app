@@ -99,7 +99,9 @@ DISPOSITION = {
     #     nhac, tron tieng, chay phu de) chay tren GPU; `vram_min_mb` con CHUA
     #     do that.
     #   - Ca bon chua nghiem thu E2E qua worker va chua kiem tren URL cong khai.
-    "transcript": (DEFER, ()),
+    # Mo 22/09/2026 (chu du an): quy tac doi soat voi bot_transcript, gia theo
+    # phut audio do tu tep (`duration_s` + `measured_from`), E2E qua worker.
+    "transcript": (EXPOSE_V1, ("transcript.run",)),
     "audio_pause": (DEFER, ()),
     "prompt_canh": (DEFER, ()),
     "video_assembly": (DEFER, ()),

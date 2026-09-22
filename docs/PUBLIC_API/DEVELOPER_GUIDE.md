@@ -683,7 +683,7 @@ Scopes: `jobs:create`
 Input:
 
 - `messages` — array, **required**, Conversation so far, OpenAI format: a list of {role, content}. `content` may be a string, or a list of parts for images.
-- `model` — string, one of `ltt-3.8`, `ltt-3.5`, default ltt-3.8, `ltt-3.8` is the deepest model and reads images (171K usable input context). `ltt-3.5` answers faster, costs much less and reads images, with 209K usable input context.
+- `model` — string, one of `ltt-3.8`, `ltt-3.5`, default ltt-3.8, `ltt-3.8` is the deepest model and reads images (124K usable input context). `ltt-3.5` answers faster, costs much less and reads images, with 152K usable input context.
 - `max_tokens` — integer, min 1, max 32768, default 32768, Ceiling on generated tokens. Credit is held against this and refunded down to what was actually generated.
 - `temperature` — number, min 0.0, max 2.0, Sampling temperature.
 - `tools` — array, Function definitions, OpenAI format. The model may answer with `tool_calls`.
@@ -697,7 +697,7 @@ Input:
 
 Output: `content` (string), `tool_calls` (array), `usage` (object)
 
-Contract hash: `1fa09e7adca5e50c`
+Contract hash: `fba964038d4be3cd`
 
 ### `text.prompt_package`
 
@@ -721,6 +721,27 @@ Input:
 Output: `prompt_package` (object), `master_prompt` (string)
 
 Contract hash: `c55834222a3c4a0c`
+
+### `transcript.run`
+
+Transcribe an audio file into a timeline of speech and silence segments with start and end times, in Vietnamese or English. Costs 2 credits per started minute of audio (minimum 1). The duration is measured from the file you upload, not from anything you send.
+
+Execution mode: `ASYNC_JOB`
+
+Scopes: `jobs:create`
+
+Input:
+
+- `audio` — string, **required**, The audio to transcribe, given as the id of an upload you confirmed or of an artifact from an earlier job.
+- `language` — string, max length 8, `vi` or `en`. Leave empty to detect the language automatically.
+- `min_s` — number, min 0.5, max 30.0, default 1.5, Shortest speech segment you want, in seconds. Segments are cut at sentence ends and pauses.
+- `max_s` — number, min 1.0, max 60.0, default 6.0, Longest speech segment you want, in seconds.
+- `include_silence` — boolean, default True, Keep pauses as separate `silence` segments in the timeline.
+- `he` — string, one of `ltt`, default ltt, Transcription engine. `ltt` is the standard engine and the default.
+
+Output: `transcript` (object)
+
+Contract hash: `efabeaa63a584c85`
 
 ### `video.generate`
 
@@ -803,8 +824,8 @@ Aliases, not vendor model ids. What a call *costs* comes from `POST /quotes`: pr
 
 | Alias | Capability | Stability | Tools | Notes |
 |---|---|---|---|---|
-| `ltt-3.5` | text | stable | `text.chat` | Faster and much cheaper, 209K usable input context. Same message format, and it reads images — send them as OpenAI image_url parts. |
-| `ltt-3.8` | text | stable | `text.chat` | 171K usable input context. Deepest model: coding, chat, agentic tool use, summarisation. It reads images too — send them as OpenAI image_url parts. |
+| `ltt-3.5` | text | stable | `text.chat` | Faster and much cheaper, 152K usable input context. Same message format, and it reads images — send them as OpenAI image_url parts. |
+| `ltt-3.8` | text | stable | `text.chat` | 124K usable input context. Deepest model: coding, chat, agentic tool use, summarisation. It reads images too — send them as OpenAI image_url parts. |
 | `seedance-2.0` | video | stable | `video.generate` | Seedance 2.0 |
 | `seedance-2.0-fast` | video | stable | `video.generate` | Seedance 2.0 Fast |
 | `seedance-2.0-mini` | video | stable | `video.generate` | Seedance 2.0 Mini |

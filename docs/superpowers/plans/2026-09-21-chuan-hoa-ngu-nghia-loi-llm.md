@@ -1,6 +1,6 @@
 # Chuẩn hoá ngữ nghĩa lỗi LTT LLM end-to-end Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Mọi lỗi model/gateway được định danh đúng một lần ở máy B, giữ nguyên mã và dữ kiện qua máy A, rồi được render tương thích nhưng không mất nghĩa cho mọi API client; không còn lỗi ảnh, output token hay payload byte bị gọi nhầm là lỗi context.
 
@@ -173,7 +173,7 @@ create `tests/test_1701_gateway_error_envelope.py`; extend các test budget/gate
   validate độ dài/ký tự.
 - [x] PASS test mới (16 ca) và test gateway hiện có (57 ca). Đột biến `images` thành
   `context_window_exceeded` phải làm đúng case đỏ.
-- [ ] Test nhắm + L2 `gateway:llm`; commit
+- [x] Test nhắm + L2 `gateway:llm`; commit
   `feat(gateway): emit structured error envelope`.
 
 ### Task 3: Chuẩn hoá lỗi HTTP từ llama.cpp tại biên máy B
@@ -204,7 +204,7 @@ def decode_upstream_http(status: int, headers: Mapping[str, str],
 - [x] Thay các nhánh `>=500`, 400/404/422 trong `api.py` dùng decoder; giữ quy
   tắc 597/598/599 nội bộ thành cancel/timeout/unreachable.
 - [x] PASS 18 ca; đột biến để status 413 tự thành context làm đúng case đỏ.
-- [ ] Test nhắm + L2 `gateway:llm`; commit
+- [x] Test nhắm + L2 `gateway:llm`; commit
   `feat(gateway): classify llama http errors by typed code`.
 
 ### Task 4: Bắt lỗi terminal sau HTTP 200 mà không phá luồng thành công
@@ -242,7 +242,7 @@ class UpstreamEventObserver:
   đúng một lần và không chuyển cancellation thành provider failure.
 - [x] PASS 13 ca/permutation. Chạy test dưới điều kiện chunk một byte và chunk
   nguyên body; kết quả semantic phải giống nhau.
-- [ ] Test nhắm + L2 `gateway:llm`; commit
+- [x] Test nhắm + L2 `gateway:llm`; commit
   `feat(gateway): normalize terminal stream errors`.
 
 ### Task 5: Một decoder typed duy nhất trên máy A
@@ -259,22 +259,22 @@ def decode_gateway_failure(status: int, headers: Mapping[str, str],
     """Decode v1 or bounded legacy data; fail closed as upstream_unknown."""
 ```
 
-- [ ] **Step 1 — test đỏ:** cùng một fixture v1 phải tạo `ModelFailure` bằng nhau
+- [x] **Step 1 — test đỏ:** cùng một fixture v1 phải tạo `ModelFailure` bằng nhau
   ở sync và stream. Fixture legacy `{truong: images, tran: 4, thay: 6}` phải ra
   `image_count_exceeded`; `{truong: context}` mới ra context.
-- [ ] Assert body lạ/status 413 → `upstream_unknown`, **không** context; 429 giữ
+- [x] Assert body lạ/status 413 → `upstream_unknown`, **không** context; 429 giữ
   `Retry-After`; request ID ưu tiên body đã validate rồi header.
-- [ ] Chạy `test_1704` + `test_251` → FAIL.
-- [ ] Cài dataclass và decoder. Import registry B→A chỉ từ module thuần stdlib;
+- [x] Chạy `test_1704` + `test_251` → FAIL.
+- [x] Cài dataclass và decoder. Import registry B→A chỉ từ module thuần stdlib;
   thêm test import không kéo FastAPI/httpx để tránh coupling runtime vòng.
-- [ ] `cong_vlm` và `luong_vlm` dùng decoder chung. Thay
+- [x] `cong_vlm` và `luong_vlm` dùng decoder chung. Thay
   `KhongMoDuocLuong(ban, qua_dai, het_gio)` bằng exception mang
   `failure: ModelFailure`; giữ property tương thích chỉ trong một chu kỳ nếu
   caller cũ còn dùng và ghi counter legacy.
-- [ ] Gỡ `_loi_parser_tool_call` khỏi đường quyết định khi B đã phát typed code;
+- [x] Gỡ `_loi_parser_tool_call` khỏi đường quyết định khi B đã phát typed code;
   giữ fallback có telemetry trong pha rollout, không retry mã unknown.
-- [ ] PASS. Đột biến khôi phục `if status == 413: qua_dai=True` phải làm test đỏ.
-- [ ] Test nhắm `core:provider` (lệnh nặng, kiểm máy trước), L2; commit
+- [x] PASS. Đột biến khôi phục `if status == 413: qua_dai=True` phải làm test đỏ.
+- [x] Test nhắm `core:provider` (lệnh nặng, kiểm máy trước), L2; commit
   `refactor(llm): share typed gateway failure decoder`.
 
 ### Task 6: Mang nguyên lỗi qua runtime/hàng chờ, không nén thành boolean
@@ -283,18 +283,18 @@ def decode_gateway_failure(status: int, headers: Mapping[str, str],
 `server/api/streaming.py`; modify `server/api/chat.py`; create
 `tests/test_1705_bao_toan_loi_qua_runtime.py`.
 
-- [ ] **Step 1 — test đỏ:** fake `mo_thuong_nguon` ném từng `ModelFailure`; assert
+- [x] **Step 1 — test đỏ:** fake `mo_thuong_nguon` ném từng `ModelFailure`; assert
   `luong_co_cho` nhận nguyên object và không đổi code/field/limit/actual/retry.
-- [ ] Thêm ca `image_count_exceeded`, `max_output_tokens_exceeded`, context,
+- [x] Thêm ca `image_count_exceeded`, `max_output_tokens_exceeded`, context,
   capacity, timeout, unknown và cancellation; assert chỉ lỗi provider thật mới
   gọi `danh_dau_loi`, bận/timeout/cancel/client disconnect thì không.
-- [ ] Chạy test → FAIL vì `KhongMoDuoc` hiện chỉ giữ ba boolean.
-- [ ] Đổi `KhongMoDuoc` mang `failure`; mọi catch/rethrow dùng exception chaining
+- [x] Chạy test → FAIL vì `KhongMoDuoc` hiện chỉ giữ ba boolean.
+- [x] Đổi `KhongMoDuoc` mang `failure`; mọi catch/rethrow dùng exception chaining
   nhưng public response không lấy `str(exc)`.
-- [ ] Tách quyết định retry provider parser thành policy theo code với số lần
+- [x] Tách quyết định retry provider parser thành policy theo code với số lần
   hữu hạn. Không retry `provider_oom`, invalid request, image, token hay unknown.
-- [ ] PASS; đối chứng tiêm lại boolean-only phải làm case ảnh đỏ.
-- [ ] Test nhắm `core:provider` + `server:api`; L2; commit
+- [x] PASS; đối chứng tiêm lại boolean-only phải làm case ảnh đỏ.
+- [x] Test nhắm `core:provider` + `server:api`; L2; commit
   `refactor(runtime): preserve model failure semantics`.
 
 ### Task 7: Renderer thống nhất cho RFC 9457 và ba giao thức model
@@ -314,28 +314,28 @@ def render_model_failure(path: str, failure: ModelFailure, *,
     """Render one failure without changing its canonical semantics."""
 ```
 
-- [ ] **Step 1 — golden đỏ:** cho mỗi mã ở spec §4, tạo golden cho generic
+- [x] **Step 1 — golden đỏ:** cho mỗi mã ở spec §4, tạo golden cho generic
   problem+json, `/v1/messages`, `/v1/chat/completions`, `/v1/responses`; kiểm cả
   trước header và terminal SSE sau 200 nơi giao thức cho phép.
-- [ ] Thêm test cờ tắt giữ response legacy hiện tại; cờ bật dùng renderer mới.
+- [x] Thêm test cờ tắt giữ response legacy hiện tại; cờ bật dùng renderer mới.
   Cấu hình đọc qua `load_public_api_config(env)` để test không phụ thuộc env máy.
-- [ ] Assert `canonical_code`, `protocol_code`, `request_id`, field/limit/actual
+- [x] Assert `canonical_code`, `protocol_code`, `request_id`, field/limit/actual
   không mất. Assert Anthropic/OpenAI shape vẫn hợp lệ với client cũ.
-- [ ] Chạy test → FAIL vì `_MA` hiện có bốn nhãn và `loi_sse` nhận string rời.
-- [ ] Thay `_MA` bằng mapping registry → protocol renderer. `ltt_error` là
+- [x] Chạy test → FAIL vì `_MA` hiện có bốn nhãn và `loi_sse` nhận string rời.
+- [x] Thay `_MA` bằng mapping registry → protocol renderer. `ltt_error` là
   extension an toàn; message giao thức có thể giữ câu tương thích
   `prompt is too long`, nhưng action không đọc câu đó.
-- [ ] Chỉ hai mã token phù hợp được render protocol context-compatible; lỗi ảnh
+- [x] Chỉ hai mã token phù hợp được render protocol context-compatible; lỗi ảnh
   và output-token không bao giờ dùng `context_length_exceeded`.
-- [ ] Ở public surface khi cờ bật, ảnh/input-output validation dùng 400; 413 chỉ
+- [x] Ở public surface khi cờ bật, ảnh/input-output validation dùng 400; 413 chỉ
   cho `request_body_too_large`. Status nội bộ B→A vẫn được decoder chấp nhận và
   không phải public status.
-- [ ] RFC 9457 trả `application/problem+json`; `type=/errors/{canonical_code}` là
+- [x] RFC 9457 trả `application/problem+json`; `type=/errors/{canonical_code}` là
   định danh problem chính và `code` bằng canonical. Test cả hai để chúng không
   trôi khỏi nhau. Authentication tiếp tục gom một `unauthorized`, không tạo key
   oracle.
-- [ ] PASS; snapshot phải đỏ nếu xoá `ltt_error` hoặc đổi ảnh thành context.
-- [ ] Test nhắm `server:api` + `core:api_cong_khai`; L2; commit
+- [x] PASS; snapshot phải đỏ nếu xoá `ltt_error` hoặc đổi ảnh thành context.
+- [x] Test nhắm `server:api` + `core:api_cong_khai`; L2; commit
   `feat(api): render typed model errors for every protocol`.
 
 ### Task 8: Công bố giới hạn model để client preflight đúng
@@ -345,14 +345,14 @@ def render_model_failure(path: str, failure: ModelFailure, *,
 `tests/test_1707_catalog_gioi_han_model.py`; đọc nguồn từ
 `apps/ltt_llm/manifest.py`, không tạo hằng số mới.
 
-- [ ] **Step 1 — test đỏ:** với từng model public, assert `items[].constraints`
+- [x] **Step 1 — test đỏ:** với từng model public, assert `items[].constraints`
   và `models[]` cùng có/cùng giá trị `max_input_tokens`, `max_output_tokens`,
   `context_window`, `max_images`, `max_image_bytes`, modality và scheme ảnh.
-- [ ] Assert model text có `max_images=0`; model vision dùng đúng manifest; không
+- [x] Assert model text có `max_images=0`; model vision dùng đúng manifest; không
   có literal trần ảnh trong `server/api/tools.py`.
-- [ ] Chạy test → FAIL vì `_dang_codex` hiện bỏ các trần ảnh.
-- [ ] Mở rộng `_dang_codex` đọc manifest/catalog source hiện có; cập nhật golden.
-- [ ] PASS; test nhắm `server:api` + `app:ltt_llm`; L2; commit
+- [x] Chạy test → FAIL vì `_dang_codex` hiện bỏ các trần ảnh.
+- [x] Mở rộng `_dang_codex` đọc manifest/catalog source hiện có; cập nhật golden.
+- [x] PASS; test nhắm `server:api` + `app:ltt_llm`; L2; commit
   `feat(catalog): publish exact model input constraints`.
 
 ### Task 9: Bộ đo contract hai chiều bằng dữ liệu thật, không gây tải giả
@@ -369,21 +369,21 @@ python tools\kiem_hop_dong_loi_llm.py live --minutes 20 --output <dir>
 python tools\kiem_hop_dong_loi_llm.py inject --base-url <test-url> --output <dir>
 ```
 
-- [ ] **Step 1 — test đỏ:** kiểm CLI fixture không cần network và sinh
+- [x] **Step 1 — test đỏ:** kiểm CLI fixture không cần network và sinh
   `report.json`/`report.md` với matrix code, protocol, phase, status,
   canonical/protocol code, action và pass/fail.
-- [ ] Cài `fixture`: replay corpus đã khử dữ liệu nhạy cảm; không tự lấy log thật
+- [x] Cài `fixture`: replay corpus đã khử dữ liệu nhạy cảm; không tự lấy log thật
   làm golden. Golden lấy từ registry/spec độc lập.
-- [ ] Cài `live` mặc định read-only/passive: lấy cửa sổ log/counter định sẵn,
+- [x] Cài `live` mặc định read-only/passive: lấy cửa sổ log/counter định sẵn,
   không gửi prompt, không chạm GPU, không in token; thống kê request ID coverage,
   unknown, legacy, mismatch và action.
-- [ ] Cài `inject` chỉ chạy với test URL/credential do operator cấp; từ chối
+- [x] Cài `inject` chỉ chạy với test URL/credential do operator cấp; từ chối
   hostname production trừ cờ rõ ràng được runbook yêu cầu. Các request lỗi rẻ,
   không sinh dài và không dùng ảnh người dùng.
-- [ ] Test hai chiều lớp C: (1) fixture không đổi dưới tải máy giả lập; (2) tiêm
+- [x] Test hai chiều lớp C: (1) fixture không đổi dưới tải máy giả lập; (2) tiêm
   decoder cũ 413→context làm report đỏ. Mở tay hai mismatch đầu tiên trước khi
   biến phép đo thành gate.
-- [ ] `test_1708` PASS; test nhắm `gateway:llm`, `core:provider`, `server:api`;
+- [x] `test_1708` PASS; test nhắm `gateway:llm`, `core:provider`, `server:api`;
   L2; commit `test(llm): add end-to-end error contract monitor`.
 
 ### Task 10: Telemetry và cảnh báo drift
@@ -392,51 +392,56 @@ python tools\kiem_hop_dong_loi_llm.py inject --base-url <test-url> --output <dir
 `platform_core/llm/model_failure.py`, `server/api/streaming.py`; extend
 `tests/test_1708_bo_do_hop_dong_loi_llm.py`.
 
-- [ ] **Step 1 — test đỏ:** capture log cho known, legacy, unknown, mismatch và
+- [x] **Step 1 — test đỏ:** capture log cho known, legacy, unknown, mismatch và
   client disconnect; assert đủ trường ở spec §9 và không chứa prompt, data URL,
   Authorization, raw body hay credential.
-- [ ] Thêm counter `llm_error_total`, `llm_error_unknown_total`,
+- [x] Thêm counter `llm_error_total`, `llm_error_unknown_total`,
   `llm_error_legacy_total`, `llm_error_contract_mismatch_total`,
   `llm_error_request_id_missing_total`, gắn label hữu hạn; tuyệt đối không label
   request ID/message để tránh cardinality bùng nổ.
-- [ ] Thêm log action ở A/B: retry/terminal/legacy/unknown; không ghi nội dung
+- [x] Thêm log action ở A/B: retry/terminal/legacy/unknown; không ghi nội dung
   cuộc hội thoại. Action compact/offload của LTTCODE để Task 12 bổ sung sau.
-- [ ] PASS; kiểm một fixture chứa secret giả không xuất hiện trong caplog/report.
-- [ ] Test nhắm các thành phần; khép riêng mọi phép kiểm đã đỏ. Không chạy lại
+- [x] PASS; kiểm một fixture chứa secret giả không xuất hiện trong caplog/report.
+- [x] Test nhắm các thành phần; khép riêng mọi phép kiểm đã đỏ. Không chạy lại
   L2; chỉ dùng L1 nếu cần gate cho deploy/gộp; commit
   `feat(observability): trace model errors across A and B`.
 
 ### Task 11: Hoàn tất và nghiệm thu máy B + máy A trước LTTCODE
 
+> **Kết quả 22/09/2026 (xong):** deploy A `f587f497` rồi `e94dd9a2`, B gateway-only
+> (snapshot rollback `auto-20260922-133432`), cờ structured = 1. Chủ dự án chốt
+> 22/09: không có traffic thì bỏ chờ 20 phút, thay bằng probe/canary chủ động.
+> Chi tiết: `docs/ltt_llm_dual/LOI_MODEL_RUNBOOK.md` §7.
+
 **Files:** Modify `docs/ltt_llm_dual/LOI_MODEL_RUNBOOK.md`; use report directory
 `tmp/kiem_loi_model_<timestamp>` (không commit dữ liệu vận hành).
 
-- [ ] Chụp baseline 20 phút bằng `live`: traffic thật đang có, không phát job
+- [x] Chụp baseline 20 phút bằng `live`: traffic thật đang có, không phát job
   mới. Ghi tổng request, code hiện thấy, legacy/unknown và tỷ lệ request ID; dữ
   liệu nhạy cảm không vào báo cáo.
-- [ ] Deploy **A decoder/runtime/telemetry tương thích old+v1** trước, với
+- [x] Deploy **A decoder/runtime/telemetry tương thích old+v1** trước, với
   `LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS=0`. Nghiệm thu health, một request test
   không lỗi, fixture replay và response legacy. Rollback: bản A trước thay đổi.
-- [ ] Deploy **B envelope + normalizer** trong cửa sổ yên theo runbook; không đổi
+- [x] Deploy **B envelope + normalizer** trong cửa sổ yên theo runbook; không đổi
   llama model/config. Nghiệm thu health, model ready, request bình thường và bảy
   lỗi budget rẻ. Rollback: artifact B trước thay đổi.
-- [ ] Bật **A renderer/catalog** bằng
+- [x] Bật **A renderer/catalog** bằng
   `powershell -ExecutionPolicy Bypass -File C:\LTTPlatform\setup\dat_bien_env.ps1 -Ten LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS -Gia_tri 1`, rồi dùng
   `python tools\nang_quyen.py --lenh` theo §9.3 để chạy
   `C:\LTTPlatform\setup\nap_lai_env.ps1 -Services LTTStudioWeb`. Chỉ restart web,
   không restart worker/Codex đang giữ job. Nghiệm thu cả ba protocol,
   sync/stream, public status đúng nghĩa và request ID A↔B. Rollback nhanh: đặt
   cờ về `0` và chỉ nạp lại `LTTStudioWeb`; không cần rollback B.
-- [ ] Chạy canary A+B 20 phút bằng HTTP client chuẩn và fixture, **không qua
+- [x] Chạy canary A+B 20 phút bằng HTTP client chuẩn và fixture, **không qua
   LTTCODE**: `contract_mismatch=0`, lỗi tiêm có `unknown=0`, mọi request kiểm có
   request ID xuyên suốt; ảnh/context/output token có canonical code và public
   status đúng spec.
-- [ ] Nếu bất kỳ invariant đỏ: dừng rollout, lưu report, rollback lớp vừa deploy;
+- [x] Nếu bất kỳ invariant đỏ: dừng rollout, lưu report, rollback lớp vừa deploy;
   không “chữa” bằng đổi mapping khi chưa có evidence B/A cùng request ID.
-- [ ] Chỉ đánh dấu A+B hoàn tất khi direct API matrix xanh và traffic thật không
+- [x] Chỉ đánh dấu A+B hoàn tất khi direct API matrix xanh và traffic thật không
   tăng `unknown`, mismatch hay lỗi key. Sau mốc này mới được mở Task 12.
-- [ ] Commit runbook với **lệnh/kết quả thật** sau triển khai, không chép secret.
-- [ ] Trước mỗi deploy chỉ dùng L1 trên đúng SHA theo hợp đồng; không chạy L2
+- [x] Commit runbook với **lệnh/kết quả thật** sau triển khai, không chép secret.
+- [x] Trước mỗi deploy chỉ dùng L1 trên đúng SHA theo hợp đồng; không chạy L2
   giữa các bước rollout. L3 dành duy nhất cho Task 14 sau khi mọi phase kết thúc.
 
 ### Task 12: LTTCODE đọc mã có cấu trúc và kích hoạt đúng recovery — làm cuối
@@ -475,6 +480,95 @@ không dùng LTTCODE để che hoặc bù lỗi server.
 - [ ] Chạy canary LTTCODE 20 phút: lỗi ảnh không compact, lỗi context không
   offload, output-token không compact, unknown không retry; không phát job tải
   nặng chỉ để tạo lỗi.
+
+## Kế hoạch phần còn lại — tái lập 22/09/2026 (Claude tiếp quản Codex)
+
+Nguồn luật: CLAUDE.md dự án (luật 1–3) · `docs/00_LTT_OPERATING_CONTRACT.md` §4, §7, §8 ·
+`docs/QUY_TAC_CHAY_LENH_NANG.md` · `~/.claude/ltt/QUY_TAC_AGENT_VA_TOKEN.md` · `D:\LTTCODEAPP\AGENTS.md`
++ `docs/LTTCODE/RELEASE_RUNBOOK.md`. Bàn giao: `~/.claude/ltt/khoi-phuc-2026-09-22/BAN_GIAO_may-b.md`.
+
+### Trạng thái thật lúc tái lập
+
+| Hạng mục | Trạng thái | Bằng chứng |
+|---|---|---|
+| Task 1–11 (máy A+B) | XONG, đã deploy | `main` `e94dd9a2`; runbook §7 |
+| Task 12a LTTCODE decoder/adapter/UI | XONG trên nhánh | `D:\LTTCODEAPP-025` `bbc0018`, `8028c53`, `b144a9e` |
+| Task 12b P2 LTT-3.5 full quyền | XONG trên nhánh, **chờ chủ dự án duyệt gộp** (auto-mode chặn [Security Weaken]) | `D:\LTTCODEAPP-025-model35` `6a42cb5` |
+| Task 12c PATH-01 / TOOL-01 | đang nghiên cứu nguồn (agent chỉ đọc) | — |
+| Task 12d build 0.2.5 + verify | CHƯA | — |
+| Task 13 gỡ legacy | HOÃN có điều kiện (xem R9) | plan M5 |
+| Task 14 tài liệu + L3 | CHƯA | — |
+| Nhánh `phien/llm-loi-nghia` | 2 commit chưa gộp main (`4567a70d` test/tool, `dc1c281b` docs) | — |
+
+### Ba quy tắc áp cho mọi bước
+
+- **CPU:** lệnh nặng (≥ 3 tệp test, npm test cả gói, build, `release.ps1`) chỉ qua
+  `python "C:\Users\Thang Tuong\.claude\ltt\chay_nang.py" --phien <làn> -- <lệnh>` (khoá `cpu_agent`, `-n` ≤ 6,
+  một lệnh agent một lúc). Gate tự giữ `cpu_nhieu` và tự in `[tai may]`; trước gate chạy `cua_so_yen.py trang-thai`
+  + `tai_may.py`, `QUÁ TẢI` ⇒ chờ. ≤ 2 tệp test chạy thẳng. Không kill app LTTCODE, không kill tiến trình người khác.
+- **Gate:** trong phiên chỉ test nhắm cụm vừa sửa; đỏ ⇒ sửa tại chỗ, chạy lại đúng phép đỏ. Không L2 giữa pha
+  (chủ dự án 22/09), L1 chỉ khi cần deploy giữa phiên. **Một L3** ở R8 trên `phien/llm-loi-nghia` sau khi mọi việc
+  LTTSTUDIOSAPP của phiên xong; đỏ ⇒ sửa + `gate.py --doi --tu <sha L3>`, không L3 lần hai. Không chạy gate để
+  "xác nhận" từng bản sửa. LTTCODE: test nhắm có đối chứng âm + `verify_installed` trên bản cài (AGENTS.md §3).
+- **Agent:** số làn = số việc độc lập, mỗi làn một worktree + nhánh `phien/<plan>-<làn>`, không hai làn sửa cùng tệp;
+  việc cơ học (gộp, chạy test, build, kiểm kê) ⇒ `model: sonnet`; nghiên cứu/thiết kế/bảo mật ⇒ Opus; brief dán
+  đường dẫn QUY_TAC_AGENT_VA_TOKEN.md mục B; báo cáo ≤ 250 từ; điều phối tự gộp + giải xung đột.
+
+### Thứ tự tối ưu (đường găng = LTTCODE 0.2.5)
+
+```
+R1 [chủ dự án] duyệt gộp P2  ─┐
+R2 [agent Opus, chạy] PATH/TOOL nguồn ─┼─> R3 sửa/ghi sổ ─> R4 một đợt test cuối LTTCODE ─> R5 gộp main LTTCODE
+R6 [agent sonnet] tài liệu Task 14 (LTTSTUDIOSAPP)          │                                   │
+                                                            └───────────────> R7 release 0.2.5 dev (nặng, nền)
+R8 L3 một lần (LTTSTUDIOSAPP) ─> gộp main ─> (deploy chỉ khi có mã phục vụ đổi) ─> NHAT_KY
+R9 [chủ dự án] cập nhật app ─> phiên MỚI: verify_installed + 5 kịch bản canary so bảng lỗi 0.2.4
+```
+
+| # | Việc | Ai / cách chạy | Test / gate | Xong khi |
+|---|---|---|---|---|
+| R1 | Gộp `phien/lttcode-025-model35` vào `phien/lttcode-025-error-contract` | chủ dự án duyệt (lệnh sẵn trong báo cáo) | sau gộp: `node --test tools/check_composition.test.mjs` + `npm test` read-guard-ltt (qua chay_nang) — một lượt | xanh, có đối chứng âm (đã có trong 6a42cb5) |
+| R2 | PATH-01 (ghép `D:\X\D:\…`), TOOL-01 (`ok:false` nhưng `isError=false`) | agent Opus chỉ đọc, GitHub MCP | — | mỗi nhóm kết luận a–e có nguồn |
+| R3 | Chỉ sửa nhóm kết luận (a) (lỗi plugin LTT, seam đúng); (b) nhận bản upstream; (c)/(e) ghi `SO_LOI_VAN_HANH` V-13/V-14 + nháp issue; (d) pass | điều phối | test nhắm gói bị sửa | sổ lỗi ghi đủ |
+| R4 | Một đợt test cuối LTTCODE trên cây gộp: llm-ltt `npm test`, ui-lttcode, read-guard-ltt, `check_composition`, typecheck | agent sonnet, tuần tự qua chay_nang | đỏ ⇒ sửa, chạy lại đúng phép đỏ | tất cả xanh |
+| R5 | `STATE.md` + `RELEASE_NOTES_0.2.5.md`; ff `D:\LTTCODEAPP\main`; gỡ worktree -025/-025-model35 (AGENTS.md §9) | điều phối | `git merge-base --is-ancestor` | main sạch |
+| R7 | `pwsh -File tools\release.ps1 -Version 0.2.5 -Channel dev -Rollout 100 -SessionFormat 3 -VerifyUrl https://app.lttstudios.com` | qua chay_nang, chạy nền, đọc kết quả khi xong | release.ps1 tự kiểm chữ ký + endpoint | endpoint dev trả 0.2.5 |
+| R6 | Task 14: QUYET_DINH_NEN_TANG, DECISION_LOG, hậu kiểm AUDIT_API_2026-09-14, docs API sinh bằng `tools/build_public_api_docs.py`, KE_HOACH, `git grep` "413 = context"/"nhận ra bằng câu chữ" cả hai kho | agent sonnet trên `phien/llm-loi-nghia` (trước R8, không ghi khi L3 chạy) | bước tĩnh liên quan | commit |
+| R8 | `python tools\gate.py` (L3) một lần trên `phien/llm-loi-nghia` → khép đỏ → ff `main` → NHAT_KY | điều phối | L3 | xanh / đã khép |
+| R9 | Cập nhật app → `verify_installed.ps1` + 5 kịch bản canary (lỗi ảnh không nén, context không offload, output-token không nén, mã lạ không retry, 3.5 con ghi được) | chủ dự án bấm cập nhật; phiên mới chạy | verify_installed PASS | bảng lỗi sau ≤ trước |
+
+**Điều chỉnh 22/09 (chủ dự án):** build CHỈ MỘT LẦN sau khi MỌI hạng mục LTTCODE xong — lượt
+build sớm đã dừng trước khi phát (không có gì lên manifest). Cổng vào R7 = đủ cả: (1) nguyên nhân 9 lỗi
+`400 INVALID_REQUEST` đã kết luận và sửa nếu thuộc LTTCODE; (2) test cố định STREAM_CLOSED giữ requestId;
+(3) sổ lỗi ghi dòng "pass có lý do" cho edit mismatch / tệp không tồn tại / exit code ≠ 0; (4) R4 chạy lại
+một lượt trên cây cuối. `subagent run was cancelled` kiểm ở R9 (cần bản đã cài).
+
+**Hạng mục MỚI đề xuất — ngoài plan này (plan cấm đổi trần/giới hạn):** lệch đơn vị cửa sổ ngữ cảnh ở
+máy A. Nguyên nhân gốc của 9 lỗi `400` trong audit 0.2.4 là tiền kiểm "quá dài" của A
+(`platform_core/runtime_noi_bo/luong.py` `vao_uoc > cap`) tính bằng token ƯỚC cận trên (`uoc_token.py`,
+≈1,33–1,4× usage thật trên 3 phiên), trong khi cửa sổ công bố cho client (`llm_gateway/ngan_sach.py:440-442`,
+tran_vao×0,92) được client so bằng token THẬT ⇒ client không nén chủ động kịp, chỉ nén sau khi đã ăn một
+lỗi (LTTCODE 0.2.5 đã nén đúng sau lỗi đó). Máy B đã có lời giải cho cùng loại lệch: ước trước, vượt trần
+thì đếm thật (`dem_that`, `llm_gateway/api.py`). Bằng chứng: `C:\lttc0\logs	ask12_400_rootcause.md`,
+sổ lỗi LTTCODE V-17. Cần chủ dự án duyệt hướng: (a) A dùng cơ chế ước→đếm thật như B; (b) công bố
+cửa sổ theo token thật (hạ số công bố); (c) giữ nguyên, chấp nhận nén sau lỗi.
+
+**Chủ dự án chốt 22/09: phương án (b)** — hạ cửa sổ công bố cho khớp token thật (ngoại lệ có chủ đích với
+ràng buộc "không đổi trần" của plan; trần tiền kiểm và máy B KHÔNG đổi, chỉ đổi số công bố + ngưỡng nén dẫn xuất).
+Làn:
+- **W1 đo** (Opus, chỉ đọc): phân phối k = token ước A / usage thật trên mọi lượt thành công của session
+  LTTCODE; đề xuất k → `C:\lttc0\logs\he_so_uoc_that.md`.
+- **W2 LTTSTUDIOSAPP** (sau W1 + sau khi gộp R6c): một hằng số k trong `apps/ltt_llm/ngan_sach.py`,
+  `cong_bo_cua` dẫn xuất từ nó; mọi nơi đang chép số (`examples.py`, `cam_cli.py`, `sdk/ltt_cai_dat_cli.py`,
+  `_cam_chon.html`, bản dịch, tài liệu PUBLIC_API, test) đọc từ hàm hoặc cập nhật; test nhắm
+  `thanh_phan.py --test ltt_llm` + các tệp đang khoá số.
+- **W3 LTTCODE**: `KNOWN_CONTEXT_WINDOWS`, ngưỡng nén preset `agent.cordis.yml`, test
+  `context-windows-catalog`/`compaction-cache`/`max-tokens`/`adapter`; rồi R4 lại → build 0.2.5 MỘT lần.
+- Deploy A sau L3 (catalog mới có hiệu lực); build 0.2.5 dùng số mới làm dự phòng.
+
+Task 13 (gỡ legacy) **không** thuộc phiên này: vào khi đủ một chu kỳ vận hành có traffic với
+`llm_error_legacy_total=0` và `llm_error_contract_mismatch_total=0` (đọc bằng
+`tools/kiem_hop_dong_loi_llm.py live`), sau khi 0.2.5 đã thay 0.2.4 trên máy dùng.
 
 ### Task 13: Xoá suy diễn cũ sau khi telemetry chứng minh không còn dùng
 

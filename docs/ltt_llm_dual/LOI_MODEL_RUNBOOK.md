@@ -153,10 +153,67 @@ chép vào report.
 Trước khi mở hạng mục LTTCODE, Task 11 phải có đủ ba artifact cùng thời điểm:
 
 - fixture `failed=0`;
-- live 20 phút có request-ID coverage được ghi rõ, mismatch bằng 0, không tăng
-  unknown/legacy so với baseline;
+- live có request-ID coverage được ghi rõ, mismatch bằng 0, không tăng
+  unknown/legacy so với baseline. Quan sát 20 phút chỉ có nghĩa khi có traffic
+  thật; không có traffic thì thay bằng probe/canary chủ động + snapshot log
+  sau probe (chủ dự án chốt 22/09/2026) — "đủ mẫu hoặc đủ thời gian";
 - inject/canary trực tiếp qua API A xanh cả ba protocol, không qua LTTCODE.
 
 Bất kỳ invariant nào đỏ thì dừng rollout và giữ cờ
 `LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS=0` (hoặc trả về 0 nếu vừa bật). Không
 được sửa client để che lỗi server.
+
+## 7. Kết quả Task 11 — rollout A+B 22/09/2026
+
+Giờ Việt Nam (UTC+7). Không có dữ liệu người dùng trong report.
+
+| Bước | Kết quả |
+|---|---|
+| Baseline live A trước deploy (bản `42c79a26`) | 0 event có cấu trúc — đúng dự kiến, bản cũ chưa có telemetry |
+| Baseline B 20 phút | 23 lượt `messages` (19 qwen38, 4 qwen35), 23/23 HTTP 200, 0 ERROR |
+| L1 trên SHA deploy | đỏ 2 phép ngoài LTT LLM (bộ khung `video_crawler` dở + DB migration tạm còn sót) → rút bộ khung khỏi SHA (`f587f497`), khép đúng 2 phép: governance 102 passed, migration PostgreSQL PASS |
+| Deploy A `f587f497` | fingerprint 1.092 tệp lệch 0; `/health/ready` ready; rollback `42c79a26` |
+| Deploy B gateway-only | snapshot `auto-20260922-133432`, hash 45 tệp khớp, YAML/model không đổi, chỉ restart `LTTLlmGateway`; nghiệm thu B 17/17 |
+| Canary thành công A→B | 9/9 (key pool, giải mã credential, sinh thật, usage, tính phí) |
+| Bật `LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS=1` | chỉ nạp lại `LTTStudioWeb` |
+| Inject `model_not_found` | B 3/3; A lộ lỗi thật: lỗi validator cục bộ đi đường `ApiError(400)` cũ → sửa `e94dd9a2` (300/300 test public route + renderer), deploy lại A |
+| Bộ đo | 2 lỗi bộ đo sửa bằng TDD: User-Agent mặc định bị Cloudflare chặn 403; probe Chat thiếu `Idempotency-Key` (`4567a70d`) |
+| Ma trận sau cùng | A 3/3, B 3/3; fixture 265/265 |
+| Snapshot log sau probe (10 phút) | 11 event lỗi có cấu trúc, request ID 11/11, unknown 0, legacy 0, mismatch 0 |
+| Lỗi xuyên tầng thật | `image_count_exceeded` (5 ảnh > trần 4, chặn trước GPU): SSE `event:error` sau 200, `field=images limit=4 actual=5`, cùng request ID ở client, log A, log B |
+
+Ghi nhận ngoài hạng mục: wrapper `chay_nghiem_thu.cmd` trả `rc=255` sau bước dọn
+dù 17/17 hành vi đạt (dọn kill đúng tiến trình nó dựng) — lỗi công cụ, chưa sửa.
+
+## 8. Rà tài liệu 413/câu chữ (Task 14)
+
+`git grep -n` (case-insensitive) trên hai kho cho các mẫu: `413` gần
+`context`/`ngữ cảnh`/`CONTEXT_WINDOW`, `prompt is too long`, "nhận ra bằng câu
+chữ", `payload_too_large`. Phân loại theo quyết định L-34: hợp lệ = fallback
+tương thích có chủ đích, hoặc tài liệu/nhật ký lịch sử tự đóng khung là ảnh
+chụp một thời điểm; chết = mô tả hành vi cũ như đang là hiện hành.
+
+### `D:\LTTSTUDIOSAPP-llm-loi-nghia`
+
+| Tệp | Phân loại | Vì sao |
+|---|---|---|
+| `docs/superpowers/plans/2026-09-21-chuan-hoa-ngu-nghia-loi-llm.md` | Hợp lệ | Chính plan đang thi hành, không phải mô tả cái cũ |
+| `docs/superpowers/specs/2026-09-21-chuan-hoa-ngu-nghia-loi-llm.md` | Hợp lệ | Spec hiện hành của chính chương trình này |
+| `docs/ltt_llm_dual/KE_HOACH_PHUONG_AN_C.md` | Hợp lệ | Tự đóng khung ở đầu tệp: "ĐÃ THỰC THI 17/09 (L-23)... §1–§2 là ảnh chụp TRƯỚC khi sửa"; dòng 413/"context" ở §1.4 là audit lịch sử client trước Task 12, có commit mốc |
+| `docs/_luutru/multijob_2026-09/2026-09-11-ltt-llm-multijob-design.md` | Hợp lệ | Nằm trong `_luutru/` — đã lưu trữ, không phải tài liệu sống |
+| `docs/_luutru/codex_2026-08-27/QUEUE_REVIEW_NHIEU_API.md` | Hợp lệ | Nằm trong `_luutru/` — đã lưu trữ |
+| `docs/VLM_NOI_BO/NGU_CANH_DAI_2026-09-03.md` | Hợp lệ | Nhật ký điều tra có mốc ngày/trạng thái ĐÓNG cho từng phát hiện (N-1…N-15), không phải đặc tả hiện hành |
+| `docs/QUYET_DINH_NEN_TANG.md` (Q120) | Hợp lệ | Mô tả việc dịch 413 khi khách vượt **trần đầu vào đã khai** — một cơ chế cụ thể vẫn đúng, không phải "mọi 413 là context"; đã tự đánh dấu phần số liệu ĐÃ GỠ ở L-23 |
+| `docs/LTT_CLI_COMPAT_DECISIONS.md` (dòng "413 ngữ cảnh không tiêu `create_rpm`") | Hợp lệ | Nói về kế toán RPM/billing khi có 413, không phải cơ chế nhận diện lỗi bằng status/câu chữ |
+| `docs/PUBLIC_API/CHANGELOG.md` (mục "Và `413` vẫn đứng trước") | Hợp lệ | Log thay đổi có mốc ngày, mô tả trạng thái tại thời điểm phát hành đó |
+| `docs/PUBLIC_API/HUONG_DAN_CAM_CLI.md:683` (`413/ngữ cảnh quá dài`) | **Chết — đã sửa (R6b, 22/09)** | Đo: status công khai của lỗi quá dài là **400** ở cả ba giao thức (`tests/test_1480_loi_qua_dai_dung_giao_thuc.py` 10 passed; `server/api/su_kien_loi.py::loi_qua_dai_json`), 413 công khai chỉ cho `request_body_too_large` (`server/api/deps.py:104`). `http_status=413` trong `KhongMoDuoc`/`LoiLuongVlm` là **status dây nội bộ** bắt chước máy B (spec §3 giữ status B trong giai đoạn tương thích; decoder ghi đúng 413 của B cho lỗi B báo) ⇒ hai đường nhất quán, không phải bug; renderer lấy status công khai từ registry. Không tách canonical: cùng nghĩa, cùng recovery `reduce_input`. Sửa dòng hướng dẫn thành 400 + thêm dòng 413 body; chú thích mã làm rõ ở `luong.py`, `luong_vlm.py`, `tham_so_da_luot.py`. Văn bản công khai cùng lỗi (`huong_dan.html`, `examples.py` NGU_CANH_NAM_SO/LOI_413, `dieu_khoan.py` `tran_ngu_canh`) sửa ở làn R6c |
+
+### `D:\LTTCODEAPP` — chỉ liệt kê, KHÔNG sửa (làn khác giữ kho này)
+
+| Vị trí | Ghi chú |
+|---|---|
+| `docs/LTTCODE/DANH_MUC_CONG_VIEC.md:280` | `"413 → CONTEXT_WINDOW_EXCEEDED"` ghi như kết quả A3 — đối chiếu lại với `plugins/llm-ltt/CONTRACT.md:137,151,153` (đã cập nhật: `request_body_too_large` là 413/`INVALID_REQUEST`, "413 không còn thành CONTEXT") |
+| `docs/LTTCODE/KE_HOACH_XU_LY_LAI.md:104` | Dòng A3 liệt "413 → `CONTEXT_WINDOW_EXCEEDED`" cạnh cột "trước sửa" — kiểm lại chiều trước/sau còn khớp `errors.ts` hiện tại không |
+| `plugins/llm-ltt/src/errors.ts:82,84` | Regex khớp câu chữ (`"The input exceeds the model's context limit"`, `"prompt is too long"`) → `context_window_exceeded`; là mã nguồn (không sửa qua tài liệu), cần làn giữ kho đó xác nhận đây vẫn là fallback tương thích ngược có chủ đích chứ không phải đường chính |
+| `docs/LTTCODE/reports/self-improve/SO_LOI_VAN_HANH.md`, `AUDIT_DOI_SOAT_2026-09-16.md`, `docs/LTTCODE/_superseded/2026-09-17-truoc-build-0.1.5.md`, `docs/LTTCODE/reports/harness-nang-cap/A_H1_H3.md`, `docs/LTTCODE/reports/H11_headless.md` | Có hit `413`/`payload_too_large`/`prompt is too long`; không đọc sâu trong lượt này — liệt kê để làn LTTCODE tự phân loại |
+

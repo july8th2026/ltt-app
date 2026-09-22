@@ -35,6 +35,80 @@ Rà soát từng hạng mục cũ: không hạng mục mã nào đạt; main đ�
 - **Tồn / chờ chủ dự án**: bật cờ production; nhập cookies.txt để nghiệm thu nền cần phiên; nối Auto Scan Video
   (CONTRACT GAP — ASV chỉ nhận upload của chính nó); worker `browser` cho QR login; giá 1 credit/video.
 - `test_211::test_a_decade_of_retention…` đỏ khi chạy RIÊNG (có sẵn trước phiên này — fixture `portal`), ngoài phạm vi.
+- **MVP W1–W2** (sau đánh giá chất lượng; plan `docs/migrations/video_crawler/PLAN_MVP.md`, đánh giá `DANH_GIA_MVP.md`;
+  8 làn agent, mỗi làn một worktree, gộp ở `phien/vcm-tich-hop`). Không nối Auto Scan Video (chủ dự án: sau này qua workflow).
+  - Pháp lý: ô cam kết quyền bắt buộc mọi lượt tải, kênh báo vi phạm, trần 60 video/giờ, 300/ngày (`PHAP_LY_NHAP.md` chờ duyệt).
+  - Giá theo thời lượng (1 credit = 100 đ): ≤10 phút 3 · 10–30 phút 6 · 30–60 phút 10 · 60–180 phút 15; giữ 15/mục, quyết toán
+    theo thời lượng thật (`gia.py` một nguồn). Xem trước miễn phí.
+  - Tin cậy: yt-dlp-ejs + node (n-challenge YouTube — thiếu gói ⇒ MỌI lượt tải YouTube 403), nghỉ 5–10 s giữa các MỤC (không
+    `sleep_interval` — nó nghỉ trước mỗi tệp), mã `trich_xuat_hong`.
+  - Sức khoẻ: `/video-crawler/van-hanh` (operator) + tắt mềm nền qua `LTT_VIDEO_CRAWLER_TAT`.
+  - Douyin/XHS tìm kiếm + kênh (a_bogus vendor f2 Apache-2.0, xhshow MIT; rủi ro ToS chủ dự án chấp nhận), Kuaishou client
+    GraphQL (registry tắt tới khi nghiệm thu có phiên). Đăng nhập QR: chỉ thiết kế (`THIET_KE_QR.md`, chờ quyết định).
+  - Dedup bền: bảng `vc_da_tai` (UNIQUE owner/nền/video, giành chỗ trước khi tải; migration `3b7d2f9e1c48`, hàng governance thứ 2)
+    ⇒ hết giới hạn 30 ngày, hai job cùng video chỉ thu một lần.
+  - UX: tốc độ/ETA, tải lại mục lỗi, lọc lịch sử theo nền, hướng dẫn cookies.txt + cảnh báo rủi ro tài khoản.
+  - Hiệu năng: ảnh bìa lưu kho ở bước xem trước (route đọc kho trước, chỉ key đúng chủ/job). Tải song song: KHÔNG làm
+    (tiến độ/dọn giả định một luồng, chỉ bilibili.tv hưởng lợi).
+  - Lỗi lúc gộp (SO_LOI W2-1..4): tải lại video hết hạn mà lỗi làm mất dấu chống trùng; lỗi lộ tên lớp `LoiNguoiGoi:`
+    (app thumbnail/taoclipngan cũng vậy — đã tách việc riêng); câu "30 ngày"/"1 credit" cũ; máy dev thiếu yt-dlp-ejs.
+  - Phụ thuộc mới: `yt-dlp-ejs>=0.8.0,<0.9` (prod yt-dlp 2026.7.4 cần đúng 0.8.0), `xhshow>=0.2.0,<0.3`.
+  - L3 `phien/video-crawler` 41120e46 đã khép PASS. Chủ dự án cấp quyền bật cờ `LTT_VIDEO_CRAWLER` (22/09).
+
+## 2026-09-22 (tối) — Chuẩn hoá ngữ nghĩa lỗi LLM B→A→LTTCODE xong; 9 lỗi 400 = quá dài; cửa sổ công bố theo token thật (L-34, L-35)
+
+Plan `docs/superpowers/plans/2026-09-21-chuan-hoa-ngu-nghia-loi-llm.md` (Codex 21–22/09, Claude tiếp quản
+22/09 chiều). Máy A+B (Task 1–11) đã deploy trước đó (`f587f497`, `e94dd9a2`; runbook
+`docs/ltt_llm_dual/LOI_MODEL_RUNBOOK.md` §7).
+
+- **Task 12 — LTTCODE 0.2.5 phát dev 100 %** (`D:\LTTCODEAPP` `fbf7124`): decoder đọc `ltt_error` v1,
+  canonical → mã Harness trung tính theo registry retry, bỏ "mọi 413 = context" / "400 không body =
+  INVALID_REQUEST", requestId từ server; LTT-3.5 agent con đủ quyền như 3.8 (chủ dự án duyệt).
+- **Nguyên nhân 9 lỗi `LTT 400 : Bad Request`** trong audit 5 phiên 0.2.4: tiền kiểm "quá dài" của A
+  (`KhongMoDuoc(qua_dai=True)`) tính token ƯỚC cận trên, ≈1,31× (max 1,483×) usage thật trên 1 120 lượt;
+  0.2.4 không đọc được thân lỗi nên không nén ⇒ lỗi dây chuyền. Giả thuyết dangling tool_call #4549 bị bác.
+- **L-35 (chủ dự án chốt (b), bỏ biên 0,92):** `ngan_sach.HE_SO_UOC_TREN_THAT = 1.5`; cửa sổ công bố
+  ltt-3.8 171 458→**124 245**, ltt-3.5 209 141→**151 552**; ngưỡng nén 91 477 / 118 784. Trần tiền kiểm
+  và máy B không đổi. Khách đã cài bằng `cam` cần chạy lại `cam` để nhận số mới.
+- **413 vs 400 của `context_window_exceeded`:** đo — công khai là 400 ở cả ba giao thức (test_1480);
+  `http_status=413` nội bộ là status dây bắt chước B (spec §3), không phải bug. Văn bản công khai còn hứa
+  "413" đã sửa (trang hướng dẫn, examples, điều khoản, gợi ý cắm CLI, bản dịch EN).
+- **Gate:** một L3 (47321f95) đỏ 2/34 — cả hai ngoài mã: thư mục rác `apps/video_crawler` chỉ `.pyc` sót
+  từ lúc rút app (dọn bằng `git clean -X` giới hạn thư mục), `test_362` đọc worktree đang được phiên
+  video-crawler tạo dở (chạy lại 74 passed). Khép `gate.py --doi --tu 47321f95` PASS trên `4f4ee8f6`.
+  Bản ghi `test-results/gates` của lượt L3 biến mất khỏi worktree sau khi chạy — chưa rõ tiến trình nào
+  xoá; lượt khép vẫn ghi được.
+- **Deploy máy A** `4f4ee8f6`: 1 092 tệp lệch 0, `/health/ready` 200; Playwright `/huong-dan`: số mới có,
+  số cũ không, 0 lỗi console. Câu sót "Nếu 413…" ở gợi ý cắm CLI sửa `ee522aec`; hoà main (tài liệu máy B VGA) → khép `--doi --tu ee522aec` PASS → deploy lại `ae93e080` (lệch 0, ready 200, Playwright: câu mới có, câu cũ không, 0 lỗi console). Tin báo deploy tới 4/5 phiên bị giữ chờ người dùng bên đó duyệt rồi hết hạn — hợp đồng "báo, không chờ" vẫn đạt nhưng các phiên đó không biết máy A đã khởi động lại.
+- **Còn mở:** chủ dự án cập nhật app lên 0.2.5 → phiên mới `verify_installed` + canary + V-16
+  (`subagent run was cancelled`); Task 13 gỡ legacy chờ một chu kỳ có traffic với legacy=0,
+  mismatch=0; V-14 nháp issue upstream `dsh-tool-search` (nuốt `isError`) chờ chủ dự án gửi.
+
+## 2026-09-22 (tối) — Máy B: mod VGA (chỉ xung nhớ) + đánh giá HyperQwen; không đổi mã kho
+
+Chủ dự án hỏi vì sao LTTCODE thấy 3.8 ~34 tok/s, 3.5 ~44 tok/s, và muốn mod card an toàn. Phiên này chỉ đụng
+máy B (card, tác vụ Windows), không sửa mã/cấu hình LTTSTUDIOSAPP.
+
+- **Chẩn đoán:** 34/44 là tốc độ MỖI luồng khi đủ suất chạy cùng lúc (3.8 np3, 3.5 np4) ở ngữ cảnh 40–130K; một
+  luồng ngắn đo được 3.8 67,9 · 3.5 74,6 tok/s. Log llama-server 19–22/09: decode giảm ~45 % từ <8K lên >128K,
+  prefill của lượt khác làm luồng đang sinh khựng xuống 1,5–8 tok/s. Hệ thống chạy đúng thiết kế.
+- **Mod (đang áp):** chỉ offset xung NHỚ — 3090 +750 MHz (P2 9501→10251), 5060 Ti +1000 (P1 13801→14801); nhân,
+  điện áp, power limit 370/180 W, VBIOS mặc định. Soak 30 phút hai card: 292 lượt greedy 0 lệch hash, 0 sự kiện
+  lỗi. So với soak mặc định cùng nhiệt: 3.8 68,4→69,6 (+1,8 %), 3.5 72,9→76,2 (+4,5 %), prefill không đổi.
+  3090 khi chạy LLM luôn chạm trần 370 W (vì vậy OC nhớ chỉ +2 %); hạ 300 W mất 3,3 % decode ⇒ không áp.
+- **Cơ chế:** tác vụ SYSTEM `LTT_ModCard_NVML_KhoiDong` lúc khởi động ⇒ `C:\Tools\ModCard\dat_offset.py 1500 2000`
+  (NVML; đơn vị NVML = 2× Afterburner). Afterburner `[Startup]` không tự áp (đã thử) ⇒ không dùng Afterburner để OC.
+  Chưa kiểm bằng một lần khởi động lại thật.
+- **Sổ tay vận hành / khôi phục:** `Setup_VGA.md` trên Desktop máy B (`C:\Users\lengo\OneDrive\Desktop\`, bản sao
+  `C:\Tools\ModCard\`); kiểm nhanh `C:\Tools\ModCard\venv\Scripts\python.exe C:\Tools\ModCard\kiem_vga.py`.
+  Bản lưu trong kho (sổ tay + script + số đo): **`docs/MAY_B_VGA/`** (mở `README.md`); dữ liệu thô `H:\LTT_MOD_CARD\`.
+- **HyperQwen (vLLM + 38 bản vá, `syv-ai/HyperQwen`) — KHÔNG triển khai:** chỉ Linux/WSL2, mà bật Hyper-V trên máy B
+  làm VMware mất VT-x lồng ⇒ cụm Proxmox chứa VPS khách không khởi động (Broadcom KB 389469); không hỗ trợ 3.5/9B;
+  không có budget suy nghĩ cứng; issue #147 (3090, tải agent) ngang llama.cpp. ⛔ Không bật WSL2/Hyper-V trên máy B.
+- Nhật ký sự kiện System/Application máy B đã sao lưu rồi xoá theo lệnh chủ dự án lúc 18:08
+  (`H:\LTT_MOD_CARD\evtx_truoc_mod\`). Còn tồn phần cứng: hot spot 5060 Ti 98,9 °C ở CẢ mặc định (tản nhiệt),
+  3090 hot spot 94 °C (lệch nhân 22 °C) — nên thay keo. Gợi ý phiên riêng: decode ngữ cảnh dài của 3.8
+  (45 tok/s ở 50K) — nghi KV q4_0.
 
 ## 2026-09-22 (chiều) — VPS: tạo máy bị khoá vì OVH ngừng liệt kê hợp đồng đã ký; phát hành VPS cho mọi người dùng
 

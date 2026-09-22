@@ -400,10 +400,32 @@ BODY_BYTES_TOI_THIEU = int(
     (max(CUA_SO_THEO_MODEL.values()) - TOKEN_RA_TRAN - DEM_UOC)
     * BYTE_MOI_TOKEN_JSON)                                        # ~999 KB
 
+#: 🔑 HỆ SỐ ƯỚC TRÊN THẬT — trần tiền kiểm ở A (`tran_vao_cua`, `TOKEN_VAO_TRAN`)
+#: tính trên TOKEN ƯỚC (`platform_core/llm/uoc_token.py`, cận trên có chứng
+#: minh); nhưng con số ta công bố cho client phải đúng ở TOKEN THẬT — client
+#: đếm bằng bộ đếm của nó, model tính tiền bằng token thật của Qwen. Hai đơn vị
+#: khác nhau; hằng số này là tỉ lệ đo được để quy đổi cái trước sang cái sau.
+#:
+#: 📏 Đo: `uoc_token_vao(A, cận trên) / usage token thật`, 1.120 lượt production
+#: (`C:\lttc0\logs\he_so_uoc_that.md`, 22/09/2026). median = 1,31 · max = 1,483.
+#:
+#: ✅ CHỦ DỰ ÁN CHỐT 22/09/2026 (quyết định (b)): k = **1,50**, BỎ biên `× 0,92`
+#:    cũ ("chừa lệch tokenizer" — sai câu hỏi: số công bố không cần chừa lệch
+#:    tokenizer, nó phải KHỚP token thật; cái cần chừa là khoảng cách ước↔thật
+#:    ở cửa vào của A).
+#:
+#: 🔴 VÌ SAO LẤY MAX (1,483 → 1,5) CHỨ KHÔNG P99: k gần như HẰNG trong một
+#:    phiên (cùng ngôn ngữ, cùng hình dạng nội dung suốt một phiên chat), nên
+#:    1.120 lượt gộp lại chỉ tương đương cỡ mẫu HIỆU DỤNG ~28 phiên độc lập —
+#:    một p99 trên cỡ mẫu nhỏ như vậy không đáng tin, một phiên lệch có thể
+#:    chiếm cả phần đuôi. `max` đo được là biên cứng quan sát trên toàn bộ
+#:    1.120 lượt; 1,50 nới thêm chút cho phiên chưa thấy.
+HE_SO_UOC_TREN_THAT = 1.5
+
 #: Cửa sổ **công bố** cho client agentic (Codex, Claude Code) để chúng nén hội
-#: thoại **trước** khi chạm trần. Chừa 8% cho lệch tokenizer: client đếm token
-#: bằng bộ đếm của nó, model đếm bằng bộ của Qwen, hai số không bao giờ khớp.
-CONG_BO_CHO_CLIENT = int(TOKEN_VAO_TRAN * 0.92)                   # 171_458
+#: thoại **trước** khi chạm trần — tính theo TOKEN THẬT (`/ HE_SO_UOC_TREN_THAT`),
+#: trong khi `TOKEN_VAO_TRAN` (tiền kiểm ở A) tính theo TOKEN ƯỚC.
+CONG_BO_CHO_CLIENT = int(TOKEN_VAO_TRAN / HE_SO_UOC_TREN_THAT)    # 124_245
 
 
 # ── Ngân sách THEO MODEL ───────────────────────────────────────────────────
@@ -413,7 +435,8 @@ CONG_BO_CHO_CLIENT = int(TOKEN_VAO_TRAN * 0.92)                   # 171_458
 #    nhất một trong hai.
 #
 # ⛔ Công thức phải GIỐNG HỆT đường text ở trên (chừa `TOKEN_RA_TRAN` cho câu
-#    trả lời dài nhất, chừa `DEM_UOC` cho sai số ước, rồi bớt 8 % lệch tokenizer).
+#    trả lời dài nhất, chừa `DEM_UOC` cho sai số ước, rồi chia `HE_SO_UOC_TREN_THAT`
+#    để quy đổi token ƯỚC ở A sang token THẬT client thấy).
 #    Nếu một model được một công thức "nới tay" riêng thì con số công bố của hai
 #    model không còn mang **cùng một lời hứa**, và khách không có cách nào biết
 #    lời hứa nào áp cho model nào.
@@ -438,8 +461,9 @@ def tran_vao_cua(model_id: str) -> int:
 
 
 def cong_bo_cua(model_id: str) -> int:
-    """Con số ngữ cảnh **công bố cho client** của một model."""
-    return int(tran_vao_cua(model_id) * 0.92)
+    """Con số ngữ cảnh **công bố cho client** của một model — quy đổi trần
+    tiền kiểm (token ƯỚC ở A) sang token THẬT bằng `HE_SO_UOC_TREN_THAT`."""
+    return int(tran_vao_cua(model_id) / HE_SO_UOC_TREN_THAT)
 
 
 #: Ngưỡng client **phải nén** hội thoại, tính từ cửa sổ công bố.

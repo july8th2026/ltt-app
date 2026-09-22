@@ -238,7 +238,7 @@ codex --profile ltt-fast</code></pre>
     <p>{{ _("Tiện ích Codex VS Code: biểu tượng bánh răng → Codex Settings → Open config.toml. Đây là cấu hình cấp người dùng. Tiện ích cần nhận được LTT_API_KEY trong môi trường khi VS Code khởi động; đóng toàn bộ VS Code rồi mở từ cửa sổ đã đặt khóa.") }}</p>
     <p>{{ _("Xem cấu hình gốc cho tiện ích ở mục VS Code. Khi đặt model/provider ở gốc config.toml, mặc định lệnh codex cũng đổi. Không coi việc CLI đọc profile là bằng chứng tiện ích tự chọn được profile đó.") }}</p>
     <p>{{ _("Codex Desktop dùng cấu hình gốc thay vì profile CLI; mở mục Codex Desktop ở đầu trang để lấy đúng khối hoàn chỉnh. Không dán khóa LTT vào mục MCP/Connectors.") }}</p>
-    <p>{{ _("Nếu thiếu model metadata: kiểm đường dẫn và JSON catalog. Nếu 401: kiểm biến LTT_API_KEY có trong tiến trình hiện tại. Nếu 403: kiểm jobs:create và giới hạn công cụ. Nếu 413: dùng đúng profile theo model hoặc mở phiên mới. Muốn gỡ: xóa khối provider ltt và hai tệp profile/catalog do mình thêm; phục hồi bản sao lưu nếu đã đổi cấu hình gốc.") }}</p>
+    <p>{{ _("Nếu thiếu model metadata: kiểm đường dẫn và JSON catalog. Nếu 401: kiểm biến LTT_API_KEY có trong tiến trình hiện tại. Nếu 403: kiểm jobs:create và giới hạn công cụ. Nếu 400 context_window_exceeded (ngữ cảnh quá dài): dùng đúng profile theo model hoặc mở phiên mới; 413 chỉ là thân request quá lớn (bớt tệp đính kèm). Muốn gỡ: xóa khối provider ltt và hai tệp profile/catalog do mình thêm; phục hồi bản sao lưu nếu đã đổi cấu hình gốc.") }}</p>
     <p class="muted"><a href="https://developers.openai.com/codex/config-advanced/" target="_blank" rel="noopener">Codex custom providers / profiles</a></p>
   </div>
   {% endif %}
@@ -297,7 +297,7 @@ codex --profile ltt-fast</code></pre>
 
   <div class="card">
     <h3 class="u-mt0">{{ _("Vì sao phải đặt các giá trị này") }}</h3>
-    <h4>{{ _("Tắt 1M chưa đặt giới hạn 171K") }}</h4>
+    <h4>{{ _("Tắt 1M chưa đặt giới hạn 124K") }}</h4>
     <p>{{ _("Default to 1M context chỉ chọn biến thể mặc định; Offer 1M-context variant khai báo model hỗ trợ 1M. LTT không hỗ trợ 1M nên giữ cả hai tắt. Code có thể vẫn giả định 200K cho tên gateway; xem vòng Usage cạnh model hoặc /context để kiểm, không dựa vào Test connection.") }}</p>
     <p>{{ _("Với Code chạy Local: ô chọn môi trường → Local → bánh răng, chép nguyên khối 11 dòng dưới đây rồi mở phiên Local mới. Đây là danh sách chuẩn đầy đủ cho Claude Desktop 1.52386.6 / Claude Code 2.1.270 với LTT Gateway; không ghép thêm các danh sách cũ. Cửa sổ/ngưỡng nén dùng theo LTT 3.8, là model hẹp hơn; khi chọn LTT 3.5 thì nén sớm hơn. Cấu hình này không tự đổi theo picker.") }}</p>
     <p>{{ _("Không thấy ô môi trường trong phiên đang chạy: bấm New ở thanh bên để mở màn hình tạo phiên. Nút Local nằm trong vùng soạn của màn hình này; mở danh sách, rê vào Local rồi bấm bánh răng. Lưu biến trước khi bắt đầu phiên mới; phiên cũ không tự nhận giới hạn mới.") }}</p>
@@ -320,7 +320,7 @@ codex --profile ltt-fast</code></pre>
     <p>{{ _("Claude gửi ngữ cảnh đã nạp: hướng dẫn hệ thống, lịch sử, tệp, kết quả/schema công cụ và ảnh; không gửi cố định 200K hay 1M mỗi lượt. Output/reasoning cũng chiếm chỗ. Nhiều kết quả công cụ có thể làm vượt trần trước lần nén kế tiếp; chia nhỏ tệp và giảm công cụ không dùng.") }}</p>
     <h4>{{ _("MCP và lỗi non-streaming trong phiên dài") }}</h4>
     <p>{{ _("Sau khi một stream lỗi, Claude Code có thể thử lại bằng stream=false. CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK=1 giữ lần thử lại ở đường streaming, đúng với gateway có SSE heartbeat. Ngày 15/09, một phiên 99.6k token bị 400 vì lần fallback non-streaming mang 98.678 token đầu vào vào cửa JSON 90 giây; biến này xử lý đúng cơ chế đó.") }}</p>
-    <p>{{ _("Với custom ANTHROPIC_BASE_URL, Claude mặc định tải toàn bộ schema MCP vì Tool Search cần tool_reference mà nhiều proxy không hỗ trợ. LTT chưa hỗ trợ tool_reference nên giữ ENABLE_TOOL_SEARCH=false. Tắt Connector/Plugin không dùng; nên giữ mục MCP tools dưới khoảng một phần mười cửa sổ nén (khoảng 13.9k ở preset 3.8). MAX_MCP_OUTPUT_TOKENS chỉ giới hạn kết quả của một tool, không làm nhỏ schema của 131 tool.") }}</p>
+    <p>{{ _("Với custom ANTHROPIC_BASE_URL, Claude mặc định tải toàn bộ schema MCP vì Tool Search cần tool_reference mà nhiều proxy không hỗ trợ. LTT chưa hỗ trợ tool_reference nên giữ ENABLE_TOOL_SEARCH=false. Tắt Connector/Plugin không dùng; nên giữ mục MCP tools dưới khoảng một phần mười cửa sổ nén (khoảng 9.1k ở preset 3.8). MAX_MCP_OUTPUT_TOKENS chỉ giới hạn kết quả của một tool, không làm nhỏ schema của 131 tool.") }}</p>
     <h4>{{ _("Permission mode trên Claude Desktop") }}</h4>
     <table class="table">
       <thead><tr><th>Mode</th><th>{{ _("Hành vi với LTT Gateway") }}</th></tr></thead>

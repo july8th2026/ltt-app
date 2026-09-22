@@ -493,7 +493,7 @@
     },
     "text.chat": {
       "aliases": [],
-      "contract_hash": "1fa09e7adca5e50c",
+      "contract_hash": "fba964038d4be3cd",
       "deprecated": "",
       "execution_mode": "ASYNC_JOB",
       "models": [
@@ -507,6 +507,16 @@
     "text.prompt_package": {
       "aliases": [],
       "contract_hash": "c55834222a3c4a0c",
+      "deprecated": "",
+      "execution_mode": "ASYNC_JOB",
+      "models": [],
+      "required_scopes": [
+        "jobs:create"
+      ]
+    },
+    "transcript.run": {
+      "aliases": [],
+      "contract_hash": "efabeaa63a584c85",
       "deprecated": "",
       "execution_mode": "ASYNC_JOB",
       "models": [],
