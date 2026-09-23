@@ -43,9 +43,16 @@ do thi lop nay khong duoc gate — xem `sua_chua.QC_HINH_LA_TU_VAN`.
 (`setup\\do_on_dinh.ps1 -Do qc-hinh`). ⛔ Cong cu nay khong doc `app.env` va
 khong in mot gia tri bi mat nao.
 
-⚠️ Phan ffmpeg la lenh NANG (giai ma + ma hoa lai ca phim). Nguoi goi cho no
-   qua `chay_nang.py`; cong cu tu gioi han 2 luong (`-threads 2`) vi may A dang
-   phuc vu khach.
+## ⛔ KHONG chay cong cu nay duoi khoa `cpu_nhieu`
+
+Do 23/09: **~95% thoi gian tuong cua no la CHO MANG** (may B tra loi mot cho noi
+trong ~28 giay). Phan CPU that chi la mot lan PySceneDetect (~9 giay/phim) va
+mot lan ffmpeg `-threads 2` (~5 giay/phim) — nho hon nhieu so voi mot luot QC
+binh thuong cua san pham.
+
+🔴 Lan dau no duoc boc trong `chay_nang.py` va **giu khoa toan may 23,5 phut**
+   trong khi GPU nam khong va lan nghiem thu that khong khoi dong duoc. Khoa do
+   ton tai de xep hang VIEC TINH TOAN; giu no de CHO la lam doi ca may.
 """
 from __future__ import annotations
 
@@ -257,7 +264,7 @@ def _hoi_mot_cho_noi(db, duong_ra: str, cn: dict, *, thu_muc_khung, ten_phim,
 
 def _do_mot_phim(db, tep: pathlib.Path, *, moi_n: int, thu_muc_khung,
                  tam: pathlib.Path, khong_model: bool = False,
-                 so_nhay: int = 4) -> dict:
+                 so_nhay: int = 4, ghi=None, so_sach=None) -> dict:
     from apps.auto_scan_video import (ban_do_thoi_gian as bdtg,
                                       canh as canh_mod, nhap_media, qc_ai)
 
@@ -290,7 +297,17 @@ def _do_mot_phim(db, tep: pathlib.Path, *, moi_n: int, thu_muc_khung,
     print(f"  [OK] {len(cac_cn)} cho noi "
           f"({sum(1 for c in cac_cn if c['loai'] == 'nhay_hinh')} nhay_hinh)")
 
-    dong = []
+    dong: list[dict] = []
+    ket = {"phim": tep.name, "thoi_luong": round(thoi_luong, 2),
+           "so_canh": len(ci.canh), "giay_tach_canh": giay_tach,
+           "giay_render": giay_render, "so_khoang_giu": len(giu),
+           "cho_noi": dong}
+    # ⭐ Dua `ket` vao so sach cua nguoi goi NGAY, TRUOC vong lap — va `dong`
+    #    la CUNG mot doi tuong danh sach, nen moi cho noi vua hoi xong da nam
+    #    san trong thu `_ghi` se ghi ra. Doi den `return` la de nua gio phan
+    #    quyet nam trong bo nho mot lan nua.
+    if so_sach is not None:
+        so_sach.append(ket)
     for stt, cn in enumerate(cac_cn):
         d = _hoi_mot_cho_noi(db, str(ra_mp4), cn, thu_muc_khung=thu_muc_khung,
                              ten_phim=ten, stt=stt, khong_model=khong_model)
@@ -300,10 +317,10 @@ def _do_mot_phim(db, tep: pathlib.Path, *, moi_n: int, thu_muc_khung,
             f"dat={pq['dat']} do_tin={pq['do_tin']}" if pq else
             f"{len(d.get('tep_khung') or [])} khung (khong goi model)")
         print(f"    #{stt:02d} {cn['loai']:10s} giay {cn['moc_ra']:8.2f}  {nhan}")
-    return {"phim": tep.name, "thoi_luong": round(thoi_luong, 2),
-            "so_canh": len(ci.canh), "giay_tach_canh": giay_tach,
-            "giay_render": giay_render, "so_khoang_giu": len(giu),
-            "cho_noi": dong}
+        # Ghi sau MOI cho noi: mot cho noi ton ~28 giay va ~2.500 token.
+        if ghi is not None:
+            ghi()
+    return ket
 
 
 def _tom_tat(cac_phim: list[dict]) -> dict:
@@ -368,25 +385,43 @@ def main() -> int:
         thu_muc_khung.mkdir(parents=True, exist_ok=True)
 
     db = None if args.khong_model else _mo_db()
-    cac_phim = []
+    cac_phim: list[dict] = []
+
+    def _ghi() -> None:
+        """Ghi ket qua NGAY, sau moi cho noi va sau moi phim.
+
+        🔴 **Ban dau phep ghi nay chi chay o cuoi, va do la mot loi da tra gia.**
+           Luot do 23/09 bi dung sau **51 cho noi da hoi** (23 phut): moi phan
+           quyet nam trong BO NHO nen dung la mat sach — trong khi khung hinh
+           thi da nam tren dia tu lau.
+
+        ⇒ Mot bo do dai phai ben voi mot lan bi dung, y nhu mot giai doan dai
+          (`lat_cat.py`) phai ben voi mot lan worker chet. Cung bai hoc, o mot
+          tang khac.
+        """
+        if not args.ra:
+            return
+        pathlib.Path(args.ra).write_bytes(json.dumps(
+            {"phim": cac_phim, "tom_tat": _tom_tat(cac_phim)},
+            ensure_ascii=False, indent=1).encode("utf-8"))
+
     with tempfile.TemporaryDirectory(prefix="ltt_qc_hinh_") as tam:
         for t in phim:
             try:
-                cac_phim.append(_do_mot_phim(
+                _do_mot_phim(
                     db, t, moi_n=args.moi_n, thu_muc_khung=thu_muc_khung,
                     tam=pathlib.Path(tam), khong_model=args.khong_model,
-                    so_nhay=args.so_nhay))
+                    so_nhay=args.so_nhay, ghi=_ghi, so_sach=cac_phim)
             except Exception as exc:       # noqa: BLE001 - mot phim hong != bo do hong
                 print(f"  [HONG] {t.name[:50]}: {type(exc).__name__}: {exc}")
                 cac_phim.append({"phim": t.name, "hong": str(exc)[:400],
                                  "cho_noi": []})
+            _ghi()
 
-    goi = {"phim": cac_phim, "tom_tat": _tom_tat(cac_phim)}
+    _ghi()
     print()
-    print(json.dumps(goi["tom_tat"], ensure_ascii=False, indent=2))
+    print(json.dumps(_tom_tat(cac_phim), ensure_ascii=False, indent=2))
     if args.ra:
-        pathlib.Path(args.ra).write_bytes(
-            json.dumps(goi, ensure_ascii=False, indent=1).encode("utf-8"))
         print(f"\n  [OK] ghi {args.ra}")
     return 0
 
