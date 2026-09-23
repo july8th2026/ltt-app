@@ -5,10 +5,9 @@ Nen tang chi can bien `router`. Import tung module o day de handler cua chung
 duoc dang ky vao router truoc khi nen tang gan vao FastAPI.
 
     _shared.py      router + helper dung chung
-    legacy_runs.py     Luong plan/run doi dau, truoc canvas. Giu cho link cu.
+    trang.py           Hai trang HTML: `/agent` va `/agent/canvas` (phuc vu bundle).
     workspace.py       Tuy chon hien thi, bang mau cong cu, tai san va bao gia.
     assistant.py       Tro ly AI: dung ke hoach, xem truoc va ap dung de xuat.
-    runs.py            Vong doi lan chay canvas: tao, duyet, tick, huy, artifact, bundle.
     workflows.py       CRUD workflow va ban chup theo phien ban.
     drafts_v3.py       Ban nhap Canvas v3 (`workflow_draft`) + xuat ban.
     runs_v3.py         Cua v3 cho mot luot chay: tao run (tao_run), doc run (node + su kien).
@@ -18,7 +17,7 @@ duoc dang ky vao router truoc khi nen tang gan vao FastAPI.
 """
 from apps.agent.routes._shared import router
 from apps.agent.routes import (  # noqa: F401  (import de dang ky route)
-    legacy_runs, workspace, assistant, runs, workflows, sharing, library, admin,
+    trang, workspace, assistant, workflows, sharing, library, admin,
     drafts_v3, runs_v3)
 
 __all__ = ["router"]

@@ -4,8 +4,6 @@ from __future__ import annotations
 import json
 import io
 import re
-from datetime import datetime, timedelta, timezone
-from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
@@ -111,12 +109,16 @@ def test_ownership_clone_archive_import_export(api):
 
 
 def test_validate_server_price_and_palette_are_authoritative(api):
+    """Gia do MAY CHU chot, khong do trinh duyet gui len.
+
+    ⛔ 23/09 (spec §17.4): `POST /agent/api/workflows/{id}/validate` da bi go
+       cung luong chay v1. Menh de con lai — `/palette` khong duoc lech
+       `discover_tools()`, va `/tools/{ten}/quote` la nguon gia duy nhat — VAN
+       nguyen gia tri va VAN co duong that di qua (`workspace.py`), nen bai nay
+       o lai; chi ba dong goi `/validate` bi cat.
+    """
     a, token, *_ = api
-    row = _create(a, token).json(); wid = row["id"]
-    result = a.post(f"/agent/api/workflows/{wid}/validate", headers={
-        "X-CSRF-Token": token, "If-Match": '"1"'}, json={})
-    assert result.status_code == 200 and result.json()["validation"]["valid"]
-    assert result.json()["estimated"] > 0 and result.json()["status"] == "validated"
+    _create(a, token)
     palette = a.get("/agent/api/palette").json()
     # ⭐ Chốt "palette phơi ĐÚNG bộ tool discover được", không chốt bằng một con số
     #    cứng. Con số cứng ở đây từng là 21 và ngày 23/08/2026 nó đỏ vì HAI phiên
@@ -239,106 +241,6 @@ def test_import_pathological_and_client_price_are_rejected(api):
                   json=deep).status_code == 422
 
 
-def test_workflow_snapshot_quote_approve_and_run_again_are_revision_bound(api):
-    a, token_a, b, token_b = api
-    workflow = _create(a, token_a).json(); wid = workflow["id"]
-    validated = a.post(f"/agent/api/workflows/{wid}/validate", headers={
-        "X-CSRF-Token": token_a, "If-Match": '"1"'}, json={}).json()
-    revision = validated["revision"]
-    stale = a.post(f"/agent/api/workflows/{wid}/runs", headers={
-        "X-CSRF-Token": token_a, "If-Match": '"1"'}, json={})
-    assert stale.status_code == 409
-    created = a.post(f"/agent/api/workflows/{wid}/runs", headers={
-        "X-CSRF-Token": token_a, "If-Match": f'"{revision}"'}, json={})
-    assert created.status_code == 201
-    run = created.json()
-    assert run["status"] == "awaiting_approval" and len(run["quote_hash"]) == 64
-    quote = next(item for item in run["decisions"] if item["event"] == "quote")
-    assert quote["planning_cost"] == 0
-    assert run["estimated"] == quote["execution_max"]
-    listing = a.get("/agent/api/runs").json()["items"]
-    assert listing[0]["id"] == run["id"] and "plan" not in listing[0]
-    assert a.get(f"/agent/api/runs/{run['id']}").json()["plan"] == run["plan"]
-    assert b.get("/agent/api/runs").json()["items"] == []
-    assert b.get(f"/agent/api/runs/{run['id']}").status_code == 404
-    assert b.post(f"/agent/api/runs/{run['id']}/approve", headers={
-        "X-CSRF-Token": token_b}, json={"version": run["version"],
-        "quote_hash": run["quote_hash"]}).status_code == 404
-    assert a.post(f"/agent/api/runs/{run['id']}/approve", headers={
-        "X-CSRF-Token": token_a}, json={"version": run["version"],
-        "quote_hash": "0" * 64}).status_code == 409
-
-    import platform_core.db as dbmod
-    from platform_core import credit
-    from platform_core.models import User
-    db = next(dbmod.get_session())
-    user = db.query(User).filter_by(email="canvas-a@example.com").one()
-    credit.cap_tay(db, user.id, 100, by="test"); db.commit(); db.close()
-    approved = a.post(f"/agent/api/runs/{run['id']}/approve", headers={
-        "X-CSRF-Token": token_a}, json={"version": run["version"],
-        "quote_hash": run["quote_hash"]})
-    assert approved.status_code == 200 and approved.json()["status"] == "running"
-    again = a.post(f"/agent/api/runs/{run['id']}/again", headers={
-        "X-CSRF-Token": token_a}, json={})
-    assert again.status_code == 201 and again.json()["id"] != run["id"]
-    assert again.json()["plan"] == run["plan"]
-
-
-def test_schedule_uses_durable_queue_and_run_snapshot_restores_workflow(api, monkeypatch):
-    a, token_a, b, token_b = api
-    workflow = _create(a, token_a).json()
-    validated = a.post(f"/agent/api/workflows/{workflow['id']}/validate", headers={
-        "X-CSRF-Token": token_a, "If-Match": '"1"'}, json={}).json()
-    run = a.post(f"/agent/api/workflows/{workflow['id']}/runs", headers={
-        "X-CSRF-Token": token_a, "If-Match": f'"{validated["revision"]}"'}, json={}).json()
-
-    import platform_core.db as dbmod
-    from platform_core import credit
-    from platform_core.models import Job, User
-    db = next(dbmod.get_session())
-    user = db.query(User).filter_by(email="canvas-a@example.com").one()
-    credit.cap_tay(db, user.id, 100, by="test"); db.commit(); db.close()
-    scheduled = datetime.now(timezone.utc) + timedelta(minutes=20)
-    approved = a.post(f"/agent/api/runs/{run['id']}/approve", headers={
-        "X-CSRF-Token": token_a}, json={"version": run["version"],
-        "quote_hash": run["quote_hash"], "scheduled_at": scheduled.isoformat()})
-    assert approved.status_code == 200
-    assert approved.json()["scheduled_at"] == scheduled.isoformat()
-
-    called = []
-    monkeypatch.setattr("apps.agent.jobs.advance",
-                        lambda *_args, **_kwargs: called.append(True))
-    early = a.post(f"/agent/api/runs/{run['id']}/tick",
-                   headers={"X-CSRF-Token": token_a}, json={})
-    assert early.status_code == 200 and early.json()["status"] == "running"
-    assert called == []
-
-    db = next(dbmod.get_session())
-    queued = db.query(Job).filter_by(job_type="agent.advance").one()
-    queued_at = queued.next_run_at.replace(tzinfo=queued.next_run_at.tzinfo or timezone.utc)
-    assert queued.status == "queued" and queued_at >= scheduled - timedelta(seconds=1)
-    db.close()
-
-    assert b.post(f"/agent/api/runs/{run['id']}/restore-workflow",
-                  headers={"X-CSRF-Token": token_b}, json={}).status_code == 404
-    restored = a.post(f"/agent/api/runs/{run['id']}/restore-workflow",
-                      headers={"X-CSRF-Token": token_a}, json={})
-    assert restored.status_code == 201
-    assert restored.json()["canvas"] == workflow["canvas"]
-
-    from apps.agent import jobs as agent_jobs
-    from platform_core.agent import runs as agent_runs
-    monkeypatch.setattr(agent_jobs, "advance", lambda session, *, run_id, user_id:
-                        agent_runs.get_owned(session, run_id, user_id))
-    result = agent_jobs.handle({"run_id": run["id"], "user_id": user.id},
-                               SimpleNamespace(job_id=queued.id))
-    assert result["status"] == "running"
-    db = next(dbmod.get_session())
-    assert db.query(Job).filter(Job.dedupe_key ==
-        f"agent:advance:{run['id']}:after:{queued.id}").count() == 1
-    db.close()
-
-
 def test_prompt_creates_editable_canvas_without_approval(api, monkeypatch):
     a, token, *_ = api
     monkeypatch.setattr("apps.agent.routes.assistant.plan_once", lambda *_args, **_kwargs: _plan())
@@ -365,23 +267,11 @@ def test_api_round_trips_canvas_v2_without_losing_non_execution_content(api):
                      json={"name": "Workflow v2", "canvas": canvas})
     assert created.status_code == 201 and created.json()["canvas"] == canvas
     wid = created.json()["id"]
-    validated = a.post(f"/agent/api/workflows/{wid}/validate", headers={
-        "X-CSRF-Token": token, "If-Match": '"1"'}, json={})
-    assert validated.status_code == 200 and validated.json()["validation"]["valid"]
+    # ⛔ 23/09: buoc `/validate` o giua da bi go (§17.4). Menh de cua bai nay la
+    #    VONG TRON tao -> xuat khong lam mat noi dung phi thi hanh; `/validate`
+    #    chi tinh co nam giua, no khong ghi gi vao canvas.
     exported = a.get(f"/agent/api/workflows/{wid}/export").json()
     assert exported["canvas"] == canvas
-
-
-def test_production_feature_off_blocks_new_run_but_keeps_workflow(api, monkeypatch):
-    a, token, *_ = api
-    workflow = _create(a, token).json()
-    validated = a.post(f"/agent/api/workflows/{workflow['id']}/validate", headers={
-        "X-CSRF-Token": token, "If-Match": '"1"'}, json={}).json()
-    monkeypatch.setenv("LTT_AGENT_CANVAS_RUN_ENABLED", "0")
-    blocked = a.post(f"/agent/api/workflows/{workflow['id']}/runs", headers={
-        "X-CSRF-Token": token, "If-Match": f'"{validated["revision"]}"'}, json={})
-    assert blocked.status_code == 503
-    assert a.get(f"/agent/api/workflows/{workflow['id']}").status_code == 200
 
 
 def test_assistant_preview_khong_mutate_va_apply_can_token_da_ky(api, monkeypatch):
@@ -429,39 +319,40 @@ def test_snapshot_share_view_clone_revoke_va_activity(api):
     assert {item["event"] for item in events} >= {"snapshot", "share_created", "share_revoked"}
 
 
-def test_production_rollout_admin_then_allowlist(api, monkeypatch):
-    a, token_a, b, token_b = api
+def _tao_agent_run(email: str = "canvas-a@example.com") -> dict:
+    """Dung mot `AgentRun` THANG qua `platform_core.agent`, khong qua HTTP.
+
+    ⛔ 23/09 (spec §17.4): cua HTTP tao run v1 da bi go. Man hinh QUAN TRI thi
+       CHUA — `apps/agent/routes/admin.py` van doc bang `AgentRun`, va menh de
+       "kiem toan khong lo noi dung nguoi dung" van la menh de that.
+
+    ⚠️ Nen doi tuong do phai duoc dung bang chinh thu ma bang do chua, thay vi
+       xoa bai kiem toan chi vi mot duong HTTP KHAC da chet. Khi Task 9/10 go
+       `AgentRun`, bai nay moi mat doi tuong — va luc do no chet cung model.
+    """
     import platform_core.db as dbmod
+    from platform_core.agent import budget, runs as agent_runs
+    from platform_core.agent.validator import validate_plan
     from platform_core.models import User
+
     db = next(dbmod.get_session())
-    user_a = db.query(User).filter_by(email="canvas-a@example.com").one()
-    user_b = db.query(User).filter_by(email="canvas-b@example.com").one()
-    user_b.role = "admin"
-    allowed_id = user_a.id
-    db.commit(); db.close()
-
-    def create_run(client, token):
-        workflow = _create(client, token).json()
-        validated = client.post(f"/agent/api/workflows/{workflow['id']}/validate", headers={
-            "X-CSRF-Token": token, "If-Match": '"1"'}, json={}).json()
-        return client.post(f"/agent/api/workflows/{workflow['id']}/runs", headers={
-            "X-CSRF-Token": token, "If-Match": f'"{validated["revision"]}"'}, json={})
-
-    monkeypatch.setenv("LTT_AGENT_CANVAS_RUN_ROLLOUT", "admin")
-    assert create_run(a, token_a).status_code == 503
-    assert create_run(b, token_b).status_code == 201
-    monkeypatch.setenv("LTT_AGENT_CANVAS_RUN_ROLLOUT", "allowlist")
-    monkeypatch.setenv("LTT_AGENT_CANVAS_RUN_USER_IDS", allowed_id)
-    assert create_run(a, token_a).status_code == 201
+    try:
+        user = db.query(User).filter_by(email=email).one()
+        plan = _plan()
+        validation = validate_plan(plan, db=db, user=user)
+        assert validation.valid, [i.message for i in validation.issues][:3]
+        run = agent_runs.create_run_capped(db, user_id=user.id, goal=plan["goal"],
+                                           plan=plan, budget_max=50)
+        budget.set_quote(db, run, plan=plan, validation=validation, planning_cost=0)
+        db.commit()
+        return {"id": run.id, "estimated": run.estimated, "status": run.status}
+    finally:
+        db.close()
 
 
 def test_admin_audit_metrics_and_safe_cancel_hide_user_content(api):
-    a, token_a, b, token_b = api
-    workflow = _create(a, token_a).json()
-    validated = a.post(f"/agent/api/workflows/{workflow['id']}/validate", headers={
-        "X-CSRF-Token": token_a, "If-Match": '"1"'}, json={}).json()
-    run = a.post(f"/agent/api/workflows/{workflow['id']}/runs", headers={
-        "X-CSRF-Token": token_a, "If-Match": f'"{validated["revision"]}"'}, json={}).json()
+    a, _token_a, b, token_b = api
+    run = _tao_agent_run()
     assert a.get("/agent/api/admin/runs").status_code == 404
     import platform_core.db as dbmod
     from platform_core.models import User

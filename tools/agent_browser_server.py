@@ -70,8 +70,7 @@ def _fake_plan(_db, *, goal, budget_max_credit, **_kwargs):
 # Gan vao TUNG module chua route, khong vao package: `plan_once` duoc import
 # theo gia tri, nen `agent_routes.plan_once = ...` chi them mot thuoc tinh
 # khong ai doc - fixture se lang le goi planner that va tieu tien API.
-for _mod in (agent_routes.legacy_runs,      # POST /agent/plan
-             agent_routes.assistant):       # POST /agent/api/workflows/plan
+for _mod in (agent_routes.assistant,):      # POST /agent/api/workflows/plan
     # Doi ten phai no o day, khong duoc lang le bo qua: gan de len mot module
     # khong co `plan_once` nghia la route that van goi planner that va tieu tien.
     assert hasattr(_mod, "plan_once"), f"{_mod.__name__} khong con dung plan_once"
