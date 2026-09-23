@@ -12,6 +12,44 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-24 (00:08–00:30) — Workflow V2 chạy thật trên production: 2 credit, 7,3 giây
+
+Nghiệm thu plan 01b (Task 11) trên `https://app.lttstudios.com`, bản đang chạy
+`6161eb5a4e46` (build 23/09 23:57). Biên bản đầy đủ + bảng số:
+`.superpowers/sdd/2026-09-23-wf-v2-01b-canvas-v3/task-11-nghiem-thu.md` (thư mục bị
+gitignore — mục này là bản kết luận **được git theo dõi**).
+
+- **Rủi ro mở đóng lại.** Trước hôm nay production **chưa từng** có một job
+  `workflow.dong_co` nào (và `workflow_run` = 0 hàng). Lượt chạy thật sinh **5 job**,
+  **tất cả `done`**, `app_slug='agent_dong_co'`, worker nhặt sau **10–400 ms**. Không
+  job nào nằm lại `queued` ⇒ không lặp lại lỗi mà cổng 501 từng che.
+- **Sổ tiền khớp, lần đầu đo được `credit_charged > 0`.** Run `3508f917`
+  `QUEUED → RUNNING → SUCCEEDED` trong 7,3 giây; `credit_charged = 2 = Σ cost_credit
+  (1+1) = credit_max`. Bút toán: `hold −2` rồi `settle 0` ("giu 2, thu 2, variance 0");
+  số dư `khach2.thu` **5000 → 4998**. Run thứ hai bị **Hủy chạy** ⇒ `CANCELLED`,
+  `actual_cost=0`, job con `ltt_voice.synthesize` cũng `cancelled`, **không** bút toán.
+- **Hủy lần hai** không bấm được từ giao diện (nút biến mất khi run kết thúc); gọi
+  thẳng cửa v3 trả **409 `{"ma":"da_ket_thuc"}`** — đọc được bằng máy, trang không
+  trắng.
+- **Đường v2 rỗng**: 0 request tới `/agent/api/workflows/*/validate|runs` và
+  `/agent/api/runs/*` (đối chứng hai lần: log mạng + `performance.getEntriesByType`).
+  Console: chỉ 1 dòng, là 409 cố ý ở trên.
+- **Bản sửa 302 (`da7fce81`) sống sót qua Cloudflare.** Đo với `ltt_lang=en` (nếu ngôn
+  ngữ là gốc thì middleware không chuyển hướng — đo lúc đó là đo cửa không có xe):
+  `fetch` kể cả khi **chỉ** có `Accept: */*` vẫn `redirected:false`, trong khi điều
+  hướng HTML thật vẫn 302 sang `/en/agent`. ⇒ Cloudflare **không** lột
+  `Sec-Fetch-Mode`; loopback trước đó không phải phép đo giả.
+- **Task 9 / Task 10, số thật:** `agent_runs` có 4 hàng (2 cancelled, 2 done), one-off
+  17.3 chạy ở chế độ đếm ra `tim_thay=0 da_dong=0 hoan_credit=0` ⇒ không chạy `--that`.
+  Migration drop (`8f1c6a4d2b90`) **đã áp ngay trong lượt deploy 23/09 23:57**
+  (`deploy-20260923-235709.out.log`: `Running upgrade 56a971862a15 -> 8f1c6a4d2b90`),
+  **không** chờ soak 1 ngày như plan định — vì `setup\2-cai-dat.ps1` chạy
+  `alembic upgrade head` vô điều kiện. Hôm nay `to_regclass('public.agent_runs')` =
+  **NULL**. Ai còn viết plan kiểu "viết migration bây giờ, áp sau" phải biết: đường
+  deploy không có công tắc để hoãn.
+- **Hỏi catalog, đừng hỏi alembic** (bài học 23/09 khuya vẫn đúng): mọi kiểm tra lược đồ
+  ở lượt này dùng `to_regclass`, không tin `alembic_version`.
+
 ## 2026-09-23 (khuya) — `alembic_version` nói dối 20 ngày, và dòng OK giúp nó sống sót
 
 Tìm ra khi **nghiệm thu sau deploy** `fde0d3aa` — không phải khi đi tìm nó.
