@@ -157,6 +157,48 @@ def test_giu_NGAN_thi_KHONG_canh_bao():
     assert cy._canh_bao_giu_lau(bg) == ""
 
 
+def test_khoa_TAI_NGUYEN_DOC_QUYEN_co_nguong_RONG_HON():
+    """Hai loại khoá trả lời hai câu khác nhau, nên không chung một ngưỡng.
+
+    `cpu_nhieu` tuần tự hoá **sức tính**: giữ nó trong lúc chờ là phí máy.
+    `postgres_test`/`may_tao_tieng` tuần tự hoá **tính đúng**: một phiên chen
+    vào giữa làm HỎNG chính phép đo (số WER/LUFS mang tiếng của lượt khác, CSDL
+    bị `drop_all` dưới chân). Với chúng, giữ suốt pha là ĐÚNG.
+
+    🔴 Báo động giả là cách nhanh nhất giết một cảnh báo: kêu sai vài lần thì
+       không ai đọc nữa, kể cả lúc nó kêu đúng.
+    """
+    assert 0 < cy.GIU_LAU_S < cy.GIU_LAU_DOC_QUYEN_S <= cy.TUOI_TOI_DA_S
+    for tn in ("postgres_test", "may_tao_tieng"):
+        assert tn in cy.TAI_NGUYEN_DOC_QUYEN, tn
+    assert "cpu_nhieu" not in cy.TAI_NGUYEN_DOC_QUYEN
+
+
+def test_khoa_doc_quyen_giu_40_phut_KHONG_bi_bao_dong_gia():
+    _ghi_khoa(os.getpid(), tuoi_s=cy.GIU_LAU_S + 600)
+    bg = cy._doc()
+    assert bg is not None
+    assert cy._canh_bao_giu_lau(bg, "postgres_test") == ""
+    assert cy._canh_bao_giu_lau(bg, "cpu_nhieu"), "khoa CPU van phai canh bao"
+
+
+def test_khoa_doc_quyen_giu_QUA_LAU_thi_van_canh_bao():
+    """🔑 Vế đối chứng: nới ngưỡng ≠ bỏ canh. Một pha đo 3 giờ vẫn phải lộ ra."""
+    _ghi_khoa(os.getpid(), tuoi_s=cy.GIU_LAU_DOC_QUYEN_S + 60)
+    bg = cy._doc()
+    assert bg is not None
+    assert cy._canh_bao_giu_lau(bg, "postgres_test")
+
+
+def test_hai_loai_khoa_noi_HAI_dieu_khac_nhau():
+    """Thông điệp phải khác: một bên là 'bạn đang giữ thừa', bên kia là 'kiểm
+    xem có bước CHỜ nào lọt vào khối không'. Cùng một câu cho cả hai là buộc
+    tội oan đúng lúc người ta đang làm đúng."""
+    _ghi_khoa(os.getpid(), tuoi_s=cy.GIU_LAU_DOC_QUYEN_S + 60)
+    bg = cy._doc()
+    assert cy._canh_bao_giu_lau(bg, "cpu_nhieu") !=         cy._canh_bao_giu_lau(bg, "postgres_test")
+
+
 def test_thoat_khoi_with_thi_IN_RA_da_giu_bao_lau(capsys, monkeypatch):
     """Người GIỮ phải thấy con số của chính mình, không chỉ người chờ thấy."""
     monkeypatch.setattr(cy, "GIU_LAU_S", 0.01)
