@@ -684,11 +684,12 @@ def url_mo_nen(nen_tang: str, tu_khoa: str = "", *, tao_adapter=None) -> str:
     nen = _nen(nen_tang)
     tu_khoa = (tu_khoa or "").strip()[:DAU_VAO_TOI_DA]
     if tu_khoa:
+        from apps.video_crawler import nen_tang as _nt      # tham số `nen_tang: str` che mất module cùng tên
         try:
             ham = getattr((tao_adapter or _adapter_cua)(nen.id), "url_tim_kenh", None)
             url = ham(tu_khoa) if callable(ham) else ""
             if isinstance(url, str) and url.startswith("https://"):
                 return url
-        except (nen_tang.NenKhongHopLe, ImportError, LookupError, NotImplementedError, ValueError):
+        except (_nt.NenKhongHopLe, ImportError, LookupError, NotImplementedError, ValueError):
             pass               # adapter chưa dựng được URL tìm ⇒ về trang chủ nền, không làm hỏng trang
     return "https://" + nen.ten_mien[0] if nen.ten_mien else ""
