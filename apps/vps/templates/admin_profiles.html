@@ -44,10 +44,24 @@
        {% if profile.is_default %} · DEFAULT{% endif %}
        · {{ _('Nhận máy mới:') }} {{ _('Có') if profile.accept_new else _('Không') }}</p>
     <p>Provider: {{ profile.provider }} · Compute: {{ profile.compute_backend }} · IP: {{ profile.ip_backend }} · Gateway: {{ profile.gateway_backend }}</p>
-    <p>Health: {{ 'HEALTHY' if profile.ready else 'NOT READY' }}
-       {% if profile.health_reason %} — {{ profile.health_reason }}{% endif %}</p>
-    <p>Compute health: {{ profile.health.compute }} · IP health: {{ profile.health.ip }} · Gateway health: {{ profile.health.gateway }}<br>
+    {# Hai cau hoi khac nhau, tra loi rieng.
+       `ready`        = tang CHAN_BAN xanh  -> BAN DUOC ngay bay gio.
+       `ready_day_du` = ca sau xanh         -> du dieu kien BAT ban lan dau.
+       Gop hai cau nay lam mot chinh la cach mot bo dem goi roi cua May B dong
+       ca cua hang ngay 23/09. Xem `apps/vps/profiles.py` muc CHAN_BAN. #}
+    <p>{{ _('Bán được:') }} <strong>{{ _('CÓ') if profile.ready else _('KHÔNG') }}</strong>
+       {% if profile.health_reason %} — {{ profile.health_reason }}{% endif %}
+       · {{ _('Đủ điều kiện bật bán lần đầu:') }} {{ _('CÓ') if profile.ready_day_du else _('KHÔNG') }}</p>
+    {% if profile.canh_bao %}
+      <p>⚠️ {{ _('Chất lượng (KHÔNG chặn bán):') }}
+        {% for ten, tt in profile.canh_bao %}<b>{{ ten }}</b>={{ tt }}{{ '' if loop.last else ' · ' }}{% endfor %}</p>
+    {% endif %}
+    <p>{{ _('Chặn bán:') }} {% for ten in profile.chan_ban %}{{ ten }}={{ profile.health[ten] }}{{ '' if loop.last else ' · ' }}{% endfor %}<br>
        Available public IPs: {{ profile.available_ips }} · VM count: {{ profile.vm_count }} · Last check: {{ profile.health_at or '—' }}</p>
+    {% if profile.cho_ban_duoc %}
+      <p>{{ _('Chỗ bán được (đo ở lượt preflight gần nhất):') }}
+        {% for goi, so in profile.cho_ban_duoc.items() %}<b>{{ goi }}</b>: {{ so }}{{ '' if loop.last else ' · ' }}{% endfor %}</p>
+    {% endif %}
     <p>Credentials: <strong>{{ 'Configured ✅' if profile.credentials_configured else _('Chưa đủ tham chiếu') }}</strong>
        · {{ _('Dùng Preflight để kiểm kết nối; Replace bằng form tham chiếu bên dưới.') }}</p>
     <details><summary>Deploy provenance</summary>

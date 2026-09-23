@@ -29,18 +29,112 @@ nói dối, và tính thêm tiền cũng vậy.
 
 ## Bán chồng, và nói thẳng ra
 
-Cổng vào Vultr có **2 TB/tháng**. Bán hết 16 máy Nhỏ là hứa 4,8 TB — chồng 2,4
-lần. Đó là chủ ý, cùng khuôn với đĩa thin (V14): phần lớn khách dùng một phần nhỏ
-hạn mức. Nhưng nó **là** một rủi ro, không phải một mẹo — nếu nhiều khách cùng
-chạm trần thì chính cổng vào bị Vultr tính thêm tiền. `tong_da_hua_gb()` có ở đây
-để theo dõi con số đó thay vì phát hiện nó trên hoá đơn.
+Cổng vào nay là **OVH VPS-1 2027** (`vps-1a9e4515.vps.ovh.ca`, zone `os-sgp2`),
+không còn là Vultr — hằng số `TRAN_CONG_VAO_GB = 2048` (chú thích "Vultr 2 TB")
+đã SAI kể từ ngày đổi nhà cung cấp, và không ai sửa cho tới khi phiên
+2026-09-23 đo lại. Bán hết các gói là hứa nhiều hơn 1 TB/tháng thật của OVH —
+chủ ý, cùng khuôn với đĩa thin (V14): phần lớn khách dùng một phần nhỏ hạn mức.
+Nhưng nó **là** một rủi ro, không phải một mẹo — nếu nhiều khách cùng chạm trần
+thì cả cổng vào (kể cả VM100-107, việc thật của chủ dự án) bị OVH hãm xuống 10
+Mbps. `tong_da_hua_gb()` và `ngan_sach_hua_gb()` có ở đây để theo dõi và giới
+hạn con số đó thay vì phát hiện nó trên hoá đơn — xem
+`docs/superpowers/specs/2026-09-23-vps-ban-that-design.md` mục 4.
+
+## Ngân sách thật — vì sao trừ nền rồi mới nhân bán chồng
+
+    Tran OVH VPS-1 SGP                          1.024 GB/thang
+    - Nen production (VM100-107), do that          512 GB
+    - Du tru an toan 15%                           154 GB
+    -----------------------------------------------------
+    = Ngan sach THAT cho khach                     358 GB/thang
+    x He so ban chong 2,5 (cong khai, giam sat)
+    -----------------------------------------------------
+    = Ngan sach HUA cho khach                      895 GB/thang
+
+`NEN_PRODUCTION_GB = 512` là số đo THẬT trên card `ens3` của cổng vào qua 27,75
+ngày (RX 234,5 GB + TX 239,4 GB) — không phải số khai, đổi cổng vào thì đo lại
+chứ đừng sửa tay. `TY_LE_DU_TRU = 0.15` là khoảng đệm trước vạch hãm 10 Mbps —
+vạch đó đập vào **cả VM100-107**, nên phải có đệm trước khi chạm chứ không phải
+phản ứng sau khi đã chạm.
 """
 from __future__ import annotations
 
+import os
+
 from apps.vps.cost import lay_plan
 
-#: Băng thông cổng vào Vultr được bao gồm mỗi tháng (gói `vhp-1c-1gb-amd`).
-TRAN_CONG_VAO_GB = 2048
+#: Hạn mức băng thông cổng vào mỗi tháng, tính bằng GB.
+#:
+#: Nguồn: OVH công bố VPS ở Mumbai/Singapore/Sydney có hạn mức tháng **1 TB**
+#: cho VPS-1 và VPS-2, vượt thì hãm xuống 10 Mbps
+#: (ovhcloud.com/en-sg/vps/unmetered-vps/, chân trang, đọc 23/09/2026).
+TRAN_CONG_VAO_GB = 1024
+
+#: Băng thông nền production (VM100-107) chiếm mỗi tháng — đo THẬT trên `ens3`
+#: của cổng vào qua 27,75 ngày: RX 234,5 GB + TX 239,4 GB ≈ 512 GB. Đọc từ biến
+#: môi trường `LTT_VPS_NEN_GB` nếu có khai (số nguyên hợp lệ), mặc định số đo
+#: này. Đổi cổng vào hay đổi việc thật đang chạy thì đo lại, đừng sửa tay.
+NEN_PRODUCTION_GB = 512
+
+#: Dự trữ an toàn trước vạch hãm 10 Mbps của OVH — vạch đó đập vào CẢ cổng vào,
+#: gồm cả VM100-107, nên ngân sách phải chừa khoảng trước khi chạm, không phải
+#: phản ứng sau khi đã chạm.
+TY_LE_DU_TRU = 0.15
+
+#: Hệ số bán chồng công khai trên trang bán, có giám sát ở lớp 2 của
+#: `apps/vps/bao_tri.py` (`_can_ham_theo_tong`) — cùng khuôn với đĩa thin V14.
+HE_SO_BAN_CHONG = 2.5
+
+#: Cờ môi trường: OVH KHÔNG nói rõ họ đếm băng thông một chiều hay hai chiều.
+#: Mặc định giả định HAI CHIỀU (thận trọng hơn — ngân sách ra số NHỎ hơn). Đặt
+#: "false" khi xác định được OVH chỉ đếm chiều ra: khi đó nền chỉ còn tính một
+#: nửa, vì nửa còn lại (chiều vào) không còn tính vào hạn mức chung nữa.
+_CO_DEM_HAI_CHIEU = "LTT_VPS_DEM_HAI_CHIEU"
+_CO_NEN_GB = "LTT_VPS_NEN_GB"
+
+
+def _doc_nen_gb_moi_truong(env: dict | None = None) -> int:
+    """`NEN_PRODUCTION_GB` mặc định, có xét biến môi trường và cờ một/hai chiều.
+
+    Tách khỏi `ngan_sach_hua_gb` để hàm đó nhận thẳng `nen_gb` khi test muốn
+    kiểm một con số cụ thể mà không phải xoay biến môi trường.
+    """
+    src = os.environ if env is None else env
+    nen = NEN_PRODUCTION_GB
+    raw = str(src.get(_CO_NEN_GB, "")).strip()
+    if raw:
+        try:
+            nen = int(raw)
+        except ValueError:
+            nen = NEN_PRODUCTION_GB
+    dem_hai_chieu = str(src.get(_CO_DEM_HAI_CHIEU, "true")).strip().lower() != "false"
+    if not dem_hai_chieu:
+        nen = nen // 2
+    return max(0, nen)
+
+
+def ngan_sach_hua_gb(*, tran_gb: int | None = None, nen_gb: int | None = None) -> int:
+    """GB đã hứa tối đa được phép bán cho khách, mỗi tháng.
+
+    = (tran - nen - tran * TY_LE_DU_TRU) * HE_SO_BAN_CHONG, sàn 0.
+
+    Mặc định (tran=1024, nen=512): (1.024 - 512 - 153,6) = 358,4 → 358 →
+    × 2,5 = **895**. Sàn 0: nền vượt trần (đo hỏng, hoặc việc thật phình ra)
+    không bao giờ được trả về một ngân sách ÂM — đó là hứa bán cho khách một
+    thứ đã âm sẵn.
+
+    `tran_gb`/`nen_gb` để `None` thì đọc hằng số / môi trường ở trên — tách
+    tham số ra để test không phải xoay biến môi trường mỗi lần kiểm một
+    trường hợp.
+    """
+    if tran_gb is None:
+        tran_gb = TRAN_CONG_VAO_GB
+    if nen_gb is None:
+        nen_gb = _doc_nen_gb_moi_truong()
+    du_tru = tran_gb * TY_LE_DU_TRU
+    that_gb = int(tran_gb - nen_gb - du_tru)
+    that_gb = max(0, that_gb)
+    return int(that_gb * HE_SO_BAN_CHONG)
 
 
 def cong_don(cu: int, moc_cu: int, hien_tai: int) -> tuple[int, int]:
@@ -91,7 +185,7 @@ def tong_da_hua_gb(may_list) -> int:
     """Tổng hạn mức đã hứa cho các máy đang sống — để so với `TRAN_CONG_VAO_GB`.
 
     Vượt trần **không** phải lỗi (bán chồng là chủ ý), nhưng nó là con số cần
-    nhìn thấy trước khi Vultr gửi hoá đơn, chứ không phải sau.
+    nhìn thấy trước khi OVH hãm tốc cả cổng, chứ không phải sau.
     """
     tong = 0
     for m in may_list:

@@ -107,7 +107,10 @@ bằng một biến của scenario execution, **không** phải một hàm sinh 
 
 ## Backend thuần (không SDK, không thư viện ngoài)
 
-Python chuẩn thư viện:
+Python chuẩn thư viện. **Bắt buộc đặt `User-Agent`** — `urllib.request` không
+tự đặt header này, và Cloudflare (đứng trước nền tảng) chặn thẳng yêu cầu
+thiếu nó với **403 `error code: 1010`** (không phải lỗi của nền tảng, xem
+`DEVELOPER_GUIDE.md` mục 2):
 
 ```python
 import json, time, urllib.request, uuid
@@ -119,6 +122,7 @@ def call(method, path, body=None, extra=None):
     req = urllib.request.Request(BASE + path, data=data, method=method)
     req.add_header("Authorization", f"Bearer {KEY}")
     req.add_header("Content-Type", "application/json")
+    req.add_header("User-Agent", "MyApp/1.0 (+contact@example.com)")
     for k, v in (extra or {}).items():
         req.add_header(k, v)
     with urllib.request.urlopen(req) as r:

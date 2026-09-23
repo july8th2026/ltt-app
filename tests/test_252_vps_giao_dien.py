@@ -218,10 +218,14 @@ def _gia_lap_proxmox(monkeypatch, *, ram_gb=64, dia_gb=600, vms=None,
         def danh_sach_vm(self):
             return list(vms or [])
 
-    import apps.vps.routes as routes
-    monkeypatch.setattr(routes, "client_tu_moi_truong", lambda *a, **k: _Client())
+    # 23/09: `routes` khong con tu doc Proxmox — phep do nam o `nguon_luc`.
     from types import SimpleNamespace
-    monkeypatch.setattr(routes.backend_factory, "compute_backend", lambda profile:
+
+    import apps.vps.routes as routes  # noqa: F401 - giu cho phep kiem khac
+    from apps.vps.services import backend_factory
+    # `nguon_luc._suc_chua` tu dung client qua `backend_factory`, nen mot cho
+    # va duy nhat mot cho la du: khong phai gia lap them `_suc_chua`.
+    monkeypatch.setattr(backend_factory, "compute_backend", lambda profile:
                         SimpleNamespace(client=_Client()))
 
 
@@ -264,8 +268,18 @@ def test_node_da_day_vi_MAY_CUA_CHU_NHA_thi_khong_moi_khach_tao(moi_truong,
     # Phep kiem nay chi ve RAM. Tu R24 (17/09) trang tinh con cho CA IPv4 va cong
     # vao; o day cho hai gioi han ay du thua de RAM la rao duy nhat. Gioi han
     # IP/cong co phep kiem rieng: tests/test_1031_vps_trang_het_ip.py.
-    import apps.vps.routes as routes
-    monkeypatch.setattr(routes, "_gioi_han_ban", lambda db: (50, 50))
+    from apps.vps.services import nguon_luc
+    monkeypatch.setattr(nguon_luc, "_gioi_han_ip_va_cong",
+                        lambda db, profile: (50, 50))
+    # 23/09: duong do compute chi chay khi CO vung dang mo VA co profile nhan
+    # may moi. Ban cu doc Proxmox thang tu bien moi truong, nen no do compute
+    # ngay ca luc khong profile nao san sang giao may — chinh cho long leo do.
+    # O day noi hai seam ay lai de compute VAN duoc do that tu node gia tren.
+    from types import SimpleNamespace as _NS
+    monkeypatch.setattr("apps.vps.services.provisioning.vung_dang_mo",
+                        lambda db: [("sgp", "SG")])
+    monkeypatch.setattr("apps.vps.profiles.select_profile",
+                        lambda db, *, region: _NS(id="p-thu"))
     _tao_khach(moi_truong)
     client = _client()
     try:
@@ -274,9 +288,12 @@ def test_node_da_day_vi_MAY_CUA_CHU_NHA_thi_khong_moi_khach_tao(moi_truong,
         assert r.status_code == 200
         # RAM còn ~2 GB: chỉ gói nhỏ nhất còn chỗ, hai gói lớn phải báo hết.
         #
-        # Kiểm TÍNH CHẤT, không kiểm nguyên văn: câu chữ đã đổi một lần
-        # ("hết chỗ" -> "Hết chỗ cho cấu hình này.") và sẽ còn đổi.
-        assert "Hết chỗ" in r.text, "trang khong bao goi nao het cho"
+        # Kiểm TÍNH CHẤT, không kiểm nguyên văn: câu chữ đã đổi hai lần
+        # ("hết chỗ" -> "Hết chỗ cho cấu hình này." -> "Gói này tạm hết chỗ.").
+        # Đọc thẳng NGUỒN CHÂN LÝ thay vì chép lại chuỗi: một bản chép trong
+        # test là một bản sẽ lệch, đúng như hai lần trước.
+        assert nguon_luc.CAU_CHO_KHACH[nguon_luc.RANG_BUOC_COMPUTE] in r.text, (
+            "trang khong bao goi nao het cho bang cau cua rang buoc compute")
         # W1 (25/08): hết chỗ thì phải NÓI ĐI ĐÂU. Trước đó trang dừng ở hai
         # chữ "hết chỗ" và bỏ khách giữa luồng mua — ở đây gói nhỏ VẪN còn
         # chỗ, nên thẻ hết chỗ bắt buộc phải chỉ sang nó.
@@ -368,7 +385,7 @@ def test_khong_co_cong_vao_thi_tu_choi_chu_khong_tao_may_mo_coi(moi_truong,
             pass
 
 
-def test_tao_may_thanh_cong_thu_tien_va_NOP_JOB_chu_khong_cham_proxmox(
+def test_tao_may_thanh_cong_GIU_CHO_credit_va_NOP_JOB_chu_khong_cham_proxmox(
         moi_truong, monkeypatch):
     """Cloudflare cắt request ở 100 giây; clone + sysprep mất vài phút tới hơn mười.
 
@@ -421,20 +438,30 @@ def test_tao_may_thanh_cong_thu_tien_va_NOP_JOB_chu_khong_cham_proxmox(
 
     from platform_core import credit
     from platform_core.models import Job
-    from apps.vps.tables import VpsInstance
+    from apps.vps.tables import VpsEvent, VpsInstance
     gen = moi_truong.get_session()
     db = next(gen)
     try:
         may = db.query(VpsInstance).one()
         assert may.trang_thai == "dang_tao"
-        assert may.paid_until is not None
         assert may.vmid is None            # chưa chạm Proxmox trong request
         assert may.infrastructure_profile_id == profile.id
         assert may.profile_resolution_state == "PINNED"
-        assert credit.so_du(db, user_id) == 10_000 - 1790
 
         job = db.query(Job).filter_by(job_type="vps.provision").one()
         assert job.params["instance_id"] == may.id
+
+        # 🔴 23/09: tien GIU CHO, chua thu. Do 22/09 cho thay thu-truoc-lam-sau
+        # bien moi job hong thanh mot vong "thu 1.490 -> hoan 1.490 -> xoa may"
+        # cho mot may chua tung ton tai. Xem `billing.mo_chu_ky`.
+        assert credit.so_da_giu(db, job.id) == 1790, "phai GIU CHO du so tien"
+        assert credit.so_du(db, user_id) == 10_000 - 1790, "giu cho van khoa so du"
+        assert may.paid_until is None, (
+            "chu ky chi duoc mo khi may len that — `jobs._quyet_toan`")
+        loai = {e.loai for e in db.query(VpsEvent).filter_by(instance_id=may.id)}
+        assert "thu_phi" not in loai, (
+            "`thu_phi` la khoa cua `bao_tri._hoan_tien_may_hong`; phat no luc "
+            "nhan yeu cau la dung lai dung vong thu-roi-hoan")
     finally:
         try:
             next(gen)
@@ -591,12 +618,25 @@ def test_app_TAT_khong_lot_vao_trang_chu_cua_nguoi_da_dang_nhap(moi_truong,
     # Đặt một `property` trên LỚP thì đi qua được (property là data descriptor,
     # ưu tiên hơn `__dict__` của thể hiện), và chỉ chạm đúng app `vps` — các app
     # khác vẫn khai đúng cờ của chúng, để ca này không vô tình tắt cả catalog.
+    # ⚠️ 23/09/2026 — property PHẢI có setter. `AppManifest` là dataclass
+    #    `frozen=True`, và `__init__` của nó ghi qua `object.__setattr__`. Một
+    #    `property` chỉ-đọc trên LỚP là data descriptor, nên **mọi manifest dựng
+    #    sau dòng này** ném `property has no setter` ngay trong `__init__`.
+    #
+    #    Chạy cả tệp thì không lộ: các ca trước đã dựng xong catalog. Chạy
+    #    riêng — hoặc dưới `pytest -n` khi xdist tách ca này sang worker khác —
+    #    thì đỏ. Đúng thứ docstring trên cảnh báo, chỉ là lần này bẫy nằm ở
+    #    đường GHI chứ không phải đường đọc. Đo lại 23/09: xanh 17/17 khi chạy
+    #    cả tệp, đỏ khi chạy một mình.
     monkeypatch.setattr(
         type(MANIFEST), "enabled",
         # App khác đọc thẳng giá trị đã lưu trong `__dict__` — `frozen=True` cất
         # ở đó — nên chúng vẫn khai đúng cờ của chính mình.
         property(lambda self: False if self.slug == "vps"
-                 else self.__dict__.get("enabled", True)),
+                 else self.__dict__.get("enabled", True),
+                 # Ghi thẳng vào `__dict__`: `object.__setattr__` sẽ gặp lại
+                 # chính property này và quay vòng vô hạn.
+                 lambda self, gt: self.__dict__.__setitem__("enabled", gt)),
         raising=False)
     _tao_khach(moi_truong)
     client = _client()

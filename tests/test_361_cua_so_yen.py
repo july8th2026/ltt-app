@@ -121,6 +121,60 @@ def test_khoa_CON_HIEU_LUC_thi_KHONG_bi_doat():
     assert cy.thu_giu("ke-cuop", "gate") is False
 
 
+# ── 2b. Giữ khoá quá lâu phải LỘ RA ───────────────────────────────────────
+#
+# Luật 23/09 (CLAUDE.md, mục ⭐ Chạy agent): khoá bao ĐÚNG lệnh tính, nhả ngay
+# khi tính xong. Nhưng một luật chỉ là giao ước cho tới khi có thứ đếm nó — nên
+# một lượt giữ lâu bất thường phải tự nói ra, ở CẢ HAI phía:
+#   · phía người CHỜ, để họ biết nên đợi hay đi làm việc khác;
+#   · phía người GIỮ, để chính họ thấy mình vừa giữ bao lâu.
+# ⛔ `TUOI_TOI_DA_S` (2 giờ) KHÔNG thay được việc này: nó là ngưỡng "coi như
+#    treo, cho phép đoạt". Một lượt giữ 40 phút thì chưa treo — nó vẫn đúng
+#    luật cũ mà vẫn làm cả máy đứng.
+
+
+def test_nguong_giu_lau_NHO_HON_nguong_coi_nhu_treo():
+    """Hai ngưỡng trả lời hai câu khác nhau, và phải xếp đúng thứ tự.
+
+    Bằng nhau thì cảnh báo vô dụng: tới lúc in ra thì khoá đã bị đoạt rồi.
+    """
+    assert 0 < cy.GIU_LAU_S < cy.TUOI_TOI_DA_S
+
+
+def test_giu_lau_thi_trang_thai_CANH_BAO():
+    _ghi_khoa(os.getpid(), tuoi_s=cy.GIU_LAU_S + 60)
+    bg = cy._doc()
+    assert bg is not None
+    assert cy._canh_bao_giu_lau(bg), "giu qua nguong ma khong canh bao gi"
+
+
+def test_giu_NGAN_thi_KHONG_canh_bao():
+    """🔑 Vế đối chứng. Thiếu nó thì một hàm luôn trả chuỗi khác rỗng cũng xanh,
+    và mọi lượt đều bị gắn nhãn 'giữ lâu' — cảnh báo kêu suốt thì không ai đọc."""
+    _ghi_khoa(os.getpid(), tuoi_s=5)
+    bg = cy._doc()
+    assert bg is not None
+    assert cy._canh_bao_giu_lau(bg) == ""
+
+
+def test_thoat_khoi_with_thi_IN_RA_da_giu_bao_lau(capsys, monkeypatch):
+    """Người GIỮ phải thấy con số của chính mình, không chỉ người chờ thấy."""
+    monkeypatch.setattr(cy, "GIU_LAU_S", 0.01)
+    with cy.CuaSoYen("toi", "lenh tinh", tai_nguyen=(cy.MAC_DINH,)):
+        time.sleep(0.05)
+    ra = capsys.readouterr().out
+    assert "giu khoa" in ra.lower(), ra
+    assert "cpu_nhieu" in ra, ra
+
+
+def test_khong_giu_khoa_thi_KHONG_in_gi_ve_thoi_gian(capsys):
+    """🔑 Vế đối chứng thứ hai: `bat=False` không chạm khoá nên không có gì để
+    khai. In ra ở đây là in một con số không có thật."""
+    with cy.CuaSoYen("toi", "lenh", bat=False):
+        pass
+    assert "giu khoa" not in capsys.readouterr().out.lower()
+
+
 # ── 3. `_con_song` không được giết thứ nó đang hỏi ─────────────────────────
 
 def test_do_tien_trinh_con_song_KHONG_giet_no():

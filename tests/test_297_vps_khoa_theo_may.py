@@ -164,7 +164,12 @@ def _maintenance_probe(db, monkeypatch):
     from apps.vps import bao_tri
     from apps.vps.services import billing, console
     calls = []
-    for name in ("_dong_bo_bang_thong_pinned", "_chup_anh_den_han", "_hoan_may_tao_hong"):
+    # `dem_profile_mat_tin_hieu` them 23/09: mot cham CSDL MOI trong `mot_luot`.
+    # Probe nay co y liet ke tuong minh moi ham cham CSDL — `db` o day la mot
+    # `object()` tran, nen quen mot ten la mot AttributeError chu khong phai mot
+    # ket qua sai im lang. Do la thiet ke dung; chi can them ten vao day.
+    for name in ("_dong_bo_bang_thong_pinned", "_chup_anh_den_han",
+                 "_hoan_may_tao_hong", "dem_profile_mat_tin_hieu"):
         monkeypatch.setattr(bao_tri, name, lambda *args, **kwargs: 0)
     monkeypatch.setattr(billing, "thu_phi_dinh_ky", lambda *args, **kwargs:
                         {"da_thu": 0, "da_treo": 0})

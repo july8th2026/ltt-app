@@ -328,15 +328,22 @@ def test_ly_do_ky_thuat_van_di_vao_LOG(caplog):
     """
     import logging
 
-    from apps.vps import routes
+    from apps.vps.services import nguon_luc
 
-    with caplog.at_level(logging.WARNING, logger="apps.vps.routes"):
-        suc_chua, ly_do = routes._suc_chua(None)
+    # 23/09: phep do nay chuyen tu `routes._suc_chua` sang `nguon_luc`. Tinh
+    # chat duoc chot KHONG doi: ly do ky thuat vao log, cau cho khach thi sach.
+    with caplog.at_level(logging.WARNING, logger="apps.vps.services.nguon_luc"):
+        suc_chua = nguon_luc._suc_chua(None, None)
+    kq = nguon_luc.danh_gia(
+        nguon_luc.DoDuoc(suc_chua=suc_chua, free_ipv4=9, gateway_slots=9),
+        "vps-nho")
 
     assert suc_chua is None
-    assert "Proxmox" not in ly_do, "cau cho khach khong duoc nhac Proxmox"
+    assert kq.ban_duoc is False
+    for cam in ("Proxmox", "LTT_VPS_", "OVH"):
+        assert cam not in kq.cau_cho_khach, f"cau cho khach ro {cam!r}"
     ghi = " ".join(x.getMessage() for x in caplog.records)
-    assert "suc chua" in ghi, "khong ghi log ly do ky thuat"
+    assert "nguon luc" in ghi, "khong ghi log ly do ky thuat"
 
 
 # ── 8. Trang MÁY cũng không được rò — cùng hạng lỗi, khác trang ────────────

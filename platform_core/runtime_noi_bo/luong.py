@@ -1304,9 +1304,13 @@ def luong_co_cho(tk: TienKiem, *, loi_sse: Callable[..., bytes],
             yield _loi_typed(model_failure(
                 "concurrency_limited", http_status=429, request_id=tk.request_id))
             return
-        except ThieuCredit:
+        except ThieuCredit as e:
+            # V-22: lop nay sinh ra de MANG can/con (xem docstring cua no).
+            # Danh roi hai so nay tung la hoi quy 14/09 o cua job; 23/09 no quay
+            # lai o day. Hop dong v1 co san cho chua: limit = can, actual = con.
             yield _loi_typed(model_failure(
-                "insufficient_credit", http_status=409, request_id=tk.request_id))
+                "insufficient_credit", http_status=409, request_id=tk.request_id,
+                limit=e.can, actual=e.con))
             return
         except phong_cho.KhachDi:
             return

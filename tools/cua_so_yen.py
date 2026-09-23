@@ -79,6 +79,18 @@ TUOI_TOI_DA_S = 7200
 #: Nhip in lai dong "dang doi" khi xep hang. Im lang qua thi nguoi dung tuong treo.
 NHIP_IN_S = 15
 
+#: Giu lau BAT THUONG — canh bao, KHONG doat. Luat 23/09 (CLAUDE.md muc ⭐ Chay
+#: agent): khoa bao DUNG lenh tinh, nha ngay khi tinh xong.
+#:
+#: ⛔ Khac han `TUOI_TOI_DA_S`: cai kia tra loi "co coi nhu treo de DOAT khong"
+#:    (2 gio). Mot luot giu 40 phut thi CHUA treo — no van dung luat cu ma van
+#:    lam ca may dung. Khong co nguong nay thi viec giu thua khong loi ra o dau
+#:    ca, va luat chi la giao uoc: phai co thu DEM no.
+#:
+#: 30 phut: mot luot gate day du ~6 phut, mot bo test app ~5-10 phut; qua 30
+#: phut thi hoac lenh dang CHO (sai luat), hoac no qua lon va phai chia nho.
+GIU_LAU_S = 1800
+
 
 def _con_song(pid: int) -> bool:
     """PID con song khong. Khong bao gio dung `os.kill` — xem dau tep."""
@@ -126,6 +138,21 @@ def _treo(ban_ghi: dict) -> str:
     if tuoi > TUOI_TOI_DA_S:
         return f"giu qua lau ({tuoi / 3600:.1f} gio)"
     return ""
+
+
+def _canh_bao_giu_lau(ban_ghi: dict) -> str:
+    """Khoa dang bi giu qua lau khong. Tra CAU CANH BAO, hoac chuoi rong.
+
+    In o CA HAI phia co chu dich: phia nguoi CHO (de biet nen doi hay di lam
+    viec khac) va phia nguoi GIU (de chinh ho thay minh vua giu bao lau). Mot
+    con so chi nguoi ngoai thay thi khong sua duoc hanh vi cua ai.
+    """
+    giay = time.time() - float(ban_ghi.get("bat_dau_epoch") or 0)
+    if giay <= GIU_LAU_S:
+        return ""
+    return (f"GIU LAU: {giay / 60:.0f} phut (nguong {GIU_LAU_S / 60:.0f}). "
+            f"Khoa bao DUNG lenh tinh — doc ket qua, sua ma, commit, viet bao "
+            f"cao, cho nguoi/dich vu deu lam NGOAI khoa.")
 
 
 def _mo_ta(ban_ghi: dict) -> str:
@@ -284,6 +311,9 @@ class CuaSoYen:
         #: Da nha roi, nhung GIU LAI de bao cao sau khoi `with`.
         self.da_giu_xong: list[str] = []
         self.da_cho_s = 0.0
+        #: Luc giu duoc khoa (epoch). 0 = chua tung giu (tat khoa, hoac chay
+        #: khong khoa sau khi cho qua han) ⇒ khong co gi de khai luc thoat.
+        self.bat_dau_giu = 0.0
 
     def _thu_giu_het(self) -> bool:
         """Xin TAT CA, hoac khong xin gi.
@@ -336,6 +366,7 @@ class CuaSoYen:
         da_bao_khong_chen = False
         while True:
             if self._thu_giu_het():
+                self.bat_dau_giu = time.time()
                 self.da_cho_s = time.time() - bat_dau
                 if self.da_cho_s > 2:
                     print(f"  [cua so yen] den luot - da doi "
@@ -362,6 +393,10 @@ class CuaSoYen:
             if time.time() - in_lan_cuoi > NHIP_IN_S:
                 print(f"  [cua so yen] xep hang {doi / 60:.1f} phut - "
                       f"{self._ai_giu()}")
+                for tn in self.tai_nguyen:
+                    cu = _doc(tn)
+                    if cu and (cb := _canh_bao_giu_lau(cu)):
+                        print(f"  [cua so yen] [{tn}] {cb}")
                 in_lan_cuoi = time.time()
             time.sleep(1.0)
 
@@ -378,6 +413,17 @@ class CuaSoYen:
         for tn in self.da_giu:
             nha(self.phien, tai_nguyen=tn)
         self.da_giu = []
+        # Khai ra chinh minh vua giu bao lau. Nguoi giu la nguoi duy nhat sua
+        # duoc cach bon lenh; nguoi cho chi biet than.
+        if self.bat_dau_giu and self.da_giu_xong:
+            giu = time.time() - self.bat_dau_giu
+            ten = ", ".join(self.da_giu_xong)
+            print(f"  [cua so yen] da nha {ten} - giu khoa {giu / 60:.1f} phut")
+            if giu > GIU_LAU_S:
+                print(f"  [cua so yen] CANH BAO: GIU LAU hon nguong "
+                      f"{GIU_LAU_S / 60:.0f} phut. Lenh nay co buoc KHONG phai "
+                      f"tinh (cho, doc, sua, commit) khong? Tach ra, hoac chia "
+                      f"nho lenh tinh.")
 
 
 def main() -> int:
@@ -399,6 +445,8 @@ def main() -> int:
                 print(f"[{bg['tai_nguyen']}] TEP KHOA HONG - luot sau se don.")
                 continue
             print(f"[{bg['tai_nguyen']}] {_mo_ta(bg)}")
+            if cb := _canh_bao_giu_lau(bg):
+                print(f"    CANH BAO: {cb}")
             if bg.get("treo"):
                 print(f"    CANH BAO: TREO ({bg['treo']}) - luot sau tu doat.")
         return 0

@@ -406,11 +406,18 @@ def test_o_TRONG_moi_tao_may_khi_dang_BAN_DUOC(tmp_path, monkeypatch):
     db.commit()
     gen.close()
 
-    import apps.vps.routes as vps_routes
-    monkeypatch.setattr(vps_routes, "_suc_chua", lambda db, profile=None: (
-        SimpleNamespace(ram_mb_con=53_000, dia_gb_con_that=114), ""))
-    monkeypatch.setattr(vps_routes, "_gioi_han_ban", lambda db: (5, 5))
-    monkeypatch.setattr(vps_routes, "_so_cho_ban", lambda *a, **k: 3)
+    # 23/09: mot cho gia lap duy nhat — `nguon_luc.do_nguon_luc`. Truoc day
+    # phai gia lap ba ham rieng cua `routes`, va ba cho gia lap cho mot cau tra
+    # loi la ba cho de chung lech nhau.
+    from apps.vps.services import capacity, nguon_luc
+    monkeypatch.setattr(nguon_luc, "do_nguon_luc", lambda db, profile=None:
+                        nguon_luc.DoDuoc(
+                            suc_chua=capacity.SucChua(
+                                ram_mb_tong=256_000, dia_gb_tong=4_000,
+                                cpu_tong=64),
+                            free_ipv4=5, gateway_slots=5,
+                            da_hua_bang_thong_gb=0,
+                            ngan_sach_bang_thong_gb=1_000_000))
 
     from server.app import create_app
     client = TestClient(create_app(), base_url="https://testserver",
