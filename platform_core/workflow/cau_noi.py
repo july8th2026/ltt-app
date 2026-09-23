@@ -18,10 +18,11 @@ from sqlalchemy.exc import IntegrityError
 
 from platform_core import jobs, registry
 from platform_core.job_scheduler import ORIGIN_WORKFLOW
-from platform_core.models import (JOB_CANCELLED, JOB_DONE, Job, Waitpoint,
-                                  WaitpointSignal, WorkflowRun)
+from platform_core.models import (JOB_CANCELLED, JOB_DONE, Artifact, Job,
+                                  Waitpoint, WaitpointSignal, WorkflowRun)
 from platform_core.workflow import (cho_doi, danh_thuc, may_trang_thai,
                                     thi_hanh)
+from platform_core.workflow import artifact as _artifact
 from platform_core.workflow import cong_cu as _nguon
 from platform_core.workflow.bien_dich import la_tham_chieu
 from platform_core.workflow.cong_cu import CongCu
@@ -53,9 +54,18 @@ def giai_tham_so(db, run_id: str, params: dict) -> dict:
         anh = thi_hanh.anh_chup_hien_tai(db, run_id, nguon)
         if anh is None or anh.execution_status != "SUCCEEDED":
             raise LoiThamSo("dau_vao_sai", f"{nguon} chua SUCCEEDED")
-        if cong not in (anh.output_ref or {}):
+        ra = anh.output_ref or {}
+        if "_tran" in ra:
+            # Output đã tràn ra artifact (§5.8). Node sau phải nhận cả tệp qua
+            # một cổng `artifact_ref`, không phải một khoá con — plan 04 thêm
+            # node đọc artifact. Nói thẳng ra thay vì báo "khong co cong".
+            raise LoiThamSo(
+                "dau_ra_tran_artifact",
+                f"{nguon} tran ra artifact {ra['_tran']['artifact_ref']}; "
+                f"khong tra cung duoc cong {cong!r}")
+        if cong not in ra:
             raise LoiThamSo("dau_vao_sai", f"{nguon} khong co cong {cong!r}")
-        return anh.output_ref[cong]
+        return ra[cong]
     return _giai(dict(params))
 
 
@@ -195,15 +205,21 @@ def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
         gia_that = int((anh.output_ref or {}).get("_gia_that", 0)) if anh else 0
         if sig.status == "SUCCEEDED":
             du_lieu = dict(sig.result_ref or {})
-            do_dai = len(json.dumps(du_lieu, default=str))
-            if do_dai > GIOI_HAN_DAU_RA:
-                may_trang_thai.chuyen_node(
-                    db, run.id, node_id, sang="FAILED", mo_ta="dau ra qua lon",
-                    error=f"dau_ra_qua_lon: {do_dai} > {GIOI_HAN_DAU_RA}",
-                    attempt_number=lan, job_id=sig.ref_id)
-                return "FAILED"
             bao = du_lieu.get("credit_cost")      # handler báo giá thật (vd theo token)
             chi_phi = int(bao) if bao is not None else gia_that
+            do_dai = len(json.dumps(du_lieu, default=str))
+            tran_ref = ""
+            if do_dai > GIOI_HAN_DAU_RA:
+                # ⭐ Spec §5.8: output quá lớn KHÔNG làm hỏng node — nó ra
+                #    artifact và output giữ ref. Plan 01a để FAILED
+                #    (`dau_ra_qua_lon`) vì chưa có đường lưu; đây là chỗ trả nợ.
+                # ⚠️ `credit_cost` đọc TRƯỚC dòng này: sau khi thay `du_lieu`
+                #    bằng ref thì handler coi như không báo giá, và mọi node
+                #    tràn sẽ bị thu theo `gia_that`.
+                khoa = f"workflow/{run.id}/{node_id}/{lan}.json"
+                du_lieu = {"_tran": _artifact.luu_json(
+                    db, owner_id=run.owner_id, key=khoa, du_lieu=du_lieu)}
+                tran_ref = str(du_lieu["_tran"]["artifact_ref"])
             node = _node_cua(db, run, node_id)
             # M2 (final-review.md): mặc định PHẢI khớp `nop_job` (fail-closed,
             # `0`) — bản cũ mặc định `chi_phi` (fail-OPEN, tức "không trần")
@@ -216,6 +232,15 @@ def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
                 db, run.id, node_id, sang="SUCCEEDED", mo_ta="job xong",
                 output_ref=du_lieu, cost_credit=chi_phi, attempt_number=lan,
                 job_id=sig.ref_id)
+            if tran_ref:
+                # LINEAGE — `created_by_snapshot_id` phải trỏ vào ảnh chụp
+                # ĐANG GIỮ ref, để "tệp này từ đâu ra" trả lời được bằng MỘT
+                # cột. Ảnh chụp đó là hàng SUCCEEDED vừa ghi ở trên: mô hình C
+                # INSERT một hàng MỚI mỗi lần chuyển, nên lúc `luu_json` chạy
+                # nó CHƯA tồn tại (`anh` khi đó còn là hàng QUEUED/RUNNING).
+                moi = thi_hanh.anh_chup_hien_tai(db, run.id, node_id)
+                if moi is not None:
+                    db.get(Artifact, tran_ref).created_by_snapshot_id = moi.id
             run.actual_cost = int(run.actual_cost or 0) + chi_phi
             db.flush()
             return "SUCCEEDED"
