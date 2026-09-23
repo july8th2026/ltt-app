@@ -40,9 +40,10 @@ Pha 19 doi ba loai QC. Giai doan nay lam hai:
 
 Xem `sua_chua.QC_HINH_LA_TU_VAN`. Ngan gon, va noi dung chu dung:
 
-  * do chinh xac cua phan quyet `dat=false` **CHUA DUOC DO** tren phim that
-    (`L_QC_HINH.md` §4 — luot do dau tien bi dung giua chung), va mot con so
-    khong co khong duoc doc thanh mot con so tot;
+  * do chinh xac DA DO va no khong dat: 54 cho noi that tren hai phim, 15 bi
+    cham `dat=false`, **9/9 cai soi bang mat la bao dong gia**, va **14/15**
+    vuot `DO_TIN_TOI_THIEU` — tuc nguong do tin khong loc duoc gi
+    (`L_QC_HINH.md` §4);
   * `cat_sai` la vong sua DAT NHAT cua he: `edit_plan` la giai doan som nhat,
     nen dat lai no keo theo gan nhu ca chuoi phia sau.
 

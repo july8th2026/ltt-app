@@ -228,16 +228,23 @@ def tu_qc_ngu_nghia(phan_doan: list[dict]) -> list[KhiemKhuyet]:
 
 #: 🔴 **QC HINH chi TU VAN — phan quyet duoc GHI nhung KHONG sinh viec sua.**
 #:
-#: ⛔ **Va ly do la CHUA DO, chu khong phai "do thay kem".** Tinh den 23/09 chua
-#:    ai do do chinh xac cua phan quyet `dat=false` tren phim that: luot do dau
-#:    tien (`tools/do_qc_hinh.py`, 4 phim tieng Trung) bi dung giua chung vi no
-#:    giu khoa toan may de CHO MANG, va moi phan quyet nam trong bo nho nen mat
-#:    sach. `L_QC_HINH.md` §4 ghi dung nhung gi con lai va dung mot cau "chua
-#:    do" o cho con so.
+#: 🔴 **DA DO, va so do la ly do (23/09, `L_QC_HINH.md` §4).**
 #:
-#: 🔑 Mot con so KHONG CO khong duoc doc thanh mot con so TOT. Cua mac dinh cua
-#:    mot phan quyet CHU QUAN chua ai do phai la "ghi lai", khong phai "tieu
-#:    tien" — do la chinh nguyen tac ma `DO_TIN_TOI_THIEU` ngay duoi viet ra.
+#:        54 cho noi THAT tren hai phim tieng Trung khac the loai
+#:        15 bi cham `dat=false`  (28 %)
+#:        14/15 mang `do_tin` >= 0,70  => VUOT `DO_TIN_TOI_THIEU` o duoi
+#:         9/9 cai da soi bang mat  => **BAO DONG GIA**
+#:
+#: ⛔ Nen day khong phai "model chua chac chan". No **sai, va sai mot cach tu
+#:    tin** — dung to hop te nhat cho mot cong tieu tien: nguong do tin khong
+#:    loc duoc gi, vi cai sai cung tu tin nhu cai dung.
+#:
+#: ⚠️ Nguyen nhan do duoc la **HINH DANG LOI NHAC**, khong phai model: ly do
+#:    model dua ra o moi luot deu mo ta mot THAY DOI NOI DUNG ("khung 1 la...,
+#:    khung 2 la...") chu khong mo ta mot cho dut mach — trong khi loi nhac noi
+#:    thang rang hai khung khac han nhau la mot cat DUNG. Cung ho voi R-05 cua
+#:    lan `fix-toc-do`. ⇒ Co the sua duoc, nhung **phai do lai** roi moi doi co
+#:    nay; `L_QC_HINH.md` §8 ghi gia thuyet cu the.
 #:
 #: 🔴 **Va rieng `cat_sai` con mot ly do doc lap voi do chinh xac: no la vong
 #:    sua DAT NHAT trong he.** `edit_plan` la giai doan SOM NHAT, nen dat lai no
