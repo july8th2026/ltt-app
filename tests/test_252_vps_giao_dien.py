@@ -618,12 +618,25 @@ def test_app_TAT_khong_lot_vao_trang_chu_cua_nguoi_da_dang_nhap(moi_truong,
     # Đặt một `property` trên LỚP thì đi qua được (property là data descriptor,
     # ưu tiên hơn `__dict__` của thể hiện), và chỉ chạm đúng app `vps` — các app
     # khác vẫn khai đúng cờ của chúng, để ca này không vô tình tắt cả catalog.
+    # ⚠️ 23/09/2026 — property PHẢI có setter. `AppManifest` là dataclass
+    #    `frozen=True`, và `__init__` của nó ghi qua `object.__setattr__`. Một
+    #    `property` chỉ-đọc trên LỚP là data descriptor, nên **mọi manifest dựng
+    #    sau dòng này** ném `property has no setter` ngay trong `__init__`.
+    #
+    #    Chạy cả tệp thì không lộ: các ca trước đã dựng xong catalog. Chạy
+    #    riêng — hoặc dưới `pytest -n` khi xdist tách ca này sang worker khác —
+    #    thì đỏ. Đúng thứ docstring trên cảnh báo, chỉ là lần này bẫy nằm ở
+    #    đường GHI chứ không phải đường đọc. Đo lại 23/09: xanh 17/17 khi chạy
+    #    cả tệp, đỏ khi chạy một mình.
     monkeypatch.setattr(
         type(MANIFEST), "enabled",
         # App khác đọc thẳng giá trị đã lưu trong `__dict__` — `frozen=True` cất
         # ở đó — nên chúng vẫn khai đúng cờ của chính mình.
         property(lambda self: False if self.slug == "vps"
-                 else self.__dict__.get("enabled", True)),
+                 else self.__dict__.get("enabled", True),
+                 # Ghi thẳng vào `__dict__`: `object.__setattr__` sẽ gặp lại
+                 # chính property này và quay vòng vô hạn.
+                 lambda self, gt: self.__dict__.__setitem__("enabled", gt)),
         raising=False)
     _tao_khach(moi_truong)
     client = _client()

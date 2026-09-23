@@ -20568,3 +20568,18 @@ msgstr "Blocks sales:"
 
 msgid "Chỗ bán được (đo ở lượt preflight gần nhất):"
 msgstr "Sellable slots (measured at the latest preflight):"
+
+msgid "Thuê một máy Windows, trả bằng credit"
+msgstr "Rent a Windows machine, paid with credit"
+
+msgid "Tạo xong trong khoảng %(phut)s phút"
+msgstr "Ready in about %(phut)s minutes"
+
+msgid "Tạo xong rồi báo bạn"
+msgstr "We build it, then tell you"
+
+msgid "Chọn một gói ở bên và bấm “Tạo máy”. Máy sẵn sàng sau khoảng %(phut)s phút, rồi bạn tự cài Windows qua console."
+msgstr "Pick a plan on the side and press “Create machine”. It is ready in about %(phut)s minutes, then you install Windows yourself through the console."
+
+msgid "Chọn một gói ở bên và bấm “Tạo máy”. Chúng tôi dựng máy rồi báo bạn, sau đó bạn tự cài Windows qua console."
+msgstr "Pick a plan on the side and press “Create machine”. We build it and tell you when it is ready, then you install Windows yourself through the console."
