@@ -77,7 +77,7 @@ SQLAlchemy (nền tảng, test `pytest`), PowerShell 7 (phát hành), Tauri/Rust
 | 11 | A1 nút "Chạy tiếp" | 🟡 **0,5** — hàm `coTheNoiLai` + test xong (`670770b`); **nút giao diện CHẶN**: slot không có hàm resend, cần thiết kế mới |
 | 12 | C2 nén bằng 3.5 | 🟡 **0,5** — mã xong (`3326d7f`), **chờ đo** tốc độ + chất lượng tóm tắt trên phiên dài |
 | 13 | MCP dùng thật (nay 0/166) | ✅ **1** — **0/166 → tự gọi ngay lượt đầu**. Catalog đã có mô tả + tiêu đề nhóm *khi nào dùng*; model tự `tool_search` → `tool_describe` → gọi `mcp__chrome-devtools__navigate`, **không ai nhắc**. ⚠️ Đạt kết quả nhưng **chưa cô lập nguyên nhân** (nâng trần + `groups` đi cùng một bản) |
-| 14 | Gỡ trần 50 của kế hoạch/mục tiêu | 🟡 **0,5** — **tiền đề của task SAI**: `exit_plan_mode` **không hề có trong tool-set**, chỉ mount khi bật `/plan on`; `create_goal` thì prompt hệ thống **dặn đừng dùng** cho việc một lượt. Model không làm sai — **bảng chấm hỏi sai câu**. Cần quyết hướng trước khi sửa |
+| 14 | Gỡ trần 50 của kế hoạch/mục tiêu | 🟡 **0,5** — **tiền đề SAI**: `exit_plan_mode` **không có trong tool-set** (chỉ mount khi `/plan on`); `create_goal` thì prompt hệ thống **dặn đừng dùng** cho việc một lượt. Model không làm sai — **thang đo phạt một hành vi đúng**. ✅ Đã chốt đi đường *giữ `/plan on` là lệnh người dùng* (Claude Code cũng vậy); còn: tài liệu + sửa câu hỏi của bảng chấm |
 | 15 | Agent do người dùng định nghĩa | ✅ **1** — chạy thật: phiên con `867b4329…` đúng vai, `agentModel:"ltt-3.5"` trong khi cha chạy `ltt-3.8`. ⚠️ **Đính chính**: vá V-25 **không ăn về vận hành** — cảnh báo vào buffer RAM, **không kênh nào đưa ra ngoài**. Lập lỗi riêng, không nhận V-25 đã đóng |
 | 16 | Credit mỗi lượt cạnh token | ⚫ **ĐÓNG — chặn ở tầng engine.** Tra ba vòng, mỗi vòng bác một phương án: (1) cổng không có trường credit, quyết toán chạy sau byte cuối; (2) `client.js` là **loopback remote page ⇒ không có Tauri IPC**; (3) từ sidecar thì `TokenUsage` là interface đóng và projection **khoá cứng đồng bộ, cấm I/O**. Cần hạ tầng engine mới ⇒ chuyển `HANG_MUC_BAN_SAU.md`. **Không chỗ nào hiện số tiền sai** |
 | 17 | Giảm độ trễ mỗi bước | ⚫ **ĐÓNG — giới hạn phần cứng, đã tách bằng số.** 226/226 lượt LLM: **sinh token 62,2 %** (4 878,9 s) · chờ suất/TTFT 23,3 % · chạy công cụ 14,5 % (82 % của phần đó là `pwsh` chạy thật). Phần mềm không chạm được vào 62,2 % ⇒ **không vờ tối ưu** |
@@ -1212,12 +1212,27 @@ không tạo mục tiêu (vì đó là **một lượt**, đúng điều prompt 
 yếu — một cái **không tồn tại trừ khi người dùng bật**, cái kia **cố ý không kích hoạt** cho việc
 một lượt. Chấm 50 vì "không bằng chứng" là **phạt một hành vi đúng**.
 
-- [ ] **Step 1 mới — quyết định trước, đừng sửa vội.** Hai đường, khác hẳn nhau:
-  1. **Chế độ kế hoạch là thứ người dùng bật (`/plan on`)** — giống Claude Code. Nếu vậy thì việc
-     cần làm là **tài liệu + chỗ dễ thấy**, không phải sửa điều kiện kích hoạt. Và bảng chấm phải
-     sửa lại cách hỏi.
-  2. **Muốn nó tự bật cho việc lớn** — đó là thay đổi hành vi thật, cần định nghĩa "việc lớn" và
-     có rủi ro làm phiền ở việc nhỏ.
+### ✅ QUYẾT ĐỊNH (24/09): đi đường 1 — chế độ kế hoạch là thứ NGƯỜI DÙNG bật
+
+Hai đường đã cân:
+
+| Đường | Bác / chọn |
+|---|---|
+| Để model **tự bật** chế độ kế hoạch cho "việc lớn" | ❌ Phải định nghĩa "việc lớn" — mà chính phép đo vừa rồi cho thấy một việc **9 phút, 18 lần gọi công cụ** vẫn là **một lượt**. Ngưỡng nào cũng sẽ bật nhầm ở việc nhỏ, và bật nhầm thì phiền hơn không có |
+| ✅ **Giữ `/plan on` là lệnh của người dùng** | **Claude Code cũng thế** — chế độ kế hoạch ở đó cũng do người dùng vào, không tự nhảy. Ta đang chấm điểm so với Claude Code mà lại đòi LTTCODE làm thứ Claude Code không làm |
+
+⇒ Việc thật còn lại **không phải sửa hành vi model**, mà là **hai chỗ đang thiếu**:
+
+- [ ] **Step 1 — cho người dùng BIẾT là có.** Hiện `/plan on` không có ở đâu dễ thấy. Cần: một
+  dòng trong tài liệu LTTCODE, và cân nhắc gợi ý trong giao diện khi phiên dài ra.
+- [ ] **Step 2 — sửa cách hỏi của bảng chấm.** Mục E2+E3 (`docs/LTTCODE/reports/CHAM_DIEM_VAN_HANH_THAT_23_09.md`)
+  hiện phạt 50 điểm vì *"có công cụ mà không dùng"*. Câu đó **sai hai lần**: `exit_plan_mode`
+  **không có** trong tool-set (chỉ mount khi `/plan on`), còn `create_goal` thì prompt hệ thống
+  **dặn đừng dùng** cho việc một lượt. Câu đúng phải là: *"bật `/plan on` rồi thì kế hoạch có chạy
+  đúng không, và người dùng có tìm thấy nó không"*.
+
+  ⚠️ **Đây là lỗi của thang đo, không phải của sản phẩm.** Một thang đo phạt hành vi đúng sẽ đẩy
+  người ta đi sửa thứ không hỏng — đúng loại bẫy `docs/BAY_TRONG_CONG_CHAT_LUONG.md` ghi.
 - [ ] **Step 2:** Làm theo đường đã chọn.
 - [ ] **Step 3:** Sửa lại mục E2+E3 của bảng chấm cho đúng câu hỏi.
 
