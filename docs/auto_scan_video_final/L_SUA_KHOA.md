@@ -103,7 +103,7 @@ Bản vá M-08 đặt `db.commit()` **tại chỗ gọi** (`giai_doan_ban_dung.p
 
 Hai lệnh `UPDATE` ở trên chạm **hai bảng khác nhau** (`asv_asset` / `jobs`).
 PostgreSQL khoá ở **mức dòng**, nên phiên thứ hai không đợi ai cả: M-09 **không
-biểu hiện** trên production. Nhưng khiếm khuyết thì vẫn có thật ở đó — giai đoạn
+biểu hiện** trên production — ⭐ **đã đo trên PostgreSQL thật**, §5.1. Nhưng khiếm khuyết thì vẫn có thật ở đó — giai đoạn
 giữ một transaction ghi mở suốt cả vòng lặp sinh tiếng (đo được **937 giây** cho
 một phim 107 s, `bang_chung/NEN_V3.md`) thay vì vài mili giây. ⇒ Bản vá phải
 đúng theo nghĩa *"không giữ transaction ghi qua một lời gọi mở phiên thứ hai"*,
@@ -164,6 +164,8 @@ Hai loại trừ, cả hai đều có lý do đo được:
 | `test_2160` (8 bài) | 2 ĐỎ (`database is locked`), 6 xanh | **8 xanh** |
 | `test_2121` (làn `qc-hinh`, 7 bài) | 7 xanh (bài vòng sửa **cố ý không chốt** `run.status`) | 7 xanh |
 | vòng sửa `cat_sai` chạy tới `run.status` | `error` | **`done`** |
+| vòng sửa `dich_sai` trên **PostgreSQL** thật (§5.2) | — | **`done`**, 42 job, 1 vòng |
+| bộ ASV nhắm (15 tệp, dưới khoá `cpu_nhieu`) | — | **278 passed, 1 skipped** |
 
 **Đột biến** — gỡ từng vế của bản vá rồi chạy lại đúng bài đã đỏ. ⛔ Một bản vá
 không đo được vế nào của nó đang gánh việc là một bản vá không ai kiểm lại được:
@@ -195,45 +197,73 @@ quyết định, không phải một sự trùng lặp vô tình.
 
 ---
 
-## 5. Còn lại chưa xác minh — nói thẳng ra
+## 5. PostgreSQL — **ĐÃ ĐO**
 
-🔴 **PostgreSQL: CHƯA ĐO.** Và đây là khoảng trống lớn nhất của tệp này.
+Khoá `cua_so_yen` `postgres_test` rảnh lúc 23/09; làn này **giữ khoá** rồi đo
+trên `lttplatform_test`. ⛔ Không `drop_all` (một lượt nghiệm thu vừa xong trên
+cùng CSDL đó) — chỉ `create_all` (cộng thêm), dòng sinh ra mang `owner_id`
+riêng `uPG-suakhoa`, xoá hết ở cuối (168 job + run).
 
-* Khoá `postgres_test` của `cua_so_yen` đang do làn `asv-final-nghiem-thu` giữ
-  (lượt nghiệm thu thật đang chạy). Các bài PG của kho gọi
-  `Base.metadata.drop_all()` trên `lttplatform_test`; chạy chúng lúc này là xoá
-  bảng dưới chân một lượt nghiệm thu đang chạy.
-* Đường vòng đã thử và **thất bại**: tạo một CSDL vứt đi **riêng**
-  (`lttplatform_test_suakhoa`) để không đụng `lttplatform_test`. Tài khoản trong
-  `C:\LTTPlatform\secrets\app.env` **không có quyền `CREATEDB`**:
-  `psycopg.errors.InsufficientPrivilege: permission denied to create database`.
-* ⛔ Và `LTT_TEST_DATABASE_URL` **không** được đặt sẵn trong môi trường phiên
-  agent, nên `tests/pg_scratch.py` bỏ qua mọi bài PG một cách im lặng.
+### 5.1 Hình dạng khoá: M-09 **không biểu hiện** trên PostgreSQL
 
-**Điều đã biết mà không cần đo** (§2.2): hai lệnh `UPDATE` va nhau ở đây thuộc
-**hai bảng khác nhau**, và PostgreSQL khoá ở mức dòng ⇒ M-09 không biểu hiện
-trên production. **Điều CHƯA biết, và chỉ một lượt đo mới trả lời được:**
+Đặt đúng cặp giữ/chờ của §2 lên PG: phiên A giữ một `UPDATE` chưa commit, phiên
+B (hình dạng `ctx.progress`) ghi một dòng khác.
 
-1. bản vá 3.1 (`commit` thay `flush`) có làm đổi hành vi nào của đường
-   PostgreSQL không — cụ thể là một `commit` giữa chừng có cắt một transaction
-   mà đường PG đang dựa vào để `rollback` trọn vẹn hay không;
-2. hàng rào 3.2 chốt sổ ở mỗi lần `progress` — trên PG điều đó **rút ngắn** thời
-   gian giữ khoá dòng, nhưng chưa ai đo rằng nó không làm tăng số lượt ghi WAL
-   đáng kể trên một phim dài (≈ một `commit` mỗi đoạn tiếng, tức hàng trăm lượt).
+| | SQLite | PostgreSQL |
+|---|---|---|
+| phiên B ghi khi phiên A đang giữ | `database is locked` | **đi qua, không đợi** |
+| phiên A commit sau đó | — | không xung đột |
 
-**Lệnh để đóng khoảng trống này** (chạy khi `postgres_test` rảnh, giữ khoá đó):
+⇒ Khoá **mức dòng** của PG: hai lệnh chạm hai bảng khác nhau (`asv_asset` /
+`jobs`) nên không có gì để tranh. **Production chưa từng gặp M-09** — nó là một
+lỗi chỉ giết lần chạy trên SQLite. ⚠️ Nhưng khiếm khuyết thì có thật ở cả hai:
+giai đoạn giữ một transaction ghi mở suốt vòng lặp sinh tiếng (đo được **937
+giây** cho một phim 107 s, `bang_chung/NEN_V3.md`) thay vì vài mili giây.
+
+### 5.2 Cả vòng sửa chạy trên PostgreSQL
+
+Bài đã đỏ ở §1 (`dich_sai` → `content_process`) chạy lại với fixture `db` trỏ
+`lttplatform_test`, **cùng thân bài**, hàng đợi thật, worker thật:
+
+| phép | số đo |
+|---|---|
+| `run.status` | **`done`**, `run.error` rỗng |
+| job của riêng lần chạy này | **42** |
+| vòng sửa trong sổ cái | **1** (`giai_doan_sua = ["content_process"]`) |
+| dòng sổ cái `voice_synthesis` | **3**, `ma_dispatch` đôi một khác nhau |
+
+⇒ Bản vá **không** chỉ làm SQLite hết kêu: đường PostgreSQL đi qua nguyên vẹn,
+và hai lo ngại đã nêu (một `commit` giữa chừng cắt mất `rollback` của PG; số
+lượt ghi tăng) **không xảy ra** ở quy mô đo được.
+
+### 5.3 ⚠️ Phát hiện phụ — `lttplatform_test` có một run MỒ CÔI đang quay
+
+Lượt đo đầu chạm trần 200 job của khuôn thử, và **không phải vì lần chạy này**:
 
 ```
-python tools\cua_so_yen.py giu postgres_test --phien sua-khoa
-set LTT_TEST_DATABASE_URL=<url .../lttplatform_test>
-python -m pytest tests/test_2160_asv_vong_sua_khoa_csdl.py -q
+RUN LA DANG SONG trong CSDL test: 1
+  ('asvr_d29cef8a3e3c4d4392ca08b2ea0f7ee', owner 'cff233e0-4c59-…', 'running')
 ```
 
-⚠️ `test_2160` hiện **ghim SQLite** qua fixture `db` của `test_402`
-(`sqlite:///{tmp_path}/asv5.db`). Chạy nó trên PG cần một fixture `db` khác —
-đó là việc còn lại, không phải một biến môi trường.
+Một `AsvRun` **`running`** của **một phiên khác** nằm lại trong CSDL test; job
+`advance` của nó **tự nộp lại vô hạn**, nên mỗi lượt gọi `_chay_het_hang_doi`
+đều nhặt job của nó. Bảng `jobs` đã tích tụ **1.274** dòng.
 
-### 5.2 Những thứ khác chưa đo
+⛔ Làn này **không xoá dữ liệu của phiên khác** (luật 4). Báo điều phối:
+(a) run đó cần được đưa về trạng thái kết thúc hoặc xoá; (b) mọi bài PG đếm số
+job phải đếm **theo `run_id` của mình**, không đếm tổng — trần 200 của
+`_chay_het_hang_doi` là một trần **dùng chung**, và trên một CSDL dùng chung nó
+không còn đo được "vòng sửa có quay không".
+
+### 5.4 Còn lại chưa xác minh
+
+* **`test_2160` vẫn ghim SQLite** qua fixture `db` của `test_402`. Lượt PG ở
+  §5.2 chạy bằng một bản sao scratch, **không** nằm trong kho — biến nó thành
+  một bài thường trực cần một fixture `db` theo tham số, và cần §5.3 được dọn
+  trước (nếu không nó đỏ vì rác của người khác). Đây là việc còn lại **duy nhất**
+  của vế PostgreSQL.
+
+### 5.5 Những thứ khác chưa đo
 
 * **Chưa đo trên phim thật.** Mọi con số ở đây đến từ khuôn `test_402` (video
   sin 0,4 s, 3 đoạn tiếng). Một vòng sửa trên phim thật (`v1`–`v4`) chạm thêm
