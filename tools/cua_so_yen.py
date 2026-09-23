@@ -151,7 +151,7 @@ def _canh_bao_giu_lau(ban_ghi: dict) -> str:
     if giay <= GIU_LAU_S:
         return ""
     return (f"GIU LAU: {giay / 60:.0f} phut (nguong {GIU_LAU_S / 60:.0f}). "
-            f"Khoa bao DUNG lenh tinh — doc ket qua, sua ma, commit, viet bao "
+            f"Khoa bao DUNG lenh tinh: doc ket qua, sua ma, commit, viet bao "
             f"cao, cho nguoi/dich vu deu lam NGOAI khoa.")
 
 

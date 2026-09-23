@@ -295,14 +295,26 @@ def test_moi_chuoi_IN_RA_deu_thuan_ASCII():
 
     ⛔ Một emoji trong stdout của một công cụ đã từng làm cổng đỏ — ghi trong
        CLAUDE.md. Chú thích tiếng Việt thì thoải mái; thứ đi ra `stdout` thì không.
+
+    🔴 LỖ ĐÃ VÁ 23/09: bản cũ chỉ quét chuỗi nằm TRỰC TIẾP trong `print(...)`.
+       Một chuỗi được **trả về** rồi mới in ở chỗ khác (`_canh_bao_giu_lau`)
+       lọt qua — và đã lọt thật: dấu `—` hiện ra console thành `?`. Cùng lớp
+       lỗi với phạm vi quét hẹp của `test_967`: bánh cóc không phủ hết đường
+       mà thứ nó canh đi qua.
+
+    ⇒ Nay quét MỌI chuỗi chạy được của mô-đun (trừ docstring). Chú thích và
+      docstring tiếng Việt vẫn thoải mái — chúng không ra `stdout`.
     """
-    ma = (GOC / "tools" / "cua_so_yen.py").read_text(encoding="utf-8")
-    xau = [a.value for n in ast.walk(ast.parse(ma))
-           if isinstance(n, ast.Call) and getattr(n.func, "id", "") == "print"
-           for a in ast.walk(n)
+    cay = ast.parse((GOC / "tools" / "cua_so_yen.py").read_text(encoding="utf-8"))
+    docstring = set()
+    for n in ast.walk(cay):
+        than = getattr(n, "body", None)
+        if isinstance(than, list) and than and isinstance(than[0], ast.Expr)                 and isinstance(than[0].value, ast.Constant)                 and isinstance(than[0].value.value, str):
+            docstring.add(id(than[0].value))
+    xau = [a.value for a in ast.walk(cay)
            if isinstance(a, ast.Constant) and isinstance(a.value, str)
-           and not a.value.isascii()]
-    assert not xau, f"chuoi in ra khong thuan ASCII: {xau}"
+           and id(a) not in docstring and not a.value.isascii()]
+    assert not xau, f"chuoi CHAY DUOC khong thuan ASCII: {xau}"
 
 # ── 4. `test_nhanh.py` phải XIN khoá — và phải BIẾT khi nào đừng xin ────────
 #
