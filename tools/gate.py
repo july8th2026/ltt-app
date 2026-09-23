@@ -1678,10 +1678,11 @@ def _thu_hep(steps: list[Step], args, ho_so: str
         try:
             duong = tp_mod.duong_da_doi(ROOT, goc_so=goc_so)
         except tp_mod.KhongBiet as e:
-            return None, f"  [doi] khong doc duoc cay ({e}) -> chay DAY DU"
+            return None, f"  [doi] {CHUA_DO_DUOC} khong doc duoc cay ({e})"
         if not duong:
             moc = goc_so or "HEAD"
-            return None, f"  [doi] cay khong doi gi so voi {moc} -> chay DAY DU"
+            return None, (f"  [doi] {CHUA_DO_DUOC} cay khong doi gi so voi {moc}"
+                          ": moc so sanh sai, khong phai pham vi hep")
         phan = tp_mod.bi_anh_huong(duong, ROOT)
         if phan is None:
             return None, ("  [doi] cham tep DUNG CHUNG hoac duong khong ai"
@@ -1839,6 +1840,13 @@ def main() -> int:
         steps = _rut_gon_vong_lap(steps)
     elif ho_so in ("pham-vi", "doi"):
         steps, ghi_chu_pham_vi = _thu_hep(steps, args, ho_so)
+        if steps is None and CHUA_DO_DUOC in ghi_chu_pham_vi:
+            # 🔴 KHONG ha cap ca nay. "Chua do duoc gi" != "pham vi rong qua".
+            #    Ha cap no xuong `nhanh` se in ra mot chu PASS cho mot luot chua
+            #    chay phep test nao — va vi khong cong cu deploy nao doc ban ghi
+            #    gate, chu PASS do la thu duy nhat nguoi ta doc.
+            print(tu_choi_vi_chua_do_duoc(ho_so, ghi_chu_pham_vi))
+            return 2
         if steps is None:
             # 🔴 CHOT 24/09 (chu du an): L1/L2 KHONG BAO GIO tu nang len L3.
             #    Truoc day cho nay hoac TU CHOI thang (return 2) hoac nang len
@@ -2260,6 +2268,45 @@ def _l3_trong_cua_so(thu_muc: Path, nhanh: str,
     if gio > CUA_SO_L3_LAI_GIO:
         return None, 0.0
     return moi_nhat, gio
+
+
+#: Tien to cua ly do "CHUA DO DUOC GI" — khac han "pham vi rong qua".
+#:
+#: 🔴 HOI QUY 24/09, phien ASV do duoc va bao: ban va ha cap gop BA ca
+#:    `return None` lam mot. Hai trong ba ca do KHONG phai van de pham vi:
+#:
+#:      `KhongBiet`  -> khong doc duoc cay (vd `--tu <sha bia>`)
+#:      `not duong`  -> diff RONG so voi moc
+#:
+#:    Ca hai deu nghia la **"ta chua do gi ca"**. Ha cap chung xuong `nhanh`
+#:    la bien mot cau "toi khong biet" thanh mot chu "DAT".
+#:
+#: ⛔ Va day la duong MAC DINH, khong phai ca hiem: hop dong viet "commit het ->
+#:    gate", ma commit het thi cay SACH, ma `--doi` khong `--tu` thi tran diff
+#:    voi HEAD => LUON rong. Tuc MOI luot L1 dung quy trinh deu roi vao day.
+CHUA_DO_DUOC = "[CHUA-DO-DUOC]"
+
+
+def tu_choi_vi_chua_do_duoc(ho_so: str, ly_do: str) -> str:
+    """Luot hep nay khong do duoc gi — TU CHOI, khong ha cap.
+
+    ⭐ Phan biet voi `canh_bao_khong_phu_bo_test`: ben kia la "pham vi rong qua,
+       chay duoc phan tinh"; ben nay la "moc so sanh sai, khong co gi de chay".
+       Mot phep do bo sot ma bao xanh thi te hon mot phep do tu choi.
+    """
+    return NL_GATE.join([
+        "=" * 62,
+        f"TU CHOI: luot `--{ho_so}` nay CHUA DO DUOC GI.",
+        f"  {ly_do.strip()}",
+        "",
+        "Day KHONG phai van de pham vi: la MOC SO SANH sai. Cay sach thi",
+        "`--doi` tran diff voi HEAD nen luon rong; phai cho no mot moc THAT:",
+        "",
+        "  python tools/gate.py --doi --tu <sha ban dang chay>      (deploy)",
+        "  python tools/gate.py --doi --tu $(git merge-base main HEAD)   (gop main)",
+        "  python tools/gate.py --pham-vi <tp>[,<tp>...]            (L2 theo thanh phan)",
+        "=" * 62,
+    ])
 
 
 def canh_bao_khong_phu_bo_test(ho_so: str) -> str:

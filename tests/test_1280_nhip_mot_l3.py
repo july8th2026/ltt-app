@@ -198,6 +198,63 @@ def test_khong_thu_hep_duoc_thi_HA_CAP_chu_khong_nang_cap():
     assert all(ord(c) < 128 for c in van), "dong in ra phai ASCII (cp1252)"
 
 
+def test_diff_RONG_thi_TU_CHOI_chu_khong_ha_cap(monkeypatch):
+    """🔴 HỒI QUY 24/09 (phiên ASV đo được): bản vá hạ cấp gộp BA ca `return None`
+    làm một, trong đó hai ca **không phải** vấn đề phạm vi:
+
+        `KhongBiet` — không đọc được cây (ví dụ `--tu <sha bịa>`)
+        `not duong` — diff RỖNG so với mốc
+
+    Cả hai nghĩa là **"ta chưa đo gì cả"**. Hạ cấp chúng xuống `nhanh` là biến một
+    câu *"tôi không biết"* thành một chữ *"ĐẠT"*.
+
+    ⛔ Và đó là đường MẶC ĐỊNH: hợp đồng viết "commit hết → gate", mà commit hết
+       thì cây SẠCH, mà `--doi` không `--tu` thì trần diff với HEAD ⇒ **luôn rỗng**.
+    """
+    import argparse
+    monkeypatch.setattr(gate, "loi_cho_bo_test", lambda **_: 4)
+    import thanh_phan as tp_mod
+    monkeypatch.setattr(tp_mod, "duong_da_doi", lambda *a, **k: [])
+    ra, ghi_chu = gate._thu_hep(gate._steps(False),
+                                argparse.Namespace(pham_vi=[], tu=""), "doi")
+    assert ra is None
+    assert gate.CHUA_DO_DUOC in ghi_chu, (
+        "diff rong phai duoc DANH DAU la 'chua do duoc', khong lan voi 'pham vi rong'")
+
+
+def test_khong_doc_duoc_cay_CUNG_la_chua_do_duoc(monkeypatch):
+    """`--tu <sha bịa>` — ca tôi vấp thật 24/09."""
+    import argparse
+    monkeypatch.setattr(gate, "loi_cho_bo_test", lambda **_: 4)
+    import thanh_phan as tp_mod
+
+    def _no(*a, **k):
+        raise tp_mod.KhongBiet("git tra 128")
+    monkeypatch.setattr(tp_mod, "duong_da_doi", _no)
+    ra, ghi_chu = gate._thu_hep(gate._steps(False),
+                                argparse.Namespace(pham_vi=[], tu="xxx"), "doi")
+    assert ra is None and gate.CHUA_DO_DUOC in ghi_chu
+
+
+def test_HAI_thong_diep_noi_HAI_dieu_khac_nhau():
+    """🔑 Vế đối chứng: nếu hai ca dùng chung một câu thì việc tách là vô nghĩa."""
+    tu_choi = gate.tu_choi_vi_chua_do_duoc("doi", "x")
+    ha_cap = gate.canh_bao_khong_phu_bo_test("doi")
+    assert "TU CHOI" in tu_choi and "MOC SO SANH sai" in tu_choi
+    assert "--tu" in tu_choi, "phai chi duong ra: truyen moc that"
+    assert "HA CAP" in ha_cap and "TU CHOI" not in ha_cap
+    for v in (tu_choi, ha_cap):
+        assert all(ord(c) < 128 for c in v), "dong in ra phai ASCII (cp1252)"
+
+
+def test_nhanh_CHUA_DO_DUOC_phai_dung_TRUOC_nhanh_ha_cap():
+    """Thứ tự quyết định kết quả: đặt sau thì ca 'chưa đo được' rơi vào hạ cấp."""
+    ma = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
+    i_tu_choi = ma.index("if steps is None and CHUA_DO_DUOC in ghi_chu_pham_vi:")
+    i_ha_cap = ma.index('ho_so = "nhanh"')
+    assert i_tu_choi < i_ha_cap
+
+
 def test_ma_KHONG_con_duong_nao_nang_len_day_du_tu_luot_hep():
     """🔑 Bánh cóc: chặn đường quay lại. Một bản vá vô tình dựng lại nhánh nâng
     cấp sẽ làm bài này đỏ."""

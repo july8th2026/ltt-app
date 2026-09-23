@@ -598,7 +598,7 @@ New-Item -ItemType Directory -Path $appDir -Force | Out-Null
 # do da that su lam production ngung 20 phut ngay 2026-08-05.
 $rc = robocopy $srcChep $appDir /E /NFL /NDL /NJH /NJS /NP /R:2 /W:2 `
       /XD data secrets logs .venv venv __pycache__ .pytest_cache .git dist build temp_videos `
-         node_modules .playwright-cli .playwright-mcp .claude .codex test-results tmp `
+         node_modules .playwright-cli .playwright-mcp .claude .codex .superpowers test-results tmp `
       /XF *.pyc *.log
 if ($LASTEXITCODE -ge 8) { throw "robocopy loi (ma $LASTEXITCODE)" }
 $global:LASTEXITCODE = 0
