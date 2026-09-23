@@ -83,7 +83,7 @@ SQLAlchemy (nền tảng, test `pytest`), PowerShell 7 (phát hành), Tauri/Rust
 | 17 | Giảm độ trễ mỗi bước | ⚫ **ĐÓNG — giới hạn phần cứng, đã tách bằng số.** 226/226 lượt LLM: **sinh token 62,2 %** (4 878,9 s) · chờ suất/TTFT 23,3 % · chạy công cụ 14,5 % (82 % của phần đó là `pwsh` chạy thật). Phần mềm không chạm được vào 62,2 % ⇒ **không vờ tối ưu** |
 | 18 | Chạy tiếp khi đóng app | 🟡 **0,5** — tra xong: **phần lớn đã có** (khay giữ sidecar sống, autostart, `lttcode-cli.exe` chạy thật 60,7 s). H18 chấm lại 45 → 78. Còn: chủ dự án quyết có làm scheduler mức hệ điều hành không |
 | 19 | Git/PR thành công cụ gốc | 🟡 **0,5** — **Cordis KHÔNG tắt được công cụ lẻ**: đơn vị nhỏ nhất là cả plugin (`cordis-plugin-loader` `disabled` = *"Stops the entry"*; tiền lệ DIV-003 phải fork nguyên plugin). ⇒ bác cả "bundle rồi tắt nhóm ghi" lẫn "fork để giữ phần tầm thường nhất". **Quyết định mới: tự viết bốn công cụ CHỈ-ĐỌC**, không có đường ghi nào |
-| 20 | Khởi động app (17→49→107 s) | 🟡 **0,5** — `36344e0`. Thêm **2/3 mốc** (`PROCESS_START: OnceLock<Instant>` ở đầu `run()`; đầu `setup()` + cuối `stage_dsh_home()`). Mốc 3 (SPA "interactive") **không làm** — chưa có hook, phải đụng mã thượng nguồn, dừng đúng brief. ⚠️ `cargo test` **chưa chạy được** (khoá máy bị phiên khác giữ 47 phút) |
+| 20 | Khởi động app (17→49→107 s) | 🟡 **0,5** — `36344e0`. Thêm **2/3 mốc** (`PROCESS_START: OnceLock<Instant>` ở đầu `run()`; đầu `setup()` + cuối `stage_dsh_home()`). Mốc 3 (SPA "interactive") **không làm** — chưa có hook, phải đụng mã thượng nguồn, dừng đúng brief. ✅ `cargo test --lib` **114 passed, 0 failed** |
 
 ### Ngoài plan — việc sinh ra từ lượt diễn tập D1
 
@@ -119,9 +119,16 @@ Bốn lần đầu các làn báo thẳng và điều phối đổi hướng. **
 trần là thay đổi rẻ và an toàn, nhưng ⛔ **không được ghi là "đã sửa nguyên nhân"** cho tới khi lượt
 mở app nhìn thấy catalog có mô tả.
 
-⚠️ **Nợ kỹ thuật đang mở:** `cargo test` cho `36344e0` (`mcp.rs`, `sidecar.rs`) **chưa chạy được** —
-khoá `cpu_nhieu` cả máy bị một phiên khác giữ 47 phút trong khi CPU chỉ 7 %. `cargo fmt --check`
-chỉ chứng minh **cú pháp hợp lệ**, không chứng minh chạy đúng.
+✅ **Nợ kỹ thuật đã trả (23/09 khuya):** `cargo test --lib` cho `desktop/src-tauri` →
+**114 passed, 0 failed**, gồm cả ba phép mới của T13/T20. Rút lại lời dè dặt "mới chỉ rà tay"
+trong báo cáo trước đó.
+
+> Hai bẫy công cụ lộ ra trên đường trả nợ này, ghi để làn sau khỏi mất giờ:
+> 1. **`chay_nang.py` nuốt MỌI token `--`**, không riêng dấu ngăn của nó ⇒
+>    `cargo test … -- --nocapture` tới `cargo` thành `--nocapture` trần và bị từ chối
+>    **trước khi biên dịch gì cả**. Lượt đỏ đó trông hệt "test hỏng" nhưng **chưa test nào chạy**.
+> 2. `cargo test <a> <b>` chỉ nhận **một** chuỗi lọc — truyền hai đường module là lỗi ngay.
+>    Chạy cả `--lib`, hoặc lọc từng cái.
 
 
 ## Bản đồ làn — chạy song song thế nào cho nhanh mà không hỏng
