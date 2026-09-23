@@ -343,11 +343,19 @@ def test_claim_bon_child_agent_khong_trung(Sess):
 #    `tests/test_965` + `tests/test_1723_v3_tao_va_doc_run.py` (muc `giu_cho_run`)
 #    canh tinh luy dang theo `run.hold_id`.
 #
-# 🔴 NHUNG do la nua LUY DANG, khong phai nua DONG THOI. Bai vua go chay HAI
-#    LUONG THAT tren PostgreSQL; hai bai thay the goi tuan tu. `giu_cho_run()`
-#    doc `run.hold_id` roi ghi ma KHONG khoa hang, nen mot cuoc dua that chua
-#    co ai do. Ghi ra day nhu mot LO HONG DO PHU da biet, khong phai mot muc
-#    da xong — dung o muc `tests/test_1720_wf_dong_co_pg.py` (cung ho PG).
+# ✅ LO HONG DO PHU DO DA DONG (23/09, cung ngay) — `tests/test_1720_wf_dong_co_pg.py`
+#    dung lai du HAI LUONG THAT tren PostgreSQL, tach lam ba bai vi ba cau hoi:
+#
+#      test_giu_cho_run_dong_thoi_chi_mot_hold      `giu_cho_run` mot minh
+#      test_tao_run_dong_thoi_cung_khoa_chi_mot_hold duong VAO that
+#      test_tao_run_hai_chu_khac_nhau_khong_chan_nhau ve doi chung
+#
+# ⭐ Va cau tra loi KHAC voi thoi v1: cuoc dua o `giu_cho_run()` la THAT (do
+#    duoc 40 credit cho mot run tran 20) nhung CHUA CO DUONG TOI — bai dau vi
+#    the la `xfail(strict=True)`, khong phai mot ban va. Thu dang giu bat bien
+#    la `ux_workflow_run_idem` + cho goi duy nhat tao hang run trong cung
+#    transaction; tien de do duoc ghim boi `tests/test_965_wf_duong_tien.py::
+#    test_giu_cho_run_chi_co_MOT_cho_goi_va_cho_do_tu_tao_run`.
 
 
 # ⏭️ `test_agent_executor_hai_scheduler_khong_submit_trung` DA GO 23/09/2026.
