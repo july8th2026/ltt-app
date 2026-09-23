@@ -107,6 +107,12 @@ DISPOSITION = {
     "video_assembly": (DEFER, ()),
     # An orchestrator, not a tool: publishing it publishes a runtime.
     "agent": (DEFER, ()),
+    # Not a sellable app: the sole job_type owner of `workflow.dong_co`
+    # (the single-instance engine loop, spec §5.1), split out of `agent` so
+    # `agent` itself can keep `job_types == ("agent.advance",)` — see
+    # `apps/agent_dong_co/manifest.py`. Same shape as `asv_gpu` below:
+    # `catalog_parent="agent"` + `surface="runtime"`, no ToolSpec, no card.
+    "agent_dong_co": (DEFER, ()),
     # Device management, not a priced tool: no ToolSpec and no Job. Publishing
     # it would publish a contract about *device identity*, which has to wait for
     # the relay decision and the AGPL legal review (Q93, docs/nexus/).

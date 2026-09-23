@@ -1,4 +1,12 @@
-"""App-owned orchestration jobs over the shared Agent executor."""
+"""App-owned orchestration jobs over the shared Agent executor.
+
+`_dong_co` here handles `workflow.dong_co`, but that job_type is declared in
+`apps/agent_dong_co/manifest.py`, NOT in this app's manifest — `apps/agent`
+must keep `job_types == ("agent.advance",)` (see manifest.py docstring). The
+handler stays in this module because it shares the executor plumbing with
+`agent.advance`; `apps.agent_dong_co.jobs.handle` just calls this file's
+`handle()`.
+"""
 from __future__ import annotations
 
 from platform_core.i18n import _ as _t

@@ -185,11 +185,8 @@ def main() -> int:
         # duoc `LTT_DATABASE_URL` lan mat khau superuser. Noi thang ra, vi hai
         # nguyen nhan do doi hai cach xu ly khac han nhau.
         if not _doc_neu_duoc(pathlib.Path(r"C:\LTTPlatform\secrets\app.env")):
-            # !! THUAN ASCII o day. Gate goi cong cu nay KHONG dat
-            #    PYTHONIOENCODING, nen stdout la cp1252 va mot ky tu ngoai bang
-            #    ma do nem `UnicodeEncodeError` -> buoc gate DO, voi mot stack
-            #    trace khong lien quan gi toi thu no dang kiem.
-            #    Da dinh dung the ngay 27/08 khi them mot emoji vao dong duoi.
+            # !! THUAN ASCII: gate khong dat PYTHONIOENCODING (stdout cp1252),
+            #    ky tu ngoai bang ma se nem UnicodeEncodeError. Da dinh 27/08.
             print()
             print("  !! Tren may CHU: gan nhu chac chan vi khong doc duoc")
             print("      C:\\LTTPlatform\\secrets\\ (da siet ve SYSTEM +")
