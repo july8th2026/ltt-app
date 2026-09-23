@@ -539,3 +539,102 @@ def test_tao_run_hai_chu_khac_nhau_khong_chan_nhau(pg, monkeypatch):
         f"nhat bat dau {vao_muon - ra_som:.2f}s SAU khi luong ra som nhat da "
         f"commit. Tuc mot khoa dang tuan tu hoa ca duong tao run, chu khong "
         f"chi mot run.")
+
+
+def test_hai_chu_dua_danh_thuc_dong_co_khong_ai_bi_500(pg, monkeypatch):
+    """HAI chu khac nhau tao run cung luc: KHONG ai duoc nhan 500.
+
+    Day la cuoc dua ma `test_tao_run_hai_chu_khac_nhau_khong_chan_nhau` co y
+    LOAI RA (no noi san job dong co truoc khi dua). O day ta do CHINH no.
+
+    `tao_run.danh_thuc_dong_co()` hoi "co job dong co nao dang song khong"
+    bang mot SELECT roi moi INSERT. Hai phien CSDL khac nhau deu thay "khong
+    co" (phien kia chua commit ⇒ READ COMMITTED khong nhin thay) va deu INSERT
+    ⇒ chi muc bo phan `ux_jobs_dedupe_active` nem `UniqueViolation`. Truoc ban
+    sua, `tao_run` de no bay len tan route ⇒ MOT NGUOI DUNG NHAN 500 du khong
+    lam gi sai.
+
+    ⭐ EP TRANH CHAP THAT, khong dua vao lech thoi gian: chi mot `Barrier`
+       truoc khi goi `tao_run` la KHONG du — luong nhanh hon co the commit xong
+       truoc khi luong kia kip SELECT, va bai kiem se xanh du loi con nguyen.
+       `tao_run.chu_dong_co()` duoc goi DUNG MOT LAN, ngay SAU cai SELECT do va
+       NGAY TRUOC `jobs.submit` (doc `danh_thuc_dong_co`), nen boc no bang mot
+       `Barrier` ghim ca hai luong vao dung khe cua so dua nhau.
+
+    Ba ve phai dung CUNG LUC sau ban sua:
+      1. ke thua VAN tao duoc run cua minh (khong 500),
+      2. khoan giu cho credit cua ke thua VAN CON (savepoint chi cuon lai
+         INSERT job, khong cuon ca chuoi tao run),
+      3. van chi con DUNG MOT job dong co dang song (bat bien plan 01a).
+    """
+    from platform_core import credit
+    from platform_core.models import JOB_QUEUED, JOB_RUNNING, Job, Workflow
+    from platform_core.models import WorkflowRun
+    from platform_core.workflow import tao_run
+
+    chu = ("u-dua-1", "u-dua-2")
+    wid = {c: _xuat_ban(pg, monkeypatch, c) for c in chu}
+
+    # ⛔ CO Y khong noi san job dong co: cuoc dua CHINH LA thu dang do.
+    khe = threading.Barrier(2)
+    that = tao_run.chu_dong_co
+
+    def _cho_ca_hai_cung_khe():
+        slug = that()
+        # SELECT "co job dong co dang song?" cua CA HAI phien da chay xong va
+        # ca hai deu thay "khong co"; INSERT cua ca hai con o phia truoc.
+        khe.wait(timeout=30)
+        return slug
+
+    monkeypatch.setattr(tao_run, "chu_dong_co", _cho_ca_hai_cung_khe)
+
+    def _chay(c):
+        ss = _mo(pg)()
+        try:
+            wf = ss.get(Workflow, wid[c])
+            run, _ = tao_run.tao_run(ss, workflow=wf, owner_id=c,
+                                     trigger_kind="manual",
+                                     idempotency_key=f"k-{c}")
+            rid = run.id
+            ss.commit()
+            return ("ok", rid)
+        except Exception as exc:            # noqa: BLE001 - giu chan doan
+            ss.rollback()
+            return ("err", f"{type(exc).__name__}: {exc}")
+        finally:
+            ss.close()
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        ket = [f.result() for f in [pool.submit(_chay, c) for c in chu]]
+
+    loi = [k[1] for k in ket if k[0] == "err"]
+    assert not loi, (
+        "mot nguoi dung bi tu choi mot hanh dong HOP LE bang loi may chu chi "
+        f"vi nguoi kia bam truoc vai mili giay: {loi}")
+
+    ids = [k[1] for k in ket]
+    assert len(set(ids)) == 2, f"hai chu khac nhau phai co hai run: {ket}"
+
+    db = _mo(pg)()
+    try:
+        # (1) ca hai run ton tai that
+        for rid in ids:
+            assert db.get(WorkflowRun, rid) is not None, f"run {rid} bien mat"
+        # (2) khoan giu cho cua CA HAI van con dung tran — savepoint cuon lai
+        #     INSERT job chu KHONG duoc cuon mat khoan giu cua ke thua
+        for rid in ids:
+            tran = db.get(WorkflowRun, rid).estimated_max
+            assert tran > 0, "bai nay vo nghia neu tran = 0"
+            assert credit.so_da_giu(db, rid) == tran, (
+                f"khoan giu cho cua run {rid} bi cuon mat theo savepoint")
+        for c in chu:
+            assert credit.so_du(db, c) < 1000, f"{c} chua bi giu cho gi"
+        # (3) bat bien plan 01a: DUNG MOT job dong co dang song
+        song = db.query(Job).filter(
+            Job.job_type == tao_run.DONG_CO_JOB,
+            Job.status.in_((JOB_QUEUED, JOB_RUNNING))).all()
+        assert len(song) == 1, (
+            f"phai co DUNG MOT job dong co dang song, dem duoc {len(song)}: "
+            f"{[(j.id, j.dedupe_key, j.status) for j in song]}")
+    finally:
+        db.close()
