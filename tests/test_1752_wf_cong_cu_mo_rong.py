@@ -26,6 +26,19 @@ def test_tat_ca_chep_du_truong_tu_toolspec_that():
     assert cc.workflow is True
 
 
+def test_so_lan_thu_khong_khai_lay_mac_dinh_cua_manifest_khong_phai_0():
+    # Fix round 1: `so_lan_thu_for()` (registry.py) là NGUỒN DUY NHẤT cho số
+    # này, mặc định 3 khi app không khai — `transcript.run` không khai
+    # `so_lan_thu` cho job_type của nó nên phải đọc ra 3, không phải 0.
+    from platform_core import registry
+    cc = tat_ca()["transcript.run"]
+    manifest = next(i.manifest for i in registry.discover()
+                     if i.slug == cc.app_slug)
+    assert "transcript.run" not in (manifest.so_lan_thu or {})
+    assert cc.so_lan_thu == 3
+    assert cc.so_lan_thu == manifest.so_lan_thu_for("transcript.run")
+
+
 def test_tat_ca_khong_bo_sot_tool_nao_cua_registry():
     from platform_core import registry
     that = {t.name for i in registry.discover() if not i.error

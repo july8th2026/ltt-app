@@ -91,7 +91,7 @@ def mot_tham_so(ten: str, rule: dict) -> dict:
     if rule.get("description"):
         ra["description"] = str(rule["description"])
     # `values`/`options` đã được `agent.tools.resolve_params_schema` giải sẵn
-    # cho `model_ref` và `source` — mang sang dạng JSON Schema, không giải lại.
+    # cho `model_ref` — mang sang dạng JSON Schema, không giải lại.
     if kieu == "model_ref" and rule.get("values"):
         ra["enum"] = list(rule["values"])
     if rule.get("options"):
@@ -128,10 +128,13 @@ def cong_vao(params_schema: dict, cong_khai: dict) -> tuple:
     ra: list[tuple[str, he_kieu.Cong]] = []
     for ten, rule in (params_schema or {}).items():
         rule = rule if isinstance(rule, dict) else {}
-        if _la_may_tu_dien(rule):
+        khai_tay = (cong_khai or {}).get(ten)
+        # Khai báo tường minh luôn thắng suy luận (spec §4.5) — kể cả khi
+        # tham số là `measured_from`. Chỉ suy luận "không phải cổng" khi
+        # KHÔNG có khai báo tường minh cho tham số này.
+        if khai_tay is None and _la_may_tu_dien(rule):
             continue
-        kieu = str((cong_khai or {}).get(ten) or
-                   KIEU_CONG.get(str(rule.get("type", "")), ""))
+        kieu = str(khai_tay or KIEU_CONG.get(str(rule.get("type", "")), ""))
         if not kieu:
             raise LoiLuocDo(
                 f"kieu tham so chua co tu vung: {rule.get('type')!r} "

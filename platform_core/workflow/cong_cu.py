@@ -83,7 +83,7 @@ def tat_ca() -> dict[str, CongCu]:
                 cong=dict(getattr(t, "cong", None) or {}),
                 resource=dict(getattr(t, "resource", None) or {}),
                 timeout_expr=str(getattr(t, "timeout_expr", "") or ""),
-                so_lan_thu=int((item.manifest.so_lan_thu or {}).get(jt, 0)),
+                so_lan_thu=item.manifest.so_lan_thu_for(jt),
                 mock=getattr(t, "mock_result", None))
     return ra
 

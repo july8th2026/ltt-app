@@ -95,6 +95,16 @@ def test_cong_khai_tay_DE_LEN_phan_suy():
     assert vao["transcript"].type == "document"
 
 
+def test_cong_khai_tay_DE_LEN_ca_measured_from():
+    # Fix round 1: khai báo tường minh phải thắng suy luận trong MỌI trường
+    # hợp, kể cả khi tham số là `measured_from` — spec §4.5. Trước sửa,
+    # nhánh `measured_from` bỏ qua tham số này TRƯỚC khi hỏi `cong_khai`.
+    vao = dict(luoc_do.cong_vao(
+        {"duration_s": {"type": "number", "measured_from": "anh"}},
+        {"duration_s": "text"}))
+    assert vao["duration_s"].type == "text"
+
+
 def test_cong_ra_tu_returns():
     ra = dict(luoc_do.cong_ra({"image_keys": "image[]", "prompt": "text"}, {}))
     assert ra["image_keys"].type == "image[]" and ra["image_keys"].multiple is False
