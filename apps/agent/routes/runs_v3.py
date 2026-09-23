@@ -19,11 +19,37 @@ Canvas vừa bấm publish xong giây trước; giá anh ta thấy đến từ c
 `version.estimated_max` mà `tao_run` đọc lại. Ký một token để tự mình kiểm lại
 trong cùng một phiên là nghi thức, không phải bảo đảm.
 
-## ⛔ Cửa này KHÔNG có `Idempotency-Key`
+## ⭐ Cửa này ĐÒI `Idempotency-Key` (sửa 23/09 — đo được là trừ tiền hai lần)
 
-Trình duyệt bấm hai lần ⇒ hai run. Đó là hành vi ĐÚNG cho một nút bấm tay: hai
-lần bấm là hai ý định, và `MAX_RUN_DONG_THOI` (5) là trần chặn tai nạn. Khoá
-idempotency là hợp đồng cho **máy** thử lại, và máy đi cửa `/api/v1`.
+Bản đầu viết: *"Trình duyệt bấm hai lần ⇒ hai run. Đó là hành vi ĐÚNG cho một
+nút bấm tay: hai lần bấm là hai ý định, và `MAX_RUN_DONG_THOI` (5) là trần chặn
+tai nạn."* Câu đó **sai**, và sai ở chỗ đắt nhất:
+
+* "hai lần bấm là hai ý định" chỉ đúng khi người dùng CHỦ Ý bấm hai lần. Bấm
+  đúp, mạng chậm rồi bấm lại, React gọi lại handler — đều là MỘT ý định.
+* `MAX_RUN_DONG_THOI` không phải cái rào cho việc này: nó chặn run **thứ 6**
+  (429). Run thứ hai vẫn tạo, vẫn `tien.giu_cho_run`, vẫn **trừ tiền lần hai**.
+  Một hạn mức đồng thời không bao giờ là hàng rào chống bấm đúp.
+
+Đã đo qua HTTP trên app thật (23/09): hai POST ⇒ hai run, hai khoản giữ chỗ.
+
+### Thiếu header thì trả 400, KHÔNG cho qua
+
+Đây là câu hỏi đã có **một câu trả lời của nền tảng**, ghi trong
+`platform_core/public_api/idempotency.require_key`: *"Required rather than
+optional on chargeable routes: making it optional means the safe path is the one
+a client has to remember, and the unsafe one is the default."* Cửa này tiêu tiền
+⇒ cùng một luật, và dùng lại luôn hằng độ dài khoá của nó thay vì đặt luật thứ
+hai.
+
+⛔ **Máy chủ TUYỆT ĐỐI không tự sinh khoá.** Mỗi request một khoá mới thì hai
+   lần bấm vẫn là hai khoá khác nhau: không chống được gì, mà lại trông như có
+   chống — tệ hơn hẳn không làm gì, vì nó dập tắt câu hỏi.
+
+Khoá phải sinh ở chỗ biết được "một ý định": **handler của nút bấm**, một
+`crypto.randomUUID()` mỗi lần bấm, giữ nguyên qua mọi lần thử lại của cùng lần
+bấm đó. Đó là việc của `frontend/agent-canvas` — cửa này chỉ từ chối cho to
+tiếng khi client quên, thay vì im lặng trừ tiền hai lần.
 
 ## Vì sao đọc run trả CẢ node CẢ sự kiện trong một lời gọi
 
@@ -38,7 +64,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 
-from fastapi import Depends, HTTPException, Query, Request
+from fastapi import Depends, Header, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -47,6 +73,10 @@ from apps.agent.routes._shared import _user, _verify_json_csrf, router
 from platform_core import credit
 from platform_core.i18n import _ as _t
 from platform_core.models import Workflow, WorkflowRun, WorkflowVersion
+# Dùng lại hằng độ dài khoá của cửa `/api/v1` — một luật, hai cửa. Đặt một trần
+# thứ hai ở đây là mời hai cửa cùng nền tảng trả lời khác nhau cho cùng câu hỏi.
+from platform_core.public_api.idempotency import (MAX_KEY_LENGTH,
+                                                  MIN_KEY_LENGTH)
 from platform_core.registry import RegistryError
 from platform_core.workflow import (dong_co, may_trang_thai, su_kien,
                                     tao_run, thi_hanh)
@@ -68,6 +98,29 @@ _NO_STORE = {"Cache-Control": "no-store"}
 #: 128 KiB để phép kiểm (và chính nhánh này) không phụ thuộc hai trần trùng
 #: khít nhau.
 _GIOI_HAN_INPUTS = 64 * 1024
+
+
+def _khoa_idempotency(raw: str) -> str:
+    """Khoá do CLIENT cấp, bắt buộc. Xem mục ⭐ ở đầu tệp vì sao không sinh hộ.
+
+    Từ chối 400 chứ không cho qua: cửa này tiêu tiền, và một mặc định "cho qua"
+    biến đường AN TOÀN thành đường khách phải nhớ, đường NGUY HIỂM thành mặc
+    định — nguyên văn lý do của `public_api/idempotency.require_key`.
+    """
+    khoa = str(raw or "").strip()
+    if not khoa:
+        raise HTTPException(status_code=400, detail={
+            "ma": "thieu_idempotency_key",
+            "thong_diep": _t('Can header "Idempotency-Key" cho moi lan chay.')})
+    if not MIN_KEY_LENGTH <= len(khoa) <= MAX_KEY_LENGTH:
+        # Trần dưới giữ "1"/"retry" ra khỏi bảng: những giá trị đó đụng nhau
+        # giữa hai request không liên quan, và khi đó idempotency KHÔNG cứu
+        # người dùng mà làm hại họ — lần chạy thứ hai bị nuốt thành phát lại.
+        raise HTTPException(status_code=400, detail={
+            "ma": "idempotency_key_khong_hop_le",
+            "thong_diep": _t('Idempotency-Key phai dai %(min)d den %(max)d ky tu.')
+            % {"min": MIN_KEY_LENGTH, "max": MAX_KEY_LENGTH}})
+    return khoa
 
 
 def _iso(v: datetime | None) -> str | None:
@@ -169,10 +222,13 @@ def _run_json_v3(db: Session, run: WorkflowRun, *, sau: int = 0) -> dict:
 
 @router.post("/api/v3/workflows/{workflow_id}/runs")
 async def v3_tao_run(request: Request, workflow_id: str,
+                     idempotency_key: str = Header(default="",
+                                                   alias="Idempotency-Key"),
                      _identity: str = Depends(require_login),
                      db: Session = Depends(get_db)):
     body = await request.json() if await request.body() else {}
     _verify_json_csrf(request, body if isinstance(body, dict) else {})
+    khoa = _khoa_idempotency(idempotency_key)
     user = _user(request)
     wf = _wf_cua_toi(db, workflow_id, user.id)
     # ⭐ `inputs` đến thẳng từ khách, chưa qua `params_schema` của tool nào —
@@ -197,9 +253,17 @@ async def v3_tao_run(request: Request, workflow_id: str,
             "thong_diep": _t('Du lieu "inputs" vuot qua %(n)d byte.')
             % {"n": _GIOI_HAN_INPUTS}})
     try:
-        run, _moi = tao_run.tao_run(
+        run, moi = tao_run.tao_run(
             db, workflow=wf, owner_id=user.id, trigger_kind="manual",
-            idempotency_key="", inputs=inputs)
+            idempotency_key=khoa, inputs=inputs)
+    except tao_run.TrungKhoaKhacWorkflow:
+        # Cùng khoá, KHÁC workflow ⇒ không phải một lần thử lại mà là hai ý
+        # định khác nhau đội chung một khoá. Phát lại run cũ ở đây sẽ trả về
+        # một run của workflow mà khách không hề gọi.
+        raise HTTPException(status_code=409, detail={
+            "ma": "khoa_dung_cho_workflow_khac",
+            "thong_diep": _t('Idempotency-Key nay da dung cho workflow khac.')
+        }) from None
     except tao_run.KhongCoBanPublish as loi:
         raise HTTPException(status_code=422, detail={
             "ma": "chua_publish", "thong_diep": str(loi)}) from None
@@ -219,7 +283,11 @@ async def v3_tao_run(request: Request, workflow_id: str,
             "ma": "dong_co_chua_san_sang", "thong_diep": str(loi)}) from None
     db.commit()
     db.refresh(run)
-    return JSONResponse(_run_json_v3(db, run), status_code=201,
+    # 201 = vừa tạo · 200 = phát lại run đã có. Cùng quy ước với cửa `/api/v1`
+    # (`server/api/workflows.py`), để một người dùng cả hai cửa không phải học
+    # hai luật. Client phân biệt được "lần bấm này tạo run" với "lần bấm này
+    # trùng lần trước" mà không phải so id.
+    return JSONResponse(_run_json_v3(db, run), status_code=201 if moi else 200,
                         headers=_NO_STORE)
 
 

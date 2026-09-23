@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import re
+import uuid
 
 import pytest
 from fastapi.testclient import TestClient
@@ -112,14 +113,41 @@ def _publish(owner_id: str, *, credit_cap: int = 500) -> str:
         db.close()
 
 
+def _chay(client, token, wf_id, body=None, *, khoa: str | None = None):
+    """POST `/runs` kèm `Idempotency-Key` — cửa này ĐÒI header đó.
+
+    `khoa=None` ⇒ một khoá MỚI mỗi lần gọi, tức "một ý định mới". Phép kiểm
+    nào muốn đo chuyện bấm hai lần thì truyền CÙNG một `khoa`.
+    """
+    return client.post(
+        f"/agent/api/v3/workflows/{wf_id}/runs",
+        headers={"X-CSRF-Token": token,
+                 "Idempotency-Key": khoa or f"t1723-{uuid.uuid4().hex}"},
+        json=body if body is not None else {})
+
+
+def _dem(owner_email: str) -> tuple[int, int]:
+    """(số run, số bút toán `hold`) của một chủ tài khoản."""
+    import platform_core.db as dbmod
+    from platform_core.models import CREDIT_HOLD, CreditEntry, WorkflowRun
+    uid = _uid(owner_email)
+    db = next(dbmod.get_session())
+    try:
+        runs = db.query(WorkflowRun).filter_by(owner_id=uid).count()
+        holds = db.query(CreditEntry).filter_by(
+            user_id=uid, kind=CREDIT_HOLD).count()
+        return runs, holds
+    finally:
+        db.close()
+
+
 def test_tao_run_di_qua_tao_run_nen_CO_giu_tien(api):
     import platform_core.db as dbmod
     from platform_core.models import WorkflowRun
     a, token_a, _, _ = api
     wf_id = _publish(_uid("v3run-a@example.com"))
 
-    r = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
-               headers={"X-CSRF-Token": token_a}, json={})
+    r = _chay(a, token_a, wf_id)
     assert r.status_code == 201, r.text
     body = r.json()
     assert body["status"] == "QUEUED" and body["credit_max"] == 3
@@ -138,8 +166,7 @@ def test_tao_run_di_qua_tao_run_nen_CO_giu_tien(api):
 def test_workflow_cua_nguoi_khac_tra_404_chu_khong_403(api):
     a, token_a, _, _ = api
     wf_id = _publish(_uid("v3run-b@example.com"))
-    r = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
-               headers={"X-CSRF-Token": token_a}, json={})
+    r = _chay(a, token_a, wf_id)
     assert r.status_code == 404
 
 
@@ -154,8 +181,7 @@ def test_workflow_chua_publish_tra_422_co_ma(api):
         db.commit(); wf_id = wf.id
     finally:
         db.close()
-    r = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
-               headers={"X-CSRF-Token": token_a}, json={})
+    r = _chay(a, token_a, wf_id)
     assert r.status_code == 422
     assert r.json()["detail"]["ma"] == "chua_publish"
 
@@ -163,8 +189,7 @@ def test_workflow_chua_publish_tra_422_co_ma(api):
 def test_thieu_credit_tra_402_chu_khong_500(api):
     a, token_a, _, _ = api
     wf_id = _publish(_uid("v3run-a@example.com"), credit_cap=0)
-    r = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
-               headers={"X-CSRF-Token": token_a}, json={})
+    r = _chay(a, token_a, wf_id)
     assert r.status_code == 402
     assert r.json()["detail"]["ma"] == "thieu_credit"
 
@@ -172,8 +197,7 @@ def test_thieu_credit_tra_402_chu_khong_500(api):
 def test_doc_run_tra_node_va_su_kien_tang_dan(api):
     a, token_a, _, _ = api
     wf_id = _publish(_uid("v3run-a@example.com"))
-    run_id = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
-                    headers={"X-CSRF-Token": token_a}, json={}).json()["id"]
+    run_id = _chay(a, token_a, wf_id).json()["id"]
 
     full = a.get(f"/agent/api/v3/runs/{run_id}").json()
     assert full["su_kien"] and full["su_kien"][0]["loai"] == "WorkflowStarted"
@@ -191,8 +215,7 @@ def test_doc_run_tra_node_va_su_kien_tang_dan(api):
 def test_doc_run_cua_nguoi_khac_tra_404(api):
     a, token_a, b, _ = api
     wf_id = _publish(_uid("v3run-a@example.com"))
-    run_id = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
-                    headers={"X-CSRF-Token": token_a}, json={}).json()["id"]
+    run_id = _chay(a, token_a, wf_id).json()["id"]
     assert b.get(f"/agent/api/v3/runs/{run_id}").status_code == 404
 
 
@@ -204,8 +227,8 @@ def test_inputs_khong_phai_object_tra_422_khong_phai_500(api):
     kiểu sai không được rơi xuống 500."""
     a, token_a, _, _ = api
     wf_id = _publish(_uid("v3run-a@example.com"))
-    r = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
-               headers={"X-CSRF-Token": token_a}, json={"inputs": [1, 2]})
+    r = _chay(a, token_a, wf_id,
+               {"inputs": [1, 2]})
     assert r.status_code == 422, r.text
     assert r.json()["detail"]["ma"] == "inputs_khong_hop_le"
 
@@ -215,8 +238,8 @@ def test_inputs_la_chuoi_cung_tra_422_khong_phai_500(api):
     của ca trên (một kiểu sai KHÁC vẫn phải qua cùng một cửa 422)."""
     a, token_a, _, _ = api
     wf_id = _publish(_uid("v3run-a@example.com"))
-    r = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
-               headers={"X-CSRF-Token": token_a}, json={"inputs": "abc"})
+    r = _chay(a, token_a, wf_id,
+               {"inputs": "abc"})
     assert r.status_code == 422, r.text
     assert r.json()["detail"]["ma"] == "inputs_khong_hop_le"
 
@@ -230,9 +253,8 @@ def test_inputs_qua_lon_tra_422_co_ma(api):
     route này) nhưng vượt trần RIÊNG của `inputs` (`_GIOI_HAN_INPUTS`, 64 KiB)."""
     a, token_a, _, _ = api
     wf_id = _publish(_uid("v3run-a@example.com"))
-    r = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
-               headers={"X-CSRF-Token": token_a},
-               json={"inputs": {"x": "a" * 100_000}})
+    r = _chay(a, token_a, wf_id,
+               {"inputs": {"x": "a" * 100_000}})
     assert r.status_code == 422, r.text
     assert r.json()["detail"]["ma"] == "inputs_qua_lon"
 
@@ -250,8 +272,8 @@ def test_tran_inputs_dem_BYTE_chu_khong_dem_ky_tu_thoat(api):
     payload = {"x": "ă" * 15_000}
     assert len(json.dumps(payload).encode()) > 64 * 1024
     assert len(json.dumps(payload, ensure_ascii=False).encode()) < 64 * 1024
-    r = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
-               headers={"X-CSRF-Token": token_a}, json={"inputs": payload})
+    r = _chay(a, token_a, wf_id,
+               {"inputs": payload})
     assert r.status_code == 201, r.text
 
 
@@ -268,8 +290,7 @@ def test_dong_co_chua_dang_ky_tra_503_co_ma_khong_phai_500(api, monkeypatch):
     monkeypatch.setattr(tao_run, "chu_dong_co", _vo)
     a, token_a, _, _ = api
     wf_id = _publish(_uid("v3run-a@example.com"))
-    r = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
-               headers={"X-CSRF-Token": token_a}, json={})
+    r = _chay(a, token_a, wf_id)
     assert r.status_code == 503, r.text
     assert r.json()["detail"]["ma"] == "dong_co_chua_san_sang"
 
@@ -279,8 +300,7 @@ def test_node_chua_co_anh_chup_bao_attempt_0_khong_phai_1(api):
     lượt (Minor #5) — `0` mới đúng."""
     a, token_a, _, _ = api
     wf_id = _publish(_uid("v3run-a@example.com"))
-    run_id = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
-                    headers={"X-CSRF-Token": token_a}, json={}).json()["id"]
+    run_id = _chay(a, token_a, wf_id).json()["id"]
     node = a.get(f"/agent/api/v3/runs/{run_id}").json()["nodes"][0]
     assert node["status"] == "PENDING"
     assert node["attempt"] == 0
@@ -296,8 +316,7 @@ def test_node_co_anh_chup_tra_dung_cost_attempt_job_error(api):
 
     a, token_a, _, _ = api
     wf_id = _publish(_uid("v3run-a@example.com"))
-    run_id = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
-                    headers={"X-CSRF-Token": token_a}, json={}).json()["id"]
+    run_id = _chay(a, token_a, wf_id).json()["id"]
 
     db = next(dbmod.get_session())
     try:
@@ -344,8 +363,7 @@ def test_su_kien_chen_giua_doc_va_seq_cuoi_khong_duoc_mat(api, monkeypatch):
 
     a, token_a, _, _ = api
     wf_id = _publish(_uid("v3run-a@example.com"))
-    run_id = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
-                    headers={"X-CSRF-Token": token_a}, json={}).json()["id"]
+    run_id = _chay(a, token_a, wf_id).json()["id"]
 
     goc = su_kien.doc
     da_xen: list[int] = []
@@ -394,8 +412,7 @@ def test_con_tro_poll_la_seq_CUOI_LO_chu_khong_phai_max_cua_bang(api,
 
     a, token_a, _, _ = api
     wf_id = _publish(_uid("v3run-a@example.com"))
-    run_id = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
-                    headers={"X-CSRF-Token": token_a}, json={}).json()["id"]
+    run_id = _chay(a, token_a, wf_id).json()["id"]
 
     goc = su_kien.doc
     da_xen: list[int] = []
@@ -426,8 +443,7 @@ def test_lo_rong_giu_nguyen_con_tro_khach_dang_cam(api):
     """
     a, token_a, _, _ = api
     wf_id = _publish(_uid("v3run-a@example.com"))
-    run_id = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
-                    headers={"X-CSRF-Token": token_a}, json={}).json()["id"]
+    run_id = _chay(a, token_a, wf_id).json()["id"]
     full = a.get(f"/agent/api/v3/runs/{run_id}").json()
     tiep = a.get(f"/agent/api/v3/runs/{run_id}",
                  params={"sau": full["seq_cuoi"]}).json()
@@ -452,8 +468,7 @@ DIEU_HUONG = {"Sec-Fetch-Mode": "navigate"}
 def test_het_phien_giua_luc_poll_tra_401_json_khong_phai_303_html(api):
     a, token_a, _, _ = api
     wf_id = _publish(_uid("v3run-a@example.com"))
-    run_id = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
-                    headers={"X-CSRF-Token": token_a}, json={}).json()["id"]
+    run_id = _chay(a, token_a, wf_id).json()["id"]
 
     a.cookies.clear()          # phiên hết hạn GIỮA LÚC vòng poll đang chạy
     r = a.get(f"/agent/api/v3/runs/{run_id}", headers=GOI_DU_LIEU,
@@ -469,8 +484,7 @@ def test_het_phien_khong_co_fetch_metadata_van_401_neu_accept_json(api):
     cùng một tiêu chí, không phải tiêu chí thứ hai."""
     a, token_a, _, _ = api
     wf_id = _publish(_uid("v3run-a@example.com"))
-    run_id = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
-                    headers={"X-CSRF-Token": token_a}, json={}).json()["id"]
+    run_id = _chay(a, token_a, wf_id).json()["id"]
     a.cookies.clear()
     r = a.get(f"/agent/api/v3/runs/{run_id}",
               headers={"Accept": "application/json"}, follow_redirects=False)
@@ -494,10 +508,93 @@ def test_doi_chung_client_khong_khai_gi_giu_nguyen_hanh_vi_cu(api):
     máy-gọi-máy gửi `Accept: */*` không được đổi nghĩa vì bản vá này."""
     a, token_a, _, _ = api
     wf_id = _publish(_uid("v3run-a@example.com"))
-    run_id = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
-                    headers={"X-CSRF-Token": token_a}, json={}).json()["id"]
+    run_id = _chay(a, token_a, wf_id).json()["id"]
     a.cookies.clear()
     r = a.get(f"/agent/api/v3/runs/{run_id}", headers={"Accept": "*/*"},
               follow_redirects=False)
     assert r.status_code == 303, r.status_code
     assert r.headers["location"].startswith("/login?next=")
+
+
+# ── Bấm "Chạy ngay" hai lần KHÔNG được trừ tiền hai lần ────────────────────
+#
+# `MAX_RUN_DONG_THOI` chặn run THỨ 6 (429). Nó không hề chặn run thứ HAI —
+# run đó vẫn `tien.giu_cho_run` và vẫn trừ tiền. Hàng rào duy nhất đúng nghĩa
+# là một khoá do CLIENT cấp, vì chỉ client biết "một lần bấm" là gì.
+
+def test_bam_hai_lan_cung_khoa_chi_MOT_run_va_MOT_but_toan_hold(api):
+    """⭐ Mệnh đề đắt nhất: hai POST cùng `Idempotency-Key` ⇒ ĐÚNG MỘT run và
+    ĐÚNG MỘT khoản giữ chỗ. Đếm cả hai vì chúng hỏng độc lập được: một cửa trả
+    cùng `id` nhưng vẫn gọi `giu_cho_run` lần nữa cũng trừ tiền hai lần."""
+    a, token_a, _, _ = api
+    wf_id = _publish(_uid("v3run-a@example.com"))
+    khoa = "canvas-bam-dup-0001"
+
+    r1 = _chay(a, token_a, wf_id, khoa=khoa)
+    r2 = _chay(a, token_a, wf_id, khoa=khoa)
+
+    assert r1.status_code == 201, r1.text
+    # Mệnh đề TIỀN trước: nó là thứ làm khách mất credit, và nó phải là dòng
+    # đỏ đầu tiên khi bản vá hỏng — không phải một mã trạng thái.
+    assert _dem("v3run-a@example.com") == (1, 1), (
+        "bam hai lan da tao them run/hold => TRU TIEN HAI LAN")
+    assert r1.json()["id"] == r2.json()["id"]
+    # 200 chứ không 201: lần hai KHÔNG tạo gì, và client đọc được điều đó.
+    assert r2.status_code == 200, r2.text
+
+
+def test_doi_chung_hai_khoa_KHAC_nhau_van_tao_HAI_run(api):
+    """Vế đối chứng: đừng vá thành "luôn luôn một run". Hai lần bấm THẬT (hai
+    khoá) vẫn phải ra hai lượt chạy — nếu không thì người dùng không chạy
+    workflow của mình hai lần được nữa."""
+    a, token_a, _, _ = api
+    wf_id = _publish(_uid("v3run-a@example.com"))
+    r1 = _chay(a, token_a, wf_id, khoa="canvas-bam-lan-1-aaaa")
+    r2 = _chay(a, token_a, wf_id, khoa="canvas-bam-lan-2-bbbb")
+    assert r1.status_code == 201 and r2.status_code == 201, r2.text
+    assert r1.json()["id"] != r2.json()["id"]
+    assert _dem("v3run-a@example.com") == (2, 2)
+
+
+def test_thieu_idempotency_key_tra_400_co_ma(api):
+    """Thiếu header ⇒ 400, KHÔNG cho qua và KHÔNG tự sinh khoá hộ.
+
+    Máy chủ sinh khoá = mỗi request một khoá mới = không chống được gì mà
+    trông như có chống. Phép kiểm khẳng định luôn rằng **không run nào** được
+    tạo — một 400 đi kèm một run đã tạo là thứ tệ nhất trong cả ba lựa chọn.
+    """
+    a, token_a, _, _ = api
+    wf_id = _publish(_uid("v3run-a@example.com"))
+    # ⚠️ KHÔNG đi qua `_chay` — helper đó luôn gắn một khoá. Ca này đo đúng
+    #    cái vắng mặt của header, nên nó phải gọi thẳng.
+    r = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
+               headers={"X-CSRF-Token": token_a}, json={})
+    assert r.status_code == 400, r.text
+    assert r.json()["detail"]["ma"] == "thieu_idempotency_key"
+    assert _dem("v3run-a@example.com") == (0, 0)
+
+
+def test_khoa_qua_ngan_tra_400_co_ma(api):
+    """`"1"`, `"retry"` đụng nhau giữa hai request không liên quan — khi đó
+    idempotency không cứu người dùng mà nuốt mất lần chạy thứ hai của họ.
+    Dùng lại trần độ dài của `public_api/idempotency`, không đặt trần thứ hai."""
+    a, token_a, _, _ = api
+    wf_id = _publish(_uid("v3run-a@example.com"))
+    r = _chay(a, token_a, wf_id, khoa="retry")
+    assert r.status_code == 400, r.text
+    assert r.json()["detail"]["ma"] == "idempotency_key_khong_hop_le"
+    assert _dem("v3run-a@example.com") == (0, 0)
+
+
+def test_khoa_dung_lai_cho_workflow_KHAC_tra_409_co_ma(api):
+    """Cùng khoá + khác workflow = hai ý định đội chung một khoá. Phát lại run
+    cũ ở đây sẽ trả về một run của workflow khách không hề gọi."""
+    a, token_a, _, _ = api
+    uid = _uid("v3run-a@example.com")
+    wf1 = _publish(uid)
+    wf2 = _publish(uid, credit_cap=0)   # đã nạp ở lần _publish trước
+    khoa = "canvas-khoa-dung-lai-01"
+    assert _chay(a, token_a, wf1, khoa=khoa).status_code == 201
+    r = _chay(a, token_a, wf2, khoa=khoa)
+    assert r.status_code == 409, r.text
+    assert r.json()["detail"]["ma"] == "khoa_dung_cho_workflow_khac"

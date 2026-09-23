@@ -18,12 +18,11 @@ from __future__ import annotations
 # ruff: noqa: F811 -- imported pytest fixture is intentionally requested below.
 
 from tests.test_1723_v3_tao_va_doc_run import (  # noqa: F401
-    CC, _publish, _uid, api)
+    CC, _chay, _publish, _uid, api)
 
 
 def _tao(a, token, wf_id) -> str:
-    r = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
-               headers={"X-CSRF-Token": token}, json={})
+    r = _chay(a, token, wf_id)
     assert r.status_code == 201, r.text
     return r.json()["id"]
 
