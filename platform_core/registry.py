@@ -510,6 +510,29 @@ class ToolSpec:
     #    `eval`** — nó duyệt AST rồi tự tính từng nút.
     timeout_expr: str = ""
 
+    #: `{"vao": {"<tham_so>": "<kieu>"}, "ra": {"<khoa_returns>": "<kieu>"}}`
+    #: — ánh xạ tên tham số / khoá kết quả sang **kiểu cổng** của `he_kieu`.
+    #:
+    # 🔴 VÌ SAO KHÔNG SUY HẾT BẰNG MÁY. Adapter (`workflow/luoc_do.py`) suy
+    #    được đa số: `{"type": "image"}` là cổng `image`. Nhưng `json` thì
+    #    không: `response_format` của `text.chat` là một **thiết lập**, còn
+    #    `transcript` của `video.subtitle` là **dữ liệu chảy từ node trước**.
+    #    Máy không phân biệt được hai thứ đó, và đoán sai ở đây là một cổng
+    #    không ai nối được (hoặc một ô nhập biến mất khỏi form).
+    #
+    # ⭐ Rỗng = adapter tự suy (đường mặc định, 19 tool hôm nay). Khai từng
+    #    khoá là **đè lên** phần suy, không phải thay cả bảng.
+    cong: dict = field(default_factory=dict)
+
+    #: `False` = ẩn tool khỏi palette **workflow** (không phải khỏi runtime).
+    #
+    # ⭐ Khác `customer_visible` có chủ ý: `customer_visible=False` là
+    #    soft-retire của palette Agent cũ; `workflow=False` nói *"tool này
+    #    không có nghĩa như một NODE"* (vd tool chỉ dùng trong hội thoại
+    #    ChatLTT, cần ngữ cảnh hội thoại mà đồ thị không có). Gộp hai cờ là
+    #    mất một trong hai câu.
+    workflow: bool = True
+
     def lane_for(self, params: dict) -> str:
         """`job_type` thật cho một lượt gọi, theo tham số app đã khai.
 
@@ -1102,6 +1125,32 @@ def _validate_hop_dong_v2(manifest: AppManifest, tool: ToolSpec) -> None:
             continue
         if isinstance(v, bool) or not isinstance(v, int) or v < 0:
             raise RegistryError(f"{ten} resource[{k!r}] phải là int >= 0, nhận {v!r}")
+
+    if not isinstance(tool.workflow, bool):
+        raise RegistryError(f"{ten} workflow phải là bool, nhận {tool.workflow!r}")
+
+    if not isinstance(tool.cong, dict):
+        raise RegistryError(f"{ten} cong phải là dict")
+    thua = set(tool.cong) - {"vao", "ra"}
+    if thua:
+        raise RegistryError(f"{ten} cong có khoá lạ: {sorted(thua)} "
+                            f"(chỉ ['ra', 'vao'])")
+    # Nạp trễ, cùng lý do với `bieu_thuc` ở dưới: `registry` là thứ được nạp
+    # sớm nhất trong tiến trình.
+    from platform_core.workflow import he_kieu
+
+    for phia, nguon in (("vao", tool.params_schema or {}),
+                        ("ra", tool.returns or {})):
+        for khoa, kieu in (tool.cong.get(phia) or {}).items():
+            if khoa not in nguon:
+                raise RegistryError(
+                    f"{ten} cong[{phia!r}] trỏ tới {khoa!r} — khong co trong "
+                    f"{'params_schema' if phia == 'vao' else 'returns'} "
+                    f"({sorted(nguon)})")
+            if not he_kieu.hop_le(str(kieu)):
+                raise RegistryError(
+                    f"{ten} cong[{phia!r}][{khoa!r}] kieu cong khong hop le: "
+                    f"{kieu!r}")
 
     if tool.timeout_expr:
         # Nạp trễ: `bieu_thuc` không phụ thuộc gì trong `platform_core`, nhưng
