@@ -46,7 +46,7 @@ from apps.agent.routes._shared import _user, _verify_json_csrf, router
 from platform_core import credit
 from platform_core.i18n import _ as _t
 from platform_core.models import Workflow, WorkflowRun, WorkflowVersion
-from platform_core.workflow import su_kien, tao_run, thi_hanh
+from platform_core.workflow import dong_co, su_kien, tao_run, thi_hanh
 from server.auth.session import require_login
 from server.deps import get_db
 
@@ -165,3 +165,24 @@ def v3_doc_run(request: Request, run_id: str, sau: int = Query(0, ge=0),
     user = _user(request)
     run = _run_cua_toi(db, run_id, user.id)
     return JSONResponse(_run_json_v3(db, run, sau=sau), headers=_NO_STORE)
+
+
+@router.post("/api/v3/runs/{run_id}/cancel")
+async def v3_huy_run(request: Request, run_id: str,
+                     _identity: str = Depends(require_login),
+                     db: Session = Depends(get_db)):
+    body = await request.json() if await request.body() else {}
+    _verify_json_csrf(request, body if isinstance(body, dict) else {})
+    user = _user(request)
+    run = _run_cua_toi(db, run_id, user.id)
+    # ⭐ `huy_run` trả `False` khi run ĐÃ ở trạng thái kết thúc. Đó không phải
+    #    lỗi hệ thống (500) và cũng không phải thành công (200): thao tác
+    #    KHÔNG xảy ra, và lý do đọc được bằng máy.
+    if not dong_co.huy_run(db, run.id, "nguoi dung huy tren Canvas"):
+        db.rollback()
+        raise HTTPException(status_code=409, detail={
+            "ma": "da_ket_thuc",
+            "thong_diep": _t('Lượt chạy đã kết thúc.')})
+    db.commit()
+    db.refresh(run)
+    return JSONResponse(_run_json_v3(db, run), headers=_NO_STORE)
