@@ -4460,6 +4460,30 @@ msgstr "Notes"
 msgid "Ghi chú nghiên cứu"
 msgstr "Research notes"
 
+#: server/routes/dashboard.py server/templates/_platform_footer.html server/templates/ghi_cong_ben_thu_ba.html
+msgid "Ghi công bên thứ ba"
+msgstr "Third-party attribution"
+
+#: server/templates/ghi_cong_ben_thu_ba.html
+msgid "Một số phần mềm/model mã nguồn mở nền tảng dùng để vận hành yêu cầu ghi công tác giả theo giấy phép của chúng. Bảng dưới đây liệt kê những phụ thuộc đó — sinh trực tiếp từ bản khai giấy phép nội bộ, không gõ tay, để không lệch với thực tế đang chạy."
+msgstr "Some open-source software/models the platform runs on require attribution under their licenses. The table below lists those dependencies — generated directly from the internal licensing record, not hand-copied, so it cannot drift from what is actually running."
+
+#: server/templates/ghi_cong_ben_thu_ba.html
+msgid "Dùng để"
+msgstr "Used for"
+
+#: server/templates/ghi_cong_ben_thu_ba.html
+msgid "Phần mềm / model"
+msgstr "Software / model"
+
+#: server/templates/ghi_cong_ben_thu_ba.html
+msgid "Giấy phép"
+msgstr "License"
+
+#: server/templates/ghi_cong_ben_thu_ba.html
+msgid "Không có mục nào cần ghi công vào lúc này."
+msgstr "There is nothing requiring attribution right now."
+
 msgid "Ghi danh giọng"
 msgstr "Voice enrolment"
 
@@ -6529,6 +6553,10 @@ msgstr "Not enough credits."
 #, fuzzy
 msgid "Không đặt"
 msgstr "Not enough credits."
+
+#: apps/auto_scan_video/giai_doan_ban_bien_tap.py:190
+msgid "Không đọc được hình của {thieu}/{tong} cảnh nên chưa thể cắt thông minh. Hãy chạy lại, hoặc chọn chế độ giữ nguyên hình."
+msgstr "Could not read the frames for {thieu}/{tong} scenes, so smart cutting is not possible. Please retry, or choose the keep-original-picture mode."
 
 #: apps/upscalevideo/jobs.py:256
 msgid "Không đọc được luồng video."
