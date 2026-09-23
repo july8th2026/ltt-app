@@ -192,10 +192,13 @@ def test_huy_bo_luot_va_don_phan_ngay(mt):
         db.close()
 
 
-def test_tran_2GiB_KEP_duoi_int4_cua_cot_expected_size():
-    """`upload_sessions.expected_size` la Integer (int4 tren PostgreSQL)."""
+def test_tran_dung_2GiB_sau_khi_cot_expected_size_la_biginteger():
+    """F-08 da sua (`platform_core/upload_sessions.py`: `expected_size` nay la
+    BigInteger, migration `d7bc2f8fbf0f`) -> `TRAN_BYTE` khong con phai kep
+    duoi `2**31-1` de tranh `DataError` khi tep dung 2 GiB; no di dung theo
+    `TRAN_BEN_VUNG` = 2 GiB = 2**31."""
     from apps.auto_scan_video import tai_len
-    assert tai_len.TRAN_BYTE <= 2 ** 31 - 1
+    assert tai_len.TRAN_BYTE == tai_len.TRAN_BEN_VUNG == 2 ** 31
     assert tai_len.so_phan(tai_len.TRAN_BYTE) <= 10000          # tran R2
     assert tai_len.CO_PHAN >= 5 * 1024 * 1024                   # san R2
     assert tai_len.CO_PHAN < 100 * 1000 * 1000                  # tran Cloudflare
