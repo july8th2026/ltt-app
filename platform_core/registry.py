@@ -438,7 +438,7 @@ class ToolSpec:
 
     # ═══ HỢP ĐỒNG NODE V2 (`25_26 §2`) ═══════════════════════════════════════
     #
-    # Sáu trường, tất cả CÓ MẶC ĐỊNH ⇒ **không app nào phải sửa để lên V2**.
+    # Tám trường, tất cả CÓ MẶC ĐỊNH ⇒ **không app nào phải sửa để lên V2**.
     # Đó là ràng buộc thiết kế, không phải may mắn: `02 §3` chốt rằng V2 mở
     # rộng `ToolSpec` chứ không dựng một registry thứ hai, vì dự án này đã trả
     # giá nhiều lần cho mô hình hai nguồn chân lý.
@@ -1070,7 +1070,7 @@ RESOURCE_KEYS = frozenset({"class", "vram_min_mb", "slots", "est_duration_s"})
 
 
 def _validate_hop_dong_v2(manifest: AppManifest, tool: ToolSpec) -> None:
-    """Sáu trường V2 (`25_26 §2`) — kiểm lúc NẠP, không đợi lúc chạy.
+    """Tám trường V2 (`25_26 §2`) — kiểm lúc NẠP, không đợi lúc chạy.
 
     ⭐ Vì sao kiểm ở đây chứ không ở chỗ dùng: ba trong sáu trường quyết định
        **tiền** hoặc **khôi phục sau sự cố** (`side_effect`, `idempotency`,
@@ -1135,22 +1135,31 @@ def _validate_hop_dong_v2(manifest: AppManifest, tool: ToolSpec) -> None:
     if thua:
         raise RegistryError(f"{ten} cong có khoá lạ: {sorted(thua)} "
                             f"(chỉ ['ra', 'vao'])")
-    # Nạp trễ, cùng lý do với `bieu_thuc` ở dưới: `registry` là thứ được nạp
-    # sớm nhất trong tiến trình.
-    from platform_core.workflow import he_kieu
+    if tool.cong:
+        # Nạp trễ VÀ có điều kiện, cùng lý do với `bieu_thuc` ở dưới: `registry`
+        # là thứ được nạp sớm nhất trong tiến trình, và mặc định của 19 tool
+        # hôm nay là `cong={}` ⇒ không tool nào phải trả giá cho cạnh nhập
+        # registry → workflow mà nó không dùng.
+        from platform_core.workflow import he_kieu
 
-    for phia, nguon in (("vao", tool.params_schema or {}),
-                        ("ra", tool.returns or {})):
-        for khoa, kieu in (tool.cong.get(phia) or {}).items():
-            if khoa not in nguon:
+        for phia, nguon in (("vao", tool.params_schema or {}),
+                            ("ra", tool.returns or {})):
+            ban = tool.cong.get(phia)
+            if ban is None:
+                continue
+            if not isinstance(ban, dict):
                 raise RegistryError(
-                    f"{ten} cong[{phia!r}] trỏ tới {khoa!r} — khong co trong "
-                    f"{'params_schema' if phia == 'vao' else 'returns'} "
-                    f"({sorted(nguon)})")
-            if not he_kieu.hop_le(str(kieu)):
-                raise RegistryError(
-                    f"{ten} cong[{phia!r}][{khoa!r}] kieu cong khong hop le: "
-                    f"{kieu!r}")
+                    f"{ten} cong[{phia!r}] phải là dict, nhận {ban!r}")
+            for khoa, kieu in ban.items():
+                if khoa not in nguon:
+                    raise RegistryError(
+                        f"{ten} cong[{phia!r}] trỏ tới {khoa!r} — không có trong "
+                        f"{'params_schema' if phia == 'vao' else 'returns'} "
+                        f"({sorted(nguon)})")
+                if not he_kieu.hop_le(str(kieu)):
+                    raise RegistryError(
+                        f"{ten} cong[{phia!r}][{khoa!r}] kiểu cổng không hợp lệ: "
+                        f"{kieu!r}")
 
     if tool.timeout_expr:
         # Nạp trễ: `bieu_thuc` không phụ thuộc gì trong `platform_core`, nhưng
