@@ -234,7 +234,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ---
 
-## Task 3: `409 insufficient_credit` phải nói cần bao nhiêu, còn bao nhiêu (V-22)
+## Task 3 ✅ XONG (`94d4edaa`): `409 insufficient_credit` phải nói cần bao nhiêu, còn bao nhiêu (V-22)
 
 **Vì sao:** `luong.py:1307` viết `except ThieuCredit:` — bắt mà **không giữ ngoại lệ** — rồi dựng
 `model_failure(...)` không truyền `limit`/`actual`. Lớp `ThieuCredit` sinh ra chính để mang
@@ -281,9 +281,10 @@ def test_doi_chung_am_khong_truyen_thi_khong_co_hai_truong():
     assert "actual" not in than
 ```
 
-⚠️ Tên hàm dựng thân (`than_v1` hay thuộc tính `ltt_error`) **phải tra lại** trong
-`platform_core/llm/model_failure.py` trước khi chạy; hai nhánh `hasattr` ở trên là để test
-không chết vì đoán sai tên, nhưng **phải sửa lại cho gọn** sau khi biết tên thật.
+✅ **ĐÃ TRA (23/09) — plan đoán SAI, đây là tên thật:** `ModelFailure` là dataclass có
+thuộc tính trực tiếp `.limit` / `.actual`, và phương thức dựng dict thân v1 tên là
+**`as_detail()`** — không phải `than_v1()` và không phải thuộc tính `ltt_error`. Viết thẳng
+`f.as_detail()`, bỏ hẳn nhánh `hasattr` phỏng đoán ở trên.
 
 - [ ] **Step 2: Chạy để chắc nó xanh (đây là phép kiểm hạ tầng sẵn có)**
 
@@ -485,7 +486,7 @@ tài khoản đó.
 
 ---
 
-## Task 6: Canh cửa `/health/ready` của máy B (N-05 — sửa lại so với đề xuất ban đầu)
+## Task 6 ✅ XONG (`5cdba614`): Canh cửa `/health/ready` của máy B (N-05 — sửa lại so với đề xuất ban đầu)
 
 **🔴 Đính chính quan trọng:** đề xuất ban đầu ("thêm thông tin GPU vào `/live`") là **SAI**.
 `llm_gateway/api.py` ghi rõ lệnh cấm: *"⛔ KHÔNG thêm bất cứ thứ gì vào đây. Mỗi trường thêm vào
