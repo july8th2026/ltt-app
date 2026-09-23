@@ -298,6 +298,31 @@ gỡ `ltt_turbo`, ép `vi` như bot gốc, mở app, giá khuyến nghị.
 - **Còn mở:** cùng lỗi email-làm-`user_id` ở `audio_pause`, `prompt_canh`, `video_assembly` (còn đóng với khách; đã tạo
   việc riêng); nhãn ô "Hệ phiên âm" dài bị cắt trên desktop (thẩm mỹ); L3 tổng kết phiên.
 
+## 2026-09-24 (rạng sáng) — `video_crawler`: trang kênh, kho tài khoản dùng được khi cào, ghim "Đang phát triển"
+
+Deploy `63623d77` (13:52) → `2a604682` (01:02). Nghiệm thu production sau mỗi lượt (băm 0 lệch/thiếu/thừa).
+
+- **Kho tài khoản hệ thống dùng được ở ĐƯỜNG CÀO** (trước đó chỉ đường tìm kênh mượn kho ⇒ dán cookie xong khách
+  vẫn bị từ chối, cả hạng mục không tới được ai). Kho rỗng ⇒ từ chối ở cửa vào, không nhận job rồi hoàn tiền.
+- **Trang kênh**: tìm kênh theo TÊN (YouTube + Bilibili ẩn danh), thẻ kênh có ảnh đại diện **qua proxy LTT**
+  (đo: 10/10 ảnh, 0 gọi thẳng CDN), lọc tab/ngày/thời lượng; nút "Mở trên nền tảng". Link rút gọn theo chuyển
+  hướng CÓ KIỂM (allowlist + chặn IP nội bộ, ≤ 3 bước).
+- **Nghiệm thu nền cần phiên bằng cookie THẬT của chủ dự án** (`nguon_phien: "kho"` xác nhận cookie được dùng):
+  Douyin trả **rỗng** trong 1,3 s; TikTok `No working app info is available`; Xiaohongshu chưa có tài khoản.
+  ⇒ Chủ dự án chốt: **ghim "Đang phát triển"** — cờ + lý do ở registry (một nguồn), chip khoá + nhãn + tooltip,
+  chặn ở cửa vào. Điều kiện GỠ ghim ghi ở `PLATFORM_MATRIX.md`. Đối chứng: YouTube không bị chặn oan
+  (production: xem trước ra 10 video).
+- **Fixture `vc_go_ghim`** (`tests/conftest.py`): ghim là quyết định sản phẩm, không được giết lưới test của
+  logic nền bị ghim — nếu không, lúc gỡ ghim sẽ không còn gì bắt hồi quy.
+- **Nền tảng**: `platform_core/jobs.py` thêm `mo_ta_loi` / `loi_cho_khach` / `voi_cau_khach` — 12 app không còn
+  lộ tên lớp Python cho khách; lỗi TẠM THỜI vẫn nói được câu của mình. Bánh cóc `tests/test_2140`.
+- **Vận hành nhiều phiên**: lượt gate CHUNG (Workflow V2 gom `main` + `phien/01b` + `phien/vcm-dpt`) — một lượt
+  thay vì ba, và nó bắt được một lỗi chặn MỌI phiên (`test_2300` báo oan vì bộ dò nhận TẠO ở hai từ vựng, XOÁ ở một).
+- **Ba bài học đo lường (chi tiết ở `SO_LOI.md` W5 + memory):** (1) `TaskStop` giết lớp bọc, tiến trình gate con
+  vẫn sống và giữ khoá — "đã gọi lệnh dừng" ≠ "đã nhả khoá"; (2) tôi báo "giao diện im lặng khi 0 kết quả" nhưng
+  template CÓ câu — script chỉ đếm phần tử, không đọc vùng khách đọc; (3) tôi báo `main` đỏ ở tệp phiên khác trong
+  khi họ đã sửa — đọc `git show main:<tệp>` thay vì tệp trong cây của mình.
+
 ## 2026-09-23 (sáng) — `video_crawler` lên production: sự cố ffmpeg, kho tài khoản hệ thống, lỗi job không lộ tên lớp
 
 Deploy `7676a758` (02:43) rồi `bcf05be1` (10:24). Cờ `LTT_VIDEO_CRAWLER=1` đã bật (chủ dự án cấp quyền 23/09).
