@@ -83,7 +83,7 @@ SQLAlchemy (nền tảng, test `pytest`), PowerShell 7 (phát hành), Tauri/Rust
 | 17 | Giảm độ trễ mỗi bước | ⚫ **ĐÓNG — giới hạn phần cứng, đã tách bằng số.** 226/226 lượt LLM: **sinh token 62,2 %** (4 878,9 s) · chờ suất/TTFT 23,3 % · chạy công cụ 14,5 % (82 % của phần đó là `pwsh` chạy thật). Phần mềm không chạm được vào 62,2 % ⇒ **không vờ tối ưu** |
 | 18 | Chạy tiếp khi đóng app | 🟡 **0,5** — tra xong: **phần lớn đã có** (khay giữ sidecar sống, autostart, `lttcode-cli.exe` chạy thật 60,7 s). H18 chấm lại 45 → 78. Còn: chủ dự án quyết có làm scheduler mức hệ điều hành không |
 | 19 | Git/PR thành công cụ gốc | ✅ **1** — `18054a2` + `cb6e596`. Model **tự** gọi `git_trang_thai`/`git_khac_biet`/`git_log` khi được hỏi "kho có gì đang thay đổi", **không ai nhắc**. Manifest thật chỉ có 4 công cụ chỉ-đọc — **không** `git_commit`/`git_stage`/`git_stash` |
-| 20 | Khởi động app (17→49→107 s) | 🟡 **0,5** — hai mốc mới đã chạy trên bản 0.2.7 và **lật kết luận**: vỏ Tauri **16 ms** · `stage_dsh_home` **7,4 s** · sidecar ready **4,8–11,4 s** ⇒ cộng ≈ 12–19 s, trong khi tổng thật **54,5 s**. **35–42 s (65–77 %) nằm ở chặng WebView2/SPA chưa ai đo.** Giả thuyết quét AV **không giải thích được**. Mốc 3 thành việc chính |
+| 20 | Khởi động app (17→49→107 s) | 🟡 **0,5** — vỏ Tauri **16 ms** · `stage_dsh_home` **7,8 s** · sidecar ready **11,4 s** ≈ 19 s, tổng **54,5 s**. ⛔ **Đính chính 2 lần**: 35 s hụt **KHÔNG** ở WebView2/SPA — `boot_wall_sec` dừng ở **cùng mốc** sidecar ready (`p05_smoke.ps1:64-67`), chặng SPA nằm **ngoài** phép đo. Hụt nằm **trước dòng log Rust đầu tiên** ⇒ nạp/quét `LTTCODE.exe` + DLL. Việc tới: lấy giờ tạo tiến trình từ OS |
 
 ### Ngoài plan — việc sinh ra từ lượt diễn tập D1
 
@@ -1556,9 +1556,38 @@ Luật *"dùng lại trước, tự viết sau"* đã được thoả: đã tra,
   | **Cộng lại** | **≈ 12 – 19 s** | |
   | **Tổng thật đo được** | **54,5 s** (`boot_wall_sec`) | |
 
-  🔴 **Còn ≈ 35 – 42 s không ai đo — chiếm 65–77 % thời gian khởi động.** Nó nằm trọn trong
-  **chặng thứ tư: mở WebView2 → SPA DSH tải xong**, đúng cái mốc số 3 mà ta **cố ý chưa làm**
-  vì "chưa có hook, phải đụng mã thượng nguồn".
+  🔴 **Còn ≈ 35 s không ai đo — chiếm khoảng 2/3 thời gian khởi động.**
+
+### ⛔ ĐÍNH CHÍNH LẦN HAI (24/09): 35 s đó **KHÔNG** nằm ở WebView2/SPA
+
+Ở lượt ghi trước tôi kết luận khoảng trống nằm ở *"mở WebView2 → SPA DSH tải xong"* và đề nghị
+nâng mốc 3 thành việc chính. **Sai.** Làn `r-t20` đi đọc **chỗ bấm giờ** thay vì tin bảng:
+
+> `tools/p05_smoke.ps1:64-67` — `$t0 = Get-Date` ngay sau `Start-Process`, rồi
+> `Wait-Until { Count-Ready }` đợi đúng dòng **`==== sidecar ready in`** xuất hiện.
+
+⇒ `boot_wall_sec` **dừng ở CÙNG cái mốc** "sidecar ready". Nó **kết thúc TRƯỚC khi**
+`win.eval()` trỏ webview sang DSH (`sidecar.rs:1338-1343`), và bước kiểm CDP "DSH UI hiện" là
+**bước 3 riêng, không cộng vào**. Chặng WebView2/SPA **không nằm trong 54,5 s** — nên nó không
+thể là chỗ mất 35 s.
+
+**Khoảng trống thật nằm ở đầu kia:** giữa lúc **OS tạo tiến trình** và dòng log Rust **đầu tiên**
+(`PROCESS_START` đặt ở đầu `run()`). Cộng lại từ log: `stage_dsh_home` 7,8 s + `sidecar ready`
+11,4 s ≈ **19 s**; tổng 54,5 s ⇒ **~35 s biến mất TRƯỚC khi Rust chạy dòng đầu**.
+
+**Và điều này phục hồi giả thuyết quét AV mà tôi đã vội bác** — chỉ khác đối tượng: không phải
+cây `sidecar/` (chặng đó đo được, 7,4 s), mà là **nạp + quét chính `LTTCODE.exe` và DLL**, lần
+đầu sau khi cài đè một bộ **293 MB**. Đúng kiểu: phép đo trước bác "AV quét cây sidecar", tôi đọc
+thành "AV không liên quan" — **hai mệnh đề khác nhau**.
+
+- [ ] **Step 3 mới — mốc rẻ nhất và đúng chỗ nhất: lấy giờ tạo tiến trình từ OS.**
+  Thay vì `Instant::now()` lúc `run()`, đọc **thời điểm OS tạo tiến trình** (`GetProcessTimes`
+  trên Windows) và in chênh lệch. Một dòng log là lộ ngay 35 s đó thuộc về ai.
+  ⛔ **Chưa cần** `initialization_script` hay `on_page_load` — chúng đo chặng **ngoài** khoảng
+  đang hụt. Giữ lại cho lần sau nếu muốn đo tới "SPA tương tác được".
+- [ ] **Step 4 — đo NGUỘI và ẤM tách bạch.** Lượt 54,5 s vừa rồi chạy **ngay sau khi cài đè**,
+  tức lần đầu OS chạm vào bộ nhị phân mới. Phải có một lượt **ấm** (chạy lại lần hai) để tách
+  "giá của lần đầu" khỏi "giá mỗi lần".
 
   **Hai giả thuyết trước đều sai hướng:**
   - *"Vỏ Tauri chậm"* — **16 ms**. Coi như bằng không.
