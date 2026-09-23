@@ -24,12 +24,19 @@ export type TruongLuocDo = {
   'x-ltt-kieu'?: string
   'x-ltt-control'?: string
   'x-ltt-nhan'?: Record<string, string>
+  // `nguon` la MOT MARKER gui client (`app_property` | `piece_property`),
+  // khong phai ten truong noi bo — `luoc_do.mot_tham_so()` sinh tu
+  // `params_schema.depends_on`; spec §4.6 cam ten co che ro ra JSON cong khai.
+  'x-ltt-dong'?: { nguon: string; prop: string }
 }
 
 export type LuocDo = {
   type: 'object'
   properties: Record<string, TruongLuocDo>
   required: string[]
+  //: `luoc_do.sang_json_schema()` LUON tra khoa nay; de tuy chon vi client chi
+  //  doc, khong phan quyet.
+  additionalProperties?: boolean
 }
 
 export type Gia = {
