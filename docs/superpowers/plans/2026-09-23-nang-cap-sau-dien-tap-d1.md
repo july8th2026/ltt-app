@@ -71,14 +71,14 @@ SQLAlchemy (nền tảng, test `pytest`), PowerShell 7 (phát hành), Tauri/Rust
 |---|---|---|
 | 11 | A1 nút "Chạy tiếp" | 🟡 **0,5** — hàm `coTheNoiLai` + test xong (`670770b`); **nút giao diện CHẶN**: slot không có hàm resend, cần thiết kế mới |
 | 12 | C2 nén bằng 3.5 | 🟡 **0,5** — mã xong (`3326d7f`), **chờ đo** tốc độ + chất lượng tóm tắt trên phiên dài |
-| 13 | MCP dùng thật (nay 0/166) | 🟡 **0,5** — **bốn MCP đều nối được thật** (9+2+3+26 công cụ, đã gọi). Nguyên nhân 0/166 là **danh sách bị cắt mất mô tả**: `listingMaxTokens: 2200` (`cordis.patch.yml:344`) ⇒ catalog tụt xuống **tên trần, không một chữ giải thích**; chú thích ngay trên tự khai con số tính cho tập MCP nhỏ hơn tập hiện tại. Còn: nâng trần + sinh `dsh-tool-search.json` với `groups` nói *khi nào dùng* |
+| 13 | MCP dùng thật (nay 0/166) | 🟡 **0,5** — `36344e0`. Bốn MCP **nối được thật**. `groups` nói *khi nào dùng* đã sinh (`$DSH_HOME/dsh-tool-search.json`, có đối chứng âm: JSON hỏng không chặn khởi động). 🔴 **Nhưng nguyên nhân CHƯA chứng minh**: đo thật ra **1 740 / 2 038 token**, đều **dưới trần cũ 2 200** ⇒ trần không giải thích được hành vi names-only ở D1. Phán quyết phải chờ lượt mở app |
 | 14 | Gỡ trần 50 của kế hoạch/mục tiêu | ⬜ chưa |
 | 15 | Agent do người dùng định nghĩa | ✅ **1** — `fd00269`. Năng lực đã có sẵn, **đã chạy thật**. Tài liệu `docs/LTTCODE/AGENT_TU_DINH_NGHIA.md`. **V-25 đã vá**: khoá frontmatter không được hỗ trợ giờ **có cảnh báo**, riêng `tools`/`disallowedTools` nói rõ hậu quả. 8/8 phép, **có đối chứng âm**. Vá theo khuôn `postinstall` + `UPSTREAM_DIVERGENCE.md` (DIV-007) vì mã nằm trong `node_modules` gitignored |
 | 16 | Credit mỗi lượt cạnh token | ⚫ **ĐÓNG — chặn ở tầng engine.** Tra ba vòng, mỗi vòng bác một phương án: (1) cổng không có trường credit, quyết toán chạy sau byte cuối; (2) `client.js` là **loopback remote page ⇒ không có Tauri IPC**; (3) từ sidecar thì `TokenUsage` là interface đóng và projection **khoá cứng đồng bộ, cấm I/O**. Cần hạ tầng engine mới ⇒ chuyển `HANG_MUC_BAN_SAU.md`. **Không chỗ nào hiện số tiền sai** |
 | 17 | Giảm độ trễ mỗi bước | ⚫ **ĐÓNG — giới hạn phần cứng, đã tách bằng số.** 226/226 lượt LLM: **sinh token 62,2 %** (4 878,9 s) · chờ suất/TTFT 23,3 % · chạy công cụ 14,5 % (82 % của phần đó là `pwsh` chạy thật). Phần mềm không chạm được vào 62,2 % ⇒ **không vờ tối ưu** |
 | 18 | Chạy tiếp khi đóng app | 🟡 **0,5** — tra xong: **phần lớn đã có** (khay giữ sidecar sống, autostart, `lttcode-cli.exe` chạy thật 60,7 s). H18 chấm lại 45 → 78. Còn: chủ dự án quyết có làm scheduler mức hệ điều hành không |
 | 19 | Git/PR thành công cụ gốc | 🟡 **0,5** — **Cordis KHÔNG tắt được công cụ lẻ**: đơn vị nhỏ nhất là cả plugin (`cordis-plugin-loader` `disabled` = *"Stops the entry"*; tiền lệ DIV-003 phải fork nguyên plugin). ⇒ bác cả "bundle rồi tắt nhóm ghi" lẫn "fork để giữ phần tầm thường nhất". **Quyết định mới: tự viết bốn công cụ CHỈ-ĐỌC**, không có đường ghi nào |
-| 20 | Khởi động app (17→49→107 s) | 🟡 **0,5** — **3/4 chặng KHÔNG CÓ MỐC**. Chặng đo được lấy giá trị lớn nhất (55,3 s) vẫn **thấp hơn** 107,7 s ⇒ **≥ 50 s nằm trong chỗ mù**. Giả thuyết: quét AV cây `sidecar/` **45 536 tệp / 1,4 GB** — `sidecar.rs:48-50` đã ghi sẵn lý do đó khi đặt `BOOT_TIMEOUT`. Còn: thêm 3 mốc rồi mới đo lại |
+| 20 | Khởi động app (17→49→107 s) | 🟡 **0,5** — `36344e0`. Thêm **2/3 mốc** (`PROCESS_START: OnceLock<Instant>` ở đầu `run()`; đầu `setup()` + cuối `stage_dsh_home()`). Mốc 3 (SPA "interactive") **không làm** — chưa có hook, phải đụng mã thượng nguồn, dừng đúng brief. ⚠️ `cargo test` **chưa chạy được** (khoá máy bị phiên khác giữ 47 phút) |
 
 ### Ngoài plan — việc sinh ra từ lượt diễn tập D1
 
@@ -1095,8 +1095,38 @@ thật để kiểm trang phát hành. Một tính năng không ai gọi thì b�
   đề** (`## ${group}`), nên nội dung "khi nào dùng" phải nhét vào chính tên nhóm — bốn nhóm đã
   soạn sẵn trong báo cáo của làn `b-mcp`.
 
+- [x] **Step 3 phần mã ✅ (`36344e0`)** — nhưng **kèm một mâu thuẫn chưa giải được, không giấu:**
+
+  Trần đã nâng 2200 → 4000, và **đã đo thật** (spawn từng máy chủ MCP, lấy mô tả thật, dùng chính
+  `estimateTokens`/`buildGroupedManifest` của `dsh-tool-search`):
+
+  | Tập công cụ | Token đo được | So với trần cũ 2200 |
+  |---|---|---|
+  | 4 MCP mặc định (40 công cụ) | **1 740** | **dưới** |
+  | + GitHub 8 công cụ đọc | **2 038** | **vẫn dưới** |
+
+  🔴 **Cả hai đều dưới trần CŨ.** Nghĩa là `listingMaxTokens: 2200` **không giải thích được** hành
+  vi names-only quan sát ở D1. Giả thuyết ban đầu của tôi **chưa được chứng minh**.
+
+  Ba cách đọc, chưa cách nào bị loại:
+  1. **Tập hoãn ở D1 lớn hơn 40 + 8** — catalog hoãn chứa **mọi** công cụ hoãn, không riêng MCP;
+     phép đo này chỉ đếm phần MCP ⇒ có thể đang đo một tập con của thủ phạm;
+  2. **lệch phiên bản** giữa gói lúc D1 chạy và gói hiện cài;
+  3. tier tụt vì lý do khác hẳn (ngân sách động theo ngữ cảnh, chứ không theo hằng số này).
+
+  ⇒ **Nâng trần là thay đổi rẻ và an toàn, nhưng KHÔNG được ghi là "đã sửa nguyên nhân".**
+  Phán quyết duy nhất có giá trị là Step 4 — mở app, xem catalog **có mô tả chưa**. Nếu vẫn
+  names-only thì cách đọc (1) đúng, và phải đếm **toàn bộ** tập hoãn chứ không chỉ MCP.
+
+  Phần `groups` thì độc lập với chuyện này và chắc chắn có ích: `mcp.rs::write_tool_search_groups`
+  sinh `$DSH_HOME/dsh-tool-search.json` mỗi lần khởi động (best-effort), bốn nhóm mang sẵn *khi nào
+  dùng* trong chính tên nhóm. **Đối chứng âm có:** thiếu tệp · JSON hỏng · `groups` sai hình ⇒ rơi
+  về `{}` + cảnh báo, **không bao giờ throw, không chặn khởi động**.
+
 - [ ] **Step 4: Đo lại trên phiên thật** — chạy một việc **bắt buộc phải dùng MCP** (ví dụ: kiểm
   một trang web thật). **Đạt khi: MCP được gọi ≥ 1 lần mà không phải nhắc trong prompt.**
+  ⚠️ Bước này giờ mang **hai** câu hỏi, không phải một: (a) MCP có được gọi không; (b) catalog
+  hoãn **đã có mô tả chưa** — tức trần có thật sự là thủ phạm không.
 
 - [ ] **Step 5: Commit**
 
