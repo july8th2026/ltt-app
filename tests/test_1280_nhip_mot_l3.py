@@ -255,6 +255,21 @@ def test_nhanh_CHUA_DO_DUOC_phai_dung_TRUOC_nhanh_ha_cap():
     assert i_tu_choi < i_ha_cap
 
 
+def test_TU_CHOI_phai_nam_TRUOC_khoi_xep_hang_khoa():
+    """Một lượt gọi sai mốc phải trả về NGAY, không chiếm `cpu_nhieu`.
+
+    🔑 Nếu cú từ chối nằm SAU khối xếp hàng, mỗi lần ai đó gõ thiếu `--tu` sẽ
+       khoá cả máy vài phút chỉ để in ra một câu từ chối — đúng lúc luật 24/09
+       đang siết việc giữ khoá trong lúc chờ. Tính chất này đang ĐÚNG; ghim lại
+       để một lần refactor dời khối không lặng lẽ làm hỏng nó.
+    """
+    ma = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
+    i_tu_choi = ma.index("if steps is None and CHUA_DO_DUOC in ghi_chu_pham_vi:")
+    i_xep_hang = ma.index("XEP HANG, DUNG CHAY TRANH")
+    assert i_tu_choi < i_xep_hang, (
+        "cu tu choi phai chay TRUOC khi xin khoa may")
+
+
 def test_ma_KHONG_con_duong_nao_nang_len_day_du_tu_luot_hep():
     """🔑 Bánh cóc: chặn đường quay lại. Một bản vá vô tình dựng lại nhánh nâng
     cấp sẽ làm bài này đỏ."""
