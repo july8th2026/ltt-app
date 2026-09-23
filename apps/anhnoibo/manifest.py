@@ -147,6 +147,14 @@ MANIFEST = AppManifest(
         },
         returns={"image_keys": "image[]", "prompt": "text"},
 
+        # Hợp đồng node V2 (spec §4.5). `class="api"`: việc nằm ở provider /
+        # máy B — máy A không giữ VRAM nào cho job này.
+        side_effect="external",
+        resource={"class": "api", "slots": 0},
+        idempotency={"key_fields": ("prompt", "negative_prompt", "mode",
+                                    "model", "count", "image_key",
+                                    "image_keys")},
+
         api_exposed=True,
         api_contract={
             "scopes": ("jobs:create",),

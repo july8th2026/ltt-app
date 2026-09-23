@@ -73,6 +73,15 @@ MANIFEST = AppManifest(
         returns={"video_key": "video", "srt_key": "text", "ass_key": "text"},
         verifiable=("technical",),
 
+        side_effect="external",
+        resource={"class": "cpu", "slots": 1},
+        # ⛔ `duration_s` KHÔNG vào khoá: nền tảng tự đo bằng ffprobe
+        #    (`measured_from`), nên nó đổi giữa hai lượt gọi giống hệt nhau và
+        #    làm khử trùng KHÔNG BAO GIỜ khớp (`registry.py` §idempotency).
+        idempotency={"key_fields": ("video_key", "transcript", "style_id",
+                                    "segment_mode", "output_format", "quality",
+                                    "export_srt")},
+
         # ── Public API (H35.10, mở 2026-08-29) ───────────────────────────────
         # Mở được nhờ H35.10a: `duration_s` khai `measured_from` ở trên, nên máy
         # chủ đo từ chính tệp đã tải lên TRƯỚC khi tính giá. Trước đó giá tin

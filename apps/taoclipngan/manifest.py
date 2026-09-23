@@ -58,6 +58,13 @@ MANIFEST = AppManifest(
         },
         # Handler trả metadata từng clip ({video_key,title,score,duration_s}).
         returns={"clips": "json"},
+        side_effect="external",
+        resource={"class": "gpu", "vram_min_mb": 6000, "slots": 1},
+        idempotency={"key_fields": ("video_key", "target_clip_count", "tier",
+                                    "min_clip_duration_sec",
+                                    "max_clip_duration_sec", "aspect_ratio",
+                                    "genre", "language", "platforms",
+                                    "brand_preset")},
         verifiable=("technical", "vlm_judge"),
     ),),
 

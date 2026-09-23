@@ -105,6 +105,13 @@ MANIFEST = AppManifest(
         returns={"image_keys": "image[]", "prompt": "text"},
         verifiable=("vlm_judge",),
 
+        # Hợp đồng node V2 (spec §4.5). `class="api"`: việc nằm ở provider /
+        # máy B — máy A không giữ VRAM nào cho job này.
+        side_effect="external",
+        resource={"class": "api", "slots": 0},
+        idempotency={"key_fields": ("prompt", "model", "aspect_ratio", "count",
+                                    "image_key", "image_keys")},
+
         # ── Public API (Q92, wave 1) ─────────────────────────────────────────
         api_exposed=True,
         api_contract={
@@ -172,6 +179,11 @@ MANIFEST = AppManifest(
         },
         returns={"image_keys": "image[]", "prompt": "text"},
         verifiable=("vlm_judge",),
+
+        side_effect="external",
+        resource={"class": "api", "slots": 0},
+        idempotency={"key_fields": ("prompt", "model", "aspect_ratio", "count",
+                                    "image_key", "image_keys")},
     )),
 
     enabled=True,

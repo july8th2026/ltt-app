@@ -353,6 +353,14 @@ MANIFEST = AppManifest(
         },
         returns={"content": "text", "tool_calls": "json[]", "usage": "json"},
 
+        side_effect="external",
+        resource={"class": "api", "slots": 0},
+        idempotency={"key_fields": ("messages", "model", "max_tokens",
+                                    "temperature", "top_p", "seed",
+                                    "reasoning_effort", "response_format",
+                                    "tools", "tool_choice",
+                                    "parallel_tool_calls", "stop")},
+
         # ── Public API (Q92) ─────────────────────────────────────────────────
         api_exposed=True,
         api_contract={

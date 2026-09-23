@@ -122,6 +122,11 @@ MANIFEST = AppManifest(
         returns={"image_keys": "image[]", "prompt": "text"},
         verifiable=("vlm_judge",),
 
+        side_effect="external",
+        resource={"class": "api", "slots": 0},
+        idempotency={"key_fields": ("topic", "model", "phong_cach",
+                                    "kieu_trend", "aspect_ratio", "count")},
+
         # ── Public API (Q92, wave 1) ─────────────────────────────────────────
         api_exposed=True,
         api_contract={

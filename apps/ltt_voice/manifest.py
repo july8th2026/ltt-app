@@ -334,6 +334,13 @@ MANIFEST = AppManifest(
             },
             returns={"audio_key": "audio", "text": "text"},
 
+            # Hợp đồng node V2 (spec §4.5). VRAM + suất lấy từ CHÍNH manifest này
+            # (`gpu_vram_mb["ltt_voice.synthesize"]`, `admission_slots`).
+            side_effect="external",
+            resource={"class": "gpu", "vram_min_mb": 2000, "slots": 1},
+            idempotency={"key_fields": ("text", "voice_id", "preset", "speed",
+                                        "language")},
+
             # 🔴 MỘT GPU = MỘT VIỆC, và cả ba cửa (job/sync/stream) phải giành
             #    cùng một slot. Không khai thì cửa đồng bộ đi vòng qua hàng đợi
             #    và hai lượt cùng đập vào một card (Q114).
