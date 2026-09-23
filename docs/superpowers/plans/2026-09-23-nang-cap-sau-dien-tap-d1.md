@@ -74,16 +74,16 @@ SQLAlchemy (nền tảng, test `pytest`), PowerShell 7 (phát hành), Tauri/Rust
 
 | Task | Việc | Trạng thái |
 |---|---|---|
-| 11 | A1 nút "Chạy tiếp" | 🟡 **0,5** — hàm `coTheNoiLai` + test xong (`670770b`); **nút giao diện CHẶN**: slot không có hàm resend, cần thiết kế mới |
+| 11 | A1 nút "Chạy tiếp" | 🟡 **0,5** — chặn ở **kiến trúc DSH** (`dsh-agent-loop` cố ý không expose `retry()`). Phần TIỀN đã sáng: quyết toán **theo token đã sinh thật** ⇒ chạy tiếp **không** trùng; trùng chỉ khi **cùng một request** bị gửi lại. Hạ tầng idempotency **đã có sẵn** (`credit_entries` khoá `job_id`=`request_id`), chỉ thiếu khoá ở cửa stream — mà `protocol.py:244-250` **đã viết sẵn luật đó**. Cần chủ dự án quyết: lỗi hạ tầng của TA thì khách có trả phần đã sinh không |
 | 12 | C2 nén bằng 3.5 | 🟡 **0,5** — mã xong (`3326d7f`), **chờ đo** tốc độ + chất lượng tóm tắt trên phiên dài |
 | 13 | MCP dùng thật (nay 0/166) | ✅ **1** — **0/166 → tự gọi ngay lượt đầu**. Catalog đã có mô tả + tiêu đề nhóm *khi nào dùng*; model tự `tool_search` → `tool_describe` → gọi `mcp__chrome-devtools__navigate`, **không ai nhắc**. ⚠️ Đạt kết quả nhưng **chưa cô lập nguyên nhân** (nâng trần + `groups` đi cùng một bản) |
-| 14 | Gỡ trần 50 của kế hoạch/mục tiêu | 🟡 **0,5** — **tiền đề của task SAI**: `exit_plan_mode` **không hề có trong tool-set**, chỉ mount khi bật `/plan on`; `create_goal` thì prompt hệ thống **dặn đừng dùng** cho việc một lượt. Model không làm sai — **bảng chấm hỏi sai câu**. Cần quyết hướng trước khi sửa |
+| 14 | Gỡ trần 50 của kế hoạch/mục tiêu | 🟡 **0,5** — **tiền đề SAI**: `exit_plan_mode` **không có trong tool-set** (chỉ mount khi `/plan on`); `create_goal` thì prompt hệ thống **dặn đừng dùng** cho việc một lượt. Model không làm sai — **thang đo phạt một hành vi đúng**. ✅ Đã chốt đi đường *giữ `/plan on` là lệnh người dùng* (Claude Code cũng vậy); còn: tài liệu + sửa câu hỏi của bảng chấm |
 | 15 | Agent do người dùng định nghĩa | ✅ **1** — chạy thật: phiên con `867b4329…` đúng vai, `agentModel:"ltt-3.5"` trong khi cha chạy `ltt-3.8`. ⚠️ **Đính chính**: vá V-25 **không ăn về vận hành** — cảnh báo vào buffer RAM, **không kênh nào đưa ra ngoài**. Lập lỗi riêng, không nhận V-25 đã đóng |
 | 16 | Credit mỗi lượt cạnh token | ⚫ **ĐÓNG — chặn ở tầng engine.** Tra ba vòng, mỗi vòng bác một phương án: (1) cổng không có trường credit, quyết toán chạy sau byte cuối; (2) `client.js` là **loopback remote page ⇒ không có Tauri IPC**; (3) từ sidecar thì `TokenUsage` là interface đóng và projection **khoá cứng đồng bộ, cấm I/O**. Cần hạ tầng engine mới ⇒ chuyển `HANG_MUC_BAN_SAU.md`. **Không chỗ nào hiện số tiền sai** |
 | 17 | Giảm độ trễ mỗi bước | ⚫ **ĐÓNG — giới hạn phần cứng, đã tách bằng số.** 226/226 lượt LLM: **sinh token 62,2 %** (4 878,9 s) · chờ suất/TTFT 23,3 % · chạy công cụ 14,5 % (82 % của phần đó là `pwsh` chạy thật). Phần mềm không chạm được vào 62,2 % ⇒ **không vờ tối ưu** |
 | 18 | Chạy tiếp khi đóng app | 🟡 **0,5** — tra xong: **phần lớn đã có** (khay giữ sidecar sống, autostart, `lttcode-cli.exe` chạy thật 60,7 s). H18 chấm lại 45 → 78. Còn: chủ dự án quyết có làm scheduler mức hệ điều hành không |
 | 19 | Git/PR thành công cụ gốc | ✅ **1** — `18054a2` + `cb6e596`. Model **tự** gọi `git_trang_thai`/`git_khac_biet`/`git_log` khi được hỏi "kho có gì đang thay đổi", **không ai nhắc**. Manifest thật chỉ có 4 công cụ chỉ-đọc — **không** `git_commit`/`git_stage`/`git_stash` |
-| 20 | Khởi động app (17→49→107 s) | 🟡 **0,5** — hai mốc mới đã chạy trên bản 0.2.7 và **lật kết luận**: vỏ Tauri **16 ms** · `stage_dsh_home` **7,4 s** · sidecar ready **4,8–11,4 s** ⇒ cộng ≈ 12–19 s, trong khi tổng thật **54,5 s**. **35–42 s (65–77 %) nằm ở chặng WebView2/SPA chưa ai đo.** Giả thuyết quét AV **không giải thích được**. Mốc 3 thành việc chính |
+| 20 | Khởi động app (17→49→107 s) | 🟡 **0,5** — vỏ Tauri **16 ms** · `stage_dsh_home` **7,8 s** · sidecar ready **11,4 s** ≈ 19 s, tổng **54,5 s**. ⛔ **Đính chính 2 lần**: 35 s hụt **KHÔNG** ở WebView2/SPA — `boot_wall_sec` dừng ở **cùng mốc** sidecar ready (`p05_smoke.ps1:64-67`), chặng SPA nằm **ngoài** phép đo. Hụt nằm **trước dòng log Rust đầu tiên** ⇒ nạp/quét `LTTCODE.exe` + DLL. Việc tới: lấy giờ tạo tiến trình từ OS |
 
 ### Ngoài plan — việc sinh ra từ lượt diễn tập D1
 
@@ -1020,6 +1020,81 @@ phải gõ lại lần nào** cho nhóm lỗi tạm thời.
 
 ---
 
+
+### 🔴 CHẶN THẬT nằm ở KIẾN TRÚC DSH, không ở slot giao diện (làn `r-t11`, 24/09)
+
+Làn trước báo *"slot giao diện không có hàm resend"*. **Đúng hệ quả, sai chỗ.** Đọc mã thượng nguồn:
+
+| Câu | Trả lời | Nguồn |
+|---|---|---|
+| Nội dung tin nhắn có còn giữ không | **CÓ** — không ở draft (draft bị xoá ngay khi gửi thành công) mà ở **lịch sử agent** (durable, `source.kind=="user"`). Bong bóng chat render từ event log, không phải từ draft | `dsh-client-ui-conversation/lib/client.js:2959`, ~13085, 14332 |
+| Có API gửi lại không | **KHÔNG.** `dsh-agent-loop` chỉ expose `send/followup/steer/inject/cancel` — **không có `retry()`** | `dsh-agent-loop/lib/index.js:781-795` |
+| Vì sao không có | **Cố ý.** Cơ chế "promptless retry turn" của DSH **chỉ chạy đồng bộ bên trong waterfall `agent/request-error`**; đóng lượt lỗi xong là **hết cửa**. `Agent`/`ReactLoopAgent` cố tình không expose `retry()` | note thượng nguồn `2026-07-27-request-error-retry-action.md` |
+| Lúc giao diện hiện lỗi thì sao | Cửa đó **đã đóng** — `coTheNoiLai` (`ui-lttcode/src/client.js:3599`) chạy **sau** khi lượt đã terminal | |
+
+Thứ duy nhất làm được trong tầm plugin: đọc nội dung lượt cũ rồi gọi `followup()` với **nội dung y
+hệt** — tức tạo **một lượt user MỚI** (trùng bong bóng), không phải "chạy tiếp" thật.
+
+### ⛔ Và câu chặn cứng là TIỀN — không giải được từ phía khách
+
+**`requestId` chỉ dedupe RPC *admit prompt*, KHÔNG liên quan quyết toán.** Billing tính ở `finally`
+phía cổng. Phía `client.js` **không có** `stream:<hex>` hay id nào để hỏi máy chủ *"lượt cũ đã tính
+tiền chưa"*.
+
+⇒ Bấm "Chạy tiếp" cho một lượt **đã quyết toán** là **trừ tiền hai lần**. Đúng câu tôi ghim vào
+brief, và câu đó **chưa ai trả lời được**.
+
+### ⇒ Task 11 chuyển câu hỏi sang phía NỀN TẢNG
+
+Việc còn lại **không nằm ở `LTTCODEAPP`**. Phải trả lời ở `llm_gateway` trước:
+
+- [ ] Cổng có nhận **khoá idempotency** cho một lượt không? Không có thì thêm được không?
+- [ ] Quyết toán credit có **idempotent** theo khoá đó không — gửi lại cùng khoá thì **không**
+      trừ lần hai?
+- [ ] Lượt **đứt giữa chừng** (khách mất mạng) đã bị tính tiền chưa? (Liên quan sự cố 19/09:
+      *khách ngắt bị tính là lỗi B*.)
+
+### ✅ BA CÂU ĐÃ CÓ ĐÁP ÁN (làn `r-tien`, 24/09) — và chặn NHỎ hơn tôi tưởng
+
+| Câu | Đáp án | Nguồn |
+|---|---|---|
+| Sổ credit khoá theo gì | Bảng `credit_entries` append-only, **khoá idempotent là `job_id`**, mà với `/api/v1/messages` thì **`job_id` CHÍNH LÀ `request_id`** | `platform_core/models.py:787-798`, `:520`; `credit.py:367-389` |
+| `request_id` từ đâu | **Server tự sinh** (`thanh_toan.ma_luot`), **không** do khách gửi | `luong.py:1438, 779` |
+| Cổng có Idempotency-Key không | **Không — CỐ Ý.** `requires_idempotency_key=False  # Q107`, lý do ghi rõ: *"không CLI nào gửi nó"* và nền tảng *"không tiếp nối luồng"*. Nhưng **khuôn đã có sẵn** ở `/chat/completions`, `/jobs`, `/workflows` | `server/api/streaming.py:1,21-23,191`; `public_api/idempotency.py` |
+| **Ngắt giữa chừng có bị tính trọn không** | **KHÔNG — tính theo token ĐÃ SINH THẬT.** `GeneratorExit` → `khach_ngat=True`, `finally` gọi `quyet_toan(..., dem, ...)` với bộ đếm tới lúc ngắt. Hợp đồng khai `settles_from_measured_usage=True`, và `protocol.py:235-243` **ép buộc** mọi STREAM tính phí phải khai — thiếu thì app **không khởi động được** | `luong.py:1932-1954`; `streaming.py:202` |
+| Có giữ-rồi-hoàn không | **Có**, và hold mang **đúng `request_id`** | `credit.giu_cho:276-322`, `credit.hoan:479-502` |
+
+### ⇒ Nỗi lo "trừ tiền hai lần" của tôi ĐÚNG MỘT NỬA — và nửa sai là nửa quan trọng
+
+Vì quyết toán **theo token đã sinh thật**, nên:
+
+- Lượt chết vì 502 **chưa sinh token** ⇒ tính ≈ **0**. Chạy tiếp **không** trừ hai lần.
+- Lượt chết **sau khi đã sinh một phần** ⇒ khách bị tính **đúng phần đã nhận**. Chạy tiếp là
+  **sinh mới thật**, tốn thật ⇒ tính tiền là **đúng**, không phải trùng.
+- **Trùng thật chỉ xảy ra khi cùng MỘT request bị gửi lại** (mạng chập, client tự retry mà không
+  thấy phản hồi). ⇒ Đây đúng là thứ `Idempotency-Key` sinh ra để chặn.
+
+⇒ Chặn của Task 11 **không phải** "tiền không giải được", mà hẹp hơn nhiều: **thiếu một khoá
+idempotency ở cửa stream**, trong khi cả hạ tầng cho nó **đã có sẵn**.
+
+> 🔑 **Và nền tảng đã tự viết sẵn đúng luật này rồi**, `protocol.py:244-250`:
+> *"a resumable STREAM must require an Idempotency-Key — resume without one bills the same work twice."*
+> Tức người thiết kế đã lường trước ngày có tính năng tiếp nối. Hôm nay là ngày đó.
+
+- [ ] **Bước 1 (nền tảng):** cho `/api/v1/messages` nhận `Idempotency-Key` **chỉ ở nhánh tiếp nối**
+      (Q107 vẫn đúng cho lượt thường — đừng bắt mọi khách gửi). `chuan_bi()` có key thì **tái dùng
+      `request_id`** thay vì sinh mới; `giu_cho`/`quyet_toan` vốn đã idempotent theo `job_id` sẽ tự chặn.
+      Đặt `requires_idempotency_key=True` cho nhánh đó — `protocol.py` sẽ **tự bắt lỗi** nếu quên.
+- [ ] **Bước 2:** xác nhận `operation` mới không đụng namespace của các op cũ trong `ApiIdempotencyRecord`.
+- [ ] **Bước 3 (khách):** chỉ sau khi bước 1 xanh mới bàn tới nút bấm.
+
+### ⚠️ Một câu CHÍNH SÁCH, không phải câu kỹ thuật — cần chủ dự án quyết
+
+Lượt chết vì **hạ tầng CỦA TA** (502 từ chính cổng của mình) mà đã sinh một phần token:
+**khách có phải trả phần đó không?**
+
+Mã hiện tại: **có** — tính theo token đã sinh, không phân biệt lỗi do ai. Đúng về kỹ thuật, nhưng
+là một lựa chọn kinh doanh chứ không phải một sự thật. ⛔ Không tự đổi sổ sách. Ghi ra để hỏi.
 ## Task 12 ⏳ MÃ XONG (`3326d7f`), CHỜ ĐO: Nén ngữ cảnh bằng model nhỏ (C2: 45 → 80)
 
 **Số đo hiện tại:** **188,6 s** và **243,7 s** cho hai lần nén trong cùng một phiên — hơn **7 phút**
@@ -1212,12 +1287,27 @@ không tạo mục tiêu (vì đó là **một lượt**, đúng điều prompt 
 yếu — một cái **không tồn tại trừ khi người dùng bật**, cái kia **cố ý không kích hoạt** cho việc
 một lượt. Chấm 50 vì "không bằng chứng" là **phạt một hành vi đúng**.
 
-- [ ] **Step 1 mới — quyết định trước, đừng sửa vội.** Hai đường, khác hẳn nhau:
-  1. **Chế độ kế hoạch là thứ người dùng bật (`/plan on`)** — giống Claude Code. Nếu vậy thì việc
-     cần làm là **tài liệu + chỗ dễ thấy**, không phải sửa điều kiện kích hoạt. Và bảng chấm phải
-     sửa lại cách hỏi.
-  2. **Muốn nó tự bật cho việc lớn** — đó là thay đổi hành vi thật, cần định nghĩa "việc lớn" và
-     có rủi ro làm phiền ở việc nhỏ.
+### ✅ QUYẾT ĐỊNH (24/09): đi đường 1 — chế độ kế hoạch là thứ NGƯỜI DÙNG bật
+
+Hai đường đã cân:
+
+| Đường | Bác / chọn |
+|---|---|
+| Để model **tự bật** chế độ kế hoạch cho "việc lớn" | ❌ Phải định nghĩa "việc lớn" — mà chính phép đo vừa rồi cho thấy một việc **9 phút, 18 lần gọi công cụ** vẫn là **một lượt**. Ngưỡng nào cũng sẽ bật nhầm ở việc nhỏ, và bật nhầm thì phiền hơn không có |
+| ✅ **Giữ `/plan on` là lệnh của người dùng** | **Claude Code cũng thế** — chế độ kế hoạch ở đó cũng do người dùng vào, không tự nhảy. Ta đang chấm điểm so với Claude Code mà lại đòi LTTCODE làm thứ Claude Code không làm |
+
+⇒ Việc thật còn lại **không phải sửa hành vi model**, mà là **hai chỗ đang thiếu**:
+
+- [ ] **Step 1 — cho người dùng BIẾT là có.** Hiện `/plan on` không có ở đâu dễ thấy. Cần: một
+  dòng trong tài liệu LTTCODE, và cân nhắc gợi ý trong giao diện khi phiên dài ra.
+- [ ] **Step 2 — sửa cách hỏi của bảng chấm.** Mục E2+E3 (`docs/LTTCODE/reports/CHAM_DIEM_VAN_HANH_THAT_23_09.md`)
+  hiện phạt 50 điểm vì *"có công cụ mà không dùng"*. Câu đó **sai hai lần**: `exit_plan_mode`
+  **không có** trong tool-set (chỉ mount khi `/plan on`), còn `create_goal` thì prompt hệ thống
+  **dặn đừng dùng** cho việc một lượt. Câu đúng phải là: *"bật `/plan on` rồi thì kế hoạch có chạy
+  đúng không, và người dùng có tìm thấy nó không"*.
+
+  ⚠️ **Đây là lỗi của thang đo, không phải của sản phẩm.** Một thang đo phạt hành vi đúng sẽ đẩy
+  người ta đi sửa thứ không hỏng — đúng loại bẫy `docs/BAY_TRONG_CONG_CHAT_LUONG.md` ghi.
 - [ ] **Step 2:** Làm theo đường đã chọn.
 - [ ] **Step 3:** Sửa lại mục E2+E3 của bảng chấm cho đúng câu hỏi.
 
@@ -1541,9 +1631,38 @@ Luật *"dùng lại trước, tự viết sau"* đã được thoả: đã tra,
   | **Cộng lại** | **≈ 12 – 19 s** | |
   | **Tổng thật đo được** | **54,5 s** (`boot_wall_sec`) | |
 
-  🔴 **Còn ≈ 35 – 42 s không ai đo — chiếm 65–77 % thời gian khởi động.** Nó nằm trọn trong
-  **chặng thứ tư: mở WebView2 → SPA DSH tải xong**, đúng cái mốc số 3 mà ta **cố ý chưa làm**
-  vì "chưa có hook, phải đụng mã thượng nguồn".
+  🔴 **Còn ≈ 35 s không ai đo — chiếm khoảng 2/3 thời gian khởi động.**
+
+### ⛔ ĐÍNH CHÍNH LẦN HAI (24/09): 35 s đó **KHÔNG** nằm ở WebView2/SPA
+
+Ở lượt ghi trước tôi kết luận khoảng trống nằm ở *"mở WebView2 → SPA DSH tải xong"* và đề nghị
+nâng mốc 3 thành việc chính. **Sai.** Làn `r-t20` đi đọc **chỗ bấm giờ** thay vì tin bảng:
+
+> `tools/p05_smoke.ps1:64-67` — `$t0 = Get-Date` ngay sau `Start-Process`, rồi
+> `Wait-Until { Count-Ready }` đợi đúng dòng **`==== sidecar ready in`** xuất hiện.
+
+⇒ `boot_wall_sec` **dừng ở CÙNG cái mốc** "sidecar ready". Nó **kết thúc TRƯỚC khi**
+`win.eval()` trỏ webview sang DSH (`sidecar.rs:1338-1343`), và bước kiểm CDP "DSH UI hiện" là
+**bước 3 riêng, không cộng vào**. Chặng WebView2/SPA **không nằm trong 54,5 s** — nên nó không
+thể là chỗ mất 35 s.
+
+**Khoảng trống thật nằm ở đầu kia:** giữa lúc **OS tạo tiến trình** và dòng log Rust **đầu tiên**
+(`PROCESS_START` đặt ở đầu `run()`). Cộng lại từ log: `stage_dsh_home` 7,8 s + `sidecar ready`
+11,4 s ≈ **19 s**; tổng 54,5 s ⇒ **~35 s biến mất TRƯỚC khi Rust chạy dòng đầu**.
+
+**Và điều này phục hồi giả thuyết quét AV mà tôi đã vội bác** — chỉ khác đối tượng: không phải
+cây `sidecar/` (chặng đó đo được, 7,4 s), mà là **nạp + quét chính `LTTCODE.exe` và DLL**, lần
+đầu sau khi cài đè một bộ **293 MB**. Đúng kiểu: phép đo trước bác "AV quét cây sidecar", tôi đọc
+thành "AV không liên quan" — **hai mệnh đề khác nhau**.
+
+- [ ] **Step 3 mới — mốc rẻ nhất và đúng chỗ nhất: lấy giờ tạo tiến trình từ OS.**
+  Thay vì `Instant::now()` lúc `run()`, đọc **thời điểm OS tạo tiến trình** (`GetProcessTimes`
+  trên Windows) và in chênh lệch. Một dòng log là lộ ngay 35 s đó thuộc về ai.
+  ⛔ **Chưa cần** `initialization_script` hay `on_page_load` — chúng đo chặng **ngoài** khoảng
+  đang hụt. Giữ lại cho lần sau nếu muốn đo tới "SPA tương tác được".
+- [ ] **Step 4 — đo NGUỘI và ẤM tách bạch.** Lượt 54,5 s vừa rồi chạy **ngay sau khi cài đè**,
+  tức lần đầu OS chạm vào bộ nhị phân mới. Phải có một lượt **ấm** (chạy lại lần hai) để tách
+  "giá của lần đầu" khỏi "giá mỗi lần".
 
   **Hai giả thuyết trước đều sai hướng:**
   - *"Vỏ Tauri chậm"* — **16 ms**. Coi như bằng không.
