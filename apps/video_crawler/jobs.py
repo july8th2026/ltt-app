@@ -382,12 +382,12 @@ def _tai_voi(adapter, params: dict, ctx) -> dict:
         try:
             _voi_db("nha_cho", owner_id, job_id)
         except Exception as loi_nha:  # noqa: BLE001 — best-effort như dọn tệp; dòng mồ côi hết hạn sau 3 giờ
-            _LOG.warning(_t("video_crawler: không nhả được chỗ của job %s: %s"), job_id, type(loi_nha).__name__)
+            _LOG.warning("video_crawler: khong nha duoc cho cua job %s: %s", job_id, type(loi_nha).__name__)
         for k in da_luu:
             try:
                 kho.delete(k)
             except Exception as loi_don:  # noqa: BLE001 — dọn best-effort; lỗi gốc mới là thứ cần báo
-                _LOG.warning(_t("video_crawler: không dọn được tệp %s: %s"), k, type(loi_don).__name__)
+                _LOG.warning("video_crawler: khong don duoc tep %s: %s", k, type(loi_don).__name__)
         raise
     if bo:
         _su_kien(ctx, "bo_qua_trung", _t("Bỏ qua {n} video đã tải trước đó").format(n=bo))

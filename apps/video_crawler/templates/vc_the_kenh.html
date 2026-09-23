@@ -1,0 +1,38 @@
+{#- Thẻ kênh tìm được (W4-L11). Ảnh đại diện đi qua PROXY của app bằng VÉ đã ký — URL CDN không vào HTML. -#}
+<div>
+  <h2>{{ _("Kênh tìm được") }}</h2>
+  {% if loi %}<div class="alert alert-err" role="alert">{{ loi }}</div>{% endif %}
+  {% if url_mo_nen %}
+  <p class="muted">
+    <a class="btn" href="{{ url_mo_nen }}" target="_blank" rel="noopener noreferrer">↗ {{ _("Mở trên nền tảng") }}</a>
+    {{ _("Mở trang tìm kiếm của nền trong tab mới; tìm thấy kênh rồi thì chép link kênh về ô nhập và chọn cách cào “Theo kênh”.") }}
+  </p>
+  {% endif %}
+  {% if kenh %}
+  <div class="vc-kenh">
+    {% for m in kenh %}{% set k = m.k %}
+    <form class="vc-kenh-the" method="post" action="{{ app.route_prefix }}/trang-kenh"
+          hx-post="{{ app.route_prefix }}/trang-kenh" hx-target="#vc-ket-qua">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="nen_tang" value="{{ nen_id }}">
+      <input type="hidden" name="dau_vao" value="{{ k.url }}">
+      <input type="hidden" name="ten" value="{{ k.ten }}">
+      {% if m.ve %}<img class="vc-anh-kenh" src="{{ app.route_prefix }}/anh-kenh/{{ m.ve }}" alt="" loading="lazy">
+      {% else %}<span class="vc-anh-kenh" aria-hidden="true">👤</span>{% endif %}
+      <div>
+        <b>{{ k.ten }}</b><br>
+        <small class="muted">
+          {%- if k.so_theo_doi is not none %}{{ _("{n} người theo dõi").format(n="{:,}".format(k.so_theo_doi).replace(",", ".")) }}{% endif -%}
+          {%- if k.so_theo_doi is not none and k.so_video %} · {% endif -%}
+          {%- if k.so_video %}{{ _("{n} video").format(n=k.so_video) }}{% endif -%}
+        </small>
+        {% if k.mo_ta %}<br><small class="muted">{{ k.mo_ta }}</small>{% endif %}
+      </div>
+      <button class="btn btn-primary" type="submit">▶ {{ _("Xem video của kênh") }}</button>
+    </form>
+    {% endfor %}
+  </div>
+  {% elif not loi %}
+  <p class="muted">{{ _("Không tìm thấy kênh nào khớp tên đó.") }}</p>
+  {% endif %}
+</div>

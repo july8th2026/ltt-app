@@ -575,14 +575,30 @@ def test_tiktok_tim_kenh_van_chua_ho_tro():
 
 # ── Nền nào tìm kênh được: SUY TỪ ADAPTER, không khai tay ────────────────────
 
-def test_co_tim_kenh_suy_tu_adapter_khong_phai_co_khai_tay():
-    """Một cờ khai tay trong registry là nguồn chân lý thứ hai: thêm `tim_kenh` cho một nền mà quên bật cờ thì
-    giao diện giấu mất tính năng vừa làm. Hỏi thẳng lớp adapter (cơ học thắng giao ước)."""
+def test_co_tim_kenh_KHONG_bat_nham_cho_adapter_ho_yt_dlp_chua_khai():
+    """Rà soát gộp W4-L11: mọi adapter họ yt-dlp đều KẾ THỪA `YtdlpAdapter.tim_kenh`, nên phép so "có ghi đè
+    `tim_kenh` không" trả True cho cả nền chưa khai `ie_key_kenh` — bản chung ấy chỉ ném "chưa hỗ trợ".
+    Giao diện vì thế mời khách gõ tên kênh rồi mới báo lỗi. Một nguồn duy nhất: `nen_tang.co_tim_kenh`."""
     from apps.video_crawler import nen_tang
-    from apps.video_crawler.adapters import base, tao
     assert nen_tang.co_tim_kenh("youtube") is True
     assert nen_tang.co_tim_kenh("bilibili") is True
+    for nen_id in ("facebook", "instagram", "twitter", "weibo", "bilibili_tv", "tiktok"):
+        assert nen_tang.co_tim_kenh(nen_id) is False, nen_id
+
+
+def test_co_tim_kenh_suy_tu_adapter_khong_phai_co_khai_tay():
+    """Một cờ khai tay trong registry là nguồn chân lý thứ hai: thêm `tim_kenh` cho một nền mà quên bật cờ thì
+    giao diện giấu mất tính năng vừa làm. Hỏi thẳng lớp adapter — kể cả điều kiện `ie_key_kenh` của họ yt-dlp."""
+    from apps.video_crawler import nen_tang
+    from apps.video_crawler.adapters import base, tao
+    from apps.video_crawler.adapters._ytdlp import YtdlpAdapter
     for nen in nen_tang.cac_nen_bat():
         lop = type(tao(nen.id))
-        assert nen_tang.co_tim_kenh(nen.id) is (lop.tim_kenh is not base.PlatformAdapter.tim_kenh)
+        if lop.tim_kenh is base.PlatformAdapter.tim_kenh:
+            mong = False
+        elif lop.tim_kenh is YtdlpAdapter.tim_kenh:
+            mong = bool(getattr(lop, "ie_key_kenh", ()))
+        else:
+            mong = True
+        assert nen_tang.co_tim_kenh(nen.id) is mong, nen.id
     assert nen_tang.co_tim_kenh("nen-khong-co-that") is False

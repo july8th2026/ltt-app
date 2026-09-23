@@ -20401,3 +20401,131 @@ msgstr "searching for channels"
 #: apps/video_crawler
 msgid "Máy chủ chưa sẵn sàng ghép video. Chúng tôi đã ghi nhận — vui lòng thử lại sau."
 msgstr "The server is not ready to merge video yet. We have logged it — please try again later."
+
+#: apps/video_crawler
+msgid "4–20 phút"
+msgstr "4–20 min"
+
+#: apps/video_crawler
+msgid "Bạn đang tìm kênh quá nhanh — đợi một phút rồi thử lại."
+msgstr "You are searching channels too fast — wait a minute and try again."
+
+#: apps/video_crawler
+msgid "Chưa nhập tên kênh."
+msgstr "Enter a channel name."
+
+#: apps/video_crawler
+msgid "Cookie chứng minh đã đăng nhập"
+msgstr "Cookie that proves you are signed in"
+
+#: apps/video_crawler
+msgid "Cách sắp xếp không hợp lệ."
+msgstr "Invalid sort order."
+
+#: apps/video_crawler
+msgid "Dưới 4 phút"
+msgstr "Under 4 min"
+
+#: apps/video_crawler
+msgid "Khoảng thời lượng không hợp lệ."
+msgstr "Invalid duration range."
+
+#: apps/video_crawler
+msgid "Không tìm thấy kênh nào khớp tên đó."
+msgstr "No channels match that name."
+
+#: apps/video_crawler
+msgid "Kênh tìm được"
+msgstr "Channels found"
+
+#: apps/video_crawler
+msgid "Mở nền tảng trong tab mới để xem kênh; chép link video hoặc link kênh về đây nếu cần."
+msgstr "Open the platform in a new tab to browse channels; copy a video or channel link back here if needed."
+
+#: apps/video_crawler
+msgid "Mở trang tìm kiếm của nền trong tab mới; tìm thấy kênh rồi thì chép link kênh về ô nhập và chọn cách cào “Theo kênh”."
+msgstr "Opens the platform's search page in a new tab; once you find the channel, copy its link into the input and pick the channel crawl mode."
+
+#: apps/video_crawler
+msgid "Mở trên nền tảng"
+msgstr "Open on the platform"
+
+#: apps/video_crawler
+msgid "Mục của kênh"
+msgstr "Channel section"
+
+#: apps/video_crawler
+msgid "Ngày bắt đầu phải trước ngày kết thúc."
+msgstr "The start date must come before the end date."
+
+#: apps/video_crawler
+msgid "Nền tảng này không có mục đó trên trang kênh."
+msgstr "This platform has no such section on channel pages."
+
+#: apps/video_crawler
+msgid "Số lượng (tối đa {n})"
+msgstr "Quantity (max {n})"
+
+#: apps/video_crawler
+msgid "Thiếu cookie xác thực ở cột cuối nghĩa là bản xuất chưa đăng nhập, hoặc xuất từ tên miền khác — đăng nhập lại rồi xuất đúng trang đó."
+msgstr "A missing auth cookie from the last column means the export was not signed in, or came from a different domain — sign in again and export from that exact site."
+
+#: apps/video_crawler
+msgid "Trang kênh"
+msgstr "Channel page"
+
+#: apps/video_crawler
+msgid "Trên 20 phút"
+msgstr "Over 20 min"
+
+#: apps/video_crawler
+msgid "Tuỳ chọn trang kênh không hợp lệ."
+msgstr "Invalid channel page option."
+
+#: apps/video_crawler
+msgid "Tài khoản hệ thống của {ten} đang bận — thử lại sau ít phút."
+msgstr "The {ten} system accounts are busy — try again in a few minutes."
+
+#: apps/video_crawler
+msgid "Tên kênh"
+msgstr "Channel name"
+
+#: apps/video_crawler
+msgid "Tên kênh, ví dụ: Lofi Girl"
+msgstr "Channel name, e.g. Lofi Girl"
+
+#: apps/video_crawler
+msgid "Tìm kênh"
+msgstr "Find channel"
+
+#: apps/video_crawler
+msgid "Xem video của kênh"
+msgstr "View this channel's videos"
+
+#: apps/video_crawler
+msgid "Xuất cookie khi đang ở tên miền"
+msgstr "Export cookies while on the domain"
+
+#: apps/video_crawler
+msgid "{n} người theo dõi"
+msgstr "{n} followers"
+
+#: apps/video_crawler
+msgid "{n} video"
+msgstr "{n} videos"
+
+#: apps/video_crawler
+msgid "{ten} không hợp lệ (dùng dạng 2026-01-31)."
+msgstr "{ten} is invalid (use the 2026-01-31 format)."
+
+#: apps/video_crawler
+msgid "Đã ẩn {n} video không khớp khoảng thời lượng bạn chọn."
+msgstr "Hid {n} videos that do not match the duration range you chose."
+
+#: apps/video_crawler
+msgid "Đăng từ ngày"
+msgstr "Posted from"
+
+#: apps/video_crawler
+msgid "đến ngày"
+msgstr "to"

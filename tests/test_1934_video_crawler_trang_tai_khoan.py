@@ -291,3 +291,27 @@ def test_chi_hien_nen_dot_dau_trong_o_chon(van_hanh_client):
     assert 'value="tiktok"' in r.text
     assert 'value="facebook"' not in r.text
     assert 'value="youtube"' not in r.text
+
+
+# ── Hướng dẫn THEO TỪNG NỀN (rà soát 23/09: trang chỉ có hướng dẫn chung) ────
+
+def test_huong_dan_tung_nen_lay_tu_REGISTRY_khong_khai_tay():
+    """Trang phải nói rõ: đứng ở tên miền nào khi xuất, cookie nào chứng minh đã đăng nhập. Dữ liệu lấy từ
+    `nen_tang` — khai tay sẽ lệch ngay lần đầu registry đổi (thêm tên miền, đổi tên cookie)."""
+    from apps.video_crawler import kho_tai_khoan, nen_tang, routes_van_hanh
+    hd = {h["nen"]: h for h in routes_van_hanh._huong_dan_nen()}
+    assert set(hd) == set(kho_tai_khoan.NEN_CO_KHO)
+    for nen_id, h in hd.items():
+        nen = nen_tang.lay(nen_id)
+        assert h["ten_mien"] == list(nen.ten_mien)
+        assert h["cookie"] == list(nen.cookie_dang_nhap)
+        assert h["ten"] == nen.ten
+
+
+def test_trang_hien_huong_dan_tung_nen(van_hanh_client):
+    client, _ = van_hanh_client
+    _login(client, "op@x.com")
+    r = client.get(DUONG)
+    assert r.status_code == 200
+    for dau in ("douyin.com", "sessionid", "xiaohongshu.com", "id_token", "tiktok.com"):
+        assert dau in r.text, dau

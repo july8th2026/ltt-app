@@ -270,7 +270,14 @@ def co_tim_kenh(nen_id: str) -> bool:
         lop = type(tao(nen_id))
     except (NenKhongHopLe, ImportError, LookupError):   # nền lạ / chưa bật / chưa có adapter
         return False
-    return lop.tim_kenh is not base.PlatformAdapter.tim_kenh
+    if lop.tim_kenh is base.PlatformAdapter.tim_kenh:
+        return False
+    # Họ yt-dlp: mọi lớp con KẾ THỪA `YtdlpAdapter.tim_kenh`, nhưng bản chung ấy ném "chưa hỗ trợ" khi lớp con
+    # chưa khai `ie_key_kenh` ⇒ so với bản mặc định thôi là bật nhầm cho Facebook/TikTok/Twitter/Instagram/Weibo.
+    from apps.video_crawler.adapters._ytdlp import YtdlpAdapter
+    if lop.tim_kenh is YtdlpAdapter.tim_kenh:
+        return bool(getattr(lop, "ie_key_kenh", ()))
+    return True
 
 
 def doan_tu_link(s: str) -> DoanLink | None:

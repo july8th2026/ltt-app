@@ -6,6 +6,8 @@ Route chỉ gọi vào đây; handler (`jobs.py`) chỉ gọi nhóm dedup (`da_t
 from __future__ import annotations
 
 import re
+import threading as _threading
+import time as _time
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
@@ -153,22 +155,35 @@ def _kiem_url(url: str, nen, phan_giai) -> str:
         raise LoiDauVao(_t("Link không hợp lệ cho {ten}.").format(ten=nen.ten)) from e
 
 
+def _kiem_phien(nen, db, owner_id: str, *, cho_kho: bool = False) -> None:
+    """Nền này đòi đăng nhập ⇒ khách phải có phiên riêng còn dùng được.
+
+    `cho_kho=True` (đường tìm kênh): nền có KHO tài khoản hệ thống thì không đòi phiên riêng — `jobs._phien`
+    sẽ mượn kho, đúng như job cào làm (THIET_KE_PHIEN_VA_KENH §2.2).
+    """
+    from apps.video_crawler import phien
+    co = [p for p in phien.danh_sach(db, owner_id) if p.nen_tang == nen.id] if db is not None else []
+    if not co:
+        if cho_kho:
+            from apps.video_crawler import kho_tai_khoan
+            # Có kho là chưa đủ: kho RỖNG (hoặc mọi tài khoản tạm nghỉ/bị chặn) mà vẫn nhận thì job chạy rồi
+            # hỏng và hoàn tiền — khách chờ vô ích. Hỏi luôn "còn tài khoản sống không".
+            if kho_tai_khoan.nen_co_kho(nen.id) and kho_tai_khoan.con_tai_khoan_song(db, nen.id):
+                return
+        raise LoiDauVao(_t("Cách cào này cần đăng nhập {ten} — thêm phiên đăng nhập trước.").format(ten=nen.ten))
+    if not phien.hop_le(co[0]):                     # review lần 2: khoá xoay ⇒ phiên không giải mã được
+        raise LoiDauVao(_t("Phiên {ten} đã hỏng (không giải mã được) — nhập lại cookies.txt.").format(ten=nen.ten))
+
+
 def _kiem_nguon(nen, che_do: str, dau_vao: str, so_luong, phan_giai, *, db=None,
                 owner_id: str = "") -> tuple[str, int]:
     if che_do not in nen.che_do:
         raise LoiDauVao(_t("{ten} không hỗ trợ cách cào này.").format(ten=nen.ten))
     if che_do in nen.che_do_can_dang_nhap:
-        from apps.video_crawler import phien
-        co = [p for p in phien.danh_sach(db, owner_id) if p.nen_tang == nen.id] if db is not None else []
-        if not co:
-            raise LoiDauVao(_t("Cách cào này cần đăng nhập {ten} — thêm phiên đăng nhập trước.").format(ten=nen.ten))
-        if not phien.hop_le(co[0]):                     # review lần 2: khoá xoay ⇒ phiên không giải mã được
-            raise LoiDauVao(_t("Phiên {ten} đã hỏng (không giải mã được) — nhập lại cookies.txt.").format(ten=nen.ten))
-    dau_vao = (dau_vao or "").strip()
-    if not dau_vao:
-        raise LoiDauVao(_t("Chưa nhập từ khoá hoặc link."))
-    if len(dau_vao) > DAU_VAO_TOI_DA:
-        raise LoiDauVao(_t("Nội dung nhập quá dài."))
+        # Kho tài khoản hệ thống dùng được ở ĐƯỜNG CÀO, không chỉ đường tìm kênh: nếu không, dán cookie vào kho
+        # xong khách vẫn bị từ chối ở cửa vào và cả hạng mục kho không tới được ai (rà soát gộp W4-L11).
+        _kiem_phien(nen, db, owner_id, cho_kho=True)
+    dau_vao = _chuan_dau_vao(nen, che_do, dau_vao, phan_giai)
     try:
         n = int(so_luong)
     except (TypeError, ValueError) as e:
@@ -176,19 +191,34 @@ def _kiem_nguon(nen, che_do: str, dau_vao: str, so_luong, phan_giai, *, db=None,
     tran = min(nen.so_luong_toi_da, SO_MUC_TOI_DA)
     if not 1 <= n <= tran:
         raise LoiDauVao(_t("Số lượng phải từ 1 đến {tran}.").format(tran=tran))
+    return dau_vao, n
+
+
+def _chuan_dau_vao(nen, che_do: str, dau_vao: str, phan_giai) -> str:
+    """Từ khoá / link / handle khách nhập ⇒ chuỗi đã kiểm (link phải thuộc tên miền của nền, không SSRF)."""
+    dau_vao = (dau_vao or "").strip()
+    if not dau_vao:
+        raise LoiDauVao(_t("Chưa nhập từ khoá hoặc link."))
+    if len(dau_vao) > DAU_VAO_TOI_DA:
+        raise LoiDauVao(_t("Nội dung nhập quá dài."))
     la_handle = che_do == "kenh" and "/" not in dau_vao and not dau_vao.lower().startswith("http")
     if che_do != "tu_khoa" and not la_handle:
         url = dau_vao if dau_vao.lower().startswith("http") else "https://" + dau_vao
         dau_vao = _kiem_url(url, nen, phan_giai)
-    return dau_vao, n
+    return dau_vao
 
 
 def dung_params_kham_pha(*, owner_id: str, nen_tang: str, che_do: str, dau_vao: str, so_luong,
-                         khong_trung: bool, phan_giai=None, db=None) -> dict:
+                         khong_trung: bool, phan_giai=None, db=None, tuy_chon: dict | None = None) -> dict:
+    """`tuy_chon` = tuỳ chọn trang kênh (tab/sắp xếp/khoảng ngày/thời lượng) — kiểm lại ở đây, không tin route."""
     nen = _nen(nen_tang)
     dau_vao, n = _kiem_nguon(nen, che_do, dau_vao, so_luong, phan_giai, db=db, owner_id=owner_id)
-    return {"owner_id": owner_id, "nen_tang": nen.id, "che_do": che_do, "dau_vao": dau_vao,
-            "so_luong": n, "khong_trung": bool(khong_trung)}
+    params = {"owner_id": owner_id, "nen_tang": nen.id, "che_do": che_do, "dau_vao": dau_vao,
+              "so_luong": n, "khong_trung": bool(khong_trung)}
+    tc = _kiem_tuy_chon(nen.id, tuy_chon)
+    if tc:
+        params["tuy_chon"] = tc
+    return params
 
 
 def dung_params_tai(*, owner_id: str, nen_tang: str, muc: list | None = None, nguon: dict | None = None,
@@ -200,9 +230,12 @@ def dung_params_tai(*, owner_id: str, nen_tang: str, muc: list | None = None, ng
     if nguon is not None:
         dau_vao, n = _kiem_nguon(nen, nguon.get("che_do", ""), nguon.get("dau_vao", ""),
                                  nguon.get("so_luong"), phan_giai, db=db, owner_id=owner_id)
-        return {"owner_id": owner_id, "nen_tang": nen.id,
-                "nguon": {"che_do": nguon["che_do"], "dau_vao": dau_vao, "so_luong": n,
-                          "khong_trung": bool(nguon.get("khong_trung"))}}
+        goc = {"che_do": nguon["che_do"], "dau_vao": dau_vao, "so_luong": n,
+               "khong_trung": bool(nguon.get("khong_trung"))}
+        tc = _kiem_tuy_chon(nen.id, nguon.get("tuy_chon"))
+        if tc:
+            goc["tuy_chon"] = tc
+        return {"owner_id": owner_id, "nen_tang": nen.id, "nguon": goc}
     if not isinstance(muc, list) or not 1 <= len(muc) <= SO_MUC_TOI_DA:
         raise LoiDauVao(_t("Chọn từ 1 đến {n} video.").format(n=SO_MUC_TOI_DA))
     from apps.video_crawler import adapters
@@ -402,3 +435,261 @@ def thong_ke(db, owner_id: str, *, bay_gio: datetime | None = None) -> dict:
         if j.job_type == JOB_TAI and j.status == JOB_DONE and tao >= dau_ngay:
             kq["video_hom_nay"] += len((j.result or {}).get("video_keys") or [])
     return kq
+
+
+# ── Tìm KÊNH theo tên + trang kênh trong app (W4-L11; THIET_KE_PHIEN_VA_KENH §3.3, §4) ────────
+# Việc nhỏ (một lượt gọi nền, vài giây) ⇒ chạy trong request như proxy ảnh bìa (`anh_bia.py`), KHÔNG
+# qua hàng đợi job: khách đang đứng trước màn hình chọn kênh, lượt tìm không tiêu credit và không tải gì.
+
+#: Tên chế độ trên GIAO DIỆN — cố ý KHÔNG nằm trong `base.CHE_DO` (nó không phải một cách cào: kết quả là
+#: thẻ kênh, không phải video). Gửi nhầm xuống `dung_params_*` sẽ bị từ chối như mọi chế độ lạ.
+CHE_DO_TIM_KENH = "tim_kenh"
+#: Số thẻ kênh mỗi lượt tìm (mặc định / trần).
+SO_KENH_MAC_DINH = 8
+SO_KENH_TOI_DA = 20
+#: Trần lượt TÌM KÊNH mỗi phút mỗi khách — cùng lý do `KHAM_PHA_MOI_PHUT` (tìm dồn dập ⇒ nền chặn IP máy A).
+TIM_KENH_MOI_PHUT = 10
+#: Cách sắp xếp video trong trang kênh. "mới nhất" là mặc định của mọi nền (THIET_KE §3.3).
+SAP_XEP_KENH: tuple[str, ...] = ("moi_nhat", "pho_bien")
+#: Bậc thời lượng ⇒ (từ giây, đến giây | None). Ranh giới 4 phút / 20 phút theo bộ lọc của chính YouTube.
+THOI_LUONG_KENH: dict[str, tuple[int, int | None]] = {
+    "ngan": (0, 240), "vua": (240, 1200), "dai": (1200, None),
+}
+#: Vé ảnh đại diện: ký bằng `LTT_SESSION_SECRET` (cùng cơ chế `platform_core/tokens.py`), có hạn, gắn CHỦ.
+#: Nhờ vé, URL CDN không bao giờ xuất hiện trong HTML và khách không tự gửi URL cho proxy được.
+_SALT_ANH_KENH = "ltt-vc-anh-kenh-v1"
+TTL_ANH_KENH = 1800
+
+_LUOT_TIM: dict[str, list[float]] = {}
+_LUOT_TIM_KHOA = _threading.Lock()
+#: Chặn sổ tần suất phình vô hạn (một tiến trình web sống nhiều ngày).
+_LUOT_TIM_TOI_DA = 2000
+
+
+def kiem_tan_suat_tim_kenh(owner_id: str, *, bay_gio: float | None = None) -> None:
+    """Ghi một lượt tìm kênh cho `owner_id`; quá `TIM_KENH_MOI_PHUT` trong 60 s ⇒ `QuaTanSuat`.
+
+    Đếm trong bộ nhớ tiến trình (lượt tìm không tạo job nên không có dấu vết trong CSDL để đếm) — nhiều
+    tiến trình web thì trần nới ra theo số tiến trình; đủ cho mục đích: chặn vòng lặp tự động, không phải
+    kế toán. Trần cứng của tiền vẫn nằm ở tầng job (`kiem_tan_suat`, `kiem_tran_tai`).
+    """
+    luc = _time.monotonic() if bay_gio is None else bay_gio
+    with _LUOT_TIM_KHOA:
+        ds = [t for t in _LUOT_TIM.get(owner_id, ()) if luc - t < 60]
+        if len(ds) >= TIM_KENH_MOI_PHUT:
+            _LUOT_TIM[owner_id] = ds
+            raise QuaTanSuat(_t("Bạn đang tìm kênh quá nhanh — đợi một phút rồi thử lại."))
+        ds.append(luc)
+        _LUOT_TIM[owner_id] = ds
+        if len(_LUOT_TIM) > _LUOT_TIM_TOI_DA:
+            for k in [k for k, v in _LUOT_TIM.items() if not v or luc - v[-1] >= 60]:
+                _LUOT_TIM.pop(k, None)
+
+
+def _adapter_cua(nen_id: str):
+    from apps.video_crawler import adapters
+    return adapters.tao(nen_id)
+
+
+def nen_tim_kenh_duoc(nen_id: str, *, tao_adapter=None) -> bool:
+    """Nền này TÌM KÊNH theo tên được không — giao diện dùng để hiện/giấu chế độ "Tìm kênh".
+
+    Một nguồn: `nen_tang.co_tim_kenh` (hỏi thẳng lớp adapter, kể cả điều kiện `ie_key_kenh` của họ yt-dlp).
+    """
+    from apps.video_crawler import nen_tang as _nt
+    return _nt.co_tim_kenh(nen_id)
+
+
+def _mo_phien(adapter, owner_id: str, nen_id: str):
+    """Ngữ cảnh phiên đăng nhập cho một lượt tìm — DÙNG LẠI đúng đường của job (`jobs._phien`):
+    phiên riêng của khách > mượn kho tài khoản hệ thống > ẩn danh, kèm nhả chỗ + chấm điểm tài khoản."""
+    from apps.video_crawler.jobs import _phien
+    return _phien(adapter, owner_id, nen_id)
+
+
+def tim_kenh(db, *, owner_id: str, nen_tang: str, tu_khoa: str, so_luong=SO_KENH_MAC_DINH,
+             tao_adapter=None, mo_phien=None) -> list:
+    """TÊN kênh ⇒ danh sách `KenhItem` để khách chọn. Mọi lỗi của nền thành câu đọc được (`LoiDauVao`).
+
+    Không tìm thấy ai ⇒ danh sách RỖNG (không phải lỗi). Nền chưa làm được ⇒ câu "hãy dán link kênh".
+    """
+    from apps.video_crawler.adapters.base import LoiCao, YeuCauTimKenh, loi_chua_ho_tro_tim_kenh
+    nen = _nen(nen_tang)
+    if not nen_tim_kenh_duoc(nen.id, tao_adapter=tao_adapter):
+        raise LoiDauVao(_t(loi_chua_ho_tro_tim_kenh().thong_diep))
+    tu_khoa = (tu_khoa or "").strip()
+    if not tu_khoa:
+        raise LoiDauVao(_t("Chưa nhập tên kênh."))
+    if len(tu_khoa) > DAU_VAO_TOI_DA:
+        raise LoiDauVao(_t("Nội dung nhập quá dài."))
+    try:
+        n = int(so_luong)
+    except (TypeError, ValueError) as e:
+        raise LoiDauVao(_t("Số lượng không hợp lệ.")) from e
+    if not 1 <= n <= SO_KENH_TOI_DA:
+        raise LoiDauVao(_t("Số lượng phải từ 1 đến {tran}.").format(tran=SO_KENH_TOI_DA))
+    # Tìm kênh đi cùng cửa đăng nhập với cách cào "kenh": nền nào đòi phiên cho kênh thì cũng đòi ở đây.
+    if "kenh" in nen.che_do_can_dang_nhap:
+        _kiem_phien(nen, db, owner_id, cho_kho=True)
+    kiem_tan_suat_tim_kenh(owner_id)
+    adapter = (tao_adapter or _adapter_cua)(nen.id)
+    yeu_cau = YeuCauTimKenh(nen_tang=nen.id, tu_khoa=tu_khoa, so_luong=n)
+    from platform_core.jobs import DangBan, LoiNguoiGoi
+    try:
+        with (mo_phien or _mo_phien)(adapter, owner_id, nen.id):
+            ra = adapter.tim_kenh(yeu_cau, bao_tien_do=lambda phan_tram, thong_diep="": None)
+    except LoiCao as e:
+        raise LoiDauVao(_t(e.thong_diep)) from e
+    except DangBan as e:
+        raise LoiDauVao(_t("Tài khoản hệ thống của {ten} đang bận — thử lại sau ít phút.")
+                        .format(ten=nen.ten)) from e
+    except LoiNguoiGoi as e:
+        raise LoiDauVao(str(e)) from e
+    return list(ra or [])[:n]
+
+
+def tab_kenh(nen_id: str, *, tao_adapter=None) -> tuple[tuple[str, str], ...]:
+    """Các tab trang kênh mà ADAPTER khai (`TAB_KENH` = ((id, nhãn), …)) — giao diện không khai tay.
+
+    Adapter chưa khai ⇒ `()` ⇒ giao diện không hiện ô chọn tab (thà thiếu một ô còn hơn hứa một tab
+    mà đường cào không biết dùng).
+    """
+    from apps.video_crawler import nen_tang as _nt
+    try:
+        adapter = (tao_adapter or _adapter_cua)(nen_id)
+    except (_nt.NenKhongHopLe, ImportError, LookupError, RuntimeError):
+        return ()
+    ra = []
+    for mot in getattr(adapter, "TAB_KENH", ()) or ():
+        try:
+            ma, nhan = mot
+        except (TypeError, ValueError):
+            continue
+        if isinstance(ma, str) and ma:
+            ra.append((ma, str(nhan or ma)))
+    return tuple(ra)
+
+
+def _ngay(s: str, ten: str) -> str:
+    from datetime import date
+    try:
+        return date.fromisoformat(s).isoformat()
+    except ValueError as e:
+        raise LoiDauVao(_t("{ten} không hợp lệ (dùng dạng 2026-01-31).").format(ten=ten)) from e
+
+
+def chuan_tuy_chon_kenh(nen_id: str, *, tab: str = "", sap_xep: str = "", tu_ngay: str = "",
+                        den_ngay: str = "", thoi_luong: str = "", tao_adapter=None) -> dict:
+    """Tuỳ chọn trang kênh từ form ⇒ dict đã kiểm (chỉ giữ khoá có giá trị). Giá trị lạ ⇒ `LoiDauVao`."""
+    ra: dict[str, str] = {}
+    tab = (tab or "").strip()
+    if tab:
+        if tab not in {ma for ma, _nhan in tab_kenh(nen_id, tao_adapter=tao_adapter)}:
+            raise LoiDauVao(_t("Nền tảng này không có mục đó trên trang kênh."))
+        ra["tab"] = tab
+    sap_xep = (sap_xep or "").strip()
+    if sap_xep:
+        if sap_xep not in SAP_XEP_KENH:
+            raise LoiDauVao(_t("Cách sắp xếp không hợp lệ."))
+        ra["sap_xep"] = sap_xep
+    tu_ngay, den_ngay = (tu_ngay or "").strip(), (den_ngay or "").strip()
+    if tu_ngay:
+        ra["tu_ngay"] = _ngay(tu_ngay, _t("Từ ngày"))
+    if den_ngay:
+        ra["den_ngay"] = _ngay(den_ngay, _t("Đến ngày"))
+    if "tu_ngay" in ra and "den_ngay" in ra and ra["tu_ngay"] > ra["den_ngay"]:
+        raise LoiDauVao(_t("Ngày bắt đầu phải trước ngày kết thúc."))
+    thoi_luong = (thoi_luong or "").strip()
+    if thoi_luong:
+        if thoi_luong not in THOI_LUONG_KENH:
+            raise LoiDauVao(_t("Khoảng thời lượng không hợp lệ."))
+        ra["thoi_luong"] = thoi_luong
+    return ra
+
+
+def _kiem_tuy_chon(nen_id: str, tuy_chon) -> dict:
+    if not tuy_chon:
+        return {}
+    if not isinstance(tuy_chon, dict):
+        raise LoiDauVao(_t("Tuỳ chọn trang kênh không hợp lệ."))
+    try:
+        return chuan_tuy_chon_kenh(nen_id, **{k: str(v or "") for k, v in tuy_chon.items()})
+    except TypeError as e:
+        raise LoiDauVao(_t("Tuỳ chọn trang kênh không hợp lệ.")) from e
+
+
+def loc_muc(muc: list, tuy_chon: dict | None) -> list:
+    """Lọc danh sách mục xem trước theo bậc thời lượng khách đã chọn.
+
+    Đây là bộ lọc THẬT đang chạy hôm nay (lọc lúc hiển thị). Lọc TẠI NGUỒN (khoảng ngày, sắp xếp, tab)
+    cần adapter đọc `params["tuy_chon"]` — xem báo cáo làn W4-L11, mục "cần điều phối".
+    """
+    bac = (tuy_chon or {}).get("thoi_luong") if isinstance(tuy_chon, dict) else None
+    khoang = THOI_LUONG_KENH.get(bac or "")
+    if khoang is None:
+        return list(muc or [])
+    tu, den = khoang
+    ra = []
+    for m in muc or []:
+        tl = _thoi_luong((m or {}).get("thoi_luong_s"))
+        if tl is not None and tl >= tu and (den is None or tl < den):
+            ra.append(m)
+    return ra
+
+
+def _serializer():
+    import os
+
+    from itsdangerous import URLSafeTimedSerializer
+    bi_mat = (os.environ.get("LTT_SESSION_SECRET") or "").strip()
+    if not bi_mat:
+        raise RuntimeError("Chua co LTT_SESSION_SECRET — khong ky duoc ve anh kenh.")
+    return URLSafeTimedSerializer(bi_mat)
+
+
+def ky_anh_kenh(owner_id: str, nen_tang: str, url: str) -> str:
+    """Vé một chiều cho ảnh đại diện: (chủ, nền, URL CDN) đã ký. Khách chỉ cầm vé, không cầm URL."""
+    return _serializer().dumps([owner_id, nen_tang, url], salt=_SALT_ANH_KENH)
+
+
+def doc_anh_kenh(ve: str, owner_id: str, *, max_age: int = TTL_ANH_KENH) -> tuple[str, str] | None:
+    """(nền, URL) của vé còn hạn và ĐÚNG chủ; vé hỏng/hết hạn/của người khác ⇒ None (route trả 404)."""
+    if not ve:
+        return None
+    from itsdangerous import BadSignature, SignatureExpired
+    try:
+        du_lieu = _serializer().loads(ve, salt=_SALT_ANH_KENH, max_age=max_age)
+    except (SignatureExpired, BadSignature):
+        return None
+    if (not isinstance(du_lieu, list)) or len(du_lieu) != 3 or du_lieu[0] != owner_id:
+        return None
+    return str(du_lieu[1]), str(du_lieu[2])
+
+
+def chuan_link_kenh(*, nen_tang: str, dau_vao: str, phan_giai=None) -> str:
+    """Link (hoặc handle) trang kênh khách chọn ⇒ chuỗi đã kiểm — CÙNG luật với cách cào "kenh".
+
+    Dùng ở bước "mở trang kênh trong app": chỉ kiểm đầu vào, chưa hỏi phiên đăng nhập (cửa phiên vẫn
+    nằm nguyên ở `dung_params_kham_pha`/`dung_params_tai` khi khách bấm Xem trước / Cào hết).
+    """
+    nen = _nen(nen_tang)
+    if "kenh" not in nen.che_do:
+        raise LoiDauVao(_t("{ten} không hỗ trợ cách cào này.").format(ten=nen.ten))
+    return _chuan_dau_vao(nen, "kenh", dau_vao, phan_giai)
+
+
+def url_mo_nen(nen_tang: str, tu_khoa: str = "", *, tao_adapter=None) -> str:
+    """URL "Mở trên nền tảng" (tab mới): trang tìm kênh của nền khi ADAPTER dựng được, nếu không thì
+    trang chủ nền lấy từ registry. Không có bảng URL khai tay ở tầng giao diện."""
+    nen = _nen(nen_tang)
+    tu_khoa = (tu_khoa or "").strip()[:DAU_VAO_TOI_DA]
+    if tu_khoa:
+        from apps.video_crawler import nen_tang as _nt      # tham số `nen_tang: str` che mất module cùng tên
+        try:
+            ham = getattr((tao_adapter or _adapter_cua)(nen.id), "url_tim_kenh", None)
+            url = ham(tu_khoa) if callable(ham) else ""
+            if isinstance(url, str) and url.startswith("https://"):
+                return url
+        except (_nt.NenKhongHopLe, ImportError, LookupError, NotImplementedError, ValueError):
+            pass               # adapter chưa dựng được URL tìm ⇒ về trang chủ nền, không làm hỏng trang
+    return "https://" + nen.ten_mien[0] if nen.ten_mien else ""

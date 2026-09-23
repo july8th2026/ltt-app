@@ -101,6 +101,20 @@ def _hang_hien_thi(tk, bay_gio: datetime) -> dict:
     }
 
 
+def _huong_dan_nen() -> list[dict]:
+    """Hướng dẫn xuất cookie THEO TỪNG NỀN, dựng từ `nen_tang` — không khai tay.
+
+    Khai tay thì lệch ngay lần đầu registry đổi (thêm tên miền, đổi tên cookie xác thực), và người vận hành
+    làm theo trang sẽ dán nhầm cookie của tên miền khác rồi không hiểu vì sao "thiếu cookie xác thực".
+    """
+    ra = []
+    for nen_id in kho_tai_khoan.NEN_CO_KHO:
+        nen = nen_tang.lay(nen_id)
+        ra.append({"nen": nen_id, "ten": nen.ten, "ten_mien": list(nen.ten_mien),
+                   "cookie": list(nen.cookie_dang_nhap)})
+    return ra
+
+
 def _trang_tai_khoan(request: Request, db, *, loi: str | None = None, ma: int = 200) -> HTMLResponse:
     bay_gio = datetime.now(timezone.utc)
     hang = [_hang_hien_thi(tk, bay_gio) for tk in kho_tai_khoan.danh_sach(db)]
@@ -109,7 +123,7 @@ def _trang_tai_khoan(request: Request, db, *, loi: str | None = None, ma: int = 
         "app": MANIFEST, "nav": MANIFEST.slug,
         "duong": _DUONG_TAI_KHOAN,
         "csrf_token": issue_csrf_token(request),
-        "hang": hang, "nen_chon": nen_chon, "loi": loi,
+        "hang": hang, "nen_chon": nen_chon, "loi": loi, "huong_dan": _huong_dan_nen(),
     }, status_code=ma)
 
 
