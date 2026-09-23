@@ -55,26 +55,84 @@ export type AgentRunSummary=Pick<AgentRun,'id'|'version'|'status'|'estimated'|'a
 
 export class WorkflowConflictError extends Error {}
 
+/** Lỗi biên dịch/báo giá do máy chủ trả ở `422 {ma,node_id,thong_diep}`.
+ *  Giữ `ma`/`nodeId` để giao diện tô đúng node — một chuỗi thuần thì không. */
+export class WorkflowCompileError extends Error {
+  ma: string
+  nodeId: string
+  constructor(message: string, ma: string, nodeId: string) {
+    super(message)
+    this.name = 'WorkflowCompileError'
+    this.ma = ma
+    this.nodeId = nodeId
+  }
+}
+
 async function decode(response: Response) {
   if (response.ok) return response.json()
-  if (response.status === 409) throw new WorkflowConflictError('Workflow was updated elsewhere')
-  let message = `Request failed (${response.status})`
+  let detail: unknown
   try {
-    const detail = (await response.json()).detail
-    if (detail != null) {
-      // Task 7 publish (drafts_v3.py) tra `detail` la dict {ma, node_id,
-      // thong_diep} thay vi chuoi — doc dung truong con nguoi doc duoc, dung
-      // de `new Error({...})` bien no thanh "[object Object]".
-      message = typeof detail === 'object'
-        ? (detail.thong_diep ?? detail.ma ?? JSON.stringify(detail))
-        : detail
-    }
+    detail = (await response.json()).detail
   } catch { /* non-JSON error */ }
-  throw new Error(message)
+  // Object co cau truc {ma?, node_id?, thong_diep?} — dung TRUOC nhanh 409
+  // mac dinh, vi cua v3 huy run (`runs_v3.py::v3_huy_run`) cung tra 409 kem
+  // detail nay ("da_ket_thuc"), khong phai xung dot revision. Doc dung
+  // truong con nguoi doc duoc thay vi de `new Error({...})` bien no thanh
+  // "[object Object]".
+  const obj = (detail && typeof detail === 'object' && !Array.isArray(detail))
+    ? detail as { ma?: string; node_id?: string; thong_diep?: string }
+    : null
+  if (response.status === 409) {
+    // 409 CO detail cau truc (huy run da ket thuc) -> loi doc duoc tu may
+    // chu. 409 KHONG co detail (luu draft, `If-Match` lech) -> xung dot
+    // revision chung, giu nguyen thong diep cu.
+    if (obj) throw new Error(obj.thong_diep ?? obj.ma ?? JSON.stringify(obj))
+    throw new WorkflowConflictError('Workflow was updated elsewhere')
+  }
+  if (obj) {
+    const message = obj.thong_diep ?? obj.ma ?? JSON.stringify(obj)
+    // ⭐ CHI 422 KEM `node_id` la loi bien dich do thi. Rieng `ma` thi khong
+    //    du: `402 thieu_credit`, `429 qua_han_muc`, `503 dong_co_chua_san_sang`
+    //    va `422 chua_publish`/`inputs_qua_lon` deu mang `ma` (runs_v3.py) va
+    //    KHONG chi duoc node nao. Nem WorkflowCompileError cho chung se lam
+    //    `CanvasShell` xu ly "het credit" nhu loi bien dich, voi `nodeId` rong
+    //    — dung kieu gop nham vua go cho 409 o ngay tren.
+    if (response.status === 422 && obj.node_id)
+      throw new WorkflowCompileError(message, obj.ma ?? '', obj.node_id)
+    throw new Error(message)
+  }
+  // `detail` con lai co the la MANG: `/agent/**` khong di qua bo viet lai cua
+  // `server/api/errors.py` (chi nhan `/api/v1`), nen loi validate cua FastAPI
+  // giu nguyen hinh `[{loc,msg,type}]`. `new Error(mang)` in ra "[object
+  // Object]" tren man hinh nguoi dung.
+  if (detail != null)
+    throw new Error(typeof detail === 'string' ? detail : JSON.stringify(detail))
+  throw new Error(`Request failed (${response.status})`)
+}
+
+// `Accept: application/json` tuong minh cho MOI loi goi API — khong phu
+// thuoc Sec-Fetch-Mode co song sot qua Cloudflare hay khong. Ban sua
+// `da7fce81` phan biet "goi API" voi "dieu huong HTML" bang Sec-Fetch-Mode,
+// lui ve Accept khi header do vang mat. Neu Cloudflare lot ca hai thi vong
+// poll (Accept: */* mac dinh cua ham fetch toan cuc) se bi may chu coi la dieu huong va
+// quay lai 302 — mat ban sua ma phep do loopback (khong qua Cloudflare) van
+// xanh. Nen client tu gui Accept, khong cho no phu thuoc mot header co the
+// bi CDN lot.
+function withAcceptHeader(init?: RequestInit): HeadersInit {
+  return { Accept: 'application/json', ...(init?.headers ?? {}) }
+}
+
+// Diem goi ham fetch toan cuc THO DUY NHAT cua module — moi ham API phai di
+// qua day. tests/workflowApi.test.ts khang dinh dieu nay bang cach dem so
+// loi goi fetch tho (chu thuong) trong tep nguon: phai la 1. Them mot loi
+// goi fetch moi ma khong qua `apiFetch()` se lam phep kiem do do ngay, khong
+// can sua tay.
+function apiFetch(path: string, init?: RequestInit): Promise<Response> {
+  return fetch(path, { credentials: 'same-origin', ...init, headers: withAcceptHeader(init) })
 }
 
 async function request(path: string, init?: RequestInit) {
-  return decode(await fetch(path, { credentials: 'same-origin', ...init }))
+  return decode(await apiFetch(path, init))
 }
 
 export function normalizeCanvas(canvas: CanvasDocument | LegacyCanvasDocument): CanvasDocument {
@@ -230,7 +288,7 @@ export async function loadOrCreateWorkflowV3(csrfToken: string): Promise<Workflo
 
 export async function saveWorkflowV3(workflow: Workflow, csrfToken: string,
                                      signal?: AbortSignal): Promise<Workflow> {
-  const response = await fetch(
+  const response = await apiFetch(
     `/agent/api/v3/workflows/${encodeURIComponent(workflow.id)}`, {
       method: 'PUT',
       credentials: 'same-origin',
@@ -273,7 +331,7 @@ export type AssistantResult = { analysis?: { nodes: number; valid: boolean; issu
 
 export async function previewAssistant(workflow: Workflow, mode: 'analyze'|'improve', prompt: string,
                                        csrfToken: string): Promise<AssistantResult> {
-  const response = await fetch(`/agent/api/workflows/${workflow.id}/assistant/preview`, { method: 'POST',
+  const response = await apiFetch(`/agent/api/workflows/${workflow.id}/assistant/preview`, { method: 'POST',
     credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken,
       'If-Match': `"${workflow.revision}"` }, body: JSON.stringify({ mode, prompt }) })
   if (!response.ok || !response.body) return decode(response)
@@ -317,7 +375,7 @@ export async function uploadAsset(file: File, csrfToken: string): Promise<{
   key: string; kind: string; name: string; size: number; content_type: string; url: string
 }> {
   const body = new FormData(); body.append('file', file)
-  return decode(await fetch('/agent/api/assets', { method: 'POST', credentials: 'same-origin',
+  return decode(await apiFetch('/agent/api/assets', { method: 'POST', credentials: 'same-origin',
     headers: { 'X-CSRF-Token': csrfToken }, body }))
 }
 
@@ -356,7 +414,7 @@ export async function saveWorkflow(
   csrfToken: string,
   signal?: AbortSignal,
 ): Promise<Workflow> {
-  const response = await fetch(`/agent/api/workflows/${workflow.id}`, {
+  const response = await apiFetch(`/agent/api/workflows/${workflow.id}`, {
     method: 'PUT',
     credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken,
@@ -460,4 +518,52 @@ export function createAutosave<T>(
       latest = undefined
     },
   }
+}
+
+// ── Cua v3: mot luot chay (Dot 5.2, apps/agent/routes/runs_v3.py) ─────────
+export type RunV3Node = { node_id: string; status: string; attempt: number
+  cost_credit: number; job_id: string; error: string }
+export type RunV3Event = { seq: number; loai: string; node_id: string
+  du_lieu: Record<string, unknown>; created_at: string }
+export type RunV3 = { id: string; workflow_id: string; version_id: string
+  status: string; credit_max: number; credit_charged: number; settled: boolean
+  created_at: string; nodes: RunV3Node[]; su_kien: RunV3Event[]
+  seq_cuoi: number }
+
+/** Trạng thái kết thúc của run (spec §5.2). Vòng poll dừng ở đây. */
+export const RUN_V3_KET_THUC: ReadonlySet<string> = new Set(
+  ['SUCCEEDED', 'FAILED', 'CANCELLED', 'TIMED_OUT', 'SYSTEM_FAILURE'])
+
+/**
+ * Tạo một run v3.
+ *
+ * ⭐ `idempotencyKey` là **tham số bắt buộc**, và đó là cả thiết kế.
+ *
+ * Cửa `/agent/api/v3/workflows/{id}/runs` từ chối `400` khi thiếu header
+ * `Idempotency-Key` (`runs_v3.py::_khoa_idempotency`, sửa 23/09 — đo được là
+ * bấm hai lần trừ tiền hai lần).
+ *
+ * ⛔ Hàm này **không tự sinh** khoá. Sinh ở đây thì mỗi lời gọi là một khoá
+ *    mới, kể cả hai lời gọi của **cùng một lần bấm** — trông như có chống
+ *    trùng mà không chống được gì. Khoá phải sinh ở **chỗ người dùng bấm**, nơi
+ *    duy nhất biết được đâu là "một lần bấm": xem `CanvasShell::chayWorkflow`.
+ */
+export async function createRunV3(workflowId: string, csrfToken: string,
+                                  idempotencyKey: string): Promise<RunV3> {
+  return request(`/agent/api/v3/workflows/${workflowId}/runs`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json',
+      'X-CSRF-Token': csrfToken,
+      'Idempotency-Key': idempotencyKey }, body: '{}' }) as Promise<RunV3>
+}
+
+/** `sau` = con trỏ sự kiện của lần poll trước (`seq_cuoi`). 0 = lấy cả lịch sử. */
+export async function loadRunV3(runId: string, sau = 0): Promise<RunV3> {
+  return request(`/agent/api/v3/runs/${runId}?sau=${sau}`) as Promise<RunV3>
+}
+
+export async function cancelRunV3(runId: string,
+                                  csrfToken: string): Promise<RunV3> {
+  return request(`/agent/api/v3/runs/${runId}/cancel`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json',
+      'X-CSRF-Token': csrfToken }, body: '{}' }) as Promise<RunV3>
 }

@@ -1,12 +1,16 @@
 """Manifest for the orchestration UI; execution uses existing app ToolSpecs.
 
-⚠️ `job_types` PHẢI đúng bằng `("agent.advance",)` — không thêm
-   `workflow.dong_co` vào đây dù handler thật của nó (`_dong_co`) vẫn sống
-   trong `jobs.py` cùng thư mục này. `test_190_public_api_coverage.py::
-   test_the_agent_app_is_an_orchestrator_not_a_tool` chốt bất biến "`agent`
-   là runtime điều phối, không phải bản thân một job_type động cơ" —
-   `apps/agent_dong_co/manifest.py` mới là nơi khai job_type đó (chỉ đăng ký,
-   gọi thẳng sang `apps.agent.jobs.handle`). Xem docstring ở đó.
+⚠️ `job_types` PHẢI là `()` — không thêm `workflow.dong_co` vào đây dù handler
+   thật của nó (`_dong_co`) vẫn sống trong `jobs.py` cùng thư mục này.
+   `test_190_public_api_coverage.py::test_the_agent_app_is_an_orchestrator_not_a_tool`
+   chốt bất biến "`agent` là runtime điều phối, không phải bản thân một
+   job_type động cơ" — `apps/agent_dong_co/manifest.py` mới là nơi khai
+   job_type đó (chỉ đăng ký, gọi thẳng sang `apps.agent.jobs.handle`). Xem
+   docstring ở đó.
+
+⏭️ `agent.advance` (vòng tick của Plan v1) ĐÃ GỠ 23/09/2026 cùng
+   `platform_core/agent/executor.py` — spec §17.5. Từ đó app này không còn khai
+   job_type nào: nó là UI thuần.
 """
 from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry
@@ -60,7 +64,7 @@ MANIFEST = AppManifest(
     accent="#8B5CF6",
     nav=(NavEntry("LTT Agent AI", "/agent", "✦", "agent"),
          NavEntry("Canvas", "/agent/canvas", "◇", "agent_canvas")),
-    job_types=("agent.advance",),
+    job_types=(),
     requires=("api",),
     credit_cost=_orchestration_cost,
     enabled=True,
@@ -69,7 +73,7 @@ MANIFEST = AppManifest(
     capabilities=("Automation",),
     group="AI Studio",
     badge="MỚI",
-    notes="Agent/Canvas dùng chung Plan v1 và executor server-side.",
+    notes="Canvas V2 chay tren platform_core/workflow (spec ADR-WF-002). Khong con Plan v1.",
     bao_tri=_luoi_do_dong_co,
     bao_tri_moi_giay=60,
 )

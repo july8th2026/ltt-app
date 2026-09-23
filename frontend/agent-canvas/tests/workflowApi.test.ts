@@ -1,9 +1,17 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { approveRun, cloneWorkflow, createAutosave, createRun, exportWorkflow, importWorkflow,
-  fromV3, loadRun, loadRunHistory, loadWorkflowV3, restoreRunAsWorkflow,
+import { approveRun, cancelRunV3, cloneWorkflow, createAutosave, createRun,
+  createRunV3, exportWorkflow, importWorkflow,
+  fromV3, loadRun, loadRunHistory, loadRunV3, loadWorkflowV3,
+  publishWorkflowV3, restoreRunAsWorkflow,
+  RUN_V3_KET_THUC,
   saveWorkflow, saveWorkflowV3, toV3,
-  WorkflowConflictError,
-  type AgentRun, type Workflow } from '../src/workflowApi'
+  WorkflowCompileError, WorkflowConflictError,
+  type AgentRun, type RunV3, type Workflow } from '../src/workflowApi'
+
+const workflowApiSource = readFileSync(
+  join(import.meta.dirname, '../src/workflowApi.ts'), 'utf8')
 
 const workflow = { id: 'w1', name: 'A', revision: 3, status: 'draft', estimated: 0,
   canvas: { version: 2, goal: 'g', budget_max_credit: 10, active_page_id: 'page-1',
@@ -205,5 +213,207 @@ describe('cua v3', () => {
       JSON.stringify({ ...rawV3, published_version_id: 'v9' }), { status: 200,
         headers: { 'Content-Type': 'application/json' } }))
     expect((await loadWorkflowV3('w3')).status).toBe('validated')
+  })
+})
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status, headers: { 'Content-Type': 'application/json' } })
+}
+
+const runV3: RunV3 = { id: 'r1', workflow_id: 'w1', version_id: 'v1',
+  status: 'QUEUED', credit_max: 3, credit_charged: 0, settled: false,
+  created_at: '2026-09-24T00:00:00+00:00',
+  nodes: [{ node_id: 'a', status: 'PENDING', attempt: 1, cost_credit: 0,
+            job_id: '', error: '' }],
+  su_kien: [{ seq: 1, loai: 'WorkflowStarted', node_id: '', du_lieu: {},
+              created_at: '2026-09-24T00:00:00+00:00' }],
+  seq_cuoi: 1 }
+
+describe('run v3', () => {
+  it('createRunV3 gọi cửa v3 kèm CSRF', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValue(json(runV3, 201))
+    expect(await createRunV3('w1', 'tok', 'khoa-bam-lan-1')).toEqual(runV3)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe('/agent/api/v3/workflows/w1/runs')
+    expect((init as RequestInit).method).toBe('POST')
+    expect((init as RequestInit & { headers: Record<string, string> })
+      .headers['X-CSRF-Token']).toBe('tok')
+  })
+
+  it('createRunV3 gửi Idempotency-Key do NGƯỜI GỌI đưa vào', async () => {
+    // 🔑 Khoa phai den TU BEN NGOAI. Neu `createRunV3` tu sinh khoa thi moi
+    //    loi goi la mot khoa moi — trong nhu co chong trung, ma khong chong
+    //    duoc gi: bam hai lan van ra hai run, hai lan giu cho, hai lan tru tien.
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValue(json(runV3, 201))
+    await createRunV3('w1', 'tok', 'khoa-cua-mot-lan-bam')
+    expect(new Headers(fetchMock.mock.calls[0][1]!.headers)
+      .get('Idempotency-Key')).toBe('khoa-cua-mot-lan-bam')
+  })
+
+  it('createRunV3 gửi ĐÚNG khoá được đưa, không tự chế ra khoá khác', async () => {
+    // 🔑 Ve doi chung cho bai tren: mot ban va bo qua tham so va gui hang so
+    //    cung se lam bai tren xanh. Hai khoa khac nhau phai ra hai header khac.
+    // ⚠️ `mockResolvedValue` tra CUNG mot `Response` cho ca hai loi goi, va
+    //    than cua no chi doc duoc MOT lan ("Body is unusable"). Bai hai lan goi
+    //    phai dung `mockImplementation` de moi lan co mot `Response` moi.
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockImplementation(async () => json(runV3, 201))
+    await createRunV3('w1', 'tok', 'khoa-A-dai-hon-8')
+    await createRunV3('w1', 'tok', 'khoa-B-dai-hon-8')
+    const doc = fetchMock.mock.calls.map(
+      ([, init]) => new Headers(init!.headers).get('Idempotency-Key'))
+    expect(doc).toEqual(['khoa-A-dai-hon-8', 'khoa-B-dai-hon-8'])
+  })
+
+  it('loadRunV3 gửi con trỏ sau= để chỉ lấy sự kiện mới', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValue(json({ ...runV3, su_kien: [], seq_cuoi: 7 }))
+    const next = await loadRunV3('r1', 7)
+    expect(fetchMock.mock.calls[0][0]).toBe('/agent/api/v3/runs/r1?sau=7')
+    expect(next.seq_cuoi).toBe(7)
+  })
+
+  it('cancelRunV3 dịch 409 thành lỗi đọc được, không nuốt', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      json({ detail: { ma: 'da_ket_thuc', thong_diep: 'Đã kết thúc.' } }, 409))
+    await expect(cancelRunV3('r1', 'tok')).rejects.toThrow('Đã kết thúc.')
+  })
+
+  it('RUN_V3_KET_THUC phủ đủ 5 trạng thái kết thúc của run', () => {
+    expect([...RUN_V3_KET_THUC].sort()).toEqual(
+      ['CANCELLED', 'FAILED', 'SUCCEEDED', 'SYSTEM_FAILURE', 'TIMED_OUT'])
+  })
+})
+
+describe('lỗi biên dịch 422 giữ được ma + node_id', () => {
+  it('publish 422 ném WorkflowCompileError mang node_id', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ detail: {
+      ma: 'bieu_thuc_chua_ho_tro', node_id: 'n_2',
+      thong_diep: 'Biểu thức chưa hỗ trợ.' } }, 422))
+    // 🔴 Trước bản này `decode()` bóp object thành chuỗi: `ma` và `node_id`
+    //    biến mất, nên giao diện không tô được node hỏng — người dùng chỉ
+    //    thấy một câu tiếng Việt và phải tự dò 40 node.
+    const loi = await publishWorkflowV3(
+      { id: 'w1' } as never, 'tok').catch(e => e)
+    expect(loi).toBeInstanceOf(WorkflowCompileError)
+    expect(loi.ma).toBe('bieu_thuc_chua_ho_tro')
+    expect(loi.nodeId).toBe('n_2')
+    expect(loi.message).toBe('Biểu thức chưa hỗ trợ.')
+  })
+
+  it('422 KHÔNG có `ma` vẫn là Error thường', async () => {
+    // 🔑 Vế đối chứng: nếu mọi 422 đều thành WorkflowCompileError thì lớp
+    //    lỗi mới không còn nói lên điều gì.
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      json({ detail: 'Tài liệu rỗng.' }, 422))
+    const loi = await publishWorkflowV3({ id: 'w1' } as never, 'tok')
+      .catch(e => e)
+    expect(loi).not.toBeInstanceOf(WorkflowCompileError)
+    expect(loi.message).toBe('Tài liệu rỗng.')
+  })
+})
+
+describe('decode() không bóp méo lỗi máy chủ', () => {
+  it('detail dạng MẢNG (lỗi validate FastAPI) không ra "[object Object]"', async () => {
+    // 🔴 `/agent/**` KHÔNG đi qua bộ viết lại của `server/api/errors.py`
+    //    (nó chỉ nhận `/api/v1`), nên lỗi validate rơi vào bộ xử lý mặc định
+    //    của FastAPI và `detail` là một MẢNG. Mảng bị nhánh object loại ra,
+    //    rồi `new Error(detail as string)` in đúng chữ "[object Object]" lên
+    //    màn hình người dùng. Hình dạng dưới đây là thứ `sau: int = Query(0,
+    //    ge=0)` thật sự trả cho `loadRunV3('r1', -1)`.
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ detail: [{
+      type: 'greater_than_equal', loc: ['query', 'sau'],
+      msg: 'Input should be greater than or equal to 0',
+      input: '-1', ctx: { ge: 0 } }] }, 422))
+    const loi = await loadRunV3('r1', -1).catch(e => e)
+    expect(loi.message).not.toBe('[object Object]')
+    expect(loi.message).toContain('greater_than_equal')
+  })
+
+  it('402 thieu_credit KHÔNG phải lỗi biên dịch đồ thị', async () => {
+    // 🔑 Hết credit là chuyện của ví, không phải của node nào cả. Ném
+    //    WorkflowCompileError với `nodeId` rỗng làm giao diện xử lý nó như
+    //    lỗi biên dịch — đúng kiểu gộp nhầm mà vòng trước vừa gỡ cho 409.
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ detail: {
+      ma: 'thieu_credit', thong_diep: 'Không đủ credit.' } }, 402))
+    const loi = await createRunV3('w1', 'tok', 'khoa-bai-loi').catch(e => e)
+    expect(loi).not.toBeInstanceOf(WorkflowCompileError)
+    expect(loi.message).toBe('Không đủ credit.')
+  })
+
+  it('503 dong_co_chua_san_sang KHÔNG phải lỗi biên dịch đồ thị', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ detail: {
+      ma: 'dong_co_chua_san_sang', thong_diep: 'Động cơ chưa sẵn sàng.' } }, 503))
+    const loi = await createRunV3('w1', 'tok', 'khoa-bai-loi').catch(e => e)
+    expect(loi).not.toBeInstanceOf(WorkflowCompileError)
+    expect(loi.message).toBe('Động cơ chưa sẵn sàng.')
+  })
+
+  it('422 có `ma` nhưng KHÔNG có node_id vẫn là Error thường', async () => {
+    // `inputs_qua_lon`/`chua_publish` mang `ma` nhưng không chỉ được node nào.
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ detail: {
+      ma: 'chua_publish', thong_diep: 'Workflow chưa publish.' } }, 422))
+    const loi = await createRunV3('w1', 'tok', 'khoa-bai-loi').catch(e => e)
+    expect(loi).not.toBeInstanceOf(WorkflowCompileError)
+    expect(loi.message).toBe('Workflow chưa publish.')
+  })
+
+  it('422 có node_id VẪN ném WorkflowCompileError (vế đối chứng)', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ detail: {
+      ma: 'bieu_thuc_chua_ho_tro', node_id: 'n_9',
+      thong_diep: 'Biểu thức chưa hỗ trợ.' } }, 422))
+    const loi = await createRunV3('w1', 'tok', 'khoa-bai-loi').catch(e => e)
+    expect(loi).toBeInstanceOf(WorkflowCompileError)
+    expect(loi.nodeId).toBe('n_9')
+    expect(loi.ma).toBe('bieu_thuc_chua_ho_tro')
+  })
+})
+
+// ── Accept: application/json tuong minh (rui ro Cloudflare lot Sec-Fetch-*) ─
+//
+// Ban sua `da7fce81` phan biet "goi API" voi "dieu huong HTML" bang
+// Sec-Fetch-Mode, lui ve Accept. Neu Cloudflare lot header Sec-Fetch-* thi
+// vong poll (Accept: */*  mac dinh cua fetch()) se bi coi la dieu huong va
+// quay lai 302 — mat ban sua ma phep do loopback (khong qua Cloudflare) van
+// xanh. Client phai tu gui Accept: application/json, khong phu thuoc header
+// nao song sot qua Cloudflare.
+describe('Accept: application/json tren moi loi goi API', () => {
+  it('CHI CO MOT diem goi fetch() tho trong module — moi ham API phai di qua no', () => {
+    // Kiem TINH nay bat duoc CA loi goi fetch() them SAU NAY ma khong qua
+    // apiFetch(): mot phep kiem liet ke tay tung ham (9 ham hom nay) se mac
+    // ngay khi ai do them ham thu 10. `fetch(` chu thuong (khac `apiFetch(`
+    // vi khong co \b truoc chu F hoa) phai chi xuat hien DUY NHAT MOT lan —
+    // ben trong apiFetch(), noi Accept duoc gan cho moi loi goi.
+    const rawFetchCalls = workflowApiSource.match(/(?<![.\w])fetch\(/g) ?? []
+    expect(rawFetchCalls).toHaveLength(1)
+  })
+
+  it('PUT (saveWorkflow) gui Accept ma khong de de ghi Content-Type', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify(workflow), { status: 200,
+        headers: { 'Content-Type': 'application/json' } }))
+    await saveWorkflow(workflow, 'csrf-test')
+    const headers = new Headers(fetchMock.mock.calls[0][1]!.headers)
+    expect(headers.get('Accept')).toBe('application/json')
+    expect(headers.get('Content-Type')).toBe('application/json')
+  })
+
+  it('GET qua request() (khong headers rieng, vd loadRunHistory) van gui Accept', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ items: [] }), { status: 200,
+        headers: { 'Content-Type': 'application/json' } }))
+    await loadRunHistory()
+    expect(new Headers(fetchMock.mock.calls[0][1]?.headers).get('Accept'))
+      .toBe('application/json')
+  })
+
+  it('poll v3 (loadRunV3, vong 1,5s) gui Accept — dung ca khi Sec-Fetch-* bi lot', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(json(runV3))
+    await loadRunV3('r1', 0)
+    expect(new Headers(fetchMock.mock.calls[0][1]?.headers).get('Accept'))
+      .toBe('application/json')
   })
 })

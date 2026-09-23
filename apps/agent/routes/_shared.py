@@ -5,9 +5,13 @@ Truoc 2026-08-06 ca 48 handler nam trong MOT file 1.308 dong. Tach theo mien
 (AGENTS.md muc 8) de debug theo hang muc: loi chia se link thi mo `sharing.py`,
 khong phai cuon qua tro ly AI va man hinh quan tri.
 
-Logic nghiep vu cua app nay nam o `platform_core/agent/` (budget, executor,
-planner, runs, validator, workflows) chu khong o `services/` trong app: agent
+Logic nghiep vu cua app nay nam o `platform_core/agent/` (planner, validator,
+verifier, tools, workflows) chu khong o `services/` trong app: agent
 la mot phan cua nen tang, khong phai app khach.
+
+🗑️ `budget.py` va `runs.py` da bi go ngay 23/09/2026 cung model `AgentRun`
+   (plan 01b Task 9, spec §17.3+§17.5). Ranh gioi tien va trang thai cua mot
+   luot chay nay o `platform_core/workflow/` (v3).
 
 Router khai o day chu khong o `__init__` de moi module import duoc no ma khong
 tao vong import.
@@ -15,26 +19,20 @@ tao vong import.
 from __future__ import annotations
 
 from platform_core.i18n import _ as _t
-import json
 import hashlib
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 from itsdangerous import URLSafeTimedSerializer
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from apps.agent.manifest import MANIFEST
-from platform_core import jobs as job_queue
-from platform_core.agent import budget, runs, workflows
+from platform_core.agent import workflows
 from platform_core.agent.tools import resolve_params_schema
 from platform_core.models import (APP_PROJECT_ACTIVE, AgentWorkflow,
-                                  AgentWorkflowShare, AppProject, Workflow,
-                                  WorkflowDraft)
-from platform_core.agent.validator import validate_plan
-from platform_core.models import AgentRun, Job
+                                  AgentWorkflowShare, AppProject)
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.deps import user_hien_tai
 
@@ -60,37 +58,6 @@ def _assistant_serializer() -> URLSafeTimedSerializer:
     return URLSafeTimedSerializer(secret)
 
 
-def _run_rollout_mode() -> str:
-    """Return off/admin/allowlist/public with a safe production default."""
-    configured = os.environ.get("LTT_AGENT_CANVAS_RUN_ROLLOUT")
-    if configured is not None:
-        mode = configured.strip().lower()
-        return mode if mode in {"off", "admin", "allowlist", "public"} else "off"
-    legacy = os.environ.get("LTT_AGENT_CANVAS_RUN_ENABLED")
-    if legacy is not None:
-        return "public" if legacy.strip().lower() in {"1", "true", "yes", "on"} else "off"
-    return "off" if os.environ.get("LTT_ENV", "").strip().lower() in {
-        "production", "prod"} else "public"
-
-
-def _new_runs_enabled(user) -> bool:
-    mode = _run_rollout_mode()
-    if mode == "public":
-        return True
-    if mode == "admin" and getattr(user, "role", "") == "admin":
-        return True
-    if mode == "allowlist":
-        allowed = {value.strip() for value in os.environ.get(
-            "LTT_AGENT_CANVAS_RUN_USER_IDS", "").split(",") if value.strip()}
-        return getattr(user, "role", "") == "admin" or str(getattr(user, "id", "")) in allowed
-    return False
-
-
-def _require_new_runs_enabled(user) -> None:
-    if not _new_runs_enabled(user):
-        raise HTTPException(status_code=503, detail=_t('Tạo run Canvas đang tạm khóa.'))
-
-
 def _user(request: Request):
     user = user_hien_tai(request)
     if user is None:
@@ -98,67 +65,9 @@ def _user(request: Request):
     return user
 
 
-def _chan_neu_dang_nang_cap_v3(db: Session, workflow_id: str, user_id: str) -> None:
-    """Chặn khởi động việc trên đường v2 khi CHỦ workflow này đã có `WorkflowDraft`.
-
-    🔴 VÌ SAO CÓ HÀM NÀY (Defect A, 22/09). Canvas lưu qua `/agent/api/v3/...`
-       (bảng `workflow`/`workflow_draft`) kể từ `c0db75dd`, nhưng "Chạy" →
-       "Kiểm tra chi phí" (`workflow_validate`) và tạo run
-       (`workflow_create_run`) vẫn đọc bảng v2 `agent_workflows` qua
-       `workflows.get_owned`. Hai hình dạng lỗi khác nhau tuỳ `workflow_id`:
-
-           chỉ có ở v3 (workflow mới)   -> `get_owned` 404 "Không tìm thấy
-                                            workflow." dù workflow có THẬT
-           có ở CẢ HAI (đã di trú qua
-           `di_tru_m1.py`, cùng id)     -> `get_owned` tìm thấy hàng v2 và
-                                            CHẠY ĐƯỢC — nhưng nội dung v2 đó có
-                                            thể đã CŨ so với draft v3 người
-                                            dùng đang sửa trên Canvas.
-
-    ⭐ Chốt của chủ dự án (22/09): chặn gọn ở đường v2 bằng một thông điệp rõ,
-       chờ Workflow V2 engine (`phien/wf-v2`) thay thế cả hai đường.
-
-    ⛔ GỌI TRƯỚC `workflows.get_owned`: một workflow chỉ tồn tại ở v3 phải nhận
-       503 rõ ràng thay vì 404 "không tìm thấy" như thể nó chưa từng có.
-
-    ⚠️ NHƯNG vẫn phải LỌC THEO CHỦ ngay tại đây, không được hoãn việc đó cho
-       `get_owned` phía sau: `WorkflowDraft` khoá theo `workflow_id`, không
-       mang `owner_id`, nên tra thẳng bảng đó cho MỌI người gọi sẽ làm lộ
-       "id này có tồn tại (đang di trú)" cho một người lạ dò `workflow_id` của
-       người khác — đúng thứ luật *"không tìm thấy" và "của người khác" phải
-       cùng một 404* ở khắp `apps/agent/routes/` được viết để chặn. Nên ở đây
-       tra qua bảng `Workflow` (v3) đã lọc `owner_id == user_id` trước, rồi
-       mới hỏi draft của đúng hàng đó — một người lạ luôn nhận `wf is None`,
-       rơi thẳng xuống `get_owned` để nhận đúng 404 như trước giờ.
-    """
-    wf = db.execute(
-        select(Workflow).where(Workflow.id == str(workflow_id or ""),
-                               Workflow.owner_id == user_id)).scalars().first()
-    if wf is not None and db.get(WorkflowDraft, wf.id) is not None:
-        raise HTTPException(status_code=503, detail=_t(
-            'Chạy workflow trên Canvas đang được nâng cấp sang runtime mới. '
-            'Bản nháp của bạn vẫn được lưu an toàn.'))
-
-
-def _owned(db: Session, request: Request, run_id: str) -> tuple[object, AgentRun]:
-    user = _user(request)
-    try:
-        return user, runs.get_owned(db, run_id, user.id)
-    except runs.AgentRunError:
-        raise HTTPException(status_code=404, detail=_t('Không tìm thấy lượt Agent.')) from None
-
-
 def _page_context(request: Request, *, error: str = "") -> dict:
     return {"nav": MANIFEST.slug, "app": MANIFEST,
             "csrf_token": issue_csrf_token(request), "error": error}
-
-
-def _run_context(request: Request, run: AgentRun, *, error: str = "") -> dict:
-    context = _page_context(request, error=error)
-    context.update({"run": run, "steps": list((run.plan or {}).get("steps") or []),
-                    "checkpoints": run.checkpoint or {},
-                    "decisions": list(run.decision_log or [])})
-    return context
 
 
 def _verify_json_csrf(request: Request, body: dict) -> None:
@@ -182,113 +91,6 @@ def _workflow_json(row: AgentWorkflow, *, include_canvas: bool = True) -> dict:
 def _workflow_response(row: AgentWorkflow, *, status_code: int = 200):
     return JSONResponse(_workflow_json(row), status_code=status_code,
                         headers={"ETag": f'"{row.revision}"'})
-
-
-def _quote_hash(run: AgentRun) -> str:
-    payload = {"run_id": run.id, "version": run.version, "plan": run.plan,
-               "estimated": run.estimated, "budget_max": run.budget_max}
-    raw = json.dumps(payload, ensure_ascii=False, sort_keys=True,
-                     separators=(",", ":")).encode("utf-8")
-    return hashlib.sha256(raw).hexdigest()
-
-
-def _run_json(run: AgentRun) -> dict:
-    quote_hash = next((item.get("quote_hash", "") for item in reversed(
-        list(run.decision_log or [])) if item.get("event") == "workflow_source"), "")
-    artifacts = []
-    for step_id, state in (run.checkpoint or {}).items():
-        outputs = state.get("outputs") if isinstance(state, dict) else None
-        values = []
-        def collect(value, name="output"):
-            if isinstance(value, dict):
-                for key, item in value.items(): collect(item, str(key))
-            elif isinstance(value, list):
-                for item in value: collect(item, name)
-            elif isinstance(value, str) and (name.endswith("_key") or name.endswith("_keys")):
-                values.append((name, value))
-        collect(outputs)
-        artifacts.extend({"step_id": step_id, "name": name,
-                          "url": f"/agent/api/runs/{run.id}/artifacts/{step_id}/{index}"}
-                         for index, (name, _key) in enumerate(values))
-    scheduled = next((item.get("scheduled_at") for item in reversed(run.decision_log or [])
-                      if item.get("event") == "scheduled"), "")
-    return {"id": run.id, "version": run.version, "status": run.status,
-            "goal": run.goal, "plan": run.plan, "checkpoint": run.checkpoint,
-            "budget_max": run.budget_max, "estimated": run.estimated,
-            "actual": run.actual, "quote_hash": quote_hash,
-            "decisions": run.decision_log, "artifacts": artifacts,
-            "scheduled_at": scheduled}
-
-
-def _scheduled_datetime(run: AgentRun) -> datetime | None:
-    value = next((item.get("scheduled_at") for item in reversed(run.decision_log or [])
-                  if item.get("event") == "scheduled"), "")
-    if not value:
-        return None
-    return datetime.fromisoformat(str(value).replace("Z", "+00:00")).astimezone(timezone.utc)
-
-
-def _schedule_at(value) -> datetime:
-    if value in (None, ""):
-        return datetime.now(timezone.utc)
-    try:
-        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-    except ValueError as exc:
-        raise ValueError(_t('Thời gian lên lịch không hợp lệ.')) from exc
-    if parsed.tzinfo is None:
-        raise ValueError(_t('Thời gian lên lịch phải kèm múi giờ.'))
-    parsed = parsed.astimezone(timezone.utc)
-    if parsed > datetime.now(timezone.utc) + timedelta(days=30):
-        raise ValueError(_t('Chỉ được lên lịch tối đa 30 ngày.'))
-    return parsed
-
-
-def _enqueue_advance(db: Session, run: AgentRun, scheduled_at: datetime) -> Job:
-    existing = next((item.get("scheduled_at") for item in reversed(run.decision_log or [])
-                     if item.get("event") == "scheduled"), "")
-    effective = _schedule_at(existing) if existing else scheduled_at
-    job = job_queue.submit(
-        db, user_id=run.user_id, app_slug="agent", job_type="agent.advance",
-        params={"run_id": run.id, "user_id": run.user_id},
-        dedupe_key=f"agent:advance:{run.id}:initial", max_attempts=3,
-    )
-    job.next_run_at = max(effective, datetime.now(timezone.utc))
-    if not existing:
-        runs.append_decision(db, run, {"event": "scheduled",
-                                       "scheduled_at": scheduled_at.isoformat()})
-    return job
-
-
-def _cancel_advance_jobs(db: Session, run: AgentRun) -> None:
-    queued = db.query(Job).filter(
-        Job.user_id == run.user_id, Job.app_slug == "agent",
-        Job.dedupe_key.like(f"agent:advance:{run.id}:%"),
-    ).all()
-    for job in queued:
-        job_queue.cancel(db, job)
-
-
-def _run_summary(run: AgentRun) -> dict:
-    return {"id": run.id, "version": run.version, "status": run.status,
-            "estimated": run.estimated, "actual": run.actual,
-            "created_at": run.created_at.isoformat() if run.created_at else "",
-            "finished_at": run.finished_at.isoformat() if run.finished_at else ""}
-
-
-def _artifact_key(run: AgentRun, step_id: str, index: int) -> str:
-    state = (run.checkpoint or {}).get(step_id) or {}
-    found = []
-    def collect(value, name="output"):
-        if isinstance(value, dict):
-            for key, item in value.items(): collect(item, str(key))
-        elif isinstance(value, list):
-            for item in value: collect(item, name)
-        elif isinstance(value, str) and (name.endswith("_key") or name.endswith("_keys")):
-            found.append(value)
-    collect(state.get("outputs"))
-    if index < 0 or index >= len(found):
-        raise HTTPException(status_code=404, detail=_t('Không tìm thấy artifact.'))
-    return found[index]
 
 
 def _palette_tool(name, spec, owner, loaded) -> dict:
@@ -350,21 +152,6 @@ def _preferences_json(row: AppProject | None) -> dict:
                 saved.get("catalog_mode") in {"simple", "advanced"}):
             payload["catalog_mode"] = saved["catalog_mode"]
     return {**payload, "revision": row.revision if row else 0}
-
-def _prepare_run(db: Session, *, user, plan: dict, source: dict) -> AgentRun:
-    _require_new_runs_enabled(user)
-    validation = validate_plan(plan, db=db, user=user)
-    if not validation.valid:
-        raise workflows.WorkflowError("Workflow không còn hợp lệ.")
-    run = runs.create_run_capped(db, user_id=user.id, goal=str(plan.get("goal", "")),
-                                 plan=plan, budget_max=int(plan.get("budget_max_credit", 0)))
-    # Canvas đã được người dùng dựng và validate; không có lần gọi AI planner nào
-    # ở luồng này nên chỉ báo/giữ chi phí thực thi. Luồng form goal→AI plan ở trên
-    # vẫn dùng planning_cost mặc định.
-    budget.set_quote(db, run, plan=plan, validation=validation, planning_cost=0)
-    event = {"event": "workflow_source", **source, "quote_hash": _quote_hash(run)}
-    runs.append_decision(db, run, event)
-    return run
 
 def _active_share(db: Session, token: str) -> AgentWorkflowShare:
     digest = hashlib.sha256(token.encode()).hexdigest()

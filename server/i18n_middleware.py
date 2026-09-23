@@ -28,6 +28,10 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import RedirectResponse
 
 from platform_core import i18n
+# ⭐ MỘT nguồn cho câu hỏi "điều hướng HTML hay lời gọi dữ liệu?" —
+#    `require_login` (server/auth/session.py) hỏi đúng hàm này để quyết định
+#    303-về-/login hay 401+JSON. Xem docstring của module đó.
+from server.loai_request import la_dieu_huong_html
 
 
 def _ho_so_ngon_ngu(request) -> str:
@@ -88,7 +92,8 @@ class I18nMiddleware(BaseHTTPMiddleware):
         # để địa chỉ khớp nội dung (xem docstring).
         if (tien_to is None and lang != i18n.GOC
                 and request.method == "GET"
-                and not request.headers.get("hx-request")):
+                and not request.headers.get("hx-request")
+                and la_dieu_huong_html(request)):
             dich = i18n.them_tien_to(duong, lang)
             if request.scope.get("query_string"):
                 dich += "?" + request.scope["query_string"].decode("latin-1")
@@ -116,6 +121,9 @@ class I18nMiddleware(BaseHTTPMiddleware):
         # Cho bộ nhớ đệm biết trang đổi theo ngôn ngữ, kẻo CDN phục vụ bản tiếng
         # Việt cho người dùng tiếng Anh.
         vary = resp.headers.get("vary", "")
-        can = "Accept-Language, CF-IPCountry, Cookie"
+        # `Sec-Fetch-Mode`/`Accept` cũng quyết định có chuyển hướng hay không, nên
+        # thiếu chúng trong `Vary` thì một bộ đệm dùng chung có thể lấy bản 200 của
+        # `fetch()` đem phục vụ cho lần điều hướng lẽ ra phải 302.
+        can = "Accept-Language, CF-IPCountry, Cookie, Accept, Sec-Fetch-Mode"
         MutableHeaders(raw=resp.raw_headers)["vary"] = f"{vary}, {can}" if vary else can
         return resp

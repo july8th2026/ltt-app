@@ -98,11 +98,16 @@ def test_bat_duoc_dung_ca_da_xay_ra_that_tren_production(db):
     assert treo[0].ly_do == "khong_ai_ket_so"
 
 
-def test_agent_run_ket_o_running_van_bi_bao(db):
-    """Không có vòng quét nào thu hồi `AgentRun` treo (đã kiểm 2026-08-26).
+def test_giu_cho_theo_ma_LUOT_CHAY_khong_phai_job_van_bi_bao(db):
+    """Không có vòng quét nào thu hồi một **lượt chạy** treo (đã kiểm 2026-08-26).
 
-    Nên tiền của nó đúng là tiền không có đường về, và phải được báo — dù hàng
-    `agent_runs` vẫn còn đó.
+    Nên tiền của nó đúng là tiền không có đường về, và phải được báo.
+
+    🗑️ 23/09 (plan 01b Task 9): bài này từng mang tên `AgentRun`. Model đó đã
+       được gỡ — nhưng nó **chưa bao giờ** là đối tượng của bài: bài chỉ dựng
+       một bút toán `hold` có khoá là mã một **lượt chạy**, không phải mã một
+       `Job`. Hình dạng ấy còn nguyên ở v3 (`platform_core/workflow/tien.py:61`
+       giữ chỗ theo `run.id`), nên tính chất còn sống và bài chỉ đổi tên.
     """
     from platform_core import credit
 
