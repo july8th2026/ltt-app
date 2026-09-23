@@ -33,7 +33,13 @@ CHU_NHA = "platform_core/phat_media.py"
 def tep_py(*thu_muc: str):
     for tm in thu_muc:
         for p in (GOC / tm).rglob("*.py"):
-            if "__pycache__" in p.parts:
+            # `vendor/` (vd `apps/video_crawler/vendor/f2_abogus/`) là mã bên
+            # thứ ba chép NGUYÊN VĂN (LICENSE/NOTICE kèm theo), không phải
+            # route media của ta — cùng lý do và cùng cách loại như các phép
+            # kiểm khác trong kho (vd test_148_frontend_bundle.py,
+            # test_149_presign_khong_nuot_loi.py, test_151_worker_gpu.py đều
+            # loại "vendor" khỏi path.parts).
+            if {"__pycache__", "vendor"} & set(p.parts):
                 continue
             yield p
 

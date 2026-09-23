@@ -29,6 +29,8 @@ import os
 import urllib.error
 import urllib.request
 
+import pytest
+
 from apps.ltt_llm.ngan_sach import ANH_BYTE_TOI_DA, SO_ANH_TOI_DA
 
 
@@ -113,6 +115,32 @@ def test_hoi_may_B_mang_bearer_vi_health_duoc_bao_ve(monkeypatch):
 
     monkeypatch.setattr(urllib.request, "urlopen", urlopen)
     assert _hoi_may_b() == {"max_images": SO_ANH_TOI_DA}
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _nap_moi_truong_may_b_cho_pytest_go_tay():
+    """`pytest tests/test_1259...` go tay khong di qua `gate.py`, nen
+    `_nap_moi_truong_test` cua gate (chi chay trong buoc "bo test" cua MOT
+    luot gate) khong tung cap `LTT_LLM_BASE_URL`/`LTT_LLM_TOKEN` o day. Goi lai
+    dung bo nap do (`tools/moi_truong_may_b.nap_env_may_b`, qua SSH khoa
+    `~/.ssh/nexus_b`) de `test_BAN_SAO_khop_may_B` doi chieu duoc khi chay tay.
+
+    Chi dat bien con THIEU, va tra lai nguyen trang sau khi het module — khong
+    ro sang tep test khac trong cung phien `pytest`. Khong hoi duoc may B
+    (thieu khoa SSH, may khong tra loi) thi khong dat gi — test_BAN_SAO van DO
+    dung thiet ke; khong in, khong log token.
+    """
+    m = _nap()
+    truoc = {k: os.environ.get(k) for k in ("LTT_LLM_BASE_URL", "LTT_LLM_TOKEN")}
+    trang_thai = m.nap_env_may_b(os.environ)
+    if trang_thai:
+        print(f"  [may B] {trang_thai}")
+    yield
+    for k, v in truoc.items():
+        if v is None:
+            os.environ.pop(k, None)
+        else:
+            os.environ[k] = v
 
 
 def test_BAN_SAO_khop_may_B():
