@@ -20586,3 +20586,23 @@ msgstr "Pick a plan on the side and press “Create machine”. We build it and 
 
 msgid "Chất lượng mạng đang suy giảm. Máy vẫn chạy, nhưng kết nối có thể chậm hoặc chập chờn. Chúng tôi đang xử lý."
 msgstr "Network quality is degraded. Your machines keep running, but the connection may be slow or unstable. We are working on it."
+
+#: apps/video_crawler
+msgid "Chưa có phiên đăng nhập Xiaohongshu nào trong hệ thống để lấy dữ liệu."
+msgstr "There is no Xiaohongshu sign-in session in the system yet to fetch data with."
+
+#: apps/video_crawler
+msgid "Nền ghi “Đang phát triển” đã dựng xong đường đi nhưng đo thật chưa ra dữ liệu — chúng tôi đang làm tiếp. Di chuột lên nhãn để xem lý do."
+msgstr "Platforms marked “In development” already have their path built, but real measurements return no data yet — we are still working on them. Hover the label to see why."
+
+#: apps/video_crawler
+msgid "{ten} đang phát triển, chưa dùng được. {ly_do}"
+msgstr "{ten} is in development and not usable yet. {ly_do}"
+
+#: apps/video_crawler
+msgid "Đo thật 23/09 bằng tài khoản hệ thống: Douyin trả về danh sách rỗng, chưa lấy được video nào."
+msgstr "Measured 23/09 with a system account: Douyin returns an empty list; no videos could be fetched."
+
+#: apps/video_crawler
+msgid "Đo thật 23/09: TikTok trả lỗi \"No working app info\" — công cụ chưa lấy được dữ liệu."
+msgstr "Measured 23/09: TikTok returns \"No working app info\" — the tool cannot fetch data yet."
