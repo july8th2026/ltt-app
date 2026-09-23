@@ -9,6 +9,8 @@ Thông điệp khách là câu cố định — không bao giờ chứa văn b�
 """
 from __future__ import annotations
 
+import logging
+
 from platform_core.i18n import N_
 
 from apps.video_crawler.adapters.base import LoiCao
@@ -33,6 +35,11 @@ _BANG: tuple[tuple[str, tuple[str, ...], bool, str], ...] = (
     # Xét TRƯỚC rieng_tu/khong_ton_tai: id/URL trong câu thô có thể chứa "private", "sign in"...
     ("trich_xuat_hong", ("cannot parse data", "unexpected response from webpage request"),
      True, N_("Nền tảng vừa đổi cấu trúc trang, công cụ đang chờ cập nhật. Vui lòng thử lại sau.")),
+    # Sự cố nghiệm thu production 23/09: worker (LocalSystem) không thấy ffmpeg ⇒ MỌI lượt tải hỏng với
+    # "lỗi không xác định". Đây là lỗi CẤU HÌNH MÁY CHỦ: khách không sửa được, thử lại cũng hỏng y hệt.
+    ("thieu_ffmpeg", ("but ffmpeg is not installed", "ffmpeg not found", "ffprobe and ffmpeg not found",
+                      "ffmpeg is not installed"),
+     False, N_("Máy chủ chưa sẵn sàng ghép video. Chúng tôi đã ghi nhận — vui lòng thử lại sau.")),
     ("chi_la_anh", ("no video formats found",),
      False, N_("Bài đăng này không có video (chỉ có ảnh).")),
     ("url_khong_ho_tro", ("unsupported url", "no suitable extractor"),
@@ -50,6 +57,8 @@ _BANG: tuple[tuple[str, tuple[str, ...], bool, str], ...] = (
      True, N_("Lỗi mạng khi kết nối tới nền tảng. Vui lòng thử lại sau.")),
 )
 
+_LOG = logging.getLogger(__name__)
+
 _KHAC = N_("Không tải được video do lỗi không xác định. Vui lòng thử lại sau.")
 
 
@@ -62,18 +71,22 @@ def phan_loai(thong_diep: str) -> LoiCao:
     for ma, tin_hieu, tam_thoi, cau in _BANG:
         if any(t in low for t in tin_hieu):
             return LoiCao(ma, cau, tam_thoi=tam_thoi)
+    # ⛔ Không nuốt: một lỗi CHƯA phân loại mà im lặng thì mọi lỗi mới trông giống hệt nhau (23/09). Văn bản gốc
+    # chỉ vào LOG VẬN HÀNH; câu cho khách vẫn là câu chung.
+    _LOG.warning("video_crawler: loi chua phan loai duoc: %s", (thong_diep or "")[:500])
     return LoiCao("loi_khac", _KHAC, tam_thoi=True)
 
 
-def cho_khach(error: str | None) -> str | None:
-    """`Job.error` (job_runner ghi `TenLop: thông điệp`) ⇒ câu báo khách thuộc bảng trên (msgid, dịch lúc hiển thị).
+def cho_khach(error: str | None) -> str:
+    """`Job.error` ⇒ câu được phép hiện cho KHÁCH (đã dịch). Một nguồn: `platform_core.jobs.loi_cho_khach`.
 
-    Chỉ trả câu CÓ TRONG bảng — lỗi hệ thống lạ (có thể chứa đường dẫn, văn bản thô) ⇒ None, template hiện câu chung.
+    Trước W4 hàm này giữ BẢNG SO KHỚP NGUYÊN VĂN của riêng app — câu có biến (kho tài khoản: "{ten} tạm không
+    khả dụng…") không bao giờ khớp nên khách nhận câu chung. Nay nền tảng đánh dấu `LoiNguoiGoi(<lớp>): …` ngay
+    lúc ngoại lệ còn sống (`jobs.mo_ta_loi`), nên mọi câu app CỐ Ý viết cho khách đều tới đúng, còn lỗi hệ thống
+    vẫn thành câu chung.
     """
-    cau_hop_le = {c for _ma, _th, _tt, c in _BANG} | {_KHAC}
-    phan = (error or "").split(": ")
-    for i in range(1, len(phan)):             # "LoiNguoiGoi: <câu>" hoặc "RuntimeError: <mã>: <câu>"
-        cau = ": ".join(phan[i:])
-        if cau in cau_hop_le:
-            return cau
-    return None
+    from types import SimpleNamespace
+
+    from platform_core.jobs import loi_cho_khach
+    from platform_core.models import JOB_ERROR
+    return loi_cho_khach(SimpleNamespace(status=JOB_ERROR, error=error))

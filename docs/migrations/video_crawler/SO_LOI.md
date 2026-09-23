@@ -75,3 +75,17 @@ nhập qua giao diện — tác tử không được nhập thông tin đăng nh
 | W2-2 | Câu "trong 30 ngày gần đây" sai sau L6; nhánh `else` còn "1 credit" (giá cũ) | rà soát gộp L6/L7 | bỏ nhánh, câu mới |
 | W2-3 | Xem trước lỗi hiện "LoiNguoiGoi: …" (job_runner ghi `TenLop: thông điệp`) | kiểm GUI sau gộp L7 | `loi.cho_khach` — chỉ câu trong bảng, lạ ⇒ câu chung (test_1931) |
 | W2-4 | Máy dev thiếu `yt-dlp-ejs` ⇒ YouTube 403 mọi lượt tải (n-challenge không giải) | kiểm GUI | cài theo requirements; production yt-dlp 2026.7.4 cần EJS 0.8.0 — khớp dòng `<0.9` |
+
+## W4 — sự cố nghiệm thu PRODUCTION (23/09)
+
+| # | Lỗi | Cách lộ ra | Sửa |
+|---|---|---|---|
+| W4-1 | 🔴 **Worker không thấy ffmpeg** ⇒ MỌI lượt tải hỏng sau ~10 s với "lỗi không xác định"; tiền hoàn đủ nên không có dấu hiệu nào khác | Tải thật bằng tài khoản thử sau deploy. Chạy lại cùng mã bằng tài khoản CỦA TÔI thì XANH; chỉ chạy dưới `SYSTEM` (tài khoản dịch vụ worker) mới đỏ. Lỗi gốc: `You have requested merging of multiple formats but ffmpeg is not installed` | adapter truyền `ffmpeg_location` từ `platform_core.media` (bộ định vị đã có: env `LTT_FFMPEG` → PATH → gợi ý Windows → WinGet Links) |
+| W4-2 | Lỗi chưa phân loại (`loi_khac`) **nuốt văn bản gốc** ⇒ không ai lần ra được W4-1 | cùng lúc | `loi.phan_loai` ghi log vận hành văn bản gốc (chỉ khi KHÔNG phân loại được; có test đối chứng không spam) |
+| W4-3 | Thiếu ffmpeg rơi vào nhóm "không xác định" và bị coi là **tạm thời** ⇒ tốn thêm một lượt thử cho một việc không bao giờ chạy được | cùng lúc | mã riêng `thieu_ffmpeg`, `tam_thoi=False` |
+| W4-4 | Câu lỗi CÓ BIẾN (`{ten} tạm không khả dụng`) không bao giờ tới khách: `loi.cho_khach` của app so khớp nguyên văn | rà soát khi gộp W4 | bỏ bảng riêng của app, dùng `platform_core.jobs.loi_cho_khach`; nền tảng thêm `cau_khach` để lỗi TẠM THỜI cũng nói được câu của mình |
+| W4-5 | Cờ `co_tim_kenh` khai tay trong registry là nguồn chân lý thứ hai | rà soát khi gộp W4 | `nen_tang.co_tim_kenh` suy thẳng từ lớp adapter |
+
+**Bài học đo lường:** "chạy được trên máy tôi" ở đây nghĩa đen là **tài khoản của tôi**. Phép đo đúng phải chạy dưới
+đúng danh tính của tiến trình thật (`SYSTEM`), nếu không thì môi trường khác nhau ở đúng chỗ quan trọng nhất.
+

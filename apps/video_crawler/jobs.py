@@ -170,7 +170,11 @@ def _loi_job(ds: list[LoiCao]) -> Exception:
     from platform_core.jobs import LoiNguoiGoi
     if any(e.tam_thoi for e in ds):
         tam = next(e for e in ds if e.tam_thoi)
-        return RuntimeError(_t("{ma}: {thong_diep}").format(ma=tam.ma, thong_diep=tam.thong_diep))
+        e = RuntimeError(_t("{ma}: {thong_diep}").format(ma=tam.ma, thong_diep=tam.thong_diep))
+        # Tạm thời ⇒ PHẢI được thử lại ⇒ không thể là `LoiNguoiGoi`; nhưng hết lượt thì khách vẫn nên đọc
+        # câu đã soạn chứ không phải câu chung (`platform_core.jobs.mo_ta_loi` mang nó qua `Job.error`).
+        e.cau_khach = tam.thong_diep
+        return e
     return LoiNguoiGoi(ds[0].thong_diep)
 
 

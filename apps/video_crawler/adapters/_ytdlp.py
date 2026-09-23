@@ -16,6 +16,7 @@ yt-dlp được nạp lúc cần — module này import được khi chưa cài 
 """
 from __future__ import annotations
 
+import logging
 import re
 import threading
 from contextlib import contextmanager
@@ -25,6 +26,8 @@ from typing import Any, Callable, ClassVar, Iterator
 
 from platform_core.i18n import N_
 from platform_core.i18n import _ as _t
+
+_LOG = logging.getLogger(__name__)
 
 from apps.video_crawler.adapters.base import (
     BaoTienDo,
@@ -318,6 +321,14 @@ class YtdlpAdapter:
             o["progress_hooks"] = list(progress_hooks)
         if postprocessor_hooks:
             o["postprocessor_hooks"] = list(postprocessor_hooks)
+        # yt-dlp cần ffmpeg để GHÉP luồng hình + tiếng. `shutil.which` thấy ffmpeg trong phiên người dùng nhưng
+        # KHÔNG thấy trong dịch vụ nssm chạy dưới LocalSystem (sự cố nghiệm thu 23/09) ⇒ hỏi bộ định vị nền tảng.
+        from platform_core import media
+        try:
+            o["ffmpeg_location"] = media.ffmpeg_bin()
+        except (media.MediaError, OSError):    # máy chưa có ffmpeg: để yt-dlp tự báo (mã `thieu_ffmpeg`)
+            _LOG.warning("video_crawler: khong tim thay ffmpeg - luot tai se hong o buoc ghep")
+
         return o
 
     # ------------------------------------------------------------ lọc

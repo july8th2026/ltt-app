@@ -106,3 +106,27 @@ def test_bo_do_bat_duoc_mau_cu():
     assert _ROUTE_THO.search('"error": job.error if job.status == "error" else "",')
     assert _ROUTE_THO.search('"progress_msg": row.progress_msg, "error": row.error,')
     assert not _ROUTE_THO.search('"error": loi_cho_khach(j),')
+
+
+# ── Lỗi TẠM THỜI vẫn nói được câu của mình (W4) ──────────────────────────────
+#
+# `LoiNguoiGoi` = "đừng thử lại". Một lỗi tạm thời (nền chặn, mạng) PHẢI được thử lại, nên không thể là
+# `LoiNguoiGoi` — nhưng khi hết lượt thử, câu app đã soạn ("YouTube tạm chặn truy cập tự động…") vẫn hữu ích
+# hơn câu chung. Nền tảng cho gắn `cau_khach` vào bất kỳ ngoại lệ nào; đó là lời hứa "câu này an toàn cho khách".
+
+def test_cau_khach_gan_vao_loi_tam_thoi_van_toi_duoc_khach():
+    from platform_core import jobs
+    e = RuntimeError("mang: chi tiet ky thuat")
+    e.cau_khach = "Lỗi mạng khi kết nối tới nền tảng. Vui lòng thử lại sau."
+    mo_ta = jobs.mo_ta_loi(e)
+    assert mo_ta.startswith("RuntimeError"), mo_ta          # vận hành vẫn thấy lớp + chi tiết
+    assert "chi tiet ky thuat" in mo_ta
+    assert jobs.loi_cho_khach(_job(mo_ta)) == "Lỗi mạng khi kết nối tới nền tảng. Vui lòng thử lại sau."
+
+
+def test_cau_khach_rong_hoac_la_thi_ve_cau_chung():
+    from platform_core import jobs
+    for gt in ("", "   ", None, 123):
+        e = RuntimeError("boom")
+        e.cau_khach = gt
+        assert jobs.loi_cho_khach(_job(jobs.mo_ta_loi(e))) == jobs.LOI_CHUNG_KHACH

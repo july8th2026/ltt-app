@@ -484,7 +484,7 @@ def loi_kho_rong(nen_id: str):
     from apps.video_crawler import nen_tang
     try:
         ten = nen_tang.lay(nen_id).ten
-    except Exception:      # noqa: BLE001 — nền lạ: câu chung vẫn đúng
+    except nen_tang.NenKhongHopLe:         # nền lạ: dùng chính id, câu vẫn đúng nghĩa
         ten = nen_id
     return LoiNguoiGoi(_t("{ten} tạm không khả dụng. Vui lòng thử lại sau, hoặc thêm phiên đăng nhập của "
                           "bạn ở mục Đăng nhập nền tảng.").format(ten=ten))

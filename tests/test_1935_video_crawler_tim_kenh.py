@@ -571,3 +571,18 @@ def test_tiktok_tim_kenh_van_chua_ho_tro():
     with pytest.raises(LoiCao) as e:
         TikTokAdapter().tim_kenh(_yc("tiktok"), bao_tien_do=_bao()[1])
     assert e.value.ma == MA_CHUA_HO_TRO_TIM_KENH
+
+
+# ── Nền nào tìm kênh được: SUY TỪ ADAPTER, không khai tay ────────────────────
+
+def test_co_tim_kenh_suy_tu_adapter_khong_phai_co_khai_tay():
+    """Một cờ khai tay trong registry là nguồn chân lý thứ hai: thêm `tim_kenh` cho một nền mà quên bật cờ thì
+    giao diện giấu mất tính năng vừa làm. Hỏi thẳng lớp adapter (cơ học thắng giao ước)."""
+    from apps.video_crawler import nen_tang
+    from apps.video_crawler.adapters import base, tao
+    assert nen_tang.co_tim_kenh("youtube") is True
+    assert nen_tang.co_tim_kenh("bilibili") is True
+    for nen in nen_tang.cac_nen_bat():
+        lop = type(tao(nen.id))
+        assert nen_tang.co_tim_kenh(nen.id) is (lop.tim_kenh is not base.PlatformAdapter.tim_kenh)
+    assert nen_tang.co_tim_kenh("nen-khong-co-that") is False

@@ -259,6 +259,20 @@ def nhan_dien(url: str) -> str | None:
     return None
 
 
+def co_tim_kenh(nen_id: str) -> bool:
+    """Nền này tìm kênh theo TÊN được không — hỏi thẳng lớp adapter, không có cờ khai tay.
+
+    Một cờ trong registry là nguồn chân lý thứ hai: làm `tim_kenh` cho một nền mà quên bật cờ thì giao diện
+    giấu mất tính năng vừa viết (và ngược lại, bật cờ cho nền chưa có mã thì khách gõ xong mới thấy lỗi).
+    """
+    from apps.video_crawler.adapters import base, tao
+    try:
+        lop = type(tao(nen_id))
+    except (NenKhongHopLe, ImportError, LookupError):   # nền lạ / chưa bật / chưa có adapter
+        return False
+    return lop.tim_kenh is not base.PlatformAdapter.tim_kenh
+
+
 def doan_tu_link(s: str) -> DoanLink | None:
     """Đoán (nền, chế độ) từ một link dán vào — port nguyên văn `_doanTuLink` (H:16762-16797)."""
     l = (s or "").strip()

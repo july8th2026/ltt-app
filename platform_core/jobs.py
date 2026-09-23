@@ -86,6 +86,8 @@ class LoiNguoiGoi(Exception):
 
 #: Câu chung cho khách khi job hỏng vì lý do KHÔNG phải của họ — cùng câu với sự kiện `failed` (`fail()`).
 LOI_CHUNG_KHACH = N_("Không thể hoàn tất yêu cầu. Bạn có thể thử lại.")
+#: Dấu ngăn "chi tiết cho vận hành" với "câu cho khách" trong `Job.error` của một lỗi KHÔNG phải `LoiNguoiGoi`.
+DAU_CAU_KHACH = "|| khach: "
 _LOI_KHACH = re.compile(r"LoiNguoiGoi(?:\(\w+\))?: (.*)\Z", re.S)
 
 
@@ -99,6 +101,11 @@ def mo_ta_loi(exc: BaseException) -> str:
     if isinstance(exc, LoiNguoiGoi):
         nhan = "LoiNguoiGoi" if type(exc) is LoiNguoiGoi else f"LoiNguoiGoi({type(exc).__name__})"
         return f"{nhan}: {exc}"
+    cau = getattr(exc, "cau_khach", None)
+    if isinstance(cau, str) and cau.strip():
+        # Lỗi TẠM THỜI (phải thử lại ⇒ không thể là `LoiNguoiGoi`) vẫn nói được câu đã soạn cho khách khi
+        # hết lượt thử. Chi tiết kỹ thuật giữ nguyên cho vận hành, câu khách nằm ở cuối sau dấu.
+        return f"{type(exc).__name__}: {exc} {DAU_CAU_KHACH}{cau}"
     return f"{type(exc).__name__}: {exc}"
 
 
@@ -112,8 +119,15 @@ def loi_cho_khach(job) -> str:
 
     if job is None or getattr(job, "status", None) != JOB_ERROR:
         return ""
-    m = _LOI_KHACH.match(getattr(job, "error", None) or "")
-    return _(m.group(1)) if m and m.group(1).strip() else _(LOI_CHUNG_KHACH)
+    loi = getattr(job, "error", None) or ""
+    m = _LOI_KHACH.match(loi)
+    if m and m.group(1).strip():
+        return _(m.group(1))
+    if DAU_CAU_KHACH in loi:
+        cau = loi.split(DAU_CAU_KHACH, 1)[1].strip()
+        if cau:
+            return _(cau)
+    return _(LOI_CHUNG_KHACH)
 
 
 class DangBan(Exception):

@@ -106,14 +106,31 @@ def test_bang_gia_cho_giao_dien_khop_gia_bang():
 
 @pytest.mark.parametrize("error, mong", [
     ("LoiNguoiGoi: Video không tồn tại hoặc đã bị gỡ.", "Video không tồn tại hoặc đã bị gỡ."),
-    ("RuntimeError: mang: Lỗi mạng khi kết nối tới nền tảng. Vui lòng thử lại sau.",
-     "Lỗi mạng khi kết nối tới nền tảng. Vui lòng thử lại sau."),
+    # Câu CÓ BIẾN (kho tài khoản W4) — bảng so khớp nguyên văn cũ không nhận ra, dấu của nền tảng thì có.
+    ("LoiNguoiGoi(LoiKhoRong): Douyin tạm không khả dụng. Vui lòng thử lại sau.",
+     "Douyin tạm không khả dụng. Vui lòng thử lại sau."),
     ("KeyError: 'muc'", None),
     ("RuntimeError: C:\secret\path boom", None),
     (None, None),
 ])
 def test_loi_job_cho_khach_khong_lo_ten_lop_hay_van_ban_tho(error, mong):
     """Kiểm GUI sau gộp L7: xem trước lỗi hiện "LoiNguoiGoi: Video không tồn tại…" — `job_runner` ghi
-    `TenLop: thông điệp`. Khách chỉ thấy câu của bảng `loi.py`; lỗi hệ thống lạ ⇒ None (template hiện câu chung)."""
+    `TenLop: thông điệp`. W4: app KHÔNG giữ bảng riêng nữa mà dùng dấu `LoiNguoiGoi(...)` của nền tảng
+    (`platform_core.jobs.loi_cho_khach`), nên câu có biến cũng tới được khách; lỗi hệ thống lạ ⇒ câu chung."""
     from apps.video_crawler import loi
-    assert loi.cho_khach(error) == mong
+    from platform_core.jobs import LOI_CHUNG_KHACH
+    assert loi.cho_khach(error) == (mong if mong is not None else LOI_CHUNG_KHACH)
+
+
+def test_loi_tam_thoi_van_giu_cau_cua_app_cho_khach():
+    """Lỗi tạm thời (nền chặn, mạng) được thử lại nên KHÔNG là `LoiNguoiGoi`; hết lượt thì khách vẫn phải đọc
+    câu đã soạn. Đi qua đúng đường thật: `jobs._loi_job` → `platform_core.jobs.mo_ta_loi` → `loi.cho_khach`."""
+    from platform_core.jobs import mo_ta_loi
+
+    from apps.video_crawler import jobs, loi
+    from apps.video_crawler.adapters.base import LoiCao
+    cau = "YouTube tạm chặn truy cập tự động. Vui lòng thử lại sau."
+    e = jobs._loi_job([LoiCao("yt_bot", cau, tam_thoi=True)])
+    ghi = mo_ta_loi(e)
+    assert "yt_bot" in ghi                       # vận hành vẫn thấy mã lỗi
+    assert loi.cho_khach(ghi) == cau

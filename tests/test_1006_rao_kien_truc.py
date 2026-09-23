@@ -81,6 +81,9 @@ MIEN_TRU_HANG = {
 #: ⛔ Thêm một dòng vào đây là một hành động có chủ ý, hiện trong diff. Danh sách
 #:    này phình lên là dấu hiệu đường ra mạng đang tán trở lại ra tầng app.
 MIEN_TRU_HTTP = {
+    # → THEO CHUYỂN HƯỚNG của link rút gọn (v.douyin.com, xhslink.com…): mỗi bước đi qua chính `kiem()`
+    #   (allowlist tên miền của nền + chặn IP nội bộ), tối đa 3 bước, không gửi cookie, không tải thân lớn.
+    "apps/video_crawler/an_toan_url.py",
     # → sidecar loopback CỦA CHÍNH TA (VOICE), không phải nhà cung cấp
     "apps/ltt_voice/sidecar_client.py",
     # → cổng render máy B (LTT_IMAGE) — nội bộ, bearer riêng

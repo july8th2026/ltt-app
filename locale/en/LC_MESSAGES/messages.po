@@ -20249,3 +20249,135 @@ msgstr "Go over the limit and you get a 400 (context_window_exceeded) carrying t
 
 msgid "Cần tài khoản người dùng để dùng credit."
 msgstr "A user account is needed to spend credits."
+
+#: apps/video_crawler
+msgid "Bật lại"
+msgstr "Re-enable"
+
+#: apps/video_crawler
+msgid "Bị chặn"
+msgstr "Blocked"
+
+#: apps/video_crawler
+msgid "Chưa có tài khoản nào trong kho."
+msgstr "No accounts in the pool yet."
+
+#: apps/video_crawler
+msgid "Chỉ dùng tài khoản PHỤ của LTT:"
+msgstr "Use only LTT SECONDARY accounts:"
+
+#: apps/video_crawler
+msgid "Còn {n} ngày"
+msgstr "{n} days left"
+
+#: apps/video_crawler
+msgid "Hạn cookie"
+msgstr "Cookie expiry"
+
+#: apps/video_crawler
+msgid "Không có tài khoản này."
+msgstr "No such account."
+
+#: apps/video_crawler
+msgid "Không giải được link rút gọn — chuyển hướng không an toàn hoặc trỏ ra ngoài nền đã chọn."
+msgstr "Could not resolve the short link — the redirect is unsafe or points outside the selected platform."
+
+#: apps/video_crawler
+msgid "Không giải được link rút gọn."
+msgstr "Could not resolve the short link."
+
+#: apps/video_crawler
+msgid "Không hạn"
+msgstr "No expiry"
+
+#: apps/video_crawler
+msgid "Lượt dùng/giờ"
+msgstr "Uses/hour"
+
+#: apps/video_crawler
+msgid "Lần dùng gần nhất"
+msgstr "Last used"
+
+#: apps/video_crawler
+msgid "Lỗi gần nhất"
+msgstr "Last error"
+
+#: apps/video_crawler
+msgid "Mỗi tài khoản tải tối đa {n} video mỗi giờ qua tài khoản hệ thống (bạn đã dùng {da}). Đợi một lát rồi thử lại, hoặc thêm phiên đăng nhập của bạn ở mục Đăng nhập nền tảng."
+msgstr "Each account can download up to {n} videos per hour through system accounts (you have used {da}). Wait a moment and try again, or add your own sign-in session under Platform login."
+
+#: apps/video_crawler
+msgid "Nhãn"
+msgstr "Label"
+
+#: apps/video_crawler
+msgid "Nhãn tài khoản phải có và không quá 64 ký tự."
+msgstr "The account label is required and must be at most 64 characters."
+
+#: apps/video_crawler
+msgid "Nền tảng này chưa dùng kho tài khoản hệ thống."
+msgstr "This platform does not use the system account pool yet."
+
+#: apps/video_crawler
+msgid "Nền tảng này chưa tìm kênh theo tên được. Hãy dán link kênh."
+msgstr "This platform cannot search channels by name yet. Paste a channel link instead."
+
+#: apps/video_crawler
+msgid "Thêm tài khoản"
+msgstr "Add account"
+
+#: apps/video_crawler
+msgid "Trạng thái không hợp lệ."
+msgstr "Invalid status."
+
+#: apps/video_crawler
+msgid "Tài khoản hệ thống của nền này đang bận — lượt của bạn sẽ chạy ngay khi có chỗ."
+msgstr "The system accounts for this platform are busy — your run will start as soon as a slot frees up."
+
+#: apps/video_crawler
+msgid "Tài khoản kho"
+msgstr "Pool accounts"
+
+#: apps/video_crawler
+msgid "Tài khoản phụ LTT dùng chung cho khách chưa có phiên riêng — cookie không hiện lại, kể cả cho quản trị viên."
+msgstr "LTT secondary accounts shared with customers who have no session of their own — cookies are never shown again, not even to operators."
+
+#: apps/video_crawler
+msgid "Tạm nghỉ"
+msgstr "Pause"
+
+#: apps/video_crawler
+msgid "Xoá tài khoản này khỏi kho? Không thể khôi phục."
+msgstr "Remove this account from the pool? This cannot be undone."
+
+#: apps/video_crawler
+msgid "không mở được URL: {url}"
+msgstr "could not open URL: {url}"
+
+#: apps/video_crawler
+msgid "quá nhiều bước chuyển hướng (tối đa {n})"
+msgstr "too many redirects (at most {n})"
+
+#: apps/video_crawler
+msgid "tìm thấy {n} kênh"
+msgstr "found {n} channels"
+
+#: apps/video_crawler
+msgid "vòng lặp chuyển hướng"
+msgstr "redirect loop"
+
+#: apps/video_crawler
+msgid "yt-dlp khuyến cáo không dùng tài khoản chính cho tải tự động; nền có thể tạm khoá hoặc buộc xác minh tài khoản dùng để cào."
+msgstr "yt-dlp advises against using your main account for automated downloads; platforms may suspend or force verification on accounts used for crawling."
+
+#: apps/video_crawler
+msgid "{ten} tạm không khả dụng. Vui lòng thử lại sau, hoặc thêm phiên đăng nhập của bạn ở mục Đăng nhập nền tảng."
+msgstr "{ten} is temporarily unavailable. Please try again later, or add your own sign-in session under Platform login."
+
+#: apps/video_crawler
+msgid "Điểm"
+msgstr "Score"
+
+#: apps/video_crawler
+msgid "đang tìm kênh"
+msgstr "searching for channels"
