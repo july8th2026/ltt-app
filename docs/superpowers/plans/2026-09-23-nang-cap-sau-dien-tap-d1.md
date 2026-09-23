@@ -96,7 +96,7 @@ SQLAlchemy (nền tảng, test `pytest`), PowerShell 7 (phát hành), Tauri/Rust
 
 ### Đọc con số này thế nào
 
-**65 % và 25 % không so sánh được với nhau.** Phần A là mười lỗi đã biết, mỗi cái vài chục dòng.
+**100 % và 55 % không so sánh được với nhau.** Phần A là mười lỗi đã biết, mỗi cái vài chục dòng.
 Phần B là mười năng lực, trong đó ba cái là dự án riêng. Cộng hai phần thành một con số là vô nghĩa.
 
 **Các task ở mức 0,5 đều dừng ở đúng chỗ đáng dừng**, không phải bỏ dở: T11 chặn vì slot giao diện
