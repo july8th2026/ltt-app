@@ -98,7 +98,11 @@ def mot_tham_so(ten: str, rule: dict) -> dict:
         ra["x-ltt-nhan"] = {str(o["value"]): str(o.get("label", o["value"]))
                             for o in rule["options"] if isinstance(o, dict)}
     if rule.get("depends_on"):
-        ra["x-ltt-dong"] = {"nguon": "tuy_chon_dong",
+        # ⛔ "nguon" là một MARKER cho client, không phải tên trường nội bộ.
+        #    `ToolSpec.tuy_chon_dong` là cơ chế app khai — nhãn ra ngoài phải
+        #    trung lập, không lặp lại đúng chữ đó (spec §4.6, sửa cùng lúc
+        #    Task 8 phát hiện qua test palette chống rò tên nội bộ).
+        ra["x-ltt-dong"] = {"nguon": "app_property",
                             "prop": str(rule["depends_on"])}
     if _la_may_tu_dien(rule):
         ra["readOnly"] = True

@@ -11,6 +11,7 @@ duoc dang ky vao router truoc khi nen tang gan vao FastAPI.
     runs.py            Vong doi lan chay canvas: tao, duyet, tick, huy, artifact, bundle.
     workflows.py       CRUD workflow va ban chup theo phien ban.
     drafts_v3.py       Ban nhap Canvas v3 (`workflow_draft`) + xuat ban.
+    palette_v3.py      Palette V2 sinh tu registry + luat noi day (plan 02).
     sharing.py         Chia se workflow qua link va nhan ban tu link.
     library.py         Thao tac tren workflow: nhat ky, kiem, nhan ban, luu tru, xuat/nhap.
     admin.py           Man hinh van hanh cho quan tri: lan chay, so lieu, huy.
@@ -18,6 +19,6 @@ duoc dang ky vao router truoc khi nen tang gan vao FastAPI.
 from apps.agent.routes._shared import router
 from apps.agent.routes import (  # noqa: F401  (import de dang ky route)
     legacy_runs, workspace, assistant, runs, workflows, sharing, library, admin,
-    drafts_v3)
+    drafts_v3, palette_v3)
 
 __all__ = ["router"]

@@ -249,7 +249,10 @@ Tập con JSON Schema: `type ∈ {string, number, integer, boolean, object, arra
   là tham chiếu.
 - `x-ltt-control`: gợi ý widget (`textarea`, `code-json`, `credential`, `dropdown-dong`).
 - `x-ltt-dong`: nguồn lựa chọn động — `{"nguon": "piece_property", "prop": "…"}`
-  (runner `run_property`, §11) hoặc `{"nguon": "tuy_chon_dong"}` (ToolSpec).
+  (runner `run_property`, §11) hoặc `{"nguon": "app_property", "prop": "…"}`
+  (ToolSpec `tuy_chon_dong`). ⛔ `"nguon"` là marker gửi client, không phải tên
+  trường nội bộ — palette test cấm tên cơ chế (`tuy_chon_dong`, `sync_executor`,
+  …) rò ra JSON công khai (plan 02, Task 8).
 
 Mọi giá trị `params` có thể là literal hoặc chuỗi biểu thức `{{ … }}` (§6). Validator
 kiểm literal theo lược đồ lúc publish; giá trị biểu thức kiểm lúc thi hành, sau khi tính.
