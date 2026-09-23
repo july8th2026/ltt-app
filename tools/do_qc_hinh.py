@@ -74,6 +74,23 @@ if str(GOC) not in sys.path:
 THU_MUC_PHIM = pathlib.Path(
     r"C:\Users\Thang Tuong\Desktop\TEST VIDEO")
 
+#: 🔴 **BI DANH ASCII cho bon phim — va day la mot ban va, khong mot tien nghi.**
+#:
+#:    Ten tep la tieng Trung hoan toan. Nguoi goi that di qua
+#:    `setup\do_on_dinh.ps1`, va `nang_quyen.py` sinh tep `.ps1` **thuan ASCII**
+#:    (CLAUDE.md luat 6: PowerShell 5.1 doc `.ps1` khong BOM theo ANSI). Nen mot
+#:    tham so `-Phim 廉价` toi noi thanh `--phim ??`:
+#:
+#:        do 23/09: tien trinh chay that mang `--phim ??`, khong phim nao khop,
+#:        cong cu in "BO QUA" roi thoat 0 — mot luot do **thanh cong ma khong do
+#:        gi**, va no trong y het mot luot dang chay tu ben ngoai.
+#:
+#: ⭐ Bi danh cung ghim `v1..v4` cua tai lieu vao TEP THAT. Truoc day hai thu do
+#:    chi khop nhau trong dau nguoi doc: `L_KY_THUAT.md` goi "v3 跳伞 107 s" con
+#:    ma nguon sap xep theo `sorted()` — mot thu tu KHAC. Mot lan doi chieu nham
+#:    la mot bang so gan sai phim.
+BI_DANH = {"v1": "牛肠", "v2": "露营", "v3": "跳伞", "v4": "气枪"}
+
 #: ⛔ Hai luong. May A la production; xem docstring dau tep.
 LUONG = "2"
 
@@ -353,7 +370,9 @@ def _tom_tat(cac_phim: list[dict]) -> dict:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--phim", default="", help="loc theo ten tep (chuoi con)")
+    ap.add_argument("--phim", default="",
+                    help="bi danh ASCII (v1|v2|v3|v4, ngan cach bang dau phay) "
+                         "hoac mot chuoi con cua ten tep. Xem `BI_DANH`.")
     ap.add_argument("--moi-n", dest="moi_n", type=int, default=MOI_N_MAC_DINH)
     ap.add_argument("--so-nhay", dest="so_nhay", type=int, default=4,
                     help="so `nhay_hinh` (doi chung duong) cay vao moi phim")
@@ -372,12 +391,19 @@ def main() -> int:
         print(f"BO QUA: khong thay {THU_MUC_PHIM}")
         return 0
 
+    # Bi danh ASCII -> chuoi con tieng Trung. Xem `BI_DANH`.
+    loc = [x.strip() for x in str(args.phim or "").split(",") if x.strip()]
+    loc = [BI_DANH.get(x.lower(), x) for x in loc]
     phim = sorted(t for t in THU_MUC_PHIM.iterdir()
                   if t.is_file() and t.suffix.lower() == ".mp4"
-                  and (not args.phim or args.phim in t.name))
+                  and (not loc or any(x in t.name for x in loc)))
     if not phim:
-        print("BO QUA: khong co phim nao khop.")
-        return 0
+        # 🔴 **HONG, khong "BO QUA".** Mot bo loc khong khop cai gi la mot LOI
+        #    GO, va tra 0 o day bien no thanh mot luot do "thanh cong" khong do
+        #    gi — dung dieu da xay ra 23/09 khi `-Phim 廉价` toi noi thanh `??`.
+        print(f"HONG: bo loc {loc!r} khong khop phim nao trong {THU_MUC_PHIM}. "
+              f"Bi danh hop le: {sorted(BI_DANH)}")
+        return 2
 
     thu_muc_khung = None
     if args.khung:

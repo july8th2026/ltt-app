@@ -228,13 +228,27 @@ def tu_qc_ngu_nghia(phan_doan: list[dict]) -> list[KhiemKhuyet]:
 
 #: 🔴 **QC HINH chi TU VAN — phan quyet duoc GHI nhung KHONG sinh viec sua.**
 #:
-#:    Con so dat co nay, do 23/09 tren 36 cho noi THAT cua bon phim tieng Trung
-#:    (`docs/auto_scan_video_final/L_QC_HINH.md` §4): trong so cho noi bi cham
-#:    `dat=false`, ti le DUNG khi xem lai tung cap khung bang mat la
-#:    **PLACEHOLDER_DO_CHINH_XAC**. Mot bo do o muc do thi du de GHI (nguoi soat
-#:    doc bao cao va tu quyet), nhung khong du de TIEU TIEN: mot bao dong gia
-#:    day ca mot vong sua — `edit_plan` + `content_process` + `voice_synthesis`
-#:    + render lai — cho mot cho noi khong hong.
+#: ⛔ **Va ly do la CHUA DO, chu khong phai "do thay kem".** Tinh den 23/09 chua
+#:    ai do do chinh xac cua phan quyet `dat=false` tren phim that: luot do dau
+#:    tien (`tools/do_qc_hinh.py`, 4 phim tieng Trung) bi dung giua chung vi no
+#:    giu khoa toan may de CHO MANG, va moi phan quyet nam trong bo nho nen mat
+#:    sach. `L_QC_HINH.md` §4 ghi dung nhung gi con lai va dung mot cau "chua
+#:    do" o cho con so.
+#:
+#: 🔑 Mot con so KHONG CO khong duoc doc thanh mot con so TOT. Cua mac dinh cua
+#:    mot phan quyet CHU QUAN chua ai do phai la "ghi lai", khong phai "tieu
+#:    tien" — do la chinh nguyen tac ma `DO_TIN_TOI_THIEU` ngay duoi viet ra.
+#:
+#: 🔴 **Va rieng `cat_sai` con mot ly do doc lap voi do chinh xac: no la vong
+#:    sua DAT NHAT trong he.** `edit_plan` la giai doan SOM NHAT, nen dat lai no
+#:    keo theo `content_process` + `voice_synthesis` + `timing_align` +
+#:    `compose` + `render` + ca ba lop QC. Lane `fix-toc-do` do duoc
+#:    `voice_synthesis` = ~190 giay cho mot phim 107 giay SAU khi toi uu (943
+#:    giay truoc do). Tuc mot bao dong gia o day khong phai mot lan hoi lai —
+#:    no la gan mot lan chay lai ca chuoi.
+#:
+#: ⇒ Tin hieu KEM TIN CAY NHAT cua he dang noi vao vong sua DAT NHAT cua he.
+#:   Hai dieu do cong lai thi mac dinh chi co the la tu van.
 #:
 #: ⭐ Va cai gia hai chieu khong bang nhau. Bo sot mot cho noi hong: khach nhan
 #:    mot ban dung co mot cho giat, thay duoc, khieu nai duoc. Bao dong gia: mot

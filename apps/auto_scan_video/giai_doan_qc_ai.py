@@ -38,10 +38,13 @@ Pha 19 doi ba loai QC. Giai doan nay lam hai:
 
 ## ⛔ Lop HINH chi TU VAN — phan quyet duoc GHI, khong sinh viec sua
 
-Xem `sua_chua.QC_HINH_LA_TU_VAN` (co + so do). Ngan gon: do tren 36 cho noi that
-cua bon phim tieng Trung, do chinh xac cua phan quyet `dat=false` chua du de
-TIEU TIEN — mot bao dong gia day ca mot vong sua (`edit_plan` +
-`content_process` + `voice_synthesis` + render) cho mot cho noi khong hong.
+Xem `sua_chua.QC_HINH_LA_TU_VAN`. Ngan gon, va noi dung chu dung:
+
+  * do chinh xac cua phan quyet `dat=false` **CHUA DUOC DO** tren phim that
+    (`L_QC_HINH.md` §4 — luot do dau tien bi dung giua chung), va mot con so
+    khong co khong duoc doc thanh mot con so tot;
+  * `cat_sai` la vong sua DAT NHAT cua he: `edit_plan` la giai doan som nhat,
+    nen dat lai no keo theo gan nhu ca chuoi phia sau.
 
 ⭐ "Tu van" = *khong tu dong tieu tien*, khong phai *khong ai duoc biet*: phan
    quyet van vao artifact, van vao `stage.outputs`, van hien o bao cao van hanh.
