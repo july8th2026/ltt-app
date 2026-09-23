@@ -43,6 +43,60 @@ SQLAlchemy (nền tảng, test `pytest`), PowerShell 7 (phát hành), Tauri/Rust
 - **Máy B là máy dùng chung:** trước khi đo hiệu năng, kiểm `http://192.168.2.66:8299/health/ready`
   — 503 `thieu_card` nghĩa là **không đo được gì cả**, dừng và báo.
 
+
+## Tiến độ (cập nhật 23/09 ~20:00)
+
+> Cách tính: mỗi task 1 đơn vị · **xong = 1** · **xong một phần = 0,5** · đang chạy chưa xong = 0.
+> Không ước lượng theo cảm giác. "Đang chạy" KHÔNG được tính điểm — hôm nay đã có bốn lần một
+> việc trông sắp xong rồi chết giữa chừng.
+
+### Phần A — sửa lỗi: **6,5 / 10 = 65 %**
+
+| Task | Việc | Trạng thái |
+|---|---|---|
+| 1 | V-19 cổng 5xx phải thử lại | ✅ `87f752a` · 116/116 |
+| 2 | V-23 chịu quá tải kéo dài | ✅ `977653f` · 28/28 · lộ thêm V-24 |
+| 3 | V-22 `409` kèm cần/còn | ✅ `94d4edaa` · 3 phép + 2823 cụm provider |
+| 4 | Khoá có `credits:read` | ⏳ đang chạy (làn credit-scope) |
+| 5 | Cửa sổ Tài khoản hiện số dư | ⏳ đang chạy (làn app-credit) |
+| 6 | Canh `/health/ready` máy B | ✅ `5cdba614` + `dbe3fc71` · 4 phép |
+| 7 | `-Notes` bắt buộc | ✅ `8ed9ecb` · manifest dev đã vá |
+| 8 | Tài liệu `User-Agent` | ✅ `c23c7cce` · đã gộp `main` |
+| 9 | Cho Cloudflare cache bộ cài | ⏳ đang chạy (làn credit-scope) |
+| 10 | Bổ sung từ sổ lỗi D1 | 🟡 **0,5** — số đo cuối đã ghi, V-19…V-24 đã lập; còn: vá `restore.ps1` thêm `alembic upgrade head`, và quyết 3 tệp ngoài mẫu backup |
+
+### Phần B — nâng năng lực: **2,5 / 10 = 25 %**
+
+| Task | Việc | Trạng thái |
+|---|---|---|
+| 11 | A1 nút "Chạy tiếp" | 🟡 **0,5** — hàm `coTheNoiLai` + test xong (`670770b`); **nút giao diện CHẶN**: slot không có hàm resend, cần thiết kế mới |
+| 12 | C2 nén bằng 3.5 | 🟡 **0,5** — mã xong (`3326d7f`), **chờ đo** tốc độ + chất lượng tóm tắt trên phiên dài |
+| 13 | MCP dùng thật (nay 0/166) | ⬜ chưa |
+| 14 | Gỡ trần 50 của kế hoạch/mục tiêu | ⬜ chưa |
+| 15 | Agent do người dùng định nghĩa | 🟡 **0,5** — tra xong: **đã có sẵn** (`~/.agents/*.md`, `resolveAgentOptions`); còn mở đường + tài liệu + bằng chứng chạy |
+| 16 | Credit mỗi lượt cạnh token | ⏳ đang chạy (làn app-credit) |
+| 17 | Giảm độ trễ mỗi bước | ⬜ chưa |
+| 18 | Chạy tiếp khi đóng app | 🟡 **0,5** — tra xong: **phần lớn đã có** (khay giữ sidecar sống, autostart, `lttcode-cli.exe` chạy thật 60,7 s). H18 chấm lại 45 → 78. Còn: chủ dự án quyết có làm scheduler mức hệ điều hành không |
+| 19 | Git/PR thành công cụ gốc | 🟡 **0,5** — tra xong: **không phải tự viết**, cộng đồng có `lxj808624/dsh-tool-git`; còn: đánh giá repo theo `TIEU_CHI.md` rồi bundle |
+| 20 | Khởi động app (17→49→107 s) | ⬜ chưa |
+
+### Ngoài plan — việc sinh ra từ lượt diễn tập D1
+
+| Việc | Trạng thái |
+|---|---|
+| Đồng bộ off-site ra Google Drive | ✅ `a70512f4` — chạy thật 7 bản/1,11 GB/0,9 phút/0 lỗi; đã cắm lịch `LTTStudioBackupOffSite` 03:00 hằng ngày, chạy thử dưới trình lập lịch **kết quả 0** |
+| Đường diễn tập khôi phục + đối chứng âm | ✅ `3f5b8a8d` (gộp `main`, 1 286 dòng) |
+
+### Đọc con số này thế nào
+
+**65 % và 25 % không so sánh được với nhau.** Phần A là mười lỗi đã biết, mỗi cái vài chục dòng.
+Phần B là mười năng lực, trong đó ba cái là dự án riêng. Cộng hai phần thành một con số là vô nghĩa.
+
+**Bốn task Phần B ở mức 0,5 đều dừng ở đúng chỗ đáng dừng**, không phải bỏ dở: Task 11 chặn vì
+slot giao diện không có sẵn đường nối; Task 12 chờ phép đo mà một lượt text không tạo ra được;
+Task 15/18/19 dừng sau khi tra ra **năng lực đã có sẵn** — và đó là kết quả có giá trị hơn việc
+viết thêm mã.
+
 ---
 
 ## File Structure
