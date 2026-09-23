@@ -36,6 +36,7 @@ trôi khỏi thực tế, và **không gì báo**.
 """
 from __future__ import annotations
 
+import os
 import pathlib
 import re
 
@@ -61,12 +62,43 @@ DA_CHET = frozenset({
 })
 
 
+def _tep_quet() -> list[pathlib.Path]:
+    """Tập tệp nguồn bánh cóc này **thực sự** nhìn thấy.
+
+    ⭐ `rglob`, không phải `glob`. Đến 23/09 mã Canvas mọc sang `src/nodes/`,
+    `src/inspector/`, `src/palette/`; một `glob("*.ts*")` không đệ quy để cả ba
+    ngoài tầm mắt mà vẫn xanh. Đó là dạng hỏng tệ nhất của một bánh cóc: nó
+    không báo sai, nó chỉ thôi nhìn.
+    """
+    return sorted(NGUON.rglob("*.ts*"))
+
+
+def _tep_that_su_co() -> list[pathlib.Path]:
+    """Đối chứng cho `_tep_quet`, dựng bằng **cơ chế khác** (`os.walk`).
+
+    Hai lối đi khác nhau tới cùng một sự thật: nếu phạm vi quét hụt một tệp thì
+    hai tập lệch nhau, thay vì cùng hụt một cách im lặng.
+    """
+    ra: list[pathlib.Path] = []
+    for thu_muc, _, ten_tep in os.walk(NGUON):
+        for t in ten_tep:
+            p = pathlib.Path(thu_muc, t)
+            if p.suffix in (".ts", ".tsx"):
+                ra.append(p)
+    return sorted(ra)
+
+
 def _ten_hardcode() -> dict[str, set[str]]:
-    """`tên tool -> {tệp}`. Đọc **nguồn**, không đọc bản build."""
+    """`tên tool -> {tệp}`. Đọc **nguồn**, không đọc bản build.
+
+    Khoá tệp là đường dẫn tương đối, không phải `name`: từ khi `src/` có thư mục
+    con, hai tệp trùng tên (`Inspector.tsx` và `inspector/…`) là chuyện bình
+    thường, và một thông báo đỏ chỉ ra `Inspector.tsx` thì không chỉ ra chỗ nào.
+    """
     ra: dict[str, set[str]] = {}
-    for f in sorted(NGUON.glob("*.ts*")):
+    for f in _tep_quet():
         for ten in _MAU.findall(f.read_text(encoding="utf-8")):
-            ra.setdefault(ten, set()).add(f.name)
+            ra.setdefault(ten, set()).add(f.relative_to(NGUON).as_posix())
     return ra
 
 
@@ -128,6 +160,38 @@ def test_moc_KHONG_duoc_TANG(hardcode):
         f"moi: {sorted(chet - DA_CHET)}")
 
 
+def test_pham_vi_quet_PHAI_phu_CA_thu_muc_con():
+    """🔑 Đối chứng thứ hai — về **phạm vi**, không về nội dung.
+
+    Bài `test_phep_kiem_nay_THUC_SU_doc_duoc_nguon` hỏi *"có đọc được gì
+    không"*; nó xanh chừng nào các tệp ở tầng trên cùng còn đủ tên. Nó **không**
+    bắt được trường hợp mã mới mọc ra trong thư mục con: `src/nodes/`,
+    `src/inspector/`, `src/palette/` (23/09) đều nằm ngoài một `glob` không đệ
+    quy, nên bánh cóc vẫn xanh trong khi nó đang đo sự vắng mặt của thứ nó
+    không nhìn thấy.
+
+    Hai mệnh đề, cố ý tách đôi:
+
+    * không tệp `.ts*` nào dưới `src/` bị bỏ sót (đối chứng dựng bằng `os.walk`);
+    * thư mục con **có đóng góp** tệp — để việc gộp phẳng cây thư mục không làm
+      mệnh đề trên thành đúng một cách rỗng.
+    """
+    quet = set(_tep_quet())
+    thieu = sorted(p.relative_to(NGUON).as_posix()
+                   for p in _tep_that_su_co() if p not in quet)
+    assert not thieu, (
+        f"{len(thieu)} tep nguon nam NGOAI pham vi quet:\n  " + "\n  ".join(thieu)
+        + "\n\nMot banh coc khong phu phan ma dang lon len thi no dang do su "
+          "vang mat cua thu no khong nhin thay.")
+
+    con = {p.relative_to(NGUON).parts[0] for p in quet
+           if len(p.relative_to(NGUON).parts) > 1}
+    assert len(con) >= 3, (
+        f"chi thay {len(con)} thu muc con trong tap quet ({sorted(con)}) — "
+        "23/09 da co `nodes/`, `inspector/`, `palette/`. Neu cay that su phang "
+        "lai thi sua con so nay KEM mot dong ly do.")
+
+
 def test_phep_kiem_nay_THUC_SU_doc_duoc_nguon(hardcode):
     """🔑 Đối chứng cho chính phép kiểm.
 
@@ -139,4 +203,6 @@ def test_phep_kiem_nay_THUC_SU_doc_duoc_nguon(hardcode):
     assert len(hardcode) >= 15, (
         f"chi doc duoc {len(hardcode)} ten tu {NGUON} — nghi phep kiem dang "
         "quet nham cho, khong phai frontend da sach")
-    assert any(f.suffix in (".ts", ".tsx") for f in NGUON.glob("*.ts*"))
+    # Qua ĐÚNG cái cửa mà `_ten_hardcode` đi qua: một đối chứng gọi `glob`
+    # riêng của nó thì nó đang chứng nhận một phạm vi quét KHÁC.
+    assert any(f.suffix in (".ts", ".tsx") for f in _tep_quet())
