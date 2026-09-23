@@ -693,7 +693,7 @@ Lượt diễn tập D1 đang chạy khi plan này được viết (lượt 7, b
 
 ---
 
-## Thứ tự thi hành
+## Thứ tự thi hành — Phần A
 
 | Đợt | Task | Vì sao thứ tự này |
 |---|---|---|
@@ -717,3 +717,343 @@ của chủ dự án.
 
 **Nhất quán tên:** `SCOPES_KHOA`, `model_failure(limit=, actual=)`, `ThieuCredit.can/.con`,
 `kiem(url, *, doc)`, `lttWireError(value, options)` — đã đối chiếu với mã thật khi viết plan.
+---
+
+# PHẦN B — Nâng năng lực, không phải vá lỗi
+
+> Phần A (Task 1–10) chỉ **dừng chảy máu**: làm hết vẫn đúng **69,7** điểm, vì không hạng mục nào
+> trong `CHAM_DIEM_VAN_HANH_THAT_23_09.md` được nâng. Phần B nhắm vào chính các hạng mục điểm thấp.
+>
+> **Luật chung của Phần B — không có ngoại lệ:** mỗi task phải **đo trước, đo sau bằng CÙNG bộ đo**
+> đã dùng ngày 23/09 (`scratchpad/d1/b30_do_toan_dien.js` cho phiên LTTCODE,
+> `scratchpad/do_phien_claude.py` cho phiên Claude Code). Không có số trước/sau ⇒ **không được
+> tick task**, dù mã đã chạy. Lý do: cả ngày 23/09 chứng minh rằng thứ trông xanh ở tầng trên vẫn
+> có thể chết ở tầng dưới.
+
+## Bảng nhắm
+
+| Task | Hạng mục | Nay | Nhắm | Cách đo lại |
+|---|---|---:|---:|---|
+| 11 | A1 Lượt dài không đứt | 55 | 85 | Tỉ lệ lượt kết thúc bằng lỗi nền tảng trong một phiên ≥ 5 giờ |
+| 12 | C2 Chi phí một lần nén | 45 | 80 | Giây/lần nén, đo trên phiên thật |
+| 13 | G1+G2 MCP dùng được thật | 45 | 85 | Số lần gọi MCP / tổng số lần gọi công cụ trong một phiên thật |
+| 14 | E2+E3 Kế hoạch và mục tiêu | 50 | 85 | Có bằng chứng E2E; gỡ trần 50 |
+| 15 | D3 Agent do người dùng định nghĩa | 40 | 85 | Định nghĩa được một agent bằng tệp và nó chạy |
+| 16 | J1+J2 Chi phí hiện cho người dùng | 25 | 85 | Số dư + credit mỗi lượt hiện trên giao diện |
+| 17 | A5 Độ trễ mỗi bước | 60 | 75 | p50/p90 giây mỗi bước |
+| 18 | H18 Chạy nền / không cần mở app | 45 | 80 | Một việc chạy tới cùng khi app đã đóng |
+| 19 | G4 Git/PR gốc | 45 | 80 | Tạo được nhánh + PR từ trong app, có đối chứng |
+| 20 | L2 Khởi động app | 45 | 80 | Giây khởi động lạnh, đo 3 lần |
+
+---
+
+## Task 11: Lượt không chết vì lỗi nền tảng — tự nối lại (A1: 55 → 85)
+
+**Số đo hiện tại:** **4/7 lượt** của phiên D1 kết thúc bằng lỗi nền tảng. Phiên Claude Code cùng
+máy cùng ngày: **0/nhiều lượt**. Đây là con số tệ nhất trong cả bảng 60 mục.
+
+Task 1 và 2 (Phần A) chỉ sửa *phân loại* và *số lần thử*. Chúng không trả lời câu hỏi thật của
+khách: **"lượt của tôi chết rồi, giờ sao?"** Hiện khách phải tự gõ lại từ đầu.
+
+**Files:**
+- Modify: `D:\LTTCODEAPP\plugins\ui-lttcode\src\client.js` (tin lỗi turn-error)
+- Create: `D:\LTTCODEAPP\plugins\ui-lttcode\test\noi-lai.test.mjs`
+
+**Interfaces:**
+- Consumes: `lttErrorParts(message)` và `LTT_CANONICAL_KEYS` đã có trong `client.js`.
+- Produces: nút "Chạy tiếp" trên tin lỗi khi mã lỗi thuộc nhóm tạm thời; bấm là gửi lại **đúng
+  lượt vừa hỏng**, không phải một tin mới.
+
+- [ ] **Step 1: Viết phép kiểm đỏ** — tin lỗi mã tạm thời phải có đường nối lại
+
+```javascript
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import { coTheNoiLai } from '../src/client.js'
+
+test('loi tam thoi thi cho noi lai', () => {
+  for (const ma of ['provider_overloaded', 'upstream_timeout', 'upstream_unreachable',
+                    'internal_error', 'stream_idle_timeout']) {
+    assert.equal(coTheNoiLai(ma), true, ma)
+  }
+})
+
+test('loi cua chinh yeu cau thi KHONG cho noi lai', () => {
+  // Noi lai mot yeu cau sai van sai - chi lam khach mat them tien.
+  for (const ma of ['invalid_request', 'context_window_exceeded', 'insufficient_credit',
+                    'unauthorized', 'model_not_found']) {
+    assert.equal(coTheNoiLai(ma), false, ma)
+  }
+})
+
+test('ma la thi KHONG cho noi lai', () => {
+  assert.equal(coTheNoiLai('upstream_unknown'), false)
+  assert.equal(coTheNoiLai('mot_ma_chua_tung_thay'), false)
+})
+```
+
+- [ ] **Step 2: Chạy để chắc nó ĐỎ**
+
+```bash
+cd /d/LTTCODEAPP && node --test plugins/ui-lttcode/test/noi-lai.test.mjs
+```
+
+- [ ] **Step 3: Viết `coTheNoiLai` trong `client.js`**
+
+```javascript
+/**
+ * Loi nao dang noi lai. Danh sach DONG, doi chieu voi registry cua may A
+ * (llm_gateway/error_contract.py: cot `recovery` = `wait`).
+ *
+ * ⛔ KHONG noi lai `upstream_unknown`: khong biet chuyen gi da xay ra thi khong
+ *    biet noi lai co an toan khong. Va KHONG noi lai loi cua chinh yeu cau -
+ *    gui lai mot yeu cau sai van sai, chi ton them tien cua khach.
+ */
+const MA_NOI_LAI_DUOC = Object.freeze(new Set([
+  'provider_overloaded', 'concurrency_limited', 'rate_limited', 'model_loading',
+  'upstream_timeout', 'upstream_unreachable', 'internal_error',
+  'stream_idle_timeout', 'empty_response',
+]))
+
+export function coTheNoiLai(maCanonical) {
+  return MA_NOI_LAI_DUOC.has(String(maCanonical ?? ''))
+}
+```
+
+- [ ] **Step 4: Chạy để chắc nó XANH**
+
+- [ ] **Step 5: Nối nút vào tin lỗi** — khi `coTheNoiLai(ma)`, tin lỗi hiện nút **"Chạy tiếp"**;
+  bấm là gửi lại đúng lượt hỏng. Nếu lỗi kèm `retryAfter`, nút hiện đếm ngược thay vì bấm được ngay.
+
+- [ ] **Step 6: Đo lại trên phiên thật**
+
+Chạy một phiên ≥ 3 giờ có việc thật, đếm lại tỉ lệ `turn/end kind=error`. **Đạt khi: khách không
+phải gõ lại lần nào** cho nhóm lỗi tạm thời.
+
+- [ ] **Step 7: Commit**
+
+---
+
+## Task 12: Nén ngữ cảnh bằng model nhỏ (C2: 45 → 80)
+
+**Số đo hiện tại:** **188,6 s** và **243,7 s** cho hai lần nén trong cùng một phiên — hơn **7 phút**
+khách ngồi nhìn màn hình không có gì xảy ra. Đây là thứ không hiện trong bất kỳ bảng tính năng nào
+nhưng quyết định người ta có dùng tiếp hay không.
+
+**Ý tưởng:** tóm tắt lịch sử **không cần** model 27B. `ltt-3.5` (9B) đo được **0,96 s TTFT** so với
+1,35 s của 3.8, và chạy trên **card khác** (5060 Ti) nên không tranh suất với lượt chính.
+
+**Files:**
+- Modify: `D:\LTTCODEAPP\desktop\sidecar\presets\standard\agent.cordis.yml` (khối compaction)
+
+**Interfaces:**
+- Consumes: khối `compaction-basic` đã có `maxOverflowRetries: 2` và `thresholdRatio: 0.79`.
+- Produces: compaction chạy trên `provider: ltt-official, model: ltt-3.5`; lượt chính không đổi.
+
+- [ ] **Step 1: Đo mốc trước** — lấy hai số 188,6 s / 243,7 s từ phiên D1 làm mốc, ghi vào báo cáo.
+
+- [ ] **Step 2: Đọc khối compaction để biết nó có nhận `agentOptions` không**
+
+```bash
+cd /d/LTTCODEAPP && grep -n "compaction" -A 15 desktop/sidecar/presets/standard/agent.cordis.yml | head -40
+```
+
+Nếu upstream **không** cho chọn model cho compaction ⇒ dừng, ghi thành mục nghiên cứu N-NN và
+soạn issue upstream, **không vá `node_modules`** (luật "dùng lại trước, tự viết sau").
+
+- [ ] **Step 3: Đặt model nén = `ltt-3.5`**, giữ nguyên ngưỡng 0,79.
+
+- [ ] **Step 4: Kiểm chất lượng tóm tắt, không chỉ kiểm tốc độ**
+
+⚠️ Đây là chỗ dễ sai nhất: nén nhanh mà mất thông tin thì phiên sau lạc đề, và **lỗi đó không
+hiện ra ngay**. Phép kiểm: chạy một phiên dài tới khi nén, rồi hỏi agent ba câu về việc đã làm ở
+phần bị nén; ba câu phải trả lời đúng.
+
+- [ ] **Step 5: Đo lại** — giây mỗi lần nén. **Đạt khi ≤ 90 s** và ba câu kiểm trên đều đúng.
+
+- [ ] **Step 6: Commit**
+
+---
+
+## Task 13: MCP phải thật sự dùng được (G1+G2: 45 → 85)
+
+**Số đo hiện tại:** LTTCODE có 4 MCP mặc định (memory, context7, chrome-devtools, playwright)
+nhưng **0/166 lần gọi công cụ** trong phiên D1 là MCP. Phiên Claude Code cùng ngày gọi playwright
+thật để kiểm trang phát hành. Một tính năng không ai gọi thì bằng không.
+
+**Files:**
+- Create: `D:\LTTCODEAPP\tests\live\mcp\kiem_tung_mcp.mjs`
+- Modify: `D:\LTTCODEAPP\plugins\profile-lttcode\cordis.patch.yml` (nếu phát hiện cấu hình chặn)
+
+**Interfaces:**
+- Produces: `kiemMcp(ten) -> { ten, noiDuoc: boolean, soCongCu: number, loi?: string }` cho từng
+  MCP; và một báo cáo JSON gom bốn kết quả.
+
+- [ ] **Step 1: Đo hiện trạng bằng một phép kiểm thật, không đọc cấu hình**
+
+Với mỗi MCP: khởi động, liệt kê công cụ, gọi **một** công cụ vô hại, ghi kết quả.
+- `memory` → ghi rồi đọc lại một khoá
+- `context7` → tra một thư viện
+- `playwright` → mở `about:blank`, đọc tiêu đề
+- `chrome-devtools` → liệt kê công cụ (không mở trang)
+
+- [ ] **Step 2: Phân loại từng cái** — chạy được / hỏng / không ai gọi vì model không biết nó có.
+  Cái thứ ba là lỗi **mô tả công cụ**, không phải lỗi MCP.
+
+- [ ] **Step 3: Sửa đúng nhóm vừa phân loại.** Với nhóm "model không biết": viết lại mô tả để nói
+  rõ **khi nào nên dùng**, không chỉ nói nó là gì.
+
+- [ ] **Step 4: Đo lại trên phiên thật** — chạy một việc **bắt buộc phải dùng MCP** (ví dụ: kiểm
+  một trang web thật). **Đạt khi: MCP được gọi ≥ 1 lần mà không phải nhắc trong prompt.**
+
+- [ ] **Step 5: Commit**
+
+---
+
+## Task 14: Gỡ trần 50 của kế hoạch và mục tiêu (E2+E3: 50 → 85)
+
+**Vì sao đang 50:** `exit_plan_mode`, `get_goal`, `create_goal`, `update_goal` **có trong 43 công
+cụ** nhưng **không dùng lần nào** trong 155 bước. Theo thang chấm, không bằng chứng ⇒ trần 50.
+Đây là **điểm rẻ nhất cả bảng**: tính năng đã có, chỉ thiếu phép đo và một cú hích.
+
+**Files:**
+- Create: `D:\LTTCODEAPP\tests\live\ke-hoach\kiem_plan_mode.mjs`
+
+- [ ] **Step 1: Chạy một việc thật đủ lớn để phải lập kế hoạch**, quan sát agent có vào chế độ
+  kế hoạch không. Ghi lại: có / không.
+- [ ] **Step 2:** Nếu không — tra vì sao: prompt hệ thống không nhắc, hay mô tả công cụ mờ, hay
+  điều kiện kích hoạt quá hẹp.
+- [ ] **Step 3:** Sửa đúng nguyên nhân tìm được.
+- [ ] **Step 4:** Chạy lại, thu bằng chứng: bản ghi có `exit_plan_mode`, và kế hoạch hiện trên giao diện.
+- [ ] **Step 5: Commit**
+
+---
+
+## Task 15: Agent do người dùng tự định nghĩa (D3: 40 → 85)
+
+**Vì sao:** Claude Code cho định nghĩa agent bằng tệp (vai trò, model, bộ công cụ riêng). LTTCODE
+chỉ có bốn agent con **cố định trong preset**. Chênh **−52**, một trong ba chênh lớn nhất.
+
+**Nghiên cứu trước, viết mã sau** — gói `dsh-agent-plugins-market` đã có mục **"Agent personas"**
+(`runtime/agent-role-names.js`, `agent-role-router.js`, `subagent-catalog.js`). Rất có thể năng lực
+này **đã có sẵn** và chỉ cần mở đường cho người dùng, giống chuyện `/health/ready` ở Task 6.
+
+- [ ] **Step 1:** Đọc `lib/runtime/subagent-catalog.js` và `agent-role-router.js`, trả lời: persona
+  đến từ đâu, người dùng thêm được không, model gắn theo persona thế nào.
+- [ ] **Step 2:** Nếu có sẵn ⇒ task này chỉ còn là **mở đường + tài liệu + một ví dụ**.
+  Nếu không ⇒ ghi thành mục nghiên cứu, **đừng tự viết một hệ agent thứ hai**.
+- [ ] **Step 3:** Làm theo kết luận bước 2.
+- [ ] **Step 4:** Bằng chứng: định nghĩa một agent "rà bảo mật" chạy trên `ltt-3.5`, giao một việc
+  thật, nó chạy đúng vai và đúng model.
+- [ ] **Step 5: Commit**
+
+---
+
+## Task 16: Tiền hiện ngay chỗ khách nhìn (J1+J2: 25 → 85)
+
+Task 4 + 5 (Phần A) mới làm cửa sổ Tài khoản. Task này đi xa hơn: **credit mỗi lượt, cạnh token**.
+
+**Vì sao:** thanh chân phiên đã hiện `288K tok · trúng cache 84 % · 47 % ngữ cảnh` — token thì
+thấy, **tiền thì không**, dù tiền mới là thứ khách trả. Và đo được: mỗi lượt giữ 17–18 credit rồi
+hoàn 16–17, tiêu thật 1–2.
+
+**Files:**
+- Modify: `D:\LTTCODEAPP\plugins\ui-lttcode\src\client.js` (thanh chân phiên)
+
+- [ ] **Step 1:** Lấy credit mỗi lượt từ đâu — nếu `/api/v1/usage` không trả theo lượt, cần nền
+  tảng thêm trường vào thân trả lời của chính lượt đó. **Tra trước, đừng đoán.**
+- [ ] **Step 2:** Hiện `~N credit` cạnh token trên thanh chân phiên.
+- [ ] **Step 3:** Đối chứng âm: khi không lấy được số, hiện `—`, **không hiện 0**.
+- [ ] **Step 4:** Bằng chứng: chạy 5 lượt, đối chiếu số hiện trên giao diện với sổ credit trong
+  cơ sở dữ liệu. Lệch ⇒ đỏ.
+- [ ] **Step 5: Commit**
+
+---
+
+## Task 17: Giảm độ trễ mỗi bước (A5: 60 → 75)
+
+**Số đo hiện tại:** p50 **26,8 s** · p90 **72,7 s** · max 273 s cho một bước. Claude Code cùng
+máy: khoảng bản ghi p50 1,5 s.
+
+⚠️ **Đây là hạng mục dễ hứa hão nhất.** Phần lớn độ trễ đến từ model 27B chạy trên một card, không
+từ phần mềm. Vì vậy task này **chỉ nhắm phần phần mềm thật sự kiểm soát được**, và nhắm khiêm tốn
+(60 → 75), không nhắm bằng Claude Code.
+
+- [ ] **Step 1: Tách độ trễ thành ba phần** trên một phiên thật: chờ suất · sinh token · chạy công
+  cụ. Chưa biết ba phần này bao nhiêu thì **mọi tối ưu đều là đoán**.
+- [ ] **Step 2:** Chỉ tối ưu phần lớn nhất mà phần mềm kiểm soát được. Nếu phần lớn nhất là sinh
+  token ⇒ kết luận thẳng: **đây là giới hạn phần cứng**, ghi vào báo cáo và **đóng task**, không
+  vờ tối ưu.
+- [ ] **Step 3:** Đo lại p50/p90 bằng đúng bộ đo cũ.
+- [ ] **Step 4: Commit**
+
+---
+
+## Task 18: Việc chạy tới cùng khi app đã đóng (H18: 45 → 80)
+
+**Vì sao:** chênh **−42,7**, lớn nhất trong cả hai bảng. LTTCODE có `schedule_create/list/delete`
+nhưng **lịch hẹn mất khi đóng app**. Nghĩa là mọi kịch bản "giao việc rồi đi ngủ" đều không dùng được.
+
+**Đây là task lớn nhất Phần B** — nên tách thành plan riêng sau khi có thiết kế. Ở plan này chỉ
+làm bước nghiên cứu để biết nó lớn cỡ nào.
+
+- [ ] **Step 1:** Trả lời ba câu bằng mã, không bằng phỏng đoán: sidecar sống được khi cửa sổ đóng
+  không · lịch hẹn lưu ở đâu · DSH có chế độ headless không.
+- [ ] **Step 2:** Viết một mục thiết kế ngắn vào `HANG_MUC_BAN_SAU.md`, kèm ước lượng khối lượng.
+- [ ] **Step 3:** Chủ dự án quyết có mở plan riêng không.
+
+---
+
+## Task 19: Git và PR thành công cụ gốc (G4: 45 → 80)
+
+**Vì sao:** chênh **−45**. Hiện LTTCODE chỉ có `pwsh` + skill; mọi thao tác git là gõ lệnh, không
+có bước xem lại thay đổi trước khi commit.
+
+- [ ] **Step 1:** Trước khi viết công cụ mới, tra gói cộng đồng DSH có sẵn chưa (luật "dùng lại
+  trước, tự viết sau"). Ghi kết quả tra vào task.
+- [ ] **Step 2:** Nếu chưa có: thêm ba công cụ mỏng — `git_trang_thai`, `git_khac_biet`,
+  `git_commit` — trong đó `git_commit` **bắt buộc** hiện diff để người xem trước khi đồng ý.
+- [ ] **Step 3:** Đối chứng âm: `git_commit` phải **từ chối** `git add -A`, và phải chặn khi thấy
+  tệp bí mật trong danh sách stage.
+- [ ] **Step 4:** Bằng chứng: tạo một nhánh, commit một thay đổi thật từ trong app.
+- [ ] **Step 5: Commit**
+
+---
+
+## Task 20: Khởi động app (L2: 45 → 80)
+
+**Số đo hiện tại, đo 3 lần trong ngày 23/09:** **17 s** (máy ấm) · **49 s** (lạnh) ·
+**107,7 s** (sau khi khởi động lại máy). Xu hướng xấu dần và chưa ai truy.
+
+- [ ] **Step 1:** Đo lại 3 lần lạnh, lấy mốc ổn định.
+- [ ] **Step 2:** Tách thời gian khởi động thành: khởi tạo vỏ Tauri · dựng `DSH_HOME` · nạp
+  composition · mở WebView2. Bản ghi `==== sidecar ready in <N> ms` đã có sẵn số cho một chặng.
+- [ ] **Step 3:** Chỉ tối ưu chặng lớn nhất.
+- [ ] **Step 4:** Đo lại 3 lần lạnh. **Đạt khi p50 ≤ 30 s.**
+- [ ] **Step 5: Commit**
+
+---
+
+## Thứ tự Phần B
+
+| Đợt | Task | Lý do |
+|---|---|---|
+| B1 | **14, 13** | Rẻ nhất: tính năng đã có, chỉ thiếu bằng chứng và một cú hích. Gỡ được hai trần 50 |
+| B2 | **11, 12** | Hai thứ khách cảm thấy ngay: không mất lượt, không chờ 4 phút để nén |
+| B3 | **16** | Tiền hiện ra — nối tiếp Task 4+5 |
+| B4 | **15, 19** | Cần tra upstream trước; rất có thể phần lớn đã có sẵn |
+| B5 | **17, 20** | Đo trước, và **được phép kết luận "giới hạn phần cứng" rồi đóng task** |
+| B6 | **18** | Lớn nhất, tách plan riêng sau khi nghiên cứu |
+
+## Nếu làm hết Phần B
+
+Cộng theo bảng nhắm: **69,7 → khoảng 78**. Chưa bằng Claude Code (85,0), và điều đó **đúng với
+thực tế** — hai chênh còn lại lớn nhất là nền tảng chạy trên (chỉ desktop Windows) và tự động hoá,
+cả hai đều là dự án riêng chứ không phải một task.
+
+⚠️ **Một điều phải nói thẳng:** đích "mạnh bằng hoặc hơn Claude Code" **không đạt được bằng cách
+đuổi theo từng hạng mục**. Claude Code chạy model trên hạ tầng đám mây; LTTCODE chạy hai model nhà
+trên một máy hai card dùng chung. Chỗ LTTCODE có thể **vượt** không nằm ở danh sách tính năng mà ở
+bốn thứ nó đang vượt thật: tiếng Việt đầu-cuối (+55), bản ghi lỗi theo hợp đồng (+22), sandbox trên
+Windows gốc (+18), và hiện tốc độ/token ngay cho người dùng (+15). Nâng bốn thứ đó lên **95+** là
+con đường khác biệt hoá; đuổi theo H18 và H14 là con đường tốn nhất và về sau cùng.
