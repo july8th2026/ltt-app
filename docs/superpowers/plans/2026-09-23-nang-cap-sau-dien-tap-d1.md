@@ -71,7 +71,7 @@ SQLAlchemy (nền tảng, test `pytest`), PowerShell 7 (phát hành), Tauri/Rust
 |---|---|---|
 | 11 | A1 nút "Chạy tiếp" | 🟡 **0,5** — hàm `coTheNoiLai` + test xong (`670770b`); **nút giao diện CHẶN**: slot không có hàm resend, cần thiết kế mới |
 | 12 | C2 nén bằng 3.5 | 🟡 **0,5** — mã xong (`3326d7f`), **chờ đo** tốc độ + chất lượng tóm tắt trên phiên dài |
-| 13 | MCP dùng thật (nay 0/166) | ⬜ chưa |
+| 13 | MCP dùng thật (nay 0/166) | 🟡 **0,5** — **bốn MCP đều nối được thật** (9+2+3+26 công cụ, đã gọi). Nguyên nhân 0/166 là **danh sách bị cắt mất mô tả**: `listingMaxTokens: 2200` (`cordis.patch.yml:344`) ⇒ catalog tụt xuống **tên trần, không một chữ giải thích**; chú thích ngay trên tự khai con số tính cho tập MCP nhỏ hơn tập hiện tại. Còn: nâng trần + sinh `dsh-tool-search.json` với `groups` nói *khi nào dùng* |
 | 14 | Gỡ trần 50 của kế hoạch/mục tiêu | ⬜ chưa |
 | 15 | Agent do người dùng định nghĩa | 🟡 **0,5** — **đã có sẵn và đã chạy thật**: `~/.agents/agents/*.md` (hai tầng), ghim model cần **cả `provider` lẫn `model`**. Lộ lỗi **V-25**: khoá `tools:` bị **bỏ qua âm thầm** — người dùng tưởng khoá được agent con, thực tế nó có đủ công cụ host. Còn: tài liệu + vá cảnh báo + bằng chứng trong app |
 | 16 | Credit mỗi lượt cạnh token | ⚫ **ĐÓNG — chặn ở tầng engine.** Tra ba vòng, mỗi vòng bác một phương án: (1) cổng không có trường credit, quyết toán chạy sau byte cuối; (2) `client.js` là **loopback remote page ⇒ không có Tauri IPC**; (3) từ sidecar thì `TokenUsage` là interface đóng và projection **khoá cứng đồng bộ, cấm I/O**. Cần hạ tầng engine mới ⇒ chuyển `HANG_MUC_BAN_SAU.md`. **Không chỗ nào hiện số tiền sai** |
@@ -1038,25 +1038,62 @@ thật để kiểm trang phát hành. Một tính năng không ai gọi thì b�
 
 **Files:**
 - Create: `D:\LTTCODEAPP\tests\live\mcp\kiem_tung_mcp.mjs`
-- Modify: `D:\LTTCODEAPP\plugins\profile-lttcode\cordis.patch.yml` (nếu phát hiện cấu hình chặn)
+- Modify: `D:\LTTCODEAPP\plugins\profile-lttcode\cordis.patch.yml` — **đã phát hiện cấu hình chặn,
+  không còn là "nếu"** (làn `b-mcp` 23/09, xem Step 1–2 dưới)
 
 **Interfaces:**
 - Produces: `kiemMcp(ten) -> { ten, noiDuoc: boolean, soCongCu: number, loi?: string }` cho từng
   MCP; và một báo cáo JSON gom bốn kết quả.
 
-- [ ] **Step 1: Đo hiện trạng bằng một phép kiểm thật, không đọc cấu hình**
+- [x] **Step 1 ✅ XONG (làn `b-mcp`, 23/09): bốn MCP đều NỐI ĐƯỢC THẬT.** Đo trực tiếp, không mở app:
 
-Với mỗi MCP: khởi động, liệt kê công cụ, gọi **một** công cụ vô hại, ghi kết quả.
-- `memory` → ghi rồi đọc lại một khoá
-- `context7` → tra một thư viện
-- `playwright` → mở `about:blank`, đọc tiêu đề
-- `chrome-devtools` → liệt kê công cụ (không mở trang)
+  | MCP | Nối được | Công cụ | Phép gọi thật |
+  |---|---|---|---|
+  | `memory` | ✅ | 9 | `create_entities` ghi rồi `open_nodes` đọc lại — **khớp** |
+  | `context7` | ✅ | 2 | `resolve-library-id` tra "React", có kết quả thật |
+  | `chrome-devtools` | ✅ | 3 | chỉ liệt kê, không mở trang |
+  | `playwright` | ✅ | 26 | mở `about:blank`, snapshot đọc được URL |
 
-- [ ] **Step 2: Phân loại từng cái** — chạy được / hỏng / không ai gọi vì model không biết nó có.
-  Cái thứ ba là lỗi **mô tả công cụ**, không phải lỗi MCP.
+  Cả bốn `default_enabled: true` (`desktop/src-tauri/src/mcp.rs:156-229`), `generate()` sinh row
+  mỗi lần khởi động. ⇒ **Không phải (a) hỏng, cũng không phải (b) không tới tay model.**
 
-- [ ] **Step 3: Sửa đúng nhóm vừa phân loại.** Với nhóm "model không biết": viết lại mô tả để nói
-  rõ **khi nào nên dùng**, không chỉ nói nó là gì.
+- [x] **Step 2 ✅ XONG — nguyên nhân là (c), và cụ thể hơn thế: DANH SÁCH BỊ CẮT MẤT MÔ TẢ.**
+
+  Đọc bản ghi phiên D1 thật (`session-dd80eaf3…`, giải nén zstd, 1 356 dòng):
+  - 43 công cụ trong `request/header` **không** chứa tên `mcp__*` — đúng như thiết kế, chúng là
+    công cụ **hoãn** (deferred);
+  - nhưng "Deferred tool catalog" (seq 11) **có đủ 44 tên** `mcp__memory__*`, `mcp__playwright__*`,
+    `mcp__chrome-devtools__*`, `mcp__context7__*` ⇒ **tên có tới model**;
+  - **catalog đó là `## ungrouped`, THUẦN TÊN, KHÔNG MÔ TẢ** (tier names-only), vì
+    `listingMaxTokens: 2200` ở `plugins/profile-lttcode/cordis.patch.yml:344`.
+
+  🔴 **Và chú thích ngay trên nó (dòng 332-334) tự khai rằng con số đó tính khi "chỉ memory +
+  context7 hoãn"** — trong khi mặc định hiện tại còn `playwright` (26) + `chrome-devtools` (3)
+  + `github` (8 khi có token). Ngân sách đặt cho một tập nhỏ hơn, tập phình ra, danh sách tụt
+  xuống tier tên-trần. **Model nhìn thấy 44 cái tên không kèm một chữ nào giải thích.**
+
+  Đối chứng hành vi: trong 166 lượt gọi công cụ có **đúng 1 lần `tool_search`** (query
+  `"read file"`, không liên quan MCP) và **0 lần `tool_describe`/`tool_call`**.
+  > ⚠️ Làn tự bắt được một **dương tính giả của chính mình**: đếm chuỗi thô ban đầu báo 8/8
+  > `tool_call`, hoá ra khớp phải chữ "tool_call" **nằm trong văn bản catalog**, không phải bản
+  > ghi gọi thật. Ghi lại vì đây đúng kiểu lỗi đo hay gặp.
+
+- [ ] **Step 3: Sửa hai lớp — đã soạn sẵn, CHƯA áp.**
+
+  **Lớp 1 — trả lại mô tả:** `cordis.patch.yml:344` `listingMaxTokens: 2200` → **4000** (bằng mặc
+  định thượng nguồn của `dsh-tool-search`), và **sửa luôn chú thích 332-334** cho khớp tập MCP
+  thật. ⚠️ Phải **đo lại token thật** sau khi đổi, kể cả trường hợp có token GitHub — nếu không
+  thì chỉ là dời cái trần chứ không biết nó đủ chưa.
+
+  **Lớp 2 — nói "khi nào dùng", không chỉ "nó là gì":** mô tả gốc của bên thứ ba vô dụng cho việc
+  chọn (`create_entities` = *"Create multiple new entities in the knowledge graph"*), và
+  `dsh-mcp-client` **không cho ghi đè mô tả** (`README.md:164-168` — lấy verbatim từ gói gốc).
+  Đường duy nhất là **`groups`** của tool-search, đọc từ `$DSH_HOME/dsh-tool-search.json`
+  (`configScope: user`, `cordis.patch.yml:343`; schema `dsh-tool-search/lib/config.js:60-80`).
+  🔴 **LTTCODE hiện chưa sinh tệp đó** ⇒ cần một hàm kiểu `prepare_overlay` (`mcp.rs:722-733`)
+  ghi nó mỗi lần khởi động. `group.name` là chuỗi tự do và là **thứ duy nhất hiển thị làm tiêu
+  đề** (`## ${group}`), nên nội dung "khi nào dùng" phải nhét vào chính tên nhóm — bốn nhóm đã
+  soạn sẵn trong báo cáo của làn `b-mcp`.
 
 - [ ] **Step 4: Đo lại trên phiên thật** — chạy một việc **bắt buộc phải dùng MCP** (ví dụ: kiểm
   một trang web thật). **Đạt khi: MCP được gọi ≥ 1 lần mà không phải nhắc trong prompt.**
