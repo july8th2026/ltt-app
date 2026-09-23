@@ -79,13 +79,14 @@ def test_mo_thuong_nguon_giu_nguyen_model_failure(
     assert caught.value.__cause__ is source
 
 
-def test_boolean_legacy_khong_duoc_bien_loi_anh_thanh_context():
+def test_loi_anh_khong_bi_bien_thanh_context():
     from platform_core.runtime_noi_bo.luong import KhongMoDuoc
 
     image = _failure("image_count_exceeded", field="images", limit=4, actual=6)
     error = KhongMoDuoc(failure=image)
     assert error.failure is image
-    assert not error.qua_dai
+    assert not error.failure.is_context_limit
+    assert not hasattr(error, "qua_dai")
 
 
 @pytest.mark.parametrize(

@@ -18,6 +18,9 @@ python-multipart>=0.0.31,<1.0   # 0.0.29 co 8 advisory AV:N/PR:N tren duong /api
 httpx>=0.28.1,<1.0
 sentry-sdk>=2.22,<3.0
 yt-dlp>=2026.3.17,<2027.0  # Agent Social Video: Python API only; no shell/netrc/exec options
+yt-dlp-ejs>=0.8.0,<0.9     # video_crawler: giai thu thach JS YouTube (khop solver yt-dlp 2026.03.17 - nang CUNG yt-dlp)
+xhshow>=0.2.0,<0.3         # video_crawler: ky x-s Xiaohongshu thuan Python (MIT; keo pycryptodome BSD)
+curl_cffi>=0.10,<0.15      # video_crawler: yt-dlp impersonate=chrome cho bilibili.tv/facebook (yt_dlp/networking/_curlcffi.py chi nhan 0.10<=v<0.15)
 
 # CSDL (H1.1). psycopg 3 ban "binary" mang theo thu vien libpq da bien dich
 # san -- tren Windows dieu do tranh phai cai PostgreSQL client rieng chi de

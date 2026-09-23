@@ -117,7 +117,8 @@ def test_cong_THU_NHAT_that_su_chan_chu_khong_chi_ton_tai():
         #    ltt_llm) cung `development` ma van hien — va do la App DANG BAN
         #    THAT. `lifecycle` o day la nhan truong thanh dung long, khong phai
         #    mot cong. Xem `tests/test_1113_phase14_agent_danh_gia.py`.
-        "transcript.run", "audio_pause.run",
+        # `transcript.run` HIEN tu 22/09/2026 (mo cho khach, chu du an chot).
+        "audio_pause.run",
         "prompt_canh.run", "video_assembly.run",
     }, (
         f"tap tool AN da doi: {an} — moi thay doi o day la mot quyet dinh "

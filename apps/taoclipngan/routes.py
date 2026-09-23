@@ -18,6 +18,7 @@ from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
 from server.deps import user_hien_tai
 from server.templating import templates
+from platform_core.jobs import loi_cho_khach
 
 router = APIRouter(tags=["taoclipngan"])
 
@@ -109,7 +110,7 @@ def _jobs_cua_toi(request: Request):
                                   _t("Đang hoàn tất"))
             out.append({"id": j.id, "status": j.status, "progress": j.progress,
                         "status_label": status_label,
-                        "progress_label": progress_label, "error": j.error,
+                        "progress_label": progress_label, "error": loi_cho_khach(j),
                         "clips": payload.get("clips") or r.get("clips") or [],
                         "source_name": str((j.params or {}).get("source_filename") or
                                            (j.params or {}).get("video_key") or "Video")[:160],

@@ -63,6 +63,7 @@ CODE_QUOTE_INVALID = "quote_invalid"
 CODE_CONCURRENCY_LIMITED = "concurrency_limited"
 CODE_MODEL_NOT_FOUND = "model_not_found"
 CODE_QUOTA_EXCEEDED = "quota_exceeded"
+CODE_WORKFLOW_RUNS_UNAVAILABLE = "workflow_runs_unavailable"
 
 _TITLES = {
     CODE_INVALID_REQUEST: "Invalid request",
@@ -88,6 +89,7 @@ _TITLES = {
     CODE_CONCURRENCY_LIMITED: "Too many concurrent jobs",
     CODE_MODEL_NOT_FOUND: "Model not found",
     CODE_QUOTA_EXCEEDED: "Quota exceeded",
+    CODE_WORKFLOW_RUNS_UNAVAILABLE: "Workflow runs unavailable",
 }
 
 _STATUS_CODES = {
@@ -101,6 +103,7 @@ _STATUS_CODES = {
     422: CODE_UNPROCESSABLE,
     429: CODE_RATE_LIMITED,
     500: CODE_INTERNAL,
+    501: CODE_WORKFLOW_RUNS_UNAVAILABLE,
     503: CODE_SERVICE_UNAVAILABLE,
 }
 
@@ -273,8 +276,9 @@ def thieu_credit_chi_tiet(e: object) -> dict:
        khách muốn biết phải nạp bao nhiêu thì chỉ còn cách phân tích chuỗi.
 
     ⭐ Hai số ấy ĐÃ CÓ SẴN ở chỗ ném (`credit.py` khoá số dư rồi mới so). Hàm này
-       chỉ **dịch tên**, một lần, một chỗ — đúng lý lẽ của `tran_bi_vuot` ngay
-       dưới đây.
+       chỉ **dịch tên**, một lần, một chỗ. (Bản dịch `{truong, tran, thay}` của
+       lỗi model — `tran_bi_vuot` — đã gỡ ở Task 13: lỗi model nay mang
+       `field`/`limit`/`actual` trong `ltt_error` của `render_model_failure`.)
 
     Trả `{}` khi không biết số, để bên gọi cứ `**` vào được: một lỗi thiếu chi
     tiết vẫn phải là một lỗi hợp lệ, chứ không được thành một lỗi khác.
@@ -285,54 +289,6 @@ def thieu_credit_chi_tiet(e: object) -> dict:
         ra["required_credit"] = can
     if isinstance(con, int) and not isinstance(con, bool):
         ra["balance"] = con
-    return ra
-
-
-def tran_bi_vuot(chi_tiet: object) -> dict:
-    """Dich `{truong, tran, thay}` cua cong may B sang ten CONG KHAI.
-
-    🔴 VI SAO CO HAM NAY. Do 14/09/2026 tren production: khach gui 5 anh nhan
-
-           400 invalid_request  detail="yeu cau vuot tran cua cong"
-
-       Khong noi tran NAO, tran BAO NHIEU, hay truong NAO. Khach khong the sua
-       yeu cau cua ho tu mot thong diep nhu vay — va do la dinh nghia cua mot
-       loi khong hanh dong duoc.
-
-    ⭐ Thong tin AY DA CO SAN. `llm_gateway/ngan_sach.py` nem kem ba truong va
-       `api.py` tra chung trong than 413:
-
-           {"ly_do": ..., "truong": "images", "tran": 4, "thay": 5}
-
-       Tang HTTP cu vut het roi thay bang mot chuoi cung. Ham nay chi lam mot
-       viec: **dich ten**, mot lan, o mot cho.
-
-    ⛔ Dich o MOT cho vi dich hai cho la hai ban dich se troi khoi nhau — cung
-       ly le `costing.py` goi la "parallel engines". `chat.py` va `streaming.py`
-       deu goi ham nay.
-
-    Tra `{}` khi khong co gi dang noi, de ben goi cu `**` vao duoc ma khong phai
-    kiem: mot loi khong co chi tiet van phai la mot loi hop le.
-    """
-    if not isinstance(chi_tiet, dict):
-        return {}
-    ra: dict = {}
-    truong = str(chi_tiet.get("truong") or "").strip()
-    if truong:
-        ra["field"] = truong
-        ra["fields"] = [truong]
-    try:
-        tran = int(chi_tiet.get("tran") or 0)
-    except (TypeError, ValueError):
-        tran = 0
-    if tran > 0:
-        ra["limit"] = tran
-    try:
-        thay = int(chi_tiet.get("thay") or 0)
-    except (TypeError, ValueError):
-        thay = 0
-    if thay > 0:
-        ra["actual"] = thay
     return ra
 
 
@@ -445,3 +401,26 @@ def quote_expired(detail: object = "") -> ApiError:
 
 def quote_invalid(detail: object = "") -> ApiError:
     return ApiError(400, CODE_QUOTE_INVALID, detail)
+
+
+def workflow_runs_unavailable(detail: object = "", **extra) -> ApiError:
+    """501: workflow runs are gated off, not merely unavailable right now.
+
+    ⚠️ NAMED FOR THE CODE, NOT GENERICALLY. A first draft called this
+       `feature_unavailable()` and hard-coded `CODE_WORKFLOW_RUNS_UNAVAILABLE`
+       inside it — every other specific-cause helper in this file (`quote_invalid`,
+       `idempotency_conflict`, …) is named after the one code it raises, and a
+       generic name over a hard-coded code is a trap for the next caller: they
+       read the name, assume it takes a code, and ship the wrong one silently.
+       Code review (22/09) caught this before a second caller could.
+
+    Deliberately not `service_unavailable` (503, "operational blip, come back
+    soon") and not `not_found` (404, "this route doesn't exist"). A workflow
+    run endpoint that answers 200/201 with an id but never executes anything —
+    the actual state of `WF-802` before the Workflow V2 engine lands — is worse
+    than either: it *looks* like success. 501 is the RFC 9110 reading of "this
+    server does not support the functionality required to fulfill the
+    request", which is the one honest thing to say here, and it is what tells
+    a client not to retry.
+    """
+    return ApiError(501, CODE_WORKFLOW_RUNS_UNAVAILABLE, detail, extra=extra or None)

@@ -20,6 +20,7 @@ from server.templating import templates
 
 from .manifest import MANIFEST
 from .services import chen_lang
+from platform_core.jobs import loi_cho_khach
 
 log = logging.getLogger("apps.audio_pause.routes")
 
@@ -155,7 +156,7 @@ def ket_qua(job_id: str, user: str = Depends(require_login)):
         return JSONResponse({
             "job_id": job.id, "status": job.status,
             "progress": getattr(job, "progress", 0),
-            "result": job.result or {}, "error": job.error or "",
+            "result": job.result or {}, "error": loi_cho_khach(job),
         })
     finally:
         db.close()

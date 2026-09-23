@@ -81,6 +81,9 @@ MIEN_TRU_HANG = {
 #: ⛔ Thêm một dòng vào đây là một hành động có chủ ý, hiện trong diff. Danh sách
 #:    này phình lên là dấu hiệu đường ra mạng đang tán trở lại ra tầng app.
 MIEN_TRU_HTTP = {
+    # → THEO CHUYỂN HƯỚNG của link rút gọn (v.douyin.com, xhslink.com…): mỗi bước đi qua chính `kiem()`
+    #   (allowlist tên miền của nền + chặn IP nội bộ), tối đa 3 bước, không gửi cookie, không tải thân lớn.
+    "apps/video_crawler/an_toan_url.py",
     # → sidecar loopback CỦA CHÍNH TA (VOICE), không phải nhà cung cấp
     "apps/ltt_voice/sidecar_client.py",
     # → cổng render máy B (LTT_IMAGE) — nội bộ, bearer riêng
@@ -101,6 +104,13 @@ MIEN_TRU_HTTP = {
     "apps/lttvideo/cong/may_that.py",
     # → SearXNG tự host trên loopback CỦA CHÍNH TA (WSL, 127.0.0.1:8888) — tìm web cho LTTCODE
     "apps/lttcode/tim_kiem.py",
+    # → CDN ảnh bìa CÔNG KHAI của nền video (i.ytimg.com, tiktokcdn…) cho "Xem trước": CSP nền tảng chặn trình duyệt
+    #   tải thẳng (đúng — không lộ IP khách). Allowlist theo nền + chặn IP nội bộ + không theo redirect + trần 2 MB.
+    #   Không phải nhà cung cấp AI, không khoá API. (video_crawler, review 22/09)
+    "apps/video_crawler/anh_bia.py",
+    # → kuaishou.com (trang + GraphQL web) và CDN video Kuaishou: yt-dlp không có extractor Kuaishou. Allowlist CDN +
+    #   chặn IP nội bộ kể cả sau redirect + trần dung lượng. Không phải nhà cung cấp AI. (video_crawler, 22/09)
+    "apps/video_crawler/adapters/kuaishou_web.py",
 }
 
 

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% import "_app_head.html" as ah %}
+{% block title %}{{ _("Tài khoản kho") }} · {{ _("Cào video nguồn") }} — LTT AI Studio{% endblock %}
+{% block page_mode %}wide{% endblock %}
+{% block content %}
+<style>
+  .vc-tk-table{width:100%;border-collapse:collapse}
+  .vc-tk-table th,.vc-tk-table td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  .vc-tk-table td.num,.vc-tk-table th.num{text-align:right}
+  .vc-tk-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+  .vc-tk-hanh{display:flex;gap:6px;flex-wrap:wrap}
+</style>
+<section aria-labelledby="vc-tk-title">
+  {{ ah.dau_trang(_("Vận hành"), _("Tài khoản kho"), _("Tài khoản phụ LTT dùng chung cho khách chưa có phiên riêng — cookie không hiện lại, kể cả cho quản trị viên."), id_tieu_de="vc-tk-title", viec=false) }}
+
+  {% if loi %}
+  <div class="alert alert-err" role="alert">{{ loi }}</div>
+  {% endif %}
+
+  <div class="card">
+    <h2>{{ _("Thêm tài khoản") }}</h2>
+    <details class="vc-xuat-cookie">
+      <summary>{{ _("Cách xuất cookies.txt (Chrome, Edge, Firefox)") }}</summary>
+      <p class="muted">{{ _("Cài tiện ích mã nguồn mở") }} <b>Get cookies.txt LOCALLY</b> {{ _("cho Chrome, Edge (cùng kho tiện ích Chrome) hoặc Firefox (kho tiện ích Firefox riêng) — tiện ích này không gửi cookie đi đâu, mã nguồn công khai kiểm được. Không dùng tiện ích chỉ tên") }} <b>cookies.txt</b> {{ _("(không có chữ LOCALLY): bản đó từng bị gỡ khỏi kho vì gửi cookie của bạn ra máy chủ ngoài.") }}</p>
+      <p class="muted">{{ _("Mở trang khi đang đăng nhập nền cần cào, bấm biểu tượng tiện ích, chọn xuất cookie của trang hiện tại (định dạng Netscape/cookies.txt), rồi dán nội dung hoặc chọn tệp vào ô bên dưới.") }}</p>
+      <p class="muted"><b>{{ _("Chỉ dùng tài khoản PHỤ của LTT:") }}</b> {{ _("yt-dlp khuyến cáo không dùng tài khoản chính cho tải tự động; nền có thể tạm khoá hoặc buộc xác minh tài khoản dùng để cào.") }}</p>
+    </details>
+    <form method="post" action="{{ duong }}" enctype="multipart/form-data" class="vc-tk-row">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label class="field"><span>{{ _("Nền") }}</span>
+        <select name="nen_tang">
+          {% for n in nen_chon %}<option value="{{ n.id }}">{{ _(n.ten) }}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="field"><span>{{ _("Nhãn") }}</span><input type="text" name="nhan" maxlength="64" autocomplete="off" required></label>
+      <label class="field"><span>{{ _("Dán cookies.txt") }}</span><textarea name="cookies_txt" rows="2" autocomplete="off" spellcheck="false"></textarea></label>
+      <label class="field"><span>{{ _("hoặc chọn tệp") }}</span><input type="file" name="cookies_tep" accept=".txt,text/plain"></label>
+      <button class="btn" type="submit">{{ _("Thêm tài khoản") }}</button>
+    </form>
+  </div>
+
+  <div class="card" style="margin-top:var(--space-5,20px)">
+    <div class="tablewrap" tabindex="0"><table class="vc-tk-table">
+      <thead><tr>
+        <th>{{ _("Nền") }}</th>
+        <th>{{ _("Nhãn") }}</th>
+        <th>{{ _("Trạng thái") }}</th>
+        <th class="num">{{ _("Điểm") }}</th>
+        <th>{{ _("Hạn cookie") }}</th>
+        <th class="num">{{ _("Lượt dùng/giờ") }}</th>
+        <th>{{ _("Lỗi gần nhất") }}</th>
+        <th>{{ _("Lần dùng gần nhất") }}</th>
+        <th></th>
+      </tr></thead>
+      <tbody>
+        {% for h in hang %}
+        <tr>
+          <td>{{ _(h.ten_nen) }}</td>
+          <td>{{ h.nhan }}</td>
+          <td>{{ h.trang_thai_nhan }}</td>
+          <td class="num">{{ h.diem }}</td>
+          <td>{% if h.con_lai_ngay is none %}{{ _("Không hạn") }}{% elif h.han_qua %}{{ _("Đã hết hạn") }}{% else %}{{ _("Còn {n} ngày").format(n=h.con_lai_ngay) }}{% endif %}</td>
+          <td class="num">{{ h.luot_trong_gio }}</td>
+          <td>{{ h.loi_gan_nhat or "—" }}</td>
+          <td>{{ h.dung_gan_nhat.strftime('%d/%m %H:%M') if h.dung_gan_nhat else "—" }}</td>
+          <td>
+            <div class="vc-tk-hanh">
+              <form method="post" action="{{ duong }}/{{ h.id }}/trang-thai">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                {% if h.trang_thai == "tam_nghi" %}
+                <input type="hidden" name="trang_thai" value="song">
+                <button class="btn" type="submit">{{ _("Bật lại") }}</button>
+                {% else %}
+                <input type="hidden" name="trang_thai" value="tam_nghi">
+                <button class="btn" type="submit">{{ _("Tạm nghỉ") }}</button>
+                {% endif %}
+              </form>
+              <form method="post" action="{{ duong }}/{{ h.id }}/xoa" onsubmit="return confirm({{ _('Xoá tài khoản này khỏi kho? Không thể khôi phục.') | tojson }})">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button class="btn" type="submit">{{ _("Xoá") }}</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9" class="muted">{{ _("Chưa có tài khoản nào trong kho.") }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+</section>
+{% endblock %}

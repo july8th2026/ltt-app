@@ -114,20 +114,15 @@ class VuotNganSach(ValueError):
         self.thay = thay
 
     def as_dict(self, *, request_id: str) -> dict[str, Any]:
-        """Phong bì v1, kèm đúng hình dạng cũ trong một chu kỳ chuyển tiếp."""
-        legacy = {"ly_do": self.ly_do, "truong": self.truong,
-                  "tran": self.tran, "thay": self.thay}
-        envelope = make_error(
+        """Phong bì v1 — đúng một hình dạng (Task 13 đã gỡ các khoá legacy
+        `ly_do`/`truong`/`tran`/`thay`/`legacy`; `ly_do` chỉ còn cho log B)."""
+        return make_error(
             self.code,
             request_id=request_id,
             field=self.truong or None,
             limit=self.tran,
             actual=self.thay,
         )
-        # Các khóa legacy ở cả tầng ngoài và `legacy`: máy A hiện hành vẫn đọc
-        # tầng ngoài; máy A mới đọc phong bì v1. Nhờ vậy B có thể đi trước và A
-        # vẫn lùi phiên bản độc lập trong cửa sổ chuyển tiếp.
-        return {**envelope, **legacy, "legacy": legacy}
 
 
 @dataclass(frozen=True)

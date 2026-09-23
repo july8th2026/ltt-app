@@ -92,7 +92,7 @@ def test_tiem_decoder_cu_413_thanh_context_lam_report_do():
     assert report["pass"] is False
     mismatches = report["first_two_mismatches"]
     assert mismatches
-    assert mismatches[0]["expected_canonical_code"] == "image_count_exceeded"
+    assert mismatches[0]["expected_canonical_code"] == "upstream_unknown"
     assert mismatches[0]["canonical_code"] == "context_window_exceeded"
 
 
@@ -449,9 +449,11 @@ def test_telemetry_a_known_legacy_unknown_mismatch_co_du_truong_va_khong_lo_secr
         "action", "source", "legacy", "contract_mismatch",
     }
     assert all(required <= event.keys() for event in events)
+    # Task 13: hình dạng legacy không còn được decode ⇒ fail-closed `unknown`.
     assert [event["action"] for event in events] == [
-        "retry", "legacy", "unknown", "unknown",
+        "retry", "unknown", "unknown", "unknown",
     ]
+    assert all(event["legacy"] is False for event in events)
     assert events[-1]["contract_mismatch"] is True
     assert events[-1]["llm_error_total"] == 4
     assert events[-1]["llm_error_contract_mismatch_total"] == 1
@@ -459,8 +461,8 @@ def test_telemetry_a_known_legacy_unknown_mismatch_co_du_truong_va_khong_lo_secr
 
     snapshot = failure_telemetry_snapshot()
     assert snapshot["llm_error_total"] == 4
-    assert snapshot["llm_error_unknown_total"] == 2
-    assert snapshot["llm_error_legacy_total"] == 1
+    assert snapshot["llm_error_unknown_total"] == 3
+    assert snapshot["llm_error_legacy_total"] == 0
     assert snapshot["llm_error_contract_mismatch_total"] == 1
     assert snapshot["llm_error_request_id_missing_total"] == 2
     assert snapshot["labels"]

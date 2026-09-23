@@ -12,6 +12,167 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-23 — Task 13: gỡ suy diễn lỗi cũ ở A/B/LTTCODE; 4xx không được phạt khoá
+
+Plan `docs/superpowers/plans/2026-09-21-chuan-hoa-ngu-nghia-loi-llm.md` Task 13 (chủ dự án cho làm ngay,
+miễn điều kiện "một chu kỳ" sau khi đo 12 giờ log: legacy 0, mismatch 0, unknown 0).
+
+- **Gỡ:** B bỏ khoá `ly_do/truong/tran/thay/legacy` khỏi thân lỗi (HTTP status dây giữ nguyên, spec §3);
+  A bỏ decoder legacy, boolean `ban/qua_dai/het_gio`, cờ `LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS` và
+  renderer cũ; LTTCODE 0.2.6 bỏ đoán lỗi theo câu chữ và `error.type` Anthropic.
+- **Hai lỗi bản gỡ tự gây ra, sửa tại chỗ:** (1) 4xx không kèm v1 rơi vào `upstream_unknown`, mà mã đó
+  nằm trong `penalizes_key` ⇒ một khách gửi ảnh hỏng có thể tắt model nhà (D-005/L-09). Chốt lại ranh
+  giới: **status không sinh `canonical_code`, nhưng 4xx vẫn quyết định lớp lỗi + chính sách**; thêm rào
+  `penalizes_key` trả False cho mọi 4xx trừ 401/403 (`e30b95e4`, `e5e0b210`). (2) Test mới của làn T13
+  tự đặt kỳ vọng ngược với phép canh gác L-09 `test_1244` — hợp nhất thay vì xoá luật cũ.
+- **Hồi quy production từ 22/09 được phát hiện và sửa:** sau 200 trên `/v1/messages`, bận/hết giờ đi ra
+  `rate_limit_error`/`api_error`; Claude Code 2.1.275 chỉ tự thử lại khi thấy `overloaded_error` ⇒ khách
+  mất lượt. Renderer khôi phục `overloaded_error` cho `concurrency_limited`, `provider_overloaded`,
+  `model_loading`, `upstream_timeout`, `stream_idle_timeout`; `canonical_code` vẫn giữ nghĩa thật.
+- **Gate/deploy:** 30 tệp test nhắm 863 passed/0 failed; L1 `--doi --tu 24271a8a` PASS; deploy **B trước**
+  (snapshot tự chụp) **rồi A** `b6fbb220` (lệch 0, ready 200). Probe production 3/3; `live --minutes 60`:
+  7 sự kiện, request ID 100%, unknown 0, legacy 0, mismatch 0; fixture 265/265.
+- **LTTCODE 0.2.6** phát dev 100 % (`b1bc1e3`), SHA-256 `11d405557d6f86a4e0e8cd6883b17c7865454b3f61e7c7d2364058b215a759fe`.
+- **Số đo cho phiên VGA máy B:** `llm_gateway/deploy/kiem_tra.ps1` sau deploy = 16 ĐẠT / 1 HỎNG, phép
+  "toc do >= 50 tok/s (card sach)" ra **29,4 tok/s** (model vừa nạp) và **41,3 tok/s** (đã ấm), GPU rảnh
+  (3090: 1%, 118 MiB). Thay đổi máy B của Task 13 chỉ là thân lỗi JSON (9 thêm/30 xoá, không đụng tham số
+  sinh, không chép `llama-swap.yaml`) ⇒ nghi liên quan mod VGA 22/09. Đã nhắn hai lần, tin bị giữ chờ
+  duyệt rồi hết hạn nên ghi ở đây.
+- **Bẫy đo:** `inject --base-url` nhận GỐC; truyền `.../api/v1` làm URL thành `/api/v1/v1/messages` ⇒ 404
+  route-không-tồn-tại trùng status kỳ vọng, report trông như "A mất `ltt_error`". Ghi ở runbook §9.
+
+## 2026-09-22 (đêm) — App `transcript`: đối soát quy tắc `bot_transcript`, mở cho khách (web + palette + `/api/v1`)
+
+Tiếp quản phiên LTTCODE "Vận hành hệ thống" (bàn giao: `C:\Users\Thang Tuong\.claude\ltt\khoi-phuc-2026-09-22\BAN_GIAO_van-hanh.md`).
+Chủ dự án đổi hướng giữa phiên: **dừng chiến dịch benchmark engine** (nhánh `phien/transcript-v2` giữ làm tham khảo,
+KHÔNG gộp; plan hiện trạng `docs/transcript_v2/PLAN_HIEN_TRANG.md` trên nhánh đó), **giữ hệ LTT = quy tắc bot gốc**,
+gỡ `ltt_turbo`, ép `vi` như bot gốc, mở app, giá khuyến nghị.
+
+- **Lỗi đã sửa + deploy** (theo thứ tự lộ ra):
+  1. `37276535` — timeline rỗng 100 %: service STT trả từ khoá `text`, engine legacy đọc `word` (`flatten_words`).
+     Kèm sửa mypy `main` đỏ 9→11 do `e94dd9a2` (`Response` vs `JSONResponse` ở `server/api/{chat,streaming}.py`).
+  2. `cf8a6984` — khớp quy tắc legacy: fixer V5 chép mà KHÔNG GỌI + 3 từ điển (`vi/en_corrections`, `vi_proper_nouns`)
+     không chép ⇒ nối lại đúng tham số `whisper_integration.py:319-339`; `min_s` 3.0 → **1.5** (config đang chạy);
+     thử lại `en`→`vi` khi rỗng; lùi timeline v1; kiểm mốc từ (mọi đoạn có words, đóng băng ≥20 %); kiểm trùng/schema
+     đúng luật `bot/worker.py`; hồ sơ STT `moc_tu_vad_ngoai_vi` (beam 5/best_of 3, như bot gốc khi `vi`); sổ hệ
+     `apps/transcript/services/he.py` (chỉ `ltt`); tên tệp cache STT an toàn với model có `/`. Mở app: `public`,
+     `released`, `customer_visible`, `api_exposed` + `api_contract`; giá `apps/transcript/gia.py` **2 credit/phút
+     audio** (tối thiểu 1), `duration_s` đo từ tệp (`measured_from=audio`, hidden), quyết toán `min(thật, đã giữ)` (Q84).
+  3. `a9a0238c` — route dùng EMAIL (`require_login`) làm `user_id` ⇒ sổ credit (khoá `User.id`) đọc 0, mọi khách 402.
+  4. `24271a8a` — `vad.py` gọi `ffmpeg`/`ffprobe` trần, dịch vụ worker không có ffmpeg trên PATH ⇒ WinError 2.
+- **Bằng chứng khớp bot gốc** (audio thật chủ dự án `G:\My Drive\AI\A\TestVoice`, chạy cả legacy lẫn LTT, diff từng
+  đoạn): EN 98/98, VI tự dò 154/154, VI ép `vi` 154/154 — **0 chữ khác, 0 ms lệch mốc**. Transcript để chủ nghe:
+  `TestVoice\{EN,VN}\TRANSCRIPT\LTT chuan - da doi soat.{txt,json}`.
+- **E2E thật production** (tài khoản `khach1.thu`, file EN 357.5 s): 202 → worker GPU 100 s → `done`, 98 đoạn 6 khoá khớp
+  bản đối soát, trừ đúng **12 credit** (133 → 121). Giao diện `app.lttstudios.com/transcript` (Chromium, desktop +
+  390 px): 200, 0 lỗi console/mạng, không tràn ngang.
+- **Cổng API:** `setup\cong_tac_tool_api.ps1 -Tool transcript.run -Bat` + `nap_lai_env.ps1` (Web/Worker/Voice nhận ENV);
+  catalog production 6 tool. Tài liệu `docs/PUBLIC_API/{APP_DISPOSITION_V1,APP_API_COVERAGE_FINAL,CHANGELOG}.md`.
+- **Bẫy gặp:** gate `--doi` tự nâng L3 khi cây có tệp không ai sở hữu (`data/stt_cache/` do chính lượt chạy STT ghi theo
+  cwd); `Path.write_text` đổi LF→CRLF trên Windows (hook xuống dòng đỏ); cookie `session` cờ `Secure` không được
+  `httpx` gửi lại qua loopback ⇒ CSRF 400 (tự mang cookie bằng header); so với legacy mà ép ngôn ngữ theo manifest sẽ
+  tạo lệch giả (bot gốc chạy `auto`); chạy python legacy phải `-B` (cây chỉ đọc).
+- **Còn mở:** cùng lỗi email-làm-`user_id` ở `audio_pause`, `prompt_canh`, `video_assembly` (còn đóng với khách; đã tạo
+  việc riêng); nhãn ô "Hệ phiên âm" dài bị cắt trên desktop (thẩm mỹ); L3 tổng kết phiên.
+
+## 2026-09-23 (sáng) — `video_crawler` lên production: sự cố ffmpeg, kho tài khoản hệ thống, lỗi job không lộ tên lớp
+
+Deploy `7676a758` (02:43) rồi `bcf05be1` (10:24). Cờ `LTT_VIDEO_CRAWLER=1` đã bật (chủ dự án cấp quyền 23/09).
+
+- 🔴 **Sự cố ffmpeg (W4-1).** Sau deploy đầu, MỌI lượt tải hỏng sau ~10 s với "lỗi không xác định"; tiền hoàn đủ nên
+  không có dấu hiệu nào khác. Chạy lại ĐÚNG mã production bằng tài khoản của tôi thì XANH; chỉ chạy dưới `SYSTEM`
+  (tài khoản dịch vụ worker) mới đỏ. Gốc: `You have requested merging of multiple formats but ffmpeg is not installed`
+  — `shutil.which` thấy ffmpeg trong phiên người dùng, KHÔNG thấy trong dịch vụ nssm. Sửa: adapter truyền
+  `ffmpeg_location` từ `platform_core.media`. **Bài học:** "chạy được trên máy tôi" ở đây nghĩa đen là *tài khoản của tôi*.
+- **Lỗi chưa phân loại nay để lại dấu vết** (W4-2): `loi.phan_loai` ghi văn bản gốc vào log vận hành — thiếu nó thì
+  mọi lỗi mới trông giống hệt nhau. `thieu_ffmpeg` có mã riêng, không còn bị coi là tạm thời (W4-3).
+- **Nền tảng: lỗi job không lộ tên lớp Python cho khách** (`platform_core/jobs.py::mo_ta_loi` + `loi_cho_khach`,
+  bánh cóc `tests/test_2140`). 12 app từng in thẳng `Job.error` ("LoiNguoiGoi: …", "RuntimeError: C:\LTTPlatform\…").
+  Thêm `voi_cau_khach` để lỗi TẠM THỜI (phải thử lại ⇒ không thể là `LoiNguoiGoi`) vẫn nói được câu của mình.
+- **W4 (4 làn agent song song)**: kho tài khoản hệ thống `vc_tai_khoan` (mượn/trả qua lease, trần + nghỉ theo tài
+  khoản, chấm điểm kiểu proxy_pool, trần 20 video/giờ/khách; migration `5e1a9c46b2d7`) + trang vận hành để chủ dự án
+  dán cookies.txt; tìm kênh theo TÊN (YouTube + Bilibili ẩn danh; Douyin/XHS cần phiên; TikTok chưa có đường); link
+  rút gọn theo chuyển hướng CÓ KIỂM (allowlist + chặn IP nội bộ, ≤ 3 bước); ảnh bìa lưu kho ở bước xem trước.
+- **Quyết định chủ dự án 23/09**: làm kho tài khoản, **LTT đứng tên phiên** khi khách dùng kho (đoạn pháp lý chờ
+  duyệt: `PHAP_LY_BO_SUNG_KHO_TK.md`); nền đợt đầu douyin/xiaohongshu/tiktok. **KHÔNG** Bilibili: luật sư Bilibili đã
+  khiến `SocialSisterYi/bilibili-API-collect` (28/01/2026) và `Nemo2011/bilibili-api` (06/07/2026) đóng kho vĩnh viễn.
+- **Nghiệm thu production thật** (tài khoản thử, không gõ mật khẩu): xem trước + tải 1 video — trước sửa: lỗi, hoàn
+  15; sau sửa: xong 27 s, giữ 15 → thu 3 (đúng bậc ≤ 10 phút), hoàn 12. Nghiệm thu deploy: 0 lệch/thiếu/thừa.
+- Không nhúng được trang nền vào LTT: YouTube/Douyin/Instagram/Facebook/X đều chặn iframe (đo 23/09) ⇒ "mở popup kênh"
+  không khả thi; đường đi là tìm kênh NGAY TRONG LTT (`THIET_KE_PHIEN_VA_KENH.md`).
+
+## 2026-09-22 (tối) — app `video_crawler` ("Cào ngay" từ ViralCrawl): 10 nền, tắt sau cờ `LTT_VIDEO_CRAWLER`
+
+Tiếp quản SUPER PROMPT sau hai phiên LTTCODE hỏng (model lỗi 400, ghi thẳng main, parity ✅ bịa, audit donor chết).
+Rà soát từng hạng mục cũ: không hạng mục mã nào đạt; main đã rút bộ khung (f587f497). Làm lại từ đầu trên nhánh
+`phien/video-crawler` — bàn giao + lý do: `C:\Users\Thang Tuong\.claude\ltt\khoi-phuc-2026-09-22\BAN_GIAO_super-prompt.md`.
+
+- **Tài liệu chứng cứ** `docs/migrations/video_crawler/` (audit donor Viral @ 368f8be có tệp:dòng, ma trận nền, bản đồ
+  API LTT, license, tái sử dụng, parity đo được, truy vết, sổ lỗi). Spec v1.1 + plan v2 (`docs/superpowers/`).
+- **License**: MediaCrawler NON-COMMERCIAL ⇒ không chép; yt-dlp là The Unlicense (kết luận "GPL-3.0" cũ sai).
+- **Kiến trúc**: một app, `requires=("api",)` (KHÔNG ffmpeg — prod chỉ 1 làn gpu+ffmpeg); registry nền trong app;
+  adapter mỏng trên `adapters/_ytdlp.py`; URL tải luôn dựng lại từ id bởi adapter (review BLOCKER: form gửi URL playlist
+  ⇒ tải cả playlist giá 1 credit). Lịch sử/dedup dùng `jobs` (⚠ "không trùng" chỉ nhớ 30 ngày — hạn của `jobs.result`).
+- **Phiên đăng nhập theo user**: bảng `vc_phien` (cookie mã hoá `secretbox`, chỉ cookie đúng tên miền), migration
+  `9c3e5a1d7f20`. **Thay đổi platform_core duy nhất**: một hàng `vc_phien` trong `public_api/governance.py` (test_211 buộc).
+- **Nền bật** (smoke mạng thật trên máy A): YouTube, TikTok, Facebook, Twitter, Weibo, bilibili.tv, Xiaohongshu;
+  Bilibili (HTTP 412 ẩn danh), Instagram (login required), Douyin (fresh cookies) bật nhưng CẦN PHIÊN, chưa nghiệm thu
+  với phiên thật. Tắt: RedNote (yt-dlp#16519), Kuaishou, Honggo. Douyin/XHS tìm kiếm + kênh: DEFER (cần client ký request).
+- **Phụ thuộc mới**: `curl_cffi>=0.10,<0.15` (impersonate cho bilibili.tv/Facebook) — venv prod chưa có.
+- **Kiểm**: test nhắm `tests/test_1900..1919_video_crawler_*` + hợp đồng nền tảng; kiểm GUI trên bản dev cô lập với
+  YouTube thật (xem trước → chọn → tải → artifact `video/mp4` → dedup, ảnh bìa qua proxy allowlist, mobile 375 px).
+- **Tồn / chờ chủ dự án**: bật cờ production; nhập cookies.txt để nghiệm thu nền cần phiên; nối Auto Scan Video
+  (CONTRACT GAP — ASV chỉ nhận upload của chính nó); worker `browser` cho QR login; giá 1 credit/video.
+- `test_211::test_a_decade_of_retention…` đỏ khi chạy RIÊNG (có sẵn trước phiên này — fixture `portal`), ngoài phạm vi.
+- **MVP W1–W2** (sau đánh giá chất lượng; plan `docs/migrations/video_crawler/PLAN_MVP.md`, đánh giá `DANH_GIA_MVP.md`;
+  8 làn agent, mỗi làn một worktree, gộp ở `phien/vcm-tich-hop`). Không nối Auto Scan Video (chủ dự án: sau này qua workflow).
+  - Pháp lý: ô cam kết quyền bắt buộc mọi lượt tải, kênh báo vi phạm, trần 60 video/giờ, 300/ngày (`PHAP_LY_NHAP.md` chờ duyệt).
+  - Giá theo thời lượng (1 credit = 100 đ): ≤10 phút 3 · 10–30 phút 6 · 30–60 phút 10 · 60–180 phút 15; giữ 15/mục, quyết toán
+    theo thời lượng thật (`gia.py` một nguồn). Xem trước miễn phí.
+  - Tin cậy: yt-dlp-ejs + node (n-challenge YouTube — thiếu gói ⇒ MỌI lượt tải YouTube 403), nghỉ 5–10 s giữa các MỤC (không
+    `sleep_interval` — nó nghỉ trước mỗi tệp), mã `trich_xuat_hong`.
+  - Sức khoẻ: `/video-crawler/van-hanh` (operator) + tắt mềm nền qua `LTT_VIDEO_CRAWLER_TAT`.
+  - Douyin/XHS tìm kiếm + kênh (a_bogus vendor f2 Apache-2.0, xhshow MIT; rủi ro ToS chủ dự án chấp nhận), Kuaishou client
+    GraphQL (registry tắt tới khi nghiệm thu có phiên). Đăng nhập QR: chỉ thiết kế (`THIET_KE_QR.md`, chờ quyết định).
+  - Dedup bền: bảng `vc_da_tai` (UNIQUE owner/nền/video, giành chỗ trước khi tải; migration `3b7d2f9e1c48`, hàng governance thứ 2)
+    ⇒ hết giới hạn 30 ngày, hai job cùng video chỉ thu một lần.
+  - UX: tốc độ/ETA, tải lại mục lỗi, lọc lịch sử theo nền, hướng dẫn cookies.txt + cảnh báo rủi ro tài khoản.
+  - Hiệu năng: ảnh bìa lưu kho ở bước xem trước (route đọc kho trước, chỉ key đúng chủ/job). Tải song song: KHÔNG làm
+    (tiến độ/dọn giả định một luồng, chỉ bilibili.tv hưởng lợi).
+  - Lỗi lúc gộp (SO_LOI W2-1..4): tải lại video hết hạn mà lỗi làm mất dấu chống trùng; lỗi lộ tên lớp `LoiNguoiGoi:`
+    (app thumbnail/taoclipngan cũng vậy — đã tách việc riêng); câu "30 ngày"/"1 credit" cũ; máy dev thiếu yt-dlp-ejs.
+  - Phụ thuộc mới: `yt-dlp-ejs>=0.8.0,<0.9` (prod yt-dlp 2026.7.4 cần đúng 0.8.0), `xhshow>=0.2.0,<0.3`.
+  - L3 `phien/video-crawler` 41120e46 đã khép PASS. Chủ dự án cấp quyền bật cờ `LTT_VIDEO_CRAWLER` (22/09).
+
+## 2026-09-22 (tối) — Chuẩn hoá ngữ nghĩa lỗi LLM B→A→LTTCODE xong; 9 lỗi 400 = quá dài; cửa sổ công bố theo token thật (L-34, L-35)
+
+Plan `docs/superpowers/plans/2026-09-21-chuan-hoa-ngu-nghia-loi-llm.md` (Codex 21–22/09, Claude tiếp quản
+22/09 chiều). Máy A+B (Task 1–11) đã deploy trước đó (`f587f497`, `e94dd9a2`; runbook
+`docs/ltt_llm_dual/LOI_MODEL_RUNBOOK.md` §7).
+
+- **Task 12 — LTTCODE 0.2.5 phát dev 100 %** (`D:\LTTCODEAPP` `fbf7124`): decoder đọc `ltt_error` v1,
+  canonical → mã Harness trung tính theo registry retry, bỏ "mọi 413 = context" / "400 không body =
+  INVALID_REQUEST", requestId từ server; LTT-3.5 agent con đủ quyền như 3.8 (chủ dự án duyệt).
+- **Nguyên nhân 9 lỗi `LTT 400 : Bad Request`** trong audit 5 phiên 0.2.4: tiền kiểm "quá dài" của A
+  (`KhongMoDuoc(qua_dai=True)`) tính token ƯỚC cận trên, ≈1,31× (max 1,483×) usage thật trên 1 120 lượt;
+  0.2.4 không đọc được thân lỗi nên không nén ⇒ lỗi dây chuyền. Giả thuyết dangling tool_call #4549 bị bác.
+- **L-35 (chủ dự án chốt (b), bỏ biên 0,92):** `ngan_sach.HE_SO_UOC_TREN_THAT = 1.5`; cửa sổ công bố
+  ltt-3.8 171 458→**124 245**, ltt-3.5 209 141→**151 552**; ngưỡng nén 91 477 / 118 784. Trần tiền kiểm
+  và máy B không đổi. Khách đã cài bằng `cam` cần chạy lại `cam` để nhận số mới.
+- **413 vs 400 của `context_window_exceeded`:** đo — công khai là 400 ở cả ba giao thức (test_1480);
+  `http_status=413` nội bộ là status dây bắt chước B (spec §3), không phải bug. Văn bản công khai còn hứa
+  "413" đã sửa (trang hướng dẫn, examples, điều khoản, gợi ý cắm CLI, bản dịch EN).
+- **Gate:** một L3 (47321f95) đỏ 2/34 — cả hai ngoài mã: thư mục rác `apps/video_crawler` chỉ `.pyc` sót
+  từ lúc rút app (dọn bằng `git clean -X` giới hạn thư mục), `test_362` đọc worktree đang được phiên
+  video-crawler tạo dở (chạy lại 74 passed). Khép `gate.py --doi --tu 47321f95` PASS trên `4f4ee8f6`.
+  Bản ghi `test-results/gates` của lượt L3 biến mất khỏi worktree sau khi chạy — chưa rõ tiến trình nào
+  xoá; lượt khép vẫn ghi được.
+- **Deploy máy A** `4f4ee8f6`: 1 092 tệp lệch 0, `/health/ready` 200; Playwright `/huong-dan`: số mới có,
+  số cũ không, 0 lỗi console. Câu sót "Nếu 413…" ở gợi ý cắm CLI sửa `ee522aec`; hoà main (tài liệu máy B VGA) → khép `--doi --tu ee522aec` PASS → deploy lại `ae93e080` (lệch 0, ready 200, Playwright: câu mới có, câu cũ không, 0 lỗi console). Tin báo deploy tới 4/5 phiên bị giữ chờ người dùng bên đó duyệt rồi hết hạn — hợp đồng "báo, không chờ" vẫn đạt nhưng các phiên đó không biết máy A đã khởi động lại.
+- **Còn mở:** chủ dự án cập nhật app lên 0.2.5 → phiên mới `verify_installed` + canary + V-16
+  (`subagent run was cancelled`); Task 13 gỡ legacy chờ một chu kỳ có traffic với legacy=0,
+  mismatch=0; V-14 nháp issue upstream `dsh-tool-search` (nuốt `isError`) chờ chủ dự án gửi.
+
 ## 2026-09-22 (tối) — Máy B: mod VGA (chỉ xung nhớ) + đánh giá HyperQwen; không đổi mã kho
 
 Chủ dự án hỏi vì sao LTTCODE thấy 3.8 ~34 tok/s, 3.5 ~44 tok/s, và muốn mod card an toàn. Phiên này chỉ đụng

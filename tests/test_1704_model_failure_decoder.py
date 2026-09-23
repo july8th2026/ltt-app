@@ -62,12 +62,12 @@ def test_v1_sync_detail_va_stream_error_tao_cung_model_failure():
         ({"truong": "context", "tran": 100, "thay": 101}, "context_window_exceeded"),
     ),
 )
-def test_legacy_chi_anh_xa_theo_field_chinh_xac(detail, canonical):
+def test_hinh_dang_legacy_nay_fail_closed_unknown(detail, canonical):
+    """Task 13: decoder legacy đã gỡ — `{truong, tran, thay}` không còn sinh
+    `canonical` (tham số giữ lại để thấy mã nó TỪNG được suy ra)."""
     failure = _decode({"detail": detail})
-    assert failure.canonical_code == canonical
-    assert failure.field == detail["truong"]
-    assert failure.limit == detail["tran"]
-    assert failure.actual == detail["thay"]
+    assert failure.canonical_code == "upstream_unknown" != canonical
+    assert not failure.is_context_limit
 
 
 @pytest.mark.parametrize(
@@ -111,11 +111,14 @@ def test_import_decoder_khong_keo_web_stack():
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
-def test_legacy_counter_tang_nhung_v1_khong_tang():
-    before = failure_decode_counters()["legacy"]
+def test_counter_khong_con_o_legacy_hinh_dang_cu_dem_vao_unknown():
+    before = failure_decode_counters()
+    assert "legacy" not in before
     _decode({"detail": {"truong": "images", "tran": 4, "thay": 6}})
     _decode(V1)
-    assert failure_decode_counters()["legacy"] == before + 1
+    after = failure_decode_counters()
+    assert after["unknown"] == before["unknown"] + 1
+    assert after["v1"] == before["v1"] + 1
 
 
 def _stream_http_failure(
@@ -201,7 +204,7 @@ def test_sync_va_stream_dung_cung_decoder_typed(monkeypatch):
 
     assert sync.value.failure == stream.failure
     assert stream.failure.canonical_code == "image_count_exceeded"
-    assert not stream.qua_dai
+    assert not stream.failure.is_context_limit
 
 
 def test_stream_413_khong_typed_khong_duoc_bien_thanh_context(monkeypatch):
@@ -212,7 +215,6 @@ def test_stream_413_khong_typed_khong_duoc_bien_thanh_context(monkeypatch):
     )
     assert error.failure.canonical_code == "upstream_unknown"
     assert not error.failure.is_context_limit
-    assert not error.qua_dai
 
 
 @pytest.mark.parametrize(
@@ -255,7 +257,7 @@ def test_chi_tool_call_parse_failed_typed_moi_duoc_retry_mot_lan(monkeypatch):
     assert len(calls) == 2
 
 
-def test_prose_parser_legacy_chi_telemetry_khong_duoc_retry(monkeypatch):
+def test_prose_parser_khong_duoc_retry(monkeypatch):
     calls: list = []
     error = _stream_http_failure(
         monkeypatch,

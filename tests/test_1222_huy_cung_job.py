@@ -39,6 +39,12 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
 
+from llm_gateway.error_contract import make_error
+
+#: Thân 499 ĐÚNG như cổng B phát khi huỷ (`llm_gateway/api.py` `_da_huy`; Task 13
+#: đã gỡ `ly_do`/`ma` legacy — `test_huy_...` ở trên đo trên cổng thật).
+THAN_HUY_B = {"detail": make_error("request_cancelled", request_id="r-huy")}
+
 M38 = "qwen38-api"
 
 #: Trần của mệnh đề 1. Luồng canh thăm mỗi 1 giây (`jobs.NHIP_CANH_S`), nên 2
@@ -277,7 +283,7 @@ def test_POST_v1_huy_cat_luot_dang_bay_va_luot_ay_tra_499(caplog):
 
     t.join(timeout=5.0)
     assert ket.get("ma") == 499, f"luot bi huy tra {ket.get('ma')}"
-    assert ket["than"]["ly_do"] == "huy theo yeu cau"
+    assert ket["than"]["detail"]["canonical_code"] == "request_cancelled"
 
     dong = _dong_so(caplog)
     assert len(dong) == 1, f"{len(dong)} dong so cho MOT luot: {dong}"
@@ -419,7 +425,7 @@ def test_499_thanh_HuyError_va_HuyError_khong_phai_CongVlmError():
     assert not issubclass(HuyError, BanError)
     assert not issubclass(HuyError, VuotNganSachError)
 
-    cong = CongVlm(goi=lambda *a, **k: (499, {"ly_do": "huy theo yeu cau"}))
+    cong = CongVlm(goi=lambda *a, **k: (499, THAN_HUY_B))
     with pytest.raises(HuyError):
         cong.chat(model=M38, messages=[{"role": "user", "content": "hi"}])
 
@@ -499,7 +505,7 @@ def test_dieu_phoi_gap_499_thi_KHONG_cascade_va_KHONG_danh_dau_loi_khoa(
     """🔴 MỆNH ĐỀ 2 ở tầng điều phối: ba cái "không" cùng lúc."""
     from platform_core.llm.cong_vlm import HuyError
 
-    loi, dem = _do_tham_dieu_phoi(monkeypatch, 499, {"ly_do": "huy theo yeu cau"})
+    loi, dem = _do_tham_dieu_phoi(monkeypatch, 499, THAN_HUY_B)
 
     assert isinstance(loi, HuyError), f"499 ra {type(loi).__name__}"
     assert dem["loi"] == 0, "mot luot HUY da danh dau loi cho khoa (D-005)"
@@ -666,7 +672,7 @@ def test_499_tu_cong_cung_thanh_JobCancelled_chu_khong_phai_job_ERROR(monkeypatc
 
     def _chay(db, params, *, timeout_s=300.0, on_dispatch=None, on_rejected=None,
               ma_luot=""):
-        kq = CongVlm(goi=lambda *a, **k: (499, {"ly_do": "huy"})).chat(
+        kq = CongVlm(goi=lambda *a, **k: (499, THAN_HUY_B)).chat(
             model=M38, messages=[{"role": "user", "content": "hi"}])
         return SimpleNamespace(as_result=lambda: {"noi_dung": kq.noi_dung})
 

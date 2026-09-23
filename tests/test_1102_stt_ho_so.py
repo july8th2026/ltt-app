@@ -114,6 +114,17 @@ def test_khoa_cache_GOM_ten_ho_so(tmp_path: Path,
     assert a != b
 
 
+def test_khoa_cache_model_ma_hugging_face_nam_TRONG_thu_muc_cache(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Model `org/ten` (hệ `ltt_turbo` của App transcript) không được biến tên tệp
+    cache thành đường dẫn tới một thư mục con không tồn tại."""
+    monkeypatch.setenv("LTT_STT_CACHE", str(tmp_path))
+    p = service._tep_cache("BAM", "deepdml/faster-whisper-large-v3-turbo-ct2",
+                           "vi", "moc_tu_vad_ngoai")
+    assert p.parent == tmp_path
+    assert "/" not in p.name and "\\" not in p.name
+
+
 def test_cache_hong_KHONG_thanh_mot_luot_phien_am_rong(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Một tệp cache hỏng phải bị **bỏ qua**, không được đọc thành `segments=[]`.

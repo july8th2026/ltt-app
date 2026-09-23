@@ -58,6 +58,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from llm_gateway.api import create_app
+from llm_gateway.error_contract import make_error
 from llm_gateway.config import DEM_UOC_MAC_DINH, Config
 from llm_gateway.vat_ly import VatLy
 from llm_gateway.upstream import MA_HET_GIO, MA_KHONG_VOI_TOI
@@ -101,7 +102,7 @@ def test_het_gio_tra_504_khong_phai_502():
     c = TestClient(create_app(_cfg(), Up(MA_HET_GIO, b"ReadTimeout")))
     r = c.post("/v1/chat/completions", json=THAN)
     assert r.status_code == 504, "het gio van bi tra 502 -> may A se phat khoa"
-    assert r.json()["ma_thuong_nguon"] == MA_HET_GIO
+    assert r.json()["detail"]["provider_code"] == MA_HET_GIO
 
 
 def test_khong_voi_toi_van_tra_502():
@@ -138,9 +139,18 @@ def _cong(ma: int, than=None):
     return CongVlm(goi=goi)
 
 
+def _than_b_that(ma_thuong_nguon: int) -> tuple[int, dict]:
+    """Thân lỗi ĐÚNG như cổng B phát (Task 13: chỉ còn phong bì v1)."""
+    r = TestClient(create_app(_cfg(), Up(ma_thuong_nguon, b"x"))).post(
+        "/v1/chat/completions", json=THAN)
+    return r.status_code, r.json()
+
+
 def test_may_A_doc_504_thanh_AmbiguousProviderError():
+    ma, than = _than_b_that(MA_HET_GIO)
+    assert ma == 504 and than["detail"]["canonical_code"] == "upstream_timeout"
     with pytest.raises(AmbiguousProviderError):
-        _cong(504, {"ly_do": "khong tra loi kip"}).chat(
+        _cong(ma, than).chat(
             model="qwen38-api", messages=[{"role": "user", "content": "hi"}])
 
 
@@ -174,7 +184,8 @@ def test_AmbiguousProviderError_KHONG_bi_dieu_phoi_danh_dau_loi():
 def test_ban_429_van_la_BanError_khong_bi_anh_huong():
     """Bản sửa này **không được** chạm cửa 429 vốn đã đúng."""
     with pytest.raises(BanError):
-        _cong(429, {"ly_do": "may B dang ban"}).chat(
+        _cong(429, {"detail": make_error("provider_overloaded", request_id="r",
+                                         retry_after_s=30)}).chat(
             model="qwen38-api", messages=[{"role": "user", "content": "hi"}])
 
 

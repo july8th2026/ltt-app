@@ -23,6 +23,7 @@ from fastapi.testclient import TestClient
 
 from platform_core.models import CREDIT_HOLD, CreditEntry, WorkflowRun
 from platform_core.public_api import keys as devkeys
+from platform_core.public_api.errors import CODE_WORKFLOW_RUNS_UNAVAILABLE
 from platform_core.public_api.scopes import (SCOPE_WORKFLOWS_CANCEL,
                                              SCOPE_WORKFLOWS_READ,
                                              SCOPE_WORKFLOWS_RUN)
@@ -32,8 +33,10 @@ PEPPER = "wf-test-pepper-" + "w" * 40
 MOI_SCOPE = (SCOPE_WORKFLOWS_RUN, SCOPE_WORKFLOWS_READ, SCOPE_WORKFLOWS_CANCEL)
 
 
-@pytest.fixture()
-def api(tmp_path, monkeypatch):
+def _dung_app(tmp_path, monkeypatch):
+    """Dựng app + CSDL sạch cho bộ kiểm này. Dùng chung bởi `api` (cổng MỞ, vì
+    mọi bài trong tệp này đo LOGIC THẬT của `/quotes` và `/runs`) và
+    `api_gated` (cổng ĐÓNG — hành vi MẶC ĐỊNH của production hôm nay)."""
     monkeypatch.setenv("LTT_DATABASE_URL",
                        f"sqlite:///{(tmp_path / 'wfapi.db').as_posix()}")
     monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
@@ -47,17 +50,43 @@ def api(tmp_path, monkeypatch):
     Base.metadata.create_all(get_engine())
     from server.app import create_app
 
-    app = create_app(env={
+    return create_app(env={
         "LTT_ENV": "local-server-test", "LTT_SESSION_SECRET": "wf-secret-value",
         "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
         "LTT_CONFIG_PATH": str(tmp_path / "config.json"), "LTT_PUBLIC_API": "1",
     })
+
+
+@pytest.fixture()
+def api(tmp_path, monkeypatch):
+    """Cổng Defect B MỞ. `_chay_workflow_da_mo` mặc định trả `False` — toàn bộ
+    tệp này đo hành vi THẬT của `/quotes` và `/runs` (báo giá, khoá idempotency,
+    khoản giữ, huỷ, ranh giới chủ sở hữu), nên phải lật công tắc trước khi gọi.
+    Đây là nơi DUY NHẤT lật nó cho các bài đã có — `api_gated` bên dưới KHÔNG
+    lật, để đo đúng cái mặc định mà một khách lạ gặp hôm nay."""
+    app = _dung_app(tmp_path, monkeypatch)
+    monkeypatch.setattr("server.api.workflows._chay_workflow_da_mo", lambda: True)
     try:
         with TestClient(app) as client:
             yield client
     finally:
         from server.api import deps
         deps.set_principal_resolver(None)
+        import platform_core.db as dbmod
+        dbmod.reset_engine()
+
+
+@pytest.fixture()
+def api_gated(tmp_path, monkeypatch):
+    """Như `api` nhưng KHÔNG lật công tắc — hành vi MẶC ĐỊNH của production."""
+    app = _dung_app(tmp_path, monkeypatch)
+    try:
+        with TestClient(app) as client:
+            yield client
+    finally:
+        from server.api import deps
+        deps.set_principal_resolver(None)
+        import platform_core.db as dbmod
         dbmod.reset_engine()
 
 
@@ -468,3 +497,53 @@ def test_scope_workflows_run_nam_trong_SPENDING_SCOPES():
 
     assert SCOPE_WORKFLOWS_RUN in scopes.SPENDING_SCOPES
     assert SCOPE_WORKFLOWS_READ not in scopes.SPENDING_SCOPES
+
+
+# ── Defect B: cổng 501 MẶC ĐỊNH (chốt 22/09) ─────────────────────────────────
+#
+# `WF-802` từng sống với `chargeable=True` mà KHÔNG có engine nào chạy run: mọi
+# bài phía trên đo đúng logic của `/quotes` và `/runs` NHƯNG chỉ đo được sau khi
+# `api` đã lật công tắc lên. Ba bài dưới đây đo cái ngược lại — cái một khách
+# lạ THẬT SỰ gặp hôm nay, khi không ai lật gì cả.
+
+def test_MAC_DINH_bao_gia_tra_501_khong_phat_quote(api_gated):
+    """Chưa phát quote token nào — cổng phải đóng TRƯỚC bước ký."""
+    uid, token = _tai_khoan()
+    wf = _workflow(uid, so_node=3)
+
+    r = _bao_gia(api_gated, token, wf)
+    assert r.status_code == 501, r.text
+    assert r.json()["code"] == CODE_WORKFLOW_RUNS_UNAVAILABLE
+
+
+def test_MAC_DINH_chay_tra_501_khong_tao_run_khong_giu_credit(api_gated):
+    """🔴 Đây là bài đắt nhất của cổng: không chỉ mã lỗi đúng, mà phải KHÔNG có
+    `WorkflowRun` mồ côi và KHÔNG có khoản giữ nào — đúng lỗi Defect B đã gây
+    ra khi cổng còn mở mà chưa có engine."""
+    uid, token = _tai_khoan(credits=500)
+    wf = _workflow(uid, so_node=3)
+
+    r = api_gated.post(f"{API_V1_PREFIX}/workflows/{wf}/runs",
+                       json={"quote": "khong-quan-trong-cong-da-dong"},
+                       headers=_auth(token, uuid.uuid4().hex))
+    assert r.status_code == 501, r.text
+    assert r.json()["code"] == CODE_WORKFLOW_RUNS_UNAVAILABLE
+
+    gen, db = _session()
+    try:
+        assert db.query(WorkflowRun).count() == 0
+        assert db.query(CreditEntry).filter_by(kind=CREDIT_HOLD).count() == 0
+    finally:
+        _close(gen)
+
+
+def test_MAC_DINH_cac_cua_DOC_va_HUY_khong_doi(api_gated):
+    """⛔ Vế phủ định của gate: `GET /runs/{id}`, huỷ và artifacts không nằm
+    trong Defect B (không tạo run, không giữ tiền) nên KHÔNG bị 501 — chúng chỉ
+    404 vì run chưa từng tồn tại. Không có bài này, một bản vá chặn CẢ NĂM route
+    cũng làm hai bài trên xanh."""
+    _uid, token = _tai_khoan(credits=500)
+    r = api_gated.get(f"{API_V1_PREFIX}/runs/{uuid.uuid4().hex}",
+                      headers=_auth(token))
+    assert r.status_code == 404
+    assert r.json().get("code") != CODE_WORKFLOW_RUNS_UNAVAILABLE

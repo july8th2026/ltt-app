@@ -57,9 +57,6 @@ Environment variables (all optional; the defaults are production-safe):
     ``127.0.0.1,::1`` because ``cloudflared`` reaches the origin over loopback
     and the origin accepts nothing else. An empty value disables header trust
     entirely and falls back to the socket peer.
-``LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS``
-    ``1`` bật envelope lỗi model có ``ltt_error``. Mặc định ``0`` trong chu kỳ
-    tương thích; tắt cờ phải giữ nguyên response legacy.
 """
 from __future__ import annotations
 
@@ -150,7 +147,6 @@ class PublicApiConfig:
     cors_origins: tuple = ()
     api_version: str = "v1"
     prefix: str = "/api/v1"
-    structured_model_errors: bool = False
 
     request_rpm: int = 120
     create_rpm: int = 20
@@ -183,9 +179,6 @@ def load_public_api_config(env: dict | None = None) -> PublicApiConfig:
         trusted_proxies=_csv(values, "LTT_PUBLIC_API_TRUSTED_PROXIES",
                              DEFAULT_TRUSTED_PROXIES),
         cors_origins=_csv(values, "LTT_PUBLIC_API_CORS_ORIGINS"),
-        structured_model_errors=_flag(
-            values, "LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS"
-        ),
         request_rpm=_int(values, "LTT_PUBLIC_API_RPM", 120, 0, 100_000),
         create_rpm=_int(values, "LTT_PUBLIC_API_CREATE_RPM", 20, 0, 100_000),
         max_active_jobs=_int(values, "LTT_PUBLIC_API_MAX_ACTIVE_JOBS", 5, 0, 10_000),

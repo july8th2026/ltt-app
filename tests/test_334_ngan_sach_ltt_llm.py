@@ -727,19 +727,15 @@ class TestThuLaiKhiParserVo:
        GPU cho mọi sự cố hạ tầng thật rồi vẫn hỏng y hệt.
     """
 
-    def test_nhan_ra_dung_ba_dang_loi_parser(self):
-        from platform_core.llm.luong_vlm import _loi_parser_tool_call as f
-        assert f('{"error":{"message":"Failed to parse tool call arguments as '
-                 'JSON: [json.exception.parse_error.101] at column 3040"}}')
-        assert f("common_chat_peg_parse: unparsed peg-native output: <think>")
-        assert f("Failed to parse input at pos 12")
+    def test_cau_parser_khong_con_la_tin_hieu(self):
+        """Task 13: câu chữ parser KHÔNG còn quyết định gì (kể cả telemetry).
 
-    def test_KHONG_bat_nham_loi_ha_tang_that(self):
-        """Thử lại một lỗi thật chỉ đốt GPU thêm một lượt rồi hỏng y hệt."""
-        from platform_core.llm.luong_vlm import _loi_parser_tool_call as f
-        for that in ("CUDA out of memory", "model not found",
-                     "connection refused", "", "internal server error"):
-            assert not f(that), f"bat nham: {that!r}"
+        Thử lại chỉ theo mã typed `tool_call_parse_failed` do máy B phát
+        (`test_1704::test_chi_tool_call_parse_failed_typed_moi_duoc_retry_mot_lan`).
+        """
+        from platform_core.llm import luong_vlm
+        assert not hasattr(luong_vlm, "_loi_parser_tool_call")
+        assert not hasattr(luong_vlm, "_DAU_HIEU_PARSER")
 
     def test_mo_co_tham_so_chan_thu_lai_vo_han(self):
         """`_da_thu_lai` là thứ giữ cho nó đúng MỘT lần, không thành vòng lặp."""

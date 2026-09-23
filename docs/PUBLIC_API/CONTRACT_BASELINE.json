@@ -188,6 +188,10 @@
     "upstream_unreachable": {
       "retry": "after_delay",
       "status": 502
+    },
+    "workflow_runs_unavailable": {
+      "retry": "never",
+      "status": 501
     }
   },
   "execution_modes_in_use": [
@@ -507,6 +511,16 @@
     "text.prompt_package": {
       "aliases": [],
       "contract_hash": "c55834222a3c4a0c",
+      "deprecated": "",
+      "execution_mode": "ASYNC_JOB",
+      "models": [],
+      "required_scopes": [
+        "jobs:create"
+      ]
+    },
+    "transcript.run": {
+      "aliases": [],
+      "contract_hash": "efabeaa63a584c85",
       "deprecated": "",
       "execution_mode": "ASYNC_JOB",
       "models": [],

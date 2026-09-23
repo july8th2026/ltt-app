@@ -390,7 +390,15 @@ def test_O05_dieu_phoi_gui_X_LTT_Token_Dat_khi_co_dat_cho(monkeypatch):
 
                 @staticmethod
                 def json():
-                    return {"ly_do": "ban"}
+                    # Thân v1 đúng như máy B phát cho 429 (Task 13: thân
+                    # không có `schema_version` là `upstream_unknown`).
+                    return {"detail": {"schema_version": 1,
+                                       "canonical_code": "concurrency_limited",
+                                       "category": "capacity",
+                                       "message": "The concurrency limit was reached.",
+                                       "retry": "after_delay",
+                                       "recovery": "wait",
+                                       "retry_after_s": 30}}
             return R()
 
         def close(self):

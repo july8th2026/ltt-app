@@ -19,6 +19,7 @@ from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
 from server.deps import user_hien_tai
 from server.templating import templates
+from platform_core.jobs import loi_cho_khach
 
 router = APIRouter(tags=["seedance"])
 
@@ -96,7 +97,7 @@ def _jobs_cua_toi(request: Request, status: str = "all", sort: str = "newest",
                     "size": int(ref.get("size") or 0),
                 })
         return {"items": [{"id": j.id, "status": j.status, "progress": j.progress,
-                 "progress_msg": j.progress_msg, "error": j.error,
+                 "progress_msg": j.progress_msg, "error": loi_cho_khach(j),
                  "video_key": (j.result or {}).get("video_key") if j.result else None,
                  "model": (j.result or {}).get("model") or (j.params or {}).get("model"),
                  "model_label": (models.get((j.result or {}).get("model") or

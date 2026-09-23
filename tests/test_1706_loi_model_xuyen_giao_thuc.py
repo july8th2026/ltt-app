@@ -53,6 +53,9 @@ _PROTOCOL = {
     "upstream_unknown": ("api_error", "upstream_unknown"),
 }
 
+_SAU_200_QUA_TAI = {"concurrency_limited", "provider_overloaded", "model_loading",
+                    "upstream_timeout", "stream_idle_timeout"}
+
 _PATHS = (
     "/api/v1/jobs",
     "/v1/messages",
@@ -89,7 +92,7 @@ def _extension(path: str, body: dict) -> tuple[dict, str]:
         return body["error"]["ltt_error"], body["error"]["type"]
     if path.endswith("/responses") and body.get("type") == "response.failed":
         return body["response"]["error"]["ltt_error"], body["response"]["error"]["code"]
-    if path.endswith("/chat/completions"):
+    if path.endswith("/chat/completions") or path.endswith("/responses"):
         return body["error"]["ltt_error"], body["error"]["code"]
     return body["ltt_error"], body["code"]
 
@@ -150,6 +153,10 @@ def test_sau_header_la_terminal_sse_nhung_khong_mat_ma(code, path):
     expected = code if path == "/api/v1/jobs" else (
         _PROTOCOL[code][0] if path.endswith("/messages") else _PROTOCOL[code][1]
     )
+    if path.endswith("/messages") and code in _SAU_200_QUA_TAI:
+        # Claude Code chỉ retry lỗi giữa luồng mang `overloaded_error`
+        # (`su_kien_loi._ANTHROPIC_SAU_200_QUA_TAI`); nghĩa ở `canonical_code`.
+        expected = "overloaded_error"
     assert extension["canonical_code"] == code
     assert extension["protocol_code"] == expected
     assert extension["request_id"] == "rid-golden"
@@ -180,11 +187,10 @@ def test_chi_hai_ma_token_duoc_adapter_context_tuong_thich():
     assert mapped == {"input_tokens_exceeded", "context_window_exceeded"}
 
 
-def test_co_cau_truc_mac_dinh_tat_va_doc_tu_env_duoc_tiem():
-    assert not load_public_api_config({}).structured_model_errors
-    assert load_public_api_config(
-        {"LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS": "1"}
-    ).structured_model_errors
+def test_co_cau_truc_da_go_khong_con_doc_env():
+    """Task 13: cờ chuyển tiếp đã gỡ — env cũ còn sót không đổi gì."""
+    cfg = load_public_api_config({"LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS": "0"})
+    assert not hasattr(cfg, "structured_model_errors")
 
 
 def test_rollout_khong_viet_de_hop_dong_public_api_cu():
@@ -192,27 +198,34 @@ def test_rollout_khong_viet_de_hop_dong_public_api_cu():
     assert REGISTRY["quota_exceeded"].retry == "after_delay"
 
 
-def test_co_tat_giu_nguyen_byte_legacy_co_bat_them_ltt_error():
-    off = load_public_api_config({})
-    on = load_public_api_config({"LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS": "1"})
-    failure = _failure("context_window_exceeded")
-    legacy = su_kien_loi.loi_sse(
-        "/v1/chat/completions",
-        "context_length",
-        "prompt is too long",
-        failure=failure,
-        structured=off.structured_model_errors,
+def test_loi_sse_luon_mang_ltt_error():
+    block = su_kien_loi.loi_sse(
+        "/v1/chat/completions", _failure("context_window_exceeded")
     )
-    assert b'"ltt_error"' not in legacy
+    assert b'"ltt_error"' in block
+    assert b"prompt is too long" in block
 
-    modern = su_kien_loi.loi_sse(
-        "/v1/chat/completions",
-        "context_length",
-        "prompt is too long",
-        failure=failure,
-        structured=on.structured_model_errors,
-    )
-    assert b'"ltt_error"' in modern
+
+@pytest.mark.parametrize("code", ("context_window_exceeded", "input_tokens_exceeded"))
+@pytest.mark.parametrize("path", ("/v1/messages", "/v1/chat/completions", "/v1/responses"))
+def test_ma_qua_dai_luon_mang_cau_client_tu_nen(code, path):
+    """Bất biến tự nén (R-08) thuộc renderer duy nhất, trước lẫn sau 200."""
+    failure = _failure(code)
+    truoc = _json_response(su_kien_loi.render_model_failure(
+        path, failure, phase="before_headers", stream=False))
+    sau = _sse_payload(su_kien_loi.render_model_failure(
+        path, failure, phase="after_headers", stream=True))[1]
+    for body in (truoc, sau):
+        error = body.get("error") or body["response"]["error"]
+        assert error["message"].startswith("prompt is too long: 6 tokens > 4 maximum")
+
+
+def test_responses_stream_qua_dai_truoc_200_la_200_mot_response_failed():
+    response = su_kien_loi.render_model_failure(
+        "/v1/responses", _failure("context_window_exceeded"),
+        phase="before_headers", stream=True)
+    assert response.status_code == 200
+    assert response.media_type == "text/event-stream"
 
 
 def test_renderer_tu_choi_phase_la_de_khong_doan():

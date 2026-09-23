@@ -2413,6 +2413,10 @@ msgstr "Try this tool"
 msgid "Chạy thử ngay trên trình duyệt"
 msgstr "Try it right in the browser"
 
+#: apps/agent/routes/_shared.py
+msgid "Chạy workflow trên Canvas đang được nâng cấp sang runtime mới. Bản nháp của bạn vẫn được lưu an toàn."
+msgstr "Running workflows on Canvas is being upgraded to the new runtime. Your draft is saved safely."
+
 #: apps/ltt_voice/templates/
 #, python-brace-format
 msgid "Chạy xong lô: {x} dòng xong, {e} lỗi."
@@ -9681,13 +9685,15 @@ msgstr "If the hash does not match, do NOT open the file - delete it and downloa
 #: server/templates/_cam_chon.html:167
 msgid ""
 "Nếu thiếu model metadata: kiểm đường dẫn và JSON catalog. Nếu 401: kiểm biến LTT_API_KEY có trong"
-" tiến trình hiện tại. Nếu 403: kiểm jobs:create và giới hạn công cụ. Nếu 413: dùng đúng profile "
-"theo model hoặc mở phiên mới. Muốn gỡ: xóa khối provider ltt và hai tệp profile/catalog do mình "
+" tiến trình hiện tại. Nếu 403: kiểm jobs:create và giới hạn công cụ. Nếu 400 context_window_exceeded "
+"(ngữ cảnh quá dài): dùng đúng profile theo model hoặc mở phiên mới; 413 chỉ là thân request quá lớn "
+"(bớt tệp đính kèm). Muốn gỡ: xóa khối provider ltt và hai tệp profile/catalog do mình "
 "thêm; phục hồi bản sao lưu nếu đã đổi cấu hình gốc."
 msgstr ""
 "Missing model metadata: check the catalog path and JSON. For 401, check that the current process "
-"has LTT_API_KEY. For 403, check jobs:create and tool restrictions. For 413, use the correct model"
-" profile or start a new session. To disconnect, remove the ltt provider block and the "
+"has LTT_API_KEY. For 403, check jobs:create and tool restrictions. For 400 context_window_exceeded "
+"(context too long), use the correct model profile or start a new session; 413 only means the "
+"request body is too large (remove attachments). To disconnect, remove the ltt provider block and the "
 "profiles/catalog you added; restore your backup if you changed root configuration."
 
 #: server/templates/_cam_chon.html:259
@@ -19423,6 +19429,810 @@ msgstr "The matcher on PreToolUse/PostToolUse matches the TOOL NAME (pwsh, write
 msgid "Lệnh hook chạy bằng PowerShell. Nếu hook gọi chương trình ngoài (node, python, git…) thì mã thoát của chương trình đó KHÔNG tự thành mã thoát của hook: phải kết thúc bằng ; exit $LASTEXITCODE, nếu không exit 2 bị nuốt và hook không chặn."
 msgstr "Hook commands run through PowerShell. If a hook calls an external program (node, python, git…), that program's exit code does NOT automatically become the hook's exit code: the command has to end with ; exit $LASTEXITCODE, otherwise exit 2 is swallowed and the hook does not block."
 
+#: apps/video_crawler/templates/video_crawler.html:65
+msgid "\"Không trùng\" bỏ qua video bạn đã tải trong 30 ngày gần đây. Mỗi video tải về tính 1 credit; xem trước miễn phí."
+msgstr "\"No duplicates\" skips videos you already downloaded in the last 30 days. Each downloaded video costs 1 credit; previewing is free."
+
+#: apps/video_crawler/templates/video_crawler.html:83
+msgid "(định dạng Netscape) từ trình duyệt khi đang đăng nhập nền đó rồi dán vào đây. Chỉ cookie của đúng nền được giữ, lưu mã hoá, chỉ dùng cho việc cào của bạn; bạn xoá được bất cứ lúc nào."
+msgstr "(Netscape format) from your browser while logged in to that platform, then paste it here. Only cookies for the matching platform are kept, stored encrypted, and used only for your own crawls; you can delete them anytime."
+
+#: apps/video_crawler/templates/video_crawler.html:6
+msgid "@tenkenh hoặc link kênh"
+msgstr "@handle or channel link"
+
+#: apps/video_crawler/nen_tang.py:100
+msgid "Bilibili quốc tế"
+msgstr "Bilibili International"
+
+#: apps/video_crawler/nen_tang.py:120
+msgid "Bài chỉ có ảnh không tải được."
+msgstr "This post only has images — nothing to download."
+
+#: apps/video_crawler/loi.py:32
+msgid "Bài đăng này không có video (chỉ có ảnh)."
+msgstr "This post has no video (images only)."
+
+#: apps/video_crawler/nen_tang.py:144
+msgid "Bài ảnh (slideshow) không có video."
+msgstr "This photo post (slideshow) has no video."
+
+#: apps/video_crawler/features.py:181
+msgid "Bạn đang xem trước quá nhanh — đợi một phút rồi thử lại."
+msgstr "You are previewing too fast — wait a minute and try again."
+
+#: apps/video_crawler/templates/video_crawler.html:76
+msgid "Bấm \"Xem trước\" để xem danh sách video trước khi tải."
+msgstr "Click \"Preview\" to see the list of videos before downloading."
+
+#: apps/video_crawler/jobs.py:192
+msgid "Bỏ qua {n} video đã tải trước đó"
+msgstr "Skipped {n} videos already downloaded"
+
+#: apps/video_crawler/templates/vc_hang_doi.html:20
+msgid "Chi tiết · tải về · huỷ"
+msgstr "Details · download · cancel"
+
+#: apps/video_crawler/features.py:137
+msgid "Chưa chọn video nào."
+msgstr "No videos selected yet."
+
+#: apps/video_crawler/templates/vc_hang_doi.html:8
+msgid "Chưa có lượt cào nào."
+msgstr "No crawls yet."
+
+#: apps/video_crawler/features.py:73
+msgid "Chưa nhập từ khoá hoặc link."
+msgstr "Enter a keyword or link."
+
+#: apps/video_crawler/nen_tang.py:95
+msgid "Chỉ dán link một video; cần phiên (Douyin đòi cookie mới)."
+msgstr "Only single video links; requires a session (Douyin needs fresh cookies)."
+
+#: apps/video_crawler/adapters/bilibili_tv.py:80
+msgid "Chỉ hỗ trợ dán link video độc lập bilibili.tv (không hỗ trợ link tập phim/season)."
+msgstr "Only standalone bilibili.tv video links are supported (episode/season links are not)."
+
+#: apps/video_crawler/nen_tang.py:120
+msgid "Chỉ link bài có xsec_token (copy từ trình duyệt)."
+msgstr "Only post links with xsec_token (copy from your browser)."
+
+#: apps/video_crawler/nen_tang.py:178
+msgid "Chỉ link một tweet."
+msgstr "Only a single tweet link."
+
+#: apps/video_crawler/nen_tang.py:104
+msgid "Chỉ link video độc lập (/video/…), chưa hỗ trợ link tập phim."
+msgstr "Only standalone video links (/video/…); episode links are not supported yet."
+
+#: apps/video_crawler/nen_tang.py:161
+msgid "Chỉ link video/reel đầy đủ (chưa nhận fb.watch, Page)."
+msgstr "Only full video/reel links (fb.watch and Page links not accepted yet)."
+
+#: apps/video_crawler/features.py:111
+msgid "Chọn từ 1 đến {n} video."
+msgstr "Choose between 1 and {n} videos."
+
+#: apps/video_crawler/phien.py:65
+msgid "Cookie này chưa đăng nhập {ten} — hãy đăng nhập rồi xuất lại."
+msgstr "These cookies are not logged in to {ten} — log in and export again."
+
+#: apps/video_crawler/templates/video_crawler.html:70
+msgid "Cào hết (thêm vào hàng đợi)"
+msgstr "Crawl all (add to queue)"
+
+#: apps/video_crawler/templates/video_crawler.html:63
+msgid "Cào không trùng"
+msgstr "Skip duplicates"
+
+#: apps/video_crawler/manifest.py:46
+msgid "Cào video"
+msgstr "Crawl video"
+
+#: apps/video_crawler/manifest.py:41
+msgid "Cào video nguồn"
+msgstr "Crawl source videos"
+
+#: apps/video_crawler/templates/video_crawler.html:50
+msgid "Cách cào"
+msgstr "How to crawl"
+
+#: apps/video_crawler/features.py:68
+msgid "Cách cào này cần đăng nhập {ten} — thêm phiên đăng nhập trước."
+msgstr "This crawl method needs a {ten} login — add a login session first."
+
+#: apps/video_crawler/nen_tang.py:169
+msgid "Cần phiên Instagram."
+msgstr "Requires an Instagram session."
+
+#: apps/video_crawler/templates/video_crawler.html:127
+msgid "Cần phiên đăng nhập — thêm ở mục Đăng nhập nền tảng bên dưới"
+msgstr "Needs a login session — add one under Platform login below"
+
+#: apps/video_crawler/nen_tang.py:111
+msgid "Cần phiên: Bilibili chặn truy cập ẩn danh từ máy chủ (HTTP 412)."
+msgstr "Requires a session: Bilibili blocks anonymous access from servers (HTTP 412)."
+
+#: apps/video_crawler/features.py:103
+msgid "Cần đúng một trong hai: danh sách mục hoặc nguồn cào."
+msgstr "Provide exactly one of: a list of items or a crawl source."
+
+#: apps/video_crawler/routes.py:42
+msgid "Cần đăng nhập bằng tài khoản người dùng (không phải quản trị nội bộ)."
+msgstr "You must be logged in with a user account (not internal admin)."
+
+#: apps/video_crawler/adapters/douyin.py:91
+msgid "Douyin chưa hỗ trợ chế độ {che_do!r}: cần client Douyin riêng (ký request, phân trang) — donor dựa vào MediaCrawler (NON-COMMERCIAL), không thể tự dùng lại."
+msgstr "Douyin does not support mode {che_do!r} yet: it needs a dedicated Douyin client (request signing, pagination) — the donor relied on MediaCrawler (NON-COMMERCIAL), which cannot be reused as-is."
+
+#: apps/video_crawler/templates/video_crawler.html:97
+msgid "Dán cookies.txt"
+msgstr "Paste cookies.txt"
+
+#: apps/video_crawler/adapters/facebook.py:78
+msgid "Facebook: chế độ '{che_do}' chưa hỗ trợ — yt-dlp không liệt kê được Page/kênh Facebook (cần trình duyệt đã đăng nhập, donor `_fb_liet_ke_kenh`); chỉ 'Theo link' dùng ẩn danh được."
+msgstr "Facebook: mode '{che_do}' is not supported yet — yt-dlp cannot list Facebook Pages/channels (needs a logged-in browser, donor `_fb_liet_ke_kenh`); only 'By link' works anonymously."
+
+#: apps/video_crawler/templates/vc_thong_ke.html:3
+msgid "Hoàn thành"
+msgstr "Completed"
+
+#: apps/video_crawler/adapters/_ytdlp.py:65
+msgid "Huỷ theo yêu cầu"
+msgstr "Cancelled on request"
+
+#: apps/video_crawler/templates/vc_hang_doi.html:6
+msgid "Hàng đợi &amp; lịch sử của tôi"
+msgstr "My queue &amp; history"
+
+#: apps/video_crawler/jobs.py:211
+msgid "Hết thời gian của lượt này, cào lại để lấy phần còn lại."
+msgstr "This run timed out — crawl again to get the rest."
+
+#: apps/video_crawler/jobs.py:212
+msgid "Hết thời gian xử lý."
+msgstr "Processing timed out."
+
+#: apps/video_crawler/an_toan_url.py:67
+msgid "IP nội bộ bị chặn: {host}"
+msgstr "Internal IP blocked: {host}"
+
+#: apps/video_crawler/jobs.py:194
+msgid "Không có video mới — bỏ qua {n} video đã tải trước đó"
+msgstr "No new videos — skipped {n} videos already downloaded"
+
+#: apps/video_crawler/nen_tang.py:111
+msgid "Không nhận link rút gọn b23.tv."
+msgstr "Shortened b23.tv links are not accepted."
+
+#: apps/video_crawler/phien.py:63
+msgid "Không thấy cookie nào của {ten}. Hãy xuất cookies.txt khi đang mở {ten}."
+msgstr "No cookies found for {ten}. Export cookies.txt while {ten} is open."
+
+#: apps/video_crawler/jobs.py:197
+msgid "Không tìm thấy video nào."
+msgstr "No videos found."
+
+#: apps/video_crawler/loi.py:48
+msgid "Không tải được video do lỗi không xác định. Vui lòng thử lại sau."
+msgstr "Could not download the video due to an unknown error. Please try again later."
+
+#: apps/video_crawler/templates/vc_ket_qua.html:4
+msgid "Kết quả xem trước"
+msgstr "Preview results"
+
+#: apps/video_crawler/features.py:133
+msgid "Kết quả xem trước không còn — bấm Xem trước lại."
+msgstr "The preview result is gone — click Preview again."
+
+#: apps/video_crawler/features.py:57
+msgid "Link không hợp lệ cho {ten}."
+msgstr "Invalid link for {ten}."
+
+#: apps/video_crawler/loi.py:34
+msgid "Link không được hỗ trợ cho nền tảng này."
+msgstr "This link is not supported for this platform."
+
+#: apps/video_crawler/nen_tang.py:136
+msgid "Link video hoặc trang kênh weibo.com/u/…"
+msgstr "Video link or channel page weibo.com/u/…"
+
+#: apps/video_crawler/features.py:124
+msgid "Link {ten} không hợp lệ hoặc thiếu mã cần thiết — dán lại link đầy đủ."
+msgstr "Invalid {ten} link or missing required id — paste the full link again."
+
+#: apps/video_crawler/features.py:145
+msgid "Loại việc không hợp lệ."
+msgstr "Invalid job type."
+
+#: apps/video_crawler/templates/video_crawler.html:99
+msgid "Lưu phiên"
+msgstr "Save session"
+
+#: apps/video_crawler/loi.py:45
+msgid "Lỗi mạng khi kết nối tới nền tảng. Vui lòng thử lại sau."
+msgstr "Network error connecting to the platform. Please try again later."
+
+#: apps/video_crawler/templates/video_crawler.html:83
+msgid "Một số cách cào cần tài khoản của chính bạn. Xuất"
+msgstr "Some crawl methods need your own account. Export"
+
+#: apps/video_crawler/features.py:118
+msgid "Mục không hợp lệ."
+msgstr "Invalid item."
+
+#: apps/video_crawler/templates/video_crawler.html:85
+msgid "Nền"
+msgstr "Platform"
+
+#: apps/video_crawler/templates/video_crawler.html:38
+msgid "Nền tảng"
+msgstr "Platform"
+
+#: apps/video_crawler/phien.py:123
+msgid "Nền tảng không hợp lệ."
+msgstr "Invalid platform."
+
+#: apps/video_crawler/features.py:47
+msgid "Nền tảng này chưa được hỗ trợ."
+msgstr "This platform is not supported yet."
+
+#: apps/video_crawler/loi.py:27
+msgid "Nền tảng yêu cầu đăng nhập — thêm phiên ở mục Đăng nhập nền tảng rồi thử lại."
+msgstr "This platform requires login — add a session under Platform login and try again."
+
+#: apps/video_crawler/loi.py:30
+msgid "Nền tảng đang chặn truy cập ẩn danh từ máy chủ — thêm phiên ở mục Đăng nhập nền tảng rồi thử lại."
+msgstr "This platform is blocking anonymous access from servers — add a session under Platform login and try again."
+
+#: apps/video_crawler/features.py:75
+msgid "Nội dung nhập quá dài."
+msgstr "The input is too long."
+
+#: apps/video_crawler/templates/video_crawler.html:92
+msgid "Phiên hỏng — nhập lại"
+msgstr "Session broken — re-enter"
+
+#: apps/video_crawler/features.py:70
+msgid "Phiên {ten} đã hỏng (không giải mã được) — nhập lại cookies.txt."
+msgstr "The {ten} session is broken (cannot decrypt) — enter cookies.txt again."
+
+#: apps/video_crawler/templates/video_crawler.html:62
+msgid "Số lượng (tối đa 20)"
+msgstr "Quantity (max 20)"
+
+#: apps/video_crawler/features.py:79
+msgid "Số lượng không hợp lệ."
+msgstr "Invalid quantity."
+
+#: apps/video_crawler/features.py:82
+msgid "Số lượng phải từ 1 đến {tran}."
+msgstr "Quantity must be between 1 and {tran}."
+
+#: apps/video_crawler/templates/video_crawler.html:5
+msgid "Theo bộ / playlist"
+msgstr "By collection / playlist"
+
+#: apps/video_crawler/templates/video_crawler.html:5
+msgid "Theo kênh"
+msgstr "By channel"
+
+#: apps/video_crawler/templates/video_crawler.html:5
+msgid "Theo link"
+msgstr "By link"
+
+#: apps/video_crawler/templates/video_crawler.html:5
+msgid "Theo từ khoá"
+msgstr "By keyword"
+
+#: apps/video_crawler/templates/vc_hang_doi.html:2
+msgid "Thống kê của bạn"
+msgstr "Your stats"
+
+#: apps/video_crawler/nen_tang.py:144
+msgid "Tìm theo từ khoá cần phiên TikTok."
+msgstr "Searching by keyword requires a TikTok session."
+
+#: apps/video_crawler/templates/video_crawler.html:27
+msgid "Tìm theo từ khoá, link, kênh hoặc playlist; xem trước, chọn rồi tải vào kho của bạn."
+msgstr "Search by keyword, link, channel, or playlist; preview, select, then download into your storage."
+
+#: apps/video_crawler/jobs.py:169
+msgid "Tìm thấy {n} video"
+msgstr "Found {n} videos"
+
+#: apps/video_crawler/manifest.py:43
+msgid "Tìm và tải video nguồn (từ khoá, link, kênh, playlist) vào kho của bạn."
+msgstr "Find and download source videos (keyword, link, channel, playlist) into your storage."
+
+#: apps/video_crawler/templates/vc_ket_qua.html:23
+msgid "Tải các video đã chọn"
+msgstr "Download the selected videos"
+
+#: apps/video_crawler/adapters/_ytdlp.py:398
+msgid "Tải xong nhưng không tìm thấy tệp video. Vui lòng thử lại."
+msgstr "Download finished but the video file was not found. Please try again."
+
+#: apps/video_crawler/phien.py:41
+msgid "Tệp cookie quá lớn hoặc không đọc được."
+msgstr "The cookie file is too large or unreadable."
+
+#: apps/video_crawler/adapters/_ytdlp.py:51
+msgid "Tệp video vượt quá dung lượng cho phép."
+msgstr "The video file exceeds the allowed size."
+
+#: apps/video_crawler/templates/video_crawler.html:58
+msgid "Từ khoá / link"
+msgstr "Keyword / link"
+
+#: apps/video_crawler/an_toan_url.py:52
+msgid "URL không hợp lệ: {url!r}"
+msgstr "Invalid URL: {url!r}"
+
+#: apps/video_crawler/loi.py:22
+msgid "Video bị giới hạn tuổi, không tải được."
+msgstr "This video is age-restricted and cannot be downloaded."
+
+#: apps/video_crawler/adapters/_ytdlp.py:50
+msgid "Video dài quá giới hạn cho phép."
+msgstr "This video is longer than the allowed limit."
+
+#: apps/video_crawler/templates/vc_thong_ke.html:1
+msgid "Video hôm nay"
+msgstr "Videos today"
+
+#: apps/video_crawler/loi.py:41
+msgid "Video không tồn tại hoặc đã bị gỡ."
+msgstr "This video does not exist or has been removed."
+
+#: apps/video_crawler/jobs.py:111
+msgid "Video quá dài để xử lý trong một lượt."
+msgstr "This video is too long to process in one run."
+
+#: apps/video_crawler/templates/video_crawler.html:27
+msgid "Video · Nguồn"
+msgstr "Video · Source"
+
+#: apps/video_crawler/adapters/_ytdlp.py:49
+msgid "Video đang phát trực tiếp hoặc chưa công chiếu, chưa tải được."
+msgstr "This video is a live stream or not yet premiered — it cannot be downloaded."
+
+#: apps/video_crawler/loi.py:38
+msgid "Video ở chế độ riêng tư hoặc chỉ dành cho thành viên."
+msgstr "This video is private or members-only."
+
+#: apps/video_crawler/templates/video_crawler.html:6
+msgid "Ví dụ: mèo con đáng yêu"
+msgstr "Example: cute kitten"
+
+#: apps/video_crawler/templates/video_crawler.html:69
+msgid "Xem trước &amp; chọn"
+msgstr "Preview &amp; select"
+
+#: apps/video_crawler/templates/vc_ket_qua.html:27
+msgid "Xem trước thất bại."
+msgstr "Preview failed."
+
+#: apps/video_crawler/templates/video_crawler.html:103
+msgid "Xoá phiên"
+msgstr "Delete session"
+
+#: apps/video_crawler/loi.py:24
+msgid "YouTube tạm chặn truy cập tự động. Vui lòng thử lại sau."
+msgstr "YouTube is temporarily blocking automated access. Please try again later."
+
+#: apps/video_crawler/loi.py:36
+msgid "YouTube từ chối tải video này lúc này. Vui lòng thử lại sau."
+msgstr "YouTube refused to download this video right now. Please try again later."
+
+#: apps/video_crawler/features.py:147
+msgid "Yêu cầu không thuộc tài khoản này."
+msgstr "This request does not belong to this account."
+
+#: apps/video_crawler/adapters/__init__.py:20
+msgid "adapter {ten!r} không khai lớp cho nền {nen_id!r}"
+msgstr "adapter {ten!r} does not declare a class for platform {nen_id!r}"
+
+#: apps/video_crawler/nen_tang.py:84
+msgid "chế độ ngoài hợp đồng: {thua}"
+msgstr "mode outside the contract: {thua}"
+
+#: apps/video_crawler/an_toan_url.py:59
+msgid "host rỗng hoặc localhost"
+msgstr "empty host or localhost"
+
+#: apps/video_crawler/anh_bia.py:115
+msgid "host ảnh không được phép"
+msgstr "image host not allowed"
+
+#: apps/video_crawler/templates/video_crawler.html:98
+msgid "hoặc chọn tệp"
+msgstr "or choose a file"
+
+#: apps/video_crawler/templates/video_crawler.html:91
+msgid "hết hạn {ngay}"
+msgstr "expires {ngay}"
+
+#: apps/video_crawler/an_toan_url.py:77
+msgid "không phân giải được host: {host}"
+msgstr "could not resolve host: {host}"
+
+#: apps/video_crawler/anh_bia.py:124
+msgid "không phải ảnh"
+msgstr "not an image"
+
+#: apps/video_crawler/anh_bia.py:108
+msgid "nền không có CDN ảnh"
+msgstr "platform has no image CDN"
+
+#: apps/video_crawler/nen_tang.py:218
+msgid "nền không hợp lệ hoặc chưa bật: {id!r}"
+msgstr "invalid platform or not enabled: {id!r}"
+
+#: apps/video_crawler/nen_tang.py:206
+msgid "nền không tồn tại: {id!r}"
+msgstr "platform does not exist: {id!r}"
+
+#: apps/video_crawler/an_toan_url.py:55
+msgid "scheme không cho phép: {scheme!r}"
+msgstr "scheme not allowed: {scheme!r}"
+
+#: apps/video_crawler/an_toan_url.py:71
+msgid "tên miền không thuộc allowlist: {host}"
+msgstr "domain not in allowlist: {host}"
+
+#: apps/video_crawler/an_toan_url.py:82
+msgid "tên miền phân giải ra IP nội bộ: {ip}"
+msgstr "domain resolves to an internal IP: {ip}"
+
+#: apps/video_crawler/adapters/_ytdlp.py:351
+msgid "tìm thấy {n} video"
+msgstr "found {n} videos"
+
+#: apps/video_crawler/jobs.py:258
+msgid "video_crawler không nhận job_type {loai!r}"
+msgstr "video_crawler does not accept job_type {loai!r}"
+
+#: apps/video_crawler/jobs.py:244
+msgid "video_crawler: không dọn được tệp %s: %s"
+msgstr "video_crawler: could not clean up file %s: %s"
+
+#: apps/video_crawler/jobs.py:81
+msgid "{ma}: {thong_diep}"
+msgstr "{ma}: {thong_diep}"
+
+#: apps/video_crawler/templates/video_crawler.html:91
+msgid "{n} cookie · cập nhật {luc}"
+msgstr "{n} cookies · updated {luc}"
+
+#: apps/video_crawler/templates/vc_hang_doi.html:17
+msgid "{n} video đã chọn"
+msgstr "{n} videos selected"
+
+#: apps/video_crawler/phien.py:125
+msgid "{ten} không dùng đăng nhập."
+msgstr "{ten} does not use login."
+
+#: apps/video_crawler/features.py:63
+msgid "{ten} không hỗ trợ cách cào này."
+msgstr "{ten} does not support this crawl method."
+
+#: apps/video_crawler/phien.py:97
+msgid "Đang lưu phiên này ở nơi khác — thử lại."
+msgstr "This session is being saved elsewhere — try again."
+
+#: apps/video_crawler/templates/vc_ket_qua.html:31
+msgid "Đang tìm"
+msgstr "Searching"
+
+#: apps/video_crawler/templates/vc_ket_qua.html:32
+msgid "Đang tìm video…"
+msgstr "Searching for videos…"
+
+#: apps/video_crawler/templates/vc_ket_qua.html:6
+msgid "Đã bỏ qua {n} video bạn tải trước đó."
+msgstr "Skipped {n} videos you already downloaded."
+
+#: apps/video_crawler/templates/video_crawler.html:90
+msgid "Đã có phiên"
+msgstr "Session added"
+
+#: apps/video_crawler/templates/vc_ket_qua.html:29
+msgid "Đã huỷ."
+msgstr "Cancelled."
+
+#: apps/video_crawler/jobs.py:234
+msgid "Đã tải {ten}"
+msgstr "Downloaded {ten}"
+
+#: apps/video_crawler/templates/video_crawler.html:82
+msgid "Đăng nhập nền tảng"
+msgstr "Platform login"
+
+#: apps/video_crawler/adapters/_ytdlp.py:382
+msgid "đang ghép"
+msgstr "merging"
+
+#: apps/video_crawler/adapters/_ytdlp.py:330
+msgid "đang tìm video"
+msgstr "searching for videos"
+
+#: apps/video_crawler/adapters/_ytdlp.py:374
+msgid "đang tải"
+msgstr "downloading"
+
+#: apps/video_crawler/adapters/_ytdlp.py:152
+msgid "đang xử lý"
+msgstr "processing"
+
+#: apps/video_crawler/anh_bia.py:67
+msgid "ảnh không tải được"
+msgstr "image failed to load"
+
+#: apps/video_crawler/anh_bia.py:126
+msgid "ảnh quá lớn"
+msgstr "image too large"
+
+#: apps/video_crawler/anh_bia.py:71
+msgid "ảnh tải quá chậm"
+msgstr "image loading too slow"
+
+#: platform_core/public_api/governance.py:343
+msgid "Cookie đăng nhập nền tảng video khách tự nhập để cào nội dung cần đăng nhập, **đã mã hoá**, chỉ giữ cookie của đúng tên miền nền đó. Xoá khi khách bấm xoá phiên."
+msgstr "Video platform login cookies the customer enters themselves to crawl content that needs login, **encrypted**, keeping only cookies for the matching platform domain. Deleted when the customer deletes the session."
+
+#: apps/video_crawler
+msgid "\"Không trùng\" bỏ qua video bạn đã tải trong 30 ngày gần đây. Xem trước miễn phí; giá mỗi video tải về theo thời lượng:"
+msgstr "\"No duplicates\" skips videos you downloaded in the last 30 days. Preview is free; each downloaded video is priced by duration:"
+
+#: apps/video_crawler
+msgid "Báo cáo lạm dụng"
+msgstr "Report abuse"
+
+#: apps/video_crawler
+msgid "Bình thường"
+msgstr "Normal"
+
+#: apps/video_crawler
+msgid "Chưa có job tải nào trong cửa sổ này."
+msgstr "No download jobs in this window."
+
+#: apps/video_crawler
+msgid "Chưa nhận link rút gọn v.douyin.com."
+msgstr "Short v.douyin.com links are not supported yet."
+
+#: apps/video_crawler
+msgid "Chưa nhận link rút gọn v.kuaishou.com."
+msgstr "Short v.kuaishou.com links are not supported yet."
+
+#: apps/video_crawler
+msgid "Chỉ tải nội dung bạn có quyền. Tài khoản vi phạm nhiều lần bị khoá. Mỗi tài khoản tải tối đa {gio} video/giờ, {ngay} video/ngày."
+msgstr "Only download content you have the rights to. Repeat infringers are banned. Each account can download up to {gio} videos/hour and {ngay} videos/day."
+
+#: apps/video_crawler
+msgid "Chủ sở hữu nội dung báo vi phạm tại"
+msgstr "Content owners can report infringement at"
+
+#: apps/video_crawler
+msgid "Credit / video"
+msgstr "Credits / video"
+
+#: apps/video_crawler
+msgid "Có nền dưới ngưỡng — xem cột Khuyến nghị. Tắt bằng biến môi trường LTT_VIDEO_CRAWLER_TAT (không tự động tắt)."
+msgstr "Some platforms are below the threshold — see the Recommendation column. Disable them with the LTT_VIDEO_CRAWLER_TAT environment variable (nothing is disabled automatically)."
+
+#: apps/video_crawler
+msgid "Cần phiên Douyin cho mọi cách cào."
+msgstr "Every crawl mode needs a Douyin session."
+
+#: apps/video_crawler
+msgid "Cần tick ô cam kết bạn có quyền tải và sử dụng các video này trước khi tải."
+msgstr "Tick the box confirming you have the rights to download and use these videos before downloading."
+
+#: apps/video_crawler
+msgid "Douyin chưa hỗ trợ chế độ {che_do!r}."
+msgstr "Douyin does not support mode {che_do!r} yet."
+
+#: apps/video_crawler
+msgid "Job lỗi toàn phần"
+msgstr "Fully failed jobs"
+
+#: apps/video_crawler
+msgid "Job tải"
+msgstr "Download jobs"
+
+#: apps/video_crawler
+msgid "Khuyến nghị"
+msgstr "Recommendation"
+
+#: apps/video_crawler
+msgid "Link bài phải có xsec_token (copy từ trình duyệt)."
+msgstr "Post links must include xsec_token (copy it from your browser)."
+
+#: apps/video_crawler
+msgid "Lỗi theo mã"
+msgstr "Errors by code"
+
+#: apps/video_crawler
+msgid "Mỗi tài khoản tải tối đa {n} video mỗi giờ (bạn đã dùng {da}) — đợi rồi thử lại hoặc chọn ít video hơn."
+msgstr "Each account can download up to {n} videos per hour (you have used {da}) — wait and try again, or pick fewer videos."
+
+#: apps/video_crawler
+msgid "Mỗi tài khoản tải tối đa {n} video mỗi ngày (bạn đã dùng {da}) — thử lại sau."
+msgstr "Each account can download up to {n} videos per day (you have used {da}) — try again later."
+
+#: apps/video_crawler
+msgid "Mục lỗi"
+msgstr "Failed items"
+
+#: apps/video_crawler
+msgid "Mục tải xong"
+msgstr "Downloaded items"
+
+#: apps/video_crawler
+msgid "Nên tắt"
+msgstr "Should be disabled"
+
+#: apps/video_crawler
+msgid "Nền tảng vừa đổi cấu trúc trang, công cụ đang chờ cập nhật. Vui lòng thử lại sau."
+msgstr "The platform just changed its page structure; the tool is waiting for an update. Please try again later."
+
+#: apps/video_crawler
+msgid "Sức khoẻ Cào video nguồn"
+msgstr "Source video crawler health"
+
+#: apps/video_crawler
+msgid "Tìm và kênh cần phiên Kuaishou."
+msgstr "Search and channel need a Kuaishou session."
+
+#: apps/video_crawler
+msgid "Tìm và kênh cần phiên Xiaohongshu."
+msgstr "Search and channel need a Xiaohongshu session."
+
+#: apps/video_crawler
+msgid "Tôi cam kết có quyền tải và sử dụng các video này (tôi là chủ sở hữu, được chủ sở hữu cho phép, hoặc thuộc trường hợp pháp luật cho phép) và tự chịu trách nhiệm theo"
+msgstr "I confirm I have the rights to download and use these videos (I am the owner, have the owner's permission, or the use is permitted by law) and I take responsibility under the"
+
+#: apps/video_crawler
+msgid "Tỉ lệ thành công"
+msgstr "Success rate"
+
+#: apps/video_crawler
+msgid "Tỉ lệ thành công/lỗi theo nền trong {gio} giờ gần nhất — đọc từ hàng đợi việc, không phải bảng riêng."
+msgstr "Success/failure rate per platform over the last {gio} hours — read from the job queue, not a separate table."
+
+#: apps/video_crawler
+msgid "chúng tôi gỡ trong 72 giờ."
+msgstr "we take it down within 72 hours."
+
+#: apps/video_crawler
+msgid "hoặc"
+msgstr "or"
+
+#: apps/video_crawler
+msgid "trên {tu} phút"
+msgstr "over {tu} min"
+
+#: apps/video_crawler
+msgid "{tu}–{den} phút"
+msgstr "{tu}–{den} min"
+
+#: apps/video_crawler
+msgid "Điều khoản sử dụng"
+msgstr "Terms of use"
+
+#: apps/video_crawler
+msgid "Danh sách video khách đã tải từ nền tảng video (chỉ nền, mã video, đường dẫn tệp), để \"cào không trùng\" không tải và thu tiền lại một video. Giữ lâu hơn tệp — tệp đi theo lịch sử việc (30 ngày)."
+msgstr "List of videos a customer downloaded from video platforms (platform, video ID, file path only) so \"no duplicates\" crawling does not download and charge for the same video twice. Kept longer than the files — files follow job history (30 days)."
+
+#: apps/video_crawler
+msgid "video_crawler: không nhả được chỗ của job %s: %s"
+msgstr "video_crawler: could not release the slot of job %s: %s"
+
+#: apps/video_crawler
+msgid "{ten}: đã hoặc đang được tải ở lượt khác của bạn — bỏ qua"
+msgstr "{ten}: already downloaded or being downloaded in another run of yours — skipped"
+
+#: apps/video_crawler
+msgid "\"Không trùng\" bỏ qua video bạn đã tải hoặc đang tải. Xem trước miễn phí; giá mỗi video tải về theo thời lượng:"
+msgstr "\"No duplicates\" skips videos you have downloaded or are downloading. Preview is free; each downloaded video is priced by duration:"
+
+#: apps/video_crawler
+msgid "(không có chữ LOCALLY): bản đó từng bị gỡ khỏi kho vì gửi cookie của bạn ra máy chủ ngoài."
+msgstr "(without the word LOCALLY): that one was once removed from the store for sending your cookies to an outside server."
+
+#: apps/video_crawler
+msgid "@tenkenh hoặc https://www.youtube.com/@tenkenh"
+msgstr "@channelname or https://www.youtube.com/@channelname"
+
+#: apps/video_crawler
+msgid "Cam kết quyền"
+msgstr "Rights confirmation"
+
+#: apps/video_crawler
+msgid "Cài tiện ích mã nguồn mở"
+msgstr "Install the open-source extension"
+
+#: apps/video_crawler
+msgid "Cách xuất cookies.txt (Chrome, Edge, Firefox)"
+msgstr "How to export cookies.txt (Chrome, Edge, Firefox)"
+
+#: apps/video_crawler
+msgid "Job này không có mục lỗi để tải lại."
+msgstr "This job has no failed items to retry."
+
+#: apps/video_crawler
+msgid "Không có lượt cào nào cho nền này."
+msgstr "No crawls for this platform."
+
+#: apps/video_crawler
+msgid "Lọc theo nền"
+msgstr "Filter by platform"
+
+#: apps/video_crawler
+msgid "Mở trang khi đang đăng nhập nền cần cào, bấm biểu tượng tiện ích, chọn xuất cookie của trang hiện tại (định dạng Netscape/cookies.txt), rồi dán nội dung hoặc chọn tệp vào ô bên dưới."
+msgstr "Open the site while signed in to the platform you want to crawl, click the extension icon, export the current site's cookies (Netscape/cookies.txt format), then paste the content or choose the file in the box below."
+
+#: apps/video_crawler
+msgid "Rủi ro tài khoản:"
+msgstr "Account risk:"
+
+#: apps/video_crawler
+msgid "Tải lại {n} mục lỗi"
+msgstr "Retry {n} failed items"
+
+#: apps/video_crawler
+msgid "Tất cả nền"
+msgstr "All platforms"
+
+#: apps/video_crawler
+msgid "cho Chrome, Edge (cùng kho tiện ích Chrome) hoặc Firefox (kho tiện ích Firefox riêng) — tiện ích này không gửi cookie đi đâu, mã nguồn công khai kiểm được. Không dùng tiện ích chỉ tên"
+msgstr "for Chrome, Edge (same Chrome extension store) or Firefox (separate Firefox add-on store) — this extension sends your cookies nowhere, and its source code is public and auditable. Do not use the extension named only"
+
+#: apps/video_crawler
+msgid "còn {tg}"
+msgstr "{tg} left"
+
+#: apps/video_crawler
+msgid "du lịch Đà Lạt"
+msgstr "Da Lat travel"
+
+#: apps/video_crawler
+msgid "mèo con đáng yêu"
+msgstr "cute kittens"
+
+#: apps/video_crawler
+msgid "nền tảng có thể tạm khoá hoặc yêu cầu xác minh tài khoản nếu phát hiện tải tự động dồn dập từ cookie của bạn. Nên dùng một tài khoản phụ để đăng nhập ở đây, không dùng tài khoản chính bạn đang cần giữ an toàn."
+msgstr "the platform may temporarily lock or ask to verify the account if it detects heavy automated downloads from your cookies. Use a secondary account here, not the main account you need to keep safe."
+
+#: apps/video_crawler
+msgid "review phim"
+msgstr "movie review"
+
+#: apps/video_crawler
+msgid "trend nhảy"
+msgstr "dance trend"
+
+#: apps/video_crawler
+msgid "{n} B/s"
+msgstr "{n} B/s"
+
+#: apps/video_crawler
+msgid "{n} s"
+msgstr "{n} s"
+
+msgid "Hệ phiên âm"
+msgstr "Transcription engine"
+
+msgid "Không đọc được thời lượng tệp âm thanh — tệp hỏng hoặc sai định dạng."
+msgstr "Could not read the duration of the audio file — the file is damaged or in an unsupported format."
+
+msgid "LTT chuẩn"
+msgstr "LTT standard"
+
+msgid "Whisper large-v3 + quy tắc LTT (hệ gốc, mặc định)"
+msgstr "Whisper large-v3 + LTT rules (original engine, default)"
+
 # Docs413 22/09: vuot tran ngu canh cong khai la 400 context_window_exceeded
 # (Responses stream: response.failed), khong con la 413 -- tests/test_1480.
 # Chuoi 413 cu (dieu_khoan.py, huong_dan.html) da doi noi dung nguon; ban dich
@@ -19436,3 +20246,142 @@ msgstr "If you get rejected for going over the context limit mid-conversation"
 
 msgid "Vượt trần thì bạn nhận mã 400 (context_window_exceeded) kèm đúng con số đã áp cho model bạn gọi — cửa Responses dạng stream báo bằng sự kiện response.failed thay vì đóng kết nối lặng lẽ. Chúng tôi KHÔNG bao giờ lặng lẽ cắt bớt lượt cũ: cắt đi thì thứ mất đầu tiên là chỉ dẫn hệ thống và kết quả tool, và bạn sẽ không biết là mình đã mất."
 msgstr "Go over the limit and you get a 400 (context_window_exceeded) carrying the number that actually applied to the model you called — a streaming Responses call instead reports it with a response.failed event instead of closing silently. We NEVER silently drop older turns: the first things to go would be your system instructions and your tool results, and you would have no way to know they were gone."
+
+msgid "Cần tài khoản người dùng để dùng credit."
+msgstr "A user account is needed to spend credits."
+
+#: apps/video_crawler
+msgid "Bật lại"
+msgstr "Re-enable"
+
+#: apps/video_crawler
+msgid "Bị chặn"
+msgstr "Blocked"
+
+#: apps/video_crawler
+msgid "Chưa có tài khoản nào trong kho."
+msgstr "No accounts in the pool yet."
+
+#: apps/video_crawler
+msgid "Chỉ dùng tài khoản PHỤ của LTT:"
+msgstr "Use only LTT SECONDARY accounts:"
+
+#: apps/video_crawler
+msgid "Còn {n} ngày"
+msgstr "{n} days left"
+
+#: apps/video_crawler
+msgid "Hạn cookie"
+msgstr "Cookie expiry"
+
+#: apps/video_crawler
+msgid "Không có tài khoản này."
+msgstr "No such account."
+
+#: apps/video_crawler
+msgid "Không giải được link rút gọn — chuyển hướng không an toàn hoặc trỏ ra ngoài nền đã chọn."
+msgstr "Could not resolve the short link — the redirect is unsafe or points outside the selected platform."
+
+#: apps/video_crawler
+msgid "Không giải được link rút gọn."
+msgstr "Could not resolve the short link."
+
+#: apps/video_crawler
+msgid "Không hạn"
+msgstr "No expiry"
+
+#: apps/video_crawler
+msgid "Lượt dùng/giờ"
+msgstr "Uses/hour"
+
+#: apps/video_crawler
+msgid "Lần dùng gần nhất"
+msgstr "Last used"
+
+#: apps/video_crawler
+msgid "Lỗi gần nhất"
+msgstr "Last error"
+
+#: apps/video_crawler
+msgid "Mỗi tài khoản tải tối đa {n} video mỗi giờ qua tài khoản hệ thống (bạn đã dùng {da}). Đợi một lát rồi thử lại, hoặc thêm phiên đăng nhập của bạn ở mục Đăng nhập nền tảng."
+msgstr "Each account can download up to {n} videos per hour through system accounts (you have used {da}). Wait a moment and try again, or add your own sign-in session under Platform login."
+
+#: apps/video_crawler
+msgid "Nhãn"
+msgstr "Label"
+
+#: apps/video_crawler
+msgid "Nhãn tài khoản phải có và không quá 64 ký tự."
+msgstr "The account label is required and must be at most 64 characters."
+
+#: apps/video_crawler
+msgid "Nền tảng này chưa dùng kho tài khoản hệ thống."
+msgstr "This platform does not use the system account pool yet."
+
+#: apps/video_crawler
+msgid "Nền tảng này chưa tìm kênh theo tên được. Hãy dán link kênh."
+msgstr "This platform cannot search channels by name yet. Paste a channel link instead."
+
+#: apps/video_crawler
+msgid "Thêm tài khoản"
+msgstr "Add account"
+
+#: apps/video_crawler
+msgid "Trạng thái không hợp lệ."
+msgstr "Invalid status."
+
+#: apps/video_crawler
+msgid "Tài khoản hệ thống của nền này đang bận — lượt của bạn sẽ chạy ngay khi có chỗ."
+msgstr "The system accounts for this platform are busy — your run will start as soon as a slot frees up."
+
+#: apps/video_crawler
+msgid "Tài khoản kho"
+msgstr "Pool accounts"
+
+#: apps/video_crawler
+msgid "Tài khoản phụ LTT dùng chung cho khách chưa có phiên riêng — cookie không hiện lại, kể cả cho quản trị viên."
+msgstr "LTT secondary accounts shared with customers who have no session of their own — cookies are never shown again, not even to operators."
+
+#: apps/video_crawler
+msgid "Tạm nghỉ"
+msgstr "Pause"
+
+#: apps/video_crawler
+msgid "Xoá tài khoản này khỏi kho? Không thể khôi phục."
+msgstr "Remove this account from the pool? This cannot be undone."
+
+#: apps/video_crawler
+msgid "không mở được URL: {url}"
+msgstr "could not open URL: {url}"
+
+#: apps/video_crawler
+msgid "quá nhiều bước chuyển hướng (tối đa {n})"
+msgstr "too many redirects (at most {n})"
+
+#: apps/video_crawler
+msgid "tìm thấy {n} kênh"
+msgstr "found {n} channels"
+
+#: apps/video_crawler
+msgid "vòng lặp chuyển hướng"
+msgstr "redirect loop"
+
+#: apps/video_crawler
+msgid "yt-dlp khuyến cáo không dùng tài khoản chính cho tải tự động; nền có thể tạm khoá hoặc buộc xác minh tài khoản dùng để cào."
+msgstr "yt-dlp advises against using your main account for automated downloads; platforms may suspend or force verification on accounts used for crawling."
+
+#: apps/video_crawler
+msgid "{ten} tạm không khả dụng. Vui lòng thử lại sau, hoặc thêm phiên đăng nhập của bạn ở mục Đăng nhập nền tảng."
+msgstr "{ten} is temporarily unavailable. Please try again later, or add your own sign-in session under Platform login."
+
+#: apps/video_crawler
+msgid "Điểm"
+msgstr "Score"
+
+#: apps/video_crawler
+msgid "đang tìm kênh"
+msgstr "searching for channels"
+
+#: apps/video_crawler
+msgid "Máy chủ chưa sẵn sàng ghép video. Chúng tôi đã ghi nhận — vui lòng thử lại sau."
+msgstr "The server is not ready to merge video yet. We have logged it — please try again later."

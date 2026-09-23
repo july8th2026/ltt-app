@@ -28,6 +28,7 @@ from server.auth.session import require_login
 from server.deps import user_hien_tai
 from server.deps import get_db
 from server.templating import templates
+from platform_core.jobs import loi_cho_khach
 
 router = APIRouter(tags=["autosubvideo"])
 
@@ -97,7 +98,7 @@ def _jobs_cua_toi(request: Request):
         for j in rows:
             r = j.result or {}
             out.append({"id": j.id, "status": j.status, "progress": j.progress,
-                        "progress_msg": j.progress_msg, "error": j.error,
+                        "progress_msg": j.progress_msg, "error": loi_cho_khach(j),
                         "video_key": r.get("video_key"), "srt_key": r.get("srt_key"),
                         "ass_key": r.get("ass_key"), "duration_s": r.get("duration_s"),
                         "font_warning": r.get("font_warning")})
@@ -589,7 +590,7 @@ def _studio_job_payload(job) -> dict:
     return {"id": job.id, "type": job.job_type, "status": job.status,
             "progress": job.progress, "message": job.progress_msg,
             "elapsed_s": round(elapsed, 1), "eta_s": eta,
-            "error": job.error if job.status == "error" else "",
+            "error": loi_cho_khach(job),
             "result": job.result if job.status == "done" else {},
             "project_id": str((job.params or {}).get("project_id", "")),
             "created_at": job.created_at.isoformat() if job.created_at else ""}

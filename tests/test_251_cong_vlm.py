@@ -57,11 +57,14 @@ def _than_ok(noi_dung="xin chao", **them):
 
 
 def test_429_nem_BanError_chu_khong_phai_CongVlmError():
-    c = CongVlm(goi=_goi_gia(429, {"detail": {"chi_tiet": "co 1 tien trinh python"}}))
+    from llm_gateway.error_contract import make_error
+
+    c = CongVlm(goi=_goi_gia(429, {"detail": make_error(
+        "concurrency_limited", request_id="rid-ban", retry_after_s=9)}))
     with pytest.raises(BanError) as e:
         c.chat(model="qwen38-api", messages=[])
-    assert e.value.failure.canonical_code == "upstream_unknown"
-    assert "python" not in e.value.ly_do
+    assert e.value.failure.canonical_code == "concurrency_limited"
+    assert e.value.retry_after_s == 9
     # Đây là mấu chốt: `BanError` KHÔNG được là con của `CongVlmError`.
     assert not isinstance(e.value, CongVlmError), (
         "lan hai loai nay se lam api_pool disable key model nha sau 5 lan (D-005)"
@@ -84,7 +87,11 @@ def test_dang_ban_doc_dung_truong_trong_tai():
 
 
 def test_413_nem_VuotNganSachError_khong_phai_loi_provider():
-    c = CongVlm(goi=_goi_gia(413, {"detail": {"truong": "input_tokens", "tran": 65536}}))
+    from llm_gateway.error_contract import make_error
+
+    c = CongVlm(goi=_goi_gia(413, {"detail": make_error(
+        "input_tokens_exceeded", request_id="rid-dai", field="input_tokens",
+        limit=65536)}))
     with pytest.raises(VuotNganSachError) as e:
         c.chat(model="qwen38-api", messages=[])
     # 🔴 HINH DANG DOI 14/09/2026, VA DOI CO CHU Y.
@@ -96,22 +103,17 @@ def test_413_nem_VuotNganSachError_khong_phai_loi_provider():
     #    khong biet tran la 4, cung khong biet do la tran ANH.
     #
     # ⇒ Nay `cong_vlm` BOC san mot lop, nen `{truong, tran, thay}` nam ngay tren
-    #   mat va `errors.tran_bi_vuot` doc thang duoc. Y dinh cua phep kiem khong
+    #   mat (Task 13: ten v1 `field`/`limit`/`actual`). Y dinh cua phep kiem khong
     #   doi: 413 phai MANG CHI TIET di tiep, va khong duoc tinh la loi provider.
-    assert e.value.chi_tiet["truong"] == "input_tokens"
-    assert e.value.chi_tiet["tran"] == 65536
+    assert e.value.chi_tiet["field"] == "input_tokens"
+    assert e.value.chi_tiet["limit"] == 65536
     assert not isinstance(e.value, CongVlmError), (
         "may B khong hong — khong duoc danh dau loi cho key vi mot yeu cau qua to"
     )
 
-    # Va chi tiet ay phai di duoc toi ten CONG KHAI ma khach doc.
-    from platform_core.public_api.errors import tran_bi_vuot
-
-    assert tran_bi_vuot(e.value.chi_tiet) == {
-        "field": "input_tokens",
-        "fields": ["input_tokens"],
-        "limit": 65536,
-    }
+    # Va chi tiet ay di toi khach qua `ltt_error` cua renderer duy nhat.
+    assert e.value.failure.field == "input_tokens"
+    assert e.value.failure.limit == 65536
 
 
 def test_404_model_chua_mo_thi_la_CongVlmError():
@@ -145,9 +147,15 @@ def test_prose_oom_khong_du_bang_chung_thi_khong_duoc_doan_provider_oom():
 
 
 def test_413_prose_la_unknown_khong_duoc_doan_thanh_context():
+    """Task 13: status 413 không còn sinh NGỮ NGHĨA (không đoán thành context).
+
+    Lớp lỗi vẫn theo chính sách 4xx (`YeuCauSaiError`, L-09/`test_1244`): yêu
+    cầu sai thì không phạt khoá và khách nhận 400 hành động được.
+    """
     c = CongVlm(goi=_goi_gia(413, {"detail": "context window exceeded"}))
-    with pytest.raises(YeuCauSaiError) as e:
+    with pytest.raises(CongVlmError) as e:
         c.chat(model="qwen38-api", messages=[])
+    assert isinstance(e.value, YeuCauSaiError)
     assert e.value.failure.canonical_code == "upstream_unknown"
     assert not e.value.failure.is_context_limit
 

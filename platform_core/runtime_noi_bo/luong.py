@@ -47,11 +47,6 @@ log = logging.getLogger("platform_core.runtime_noi_bo.luong")
 #: không mua thêm thời gian — nó chỉ đổi 503 của ta lấy 524 của Cloudflare.
 MO_LUONG_GIAY = 75.0
 
-#: Câu cho khách khi máy B không trả lời kịp (C0-34). Đi với mã `overloaded`
-#: (Anthropic `overloaded_error`, OpenAI `server_is_overloaded`): client tự thử
-#: lại. ⛔ Không lộ chi tiết nội bộ (tên máy, hạn giây).
-_CAU_HET_GIO = "The model did not respond in time because it is busy. Please retry shortly."
-
 #: Đường của cổng máy B mà client nội bộ dùng. Hình dạng OpenAI chat chunk là
 #: hình dạng **duy nhất** `_su_kien_tu_goi` biết đọc; hai đường kia
 #: (`/v1/messages`, `/v1/responses`) chỉ đi qua `mo_luong_tho` (byte nguyên xi).
@@ -109,41 +104,33 @@ class ThieuCredit(LoiCuaLuong):
 
 
 class KhongMoDuoc(LoiCuaLuong):
-    """Không mở được luồng vì lý do khác bận. `qua_dai` = lỗi của đầu vào.
+    """Không mở được luồng vì lý do khác bận. Nghĩa nằm DUY NHẤT ở `failure`.
 
-    `failure.http_status=413` là status DÂY như máy B phát trong giai đoạn tương
-    thích (spec chuẩn hoá lỗi §3), dùng cho telemetry/phạt key; status công khai do
-    renderer lấy từ registry (`context_window_exceeded` = 400, L-34).
+    Task 13 đã gỡ kwarg/thuộc tính boolean `qua_dai`/`het_gio`: quá dài là
+    `failure.is_context_limit`, máy B không trả lời kịp (504 hoặc hết hạn đọc —
+    C0-34) là `failure.is_timeout`. Không có `failure` ⇒ `upstream_unknown`.
     """
 
-    def __init__(self, ly_do: str = "", *, qua_dai: bool = False,
+    def __init__(self, ly_do: str = "", *,
                  token: Optional[int] = None, tran: Optional[int] = None,
-                 het_gio: bool = False, failure: ModelFailure | None = None):
+                 failure: ModelFailure | None = None):
         if failure is None:
-            code = (
-                "context_window_exceeded"
-                if qua_dai
-                else "upstream_timeout"
-                if het_gio
-                else "upstream_unknown"
-            )
-            failure = model_failure(
-                code,
-                http_status=413 if qua_dai else 504 if het_gio else 502,
-                field="context" if qua_dai else None,
-                limit=tran,
-                actual=token,
-            )
+            failure = model_failure("upstream_unknown", http_status=502)
         super().__init__(ly_do or failure.message)
         self.failure = failure
         self.ly_do = ly_do or failure.message
-        self.qua_dai = failure.is_context_limit
-        #: Máy B không trả lời kịp (504 hoặc hết hạn đọc — C0-34): nghẽn, khách
-        #: nhận `overloaded` (thử lại được), không phải "không phục vụ được".
-        self.het_gio = failure.is_timeout
         #: Số cho câu "prompt is too long: N tokens > M maximum" (R-08), khi biết.
         self.token = token if token is not None else failure.actual
         self.tran = tran if tran is not None else failure.limit
+
+
+def _qua_dai(ly_do: str, *, token: int, tran: int) -> KhongMoDuoc:
+    """Lỗi quá dài do CHÍNH máy A phát hiện (trước khi chạm máy B)."""
+    return KhongMoDuoc(
+        ly_do,
+        failure=model_failure("context_window_exceeded", http_status=400,
+                              field="context", limit=int(tran), actual=int(token)),
+    )
 
 
 # ── Ước lượng đầu vào / trần đầu ra (hạ từ `server/api/streaming.py`) ────────
@@ -728,9 +715,9 @@ def _dat_cho(suc, *, lop: str, token_vao_uoc: int, xin_ra: int, so_anh: int = 0,
             suc, lop=lop, token_vao_uoc=token_vao_uoc, xin_ra=xin_ra,
             so_anh=so_anh, token_prefill_moi=token_prefill_moi)
     except tham_so_da_luot.DatChoVuotPool as e:
-        raise KhongMoDuoc(f"dau vao + dau ra + anh {e.dat} token vuot ngan sach "
-                          f"KV {e.pool} cua model", qua_dai=True,
-                          token=int(e.dat), tran=int(e.pool)) from None
+        raise _qua_dai(f"dau vao + dau ra + anh {e.dat} token vuot ngan sach "
+                       f"KV {e.pool} cua model",
+                       token=int(e.dat), tran=int(e.pool)) from None
 
 
 def tien_kiem(db, *, user_id: str, tool_name: str, than: dict, duong: str,
@@ -799,8 +786,8 @@ def tien_kiem(db, *, user_id: str, tool_name: str, than: dict, duong: str,
     if tran_vao is not None:
         cap = int(tran_vao(ten))
         if vao_uoc > cap:
-            raise KhongMoDuoc(f"dau vao uoc {vao_uoc} token vuot tran {cap}",
-                              qua_dai=True, token=vao_uoc, tran=cap)
+            raise _qua_dai(f"dau vao uoc {vao_uoc} token vuot tran {cap}",
+                           token=vao_uoc, tran=cap)
 
     ts = tham_so_da_luot.doc()
     suc = _suc_chua(tool, ten)
@@ -1270,7 +1257,7 @@ def luong_co_cho(tk: TienKiem, *, loi_sse: Callable[..., bytes],
     """Byte của cửa `/api/v1` stream: nhịp tim khi chờ → luồng máy B → quyết toán.
 
     Sau 200 thì không còn mã HTTP: mọi kết cục xấu là MỘT khối lỗi đúng khuôn
-    giao thức do `loi_sse(duong, ma, thong_diep)` dựng (`server/api/su_kien_loi.py`).
+    giao thức do `loi_sse(duong, failure)` dựng (`server/api/su_kien_loi.py`).
     Máy B 429 cho lượt đã nhận ⇒ xếp lại trong hạn chờ (`mo_co_xep_lai`), nhịp
     SSE vẫn chảy; chỉ quá lần/hạn mới thành khối `overloaded`.
     """
@@ -1282,13 +1269,8 @@ def luong_co_cho(tk: TienKiem, *, loi_sse: Callable[..., bytes],
     moi_nhip = ts.nhip_tim_cho_s if nhip_s is None else nhip_s
     bat_dau = time.monotonic()
 
-    def _loi_typed(failure: ModelFailure, ma_cu: str, thong_diep_cu: str) -> bytes:
-        return loi_sse(
-            tk.duong,
-            ma_cu,
-            thong_diep_cu,
-            failure=failure,
-        )
+    def _loi_typed(failure: ModelFailure) -> bytes:
+        return loi_sse(tk.duong, failure)
 
     def _nhip(ly_do: str) -> bytes:
         # Chú thích SSE: mọi client bỏ qua, Cloudflare thấy byte. `nhip_sse` (bên
@@ -1319,24 +1301,12 @@ def luong_co_cho(tk: TienKiem, *, loi_sse: Callable[..., bytes],
         except phong_cho.HetCho as e:
             metrics.increment(metrics.CAPACITY_REFUSED)
             log.warning("HET CHO stream user=%s ly_do=%s", tk.user_id[:8], e.ly_do)
-            yield _loi_typed(
-                model_failure(
-                    "concurrency_limited", http_status=429,
-                    request_id=tk.request_id,
-                ),
-                "overloaded",
-                "The model is busy right now. Please retry shortly.",
-            )
+            yield _loi_typed(model_failure(
+                "concurrency_limited", http_status=429, request_id=tk.request_id))
             return
         except ThieuCredit:
-            yield _loi_typed(
-                model_failure(
-                    "insufficient_credit", http_status=409,
-                    request_id=tk.request_id,
-                ),
-                "insufficient_credit",
-                "Insufficient credit for this request.",
-            )
+            yield _loi_typed(model_failure(
+                "insufficient_credit", http_status=409, request_id=tk.request_id))
             return
         except phong_cho.KhachDi:
             return
@@ -1356,37 +1326,20 @@ def luong_co_cho(tk: TienKiem, *, loi_sse: Callable[..., bytes],
             metrics.increment(metrics.CAPACITY_REFUSED)
             log.warning("HET CHO (xep lai) stream user=%s ly_do=%s",
                         tk.user_id[:8], e.ly_do)
-            yield _loi_typed(
-                model_failure(
-                    "concurrency_limited", http_status=429,
-                    request_id=tk.request_id,
-                ),
-                "overloaded",
-                "The model is busy right now. Please retry shortly.",
-            )
+            yield _loi_typed(model_failure(
+                "concurrency_limited", http_status=429, request_id=tk.request_id))
             return
         except phong_cho.KhachDi:
             return
         except DangBan as e:
             phong_cho.ghi_ket_thuc(cb.waiter_id, "ban")
-            yield _loi_typed(
-                e.failure,
-                "overloaded",
-                "The model is busy right now. Please retry shortly.",
-            )
+            yield _loi_typed(e.failure)
             return
         except KhongMoDuoc as e:
-            phong_cho.ghi_ket_thuc(cb.waiter_id, "qua_dai" if e.qua_dai else "khong_mo_duoc")
-            if e.het_gio and not e.qua_dai:
-                yield _loi_typed(e.failure, "overloaded", _CAU_HET_GIO)
-                return
-            yield _loi_typed(
-                e.failure,
-                "context_length" if e.qua_dai else "upstream",
-                "The input exceeds the model's context limit."
-                if e.qua_dai
-                else "The model could not serve this request.",
-            )
+            phong_cho.ghi_ket_thuc(
+                cb.waiter_id,
+                "qua_dai" if e.failure.is_context_limit else "khong_mo_duoc")
+            yield _loi_typed(e.failure)
             return
         finally:
             mo.close()
@@ -1414,13 +1367,7 @@ def luong_co_cho(tk: TienKiem, *, loi_sse: Callable[..., bytes],
                 http_status=504 if het_gio else 502,
                 request_id=tk.request_id,
             )
-            yield _loi_typed(
-                failure,
-                "overloaded" if het_gio else "upstream",
-                _CAU_HET_GIO
-                if het_gio
-                else "The connection to the model was interrupted. Please retry.",
-            )
+            yield _loi_typed(failure)
     finally:
         _dong_phien(gen)
 
@@ -1846,7 +1793,7 @@ def mo_thuong_nguon(cb: ChuanBi, *, timeout_s: float = MO_LUONG_GIAY,
             cb.db, duong=cb.duong, than=cb.than_gui, timeout_s=timeout_s,
             request_id=cb.request_id, token_dat_truoc=cb.token_dat_truoc)
     except luong_vlm.KhongMoDuocLuong as e:
-        if e.ban and not hoan_khi_ban:
+        if e.failure.is_busy and not hoan_khi_ban:
             # 💰 NGOẠI LỆ DUY NHẤT của "hoàn trước mọi thứ" (phương án C bước 1):
             #    lượt sắp XẾP LẠI nên GIỮ tiền; `mo_co_xep_lai` hoàn ở mọi đường ra.
             _nha_suat(cb.lease_id)
@@ -1861,7 +1808,7 @@ def mo_thuong_nguon(cb: ChuanBi, *, timeout_s: float = MO_LUONG_GIAY,
             ) from e
         hoan(cb.user_id, cb.request_id)
         _nha_suat(cb.lease_id)
-        if e.ban:
+        if e.failure.is_busy:
             # ⛔ BẬN ≠ HỎNG. Khách KHÔNG bị thu tiền. Đếm vào `CAPACITY_REFUSED`
             #    để người trực thấy tần suất, không chỉ thấy một dòng log.
             metrics.increment(metrics.CAPACITY_REFUSED)
@@ -2248,7 +2195,7 @@ def mo_luong(db, *, user_id: str, tool_name: str, params: dict,
         return
     except KhongMoDuoc as e:
         yield {"type": "response.failed",
-               "code": "qua_dai" if e.qua_dai else "khong_mo_duoc",
+               "code": "qua_dai" if e.failure.is_context_limit else "khong_mo_duoc",
                "ly_do": e.ly_do}
         yield _billing(cb, None)
         return

@@ -186,6 +186,8 @@ htmlcov/
 
 # App vendor binaries (Real-ESRGAN engine + models) — copy tu BOT GEMINI, khong commit
 apps/*/vendor/
+# video_crawler/vendor la MA NGUON ben thu ba co LICENSE/NOTICE (f2 a_bogus, Apache-2.0) - PHAI commit.
+!apps/video_crawler/vendor/
 
 # TAO CLIP NGAN: model cache + weight (tai runtime, khong commit)
 /models/
