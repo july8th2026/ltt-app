@@ -407,9 +407,9 @@ def _soat_hinh(db, kho: Storage, *, run, lc, tu_vi_tri: int, ctx=None,
     ma_cat: tuple = ()
     if khoa_ep:
         try:
-            from . import ban_bien_tap as _bbt, canh as _c
+            from . import ban_bien_tap as _bbt
             goi_ep = _doc_json(kho, khoa_ep)
-            chi_muc = _c.tu_dict(goi_ep.get("chi_muc") or {})
+            chi_muc = canh_mod.tu_dict(goi_ep.get("chi_muc") or {})
             # ⛔ Doc qua `BanBienTap.tu_dict`, khong boi khoa `cac_ma_cat` ra
             #    khoi JSON: `sang_dict` KHONG ghi khoa do (no la mot thuoc tinh
             #    tinh ra tu `quyet_dinh`), nen mot phep `goi["ban"]["cac_ma_cat"]`
