@@ -12,6 +12,63 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-24 — Plan 02 (Node SDK) đóng: 29 bài test xanh trong khi desktop không mở được inspector
+
+Đóng plan 02 của Workflow V2 (nhánh `phien/02`, 16/16 task). Bảng task + số đo đầy đủ:
+`docs/superpowers/plans/2026-09-22-wf-v2-LEDGER.md`. Mục này ghi phần **đáng nhớ**.
+
+### ⭐ Luật 7 vừa tự chứng minh: jsdom không đọc CSS
+
+Sau khi cắt Canvas sang `NodeRenderer`/`PaletteV2`/`FormTuLuocDo`, **cả 29 bài vitest đều xanh**
+— và màn hình **không dùng được**. Ba lỗi, cả ba chỉ trình duyệt thật nhìn thấy:
+
+1. ⛔ **Desktop không có đường nào mở inspector.** Nút "Chi tiết" chỉ sống trong
+   `.canvas-mobile-tabs`, mà bảng đó `display:none` (`frontend/agent-canvas/src/canvas.css:65`)
+   và chỉ được bật lại trong `@media (max-width:640px)` ⇒ **từ 641px trở lên không có nút nào**.
+   Trước đó tham số còn nằm ở `ContextComposer` cạnh node nên không ai thấy thiếu; sau khi dồn
+   **mọi** tham số về inspector thì trên desktop **không sửa được một node nào**.
+2. `.node-khung` lấy nền **trắng** mặc định ⇒ chữ trắng trên nền trắng ở chủ đề tối.
+3. Ô nhập inspector **tràn ra ngoài panel** (`width:100%` + padding, thiếu `box-sizing`).
+
+**Bài học đo lường:** bộ vitest không phủ **bố cục** và **breakpoint** — và nó im lặng đúng ở chỗ
+nó không nhìn tới. Thêm bài jsdom cũng không bắt được; cái bắt được là một lượt Playwright trên
+**bản build thật**. Đây là cùng một hình dạng với `test_967` quét không đệ quy và bánh cóc ASCII
+chỉ quét `print()` trực tiếp: *một thứ canh gác im lặng về chỗ nó không nhìn tới*.
+
+### `resource.class` nghĩa là "giữ lease card", không phải "có chạm card"
+
+Chiến dịch khai hợp đồng V2 cho 19 tool đã khai `autosubvideo.render` là `class="gpu"`, lập luận
+*"`burn.py` có gọi NVENC nên có chạm card"*. Lập luận ấy đọc trường theo **nghĩa tự suy**. Mã thật
+nói nghĩa khác: `AppManifest.vram_for()` (`platform_core/registry.py:881`) **hợp nhất**
+`gpu_vram_mb[job_type]` với `resource["vram_min_mb"]`, và `tests/test_1112` chốt bất biến
+`class="gpu"` ⇒ `vram_for() != 0`. Bất biến ấy ra đời từ **một sự cố thật** (Phase 13,
+`8fbf7aed`): ba App GPU chạy **không có lease nào** và đè lên `taoclipngan`/`upscalevideo` trên
+cùng một card. `autosubvideo.render` **cố ý** không giữ lease (khai thừa sẽ bắt job khắc phụ đề
+chờ một card trống nó không cần) ⇒ đúng từ vựng của kho, nó là `cpu`.
+
+Một bản khai thêm vào **chỉ để phục vụ palette** suýt dựng lại hình dạng của một sự cố cũ. Nợ còn
+lại đã ghi ở ledger: `RESOURCE_CLASS` không có mức *"ưu tiên GPU, lui về CPU, không giữ lease"*.
+
+### Lượt chạy lan toả mới thấy — test nhắm không thấy
+
+12 tệp test nhắm của plan: **94 passed / 0 failed**. Nhưng lượt chạy **576 tệp bị lan tới**:
+**10.174 passed / 5 failed**. Bốn đỏ là của plan 02 và **không bài nào** nằm trong 12 tệp nhắm:
+hai bánh cóc đọc `presentationAdapter.ts` (tệp vừa bị xoá), một bài chốt "cửa v3 có **tám** route"
+(vừa thêm 2), và `test_1112` ở trên. Đỏ thứ năm (`'lttcode' o server/app.py`) là **mã của phiên
+khác** đã ở `main` (`e17f1bc3`) bị bánh cóc mới của plan 02 bắt — không sửa hộ.
+
+### ⚠️ `thanh_phan.py --doi` trên cây SẠCH đo đúng số không
+
+`python tools	hanh_phan.py --doi` in **"Cay khong doi gi."** trên nhánh `phien/02` — vì
+`duong_da_doi()` với `goc_so` rỗng so với **HEAD + phần chưa commit**, mà mọi việc của plan đã
+commit. Nó **không** trả lời *"nhánh này chạm tới đâu"*. Phải truyền
+`--goc-so <merge-base với main>`; lúc đó ra **68 đường dẫn**.
+
+Và khi đó nó trả **"phải chạy TẤT CẢ"**, vì `platform_core/workflow/` **không được khai trong
+`tools/thanh_phan.toml`** — cả gói động cơ workflow là đường **không ai sở hữu**, nên
+`bi_anh_huong()` fail-open. Nghĩa là **mọi** thay đổi trong `platform_core/workflow/` đều không
+thu hẹp được. Đáng khai vào `thanh_phan.toml` như một thành phần riêng.
+
 ## 2026-09-24 (00:08–00:30) — Workflow V2 chạy thật trên production: 2 credit, 7,3 giây
 
 Nghiệm thu plan 01b (Task 11) trên `https://app.lttstudios.com`, bản đang chạy

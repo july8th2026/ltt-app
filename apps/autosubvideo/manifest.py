@@ -74,22 +74,33 @@ MANIFEST = AppManifest(
         verifiable=("technical",),
 
         side_effect="external",
-        # 🔴 `class="gpu"` DÙ `gpu_vram_mb` KHÔNG khai `autosubvideo.render`.
-        #    Hai bản khai này không mâu thuẫn, chúng trả lời hai câu khác nhau:
-        #      · `gpu_vram_mb` = VRAM scheduler phải GIỮ TRƯỚC. Để trống vì
-        #        NVENC chưa ai đo (khối chú thích dòng 47-51) — và khai bừa một
-        #        con số sẽ bắt job khắc phụ đề chờ card trống nó không cần.
-        #      · `resource.class` = node này CÓ chạm card hay không. `burn.py`
-        #        dòng 135-149 gọi `media.detect_gpu_encoder()` rồi lấy
-        #        `h264_nvenc` / `h264_qsv` KHI CÓ, chỉ lui về `libx264` khi
-        #        không. Vậy câu trả lời là "có".
-        #    `RESOURCE_CLASS` (`workflow/nut.py`) không có mức "ưu tiên GPU, lui
-        #    về CPU", nên khai về phía AN TOÀN. Khai `cpu` là khẳng định node
-        #    không bao giờ chạm card — đúng cái phiên NVENC chồng lên một card
-        #    chưa thuê mà trường này sinh ra để chặn.
+        # 🔴 `class="cpu"` DÙ `burn.py` CÓ DÙNG NVENC. Bản đầu của plan 02 khai
+        #    `"gpu"` với lập luận *"class = node có chạm card hay không"* —
+        #    `burn.py` dòng 135-149 gọi `media.detect_gpu_encoder()` rồi lấy
+        #    `h264_nvenc`/`h264_qsv` khi có, nên "có chạm". Lập luận ấy đọc
+        #    trường này theo NGHĨA TỰ SUY, và mã thật nói nghĩa khác:
+        #
+        #      `AppManifest.vram_for()` (`registry.py:881`) HỢP NHẤT
+        #      `gpu_vram_mb[job_type]` với `resource["vram_min_mb"]`, và
+        #      `test_1112` chốt bất biến `class="gpu"` ⇒ `vram_for() != 0`.
+        #      Nghĩa là trong kho này `class="gpu"` = **GIỮ MỘT LEASE CARD**,
+        #      không phải "có chạm card". Bất biến ấy ra đời từ một sự cố thật
+        #      (`8fbf7aed`, Phase 13): ba App GPU chạy KHÔNG lease và đè lên
+        #      `taoclipngan`/`upscalevideo` trên cùng một card.
+        #
+        #    `autosubvideo.render` cố ý KHÔNG giữ lease (dòng 47-51: khai thừa
+        #    sẽ bắt job khắc phụ đề chờ một card trống nó không cần). Vậy theo
+        #    từ vựng của kho, nó là `cpu`. Khai `"gpu"` mà không có VRAM là
+        #    dựng lại đúng hình dạng sự cố Phase 13 trong một bản khai.
+        # ⚠️ NỢ THẬT, KHÔNG PHẢI LỖI CHỮ: `RESOURCE_CLASS` (`workflow/nut.py`)
+        #    chỉ có `cpu|gpu|api` — không có mức "ưu tiên GPU, lui về CPU, không
+        #    giữ lease". NVENC của `render` vẫn chạy ngoài mọi lease (tình trạng
+        #    CÓ TRƯỚC plan 02, plan 02 không được lặng lẽ đổi lịch card của một
+        #    App đang bán). Muốn đóng nợ thì thêm một mức vào `RESOURCE_CLASS`
+        #    và đo VRAM phiên NVENC — cả hai nằm ngoài phạm vi plan 02.
         # ⛔ `slots` không khai: không có bản khai nào trong kho sinh ra con số
         #    đó cho `autosubvideo.render` (không `admission_*`, không lane).
-        resource={"class": "gpu"},
+        resource={"class": "cpu"},
         # ⛔ `duration_s` KHÔNG vào khoá: nền tảng tự đo bằng ffprobe
         #    (`measured_from`), nên nó đổi giữa hai lượt gọi giống hệt nhau và
         #    làm khử trùng KHÔNG BAO GIỜ khớp (`registry.py` §idempotency).
