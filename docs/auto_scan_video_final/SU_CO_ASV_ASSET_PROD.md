@@ -69,6 +69,44 @@ dòng `CREATE TABLE`** trong toàn bộ log đầu tháng 9. Vắng mặt ở đ
 bằng chứng vắng mặt. Muốn truy tiếp phải đọc lịch sử lệnh / log deploy quanh
 01–03/09.
 
+
+## Nguyên nhân — ĐÃ TRUY RA (23/09 tối, phiên *Phân tích hệ thống VPS* + kiểm chéo)
+
+Mảnh ghép nằm trong `.err.log` của deploy, không phải `.out.log`: alembic ghi qua
+`logging` nên ra **stderr**.
+
+1. **Alembic CÓ chạy 01/09 và nói "không có gì để làm".**
+   `deploy-20260901-011035.err.log` chỉ có hai dòng khởi tạo context, **không có
+   `Running upgrade`** — trong khi 21 lượt deploy khác đều có. Vắng mặt ở đây có
+   nghĩa vì có đối chứng.
+2. ⚠️ **Dòng `[OK] Lược đồ CSDL đã ở bản mới nhất` KHÔNG phải bằng chứng.**
+   `setup/2-cai-dat.ps1:915` in nó **vô điều kiện** sau khi `alembic upgrade head`
+   trả mã 0 — mà *"không có gì để làm"* cũng trả 0. Một dòng OK cho một việc
+   chưa từng xảy ra.
+3. **Khoảng trống lịch sử:** head rời `c7b91e4a2f80` lúc 01/09 23:04, tới 06/09
+   08:51 đã ở `7d2c1e9f4a03`, **không lượt deploy nào ở giữa ghi `Running
+   upgrade`** ⇒ `alembic_version` bị **đẩy tay** qua **5 revision** (4 ASV +
+   `chatltt_cay_hoi_thoai`) mà không thực thi cái nào: `stamp`, hoặc `UPDATE`
+   thẳng vào bảng.
+
+**Vì sao chỉ ASV chết mà chatltt thì không** (tôi kiểm chéo, chỉ đọc):
+`chatltt_conversation` / `_message` / `_execution` **CÓ** trên production với dữ
+liệu thật (220 / 519 / 282 hàng), và **cột khớp tuyệt đối** với bản khai ORM
+(10/10 · 11/11 · 24/24, không thiếu không thừa). Chỉ đúng revision bị nhảy tạo
+ba bảng đó, và nền tảng **không** dùng `create_all` (`platform_core/db.py:16`)
+⇒ ai đó đã tạo chúng **ngoài alembic**, và tạo đúng.
+
+⇒ ASV là app **duy nhất** trong khối bị nhảy mà không ai sửa tay — vì nó
+`enabled=False`, không khách nào chạm, nên **không có gì để kêu**. Sự cố nằm im
+20 ngày và chỉ lộ ra khi bộ quét tài sản (04/09) được deploy.
+
+### Việc nên làm ngoài phạm vi ASV
+
+`setup/2-cai-dat.ps1:915` in `[OK]` cho cả trường hợp alembic không làm gì. Dòng
+OK ấy chính là thứ khiến sự cố này sống sót qua **21 lượt deploy**. Sửa đúng:
+đọc stdout của alembic, chỉ in OK khi thấy `Running upgrade` **hoặc** khi đối
+chiếu `Base.metadata` với `pg_tables` cho kết quả rỗng.
+
 ## Phương án (⚠️ CẦN CHỦ DỰ ÁN DUYỆT — ghi schema production là thao tác khó đảo)
 
 | # | Cách | Rủi ro | Ghi chú |
@@ -81,7 +119,7 @@ bằng chứng vắng mặt. Muốn truy tiếp phải đọc lịch sử lệnh
 (`BEGIN … COMMIT`, hỏng thì cuộn lại), và đối chiếu sau khi chạy bằng chính
 `Base.metadata` chứ không bằng mắt.
 
-## Câu chưa trả lời được (và không nên đoán)
+## Câu còn lại
 
 **Vì sao chuỗi vượt qua ASV?** Không còn bằng chứng trong CSDL. Hai khả năng:
 `alembic stamp` ở một lần cài/khôi phục nào đó, hoặc migration ASV được **chèn
