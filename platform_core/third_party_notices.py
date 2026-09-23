@@ -82,7 +82,8 @@ def doc_bang_muc1(duong_dan: pathlib.Path | None = None) -> list[dict]:
         o = _tach_dong_bang(dong)
         if len(o) != len(_TEN_COT):
             continue    # dong khong dung khuon (vd. bi vo tinh chen) - bo qua, khong doan
-        ket_qua.append(dict(zip(_TEN_COT, o)))
+        # strict: dong tren da chot len(o) == len(_TEN_COT).
+        ket_qua.append(dict(zip(_TEN_COT, o, strict=True)))
     return ket_qua
 
 

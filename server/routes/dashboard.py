@@ -9,7 +9,7 @@ dưới. Trang này không còn chạy `tools/doctor.py` mỗi lượt tải n�
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 
 from platform_core import registry
