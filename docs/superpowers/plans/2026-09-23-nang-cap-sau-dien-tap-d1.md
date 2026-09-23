@@ -64,7 +64,7 @@ SQLAlchemy (nền tảng, test `pytest`), PowerShell 7 (phát hành), Tauri/Rust
 
 ---
 
-## Task 1: Lỗi cổng 5xx phải được thử lại (V-19)
+## Task 1 ✅ XONG (`87f752ae`): Lỗi cổng 5xx phải được thử lại (V-19)
 
 **Vì sao:** 23/09, PostgreSQL bị một phiên khác restart ⇒ origin đứt ⇒ Cloudflare trả **502** kèm
 trang HTML của chính nó. Thân đó **không bao giờ** có `ltt_error` (yêu cầu chưa tới máy A), nên
@@ -140,6 +140,8 @@ Trong `plugins/llm-ltt/src/errors.ts`, thay thân `lttWireError`:
  */
 const RETRYABLE_GATEWAY_STATUS = Object.freeze([502, 503, 504])
 
+// ⚠️ BAN VA NAY CHUA DU - xem ghi chu ben duoi.
+
 /** Build a typed LlmError from a decoded LTT HTTP or SSE envelope. */
 export function lttWireError(value: unknown, options: { status?: number; headers?: Headers } = {}): LlmError {
   const decoded = decodeLttFailure(value, options.headers)
@@ -152,21 +154,31 @@ export function lttWireError(value: unknown, options: { status?: number; headers
 }
 ```
 
+🔴 **BẢN VÁ TRÊN LÀM VỠ MỘT PHÉP KIỂM SẴN CÓ — đã sửa khi thi hành (23/09).** Chỉ xét
+`neutralCode === UPSTREAM_UNKNOWN_CODE` là chưa đủ: một thân **có** `ltt_error` với
+`canonical_code: upstream_unknown` đi qua HTTP 502 thì **registry đã quyết**, phải giữ
+`UPSTREAM_UNKNOWN`. Nó khác hẳn "thân không đọc được gì". Cách sửa đúng: thêm cờ
+`structured: boolean` vào `DecodedFailure` (`errors.ts:106`, gán ở dòng 254) và **chỉ đè
+khi `!structured`**.
+
 - [ ] **Step 4: Chạy để chắc nó XANH**
 
 ```bash
 cd /d/LTTCODEAPP && node --test plugins/llm-ltt/test/error-contract.test.mjs
 ```
 
-Kỳ vọng: **PASS** toàn bộ tệp (trước đợt này là 9 phép, nay 12).
+Kỳ vọng: **PASS** toàn bộ tệp — 18 phép (bản đầu của plan ghi 9→12 là **sai**, tệp này
+vốn đã có 15 phép).
 
 - [ ] **Step 5: Chạy cả cụm llm-ltt để chắc không vỡ chỗ khác**
 
 ```bash
-cd /d/LTTCODEAPP && node --test plugins/llm-ltt/test/
+cd /d/LTTCODEAPP && node --test plugins/llm-ltt/test/*.test.mjs
 ```
 
-Kỳ vọng: PASS. Bản 0.2.6 có 110 phép ở cụm này.
+⚠️ **Phải có `*.test.mjs`** — Node 24 không nhận thư mục làm đối số `--test`, đưa thư mục
+vào sẽ ném `Cannot find module`, trông hệt như test đỏ. Kỳ vọng: PASS **116** phép (không
+phải 110 như bản đầu của plan ghi).
 
 - [ ] **Step 6: Commit**
 
@@ -630,7 +642,7 @@ Task Scheduler chạy mỗi 2 phút; mã thoát 1 ⇒ báo. **Không tự tạo 
 
 ---
 
-## Task 7: Phát hành bắt buộc có ghi chú (V-20)
+## Task 7 ✅ XONG (`8ed9ecb0`): Phát hành bắt buộc có ghi chú (V-20)
 
 **Files:** Modify `D:\LTTCODEAPP\tools\release.ps1`
 
