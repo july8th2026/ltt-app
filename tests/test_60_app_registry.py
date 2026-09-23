@@ -407,7 +407,17 @@ def test_platform_never_imports_an_app():
 #:    thêm một tên ở đây không rẻ — nó làm mù phép kiểm với chuỗi ấy ở MỌI
 #:    nơi. Chỉ đúng khi nền tảng SỞ HỮU namespace và app được đặt tên theo
 #:    nó, không phải chiều ngược lại. Lý do từng mục ở ngay dưới.
-MIEN_TRU_SLUG = frozenset({"agent", "nexus", "ltt_llm"})
+#: ⚠️ `lttcode` (24/09): `server/app.py` dat cache header cho `/nexus/dl/` va
+#: `/lttcode/dl/` — hai app DUY NHAT phat hanh ban cai. `nexus` da duoc mien
+#: tu truoc tren CHINH dong do, nen giu `lttcode` ngoai danh sach chi tao ra
+#: mot su bat doi xung, khong tao ra an toan.
+#:
+#: ⛔ NHUNG day la MIEN TRU, khong phai loi giai. Duong sua that: them mot
+#:    truong manifest kieu `tai_ve_bat_bien = True` (app tu khai ten tep co
+#:    mang phien ban), roi `server/app.py` suy tien to tu registry MOT lan luc
+#:    khoi dong. Lam duoc thi BO CA HAI khoi danh sach — banh coc co lai, dung
+#:    chieu. Ghi trong plan lon muc 5.
+MIEN_TRU_SLUG = frozenset({"agent", "nexus", "ltt_llm", "lttcode"})
 
 #: Nền tảng = `platform_core/` **và** `server/`. Thêm `server/` ngày 23/09:
 #: tầng route là chỗ dễ đi vòng registry nhất, và nó đã đi vòng thật
