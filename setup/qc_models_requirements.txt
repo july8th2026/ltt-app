@@ -17,3 +17,7 @@ av==18.1.0
 # OCR hardsub (dinh tuyen nguon loi, lan ocr 23/09) - chay CPU, khong gianh card.
 rapidocr==3.9.2
 onnxruntime==1.30.0
+# Cham MOS de XEP HANG giong (lan do-giong 23/09) - MIT ca ma lan weights.
+# Weights di kem goi (distillmos/weights/distill_mos_v7.pt), khong tai them.
+distillmos==0.9.1
+xls-r-sqa==0.1.0
