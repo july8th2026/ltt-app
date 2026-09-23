@@ -5,7 +5,7 @@ Plan 02 dựng `NodeDefinition` (spec §4.4) TRÊN mô-đun này.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Callable, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -30,6 +30,20 @@ class CongCu:
     # `public_api/invocation.py:~500-560`) thay vì tự suy diễn một bản khác —
     # `spec is None` thì bỏ qua admission (hành vi cũ nguyên vẹn).
     spec: Optional["ToolSpec"] = None
+
+    # ── Trường plan 02 (spec §4.4). TẤT CẢ có mặc định: `CongCu` dựng tay
+    #    trong test của plan 01a phải tiếp tục dựng được không sửa một chữ.
+    returns: dict = field(default_factory=dict)
+    mo_ta: str = ""
+    icon: str = ""
+    app_name: str = ""
+    customer_visible: bool = True
+    workflow: bool = True
+    cong: dict = field(default_factory=dict)
+    resource: dict = field(default_factory=dict)
+    timeout_expr: str = ""
+    so_lan_thu: int = 0
+    mock: Optional[Callable[[dict], dict]] = None
 
 
 def _ham_gia(job_type: str) -> Callable[[dict], int]:
@@ -57,7 +71,20 @@ def tat_ca() -> dict[str, CongCu]:
                 idempotency_fields=tuple(
                     (getattr(t, "idempotency", None) or {}).get("key_fields", ())),
                 tinh_gia=_ham_gia(jt),
-                spec=t)
+                spec=t,
+                returns=dict(t.returns or {}),
+                mo_ta=str(t.description or ""),
+                # Biểu tượng + tên hiển thị đến từ AppManifest — nền tảng
+                # KHÔNG giữ bảng nhãn thứ hai (bài học `test_967`).
+                icon=str(item.manifest.icon or ""),
+                app_name=str(item.manifest.display_name or item.slug),
+                customer_visible=bool(t.customer_visible),
+                workflow=bool(getattr(t, "workflow", True)),
+                cong=dict(getattr(t, "cong", None) or {}),
+                resource=dict(getattr(t, "resource", None) or {}),
+                timeout_expr=str(getattr(t, "timeout_expr", "") or ""),
+                so_lan_thu=int((item.manifest.so_lan_thu or {}).get(jt, 0)),
+                mock=getattr(t, "mock_result", None))
     return ra
 
 
