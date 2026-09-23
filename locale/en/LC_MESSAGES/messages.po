@@ -20529,3 +20529,11 @@ msgstr "Posted from"
 #: apps/video_crawler
 msgid "đến ngày"
 msgstr "to"
+
+#: apps/agent
+msgid "Mở Canvas"
+msgstr "Open Canvas"
+
+#: apps/agent
+msgid "Mục tiêu, ngân sách và các bước đều dựng trong Canvas. Bản nháp tự lưu, báo giá hiện ra trước khi chạy."
+msgstr "Goals, budget and steps are all built in Canvas. Drafts save automatically and the quote appears before you run."
