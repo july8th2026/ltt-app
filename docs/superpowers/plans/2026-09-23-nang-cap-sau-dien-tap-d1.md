@@ -73,7 +73,7 @@ SQLAlchemy (nền tảng, test `pytest`), PowerShell 7 (phát hành), Tauri/Rust
 | 12 | C2 nén bằng 3.5 | 🟡 **0,5** — mã xong (`3326d7f`), **chờ đo** tốc độ + chất lượng tóm tắt trên phiên dài |
 | 13 | MCP dùng thật (nay 0/166) | ⬜ chưa |
 | 14 | Gỡ trần 50 của kế hoạch/mục tiêu | ⬜ chưa |
-| 15 | Agent do người dùng định nghĩa | 🟡 **0,5** — tra xong: **đã có sẵn** (`~/.agents/*.md`, `resolveAgentOptions`); còn mở đường + tài liệu + bằng chứng chạy |
+| 15 | Agent do người dùng định nghĩa | 🟡 **0,5** — **đã có sẵn và đã chạy thật**: `~/.agents/agents/*.md` (hai tầng), ghim model cần **cả `provider` lẫn `model`**. Lộ lỗi **V-25**: khoá `tools:` bị **bỏ qua âm thầm** — người dùng tưởng khoá được agent con, thực tế nó có đủ công cụ host. Còn: tài liệu + vá cảnh báo + bằng chứng trong app |
 | 16 | Credit mỗi lượt cạnh token | 🔴 **CHẶN** — tra hết chuỗi: `/api/v1/messages` chỉ mang token; quyết toán chạy trong `finally` SAU khi byte cuối đã gửi; `/api/v1/usage` join theo `Job.id` còn lượt chat mang mã `stream:<hex>`. **Không có nguồn nào cho credit theo lượt.** Chủ dự án chọn (b): suy từ hiệu số số dư, gắn nhãn `≈` |
 | 17 | Giảm độ trễ mỗi bước | ⬜ chưa |
 | 18 | Chạy tiếp khi đóng app | 🟡 **0,5** — tra xong: **phần lớn đã có** (khay giữ sidecar sống, autostart, `lttcode-cli.exe` chạy thật 60,7 s). H18 chấm lại 45 → 78. Còn: chủ dự án quyết có làm scheduler mức hệ điều hành không |
@@ -1093,14 +1093,44 @@ chỉ có bốn agent con **cố định trong preset**. Chênh **−52**, một
 (`runtime/agent-role-names.js`, `agent-role-router.js`, `subagent-catalog.js`). Rất có thể năng lực
 này **đã có sẵn** và chỉ cần mở đường cho người dùng, giống chuyện `/health/ready` ở Task 6.
 
-- [ ] **Step 1:** Đọc `lib/runtime/subagent-catalog.js` và `agent-role-router.js`, trả lời: persona
-  đến từ đâu, người dùng thêm được không, model gắn theo persona thế nào.
-- [ ] **Step 2:** Nếu có sẵn ⇒ task này chỉ còn là **mở đường + tài liệu + một ví dụ**.
-  Nếu không ⇒ ghi thành mục nghiên cứu, **đừng tự viết một hệ agent thứ hai**.
-- [ ] **Step 3:** Làm theo kết luận bước 2.
-- [ ] **Step 4:** Bằng chứng: định nghĩa một agent "rà bảo mật" chạy trên `ltt-3.5`, giao một việc
-  thật, nó chạy đúng vai và đúng model.
-- [ ] **Step 5: Commit**
+- [x] **Step 1 ✅ XONG (làn `b-agent`, 23/09) — năng lực CÓ SẴN, đã chạy thật:**
+
+  | Câu | Trả lời | Bằng chứng |
+  |---|---|---|
+  | Đọc ở đâu | `$DSH_AGENTS_HOME`, mặc định `homedir()/.agents`, rồi nối thêm `/agents` | `lib/catalog/paths.js:51-54` (`resolveAgentsRoot`) + `lib/runtime/user-store.js:19-21` |
+  | Đường thật trên máy này | `C:\Users\<user>\.agents\agents\*.md` — **hai tầng `agents`**, không phải `~/.agents/*.md` như plan viết | như trên |
+  | Gắn model riêng | **ĐƯỢC** — nhưng phải khai **CẢ `provider` LẪN `model`**; thiếu một khoá thì route bị bỏ qua | `lib/runtime/agent-role-router.js:28-60` (`parseAgentRole`), `resolveAgentOptions` ~78-106 |
+  | Khoá được nhận | `name`, `description`, `disabled`, `provider`, `model`, `reasoning_effort` | như trên |
+  | Giới hạn bộ công cụ | **KHÔNG** — xem mục 🔴 dưới | `parseAgentRole` không đọc khoá `tools` |
+  | Người dùng thấy được không | **CÓ**, hai đường: catalog tự chèn `<available_subagents>` khi có tool `subagent_run` (`lib/runtime/subagent-catalog.js`); và API CRUD HTTP cho panel `agents` (`lib/routes.js:337-370`) |
+
+  **Bằng chứng chạy** (gọi thẳng `node` vào `agent-role-router.js`, không mở app): frontmatter mẫu
+  → `agentRoleCatalog` sinh `{name, provider:"ltt-official", model:"ltt-3.5"}` không suy biến →
+  `resolveAgentOptions` trả đúng cặp đó, diagnostics rỗng.
+  Tệp mẫu đang sống: `C:\Users\Thang Tuong\.agents\agents\ra-bao-mat-thu.md` (thư mục trước đó
+  **rỗng** — không đụng tệp nào của người dùng). **Giữ lại** làm ví dụ chạy được cho tài liệu.
+
+  🔴 **Lỗi V-25 — khoá `tools:` bị bỏ qua ÂM THẦM.** Làn đã chạy đối chứng: frontmatter có
+  `tools: [Read, Grep]` ⇒ `'tools' in policy` → **`false`**, **không lỗi, không cảnh báo**.
+  Đây là dạng nguy hiểm nhất: người dùng tưởng đã khoá agent con thành chỉ-đọc, thực tế nó
+  **có toàn bộ công cụ của host**. Tệ hơn, `lib/runtime/user-panels.js:12-14` mô tả khuôn lưu
+  trữ là "Claude Code agents frontmatter" — tức **mời người ta viết `tools:`** rồi lặng lẽ vứt đi.
+  ⇒ Ít nhất phải **cảnh báo** khi thấy khoá không được hỗ trợ. Đã lập thành mục lỗi riêng.
+
+  **Muốn khoá công cụ thật** thì có đường khác, nhưng **không phải đường của người dùng**: khai
+  một tool subagent trong `presets/standard/agent.cordis.yml:374-420` qua
+  `@deepseek-ai/dsh-tool-subagent` với `toolFilter.allow` — ví dụ `tool-subagent-doc-nhanh` đang
+  chạy `ltt-3.5` với `allow:[read, glob, grep, skill]`. Đó là YAML của dev, không phải tệp `.md`.
+
+- [ ] **Step 2 — chỉ còn tài liệu + cảnh báo, KHÔNG viết hệ agent thứ hai.**
+  - [ ] Viết mục "Tự định nghĩa subagent" vào tài liệu LTTCODE: đường đặt tệp **hai tầng**,
+        khuôn frontmatter, ví dụ `ra-bao-mat-thu.md`, và **giới hạn thật** (`tools:` không ăn).
+  - [ ] Vá V-25: `parseAgentRole` gặp khoá lạ ⇒ đẩy một dòng cảnh báo, đừng im.
+- [ ] **Step 3 — bằng chứng cuối:** giao một việc thật cho `ra-bao-mat-thu`, xác nhận bản ghi
+  cho thấy nó chạy **đúng vai và đúng `ltt-3.5`** (bước này cần mở app ⇒ gộp vào lượt mở app chung).
+- [ ] **Step 4: Commit**
+
+> **Việc ghi vào `D:\LTTCODEAPP` đang xếp sau làn `credit-uoc` (R1).**
 
 ---
 
