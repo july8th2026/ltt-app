@@ -110,8 +110,29 @@ async function decode(response: Response) {
   throw new Error(`Request failed (${response.status})`)
 }
 
+// `Accept: application/json` tuong minh cho MOI loi goi API — khong phu
+// thuoc Sec-Fetch-Mode co song sot qua Cloudflare hay khong. Ban sua
+// `da7fce81` phan biet "goi API" voi "dieu huong HTML" bang Sec-Fetch-Mode,
+// lui ve Accept khi header do vang mat. Neu Cloudflare lot ca hai thi vong
+// poll (Accept: */* mac dinh cua ham fetch toan cuc) se bi may chu coi la dieu huong va
+// quay lai 302 — mat ban sua ma phep do loopback (khong qua Cloudflare) van
+// xanh. Nen client tu gui Accept, khong cho no phu thuoc mot header co the
+// bi CDN lot.
+function withAcceptHeader(init?: RequestInit): HeadersInit {
+  return { Accept: 'application/json', ...(init?.headers ?? {}) }
+}
+
+// Diem goi ham fetch toan cuc THO DUY NHAT cua module — moi ham API phai di
+// qua day. tests/workflowApi.test.ts khang dinh dieu nay bang cach dem so
+// loi goi fetch tho (chu thuong) trong tep nguon: phai la 1. Them mot loi
+// goi fetch moi ma khong qua `apiFetch()` se lam phep kiem do do ngay, khong
+// can sua tay.
+function apiFetch(path: string, init?: RequestInit): Promise<Response> {
+  return fetch(path, { credentials: 'same-origin', ...init, headers: withAcceptHeader(init) })
+}
+
 async function request(path: string, init?: RequestInit) {
-  return decode(await fetch(path, { credentials: 'same-origin', ...init }))
+  return decode(await apiFetch(path, init))
 }
 
 export function normalizeCanvas(canvas: CanvasDocument | LegacyCanvasDocument): CanvasDocument {
@@ -267,7 +288,7 @@ export async function loadOrCreateWorkflowV3(csrfToken: string): Promise<Workflo
 
 export async function saveWorkflowV3(workflow: Workflow, csrfToken: string,
                                      signal?: AbortSignal): Promise<Workflow> {
-  const response = await fetch(
+  const response = await apiFetch(
     `/agent/api/v3/workflows/${encodeURIComponent(workflow.id)}`, {
       method: 'PUT',
       credentials: 'same-origin',
@@ -310,7 +331,7 @@ export type AssistantResult = { analysis?: { nodes: number; valid: boolean; issu
 
 export async function previewAssistant(workflow: Workflow, mode: 'analyze'|'improve', prompt: string,
                                        csrfToken: string): Promise<AssistantResult> {
-  const response = await fetch(`/agent/api/workflows/${workflow.id}/assistant/preview`, { method: 'POST',
+  const response = await apiFetch(`/agent/api/workflows/${workflow.id}/assistant/preview`, { method: 'POST',
     credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken,
       'If-Match': `"${workflow.revision}"` }, body: JSON.stringify({ mode, prompt }) })
   if (!response.ok || !response.body) return decode(response)
@@ -354,7 +375,7 @@ export async function uploadAsset(file: File, csrfToken: string): Promise<{
   key: string; kind: string; name: string; size: number; content_type: string; url: string
 }> {
   const body = new FormData(); body.append('file', file)
-  return decode(await fetch('/agent/api/assets', { method: 'POST', credentials: 'same-origin',
+  return decode(await apiFetch('/agent/api/assets', { method: 'POST', credentials: 'same-origin',
     headers: { 'X-CSRF-Token': csrfToken }, body }))
 }
 
@@ -393,7 +414,7 @@ export async function saveWorkflow(
   csrfToken: string,
   signal?: AbortSignal,
 ): Promise<Workflow> {
-  const response = await fetch(`/agent/api/workflows/${workflow.id}`, {
+  const response = await apiFetch(`/agent/api/workflows/${workflow.id}`, {
     method: 'PUT',
     credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken,

@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { approveRun, cancelRunV3, cloneWorkflow, createAutosave, createRun,
   createRunV3, exportWorkflow, importWorkflow,
@@ -7,6 +9,9 @@ import { approveRun, cancelRunV3, cloneWorkflow, createAutosave, createRun,
   saveWorkflow, saveWorkflowV3, toV3,
   WorkflowCompileError, WorkflowConflictError,
   type AgentRun, type RunV3, type Workflow } from '../src/workflowApi'
+
+const workflowApiSource = readFileSync(
+  join(import.meta.dirname, '../src/workflowApi.ts'), 'utf8')
 
 const workflow = { id: 'w1', name: 'A', revision: 3, status: 'draft', estimated: 0,
   canvas: { version: 2, goal: 'g', budget_max_credit: 10, active_page_id: 'page-1',
@@ -338,5 +343,51 @@ describe('decode() không bóp méo lỗi máy chủ', () => {
     expect(loi).toBeInstanceOf(WorkflowCompileError)
     expect(loi.nodeId).toBe('n_9')
     expect(loi.ma).toBe('bieu_thuc_chua_ho_tro')
+  })
+})
+
+// ── Accept: application/json tuong minh (rui ro Cloudflare lot Sec-Fetch-*) ─
+//
+// Ban sua `da7fce81` phan biet "goi API" voi "dieu huong HTML" bang
+// Sec-Fetch-Mode, lui ve Accept. Neu Cloudflare lot header Sec-Fetch-* thi
+// vong poll (Accept: */*  mac dinh cua fetch()) se bi coi la dieu huong va
+// quay lai 302 — mat ban sua ma phep do loopback (khong qua Cloudflare) van
+// xanh. Client phai tu gui Accept: application/json, khong phu thuoc header
+// nao song sot qua Cloudflare.
+describe('Accept: application/json tren moi loi goi API', () => {
+  it('CHI CO MOT diem goi fetch() tho trong module — moi ham API phai di qua no', () => {
+    // Kiem TINH nay bat duoc CA loi goi fetch() them SAU NAY ma khong qua
+    // apiFetch(): mot phep kiem liet ke tay tung ham (9 ham hom nay) se mac
+    // ngay khi ai do them ham thu 10. `fetch(` chu thuong (khac `apiFetch(`
+    // vi khong co \b truoc chu F hoa) phai chi xuat hien DUY NHAT MOT lan —
+    // ben trong apiFetch(), noi Accept duoc gan cho moi loi goi.
+    const rawFetchCalls = workflowApiSource.match(/(?<![.\w])fetch\(/g) ?? []
+    expect(rawFetchCalls).toHaveLength(1)
+  })
+
+  it('PUT (saveWorkflow) gui Accept ma khong de de ghi Content-Type', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify(workflow), { status: 200,
+        headers: { 'Content-Type': 'application/json' } }))
+    await saveWorkflow(workflow, 'csrf-test')
+    const headers = new Headers(fetchMock.mock.calls[0][1]!.headers)
+    expect(headers.get('Accept')).toBe('application/json')
+    expect(headers.get('Content-Type')).toBe('application/json')
+  })
+
+  it('GET qua request() (khong headers rieng, vd loadRunHistory) van gui Accept', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ items: [] }), { status: 200,
+        headers: { 'Content-Type': 'application/json' } }))
+    await loadRunHistory()
+    expect(new Headers(fetchMock.mock.calls[0][1]?.headers).get('Accept'))
+      .toBe('application/json')
+  })
+
+  it('poll v3 (loadRunV3, vong 1,5s) gui Accept — dung ca khi Sec-Fetch-* bi lot', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(json(runV3))
+    await loadRunV3('r1', 0)
+    expect(new Headers(fetchMock.mock.calls[0][1]?.headers).get('Accept'))
+      .toBe('application/json')
   })
 })
