@@ -50,3 +50,21 @@ khung khác hẳn nhau (khác bối cảnh, khác góc máy, khác chủ thể) 
 lượt hỏng vì lời nhắc, không phải vì model) — không phải "model kém". Nhưng
 chừng nào chưa đo lại sau khi sửa lời nhắc thì con số hiện hành vẫn là con số
 hiện hành, và nó không đủ để tiêu tiền.
+
+---
+
+# v2 (暴雨天野外露营…, 190 s) — phim khác hẳn thể loại
+
+⭐ Soi v2 không phải để có thêm mẫu, mà để hỏi *"kết luận ở v1 có phải chỉ đúng
+với phim nấu ăn không"*. v2 là vlog cắm trại mưa: ngoài trời, người, xe, lều.
+
+| # | giây | `do_tin` | hai khung là gì | người đo |
+|---|---|---|---|---|
+| 5 | 22,37 | 0,85 | nhìn qua cửa kính đầy nước mưa từ **trong** → toàn cảnh **ngoài**, lều vàng nối vào đuôi xe Jeep | **KHÔNG hỏng** — cắt trong→ngoài, chuẩn vlog |
+
+⇒ Cùng một kiểu sai: model mô tả *"hai khung thay đổi hoàn toàn về không gian
+và góc máy"* rồi kết luận `dat=false` — trong khi lời nhắc nói **đúng cái đó**
+là dấu hiệu của một cắt ĐÚNG.
+
+**Tổng cộng: 9/9 chỗ nối đã soi bằng mắt, trên HAI phim khác thể loại, đều là
+báo động giả.**
