@@ -12,6 +12,68 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-24 — Bốn lớp của MỘT lỗi: cảnh báo agent chạy tới lớp thứ tư mới ra được log
+
+Phiên nâng cấp LTTCODE sau diễn tập D1 (plan `docs/superpowers/plans/2026-09-23-nang-cap-sau-dien-tap-d1.md`).
+Phần A 10/10, Phần B 2,5/10 → **7,5/10**. Dựng và phát bốn bản kênh `dev`: 0.2.7 → 0.2.10.
+Mục này ghi phần **đáng nhớ**, không ghi lại bảng task.
+
+### ⭐ Một lỗi, bốn lớp, mỗi lớp đều thật — và ba lớp đầu đều "đã vá" nhầm
+
+Lỗi gốc (V-25): tệp agent người dùng khai `tools: [...]` thì khoá đó **bị bỏ qua âm thầm** —
+người dùng tưởng đã khoá agent con thành chỉ-đọc, thực tế nó có **toàn bộ công cụ của host**.
+
+| Lớp | "Đã vá" | Vì sao vẫn im |
+|---|---|---|
+| 1 | Thêm `ctx.logger.warn()` (DIV-007) | Cordis đẩy vào **buffer 1 000 dòng trong RAM**; không exporter nào gắn ở runtime |
+| 2 | Mở kênh: mount `logger.exporter` → `stderr` (DIV-009) | **Patch chưa bao giờ vào bản cài**: `.npmrc: ignore-scripts=true` (đặt có chủ ý 19/09 để gói cộng đồng không chạy script) **tắt luôn `postinstall` của chính gói nội bộ** |
+| 3 | Gọi script vá tường minh sau `npm ci` | Patch vào được bản cài rồi, **vẫn 0 dòng**: bộ 8 phép kiểm gọi `parseAgentRole` với `diagnose` **tự tiêm**, **chưa bao giờ chạm chỗ gọi thật** (`mountAgentRoleTool` → `execute()`, chỉ có `ctx.logger?.warn()` trần) |
+| 4 | `lttcodeDiagnoseStderr()` ghi thẳng `process.stderr` + 2 phép **gọi thật** `tool.execute()` | đang kiểm trên 0.2.10 |
+
+**Ba lần đầu đều có phép kiểm XANH.** Không lần nào phép kiểm nói dối — chúng trả lời đúng câu
+chúng hỏi. Chỉ là **không câu nào hỏi "người dùng có thấy cảnh báo không"**.
+
+### ⭐ Hai phép kiểm đọc THỨ ĐẠI DIỆN, cùng một đêm
+
+1. Phép kiểm DIV-007 `import` thẳng tệp trong `node_modules` ⇒ **không phân biệt được** cây do
+   build sinh ra với cây **ai đó vá tay một lần**. Nó xanh 8/8 suốt trong khi patch chưa từng chạy.
+2. Cùng bộ phép ấy tiêm `diagnose` giả ⇒ **không phân biệt được** "hàm chạy đúng" với "hàm **được
+   gọi**".
+
+⇒ Chặn bằng `tools/check_upstream_divergence_patches.mjs`: chốt theo **TẬP HỢP** — mọi
+`patch-*.mjs` phải có tên trong `UPSTREAM_DIVERGENCE.md` và ngược lại, rồi chạy `--check` trên
+**cây đã dựng**. Không có hằng "có 9 bản vá" nào để mục ruỗng.
+
+### ⛔ Tôi đuổi theo một hồi quy không tồn tại, vì đọc ĐUÔI console
+
+Báo "0.2.9 có 3 phép đỏ mới" và dựng giả thuyết DIV-007 làm hỏng trang Plugins. Sự thật:
+`grep FAIL` trên **đuôi console** của lượt 0.2.7 chỉ thấy `P08`, trong khi **tệp JSON có 9 mục
+không PASS**. Bốn phép ấy đỏ **từ 0.2.7**. Nặng thêm vì lượt nghiệm thu 0.2.9 **không ghi ra tệp
+JSON nào**, nên làn sau đọc nhầm tệp cũ. ⇒ Đang sửa `verify_installed.ps1` để **luôn** ghi bản ghi.
+
+### ⭐ Chặn lõi build: rẻ hơn tôi tưởng rất nhiều
+
+Đo trọn hai lượt dựng (379 mẫu, bám theo tiến trình build chứ không theo đồng hồ):
+
+| | Không chặn | `CARGO_BUILD_JOBS=3` |
+|---|---|---|
+| Đỉnh | **18,67 lõi** | **2,01 lõi** |
+| Thời gian tường | 18,6 phút *(giữ khoá cả máy)* | 18,9 phút *(ngoài khoá)* |
+
+**Đổi 15 lõi rảnh lấy 18 giây.** Những đợt codegen 18 lõi **không mua được tốc độ nào**.
+Luật mới: `docs/QUY_TAC_CHAY_LENH_NANG.md` §4b — build chạy ngoài khoá **khi và chỉ khi** chặn lõi.
+
+### Ba thứ tưởng phải xây, hoá ra đã có sẵn
+
+`/health/ready` của máy B · `~/.agents/agents/*.md` (agent người dùng, ghim được model) ·
+và hạ tầng **idempotency theo `job_id`** cho sổ credit — `protocol.py:244-250` **đã viết sẵn luật**
+*"a resumable STREAM must require an Idempotency-Key"* từ trước, chỉ tắt ở cửa stream (Q107).
+
+### Quyết định của chủ dự án
+
+**Q137**: lượt đứt giữa chừng — kể cả do **502/503 của chính ta** — khách **vẫn trả phần token đã
+sinh**. Mã hiện tại đã đúng; ghi ra **chính vì** nó trông giống một lỗi.
+
 ## 2026-09-24 — Plan 02 (Node SDK) đóng: 29 bài test xanh trong khi desktop không mở được inspector
 
 Đóng plan 02 của Workflow V2 (nhánh `phien/02`, 16/16 task). Bảng task + số đo đầy đủ:
