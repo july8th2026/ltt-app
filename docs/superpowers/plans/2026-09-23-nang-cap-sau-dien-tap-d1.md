@@ -82,8 +82,8 @@ SQLAlchemy (nền tảng, test `pytest`), PowerShell 7 (phát hành), Tauri/Rust
 | 16 | Credit mỗi lượt cạnh token | ⚫ **ĐÓNG — chặn ở tầng engine.** Tra ba vòng, mỗi vòng bác một phương án: (1) cổng không có trường credit, quyết toán chạy sau byte cuối; (2) `client.js` là **loopback remote page ⇒ không có Tauri IPC**; (3) từ sidecar thì `TokenUsage` là interface đóng và projection **khoá cứng đồng bộ, cấm I/O**. Cần hạ tầng engine mới ⇒ chuyển `HANG_MUC_BAN_SAU.md`. **Không chỗ nào hiện số tiền sai** |
 | 17 | Giảm độ trễ mỗi bước | ⚫ **ĐÓNG — giới hạn phần cứng, đã tách bằng số.** 226/226 lượt LLM: **sinh token 62,2 %** (4 878,9 s) · chờ suất/TTFT 23,3 % · chạy công cụ 14,5 % (82 % của phần đó là `pwsh` chạy thật). Phần mềm không chạm được vào 62,2 % ⇒ **không vờ tối ưu** |
 | 18 | Chạy tiếp khi đóng app | 🟡 **0,5** — tra xong: **phần lớn đã có** (khay giữ sidecar sống, autostart, `lttcode-cli.exe` chạy thật 60,7 s). H18 chấm lại 45 → 78. Còn: chủ dự án quyết có làm scheduler mức hệ điều hành không |
-| 19 | Git/PR thành công cụ gốc | 🟡 **0,5** — **Cordis KHÔNG tắt được công cụ lẻ**: đơn vị nhỏ nhất là cả plugin (`cordis-plugin-loader` `disabled` = *"Stops the entry"*; tiền lệ DIV-003 phải fork nguyên plugin). ⇒ bác cả "bundle rồi tắt nhóm ghi" lẫn "fork để giữ phần tầm thường nhất". **Quyết định mới: tự viết bốn công cụ CHỈ-ĐỌC**, không có đường ghi nào |
-| 20 | Khởi động app (17→49→107 s) | 🟡 **0,5** — `36344e0`. Thêm **2/3 mốc** (`PROCESS_START: OnceLock<Instant>` ở đầu `run()`; đầu `setup()` + cuối `stage_dsh_home()`). Mốc 3 (SPA "interactive") **không làm** — chưa có hook, phải đụng mã thượng nguồn, dừng đúng brief. ⚠️ `cargo test` **chưa chạy được** (khoá máy bị phiên khác giữ 47 phút) |
+| 19 | Git/PR thành công cụ gốc | 🟡 **0,5** — `18054a2`: **bốn công cụ chỉ-đọc** `git_status/diff/log/show`, `execFile` không qua shell, `repoDir` **không bao giờ vào argv** (chỉ làm `cwd`, chốt không thoát workspace), `rev` qua regex buộc ký tự đầu là chữ/số ⇒ loại sạch `--force`/`-A`/`; …`/`&& …`. **38/38 phép**, đối chứng âm chốt `execFile` **0 lần gọi**. 🔴 **CHƯA mount vào profile** ⇒ model trong app chưa thấy — đang làm |
+| 20 | Khởi động app (17→49→107 s) | 🟡 **0,5** — hai mốc mới đã chạy trên bản 0.2.7 và **lật kết luận**: vỏ Tauri **16 ms** · `stage_dsh_home` **7,4 s** · sidecar ready **4,8–11,4 s** ⇒ cộng ≈ 12–19 s, trong khi tổng thật **54,5 s**. **35–42 s (65–77 %) nằm ở chặng WebView2/SPA chưa ai đo.** Giả thuyết quét AV **không giải thích được**. Mốc 3 thành việc chính |
 
 ### Ngoài plan — việc sinh ra từ lượt diễn tập D1
 
@@ -119,9 +119,16 @@ Bốn lần đầu các làn báo thẳng và điều phối đổi hướng. **
 trần là thay đổi rẻ và an toàn, nhưng ⛔ **không được ghi là "đã sửa nguyên nhân"** cho tới khi lượt
 mở app nhìn thấy catalog có mô tả.
 
-⚠️ **Nợ kỹ thuật đang mở:** `cargo test` cho `36344e0` (`mcp.rs`, `sidecar.rs`) **chưa chạy được** —
-khoá `cpu_nhieu` cả máy bị một phiên khác giữ 47 phút trong khi CPU chỉ 7 %. `cargo fmt --check`
-chỉ chứng minh **cú pháp hợp lệ**, không chứng minh chạy đúng.
+✅ **Nợ kỹ thuật đã trả (23/09 khuya):** `cargo test --lib` cho `desktop/src-tauri` →
+**114 passed, 0 failed**, gồm cả ba phép mới của T13/T20. Rút lại lời dè dặt "mới chỉ rà tay"
+trong báo cáo trước đó.
+
+> Hai bẫy công cụ lộ ra trên đường trả nợ này, ghi để làn sau khỏi mất giờ:
+> 1. **`chay_nang.py` nuốt MỌI token `--`**, không riêng dấu ngăn của nó ⇒
+>    `cargo test … -- --nocapture` tới `cargo` thành `--nocapture` trần và bị từ chối
+>    **trước khi biên dịch gì cả**. Lượt đỏ đó trông hệt "test hỏng" nhưng **chưa test nào chạy**.
+> 2. `cargo test <a> <b>` chỉ nhận **một** chuỗi lọc — truyền hai đường module là lỗi ngay.
+>    Chạy cả `--lib`, hoặc lọc từng cái.
 
 
 ## Bản đồ làn — chạy song song thế nào cho nhanh mà không hỏng
@@ -1444,6 +1451,35 @@ Luật *"dùng lại trước, tự viết sau"* đã được thoả: đã tra,
   - [ ] cuối `stage_dsh_home()` — `desktop/src-tauri/src/sidecar.rs:290-311` (**hàm đã có, chỉ
         thiếu dòng log**)
   - [ ] sự kiện DSH SPA báo "interactive" — **chưa có hook**, phải thêm
+- [x] **Step 3 phần mốc ✅ + SỐ ĐẦU TIÊN (23/09 23:41, bản 0.2.7 đã cài, 3 lượt khởi động)**
+
+  Hai mốc mới in ra thật, và chúng **bác giả thuyết quét-AV** ở trên:
+
+  | Chặng | Số đo | Trước đây |
+  |---|---|---|
+  | Vỏ Tauri → `setup()` | **12–16 ms** | mù |
+  | `stage_dsh_home()` xong | **7 046 – 7 796 ms** | mù |
+  | spawn → `sidecar ready` | **4 815 · 11 315 · 11 387 ms** | chặng duy nhất có số |
+  | **Cộng lại** | **≈ 12 – 19 s** | |
+  | **Tổng thật đo được** | **54,5 s** (`boot_wall_sec`) | |
+
+  🔴 **Còn ≈ 35 – 42 s không ai đo — chiếm 65–77 % thời gian khởi động.** Nó nằm trọn trong
+  **chặng thứ tư: mở WebView2 → SPA DSH tải xong**, đúng cái mốc số 3 mà ta **cố ý chưa làm**
+  vì "chưa có hook, phải đụng mã thượng nguồn".
+
+  **Hai giả thuyết trước đều sai hướng:**
+  - *"Vỏ Tauri chậm"* — **16 ms**. Coi như bằng không.
+  - *"Quét AV cây `sidecar/` 45 536 tệp"* — nếu đúng thì `stage_dsh_home()` (chặng đụng cây đó)
+    phải là chỗ phình ra. Nó chỉ **7,4 s**. Quét AV **không giải thích được** 35–42 s kia.
+
+  ⇒ **Mốc 3 đổi từ "tuỳ chọn" thành VIỆC CHÍNH của Task 20.** Tối ưu bất cứ chặng nào trong ba
+  chặng đã đo là tối ưu 12–19 s trên tổng 54,5 s — cùng lắm cắt được một phần ba, trong khi hai
+  phần ba còn lại vẫn chưa ai nhìn thấy.
+
+  > Bài học lặp lại lần thứ hai trong ngày: **thêm mốc trước, tối ưu sau.** Nếu làm theo plan gốc
+  > (tối ưu "chặng lớn nhất" trong số đã đo) thì đã dồn công vào `sidecar ready` 11 s và bỏ qua
+  > chỗ ăn 40 s.
+
 - [ ] **Step 4:** Đo lại 3 lần lạnh + 1 lần sau reboot. **Đạt khi p50 ≤ 30 s.**
   ⚠️ Nếu số mới xác nhận phần lớn là quét AV ⇒ việc phải làm là **loại trừ thư mục cài khỏi
   Defender** (việc của chủ dự án, không phải sửa mã), chứ không phải tối ưu khởi động.
@@ -1463,7 +1499,13 @@ trên phiên thật" còn lại đều **không kiểm được trên bản đan
 | T13 Step 4 — catalog đã có mô tả chưa · MCP có được gọi không | `36344e0` | ❌ |
 | T15 Step 3 — `ra-bao-mat-thu` chạy đúng vai + đúng `ltt-3.5`, và cảnh báo V-25 hiện ra | `fd00269` | ❌ |
 | T19 Step 4 — model tự gọi `git_khac_biet` trước khi đề nghị commit | (đang viết) | ❌ |
-| T11 / T12 | `670770b` / `3326d7f` | ❓ chưa xác định |
+| T11 / T12 — nút "Chạy tiếp" · nén bằng 3.5 | `670770b` / `3326d7f` | ❌ |
+
+**Đã xác định dứt điểm bằng giờ, không phải bằng ref** (23/09 khuya): bộ cài stable đang phục vụ
+là `LTTCODE_0.2.6_stable_x64-setup.exe`, **dựng lúc 14:12**. Cả năm commit đều **sau** nó —
+`3326d7f` 19:19 · `670770b` 19:21 · `0c6df5a` 20:11 · `fd00269` 21:45 · `36344e0` 22:07.
+Một bộ cài không thể chứa commit tạo ra năm tiếng sau nó. ⇒ **Không commit nào của hôm nay có
+trong bản đang cài**, kể cả Task 5 (`0c6df5a`) của Phần A.
 
 > ⚠️ **Đính chính một phép kiểm sai của chính điều phối:** đã thử `git merge-base --is-ancestor
 > <sha> v0.2.6` và đọc năm dòng "KHÔNG" như thể là kết quả. **Kho không có tag nào** — ref không

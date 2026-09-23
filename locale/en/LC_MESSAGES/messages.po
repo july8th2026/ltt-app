@@ -20530,6 +20530,48 @@ msgstr "Posted from"
 msgid "đến ngày"
 msgstr "to"
 
+#: apps/agent
+msgid "Mở Canvas"
+msgstr "Open Canvas"
+
+#: apps/agent
+msgid "Mục tiêu, ngân sách và các bước đều dựng trong Canvas. Bản nháp tự lưu, báo giá hiện ra trước khi chạy."
+msgstr "Goals, budget and steps are all built in Canvas. Drafts save automatically and the quote appears before you run."
+
+#: apps/agent/routes/runs_v3.py
+msgid "Can header \"Idempotency-Key\" cho moi lan chay."
+msgstr "Every run needs an \"Idempotency-Key\" header."
+
+#: apps/agent/routes/runs_v3.py
+#, python-format
+msgid "Du lieu \"inputs\" vuot qua %(n)d byte."
+msgstr "The \"inputs\" data exceeds %(n)d bytes."
+
+#: apps/agent/routes/runs_v3.py
+msgid "Idempotency-Key nay da dung cho workflow khac."
+msgstr "This Idempotency-Key was already used for a different workflow."
+
+#: apps/agent/routes/runs_v3.py
+#, python-format
+msgid "Idempotency-Key phai dai %(min)d den %(max)d ky tu."
+msgstr "Idempotency-Key must be between %(min)d and %(max)d characters."
+
+#: apps/agent/routes/runs_v3.py
+msgid "Không tìm thấy lượt chạy."
+msgstr "Run not found."
+
+#: apps/agent/routes/runs_v3.py
+msgid "Lượt chạy đã kết thúc."
+msgstr "This run has already finished."
+
+#: server/auth/session.py
+msgid "Phiên đã hết hạn. Vui lòng đăng nhập lại."
+msgstr "Your session has expired. Please sign in again."
+
+#: apps/agent/routes/runs_v3.py
+msgid "Truong \"inputs\" phai la mot object."
+msgstr "The \"inputs\" field must be an object."
+
 msgid "Gói này tạm hết chỗ."
 msgstr "This size is temporarily sold out."
 
@@ -20606,3 +20648,9 @@ msgstr "Measured 23/09 with a system account: Douyin returns an empty list; no v
 #: apps/video_crawler
 msgid "Đo thật 23/09: TikTok trả lỗi \"No working app info\" — công cụ chưa lấy được dữ liệu."
 msgstr "Measured 23/09: TikTok returns \"No working app info\" — the tool cannot fetch data yet."
+
+msgid "Plan thiếu steps."
+msgstr "Plan is missing steps."
+
+msgid "Step không hợp lệ."
+msgstr "Invalid step."

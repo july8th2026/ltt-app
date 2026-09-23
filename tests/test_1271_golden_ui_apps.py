@@ -144,7 +144,10 @@ def test_hai_tab_image_studio_cung_dai_tieu_de():
 
 
 @pytest.mark.parametrize("tep", [
-    "apps/agent/templates/agent.html", "apps/agent/templates/agent_run.html",
+    # `agent_run.html` + `_agent_progress.html` đã bị xoá 23/09: chúng là
+    # template của luồng chạy v1, không route nào render chúng nữa và mọi
+    # `action=` trong đó trỏ tới đường đã chết (`test_969` §4).
+    "apps/agent/templates/agent.html",
     "apps/autosubvideo/templates/autosubvideo.html", "apps/chatltt/templates/chatltt.html",
     "apps/prompt_ai_ommi/templates/prompt_ai_ommi_workspace.html",
 ])

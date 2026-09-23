@@ -250,11 +250,17 @@ def agent_seed(uid: str) -> str:
        không pan** — mà cấu hình `panOnDrag={[1,2]}` thì chuột giữa *phải* pan.
        Một phép đo trả lời "không" cho mọi đầu vào thì nó đang đo bộ đo.
 
-    ⭐ Dùng chính `workflows.plan_to_canvas` của máy chủ chứ không tự bịa hình
+    ⭐ Dùng chính `plan_v1.plan_to_canvas` của máy chủ chứ không tự bịa hình
        dạng `document`: hình dạng ấy là hợp đồng của app, và một bản chép tay sẽ
        lệch ngay khi app đổi.
+
+    ⚠️ Hàng này là `AgentWorkflow` (Canvas **v2**). Từ 23/09/2026 CanvasShell mở
+       workflow qua `/agent/api/v3/...` (bảng `workflow_draft`), nên hạt giống
+       này **không còn hiện lên canvas** mà người đo nhìn thấy. Muốn đo mobile
+       trên canvas thì cần một hạt giống v3 — một việc có chủ, không phải một
+       dòng sửa ở đây.
     """
-    from platform_core.agent import workflows
+    from platform_core.agent import plan_v1, workflows
 
     ke_hoach = {
         "version": 1, "goal": "Do giao dien mobile", "budget_max_credit": 1000,
@@ -273,7 +279,7 @@ def agent_seed(uid: str) -> str:
     db, don = _phien_dev()
     try:
         row = workflows.create(db, user_id=uid, name="Canvas mau cho do mobile",
-                               canvas=workflows.plan_to_canvas(ke_hoach))
+                               canvas=plan_v1.plan_to_canvas(ke_hoach))
         db.commit()
         return row.id
     finally:
@@ -293,7 +299,7 @@ def ommi_seed(uid: str) -> dict:
     ⭐ Dùng **chính service của app** (`resources.create`, `library.create`)
        chứ không tự dựng hàng trong bảng: hình dạng hàng là hợp đồng của app,
        và một bản chép tay sẽ lệch ngay khi app đổi. Cùng lý do `agent_seed`
-       gọi `workflows.plan_to_canvas` thay vì tự bịa `document`.
+       gọi `plan_v1.plan_to_canvas` thay vì tự bịa `document`.
     """
     from apps.prompt_ai_ommi.services import library, resources
 

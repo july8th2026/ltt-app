@@ -64,6 +64,8 @@
 | 6.3 | **CHỜ ĐO:** bật một suite có ăn vào lượt đang chạy không | N-03 |
 | 6.4 | Agent cha giao việc chạy lệnh cho trợ lý CHỈ ĐỌC rồi bị guard chặn, **lặp lại y nguyên** thay vì đổi đường (23/112 dòng đỏ `pwsh` trong 7 ngày) | V-21 |
 | 6.5 | **Khoá `tools:` trong tệp agent người dùng bị BỎ QUA ÂM THẦM** — `~/.agents/agents/*.md` nhận `tools: [...]`, `parseAgentRole` không đọc khoá đó, **không lỗi không cảnh báo**. Người dùng tưởng đã khoá agent con thành chỉ-đọc, thực tế nó có **toàn bộ công cụ của host**. Nặng thêm vì `lib/runtime/user-panels.js:12-14` mô tả khuôn là "Claude Code agents frontmatter" — tức mời người ta viết `tools:` rồi lặng lẽ vứt. Tối thiểu: cảnh báo khi gặp khoá không hỗ trợ | V-25 |
+| 6.6 | **Tiêu đề cửa sổ lấy nguyên dòng đầu của prompt.** Bản 0.2.7 đo được `document.title` = `"# ============================================================ # SUPER PROMPT - LTTCODE"` — tiêu đề phiên sinh từ một prompt mở đầu bằng dải `# ====`. `H12_session_title_caps` (chặn độ dài) **xanh**, nên không phép nào bắt được: thiếu bước **lọc nhiễu markdown/banner** trước khi đặt tiêu đề. Khách thấy rác trên thanh cửa sổ | V-26 |
+| 6.7 | **Phép `P08_document_title` giả định máy sạch.** Nó chốt `document.title == "LTTCODE"`, nhưng app **khôi phục phiên cũ** lúc khởi động ⇒ tiêu đề thành tên phiên ⇒ **ĐỎ trên mọi máy đã dùng**, bất kể bản build tốt hay xấu. Đây là phép đo lệch chiều: nó đỏ vì môi trường, và đỏ vì môi trường là thứ dạy người ta bỏ qua màu đỏ. Sửa: so với tên phiên đang mở, hoặc chạy trên hồ sơ sạch | (mới) |
 
 ## 7. Nợ cũ còn mở (không sinh ra hôm nay)
 

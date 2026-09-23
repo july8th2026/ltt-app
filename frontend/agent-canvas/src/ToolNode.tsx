@@ -9,7 +9,10 @@ type ConnectedInput={edgeId:string;label:string;detail:string}
 type ToolData = Record<string, unknown> & { __tool?: PaletteTool; __cost?: number; __status?: string;
   __artifacts?: { name: string; url: string }[]; __readOnly?: boolean;
   __inputFields?:string[]; __label?:string;
-  __onQuickConnect?: (output:string)=>void; __onOpen?:()=>void; __onRun?:()=>void;
+  __onQuickConnect?: (output:string)=>void; __onOpen?:()=>void;
+  /** Id cua chinh node nay khi trinh bien dich v3 tra 422 vao no — dung lam
+   *  dau `data-loi-node` de giao dien to duoc node hong. */
+  __loiNode?: string;
   __onMenu?:(x:number,y:number)=>void;
   __onUpload?:(files:File[])=>void; __onGenerate?:()=>void; __onRename?:(label:string)=>void;
   __onDuplicate?:()=>void; __onParamChange?:(name:string,value:unknown)=>void;
@@ -39,7 +42,7 @@ export function ToolNode({ data, selected }: NodeProps) {
   const upload=(files?:FileList|File[])=>{const selected=files?Array.from(files):[]
     if(selected.length&&!typed.__readOnly)typed.__onUpload?.(selected.slice(0,modality==='batch'?12:1))}
   return <article className={`tool-node modality-${modality}${selected ? ' is-selected' : ''}`}
-    aria-label={`Khối ${customerToolLabel(tool)}`}
+    aria-label={`Khối ${customerToolLabel(tool)}`} data-loi-node={typed.__loiNode}
     onDragOver={event=>{if(accept&&!typed.__readOnly){event.preventDefault();event.dataTransfer.dropEffect='copy'}}}
     onDrop={event=>{if(!accept||typed.__readOnly)return;event.preventDefault();event.stopPropagation();upload(event.dataTransfer.files)}}>
     <header><span aria-hidden="true">{icon[modality]}</span><input className="node-title nodrag" aria-label="Tên hiển thị node"
@@ -73,8 +76,7 @@ export function ToolNode({ data, selected }: NodeProps) {
       </div>}
     </div>
     <footer><span className={`node-status ${typed.__status}`}>{labels[String(typed.__status)] ?? 'Đang chờ'}</span>
-      <button className="node-run nodrag" disabled={typed.__readOnly||typed.__status==='running'} onClick={event=>{event.stopPropagation();typed.__onRun?.()}}>
-        {typed.__cost===undefined?'Báo giá':`${typed.__cost} credit · Chạy`}</button></footer>
+      <span className="node-cost">{typed.__cost===undefined?'Chi phí do server chốt':`${typed.__cost} credit`}</span></footer>
     {!!typed.__artifacts?.length && <div className="node-artifacts nodrag">{typed.__artifacts.map((item, index) =>
       <div key={`${item.url}-${index}`}><span>{item.name}</span><nav aria-label={`Thao tác ${item.name}`}>
         <a href={item.url} target="_blank" rel="noreferrer" aria-label={`Mở rộng ${item.name}`}>Mở</a>
@@ -114,7 +116,7 @@ export function CreativeToolNode({data,selected}:NodeProps){
     if(selectedFiles.length&&!typed.__readOnly)typed.__onUpload?.(selectedFiles.slice(0,tool?.name.includes('batch')?12:1))}
   const output=primaryOutputHandle(tool)
   return <article className={`tool-node creative-node modality-${modality}${selected?' is-selected':''}`}
-    aria-label={`Khối ${customerToolLabel(tool)}`}
+    aria-label={`Khối ${customerToolLabel(tool)}`} data-loi-node={typed.__loiNode}
     onDragOver={event=>{if(accept&&!typed.__readOnly){event.preventDefault();event.dataTransfer.dropEffect='copy'}}}
     onDrop={event=>{if(!accept||typed.__readOnly)return;event.preventDefault();event.stopPropagation();upload(event.dataTransfer.files)}}>
     <header><span aria-hidden="true">{presentation?.icon??icon[nodeModality(tool)]}</span>
@@ -173,9 +175,7 @@ export function CreativeToolNode({data,selected}:NodeProps){
           value={`${reference.source}|${reference.sourceHandle}|${reference.targetHandle}`}>@{reference.label} · {reference.detail}</option>)}</select></label>}
     </section>}
     <footer><span>{typed.__cost===undefined?'Chi phí do server xác nhận':`Tối đa ${typed.__cost} credit`}</span>
-      <nav className="node-footer-actions nodrag"><button onClick={event=>{event.stopPropagation();typed.__onOpen?.()}}>Chi tiết</button>
-        <button className="node-run" disabled={typed.__readOnly||typed.__status==='running'}
-          onClick={event=>{event.stopPropagation();typed.__onRun?.()}}>{typed.__cost===undefined?'Báo giá':`${typed.__cost} credit · Chạy`}</button></nav></footer>
+      <nav className="node-footer-actions nodrag"><button onClick={event=>{event.stopPropagation();typed.__onOpen?.()}}>Chi tiết</button></nav></footer>
     {tool&&Object.entries(tool.params_schema).filter(([name])=>typed.__inputFields?.includes(name)).map(([name],index)=><Handle
       key={name} id={name} type="target" position={Position.Left} className="typed-port input-port"
       style={{top:58+index*28}} aria-label={`Đầu vào ${fieldLabel(name)}`}/>)}

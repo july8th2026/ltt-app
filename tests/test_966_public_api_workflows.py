@@ -59,13 +59,11 @@ def _dung_app(tmp_path, monkeypatch):
 
 @pytest.fixture()
 def api(tmp_path, monkeypatch):
-    """Cổng Defect B MỞ. `_chay_workflow_da_mo` mặc định trả `False` — toàn bộ
-    tệp này đo hành vi THẬT của `/quotes` và `/runs` (báo giá, khoá idempotency,
-    khoản giữ, huỷ, ranh giới chủ sở hữu), nên phải lật công tắc trước khi gọi.
-    Đây là nơi DUY NHẤT lật nó cho các bài đã có — `api_gated` bên dưới KHÔNG
-    lật, để đo đúng cái mặc định mà một khách lạ gặp hôm nay."""
+    """Cổng Defect B đã MỞ VĨNH VIỄN (23/09 — công tắc `_chay_workflow_da_mo`
+    bị xoá khỏi `server/api/workflows.py`, không phải lật). Toàn bộ tệp này đo
+    hành vi THẬT của `/quotes` và `/runs` (báo giá, khoá idempotency, khoản
+    giữ, huỷ, ranh giới chủ sở hữu) không cần chuẩn bị gì thêm."""
     app = _dung_app(tmp_path, monkeypatch)
-    monkeypatch.setattr("server.api.workflows._chay_workflow_da_mo", lambda: True)
     try:
         with TestClient(app) as client:
             yield client
@@ -78,7 +76,9 @@ def api(tmp_path, monkeypatch):
 
 @pytest.fixture()
 def api_gated(tmp_path, monkeypatch):
-    """Như `api` nhưng KHÔNG lật công tắc — hành vi MẶC ĐỊNH của production."""
+    """Bí danh của `api`: dựng app y hệt, KHÔNG monkeypatch gì. Tồn tại để các
+    bài "MẶC ĐỊNH" bên dưới tự đứng vững — chúng chứng minh cổng mở bằng chính
+    hành vi mặc định của app thật, không mượn việc `api` đã chuẩn bị sẵn gì."""
     app = _dung_app(tmp_path, monkeypatch)
     try:
         with TestClient(app) as client:
@@ -499,49 +499,52 @@ def test_scope_workflows_run_nam_trong_SPENDING_SCOPES():
     assert SCOPE_WORKFLOWS_READ not in scopes.SPENDING_SCOPES
 
 
-# ── Defect B: cổng 501 MẶC ĐỊNH (chốt 22/09) ─────────────────────────────────
+# ── Defect B: cổng đã MỞ, không cần chuẩn bị gì (chốt 23/09) ─────────────────
 #
-# `WF-802` từng sống với `chargeable=True` mà KHÔNG có engine nào chạy run: mọi
-# bài phía trên đo đúng logic của `/quotes` và `/runs` NHƯNG chỉ đo được sau khi
-# `api` đã lật công tắc lên. Ba bài dưới đây đo cái ngược lại — cái một khách
-# lạ THẬT SỰ gặp hôm nay, khi không ai lật gì cả.
+# `WF-802` từng sống với `chargeable=True` mà KHÔNG có engine nào chạy run —
+# bản vá 22/09 chặn nó bằng một công tắc (`_chay_workflow_da_mo`). 01a đã cho
+# quote đọc `estimated_max` đã đóng băng và cho `tao_run` giữ credit một lần
+# rồi giao cho `workflow.dong_co`, nên lý do đóng cổng hết còn. 23/09 công tắc
+# đó bị XOÁ khỏi `server/api/workflows.py` (không phải lật `True`) — xem
+# `test_1725_cong_v1_da_mo.py` cho phần "mã đã biến mất". Ba bài dưới đây là vế
+# hành vi: `api_gated` KHÔNG monkeypatch bất cứ gì, nên nếu chúng xanh thì đúng
+# là app THẬT, không chuẩn bị gì, đã phục vụ hai route này.
 
-def test_MAC_DINH_bao_gia_tra_501_khong_phat_quote(api_gated):
-    """Chưa phát quote token nào — cổng phải đóng TRƯỚC bước ký."""
+def test_MAC_DINH_bao_gia_phat_quote_khong_can_bat_cong(api_gated):
+    """Route sống ngay từ app mặc định — không còn cửa nào phải mở trước."""
     uid, token = _tai_khoan()
     wf = _workflow(uid, so_node=3)
 
     r = _bao_gia(api_gated, token, wf)
-    assert r.status_code == 501, r.text
-    assert r.json()["code"] == CODE_WORKFLOW_RUNS_UNAVAILABLE
+    assert r.status_code == 200, r.text
+    assert r.json()["quote"] and r.json()["credit_max"] > 0
 
 
-def test_MAC_DINH_chay_tra_501_khong_tao_run_khong_giu_credit(api_gated):
-    """🔴 Đây là bài đắt nhất của cổng: không chỉ mã lỗi đúng, mà phải KHÔNG có
-    `WorkflowRun` mồ côi và KHÔNG có khoản giữ nào — đúng lỗi Defect B đã gây
-    ra khi cổng còn mở mà chưa có engine."""
+def test_MAC_DINH_chay_tao_run_va_giu_dung_MOT_khoan_credit(api_gated):
+    """🔴 Vế đối chứng của bài từng đo Defect B: nay một run hợp lệ phải THẬT
+    SỰ được tạo và giữ ĐÚNG MỘT khoản credit — không phải 501, không phải một
+    run mồ côi không ai giữ tiền."""
     uid, token = _tai_khoan(credits=500)
     wf = _workflow(uid, so_node=3)
+    q = _bao_gia(api_gated, token, wf).json()["quote"]
 
     r = api_gated.post(f"{API_V1_PREFIX}/workflows/{wf}/runs",
-                       json={"quote": "khong-quan-trong-cong-da-dong"},
+                       json={"quote": q},
                        headers=_auth(token, uuid.uuid4().hex))
-    assert r.status_code == 501, r.text
-    assert r.json()["code"] == CODE_WORKFLOW_RUNS_UNAVAILABLE
+    assert r.status_code == 201, r.text
+    assert r.json().get("code") != CODE_WORKFLOW_RUNS_UNAVAILABLE
 
     gen, db = _session()
     try:
-        assert db.query(WorkflowRun).count() == 0
-        assert db.query(CreditEntry).filter_by(kind=CREDIT_HOLD).count() == 0
+        assert db.query(WorkflowRun).count() == 1
+        assert db.query(CreditEntry).filter_by(kind=CREDIT_HOLD).count() == 1
     finally:
         _close(gen)
 
 
 def test_MAC_DINH_cac_cua_DOC_va_HUY_khong_doi(api_gated):
-    """⛔ Vế phủ định của gate: `GET /runs/{id}`, huỷ và artifacts không nằm
-    trong Defect B (không tạo run, không giữ tiền) nên KHÔNG bị 501 — chúng chỉ
-    404 vì run chưa từng tồn tại. Không có bài này, một bản vá chặn CẢ NĂM route
-    cũng làm hai bài trên xanh."""
+    """`GET /runs/{id}` với id bịa vẫn 404 như trước — cổng đã mở không đổi
+    hành vi của các cửa vốn không liên quan tới Defect B."""
     _uid, token = _tai_khoan(credits=500)
     r = api_gated.get(f"{API_V1_PREFIX}/runs/{uuid.uuid4().hex}",
                       headers=_auth(token))
