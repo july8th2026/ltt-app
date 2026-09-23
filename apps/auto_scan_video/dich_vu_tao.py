@@ -191,6 +191,24 @@ def dung_cai_dat(db, *, owner_id: str, tho: Mapping) -> dict:
                "che_do_giong": che_do_giong, "giong_id": giong_id,
                "ngon_ngu_nguon": "" if nguon == ngon_ngu_mod.TU_DOAN else nguon,
                "ngon_ngu_dich": dich,
+               # 🔴 **Dong nay tung VANG MAT, va o chon nguon loi thoai vi the
+               #    la mot o CHET tu dau den cuoi.**
+               #
+               #    Phep duyet o tren da co tu lan `ocr`, `cai_dat.tu_ho_so` da
+               #    doc khoa nay, `nguon_loi.dinh_tuyen` da xu ly du bon che do
+               #    — chi mot cho khong noi: ho so dung o day. Nen mot khach ep
+               #    "chu tren hinh" di qua CUA khong mot loi nao, roi lan chay
+               #    van chay `auto`.
+               #
+               # ⚠️ Kieu hong nay khong the keu: moi phep kiem don le deu xanh,
+               #    va ket qua `auto` la mot ket qua hop le — chi khong phai cai
+               #    khach chon. No chi lo ra khi ai do doi soat O GIAO DIEN voi
+               #    HO SO DA LUU, va do la viec cua lan `gui`.
+               #
+               # ⭐ `chuan_hoa` tu bo khoa nay khi no bang `auto` (luat
+               #    `KHOA_THUA`), nen ho so cua nhung lan chay khong ep nguon
+               #    giu nguyen hinh dang cu — van tay khong doi.
+               "nguon_loi": nl,
                "vung": ds_vung,
                "tu_dien": bang_tu_dien,
                # ⚠️ Bi danh cu, xem `cai_dat.KHOA_BI_DANH_GIONG`.

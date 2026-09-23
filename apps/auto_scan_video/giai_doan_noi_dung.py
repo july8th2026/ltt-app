@@ -135,7 +135,11 @@ def _giong_da_chot(db, run, *, ban_ghi: dict, ctx=None) -> tuple[str, dict, str]
 
     kq = rang_giong.rang_noi_long(db, owner_id=run.owner_id, yeu_cau=yc)
     if not kq.da_chot:
-        raise rang_giong.ChuaRangError(rang_giong.vi_sao_chua_rang(kq))
+        # ⭐ Cau + MA. Khong co ma thi cau nay dung lai o cot `error` — mot cot
+        #    ma man hinh cua khach co y khong doc (`quan_sat.LOI_CO_MA`), vi chu
+        #    tu do cua van hanh co the mang duong dan hay ten model.
+        raise rang_giong.ChuaRangError(rang_giong.vi_sao_chua_rang(kq),
+                                       ma_loi=rang_giong.ma_chua_rang(kq))
     # 🔴 **`nguon` tra ve RIENG, khong nhet vao `can_cu`.** No la mot TRUONG cua
     #    `KetQua`, con `tom_tat` cua giai doan nay lai doc `can_cu["nguon"]` —
     #    nen truoc 23/09 `nguon_giong` cua MOI lan chay deu la chuoi rong. Mot
