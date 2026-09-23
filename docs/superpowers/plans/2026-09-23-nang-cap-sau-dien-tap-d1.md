@@ -74,7 +74,7 @@ SQLAlchemy (nền tảng, test `pytest`), PowerShell 7 (phát hành), Tauri/Rust
 
 | Task | Việc | Trạng thái |
 |---|---|---|
-| 11 | A1 nút "Chạy tiếp" | 🟡 **0,5** — chặn thật **KHÔNG** ở giao diện mà ở **kiến trúc DSH**: `dsh-agent-loop` **cố ý không expose `retry()`**; cửa retry chỉ mở đồng bộ trong waterfall `agent/request-error`, lượt terminal rồi là hết. ⛔ Và `requestId` **chỉ dedupe admit prompt, không dedupe TIỀN** ⇒ nối lại = **trừ hai lần**. Chuyển ba câu idempotency sang phía `llm_gateway` trước khi bàn nút |
+| 11 | A1 nút "Chạy tiếp" | 🟡 **0,5** — chặn ở **kiến trúc DSH** (`dsh-agent-loop` cố ý không expose `retry()`). Phần TIỀN đã sáng: quyết toán **theo token đã sinh thật** ⇒ chạy tiếp **không** trùng; trùng chỉ khi **cùng một request** bị gửi lại. Hạ tầng idempotency **đã có sẵn** (`credit_entries` khoá `job_id`=`request_id`), chỉ thiếu khoá ở cửa stream — mà `protocol.py:244-250` **đã viết sẵn luật đó**. Cần chủ dự án quyết: lỗi hạ tầng của TA thì khách có trả phần đã sinh không |
 | 12 | C2 nén bằng 3.5 | 🟡 **0,5** — mã xong (`3326d7f`), **chờ đo** tốc độ + chất lượng tóm tắt trên phiên dài |
 | 13 | MCP dùng thật (nay 0/166) | ✅ **1** — **0/166 → tự gọi ngay lượt đầu**. Catalog đã có mô tả + tiêu đề nhóm *khi nào dùng*; model tự `tool_search` → `tool_describe` → gọi `mcp__chrome-devtools__navigate`, **không ai nhắc**. ⚠️ Đạt kết quả nhưng **chưa cô lập nguyên nhân** (nâng trần + `groups` đi cùng một bản) |
 | 14 | Gỡ trần 50 của kế hoạch/mục tiêu | 🟡 **0,5** — **tiền đề SAI**: `exit_plan_mode` **không có trong tool-set** (chỉ mount khi `/plan on`); `create_goal` thì prompt hệ thống **dặn đừng dùng** cho việc một lượt. Model không làm sai — **thang đo phạt một hành vi đúng**. ✅ Đã chốt đi đường *giữ `/plan on` là lệnh người dùng* (Claude Code cũng vậy); còn: tài liệu + sửa câu hỏi của bảng chấm |
@@ -1054,9 +1054,47 @@ Việc còn lại **không nằm ở `LTTCODEAPP`**. Phải trả lời ở `llm
 - [ ] Lượt **đứt giữa chừng** (khách mất mạng) đã bị tính tiền chưa? (Liên quan sự cố 19/09:
       *khách ngắt bị tính là lỗi B*.)
 
-⛔ **Không thiết kế nút bấm nào trước khi ba câu trên có đáp án.** Một nút "Chạy tiếp" trừ tiền
-hai lần tệ hơn không có nút.
+### ✅ BA CÂU ĐÃ CÓ ĐÁP ÁN (làn `r-tien`, 24/09) — và chặn NHỎ hơn tôi tưởng
 
+| Câu | Đáp án | Nguồn |
+|---|---|---|
+| Sổ credit khoá theo gì | Bảng `credit_entries` append-only, **khoá idempotent là `job_id`**, mà với `/api/v1/messages` thì **`job_id` CHÍNH LÀ `request_id`** | `platform_core/models.py:787-798`, `:520`; `credit.py:367-389` |
+| `request_id` từ đâu | **Server tự sinh** (`thanh_toan.ma_luot`), **không** do khách gửi | `luong.py:1438, 779` |
+| Cổng có Idempotency-Key không | **Không — CỐ Ý.** `requires_idempotency_key=False  # Q107`, lý do ghi rõ: *"không CLI nào gửi nó"* và nền tảng *"không tiếp nối luồng"*. Nhưng **khuôn đã có sẵn** ở `/chat/completions`, `/jobs`, `/workflows` | `server/api/streaming.py:1,21-23,191`; `public_api/idempotency.py` |
+| **Ngắt giữa chừng có bị tính trọn không** | **KHÔNG — tính theo token ĐÃ SINH THẬT.** `GeneratorExit` → `khach_ngat=True`, `finally` gọi `quyet_toan(..., dem, ...)` với bộ đếm tới lúc ngắt. Hợp đồng khai `settles_from_measured_usage=True`, và `protocol.py:235-243` **ép buộc** mọi STREAM tính phí phải khai — thiếu thì app **không khởi động được** | `luong.py:1932-1954`; `streaming.py:202` |
+| Có giữ-rồi-hoàn không | **Có**, và hold mang **đúng `request_id`** | `credit.giu_cho:276-322`, `credit.hoan:479-502` |
+
+### ⇒ Nỗi lo "trừ tiền hai lần" của tôi ĐÚNG MỘT NỬA — và nửa sai là nửa quan trọng
+
+Vì quyết toán **theo token đã sinh thật**, nên:
+
+- Lượt chết vì 502 **chưa sinh token** ⇒ tính ≈ **0**. Chạy tiếp **không** trừ hai lần.
+- Lượt chết **sau khi đã sinh một phần** ⇒ khách bị tính **đúng phần đã nhận**. Chạy tiếp là
+  **sinh mới thật**, tốn thật ⇒ tính tiền là **đúng**, không phải trùng.
+- **Trùng thật chỉ xảy ra khi cùng MỘT request bị gửi lại** (mạng chập, client tự retry mà không
+  thấy phản hồi). ⇒ Đây đúng là thứ `Idempotency-Key` sinh ra để chặn.
+
+⇒ Chặn của Task 11 **không phải** "tiền không giải được", mà hẹp hơn nhiều: **thiếu một khoá
+idempotency ở cửa stream**, trong khi cả hạ tầng cho nó **đã có sẵn**.
+
+> 🔑 **Và nền tảng đã tự viết sẵn đúng luật này rồi**, `protocol.py:244-250`:
+> *"a resumable STREAM must require an Idempotency-Key — resume without one bills the same work twice."*
+> Tức người thiết kế đã lường trước ngày có tính năng tiếp nối. Hôm nay là ngày đó.
+
+- [ ] **Bước 1 (nền tảng):** cho `/api/v1/messages` nhận `Idempotency-Key` **chỉ ở nhánh tiếp nối**
+      (Q107 vẫn đúng cho lượt thường — đừng bắt mọi khách gửi). `chuan_bi()` có key thì **tái dùng
+      `request_id`** thay vì sinh mới; `giu_cho`/`quyet_toan` vốn đã idempotent theo `job_id` sẽ tự chặn.
+      Đặt `requires_idempotency_key=True` cho nhánh đó — `protocol.py` sẽ **tự bắt lỗi** nếu quên.
+- [ ] **Bước 2:** xác nhận `operation` mới không đụng namespace của các op cũ trong `ApiIdempotencyRecord`.
+- [ ] **Bước 3 (khách):** chỉ sau khi bước 1 xanh mới bàn tới nút bấm.
+
+### ⚠️ Một câu CHÍNH SÁCH, không phải câu kỹ thuật — cần chủ dự án quyết
+
+Lượt chết vì **hạ tầng CỦA TA** (502 từ chính cổng của mình) mà đã sinh một phần token:
+**khách có phải trả phần đó không?**
+
+Mã hiện tại: **có** — tính theo token đã sinh, không phân biệt lỗi do ai. Đúng về kỹ thuật, nhưng
+là một lựa chọn kinh doanh chứ không phải một sự thật. ⛔ Không tự đổi sổ sách. Ghi ra để hỏi.
 ## Task 12 ⏳ MÃ XONG (`3326d7f`), CHỜ ĐO: Nén ngữ cảnh bằng model nhỏ (C2: 45 → 80)
 
 **Số đo hiện tại:** **188,6 s** và **243,7 s** cho hai lần nén trong cùng một phiên — hơn **7 phút**
