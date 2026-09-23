@@ -433,6 +433,24 @@ def promote_va_ghi(db: Session, kho: Storage, *, owner_id: str, run_id: str,
 #  Toan ven va cache
 # ══════════════════════════════════════════════════════════════════════════════
 
+def _do_toan_ven(kho: Storage, asset: AsvAsset) -> str:
+    """DO trang thai toan ven — thuan doc, khong cham CSDL."""
+    han = _aware(asset.expires_at)
+    if han is not None and han <= _now():
+        return ASSET_EXPIRED
+    try:
+        if not kho.exists(asset.storage_key):
+            return ASSET_MISSING
+        # Chi can do dai va checksum, khong can noi dung -> doc theo khoi.
+        co, checksum = do_va_bam(kho, asset.storage_key)
+    except (StorageError, FileNotFoundError):
+        return ASSET_MISSING
+
+    if co != int(asset.size) or checksum != asset.checksum:
+        return ASSET_CORRUPT
+    return ASSET_OK
+
+
 def kiem_toan_ven(db: Session, kho: Storage, asset: AsvAsset) -> str:
     """Doi chieu ban ghi voi tep that. Cap nhat va tra ve `integrity`.
 
@@ -440,32 +458,52 @@ def kiem_toan_ven(db: Session, kho: Storage, asset: AsvAsset) -> str:
       `missing` — tham chieu con, tep bien mat  -> phai tinh lai
       `corrupt` — tep con, noi dung da lech     -> phai tinh lai VA dang ngo
       `expired` — chinh sach luu tru, khong phai su co
+
+    🔴 **Ham nay la NGUON cua ca M-08 lan M-09, va ly do la mot dong `flush`.**
+
+       No mang ten mot phep DOC (*"kiem"*) nhung no GHI: truoc 23/09 no dat
+       `asset.integrity` roi `flush` — tuc mo mot transaction GHI tren phien
+       cua worker va **khong dong lai**. Nguoi goi khong co ly do gi de doan
+       ra dieu do tu ten ham.
+
+       Cai bay no giang: `JobContext.progress` / `.event` / `.is_cancelled`
+       (`platform_core/job_runner.py`) mo mot phien **THU HAI** theo thiet ke.
+       Tren SQLite hai phien do gap nhau thanh `database is locked`:
+
+         * M-08 — `COMPOSE`: `_khoa_con_dung` -> `kiem_toan_ven` -> `flush`,
+           roi `ctx.progress(60)`;
+         * M-09 — `VOICE_SYNTHESIS`: `_doan_con_dung` -> `kiem_toan_ven` ->
+           `flush`, roi nhanh `continue` (doan dung lai duoc) **bo qua**
+           `db.commit()` cuoi vong, nen lan `ctx.progress` cua vong lap KE TIEP
+           dung vao dung khoa do. Vi the no chi lo ra o VONG SUA: chi khi ay
+           artifact moi bi `vo_hieu_theo_day_chuyen` dat `missing` va phep do
+           nay moi co gi de GHI lai.
+
+       M-08 vá tai MOT trong nam nguoi goi. Nam nguoi goi thi bon cai bay con
+       lai van nguyen, va M-09 chinh la cai thu hai no bo xuong.
+
+    ⭐ Nen phep do tach khoi phep ghi, va phep ghi chiu hai rang buoc:
+
+      1. **Khong doi thi khong ghi.** Duong lanh (artifact van `ok`) nay la
+         thuan doc — phien cua nguoi goi khong bao gio bi mo transaction ghi vi
+         mot cau hoi ma cau tra loi la "khong co gi moi".
+      2. **Doi thi COMMIT, khong `flush`.** Day la mot quan sat ve THE GIOI
+         ("tep nay bien mat"), khong phai mot manh cua don vi viec nguoi goi
+         dang lam: no dung ke ca khi giai doan sau do hong va bi `rollback`.
+         Do cung la luat ma `thi_hanh.chay_giai_doan` ghi trong nhanh bat loi
+         cua no — *"diem chot da `commit` ... do la ca ly do chung `commit`
+         ngay tai cho thay vi `flush`"*.
+
+    ⛔ Khong dung mot phien RIENG cho lan ghi nay. Phien cua nguoi goi vua
+       SELECT chinh dong nay nen tren SQLite no dang giu khoa doc; mot phien
+       thu hai xin khoa ghi se **doi chinh no** — dung cai bay vua go, dat
+       nguoc chieu.
     """
-    han = _aware(asset.expires_at)
-    if han is not None and han <= _now():
-        asset.integrity = ASSET_EXPIRED
-        db.flush()
-        return ASSET_EXPIRED
-    try:
-        if not kho.exists(asset.storage_key):
-            asset.integrity = ASSET_MISSING
-            db.flush()
-            return ASSET_MISSING
-        # Chi can do dai va checksum, khong can noi dung -> doc theo khoi.
-        co, checksum = do_va_bam(kho, asset.storage_key)
-    except (StorageError, FileNotFoundError):
-        asset.integrity = ASSET_MISSING
-        db.flush()
-        return ASSET_MISSING
-
-    if co != int(asset.size) or checksum != asset.checksum:
-        asset.integrity = ASSET_CORRUPT
-        db.flush()
-        return ASSET_CORRUPT
-
-    asset.integrity = ASSET_OK
-    db.flush()
-    return ASSET_OK
+    moi = _do_toan_ven(kho, asset)
+    if str(asset.integrity or "") != moi:
+        asset.integrity = moi
+        db.commit()
+    return moi
 
 
 def cache_dung_duoc(db: Session, kho: Storage, *, owner_id: str, run_id: str,
