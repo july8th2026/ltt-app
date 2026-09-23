@@ -47,8 +47,11 @@ MANIFEST = AppManifest(
     requires=("ffmpeg",),
     # Chỉ hai loại job này chạm GPU. `render` là FFmpeg thuần nên để 0 —
     # khai thừa sẽ bắt job khắc phụ đề chờ một card trống mà nó không cần.
-    # whisperx large-v3 float16 + model align ~6 GB; pyannote nhẹ hơn nhiều.
-    gpu_vram_mb={"autosubvideo.transcribe": 6000, "autosubvideo.diarize": 2000},
+    # ✅ DO THAT 23/09 (làn `toc-do-gpu`), venv worker, phim thật 106,8 s:
+    #    whisperx large-v3 fp16 + model align — đỉnh **+6.334 MiB**, tức bản khai cũ
+    #    6.000 khai THIẾU. Khai = đỉnh + ~20%. pyannote nhẹ hơn nhiều.
+    #    Bảng đo: `docs/auto_scan_video_final/L_TOC_DO_GPU.md`.
+    gpu_vram_mb={"autosubvideo.transcribe": 7600, "autosubvideo.diarize": 2000},
     credit_cost=_cost,
     tools=(ToolSpec(
         name="video.subtitle", job_type="autosubvideo.render",
