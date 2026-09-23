@@ -271,6 +271,34 @@ def _do_to(tep: str) -> dict:
     return ra
 
 
+#: Doi chung cho bang xep hang. 🔴 KHONG CO DOI CHUNG THI MOT BANG DIEM CHI LA
+#: MOT THU TU: doc gia khong biet chenh 0,15 diem Distill-MOS la nhieu hay it.
+#: Ba bien doi duoi day lam BAN THAN thang do lo ra tren chinh kho nay.
+DOI_CHUNG = {
+    "nhieu10db": ["-f", "lavfi", "-i", "anoisesrc=c=white:r=16000:a=0.03",
+                  "-filter_complex", "amix=inputs=2:duration=first:normalize=0"],
+    "meo_clip": ["-af", "volume=6dB,alimiter=limit=0.999"],
+    "bang_thong_hep": ["-af", "lowpass=f=3400,highpass=f=300"],
+}
+
+
+def _doi_chung(ra: pathlib.Path, goc: dict) -> list[dict]:
+    """Dung ba ban BIEN DANG tu mot doan that. Tra danh sach doan nhu `kho`."""
+    from platform_core import media
+
+    d = ra / "doi_chung"
+    d.mkdir(parents=True, exist_ok=True)
+    ds = []
+    for ten, loc in DOI_CHUNG.items():
+        p = d / f"doi_chung__{ten}.wav"
+        if not p.is_file():
+            subprocess.run([media.ffmpeg_bin(), "-y", "-loglevel", "error",
+                            "-i", goc["tep"], *loc, "-ac", "1", "-ar", "16000",
+                            "-c:a", "pcm_s16le", str(p)], check=True)
+        ds.append({"ma": f"doi_chung__{ten}", "tep": str(p), "chu": goc["chu"]})
+    return ds
+
+
 def cham_en(ra: pathlib.Path) -> int:
     from apps.asv_gpu.do_luong import giong, squim, venv
 
@@ -279,6 +307,7 @@ def cham_en(ra: pathlib.Path) -> int:
         print("BO QUA: kho chua co tieng `en`.")
         return 2
     doan = [{"ma": d["ma"], "tep": d["tep"], "chu": d["chu"]} for d in kho]
+    doan += _doi_chung(ra, kho[0])
 
     print(f"  [..] ASR + jiwer tren {len(doan)} doan", flush=True)
     g = giong.do_giong(doan, ngon_ngu="en")
@@ -416,6 +445,20 @@ def bao_cao(ra: pathlib.Path) -> int:
               f"{_p(h['dnsmos_sig'],2)} | {_p(h['tu_phut'],1)} | "
               f"{_p(h['lufs_i'],1)} | {_p(h['true_peak'],1)} |")
     _json(ra / "xep_hang_en.json", hang)
+
+    # ── Đối chứng: thang đo lộ ra trên CHÍNH kho này ───────────────────────
+    dc = {k: v for k, v in m.items() if k.startswith("doi_chung__")}
+    if dc:
+        print("\n### Đối chứng — cùng một đoạn tiếng, ba biến dạng\n")
+        print("| bản | WER | PESQ | Distill-MOS | DNSMOS OVRL |")
+        print("|---|---|---|---|---|")
+        goc_ma = [b for v in theo_giong.values() for b in v["ban"]][0]
+        for ten, ma in [("gốc (chưa biến dạng)", goc_ma),
+                        *[(k.replace("doi_chung__", ""), k) for k in dc]]:
+            print(f"| {ten} | {_p((g.get(ma) or {}).get('wer'))} | "
+                  f"{_p((s.get(ma) or {}).get('pesq'))} | "
+                  f"{_p((m.get(ma) or {}).get('distill_mos'), 2)} | "
+                  f"{_p((m.get(ma) or {}).get('dnsmos_ovrl'), 2)} |")
     print(f"\n(xep hang co may: {ra / 'xep_hang_en.json'})\n")
     return 0
 
