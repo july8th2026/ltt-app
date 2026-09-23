@@ -30,6 +30,39 @@ from starlette.responses import RedirectResponse
 from platform_core import i18n
 
 
+def _la_dieu_huong_html(request) -> bool:
+    """Request này có phải trình duyệt MỞ CẢ TRANG không?
+
+    Chuyển hướng 302 chỉ tồn tại để **thanh địa chỉ khớp nội dung** (xem
+    docstring trên). `fetch()` trong trang không có thanh địa chỉ: chuyển hướng
+    nó không sửa được gì, chỉ thêm một chặng. Vòng poll gọi 1,5 giây một lần thì
+    một chặng thừa là nhân đôi tải.
+
+    Tiêu chí KHÔNG được là tiền tố đường dẫn. Thêm `/agent/api/` vào `MIEN_TRU`
+    vừa mất i18n cho nhánh đó (`/en/agent/...` thành 404), vừa chỉ vá một app —
+    có 136 route `/api/` nằm dưới `route_prefix` của các app (`/chatltt/api/…`,
+    `/autosubvideo/api/…`, …) và app sau lại dính đúng lỗi này.
+
+    Hỏi chính trình duyệt thay vì đoán từ URL: `Sec-Fetch-Mode` (Fetch Metadata)
+    là nơi nó khai request này là điều hướng hay lời gọi dữ liệu. Có header đó
+    thì nó là lời khai TƯỜNG MINH, tin luôn. Không có (Safari < 16.4, script) thì
+    lùi về `Accept`.
+
+    ⚠️ Mặc định khi KHÔNG có bằng chứng là `True` — giữ nguyên hành vi cũ. Đây là
+    middleware của cả trang web: chỉ thu hẹp chuyển hướng ở nơi client đã nói rõ,
+    để bản vá không lặng lẽ tắt i18n cho một loại client chưa nghĩ tới. Cái giá:
+    client máy-gọi-máy gửi `Accept: */*` mà không có Fetch Metadata vẫn ăn một
+    chặng 302 như trước.
+    """
+    mode = request.headers.get("sec-fetch-mode", "")
+    if mode:
+        return mode == "navigate"
+    accept = request.headers.get("accept", "")
+    if not accept:
+        return True
+    return "text/html" in accept or "*/*" in accept
+
+
 def _ho_so_ngon_ngu(request) -> str:
     """Ngôn ngữ lưu ở hồ sơ tài khoản. Đọc từ session để khỏi truy vấn CSDL mỗi
     request — phiên đã có sẵn trong cookie đã ký."""
@@ -88,7 +121,8 @@ class I18nMiddleware(BaseHTTPMiddleware):
         # để địa chỉ khớp nội dung (xem docstring).
         if (tien_to is None and lang != i18n.GOC
                 and request.method == "GET"
-                and not request.headers.get("hx-request")):
+                and not request.headers.get("hx-request")
+                and _la_dieu_huong_html(request)):
             dich = i18n.them_tien_to(duong, lang)
             if request.scope.get("query_string"):
                 dich += "?" + request.scope["query_string"].decode("latin-1")
@@ -116,6 +150,9 @@ class I18nMiddleware(BaseHTTPMiddleware):
         # Cho bộ nhớ đệm biết trang đổi theo ngôn ngữ, kẻo CDN phục vụ bản tiếng
         # Việt cho người dùng tiếng Anh.
         vary = resp.headers.get("vary", "")
-        can = "Accept-Language, CF-IPCountry, Cookie"
+        # `Sec-Fetch-Mode`/`Accept` cũng quyết định có chuyển hướng hay không, nên
+        # thiếu chúng trong `Vary` thì một bộ đệm dùng chung có thể lấy bản 200 của
+        # `fetch()` đem phục vụ cho lần điều hướng lẽ ra phải 302.
+        can = "Accept-Language, CF-IPCountry, Cookie, Accept, Sec-Fetch-Mode"
         MutableHeaders(raw=resp.raw_headers)["vary"] = f"{vary}, {can}" if vary else can
         return resp
