@@ -10,6 +10,7 @@
 """
 from __future__ import annotations
 
+from platform_core.i18n import N_
 from platform_core.workflow import he_kieu
 from platform_core.workflow.nut import Gia, LoiNut, NodeDefinition
 
@@ -29,8 +30,8 @@ def tat_ca() -> dict:
 
 dang_ky(NodeDefinition(
     type="trigger.manual", type_version=1, kind="trigger", category="TRIGGERS",
-    title="Chạy thủ công",
-    description="Người dùng bấm chạy. Không có lịch, không có webhook.",
+    title=N_("Chạy thủ công"),
+    description=N_("Người dùng bấm chạy. Không có lịch, không có webhook."),
     icon="▶",
     cong_vao=(),
     cong_ra=(("event", he_kieu.Cong(type="event", required=True, nhan="event")),),

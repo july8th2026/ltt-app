@@ -26,7 +26,12 @@ def test_du_15_kieu_va_KHONG_gop_so_voi_object():
         "model_ref", "connection_ref", "artifact_ref", "workflow_ref",
         "secret_ref",
     }
-    assert len(KIEU_CO_BAN) == 15
+    # 17, khong phai 15: `any` va `event` them CO CHU DICH o `75cca2cb` theo
+    # spec 4.7 (`any` cho cong nhan moi kieu; `event` cho trigger/waitpoint).
+    # Con so nay ghim de mot kieu moi phai di qua REVIEW, khong phai de dong bang
+    # he kieu — doi no la mot quyet dinh, va day la lan doi thu nhat.
+    assert len(KIEU_CO_BAN) == 17
+    assert {"any", "event"} <= KIEU_CO_BAN
     # Ba cai nay PHAI khac nhau — do la toan bo diem cua G37.
     assert len({"number", "integer", "json"} & KIEU_CO_BAN) == 3
 
@@ -129,7 +134,7 @@ def test_M9_luat_XUAT_duoc_ra_du_lieu_cho_client():
     luat = xuat_luat_noi_day()
     assert set(luat["kieu"]) == set(luat["kieu"])
     assert luat["ep_kieu"] == [["T", "T[]"]], "chi dung MOT luat ep kieu"
-    assert "15" in str(len(luat["kieu"])) or len(luat["kieu"]) == 15
+    assert len(luat["kieu"]) == 17
 
 
 def test_M9_client_va_server_TRUNG_KHOP_100_phan_tram():

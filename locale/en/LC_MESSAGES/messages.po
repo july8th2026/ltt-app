@@ -20654,3 +20654,9 @@ msgstr "Plan is missing steps."
 
 msgid "Step không hợp lệ."
 msgstr "Invalid step."
+
+msgid "Chạy thủ công"
+msgstr "Run manually"
+
+msgid "Người dùng bấm chạy. Không có lịch, không có webhook."
+msgstr "The user clicks Run. No schedule, no webhook."
