@@ -248,11 +248,19 @@ Tập con JSON Schema: `type ∈ {string, number, integer, boolean, object, arra
 - `x-ltt-kieu`: kiểu cổng (`image`, `video[]`, `artifact`, `model_ref`…) khi giá trị
   là tham chiếu.
 - `x-ltt-control`: gợi ý widget (`textarea`, `code-json`, `credential`, `dropdown-dong`).
-- `x-ltt-dong`: nguồn lựa chọn động — `{"nguon": "piece_property", "prop": "…"}`
-  (runner `run_property`, §11) hoặc `{"nguon": "app_property", "prop": "…"}`
-  (ToolSpec `tuy_chon_dong`). ⛔ `"nguon"` là marker gửi client, không phải tên
-  trường nội bộ — palette test cấm tên cơ chế (`tuy_chon_dong`, `sync_executor`,
-  …) rò ra JSON công khai (plan 02, Task 8).
+- `x-ltt-dong`: nguồn lựa chọn động **theo một tham số khác của cùng node** —
+  `{"nguon": "piece_property", "prop": "…"}` (runner `run_property`, §11) hoặc
+  `{"nguon": "app_property", "prop": "…"}` (`params_schema` khai `depends_on`;
+  vd `taovideo.resolution` hợp lệ tuỳ `model` đã chọn, giải qua
+  `providers.model_capabilities`). ⛔ `"nguon"` là marker gửi client, không phải
+  tên trường nội bộ — palette test cấm tên cơ chế (`tuy_chon_dong`,
+  `sync_executor`, …) rò ra JSON công khai (plan 02, Task 8).
+
+  ⛔ **Không nhầm với `ToolSpec.tuy_chon_dong`** (enum động theo NGƯỜI DÙNG, vd
+  giọng nhân bản của chính họ). Cơ chế đó KHÔNG sinh `x-ltt-dong`: palette giải
+  nó ngay lúc phục vụ (`resolve_params_schema(db=, user_id=)`) và trả thẳng
+  `enum` + `x-ltt-nhan`. `enum: []` nghĩa là "bạn chưa có lựa chọn nào" — vẫn
+  khác `string` tự do, và sự khác đó chính là GENERIC_GAP D10.
 
 Mọi giá trị `params` có thể là literal hoặc chuỗi biểu thức `{{ … }}` (§6). Validator
 kiểm literal theo lược đồ lúc publish; giá trị biểu thức kiểm lúc thi hành, sau khi tính.

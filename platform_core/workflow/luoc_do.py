@@ -90,18 +90,31 @@ def mot_tham_so(ten: str, rule: dict) -> dict:
         ra["default"] = rule["default"]
     if rule.get("description"):
         ra["description"] = str(rule["description"])
-    # `values`/`options` đã được `agent.tools.resolve_params_schema` giải sẵn
-    # cho `model_ref` — mang sang dạng JSON Schema, không giải lại.
-    if kieu == "model_ref" and rule.get("values"):
-        ra["enum"] = list(rule["values"])
+    # `values`/`options` đã được `agent.tools.resolve_params_schema` giải sẵn —
+    # mang sang dạng JSON Schema, KHÔNG giải lại ở đây. Ba nguồn cùng ghi vào
+    # `values`: `model_ref` (capability tĩnh), `source` (prompt fragments) và
+    # `ToolSpec.tuy_chon_dong` (enum **theo người dùng**, vd giọng nhân bản).
+    #
+    # ⛔ `"values" in rule` chứ KHÔNG phải `rule.get("values")`: một danh sách
+    #    RỖNG nghĩa là *"bạn chưa có lựa chọn nào"*, khác hẳn *"gõ gì cũng
+    #    được"*. Bỏ khoá `enum` khi rỗng là trả đúng ô chữ tự do mà
+    #    GENERIC_GAP D10 sinh ra để đóng — và một ô chữ tự do thì khách gõ được
+    #    `voice_id` của người khác.
+    if kieu != "enum" and "values" in rule:
+        ra["enum"] = list(rule["values"] or [])
     if rule.get("options"):
         ra["x-ltt-nhan"] = {str(o["value"]): str(o.get("label", o["value"]))
                             for o in rule["options"] if isinstance(o, dict)}
     if rule.get("depends_on"):
-        # ⛔ "nguon" là một MARKER cho client, không phải tên trường nội bộ.
-        #    `ToolSpec.tuy_chon_dong` là cơ chế app khai — nhãn ra ngoài phải
-        #    trung lập, không lặp lại đúng chữ đó (spec §4.6, sửa cùng lúc
-        #    Task 8 phát hiện qua test palette chống rò tên nội bộ).
+        # `depends_on` = tham số này phụ thuộc **một tham số khác của cùng
+        # node** (vd `taovideo`: `resolution` hợp lệ tuỳ `model` đã chọn) —
+        # `agent.tools.resolve_params_schema` giải nó qua
+        # `providers.model_capabilities`. ⛔ KHÔNG phải `ToolSpec.tuy_chon_dong`
+        # (enum theo NGƯỜI DÙNG, `platform_core/agent/tools.py:65`) — cơ chế đó
+        # đi qua nhánh `values` ở trên và ra thẳng `enum`.
+        #
+        # ⛔ Và "nguon" là một MARKER cho client, không phải tên trường nội bộ:
+        #    palette test cấm tên cơ chế ra ngoài (spec §4.6).
         ra["x-ltt-dong"] = {"nguon": "app_property",
                             "prop": str(rule["depends_on"])}
     if _la_may_tu_dien(rule):

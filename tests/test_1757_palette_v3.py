@@ -14,6 +14,13 @@ def api(tmp_path, monkeypatch):
                        f"sqlite:///{(tmp_path / 'api.db').as_posix()}")
     import platform_core.db as dbmod
     import platform_core.models  # noqa: F401
+    # Bang RIENG cua app (`apps/<slug>/tables.py`) — nap y het production
+    # (`registry.load_app_tables`), khong go ten mot app cu the. Palette giai
+    # `ToolSpec.tuy_chon_dong` nen no THAT SU doc bang cua app (vd
+    # `voice_profile`); thieu chung thi route 500 va bai kiem noi doi ve
+    # nguyen nhan.
+    from platform_core import registry as _reg
+    _reg.load_app_tables()
     dbmod.reset_engine(); dbmod.Base.metadata.create_all(dbmod.get_engine())
     db = next(dbmod.get_session())
     from platform_core.users import tao_nguoi_dung
@@ -85,12 +92,20 @@ def test_khong_lo_job_type_noi_bo_cua_provider(api):
     for cam in ("sync_executor", "api_contract", "admission_token_pool",
                 "kiem_truoc", "tuy_chon_dong"):
         assert cam not in tho
+    # 🔑 DOI CHUNG (fix round 1): sau bon dong `assert ... not in`, mot route
+    #    tra `{}` cung XANH. Neo lai mot chuoi PHAI co mat — `x-ltt-dong` la
+    #    marker trung lap thay cho ten co che noi bo, va `app.video.generate`
+    #    (taovideo) co `depends_on` nen no phai xuat hien that.
+    assert "x-ltt-dong" in tho and "app_property" in tho
 
 
 def test_luat_noi_day_la_CUNG_mot_bang_voi_he_kieu(api):
     from platform_core.workflow import he_kieu
     body = api.get("/agent/api/v3/luat-noi-day").json()
     assert body == he_kieu.xuat_luat_noi_day()
+    # 🔑 DOI CHUNG (fix round 1): `{} == {}` cung XANH. Bang luat phai co noi
+    #    dung that thi phep so sanh moi noi duoc dieu gi.
+    assert body["cap_noi_duoc"] and body["kieu"]
     # Palette nhung san cung bang => Canvas chi can MOT luot goi khi mo trang.
     assert api.get("/agent/api/v3/palette").json()["luat_noi_day"] == body
 
@@ -103,3 +118,64 @@ def test_palette_loc_theo_quyen_app_cua_nguoi_dung(api, monkeypatch):
     apps = next(n for n in api.get("/agent/api/v3/palette").json()["nhom"]
                 if n["category"] == "LTT_APPS")["nut"]
     assert "app.transcript.run" not in {x["type"] for x in apps}
+
+
+# ─────────────────────────── Fix round 1 (Task 8) ───────────────────────────
+
+#: Cong cu app CO TINH khai `customer_visible=False` — cua dong TAY vi chua
+#: nghiem thu E2E (`apps/audio_pause/manifest.py:73-87`). Duong v2 loc chung o
+#: `presentationAdapter.ts:65`; duong v3 phai loc o server.
+KHONG_CHO_KHACH = ("app.audio_pause.run", "app.prompt_canh.run",
+                   "app.video_assembly.run", "app.chatltt.trich_tep",
+                   "app.chatltt.nghien_cuu")
+
+
+def test_palette_khong_lo_cong_cu_customer_visible_false(api):
+    body = api.get("/agent/api/v3/palette").json()
+    co_mat = {x["type"] for n in body["nhom"] for x in n["nut"]}
+    for ten in KHONG_CHO_KHACH:
+        assert ten not in co_mat, f"{ten} customer_visible=False ma van len palette"
+    # 🔑 DOI CHUNG: mot bo loc chan SACH cung lam bon dong tren xanh. Palette
+    #    phai con dung nhung node that — 12 node app deu duoc ra mat.
+    apps = {x["type"] for n in body["nhom"]
+            if n["category"] == "LTT_APPS" for x in n["nut"]}
+    assert len(apps) >= 10 and "app.transcript.run" in apps
+    assert "app.speech.ltt" in apps
+
+
+def _thamso(api, ten: str) -> dict:
+    body = api.get("/agent/api/v3/palette").json()
+    nd = next(x for n in body["nhom"] for x in n["nut"] if x["type"] == ten)
+    return nd["tham_so"]["properties"]
+
+
+def test_tuy_chon_dong_duoc_GIAI_chu_khong_ra_o_chu_tu_do(api):
+    """GENERIC_GAP D10: `voice_id`/`preset` la enum THEO NGUOI DUNG.
+
+    Khong goi `resolve_params_schema(db=, user_id=)` thi ca hai ra
+    `{"type": "string", "maxLength": N}` — dung cai o chu tu do ma D10 sinh ra
+    de dong (`docs/CHATLTT/reports/02_runtime_noi_bo.md:38`).
+    """
+    p = _thamso(api, "app.speech.ltt")
+    # Kho DUNG CHUNG cua nen tang: luon co 20 giong, khong phu thuoc tai khoan.
+    assert "enum" in p["preset"], f"preset van la o chu tu do: {p['preset']}"
+    assert len(p["preset"]["enum"]) >= 1
+    assert p["preset"]["x-ltt-nhan"]
+    # Giong NHAN BAN cua chinh nguoi dung: tai khoan test chua nhan ban giong
+    # nao ⇒ enum RONG. Phep kiem phan biet "enum rong" (co khoa, list rong)
+    # voi "chuoi tu do" (khong co khoa `enum`) — day moi la cai khe D10 do.
+    assert "enum" in p["voice_id"], f"voice_id van la o chu tu do: {p['voice_id']}"
+    assert isinstance(p["voice_id"]["enum"], list)
+
+
+def test_resource_chi_tra_khoa_phan_loai_khong_tra_so_lieu_ha_tang(api):
+    """Sức chứa GPU khong phai thong tin cua khach dang nhap."""
+    tho = api.get("/agent/api/v3/palette").text
+    for cam in ("vram_min_mb", "slots", "est_duration_s"):
+        assert cam not in tho, f"palette lo so lieu ha tang: {cam}"
+    # 🔑 DOI CHUNG: bo SACH khoi `resource` cung lam ba dong tren xanh —
+    #    `class` la khoa Canvas that su can de phan loai node.
+    body = api.get("/agent/api/v3/palette").json()
+    nd = next(x for n in body["nhom"] for x in n["nut"]
+              if x["type"] == "app.transcript.run")
+    assert nd["resource"] == {"class": "gpu"}
