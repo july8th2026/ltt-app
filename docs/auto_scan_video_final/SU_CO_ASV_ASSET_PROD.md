@@ -29,6 +29,29 @@ tạm `lttplatform_dienthu_<stamp>`, *"không đụng live CSDL"*, và lượt h
 
 ⚠️ `alembic upgrade head` **KHÔNG sửa được**: nó tin rằng đã xong.
 
+## ⭐ Đối chứng ĐỘC LẬP từ bản sao lưu (24/09, đọc `pg_restore -l`, không nạp)
+
+Chẩn đoán trên chỉ nhìn CSDL **hiện tại** — nó không tự loại được giả thuyết
+*"bảng từng có rồi bị xoá gần đây"*. Hai bản sao lưu `D:\LTTBackups` trả lời
+câu đó, và chúng **không do ai trong cuộc điều tra này tạo ra** (lịch 02:30 hằng
+đêm, có từ trước khi sự cố được phát hiện):
+
+| bản | ngày | đối tượng tên `asv*` | tổng bảng `public` | đối chứng dương |
+|---|---|---|---|---|
+| `ltt_data_20260910_023001.zip` | 10/09 02:30 | **0** | 94 | `jobs`, `users`, `alembic_version` đều có |
+| `ltt_data_20260923_023001.zip` | 23/09 02:30 | **0** | 101 | `agent_runs` có (bảng + `TABLE DATA`) |
+
+Migration ASV ra đời **01/09** (`asv_run`/`asv_stage`) và **03/09** (`asv_work_item`).
+Bản 10/09 là **một tuần sau** đó và **không có lấy một đối tượng nào** tên `asv*` —
+không bảng, không index, không sequence.
+
+⇒ Bảng **chưa bao giờ được tạo**, chứ không phải bị xoá. Giả thuyết "xoá gần đây"
+đã bị loại bằng dữ liệu có trước cuộc điều tra.
+
+⭐ Đối chứng dương quan trọng: cùng bản sao lưu đó **có** `jobs`, `users`,
+`alembic_version` — nên số 0 ở cột `asv*` là *vắng mặt thật*, không phải do đọc
+sai tệp hay lọc hỏng.
+
 ## Ảnh hưởng thật
 
 - **Khách: không.** ASV khai `enabled=False` và `/auto-scan-video` trả 404 trên
