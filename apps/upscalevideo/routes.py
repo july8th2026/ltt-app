@@ -24,6 +24,7 @@ from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
 from server.deps import user_hien_tai
 from server.templating import templates
+from platform_core.jobs import loi_cho_khach
 
 router = APIRouter(tags=["upscalevideo"])
 
@@ -122,7 +123,7 @@ def _jobs_cua_toi(request: Request):
                 else:
                     eta_text = _t("Đang ước tính ETA")
             out.append({"id": j.id, "status": j.status, "progress": j.progress,
-                        "progress_msg": j.progress_msg, "error": j.error,
+                        "progress_msg": j.progress_msg, "error": loi_cho_khach(j),
                         "video_key": r.get("video_key"), "duration_s": r.get("duration_s"),
                         "target_height": r.get("target_height") or p.get("target_height"),
                         "source_key": source_key,

@@ -28,6 +28,7 @@ from server.templating import templates
 from .manifest import MANIFEST
 from .services import he as he_phien_am
 from .services import phien_am
+from platform_core.jobs import loi_cho_khach
 
 log = logging.getLogger("apps.transcript.routes")
 
@@ -202,7 +203,7 @@ def ket_qua(request: Request, job_id: str, user: str = Depends(require_login)):
             "status": job.status,
             "progress": getattr(job, "progress", 0),
             "result": job.result or {},
-            "error": job.error or "",
+            "error": loi_cho_khach(job),
         })
     finally:
         db.close()

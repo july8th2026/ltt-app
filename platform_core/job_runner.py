@@ -658,7 +658,7 @@ def _chay_handler(worker_id: str, job_id: str, job_type: str, params: dict,
             # 3a. Thất bại → fail(). Chỉ hoàn credit khi job hết lượt;
             # retry còn lại giữ nguyên hold để lượt sau dùng.
             safe_error = job_events.sanitize_text(
-                f"{type(exc).__name__}: {exc}", limit=5000)
+                jobq.mo_ta_loi(exc), limit=5000)
             _runtime_event(job_id, "execution_failed", level="error", details={
                 "attempt": attempt, "error_type": type(exc).__name__,
                 "error": safe_error, "duration_ms": _duration_ms(started),
