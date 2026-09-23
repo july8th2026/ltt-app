@@ -239,6 +239,14 @@ def phan_hoi_ngoai_dich(thao_tac, messages):
     if ma == ai.HO_SO_NOI_DUNG.ma:
         return {"noi_dung": json.dumps(_ho_so_gia(messages), ensure_ascii=False),
                 "su_dung": None}
+    if ma == ai.QC_HINH.ma:
+        # ⭐ Mac dinh DAT: mot ban gia mac dinh "hong" se lam moi phep kiem
+        #    dau-cuoi sinh ra mot vong sua ma chung khong noi gi ve no. Phep
+        #    kiem nao can chieu HONG thi tu dat ban gia cua rieng no
+        #    (`test_2120`), va no phai noi ro dieu do.
+        return {"noi_dung": json.dumps(
+            {"dat": True, "do_tin": 0.9, "ly_do": ""}, ensure_ascii=False),
+            "su_dung": None}
     return None
 
 

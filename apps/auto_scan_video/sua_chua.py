@@ -186,16 +186,29 @@ def tu_qc_giong(doan: list[dict]) -> list[KhiemKhuyet]:
     return ra
 
 
-def lan_doc_lai(cac_ke_hoach: list[dict]) -> dict[str, int]:
-    """`{ma: n}` — so ke hoach sua (`KeHoachSua.sang_dict()`) da dua doan `ma`
-    ve `voice_synthesis`. Giai doan giong muoi van tay bang `n` de lay luot doc
-    MOI thay vi tra lai tep cu tu cache (cung van tay = cung khoa = cung tep).
+def lan_lam_lai(cac_ke_hoach: list[dict], giai_doan: str) -> dict[str, int]:
+    """`{ma: n}` — so ke hoach sua (`KeHoachSua.sang_dict()`) da dua don vi `ma`
+    ve `giai_doan`.
+
+    🔑 **Mot ham cho MOI giai doan co vong sua, khong mot ham moi giai doan.**
+       `voice_synthesis` muoi van tay tieng bang `n` (M-07); `edit_plan` muoi
+       van tay canh bang `n` (M-02). Hai ban sao cua phep dem nay se lech nhau
+       o mot nhanh nao do, va nhanh lech la nhanh it duoc chay nhat.
+
+    ⭐ Vi sao phai muoi: cung van tay = cung khoa = cung ket qua cache. Mot
+       "vong sua" khong muoi tra ve **dung phan doan vua bi bao la sai** — tuc
+       mot hoa don khong co san pham. Do la M-07, do duoc tren duong that.
     """
     ra: dict[str, int] = {}
     for ke in cac_ke_hoach or []:
-        for ma in (ke.get("giai_doan_sua") or {}).get("voice_synthesis") or []:
+        for ma in (ke.get("giai_doan_sua") or {}).get(str(giai_doan)) or []:
             ra[str(ma)] = ra.get(str(ma), 0) + 1
     return ra
+
+
+def lan_doc_lai(cac_ke_hoach: list[dict]) -> dict[str, int]:
+    """`lan_lam_lai` cho `voice_synthesis` — ten cu, giu cho nguoi goi hien co."""
+    return lan_lam_lai(cac_ke_hoach, "voice_synthesis")
 
 
 def tu_qc_ngu_nghia(phan_doan: list[dict]) -> list[KhiemKhuyet]:
@@ -213,17 +226,82 @@ def tu_qc_ngu_nghia(phan_doan: list[dict]) -> list[KhiemKhuyet]:
     return ra
 
 
-def tu_qc_hinh(phan_doan: list[dict]) -> list[KhiemKhuyet]:
-    """Khiem khuyet tu QC HINH: `[{ma_canh, dat, ly_do, do_tin}]`."""
+#: 🔴 **QC HINH chi TU VAN — phan quyet duoc GHI nhung KHONG sinh viec sua.**
+#:
+#: 🔴 **DA DO, va so do la ly do (23/09, `L_QC_HINH.md` §4).**
+#:
+#:        54 cho noi THAT tren hai phim tieng Trung khac the loai
+#:        15 bi cham `dat=false`  (28 %)
+#:        14/15 mang `do_tin` >= 0,70  => VUOT `DO_TIN_TOI_THIEU` o duoi
+#:         9/9 cai da soi bang mat  => **BAO DONG GIA**
+#:
+#: ⛔ Nen day khong phai "model chua chac chan". No **sai, va sai mot cach tu
+#:    tin** — dung to hop te nhat cho mot cong tieu tien: nguong do tin khong
+#:    loc duoc gi, vi cai sai cung tu tin nhu cai dung.
+#:
+#: ⚠️ Nguyen nhan do duoc la **HINH DANG LOI NHAC**, khong phai model: ly do
+#:    model dua ra o moi luot deu mo ta mot THAY DOI NOI DUNG ("khung 1 la...,
+#:    khung 2 la...") chu khong mo ta mot cho dut mach — trong khi loi nhac noi
+#:    thang rang hai khung khac han nhau la mot cat DUNG. Cung ho voi R-05 cua
+#:    lan `fix-toc-do`. ⇒ Co the sua duoc, nhung **phai do lai** roi moi doi co
+#:    nay; `L_QC_HINH.md` §8 ghi gia thuyet cu the.
+#:
+#: 🔴 **Va rieng `cat_sai` con mot ly do doc lap voi do chinh xac: no la vong
+#:    sua DAT NHAT trong he.** `edit_plan` la giai doan SOM NHAT, nen dat lai no
+#:    keo theo `content_process` + `voice_synthesis` + `timing_align` +
+#:    `compose` + `render` + ca ba lop QC. Lane `fix-toc-do` do duoc
+#:    `voice_synthesis` = ~190 giay cho mot phim 107 giay SAU khi toi uu (943
+#:    giay truoc do). Tuc mot bao dong gia o day khong phai mot lan hoi lai —
+#:    no la gan mot lan chay lai ca chuoi.
+#:
+#: ⇒ Tin hieu KEM TIN CAY NHAT cua he dang noi vao vong sua DAT NHAT cua he.
+#:   Hai dieu do cong lai thi mac dinh chi co the la tu van.
+#:
+#: ⭐ Va cai gia hai chieu khong bang nhau. Bo sot mot cho noi hong: khach nhan
+#:    mot ban dung co mot cho giat, thay duoc, khieu nai duoc. Bao dong gia: mot
+#:    hoa don khong ai thay, tren mot lan chay khong ai bao la sai.
+#:
+#: ⛔ Va vong sua KHONG phai duong duy nhat: phan quyet van vao `qc_ai` report,
+#:    van vao `stage.outputs`, van hien o bao cao van hanh. "Tu van" o day nghia
+#:    la *khong tu dong tieu tien*, khong phai *khong ai duoc biet*.
+#:
+#: 🔑 Doi co nay thanh `False` la mot quyet dinh ve GIA. Doi kem mot bo do moi
+#:    o cung tep tren, khong doi mot minh.
+QC_HINH_LA_TU_VAN = True
+
+
+def tu_qc_hinh(phan_doan: list[dict], *, tu_van: bool | None = None
+               ) -> list[KhiemKhuyet]:
+    """Khiem khuyet CAT SAI tu QC HINH: `[{ma_canh, ma_cat, dat, ly_do, do_tin}]`.
+
+    🔑 **MOT khiem khuyet cho MOI canh bi bo tai cho noi do, khong mot cho ca
+       cho noi.** Cai `edit_plan` nhan lam don vi viec la mot MA CANH; mot "cho
+       noi o giay 74" khong dat lai duoc gi. `qc_ai.cac_cho_noi` doi nguoc tu
+       khoang bi cat ra `ma_cat`, va day la noi no tro thanh viec.
+
+    ⚠️ `ma_cat` rong (khong truyen chi muc canh, hoac khoang bi cat khong trung
+       canh nao) ⇒ phan quyet duoc ghi lai nhung khong sinh viec sua duoc. Ta
+       KHONG bia mot ma canh de co viec lam.
+
+    ⛔ Mac dinh TU VAN — xem `QC_HINH_LA_TU_VAN`. `tu_van` chi de phep kiem
+       (va mot nguoi van hanh) doi chieu ca hai chieu ma khong phai va hang so.
+    """
+    if bool(QC_HINH_LA_TU_VAN if tu_van is None else tu_van):
+        return []
     ra = []
     for d in phan_doan or []:
         if bool(d.get("dat", True)):
             continue
-        ra.append(KhiemKhuyet(
-            CAT_SAI, ma=str(d.get("ma_canh") or ""),
-            ly_do=str(d.get("ly_do") or ""),
-            do_tin=float(d.get("do_tin") or 0.0),
-            bang_chung={"moc_giay": d.get("moc_giay")}))
+        ds = [str(m) for m in (d.get("ma_cat") or ()) if str(m)]
+        if not ds and d.get("ma_canh"):
+            ds = [str(d["ma_canh"])]
+        for ma in ds:
+            ra.append(KhiemKhuyet(
+                CAT_SAI, ma=ma,
+                ly_do=str(d.get("ly_do") or ""),
+                do_tin=float(d.get("do_tin") or 0.0),
+                bang_chung={"moc_giay": d.get("moc_giay"),
+                            "ma_cat": ds}))
     return ra
 
 

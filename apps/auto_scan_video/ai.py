@@ -208,10 +208,27 @@ RUT_NGAN_CHO_VUA = ThaoTac("rut_ngan_cho_vua", False, ("doan",), pha="15",
 #: ⚠️ Bat duoc TRUOC khi noi vao mach, bang cach cho mot phan hoi tuan thu
 #:    di qua `doc_json` — khong bang cach doc hai tep roi so trong dau.
 QC_NGU_NGHIA = ThaoTac("qc_ngu_nghia", False, ("doan",), pha="19")
+#: 🔑 **QC HINH — nhin hai khung hai ben MOT cho noi cua BAN RA** (M-02, 23/09).
+#:
+#: ⭐ `can_thi_giac=True` va no la khai DUNG, khac `HO_SO_NOI_DUNG` (khai thi
+#:    giac ma khong gui khung nao): loi nhac nay gui khung JPEG that, va cau hoi
+#:    *"cho noi nay co dut mach nhin khong"* khong tra loi duoc tu van ban.
+#:
+#: 🔴 `truong_bat_buoc = ("dat", "do_tin")` — dung hai truong `sua_chua` THUC SU
+#:    doc, khong phai ca luoc do. Cung phep chon voi `DOC_CANH`, va cung ly do:
+#:    thieu `ly_do` lam bao cao kho doc, con thieu `dat`/`do_tin` lam **quyet
+#:    dinh sai**.
+#:
+#: ⛔ Va thieu `dat` phai NO, khong duoc mac dinh thanh `True`. Ban dau
+#:    `qc_ai.doc_hinh` viet `bool(goi.get("dat", True))`: mot phan hoi thieu
+#:    truong doc ra thanh "cho noi nay DAT" — tuc mot cau hoi khong duoc tra loi
+#:    bien thanh mot loi khai rang ban ra lanh lan. Im lang khong phai mot phan
+#:    doan.
+QC_HINH = ThaoTac("qc_hinh", True, ("dat", "do_tin"), pha="19")
 
 THAO_TAC: tuple[ThaoTac, ...] = (
     DICH_THUAT, DOC_CANH, HO_SO_NOI_DUNG, CHUYEN_LOI_THOAI,
-    RUT_NGAN_CHO_VUA, QC_NGU_NGHIA)
+    RUT_NGAN_CHO_VUA, QC_NGU_NGHIA, QC_HINH)
 
 THEO_MA = {t.ma: t for t in THAO_TAC}
 

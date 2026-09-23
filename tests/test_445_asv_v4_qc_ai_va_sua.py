@@ -86,7 +86,14 @@ def test_doan_CHI_bi_doc_sai_thi_KHONG_bi_day_ve_content():
     assert sc.gon_theo_don_vi(ke) == {"seg_0002": "voice_synthesis"}
 
 
-def test_moi_don_vi_chi_xuat_hien_MOT_lan_trong_ke_hoach_gon():
+def test_moi_don_vi_chi_xuat_hien_MOT_lan_trong_ke_hoach_gon(monkeypatch):
+    """⚠️ Tat `QC_HINH_LA_TU_VAN` **cho rieng phep kiem nay**, khong o san pham.
+
+    Menh de o day la ve DINH TUYEN (`cat_sai` -> `edit_plan`, mot don vi mot
+    cho), khong ve chinh sach tu van. Ha co o san pham de phep kiem xanh la
+    doi mot phep do lay mot dau tich; noi chot chinh sach la `test_2120`.
+    """
+    monkeypatch.setattr(sc, "QC_HINH_LA_TU_VAN", False)
     ke = sc.lap_ke_hoach(
         qc_giong=[_doc_sai("seg_0001")],
         qc_ngu_nghia=[{"ma": "seg_0001", "dat": False, "do_tin": 0.9},
