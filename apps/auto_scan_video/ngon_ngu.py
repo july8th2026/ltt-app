@@ -79,7 +79,14 @@ DON_VI_DO_DAI = {VI: "am tiet", EN: "tu"}
 #:    tren may sinh tieng nay. Giu nguyen so cu va NOI RO no chua do — doi no
 #:    theo cam tinh la lap lai dung cai bay vua go. Do bang cung mot cong cu khi
 #:    duong `en` co mot luot chay that.
-NHIP: dict[str, float] = {VI: 3.35, EN: 2.6}
+#: 🔴 `EN` 2,6 -> 3,63 (lan do-giong, 23/09). Con so 2,6 tu/giay la do TOI go
+#:    tay tu "~155 wpm, toc do thuyet minh pho bien" — mot con so muon, chua he
+#:    do tren giong THAT cua san pham. Do 34 luot doc that bang giong kho chung:
+#:    **3,63** tu/giay; giong CHAM NHAT cung doc 181,9 wpm, tuc khong giong nao
+#:    o gan 155. Mot cau viet theo 2,6 se NGAN hon khe ~28%, va cai gia khong
+#:    phai la tran khe — la mot cau bi cat y cho vua mot khe khong ai can.
+#:    Xem `docs/auto_scan_video_final/L_DO_GIONG.md`.
+NHIP: dict[str, float] = {VI: 3.35, EN: 3.63}
 
 #: Nham THAP hon khe mot chut, va **mot con so cho ca hai pha**.
 #:

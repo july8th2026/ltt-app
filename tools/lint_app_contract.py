@@ -491,16 +491,31 @@ def lint() -> list:
             noi_dung = _read(f)
 
             # ── BIEN `apps/` -> `apps/` (A-01) ───────────────────────────
-            for m3 in re.finditer(
-                    r"^\s*from\s+(apps\.[A-Za-z0-9_.]+)\s+import\s+(.+)$",
-                    noi_dung, re.M):
-                mod, ten_raw = m3.group(1), m3.group(2).split("#")[0]
+            #
+            # 🔴 Doc bang AST, KHONG bang regex. Ban regex cu doc
+            #    `from x import (A, B, C)` ra ba ten `"(A"`, `"B"`, `"C)"` —
+            #    hai bao dong gia. Te hon: mot import NHIEU DONG co ngoac
+            #    (`from x import (\n    A,\n    B,\n)`) khong khop dong nao,
+            #    nen no VO HINH voi phep kiem ranh gioi — tuc mot app co the
+            #    voi vao ruot app khac ma cong cu cuong che khong thay.
+            #    Ca hai lo ra ngay 23/09 khi `ho_so_noi_dung.py` nhap ba nhan
+            #    DA nam trong be mat cho phep ma van bi bao do.
+            try:
+                cay_nhap = ast.parse(noi_dung)
+            except SyntaxError:
+                cay_nhap = None
+            for nut in (ast.walk(cay_nhap) if cay_nhap else ()):
+                if not isinstance(nut, ast.ImportFrom) or nut.level:
+                    continue
+                mod = nut.module or ""
+                if not mod.startswith("apps."):
+                    continue
                 phan = mod.split(".")
                 if len(phan) < 2 or phan[1] == app:
                     continue                  # trong cung app — khong phai canh
                 cho_phep = APP_DUOC_DUNG_APP.get((app, phan[1]), set())
-                for ten in (t.strip().split(" as ")[0].strip()
-                            for t in ten_raw.split(",")):
+                for bi_danh in nut.names:
+                    ten = bi_danh.name
                     if not ten or (mod, ten) in cho_phep:
                         continue
                     findings.append(Finding(
