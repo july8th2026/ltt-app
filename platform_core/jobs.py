@@ -128,19 +128,19 @@ def loi_cho_khach(job) -> str:
     Chỉ câu của `LoiNguoiGoi` đi qua nguyên văn; mọi lỗi khác (hạ tầng, provider, bug, hết giờ, định dạng
     cũ trước dấu `LoiNguoiGoi`) ⇒ `LOI_CHUNG_KHACH` — không bao giờ văn bản thô, như `/api/v1` (Q76).
     """
-    from platform_core.i18n import _
+    from platform_core.i18n import _ as _t      # `_` là biến vứt đi quen thuộc ⇒ dễ bị che (test_161)
 
     if job is None or getattr(job, "status", None) != JOB_ERROR:
         return ""
     loi = getattr(job, "error", None) or ""
     m = _LOI_KHACH.match(loi)
     if m and m.group(1).strip():
-        return _(m.group(1))
+        return _t(m.group(1))
     if DAU_CAU_KHACH in loi:
         cau = loi.split(DAU_CAU_KHACH, 1)[1].strip()
         if cau:
-            return _(cau)
-    return _(LOI_CHUNG_KHACH)
+            return _t(cau)
+    return _t(LOI_CHUNG_KHACH)
 
 
 class DangBan(Exception):
