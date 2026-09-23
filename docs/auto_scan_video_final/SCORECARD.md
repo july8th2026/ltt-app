@@ -39,8 +39,8 @@
 | QC kỹ thuật (khung đen/decode/VMAF/cắt cảnh) | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | — | |
 | QC giọng (ASR lượt cuối + WER/CER + SQUIM) | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | — | |
 | QC dịch (MetricX QE) | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | — | |
-| QC hình/ngữ nghĩa bằng VLM | — | — | — | — | — | — | — | — | — | M-02 còn mở |
-| Sửa đúng chỗ (targeted repair) | — | — | — | — | — | — | — | — | — | |
+| QC hình/ngữ nghĩa bằng VLM | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | — | M-02 **đã nối** (`L_QC_HINH.md`) — ⚠️ lớp hình đang **TƯ VẤN**, chưa gate |
+| Sửa đúng chỗ (targeted repair) | — | — | — | — | — | — | — | — | — | `cat_sai` → `edit_plan` đã nối (`jobs._qc_hinh`), nhưng ⚠️ tắt vì tư vấn |
 | Cổng workflow nội bộ | — | — | — | — | — | — | — | — | — | |
 | Giao diện Studio | — | — | — | — | — | — | — | — | — | làn `gui` chưa chạy |
 

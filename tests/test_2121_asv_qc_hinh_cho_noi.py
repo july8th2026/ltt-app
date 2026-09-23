@@ -17,7 +17,8 @@ import json
 
 import pytest
 
-from apps.auto_scan_video import features, giai_doan_qc_ai as gdqa, pipeline
+from apps.auto_scan_video import (features, giai_doan_qc_ai as gdqa,
+                                  pipeline, qc_ai)
 from platform_core.storage import get_storage
 from tests.rao_chan_nang import demucs_gia_lap  # noqa: F401
 from tests.test_402_asv_mach_doc_gia import (_chay_het_hang_doi, _tao_run,  # noqa: F401
@@ -65,7 +66,7 @@ def test_preset_CAT_hoi_VLM_ve_TUNG_cho_noi_cua_ban_ra(
     # bo (don vi sua), va so khung DA THUC SU gui di.
     assert len(bc["hinh"]) == tt["so_cho_noi"]
     for pq in bc["hinh"]:
-        assert pq["so_khung"] >= 1, pq
+        assert pq["so_khung"] == qc_ai.KHUNG_MOI_CHO_NOI, pq
         assert pq["moc_giay"] >= 0.0
         assert pq["ma_cat"], "cho noi khong doi nguoc ra canh nao — khong sua duoc"
         assert pq["ma_canh"] in pq["ma_cat"]
@@ -142,3 +143,33 @@ def test_cho_noi_HONG_van_ve_run_DONE_chu_khong_giet_lan_chay(
     assert tt["du_phu"] is True
     assert features.giai_doan_theo_ten(db, run.id, pipeline.QC_AI).status \
         == "succeeded"
+
+
+def test_thieu_mot_khung_thi_KHONG_HOI_chu_khong_hoi_bang_mot_anh(
+        tmp_path, monkeypatch, db, kho_tam, asr_gia, dich_gia, giong_gia,
+        bat_qc_ai):
+    """🔴 Mot chuyen tiep khong nhin duoc tu MOT phia.
+
+    `canh.rut_khung` chiu duoc mot khung hong vi nguoi goi dau tien cua no
+    (`doc_canh`) mo ta MOT canh. O day thi khong: hoi bang mot buc anh se cho
+    ra mot phan quyet **trong nhu that** ve mot chuyen tiep model chua nhin
+    thay. Phai ra `thieu_khung`, khong ra `dat=true`.
+    """
+    from apps.auto_scan_video import canh as canh_mod
+
+    _nhieu_canh(monkeypatch)
+    _cat_canh_le(monkeypatch)
+    # `_soat_hinh` nhap `canh` ben trong ham, nen va tren chinh MODULE la du
+    # — va do la cach va dung: khong co ban sao thu hai nao de sot.
+    goc = canh_mod.rut_khung
+    monkeypatch.setattr(canh_mod, "rut_khung",
+                        lambda duong, moc, **kw: goc(duong, list(moc)[:1], **kw))
+
+    run = _run_cat(db, kho_tam, tmp_path)
+    _chay_het_hang_doi(db)
+    db.expire_all()
+
+    tt = _bao_cao(db, run)["hinh_tom_tat"]
+    assert tt["so_co_phan_quyet"] == 0, "hoi bang MOT anh ve mot chuyen tiep"
+    assert tt["so_hong"] == tt["so_cho_noi"] > 0
+    assert tt["du_phu"] is True

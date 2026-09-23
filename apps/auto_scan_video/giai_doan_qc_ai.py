@@ -460,11 +460,21 @@ def _soat_hinh(db, kho: Storage, *, run, lc, tu_vi_tri: int, ctx=None,
             moc_s = [m for m in cn["khung_s"]
                      if 0.0 <= m <= (dai_ra + 0.05 if dai_ra > 0 else m)]
             khung = canh_mod.rut_khung(duong_ra, moc_s)
-            if not khung:
-                # ⚠️ Khong rut duoc khung nao = cau hoi khong hoi duoc. Ghi ra
-                #    `hong`, KHONG ghi mot phan quyet `dat=true`.
+            if len(khung) < qc_ai.KHUNG_MOI_CHO_NOI:
+                # 🔴 **Doi DU hai khung, khong chiu mot.**
+                #
+                #    `canh.rut_khung` ghi rang mot cau hoi hai khung ma mot khung
+                #    hong "van la mot cau hoi tra loi duoc (kem hon)" — dung cho
+                #    `doc_canh` (mo ta MOT canh), sai cho day. Cau hoi o day la
+                #    ve mot CHUYEN TIEP, va mot chuyen tiep khong nhin duoc tu
+                #    mot phia: model se ta buc anh no co va tra ve mot phan
+                #    quyet trong nhu that.
+                #
+                # ⚠️ Ghi ra `hong`, KHONG ghi mot phan quyet `dat=true`. "Khong
+                #    hoi duoc" khac han "da hoi va khong thay gi".
                 hong.append({"moc_giay": cn["moc_ra"], "loai": "thieu_khung",
-                             "ly_do": "ffmpeg khong rut duoc khung nao"})
+                             "ly_do": f"chi rut duoc {len(khung)}/"
+                                      f"{qc_ai.KHUNG_MOI_CHO_NOI} khung"})
                 db.commit()
                 lc.xong_mot()
                 continue
