@@ -200,11 +200,14 @@ def test_chuoi_migration_chi_co_MOT_dau():
     for p in (GOC / "alembic" / "versions").glob("*.py"):
         src = p.read_text(encoding="utf-8", errors="replace")
         r = re.search(r'^revision\s*=\s*["\']([^"\']+)', src, re.M)
-        d = re.search(r'^down_revision\s*=\s*["\']([^"\']+)', src, re.M)
+        # down_revision co the la mot chuoi HOAC mot tuple nhieu chuoi (revision
+        # MERGE noi hai head, vd `down_revision = ("a", "b")`).
+        d = re.search(r"^down_revision\s*=\s*(.+)$", src, re.M)
         if r:
             revs[r.group(1)] = p.name
         if d:
-            downs.add(d.group(1))
+            for m in re.finditer(r'["\']([^"\']+)["\']', d.group(1)):
+                downs.add(m.group(1))
     dau = [k for k in revs if k not in downs]
     assert len(dau) == 1, f"co {len(dau)} dau: {[revs[k] for k in dau]}"
 
