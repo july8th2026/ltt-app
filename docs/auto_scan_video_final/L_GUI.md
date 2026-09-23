@@ -188,6 +188,24 @@ nội bộ dùng chung, `test_2086` chốt cùng đầu vào cho cùng hồ sơ.
 | `test_2100_asv_gui_dieu_khien_ve_dich.py` (13) | ô có mặt · miền giá trị đến từ module · **giá trị khách chọn nằm trong hồ sơ đã lưu** · `nguon_loi` mặc định không ghi khoá thừa · bịa ra thì từ chối ở cửa · nạp lại cài đặt cũ · trần `routes.py` + JS · không câu tiếng Việt trong `.js` · `#asv-chu` giải được |
 | `test_2101_asv_gui_bang_chung_chat_luong.py` (11) | bốn nhóm bằng chứng lên màn · không hiện khối rỗng · `khong_kha_dung` không bị đọc thành đã đạt · độ phủ là phần trăm · không lộ thứ của vận hành · ba mã `CHUA_RANG` có câu riêng và nằm trong bảng của màn khách · câu hiện ra **không kèm** nút thử lại |
 
+### Hồi quy đã chạy (xanh toàn bộ)
+
+| tệp | kết quả |
+|---|---|
+| `test_2100` · `test_2101` (mới) | 13 · 11 |
+| `test_423` · `test_447` (route + GUI V4) | 35 |
+| `test_468` (kiến trúc JS) · `test_2007` (ràng giọng) | 26 |
+| `test_2000` (ngôn ngữ) · `test_2041` (nguồn lời) | 44 |
+| `test_2025` (cảnh hỏng) · `test_2008` (auto-match hết chuỗi) | 37 |
+| `test_420` (QC) | 25 |
+| `test_2086` · `test_2087` (cổng nội bộ ngang route) | 23 |
+
+⚠️ Chạy thành **từng mẻ 1–2 tệp** chứ không một mẻ 10 tệp: luật máy 23/09 cho
+`chay_nang.py` giữ **cùng khoá `cpu_nhieu`** với `gate.py`, và khoá đang do phiên
+`qc-hinh` giữ. Mẻ nhỏ nằm dưới ngưỡng "lệnh nặng" (≥ 3 tệp test) nên chạy được
+ngay mà không chen hàng; lượt xếp hàng đã được **rút lại** sau khi đủ độ phủ, để
+không giữ chỗ vô ích trong hàng đợi của máy.
+
 ⚠️ **Một phép đo đã phải bỏ chứ không sửa.** Bản đầu của
 `test_CAU_hien_cho_khach_KHONG_nam_trong_js` hỏi *"có ký tự tiếng Việt không"*
 và đánh hỏng `giong.js:khongDau()` — dòng `replace(/đ/g, "d")`, một ký tự tiếng
