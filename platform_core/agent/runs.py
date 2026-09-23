@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
 from platform_core import jobs
+from platform_core import registry
 from platform_core.models import (
     AGENT_AWAITING_APPROVAL, AGENT_CANCELLED, AGENT_DONE, AGENT_ERROR,
     AGENT_PLANNING, AGENT_RUNNING, JOB_DONE, JOB_ERROR, AgentRun, Job,
@@ -137,3 +138,29 @@ def child_summary(db: DbSession, run: AgentRun, *, step_id: str = "") -> dict:
         "error": sum(row.status == JOB_ERROR for row in rows),
         "pending": sum(row.status not in (JOB_DONE, JOB_ERROR) for row in rows),
     }
+
+
+def actual_cost(run: AgentRun, rows: list[Job]) -> int:
+    """Planning plus actual terminal child attempts, never the quoted maximum.
+
+    ⏭️ Chuyen tu `platform_core/agent/executor.py` 23/09/2026 khi runtime v1 bi
+       go (spec §17.5). No **khong** di theo executor vi day la mot phep TINH
+       TIEN, khong phai mot buoc chay: man hinh quan tri con goi no de biet
+       phai quyet toan bao nhieu khi huy mot run do dang. Tra 0 thay cho no se
+       hoan du cho khach phan credit ho da tieu that.
+
+    Mon no nay chet cung `AgentRun` (Task 9 cua plan 01b).
+    """
+    planning = next((int(event.get("planning_cost", 0))
+                     for event in reversed(run.decision_log or [])
+                     if event.get("event") == "quote"), 0)
+    total = planning
+    for row in rows:
+        if row.status not in (JOB_DONE, JOB_ERROR):
+            continue
+        unit = registry.credit_for(row.job_type, row.params)
+        attempts = row.attempts + (1 if row.status == JOB_DONE else 0)
+        total += unit * attempts
+    total += sum(int(event.get("credit", 0)) for event in (run.decision_log or [])
+                 if event.get("event") == "verify")
+    return total

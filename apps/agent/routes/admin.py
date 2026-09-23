@@ -7,7 +7,7 @@ import hashlib
 from fastapi import Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
-from platform_core.agent import budget, executor, metrics, runs
+from platform_core.agent import budget, metrics, runs
 from platform_core.registry import discover
 from platform_core.models import AGENT_AWAITING_APPROVAL, AGENT_RUNNING, AgentRun, Job
 from server.auth.session import require_login
@@ -78,7 +78,7 @@ async def agent_admin_cancel(request: Request, run_id: str,
     if run is None:
         raise HTTPException(status_code=404, detail=_t('Không tìm thấy run.'))
     if run.status in (AGENT_AWAITING_APPROVAL, AGENT_RUNNING):
-        actual = executor.actual_cost(run, runs.children(db, run)) if run.status == AGENT_RUNNING else 0
+        actual = runs.actual_cost(run, runs.children(db, run)) if run.status == AGENT_RUNNING else 0
         run = budget.cancel(db, run_id=run.id, user_id=run.user_id, actual=actual)
     return JSONResponse({"id": run.id, "status": run.status,
                          "estimated": run.estimated, "actual": run.actual})

@@ -44,9 +44,7 @@ app = create_app(env={
     "LTT_ADMIN_PASSWORD_HASH": "",
 })
 
-from apps.agent import jobs as agent_jobs
 from apps.agent import routes as agent_routes
-from platform_core.agent import executor
 
 
 def _fake_plan(_db, *, goal, budget_max_credit, **_kwargs):
@@ -189,21 +187,12 @@ clip_jobs.handle = _clip_handle
 #    phải một dòng sửa ở đây.
 
 
-_judge_counts: dict[str, int] = {}
-
-
-def _advance(db, *, run_id, user_id):
-    def judge(_outputs, _config):
-        count = _judge_counts.get(run_id, 0)
-        _judge_counts[run_id] = count + 1
-        if count == 0:
-            return {"pass": False, "score": .2, "fault": "structural",
-                    "reason": "Cần tạo lại."}
-        return {"pass": True, "score": .9, "fault": "", "reason": "Đạt."}
-    return executor.tick(db, run_id=run_id, user_id=user_id, judge=judge)
-
-
-agent_jobs.advance = _advance
+# ⏭️ KHOI "_advance + judge gia" DA GO 23/09/2026 cung runtime v1 (spec §17.5).
+#
+#    No va `apps.agent.jobs.advance` de `tick()` cua runtime v1 nhan mot judge
+#    gia (lan 1 truot, lan 2 dat), cho phep do luong "thu lai sau khi VLM judge
+#    tu choi". Ca `advance` lan mo-dun kia khong con ton tai; duong chay bay gio
+#    la dong co Workflow V2 (`workflow.dong_co`) — no khong nhan judge tu ngoai.
 
 from platform_core.job_runner import run_forever
 from platform_core.observability import configure_logging

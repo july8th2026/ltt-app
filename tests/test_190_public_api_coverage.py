@@ -109,7 +109,7 @@ DISPOSITION = {
     "agent": (DEFER, ()),
     # Not a sellable app: the sole job_type owner of `workflow.dong_co`
     # (the single-instance engine loop, spec §5.1), split out of `agent` so
-    # `agent` itself can keep `job_types == ("agent.advance",)` — see
+    # `agent` itself declares NO job_type at all — see
     # `apps/agent_dong_co/manifest.py`. Same shape as `asv_gpu` below:
     # `catalog_parent="agent"` + `surface="runtime"`, no ToolSpec, no card.
     "agent_dong_co": (DEFER, ()),
@@ -260,6 +260,10 @@ def test_the_removed_apps_stay_removed():
 
 
 def test_the_agent_app_is_an_orchestrator_not_a_tool():
+    # ⏭️ 23/09/2026: `agent.advance` (vòng tick Plan v1) đã gỡ cùng runtime v1
+    #    (spec §17.5), nên app này giờ không khai job_type nào — nó là UI
+    #    thuần. Chủ duy nhất của `workflow.dong_co` vẫn là `agent_dong_co`,
+    #    bất biến ấy có người canh riêng ở `test_1727`.
     manifest = _apps()["agent"].manifest
     assert manifest.tools == ()
-    assert manifest.job_types == ("agent.advance",)
+    assert manifest.job_types == ()

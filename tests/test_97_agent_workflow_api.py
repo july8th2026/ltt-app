@@ -8,7 +8,7 @@ import re
 import pytest
 from fastapi.testclient import TestClient
 
-from platform_core.agent.workflows import plan_to_canvas
+from platform_core.agent.plan_v1 import plan_to_canvas
 
 
 def _plan():
