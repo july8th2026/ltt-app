@@ -55,7 +55,13 @@ def test_vps_admin_renders_real_profile_state_without_secret_values(admin_client
     assert "Cổng hạ tầng" in response.text
     assert "never-render-this-value" not in response.text
     assert "api_secret" not in response.text
-    assert "Compute health:" in response.text and "VM count:" in response.text
+    # 23/09: nhan doi tu "Compute health:" sang bang hai tang. Chot MANH hon
+    # ban cu — doi DU ten moi thanh phan chan ban co mat, thay vi mot nhan.
+    from apps.vps import profiles
+    for ten in profiles.CHAN_BAN:
+        assert f"{ten}=" in response.text, f"trang admin khong hien {ten}"
+    assert "Bán được:" in response.text
+    assert "VM count:" in response.text
     assert "Available public IPs:" in response.text and "Provider: OVH" in response.text
     assert "LTTSTUDIOSAPP SHA" in response.text and "Machine B SHA" in response.text
     assert "Runtime generated_at" in response.text
