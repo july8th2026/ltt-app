@@ -57,33 +57,112 @@ def _adapter(nen_id: str):
     return adapters.tao(nen_id)
 
 
+class _NguonPhien:
+    """Job này đăng nhập bằng gì: `rieng` (phiên của khách), `kho` (tài khoản hệ thống), `""` (ẩn danh).
+
+    ⛔ `tai_khoan_id` KHÔNG được đi vào `result`/`params`/log — chỉ vào sự kiện INTERNAL. Khách không bao giờ
+       biết, tải về hay nhìn thấy tài khoản nào đã phục vụ lượt của họ (THIET_KE_PHIEN_VA_KENH §2.2.4).
+    """
+
+    def __init__(self):
+        self.nguon = ""
+        self.tai_khoan_id = ""
+        self.ma_loi: str | None = None
+        #: Thân job thoát bằng exception (kể cả huỷ) ⇒ KHÔNG cộng điểm cho tài khoản kho.
+        self.hong = False
+
+    def ghi_ket_qua(self, ket_qua: dict | None) -> None:
+        """Lấy mã lỗi NẶNG nhất của các mục hỏng để chấm điểm tài khoản kho.
+
+        Job xong-một-phần không ném gì cả: vài mục `can_dang_nhap` là cái chết của tài khoản kho, và nhìn
+        exception thôi thì cái chết ấy không bao giờ được ghi nhận.
+        """
+        if self.nguon != "kho" or self.ma_loi:
+            return
+        from apps.video_crawler import kho_tai_khoan
+        self.ma_loi = kho_tai_khoan.ma_tu_ket_qua(ket_qua)
+
+
 @contextlib.contextmanager
-def _phien(adapter, owner_id: str, nen_id: str):
-    """Đặt `adapter.tep_cookie` = cookies.txt TẠM của đúng chủ job (nếu có phiên) trong suốt job; xoá khi ra.
+def _phien(adapter, owner_id: str, nen_id: str, *, ctx=None):
+    """Đặt `adapter.tep_cookie` = cookies.txt TẠM cho suốt job; xoá khi ra. Trả `_NguonPhien` của lượt này.
+
+    Thứ tự chọn nguồn (THIET_KE_PHIEN_VA_KENH §2.2, chủ dự án duyệt 23/09):
+    1. phiên RIÊNG của khách cho nền đó ⇒ dùng (khách đứng tên lượt tải của chính họ);
+    2. không có, nền có kho ⇒ MƯỢN một tài khoản hệ thống (LTT đứng tên) — hết chỗ ⇒ `DangBan` (về hàng đợi,
+       không tiêu lượt, không chạm tiền); kho không còn tài khoản sống ⇒ `LoiNguoiGoi` (hoàn tiền);
+    3. nền không có kho ⇒ chạy ẩn danh như trước.
 
     Cookie chỉ đi: DB (mã hoá) → tệp tạm quyền 600 trong thư mục job → yt-dlp. Không vào params/result/sự kiện.
     """
     nen = nen_tang.lay(nen_id)
+    trang = _NguonPhien()
     if not nen.cookie_dang_nhap or not hasattr(adapter, "tep_cookie"):
-        yield
+        yield trang
         return
-    from apps.video_crawler import phien
+    from apps.video_crawler import kho_tai_khoan, phien
     from platform_core.db import get_session
     phien.don_tam_cu(Path(tempfile.gettempdir()))    # thư mục của job bị `_het_gio` giết (review lần 2)
-    with tempfile.TemporaryDirectory(prefix="vc_phien_") as tam:
+    job_id = (getattr(ctx, "job_id", "") or "") if ctx is not None else ""
+    # `ExitStack` chứ không phải hai biến `ql`: `DangBan`/`LoiNguoiGoi` ném ra GIỮA lúc chọn nguồn cũng phải
+    # đóng đúng những gì đã mở — một đường thoát không dọn là một tệp cookie nằm lại.
+    with tempfile.TemporaryDirectory(prefix="vc_phien_") as tam, contextlib.ExitStack() as ngan:
         gen = get_session(); db = next(gen)
+        muon = None
         try:
-            ql = phien.tep_cookie_tam(db, owner_id=owner_id, nen_tang=nen_id, thu_muc=Path(tam))
-            duong = ql.__enter__()
+            duong = ngan.enter_context(
+                phien.tep_cookie_tam(db, owner_id=owner_id, nen_tang=nen_id, thu_muc=Path(tam)))
+            if duong is not None:
+                trang.nguon = "rieng"
+            elif kho_tai_khoan.nen_co_kho(nen_id):
+                kho_tai_khoan.kiem_tran_khach(db, owner_id, nen_id)
+                muon = kho_tai_khoan.muon(db, nen_id, owner_id=owner_id, job_id=job_id)
+                if muon is None:
+                    # Hai câu trả lời rất khác nhau: còn tài khoản nhưng hết CHỖ ⇒ đợi lượt sau; kho rỗng ⇒
+                    # nói thật với khách và hoàn tiền, đừng để job quay vòng tới khi hết lượt thử.
+                    if kho_tai_khoan.con_tai_khoan_song(db, nen_id):
+                        from platform_core.jobs import DangBan
+                        raise DangBan(_t("Tài khoản hệ thống của nền này đang bận — lượt của bạn sẽ chạy "
+                                         "ngay khi có chỗ."))
+                    raise kho_tai_khoan.loi_kho_rong(nen_id)
+                duong = ngan.enter_context(kho_tai_khoan.tep_cookie_tam(db, muon, thu_muc=Path(tam)))
+                trang.nguon, trang.tai_khoan_id = "kho", muon.tai_khoan_id
+                _su_kien_noi_bo(ctx, "phien_kho",
+                                f"nguon_phien=kho tai_khoan={muon.tai_khoan_id} nhan={muon.nhan}")
         finally:
             with contextlib.suppress(StopIteration):
                 next(gen)
         try:
             adapter.tep_cookie = str(duong) if duong else None
-            yield
+            yield trang
+        except BaseException as e:
+            trang.hong = True
+            if trang.ma_loi is None:
+                trang.ma_loi = kho_tai_khoan.ma_tu_loi(e)
+            raise
         finally:
             adapter.tep_cookie = None
-            ql.__exit__(None, None, None)
+            if muon is not None:
+                _tra_kho(muon, trang.ma_loi, thanh_cong=not trang.hong)
+
+
+def _tra_kho(muon, ma_loi: str | None, *, thanh_cong: bool = True) -> None:
+    """Nhả chỗ + chấm điểm trên một phiên DB MỚI: phiên lúc mượn đã đóng từ đầu job (job tải chạy hàng giờ)."""
+    from apps.video_crawler import kho_tai_khoan
+    from platform_core.db import get_session
+    gen = get_session(); db = next(gen)
+    try:
+        kho_tai_khoan.tra(db, muon, ma_loi=ma_loi, thanh_cong=thanh_cong)
+    finally:
+        with contextlib.suppress(StopIteration):
+            next(gen)
+
+
+def _su_kien_noi_bo(ctx, ma: str, thong_diep: str) -> None:
+    """Sự kiện chỉ vận hành đọc được. Đây là chỗ DUY NHẤT id tài khoản kho được ghi lại."""
+    if ctx is not None:
+        from platform_core import job_events
+        ctx.event(ma, thong_diep, visibility=job_events.INTERNAL)
 
 
 def _loi_job(ds: list[LoiCao]) -> Exception:
@@ -202,19 +281,22 @@ def _luu_anh_bia(muc: list[CrawlItem], *, owner_id: str, job_id: str, nen_id: st
 def _xu_ly_kham_pha(params: dict, ctx) -> dict:
     adapter = _adapter(params["nen_tang"])
     td = _TienDo(ctx, 1)
-    with _phien(adapter, params["owner_id"], params["nen_tang"]):
+    with _phien(adapter, params["owner_id"], params["nen_tang"], ctx=ctx) as p:
         muc, bo = _kham_pha(adapter, params["nen_tang"], params, params["owner_id"], td.bao)
     job_id = getattr(ctx, "job_id", "") or "khong-ctx"
     muc_dict = _luu_anh_bia(muc, owner_id=params["owner_id"], job_id=job_id, nen_id=params["nen_tang"])
     if ctx is not None:
         ctx.progress(100, _t("Tìm thấy {n} video").format(n=len(muc)))
-    return {"muc": muc_dict, "bo_qua_trung": bo}
+    # `nguon_phien` là "rieng" | "kho" | "" — KHÔNG bao giờ kèm tài khoản nào (id chỉ ở sự kiện INTERNAL).
+    return {"muc": muc_dict, "bo_qua_trung": bo, "nguon_phien": p.nguon}
 
 
 def _xu_ly_tai(params: dict, ctx) -> dict:
     adapter = _adapter(params["nen_tang"])
-    with _phien(adapter, params["owner_id"], params["nen_tang"]):
-        return _tai_voi(adapter, params, ctx)
+    with _phien(adapter, params["owner_id"], params["nen_tang"], ctx=ctx) as p:
+        ra = _tai_voi(adapter, params, ctx)
+        p.ghi_ket_qua(ra)          # mục hỏng vì `can_dang_nhap` ⇒ chấm điểm tài khoản kho trước khi trả chỗ
+    return {**ra, "nguon_phien": p.nguon}
 
 
 def _tai_voi(adapter, params: dict, ctx) -> dict:
