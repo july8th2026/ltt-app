@@ -2,8 +2,8 @@
 {% import "_app_head.html" as ah %}
 {% block page_mode %}wide{% endblock %}
 {% block title %}{{ _("Cào video nguồn") }} — LTT AI Studio{% endblock %}
-{% set TEN_CHE_DO = {"tu_khoa": "🔍 " ~ _("Theo từ khoá"), "link": "🔗 " ~ _("Theo link"), "kenh": "👤 " ~ _("Theo kênh"), "bo": "📦 " ~ _("Theo bộ / playlist")} %}
-{% set GOI_Y = {"tu_khoa": _("Ví dụ: mèo con đáng yêu"), "link": "https://www.youtube.com/watch?v=…", "kenh": _("@tenkenh hoặc link kênh"), "bo": "https://www.youtube.com/playlist?list=…"} %}
+{% set TEN_CHE_DO = {"tu_khoa": "🔍 " ~ _("Theo từ khoá"), "link": "🔗 " ~ _("Theo link"), "kenh": "👤 " ~ _("Theo kênh"), "bo": "📦 " ~ _("Theo bộ / playlist"), "tim_kenh": "🔎 " ~ _("Tìm kênh")} %}
+{% set GOI_Y = {"tu_khoa": _("Ví dụ: mèo con đáng yêu"), "link": "https://www.youtube.com/watch?v=…", "kenh": _("@tenkenh hoặc link kênh"), "bo": "https://www.youtube.com/playlist?list=…", "tim_kenh": _("Tên kênh, ví dụ: Lofi Girl")} %}
 {% block content %}
 <script src="/static/htmx.min.js?v={{ asset_ver }}"></script>
 <style>
@@ -26,6 +26,13 @@
   .vc-cam-ket input{margin-top:.25em;flex:none}
   .vc-dieu-khoan{font-size:.85rem;margin-top:8px}
   .vc-gia{margin-top:8px}
+  .vc-kenh{display:grid;gap:10px}
+  .vc-kenh-the{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+  @media (max-width:420px){.vc-kenh-the{grid-template-columns:48px minmax(0,1fr);row-gap:8px}.vc-kenh-the button{grid-column:1 / -1}}
+  .vc-kenh-the>div{overflow-wrap:anywhere}
+  img.vc-anh-kenh{object-fit:cover}
+  .vc-anh-kenh{width:56px;height:56px;display:grid;place-items:center;border-radius:50%;background:var(--panel);border:1px solid var(--line);overflow:hidden}
+  .vc-link-kenh{overflow-wrap:anywhere}
 </style>
 <section aria-labelledby="vc-title">
   {{ ah.dau_trang(_("Video · Nguồn"), _("Cào video nguồn"), _("Tìm theo từ khoá, link, kênh hoặc playlist; xem trước, chọn rồi tải vào kho của bạn."), id_tieu_de="vc-title") }}
@@ -45,7 +52,8 @@
         {% for n in cac_nen %}
         <label class="chip-opt" data-nen="{{ n.id }}" data-che-do="{{ n.che_do | sort | join(',') }}"
                data-can-phien="{{ n.che_do_can_dang_nhap | sort | join(',') }}" data-co-phien="{{ '1' if n.id in phien_cua_toi else '' }}"
-               data-ghi-chu="{{ n.gioi_han | join(' · ') }}" data-goi-y='{{ (goi_y_nen.get(n.id) if goi_y_nen else {}) | tojson }}'>
+               data-ghi-chu="{{ n.gioi_han | join(' · ') }}" data-co-tim-kenh="{{ '1' if (co_tim_kenh and co_tim_kenh.get(n.id)) else '' }}"
+               data-goi-y='{{ (goi_y_nen.get(n.id) if goi_y_nen else {}) | tojson }}'>
           <input type="radio" name="nen_tang" value="{{ n.id }}" {% if n.id == nen_mac_dinh %}checked{% endif %}><span>{{ _(n.ten) }}</span>
         </label>
         {% endfor %}
@@ -53,13 +61,13 @@
 
       <h2>2 · {{ _("Cách cào") }}</h2>
       <div class="chips vc-che-do" role="radiogroup" aria-label="{{ _('Cách cào') }}">
-        {% for k in ["tu_khoa", "link", "kenh", "bo"] %}
+        {% for k in ["tu_khoa", "link", "kenh", "bo", "tim_kenh"] %}
         <label class="chip-opt" data-che-do-nut="{{ k }}"><input type="radio" name="che_do" value="{{ k }}" {% if loop.first %}checked{% endif %} data-goi-y="{{ GOI_Y[k] }}"><span>{{ TEN_CHE_DO[k] }}</span></label>
         {% endfor %}
       </div>
 
       <p class="muted" id="vc-ghi-chu" aria-live="polite"></p>
-      <label class="field"><span>{{ _("Từ khoá / link") }}</span>
+      <label class="field"><span id="vc-nhan-dau-vao">{{ _("Từ khoá / link") }}</span>
         <input id="vc-dau-vao" name="dau_vao" required maxlength="500" placeholder="{{ GOI_Y.tu_khoa }}" autocomplete="off">
       </label>
       <div class="vc-row">
@@ -78,15 +86,16 @@
       </table></div>
       {% endif %}
 
-      <label class="vc-cam-ket"><input type="checkbox" name="cam_ket" value="1" required>
-        <span>{{ _("Tôi cam kết có quyền tải và sử dụng các video này (tôi là chủ sở hữu, được chủ sở hữu cho phép, hoặc thuộc trường hợp pháp luật cho phép) và tự chịu trách nhiệm theo") }} <a href="{{ phap_ly.url_dieu_khoan }}" target="_blank" rel="noopener">{{ _("Điều khoản sử dụng") }}</a>.</span></label>
-      <p class="muted vc-dieu-khoan">{{ _("Chỉ tải nội dung bạn có quyền. Tài khoản vi phạm nhiều lần bị khoá. Mỗi tài khoản tải tối đa {gio} video/giờ, {ngay} video/ngày.").format(gio=phap_ly.tai_moi_gio, ngay=phap_ly.tai_moi_ngay) }}
-        {{ _("Chủ sở hữu nội dung báo vi phạm tại") }} <a href="{{ phap_ly.url_bao_vi_pham }}" target="_blank" rel="noopener">{{ _("Báo cáo lạm dụng") }}</a> {{ _("hoặc") }} <a href="mailto:{{ phap_ly.email_ho_tro }}">{{ phap_ly.email_ho_tro }}</a> — {{ _("chúng tôi gỡ trong 72 giờ.") }}</p>
+      <div id="vc-khoi-cam-ket">{% include "vc_cam_ket.html" %}</div>
 
       <div class="vc-actions">
-        <button class="btn" type="submit" formaction="{{ app.route_prefix }}/kham-pha" formnovalidate
+        <button class="btn" type="submit" id="vc-nut-xem-truoc" formaction="{{ app.route_prefix }}/kham-pha" formnovalidate
                 hx-post="{{ app.route_prefix }}/kham-pha" hx-target="#vc-ket-qua">👁 {{ _("Xem trước &amp; chọn") }}</button>
-        <button class="btn btn-primary" type="submit">🚀 {{ _("Cào hết (thêm vào hàng đợi)") }}</button>
+        <button class="btn btn-primary" type="submit" id="vc-nut-cao-het">🚀 {{ _("Cào hết (thêm vào hàng đợi)") }}</button>
+        {#- "Tìm kênh" không tải gì và không cần cam kết quyền ⇒ formnovalidate, route riêng trả thẻ kênh. -#}
+        <button class="btn btn-primary" type="submit" id="vc-nut-tim-kenh" hidden formnovalidate
+                formaction="{{ app.route_prefix }}/tim-kenh"
+                hx-post="{{ app.route_prefix }}/tim-kenh" hx-target="#vc-ket-qua">🔎 {{ _("Tìm kênh") }}</button>
       </div>
     </form>
 
@@ -144,8 +153,9 @@
     if (!nen) return;
     var the = nen.closest("[data-che-do]"), hoTro = the.dataset.cheDo.split(",");
     var canPhien = (the.dataset.canPhien || "").split(","), coPhien = the.dataset.coPhien === "1";
+    var coTimKenh = the.dataset.coTimKenh === "1";
     form.querySelectorAll("[data-che-do-nut]").forEach(function (l) {
-      var ok = hoTro.indexOf(l.dataset.cheDoNut) >= 0;
+      var ok = l.dataset.cheDoNut === "tim_kenh" ? coTimKenh : hoTro.indexOf(l.dataset.cheDoNut) >= 0;
       l.hidden = !ok; l.querySelector("input").disabled = !ok;
       var khoa = ok && canPhien.indexOf(l.dataset.cheDoNut) >= 0 && !coPhien;
       l.classList.toggle("vc-can-phien", khoa);
@@ -162,6 +172,16 @@
       try { goiYNen = JSON.parse(the.dataset.goiY || "{}"); } catch (e) { goiYNen = {}; }
       dauVao.placeholder = goiYNen[chon.value] || chon.dataset.goiY;
     }
+    // "Tìm kênh" là một đường RIÊNG: không tải gì, không cần cam kết quyền, kết quả là thẻ kênh.
+    var laTim = !!chon && chon.value === "tim_kenh";
+    document.getElementById("vc-nut-tim-kenh").hidden = !laTim;
+    document.getElementById("vc-nut-xem-truoc").hidden = laTim;
+    document.getElementById("vc-nut-cao-het").hidden = laTim;
+    var khoiCamKet = document.getElementById("vc-khoi-cam-ket");
+    var oCamKet = khoiCamKet.querySelector("[name=cam_ket]");
+    khoiCamKet.hidden = laTim; oCamKet.required = !laTim; oCamKet.disabled = laTim;
+    document.getElementById("vc-nhan-dau-vao").textContent = laTim
+      ? {{ _("Tên kênh") | tojson }} : {{ _("Từ khoá / link") | tojson }};
   }
   form.addEventListener("change", capNhat); capNhat();
 })();

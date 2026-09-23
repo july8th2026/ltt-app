@@ -104,10 +104,16 @@ def _phap_ly() -> dict:
             "tai_moi_ngay": features.TAI_MOI_NGAY}
 
 
+def _co_tim_kenh() -> dict:
+    """`{nen_id: True/False}` — nền nào hiện được chế độ "Tìm kênh". Hỏi lớp adapter (`features`), không khai tay."""
+    return {n.id: features.nen_tim_kenh_duoc(n.id) for n in nen_tang.cac_nen_bat()}
+
+
 def _trang(request: Request, user: str, db, *, loi: str = "", ma: int = 200) -> HTMLResponse:
     u: Any = user_hien_tai(request)
     return templates.TemplateResponse(request, "video_crawler.html", {
         "phap_ly": _phap_ly(), "bang_gia": _bang_gia(), "goi_y_nen": _goi_y_nen(),
+        "co_tim_kenh": _co_tim_kenh(),
         "user": user, "nav": MANIFEST.slug, "app": MANIFEST,
         "csrf_token": issue_csrf_token(request),
         "cac_nen": nen_tang.cac_nen_bat(),
@@ -142,10 +148,15 @@ def trang(request: Request, user: str = Depends(require_login), db=Depends(get_d
     return _trang(request, user, db)
 
 
+def _tuy_chon_form(form) -> dict:
+    """Tuỳ chọn trang kênh lấy từ form, CHƯA kiểm — `features` kiểm (một cửa, route không tự duyệt)."""
+    return {k: str(form.get(k) or "") for k in ("tab", "sap_xep", "tu_ngay", "den_ngay", "thoi_luong")}
+
+
 @router.post("/kham-pha", response_class=HTMLResponse, dependencies=[Depends(_cong_co)])
-def kham_pha(request: Request, nen_tang_id: str = Form("", alias="nen_tang"), che_do: str = Form(""),
-             dau_vao: str = Form(""), so_luong: str = Form("10"), khong_trung: str = Form(""),
-             csrf_token: str = Form(""), user: str = Depends(require_login), db=Depends(get_db)):
+async def kham_pha(request: Request, nen_tang_id: str = Form("", alias="nen_tang"), che_do: str = Form(""),
+                   dau_vao: str = Form(""), so_luong: str = Form("10"), khong_trung: str = Form(""),
+                   csrf_token: str = Form(""), user: str = Depends(require_login), db=Depends(get_db)):
     from platform_core import credit
     from platform_core.registry import RegistryError
     if not verify_csrf_token(request, csrf_token):
@@ -155,7 +166,8 @@ def kham_pha(request: Request, nen_tang_id: str = Form("", alias="nen_tang"), ch
         features.kiem_tan_suat(db, u.id)
         params = features.dung_params_kham_pha(owner_id=u.id, nen_tang=nen_tang_id, che_do=che_do,
                                                dau_vao=dau_vao, so_luong=so_luong,
-                                               khong_trung=khong_trung == "1", db=db)
+                                               khong_trung=khong_trung == "1", db=db,
+                                               tuy_chon=_tuy_chon_form(await request.form()))
         job = features.nop(db, owner_id=u.id, job_type=features.JOB_KHAM_PHA, params=params)
         db.commit()
     except features.QuaTanSuat as e:
@@ -171,9 +183,13 @@ def _ket_qua(request: Request, db, owner_id: str, job_id: str) -> HTMLResponse:
     job = features.job_cua(db, owner_id, job_id, job_type=features.JOB_KHAM_PHA)
     if job is None:
         raise HTTPException(status_code=404)
+    # `chi_so` = vị trí GỐC trong `job.result.muc` — route ảnh bìa đánh số theo đó, lọc không được làm lệch.
+    tat_ca = [dict(m or {}, chi_so=i) for i, m in enumerate((job.result or {}).get("muc") or [])]
+    # Bậc thời lượng khách chọn ở trang kênh được lọc TẠI ĐÂY (lọc tại nguồn cần adapter đọc `tuy_chon`).
+    muc = features.loc_muc(tat_ca, (job.params or {}).get("tuy_chon"))
     return templates.TemplateResponse(request, "vc_ket_qua.html", {
         "job": job, "app": MANIFEST, "csrf_token": issue_csrf_token(request), "phap_ly": _phap_ly(),
-        "muc": (job.result or {}).get("muc") or [],
+        "muc": muc, "bo_qua_loc": len(tat_ca) - len(muc),
         "bo_qua_trung": (job.result or {}).get("bo_qua_trung") or 0,
         "loi_khach": loi.cho_khach,
     })
@@ -208,7 +224,8 @@ async def tai(request: Request, user: str = Depends(require_login), db=Depends(g
         else:
             params = features.dung_params_tai(owner_id=u.id, nen_tang=nen_id, nguon={
                 "che_do": str(form.get("che_do") or ""), "dau_vao": str(form.get("dau_vao") or ""),
-                "so_luong": form.get("so_luong"), "khong_trung": form.get("khong_trung") == "1"}, db=db)
+                "so_luong": form.get("so_luong"), "khong_trung": form.get("khong_trung") == "1",
+                "tuy_chon": _tuy_chon_form(form)}, db=db)
         params = features.chuan_bi_tai(db, u.id, params, dong_y=form.get("cam_ket") == "1")
         features.nop(db, owner_id=u.id, job_type=features.JOB_TAI, params=params)
         db.commit()
@@ -329,6 +346,89 @@ def anh_bia_xem_truoc(request: Request, job_id: str, chi_so: int, user: str = De
         raise HTTPException(status_code=404)
     try:
         du_lieu, loai = anh_bia.doc(tim[1], nen_tang=tim[0], owner_id=u.id, job_id=job_id)   # kho trước, CDN sau (L8)
+    except anh_bia.AnhKhongHopLe:
+        raise HTTPException(status_code=404) from None
+    return Response(du_lieu, media_type=loai, headers={"X-Content-Type-Options": "nosniff"})
+
+
+# ── Tìm kênh theo TÊN + trang kênh trong app (W4-L11, THIET_KE_PHIEN_VA_KENH §3.3, §4) ───────
+# Lượt tìm không tạo job (miễn phí, vài giây, không tải gì) — `features.tim_kenh` giữ trần tần suất.
+# Ảnh đại diện KHÔNG bao giờ là URL CDN trong HTML: mỗi ảnh một vé đã ký (`features.ky_anh_kenh`).
+
+
+def _the_kenh(request: Request, u, nen_id: str, tu_khoa: str, kenh: list, *,
+              loi: str = "", ma: int = 200) -> HTMLResponse:
+    try:
+        ten_nen = _t(nen_tang.lay(nen_id).ten)
+    except nen_tang.NenKhongHopLe:
+        nen_id, ten_nen = "", ""
+    return templates.TemplateResponse(request, "vc_the_kenh.html", {
+        "app": MANIFEST, "csrf_token": issue_csrf_token(request),
+        "nen_id": nen_id, "ten_nen": ten_nen, "tu_khoa": tu_khoa, "loi": loi,
+        "kenh": [{"k": k, "ve": features.ky_anh_kenh(u.id, nen_id, k.anh_dai_dien)} if k.anh_dai_dien
+                 else {"k": k, "ve": ""} for k in kenh],
+        "url_mo_nen": features.url_mo_nen(nen_id, tu_khoa) if nen_id else "",
+    }, status_code=200, headers={"X-LTT-Ma-Loi": str(ma)} if ma != 200 else None)
+
+
+@router.post("/tim-kenh", response_class=HTMLResponse, dependencies=[Depends(_cong_co)])
+def tim_kenh(request: Request, nen_tang_id: str = Form("", alias="nen_tang"), tu_khoa: str = Form(""),
+             dau_vao: str = Form(""), so_luong: str = Form(str(features.SO_KENH_MAC_DINH)),
+             csrf_token: str = Form(""), user: str = Depends(require_login), db=Depends(get_db)):
+    """TÊN kênh ⇒ thẻ kênh để khách chọn. Lỗi của nền hiện thành câu trong vùng kết quả, không phải 500."""
+    if not verify_csrf_token(request, csrf_token):
+        return _loi_form(request, user, db, _t("Phiên đã hết hạn — tải lại trang."))
+    u: Any = user_hien_tai(request)
+    tu_tim = (tu_khoa or dau_vao or "").strip()
+    try:
+        u = _nguoi(request)
+        kenh = features.tim_kenh(db, owner_id=u.id, nen_tang=nen_tang_id, tu_khoa=tu_tim,
+                                 so_luong=so_luong)
+    except features.QuaTanSuat as e:
+        return _the_kenh(request, u, nen_tang_id, tu_tim, [], loi=str(e), ma=429)
+    except features.LoiDauVao as e:
+        return _the_kenh(request, u, nen_tang_id, tu_tim, [], loi=str(e), ma=400)
+    return _the_kenh(request, u, nen_tang_id, tu_tim, kenh)
+
+
+@router.post("/trang-kenh", response_class=HTMLResponse, dependencies=[Depends(_cong_co)])
+def trang_kenh(request: Request, nen_tang_id: str = Form("", alias="nen_tang"), dau_vao: str = Form(""),
+               ten: str = Form(""), csrf_token: str = Form(""), user: str = Depends(require_login),
+               db=Depends(get_db)):
+    """"Trang kênh" trong app: các tuỳ chọn (tab · sắp xếp · khoảng ngày · thời lượng · số lượng ·
+    không trùng) rồi Xem trước / Cào hết như mọi nguồn khác — cùng rào an toàn, cùng cam kết quyền."""
+    if not verify_csrf_token(request, csrf_token):
+        return _loi_form(request, user, db, _t("Phiên đã hết hạn — tải lại trang."))
+    u: Any = user_hien_tai(request)
+    try:
+        link = features.chuan_link_kenh(nen_tang=nen_tang_id, dau_vao=dau_vao)
+    except features.LoiDauVao as e:
+        return _the_kenh(request, u, nen_tang_id, "", [], loi=str(e), ma=400)
+    nen = nen_tang.lay_nen_bat(nen_tang_id)
+    return templates.TemplateResponse(request, "vc_trang_kenh.html", {
+        "app": MANIFEST, "csrf_token": issue_csrf_token(request), "phap_ly": _phap_ly(),
+        "nen": nen, "link": link, "ten_kenh": (ten or "").strip()[:120],
+        "tab": features.tab_kenh(nen.id), "sap_xep": features.SAP_XEP_KENH,
+        "thoi_luong": list(features.THOI_LUONG_KENH),
+        "so_luong_toi_da": min(nen.so_luong_toi_da, features.SO_MUC_TOI_DA),
+        "url_mo_nen": features.url_mo_nen(nen.id),
+    })
+
+
+@router.get("/anh-kenh/{ve}", dependencies=[Depends(_cong_co)])
+def anh_kenh(request: Request, ve: str, user: str = Depends(require_login), db=Depends(get_db)):
+    """Ảnh đại diện của một thẻ kênh, phục vụ lại qua app (CSP chặn CDN ngoài; tải thẳng lộ IP khách).
+
+    Chỉ nhận VÉ đã ký của CHÍNH người đang đăng nhập — khách không gửi URL cho proxy được. `anh_bia`
+    vẫn giữ nguyên rào của nó: allowlist CDN theo nền, chặn IP nội bộ, không theo redirect, 2 MB, ảnh thật.
+    """
+    from apps.video_crawler import anh_bia
+    u: Any = user_hien_tai(request)
+    doc = features.doc_anh_kenh(ve, u.id) if u else None
+    if doc is None:
+        raise HTTPException(status_code=404)
+    try:
+        du_lieu, loai = anh_bia.tai(doc[1], nen_tang=doc[0])
     except anh_bia.AnhKhongHopLe:
         raise HTTPException(status_code=404) from None
     return Response(du_lieu, media_type=loai, headers={"X-Content-Type-Options": "nosniff"})
