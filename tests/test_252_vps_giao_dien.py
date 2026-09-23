@@ -268,8 +268,18 @@ def test_node_da_day_vi_MAY_CUA_CHU_NHA_thi_khong_moi_khach_tao(moi_truong,
     # Phep kiem nay chi ve RAM. Tu R24 (17/09) trang tinh con cho CA IPv4 va cong
     # vao; o day cho hai gioi han ay du thua de RAM la rao duy nhat. Gioi han
     # IP/cong co phep kiem rieng: tests/test_1031_vps_trang_het_ip.py.
-    import apps.vps.routes as routes
-    monkeypatch.setattr(routes, "_gioi_han_ban", lambda db: (50, 50))
+    from apps.vps.services import nguon_luc
+    monkeypatch.setattr(nguon_luc, "_gioi_han_ip_va_cong",
+                        lambda db, profile: (50, 50))
+    # 23/09: duong do compute chi chay khi CO vung dang mo VA co profile nhan
+    # may moi. Ban cu doc Proxmox thang tu bien moi truong, nen no do compute
+    # ngay ca luc khong profile nao san sang giao may — chinh cho long leo do.
+    # O day noi hai seam ay lai de compute VAN duoc do that tu node gia tren.
+    from types import SimpleNamespace as _NS
+    monkeypatch.setattr("apps.vps.services.provisioning.vung_dang_mo",
+                        lambda db: [("sgp", "SG")])
+    monkeypatch.setattr("apps.vps.profiles.select_profile",
+                        lambda db, *, region: _NS(id="p-thu"))
     _tao_khach(moi_truong)
     client = _client()
     try:
@@ -278,9 +288,12 @@ def test_node_da_day_vi_MAY_CUA_CHU_NHA_thi_khong_moi_khach_tao(moi_truong,
         assert r.status_code == 200
         # RAM còn ~2 GB: chỉ gói nhỏ nhất còn chỗ, hai gói lớn phải báo hết.
         #
-        # Kiểm TÍNH CHẤT, không kiểm nguyên văn: câu chữ đã đổi một lần
-        # ("hết chỗ" -> "Hết chỗ cho cấu hình này.") và sẽ còn đổi.
-        assert "Hết chỗ" in r.text, "trang khong bao goi nao het cho"
+        # Kiểm TÍNH CHẤT, không kiểm nguyên văn: câu chữ đã đổi hai lần
+        # ("hết chỗ" -> "Hết chỗ cho cấu hình này." -> "Gói này tạm hết chỗ.").
+        # Đọc thẳng NGUỒN CHÂN LÝ thay vì chép lại chuỗi: một bản chép trong
+        # test là một bản sẽ lệch, đúng như hai lần trước.
+        assert nguon_luc.CAU_CHO_KHACH[nguon_luc.RANG_BUOC_COMPUTE] in r.text, (
+            "trang khong bao goi nao het cho bang cau cua rang buoc compute")
         # W1 (25/08): hết chỗ thì phải NÓI ĐI ĐÂU. Trước đó trang dừng ở hai
         # chữ "hết chỗ" và bỏ khách giữa luồng mua — ở đây gói nhỏ VẪN còn
         # chỗ, nên thẻ hết chỗ bắt buộc phải chỉ sang nó.
@@ -372,7 +385,7 @@ def test_khong_co_cong_vao_thi_tu_choi_chu_khong_tao_may_mo_coi(moi_truong,
             pass
 
 
-def test_tao_may_thanh_cong_thu_tien_va_NOP_JOB_chu_khong_cham_proxmox(
+def test_tao_may_thanh_cong_GIU_CHO_credit_va_NOP_JOB_chu_khong_cham_proxmox(
         moi_truong, monkeypatch):
     """Cloudflare cắt request ở 100 giây; clone + sysprep mất vài phút tới hơn mười.
 
@@ -425,20 +438,30 @@ def test_tao_may_thanh_cong_thu_tien_va_NOP_JOB_chu_khong_cham_proxmox(
 
     from platform_core import credit
     from platform_core.models import Job
-    from apps.vps.tables import VpsInstance
+    from apps.vps.tables import VpsEvent, VpsInstance
     gen = moi_truong.get_session()
     db = next(gen)
     try:
         may = db.query(VpsInstance).one()
         assert may.trang_thai == "dang_tao"
-        assert may.paid_until is not None
         assert may.vmid is None            # chưa chạm Proxmox trong request
         assert may.infrastructure_profile_id == profile.id
         assert may.profile_resolution_state == "PINNED"
-        assert credit.so_du(db, user_id) == 10_000 - 1790
 
         job = db.query(Job).filter_by(job_type="vps.provision").one()
         assert job.params["instance_id"] == may.id
+
+        # 🔴 23/09: tien GIU CHO, chua thu. Do 22/09 cho thay thu-truoc-lam-sau
+        # bien moi job hong thanh mot vong "thu 1.490 -> hoan 1.490 -> xoa may"
+        # cho mot may chua tung ton tai. Xem `billing.mo_chu_ky`.
+        assert credit.so_da_giu(db, job.id) == 1790, "phai GIU CHO du so tien"
+        assert credit.so_du(db, user_id) == 10_000 - 1790, "giu cho van khoa so du"
+        assert may.paid_until is None, (
+            "chu ky chi duoc mo khi may len that — `jobs._quyet_toan`")
+        loai = {e.loai for e in db.query(VpsEvent).filter_by(instance_id=may.id)}
+        assert "thu_phi" not in loai, (
+            "`thu_phi` la khoa cua `bao_tri._hoan_tien_may_hong`; phat no luc "
+            "nhan yeu cau la dung lai dung vong thu-roi-hoan")
     finally:
         try:
             next(gen)

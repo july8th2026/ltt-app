@@ -47,6 +47,11 @@ def _goi_tren_trang(monkeypatch, do: nguon_luc.DoDuoc):
     monkeypatch.setattr(routes, "_menu", lambda *a, **k: [])
     monkeypatch.setattr(routes, "issue_csrf_token", lambda request: "csrf")
     monkeypatch.setattr(routes.provisioning, "vung_dang_mo", lambda db: [("sgp", "SG")])
+    # Seam moi (23/09): trang noi truoc thoi gian cho. No doc `vps_event`, ma
+    # cac phep o day chay voi `db=None` — chung do CHO BAN, khong do thoi gian.
+    monkeypatch.setattr(routes.provisioning, "thoi_gian_san_sang",
+                        lambda db, **k: None)
+    monkeypatch.setattr(routes, "_canh_bao_chat_luong", lambda db, profile: [])
     monkeypatch.setattr(routes.ten_may, "tu_sinh", lambda db, user_id: "vps-01")
     monkeypatch.setattr(routes.templates, "TemplateResponse",
                         lambda request, name, ctx: ctx)
