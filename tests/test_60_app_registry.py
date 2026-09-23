@@ -6,6 +6,7 @@ Nếu hợp đồng này lỏng thì mỗi app mới lại phải sửa nền t�
 """
 from __future__ import annotations
 
+import functools
 import pathlib
 
 import pytest
@@ -393,6 +394,83 @@ def test_platform_never_imports_an_app():
     assert offenders == [], f"platform_core import app: {offenders}"
 
 
+#: 🔑 DANH SÁCH MIỄN TRỪ SLUG **DUY NHẤT CỦA CẢ KHO**.
+#:
+#:    Bài nào cần miễn trừ slug thì `from tests.test_60_app_registry import
+#:    MIEN_TRU_SLUG` — ⛔ đừng lập bộ thứ hai. Ngày 23/09 đã có đúng cái bẫy
+#:    đó: `tests/test_1758_...` đẻ thêm `DA_CHET_SLUG` sáu mục, nên sửa một
+#:    bên không làm bên kia đỏ và hai bộ số lặng lẽ trôi xa nhau.
+#:
+#: ⚠️ CHIỀU CO LẠI có `test_mien_tru_slug_khong_chua_thu_da_bien_mat` chốt.
+#:    CHIỀU PHÌNH TO **không có gì cản**: thêm một hardcode mới rồi thêm tên
+#:    vào đây thì mọi bài đều xanh. Người review là hàng rào duy nhất, và
+#:    thêm một tên ở đây không rẻ — nó làm mù phép kiểm với chuỗi ấy ở MỌI
+#:    nơi. Chỉ đúng khi nền tảng SỞ HỮU namespace và app được đặt tên theo
+#:    nó, không phải chiều ngược lại. Lý do từng mục ở ngay dưới.
+MIEN_TRU_SLUG = frozenset({"agent", "nexus", "ltt_llm"})
+
+#: Nền tảng = `platform_core/` **và** `server/`. Thêm `server/` ngày 23/09:
+#: tầng route là chỗ dễ đi vòng registry nhất, và nó đã đi vòng thật
+#: (`server/routes/dashboard.py` tra `bang_gia_app.get("anhnoibo")`).
+THU_MUC_NEN_TANG = (ROOT / "platform_core", ROOT / "server")
+
+
+def _boc_ten_co_hoc(text: str) -> str:
+    """Bóc những cái TÊN chứa slug nhưng không phải tham chiếu app.
+
+    🔴 TÊN BẢNG và TÊN TỆP TĨNH KHÔNG PHẢI TÊN APP — bỏ qua điều đó làm hai
+       bánh cóc đánh nhau, và cách sai là miễn trừ slug (miễn trừ làm mù phép
+       kiểm với chuỗi ấy ở MỌI nơi).
+
+    ⭐ Cả hai danh sách đều lấy CƠ HỌC, không gõ tay:
+       · tên bảng ← `Base.metadata` (`test_211` bắt buộc
+         `public_api/governance.py` nêu tên mọi bảng; app nào có
+         `table_prefix` trùng slug thì tên bảng chứa slug — đã xảy ra thật với
+         `apps/vps`: `vps_instance`, `vps_ip`, …);
+       · tên tệp tĩnh ← chính thư mục `server/static` (`server/templating.py`
+         phải kê tên mọi tệp được đính `?v=`, quy tắc 6 `CLAUDE.md`; tệp
+         `server/static/lttvideo.js` là tài sản CỦA NỀN TẢNG, chỉ trùng tên
+         với slug app).
+
+    ⛔ Chỉ bóc tên ĐẦY ĐỦ (tệp phải có phần mở rộng). Một chuỗi `"lttvideo"`
+       hay `"vps"` đứng trơ vẫn bị bắt — hai bài `*_KHONG_lam_mu_chot` chốt.
+    """
+    for ten in _TEN_CO_HOC():
+        text = text.replace(ten, "<ten>")
+    return text
+
+
+@functools.lru_cache(maxsize=1)
+def _TEN_CO_HOC() -> tuple:
+    from platform_core.db import Base
+    from platform_core.registry import load_app_tables
+    import platform_core.models  # noqa: F401
+    load_app_tables()
+    ten = set(Base.metadata.tables)
+    ten |= {f.name for f in (ROOT / "server" / "static").rglob("*")
+            if f.is_file() and "." in f.name}
+    return tuple(sorted(ten, key=len, reverse=True))
+
+
+def _slug_go_cung() -> dict:
+    """`{slug: {tệp…}}` — slug app xuất hiện trong MÃ CHẠY ĐƯỢC của nền tảng.
+
+    Tách khỏi phép kiểm để bài chốt chiều CO LẠI dùng lại đúng một phép quét.
+    """
+    slugs = [a.slug for a in discover()]
+    ra: dict[str, set] = {}
+    for goc in THU_MUC_NEN_TANG:
+        for path in goc.rglob("*.py"):
+            if "__pycache__" in path.parts:
+                continue
+            text = _boc_ten_co_hoc(ma_thuc_thi(path.read_text(encoding="utf-8")))
+            for slug in slugs:
+                if slug in text:
+                    ra.setdefault(slug, set()).add(
+                        str(path.relative_to(ROOT)).replace("\\", "/"))
+    return ra
+
+
 def test_no_app_slug_is_hardcoded_in_the_platform():
     """Tên app xuất hiện trong code nền tảng là dấu hiệu registry bị đi vòng."""
     # ``agent`` is also the architectural namespace mandated by Q39/Q40
@@ -429,8 +507,6 @@ def test_no_app_slug_is_hardcoded_in_the_platform():
     #
     # What still covers the real risk: ``test_platform_core_never_imports_apps``
     # above. Blinding a substring does not let ``platform_core`` import the app.
-    slugs = [a.slug for a in discover()
-             if a.slug not in ("agent", "nexus", "ltt_llm")]
 
     # 🔴 TÊN BẢNG KHÔNG PHẢI TÊN APP — và bỏ qua điều đó làm hai bánh cóc đánh nhau.
     #
@@ -446,44 +522,36 @@ def test_no_app_slug_is_hardcoded_in_the_platform():
     #    miễn trừ sẽ làm mù chốt với một tham chiếu app thật. Cách đúng: bóc **tên
     #    bảng thật** (lấy từ metadata, không phải danh sách gõ tay) ra khỏi văn bản
     #    trước khi dò. Một chuỗi `"vps"` đứng trơ vẫn bị bắt.
-    from platform_core.db import Base
-    from platform_core.registry import load_app_tables
-    import platform_core.models  # noqa: F401
-    load_app_tables()
-    ten_bang = sorted(Base.metadata.tables, key=len, reverse=True)
-
-    offenders = []
-    for path in (ROOT / "platform_core").rglob("*.py"):
-        text = _ma_thuc_thi(path.read_text(encoding="utf-8"))
-        for bang in ten_bang:
-            text = text.replace(bang, "<bang>")
-        for slug in slugs:
-            if slug in text:
-                offenders.append(f"{path.name}: {slug!r}")
+    thay = _slug_go_cung()
+    offenders = sorted(f"{slug!r} o {', '.join(sorted(tep))}"
+                       for slug, tep in thay.items()
+                       if slug not in MIEN_TRU_SLUG)
     assert offenders == [], f"tên app bị viết cứng: {offenders}"
 
 
-def test_boc_ten_bang_KHONG_lam_mu_chot():
-    """Chốt trên bóc tên bảng ra trước khi dò. Đây là chỗ chứng minh nó không
-    bóc quá tay: một slug đứng trơ, hoặc một `apps.<slug>`, vẫn phải bị bắt."""
-    from platform_core.db import Base
-    from platform_core.registry import load_app_tables
-    import platform_core.models  # noqa: F401
-    load_app_tables()
-    ten_bang = sorted(Base.metadata.tables, key=len, reverse=True)
+def test_mien_tru_slug_khong_chua_thu_da_bien_mat():
+    """Chiều CO LẠI của bánh cóc: một mục không còn hardcode nào thì phải rời
+    danh sách, nếu không nó làm mù phép kiểm mà chẳng che cho cái gì."""
+    thua = sorted(MIEN_TRU_SLUG - set(_slug_go_cung()))
+    assert not thua, (
+        f"`MIEN_TRU_SLUG` con {thua} — khong con hardcode nao, phai go khoi "
+        f"danh sach (banh coc phai co lai cung)")
 
-    def con_lai(text):
-        for bang in ten_bang:
-            text = text.replace(bang, "<bang>")
-        return text
 
-    assert "vps" not in con_lai('"vps_instance", "vps_ip"')
-    assert "vps" in con_lai('if app.slug == "vps":'), (
+def test_boc_ten_co_hoc_KHONG_lam_mu_chot():
+    """Chốt trên bóc tên bảng + tên tệp tĩnh ra trước khi dò. Đây là chỗ chứng
+    minh nó không bóc quá tay: một slug đứng trơ vẫn phải bị bắt."""
+    assert "vps" not in _boc_ten_co_hoc('"vps_instance", "vps_ip"')
+    assert "lttvideo" not in _boc_ten_co_hoc('"lttvideo.js",')
+    assert "vps" in _boc_ten_co_hoc('if app.slug == "vps":'), (
         "phep boc da an ca tham chieu app that — chot bi lam mu"
+    )
+    assert "lttvideo" in _boc_ten_co_hoc('bang.get("lttvideo")'), (
+        "boc ten tep tinh da an ca mot tra cuu app that"
     )
 
 
-def _ma_thuc_thi(nguon: str) -> str:
+def ma_thuc_thi(nguon: str) -> str:
     """Bỏ chú thích và docstring, giữ nguyên phần còn lại.
 
     Vì sao lọc chứ không so nguyên văn: cái test này chốt *"nền tảng không đi vòng
@@ -535,14 +603,14 @@ def _nguon(*dong: str) -> str:
 def test_bo_quet_van_bat_slug_trong_MA_CHAY_DUOC():
     """Bánh cóc cho chính bộ lọc trên. Nếu nó nới tay quá thì phép kiểm ở trên
     thành vô dụng mà vẫn xanh."""
-    ma = _ma_thuc_thi(_nguon('x = 1',
+    ma = ma_thuc_thi(_nguon('x = 1',
                              'if slug == "taovideo":',
                              '    pass'))
     assert "taovideo" in ma
 
 
 def test_bo_quet_KHONG_bat_slug_trong_docstring_hay_chu_thich():
-    ma = _ma_thuc_thi(_nguon('"""Xem apps/taovideo/translate.py."""',
+    ma = ma_thuc_thi(_nguon('"""Xem apps/taovideo/translate.py."""',
                              '# cung nhu apps/autosubvideo/jobs.py',
                              'x = 1'))
     assert "taovideo" not in ma and "autosubvideo" not in ma
@@ -550,7 +618,7 @@ def test_bo_quet_KHONG_bat_slug_trong_docstring_hay_chu_thich():
 
 def test_bo_quet_van_bat_slug_trong_CHUOI_THUONG():
     """Chuỗi thường KHÁC docstring: `TEN = "taovideo"` đúng là đi vòng registry."""
-    assert "taovideo" in _ma_thuc_thi(_nguon('TEN = "taovideo"'))
+    assert "taovideo" in ma_thuc_thi(_nguon('TEN = "taovideo"'))
 
 
 # ── app thử: handler phải NÉM khi thất bại ─────────────────────────────────

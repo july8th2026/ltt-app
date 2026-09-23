@@ -714,6 +714,21 @@ class AppManifest:
     #:
     #: ⚠️ Hàm này KHÔNG được ném — cùng luật với `bao_tri`. Một app hỏng bảng
     #:    giá không được làm sập trang giá của mọi app khác.
+    #:
+    #: ⭐ KHOÁ `"nhom"` — NHÓM HIỂN THỊ, app tự khai (23/09/2026). Từ vựng hiện
+    #:    có: `"anh"` · `"tieng"`. Trang `/gia-api` có bố cục THỦ CÔNG (mỗi
+    #:    nhóm một khối, khác hẳn nhau về đơn vị và về cột), nên nó phải biết
+    #:    bảng giá nào đi vào khối nào.
+    #:
+    #:    🔴 Trước 23/09 nó biết bằng cách gõ tên app:
+    #:       `bang_gia_app.get("anhnoibo")` / `.get("ltt_voice")`. Đọc registry
+    #:       đúng rồi VẪN tra bằng literal thì nền tảng vẫn biết tên hai app cụ
+    #:       thể — đi qua registry không xoá điều đó, chỉ chuyển chỗ nó nấp.
+    #:       Nay app nói nó thuộc khối nào; nền tảng chỉ **xếp**.
+    #:
+    #:    ⚠️ Không khai `"nhom"` ⇒ bảng giá vẫn trả về trong `bang_gia_cong_khai()`
+    #:       nhưng trang `/gia-api` không có khối nào để đặt nó — cùng luật với
+    #:       `suc_khoe`, từ vựng là chuỗi thường, không phải enum.
     bang_gia: Optional[Callable[[], dict]] = None
 
     #: Sức khoẻ **của năng lực** app cung cấp, cho catalog của sản phẩm khác

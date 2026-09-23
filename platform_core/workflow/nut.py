@@ -230,20 +230,39 @@ def type_version_thieu(db, *, dinh_nghia: Optional[dict] = None) -> list:
        `dinh_nghia._sinh_chi_muc`) chứ không duyệt JSON: một truy vấn SQL cho
        toàn hệ thống, và nó chạy được trên PostgreSQL production.
 
+    🔑 RANH GIỚI LẤY NGUYÊN VĂN TỪ CỔNG THẬT, KHÔNG TỰ ĐẶT LẠI.
+       `workflow/tao_run.py::tao_run` chỉ cho tạo run mới khi:
+
+           if not workflow.published_version_id or workflow.archived_at is not None:
+               raise KhongCoBanPublish(...)
+           ver = db.get(WorkflowVersion, workflow.published_version_id)
+
+       ⇒ tập version còn tạo được run mới = ĐÚNG MỘT version mỗi workflow
+       (`published_version_id`) của workflow chưa lưu trữ. Hàm này lọc y hệt.
+
+    ⛔ TRƯỚC 23/09 NÓ CHỈ LỌC `Workflow.archived_at IS NULL` — tức báo cả những
+       version CŨ. `WorkflowVersion` là *"một bản đã xuất bản — BẤT BIẾN sau
+       khi tạo"* (`platform_core/models.py`, khoá `seq`), nên một version cũ
+       trỏ tới tool đã gỡ thì **không bao giờ sửa được**: báo nó là dựng đúng
+       cái "báo động không ai tắt được" mà chính đoạn này lấy làm lý do loại
+       workflow đã lưu trữ. Lệch về phía báo thừa (ồn, không nguy hiểm) nhưng
+       mâu thuẫn nội tại, và ồn dần theo số lần xuất bản.
+
     ⚠️ CÂY NÀY KHÔNG CÓ CỘT TRẠNG THÁI trên `WorkflowVersion` — spec §18.4 nói
-       "chỉ xét version ĐÃ PUBLISH", nhưng `platform_core/models.py` khai
-       `WorkflowVersion` là *"một bản đã xuất bản — BẤT BIẾN sau khi tạo"*:
-       **mọi** hàng của bảng `workflow_version` LÀ một bản đã xuất bản; không
-       có khái niệm `DRAFT` ở tầng này (bản đang soạn nằm ở bảng
-       `workflow_draft` riêng, sửa tại chỗ — spec §4.2, `dinh_nghia.luu_draft`).
-       "Lưu trữ" (điều spec muốn loại trừ) là một thuộc tính của `Workflow`
-       CHA (`archived_at`), không phải của từng version: một workflow bị lưu
-       trữ khiến `workflow/tao_run.py::tao_run` từ chối tạo run mới trên MỌI
-       version của nó (`if not workflow.published_version_id or
-       workflow.archived_at is not None: ...`), nên đó là ranh giới đúng để
-       loại một cảnh báo không còn ai tắt được — đúng lý do test gốc đưa ra
-       (*"một bản đã lưu trữ không còn tạo run mới => không phải rủi ro đang
-       sống"*), chỉ khác chỗ áp luật: ở `Workflow`, không ở `WorkflowVersion`.
+       "chỉ xét version ĐÃ PUBLISH", và ở cây này "đã publish" **không** đọc
+       được từ một cột `status` của version: mọi hàng `workflow_version` là
+       một bản đã xuất bản (bản đang soạn nằm ở bảng `workflow_draft` riêng,
+       spec §4.2, `dinh_nghia.luu_draft`), còn "bản ĐANG publish" là một con
+       trỏ trên `Workflow` CHA. Nên luật áp ở `Workflow`, không ở
+       `WorkflowVersion`.
+
+    📌 TODO (chưa có người gọi ngoài test — 23/09): hàm này là một máy đo drift
+       mà không ai đọc thì không đo gì trên production. Nối vào MỘT trong hai
+       chỗ có người nhìn: (a) đường publish `platform_core/workflow/dinh_nghia`
+       — từ chối/cảnh báo ngay lúc xuất bản bản trỏ tới `type@version` không
+       còn; hoặc (b) một mục trạng thái quản trị ở `server/routes/status.py`.
+       Việc nối thuộc plan 02 Task 10 (đường publish + kiểm tra quản trị), không
+       làm trong Task 9 vì nó mở thêm bề mặt HTTP ngoài phạm vi bài này.
     """
     from sqlalchemy import select
 
@@ -257,7 +276,8 @@ def type_version_thieu(db, *, dinh_nghia: Optional[dict] = None) -> list:
         .join(WorkflowVersion,
               WorkflowVersion.id == WorkflowVersionNode.version_id)
         .join(Workflow, Workflow.id == WorkflowVersion.workflow_id)
-        .where(Workflow.archived_at.is_(None))
+        .where(Workflow.archived_at.is_(None),
+               Workflow.published_version_id == WorkflowVersion.id)
         .order_by(WorkflowVersionNode.version_id,
                   WorkflowVersionNode.node_id)).all()
     return [{"version_id": v, "node_id": n, "node_type": t, "type_version": tv}
