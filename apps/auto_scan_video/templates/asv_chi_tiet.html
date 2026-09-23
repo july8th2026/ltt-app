@@ -83,6 +83,15 @@
       <li>{{ _("Cách khớp thời gian") }}:
         {% for ma, ten, _mo_ta in che_do %}{% if ma == cai.timing_mode %}{{ _(ten) }}{% endif %}{% endfor %}
       </li>
+      {#- ⭐ Cặp ngôn ngữ đứng TRÊN giọng đọc, vì nó quyết định giọng nào chọn
+          được (`rang_giong` lọc theo `ngon_ngu_dich`). Nguồn rỗng = khách để
+          hệ thống tự nhận ra — nói ra chứ không bỏ trống dòng. -#}
+      <li>{{ _("Ngôn ngữ") }}:
+        {% if cai.ngon_ngu_nguon %}{{ _(ngon_ngu_nhan.get(cai.ngon_ngu_nguon, cai.ngon_ngu_nguon)) }}
+        {%- else %}{{ _("Tự nhận ra") }}{% endif %}
+        → {{ _(ngon_ngu_nhan.get(cai.ngon_ngu_dich, cai.ngon_ngu_dich)) }}
+      </li>
+      <li>{{ _("Nguồn lời thoại") }}: {{ _(nguon_loi_nhan.get(cai.nguon_loi, cai.nguon_loi)) }}</li>
       <li>{{ _("Giọng đọc") }}: {{ cai.giong_id or "—" }}</li>
       <li>{{ _("Vùng che") }}:
         {% if cai.vung %}{{ cai.vung | length }}{% else %}{{ _("không có") }}{% endif %}
@@ -105,6 +114,77 @@
       </li>
     </ul>
   </details>
+
+  {# ── Bằng chứng chất lượng (asv-final 23/09) ───────────────────────────
+
+     🔴 Bốn con số dưới đây đã tồn tại trong `asv_stage.outputs` từ trước làn
+        này, và **không cái nào với tới được màn hình của người trả tiền**. Hậu
+        quả đo được ở lượt nền v3: `smart_localize` giao một video không cắt
+        cảnh nào (VLM hỏng 4/12 lượt) và màn hình của khách nói đúng một chữ —
+        *"Đã xong."*
+
+     ⭐ MỞ SẴN, không nằm trong `<details>` như khối `Chi phí`. Một bằng chứng
+        phải gập ra mới thấy là một bằng chứng không ai đọc; và nếu QC có mục
+        hỏng thì đó chính là điều khách cần biết trước khi tải video về.
+
+     ⛔ Không phải khối vận hành: không job id, không tên model, không đường
+        dẫn. Tên kỹ thuật duy nhất còn lại là mã phép kiểm (`T13`) — giữ cạnh
+        nhãn tiếng Việt để người hỗ trợ và khách nói cùng một thứ tiếng. #}
+  {% if bang_chung %}
+  <section class="asv-bang-chung" aria-labelledby="asv-bc">
+    <h2 id="asv-bc" class="asv-nhan-nhom">{{ _("Bằng chứng chất lượng") }}</h2>
+    <ul class="asv-bc-ds">
+      {% if bang_chung.nguon_loi %}
+        <li>{{ _("Lời thoại gốc lấy từ") }}:
+          <strong>{{ _(bang_chung.nguon_loi.nhan) }}</strong></li>
+      {% endif %}
+
+      {% if bang_chung.canh %}{% set c = bang_chung.canh %}
+        {#- 🔑 Câu này là câu trả lời cho *"vì sao video không ngắn đi"*. Một
+            cảnh không có bằng chứng LUÔN được giữ (`ban_bien_tap`), nên độ phủ
+            thấp và "không cắt gì" là cùng một sự thật nhìn từ hai phía. -#}
+        <li>{{ _("Cảnh đã đọc được") }}:
+          {{ c.so_canh_da_doc }}/{{ c.so_canh }} ({{ c.do_phu_pt }}%)
+          {% if c.so_canh_hong %}
+            · <strong>{{ _("%(n)s cảnh không đọc được") % {"n": c.so_canh_hong} }}</strong>
+          {% endif %}
+        </li>
+      {% endif %}
+
+      {% if bang_chung.qc %}{% set q = bang_chung.qc %}
+        <li>{{ _("Kiểm chất lượng tự động") }}:
+          {% if q.dat %}<strong>{{ _("đạt toàn bộ") }}</strong>
+          {% else %}<strong>{{ _("%(n)s mục chưa đạt") % {"n": q.so_muc_hong} }}</strong>
+          {% endif %}
+          {% if q.muc_hong %}
+            <ul>
+              {% for m in q.muc_hong %}
+                <li>{{ _(m.nhan) }} <code>{{ m.ma }}</code></li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </li>
+      {% endif %}
+
+      {% if bang_chung.do_luong %}{% set d = bang_chung.do_luong %}
+        <li>{{ _("Nghe lại và soát lại") }}:
+          {{ _("%(n)s đoạn đã đo") % {"n": d.so_doan_do} }}
+          <ul>
+            {% for b in d.bo_do %}
+              <li>{{ _(b.nhan) }} — {{ _(b.nhan_trang_thai) }}</li>
+            {% endfor %}
+          </ul>
+          {% if d.so_giong_khong_dat %}
+            <p class="asv-ghi-chu">{{ _("%(n)s đoạn đã được đọc lại vì chưa khớp lời.") % {"n": d.so_giong_khong_dat} }}</p>
+          {% endif %}
+          {% if d.so_canh_bao_tieng %}
+            <p class="asv-ghi-chu">{{ _("%(n)s đoạn có tiếng đọc hơi kém sạch.") % {"n": d.so_canh_bao_tieng} }}</p>
+          {% endif %}
+        </li>
+      {% endif %}
+    </ul>
+  </section>
+  {% endif %}
 
   {# ── Bang ke canh (V6 pha 09) ──────────────────────────────────────────
 

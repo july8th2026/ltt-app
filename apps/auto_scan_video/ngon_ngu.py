@@ -188,6 +188,30 @@ def kiem_cap(nguon, dich) -> tuple[str, str]:
     return n, d
 
 
+#: Nhan cua muc "de he thong tu nhan ra" o o NGON NGU NGUON.
+#:
+#: ⭐ Rieng ra khoi `NHAN` vi `TU_DOAN` **khong phai mot ngon ngu**: no la loi
+#:    khai "toi khong biet", va `kiem_nguon_da_doan` moi chot ngon ngu that sau
+#:    ASR. Nhet no vao `NHAN` se lam moi cho doc nhan (bao cao, cau loi, man chi
+#:    tiet) in ra "Tu nhan ra" nhu mot ngon ngu co that.
+NHAN_TU_DOAN = N_("Tự nhận ra")
+
+
+def cho_giao_dien() -> dict:
+    """Mien gia tri cua CAP NGON NGU cho giao dien — MOT nguon voi `kiem_cap`.
+
+    ⛔ Khong go `zh`/`en`/`vi` vao template. Hop dong 22/09 song o tep nay; mot
+       danh sach go tay o Jinja la ban thu hai, va no se lech ngay lan dau ai do
+       them hay bot mot ma o day.
+    """
+    return {
+        "nguon": [(TU_DOAN, NHAN_TU_DOAN)] + [(m, NHAN[m]) for m in NGUON_HOP_LE],
+        "dich": [(m, NHAN[m]) for m in DICH_HOP_LE],
+        "tu_doan": TU_DOAN,
+        "dich_mac_dinh": DICH_MAC_DINH,
+    }
+
+
 def kiem_nguon_da_doan(ma_asr, dich) -> str:
     """Chot ngon ngu ASR DOAN ra. Goi o TRANSCRIBE, truoc moi giai doan tra tien.
 

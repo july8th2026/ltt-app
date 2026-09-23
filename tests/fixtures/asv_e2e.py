@@ -864,9 +864,15 @@ def sach_de_cong_bo(gt):
 def soi(duong: str) -> dict:
     """ffprobe -> dict. Dung cho phep kiem tren TEP RA, khong tren bao cao."""
     ff = shutil.which("ffprobe") or "ffprobe"
+    # R-06: `text=True` KHONG khai `encoding` -> tren Windows Python doan
+    # bang locale (`cp1252` may tieng Viet), va no VO ngay khi `-show_format`
+    # tra ve ten tep/tag co ky tu tieng Trung that (video nghiem thu). ffprobe
+    # luon ghi JSON UTF-8 bat ke locale may, nen ep `encoding="utf-8"` la
+    # dung, khong phai chon tam.
     ra = subprocess.run(
         [ff, "-v", "error", "-print_format", "json", "-show_format",
-         "-show_streams", str(duong)], capture_output=True, text=True, check=True)
+         "-show_streams", str(duong)], capture_output=True, text=True,
+        encoding="utf-8", check=True)
     return json.loads(ra.stdout)
 
 

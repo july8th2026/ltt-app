@@ -34,7 +34,7 @@ import re
 import subprocess
 
 from platform_core import media
-from platform_core.i18n import _ as _t
+from platform_core.i18n import N_, _ as _t
 
 from . import tach_tieng, thoi_gian
 
@@ -159,6 +159,40 @@ LECH_TIENG_HINH_S = 0.50
 DAT = "dat"
 HONG = "hong"
 KHONG_AP_DUNG = "khong_ap_dung"
+
+#: Nhan TIENG VIET cua tung phep kiem, cho KHACH doc o man mot lan chay.
+#:
+#: 🔴 `_muc(...)` da mang mot `mo_ta`, nhung do la chu cua NGUOI VAN HANH:
+#:    *"dinh that"*, *"troi tich luy khong vuot ngan sach cua 3 doan ke tiep"*.
+#:    In chung ra cho khach la in ten mot he con va mot nguong ra man hinh cua
+#:    nguoi tra tien — cung loi ma `quan_sat.dong_canh` co y tranh voi `ly_do`
+#:    cua tung canh.
+#:
+#: ⭐ Nen bang nay noi **cai gi da duoc kiem**, khong noi kiem BANG CACH nao.
+#:    Mot ma khong co trong bang se tu hien ra chinh no (`T19`), va do la hanh
+#:    vi dung: mot phep kiem moi phai lo ra chu khong duoc bien mat im lang.
+#:
+#: ⛔ `N_` chu khong `_t`: hang so cap MODULE. Xem `routes.NHAN_GIAI_DOAN`.
+NHAN_MUC = {
+    "T1": N_("Tệp ra có đủ hình và tiếng"),
+    "T2": N_("Độ dài video ra đúng như hứa"),
+    "T3": N_("Hình ảnh giữ nguyên từng điểm ảnh"),
+    "T4": N_("Độ to chung đạt chuẩn nền tảng"),
+    "T5": N_("Tiếng không bị vỡ ở chỗ to nhất"),
+    "T6": N_("Mọi câu đều có tiếng đọc"),
+    "T7": N_("Từng câu nằm đúng chỗ đã định"),
+    "T8": N_("Khoảng lặng chèn thêm"),
+    "T9": N_("Khoảng lặng chèn thêm"),
+    "T10": N_("Khoảng lặng chèn thêm"),
+    "T11": N_("Lời đọc không trôi dồn về cuối"),
+    "T12": N_("Mọi đoạn bị cắt đều được báo cáo"),
+    "T13": N_("Không sinh thêm khung đen hay hình đứng"),
+    "T14": N_("Cách xử lý hình đúng kiểu bạn chọn"),
+    "T15": N_("Phụ đề nằm trọn trong video ra"),
+    "T16": N_("Hình và tiếng dài bằng nhau"),
+    "T17": N_("Video ra giải mã hết, không lỗi"),
+    "T18": N_("Chất lượng hình sau mã hoá lại (VMAF)"),
+}
 
 # ── Nguong, tu MVP_CONTRACT §7 ────────────────────────────────────────────────
 #: T2 — thoi luong ban ra so voi nguon.

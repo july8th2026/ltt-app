@@ -45,7 +45,8 @@ from server.templating import templates
 from . import dich_vu_tao, hop_dong_v4, features, gia, pipeline, quan_sat
 from . import bien_tap as bien_tap_mod
 from . import (am_thanh as am_thanh_mod, cai_dat as cai_dat_mod, logo as logo_mod,
-               lop_phu as lop_phu_mod, phu_de as phu_de_mod)
+               lop_phu as lop_phu_mod, ngon_ngu as ngon_ngu_mod,
+               nguon_loi as nguon_loi_mod, phu_de as phu_de_mod)
 from .manifest import MANIFEST
 
 log = logging.getLogger(__name__)
@@ -179,6 +180,20 @@ def _ngu_canh_studio(db, u, loi: str = "", nap_lai: dict | None = None) -> dict:
         "giong_chon": nl.get("giong_id") or "",
         "che_do_giong_chon": (nl.get("che_do_giong")
                               or hop_dong_v4.CHE_DO_GIONG_MAC_DINH),
+        #: ── Cap ngon ngu + nguon loi thoai (asv-final 23/09) ───────────────
+        #:
+        #: ⭐ Ba o nay nap lai duoc, khac `vung`: chung noi "xu ly the nao",
+        #:    khong noi "o cho nao tren khung hinh nay". Xem docstring tren.
+        #:
+        #: ⛔ Mien gia tri lay TU `ngon_ngu`/`nguon_loi`, khong go `zh`/`ocr`
+        #:    vao template — cung luat voi `preset_can_cho_vung`.
+        "ngon_ngu": ngon_ngu_mod.cho_giao_dien(),
+        "ngon_ngu_nguon_chon": nl.get("ngon_ngu_nguon") or ngon_ngu_mod.TU_DOAN,
+        "ngon_ngu_dich_chon": (nl.get("ngon_ngu_dich")
+                               or ngon_ngu_mod.DICH_MAC_DINH),
+        "nguon_loi": nguon_loi_mod.cho_giao_dien(),
+        "nguon_loi_chon": (nl.get("nguon_loi")
+                           or nguon_loi_mod.CHE_DO_MAC_DINH),
         "nap_lai_tu": nl.get("_tu_run") or "",
         "preset": gia.PRESET_BANG,
         "preset_mac_dinh": gia.preset_mac_dinh(),
@@ -447,11 +462,18 @@ def chi_tiet(request: Request, run_id: str,
         #    khong thay duoc mot dong nao trong so do. Ho tra tien cho mot quyet
         #    dinh ho khong duoc xem.
         "canh": quan_sat.dong_canh(db, get_storage(), run),
+        # ⭐ Bang chung chat luong (asv-final 23/09). Bon so nay da nam san
+        #    trong `asv_stage.outputs` tu hai ngay nay va khong cai nao voi toi
+        #    duoc man hinh cua nguoi tra tien — xem docstring cua ham.
+        "bang_chung": quan_sat.bang_chung_chat_luong(db, run),
         # ⭐ Hai bang nhan de man "Cai dat da dung" doc duoc `run.settings` bang
         #    TIENG VIET. Khong go lai nhan o template: chung song o `gia.py`, va
         #    hai ban cua mot nhan la hai ban se lech.
         "preset": gia.PRESET_BANG,
         "che_do": gia.CHE_DO_THOI_GIAN,
+        # ⛔ Cung luat: nhan ngon ngu + nguon loi song o module cua chung.
+        "ngon_ngu_nhan": ngon_ngu_mod.NHAN,
+        "nguon_loi_nhan": nguon_loi_mod.NHAN_CHE_DO,
         # ⭐ Hai con so cua ho so (V6 pha 07). Truoc do khong ai tra loi duoc
         #    *"ho so nay theo schema nao"* va *"ca cau hinh bam ra gi"* — va cau
         #    thu hai la cau hoi DAU TIEN khi mot khach hoi vi sao hai lan chay
