@@ -27,12 +27,12 @@
 | M-04b | trung | Khung đen/đóng băng: `blackdetect`+`freezedetect` so với NGUỒN; thêm T17 giải mã cả tệp, T18 VMAF (ngưỡng 75) | `qc.py` | ky-thuat | **ĐÃ ĐÓNG** |
 | M-06 | thấp | `tools/do_watermark.py` heuristic tự chế, không app nào gọi | `tools/` | ky-thuat | **ĐÃ XOÁ** (cùng `test_470`, `PHA13_*.md`) |
 
-| R-01 | **chặn phát hành** | AUTO_MATCH là đường CHẾT: không giai đoạn nào sinh `HoSoNoiDung` ⇒ `dac_diem_giong` luôn rỗng ⇒ `ChuaRangError`. Preset giữ hình còn không chạy `edit_plan` (0,0 s) nên không bao giờ có hồ sơ | `rang_giong.py:133`, `giai_doan_noi_dung.py:117` | fix-auto-match | MỞ — lượt thật NEN_V3 lượt A chết ở `content_process` sau 133 s |
+| R-01 | **chặn phát hành** | AUTO_MATCH là đường CHẾT: không giai đoạn nào sinh `HoSoNoiDung` ⇒ `dac_diem_giong` luôn rỗng ⇒ `ChuaRangError`. Preset giữ hình còn không chạy `edit_plan` (0,0 s) nên không bao giờ có hồ sơ | `rang_giong.py:133`, `giai_doan_noi_dung.py:117` | fix-auto-match | **ĐÃ SỬA mã** `679d8953` — hồ sơ dựng từ F0 stem `vocals` (đo trong chính tiến trình demucs) + MỘT lượt LLM văn bản, cả hai TRƯỚC `edit_plan` nên hai preset đi chung đường. ⏳ chờ bằng chứng vận hành ở lượt nghiệm thu cuối |
 | R-02 | cao | QC **T3** đỏ ở preset giữ hình. Giả thuyết "so với tệp nguồn gốc" **SAI**: render đọc đúng `run.source_key` mà QC băm. Nguyên nhân thật là `-shortest` trên đường `-c:v copy` — nó vứt 2 gói hình cuối khi luồng hình nguồn dài hơn bản phối. **Sản phẩm sai, T3 đúng.** | `ket_xuat.dung_lenh` | fix-qc-am | **ĐÃ ĐÓNG** — `test_2014`, đo lại trên 4 phim thật |
 | R-03 | cao | QC **T5** đỏ: đỉnh thoát ở **bộ mã hoá AAC sau chuẩn âm**, và `BIEN_CHO_CODEC_DB` là một hằng số ĐOÁN (vọt lọ đo được 0,00–2,78 dB, tuỳ tín hiệu). Thay bằng hạn đỉnh THẬT (lấy mẫu 4×) + vòng đo trên bản mã hoá thử | `am_master.ghim_tran_phoi` | fix-qc-am | **ĐÃ ĐÓNG** — `test_2015`, vọt lọ 1,31 → 0,61 dB trên phim thật |
-| R-04 | cao | `voice_synthesis` chiếm 937 s / 1191 s (79%) cho phim 107 s, kèm 11 lượt `rut_ngan_cho_vua` (50 653 token): câu tiếng Việt dài hơn tiếng Trung ngay từ lượt viết đầu | `giai_doan_giong.py`, `long_tieng.py` | fix-toc-do | MỞ |
-| R-05 | trung | VLM đọc cảnh hỏng 4/12 lượt (`LuocDoSai`/`HieuCanhError`) ⇒ `so_cat=0/6`: `smart_localize` **không cắt gì** | `giai_doan_ban_bien_tap.py:219` | fix-toc-do | MỞ |
-| R-06 | thấp | Khuôn nghiệm thu `text=True` không khai encoding ⇒ chết với đường dẫn tiếng Trung | `tests/fixtures/asv_e2e.py:840` | điều phối | MỞ |
+| R-04 | cao | `voice_synthesis` chiếm 937 s / 1191 s (79%) cho phim 107 s, kèm 11 lượt `rut_ngan_cho_vua` (50 653 token): câu tiếng Việt dài hơn tiếng Trung ngay từ lượt viết đầu | `giai_doan_giong.py`, `long_tieng.py` | fix-toc-do | **ĐÃ SỬA** `a248267e` — 80% thời gian là LLM viết lại, không phải TTS. Nhịp đọc `vi` 4,5 âm tiết/s là số CHƯA TỪNG ĐO; đo thật 3,35 ⇒ mọi câu lượt đầu vượt khe 28–51%. Sau sửa: cần nắn 6/6 → 5/18, dự phóng 943 s → ~190 s, WER/CER không tụt (0/18 gắn cờ) |
+| R-05 | trung | VLM đọc cảnh hỏng 4/12 lượt (`LuocDoSai`/`HieuCanhError`) ⇒ `so_cat=0/6`: `smart_localize` **không cắt gì** | `giai_doan_ban_bien_tap.py:219` | fix-toc-do | **ĐÃ SỬA** — 8/18 lượt hỏng là do LỜI NHẮC (model trả `"giữ"` CÓ DẤU, mảng, `{objects:[]}`), không phải model. Sau sửa 18/18. `smart_localize` nay ĐÒI bằng chứng mọi cảnh và TỪ CHỐI thay vì giao video không cắt |
+| R-06 | thấp | Khuôn nghiệm thu `text=True` không khai encoding ⇒ chết với đường dẫn tiếng Trung | `tests/fixtures/asv_e2e.py:840` | nghiem-thu | ĐÃ VÒNG TRÁNH trong khuôn scratch; tệp kho chưa sửa |
 | R-07 | trung | `qc_ai` TẮT mặc định ⇒ lượt nền không đo lớp ngữ nghĩa/thị giác; nghiệm thu cuối phải bật | `LTT_ASV_QC_AI` | nghiem-thu | MỞ |
 
 ## Độ phủ lượt thật
@@ -40,3 +40,4 @@
 | lượt | video | cặp | preset | model_that | giong_that | kết quả | ghi chú |
 |---|---|---|---|---|---|---|---|
 | NEN_V3 | v3 | zh→vi | cả hai | ✅ true | ✅ true | B/C ra tệp dùng được, QC T3/T5 đỏ; A chết (R-01) | `859b3361`, `thay_the=[]`, qc_ai TẮT |
+| NT-CUOI lượt A (10:21) | v3 | zh→vi | giữ hình | — | — | **LOẠI** — chạy trúng 10:21–10:24, deploy phiên khác khởi động lại LTTStudioVoice + 8100 | phải chạy lại |
