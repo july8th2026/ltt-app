@@ -1,9 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { approveRun, cloneWorkflow, createAutosave, createRun, exportWorkflow, importWorkflow,
-  fromV3, loadRun, loadRunHistory, loadWorkflowV3, restoreRunAsWorkflow,
+import { approveRun, cancelRunV3, cloneWorkflow, createAutosave, createRun,
+  createRunV3, exportWorkflow, importWorkflow,
+  fromV3, loadRun, loadRunHistory, loadRunV3, loadWorkflowV3,
+  publishWorkflowV3, restoreRunAsWorkflow,
+  RUN_V3_KET_THUC,
   saveWorkflow, saveWorkflowV3, toV3,
-  WorkflowConflictError,
-  type AgentRun, type Workflow } from '../src/workflowApi'
+  WorkflowCompileError, WorkflowConflictError,
+  type AgentRun, type RunV3, type Workflow } from '../src/workflowApi'
 
 const workflow = { id: 'w1', name: 'A', revision: 3, status: 'draft', estimated: 0,
   canvas: { version: 2, goal: 'g', budget_max_credit: 10, active_page_id: 'page-1',
@@ -205,5 +208,79 @@ describe('cua v3', () => {
       JSON.stringify({ ...rawV3, published_version_id: 'v9' }), { status: 200,
         headers: { 'Content-Type': 'application/json' } }))
     expect((await loadWorkflowV3('w3')).status).toBe('validated')
+  })
+})
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status, headers: { 'Content-Type': 'application/json' } })
+}
+
+const runV3: RunV3 = { id: 'r1', workflow_id: 'w1', version_id: 'v1',
+  status: 'QUEUED', credit_max: 3, credit_charged: 0, settled: false,
+  created_at: '2026-09-24T00:00:00+00:00',
+  nodes: [{ node_id: 'a', status: 'PENDING', attempt: 1, cost_credit: 0,
+            job_id: '', error: '' }],
+  su_kien: [{ seq: 1, loai: 'WorkflowStarted', node_id: '', du_lieu: {},
+              created_at: '2026-09-24T00:00:00+00:00' }],
+  seq_cuoi: 1 }
+
+describe('run v3', () => {
+  it('createRunV3 gọi cửa v3 kèm CSRF', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValue(json(runV3, 201))
+    expect(await createRunV3('w1', 'tok')).toEqual(runV3)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe('/agent/api/v3/workflows/w1/runs')
+    expect((init as RequestInit).method).toBe('POST')
+    expect((init as RequestInit & { headers: Record<string, string> })
+      .headers['X-CSRF-Token']).toBe('tok')
+  })
+
+  it('loadRunV3 gửi con trỏ sau= để chỉ lấy sự kiện mới', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValue(json({ ...runV3, su_kien: [], seq_cuoi: 7 }))
+    const next = await loadRunV3('r1', 7)
+    expect(fetchMock.mock.calls[0][0]).toBe('/agent/api/v3/runs/r1?sau=7')
+    expect(next.seq_cuoi).toBe(7)
+  })
+
+  it('cancelRunV3 dịch 409 thành lỗi đọc được, không nuốt', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      json({ detail: { ma: 'da_ket_thuc', thong_diep: 'Đã kết thúc.' } }, 409))
+    await expect(cancelRunV3('r1', 'tok')).rejects.toThrow('Đã kết thúc.')
+  })
+
+  it('RUN_V3_KET_THUC phủ đủ 5 trạng thái kết thúc của run', () => {
+    expect([...RUN_V3_KET_THUC].sort()).toEqual(
+      ['CANCELLED', 'FAILED', 'SUCCEEDED', 'SYSTEM_FAILURE', 'TIMED_OUT'])
+  })
+})
+
+describe('lỗi biên dịch 422 giữ được ma + node_id', () => {
+  it('publish 422 ném WorkflowCompileError mang node_id', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ detail: {
+      ma: 'bieu_thuc_chua_ho_tro', node_id: 'n_2',
+      thong_diep: 'Biểu thức chưa hỗ trợ.' } }, 422))
+    // 🔴 Trước bản này `decode()` bóp object thành chuỗi: `ma` và `node_id`
+    //    biến mất, nên giao diện không tô được node hỏng — người dùng chỉ
+    //    thấy một câu tiếng Việt và phải tự dò 40 node.
+    const loi = await publishWorkflowV3(
+      { id: 'w1' } as never, 'tok').catch(e => e)
+    expect(loi).toBeInstanceOf(WorkflowCompileError)
+    expect(loi.ma).toBe('bieu_thuc_chua_ho_tro')
+    expect(loi.nodeId).toBe('n_2')
+    expect(loi.message).toBe('Biểu thức chưa hỗ trợ.')
+  })
+
+  it('422 KHÔNG có `ma` vẫn là Error thường', async () => {
+    // 🔑 Vế đối chứng: nếu mọi 422 đều thành WorkflowCompileError thì lớp
+    //    lỗi mới không còn nói lên điều gì.
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      json({ detail: 'Tài liệu rỗng.' }, 422))
+    const loi = await publishWorkflowV3({ id: 'w1' } as never, 'tok')
+      .catch(e => e)
+    expect(loi).not.toBeInstanceOf(WorkflowCompileError)
+    expect(loi.message).toBe('Tài liệu rỗng.')
   })
 })

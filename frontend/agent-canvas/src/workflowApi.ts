@@ -55,22 +55,47 @@ export type AgentRunSummary=Pick<AgentRun,'id'|'version'|'status'|'estimated'|'a
 
 export class WorkflowConflictError extends Error {}
 
+/** Lỗi biên dịch/báo giá do máy chủ trả ở `422 {ma,node_id,thong_diep}`.
+ *  Giữ `ma`/`nodeId` để giao diện tô đúng node — một chuỗi thuần thì không. */
+export class WorkflowCompileError extends Error {
+  ma: string
+  nodeId: string
+  constructor(message: string, ma: string, nodeId: string) {
+    super(message)
+    this.name = 'WorkflowCompileError'
+    this.ma = ma
+    this.nodeId = nodeId
+  }
+}
+
 async function decode(response: Response) {
   if (response.ok) return response.json()
-  if (response.status === 409) throw new WorkflowConflictError('Workflow was updated elsewhere')
-  let message = `Request failed (${response.status})`
+  let detail: unknown
   try {
-    const detail = (await response.json()).detail
-    if (detail != null) {
-      // Task 7 publish (drafts_v3.py) tra `detail` la dict {ma, node_id,
-      // thong_diep} thay vi chuoi — doc dung truong con nguoi doc duoc, dung
-      // de `new Error({...})` bien no thanh "[object Object]".
-      message = typeof detail === 'object'
-        ? (detail.thong_diep ?? detail.ma ?? JSON.stringify(detail))
-        : detail
-    }
+    detail = (await response.json()).detail
   } catch { /* non-JSON error */ }
-  throw new Error(message)
+  // Object co cau truc {ma?, node_id?, thong_diep?} — dung TRUOC nhanh 409
+  // mac dinh, vi cua v3 huy run (`runs_v3.py::v3_huy_run`) cung tra 409 kem
+  // detail nay ("da_ket_thuc"), khong phai xung dot revision. Doc dung
+  // truong con nguoi doc duoc thay vi de `new Error({...})` bien no thanh
+  // "[object Object]".
+  const obj = (detail && typeof detail === 'object' && !Array.isArray(detail))
+    ? detail as { ma?: string; node_id?: string; thong_diep?: string }
+    : null
+  if (response.status === 409) {
+    // 409 CO detail cau truc (huy run da ket thuc) -> loi doc duoc tu may
+    // chu. 409 KHONG co detail (luu draft, `If-Match` lech) -> xung dot
+    // revision chung, giu nguyen thong diep cu.
+    if (obj) throw new Error(obj.thong_diep ?? obj.ma ?? JSON.stringify(obj))
+    throw new WorkflowConflictError('Workflow was updated elsewhere')
+  }
+  if (obj) {
+    const message = obj.thong_diep ?? obj.ma ?? JSON.stringify(obj)
+    if (obj.ma) throw new WorkflowCompileError(message, obj.ma, obj.node_id ?? '')
+    throw new Error(message)
+  }
+  if (detail != null) throw new Error(detail as string)
+  throw new Error(`Request failed (${response.status})`)
 }
 
 async function request(path: string, init?: RequestInit) {
@@ -460,4 +485,37 @@ export function createAutosave<T>(
       latest = undefined
     },
   }
+}
+
+// ── Cua v3: mot luot chay (Dot 5.2, apps/agent/routes/runs_v3.py) ─────────
+export type RunV3Node = { node_id: string; status: string; attempt: number
+  cost_credit: number; job_id: string; error: string }
+export type RunV3Event = { seq: number; loai: string; node_id: string
+  du_lieu: Record<string, unknown>; created_at: string }
+export type RunV3 = { id: string; workflow_id: string; version_id: string
+  status: string; credit_max: number; credit_charged: number; settled: boolean
+  created_at: string; nodes: RunV3Node[]; su_kien: RunV3Event[]
+  seq_cuoi: number }
+
+/** Trạng thái kết thúc của run (spec §5.2). Vòng poll dừng ở đây. */
+export const RUN_V3_KET_THUC: ReadonlySet<string> = new Set(
+  ['SUCCEEDED', 'FAILED', 'CANCELLED', 'TIMED_OUT', 'SYSTEM_FAILURE'])
+
+export async function createRunV3(workflowId: string,
+                                  csrfToken: string): Promise<RunV3> {
+  return request(`/agent/api/v3/workflows/${workflowId}/runs`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json',
+      'X-CSRF-Token': csrfToken }, body: '{}' }) as Promise<RunV3>
+}
+
+/** `sau` = con trỏ sự kiện của lần poll trước (`seq_cuoi`). 0 = lấy cả lịch sử. */
+export async function loadRunV3(runId: string, sau = 0): Promise<RunV3> {
+  return request(`/agent/api/v3/runs/${runId}?sau=${sau}`) as Promise<RunV3>
+}
+
+export async function cancelRunV3(runId: string,
+                                  csrfToken: string): Promise<RunV3> {
+  return request(`/agent/api/v3/runs/${runId}/cancel`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json',
+      'X-CSRF-Token': csrfToken }, body: '{}' }) as Promise<RunV3>
 }
