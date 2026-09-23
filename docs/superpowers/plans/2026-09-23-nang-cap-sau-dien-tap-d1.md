@@ -1451,6 +1451,42 @@ Luật *"dùng lại trước, tự viết sau"* đã được thoả: đã tra,
 
 ---
 
+## ⛔ Chốt chặn cuối Phần B: BỐN BƯỚC CÒN LẠI ĐỀU CẦN MỘT BẢN BUILD MỚI
+
+Ghi ra vì suýt bỏ sót, và bỏ sót thì sẽ đo nhầm rồi tưởng là đã kiểm chứng.
+
+Bản **đang cài trên máy này là 0.2.6**, dựng trước các commit hôm nay. Nên mọi bước "bằng chứng
+trên phiên thật" còn lại đều **không kiểm được trên bản đang cài**:
+
+| Bước | Cần commit | Có trong bản cài? |
+|---|---|---|
+| T13 Step 4 — catalog đã có mô tả chưa · MCP có được gọi không | `36344e0` | ❌ |
+| T15 Step 3 — `ra-bao-mat-thu` chạy đúng vai + đúng `ltt-3.5`, và cảnh báo V-25 hiện ra | `fd00269` | ❌ |
+| T19 Step 4 — model tự gọi `git_khac_biet` trước khi đề nghị commit | (đang viết) | ❌ |
+| T11 / T12 | `670770b` / `3326d7f` | ❓ chưa xác định |
+
+> ⚠️ **Đính chính một phép kiểm sai của chính điều phối:** đã thử `git merge-base --is-ancestor
+> <sha> v0.2.6` và đọc năm dòng "KHÔNG" như thể là kết quả. **Kho không có tag nào** — ref không
+> phân giải được thì lệnh đó luôn trả sai, **không phải** nó đang nói commit vắng mặt. Con số duy
+> nhất đáng tin ở bảng trên là hai dòng `fd00269`/`36344e0`, vì chúng được commit **sau** lượt
+> dựng 0.2.6 trong cùng phiên này. Hai dòng `❓` là **thật sự chưa biết**, không phải "chắc là có".
+>
+> Bài học cũ lặp lại: *một lệnh trả lời được câu hỏi nào* — `--is-ancestor` với ref không tồn tại
+> trả lời câu "ref có phân giải không", không phải câu "commit có trong bản phát hành không".
+
+**⇒ Thứ tự bắt buộc cho phần còn lại:**
+
+1. Xong mã: T19 (đang chạy) · trả nợ `cargo test` cho `36344e0`;
+2. **Một** lượt gate (L1/L2) cho hai kho;
+3. **Dựng một bản mới + cài đè** — và ghi lại **SHA đã dựng** vào ghi chú phát hành, để lần sau
+   không phải đoán như vừa rồi;
+4. **MỘT** lượt mở app **độc quyền** (R2), gom hết: T13 Step 4 · T14 trọn task · T15 Step 3 ·
+   T19 Step 4 · T12 đo nén. Mở app một lần, đo tất cả — không mở bốn lần.
+
+⚠️ T14 và T12 **có thể** đo được trên bản cài sẵn, nhưng chỉ khi xác định được chúng nằm trong
+0.2.6. Chưa xác định thì **đừng đo** — đo trên bản không chứa thay đổi rồi kết luận là đúng kiểu
+"phạm vi phép đo hẹp hơn lời tuyên bố".
+
 ## Thứ tự Phần B
 
 | Đợt | Task | Lý do |
