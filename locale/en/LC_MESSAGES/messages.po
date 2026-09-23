@@ -20547,3 +20547,24 @@ msgstr "Machines are usually ready in about %(phut)s minutes, at most about %(ch
 
 msgid "Đường truyền ra Internet là <strong>tài nguyên dùng chung</strong> giữa mọi máy. Khi tổng lưu lượng của toàn nền tảng chạm ngưỡng an toàn, máy đang dùng <strong>nhiều nhất</strong> có thể bị giảm tốc <strong>trước</strong> khi chạm hạn mức riêng của chính máy đó — để giữ đường truyền chung không bị nhà cung cấp hãm tốc cho tất cả."
 msgstr "The uplink to the Internet is a <strong>shared resource</strong> across all machines. When total platform traffic reaches a safe threshold, the machine using the <strong>most</strong> bandwidth may be throttled <strong>before</strong> it reaches its own limit — so the shared uplink is not throttled by the provider for everyone."
+
+msgid "Bán được:"
+msgstr "Sellable:"
+
+msgid "CÓ"
+msgstr "YES"
+
+msgid "KHÔNG"
+msgstr "NO"
+
+msgid "Đủ điều kiện bật bán lần đầu:"
+msgstr "Eligible to enable sales:"
+
+msgid "Chất lượng (KHÔNG chặn bán):"
+msgstr "Quality (does NOT block sales):"
+
+msgid "Chặn bán:"
+msgstr "Blocks sales:"
+
+msgid "Chỗ bán được (đo ở lượt preflight gần nhất):"
+msgstr "Sellable slots (measured at the latest preflight):"

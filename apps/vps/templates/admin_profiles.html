@@ -49,17 +49,17 @@
        `ready_day_du` = ca sau xanh         -> du dieu kien BAT ban lan dau.
        Gop hai cau nay lam mot chinh la cach mot bo dem goi roi cua May B dong
        ca cua hang ngay 23/09. Xem `apps/vps/profiles.py` muc CHAN_BAN. #}
-    <p>Bán được: <strong>{{ 'CÓ' if profile.ready else 'KHÔNG' }}</strong>
+    <p>{{ _('Bán được:') }} <strong>{{ _('CÓ') if profile.ready else _('KHÔNG') }}</strong>
        {% if profile.health_reason %} — {{ profile.health_reason }}{% endif %}
-       · Đủ điều kiện bật bán lần đầu: {{ 'CÓ' if profile.ready_day_du else 'KHÔNG' }}</p>
+       · {{ _('Đủ điều kiện bật bán lần đầu:') }} {{ _('CÓ') if profile.ready_day_du else _('KHÔNG') }}</p>
     {% if profile.canh_bao %}
-      <p>⚠️ Chất lượng (KHÔNG chặn bán):
+      <p>⚠️ {{ _('Chất lượng (KHÔNG chặn bán):') }}
         {% for ten, tt in profile.canh_bao %}<b>{{ ten }}</b>={{ tt }}{{ '' if loop.last else ' · ' }}{% endfor %}</p>
     {% endif %}
-    <p>Chặn bán: {% for ten in profile.chan_ban %}{{ ten }}={{ profile.health[ten] }}{{ '' if loop.last else ' · ' }}{% endfor %}<br>
+    <p>{{ _('Chặn bán:') }} {% for ten in profile.chan_ban %}{{ ten }}={{ profile.health[ten] }}{{ '' if loop.last else ' · ' }}{% endfor %}<br>
        Available public IPs: {{ profile.available_ips }} · VM count: {{ profile.vm_count }} · Last check: {{ profile.health_at or '—' }}</p>
     {% if profile.cho_ban_duoc %}
-      <p>Chỗ bán được (đo ở lượt preflight gần nhất):
+      <p>{{ _('Chỗ bán được (đo ở lượt preflight gần nhất):') }}
         {% for goi, so in profile.cho_ban_duoc.items() %}<b>{{ goi }}</b>: {{ so }}{{ '' if loop.last else ' · ' }}{% endfor %}</p>
     {% endif %}
     <p>Credentials: <strong>{{ 'Configured ✅' if profile.credentials_configured else _('Chưa đủ tham chiếu') }}</strong>
