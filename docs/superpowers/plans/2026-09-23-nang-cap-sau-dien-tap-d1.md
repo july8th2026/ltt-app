@@ -1463,7 +1463,13 @@ trên phiên thật" còn lại đều **không kiểm được trên bản đan
 | T13 Step 4 — catalog đã có mô tả chưa · MCP có được gọi không | `36344e0` | ❌ |
 | T15 Step 3 — `ra-bao-mat-thu` chạy đúng vai + đúng `ltt-3.5`, và cảnh báo V-25 hiện ra | `fd00269` | ❌ |
 | T19 Step 4 — model tự gọi `git_khac_biet` trước khi đề nghị commit | (đang viết) | ❌ |
-| T11 / T12 | `670770b` / `3326d7f` | ❓ chưa xác định |
+| T11 / T12 — nút "Chạy tiếp" · nén bằng 3.5 | `670770b` / `3326d7f` | ❌ |
+
+**Đã xác định dứt điểm bằng giờ, không phải bằng ref** (23/09 khuya): bộ cài stable đang phục vụ
+là `LTTCODE_0.2.6_stable_x64-setup.exe`, **dựng lúc 14:12**. Cả năm commit đều **sau** nó —
+`3326d7f` 19:19 · `670770b` 19:21 · `0c6df5a` 20:11 · `fd00269` 21:45 · `36344e0` 22:07.
+Một bộ cài không thể chứa commit tạo ra năm tiếng sau nó. ⇒ **Không commit nào của hôm nay có
+trong bản đang cài**, kể cả Task 5 (`0c6df5a`) của Phần A.
 
 > ⚠️ **Đính chính một phép kiểm sai của chính điều phối:** đã thử `git merge-base --is-ancestor
 > <sha> v0.2.6` và đọc năm dòng "KHÔNG" như thể là kết quả. **Kho không có tag nào** — ref không
