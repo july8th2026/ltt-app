@@ -39,6 +39,21 @@ describe('PaletteV2', () => {
     expect(screen.getAllByText('Theo bảng giá').length).toBe(3)
   })
 
+  // ⭐ `palette_v3.sang_json` gan dau o MUC NODE khi node ra palette voi luoc
+  //    do TINH. The phai NOI RA — nguoi dung keo node ve roi moi phat hien
+  //    mot nua tham so bi khoa thi da muon.
+  it('node mang x-ltt-loi noi ro la chua tai duoc lua chon', () => {
+    const hong: NhomPalette[] = [{ category: 'LTT_APPS', nut: [
+      nd('app.voice.tts', 'Đọc văn bản', { 'x-ltt-loi': 'LUACHON_KHONG_TAI_DUOC' })] }]
+    render(<PaletteV2 nhom={hong} truyVan="" onTruyVan={vi.fn()} onChon={vi.fn()} />)
+    expect(screen.getByText('Chưa tải được lựa chọn')).toBeInTheDocument()
+  })
+
+  it('node BINH THUONG khong deo nhan canh bao oan', () => {
+    render(<PaletteV2 nhom={nhom} truyVan="" onTruyVan={vi.fn()} onChon={vi.fn()} />)
+    expect(screen.queryByText('Chưa tải được lựa chọn')).toBeNull()
+  })
+
   it('node chua publish duoc thi vo hieu, khong moi keo', () => {
     render(<PaletteV2 nhom={nhom} truyVan="" onTruyVan={vi.fn()} onChon={vi.fn()} />)
     expect(screen.getByRole('button', { name: /Chạy thủ công/ })).toBeDisabled()

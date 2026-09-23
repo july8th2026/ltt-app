@@ -24,6 +24,11 @@ export type TruongLuocDo = {
   'x-ltt-kieu'?: string
   'x-ltt-control'?: string
   'x-ltt-nhan'?: Record<string, string>
+  //: `apps/agent/routes/palette_v3.py::MA_LOI_TUY_CHON`. Co mat = truong nay
+  //  ra voi luoc do TINH vi giai tuy chon dong da nem loi. Giao dien phai
+  //  KHOA o lai: luoc do tinh cua `voice_id` la `string` tu do, nen khong khoa
+  //  thi nguoi dung go bua mot gia tri, publish qua, va hong LUC CHAY.
+  'x-ltt-loi'?: string
   // `nguon` la MOT MARKER gui client (`app_property` | `piece_property`),
   // khong phai ten truong noi bo — `luoc_do.mot_tham_so()` sinh tu
   // `params_schema.depends_on`; spec §4.6 cam ten co che ro ra JSON cong khai.
@@ -55,6 +60,9 @@ export type ResourceClass = 'cpu'|'gpu'|'api'
 export type Resource = { class?: ResourceClass }
 
 export type NodeDefinition = {
+  //: Dau o MUC NODE (`palette_v3.sang_json`): node nay ra palette voi luoc do
+  //  TINH. Tung truong bi anh huong mang dau rieng trong `tham_so.properties`.
+  'x-ltt-loi'?: string
   type: string
   type_version: number
   kind: NodeKind

@@ -28,6 +28,11 @@ const luocDo: LuocDo = {
                   'x-ltt-dong': { nguon: 'app_property', prop: 'model' } },
     cau_hinh: { type: 'object', 'x-ltt-kieu': 'json' },
     duration_s: { type: 'number', readOnly: true, 'x-ltt-control': 'may_tu_dien' },
+    // `apps/agent/routes/palette_v3.py::_tham_so_co_dau` gan dau nay len DUNG
+    // nhung truong chua tai duoc lua chon dong. Luoc do con lai la ban TINH —
+    // `voice_id` tinh la mot `string` TU DO.
+    voice_id: { type: 'string', 'x-ltt-loi': 'LUACHON_KHONG_TAI_DUOC' },
+    so_giong: { type: 'integer', 'x-ltt-loi': 'LUACHON_KHONG_TAI_DUOC' },
   },
 }
 
@@ -130,6 +135,78 @@ describe('FormTuLuocDo', () => {
     render(<FormTuLuocDo luocDo={{ type: 'object', properties: {}, required: [] }}
       giaTri={{}} onChange={vi.fn()} />)
     expect(screen.getByText('Node này không có tham số.')).toBeInTheDocument()
+  })
+
+  // ── x-ltt-loi: MAT XICH CUOI cua phan quyet "palette la catalogue" ──────
+  //
+  // 🔴 Khi giai tuy chon dong cua mot tool nem loi, `palette_v3.sang_json` van
+  //    tra node ra palette — voi luoc do TINH va mot dau doc duoc. Luoc do
+  //    tinh cua `voice_id` la mot `string` TU DO. Khong khoa o lai thi nguoi
+  //    dung go bua mot `voice_id`, publish qua, va hong LUC CHAY — dung cai
+  //    ma dau `x-ltt-loi` sinh ra de chan.
+  //
+  // ⚠️ Phep do o day la `toBeDisabled()`, KHONG phai "onChange khong duoc goi".
+  //    `fireEvent.change` ban thang su kien vao phan tu, nen no goi duoc
+  //    handler cua ca mot o `disabled` — trinh duyet that thi khong. Mot
+  //    `expect(bat).not.toHaveBeenCalled()` o day do jsdom, khong do san pham:
+  //    no do khi ta khoa o, va do la mot phep do lech chieu. `disabled` moi la
+  //    thu trinh duyet cuong che.
+  it('truong mang x-ltt-loi bi KHOA lai, khong phai o chu tu do', () => {
+    render(<FormTuLuocDo luocDo={luocDo} giaTri={{}} onChange={vi.fn()} />)
+    const o = screen.getByLabelText('voice_id')
+    expect(o).toBeDisabled()
+    // Va no la o CHU (luoc do tinh) — tuc chinh hinh dang nguy hiem: neu
+    // khong khoa, no trong y het mot tham so khoe manh.
+    expect(o).toHaveAttribute('type', 'text')
+  })
+
+  it('truong mang x-ltt-loi noi ro VI SAO bi khoa', () => {
+    render(<FormTuLuocDo luocDo={luocDo} giaTri={{}} onChange={vi.fn()} />)
+    expect(screen.getAllByText('Chưa tải được lựa chọn').length).toBe(2)
+  })
+
+  // Mot o SO mang dau loi cung phai khoa — ke ca nut "dung bieu thuc".
+  it('o SO mang x-ltt-loi khong mo duoc loi thoat bieu thuc', () => {
+    render(<FormTuLuocDo luocDo={luocDo} giaTri={{}} onChange={vi.fn()} />)
+    expect(screen.getByLabelText('so_giong')).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Dùng biểu thức cho so_giong' }))
+      .toBeDisabled()
+  })
+
+  // ── O SO: phai GO MOI duoc bieu thuc, khong chi hien thi cai da luu ──────
+  //
+  // 🔴 Nhanh `laBieuThuc` chi voi toi khi gia tri DA LUU la bieu thuc. Voi mot
+  //    o `<input type="number">`, go `{` khong vao duoc gia tri — nen khong co
+  //    duong nao BIEN mot o so thanh bieu thuc tu giao dien. Tham chieu chi
+  //    dat duoc bang cach sua JSON o noi khac. Can mot cong tac tuong minh.
+  it('nut "dung bieu thuc" bien o SO thanh o chu va gui chuoi nguyen ven', () => {
+    const bat = vi.fn()
+    render(<FormTuLuocDo luocDo={luocDo} giaTri={{ count: 2 }} onChange={bat} />)
+    expect(screen.getByLabelText('count')).toHaveAttribute('type', 'number')
+    const cong_tac = screen.getByRole('button', { name: 'Dùng biểu thức cho count' })
+    expect(cong_tac).toHaveAttribute('aria-pressed', 'false')
+    fireEvent.click(cong_tac)
+    expect(cong_tac).toHaveAttribute('aria-pressed', 'true')
+    const o = screen.getByLabelText('count')
+    expect(o).toHaveAttribute('type', 'text')
+    fireEvent.change(o, { target: { value: '{{ nodes.a.output.n }}' } })
+    expect(bat).toHaveBeenCalledWith('count', '{{ nodes.a.output.n }}')
+  })
+
+  // Gia tri DA LUU la bieu thuc ⇒ cong tac phai BAT SAN, neu khong mot lan
+  // render lai se doi o ve `type=number` va nuot tham chieu.
+  it('gia tri da luu la bieu thuc thi cong tac bat san', () => {
+    render(<FormTuLuocDo luocDo={luocDo}
+      giaTri={{ count: '{{ nodes.a.output.n }}' }} onChange={vi.fn()} />)
+    expect(screen.getByRole('button', { name: 'Dùng biểu thức cho count' }))
+      .toHaveAttribute('aria-pressed', 'true')
+  })
+
+  // O CHU khong can cong tac: no von go duoc `{{ }}` (bai o tren da chot).
+  it('o CHU khong moc them cong tac bieu thuc', () => {
+    render(<FormTuLuocDo luocDo={luocDo} giaTri={{}} onChange={vi.fn()} />)
+    expect(screen.queryByRole('button', { name: 'Dùng biểu thức cho prompt' }))
+      .toBeNull()
   })
 
   it('readOnly toan form khoa moi o, ke ca enum va checkbox', () => {

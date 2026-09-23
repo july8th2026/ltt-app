@@ -47,6 +47,10 @@ function The({ nd, onChon }: {
           title="Tài nguyên: GPU">GPU</small>
       : null}
     {nd.credential.length > 0 && <small className="palette-credential">Cần kết nối</small>}
+    {/* ⭐ `palette_v3.sang_json` danh dau o MUC NODE khi node ra palette voi
+        luoc do TINH (giai tuy chon dong da nem loi). Noi ra TAI DAY, truoc khi
+        nguoi dung keo node ve va phat hien mot nua tham so bi khoa. */}
+    {nd['x-ltt-loi'] && <small className="palette-loi-tuy-chon">Chưa tải được lựa chọn</small>}
     {!nd.publish_duoc && <small className="palette-sap-co">Sắp có</small>}
   </button>
 }
