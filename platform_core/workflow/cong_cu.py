@@ -6,7 +6,10 @@ Plan 02 dựng `NodeDefinition` (spec §4.4) TRÊN mô-đun này.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, Optional
+from typing import Callable, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from platform_core.registry import ToolSpec
 
 
 @dataclass(frozen=True)
@@ -26,7 +29,14 @@ class CongCu:
     # (`registry.admission_luc_nop`/`ToolSpec.lane_for`,
     # `public_api/invocation.py:~500-560`) thay vì tự suy diễn một bản khác —
     # `spec is None` thì bỏ qua admission (hành vi cũ nguyên vẹn).
-    spec: Optional[object] = None
+    spec: Optional["ToolSpec"] = None
+
+
+def _ham_gia(job_type: str) -> Callable[[dict], int]:
+    def gia(params: dict) -> int:
+        from platform_core import registry
+        return int(registry.credit_for(job_type, params))
+    return gia
 
 
 def tat_ca() -> dict[str, CongCu]:
@@ -46,7 +56,7 @@ def tat_ca() -> dict[str, CongCu]:
                                 or "external"),
                 idempotency_fields=tuple(
                     (getattr(t, "idempotency", None) or {}).get("key_fields", ())),
-                tinh_gia=lambda p, _jt=jt: int(registry.credit_for(_jt, p)),
+                tinh_gia=_ham_gia(jt),
                 spec=t)
     return ra
 
