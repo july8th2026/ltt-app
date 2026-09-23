@@ -21,8 +21,15 @@ depends_on = None
 
 
 def upgrade() -> None:
+    # Revision MERGE thuan tuy: hai nhanh khong dung mot bang/cot nao, nen
+    # khong co gi de gop o tang schema — chi noi lai chuoi lich su.
     pass
 
 
 def downgrade() -> None:
+    # Doi xung voi upgrade(): khong mat du lieu, khong doi schema o chieu
+    # nao. "Lui" that su khoi diem gop nay la downgrade toi MOT trong hai
+    # dau (e02cebbbd57a hoac 5e1a9c46b2d7) — da kiem tay ca hai deu sach
+    # tren SQLite (upgrade head -> downgrade ve to tien chung -> upgrade
+    # head), xem task-12-sua-do.md.
     pass
