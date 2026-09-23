@@ -43,8 +43,13 @@ param(
     #
     #    Nen tham so nay KHONG nhan mot duong dan. No nhan mot TU KHOA, va bang
     #    anh xa tu khoa -> tep nam ngay duoi day, trong ma nguon nay.
-    [ValidateSet('on-dinh', 'ngan-sach', 'do-giong')]
-    [string]$Do = 'on-dinh'
+    [ValidateSet('on-dinh', 'ngan-sach', 'do-giong', 'qc-hinh')]
+    [string]$Do = 'on-dinh',
+
+    # Tham so RIENG cua 'qc-hinh': ten tep phim trong thu muc TEST VIDEO va
+    # noi ghi khung hinh bang chung. Khong anh huong ba tu khoa kia.
+    [string]$Phim = '',
+    [string]$ThuMucKhung = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -57,6 +62,7 @@ $bangCongCu = @{
     'on-dinh'   = 'tools\do_on_dinh_chuyen_loi_thoai.py'
     'ngan-sach' = 'tools\do_ngan_sach_chuyen_loi_thoai.py'
     'do-giong'  = 'tools\do_giong_hieu_chinh.py'
+    'qc-hinh'   = 'tools\do_qc_hinh.py'
 }
 $congCu = Join-Path $Repo $bangCongCu[$Do]
 
@@ -142,8 +148,20 @@ $env:LTT_ASV_POOL_URL = $env:LTT_DATABASE_URL
 # !! `-u`: KHONG dem stdout. Python dem khi dau ra khong phai TTY, nen mot
 #    luot dai se khong in mot byte nao cho toi luc ket thuc - va nhin tu ngoai
 #    thi "dang chay" va "treo" trong y het nhau. Do that 09/09.
-$dsThamSo = @('-u', $congCu, '--vong', "$Vong")
-Write-Host "  [OK] Bat dau do $Vong vong (moi vong goi CA HAI thao tac)" -ForegroundColor Green
+# !! Moi cong cu mot danh sach tham so, va no nam TRONG MA nhu bang tren.
+#    Mot tham so '-Args' tu do se bien script nay thanh cai ma docstring cua no
+#    noi ro la khong duoc ton tai: mot cach chay lenh bat ky voi moi truong
+#    production.
+if ($Do -eq 'qc-hinh') {
+    $dsThamSo = @('-u', $congCu)
+    if ($Phim)        { $dsThamSo += @('--phim', $Phim) }
+    if ($ThuMucKhung) { $dsThamSo += @('--khung', $ThuMucKhung) }
+    if ($Ra)          { $dsThamSo += @('--ra', $Ra) }
+    Write-Host "  [OK] Bat dau do QC hinh tren phim that" -ForegroundColor Green
+} else {
+    $dsThamSo = @('-u', $congCu, '--vong', "$Vong")
+    Write-Host "  [OK] Bat dau do $Vong vong (moi vong goi CA HAI thao tac)" -ForegroundColor Green
+}
 Write-Host ""
 
 # !! KHONG dung `Tee-Object` nua. Lop NGOAI (`do_on_dinh_nang_quyen.ps1`)
