@@ -29,6 +29,7 @@ nhiều node (mỗi node có thể là **20 phút A100**) mà không giữ một
 from __future__ import annotations
 
 import logging
+import math
 from datetime import datetime, timezone
 
 from fastapi import Body, Depends, Header, Path, Request
@@ -41,15 +42,17 @@ from platform_core.models import (Artifact, NodeRunSnapshot, Workflow,
                                   WorkflowRun, WorkflowVersion)
 from platform_core.public_api import idempotency, quotes
 from platform_core.public_api.errors import (THIEU_CREDIT_LOI, conflict,
+                                             idempotency_conflict,
                                              insufficient_credit,
-                                             invalid_request, not_found,
+                                             not_found,
+                                             quote_invalid, rate_limited,
                                              thieu_credit_chi_tiet,
                                              workflow_runs_unavailable)
 from platform_core.public_api.principal import Principal
 from platform_core.public_api.scopes import (SCOPE_WORKFLOWS_CANCEL,
                                              SCOPE_WORKFLOWS_READ,
                                              SCOPE_WORKFLOWS_RUN)
-from platform_core.workflow import bao_gia, may_trang_thai, thi_hanh, tien
+from platform_core.workflow import bao_gia, dong_co, may_trang_thai, tao_run
 from server.api.auth import require_scope
 # ⛔ DUNG LAI, khong chep. Chu thich cua chinh ham do canh bao dung cai bay
 #    toi vua dinh: `request.app` ben trong mot sub-app la SUB-APP, nen voi
@@ -123,6 +126,17 @@ def _ban_publish(db: Session, wf: Workflow) -> WorkflowVersion:
     ver = db.get(WorkflowVersion, wf.published_version_id)
     if ver is None or ver.workflow_id != wf.id:
         raise conflict("This workflow has no published version to run.")
+    # ⚠️ Task 7 dong bang `estimated_max` VAO graph luc publish, nhung ban
+    #    publish TU TRUOC do (hinh dang `pages`, gia tinh tu `params.gia` cua
+    #    client — dung lo hong ma audit 22/09 chi ra) khong co dau `ltt.workflow/3`
+    #    va khong co `bang_gia`/`gia_tran`. Tin `estimated_max` cua no la giu
+    #    lai chinh lo hong da vua vá o Task 6 cho MOI workflow xuat ban truoc
+    #    ban sua nay. Tu choi ca quote lan chay — khong doan lai gia, doi
+    #    xuat ban lai qua `xuat_ban_draft` (registry).
+    if (ver.graph or {}).get("schema") != "ltt.workflow/3":
+        raise quote_invalid(
+            "This workflow's published version predates registry-based "
+            "pricing. Re-publish it before requesting a quote or a run.")
     return ver
 
 
@@ -161,19 +175,19 @@ def register_workflow_routes(api, config, tag: str) -> None:
             raise workflow_runs_unavailable(_LOI_CHUA_MO)
         wf = _cua_toi(db, Workflow, workflow_id, principal)
         ver = _ban_publish(db, wf)
-        try:
-            gia = bao_gia.uoc_tinh({"nodes": ver.graph.get("nodes", [])})
-        except bao_gia.KhongBaoGiaDuoc as loi:
-            # ⛔ Từ chối, đừng đoán một con số: một trần đoán ra không chặn gì,
-            #    nó chỉ làm người đọc yên tâm.
-            raise invalid_request(str(loi)) from loi
+        # `estimated_max` da bi DONG BANG cung graph luc publish (Task 7) —
+        # khong tinh lai o day, vi tinh lai luc quote/chay nghia la mot lan
+        # publish va mot lan quote co the ra hai tran khac nhau cho CUNG mot
+        # `graph_hash`.
+        toi_da = int(ver.estimated_max or 0)
+        uoc = int(math.ceil(toi_da * bao_gia._TY_LE_UOC_TINH))
 
         token, _ = quotes.issue(
             secret=_quote_secret(request), user_id=principal.user_id,
             key_id=principal.key_id,
             tool_name=f"{_KHOA_BAO_GIA}{wf.id}",
             params={"version_id": ver.id, "graph_hash": ver.graph_hash},
-            credit=gia.toi_da)
+            credit=toi_da)
         return JSONResponse(
             {
                 "quote": token,
@@ -181,8 +195,8 @@ def register_workflow_routes(api, config, tag: str) -> None:
                 "version_id": ver.id,
                 # HAI số (`M8`): trần là thứ được giữ và được ký; ước tính chỉ
                 # để khách biết mình nhiều khả năng trả bao nhiêu.
-                "credit_max": gia.toi_da,
-                "credit_estimate": gia.uoc_tinh,
+                "credit_max": toi_da,
+                "credit_estimate": uoc,
                 "expires_in": quotes.QUOTE_TTL_S,
                 "balance": credit.so_du(db, principal.user_id),
             },
@@ -227,51 +241,20 @@ def register_workflow_routes(api, config, tag: str) -> None:
             bg, tool_name=f"{_KHOA_BAO_GIA}{wf.id}",
             params={"version_id": ver.id, "graph_hash": ver.graph_hash})
 
-        # Luỹ đẳng do chỉ mục bộ phận `ux_workflow_run_idem` cưỡng chế, không do
-        # một SELECT trước INSERT — một SELECT để lại đúng cửa sổ tranh chấp mà
-        # chỉ mục ấy sinh ra để đóng.
-        cu = db.execute(
-            select(WorkflowRun).where(
-                WorkflowRun.owner_id == principal.user_id,
-                WorkflowRun.workflow_id == wf.id,
-                WorkflowRun.idempotency_key == key)).scalars().first()
-        if cu is not None:
-            return JSONResponse(_cong_khai_run(cu), status_code=200,
-                                headers=_NO_STORE)
-
         try:
-            run = thi_hanh.tao_run(
-                db, workflow_id=wf.id, version_id=ver.id,
-                owner_id=principal.user_id, trigger_kind="api",
-                idempotency_key=key, estimated_max=int(bg.get("credit") or 0))
-        except Exception as loi:                             # noqa: BLE001
-            # `tao_run` flush bên trong, nên `IntegrityError` của chỉ mục bộ
-            # phận nổi lên **ở đây**, không ở commit. Thua ở CSDL rồi trả lượt
-            # cũ rẻ hơn thắng ở một câu truy vấn không có khoá.
-            db.rollback()
-            lai = db.execute(
-                select(WorkflowRun).where(
-                    WorkflowRun.owner_id == principal.user_id,
-                    WorkflowRun.workflow_id == wf.id,
-                    WorkflowRun.idempotency_key == key)).scalars().first()
-            if lai is None:
-                raise
-            # Moi tep khac trong `server/api/` dung `logging`; `print`
-            # trong mot bo xu ly request di thang ra stdout, khong mang
-            # muc do va khong loc duoc o production.
-            log.info("tao_run dua idempotency: %s", type(loi).__name__)
-            return JSONResponse(_cong_khai_run(lai), status_code=200,
-                                headers=_NO_STORE)
-
-        try:
-            tien.giu_cho_run(db, run)
+            run, moi = tao_run.tao_run(db, workflow=wf,
+                                       owner_id=principal.user_id,
+                                       trigger_kind="api",
+                                       idempotency_key=key)
+        except tao_run.TrungKhoaKhacWorkflow:
+            raise idempotency_conflict(
+                "Idempotency-Key already used for another workflow.") from None
+        except tao_run.QuaHanMuc as loi:
+            raise rate_limited(str(loi)) from loi
         except credit.ThieuCreditError as loi:
-            # Cùng transaction ⇒ run và khoản giữ cùng rollback. Không có lượt
-            # chạy nào tồn tại mà không có tiền đứng sau nó.
             raise insufficient_credit(
                 THIEU_CREDIT_LOI, **thieu_credit_chi_tiet(loi)) from loi
-
-        return JSONResponse(_cong_khai_run(run), status_code=201,
+        return JSONResponse(_cong_khai_run(run), status_code=201 if moi else 200,
                             headers=_NO_STORE)
 
     @api.get("/runs/{run_id}", tags=[tag], summary="Read one workflow run",
@@ -297,11 +280,12 @@ def register_workflow_routes(api, config, tag: str) -> None:
             if run.status == "CANCELLED":
                 return JSONResponse(_cong_khai_run(run), headers=_NO_STORE)
             raise conflict(f"This run is already {run.status}.")
-        # ⭐ `chuyen_run` kéo theo `ket_so` trong CÙNG transaction — đó chính là
-        #    hình dạng của `M10`. Không có bước "nhớ hoàn tiền" nào ở đây để
-        #    quên, và cũng không có cửa sổ nào cho một lần restart lọt vào.
-        may_trang_thai.chuyen_run(db, run.id, sang="CANCELLED",
-                                  ly_do="huy qua API")
+        # ⭐ `dong_co.huy_run` huỷ mọi node CHƯA kết thúc + job `jobs.cancel`
+        #    tương ứng, rồi mới `chuyen_run` — kéo theo `ket_so` trong CÙNG
+        #    transaction (hình dạng của `M10`). Không có bước "nhớ hoàn tiền"
+        #    nào ở đây để quên, và cũng không có cửa sổ nào cho một lần
+        #    restart lọt vào.
+        dong_co.huy_run(db, run.id, "huy qua API")
         return JSONResponse(_cong_khai_run(run), headers=_NO_STORE)
 
     @api.get("/runs/{run_id}/artifacts", tags=[tag],

@@ -14,8 +14,6 @@ from __future__ import annotations
 import pathlib
 import re
 
-import pytest
-
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 IMPORT = re.compile(r"^\s*(?:from|import)\s+([a-zA-Z_][\w.]*)", re.M)
 
@@ -159,6 +157,10 @@ CROSS_APP_ALLOWED = {
     ("asv_media", "auto_scan_video"),
     ("asv_gpu", "auto_scan_video"),
     ("asv_voice", "auto_scan_video"),
+    # agent_dong_co chỉ khai job_type `workflow.dong_co`; handler thật vẫn ở
+    # apps/agent/jobs.py (xem docstring apps/agent_dong_co/manifest.py) —
+    # tách để apps/agent giữ job_types == ("agent.advance",) (test_190).
+    ("agent_dong_co", "agent"),
     # loại B — nợ thật, đường ra là nâng phần dùng chung lên platform_core
     ("auto_scan_video", "ltt_llm"),
     ("auto_scan_video", "autosubvideo"),
@@ -233,6 +235,29 @@ def test_routes_package_van_xuat_ra_router():
         module = importlib.import_module(f"apps.{app}.routes")
         assert hasattr(module, "router"), f"apps/{app}/routes/ không xuất ra `router`"
         assert module.router.routes, f"apps/{app}/routes/ có router nhưng rỗng route"
+
+
+def test_platform_core_workflow_khong_hardcode_app_slug():
+    """F2 (final-review.md, plan 01a): Global Constraint "không hardcode tên
+    app/tool trong `platform_core/`" không có phép kiểm nào canh —
+    `test_967` (bánh cóc được viện dẫn) chỉ quét `frontend/agent-canvas/src`,
+    không đụng tới `platform_core`. Đây là bánh cóc CHỊ EM cho backend, cùng
+    tinh thần `test_967`: quét `platform_core/workflow/*.py` tìm
+    `app_slug="<literal>"` viết tay — mọi chỗ cần biết slug app phải tra qua
+    `registry.job_type_owners()` (như `tao_run.chu_dong_co()`), không viết
+    thẳng tên app ở tầng nền.
+    """
+    mau = re.compile(r'app_slug\s*=\s*["\'][a-z_][a-z0-9_]*["\']')
+    offenders = {}
+    for path in sorted((ROOT / "platform_core" / "workflow").glob("*.py")):
+        text = path.read_text(encoding="utf-8")
+        hits = mau.findall(text)
+        if hits:
+            offenders[str(path.relative_to(ROOT)).replace("\\", "/")] = hits
+    assert offenders == {}, (
+        f"platform_core/workflow hardcode app_slug bằng tay: {offenders} — "
+        "tra qua registry.job_type_owners() thay vì viết tên app trực tiếp "
+        "(mẫu: platform_core/workflow/tao_run.py::chu_dong_co)")
 
 
 def test_nen_tang_va_app_khong_phu_thuoc_core_legacy():

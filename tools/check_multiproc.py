@@ -1,9 +1,17 @@
-"""Chay bo bat bien da tien trinh (`test_214`) — hoac noi to rang no khong chay.
+"""Chay bo bat bien da tien trinh/da luong tren PostgreSQL that (`TEP_PG`) —
+hoac noi to rang no khong chay.
 
 Ba loi P0 cua ban audit 2026-08-15 lot qua hon ba nghin test vi CHUA TUNG co gi
 chay hai tien trinh worker cung luc tren mot CSDL. `test_214` la phep do con
 thieu do — nhung no can PostgreSQL, va `pytest` chi in mot chu `s` khi bo qua.
 Mot chu `s` giua ba nghin dau cham thi khong ai thay.
+
+`TEP_PG` (duoi day) cung gom `test_1720_wf_dong_co_pg.py`: dam bao dong co
+Workflow V2 (`platform_core/workflow/dong_co.py`) an toan khi hai luot
+`mot_vong` chay song song tren cung CSDL (khoa hang run, khong nop job doi) va
+song sot khi mot luot chet giua chung (FLOW H — transaction rollback, khong
+job ma). Cung mot ly do bo qua vo hinh: bo qua ca hai chum bao dam nay tren mot
+may khong co PostgreSQL cung chi la MOT chu `s`.
 
 Cong cu nay bien viec bo qua thanh MOT DONG RIENG trong gate. No khong lam gate
 do khi may khong co PostgreSQL — mot may phat trien khong co PostgreSQL van phai
@@ -29,6 +37,10 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 HAU_TO = "_multiproc_test"
 SUPER = (pathlib.Path(r"C:\LTTPlatform\secrets\postgres-superuser.txt"),
          ROOT / "secrets" / "postgres-superuser.txt")
+
+#: Moi tep test can PostgreSQL that. Them tep moi vao DAY (mot nguon).
+TEP_PG = ("tests/test_214_multi_process_runtime.py",
+          "tests/test_1720_wf_dong_co_pg.py")
 
 
 def _doc_neu_duoc(path: pathlib.Path) -> str:
@@ -195,21 +207,22 @@ def main() -> int:
     if not url:
         # KHONG phai loi: mot may khong co PostgreSQL van phai lam viec duoc.
         # Nhung phai noi to, vi day la bang chung cho ba loi P0 da dong.
-        print("BO QUA bo bat bien da tien trinh — " + ly_do)
+        print("BO QUA bo bat bien da tien trinh/da luong — " + ly_do)
         print("  test_214 la thu duy nhat chung minh webhook khong gui trung,")
         print("  canh bao khong nhan doi, va so credit khop khi nhieu tien")
-        print("  trinh worker chay cung luc.")
+        print("  trinh worker chay cung luc. test_1720 la thu duy nhat chung")
+        print("  minh dong co Workflow V2 khong nop job doi khi hai luot")
+        print("  `mot_vong` chay song song, va song sot khi mot luot chet")
+        print("  giua chung (FLOW H). Bo qua ca hai la bo qua bang chung cho")
+        print("  ca hai bao dam nay, khong chi bao dam cua test_214.")
         # Tu 2026-08-27, nguyen nhan HAY GAP NHAT tren may chu khong con la
         # "khong co PostgreSQL" ma la "khong doc duoc secrets\": thu muc do da
         # duoc siet ve SYSTEM + Administrators, nen mot shell thuong khong lay
         # duoc `LTT_DATABASE_URL` lan mat khau superuser. Noi thang ra, vi hai
         # nguyen nhan do doi hai cach xu ly khac han nhau.
         if not _doc_neu_duoc(pathlib.Path(r"C:\LTTPlatform\secrets\app.env")):
-            # !! THUAN ASCII o day. Gate goi cong cu nay KHONG dat
-            #    PYTHONIOENCODING, nen stdout la cp1252 va mot ky tu ngoai bang
-            #    ma do nem `UnicodeEncodeError` -> buoc gate DO, voi mot stack
-            #    trace khong lien quan gi toi thu no dang kiem.
-            #    Da dinh dung the ngay 27/08 khi them mot emoji vao dong duoi.
+            # !! THUAN ASCII: gate khong dat PYTHONIOENCODING (stdout cp1252),
+            #    ky tu ngoai bang ma se nem UnicodeEncodeError. Da dinh 27/08.
             print()
             print("  !! Tren may CHU: gan nhu chac chan vi khong doc duoc")
             print("      C:\\LTTPlatform\\secrets\\ (da siet ve SYSTEM +")
@@ -219,7 +232,7 @@ def main() -> int:
         print()
         print("  Chay tay:")
         print("    set LTT_TEST_DATABASE_URL=postgresql+psycopg://.../..._test")
-        print("    python -m pytest tests/test_214_multi_process_runtime.py")
+        print("    python -m pytest " + " ".join(TEP_PG))
         return 0
 
     try:
@@ -233,8 +246,7 @@ def _chay_test_214(url: str) -> int:
     env["LTT_TEST_DATABASE_URL"] = url
     env.pop("LTT_DATABASE_URL", None)       # test tu tro CSDL cua no
     done = subprocess.run(
-        [sys.executable, "-m", "pytest", "-q",
-         "tests/test_214_multi_process_runtime.py"],
+        [sys.executable, "-m", "pytest", "-q", *TEP_PG],
         # 🔴 `encoding=` + `errors=`, KHONG chi `text=True`.
         #
         #    `text=True` giai ma bang bang ma MAC DINH cua he — tren Windows la

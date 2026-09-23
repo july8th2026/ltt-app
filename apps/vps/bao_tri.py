@@ -47,6 +47,7 @@ trình vẫn nổ lên trên như bình thường.
 from __future__ import annotations
 
 import logging
+import os
 import time
 
 from apps.vps.services import billing, backend_factory
@@ -108,7 +109,7 @@ def _nop_job_xoa(db, may) -> bool:
     return truoc is not None
 
 
-def _dong_bo_bang_thong(db, profile=None) -> int:
+def _dong_bo_bang_thong(db, profile=None, *, now=None) -> int:
     """Đọc bộ đếm trên router, cộng dồn vào từng máy, và hãm tốc máy vượt trần.
 
     Trả về số máy vừa **đổi** trạng thái hãm tốc — chỉ số đó đáng ghi log.
@@ -126,6 +127,18 @@ def _dong_bo_bang_thong(db, profile=None) -> int:
     Nên mỗi lượt: đọc **sự thật trên router**, ghi lại những gì thiếu. Cùng
     nguyên tắc với `gateway.danh_sach_duong` — thứ duy nhất phát hiện được lệch
     là đọc lại phía kia, không phải tin phía mình.
+
+    ## Hai lớp bảo vệ, MỘT quyết định mỗi máy
+
+    Từ V2 (Mục 4, 23/09/2026) có thêm lớp 2 — theo TỔNG cả cổng vào, không chỉ
+    theo từng khách (`_can_ham_theo_tong`). Hai lớp phải hội tụ thành **một**
+    `can_ham` mỗi máy trước khi chạm router: tính riêng rồi gọi `dat_giam_toc`
+    hai lần trong cùng lượt sẽ có lúc BẬT rồi TẮT ngay chính máy đó (lớp riêng
+    nói không cần hãm, lớp tổng nói cần) — tốn SSH thật và ghi hai sự kiện
+    trái nhau trong cùng một lượt bảo trì. Nên hàm này CỘNG DỒN xong hết cho
+    mọi máy TRƯỚC (bước 1, không đụng router), rồi mới hỏi lớp tổng cần hãm ai
+    (bước 2, dùng đúng số vừa cộng dồn), rồi mới quyết định và gọi router
+    (bước 3) — đúng MỘT lần mỗi máy.
     """
     from sqlalchemy import select
 
@@ -144,13 +157,15 @@ def _dong_bo_bang_thong(db, profile=None) -> int:
         log.warning("VPS bao tri: khong doc duoc bang thong: %s", exc)
         return 0
 
-    doi = 0
     query = select(VpsInstance).where(
             VpsInstance.trang_thai.in_(("dang_chay", "da_tat", "bi_treo")),
             VpsInstance.ip_noi_bo.is_not(None))
     if profile is not None:
         query = query.where(VpsInstance.infrastructure_profile_id == profile.id,
                             VpsInstance.profile_resolution_state == "PINNED")
+
+    # ── Bước 1: cộng dồn riêng từng máy — THUẦN DB, chưa đụng router ─────────
+    dang_song: list = []
     for may in db.execute(query).scalars():
         if profile is not None:
             try:
@@ -177,8 +192,19 @@ def _dong_bo_bang_thong(db, profile=None) -> int:
         may.bang_thong_byte = tong
         may.bang_thong_moc_len = moc_len
         may.bang_thong_moc_xuong = moc_xuong
+        dang_song.append(may)
 
-        can_ham = bang_thong.vuot_han_muc(may)
+    # ── Bước 2: lớp bảo vệ THEO TỔNG — chỉ có ý nghĩa khi có PROFILE, vì cần
+    #    biết đọc bộ đếm cổng vào nào. Duyệt đúng `dang_song` (bảng VpsInstance)
+    #    nên KHÔNG BAO GIỜ đụng tới VM100-107 — chúng không có mặt trong bảng.
+    can_ham_theo_tong = (_can_ham_theo_tong(profile, dang_song, now=now)
+                         if profile is not None else set())
+
+    # ── Bước 3: MỘT quyết định mỗi máy, rồi mới gọi router ───────────────────
+    doi = 0
+    for may in dang_song:
+        ip = str(may.ip_noi_bo)
+        can_ham = bang_thong.vuot_han_muc(may) or may.id in can_ham_theo_tong
         # So với TRẠNG THÁI THẬT trên router, không với cột trong CSDL: sau một
         # lần dựng lại ruleset, cột nói "đang hãm" mà router thì không.
         if (ip in dang_ham) != can_ham:
@@ -193,9 +219,223 @@ def _dong_bo_bang_thong(db, profile=None) -> int:
             may.bi_giam_toc = can_ham
             billing.ghi_su_kien(
                 db, may.id, "giam_toc_bat" if can_ham else "giam_toc_tat",
-                boi="he_thong", da_dung=bang_thong.doc_duoc(tong))
+                boi="he_thong", da_dung=bang_thong.doc_duoc(may.bang_thong_byte))
     db.commit()
     return doi
+
+
+# ── Lớp bảo vệ THEO TỔNG (V2, Mục 4 của đặc tả 2026-09-23) ──────────────────
+#
+# Lớp riêng ở trên (`bang_thong.vuot_han_muc`) hãm một khách khi CHÍNH khách đó
+# vượt hạn mức GÓI của họ. Nhưng cổng vào chỉ có 1 TB/tháng CHUNG cho mọi thứ
+# đi qua nó — kể cả VM100-107, việc thật của chủ dự án, không phải khách. OVH
+# không hãm riêng từng địa chỉ khi cổng chạm trần: họ hãm CẢ CỔNG xuống 10
+# Mbps. Nên phải có một lớp nhìn TỔNG, không chỉ nhìn từng khách, và hãm bớt
+# TRƯỚC khi cái tổng đó tới tay OVH.
+#
+# ## Mốc cộng dồn: dùng `network_config` sẵn có, không thêm cột
+#
+# `VpsInfrastructureProfile.network_config` (JSON, đã có từ V12) là chỗ chứa
+# CẤU HÌNH không bí mật riêng cho từng profile — đúng khuôn "bảng/khoá cấu hình
+# sẵn có" mà không cần migration Alembic (migration đụng deploy, không phải
+# quyết định của một làn riêng lẻ). Khoá `cong_vao_bang_thong` bên trong nó
+# giữ ba thứ: tháng đang tính, tổng byte đã cộng dồn tháng này, và MỐC bộ đếm
+# thô của card mạng — dùng lại NGUYÊN `bang_thong.cong_don` để xử lý việc bộ
+# đếm không bao giờ tự về 0 (nó là bộ đếm từ lúc khởi động máy, không phải bộ
+# đếm theo tháng), cùng khuôn với cách mỗi máy khách tự cộng dồn của nó.
+_KHOA_CAU_HINH_CONG_VAO = "cong_vao_bang_thong"
+
+#: Tháng-tới-giờ chạm mốc này (% trần) thì bắt đầu xét hãm theo tổng.
+NGUONG_BAO_VE_TONG = 0.8
+
+
+def _doc_cau_hinh_cong_vao(env: dict | None = None):
+    """`DichDen` SSH CHỈ-ĐỌC tới cổng vào OVH — chỉ để đọc bộ đếm mạng.
+
+    Không cần tiền tố `sudo`: đọc `/sys/class/net/*/statistics/*` và chạy
+    `ip route get` không đòi quyền root.
+    """
+    from apps.vps.services.ssh_lenh import DichDen
+
+    src = os.environ if env is None else env
+    return DichDen(
+        host=str(src.get("LTT_OVH_GATEWAY_HOST", "")).strip(),
+        user=str(src.get("LTT_OVH_GATEWAY_USER", "")).strip() or "ubuntu",
+        khoa=str(src.get("LTT_OVH_GATEWAY_SSH_KEY", "")).strip(),
+        known_hosts=str(src.get("LTT_OVH_GATEWAY_KNOWN_HOSTS", "")).strip(),
+        nhan="cong vao OVH",
+    ).verify("LTT_OVH_GATEWAY_HOST")
+
+
+def _doc_bo_dem_cong_vao(dich, *, chay=None) -> tuple[int, int]:
+    """`(rx_byte, tx_byte)` tích luỹ từ lúc khởi động của card mạng công khai.
+
+    Dò `IFACE` bằng `ip route get 1.1.1.1` thay vì viết cứng `ens3`: tên card
+    đổi được khi đổi nhà cung cấp, hoặc họ đổi tên card mặc định — đã có tiền
+    lệ ở chính cổng vào này (Vultr → OVH đổi luôn cả TRẦN, xem `bang_thong.py`).
+    """
+    from apps.vps.services.ssh_lenh import SshLenhError, bash_tu_xa
+
+    kich_ban = (
+        "IFACE=$(ip route get 1.1.1.1 2>/dev/null | "
+        "sed -n 's/.* dev \\([^ ]*\\).*/\\1/p' | head -n1); "
+        "cat /sys/class/net/$IFACE/statistics/rx_bytes; "
+        "cat /sys/class/net/$IFACE/statistics/tx_bytes"
+    )
+    ra = bash_tu_xa(dich, kich_ban, chay=chay)
+    dong = [d.strip() for d in ra.splitlines() if d.strip()]
+    if len(dong) < 2:
+        raise SshLenhError(
+            f"cong vao tra ve thieu so lieu bo dem (can 2 dong, duoc {dong!r})")
+    try:
+        return int(dong[0]), int(dong[1])
+    except ValueError as exc:
+        raise SshLenhError(f"cong vao tra ve khong phai so: {dong!r}") from exc
+
+
+def _doc_dem_hai_chieu_moi_truong(env: dict | None = None) -> bool:
+    src = os.environ if env is None else env
+    return str(src.get("LTT_VPS_DEM_HAI_CHIEU", "true")).strip().lower() != "false"
+
+
+def _thang_hien_tai(now) -> str:
+    return f"{now.year:04d}-{now.month:02d}"
+
+
+def _so_ngay_trong_thang(now) -> int:
+    import calendar
+    return calendar.monthrange(now.year, now.month)[1]
+
+
+def _cong_don_cong_vao(profile, rx_byte: int, tx_byte: int, *, now,
+                       dem_hai_chieu: bool) -> dict:
+    """Cập nhật tổng băng thông THÁNG-TỚI-GIỜ của cả cổng vào, lưu vào
+    `profile.network_config[_KHOA_CAU_HINH_CONG_VAO]`. Trả về trạng thái mới.
+
+    Tái dùng ĐÚNG `bang_thong.cong_don` — không viết lại phép cộng dồn, cùng
+    khuôn với cách `_dong_bo_bang_thong` cộng dồn cho từng máy ở trên.
+
+    ## Sang tháng mới: đặt MỐC = số thô hiện tại, không phải 0
+
+    Bộ đếm của card mạng tích luỹ từ lúc **khởi động máy**, không tự về 0 đầu
+    tháng. Đặt mốc về 0 khi sang tháng sẽ cộng nhầm toàn bộ lịch sử từ lúc
+    khởi động cổng vào tới giờ vào tháng mới — có thể là hàng chục TB. Mốc
+    đúng của một tháng mới là số thô đọc được ngay lúc phát hiện đã sang tháng.
+    """
+    from apps.vps import bang_thong
+
+    cfg = dict(getattr(profile, "network_config", None) or {})
+    tt = dict(cfg.get(_KHOA_CAU_HINH_CONG_VAO) or {})
+    thang = _thang_hien_tai(now)
+    if tt.get("thang") != thang:
+        tt = {"thang": thang, "tong_byte": 0,
+             "moc_len": rx_byte, "moc_xuong": tx_byte}
+
+    tong = int(tt.get("tong_byte", 0))
+    moc_len = int(tt.get("moc_len", 0))
+    moc_xuong = int(tt.get("moc_xuong", 0))
+
+    if dem_hai_chieu:
+        tong, moc_len = bang_thong.cong_don(tong, moc_len, rx_byte)
+    else:
+        # OVH chi dem chieu ra (xem bang_thong.LTT_VPS_DEM_HAI_CHIEU): khong
+        # cong RX vao tong, nhung VAN cap nhat moc de lan sau khong tinh nham
+        # mot khoi RX tich luy tu dau thang neu co dem lai hai chieu.
+        moc_len = rx_byte
+    tong, moc_xuong = bang_thong.cong_don(tong, moc_xuong, tx_byte)
+
+    tt = {"thang": thang, "tong_byte": tong,
+         "moc_len": moc_len, "moc_xuong": moc_xuong}
+    cfg[_KHOA_CAU_HINH_CONG_VAO] = tt
+    profile.network_config = cfg   # gan lai ca dict — JSON column can doi tuong MOI de SQLAlchemy thay doi
+    return tt
+
+
+def _chon_may_can_ham_theo_tong(may_sap_xep, *, tong_thang_byte: int,
+                                tran_byte: int, ngay_da_qua: int,
+                                so_ngay_thang: int) -> set[str]:
+    """Chọn tập `id` máy cần ép hãm để dự phóng cuối tháng lọt trần.
+
+    `may_sap_xep`: các VpsInstance đang sống, **sắp theo `bang_thong_byte`
+    GIẢM DẦN** — hãm máy dùng nhiều nhất trước, đúng như đặc tả.
+
+    ## Mô hình, và vì sao nó là một XẤP XỈ có chủ ý
+
+    Tốc độ trung bình mỗi ngày của CẢ CỔNG (`tong_thang_byte / ngay_da_qua`) đã
+    gồm cả nền production (VM100-107) lẫn mọi khách — đó là số ĐO ĐƯỢC thật từ
+    bộ đếm của card mạng, không phải suy diễn. Khi ép hãm một khách, giả định
+    khách đó gần như ngừng đóng góp cho phần còn lại của tháng (10 Mbps không
+    đáng kể so với hạn mức GB/tháng), nên trừ ĐÚNG phần tốc độ trung bình của
+    riêng khách đó (`bang_thong_byte` của khách / số ngày đã qua) khỏi tốc độ
+    chung, rồi chiếu tốc độ còn lại theo số ngày còn lại của tháng. Phần của
+    nền KHÔNG BAO GIỜ bị trừ — không có khách nào đại diện cho nó — nên nếu
+    chính nền đã đủ đẩy dự phóng vượt trần, hãm hết mọi khách cũng không đủ,
+    và hàm trả về tất cả những gì nó xét được (xem nhánh cuối vòng lặp).
+
+    Hãm khách dùng nhiều nhất trước vì tốc độ của khách đó cũng lớn nhất — mỗi
+    lần hãm kéo dự phóng xuống nhiều nhất, nên cần hãm ÍT khách nhất để đủ.
+
+    Đây KHÔNG phải một phép đo chính xác — nó không biết tốc độ THẬT của từng
+    khách trong THÁNG DƯƠNG LỊCH, chỉ biết tổng byte khách đó đã dùng TỪ ĐẦU
+    CHU KỲ RIÊNG của khách (có thể lệch vài ngày so với đầu tháng). Chấp nhận
+    được vì đây là lớp BẢO VỆ THÊM, không phải sổ tính tiền — sổ tính tiền vẫn
+    là `bang_thong.vuot_han_muc` (lớp riêng) với cột CSDL của chính nó.
+    """
+    ngay_da_qua = max(1, int(ngay_da_qua))
+    ngay_con_lai = max(0, int(so_ngay_thang) - ngay_da_qua)
+    rate_tong_ngay = tong_thang_byte / ngay_da_qua
+
+    da_giam_rate = 0.0
+    ham: set[str] = set()
+    for may in may_sap_xep:
+        du_phong_byte = tong_thang_byte + (rate_tong_ngay - da_giam_rate) * ngay_con_lai
+        if du_phong_byte <= tran_byte:
+            return ham
+        ham.add(may.id)
+        da_giam_rate += max(0, int(getattr(may, "bang_thong_byte", 0) or 0)) / ngay_da_qua
+    return ham
+
+
+def _can_ham_theo_tong(profile, dang_song, *, now=None) -> set[str]:
+    """Tập `id` VpsInstance cần bị ép hãm bởi lớp TỔNG, cho một profile.
+
+    Lỗi đọc cổng vào (SSH hỏng, thiếu cấu hình) KHÔNG được làm hỏng vòng bảo
+    trì: trả về tập rỗng — lớp RIÊNG (đã chạy xong ở bước 1/3 của
+    `_dong_bo_bang_thong`) vẫn hoạt động bình thường, chỉ là lớp tổng bỏ lượt
+    này. Bộ đếm trên cổng vào vẫn chạy tiếp nên lượt sau cộng bù đủ.
+
+    Chỉ xét `dang_song` — đúng những gì `_dong_bo_bang_thong` vừa duyệt từ
+    bảng `VpsInstance`. VM100-107 không phải `VpsInstance` nên KHÔNG BAO GIỜ
+    có mặt ở đây — không phải một điều kiện phải nhớ kiểm tra, mà là hệ quả
+    của việc hàm này không có đường nào để với tới chúng.
+    """
+    from datetime import datetime, timezone
+
+    from apps.vps import bang_thong
+    from apps.vps.services.ssh_lenh import SshLenhError
+
+    try:
+        dich = _doc_cau_hinh_cong_vao()
+        rx_byte, tx_byte = _doc_bo_dem_cong_vao(dich)
+    except SshLenhError as exc:
+        log.warning("VPS bao tri: khong doc duoc bo dem cong vao: %s", exc)
+        return set()
+
+    bay_gio = now or datetime.now(timezone.utc)
+    trang_thai = _cong_don_cong_vao(
+        profile, rx_byte, tx_byte, now=bay_gio,
+        dem_hai_chieu=_doc_dem_hai_chieu_moi_truong())
+    tran_byte = bang_thong.TRAN_CONG_VAO_GB * 1024 ** 3
+    tong_thang_byte = trang_thai["tong_byte"]
+
+    if tong_thang_byte < NGUONG_BAO_VE_TONG * tran_byte:
+        return set()
+
+    may_sap_xep = sorted(
+        dang_song, key=lambda m: int(m.bang_thong_byte or 0), reverse=True)
+    return _chon_may_can_ham_theo_tong(
+        may_sap_xep, tong_thang_byte=tong_thang_byte, tran_byte=tran_byte,
+        ngay_da_qua=bay_gio.day, so_ngay_thang=_so_ngay_trong_thang(bay_gio))
 
 
 def _dong_bo_bang_thong_pinned(db):

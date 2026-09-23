@@ -29,6 +29,16 @@ describe('workflow API', () => {
     await expect(saveWorkflow(workflow, 'csrf-test')).rejects.toBeInstanceOf(WorkflowConflictError)
   })
 
+  it('doc duoc thong_diep khi loi 422 tra detail la dict (Task 7 publish)', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(
+      JSON.stringify({ detail: { ma: 'khong_bao_gia_duoc', node_id: 'a',
+        thong_diep: 'a: khong co cong cu' } }),
+      { status: 422, headers: { 'Content-Type': 'application/json' } }))
+    // Truoc ban sua: `new Error({...})` -> message la "[object Object]".
+    await expect(saveWorkflow(workflow, 'csrf-test'))
+      .rejects.toThrow('a: khong co cong cu')
+  })
+
   it('binds run creation to workflow revision and approval to quote hash', async () => {
     const run = { id: 'r1', version: 1, status: 'awaiting_approval', plan: { steps: [] },
       checkpoint: {}, estimated: 5, actual: 0, quote_hash: 'abc', decisions: [], artifacts: [] } satisfies AgentRun

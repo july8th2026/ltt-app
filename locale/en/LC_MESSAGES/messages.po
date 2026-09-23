@@ -4312,6 +4312,10 @@ msgstr ""
 msgid "Evaluator manifest không có artifact."
 msgstr "The batch manifest is not valid."
 
+#: apps/agent_dong_co/manifest.py
+msgid "Executor nội bộ của Agent/Workflow (job_type workflow.dong_co). Không phải sản phẩm riêng."
+msgstr "Internal executor for Agent/Workflow (job_type workflow.dong_co). Not a separate product."
+
 #: apps/auto_scan_video
 msgid "Executor nội bộ của Auto Scan Video. Không phải sản phẩm riêng."
 msgstr "Internal executor for Auto Scan Video. Not a separate product."
@@ -7003,6 +7007,10 @@ msgstr "LTT 3.8 (Strong)"
 msgid "LTT 3.8 hoặc đổi qua lại hai model"
 msgstr "LTT 3.8 or switching between both models"
 
+#: apps/agent_dong_co/manifest.py
+msgid "LTT Agent AI — động cơ"
+msgstr "LTT Agent AI — engine"
+
 msgid "LTT API"
 msgstr "LTT API"
 
@@ -9379,6 +9387,14 @@ msgstr "Type the text you want read aloud…"
 #: server/templates/nexus_nhat_ky.html:2
 msgid "Nhật ký"
 msgstr "Activity log"
+
+#: platform_core/public_api/governance.py
+msgid ""
+"Nhật ký cấp run, CHỈ THÊM: WorkflowStarted, WaitpointOpened, SupervisorDecision, ... Cùng bảng "
+"làm outbox cho trigger `event` (spec Sec8.4)."
+msgstr ""
+"Run-level event log, APPEND ONLY: WorkflowStarted, WaitpointOpened, SupervisorDecision, ... Also "
+"the outbox for the `event` trigger (spec §8.4)."
 
 #, python-format
 msgid "Nhật ký chỉ giữ %(days)s ngày gần nhất — một request cũ hơn thế đã bị dọn."
@@ -20528,3 +20544,6 @@ msgstr "Not accepting new machines for the rest of this month."
 
 msgid "Máy thường sẵn sàng sau khoảng %(phut)s phút, chậm nhất khoảng %(cham)s phút."
 msgstr "Machines are usually ready in about %(phut)s minutes, at most about %(cham)s minutes."
+
+msgid "Đường truyền ra Internet là <strong>tài nguyên dùng chung</strong> giữa mọi máy. Khi tổng lưu lượng của toàn nền tảng chạm ngưỡng an toàn, máy đang dùng <strong>nhiều nhất</strong> có thể bị giảm tốc <strong>trước</strong> khi chạm hạn mức riêng của chính máy đó — để giữ đường truyền chung không bị nhà cung cấp hãm tốc cho tất cả."
+msgstr "The uplink to the Internet is a <strong>shared resource</strong> across all machines. When total platform traffic reaches a safe threshold, the machine using the <strong>most</strong> bandwidth may be throttled <strong>before</strong> it reaches its own limit — so the shared uplink is not throttled by the provider for everyone."

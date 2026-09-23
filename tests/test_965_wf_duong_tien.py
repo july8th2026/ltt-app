@@ -287,11 +287,11 @@ def test_TRAN_RUN_phai_NGAN_HON_nguong_tu_hoan():
     mà là một đường thứ hai cạnh tranh.
     """
     from platform_core import credit
-    from platform_core.workflow import dieu_phoi
+    from platform_core.workflow import dong_co
 
-    assert dieu_phoi.TRAN_RUN < credit.TU_HOAN_SAU, (
-        f"TRAN_RUN={dieu_phoi.TRAN_RUN} phai NGAN HON "
+    assert dong_co.TRAN_RUN < credit.TU_HOAN_SAU, (
+        f"TRAN_RUN={dong_co.TRAN_RUN} phai NGAN HON "
         f"TU_HOAN_SAU={credit.TU_HOAN_SAU}")
-    du = credit.TU_HOAN_SAU - dieu_phoi.TRAN_RUN
+    du = credit.TU_HOAN_SAU - dong_co.TRAN_RUN
     assert du >= timedelta(hours=2), (
         f"khoang cach {du} qua hep cho mot vong quet co chu ky")

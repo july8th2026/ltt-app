@@ -569,6 +569,17 @@ STORES: tuple = (
     Store("foreach_muc", DERIVED, None, N_("chủ tài khoản + vận hành"),
           N_("Kết quả từng phần tử của một vòng ForEach — thứ nói CHÍNH XÁC còn "
              "phải chạy gì sau một lần chết.")),
+    # OPERATIONAL, không phải EVIDENCE: `node_run_snapshot` (ở trên) đã là bằng
+    # chứng bất biến trả lời "vì sao tốn ngần ấy". `workflow_event` chỉ là nhật
+    # ký + outbox cấp RUN (spec Sec5.11) — hữu ích lúc mới, vô giá trị khi cũ.
+    # TTL 90 ngày SAU KHI RUN KẾT SỔ (`ket_so_luc`), không phải sau
+    # `created_at` của chính sự kiện: một run còn sống thì sự kiện đầu tiên của
+    # nó không bao giờ bị dọn dù đã 90 ngày tuổi.
+    Store("workflow_event", OPERATIONAL, 90, N_("chủ tài khoản + vận hành"),
+          N_("Nhật ký cấp run, CHỈ THÊM: WorkflowStarted, WaitpointOpened, "
+             "SupervisorDecision, ... Cùng bảng làm outbox cho trigger `event` "
+             "(spec Sec8.4)."),
+          "su_kien.purge_expired (worker)"),
 )
 
 
