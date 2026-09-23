@@ -154,6 +154,42 @@ def _dung_bang_superuser(sa, pw: str, dia_chi: str, scratch_ten: str) -> tuple[s
                     f"(khong noi duoc truoc do: {vi_sao_khong_noi_duoc})")
 
 
+def _xoa_scratch() -> None:
+    """Xoa CSDL test cua CHINH cay nay sau luot chay (su co 23/09: CSDL mo coi).
+
+    Chi xoa khi cong cu TU dung CSDL do bang superuser — tuc lan sau tu tao lai
+    duoc. `LTT_TEST_DATABASE_URL` do nguoi goi dat, hoac khong co superuser (CSDL
+    co san, tai khoan ung dung noi vao): KHONG phai cua ta, giu nguyen.
+    """
+    if (os.environ.get("LTT_TEST_DATABASE_URL") or "").strip():
+        return
+    pw = _superuser_pw()
+    if not pw:
+        return
+    live = (os.environ.get("LTT_DATABASE_URL") or "").strip() or _doc_env("LTT_DATABASE_URL")
+    if not live.startswith(("postgresql", "postgres")):
+        return
+    base, _, ten = live.rpartition("/")
+    ten = ten.split("?", 1)[0]
+    sys.path.insert(0, str(ROOT / "tools"))
+    from pg_ten_cay import cau_xoa_csdl_test
+    cau = cau_xoa_csdl_test(ten, HAU_TO, ROOT)
+    dia_chi = base.partition("://")[2].partition("@")[2]
+    import sqlalchemy as sa
+    e = sa.create_engine(f"postgresql+psycopg://postgres:{pw}@{dia_chi}/postgres",
+                         future=True, isolation_level="AUTOCOMMIT",
+                         connect_args={"connect_timeout": 5})
+    try:
+        with e.connect() as c:
+            c.execute(sa.text(cau))
+        print("[i] da xoa CSDL test cua cay nay")
+    except Exception as exc:                # noqa: BLE001
+        print(f"[!] khong xoa duoc CSDL test ({type(exc).__name__}) - "
+              "python tools/don_csdl_test.py se liet ke no")
+    finally:
+        e.dispose()
+
+
 def main() -> int:
     url, ly_do = _tim_url()
     if not url:
@@ -186,6 +222,13 @@ def main() -> int:
         print("    python -m pytest tests/test_214_multi_process_runtime.py")
         return 0
 
+    try:
+        return _chay_test_214(url)
+    finally:
+        _xoa_scratch()
+
+
+def _chay_test_214(url: str) -> int:
     env = dict(os.environ)
     env["LTT_TEST_DATABASE_URL"] = url
     env.pop("LTT_DATABASE_URL", None)       # test tu tro CSDL cua no

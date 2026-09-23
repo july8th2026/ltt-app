@@ -12,6 +12,26 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-23 (chiều) — CSDL test PostgreSQL mồ côi: 132 CSDL làm PostgreSQL phục hồi 4,5 phút mỗi lần sập
+
+- **Đo trên máy chủ:** `data\base` có 132 CSDL (127 tạo trong tháng 9), 44.651 tệp. Sau mỗi lần máy sập,
+  PostgreSQL "syncing data directory (fsync)" từng tệp: 14:24:56 → 14:29:23 (redo chỉ 0,01 s) ⇒
+  `pg_ctl runservice -w` quá hạn ⇒ SCM ghi `postgresql-x64-17` **Stopped** trong khi postgres.exe vẫn chạy
+  ⇒ lần tắt máy sau Windows không dừng nó ⇒ lại phục hồi. Vòng lặp.
+- **Nguồn rò:** `check_multiproc` / `do_migration_tren_postgres` / `dien_tap_m1_tren_postgres` tạo một CSDL
+  cho MỖI worktree (`pg_ten_cay.ten_csdl_test`) và rào cũ là *"không bao giờ DROP DATABASE"*; worktree gỡ đi
+  là CSDL mồ côi. `test_1010::profile_pg` tạo `ltt_vps_v4_test_<uuid>` mỗi lượt, chỉ xoá bảng.
+- **Vận hành (chủ dự án duyệt):** dừng sạch + start lại qua dịch vụ (0,8 s, không phục hồi); loại trừ Defender
+  thư mục data; DROP 110 CSDL mồ côi (không FORCE, giữ CSDL của 7 worktree còn sống theo vân tay) ⇒ 22 CSDL,
+  9.666 tệp.
+- **Mã (`phien/pg-scratch-don`):** rào mới thay rào cũ — mọi DROP qua `pg_ten_cay.cau_xoa` (tên chứa `test`
+  hoặc khuôn diễn tập, khác CSDL đang chạy, không phải CSDL hệ thống, identifier thuần, không FORCE); ba công cụ
+  xoá CSDL của CHÍNH cây trong `finally` (`--giu` thì giữ; `check_multiproc` chỉ xoá khi tự tạo bằng
+  superuser); `test_1010` xoá CSDL ngẫu nhiên; `tools/don_csdl_test.py` (mặc định chạy thử, `--xoa` mới xoá).
+  Chạy thử 23/09 sau khi dọn: XOA 0 · GIU 21 · KHAC 1 (`lttplatform_test`, không đụng).
+- **Chốt:** `tests/test_2300` — rào, hành vi `finally`/`--giu` của ba công cụ (stub), phân loại, quét AST
+  "tạo CSDL phải có đường xoá". Tiêm bản cũ: bộ quét trên `main` chưa vá tố đúng 4 tệp, trên nhánh 0.
+
 ## 2026-09-23 — Task 13: gỡ suy diễn lỗi cũ ở A/B/LTTCODE; 4xx không được phạt khoá
 
 Plan `docs/superpowers/plans/2026-09-21-chuan-hoa-ngu-nghia-loi-llm.md` Task 13 (chủ dự án cho làm ngay,

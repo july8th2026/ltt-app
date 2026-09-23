@@ -273,6 +273,18 @@ def profile_pg():
         VpsIp.__table__.drop(engine, checkfirst=True)
         table.drop(engine, checkfirst=True)
         engine.dispose()
+        # 23/09/2026: ten ngau nhien moi luot, khong bao gio dung lai -> truoc
+        # day moi luot de lai mot CSDL rong (17 cai). Xoa qua rao `cau_xoa`.
+        from sqlalchemy import text
+        from tools import pg_ten_cay
+        quan_tri = create_engine(scratch._url_nhap(live, "postgres"),
+                                 isolation_level="AUTOCOMMIT",
+                                 connect_args={"connect_timeout": 5})
+        try:
+            with quan_tri.connect() as c:
+                c.execute(text(pg_ten_cay.cau_xoa(name, scratch._ten_csdl(live))))
+        finally:
+            quan_tri.dispose()
 
 
 def test_real_postgres_profile_schema_and_default_invariant(profile_pg):
