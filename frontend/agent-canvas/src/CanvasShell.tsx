@@ -70,6 +70,17 @@ function uniqueNodeLabel(node:CanvasNode,nodes:CanvasNode[],byName:Map<string,Pa
 
 // Trang thai node v3 (chu HOA, spec §5.3) -> tu vung mau sac ma `ToolNode`
 // da biet. ⛔ Khong doi `ToolNode` o day: no la viec cua plan 02.
+/** Nhip poll co ban, va do LUI DAN khi cua doc hong.
+ *  LUI chu khong DUNG: man hinh nay theo doi mot luot chay DANG TIEU TIEN, nen
+ *  bo cuoc nghia la de nguoi dung nhin mot anh chup cu ma tuong la that. Va
+ *  khong im lang — moi nhip hong deu hien ngay o dong loi cua ngan keo, va
+ *  dong ay tu bien mat khi mot nhip thanh cong. "Thu lai vo han trong im lang"
+ *  moi la noi doi; thu lai CO NOI thi khong. */
+const NHIP_POLL_MS=1500
+const LUI_TOI_DA=3                       //: 1,5s -> 3s -> 6s -> 12s roi giu 12s
+const LOI_POLL='Không đọc được lượt chạy — đang thử lại…'
+const nhipCho=(soHong:number)=>NHIP_POLL_MS*2**Math.min(soHong,LUI_TOI_DA)
+
 /** Noi su kien theo `seq`: chi giu cai MOI hon cai da co.
  *
  *  🔴 Do duoc tren trinh duyet 23/09: cua huy (`POST /runs/{id}/cancel`) KHONG
@@ -114,6 +125,10 @@ function Editor() {
   const [retryNonce, setRetryNonce] = useState(0)
   const [run, setRun] = useState<RunV3|null>(null)
   const [runError, setRunError] = useState('')
+  //: so nhip poll HONG LIEN TIEP. Vua lam thoi gian cho lui dan, vua la thu
+  //  duy nhat lam effect poll chay lai sau mot cu nga — `run` khong doi khi
+  //  request hong, nen khong co no thi khong con `setTimeout` nao ca.
+  const [soHong, setSoHong] = useState(0)
   //: node_id -> ma loi bien dich (422 `{ma,node_id,thong_diep}` cua publish).
   const [loiNode,setLoiNode]=useState<Record<string,string>>({})
   const [assistantOpen,setAssistantOpen]=useState(false)
@@ -222,15 +237,33 @@ function Editor() {
 
   useEffect(() => {
     if (!run || RUN_V3_KET_THUC.has(run.status)) return
+    // `active` = phan hoi nay con dung voi man hinh nao khong. Khong co no,
+    // mot GET ve MUON de nguoc CANCELLED -> RUNNING (nut "Huy chay" hien lai
+    // cho mot luot da chet), hoac lam song lai mot run vua `setRun(null)`.
+    let active = true
     const timer = window.setTimeout(() => {
       void loadRunV3(run.id, run.seq_cuoi)
         // Su kien ve theo lo tang dan (`?sau=<seq>`) — NOI, khong thay. Thay
         // la mat lich su moi nhip, va dong thoi gian chi con mot dong.
-        .then(next => setRun(truoc => nhapRun(truoc, next)))
-        .catch(() => setRunError('Không đọc được lượt chạy.'))
-    }, 1500)
-    return () => window.clearTimeout(timer)
-  }, [run])
+        .then(next => {
+          if (!active) return
+          setSoHong(0)
+          // Chi xoa thong diep cua CHINH vong poll: mot loi huy/chay dang hien
+          // khong phai viec cua no.
+          setRunError(cu => cu === LOI_POLL ? '' : cu)
+          setRun(truoc => truoc && truoc.id === next.id ? nhapRun(truoc, next) : truoc)
+        })
+        .catch(() => {
+          if (!active) return
+          // `soHong` doi => effect chay lai => CO nhip ke tiep. Day moi la
+          // duong song: nhanh nay khong dung toi `run`, nen neu chi
+          // `setRunError` thi vong poll dung han sau mot blip mang.
+          setSoHong(soHong + 1)
+          setRunError(LOI_POLL)
+        })
+    }, nhipCho(soHong))
+    return () => { active = false; window.clearTimeout(timer) }
+  }, [run, soHong])
 
   useEffect(() => {
     if (!workflow || phase === 'loading' || offline) return
@@ -374,7 +407,7 @@ function Editor() {
     const dangChay=run&&!RUN_V3_KET_THUC.has(run.status)
     if(!workflow||readOnly||dangChay)return
     if(autosaveTimer.current)window.clearTimeout(autosaveTimer.current)
-    setRun(null);setDesktopPanel('run');setPhase('saving');setRunError('');setLoiNode({})
+    setRun(null);setSoHong(0);setDesktopPanel('run');setPhase('saving');setRunError('');setLoiNode({})
     try{
       const saved=await saveWorkflowV3({...workflow,canvas:state.document},csrf)
       setWorkflow(saved);setPhase('saved')
@@ -394,7 +427,10 @@ function Editor() {
 
   const huyRun=useCallback(()=>{
     if(!run)return
-    void cancelRunV3(run.id,csrf).then(next=>setRun(truoc=>nhapRun(truoc,next)))
+    // Cung mot luat nhu vong poll: phan hoi ve muon khong duoc lam song lai
+    // mot run da dong, hay de len mot run khac.
+    void cancelRunV3(run.id,csrf)
+      .then(next=>setRun(truoc=>truoc&&truoc.id===next.id?nhapRun(truoc,next):truoc))
       .catch(error=>setRunError(error instanceof Error?error.message:'Không hủy được.'))
   },[run,csrf])
 
@@ -437,7 +473,7 @@ function Editor() {
     dispatch({type:'graph',nodes,edges:page.edges.filter(item=>item.id!==edgeId)})
   },[readOnly,page])
   const toggleErrorBranch=()=>{if(!selectedEdge||readOnly)return;const condition=selectedEdge.data?.condition==='error'?'success':'error';dispatch({type:'graph',nodes:page.nodes,edges:page.edges.map(edge=>edge.id===selectedEdge.id?{...edge,data:{...edge.data,condition}}:edge)})}
-  const activateWorkflow=(next:Workflow)=>{setWorkflow(next);dispatch({type:'replace',document:next.canvas});setRun(null);setLoiNode({});setPhase('ready')}
+  const activateWorkflow=(next:Workflow)=>{setWorkflow(next);dispatch({type:'replace',document:next.canvas});setRun(null);setSoHong(0);setRunError('');setLoiNode({});setPhase('ready')}
   const cloneCurrent=async()=>{if(!workflow)return;try{activateWorkflow(await cloneWorkflow(workflow,csrf))}catch{setPhase('error')}}
   const downloadTemplate=async()=>{if(!workflow)return;try{const payload=await exportWorkflow(workflow);const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download=`workflow-${workflow.id}.json`;link.click();URL.revokeObjectURL(url)}catch{setPhase('error')}}
   const importTemplate=async(event:React.ChangeEvent<HTMLInputElement>)=>{const file=event.target.files?.[0];if(!file)return;try{activateWorkflow(await importWorkflow(JSON.parse(await file.text()),csrf))}catch{setPhase('error')}finally{event.target.value=''}}
@@ -642,7 +678,7 @@ function Editor() {
           <span>{page.nodes.length} block · server chốt chi phí tối đa khi publish</span></section>
         {!run&&<button className="run-confirm" disabled={readOnly||!workflow||!page.nodes.length||phase==='saving'}
           onClick={()=>void chayWorkflow()}>Chạy ngay</button>}
-        {runDaXong&&<button onClick={()=>{setRun(null);setRunError('')}}>Tạo bản chạy mới</button>}
+        {runDaXong&&<button onClick={()=>{setRun(null);setRunError('');setSoHong(0)}}>Tạo bản chạy mới</button>}
         <RunV3Panel run={run} onCancel={huyRun}/>
         {runError && <span className="run-error" role="alert">{runError}</span>}</nav>
       {presentationMode==='legacy'&&<div className={`legacy-save-state save-state ${phase}`} aria-live="polite">{offline ? 'Ngoại tuyến · chờ thử lại' : phase === 'saving' ? 'Đang lưu…' : phase === 'conflict'
@@ -689,8 +725,14 @@ function Editor() {
         </section><h2>Công cụ</h2>
         <div className="workflow-settings"><p className="routing-note">AUTO ROUTING · {catalogMeta.models} model · {catalogMeta.routing||'managed'}</p><label>Mục tiêu workflow<textarea disabled={readOnly}
           value={state.document.goal} onChange={event => dispatch({ type: 'document', goal: event.target.value })} /></label>
-          <label>Ngân sách tối đa<input type="number" inputMode="numeric" min="5" disabled={readOnly}
-            value={state.document.budget_max_credit} onChange={event => dispatch({ type: 'document', budget_max_credit: Number(event.target.value) })} /></label>
+          {/* O "Ngan sach toi da" da GO (review I4): khong mot tep
+              `platform_core/workflow/*` nao doc `budget_max_credit` o v3 — dong
+              co chot tran bang `version.estimated_max` luc publish. Giu lai o
+              nhap ay la hua voi nguoi dung mot tran chi tieu ma khong ai thi
+              hanh: noi doi ve TIEN. Tran that hien o bang luot chay
+              (`credit_charged/credit_max`, RunV3Panel). Khoa `budget_max_credit`
+              van con trong `document` vi `di_tru_m1.py` mang no sang tu ban
+              nhap cu — go o nhap khong duoc lam mat du lieu ay. */}
           {/* Nut "AI dung Canvas" da bo: `planWorkflow` sinh Plan v1, va lop ay
               chet o task 8 (spec §17.6). Assistant v3 la viec cua phase 11. */}
           <div className="template-actions"><button disabled={readOnly||!workflow} onClick={cloneCurrent}>Nhân workflow</button><button disabled={!workflow} onClick={downloadTemplate}>Xuất mẫu</button><label>Nhập mẫu<input type="file" accept="application/json,.json" onChange={importTemplate}/></label></div></div>

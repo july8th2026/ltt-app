@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CanvasShell } from '../src/CanvasShell'
 
@@ -426,7 +426,8 @@ const runV3Goc = { id: 'r1', workflow_id: 'w1', version_id: 'v1', status: 'QUEUE
   seq_cuoi: 1 }
 
 /** Giu nguyen mock goc cua `beforeEach`, chi chen them cac cua v3 cua run. */
-function mockRunV3(xen?: (url: string, init?: RequestInit) => Response | undefined) {
+function mockRunV3(xen?: (url: string, init?: RequestInit) =>
+    Response | Promise<Response> | undefined) {
   const fetchMock = vi.mocked(globalThis.fetch)
   const base = fetchMock.getMockImplementation()!
   fetchMock.mockImplementation(async (input, init) => {
@@ -466,6 +467,25 @@ async function bamChay() {
 }
 
 const duongDaGoi = () => vi.mocked(globalThis.fetch).mock.calls.map(([url]) => String(url))
+
+/** ⏱️ KHONG dung `vi.useFakeTimers()` o day, va day la ly do — no la mot bay
+ *  im lang: `@testing-library/dom` do dong ho gia bang `typeof jest !==
+ *  'undefined'`, ma vitest khong dat bien ay. Hau qua khong phai "RTL bo qua
+ *  dong ho gia" ma la TREO: `asyncWrapper` cua @testing-library/react xa hang
+ *  microtask bang `await new Promise(r => setTimeout(r, 0))` roi chi day dong
+ *  ho khi `jestFakeTimersAreEnabled()`. Voi vitest, cai `setTimeout` ay bi gia
+ *  lap va KHONG AI day => moi `findBy*`/`waitFor` treo den khi vitest cat, ke
+ *  ca khi phan tu da co san trong DOM. (Do ngay 23/09: 6 bai treo 20s mot bai.)
+ *
+ *  Nen cac bai duoi dung dong ho THAT va tra gia bang vai giay cho. Nhip poll
+ *  la 1,5s + lui dan, nen mot bai hai nhip het ~4,5s. */
+const trangThaiRun = (drawer: HTMLElement) =>
+  drawer.querySelector<HTMLElement>('[data-run-status]')?.dataset.runStatus ?? ''
+/** Cho mot khoang THAT, trong `act`, de phan hoi ve muon kip duoc xu ly. Dung
+ *  cho cac khang dinh PHU DINH ("khong duoc doi") — chung can mot cua so thoi
+ *  gian, khong the chi doc ngay. */
+const cho = (ms: number) =>
+  act(async () => { await new Promise(resolve => setTimeout(resolve, ms)) })
 
 describe('Chạy workflow trên v3', () => {
   it('bấm Chạy: lưu v3 → publish v3 → tạo run v3, đúng thứ tự', async () => {
@@ -533,6 +553,124 @@ describe('Chạy workflow trên v3', () => {
     expect(drawer.textContent).toContain('run.created')
     expect(drawer.textContent).toContain('run.succeeded')
     expect(within(drawer).queryByRole('button', { name: 'Hủy chạy' })).not.toBeInTheDocument()
+  })
+
+  // -- Vong sua 1 (review C1 / I2) ----------------------------------------
+  it('MOT nhip poll hong khong giet vong poll: nhip sau van toi', async () => {
+    // Benh: nhip ke chi duoc len lich khi `run` DOI tham chieu. Nhanh `.catch`
+    // khong dung toi `run` => effect khong chay lai => khong con `setTimeout`
+    // nao nua. Mot blip mang la mot run DANG TIEU TIEN dung mai o RUNNING, va
+    // chi tai lai trang moi cuu duoc.
+    // Bai nay do dung cai chet do: nhip THU HAI co xay ra khong. Khang dinh ve
+    // `runError` chi la phan them — mot minh no do trieu chung, khong do benh.
+    let soLanDoc = 0
+    mockRunV3(url => {
+      if (url.includes('/api/v3/runs/') && !url.endsWith('/cancel')) {
+        soLanDoc += 1
+        if (soLanDoc === 1) throw new TypeError('Failed to fetch')
+      }
+      return undefined
+    })
+    const { drawer } = await bamChay()
+    await within(drawer).findByText('QUEUED')
+    expect(await within(drawer).findByText(/đang thử lại/i, {}, { timeout: 10_000 }))
+      .toBeInTheDocument()
+    expect(soLanDoc).toBe(1)
+    // 🔴 VE DO CHINH: vong poll phai con song sau cu nga.
+    expect(await within(drawer).findByText('SUCCEEDED', {}, { timeout: 15_000 }))
+      .toBeInTheDocument()
+    expect(soLanDoc).toBeGreaterThanOrEqual(2)
+    // ... va khi poll khoe lai thi thong diep loi phai BIEN MAT, khong o lai
+    // vinh vien tren mot man hinh dang chay binh thuong.
+    expect(within(drawer).queryByText(/đang thử lại/i)).toBeNull()
+  })
+
+  it('phan hoi poll ve MUON khong lam song lai run da huy', async () => {
+    // Benh: khong co co `active`. Mot GET poll dang bay, nguoi dung bam
+    // "Huy chay", cua huy tra CANCELLED — roi phan hoi poll cu (RUNNING) ve
+    // sau va de nguoc trang thai. Nut "Huy chay" hien lai cho mot luot da
+    // chet; bam lan hai an 409 "Luot chay da ket thuc" cho mot thao tac DA
+    // thanh cong.
+    let moKhoa: () => void = () => {}
+    const treo = new Promise<void>(resolve => { moKhoa = resolve })
+    let daTreo = false
+    mockRunV3(url => {
+      if (url.includes('/api/v3/runs/') && !url.endsWith('/cancel') && !daTreo) {
+        daTreo = true
+        return treo.then(() => new Response(JSON.stringify(
+          { ...runV3Goc, status: 'RUNNING' }), { status: 200 }))
+      }
+      return undefined
+    })
+    const { drawer } = await bamChay()
+    await within(drawer).findByText('QUEUED')
+    await waitFor(() => expect(daTreo).toBe(true), { timeout: 10_000 })
+    fireEvent.click(within(drawer).getByRole('button', { name: 'Hủy chạy' }))
+    await within(drawer).findByText('CANCELLED')
+    moKhoa()                                   // phan hoi cu ve MUON
+    await cho(50)
+    expect(trangThaiRun(drawer)).toBe('CANCELLED')
+    expect(within(drawer).queryByRole('button', { name: 'Hủy chạy' })).toBeNull()
+  })
+
+  it('phan hoi poll ve MUON khong lam song lai run da DONG', async () => {
+    let moKhoa: () => void = () => {}
+    const treo = new Promise<void>(resolve => { moKhoa = resolve })
+    let daTreo = false
+    mockRunV3(url => {
+      if (url.includes('/api/v3/runs/') && !url.endsWith('/cancel') && !daTreo) {
+        daTreo = true
+        return treo.then(() => new Response(JSON.stringify(
+          { ...runV3Goc, status: 'RUNNING' }), { status: 200 }))
+      }
+      return undefined
+    })
+    const { drawer } = await bamChay()
+    await within(drawer).findByText('QUEUED')
+    await waitFor(() => expect(daTreo).toBe(true), { timeout: 10_000 })
+    // Huy roi bam "Tao ban chay moi" => `setRun(null)`: bang luot chay bien mat.
+    fireEvent.click(within(drawer).getByRole('button', { name: 'Hủy chạy' }))
+    await within(drawer).findByText('CANCELLED')
+    fireEvent.click(within(drawer).getByRole('button', { name: 'Tạo bản chạy mới' }))
+    expect(trangThaiRun(drawer)).toBe('')
+    moKhoa()
+    await cho(50)
+    expect(trangThaiRun(drawer)).toBe('')
+    expect(within(drawer).queryByLabelText('Lượt chạy')).toBeNull()
+  })
+
+  // -- Do phu dung lai tu bai v1 da xoa (review, phan quyet 4) -------------
+  it('publish 422 KHONG bi dan nhan "Loi luu"', async () => {
+    // Manh (a) cua bai `keeps global budget validation visible and does not
+    // mislabel it as a save failure`: mot loi o duong CHAY khong duoc hien ra
+    // nhu loi LUU. Ban nhap DA luu that; noi nguoc lai la day nguoi dung di
+    // cuu mot thu khong hong.
+    mockRunV3(url => url.includes('/publish')
+      ? new Response(JSON.stringify({ detail: { ma: 'node_khong_biet',
+          node_id: 'n1', thong_diep: 'Node không có trong registry.' } }),
+        { status: 422 })
+      : undefined)
+    const { drawer } = await bamChay()
+    expect(await within(drawer).findByText(/Node không có trong registry\./)).toBeTruthy()
+    // Doc NGAY: vong autosave se luu lai ban nhap sau 800ms va dua huy hieu ve
+    // 'Da luu' du co chuyen gi — waitFor o day se do chinh vong autosave chu
+    // khong do nhan cua loi publish.
+    const huyHieu = document.querySelector<HTMLElement>('.canvas-top-actions .save-state')!
+    expect(huyHieu.textContent).toBe('Đã lưu')
+  })
+
+  it('tran chi tieu hien tren giao dien v3, o "Ngan sach toi da" chet da go', async () => {
+    // Manh (b): tran chi tieu phai duoc CHOT o dau do va nguoi dung phai THAY.
+    // O v3, may chu chot `credit_max` luc publish va tra ve trong run — giao
+    // dien phai hien no. O nhap cu khong con duoc doc boi bat ky tep
+    // `platform_core/workflow/*` nao, nen giu lai la hua mot tran ma khong ai
+    // thi hanh.
+    mockRunV3()
+    const { drawer } = await bamChay()
+    await within(drawer).findByText('QUEUED')
+    expect(within(drawer).getByText('0/20 credit')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Mở mẫu và thiết lập' }))
+    expect(screen.queryByLabelText(/Ngân sách tối đa/)).toBeNull()
   })
 })
 
