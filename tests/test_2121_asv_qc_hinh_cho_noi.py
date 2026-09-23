@@ -173,3 +173,96 @@ def test_thieu_mot_khung_thi_KHONG_HOI_chu_khong_hoi_bang_mot_anh(
     assert tt["so_co_phan_quyet"] == 0, "hoi bang MOT anh ve mot chuyen tiep"
     assert tt["so_hong"] == tt["so_cho_noi"] > 0
     assert tt["du_phu"] is True
+
+
+def test_cho_noi_HONG_sinh_vong_sua_NHAM_DUNG_CHO_va_CO_TRAN(
+        tmp_path, monkeypatch, db, kho_tam, asr_gia, dich_gia, giong_gia,
+        bat_qc_ai):
+    """🔴 **Nửa thứ hai của M-02: vòng sửa có nhắm đúng chỗ, và có trần không.**
+
+    Bật cờ gate (⛔ **chỉ trong bài này** — sản phẩm vẫn tư vấn; `test_2120` §4
+    chốt mặc định), rồi cho model chấm **mọi** chỗ nối là hỏng. Đó là trường hợp
+    tệ nhất có thật: một chỗ nối hỏng **không sửa được** (hai cảnh hai bên vốn là
+    hai cảnh khác nhau) thì mọi vòng sửa đều cho ra đúng phán quyết cũ.
+
+    Hai mệnh đề, và cả hai đo được từ SỔ CÁI:
+      1. vòng sửa **nhắm đúng** `edit_plan`, với đúng mã cảnh — không phải một
+         lần chạy lại mù;
+      2. nó chạy **đúng một** vòng (`VONG_SUA_TOI_DA`) rồi thôi — không quay.
+
+    ⚠️ Bài này **không** chốt `run.status == "done"`. Lý do là một khiếm khuyết
+       KHÁC, có trước và không liên quan tới M-02: xem `M-09` trong `LOI_TONG.md`
+       — mọi vòng sửa chạy lại `voice_synthesis` đều chết vì `database is
+       locked`. Đối chứng: ép `qc_ngu_nghia` chấm hỏng (đường `dich_sai`, có từ
+       M-01, không đụng gì tới làn này) cho ra **đúng cùng một lỗi**. Chốt
+       `done` ở đây sẽ là chốt một mệnh đề của làn khác vào một bài của làn này.
+    """
+    from apps.auto_scan_video import ai, jobs, su_dung, sua_chua as sc
+
+    monkeypatch.setattr(sc, "QC_HINH_LA_TU_VAN", False)
+    _nhieu_canh(monkeypatch)
+    _cat_canh_le(monkeypatch)
+
+    goc = ai.goi_tinh_tien
+    # 🔑 Ghi lai MOI luot goi: `(thao tac, item_key)`. Day la cach duy nhat o
+    #    khuon thu nay de chung minh vong sua **hoi lai that** — khuon dung ban
+    #    gia cua `goi_tinh_tien` nen khong co dong so cai nao cho `edit_plan`.
+    da_goi: list[tuple[str, str]] = []
+
+    def moi_cho_noi_deu_hong(db_, run_, thao_tac, messages, **kw):
+        da_goi.append((thao_tac.ma, str(kw.get("item_key") or "")))
+        if thao_tac.ma == ai.QC_HINH.ma:
+            return {"noi_dung": json.dumps(
+                {"dat": False, "do_tin": 0.95,
+                 "ly_do": "cat giua mot dong tac"}, ensure_ascii=False),
+                "provider": "gia", "model": "gia", "su_dung": None,
+                "finish_reason": "stop", "suy_nghi": ""}
+        return goc(db_, run_, thao_tac, messages, **kw)
+
+    monkeypatch.setattr(ai, "goi_tinh_tien", moi_cho_noi_deu_hong)
+    monkeypatch.setattr(gdqa.ai, "goi_tinh_tien", moi_cho_noi_deu_hong,
+                        raising=False)
+
+    run = _run_cat(db, kho_tam, tmp_path)
+    so_job = _chay_het_hang_doi(db)
+    db.expire_all()
+
+    # (2) CO TRAN — dem bang SO CAI (`UNIQUE(run_id, ma_dispatch)`), khong bang
+    #     mot bien trong bo nho: mot bien khong song qua mot lan worker chet, va
+    #     hai luot `advance` chay chong nhau co the cung tang no.
+    vong = [d for d in su_dung.cac_dong(db, run, stage=pipeline.QC,
+                                        item_key=jobs.DON_VI_SUA)
+            if d.nang_luc == jobs.NANG_LUC_VONG_SUA]
+    assert len(vong) == 1 == sc.VONG_SUA_TOI_DA
+    # ...va khuon thu co tran 200 job. Cham tran do la dau hieu cua mot vong
+    #    quay, chu khong phai mot lan chay dai.
+    assert so_job < 200, "vong sua quay: cham tran job cua chinh khuon thu"
+
+    # (1) NHAM DUNG CHO: `cat_sai` -> `edit_plan`, mang MA CANH that, va KHONG
+    #     keo theo mot giai doan nao khac vao ke hoach sua.
+    ke = dict(vong[0].ghi_chu or {})
+    assert list(ke["giai_doan_sua"]) == ["edit_plan"], ke["giai_doan_sua"]
+    ma_canh = ke["giai_doan_sua"]["edit_plan"]
+    assert ma_canh and all(m.startswith("canh_") for m in ma_canh), ma_canh
+    assert {k["loai"] for k in ke["khiem_khuyet"]} == {sc.CAT_SAI}
+
+    # 🔴 **Va vong sua da HOI LAI THAT — day moi la menh de dat gia.**
+    #
+    #    Mo lai mot don vi la de. Cai kho la bao dam luot hoi lai KHONG tra ve
+    #    ket qua cache cu: cung van tay = cung khoa = cung phan doan vua bi bao
+    #    la sai (M-07 cua duong GIONG). `_ma_don_vi_goi` dua so VONG SUA vao
+    #    `item_key`, nen mot but toan `doc_canh` mang hau to `:sua1` la bang
+    #    chung CO HOC rang mot luot goi MOI da xay ra cho dung canh do.
+    doc_canh = {k for t, k in da_goi if t == ai.DOC_CANH.ma}
+    for m in ma_canh:
+        assert m in doc_canh, (m, sorted(doc_canh))          # luot dau
+        assert f"{m}:sua1" in doc_canh, (m, sorted(doc_canh))  # luot VONG SUA
+
+    # ...va no hoi bang mot cau KHAC: van tay don vi phai mang muoi cua vong sua.
+    from apps.auto_scan_video import features, hieu_canh as hc
+    for m in ma_canh:
+        it = features.don_vi_theo_khoa(db, run.id, pipeline.EDIT_PLAN, m)
+        assert it is not None and "xem_lai" not in str(it.fingerprint or ""), (
+            "van tay la mot bam — khong doc duoc muoi tu no")
+        # Chot gian tiep nhung chat: van tay MOI khac van tay khong muoi.
+        assert hc.van_tay_canh(m, "", 0, 0.0) != str(it.fingerprint or "")
