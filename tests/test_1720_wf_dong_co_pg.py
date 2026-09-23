@@ -5,6 +5,8 @@ Chạy qua `tools/check_multiproc.py` (tự dựng CSDL scratch theo cây).
 from __future__ import annotations
 
 import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
@@ -67,20 +69,64 @@ def _hoan_tat_job(dbmod):
 
 
 def test_hai_vong_song_song_khong_nop_doi(pg, monkeypatch):
-    from platform_core.models import Job
+    """Hai luồng gọi `dong_co.mot_vong` THẬT SỰ cùng chạm vào cùng một hàng
+    run tại cùng một thời điểm (review round 1, Important #2): riêng lệch
+    khởi động luồng của hệ điều hành đủ để hai luồng không bao giờ thực sự
+    tranh chấp — phép kiểm khi đó xanh dù khoá đúng hay sai, vì mỗi luồng chỉ
+    thấy hàng đã bị dọn dẹp bởi luồng kia TỪ TRƯỚC (khoá không được thử thật).
+    `threading.Barrier(2)` ép cả hai gọi `mot_vong` cùng một nhịp; sleep bên
+    trong đoạn ĐÃ KHOÁ (`xu_ly_run`, chạy sau `FOR UPDATE SKIP LOCKED`, trước
+    `commit`) cho vài lần gọi đầu kéo dài cửa sổ tranh chấp đủ để luồng thua
+    thật sự chạm đúng hàng đang bị khoá — buộc `SKIP LOCKED` phải bỏ qua
+    (không chờ), đúng cơ chế đang được kiểm.
+
+    Also review round 1, Important #1: `threading.Thread` + `join()` nuốt mọi
+    exception ném trong luồng (in traceback ra stderr rồi im lặng chết) — một
+    lỗi thật trong `mot_vong` sẽ không làm phép kiểm này đỏ. Dùng
+    `ThreadPoolExecutor` + `future.result()` để lỗi của luồng được ném lại ở
+    luồng chính (sibling: `tests/test_214_multi_process_runtime.py:335` kiểm
+    exit code của worker process vì cùng lý do)."""
+    from platform_core.models import Job, WorkflowRun
     from platform_core.workflow import dong_co
+
     ids = _chuan_bi(pg, monkeypatch)
+
+    goc_xu_ly = dong_co.xu_ly_run
+    dem = {"n": 0}
+    khoa_dem = threading.Lock()
+
+    def _xu_ly_cham(db, rid, **kw):
+        with khoa_dem:
+            can_cham = dem["n"] < 6
+            dem["n"] += 1
+        if can_cham:
+            time.sleep(0.08)   # keo dai cua so da khoa de ep tranh chap that
+        return goc_xu_ly(db, rid, **kw)
+
+    monkeypatch.setattr(dong_co, "xu_ly_run", _xu_ly_cham)
+
     for _ in range(3):
-        t = [threading.Thread(target=dong_co.mot_vong, args=(_mo(pg),))
-             for _ in range(2)]
-        [x.start() for x in t]
-        [x.join() for x in t]
+        rao = threading.Barrier(2)
+
+        def _chay(rao=rao):
+            rao.wait()
+            dong_co.mot_vong(_mo(pg))
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futs = [pool.submit(_chay) for _ in range(2)]
+            for f in futs:
+                f.result()   # nem lai loi that cua luong - khong nuot
         _hoan_tat_job(pg)
     dong_co.mot_vong(_mo(pg))
+
     db = _mo(pg)()
     for rid in ids:
-        assert db.query(Job).filter_by(plan_id=rid).count() == 2   # a và b, không đôi
-    from platform_core.models import WorkflowRun
+        viec = db.query(Job).filter_by(plan_id=rid).all()
+        assert len(viec) == 2, (
+            f"run {rid}: {len(viec)} job, ky vong dung 2 (a va b, khong doi)")
+        khoa_ids = [j.dedupe_key for j in viec]
+        assert len(khoa_ids) == len(set(khoa_ids)), (
+            f"dedupe_key trung cho run {rid}: {khoa_ids} - da nop doi")
     assert {r.status for r in db.query(WorkflowRun).all()} == {"SUCCEEDED"}
     db.close()
 

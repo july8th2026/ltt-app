@@ -1,9 +1,17 @@
-"""Chay bo bat bien da tien trinh (`test_214`) — hoac noi to rang no khong chay.
+"""Chay bo bat bien da tien trinh/da luong tren PostgreSQL that (`TEP_PG`) —
+hoac noi to rang no khong chay.
 
 Ba loi P0 cua ban audit 2026-08-15 lot qua hon ba nghin test vi CHUA TUNG co gi
 chay hai tien trinh worker cung luc tren mot CSDL. `test_214` la phep do con
 thieu do — nhung no can PostgreSQL, va `pytest` chi in mot chu `s` khi bo qua.
 Mot chu `s` giua ba nghin dau cham thi khong ai thay.
+
+`TEP_PG` (duoi day) cung gom `test_1720_wf_dong_co_pg.py`: dam bao dong co
+Workflow V2 (`platform_core/workflow/dong_co.py`) an toan khi hai luot
+`mot_vong` chay song song tren cung CSDL (khoa hang run, khong nop job doi) va
+song sot khi mot luot chet giua chung (FLOW H — transaction rollback, khong
+job ma). Cung mot ly do bo qua vo hinh: bo qua ca hai chum bao dam nay tren mot
+may khong co PostgreSQL cung chi la MOT chu `s`.
 
 Cong cu nay bien viec bo qua thanh MOT DONG RIENG trong gate. No khong lam gate
 do khi may khong co PostgreSQL — mot may phat trien khong co PostgreSQL van phai
@@ -163,10 +171,14 @@ def main() -> int:
     if not url:
         # KHONG phai loi: mot may khong co PostgreSQL van phai lam viec duoc.
         # Nhung phai noi to, vi day la bang chung cho ba loi P0 da dong.
-        print("BO QUA bo bat bien da tien trinh — " + ly_do)
+        print("BO QUA bo bat bien da tien trinh/da luong — " + ly_do)
         print("  test_214 la thu duy nhat chung minh webhook khong gui trung,")
         print("  canh bao khong nhan doi, va so credit khop khi nhieu tien")
-        print("  trinh worker chay cung luc.")
+        print("  trinh worker chay cung luc. test_1720 la thu duy nhat chung")
+        print("  minh dong co Workflow V2 khong nop job doi khi hai luot")
+        print("  `mot_vong` chay song song, va song sot khi mot luot chet")
+        print("  giua chung (FLOW H). Bo qua ca hai la bo qua bang chung cho")
+        print("  ca hai bao dam nay, khong chi bao dam cua test_214.")
         # Tu 2026-08-27, nguyen nhan HAY GAP NHAT tren may chu khong con la
         # "khong co PostgreSQL" ma la "khong doc duoc secrets\": thu muc do da
         # duoc siet ve SYSTEM + Administrators, nen mot shell thuong khong lay
