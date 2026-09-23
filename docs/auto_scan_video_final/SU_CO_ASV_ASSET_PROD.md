@@ -107,6 +107,32 @@ OK ấy chính là thứ khiến sự cố này sống sót qua **21 lượt dep
 đọc stdout của alembic, chỉ in OK khi thấy `Running upgrade` **hoặc** khi đối
 chiếu `Base.metadata` với `pg_tables` cho kết quả rỗng.
 
+
+## Xác nhận độc lập 23/09 tối — và sự cố nay đã CÓ TIẾNG
+
+Phiên *Phân tích hệ thống VPS* đã gộp `main` (`34005462`) hai thứ:
+
+1. `setup/2-cai-dat.ps1` bắt **mọi** luồng alembic bằng `*>` (nó ghi qua
+   `logging` = **stderr**; `>` đơn mất sạch — đúng lý do log deploy đầu tháng 9
+   trống trơn), đếm `Running upgrade` và in **đúng số** migration vừa chạy.
+   *"Đã chạy 4 migration"* và *"không có migration nào để chạy"* không còn in ra
+   cùng một dòng chữ.
+2. `tools/kiem_luoc_do.py` — đối chiếu `Base.metadata` với `information_schema`
+   **cả cột**, gom **theo app**, **không lọc app đang tắt** (lọc ở đây là bỏ qua
+   đúng ca cần bắt), chạy ở **mỗi lần deploy**, có bánh cóc chốt rằng nó *được
+   gọi* chứ không chỉ tồn tại.
+
+**Chạy thật trên production:**
+
+```
+LECH - 5 bang thieu, 0 cot thieu
+  app auto_scan_video: thieu 5 bang
+```
+
+⭐ **0 cột thiếu trên TOÀN lược đồ** — mở rộng phép kiểm tay của tôi (chatltt
+10/10 · 11/11 · 24/24) ra mọi bảng của mọi app. **ASV là sai lệch duy nhất còn
+lại trong CSDL production**, và nay mỗi lần deploy sẽ in nó ra.
+
 ## Phương án (⚠️ CẦN CHỦ DỰ ÁN DUYỆT — ghi schema production là thao tác khó đảo)
 
 | # | Cách | Rủi ro | Ghi chú |
