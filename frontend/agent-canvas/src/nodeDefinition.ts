@@ -111,6 +111,23 @@ export function noiDuoc(luat: LuatNoiDay, kieuRa: string, kieuVao: string,
   return nhanNhieuCanh || soCanhDangCo < 1
 }
 
+//: Tien to `type` cua node sinh tu mot `ToolSpec`
+//  (`platform_core/workflow/nut.py::tu_toolspec`: `type=f"app.{cc.ten}"`).
+const TIEN_TO_APP = 'app.'
+
+/** Slug cong cu cua mot node (`app.image.generate` -> `image.generate`).
+ *
+ *  ⭐ MOT cho ghep/bo tien to cho ca frontend. Do thi luu `data.tool` = slug
+ *     (`bien_dich._node` doc dung khoa do), con palette noi bang `type`. Rai
+ *     phep `slice(4)` khap noi la cach chac chan de hai ben lech nhau.
+ */
+export const slugCongCu = (nd: NodeDefinition): string =>
+  nd.type.startsWith(TIEN_TO_APP) ? nd.type.slice(TIEN_TO_APP.length) : nd.type
+
+/** Chieu nguoc lai: slug trong `data.tool` -> `type` cua `NodeDefinition`. */
+export const typeTuSlug = (slug: string): string =>
+  slug.includes('.') && !slug.startsWith(TIEN_TO_APP) ? `${TIEN_TO_APP}${slug}` : slug
+
 export function timNut(nhom: NhomPalette[], type: string): NodeDefinition|undefined {
   for (const n of nhom) {
     const found = n.nut.find(x => x.type === type)

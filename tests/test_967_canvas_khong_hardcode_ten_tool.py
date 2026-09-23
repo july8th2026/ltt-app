@@ -52,14 +52,14 @@ _MAU = re.compile(r"""['"]([a-z][a-z0-9_]*\.[a-z][a-z0-9_]*)['"]""")
 #: `ToolSpec` nào mang tên ấy** — tức các hàng chết trong bảng tra cứu. Chúng
 #: được miễn trừ để bánh cóc dựng được ngay hôm nay, không phải để ở lại.
 #:
-#: Cách gỡ đúng: lấy nhãn/biểu tượng/tầng từ `/agent/api/palette` thay vì tra
-#: một bảng trong mã frontend. Khi ấy xoá tên khỏi bảng và xoá khỏi đây.
-DA_CHET = frozenset({
-    "asset.audio", "asset.image", "asset.images", "asset.video",
-    "audio.generate", "media.merge_image", "media.merge_video",
-    "text.generate", "text.script", "video.extract_frames",
-    "video.social_import",
-})
+#: Cách gỡ đúng: lấy nhãn/biểu tượng/tầng từ `/agent/api/v3/palette` thay vì
+#: tra một bảng trong mã frontend. Khi ấy xoá tên khỏi bảng và xoá khỏi đây.
+#:
+#: ⭐ RỖNG từ plan 02 task 15 (24/09/2026). Canvas lấy nhãn/biểu tượng/phân
+#:    nhóm/lược đồ tham số từ `/agent/api/v3/palette`, không còn một bảng tra
+#:    cứu nào trong mã frontend. Bốn tệp mang bảng ấy — `nodePresentation.ts`,
+#:    `presentationAdapter.ts`, `ToolNode.tsx`, `Inspector.tsx` — đã xoá.
+DA_CHET: frozenset[str] = frozenset()
 
 
 def _tep_quet() -> list[pathlib.Path]:
@@ -192,17 +192,24 @@ def test_pham_vi_quet_PHAI_phu_CA_thu_muc_con():
         "lai thi sua con so nay KEM mot dong ly do.")
 
 
-def test_phep_kiem_nay_THUC_SU_doc_duoc_nguon(hardcode):
+def test_phep_kiem_nay_THUC_SU_doc_duoc_nguon():
     """🔑 Đối chứng cho chính phép kiểm.
 
-    Nếu đường dẫn sai hay `glob` hụt, `hardcode` rỗng và **cả ba bài trên đều
+    Nếu đường dẫn sai hay `rglob` hụt, `hardcode` rỗng và **cả ba bài trên đều
     xanh** — một bộ kiểm xanh vì nó không đo gì. Bài này bắt đúng trạng thái ấy.
+
+    ⚠️ Mệnh đề cũ là *"còn ≥ 15 tên hardcode"*. Plan 02 task 15 đã dọn hết, nên
+       nó đo đúng thứ vừa xoá: giữ lại là buộc frontend phải bẩn để phép kiểm
+       xanh. Thay bằng hai mệnh đề vẫn đúng sau khi dọn — **glob có đọc được
+       tệp không**, và **tệp đọc được có phải mã nguồn Canvas không**.
 
     Cùng bài học với *"không đối chứng thì số 0 không phải phát hiện"*.
     """
-    assert len(hardcode) >= 15, (
-        f"chi doc duoc {len(hardcode)} ten tu {NGUON} — nghi phep kiem dang "
-        "quet nham cho, khong phai frontend da sach")
     # Qua ĐÚNG cái cửa mà `_ten_hardcode` đi qua: một đối chứng gọi `glob`
     # riêng của nó thì nó đang chứng nhận một phạm vi quét KHÁC.
-    assert any(f.suffix in (".ts", ".tsx") for f in _tep_quet())
+    tep = _tep_quet()
+    assert len(tep) >= 5, f"chi thay {len(tep)} tep .ts* o {NGUON}"
+    assert any("CanvasShell" in f.name for f in tep), (
+        f"khong thay CanvasShell trong {NGUON} — phep kiem dang quet nham cho")
+    assert any(len(f.read_text(encoding="utf-8")) > 1000 for f in tep), (
+        "moi tep doc duoc deu duoi 1000 ky tu — nghi dang doc vo, khong doc ma")

@@ -334,3 +334,33 @@ body.agent-canvas-immersive .canvas-shell[data-presentation=creative] .canvas-bo
 .node-kind-trigger .node-khung-dau { background: var(--nen-trigger, #eef7ee); }
 .node-kind-control .node-khung-dau { background: var(--nen-control, #fff6e5); }
 .node-kind-connector .node-khung-dau { background: var(--nen-connector, #eef2ff); }
+
+/* Palette V2 + form sinh tu luoc do (plan 02 task 13/14/15). Chung song BEN
+   TRONG `.canvas-palette` / `.canvas-inspector` nen thua phan lon kieu da co;
+   khoi nay chi bu cho cac lop moi. */
+.palette { display:block; padding:0; border:0; background:transparent; }
+.canvas-palette.workspace-only > .palette { display:none; }
+.palette-tim { position:sticky; z-index:2; top:44px; width:100%; min-height:44px;
+  margin-bottom:10px; padding:8px 10px; border:1px solid var(--border-strong,#63332e);
+  border-radius:8px; background:var(--surface-canvas,#08090a); color:#fff; }
+.palette-the { position:relative; }
+.palette-type,.inspector-type { font-family:ui-monospace,monospace; font-size:10px; opacity:.6; }
+.palette-gia,.palette-tai-nguyen,.palette-credential,.palette-sap-co,.palette-loi-tuy-chon {
+  font-size:10px; opacity:.75; }
+.palette-loi-tuy-chon,.o-loi-tuy-chon,.inspector-loi { color:var(--canh-bao,#f0a71a); }
+.palette-trong,.form-trong,.o-trong { color:#94a3b8; font-size:12px; }
+
+.form-luoc-do { display:grid; gap:10px; }
+.o-truong { display:grid; gap:5px; }
+.o-truong label { margin:0; }
+.o-mo-ta,.o-dong,.o-loi { font-size:11px; color:#94a3b8; }
+.o-loi { color:var(--nguy-hiem,#f87171); }
+/* Cong tac "dung bieu thuc": mot nut NHO canh o, khong phai mot the palette —
+   `.canvas-palette button` dat `width:100%` cho moi nut ben trong no. */
+.o-cong-tac-bieu-thuc { width:auto!important; min-width:34px!important;
+  justify-self:start; padding:2px 8px!important; font-family:ui-monospace,monospace;
+  font-size:11px; }
+.o-cong-tac-bieu-thuc[aria-pressed="true"] { border-color:var(--brand-primary,#ef3731); }
+
+/* Node bi publish tu choi (422). Dau nay nam tren chinh `.react-flow__node`. */
+.react-flow__node.node-do-loi .node-khung { border-color:var(--nguy-hiem,#f87171); }

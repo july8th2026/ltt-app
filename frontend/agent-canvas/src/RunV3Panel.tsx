@@ -3,7 +3,9 @@ import { RUN_V3_KET_THUC } from './workflowApi'
 
 // Nhan tieng Viet cho trang thai NODE (spec §5.3). Trang thai RUN de nguyen
 // chu HOA: no la hop dong voi may chu, va bang nay chi doi ten cho nguoi doc.
-const NHAN: Record<string, string> = {
+// ⭐ Xuat ra: huy hieu trang thai tren NODE (`NodeKhung`) doc cung bang nay.
+//    Hai bang song song thi mot hom nao do mot trang thai co hai ten.
+export const NHAN_TRANG_THAI_NODE: Record<string, string> = {
   PENDING: 'Chờ', READY: 'Sẵn sàng', QUEUED: 'Đã xếp hàng', RUNNING: 'Đang chạy',
   WAITING: 'Đang chờ tín hiệu', RETRY_SCHEDULED: 'Sẽ thử lại',
   SUCCEEDED: 'Xong', FAILED: 'Hỏng', SKIPPED: 'Bỏ qua',
@@ -26,7 +28,7 @@ export function RunV3Panel({ run, onCancel }: {
           {run.nodes.map(n => (
             <tr key={n.node_id} data-node-status={n.status}>
               <td>{n.node_id}</td>
-              <td>{NHAN[n.status] ?? n.status}</td>
+              <td>{NHAN_TRANG_THAI_NODE[n.status] ?? n.status}</td>
               <td>{n.cost_credit}</td>
               <td>{n.error}</td>
             </tr>
