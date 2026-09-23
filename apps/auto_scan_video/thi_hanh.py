@@ -252,6 +252,90 @@ def _khoa_cha(db, run_id: str, ten: str) -> list[str]:
     return ra
 
 
+#: Cac loi goi cua `ctx` mo mot phien CSDL thu hai de **GHI**.
+#: Danh sach nay bam theo `platform_core/job_runner.py:JobContext`.
+#:
+#: ⛔ `is_cancelled` CO Y khong nam trong danh sach, va khong phai vi quen:
+#:    (a) no chi DOC, ma mot lan doc o phien thu hai khong va vao khoa ghi cua
+#:        phien thu nhat (SQLite cho nhieu ban doc cung mot ban ghi dang do);
+#:    (b) `cache_chung.GiuCho` goi no tu LUONG NHIP — `commit` mot `Session`
+#:        tu mot luong khac la mot loi nang hon han cai dang duoc sua.
+_CTX_MO_PHIEN_RIENG = ("progress", "event", "stage",
+                       "provider_dispatched", "provider_rejected")
+
+
+class _CtxChotSo:
+    """Bao quanh `ctx` cua worker: CHOT SO truoc moi loi goi mo phien thu hai.
+
+    🔴 **Cai bay chung cua M-08 va M-09, dat o noi duy nhat thay duoc ca hai ve.**
+
+       `JobContext.progress` / `.event` / `.is_cancelled` mo mot phien CSDL
+       **rieng** — do la thiet ke, va no dung: tien do phai thay duoc ngay ca
+       khi giai doan con dang chay, nen no khong the nam trong transaction cua
+       giai doan. Nhung he qua thi khong ai viet ra: neu phien cua giai doan
+       dang giu mot transaction chua dong, hai phien gap nhau.
+
+         * SQLite — `database is locked`, va no **giet ca lan chay**:
+           `UPDATE jobs SET progress` nem `OperationalError` tu trong
+           `ctx.progress`, tuc tu giua than giai doan.
+         * PostgreSQL — khong nem, nhung giai doan giu khoa dong `asv_asset`
+           suot ca vong lap thay vi vai mili giay. Im lang hon, khong lanh hon.
+
+    ⛔ Cach sua "moi nguoi goi tu nho `commit` truoc khi bao tien do" da duoc
+       thu, va no hong theo dung kieu mot luat khong ai thi hanh duoc thi hong:
+       M-08 va o `giai_doan_ban_dung`, roi M-09 no ra o `giai_doan_giong` —
+       **cung mot ham** (`assets.kiem_toan_ven`) giang bay o mot giai doan khac.
+       Con ba nguoi goi nua cua ham do chua no.
+
+    ⇒ Bat bien duoc thi hanh o DAY, noi duy nhat nam giu ca phien cua giai doan
+      lan `ctx`: **truoc khi mo phien thu hai, phien thu nhat phai o diem chot.**
+
+    ⭐ `commit` chu khong `rollback`: moi thu giai doan da ghi toi diem nay la
+       diem chot theo dung thiet ke cua tep nay — *"diem chot da `commit` ...
+       do la ca ly do chung `commit` ngay tai cho thay vi `flush`"* (nhanh bat
+       loi ben duoi). Chot ca transaction chi-doc: tren SQLite mot khoa DOC
+       cung chan phien kia ghi.
+    """
+
+    __slots__ = ("_ctx", "_db", "_luong")
+
+    def __init__(self, ctx, db):
+        import threading
+
+        object.__setattr__(self, "_ctx", ctx)
+        object.__setattr__(self, "_db", db)
+        # Luong SO HUU phien. `Session` khong an toan da luong, nen chot so tu
+        # mot luong khac se doi mot loi lay mot loi te hon.
+        object.__setattr__(self, "_luong", threading.get_ident())
+
+    def __getattr__(self, ten):
+        gt = getattr(object.__getattribute__(self, "_ctx"), ten)
+        if ten not in _CTX_MO_PHIEN_RIENG or not callable(gt):
+            return gt
+
+        def goi(*a, **kw):
+            self._chot()
+            return gt(*a, **kw)
+
+        return goi
+
+    def __setattr__(self, ten, gt):
+        setattr(object.__getattribute__(self, "_ctx"), ten, gt)
+
+    def _chot(self) -> None:
+        import threading
+
+        if threading.get_ident() != object.__getattribute__(self, "_luong"):
+            return
+        db = object.__getattribute__(self, "_db")
+        # ⛔ Trong mot SAVEPOINT (`su_dung.ghi`) thi khong chot: `commit` o day
+        #    se dong ca transaction ngoai, tuc quyet dinh thay cho nguoi dang
+        #    giu savepoint. Khong khoi nao cua kho nay goi `ctx` trong savepoint.
+        if db.in_nested_transaction() or not db.in_transaction():
+            return
+        db.commit()
+
+
 def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
     """Chay MOT giai doan. Be mat cong khai cho hai executor an.
 
@@ -269,6 +353,9 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
 
     gen = get_session()
     db = next(gen)
+    # 🔑 Moi loi goi `ctx` cua giai doan di qua day — xem `_CtxChotSo`.
+    if ctx is not None:
+        ctx = _CtxChotSo(ctx, db)
     giu = None      # lease "mot tinh, cac ben kia cho" (cache_chung.giu_cho)
     try:
         # 🔑 Doc CO PHAM VI CHU SO HUU, ke ca trong worker. `owner_id` den tu
