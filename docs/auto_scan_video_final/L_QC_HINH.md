@@ -162,11 +162,13 @@ cảnh vì đúng lý do đó, và lý do đó áp y nguyên cho việc gắn nh
 `sua_chua.QC_HINH_LA_TU_VAN = True` — phán quyết đi vào báo cáo, `stage.outputs`
 và bề mặt vận hành, nhưng **không sinh việc sửa**.
 
-**(a) Độ chính xác đo được là quá thấp để tiêu tiền.** Trên v1, mọi chỗ nối bị
-chấm `dat=false` đều được người đo xem lại **cả hai khung**:
-**6/6 là báo động giả** (`bang_chung/qc_hinh/NHAN_TAY.md`). Năm trong sáu cái đó
-mang `do_tin` ≥ 0,90 — tức chúng **vượt** `DO_TIN_TOI_THIEU = 0,70` và sẽ sinh
-việc sửa thật nếu bật cổng.
+**(a) Độ chính xác đo được là quá thấp để tiêu tiền.** Người đo mở **cả hai
+khung** của từng chỗ nối bị chấm `dat=false` rồi trả lời đúng câu mà model được
+hỏi: **8/8 cái đã soi là báo động giả** (`bang_chung/qc_hinh/NHAN_TAY.md`).
+
+Và chúng không phải những cái model lưỡng lự: **9/10** cái bị chấm mang
+`do_tin` ≥ 0,70, tức **vượt** `DO_TIN_TOI_THIEU` và sẽ sinh việc sửa thật nếu
+bật cổng.
 
 ⇒ Không phải "chưa chắc chắn". Là **sai, và sai một cách tự tin**.
 
