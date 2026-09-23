@@ -24,6 +24,23 @@
       <p class="muted">{{ _("Cài tiện ích mã nguồn mở") }} <b>Get cookies.txt LOCALLY</b> {{ _("cho Chrome, Edge (cùng kho tiện ích Chrome) hoặc Firefox (kho tiện ích Firefox riêng) — tiện ích này không gửi cookie đi đâu, mã nguồn công khai kiểm được. Không dùng tiện ích chỉ tên") }} <b>cookies.txt</b> {{ _("(không có chữ LOCALLY): bản đó từng bị gỡ khỏi kho vì gửi cookie của bạn ra máy chủ ngoài.") }}</p>
       <p class="muted">{{ _("Mở trang khi đang đăng nhập nền cần cào, bấm biểu tượng tiện ích, chọn xuất cookie của trang hiện tại (định dạng Netscape/cookies.txt), rồi dán nội dung hoặc chọn tệp vào ô bên dưới.") }}</p>
       <p class="muted"><b>{{ _("Chỉ dùng tài khoản PHỤ của LTT:") }}</b> {{ _("yt-dlp khuyến cáo không dùng tài khoản chính cho tải tự động; nền có thể tạm khoá hoặc buộc xác minh tài khoản dùng để cào.") }}</p>
+      <table class="vc-tk-table" style="margin-top:8px">
+        <thead><tr>
+          <th>{{ _("Nền") }}</th>
+          <th>{{ _("Xuất cookie khi đang ở tên miền") }}</th>
+          <th>{{ _("Cookie chứng minh đã đăng nhập") }}</th>
+        </tr></thead>
+        <tbody>
+          {% for h in huong_dan %}
+          <tr>
+            <td>{{ _(h.ten) }}</td>
+            <td><code>{{ h.ten_mien | join(", ") }}</code></td>
+            <td><code>{{ h.cookie | join(", ") }}</code></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p class="muted">{{ _("Thiếu cookie xác thực ở cột cuối nghĩa là bản xuất chưa đăng nhập, hoặc xuất từ tên miền khác — đăng nhập lại rồi xuất đúng trang đó.") }}</p>
     </details>
     <form method="post" action="{{ duong }}" enctype="multipart/form-data" class="vc-tk-row">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

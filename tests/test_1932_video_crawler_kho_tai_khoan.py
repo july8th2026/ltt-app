@@ -549,3 +549,39 @@ def test_governance_khai_bang_tai_khoan_la_du_lieu_cua_LTT():
     from platform_core.public_api import governance
     assert "vc_tai_khoan" in governance.NOT_CUSTOMER_DATA
     assert governance.unclassified(["vc_tai_khoan"]) == []
+
+
+# ── Kho phải dùng được ở ĐƯỜNG CÀO, không chỉ đường tìm kênh ─────────────────
+#
+# Rà soát khi gộp W4-L11: `features._kiem_phien(cho_kho=True)` mới chỉ được gọi ở đường TÌM KÊNH. Đường cào
+# (`dung_params_kham_pha`) vẫn đòi khách có phiên RIÊNG ⇒ dán cookie vào kho xong vẫn không cào được nền đó,
+# tức cả hạng mục kho tài khoản không tới được khách.
+
+_DNS_KHO = lambda host: ["1.2.3.4"]  # noqa: E731
+
+
+def test_kho_co_tai_khoan_song_thi_khach_cao_duoc_khong_can_phien_rieng(db):
+    from apps.video_crawler import features
+    _them(db, nen="douyin")
+    p = features.dung_params_kham_pha(owner_id="u1", nen_tang="douyin", che_do="tu_khoa", dau_vao="meo con",
+                                      so_luong=1, khong_trung=False, phan_giai=_DNS_KHO, db=db)
+    assert p["nen_tang"] == "douyin"
+
+
+def test_kho_RONG_thi_van_tu_choi_o_cua_vao_khong_de_job_hong(db):
+    """Không tài khoản nào sống ⇒ từ chối NGAY, đừng nhận job rồi hỏng và hoàn tiền (khách chờ vô ích)."""
+    from apps.video_crawler import features
+    with pytest.raises(features.LoiDauVao, match="đăng nhập|khả dụng"):
+        features.dung_params_kham_pha(owner_id="u1", nen_tang="douyin", che_do="tu_khoa", dau_vao="meo con",
+                                      so_luong=1, khong_trung=False, phan_giai=_DNS_KHO, db=db)
+
+
+def test_tai_khoan_kho_tam_nghi_khong_tinh_la_song(db):
+    from apps.video_crawler import features, kho_tai_khoan
+    from apps.video_crawler.tables import TAM_NGHI
+    tk = _them(db, nen="douyin")
+    kho_tai_khoan.doi_trang_thai(db, tk.id, TAM_NGHI)
+    db.commit()
+    with pytest.raises(features.LoiDauVao):
+        features.dung_params_kham_pha(owner_id="u1", nen_tang="douyin", che_do="tu_khoa", dau_vao="meo con",
+                                      so_luong=1, khong_trung=False, phan_giai=_DNS_KHO, db=db)

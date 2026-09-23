@@ -166,7 +166,9 @@ def _kiem_phien(nen, db, owner_id: str, *, cho_kho: bool = False) -> None:
     if not co:
         if cho_kho:
             from apps.video_crawler import kho_tai_khoan
-            if kho_tai_khoan.nen_co_kho(nen.id):
+            # Có kho là chưa đủ: kho RỖNG (hoặc mọi tài khoản tạm nghỉ/bị chặn) mà vẫn nhận thì job chạy rồi
+            # hỏng và hoàn tiền — khách chờ vô ích. Hỏi luôn "còn tài khoản sống không".
+            if kho_tai_khoan.nen_co_kho(nen.id) and kho_tai_khoan.con_tai_khoan_song(db, nen.id):
                 return
         raise LoiDauVao(_t("Cách cào này cần đăng nhập {ten} — thêm phiên đăng nhập trước.").format(ten=nen.ten))
     if not phien.hop_le(co[0]):                     # review lần 2: khoá xoay ⇒ phiên không giải mã được
@@ -178,7 +180,9 @@ def _kiem_nguon(nen, che_do: str, dau_vao: str, so_luong, phan_giai, *, db=None,
     if che_do not in nen.che_do:
         raise LoiDauVao(_t("{ten} không hỗ trợ cách cào này.").format(ten=nen.ten))
     if che_do in nen.che_do_can_dang_nhap:
-        _kiem_phien(nen, db, owner_id)
+        # Kho tài khoản hệ thống dùng được ở ĐƯỜNG CÀO, không chỉ đường tìm kênh: nếu không, dán cookie vào kho
+        # xong khách vẫn bị từ chối ở cửa vào và cả hạng mục kho không tới được ai (rà soát gộp W4-L11).
+        _kiem_phien(nen, db, owner_id, cho_kho=True)
     dau_vao = _chuan_dau_vao(nen, che_do, dau_vao, phan_giai)
     try:
         n = int(so_luong)
@@ -488,25 +492,12 @@ def _adapter_cua(nen_id: str):
 
 
 def nen_tim_kenh_duoc(nen_id: str, *, tao_adapter=None) -> bool:
-    """Nền này TÌM KÊNH theo tên được không — câu trả lời giao diện dùng để hiện/giấu chế độ "Tìm kênh".
+    """Nền này TÌM KÊNH theo tên được không — giao diện dùng để hiện/giấu chế độ "Tìm kênh".
 
-    ⚠ `nen_tang.co_tim_kenh` một mình chưa đủ: nó so `tim_kenh` với bản mặc định của `PlatformAdapter`,
-    nên MỌI adapter họ yt-dlp đều "có" (chúng kế thừa `YtdlpAdapter.tim_kenh`) kể cả khi bản chung ấy
-    lập tức ném `chua_ho_tro_tim_kenh` vì lớp con chưa khai `ie_key_kenh` (đo 23/09: Facebook, TikTok,
-    Twitter, Instagram, Weibo, Bilibili quốc tế đều bị "có" nhầm). Ở đây hỏi thêm đúng điều kiện ấy.
-    ⇒ cần điều phối: chuyển hẳn luật này vào `nen_tang.co_tim_kenh` (tệp của làn khác) rồi gọi lại một chỗ.
+    Một nguồn: `nen_tang.co_tim_kenh` (hỏi thẳng lớp adapter, kể cả điều kiện `ie_key_kenh` của họ yt-dlp).
     """
     from apps.video_crawler import nen_tang as _nt
-    if not _nt.co_tim_kenh(nen_id):
-        return False
-    try:
-        adapter = (tao_adapter or _adapter_cua)(nen_id)
-        from apps.video_crawler.adapters._ytdlp import YtdlpAdapter
-    except (_nt.NenKhongHopLe, ImportError, LookupError, RuntimeError):
-        return False
-    if type(adapter).tim_kenh is YtdlpAdapter.tim_kenh:
-        return bool(getattr(adapter, "ie_key_kenh", ()))
-    return True
+    return _nt.co_tim_kenh(nen_id)
 
 
 def _mo_phien(adapter, owner_id: str, nen_id: str):
