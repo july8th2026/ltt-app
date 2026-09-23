@@ -95,12 +95,14 @@ def da_mo(db, waitpoint_id: str) -> bool:
       1. `release_on_first_failure` → hỏng một nhánh là thả ngay. Đứng trước vì
          nó là quyết định "đừng bắt chờ nữa", không phụ thuộc đếm đủ hay chưa.
       2. `required_successes > 0` → N-of-M: đếm `SUCCEEDED`, đủ N thì mở.
-      3. `required_successes == 0` (**ALL**) → chỉ kết luận được khi `sealed`.
+      3. `required_successes == 0` (**ALL**) → nếu `so_nguon > 0` (Join, mẫu số
+         biết lúc dựng đồ thị) thì đếm số tín hiệu đã xong so với `so_nguon`.
+         Nếu không (barrier động — ForEach) thì chỉ kết luận được khi `sealed`.
 
-    ⛔ Trả `False` ở nhánh 3 khi chưa `sealed` KHÔNG có nghĩa "chưa đủ" — nó có
-       nghĩa **"chưa biết"**. Hai thứ ấy khác nhau, và gộp chúng lại chính là
-       khiếm khuyết mà `sealed` sinh ra để đóng: không có cờ này thì "đủ tất
-       cả" là một câu hỏi không có mẫu số.
+    ⛔ `so_nguon == 0` và chưa `sealed` KHÔNG có nghĩa "chưa đủ" — nó có nghĩa
+       **"chưa biết"**. Hai thứ ấy khác nhau, và gộp chúng lại chính là
+       khiếm khuyết mà `sealed`/`so_nguon` sinh ra để đóng: không có mẫu số
+       thì "đủ tất cả" là một câu hỏi không trả lời được.
     """
     wp = db.get(Waitpoint, waitpoint_id)
     if wp is None:
@@ -117,6 +119,8 @@ def da_mo(db, waitpoint_id: str) -> bool:
         thanh_cong = sum(1 for s in tin_hieu if s.status == _THANH_CONG)
         return thanh_cong >= wp.required_successes
 
-    if not wp.sealed:
-        return False
-    return bool(tin_hieu) and all(s.status in _DA_XONG for s in tin_hieu)
+    xong = [s for s in tin_hieu if s.status in _DA_XONG]
+    if wp.so_nguon > 0:
+        return len(xong) >= wp.so_nguon
+    # Barrier động (ForEach): mẫu số chỉ biết khi đã niêm phong.
+    return bool(wp.sealed) and len(xong) == len(tin_hieu)

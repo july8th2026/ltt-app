@@ -27,6 +27,8 @@ do — va no se trong y het mot tien nghi cho nguoi dung giao dien.
 """
 from __future__ import annotations
 
+import math
+
 from fastapi import Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
@@ -35,7 +37,7 @@ from sqlalchemy.orm import Session
 from apps.agent.routes._shared import _user, _verify_json_csrf, router
 from platform_core.i18n import _ as _t
 from platform_core.models import Workflow, WorkflowDraft
-from platform_core.workflow import bao_gia, dinh_nghia
+from platform_core.workflow import bao_gia, bien_dich, dinh_nghia
 from server.auth.session import require_login
 from server.deps import get_db
 
@@ -150,24 +152,23 @@ async def v3_xuat_ban(request: Request, workflow_id: str,
     _verify_json_csrf(request, body)
     user = _user(request)
     wf = _cua_toi(db, workflow_id, user.id)
-    draft = db.get(WorkflowDraft, wf.id)
-    if draft is None or not (draft.document or {}).get("pages"):
-        raise HTTPException(status_code=409,
-                            detail=_t('Bản nháp chưa có nội dung để xuất bản.'))
 
-    # Bao gia truoc khi dong bang: `estimated_max` phai bi DONG BANG CUNG graph
-    # (`23_24`), vi tinh lai luc chay nghia la mot luot co the vuot mot tran ma
-    # nguoi duyet chua tung thay.
-    trang = (draft.document.get("pages") or [{}])[0]
+    # Bien dich + bao gia truoc khi dong bang: `estimated_max` phai bi DONG
+    # BANG CUNG graph DA BIEN DICH (`23_24`), vi tinh lai luc chay nghia la
+    # mot luot co the vuot mot tran ma nguoi duyet chua tung thay.
     try:
-        gia = bao_gia.uoc_tinh({"nodes": trang.get("nodes") or []})
+        version = dinh_nghia.xuat_ban_draft(db, wf.id, created_by=user.id)
+    except bien_dich.LoiBienDich as exc:
+        raise HTTPException(status_code=422, detail={
+            "ma": exc.ma, "node_id": exc.node_id, "thong_diep": str(exc)}) from None
     except bao_gia.KhongBaoGiaDuoc as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from None
+        raise HTTPException(status_code=422, detail={
+            "ma": "khong_bao_gia_duoc", "thong_diep": str(exc)}) from None
 
-    ver = dinh_nghia.xuat_ban(db, wf.id, draft.document, created_by=user.id,
-                              estimated_max=gia.toi_da)
-    wf.published_version_id = ver.id
+    toi_da = int(version.estimated_max or 0)
+    uoc = int(math.ceil(toi_da * bao_gia._TY_LE_UOC_TINH))
+    wf.published_version_id = version.id
     db.commit()
-    return JSONResponse({"workflow_id": wf.id, "version_id": ver.id,
-                         "credit_max": gia.toi_da,
-                         "credit_estimate": gia.uoc_tinh})
+    return JSONResponse({"workflow_id": wf.id, "version_id": version.id,
+                         "credit_max": toi_da,
+                         "credit_estimate": uoc})

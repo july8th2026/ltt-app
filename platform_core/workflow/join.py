@@ -30,10 +30,11 @@ def tao(db, *, run_id: str, owner_id: str, che_do: str, so_nhanh: int,
 
         ANY     required_successes = 1
         N_OF_M  required_successes = can
-        ALL     required_successes = 0  +  sealed = True  ngay tu dau
+        ALL     required_successes = 0  +  so_nguon = so_nhanh
 
-    ⭐ `ALL` niêm phong **ngay lúc tạo**, và đó là điều đúng ở đây: số nhánh của
-       một Join **đã biết** lúc dựng đồ thị. Khác hẳn một barrier động (ForEach
+    ⭐ `ALL` **không** niêm phong lúc tạo: số nhánh của một Join **đã biết**
+       lúc dựng đồ thị, nên `so_nguon` là mẫu số ngay từ đầu và `da_mo()` chỉ
+       cần đếm tín hiệu đã xong so với nó. Khác hẳn một barrier động (ForEach
        sinh nhánh lúc chạy), nơi `sealed` phải đợi.
     """
     if che_do not in CHE_DO:
@@ -52,9 +53,11 @@ def tao(db, *, run_id: str, owner_id: str, che_do: str, so_nhanh: int,
                                kind="BARRIER",
                                required_successes=can_thanh_cong)
     wp.token_hash = ""
+    wp.so_nguon = int(so_nhanh)
     wp.output_ref = {"che_do": che_do, "so_nhanh": int(so_nhanh),
                      "hanh_vi_tran": hanh_vi_tran}
-    if che_do == "ALL":
-        wp.sealed = True
+    # ALL KHÔNG niêm phong lúc tạo: niêm phong sớm + `da_mo` chỉ nhìn tín hiệu
+    # ĐÃ có từng mở join sau tín hiệu đầu tiên (audit 22/09). ALL nay đếm theo
+    # `so_nguon` — mẫu số biết từ lúc dựng đồ thị.
     db.flush()
     return wp

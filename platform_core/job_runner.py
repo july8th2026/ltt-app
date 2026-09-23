@@ -1422,6 +1422,7 @@ def _don_du_lieu_het_han() -> None:
                                           notifications, outbox, request_log,
                                           security_log)
     from platform_core.llm import admission, phong_cho
+    from platform_core.workflow import su_kien as workflow_su_kien
 
     rules = (
         ("nhat ky request API", request_log.purge_expired),
@@ -1438,6 +1439,8 @@ def _don_du_lieu_het_han() -> None:
         # ở lại (bằng chứng), nội dung thì hết hạn — trước đây cả hai chung một
         # số phận là giữ vĩnh viễn, nên kho file phình không trần.
         ("noi dung job het han", _don_noi_dung_job),
+        # workflow_event cua run DA KET SO qua 90 ngay (spec Sec5.11).
+        ("su kien workflow", workflow_su_kien.purge_expired),
     )
     for label, purge in rules:
         try:

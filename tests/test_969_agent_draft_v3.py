@@ -120,10 +120,16 @@ def test_tran_chi_phi_DONG_BANG_cung_graph(db):
     """⚠️ `23_24`: tính lại lúc chạy nghĩa là một lượt có thể vượt một trần mà
     người duyệt **chưa từng thấy con số ấy**."""
     from platform_core.workflow import bao_gia, dinh_nghia
+    from platform_core.workflow.cong_cu import CongCu
 
     wf = dinh_nghia.tao_workflow(db, owner_id="u1", name="w")
-    g = _do_thi(3)
-    gia = bao_gia.uoc_tinh({"nodes": g["pages"][0]["nodes"]})
+    cc = {"t.x": CongCu(ten="t.x", app_slug="t", job_type="t.x", type_version=1,
+                        params_schema={}, side_effect="external",
+                        idempotency_fields=(), tinh_gia=lambda p: 5)}
+    g = {"schema": "ltt.workflow/3", "nodes": [
+        {"id": f"n{i}", "type": "app.t.x", "params": {}, "thi_hanh": "job"}
+        for i in range(3)], "edges": []}
+    gia = bao_gia.bao_gia_do_thi(g, cong_cu=cc)
     ver = dinh_nghia.xuat_ban(db, wf.id, g, created_by="u1",
                               estimated_max=gia.toi_da)
     db.commit()

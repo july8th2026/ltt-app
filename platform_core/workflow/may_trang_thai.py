@@ -31,10 +31,8 @@ RUN_KET_THUC = frozenset({
 RUN_LOI_CUA_TA = frozenset({"SYSTEM_FAILURE"})
 
 RUN_CHUYEN: dict[str, frozenset[str]] = {
-    "queued": frozenset({"VALIDATING", "CANCELLED"}),      # trạng thái khởi tạo
-    "CREATED": frozenset({"VALIDATING", "CANCELLED"}),
-    "VALIDATING": frozenset({"QUEUED", "FAILED", "SYSTEM_FAILURE",
-                             "CANCELLED"}),
+    # Validate chạy lúc PUBLISH (spec §4.2) — tạo run chỉ kiểm tiền + quyền.
+    "CREATED": frozenset({"QUEUED", "FAILED", "CANCELLED"}),
     "QUEUED": frozenset({"RUNNING", "CANCELLED", "TIMED_OUT",
                          "SYSTEM_FAILURE"}),
     # `RUNNING ⇄ WAITING` qua lại được: một run có thể chờ rồi chạy tiếp nhiều lần.
@@ -54,17 +52,26 @@ NODE_KET_THUC = frozenset({
     "SUCCEEDED", "FAILED", "SKIPPED", "ABANDONED", "CANCELLED",
 })
 
+#: Node đang chiếm một suất song song của run (spec §5.9).
+NODE_DANG_CHAY = frozenset({"QUEUED", "RUNNING", "WAITING"})
+
+#: ⭐ `RESUMING` KHÔNG phải trạng thái lưu (spec §5.3): resume là MỘT transaction
+#:    (nhặt wakeup → đọc tín hiệu → chuyển), không có khoảng nào quan sát được.
+#: ⭐ `QUEUED → SUCCEEDED/FAILED/…` hợp lệ: job có thể xong trước khi động cơ kịp
+#:    thấy nó chạy — động cơ không có hook lúc job bắt đầu (spec §5.8).
 NODE_CHUYEN: dict[str, frozenset[str]] = {
     "PENDING": frozenset({"READY", "SKIPPED", "CANCELLED"}),
-    "READY": frozenset({"QUEUED", "SKIPPED", "CANCELLED"}),
-    "QUEUED": frozenset({"RUNNING", "CANCELLED", "ABANDONED"}),
-    # ⭐ *đang chạy* và *đang chờ* KHÔNG loại trừ nhau. Bản nháp `WF-207` viết
-    #   `RUNNING ⇄ WAITING` tách rời, và với ForEach (vài vòng xong, vài vòng
-    #   đang chờ) thì **không biểu đạt được** — một run có thật mà không có tên.
-    "RUNNING": frozenset({"RUNNING_WITH_WAITPOINTS", "SUCCEEDED", "FAILED",
+    # ⭐ `READY → FAILED`: cầu nối job có thể từ chối một node TRƯỚC KHI nộp job
+    #    (vượt trần báo giá, tham số không giải được) — node chưa từng vào
+    #    `QUEUED` (spec §5.8, Task 9 `cau_noi.nop_job`).
+    "READY": frozenset({"QUEUED", "RUNNING", "WAITING", "SKIPPED",
+                        "CANCELLED", "FAILED"}),
+    "QUEUED": frozenset({"RUNNING", "SUCCEEDED", "FAILED", "ABANDONED",
+                         "RETRY_SCHEDULED", "CANCELLED"}),
+    "RUNNING": frozenset({"SUCCEEDED", "FAILED", "WAITING", "RETRY_SCHEDULED",
                           "ABANDONED", "CANCELLED"}),
-    "RUNNING_WITH_WAITPOINTS": frozenset({"RUNNING", "SUCCEEDED", "FAILED",
-                                          "ABANDONED", "CANCELLED"}),
+    "WAITING": frozenset({"RUNNING", "SUCCEEDED", "FAILED", "CANCELLED"}),
+    "RETRY_SCHEDULED": frozenset({"READY", "CANCELLED"}),
 }
 
 _NODE_BAT_DAU = "PENDING"
@@ -77,7 +84,7 @@ def trang_thai_node(db, run_id: str, node_id: str) -> str:
 
 
 def chuyen_node(db, run_id: str, node_id: str, *, sang: str, mo_ta: str,
-                **thong_tin) -> bool:
+                error: str = "", **thong_tin) -> bool:
     """Chuyển một node sang trạng thái mới. Trả `False` nếu bị TỪ CHỐI.
 
     ⭐ **Lần chuyển bị từ chối vẫn ghi một ảnh chụp** (`is_valid=False`), đúng
@@ -87,6 +94,13 @@ def chuyen_node(db, run_id: str, node_id: str, *, sang: str, mo_ta: str,
 
     ⛔ Nhưng ghi lại KHÔNG phải chấp nhận — con trỏ `node_run` đứng yên
        (`thi_hanh.ghi_chuyen` lo phần đó).
+
+    `error` — mã lỗi MIỀN (spec §5.6 `NodeError.ma`, vd `vuot_tran_bao_gia`,
+    `bi_huy`) của bên gọi, ghi thẳng vào cột `error` của ảnh chụp KHI chuyển
+    được CHẤP NHẬN. Khi bị TỪ CHỐI, cột `error` luôn là thông điệp từ chối của
+    chính máy trạng thái — `error` của bên gọi bị GHI ĐÈ, vì lý do từ chối
+    (chuyển không nằm trong bảng) quan trọng hơn lý do miền mà bên gọi định
+    ghi cho một chuyển KHÁC (chuyển không xảy ra).
     """
     hien = trang_thai_node(db, run_id, node_id)
     duoc = NODE_CHUYEN.get(hien, frozenset())
@@ -95,7 +109,7 @@ def chuyen_node(db, run_id: str, node_id: str, *, sang: str, mo_ta: str,
     thi_hanh.ghi_chuyen(
         db, run_id, node_id, execution_status=(sang if hop_le else hien),
         description=mo_ta, is_valid=hop_le,
-        error=("" if hop_le else
+        error=(error if hop_le else
                f"chuyen bi tu choi: {hien} -> {sang} khong nam trong bang"),
         **thong_tin)
     return hop_le
@@ -149,5 +163,5 @@ def tong_chi_phi_hop_le(db, run_id: str) -> int:
 
 
 __all__ = ["RUN_CHUYEN", "RUN_KET_THUC", "RUN_LOI_CUA_TA", "NODE_CHUYEN",
-           "NODE_KET_THUC", "chuyen_node", "chuyen_run", "trang_thai_node",
-           "tong_chi_phi_hop_le", "NodeRun"]
+           "NODE_KET_THUC", "NODE_DANG_CHAY", "chuyen_node", "chuyen_run",
+           "trang_thai_node", "tong_chi_phi_hop_le", "NodeRun"]

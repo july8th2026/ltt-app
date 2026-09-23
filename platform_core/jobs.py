@@ -33,6 +33,7 @@ from platform_core.models import (ExecutionLease, JOB_CANCELLED, JOB_DONE, JOB_E
                                   JOB_QUEUED, JOB_RUNNING, Job)
 from platform_core import job_events
 from platform_core.i18n import N_
+from platform_core.job_scheduler import ORIGIN_WORKFLOW
 
 # Job running quá lâu không đập nhịp bị coi là mồ côi (worker chết).
 ORPHAN_TIMEOUT = timedelta(minutes=5)
@@ -540,6 +541,7 @@ def mark_ambiguous(db: DbSession, job: Job, error: str) -> None:
             "Không thể xác định kết quả từ nhà cung cấp; hệ thống đã dừng tự thử lại."),
         details={"attempt": job.attempts, "status": JOB_ERROR},
         level="error", event_key="ambiguous-provider")
+    _bao_workflow(db, job)
     db.flush()
 
 
@@ -556,6 +558,13 @@ def set_progress(db: DbSession, job: Job, percent: int, message: str = "") -> No
     db.flush()
 
 
+def _bao_workflow(db: DbSession, job: Job) -> None:
+    """Điểm nối DUY NHẤT tầng nền → workflow (spec §3.1-3)."""
+    if job.origin == ORIGIN_WORKFLOW and job.parent_id:
+        from platform_core.workflow.cau_noi import bao_ket_thuc
+        bao_ket_thuc(db, job)
+
+
 def complete(db: DbSession, job: Job, result: dict) -> None:
     job.status = JOB_DONE
     job.result = result
@@ -567,6 +576,7 @@ def complete(db: DbSession, job: Job, result: dict) -> None:
         db, job, "completed", public_message=N_("Đã hoàn tất."),
         details={"status": JOB_DONE}, event_key="completed",
     )
+    _bao_workflow(db, job)
     db.flush()
 
 
@@ -585,6 +595,7 @@ def cancel(db: DbSession, job: Job) -> bool:
         db, job, "cancelled", public_message=N_("Đã hủy theo yêu cầu."),
         details={"status": JOB_CANCELLED}, level="warning", event_key="cancelled",
     )
+    _bao_workflow(db, job)
     db.flush()
     return True
 
@@ -623,6 +634,7 @@ def fail(db: DbSession, job: Job, error: str, *, retry: bool = True) -> None:
             details={"attempt": job.attempts, "max_attempts": job.max_attempts,
                      "status": JOB_ERROR}, level="error", event_key="failed",
         )
+        _bao_workflow(db, job)
     job_events.append(
         db, job, "attempt_error", visibility=job_events.INTERNAL, level="error",
         details={"attempt": job.attempts, "error": safe_error},

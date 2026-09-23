@@ -153,6 +153,24 @@ def xuat_ban(db, workflow_id: str, graph: dict, *, created_by: str,
     return version
 
 
+def xuat_ban_draft(db, workflow_id: str, *, created_by: str,
+                   cong_cu: Optional[dict] = None) -> WorkflowVersion:
+    """Draft → biên dịch → báo giá → version bất biến (spec §4.2, §7.2).
+
+    Ném `bien_dich.LoiBienDich` / `bao_gia.KhongBaoGiaDuoc` — bên gọi đổi thành
+    422 có `ma`. Không commit.
+    """
+    from platform_core.workflow import bao_gia, bien_dich
+
+    draft = db.get(WorkflowDraft, workflow_id)
+    if draft is None:
+        raise bien_dich.LoiBienDich("do_thi_rong", "chua co ban nhap")
+    graph = bien_dich.bien_dich(draft.document or {}, cong_cu=cong_cu)
+    gia = bao_gia.bao_gia_do_thi(graph, cong_cu=cong_cu)
+    return xuat_ban(db, workflow_id, graph, created_by=created_by,
+                    estimated_max=gia.toi_da)
+
+
 def _sinh_chi_muc(db, version: WorkflowVersion) -> None:
     """Trải `graph` ra hai bảng phẳng để truy vấn được bằng SQL.
 
