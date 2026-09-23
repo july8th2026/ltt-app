@@ -65,7 +65,12 @@ SQLAlchemy (nền tảng, test `pytest`), PowerShell 7 (phát hành), Tauri/Rust
 | 9 | Cho Cloudflare cache bộ cài | ✅ `e17f1bc3` · **đã deploy + đo**: `no-store` → `immutable`, BYPASS → MISS → **HIT** (Age tăng 29→37) |
 | 10 | Bổ sung từ sổ lỗi D1 | ✅ `67f412f6` — số đo cuối đã ghi, V-19…V-24 đã lập, **`restore.ps1` đã vá** (7 phép, có đối chứng âm). Off-site đã dựng + cắm lịch. Sổ đăng ký đã vào mẫu backup (`8a46784c`) — **hết việc mở** |
 
-### Phần B — nâng năng lực: **2,5 / 10 = 25 %** (không đổi)
+### Phần B — nâng năng lực: **5,5 / 10 = 55 %** (cập nhật 23/09 khuya)
+
+> Cộng: T11 0,5 · T12 0,5 · T13 0,5 · T14 **0** · T15 **1** · T16 0,5 · T17 **1** · T18 0,5 · T19 0,5 · T20 0,5.
+> **T17 được tính trọn 1** vì bước 2 của chính nó cho phép *"kết luận giới hạn phần cứng rồi đóng task"* —
+> và số đo đã chứng minh đúng điều đó. **T16 chỉ 0,5** vì thứ khách cần (thấy tiền) **không** giao được;
+> tra xong không phải là làm xong.
 
 | Task | Việc | Trạng thái |
 |---|---|---|
@@ -94,10 +99,29 @@ SQLAlchemy (nền tảng, test `pytest`), PowerShell 7 (phát hành), Tauri/Rust
 **65 % và 25 % không so sánh được với nhau.** Phần A là mười lỗi đã biết, mỗi cái vài chục dòng.
 Phần B là mười năng lực, trong đó ba cái là dự án riêng. Cộng hai phần thành một con số là vô nghĩa.
 
-**Bốn task Phần B ở mức 0,5 đều dừng ở đúng chỗ đáng dừng**, không phải bỏ dở: Task 11 chặn vì
-slot giao diện không có sẵn đường nối; Task 12 chờ phép đo mà một lượt text không tạo ra được;
-Task 15/18/19 dừng sau khi tra ra **năng lực đã có sẵn** — và đó là kết quả có giá trị hơn việc
-viết thêm mã.
+**Các task ở mức 0,5 đều dừng ở đúng chỗ đáng dừng**, không phải bỏ dở: T11 chặn vì slot giao diện
+không có sẵn đường nối; T12 chờ phép đo mà một lượt text không tạo ra được; T18 dừng sau khi tra ra
+**năng lực đã có sẵn**.
+
+### Thu hoạch thật của vòng 23/09 khuya: **năm lần giả thuyết của điều phối bị số đo bác**
+
+Ghi lại vì đây là giá trị lớn hơn số dòng mã viết ra.
+
+| # | Điều phối tin | Số đo / mã nói |
+|---|---|---|
+| 1 | Ba tệp sổ đăng ký phải vào backup | **Hai.** `translations/` robocopy lại mỗi lần deploy (`2-cai-dat.ps1:683-694`) |
+| 2 | T16 lấy credit qua đường gọi của cửa sổ Tài khoản | **Không với tới.** DSH web UI là loopback remote page ⇒ **không có Tauri IPC**. Và đi lối sidecar cũng chặn: `TokenUsage` là interface đóng, projection **cấm I/O** |
+| 3 | T19 bundle rồi tắt nhóm công cụ ghi | **Cordis không có khái niệm "tool" ở lớp đó** — đơn vị nhỏ nhất là cả plugin |
+| 4 | T15 sửa `agent-role-router.js` trong kho | Tệp nằm trong **`node_modules` gitignored** — phải vá theo khuôn `postinstall` + `UPSTREAM_DIVERGENCE.md` |
+| 5 | T13 `listingMaxTokens: 2200` là thủ phạm | Đo thật **1 740 / 2 038 token — đều DƯỚI trần cũ**. Giả thuyết **chưa được chứng minh** |
+
+Bốn lần đầu các làn báo thẳng và điều phối đổi hướng. **Lần thứ năm chưa giải quyết xong** — nâng
+trần là thay đổi rẻ và an toàn, nhưng ⛔ **không được ghi là "đã sửa nguyên nhân"** cho tới khi lượt
+mở app nhìn thấy catalog có mô tả.
+
+⚠️ **Nợ kỹ thuật đang mở:** `cargo test` cho `36344e0` (`mcp.rs`, `sidecar.rs`) **chưa chạy được** —
+khoá `cpu_nhieu` cả máy bị một phiên khác giữ 47 phút trong khi CPU chỉ 7 %. `cargo fmt --check`
+chỉ chứng minh **cú pháp hợp lệ**, không chứng minh chạy đúng.
 
 
 ## Bản đồ làn — chạy song song thế nào cho nhanh mà không hỏng
