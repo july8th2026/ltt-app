@@ -69,9 +69,15 @@ class KetQua:
     cau_cho_khach: str      # MOT cau da dich, khong ten he thong noi bo
     cau_cho_van_hanh: str   # chi tiet ky thuat: log + trang admin
 
-def con_ban_duoc(db, plan_id, *, dia_them_gb=0) -> KetQua
-def so_nguon_luc(db, profile=None) -> SoNguonLuc   # bang day du cho admin
+def danh_gia(do: DoDuoc, plan_id, *, dia_them_gb=0) -> KetQua   # THUAN
+def do_nguon_luc(db, profile=None) -> DoDuoc                    # doc that
+def con_ban_duoc(db, plan_id, *, dia_them_gb=0, do=None) -> KetQua
 ```
+
+> **Đã dựng, khác đề xuất ban đầu một chỗ:** không có `so_nguon_luc()`. Trang
+> admin đọc số chỗ từ `provenance` của bản ghi `capacity` mà `preflight` **đã**
+> ghi sẵn, thay vì gọi lại Proxmox/OVH. Một trang quản trị đi hỏi hai nhà cung
+> cấp cho mỗi profile là một trang treo đúng lúc người vận hành cần nó nhất.
 
 Ba nơi gọi, không nơi nào tự tính: `routes.trang_chinh`, `routes.tao_may`,
 `preflight.run_profile_preflight`. Xoá `_gioi_han_ban`,
@@ -216,7 +222,10 @@ Không viết vào là bán một thứ khác với thứ giao.
 
 `tx_dropped` không còn chặn bán, nên nó phải **được nhìn**, không phải bị bỏ:
 
-- `nguon_luc.so_nguon_luc()` trả cả sáu tài nguyên kèm % đã dùng → trang admin.
+- Trang admin (`admin_profiles.list_profiles`) nói rõ **tầng nào chặn bán**
+  (`chan_ban`) và **tầng nào chỉ cảnh báo** (`canh_bao`), kèm `cho_ban_duoc`
+  — số chỗ đo ở lượt preflight gần nhất, đọc từ `provenance`, không gọi lại
+  nhà cung cấp.
 - Băng thông cổng vào tháng-tới-giờ và dự phóng cuối tháng hiện cạnh trần.
 - `tx_dropped` giữ trong health ở tầng `CANH_BAO`, kèm bộ đếm tổng và tỉ lệ
   trên tổng gói TX (hiện 6.523.625 / 245.827.848 = 2,65% tích luỹ 27 ngày) để
