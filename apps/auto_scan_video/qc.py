@@ -163,6 +163,26 @@ KHONG_AP_DUNG = "khong_ap_dung"
 # ── Nguong, tu MVP_CONTRACT §7 ────────────────────────────────────────────────
 #: T2 — thoi luong ban ra so voi nguon.
 LECH_THOI_LUONG_S = 0.50
+
+#: T2 — bao nhieu GIAY dai hon MONG DOI van con la "khong dai hon".
+#:
+#: 🔴 **Khong phai mot noi long chinh sach — la DO PHAN GIAI cua phep so sanh.**
+#:
+#:    `mong_doi` khong do duoc tu tep ra: no di qua `BanDoThoiGian.sang_dict`,
+#:    ham nay lam tron TUNG moc giu ve 4 chu so thap phan
+#:    (`ban_do_thoi_gian.py:190`). Moi khoang giu vi the mang toi ±1e-4 s sai so
+#:    lam tron, va container MP4 con lam tron lan nua theo timebase cua no.
+#:
+#: ⛔ Da do that, 23/09, nghiem thu cuoi luot A (v3, 30 fps, 106,833333 s):
+#:    ban do luu 106,8333 · tep ra 106,833333 · `lech = +3,3e-5` ⇒ `lech <= 0`
+#:    SAI ⇒ T2 **hong** tren mot ban giao khong sai mot khung hinh nao. Truoc
+#:    ban sua R-02 loi nay bi che: `-shortest` cat bot hai goi hinh cuoi nen ban
+#:    ra luon NGAN hon — T2 xanh vi mot khiem khuyet khac (T3 do).
+#:
+#: ⭐ 0,01 s = 100 lan do phan giai lam tron cua mot moc, va van nho hon
+#:    `LECH_THOI_LUONG_S` hai bac: loi hua "khong bao gio dai hon" giu nguyen
+#:    nghia (`test_444` chot mot ban ra dai hon 0,3 s van HONG).
+DAI_HON_CHO_PHEP_S = 0.01
 #: T4 — am luong tich hop. Cung so `tach_tieng` dung de CHUAN HOA, va do la co y:
 #: chuan hoa toi mot dich roi do bang mot dich khac la tu bay minh.
 #:
@@ -426,12 +446,15 @@ def kiem(*, tt_ra: dict, tt_nguon: dict, am_luong: dict, ke_hoach: dict,
     lech = d_ra - mong_doi
     # "khong bao gio dai hon MONG DOI" la mot chot RIENG, khong phai he qua cua
     # `abs(lech) <= 0.5`: mot ban ra dai hon 0,3 giay van vi pham loi hua §3.
-    t2 = abs(lech) <= LECH_THOI_LUONG_S and lech <= 0
+    t2 = abs(lech) <= LECH_THOI_LUONG_S and lech <= DAI_HON_CHO_PHEP_S
     muc.append(_muc("T2", DAT if t2 else HONG,
                     "thoi luong ban ra so voi MONG DOI cua che do",
                     thoi_luong_ra=round(d_ra, 3), thoi_luong_nguon=round(d_nguon, 3),
                     mong_doi=round(mong_doi, 3),
-                    lech=round(lech, 3), nguong=LECH_THOI_LUONG_S))
+                    # ⚠️ 6 chu so, khong 3: o 3 chu so `lech` cua loi 23/09 in ra
+                    # `0.0` trong khi phan quyet la HONG — bao cao tu mau thuan.
+                    lech=round(lech, 6), nguong=LECH_THOI_LUONG_S,
+                    dai_hon_cho_phep=DAI_HON_CHO_PHEP_S))
 
     # ── T3 — luong hinh giong het nguon tung bit ────────────────────────────
     #

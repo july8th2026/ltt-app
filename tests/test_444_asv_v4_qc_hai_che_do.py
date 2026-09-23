@@ -117,6 +117,29 @@ def test_ban_ra_DAI_HON_mong_doi_luon_hong_du_trong_dung_sai():
     assert _muc(bc, "T2")["trang_thai"] == qc.HONG
 
 
+def test_dai_hon_mong_doi_duoi_DO_PHAN_GIAI_lam_tron_thi_van_DAT():
+    """🔴 Ca do that, nghiem thu cuoi 23/09 luot A (v3, 30 fps).
+
+    `mong_doi` di qua `BanDoThoiGian.sang_dict`, ham do lam tron tung moc giu ve
+    4 chu so (`ban_do_thoi_gian.py:190`): ban do luu **106,8333** trong khi tep
+    ra do duoc **106,833333**. `lech = +3,3e-5` — ba muoi ba MICRO giay — va chot
+    `lech <= 0` cu tra ve HONG tren mot ban giao khong lech mot khung hinh nao.
+
+    ⛔ Loi bi che tu truoc: ban `-shortest` (R-02) cat bot hai goi hinh cuoi nen
+       ban ra luon NGAN hon mong doi. Go `-shortest` xong thi T3 xanh va T2 do —
+       hai muc do cung mot su that, va khong muc nao noi ra.
+    """
+    bc = qc.kiem(**_dau_vao(
+        tt_ra={"co_video": True, "co_tieng": True, "thoi_luong": 106.833333},
+        tt_nguon={"co_video": True, "co_tieng": True, "thoi_luong": 106.833333},
+        che_do_render=cdr.SAO_CHEP, thoi_luong_mong_doi=106.8333))
+    muc = _muc(bc, "T2")
+    assert muc["trang_thai"] == qc.DAT, muc
+    # ⭐ Va bao cao phai IN duoc con so vua phan quyet: o 3 chu so thap phan
+    #    `lech` hien ra `0.0` canh mot phan quyet HONG — mot bao cao tu mau thuan.
+    assert muc["lech"] > 0, muc
+
+
 def test_khong_khai_mong_doi_thi_lui_ve_thoi_luong_NGUON():
     bc = qc.kiem(**_dau_vao())
     assert _muc(bc, "T2")["mong_doi"] == 100.0
