@@ -186,3 +186,45 @@ khi làm theo thủ công mục 5.
 Điểm nghẽn vận hành: bản sao lưu `D:\LTTBackups` **nằm CÙNG máy với dữ liệu
 đang chạy** — mất máy = mất cả dữ liệu lẫn bản sao lưu. Xem mục "Rủi ro
 off-site" trong `docs/reports/dien-tap-khoi-phuc-2026-09-23.md`.
+
+## 8. Off-site — bản sao ở nơi khác với dữ liệu gốc (dựng 23/09/2026)
+
+Diễn tập chứng minh bản sao **khôi phục được**. Nhưng tới 23/09 toàn bộ bản sao vẫn nằm trên
+**chính máy production** (`D:\LTTBackups`): một ổ hỏng, một đám cháy, một lần ransomware trúng
+cả `C:` lẫn `D:` là mất **cả dữ liệu lẫn bản sao**. Khi đó không còn gì để khôi phục.
+
+```powershell
+# Chay thu truoc (khong ghi gi):
+pwsh -File deploy\windows\dong_bo_off_site.ps1 -Dich "G:\My Drive\LTTBackups" -ChayThu
+
+# Chay that - giu 7 ban moi nhat o dich:
+pwsh -File deploy\windows\dong_bo_off_site.ps1 -Dich "G:\My Drive\LTTBackups" -Giu 7
+```
+
+Đo lần chạy đầu (23/09 ~19:50): **7 bản · 1,11 GB · 0,9 phút · 0 lỗi**, mọi băm SHA-256 khớp
+sau khi chép. Mã thoát khác 0 khi có bất kỳ bản nào lệch băm — và bản lệch **bị xoá ngay ở đích**
+thay vì để nằm đó giả vờ là bản sao.
+
+### ⛔ Vì sao KHÔNG đồng bộ `ltt_secrets_*.zip`
+
+`backup.ps1` (H35.9) cố ý để hai bản ở **hai thư mục anh em**, không lồng nhau, kèm dòng giải
+thích: *"đồng bộ off-site trỏ vào `-BackupDir` sẽ không vô tình kéo theo bí mật"*.
+
+- `ltt_data_*.zip` giữ **bản mã** của token và **hash** khoá API của khách.
+- `ltt_secrets_*.zip` giữ `app.env` với `LTT_TOKEN_ENCRYPTION_KEY` và `LTT_API_KEY_PEPPER`.
+
+Tách ra thì **một** bản sao bị lấy cắp không đủ để đọc gì. Đẩy cả hai lên cùng một tài khoản
+đám mây là tự tay gỡ bỏ chính lớp phòng thủ đó: mất tài khoản Google = mất cả hai.
+
+Script vì thế **từ chối chạy** nếu `-Nguon` hoặc `-Dich` có chữ `secret` trong đường dẫn
+(`test_2507` chốt hành vi này).
+
+### 🔴 Hệ quả phải nhận: dựng lại máy trắng CẦN cả hai
+
+Chỉ có bản dữ liệu off-site thì khôi phục được **cấu trúc, người dùng, sổ credit, job** — nhưng
+**token đã lưu sẽ không giải mã được** và khoá API của khách không xác thực lại được, vì thiếu
+`LTT_TOKEN_ENCRYPTION_KEY` và `LTT_API_KEY_PEPPER`.
+
+⇒ `app.env` phải được cất ở **một nơi thứ ba**, không phải máy production và không phải cùng tài
+khoản đám mây với bản dữ liệu. Ví dụ: trình quản lý mật khẩu, hoặc một USB cất rời. **Đây là
+việc thủ công của chủ dự án — không script hoá, và cố ý không script hoá.**
