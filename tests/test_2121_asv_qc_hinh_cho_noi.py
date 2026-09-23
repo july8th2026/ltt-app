@@ -266,3 +266,82 @@ def test_cho_noi_HONG_sinh_vong_sua_NHAM_DUNG_CHO_va_CO_TRAN(
             "van tay la mot bam — khong doc duoc muoi tu no")
         # Chot gian tiep nhung chat: van tay MOI khac van tay khong muoi.
         assert hc.van_tay_canh(m, "", 0, 0.0) != str(it.fingerprint or "")
+
+
+def test_lat_cat_vong_HINH_nhuong_roi_NOI_TIEP_khong_hoi_lai(
+        tmp_path, monkeypatch, db, kho_tam, asr_gia, dich_gia, giong_gia,
+        bat_qc_ai):
+    """🔑 **Vòng hình là một vòng lặp model DÀI — nó phải đi qua `lat_cat`.**
+
+    Một phim 120 phút cho hàng trăm chỗ nối × ~22 s/chỗ nối (đo thật) ⇒ không
+    vừa một job. `lat_cat` nhường trước khi chạm trần rồi nối tiếp bằng job
+    mới; điều kiện đúng đắn là **mỗi chỗ nối chỉ được hỏi MỘT lần** qua tất cả
+    các lượt, vì mỗi lần hỏi là một lần trả tiền.
+
+    ⛔ Và hai vòng (nghĩa + hình) dùng **CHUNG một con trỏ**: lô nghĩa chiếm
+       `0..so_lo-1`, chỗ nối hình chiếm `so_lo..`. Bài này ép trần nhỏ để con
+       trỏ phải đi qua ranh giới đó.
+    """
+    from apps.auto_scan_video import ai, canh as canh_mod, features, lat_cat
+
+    # ⭐ BAY canh (khong dung `_nhieu_canh`, no cho ba): `_cat_canh_le` bo canh
+    #    chi so LE nen bay canh => bon canh duoc giu, khong lien nhau => BA cho
+    #    noi. Hai cho noi tro len moi chung minh duoc "nhuong roi noi tiep".
+    def bay_canh(duong, *, thoi_luong, hoi_huy=None, **kw):
+        n, t = 7, float(thoi_luong)
+        return canh_mod.ChiMucCanh(
+            tuple(canh_mod.Canh("canh_%04d" % (i + 1), t * i / n,
+                                t * (i + 1) / n, (t * (i + 0.5) / n,))
+                  for i in range(n)), t)
+
+    monkeypatch.setattr(canh_mod, "phan_tich", bay_canh)
+    from apps.auto_scan_video import giai_doan_ban_bien_tap as _gdbbt
+    monkeypatch.setattr(_gdbbt.canh_mod, "phan_tich", bay_canh, raising=False)
+    _cat_canh_le(monkeypatch)
+
+    # Đồng hồ giả: mỗi lượt gọi model "tốn" 200 s, trần `qc_ai` ép còn 600 s.
+    gio = {"t": 1000.0}
+    monkeypatch.setattr(lat_cat, "dong_ho", lambda: gio["t"])
+    that = lat_cat.tran_giai_doan
+    monkeypatch.setattr(
+        lat_cat, "tran_giai_doan",
+        lambda ten: 600 if ten == pipeline.QC_AI else that(ten))
+
+    goc = ai.goi_tinh_tien
+    da_goi: list[str] = []
+
+    def dem(db_, run_, thao_tac, messages, **kw):
+        if thao_tac.ma in (ai.QC_HINH.ma, ai.QC_NGU_NGHIA.ma):
+            gio["t"] += 200.0
+            da_goi.append(f"{thao_tac.ma}:{kw.get('item_key')}")
+        return goc(db_, run_, thao_tac, messages, **kw)
+
+    monkeypatch.setattr(ai, "goi_tinh_tien", dem)
+    monkeypatch.setattr(gdqa.ai, "goi_tinh_tien", dem, raising=False)
+
+    run = _run_cat(db, kho_tam, tmp_path)
+    _chay_het_hang_doi(db)
+    db.expire_all()
+
+    gd = features.giai_doan_theo_ten(db, run.id, pipeline.QC_AI)
+    assert gd.status == "succeeded", (gd.status, gd.error)
+
+    # 🔴 **Phải THỰC SỰ đã nhường ít nhất một lần** — nếu không, bài này xanh
+    #    mà không đo gì (trần ép quá rộng, hoặc con trỏ không được dùng).
+    hinh = [k for k in da_goi if k.startswith(ai.QC_HINH.ma)]
+    assert len(hinh) >= 2, da_goi
+    tt = _bao_cao(db, run)["hinh_tom_tat"]
+    assert tt["so_co_phan_quyet"] == len(hinh)
+
+    # ⛔ MỖI chỗ nối đúng MỘT lần hỏi, qua tất cả các lượt nối tiếp. Đây là
+    #    mệnh đề đắt nhất: hỏi lại một chỗ nối đã hỏi là trả tiền hai lần.
+    assert len(set(hinh)) == len(hinh), sorted(hinh)
+    hop_le = {f"{ai.QC_HINH.ma}:hinh_{j:03d}" for j in range(tt["so_cho_noi"])}
+    assert set(hinh) <= hop_le, (sorted(hinh), sorted(hop_le))
+
+    # ⚠️ **Bất biến độ phủ vẫn đúng qua nhiều lượt**: mỗi chỗ nối hoặc có phán
+    #    quyết, hoặc có một dòng lý do. (Phim mẫu của khuôn thử dài 3 s nên chỗ
+    #    nối cuối nằm sát cuối bản ra và `ffmpeg` không rút đủ hai khung — đúng
+    #    theo luật "một chuyển tiếp không nhìn được từ MỘT phía".)
+    assert tt["du_phu"] is True, tt
+    assert tt["so_co_phan_quyet"] + tt["so_hong"] == tt["so_cho_noi"]

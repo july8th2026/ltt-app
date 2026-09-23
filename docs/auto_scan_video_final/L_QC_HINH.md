@@ -162,7 +162,13 @@ cảnh vì đúng lý do đó, và lý do đó áp y nguyên cho việc gắn nh
 `sua_chua.QC_HINH_LA_TU_VAN = True` — phán quyết đi vào báo cáo, `stage.outputs`
 và bề mặt vận hành, nhưng **không sinh việc sửa**.
 
-<!-- LY_DO_A -->
+**(a) Độ chính xác đo được là quá thấp để tiêu tiền.** Trên v1, mọi chỗ nối bị
+chấm `dat=false` đều được người đo xem lại **cả hai khung**:
+**6/6 là báo động giả** (`bang_chung/qc_hinh/NHAN_TAY.md`). Năm trong sáu cái đó
+mang `do_tin` ≥ 0,90 — tức chúng **vượt** `DO_TIN_TOI_THIEU = 0,70` và sẽ sinh
+việc sửa thật nếu bật cổng.
+
+⇒ Không phải "chưa chắc chắn". Là **sai, và sai một cách tự tin**.
 
 **(b) `cat_sai` là vòng sửa ĐẮT NHẤT của hệ, độc lập với độ chính xác.**
 `edit_plan` là giai đoạn **sớm nhất** của chuỗi, nên đặt lại nó kéo theo
@@ -214,7 +220,7 @@ chặn thứ nhất; `test_vong_sua_MUOI_van_tay_canh_...` chốt chặn thứ b
 | Tệp | Bài | Hỏi gì |
 |---|---|---|
 | `tests/test_2120_asv_qc_hinh.py` | 49 | §1 đổi ngược chỗ nối → cảnh (kể cả trục tốc độ, kể cả khi thiếu chỉ mục) · §2 `chuan_dat` nhận/không-nuốt-rác, thiếu `dat`/`do_tin` thì NỔ, `doc_hinh` nhận CẢ kết quả · §3 lời nhắc mang khung JSON + thứ tự hai ảnh · §4 chính sách tư vấn, trần vòng sửa, muối vân tay · §5 F-10 hai chiều · §6 một bản sao `rut_khung` |
-| `tests/test_2121_asv_qc_hinh_cho_noi.py` | 4 | **CHỖ NỐI**: chạy HẾT chuỗi với `LTT_ASV_QC_AI=1`; preset cắt phải có phán quyết THẬT cho MỌI chỗ nối; preset giữ hình 0 chỗ nối **kèm lý do**; phán quyết tới `stage.outputs`; một chỗ nối hỏng KHÔNG giết lần chạy |
+| `tests/test_2121_asv_qc_hinh_cho_noi.py` | 6 | **CHỖ NỐI**: chạy HẾT chuỗi với `LTT_ASV_QC_AI=1`; preset cắt phải có phán quyết THẬT cho MỌI chỗ nối; preset giữ hình 0 chỗ nối **kèm lý do**; phán quyết tới `stage.outputs`; một chỗ nối hỏng KHÔNG giết lần chạy; thiếu một khung ⇒ **không hỏi** thay vì hỏi bằng một ảnh; và **vòng sửa** nhắm đúng `edit_plan` + có trần + hỏi lại THẬT (bút toán `:sua1`) |
 
 **Đối chứng cho `test_2121`** (một phép kiểm chỗ nối phải chứng minh được là nó
 bắt): bỏ lời gọi `_soat_hinh` khỏi `giai_doan_qc_ai.chay` ⇒ **3/4 bài đỏ**. Một bộ
