@@ -46,6 +46,9 @@
 
 | P-01 | **chặn mở khách** | Production KHÔNG có bảng `asv_*` nào (0/5) dù `alembic_version` ở head và migration ASV nằm trong tổ tiên. Bảng của migration HÔM NAY (`vc_phien`) thì có ⇒ chuỗi đã **vượt qua** ASV, không phải bị xoá. `alembic upgrade head` không sửa được | CSDL `lttplatform` | ĐIỀU PHỐI | **CHỜ CHỦ DỰ ÁN** — phương án + rủi ro ở `SU_CO_ASV_ASSET_PROD.md`. Khách không bị ảnh hưởng (ASV 404 trên production) |
 
+| M-09 | **cao** | MỌI vòng sửa chạy lại `voice_synthesis` đều chết `database is locked`. Đối chứng chứng minh lỗi CÓ TRƯỚC lane qc-hinh ⇒ vòng sửa đoạn giọng chưa từng chạy trọn trên SQLite | `giai_doan_giong` / `su_dung` | **CHƯA GIAO** | MỞ — chặn năng lực "sửa đúng chỗ" (§8 đề bài) |
+| M-10 | trung | QC hình bằng VLM: 15/54 mối nối bị gắn cờ, **9/9 mối kiểm tay đều là báo động giả**, và 14/15 vượt ngưỡng `DO_TIN_TOI_THIEU` ⇒ cổng độ tin cậy **không lọc gì**. Giá 23,3 s + ~2.250 token mỗi mối | `qc_ai` lớp hình | qc-hinh | **ĐÃ HẠ XUỐNG TƯ VẤN** (`QC_HINH_LA_TU_VAN=True`), khai rõ trong mã + tài liệu |
+
 ## Độ phủ lượt thật
 
 | lượt | video | cặp | preset | model_that | giong_that | kết quả | ghi chú |
