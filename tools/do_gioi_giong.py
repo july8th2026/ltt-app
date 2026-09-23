@@ -274,6 +274,11 @@ def _do_to(tep: str) -> dict:
 #: Doi chung cho bang xep hang. 🔴 KHONG CO DOI CHUNG THI MOT BANG DIEM CHI LA
 #: MOT THU TU: doc gia khong biet chenh 0,15 diem Distill-MOS la nhieu hay it.
 #: Ba bien doi duoi day lam BAN THAN thang do lo ra tren chinh kho nay.
+#: Doan THAT dem di bien dang. ⛔ GHIM MOT MA, khong lay "phan tu dau cua kho":
+#: thu tu kho la thu tu tong hop, nen bang doi chung se doi giong giua hai lan
+#: chay ma khong ai thay. Day la Douglas — giong L_GIONG_EN da chon.
+MA_DOI_CHUNG = "chung__vc_1b65a9e636a54ab59c6a69b8046d3d0a__en_a"
+
 DOI_CHUNG = {
     "nhieu10db": ["-f", "lavfi", "-i", "anoisesrc=c=white:r=16000:a=0.03",
                   "-filter_complex", "amix=inputs=2:duration=first:normalize=0"],
@@ -307,7 +312,8 @@ def cham_en(ra: pathlib.Path) -> int:
         print("BO QUA: kho chua co tieng `en`.")
         return 2
     doan = [{"ma": d["ma"], "tep": d["tep"], "chu": d["chu"]} for d in kho]
-    doan += _doi_chung(ra, kho[0])
+    goc = next((d for d in kho if d["ma"] == MA_DOI_CHUNG), kho[0])
+    doan += _doi_chung(ra, goc)
 
     print(f"  [..] ASR + jiwer tren {len(doan)} doan", flush=True)
     g = giong.do_giong(doan, ngon_ngu="en")
@@ -452,7 +458,7 @@ def bao_cao(ra: pathlib.Path) -> int:
         print("\n### Đối chứng — cùng một đoạn tiếng, ba biến dạng\n")
         print("| bản | WER | PESQ | Distill-MOS | DNSMOS OVRL |")
         print("|---|---|---|---|---|")
-        goc_ma = [b for v in theo_giong.values() for b in v["ban"]][0]
+        goc_ma = MA_DOI_CHUNG
         for ten, ma in [("gốc (chưa biến dạng)", goc_ma),
                         *[(k.replace("doi_chung__", ""), k) for k in dc]]:
             print(f"| {ten} | {_p((g.get(ma) or {}).get('wer'))} | "
