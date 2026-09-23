@@ -681,8 +681,24 @@ lượt tải kéo trọn 279 MB từ máy nhà qua tunnel. `/nexus/dl/` **đã*
 
 Lượt diễn tập D1 đang chạy khi plan này được viết (lượt 7, bước 168). **Khi nó kết thúc:**
 
-- [ ] **Step 1:** Chạy bộ đo tổng kết trên phiên `session-dd80eaf3` (script đã có:
-  `scratchpad/d1/b30_do_toan_dien.js`), lấy số cuối.
+- [x] **Step 1: XONG 23/09 ~18:40** — số đo cuối của cả lượt D1:
+
+| Chỉ số | Giá trị |
+|---|---|
+| Thời lượng | **347 phút** (5 h 47) · 1 355 dòng bản ghi |
+| Lượt / bước | 7 / **231** |
+| Gọi công cụ | **246** — `pwsh` 91 · `read` 49 · `edit` 40 · `write` 19 · `grep` 18 · `job_output` 13 · `todo_write` 6 · `glob` 6 · `subagent_doc_nhanh` 2 · `list_subagent_models` 1 · `tool_search` 1 |
+| Lỗi công cụ | **13 = 5,3 %** (`pwsh` 12, `edit` 1) |
+| Nén ngữ cảnh | **4 lần**: 188,6 · 243,7 · 173,5 · 115,8 s ⇒ **721,6 s = 12 phút**, bằng **3,5 %** thời lượng phiên |
+| Thử lại | 12 |
+| Thẻ xin duyệt | 1 |
+| Độ trễ mỗi bước | p50 **23,7 s** · p90 70,9 s · max 328,9 s |
+| Kết thúc 7 lượt | 1 `aborted` (phiên chính dừng) · **4 `error`** · 1 `interrupted` (khởi động lại máy) · **1 `completed`** |
+
+⚠️ **Hai con số này làm xấu bảng chấm điểm so với lúc chấm giữa chừng, và phải cập nhật:**
+- C2 (chi phí một lần nén): lúc chấm mới có 2 lần nén; thực tế **4 lần, tổng 12 phút**.
+  Điểm 45 là **rộng lượng quá** — số đúng gần 40.
+- A2 (tỉ lệ gọi công cụ hỏng): 4,8 % → **5,3 %** khi đủ 246 lần gọi.
 - [ ] **Step 2:** Đọc báo cáo agent viết ra (`docs/reports/dien-tap-khoi-phuc-2026-09-23.md`) và
   bốn kết luận bằng số của nó.
 - [ ] **Step 3:** Mỗi lỗi mới ⇒ một mục **V-NN** trong `SO_LOI_VAN_HANH.md` với bằng chứng đo.
