@@ -36,7 +36,7 @@ from platform_core.models import Job
 
 from platform_core.i18n import N_
 
-from . import features, pipeline
+from . import features, pipeline, rang_giong
 
 #: Chuoi hien cho khach khi mot giai doan hong ma ta khong co thong diep an toan.
 #: ⚠️ Khong bao gio boc `str(exc)` tho vao day.
@@ -379,6 +379,18 @@ LOI_CO_MA = {
     "voice_language_unknown": N_(
         "Giọng đã chọn chưa xác định được ngôn ngữ nên chưa dùng để đọc được. "
         "Hãy tạo lần chạy mới với một giọng đã ghi rõ Tiếng Việt hoặc Tiếng Anh."),
+    # ── AUTO_MATCH khong rang duoc giong (asv-final 23/09) ──────────────────
+    #
+    # 🔴 `rang_giong.vi_sao_chua_rang` viet mot cau NOI RO thieu gi tu 23/09, va
+    #    cau do dung lai o cot `error`: man nay doc `outputs.ma_loi`. Khach vi
+    #    the doc mot cau chung chung kem mot nut "Thu lai buoc nay" **chac chan
+    #    hong** — AUTO_MATCH tren cung ban chep loi cho ra dung ket qua do.
+    #
+    # ⛔ Va cau tra loi khong phai "thu lai": la TU CHON mot giong. `LOI_CO_MA`
+    #    an nut thu lai (xem `asv_tien_do.html`), nen ba ma nay vao dung cho.
+    #
+    # ⭐ Khong chep cau vao day: `rang_giong.CAU_CHUA_RANG` la ban duy nhat.
+    **rang_giong.CAU_CHUA_RANG,
 }
 
 
@@ -500,3 +512,129 @@ def dong_canh(db, kho, run) -> dict | None:
         # Xem docstring: day la cho DUY NHAT hom nay noi duoc ve viec hoan cat.
         "da_hoan_cat": int(ghi_chu.get("da_hoan_cat") or 0),
     }
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Bang chung chat luong — asv-final 23/09 (lan `gui`)
+# ══════════════════════════════════════════════════════════════════════════════
+
+#: Nhan cua tung BO DO trong `apps.asv_gpu.do_luong.bo_do.BO_DO`.
+#:
+#: ⭐ Nhan noi **cai gi duoc do**, khong noi TEN MODEL. Khach khong biet SQUIM
+#:    hay MetricX la gi, va ho khong can biet: ho can biet ai da nghe lai ban
+#:    doc va ai da soat lai ban dich.
+NHAN_BO_DO = {
+    "giong": N_("Đọc có đúng lời không"),
+    "chat_luong_tieng": N_("Tiếng đọc có sạch không"),
+    "dich": N_("Bản dịch có sát nghĩa không"),
+}
+
+#: Trang thai cua mot bo do -> cau cho khach.
+#:
+#: 🔴 `khong_kha_dung` phai NOI RA, khong duoc im lang. Luat §2 cua brief chung:
+#:    *"Model thieu ⇒ danh dau QC `khong_kha_dung`; ⛔ khong lui im lang ve
+#:    heuristic tu che"*. Mot bang bo mat hang "chua do duoc" doc y het mot bang
+#:    da do het va deu dat — va do la dung thu bang nay ton tai de chan.
+NHAN_TRANG_THAI_BO_DO = {
+    "xong": N_("đã đo"),
+    "khong_kha_dung": N_("chưa đo được trên máy chủ"),
+    "loi": N_("đo không xong"),
+}
+
+
+def _outputs(db, run, ten_giai_doan: str) -> dict:
+    """`outputs` cua MOT giai doan, hoac `{}` khi giai doan do chua chay.
+
+    ⚠️ `thi_hanh` do `tom_tat` cua giai doan **phang** vao `outputs`, nen moi
+       khoa duoi day la mot khoa cua chinh `tom_tat` do — khong phai mot cau
+       truc long. Xem `thi_hanh.py:388`.
+    """
+    for s in features.cac_giai_doan(db, run):
+        if s.stage == ten_giai_doan:
+            return dict(s.outputs or {})
+    return {}
+
+
+def bang_chung_chat_luong(db, run) -> dict | None:
+    """Bang chung KHACH doc duoc ve mot lan chay. `None` khi chua co gi.
+
+    🔴 **Bon con so nay da ton tai tu truoc, va khong mot cai nao voi toi duoc
+       man hinh cua nguoi tra tien.**
+
+       `so_canh_hong`/`do_phu_bang_chung` (lan `fix-toc-do`), bao cao QC
+       (`qc.tom_tat`), trang thai tung bo do (`giai_doan_qc_do_luong`) va nguon
+       loi thoai THAT (`nguon_loi.dinh_tuyen`) deu nam trong `asv_stage.outputs`
+       — tuc trong CSDL, doc duoc, va chi doc duoc boi mot nguoi mo CSDL ra.
+
+       Hau qua do duoc o luot nen v3: `smart_localize` giao mot video **khong
+       cat mot canh nao** vi VLM hong 4/12 luot, va man hinh cua khach noi dung
+       mot chu: *"Da xong."*
+
+    ⇒ `do_phu_bang_chung` la con so tra loi cau ay, va no phai nam canh cau "Da
+      xong" chu khong nam trong mot tep JSON o kho.
+
+    ⛔ Khong mo kho luu tru o day. Moi thu duoi day nam san trong `outputs` —
+      mot man hinh hoi lai ba giay mot lan khong duoc keo mot artifact ve.
+    """
+    from . import nguon_loi as nguon_loi_mod, qc as qc_mod
+
+    ra: dict = {}
+
+    # ── Loi thoai goc lay tu dau (lan `ocr`) ────────────────────────────────
+    #
+    # ⭐ Day la cho o `Nguon loi thoai` cua Studio VE DICH: khach ep mot nguon,
+    #    va day la cho ho doc xem nguon nao thuc su da duoc dung.
+    dt = dict(_outputs(db, run, pipeline.TRANSCRIBE).get("dinh_tuyen") or {})
+    ma_nguon = str(dt.get("nguon_loi") or "")
+    if ma_nguon:
+        ra["nguon_loi"] = {
+            "ma": ma_nguon,
+            # ⛔ `NHAN_NGUON_THAT`, khong `NHAN_CHE_DO`: `auto` la mot loi khai
+            #    luc nop, khong bao gio la mot ket qua. Xem `nguon_loi.py`.
+            "nhan": nguon_loi_mod.NHAN_NGUON_THAT.get(ma_nguon, ma_nguon),
+        }
+
+    # ── Do phu bang chung cua buoc chon canh (lan `fix-toc-do`) ─────────────
+    bt = _outputs(db, run, pipeline.EDIT_PLAN)
+    if bt.get("so_canh"):
+        so_canh = int(bt.get("so_canh") or 0)
+        ra["canh"] = {
+            "so_canh": so_canh,
+            "so_canh_da_doc": int(bt.get("so_canh_da_doc") or 0),
+            "so_canh_hong": int(bt.get("so_canh_hong") or 0),
+            # ⚠️ Phan tram, lam tron ve so nguyen: `0,8333` tren man hinh cua
+            #    khach la mot con so khong ai doc duoc thanh mot cau.
+            "do_phu_pt": round(100.0 * float(bt.get("do_phu_bang_chung") or 0)),
+        }
+
+    # ── Cong QC tat dinh (T1..T18) ──────────────────────────────────────────
+    q = _outputs(db, run, pipeline.QC)
+    if q.get("qc_phien_ban"):
+        hong = [str(m) for m in (q.get("qc_muc_hong") or [])]
+        ra["qc"] = {
+            "dat": bool(q.get("qc_dat")),
+            "so_muc_hong": int(q.get("qc_so_muc_hong") or 0),
+            # ⭐ Ma VA nhan. Ma de nguoi ho tro noi chuyen duoc voi bao cao
+            #    trong kho; nhan de khach hieu phep kiem do hoi cai gi.
+            "muc_hong": [{"ma": m, "nhan": qc_mod.NHAN_MUC.get(m, m)}
+                         for m in hong],
+        }
+
+    # ── Bo do tren card (WER/CER · SQUIM · MetricX) ─────────────────────────
+    dl = _outputs(db, run, pipeline.QC_DO_LUONG)
+    if dl.get("do_luong"):
+        ra["do_luong"] = {
+            "so_doan_do": int(dl.get("so_doan_do") or 0),
+            "so_giong_khong_dat": int(dl.get("so_giong_khong_dat") or 0),
+            "so_canh_bao_tieng": len(dl.get("canh_bao_tieng") or []),
+            "bo_do": [
+                {"ma": ten,
+                 "nhan": NHAN_BO_DO.get(ten, ten),
+                 "trang_thai": str(tt or ""),
+                 "nhan_trang_thai": NHAN_TRANG_THAI_BO_DO.get(str(tt or ""),
+                                                              str(tt or ""))}
+                for ten, tt in (dl.get("do_luong") or {}).items()
+            ],
+        }
+
+    return ra or None

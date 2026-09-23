@@ -31,7 +31,7 @@ import re
 import subprocess
 from pathlib import Path
 
-from platform_core.i18n import _ as _t
+from platform_core.i18n import N_, _ as _t
 
 from . import phu_de_cung
 
@@ -67,6 +67,47 @@ class KhongCoNguon(ValueError):
 def chuan_che_do(gia_tri) -> str:
     v = str(gia_tri or "").strip().lower()
     return v if v in CHE_DO_HOP_LE else CHE_DO_MAC_DINH
+
+
+#: Nhan cho KHACH doc, theo CHE DO ho chon o Studio. `N_` = danh dau de trich.
+#:
+#: ⭐ Nhan noi **viec gi xay ra**, khong noi ten ky thuat: khach khong biet
+#:    "OCR" hay "ASR" la gi, nhung ho biet "chu chay tren hinh" va "nghe roi
+#:    chep". Cung luat voi `routes.NHAN_GIAI_DOAN`.
+NHAN_CHE_DO = {
+    AUTO: N_("Tự chọn nguồn tốt nhất"),
+    EMBEDDED: N_("Phụ đề có sẵn trong tệp"),
+    OCR: N_("Chữ chạy trên hình"),
+    ASR: N_("Nghe tiếng rồi chép lại"),
+}
+
+#: Mo ta mot dong cho tung che do — cai gia phai tra khi EP mot nguon.
+MO_TA_CHE_DO = {
+    AUTO: N_("Ưu tiên phụ đề có sẵn, rồi tới chữ trên hình, cuối cùng mới nghe chép."),
+    EMBEDDED: N_("Chỉ dùng phụ đề chữ nhúng trong tệp. Video không có thì dừng lại."),
+    OCR: N_("Chỉ đọc chữ in trên khung hình. Video không có chữ thì dừng lại."),
+    ASR: N_("Bỏ qua mọi phụ đề, nghe tiếng trong video rồi chép lại."),
+}
+
+#: Nhan cho nguon THAT da dung, hien o man mot lan chay.
+#:
+#: ⛔ KHAC `NHAN_CHE_DO`: `auto` la mot loi khai LUC NOP, khong bao gio la mot
+#:    ket qua. Mot bang chung ghi "Tu chon nguon tot nhat" tra loi sai cau hoi
+#:    duy nhat khach hoi o man do — *"lan chay nay lay loi tu dau"*.
+NHAN_NGUON_THAT = {
+    EMBEDDED: N_("Phụ đề có sẵn trong tệp"),
+    OCR: N_("Chữ chạy trên hình"),
+    ASR: N_("Nghe tiếng rồi chép lại"),
+}
+
+
+def cho_giao_dien() -> list[tuple[str, str, str]]:
+    """`(ma, nhan, mo_ta)` cho tung che do — MOT nguon voi phep duyet o tren.
+
+    ⛔ Khong go bon chuoi `auto`/`embedded`/`ocr`/`asr` vao template: `dinh_tuyen`
+       o tep nay la nguoi duy nhat biet chung nghia la gi.
+    """
+    return [(m, NHAN_CHE_DO[m], MO_TA_CHE_DO[m]) for m in CHE_DO_HOP_LE]
 
 
 #: Tran thoi gian cho tien trinh con (test_451: MOI loi goi phai co tran —

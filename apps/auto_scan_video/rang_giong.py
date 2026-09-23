@@ -42,7 +42,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 
-from platform_core.i18n import _ as _t
+from platform_core.i18n import N_, _ as _t
 
 from . import ngon_ngu
 
@@ -67,7 +67,16 @@ class ChuaRangError(RangGiongError):
     """Doc giong tu mot rang buoc chua chot.
 
     ⛔ La mot loi, khong phai mot chuoi rong. Xem docstring dau tep.
+
+    ⭐ `ma_loi` — ma ON DINH cua ly do (`CAU_CHUA_RANG`). `thi_hanh` do no vao
+       `stage.outputs`, va man mot lan chay doc no de noi dung cau cho khach.
+       Cung khuon `giong_noi.GiongKhongHopLe`, va cung ly do: *"khach bat loi
+       theo ma, khong theo cau chu"*.
     """
+
+    def __init__(self, thong_diep: str = "", *, ma_loi: str = ""):
+        super().__init__(thong_diep)
+        self.ma_loi = str(ma_loi or "")
 
 
 @dataclass(frozen=True)
@@ -381,6 +390,52 @@ def rang_noi_long(db, *, owner_id: str, yeu_cau: YeuCau) -> KetQua:
                   {**dict(kq.can_cu or {}), "mat_da_noi_long": da_bo})
 
 
+#: Ma ON DINH cua tung ly do `CHUA_RANG`, + cau cho khach doc.
+#:
+#: 🔴 **Bang nay ton tai vi cau cua `vi_sao_chua_rang` chua bao gio toi duoc
+#:    khach.** `giai_doan_noi_dung` nem `ChuaRangError(vi_sao_chua_rang(kq))`,
+#:    nhung man mot lan chay doc `outputs.ma_loi` (`quan_sat.LOI_CO_MA`) chu
+#:    khong doc `error` — va `error` la cho DUY NHAT cau ay di toi. Nen tu
+#:    23/09 khach doc *"Mot buoc khong hoan tat nen chung toi dung lai"* kem
+#:    mot nut **Thu lai buoc nay** chac chan hong, trong khi he thong BIET
+#:    chinh xac thieu gi va phai lam gi.
+#:
+#: ⭐ MOT bang, hai nguoi doc: `vi_sao_chua_rang` (cau nem kem ngoai le, cho
+#:    log + cong noi bo) va `quan_sat.LOI_CO_MA` (man hinh cua khach). Chep cau
+#:    sang `quan_sat` se la ban thu hai cua cung mot cau, va no se lech.
+#:
+#: ⛔ `N_` chu khong `_t`: hang so cap MODULE. `_t` o day dong bang ngon ngu cua
+#:    request DAU TIEN vao mot bien toan cuc — xem `routes.NHAN_GIAI_DOAN`.
+MA_KHONG_KHOP = "auto_match_khong_giong_nao_khop"
+MA_KHO_CHUNG_THIEU_GIOI = "auto_match_kho_chung_thieu_gioi"
+MA_THIEU_CAN_CU = "auto_match_thieu_can_cu"
+
+CAU_CHUA_RANG = {
+    MA_KHONG_KHOP: N_(
+        'Không có giọng nào hợp với nội dung này. Hãy tự chọn một giọng.'),
+    MA_KHO_CHUNG_THIEU_GIOI: N_(
+        'Chưa nhận ra giọng người nói trong video nên không tự khớp được. '
+        'Hãy tự chọn một giọng.'),
+    MA_THIEU_CAN_CU: N_(
+        'Chưa đủ căn cứ từ nội dung để tự khớp giọng. Hãy tự chọn một giọng.'),
+}
+
+
+def ma_chua_rang(kq: KetQua) -> str:
+    """Ma ON DINH cua ly do mot `CHUA_RANG`. Xem `CAU_CHUA_RANG`.
+
+    ⚠️ Doc `can_cu["ly_do"]` — chuoi NOI BO cua tep nay, khong phai chu cua
+       khach. Do la co y: mot ma cong khai phai duoc quyet dinh o mot cho, va
+       cho do la day.
+    """
+    ly_do = str((kq.can_cu or {}).get("ly_do") or "")
+    if ly_do.startswith("khong giong nao khop"):
+        return MA_KHONG_KHOP
+    if ly_do.startswith("kho chung chi khai gioi"):
+        return MA_KHO_CHUNG_THIEU_GIOI
+    return MA_THIEU_CAN_CU
+
+
 def vi_sao_chua_rang(kq: KetQua) -> str:
     """Cau loi CU THE cho mot `CHUA_RANG`. Cho khach doc, khong phai cho log.
 
@@ -389,13 +444,7 @@ def vi_sao_chua_rang(kq: KetQua) -> str:
        ta BIET, va mot khach doc "khong giong nao khop" se lam mot viec khac han
        khi doc "chua co ho so noi dung".
     """
-    ly_do = str((kq.can_cu or {}).get("ly_do") or "")
-    if ly_do.startswith("khong giong nao khop"):
-        return _t('Không có giọng nào hợp với nội dung này. Hãy tự chọn một giọng.')
-    if ly_do.startswith("kho chung chi khai gioi"):
-        return _t('Chưa nhận ra giọng người nói trong video nên không tự khớp được. '
-                  'Hãy tự chọn một giọng.')
-    return _t('Chưa đủ căn cứ từ nội dung để tự khớp giọng. Hãy tự chọn một giọng.')
+    return _t(CAU_CHUA_RANG[ma_chua_rang(kq)])
 
 
 def kiem_o_cua(db, *, owner_id: str, che_do: str, giong_id: str,

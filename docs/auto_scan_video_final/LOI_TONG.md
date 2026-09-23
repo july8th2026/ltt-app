@@ -26,6 +26,11 @@
 | M-03b | trung | Cắt cảnh: PySceneDetect ContentDetector(35) F1 0,95 vs 0,73 của `scdet` cũ | `canh.py` | ky-thuat | **ĐÃ ĐÓNG** |
 | M-04b | trung | Khung đen/đóng băng: `blackdetect`+`freezedetect` so với NGUỒN; thêm T17 giải mã cả tệp, T18 VMAF (ngưỡng 75) | `qc.py` | ky-thuat | **ĐÃ ĐÓNG** |
 | M-06 | thấp | `tools/do_watermark.py` heuristic tự chế, không app nào gọi | `tools/` | ky-thuat | **ĐÃ XOÁ** (cùng `test_470`, `PHA13_*.md`) |
+| G-01 | **cao** | `nguon_loi` là ô CHẾT: `dung_cai_dat` duyệt giá trị rồi **không đặt vào hồ sơ trả về** ⇒ khách ép `embedded`/`ocr`/`asr` đi qua cửa không lỗi nào, lần chạy vẫn chạy `auto`. Không phép kiểm nào kêu được: mỗi phép hỏi một mắt xích, và `auto` là kết quả hợp lệ | `dich_vu_tao.dung_cai_dat` | gui | **ĐÃ SỬA** — `test_2100`, đối soát giao diện ↔ hồ sơ đã lưu trên trình duyệt thật |
+| G-02 | cao | Cặp ngôn ngữ + nguồn lời thoại **không có ô nào** trên màn Studio: `routes.tao` nhận đủ ba `Form(...)` từ 22/09 nhưng template chưa bao giờ vẽ chúng ⇒ mọi lần chạy của khách là `auto → vi` | `asv_trang_chinh.html` | gui | **ĐÃ SỬA** — ô ở tầng cơ bản, miền giá trị lấy từ `ngon_ngu`/`nguon_loi` |
+| G-03 | cao | Bằng chứng đã đo không tới được khách: `so_canh_hong`/`do_phu_bang_chung`, `qc.tom_tat`, trạng thái từng bộ đo, nguồn lời thoại THẬT đều nằm trong `asv_stage.outputs` và màn một lần chạy nói đúng một chữ *"Đã xong."* (đo ở lượt nền v3) | `asv_chi_tiet.html` | gui | **ĐÃ SỬA** — `quan_sat.bang_chung_chat_luong`, `test_2101` |
+| G-04 | trung | Câu `vi_sao_chua_rang` dừng ở cột `error` — màn khách đọc `outputs.ma_loi` ⇒ khách nhận câu chung chung + nút "Thử lại bước này" **chắc chắn hỏng** | `rang_giong`, `quan_sat.LOI_CO_MA` | gui | **ĐÃ SỬA** — ba mã ổn định, một bản của câu, nút thử lại bị ẩn |
+| G-05 | thấp | Danh sách giọng rỗng chỉ có MỘT câu (*"bỏ bớt điều kiện"*) — sai khi nguyên nhân là **hết giọng trong làn** (F-03), bảo khách gỡ một bộ lọc không tồn tại | `server/static/asv/giong.js` | gui | **ĐÃ SỬA** — hai câu, tách bằng số giọng hợp làn |
 
 | R-01 | **chặn phát hành** | AUTO_MATCH là đường CHẾT: không giai đoạn nào sinh `HoSoNoiDung` ⇒ `dac_diem_giong` luôn rỗng ⇒ `ChuaRangError`. Preset giữ hình còn không chạy `edit_plan` (0,0 s) nên không bao giờ có hồ sơ | `rang_giong.py:133`, `giai_doan_noi_dung.py:117` | fix-auto-match | **ĐÃ SỬA mã** `679d8953` — hồ sơ dựng từ F0 stem `vocals` (đo trong chính tiến trình demucs) + MỘT lượt LLM văn bản, cả hai TRƯỚC `edit_plan` nên hai preset đi chung đường. ⏳ chờ bằng chứng vận hành ở lượt nghiệm thu cuối |
 | R-02 | cao | QC **T3** đỏ ở preset giữ hình. Giả thuyết "so với tệp nguồn gốc" **SAI**: render đọc đúng `run.source_key` mà QC băm. Nguyên nhân thật là `-shortest` trên đường `-c:v copy` — nó vứt 2 gói hình cuối khi luồng hình nguồn dài hơn bản phối. **Sản phẩm sai, T3 đúng.** | `ket_xuat.dung_lenh` | fix-qc-am | **ĐÃ ĐÓNG** — `test_2014`, đo lại trên 4 phim thật |
@@ -34,6 +39,9 @@
 | R-05 | trung | VLM đọc cảnh hỏng 4/12 lượt (`LuocDoSai`/`HieuCanhError`) ⇒ `so_cat=0/6`: `smart_localize` **không cắt gì** | `giai_doan_ban_bien_tap.py:219` | fix-toc-do | **ĐÃ SỬA** — 8/18 lượt hỏng là do LỜI NHẮC (model trả `"giữ"` CÓ DẤU, mảng, `{objects:[]}`), không phải model. Sau sửa 18/18. `smart_localize` nay ĐÒI bằng chứng mọi cảnh và TỪ CHỐI thay vì giao video không cắt |
 | R-06 | thấp | Khuôn nghiệm thu `text=True` không khai encoding ⇒ chết với đường dẫn tiếng Trung | `tests/fixtures/asv_e2e.py:840` | nghiem-thu | ĐÃ VÒNG TRÁNH trong khuôn scratch; tệp kho chưa sửa |
 | R-07 | trung | `qc_ai` TẮT mặc định ⇒ lượt nền không đo lớp ngữ nghĩa/thị giác; nghiệm thu cuối phải bật | `LTT_ASV_QC_AI` | nghiem-thu | MỞ |
+
+| G-01 | cao | `dich_vu_tao.dung_cai_dat` KIỂM `nguon_loi` rồi **không ghi vào hồ sơ** ⇒ khách ép `embedded`/`ocr`/`asr` vẫn chạy `auto`, im lặng. **Lỗi do ĐIỀU PHỐI gây ra lúc gộp lane ocr** (thêm phép kiểm, quên dòng ghi) | `dich_vu_tao.py:211` | gui | **ĐÃ SỬA** — không test đơn lẻ nào bắt được: mỗi test hỏi một mắt xích, và `auto` là kết quả hợp lệ |
+| G-02 | trung | Màn chạy báo "Đã xong" cho một video **không cắt gì** (lượt nền v3): 4 con số `so_canh_hong` / độ phủ bằng chứng đã nằm sẵn trong `asv_stage.outputs` mà giao diện không đọc | `asv_chi_tiet.html` | gui | **ĐÃ SỬA** — khối "Bằng chứng chất lượng", mở sẵn |
 
 ## Độ phủ lượt thật
 

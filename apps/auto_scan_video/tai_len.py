@@ -44,10 +44,12 @@ from .features import (KIEU_VIDEO_HOP_LE, SLUG, TRAN_BEN_VUNG, AsvError,
 #: con 128 phan — dut mang mat toi da 16 MiB, khong phai ca tep.
 CO_PHAN = 16 * 1024 * 1024
 
-#: `upload_sessions.expected_size` la `Integer` — int4 tren PostgreSQL
-#: production. 2 GiB dung bang = 2**31 = TRAN mot byte. Kep o day thay vi de
-#: mot tep dung 2 GiB thanh loi 500 `DataError`.
-TRAN_BYTE = min(int(TRAN_BEN_VUNG), 2 ** 31 - 1)
+#: Truoc F-08 (`platform_core/upload_sessions.py`): `expected_size` la
+#: `Integer` (int4 tren PostgreSQL) trong khi `TRAN_BEN_VUNG` = 2 GiB = 2**31
+#: dung bang tran do -> tep DUNG 2 GiB thanh loi 500 `DataError`. Kep tam thoi
+#: o `2**31-1` o day. Cot do nay la BigInteger (migration `d7bc2f8fbf0f`) nen
+#: tran that su di theo `TRAN_BEN_VUNG`, khong con can kep rieng.
+TRAN_BYTE = int(TRAN_BEN_VUNG)
 
 GIA_HAN_S = 2 * 60 * 60
 HAN_TOI_DA_S = 48 * 60 * 60

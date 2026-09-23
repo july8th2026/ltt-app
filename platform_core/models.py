@@ -643,8 +643,8 @@ class UploadSession(Base):
     final_key: Mapped[str] = mapped_column(String(512), default="", nullable=False)
     filename: Mapped[str] = mapped_column(String(255), default="", nullable=False)
     content_type: Mapped[str] = mapped_column(String(128), nullable=False)
-    expected_size: Mapped[int] = mapped_column(Integer, nullable=False)
-    actual_size: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    expected_size: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    actual_size: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
     status: Mapped[str] = mapped_column(
         String(16), default=UPLOAD_PENDING, nullable=False)
     job_id: Mapped[str] = mapped_column(String(36), default="", nullable=False)
