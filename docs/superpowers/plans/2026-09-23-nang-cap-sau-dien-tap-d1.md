@@ -99,9 +99,9 @@ phụ thuộc câu trả lời, rồi hỏi **một lần, gọn**.
 | 9 | Cho Cloudflare cache bộ cài | ✅ `e17f1bc3` · **đã deploy + đo**: `no-store` → `immutable`, BYPASS → MISS → **HIT** (Age tăng 29→37) |
 | 10 | Bổ sung từ sổ lỗi D1 | ✅ `67f412f6` — số đo cuối đã ghi, V-19…V-24 đã lập, **`restore.ps1` đã vá** (7 phép, có đối chứng âm). Off-site đã dựng + cắm lịch. Sổ đăng ký đã vào mẫu backup (`8a46784c`) — **hết việc mở** |
 
-### Phần B — nâng năng lực: **7,0 / 10 = 70 %** (cập nhật 24/09 ~00:20, sau lượt mở app)
+### Phần B — nâng năng lực: **7,5 / 10 = 75 %** (cập nhật 24/09 ~02:30, sau lượt 0.2.8)
 
-> Cộng: T11 0,5 · T12 0,5 · T13 **1** · T14 0,5 · T15 **1** · T16 0,5 · T17 **1** · T18 0,5 · T19 **1** · T20 0,5.
+> Cộng: T11 0,5 · T12 **1** · T13 **1** · T14 0,5 · T15 **1** · T16 0,5 · T17 **1** · T18 0,5 · T19 **1** · T20 0,5.
 > **T17 được tính trọn 1** vì bước 2 của chính nó cho phép *"kết luận giới hạn phần cứng rồi đóng task"* —
 > và số đo đã chứng minh đúng điều đó. **T16 chỉ 0,5** vì thứ khách cần (thấy tiền) **không** giao được;
 > tra xong không phải là làm xong.
@@ -109,7 +109,7 @@ phụ thuộc câu trả lời, rồi hỏi **một lần, gọn**.
 | Task | Việc | Trạng thái |
 |---|---|---|
 | 11 | A1 nút "Chạy tiếp" | 🟡 **0,5** — chặn ở **kiến trúc DSH** (`dsh-agent-loop` cố ý không expose `retry()`). Phần TIỀN đã sáng: quyết toán **theo token đã sinh thật** ⇒ chạy tiếp **không** trùng; trùng chỉ khi **cùng một request** bị gửi lại. Hạ tầng idempotency **đã có sẵn** (`credit_entries` khoá `job_id`=`request_id`), chỉ thiếu khoá ở cửa stream — mà `protocol.py:244-250` **đã viết sẵn luật đó**. Cần chủ dự án quyết: lỗi hạ tầng của TA thì khách có trả phần đã sinh không |
-| 12 | C2 nén bằng 3.5 | 🟡 **0,5** — mã xong (`3326d7f`), **chờ đo** tốc độ + chất lượng tóm tắt trên phiên dài |
+| 12 | C2 nén bằng 3.5 | ✅ **1** — **đã đo trên app thật (0.2.8)**: chạm ngưỡng 98 153 token, `compaction/start→summary→end` chạy bằng **`ltt-official/ltt-3.5`** (không phải 3.8), mất **57,6 s** — nhanh hơn nền cũ 188–244 s trên 3.8 **3–4 lần**. Tóm tắt giữ đúng việc đang làm (đọc lại, không chỉ tin nhãn) |
 | 13 | MCP dùng thật (nay 0/166) | ✅ **1** — **0/166 → tự gọi ngay lượt đầu**. Catalog đã có mô tả + tiêu đề nhóm *khi nào dùng*; model tự `tool_search` → `tool_describe` → gọi `mcp__chrome-devtools__navigate`, **không ai nhắc**. ⚠️ Đạt kết quả nhưng **chưa cô lập nguyên nhân** (nâng trần + `groups` đi cùng một bản) |
 | 14 | Gỡ trần 50 của kế hoạch/mục tiêu | 🟡 **0,5** — **tiền đề SAI**: `exit_plan_mode` **không có trong tool-set** (chỉ mount khi `/plan on`); `create_goal` thì prompt hệ thống **dặn đừng dùng** cho việc một lượt. Model không làm sai — **thang đo phạt một hành vi đúng**. ✅ Đã chốt đi đường *giữ `/plan on` là lệnh người dùng* (Claude Code cũng vậy); còn: tài liệu + sửa câu hỏi của bảng chấm |
 | 15 | Agent do người dùng định nghĩa | ✅ **1** — chạy thật: phiên con `867b4329…` đúng vai, `agentModel:"ltt-3.5"` trong khi cha chạy `ltt-3.8`. ⚠️ **Đính chính**: vá V-25 **không ăn về vận hành** — cảnh báo vào buffer RAM, **không kênh nào đưa ra ngoài**. Lập lỗi riêng, không nhận V-25 đã đóng |
@@ -130,7 +130,7 @@ phụ thuộc câu trả lời, rồi hỏi **một lần, gọn**.
 
 ### Đọc con số này thế nào
 
-**100 % và 70 % không so sánh được với nhau.** Phần A là mười lỗi đã biết, mỗi cái vài chục dòng.
+**100 % và 75 % không so sánh được với nhau.** Phần A là mười lỗi đã biết, mỗi cái vài chục dòng.
 Phần B là mười năng lực, trong đó ba cái là dự án riêng. Cộng hai phần thành một con số là vô nghĩa.
 
 **Các task ở mức 0,5 đều dừng ở đúng chỗ đáng dừng**, không phải bỏ dở: T11 chặn vì slot giao diện
