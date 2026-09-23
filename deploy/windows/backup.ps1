@@ -70,7 +70,14 @@ if (-not (Test-Path $backups)) { New-Item -ItemType Directory -Path $backups -Fo
 New-Item -ItemType Directory -Path $staging -Force | Out-Null
 
 # Included: authoritative state. Excluded: anything regenerable.
-$patterns = @('config.json', 'workers.json', '*.enc', '*.db', '*.sqlite3', 'audit_log.jsonl')
+# lttcode_releases.json / nexus_versions.json (dien tap 23/09/2026, W-SOTAY):
+# hai so dang ky phat hanh, ghi boi tools/release.ps1 (kho LTTCODEAPP) va boi
+# tay khi sua nexus_versions.json - khong sinh lai duoc bang deploy, vi chua
+# chu ky minisign + SHA cua tung ban da phat. translations/ KHONG nam trong
+# danh sach nay: no la tai nguyen nguon di kem code, setup\2-cai-dat.ps1 robocopy
+# tu $src\data\translations vao data\translations moi lan deploy (dong 683-694).
+$patterns = @('config.json', 'workers.json', '*.enc', '*.db', '*.sqlite3', 'audit_log.jsonl',
+              'lttcode_releases.json', 'nexus_versions.json')
 $copied = 0
 foreach ($p in $patterns) {
     Get-ChildItem -Path $dataDir -Filter $p -File -ErrorAction SilentlyContinue | ForEach-Object {
