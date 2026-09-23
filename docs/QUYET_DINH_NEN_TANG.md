@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q136; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số), Q125→Q126→Q128 đã thay)
+## 1. Quyết định đã chốt (đến Q137; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số), Q125→Q126→Q128 đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -596,6 +596,29 @@ ngữ nghĩa, canonical/protocol tách, mã lạ fail-closed — 22/09), L-35 (c
 theo token thật, k = 1,50 — 22/09). Số theo model chỉ ở
 `apps/ltt_llm/ngan_sach.HO_SO`. Mục này chỉ là con trỏ; quyết định mới của đường LLM
 ghi ở DECISION_LOG, không thêm số Q.
+
+### Q137 — Khách TRẢ phần token đã sinh, kể cả khi lượt chết vì hạ tầng của ta (2026-09-24)
+
+**Chủ dự án chốt: CÓ.** Lượt stream đứt giữa chừng — dù vì khách ngắt, mạng đứt, hay **502/503
+từ chính cổng của ta** — khách vẫn trả **đúng phần token đã sinh ra**, không phân biệt lỗi do ai.
+
+**Mã hiện tại đã ĐÚNG, không cần sửa gì.** `platform_core/runtime_noi_bo/luong.py:1932-1954`:
+`GeneratorExit` đặt `khach_ngat=True`, rồi `finally` gọi `quyet_toan(..., dem, ...)` với bộ đếm
+token tới lúc đứt. Hợp đồng khai `settles_from_measured_usage=True` (`server/api/streaming.py:202`),
+và `platform_core/public_api/protocol.py:235-243` **ép buộc** mọi STREAM tính phí phải khai điều
+đó — thiếu thì app không khởi động được.
+
+⛔ **Ghi mục này ra CHÍNH VÌ mã đã đúng.** Nó trông giống một lỗi ("khách trả tiền cho lượt hỏng
+của mình") nên người sau rất dễ "sửa" thành hoàn tiền khi 5xx. **Đó là đổi sổ sách, không phải vá
+lỗi** — phải quay lại hỏi chủ dự án.
+
+Hai điều mục này **không** nói:
+
+- Không nói lượt **chưa sinh token nào** cũng bị tính — lượt đó tính ≈ 0, vì quyết toán theo token
+  đo được.
+- Không cho phép tính **hai lần cùng một phần token**. Trùng thật (cùng một request bị gửi lại)
+  vẫn phải chặn bằng `Idempotency-Key`: xem `protocol.py:244-250` và Task 11 của
+  `docs/superpowers/plans/2026-09-23-nang-cap-sau-dien-tap-d1.md`.
 
 ## 2. Ràng buộc bất biến
 
