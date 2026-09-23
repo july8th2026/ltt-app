@@ -43,6 +43,8 @@
 | G-01 | cao | `dich_vu_tao.dung_cai_dat` KIỂM `nguon_loi` rồi **không ghi vào hồ sơ** ⇒ khách ép `embedded`/`ocr`/`asr` vẫn chạy `auto`, im lặng. **Lỗi do ĐIỀU PHỐI gây ra lúc gộp lane ocr** (thêm phép kiểm, quên dòng ghi) | `dich_vu_tao.py:211` | gui | **ĐÃ SỬA** — không test đơn lẻ nào bắt được: mỗi test hỏi một mắt xích, và `auto` là kết quả hợp lệ |
 | G-02 | trung | Màn chạy báo "Đã xong" cho một video **không cắt gì** (lượt nền v3): 4 con số `so_canh_hong` / độ phủ bằng chứng đã nằm sẵn trong `asv_stage.outputs` mà giao diện không đọc | `asv_chi_tiet.html` | gui | **ĐÃ SỬA** — khối "Bằng chứng chất lượng", mở sẵn |
 
+| P-01 | **chặn mở khách** | Production KHÔNG có bảng `asv_*` nào (0/5) dù `alembic_version` ở head và migration ASV nằm trong tổ tiên. Bảng của migration HÔM NAY (`vc_phien`) thì có ⇒ chuỗi đã **vượt qua** ASV, không phải bị xoá. `alembic upgrade head` không sửa được | CSDL `lttplatform` | ĐIỀU PHỐI | **CHỜ CHỦ DỰ ÁN** — phương án + rủi ro ở `SU_CO_ASV_ASSET_PROD.md`. Khách không bị ảnh hưởng (ASV 404 trên production) |
+
 ## Độ phủ lượt thật
 
 | lượt | video | cặp | preset | model_that | giong_that | kết quả | ghi chú |
