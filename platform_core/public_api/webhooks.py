@@ -143,9 +143,21 @@ def _system_resolver(host: str) -> list:
 
 
 def _reject_internal(address) -> None:
-    if (address.is_loopback or address.is_private or address.is_link_local
-            or address.is_multicast or address.is_reserved
-            or address.is_unspecified
+    # 🔴 `is_global`, KHONG phai danh sach `is_private`/`is_reserved`/...
+    #
+    #    Do 24/09/2026: `ipaddress.ip_address("100.64.0.1").is_private` tra
+    #    **False**. Dai CGNAT (RFC 6598, 100.64.0.0/10) di qua bo loc liet ke,
+    #    va ha tang VPS cua du an chay NAT qua WireGuard nen dai do co that.
+    #
+    # ⭐ Mot danh sach lop dia chi la thu ai cung phai nho bo sung; `is_global`
+    #    la MOT menh de tra loi dung cau can hoi -- "dia chi nay co dinh tuyen
+    #    duoc tren Internet cong cong khong". No phu nguoc lai ca sau lop cu
+    #    (loopback/private/link_local/multicast/reserved/unspecified deu khong
+    #    global) cong CGNAT, 192.0.0.0/24, cac dai tai lieu, va IPv6 unique-local.
+    #
+    #    Giu them `METADATA_ADDRESSES`: mot so nha cung cap dat metadata tren
+    #    dia chi VAN global (Alibaba), nen `is_global` mot minh khong du.
+    if (not address.is_global
             or str(address) in METADATA_ADDRESSES):
         # One message for every rejected class: a caller must not be able to use
         # the error text to map the platform's internal network.
