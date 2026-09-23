@@ -75,10 +75,10 @@ SQLAlchemy (nền tảng, test `pytest`), PowerShell 7 (phát hành), Tauri/Rust
 | 14 | Gỡ trần 50 của kế hoạch/mục tiêu | ⬜ chưa |
 | 15 | Agent do người dùng định nghĩa | 🟡 **0,5** — **đã có sẵn và đã chạy thật**: `~/.agents/agents/*.md` (hai tầng), ghim model cần **cả `provider` lẫn `model`**. Lộ lỗi **V-25**: khoá `tools:` bị **bỏ qua âm thầm** — người dùng tưởng khoá được agent con, thực tế nó có đủ công cụ host. Còn: tài liệu + vá cảnh báo + bằng chứng trong app |
 | 16 | Credit mỗi lượt cạnh token | ⚫ **ĐÓNG — chặn ở tầng engine.** Tra ba vòng, mỗi vòng bác một phương án: (1) cổng không có trường credit, quyết toán chạy sau byte cuối; (2) `client.js` là **loopback remote page ⇒ không có Tauri IPC**; (3) từ sidecar thì `TokenUsage` là interface đóng và projection **khoá cứng đồng bộ, cấm I/O**. Cần hạ tầng engine mới ⇒ chuyển `HANG_MUC_BAN_SAU.md`. **Không chỗ nào hiện số tiền sai** |
-| 17 | Giảm độ trễ mỗi bước | ⬜ chưa |
+| 17 | Giảm độ trễ mỗi bước | ⚫ **ĐÓNG — giới hạn phần cứng, đã tách bằng số.** 226/226 lượt LLM: **sinh token 62,2 %** (4 878,9 s) · chờ suất/TTFT 23,3 % · chạy công cụ 14,5 % (82 % của phần đó là `pwsh` chạy thật). Phần mềm không chạm được vào 62,2 % ⇒ **không vờ tối ưu** |
 | 18 | Chạy tiếp khi đóng app | 🟡 **0,5** — tra xong: **phần lớn đã có** (khay giữ sidecar sống, autostart, `lttcode-cli.exe` chạy thật 60,7 s). H18 chấm lại 45 → 78. Còn: chủ dự án quyết có làm scheduler mức hệ điều hành không |
 | 19 | Git/PR thành công cụ gốc | 🟡 **0,5** — đã chấm `lxj808624/dsh-tool-git` (≈ 51/100). **Quyết định: bundle nhưng CHỈ lấy nhóm chỉ-đọc** (`git_status/diff/log/show`) — nhóm ghi có `add -A` không chặn, không quét bí mật, và `stash -u` ngoài hàng rào (cuốn mất tệp `??` của phiên khác). Còn: xác minh Cordis tắt được công cụ lẻ, rồi bundle |
-| 20 | Khởi động app (17→49→107 s) | ⬜ chưa |
+| 20 | Khởi động app (17→49→107 s) | 🟡 **0,5** — **3/4 chặng KHÔNG CÓ MỐC**. Chặng đo được lấy giá trị lớn nhất (55,3 s) vẫn **thấp hơn** 107,7 s ⇒ **≥ 50 s nằm trong chỗ mù**. Giả thuyết: quét AV cây `sidecar/` **45 536 tệp / 1,4 GB** — `sidecar.rs:48-50` đã ghi sẵn lý do đó khi đặt `BOOT_TIMEOUT`. Còn: thêm 3 mốc rồi mới đo lại |
 
 ### Ngoài plan — việc sinh ra từ lượt diễn tập D1
 
@@ -1235,13 +1235,34 @@ máy: khoảng bản ghi p50 1,5 s.
 từ phần mềm. Vì vậy task này **chỉ nhắm phần phần mềm thật sự kiểm soát được**, và nhắm khiêm tốn
 (60 → 75), không nhắm bằng Claude Code.
 
-- [ ] **Step 1: Tách độ trễ thành ba phần** trên một phiên thật: chờ suất · sinh token · chạy công
-  cụ. Chưa biết ba phần này bao nhiêu thì **mọi tối ưu đều là đoán**.
-- [ ] **Step 2:** Chỉ tối ưu phần lớn nhất mà phần mềm kiểm soát được. Nếu phần lớn nhất là sinh
-  token ⇒ kết luận thẳng: **đây là giới hạn phần cứng**, ghi vào báo cáo và **đóng task**, không
-  vờ tối ưu.
-- [ ] **Step 3:** Đo lại p50/p90 bằng đúng bộ đo cũ.
-- [ ] **Step 4: Commit**
+- [x] **Step 1 ✅ XONG (làn `b-do`, 23/09) — tách được thật, trên chính phiên D1.**
+
+  Nguồn: `session-dd80eaf3…` (cwd `D:\LTTSTUDIOSAPP-d1-khoi-phuc`, 231 bước — p50 bước 23,7 s,
+  **khớp** số đã công bố). Mốc lấy từ `assistant/message.data.stream` (đủ cho **226/226** lượt LLM)
+  và cặp `tool/call` ↔ `tool/result` (**245/248** cặp sạch; loại 3 cặp vắt qua khoảng dừng phiên
+  > 5 phút — máy khởi động lại giữa lượt 1 và 2).
+
+  | Phần | Tổng | Tỉ lệ | p50 | p90 |
+  |---|---|---|---|---|
+  | Chờ suất + đổi card + nạp model (TTFT) | 1 829,5 s | **23,3 %** | 4,0 s | 8,6 s (max 199 s) |
+  | **Sinh token** | **4 878,9 s** | **62,2 %** | 10,9 s | 54,4 s (~45–54 tok/s) |
+  | Chạy công cụ | 1 138,6 s | 14,5 % | 4,8 s | 8,7 s (`pwsh` chiếm 933,5 s) |
+
+- [x] **Step 2 ✅ — KẾT LUẬN: GIỚI HẠN PHẦN CỨNG. ĐÓNG TASK.**
+
+  Sinh token chiếm **62,2 %**, chạy trên 27B một card. Không có thay đổi phần mềm nào chạm tới nó.
+  Phần mềm kiểm soát được 14,5 % (chạy công cụ), mà 82 % của phần đó là `pwsh` — tức là **thời
+  gian lệnh thật sự chạy**, không phải phí tổn của khung.
+
+  ⇒ **Không "tối ưu" gì ở đây cả.** Plan đã cảnh báo đây là hạng mục dễ hứa hão nhất; số đo xác
+  nhận đúng cảnh báo đó. Muốn giảm thật thì phải đổi phần cứng hoặc đổi model, không phải sửa mã.
+
+  **Một đường còn bỏ ngỏ nếu sau này cần:** TTFT (23,3 %) hiện **gộp ba nguyên nhân** và bản ghi
+  phía khách không tách thêm được. Nhưng **máy chủ đã tách sẵn**: `llm_gateway/so_luot.py:88-198`
+  có `ttft_s`/`decode_tps`, và máy A có cột `llm_waiters.cho_residency_s`
+  (`platform_core/models.py:514`) tách riêng *"chờ vì hết năng lực"*, lộ qua `/ops/jobs-metrics`
+  (`server/routes/jobs.py:383`). Lượt này **không tra** — ngoài phạm vi làn. Ghi lại để khỏi
+  phải tìm lại.
 
 ---
 
@@ -1318,11 +1339,38 @@ có bước xem lại thay đổi trước khi commit.
 **Số đo hiện tại, đo 3 lần trong ngày 23/09:** **17 s** (máy ấm) · **49 s** (lạnh) ·
 **107,7 s** (sau khi khởi động lại máy). Xu hướng xấu dần và chưa ai truy.
 
-- [ ] **Step 1:** Đo lại 3 lần lạnh, lấy mốc ổn định.
-- [ ] **Step 2:** Tách thời gian khởi động thành: khởi tạo vỏ Tauri · dựng `DSH_HOME` · nạp
-  composition · mở WebView2. Bản ghi `==== sidecar ready in <N> ms` đã có sẵn số cho một chặng.
-- [ ] **Step 3:** Chỉ tối ưu chặng lớn nhất.
-- [ ] **Step 4:** Đo lại 3 lần lạnh. **Đạt khi p50 ≤ 30 s.**
+- [x] **Step 1 ✅ XONG (làn `b-do`) — và đây là phát hiện chính: BA TRÊN BỐN CHẶNG KHÔNG CÓ MỐC.**
+
+  | Chặng | Có mốc? | Số |
+  |---|---|---|
+  | Vỏ Tauri (exec → `setup`) | ⬛ **mù** | — |
+  | Dựng `DSH_HOME` | ⬛ **mù** — chạy **trước** dòng spawn nên không log gì | — |
+  | Nạp composition (spawn → ready) | ✅ có | `lttcode.log` 21–23/09: **5,0 – 55,3 s** |
+  | Mở WebView2 (đến khi SPA DSH tải xong) | ⬛ **mù** | — |
+
+  🔴 **Số học nói thẳng:** chặng duy nhất đo được, lấy **giá trị lớn nhất từng quan sát** (55,3 s),
+  vẫn **thấp hơn** 107,7 s đo tay. ⇒ **ít nhất 50 s nằm trong ba chặng mù.** Tối ưu chặng đo được
+  là tối ưu chỗ không phải thủ phạm.
+
+- [x] **Step 2 ✅ — giả thuyết cho 107,7 s: QUÉT ĐĨA / AV, không phải mã.**
+
+  Cây `sidecar/` có **45 536 tệp / 1,4 GB**. Và chính mã đã lường trước:
+  `desktop/src-tauri/src/sidecar.rs:48-50` đặt `BOOT_TIMEOUT` = 60 s với lý do ghi thẳng trong
+  chú thích là *"antivirus scanning node_modules tree"*.
+  Khởi động lại máy ⇒ mất cache đĩa + Defender quét lại toàn cây ⇒ khớp đúng bậc thang quan sát:
+  **ấm 17 s → lạnh cùng phiên 49 s → sau reboot 107,7 s**.
+
+  > Liên quan: cùng ngày 23/09 đã dọn 1,9 triệu tệp `%TEMP%` vì `ProfSvc` quét từng tệp lúc đăng
+  > nhập. Cùng một họ nguyên nhân — **số lượng tệp**, không phải mã.
+
+- [ ] **Step 3 — thêm ba mốc TRƯỚC, đo lại SAU.** Không có mốc thì bước 4 không phán quyết được gì:
+  - [ ] đầu `setup()` — `desktop/src-tauri/src/lib.rs:279`
+  - [ ] cuối `stage_dsh_home()` — `desktop/src-tauri/src/sidecar.rs:290-311` (**hàm đã có, chỉ
+        thiếu dòng log**)
+  - [ ] sự kiện DSH SPA báo "interactive" — **chưa có hook**, phải thêm
+- [ ] **Step 4:** Đo lại 3 lần lạnh + 1 lần sau reboot. **Đạt khi p50 ≤ 30 s.**
+  ⚠️ Nếu số mới xác nhận phần lớn là quét AV ⇒ việc phải làm là **loại trừ thư mục cài khỏi
+  Defender** (việc của chủ dự án, không phải sửa mã), chứ không phải tối ưu khởi động.
 - [ ] **Step 5: Commit**
 
 ---
