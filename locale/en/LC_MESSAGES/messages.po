@@ -20628,3 +20628,9 @@ msgstr "Pick a plan on the side and press “Create machine”. We build it and 
 
 msgid "Chất lượng mạng đang suy giảm. Máy vẫn chạy, nhưng kết nối có thể chậm hoặc chập chờn. Chúng tôi đang xử lý."
 msgstr "Network quality is degraded. Your machines keep running, but the connection may be slow or unstable. We are working on it."
+
+msgid "Plan thiếu steps."
+msgstr "Plan is missing steps."
+
+msgid "Step không hợp lệ."
+msgstr "Invalid step."

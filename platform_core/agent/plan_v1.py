@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import copy
 
+from platform_core.i18n import _
 from platform_core.agent.workflows import (WorkflowError, kiem_canvas,
                                            page_graph)
 
@@ -42,11 +43,11 @@ def plan_to_canvas(plan: dict) -> dict:
     """Preserve every execution field; add layout only as editor metadata."""
     steps = plan.get("steps") if isinstance(plan, dict) else None
     if not isinstance(steps, list):
-        raise WorkflowError("Plan thiếu steps.")
+        raise WorkflowError(_("Plan thiếu steps."))
     nodes, edges = [], []
     for index, step in enumerate(steps):
         if not isinstance(step, dict):
-            raise WorkflowError("Step không hợp lệ.")
+            raise WorkflowError(_("Step không hợp lệ."))
         sid = str(step.get("id", ""))
         execution = {key: copy.deepcopy(value) for key, value in step.items()
                      if key not in {"id", "after", "after_error"}}
