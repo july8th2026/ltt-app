@@ -73,11 +73,11 @@ SQLAlchemy (nền tảng, test `pytest`), PowerShell 7 (phát hành), Tauri/Rust
 | 12 | C2 nén bằng 3.5 | 🟡 **0,5** — mã xong (`3326d7f`), **chờ đo** tốc độ + chất lượng tóm tắt trên phiên dài |
 | 13 | MCP dùng thật (nay 0/166) | 🟡 **0,5** — **bốn MCP đều nối được thật** (9+2+3+26 công cụ, đã gọi). Nguyên nhân 0/166 là **danh sách bị cắt mất mô tả**: `listingMaxTokens: 2200` (`cordis.patch.yml:344`) ⇒ catalog tụt xuống **tên trần, không một chữ giải thích**; chú thích ngay trên tự khai con số tính cho tập MCP nhỏ hơn tập hiện tại. Còn: nâng trần + sinh `dsh-tool-search.json` với `groups` nói *khi nào dùng* |
 | 14 | Gỡ trần 50 của kế hoạch/mục tiêu | ⬜ chưa |
-| 15 | Agent do người dùng định nghĩa | 🟡 **0,5** — **đã có sẵn và đã chạy thật**: `~/.agents/agents/*.md` (hai tầng), ghim model cần **cả `provider` lẫn `model`**. Lộ lỗi **V-25**: khoá `tools:` bị **bỏ qua âm thầm** — người dùng tưởng khoá được agent con, thực tế nó có đủ công cụ host. Còn: tài liệu + vá cảnh báo + bằng chứng trong app |
+| 15 | Agent do người dùng định nghĩa | ✅ **1** — `fd00269`. Năng lực đã có sẵn, **đã chạy thật**. Tài liệu `docs/LTTCODE/AGENT_TU_DINH_NGHIA.md`. **V-25 đã vá**: khoá frontmatter không được hỗ trợ giờ **có cảnh báo**, riêng `tools`/`disallowedTools` nói rõ hậu quả. 8/8 phép, **có đối chứng âm**. Vá theo khuôn `postinstall` + `UPSTREAM_DIVERGENCE.md` (DIV-007) vì mã nằm trong `node_modules` gitignored |
 | 16 | Credit mỗi lượt cạnh token | ⚫ **ĐÓNG — chặn ở tầng engine.** Tra ba vòng, mỗi vòng bác một phương án: (1) cổng không có trường credit, quyết toán chạy sau byte cuối; (2) `client.js` là **loopback remote page ⇒ không có Tauri IPC**; (3) từ sidecar thì `TokenUsage` là interface đóng và projection **khoá cứng đồng bộ, cấm I/O**. Cần hạ tầng engine mới ⇒ chuyển `HANG_MUC_BAN_SAU.md`. **Không chỗ nào hiện số tiền sai** |
 | 17 | Giảm độ trễ mỗi bước | ⚫ **ĐÓNG — giới hạn phần cứng, đã tách bằng số.** 226/226 lượt LLM: **sinh token 62,2 %** (4 878,9 s) · chờ suất/TTFT 23,3 % · chạy công cụ 14,5 % (82 % của phần đó là `pwsh` chạy thật). Phần mềm không chạm được vào 62,2 % ⇒ **không vờ tối ưu** |
 | 18 | Chạy tiếp khi đóng app | 🟡 **0,5** — tra xong: **phần lớn đã có** (khay giữ sidecar sống, autostart, `lttcode-cli.exe` chạy thật 60,7 s). H18 chấm lại 45 → 78. Còn: chủ dự án quyết có làm scheduler mức hệ điều hành không |
-| 19 | Git/PR thành công cụ gốc | 🟡 **0,5** — đã chấm `lxj808624/dsh-tool-git` (≈ 51/100). **Quyết định: bundle nhưng CHỈ lấy nhóm chỉ-đọc** (`git_status/diff/log/show`) — nhóm ghi có `add -A` không chặn, không quét bí mật, và `stash -u` ngoài hàng rào (cuốn mất tệp `??` của phiên khác). Còn: xác minh Cordis tắt được công cụ lẻ, rồi bundle |
+| 19 | Git/PR thành công cụ gốc | 🟡 **0,5** — **Cordis KHÔNG tắt được công cụ lẻ**: đơn vị nhỏ nhất là cả plugin (`cordis-plugin-loader` `disabled` = *"Stops the entry"*; tiền lệ DIV-003 phải fork nguyên plugin). ⇒ bác cả "bundle rồi tắt nhóm ghi" lẫn "fork để giữ phần tầm thường nhất". **Quyết định mới: tự viết bốn công cụ CHỈ-ĐỌC**, không có đường ghi nào |
 | 20 | Khởi động app (17→49→107 s) | 🟡 **0,5** — **3/4 chặng KHÔNG CÓ MỐC**. Chặng đo được lấy giá trị lớn nhất (55,3 s) vẫn **thấp hơn** 107,7 s ⇒ **≥ 50 s nằm trong chỗ mù**. Giả thuyết: quét AV cây `sidecar/` **45 536 tệp / 1,4 GB** — `sidecar.rs:48-50` đã ghi sẵn lý do đó khi đặt `BOOT_TIMEOUT`. Còn: thêm 3 mốc rồi mới đo lại |
 
 ### Ngoài plan — việc sinh ra từ lượt diễn tập D1
@@ -1318,19 +1318,41 @@ có bước xem lại thay đổi trước khi commit.
   ba vấn đề a/b/c biến mất mà **không phải fork, không phải vá mã người khác, không phải nuôi
   một bản rẽ nhánh**.
 
-  - [ ] Xác minh **tắt được từng công cụ** trong lớp vá Cordis (`plugins/profile-lttcode/cordis.patch.yml`).
-        ⚠️ **Chưa xác minh — đừng coi là đã biết.** Nếu Cordis **không** cho tắt lẻ từng công cụ
-        ⇒ quay lại tự viết ba công cụ mỏng, đừng nhận cả nhóm ghi.
-  - [ ] Ghim đúng `#v0.1.3`, không để trôi theo `main` của upstream đang im.
+### ❌ Quyết định trên BỊ BÁC — Cordis không tắt được công cụ lẻ (làn `lttcode-t15-t19`, 23/09)
 
-- [ ] **Step 3 — đối chứng âm, chạy THẬT sau khi bundle:** gọi `git_stage`, `git_commit`,
-  `git_stash` từ trong phiên ⇒ cả ba **phải không tồn tại**. Nếu còn gọi được thì việc tắt
-  không ăn, và task này **chưa xong** — dù `git_status` đã chạy đẹp.
-- [ ] **Step 4 — bằng chứng:** trong một phiên thật, model tự gọi `git_diff` để xem lại trước
+Tôi bảo "chưa xác minh, đừng coi là đã biết". Làn đi xác minh và câu trả lời là **KHÔNG**:
+
+- `cordis-plugin-loader/README.md` mục "Entry Options": `disabled` = *"Stops the entry"* —
+  đơn vị nhỏ nhất Cordis biết là **một row/entry = CẢ plugin**. Không có khái niệm "tool" ở lớp này.
+  Xác nhận ở `lib/index.js:359-378` (`disabled` getter trên cả fiber).
+- `ctx.tools.restrict()` (`dsh-tools/README.md:81`) **không phải** cơ chế cần: nó là mặt nạ theo
+  **scope agent con** — thứ `dsh-tool-subagent` tự dùng cho `toolFilter` khi spawn con — chứ không
+  phải cách host tắt từng công cụ của một plugin đã mount vào scope hiện tại.
+- Tiền lệ trong chính kho: **DIV-003** phải **fork nguyên plugin** mới kiểm soát được mức đó.
+
+⇒ "Bundle rồi tắt nhóm ghi" **không tồn tại như một lựa chọn**. Làn đã **dừng đúng**: không bundle,
+không sửa `cordis.patch.yml`, và cũng **không tự ý** viết công cụ thay thế.
+
+### Quyết định mới: TỰ VIẾT BỐN CÔNG CỤ CHỈ-ĐỌC
+
+Ba đường còn lại, và vì sao chọn đường thứ ba:
+
+| Đường | Bác vì |
+|---|---|
+| Bundle nguyên gói | Nhận cả ba rủi ro: `add -A` không chặn · không quét bí mật · **`stash -u` cuốn mất tệp `??` của phiên khác**. Rủi ro thứ ba là hỏng việc người khác, không phải hỏng việc mình |
+| Fork gói rồi cắt nhóm ghi | Phải **nuôi một bản rẽ nhánh** của mã 51/100, upstream im > 5 tuần, issue #4 chưa vá — để giữ lại đúng **phần tầm thường nhất** của nó |
+| ✅ **Tự viết bốn công cụ chỉ-đọc** | `git_trang_thai` / `git_khac_biet` / `git_log` / `git_show` là vỏ mỏng quanh `git`, trả JSON. **Không có đường ghi nào ⇒ không có rủi ro nào để bọc.** |
+
+Luật *"dùng lại trước, tự viết sau"* đã được thoả: đã tra, đã chấm, đã chứng minh gói cộng đồng
+**không nhận được ở dạng ta cần**, và phần ta cần là phần rẻ nhất tự làm.
+
+- [ ] **Step 2 — bốn công cụ, KHÔNG có công cụ ghi nào.** `execFile` không qua shell (học từ gói gốc,
+  đó là chỗ nó làm đúng). ⛔ Không `add`, không `commit`, không `stash`, không `checkout`, không `reset`.
+- [ ] **Step 3 — đối chứng âm:** phép kiểm chốt rằng **không công cụ nào trong bộ này chạy được lệnh ghi**
+  — kể cả khi tham số cố nhét (`-- --force`, `;`, `&&`). Thiếu phép này thì "chỉ đọc" chỉ là lời hứa.
+- [ ] **Step 4 — bằng chứng:** trong một phiên thật, model tự gọi `git_khac_biet` để xem lại trước
   khi đề nghị commit (chứ không phải ta nhắc nó trong prompt).
 - [ ] **Step 5: Commit**
-
-> **Việc ghi vào `D:\LTTCODEAPP` đang xếp sau làn `credit-uoc` (R1: một kho một làn ghi).**
 
 ---
 
