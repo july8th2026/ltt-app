@@ -198,7 +198,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ---
 
-## Task 2: Chịu được quá tải kéo dài (V-23)
+## Task 2 ✅ XONG (`977653f`): Chịu được quá tải kéo dài (V-23)
 
 **Vì sao:** 23/09 máy B mất GPU; mọi lượt nhận `provider_overloaded` → `RATE_LIMIT` (mã **được**
 thử lại) nhưng hết số lần thử thì `turn/end kind=error` — lượt chết. Bản đồ đường đi hứa *"người
@@ -765,8 +765,8 @@ của chủ dự án.
 
 | Task | Hạng mục | Nay | Nhắm | Cách đo lại |
 |---|---|---:|---:|---|
-| 11 | A1 Lượt dài không đứt | 55 | 85 | Tỉ lệ lượt kết thúc bằng lỗi nền tảng trong một phiên ≥ 5 giờ |
-| 12 | C2 Chi phí một lần nén | 45 | 80 | Giây/lần nén, đo trên phiên thật |
+| 11 | A1 Lượt dài không đứt | 55 | 85 | Tỉ lệ lượt lỗi trong phiên ≥ 5 h — **hàm + test xong `670770b`, nút giao diện CHẶN: xem dưới** |
+| 12 | C2 Chi phí một lần nén | 45 | 80 | Giây/lần nén, đo trên phiên thật — **mã xong `3326d7f`, CHỜ ĐO** |
 | 13 | G1+G2 MCP dùng được thật | 45 | 85 | Số lần gọi MCP / tổng số lần gọi công cụ trong một phiên thật |
 | 14 | E2+E3 Kế hoạch và mục tiêu | 50 | 85 | Có bằng chứng E2E; gỡ trần 50 |
 | 15 | D3 Agent do người dùng định nghĩa | 40 | 85 | Định nghĩa được một agent bằng tệp và nó chạy |
@@ -778,7 +778,7 @@ của chủ dự án.
 
 ---
 
-## Task 11: Lượt không chết vì lỗi nền tảng — tự nối lại (A1: 55 → 85)
+## Task 11 ⏳ HÀM XONG (`670770b`), NÚT GIAO DIỆN CHẶN: Lượt không chết vì lỗi nền tảng (A1: 55 → 85)
 
 **Số đo hiện tại:** **4/7 lượt** của phiên D1 kết thúc bằng lỗi nền tảng. Phiên Claude Code cùng
 máy cùng ngày: **0/nhiều lượt**. Đây là con số tệ nhất trong cả bảng 60 mục.
@@ -853,7 +853,14 @@ export function coTheNoiLai(maCanonical) {
 
 - [ ] **Step 4: Chạy để chắc nó XANH**
 
-- [ ] **Step 5: Nối nút vào tin lỗi** — khi `coTheNoiLai(ma)`, tin lỗi hiện nút **"Chạy tiếp"**;
+🔴 **CHẶN (đo 23/09):** `ChatNodeOwnerProps` — props thật mà slot `conversation.chat.node`
+nhận (`dsh-client-ui-chat/lib/types/client/contract/slots.d.ts:60-78`) — **không có** hàm
+resend/retry/continue nào. Chỉ có `cwd, openSkill, openFile, inspectCall, forkAt, loadImage,
+renderMessageImages, fileMentions, turnProcess`. `forkAt(seq)` tạo **nhánh mới**, khác nghĩa
+"gửi lại đúng lượt hỏng". Muốn có nút này phải luồn prop qua nhiều tầng — là thiết kế mới,
+không phải chỗ nối sẵn. **Đã dừng đúng chỗ, không đoán cấu trúc giao diện.**
+
+- [ ] **Step 5 (CHẶN — cần thiết kế): Nối nút vào tin lỗi** — khi `coTheNoiLai(ma)`, tin lỗi hiện nút **"Chạy tiếp"**;
   bấm là gửi lại đúng lượt hỏng. Nếu lỗi kèm `retryAfter`, nút hiện đếm ngược thay vì bấm được ngay.
 
 - [ ] **Step 6: Đo lại trên phiên thật**
@@ -865,7 +872,7 @@ phải gõ lại lần nào** cho nhóm lỗi tạm thời.
 
 ---
 
-## Task 12: Nén ngữ cảnh bằng model nhỏ (C2: 45 → 80)
+## Task 12 ⏳ MÃ XONG (`3326d7f`), CHỜ ĐO: Nén ngữ cảnh bằng model nhỏ (C2: 45 → 80)
 
 **Số đo hiện tại:** **188,6 s** và **243,7 s** cho hai lần nén trong cùng một phiên — hơn **7 phút**
 khách ngồi nhìn màn hình không có gì xảy ra. Đây là thứ không hiện trong bất kỳ bảng tính năng nào
