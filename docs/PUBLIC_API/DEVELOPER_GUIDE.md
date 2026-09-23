@@ -327,6 +327,28 @@ không đốt GPU.
   điệp để đoán nguyên nhân — hãy kiểm tra `key_id` ở `/developers`.
 - Khóa có dạng `ltt_sk_<key_id>_<secret>`. Phần `key_id` là **công khai**: dùng
   nó khi cần hỗ trợ. Đừng bao giờ gửi cả chuỗi.
+- **Luôn đặt header `User-Agent` trên mọi yêu cầu.** Cloudflare đứng trước nền
+  tảng và chặn thẳng các yêu cầu không có `User-Agent`, trả về **403 với
+  `error code: 1010`** — một trang HTML của Cloudflare, **không phải lỗi của
+  nền tảng** (không `application/problem+json`, không `request_id`, xem mục 4).
+  Đo được 23/09/2026: thư viện chuẩn Python `urllib.request` **không tự đặt**
+  `User-Agent` nên bị chặn ngay ở cửa; `curl`, `requests`, và mọi trình duyệt
+  đều tự đặt header này nên đi lọt (nhận đúng `401` khi thiếu khóa). Ví dụ đặt
+  đúng bằng `urllib`:
+
+  ```python
+  import urllib.request
+
+  req = urllib.request.Request(
+      "https://app.lttstudios.com/api/v1/tools",
+      headers={
+          "Authorization": "Bearer ltt_sk_...",
+          "User-Agent": "MyApp/1.0 (+contact@example.com)",
+      },
+  )
+  with urllib.request.urlopen(req) as r:
+      print(r.read())
+  ```
 
 ## 3. Scope
 
@@ -721,6 +743,27 @@ Input:
 Output: `prompt_package` (object), `master_prompt` (string)
 
 Contract hash: `c55834222a3c4a0c`
+
+### `transcript.run`
+
+Transcribe an audio file into a timeline of speech and silence segments with start and end times, in Vietnamese or English. Costs 2 credits per started minute of audio (minimum 1). The duration is measured from the file you upload, not from anything you send.
+
+Execution mode: `ASYNC_JOB`
+
+Scopes: `jobs:create`
+
+Input:
+
+- `audio` — string, **required**, The audio to transcribe, given as the id of an upload you confirmed or of an artifact from an earlier job.
+- `language` — string, max length 8, `vi` or `en`. Leave empty to detect the language automatically.
+- `min_s` — number, min 0.5, max 30.0, default 1.5, Shortest speech segment you want, in seconds. Segments are cut at sentence ends and pauses.
+- `max_s` — number, min 1.0, max 60.0, default 6.0, Longest speech segment you want, in seconds.
+- `include_silence` — boolean, default True, Keep pauses as separate `silence` segments in the timeline.
+- `he` — string, one of `ltt`, default ltt, Transcription engine. `ltt` is the standard engine and the default.
+
+Output: `transcript` (object)
+
+Contract hash: `efabeaa63a584c85`
 
 ### `video.generate`
 

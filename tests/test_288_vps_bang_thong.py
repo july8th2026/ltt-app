@@ -94,8 +94,9 @@ def test_goi_la_thi_khong_ham_chu_khong_no():
 
 
 def test_phan_tram_khong_vo_bo_cuc_trang():
+    tran = bang_thong.han_muc_byte("vps-nho")
     assert bang_thong.phan_tram(_May(da_dung=0)) == 0
-    assert bang_thong.phan_tram(_May(da_dung=150 * GB)) == 50
+    assert bang_thong.phan_tram(_May(da_dung=tran // 2)) == 50
     assert bang_thong.phan_tram(_May(da_dung=99_999 * GB)) == 999
 
 
@@ -109,10 +110,10 @@ def test_doc_duoc_ra_cau_nguoi_doc():
 
 def test_tong_da_hua_doi_chieu_duoc_voi_tran_cong_vao():
     """Bán chồng là chủ ý (cùng khuôn với đĩa thin ở V14), nhưng nó phải là một
-    con số nhìn thấy được — không phải một bất ngờ trên hoá đơn Vultr."""
+    con số nhìn thấy được — không phải một bất ngờ trên hoá đơn OVH."""
     may = [_May(plan_id="vps-lon") for _ in range(3)]
-    assert bang_thong.tong_da_hua_gb(may) == 3000
-    assert bang_thong.TRAN_CONG_VAO_GB == 2048
+    assert bang_thong.tong_da_hua_gb(may) == 750
+    assert bang_thong.TRAN_CONG_VAO_GB == 1024
 
 
 # ── 4. Vòng bảo trì: đo, hãm, và bỏ hãm ─────────────────────────────────────
@@ -187,8 +188,8 @@ def test_cong_don_ca_hai_chieu_vao_MOT_tong(monkeypatch, _khong_ghi_su_kien):
 
 
 def test_vuot_tran_thi_HAM_TOC_tren_router(monkeypatch, _khong_ghi_su_kien):
-    m = _May(da_dung=299 * GB)
-    rt = _RouterGia({"10.51.0.50": (2 * GB, 0)})     # 299 + 2 = 301 > 300
+    m = _May(da_dung=99 * GB)
+    rt = _RouterGia({"10.51.0.50": (2 * GB, 0)})     # 99 + 2 = 101 > 100
     doi, _ = _chay(monkeypatch, [m], rt)
     assert doi == 1
     assert rt.da_dat == [("10.51.0.50", True)]

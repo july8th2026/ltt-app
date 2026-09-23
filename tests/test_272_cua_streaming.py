@@ -186,8 +186,10 @@ def _dat_luong(monkeypatch, khoi=None, *, nem=None, ban=False):
     def gia(db, *, duong, than, timeout_s=900.0, **_meta):
         da_goi.append({"duong": duong, "than": than})
         if ban:
-            raise luong_vlm.KhongMoDuocLuong("may B dang ban", ban=True,
-                                             thu_lai_sau_s=30)
+            raise luong_vlm.KhongMoDuocLuong(
+                "may B dang ban", failure=luong_vlm.model_failure(
+                    "concurrency_limited", http_status=429,
+                    retry_after_s=30))
         if nem is not None:
             raise nem
         return GiaLuong(khoi if khoi is not None else _khoi())
@@ -704,8 +706,10 @@ def test_may_B_429_MOT_LAN_sau_200_thi_XEP_LAI_va_khach_NHAN_noi_dung(api, monke
     def mo(db, **kw):
         da_goi.append(kw.get("token_dat_truoc"))
         if len(da_goi) == 1:
-            raise luong_vlm.KhongMoDuocLuong("may B dang ban", ban=True,
-                                             thu_lai_sau_s=30)
+            raise luong_vlm.KhongMoDuocLuong(
+                "may B dang ban", failure=luong_vlm.model_failure(
+                    "concurrency_limited", http_status=429,
+                    retry_after_s=30))
         return mo_that(db, **kw)
 
     monkeypatch.setattr(luong_vlm, "mo", mo)
@@ -753,7 +757,8 @@ def test_id_noi_bo_KHONG_goi_duoc(api, monkeypatch):
     goi = _dat_luong(monkeypatch)
     _u, token = _account()
     r = api.post(MSG, json=_than(model="qwen38-api"), headers=_h(token))
-    assert r.status_code == 400
+    # `model_not_found` = 404 theo registry (`llm_gateway/error_contract.py`).
+    assert r.status_code == 404
     assert goi == []
 
 

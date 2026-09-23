@@ -20,9 +20,10 @@ from server.auth.session import require_login
 from server.deps import get_db
 
 from apps.agent.routes._shared import (
-    _artifact_key, _cancel_advance_jobs, _enqueue_advance, _owned,
-    _prepare_run, _run_json, _run_summary, _schedule_at, _scheduled_datetime,
-    _user, _verify_json_csrf, _workflow_response, router)
+    _artifact_key, _cancel_advance_jobs, _chan_neu_dang_nang_cap_v3,
+    _enqueue_advance, _owned, _prepare_run, _run_json, _run_summary,
+    _schedule_at, _scheduled_datetime, _user, _verify_json_csrf,
+    _workflow_response, router)
 
 
 @router.post("/api/workflows/{workflow_id}/runs")
@@ -32,6 +33,7 @@ async def workflow_create_run(request: Request, workflow_id: str,
     """Snapshot an exact validated Canvas revision into an immutable AgentRun."""
     body = await request.json(); _verify_json_csrf(request, body)
     user = _user(request)
+    _chan_neu_dang_nang_cap_v3(db, workflow_id, user.id)
     try:
         row = workflows.get_owned(db, workflow_id, user.id)
         expected = int(request.headers.get("If-Match", "").strip('"') or body["revision"])

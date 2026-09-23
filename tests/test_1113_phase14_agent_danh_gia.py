@@ -47,7 +47,9 @@ from platform_core.agent.tools import discover_tools
 from platform_core.agent.validator import validate_plan
 from platform_core.registry import discover
 
-BON = ("transcript", "audio_pause", "prompt_canh", "video_assembly")
+# `transcript` ra khoi danh sach 22/09/2026: mo cho khach sau doi soat quy tac
+# legacy + E2E (chu du an chot). Ba App con lai van dong.
+BON = ("audio_pause", "prompt_canh", "video_assembly")
 TOOL = tuple(f"{s}.run" for s in BON)
 
 

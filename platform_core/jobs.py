@@ -21,6 +21,8 @@ worker) quyết định ranh giới transaction.
 from __future__ import annotations
 
 import importlib
+import re
+from typing import TypeVar
 from datetime import datetime, timedelta, timezone
 from typing import Callable, Optional
 
@@ -31,6 +33,7 @@ from platform_core.models import (ExecutionLease, JOB_CANCELLED, JOB_DONE, JOB_E
                                   JOB_QUEUED, JOB_RUNNING, Job)
 from platform_core import job_events
 from platform_core.i18n import N_
+from platform_core.job_scheduler import ORIGIN_WORKFLOW
 
 # Job running quá lâu không đập nhịp bị coi là mồ côi (worker chết).
 ORPHAN_TIMEOUT = timedelta(minutes=5)
@@ -81,6 +84,64 @@ class LoiNguoiGoi(Exception):
         class LoiGiongNoi(LoiNguoiGoi):
             \"\"\"Thông điệp đưa thẳng cho khách — phải nói được cách sửa.\"\"\"
     """
+
+
+#: Câu chung cho khách khi job hỏng vì lý do KHÔNG phải của họ — cùng câu với sự kiện `failed` (`fail()`).
+_E = TypeVar("_E", bound=BaseException)
+
+LOI_CHUNG_KHACH = N_("Không thể hoàn tất yêu cầu. Bạn có thể thử lại.")
+#: Dấu ngăn "chi tiết cho vận hành" với "câu cho khách" trong `Job.error` của một lỗi KHÔNG phải `LoiNguoiGoi`.
+DAU_CAU_KHACH = "|| khach: "
+_LOI_KHACH = re.compile(r"LoiNguoiGoi(?:\(\w+\))?: (.*)\Z", re.S)
+
+
+def mo_ta_loi(exc: BaseException) -> str:
+    """Chuỗi `Job.error` của một ngoại lệ — MỘT nguồn cho `job_runner`.
+
+    `TenLop: thông điệp` cho vận hành. `LoiNguoiGoi` (câu app viết CHO KHÁCH) mang dấu riêng
+    `LoiNguoiGoi(<lớp con>): …` — tên lớp con vẫn còn cho vận hành, còn `loi_cho_khach` nhận ra được
+    mà không cần import module app (lúc hiển thị, `isinstance` không còn: ngoại lệ đã thành chuỗi).
+    """
+    if isinstance(exc, LoiNguoiGoi):
+        nhan = "LoiNguoiGoi" if type(exc) is LoiNguoiGoi else f"LoiNguoiGoi({type(exc).__name__})"
+        return f"{nhan}: {exc}"
+    cau = getattr(exc, "cau_khach", None)
+    if isinstance(cau, str) and cau.strip():
+        # Lỗi TẠM THỜI (phải thử lại ⇒ không thể là `LoiNguoiGoi`) vẫn nói được câu đã soạn cho khách khi
+        # hết lượt thử. Chi tiết kỹ thuật giữ nguyên cho vận hành, câu khách nằm ở cuối sau dấu.
+        return f"{type(exc).__name__}: {exc} {DAU_CAU_KHACH}{cau}"
+    return f"{type(exc).__name__}: {exc}"
+
+
+def voi_cau_khach(exc: _E, cau: str) -> _E:
+    """Gắn "câu an toàn cho khách" vào một ngoại lệ KHÔNG phải `LoiNguoiGoi` (lỗi tạm thời được thử lại).
+
+    Dùng helper thay vì `exc.cau_khach = ...` ở từng app: gán thuộc tính tự do lên `Exception` là thứ mypy
+    không kiểm được, và mỗi app lại gõ một kiểu tên khác nhau.
+    """
+    vars(exc)["cau_khach"] = cau      # ghi thẳng `__dict__`: `setattr` tên hằng bị ruff B010 chặn
+    return exc
+
+
+def loi_cho_khach(job) -> str:
+    """Câu lỗi được phép hiện cho KHÁCH (đã dịch), `""` nếu job không lỗi.
+
+    Chỉ câu của `LoiNguoiGoi` đi qua nguyên văn; mọi lỗi khác (hạ tầng, provider, bug, hết giờ, định dạng
+    cũ trước dấu `LoiNguoiGoi`) ⇒ `LOI_CHUNG_KHACH` — không bao giờ văn bản thô, như `/api/v1` (Q76).
+    """
+    from platform_core.i18n import _ as _t      # `_` là biến vứt đi quen thuộc ⇒ dễ bị che (test_161)
+
+    if job is None or getattr(job, "status", None) != JOB_ERROR:
+        return ""
+    loi = getattr(job, "error", None) or ""
+    m = _LOI_KHACH.match(loi)
+    if m and m.group(1).strip():
+        return _t(m.group(1))
+    if DAU_CAU_KHACH in loi:
+        cau = loi.split(DAU_CAU_KHACH, 1)[1].strip()
+        if cau:
+            return _t(cau)
+    return _t(LOI_CHUNG_KHACH)
 
 
 class DangBan(Exception):
@@ -480,6 +541,7 @@ def mark_ambiguous(db: DbSession, job: Job, error: str) -> None:
             "Không thể xác định kết quả từ nhà cung cấp; hệ thống đã dừng tự thử lại."),
         details={"attempt": job.attempts, "status": JOB_ERROR},
         level="error", event_key="ambiguous-provider")
+    _bao_workflow(db, job)
     db.flush()
 
 
@@ -496,6 +558,13 @@ def set_progress(db: DbSession, job: Job, percent: int, message: str = "") -> No
     db.flush()
 
 
+def _bao_workflow(db: DbSession, job: Job) -> None:
+    """Điểm nối DUY NHẤT tầng nền → workflow (spec §3.1-3)."""
+    if job.origin == ORIGIN_WORKFLOW and job.parent_id:
+        from platform_core.workflow.cau_noi import bao_ket_thuc
+        bao_ket_thuc(db, job)
+
+
 def complete(db: DbSession, job: Job, result: dict) -> None:
     job.status = JOB_DONE
     job.result = result
@@ -507,6 +576,7 @@ def complete(db: DbSession, job: Job, result: dict) -> None:
         db, job, "completed", public_message=N_("Đã hoàn tất."),
         details={"status": JOB_DONE}, event_key="completed",
     )
+    _bao_workflow(db, job)
     db.flush()
 
 
@@ -525,6 +595,7 @@ def cancel(db: DbSession, job: Job) -> bool:
         db, job, "cancelled", public_message=N_("Đã hủy theo yêu cầu."),
         details={"status": JOB_CANCELLED}, level="warning", event_key="cancelled",
     )
+    _bao_workflow(db, job)
     db.flush()
     return True
 
@@ -559,10 +630,11 @@ def fail(db: DbSession, job: Job, error: str, *, retry: bool = True) -> None:
         job.finished_at = _bay_gio()
         job_events.append(
             db, job, "failed",
-            public_message=N_("Không thể hoàn tất yêu cầu. Bạn có thể thử lại."),
+            public_message=LOI_CHUNG_KHACH,
             details={"attempt": job.attempts, "max_attempts": job.max_attempts,
                      "status": JOB_ERROR}, level="error", event_key="failed",
         )
+        _bao_workflow(db, job)
     job_events.append(
         db, job, "attempt_error", visibility=job_events.INTERNAL, level="error",
         details={"attempt": job.attempts, "error": safe_error},

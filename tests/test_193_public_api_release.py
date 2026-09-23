@@ -115,7 +115,8 @@ def test_the_release_inventory_is_frozen_and_self_consistent():
     #    khong test nao thay duoc — `setup/4-nghiem-thu.ps1` la cho kiem no.
     assert published == exposed == ["image.generate", "image.ltt", "image.thumbnail",
                                     "image.upscale", "speech.ltt", "story.storyboard",
-                                    "text.chat", "text.prompt_package", "video.generate",
+                                    "text.chat", "text.prompt_package", "transcript.run",
+                                    "video.generate",
                                     "video.subtitle", "video.upscale"]
 
     # Migrations: three, and the head is the last of them.

@@ -716,6 +716,87 @@
       "contract_hash": "c55834222a3c4a0c"
     },
     {
+      "name": "transcript.run",
+      "capability": "transcript",
+      "description": "Transcribe an audio file into a timeline of speech and silence segments with start and end times, in Vietnamese or English. Costs 2 credits per started minute of audio (minimum 1). The duration is measured from the file you upload, not from anything you send.",
+      "execution_mode": "ASYNC_JOB",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "audio": {
+            "type": "string",
+            "description": "The audio to transcribe, given as the id of an upload you confirmed or of an artifact from an earlier job.",
+            "examples": [
+              "upl_from_POST_/api/v1/uploads"
+            ]
+          },
+          "language": {
+            "type": "string",
+            "maxLength": 8,
+            "description": "`vi` or `en`. Leave empty to detect the language automatically.",
+            "examples": [
+              "vi"
+            ]
+          },
+          "min_s": {
+            "type": "number",
+            "minimum": 0.5,
+            "maximum": 30.0,
+            "default": 1.5,
+            "description": "Shortest speech segment you want, in seconds. Segments are cut at sentence ends and pauses.",
+            "examples": [
+              1.5
+            ]
+          },
+          "max_s": {
+            "type": "number",
+            "minimum": 1.0,
+            "maximum": 60.0,
+            "default": 6.0,
+            "description": "Longest speech segment you want, in seconds.",
+            "examples": [
+              6.0
+            ]
+          },
+          "include_silence": {
+            "type": "boolean",
+            "default": true,
+            "description": "Keep pauses as separate `silence` segments in the timeline.",
+            "examples": [
+              true
+            ]
+          },
+          "he": {
+            "type": "string",
+            "enum": [
+              "ltt"
+            ],
+            "default": "ltt",
+            "description": "Transcription engine. `ltt` is the standard engine and the default.",
+            "examples": [
+              "ltt"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "audio"
+        ]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "transcript": {
+            "type": "object"
+          }
+        }
+      },
+      "required_scopes": [
+        "jobs:create"
+      ],
+      "contract_hash": "efabeaa63a584c85"
+    },
+    {
       "name": "video.generate",
       "capability": "video",
       "description": "Generate video from a text prompt, optionally guided by reference media. Valid resolution, duration and aspect ratio depend on the model — see each model's `constraints` in GET /api/v1/models.",

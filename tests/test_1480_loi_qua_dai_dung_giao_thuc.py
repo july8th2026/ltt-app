@@ -152,11 +152,19 @@ def test_chat_completions_qua_dai_la_400_khuon_OpenAI(api, monkeypatch):
 # ── Sau 200 (vượt pool KV lúc mở) cũng phải có câu Claude Code nhận ra ─────
 
 def test_loi_sse_context_length_mang_cau_prompt_is_too_long():
+    from platform_core.llm.model_failure import model_failure
     from server.api import su_kien_loi
-    for duong in ("/v1/messages", "/v1/responses"):
-        khoi = su_kien_loi.loi_sse(duong, "context_length",
-                                   "The input exceeds the model's context limit.")
-        assert b"prompt is too long" in khoi.lower(), khoi
+    for code in ("context_window_exceeded", "input_tokens_exceeded"):
+        failure = model_failure(code, http_status=400, field="context",
+                                limit=_tran(), actual=_tran() + 1)
+        for duong in ("/v1/messages", "/v1/responses", "/v1/chat/completions"):
+            khoi = su_kien_loi.loi_sse(duong, failure)
+            ev = _su_kien(khoi)[0]
+            err = ev.get("error") or ev["response"]["error"]
+            m = REGEX_CLAUDE.search(err["message"])
+            assert m and int(m.group(1)) > int(m.group(2)) == _tran(), khoi
+            if duong == "/v1/responses":
+                assert err["code"] == "context_length_exceeded"
 
 
 # ── Nhịp chờ của Responses: một SỰ KIỆN hợp lệ, không chỉ comment ───────────

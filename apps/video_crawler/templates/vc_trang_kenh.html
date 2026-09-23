@@ -1,0 +1,56 @@
+{#- "Trang kênh" trong app (W4-L11): tuỳ chọn rồi Xem trước / Cào hết — cùng route, cùng rào an toàn,
+    cùng cam kết quyền như mọi nguồn khác. Ô nào nền chưa khai (tab) thì KHÔNG hiện. -#}
+<div>
+  <h2>{{ _("Trang kênh") }}{% if ten_kenh %} · {{ ten_kenh }}{% endif %}</h2>
+  <p class="muted">{{ _(nen.ten) }} · <span class="vc-link-kenh">{{ link }}</span></p>
+  {#- Swap vào TRONG `#vc-ket-qua` (không `outerHTML`): nút "Tìm kênh"/"Xem trước" ở form chính vẫn còn
+      đích để bắn kết quả lượt sau (kiểm GUI 23/09: `outerHTML` xoá luôn id, lượt tìm kế tiếp mất đích). -#}
+  <form method="post" action="{{ app.route_prefix }}/tai" hx-post="{{ app.route_prefix }}/tai"
+        hx-target="#vc-ket-qua" hx-swap="innerHTML">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="nen_tang" value="{{ nen.id }}">
+    <input type="hidden" name="che_do" value="kenh">
+    <input type="hidden" name="dau_vao" value="{{ link }}">
+
+    {% if tab %}
+    <label class="field"><span>{{ _("Mục của kênh") }}</span>
+      <select name="tab">{% for ma, nhan in tab %}<option value="{{ ma }}">{{ _(nhan) }}</option>{% endfor %}</select>
+    </label>
+    {% endif %}
+
+    <div class="vc-row">
+      <label class="field"><span>{{ _("Sắp xếp") }}</span>
+        <select name="sap_xep">
+          {% set TEN_SAP_XEP = {"moi_nhat": _("Mới nhất"), "pho_bien": _("Phổ biến")} %}
+          {% for s in sap_xep %}<option value="{{ s }}">{{ TEN_SAP_XEP.get(s, s) }}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="field"><span>{{ _("Thời lượng") }}</span>
+        <select name="thoi_luong">
+          {% set TEN_THOI_LUONG = {"ngan": _("Dưới 4 phút"), "vua": _("4–20 phút"), "dai": _("Trên 20 phút")} %}
+          <option value="">{{ _("Tất cả") }}</option>
+          {% for t in thoi_luong %}<option value="{{ t }}">{{ TEN_THOI_LUONG.get(t, t) }}</option>{% endfor %}
+        </select>
+      </label>
+    </div>
+    <div class="vc-row">
+      <label class="field"><span>{{ _("Đăng từ ngày") }}</span><input type="date" name="tu_ngay"></label>
+      <label class="field"><span>{{ _("đến ngày") }}</span><input type="date" name="den_ngay"></label>
+    </div>
+    <div class="vc-row">
+      <label class="field"><span>{{ _("Số lượng (tối đa {n})").format(n=so_luong_toi_da) }}</span>
+        <input type="number" name="so_luong" value="10" min="1" max="{{ so_luong_toi_da }}" inputmode="numeric"></label>
+      <label class="chip-opt"><input type="checkbox" name="khong_trung" value="1"><span>🆕 {{ _("Cào không trùng") }}</span></label>
+    </div>
+
+    {% include "vc_cam_ket.html" %}
+
+    <div class="vc-actions">
+      <button class="btn" type="submit" formaction="{{ app.route_prefix }}/kham-pha" formnovalidate
+              hx-post="{{ app.route_prefix }}/kham-pha" hx-target="#vc-ket-qua">👁 {{ _("Xem trước &amp; chọn") }}</button>
+      <button class="btn btn-primary" type="submit">🚀 {{ _("Cào hết (thêm vào hàng đợi)") }}</button>
+      {% if url_mo_nen %}<a class="btn" href="{{ url_mo_nen }}" target="_blank" rel="noopener noreferrer">↗ {{ _("Mở trên nền tảng") }}</a>{% endif %}
+    </div>
+    {% if url_mo_nen %}<p class="muted">{{ _("Mở nền tảng trong tab mới để xem kênh; chép link video hoặc link kênh về đây nếu cần.") }}</p>{% endif %}
+  </form>
+</div>

@@ -907,12 +907,63 @@ $envText = if (Test-Path $envFile) { Get-Content $envFile -Raw } else { '' }
 if ($envText -match '(?m)^LTT_DATABASE_URL=(.+)$') {
     $env:LTT_DATABASE_URL = $Matches[1].Trim()
     Push-Location $appDir
-    Invoke-Ngoai { & $venvPy -m alembic upgrade head }
+    # !! Doc ky truoc khi rut gon doan nay. Ban cu chi co ba dong:
+    #        Invoke-Ngoai { & $venvPy -m alembic upgrade head }
+    #        if ($rc -ne 0) { throw ... }
+    #        Ok 'Luoc do CSDL da o ban moi nhat'
+    #    Tuc mot dau OK mau xanh in VO DIEU KIEN khi alembic tra ma 0. Nhung
+    #    "da chay 4 migration" va "khong co gi de chay" CUNG tra 0.
+    #
+    #    Cai gia, do duoc 23/09/2026: giua 01/09 23:04 va 06/09 08:51 ai do da
+    #    day `alembic_version` qua NAM revision ma khong thuc thi cai nao (bon
+    #    cua app auto_scan_video, mot cua chatltt). Ca nam bang `asv_*` khong
+    #    bao gio duoc tao. Suot 21 luot deploy sau do, moi luot deu in dung
+    #    dau OK nay va khong ai thay gi. Su co nam im 20 ngay, chi lo ra khi
+    #    mot vong quet tai san (ra doi 04/09) duoc deploy va bat dau nem
+    #    `UndefinedTable` vao log worker.
+    #
+    # => Dong nay phai NOI DUNG thu vua xay ra: chay bao nhieu migration, hay
+    #    khong chay cai nao. Hai tinh huong do khac nhau nen chung khong duoc
+    #    in ra cung mot dong chu.
+    #
+    # `*>` gom MOI luong ra tep: alembic ghi `Running upgrade` qua `logging`,
+    # tuc STDERR. Bat bang `>` don se mat sach - va do dung la ly do cac log
+    # deploy dau thang 9 trong rong khi grep chu "alembic" trong `.out.log`.
+    $tepAlOut = Join-Path ([IO.Path]::GetTempPath()) ('ltt-alembic-' + [Guid]::NewGuid().ToString('N') + '.log')
+    Invoke-Ngoai { & $venvPy -m alembic upgrade head *> $tepAlOut }
     $rc = $LASTEXITCODE
     Pop-Location
     $env:LTT_DATABASE_URL = $null
+    # In lai nguyen van cho nguoi doc log - ke ca khi hong, nhat la khi hong.
+    $dongAl = @()
+    if (Test-Path $tepAlOut) {
+        $dongAl = @(Get-Content $tepAlOut -ErrorAction SilentlyContinue)
+        foreach ($d in $dongAl) { Write-Host ('    ' + $d) }
+        Remove-Item $tepAlOut -ErrorAction SilentlyContinue
+    }
     if ($rc -ne 0) { throw 'alembic upgrade head that bai - xem thong bao o tren' }
-    Ok 'Luoc do CSDL da o ban moi nhat'
+    $soChay = @($dongAl | Where-Object { $_ -like '*Running upgrade*' }).Count
+    if ($soChay -gt 0) {
+        Ok ('Luoc do CSDL: da chay ' + $soChay + ' migration')
+    } else {
+        Ok 'Luoc do CSDL: khong co migration nao cho chay'
+    }
+
+    # Doi chieu ban khai ORM voi luoc do THAT. Day la lop bat cuoi cung, va no
+    # phai chay o MOI lan deploy chu khong cho ai nho goi: bang chung ro nhat
+    # cua su co 23/09 la 21 luot deploy deu in mot dau xanh.
+    #
+    # `alembic upgrade head` tra 0 chi noi "chuoi revision da toi head". No
+    # KHONG noi "cac bang that su ton tai" - va do dung la khe ho ma nam
+    # revision bi day tay chui qua.
+    #
+    # Khong lam hong luot deploy khi lech: viec cua no la NOI RA. Mot canh bao
+    # bien thanh mot su co la cach nhanh nhat de nguoi ta hoc cach bo qua no.
+    $env:LTT_DATABASE_URL = $Matches[1].Trim()
+    Push-Location $appDir
+    Invoke-Ngoai { & $venvPy tools\kiem_luoc_do.py --im-lang }
+    Pop-Location
+    $env:LTT_DATABASE_URL = $null
 } else {
     Note 'Bo qua migration - chua co LTT_DATABASE_URL'
 }

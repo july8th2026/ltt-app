@@ -12,6 +12,352 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-23 (khuya) — `alembic_version` nói dối 20 ngày, và dòng OK giúp nó sống sót
+
+Tìm ra khi **nghiệm thu sau deploy** `fde0d3aa` — không phải khi đi tìm nó.
+
+- **Triệu chứng:** `worker-err.log` lặp `UndefinedTable: relation "asv_asset" does not exist`.
+- **Truy ngược (ba phiên, mỗi phiên một mảnh):**
+  - Phiên ASV: **0/5 bảng `asv_*`**, không còn một đối tượng nào tên `asv*`; nhưng `vc_phien`/`vc_da_tai`
+    — migration **sau** ASV trong chuỗi — thì **có**. ⇒ chuỗi đã chạy **vượt qua** ASV, không phải bảng bị xoá.
+  - Phiên này: đối chiếu cơ học 80 bảng khai trong toàn chuỗi với `pg_tables` ⇒ thiếu đúng 7 dòng, trong đó
+    `vps_port_map` là **cố ý** (bị drop khi VPS bỏ port-mapping 24/08). Phần không giải thích được **chỉ còn ASV,
+    và là toàn bộ 4 migration ASV**.
+  - Phiên workflow: kiểm lược đồ thật (không tin `alembic_version`) ⇒ migration của họ có thật; xác nhận độc lập
+    `asv_asset` thiếu.
+- **Nguyên nhân, từ `.err.log` của deploy** (alembic ghi `Running upgrade` qua `logging` ⇒ **stderr**, nên grep
+  `.out.log` trống trơn — chính bẫy này giấu mất bằng chứng suốt buổi):
+
+  ```
+  01/09 07:19   d4e0a63b8f29 -> a5f31c07d2b4
+  01/09 23:04   a5f31c07d2b4 -> c7b91e4a2f80
+  06/09 08:51   7d2c1e9f4a03 -> 4b8e21c6d907   <-- bat dau o mot cho KHAC
+  ```
+
+  Head rời `c7b91e4a2f80` lúc 01/09 23:04, tới 06/09 đã ở `7d2c1e9f4a03`, **không lượt deploy nào ở giữa chạy một
+  upgrade nào**. Đúng **5 revision** bị nhảy qua: 4 ASV + `chatltt_cay_hoi_thoai`.
+  ⇒ `alembic_version` bị **đẩy tay** (`stamp` hoặc `UPDATE`) mà không thực thi.
+- **Vì sao sống được 20 ngày:** `setup/2-cai-dat.ps1:915` in `[OK] Luoc do CSDL da o ban moi nhat` **vô điều kiện**
+  khi `alembic upgrade head` trả 0 — mà *"không có gì để làm"* **cũng trả 0**. 21 lượt deploy, 21 dấu xanh.
+  App `auto_scan_video` khai `enabled=False` nên không luồng nào chạm bảng của nó ⇒ **không có gì kêu**.
+  Phần `chatltt` trong cùng khối thì có người sửa tay, và sửa đúng (phiên ASV đối chiếu: 10/10 · 11/11 · 24/24).
+  Sự cố chỉ lộ ra khi một vòng quét tài sản (ra đời 04/09) được deploy — tức **bởi một tai nạn, không bởi phép kiểm**.
+
+### Đã làm
+
+- `setup/2-cai-dat.ps1`: bắt **mọi luồng** của alembic ra tệp (`*>`), in lại nguyên văn, đếm `Running upgrade`,
+  rồi nói **đúng số** migration vừa chạy — hoặc nói thẳng *"không có migration nào cho chạy"*. Hai tình huống khác
+  nhau không còn in ra cùng một dòng chữ.
+- `tools/kiem_luoc_do.py` — đối chiếu `Base.metadata` với `information_schema`, **chạy ở mỗi lần deploy**.
+  Ba quyết định: soi **cả cột** (bản dò tay chỉ gom `create_table` — lỗ hổng tự phát hiện); **không lọc app đang
+  tắt** (đó chính là chỗ bệnh nấp); **thừa không phải lỗi** (báo đỏ vì thứ vô hại là cách làm người ta bỏ qua nó).
+  Lệch **không** làm hỏng deploy — việc của nó là NÓI RA.
+- `tests/test_2800`: 13 phép, gồm bánh cóc *"deploy phải gọi `kiem_luoc_do`"* và *"dấu OK vô điều kiện không được
+  quay lại"* (đọc **mã sống**, bỏ chú thích — để việc ghi lại lịch sử không bị chính phép kiểm cấm), và một phép
+  chốt báo cáo **thuần ASCII** vì nó in ra console Windows cp1252.
+- Chạy thật trên production: `LECH - 5 bang thieu, 0 cot thieu · app auto_scan_video: thieu 5 bang`.
+  **0 cột thiếu** trên toàn lược đồ — xác nhận độc lập rằng phần sửa tay của `chatltt` là đúng hình dạng.
+
+### Chưa làm — cố ý
+
+Không tạo bảng `asv_*`. Sân của phiên ASV, đang chờ chủ dự án duyệt phương án. ⛔ Và **không** `alembic downgrade`
+rồi chạy lại cả chuỗi: chuỗi đó chứa migration của nhiều làn, chạy lại sẽ đụng dữ liệu thật của các bảng khác.
+
+## 2026-09-23 (khuya) — VPS: lớp canh băng thông TỔNG không được ngừng canh trong im lặng
+
+- **Chủ dự án chỉ ra**, sau khi đọc bản sửa băng thông cùng ngày: `bao_tri._can_ham_theo_tong`
+  đọc bộ đếm cổng vào qua SSH; đọc hỏng thì `log.warning` rồi `return set()`. Tức lớp bảo vệ
+  **im lặng ngừng canh**, và một dòng log trong một vòng chạy mỗi giờ là một dòng không ai đọc.
+- **Cái giá nếu SSH hỏng dài ngày:** cổng vào là OVH VPS-1 Singapore, 1 TB/tháng; vượt thì OVH
+  hãm 10 Mbps cho **tất cả**, kể cả VM100–107. Thứ đầu tiên phát hiện ra sẽ là hoá đơn.
+- Đúng khuôn **"đo vắng mặt thì xoá cũng xanh"** (`docs/BAY_TRONG_CONG_CHAT_LUONG.md`): không
+  phép kiểm nào đo được rằng một lớp bảo vệ đã biến mất, nếu nó biến mất mà không nói gì.
+
+### Đã làm — thêm TIẾNG NÓI, không đổi hành vi
+
+- `bao_tri._ghi_tin_hieu_bang_thong_tong`: mỗi lượt ghi một bản ghi sức khoẻ, **cả khi đọc được
+  lẫn khi không**. HEALTHY · DEGRADED (1–2 lượt) · CRITICAL (≥ `MAT_TIN_HIEU_NGHIEM_TRONG` = 3),
+  kèm log leo thang lên `error`. Đếm **số lượt liên tiếp** (`so_lan_mat_tin_hieu`) chứ không chỉ
+  trạng thái cuối — một lần mạng chớp khác hẳn một tuần SSH chết.
+- `profiles.CANH_BAO_BAO_TRI = ("bang_thong_tong",)` — tầng cảnh báo do **vòng bảo trì** đo.
+  ⚠️ Phải nằm NGOÀI `REQUIRED_HEALTH_COMPONENTS`: `preflight` duyệt tập đó và đòi trạng thái cho
+  từng thành phần, nên thêm vào đấy một thứ nó không đo được là một `KeyError` giữa đường đo sức
+  khoẻ. `test_2600` chốt hai tập rời nhau bằng cơ học.
+- Con số lên tới dòng `log.info` tổng kết vòng bảo trì (`mat tin hieu bang thong tong N`) và
+  `profiles.canh_bao()` — trang admin hạ tầng đã đọc sẵn hàm đó.
+- Trạng thái đếm cất trong `profile.network_config`, **không migration**.
+
+### Quyết định: fail-open, chỉ báo động
+
+Chủ dự án chốt sau khi được hỏi thẳng ba lựa chọn (giữ fail-open + báo động · hãm theo ước lượng
+sau 3 lượt · đóng bán máy mới sau 3 lượt): **giữ fail-open**. Hãm khách dựa trên một con số ĐỌC
+KHÔNG ĐƯỢC là phạt người không có lỗi bằng bằng chứng không tồn tại; ở quy mô 5–15 máy, rủi ro
+chạm trần trong vài giờ là nhỏ và báo động đủ để có người vào xem.
+
+Ghi vào docstring `_can_ham_theo_tong` kèm cảnh báo đừng đổi sang fail-closed trong một bản sửa
+khác mà không hỏi lại — và `test_2600::test_mat_tin_hieu_tong_thi_KHONG_ep_ham_may_nao` chốt nó
+bằng cơ học, nên một lần đổi lặng lẽ sẽ làm đỏ chứ không trôi qua.
+
+### Một chỗ cùng bệnh, sửa luôn
+
+`routes.trang_chinh` truyền `canh_bao_chat_luong` vào template nhưng gọi với `profile=None` nên
+**luôn rỗng**, và template chưa hề vẽ nó — một tín hiệu đi vào hư không, thêm chiều cùng ngày.
+Nay nối thật: tra profile theo **vùng + default** chứ không qua `select_profile` (hàm đó lọc theo
+`CHAN_BAN`, nên đúng lúc hạ tầng có vấn đề thì nó không trả gì — cảnh báo biến mất đúng lúc cần
+xuất hiện). Khách chỉ thấy tầng `CANH_BAO`; `bang_thong_tong` là tín hiệu vận hành, khách không
+làm gì được với nó.
+
+### Còn mở
+
+Khi **router** không đọc được, `_dong_bo_bang_thong` bỏ ngang ở bước 1 nên **cả hai** lớp băng
+thông cùng im, chỉ còn một `log.warning`. Cùng họ bệnh, khác cổng vào. Chủ dự án chốt chưa xử lý.
+
+## 2026-09-23 (tối) — VPS bán thật: sổ nguồn lực, cổng bán hai tầng, hai trần cứng chưa ai đo
+
+- **Triệu chứng:** chủ dự án không tạo được VPS; trang `/vps` in *"Hết chỗ cho cấu hình này"* cho **cả ba gói**.
+- **Đo trên production:** compute còn 14/9/6 chỗ, gateway còn 150 chỗ. **Không tài nguyên nào hết.**
+  `select_profile` loại profile OVH vì 1/6 thành phần sức khoẻ đỏ: `network` — và miền đó đỏ **chỉ** vì một phép
+  kiểm của Máy B, `wireguard.gateway.tx_dropped` (delta 3034, 1,69/s). 12/13 phép kiểm mạng còn lại đều PASS.
+  `_gioi_han_ban` bắt `ProfileNotReady` rồi trả `None`, và `trang_chinh` đọc `None` thành `con_cho = False`.
+  **Một lỗi sức khoẻ bị dịch sai thành một lời từ chối bán hàng.**
+- **`tx_dropped` không phải tín hiệu "giao được máy hay không".** Đo 30 giây lúc 15:40: 1.786 gói TX, **0 gói rơi**,
+  0,12 Mbit/s — các cụm rơi là từng đợt. Tích luỹ 6.523.625/245.827.848 = 2,65% qua 27 ngày, trên đường hầm
+  WireGuard VN↔SG (RTT 36 ms, 0% mất gói khi ping). Lịch sử `vps_profile_health` từ 16/09:
+  HEALTHY 608 · CRITICAL 136 · DEGRADED 94 · STALE 173 — **cửa hàng bật tắt theo cửa sổ 10 phút.**
+- **Lần thử 22/09 chết ở chỗ khác:** cả hai lần (`vps-01` 13:07, `May Tram 2` 16:25) đều hỏng ở `OVH_IP_ACQUIRE`
+  với `pre_checkout_failure`, mỗi lần **thu 1.490 rồi hoàn 1.490 rồi xoá máy**. Bản sửa `43fdd643` (chấp nhận giỏ
+  OVH không kèm điều khoản mới) commit lúc **16:33 — 8 phút sau** lần thử cuối, và đã có trên production.
+
+### Hai trần cứng chưa ai đo (tìm thấy khi khảo sát để bán thật)
+
+- **IPv4 = 16.** Cổng vào là OVH VPS-1 2027 (`vps-1a9e4515.vps.ovh.ca`, zone `os-sgp2`),
+  `maximumAdditionnalIp = 16`. Đã dùng 9 (8 cho VM100–107, 1 cho máy thử) ⇒ **còn 7**. Chặt hơn compute.
+- **Băng thông = 1 TB/tháng.** OVH công bố VPS ở Mumbai/Singapore/Sydney có hạn mức tháng 1 TB cho VPS-1/VPS-2,
+  vượt thì **hãm xuống 10 Mbps** — và vạch đó đập vào **cả VM100–107**. Đo `ens3` qua 27,75 ngày:
+  RX 234,5 GB + TX 239,4 GB ⇒ ~512 GB/tháng nền production. Bảng giá đang hứa 300/600/1000 GB **mỗi máy**.
+  `bang_thong.TRAN_CONG_VAO_GB = 2048` là hằng số **Vultr**, và `tong_da_hua_gb()` viết ra để canh bán chồng
+  **không chỗ nào gọi**.
+
+### Chủ dự án chốt (bán thật, 5–15 máy)
+
+mua IP theo yêu cầu nhưng **nói trước thời gian chờ** · **tách** cổng sức khoẻ · **hạ băng thông trong bảng giá**.
+
+### Đã làm
+
+- `apps/vps/services/nguon_luc.py` — MỘT phép tính cho "bán được không, vì sao không". `danh_gia` thuần +
+  `do_nguon_luc` đọc thật. Mỗi lý do mang **đúng tên** của nó, mỗi tên có một câu cho khách không chứa hệ thống nội bộ.
+  Gỡ `_suc_chua`, `_gioi_han_ban`, `_gioi_han_ip_va_cong`, `_so_cho_ban` khỏi `routes.py`.
+- **Khuyết tật thứ ba, tìm thấy dọc đường:** `preflight` gọi `effective_ipv4_slots` **không** trừ
+  `promised_without_ip` trong khi `routes` thì có ⇒ `capacity` báo xanh lúc trang hiện 0 chỗ. Nay cả ba đi một đường.
+- `profiles.CHAN_BAN` (compute/ip/gateway/capacity) chặn bán · `CANH_BAO` (network/runtime) chỉ cảnh báo.
+  `activate_profile` vẫn đòi cả sáu. `preflight` chỉ hạ profile khi `CHAN_BAN` đỏ. Thêm `profiles.canh_bao()` —
+  gỡ một tín hiệu khỏi chỗ chặn mà không đưa nó vào chỗ nhìn là bỏ nó thật.
+- Tạo máy đi `credit.giu_cho` / `quyet_toan` theo `job_id` (nguyên thuỷ **đã có sẵn** ở `platform_core`, VPS
+  không dùng). Tiền chỉ rời tài khoản khi máy đã bật thật. Sự kiện `thu_phi` chỉ phát lúc quyết toán — nó là
+  **khoá** của `bao_tri._hoan_tien_may_hong`, nên máy hỏng không còn bị hoàn một khoản chưa bao giờ thu.
+  Job hỏng **không** tự nhả ở app: `job_runner._hoan_tien_neu_can` đã làm đúng việc đó.
+- `provisioning.thoi_gian_san_sang` — p50/p90 đo từ `tao_moi` → `tao_xong` của các máy thật sự đã lên, 20 lần gần
+  nhất. Dưới 3 mẫu thì trang **im**, không đoán.
+- Bánh cóc `test_1031`: đọc AST `routes.py`, từ chối mọi lời gọi thẳng tới `sellable_slots` /
+  `effective_ipv4_slots` / `available_gateway_slots` / `cho_phep_ban` / `suc_chua_hien_tai`.
+
+Đặc tả: `docs/superpowers/specs/2026-09-23-vps-ban-that-design.md`.
+
+## 2026-09-23 (chiều) — VPS: bộ cấp IP OVH khoá hết dòng FREE (R16 `LIMIT 20`), luồng thứ hai báo hết IP
+
+- **Triệu chứng:** `test_1010::test_real_postgres_two_ip_allocators_each_get_a_distinct_free_row` (chỉ chạy khi
+  `LTT_VPS_PG_TEST=1`) đỏ `CapacityExhausted` 3/3 khi chạy CẢ module, XANH 4/4 khi chạy riêng — chạy riêng thì
+  pool kết nối rỗng, hai luồng mở kết nối mới nên so le (một luồng commit xong luồng kia mới hỏi): may mắn thời điểm.
+- **Gốc:** `dc516d5c` (R16) đổi `.limit(1)` → `.limit(20)` để bước qua dòng đã tắt gia hạn;
+  `SELECT … FOR UPDATE SKIP LOCKED LIMIT 20` khoá mọi dòng FREE của profile ⇒ luồng thứ hai bỏ qua hết. Bộ cấp sai,
+  dữ liệu test đúng.
+- **Sửa:** mỗi vòng khoá MỘT dòng, dòng bị loại (R16) loại trừ theo id. Real-Postgres cả module 3/3.
+  `tests/test_2400` (SQLite, chạy trong bộ thường) ghi mọi câu `FOR UPDATE` bộ cấp gửi, dịch sang PostgreSQL, đòi
+  `LIMIT 1`; tiêm file `main` cũ ⇒ đỏ `assert 1 == 3`.
+- **Đề xuất (chưa làm):** gate không chạy test nào sau rào `LTT_VPS_PG_TEST` ⇒ lỗi này im từ R16. Cân nhắc cho
+  bước `postgres_test` của gate chạy nhóm real-Postgres của `test_1010` (giờ đã tự xoá CSDL sau mỗi lượt).
+
+## 2026-09-23 (chiều) — CSDL test PostgreSQL mồ côi: 132 CSDL làm PostgreSQL phục hồi 4,5 phút mỗi lần sập
+
+- **Đo trên máy chủ:** `data\base` có 132 CSDL (127 tạo trong tháng 9), 44.651 tệp. Sau mỗi lần máy sập,
+  PostgreSQL "syncing data directory (fsync)" từng tệp: 14:24:56 → 14:29:23 (redo chỉ 0,01 s) ⇒
+  `pg_ctl runservice -w` quá hạn ⇒ SCM ghi `postgresql-x64-17` **Stopped** trong khi postgres.exe vẫn chạy
+  ⇒ lần tắt máy sau Windows không dừng nó ⇒ lại phục hồi. Vòng lặp.
+- **Nguồn rò:** `check_multiproc` / `do_migration_tren_postgres` / `dien_tap_m1_tren_postgres` tạo một CSDL
+  cho MỖI worktree (`pg_ten_cay.ten_csdl_test`) và rào cũ là *"không bao giờ DROP DATABASE"*; worktree gỡ đi
+  là CSDL mồ côi. `test_1010::profile_pg` tạo `ltt_vps_v4_test_<uuid>` mỗi lượt, chỉ xoá bảng.
+- **Vận hành (chủ dự án duyệt):** dừng sạch + start lại qua dịch vụ (0,8 s, không phục hồi); loại trừ Defender
+  thư mục data; DROP 110 CSDL mồ côi (không FORCE, giữ CSDL của 7 worktree còn sống theo vân tay) ⇒ 22 CSDL,
+  9.666 tệp.
+- **Mã (`phien/pg-scratch-don`):** rào mới thay rào cũ — mọi DROP qua `pg_ten_cay.cau_xoa` (tên chứa `test`
+  hoặc khuôn diễn tập, khác CSDL đang chạy, không phải CSDL hệ thống, identifier thuần, không FORCE); ba công cụ
+  xoá CSDL của CHÍNH cây trong `finally` (`--giu` thì giữ; `check_multiproc` chỉ xoá khi tự tạo bằng
+  superuser); `test_1010` xoá CSDL ngẫu nhiên; `tools/don_csdl_test.py` (mặc định chạy thử, `--xoa` mới xoá).
+  Chạy thử 23/09 sau khi dọn: XOA 0 · GIU 21 · KHAC 1 (`lttplatform_test`, không đụng).
+- **Chốt:** `tests/test_2300` — rào, hành vi `finally`/`--giu` của ba công cụ (stub), phân loại, quét AST
+  "tạo CSDL phải có đường xoá". Tiêm bản cũ: bộ quét trên `main` chưa vá tố đúng 4 tệp, trên nhánh 0.
+
+## 2026-09-23 — Task 13: gỡ suy diễn lỗi cũ ở A/B/LTTCODE; 4xx không được phạt khoá
+
+Plan `docs/superpowers/plans/2026-09-21-chuan-hoa-ngu-nghia-loi-llm.md` Task 13 (chủ dự án cho làm ngay,
+miễn điều kiện "một chu kỳ" sau khi đo 12 giờ log: legacy 0, mismatch 0, unknown 0).
+
+- **Gỡ:** B bỏ khoá `ly_do/truong/tran/thay/legacy` khỏi thân lỗi (HTTP status dây giữ nguyên, spec §3);
+  A bỏ decoder legacy, boolean `ban/qua_dai/het_gio`, cờ `LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS` và
+  renderer cũ; LTTCODE 0.2.6 bỏ đoán lỗi theo câu chữ và `error.type` Anthropic.
+- **Hai lỗi bản gỡ tự gây ra, sửa tại chỗ:** (1) 4xx không kèm v1 rơi vào `upstream_unknown`, mà mã đó
+  nằm trong `penalizes_key` ⇒ một khách gửi ảnh hỏng có thể tắt model nhà (D-005/L-09). Chốt lại ranh
+  giới: **status không sinh `canonical_code`, nhưng 4xx vẫn quyết định lớp lỗi + chính sách**; thêm rào
+  `penalizes_key` trả False cho mọi 4xx trừ 401/403 (`e30b95e4`, `e5e0b210`). (2) Test mới của làn T13
+  tự đặt kỳ vọng ngược với phép canh gác L-09 `test_1244` — hợp nhất thay vì xoá luật cũ.
+- **Hồi quy production từ 22/09 được phát hiện và sửa:** sau 200 trên `/v1/messages`, bận/hết giờ đi ra
+  `rate_limit_error`/`api_error`; Claude Code 2.1.275 chỉ tự thử lại khi thấy `overloaded_error` ⇒ khách
+  mất lượt. Renderer khôi phục `overloaded_error` cho `concurrency_limited`, `provider_overloaded`,
+  `model_loading`, `upstream_timeout`, `stream_idle_timeout`; `canonical_code` vẫn giữ nghĩa thật.
+- **Gate/deploy:** 30 tệp test nhắm 863 passed/0 failed; L1 `--doi --tu 24271a8a` PASS; deploy **B trước**
+  (snapshot tự chụp) **rồi A** `b6fbb220` (lệch 0, ready 200). Probe production 3/3; `live --minutes 60`:
+  7 sự kiện, request ID 100%, unknown 0, legacy 0, mismatch 0; fixture 265/265.
+- **LTTCODE 0.2.6** phát dev 100 % (`b1bc1e3`), SHA-256 `11d405557d6f86a4e0e8cd6883b17c7865454b3f61e7c7d2364058b215a759fe`.
+- **Số đo cho phiên VGA máy B:** `llm_gateway/deploy/kiem_tra.ps1` sau deploy = 16 ĐẠT / 1 HỎNG, phép
+  "toc do >= 50 tok/s (card sach)" ra **29,4 tok/s** (model vừa nạp) và **41,3 tok/s** (đã ấm), GPU rảnh
+  (3090: 1%, 118 MiB). Thay đổi máy B của Task 13 chỉ là thân lỗi JSON (9 thêm/30 xoá, không đụng tham số
+  sinh, không chép `llama-swap.yaml`) ⇒ nghi liên quan mod VGA 22/09. Đã nhắn hai lần, tin bị giữ chờ
+  duyệt rồi hết hạn nên ghi ở đây.
+- **Bẫy đo:** `inject --base-url` nhận GỐC; truyền `.../api/v1` làm URL thành `/api/v1/v1/messages` ⇒ 404
+  route-không-tồn-tại trùng status kỳ vọng, report trông như "A mất `ltt_error`". Ghi ở runbook §9.
+
+## 2026-09-22 (đêm) — App `transcript`: đối soát quy tắc `bot_transcript`, mở cho khách (web + palette + `/api/v1`)
+
+Tiếp quản phiên LTTCODE "Vận hành hệ thống" (bàn giao: `C:\Users\Thang Tuong\.claude\ltt\khoi-phuc-2026-09-22\BAN_GIAO_van-hanh.md`).
+Chủ dự án đổi hướng giữa phiên: **dừng chiến dịch benchmark engine** (nhánh `phien/transcript-v2` giữ làm tham khảo,
+KHÔNG gộp; plan hiện trạng `docs/transcript_v2/PLAN_HIEN_TRANG.md` trên nhánh đó), **giữ hệ LTT = quy tắc bot gốc**,
+gỡ `ltt_turbo`, ép `vi` như bot gốc, mở app, giá khuyến nghị.
+
+- **Lỗi đã sửa + deploy** (theo thứ tự lộ ra):
+  1. `37276535` — timeline rỗng 100 %: service STT trả từ khoá `text`, engine legacy đọc `word` (`flatten_words`).
+     Kèm sửa mypy `main` đỏ 9→11 do `e94dd9a2` (`Response` vs `JSONResponse` ở `server/api/{chat,streaming}.py`).
+  2. `cf8a6984` — khớp quy tắc legacy: fixer V5 chép mà KHÔNG GỌI + 3 từ điển (`vi/en_corrections`, `vi_proper_nouns`)
+     không chép ⇒ nối lại đúng tham số `whisper_integration.py:319-339`; `min_s` 3.0 → **1.5** (config đang chạy);
+     thử lại `en`→`vi` khi rỗng; lùi timeline v1; kiểm mốc từ (mọi đoạn có words, đóng băng ≥20 %); kiểm trùng/schema
+     đúng luật `bot/worker.py`; hồ sơ STT `moc_tu_vad_ngoai_vi` (beam 5/best_of 3, như bot gốc khi `vi`); sổ hệ
+     `apps/transcript/services/he.py` (chỉ `ltt`); tên tệp cache STT an toàn với model có `/`. Mở app: `public`,
+     `released`, `customer_visible`, `api_exposed` + `api_contract`; giá `apps/transcript/gia.py` **2 credit/phút
+     audio** (tối thiểu 1), `duration_s` đo từ tệp (`measured_from=audio`, hidden), quyết toán `min(thật, đã giữ)` (Q84).
+  3. `a9a0238c` — route dùng EMAIL (`require_login`) làm `user_id` ⇒ sổ credit (khoá `User.id`) đọc 0, mọi khách 402.
+  4. `24271a8a` — `vad.py` gọi `ffmpeg`/`ffprobe` trần, dịch vụ worker không có ffmpeg trên PATH ⇒ WinError 2.
+- **Bằng chứng khớp bot gốc** (audio thật chủ dự án `G:\My Drive\AI\A\TestVoice`, chạy cả legacy lẫn LTT, diff từng
+  đoạn): EN 98/98, VI tự dò 154/154, VI ép `vi` 154/154 — **0 chữ khác, 0 ms lệch mốc**. Transcript để chủ nghe:
+  `TestVoice\{EN,VN}\TRANSCRIPT\LTT chuan - da doi soat.{txt,json}`.
+- **E2E thật production** (tài khoản `khach1.thu`, file EN 357.5 s): 202 → worker GPU 100 s → `done`, 98 đoạn 6 khoá khớp
+  bản đối soát, trừ đúng **12 credit** (133 → 121). Giao diện `app.lttstudios.com/transcript` (Chromium, desktop +
+  390 px): 200, 0 lỗi console/mạng, không tràn ngang.
+- **Cổng API:** `setup\cong_tac_tool_api.ps1 -Tool transcript.run -Bat` + `nap_lai_env.ps1` (Web/Worker/Voice nhận ENV);
+  catalog production 6 tool. Tài liệu `docs/PUBLIC_API/{APP_DISPOSITION_V1,APP_API_COVERAGE_FINAL,CHANGELOG}.md`.
+- **Bẫy gặp:** gate `--doi` tự nâng L3 khi cây có tệp không ai sở hữu (`data/stt_cache/` do chính lượt chạy STT ghi theo
+  cwd); `Path.write_text` đổi LF→CRLF trên Windows (hook xuống dòng đỏ); cookie `session` cờ `Secure` không được
+  `httpx` gửi lại qua loopback ⇒ CSRF 400 (tự mang cookie bằng header); so với legacy mà ép ngôn ngữ theo manifest sẽ
+  tạo lệch giả (bot gốc chạy `auto`); chạy python legacy phải `-B` (cây chỉ đọc).
+- **Còn mở:** cùng lỗi email-làm-`user_id` ở `audio_pause`, `prompt_canh`, `video_assembly` (còn đóng với khách; đã tạo
+  việc riêng); nhãn ô "Hệ phiên âm" dài bị cắt trên desktop (thẩm mỹ); L3 tổng kết phiên.
+
+## 2026-09-23 (sáng) — `video_crawler` lên production: sự cố ffmpeg, kho tài khoản hệ thống, lỗi job không lộ tên lớp
+
+Deploy `7676a758` (02:43) rồi `bcf05be1` (10:24). Cờ `LTT_VIDEO_CRAWLER=1` đã bật (chủ dự án cấp quyền 23/09).
+
+- 🔴 **Sự cố ffmpeg (W4-1).** Sau deploy đầu, MỌI lượt tải hỏng sau ~10 s với "lỗi không xác định"; tiền hoàn đủ nên
+  không có dấu hiệu nào khác. Chạy lại ĐÚNG mã production bằng tài khoản của tôi thì XANH; chỉ chạy dưới `SYSTEM`
+  (tài khoản dịch vụ worker) mới đỏ. Gốc: `You have requested merging of multiple formats but ffmpeg is not installed`
+  — `shutil.which` thấy ffmpeg trong phiên người dùng, KHÔNG thấy trong dịch vụ nssm. Sửa: adapter truyền
+  `ffmpeg_location` từ `platform_core.media`. **Bài học:** "chạy được trên máy tôi" ở đây nghĩa đen là *tài khoản của tôi*.
+- **Lỗi chưa phân loại nay để lại dấu vết** (W4-2): `loi.phan_loai` ghi văn bản gốc vào log vận hành — thiếu nó thì
+  mọi lỗi mới trông giống hệt nhau. `thieu_ffmpeg` có mã riêng, không còn bị coi là tạm thời (W4-3).
+- **Nền tảng: lỗi job không lộ tên lớp Python cho khách** (`platform_core/jobs.py::mo_ta_loi` + `loi_cho_khach`,
+  bánh cóc `tests/test_2140`). 12 app từng in thẳng `Job.error` ("LoiNguoiGoi: …", "RuntimeError: C:\LTTPlatform\…").
+  Thêm `voi_cau_khach` để lỗi TẠM THỜI (phải thử lại ⇒ không thể là `LoiNguoiGoi`) vẫn nói được câu của mình.
+- **W4 (4 làn agent song song)**: kho tài khoản hệ thống `vc_tai_khoan` (mượn/trả qua lease, trần + nghỉ theo tài
+  khoản, chấm điểm kiểu proxy_pool, trần 20 video/giờ/khách; migration `5e1a9c46b2d7`) + trang vận hành để chủ dự án
+  dán cookies.txt; tìm kênh theo TÊN (YouTube + Bilibili ẩn danh; Douyin/XHS cần phiên; TikTok chưa có đường); link
+  rút gọn theo chuyển hướng CÓ KIỂM (allowlist + chặn IP nội bộ, ≤ 3 bước); ảnh bìa lưu kho ở bước xem trước.
+- **Quyết định chủ dự án 23/09**: làm kho tài khoản, **LTT đứng tên phiên** khi khách dùng kho (đoạn pháp lý chờ
+  duyệt: `PHAP_LY_BO_SUNG_KHO_TK.md`); nền đợt đầu douyin/xiaohongshu/tiktok. **KHÔNG** Bilibili: luật sư Bilibili đã
+  khiến `SocialSisterYi/bilibili-API-collect` (28/01/2026) và `Nemo2011/bilibili-api` (06/07/2026) đóng kho vĩnh viễn.
+- **Nghiệm thu production thật** (tài khoản thử, không gõ mật khẩu): xem trước + tải 1 video — trước sửa: lỗi, hoàn
+  15; sau sửa: xong 27 s, giữ 15 → thu 3 (đúng bậc ≤ 10 phút), hoàn 12. Nghiệm thu deploy: 0 lệch/thiếu/thừa.
+- Không nhúng được trang nền vào LTT: YouTube/Douyin/Instagram/Facebook/X đều chặn iframe (đo 23/09) ⇒ "mở popup kênh"
+  không khả thi; đường đi là tìm kênh NGAY TRONG LTT (`THIET_KE_PHIEN_VA_KENH.md`).
+
+## 2026-09-22 (tối) — app `video_crawler` ("Cào ngay" từ ViralCrawl): 10 nền, tắt sau cờ `LTT_VIDEO_CRAWLER`
+
+Tiếp quản SUPER PROMPT sau hai phiên LTTCODE hỏng (model lỗi 400, ghi thẳng main, parity ✅ bịa, audit donor chết).
+Rà soát từng hạng mục cũ: không hạng mục mã nào đạt; main đã rút bộ khung (f587f497). Làm lại từ đầu trên nhánh
+`phien/video-crawler` — bàn giao + lý do: `C:\Users\Thang Tuong\.claude\ltt\khoi-phuc-2026-09-22\BAN_GIAO_super-prompt.md`.
+
+- **Tài liệu chứng cứ** `docs/migrations/video_crawler/` (audit donor Viral @ 368f8be có tệp:dòng, ma trận nền, bản đồ
+  API LTT, license, tái sử dụng, parity đo được, truy vết, sổ lỗi). Spec v1.1 + plan v2 (`docs/superpowers/`).
+- **License**: MediaCrawler NON-COMMERCIAL ⇒ không chép; yt-dlp là The Unlicense (kết luận "GPL-3.0" cũ sai).
+- **Kiến trúc**: một app, `requires=("api",)` (KHÔNG ffmpeg — prod chỉ 1 làn gpu+ffmpeg); registry nền trong app;
+  adapter mỏng trên `adapters/_ytdlp.py`; URL tải luôn dựng lại từ id bởi adapter (review BLOCKER: form gửi URL playlist
+  ⇒ tải cả playlist giá 1 credit). Lịch sử/dedup dùng `jobs` (⚠ "không trùng" chỉ nhớ 30 ngày — hạn của `jobs.result`).
+- **Phiên đăng nhập theo user**: bảng `vc_phien` (cookie mã hoá `secretbox`, chỉ cookie đúng tên miền), migration
+  `9c3e5a1d7f20`. **Thay đổi platform_core duy nhất**: một hàng `vc_phien` trong `public_api/governance.py` (test_211 buộc).
+- **Nền bật** (smoke mạng thật trên máy A): YouTube, TikTok, Facebook, Twitter, Weibo, bilibili.tv, Xiaohongshu;
+  Bilibili (HTTP 412 ẩn danh), Instagram (login required), Douyin (fresh cookies) bật nhưng CẦN PHIÊN, chưa nghiệm thu
+  với phiên thật. Tắt: RedNote (yt-dlp#16519), Kuaishou, Honggo. Douyin/XHS tìm kiếm + kênh: DEFER (cần client ký request).
+- **Phụ thuộc mới**: `curl_cffi>=0.10,<0.15` (impersonate cho bilibili.tv/Facebook) — venv prod chưa có.
+- **Kiểm**: test nhắm `tests/test_1900..1919_video_crawler_*` + hợp đồng nền tảng; kiểm GUI trên bản dev cô lập với
+  YouTube thật (xem trước → chọn → tải → artifact `video/mp4` → dedup, ảnh bìa qua proxy allowlist, mobile 375 px).
+- **Tồn / chờ chủ dự án**: bật cờ production; nhập cookies.txt để nghiệm thu nền cần phiên; nối Auto Scan Video
+  (CONTRACT GAP — ASV chỉ nhận upload của chính nó); worker `browser` cho QR login; giá 1 credit/video.
+- `test_211::test_a_decade_of_retention…` đỏ khi chạy RIÊNG (có sẵn trước phiên này — fixture `portal`), ngoài phạm vi.
+- **MVP W1–W2** (sau đánh giá chất lượng; plan `docs/migrations/video_crawler/PLAN_MVP.md`, đánh giá `DANH_GIA_MVP.md`;
+  8 làn agent, mỗi làn một worktree, gộp ở `phien/vcm-tich-hop`). Không nối Auto Scan Video (chủ dự án: sau này qua workflow).
+  - Pháp lý: ô cam kết quyền bắt buộc mọi lượt tải, kênh báo vi phạm, trần 60 video/giờ, 300/ngày (`PHAP_LY_NHAP.md` chờ duyệt).
+  - Giá theo thời lượng (1 credit = 100 đ): ≤10 phút 3 · 10–30 phút 6 · 30–60 phút 10 · 60–180 phút 15; giữ 15/mục, quyết toán
+    theo thời lượng thật (`gia.py` một nguồn). Xem trước miễn phí.
+  - Tin cậy: yt-dlp-ejs + node (n-challenge YouTube — thiếu gói ⇒ MỌI lượt tải YouTube 403), nghỉ 5–10 s giữa các MỤC (không
+    `sleep_interval` — nó nghỉ trước mỗi tệp), mã `trich_xuat_hong`.
+  - Sức khoẻ: `/video-crawler/van-hanh` (operator) + tắt mềm nền qua `LTT_VIDEO_CRAWLER_TAT`.
+  - Douyin/XHS tìm kiếm + kênh (a_bogus vendor f2 Apache-2.0, xhshow MIT; rủi ro ToS chủ dự án chấp nhận), Kuaishou client
+    GraphQL (registry tắt tới khi nghiệm thu có phiên). Đăng nhập QR: chỉ thiết kế (`THIET_KE_QR.md`, chờ quyết định).
+  - Dedup bền: bảng `vc_da_tai` (UNIQUE owner/nền/video, giành chỗ trước khi tải; migration `3b7d2f9e1c48`, hàng governance thứ 2)
+    ⇒ hết giới hạn 30 ngày, hai job cùng video chỉ thu một lần.
+  - UX: tốc độ/ETA, tải lại mục lỗi, lọc lịch sử theo nền, hướng dẫn cookies.txt + cảnh báo rủi ro tài khoản.
+  - Hiệu năng: ảnh bìa lưu kho ở bước xem trước (route đọc kho trước, chỉ key đúng chủ/job). Tải song song: KHÔNG làm
+    (tiến độ/dọn giả định một luồng, chỉ bilibili.tv hưởng lợi).
+  - Lỗi lúc gộp (SO_LOI W2-1..4): tải lại video hết hạn mà lỗi làm mất dấu chống trùng; lỗi lộ tên lớp `LoiNguoiGoi:`
+    (app thumbnail/taoclipngan cũng vậy — đã tách việc riêng); câu "30 ngày"/"1 credit" cũ; máy dev thiếu yt-dlp-ejs.
+  - Phụ thuộc mới: `yt-dlp-ejs>=0.8.0,<0.9` (prod yt-dlp 2026.7.4 cần đúng 0.8.0), `xhshow>=0.2.0,<0.3`.
+  - L3 `phien/video-crawler` 41120e46 đã khép PASS. Chủ dự án cấp quyền bật cờ `LTT_VIDEO_CRAWLER` (22/09).
+
+## 2026-09-22 (tối) — Chuẩn hoá ngữ nghĩa lỗi LLM B→A→LTTCODE xong; 9 lỗi 400 = quá dài; cửa sổ công bố theo token thật (L-34, L-35)
+
+Plan `docs/superpowers/plans/2026-09-21-chuan-hoa-ngu-nghia-loi-llm.md` (Codex 21–22/09, Claude tiếp quản
+22/09 chiều). Máy A+B (Task 1–11) đã deploy trước đó (`f587f497`, `e94dd9a2`; runbook
+`docs/ltt_llm_dual/LOI_MODEL_RUNBOOK.md` §7).
+
+- **Task 12 — LTTCODE 0.2.5 phát dev 100 %** (`D:\LTTCODEAPP` `fbf7124`): decoder đọc `ltt_error` v1,
+  canonical → mã Harness trung tính theo registry retry, bỏ "mọi 413 = context" / "400 không body =
+  INVALID_REQUEST", requestId từ server; LTT-3.5 agent con đủ quyền như 3.8 (chủ dự án duyệt).
+- **Nguyên nhân 9 lỗi `LTT 400 : Bad Request`** trong audit 5 phiên 0.2.4: tiền kiểm "quá dài" của A
+  (`KhongMoDuoc(qua_dai=True)`) tính token ƯỚC cận trên, ≈1,31× (max 1,483×) usage thật trên 1 120 lượt;
+  0.2.4 không đọc được thân lỗi nên không nén ⇒ lỗi dây chuyền. Giả thuyết dangling tool_call #4549 bị bác.
+- **L-35 (chủ dự án chốt (b), bỏ biên 0,92):** `ngan_sach.HE_SO_UOC_TREN_THAT = 1.5`; cửa sổ công bố
+  ltt-3.8 171 458→**124 245**, ltt-3.5 209 141→**151 552**; ngưỡng nén 91 477 / 118 784. Trần tiền kiểm
+  và máy B không đổi. Khách đã cài bằng `cam` cần chạy lại `cam` để nhận số mới.
+- **413 vs 400 của `context_window_exceeded`:** đo — công khai là 400 ở cả ba giao thức (test_1480);
+  `http_status=413` nội bộ là status dây bắt chước B (spec §3), không phải bug. Văn bản công khai còn hứa
+  "413" đã sửa (trang hướng dẫn, examples, điều khoản, gợi ý cắm CLI, bản dịch EN).
+- **Gate:** một L3 (47321f95) đỏ 2/34 — cả hai ngoài mã: thư mục rác `apps/video_crawler` chỉ `.pyc` sót
+  từ lúc rút app (dọn bằng `git clean -X` giới hạn thư mục), `test_362` đọc worktree đang được phiên
+  video-crawler tạo dở (chạy lại 74 passed). Khép `gate.py --doi --tu 47321f95` PASS trên `4f4ee8f6`.
+  Bản ghi `test-results/gates` của lượt L3 biến mất khỏi worktree sau khi chạy — chưa rõ tiến trình nào
+  xoá; lượt khép vẫn ghi được.
+- **Deploy máy A** `4f4ee8f6`: 1 092 tệp lệch 0, `/health/ready` 200; Playwright `/huong-dan`: số mới có,
+  số cũ không, 0 lỗi console. Câu sót "Nếu 413…" ở gợi ý cắm CLI sửa `ee522aec`; hoà main (tài liệu máy B VGA) → khép `--doi --tu ee522aec` PASS → deploy lại `ae93e080` (lệch 0, ready 200, Playwright: câu mới có, câu cũ không, 0 lỗi console). Tin báo deploy tới 4/5 phiên bị giữ chờ người dùng bên đó duyệt rồi hết hạn — hợp đồng "báo, không chờ" vẫn đạt nhưng các phiên đó không biết máy A đã khởi động lại.
+- **Còn mở:** chủ dự án cập nhật app lên 0.2.5 → phiên mới `verify_installed` + canary + V-16
+  (`subagent run was cancelled`); Task 13 gỡ legacy chờ một chu kỳ có traffic với legacy=0,
+  mismatch=0; V-14 nháp issue upstream `dsh-tool-search` (nuốt `isError`) chờ chủ dự án gửi.
+
 ## 2026-09-22 (tối) — Máy B: mod VGA (chỉ xung nhớ) + đánh giá HyperQwen; không đổi mã kho
 
 Chủ dự án hỏi vì sao LTTCODE thấy 3.8 ~34 tok/s, 3.5 ~44 tok/s, và muốn mod card an toàn. Phiên này chỉ đụng
@@ -19687,3 +20033,35 @@ làn tích hợp: 31 sửa, 5 lưu trữ. Tổng so với `main`: 39 sửa · 13
   tay; chú thích "chép CẢ CÂY" còn trong mã vận hành (`setup/2-cai-dat.ps1`, `tools/cay_rieng.py`, `tools/ho_so_cay.py`,
   docstring test) — ngoài phạm vi dọn tài liệu; CẦN XEM của làn: `CHATLTT_V3/06_KE_HOACH_P06.md` (features PDF),
   `LTT_VOICE/UPGRADE_98/06_BLOCKERS.md` (`gate.yml`), số test 958/1512 trong `ltt_llm_dual`. Gộp `main` sau lượt kiểm độc lập.
+
+## 2026-09-23 — Diễn tập khôi phục backup: chứng minh bản sao lưu chạy lại được
+
+Nhánh `phien/d1-khoi-phuc` (worktree `D:\LTTSTUDIOSAPP-d1-khoi-phuc`). Câu hỏi:
+backup `D:\LTTBackups` có khôi phục được không — đo thật, không tin tưởng.
+
+**Công cụ mới** (chạy ở CSDL tạm `lttplatform_dienthu_<stamp>`, không đụng live):
+`deploy/windows/dien_tap_khoi_phuc.ps1` + `dien_tap_kiem.py` +
+`tests/test_2200_dien_tap_khoi_phuc.py` (8 test xanh).
+
+**Kết quả đo (bản sao lưu 23/09 02:30, dump 99.373.232 B):**
+- XANH: pg_restore 19,08 s, tổng RTO 24,01 s; 101 bảng, users=35,
+  credit_entries=45.472 (tổng bút toán 70.992), jobs=7.659, api_keys=4 —
+  sổ credit sạch (0 mồ côi, 0 số dư âm).
+- **Alembic lệch 3 migration là CHUẨN, không phải lỗi backup**: migration chỉ
+  áp dụng lúc deploy; dump 02:30 mang `e4a19c07b5d2`, tree đã deploy ở head
+  `5e1a9c46b2d7` (3 migration video-crawler, commit 23/09 00:58). Diễn tập
+  chứng minh: `alembic upgrade head` lên CSDL tạm = 1,37 s, version sau = head.
+  ⇒ **Quy tắc khôi phục thật: sau restore, chạy `alembic upgrade head` từ
+  `C:\LTTPlatform\app` (tree deploy) TRƯỚC khi khởi động dịch vụ** — đã ghi
+  vào runbook.
+- **Đỏ thật (đối chứng âm, dump cắt 2 MB)**: `pg_restore` ĐỎ (rc=1, 'end of
+  file'), `bang_co_dat` 0 bảng (rollback `-1`), alembic 0 version; exit 1.
+- **Bẫy đo lường phát hiện**: pg_restore với dump -Fc bị cắt trả rc=1 (chứ
+  không phải rc=2) → mã xuất đơn thân xanh giả; phép kiểm phải đếm dòng
+  `pg_restore: error:` + chữ 'end of file' trong stderr.
+- Lỗ hổng còn mở: `deploy/windows/restore.ps1` (khôi phục thật) chưa có bước
+  alembic — đã ghi nhận vào runbook, chưa vá script đó (ngoài phạm vi phiên).
+
+**Tài liệu:** `docs/RUNBOOK_KHOI_PHUC.md` (mới) +
+`docs/reports/dien-tap-khoi-phuc-2026-09-23.md` (báo cáo + rủi ro off-site:
+backup nằm cùng máy với dữ liệu, `D:\LTTBackups`).

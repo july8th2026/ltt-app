@@ -508,7 +508,7 @@ def test_3090_ban_thi_35_VAN_phuc_vu():
     than = {"messages": [{"role": "user", "content": "hi"}]}
     r38 = c.post("/v1/chat/completions", json={"model": M38, **than})
     assert r38.status_code == 429, r38.text
-    assert "may B dang ban" in r38.json()["detail"]["ly_do"]
+    assert r38.json()["detail"]["canonical_code"] == "provider_overloaded"
 
     r35 = c.post("/v1/chat/completions", json={"model": M35, **than})
     assert r35.status_code == 200, (

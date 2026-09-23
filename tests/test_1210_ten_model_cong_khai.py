@@ -169,7 +169,7 @@ def test_bo_cai_client_va_vi_du_deu_dung_ten_moi():
 
 # ── B. Bốn cửa từ chối tên cũ, CÙNG một mã lỗi ───────────────────────────────
 
-def _moi_truong_cua(tmp_path, monkeypatch, *, structured=False):
+def _moi_truong_cua(tmp_path, monkeypatch):
     """App thật + khoá API thật trên SQLite sạch. Khuôn của `test_1209`."""
     from platform_core.public_api import keys as devkeys, limits
     from platform_core.public_api.scopes import (SCOPE_JOBS_CREATE,
@@ -218,7 +218,6 @@ def _moi_truong_cua(tmp_path, monkeypatch, *, structured=False):
         "LTT_CONFIG_PATH": str(tmp_path / "config.json"),
         "LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": "text.chat",
         "LTT_PUBLIC_API_RPM": "600",
-        "LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS": "1" if structured else "0",
     })
     return app, token, uid
 
@@ -230,27 +229,6 @@ def cua(tmp_path, monkeypatch):
     from platform_core.public_api import limits
 
     app, token, uid = _moi_truong_cua(tmp_path, monkeypatch)
-    try:
-        with TestClient(app, base_url="https://testserver",
-                        raise_server_exceptions=False) as client:
-            yield client, token, uid
-    finally:
-        from server.api import deps
-        deps.set_principal_resolver(None)
-        limits.reset()
-        import platform_core.db as dbmod
-        dbmod.reset_engine()
-
-
-@pytest.fixture()
-def cua_structured(tmp_path, monkeypatch):
-    from fastapi.testclient import TestClient
-
-    from platform_core.public_api import limits
-
-    app, token, uid = _moi_truong_cua(
-        tmp_path, monkeypatch, structured=True
-    )
     try:
         with TestClient(app, base_url="https://testserver",
                         raise_server_exceptions=False) as client:
@@ -293,12 +271,12 @@ def _h(token, idem=True):
         ),
     ),
 )
-def test_co_structured_ten_model_sai_giu_nghia_o_ba_giao_thuc(
-    cua_structured, duong, than, protocol_code
+def test_ten_model_sai_giu_nghia_o_ba_giao_thuc(
+    cua, duong, than, protocol_code
 ):
     from server.api.inventory import API_V1_PREFIX
 
-    client, token, _uid = cua_structured
+    client, token, _uid = cua
     response = client.post(
         API_V1_PREFIX + duong,
         headers=_h(token, idem=duong == "/chat/completions"),
@@ -310,9 +288,6 @@ def test_co_structured_ten_model_sai_giu_nghia_o_ba_giao_thuc(
     if duong == "/messages":
         extension = body["error"]["ltt_error"]
         assert body["error"]["type"] == protocol_code
-    elif duong == "/responses":
-        extension = body["response"]["error"]["ltt_error"]
-        assert body["response"]["error"]["code"] == protocol_code
     else:
         extension = body["error"]["ltt_error"]
         assert body["error"]["code"] == protocol_code
@@ -339,8 +314,15 @@ def test_cua_dong_bo_tu_choi_ten_cu_bang_model_not_found(cua, cu):
     r = client.post(API_V1_PREFIX + "/chat/completions", headers=_h(token),
                     json={"model": cu, "max_tokens": 64,
                           "messages": [{"role": "user", "content": "xin chao"}]})
-    assert r.status_code == 400, r.text
-    assert r.json()["code"] == "model_not_found", r.text
+    assert r.status_code == 404, r.text
+    assert _ma_ltt(r) == "model_not_found", r.text
+
+
+def _ma_ltt(r) -> str:
+    """`canonical_code` trong `ltt_error` — cùng một chỗ đọc cho mọi giao thức."""
+    body = r.json()
+    error = body.get("error") if isinstance(body.get("error"), dict) else body
+    return str((error.get("ltt_error") or {}).get("canonical_code") or "")
 
 
 @pytest.mark.parametrize("duong", ("/messages", "/responses"))
@@ -360,8 +342,8 @@ def test_cua_mot_cuc_va_stream_tu_choi_ten_cu_bang_model_not_found(cua, duong):
         than = {"model": "ltt_llm", "max_output_tokens": 64, "stream": True,
                 "input": [{"role": "user", "content": "xin chao"}]}
     r = client.post(API_V1_PREFIX + duong, headers=_h(token), json=than)
-    assert r.status_code == 400, r.text
-    assert r.json()["code"] == "model_not_found", r.text
+    assert r.status_code == 404, r.text
+    assert _ma_ltt(r) == "model_not_found", r.text
 
 
 def test_cua_job_tu_choi_ten_cu(cua):
@@ -399,8 +381,7 @@ def test_ten_moi_khong_bi_chan_o_cua_dong_bo(cua):
     r = client.post(API_V1_PREFIX + "/chat/completions", headers=_h(token),
                     json={"model": "ltt-3.8", "max_tokens": 64,
                           "messages": [{"role": "user", "content": "xin chao"}]})
-    ma = r.json().get("code") if r.headers.get(
-        "content-type", "").startswith("application/problem") else ""
+    ma = _ma_ltt(r) or str(r.json().get("code") or "")
     assert ma != "model_not_found", (
         "ten MOI cung bi chan — bon phep kiem tren dang do 'cua tu choi tat ca'")
 

@@ -122,6 +122,13 @@ APP_DUOC_DUNG_APP: dict = {
         ("apps.auto_scan_video.thi_hanh", "chay_theo_job_type"),
     },
 
+    # agent_dong_co chi khai job_type `workflow.dong_co`; handler that van o
+    # apps/agent/jobs.py (xem docstring apps/agent_dong_co/manifest.py) — tach
+    # de apps/agent giu job_types == ("agent.advance",) (test_190).
+    ("agent_dong_co", "agent"): {
+        ("apps.agent.jobs", "handle"),
+    },
+
     # ── Auto Scan Video goi SO DANG KY BO DO cua executor GPU (22/09) ──────
     #
     # ⭐ Chieu NGUOC cua ba canh tren, va co ly do: bo do bang model (whisper,

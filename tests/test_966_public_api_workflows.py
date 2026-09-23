@@ -23,6 +23,7 @@ from fastapi.testclient import TestClient
 
 from platform_core.models import CREDIT_HOLD, CreditEntry, WorkflowRun
 from platform_core.public_api import keys as devkeys
+from platform_core.public_api.errors import CODE_WORKFLOW_RUNS_UNAVAILABLE
 from platform_core.public_api.scopes import (SCOPE_WORKFLOWS_CANCEL,
                                              SCOPE_WORKFLOWS_READ,
                                              SCOPE_WORKFLOWS_RUN)
@@ -32,8 +33,10 @@ PEPPER = "wf-test-pepper-" + "w" * 40
 MOI_SCOPE = (SCOPE_WORKFLOWS_RUN, SCOPE_WORKFLOWS_READ, SCOPE_WORKFLOWS_CANCEL)
 
 
-@pytest.fixture()
-def api(tmp_path, monkeypatch):
+def _dung_app(tmp_path, monkeypatch):
+    """Dựng app + CSDL sạch cho bộ kiểm này. Dùng chung bởi `api` (cổng MỞ, vì
+    mọi bài trong tệp này đo LOGIC THẬT của `/quotes` và `/runs`) và
+    `api_gated` (cổng ĐÓNG — hành vi MẶC ĐỊNH của production hôm nay)."""
     monkeypatch.setenv("LTT_DATABASE_URL",
                        f"sqlite:///{(tmp_path / 'wfapi.db').as_posix()}")
     monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
@@ -47,17 +50,43 @@ def api(tmp_path, monkeypatch):
     Base.metadata.create_all(get_engine())
     from server.app import create_app
 
-    app = create_app(env={
+    return create_app(env={
         "LTT_ENV": "local-server-test", "LTT_SESSION_SECRET": "wf-secret-value",
         "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
         "LTT_CONFIG_PATH": str(tmp_path / "config.json"), "LTT_PUBLIC_API": "1",
     })
+
+
+@pytest.fixture()
+def api(tmp_path, monkeypatch):
+    """Cổng Defect B MỞ. `_chay_workflow_da_mo` mặc định trả `False` — toàn bộ
+    tệp này đo hành vi THẬT của `/quotes` và `/runs` (báo giá, khoá idempotency,
+    khoản giữ, huỷ, ranh giới chủ sở hữu), nên phải lật công tắc trước khi gọi.
+    Đây là nơi DUY NHẤT lật nó cho các bài đã có — `api_gated` bên dưới KHÔNG
+    lật, để đo đúng cái mặc định mà một khách lạ gặp hôm nay."""
+    app = _dung_app(tmp_path, monkeypatch)
+    monkeypatch.setattr("server.api.workflows._chay_workflow_da_mo", lambda: True)
     try:
         with TestClient(app) as client:
             yield client
     finally:
         from server.api import deps
         deps.set_principal_resolver(None)
+        import platform_core.db as dbmod
+        dbmod.reset_engine()
+
+
+@pytest.fixture()
+def api_gated(tmp_path, monkeypatch):
+    """Như `api` nhưng KHÔNG lật công tắc — hành vi MẶC ĐỊNH của production."""
+    app = _dung_app(tmp_path, monkeypatch)
+    try:
+        with TestClient(app) as client:
+            yield client
+    finally:
+        from server.api import deps
+        deps.set_principal_resolver(None)
+        import platform_core.db as dbmod
         dbmod.reset_engine()
 
 
@@ -76,7 +105,15 @@ def _close(gen):
 
 
 def _do_thi(so_node: int = 3) -> dict:
-    return {"nodes": [{"id": f"n{i}", "type": "tool"} for i in range(so_node)],
+    # `schema: ltt.workflow/3` la dau hieu DUY NHAT ma `_ban_publish` (Task 7
+    # fix round 1) doc de chap nhan mot version cho quote/chay — do thi phang
+    # nay khong di qua compiler that, nhung no KHONG phai thu bi tu choi: gia
+    # duoc khai TUONG MINH qua `estimated_max=` o noi goi (`_workflow()` duoi
+    # day), khong phai mot con so con lai tu `params.gia` cua client thoi ky
+    # truoc audit. Do thi "legacy" that (khong co khoa nay) duoc dung rieng o
+    # `test_quote_va_chay_TU_CHOI_version_legacy_chua_bang_gia`.
+    return {"schema": "ltt.workflow/3",
+            "nodes": [{"id": f"n{i}", "type": "tool"} for i in range(so_node)],
             "edges": []}
 
 
@@ -106,8 +143,14 @@ def _workflow(owner_id: str, *, so_node: int = 3, publish: bool = True) -> str:
     try:
         wf = dinh_nghia.tao_workflow(db, owner_id=owner_id, name="w")
         if publish:
+            # Quote (Task 7) đọc `version.estimated_max` đã ĐÓNG BĂNG lúc
+            # publish, không tính lại từ `graph["nodes"]` nữa — đồ thị thẳng
+            # `{"nodes": [...]}` của test này không đi qua registry, nên giá
+            # phải khai tường minh ở đây (10 / node, giữ đúng con số các bài
+            # cũ vẫn ngầm dùng qua `_GIA_MAC_DINH`).
             ver = dinh_nghia.xuat_ban(db, wf.id, _do_thi(so_node),
-                                      created_by=owner_id)
+                                      created_by=owner_id,
+                                      estimated_max=so_node * 10)
             wf.published_version_id = ver.id
         db.commit()
         return wf.id
@@ -146,6 +189,80 @@ def test_bao_gia_tra_HAI_so(api):
     assert b["credit_max"] > 0
     assert 0 < b["credit_estimate"] < b["credit_max"]
     assert b["quote"] and b["workflow_id"] == wf
+
+
+def test_bao_gia_doc_estimated_max_cua_version_xuat_ban_qua_xuat_ban_draft(api):
+    """Task 7: quote không tự tính giá nữa — nó đọc `estimated_max` đã đóng
+    băng lúc `xuat_ban_draft` (biên dịch qua registry + `bao_gia.bao_gia_do_thi`).
+    """
+    from platform_core.models import Workflow
+    from platform_core.workflow import dinh_nghia
+    from platform_core.workflow.cong_cu import CongCu
+
+    cc = {"text.chat": CongCu(ten="text.chat", app_slug="ltt_llm",
+                              job_type="ltt_llm.chat", type_version=1,
+                              params_schema={}, side_effect="external",
+                              idempotency_fields=(), tinh_gia=lambda p: 3)}
+    uid, token = _tai_khoan()
+
+    gen, db = _session()
+    try:
+        wf = dinh_nghia.tao_workflow(db, owner_id=uid, name="w")
+        doc = {"version": 3, "pages": [{"id": "p1", "nodes": [
+            {"id": "a", "type": "tool", "position": {"x": 0, "y": 0},
+             "data": {"tool": "text.chat", "params": {}}}],
+            "edges": []}]}
+        dinh_nghia.luu_draft(db, wf.id, document=doc, revision=0)
+        db.commit()
+        ver = dinh_nghia.xuat_ban_draft(db, wf.id, created_by=uid, cong_cu=cc)
+        db.get(Workflow, wf.id).published_version_id = ver.id
+        db.commit()
+        wf_id, estimated_max = wf.id, ver.estimated_max
+    finally:
+        _close(gen)
+
+    r = _bao_gia(api, token, wf_id)
+    assert r.status_code == 200, r.text
+    assert estimated_max > 0
+    assert r.json()["credit_max"] == estimated_max
+
+
+def test_quote_va_chay_TU_CHOI_version_legacy_chua_bang_gia(api):
+    """Fix round 1 (review Important #2): một version xuất bản TRƯỚC bản sửa
+    này — đồ thị phẳng, không có `schema: "ltt.workflow/3"`, không có
+    `bang_gia`/`gia_tran` — không còn được tin cho quote/chạy dù
+    `estimated_max` của nó có vẻ hợp lệ; con số ấy có thể đến từ
+    `params.gia` của client thời trước audit (đúng lỗ hổng Task 6 đã vá).
+    Cả `/quotes` lẫn `/runs` đều từ chối bằng `quote_invalid` (400), không
+    phải một trần đoán lại và không phải 500."""
+    from platform_core.workflow import dinh_nghia
+
+    uid, token = _tai_khoan()
+    gen, db = _session()
+    try:
+        wf = dinh_nghia.tao_workflow(db, owner_id=uid, name="w-legacy")
+        # Hình dạng CŨ: không `schema`, giá đến thẳng từ `params.gia` của
+        # client (đúng lỗ hổng audit 22/09) — không đi qua `bao_gia_do_thi`.
+        legacy = {"nodes": [{"id": "n0", "type": "tool",
+                             "params": {"gia": 999}}], "edges": []}
+        ver = dinh_nghia.xuat_ban(db, wf.id, legacy, created_by=uid,
+                                  estimated_max=999)
+        wf.published_version_id = ver.id
+        db.commit()
+        wf_id = wf.id
+    finally:
+        _close(gen)
+
+    r = _bao_gia(api, token, wf_id)
+    assert r.status_code == 400, r.text
+    assert r.json()["code"] == "quote_invalid"
+
+    # `_ban_publish` từ chối TRƯỚC khi xác minh quote, nên một chuỗi quote bịa
+    # cũng đủ để chứng minh route `/runs` chặn version này — không cần một
+    # quote thật (không thể có: `/quotes` đã từ chối ở trên).
+    r2 = _chay(api, token, wf_id, quote="khong-quan-trong")
+    assert r2.status_code == 400, r2.text
+    assert r2.json()["code"] == "quote_invalid"
 
 
 def test_bao_gia_cua_workflow_CHUA_PUBLISH_bi_tu_choi(api):
@@ -292,6 +409,31 @@ def test_huy_thi_HOAN_lai_phan_chua_dung(api):
         _close(gen)
 
 
+def test_cung_khoa_idempotency_cho_HAI_workflow_KHAC_tra_409(api):
+    """`ux_workflow_run_idem` khoá theo `(owner_id, idempotency_key)`, KHÔNG
+    theo `workflow_id`. Cùng khoá cho hai workflow khác nhau của cùng chủ phải
+    bị chặn bằng 409 — không lặng lẽ trả run của workflow kia, và không 500."""
+    uid, token = _tai_khoan(credits=500)
+    wf_a = _workflow(uid, so_node=2)
+    wf_b = _workflow(uid, so_node=2)
+    q_a = _bao_gia(api, token, wf_a).json()["quote"]
+    q_b = _bao_gia(api, token, wf_b).json()["quote"]
+    khoa = uuid.uuid4().hex
+
+    a = _chay(api, token, wf_a, q_a, idem=khoa)
+    assert a.status_code == 201, a.text
+
+    b = _chay(api, token, wf_b, q_b, idem=khoa)
+    assert b.status_code == 409, b.text
+    assert b.json()["code"] == "idempotency_conflict"
+
+    gen, db = _session()
+    try:
+        assert db.query(WorkflowRun).count() == 1
+    finally:
+        _close(gen)
+
+
 def test_huy_LAN_HAI_khong_hoan_them(api):
     from platform_core import credit
 
@@ -355,3 +497,53 @@ def test_scope_workflows_run_nam_trong_SPENDING_SCOPES():
 
     assert SCOPE_WORKFLOWS_RUN in scopes.SPENDING_SCOPES
     assert SCOPE_WORKFLOWS_READ not in scopes.SPENDING_SCOPES
+
+
+# ── Defect B: cổng 501 MẶC ĐỊNH (chốt 22/09) ─────────────────────────────────
+#
+# `WF-802` từng sống với `chargeable=True` mà KHÔNG có engine nào chạy run: mọi
+# bài phía trên đo đúng logic của `/quotes` và `/runs` NHƯNG chỉ đo được sau khi
+# `api` đã lật công tắc lên. Ba bài dưới đây đo cái ngược lại — cái một khách
+# lạ THẬT SỰ gặp hôm nay, khi không ai lật gì cả.
+
+def test_MAC_DINH_bao_gia_tra_501_khong_phat_quote(api_gated):
+    """Chưa phát quote token nào — cổng phải đóng TRƯỚC bước ký."""
+    uid, token = _tai_khoan()
+    wf = _workflow(uid, so_node=3)
+
+    r = _bao_gia(api_gated, token, wf)
+    assert r.status_code == 501, r.text
+    assert r.json()["code"] == CODE_WORKFLOW_RUNS_UNAVAILABLE
+
+
+def test_MAC_DINH_chay_tra_501_khong_tao_run_khong_giu_credit(api_gated):
+    """🔴 Đây là bài đắt nhất của cổng: không chỉ mã lỗi đúng, mà phải KHÔNG có
+    `WorkflowRun` mồ côi và KHÔNG có khoản giữ nào — đúng lỗi Defect B đã gây
+    ra khi cổng còn mở mà chưa có engine."""
+    uid, token = _tai_khoan(credits=500)
+    wf = _workflow(uid, so_node=3)
+
+    r = api_gated.post(f"{API_V1_PREFIX}/workflows/{wf}/runs",
+                       json={"quote": "khong-quan-trong-cong-da-dong"},
+                       headers=_auth(token, uuid.uuid4().hex))
+    assert r.status_code == 501, r.text
+    assert r.json()["code"] == CODE_WORKFLOW_RUNS_UNAVAILABLE
+
+    gen, db = _session()
+    try:
+        assert db.query(WorkflowRun).count() == 0
+        assert db.query(CreditEntry).filter_by(kind=CREDIT_HOLD).count() == 0
+    finally:
+        _close(gen)
+
+
+def test_MAC_DINH_cac_cua_DOC_va_HUY_khong_doi(api_gated):
+    """⛔ Vế phủ định của gate: `GET /runs/{id}`, huỷ và artifacts không nằm
+    trong Defect B (không tạo run, không giữ tiền) nên KHÔNG bị 501 — chúng chỉ
+    404 vì run chưa từng tồn tại. Không có bài này, một bản vá chặn CẢ NĂM route
+    cũng làm hai bài trên xanh."""
+    _uid, token = _tai_khoan(credits=500)
+    r = api_gated.get(f"{API_V1_PREFIX}/runs/{uuid.uuid4().hex}",
+                      headers=_auth(token))
+    assert r.status_code == 404
+    assert r.json().get("code") != CODE_WORKFLOW_RUNS_UNAVAILABLE

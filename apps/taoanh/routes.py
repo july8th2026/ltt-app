@@ -14,6 +14,7 @@ from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
 from server.deps import user_hien_tai
 from server.templating import templates
+from platform_core.jobs import loi_cho_khach
 
 router = APIRouter(tags=["image"])
 
@@ -66,7 +67,7 @@ def _jobs_cua_toi(request: Request):
             .order_by(Job.created_at.desc()).limit(12)
         ).scalars().all()
         return [{"id": j.id, "status": j.status, "progress": j.progress,
-                 "progress_msg": j.progress_msg, "error": j.error,
+                 "progress_msg": j.progress_msg, "error": loi_cho_khach(j),
                  "created_at": j.created_at, "finished_at": j.finished_at,
                  "prompt": str((j.params or {}).get("prompt", ""))[:240],
                  "aspect_ratio": str((j.params or {}).get("aspect_ratio", "16:9")),

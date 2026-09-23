@@ -34,6 +34,7 @@ from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
 from server.deps import get_db, is_operator, user_hien_tai
 from server.templating import templates
+from platform_core.jobs import loi_cho_khach
 
 router = APIRouter(tags=["prompt-ai-ommi"])
 _ASSET_CAP = {"image": 20 * 1024 * 1024, "video": 60 * 1024 * 1024,
@@ -150,7 +151,7 @@ def _jobs(db: Session, user_id: str) -> list[dict]:
         Job.user_id == user_id, Job.app_slug == MANIFEST.slug
     ).order_by(Job.created_at.desc()).limit(30)).scalars().all()
     return [{"id": row.id, "status": row.status, "progress": row.progress,
-             "progress_msg": row.progress_msg, "error": row.error,
+             "progress_msg": row.progress_msg, "error": loi_cho_khach(row),
              "operation": str((row.params or {}).get("operation") or "director"),
              "project_id": str((row.params or {}).get("project_id") or ""),
              "created_at": row.created_at.isoformat()} for row in rows]

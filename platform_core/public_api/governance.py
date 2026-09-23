@@ -339,6 +339,14 @@ STORES: tuple = (
           N_("Trần chi khách tự đặt. Chỉ QUAN SÁT, không đổi sổ credit.")),
     Store("app_projects", CONTENT, None, N_("chủ tài khoản"),
           N_("Dự án của các editor có trạng thái. Vòng đời do app quản.")),
+    Store("vc_phien", CONTENT, None, N_("chủ tài khoản"),
+          N_("Cookie đăng nhập nền tảng video khách tự nhập để cào nội dung cần "
+          "đăng nhập, **đã mã hoá**, chỉ giữ cookie của đúng tên miền nền đó. "
+          "Xoá khi khách bấm xoá phiên.")),
+    Store("vc_da_tai", CONTENT, None, N_("chủ tài khoản"),
+          N_("Danh sách video khách đã tải từ nền tảng video (chỉ nền, mã video, "
+          "đường dẫn tệp), để \"cào không trùng\" không tải và thu tiền lại một "
+          "video. Giữ lâu hơn tệp — tệp đi theo lịch sử việc (30 ngày).")),
 
     # Bảng do APP sở hữu. Tất cả là nội dung của khách, vòng đời đi theo app —
     # nền tảng cố ý không đặt hạn cho chúng: app biết khi nào một cảnh, một
@@ -561,6 +569,17 @@ STORES: tuple = (
     Store("foreach_muc", DERIVED, None, N_("chủ tài khoản + vận hành"),
           N_("Kết quả từng phần tử của một vòng ForEach — thứ nói CHÍNH XÁC còn "
              "phải chạy gì sau một lần chết.")),
+    # OPERATIONAL, không phải EVIDENCE: `node_run_snapshot` (ở trên) đã là bằng
+    # chứng bất biến trả lời "vì sao tốn ngần ấy". `workflow_event` chỉ là nhật
+    # ký + outbox cấp RUN (spec Sec5.11) — hữu ích lúc mới, vô giá trị khi cũ.
+    # TTL 90 ngày SAU KHI RUN KẾT SỔ (`ket_so_luc`), không phải sau
+    # `created_at` của chính sự kiện: một run còn sống thì sự kiện đầu tiên của
+    # nó không bao giờ bị dọn dù đã 90 ngày tuổi.
+    Store("workflow_event", OPERATIONAL, 90, N_("chủ tài khoản + vận hành"),
+          N_("Nhật ký cấp run, CHỈ THÊM: WorkflowStarted, WaitpointOpened, "
+             "SupervisorDecision, ... Cùng bảng làm outbox cho trigger `event` "
+             "(spec Sec8.4)."),
+          "su_kien.purge_expired (worker)"),
 )
 
 
@@ -609,6 +628,17 @@ NOT_CUSTOMER_DATA = frozenset({
     # của khách ở đây — nội dung lượt chạy nằm ở `workflow_run`, và bảng đó ĐÃ
     # được xếp loại.
     "wakeup",
+    # Kho tài khoản PHỤ của LTT trên các nền video cần đăng nhập (video_crawler
+    # W4-L9). Không có `user_id` và không có nội dung nào của khách: đây là tài
+    # sản của chính ta, cùng loại với `api_keys` ở trên — cookie trong đó là
+    # cookie của TÀI KHOẢN LTT, đã mã hoá, và nó không trả lời câu hỏi nào về
+    # một khách cụ thể. Quan hệ "lượt của khách nào đi qua tài khoản nào" nằm ở
+    # sự kiện job INTERNAL, và `job_events` đã được xếp loại.
+    #
+    # Không có hạn lưu trữ vì không có dòng nào để hết hạn: admin thêm và gỡ
+    # tài khoản bằng tay trên trang vận hành. Xếp OPERATIONAL sẽ buộc khai một
+    # hàm dọn trỏ vào một hàm không có việc gì làm — đúng thứ `test_211` chặn.
+    "vc_tai_khoan",
     # Model nào đang cư trú trên một nhóm GPU của MÁY TA (D01 B). Cùng loại với
     # `gpu_leases` ở trên: tên nhóm + trạng thái + mốc thời gian, không `user_id`
     # và không nội dung nào của khách.

@@ -1,4 +1,4 @@
-"""May B phat ma loi v1 ma van giu hop dong legacy trong mot chu ky."""
+"""May B phat ma loi v1 — mot hinh dang duy nhat (Task 13 da go khoa legacy)."""
 from __future__ import annotations
 
 import pytest
@@ -52,7 +52,7 @@ def _assert_v1(response, code: str, request_id: str) -> dict:
     return detail
 
 
-def test_413_anh_giu_du_ma_v1_va_legacy_de_rollback_A_doc_duoc():
+def test_413_anh_chi_con_ma_v1_status_day_giu_nguyen():
     client, _ = _client(_cfg(max_images=0))
     response = client.post(
         "/v1/chat/completions",
@@ -63,11 +63,8 @@ def test_413_anh_giu_du_ma_v1_va_legacy_de_rollback_A_doc_duoc():
     detail = _assert_v1(response, "image_count_exceeded", "rid-image-01")
     assert detail["field"] == "images" and detail["limit"] == 0
     assert detail["actual"] == 1
-    assert detail["truong"] == "images" and detail["tran"] == 0
-    assert detail["thay"] == 1 and detail["ly_do"]
-    assert detail["legacy"] == {
-        "ly_do": detail["ly_do"], "truong": "images", "tran": 0, "thay": 1,
-    }
+    for khoa in ("legacy", "ly_do", "truong", "tran", "thay"):
+        assert khoa not in detail, detail
 
 
 def test_B_tu_tao_request_id_khi_client_khong_gui():

@@ -44,11 +44,11 @@ from platform_core.public_api.errors import (THIEU_CREDIT_LOI, ApiError,
                                              invalid_request,
                                              model_not_found,
                                              service_unavailable,
-                                             thieu_credit_chi_tiet,
-                                             tran_bi_vuot)
+                                             thieu_credit_chi_tiet)
 from platform_core.public_api.principal import Principal
 from platform_core.public_api.protocol import SYNC_BILLED_MAX_SECONDS
 from platform_core.public_api.scopes import SCOPE_JOBS_CREATE
+from platform_core.llm.model_failure import model_failure
 from server.api import su_kien_loi
 from server.api.auth import require_scope
 from server.api.context import request_id as api_request_id
@@ -250,10 +250,7 @@ def register_chat_routes(api, config, tag: str) -> None:
         try:
             kiem_ten_model(tool, payload.get("model"))
         except ApiError as exc:
-            if (
-                config.structured_model_errors
-                and exc.code == CODE_MODEL_NOT_FOUND
-            ):
+            if exc.code == CODE_MODEL_NOT_FOUND:
                 return su_kien_loi.render_local_model_failure(
                     "/v1/chat/completions",
                     "model_not_found",
@@ -280,8 +277,7 @@ def register_chat_routes(api, config, tag: str) -> None:
                 # too long" (`su_kien_loi` — một chỗ dựng cho mọi cửa).
                 return su_kien_loi.loi_qua_dai_json(
                     "/v1/chat/completions", token=int(token_vao_uoc), tran=_cap,
-                    request=request,
-                    structured=config.structured_model_errors)
+                    request=request)
 
         # ⛔ SAU 413, khong truoc. Mot tran ra thap den muc chac chan tra ve
         #    RONG cung la mot yeu cau hong, nhung no la hong ve NGAN SACH — con
@@ -316,16 +312,11 @@ def register_chat_routes(api, config, tag: str) -> None:
             #    Trước 2.3 chỗ này nói `invalid_request`, tức khách nhận hai câu
             #    khác nhau cho cùng một sự thật "model này không phục vụ được".
             log.error("ban khai admission thieu model %r: %s", sach["model"], e)
-            if config.structured_model_errors:
-                return su_kien_loi.render_local_model_failure(
-                    "/v1/chat/completions",
-                    "model_not_found",
-                    request_id=api_request_id(request),
-                )
-            raise model_not_found(
-                f"`model` {sach['model']!r} is not served here. Call "
-                f"GET /api/v1/models for the names in service."
-            ) from None
+            return su_kien_loi.render_local_model_failure(
+                "/v1/chat/completions",
+                "model_not_found",
+                request_id=api_request_id(request),
+            )
 
         tran = _tran_max_tokens(token_vao_uoc, executor)
         if sach["max_tokens"] > tran:
@@ -452,8 +443,7 @@ def register_chat_routes(api, config, tag: str) -> None:
                 "/v1/chat/completions", token=e.token,
                 tran=(e.tran if e.tran is not None
                       else int(suc.token_pool if suc else 0)),
-                request=request, failure=e.failure,
-                structured=config.structured_model_errors)
+                request=request, failure=e.failure)
 
         # ── Được nhận ⇒ GIỮ TIỀN (và chỉ từ đây trở đi) ─────────────────────
         try:
@@ -687,18 +677,13 @@ def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
         #
         #    Cong may B da gui san `{truong, tran, thay}`; day la cho dich
         #    chung sang ten cong khai MOT LAN.
-        failure = e.failure
-        if getattr(config, "structured_model_errors", False) and failure is not None:
-            return su_kien_loi.render_model_failure(
-                "/v1/chat/completions",
-                failure,
-                phase="before_headers",
-                stream=False,
-            )
-        raise invalid_request(
-            failure.message if failure is not None else "The request exceeds a model limit.",
-            **tran_bi_vuot(failure.as_detail() if failure is not None else e.chi_tiet),
-        ) from e
+        return su_kien_loi.render_model_failure(
+            "/v1/chat/completions",
+            e.failure or model_failure("invalid_request", http_status=400,
+                                       request_id=request_id),
+            phase="before_headers",
+            stream=False,
+        )
     except YeuCauSaiError as e:
         # 🔴 LOI CUA KHACH, KHONG PHAI CUA MAY. Do duoc 13/09 (L-09): mot anh
         #    hong lam may B tra dung chuan
@@ -715,18 +700,13 @@ def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
         phong_cho.ghi_ket_thuc(waiter_id, "tham_so_sai")
-        if getattr(config, "structured_model_errors", False) and e.failure is not None:
-            return su_kien_loi.render_model_failure(
-                "/v1/chat/completions",
-                e.failure,
-                phase="before_headers",
-                stream=False,
-            )
-        raise invalid_request(
-            e.failure.message
-            if e.failure is not None
-            else "The model rejected this request.",
-        ) from e
+        return su_kien_loi.render_model_failure(
+            "/v1/chat/completions",
+            e.failure or model_failure("invalid_request", http_status=400,
+                                       request_id=request_id),
+            phase="before_headers",
+            stream=False,
+        )
     except HuyError:
         # ⛔ PHAI dung TRUOC nhanh bat-tat-ca ben duoi. `HuyError` co chu y KHONG
         #    ke thua `CongVlmError`, nen no roi thang vao `except Exception` va

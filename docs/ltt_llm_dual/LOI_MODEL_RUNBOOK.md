@@ -159,9 +159,9 @@ Trước khi mở hạng mục LTTCODE, Task 11 phải có đủ ba artifact cù
   sau probe (chủ dự án chốt 22/09/2026) — "đủ mẫu hoặc đủ thời gian";
 - inject/canary trực tiếp qua API A xanh cả ba protocol, không qua LTTCODE.
 
-Bất kỳ invariant nào đỏ thì dừng rollout và giữ cờ
-`LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS=0` (hoặc trả về 0 nếu vừa bật). Không
-được sửa client để che lỗi server.
+Bất kỳ invariant nào đỏ thì dừng rollout. Từ Task 13 không còn cờ
+`LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS` để tắt — đường lui là bản trước
+(§9). Không được sửa client để che lỗi server.
 
 ## 7. Kết quả Task 11 — rollout A+B 22/09/2026
 
@@ -217,3 +217,82 @@ chụp một thời điểm; chết = mô tả hành vi cũ như đang là hiệ
 | `plugins/llm-ltt/src/errors.ts:82,84` | Regex khớp câu chữ (`"The input exceeds the model's context limit"`, `"prompt is too long"`) → `context_window_exceeded`; là mã nguồn (không sửa qua tài liệu), cần làn giữ kho đó xác nhận đây vẫn là fallback tương thích ngược có chủ đích chứ không phải đường chính |
 | `docs/LTTCODE/reports/self-improve/SO_LOI_VAN_HANH.md`, `AUDIT_DOI_SOAT_2026-09-16.md`, `docs/LTTCODE/_superseded/2026-09-17-truoc-build-0.1.5.md`, `docs/LTTCODE/reports/harness-nang-cap/A_H1_H3.md`, `docs/LTTCODE/reports/H11_headless.md` | Có hit `413`/`payload_too_large`/`prompt is too long`; không đọc sâu trong lượt này — liệt kê để làn LTTCODE tự phân loại |
 
+## 9. Gỡ legacy (Task 13)
+
+Chủ dự án cho làm ngay 22/09 (miễn điều kiện "một chu kỳ"): A+B chạy hợp đồng
+v1 từ 22/09, `kiem_hop_dong_loi_llm.py live --minutes 720` = 7 sự kiện,
+legacy 0, mismatch 0, unknown 0.
+
+**Đã gỡ**
+
+| Máy | Gỡ gì | Giữ lại |
+|---|---|---|
+| B | khoá `ly_do`/`truong`/`tran`/`thay`/`legacy` trong `VuotNganSach.as_dict`; `ly_do`/`co_the_dung`/`ma` trong `detail`; khoá anh em `ly_do`/`ma_thuong_nguon`/`ma` ngoài `detail` (499/502/504) | **HTTP status dây y nguyên** (413 ngân sách, 429, 499, 502, 504 — spec §3/§10.9); `model`/`available_models` ở lỗi 404; trường `legacy` của telemetry (luôn `false`) để bảng đo cũ còn đọc |
+| A decoder | `_LEGACY_FIELD_TO_CODE`, nhánh đọc `{truong,tran,thay}`, counter `legacy`; `as_detail()` hết khoá tiếng Việt | thân không có `schema_version=1` + mã đã đăng ký ⇒ `upstream_unknown` |
+| A cửa stream/đồng bộ | boolean `ban`/`qua_dai`/`het_gio` (kwarg + thuộc tính) của `KhongMoDuocLuong`/`KhongMoDuoc`; suy nghĩa từ status (429⇒bận, 504⇒hết giờ, 499⇒huỷ, 400/413/422⇒yêu cầu sai); dò câu parser tool-call | mọi quyết định đọc `failure.*` |
+| A public | cờ `LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS`, renderer cũ (`_MA`, `_loi_openai`, …), `tran_bi_vuot` | renderer có cấu trúc là đường duy nhất, giữ `ltt_error` |
+
+**Bất biến tự nén giữ nguyên** (`tests/test_1480`, `test_1706`): mã quá dài
+(`context_window_exceeded`, `input_tokens_exceeded`) mang câu
+`prompt is too long: N tokens > M maximum` ở cả ba giao thức, trước lẫn sau 200
+(Claude Code); Responses **stream** trước 200 = 200 + đúng một
+`response.failed` với `code=context_length_exceeded` (Codex); Chat/Responses
+không stream = 400 `{"error": {..., "code": "context_length_exceeded"}}` kèm
+`limit_name`/`limit_value`. Thay đổi dây kèm theo: lỗi Responses **trước 200**
+(không phải quá dài) nay là `{"error": {...}}` khuôn OpenAI thay vì vỏ
+`response.failed` (vỏ đó chỉ còn cho SSE sau 200, spec §7).
+
+**Thứ tự deploy bắt buộc: B trước, A sau.** A hiện hành đã đọc v1 trước nên
+không cần khoá legacy của B; ngược lại A mới coi thân thiếu v1 là
+`upstream_unknown`, nên B cũ (còn đường nào chưa phát v1) phải được thay trước.
+
+**Rollback** (ngược thứ tự: A trước, B sau)
+
+- A: chép lại `C:\LTTPlatform\app.previous\` (xem `app.previous\dau_van_tay.json`
+  trước deploy, `docs/16_CAP_NHAT_VA_DEPLOY.md` §3). Bản trước còn cờ, nhưng
+  production đang đặt `LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS=1` nên hành vi
+  public không đổi.
+- B: `llm_gateway/deploy/deploy.ps1` chụp `H:/LTT_LLM/releases/auto-<giờ>` ở
+  bước 1b trước khi chép; lùi = `xcopy /E /I /Y` bản chụp đó về
+  `H:\LTT_LLM\gateway` rồi `Restart-Service LTTLlmGateway`.
+
+⚠️ **Bẫy đo (23/09):** `inject --base-url` nhận GỐC, công cụ tự thêm `/v1/...`.
+Truyền `https://app.lttstudios.com/api/v1` ⇒ URL thành `/api/v1/v1/messages` ⇒ 404
+route-không-tồn-tại, **trùng đúng status kỳ vọng** nên report chỉ đỏ ở `canonical`
+rỗng và dễ bị đọc nhầm thành "A mất `ltt_error`". Đúng: `--base-url
+https://app.lttstudios.com/api`. Đối chứng nhanh: gọi thẳng một request và xem thân
+có `ltt_error` không.
+
+Sau deploy: `python tools/kiem_hop_dong_loi_llm.py fixture` PASS và
+`live --minutes 60` phải giữ mismatch 0; `unknown` tăng ⇒ có đường B chưa phát
+v1 — lùi A trước.
+
+## 10. Model không chạy — hỏi cửa nào (N-05)
+
+**🔴 `/live` KHÔNG trả lời được câu "model có chạy được không".** `/live` của
+cổng LLM máy B chỉ xác nhận tiến trình còn sống — nó xanh suốt sự cố 23/08
+(CUDA hỏng) và suốt cả ca một card GPU rụng khỏi bus PCIe, vì tiến trình gateway
+vẫn đứng, cổng vẫn mở, ping vẫn thông. Hỏi `/live` rồi kết luận "model chạy
+được" là suy diễn sai chỗ — đúng lỗi đã xảy ra 23/09/2026 lúc 16:20: hai card
+rụng (lỏng dây PSU), phiên chẩn đoán gọi `/live` (200), kết luận nhầm là "đóng
+khách tránh suất", mất khoảng 40 phút mới lần ra nguyên nhân thật.
+
+**Cửa phải hỏi:** `/health/ready` của **cổng máy B** (`http://192.168.2.66:8299/health/ready`),
+**không phải** `/live` của máy A hay của chính máy B. `/health/ready` đã kiểm
+`GPU.thay_du_hai_card()` từ trước và trả 503 `{"ok": false, "ly_do": "thieu_card"}`
+đúng lúc card rụng — chỉ là trước 23/09 không ai canh cửa đó.
+
+```powershell
+python tools\canh_cong_may_b.py
+```
+
+In JSON một dòng: `{"ok": true, "http": 200, "ly_do": ""}` khi sẵn sàng;
+`{"ok": false, "http": 503, "ly_do": "thieu_card"}` khi thiếu card; hoặc
+`{"ok": false, "http": 0, "ly_do": "khong_noi_duoc: ..."}` khi không nối được
+tới máy B. Mã thoát là `0` (sẵn sàng) hoặc `1` (báo động) — cắm được vào lịch
+theo dõi. Công cụ chỉ đọc qua HTTP, không khởi động lại dịch vụ nào, không sửa
+`/live`, không thêm trường nào vào `llm_gateway/api.py` (tệp đó cấm thêm bất cứ
+thứ gì — mọi trường thêm vào là một thứ rò ra cho người chưa xác thực).
+
+⛔ Việc cắm `tools\canh_cong_may_b.py` vào Task Scheduler chạy định kỳ là một
+quyết định/task riêng của chủ dự án — không tự tạo task hệ thống ở đây.

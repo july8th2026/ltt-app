@@ -364,17 +364,29 @@ class CongVlm:
                 "max_output_tokens_exceeded",
                 "context_window_exceeded",
             }
-            if failure.is_busy or (ma == 429 and code == "upstream_unknown"):
+            # Chỉ mã có cấu trúc quyết định NGỮ NGHĨA (Task 13): status HTTP
+            # không sinh `canonical_code` — mã lạ fail-closed `upstream_unknown`.
+            #
+            # ⛔ NHƯNG status 4xx vẫn quyết định CHÍNH SÁCH, và đó là hai việc
+            #    khác nhau (L-09, `tests/test_1244`): một phản hồi 4xx chứng minh
+            #    YÊU CẦU sai, nó không chứng minh khoá/endpoint hỏng. Thiếu nhánh
+            #    dưới thì mã lạ + 400 rơi vào `upstream_unknown`, mà mã ấy nằm
+            #    trong `penalizes_key` ⇒ `danh_dau_loi` đếm lỗi khoá ⇒ năm ảnh
+            #    hỏng của một khách tắt model nhà (thảm hoạ D-005, cửa thứ tư).
+            #    Ngữ nghĩa vẫn là `upstream_unknown`; chỉ LỚP lỗi đổi.
+            if failure.is_busy:
                 raise BanError(failure.message, failure.retry_after_s, detail, failure=failure)
-            if failure.is_cancelled or ma == MA_HUY:
+            if failure.is_cancelled:
                 raise HuyError(failure.message, detail, failure=failure)
-            if failure.is_timeout or (ma == 504 and code == "upstream_unknown"):
+            if failure.is_timeout:
                 raise AmbiguousProviderError(failure.message, ma=ma, failure=failure)
             if code == "provider_oom":
                 raise ProviderOomError(failure.message, ma=ma, failure=failure)
             if code in budget_codes:
                 raise VuotNganSachError(failure.message, detail, failure=failure)
-            if code in {"invalid_request", "unsupported_parameter"} or ma in {400, 413, 422}:
+            if code in {"invalid_request", "unsupported_parameter"}:
+                raise YeuCauSaiError(failure.message, ma=ma, failure=failure)
+            if 400 <= int(ma) < 500 and code not in {"unauthorized", "forbidden"}:
                 raise YeuCauSaiError(failure.message, ma=ma, failure=failure)
             raise CongVlmError(failure.message, ma=ma, failure=failure)
 

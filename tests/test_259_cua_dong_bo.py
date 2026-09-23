@@ -487,14 +487,12 @@ def test_yeu_cau_sai_giu_ma_typed_khong_lo_prose_va_HOAN_DU(api, monkeypatch):
     assert r.status_code == 400, r.text
     assert failure.message in r.text
     assert "RAW_PROVIDER_PROSE" not in r.text
-    assert '"ltt_error"' not in r.text
+    # Task 13: renderer có cấu trúc là đường duy nhất — luôn có `ltt_error`.
+    assert '"ltt_error"' in r.text
     assert _so_du(user_id) == truoc, "yeu cau sai ma van giu tien cua khach"
 
 
-@pytest.mark.parametrize(
-    "api", [{"LTT_PUBLIC_API_STRUCTURED_MODEL_ERRORS": "1"}], indirect=True
-)
-def test_bat_co_tra_ltt_error_ma_khong_doi_nghia_hay_lo_prose(api, monkeypatch):
+def test_tra_ltt_error_ma_khong_doi_nghia_hay_lo_prose(api, monkeypatch):
     from platform_core.llm.cong_vlm import YeuCauSaiError
     from platform_core.llm.model_failure import model_failure
 
@@ -722,7 +720,9 @@ def test_id_noi_bo_KHONG_goi_duoc_qua_cua_nay(api, monkeypatch):
     goi = _dat_model(monkeypatch)
     _user_id, token = _account()
     r = api.post(DUONG, json=_than(model="qwen38-api"), headers=_h(token))
-    assert r.status_code == 400
+    # `model_not_found` = 404 theo registry (`llm_gateway/error_contract.py`).
+    assert r.status_code == 404
+    assert r.json()["error"]["ltt_error"]["canonical_code"] == "model_not_found"
     assert goi == []
 
 

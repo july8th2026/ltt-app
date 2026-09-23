@@ -24,10 +24,17 @@ là CSDL vứt đi trước khi chạm, chứ không phải "cẩn thận":
 
     1. ten CSDL PHAI chua "test"       — production khong tinh co mang chu do
     2. ten CSDL PHAI KHAC ten dang chay — kiem theo TEN, khong theo chuoi URL
-    3. chi CREATE DATABASE moi          — khong bao gio DROP DATABASE
+    3. chi DROP DATABASE qua `pg_ten_cay.cau_xoa_csdl_test` — ten TINH LAI tu
+       (ten dang chay, HAU_TO, cay nay), khong nhan tu ngoai; khong FORCE
 
 ⚠️ Rào 2 kiểm **tên**, không so cả URL: `tests/pg_scratch.py` ghi rõ phép so URL
    từng bắn nhầm đúng vào tình huống nó sinh ra để bảo vệ.
+
+🔴 Rào 3 cũ là *"không bao giờ DROP DATABASE"*. Đo 23/09/2026: mỗi worktree để
+   lại CSDL nháp, worktree bị gỡ thì CSDL mồ côi — 132 CSDL, 44.651 tệp, và
+   PostgreSQL fsync từng tệp sau mỗi lần máy sập (~4,5 phút, `pg_ctl` quá hạn,
+   dịch vụ báo Stopped). Giờ công cụ xoá CSDL nháp của CHÍNH cây nó ở cuối lượt
+   (`--giu` thì giữ); còn sót thì `tools/don_csdl_test.py`.
 """
 from __future__ import annotations
 
@@ -151,10 +158,29 @@ def _tao_neu_thieu(url: str, ten: str, live: str) -> None:
         e.dispose()
 
 
+def _xoa_csdl_nhap(live: str, ten_dang_chay: str) -> None:
+    """Xoá CSDL nháp của CHÍNH cây này. Hỏng thì nói, không làm đổi kết luận."""
+    import sqlalchemy as sa
+    from pg_ten_cay import cau_xoa_csdl_test
+
+    cau = cau_xoa_csdl_test(ten_dang_chay, HAU_TO, GOC)
+    e = sa.create_engine(_url_nhap(live, "postgres"), isolation_level="AUTOCOMMIT",
+                         connect_args={"connect_timeout": 5})
+    try:
+        with e.connect() as c:
+            c.execute(sa.text(cau))
+        print("  (da xoa CSDL nhap - dung `--giu` neu muon giu lai)")
+    except Exception as loi:                                # noqa: BLE001
+        print(f"  !! khong xoa duoc CSDL nhap ({type(loi).__name__}) - "
+              "`python tools/don_csdl_test.py` se liet ke no")
+    finally:
+        e.dispose()
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--giu", action="store_true",
-                    help="giu lai bang sau khi chay (mac dinh: don sach)")
+                    help="giu lai CSDL nhap sau khi chay (mac dinh: xoa)")
     args = ap.parse_args()
 
     live = (os.environ.get("LTT_DATABASE_URL") or "").strip() or _doc_env(
@@ -178,16 +204,34 @@ def main() -> int:
     print(f"CSDL nhap      : {ten}")
     _tao_neu_thieu(url, ten, live)
 
+    try:
+        return _do(url)
+    finally:
+        if not args.giu:
+            _xoa_csdl_nhap(live, ten_dang_chay)
+
+
+def _do(url: str) -> int:
+    """Than phep do. Engine dong truoc khi `main` xoa CSDL nhap (DROP khong FORCE)."""
+    import sqlalchemy as sa
+
+    e = sa.create_engine(url)
+    try:
+        return _do_tren(e, url)
+    finally:
+        e.dispose()
+
+
+def _do_tren(e, url: str) -> int:
     import sqlalchemy as sa
     from alembic import command
     from alembic.config import Config
 
+    import platform_core.db as dbmod                        # noqa: E402
+    import platform_core.models                             # noqa: F401,E402
     # Don sach truoc khi chay: mot luot cu con sot bang se lam
     # `alembic upgrade` do vi "da ton tai", va do la mot cai do KHONG noi gi ve
     # migration.
-    e = sa.create_engine(url)
-    import platform_core.db as dbmod                        # noqa: E402
-    import platform_core.models                             # noqa: F401,E402
     dbmod.Base.metadata.drop_all(e)
     with e.connect() as c:
         c.execute(sa.text("DROP TABLE IF EXISTS alembic_version"))
@@ -224,14 +268,6 @@ def main() -> int:
         bo_phan += 1
         print(f"    {ten_idx}")
     print(f"    tong: {bo_phan} chi muc bo phan")
-
-    if not args.giu:
-        dbmod.Base.metadata.drop_all(e)
-        with e.connect() as c:
-            c.execute(sa.text("DROP TABLE IF EXISTS alembic_version"))
-            c.commit()
-        print("\n  (da don sach - dung `--giu` neu muon giu lai)")
-    e.dispose()
 
     xau = bool(thieu)
     print("\nRESULT: " + ("FAIL" if xau else "PASS"))

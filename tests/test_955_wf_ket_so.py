@@ -57,7 +57,7 @@ def run(db):
 def _toi_ket_thuc(db, run, trang_thai="SUCCEEDED"):
     from platform_core.workflow import may_trang_thai
 
-    for sang in ("VALIDATING", "QUEUED", "RUNNING", trang_thai):
+    for sang in ("QUEUED", "RUNNING", trang_thai):
         may_trang_thai.chuyen_run(db, run.id, sang=sang)
 
 
@@ -77,7 +77,7 @@ def test_ket_so_chay_khi_run_sang_trang_thai_KET_THUC(db, run):
 def test_ket_so_KHONG_chay_khi_run_chua_ket_thuc(db, run):
     from platform_core.workflow import ket_so, may_trang_thai
 
-    for sang in ("VALIDATING", "QUEUED", "RUNNING"):
+    for sang in ("QUEUED", "RUNNING"):
         may_trang_thai.chuyen_run(db, run.id, sang=sang)
     db.commit()
     db.refresh(run)

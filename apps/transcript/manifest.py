@@ -20,14 +20,15 @@ from __future__ import annotations
 from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
-#: Giá tạm cho V1. App chưa mở cho khách (`public=False`), nên con số này chưa
-#: chạm sổ của ai. Phải đo lại theo thời lượng audio trước khi mở cổng.
-#:
-#: ⚠️ Đừng biến nó thành một hằng số "đã cân nhắc": nó là một chỗ giữ chỗ, và
-#:    memory *sàn làm tròn là một tầng khác với bảng giá* nói rõ chuyện gì xảy
-#:    ra khi một con số tạm được coi là giá thật.
+from .gia import uoc_luong_credit
+from .services.he import HE, MAC_DINH
+
+
+#: Giá theo phút audio (`gia.py`, chủ dự án chốt 22/09/2026). `duration_s` do
+#: MÁY CHỦ đo (route web trước khi gửi; API qua `measured_from`), không phải số
+#: người gọi khai. Worker đo lại và quyết toán `min(giá thật, đã giữ)` — Q84.
 def _gia(params: dict) -> int:
-    return 1
+    return uoc_luong_credit((params or {}).get("duration_s"))
 
 
 MANIFEST = AppManifest(
@@ -52,11 +53,12 @@ MANIFEST = AppManifest(
     cho_tai_nguyen_s={"transcript.run": 20},
     credit_cost=_gia,
 
-    # Chưa mở cho khách: parity chưa đóng.
+    # Mở cho khách 22/09/2026 (chủ dự án): quy tắc đã đối soát với bot_transcript
+    # (khớp tuyệt đối trên EN 98/98 đoạn), E2E trên app.lttstudios.com.
     enabled=True,
-    public=False,
+    public=True,
     surface="customer",
-    lifecycle="development",
+    lifecycle="released",
     capabilities=("audio",),
 
     tools=(ToolSpec(
@@ -66,9 +68,15 @@ MANIFEST = AppManifest(
         params_schema={
             "audio": {"type": "audio", "required": True},
             "language": {"type": "string", "required": False, "max_length": 8},
-            "min_s": {"type": "number", "min": 0.5, "max": 30.0, "default": 3.0},
+            # 1.5 = segment.min_s cua cau hinh legacy DANG CHAY (khong phai 3.0).
+            "min_s": {"type": "number", "min": 0.5, "max": 30.0, "default": 1.5},
             "max_s": {"type": "number", "min": 1.0, "max": 60.0, "default": 6.0},
             "include_silence": {"type": "bool", "default": True},
+            # He phien am (services/he.py) — them he = them mot muc o do.
+            "he": {"type": "enum", "values": list(HE), "default": MAC_DINH},
+            # Máy chủ đo từ chính tệp đã tải lên; số người gọi khai không chạm
+            # vào giá (Q84, H35.10a — cùng khuôn `apps/autosubvideo`).
+            "duration_s": {"type": "number", "min": 0, "measured_from": "audio"},
         },
         returns={"transcript": "json"},
 
@@ -91,18 +99,66 @@ MANIFEST = AppManifest(
         # ⚠️ `customer_visible=False` KHONG go nang luc: `discover_tools()` van
         #    thay, `runtime_noi_bo.bao_gia()` van tra duoc gia, va workflow da
         #    dung no van chay. Cung khuon `apps/chatltt` da dung.
-        customer_visible=False,
+        # Mở 22/09/2026 sau đối soát quy tắc legacy + E2E (xem docstring đầu tệp).
+        customer_visible=True,
         side_effect="external",
         # Cung mot audio + cung hai tran do dai => cung mot dong thoi gian.
         # `language` KHONG nam trong khoa: de trong nghia la tu do, va hai lan
         # tu do tren cung tep cho cung ket qua.
-        idempotency={"key_fields": ("audio", "min_s", "max_s")},
+        # `he` doi model STT => ket qua khac: phai nam trong khoa.
+        idempotency={"key_fields": ("audio", "min_s", "max_s", "he")},
         resource={"class": "gpu", "vram_min_mb": 5000, "slots": 1,
                   "est_duration_s": 120},
         admission_resource="gpu_stt",
         admission_slots=1,
 
-        # Ba cong deu dong o V1 — xem docstring dau tep.
-        api_exposed=False,
+        # ── Public API (mở 22/09/2026) ──────────────────────────────────────
+        # Giá đo từ tệp (`duration_s` + `measured_from`) nên báo giá máy-gọi-máy
+        # giữ được lời hứa Q84. Cổng thứ ba là `LTT_PUBLIC_API_TOOLS` trên
+        # production (`setup/cong_tac_tool_api.ps1 -Tool transcript.run -Bat`).
+        api_exposed=True,
+        api_contract={
+            "scopes": ("jobs:create",),
+            "description": ("Transcribe an audio file into a timeline of "
+                            "speech and silence segments with start and end "
+                            "times, in Vietnamese or English. Costs 2 credits "
+                            "per started minute of audio (minimum 1). The "
+                            "duration is measured from the file you upload, "
+                            "not from anything you send."),
+            "hidden": ("duration_s",),
+            "params": {
+                "audio": {
+                    "description": ("The audio to transcribe, given as the id "
+                                    "of an upload you confirmed or of an "
+                                    "artifact from an earlier job."),
+                    "example": "upl_from_POST_/api/v1/uploads",
+                },
+                "language": {
+                    "description": ("`vi` or `en`. Leave empty to detect the "
+                                    "language automatically."),
+                    "example": "vi",
+                },
+                "min_s": {
+                    "description": ("Shortest speech segment you want, in "
+                                    "seconds. Segments are cut at sentence "
+                                    "ends and pauses."),
+                    "example": 1.5,
+                },
+                "max_s": {
+                    "description": "Longest speech segment you want, in seconds.",
+                    "example": 6.0,
+                },
+                "include_silence": {
+                    "description": ("Keep pauses as separate `silence` "
+                                    "segments in the timeline."),
+                    "example": True,
+                },
+                "he": {
+                    "description": ("Transcription engine. `ltt` is the "
+                                    "standard engine and the default."),
+                    "example": "ltt",
+                },
+            },
+        },
     ),),
 )

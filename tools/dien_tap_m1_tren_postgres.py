@@ -28,6 +28,11 @@ CSDL production ten `lttplatform`, dang giu **so credit that**. Cong cu nay goi
 
 ⇒ Duong ghi va duong doc la HAI ket noi khac nhau toi HAI CSDL khac nhau.
   Production khong bao gio nam tren duong ghi.
+
+🔴 23/09/2026: CSDL nhap cua moi cay tung KHONG bao gio bi xoa -> worktree go
+   di la CSDL mo coi (132 CSDL, PostgreSQL fsync 44.651 tep sau moi lan sap).
+   Gio cuoi luot xoa CSDL nhap cua CHINH cay nay qua
+   `pg_ten_cay.cau_xoa_csdl_test` (ten tinh lai, khong FORCE); `--giu` thi giu.
 """
 from __future__ import annotations
 
@@ -120,9 +125,28 @@ def _tao_neu_thieu(d2, url: str, ten: str) -> None:
         e.dispose()
 
 
+def _xoa_csdl_nhap(d2, ten_dang_chay: str) -> None:
+    """Xoa CSDL nhap cua CHINH cay nay. Hong thi noi, khong doi ket luan."""
+    import sqlalchemy as sa
+    from pg_ten_cay import cau_xoa_csdl_test
+
+    cau = cau_xoa_csdl_test(ten_dang_chay, HAU_TO, GOC)
+    e = sa.create_engine(_url_nhap(d2, "postgres"), isolation_level="AUTOCOMMIT",
+                         connect_args={"connect_timeout": 5})
+    try:
+        with e.connect() as c:
+            c.execute(sa.text(cau))
+        print("  (da xoa CSDL nhap - dung `--giu` neu muon giu lai)")
+    except Exception as loi:                                # noqa: BLE001
+        print(f"  !! khong xoa duoc CSDL nhap ({type(loi).__name__}) - "
+              "`python tools/don_csdl_test.py` se liet ke no")
+    finally:
+        e.dispose()
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--giu", action="store_true", help="giu lai bang sau khi chay")
+    ap.add_argument("--giu", action="store_true", help="giu lai CSDL nhap sau khi chay")
     args = ap.parse_args()
 
     d2 = _nap_d2()
@@ -148,11 +172,25 @@ def main() -> int:
     print(f"CSDL nhap      : {ten}")
     _tao_neu_thieu(d2, url, ten)
 
-    import sqlalchemy as sa
+    try:
+        return _dien_tap(url, ban_ghi)
+    finally:
+        if not args.giu:
+            _xoa_csdl_nhap(d2, ten_dang_chay)
 
+
+def _dien_tap(url: str, ban_ghi: list[dict]) -> int:
+    """Than dien tap. Engine dong (`reset_engine`) truoc khi `main` xoa CSDL nhap."""
     os.environ["LTT_DATABASE_URL"] = url
     import platform_core.db as dbmod
     dbmod.reset_engine()
+    try:
+        return _dien_tap_tren(dbmod, ban_ghi)
+    finally:
+        dbmod.reset_engine()
+
+
+def _dien_tap_tren(dbmod, ban_ghi: list[dict]) -> int:
     import platform_core.models as M
 
     e = dbmod.get_engine()
@@ -196,13 +234,6 @@ def main() -> int:
     print(f"[gia tri  ] canh mang cong KHONG mac dinh duoc giu: {giu}")
 
     db.close()
-    if not args.giu:
-        dbmod.Base.metadata.drop_all(e)
-        with e.connect() as c:
-            c.execute(sa.text("DROP TABLE IF EXISTS alembic_version"))
-            c.commit()
-        print("\n  (da don sach - dung `--giu` neu muon giu lai)")
-    dbmod.reset_engine()
 
     xau = (tao_sau_chay_thu != 0
            or cong != that["tong"]

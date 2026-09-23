@@ -157,6 +157,7 @@ Mỗi mã trả lời đúng một câu hỏi: **thử lại có ích không, v�
 | `rate_limited` | 429 | `after_delay` | yes | Wait for `Retry-After` seconds, then retry with the same Idempotency-Key if the call was chargeable. |
 | `request_cancelled` | 499 | `never` | no | none |
 | `internal_error` | 500 | `after_delay` | yes | Retry with backoff and the same Idempotency-Key. Quote the X-Correlation-ID if it persists. |
+| `workflow_runs_unavailable` | 501 | `never` | no | This platform does not execute workflow runs yet — the feature is gated until the Workflow V2 engine is wired up. Do not retry; watch the changelog for the flip. |
 | `empty_response` | 502 | `ambiguous` | no | report_request_id |
 | `malformed_upstream_response` | 502 | `ambiguous` | no | report_request_id |
 | `stream_truncated` | 502 | `ambiguous` | no | report_request_id |

@@ -275,7 +275,16 @@ def main() -> int:
                     "uq_nexus_enrollments_digest",
                     # Mat rang buoc nay = mot ve phien dung lai duoc, va "ve
                     # dung mot lan" chi con la mot cau trong tai lieu.
-                    "uq_nexus_sessions_ticket"):
+                    "uq_nexus_sessions_ticket",
+                    # video_crawler. Mat rang buoc nay = hai phien cung (khach, nen)
+                    # va worker nap nham phien; mat uq_vc_da_tai = hai job cung
+                    # tai VA cung thu tien mot video cua mot khach (dedup ben).
+                    "uq_vc_phien_owner_nen",
+                    "uq_vc_da_tai_owner_nen_video",
+                    # Mat rang buoc nay = hai dong cung mot tai khoan kho
+                    # (cung nen, cung nhan) va viec "tam nghi tai khoan nay"
+                    # khong con tro ve mot dong duy nhat.
+                    "uq_vc_tai_khoan_nen_nhan"):
             co = _psql(args.pg_bin, args.host, args.port, dst,
                        "SELECT count(*) FROM information_schema.table_constraints "
                        f"WHERE constraint_name='{ten}';", atq=True).strip()

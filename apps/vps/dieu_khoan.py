@@ -204,6 +204,13 @@ def NOI_DUNG() -> list[dict]:
                    "mức thì tốc độ bị giảm còn <strong>%(toc)s MB/giây</strong> "
                    "cho tới hết chu kỳ. Chúng tôi <strong>không tính thêm "
                    "tiền</strong> và không cắt mạng của bạn.") % {"toc": TOC_KHI_HAM_MB},
+                _t("Đường truyền ra Internet là <strong>tài nguyên dùng "
+                   "chung</strong> giữa mọi máy. Khi tổng lưu lượng của toàn "
+                   "nền tảng chạm ngưỡng an toàn, máy đang dùng "
+                   "<strong>nhiều nhất</strong> có thể bị giảm tốc "
+                   "<strong>trước</strong> khi chạm hạn mức riêng của chính "
+                   "máy đó — để giữ đường truyền chung không bị nhà cung cấp "
+                   "hãm tốc cho tất cả."),
             ]),
         ]},
         {"so": "6", "tieu_de": _t("Ảnh chụp — không phải bản sao lưu"), "khoi": [

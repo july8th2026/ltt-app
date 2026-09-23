@@ -23,13 +23,16 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 from itsdangerous import URLSafeTimedSerializer
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from apps.agent.manifest import MANIFEST
 from platform_core import jobs as job_queue
 from platform_core.agent import budget, runs, workflows
 from platform_core.agent.tools import resolve_params_schema
-from platform_core.models import APP_PROJECT_ACTIVE, AgentWorkflow, AgentWorkflowShare, AppProject
+from platform_core.models import (APP_PROJECT_ACTIVE, AgentWorkflow,
+                                  AgentWorkflowShare, AppProject, Workflow,
+                                  WorkflowDraft)
 from platform_core.agent.validator import validate_plan
 from platform_core.models import AgentRun, Job
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
@@ -93,6 +96,48 @@ def _user(request: Request):
     if user is None:
         raise HTTPException(status_code=403, detail=_t('Cần tài khoản người dùng.'))
     return user
+
+
+def _chan_neu_dang_nang_cap_v3(db: Session, workflow_id: str, user_id: str) -> None:
+    """Chặn khởi động việc trên đường v2 khi CHỦ workflow này đã có `WorkflowDraft`.
+
+    🔴 VÌ SAO CÓ HÀM NÀY (Defect A, 22/09). Canvas lưu qua `/agent/api/v3/...`
+       (bảng `workflow`/`workflow_draft`) kể từ `c0db75dd`, nhưng "Chạy" →
+       "Kiểm tra chi phí" (`workflow_validate`) và tạo run
+       (`workflow_create_run`) vẫn đọc bảng v2 `agent_workflows` qua
+       `workflows.get_owned`. Hai hình dạng lỗi khác nhau tuỳ `workflow_id`:
+
+           chỉ có ở v3 (workflow mới)   -> `get_owned` 404 "Không tìm thấy
+                                            workflow." dù workflow có THẬT
+           có ở CẢ HAI (đã di trú qua
+           `di_tru_m1.py`, cùng id)     -> `get_owned` tìm thấy hàng v2 và
+                                            CHẠY ĐƯỢC — nhưng nội dung v2 đó có
+                                            thể đã CŨ so với draft v3 người
+                                            dùng đang sửa trên Canvas.
+
+    ⭐ Chốt của chủ dự án (22/09): chặn gọn ở đường v2 bằng một thông điệp rõ,
+       chờ Workflow V2 engine (`phien/wf-v2`) thay thế cả hai đường.
+
+    ⛔ GỌI TRƯỚC `workflows.get_owned`: một workflow chỉ tồn tại ở v3 phải nhận
+       503 rõ ràng thay vì 404 "không tìm thấy" như thể nó chưa từng có.
+
+    ⚠️ NHƯNG vẫn phải LỌC THEO CHỦ ngay tại đây, không được hoãn việc đó cho
+       `get_owned` phía sau: `WorkflowDraft` khoá theo `workflow_id`, không
+       mang `owner_id`, nên tra thẳng bảng đó cho MỌI người gọi sẽ làm lộ
+       "id này có tồn tại (đang di trú)" cho một người lạ dò `workflow_id` của
+       người khác — đúng thứ luật *"không tìm thấy" và "của người khác" phải
+       cùng một 404* ở khắp `apps/agent/routes/` được viết để chặn. Nên ở đây
+       tra qua bảng `Workflow` (v3) đã lọc `owner_id == user_id` trước, rồi
+       mới hỏi draft của đúng hàng đó — một người lạ luôn nhận `wf is None`,
+       rơi thẳng xuống `get_owned` để nhận đúng 404 như trước giờ.
+    """
+    wf = db.execute(
+        select(Workflow).where(Workflow.id == str(workflow_id or ""),
+                               Workflow.owner_id == user_id)).scalars().first()
+    if wf is not None and db.get(WorkflowDraft, wf.id) is not None:
+        raise HTTPException(status_code=503, detail=_t(
+            'Chạy workflow trên Canvas đang được nâng cấp sang runtime mới. '
+            'Bản nháp của bạn vẫn được lưu an toàn.'))
 
 
 def _owned(db: Session, request: Request, run_id: str) -> tuple[object, AgentRun]:

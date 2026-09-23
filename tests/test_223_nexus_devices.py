@@ -345,14 +345,16 @@ def test_do_thi_migration_chi_co_MOT_head():
     from pathlib import Path
 
     root = Path(__file__).resolve().parent.parent / "alembic" / "versions"
-    down = re.compile(r"^down_revision(?::[^=]+)?\s*=\s*(?:['\"]([^'\"]+)['\"]|None)",
-                      re.M)
+    # RHS co the la mot chuoi, None, hoac mot tuple nhieu chuoi (revision MERGE
+    # noi hai head, vd `down_revision = ("a", "b")`).
+    down = re.compile(r"^down_revision(?::[^=]+)?\s*=\s*(.+)$", re.M)
+    id_re = re.compile(r"['\"]([^'\"]+)['\"]")
     tat_ca = set(_revision_ids())
     da_bi_tro_toi = set()
     for path in root.glob("*.py"):
         for match in down.finditer(path.read_text(encoding="utf-8")):
-            if match.group(1):
-                da_bi_tro_toi.add(match.group(1))
+            for m2 in id_re.finditer(match.group(1)):
+                da_bi_tro_toi.add(m2.group(1))
 
     heads = tat_ca - da_bi_tro_toi
     assert len(heads) == 1, f"phai co dung mot head, dang co: {sorted(heads)}"

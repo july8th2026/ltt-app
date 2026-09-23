@@ -419,7 +419,7 @@ def _ma_loi(e) -> str:
     if isinstance(e, L.ThieuCredit):
         return "het_credit"
     if isinstance(e, L.KhongMoDuoc):
-        return "qua_dai" if e.qua_dai else "khong_mo_duoc"
+        return "qua_dai" if e.failure.is_context_limit else "khong_mo_duoc"
     if isinstance(e, L.KhongCoNangLuc):
         return "khong_co_nang_luc"
     return "tham_so"

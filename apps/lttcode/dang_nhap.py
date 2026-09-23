@@ -24,12 +24,15 @@ from sqlalchemy import delete, select, update
 from apps.lttcode.tables import LttcodeAuthCode
 from platform_core.public_api import keys as devkeys
 from platform_core.public_api import projects
-from platform_core.public_api.scopes import SCOPE_JOBS_CREATE, SCOPE_JOBS_READ, SCOPE_TOOLS_READ
+from platform_core.public_api.scopes import (SCOPE_CREDITS_READ, SCOPE_JOBS_CREATE,
+                                             SCOPE_JOBS_READ, SCOPE_TOOLS_READ)
 
 HAN_MA_S = 120
 HAN_KHOA = timedelta(days=365)
 LUOT_TOKEN_MOI_PHUT = 10
-SCOPES_KHOA = (SCOPE_TOOLS_READ, SCOPE_JOBS_CREATE, SCOPE_JOBS_READ)
+#: N-04: them credits:read de app hien duoc so du. KHONG them usage:read o day -
+#: mot quyen chi cap khi co man hinh dung toi no.
+SCOPES_KHOA = (SCOPE_TOOLS_READ, SCOPE_JOBS_CREATE, SCOPE_JOBS_READ, SCOPE_CREDITS_READ)
 TIEN_TO_TEN_KHOA = "LTTCODE – "
 
 _STATE = re.compile(r"^[A-Za-z0-9_-]{16,128}$")

@@ -155,7 +155,10 @@ def _tool_thu(monkeypatch, khoi=None, ban=False):
     def mo(db, *, duong, than, timeout_s=0, **_meta):
         da_goi.append(than)
         if ban:
-            raise luong_vlm.KhongMoDuocLuong("may B dang ban", ban=True, thu_lai_sau_s=20)
+            raise luong_vlm.KhongMoDuocLuong(
+                "may B dang ban", failure=luong_vlm.model_failure(
+                    "concurrency_limited", http_status=429,
+                    retry_after_s=20))
         return Gia(list(khoi) if khoi is not None else [
             _sse({"choices": [{"delta": {"reasoning_content": "nghi"}}]}),
             _sse({"choices": [{"delta": {"content": "xin "}}]}),

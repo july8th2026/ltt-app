@@ -32,42 +32,46 @@ that va mot GPU ranh; phep kiem nay chot **bat bien**, nen no chay moi lan gate.
 from __future__ import annotations
 
 import inspect
+import json
 
 import pytest
 
-from platform_core.public_api.errors import tran_bi_vuot
+from llm_gateway.error_contract import make_error
+from platform_core.llm.model_failure import decode_gateway_failure
+from server.api import su_kien_loi
 
 
 # ── (a) Thong tin cong da gui phai di TIEP ra toi khach ──────────────────────
+#
+# Task 13 (22/09): `tran_bi_vuot` (dich `{truong, tran, thay}`) da go cung
+# decoder legacy. Cong may B gui `field`/`limit`/`actual` trong phong bi v1;
+# renderer duy nhat dua chung ra `ltt_error` cua moi giao thuc.
 
 
-def test_dich_du_ba_truong_cong_gui_len():
-    """`{truong, tran, thay}` cua cong -> `field`/`limit`/`actual` cong khai."""
-    ra = tran_bi_vuot({"ly_do": "Qua nhieu anh.", "truong": "images", "tran": 4, "thay": 5})
-    assert ra["field"] == "images", "khach khong biet TRUONG nao sai"
-    assert ra["limit"] == 4, "khach khong biet tran la BAO NHIEU"
-    assert ra["actual"] == 5, "khach khong biet ho da gui BAO NHIEU"
-    # `fields` la ten sổ tay cua nen tang cho danh sach truong (cua job dung no).
-    assert ra["fields"] == ["images"]
+def _loi_anh():
+    return decode_gateway_failure(413, {}, json.dumps({"detail": make_error(
+        "image_count_exceeded", request_id="rid", field="images", limit=4,
+        actual=5)}).encode())
 
 
-@pytest.mark.parametrize("vao", [None, "", 0, [], {"khong": "lien quan"}])
-def test_khong_co_chi_tiet_thi_tra_RONG_chu_khong_no(vao):
-    """Mot loi khong kem chi tiet van phai la mot loi hop le.
+@pytest.mark.parametrize("duong", ["/v1/chat/completions", "/v1/messages",
+                                   "/v1/responses", "/api/v1/jobs"])
+def test_ba_truong_cong_gui_len_di_toi_khach(duong):
+    body = json.loads(su_kien_loi.render_model_failure(
+        duong, _loi_anh(), phase="before_headers", stream=False).body)
+    error = body.get("error") if isinstance(body.get("error"), dict) else body
+    ext = error["ltt_error"]
+    assert ext["field"] == "images", "khach khong biet TRUONG nao sai"
+    assert ext["limit"] == 4, "khach khong biet tran la BAO NHIEU"
+    assert ext["actual"] == 5, "khach khong biet ho da gui BAO NHIEU"
 
-    Ben goi dung `**tran_bi_vuot(...)`, nen ham nay ma nem thi mot loi 400
-    binh thuong se thanh 500 — bien mot loi cua khach thanh mot loi cua may.
-    """
-    assert tran_bi_vuot(vao) == {}
 
-
-def test_gia_tri_vo_nghia_bi_BO_chu_khong_duoc_cong_bo():
-    """`tran=0` nghia la 'khong co tran', dung day 0 ra cho khach doc."""
-    ra = tran_bi_vuot({"truong": "", "tran": 0, "thay": 0})
-    assert ra == {}, f"dang cong bo gia tri vo nghia: {ra!r}"
-
-    ra = tran_bi_vuot({"truong": "images", "tran": "khong phai so", "thay": None})
-    assert ra == {"field": "images", "fields": ["images"]}
+def test_hinh_dang_legacy_khong_con_duoc_dich():
+    """Than cu `{truong, tran, thay}` khong mang ma v1 ⇒ `upstream_unknown`."""
+    failure = decode_gateway_failure(413, {}, b'{"detail": {"truong": "images", '
+                                               b'"tran": 4, "thay": 5}}')
+    assert failure.canonical_code == "upstream_unknown"
+    assert failure.field is None
 
 
 # ── (b) Dung LOAI loi: qua lon la 4xx, KHONG phai 503 ────────────────────────
@@ -89,14 +93,14 @@ def test_cua_STREAM_khong_con_gop_qua_lon_vao_503():
 
 
 @pytest.mark.parametrize("mo_dun", ["server.api.chat", "server.api.streaming"])
-def test_CA_HAI_cua_deu_dich_chi_tiet_tran(mo_dun):
+def test_CA_HAI_cua_deu_dua_loi_vuot_tran_qua_renderer_duy_nhat(mo_dun):
     """Mot cua dich, mot cua khong = hai khach thay hai thong diep khac nhau."""
     import importlib
 
     nguon = inspect.getsource(importlib.import_module(mo_dun))
-    assert "tran_bi_vuot(" in nguon, (
-        f"`{mo_dun}` khong dich `{{truong, tran, thay}}` sang ten cong khai — "
-        "thong tin cong may B gui len bi vut di"
+    assert "tran_bi_vuot(" not in nguon
+    assert "render_model_failure(" in nguon, (
+        f"`{mo_dun}` khong dua loi vuot tran qua renderer co cau truc"
     )
 
 
@@ -117,6 +121,6 @@ def test_cong_vlm_GIU_chi_tiet_thay_vi_thay_bang_chuoi_cung():
     client = cong_vlm.CongVlm(goi=lambda *args, **kwargs: (400, payload, {}))
     with pytest.raises(cong_vlm.VuotNganSachError) as caught:
         client.chat(model="qwen35-api", messages=[])
-    assert caught.value.chi_tiet["truong"] == "images"
-    assert caught.value.chi_tiet["tran"] == 4
-    assert caught.value.chi_tiet["thay"] == 5
+    assert caught.value.chi_tiet["field"] == "images"
+    assert caught.value.chi_tiet["limit"] == 4
+    assert caught.value.chi_tiet["actual"] == 5

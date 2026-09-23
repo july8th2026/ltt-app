@@ -124,9 +124,22 @@ def _find_extension(value) -> dict:
     return {}
 
 
-def _expected_protocol(code: str, protocol: str) -> str:
+#: Anthropic SAU 200: bận/hết giờ mang `overloaded_error` để Claude Code tự
+#: retry (lý do + nguồn: `server/api/su_kien_loi._ANTHROPIC_SAU_200_QUA_TAI`).
+#: Gõ lại ở đây CÓ CHỦ Ý — golden độc lập với renderer.
+ANTHROPIC_SAU_200_QUA_TAI = frozenset({
+    "concurrency_limited", "provider_overloaded", "model_loading",
+    "upstream_timeout", "stream_idle_timeout",
+})
+
+
+def _expected_protocol(code: str, protocol: str,
+                       phase: str = "before_headers") -> str:
     if protocol == "rfc9457":
         return code
+    if (protocol == "anthropic" and phase == "after_headers"
+            and code in ANTHROPIC_SAU_200_QUA_TAI):
+        return "overloaded_error"
     return EXPECTED_PROTOCOL[code][0 if protocol == "anthropic" else 1]
 
 
@@ -145,7 +158,7 @@ def _renderer_row(
     )
     status, body = _body_from_rendered(rendered)
     extension = _find_extension(body)
-    expected_protocol = _expected_protocol(code, protocol)
+    expected_protocol = _expected_protocol(code, protocol, phase)
     expected_status = 200 if phase == "after_headers" else ERROR_SPECS[code].status
     if phase == "before_headers" and protocol == "anthropic" and code == (
         "provider_overloaded"
@@ -174,6 +187,11 @@ def _renderer_row(
 
 
 def _decoder_row(decoder: Callable) -> dict:
+    """Thân HÌNH DẠNG legacy ở 413 phải fail-closed `upstream_unknown` (Task 13).
+
+    Đây cũng là phép đột biến: decoder nào còn suy "413 ⇒ context" hay đọc
+    `{truong, tran, thay}` thành mã cụ thể sẽ làm dòng này đỏ.
+    """
     body = json.dumps(
         {
             "detail": {
@@ -185,10 +203,10 @@ def _decoder_row(decoder: Callable) -> dict:
         }
     ).encode("utf-8")
     failure = decoder(413, {"X-LTT-Request-Id": "fixture-request-id"}, body)
-    expected = "image_count_exceeded"
+    expected = "upstream_unknown"
     return {
         "code": expected,
-        "protocol": "gateway_legacy",
+        "protocol": "gateway_legacy_fail_closed",
         "phase": "decode",
         "status": 413,
         "expected_status": 413,

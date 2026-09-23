@@ -12,7 +12,8 @@ from server.auth.session import require_login
 from server.deps import get_db
 
 from apps.agent.routes._shared import (
-    _user, _verify_json_csrf, _workflow_json, _workflow_response, router)
+    _chan_neu_dang_nang_cap_v3, _user, _verify_json_csrf, _workflow_json,
+    _workflow_response, router)
 
 
 @router.get("/api/workflows/{workflow_id}/activity")
@@ -37,6 +38,7 @@ async def workflow_validate(request: Request, workflow_id: str,
                             db: Session = Depends(get_db)):
     body = await request.json(); _verify_json_csrf(request, body)
     user = _user(request)
+    _chan_neu_dang_nang_cap_v3(db, workflow_id, user.id)
     try:
         row = workflows.get_owned(db, workflow_id, user.id)
         expected = int(request.headers.get("If-Match", "").strip('"') or body["revision"])

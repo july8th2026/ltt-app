@@ -5,13 +5,13 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import os
 
-from apps.vps import profiles
+from apps.vps import bang_thong, profiles
 from apps.vps.cost import PLANS
-from apps.vps.services import backend_factory, provisioning
+from apps.vps.services import backend_factory, nguon_luc, provisioning
 from apps.vps.services.sellable_capacity import (
     available_gateway_slots,
     effective_ipv4_slots,
-    sellable_slots,
+    promised_without_ip,
 )
 from apps.vps.services.machine_b_runtime import (
     MachineBRuntimeEvidence,
@@ -86,15 +86,30 @@ def run_profile_preflight(
             gateway_limit = available_gateway_slots(db, profile.id)
         measured = provisioning.suc_chua_hien_tai(
             db, capacity_probe["node"], capacity_probe["storage"], capacity_probe["vms"])
-        ipv4_slots = effective_ipv4_slots(ip_details)
-        sellable = {plan.id: sellable_slots(
-            measured, plan.id, free_ipv4=ipv4_slots,
-            gateway_slots=gateway_limit).slots for plan in PLANS}
-        if any(sellable.values()):
+        # 🔴 Bản cũ gọi `effective_ipv4_slots(ip_details)` **không** trừ
+        #    `promised_without_ip`, trong khi trang bán và luồng tạo máy thì
+        #    có. Hai phép tính cho cùng một câu hỏi, và chúng lệch nhau thật:
+        #    `capacity` báo xanh trong khi trang hiện 0 chỗ. Nay cả ba đi qua
+        #    `nguon_luc`, nên "lệch" không còn là một trạng thái biểu diễn được.
+        do = nguon_luc.DoDuoc(
+            suc_chua=measured,
+            free_ipv4=effective_ipv4_slots(
+                ip_details,
+                promised_without_ip=promised_without_ip(db, profile.id)),
+            gateway_slots=gateway_limit,
+            da_hua_bang_thong_gb=nguon_luc.bang_thong_da_hua_gb(db, profile.id),
+            ngan_sach_bang_thong_gb=bang_thong.ngan_sach_hua_gb(),
+        )
+        ket = {plan.id: nguon_luc.danh_gia(do, plan.id) for plan in PLANS}
+        sellable = {plan_id: kq.so_cho for plan_id, kq in ket.items()}
+        if any(kq.ban_duoc for kq in ket.values()):
             capacity_status = "HEALTHY"
-            capacity_summary = "compute, IPv4 and gateway have sellable slots"
+            capacity_summary = "compute, IPv4, gateway and bandwidth have slots"
         else:
-            capacity_summary = "no sellable slots across compute, IPv4 and gateway"
+            # Nói ĐÚNG ràng buộc đang chặn, không nói "no sellable slots" cho
+            # cả bốn nguyên nhân: người vận hành đọc dòng này để biết đi sửa gì.
+            capacity_summary = "khong con cho: " + "; ".join(
+                kq.cau_cho_van_hanh for kq in ket.values())[:280]
     except (TypeError, ValueError, KeyError, AttributeError):
         # Malformed provider payloads must not turn the whole health page into
         # an exception, or unknown capacity into a green activation gate.
@@ -132,7 +147,13 @@ def run_profile_preflight(
             observed_at=observed,
         ))
     ready = all(value == "HEALTHY" for value in components.values())
-    if not ready and demote_on_failure:
+    # ⚠️ Hạ profile CHỈ khi tầng `CHAN_BAN` đỏ. Hạ vì `network` đỏ thì việc tách
+    #    hai tầng thành vô nghĩa: `select_profile` bỏ qua `network` được, nhưng
+    #    một profile đã bị đặt `accept_new = False` thì không con đường nào chọn
+    #    nó nữa — và phải có NGƯỜI bật lại. Đúng vòng luẩn quẩn mà một bộ đếm
+    #    gói rơi từng tạo ra ngày 23/09.
+    giao_duoc = all(components[ten] == "HEALTHY" for ten in profiles.CHAN_BAN)
+    if not giao_duoc and demote_on_failure:
         profile.accept_new = False
         profile.is_default = False
     profile.last_health_at = observed
