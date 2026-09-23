@@ -167,3 +167,32 @@ def test_thiet_lap_ep_nguon_duoc_ghi_va_doc_lai():
     assert ho_so["nguon_loi"] == "asr"
     assert cai_dat.tu_ho_so(ho_so).nguon_loi == "asr"
     assert cai_dat.tu_ho_so({"nguon_loi": "rac"}).nguon_loi == "auto"
+
+
+def test_CUA_KHACH_ghi_nguon_loi_vao_ho_so_chu_khong_chi_duyet_roi_bo():
+    """🔴 **Do that, nghiem thu cuoi 23/09: mot dieu khien CHET.**
+
+    `dich_vu_tao.dung_cai_dat` duyet `nguon_loi` (dong 132-133) roi **khong**
+    dat no vao `cai_dat` — ba lan nop `nguon_loi=asr` tren phim khach that, ca
+    ba lan `transcribe.tom_tat` ghi `dinh_tuyen.che_do: "auto"` va chay OCR.
+
+    ⛔ Hai phep kiem tren (`test_thiet_lap_*`) goi THANG `cai_dat.chuan_hoa`,
+       nen ca hai xanh trong khi duong khach di thi dut. Day dung la
+       "hai cho khai cung mot dieu, khong ai bat khop": cua nhan gia tri, kho
+       biet luu gia tri, va khong ai doi chieu rang cua CO dua gia tri cho kho.
+    """
+    from apps.auto_scan_video import dich_vu_tao
+
+    # AUTO_MATCH + giong_id rong: khong tra cuu kho giong, nen phep kiem nay
+    # van la mot phep kiem DON VI cua cua tao — khong can CSDL.
+    tho = {"preset": "localize_preserve_picture", "che_do_giong": "AUTO_MATCH",
+           "giong_id": "", "ngon_ngu_nguon": "zh", "ngon_ngu_dich": "vi"}
+    ho_so = dich_vu_tao.dung_cai_dat(None, owner_id="u", tho={**tho, "nguon_loi": "asr"})
+    assert ho_so.get("nguon_loi") == "asr", ho_so
+    assert cai_dat.tu_ho_so(ho_so).nguon_loi == "asr"
+
+    # ⭐ Va `auto` van KHONG duoc ghi (`KHOA_THUA`): mot ho so mang mot khoa
+    #    bang mac dinh la mot van tay doi ma cau hinh thi khong.
+    mac_dinh = dich_vu_tao.dung_cai_dat(None, owner_id="u", tho={**tho, "nguon_loi": "auto"})
+    assert "nguon_loi" not in mac_dinh
+    assert cai_dat.tu_ho_so(mac_dinh).nguon_loi == "auto"

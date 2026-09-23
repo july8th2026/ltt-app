@@ -129,6 +129,16 @@ def dung_cai_dat(db, *, owner_id: str, tho: Mapping) -> dict:
         raise LoiCaiDat(str(exc)) from None
 
     # Nguon loi thoai (auto|embedded|ocr|asr) — kiem o CUA, truoc credit.
+    #
+    # 🔴 **Kiem xong phai GHI.** Tu 23/09 toi truoc ban sua nay, `nl` duoc duyet
+    #    o day roi khong bao gio duoc dat vao `cai_dat` ben duoi — mot dieu
+    #    khien CHET: khach chon "chi dung ASR" hay "chi dung OCR", cua nhan,
+    #    lan chay van di duong `auto`.
+    #
+    # ⛔ Va no im lang theo kieu te nhat: form tra ve 200, `tom_tat` giai doan
+    #    ghi `dinh_tuyen.che_do: "auto"` — dung mot cach trung thuc — nen khong
+    #    co thong bao nao noi rang lua chon vua bi bo. Do duoc o nghiem thu cuoi
+    #    23/09: nop `nguon_loi=asr` ba lan, ca ba lan `transcribe` van chay OCR.
     nl = str(tho.get("nguon_loi") or "").strip().lower()
     if nl and nl not in nguon_loi_mod.CHE_DO_HOP_LE:
         raise LoiCaiDat(_t('Nguồn lời thoại không hợp lệ.'))
@@ -196,6 +206,10 @@ def dung_cai_dat(db, *, owner_id: str, tho: Mapping) -> dict:
                # ⚠️ Bi danh cu, xem `cai_dat.KHOA_BI_DANH_GIONG`.
                "voice_id": giong_id}
     # ⛔ L4 cua `cat_dau_cuoi` + luat `KHOA_THUA`: khong dung thi KHONG ghi khoa.
+    #    `cai_dat.chuan_hoa` (dong 203-205) tu bo `nguon_loi` khi no bang mac
+    #    dinh, nen o day chi can dua gia tri da duyet qua.
+    if nl:
+        cai_dat["nguon_loi"] = nl
     if cua_so_cat:
         cai_dat["cat"] = [cua_so_cat[0], cua_so_cat[1]]
     if ds_lop_phu:
