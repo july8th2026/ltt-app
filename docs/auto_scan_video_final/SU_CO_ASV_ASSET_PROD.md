@@ -37,6 +37,38 @@ tạm `lttplatform_dienthu_<stamp>`, *"không đụng live CSDL"*, và lượt h
   tới 19:43) — rác log, và bộ quét coi như không chạy.
 - **Ngày mở khách:** đây là **chặn cứng**. Lần chạy đầu tiên sẽ chết ở `tao_run`.
 
+
+## Bổ sung 23/09 tối — đối chiếu cơ học (phiên *Phân tích hệ thống VPS*) + kiểm chéo
+
+**Họ dựng chuỗi `down_revision` từ head và gom MỌI `create_table` trong tổ tiên,
+so với `pg_tables` thật: 80 bảng khai, thiếu đúng 7 dòng.** Bỏ `vps_port_map`
+(bị drop có chủ đích khi VPS chuyển sang một-IP-mỗi-VM, 24/08) thì phần không
+giải thích được **chỉ còn ASV — và là TOÀN BỘ 5 bảng của cả 4 migration**, trải
+hai ngày khác nhau (01/09 và 03/09), trong khi mọi revision trước và sau đều có
+bảng.
+
+**Tôi kiểm chéo hai điều họ chưa loại trừ:**
+
+1. **Không migration nào KHÁC xoá bảng ASV.** Grep `drop_table("asv_…")` toàn
+   `alembic/versions/` chỉ khớp đúng bốn tệp ASV — tức hàm `downgrade()` của
+   chính chúng. Không ai xoá từ nơi khác.
+2. ⚠️ **Mốc "lỗi đầu tiên 13/09" KHÔNG phải lúc bảng biến mất.** Bộ quét tài sản
+   (`assets.quet_het_han` + `bao_tri` trong manifest) chỉ ra đời **04/09**
+   (`8d56c05d`, pha 27). Trước đó **không câu lệnh nào chạm `asv_asset`**, nên
+   không thể có lỗi để mà ghi. 13/09 nhiều khả năng là lần **deploy** đầu tiên
+   mang bộ quét lên production — nó nói về lịch deploy, không nói về schema.
+
+⇒ Giả thuyết còn đứng vững nhất: **các migration ASV được đánh dấu đã chạy mà
+không thực thi** (`alembic stamp` hoặc đẩy tay qua khối đó). Một biến thể cũng
+khớp mọi bằng chứng: ai đó `downgrade` riêng khối ASV (hàm `down()` của chính
+chúng xoá sạch, không để lại dấu) rồi `stamp` tiến lên.
+
+⛔ **Log PostgreSQL không phân xử được chuyện này**, và đây là giới hạn của kênh
+chứ không phải kết luận: `log_statement` không bật, nên log chỉ ghi LỖI — **0
+dòng `CREATE TABLE`** trong toàn bộ log đầu tháng 9. Vắng mặt ở đây không phải
+bằng chứng vắng mặt. Muốn truy tiếp phải đọc lịch sử lệnh / log deploy quanh
+01–03/09.
+
 ## Phương án (⚠️ CẦN CHỦ DỰ ÁN DUYỆT — ghi schema production là thao tác khó đảo)
 
 | # | Cách | Rủi ro | Ghi chú |
