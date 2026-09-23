@@ -63,7 +63,7 @@ SQLAlchemy (nền tảng, test `pytest`), PowerShell 7 (phát hành), Tauri/Rust
 | 7 | `-Notes` bắt buộc | ✅ `8ed9ecb` · manifest dev đã vá |
 | 8 | Tài liệu `User-Agent` | ✅ `c23c7cce` · đã gộp `main` |
 | 9 | Cho Cloudflare cache bộ cài | ✅ `e17f1bc3` · **đã deploy + đo**: `no-store` → `immutable`, BYPASS → MISS → **HIT** (Age tăng 29→37) |
-| 10 | Bổ sung từ sổ lỗi D1 | ✅ `67f412f6` — số đo cuối đã ghi, V-19…V-24 đã lập, **`restore.ps1` đã vá** (7 phép, có đối chứng âm). Off-site đã dựng + cắm lịch. Còn mở: 3 tệp sổ đăng ký ngoài mẫu backup (chờ chủ dự án) |
+| 10 | Bổ sung từ sổ lỗi D1 | ✅ `67f412f6` — số đo cuối đã ghi, V-19…V-24 đã lập, **`restore.ps1` đã vá** (7 phép, có đối chứng âm). Off-site đã dựng + cắm lịch. Sổ đăng ký đã vào mẫu backup (`8a46784c`) — **hết việc mở** |
 
 ### Phần B — nâng năng lực: **2,5 / 10 = 25 %** (không đổi)
 
@@ -85,6 +85,8 @@ SQLAlchemy (nền tảng, test `pytest`), PowerShell 7 (phát hành), Tauri/Rust
 | Việc | Trạng thái |
 |---|---|
 | Đồng bộ off-site ra Google Drive | ✅ `a70512f4` — chạy thật 7 bản/1,11 GB/0,9 phút/0 lỗi; đã cắm lịch `LTTStudioBackupOffSite` 03:00 hằng ngày, chạy thử dưới trình lập lịch **kết quả 0** |
+| Ba tệp sổ đăng ký ngoài mẫu backup | ✅ `8a46784c` (đã gộp `main`) — tra ra **chỉ hai** tệp cần sao lưu, không phải ba: `lttcode_releases.json` + `nexus_versions.json` (chứa chữ ký minisign + SHA từng bản đã phát ⇒ **không dựng lại được**). `translations/` **sinh lại được**: `setup\2-cai-dat.ps1:683-694` robocopy nó từ kho mã mỗi lần deploy ⇒ cố ý để ngoài. 7 phép, đỏ trước (kiểm trên `HEAD` cũ) xanh sau |
+| `app.env` cất ở ổ D | ✅ ghi thành **quyết định có chủ ý** của chủ dự án 23/09 trong `RUNBOOK_KHOI_PHUC.md` §8 (D là ổ vật lý khác C ⇒ chịu được hỏng một ổ), kèm phần nó **KHÔNG** che: cháy máy · mất trộm · ransomware mã hoá cả hai ổ |
 | Đường diễn tập khôi phục + đối chứng âm | ✅ `3f5b8a8d` (gộp `main`, 1 286 dòng) |
 
 ### Đọc con số này thế nào
