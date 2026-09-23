@@ -348,12 +348,18 @@ def chia_lo(doan: list[dict], *, moi_lo: int | None = None) -> list[list[dict]]:
     return [doan[i:i + n] for i in range(0, len(doan), n)]
 
 
-def tom_tat(qc_giong: list, qc_nghia: list, qc_hinh: list) -> dict:
-    return {
-        "so_doan_do_giong": len(qc_giong or []),
-        "so_doan_do_nghia": len(qc_nghia or []),
-        "so_cho_noi_do_hinh": len(qc_hinh or []),
-        "so_nghia_khong_dat": sum(1 for d in (qc_nghia or []) if not d.get("dat", True)),
-        "so_hinh_khong_dat": sum(1 for d in (qc_hinh or []) if not d.get("dat", True)),
-        "phien_ban_qc_ai": PHIEN_BAN_QC_AI,
-    }
+# 🔴 **`tom_tat(qc_giong, qc_nghia, qc_hinh)` da XOA (23/09, M-02).**
+#
+#    No dem lai dung nhung con so ma `giai_doan_qc_ai.chay` tu dem, va no
+#    **chua tung co nguoi goi** — khong o san pham, khong o phep kiem. Tuc mot
+#    ban mo ta THU HAI cua cung mot bao cao, duoc phep lech khoi ban that ma
+#    khong ai thay.
+#
+# ⛔ Va no mang `phien_ban_qc_ai` vao mot cho khong ai doc, trong khi cho DOC
+#    no la van tay bao cao. Hai ban sao cua mot con so phien ban la cach chac
+#    chan nhat de mot lan doi loi nhac khong toi duoc khach.
+#
+# ⇒ Giu MOT cho dem: `chay` dem, `bao_cao` mang, `tom_tat` cua giai doan di
+#   thang vao `stage.outputs`. Day la lan thu nam kho nay go mot "nang luc
+#   khong ai goi" (kiem toan pha 26); go luon thay vi de no doi nguoi goi dau
+#   tien phat hien no lech.
