@@ -364,3 +364,31 @@ body.agent-canvas-immersive .canvas-shell[data-presentation=creative] .canvas-bo
 
 /* Node bi publish tu choi (422). Dau nay nam tren chinh `.react-flow__node`. */
 .react-flow__node.node-do-loi .node-khung { border-color:var(--nguy-hiem,#f87171); }
+
+/* 🔴 BA LOI NHIN THAY TREN TRINH DUYET THAT (24/09, sau khi task 15 cat sang
+   NodeKhung + FormTuLuocDo). jsdom khong doc CSS nen ca 29 bai vitest deu
+   xanh trong khi man hinh khong doc duoc. */
+
+/* 1. `.node-khung` mac dinh nen TRANG (`--nen-node`) — tren nen toi thi chu
+      trang tren nen trang. Buoc mau theo chu de, khong de mac dinh quyet. */
+.theme-dark .node-khung { border-color:var(--border-strong,#63332e);
+  background:var(--surface-raised,#151111); color:var(--text-primary,#f4f4f5); }
+.theme-dark .node-khung-dau { border-bottom-color:var(--border-strong,#63332e); }
+.theme-dark :is(.node-kind-trigger,.node-kind-control,.node-kind-connector) .node-khung-dau {
+  background:var(--surface-overlay,#1b1413); }
+.theme-dark .node-khung.is-chon,.theme-dark .react-flow__node.selected .node-khung {
+  border-color:var(--brand-primary,#ef3731); }
+.theme-light .node-khung { border-color:#d0d7de; background:#fff; color:#17191d; }
+
+/* 2. Cac dong phu trong node (`type@ver`, ten cong, kieu cong) dung `opacity`
+      thap tren nen toi ⇒ gan nhu vo hinh. Nang len va cho mau ro. */
+.node-type,.node-cong-kieu { opacity:.85; }
+.theme-dark :is(.node-type,.node-cong-kieu,.node-kind) { color:var(--text-secondary,#c9bbb7); }
+.theme-dark .node-cong-ten { color:var(--text-primary,#f4f4f5); }
+
+/* 3. O nhap trong inspector tran ra ngoai panel: `width:100%` cong padding va
+      vien ma khong co `border-box`. */
+.canvas-inspector,.canvas-palette,.form-luoc-do,.o-truong,
+.canvas-inspector :is(input,select,textarea,button),
+.canvas-palette :is(input,select,textarea,button) { box-sizing:border-box; }
+.canvas-inspector > * { max-width:100%; }

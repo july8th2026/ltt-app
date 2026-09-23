@@ -366,7 +366,10 @@ function Editor() {
       try{localStorage.setItem('ltt.palette.ganDay',JSON.stringify(moi))}catch{/* rieng tu */}
       return moi
     })
-    setDesktopPanel(null)
+    // Vua them xong ⇒ mo luon tham so cua no. Ngan keo palette dong lai o day
+    // dang nao cung dong; de nguoi dung phai tu tim duong toi inspector sau
+    // moi lan keo mot node la bat ho lam mot viec vo nghia.
+    setDesktopPanel('inspector')
   }, [readOnly, page])
 
   /** Luat cho `isValidConnection` cua React Flow — duong "co duoc keo khong",
@@ -630,6 +633,11 @@ function Editor() {
         <button title="Chọn" aria-label="Công cụ chọn" aria-pressed={!desktopPanel}>↖</button>
         <button title="Thêm node" aria-label="Mở công cụ" aria-pressed={desktopPanel==='tools'} onClick={()=>{const open=desktopPanel!=='tools';setDesktopPanel(open?'tools':null);if(open){setSelected([]);setSelectedEdges([]);dispatch({type:'select'})}}}>＋</button>
         <button title="Mẫu & thiết lập" aria-label="Mở mẫu và thiết lập" aria-pressed={desktopPanel==='workspace'} onClick={()=>setDesktopPanel(value=>value==='workspace'?null:'workspace')}>▦</button>
+        {/* 🔴 Nut nay la DUONG VAO DUY NHAT cua inspector tren desktop:
+            `.canvas-mobile-tabs` (nut "Chi tiết") la `display:none` tren man
+            rong. Truoc task 15, tham so con o `ContextComposer` noi len canh
+            node nen thieu no khong ai thay; gio MOI tham so o inspector. */}
+        <button title="Chi tiết node" aria-label="Mở chi tiết node" aria-pressed={desktopPanel==='inspector'} onClick={()=>setDesktopPanel(value=>value==='inspector'?null:'inspector')}>☰</button>
         {hasAnyNodes&&<><button title="Lớp" aria-label="Mở danh sách lớp" aria-pressed={showLayers} onClick={()=>setShowLayers(value=>!value)}>☷</button>
           <button title="Sticky note" aria-label="Tạo sticky note" disabled={readOnly} onClick={()=>dispatch({type:'noteAdd',text:'Ghi chú mới'})}>□</button>
           <button title="Bình luận" aria-label="Tạo comment" disabled={readOnly} onClick={()=>dispatch({type:'commentAdd',text:'Bình luận mới'})}>◌</button></>}
@@ -687,7 +695,9 @@ function Editor() {
             if (persisted.length) dispatch({ type: 'graph', nodes: page.nodes, edges: applyEdgeChanges(persisted, page.edges) as CanvasEdge[] }) }}
           onConnect={onConnect} isValidConnection={chapNhanCanh} onReconnect={onReconnectEdge} edgesReconnectable={!readOnly}
           onNodeClick={(event, node) => {const additive=event.ctrlKey||event.metaKey||event.shiftKey
-            setContextMenu(null);setSelectedEdges([]);setDesktopPanel(null)
+            // Bam vao node ⇒ mo inspector. Do la cu chi tu nhien nhat, va sau
+            // task 15 khong con bang nao noi len canh node de sua tham so.
+            setContextMenu(null);setSelectedEdges([]);setDesktopPanel('inspector')
             setSelected(previous=>additive?(previous.includes(node.id)?previous.filter(id=>id!==node.id):[...previous,node.id]):[node.id])
             dispatch({ type: 'select', id: node.id }) }}
           onNodeContextMenu={(event,node)=>{event.preventDefault();setSelected([node.id]);dispatch({type:'select',id:node.id});

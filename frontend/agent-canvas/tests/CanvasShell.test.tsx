@@ -171,6 +171,33 @@ describe('CanvasShell', () => {
     expect(within(inspector).getByLabelText('voice_id')).toBeDisabled()
   })
 
+  // 🔴 DO DUOC TREN TRINH DUYET THAT 24/09: tren desktop `.canvas-mobile-tabs`
+  //    la `display:none`, nen nut "Chi tiết" chi ton tai o mobile. Sau khi
+  //    task 15 don `ContextComposer`, MOI tham so chi con o inspector — va tren
+  //    desktop khong con mot duong nao mo no. jsdom khong doc CSS nen bai
+  //    "responsive panel" van xanh: no bam duoc mot nut ma nguoi dung khong
+  //    thay. Hai duong vao, va ca hai deu phai co.
+  it('mở được inspector trên desktop: nút ở thanh dọc VÀ bấm vào node', async () => {
+    render(<CanvasShell />)
+    const node = await themVanBan()
+    const nut = screen.getByRole('button', { name: 'Mở chi tiết node' })
+    const co = () => screen.queryByRole('complementary', { name: 'Chi tiết node' })
+    // Them node xong thi inspector MO SAN: tham so cua node vua keo ve phai
+    // thay duoc ngay, khong bat nguoi dung di tim mot duong nua.
+    expect(nut).toHaveAttribute('aria-pressed', 'true')
+    expect(co()).toHaveClass('is-open')
+    // 1. Nut o thanh doc dong/mo duoc — `.canvas-rail` hien o moi be ngang.
+    fireEvent.click(nut)
+    expect(co()).toBeNull()
+    fireEvent.click(nut)
+    expect(co()).toHaveClass('is-open')
+    // 2. Bam vao node tren khung cung mo — do la cu chi tu nhien nhat.
+    fireEvent.click(nut)
+    expect(co()).toBeNull()
+    fireEvent.click(node)
+    expect(co()).toHaveClass('is-open')
+  })
+
   it('nhớ node dùng gần đây qua localStorage', async () => {
     render(<CanvasShell />)
     await themVanBan()
