@@ -19933,3 +19933,35 @@ làn tích hợp: 31 sửa, 5 lưu trữ. Tổng so với `main`: 39 sửa · 13
   tay; chú thích "chép CẢ CÂY" còn trong mã vận hành (`setup/2-cai-dat.ps1`, `tools/cay_rieng.py`, `tools/ho_so_cay.py`,
   docstring test) — ngoài phạm vi dọn tài liệu; CẦN XEM của làn: `CHATLTT_V3/06_KE_HOACH_P06.md` (features PDF),
   `LTT_VOICE/UPGRADE_98/06_BLOCKERS.md` (`gate.yml`), số test 958/1512 trong `ltt_llm_dual`. Gộp `main` sau lượt kiểm độc lập.
+
+## 2026-09-23 — Diễn tập khôi phục backup: chứng minh bản sao lưu chạy lại được
+
+Nhánh `phien/d1-khoi-phuc` (worktree `D:\LTTSTUDIOSAPP-d1-khoi-phuc`). Câu hỏi:
+backup `D:\LTTBackups` có khôi phục được không — đo thật, không tin tưởng.
+
+**Công cụ mới** (chạy ở CSDL tạm `lttplatform_dienthu_<stamp>`, không đụng live):
+`deploy/windows/dien_tap_khoi_phuc.ps1` + `dien_tap_kiem.py` +
+`tests/test_2200_dien_tap_khoi_phuc.py` (8 test xanh).
+
+**Kết quả đo (bản sao lưu 23/09 02:30, dump 99.373.232 B):**
+- XANH: pg_restore 19,08 s, tổng RTO 24,01 s; 101 bảng, users=35,
+  credit_entries=45.472 (tổng bút toán 70.992), jobs=7.659, api_keys=4 —
+  sổ credit sạch (0 mồ côi, 0 số dư âm).
+- **Alembic lệch 3 migration là CHUẨN, không phải lỗi backup**: migration chỉ
+  áp dụng lúc deploy; dump 02:30 mang `e4a19c07b5d2`, tree đã deploy ở head
+  `5e1a9c46b2d7` (3 migration video-crawler, commit 23/09 00:58). Diễn tập
+  chứng minh: `alembic upgrade head` lên CSDL tạm = 1,37 s, version sau = head.
+  ⇒ **Quy tắc khôi phục thật: sau restore, chạy `alembic upgrade head` từ
+  `C:\LTTPlatform\app` (tree deploy) TRƯỚC khi khởi động dịch vụ** — đã ghi
+  vào runbook.
+- **Đỏ thật (đối chứng âm, dump cắt 2 MB)**: `pg_restore` ĐỎ (rc=1, 'end of
+  file'), `bang_co_dat` 0 bảng (rollback `-1`), alembic 0 version; exit 1.
+- **Bẫy đo lường phát hiện**: pg_restore với dump -Fc bị cắt trả rc=1 (chứ
+  không phải rc=2) → mã xuất đơn thân xanh giả; phép kiểm phải đếm dòng
+  `pg_restore: error:` + chữ 'end of file' trong stderr.
+- Lỗ hổng còn mở: `deploy/windows/restore.ps1` (khôi phục thật) chưa có bước
+  alembic — đã ghi nhận vào runbook, chưa vá script đó (ngoài phạm vi phiên).
+
+**Tài liệu:** `docs/RUNBOOK_KHOI_PHUC.md` (mới) +
+`docs/reports/dien-tap-khoi-phuc-2026-09-23.md` (báo cáo + rủi ro off-site:
+backup nằm cùng máy với dữ liệu, `D:\LTTBackups`).
