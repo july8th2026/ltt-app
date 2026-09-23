@@ -529,7 +529,9 @@ describe('Chạy workflow trên v3', () => {
     const { drawer } = await bamChay()
     expect(await within(drawer).findByText(/Mạng lỗi\./)).toBeTruthy()
     hong = false
-    fireEvent.click(within(drawer).getByRole('button', { name: 'Chạy ngay' }))
+    // `findBy`, khong `getBy`: trong lúc lượt trước còn bay, nút mang nhãn
+    // "Đang gửi…" (cờ chặn bấm đúp) — phải chờ nó trở lại "Chạy ngay".
+    fireEvent.click(await within(drawer).findByRole('button', { name: 'Chạy ngay' }))
     await waitFor(() => expect(khoaTaoRun().length).toBe(2))
     const khoa = khoaTaoRun()
     expect(khoa[0]).toBeTruthy()
@@ -559,6 +561,83 @@ describe('Chạy workflow trên v3', () => {
     expect(khoa[1]).not.toBe(khoa[0])
   })
 
+  // -- Bam dup (vong sua 23/09) -------------------------------------------
+  // ⚠️ `Idempotency-Key` va bam dup la HAI benh khac nhau. Khoa chi cuu
+  //    "THU LAI CUNG mot lan bam" (mang dut): cung khoa => may chu tra lai
+  //    run cu. Bam dup sinh HAI lan bam => HAI khoa => hai run, hai lan giu
+  //    cho, hai lan tru tien. Chi mot cai chot O CLIENT moi chan duoc.
+  /** Treo lo `POST …/runs` cho toi khi goi `moKhoa()`. Tra ve co bao "da gui". */
+  function treoTaoRun(ketQua: () => Response) {
+    let moKhoa: () => void = () => {}
+    const treo = new Promise<void>(resolve => { moKhoa = resolve })
+    const trangThai = { daGui: false }
+    mockRunV3((url, init) => {
+      if (url.includes('/api/v3/workflows/') && url.endsWith('/runs')
+          && init?.method === 'POST') {
+        trangThai.daGui = true
+        return treo.then(ketQua)
+      }
+      return undefined
+    })
+    return { trangThai, moKhoa: () => moKhoa() }
+  }
+
+  it('bấm đúp lúc lượt đầu ĐANG BAY: đúng MỘT run được tạo', async () => {
+    const { trangThai, moKhoa } = treoTaoRun(() =>
+      new Response(JSON.stringify(runV3Goc), { status: 201 }))
+    const { drawer } = await bamChay()
+    // Cho toi dung cua so nguy hiem: luu + publish DA xong (nen `phase` khong
+    // con 'saving' va nut het bi khoa vi ly do luu), con `tao_run` CHUA ve.
+    await waitFor(() => expect(trangThai.daGui).toBe(true), { timeout: 10_000 })
+    // 🔴 VE DO CHINH (cai HAI that): lan bam thu hai khong duoc de lai dau vet
+    //    nao o cua tao run. Hai POST = hai run = hai lan tru tien.
+    const nut = drawer.querySelector<HTMLButtonElement>('button.run-confirm')!
+    fireEvent.click(nut)
+    fireEvent.click(nut)
+    await cho(50)
+    expect(khoaTaoRun()).toHaveLength(1)
+    // Va nguoi dung phai THAY luot dau dang bay — nuot im lang lam ho bam them.
+    expect(nut.textContent).toMatch(/Đang gửi/)
+    expect(nut).toBeDisabled()
+    moKhoa()
+    expect(await within(drawer).findByText('QUEUED')).toBeInTheDocument()
+    expect(khoaTaoRun()).toHaveLength(1)
+  })
+
+  it('lượt đầu HỎNG rồi: bấm lại PHẢI gửi được', async () => {
+    // ⛔ Ve doi chung BAT BUOC cho bai tren: mot ban va khoa nut VINH VIEN
+    //    cung xanh o bai tren, va nguoi dung se khong bao gio chay lai duoc
+    //    sau mot loi 402/503.
+    const { trangThai, moKhoa } = treoTaoRun(() =>
+      new Response(JSON.stringify({ detail: 'Không đủ credit.' }), { status: 402 }))
+    const { drawer } = await bamChay()
+    await waitFor(() => expect(trangThai.daGui).toBe(true), { timeout: 10_000 })
+    moKhoa()
+    expect(await within(drawer).findByText(/Không đủ credit\./)).toBeTruthy()
+    // Co "dang gui" phai duoc DAT LAI o duong hong, khong chi o duong thanh cong.
+    const nut = await within(drawer).findByRole('button', { name: 'Chạy ngay' })
+    await waitFor(() => expect(nut).toBeEnabled())
+    fireEvent.click(nut)
+    await waitFor(() => expect(khoaTaoRun().length).toBe(2), { timeout: 10_000 })
+  })
+
+  it('run tạo XONG rồi: bấm lại tạo được run MỚI', async () => {
+    mockRunV3((url, init) =>
+      url.includes('/api/v3/workflows/') && url.endsWith('/runs')
+        && init?.method === 'POST'
+        ? new Response(JSON.stringify({ ...runV3Goc, status: 'SUCCEEDED',
+            credit_charged: 4, settled: true }), { status: 201 })
+        : undefined)
+    const { drawer } = await bamChay()
+    await waitFor(() => expect(khoaTaoRun().length).toBe(1))
+    fireEvent.click(await within(drawer).findByRole('button',
+      { name: 'Tạo bản chạy mới' }))
+    const nut = await within(drawer).findByRole('button', { name: 'Chạy ngay' })
+    await waitFor(() => expect(nut).toBeEnabled())
+    fireEvent.click(nut)
+    await waitFor(() => expect(khoaTaoRun().length).toBe(2), { timeout: 10_000 })
+  })
+
   it('publish 422 hiện thông điệp VÀ đánh dấu node hỏng', async () => {
     let nodeLoi = ''
     mockRunV3(url => url.includes('/publish')
@@ -569,8 +648,9 @@ describe('Chạy workflow trên v3', () => {
     const ket = await bamChay()
     nodeLoi = ket.nodeId
     // Lan bam dau co the da gui publish truoc khi `nodeLoi` duoc gan — bam lai
-    // mot lan nua de mock tra ve dung id node dang co tren canvas.
-    fireEvent.click(within(ket.drawer).getByRole('button', { name: 'Chạy ngay' }))
+    // mot lan nua de mock tra ve dung id node dang co tren canvas. `findBy`:
+    // lan bam dau con dang bay thi nut mang nhan "Dang gui…" — cho no ve.
+    fireEvent.click(await within(ket.drawer).findByRole('button', { name: 'Chạy ngay' }))
     // Thong diep hien o HAI cho co chu dich: bang bao loi tren canvas va dong
     // loi trong ngan keo chay. Neo vao ngan keo de bai nay khong do vi "nhieu
     // ket qua" khi bang kia cung noi cung mot cau.

@@ -166,6 +166,22 @@ function Editor() {
   /** Khoá `Idempotency-Key` của lần bấm "Chạy ngay" đang dở. Rỗng = chưa bấm,
    *  hoặc lần bấm trước đã tạo được run. Xem `chayWorkflow`. */
   const khoaChay = useRef<string>('')
+  /** Cờ "ĐANG GỬI một lượt chạy" — bật từ lúc bắt đầu tạo run cho tới khi run
+   *  được tạo xong hoặc hỏng.
+   *
+   *  ⚠️ `Idempotency-Key` và cờ này chữa HAI bệnh khác nhau. Khoá chỉ cứu
+   *     *thử lại CÙNG một lần bấm* (mạng đứt): cùng khoá ⇒ máy chủ trả lại
+   *     run cũ. **Bấm đúp là hai lần bấm ⇒ hai khoá ⇒ hai run, hai lần giữ
+   *     chỗ, hai lần trừ tiền.** Chỉ một chốt ở client chặn được.
+   *
+   *  ⛔ Vì sao là `ref` chứ không phải chỉ `disabled` của DOM: `disabled` chỉ
+   *     có hiệu lực SAU một lượt render, và React bỏ qua sự kiện chuột trên
+   *     nút disabled nhưng KHÔNG bỏ qua mọi đường vào khác (phím Enter trên
+   *     một điều khiển khác, một lối gọi `chayWorkflow` thêm về sau). Chốt
+   *     phải nằm ở tầng logic; `dangGui` bên dưới chỉ để giao diện PHẢN ÁNH
+   *     nó. Hai thứ luôn đổi cùng nhau. */
+  const dangGuiRun = useRef(false)
+  const [dangGui,setDangGui] = useState(false)
   const dragBefore = useRef<CanvasDocument | undefined>(undefined)
   const csrf = document.querySelector<HTMLElement>('#agent-canvas-root')?.dataset.csrfToken ?? ''
   const presentationMode=document.querySelector<HTMLElement>('#agent-canvas-root')?.dataset.presentation==='legacy'
@@ -429,7 +445,10 @@ function Editor() {
    *  DUNG ban nhap vua luu — nen luu phai xong truoc, khong chay song song. */
   const chayWorkflow=useCallback(async()=>{
     const dangChay=run&&!RUN_V3_KET_THUC.has(run.status)
-    if(!workflow||readOnly||dangChay)return
+    // ⭐ CHOT BAM DUP. Doc ref, khong doc state: state cua lan bam truoc co
+    //    the CHUA kip render khi lan bam thu hai toi. Xem `dangGuiRun`.
+    if(!workflow||readOnly||dangChay||dangGuiRun.current)return
+    dangGuiRun.current=true;setDangGui(true)
     if(autosaveTimer.current)window.clearTimeout(autosaveTimer.current)
     // ⭐ MOT LAN BAM = MOT KHOA. Khoa sinh O DAY, khong sinh trong
     //    `createRunV3`: chi cho nay biet dau la ranh gioi cua "mot lan bam".
@@ -458,6 +477,12 @@ function Editor() {
       }else{
         setRunError(error instanceof Error?error.message:'Không chạy được.')
       }
+    }finally{
+      // ⛔ `finally`, khong phai cuoi nhanh `try`: neu co chi duoc ha o duong
+      //    THANH CONG thi mot loi 402/503 se khoa nut VINH VIEN va nguoi dung
+      //    khong bao gio chay lai duoc. Bai "luot dau HONG roi: bam lai PHAI
+      //    gui duoc" giu dung cho nay.
+      dangGuiRun.current=false;setDangGui(false)
     }
   },[workflow,readOnly,run,state.document,csrf])
 
@@ -716,8 +741,11 @@ function Editor() {
             cua Plan v1. May chu chot `credit_max` ngay luc publish. */}
         <section className="run-scope-preview" aria-label="Phạm vi và chi phí"><small>PHẠM VI</small><strong>Toàn workflow</strong>
           <span>{page.nodes.length} block · server chốt chi phí tối đa khi publish</span></section>
-        {!run&&<button className="run-confirm" disabled={readOnly||!workflow||!page.nodes.length||phase==='saving'}
-          onClick={()=>void chayWorkflow()}>Chạy ngay</button>}
+        {/* Nhan doi theo `dangGui`: nuot im lang lan bam thu hai chi lam nguoi
+            dung bam them nua. Ho phai THAY lang minh da di. */}
+        {!run&&<button className="run-confirm" aria-busy={dangGui||undefined}
+          disabled={readOnly||!workflow||!page.nodes.length||phase==='saving'||dangGui}
+          onClick={()=>void chayWorkflow()}>{dangGui?'Đang gửi…':'Chạy ngay'}</button>}
         {runDaXong&&<button onClick={()=>{setRun(null);setRunError('');setSoHong(0)}}>Tạo bản chạy mới</button>}
         <RunV3Panel run={run} onCancel={huyRun}/>
         {runError && <span className="run-error" role="alert">{runError}</span>}</nav>
