@@ -80,4 +80,6 @@ Khép L3 (`gate.py --doi --tu 41120e46`) → hoà main → `merge --ff-only` →
 | W4 L9b trang tài khoản | phien/vcm-tk-ui | 66770a53 | 64 xanh | thêm/tạm nghỉ/xoá bằng cookie giả | ✅ gộp |
 | W4 L10 tìm kênh | phien/vcm-tim-kenh | 40a34158 | test_1935 54 xanh | smoke thật YouTube + Bilibili | ✅ gộp |
 | W4 L12 link rút gọn | phien/vcm-link | 08f465c5 | test_1933 107 xanh | smoke youtu.be + b23.tv | ✅ gộp |
-| W4 L11 trang kênh (giao diện) | phien/vcm-trang-kenh | | | | ⏳ đang chạy |
+| W4 L11 trang kênh (giao diện) | phien/vcm-trang-kenh | 8cb38f7d | test_1937 28 xanh | tìm kênh YouTube thật, 10 ảnh qua proxy | ✅ gộp |
+| W4 gộp + sửa rà soát | phien/vcm-w4b | bcf05be1 → 63623d77 | 1471 xanh | kho dùng được khi cào, hướng dẫn cookie theo nền | ✅ deploy 13:52 |
+| W5 ghim "Đang phát triển" | phien/vcm-dpt | 2a604682 | 1186 xanh + gate chung | 3 nền khoá + nhãn + lý do; YouTube vẫn chạy | ✅ deploy 01:02 |

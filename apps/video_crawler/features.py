@@ -140,9 +140,15 @@ def chuan_bi_tai(db, owner_id: str, params: dict, *, dong_y: bool) -> dict:
 
 def _nen(nen_id: str):
     try:
-        return nen_tang.lay_nen_bat(nen_id)
+        nen = nen_tang.lay_nen_bat(nen_id)
     except nen_tang.NenKhongHopLe as e:
         raise LoiDauVao(_t("Nền tảng này chưa được hỗ trợ.")) from e
+    if nen.dang_phat_trien:
+        # Chặn Ở CỬA VÀO, không nhận job rồi trả rỗng: đo thật 23/09, Douyin trả danh sách rỗng và khách
+        # nhìn một trang trắng không hiểu vì sao (SO_LOI W5-1).
+        raise LoiDauVao(_t("{ten} đang phát triển, chưa dùng được. {ly_do}")
+                        .format(ten=_t(nen.ten), ly_do=_t(nen.ly_do_dpt)))
+    return nen
 
 
 def _kiem_url(url: str, nen, phan_giai) -> str:

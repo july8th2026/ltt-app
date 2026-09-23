@@ -42,7 +42,7 @@ def test_mac_dinh_url_chuan_bo_url_khach_gui():
         f"https://www.youtube.com/watch?v={'a' * 11}"
 
 
-def test_features_giu_url_xhs_hop_le_va_tu_choi_url_thieu_token():
+def test_features_giu_url_xhs_hop_le_va_tu_choi_url_thieu_token(vc_go_ghim):
     from apps.video_crawler import features
     p = features.dung_params_tai(owner_id="u1", nen_tang="xiaohongshu", muc=[{"id": _NOTE, "url": _URL_XHS}],
                                  phan_giai=_DNS)

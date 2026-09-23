@@ -89,3 +89,14 @@ nhập qua giao diện — tác tử không được nhập thông tin đăng nh
 **Bài học đo lường:** "chạy được trên máy tôi" ở đây nghĩa đen là **tài khoản của tôi**. Phép đo đúng phải chạy dưới
 đúng danh tính của tiến trình thật (`SYSTEM`), nếu không thì môi trường khác nhau ở đúng chỗ quan trọng nhất.
 
+## W5 — nghiệm thu nền cần phiên (23/09 tối)
+
+| # | Lỗi | Cách lộ ra | Xử lý |
+|---|---|---|---|
+| W5-1 | Douyin trả danh sách RỖNG mà job vẫn "xong" ⇒ khách đọc "Không tìm thấy video nào" và tưởng do từ khoá của mình | đo thật bằng kho tài khoản | ghim "Đang phát triển" + chặn ở cửa vào kèm lý do (`nen_tang.dang_phat_trien`) |
+| W5-2 | TikTok: `No working app info is available` | như trên | ghim; điều kiện gỡ ghim ghi ở `PLATFORM_MATRIX.md` |
+| W5-3 | **Tôi báo sai**: nói giao diện "im lặng" khi 0 kết quả. Đo lại thì template CÓ câu "Không tìm thấy video nào." — script của tôi chỉ đếm `input[name=muc]`, không đọc vùng kết quả | tự đo lại trước khi sửa | đính chính trong `tests/test_1938`; giữ bánh cóc cho câu rỗng |
+
+**Bài học:** phép đo đếm SỰ VẮNG MẶT của một phần tử không trả lời câu "khách thấy gì" — phải đọc đúng vùng mà
+khách đọc. Suýt nữa tôi "sửa" một thứ vốn không hỏng và ghi một dòng sai vào sổ lỗi.
+

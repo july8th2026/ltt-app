@@ -82,3 +82,24 @@ và có thể ẩn ô "Tìm kênh" thay vì để khách gõ rồi mới báo l�
 Ảnh đại diện: adapter **chỉ trả URL**, không tải trong request; miền ảnh của cả 4 nền đã làm đều nằm sẵn trong
 `anh_bia.CDN_ANH` (`ggpht.com`, `hdslb.com`, `douyinpic.com`, `xhscdn.com`) ⇒ proxy `anh_bia` phục vụ lại được,
 không cần thêm miền.
+
+## Nghiệm thu PRODUCTION bằng KHO tài khoản hệ thống (23/09/2026, tối)
+
+Chủ dự án đã nạp cookie thật vào kho (`/video-crawler/van-hanh/tai-khoan`). Đo bằng tài khoản thử
+`khach1.thu` (KHÔNG có phiên riêng ⇒ job bắt buộc mượn kho; xác nhận bằng `result.nguon_phien = "kho"`).
+
+| Nền | Có trong kho | Chế độ đo | Kết quả THẬT | Kết luận |
+|---|---|---|---|---|
+| YouTube | không cần | từ khoá · link · tìm kênh · tải | xem trước 10 s; tải 4 phút 12 hết 23 s, giữ 15 → thu 3; tải lại cùng video: 1 s, thu 0 (chống trùng) | ✅ chạy |
+| Douyin | có (hạn 22/11/2026) | từ khoá `猫` | job **done 1,3 s, `muc: []`** — nền trả rỗng, KHÔNG lỗi. Cookie có được dùng | ⛔ ghim "Đang phát triển" |
+| TikTok | có (hạn 22/03/2027) | từ khoá `cat` | `ERROR: No working app info is available` (yt-dlp) | ⛔ ghim "Đang phát triển" |
+| Xiaohongshu | **chưa có** | — | không đo được | ⛔ ghim "Đang phát triển" |
+
+**Vì sao ghim chứ không tắt:** nền vẫn hiện trên giao diện (khách thấy lộ trình) nhưng bị chặn ở cửa vào kèm
+lý do. Tắt hẳn (`bat=False`) sẽ giấu luôn khỏi bảng nền và mất dấu vết việc đã làm.
+
+**Điều kiện GỠ ghim** (đo lại, không phải sửa mù):
+- Douyin: dựng lại chữ ký request (a_bogus/msToken) rồi đo `tu_khoa` ra ≥ 1 mục thật.
+- TikTok: chờ yt-dlp vá "No working app info" (tra issue trước — hợp đồng §1b) hoặc đi đường API riêng như Douyin.
+- Xiaohongshu: nạp cookie vào kho rồi đo lại.
+
