@@ -20381,3 +20381,7 @@ msgstr "Score"
 #: apps/video_crawler
 msgid "đang tìm kênh"
 msgstr "searching for channels"
+
+#: apps/video_crawler
+msgid "Máy chủ chưa sẵn sàng ghép video. Chúng tôi đã ghi nhận — vui lòng thử lại sau."
+msgstr "The server is not ready to merge video yet. We have logged it — please try again later."

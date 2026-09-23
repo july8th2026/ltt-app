@@ -100,7 +100,7 @@ class Muon:
     nhan: str
     lease_id: str
     #: Luồng đập nhịp giữ chỗ (xem `NHIP_TIM_S`). Không tham gia so sánh/hiển thị.
-    nhip: object | None = field(default=None, compare=False, repr=False)
+    nhip: "_NhipTim | None" = field(default=None, compare=False, repr=False)
 
 
 def nen_co_kho(nen_id: str) -> bool:

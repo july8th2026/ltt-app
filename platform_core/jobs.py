@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import importlib
 import re
+from typing import TypeVar
 from datetime import datetime, timedelta, timezone
 from typing import Callable, Optional
 
@@ -85,6 +86,8 @@ class LoiNguoiGoi(Exception):
 
 
 #: Câu chung cho khách khi job hỏng vì lý do KHÔNG phải của họ — cùng câu với sự kiện `failed` (`fail()`).
+_E = TypeVar("_E", bound=BaseException)
+
 LOI_CHUNG_KHACH = N_("Không thể hoàn tất yêu cầu. Bạn có thể thử lại.")
 #: Dấu ngăn "chi tiết cho vận hành" với "câu cho khách" trong `Job.error` của một lỗi KHÔNG phải `LoiNguoiGoi`.
 DAU_CAU_KHACH = "|| khach: "
@@ -107,6 +110,16 @@ def mo_ta_loi(exc: BaseException) -> str:
         # hết lượt thử. Chi tiết kỹ thuật giữ nguyên cho vận hành, câu khách nằm ở cuối sau dấu.
         return f"{type(exc).__name__}: {exc} {DAU_CAU_KHACH}{cau}"
     return f"{type(exc).__name__}: {exc}"
+
+
+def voi_cau_khach(exc: _E, cau: str) -> _E:
+    """Gắn "câu an toàn cho khách" vào một ngoại lệ KHÔNG phải `LoiNguoiGoi` (lỗi tạm thời được thử lại).
+
+    Dùng helper thay vì `exc.cau_khach = ...` ở từng app: gán thuộc tính tự do lên `Exception` là thứ mypy
+    không kiểm được, và mỗi app lại gõ một kiểu tên khác nhau.
+    """
+    vars(exc)["cau_khach"] = cau      # ghi thẳng `__dict__`: `setattr` tên hằng bị ruff B010 chặn
+    return exc
 
 
 def loi_cho_khach(job) -> str:
