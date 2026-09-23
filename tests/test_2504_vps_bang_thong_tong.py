@@ -223,6 +223,17 @@ class _May:
 class _Db:
     def __init__(self, may):
         self.may = list(may)
+        #: Ban ghi suc khoe ma vong bao tri ghi cho lop canh THEO TONG
+        #: (`bao_tri.THANH_PHAN_BANG_THONG_TONG`, them 23/09/2026). Do gia lap
+        #: nay phai NHAN duoc chung: mot lop bao ve ngung canh phai ghi lai
+        #: duoc, va mot `_Db` khong co `add` se lam chinh duong do im lang.
+        self.da_them = []
+
+    def add(self, row):
+        self.da_them.append(row)
+
+    def flush(self):
+        pass
 
     def execute(self, *a, **kw):
         class _Kq:

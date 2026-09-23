@@ -37,6 +37,20 @@ REQUIRED_HEALTH_COMPONENTS = (
 CHAN_BAN = ("compute", "ip", "gateway", "capacity")
 CANH_BAO = ("network", "runtime")
 
+#: Thành phần cảnh báo do **vòng bảo trì** đo, không phải `preflight`.
+#:
+#: ⚠️ Phải NẰM NGOÀI `REQUIRED_HEALTH_COMPONENTS`: `preflight` duyệt tập đó và
+#:    đòi một trạng thái cho **từng** thành phần (`components[component]`), nên
+#:    thêm vào đấy một thứ nó không đo được là một `KeyError` giữa đường đo sức
+#:    khoẻ. `test_2600` chốt rằng hai tập rời nhau.
+#:
+#: Vì sao cần một tầng riêng: lớp canh băng thông theo TỔNG
+#: (`bao_tri._can_ham_theo_tong`) đọc bộ đếm cổng vào qua SSH. Đọc hỏng thì nó
+#: bỏ lượt — cố ý, để một lần hỏng thoáng qua không kéo theo lớp riêng. Nhưng
+#: bỏ lượt **trong im lặng** thì một tuần SSH chết trông y hệt một tuần bình
+#: thường, và thứ đầu tiên phát hiện ra sẽ là hoá đơn OVH.
+CANH_BAO_BAO_TRI = ("bang_thong_tong",)
+
 # Stable IDs make migration/backfill and operator tooling agree without looking
 # profiles up by a mutable display name.
 VULTR_PROFILE_ID = "00000000-0000-4000-8000-000000000401"
@@ -184,7 +198,8 @@ def activate_profile(
     return profile
 
 
-def canh_bao(db: Session, profile_id: str) -> list[tuple[str, str]]:
+def canh_bao(db: Session, profile_id: str, *,
+             thanh_phan: tuple[str, ...] | None = None) -> list[tuple[str, str]]:
     """Thành phần tầng `CANH_BAO` đang không xanh: `[(tên, trạng_thái)]`.
 
     ⚠️ Hàm này là **nửa còn lại** của việc gỡ `network` khỏi cổng bán. Gỡ một
@@ -195,8 +210,16 @@ def canh_bao(db: Session, profile_id: str) -> list[tuple[str, str]]:
     Thiếu bản ghi cũng là một cảnh báo (`UNKNOWN`): ở tầng này "không đo được"
     không đóng cửa hàng, nhưng nó vẫn phải hiện ra cho người vận hành.
     """
+    # Mặc định gồm CẢ thành phần do vòng bảo trì ghi: một tín hiệu chỉ có giá
+    # trị khi có chỗ nhìn nó, và trang admin đọc thẳng hàm này.
+    #
+    # Người gọi hướng KHÁCH truyền `thanh_phan=CANH_BAO`: `bang_thong_tong` là
+    # tín hiệu VẬN HÀNH ("ta có đang canh không"), không phải chất lượng dịch
+    # vụ khách đang nhận. Nói với khách rằng một bộ đếm nội bộ đọc không được
+    # là đổ lo lắng sang người không làm gì được với nó.
     ra: list[tuple[str, str]] = []
-    for component in CANH_BAO:
+    for component in (CANH_BAO + CANH_BAO_BAO_TRI if thanh_phan is None
+                      else thanh_phan):
         row = db.execute(
             select(VpsProfileHealth)
             .where(
@@ -207,6 +230,8 @@ def canh_bao(db: Session, profile_id: str) -> list[tuple[str, str]]:
             .limit(1)
         ).scalar_one_or_none()
         if row is None:
+            # Thiếu bản ghi cũng là một cảnh báo: "chưa bao giờ đo" là đúng thứ
+            # mục này sinh ra để không giấu nữa.
             ra.append((component, "UNKNOWN"))
         elif row.status != "HEALTHY":
             ra.append((component, str(row.status)))

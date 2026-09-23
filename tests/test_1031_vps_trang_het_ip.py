@@ -51,7 +51,7 @@ def _goi_tren_trang(monkeypatch, do: nguon_luc.DoDuoc):
     # cac phep o day chay voi `db=None` — chung do CHO BAN, khong do thoi gian.
     monkeypatch.setattr(routes.provisioning, "thoi_gian_san_sang",
                         lambda db, **k: None)
-    monkeypatch.setattr(routes, "_canh_bao_chat_luong", lambda db, profile: [])
+    monkeypatch.setattr(routes, "_canh_bao_chat_luong", lambda db: False)
     monkeypatch.setattr(routes.ten_may, "tu_sinh", lambda db, user_id: "vps-01")
     monkeypatch.setattr(routes.templates, "TemplateResponse",
                         lambda request, name, ctx: ctx)

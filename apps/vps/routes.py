@@ -35,7 +35,8 @@ from apps.vps.services import (billing, console, dieu_khien,
                                nguon_luc, provisioning, sao_luu, thao_tac,
                                backend_factory)
 from apps.vps.services.proxmox import (ChuaCauHinh, ProxmoxError)
-from apps.vps.tables import VpsEvent, VpsInstance, VpsIp
+from apps.vps.tables import (VpsEvent, VpsInfrastructureProfile,
+                             VpsInstance, VpsIp)
 from platform_core.i18n import N_
 from platform_core.i18n import _ as _t
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
@@ -77,20 +78,38 @@ def _instance_client(db, may):
     return backend_factory.compute_backend(profiles.pinned_profile(db, may)).client
 
 
-def _canh_bao_chat_luong(db, profile) -> list[str]:
-    """Nhãn chất lượng cho khách ĐANG DÙNG — không phải lý do từ chối bán.
+def _canh_bao_chat_luong(db) -> bool:
+    """Chất lượng dịch vụ đang suy giảm? Dành cho khách **đang dùng**.
 
     Tầng `profiles.CANH_BAO` đỏ nghĩa là dịch vụ chạy chưa mượt, không phải
     không giao được máy. Khách đang có máy xứng đáng biết điều đó; khách đang
     định mua thì không bị chặn vì nó. Xem `profiles.CHAN_BAN`.
+
+    ⚠️ Tra profile theo **vùng + default**, KHÔNG qua `select_profile`:
+       `select_profile` lọc theo tầng `CHAN_BAN`, nên đúng lúc hạ tầng có vấn
+       đề thì nó không trả gì — và cảnh báo chất lượng biến mất đúng lúc nó
+       cần xuất hiện.
+
+    ⛔ Chỉ tầng `CANH_BAO`. `CANH_BAO_BAO_TRI` là tín hiệu vận hành nội bộ
+       ("ta có đang canh băng thông không"); khách không làm gì được với nó.
     """
-    if profile is None:
-        return []
     try:
-        return [ten for ten, _tt in profiles.canh_bao(db, profile.id)]
+        vung = provisioning.vung_dang_mo(db)
+        if not vung:
+            return False
+        hang = db.execute(
+            select(VpsInfrastructureProfile)
+            .where(VpsInfrastructureProfile.region == vung[0][0],
+                   VpsInfrastructureProfile.status == "ACTIVE")
+            .order_by(VpsInfrastructureProfile.is_default.desc())
+            .limit(1)).scalar_one_or_none()
+        if hang is None:
+            return False
+        return bool(profiles.canh_bao(db, hang.id,
+                                      thanh_phan=profiles.CANH_BAO))
     except Exception:  # noqa: BLE001 - nhan hien thi khong duoc lam sap trang
         log.warning("vps: khong doc duoc canh bao chat luong")
-        return []
+        return False
 
 
 def _viec_dang_chay(db, may) -> dict:
@@ -375,7 +394,7 @@ def trang_chinh(request: Request,
         "suc_chua": suc_chua,
         # Chất lượng đang suy giảm thì khách ĐANG DÙNG được biết — nhưng nó
         # không chặn ai mua. Xem `profiles.CHAN_BAN` / `CANH_BAO`.
-        "canh_bao_chat_luong": _canh_bao_chat_luong(db, None),
+        "chat_luong_suy_giam": _canh_bao_chat_luong(db),
         "loi_ha_tang": loi_ha_tang,
         "loi": request.query_params.get("loi", ""),
     })

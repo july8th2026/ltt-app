@@ -197,7 +197,7 @@ def _dong_bo_bang_thong(db, profile=None, *, now=None) -> int:
     # ── Bước 2: lớp bảo vệ THEO TỔNG — chỉ có ý nghĩa khi có PROFILE, vì cần
     #    biết đọc bộ đếm cổng vào nào. Duyệt đúng `dang_song` (bảng VpsInstance)
     #    nên KHÔNG BAO GIỜ đụng tới VM100-107 — chúng không có mặt trong bảng.
-    can_ham_theo_tong = (_can_ham_theo_tong(profile, dang_song, now=now)
+    can_ham_theo_tong = (_can_ham_theo_tong(profile, dang_song, now=now, db=db)
                          if profile is not None else set())
 
     # ── Bước 3: MỘT quyết định mỗi máy, rồi mới gọi router ───────────────────
@@ -244,6 +244,22 @@ def _dong_bo_bang_thong(db, profile=None, *, now=None) -> int:
 # đếm không bao giờ tự về 0 (nó là bộ đếm từ lúc khởi động máy, không phải bộ
 # đếm theo tháng), cùng khuôn với cách mỗi máy khách tự cộng dồn của nó.
 _KHOA_CAU_HINH_CONG_VAO = "cong_vao_bang_thong"
+
+#: Tên thành phần sức khoẻ mà **vòng bảo trì** ghi cho lớp canh theo tổng.
+#: Phải nằm ngoài `profiles.REQUIRED_HEALTH_COMPONENTS` (xem
+#: `profiles.CANH_BAO_BAO_TRI`); `test_2600` chốt điều đó.
+THANH_PHAN_BANG_THONG_TONG = "bang_thong_tong"
+
+#: Khoá đếm số lượt LIÊN TIẾP không đọc được bộ đếm cổng vào.
+#:
+#: Một lần hỏng thoáng qua (mạng chớp, cổng vào vừa khởi động lại) khác hẳn một
+#: tuần SSH chết. Gộp hai thứ đó vào một trạng thái nhị phân là mất đúng thông
+#: tin người trực cần để quyết định có phải dậy giữa đêm hay không.
+_KHOA_MAT_TIN_HIEU = "mat_tin_hieu_lien_tiep"
+
+#: Từ ngần này lượt liên tiếp trở lên thì tín hiệu lên CRITICAL thay vì DEGRADED.
+#: Vòng bảo trì chạy mỗi giờ, nên 3 lượt ≈ 3 giờ không biết cổng vào ra sao.
+MAT_TIN_HIEU_NGHIEM_TRONG = 3
 
 #: Tháng-tới-giờ chạm mốc này (% trần) thì bắt đầu xét hãm theo tổng.
 NGUONG_BAO_VE_TONG = 0.8
@@ -396,13 +412,94 @@ def _chon_may_can_ham_theo_tong(may_sap_xep, *, tong_thang_byte: int,
     return ham
 
 
-def _can_ham_theo_tong(profile, dang_song, *, now=None) -> set[str]:
+def so_lan_mat_tin_hieu(profile) -> int:
+    """Số lượt LIÊN TIẾP gần nhất không đọc được bộ đếm cổng vào. 0 = đang đọc được."""
+    cfg = dict(getattr(profile, "network_config", None) or {})
+    tt = dict(cfg.get(_KHOA_CAU_HINH_CONG_VAO) or {})
+    try:
+        return max(0, int(tt.get(_KHOA_MAT_TIN_HIEU, 0)))
+    except (TypeError, ValueError):
+        return 0
+
+
+def _ghi_tin_hieu_bang_thong_tong(db, profile, *, doc_duoc: bool,
+                                  ly_do: str = "", now=None) -> int:
+    """Ghi lại việc lớp canh theo TỔNG có đọc được cổng vào hay không.
+
+    🔴 Vì sao hàm này tồn tại. `_can_ham_theo_tong` **cố ý** bỏ lượt khi đọc
+       hỏng — kéo cả lớp riêng xuống theo vì một lần SSH chớp là tệ hơn. Nhưng
+       bản đầu chỉ để lại một `log.warning` trong một vòng chạy mỗi giờ, tức
+       một lớp bảo vệ có thể **biến mất trong im lặng**. Cái giá: cổng vào là
+       OVH VPS-1 Singapore, 1 TB/tháng, vượt thì OVH hãm 10 Mbps cho TẤT CẢ —
+       kể cả VM100-107, việc thật của chủ dự án.
+
+       Đúng khuôn "đo vắng mặt thì xoá cũng xanh": không có phép kiểm nào đo
+       được rằng một lớp bảo vệ đã ngừng canh, nếu nó ngừng mà không nói gì.
+
+    Trả về số lượt hỏng liên tiếp sau khi cập nhật (0 khi vừa đọc được).
+    """
+    from datetime import datetime, timezone
+
+    bay_gio = now or datetime.now(timezone.utc)
+    lien_tiep = 0 if doc_duoc else so_lan_mat_tin_hieu(profile) + 1
+
+    cfg = dict(getattr(profile, "network_config", None) or {})
+    tt = dict(cfg.get(_KHOA_CAU_HINH_CONG_VAO) or {})
+    tt[_KHOA_MAT_TIN_HIEU] = lien_tiep
+    cfg[_KHOA_CAU_HINH_CONG_VAO] = tt
+    # Gán lại CẢ dict: SQLAlchemy không theo dõi thay đổi bên trong một cột JSON.
+    profile.network_config = cfg
+
+    if db is None:
+        return lien_tiep
+    from apps.vps.tables import VpsProfileHealth
+    if doc_duoc:
+        trang_thai, tom_tat = "HEALTHY", "doc duoc bo dem cong vao"
+    elif lien_tiep >= MAT_TIN_HIEU_NGHIEM_TRONG:
+        trang_thai = "CRITICAL"
+        tom_tat = (f"mat tin hieu bo dem cong vao {lien_tiep} luot lien tiep — "
+                   f"lop canh bang thong TONG dang khong canh gi")
+    else:
+        trang_thai = "DEGRADED"
+        tom_tat = f"khong doc duoc bo dem cong vao ({lien_tiep} luot lien tiep)"
+    # Lý do kỹ thuật chỉ đi vào tóm tắt của bản ghi sức khoẻ — trang admin đọc
+    # nó, khách thì không bao giờ thấy thành phần này.
+    if ly_do and not doc_duoc:
+        tom_tat = f"{tom_tat}: {ly_do}"
+    db.add(VpsProfileHealth(
+        infrastructure_profile_id=profile.id,
+        component=THANH_PHAN_BANG_THONG_TONG,
+        status=trang_thai, summary=tom_tat[:300],
+        observed_at=bay_gio, generated_at=bay_gio))
+    return lien_tiep
+
+
+def _can_ham_theo_tong(profile, dang_song, *, now=None, db=None) -> set[str]:
     """Tập `id` VpsInstance cần bị ép hãm bởi lớp TỔNG, cho một profile.
 
     Lỗi đọc cổng vào (SSH hỏng, thiếu cấu hình) KHÔNG được làm hỏng vòng bảo
     trì: trả về tập rỗng — lớp RIÊNG (đã chạy xong ở bước 1/3 của
     `_dong_bo_bang_thong`) vẫn hoạt động bình thường, chỉ là lớp tổng bỏ lượt
     này. Bộ đếm trên cổng vào vẫn chạy tiếp nên lượt sau cộng bù đủ.
+
+    ## Fail-open là một QUYẾT ĐỊNH, không phải một chỗ chưa làm xong
+
+    ⭐ Chủ dự án chốt 23/09/2026, sau khi được hỏi thẳng ba lựa chọn (giữ
+       fail-open + báo động · hãm theo ước lượng sau 3 lượt · đóng bán máy mới
+       sau 3 lượt): **giữ fail-open, chỉ báo động.**
+
+       Lý do: hãm khách dựa trên một con số ĐỌC KHÔNG ĐƯỢC là phạt người không
+       có lỗi bằng một bằng chứng không tồn tại. Ở quy mô 5–15 máy, rủi ro chạm
+       trần 1 TB trong vài giờ là nhỏ, và báo động đủ để có người vào xem.
+
+    ⛔ Đừng đổi sang fail-closed trong một bản sửa khác mà không hỏi lại. Đổi
+       nó là đổi hành vi tính tiền/chất lượng của khách đang trả tiền.
+       `test_2600::test_mat_tin_hieu_tong_thi_KHONG_ep_ham_may_nao` chốt điều
+       này bằng cơ học, nên một lần đổi lặng lẽ sẽ làm đỏ chứ không trôi qua.
+
+    Cái đã thêm 23/09 là **tiếng nói**, không phải hành vi: mỗi lượt đọc hỏng
+    ghi một bản ghi sức khoẻ (`THANH_PHAN_BANG_THONG_TONG`), đếm số lượt liên
+    tiếp, và leo thang log lên `error` từ lượt thứ `MAT_TIN_HIEU_NGHIEM_TRONG`.
 
     Chỉ xét `dang_song` — đúng những gì `_dong_bo_bang_thong` vừa duyệt từ
     bảng `VpsInstance`. VM100-107 không phải `VpsInstance` nên KHÔNG BAO GIỜ
@@ -418,8 +515,15 @@ def _can_ham_theo_tong(profile, dang_song, *, now=None) -> set[str]:
         dich = _doc_cau_hinh_cong_vao()
         rx_byte, tx_byte = _doc_bo_dem_cong_vao(dich)
     except SshLenhError as exc:
-        log.warning("VPS bao tri: khong doc duoc bo dem cong vao: %s", exc)
+        lien_tiep = _ghi_tin_hieu_bang_thong_tong(
+            db, profile, doc_duoc=False, ly_do=str(exc), now=now)
+        # Log LEO THANG theo số lượt: một dòng warning mỗi giờ là một dòng không
+        # ai đọc, nhưng `error` sau ba lượt thì đi vào đúng chỗ người trực nhìn.
+        (log.error if lien_tiep >= MAT_TIN_HIEU_NGHIEM_TRONG else log.warning)(
+            "VPS bao tri: khong doc duoc bo dem cong vao (%s luot lien tiep): %s",
+            lien_tiep, exc)
         return set()
+    _ghi_tin_hieu_bang_thong_tong(db, profile, doc_duoc=True, now=now)
 
     bay_gio = now or datetime.now(timezone.utc)
     trang_thai = _cong_don_cong_vao(
@@ -438,7 +542,16 @@ def _can_ham_theo_tong(profile, dang_song, *, now=None) -> set[str]:
         ngay_da_qua=bay_gio.day, so_ngay_thang=_so_ngay_trong_thang(bay_gio))
 
 
-def _dong_bo_bang_thong_pinned(db):
+def _dong_bo_bang_thong_pinned(db) -> int:
+    """Số máy vừa đổi trạng thái hãm, trên mọi profile còn sống.
+
+    ⛔ Chữ ký trả về **một số nguyên** và phải giữ nguyên như thế. Bản đầu của
+       việc thêm quan sát (23/09) cho hàm này trả `int` HOẶC `dict` tuỳ một cờ
+       — và `test_555` đỏ ngay, vì nó giả lập hàm này bằng một `int`. Một hàm
+       đổi KIỂU trả về theo tham số là một hàm mà mọi chỗ giả lập nó đều phải
+       biết cờ đó; số profile mất tín hiệu nay đếm riêng ở
+       `dem_profile_mat_tin_hieu`.
+    """
     from sqlalchemy import select
     from apps.vps.tables import VpsInfrastructureProfile
     changed = 0
@@ -449,6 +562,21 @@ def _dong_bo_bang_thong_pinned(db):
         except backend_factory.operation_error_types():
             log.warning("VPS bandwidth unavailable for profile %s", profile.id)
     return changed
+
+
+def dem_profile_mat_tin_hieu(db) -> int:
+    """Số profile mà lớp canh băng thông TỔNG đang không đọc được cổng vào.
+
+    Đọc trạng thái đã ghi, **không** đi đo lại: `_can_ham_theo_tong` vừa cập
+    nhật nó trong cùng lượt bảo trì. Một lớp bảo vệ ngừng canh phải hiện ra ở
+    chỗ người vận hành nhìn, và dòng tổng kết của vòng bảo trì là chỗ đó.
+    """
+    from sqlalchemy import select
+    from apps.vps.tables import VpsInfrastructureProfile
+    return sum(
+        1 for profile in db.execute(select(VpsInfrastructureProfile).where(
+            VpsInfrastructureProfile.status != "DISABLED")).scalars()
+        if so_lan_mat_tin_hieu(profile))
 
 
 def _doi_chieu_profiles(db):
@@ -724,6 +852,11 @@ def mot_luot(db, *, now=None) -> dict:
         # chậm — "tôi vừa gia hạn mà máy vẫn ì" là một lá thư hỗ trợ có thật.
         da_doi_giam_toc += _dong_bo_bang_thong_pinned(db)
     ket_qua["da_doi_giam_toc"] = da_doi_giam_toc
+    # Số profile mà lớp canh băng thông TỔNG đang không đọc được cổng vào. Con
+    # số này phải đi tới dòng tổng kết bên dưới: một lớp bảo vệ ngừng canh mà
+    # chỉ để lại `log.warning` trong một vòng chạy mỗi giờ là một lớp bảo vệ
+    # biến mất trong im lặng.
+    ket_qua["mat_tin_hieu_bang_thong_tong"] = dem_profile_mat_tin_hieu(db)
     # Chụp ảnh SAU khi thu tiền: máy vừa bị treo vì hết tiền vẫn được chụp (nó
     # còn 7 ngày ân hạn, và ngừng chụp trong 7 ngày đó là một hình phạt kèm mà
     # không ai công bố), nhưng máy vừa bị nộp job xoá thì không cần bản nào nữa.
@@ -799,10 +932,12 @@ def chay(*, dong_ho=None) -> None:
         if any(kq.values()):
             log.info("VPS bao tri: thu %s, treo %s, nop xoa %s, doi giam toc %s, "
                      "chup anh %s, don ve %s, hoan %s, thao tac qua han %s, "
-                     "mo coi %s, ip rong huy gia han %s",
+                     "mo coi %s, ip rong huy gia han %s, "
+                     "mat tin hieu bang thong tong %s",
                      kq["da_thu"], kq["da_treo"], kq["da_nop_xoa"],
                      kq["da_doi_giam_toc"], kq["da_chup"], kq["da_don_ve"],
                      kq["da_hoan"], kq["thao_tac_qua_han"], kq["mo_coi"],
-                     kq.get("ip_rong_huy_gia_han", 0))
+                     kq.get("ip_rong_huy_gia_han", 0),
+                     kq.get("mat_tin_hieu_bang_thong_tong", 0))
     finally:
         gen.close()

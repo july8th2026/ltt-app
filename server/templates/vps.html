@@ -377,6 +377,14 @@
   <div class="vps-nha">
     <div>
       <h2 class="vps-h2">{{ _("Máy của tôi") }}</h2>
+      {# Chất lượng đang suy giảm — cho khách ĐANG DÙNG, không chặn ai mua.
+         Đặt ở khu "Máy của tôi" chứ không trên bảng giá: người đang có máy là
+         người thấy nó chậm; người đang cân nhắc mua thì tín hiệu này không
+         giúp họ quyết định gì, chỉ làm họ bỏ đi.
+         Tầng `profiles.CANH_BAO` — xem `apps/vps/profiles.py`. #}
+      {% if chat_luong_suy_giam %}
+        <p class="alert alert-warn u-mb16">{{ _("Chất lượng mạng đang suy giảm. Máy vẫn chạy, nhưng kết nối có thể chậm hoặc chập chờn. Chúng tôi đang xử lý.") }}</p>
+      {% endif %}
 
       {% if not may_cua_toi %}
       {# Trạng thái rỗng: một lời mời, không phải một bảng trống. Người vừa tạo

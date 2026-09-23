@@ -12,6 +12,55 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-23 (khuya) — VPS: lớp canh băng thông TỔNG không được ngừng canh trong im lặng
+
+- **Chủ dự án chỉ ra**, sau khi đọc bản sửa băng thông cùng ngày: `bao_tri._can_ham_theo_tong`
+  đọc bộ đếm cổng vào qua SSH; đọc hỏng thì `log.warning` rồi `return set()`. Tức lớp bảo vệ
+  **im lặng ngừng canh**, và một dòng log trong một vòng chạy mỗi giờ là một dòng không ai đọc.
+- **Cái giá nếu SSH hỏng dài ngày:** cổng vào là OVH VPS-1 Singapore, 1 TB/tháng; vượt thì OVH
+  hãm 10 Mbps cho **tất cả**, kể cả VM100–107. Thứ đầu tiên phát hiện ra sẽ là hoá đơn.
+- Đúng khuôn **"đo vắng mặt thì xoá cũng xanh"** (`docs/BAY_TRONG_CONG_CHAT_LUONG.md`): không
+  phép kiểm nào đo được rằng một lớp bảo vệ đã biến mất, nếu nó biến mất mà không nói gì.
+
+### Đã làm — thêm TIẾNG NÓI, không đổi hành vi
+
+- `bao_tri._ghi_tin_hieu_bang_thong_tong`: mỗi lượt ghi một bản ghi sức khoẻ, **cả khi đọc được
+  lẫn khi không**. HEALTHY · DEGRADED (1–2 lượt) · CRITICAL (≥ `MAT_TIN_HIEU_NGHIEM_TRONG` = 3),
+  kèm log leo thang lên `error`. Đếm **số lượt liên tiếp** (`so_lan_mat_tin_hieu`) chứ không chỉ
+  trạng thái cuối — một lần mạng chớp khác hẳn một tuần SSH chết.
+- `profiles.CANH_BAO_BAO_TRI = ("bang_thong_tong",)` — tầng cảnh báo do **vòng bảo trì** đo.
+  ⚠️ Phải nằm NGOÀI `REQUIRED_HEALTH_COMPONENTS`: `preflight` duyệt tập đó và đòi trạng thái cho
+  từng thành phần, nên thêm vào đấy một thứ nó không đo được là một `KeyError` giữa đường đo sức
+  khoẻ. `test_2600` chốt hai tập rời nhau bằng cơ học.
+- Con số lên tới dòng `log.info` tổng kết vòng bảo trì (`mat tin hieu bang thong tong N`) và
+  `profiles.canh_bao()` — trang admin hạ tầng đã đọc sẵn hàm đó.
+- Trạng thái đếm cất trong `profile.network_config`, **không migration**.
+
+### Quyết định: fail-open, chỉ báo động
+
+Chủ dự án chốt sau khi được hỏi thẳng ba lựa chọn (giữ fail-open + báo động · hãm theo ước lượng
+sau 3 lượt · đóng bán máy mới sau 3 lượt): **giữ fail-open**. Hãm khách dựa trên một con số ĐỌC
+KHÔNG ĐƯỢC là phạt người không có lỗi bằng bằng chứng không tồn tại; ở quy mô 5–15 máy, rủi ro
+chạm trần trong vài giờ là nhỏ và báo động đủ để có người vào xem.
+
+Ghi vào docstring `_can_ham_theo_tong` kèm cảnh báo đừng đổi sang fail-closed trong một bản sửa
+khác mà không hỏi lại — và `test_2600::test_mat_tin_hieu_tong_thi_KHONG_ep_ham_may_nao` chốt nó
+bằng cơ học, nên một lần đổi lặng lẽ sẽ làm đỏ chứ không trôi qua.
+
+### Một chỗ cùng bệnh, sửa luôn
+
+`routes.trang_chinh` truyền `canh_bao_chat_luong` vào template nhưng gọi với `profile=None` nên
+**luôn rỗng**, và template chưa hề vẽ nó — một tín hiệu đi vào hư không, thêm chiều cùng ngày.
+Nay nối thật: tra profile theo **vùng + default** chứ không qua `select_profile` (hàm đó lọc theo
+`CHAN_BAN`, nên đúng lúc hạ tầng có vấn đề thì nó không trả gì — cảnh báo biến mất đúng lúc cần
+xuất hiện). Khách chỉ thấy tầng `CANH_BAO`; `bang_thong_tong` là tín hiệu vận hành, khách không
+làm gì được với nó.
+
+### Còn mở
+
+Khi **router** không đọc được, `_dong_bo_bang_thong` bỏ ngang ở bước 1 nên **cả hai** lớp băng
+thông cùng im, chỉ còn một `log.warning`. Cùng họ bệnh, khác cổng vào. Chủ dự án chốt chưa xử lý.
+
 ## 2026-09-23 (tối) — VPS bán thật: sổ nguồn lực, cổng bán hai tầng, hai trần cứng chưa ai đo
 
 - **Triệu chứng:** chủ dự án không tạo được VPS; trang `/vps` in *"Hết chỗ cho cấu hình này"* cho **cả ba gói**.

@@ -55,11 +55,17 @@ def _profile(db):
     return p
 
 
-def _health(db, **trang_thai):
-    """Ghi mot ban ghi suc khoe tuoi cho moi thanh phan bat buoc."""
+def _health(db, *, gom_bao_tri=True, **trang_thai):
+    """Ghi mot ban ghi suc khoe tuoi cho moi thanh phan.
+
+    `gom_bao_tri` ghi ca tang `CANH_BAO_BAO_TRI` — tang do KHONG do boi
+    `preflight` ma boi vong bao tri, nen o doi that no co the vang mat.
+    """
     from apps.vps.tables import VpsProfileHealth
     now = datetime.now(timezone.utc)
-    for thanh_phan in profiles.REQUIRED_HEALTH_COMPONENTS:
+    tap = profiles.REQUIRED_HEALTH_COMPONENTS + (
+        profiles.CANH_BAO_BAO_TRI if gom_bao_tri else ())
+    for thanh_phan in tap:
         db.add(VpsProfileHealth(
             infrastructure_profile_id=PID, component=thanh_phan,
             status=trang_thai.get(thanh_phan, "HEALTHY"),
@@ -174,3 +180,18 @@ def test_khong_co_gi_do_thi_khong_co_canh_bao(db):
     _profile(db)
     _health(db)
     assert profiles.canh_bao(db, PID) == []
+
+
+def test_thanh_phan_do_boi_VONG_BAO_TRI_vang_mat_thi_VAN_canh_bao(db):
+    """"Chua bao gio do" phai hien ra, khong duoc im.
+
+    🔴 Lop canh bang thong THEO TONG doc bo dem cong vao qua SSH; doc hong thi
+       no bo luot (chu y). Neu vang mat ban ghi ma `canh_bao` im, thi mot tuan
+       SSH chet trong y het mot tuan binh thuong — va thu dau tien phat hien ra
+       se la hoa don OVH. Xem `docs/BAY_TRONG_CONG_CHAT_LUONG.md`.
+    """
+    _profile(db)
+    _health(db, gom_bao_tri=False)
+    canh = dict(profiles.canh_bao(db, PID))
+    for ten in profiles.CANH_BAO_BAO_TRI:
+        assert canh.get(ten) == "UNKNOWN", f"{ten} vang mat ma khong ai thay"

@@ -20583,3 +20583,6 @@ msgstr "Pick a plan on the side and press “Create machine”. It is ready in a
 
 msgid "Chọn một gói ở bên và bấm “Tạo máy”. Chúng tôi dựng máy rồi báo bạn, sau đó bạn tự cài Windows qua console."
 msgstr "Pick a plan on the side and press “Create machine”. We build it and tell you when it is ready, then you install Windows yourself through the console."
+
+msgid "Chất lượng mạng đang suy giảm. Máy vẫn chạy, nhưng kết nối có thể chậm hoặc chập chờn. Chúng tôi đang xử lý."
+msgstr "Network quality is degraded. Your machines keep running, but the connection may be slow or unstable. We are working on it."
