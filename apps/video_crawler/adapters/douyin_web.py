@@ -32,13 +32,19 @@ from platform_core.i18n import N_
 from apps.video_crawler.adapters.base import LoiCao
 
 __all__ = [
-    "DUONG_KENH", "DUONG_TIM", "SO_TRANG_TOI_DA", "UA", "DouyinWeb", "doc_cookie", "dung_url", "ky_a_bogus",
-    "muc_tu_aweme", "sec_uid_tu_link", "tham_so_goc", "van_chuyen_ytdlp",
+    "DUONG_KENH", "DUONG_TIM", "DUONG_TIM_KENH", "SO_TRANG_TOI_DA", "UA", "DouyinWeb", "doc_cookie",
+    "dung_url", "kenh_tu_user", "ky_a_bogus", "muc_tu_aweme", "sec_uid_tu_link", "tham_so_goc",
+    "tham_so_tim_kenh", "van_chuyen_ytdlp",
 ]
 
 GOC = "https://www.douyin.com"
 DUONG_TIM = "/aweme/v1/web/general/search/single/"
 DUONG_KENH = "/aweme/v1/web/aweme/post/"
+#: Tìm NGƯỜI DÙNG theo tên: `Evil0ctal/Douyin_TikTok_Download_API` (Apache-2.0) @9fa3e54
+#: `src/dtk/platforms/douyin/endpoints.py:USER_SEARCH`; kênh tìm `aweme_user_web` (giá trị công khai,
+#: nhiều client độc lập dùng cùng một hằng). Phản hồi: `user_list[].user_info`, `has_more`.
+#: Spike 23/09: ẩn danh trả HTTP 200 THÂN RỖNG (chống bot) cả hai lượt ⇒ đường này bắt buộc có phiên.
+DUONG_TIM_KENH = "/aweme/v1/web/discover/search/"
 #: UA phải khớp `browser_name`/`browser_version` gửi trong query (Evil0ctal params.py: hồ sơ phải nhất quán).
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
       "Chrome/130.0.0.0 Safari/537.36")
@@ -101,6 +107,12 @@ def tham_so_kenh(sec_uid: str, max_cursor: str, count: int = CO_TRANG_KENH) -> d
             "publish_video_strategy_type": "2", "from_user_page": "1", "locate_query": "false",
             "need_time_list": "1", "show_live_replay_strategy": "1", "time_list_query": "0",
             "pc_libra_divert": "Windows", "whale_cut_token": ""}
+
+
+def tham_so_tim_kenh(tu_khoa: str, offset: int, count: int = CO_TRANG_TIM) -> dict[str, str]:
+    return {**tham_so_goc(), "keyword": tu_khoa, "search_channel": "aweme_user_web",
+            "search_source": "normal_search", "query_correct_type": "1", "is_filter_search": "0",
+            "offset": str(offset), "count": str(count)}
 
 
 def ky_a_bogus(query: str, ua: str) -> str:
@@ -171,6 +183,25 @@ def muc_tu_aweme(aw: Any) -> dict | None:
         "tac_gia": str(author.get("nickname") or ""),
         "thoi_luong_s": round(ms / 1000) if isinstance(ms, (int, float)) and ms > 0 else None,
         "anh_bia": _url_dau(video.get("cover")) or _url_dau(video.get("origin_cover")),
+    }
+
+
+def kenh_tu_user(muc: Any) -> dict | None:
+    """Một mục `user_list[]` ⇒ {id (sec_uid), ten, anh_dai_dien, so_theo_doi, so_video, mo_ta}.
+
+    `sec_uid` (không phải `uid`) là thứ `tham_so_kenh` cần để liệt kê video ⇒ dùng làm id kênh.
+    Thiếu `sec_uid` hoặc mục lạ ⇒ None (không ném).
+    """
+    ui = muc.get("user_info") if isinstance(muc, dict) else None
+    if not isinstance(ui, dict) or not ui.get("sec_uid"):
+        return None
+    return {
+        "id": str(ui["sec_uid"]),
+        "ten": ui.get("nickname"),
+        "anh_dai_dien": _url_dau(ui.get("avatar_thumb")) or _url_dau(ui.get("avatar_larger")),
+        "so_theo_doi": ui.get("follower_count"),
+        "so_video": ui.get("aweme_count"),
+        "mo_ta": ui.get("signature"),
     }
 
 
@@ -269,3 +300,22 @@ class DouyinWeb:
             awemes: list = al if isinstance(al, list) else []
             return awemes, bool(d.get("has_more")), str(d.get("max_cursor") or "")
         return self._lap(n, bao, trang, nhan)
+
+    def tim_nguoi_dung(self, tu_khoa: str, n: int, *, bao: Callable[[int], None]) -> list[dict]:
+        """Tới `n` kênh khớp `tu_khoa`. Phân trang theo `offset` (như tìm video), bỏ trùng theo sec_uid."""
+        ra: list[dict] = []
+        da_co: set[str] = set()
+        offset = 0
+        for _ in range(SO_TRANG_TOI_DA):
+            d = self._goi(DUONG_TIM_KENH, tham_so_tim_kenh(tu_khoa, offset))
+            ul = d.get("user_list")
+            for muc in (ul if isinstance(ul, list) else []):
+                k = kenh_tu_user(muc)
+                if k is not None and k["id"] not in da_co:
+                    da_co.add(k["id"])
+                    ra.append(k)
+            bao(min(95, len(ra) * 100 // max(n, 1)))
+            if len(ra) >= n or not d.get("has_more"):
+                break
+            offset += CO_TRANG_TIM
+        return ra[:n]

@@ -16,6 +16,7 @@ Thông điệp lỗi: lấy nguyên câu của `loi.py` theo mã (không msgid m
 from __future__ import annotations
 
 import json
+import time
 from typing import Any, Protocol
 
 from apps.video_crawler.adapters.base import LoiCao
@@ -24,6 +25,11 @@ from apps.video_crawler.loi import _BANG, _KHAC
 API = "https://edith.xiaohongshu.com"
 URI_TIM = "/api/sns/web/v1/search/notes"
 URI_KENH = "/api/sns/web/v1/user_posted"
+#: Tìm KÊNH theo tên — `ReaJason/xhs` (MIT, @f4b62d9) `xhs/core.py:get_user_by_keyword`: POST với thân
+#: `{"search_user_request": {keyword, search_id, page, page_size, biz_type: "web_search_user", request_id}}`.
+#: Phản hồi `data.users[]` (`id`, `name`, `image`, `sub_title`, `fans` là CHUỖI rút gọn kiểu "1.2万").
+#: Cần phiên như mọi đường tìm/kênh của nền này (spike 23/09 không có đường ẩn danh).
+URI_TIM_KENH = "/api/sns/web/v1/search/usersearch"
 TRANG_CHU = "https://www.xiaohongshu.com"
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36")
@@ -147,6 +153,14 @@ def params_kenh(user_id: str, cursor: str, xsec_token: str = "") -> dict:
     return p
 
 
+def payload_tim_kenh(tu_khoa: str, trang: int, search_id: str, page_size: int = 20) -> dict:
+    giay = int(round(time.time()))
+    return {"search_user_request": {
+        "keyword": tu_khoa, "search_id": search_id, "page": trang, "page_size": page_size,
+        "biz_type": "web_search_user", "request_id": f"{giay}-{giay * 1000}",
+    }}
+
+
 def _chu(v: Any) -> str:
     return v if isinstance(v, str) else ""
 
@@ -173,3 +187,20 @@ def _chuan(note: str, token: str, card: dict) -> dict:
             "tieu_de": _chu(card.get("display_title")) or _chu(card.get("title")),
             "tac_gia": _chu(user.get("nickname")) or _chu(user.get("nick_name")) or _chu(user.get("user_id")),
             "anh_bia": _chu(cover.get("url_default")) or _chu(cover.get("url"))}
+
+
+def user_tim(muc: Any) -> dict | None:
+    """Một mục `data.users[]` ⇒ {id, ten, anh_dai_dien, so_video, mo_ta}; mục lạ ⇒ None (không ném).
+
+    KHÔNG trả `so_theo_doi`: `fans` của nền là chuỗi đã rút gọn ("1.2万") — đoán thành số là bịa số liệu.
+    """
+    if not isinstance(muc, dict):
+        return None
+    uid = _chu(muc.get("id")) or _chu(muc.get("user_id"))
+    if not uid:
+        return None
+    return {"id": uid,
+            "ten": _chu(muc.get("name")) or _chu(muc.get("nickname")),
+            "anh_dai_dien": _chu(muc.get("image")) or _chu(muc.get("avatar")),
+            "so_video": muc.get("note_count"),
+            "mo_ta": _chu(muc.get("sub_title")) or _chu(muc.get("desc"))}

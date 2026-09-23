@@ -26,8 +26,29 @@ from typing import Any, Callable, ClassVar, Iterator
 from platform_core.i18n import N_
 from platform_core.i18n import _ as _t
 
-from apps.video_crawler.adapters.base import BaoTienDo, CrawlItem, LoiCao, TepTai, YeuCauCao
-from apps.video_crawler.loi import phan_loai
+from apps.video_crawler.adapters.base import (
+    BaoTienDo,
+    CrawlItem,
+    KenhItem,
+    LoiCao,
+    TepTai,
+    YeuCauCao,
+    YeuCauTimKenh,
+    loi_chua_ho_tro_tim_kenh,
+    tao_kenh,
+)
+from apps.video_crawler.loi import _BANG, _KHAC, phan_loai
+
+
+def loi_theo_ma(ma: str) -> LoiCao:
+    """LoiCao mang đúng câu + cờ `tam_thoi` mà `loi.py` đã chốt cho `ma` (mã lạ ⇒ câu chung, tạm thời).
+
+    Dùng ở các đường KHÔNG đi qua `DownloadError` (client web của từng nền) để không sinh msgid mới.
+    """
+    for m, _tin_hieu, tam_thoi, cau in _BANG:
+        if m == ma:
+            return LoiCao(ma, cau, tam_thoi=tam_thoi)
+    return LoiCao("loi_khac", _KHAC, tam_thoi=True)
 
 # Y:1235-1249 `_CODEC_HONG` + `_CHUOI_FORMAT()` với TAI_CODEC=tot (mặc định donor).
 _CODEC_HONG = ("hev", "hvc", "h265", "vvc", "bytevc")
@@ -228,6 +249,10 @@ class YtdlpAdapter:
     extractor_args: ClassVar[dict] = {}
     #: ie_key chấp nhận cho mục phẳng khi khám phá (None — mục đã trích đầy đủ — luôn nhận).
     ie_key_video: ClassVar[tuple[str, ...]] = ()
+    #: ie_key của một mục KÊNH khi tìm kênh theo tên. Rỗng ⇒ nền chưa hỗ trợ `tim_kenh`.
+    ie_key_kenh: ClassVar[tuple[str, ...]] = ()
+    #: `allowed_extractors` riêng cho đường tìm kênh (trang kết quả có IE khác đường tải). Rỗng ⇒ giữ nguyên.
+    extractor_tim_kenh: ClassVar[tuple[str, ...]] = ()
     #: True ⇒ `impersonate=ImpersonateTarget()` (bất kỳ đích curl_cffi có sẵn).
     impersonate: ClassVar[bool] = False
     #: Gửi cookie phiên của khách khi khám phá / khi tải. TikTok: cookie đăng nhập làm TẢI trả 403 (donor Y:1734-1741).
@@ -394,6 +419,57 @@ class YtdlpAdapter:
                 continue
             ra.append(self._sang_item(muc))
         bao_tien_do(100, _t("tìm thấy {n} video").format(n=len(ra)))
+        return ra
+
+    # ------------------------------------------------------------ tìm kênh theo TÊN
+    def url_tim_kenh(self, tu_khoa: str) -> str:
+        """URL trang kết quả "chỉ kênh" của nền. Lớp con khai `ie_key_kenh` thì phải cài hàm này."""
+        raise NotImplementedError
+
+    def url_kenh(self, id: str) -> str:
+        """URL trang kênh chuẩn — nguồn DUY NHẤT cho `KenhItem.url` (không lấy chuỗi của nền)."""
+        raise NotImplementedError
+
+    def kenh_tu_muc(self, e: dict) -> KenhItem | None:
+        """Mục phẳng yt-dlp ⇒ KenhItem đã làm sạch (trường vắng ⇒ mặc định, không ném)."""
+        cid = str(e.get("id") or "")
+        return tao_kenh(self.nen_tang, cid, self.url_kenh(cid),
+                        ten=e.get("title") or e.get("channel"), anh_dai_dien=_anh_bia(e),
+                        so_theo_doi=e.get("channel_follower_count"), so_video=e.get("playlist_count"),
+                        mo_ta=e.get("description"))
+
+    def tim_kenh(self, yeu_cau: YeuCauTimKenh, *, bao_tien_do: BaoTienDo) -> list[KenhItem]:
+        """TÊN kênh ⇒ thẻ kênh, qua trang kết quả của nền + `extract_flat` (yt-dlp KHÔNG resolve tiếp
+        mục phẳng ⇒ một lượt mạng cho cả trang). Lớp con không khai `ie_key_kenh` ⇒ nền chưa hỗ trợ
+        (spike 23/09, `PLATFORM_MATRIX.md` mục "Tìm kênh theo TÊN")."""
+        from yt_dlp.utils import DownloadCancelled, DownloadError
+
+        if not self.ie_key_kenh:
+            raise loi_chua_ho_tro_tim_kenh()
+        n = max(1, int(yeu_cau.so_luong))
+        tt = _TrangThai(bao_tien_do)
+        opts = self._them_chung(self.tuy_chon_goc(), tt, ghi_tu_choi=False)
+        if self.extractor_tim_kenh:
+            opts["allowed_extractors"] = list(self.extractor_tim_kenh)
+        opts.update(extract_flat="in_playlist", skip_download=True, playlistend=n)
+        bao_tien_do(0, _t("đang tìm kênh"))
+        try:
+            with _nhip_tim(tt), self._tao(opts) as ydl:
+                info = ydl.extract_info(self.url_tim_kenh(yeu_cau.tu_khoa.strip()), download=False)
+        except (DownloadCancelled, DownloadError) as e:
+            self._nem_lai(tt, e)
+        if tt.giu:
+            raise tt.giu[0]
+        ra: list[KenhItem] = []
+        for muc in ((info or {}).get("entries") or []):
+            if len(ra) >= n:
+                break
+            if not isinstance(muc, dict) or muc.get("ie_key") not in self.ie_key_kenh:
+                continue                              # video/playlist lẫn vào, không phải kênh
+            k = self.kenh_tu_muc(muc)
+            if k is not None and all(k.id != x.id for x in ra):
+                ra.append(k)
+        bao_tien_do(100, _t("tìm thấy {n} kênh").format(n=len(ra)))
         return ra
 
     # ------------------------------------------------------------ tải

@@ -55,3 +55,30 @@ Nếu muốn giảm rủi ro chi phí đó: làm Bilibili trước. API công kh
 
 Không chọn XHS/RedNote làm lát 2: bắt buộc tải bằng trình duyệt + `xsec_token`, và API bị 风控.
 Không chọn Kuaishou: bị CAPTCHA, chính code donor ghi "chưa hứa cào ra video" (`W:1105-1112`).
+
+---
+
+## Tìm kênh theo TÊN (spike làn W4-L10, đo thật 23/09/2026)
+
+Câu hỏi của mỗi dòng: *khách gõ TÊN kênh (không có link) — nền này trả được danh sách kênh không, ẩn danh hay
+cần phiên, qua đường nào?* Phép đo: gọi thật từ máy A, **ẩn danh, không cookie, không đăng nhập**, thư mục tạm
+đã xoá. "200 thân rỗng" là tín hiệu chống bot quen thuộc của ByteDance (xem `douyin_web._goi`), không phải lỗi mạng.
+
+| Nền | Tìm kênh theo tên | Ẩn danh? | Đường đi | Kết quả đo 23/09 |
+|---|---|---|---|---|
+| `youtube` | ✅ **đã làm** | ẩn danh | yt-dlp `youtube:search_url` trên `https://www.youtube.com/results?search_query=<kw>&sp=EgIQAg%3D%3D` (`sp` = bộ lọc "Kênh") + `extract_flat="in_playlist"` | mục `ie_key="YoutubeTab"`, có `id` (UC…), `title`, `channel_follower_count`, `description`, `thumbnails` (`yt3.ggpht.com`). "lofi girl" ⇒ Lofi Girl, 15 800 000 người theo dõi |
+| `bilibili` | ✅ **đã làm** | ẩn danh (cần cookie `buvid` ẩn danh) | GET `api.bilibili.com/x/web-interface/search/type?search_type=bili_user&keyword=<kw>` — **không** cần ký WBI | gọi thẳng ⇒ **HTTP 412**; GET `bilibili.com` một lượt trước (xin `buvid`) ⇒ `code: 0`, `data.result[]` 20 mục (`mid`, `uname`, `fans`, `videos`, `upic` `//i2.hdslb.com/…`, `usign`). Bản `wbi/search/type` khi **chưa** ký `w_rid` chỉ trả `{"v_voucher": …}` ⇒ dùng bản không WBI |
+| `douyin` | ⚠ **đã làm, cần phiên** | cần phiên | GET `/aweme/v1/web/discover/search/` với `search_channel=aweme_user_web`, ký `a_bogus` (điểm cuối: `Evil0ctal/Douyin_TikTok_Download_API` Apache-2.0 @9fa3e54 `endpoints.py:USER_SEARCH`) | ẩn danh: **HTTP 200 thân rỗng** cả hai lượt ⇒ chặn. Adapter từ chối TRƯỚC khi gọi mạng khi không có `tep_cookie`; test bằng phản hồi giả |
+| `xiaohongshu` | ⚠ **đã làm, cần phiên** | cần phiên | POST `/api/sns/web/v1/search/usersearch`, thân `{"search_user_request": {keyword, search_id, page, page_size, biz_type: "web_search_user", request_id}}`, ký `xhshow` (`ReaJason/xhs` MIT @f4b62d9 `core.py:get_user_by_keyword`) | không có đường ẩn danh (cùng lý do `tu_khoa`/`kenh` của nền này: thiếu `a1`+`web_session` ⇒ `can_dang_nhap`). `data.users[]`: `id`, `name`, `image`, `sub_title`, `note_count`; `fans` là **chuỗi rút gọn** ("1.2万") ⇒ không quy thành số |
+| `tiktok` | ✗ chưa làm | — | không có: yt-dlp không có extractor tìm người dùng; web API `api/search/user/full` đòi `msToken` + ký `X-Bogus` (chưa có bản port giấy phép dùng được) | ẩn danh: **HTTP 200 thân rỗng** |
+| `weibo` | ✗ chưa làm | cần phiên | `m.weibo.cn/api/container/getIndex?containerid=100103type%3D3%26q%3D<kw>` | `{"ok": -100, "url": ".../passport.weibo.com/sso/signin…"}` ⇒ bắt đăng nhập |
+| `kuaishou` | ✗ chưa làm | cần phiên | GraphQL `www.kuaishou.com/graphql` | nền đang **tắt** trong registry; GraphQL đòi cookie và dính CAPTCHA trượt (dòng `ks` trên) ⇒ không làm |
+| `facebook`, `instagram`, `twitter` | ✗ chưa làm | cần phiên | không có API công khai; yt-dlp không có extractor tìm trang/người dùng | không đo (đã biết chắc phải đăng nhập, dòng `fb`/`ig`/`tw` trên) |
+| `bilibili_tv` | ✗ chưa làm | — | nền chỉ có chế độ `link` (dòng `bilitv` trên) | không áp dụng |
+
+Nền ✗ ném `LoiCao("chua_ho_tro_tim_kenh")` (`adapters/base.py`) — tầng trên phân biệt được với lỗi mạng/đăng nhập
+và có thể ẩn ô "Tìm kênh" thay vì để khách gõ rồi mới báo lỗi.
+
+Ảnh đại diện: adapter **chỉ trả URL**, không tải trong request; miền ảnh của cả 4 nền đã làm đều nằm sẵn trong
+`anh_bia.CDN_ANH` (`ggpht.com`, `hdslb.com`, `douyinpic.com`, `xhscdn.com`) ⇒ proxy `anh_bia` phục vụ lại được,
+không cần thêm miền.
