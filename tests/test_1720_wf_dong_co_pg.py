@@ -180,6 +180,57 @@ def test_hai_vong_song_song_khong_nop_doi(pg, monkeypatch):
     db.close()
 
 
+def test_ttl_hai_luong_song_song_khong_sap_ca_luot(pg, monkeypatch):
+    """F3 (final-review.md): hai luồng gọi `dong_co.ttl` THẬT SỰ cùng chạm
+    một run quá hạn tại cùng thời điểm. Trước fix, `ttl()` chạy cả vòng trong
+    MỘT transaction không khoá hàng nào — hai luồng cùng đọc run RUNNING quá
+    hạn, cùng ghi sự kiện `WorkflowFailed`, `UNIQUE(run_id, seq)` làm luồng
+    thua `IntegrityError` sập NGUYÊN vòng TTL của luồng đó (không chỉ run va
+    chạm). Sau fix, mỗi run một transaction + khoá `SKIP LOCKED`: luồng thua
+    bỏ qua êm, không ném, và run chỉ chuyển TIMED_OUT đúng MỘT lần."""
+    from datetime import timedelta
+
+    from platform_core.models import Job, JOB_CANCELLED, WorkflowRun
+    from platform_core.workflow import dong_co
+
+    ids = _chuan_bi(pg, monkeypatch, so_run=1)
+    rid = ids[0]
+    db = _mo(pg)()
+    dong_co.mot_vong(_mo(pg))              # QUEUED -> RUNNING, started_at set
+    run = db.get(WorkflowRun, rid)
+    run.started_at = dong_co._bay_gio() - timedelta(hours=7)   # > mac dinh 6h
+    db.commit()
+    db.close()
+
+    goc_ghi = dong_co.su_kien.ghi
+    rao = threading.Barrier(2)
+
+    def _ghi_cham(db_, run_id, *a, **k):
+        if run_id == rid:
+            try:
+                rao.wait(timeout=30)
+            except threading.BrokenBarrierError:
+                pass
+            time.sleep(0.05)   # keo dai cua so tranh chap that su
+        return goc_ghi(db_, run_id, *a, **k)
+    monkeypatch.setattr(dong_co.su_kien, "ghi", _ghi_cham)
+
+    ket_qua = []
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futs = [pool.submit(dong_co.ttl, _mo(pg)) for _ in range(2)]
+        for f in futs:
+            ket_qua.append(f.result())   # khong duoc nem - nem la F3 con song
+
+    assert sum(ket_qua) == 1, (
+        f"dung MOT luong duoc tinh TIMED_OUT cho run nay, duoc {ket_qua}")
+
+    db = _mo(pg)()
+    assert db.get(WorkflowRun, rid).status == "TIMED_OUT"
+    assert db.query(Job).filter_by(
+        plan_id=rid, status=JOB_CANCELLED).count() >= 1
+    db.close()
+
+
 def test_crash_giua_chung_resume_dung(pg, monkeypatch):
     """FLOW H: vòng động cơ chết sau khi nộp job, trước commit ⇒ không job ma."""
     from platform_core.models import Job

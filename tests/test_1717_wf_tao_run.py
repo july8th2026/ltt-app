@@ -33,6 +33,22 @@ def test_tao_run_day_du(db, wf):
     assert len(dc) == 1 and dc[0].origin == "workflow"
 
 
+def test_job_dong_co_dung_slug_registry_bao(db, wf):
+    """F2 (final-review.md): `Job.app_slug` của job động cơ phải khớp ĐÚNG
+    app registry báo sở hữu `DONG_CO_JOB` — không phải một chuỗi viết tay
+    (trước fix: luôn `"agent"`, bất kể registry nói gì)."""
+    from platform_core import registry
+    from platform_core.models import Job
+    from platform_core.workflow import tao_run
+
+    run, _ = tao_run.tao_run(db, workflow=wf, owner_id="u1",
+                             trigger_kind="manual", idempotency_key="k2")
+    dc = db.query(Job).filter_by(job_type=tao_run.DONG_CO_JOB).all()
+    assert len(dc) == 1
+    slug_that = registry.job_type_owners()[tao_run.DONG_CO_JOB]
+    assert dc[0].app_slug == slug_that == tao_run.chu_dong_co()
+
+
 def test_cung_khoa_tra_run_cu(db, wf):
     from platform_core.workflow import tao_run
     a, _ = tao_run.tao_run(db, workflow=wf, owner_id="u1",

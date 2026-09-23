@@ -24,16 +24,22 @@
    `catalog_parent` + `surface="runtime"`: không thẻ catalog, không mục nav,
    không `ToolSpec` riêng.
 
-⚠️ `Job.app_slug` của các job `workflow.dong_co` VẪN ghi `"agent"` (xem
-   `platform_core/workflow/tao_run.py`, `apps/agent/jobs.py::_dong_co`) — cố ý
-   không đổi, để không phải sửa lại các test đã xanh
-   (`tests/test_1717_wf_tao_run.py`, `tests/test_1719_wf_dong_co.py`) khẳng
-   định giá trị đó. Điều này an toàn vì `platform_core/jobs.py::claim()` lọc
-   worker theo NĂNG LỰC (`manifest.requires`), không theo `app_slug` cụ thể —
-   và cả hai manifest đều khai `requires=("api",)`, nên một worker phục vụ
-   được app này thì cũng phục vụ được app kia. Khác với `asv_gpu` (đòi
-   `requires=("gpu",)` — một tập năng lực THẬT KHÁC `asv_media`), ở đây không
-   có sự khác biệt năng lực nào để tách theo.
+⚠️ CẬP NHẬT 23/09 (final-review.md F2): `Job.app_slug` của các job
+   `workflow.dong_co` từng VẪN ghi `"agent"` viết tay ở cả
+   `platform_core/workflow/tao_run.py` lẫn `apps/agent/jobs.py::_dong_co` —
+   nhưng đó chính là vi phạm Global Constraint "không hardcode tên app/tool
+   trong `platform_core/`" mà `test_967` không bắt được (bánh cóc đó chỉ quét
+   `frontend/agent-canvas/src`). Cả hai chỗ giờ tra qua
+   `tao_run.chu_dong_co()` (bọc `registry.job_type_owners()`), nên
+   `Job.app_slug` của MỌI job `workflow.dong_co` — cả job "mở đầu"
+   (`danh_thuc_dong_co`) lẫn job "kế tiếp" tự nộp (`_dong_co`) — đều ghi
+   đúng `"agent_dong_co"`, khớp app thật sự khai `job_types` này. Vẫn an
+   toàn để đổi: `platform_core/jobs.py::claim()` lọc worker theo NĂNG LỰC
+   (`manifest.requires`), không theo `app_slug` cụ thể, và cả hai manifest
+   đều khai `requires=("api",)`, nên một worker phục vụ được app này thì
+   cũng phục vụ được app kia. Khác với `asv_gpu` (đòi `requires=("gpu",)` —
+   một tập năng lực THẬT KHÁC `asv_media`), ở đây không có sự khác biệt
+   năng lực nào để tách theo.
 """
 from __future__ import annotations
 

@@ -207,6 +207,62 @@ def test_nop_job_ghi_admission_tu_toolspec_that(db, run):
     assert job.admission_slots > 0
 
 
+def test_nop_job_cong_cu_bien_mat_thi_FAILED_khong_KeyError(db, run):
+    """F5 (final-review.md): tool bị gỡ khỏi registry sau khi version đã
+    publish (app tắt cờ, tool đổi tên) — `cc_all[...]` tra tay ném `KeyError`
+    thẳng vào `mot_vong`, nuốt theo lượt (`except Exception`), node kẹt QUEUED
+    tới khi hết `TRAN_RUN` 20h. Phải FAILED có mã rõ ngay trong lượt này."""
+    from platform_core.workflow import cau_noi, may_trang_thai as mtt, thi_hanh
+    mtt.chuyen_node(db, run.id, "a", sang="READY", mo_ta="t")
+    assert cau_noi.nop_job(db, run, _node(db, run, "a"), cong_cu={}) is None
+    assert mtt.trang_thai_node(db, run.id, "a") == "FAILED"
+    anh = thi_hanh.anh_chup_hien_tai(db, run.id, "a")
+    assert anh.error.startswith("cong_cu_khong_con")
+
+
+def test_ap_ket_qua_cong_cu_bien_mat_thi_FAILED_khong_KeyError(db, run):
+    """F5 — cùng bẫy, cửa vào thứ hai: job ĐÃ nộp xong (tool còn khi nộp) rồi
+    mới bị gỡ khỏi registry trước khi job kết thúc. `ap_ket_qua` tra
+    `side_effect` bằng tay ở nhánh không-SUCCEEDED cũng ném `KeyError`."""
+    from platform_core import jobs
+    from platform_core.models import Job
+    from platform_core.workflow import cau_noi, may_trang_thai as mtt, thi_hanh
+    mtt.chuyen_node(db, run.id, "a", sang="READY", mo_ta="t")
+    job = db.get(Job, cau_noi.nop_job(db, run, _node(db, run, "a"), cong_cu=CC))
+    jobs.fail(db, job, "hong", retry=False)
+    assert cau_noi.ap_ket_qua(db, run, "a", cong_cu={}) == "FAILED"
+    anh = thi_hanh.anh_chup_hien_tai(db, run.id, "a")
+    assert anh.error.startswith("cong_cu_khong_con")
+
+
+def test_ap_ket_qua_thieu_gia_tran_fail_closed(db, run, monkeypatch):
+    """M2 (final-review.md): thiếu `gia_tran` (không nên xảy ra — bộ biên
+    dịch luôn ghi, `_ban_publish` từ chối version chưa biên dịch) phải
+    FAIL CLOSED (trần = 0), khớp mặc định của `nop_job` — trước fix,
+    `ap_ket_qua` mặc định fail-OPEN (thu hết `credit_cost` báo cáo, không
+    trần) khi thiếu khoá này, hai bản sao của MỘT luật trôi khỏi nhau."""
+    from platform_core import jobs
+    from platform_core.models import Job
+    from platform_core.workflow import cau_noi, may_trang_thai as mtt, thi_hanh
+
+    mtt.chuyen_node(db, run.id, "a", sang="READY", mo_ta="t")
+    job = db.get(Job, cau_noi.nop_job(db, run, _node(db, run, "a"), cong_cu=CC))
+
+    goc = cau_noi._node_cua
+
+    def _thieu_tran(db_, run_, node_id):
+        n = dict(goc(db_, run_, node_id))
+        n.pop("gia_tran", None)
+        return n
+    monkeypatch.setattr(cau_noi, "_node_cua", _thieu_tran)
+
+    jobs.complete(db, job, {"text": "ok", "credit_cost": 999})
+    assert cau_noi.ap_ket_qua(db, run, "a") == "SUCCEEDED"
+    anh = thi_hanh.anh_chup_hien_tai(db, run.id, "a")
+    assert anh.cost_credit == 0, (
+        "thieu gia_tran phai fail CLOSED (tran=0), khong duoc fail-open")
+
+
 def test_nop_job_khong_admission_khi_CongCu_gia_khong_co_spec(db, run):
     """`CongCu` giả (không đi qua `cong_cu.tat_ca()`, `spec is None`, như mọi
     fixture `CC` khác trong tệp này) phải giữ hành vi CŨ nguyên vẹn: không

@@ -239,6 +239,29 @@ def test_routes_package_van_xuat_ra_router():
         assert module.router.routes, f"apps/{app}/routes/ có router nhưng rỗng route"
 
 
+def test_platform_core_workflow_khong_hardcode_app_slug():
+    """F2 (final-review.md, plan 01a): Global Constraint "không hardcode tên
+    app/tool trong `platform_core/`" không có phép kiểm nào canh —
+    `test_967` (bánh cóc được viện dẫn) chỉ quét `frontend/agent-canvas/src`,
+    không đụng tới `platform_core`. Đây là bánh cóc CHỊ EM cho backend, cùng
+    tinh thần `test_967`: quét `platform_core/workflow/*.py` tìm
+    `app_slug="<literal>"` viết tay — mọi chỗ cần biết slug app phải tra qua
+    `registry.job_type_owners()` (như `tao_run.chu_dong_co()`), không viết
+    thẳng tên app ở tầng nền.
+    """
+    mau = re.compile(r'app_slug\s*=\s*["\'][a-z_][a-z0-9_]*["\']')
+    offenders = {}
+    for path in sorted((ROOT / "platform_core" / "workflow").glob("*.py")):
+        text = path.read_text(encoding="utf-8")
+        hits = mau.findall(text)
+        if hits:
+            offenders[str(path.relative_to(ROOT)).replace("\\", "/")] = hits
+    assert offenders == {}, (
+        f"platform_core/workflow hardcode app_slug bằng tay: {offenders} — "
+        "tra qua registry.job_type_owners() thay vì viết tên app trực tiếp "
+        "(mẫu: platform_core/workflow/tao_run.py::chu_dong_co)")
+
+
 def test_nen_tang_va_app_khong_phu_thuoc_core_legacy():
     """`core/` **đã bị xoá hẳn 2026-08-25** (Q108). Đừng dựng lại nó.
 

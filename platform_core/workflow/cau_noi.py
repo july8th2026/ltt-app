@@ -74,9 +74,23 @@ def nop_job(db, run: WorkflowRun, node: dict, *,
             cong_cu: Optional[dict[str, CongCu]] = None) -> Optional[str]:
     cc_all = _nguon.tat_ca() if cong_cu is None else cong_cu
     nid = node["id"]
-    cc = cc_all[str(node["type"])[4:]]
+    ten_cc = str(node["type"])[4:]
     anh = thi_hanh.anh_chup_hien_tai(db, run.id, nid)
     lan = int(anh.attempt_number if anh else 1)
+    cc = cc_all.get(ten_cc)
+    if cc is None:
+        # ⭐ F5 (final-review.md): tra `cc_all[...]` bằng tay trước đây ném
+        # `KeyError` thẳng vào `mot_vong` khi một tool bị gỡ khỏi registry
+        # SAU KHI version đã publish (app tắt cờ, tool đổi tên) — nuốt mất
+        # theo từng lượt (`except Exception` ở `mot_vong`), node đứng QUEUED
+        # mãi, credit vẫn giữ, cho tới khi `TRAN_RUN` (20h) tự hết hạn. Mọi
+        # chỗ từ chối node KHÁC trong hàm này đều xử lý văn minh (`LoiThamSo`,
+        # vượt trần báo giá) — chỗ này cũng phải vậy: FAILED có mã lỗi rõ, để
+        # run kết thúc ngay trong lượt này thay vì quay vòng đến khi hết hạn.
+        may_trang_thai.chuyen_node(
+            db, run.id, nid, sang="FAILED", mo_ta="cong cu bien mat khoi registry",
+            error=f"cong_cu_khong_con: {ten_cc!r}", attempt_number=lan)
+        return None
     try:
         params = giai_tham_so(db, run.id, node.get("params") or {})
     except LoiThamSo as loi:
@@ -191,7 +205,13 @@ def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
             bao = du_lieu.get("credit_cost")      # handler báo giá thật (vd theo token)
             chi_phi = int(bao) if bao is not None else gia_that
             node = _node_cua(db, run, node_id)
-            chi_phi = min(chi_phi, int(node.get("gia_tran", chi_phi)))  # không thu quá trần
+            # M2 (final-review.md): mặc định PHẢI khớp `nop_job` (fail-closed,
+            # `0`) — bản cũ mặc định `chi_phi` (fail-OPEN, tức "không trần")
+            # khi thiếu `gia_tran`. Không sờ được hôm nay (bộ biên dịch luôn
+            # ghi `gia_tran` và `_ban_publish` từ chối version chưa biên
+            # dịch), nhưng hai mặc định khác nhau cho CÙNG một luật là đúng
+            # hình dạng hai bản sao trôi nhau — sửa cả hai về cùng `0`.
+            chi_phi = min(chi_phi, int(node.get("gia_tran", 0)))  # không thu quá trần
             may_trang_thai.chuyen_node(
                 db, run.id, node_id, sang="SUCCEEDED", mo_ta="job xong",
                 output_ref=du_lieu, cost_credit=chi_phi, attempt_number=lan,
@@ -201,8 +221,22 @@ def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
             return "SUCCEEDED"
         mo_ho = (sig.result_ref or {}).get("provider_state") == jobs.PROVIDER_AMBIGUOUS
         cc_all = _nguon.tat_ca() if cong_cu is None else cong_cu
-        se = cc_all[str(_node_cua(db, run, node_id)["type"])[4:]].side_effect
-        sang = "ABANDONED" if (mo_ho and se == "irreversible") else (
+        ten_cc = str(_node_cua(db, run, node_id)["type"])[4:]
+        cc = cc_all.get(ten_cc)
+        if cc is None:
+            # F5 (final-review.md) — cùng lý do với `nop_job`: tool bị gỡ
+            # khỏi registry giữa lúc publish và lúc job này kết thúc. Tra
+            # `side_effect` bằng tay ném `KeyError` ở đây thì job ĐÃ kết thúc
+            # (job runner đã gọi `bao_ket_thuc`) nhưng node không bao giờ
+            # chốt trạng thái — cùng cái bẫy 20h, chỉ khác cửa vào. FAILED có
+            # mã rõ, không đoán `side_effect` khi không còn ToolSpec nào để
+            # đọc nó.
+            may_trang_thai.chuyen_node(
+                db, run.id, node_id, sang="FAILED", mo_ta="job ket thuc",
+                error=f"cong_cu_khong_con: {ten_cc!r}", attempt_number=lan,
+                job_id=sig.ref_id)
+            return "FAILED"
+        sang = "ABANDONED" if (mo_ho and cc.side_effect == "irreversible") else (
             "CANCELLED" if sig.status == "CANCELLED" else "FAILED")
         # Ba mã riêng (spec §5.6 `NodeError.ma`) — review round 1: CANCELLED
         # từng bị gắn nhầm mã `provider_loi` (mã của FAILED).

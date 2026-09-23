@@ -1487,7 +1487,10 @@ class Wakeup(Base):
     run_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     node_run_id: Mapped[str] = mapped_column(String(64), default="",
                                              nullable=False)
-    # job_done | waitpoint_due | approval | child_run | resource_free
+    # job_done | waitpoint_due | approval | child_run | resource_free | tick
+    # (M8, final-review.md: "tick" - tu-hen cua dong_co.xu_ly_run khi mot
+    # vong lan truyen tu chuyen node ma khong con wakeup nao khac dang cho -
+    # dong_co.py:157 - thieu trong danh sach nay tu luc them.)
     kind: Mapped[str] = mapped_column(String(24), nullable=False)
     due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),
                                              nullable=False)

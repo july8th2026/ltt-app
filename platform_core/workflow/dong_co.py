@@ -82,8 +82,28 @@ def _ket_run(db, run: WorkflowRun, g: dict, tt: dict[str, str]) -> Optional[str]
     if not all(s in mtt.NODE_KET_THUC for s in tt.values()):
         return None
     co_nhanh_loi = {e["source_node"] for e in g["edges"] if e["kind"] == "ERROR"}
+    # ⭐ F4 (final-review.md): CANCELLED phải đếm là "hỏng" giống FAILED/
+    # ABANDONED. Trước fix, một node bị huỷ TỪ NGOÀI (vd admin huỷ đúng một
+    # job đang chạy — không đi qua `huy_run`, cái đó huỷ CẢ run trước rồi mới
+    # huỷ node nên không đụng nhánh này) khiến `_ket_run` báo SUCCEEDED cho
+    # một run có một node CHƯA BAO GIỜ chạy xong — sai đúng chữ khách hàng và
+    # support đọc. Không thu tiền quá (node CANCELLED không viết `cost_credit`
+    # — `test_1718::test_job_loi_khong_tinh_tien`), nên đây là lỗi TRUNG THỰC,
+    # không phải lỗi SỔ SÁCH; nhưng "trung thực" vẫn là bất biến phải giữ.
+    #
+    # Chọn FAILED cho run (không phải một run-status CANCELLED riêng cho
+    # trường hợp này): một node CANCELLED nghĩa là "phần việc đó không hoàn
+    # thành như dự định" — cùng bản chất với FAILED/ABANDONED, chỉ khác NGUỒN
+    # gây dừng (ngoại lực thay vì lỗi provider). Tái dùng đúng đường FAILED đã
+    # kiểm kỹ (sự kiện `WorkflowFailed`, `ket_so` xử lý FAILED như bất kỳ kết
+    # thúc lỗi nào) an toàn hơn là mở một đường run-CANCELLED-từ-node-lẻ mới,
+    # thứ sẽ cần tự kiểm lại toàn bộ ma trận chuyển trạng thái + settlement.
+    # `huy_run` (huỷ CẢ run, người dùng bấm nút Huỷ) vẫn đi thẳng
+    # `chuyen_run(sang="CANCELLED")`, không qua hàm này — ý nghĩa "khách tự
+    # huỷ" và "một node bị dừng ngoài ý muốn giữa một run vẫn đang chạy" là
+    # hai chuyện khác nhau, và chỉ chuyện thứ hai đi qua `_ket_run`.
     hong = [n for n, s in tt.items()
-            if s in ("FAILED", "ABANDONED") and n not in co_nhanh_loi]
+            if s in ("FAILED", "ABANDONED", "CANCELLED") and n not in co_nhanh_loi]
     sang = "FAILED" if hong else "SUCCEEDED"
     if run.status == "QUEUED":
         mtt.chuyen_run(db, run.id, sang="RUNNING")
@@ -159,32 +179,82 @@ def huy_run(db, run_id: str, ly_do: str) -> bool:
     return mtt.chuyen_run(db, run.id, sang="CANCELLED", ly_do=ly_do)
 
 
-def ttl(db) -> int:
+def ttl(db_factory: Callable) -> int:
+    """Quét TTL — MỖI RUN QUÁ HẠN MỘT TRANSACTION RIÊNG, khoá hàng run
+    `SKIP LOCKED` giống `mot_vong` (⭐ F3, final-review.md).
+
+    ⛔ Bản cũ chạy CẢ vòng TTL trong MỘT transaction dùng chung với vòng gom
+       wakeup của `mot_vong`, không khoá hàng nào. Đây là đường ĐỘNG CƠ DUY
+       NHẤT không khoá — hai lượt `mot_vong` song song (thiết kế CHO PHÉP
+       điều này, `jobs.submit` chỉ khử trùng bằng `SELECT` thường) có thể
+       cùng đọc một run RUNNING quá hạn, cùng chuyển nó sang TIMED_OUT, cùng
+       ghi sự kiện `WorkflowFailed` — `UNIQUE(run_id, seq)` làm LƯỢT THUA
+       ném `IntegrityError`, sập NGUYÊN transaction TTL đó, kéo theo quyết
+       định TTL của MỌI run khác trong cùng lượt (không phải chỉ run va
+       chạm). Tiền vẫn an toàn (`_khoa_ket_so_job` + `_ket_qua_da_chot` tự
+       khoá ở tầng settlement) — đây là lỗi sống còn/nhiễu, không phải sổ
+       sách, nhưng "một run va chạm chặn hết các run khác" đúng hình dạng lỗi
+       `mot_vong` đã né cho vòng nộp job (Important #1 review round 1).
+
+    ⇒ Gom ứng viên (không khoá) trước, rồi khoá + xử lý + commit TỪNG RUN
+       MỘT giống hệt vòng lặp chính của `mot_vong`: lượt thua `SKIP LOCKED`
+       bỏ qua (không chờ, không sập), lượt lỗi khác cuộn riêng transaction
+       của nó rồi đi tiếp — không chặn các run còn lại trong lượt quét này.
+       Điều kiện lọc trạng thái được lặp lại NGAY TRONG câu khoá (không chỉ
+       ở vòng gom ứng viên) để tự tái kiểm trạng thái SAU khi khoá được: run
+       đã kết thúc bằng đường khác (vd `mot_vong` xử lý xong) giữa hai bước
+       sẽ không khớp `WHERE` nữa và bị bỏ qua đúng cách, không cần đọc lại
+       thêm một câu riêng.
+    """
     dem = 0
     luc = _bay_gio()
-    for run in db.execute(select(WorkflowRun).where(
+    db0 = db_factory()
+    try:
+        ung_vien = list(db0.execute(select(WorkflowRun.id).where(
             WorkflowRun.status.in_(("QUEUED", "RUNNING", "WAITING")),
-            WorkflowRun.started_at.is_not(None))).scalars():
-        g = _do_thi(db, run.version_id)
-        han = min(timedelta(seconds=int(g["settings"].get("timeout_s", 21600))),
-                  TRAN_RUN)
-        # `WorkflowRun.started_at` là cột `DateTime(timezone=True)` — SQLite
-        # trả về naive (bất kể khai báo), nhưng PostgreSQL thật trả về AWARE
-        # (session TZ, thường là UTC). `_bay_gio()` luôn naive UTC theo quy
-        # ước chung của module này (8 chỗ khác cùng định nghĩa) — so sánh
-        # trực tiếp aware với naive ném `TypeError` ngay trên PostgreSQL thật,
-        # chưa từng lộ trên SQLite (phát hiện bằng `tests/test_1720_wf_dong_co_pg.py`
-        # chạy thật, Task 11 fix round 3). Bỏ tzinfo trước khi so — an toàn vì
-        # giả định session TZ = UTC đã ngầm có sẵn ở MỌI chỗ khác ghi
-        # `_bay_gio()` vào chính cột này.
-        bat_dau = run.started_at.replace(tzinfo=None) if run.started_at.tzinfo else run.started_at
-        if bat_dau <= luc - han:
-            for job in db.execute(select(Job).where(Job.plan_id == run.id)).scalars():
-                jobs.cancel(db, job)
-            su_kien.ghi(db, run.id, "WorkflowFailed",
-                        du_lieu={"status": "TIMED_OUT"})
-            if mtt.chuyen_run(db, run.id, sang="TIMED_OUT", ly_do="qua han"):
-                dem += 1
+            WorkflowRun.started_at.is_not(None))).scalars())
+    finally:
+        db0.close()
+    for rid in ung_vien:
+        db = db_factory()
+        try:
+            run = db.execute(select(WorkflowRun).where(
+                WorkflowRun.id == rid,
+                WorkflowRun.status.in_(("QUEUED", "RUNNING", "WAITING")),
+                WorkflowRun.started_at.is_not(None))
+                .with_for_update(skip_locked=True)).scalars().first()
+            if run is None:
+                db.rollback()
+                continue
+            g = _do_thi(db, run.version_id)
+            han = min(timedelta(seconds=int(g["settings"].get("timeout_s", 21600))),
+                      TRAN_RUN)
+            # `WorkflowRun.started_at` là cột `DateTime(timezone=True)` — SQLite
+            # trả về naive (bất kể khai báo), nhưng PostgreSQL thật trả về AWARE
+            # (session TZ, thường là UTC). `_bay_gio()` luôn naive UTC theo quy
+            # ước chung của module này (8 chỗ khác cùng định nghĩa) — so sánh
+            # trực tiếp aware với naive ném `TypeError` ngay trên PostgreSQL thật,
+            # chưa từng lộ trên SQLite (phát hiện bằng `tests/test_1720_wf_dong_co_pg.py`
+            # chạy thật, Task 11 fix round 3). Bỏ tzinfo trước khi so — an toàn vì
+            # giả định session TZ = UTC đã ngầm có sẵn ở MỌI chỗ khác ghi
+            # `_bay_gio()` vào chính cột này.
+            bat_dau = run.started_at.replace(tzinfo=None) if run.started_at.tzinfo else run.started_at
+            if bat_dau <= luc - han:
+                for job in db.execute(select(Job).where(Job.plan_id == run.id)).scalars():
+                    jobs.cancel(db, job)
+                su_kien.ghi(db, run.id, "WorkflowFailed",
+                            du_lieu={"status": "TIMED_OUT"})
+                if mtt.chuyen_run(db, run.id, sang="TIMED_OUT", ly_do="qua han"):
+                    dem += 1
+            db.commit()
+        except Exception:
+            # Cùng hình dạng Important #1 (review round 1) của vòng nộp job:
+            # một run lỗi cuộn riêng transaction của nó, ghi log, đi tiếp —
+            # không chặn quyết định TTL của các run khác trong lượt này.
+            db.rollback()
+            log.exception("dong co: ttl run %s loi, bo qua luot nay", rid)
+        finally:
+            db.close()
     return dem
 
 
@@ -195,10 +265,10 @@ def mot_vong(db_factory: Callable, *, gioi_han: int = 50) -> dict:
             select(Wakeup.run_id).where(Wakeup.claimed_at.is_(None),
                                         Wakeup.due_at <= _bay_gio())
             .order_by(Wakeup.due_at).limit(gioi_han * 4)).scalars()))[:gioi_han]
-        so = ttl(db)
         db.commit()
     finally:
         db.close()
+    so = ttl(db_factory)
     da = 0
     loi = 0
     for rid in run_ids:

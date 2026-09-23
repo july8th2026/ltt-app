@@ -73,7 +73,8 @@ def _dong_co(ctx=None) -> dict:
             from platform_core import jobs as job_queue
             from platform_core.job_scheduler import ORIGIN_WORKFLOW
             job_next = job_queue.submit(
-                db, user_id=tao_run.DONG_CO_USER, app_slug="agent",
+                db, user_id=tao_run.DONG_CO_USER,
+                app_slug=tao_run.chu_dong_co(),
                 job_type=tao_run.DONG_CO_JOB, params={},
                 dedupe_key=f"workflow:dong_co:sau:{getattr(ctx, 'job_id', 'x')}",
                 max_attempts=3, origin=ORIGIN_WORKFLOW, priority_class="internal")

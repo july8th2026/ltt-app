@@ -79,6 +79,24 @@ def test_xu_ly_hai_lan_khong_nop_doi(db, run):
     assert db.query(Job).filter_by(plan_id=run.id).count() == 1
 
 
+def test_mot_node_bi_huy_ngoai_khong_lam_run_SUCCEEDED(db, run):
+    """F4 (final-review.md): huỷ ĐÚNG MỘT job (không qua `huy_run` — vd một
+    đường admin/operator huỷ trực tiếp một job đang chạy) không được để run
+    báo SUCCEEDED khi một node CHƯA BAO GIỜ chạy xong. `huy_run` tự nó vẫn
+    an toàn (nó chuyển CẢ run sang CANCELLED trước, không đi qua `_ket_run`)
+    — bài này bắt đúng đường CÒN LẠI: hủy một job lẻ giữa lúc run vẫn RUNNING,
+    node kia (b) bị lan truyền SKIPPED do nguồn dữ liệu (a) không SUCCEEDED."""
+    from platform_core import jobs
+    from platform_core.workflow import dong_co, may_trang_thai as mtt, su_kien
+    dong_co.xu_ly_run(db, run.id, cong_cu=CC)          # nop job cho node a
+    job_a = _job_cua(db, run, "a")
+    assert jobs.cancel(db, job_a) is True
+    assert dong_co.xu_ly_run(db, run.id, cong_cu=CC) == "FAILED", (
+        "node a bi huy ngoai -> run phai bao FAILED, khong duoc SUCCEEDED")
+    assert mtt.trang_thai_node(db, run.id, "a") == "CANCELLED"
+    assert su_kien.doc(db, run.id)[-1].loai == "WorkflowFailed"
+
+
 def test_huy_run_huy_job(db, run):
     """⚠️ Tra job bằng `Job.plan_id == run.id` trực tiếp — KHÔNG qua ảnh chụp
     mới nhất: `huy_run` chuyển node sang CANCELLED bằng `chuyen_node(...)`
@@ -91,6 +109,58 @@ def test_huy_run_huy_job(db, run):
     assert run.status == "CANCELLED"
     job = db.query(Job).filter_by(plan_id=run.id).one()
     assert job.status == JOB_CANCELLED
+
+
+# ── F3 (final-review.md): ttl() khoá hàng + cô lập từng run ─────────────────
+
+def test_ttl_mot_run_loi_khong_chan_run_khac(db, wf, monkeypatch):
+    """Một run lỗi trong `ttl()` KHÔNG được chặn quyết định TTL của run khác
+    trong cùng lượt quét (trước fix: cả vòng TTL dùng chung MỘT transaction,
+    một lỗi bất kỳ ở một run — vd va chạm `UNIQUE(run_id, seq)` giữa hai lượt
+    động cơ song song — sập NGUYÊN transaction, kéo theo mọi run khác chưa
+    kịp quyết định trong lượt đó). Giả lập bằng cách làm `su_kien.ghi` ném lỗi
+    ĐÚNG cho run thứ nhất — chữ ký MỚI của `ttl` (nhận `db_factory`, tự mở một
+    transaction RIÊNG mỗi run) khiến điều này khả thi: run thứ hai vẫn phải
+    được quyết định TIMED_OUT dù run thứ nhất lỗi."""
+    from datetime import timedelta
+
+    from platform_core.models import JOB_CANCELLED, Job, WorkflowRun
+    from platform_core.workflow import cong_cu, dong_co, su_kien, tao_run
+
+    monkeypatch.setattr(cong_cu, "tat_ca", lambda: CC)
+    r1, _ = tao_run.tao_run(db, workflow=wf, owner_id="u1",
+                            trigger_kind="manual", idempotency_key="k-ttl-1")
+    r2, _ = tao_run.tao_run(db, workflow=wf, owner_id="u1",
+                            trigger_kind="manual", idempotency_key="k-ttl-2")
+    db.commit()
+    dong_co.xu_ly_run(db, r1.id, cong_cu=CC)
+    dong_co.xu_ly_run(db, r2.id, cong_cu=CC)
+    qua_khu = dong_co._bay_gio() - timedelta(hours=7)   # > mac dinh 6h
+    r1.started_at = qua_khu
+    r2.started_at = qua_khu
+    db.commit()
+
+    goc_ghi = su_kien.ghi
+
+    def _hong_voi_r1(db_, run_id, *a, **k):
+        if run_id == r1.id:
+            raise RuntimeError("gia lap loi ttl cho r1")
+        return goc_ghi(db_, run_id, *a, **k)
+    monkeypatch.setattr(su_kien, "ghi", _hong_voi_r1)
+
+    dem = dong_co.ttl(_db_factory)   # KHONG duoc nem, du r1 loi giua chung
+    assert dem == 1, "r2 van phai duoc tinh TIMED_OUT du r1 loi"
+
+    kiem = _db_factory()
+    r1_sau = kiem.get(WorkflowRun, r1.id)
+    r2_sau = kiem.get(WorkflowRun, r2.id)
+    assert r1_sau.status == "RUNNING", (
+        "r1 loi giua chung -> transaction CUA RIENG r1 cuon lai, khong TIMED_OUT")
+    assert r2_sau.status == "TIMED_OUT", (
+        "r2 khong lien quan gi den loi cua r1, phai duoc xu ly binh thuong")
+    assert kiem.query(Job).filter_by(
+        plan_id=r2.id, status=JOB_CANCELLED).count() >= 1
+    kiem.close()
 
 
 # ── Critical #1 (review round 1): danh_thuc_dong_co không nhân bản ─────────
@@ -342,6 +412,43 @@ def test_luoi_do_khong_lam_gi_khi_da_co_job_dang_song(db):
 
     sau = db.query(Job).filter_by(job_type=tao_run.DONG_CO_JOB).count()
     assert sau == truoc, "co san mot job dang song thi luoi do khong duoc nop them"
+
+
+def test_luoi_do_khong_nop_khi_khong_co_wakeup_toi_han(db):
+    """F1 (final-review.md): khong wakeup nao toi han va khong job dang song
+    ⇒ luoi do KHONG duoc nop job dong co (truoc fix: nop vo dieu kien moi 60s,
+    ~1440 job rong/ngay khi he thong khong co run nao)."""
+    from platform_core.models import Job
+    from platform_core.workflow import tao_run
+
+    assert db.query(Job).filter_by(job_type=tao_run.DONG_CO_JOB).count() == 0
+
+    from apps.agent.manifest import _luoi_do_dong_co
+    _luoi_do_dong_co()
+
+    assert db.query(Job).filter_by(job_type=tao_run.DONG_CO_JOB).count() == 0, (
+        "khong wakeup toi han thi luoi do khong duoc tu nop job")
+
+
+def test_luoi_do_nop_khi_co_wakeup_toi_han_va_khong_job_song(db):
+    """Mat doi cua ca tren: co wakeup THAT SU toi han (va khong job dong co
+    dang song) thi luoi do van phai nop lai — lang do khong duoc mat tac
+    dung khi sua F1."""
+    from datetime import datetime, timedelta, timezone
+
+    from platform_core.models import Job
+    from platform_core.workflow import danh_thuc, tao_run
+
+    danh_thuc.hen(db, run_id="r-khong-ton-tai", kind="tick",
+                  due_at=datetime.now(timezone.utc).replace(tzinfo=None)
+                  - timedelta(seconds=1))
+    db.commit()
+
+    from apps.agent.manifest import _luoi_do_dong_co
+    _luoi_do_dong_co()
+
+    assert db.query(Job).filter_by(job_type=tao_run.DONG_CO_JOB).count() == 1, (
+        "co wakeup toi han va khong job song thi luoi do phai nop lai")
 
 
 # ── G23 — không I/O ngoài (phục hồi đầy đủ từ `test_962`, review round 1) ───

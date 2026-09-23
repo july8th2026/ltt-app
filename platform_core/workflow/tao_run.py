@@ -10,10 +10,11 @@ from datetime import datetime, timezone
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
-from platform_core import jobs
+from platform_core import jobs, registry
 from platform_core.job_scheduler import ORIGIN_WORKFLOW
 from platform_core.models import (JOB_QUEUED, JOB_RUNNING, Job, Workflow,
                                   WorkflowRun, WorkflowVersion)
+from platform_core.registry import RegistryError
 from platform_core.workflow import (danh_thuc, may_trang_thai, su_kien,
                                     thi_hanh, tien)
 
@@ -40,6 +41,28 @@ def _bay_gio() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
+def chu_dong_co() -> str:
+    """slug app sở hữu `DONG_CO_JOB`, tra qua registry — KHÔNG hardcode.
+
+    ⭐ F2 (final-review.md): bản cũ viết thẳng slug app = "agent" ở đây,
+       phạm Global Constraint "không hardcode tên app/tool trong
+       `platform_core/`" — mà `test_967` (bánh cóc cho luật đó) chỉ quét
+       `frontend/agent-canvas/src` nên không bắt được. `apps/agent_dong_co`
+       mới là app khai `job_types=("workflow.dong_co",)` (tách khỏi
+       `apps/agent` để giữ bất biến orchestrator-không-phải-tool,
+       `test_190`); tra registry cho `job.app_slug` khớp đúng app thật sự sở
+       hữu job_type này, giống hệt cách `jobs.resolve_handler` tra handler.
+       Ném `RegistryError` nếu registry đứt tay (không app nào khai job_type
+       này) — vỡ ngay lúc nộp còn hơn ghi một `app_slug` sai lặng lẽ.
+    """
+    slug = registry.job_type_owners().get(DONG_CO_JOB)
+    if not slug:
+        raise RegistryError(
+            f"khong app nao khai job_type {DONG_CO_JOB!r} trong job_types "
+            "(xem apps/agent_dong_co/manifest.py)")
+    return slug
+
+
 def danh_thuc_dong_co(db) -> None:
     """Nộp job động cơ — TỐI ĐA MỘT job động cơ chờ/chạy trên toàn hệ.
 
@@ -62,7 +85,7 @@ def danh_thuc_dong_co(db) -> None:
         Job.status.in_((JOB_QUEUED, JOB_RUNNING))).limit(1)).scalar()
     if dang_song is not None:
         return
-    jobs.submit(db, user_id=DONG_CO_USER, app_slug="agent",
+    jobs.submit(db, user_id=DONG_CO_USER, app_slug=chu_dong_co(),
                 job_type=DONG_CO_JOB, params={}, dedupe_key="workflow:dong_co",
                 max_attempts=3, origin=ORIGIN_WORKFLOW,
                 priority_class="internal")
@@ -151,4 +174,4 @@ def tao_run(db, *, workflow: Workflow, owner_id: str, trigger_kind: str,
 
 __all__ = ["DONG_CO_JOB", "DONG_CO_USER", "MAX_RUN_DONG_THOI",
            "KhongCoBanPublish", "QuaHanMuc", "TrungKhoaKhacWorkflow",
-           "danh_thuc_dong_co", "tao_run"]
+           "chu_dong_co", "danh_thuc_dong_co", "tao_run"]
