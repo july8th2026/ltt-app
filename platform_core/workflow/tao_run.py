@@ -59,7 +59,7 @@ def chu_dong_co() -> str:
     if not slug:
         raise RegistryError(
             f"khong app nao khai job_type {DONG_CO_JOB!r} trong job_types "
-            "(xem apps/agent_dong_co/manifest.py)")
+            "(xem manifest cua app dang so huu job_type nay duoi apps/)")
     return slug
 
 
