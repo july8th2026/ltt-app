@@ -75,6 +75,32 @@ gỡ `ltt_turbo`, ép `vi` như bot gốc, mở app, giá khuyến nghị.
 - **Còn mở:** cùng lỗi email-làm-`user_id` ở `audio_pause`, `prompt_canh`, `video_assembly` (còn đóng với khách; đã tạo
   việc riêng); nhãn ô "Hệ phiên âm" dài bị cắt trên desktop (thẩm mỹ); L3 tổng kết phiên.
 
+## 2026-09-23 (sáng) — `video_crawler` lên production: sự cố ffmpeg, kho tài khoản hệ thống, lỗi job không lộ tên lớp
+
+Deploy `7676a758` (02:43) rồi `bcf05be1` (10:24). Cờ `LTT_VIDEO_CRAWLER=1` đã bật (chủ dự án cấp quyền 23/09).
+
+- 🔴 **Sự cố ffmpeg (W4-1).** Sau deploy đầu, MỌI lượt tải hỏng sau ~10 s với "lỗi không xác định"; tiền hoàn đủ nên
+  không có dấu hiệu nào khác. Chạy lại ĐÚNG mã production bằng tài khoản của tôi thì XANH; chỉ chạy dưới `SYSTEM`
+  (tài khoản dịch vụ worker) mới đỏ. Gốc: `You have requested merging of multiple formats but ffmpeg is not installed`
+  — `shutil.which` thấy ffmpeg trong phiên người dùng, KHÔNG thấy trong dịch vụ nssm. Sửa: adapter truyền
+  `ffmpeg_location` từ `platform_core.media`. **Bài học:** "chạy được trên máy tôi" ở đây nghĩa đen là *tài khoản của tôi*.
+- **Lỗi chưa phân loại nay để lại dấu vết** (W4-2): `loi.phan_loai` ghi văn bản gốc vào log vận hành — thiếu nó thì
+  mọi lỗi mới trông giống hệt nhau. `thieu_ffmpeg` có mã riêng, không còn bị coi là tạm thời (W4-3).
+- **Nền tảng: lỗi job không lộ tên lớp Python cho khách** (`platform_core/jobs.py::mo_ta_loi` + `loi_cho_khach`,
+  bánh cóc `tests/test_2140`). 12 app từng in thẳng `Job.error` ("LoiNguoiGoi: …", "RuntimeError: C:\LTTPlatform\…").
+  Thêm `voi_cau_khach` để lỗi TẠM THỜI (phải thử lại ⇒ không thể là `LoiNguoiGoi`) vẫn nói được câu của mình.
+- **W4 (4 làn agent song song)**: kho tài khoản hệ thống `vc_tai_khoan` (mượn/trả qua lease, trần + nghỉ theo tài
+  khoản, chấm điểm kiểu proxy_pool, trần 20 video/giờ/khách; migration `5e1a9c46b2d7`) + trang vận hành để chủ dự án
+  dán cookies.txt; tìm kênh theo TÊN (YouTube + Bilibili ẩn danh; Douyin/XHS cần phiên; TikTok chưa có đường); link
+  rút gọn theo chuyển hướng CÓ KIỂM (allowlist + chặn IP nội bộ, ≤ 3 bước); ảnh bìa lưu kho ở bước xem trước.
+- **Quyết định chủ dự án 23/09**: làm kho tài khoản, **LTT đứng tên phiên** khi khách dùng kho (đoạn pháp lý chờ
+  duyệt: `PHAP_LY_BO_SUNG_KHO_TK.md`); nền đợt đầu douyin/xiaohongshu/tiktok. **KHÔNG** Bilibili: luật sư Bilibili đã
+  khiến `SocialSisterYi/bilibili-API-collect` (28/01/2026) và `Nemo2011/bilibili-api` (06/07/2026) đóng kho vĩnh viễn.
+- **Nghiệm thu production thật** (tài khoản thử, không gõ mật khẩu): xem trước + tải 1 video — trước sửa: lỗi, hoàn
+  15; sau sửa: xong 27 s, giữ 15 → thu 3 (đúng bậc ≤ 10 phút), hoàn 12. Nghiệm thu deploy: 0 lệch/thiếu/thừa.
+- Không nhúng được trang nền vào LTT: YouTube/Douyin/Instagram/Facebook/X đều chặn iframe (đo 23/09) ⇒ "mở popup kênh"
+  không khả thi; đường đi là tìm kênh NGAY TRONG LTT (`THIET_KE_PHIEN_VA_KENH.md`).
+
 ## 2026-09-22 (tối) — app `video_crawler` ("Cào ngay" từ ViralCrawl): 10 nền, tắt sau cờ `LTT_VIDEO_CRAWLER`
 
 Tiếp quản SUPER PROMPT sau hai phiên LTTCODE hỏng (model lỗi 400, ghi thẳng main, parity ✅ bịa, audit donor chết).

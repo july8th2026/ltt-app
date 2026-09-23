@@ -74,4 +74,10 @@ Khép L3 (`gate.py --doi --tu 41120e46`) → hoà main → `merge --ff-only` →
 | L1–L5 + Q5 (douyin/xhs tìm+kênh, kuaishou) | phien/vcm-* → phien/vcm-tich-hop | 4f0c3d81 | 1092 xanh, kiểm tĩnh sạch | cam kết, vận hành 403, bảng giá, tải thật 2 video | ✅ gộp |
 | L6 dedup bền | phien/vcm-dedup | 07265224, 5927559e | test_1925 (+ ca tải lại video hết hạn mà lỗi ⇒ giữ dấu 'xong', sửa khi gộp) | — | ✅ gộp |
 | L7 UX | phien/vcm-ux | bc8d5ced (+ bed424d9 khi gộp) | test_1926 17 xanh; nhóm tích hợp 1114 xanh | tốc độ/ETA, gợi ý nền×chế độ, lọc nền, không trùng, lỗi sạch | ✅ gộp |
-| L8 hiệu năng | phien/vcm-perf | | | | ⏳ đang chạy |
+| L8 hiệu năng | phien/vcm-perf | 808c69c4 | test_1927 10 xanh | ảnh bìa từ kho (4/4 ảnh 200) | ✅ gộp |
+| **W3 deploy + nghiệm thu production** | main | 7676a758 → bcf05be1 | gate L2 6 thành phần + L1 khép | tải thật: 15 giữ → 3 thu | ✅ xong 23/09 |
+| W4 L9 kho tài khoản | phien/vcm-kho-tk | 9ccc277d | test_1932 29 xanh | — | ✅ gộp |
+| W4 L9b trang tài khoản | phien/vcm-tk-ui | 66770a53 | 64 xanh | thêm/tạm nghỉ/xoá bằng cookie giả | ✅ gộp |
+| W4 L10 tìm kênh | phien/vcm-tim-kenh | 40a34158 | test_1935 54 xanh | smoke thật YouTube + Bilibili | ✅ gộp |
+| W4 L12 link rút gọn | phien/vcm-link | 08f465c5 | test_1933 107 xanh | smoke youtu.be + b23.tv | ✅ gộp |
+| W4 L11 trang kênh (giao diện) | phien/vcm-trang-kenh | | | | ⏳ đang chạy |
