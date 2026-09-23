@@ -20525,3 +20525,6 @@ msgstr "Not accepting new machines right now."
 
 msgid "Tạm ngưng nhận máy mới trong tháng này."
 msgstr "Not accepting new machines for the rest of this month."
+
+msgid "Máy thường sẵn sàng sau khoảng %(phut)s phút, chậm nhất khoảng %(cham)s phút."
+msgstr "Machines are usually ready in about %(phut)s minutes, at most about %(cham)s minutes."

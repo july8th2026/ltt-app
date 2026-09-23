@@ -366,9 +366,16 @@ def trang_chinh(request: Request,
         # tên gõ được, thay vì một chuỗi hex 8 ký tự ở ô xác nhận phá huỷ (D-01).
         "ten_goi_y": ten_may.tu_sinh(db, user_id) if user_id else "",
         "da_dang_nhap": True,
+        # Nói TRƯỚC khi khách bấm là máy sẽ mất bao lâu. Đường tạo máy có một
+        # bước đặt mua IP ở OVH; "vài giây" là sai, và một trang không nói gì
+        # thì khách ngồi nhìn nó. `None` = chưa đủ mẫu ⇒ template không hứa gì.
+        "cho_khoang": provisioning.thoi_gian_san_sang(db),
         # Rỗng cho khách ẩn danh ⇒ `vps_base.html` không dựng vỏ điều khiển.
         "menu_trai": _menu("tong_quan", ds=may_cua_toi),
         "suc_chua": suc_chua,
+        # Chất lượng đang suy giảm thì khách ĐANG DÙNG được biết — nhưng nó
+        # không chặn ai mua. Xem `profiles.CHAN_BAN` / `CANH_BAO`.
+        "canh_bao_chat_luong": _canh_bao_chat_luong(db, None),
         "loi_ha_tang": loi_ha_tang,
         "loi": request.query_params.get("loi", ""),
     })

@@ -640,6 +640,19 @@
               {{ _("Không đủ credit.") }} <a href="/nap">{{ _("Nạp thêm") }}</a>
             </p>
 
+            {# Noi TRUOC khi bam la se cho bao lau. Duong tao may co mot buoc dat
+               mua IP o OVH, nen "vai giay" la sai — va mot trang khong noi gi
+               thi khach bam xong se ngoi nhin no.
+               `cho_khoang` None = chua du mau do duoc ⇒ IM, khong doan. Xem
+               `provisioning.thoi_gian_san_sang`. #}
+            {% if cho_khoang %}
+              <p class="muted vps-mt8 vps-chu-85">
+                {{ _("Máy thường sẵn sàng sau khoảng %(phut)s phút, chậm nhất khoảng %(cham)s phút.")
+                   % {"phut": (cho_khoang.p50_giay // 60) or 1,
+                      "cham": (cho_khoang.p90_giay // 60) or 1} }}
+              </p>
+            {% endif %}
+
             <button type="submit" id="tt-nut" class="btn-goi vps-tao-may">{{ _("Tạo máy") }}</button>
             {# Clickwrap: bam la dong y. Dat NGAY duoi nut, khong o chan trang —
                mot lien ket dieu khoan o cuoi trang la mot lien ket khong ai bam. #}

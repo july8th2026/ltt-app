@@ -24,6 +24,8 @@ from __future__ import annotations
 from platform_core.i18n import N_
 
 import logging
+from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Iterable
 
 from sqlalchemy import func, select
@@ -307,3 +309,74 @@ def ghi_su_kien(db: DbSession, instance_id: str, loai: str, *,
     db.add(su_kien)
     db.flush()
     return su_kien
+
+
+@dataclass(frozen=True)
+class ThoiGianSanSang:
+    """Bao lâu từ lúc khách bấm "Tạo máy" tới lúc máy dùng được."""
+
+    p50_giay: int
+    p90_giay: int
+    so_mau: int
+
+
+#: Dưới ngần này lần tạo thành công thì **không hứa gì**. Một lần đo không phải
+#: một phân bố, và một lời hứa dựng từ nó là một lời hứa dựng từ may rủi.
+TOI_THIEU_MAU = 3
+
+
+def thoi_gian_san_sang(db, *, toi_da_mau: int = 20) -> "ThoiGianSanSang | None":
+    """Thời gian tới lúc sẵn sàng, **đo từ chính các máy đã tạo xong**.
+
+    ## Vì sao không viết cứng một con số
+
+    Chủ dự án chốt 23/09/2026: giữ cách mua IP OVH theo yêu cầu, nhưng **nói
+    trước** với khách rằng họ sẽ chờ. Đường tạo máy có một bước đặt mua địa chỉ
+    IP ở OVH với `order_delivery_timeout_seconds = 3600`, nên "vài giây" là sai
+    và khách bấm xong sẽ ngồi nhìn một trang không nói gì.
+
+    Một con số viết cứng thì không ai kiểm lại: hạ tầng chậm đi, trang vẫn nói
+    "3 phút" mãi mãi. Nên số này đo từ khoảng `tao_moi` → `tao_xong` của các
+    máy **thật sự** đã lên, lấy `toi_da_mau` lần gần nhất.
+
+    `None` = chưa đủ mẫu để nói gì. Im lặng đúng hơn là đoán.
+
+    ⚠️ Máy hỏng không có `tao_xong`, nên nó không đóng góp số nào — cố ý. Đếm
+       nó bằng "bây giờ trừ lúc bắt đầu" sẽ biến mỗi máy hỏng thành một con số
+       khổng lồ, và lời hứa cho khách trôi ra vô tận.
+    """
+    bat_dau: dict[str, datetime] = {}
+    ket_thuc: dict[str, datetime] = {}
+    for e in db.execute(
+        select(VpsEvent)
+        .where(VpsEvent.loai.in_(("tao_moi", "tao_xong")))
+        .order_by(VpsEvent.created_at.desc())
+        .limit(toi_da_mau * 8)
+    ).scalars():
+        (bat_dau if e.loai == "tao_moi" else ket_thuc)[e.instance_id] = e.created_at
+
+    cap: list[tuple[datetime, int]] = []
+    for instance_id, xong in ket_thuc.items():
+        moi = bat_dau.get(instance_id)
+        if moi is None:
+            continue
+        giay = int((_utc(xong) - _utc(moi)).total_seconds())
+        if giay < 0:
+            # Đồng hồ lệch hoặc sự kiện ghi lại sau: một khoảng âm là bằng
+            # chứng hỏng, không phải một mẫu nhanh kỷ lục.
+            continue
+        cap.append((xong, giay))
+
+    if len(cap) < TOI_THIEU_MAU:
+        return None
+    cap.sort(key=lambda x: x[0], reverse=True)
+    giay = sorted(g for _x, g in cap[:toi_da_mau])
+    return ThoiGianSanSang(
+        p50_giay=giay[(len(giay) - 1) // 2 + (len(giay) % 2 == 0)],
+        p90_giay=giay[min(len(giay) - 1, int(len(giay) * 0.9))],
+        so_mau=len(giay),
+    )
+
+
+def _utc(gt: datetime) -> datetime:
+    return gt if gt.tzinfo else gt.replace(tzinfo=timezone.utc)
