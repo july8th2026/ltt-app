@@ -125,6 +125,33 @@ if (Test-Path $envFile) {
         }
         Remove-Item $dumpFile -Force -ErrorAction SilentlyContinue
         Write-Host "  [OK] pg_restore: $dbName" -ForegroundColor Green
+
+        # ---- Nang LUOC DO sau khi nap dump ---------------------------------
+        # VI SAO BUOC NAY BAT BUOC: `pg_restore` tra lai CSDL DUNG NHU LUC CHUP,
+        # ke ca bang `alembic_version`. Backup chay luc 02:30 con migration chi
+        # ap luc DEPLOY, nen mot ban sao BINH THUONG van co the cu hon ma dang
+        # chay - do la vong doi dung, khong phai loi cua ban sao.
+        #
+        # BO BUOC NAY thi dich vu khoi dong lai tren mot CSDL CU HON ma: cot moi
+        # khong ton tai, va loi hien ra o cho khong ai ngo, HANG GIO sau khi da
+        # bao "khoi phuc thanh cong".
+        #
+        # Do 23/09/2026 (dien tap D1): dump 02:30 mang alembic_version
+        # `e4a19c07b5d2`, ma dang chay o `5e1a9c46b2d7` - lech dung 3 migration.
+        # Nang mat 1,37 giay. Duong nay da chay that trong
+        # `deploy/windows/dien_tap_khoi_phuc.ps1` va xac minh version sau = head.
+        $venvPy = 'C:\LTTPlatform\venv\Scripts\python.exe'
+        if (-not (Test-Path $venvPy)) { $venvPy = 'python' }
+        Write-Host '  [..] alembic upgrade head' -ForegroundColor Cyan
+        Push-Location $Root\app
+        try {
+            Invoke-Ngoai { & $venvPy -m alembic upgrade head }
+            $rcAl = $LASTEXITCODE
+        } finally { Pop-Location }
+        if ($rcAl -ne 0) {
+            throw "alembic upgrade head that bai (ma $rcAl). CSDL da nap nhung luoc do CU HON ma dang chay - DUNG khoi dong dich vu, sua roi chay lai."
+        }
+        Write-Host '  [OK] alembic upgrade head' -ForegroundColor Green
     }
 }
 
