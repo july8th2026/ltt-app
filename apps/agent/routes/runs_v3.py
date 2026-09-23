@@ -35,6 +35,7 @@ SSE là plan 13 (spec §19) — xem "Quyết định transport" trong plan 01b.
 """
 from __future__ import annotations
 
+import json
 from datetime import datetime
 
 from fastapi import Depends, HTTPException, Query, Request
@@ -46,15 +47,27 @@ from apps.agent.routes._shared import _user, _verify_json_csrf, router
 from platform_core import credit
 from platform_core.i18n import _ as _t
 from platform_core.models import Workflow, WorkflowRun, WorkflowVersion
-from platform_core.workflow import dong_co, su_kien, tao_run, thi_hanh
+from platform_core.registry import RegistryError
+from platform_core.workflow import (dong_co, may_trang_thai, su_kien,
+                                    tao_run, thi_hanh)
 from server.auth.session import require_login
 from server.deps import get_db
 
 _NO_STORE = {"Cache-Control": "no-store"}
 
-#: Node chưa có ảnh chụp nào. Cùng hằng với `may_trang_thai._NODE_BAT_DAU`,
-#: lặp lại ở đây vì đó là hằng RIÊNG TƯ của mô-đun kia.
-_NODE_BAT_DAU = "PENDING"
+#: Trần kích thước `inputs` do người dùng gõ — nó đi thẳng vào
+#: `WorkflowStarted.du_lieu["inputs"]` (`tao_run.py`), sống 90 ngày trong
+#: `workflow_event` (`su_kien.RETENTION_DAYS`), cùng LÝ DO với trần đầu ra
+#: node (`cau_noi.GIOI_HAN_DAU_RA`): một payload khổng lồ không nên nằm mãi
+#: trong nhật ký sự kiện.
+#:
+#: ⚠️ PHẢI nhỏ hơn `server/request_body_limit.AGENT_BODY_LIMIT` (128 KiB —
+#: trần CHUNG cho mọi body POST/PUT/PATCH dưới `/agent/`), nếu không nhánh
+#: này chết: request đã bị middleware trả 413 trước khi route kịp chạy.
+#: Chọn NỬA trần đó — đủ rộng cho `inputs` có thật, và còn khoảng cách rõ với
+#: 128 KiB để phép kiểm (và chính nhánh này) không phụ thuộc hai trần trùng
+#: khít nhau.
+_GIOI_HAN_INPUTS = 64 * 1024
 
 
 def _iso(v: datetime | None) -> str | None:
@@ -97,13 +110,20 @@ def _nodes_json(db: Session, run: WorkflowRun) -> list[dict]:
     for nut in do_thi.get("nodes") or []:
         nid = str(nut.get("id") or "")
         anh = thi_hanh.anh_chup_hien_tai(db, run.id, nid)
+        if anh is None:
+            # Chưa có ảnh chụp nào ⇒ chưa từng thử: `attempt: 0`, không phải
+            # `1` — `1` sẽ nói dối rằng node đã chạy một lượt.
+            ra.append({"node_id": nid, "status": may_trang_thai.NODE_BAT_DAU,
+                       "attempt": 0, "cost_credit": 0, "job_id": "",
+                       "error": ""})
+            continue
         ra.append({
             "node_id": nid,
-            "status": anh.execution_status if anh is not None else _NODE_BAT_DAU,
-            "attempt": int(getattr(anh, "attempt_number", 0) or 1),
-            "cost_credit": int(getattr(anh, "cost_credit", 0) or 0),
-            "job_id": getattr(anh, "job_id", "") or "",
-            "error": getattr(anh, "error", "") or "",
+            "status": anh.execution_status,
+            "attempt": int(anh.attempt_number),
+            "cost_credit": int(anh.cost_credit),
+            "job_id": anh.job_id,
+            "error": anh.error,
         })
     return ra
 
@@ -112,8 +132,9 @@ def _run_json_v3(db: Session, run: WorkflowRun, *, sau: int = 0) -> dict:
     su = su_kien.doc(db, run.id, sau=int(sau or 0))
     # `seq_cuoi` phải là seq LỚN NHẤT của run, không phải của trang vừa lọc —
     # client dùng nó làm con trỏ cho lần poll sau, và một con trỏ lùi lại khi
-    # trang rỗng sẽ gửi lại toàn bộ lịch sử mỗi nhịp.
-    cuoi = su_kien.doc(db, run.id, sau=0)
+    # trang rỗng sẽ gửi lại toàn bộ lịch sử mỗi nhịp. `su_kien.seq_cuoi` là
+    # MỘT truy vấn tổng hợp (`func.max`) — KHÔNG gọi lại `doc(sau=0)` ở đây,
+    # nó sẽ đọc lại toàn bộ lịch sử sự kiện của run mỗi lần poll.
     return {
         "id": run.id,
         "workflow_id": run.workflow_id,
@@ -127,7 +148,7 @@ def _run_json_v3(db: Session, run: WorkflowRun, *, sau: int = 0) -> dict:
         "su_kien": [{"seq": e.seq, "loai": e.loai, "node_id": e.node_id,
                      "du_lieu": dict(e.du_lieu or {}),
                      "created_at": _iso(e.created_at)} for e in su],
-        "seq_cuoi": int(cuoi[-1].seq) if cuoi else 0,
+        "seq_cuoi": su_kien.seq_cuoi(db, run.id),
     }
 
 
@@ -139,10 +160,26 @@ async def v3_tao_run(request: Request, workflow_id: str,
     _verify_json_csrf(request, body if isinstance(body, dict) else {})
     user = _user(request)
     wf = _wf_cua_toi(db, workflow_id, user.id)
+    # ⭐ `inputs` đến thẳng từ khách, chưa qua `params_schema` của tool nào —
+    # `dict(raw or {})` trên MỘT list/chuỗi ném `TypeError`/`ValueError` TRƯỚC
+    # khi `tao_run` kịp chạy, nên đây là 500 duy nhất còn sót trên cửa tiêu
+    # tiền (task-2-review.md, Important #2). Kiểm kiểu tường minh ⇒ 422 có mã.
+    raw_inputs = (body or {}).get("inputs") if isinstance(body, dict) else None
+    if raw_inputs is not None and not isinstance(raw_inputs, dict):
+        raise HTTPException(status_code=422, detail={
+            "ma": "inputs_khong_hop_le",
+            "thong_diep": _t('Truong "inputs" phai la mot object.')})
+    inputs = dict(raw_inputs or {})
+    do_dai = len(json.dumps(inputs, default=str))
+    if do_dai > _GIOI_HAN_INPUTS:
+        raise HTTPException(status_code=422, detail={
+            "ma": "inputs_qua_lon",
+            "thong_diep": _t('Du lieu "inputs" vuot qua %(n)d byte.')
+            % {"n": _GIOI_HAN_INPUTS}})
     try:
         run, _moi = tao_run.tao_run(
             db, workflow=wf, owner_id=user.id, trigger_kind="manual",
-            idempotency_key="", inputs=dict((body or {}).get("inputs") or {}))
+            idempotency_key="", inputs=inputs)
     except tao_run.KhongCoBanPublish as loi:
         raise HTTPException(status_code=422, detail={
             "ma": "chua_publish", "thong_diep": str(loi)}) from None
@@ -152,6 +189,14 @@ async def v3_tao_run(request: Request, workflow_id: str,
     except credit.ThieuCreditError as loi:
         raise HTTPException(status_code=402, detail={
             "ma": "thieu_credit", "thong_diep": str(loi)}) from None
+    except RegistryError as loi:
+        # `chu_dong_co()` (gọi trong `tao_run` → `danh_thuc_dong_co`) ném cái
+        # này khi KHÔNG app nào khai `job_type` của động cơ — sự cố cấu hình
+        # thật (`2d3e3c41` phải đăng ký lại `apps/agent_dong_co` "ở mọi điểm
+        # ratchet" vì đúng lỗi này), không phải lỗi của khách. 503 có mã, để
+        # Canvas phân biệt được với một 500 chung chung.
+        raise HTTPException(status_code=503, detail={
+            "ma": "dong_co_chua_san_sang", "thong_diep": str(loi)}) from None
     db.commit()
     db.refresh(run)
     return JSONResponse(_run_json_v3(db, run), status_code=201,

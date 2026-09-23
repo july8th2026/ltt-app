@@ -194,3 +194,112 @@ def test_doc_run_cua_nguoi_khac_tra_404(api):
     run_id = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
                     headers={"X-CSRF-Token": token_a}, json={}).json()["id"]
     assert b.get(f"/agent/api/v3/runs/{run_id}").status_code == 404
+
+
+# ── Fix round 1 (task-2-review.md) ──────────────────────────────────────────
+
+def test_inputs_khong_phai_object_tra_422_khong_phai_500(api):
+    """`{"inputs": [1, 2]}` — `dict(raw or {})` trên một list ném `TypeError`
+    trước khi `tao_run` kịp chạy (Important #2). Đây là cửa tiêu tiền, một
+    kiểu sai không được rơi xuống 500."""
+    a, token_a, _, _ = api
+    wf_id = _publish(_uid("v3run-a@example.com"))
+    r = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
+               headers={"X-CSRF-Token": token_a}, json={"inputs": [1, 2]})
+    assert r.status_code == 422, r.text
+    assert r.json()["detail"]["ma"] == "inputs_khong_hop_le"
+
+
+def test_inputs_la_chuoi_cung_tra_422_khong_phai_500(api):
+    """`{"inputs": "abc"}` — `dict("abc")` ném `ValueError`, vế đối chứng
+    của ca trên (một kiểu sai KHÁC vẫn phải qua cùng một cửa 422)."""
+    a, token_a, _, _ = api
+    wf_id = _publish(_uid("v3run-a@example.com"))
+    r = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
+               headers={"X-CSRF-Token": token_a}, json={"inputs": "abc"})
+    assert r.status_code == 422, r.text
+    assert r.json()["detail"]["ma"] == "inputs_khong_hop_le"
+
+
+def test_inputs_qua_lon_tra_422_co_ma(api):
+    """`inputs` hợp lệ VỀ KIỂU nhưng vượt trần vẫn không được đi vào
+    `WorkflowStarted.du_lieu` (sống 90 ngày) — Important #2, vế thứ hai.
+
+    100_000 byte: dưới trần CHUNG của `AgentBodyLimitMiddleware` (128 KiB —
+    nếu không request chết ở tầng middleware với 413, không phải 422 của
+    route này) nhưng vượt trần RIÊNG của `inputs` (`_GIOI_HAN_INPUTS`, 64 KiB)."""
+    a, token_a, _, _ = api
+    wf_id = _publish(_uid("v3run-a@example.com"))
+    r = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
+               headers={"X-CSRF-Token": token_a},
+               json={"inputs": {"x": "a" * 100_000}})
+    assert r.status_code == 422, r.text
+    assert r.json()["detail"]["ma"] == "inputs_qua_lon"
+
+
+def test_dong_co_chua_dang_ky_tra_503_co_ma_khong_phai_500(api, monkeypatch):
+    """`chu_dong_co()` ném `RegistryError` khi không app nào khai
+    `job_type workflow.dong_co` — sự cố cấu hình thật (`2d3e3c41`), phải là
+    503 có mã, không phải 500 trơ (Minor #4, mục cuối)."""
+    from platform_core.registry import RegistryError
+    from platform_core.workflow import tao_run
+
+    def _vo() -> str:
+        raise RegistryError("khong app nao khai job_type workflow.dong_co")
+
+    monkeypatch.setattr(tao_run, "chu_dong_co", _vo)
+    a, token_a, _, _ = api
+    wf_id = _publish(_uid("v3run-a@example.com"))
+    r = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
+               headers={"X-CSRF-Token": token_a}, json={})
+    assert r.status_code == 503, r.text
+    assert r.json()["detail"]["ma"] == "dong_co_chua_san_sang"
+
+
+def test_node_chua_co_anh_chup_bao_attempt_0_khong_phai_1(api):
+    """`attempt: 1` trên một node CHƯA TỪNG chạy nói dối rằng nó đã thử một
+    lượt (Minor #5) — `0` mới đúng."""
+    a, token_a, _, _ = api
+    wf_id = _publish(_uid("v3run-a@example.com"))
+    run_id = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
+                    headers={"X-CSRF-Token": token_a}, json={}).json()["id"]
+    node = a.get(f"/agent/api/v3/runs/{run_id}").json()["nodes"][0]
+    assert node["status"] == "PENDING"
+    assert node["attempt"] == 0
+
+
+def test_node_co_anh_chup_tra_dung_cost_attempt_job_error(api):
+    """Important #3 — không phép kiểm nào trước đây đưa một node qua khỏi
+    `PENDING`, nên nhánh `anh is not None` của `_nodes_json` (cost_credit,
+    attempt, job_id, error) chưa hề được xác nhận. Đi qua đường THẬT
+    (`may_trang_thai.chuyen_node`), không ghi tay `NodeRunSnapshot`."""
+    import platform_core.db as dbmod
+    from platform_core.workflow import may_trang_thai
+
+    a, token_a, _, _ = api
+    wf_id = _publish(_uid("v3run-a@example.com"))
+    run_id = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
+                    headers={"X-CSRF-Token": token_a}, json={}).json()["id"]
+
+    db = next(dbmod.get_session())
+    try:
+        assert may_trang_thai.chuyen_node(db, run_id, "a", sang="READY",
+                                          mo_ta="scheduler nhac node")
+        assert may_trang_thai.chuyen_node(db, run_id, "a", sang="RUNNING",
+                                          mo_ta="worker nhan job",
+                                          job_id="job-abc", attempt_number=2)
+        assert may_trang_thai.chuyen_node(
+            db, run_id, "a", sang="FAILED", mo_ta="worker bao loi",
+            error="vuot_tran_bao_gia", job_id="job-abc", attempt_number=2,
+            cost_credit=7)
+        db.commit()
+    finally:
+        db.close()
+
+    nodes = a.get(f"/agent/api/v3/runs/{run_id}").json()["nodes"]
+    node = next(n for n in nodes if n["node_id"] == "a")
+    assert node["status"] == "FAILED"
+    assert node["attempt"] == 2
+    assert node["cost_credit"] == 7
+    assert node["job_id"] == "job-abc"
+    assert node["error"] == "vuot_tran_bao_gia"

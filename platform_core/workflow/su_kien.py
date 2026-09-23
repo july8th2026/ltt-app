@@ -47,6 +47,21 @@ def doc(db, run_id: str, *, sau: int = 0) -> list[WorkflowEvent]:
         .order_by(WorkflowEvent.seq)).scalars())
 
 
+def seq_cuoi(db, run_id: str) -> int:
+    """Seq LỚN NHẤT của run — MỘT truy vấn tổng hợp, không đọc hàng nào.
+
+    ⭐ Con trỏ poll (`seq_cuoi` trong payload v3 — `runs_v3._run_json_v3`)
+       dùng số này mỗi nhịp. Gọi `doc(db, run_id, sau=0)` rồi lấy `[-1].seq`
+       trông tiện nhưng kéo TOÀN BỘ lịch sử sự kiện (kể cả cột `du_lieu`
+       JSON) về Python chỉ để đọc một số nguyên — chi phí tăng theo TUỔI của
+       run, đúng thứ tham số `sau=` sinh ra để tránh. `func.max` để CSDL trả
+       một hàng một cột, giống hệt cách `ghi()` tự tính `seq` kế tiếp ở trên.
+    """
+    return int(db.execute(
+        select(func.max(WorkflowEvent.seq))
+        .where(WorkflowEvent.run_id == run_id)).scalar() or 0)
+
+
 def _bay_gio() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
@@ -74,4 +89,4 @@ def purge_expired(db, *, days: int = RETENTION_DAYS,
     return len(rows)
 
 
-__all__ = ["LOAI", "RETENTION_DAYS", "ghi", "doc", "purge_expired"]
+__all__ = ["LOAI", "RETENTION_DAYS", "ghi", "doc", "seq_cuoi", "purge_expired"]
