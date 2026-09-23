@@ -97,6 +97,67 @@ slot giao diện không có sẵn đường nối; Task 12 chờ phép đo mà m
 Task 15/18/19 dừng sau khi tra ra **năng lực đã có sẵn** — và đó là kết quả có giá trị hơn việc
 viết thêm mã.
 
+
+## Bản đồ làn — chạy song song thế nào cho nhanh mà không hỏng
+
+> Phần này **không phải lý thuyết**: mọi ràng buộc dưới đây đều là thứ đã va phải trong ngày
+> 23/09. Thiếu nó thì người sau hoặc chạy tuần tự (mất hết tốc độ), hoặc cho hai làn cùng ghi
+> một kho rồi hỏng việc của nhau.
+
+### Năm ràng buộc cứng
+
+| # | Ràng buộc | Vì sao — bằng chứng 23/09 |
+|---|---|---|
+| R1 | **Một kho = MỘT làn được ghi.** Không phải "không sửa trùng tệp" mà là **chỉ số git dùng chung** | Chính phiên điều phối đã phá luật này: commit `4b56a79` vào `D:\LTTCODEAPP` trong lúc làn `lttcode-ma` đang làm ở đó. Làn kia phát hiện và báo lại. Lần đó không đụng tệp nên thoát, lần sau thì không chắc |
+| R2 | **Làn cần mở app LTTCODE: chỉ một, và phải độc quyền** | App single-instance; bộ lái từ chối mở khi app đang chạy. Hai làn cùng lái là chồng phím lên nhau |
+| R3 | **Làn tra nguồn KHÔNG commit gì cả**, kể cả tài liệu — báo về, điều phối ghi | Để nó không tranh chỉ số git với làn đang ghi cùng kho (R1) |
+| R4 | **Lệnh nặng đi qua MỘT khoá `cpu_nhieu` cho cả máy**, `-n` ≤ 7, **không giữ khoá lúc chờ** | Luật chốt 23/09 sau sự cố gate + agent cộng dồn 14/20 lõi; và một làn giữ khoá 22 phút cho lệnh nâng quyền chờ 90 phút trong khi GPU rảnh 9 % |
+| R5 | **Làn dùng model LTT: đếm suất máy B (3.8 ba · 3.5 bốn)** | 23/09: ba máy LTTCODE cùng chạy ⇒ `provider_overloaded` 48 sự kiện/90 phút. Nhiều làn gọi model cùng lúc sẽ tự làm nghẽn mình |
+
+### Ba loại làn
+
+| Loại | Ghi gì | Chạy song song được với |
+|---|---|---|
+| **Làn mã** | commit vào **một** kho | Làn mã của kho KHÁC · làn tra nguồn · (không với làn app cùng kho) |
+| **Làn app** | thường không commit; lái app đã cài để đo | Mọi làn mã — nhưng **chỉ một làn app tại một thời điểm** |
+| **Làn tra nguồn** | **không gì cả** | Tất cả |
+
+### Xếp làn cho các task còn lại
+
+| Làn | Kho / cây | Task | Song song được với |
+|---|---|---|---|
+| `nen-tang` | worktree `D:\LTTSTUDIOSAPP-*` | 10 (vá `restore.ps1` thêm `alembic upgrade head`) | mọi làn khác |
+| `lttcode-ma` | `D:\LTTCODEAPP` cây chính | 11 Step 5 (nút "Chạy tiếp" — **cần thiết kế trước**), 16 (chờ chủ dự án chọn nguồn số) | `nen-tang`, `tra-nguon` |
+| `do-app` | không commit · **độc quyền app** | 13 (MCP dùng thật), 14 (gỡ trần kế hoạch), 20 (khởi động app), và **phép đo còn nợ của 12** | mọi làn mã |
+| `tra-nguon` | **không commit** | 17 Step 1 (tách độ trễ ba phần), đánh giá `dsh-tool-git` cho 19 | tất cả |
+
+⚠️ **Task 12 và 13/14/20 đều cần `do-app`** ⇒ chúng **không** song song với nhau, phải xếp hàng
+trong cùng một làn. Đó là nút thắt thật của đợt sau, không phải số lượng agent.
+
+### Đo được gì về tốc độ hôm nay
+
+| Đợt | Làn chạy cùng lúc | Kết quả |
+|---|---|---|
+| 1 | 2 (lttcode + nền tảng) | 4 task xong |
+| 2 | 3 (mã + tài liệu + tra nguồn) | 3 task xong + 3 câu năng lực được trả lời |
+| 3 | 2 (credit nền tảng + credit app) | 3 task xong, 1 dừng đúng luật |
+
+**Trần thật không phải số agent.** Ba đợt trên đều dừng ở 2–3 làn, và lý do luôn là R1 (số kho
+có thể ghi song song) chứ không phải thiếu CPU — máy chạy 5–48 % suốt. Muốn nhanh hơn thì phải
+**tăng số worktree**, không phải tăng số agent trên cùng một cây.
+
+### Ba thứ phải viết vào MỌI brief agent
+
+Thiếu một trong ba, agent sẽ làm sai theo đúng cách đã thấy hôm nay:
+
+1. **"KHÔNG chạy gate ở bất kỳ mức nào"** — nếu không nó sẽ tự chạy và hoặc tốn 16 phút, hoặc
+   vô tình nâng thành L3.
+2. **"Không dừng lượt để chờ — chờ ở tiền cảnh"** — làn `credit-scope` đã dừng lượt giữa chừng
+   để "đợi thông báo việc nền", bỏ dở 4 tệp chưa commit.
+3. **"Chỗ nào plan sai so với mã thật thì nói thẳng, đừng lặng lẽ sửa"** — nhờ câu này mà ba lỗi
+   trong plan lộ ra: `maxOverflowRetries` sai chỗ, `than_v1()` sai tên, `node --test <thư mục>`
+   sai lệnh.
+
 ---
 
 ## File Structure
