@@ -147,13 +147,64 @@ dựng" với "chuyển camera". `L_KY_THUAT.md` §3 đã loại v3/v4 khỏi ch
 cảnh vì đúng lý do đó, và lý do đó áp y nguyên cho việc gắn nhãn tay ở đây.
 ⇒ Chấm điểm trên **v1 + v2** (cảnh đời thật, gắn nhãn được); v3/v4 chỉ đo CHI PHÍ.
 
-### 4.2 SO_DO_KET_QUA
+### 4.2 Kết quả trên phim thật
 
-<!-- KET_QUA -->
+| phim | cảnh | chỗ nối | có phán quyết | bị chấm `dat=false` | trong đó `do_tin` ≥ 0,70 |
+|---|---|---|---|---|---|
+| v1 烤牛肠 (265 s) | 125 | 41 | 41 | 10 | 9 |
+| v2 暴雨露营 (190 s) | 100 | 13\* | 13 | 5 | 5 |
+| **tổng** | | **54** | **54** | **15** (28 %) | **14** |
 
-### 4.3 Chi phí
+\* v2 **đo dở**: lượt đo bị dừng chủ động ở chỗ nối thứ 13/33 khi kết luận đã
+ổn định (xem §4.3 — ~23 s/chỗ nối). Nhờ ghi **nguyên tử sau mỗi chỗ nối**, 13
+phán quyết đó là số liệu đầy đủ và dùng được; ⛔ nhưng chúng là **13**, không
+phải 33, và bảng này ghi đúng như vậy.
 
-<!-- CHI_PHI -->
+**Người đo soi lại từng cặp khung của các chỗ nối bị chấm: 9/9 cái đã soi — trên
+CẢ HAI phim, hai thể loại khác hẳn — đều là BÁO ĐỘNG GIẢ.** Bảng nhãn tay đầy đủ
+ở `bang_chung/qc_hinh/NHAN_TAY.md`.
+
+⛔ **14/15** cái bị chấm có `do_tin` ≥ 0,70, tức **vượt** `DO_TIN_TOI_THIEU` và
+sẽ sinh việc sửa thật nếu bật cổng. Đây không phải một model lưỡng lự.
+
+⛔ Và lý do model đưa ra ở **mọi** lượt đều mô tả một **thay đổi nội dung**
+("khung 1 là…, khung 2 là…, có sự thay đổi"), không mô tả một chỗ đứt mạch.
+Tức model đang trả lời câu *"hai khung này có khác nhau không"* thay vì câu
+*"chỗ nối này có gây khó hiểu không"* — trong khi lời nhắc nói **thẳng** rằng
+hai khung khác hẳn nhau (khác bối cảnh, khác góc máy, khác chủ thể) là một cắt
+**ĐÚNG** và phải cho `dat=true`.
+
+⇒ Đây là **hình dạng lời nhắc**, cùng họ với R-05 của làn `fix-toc-do` (8/18
+lượt hỏng vì lời nhắc chứ không vì model) — không phải "model kém". Nhưng
+chừng nào chưa đo lại sau khi sửa lời nhắc thì con số hiện hành vẫn là con số
+hiện hành.
+
+⚠️ **Đối chứng dương (`nhay_hinh`) VẮNG trên v1/v2, và phải nói ra.** Ngưỡng
+`CANH_DU_DAI_S` ban đầu là 6,0 s — một con số tự đặt — trong khi v1 có 125 cảnh
+/265 s (2,1 s/cảnh). Không cảnh nào đủ dài, nên bộ đo cấy **0** jump cut và
+**không kêu lên**. Tức lượt này trả lời được *"model chấm bao nhiêu cái là
+hỏng"* nhưng **không** trả lời được *"model có bắt được một cái hỏng thật
+không"*. Đã sửa: ngưỡng nay **tính ra** từ `KHUC_NHAY_S` (= 3,0 s) và công cụ in
+cảnh báo khi cấy được 0 cái.
+
+### 4.3 Chi phí — và nó KHÔNG nhỏ
+
+| phép | số đo |
+|---|---|
+| **một chỗ nối** (2 ảnh → 1 lượt VLM) | **23,3 s** · ~687 token vào / ~1.562 token ra |
+| rút 2 khung quanh một chỗ nối (ffmpeg, 2 luồng) | ~0,22 s |
+| tách cảnh (PySceneDetect, 2 luồng) | 14,1 s cho 265 s video · 12,4 s cho 190 s |
+| render bản cắt (crf23, `-threads 2`) | 15,8 s cho 265 s · 9,3 s cho 190 s |
+| **v1 (265 s, 41 chỗ nối)** | **~16 phút chỉ riêng lớp QC hình** |
+| GPU | **0** — máy B phục vụ; máy A chỉ chạy ffmpeg 2 luồng |
+
+⇒ Chi phí tỉ lệ với **số cảnh bị bỏ**, không với thời lượng. Một phim 120 phút
+cùng mật độ cảnh cho hàng trăm chỗ nối ⇒ **hàng giờ**. Hai hệ quả bắt buộc:
+
+1. lớp này **phải** đi qua `lat_cat` (§2.4) — `test_2121` chốt rằng nó nhường
+   rồi nối tiếp và **mỗi chỗ nối chỉ hỏi một lần**;
+2. `LTT_ASV_QC_AI=1` là một quyết định về **giá**, và người vận hành cần con số
+   này *trước* khi bật. GPU: lượt đo không chiếm card nào (máy B phục vụ).
 
 ---
 
@@ -162,13 +213,13 @@ cảnh vì đúng lý do đó, và lý do đó áp y nguyên cho việc gắn nh
 `sua_chua.QC_HINH_LA_TU_VAN = True` — phán quyết đi vào báo cáo, `stage.outputs`
 và bề mặt vận hành, nhưng **không sinh việc sửa**.
 
-**(a) Độ chính xác đo được là quá thấp để tiêu tiền.** Người đo mở **cả hai
-khung** của từng chỗ nối bị chấm `dat=false` rồi trả lời đúng câu mà model được
-hỏi: **8/8 cái đã soi là báo động giả** (`bang_chung/qc_hinh/NHAN_TAY.md`).
+**(a) Độ chính xác đo được là quá thấp để tiêu tiền.** 54 chỗ nối thật được
+soát trên hai phim; **15 bị chấm `dat=false`** (28 %). Người đo mở **cả hai
+khung** của từng cái rồi trả lời đúng câu mà model được hỏi: **9/9 cái đã soi là
+báo động giả** (`bang_chung/qc_hinh/NHAN_TAY.md`).
 
-Và chúng không phải những cái model lưỡng lự: **9/10** cái bị chấm mang
-`do_tin` ≥ 0,70, tức **vượt** `DO_TIN_TOI_THIEU` và sẽ sinh việc sửa thật nếu
-bật cổng.
+Và chúng không phải những cái model lưỡng lự: **14/15** mang `do_tin` ≥ 0,70,
+tức **vượt** `DO_TIN_TOI_THIEU` và sẽ sinh việc sửa thật nếu bật cổng.
 
 ⇒ Không phải "chưa chắc chắn". Là **sai, và sai một cách tự tin**.
 
