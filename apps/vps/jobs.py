@@ -552,6 +552,9 @@ def _tao_may(params: dict, ctx=None) -> dict:
         provisioning.ghi_su_kien(db, may.id, "tao_xong", boi="he_thong",
                                  vmid=may.vmid, ip_noi_bo=ip_noi_bo,
                                  ip_cong_khai=ip_cong_khai)
+        # Tiền rời tài khoản **ở đây** — sau khi máy đã bật thật và đã được hỏi
+        # lại, không phải lúc khách bấm nút. Xem `billing.mo_chu_ky`.
+        _quyet_toan(db, may, ctx)
         db.commit()
         _bao(ctx, 100, "xong")
 
@@ -569,12 +572,46 @@ def _tao_may(params: dict, ctx=None) -> dict:
     except DangBan:
         # A paid OVH order still being delivered is not a failed VM. The core
         # worker requeues this signal without another credit charge/attempt.
+        #
+        # ⚠️ KHÔNG nhả giữ chỗ ở đây: job còn sống và sẽ chạy lại. Nhả rồi thì
+        #    lượt sau không còn gì để quyết toán, và một máy đã trả tiền cho
+        #    OVH sẽ được giao miễn phí.
         raise
     except Exception as exc:
         _danh_dau_loi(db, params.get("instance_id"), exc)
+        # ⚠️ KHÔNG tự nhả giữ chỗ ở đây. `job_runner._hoan_tien_neu_can` đã làm
+        #    đúng việc đó cho mọi job hỏng, và hai cơ chế cho cùng một bút toán
+        #    là hai cơ chế sẽ lệch nhau — đúng lý do `_khoa_may` ở tệp này chỉ
+        #    có một khoá. Việc của app chỉ là **không** phát `thu_phi`, nhờ đó
+        #    vòng quét `bao_tri._hoan_tien_may_hong` cũng không hoàn một khoản
+        #    chưa bao giờ thu.
         raise
     finally:
         gen.close()
+
+
+def _quyet_toan(db, may: VpsInstance, ctx) -> None:
+    """Thu phần credit đang giữ cho job tạo máy này, và mở chu kỳ đầu.
+
+    Gọi **sau** khi máy đã bật thật và đã được hỏi lại — không phải lúc khách
+    bấm nút. `credit.quyet_toan` idempotent theo `job_id`, nên job chạy lại
+    không thu hai lần.
+
+    Job hỏng thì KHÔNG đi qua đây: `job_runner._hoan_tien_neu_can` nhả phần
+    giữ, và không có `thu_phi` nào được phát.
+
+    Không có `job_id` (máy cũ tạo trước 23/09, hoặc gọi ngoài hàng đợi) thì
+    không có gì để chốt — vẫn mở chu kỳ, vì máy thì đã dựng xong thật.
+    """
+    from platform_core import credit
+
+    from apps.vps.services import billing
+
+    gia = billing.credit_thang(may.plan_id, may.dia_them_gb)
+    job_id = str(getattr(ctx, "job_id", "") or "")
+    if job_id and credit.so_da_giu(db, job_id) > 0:
+        gia = credit.quyet_toan(db, may.user_id, job_id, gia).charged_credit
+    billing.mo_chu_ky(db, may, gia=gia)
 
 
 def _vm_da_ton_tai(client, vmid: int | None) -> bool:

@@ -57,9 +57,18 @@
        chọn thì bảng tổng liệt kê thẳng những vùng CÓ.
        Dữ liệu đã sẵn (`g.con_cho` tính cho từng gói); chỉ là trang chưa dùng
        nó để đề xuất. #}
+    {# 🔴 23/09/2026: chỗ này từng in cứng "Hết chỗ cho cấu hình này" cho MỌI
+       lý do — kể cả khi hạ tầng còn 14/9/6 chỗ và nguyên nhân thật là một bộ
+       đếm gói rơi làm profile không qua được health. Khách đọc một câu sai sự
+       thật, và chủ dự án đi tìm sai hướng vì nó.
+       Nay câu đến từ `nguon_luc.KetQua.cau_cho_khach`, sinh từ ĐÚNG ràng buộc
+       đang chặn. Gợi ý "Còn chỗ:" chỉ có nghĩa khi ràng buộc là `compute` —
+       đó là ràng buộc DUY NHẤT khách tự xử lý được bằng cách đổi gói. Hết IP
+       hay cạn băng thông thì mọi gói đều tắc, và mời họ đổi gói là mời họ đi
+       vào một cánh cửa giả. #}
     {% if not g.con_cho %}
-      <span class="goi-trangthai">{{ _("Hết chỗ cho cấu hình này.") }}
-        {% if con_cho_khac %}
+      <span class="goi-trangthai">{{ g.cau_het }}
+        {% if g.rang_buoc == "compute" and con_cho_khac %}
           {{ _("Còn chỗ:") }}
           {% for k in con_cho_khac %}<b>{{ _(k.plan.ten) }}</b>{{ "" if loop.last else " · " }}{% endfor %}
         {% endif %}

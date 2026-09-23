@@ -31,10 +31,10 @@ from apps.vps import (bang_thong, dieu_khoan, nhan, os_images, profiles,
                       ten_may, trang_thai_may)
 from apps.vps.cost import CHU_KY_NGAY, PLANS, dia_tong_gb, lay_plan
 from apps.vps.manifest import MANIFEST
-from apps.vps.services import (billing, capacity, console, dieu_khien,
-                               provisioning, sao_luu, thao_tac, backend_factory)
-from apps.vps.services.proxmox import (ChuaCauHinh, ProxmoxError,
-                                       client_tu_moi_truong)
+from apps.vps.services import (billing, console, dieu_khien,
+                               nguon_luc, provisioning, sao_luu, thao_tac,
+                               backend_factory)
+from apps.vps.services.proxmox import (ChuaCauHinh, ProxmoxError)
 from apps.vps.tables import VpsEvent, VpsInstance, VpsIp
 from platform_core.i18n import N_
 from platform_core.i18n import _ as _t
@@ -77,85 +77,20 @@ def _instance_client(db, may):
     return backend_factory.compute_backend(profiles.pinned_profile(db, may)).client
 
 
-def _suc_chua(db, profile=None) -> tuple[capacity.SucChua | None, str]:
-    """Sức chứa hiện tại, và **câu cho khách đọc** nếu không đọc được.
+def _canh_bao_chat_luong(db, profile) -> list[str]:
+    """Nhãn chất lượng cho khách ĐANG DÙNG — không phải lý do từ chối bán.
 
-    Không đọc được Proxmox **không** phải lỗi trang: trang vẫn phải mở để khách
-    xem máy của mình. Nhưng nút "Tạo máy" thì phải khoá — bán khi không biết còn
-    bao nhiêu chỗ là đúng thứ `capacity.py` sinh ra để phòng.
-
-    ## Lý do KỸ THUẬT đi vào log, không đi ra trang
-
-    🔴 Đo được trên production 09/09/2026, ngay sau khi deploy VPS V2: trang bán
-    hàng **công khai** (khách chưa đăng nhập cũng thấy) in nguyên văn
-
-        Hiện chưa nhận máy mới. (chua cau hinh Proxmox: production ma khong co
-        LTT_VPS_PROXMOX_CA: tu choi noi toi Proxmox khi khong xac minh duoc
-        chung chi. Ghim CA that, hoac chay o moi truong khac.)
-
-    Ba thứ sai cùng lúc: một câu tiếng Việt-không-dấu trộn thuật ngữ trên trang
-    bán hàng; **tên biến môi trường** của hệ thống nội bộ; và cái tên `Proxmox`
-    — thứ mà chính `proxmox.py` nói là khách **không bao giờ** được thấy.
-
-    ⚠️ Rò rỉ này **có sẵn từ trước**, không phải do bản sửa TLS: dòng cũ là
-    `f"chua cau hinh Proxmox: {exc}"`. Bản sửa TLS chỉ làm `exc` dài hơn, và
-    nhờ dài hơn mà nó lộ ra. Một lỗi nhỏ ẩn sau một chuỗi ngắn vẫn là lỗi.
-
-    ⇒ Hàm này nay trả **đúng một câu viết cho khách**. Chi tiết kỹ thuật đi vào
-    `log.warning` — nơi người vận hành đọc, và nơi nó thật sự có ích.
+    Tầng `profiles.CANH_BAO` đỏ nghĩa là dịch vụ chạy chưa mượt, không phải
+    không giao được máy. Khách đang có máy xứng đáng biết điều đó; khách đang
+    định mua thì không bị chặn vì nó. Xem `profiles.CHAN_BAN`.
     """
+    if profile is None:
+        return []
     try:
-        client = (backend_factory.compute_backend(profile).client if profile is not None
-                  else client_tu_moi_truong())
-        return provisioning.suc_chua_hien_tai(
-            db, client.trang_thai_node(), client.kho_luu_tru(),
-            client.danh_sach_vm()), ""
-    except ChuaCauHinh as exc:
-        # `ChuaCauHinh` gồm cả ca "thiếu biến môi trường" lẫn ca "production
-        # không có CA" (Pha 07). Cả hai đều là **việc của nhà**, và với khách
-        # thì chúng giống hệt nhau: chưa mua được.
-        log.warning("vps: chua cau hinh de doc suc chua: %s", exc)
-        return None, _t("Hệ thống đang bảo trì, tạm chưa nhận máy mới.")
-    except ProxmoxError as exc:
-        log.warning("vps: khong doc duoc suc chua: %s", exc)
-        return None, _t("Hệ thống đang bảo trì, tạm chưa nhận máy mới.")
-
-
-def _gioi_han_ip_va_cong(db, profile) -> tuple[int, int] | None:
-    """`(IPv4 con ban duoc, cong vao con cho)` cua mot profile; `None` = khong doc duoc.
-
-    Mot nguon cho ca trang ban va luc tao may (R24). Hang doi da hua IP tinh
-    truoc khi provision giu dia chi; khoa dong cua selector tuan tu hoa luot nhan.
-    """
-    from apps.vps.services.sellable_capacity import (
-        available_gateway_slots, effective_ipv4_slots, promised_without_ip)
-    try:
-        ip_details = backend_factory.public_ip_backend(db, profile).health().details
-        free = effective_ipv4_slots(
-            ip_details, promised_without_ip=promised_without_ip(db, profile.id))
-        return free, available_gateway_slots(db, profile.id)
-    except backend_factory.operation_error_types():
-        return None
-
-
-def _gioi_han_ban(db) -> tuple[int, int] | None:
-    """Gioi han IP/cong cua profile se nhan may moi o vung dang mo dau tien."""
-    vung = provisioning.vung_dang_mo(db)
-    if not vung:
-        return None
-    try:
-        profile = profiles.select_profile(db, region=vung[0][0])
-    except profiles.ProfileNotReady:
-        return None
-    return _gioi_han_ip_va_cong(db, profile)
-
-
-def _so_cho_ban(suc_chua, plan_id: str, gioi_han: tuple[int, int], *,
-                dia_them_gb: int = 0) -> int:
-    from apps.vps.services.sellable_capacity import sellable_slots
-    free_ipv4, cong = gioi_han
-    return sellable_slots(suc_chua, plan_id, extra_disk_gb=dia_them_gb,
-                          free_ipv4=free_ipv4, gateway_slots=cong).slots
+        return [ten for ten, _tt in profiles.canh_bao(db, profile.id)]
+    except Exception:  # noqa: BLE001 - nhan hien thi khong duoc lam sap trang
+        log.warning("vps: khong doc duoc canh bao chat luong")
+        return []
 
 
 def _viec_dang_chay(db, may) -> dict:
@@ -383,23 +318,33 @@ def trang_chinh(request: Request,
     phai "bo qua co `LTT_VPS`".
     """
     user_id = _chu(request)
-    suc_chua, loi_ha_tang = _suc_chua(db)
-    # R24 (17/09): "con cho" tren trang phai la CUNG phep tinh voi luc tao may
-    # (RAM/dia/CPU + IPv4 + gateway). Truoc day trang chi hoi RAM/dia, nen khi
-    # het IP khach van thay "con cho", chon xong moi an "Da het cho".
-    gioi_han = _gioi_han_ban(db)
+    # R24 (17/09): "con cho" tren trang phai la CUNG phep tinh voi luc tao may.
+    # Tu 23/09 phep tinh do chi con MOT ban, trong `nguon_luc` — truoc day trang
+    # va `preflight` tu tinh lay va DA lech nhau that (`preflight` khong tru
+    # `promised_without_ip`). Do MOT lan roi hoi ca ba goi: ba luot goi Proxmox
+    # cho mot lan dung trang la ba lan cho mang.
+    do = nguon_luc.do_nguon_luc(db)
 
     goi = []
     for p in PLANS:
-        con_cho = (suc_chua is not None and gioi_han is not None
-                   and _so_cho_ban(suc_chua, p.id, gioi_han) >= 1)
+        kq = nguon_luc.danh_gia(do, p.id)
         goi.append({
             "plan": p,
             "credit": p.credit_thang,
-            "con_cho": con_cho,
+            "con_cho": kq.ban_duoc,
+            "cau_het": kq.cau_cho_khach,
+            "rang_buoc": kq.rang_buoc,
             "os": [o for o in os_images.os_ban_duoc()
                    if os_images.hop_le(p.id, o.id)[0]],
         })
+
+    # Câu báo chung chỉ xuất hiện khi chính hạ tầng không trả lời được — KHÔNG
+    # khi một gói hết chỗ. Một dải băng đỏ trên trang lúc chỉ có gói Lớn đầy là
+    # nói quá, và khách sẽ bỏ đi thay vì chọn gói Vừa ngay bên cạnh.
+    loi_ha_tang = next(
+        (g["cau_het"] for g in goi
+         if g["rang_buoc"] == nguon_luc.RANG_BUOC_SUC_KHOE), "")
+    suc_chua = do.suc_chua
 
     may_cua_toi = _may_cua_toi(db, user_id)
     return templates.TemplateResponse(request, "vps.html", {
@@ -502,14 +447,14 @@ def tao_may(request: Request,
     except (profiles.ProfileNotReady, provisioning.KhongCoGatewayError):
         return _ve_trang(_t("Vùng bạn chọn hiện không nhận máy mới."))
 
-    suc_chua, loi_ha_tang = _suc_chua(db, profile)
-    if suc_chua is None:
-        return _ve_trang(_t("Hệ thống đang bận, chưa nhận máy mới. Thử lại sau."))
-    gioi_han = _gioi_han_ip_va_cong(db, profile)
-    if gioi_han is None:
-        return _ve_trang(_t("Hệ thống đang bận, chưa nhận máy mới. Thử lại sau."))
-    if _so_cho_ban(suc_chua, plan_id, gioi_han, dia_them_gb=dia_them_gb) < 1:
-        return _ve_trang(_t("Đã hết chỗ cho cấu hình này. Vui lòng chọn gói nhỏ hơn."))
+    # CÙNG phép tính với trang bán — không phải một bản chép. Câu từ chối cũng
+    # từ đó ra, nên khách không bao giờ đọc "hết chỗ" cho một lý do không phải
+    # hết chỗ (sự cố 23/09), và không bao giờ thấy tên hệ thống nội bộ.
+    kq = nguon_luc.con_ban_duoc(db, plan_id, dia_them_gb=dia_them_gb,
+                                do=nguon_luc.do_nguon_luc(db, profile))
+    if not kq.ban_duoc:
+        log.warning("vps: tu choi tao may (%s)", kq.cau_cho_van_hanh)
+        return _ve_trang(kq.cau_cho_khach)
 
     # Tên: bỏ trống thì tự sinh. Kiểm TRƯỚC khi ghi gì vào CSDL — một tên trùng
     # phát hiện sau khi đã trừ tiền là một lỗi phải hoàn tiền để sửa.
@@ -527,20 +472,31 @@ def tao_may(request: Request,
     db.add(may)
     db.flush()
 
-    # Thu chu kỳ đầu TRƯỚC khi nộp job: hết credit thì không được chiếm chỗ.
-    try:
-        billing.thu_mot_chu_ky(db, may)
-    except billing.ThieuCreditError as exc:
-        db.rollback()
-        return _ve_trang(_t("Không đủ credit: %(ly_do)s") % {"ly_do": exc})
-
     provisioning.ghi_su_kien(db, may.id, "tao_moi", boi=user_id,
                              plan_id=plan_id, os_id=os_id, vung=vung)
 
+    from platform_core import credit as credit_core
     from platform_core import jobs as job_queue
-    job_queue.submit(db, user_id=user_id, app_slug=MANIFEST.slug,
-                     job_type="vps.provision",
-                     params={"instance_id": may.id})
+    job = job_queue.submit(db, user_id=user_id, app_slug=MANIFEST.slug,
+                           job_type="vps.provision",
+                           params={"instance_id": may.id})
+
+    # GIỮ CHỖ, không trừ. `giu_cho` khoá số dư rồi mới đọc, và chạy trong CÙNG
+    # transaction với `submit` — thiếu tiền thì cả job lẫn máy đều rollback, nên
+    # khách hết credit vẫn không chiếm được một chỗ.
+    #
+    # 🔴 Bản cũ gọi `billing.thu_mot_chu_ky` ngay tại đây. Đo 22/09/2026: cả hai
+    #    lần thử của chủ dự án đều thành *thu 1.490 → hoàn 1.490 → xoá máy*, vì
+    #    job chết ở `OVH_IP_ACQUIRE` sau đó. Tiền đi trước hàng, và hàng không
+    #    bao giờ tới. Nay tiền chỉ rời tài khoản khi máy đã bật thật
+    #    (`jobs._tao_may` gọi `quyet_toan`), và job hỏng thì phần giữ nhả hết.
+    try:
+        credit_core.giu_cho(db, user_id, billing.credit_thang(
+            plan_id, int(dia_them_gb or 0)), job.id)
+    except credit_core.ThieuCreditError as exc:
+        db.rollback()
+        return _ve_trang(_t("Không đủ credit: %(ly_do)s") % {"ly_do": exc})
+
     db.commit()
     return RedirectResponse(MANIFEST.route_prefix, status_code=303)
 
