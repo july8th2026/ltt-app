@@ -12,6 +12,20 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-23 (chiều) — VPS: bộ cấp IP OVH khoá hết dòng FREE (R16 `LIMIT 20`), luồng thứ hai báo hết IP
+
+- **Triệu chứng:** `test_1010::test_real_postgres_two_ip_allocators_each_get_a_distinct_free_row` (chỉ chạy khi
+  `LTT_VPS_PG_TEST=1`) đỏ `CapacityExhausted` 3/3 khi chạy CẢ module, XANH 4/4 khi chạy riêng — chạy riêng thì
+  pool kết nối rỗng, hai luồng mở kết nối mới nên so le (một luồng commit xong luồng kia mới hỏi): may mắn thời điểm.
+- **Gốc:** `dc516d5c` (R16) đổi `.limit(1)` → `.limit(20)` để bước qua dòng đã tắt gia hạn;
+  `SELECT … FOR UPDATE SKIP LOCKED LIMIT 20` khoá mọi dòng FREE của profile ⇒ luồng thứ hai bỏ qua hết. Bộ cấp sai,
+  dữ liệu test đúng.
+- **Sửa:** mỗi vòng khoá MỘT dòng, dòng bị loại (R16) loại trừ theo id. Real-Postgres cả module 3/3.
+  `tests/test_2400` (SQLite, chạy trong bộ thường) ghi mọi câu `FOR UPDATE` bộ cấp gửi, dịch sang PostgreSQL, đòi
+  `LIMIT 1`; tiêm file `main` cũ ⇒ đỏ `assert 1 == 3`.
+- **Đề xuất (chưa làm):** gate không chạy test nào sau rào `LTT_VPS_PG_TEST` ⇒ lỗi này im từ R16. Cân nhắc cho
+  bước `postgres_test` của gate chạy nhóm real-Postgres của `test_1010` (giờ đã tự xoá CSDL sau mỗi lượt).
+
 ## 2026-09-23 (chiều) — CSDL test PostgreSQL mồ côi: 132 CSDL làm PostgreSQL phục hồi 4,5 phút mỗi lần sập
 
 - **Đo trên máy chủ:** `data\base` có 132 CSDL (127 tạo trong tháng 9), 44.651 tệp. Sau mỗi lần máy sập,
