@@ -48,6 +48,7 @@
 
 | M-09 | **cao** | MỌI vòng sửa chạy lại `voice_synthesis` đều chết `database is locked`. Đối chứng chứng minh lỗi CÓ TRƯỚC lane qc-hinh ⇒ vòng sửa đoạn giọng chưa từng chạy trọn trên SQLite | `assets.kiem_toan_ven` / `thi_hanh` | sua-khoa | **ĐÃ ĐÓNG** — xem dòng M-09 ở bảng trên và `L_SUA_KHOA.md` |
 | M-10 | trung | QC hình bằng VLM: 15/54 mối nối bị gắn cờ, **9/9 mối kiểm tay đều là báo động giả**, và 14/15 vượt ngưỡng `DO_TIN_TOI_THIEU` ⇒ cổng độ tin cậy **không lọc gì**. Giá 23,3 s + ~2.250 token mỗi mối | `qc_ai` lớp hình | qc-hinh | **ĐÃ HẠ XUỐNG TƯ VẤN** (`QC_HINH_LA_TU_VAN=True`), khai rõ trong mã + tài liệu |
+| M-11 | trung | CSDL test dùng chung `lttplatform_test` còn một `AsvRun` **`running` mồ côi** (`asvr_d29cef8a…`) mà job `advance` **tự nộp lại vô hạn** ⇒ `jobs` tích tụ 1.274 dòng và mọi lượt `_chay_het_hang_doi` đều nhặt job của nó. ⛔ Hệ quả đo lường: trần 200 job là trần **dùng chung**, nên trên CSDL này nó **không còn đo được** *„vòng sửa có quay không“* — một bài PG thường trực sẽ đỏ vì rác, không vì mã | CSDL `lttplatform_test` | ĐIỀU PHỐI | **MỞ** — dọn khi mở lại việc CPU: cần khoá `postgres_test`, đưa run về trạng thái kết thúc, và mọi bài PG phải đếm job **theo `run_id` của mình**. `L_SUA_KHOA.md` §5.3 |
 
 ## Độ phủ lượt thật
 
