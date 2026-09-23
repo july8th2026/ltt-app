@@ -220,7 +220,22 @@ KIND_TEXT = "text"
 #:    kiem la mo mot loai artifact **khong ai soi noi dung** — tuc bat bien I8
 #:    ("DONE nghia la co mot ket qua HOP LE") mat hieu luc cho dung loai do.
 KIND_ANH = "image"
-KINDS = frozenset({KIND_VIDEO, KIND_AUDIO, KIND_JSON, KIND_TEXT, KIND_ANH})
+#: 🔴 Them o asv-final 23/09. `giai_doan_ket_xuat.chay` DA phat ma nay tu pha 14
+#:    (`kind: "subtitle"` cho tep `.srt` khach tai ve), nhung no chua bao gio
+#:    nam trong `KINDS` — nen `assets.kiem_hop_le` nem
+#:    `loai artifact khong biet: 'subtitle'` va `render` chet han.
+#:
+#: ⛔ Do duoc o nghiem thu cuoi, luot C (smart_localize + phu de `dich` +
+#:    `xuat_srt: true` + toc do 1,25): chin giai doan xanh, `compose` xanh, roi
+#:    `render failed_terminal`. Tuc lua chon "xuat tep phu de roi" **chua bao
+#:    gio chay duoc dau-cuoi** — mot tinh nang chet, khong phai mot tinh nang
+#:    hong.
+#:
+#: ⭐ Va theo dung canh bao o `KIND_ANH` ngay tren: them ma nay DI KEM mot phep
+#:    kiem noi dung o `assets.kiem_hop_le` (`_kiem_srt`), khong chi them chuoi.
+KIND_PHU_DE = "subtitle"
+KINDS = frozenset({KIND_VIDEO, KIND_AUDIO, KIND_JSON, KIND_TEXT, KIND_ANH,
+                   KIND_PHU_DE})
 
 
 class AsvAsset(Base):

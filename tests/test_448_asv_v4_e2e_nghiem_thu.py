@@ -160,6 +160,15 @@ def _dang_ky_may() -> dict:
 NGAN_SACH_HOAN_S = 90.0
 
 
+class ThieuGpuNghiemThu(RuntimeError):
+    """Khong giành duoc card cho mot job khai `gpu`. Xem `_chay_hang_doi`.
+
+    ⛔ Lop RIENG, khong dung `RuntimeError` tran: `_provider_failure_kind` phan
+       loai theo lop, va mot `RuntimeError` chung se roi vao nhanh `"retry"` —
+       tuc bo chay se quay vong tren cung mot the thieu card thay vi noi ra.
+    """
+
+
 def _chay_hang_doi(db, *, toi_da: int = 200) -> list[dict]:
     """Dong vai worker THAT, va do gio tung job.
 
@@ -188,7 +197,8 @@ def _chay_hang_doi(db, *, toi_da: int = 200) -> list[dict]:
        va nhanh lech se la nhanh it duoc chay nhat.
     """
     from platform_core import jobs
-    from platform_core.job_runner import JobContext, _provider_failure_kind
+    from platform_core.job_runner import (JobContext, _giu_gpu, _vram_can,
+                                          _provider_failure_kind)
 
     nhat_ky: list[dict] = []
     da_hoan_s = 0.0
@@ -198,13 +208,33 @@ def _chay_hang_doi(db, *, toi_da: int = 200) -> list[dict]:
             break
         db.commit()
         handler = jobs.resolve_handler(job.job_type)
-        ctx = JobContext(job.id)
-        ctx.job_type = job.job_type
         t0 = time.time()
         loi = ""
         hoan = 0.0
+        # 🔴 **Bo chay nay tung khong GIANH GPU, va vi the do nham moi truong.**
+        #
+        #    Dong cu la `ctx = JobContext(job.id)` — khong `gpu_uuid`, khong
+        #    `_giu_gpu`. Worker that thi lam ca hai (`job_runner._chay_mot_job`
+        #    dong 292-299). Hau qua: `ctx.co_gpu()` sai o MOI job, nen demucs va
+        #    ASR tut xuong CPU, va bao cao ghi `gpu_cap: ""` o moi lan chay.
+        #
+        # ⛔ Do duoc 23/09 tren phim khach that (106,8 s): demucs 69,9 s CPU ->
+        #    29,8 s GPU; `transcribe` 107,6 s -> 50,7 s. Tuc bao cao nghiem thu
+        #    tung noi san pham cham gap hai lan so voi thu khach that nhan —
+        #    mot bo chay do CHINH NO chu khong do san pham.
+        #
+        # ⭐ Va cai nguy hiem khong phai con so cham: la `gpu_cap: ""` doc len
+        #    giong het "may nay khong co card", nen khong ai di tim.
+        can_mb = _vram_can(job.job_type)
         try:
-            ket_qua = handler(dict(job.params), ctx) or {}
+            with _giu_gpu("w-nghiem-thu", job.id, job.job_type, can_mb) as (lease, het_gpu):
+                if het_gpu:
+                    raise ThieuGpuNghiemThu(
+                        "nen tang co card nhung khong card nao ranh — "
+                        "mot luot nghiem thu khong duoc chay tren CPU roi bao la nhanh")
+                ctx = JobContext(job.id, gpu_uuid=(lease.gpu_uuid if lease else ""))
+                ctx.job_type = job.job_type
+                ket_qua = handler(dict(job.params), ctx) or {}
             jobs.complete(db, job, ket_qua)
         except Exception as exc:            # noqa: BLE001 - worker that cung bat het
             loai, cho = _provider_failure_kind(
