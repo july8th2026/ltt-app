@@ -1145,13 +1145,47 @@ hoàn 16–17, tiêu thật 1–2.
 **Files:**
 - Modify: `D:\LTTCODEAPP\plugins\ui-lttcode\src\client.js` (thanh chân phiên)
 
-- [ ] **Step 1:** Lấy credit mỗi lượt từ đâu — nếu `/api/v1/usage` không trả theo lượt, cần nền
-  tảng thêm trường vào thân trả lời của chính lượt đó. **Tra trước, đừng đoán.**
-- [ ] **Step 2:** Hiện `~N credit` cạnh token trên thanh chân phiên.
-- [ ] **Step 3:** Đối chứng âm: khi không lấy được số, hiện `—`, **không hiện 0**.
-- [ ] **Step 4:** Bằng chứng: chạy 5 lượt, đối chiếu số hiện trên giao diện với sổ credit trong
-  cơ sở dữ liệu. Lệch ⇒ đỏ.
-- [ ] **Step 5: Commit**
+### 🔴 CHẶN Ở TẦNG ENGINE — đóng task ở plan này, chuyển thành mục thiết kế riêng
+
+Đã tra **ba vòng**, mỗi vòng bác một phương án. Không vòng nào là đoán — đều có tệp:dòng.
+
+**Vòng 1 — không có nguồn chính xác.** `/api/v1/messages` (cửa LTTCODE dùng) chỉ mang `WireUsage`:
+token vào/ra/cache, **không có trường credit**. Quyết toán credit chạy trong `finally` **SAU khi
+byte cuối đã gửi** ⇒ không nhét được vào SSE đang chạy. `/api/v1/usage` join theo `Job.id`, còn
+lượt chat mang mã `stream:<hex>` ⇒ **không liệt kê lượt chat**.
+
+**Vòng 2 — phương án (b) "hiệu số số dư, gọi từ giao diện": BẤT KHẢ.**
+`client.js` chạy trong **DSH web UI, là một loopback remote page** ⇒ **không có Tauri IPC**, nên
+không gọi được `credits_balance` (đường gọi số dư duy nhất, do Task 5 dựng).
+> `desktop/src-tauri/src/lib.rs`, docstring `open_account_window`: *"…the DSH web UI, **which as a
+> loopback remote page gets no Tauri IPC**"* · `desktop/src-tauri/capabilities/default.json`:
+> *"**The DSH web UI is a loopback remote page and gets no capability.**"*
+
+Cửa sổ Tài khoản (`account.html`, `WebviewUrl::App`) là **cửa sổ khác hẳn** — nó có IPC, nhưng
+không phải nơi cần hiện credit.
+
+**Vòng 3 — gọi từ phía sidecar (đúng lớp): vẫn chặn, ở BA lớp liên tiếp.**
+
+| Lớp | Tình trạng | Bằng chứng |
+|---|---|---|
+| Gọi mạng | ✅ **dùng lại được** — `plugins/llm-ltt/src/adapter.ts` `stream()` đã có `resolveApiKey()` + `doFetch` + `attributionHeaders()` gọi `baseUrl` bằng Bearer `ltt_sk_` | — |
+| Chở số đi tiếp | ❌ `TokenUsage` là **interface đóng**, chỉ có `inputTokens, outputTokens, totalTokens?, cacheRead/Write?, reasoningTokens?` — **không có trường tự do** | `plugins/llm-ltt/src/translate.ts:47-59` (`mergeUsage`) · `dsh-llm/lib/types/types.d.ts:149-163` |
+| Nuôi thanh chân phiên | ❌ projection **khoá cứng đồng bộ**: *"All functions MUST be synchronous… an async unit would tear the carriers' consistency cut"* ⇒ **không `fetch` được trong projection**, và nó chỉ fold lại sự kiện **đã có** trong log, không tự đi lấy | `dsh-token-meter/lib/types/usage-projection.d.ts` · `dsh-session-projection/lib/types/index.d.ts:34-36` |
+
+**Vì sao đây là "không có kênh" chứ không phải "kênh khó dùng":** muốn số credit tới được thanh
+chân phiên thì phải có **cả ba**: (a) một actor mới ngoài projection, gọi `credits/balance` bất
+đồng bộ quanh ranh giới lượt; (b) **một loại sự kiện MỚI** ghi vào log phiên; (c) một unit
+projection MỚI fold trên sự kiện đó. Cả ba đều là **hạ tầng engine mới**.
+
+**Quyết định:** ⛔ **không dựng hạ tầng engine mới trong plan này.** Chuyển sang
+`HANG_MUC_BAN_SAU.md`. Hai đường đi tiếp, chủ dự án chọn sau:
+1. Bàn với người giữ `dsh-token-meter` / `dsh-session-projection` để mở một kênh sự kiện phụ;
+2. Chấp nhận **credit không đồng bộ theo đúng lượt** — hiện số dư ví cập nhật rời rạc (đã có ở
+   cửa sổ Tài khoản, Task 5), không gắn vào từng lượt.
+
+> **Điều đã giữ được:** không có chỗ nào trong app hiện một con số tiền **sai**. Ba vòng tra đều
+> dừng trước khi viết mã. Thà không nói còn hơn nói sai về tiền — đó là ràng buộc đặt ra từ đầu
+> và nó đã làm đúng việc của nó.
 
 ---
 
