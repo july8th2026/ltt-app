@@ -40,6 +40,9 @@
 | R-06 | thấp | Khuôn nghiệm thu `text=True` không khai encoding ⇒ chết với đường dẫn tiếng Trung | `tests/fixtures/asv_e2e.py:840` | nghiem-thu | ĐÃ VÒNG TRÁNH trong khuôn scratch; tệp kho chưa sửa |
 | R-07 | trung | `qc_ai` TẮT mặc định ⇒ lượt nền không đo lớp ngữ nghĩa/thị giác; nghiệm thu cuối phải bật | `LTT_ASV_QC_AI` | nghiem-thu | MỞ |
 
+| G-01 | cao | `dich_vu_tao.dung_cai_dat` KIỂM `nguon_loi` rồi **không ghi vào hồ sơ** ⇒ khách ép `embedded`/`ocr`/`asr` vẫn chạy `auto`, im lặng. **Lỗi do ĐIỀU PHỐI gây ra lúc gộp lane ocr** (thêm phép kiểm, quên dòng ghi) | `dich_vu_tao.py:211` | gui | **ĐÃ SỬA** — không test đơn lẻ nào bắt được: mỗi test hỏi một mắt xích, và `auto` là kết quả hợp lệ |
+| G-02 | trung | Màn chạy báo "Đã xong" cho một video **không cắt gì** (lượt nền v3): 4 con số `so_canh_hong` / độ phủ bằng chứng đã nằm sẵn trong `asv_stage.outputs` mà giao diện không đọc | `asv_chi_tiet.html` | gui | **ĐÃ SỬA** — khối "Bằng chứng chất lượng", mở sẵn |
+
 ## Độ phủ lượt thật
 
 | lượt | video | cặp | preset | model_that | giong_that | kết quả | ghi chú |
