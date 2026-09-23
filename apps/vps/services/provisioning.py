@@ -360,21 +360,21 @@ def thoi_gian_san_sang(db, *, toi_da_mau: int = 20) -> "ThoiGianSanSang | None":
         moi = bat_dau.get(instance_id)
         if moi is None:
             continue
-        giay = int((_utc(xong) - _utc(moi)).total_seconds())
-        if giay < 0:
+        khoang = int((_utc(xong) - _utc(moi)).total_seconds())
+        if khoang < 0:
             # Đồng hồ lệch hoặc sự kiện ghi lại sau: một khoảng âm là bằng
             # chứng hỏng, không phải một mẫu nhanh kỷ lục.
             continue
-        cap.append((xong, giay))
+        cap.append((xong, khoang))
 
     if len(cap) < TOI_THIEU_MAU:
         return None
     cap.sort(key=lambda x: x[0], reverse=True)
-    giay = sorted(g for _x, g in cap[:toi_da_mau])
+    mau = sorted(g for _x, g in cap[:toi_da_mau])
     return ThoiGianSanSang(
-        p50_giay=giay[(len(giay) - 1) // 2 + (len(giay) % 2 == 0)],
-        p90_giay=giay[min(len(giay) - 1, int(len(giay) * 0.9))],
-        so_mau=len(giay),
+        p50_giay=mau[(len(mau) - 1) // 2 + (len(mau) % 2 == 0)],
+        p90_giay=mau[min(len(mau) - 1, int(len(mau) * 0.9))],
+        so_mau=len(mau),
     )
 
 
