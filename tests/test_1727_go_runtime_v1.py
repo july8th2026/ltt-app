@@ -86,3 +86,49 @@ def test_handle_tu_choi_job_type_la_thay_vi_chay_nhanh_advance_cu():
     from apps.agent import jobs
     with pytest.raises(ValueError, match="khong thuoc app agent"):
         jobs.handle({"run_id": "r1", "user_id": "u1"})
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Task 9 (plan 01b) — `AgentRun` và hai mô-đun sống nhờ nó đã đi theo runtime v1
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize("ten", ["platform_core.agent.runs",
+                                 "platform_core.agent.budget"])
+def test_mo_dun_song_nho_AgentRun_khong_con_import_duoc(ten):
+    """`runs.py` là dịch vụ trạng thái của `AgentRun`; `budget.py` là ranh giới
+    tiền của chính nó. Không còn bảng thì không còn hai mô-đun này."""
+    with pytest.raises(ModuleNotFoundError):
+        importlib.import_module(ten)
+
+
+@pytest.mark.parametrize("ten", ["AgentRun", "AGENT_PLANNING",
+                                 "AGENT_AWAITING_APPROVAL", "AGENT_RUNNING",
+                                 "AGENT_DONE", "AGENT_ERROR",
+                                 "AGENT_CANCELLED"])
+def test_models_khong_con_AgentRun_va_hang_trang_thai(ten):
+    models = importlib.import_module("platform_core.models")
+    assert not hasattr(models, ten), f"{ten} van con trong models — spec §17.5"
+
+
+@pytest.mark.parametrize("ten", ["AgentWorkflow", "Job", "CreditEntry"])
+def test_cac_model_O_LAI_van_con(ten):
+    """🔑 Vế đối chứng: một bản vá xoá nhầm nửa `models.py` cũng làm bài trên
+    xanh. Ba model này KHÔNG thuộc runtime v1 và phải còn nguyên."""
+    models = importlib.import_module("platform_core.models")
+    assert hasattr(models, ten)
+
+
+def test_cua_quan_tri_cua_run_v1_da_dong_nhung_so_lieu_worker_O_LAI():
+    """Hai cửa `/api/admin/runs*` chỉ đọc bảng `agent_runs` ⇒ chết cùng bảng.
+
+    ⚠️ `/api/admin/metrics` thì KHÁC: nửa `AgentRun` của nó chết, nhưng
+    `worker_wait_by_capability` đo **job con** — và job con vẫn được sinh ra
+    bởi động cơ v2 (`platform_core/workflow/cau_noi.py` đặt `parent_id`). Đó
+    là một tính chất còn sống, nên nó được CHUYỂN chứ không bị xoá.
+    """
+    from apps.agent.routes import router
+    duong = {getattr(r, "path", "") for r in router.routes}
+    assert "/api/admin/runs" not in duong
+    assert "/api/admin/runs/{run_id}/cancel" not in duong
+    assert "/api/admin/metrics" in duong

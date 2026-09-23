@@ -1,55 +1,44 @@
-"""Man hinh van hanh cho quan tri: lan chay, so lieu, huy."""
+"""Man hinh van hanh cho quan tri: so lieu hang doi cua job con.
+
+🗑️ 23/09/2026 (plan 01b Task 9, spec §17.3+§17.5) — hai cua `/api/admin/runs`
+   va `/api/admin/runs/{id}/cancel` da bi go cung bang `agent_runs`. Chung
+   khong lam gi khac ngoai doc/ghi bang do, nen chung chet cung no.
+
+⭐ `/api/admin/metrics` thi O LAI, va day la ly do — no la hai menh de chu
+   khong phai mot:
+
+   1. nua "runs" (dem theo trang thai, estimated/actual, ti le thanh cong,
+      so lan hoan) doc THANG tu `AgentRun` ⇒ chet cung bang;
+   2. nua `worker_wait_by_capability` do **job con** doi bao lau truoc khi
+      worker nhat — va job con VAN duoc sinh ra: `platform_core/workflow/
+      cau_noi.py` dat `parent_id` cho moi waitpoint cua dong co v2.
+
+   Go ca cua nay la go luon menh de thu hai, thu duy nhat con do mot duong
+   dang song. Nen no duoc CHUYEN, khong bi xoa.
+
+⚠️ `live` (`metrics.snapshot()`) la bo dem trong tien trinh cua `planner`, khong
+   phai cua runtime v1 — `apps/agent/routes/assistant.py` con goi `plan_once()`.
+"""
 from __future__ import annotations
 
-from __future__ import annotations
-from platform_core.i18n import _ as _t
-import hashlib
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
-from platform_core.agent import budget, metrics, runs
+
+from platform_core.agent import metrics
+from platform_core.models import Job
 from platform_core.registry import discover
-from platform_core.models import AGENT_AWAITING_APPROVAL, AGENT_RUNNING, AgentRun, Job
 from server.auth.session import require_login
 from server.deps import get_db
 
-from apps.agent.routes._shared import (
-    _require_admin_user, _verify_json_csrf, router)
-
-
-@router.get("/api/admin/runs")
-def agent_admin_runs(request: Request, _identity: str = Depends(require_login),
-                     db: Session = Depends(get_db)):
-    """Read-only operational audit without exposing goals, params or user PII."""
-    _require_admin_user(request)
-    rows = db.query(AgentRun).order_by(AgentRun.created_at.desc()).limit(100).all()
-    return JSONResponse({"items": [{
-        "id": row.id, "user_ref": hashlib.sha256(row.user_id.encode()).hexdigest()[:12],
-        "status": row.status, "version": row.version, "estimated": row.estimated,
-        "actual": row.actual, "step_count": len((row.plan or {}).get("steps") or []),
-        "events": [str(item.get("event", "")) for item in (row.decision_log or [])],
-    } for row in rows]})
+from apps.agent.routes._shared import _require_admin_user, router
 
 
 @router.get("/api/admin/metrics")
 def agent_admin_metrics(request: Request, _identity: str = Depends(require_login),
                         db: Session = Depends(get_db)):
+    """Read-only operational audit without exposing goals, params or user PII."""
     _require_admin_user(request)
-    rows = db.query(AgentRun).all()
-    statuses: dict[str, int] = {}
-    retries = verifies = refunds = 0
-    for row in rows:
-        statuses[row.status] = statuses.get(row.status, 0) + 1
-        retries += sum(1 for item in (row.decision_log or [])
-                       if item.get("event") == "verify" and item.get("attempt", 0))
-        verifies += sum(1 for item in (row.decision_log or []) if item.get("event") == "verify")
-        refunds += sum(int(item.get("refunded", 0)) for item in (row.decision_log or [])
-                       if item.get("event") == "settle")
-    estimated = sum(row.estimated for row in rows)
-    actual = sum(row.actual for row in rows)
-    terminal = sum(count for status, count in statuses.items()
-                   if status in {"done", "error", "cancelled"})
-    run_success_rate = statuses.get("done", 0) / terminal if terminal else 0
     requirements = {item.slug: tuple(item.manifest.requires) for item in discover()}
     waits: dict[str, list[float]] = {}
     for job in db.query(Job).filter(Job.parent_id != "").all():
@@ -60,25 +49,5 @@ def agent_admin_metrics(request: Request, _identity: str = Depends(require_login
             waits.setdefault(capability, []).append(seconds)
     worker_wait = {name: {"count": len(values), "avg_s": sum(values) / len(values),
                           "max_s": max(values)} for name, values in waits.items()}
-    return JSONResponse({"runs": len(rows), "statuses": statuses, "retries": retries,
-                         "verifications": verifies, "estimated": estimated,
-                         "actual": actual, "actual_estimated_ratio": actual / estimated if estimated else 0,
-                         "refunded": refunds, "run_success_rate": run_success_rate,
-                         "worker_wait_by_capability": worker_wait,
+    return JSONResponse({"worker_wait_by_capability": worker_wait,
                          "live": metrics.snapshot()})
-
-
-@router.post("/api/admin/runs/{run_id}/cancel")
-async def agent_admin_cancel(request: Request, run_id: str,
-                             _identity: str = Depends(require_login),
-                             db: Session = Depends(get_db)):
-    body = await request.json(); _verify_json_csrf(request, body)
-    _require_admin_user(request)
-    run = db.get(AgentRun, run_id)
-    if run is None:
-        raise HTTPException(status_code=404, detail=_t('Không tìm thấy run.'))
-    if run.status in (AGENT_AWAITING_APPROVAL, AGENT_RUNNING):
-        actual = runs.actual_cost(run, runs.children(db, run)) if run.status == AGENT_RUNNING else 0
-        run = budget.cancel(db, run_id=run.id, user_id=run.user_id, actual=actual)
-    return JSONResponse({"id": run.id, "status": run.status,
-                         "estimated": run.estimated, "actual": run.actual})

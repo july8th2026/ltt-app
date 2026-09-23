@@ -5,9 +5,13 @@ Truoc 2026-08-06 ca 48 handler nam trong MOT file 1.308 dong. Tach theo mien
 (AGENTS.md muc 8) de debug theo hang muc: loi chia se link thi mo `sharing.py`,
 khong phai cuon qua tro ly AI va man hinh quan tri.
 
-Logic nghiep vu cua app nay nam o `platform_core/agent/` (budget, planner,
-runs, validator, workflows) chu khong o `services/` trong app: agent
+Logic nghiep vu cua app nay nam o `platform_core/agent/` (planner, validator,
+verifier, tools, workflows) chu khong o `services/` trong app: agent
 la mot phan cua nen tang, khong phai app khach.
+
+🗑️ `budget.py` va `runs.py` da bi go ngay 23/09/2026 cung model `AgentRun`
+   (plan 01b Task 9, spec §17.3+§17.5). Ranh gioi tien va trang thai cua mot
+   luot chay nay o `platform_core/workflow/` (v3).
 
 Router khai o day chu khong o `__init__` de moi module import duoc no ma khong
 tao vong import.

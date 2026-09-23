@@ -254,13 +254,6 @@ JOB_DONE = "done"
 JOB_ERROR = "error"
 JOB_CANCELLED = "cancelled"
 
-AGENT_PLANNING = "planning"
-AGENT_AWAITING_APPROVAL = "awaiting_approval"
-AGENT_RUNNING = "running"
-AGENT_DONE = "done"
-AGENT_ERROR = "error"
-AGENT_CANCELLED = "cancelled"
-
 
 class Job(Base):
     """Một công việc trong hàng đợi (H2, Q26).
@@ -661,35 +654,6 @@ class UploadSession(Base):
         Index("ix_upload_sessions_app_created", "app_slug", "created_at"),
         Index("ix_upload_sessions_job", "job_id"),
         Index("ix_upload_sessions_project", "project_id", "status"),
-    )
-
-
-class AgentRun(Base):
-    """Plan đã chuẩn hoá cùng checkpoint để resume executor sau khi worker chết."""
-
-    __tablename__ = "agent_runs"
-
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
-    user_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
-    app_slug: Mapped[str] = mapped_column(String(64), default="agent", nullable=False)
-    goal: Mapped[str] = mapped_column(Text, default="", nullable=False)
-    plan: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
-    checkpoint: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
-    status: Mapped[str] = mapped_column(String(24), default=AGENT_PLANNING,
-                                        nullable=False, index=True)
-    budget_max: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    estimated: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    actual: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    approved_by: Mapped[str] = mapped_column(String(36), default="", nullable=False)
-    decision_log: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
-    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=_bay_gio, nullable=False, index=True)
-    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-
-    __table_args__ = (
-        Index("ix_agent_runs_user_created", "user_id", "created_at"),
     )
 
 
@@ -1265,7 +1229,8 @@ class WorkflowVersionEdge(Base):
 class WorkflowRun(Base):
     """Một lượt chạy. `version_id` GHIM và không bao giờ đổi.
 
-    ⭐ Ghim là điểm khác cốt lõi với `AgentRun`: sửa workflow lúc 10:00 **không**
+    ⭐ Ghim là điểm khác cốt lõi với `AgentRun` (model v1, đã gỡ 23/09/2026 —
+       đọc `git log` nếu cần): sửa workflow lúc 10:00 **không**
        được đổi lượt chạy bắt đầu 09:58. Không ghim thì một lượt chạy dài không
        có nội dung xác định — báo cáo sự cố của nó nói về một đồ thị không còn
        tồn tại.

@@ -13,7 +13,9 @@ duoc dang ky vao router truoc khi nen tang gan vao FastAPI.
     runs_v3.py         Cua v3 cho mot luot chay: tao run (tao_run), doc run (node + su kien).
     sharing.py         Chia se workflow qua link va nhan ban tu link.
     library.py         Thao tac tren workflow: nhat ky, kiem, nhan ban, luu tru, xuat/nhap.
-    admin.py           Man hinh van hanh cho quan tri: lan chay, so lieu, huy.
+    admin.py           So lieu van hanh cho quan tri (job con doi bao lau).
+                       Hai cua `/api/admin/runs*` da di cung bang `agent_runs`
+                       ngay 23/09/2026 — xem docstring cua chinh admin.py.
 """
 from apps.agent.routes._shared import router
 from apps.agent.routes import (  # noqa: F401  (import de dang ky route)

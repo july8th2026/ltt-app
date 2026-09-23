@@ -319,54 +319,37 @@ def test_snapshot_share_view_clone_revoke_va_activity(api):
     assert {item["event"] for item in events} >= {"snapshot", "share_created", "share_revoked"}
 
 
-def _tao_agent_run(email: str = "canvas-a@example.com") -> dict:
-    """Dung mot `AgentRun` THANG qua `platform_core.agent`, khong qua HTTP.
+def test_cua_quan_tri_chi_admin_vao_duoc_va_khong_lo_noi_dung_nguoi_dung(api):
+    """Phan CON LAI cua bai kiem toan quan tri sau khi `AgentRun` bi go.
 
-    ⛔ 23/09 (spec §17.4): cua HTTP tao run v1 da bi go. Man hinh QUAN TRI thi
-       CHUA — `apps/agent/routes/admin.py` van doc bang `AgentRun`, va menh de
-       "kiem toan khong lo noi dung nguoi dung" van la menh de that.
+    🗑️ 23/09 (plan 01b Task 9): `_tao_agent_run()` + hai cua `/api/admin/runs*`
+       da chet cung bang `agent_runs` — chung khong do gi khac ngoai bang do.
 
-    ⚠️ Nen doi tuong do phai duoc dung bang chinh thu ma bang do chua, thay vi
-       xoa bai kiem toan chi vi mot duong HTTP KHAC da chet. Khi Task 9/10 go
-       `AgentRun`, bai nay moi mat doi tuong — va luc do no chet cung model.
+    ⭐ Hai menh de KHONG chet cung no, nen chung o lai day:
+       1. cua quan tri la cua QUAN TRI — nguoi dung thuong phai nhan 404 (404
+          chu khong phai 403: khong xac nhan su ton tai cua cua);
+       2. no khong lo noi dung nguoi dung — khong `goal`, khong `plan`, khong
+          email, khong id nguoi dung.
+       Menh de 2 hom nay de dat hon truoc (phan hoi khong con doc bang nao cua
+       nguoi dung), nhung no van la menh de that va van phai co nguoi canh.
     """
-    import platform_core.db as dbmod
-    from platform_core.agent import budget, runs as agent_runs
-    from platform_core.agent.validator import validate_plan
-    from platform_core.models import User
+    a, _token_a, b, _token_b = api
+    assert a.get("/agent/api/admin/metrics").status_code == 404
 
-    db = next(dbmod.get_session())
-    try:
-        user = db.query(User).filter_by(email=email).one()
-        plan = _plan()
-        validation = validate_plan(plan, db=db, user=user)
-        assert validation.valid, [i.message for i in validation.issues][:3]
-        run = agent_runs.create_run_capped(db, user_id=user.id, goal=plan["goal"],
-                                           plan=plan, budget_max=50)
-        budget.set_quote(db, run, plan=plan, validation=validation, planning_cost=0)
-        db.commit()
-        return {"id": run.id, "estimated": run.estimated, "status": run.status}
-    finally:
-        db.close()
-
-
-def test_admin_audit_metrics_and_safe_cancel_hide_user_content(api):
-    a, _token_a, b, token_b = api
-    run = _tao_agent_run()
-    assert a.get("/agent/api/admin/runs").status_code == 404
     import platform_core.db as dbmod
     from platform_core.models import User
     db = next(dbmod.get_session())
     db.query(User).filter_by(email="canvas-b@example.com").one().role = "admin"
     db.commit(); db.close()
-    listing = b.get("/agent/api/admin/runs")
-    assert listing.status_code == 200 and listing.json()["items"][0]["id"] == run["id"]
-    assert "goal" not in listing.text and "plan" not in listing.text
-    metrics = b.get("/agent/api/admin/metrics").json()
-    assert metrics["runs"] == 1 and metrics["estimated"] == run["estimated"]
-    assert "run_success_rate" in metrics and "worker_wait_by_capability" in metrics
-    assert metrics["live"]["planning_attempts"] >= 0
-    assert b.post(f"/agent/api/admin/runs/{run['id']}/cancel", json={}).status_code == 400
-    cancelled = b.post(f"/agent/api/admin/runs/{run['id']}/cancel",
-                       headers={"X-CSRF-Token": token_b}, json={})
-    assert cancelled.status_code == 200 and cancelled.json()["status"] == "cancelled"
+
+    tra_loi = b.get("/agent/api/admin/metrics")
+    assert tra_loi.status_code == 200
+    so_lieu = tra_loi.json()
+    assert "worker_wait_by_capability" in so_lieu
+    assert so_lieu["live"]["planning_attempts"] >= 0
+    # ⚠️ So theo KHOA JSON (`"goal":`), khong theo chuoi tran: `"plan"` tran
+    #    khop ca `planning_attempts` — mot bo do bat nham chinh bo dem noi bo
+    #    cua `planner`, va bai se do mai du khong co ro ri nao.
+    for cam in ('"goal"', '"plan"', '"user_id"',
+                "canvas-a@example.com", "canvas-b@example.com"):
+        assert cam not in tra_loi.text, f"phan hoi quan tri lo `{cam}`"

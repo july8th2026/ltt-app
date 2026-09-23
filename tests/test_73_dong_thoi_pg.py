@@ -12,7 +12,6 @@ test (test này DROP/CREATE mọi bảng). Không đặt → cả file tự bỏ
 """
 from __future__ import annotations
 
-from tests.conftest import bao_dam_user
 import threading
 from types import SimpleNamespace
 
@@ -278,19 +277,32 @@ def test_hai_worker_dong_thoi_deu_chon_internal_khi_con_du_ung_vien(Sess):
 
 
 def test_claim_bon_child_agent_khong_trung(Sess):
-    """Fan-out Agent dùng cùng queue Q26: hai worker phải chia đúng 4 child."""
+    """Fan-out dùng cùng queue Q26: hai worker phải chia đúng 4 child.
+
+    🗑️ 23/09 (plan 01b Task 9): bài này dựng 4 child qua `runs.submit_child()`
+       của `AgentRun`. Cỗ xe đó chết cùng bảng `agent_runs` — **tính chất thì
+       không**: "hai worker không nhặt trùng một child" vẫn là mệnh đề sống, và
+       nó là mệnh đề về `jobs.claim()` trên PostgreSQL, không về `AgentRun`.
+       Nên bài được CHUYỂN sang gọi thẳng `jobs.submit()` với đúng bộ trường
+       mà `submit_child()` từng đặt (`parent_id`/`plan_id`/`step_id`,
+       `origin="agent"`, `priority_class="internal"`).
+
+    ⚠️ Đây KHÔNG phải bản sao của `tests/test_1720_wf_dong_co_pg.py`: bài đó đo
+       động cơ v2 không nhặt trùng một waitpoint; bài này đo tầng dưới —
+       `jobs.claim()` không phát trùng một job con cho hai worker.
+    """
+    import uuid
+
     from platform_core import jobs
-    from platform_core.agent import runs
-    from platform_core.models import AGENT_AWAITING_APPROVAL, AGENT_RUNNING
 
     s = Sess()
-    run = runs.create_run(s, user_id="agent-user", goal="fanout")
-    runs.transition(s, run, AGENT_AWAITING_APPROVAL)
-    run.status = AGENT_RUNNING  # structural P3 fixture; P5 approval is tested below
+    plan_id = str(uuid.uuid4())
     for i in range(4):
-        runs.submit_child(s, run, step_id="s1", app_slug="appthu",
-                          job_type="appthu.dao_nguoc", params={"text": str(i)},
-                          dedupe_key=f"{run.id}:s1:{i}")
+        jobs.submit(s, user_id="agent-user", app_slug="appthu",
+                    job_type="appthu.dao_nguoc", params={"text": str(i)},
+                    dedupe_key=f"{plan_id}:s1:{i}", parent_id=plan_id,
+                    plan_id=plan_id, step_id="s1", origin="agent",
+                    priority_class="internal")
     s.commit(); s.close()
 
     claimed: list[str] = []
@@ -319,49 +331,23 @@ def test_claim_bon_child_agent_khong_trung(Sess):
     assert len(set(claimed)) == 4
 
 
-def test_agent_approve_dong_thoi_chi_mot_hold(Sess):
-    """Hai request approve cùng version chỉ tạo đúng một hold."""
-    from platform_core import credit
-    from platform_core.agent import budget, runs
-    from platform_core.agent.validator import ValidationResult
-
-    s = Sess()
-    bao_dam_user(s, "approval-user"); credit.cap_tay(s, "approval-user", 100, by="test")
-    run = runs.create_run(s, user_id="approval-user", goal="approve race")
-    plan = {"version": 1, "budget_max_credit": 30, "steps": [{"id": "s1"}]}
-    validation = ValidationResult(True, (), 16, ({"step_id": "s1", "maximum": 16},))
-    budget.set_quote(s, run, plan=plan, validation=validation)
-    run_id, version = run.id, run.version
-    s.commit(); s.close()
-
-    results: list[str] = []
-    start = threading.Barrier(2)
-
-    def worker() -> None:
-        ss = Sess()
-        try:
-            start.wait()
-            budget.approve(ss, run_id=run_id, user_id="approval-user",
-                           approved_by="approval-user", expected_version=version)
-            ss.commit()
-            results.append("ok")
-        except Exception as exc:  # noqa: BLE001 - preserve race diagnostics
-            ss.rollback()
-            results.append(f"err:{type(exc).__name__}:{exc}")
-        finally:
-            ss.close()
-
-    threads = [threading.Thread(target=worker) for _ in range(2)]
-    for thread in threads: thread.start()
-    for thread in threads: thread.join()
-
-    assert results.count("ok") == 2, results
-    check = Sess()
-    try:
-        assert credit.so_da_giu(check, run_id) == 20
-        assert credit.so_du(check, "approval-user") == 80
-    finally:
-        check.close()
+# ⏭️ `test_agent_approve_dong_thoi_chi_mot_hold` DA GO 23/09/2026 (plan 01b
+#    Task 9).
+#
+#    No do: hai request `budget.approve()` cung mot `AgentRun` va cung
+#    `version` chi tao DUNG MOT but toan `hold`. `budget.py` di cung model
+#    `AgentRun` (spec §17.3+§17.5) ⇒ khong con ham nao de dua.
+#
+# ⚠️ Menh de "mot luot chay = mot khoan giu cho" KHONG chet theo: no chuyen
+#    sang `platform_core/workflow/tien.py::giu_cho_run()`, va o do
+#    `tests/test_965` + `tests/test_1723_v3_tao_va_doc_run.py` (muc `giu_cho_run`)
+#    canh tinh luy dang theo `run.hold_id`.
+#
+# 🔴 NHUNG do la nua LUY DANG, khong phai nua DONG THOI. Bai vua go chay HAI
+#    LUONG THAT tren PostgreSQL; hai bai thay the goi tuan tu. `giu_cho_run()`
+#    doc `run.hold_id` roi ghi ma KHONG khoa hang, nen mot cuoc dua that chua
+#    co ai do. Ghi ra day nhu mot LO HONG DO PHU da biet, khong phai mot muc
+#    da xong — dung o muc `tests/test_1720_wf_dong_co_pg.py` (cung ho PG).
 
 
 # ⏭️ `test_agent_executor_hai_scheduler_khong_submit_trung` DA GO 23/09/2026.
