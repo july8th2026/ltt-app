@@ -363,11 +363,24 @@ def chon_thiet_bi(torch, *, buoc_gpu: bool) -> str:
       * `buoc_gpu=True` — nen tang **da giu cho** mot card qua `gpu_lease` va da
         ghim no bang `CUDA_VISIBLE_DEVICES`. Torch khong thay CUDA o day nghia
         la viec cap card da hong. Do la mot **loi**, va no phai keu.
+
+    🔴 **Sua 23/09 (lan `toc-do-gpu`): `buoc_gpu=False` + co CUDA nay chay CPU,
+       truoc do chay "cuda".** Ban cu doc `is_available()` TRUOC khi hoi co
+       lease khong, nen mot lan goi KHONG co lease van lay card — tuc chiem
+       ~1,7 GiB VRAM ma `gpu_lease` khong he ghi so. May nay co MOT card, dung
+       chung voi `voice_sidecar` dang phuc vu khach that (CLAUDE.md), nen mot
+       nguoi dung card ngoai so sach la dung cai ma lease sinh ra de chan.
+
+       ⚠️ Cho nay truoc 23/09 khong lo ra vi trinh thong dich chay test la ban
+          `torch 2.11.0+cpu` (`cuda False`) — con worker that
+          (`C:\\LTTPlatform\\venv`) la `2.11.0+cu128`. Mot khac biet giua hai
+          venv da giau mot chinh sach sai suot hai muoi ngay. Xem
+          `docs/auto_scan_video_final/L_TOC_DO_GPU.md` §4.
     """
     co = bool(torch.cuda.is_available())
-    if co:
-        return "cuda"
     if buoc_gpu:
+        if co:
+            return "cuda"
         raise ThieuCard(
             "nen tang da cap card nhung torch khong thay CUDA — "
             "khong tu tut xuong CPU (xem chon_thiet_bi)")
