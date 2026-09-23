@@ -12,6 +12,57 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-23 (tối) — VPS bán thật: sổ nguồn lực, cổng bán hai tầng, hai trần cứng chưa ai đo
+
+- **Triệu chứng:** chủ dự án không tạo được VPS; trang `/vps` in *"Hết chỗ cho cấu hình này"* cho **cả ba gói**.
+- **Đo trên production:** compute còn 14/9/6 chỗ, gateway còn 150 chỗ. **Không tài nguyên nào hết.**
+  `select_profile` loại profile OVH vì 1/6 thành phần sức khoẻ đỏ: `network` — và miền đó đỏ **chỉ** vì một phép
+  kiểm của Máy B, `wireguard.gateway.tx_dropped` (delta 3034, 1,69/s). 12/13 phép kiểm mạng còn lại đều PASS.
+  `_gioi_han_ban` bắt `ProfileNotReady` rồi trả `None`, và `trang_chinh` đọc `None` thành `con_cho = False`.
+  **Một lỗi sức khoẻ bị dịch sai thành một lời từ chối bán hàng.**
+- **`tx_dropped` không phải tín hiệu "giao được máy hay không".** Đo 30 giây lúc 15:40: 1.786 gói TX, **0 gói rơi**,
+  0,12 Mbit/s — các cụm rơi là từng đợt. Tích luỹ 6.523.625/245.827.848 = 2,65% qua 27 ngày, trên đường hầm
+  WireGuard VN↔SG (RTT 36 ms, 0% mất gói khi ping). Lịch sử `vps_profile_health` từ 16/09:
+  HEALTHY 608 · CRITICAL 136 · DEGRADED 94 · STALE 173 — **cửa hàng bật tắt theo cửa sổ 10 phút.**
+- **Lần thử 22/09 chết ở chỗ khác:** cả hai lần (`vps-01` 13:07, `May Tram 2` 16:25) đều hỏng ở `OVH_IP_ACQUIRE`
+  với `pre_checkout_failure`, mỗi lần **thu 1.490 rồi hoàn 1.490 rồi xoá máy**. Bản sửa `43fdd643` (chấp nhận giỏ
+  OVH không kèm điều khoản mới) commit lúc **16:33 — 8 phút sau** lần thử cuối, và đã có trên production.
+
+### Hai trần cứng chưa ai đo (tìm thấy khi khảo sát để bán thật)
+
+- **IPv4 = 16.** Cổng vào là OVH VPS-1 2027 (`vps-1a9e4515.vps.ovh.ca`, zone `os-sgp2`),
+  `maximumAdditionnalIp = 16`. Đã dùng 9 (8 cho VM100–107, 1 cho máy thử) ⇒ **còn 7**. Chặt hơn compute.
+- **Băng thông = 1 TB/tháng.** OVH công bố VPS ở Mumbai/Singapore/Sydney có hạn mức tháng 1 TB cho VPS-1/VPS-2,
+  vượt thì **hãm xuống 10 Mbps** — và vạch đó đập vào **cả VM100–107**. Đo `ens3` qua 27,75 ngày:
+  RX 234,5 GB + TX 239,4 GB ⇒ ~512 GB/tháng nền production. Bảng giá đang hứa 300/600/1000 GB **mỗi máy**.
+  `bang_thong.TRAN_CONG_VAO_GB = 2048` là hằng số **Vultr**, và `tong_da_hua_gb()` viết ra để canh bán chồng
+  **không chỗ nào gọi**.
+
+### Chủ dự án chốt (bán thật, 5–15 máy)
+
+mua IP theo yêu cầu nhưng **nói trước thời gian chờ** · **tách** cổng sức khoẻ · **hạ băng thông trong bảng giá**.
+
+### Đã làm
+
+- `apps/vps/services/nguon_luc.py` — MỘT phép tính cho "bán được không, vì sao không". `danh_gia` thuần +
+  `do_nguon_luc` đọc thật. Mỗi lý do mang **đúng tên** của nó, mỗi tên có một câu cho khách không chứa hệ thống nội bộ.
+  Gỡ `_suc_chua`, `_gioi_han_ban`, `_gioi_han_ip_va_cong`, `_so_cho_ban` khỏi `routes.py`.
+- **Khuyết tật thứ ba, tìm thấy dọc đường:** `preflight` gọi `effective_ipv4_slots` **không** trừ
+  `promised_without_ip` trong khi `routes` thì có ⇒ `capacity` báo xanh lúc trang hiện 0 chỗ. Nay cả ba đi một đường.
+- `profiles.CHAN_BAN` (compute/ip/gateway/capacity) chặn bán · `CANH_BAO` (network/runtime) chỉ cảnh báo.
+  `activate_profile` vẫn đòi cả sáu. `preflight` chỉ hạ profile khi `CHAN_BAN` đỏ. Thêm `profiles.canh_bao()` —
+  gỡ một tín hiệu khỏi chỗ chặn mà không đưa nó vào chỗ nhìn là bỏ nó thật.
+- Tạo máy đi `credit.giu_cho` / `quyet_toan` theo `job_id` (nguyên thuỷ **đã có sẵn** ở `platform_core`, VPS
+  không dùng). Tiền chỉ rời tài khoản khi máy đã bật thật. Sự kiện `thu_phi` chỉ phát lúc quyết toán — nó là
+  **khoá** của `bao_tri._hoan_tien_may_hong`, nên máy hỏng không còn bị hoàn một khoản chưa bao giờ thu.
+  Job hỏng **không** tự nhả ở app: `job_runner._hoan_tien_neu_can` đã làm đúng việc đó.
+- `provisioning.thoi_gian_san_sang` — p50/p90 đo từ `tao_moi` → `tao_xong` của các máy thật sự đã lên, 20 lần gần
+  nhất. Dưới 3 mẫu thì trang **im**, không đoán.
+- Bánh cóc `test_1031`: đọc AST `routes.py`, từ chối mọi lời gọi thẳng tới `sellable_slots` /
+  `effective_ipv4_slots` / `available_gateway_slots` / `cho_phep_ban` / `suc_chua_hien_tai`.
+
+Đặc tả: `docs/superpowers/specs/2026-09-23-vps-ban-that-design.md`.
+
 ## 2026-09-23 (chiều) — VPS: bộ cấp IP OVH khoá hết dòng FREE (R16 `LIMIT 20`), luồng thứ hai báo hết IP
 
 - **Triệu chứng:** `test_1010::test_real_postgres_two_ip_allocators_each_get_a_distinct_free_row` (chỉ chạy khi
