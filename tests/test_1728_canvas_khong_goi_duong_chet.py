@@ -226,10 +226,15 @@ def test_mot_endpoint_CON_SONG_thi_khong_bi_bao(duong_voi_toi_duoc,
     Không có vế này, một bộ dò báo *mọi thứ* cũng làm bài đầu "đúng" theo
     hướng ngược lại, và ai cũng sẽ tắt nó đi.
     """
+    # ⚠️ `/agent/api/palette` (v2) DA RA khoi danh sach nay ngày 24/09: plan 02
+    #    task 15 cắt Canvas sang `/agent/api/v3/palette`, nên đường v2 ấy không
+    #    còn với tới được từ giao diện. Cửa máy chủ vẫn sống — nhưng bài này đo
+    #    *"đường giao diện ĐANG gọi"*, không đo *"cửa còn mở"*. Thay bằng cửa
+    #    palette v3, thứ giao diện thật sự gọi hôm nay (`paletteApi.ts`).
     for song in ("/agent/api/v3/workflows",
                  "/agent/api/v3/workflows/{}",
                  "/agent/api/v3/workflows/{}/publish",
-                 "/agent/api/palette"):
+                 "/agent/api/v3/palette"):
         assert song in duong_voi_toi_duoc, f"khong doc ra duong song {song}"
         assert song in bang_dinh_tuyen, f"{song} phai co trong bang dinh tuyen"
 

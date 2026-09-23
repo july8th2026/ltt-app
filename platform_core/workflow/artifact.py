@@ -11,6 +11,7 @@
 """
 from __future__ import annotations
 
+import json
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -82,6 +83,47 @@ def ghi_danh(db, *, owner_id: str, backend: str, key: str, kind: str,
     db.add(a)
     db.flush()
     return a
+
+
+def backend_cua(kho, key: str) -> str:
+    """Tên backend THẬT đang phục vụ `key` — để `ghi_danh` đặt đúng tiền tố id.
+
+    🔴 `get_storage()` có thể là `RoutedStorage`: cùng một tiến trình phục vụ
+       hai backend theo TIỀN TỐ khoá. Đoán bằng biến môi trường là đoán sai ở
+       đúng chỗ đắt nhất — một id `"r2:…"` trỏ vào tệp nằm trên đĩa máy A thì
+       không ai tra ngược được nữa (`output_ref` là JSONB, không join được).
+    """
+    from platform_core import storage as _st
+
+    if isinstance(kho, _st.RoutedStorage):
+        return backend_cua(kho.cuc_bo if kho.la_cuc_bo(key) else kho.chinh, key)
+    if isinstance(kho, _st.R2Storage):
+        return "r2"
+    if isinstance(kho, _st.LocalStorage):
+        return "local"
+    raise ValueError(
+        f"khong biet backend cua {type(kho).__name__} — them mot nhanh o day "
+        f"thay vi doan")
+
+
+def luu_json(db, *, owner_id: str, key: str, du_lieu: dict,
+             snapshot_id: str = "", ttl_class: str = "RUN") -> dict:
+    """Đổ một output JSON quá lớn ra kho, ghi danh artifact, trả REF (§5.8)."""
+    import hashlib
+    import io
+
+    from platform_core import storage as _st
+
+    tho = json.dumps(du_lieu, default=str, ensure_ascii=False).encode("utf-8")
+    kho = _st.get_storage()
+    kho.put(key, io.BytesIO(tho), content_type="application/json")
+    a = ghi_danh(db, owner_id=owner_id, backend=backend_cua(kho, key), key=key,
+                 kind="json", ttl_class=ttl_class, mime="application/json",
+                 size_bytes=len(tho),
+                 checksum_sha256=hashlib.sha256(tho).hexdigest(),
+                 created_by_snapshot_id=snapshot_id)
+    return {"artifact_ref": a.id, "mime": "application/json",
+            "size_bytes": len(tho), "kind": "json"}
 
 
 def het_han(db, gioi_han: int = 500) -> list[Artifact]:

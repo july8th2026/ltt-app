@@ -1,37 +1,59 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CanvasShell } from '../src/CanvasShell'
+import type { NodeDefinition, NhomPalette } from '../src/nodeDefinition'
 
-const palette = { version: 1, tools: [
-  { name: 'text.generate', label:'Tạo văn bản',category:'content',primary:true,description:'Tạo nội dung từ yêu cầu',
-    app_slug:'kichban',app_name:'Kịch bản',requires:['api'],verifiable:[],params_schema:{prompt:{type:'text',required:true},image_key:{type:'image'}},returns:{text:'text'} },
-  { name: 'image.generate', label:'Tạo hình ảnh',category:'content',primary:true,description:'Tạo ảnh từ mô tả',
-    app_slug:'taoanh',app_name:'Tạo ảnh',requires:['gpu'],verifiable:[],params_schema:{prompt:{type:'text',required:true}},returns:{image:'image'} },
-  { name: 'asset.image', label:'Ảnh đầu vào',category:'input',primary:false,description:'Ảnh tải lên',
-    app_slug:'mediatools',app_name:'Media',requires:[],verifiable:[],params_schema:{image_key:{type:'string',required:true}},returns:{image_key:'image'} },
-  { name: 'video.social_import', label:'Social Video',category:'input',primary:false,description:'Video từ liên kết',
-    app_slug:'mediatools',app_name:'Media',requires:[],verifiable:[],params_schema:{url:{type:'string',required:true},confirm_rights:{type:'bool',required:true}},returns:{video_key:'video'} },
-  { name: 'image.batch_generate', label:'Tạo nhiều ảnh',category:'specialized',primary:false,description:'Tạo bộ ảnh',
-    app_slug:'taoanh',app_name:'Tạo ảnh',requires:['gpu'],verifiable:[],params_schema:{prompt:{type:'text',required:true},count:{type:'int',default:4}},returns:{image_keys:'image[]'} },
-  { name: 'asset.images', label:'Bộ ảnh',category:'input',primary:false,description:'Bộ ảnh tải lên',
-    app_slug:'mediatools',app_name:'Media',requires:[],verifiable:[],params_schema:{image_keys:{type:'json',required:true}},returns:{image_keys:'image[]'} },
-  { name: 'video.generate', label:'Tạo video',category:'content',primary:true,description:'Tạo video từ mô tả',
-    app_slug:'seedance',app_name:'Seedance',requires:['gpu'],verifiable:[],params_schema:{prompt:{type:'text',required:true}},returns:{video:'video'} },
-  { name: 'audio.generate', label:'Tạo âm thanh',category:'content',primary:true,description:'Tạo âm thanh từ văn bản',
-    app_slug:'mediatools',app_name:'Media',requires:[],verifiable:[],params_schema:{text:{type:'text',required:true}},returns:{audio_key:'audio'} },
-  { name: 'image.upscale', label:'Nâng cấp ảnh',category:'transform',primary:false,description:'Tăng độ nét ảnh',
-    app_slug:'upscale',app_name:'Upscale',requires:['gpu'],verifiable:[],params_schema:{image_key:{type:'image',required:true}},returns:{image:'image'} },
-  { name: 'media.merge_video', label:'Ghép video',category:'transform',primary:false,description:'Ghép nhiều video',
-    app_slug:'mediatools',app_name:'Media',requires:[],verifiable:[],params_schema:{videos:{type:'video[]',required:true},transition:{type:'enum',default:'cut',values:['cut']}},returns:{video_key:'video'} },
-  { name: 'text.script', label:'Viết kịch bản',category:'specialized',primary:false,description:'Viết kịch bản',
-    app_slug:'kichban',app_name:'Kịch bản',requires:['api'],verifiable:[],params_schema:{topic:{type:'text',required:true}},returns:{script:'text'} }
-] }
+// ── Palette v3 THAT (`apps/agent/routes/palette_v3.py::sang_json`) ──────────
+//
+// ⛔ Khong con palette v2 (`{tools:[{name,label,category,primary,…}]}`) o day.
+//    Plan 02 task 15 cat Canvas sang `/agent/api/v3/palette`: node mang
+//    `type`/`type_version`, CONG CO KIEU (`cong_vao`/`cong_ra`) va mot luoc do
+//    JSON Schema, con luat noi day tai tu `he_kieu.xuat_luat_noi_day()`.
+const cong = (ten: string, kieu: string, nhieu = false) =>
+  ({ ten, kieu, bat_buoc: false, nhieu })
+
+const nd = (type: string, title: string, over: Partial<NodeDefinition> = {}):
+  NodeDefinition => ({ type, type_version: 1, kind: 'app', category: 'LTT_APPS',
+    title, description: 'mo ta', icon: '', app_name: 'App', cong_vao: [],
+    cong_ra: [], tham_so: { type: 'object', properties: {}, required: [] },
+    thi_hanh: 'job', side_effect: 'external', resource: {}, timeout_expr: '',
+    retry_mac_dinh: { max: 0, backoff_s: 30 },
+    gia: { kieu: 'theo_registry', so: 0, job_type: 'j' }, credential: [],
+    quyen: [], cho: [], ma_loi: [], co_mock: false, publish_duoc: true, ...over })
+
+const nhomPalette: NhomPalette[] = [
+  { category: 'TRIGGERS', nut: [nd('trigger.manual', 'Chạy thủ công', {
+      kind: 'trigger', category: 'TRIGGERS', publish_duoc: false,
+      cong_ra: [cong('event', 'event')] })] },
+  { category: 'LTT_APPS', nut: [
+    nd('app.image.generate', 'Sinh ảnh', { app_name: 'Tạo ảnh',
+      resource: { class: 'gpu' },
+      cong_vao: [cong('prompt', 'text')], cong_ra: [cong('image', 'image')],
+      tham_so: { type: 'object', required: ['prompt'],
+        properties: { prompt: { type: 'string' } } } }),
+    nd('app.text.chat', 'Sinh văn bản', { app_name: 'LTT LLM',
+      cong_vao: [cong('prompt', 'text')], cong_ra: [cong('content', 'text')],
+      tham_so: { type: 'object', required: ['prompt'],
+        properties: { prompt: { type: 'string' }, count: { type: 'integer', default: 1 } } } }),
+    // ⭐ App HONG: `_giai_tuy_chon_dong` nem ⇒ node VAN ra palette, voi lucc
+    //    do TINH va dau `x-ltt-loi` o ca muc node lan tung truong.
+    nd('app.voice.tts', 'Đọc văn bản', { app_name: 'LTT Voice',
+      'x-ltt-loi': 'LUACHON_KHONG_TAI_DUOC',
+      cong_vao: [cong('text', 'text')], cong_ra: [cong('audio', 'audio')],
+      tham_so: { type: 'object', required: [], properties: {
+        voice_id: { type: 'string', 'x-ltt-loi': 'LUACHON_KHONG_TAI_DUOC' } } } }),
+  ] },
+]
+
+const paletteV3 = { phien_ban: 3, nhom: nhomPalette, luat_noi_day: {
+  phien_ban: 2, kieu: ['text', 'image', 'audio', 'event'], hau_to_tap_hop: '[]',
+  cap_noi_duoc: [['text', 'text'], ['image', 'image'], ['text', 'image']] as [string, string][] } }
+
 const workflow = { id: 'w1', name: 'Workflow mới', status: 'draft', revision: 1, estimated: 0,
   canvas: { version: 1, goal: '', budget_max_credit: 50, nodes: [], edges: [],
     viewport: { x: 0, y: 0, zoom: 1 } } }
 // Hinh dang v3 ma cua `/agent/api/v3/*` tra ve (Dot 5.2 phan D). `fromV3`
-// se doi no ve hinh dang React Flow ma trinh soan dang dung, nen phan con lai
-// cua tep nay khong doi.
+// se doi no ve hinh dang React Flow ma trinh soan dang dung.
 const workflowV3 = { id: 'w1', name: 'Workflow mới', published_version_id: '',
   revision: 1,
   document: { version: 3, goal: '', budget_max_credit: 50,
@@ -39,22 +61,17 @@ const workflowV3 = { id: 'w1', name: 'Workflow mới', published_version_id: '',
     pages: [{ id: 'page-1', name: 'Page 1', nodes: [], edges: [],
       viewport: { x: 0, y: 0, zoom: 1 }, frames: [], notes: [], comments: [],
       view: { grid: true, connections: true, minimap: true } }] } }
-const validatedWorkflow={...workflow,revision:3,validation:{issues:[],step_costs:[],estimated_max_credit:7}}
-const awaitingRun={id:'r1',version:1,status:'awaiting_approval',plan:{steps:[{id:'n1'},{id:'n2'}]},
-  checkpoint:{},estimated:7,actual:0,quote_hash:'quote-test',decisions:[]}
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="agent-canvas-root" data-csrf-token="test-csrf"></div>'
+  try { localStorage.clear() } catch { /* cua so rieng tu */ }
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
     const url = String(input)
-    if (url.endsWith('/palette')) return new Response(JSON.stringify(palette), { status: 200 })
+    // ⚠️ TRUOC nhanh `/api/v3/workflows`: thu tu o day tung nuot mot duong roi.
+    if (url.endsWith('/v3/palette')) return new Response(JSON.stringify(paletteV3), { status: 200 })
+    if (url.endsWith('/v3/luat-noi-day')) return new Response(JSON.stringify(paletteV3.luat_noi_day), { status: 200 })
     if (url.endsWith('/preferences')) return new Response(JSON.stringify({theme:'dark',catalog_mode:'simple',presentation_version:'creative-v1',revision:init?.method?1:0}), { status: 200 })
-    if (url.endsWith('/assets')) {const file=init?.body instanceof FormData?init.body.get('file') as File:null
-      const name=file?.name||'owned.png';return new Response(JSON.stringify({key:`agent-assets/u/${name}`,kind:'image',
-        name,size:123,content_type:'image/png',url:`/agent/api/assets/${name}`}),{status:200})}
-    if (url.endsWith('/agent/api/runs') && !init?.method) return new Response(JSON.stringify({items:[]}),{status:200})
-    // ⚠️ PHAI dung TRUOC cac nhanh `/workflows` cu: duong v3 cung ket thuc
-    //    bang `/workflows`, nen dat sau se bi nhanh cu nuot mat.
+    if (url.includes('/quote')) return new Response(JSON.stringify({valid:true,maximum:3}), { status: 200 })
     if (url.includes('/api/v3/workflows')) {
       if (init?.method === 'PUT')
         return new Response(JSON.stringify({...workflowV3, revision: workflowV3.revision + 1}), { status: 200 })
@@ -66,13 +83,6 @@ beforeEach(() => {
         return new Response(JSON.stringify({ items: [{ id: 'w1', name: 'Workflow mới', published: false }] }), { status: 200 })
       return new Response(JSON.stringify(workflowV3), { status: 200 })
     }
-    if (url.endsWith('/validate')) return new Response(JSON.stringify(validatedWorkflow),{status:200})
-    if (url.endsWith('/workflows/w1/runs')&&init?.method==='POST') return new Response(JSON.stringify(awaitingRun),{status:201})
-    if (url.endsWith('/runs/r1/approve')) return new Response(JSON.stringify({...awaitingRun,version:2,status:'running'}),{status:200})
-    if (url.endsWith('/runs/r1/cancel')) return new Response(JSON.stringify({...awaitingRun,version:3,status:'cancelled'}),{status:200})
-    if (url.endsWith('/runs/r1/again')) return new Response(JSON.stringify({...awaitingRun,version:4}),{status:201})
-    if (url.endsWith('/workflows') && !init?.method) return new Response(JSON.stringify({ items: [] }), { status: 200 })
-    if (url.includes('/workflows/w1')) return new Response(JSON.stringify({ ...workflow, revision: 2 }), { status: 200 })
     return new Response(JSON.stringify(workflow), { status: 201 })
   })
 })
@@ -82,49 +92,136 @@ afterEach(() => {
   Object.defineProperty(navigator,'onLine',{configurable:true,value:true})
 })
 
+/** So node DO THI dang ve tren khung (khong tinh the o palette). */
+const soNode = () => document.querySelectorAll('.react-flow__node').length
+
+/** Mo bang node va them "Sinh văn bản". Tra ve phan tu node vua ve.
+ *
+ *  ⚠️ Phai gioi han trong `.react-flow__node`: `app.text.chat@1` xuat hien o
+ *     CA the palette lan node — mot `findByText` tran se nhap nhang. */
+async function themVanBan() {
+  fireEvent.click(await screen.findByRole('button', { name: 'Mở công cụ' }))
+  fireEvent.click(await screen.findByRole('button', { name: /Sinh văn bản/ }))
+  return await waitFor(() => {
+    const el = document.querySelector<HTMLElement>('.react-flow__node')
+    if (!el) throw new Error('chua ve node nao tren khung')
+    return el
+  })
+}
+
 describe('CanvasShell', () => {
-  it('loads dynamic palette and adds/configures a tool node', async () => {
+  // ⭐ Bai CHOT cua task 15: nhan node den TU `NodeDefinition` cua palette, va
+  //    node duoc ve bang MOT component (`NodeRenderer`). Truoc do nhan di qua
+  //    `presentationAdapter.customerToolLabel` — mot bang tra cuu go cung.
+  it('vẽ node bằng NodeRenderer và lấy nhãn từ NodeDefinition', async () => {
     render(<CanvasShell />)
-    const palettePanel = await screen.findByLabelText('Palette công cụ')
-    expect(palettePanel).not.toHaveClass('is-open')
-    fireEvent.click(screen.getByRole('button',{name:'Mở công cụ'}))
-    expect(palettePanel).toHaveClass('is-open')
-    expect(screen.getByRole('textbox',{name:'Tìm công cụ'})).toBeInTheDocument()
-    const add = await screen.findByRole('button', { name: 'Thêm Văn bản' })
-    fireEvent.click(add)
-    const node=await screen.findByLabelText('Khối Văn bản')
-    expect(node).toBeInTheDocument()
-    const inline=within(node).getByRole('textbox',{name:'Nội dung trực tiếp trong node'})
-    fireEvent.change(inline,{target:{value:'Viết ngay trong node'}})
-    expect(inline).toHaveValue('Viết ngay trong node')
-    const title=within(node).getByRole('textbox',{name:'Tên hiển thị node'})
-    fireEvent.change(title,{target:{value:'Lời dẫn mở đầu'}})
-    expect(title).toHaveValue('Lời dẫn mở đầu')
+    const node = await themVanBan()
+    expect(within(node).getByText('Sinh văn bản')).toBeInTheDocument()
+    expect(within(node).getByText('app.text.chat@1')).toBeInTheDocument()
+    expect(within(node).getByTestId('node-kind')).toHaveTextContent('app')
+    // Cong CO KIEU den tu `cong_vao`/`cong_ra`, khong tu mot bang tra cuu.
+    expect(within(node).getByTitle('prompt · text')).toBeInTheDocument()
+    expect(within(node).getByTitle('content · text')).toBeInTheDocument()
+  })
+
+  it('palette v3 nhóm theo category và thẻ hiện type@version', async () => {
+    render(<CanvasShell />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Mở công cụ' }))
+    const bang = await screen.findByRole('complementary', { name: 'Bảng node' })
+    expect(within(bang).getByRole('heading', { name: 'Kích hoạt' })).toBeInTheDocument()
+    expect(within(bang).getByRole('heading', { name: 'App LTT' })).toBeInTheDocument()
+    expect(within(bang).getByText('app.image.generate@1')).toBeInTheDocument()
+    // Node loi chua bien dich duoc (`publish_duoc=False`) ⇒ vo hieu, khong moi keo.
+    expect(within(bang).getByRole('button', { name: /Chạy thủ công/ })).toBeDisabled()
+  })
+
+  // ⛔ Nhan cu ghi "Canvas v2" trong khi trinh soan da chay runtime v3 tu
+  //    plan 01b — nghiem thu production 23/09 bat duoc.
+  it('thanh công cụ nói đúng phiên bản Canvas', async () => {
+    render(<CanvasShell />)
+    await screen.findByRole('button', { name: 'Mở công cụ' })
+    expect(screen.getByText(/Canvas v3/)).toBeInTheDocument()
+    expect(screen.queryByText(/Canvas v2/)).toBeNull()
+  })
+
+  it('inspector sinh form TỪ LƯỢC ĐỒ của node đang chọn', async () => {
+    render(<CanvasShell />)
+    await themVanBan()
+    fireEvent.click(screen.getByRole('button', { name: 'Chi tiết' }))
+    const inspector = screen.getByRole('complementary', { name: 'Chi tiết node' })
+    const prompt = within(inspector).getByLabelText('prompt *')
+    fireEvent.change(prompt, { target: { value: 'viết một đoạn' } })
+    expect(prompt).toHaveValue('viết một đoạn')
+    // O SO co cong tac bieu thuc (task 15, viec them 2).
+    expect(within(inspector).getByRole('button', { name: 'Dùng biểu thức cho count' }))
+      .toBeInTheDocument()
+  })
+
+  // ⭐ Mat xich cuoi cua "palette la catalogue": node hong ra palette voi lucc
+  //    do TINH. Lucc do tinh cua `voice_id` la mot `string` TU DO — khong khoa
+  //    thi nguoi dung go bua, publish qua, va hong LUC CHAY.
+  it('node mang x-ltt-loi: palette cảnh báo và inspector khoá ô lại', async () => {
+    render(<CanvasShell />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Mở công cụ' }))
+    const bang = await screen.findByRole('complementary', { name: 'Bảng node' })
+    expect(within(bang).getByText('Chưa tải được lựa chọn')).toBeInTheDocument()
+    fireEvent.click(within(bang).getByRole('button', { name: /Đọc văn bản/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Chi tiết' }))
+    const inspector = screen.getByRole('complementary', { name: 'Chi tiết node' })
+    expect(within(inspector).getByLabelText('voice_id')).toBeDisabled()
+  })
+
+  // 🔴 DO DUOC TREN TRINH DUYET THAT 24/09: tren desktop `.canvas-mobile-tabs`
+  //    la `display:none`, nen nut "Chi tiết" chi ton tai o mobile. Sau khi
+  //    task 15 don `ContextComposer`, MOI tham so chi con o inspector — va tren
+  //    desktop khong con mot duong nao mo no. jsdom khong doc CSS nen bai
+  //    "responsive panel" van xanh: no bam duoc mot nut ma nguoi dung khong
+  //    thay. Hai duong vao, va ca hai deu phai co.
+  it('mở được inspector trên desktop: nút ở thanh dọc VÀ bấm vào node', async () => {
+    render(<CanvasShell />)
+    const node = await themVanBan()
+    const nut = screen.getByRole('button', { name: 'Mở chi tiết node' })
+    const co = () => screen.queryByRole('complementary', { name: 'Chi tiết node' })
+    // Them node xong thi inspector MO SAN: tham so cua node vua keo ve phai
+    // thay duoc ngay, khong bat nguoi dung di tim mot duong nua.
+    expect(nut).toHaveAttribute('aria-pressed', 'true')
+    expect(co()).toHaveClass('is-open')
+    // 1. Nut o thanh doc dong/mo duoc — `.canvas-rail` hien o moi be ngang.
+    fireEvent.click(nut)
+    expect(co()).toBeNull()
+    fireEvent.click(nut)
+    expect(co()).toHaveClass('is-open')
+    // 2. Bam vao node tren khung cung mo — do la cu chi tu nhien nhat.
+    fireEvent.click(nut)
+    expect(co()).toBeNull()
     fireEvent.click(node)
-    expect(screen.getByRole('region',{name:'Thiết lập Văn bản'})).toBeInTheDocument()
-    fireEvent.change(inline, { target: { value: 'Chủ đề mới' } })
-    expect(inline).toHaveValue('Chủ đề mới')
-    fireEvent.keyDown(window,{key:'Escape'})
-    expect(screen.queryByRole('region',{name:'Thiết lập Văn bản'})).not.toBeInTheDocument()
+    expect(co()).toHaveClass('is-open')
+  })
+
+  it('nhớ node dùng gần đây qua localStorage', async () => {
+    render(<CanvasShell />)
+    await themVanBan()
+    expect(JSON.parse(localStorage.getItem('ltt.palette.ganDay')!))
+      .toEqual(['app.text.chat'])
+    expect(await screen.findByRole('heading', { name: 'Gần đây' })).toBeInTheDocument()
   })
 
   it('provides undo/redo and accessible regions', async () => {
     render(<CanvasShell />)
-    fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
-    const add = await screen.findByRole('button', { name: 'Thêm Văn bản' })
+    await themVanBan()
     expect(screen.getByRole('region', { name: 'LTT Agent Canvas' })).toBeInTheDocument()
-    fireEvent.click(add)
+    expect(soNode()).toBe(1)
     const undo = screen.getByRole('button', { name: 'Hoàn tác' })
     await waitFor(() => expect(undo).toBeEnabled())
     fireEvent.click(undo)
-    expect(screen.queryByLabelText('Khối Văn bản')).not.toBeInTheDocument()
+    expect(soNode()).toBe(0)
     fireEvent.click(screen.getByRole('button', { name: 'Làm lại' }))
-    expect(screen.getByLabelText('Khối Văn bản')).toBeInTheDocument()
+    expect(soNode()).toBe(1)
   })
 
   it('opens layers and keyboard command palette with working display toggles', async () => {
     render(<CanvasShell />)
-    fireEvent.click(await screen.findByRole('button',{name:'Thêm Văn bản'}))
+    await themVanBan()
     fireEvent.click(screen.getByRole('button',{name:'Mở danh sách lớp'}))
     expect(screen.getByRole('complementary',{name:'Danh sách lớp'})).toBeInTheDocument()
     fireEvent.keyDown(window,{key:'k',ctrlKey:true})
@@ -138,11 +235,11 @@ describe('CanvasShell', () => {
 
   it('exposes responsive panel controls without hiding inspector semantics', async () => {
     render(<CanvasShell />)
-    await screen.findByRole('button',{name:'Thêm Văn bản'})
+    await screen.findByRole('button',{name:'Mở công cụ'})
     expect(screen.getByRole('navigation',{name:'Khu vực Canvas'})).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button',{name:'Chi tiết'}))
     expect(screen.getByRole('button',{name:'Chi tiết'})).toHaveAttribute('aria-pressed','true')
-    expect(screen.getByLabelText('Chi tiết block')).toHaveTextContent('Chọn một block')
+    expect(screen.getByLabelText('Chi tiết node')).toHaveTextContent('Chọn một node')
     // ⛔ Lich su run (`AgentRun` v1) da bo khoi bang chi tiet — trang thai
     //    luot chay v3 chi o ngan keo "Chay workflow".
     expect(screen.queryByLabelText('Run inspector')).not.toBeInTheDocument()
@@ -150,8 +247,7 @@ describe('CanvasShell', () => {
 
   it('upgrades legacy canvas and manages pages and annotations', async () => {
     render(<CanvasShell />)
-    await screen.findByRole('button',{name:'Thêm Văn bản'})
-    expect(screen.getByText(/Canvas v2/)).toBeInTheDocument()
+    fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
     fireEvent.click(screen.getByRole('button',{name:'+ Page'}))
     expect(screen.getByRole('textbox',{name:/Đổi tên Page 2/})).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button',{name:'+ Sticky note'}))
@@ -164,18 +260,10 @@ describe('CanvasShell', () => {
     expect(screen.queryByLabelText(/Comment Bình luận mới/)).not.toBeInTheDocument()
   })
 
-  it('defaults to a dark, complete catalog and persists explicit choices', async () => {
+  it('defaults to a dark theme and persists an explicit choice', async () => {
     render(<CanvasShell />)
     const canvas=await screen.findByRole('region',{name:'LTT Agent Canvas'})
     expect(canvas).toHaveClass('theme-dark')
-    fireEvent.click(screen.getByRole('button',{name:'Mở công cụ'}))
-    expect(screen.getByRole('button',{name:'Thêm Văn bản'})).toHaveTextContent('Văn bản')
-    expect(screen.getByRole('button',{name:'Thêm Hình ảnh'})).toBeInTheDocument()
-    expect(screen.getByRole('button',{name:'Thêm Video'})).toBeInTheDocument()
-    expect(screen.getByRole('button',{name:'Thêm Âm thanh'})).toBeInTheDocument()
-    expect(screen.queryByRole('button',{name:'Thêm Viết kịch bản'})).not.toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button',{name:'Hiện công cụ nâng cao'}))
-    expect(screen.getByRole('button',{name:'Thêm Viết kịch bản'})).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button',{name:'Chuyển sang nền sáng'}))
     expect(canvas).toHaveClass('theme-light')
     await waitFor(()=>expect(globalThis.fetch).toHaveBeenCalledWith('/agent/api/preferences',expect.objectContaining({method:'PUT'})))
@@ -183,46 +271,17 @@ describe('CanvasShell', () => {
 
   it('provides pane and node context menus without exposing raw tool fields',async()=>{
     render(<CanvasShell />)
-    fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
-    fireEvent.click(screen.getByRole('button',{name:'Thêm Hình ảnh'}))
-    const node=await screen.findByLabelText('Khối Hình ảnh')
-    expect(screen.getByRole('textbox',{name:/Mô tả/})).toBeInTheDocument()
+    const node=await themVanBan()
     expect(screen.queryByText('app_slug')).not.toBeInTheDocument()
-    fireEvent.click(within(node).getByRole('button',{name:'Mở thao tác node'}))
+    fireEvent.contextMenu(node,{clientX:400,clientY:300})
     // ⛔ 01b chay CA do thi: hai muc "Bao gia & chay block/tu day" la `scope`
     //    cua Plan v1 va da bo — khong duoc de lai nut chet.
     const menu=screen.getByRole('complementary',{name:'Menu thao tác node'})
     expect(menu).toHaveTextContent('Sao chép node')
     expect(menu).not.toHaveTextContent('Báo giá')
     fireEvent.click(screen.getByRole('button',{name:'Đóng menu ngữ cảnh'}))
-    fireEvent.contextMenu(node,{clientX:400,clientY:300})
-    expect(screen.getByRole('complementary',{name:'Menu thao tác node'})).toHaveTextContent('Xóa node')
-    fireEvent.click(screen.getByRole('button',{name:'Đóng menu ngữ cảnh'}))
     fireEvent.contextMenu(document.querySelector('.react-flow__pane')!,{clientX:600,clientY:250})
     expect(screen.getByRole('complementary',{name:'Menu khoảng trống Canvas'})).toHaveTextContent('Tự động sắp xếp node')
-  })
-
-  it('guides first-run users through both canonical chains before exposing advanced chrome',async()=>{
-    render(<CanvasShell />)
-    const firstRun=await screen.findByRole('region',{name:'Bắt đầu workflow'})
-    expect(firstRun).toHaveTextContent('Chọn một mẫu')
-    expect(screen.queryByTitle('Assistant')).not.toBeInTheDocument()
-    expect(screen.queryByRole('button',{name:'Mở danh sách lớp'})).not.toBeInTheDocument()
-    fireEvent.click(within(firstRun).getByRole('button',{name:/Prompt thành hình ảnh/}))
-    expect(await screen.findByRole('region',{name:'Thiết lập Văn bản'})).toBeInTheDocument()
-    expect(screen.getAllByText(/2 node · 1 kết nối/).length).toBeGreaterThan(0)
-    // Chrome nang cao xuat hien khi da co node. Truoc 23/09 phep do nay dung
-    // nut "Assistant"; nut ay da bo vi no goi cua v2 bang mot id v3 (404), nen
-    // moc chuyen sang nut "Lop" — van con, va van chi hien khi co node.
-    expect(screen.getByRole('button',{name:'Mở danh sách lớp'})).toBeInTheDocument()
-    // ⛔ Khoa chieu nguoc: nut Assistant KHONG duoc quay lai chung nao cum ay
-    //    con nam o `/agent/api/workflows/...`.
-    expect(screen.queryByTitle('Assistant')).not.toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button',{name:'Hoàn tác'}))
-    const reset=await screen.findByRole('region',{name:'Bắt đầu workflow'})
-    fireEvent.click(within(reset).getByRole('button',{name:/Hiểu nội dung hình ảnh/}))
-    expect(await screen.findByRole('region',{name:'Thiết lập Hình ảnh'})).toBeInTheDocument()
-    expect(screen.getAllByText(/2 node · 1 kết nối/).length).toBeGreaterThan(0)
   })
 
   it('exposes save-conflict recovery in the active toolbar',async()=>{
@@ -233,29 +292,24 @@ describe('CanvasShell', () => {
       return base(input,init)
     })
     render(<CanvasShell />)
-    fireEvent.click(await screen.findByRole('button',{name:'Thêm Văn bản'}))
+    await themVanBan()
     // 🔴 Cho nay tung viet `{timeout:1900}` va lam ca buoc gate chap chon.
     // Nut chi hien sau khi autosave PUT tra 409; chuoi debounce + fetch tren
-    // may RANH mat ~1,5s, nen 1900ms chi con ~400ms bien. Do duoc mot luot do
-    // that: that bai o 2381ms — duoi xa gio cua vitest, tuc KHONG phai het
-    // gio khung test ma la mot con so chinh cho may ranh.
-    //
-    // ⚠️ Mot con so cho lon KHONG giau loi: neu nut khong bao gio hien, phep
-    // kiem van do — chi la do muon hon. Cai no bo di la bien qua mong giua
-    // "cham" va "hong".
+    // may RANH mat ~1,5s, nen 1900ms chi con ~400ms bien.
     expect(await screen.findByRole('button',{name:'Tải bản mới'},{timeout:10_000})).toBeInTheDocument()
     expect(screen.getAllByText('Xung đột').length).toBeGreaterThan(0)
   })
 
   it('queues offline edits, retries after reconnect and keeps mobile read-only',async()=>{
     render(<CanvasShell />)
-    fireEvent.click(await screen.findByRole('button',{name:'Thêm Văn bản'}))
+    await themVanBan()
     fireEvent(window,new Event('offline'))
     expect(await screen.findAllByText(/Ngoại tuyến/)).not.toHaveLength(0)
     const putCount=()=>vi.mocked(globalThis.fetch).mock.calls.filter(([url,init])=>
       String(url).includes('/workflows/w1')&&init?.method==='PUT').length
     const before=putCount()
-    fireEvent.change(screen.getByRole('textbox',{name:'Nội dung trực tiếp trong node'}),{target:{value:'Sửa khi mất mạng'}})
+    fireEvent.click(screen.getByRole('button',{name:'Chi tiết'}))
+    fireEvent.change(screen.getByLabelText('prompt *'),{target:{value:'Sửa khi mất mạng'}})
     await new Promise(resolve=>setTimeout(resolve,900))
     expect(putCount()).toBe(before)
     Object.defineProperty(navigator,'onLine',{configurable:true,value:true})
@@ -265,157 +319,8 @@ describe('CanvasShell', () => {
     fireEvent(window,new Event('resize'))
     expect(screen.getByRole('button',{name:'Chạy'})).toBeDisabled()
   })
-
-  it('connects a compatible node through the contextual @ reference picker',async()=>{
-    render(<CanvasShell />)
-    fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
-    fireEvent.click(screen.getByRole('button',{name:'Thêm Hình ảnh'}))
-    fireEvent.click(screen.getByRole('button',{name:'Mở công cụ'}))
-    fireEvent.click(screen.getByRole('button',{name:'Hiện công cụ nâng cao'}))
-    fireEvent.click(screen.getByRole('button',{name:'Thêm Nâng cấp ảnh'}))
-    const transform=await screen.findByLabelText('Khối Nâng cấp ảnh')
-    fireEvent.click(transform)
-    expect(within(transform).queryByLabelText('Tải lên')).not.toBeInTheDocument()
-    const picker=screen.getByRole('combobox',{name:'Thêm nội dung từ block khác'})
-    expect(picker).toHaveTextContent('@Hình ảnh · Hình ảnh → Ảnh đầu vào')
-    const option=screen.getByRole('option',{name:/@Hình ảnh/}) as HTMLOptionElement
-    fireEvent.change(picker,{target:{value:option.value}})
-    expect(await screen.findByLabelText('Đầu vào đã kết nối')).toHaveTextContent('@Hình ảnh')
-    fireEvent.click(screen.getByRole('button',{name:'Chèn bước vào kết nối'}))
-    expect(screen.getByRole('complementary',{name:'Chèn bước vào kết nối'})).toHaveTextContent('Chọn hành động tương thích')
-    fireEvent.click(screen.getByRole('button',{name:'Đóng chèn bước'}))
-    fireEvent.click(screen.getByRole('button',{name:'Tháo kết nối Hình ảnh'}))
-    expect(screen.queryByLabelText('Đầu vào đã kết nối')).not.toBeInTheDocument()
-    // ⚠️ Doc `document`, khong `canvas`: tu Dot 5.2 phan D trinh soan ghi qua
-    //    cua v3, va hinh dang TREN DAY la v3. Bai nay ghim dung hinh dang ay —
-    //    nen no phai doi cung, khong duoc noi long thanh "co mot PUT nao do".
-    await waitFor(()=>expect(vi.mocked(globalThis.fetch).mock.calls.some(([,init])=>{
-      if(init?.method!=='PUT'||typeof init.body!=='string')return false
-      const d=JSON.parse(init.body).document
-      return d?.version===3&&d?.pages?.[0]?.edges?.length===0
-    })).toBe(true),{timeout:10_000})
-  })
-
-  it('hides reference options that would loop back into the current block',async()=>{
-    render(<CanvasShell />)
-    fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
-    fireEvent.click(screen.getByRole('button',{name:'Thêm Văn bản'}))
-    fireEvent.click(screen.getByRole('button',{name:'Mở công cụ'}))
-    fireEvent.click(screen.getByRole('button',{name:'Thêm Hình ảnh'}))
-    fireEvent.click(await screen.findByLabelText('Khối Hình ảnh'))
-    const picker=screen.getByRole('combobox',{name:'Thêm nội dung từ block khác'})
-    fireEvent.change(picker,{target:{value:(screen.getByRole('option',{name:/@Văn bản/}) as HTMLOptionElement).value}})
-    expect(await screen.findByLabelText('Đầu vào đã kết nối')).toHaveTextContent('@Văn bản')
-    fireEvent.click(screen.getByLabelText('Khối Văn bản'))
-    // Hình ảnh feeds this block already: connectGraph refuses the reverse edge
-    // as a cycle, so offering it would leave the customer with a dead control.
-    expect(screen.queryByRole('option',{name:/@Hình ảnh/})).not.toBeInTheDocument()
-    expect(screen.getAllByText(/2 node · 1 kết nối/).length).toBeGreaterThan(0)
-  })
-
-  it('keeps multiple scalar sources connected to one collection input',async()=>{
-    render(<CanvasShell />)
-    fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
-    fireEvent.click(screen.getByRole('button',{name:'Thêm Video'}))
-    fireEvent.click(screen.getByRole('button',{name:'Thêm Video'}))
-    fireEvent.click(screen.getByRole('button',{name:'Mở công cụ'}))
-    fireEvent.click(screen.getByRole('button',{name:'Hiện công cụ nâng cao'}))
-    fireEvent.click(screen.getByRole('button',{name:'Thêm Ghép video'}))
-    fireEvent.click(await screen.findByLabelText('Khối Ghép video'))
-    let picker=screen.getByRole('combobox',{name:'Thêm nội dung từ block khác'}) as HTMLSelectElement
-    const first=[...picker.options].find(option=>option.value)!
-    fireEvent.change(picker,{target:{value:first.value}})
-    picker=screen.getByRole('combobox',{name:'Thêm nội dung từ block khác'}) as HTMLSelectElement
-    const second=[...picker.options].find(option=>option.value&&option.value!==first.value)!
-    fireEvent.change(picker,{target:{value:second.value}})
-    expect(await screen.findByLabelText('Đầu vào đã kết nối')).toHaveTextContent('Video → Video đầu vào')
-    expect(screen.getByRole('button',{name:'Tháo kết nối Video 1'})).toBeInTheDocument()
-    expect(screen.getByRole('button',{name:'Tháo kết nối Video 2'})).toBeInTheDocument()
-    expect(screen.getAllByText(/3 node · 2 kết nối/).length).toBeGreaterThan(0)
-    fireEvent.click(screen.getByRole('button',{name:'Tháo kết nối Video 1'}))
-    expect(screen.queryByRole('button',{name:'Tháo kết nối Video 1'})).not.toBeInTheDocument()
-    expect(screen.getAllByText(/3 node · 1 kết nối/).length).toBeGreaterThan(0)
-  })
-
-  it('supports direct creation and workspace shortcuts without hijacking text input',async()=>{
-    render(<CanvasShell />)
-    const canvas=await screen.findByRole('region',{name:'LTT Agent Canvas'})
-    fireEvent.keyDown(canvas,{key:'i'})
-    expect(await screen.findByLabelText('Khối Hình ảnh')).toBeInTheDocument()
-    fireEvent.keyDown(canvas,{key:'t'})
-    const text=await screen.findByLabelText('Khối Văn bản')
-    expect(text).toBeInTheDocument()
-    fireEvent.keyDown(canvas,{key:'n'})
-    expect(screen.getByLabelText('Sticky note Ghi chú mới')).toBeInTheDocument()
-    fireEvent.keyDown(canvas,{key:'d'})
-    expect(screen.getByLabelText('Palette công cụ')).toHaveClass('workspace-only')
-    const inline=within(text).getByRole('textbox',{name:'Nội dung trực tiếp trong node'})
-    fireEvent.keyDown(inline,{key:'i'})
-    expect(screen.getAllByLabelText('Khối Hình ảnh')).toHaveLength(1)
-  })
-
-  it('opens a compatibility-filtered next-step picker from the single output plus',async()=>{
-    render(<CanvasShell />)
-    fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
-    fireEvent.click(screen.getByRole('button',{name:'Thêm Văn bản'}))
-    fireEvent.click(screen.getByLabelText('Kết nối Nội dung'))
-    const picker=screen.getByRole('complementary',{name:'Chọn bước tiếp theo'})
-    expect(picker).toHaveTextContent('TẠO BLOCK MỚI')
-    expect(within(picker).getByRole('button',{name:/Tạo hình ảnh/})).toBeInTheDocument()
-    expect(picker).not.toHaveTextContent('asset.image')
-    fireEvent.click(within(picker).getByRole('button',{name:/Tạo hình ảnh/}))
-    const created=(await screen.findAllByLabelText('Khối Hình ảnh'))[0]
-    expect(within(created).getByRole('textbox',{name:'Mô tả'})).toHaveAttribute('placeholder','Dùng nội dung từ block đã kết nối')
-    expect((within(created).getByRole('textbox',{name:'Mô tả'}) as HTMLTextAreaElement).value).not.toContain('$')
-  })
-
-  it('keeps Upload and Generate as two modes of the same user-facing Image node',async()=>{
-    render(<CanvasShell />)
-    fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
-    fireEvent.click(screen.getByRole('button',{name:'Thêm Hình ảnh'}))
-    const generated=await screen.findByLabelText('Khối Hình ảnh')
-    fireEvent.change(within(generated).getByLabelText('Tải lên'),{target:{files:[new File(['png'],'owned.png',{type:'image/png'})]}})
-    const preview=await screen.findByRole('img',{name:'Ảnh đã tải lên'})
-    const uploaded=preview.closest('article')!
-    expect(within(uploaded).getByRole('textbox',{name:'Tên hiển thị node'})).toHaveValue('Hình ảnh')
-    expect(preview).toHaveAttribute('src','/agent/api/assets/owned.png')
-    expect(within(uploaded).getByRole('button',{name:'Tạo lại'})).toBeInTheDocument()
-    fireEvent.click(within(uploaded).getByRole('button',{name:'Tạo lại'}))
-    expect(await screen.findByLabelText('Khối Hình ảnh')).toBeInTheDocument()
-    expect(screen.getByRole('textbox',{name:/Mô tả/})).toBeInTheDocument()
-  })
-
-  it('presents Social Video as a URL action and never as a local upload node',async()=>{
-    render(<CanvasShell />)
-    fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
-    fireEvent.click(screen.getByRole('button',{name:'Hiện công cụ nâng cao'}))
-    fireEvent.click(screen.getByRole('button',{name:'Thêm Nhập video từ liên kết'}))
-    const node=await screen.findByLabelText('Khối Nhập video từ liên kết')
-    expect(within(node).getByRole('textbox',{name:'Tên hiển thị node'})).toHaveValue('Nhập video từ liên kết')
-    expect(within(node).getByText('Thêm Social Video')).toBeInTheDocument()
-    expect(within(node).queryByLabelText('Tải lên')).not.toBeInTheDocument()
-    expect(screen.getByRole('textbox',{name:/Liên kết/})).toHaveAttribute('placeholder',
-      'Dán link TikTok, YouTube Shorts hoặc Reels…')
-    fireEvent.click(within(node).getByRole('button',{name:'Chi tiết'}))
-    expect(screen.getByRole('checkbox',{name:/Tôi xác nhận có quyền sử dụng video/})).toBeInTheDocument()
-  })
-
-  it('keeps multiple uploads inside one Batch Images node and can switch back to generation',async()=>{
-    render(<CanvasShell />)
-    fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
-    fireEvent.click(screen.getByRole('button',{name:'Hiện công cụ nâng cao'}))
-    fireEvent.click(screen.getByRole('button',{name:'Thêm Tạo bộ ảnh'}))
-    const generated=await screen.findByLabelText('Khối Tạo bộ ảnh')
-    const files=[new File(['a'],'a.png',{type:'image/png'}),new File(['b'],'b.png',{type:'image/png'})]
-    fireEvent.change(within(generated).getByLabelText('Tải lên'),{target:{files}})
-    const uploaded=await screen.findByLabelText('Khối Hình ảnh')
-    expect(within(uploaded).getByRole('textbox',{name:'Tên hiển thị node'})).toHaveValue('Hình ảnh')
-    expect(within(uploaded).getAllByRole('img')).toHaveLength(2)
-    expect(within(uploaded).getByRole('img',{name:'Ảnh 1 trong bộ ảnh'})).toHaveAttribute('src','/agent/api/assets/a.png')
-    fireEvent.click(within(uploaded).getByRole('button',{name:'Tạo lại'}))
-    expect(await screen.findByLabelText('Khối Tạo bộ ảnh')).toBeInTheDocument()
-  })
 })
+
 
 // ── Chay workflow tren v3 (Dot 5.2 phan D / plan 01b task 6) ─────────────
 // Vong doi mot luot chay o day KHONG con la "bao gia -> duyet -> tick":
@@ -461,8 +366,7 @@ function mockRunV3(xen?: (url: string, init?: RequestInit) =>
 /** Them mot node, mo ngan keo chay, bam "Chay ngay". Tra ve ngan keo + id node. */
 async function bamChay() {
   render(<CanvasShell />)
-  fireEvent.click(await screen.findByRole('button', { name: 'Thêm Văn bản' }))
-  await screen.findByLabelText('Khối Văn bản')
+  await themVanBan()
   const nodeId = document.querySelector<HTMLElement>('.react-flow__node')!.dataset.id!
   fireEvent.click(screen.getByRole('button', { name: 'Chạy' }))
   const drawer = screen.getByRole('navigation', { name: 'Chạy workflow' })
@@ -655,8 +559,11 @@ describe('Chạy workflow trên v3', () => {
     // loi trong ngan keo chay. Neo vao ngan keo de bai nay khong do vi "nhieu
     // ket qua" khi bang kia cung noi cung mot cau.
     expect(await within(ket.drawer).findByText(/Node không có trong registry\./)).toBeTruthy()
-    await waitFor(() => expect(
-      document.querySelector(`[data-loi-node="${ket.nodeId}"]`)).toBeTruthy())
+    // `node-do-loi` nam tren chinh `.react-flow__node` (CanvasShell dat qua
+    // `className`), cung cho voi `data-id` — khong phai doan qua mot chuoi
+    // tieng Viet co the doi.
+    await waitFor(() => expect(document.querySelector(
+      `.react-flow__node.node-do-loi[data-id="${ket.nodeId}"]`)).toBeTruthy())
     // Publish do => KHONG duoc tao run: tien chi duoc giu khi do thi bien dich duoc.
     expect(duongDaGoi().some(u => u.endsWith('/runs') &&
       u.includes('/api/v3/'))).toBe(false)

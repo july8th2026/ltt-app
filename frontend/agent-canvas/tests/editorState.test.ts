@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { activePage, cloneGraphSelection, connectionAllowed, connectionCreatesCycle, editorReducer, emptyDocument, replaceNodeTool, scopeNodeIds, type EditorState, type PaletteTool } from '../src/editorState'
+import { activePage, cloneGraphSelection, connectionCreatesCycle, editorReducer, emptyDocument, scopeNodeIds, type EditorState } from '../src/editorState'
 
-const tool = (name: string, input: string, output: string): PaletteTool => ({ name,
-  description: '', app_slug: 'x', app_name: 'X', requires: [], verifiable: [],
-  params_schema: { input: { type: input } }, returns: { output } })
+// ⛔ Bai `typed connection guard` va bai "doi Image node sang upload" DA XOA
+//    cung `connectionAllowed`/`replaceNodeTool` (plan 02 task 15). Chung do
+//    mot luat noi day GO CUNG o client tren `params_schema` phang cua palette
+//    v2. Luat that gio tai tu `he_kieu.xuat_luat_noi_day()`; phep kiem cua no
+//    o `tests/nodeDefinition.test.ts` (`noiDuoc`) va `tests/test_1750_*.py`.
 
 describe('editor reducer', () => {
   it('rejects self-links and links that would close a graph cycle',()=>{
@@ -134,87 +136,9 @@ describe('editor reducer', () => {
     expect(cloned.nodes[0].position).toEqual({x:42,y:52})
   })
 
-  it('switches an Image node from generated collection to owned upload without leaving a broken graph',()=>{
-    const generated={...tool('image.generate','text','image[]'),params_schema:{prompt:{type:'text',required:true}},
-      returns:{image_keys:'image[]'}}
-    const uploaded={...tool('asset.image','string','image'),params_schema:{image_key:{type:'string',required:true}},
-      returns:{image_key:'image'}}
-    const text={...tool('text.generate','text','text'),params_schema:{prompt:{type:'string',required:true},
-      image_key:{type:'image'},image_keys:{type:'image[]'}},returns:{text:'text'}}
-    const page=activePage(emptyDocument())
-    page.nodes=[
-      {id:'source',type:'tool',position:{x:0,y:0},data:{tool:'text.generate',params:{prompt:'nguồn'}}},
-      {id:'image',type:'tool',label:'Ảnh sản phẩm',position:{x:1,y:0},data:{tool:'image.generate',params:{prompt:'$source.text'}}},
-      {id:'analysis',type:'tool',position:{x:2,y:0},data:{tool:'text.generate',params:{prompt:'phân tích',image_keys:'$image.image_keys'}}},
-    ]
-    page.edges=[
-      {id:'source-image',source:'source',sourceHandle:'text',target:'image',targetHandle:'prompt'},
-      {id:'image-analysis',source:'image',sourceHandle:'image_keys',target:'analysis',targetHandle:'image_keys'},
-    ]
-    const replaced=replaceNodeTool(page,'image',uploaded,[generated,uploaded,text],{
-      params:{image_key:'agent-assets/u/owned.png'},asset_name:'owned.png',asset_url:'/preview/owned.png'})
-    expect(replaced.nodes.find(node=>node.id==='image')).toMatchObject({label:'Ảnh sản phẩm',data:{
-      tool:'asset.image',params:{image_key:'agent-assets/u/owned.png'},asset_name:'owned.png'}})
-    expect(replaced.edges).toEqual([{id:'image-image_key-analysis-image_key',source:'image',
-      sourceHandle:'image_key',target:'analysis',targetHandle:'image_key'}])
-    expect(replaced.nodes.find(node=>node.id==='analysis')?.data.params).toMatchObject({
-      prompt:'phân tích',image_key:'$image.image_key'})
-    expect((replaced.nodes.find(node=>node.id==='analysis')?.data.params as Record<string,unknown>).image_keys).toBeUndefined()
-  })
 })
 
-describe('typed connection guard', () => {
-  it('accepts matching ports and rejects mismatches', () => {
-    expect(connectionAllowed(tool('a', 'text', 'video'), 'output', tool('b', 'video', 'text'), 'input')).toBe(true)
-    expect(connectionAllowed(tool('a', 'text', 'video'), 'output', tool('b', 'image', 'text'), 'input')).toBe(false)
-    expect(connectionAllowed(tool('a', 'text', 'text'), 'output', tool('b', 'enum', 'text'), 'input')).toBe(false)
-  })
-
-  it('connects image and image collections to matching multimodal text inputs', () => {
-    expect(connectionAllowed(tool('image-source', 'text', 'image'), 'output',
-      tool('text-vision', 'image', 'text'), 'input')).toBe(true)
-    expect(connectionAllowed(tool('batch-source', 'text', 'image[]'), 'output',
-      tool('text-vision', 'image[]', 'text'), 'input')).toBe(true)
-    expect(connectionAllowed(tool('batch-source', 'text', 'image[]'), 'output',
-      tool('text-vision', 'image', 'text'), 'input')).toBe(false)
-  })
-
-  it('allows repeated scalar media outputs to feed collection merge inputs',()=>{
-    expect(connectionAllowed(tool('video-source','text','video'),'output',
-      tool('merge-video','video[]','video'),'input')).toBe(true)
-    expect(connectionAllowed(tool('image-source','text','image'),'output',
-      tool('merge-image','image[]','image'),'input')).toBe(true)
-    expect(connectionAllowed(tool('audio-source','text','audio'),'output',
-      tool('merge-video','video[]','video'),'input')).toBe(false)
-  })
-
-  it('keeps uploaded asset nodes as graph sources, never connection targets', () => {
-    expect(connectionAllowed(tool('text.generate', 'text', 'text'), 'output',
-      tool('asset.image', 'string', 'image'), 'input')).toBe(false)
-  })
-
-  it('keeps text context separate from the instruction prompt', () => {
-    const source = tool('source-text', 'text', 'text')
-    const target = {
-      ...tool('text.generate', 'string', 'text'),
-      params_schema: { prompt: { type: 'string' }, source_text: { type: 'text' } },
-    }
-    expect(connectionAllowed(source, 'output', target, 'prompt')).toBe(false)
-    expect(connectionAllowed(source, 'output', target, 'source_text')).toBe(true)
-    expect(connectionAllowed(source, 'output', tool('image.generate', 'string', 'image'), 'input')).toBe(true)
-  })
-
-  it('allows typed image and video references to drive a Video node',()=>{
-    const videoTarget={...tool('video.generate','text','video'),params_schema:{
-      prompt:{type:'text',required:true},image_key:{type:'image'},image_keys:{type:'image[]'},video_key:{type:'video'}},
-      returns:{video_key:'video'}}
-    expect(connectionAllowed(tool('asset.image','string','image'),'output',videoTarget,'image_key')).toBe(true)
-    expect(connectionAllowed(tool('image.batch_generate','text','image[]'),'output',videoTarget,'image_keys')).toBe(true)
-    expect(connectionAllowed(tool('asset.video','string','video'),'output',videoTarget,'video_key')).toBe(true)
-    expect(connectionAllowed(tool('raw.json','text','json'),'output',{
-      ...videoTarget,params_schema:{...videoTarget.params_schema,refs:{type:'json'}}},'refs')).toBe(false)
-  })
-
+describe('pham vi chay mot node', () => {
   it('limits a node run to that node and all transitive prerequisites',()=>{
     const nodes=['a','b','c','unrelated'].map((id,index)=>({id,type:'tool' as const,position:{x:index,y:0},data:{}}))
     const edges=[{id:'a-b',source:'a',target:'b'},{id:'b-c',source:'b',target:'c'}]

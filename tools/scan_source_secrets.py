@@ -70,6 +70,13 @@ EXCLUDED_DIR_NAMES = {
     # nay, da duoc quet o cay goc; giu lai chi lam may quet bao trung + trip vi
     # file vendor (pako/zlib). Doi xung voi ".claude" ngay tren.
     ".codex",
+    # Bao cao cua agent (.superpowers/sdd/*): tep LAM VIEC, nam trong .gitignore
+    # nen khong bao gio len kho hay len production. Chung ghi BANG CHUNG do duoc
+    # — md5, sha, checksum — va do chinh la thu lam trip `bare_32_char_hex`
+    # (24/09: mot md5 chung minh HTML /gia-api khong doi bi bao la secret).
+    # Doi xung voi ".claude" va ".codex" ngay tren: cung la thu muc cong cu, cung
+    # khong phai nguon.
+    ".superpowers",
     # Engine vendored tu D:/FULL AUTO VIDEO (Tao Clip ngan). Ma van hanh cua ben thu
     # ba (khong chua secret cua ta — luong lam-file-truc-tiep khong can key); co chuoi
     # hex 32 ky tu trong VI DU tai lieu (sha256 rut gon) lam trip may quet.

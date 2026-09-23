@@ -26,6 +26,11 @@ KIEU_CO_BAN = frozenset({
     "image", "video", "audio", "document",
     # Tham chiếu — giá trị THẬT không bao giờ vào `WorkflowVersion` (`WF-902`)
     "model_ref", "connection_ref", "artifact_ref", "workflow_ref", "secret_ref",
+    # ⭐ Spec §4.7. `any` chỉ dành cho node `core.*` dữ liệu (set/transform/
+    #    aggregate): chúng đi qua giá trị mà KHÔNG diễn giải nó, nên bắt chúng
+    #    khai một kiểu là bắt khai một điều không đúng. `event` là cổng ra của
+    #    trigger — một biến cố, không phải dữ liệu người dùng nối vào ô nhập.
+    "any", "event",
 })
 
 _HAU_TO = "[]"
@@ -63,6 +68,12 @@ def ep_duoc(tu: str, den: str) -> bool:
     if not (hop_le(tu) and hop_le(den)):
         return False
     if tu == den:
+        return True
+    # ⭐ `any` là CỬA MỞ, không phải CẦU. Nó cho một node lõi dữ liệu nhận/nhả
+    #    bất cứ gì, nhưng KHÔNG làm `image -> video` hợp lệ: hai cổng thật vẫn
+    #    phải trùng kiểu. Nếu `any` là cầu thì mọi phép kiểm kiểu trong đồ thị
+    #    biến mất ngay khi có một node lõi nằm giữa.
+    if "any" in (kieu_phan_tu(tu), kieu_phan_tu(den)) or "any" in (tu, den):
         return True
     return (not la_tap_hop(tu)) and la_tap_hop(den) and kieu_phan_tu(den) == tu
 
@@ -140,7 +151,7 @@ def xuat_luat_noi_day() -> dict:
     moi_kieu = sorted(KIEU_CO_BAN) + [f"{k}{_HAU_TO}" for k in sorted(KIEU_CO_BAN)]
     cap = [[a, b] for a in moi_kieu for b in moi_kieu if ep_duoc(a, b)]
     return {
-        "phien_ban": 1,
+        "phien_ban": 2,
         "kieu": sorted(KIEU_CO_BAN),
         "hau_to_tap_hop": _HAU_TO,
         "ep_kieu": [["T", "T[]"]],

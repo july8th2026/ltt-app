@@ -265,6 +265,9 @@ def bang_gia() -> dict:
     lệch nhau thì bảng nào cũng không đáng tin.
     """
     return {
+        # ⭐ NHÓM HIỂN THỊ — xem `AppManifest.bang_gia`. Trang `/gia-api` xếp
+        #    theo khoá này chứ không tra `bang_gia_app.get("ltt_voice")`.
+        "nhom": "tieng",
         "phien_ban": PHIEN_BAN_GIA,
         "don_vi": "credit",
         "muc": [

@@ -74,6 +74,16 @@ MANIFEST = AppManifest(
             returns={"prompt_package": "json", "master_prompt": "text"},
             verifiable=("structural",),
 
+            side_effect="external",
+            # `slots: 0` truy về một VẮNG MẶT có chủ ý: manifest này không khai
+            # `admission_*` hay `gpu_vram_mb` nào — việc nằm trọn ở provider
+            # ngoài, máy A không có tài nguyên nào để giành.
+            resource={"class": "api", "slots": 0},
+            idempotency={"key_fields": ("operation", "title", "story", "style",
+                                        "aspect_ratio", "scene_count", "model",
+                                        "audience", "language",
+                                        "duration_seconds", "resources")},
+
             # ── Public API (Q92, wave 3) ─────────────────────────────────────
             # Priced from `scene_count` alone — no client-declared duration, so
             # no run-time top-up, so a signed quote stays true (unlike the
@@ -157,6 +167,15 @@ MANIFEST = AppManifest(
             },
             returns={"storyboard": "json", "master_prompt": "text"},
             verifiable=("structural",),
+
+            side_effect="external",
+            # `slots: 0` truy về một VẮNG MẶT có chủ ý: manifest này không khai
+            # `admission_*` hay `gpu_vram_mb` nào — việc nằm trọn ở provider
+            # ngoài, máy A không có tài nguyên nào để giành.
+            resource={"class": "api", "slots": 0},
+            idempotency={"key_fields": ("operation", "title", "story", "style",
+                                        "aspect_ratio", "scene_count", "model",
+                                        "resources")},
 
             # ── Public API (Q92, wave 3) ─────────────────────────────────────
             # Priced from `scene_count` alone — no client-declared duration, so
