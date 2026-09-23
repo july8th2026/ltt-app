@@ -75,6 +75,9 @@ MANIFEST = AppManifest(
             verifiable=("structural",),
 
             side_effect="external",
+            # `slots: 0` truy về một VẮNG MẶT có chủ ý: manifest này không khai
+            # `admission_*` hay `gpu_vram_mb` nào — việc nằm trọn ở provider
+            # ngoài, máy A không có tài nguyên nào để giành.
             resource={"class": "api", "slots": 0},
             idempotency={"key_fields": ("operation", "title", "story", "style",
                                         "aspect_ratio", "scene_count", "model",
@@ -166,6 +169,9 @@ MANIFEST = AppManifest(
             verifiable=("structural",),
 
             side_effect="external",
+            # `slots: 0` truy về một VẮNG MẶT có chủ ý: manifest này không khai
+            # `admission_*` hay `gpu_vram_mb` nào — việc nằm trọn ở provider
+            # ngoài, máy A không có tài nguyên nào để giành.
             resource={"class": "api", "slots": 0},
             idempotency={"key_fields": ("operation", "title", "story", "style",
                                         "aspect_ratio", "scene_count", "model",

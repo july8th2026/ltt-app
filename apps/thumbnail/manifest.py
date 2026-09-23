@@ -122,8 +122,16 @@ MANIFEST = AppManifest(
         returns={"image_keys": "image[]", "prompt": "text"},
         verifiable=("vlm_judge",),
 
+        # Hợp đồng node V2 (spec §4.5).
+        #
+        # `class="api"`: việc VẼ nằm ở máy B, máy A không giữ VRAM.
+        #   `RESOURCE_CLASS` (`workflow/nut.py`) chỉ có cpu|gpu|api — không có
+        #   mức "GPU của máy khác", nên `vram_min_mb` bỏ trống là ĐÚNG.
+        # `slots=SUAT_ANH`: hằng số dòng 37 của chính tệp này, cũng là con số
+        #   `KHAI_CU_TRU_ANH` (dòng 38) đưa vào `admission_theo_model` (dòng
+        #   109). ⛔ Không ghi 0: ba app ảnh giành CHUNG một suất `anh_3090`.
         side_effect="external",
-        resource={"class": "api", "slots": 0},
+        resource={"class": "api", "slots": SUAT_ANH},
         idempotency={"key_fields": ("topic", "model", "phong_cach",
                                     "kieu_trend", "aspect_ratio", "count")},
 

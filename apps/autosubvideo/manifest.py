@@ -74,7 +74,22 @@ MANIFEST = AppManifest(
         verifiable=("technical",),
 
         side_effect="external",
-        resource={"class": "cpu", "slots": 1},
+        # 🔴 `class="gpu"` DÙ `gpu_vram_mb` KHÔNG khai `autosubvideo.render`.
+        #    Hai bản khai này không mâu thuẫn, chúng trả lời hai câu khác nhau:
+        #      · `gpu_vram_mb` = VRAM scheduler phải GIỮ TRƯỚC. Để trống vì
+        #        NVENC chưa ai đo (khối chú thích dòng 47-51) — và khai bừa một
+        #        con số sẽ bắt job khắc phụ đề chờ card trống nó không cần.
+        #      · `resource.class` = node này CÓ chạm card hay không. `burn.py`
+        #        dòng 135-149 gọi `media.detect_gpu_encoder()` rồi lấy
+        #        `h264_nvenc` / `h264_qsv` KHI CÓ, chỉ lui về `libx264` khi
+        #        không. Vậy câu trả lời là "có".
+        #    `RESOURCE_CLASS` (`workflow/nut.py`) không có mức "ưu tiên GPU, lui
+        #    về CPU", nên khai về phía AN TOÀN. Khai `cpu` là khẳng định node
+        #    không bao giờ chạm card — đúng cái phiên NVENC chồng lên một card
+        #    chưa thuê mà trường này sinh ra để chặn.
+        # ⛔ `slots` không khai: không có bản khai nào trong kho sinh ra con số
+        #    đó cho `autosubvideo.render` (không `admission_*`, không lane).
+        resource={"class": "gpu"},
         # ⛔ `duration_s` KHÔNG vào khoá: nền tảng tự đo bằng ffprobe
         #    (`measured_from`), nên nó đổi giữa hai lượt gọi giống hệt nhau và
         #    làm khử trùng KHÔNG BAO GIỜ khớp (`registry.py` §idempotency).

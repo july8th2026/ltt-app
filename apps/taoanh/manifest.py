@@ -105,10 +105,16 @@ MANIFEST = AppManifest(
         returns={"image_keys": "image[]", "prompt": "text"},
         verifiable=("vlm_judge",),
 
-        # Hợp đồng node V2 (spec §4.5). `class="api"`: việc nằm ở provider /
-        # máy B — máy A không giữ VRAM nào cho job này.
+        # Hợp đồng node V2 (spec §4.5).
+        #
+        # `class="api"`: việc VẼ nằm ở provider / máy B, máy A không giữ VRAM.
+        #   `RESOURCE_CLASS` (`workflow/nut.py`) chỉ có cpu|gpu|api — không có
+        #   mức "GPU của máy khác", nên `vram_min_mb` bỏ trống là ĐÚNG.
+        # `slots=SUAT_ANH`: hằng số dòng 31 của chính tệp này, cũng là con số
+        #   `KHAI_CU_TRU_ANH` (dòng 32) đưa vào `admission_theo_model` ngay
+        #   trên. ⛔ Không ghi 0: ba app ảnh giành CHUNG một suất `anh_3090`.
         side_effect="external",
-        resource={"class": "api", "slots": 0},
+        resource={"class": "api", "slots": SUAT_ANH},
         idempotency={"key_fields": ("prompt", "model", "aspect_ratio", "count",
                                     "image_key", "image_keys")},
 
@@ -180,8 +186,10 @@ MANIFEST = AppManifest(
         returns={"image_keys": "image[]", "prompt": "text"},
         verifiable=("vlm_judge",),
 
+        # Hợp đồng node V2 — cùng lý do và cùng hằng số với `image.generate`
+        # ở trên (`SUAT_ANH` dòng 31 → `admission_theo_model` của tool này).
         side_effect="external",
-        resource={"class": "api", "slots": 0},
+        resource={"class": "api", "slots": SUAT_ANH},
         idempotency={"key_fields": ("prompt", "model", "aspect_ratio", "count",
                                     "image_key", "image_keys")},
     )),

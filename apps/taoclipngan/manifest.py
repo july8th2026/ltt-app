@@ -59,7 +59,16 @@ MANIFEST = AppManifest(
         # Handler trả metadata từng clip ({video_key,title,score,duration_s}).
         returns={"clips": "json"},
         side_effect="external",
+        # `vram_min_mb` = `gpu_vram_mb["taoclipngan.render"]` (dòng 41), đúng
+        # làn của tool này. `slots=1` KHÔNG có bản khai nào sinh ra nó (app này
+        # không khai `admission_*`) — nó là mức AN TOÀN cho một làn GPU chưa ai
+        # đo song song, không phải một con số truy ngược được.
         resource={"class": "gpu", "vram_min_mb": 6000, "slots": 1},
+        # ⛔ `duration_s` KHÔNG vào khoá, và lý do KHÁC autosubvideo (chỗ đó là
+        #    `measured_from`). Ở đây handler **không hề đọc** `duration_s`:
+        #    `jobs.py` dòng 72-115 tự đo `media.duration_seconds(src)` (dòng
+        #    115) rồi tính giá bằng số đo đó. Một tham số không vào kết quả thì
+        #    không được vào khoá khử trùng.
         idempotency={"key_fields": ("video_key", "target_clip_count", "tier",
                                     "min_clip_duration_sec",
                                     "max_clip_duration_sec", "aspect_ratio",

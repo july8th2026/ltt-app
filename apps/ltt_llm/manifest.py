@@ -353,8 +353,20 @@ MANIFEST = AppManifest(
         },
         returns={"content": "text", "tool_calls": "json[]", "usage": "json"},
 
+        # Hợp đồng node V2 (spec §4.5).
+        #
+        # `class="api"`: engine chạy ở máy B — máy A không giữ VRAM nào.
+        # ⛔ `slots` CỐ TÌNH KHÔNG KHAI, không phải quên. Suất của tool này
+        #    KHÔNG phải hằng số: nó là `HO_SO[model].seq_cap`
+        #    (`ngan_sach.py:334` qwen38-api = 3, `:340` qwen35-api = 4), đi vào
+        #    `admission_theo_model` ở trên qua `_khai_admission` (dòng 112-126).
+        #    `resource` chỉ tả được MỘT con số tĩnh cho cả tool, nên mọi giá trị
+        #    viết ở đây đều sai cho ít nhất một model — kể cả 0, thứ khai thành
+        #    "không tốn suất nào" đúng vào tool đã làm sập pool 19/09. Chỗ hỏi
+        #    đúng vẫn là `registry.admission_luc_nop()` / `admission_cho(model)`
+        #    (xem khối 🔴 ngay trên `admission_theo_model`).
         side_effect="external",
-        resource={"class": "api", "slots": 0},
+        resource={"class": "api"},
         idempotency={"key_fields": ("messages", "model", "max_tokens",
                                     "temperature", "top_p", "seed",
                                     "reasoning_effort", "response_format",

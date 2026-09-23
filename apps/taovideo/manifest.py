@@ -207,6 +207,9 @@ MANIFEST = AppManifest(
         verifiable=("technical", "vlm_judge"),
 
         side_effect="external",
+        # `slots: 0` truy về một VẮNG MẶT có chủ ý: manifest này không khai
+        # `admission_*` hay `gpu_vram_mb` nào — việc nằm trọn ở provider ngoài,
+        # máy A không có tài nguyên nào để giành. Không phải "chưa đo".
         resource={"class": "api", "slots": 0},
         idempotency={"key_fields": ("prompt", "model", "aspect_ratio",
                                     "duration", "resolution", "seed", "camera",

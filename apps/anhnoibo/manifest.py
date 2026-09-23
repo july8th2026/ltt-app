@@ -147,10 +147,19 @@ MANIFEST = AppManifest(
         },
         returns={"image_keys": "image[]", "prompt": "text"},
 
-        # Hợp đồng node V2 (spec §4.5). `class="api"`: việc nằm ở provider /
-        # máy B — máy A không giữ VRAM nào cho job này.
+        # Hợp đồng node V2 (spec §4.5).
+        #
+        # `class="api"`: việc VẼ nằm ở máy B, nên máy A không giữ VRAM nào cho
+        #   job này. `RESOURCE_CLASS` (`workflow/nut.py`) chỉ có cpu|gpu|api —
+        #   không có mức "GPU của máy khác", nên `api` là nhãn gần nhất và
+        #   `vram_min_mb` bỏ trống là ĐÚNG (không phải quên).
+        # `slots=SUAT_ANH`: KHÔNG gõ số — dùng thẳng hằng số dòng 64 của chính
+        #   tệp này, cũng là con số `KHAI_CU_TRU_ANH` (dòng 65) đưa vào cửa
+        #   admission qua `admission_theo_model` (dòng 123). ⛔ Ghi 0 ở đây là
+        #   khai "node này không tốn suất nào" trong khi ba app ảnh giành CHUNG
+        #   một suất trên `anh_3090`: hai lượt HiDream cùng lúc là OOM.
         side_effect="external",
-        resource={"class": "api", "slots": 0},
+        resource={"class": "api", "slots": SUAT_ANH},
         idempotency={"key_fields": ("prompt", "negative_prompt", "mode",
                                     "model", "count", "image_key",
                                     "image_keys")},
