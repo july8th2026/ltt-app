@@ -161,7 +161,7 @@
     <div class="card-accent card-accent--khu" aria-hidden="true"></div>
     <div class="vps-hero">
       <div class="vps-hero-chu">
-        <h2 class="u-mt0">{{ _("Thuê một máy Windows trong khoảng 20 giây") }}</h2>
+        <h2 class="u-mt0">{{ _("Thuê một máy Windows, trả bằng credit") }}</h2>
         <p>
           {{ _("Mỗi máy có một địa chỉ IP riêng ở Singapore, dùng được mọi cổng. Bạn vào máy bằng Remote Desktop như một máy Windows bình thường, hoặc bằng console ngay trong trình duyệt khi cần cứu hộ.") }}
         </p>
@@ -228,15 +228,21 @@
      (`docs/VPS/GIAO_DIEN.md` đã chốt, `test_304` canh). Bốn dòng dưới đây đều
      kiểm chứng được, và ba trong bốn là thứ đối thủ ở tầm giá này không có.
 
-     ⚠️ "~20 giây" là SỐ ĐO THẬT (G-series, đo trên chính cụm này: 17 giây).
-        Nếu có ngày nó không còn đúng thì phải bỏ khỏi trang — một con số đo
-        được hôm qua vẫn là một lời hứa hôm nay. #}
+     🔴 23/09/2026 — ĐÃ BỎ "~20 giây". Con số đó đo trên kiến trúc CŨ, lúc
+        luồng tạo máy chưa phải đi mua một địa chỉ IP ở OVH giữa chừng. Đo lại
+        trên máy thật gần nhất (`d96b66f3`, 16/09): **3 phút 24 giây**.
+        Chính dòng chú thích cũ ở đây đã ra luật — *"nếu có ngày nó không còn
+        đúng thì phải bỏ khỏi trang"* — và hôm nay là ngày đó.
+        Nay trang hiện số ĐO ĐƯỢC (`provisioning.thoi_gian_san_sang`), và khi
+        chưa đủ mẫu thì **không hứa con số nào**. #}
   <ul class="vps-dai">
     <li><span class="ico" aria-hidden="true">✓</span>
       <span><b>{{ _("IP riêng, dùng được mọi cổng") }}</b>
         <span>{{ _("Toàn bộ cổng của địa chỉ đó thuộc về máy bạn.") }}</span></span></li>
     <li><span class="ico" aria-hidden="true">✓</span>
-      <span><b>{{ _("Tạo xong trong khoảng 20 giây") }}</b>
+      <span><b>{% if cho_khoang %}{{ _("Tạo xong trong khoảng %(phut)s phút")
+                                     % {"phut": (cho_khoang.p50_giay // 60) or 1} }}{%
+             else %}{{ _("Tạo xong rồi báo bạn") }}{% endif %}</b>
         <span>{{ _("Máy giao cho bạn là máy trống đã gắn sẵn đĩa cài.") }}</span></span></li>
     <li><span class="ico" aria-hidden="true">✓</span>
       <span><b>{{ _("Không hợp đồng, xoá là dừng") }}</b>
@@ -378,7 +384,9 @@
       <div class="vps-rong">
         <h3>{{ _("Bạn chưa có máy nào") }}</h3>
         {% if goi_ban_duoc and suc_chua %}
-        <p>{{ _("Chọn một gói ở bên và bấm “Tạo máy”. Máy sẵn sàng trong khoảng 20 giây, rồi bạn tự cài Windows qua console.") }}</p>
+        <p>{% if cho_khoang %}{{ _("Chọn một gói ở bên và bấm “Tạo máy”. Máy sẵn sàng sau khoảng %(phut)s phút, rồi bạn tự cài Windows qua console.")
+                                  % {"phut": (cho_khoang.p50_giay // 60) or 1} }}{%
+           else %}{{ _("Chọn một gói ở bên và bấm “Tạo máy”. Chúng tôi dựng máy rồi báo bạn, sau đó bạn tự cài Windows qua console.") }}{% endif %}</p>
         {% else %}
         {# Đang không nhận máy mới: đừng mời bấm một nút không có trên trang. #}
         <p>{{ _("Hiện chưa nhận máy mới. Khi mở lại, bạn chọn gói ở bảng giá và bấm “Tạo máy”.") }}</p>
