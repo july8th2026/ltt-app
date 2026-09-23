@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import json
 import logging
-from pathlib import Path
 
 from platform_core.i18n import _ as _t
 from platform_core.storage import Storage

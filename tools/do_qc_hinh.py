@@ -427,9 +427,24 @@ def main() -> int:
         """
         if not args.ra:
             return
-        pathlib.Path(args.ra).write_bytes(json.dumps(
+        # 🔴 **Ghi NGUYEN TU: tep tam roi `os.replace`.**
+        #
+        #    `write_bytes` thang vao dich KHONG nguyen tu. Do that 23/09: tien
+        #    trinh bi `taskkill /F` giua mot lan ghi, va tep ket qua con lai
+        #    **21.260 byte toan `\x00`** — NTFS da cap phat khoang nhung du lieu
+        #    chua kip xuong dia. Tuc mot tep co that, co kich thuoc that, va
+        #    khong mot byte du lieu nao: te hon han mot tep vang mat, vi no
+        #    trong nhu mot ket qua.
+        #
+        # ⭐ `os.replace` la doi ten NGUYEN TU tren cung o dia. Nguoi doc hoac
+        #    thay ban CU tron ven, hoac thay ban MOI tron ven — khong bao gio
+        #    thay mot ban nua chung.
+        dich = pathlib.Path(args.ra)
+        tam = dich.with_suffix(dich.suffix + ".tmp")
+        tam.write_bytes(json.dumps(
             {"phim": cac_phim, "tom_tat": _tom_tat(cac_phim)},
             ensure_ascii=False, indent=1).encode("utf-8"))
+        os.replace(tam, dich)
 
     with tempfile.TemporaryDirectory(prefix="ltt_qc_hinh_") as tam:
         for t in phim:

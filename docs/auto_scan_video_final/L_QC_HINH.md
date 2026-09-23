@@ -126,13 +126,86 @@ và chỉ tầng dưới trả lời được câu *"`canh_0003` này có phải
 
 ## 4. Số đo trên phim thật
 
-<!-- PLACEHOLDER_SO_DO -->
+### 4.1 Bộ đo có hai vế, và một vế có đáp án biết trước
+
+| vế | dựng thế nào | đáp án |
+|---|---|---|
+| `cat_canh` | nối hai cảnh THẬT không liền nhau (bỏ mọi cảnh thứ 3) | **chưa biết** → người đo xem hai khung rồi gắn nhãn tay |
+| `nhay_hinh` | cắt mất 1,5 s ở **giữa** một cảnh dài liên tục rồi nối lại | **BIẾT TRƯỚC: hỏng** (jump cut) |
+
+⭐ Vế `nhay_hinh` là **đối chứng dương**. Nếu bộ đo không bắt được loại này thì
+mọi con số ở vế kia đều vô nghĩa — ta chưa chứng minh phép đo NỔ được.
+
+Khung hình của vế đó đã **kiểm bằng mắt**: cặp khung hai bên một `nhay_hinh`
+trên v3 cho thấy đúng một jump cut — cùng phòng, cùng nhân vật, nhưng bộ đếm HUD
+nhảy (95 → 94), phụ đề đổi giữa câu, nhân vật đã xoay. Chân lý nền của vế này là
+**thật**, không phải một nhãn tự gán.
+
+⚠️ **Giới hạn phải nói ra — trùng giới hạn làn `ky-thuat` đã ghi:** v3/v4 là cảnh
+game; camera trong game cắt liên tục nên mắt người không phân biệt được "cắt
+dựng" với "chuyển camera". `L_KY_THUAT.md` §3 đã loại v3/v4 khỏi chân lý nền cắt
+cảnh vì đúng lý do đó, và lý do đó áp y nguyên cho việc gắn nhãn tay ở đây.
+⇒ Chấm điểm trên **v1 + v2** (cảnh đời thật, gắn nhãn được); v3/v4 chỉ đo CHI PHÍ.
+
+### 4.2 SO_DO_KET_QUA
+
+<!-- KET_QUA -->
+
+### 4.3 Chi phí
+
+<!-- CHI_PHI -->
 
 ---
 
 ## 5. Quyết định: lớp này **TƯ VẤN**, chưa gate
 
-<!-- PLACEHOLDER_QUYET_DINH -->
+`sua_chua.QC_HINH_LA_TU_VAN = True` — phán quyết đi vào báo cáo, `stage.outputs`
+và bề mặt vận hành, nhưng **không sinh việc sửa**.
+
+<!-- LY_DO_A -->
+
+**(b) `cat_sai` là vòng sửa ĐẮT NHẤT của hệ, độc lập với độ chính xác.**
+`edit_plan` là giai đoạn **sớm nhất** của chuỗi, nên đặt lại nó kéo theo
+`content_process` + `voice_synthesis` + `timing_align` + `compose` + `render` +
+cả ba lớp QC. Làn `fix-toc-do` đo được `voice_synthesis` = **~190 s** cho một
+phim 107 s *sau khi đã tối ưu 5×* (943 s trước đó). Tức một báo động giả ở đây
+không phải "một lần hỏi lại" — nó gần bằng **một lần chạy lại cả chuỗi**.
+
+⇒ Cái giá hai chiều **không bằng nhau**. Bỏ sót một chỗ nối hỏng: khách nhận một
+bản dựng có một chỗ giật — thấy được, khiếu nại được, và `qc` tất định vẫn gác
+mọi lỗi kỹ thuật. Báo động giả: một hoá đơn gần bằng cả lần chạy, trên một lần
+chạy không ai bảo là sai.
+
+⭐ Nhưng **dây đã nối đủ**, không phải nối một nửa: `jobs._qc_hinh` →
+`sua_chua.lap_ke_hoach(qc_hinh=)` → `cat_sai` → `edit_plan` với **một đơn vị cho
+mỗi cảnh bị bỏ**, và `test_2120` §4 chốt cả hai chiều của cờ. Bật nó là **đổi một
+hằng số**, không phải viết thêm một tầng. Đó là khác biệt giữa cái này và M-02
+(một năng lực định nghĩa xong rồi không ai gọi).
+
+### 5.1 Vòng sửa có DỪNG không — có, bằng cơ học
+
+Một chỗ nối hỏng **có thể không sửa được**: hai cảnh hai bên vốn là hai cảnh khác
+nhau, và không cảnh bị bỏ nào là cầu nối. Khi đó mọi vòng sửa đều cho ra đúng
+phán quyết cũ.
+
+| chặn | ở đâu | cơ học |
+|---|---|---|
+| **1 vòng cho một lần chạy** | `sua_chua.VONG_SUA_TOI_DA = 1` | đếm bằng **số dòng sổ cái** (`UNIQUE(run_id, ma_dispatch)`), không bằng một biến trong bộ nhớ — bền qua worker chết, không bị hai lượt `advance` cùng tăng |
+| hết vòng ⇒ **giao hàng, không giết lần chạy** | `jobs._sua_chua_neu_can` | ghi `sua_chua_con_lai` vào sổ cái rồi đi tiếp; `qc` (tất định) vẫn là cổng phát hành |
+| vòng sửa phải hỏi một câu **KHÁC** | `hieu_canh.van_tay_canh(muoi=)` + `loi_nhac_canh(phan_hoi_qc=)` | không muối thì cache trả về đúng phán đoán vừa bị báo sai (M-07) — tức một vòng sửa **không thể** sửa được gì mà vẫn tính tiền |
+
+`test_2120::test_VONG_SUA_CO_TRAN_nen_mot_cho_noi_KHONG_SUA_DUOC_se_DUNG` chốt
+chặn thứ nhất; `test_vong_sua_MUOI_van_tay_canh_...` chốt chặn thứ ba.
+
+### 5.2 Điều kiện để bật gate
+
+1. Vế `nhay_hinh` (đối chứng dương) phải **bắt được gần hết** — bộ đo chưa nổ
+   được thì chưa đo được gì.
+2. Gắn nhãn tay **cả hai phía**: mọi chỗ nối bị chấm `dat=false` **và** một mẫu
+   đối chứng các chỗ nối được chấm `dat=true`. ⛔ Chỉ xem cái bị chấm hỏng thì
+   không đo được recall — *"không đối chứng thì số không không phải phát hiện"*.
+3. Chỉ khi độ chính xác của `dat=false` đủ cao so với cái giá ở (b) mới đổi cờ —
+   và đổi **kèm** bảng số ở §4, không đổi một mình.
 
 ---
 
@@ -182,4 +255,30 @@ chạy được trên đường khô thì mọi con số của nó đều là m�
 
 ## 8. Việc còn lại
 
-<!-- PLACEHOLDER_CON_LAI -->
+<!-- CON_LAI_DO -->
+* **Lệnh đo cần quyền Administrator** — nó đọc `C:\LTTPlatform\secrets\app.env`
+  (ACL đúng, ⛔ đừng nới) để lấy `LTT_DATABASE_URL` + `LTT_TOKEN_ENCRYPTION_KEY`
+  cho `api_pool` chọn khoá gọi máy B. Đây là khuôn `setup\do_on_dinh.ps1` mà các
+  làn `ngan-sach` / `do-giong` / `fix-toc-do` đều đi qua. Chạy ⛔ **KHÔNG** qua
+  `chay_nang.py` (xem §7):
+
+  ```
+  python tools\nang_quyen.py --cho 5400 --log <tep.log> --lenh ^
+    "powershell -NoProfile -ExecutionPolicy Bypass -File ^
+     D:\LTTSTUDIOSAPP-asvf-qc-hinh\setup\do_on_dinh.ps1 -Do qc-hinh ^
+     -Phim v1,v2 -ThuMucKhung <thu-muc-khung> -Ra <ket-qua.json>"
+  ```
+
+  ⛔ `-Phim` phải là **bí danh ASCII** (`v1|v2|v3|v4`). Tên tệp là tiếng Trung và
+  `nang_quyen` sinh `.ps1` thuần ASCII, nên `-Phim 廉价` tới nơi thành `--phim ??`
+  — lượt đo 23/09 chạy thật với đúng bộ lọc đó, không khớp phim nào, in `BO QUA`
+  rồi **thoát 0**: một lượt đo *thành công mà không đo gì*, nhìn từ ngoài giống
+  hệt một lượt đang chạy. Nay nó trả `2` và in rõ (`BI_DANH` trong `do_qc_hinh.py`).
+
+* **Chưa đo trên preset có `toc_do` ≠ 1** — phép đổi trục đã có test
+  (`test_2120::..._truc_BAN_RA_khi_co_doi_TOC_DO`) nhưng chưa lượt thật nào đi qua.
+* **Chưa đo video dọc / ≥ 1080p**, giống hạn chế của làn `ky-thuat`.
+* `KHUNG_MOI_CHO_NOI = 2` và `LECH_KHUNG_GIAY = 0,4` **thừa hưởng từ pha 19, chưa
+  ai đo**. 0,4 s có thể quá gần chỗ nối (bắt phải khung đang chuyển) hoặc quá xa
+  (bỏ sót chính khoảnh khắc nối). Đây là tham số đo được — cùng bộ đo ở §4, chỉ
+  đổi một số.
