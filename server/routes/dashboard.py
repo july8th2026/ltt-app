@@ -218,6 +218,23 @@ def api_dieu_khoan(request: Request):
     })
 
 
+@router.get("/ghi-cong-ben-thu-ba", response_class=HTMLResponse)
+def ghi_cong_ben_thu_ba(request: Request):
+    """Ghi công bên thứ ba — **CÔNG KHAI, không cần đăng nhập** (F-09).
+
+    Một số phụ thuộc runtime (vd. `SQUIM_OBJECTIVE` của Auto Scan Video) mang
+    trọng số cấp phép CC BY 4.0, và giấy phép đó BẮT BUỘC ghi công khi phát
+    hành thương mại. Bảng ở đây sinh từ `THIRD_PARTY_METRICS.md` §1
+    (`platform_core.third_party_notices`) — MỘT nguồn, không có bản chép tay
+    thứ hai có thể lệch đi khi một làn thêm/đổi phụ thuộc.
+    """
+    from platform_core import third_party_notices as tpn
+
+    return templates.TemplateResponse(request, "ghi_cong_ben_thu_ba.html", {
+        "muc": tpn.muc_ghi_cong(),
+    })
+
+
 @router.get("/", response_class=HTMLResponse)
 def home(request: Request):
     """Trang chủ = CATALOG (H6/Q30).
