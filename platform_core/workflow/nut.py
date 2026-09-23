@@ -145,5 +145,84 @@ def tu_toolspec(cc: CongCu) -> NodeDefinition:
         publish_duoc=True)
 
 
-__all__ = ["CATEGORY", "Gia", "KIND", "LoiNut", "MA_LOI_APP", "NodeDefinition",
-           "QUYEN", "RESOURCE_CLASS", "tu_toolspec"]
+def _nguon_piece_rong() -> list:
+    """Khe cắm cho plan 08. ⛔ Không đoán đường dẫn `catalog.json` ở đây: tệp
+    đó sinh lúc build và chỉ tồn tại sau khi runner được dựng."""
+    return []
+
+
+#: Plan 08 gán lại bằng hàm đọc `connector_runner/catalog.json`.
+NGUON_PIECE: Callable[[], list] = _nguon_piece_rong
+
+
+def tu_piece(muc: dict) -> NodeDefinition:
+    """Node `piece.*` từ một mục catalog (spec §4.5 nguồn 3)."""
+    auth = tuple(str(a) for a in (muc.get("auth") or ()))
+    quyen = {"network"} | ({"credential"} if auth else set())
+    return NodeDefinition(
+        type=str(muc["type"]), type_version=int(muc.get("type_version", 1) or 1),
+        kind="connector", category="CONNECTORS",
+        title=str(muc.get("title") or muc["type"]),
+        description=str(muc.get("description") or ""),
+        icon=str(muc.get("icon") or ""),
+        cong_vao=luoc_do.cong_vao(muc.get("params") or {},
+                                  (muc.get("cong") or {}).get("vao") or {}),
+        cong_ra=luoc_do.cong_ra(muc.get("returns") or {},
+                                (muc.get("cong") or {}).get("ra") or {}),
+        tham_so=luoc_do.sang_json_schema(muc.get("params") or {}),
+        thi_hanh="job", job_type="workflow.piece",
+        side_effect=str(muc.get("side_effect") or "external"),
+        gia=Gia.co_dinh(int(muc.get("gia", 0) or 0)),
+        credential=auth, quyen=frozenset(quyen),
+        cho=("JOB",), ma_loi=MA_LOI_APP,
+        publish_duoc=False)
+
+
+def chua_du_hop_dong(cong_cu: dict) -> dict:
+    """`{tên tool: [trường còn thiếu]}` — spec §4.5 *"khai đủ side_effect,
+    idempotency, resource"*.
+
+    ⚠️ `side_effect` **không đo được ở đây**: nó có mặc định `"external"` trong
+       `ToolSpec`, nên một tool khai tường minh `"external"` và một tool quên
+       khai trông giống hệt nhau. Phép đếm này chỉ nói về `idempotency` và
+       `resource` — xem mục "Spec lệch mã thật" của plan 02.
+    """
+    ra: dict[str, list] = {}
+    for ten, cc in (cong_cu or {}).items():
+        thieu = []
+        if not cc.idempotency_fields:
+            thieu.append("idempotency")
+        if not cc.resource:
+            thieu.append("resource")
+        if thieu:
+            ra[ten] = thieu
+    return ra
+
+
+def tat_ca(*, cong_cu: Optional[dict] = None,
+           nguon_piece: Optional[Callable[[], list]] = None) -> dict:
+    """Hợp ba nguồn. Trùng `type` ⇒ `LoiNut` (spec §4.5)."""
+    from platform_core.workflow import cong_cu as _nguon
+    from platform_core.workflow import nut_loi
+
+    ra: dict[str, NodeDefinition] = dict(nut_loi.tat_ca())
+    cc_all = _nguon.tat_ca() if cong_cu is None else cong_cu
+    chua_du = chua_du_hop_dong(cc_all)
+    for ten, cc in cc_all.items():
+        if not cc.workflow or ten in chua_du:
+            continue
+        nd = tu_toolspec(cc)
+        if nd.type in ra:
+            raise LoiNut(f"trung type giua hai nguon: {nd.type!r}")
+        ra[nd.type] = nd
+    for muc in (nguon_piece or NGUON_PIECE)():
+        nd = tu_piece(muc)
+        if nd.type in ra:
+            raise LoiNut(f"trung type giua hai nguon: {nd.type!r}")
+        ra[nd.type] = nd
+    return ra
+
+
+__all__ = ["CATEGORY", "Gia", "KIND", "LoiNut", "MA_LOI_APP", "NGUON_PIECE",
+           "NodeDefinition", "QUYEN", "RESOURCE_CLASS", "chua_du_hop_dong",
+           "tat_ca", "tu_piece", "tu_toolspec"]
