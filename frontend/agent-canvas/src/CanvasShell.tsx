@@ -12,11 +12,22 @@ import { CanvasEdgeView } from './CanvasEdgeView'
 import { fieldLabel, mediaKind, nodeModality, outputLabel, primaryFields } from './nodePresentation'
 import { CANVAS_PRESENTATION_VERSION, customerPaletteTools, customerToolLabel,
   destinationLabel, primaryOutputHandle } from './presentationAdapter'
-import { applyAssistant, cloneWorkflow, createShare, exportWorkflow, importWorkflow,
-  loadOrCreateWorkflowV3, loadPalette, loadPreferences, loadSnapshots, restoreSnapshot,
+// ⛔ KHONG import lai cum v2 (`applyAssistant`, `previewAssistant`,
+//    `loadSnapshots`, `restoreSnapshot`, `createShare`, `cloneWorkflow`,
+//    `exportWorkflow`, `importWorkflow`).
+//
+//    Trinh soan nap workflow qua `loadOrCreateWorkflowV3` — id thuoc bang
+//    `workflow` (v3). Cum tren tra id ay trong `agent_workflows` (v2) va khong
+//    thay ⇒ **404 ngay lan bam dau**. Cua may chu van con nguyen; viec chuyen
+//    chung sang `/agent/api/v3/` la mot pha rieng. Cho toi luc ay, giao dien
+//    khong duoc moi nguoi dung lam mot viec se 404.
+//
+//    `tests/test_1728_canvas_khong_goi_duong_chet.py` chot dieu nay bang bang
+//    dinh tuyen THAT, nen mot lan import lai se do ngay.
+import { loadOrCreateWorkflowV3, loadPalette, loadPreferences,
   savePreferences, saveWorkflowV3,
-  previewAssistant, quoteTool, uploadAsset, WorkflowConflictError, type AssistantResult, type CanvasDocument,
-  type CanvasEdge, type CanvasNode, type Workflow, type WorkflowSnapshot } from './workflowApi'
+  quoteTool, uploadAsset, WorkflowConflictError, type CanvasDocument,
+  type CanvasEdge, type CanvasNode, type Workflow } from './workflowApi'
 // Cua v3: trinh soan LUU -> PUBLISH -> TAO run -> DOC. No khong con "lai"
 // dong co bang `tickRun` nua; may chu tu tien, client chi poll.
 import { cancelRunV3, createRunV3, loadRunV3, publishWorkflowV3,
@@ -25,6 +36,23 @@ import { RunV3Panel } from './RunV3Panel'
 
 const nodeTypes = { tool: ToolNode, creativeTool: CreativeToolNode, frame: FrameNode, annotation: AnnotationNode }
 const edgeTypes = { creative: CanvasEdgeView }
+
+/** Khoá `Idempotency-Key` cho MỘT lần bấm "Chạy ngay".
+ *
+ * `crypto.randomUUID()` dài 36 ký tự, nằm gọn trong khoảng 8..255 mà
+ * `platform_core/public_api/idempotency.py` đòi.
+ *
+ * ⚠️ `randomUUID` đòi **secure context**. Trang chạy qua `https://` (Cloudflare)
+ *    và qua loopback đều đủ điều kiện, nhưng một bản tự dựng phục vụ qua `http://`
+ *    một tên máy nội bộ thì không — ở đó `crypto.randomUUID` là `undefined` và
+ *    nút "Chạy ngay" sẽ ném `TypeError` thay vì chạy. Nên có lối lui; nó không
+ *    cần chuẩn mật mã, chỉ cần **không trùng giữa hai lần bấm**.
+ */
+function taoKhoaChay(): string {
+  const nguon = globalThis.crypto as Crypto | undefined
+  if (typeof nguon?.randomUUID === 'function') return nguon.randomUUID()
+  return `run-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`
+}
 
 function removeEdgeFromGraph(nodes:CanvasNode[],edges:CanvasEdge[],edgeId:string){
   const edge=edges.find(item=>item.id===edgeId);if(!edge)return {nodes,edges}
@@ -131,17 +159,13 @@ function Editor() {
   const [soHong, setSoHong] = useState(0)
   //: node_id -> ma loi bien dich (422 `{ma,node_id,thong_diep}` cua publish).
   const [loiNode,setLoiNode]=useState<Record<string,string>>({})
-  const [assistantOpen,setAssistantOpen]=useState(false)
-  const [assistantMode,setAssistantMode]=useState<'analyze'|'improve'>('analyze')
-  const [assistantPrompt,setAssistantPrompt]=useState('')
-  const [assistantResult,setAssistantResult]=useState<AssistantResult>({})
-  const [assistantBusy,setAssistantBusy]=useState(false)
-  const [historyOpen,setHistoryOpen]=useState(false)
-  const [snapshots,setSnapshots]=useState<WorkflowSnapshot[]>([])
-  const [sharePermission,setSharePermission]=useState<'view'|'clone'>('view')
-  const [sharePath,setSharePath]=useState('')
+  // Trang thai cua Assistant / Phien ban / Share da go cung luc voi cac nut
+  // cua chung — xem chu thich o khoi `import`.
   const copied = useRef<{nodes:CanvasNode[];edges:CanvasEdge[]}>({nodes:[],edges:[]})
   const autosaveTimer = useRef<number | undefined>(undefined)
+  /** Khoá `Idempotency-Key` của lần bấm "Chạy ngay" đang dở. Rỗng = chưa bấm,
+   *  hoặc lần bấm trước đã tạo được run. Xem `chayWorkflow`. */
+  const khoaChay = useRef<string>('')
   const dragBefore = useRef<CanvasDocument | undefined>(undefined)
   const csrf = document.querySelector<HTMLElement>('#agent-canvas-root')?.dataset.csrfToken ?? ''
   const presentationMode=document.querySelector<HTMLElement>('#agent-canvas-root')?.dataset.presentation==='legacy'
@@ -407,12 +431,24 @@ function Editor() {
     const dangChay=run&&!RUN_V3_KET_THUC.has(run.status)
     if(!workflow||readOnly||dangChay)return
     if(autosaveTimer.current)window.clearTimeout(autosaveTimer.current)
+    // ⭐ MOT LAN BAM = MOT KHOA. Khoa sinh O DAY, khong sinh trong
+    //    `createRunV3`: chi cho nay biet dau la ranh gioi cua "mot lan bam".
+    //
+    //    Giu trong ref cho toi khi may chu THAT SU nhan duoc run. Neu lo tao
+    //    run hong (mang dut, 503) thi lan thu lai — du la nguoi dung tu bam
+    //    lai — van mang dung khoa ay, nen mot run da lo tao ben may chu se
+    //    duoc tra ve thay vi tao them mot run thu hai va giu cho lan nua.
+    //    Thanh cong roi moi xoa khoa ⇒ lan bam KE TIEP la mot khoa moi, va
+    //    nguoi dung chay duoc lan thu hai that.
+    if(!khoaChay.current)khoaChay.current=taoKhoaChay()
     setRun(null);setSoHong(0);setDesktopPanel('run');setPhase('saving');setRunError('');setLoiNode({})
     try{
       const saved=await saveWorkflowV3({...workflow,canvas:state.document},csrf)
       setWorkflow(saved);setPhase('saved')
       await publishWorkflowV3(saved,csrf)
-      setRun(await createRunV3(saved.id,csrf))
+      const moi=await createRunV3(saved.id,csrf,khoaChay.current)
+      khoaChay.current=''
+      setRun(moi)
     }catch(error){
       if(error instanceof WorkflowCompileError){
         setRunError(error.message)
@@ -473,10 +509,14 @@ function Editor() {
     dispatch({type:'graph',nodes,edges:page.edges.filter(item=>item.id!==edgeId)})
   },[readOnly,page])
   const toggleErrorBranch=()=>{if(!selectedEdge||readOnly)return;const condition=selectedEdge.data?.condition==='error'?'success':'error';dispatch({type:'graph',nodes:page.nodes,edges:page.edges.map(edge=>edge.id===selectedEdge.id?{...edge,data:{...edge.data,condition}}:edge)})}
-  const activateWorkflow=(next:Workflow)=>{setWorkflow(next);dispatch({type:'replace',document:next.canvas});setRun(null);setSoHong(0);setRunError('');setLoiNode({});setPhase('ready')}
-  const cloneCurrent=async()=>{if(!workflow)return;try{activateWorkflow(await cloneWorkflow(workflow,csrf))}catch{setPhase('error')}}
-  const downloadTemplate=async()=>{if(!workflow)return;try{const payload=await exportWorkflow(workflow);const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download=`workflow-${workflow.id}.json`;link.click();URL.revokeObjectURL(url)}catch{setPhase('error')}}
-  const importTemplate=async(event:React.ChangeEvent<HTMLInputElement>)=>{const file=event.target.files?.[0];if(!file)return;try{activateWorkflow(await importWorkflow(JSON.parse(await file.text()),csrf))}catch{setPhase('error')}finally{event.target.value=''}}
+  // ⛔ `cloneCurrent` / `downloadTemplate` / `importTemplate` da go cung ba nut
+  //    cua chung. Hai cai dau goi `/agent/api/workflows/{id}/clone|export` (v2)
+  //    voi mot id v3 ⇒ 404. Cai thu ba goi `/agent/api/workflows/import` —
+  //    duong nay CON SONG, nhung no tao mot ban ghi `agent_workflows` (v2) roi
+  //    dat id v2 ay vao trinh soan; lan tu dong luu ke tiep di qua
+  //    `saveWorkflowV3` va 404. Mot loi moi dan toi canvas khong luu duoc thi
+  //    hong hon mot loi moi 404 ngay, nen no di cung hai cai kia.
+  //    `activateWorkflow` go theo vi khong con ai goi.
   const onSelectionChange = useCallback(({ nodes, edges }: { nodes: { id: string }[]; edges: { id: string }[] }) => {
     const next = nodes.map(node => node.id).sort()
     const nextEdges = edges.map(edge => edge.id).sort()
@@ -658,8 +698,8 @@ function Editor() {
         {phase==='error'&&<button className="save-recovery" onClick={()=>setRetryNonce(value=>value+1)}>Thử lưu lại</button>}
         <button title="Đổi giao diện" aria-label={theme==='light'?'Chuyển sang nền tối':'Chuyển sang nền sáng'} onClick={()=>persistPreferences(theme==='light'?'dark':'light',catalogMode)}>{theme==='light'?'☾':'☀'}</button>
         <button title="Bảng lệnh" aria-label="Mở bảng lệnh" onClick={()=>setCommandOpen(true)}>⌘</button>
-        {hasAnyNodes&&<button title="Assistant" aria-pressed={assistantOpen} onClick={()=>setAssistantOpen(value=>!value)}>AI</button>}
-        {hasAnyNodes&&<button title="Phiên bản và chia sẻ" aria-pressed={historyOpen} onClick={()=>{const open=!historyOpen;setHistoryOpen(open);if(open&&workflow)void loadSnapshots(workflow).then(setSnapshots)}}>↗</button>}
+        {/* Nut "AI" (Assistant) va "↗" (Phien ban & chia se) da bo: ca hai ngan
+            keo phia sau chung chi goi cua v2, va cua v2 khong biet id v3. */}
         <button className="run-primary" disabled={readOnly||!page.nodes.length} aria-pressed={desktopPanel==='run'} onClick={()=>setDesktopPanel(value=>value==='run'?null:'run')}>Chạy</button></div>
       <nav className={`operation-drawer${desktopPanel==='run'?' is-open':''}`} aria-label="Chạy workflow"><header><strong>Chạy workflow</strong><button aria-label="Đóng bảng chạy" onClick={()=>setDesktopPanel(null)}>×</button></header>
         {presentationMode==='legacy'&&<div className="legacy-run-tools"><button disabled={!selected.length || readOnly} onClick={duplicate}>Nhân bản</button>
@@ -735,7 +775,11 @@ function Editor() {
               nhap cu — go o nhap khong duoc lam mat du lieu ay. */}
           {/* Nut "AI dung Canvas" da bo: `planWorkflow` sinh Plan v1, va lop ay
               chet o task 8 (spec §17.6). Assistant v3 la viec cua phase 11. */}
-          <div className="template-actions"><button disabled={readOnly||!workflow} onClick={cloneCurrent}>Nhân workflow</button><button disabled={!workflow} onClick={downloadTemplate}>Xuất mẫu</button><label>Nhập mẫu<input type="file" accept="application/json,.json" onChange={importTemplate}/></label></div></div>
+          {/* Nhom "Nhan workflow / Xuat mau / Nhap mau" da bo: ca ba di qua cua
+              v2 (`/agent/api/workflows/...`) trong khi trinh soan nap id tu cua
+              v3 — bam vao la 404, hoac (nhap mau) lam canvas khong luu duoc
+              nua. Cua may chu van con; noi lai chung o `/agent/api/v3/` la mot
+              pha rieng. */}</div>
         {Object.entries(groups).map(([group, tools]) => <section key={group}><h3>{group}</h3>
         {tools?.map(tool => <button key={tool.name} draggable={!readOnly} disabled={readOnly}
           onDragStart={event => event.dataTransfer.setData('application/ltt-tool', tool.name)} onClick={() => addTool(tool)}
@@ -830,18 +874,11 @@ function Editor() {
           onConnect({ source, sourceHandle, target: selectedNode.id, targetHandle: field }) }}
         onChange={data => selectedNode && dispatch({ type: 'update', id: selectedNode.id, data })} />}
     </div>
-    {assistantOpen&&<aside className="assistant-drawer" aria-label="Workflow Assistant"><header><strong>Workflow Assistant</strong><button aria-label="Đóng Assistant" onClick={()=>setAssistantOpen(false)}>×</button></header>
-      <div className="assistant-modes"><button aria-pressed={assistantMode==='analyze'} onClick={()=>setAssistantMode('analyze')}>Phân tích</button><button aria-pressed={assistantMode==='improve'} onClick={()=>setAssistantMode('improve')}>Đề xuất cải tiến</button></div>
-      {!!selected.length&&<p className="assistant-context">Ngữ cảnh: {selected.map(id=>byName.get(String(page.nodes.find(node=>node.id===id)?.data.tool))?.label??id).join(', ')}</p>}
-      <textarea aria-label="Yêu cầu Assistant" value={assistantPrompt} onChange={event=>setAssistantPrompt(event.target.value)} placeholder="Ví dụ: thêm nhánh tạo giọng đọc và ghép video…"/>
-      <button disabled={!workflow||assistantBusy||(assistantMode==='improve'&&assistantPrompt.trim().length<3)} onClick={async()=>{if(!workflow)return;setAssistantBusy(true);setAssistantResult({});try{const context=selected.length?`${assistantPrompt}\n\nNgữ cảnh node đã chọn: ${selected.join(', ')}`:assistantPrompt;setAssistantResult(await previewAssistant(workflow,assistantMode,context,csrf))}catch(error){setAssistantResult({error:error instanceof Error?error.message:'Assistant lỗi'})}finally{setAssistantBusy(false)}}}>{assistantBusy?'Đang phân tích…':'Tạo bản xem trước'}</button>
-      {assistantResult.analysis&&<section><h3>Phân tích</h3><p>{assistantResult.analysis.nodes} node · {assistantResult.analysis.roots} đầu vào · {assistantResult.analysis.valid?'Hợp lệ':'Cần sửa'}</p>{assistantResult.analysis.issues.map(issue=><small key={issue}>{issue}</small>)}</section>}
-      {assistantResult.proposal&&<section className="assistant-diff"><h3>Bản diff</h3><p>{assistantResult.proposal.diff.before_nodes} → {assistantResult.proposal.diff.after_nodes} node · tối đa {assistantResult.proposal.diff.estimated_max_credit} credit</p><button onClick={async()=>{if(!workflow||!assistantResult.proposal)return;try{activateWorkflow(await applyAssistant(workflow,assistantResult.proposal.token,csrf));setAssistantOpen(false)}catch(error){setAssistantResult(current=>({...current,error:error instanceof Error?error.message:'Không áp dụng được'}))}}}>Áp dụng bản đã xem trước</button></section>}
-      {assistantResult.error&&<p className="assistant-error" role="alert">{assistantResult.error}</p>}</aside>}
-    {historyOpen&&<aside className="history-drawer" aria-label="Phiên bản và chia sẻ"><header><strong>Phiên bản & chia sẻ</strong><button aria-label="Đóng phiên bản" onClick={()=>setHistoryOpen(false)}>×</button></header>
-      <section><h3>Snapshot</h3>{snapshots.map(item=><div key={item.revision}><span>v{item.revision} · {item.reason}</span><button disabled={!workflow||item.revision===workflow.revision} onClick={()=>workflow&&void restoreSnapshot(workflow,item.revision,csrf).then(next=>{activateWorkflow(next);return loadSnapshots(next)}).then(setSnapshots)}>Khôi phục</button></div>)}</section>
-      <section><h3>Share riêng tư · 24 giờ</h3><select aria-label="Quyền share" value={sharePermission} onChange={event=>setSharePermission(event.target.value as 'view'|'clone')}><option value="view">Chỉ xem</option><option value="clone">Xem & clone</option></select><button onClick={()=>workflow&&void createShare(workflow,sharePermission,csrf).then(result=>setSharePath(`${location.origin}${result.path}`))}>Tạo link</button>{sharePath&&<input readOnly aria-label="Link share" value={sharePath}/>}</section>
-    </aside>}
+    {/* Ngan keo Assistant (AI) va ngan keo "Phien ban & chia se" da bo.
+        Ca hai chi goi cua v2: `/agent/api/workflows/{id}/assistant/*`,
+        `/snapshots`, `/snapshots/{rev}/restore`, `/shares`. Trinh soan nap id
+        tu cua v3 nen moi lan bam deu 404. May chu van giu nguyen cum nay; noi
+        lai chung o `/agent/api/v3/` la mot pha rieng. */}
     {commandOpen&&<div className="command-backdrop" role="presentation" onMouseDown={event=>event.target===event.currentTarget&&setCommandOpen(false)}>
       <section className="command-palette" role="dialog" aria-modal="true" aria-label="Bảng lệnh Canvas">
         <header><strong>Bảng lệnh</strong><kbd>Esc</kbd></header><input autoFocus aria-label="Tìm lệnh" value={commandQuery}

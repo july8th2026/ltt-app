@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import pathlib
 import re
+import uuid
 
 import pytest
 from fastapi.testclient import TestClient
@@ -229,8 +230,23 @@ class _Web:
             db.close()
 
     def chay(self, wf_id: str, *, body: dict | None = None,
-             headers: dict | None = None):
+             headers: dict | None = None, khoa: str | None = None):
+        """POST cửa tạo run.
+
+        ⭐ `khoa=None` ⇒ sinh một `Idempotency-Key` **mới cho mỗi lần gọi**.
+
+        Cửa này đòi header ấy (`runs_v3._khoa_idempotency`). Một mặc định
+        **cố định** sẽ làm mọi bài gọi `chay()` hai lần im lặng nhận lại đúng
+        một run — và các bài đếm run sẽ đo nhầm đối tượng mà vẫn xanh.
+
+        Truyền `khoa=""` để **bỏ hẳn** header (bài đo mệnh đề "thiếu ⇒ 400"),
+        hoặc một chuỗi cụ thể để hai lần gọi dùng CHUNG một khoá.
+        """
         h = {"X-CSRF-Token": self.csrf}
+        if khoa is None:
+            khoa = f"tk-{uuid.uuid4()}"
+        if khoa:
+            h["Idempotency-Key"] = khoa
         h.update(headers or {})
         return self.client.post(f"/agent/api/v3/workflows/{wf_id}/runs",
                                 json=body if body is not None else {},
@@ -402,30 +418,64 @@ def test_bao_ve_2_khoa_dung_lai_cho_workflow_KHAC_thi_NEM(db):
     db.rollback()
 
 
-def test_bao_ve_2_cua_v3_CO_Y_khong_doc_Idempotency_Key(web):
-    """⭐ Ghi rõ **đúng cái mã làm**, không ghi cái ta mong nó làm.
+def test_bao_ve_2_cua_v3_DOI_Idempotency_Key_va_THI_HANH_no(web):
+    """⭐ Đảo mệnh đề, 23/09/2026 — bài này trước đây chốt rằng cửa v3 **cố ý
+    bỏ qua** `Idempotency-Key`, với lập luận *"hai lần bấm là hai ý định"*.
 
-    `runs_v3.v3_tao_run` truyền `idempotency_key=""` — header
-    `Idempotency-Key` bị bỏ qua hoàn toàn, nên bấm hai lần ra **hai** run. Đó
-    là hành vi ĐÚNG cho một nút bấm tay (hai lần bấm là hai ý định); khoá
-    idempotency là hợp đồng cho **máy** thử lại, và máy đi cửa `/api/v1`.
+    🔴 Lập luận ấy sai ở chỗ nó đọc **thứ đại diện**: cái đo được không phải
+       "ý định" mà là **bút toán**. Đo qua HTTP thật cho thấy bấm hai lần ⇒ hai
+       run, hai khoản `hold`, hai lần trừ tiền — và người dùng bấm lần hai vì
+       lần một **trông như** chưa ăn, không phải vì họ muốn trả tiền hai lần.
 
-    ⇒ Rào của cửa này không phải khoá, mà là `MAX_RUN_DONG_THOI` — xem bài kế.
+    ⇒ Cửa nay đòi khoá (`runs_v3._khoa_idempotency`). Ba mệnh đề dương:
+
+        thieu khoa          -> 400 `thieu_idempotency_key`, KHONG co run
+        cung khoa hai lan   -> MOT run, MOT but toan `hold`  (201 roi 200)
+        khoa khac nhau      -> HAI run
+
+    ⭐ `201` rồi `200`: mã trạng thái tự nói lần nào **tạo** và lần nào **phát
+       lại**. Nếu cả hai cùng `201` thì một cửa tạo hai run cũng khai y hệt một
+       cửa phát lại, và bài này sẽ phải đi đếm bảng mới biết sự khác nhau.
+
+    Mệnh đề thứ ba là vế đối chứng bắt buộc: thiếu nó, một cửa trả lại run đầu
+    tiên cho **mọi** khoá cũng xanh — và khách sẽ không bao giờ chạy được lần
+    thứ hai.
     """
-    from platform_core.models import WorkflowRun
+    from platform_core.models import CREDIT_HOLD, CreditEntry, WorkflowRun
 
     web.nap(500)
     wf = web.wf_da_publish(tran=10)
-    h = {"Idempotency-Key": "nguoi-dung-bam-hai-lan"}
 
-    a = web.chay(wf, headers=h)
-    b = web.chay(wf, headers=h)
-    assert (a.status_code, b.status_code) == (201, 201), (a.text, b.text)
-    assert a.json()["id"] != b.json()["id"]
+    # 1. Thiếu khoá ⇒ 400, và KHÔNG được ghi run nào.
+    thieu = web.chay(wf, khoa="")
+    assert thieu.status_code == 400, thieu.text
+    assert thieu.json()["detail"]["ma"] == "thieu_idempotency_key"
+    db = web.phien()
+    try:
+        assert db.query(WorkflowRun).count() == 0
+    finally:
+        db.close()
 
+    # 2. Cùng khoá hai lần ⇒ MỘT run, MỘT bút toán giữ chỗ.
+    a = web.chay(wf, khoa="nguoi-dung-bam-hai-lan")
+    b = web.chay(wf, khoa="nguoi-dung-bam-hai-lan")
+    assert (a.status_code, b.status_code) == (201, 200), (a.text, b.text)
+    assert a.json()["id"] == b.json()["id"]
+    db = web.phien()
+    try:
+        assert db.query(WorkflowRun).count() == 1
+        assert db.query(CreditEntry).filter_by(kind=CREDIT_HOLD).count() == 1
+    finally:
+        db.close()
+
+    # 3. 🔑 Đối chứng: khoá KHÁC ⇒ một run thật sự mới.
+    c = web.chay(wf, khoa="lan-bam-thu-hai-that-su")
+    assert c.status_code == 201, c.text
+    assert c.json()["id"] != a.json()["id"]
     db = web.phien()
     try:
         assert db.query(WorkflowRun).count() == 2
+        assert db.query(CreditEntry).filter_by(kind=CREDIT_HOLD).count() == 2
     finally:
         db.close()
 

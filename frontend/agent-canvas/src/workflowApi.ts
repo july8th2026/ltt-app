@@ -534,11 +534,26 @@ export type RunV3 = { id: string; workflow_id: string; version_id: string
 export const RUN_V3_KET_THUC: ReadonlySet<string> = new Set(
   ['SUCCEEDED', 'FAILED', 'CANCELLED', 'TIMED_OUT', 'SYSTEM_FAILURE'])
 
-export async function createRunV3(workflowId: string,
-                                  csrfToken: string): Promise<RunV3> {
+/**
+ * Tạo một run v3.
+ *
+ * ⭐ `idempotencyKey` là **tham số bắt buộc**, và đó là cả thiết kế.
+ *
+ * Cửa `/agent/api/v3/workflows/{id}/runs` từ chối `400` khi thiếu header
+ * `Idempotency-Key` (`runs_v3.py::_khoa_idempotency`, sửa 23/09 — đo được là
+ * bấm hai lần trừ tiền hai lần).
+ *
+ * ⛔ Hàm này **không tự sinh** khoá. Sinh ở đây thì mỗi lời gọi là một khoá
+ *    mới, kể cả hai lời gọi của **cùng một lần bấm** — trông như có chống
+ *    trùng mà không chống được gì. Khoá phải sinh ở **chỗ người dùng bấm**, nơi
+ *    duy nhất biết được đâu là "một lần bấm": xem `CanvasShell::chayWorkflow`.
+ */
+export async function createRunV3(workflowId: string, csrfToken: string,
+                                  idempotencyKey: string): Promise<RunV3> {
   return request(`/agent/api/v3/workflows/${workflowId}/runs`, {
     method: 'POST', headers: { 'Content-Type': 'application/json',
-      'X-CSRF-Token': csrfToken }, body: '{}' }) as Promise<RunV3>
+      'X-CSRF-Token': csrfToken,
+      'Idempotency-Key': idempotencyKey }, body: '{}' }) as Promise<RunV3>
 }
 
 /** `sau` = con trỏ sự kiện của lần poll trước (`seq_cuoi`). 0 = lấy cả lịch sử. */

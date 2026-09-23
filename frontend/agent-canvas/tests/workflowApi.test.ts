@@ -234,12 +234,38 @@ describe('run v3', () => {
   it('createRunV3 gọi cửa v3 kèm CSRF', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch')
       .mockResolvedValue(json(runV3, 201))
-    expect(await createRunV3('w1', 'tok')).toEqual(runV3)
+    expect(await createRunV3('w1', 'tok', 'khoa-bam-lan-1')).toEqual(runV3)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe('/agent/api/v3/workflows/w1/runs')
     expect((init as RequestInit).method).toBe('POST')
     expect((init as RequestInit & { headers: Record<string, string> })
       .headers['X-CSRF-Token']).toBe('tok')
+  })
+
+  it('createRunV3 gửi Idempotency-Key do NGƯỜI GỌI đưa vào', async () => {
+    // 🔑 Khoa phai den TU BEN NGOAI. Neu `createRunV3` tu sinh khoa thi moi
+    //    loi goi la mot khoa moi — trong nhu co chong trung, ma khong chong
+    //    duoc gi: bam hai lan van ra hai run, hai lan giu cho, hai lan tru tien.
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValue(json(runV3, 201))
+    await createRunV3('w1', 'tok', 'khoa-cua-mot-lan-bam')
+    expect(new Headers(fetchMock.mock.calls[0][1]!.headers)
+      .get('Idempotency-Key')).toBe('khoa-cua-mot-lan-bam')
+  })
+
+  it('createRunV3 gửi ĐÚNG khoá được đưa, không tự chế ra khoá khác', async () => {
+    // 🔑 Ve doi chung cho bai tren: mot ban va bo qua tham so va gui hang so
+    //    cung se lam bai tren xanh. Hai khoa khac nhau phai ra hai header khac.
+    // ⚠️ `mockResolvedValue` tra CUNG mot `Response` cho ca hai loi goi, va
+    //    than cua no chi doc duoc MOT lan ("Body is unusable"). Bai hai lan goi
+    //    phai dung `mockImplementation` de moi lan co mot `Response` moi.
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockImplementation(async () => json(runV3, 201))
+    await createRunV3('w1', 'tok', 'khoa-A-dai-hon-8')
+    await createRunV3('w1', 'tok', 'khoa-B-dai-hon-8')
+    const doc = fetchMock.mock.calls.map(
+      ([, init]) => new Headers(init!.headers).get('Idempotency-Key'))
+    expect(doc).toEqual(['khoa-A-dai-hon-8', 'khoa-B-dai-hon-8'])
   })
 
   it('loadRunV3 gửi con trỏ sau= để chỉ lấy sự kiện mới', async () => {
@@ -313,7 +339,7 @@ describe('decode() không bóp méo lỗi máy chủ', () => {
     //    lỗi biên dịch — đúng kiểu gộp nhầm mà vòng trước vừa gỡ cho 409.
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ detail: {
       ma: 'thieu_credit', thong_diep: 'Không đủ credit.' } }, 402))
-    const loi = await createRunV3('w1', 'tok').catch(e => e)
+    const loi = await createRunV3('w1', 'tok', 'khoa-bai-loi').catch(e => e)
     expect(loi).not.toBeInstanceOf(WorkflowCompileError)
     expect(loi.message).toBe('Không đủ credit.')
   })
@@ -321,7 +347,7 @@ describe('decode() không bóp méo lỗi máy chủ', () => {
   it('503 dong_co_chua_san_sang KHÔNG phải lỗi biên dịch đồ thị', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ detail: {
       ma: 'dong_co_chua_san_sang', thong_diep: 'Động cơ chưa sẵn sàng.' } }, 503))
-    const loi = await createRunV3('w1', 'tok').catch(e => e)
+    const loi = await createRunV3('w1', 'tok', 'khoa-bai-loi').catch(e => e)
     expect(loi).not.toBeInstanceOf(WorkflowCompileError)
     expect(loi.message).toBe('Động cơ chưa sẵn sàng.')
   })
@@ -330,7 +356,7 @@ describe('decode() không bóp méo lỗi máy chủ', () => {
     // `inputs_qua_lon`/`chua_publish` mang `ma` nhưng không chỉ được node nào.
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ detail: {
       ma: 'chua_publish', thong_diep: 'Workflow chưa publish.' } }, 422))
-    const loi = await createRunV3('w1', 'tok').catch(e => e)
+    const loi = await createRunV3('w1', 'tok', 'khoa-bai-loi').catch(e => e)
     expect(loi).not.toBeInstanceOf(WorkflowCompileError)
     expect(loi.message).toBe('Workflow chưa publish.')
   })
@@ -339,7 +365,7 @@ describe('decode() không bóp méo lỗi máy chủ', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ detail: {
       ma: 'bieu_thuc_chua_ho_tro', node_id: 'n_9',
       thong_diep: 'Biểu thức chưa hỗ trợ.' } }, 422))
-    const loi = await createRunV3('w1', 'tok').catch(e => e)
+    const loi = await createRunV3('w1', 'tok', 'khoa-bai-loi').catch(e => e)
     expect(loi).toBeInstanceOf(WorkflowCompileError)
     expect(loi.nodeId).toBe('n_9')
     expect(loi.ma).toBe('bieu_thuc_chua_ho_tro')

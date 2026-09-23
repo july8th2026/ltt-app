@@ -211,7 +211,13 @@ describe('CanvasShell', () => {
     fireEvent.click(within(firstRun).getByRole('button',{name:/Prompt thành hình ảnh/}))
     expect(await screen.findByRole('region',{name:'Thiết lập Văn bản'})).toBeInTheDocument()
     expect(screen.getAllByText(/2 node · 1 kết nối/).length).toBeGreaterThan(0)
-    expect(screen.getByTitle('Assistant')).toBeInTheDocument()
+    // Chrome nang cao xuat hien khi da co node. Truoc 23/09 phep do nay dung
+    // nut "Assistant"; nut ay da bo vi no goi cua v2 bang mot id v3 (404), nen
+    // moc chuyen sang nut "Lop" — van con, va van chi hien khi co node.
+    expect(screen.getByRole('button',{name:'Mở danh sách lớp'})).toBeInTheDocument()
+    // ⛔ Khoa chieu nguoc: nut Assistant KHONG duoc quay lai chung nao cum ay
+    //    con nam o `/agent/api/workflows/...`.
+    expect(screen.queryByTitle('Assistant')).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button',{name:'Hoàn tác'}))
     const reset=await screen.findByRole('region',{name:'Bắt đầu workflow'})
     fireEvent.click(within(reset).getByRole('button',{name:/Hiểu nội dung hình ảnh/}))
@@ -468,6 +474,12 @@ async function bamChay() {
 
 const duongDaGoi = () => vi.mocked(globalThis.fetch).mock.calls.map(([url]) => String(url))
 
+/** Khoá `Idempotency-Key` của TỪNG lời gọi tạo run, theo thứ tự đã gửi. */
+const khoaTaoRun = () => vi.mocked(globalThis.fetch).mock.calls
+  .filter(([url, init]) => String(url).includes('/api/v3/workflows/')
+    && String(url).endsWith('/runs') && init?.method === 'POST')
+  .map(([, init]) => new Headers(init!.headers).get('Idempotency-Key'))
+
 /** ⏱️ KHONG dung `vi.useFakeTimers()` o day, va day la ly do — no la mot bay
  *  im lang: `@testing-library/dom` do dong ho gia bang `typeof jest !==
  *  'undefined'`, ma vitest khong dat bien ay. Hau qua khong phai "RTL bo qua
@@ -501,6 +513,50 @@ describe('Chạy workflow trên v3', () => {
     // ⛔ Ve doi chung: khong duoc con mot loi goi chay v2 nao. Mot cai sot lai
     //    la Canvas vua tao `WorkflowRun` v3 vua lai `AgentRun` v1.
     expect(goi.some(u => u.includes('/agent/api/workflows/'))).toBe(false)
+  })
+
+  it('MỘT lần bấm = MỘT khoá; thử lại cùng lần bấm gửi LẠI khoá ấy', async () => {
+    // 🔴 Do duoc qua HTTP that 23/09: bam "Chay ngay" hai lan tao HAI run, HAI
+    //    lan giu cho, HAI lan tru tien. Cua v3 nay doi `Idempotency-Key`.
+    //    Lan thu lai cua CUNG mot lan bam phai mang LAI dung khoa cu — neu
+    //    khong, may chu coi day la mot lan chay moi va tru tien lan nua.
+    let hong = true
+    mockRunV3((url, init) =>
+      url.includes('/api/v3/workflows/') && url.endsWith('/runs')
+        && init?.method === 'POST' && hong
+        ? new Response(JSON.stringify({ detail: 'Mạng lỗi.' }), { status: 503 })
+        : undefined)
+    const { drawer } = await bamChay()
+    expect(await within(drawer).findByText(/Mạng lỗi\./)).toBeTruthy()
+    hong = false
+    fireEvent.click(within(drawer).getByRole('button', { name: 'Chạy ngay' }))
+    await waitFor(() => expect(khoaTaoRun().length).toBe(2))
+    const khoa = khoaTaoRun()
+    expect(khoa[0]).toBeTruthy()
+    expect(khoa[0]!.length).toBeGreaterThanOrEqual(8)   // MIN_KEY_LENGTH may chu
+    expect(khoa[1]).toBe(khoa[0])
+  })
+
+  it('hai lần bấm KHÁC NHAU gửi khoá KHÁC NHAU', async () => {
+    // 🔑 Ve doi chung bat buoc cho bai tren. Khong co no, mot ban va gui mot
+    //    HANG SO cung xanh — va khi ay nguoi dung se khong bao gio chay duoc
+    //    lan thu hai: may chu tra lai dung run cu cho moi lan bam ve sau.
+    mockRunV3((url, init) =>
+      url.includes('/api/v3/workflows/') && url.endsWith('/runs')
+        && init?.method === 'POST'
+        ? new Response(JSON.stringify({ ...runV3Goc, status: 'SUCCEEDED',
+            credit_charged: 4, settled: true }), { status: 201 })
+        : undefined)
+    const { drawer } = await bamChay()
+    await waitFor(() => expect(khoaTaoRun().length).toBe(1))
+    // Mot lan bam MOI: run cu da ket thuc, nguoi dung mo mot ban chay khac.
+    fireEvent.click(await within(drawer).findByRole('button',
+      { name: 'Tạo bản chạy mới' }))
+    fireEvent.click(await within(drawer).findByRole('button', { name: 'Chạy ngay' }))
+    await waitFor(() => expect(khoaTaoRun().length).toBe(2))
+    const khoa = khoaTaoRun()
+    expect(khoa[1]).toBeTruthy()
+    expect(khoa[1]).not.toBe(khoa[0])
   })
 
   it('publish 422 hiện thông điệp VÀ đánh dấu node hỏng', async () => {
