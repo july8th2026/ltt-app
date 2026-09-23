@@ -29,8 +29,11 @@ def _doc_that(url: str) -> tuple[int, dict]:
     except urllib.error.HTTPError as e:
         try:
             return e.code, json.loads(e.read().decode("utf-8"))
-        except Exception:
-            return e.code, {}
+        except (ValueError, OSError) as loi_than:
+            # Than khong phai JSON - vi du trang HTML cua reverse proxy khi origin
+            # dut. Van tra ma HTTP that, va NOI RA vi sao khong doc duoc than:
+            # nuot lang le o day la giau loi o dung cho kho tim nhat khi chan doan.
+            return e.code, {"ly_do": f"than_khong_doc_duoc_{type(loi_than).__name__}"}
 
 
 def kiem(url: str = MAC_DINH, *, doc=_doc_that) -> dict:
