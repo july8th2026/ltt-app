@@ -120,3 +120,24 @@ Mọi lượt deploy xuất HEAD của `D:\LTTSTUDIOSAPP`, nên một commit d�
 khác**. ⇒ Không làm việc dở ở cây chính; mỗi phiên
 làm trong worktree riêng (hợp đồng §5). Cần một cây sạch để đo:
 `git worktree add --detach <tmp> HEAD` — không `stash` cây dùng chung.
+
+### ⚠️ Báo phiên khác trước khi deploy: cơ chế hiện có KHÔNG tin được (đo 23/09/2026)
+
+Hợp đồng bắt **báo các phiên đang chạy trước khi deploy** (`ListAgents`). Đo thật ngày 23/09:
+**5/5 tin nhắn liên phiên bị giữ chờ người nhận duyệt và không bao giờ tới Claude bên kia** —
+hai tin hỏi phiên VGA về máy B, một tin yêu cầu bản fork dừng tay, và hai tin báo trước deploy
+lần này. Tin bị giữ vì phiên nhận chạy ở chế độ quyền khác; chủ phiên phải bấm duyệt, mà không
+ai ngồi nhìn.
+
+⇒ **Gửi tin là làm cho có, không phải là đã báo.** Đừng coi "đã gửi" là đã thoả luật.
+
+Ba đường thay thế, theo thứ tự đáng tin:
+
+1. **Hỏi chủ dự án** — người duy nhất thấy được mọi phiên. Một câu trước khi bấm.
+2. **Đọc trạng thái thay cho hỏi**: `python tools/cua_so_yen.py trang-thai` cho biết phiên nào
+   đang giữ khoá nặng; `git log --oneline -20` cho biết ai vừa gộp gì vào `main`. Cái này
+   **không cần ai trả lời**.
+3. Gửi tin — vẫn nên gửi, nhưng **không chờ**, và không tính là đã báo.
+
+Lượt deploy 23/09 21:00 đi tiếp sau khi hai tin bị giữ: nghiệm thu băm 1 157 tệp lệch 0, nên
+không ai bị ảnh hưởng — nhưng đó là may, không phải quy trình.
