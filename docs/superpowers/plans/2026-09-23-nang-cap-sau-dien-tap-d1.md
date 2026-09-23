@@ -1379,6 +1379,13 @@ riêng), còn `bin.js` không gắn exporter nào khác.
 HTTP, không giao diện. Về mã thì không còn là no-op; **về vận hành thì vẫn im lặng y như trước**,
 tức người dùng vẫn tưởng đã khoá được agent con.
 
+> 🟢 **Đã mở kênh (`b7eccdd`, 24/09):** mount một `ctx.logger.exporter()` thường trực trong
+> `dsh-harness-ltt`, lọc `warn`/`error`, đẩy ra `process.stderr` — **kênh mà `sidecar.rs::pump()`
+> vốn đã bơm vào `lttcode.log`**, nên không dựng kênh thứ hai. Đo thật: boot sinh **0 dòng thêm**
+> (không ngập log). Có `redactSecrets()` làm lớp phòng thủ, độc lập với `redact()` phía Rust.
+> ⚠️ **Chứng minh trên chuỗi thật (cordis + patch + catalog đều là bản thật), CHƯA trên app đã
+> cài** — bản 0.2.7 không chứa mã này. Đóng hẳn V-25 phải chờ **bản build mới**.
+
 > Bài học đúng loại kho này đã ghi: **viết xong không phải là tới tay ai.** Task 19 vướng đúng thế
 > (plugin có mã, chưa mount). Lần này tinh vi hơn: cảnh báo có, kênh không có.
 > ⇒ Lập thành mục lỗi riêng, **không** tự nhận V-25 là đã đóng.
