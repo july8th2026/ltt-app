@@ -35,8 +35,10 @@ SQLAlchemy (nền tảng, test `pytest`), PowerShell 7 (phát hành), Tauri/Rust
   không `stash`, không `reset`, không `checkout --`.
 - **Windows:** cấu hình ghi **KHÔNG BOM**; `.ps1` **thuần ASCII**; ⛔ không viết Python inline
   qua PowerShell. Cả ba đã từng làm sập production (`AGENTS.md` §5).
-- **Số tệp test:** lấy trong dải **2300–2319** cho đợt này; chạy `py tools/check_so_test.py`
-  sau khi thêm để chắc không tăng trùng lặp.
+- **Số tệp test:** số cao nhất đang dùng trên MỌI cây là **2504** (đo 23/09 khi dựng cây
+  `sua-d1`). Dùng số **≥ 2505** chưa ai dùng; chạy `py tools/check_so_test.py` sau khi thêm
+  để chắc không tăng trùng lặp. ⚠️ Dải 2300–2319 ghi ở bản đầu của plan là **SAI** — số đó
+  đã có phiên khác dùng.
 - **Deploy:** thứ tự bắt buộc **máy B trước, máy A sau**. Deploy cần gate xanh trên đúng SHA.
 - **Máy B là máy dùng chung:** trước khi đo hiệu năng, kiểm `http://192.168.2.66:8299/health/ready`
   — 503 `thieu_card` nghĩa là **không đo được gì cả**, dừng và báo.
