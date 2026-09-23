@@ -9,10 +9,16 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
+import sqlalchemy as sa
 
 from tests import pg_scratch
 
 pytestmark = pg_scratch.skip_without_postgres()
+
+#: Khoa advisory Postgres (muc phien) giu SUOT tep nay dang chay mot test —
+#: xem ly do o fixture `pg`. So bat ky, chi can khong dung so nao khac trong
+#: kho (khong phoi hop bang dat ten dep, phoi hop bang mot hang co dinh).
+_KHOA_LOCK_KEY = 172012001720   # tuy y, gan voi ten tep "1720" de de nhan dien
 
 
 @pytest.fixture()
@@ -22,10 +28,35 @@ def pg(monkeypatch):
     import platform_core.db as dbmod
     dbmod.reset_engine()
     import platform_core.models  # noqa: F401
-    dbmod.Base.metadata.drop_all(dbmod.get_engine())
-    dbmod.Base.metadata.create_all(dbmod.get_engine())
-    yield dbmod
-    dbmod.reset_engine()
+
+    # `pytest-xdist -n 2` (hoac hon) phan hai test CUA CHINH TEP NAY cho hai
+    # worker KHAC NHAU, va ca hai tro ve CUNG MOT CSDL scratch (`scratch_url`
+    # doc cung mot bien moi truong). Khong co gi ngan hai worker goi
+    # `drop_all`/`create_all` CUNG LUC — da thay that (23/09): hai `CREATE
+    # TABLE` dung ten dua nhau tren catalog he thong Postgres, nem
+    # `UniqueViolation` ngay o buoc dung fixture. Ke ca khong dung DDL, hai
+    # bai test chay THAT SU song song tren CUNG schema se ghi de du lieu cua
+    # nhau (vd `WorkflowRun` cua bai nay lo vao truy van "moi run SUCCEEDED"
+    # cua bai kia). `xdist_group` KHONG giai duoc: no chi co hieu luc voi
+    # `--dist=loadgroup`, va khong noi goi lenh nao o day dam bao co co.
+    # Khoa advisory cua chinh Postgres thi dung bat ke `-n` bao nhieu hay
+    # `--dist` gi: worker thua vao SAU se doi tai `pg_advisory_lock` cho toi
+    # khi worker truoc giai phong (fixture teardown), nen hai test trong tep
+    # nay luon chay TUAN TU voi nhau tren cung mot CSDL - it hai worker khac
+    # (vd tu `test_214`) van chay song song binh thuong.
+    khoa_engine = sa.create_engine(url, future=True)
+    khoa_conn = khoa_engine.connect()
+    khoa_conn.execute(sa.text("SELECT pg_advisory_lock(:k)"), {"k": _KHOA_LOCK_KEY})
+
+    try:
+        dbmod.Base.metadata.drop_all(dbmod.get_engine())
+        dbmod.Base.metadata.create_all(dbmod.get_engine())
+        yield dbmod
+    finally:
+        dbmod.reset_engine()
+        khoa_conn.execute(sa.text("SELECT pg_advisory_unlock(:k)"), {"k": _KHOA_LOCK_KEY})
+        khoa_conn.close()
+        khoa_engine.dispose()
 
 
 def _mo(dbmod):
@@ -35,13 +66,21 @@ def _mo(dbmod):
 def _chuan_bi(dbmod, monkeypatch, so_run=10):
     from platform_core import credit
     from platform_core.workflow import cong_cu, dinh_nghia, tao_run
+    from tests.conftest import bao_dam_user
     from tests.test_1716_wf_xuat_ban_va_bao_gia_api import CC, _draft
     monkeypatch.setattr(cong_cu, "tat_ca", lambda: CC)
     db = _mo(dbmod)()
     w = _draft(db)
     v = dinh_nghia.xuat_ban_draft(db, w.id, created_by="u1", cong_cu=CC)
     w.published_version_id = v.id
-    credit.nap(db, "u1", 10_000, ly_do="test")
+    # `credit.nap` ghi vao `credit_entries`, cot `user_id` mang khoa ngoai
+    # tham chieu `users.id` (F-01, audit 2026-08-07) — Postgres THAT SU thi
+    # ep FK nay (SQLite mac dinh KHONG, nen cac test cung dong cua tren
+    # SQLite khong bao gio bat duoc thieu buoc nay). `bao_dam_user` la
+    # helper dung chung cua kho (`tests/conftest.py`), tao mot user gia mang
+    # dung id neu chua co.
+    bao_dam_user(db, "u1")
+    credit.nap(db, "u1", 10_000, note="test")
     ids = []
     import platform_core.workflow.tao_run as tr
     monkeypatch.setattr(tr, "MAX_RUN_DONG_THOI", 1000)

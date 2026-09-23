@@ -168,7 +168,17 @@ def ttl(db) -> int:
         g = _do_thi(db, run.version_id)
         han = min(timedelta(seconds=int(g["settings"].get("timeout_s", 21600))),
                   TRAN_RUN)
-        if run.started_at <= luc - han:
+        # `WorkflowRun.started_at` là cột `DateTime(timezone=True)` — SQLite
+        # trả về naive (bất kể khai báo), nhưng PostgreSQL thật trả về AWARE
+        # (session TZ, thường là UTC). `_bay_gio()` luôn naive UTC theo quy
+        # ước chung của module này (8 chỗ khác cùng định nghĩa) — so sánh
+        # trực tiếp aware với naive ném `TypeError` ngay trên PostgreSQL thật,
+        # chưa từng lộ trên SQLite (phát hiện bằng `tests/test_1720_wf_dong_co_pg.py`
+        # chạy thật, Task 11 fix round 3). Bỏ tzinfo trước khi so — an toàn vì
+        # giả định session TZ = UTC đã ngầm có sẵn ở MỌI chỗ khác ghi
+        # `_bay_gio()` vào chính cột này.
+        bat_dau = run.started_at.replace(tzinfo=None) if run.started_at.tzinfo else run.started_at
+        if bat_dau <= luc - han:
             for job in db.execute(select(Job).where(Job.plan_id == run.id)).scalars():
                 jobs.cancel(db, job)
             su_kien.ghi(db, run.id, "WorkflowFailed",
