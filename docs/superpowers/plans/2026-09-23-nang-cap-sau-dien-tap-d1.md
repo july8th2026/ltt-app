@@ -44,28 +44,28 @@ SQLAlchemy (nền tảng, test `pytest`), PowerShell 7 (phát hành), Tauri/Rust
   — 503 `thieu_card` nghĩa là **không đo được gì cả**, dừng và báo.
 
 
-## Tiến độ (cập nhật 23/09 ~20:00)
+## Tiến độ (cập nhật 23/09 ~21:35)
 
 > Cách tính: mỗi task 1 đơn vị · **xong = 1** · **xong một phần = 0,5** · đang chạy chưa xong = 0.
 > Không ước lượng theo cảm giác. "Đang chạy" KHÔNG được tính điểm — hôm nay đã có bốn lần một
 > việc trông sắp xong rồi chết giữa chừng.
 
-### Phần A — sửa lỗi: **6,5 / 10 = 65 %**
+### Phần A — sửa lỗi: **10 / 10 = 100 %** (xong 23/09 ~21:30)
 
 | Task | Việc | Trạng thái |
 |---|---|---|
 | 1 | V-19 cổng 5xx phải thử lại | ✅ `87f752a` · 116/116 |
 | 2 | V-23 chịu quá tải kéo dài | ✅ `977653f` · 28/28 · lộ thêm V-24 |
 | 3 | V-22 `409` kèm cần/còn | ✅ `94d4edaa` · 3 phép + 2823 cụm provider |
-| 4 | Khoá có `credits:read` | ⏳ đang chạy (làn credit-scope) |
-| 5 | Cửa sổ Tài khoản hiện số dư | ⏳ đang chạy (làn app-credit) |
+| 4 | Khoá có `credits:read` | ✅ `c622589c` · chỉ ăn vào khoá **cấp mới**, khách cũ không bị bắt làm gì |
+| 5 | Cửa sổ Tài khoản hiện số dư | ✅ `0c6df5a` · 6 phép · lấy không được thì hiện `—`, **không bao giờ `0`** |
 | 6 | Canh `/health/ready` máy B | ✅ `5cdba614` + `dbe3fc71` · 4 phép |
 | 7 | `-Notes` bắt buộc | ✅ `8ed9ecb` · manifest dev đã vá |
 | 8 | Tài liệu `User-Agent` | ✅ `c23c7cce` · đã gộp `main` |
-| 9 | Cho Cloudflare cache bộ cài | ⏳ đang chạy (làn credit-scope) |
-| 10 | Bổ sung từ sổ lỗi D1 | 🟡 **0,5** — số đo cuối đã ghi, V-19…V-24 đã lập; còn: vá `restore.ps1` thêm `alembic upgrade head`, và quyết 3 tệp ngoài mẫu backup |
+| 9 | Cho Cloudflare cache bộ cài | ✅ `e17f1bc3` · **đã deploy + đo**: `no-store` → `immutable`, BYPASS → MISS → **HIT** (Age tăng 29→37) |
+| 10 | Bổ sung từ sổ lỗi D1 | ✅ `67f412f6` — số đo cuối đã ghi, V-19…V-24 đã lập, **`restore.ps1` đã vá** (7 phép, có đối chứng âm). Off-site đã dựng + cắm lịch. Còn mở: 3 tệp sổ đăng ký ngoài mẫu backup (chờ chủ dự án) |
 
-### Phần B — nâng năng lực: **2,5 / 10 = 25 %**
+### Phần B — nâng năng lực: **2,5 / 10 = 25 %** (không đổi)
 
 | Task | Việc | Trạng thái |
 |---|---|---|
@@ -74,7 +74,7 @@ SQLAlchemy (nền tảng, test `pytest`), PowerShell 7 (phát hành), Tauri/Rust
 | 13 | MCP dùng thật (nay 0/166) | ⬜ chưa |
 | 14 | Gỡ trần 50 của kế hoạch/mục tiêu | ⬜ chưa |
 | 15 | Agent do người dùng định nghĩa | 🟡 **0,5** — tra xong: **đã có sẵn** (`~/.agents/*.md`, `resolveAgentOptions`); còn mở đường + tài liệu + bằng chứng chạy |
-| 16 | Credit mỗi lượt cạnh token | ⏳ đang chạy (làn app-credit) |
+| 16 | Credit mỗi lượt cạnh token | 🔴 **CHẶN** — tra hết chuỗi: `/api/v1/messages` chỉ mang token; quyết toán chạy trong `finally` SAU khi byte cuối đã gửi; `/api/v1/usage` join theo `Job.id` còn lượt chat mang mã `stream:<hex>`. **Không có nguồn nào cho credit theo lượt.** Chủ dự án chọn (b): suy từ hiệu số số dư, gắn nhãn `≈` |
 | 17 | Giảm độ trễ mỗi bước | ⬜ chưa |
 | 18 | Chạy tiếp khi đóng app | 🟡 **0,5** — tra xong: **phần lớn đã có** (khay giữ sidecar sống, autostart, `lttcode-cli.exe` chạy thật 60,7 s). H18 chấm lại 45 → 78. Còn: chủ dự án quyết có làm scheduler mức hệ điều hành không |
 | 19 | Git/PR thành công cụ gốc | 🟡 **0,5** — tra xong: **không phải tự viết**, cộng đồng có `lxj808624/dsh-tool-git`; còn: đánh giá repo theo `TIEU_CHI.md` rồi bundle |
