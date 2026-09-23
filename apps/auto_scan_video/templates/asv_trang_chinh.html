@@ -125,6 +125,48 @@
           {% endfor %}
         </fieldset>
 
+        {# ── Cặp ngôn ngữ (asv-final 23/09, `ngon_ngu.py`) ───────────────────
+
+           🔑 Ở TẦNG CƠ BẢN, không nằm trong `Tuỳ chọn nâng cao`. Hai ô này
+              không phải tinh chỉnh: chúng quyết định ASR nghe bằng bảng chữ
+              nào, LLM dịch sang đâu, và **giọng nào còn chọn được**. Một khách
+              làm video tiếng Trung mà không thấy ô nguồn sẽ không có cách nào
+              biết hệ thống đang đoán giùm mình.
+
+           ⭐ Nguồn có `Tự nhận ra` vì đó là câu trả lời ĐÚNG của phần lớn
+              khách: họ biết video nói tiếng gì nhưng không biết ASR có nghe ra
+              không. `ngon_ngu.kiem_nguon_da_doan` chốt lại ngay sau ASR, nên
+              một lần đoán sai dừng ở cửa chứ không chạy tiếp tới LLM.
+
+           ⛔ Miền giá trị đến TỪ `ngon_ngu.cho_giao_dien()`. Gõ `zh`/`vi` vào
+              đây là tạo bản thứ hai của hợp đồng 22/09, và nó sẽ trôi. #}
+        <div class="asv-o" id="asv-nhom-ngon-ngu">
+          <div class="asv-luoi-tinh-chinh">
+            <label class="asv-o" for="asv-nn-nguon">
+              <span><strong>{{ _("Video nói tiếng gì") }}</strong></span>
+              <select id="asv-nn-nguon" name="ngon_ngu_nguon">
+                {% for ma, ten in ngon_ngu.nguon %}
+                  <option value="{{ ma }}"
+                          {% if ma == ngon_ngu_nguon_chon %}selected{% endif %}>{{ _(ten) }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label class="asv-o" for="asv-nn-dich">
+              <span><strong>{{ _("Lồng tiếng sang") }}</strong></span>
+              <select id="asv-nn-dich" name="ngon_ngu_dich">
+                {% for ma, ten in ngon_ngu.dich %}
+                  <option value="{{ ma }}"
+                          {% if ma == ngon_ngu_dich_chon %}selected{% endif %}>{{ _(ten) }}</option>
+                {% endfor %}
+              </select>
+            </label>
+          </div>
+          {# ⭐ Câu này do JS viết: nó nói HỆ QUẢ của ô đích lên danh sách giọng
+             ("còn N giọng đọc tiếng Anh"). Một ô đổi mà danh sách bên dưới im
+             lặng ngắn đi là cách chắc chắn nhất để khách tưởng giọng bị mất. #}
+          <p class="asv-ghi-chu" id="asv-nn-tt" aria-live="polite"></p>
+        </div>
+
         <div class="asv-o">
           <label for="asv-giong"><strong>{{ _("Giọng đọc") }}</strong></label>
 
@@ -185,6 +227,9 @@
                       data-nguon="{{ 'mau' if g.la_mau else 'rieng' }}"
                       data-gioi="{{ g.gioi }}" data-vung="{{ g.vung }}"
                       data-phong-cach="{{ g.phong_cach }}"
+                      {# ⭐ Rỗng = giọng nhân bản của khách; `giong.js` KHÔNG ẩn
+                         chúng theo làn. Xem `gia.giong_cho_giao_dien`. #}
+                      data-lan="{{ g.ngon_ngu }}"
                       {% if g.duong_nghe %}data-nghe="{{ g.duong_nghe }}"{% endif %}
                       >{{ g.ten }}{% if not g.duong_nghe %} · {{ _("chưa có mẫu nghe") }}{% endif %}</option>
             {% endfor %}
@@ -213,6 +258,33 @@
     {# ── Nang cao — DONG mac dinh ──────────────────────────────────────── #}
     <details class="asv-nang-cao">
       <summary>{{ _("Tuỳ chọn nâng cao") }}</summary>
+
+      {# ── Nguồn lời thoại gốc (asv-final 23/09, `nguon_loi.py`) ───────────
+
+         🔑 Mặc định `Tự chọn nguồn tốt nhất` đúng cho gần hết khách, nên ô này
+            ở NÂNG CAO chứ không ở tầng cơ bản — khác cặp ngôn ngữ.
+
+         ⛔ Nhưng nó KHÔNG phải ô trang trí: ba chế độ còn lại là ÉP, và ép một
+            nguồn video không có thì `nguon_loi.dinh_tuyen` **dừng lần chạy**
+            (`KhongCoNguon`). Câu ghi chú dưới nói đúng điều đó, vì một khách ép
+            "chữ trên hình" cho video không có hardsub cần biết trước hậu quả
+            chứ không phải sau khi đã bị giữ credit.
+
+         ⭐ Nguồn THẬT đã dùng hiện ở màn một lần chạy (`Bằng chứng chất
+            lượng`) — đó là chỗ ô này về đích. #}
+      <div class="asv-nhom" id="asv-nhom-nguon-loi">
+        <h3>{{ _("Lời thoại gốc lấy từ đâu") }}</h3>
+        <fieldset class="asv-o">
+          <legend class="asv-an-doc">{{ _("Nguồn lời thoại") }}</legend>
+          {% for ma, ten, mo_ta in nguon_loi %}
+            <label class="asv-chon">
+              <input type="radio" name="nguon_loi" value="{{ ma }}"
+                     {% if ma == nguon_loi_chon %}checked{% endif %}>
+              <span><strong>{{ _(ten) }}</strong><small>{{ _(mo_ta) }}</small></span>
+            </label>
+          {% endfor %}
+        </fieldset>
+      </div>
 
       <div class="asv-nhom">
         <h3>{{ _("Cách đọc tên riêng") }}</h3>
@@ -729,6 +801,9 @@
   "nghe_chua_co": {{ _("Giọng này đang được chuẩn bị bản nghe thử.")|tojson }},
   "nghe_hong": {{ _("Không phát được bản nghe thử.")|tojson }},
   "giong_khong_khop": {{ _("Không có giọng nào khớp bộ lọc — hãy bỏ bớt điều kiện.")|tojson }},
+  "giong_het_lan": {{ _("Chưa có giọng nào đọc được ngôn ngữ này — hãy đổi ngôn ngữ đích, hoặc nhân bản một giọng ở LTT VOICE.")|tojson }},
+  "nn_con_giong": {{ _("Còn %(so)s giọng đọc được bản %(lan)s.")|tojson }},
+  "nn_het_giong": {{ _("Chưa có giọng nào đọc được bản %(lan)s.")|tojson }},
   "giong_chua_mau": {{ _("chưa có mẫu nghe")|tojson }},
   "giong_da_lam_moi": {{ _("Đã cập nhật danh sách: %(so)s giọng.")|tojson }},
   "giong_lam_moi_hong": {{ _("Không làm mới được danh sách giọng.")|tojson }},

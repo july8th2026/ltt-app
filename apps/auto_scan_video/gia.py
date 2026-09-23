@@ -330,6 +330,18 @@ def giong_cho_giao_dien(db, owner_id: str) -> list[dict]:
                 "gioi": str(getattr(g, "gioi", "") or ""),
                 "vung": str(getattr(g, "vung", "") or ""),
                 "phong_cach": str(getattr(g, "phong_cach", "") or ""),
+                # 🔑 LAN cua giong mau. `rang_giong._rang_khach_chon` tu choi o
+                #    CUA mot giong lech lan voi `ngon_ngu_dich`, nen giao dien
+                #    phai loc truoc — nguoc lai khach doi dich sang `en`, thay
+                #    nguyen 20 giong `vi`, bam Gui va an mot cau tu choi.
+                #
+                # ⚠️ Giong NHAN BAN cua khach khong co truong nay, va do la co
+                #    y: lan cua chung do `ltt_voice` chot luc goi
+                #    (`giong_noi.giai_giong(..., ngon_ngu=)`), khong phai mot
+                #    nhan doc san. Chung tra ve `""` va giao dien KHONG an
+                #    chung — an mot giong rieng di la dieu khach khong doi va
+                #    khong co cach nao doan la vi sao.
+                "ngon_ngu": str(getattr(g, "ngon_ngu", "") or ""),
             }
     except Exception as exc:      # noqa: BLE001
         log.warning("khong nap duoc thuoc tinh giong mau (%s: %s)",
@@ -360,7 +372,8 @@ def giong_cho_giao_dien(db, owner_id: str) -> list[dict]:
         tt = thuoc_tinh.get(ma) or {}
         muc = {"ma": ma, "ten": muc_goc["ten"], "la_mau": ma in thuoc_tinh,
                "gioi": tt.get("gioi", ""), "vung": tt.get("vung", ""),
-               "phong_cach": tt.get("phong_cach", "")}
+               "phong_cach": tt.get("phong_cach", ""),
+               "ngon_ngu": tt.get("ngon_ngu", "")}
         if ma in duong:
             muc["duong_nghe"] = duong[ma]
         ra.append(muc)
