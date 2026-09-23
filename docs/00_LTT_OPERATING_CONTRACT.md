@@ -138,7 +138,8 @@ python -m pytest tests\test_A.py tests\test_B.py -q
 ```
 
 - **≤ 2 tệp test**: chạy thẳng.
-- **≥ 3 tệp test**: là lệnh nặng — kiểm theo §4.8, `-n` tối đa 6.
+- **≥ 3 tệp test**: là lệnh nặng — kiểm theo §4.8, `-n` tối đa 7 (chủ dự án 23/09;
+  trước đó là 6).
 - Bước kiểm tĩnh lẻ (mypy, i18n, kiểu xuống dòng…): chạy **đúng công cụ đó**; tên
   lệnh ở `tools/gate.py::_steps`, và gate in sẵn khi đỏ.
 
