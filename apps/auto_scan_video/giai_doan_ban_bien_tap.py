@@ -477,38 +477,20 @@ def _doc_cac_canh(db, kho, run, ci, ban_ghi: dict, ctx) -> tuple:
     return tuple(ra), hong
 
 
-#: Tran thoi gian cua MOT lenh `ffmpeg` rut khung. Mot nguon cho ca lenh goi
-#: lan phep tinh du phong cua lat cat.
-CHO_RUT_KHUNG_S = 120
+#: 🔑 Tran thoi gian cua MOT lenh `ffmpeg` rut khung — DOC tu `canh.py`, khong
+#: go lai so. Mot ban sao thu hai cua hang so nay se troi khoi ban goc, va phep
+#: tinh du phong cua lat cat o ngay duoi doc chinh no.
+CHO_RUT_KHUNG_S = canh_mod.CHO_RUT_KHUNG_S
 
 
 def _rut_khung(duong: str, moc) -> tuple:
-    """Rut cac khung mau cua MOT canh thanh bytes JPEG.
+    """Khung mau cua MOT canh. Than ham o `canh.rut_khung` — xem ghi chu o do.
 
-    ⛔ Khung di thang tu dia vao bo nho roi ra `messages` — khong luu vao kho.
-       Chung la **dau vao cua mot cau hoi**, khong phai san pham giao cho khach;
-       luu chung la them mot vong doi phai quet (B25-01 vua day) doi lay khong gi.
-
-    ⚠️ Mot khung hong thi bo rieng khung do. Mot canh hai khung ma mot khung
-       hong van la mot cau hoi tra loi duoc; nem ca canh di thi khong.
+    ⭐ Giai doan nay giu mot ten rieng vi phep kiem cua no goi ten nay, nhung
+       than ham thi CHUNG voi `qc_ai`: hai cho rut khung bang hai doan ma la hai
+       cho se lech nhau ve tran thoi gian va ve cach bo mot khung hong.
     """
-    import subprocess
-    import tempfile
-
-    ra: list = []
-    with tempfile.TemporaryDirectory(prefix="asv_khung_") as tam:
-        for j, m in enumerate(moc):
-            tep = Path(tam) / f"k{j:02d}.jpg"
-            cmd = canh_mod.lenh_rut_khung(duong, float(m), str(tep))
-            try:
-                subprocess.run(cmd, capture_output=True, timeout=CHO_RUT_KHUNG_S,
-                               check=False)
-                if tep.exists() and tep.stat().st_size > 0:
-                    ra.append(tep.read_bytes())
-            except (OSError, subprocess.SubprocessError) as exc:
-                log.warning("khong rut duoc khung o giay %.3f (%s)",
-                            float(m), type(exc).__name__)
-    return tuple(ra)
+    return canh_mod.rut_khung(duong, moc, cho_s=CHO_RUT_KHUNG_S)
 
 
 def _nguon_soi_duoc(db, kho, run) -> str:

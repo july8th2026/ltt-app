@@ -226,17 +226,61 @@ def tu_qc_ngu_nghia(phan_doan: list[dict]) -> list[KhiemKhuyet]:
     return ra
 
 
-def tu_qc_hinh(phan_doan: list[dict]) -> list[KhiemKhuyet]:
-    """Khiem khuyet tu QC HINH: `[{ma_canh, dat, ly_do, do_tin}]`."""
+#: 🔴 **QC HINH chi TU VAN — phan quyet duoc GHI nhung KHONG sinh viec sua.**
+#:
+#:    Con so dat co nay, do 23/09 tren 36 cho noi THAT cua bon phim tieng Trung
+#:    (`docs/auto_scan_video_final/L_QC_HINH.md` §4): trong so cho noi bi cham
+#:    `dat=false`, ti le DUNG khi xem lai tung cap khung bang mat la
+#:    **PLACEHOLDER_DO_CHINH_XAC**. Mot bo do o muc do thi du de GHI (nguoi soat
+#:    doc bao cao va tu quyet), nhung khong du de TIEU TIEN: mot bao dong gia
+#:    day ca mot vong sua — `edit_plan` + `content_process` + `voice_synthesis`
+#:    + render lai — cho mot cho noi khong hong.
+#:
+#: ⭐ Va cai gia hai chieu khong bang nhau. Bo sot mot cho noi hong: khach nhan
+#:    mot ban dung co mot cho giat, thay duoc, khieu nai duoc. Bao dong gia: mot
+#:    hoa don khong ai thay, tren mot lan chay khong ai bao la sai.
+#:
+#: ⛔ Va vong sua KHONG phai duong duy nhat: phan quyet van vao `qc_ai` report,
+#:    van vao `stage.outputs`, van hien o bao cao van hanh. "Tu van" o day nghia
+#:    la *khong tu dong tieu tien*, khong phai *khong ai duoc biet*.
+#:
+#: 🔑 Doi co nay thanh `False` la mot quyet dinh ve GIA. Doi kem mot bo do moi
+#:    o cung tep tren, khong doi mot minh.
+QC_HINH_LA_TU_VAN = True
+
+
+def tu_qc_hinh(phan_doan: list[dict], *, tu_van: bool | None = None
+               ) -> list[KhiemKhuyet]:
+    """Khiem khuyet CAT SAI tu QC HINH: `[{ma_canh, ma_cat, dat, ly_do, do_tin}]`.
+
+    🔑 **MOT khiem khuyet cho MOI canh bi bo tai cho noi do, khong mot cho ca
+       cho noi.** Cai `edit_plan` nhan lam don vi viec la mot MA CANH; mot "cho
+       noi o giay 74" khong dat lai duoc gi. `qc_ai.cac_cho_noi` doi nguoc tu
+       khoang bi cat ra `ma_cat`, va day la noi no tro thanh viec.
+
+    ⚠️ `ma_cat` rong (khong truyen chi muc canh, hoac khoang bi cat khong trung
+       canh nao) ⇒ phan quyet duoc ghi lai nhung khong sinh viec sua duoc. Ta
+       KHONG bia mot ma canh de co viec lam.
+
+    ⛔ Mac dinh TU VAN — xem `QC_HINH_LA_TU_VAN`. `tu_van` chi de phep kiem
+       (va mot nguoi van hanh) doi chieu ca hai chieu ma khong phai va hang so.
+    """
+    if bool(QC_HINH_LA_TU_VAN if tu_van is None else tu_van):
+        return []
     ra = []
     for d in phan_doan or []:
         if bool(d.get("dat", True)):
             continue
-        ra.append(KhiemKhuyet(
-            CAT_SAI, ma=str(d.get("ma_canh") or ""),
-            ly_do=str(d.get("ly_do") or ""),
-            do_tin=float(d.get("do_tin") or 0.0),
-            bang_chung={"moc_giay": d.get("moc_giay")}))
+        ds = [str(m) for m in (d.get("ma_cat") or ()) if str(m)]
+        if not ds and d.get("ma_canh"):
+            ds = [str(d["ma_canh"])]
+        for ma in ds:
+            ra.append(KhiemKhuyet(
+                CAT_SAI, ma=ma,
+                ly_do=str(d.get("ly_do") or ""),
+                do_tin=float(d.get("do_tin") or 0.0),
+                bang_chung={"moc_giay": d.get("moc_giay"),
+                            "ma_cat": ds}))
     return ra
 
 

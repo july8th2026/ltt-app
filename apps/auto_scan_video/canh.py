@@ -32,6 +32,7 @@ import json
 import logging
 import threading
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from platform_core import media
 
@@ -286,6 +287,47 @@ def lenh_rut_khung(duong: str, moc: float, ra: str,
             "-frames:v", "1",
             "-vf", f"scale='min({int(canh_dai)},iw)':-2",
             "-q:v", str(CHAT_LUONG_JPEG), "-y", str(ra)]
+
+
+#: Tran thoi gian cua MOT lenh `ffmpeg` rut khung. MOT nguon cho ca lenh goi
+#: lan phep tinh du phong cua lat cat (`edit_plan` va `qc_ai` deu doc no).
+CHO_RUT_KHUNG_S = 120
+
+
+def rut_khung(duong: str, moc, *, cho_s: float = CHO_RUT_KHUNG_S) -> tuple:
+    """Rut cac khung o `moc` (giay) thanh bytes JPEG.
+
+    🔑 **MOT ban sao cho ca hai nguoi goi.** `edit_plan` rut khung cua mot CANH
+       tren tep nguon; `qc_ai` rut khung hai ben mot CHO NOI tren tep da render.
+       Hai cau hoi khac nhau, nhung phep rut khung thi y het — va hai ban sao
+       cua no se lech nhau o mot nhanh nao do (tran thoi gian, xu ly khung hong,
+       co giai phong thu muc tam khong), nhanh lech la nhanh it duoc chay nhat.
+
+    ⛔ Khung di thang tu dia vao bo nho roi ra `messages` — khong luu vao kho.
+       Chung la **dau vao cua mot cau hoi**, khong phai san pham giao cho khach;
+       luu chung la them mot vong doi phai quet doi lay khong gi.
+
+    ⚠️ Mot khung hong thi bo RIENG khung do. Mot cau hoi hai khung ma mot khung
+       hong van la mot cau hoi tra loi duoc (kem hon); nem ca cau hoi di thi
+       khong. Nguoi goi doc `len()` de biet no da hoi bang may khung.
+    """
+    import subprocess
+    import tempfile
+
+    ra: list = []
+    with tempfile.TemporaryDirectory(prefix="asv_khung_") as tam:
+        for j, m in enumerate(moc):
+            tep = Path(tam) / f"k{j:02d}.jpg"
+            cmd = lenh_rut_khung(duong, float(m), str(tep))
+            try:
+                subprocess.run(cmd, capture_output=True, timeout=float(cho_s),
+                               check=False)
+                if tep.exists() and tep.stat().st_size > 0:
+                    ra.append(tep.read_bytes())
+            except (OSError, subprocess.SubprocessError) as exc:
+                log.warning("khong rut duoc khung o giay %.3f (%s)",
+                            float(m), type(exc).__name__)
+    return tuple(ra)
 
 
 def kiem_chi_muc(ci: ChiMucCanh) -> None:

@@ -116,9 +116,25 @@ def test_CHI_loi_HINH_DANG_duoc_hoi_lai():
 
 def test_luot_thu_lai_DUNG_ma_dispatch_KHAC():
     """`UNIQUE(run_id, ma_dispatch)` se nuot but toan cua luot thu hai neu hai
-    luot dung chung `item_key` — tuc mot luot DA tra tien bien mat khoi so cai."""
-    ma = inspect.getsource(gdbbt._doc_cac_canh)
-    assert 'f"{c.ma}:lai' in ma
+    luot dung chung `item_key` — tuc mot luot DA tra tien bien mat khoi so cai.
+
+    ⚠️ Phep doc doi 23/09 (M-02), MENH DE thi khong: khoa chuyen tu mot chuoi
+       f viet tai cho sang `_ma_don_vi_goi(...)` vi no nay mang THEM chieu thu
+       hai — so VONG SUA. Chot bang hanh vi cua ham do thi manh hon chot bang
+       mot chuoi con, va no chot duoc ca chieu moi.
+    """
+    f = gdbbt._ma_don_vi_goi
+    # Luot binh thuong = DUNG ma canh, khong hau to (so cai cu doc duoc).
+    assert f("canh_0003", vong_sua=0, lan_lai=0) == "canh_0003"
+    # Ba chieu deu phai cho khoa KHAC nhau, va khong chieu nao trung chieu kia.
+    khoa = {f("canh_0003", vong_sua=v, lan_lai=l)
+            for v in (0, 1, 2) for l in (0, 1)}
+    assert len(khoa) == 6, khoa
+    # Hai canh khac nhau khong bao gio dung chung khoa.
+    assert f("canh_0003", vong_sua=1, lan_lai=1) != f("canh_0004", vong_sua=1,
+                                                      lan_lai=1)
+    # Va nguoi goi that phai di qua no, khong go lai chuoi.
+    assert "_ma_don_vi_goi(" in inspect.getsource(gdbbt._doc_cac_canh)
 
 
 def test_nhat_ky_GHI_THONG_DIEP_chu_khong_chi_ten_lop():

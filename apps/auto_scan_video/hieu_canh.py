@@ -50,7 +50,10 @@ log = logging.getLogger(__name__)
 #: 4/2 (23/09): loi nhac dua KHUNG JSON (thay vi ke ten khoa) va noi ro `de_xuat`
 #: la MA chep y nguyen. Do 18 canh phim nghiem thu voi loi nhac cu: 8/18 hong —
 #: 5 vi `"giữ"` co dau, 2 vi tra ve MANG, 1 vi boc `{"objects": [...]}`.
-PHIEN_BAN_HIEU_CANH = 4
+#: 5/2 (23/09, M-02): loi nhac nhan them BANG CHUNG cua vong sua (`phan_hoi_qc`)
+#: — QC hinh da nhin cho noi tren BAN RA va bao no dut mach. Khong co no thi
+#: vong sua hoi lai y nguyen cau cu va nhan lai y nguyen cau tra loi cu (M-07).
+PHIEN_BAN_HIEU_CANH = 5
 PHIEN_BAN_HO_SO = 2
 
 #: Toi da bao nhieu ky tu ban chep loi gui kem MOT canh.
@@ -208,7 +211,8 @@ def loi_nhac_canh(ma_canh: str, ngu_canh: str, so_khung: int,
     #    Mot loi nhac ra lenh se bien vong sua thanh mot cong tac giu-het, va
     #    khi do phan doan cua model khong con la bang chung cua ai.
     nhac_qc = (
-        f"\n⚠️ Mot nguoi soat da xem BAN DUNG co canh nay bi BO, va bao rang "
+        f"\nLUU Y - BANG CHUNG TU VONG SUA: mot nguoi soat da xem BAN DUNG "
+        f"co canh nay bi BO, va bao rang "
         f"cho noi tai do lam dut mach nhin: \"{str(phan_hoi_qc)[:300]}\". "
         f"Hay can nhac LAI canh nay voi bang chung do. Neu canh nay la cau noi "
         f"can thiet cho mach nhin thi de xuat giu; neu khong thi giu nguyen "
