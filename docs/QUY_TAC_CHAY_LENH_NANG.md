@@ -102,7 +102,30 @@ CARGO_BUILD_JOBS=3 npm_config_jobs=3 pwsh -NoProfile -File tools/release.ps1 ...
 - Không đặt biến này ⇒ **phải đi qua khoá** như cũ. Không có đường thứ ba.
 - Vẫn kiểm `tai_may.py` trước: `QUÁ TẢI` ⇒ chờ, dù có chặn lõi.
 
-**Độ phủ của phép đo trên: chỉ 2,5 / 18,6 phút ≈ 13 %** (bộ đo phần lớn thời gian đang đếm một
+### ✅ ĐÃ KIỂM CHỨNG (24/09, dựng LTTCODE 0.2.8) — chặn lõi ăn thật, và KHÔNG tốn thêm thời gian
+
+Lượt dựng đầu tiên có `CARGO_BUILD_JOBS=3`, đo **trọn** (bộ đo bám theo tiến trình build chứ không
+theo đồng hồ — 379 mẫu, 18,9 phút, phủ ~100 %):
+
+| | Không chặn (0.2.7) | **Chặn `=3` (0.2.8)** |
+|---|---|---|
+| Đỉnh | **18,67 lõi** | **2,01 lõi** |
+| p50 | 2,99 | **1,00** |
+| Trung bình | 3,95 | **0,80** |
+| Số mẫu vượt 3 lõi | có | **0 / 379** |
+| **Thời gian tường** | **18,6 phút** (giữ khoá cả máy) | **18,9 phút** (ngoài khoá) |
+
+🔑 **Hai kết luận, cái thứ hai quan trọng hơn:**
+
+1. `CARGO_BUILD_JOBS` **khống chế được thật** — 0/379 mẫu vượt 3 lõi. Điều kiện của luật 4b đứng vững.
+2. **Chặn lõi gần như không tốn thời gian: 18,6 → 18,9 phút (+1,6 %).** Tức những đợt codegen
+   18,67 lõi ở bản không chặn **không mua được tốc độ nào** — chúng chỉ cướp máy của phiên khác.
+   Đổi 15 lõi rảnh lấy 18 giây là món hời hiếm thấy.
+
+⇒ Không còn lý do gì để build chạy không chặn lõi. Luật 4b **không phải sự thoả hiệp**, nó là
+lựa chọn tốt hơn ở cả hai chiều.
+
+**Độ phủ của phép đo CŨ (bản không chặn): chỉ 2,5 / 18,6 phút ≈ 13 %** (bộ đo phần lớn thời gian đang đếm một
 lượt build **xếp hàng** rồi chết vì cây bẩn). ⇒ Con số 18,67 là **sàn của đỉnh**, không phải
 đỉnh thật. Lượt build tới phải đo **trọn**, và đo **bản đã chặn lõi**, để xác nhận đỉnh thật sự
 nằm dưới số đã chặn. Chưa có phép đo đó thì đừng nâng `CARGO_BUILD_JOBS` lên quá 3.
