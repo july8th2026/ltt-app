@@ -77,7 +77,7 @@ SQLAlchemy (nền tảng, test `pytest`), PowerShell 7 (phát hành), Tauri/Rust
 | 16 | Credit mỗi lượt cạnh token | 🔴 **CHẶN** — tra hết chuỗi: `/api/v1/messages` chỉ mang token; quyết toán chạy trong `finally` SAU khi byte cuối đã gửi; `/api/v1/usage` join theo `Job.id` còn lượt chat mang mã `stream:<hex>`. **Không có nguồn nào cho credit theo lượt.** Chủ dự án chọn (b): suy từ hiệu số số dư, gắn nhãn `≈` |
 | 17 | Giảm độ trễ mỗi bước | ⬜ chưa |
 | 18 | Chạy tiếp khi đóng app | 🟡 **0,5** — tra xong: **phần lớn đã có** (khay giữ sidecar sống, autostart, `lttcode-cli.exe` chạy thật 60,7 s). H18 chấm lại 45 → 78. Còn: chủ dự án quyết có làm scheduler mức hệ điều hành không |
-| 19 | Git/PR thành công cụ gốc | 🟡 **0,5** — tra xong: **không phải tự viết**, cộng đồng có `lxj808624/dsh-tool-git`; còn: đánh giá repo theo `TIEU_CHI.md` rồi bundle |
+| 19 | Git/PR thành công cụ gốc | 🟡 **0,5** — đã chấm `lxj808624/dsh-tool-git` (≈ 51/100). **Quyết định: bundle nhưng CHỈ lấy nhóm chỉ-đọc** (`git_status/diff/log/show`) — nhóm ghi có `add -A` không chặn, không quét bí mật, và `stash -u` ngoài hàng rào (cuốn mất tệp `??` của phiên khác). Còn: xác minh Cordis tắt được công cụ lẻ, rồi bundle |
 | 20 | Khởi động app (17→49→107 s) | ⬜ chưa |
 
 ### Ngoài plan — việc sinh ra từ lượt diễn tập D1
@@ -1164,14 +1164,51 @@ làm bước nghiên cứu để biết nó lớn cỡ nào.
 **Vì sao:** chênh **−45**. Hiện LTTCODE chỉ có `pwsh` + skill; mọi thao tác git là gõ lệnh, không
 có bước xem lại thay đổi trước khi commit.
 
-- [ ] **Step 1:** Trước khi viết công cụ mới, tra gói cộng đồng DSH có sẵn chưa (luật "dùng lại
-  trước, tự viết sau"). Ghi kết quả tra vào task.
-- [ ] **Step 2:** Nếu chưa có: thêm ba công cụ mỏng — `git_trang_thai`, `git_khac_biet`,
-  `git_commit` — trong đó `git_commit` **bắt buộc** hiện diff để người xem trước khi đồng ý.
-- [ ] **Step 3:** Đối chứng âm: `git_commit` phải **từ chối** `git add -A`, và phải chặn khi thấy
-  tệp bí mật trong danh sách stage.
-- [ ] **Step 4:** Bằng chứng: tạo một nhánh, commit một thay đổi thật từ trong app.
+- [x] **Step 1 ✅ XONG (làn `b-git`, 23/09):** đã chấm `lxj808624/dsh-tool-git` theo `TIEU_CHI.md`.
+
+  **≈ 51/100.** MIT · TypeScript · v0.1.3 · `execFile` không qua shell · cài bằng
+  `dsh plugin add` — **kiến trúc khớp** (4,5/5): đây là plugin Cordis, mà LTTCODE **chạy trên
+  DSH/Cordis**, nên nó cắm thẳng vào được.
+
+  > ⚠️ Làn chấm mục 5 **1/5 vì "không cắm được vào runtime Claude Code"** — **chấm sai**. Tiêu chí
+  > đó hỏi *giá trị cho nền tảng của ta*, mà nền tảng của ta là DSH. Trừ điểm này đi thì điểm
+  > thật cao hơn 51. Ghi lại để lần sau đọc `TIEU_CHI.md` đúng chủ ngữ.
+
+  **Ba thứ làm nó KHÔNG dùng nguyên trạng được** (bằng chứng tệp:dòng do làn đọc mã):
+
+  | # | Vấn đề | Bằng chứng |
+  |---|---|---|
+  | a | **`git add -A` là tính năng chính thức, không bị chặn** | `src/tools/stage.ts`: `all: true` → `ctx.run(['add','-A'])`. Hàng rào `findDestructiveGit` (`src/safety.ts`) **chỉ kiểm `git_commit --amend`**, không hề kiểm `git_stage` |
+  | b | **Không quét bí mật, một dòng nào cũng không** | `search_code` "secret" → 0 kết quả; đọc `stage.ts`/`commit.ts`/`safety.ts` không có logic nào cho `.env`, `*.pem`, `secrets/**` |
+  | c | **`git_stash push --includeUntracked` KHÔNG nằm trong hàng rào** | `PATTERNS` chặn `reset --hard`, `clean -f`, `checkout -- .`, `push --force`… nhưng bỏ sót `stash`. Đây đúng là **luật chết người số 4** của kho này: dòng `??` là của phiên khác — một lượt `stash -u` sẽ **cuốn mất việc của phiên đang chạy** |
+
+  Thêm: upstream im > 5 tuần, issue #4 đã xác nhận lỗi mà chưa vá (trưởng thành 2/5).
+
+- [ ] **Step 2 — QUYẾT ĐỊNH: bundle NHƯNG CHỈ LẤY PHẦN ĐỌC.**
+
+  **Vì sao không bọc cả gói, cũng không tự viết từ đầu:** chênh −45 sinh ra từ *"không có bước
+  xem lại thay đổi trước khi commit"* — tức là thiếu **`git_status` / `git_diff` / `git_log` /
+  `git_show` có cấu trúc**. Bốn công cụ đó là **chỉ đọc, không rủi ro**, và gói này đã có sẵn,
+  làm tốt, trả JSON. Lấy chúng là **đóng đúng cái chênh** mà không nhận một rủi ro nào.
+
+  Ba thứ ở bảng trên **đều nằm ở nhóm công cụ GHI** (`git_stage`, `git_commit`, `git_stash`).
+  Nhóm đó ta **không cần**: ghi git vẫn đi qua `pwsh`, nơi luật của kho đã áp sẵn. Bỏ chúng thì
+  ba vấn đề a/b/c biến mất mà **không phải fork, không phải vá mã người khác, không phải nuôi
+  một bản rẽ nhánh**.
+
+  - [ ] Xác minh **tắt được từng công cụ** trong lớp vá Cordis (`plugins/profile-lttcode/cordis.patch.yml`).
+        ⚠️ **Chưa xác minh — đừng coi là đã biết.** Nếu Cordis **không** cho tắt lẻ từng công cụ
+        ⇒ quay lại tự viết ba công cụ mỏng, đừng nhận cả nhóm ghi.
+  - [ ] Ghim đúng `#v0.1.3`, không để trôi theo `main` của upstream đang im.
+
+- [ ] **Step 3 — đối chứng âm, chạy THẬT sau khi bundle:** gọi `git_stage`, `git_commit`,
+  `git_stash` từ trong phiên ⇒ cả ba **phải không tồn tại**. Nếu còn gọi được thì việc tắt
+  không ăn, và task này **chưa xong** — dù `git_status` đã chạy đẹp.
+- [ ] **Step 4 — bằng chứng:** trong một phiên thật, model tự gọi `git_diff` để xem lại trước
+  khi đề nghị commit (chứ không phải ta nhắc nó trong prompt).
 - [ ] **Step 5: Commit**
+
+> **Việc ghi vào `D:\LTTCODEAPP` đang xếp sau làn `credit-uoc` (R1: một kho một làn ghi).**
 
 ---
 
