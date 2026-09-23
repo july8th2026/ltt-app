@@ -54,7 +54,7 @@ docs/00_LTT_OPERATING_CONTRACT.md      ← đọc trước việc thực chất
    bảo mật (hợp đồng §10, §10b).
 3. **Kiểm CPU trước lệnh nặng** (gate mọi chế độ, `test_nhanh.py`, ≥ 3 tệp test):
    `python tools\cua_so_yen.py trang-thai` (có người giữ khoá → chờ) +
-   `python tools\tai_may.py` (`QUÁ TẢI` → chờ). pytest gõ tay `-n` tối đa 6. Hợp đồng §4.8.
+   `python tools\tai_may.py` (`QUÁ TẢI` → chờ). pytest gõ tay `-n` tối đa 7 (chủ dự án đổi 6 → 7, 23/09). Hợp đồng §4.8.
 4. **Dòng `??` lạ trong `git status` là một PHIÊN KHÁC**, không phải rác. Không
    `stash`, `reset`, `checkout --`. `git add` tường minh từng tệp.
 5. **Deploy xuất HEAD cây chính** (`git archive` — mọi commit trên `main` của mọi phiên)
