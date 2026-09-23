@@ -232,6 +232,7 @@ def ghi_cong_ben_thu_ba(request: Request):
 
     return templates.TemplateResponse(request, "ghi_cong_ben_thu_ba.html", {
         "muc": tpn.muc_ghi_cong(),
+        "dinh_danh": tpn.dinh_danh_giay_phep,
     })
 
 

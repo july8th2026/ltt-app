@@ -86,6 +86,19 @@ def doc_bang_muc1(duong_dan: pathlib.Path | None = None) -> list[dict]:
     return ket_qua
 
 
+#: Chu thich trong ngoac o o giay phep ("(ghi cong)", "(attribution)") la van
+#: xuoi tieng Viet trong tep nguon. Trang cong khai phuc vu ca khach doc tieng
+#: Anh, nen chi lay DINH DANH giay phep — thu ngon ngu nao cung doc duoc, va
+#: cung la thu ma nghia vu ghi cong noi toi.
+_GHI_CHU_TRONG_NGOAC = re.compile(r"\s*\([^)]*\)\s*$")
+
+
+def dinh_danh_giay_phep(o: str) -> str:
+    """`**CC BY 4.0** (ghi cong)` -> `CC BY 4.0`."""
+    s = str(o or "").replace("**", "").strip()
+    return _GHI_CHU_TRONG_NGOAC.sub("", s).strip()
+
+
 def can_ghi_cong(dong: dict) -> bool:
     """CC BY (bao gom CC BY-SA/-NC) o License mã HOAC License weights ⇒ bắt
     buộc ghi công theo điều khoản giấy phép. Đây là phép thử duy nhất; trang
