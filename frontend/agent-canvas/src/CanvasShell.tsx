@@ -5,19 +5,23 @@ import { addEdge, applyEdgeChanges, applyNodeChanges, Background, Controls, Mark
 import '@xyflow/react/dist/style.css'
 import './canvas.css'
 import { activePage, cloneGraphSelection, connectionAllowed, connectionCreatesCycle, editorReducer, emptyDocument, nextNode,
-  scopeNodeIds, type PaletteTool } from './editorState'
+  type PaletteTool } from './editorState'
 import { Inspector } from './Inspector'
 import { AnnotationNode, CreativeToolNode, FrameNode, ToolNode } from './ToolNode'
 import { CanvasEdgeView } from './CanvasEdgeView'
 import { fieldLabel, mediaKind, nodeModality, outputLabel, primaryFields } from './nodePresentation'
 import { CANVAS_PRESENTATION_VERSION, customerPaletteTools, customerToolLabel,
   destinationLabel, primaryOutputHandle } from './presentationAdapter'
-import { applyAssistant, approveRun, cancelRun, cloneWorkflow, createRun, createShare, exportWorkflow, importWorkflow,
-  loadOrCreateWorkflowV3, loadPalette, loadPreferences,
-  loadRun, loadRunHistory, loadSnapshots, planWorkflow, restoreSnapshot,
+import { applyAssistant, cloneWorkflow, createShare, exportWorkflow, importWorkflow,
+  loadOrCreateWorkflowV3, loadPalette, loadPreferences, loadSnapshots, restoreSnapshot,
   savePreferences, saveWorkflowV3,
-  previewAssistant, quoteTool, restoreRunAsWorkflow, runAgain, tickRun, uploadAsset, WorkflowConflictError, validateWorkflow, type AgentRun, type AgentRunSummary, type AssistantResult, type CanvasDocument,
-  type CanvasEdge, type CanvasNode, type RunScope, type Workflow, type WorkflowSnapshot } from './workflowApi'
+  previewAssistant, quoteTool, uploadAsset, WorkflowConflictError, type AssistantResult, type CanvasDocument,
+  type CanvasEdge, type CanvasNode, type Workflow, type WorkflowSnapshot } from './workflowApi'
+// Cua v3: trinh soan LUU -> PUBLISH -> TAO run -> DOC. No khong con "lai"
+// dong co bang `tickRun` nua; may chu tu tien, client chi poll.
+import { cancelRunV3, createRunV3, loadRunV3, publishWorkflowV3,
+  RUN_V3_KET_THUC, WorkflowCompileError, type RunV3 } from './workflowApi'
+import { RunV3Panel } from './RunV3Panel'
 
 const nodeTypes = { tool: ToolNode, creativeTool: CreativeToolNode, frame: FrameNode, annotation: AnnotationNode }
 const edgeTypes = { creative: CanvasEdgeView }
@@ -64,10 +68,23 @@ function uniqueNodeLabel(node:CanvasNode,nodes:CanvasNode[],byName:Map<string,Pa
   return peers.length>1?`${base} ${peers.findIndex(item=>item.id===node.id)+1}`:base
 }
 
-function runStatusLabel(status:string){
-  return ({awaiting_approval:'Chờ xác nhận',running:'Đang chạy',done:'Hoàn tất',error:'Có lỗi',
-    cancelled:'Đã hủy',scheduled:'Đã lên lịch'} as Record<string,string>)[status]??status
+// Trang thai node v3 (chu HOA, spec §5.3) -> tu vung mau sac ma `ToolNode`
+// da biet. ⛔ Khong doi `ToolNode` o day: no la viec cua plan 02.
+/** Noi su kien theo `seq`: chi giu cai MOI hon cai da co.
+ *
+ *  🔴 Do duoc tren trinh duyet 23/09: cua huy (`POST /runs/{id}/cancel`) KHONG
+ *     nhan `?sau=`, nen no tra CA lich su; con vong poll tra phan tang dan.
+ *     Noi mu quang lam dong thoi gian hien `WorkflowStarted` hai lan. Loc theo
+ *     `seq` dung cho ca hai nguon, va khong phu thuoc nguon nao tra gi. */
+function nhapRun(truoc:RunV3|null,next:RunV3):RunV3{
+  if(!truoc||truoc.id!==next.id)return next
+  const cuoi=truoc.su_kien.reduce((max,e)=>Math.max(max,e.seq),0)
+  return {...next,su_kien:[...truoc.su_kien,...next.su_kien.filter(e=>e.seq>cuoi)]}
 }
+
+const TRANG_THAI_NODE_UI:Record<string,string>={PENDING:'queued',READY:'queued',
+  QUEUED:'queued',RUNNING:'running',WAITING:'queued',RETRY_SCHEDULED:'retry_needed',
+  SUCCEEDED:'done',FAILED:'error',SKIPPED:'queued',CANCELLED:'error',ABANDONED:'error'}
 
 type StarterFlowKind='text-image'|'image-text'|'image-video'
 
@@ -93,17 +110,12 @@ function Editor() {
   const [showLayers,setShowLayers]=useState(false)
   const [commandOpen,setCommandOpen]=useState(false)
   const [commandQuery,setCommandQuery]=useState('')
-  const [costs, setCosts] = useState<Record<string, number>>({})
   const [liveQuotes,setLiveQuotes]=useState<Record<string,number>>({})
   const [retryNonce, setRetryNonce] = useState(0)
-  const [validationIssues, setValidationIssues] = useState<{ step_id: string; message: string }[]>([])
-  const [run, setRun] = useState<AgentRun>()
-  const [runHistory,setRunHistory]=useState<AgentRunSummary[]>([])
+  const [run, setRun] = useState<RunV3|null>(null)
   const [runError, setRunError] = useState('')
-  const [scheduledAt,setScheduledAt]=useState('')
-  const [runScope,setRunScope]=useState('full')
-  const [preparedScope,setPreparedScope]=useState<RunScope>()
-  const [useCache,setUseCache]=useState(true)
+  //: node_id -> ma loi bien dich (422 `{ma,node_id,thong_diep}` cua publish).
+  const [loiNode,setLoiNode]=useState<Record<string,string>>({})
   const [assistantOpen,setAssistantOpen]=useState(false)
   const [assistantMode,setAssistantMode]=useState<'analyze'|'improve'>('analyze')
   const [assistantPrompt,setAssistantPrompt]=useState('')
@@ -150,7 +162,6 @@ function Editor() {
     return {edgeId:edge.id,label:source?uniqueNodeLabel(source,page.nodes,byName):edge.source,
       detail:`${outputLabel(edge.sourceHandle??'',String(sourceTool?.returns[edge.sourceHandle??'']??''))} → ${fieldLabel(edge.targetHandle??'đầu vào')}`}
   }):[],[selectedNode,page.edges,page.nodes,byName])
-  const refreshRunHistory=useCallback(()=>loadRunHistory().then(setRunHistory).catch(()=>setRunHistory([])),[])
 
   useEffect(()=>{
     if(!palette.length||!page.nodes.length)return
@@ -188,7 +199,6 @@ function Editor() {
     }).catch(() => active && setPhase('error'))
     return () => { active = false }
   }, [csrf])
-  useEffect(()=>{void refreshRunHistory()},[refreshRunHistory])
 
   useEffect(() => {
     const online = () => setOffline(false); const offlineNow = () => setOffline(true)
@@ -211,18 +221,20 @@ function Editor() {
   }, [])
 
   useEffect(() => {
-    if (!run || run.status !== 'running') return
-    const scheduledDelay=run.scheduled_at?new Date(run.scheduled_at).getTime()-Date.now():0
-    const delay=scheduledDelay>0?Math.min(60_000,Math.max(1200,scheduledDelay)):1200
-    const timer = window.setTimeout(() => { void tickRun(run, csrf).then(next=>{setRun(next);void refreshRunHistory()})
-      .catch(() => setPhase('error')) }, delay)
+    if (!run || RUN_V3_KET_THUC.has(run.status)) return
+    const timer = window.setTimeout(() => {
+      void loadRunV3(run.id, run.seq_cuoi)
+        // Su kien ve theo lo tang dan (`?sau=<seq>`) — NOI, khong thay. Thay
+        // la mat lich su moi nhip, va dong thoi gian chi con mot dong.
+        .then(next => setRun(truoc => nhapRun(truoc, next)))
+        .catch(() => setRunError('Không đọc được lượt chạy.'))
+    }, 1500)
     return () => window.clearTimeout(timer)
-  }, [run, csrf])
+  }, [run])
 
   useEffect(() => {
     if (!workflow || phase === 'loading' || offline) return
     if (JSON.stringify(workflow.canvas) === JSON.stringify(state.document)) return
-    setValidationIssues([])
     autosaveTimer.current = window.setTimeout(async () => {
       setPhase('saving')
       try {
@@ -355,45 +367,37 @@ function Editor() {
     dispatch({type:'select',id:nodeId});setSelected([nodeId]);setSelectedEdges([]);setDesktopPanel('inspector')
   },[page.nodes,byName,palette])
 
-  const prepareScope=useCallback(async(scope:RunScope)=>{
-    const activeRun=run&&!['done','error','cancelled'].includes(run.status)
-    if(!workflow||readOnly||activeRun)return
+  /** LUU -> PUBLISH -> TAO run. Ba lo phai di dung thu tu: `tao_run` tu choi
+   *  mot workflow chua publish (422 `chua_publish`), va publish dong bang
+   *  DUNG ban nhap vua luu — nen luu phai xong truoc, khong chay song song. */
+  const chayWorkflow=useCallback(async()=>{
+    const dangChay=run&&!RUN_V3_KET_THUC.has(run.status)
+    if(!workflow||readOnly||dangChay)return
     if(autosaveTimer.current)window.clearTimeout(autosaveTimer.current)
-    setRun(undefined)
-    setPreparedScope(scope);setRunScope(scope.mode==='frame'?`frame:${scope.frame_id}`:scope.mode)
-    setDesktopPanel('run');setPhase('saving');setRunError('')
-    let saved:Workflow
+    setRun(null);setDesktopPanel('run');setPhase('saving');setRunError('');setLoiNode({})
     try{
-      saved=await saveWorkflowV3({...workflow,canvas:state.document},csrf)
-      setPhase('saved')
+      const saved=await saveWorkflowV3({...workflow,canvas:state.document},csrf)
+      setWorkflow(saved);setPhase('saved')
+      await publishWorkflowV3(saved,csrf)
+      setRun(await createRunV3(saved.id,csrf))
     }catch(error){
-      setPhase(error instanceof WorkflowConflictError?'conflict':'error')
-      setRunError(error instanceof Error?error.message:'Không lưu được workflow.')
-      return
+      if(error instanceof WorkflowCompileError){
+        setRunError(error.message)
+        if(error.nodeId)setLoiNode({[error.nodeId]:error.ma})
+      }else if(error instanceof WorkflowConflictError){
+        setPhase('conflict');setRunError('Workflow vừa đổi ở nơi khác — tải bản mới rồi chạy lại.')
+      }else{
+        setRunError(error instanceof Error?error.message:'Không chạy được.')
+      }
     }
-    try{
-      const checked=await validateWorkflow(saved,csrf)
-      setWorkflow(checked);setCosts(Object.fromEntries(checked.validation.step_costs.map((item:{step_id:string;maximum:number})=>[item.step_id,item.maximum])))
-      const requested=scope.mode==='full'?page.nodes.map(node=>node.id):scope.mode==='frame'
-        ?page.frames.find(frame=>frame.id===scope.frame_id)?.node_ids??[]
-        :(scope.node_ids??[scope.node_id??'']).filter(Boolean)
-      const relevantIds=new Set(scopeNodeIds(page.nodes,page.edges,requested))
-      const relevantIssues=checked.validation.issues.filter((issue:{step_id:string;message:string})=>
-        !issue.step_id||relevantIds.has(issue.step_id))
-      setValidationIssues(relevantIssues)
-      if(relevantIssues.length)return
-      setRun(await createRun(checked,csrf,scope,useCache));void refreshRunHistory()
-    }catch(error){
-      if(error instanceof WorkflowConflictError)setPhase('conflict')
-      setRunError(error instanceof Error?error.message:'Không chuẩn bị được bản chạy.')
-    }
-  },[workflow,readOnly,run,state.document,csrf,useCache,refreshRunHistory,page.nodes,page.edges,page.frames])
+  },[workflow,readOnly,run,state.document,csrf])
 
-  const downstreamIds=useCallback((nodeId:string)=>{
-    const found=new Set([nodeId]);let changed=true
-    while(changed){changed=false;for(const edge of page.edges)if(found.has(edge.source)&&!found.has(edge.target)){found.add(edge.target);changed=true}}
-    return [...found]
-  },[page.edges])
+  const huyRun=useCallback(()=>{
+    if(!run)return
+    void cancelRunV3(run.id,csrf).then(next=>setRun(truoc=>nhapRun(truoc,next)))
+      .catch(error=>setRunError(error instanceof Error?error.message:'Không hủy được.'))
+  },[run,csrf])
+
 
   const duplicateNode=useCallback((nodeId:string)=>{
     if(readOnly)return;const source=page.nodes.find(node=>node.id===nodeId);if(!source)return
@@ -433,7 +437,7 @@ function Editor() {
     dispatch({type:'graph',nodes,edges:page.edges.filter(item=>item.id!==edgeId)})
   },[readOnly,page])
   const toggleErrorBranch=()=>{if(!selectedEdge||readOnly)return;const condition=selectedEdge.data?.condition==='error'?'success':'error';dispatch({type:'graph',nodes:page.nodes,edges:page.edges.map(edge=>edge.id===selectedEdge.id?{...edge,data:{...edge.data,condition}}:edge)})}
-  const activateWorkflow=(next:Workflow)=>{setWorkflow(next);dispatch({type:'replace',document:next.canvas});setRun(undefined);setPreparedScope(undefined);setCosts({});setValidationIssues([]);setPhase('ready')}
+  const activateWorkflow=(next:Workflow)=>{setWorkflow(next);dispatch({type:'replace',document:next.canvas});setRun(null);setLoiNode({});setPhase('ready')}
   const cloneCurrent=async()=>{if(!workflow)return;try{activateWorkflow(await cloneWorkflow(workflow,csrf))}catch{setPhase('error')}}
   const downloadTemplate=async()=>{if(!workflow)return;try{const payload=await exportWorkflow(workflow);const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download=`workflow-${workflow.id}.json`;link.click();URL.revokeObjectURL(url)}catch{setPhase('error')}}
   const importTemplate=async(event:React.ChangeEvent<HTMLInputElement>)=>{const file=event.target.files?.[0];if(!file)return;try{activateWorkflow(await importWorkflow(JSON.parse(await file.text()),csrf))}catch{setPhase('error')}finally{event.target.value=''}}
@@ -497,7 +501,7 @@ function Editor() {
       ...inputFields.map((id,index)=>({id,type:'target' as const,position:Position.Left,x:-22,y:34+index*34,width:44,height:44})),
       ...outputHandles.map((id,index)=>({id,type:'source' as const,position:Position.Right,x:width-22,y:46+index*42,width:44,height:44}))],
     selected: node.id === state.selectedId || selected.includes(node.id),
-    data: { ...node.data, __tool: tool, __cost: liveQuotes[node.id]??costs[node.id],
+    data: { ...node.data, __tool: tool, __cost: liveQuotes[node.id],
       __readOnly: readOnly,__inputFields:inputFields,__label:node.label,
       __onParamChange: (name:string,value:unknown) => dispatch({type:'update',id:node.id,data:{
         params:{...((node.data.params??{}) as Record<string,unknown>),[name]:value}}}),
@@ -507,7 +511,6 @@ function Editor() {
         setDesktopPanel(null);setQuickCreate(null);setContextMenu({kind:'node',nodeId:node.id,x,y,flow:node.position})},
       __onQuickConnect: (sourceHandle:string)=>setQuickConnect({sourceId:node.id,sourceHandle}),
       __onOpen:()=>{setSelected([node.id]);setSelectedEdges([]);dispatch({type:'select',id:node.id});setDesktopPanel('inspector')},
-      __onRun:()=>{setSelected([node.id]);dispatch({type:'select',id:node.id});void prepareScope({mode:'node',node_id:node.id})},
       __onUpload:(files:File[])=>void uploadToNode(node.id,files),
       __onGenerate:()=>generateInNode(node.id),
       __references:node.id===selectedNode?.id?referenceOptions:[],
@@ -515,10 +518,10 @@ function Editor() {
       __onReference:(reference:ReferenceOption)=>onConnect({source:reference.source,sourceHandle:reference.sourceHandle,
         target:node.id,targetHandle:reference.targetHandle}),
       __onDisconnect:disconnectInput,
-      __status: String(run?.checkpoint[node.id]?.status ??
-        (validationIssues.some(issue => issue.step_id === node.id) ? 'invalid'
-        : costs[node.id] === undefined ? 'draft' : 'validated')),
-      __artifacts: (run?.artifacts ?? []).filter(item => item.step_id === node.id) } })})
+      __loiNode: loiNode[node.id] ? node.id : undefined,
+      __status: loiNode[node.id] ? 'invalid'
+        : TRANG_THAI_NODE_UI[String(run?.nodes.find(item => item.node_id === node.id)?.status ?? '')]
+        ?? 'draft' } })})
     const frames = page.frames.map(frame => {
       const members = page.nodes.filter(node => frame.node_ids.includes(node.id))
       const minX = Math.min(...members.map(node => node.position.x), 80)
@@ -539,13 +542,14 @@ function Editor() {
       draggable: false, selectable: false, connectable: false, zIndex: 3,
       data: { kind: 'comment', text: comment.text } }))
     return [...frames, ...tools, ...notes, ...comments]
-  }, [page, state.selectedId, selected, selectedNode, byName, palette, costs, liveQuotes, validationIssues, run,
-    readOnly,presentationMode,prepareScope,uploadToNode,generateInNode,duplicateNode,referenceOptions,connectedInputs,onConnect,disconnectInput])
+  }, [page, state.selectedId, selected, selectedNode, byName, palette, liveQuotes, loiNode, run,
+    readOnly,presentationMode,uploadToNode,generateInNode,duplicateNode,referenceOptions,connectedInputs,onConnect,disconnectInput])
   const displayEdges = useMemo(() => (showConnections ? page.edges : []).map(edge => {
     const isError = edge.data?.condition === 'error'
     const sourceTool=byName.get(String(page.nodes.find(node=>node.id===edge.source)?.data.tool))
     const kind=String(sourceTool?.returns[edge.sourceHandle??'']??'data').replace('[]','')
-    const running=run?.status==='running'&&run.checkpoint[edge.source]?.status==='done'&&run.checkpoint[edge.target]?.status!=='done'
+    const trangThai=(id:string)=>run?.nodes.find(item=>item.node_id===id)?.status
+    const running=run?.status==='RUNNING'&&trangThai(edge.source)==='SUCCEEDED'&&trangThai(edge.target)!=='SUCCEEDED'
     return { ...edge,type:presentationMode==='creative'?'creative':undefined,
       selected:selectedEdges.includes(edge.id),label:isError?'Lỗi':undefined,
       markerEnd:{type:MarkerType.ArrowClosed,width:16,height:16},animated:isError||running,
@@ -601,20 +605,7 @@ function Editor() {
     return Object.keys(tool.params_schema).some(field=>connectionAllowed(sourceTool,insertEdge.sourceHandle!,tool,field))&&
       Boolean(primaryOutputHandle(tool)&&connectionAllowed(tool,primaryOutputHandle(tool)!,targetTool,insertEdge.targetHandle!))
   }):[]
-  const selectedRunScope:RunScope=runScope.startsWith('frame:')
-    ?{mode:'frame',frame_id:runScope.slice(6)}:runScope==='selection'
-    ?{mode:'selection',node_ids:selected}:runScope==='node'&&selectedNode
-    ?{mode:'node',node_id:selectedNode.id}:{mode:'full'}
-  const shownRunScope=run&&preparedScope?preparedScope:selectedRunScope
-  const shownSelection=shownRunScope.mode==='selection'?shownRunScope.node_ids??[]:[]
-  const scopeNodeCount=shownRunScope.mode==='full'?page.nodes.length:shownRunScope.mode==='frame'
-    ?page.frames.find(frame=>frame.id===shownRunScope.frame_id)?.node_ids.length??0
-    :shownRunScope.mode==='selection'?shownSelection.length:shownRunScope.node_id?1:0
-  const scopedNode=shownRunScope.mode==='node'?page.nodes.find(node=>node.id===shownRunScope.node_id):undefined
-  const scopeLabel=shownRunScope.mode==='full'?'Toàn workflow':shownRunScope.mode==='selection'
-    ?`${shownSelection.length} block đã chọn`:shownRunScope.mode==='node'&&scopedNode
-    ?uniqueNodeLabel(scopedNode,page.nodes,byName):`Frame · ${page.frames.find(frame=>frame.id===shownRunScope.frame_id)?.name??''}`
-  const terminalRun=Boolean(run&&['done','error','cancelled'].includes(run.status))
+  const runDaXong=Boolean(run&&RUN_V3_KET_THUC.has(run.status))
   const persistPreferences=(nextTheme:'light'|'dark',nextCatalog:'simple'|'advanced')=>{
     setTheme(nextTheme);setCatalogMode(nextCatalog)
     void savePreferences({theme:nextTheme,catalog_mode:nextCatalog,
@@ -644,30 +635,15 @@ function Editor() {
           <button aria-pressed={showGrid} onClick={()=>dispatch({type:'pageView',grid:!showGrid})}>Lưới</button>
           <button aria-pressed={showConnections} onClick={()=>dispatch({type:'pageView',connections:!showConnections})}>Đường nối</button>
           <button aria-pressed={showMinimap} onClick={()=>dispatch({type:'pageView',minimap:!showMinimap})}>Bản đồ</button></div>}
-        <select aria-label="Phạm vi chạy" value={runScope} disabled={!!run&&!terminalRun} onChange={event=>{setPreparedScope(undefined);setRunScope(event.target.value)}}>
-          <option value="full">Toàn workflow</option>
-          <option value="selection" disabled={!selected.length}>Lựa chọn ({selected.length})</option>
-          {selectedNode&&<option value="node">Node đang chọn</option>}
-          {page.frames.map(frame=><option key={frame.id} value={`frame:${frame.id}`}>Frame · {frame.name}</option>)}
-        </select>
-        <label className="cache-control"><input type="checkbox" disabled={!!run&&!terminalRun} checked={useCache} onChange={event=>setUseCache(event.target.checked)}/>Dùng cache</label>
-        <section className="run-scope-preview" aria-label="Phạm vi và chi phí"><small>PHẠM VI</small><strong>{scopeLabel}</strong><span>{scopeNodeCount} block đích{run?` · ${run.plan.steps.length} bước gồm đầu vào liên quan`:' · server sẽ chốt chi phí tối đa trước khi chạy'}</span></section>
-        {!run&&<button className="run-confirm" disabled={readOnly||!workflow||phase==='saving'||(selectedRunScope.mode==='selection'&&!selected.length)}
-          onClick={()=>void prepareScope(selectedRunScope)}>Kiểm tra chi phí</button>}
-        {!!validationIssues.length&&<section className="run-validation" role="alert"><strong>Cần sửa {validationIssues.length} mục</strong>{validationIssues.slice(0,4).map(issue=><span key={`${issue.step_id}-${issue.message}`}>{issue.message}</span>)}
-          {validationIssues.some(issue=>issue.message.toLocaleLowerCase('vi').includes('ngân sách'))&&<button onClick={()=>setDesktopPanel('workspace')}>Điều chỉnh ngân sách</button>}</section>}
-        {run?.status === 'awaiting_approval' && <label className="schedule-control">Chạy lúc<input type="datetime-local" value={scheduledAt} min={new Date().toISOString().slice(0,16)} onChange={event=>setScheduledAt(event.target.value)}/></label>}
-        {run?.status === 'awaiting_approval' && <section className="run-quote" aria-label="Xác nhận chi phí"><span>Tối đa</span><strong>{run.estimated} credit</strong><small>Đã dùng trước xác nhận: {run.actual} credit</small></section>}
-        {run?.status === 'awaiting_approval' && <button className="run-confirm" disabled={run.actual!==0} onClick={async () => {
-          try { setRunError(''); const when=scheduledAt?new Date(scheduledAt).toISOString():'';setRun(await approveRun(run, csrf,when));void refreshRunHistory() }
-          catch (error) { setRunError(error instanceof Error ? error.message : 'Không thể phê duyệt.') }
-        }}>Xác nhận và chạy · {run.estimated} credit</button>}
-        {run?.status === 'awaiting_approval'&&<button onClick={async()=>{setRun(await cancelRun(run,csrf));void refreshRunHistory()}}>Hủy bản chạy</button>}
-        {run?.status === 'awaiting_approval'&&run.actual!==0&&<span className="run-error" role="alert">Bản chạy không an toàn: credit phải bằng 0 trước xác nhận.</span>}
-        {run?.status === 'running' && <button onClick={async () => {setRun(await cancelRun(run, csrf));void refreshRunHistory()}}>Hủy chạy</button>}
-        {terminalRun&&run&&<button onClick={()=>void runAgain(run,csrf).then(next=>{setRun(next);setRunError('');void refreshRunHistory()}).catch(error=>setRunError(error instanceof Error?error.message:'Không thể chạy lại.'))}>Chạy lại theo cấu hình này</button>}
-        {terminalRun&&<button onClick={()=>{setRun(undefined);setPreparedScope(undefined);setRunError('')}}>Tạo bản chạy mới</button>}
-        {run && <span className={`run-state ${run.status}`} aria-live="polite">{runStatusLabel(run.status)} · đã dùng {run.actual}/{run.estimated} credit · {run.plan.steps.length} bước</span>}
+        {/* 01b chay CA do thi da publish: khong con chon pham vi, khong con
+            `use_cache`, khong con buoc duyet bao gia — ba thu ay la ngu nghia
+            cua Plan v1. May chu chot `credit_max` ngay luc publish. */}
+        <section className="run-scope-preview" aria-label="Phạm vi và chi phí"><small>PHẠM VI</small><strong>Toàn workflow</strong>
+          <span>{page.nodes.length} block · server chốt chi phí tối đa khi publish</span></section>
+        {!run&&<button className="run-confirm" disabled={readOnly||!workflow||!page.nodes.length||phase==='saving'}
+          onClick={()=>void chayWorkflow()}>Chạy ngay</button>}
+        {runDaXong&&<button onClick={()=>{setRun(null);setRunError('')}}>Tạo bản chạy mới</button>}
+        <RunV3Panel run={run} onCancel={huyRun}/>
         {runError && <span className="run-error" role="alert">{runError}</span>}</nav>
       {presentationMode==='legacy'&&<div className={`legacy-save-state save-state ${phase}`} aria-live="polite">{offline ? 'Ngoại tuyến · chờ thử lại' : phase === 'saving' ? 'Đang lưu…' : phase === 'conflict'
         ? <>Xung đột <button onClick={() => location.reload()}>Tải bản mới</button></>
@@ -702,8 +678,7 @@ function Editor() {
           <button disabled={readOnly} onClick={()=>dispatch({type:'commentAdd',text:'Bình luận mới'})}>+ Comment</button>
           {!!page.frames.length&&<ul>{page.frames.map(frame=><li key={frame.id}><input aria-label={`Đổi tên ${frame.name}`}
             value={frame.name} disabled={readOnly} onChange={event=>dispatch({type:'frameRename',id:frame.id,name:event.target.value})}/>
-            <small>{frame.node_ids.length} node</small>{workflow&&<a aria-label={`Xuất ${frame.name}`}
-              href={`/agent/api/workflows/${workflow.id}/frames/${frame.id}/export`}>↓</a>}<button aria-label={`Xóa ${frame.name}`} disabled={readOnly}
+            <small>{frame.node_ids.length} node</small><button aria-label={`Xóa ${frame.name}`} disabled={readOnly}
               onClick={()=>dispatch({type:'frameDelete',id:frame.id})}>×</button></li>)}</ul>}
           {!!page.notes.length&&<ul>{page.notes.map(note=><li key={note.id}><label>NOTE<input aria-label="Nội dung sticky note"
             value={note.text} disabled={readOnly} onChange={event=>dispatch({type:'annotationUpdate',kind:'notes',id:note.id,text:event.target.value})}/></label>
@@ -716,12 +691,9 @@ function Editor() {
           value={state.document.goal} onChange={event => dispatch({ type: 'document', goal: event.target.value })} /></label>
           <label>Ngân sách tối đa<input type="number" inputMode="numeric" min="5" disabled={readOnly}
             value={state.document.budget_max_credit} onChange={event => dispatch({ type: 'document', budget_max_credit: Number(event.target.value) })} /></label>
-          <button disabled={readOnly || state.document.goal.trim().length < 10} onClick={async () => {
-            try { setPhase('loading'); const planned = await planWorkflow(state.document.goal,
-              state.document.budget_max_credit, csrf); setWorkflow(planned)
-              dispatch({ type: 'replace', document: planned.canvas }); setRun(undefined); setCosts({}); setPhase('ready')
-            } catch { setPhase('error') }
-          }}>AI dựng Canvas</button><div className="template-actions"><button disabled={readOnly||!workflow} onClick={cloneCurrent}>Nhân workflow</button><button disabled={!workflow} onClick={downloadTemplate}>Xuất mẫu</button><label>Nhập mẫu<input type="file" accept="application/json,.json" onChange={importTemplate}/></label></div></div>
+          {/* Nut "AI dung Canvas" da bo: `planWorkflow` sinh Plan v1, va lop ay
+              chet o task 8 (spec §17.6). Assistant v3 la viec cua phase 11. */}
+          <div className="template-actions"><button disabled={readOnly||!workflow} onClick={cloneCurrent}>Nhân workflow</button><button disabled={!workflow} onClick={downloadTemplate}>Xuất mẫu</button><label>Nhập mẫu<input type="file" accept="application/json,.json" onChange={importTemplate}/></label></div></div>
         {Object.entries(groups).map(([group, tools]) => <section key={group}><h3>{group}</h3>
         {tools?.map(tool => <button key={tool.name} draggable={!readOnly} disabled={readOnly}
           onDragStart={event => event.dataTransfer.setData('application/ltt-tool', tool.name)} onClick={() => addTool(tool)}
@@ -767,8 +739,8 @@ function Editor() {
           <button onClick={()=>applyStarterFlow('image-text')}><strong>Hiểu nội dung hình ảnh</strong><span>Tải hoặc tạo ảnh, rồi yêu cầu AI phân tích</span></button>
           <button onClick={()=>applyStarterFlow('image-video')}><strong>Ảnh thành video</strong><span>Dùng ảnh làm khung đầu cho video</span></button>
           <button className="blank-flow" onClick={()=>setDesktopPanel('tools')}>Bắt đầu với Canvas trống</button></div></section>}
-        {!!validationIssues.length && <div className="validation-banner" role="alert"><strong>Workflow chưa hợp lệ</strong>
-          <span>{validationIssues.slice(0, 3).map(issue => issue.message).join(' · ')}</span></div>}
+        {!!Object.keys(loiNode).length && <div className="validation-banner" role="alert"><strong>Workflow chưa biên dịch được</strong>
+          <span>{runError||Object.values(loiNode).join(' · ')}</span></div>}
         {showLayers&&<aside className="layers-drawer" aria-label="Danh sách lớp"><header><strong>Lớp · {page.name}</strong>
           <button aria-label="Đóng danh sách lớp" onClick={()=>setShowLayers(false)}>×</button></header>
           <ul>{page.frames.map(frame=><li key={frame.id}><span>FRAME</span>{frame.name}</li>)}
@@ -799,23 +771,18 @@ function Editor() {
         {contextMenu.kind==='pane'?<><div className="context-tool-list">{customerPaletteTools(palette,catalogMode==='advanced').map(tool=><button key={tool.name} onClick={()=>{addTool(tool,contextMenu.flow);setContextMenu(null)}}><strong>{customerToolLabel(tool)}</strong><small>{categoryLabels[tool.category??'advanced']}</small></button>)}</div>
           <hr/><button onClick={()=>{dispatch({type:'pageView',connections:!showConnections});setContextMenu(null)}}>{showConnections?'Ẩn đường nối':'Hiện đường nối'}</button>
           <button onClick={()=>{dispatch({type:'layout'});setContextMenu(null)}}>Tự động sắp xếp node</button></>:
-          <>{contextMenu.nodeId&&<><button disabled={readOnly||Boolean(run&&!terminalRun)} onClick={()=>{setRunScope('node');void prepareScope({mode:'node',node_id:contextMenu.nodeId});setContextMenu(null)}}>Báo giá & chạy block này</button>
-            <button disabled={readOnly||Boolean(run&&!terminalRun)} onClick={()=>{setRunScope('selection');void prepareScope({mode:'selection',node_ids:downstreamIds(contextMenu.nodeId!)});setContextMenu(null)}}>Báo giá & chạy từ đây</button>
-            <button disabled={readOnly} onClick={()=>{duplicateNode(contextMenu.nodeId!);setContextMenu(null)}}>Sao chép node</button>
+          <>{contextMenu.nodeId&&<><button disabled={readOnly} onClick={()=>{duplicateNode(contextMenu.nodeId!);setContextMenu(null)}}>Sao chép node</button>
             {state.document.pages.filter(item=>item.id!==page.id).map(item=><button key={item.id} disabled={readOnly}
               onClick={()=>{dispatch({type:'nodeMovePage',id:contextMenu.nodeId!,pageId:item.id});setContextMenu(null)}}>Chuyển sang {item.name}</button>)}
             <button className="danger" disabled={readOnly} onClick={()=>{dispatch({type:'delete',ids:[contextMenu.nodeId!]});setSelected([]);setContextMenu(null)}}>Xóa node</button></>}</>}
       </aside>}
       {selectedNode&&presentationMode==='legacy'&&<ContextComposer node={selectedNode} tool={byName.get(String(selectedNode.data.tool))} readOnly={readOnly} presentationMode={presentationMode}
         onClose={()=>{setSelected([]);dispatch({type:'select'})}} onAdvanced={()=>setDesktopPanel('inspector')}
-        onRun={()=>void prepareScope({mode:'node',node_id:selectedNode.id})} cost={liveQuotes[selectedNode.id]??costs[selectedNode.id]}
+        cost={liveQuotes[selectedNode.id]}
         references={referenceOptions} connectedInputs={connectedInputs} onDisconnect={disconnectInput} onReference={reference=>onConnect({source:reference.source,sourceHandle:reference.sourceHandle,
           target:selectedNode.id,targetHandle:reference.targetHandle})}
         onChange={data=>dispatch({type:'update',id:selectedNode.id,data})}/>}
-      {(desktopPanel==='inspector'||mobilePanel==='inspector')&&<Inspector className={desktopPanel==='inspector'?'is-open':''} node={selectedNode} tool={selectedNode ? byName.get(String(selectedNode.data.tool)) : undefined} run={run} csrfToken={csrf}
-        runHistory={runHistory} onSelectRun={id=>void loadRun(id).then(setRun).catch(()=>setRunError('Không tải được run.'))}
-        onReplay={source=>void runAgain(source,csrf).then(next=>{setRun(next);void refreshRunHistory()}).catch(error=>setRunError(error instanceof Error?error.message:'Không thể replay.'))}
-        onRestore={source=>void restoreRunAsWorkflow(source,csrf).then(activateWorkflow).catch(error=>setRunError(error instanceof Error?error.message:'Không thể khôi phục workflow.'))}
+      {(desktopPanel==='inspector'||mobilePanel==='inspector')&&<Inspector className={desktopPanel==='inspector'?'is-open':''} node={selectedNode} tool={selectedNode ? byName.get(String(selectedNode.data.tool)) : undefined} csrfToken={csrf}
         readOnly={readOnly} connections={connectionOptions}
         onConnect={(field, value) => { if (!selectedNode) return; const [source, sourceHandle] = value.split('|')
           onConnect({ source, sourceHandle, target: selectedNode.id, targetHandle: field }) }}
@@ -860,8 +827,8 @@ function FlowStatus(){
 type ReferenceOption={source:string;sourceHandle:string;targetHandle:string;label:string;detail:string}
 type ConnectedInput={edgeId:string;label:string;detail:string}
 
-function ContextComposer({node,tool,readOnly,presentationMode,onChange,onAdvanced,onClose,onRun,cost,references,connectedInputs,onReference,onDisconnect}:{node:CanvasNode;tool?:PaletteTool;readOnly:boolean;presentationMode:'creative'|'legacy';
-  onChange:(data:Record<string,unknown>)=>void;onAdvanced:()=>void;onClose:()=>void;onRun:()=>void;cost?:number;
+function ContextComposer({node,tool,readOnly,presentationMode,onChange,onAdvanced,onClose,cost,references,connectedInputs,onReference,onDisconnect}:{node:CanvasNode;tool?:PaletteTool;readOnly:boolean;presentationMode:'creative'|'legacy';
+  onChange:(data:Record<string,unknown>)=>void;onAdvanced:()=>void;onClose:()=>void;cost?:number;
   references:ReferenceOption[];connectedInputs:ConnectedInput[];onReference:(reference:ReferenceOption)=>void;onDisconnect:(edgeId:string)=>void}) {
   if(!tool)return null
   const params=(node.data.params??{}) as Record<string,unknown>
@@ -887,7 +854,7 @@ function ContextComposer({node,tool,readOnly,presentationMode,onChange,onAdvance
         placeholder={name==='url'&&tool.name==='video.social_import'?'Dán link TikTok, YouTube Shorts hoặc Reels…':undefined}
         onChange={event=>setParam(name,rule.type==='int'?Number.parseInt(event.target.value):rule.type==='number'?Number(event.target.value):event.target.value)} /></label>
     })}</div>
-    <footer><span>{cost===undefined?'Chi phí do server xác nhận':`Tối đa ${cost} credit`}</span><button className="composer-run" disabled={readOnly} onClick={onRun}>✦ Kiểm tra chi phí</button></footer>
+    <footer><span>{cost===undefined?'Chi phí do server xác nhận':`Tối đa ${cost} credit`}</span></footer>
   </section>
 }
 

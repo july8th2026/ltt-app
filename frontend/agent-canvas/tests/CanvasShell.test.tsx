@@ -1,7 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CanvasShell } from '../src/CanvasShell'
-import { RunInspector } from '../src/RunInspector'
 
 const palette = { version: 1, tools: [
   { name: 'text.generate', label:'Tạo văn bản',category:'content',primary:true,description:'Tạo nội dung từ yêu cầu',
@@ -143,7 +142,10 @@ describe('CanvasShell', () => {
     expect(screen.getByRole('navigation',{name:'Khu vực Canvas'})).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button',{name:'Chi tiết'}))
     expect(screen.getByRole('button',{name:'Chi tiết'})).toHaveAttribute('aria-pressed','true')
-    expect(screen.getByLabelText('Run inspector')).toHaveTextContent('Kiểm tra workflow')
+    expect(screen.getByLabelText('Chi tiết block')).toHaveTextContent('Chọn một block')
+    // ⛔ Lich su run (`AgentRun` v1) da bo khoi bang chi tiet — trang thai
+    //    luot chay v3 chi o ngan keo "Chay workflow".
+    expect(screen.queryByLabelText('Run inspector')).not.toBeInTheDocument()
   })
 
   it('upgrades legacy canvas and manages pages and annotations', async () => {
@@ -187,65 +189,17 @@ describe('CanvasShell', () => {
     expect(screen.getByRole('textbox',{name:/Mô tả/})).toBeInTheDocument()
     expect(screen.queryByText('app_slug')).not.toBeInTheDocument()
     fireEvent.click(within(node).getByRole('button',{name:'Mở thao tác node'}))
-    expect(screen.getByRole('complementary',{name:'Menu thao tác node'})).toHaveTextContent('Báo giá & chạy block này')
+    // ⛔ 01b chay CA do thi: hai muc "Bao gia & chay block/tu day" la `scope`
+    //    cua Plan v1 va da bo — khong duoc de lai nut chet.
+    const menu=screen.getByRole('complementary',{name:'Menu thao tác node'})
+    expect(menu).toHaveTextContent('Sao chép node')
+    expect(menu).not.toHaveTextContent('Báo giá')
     fireEvent.click(screen.getByRole('button',{name:'Đóng menu ngữ cảnh'}))
     fireEvent.contextMenu(node,{clientX:400,clientY:300})
-    expect(screen.getByRole('complementary',{name:'Menu thao tác node'})).toHaveTextContent('Báo giá & chạy từ đây')
+    expect(screen.getByRole('complementary',{name:'Menu thao tác node'})).toHaveTextContent('Xóa node')
     fireEvent.click(screen.getByRole('button',{name:'Đóng menu ngữ cảnh'}))
     fireEvent.contextMenu(document.querySelector('.react-flow__pane')!,{clientX:600,clientY:250})
     expect(screen.getByRole('complementary',{name:'Menu khoảng trống Canvas'})).toHaveTextContent('Tự động sắp xếp node')
-  })
-
-  it('keeps quote, approval, cancel and retry in one spend-safe run flow',async()=>{
-    render(<CanvasShell />)
-    fireEvent.click(await screen.findByRole('button',{name:'Thêm Văn bản'}))
-    fireEvent.click(screen.getByRole('button',{name:'Chạy'}))
-    const drawer=screen.getByRole('navigation',{name:'Chạy workflow'})
-    expect(drawer).toHaveTextContent('Toàn workflow')
-    expect(drawer).toHaveTextContent('1 block đích')
-    expect(within(drawer).queryByRole('button',{name:'Nhân bản'})).not.toBeInTheDocument()
-    fireEvent.click(within(drawer).getByRole('button',{name:'Kiểm tra chi phí'}))
-    const confirm=await within(drawer).findByRole('button',{name:'Xác nhận và chạy · 7 credit'})
-    expect(drawer).toHaveTextContent('2 bước gồm đầu vào liên quan')
-    expect(within(drawer).getByLabelText('Xác nhận chi phí')).toHaveTextContent('Đã dùng trước xác nhận: 0 credit')
-    expect(vi.mocked(globalThis.fetch).mock.calls.some(([url])=>String(url).endsWith('/approve'))).toBe(false)
-    fireEvent.click(confirm)
-    expect(await within(drawer).findByText(/Đang chạy · đã dùng 0\/7 credit · 2 bước/)).toBeInTheDocument()
-    fireEvent.click(within(drawer).getByRole('button',{name:'Hủy chạy'}))
-    expect(await within(drawer).findByText(/Đã hủy · đã dùng 0\/7 credit · 2 bước/)).toBeInTheDocument()
-    expect(within(drawer).getByRole('combobox',{name:'Phạm vi chạy'})).toBeEnabled()
-    fireEvent.click(within(drawer).getByRole('button',{name:'Tạo bản chạy mới'}))
-    expect(within(drawer).getByRole('button',{name:'Kiểm tra chi phí'})).toBeInTheDocument()
-    fireEvent.click(within(drawer).getByRole('button',{name:'Kiểm tra chi phí'}))
-    expect(await within(drawer).findByRole('button',{name:'Xác nhận và chạy · 7 credit'})).toBeInTheDocument()
-    fireEvent.click(within(drawer).getByRole('button',{name:'Hủy bản chạy'}))
-    expect(await within(drawer).findByText(/Đã hủy · đã dùng 0\/7 credit · 2 bước/)).toBeInTheDocument()
-    fireEvent.click(within(drawer).getByRole('button',{name:'Chạy lại theo cấu hình này'}))
-    expect(await within(drawer).findByRole('button',{name:'Xác nhận và chạy · 7 credit'})).toBeInTheDocument()
-  })
-
-  it('keeps global budget validation visible and does not mislabel it as a save failure',async()=>{
-    const fetchMock=vi.mocked(globalThis.fetch)
-    const base=fetchMock.getMockImplementation()!
-    fetchMock.mockImplementation(async(input,init)=>{
-      if(String(input).endsWith('/validate'))return new Response(JSON.stringify({...validatedWorkflow,
-        validation:{issues:[{code:'budget',step_id:'',field:'',message:'Cần tối đa 59, vượt ngân sách 50.'}],
-          step_costs:[{step_id:'n1',maximum:59}],estimated_max_credit:59}}),{status:200})
-      return base(input,init)
-    })
-    render(<CanvasShell />)
-    fireEvent.click(await screen.findByRole('button',{name:'Thêm Video'}))
-    fireEvent.click(screen.getByRole('button',{name:'Chạy'}))
-    const drawer=screen.getByRole('navigation',{name:'Chạy workflow'})
-    const quote=within(drawer).getByRole('button',{name:'Kiểm tra chi phí'})
-    await waitFor(()=>expect(quote).toBeEnabled())
-    fireEvent.click(quote)
-    expect(await within(drawer).findByText('Cần tối đa 59, vượt ngân sách 50.')).toBeInTheDocument()
-    expect(screen.getByText('Đã lưu')).toBeInTheDocument()
-    expect(screen.queryByText('Lỗi lưu')).not.toBeInTheDocument()
-    expect(fetchMock.mock.calls.some(([url,init])=>String(url).endsWith('/workflows/w1/runs')&&init?.method==='POST')).toBe(false)
-    fireEvent.click(within(drawer).getByRole('button',{name:'Điều chỉnh ngân sách'}))
-    expect(screen.getByRole('spinbutton',{name:'Ngân sách tối đa'})).toHaveValue(50)
   })
 
   it('guides first-run users through both canonical chains before exposing advanced chrome',async()=>{
@@ -457,28 +411,128 @@ describe('CanvasShell', () => {
   })
 })
 
-it('renders server run checkpoints, costs, decisions and artifacts',()=>{
-  render(<RunInspector run={{id:'r1',version:2,status:'done',estimated:8,actual:6,
-    quote_hash:'hash',plan:{steps:[{id:'step-1'}]},checkpoint:{'step-1':{status:'done'}},
-    decisions:[{event:'approved'}],artifacts:[{step_id:'step-1',name:'video.mp4',url:'/artifact'}]}}/>)
-  const inspector=screen.getByLabelText('Run inspector')
-  expect(inspector).toHaveTextContent('Hoàn tất')
-  expect(inspector).toHaveTextContent('6 credit')
-  expect(screen.getByRole('link',{name:'video.mp4'})).toHaveAttribute('href','/artifact')
+// ── Chay workflow tren v3 (Dot 5.2 phan D / plan 01b task 6) ─────────────
+// Vong doi mot luot chay o day KHONG con la "bao gia -> duyet -> tick":
+// trinh soan LUU ban nhap, PUBLISH mot version, roi TAO run va chi DOC.
+// Ba loi goi ay phai di dung thu tu — publish truoc run — vi `tao_run` tu
+// choi mot workflow chua publish (422 `chua_publish`).
+const runV3Goc = { id: 'r1', workflow_id: 'w1', version_id: 'v1', status: 'QUEUED',
+  credit_max: 20, credit_charged: 0, settled: false,
+  created_at: '2026-09-24T00:00:00+00:00',
+  nodes: [] as { node_id: string; status: string; attempt: number
+    cost_credit: number; job_id: string; error: string }[],
+  su_kien: [{ seq: 1, loai: 'run.created', node_id: '', du_lieu: {},
+    created_at: '2026-09-24T00:00:00+00:00' }],
+  seq_cuoi: 1 }
+
+/** Giu nguyen mock goc cua `beforeEach`, chi chen them cac cua v3 cua run. */
+function mockRunV3(xen?: (url: string, init?: RequestInit) => Response | undefined) {
+  const fetchMock = vi.mocked(globalThis.fetch)
+  const base = fetchMock.getMockImplementation()!
+  fetchMock.mockImplementation(async (input, init) => {
+    const url = String(input)
+    const rieng = xen?.(url, init)
+    if (rieng) return rieng
+    if (url.includes('/api/v3/workflows/') && url.endsWith('/runs') && init?.method === 'POST')
+      return new Response(JSON.stringify(runV3Goc), { status: 201 })
+    // ⚠️ Cua huy KHONG nhan `?sau=`: no tra CA lich su su kien (runs_v3.py).
+    //    Mock phai giong the, neu khong bai duoi khong do duoc loi nhan doi.
+    if (url.includes('/api/v3/runs/') && url.endsWith('/cancel'))
+      return new Response(JSON.stringify({ ...runV3Goc, status: 'CANCELLED',
+        su_kien: [...runV3Goc.su_kien,
+          { seq: 2, loai: 'WorkflowCancelled', node_id: '', du_lieu: {},
+            created_at: '2026-09-24T00:00:05+00:00' }], seq_cuoi: 2 }), { status: 200 })
+    if (url.includes('/api/v3/runs/'))
+      return new Response(JSON.stringify({ ...runV3Goc, status: 'SUCCEEDED',
+        credit_charged: 4, settled: true,
+        su_kien: [{ seq: 2, loai: 'run.succeeded', node_id: '', du_lieu: {},
+          created_at: '2026-09-24T00:00:10+00:00' }], seq_cuoi: 2 }), { status: 200 })
+    return base(input, init)
+  })
+}
+
+/** Them mot node, mo ngan keo chay, bam "Chay ngay". Tra ve ngan keo + id node. */
+async function bamChay() {
+  render(<CanvasShell />)
+  fireEvent.click(await screen.findByRole('button', { name: 'Thêm Văn bản' }))
+  await screen.findByLabelText('Khối Văn bản')
+  const nodeId = document.querySelector<HTMLElement>('.react-flow__node')!.dataset.id!
+  fireEvent.click(screen.getByRole('button', { name: 'Chạy' }))
+  const drawer = screen.getByRole('navigation', { name: 'Chạy workflow' })
+  const nut = await within(drawer).findByRole('button', { name: 'Chạy ngay' })
+  await waitFor(() => expect(nut).toBeEnabled())
+  fireEvent.click(nut)
+  return { drawer, nodeId }
+}
+
+const duongDaGoi = () => vi.mocked(globalThis.fetch).mock.calls.map(([url]) => String(url))
+
+describe('Chạy workflow trên v3', () => {
+  it('bấm Chạy: lưu v3 → publish v3 → tạo run v3, đúng thứ tự', async () => {
+    mockRunV3()
+    const { drawer } = await bamChay()
+    expect(await within(drawer).findByText('QUEUED')).toBeInTheDocument()
+    const goi = duongDaGoi()
+    const v3 = goi.filter(u => u.includes('/agent/api/v3/'))
+    expect(v3.some(u => u.startsWith('/agent/api/v3/workflows/') &&
+      !u.includes('/publish') && !u.endsWith('/runs'))).toBe(true)
+    expect(v3.findIndex(u => u.includes('/publish')))
+      .toBeLessThan(v3.findIndex(u => u.endsWith('/runs')))
+    // ⛔ Ve doi chung: khong duoc con mot loi goi chay v2 nao. Mot cai sot lai
+    //    la Canvas vua tao `WorkflowRun` v3 vua lai `AgentRun` v1.
+    expect(goi.some(u => u.includes('/agent/api/workflows/'))).toBe(false)
+  })
+
+  it('publish 422 hiện thông điệp VÀ đánh dấu node hỏng', async () => {
+    let nodeLoi = ''
+    mockRunV3(url => url.includes('/publish')
+      ? new Response(JSON.stringify({ detail: { ma: 'node_khong_biet',
+          node_id: nodeLoi, thong_diep: 'Node không có trong registry.' } }),
+        { status: 422 })
+      : undefined)
+    const ket = await bamChay()
+    nodeLoi = ket.nodeId
+    // Lan bam dau co the da gui publish truoc khi `nodeLoi` duoc gan — bam lai
+    // mot lan nua de mock tra ve dung id node dang co tren canvas.
+    fireEvent.click(within(ket.drawer).getByRole('button', { name: 'Chạy ngay' }))
+    // Thong diep hien o HAI cho co chu dich: bang bao loi tren canvas va dong
+    // loi trong ngan keo chay. Neo vao ngan keo de bai nay khong do vi "nhieu
+    // ket qua" khi bang kia cung noi cung mot cau.
+    expect(await within(ket.drawer).findByText(/Node không có trong registry\./)).toBeTruthy()
+    await waitFor(() => expect(
+      document.querySelector(`[data-loi-node="${ket.nodeId}"]`)).toBeTruthy())
+    // Publish do => KHONG duoc tao run: tien chi duoc giu khi do thi bien dich duoc.
+    expect(duongDaGoi().some(u => u.endsWith('/runs') &&
+      u.includes('/api/v3/'))).toBe(false)
+  })
+
+  it('hủy run KHÔNG nhân đôi dòng thời gian', async () => {
+    // 🔴 Do duoc mot lan tren trinh duyet (loopback, 23/09): bam "Huy chay" roi
+    //    dong thoi gian hien WorkflowStarted HAI lan. Noi mu quang lo nhu vay
+    //    vi cua huy tra ca lich su, con vong poll tra phan tang dan.
+    mockRunV3()
+    const { drawer } = await bamChay()
+    await within(drawer).findByText('QUEUED')
+    fireEvent.click(within(drawer).getByRole('button', { name: 'Hủy chạy' }))
+    expect(await within(drawer).findByText('CANCELLED')).toBeInTheDocument()
+    const dong = [...drawer.querySelectorAll('.run-v3-su-kien li')].map(li => li.textContent)
+    expect(dong.filter(t => t === 'run.created')).toHaveLength(1)
+    expect(dong).toContain('WorkflowCancelled')
+  })
+
+  it('poll đọc lại run và nối sự kiện, dừng khi run kết thúc, hủy được', async () => {
+    mockRunV3()
+    const { drawer } = await bamChay()
+    await within(drawer).findByText('QUEUED')
+    // Nut huy chi ton tai khi run CHUA ket thuc.
+    expect(within(drawer).getByRole('button', { name: 'Hủy chạy' })).toBeInTheDocument()
+    expect(await within(drawer).findByText('SUCCEEDED', {}, { timeout: 10_000 })).toBeInTheDocument()
+    const doc = duongDaGoi().filter(u => u.includes('/api/v3/runs/'))
+    expect(doc.some(u => u.includes('sau=1'))).toBe(true)
+    // Su kien phai NOI, khong thay: lich su con lai ca hai dong.
+    expect(drawer.textContent).toContain('run.created')
+    expect(drawer.textContent).toContain('run.succeeded')
+    expect(within(drawer).queryByRole('button', { name: 'Hủy chạy' })).not.toBeInTheDocument()
+  })
 })
 
-it('shows run failure context, history selection and snapshot replay',()=>{
-  const onSelect=vi.fn();const onReplay=vi.fn();const onRestore=vi.fn()
-  const run={id:'run-current',version:2,status:'error',estimated:8,actual:3,
-    quote_hash:'hash',plan:{steps:[{id:'step-1'}]},checkpoint:{'step-1':{status:'error',error:'provider timeout'}},
-    decisions:[],artifacts:[]}
-  render(<RunInspector run={{...run,scheduled_at:'2026-08-04T02:00:00.000Z'}} history={[{id:'run-old',version:1,status:'done',estimated:5,actual:4,
-    created_at:'2026-08-03',finished_at:'2026-08-03'}]} onSelect={onSelect} onReplay={onReplay} onRestore={onRestore}/>)
-  expect(screen.getByLabelText('Run inspector')).toHaveTextContent('provider timeout')
-  fireEvent.click(screen.getByRole('button',{name:/Replay từ snapshot này/}))
-  expect(onReplay).toHaveBeenCalledWith(expect.objectContaining({id:'run-current'}))
-  fireEvent.click(screen.getByRole('button',{name:/Khôi phục thành workflow mới/}))
-  expect(onRestore).toHaveBeenCalledWith(expect.objectContaining({id:'run-current'}))
-  fireEvent.click(screen.getByRole('button',{name:/run-old/}))
-  expect(onSelect).toHaveBeenCalledWith('run-old')
-})
