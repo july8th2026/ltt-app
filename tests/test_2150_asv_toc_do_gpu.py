@@ -206,8 +206,14 @@ def test_manifest_asv_gpu_khong_con_khai_torch_la_ban_CPU():
     """
     ma = Path(__file__).resolve().parents[1] / "apps" / "asv_gpu" / "manifest.py"
     van = ma.read_text(encoding="utf-8")
-    assert "CPU-only" not in van, (
-        "ghi chu cu con do - xem docs/auto_scan_video_final/L_TOC_DO_GPU.md")
+
+    # ⛔ Khong chot bang "vang mat chuoi `CPU-only`": ban sua TRICH lai cau sai
+    #    de nguoi doc sau hieu vi sao, nen chuoi do con nguyen. Chot bang thu
+    #    PHAI CO MAT: ban khai phai chi dung venv nao va ban torch nao.
+    for can in ("LTTPlatform", "cu128"):
+        assert can in van, (
+            f"ban khai VRAM phai noi ro moi truong da do ({can}) - "
+            "xem docs/auto_scan_video_final/L_TOC_DO_GPU.md")
 
 
 @pytest.mark.parametrize("job", ["asv_gpu.audio_prepare", "asv_gpu.transcribe",
