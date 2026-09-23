@@ -74,7 +74,7 @@ SQLAlchemy (nền tảng, test `pytest`), PowerShell 7 (phát hành), Tauri/Rust
 
 | Task | Việc | Trạng thái |
 |---|---|---|
-| 11 | A1 nút "Chạy tiếp" | 🟡 **0,5** — hàm `coTheNoiLai` + test xong (`670770b`); **nút giao diện CHẶN**: slot không có hàm resend, cần thiết kế mới |
+| 11 | A1 nút "Chạy tiếp" | 🟡 **0,5** — chặn thật **KHÔNG** ở giao diện mà ở **kiến trúc DSH**: `dsh-agent-loop` **cố ý không expose `retry()`**; cửa retry chỉ mở đồng bộ trong waterfall `agent/request-error`, lượt terminal rồi là hết. ⛔ Và `requestId` **chỉ dedupe admit prompt, không dedupe TIỀN** ⇒ nối lại = **trừ hai lần**. Chuyển ba câu idempotency sang phía `llm_gateway` trước khi bàn nút |
 | 12 | C2 nén bằng 3.5 | 🟡 **0,5** — mã xong (`3326d7f`), **chờ đo** tốc độ + chất lượng tóm tắt trên phiên dài |
 | 13 | MCP dùng thật (nay 0/166) | ✅ **1** — **0/166 → tự gọi ngay lượt đầu**. Catalog đã có mô tả + tiêu đề nhóm *khi nào dùng*; model tự `tool_search` → `tool_describe` → gọi `mcp__chrome-devtools__navigate`, **không ai nhắc**. ⚠️ Đạt kết quả nhưng **chưa cô lập nguyên nhân** (nâng trần + `groups` đi cùng một bản) |
 | 14 | Gỡ trần 50 của kế hoạch/mục tiêu | 🟡 **0,5** — **tiền đề SAI**: `exit_plan_mode` **không có trong tool-set** (chỉ mount khi `/plan on`); `create_goal` thì prompt hệ thống **dặn đừng dùng** cho việc một lượt. Model không làm sai — **thang đo phạt một hành vi đúng**. ✅ Đã chốt đi đường *giữ `/plan on` là lệnh người dùng* (Claude Code cũng vậy); còn: tài liệu + sửa câu hỏi của bảng chấm |
@@ -1019,6 +1019,43 @@ phải gõ lại lần nào** cho nhóm lỗi tạm thời.
 - [ ] **Step 7: Commit**
 
 ---
+
+
+### 🔴 CHẶN THẬT nằm ở KIẾN TRÚC DSH, không ở slot giao diện (làn `r-t11`, 24/09)
+
+Làn trước báo *"slot giao diện không có hàm resend"*. **Đúng hệ quả, sai chỗ.** Đọc mã thượng nguồn:
+
+| Câu | Trả lời | Nguồn |
+|---|---|---|
+| Nội dung tin nhắn có còn giữ không | **CÓ** — không ở draft (draft bị xoá ngay khi gửi thành công) mà ở **lịch sử agent** (durable, `source.kind=="user"`). Bong bóng chat render từ event log, không phải từ draft | `dsh-client-ui-conversation/lib/client.js:2959`, ~13085, 14332 |
+| Có API gửi lại không | **KHÔNG.** `dsh-agent-loop` chỉ expose `send/followup/steer/inject/cancel` — **không có `retry()`** | `dsh-agent-loop/lib/index.js:781-795` |
+| Vì sao không có | **Cố ý.** Cơ chế "promptless retry turn" của DSH **chỉ chạy đồng bộ bên trong waterfall `agent/request-error`**; đóng lượt lỗi xong là **hết cửa**. `Agent`/`ReactLoopAgent` cố tình không expose `retry()` | note thượng nguồn `2026-07-27-request-error-retry-action.md` |
+| Lúc giao diện hiện lỗi thì sao | Cửa đó **đã đóng** — `coTheNoiLai` (`ui-lttcode/src/client.js:3599`) chạy **sau** khi lượt đã terminal | |
+
+Thứ duy nhất làm được trong tầm plugin: đọc nội dung lượt cũ rồi gọi `followup()` với **nội dung y
+hệt** — tức tạo **một lượt user MỚI** (trùng bong bóng), không phải "chạy tiếp" thật.
+
+### ⛔ Và câu chặn cứng là TIỀN — không giải được từ phía khách
+
+**`requestId` chỉ dedupe RPC *admit prompt*, KHÔNG liên quan quyết toán.** Billing tính ở `finally`
+phía cổng. Phía `client.js` **không có** `stream:<hex>` hay id nào để hỏi máy chủ *"lượt cũ đã tính
+tiền chưa"*.
+
+⇒ Bấm "Chạy tiếp" cho một lượt **đã quyết toán** là **trừ tiền hai lần**. Đúng câu tôi ghim vào
+brief, và câu đó **chưa ai trả lời được**.
+
+### ⇒ Task 11 chuyển câu hỏi sang phía NỀN TẢNG
+
+Việc còn lại **không nằm ở `LTTCODEAPP`**. Phải trả lời ở `llm_gateway` trước:
+
+- [ ] Cổng có nhận **khoá idempotency** cho một lượt không? Không có thì thêm được không?
+- [ ] Quyết toán credit có **idempotent** theo khoá đó không — gửi lại cùng khoá thì **không**
+      trừ lần hai?
+- [ ] Lượt **đứt giữa chừng** (khách mất mạng) đã bị tính tiền chưa? (Liên quan sự cố 19/09:
+      *khách ngắt bị tính là lỗi B*.)
+
+⛔ **Không thiết kế nút bấm nào trước khi ba câu trên có đáp án.** Một nút "Chạy tiếp" trừ tiền
+hai lần tệ hơn không có nút.
 
 ## Task 12 ⏳ MÃ XONG (`3326d7f`), CHỜ ĐO: Nén ngữ cảnh bằng model nhỏ (C2: 45 → 80)
 
