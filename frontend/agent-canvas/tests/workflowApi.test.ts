@@ -284,3 +284,59 @@ describe('lỗi biên dịch 422 giữ được ma + node_id', () => {
     expect(loi.message).toBe('Tài liệu rỗng.')
   })
 })
+
+describe('decode() không bóp méo lỗi máy chủ', () => {
+  it('detail dạng MẢNG (lỗi validate FastAPI) không ra "[object Object]"', async () => {
+    // 🔴 `/agent/**` KHÔNG đi qua bộ viết lại của `server/api/errors.py`
+    //    (nó chỉ nhận `/api/v1`), nên lỗi validate rơi vào bộ xử lý mặc định
+    //    của FastAPI và `detail` là một MẢNG. Mảng bị nhánh object loại ra,
+    //    rồi `new Error(detail as string)` in đúng chữ "[object Object]" lên
+    //    màn hình người dùng. Hình dạng dưới đây là thứ `sau: int = Query(0,
+    //    ge=0)` thật sự trả cho `loadRunV3('r1', -1)`.
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ detail: [{
+      type: 'greater_than_equal', loc: ['query', 'sau'],
+      msg: 'Input should be greater than or equal to 0',
+      input: '-1', ctx: { ge: 0 } }] }, 422))
+    const loi = await loadRunV3('r1', -1).catch(e => e)
+    expect(loi.message).not.toBe('[object Object]')
+    expect(loi.message).toContain('greater_than_equal')
+  })
+
+  it('402 thieu_credit KHÔNG phải lỗi biên dịch đồ thị', async () => {
+    // 🔑 Hết credit là chuyện của ví, không phải của node nào cả. Ném
+    //    WorkflowCompileError với `nodeId` rỗng làm giao diện xử lý nó như
+    //    lỗi biên dịch — đúng kiểu gộp nhầm mà vòng trước vừa gỡ cho 409.
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ detail: {
+      ma: 'thieu_credit', thong_diep: 'Không đủ credit.' } }, 402))
+    const loi = await createRunV3('w1', 'tok').catch(e => e)
+    expect(loi).not.toBeInstanceOf(WorkflowCompileError)
+    expect(loi.message).toBe('Không đủ credit.')
+  })
+
+  it('503 dong_co_chua_san_sang KHÔNG phải lỗi biên dịch đồ thị', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ detail: {
+      ma: 'dong_co_chua_san_sang', thong_diep: 'Động cơ chưa sẵn sàng.' } }, 503))
+    const loi = await createRunV3('w1', 'tok').catch(e => e)
+    expect(loi).not.toBeInstanceOf(WorkflowCompileError)
+    expect(loi.message).toBe('Động cơ chưa sẵn sàng.')
+  })
+
+  it('422 có `ma` nhưng KHÔNG có node_id vẫn là Error thường', async () => {
+    // `inputs_qua_lon`/`chua_publish` mang `ma` nhưng không chỉ được node nào.
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ detail: {
+      ma: 'chua_publish', thong_diep: 'Workflow chưa publish.' } }, 422))
+    const loi = await createRunV3('w1', 'tok').catch(e => e)
+    expect(loi).not.toBeInstanceOf(WorkflowCompileError)
+    expect(loi.message).toBe('Workflow chưa publish.')
+  })
+
+  it('422 có node_id VẪN ném WorkflowCompileError (vế đối chứng)', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ detail: {
+      ma: 'bieu_thuc_chua_ho_tro', node_id: 'n_9',
+      thong_diep: 'Biểu thức chưa hỗ trợ.' } }, 422))
+    const loi = await createRunV3('w1', 'tok').catch(e => e)
+    expect(loi).toBeInstanceOf(WorkflowCompileError)
+    expect(loi.nodeId).toBe('n_9')
+    expect(loi.ma).toBe('bieu_thuc_chua_ho_tro')
+  })
+})

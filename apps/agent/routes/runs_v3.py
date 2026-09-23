@@ -170,7 +170,12 @@ async def v3_tao_run(request: Request, workflow_id: str,
             "ma": "inputs_khong_hop_le",
             "thong_diep": _t('Truong "inputs" phai la mot object.')})
     inputs = dict(raw_inputs or {})
-    do_dai = len(json.dumps(inputs, default=str))
+    # ⭐ Đếm BYTE, không đếm ký tự. `ensure_ascii` mặc định biến mỗi chữ tiếng
+    #    Việt thành một dãy `\uXXXX` 6 ký tự cho 2-3 byte thật, nên
+    #    `len(json.dumps(...))` siết payload tiếng Việt gắt gấp ~2-3 lần so với
+    #    chính con số "byte" mà thông điệp lỗi ngay dưới đây hứa với khách.
+    do_dai = len(json.dumps(inputs, default=str,
+                            ensure_ascii=False).encode("utf-8"))
     if do_dai > _GIOI_HAN_INPUTS:
         raise HTTPException(status_code=422, detail={
             "ma": "inputs_qua_lon",

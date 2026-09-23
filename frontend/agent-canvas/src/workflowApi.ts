@@ -91,10 +91,22 @@ async function decode(response: Response) {
   }
   if (obj) {
     const message = obj.thong_diep ?? obj.ma ?? JSON.stringify(obj)
-    if (obj.ma) throw new WorkflowCompileError(message, obj.ma, obj.node_id ?? '')
+    // ⭐ CHI 422 KEM `node_id` la loi bien dich do thi. Rieng `ma` thi khong
+    //    du: `402 thieu_credit`, `429 qua_han_muc`, `503 dong_co_chua_san_sang`
+    //    va `422 chua_publish`/`inputs_qua_lon` deu mang `ma` (runs_v3.py) va
+    //    KHONG chi duoc node nao. Nem WorkflowCompileError cho chung se lam
+    //    `CanvasShell` xu ly "het credit" nhu loi bien dich, voi `nodeId` rong
+    //    — dung kieu gop nham vua go cho 409 o ngay tren.
+    if (response.status === 422 && obj.node_id)
+      throw new WorkflowCompileError(message, obj.ma ?? '', obj.node_id)
     throw new Error(message)
   }
-  if (detail != null) throw new Error(detail as string)
+  // `detail` con lai co the la MANG: `/agent/**` khong di qua bo viet lai cua
+  // `server/api/errors.py` (chi nhan `/api/v1`), nen loi validate cua FastAPI
+  // giu nguyen hinh `[{loc,msg,type}]`. `new Error(mang)` in ra "[object
+  // Object]" tren man hinh nguoi dung.
+  if (detail != null)
+    throw new Error(typeof detail === 'string' ? detail : JSON.stringify(detail))
   throw new Error(`Request failed (${response.status})`)
 }
 

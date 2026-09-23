@@ -237,6 +237,24 @@ def test_inputs_qua_lon_tra_422_co_ma(api):
     assert r.json()["detail"]["ma"] == "inputs_qua_lon"
 
 
+def test_tran_inputs_dem_BYTE_chu_khong_dem_ky_tu_thoat(api):
+    """Trần là BYTE, đúng như thông điệp lỗi hứa — không phải ký tự `\\uXXXX`.
+
+    15_000 chữ "ă" = 30_010 byte UTF-8 (LỌT trần 64 KiB) nhưng
+    `json.dumps(..., ensure_ascii=True)` nở thành 90_010 ký tự (VƯỢT trần).
+    Đếm ký tự ⇒ khách viết tiếng Việt bị siết gắt gấp ~3 lần so với khách
+    viết tiếng Anh, trên cùng một con số được quảng cáo.
+    """
+    a, token_a, _, _ = api
+    wf_id = _publish(_uid("v3run-a@example.com"))
+    payload = {"x": "ă" * 15_000}
+    assert len(json.dumps(payload).encode()) > 64 * 1024
+    assert len(json.dumps(payload, ensure_ascii=False).encode()) < 64 * 1024
+    r = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
+               headers={"X-CSRF-Token": token_a}, json={"inputs": payload})
+    assert r.status_code == 201, r.text
+
+
 def test_dong_co_chua_dang_ky_tra_503_co_ma_khong_phai_500(api, monkeypatch):
     """`chu_dong_co()` ném `RegistryError` khi không app nào khai
     `job_type workflow.dong_co` — sự cố cấu hình thật (`2d3e3c41`), phải là
