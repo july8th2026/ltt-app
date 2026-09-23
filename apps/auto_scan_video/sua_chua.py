@@ -186,16 +186,29 @@ def tu_qc_giong(doan: list[dict]) -> list[KhiemKhuyet]:
     return ra
 
 
-def lan_doc_lai(cac_ke_hoach: list[dict]) -> dict[str, int]:
-    """`{ma: n}` — so ke hoach sua (`KeHoachSua.sang_dict()`) da dua doan `ma`
-    ve `voice_synthesis`. Giai doan giong muoi van tay bang `n` de lay luot doc
-    MOI thay vi tra lai tep cu tu cache (cung van tay = cung khoa = cung tep).
+def lan_lam_lai(cac_ke_hoach: list[dict], giai_doan: str) -> dict[str, int]:
+    """`{ma: n}` — so ke hoach sua (`KeHoachSua.sang_dict()`) da dua don vi `ma`
+    ve `giai_doan`.
+
+    🔑 **Mot ham cho MOI giai doan co vong sua, khong mot ham moi giai doan.**
+       `voice_synthesis` muoi van tay tieng bang `n` (M-07); `edit_plan` muoi
+       van tay canh bang `n` (M-02). Hai ban sao cua phep dem nay se lech nhau
+       o mot nhanh nao do, va nhanh lech la nhanh it duoc chay nhat.
+
+    ⭐ Vi sao phai muoi: cung van tay = cung khoa = cung ket qua cache. Mot
+       "vong sua" khong muoi tra ve **dung phan doan vua bi bao la sai** — tuc
+       mot hoa don khong co san pham. Do la M-07, do duoc tren duong that.
     """
     ra: dict[str, int] = {}
     for ke in cac_ke_hoach or []:
-        for ma in (ke.get("giai_doan_sua") or {}).get("voice_synthesis") or []:
+        for ma in (ke.get("giai_doan_sua") or {}).get(str(giai_doan)) or []:
             ra[str(ma)] = ra.get(str(ma), 0) + 1
     return ra
+
+
+def lan_doc_lai(cac_ke_hoach: list[dict]) -> dict[str, int]:
+    """`lan_lam_lai` cho `voice_synthesis` — ten cu, giu cho nguoi goi hien co."""
+    return lan_lam_lai(cac_ke_hoach, "voice_synthesis")
 
 
 def tu_qc_ngu_nghia(phan_doan: list[dict]) -> list[KhiemKhuyet]:
