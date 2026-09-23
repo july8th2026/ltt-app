@@ -105,11 +105,21 @@ def test_hai_vong_song_song_khong_nop_doi(pg, monkeypatch):
 
     monkeypatch.setattr(dong_co, "xu_ly_run", _xu_ly_cham)
 
-    for _ in range(3):
+    for vong in range(3):
         rao = threading.Barrier(2)
 
-        def _chay(rao=rao):
-            rao.wait()
+        def _chay(rao=rao, vong=vong):
+            # `wait()` khong timeout se treo VINH VIEN ca luong nay lan luong
+            # kia (roi ca `future.result()` o luong chinh) neu mot worker
+            # khong bao gio toi duoc rao (kiet thread/tai nguyen, scheduler
+            # doi khi chay duoi quyen nang - review round 2, Important). Gioi
+            # han 30s + bao loi ro rang, thay vi treo im lang.
+            try:
+                rao.wait(timeout=30)
+            except threading.BrokenBarrierError:
+                raise AssertionError(
+                    f"vong {vong}: luong thu hai khong toi rao trong 30s - "
+                    "khong ep duoc tranh chap that") from None
             dong_co.mot_vong(_mo(pg))
 
         with ThreadPoolExecutor(max_workers=2) as pool:
