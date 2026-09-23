@@ -63,6 +63,7 @@
 | 6.2 | Khách không cài được plugin npm: `dsh plugin add` cần **pnpm**, bản cài chỉ có `node.exe` | N-02 |
 | 6.3 | **CHỜ ĐO:** bật một suite có ăn vào lượt đang chạy không | N-03 |
 | 6.4 | Agent cha giao việc chạy lệnh cho trợ lý CHỈ ĐỌC rồi bị guard chặn, **lặp lại y nguyên** thay vì đổi đường (23/112 dòng đỏ `pwsh` trong 7 ngày) | V-21 |
+| 6.5 | **Khoá `tools:` trong tệp agent người dùng bị BỎ QUA ÂM THẦM** — `~/.agents/agents/*.md` nhận `tools: [...]`, `parseAgentRole` không đọc khoá đó, **không lỗi không cảnh báo**. Người dùng tưởng đã khoá agent con thành chỉ-đọc, thực tế nó có **toàn bộ công cụ của host**. Nặng thêm vì `lib/runtime/user-panels.js:12-14` mô tả khuôn là "Claude Code agents frontmatter" — tức mời người ta viết `tools:` rồi lặng lẽ vứt. Tối thiểu: cảnh báo khi gặp khoá không hỗ trợ | V-25 |
 
 ## 7. Nợ cũ còn mở (không sinh ra hôm nay)
 
