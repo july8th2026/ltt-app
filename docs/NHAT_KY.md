@@ -12,6 +12,57 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-23 (khuya) — `alembic_version` nói dối 20 ngày, và dòng OK giúp nó sống sót
+
+Tìm ra khi **nghiệm thu sau deploy** `fde0d3aa` — không phải khi đi tìm nó.
+
+- **Triệu chứng:** `worker-err.log` lặp `UndefinedTable: relation "asv_asset" does not exist`.
+- **Truy ngược (ba phiên, mỗi phiên một mảnh):**
+  - Phiên ASV: **0/5 bảng `asv_*`**, không còn một đối tượng nào tên `asv*`; nhưng `vc_phien`/`vc_da_tai`
+    — migration **sau** ASV trong chuỗi — thì **có**. ⇒ chuỗi đã chạy **vượt qua** ASV, không phải bảng bị xoá.
+  - Phiên này: đối chiếu cơ học 80 bảng khai trong toàn chuỗi với `pg_tables` ⇒ thiếu đúng 7 dòng, trong đó
+    `vps_port_map` là **cố ý** (bị drop khi VPS bỏ port-mapping 24/08). Phần không giải thích được **chỉ còn ASV,
+    và là toàn bộ 4 migration ASV**.
+  - Phiên workflow: kiểm lược đồ thật (không tin `alembic_version`) ⇒ migration của họ có thật; xác nhận độc lập
+    `asv_asset` thiếu.
+- **Nguyên nhân, từ `.err.log` của deploy** (alembic ghi `Running upgrade` qua `logging` ⇒ **stderr**, nên grep
+  `.out.log` trống trơn — chính bẫy này giấu mất bằng chứng suốt buổi):
+
+  ```
+  01/09 07:19   d4e0a63b8f29 -> a5f31c07d2b4
+  01/09 23:04   a5f31c07d2b4 -> c7b91e4a2f80
+  06/09 08:51   7d2c1e9f4a03 -> 4b8e21c6d907   <-- bat dau o mot cho KHAC
+  ```
+
+  Head rời `c7b91e4a2f80` lúc 01/09 23:04, tới 06/09 đã ở `7d2c1e9f4a03`, **không lượt deploy nào ở giữa chạy một
+  upgrade nào**. Đúng **5 revision** bị nhảy qua: 4 ASV + `chatltt_cay_hoi_thoai`.
+  ⇒ `alembic_version` bị **đẩy tay** (`stamp` hoặc `UPDATE`) mà không thực thi.
+- **Vì sao sống được 20 ngày:** `setup/2-cai-dat.ps1:915` in `[OK] Luoc do CSDL da o ban moi nhat` **vô điều kiện**
+  khi `alembic upgrade head` trả 0 — mà *"không có gì để làm"* **cũng trả 0**. 21 lượt deploy, 21 dấu xanh.
+  App `auto_scan_video` khai `enabled=False` nên không luồng nào chạm bảng của nó ⇒ **không có gì kêu**.
+  Phần `chatltt` trong cùng khối thì có người sửa tay, và sửa đúng (phiên ASV đối chiếu: 10/10 · 11/11 · 24/24).
+  Sự cố chỉ lộ ra khi một vòng quét tài sản (ra đời 04/09) được deploy — tức **bởi một tai nạn, không bởi phép kiểm**.
+
+### Đã làm
+
+- `setup/2-cai-dat.ps1`: bắt **mọi luồng** của alembic ra tệp (`*>`), in lại nguyên văn, đếm `Running upgrade`,
+  rồi nói **đúng số** migration vừa chạy — hoặc nói thẳng *"không có migration nào cho chạy"*. Hai tình huống khác
+  nhau không còn in ra cùng một dòng chữ.
+- `tools/kiem_luoc_do.py` — đối chiếu `Base.metadata` với `information_schema`, **chạy ở mỗi lần deploy**.
+  Ba quyết định: soi **cả cột** (bản dò tay chỉ gom `create_table` — lỗ hổng tự phát hiện); **không lọc app đang
+  tắt** (đó chính là chỗ bệnh nấp); **thừa không phải lỗi** (báo đỏ vì thứ vô hại là cách làm người ta bỏ qua nó).
+  Lệch **không** làm hỏng deploy — việc của nó là NÓI RA.
+- `tests/test_2800`: 13 phép, gồm bánh cóc *"deploy phải gọi `kiem_luoc_do`"* và *"dấu OK vô điều kiện không được
+  quay lại"* (đọc **mã sống**, bỏ chú thích — để việc ghi lại lịch sử không bị chính phép kiểm cấm), và một phép
+  chốt báo cáo **thuần ASCII** vì nó in ra console Windows cp1252.
+- Chạy thật trên production: `LECH - 5 bang thieu, 0 cot thieu · app auto_scan_video: thieu 5 bang`.
+  **0 cột thiếu** trên toàn lược đồ — xác nhận độc lập rằng phần sửa tay của `chatltt` là đúng hình dạng.
+
+### Chưa làm — cố ý
+
+Không tạo bảng `asv_*`. Sân của phiên ASV, đang chờ chủ dự án duyệt phương án. ⛔ Và **không** `alembic downgrade`
+rồi chạy lại cả chuỗi: chuỗi đó chứa migration của nhiều làn, chạy lại sẽ đụng dữ liệu thật của các bảng khác.
+
 ## 2026-09-23 (khuya) — VPS: lớp canh băng thông TỔNG không được ngừng canh trong im lặng
 
 - **Chủ dự án chỉ ra**, sau khi đọc bản sửa băng thông cùng ngày: `bao_tri._can_ham_theo_tong`
