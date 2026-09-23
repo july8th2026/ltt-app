@@ -179,3 +179,74 @@ def test_resource_chi_tra_khoa_phan_loai_khong_tra_so_lieu_ha_tang(api):
     nd = next(x for n in body["nhom"] for x in n["nut"]
               if x["type"] == "app.transcript.run")
     assert nd["resource"] == {"class": "gpu"}
+
+
+# ───────────── Fix round 2 (Task 8) — palette la CATALOGUE, khong phai giao dich ──
+
+#: Tool DUY NHAT trong cay nay khai tham chieu dong (`apps/ltt_voice/manifest.py:359`)
+#: — no la cho MOT app co the nem loi luc giai tuy chon.
+_REF_HONG = "apps.ltt_voice.tham_chieu:tuy_chon_voice_id"
+#: Chuoi NOI BO co y nhet vao thong bao loi: no ra toi trinh duyet = ro thong tin.
+_RO = r"D:\LTTSTUDIOSAPP\secrets\kho_giong.py:42 (bien _speaker_embedding)"
+
+
+@pytest.fixture()
+def api_mot_app_hong(api, monkeypatch):
+    """Callable `ToolSpec` dong cua MOT app nem loi; cac app khac nguyen ven."""
+    from platform_core.agent import tools as _tools
+    that = _tools.tai_tham_chieu
+
+    def gia(ref):
+        if ref == _REF_HONG:
+            raise RuntimeError(f"CSDL giong sap: {_RO}")
+        return that(ref)
+
+    monkeypatch.setattr(_tools, "tai_tham_chieu", gia)
+    return api
+
+
+def test_mot_app_hong_khong_lam_sap_ca_palette(api_mot_app_hong):
+    """Palette la CATALOGUE: mot muc hong khong duoc giet ca quyen sach."""
+    r = api_mot_app_hong.get("/agent/api/v3/palette")
+    assert r.status_code == 200, r.text[:400]
+    co_mat = {x["type"] for n in r.json()["nhom"] for x in n["nut"]}
+    assert "app.speech.ltt" in co_mat, "node hong bi giau thay vi bao ra"
+    # 🔑 DOI CHUNG: mot ban va tra palette RONG cung "khong 500". Cac node khac
+    #    phai con NGUYEN VEN thi phep kiem nay moi noi duoc dieu gi.
+    assert "app.transcript.run" in co_mat and "trigger.manual" in co_mat
+    assert len([t for t in co_mat if t.startswith("app.")]) >= 10
+
+
+def test_node_hong_mang_dau_doc_duoc_tren_truong_bi_anh_huong(api_mot_app_hong):
+    body = api_mot_app_hong.get("/agent/api/v3/palette").json()
+    nd = next(x for n in body["nhom"] for x in n["nut"]
+              if x["type"] == "app.speech.ltt")
+    props = nd["tham_so"]["properties"]
+    for truong in ("voice_id", "preset"):
+        assert props[truong].get("x-ltt-loi"), f"{truong} thieu dau loi doc duoc"
+    assert nd.get("x-ltt-loi"), "node thieu dau loi o muc node"
+    # Truong khong dinh toi lua chon dong thi khong bi danh dau oan.
+    assert "x-ltt-loi" not in props["text"]
+    # Va luoc do TINH van con: form khong duoc rong di.
+    assert props["text"]["type"] == "string" and props["language"]["enum"]
+
+
+def test_node_khac_khong_bi_danh_dau_oan(api_mot_app_hong):
+    body = api_mot_app_hong.get("/agent/api/v3/palette").json()
+    for n in body["nhom"]:
+        for x in n["nut"]:
+            if x["type"] == "app.speech.ltt":
+                continue
+            assert "x-ltt-loi" not in x, f"{x['type']} bi danh dau oan"
+            ban = [k for k, v in x["tham_so"]["properties"].items()
+                   if "x-ltt-loi" in v]
+            assert not ban, f"{x['type']} truong {ban} bi danh dau oan"
+
+
+def test_dau_loi_la_MA_NGAN_chu_khong_phai_traceback(api_mot_app_hong):
+    """Chi tiet loi thuoc ve log may chu, khong thuoc ve moi tai khoan dang nhap."""
+    tho = api_mot_app_hong.get("/agent/api/v3/palette").text
+    for cam in ("Traceback", "RuntimeError", "LTTSTUDIOSAPP", "kho_giong",
+                "_speaker_embedding", "CSDL giong sap", "tham_chieu",
+                "tuy_chon_voice_id"):
+        assert cam not in tho, f"palette ro thong tin noi bo: {cam}"
