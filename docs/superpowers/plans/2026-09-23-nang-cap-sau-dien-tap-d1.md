@@ -22,6 +22,40 @@ SQLAlchemy (nền tảng, test `pytest`), PowerShell 7 (phát hành), Tauri/Rust
 - `D:\LTTCODEAPP\docs\LTTCODE\reports\CHAM_DIEM_VAN_HANH_THAT_23_09.md` — 60 hạng mục chấm điểm
 - `docs\VIEC_CAN_LAM_HOP_NHAT.md` — bảng quyết ưu tiên
 
+## ⛔ LUẬT SỐ MỘT KHI THI HÀNH PLAN NÀY: KHÔNG DỪNG GIỮA CÁC PHA
+
+Xong một pha thì **làm tiếp pha kế, không xin phép**. Hết **mọi** pha mới L3 → gộp `main` →
+deploy (nếu cần) → **báo**. Pha nào cần deploy để xây tiếp (đo thật, E2E) thì L1/L2 xanh → gộp
+`main` → deploy → báo, **rồi làm tiếp** — vẫn không dừng.
+
+**Chỉ được dừng khi đúng một trong bốn điều sau** (hợp đồng §10, §10b):
+
+| # | Được dừng khi | KHÔNG phải điểm dừng |
+|---|---|---|
+| 1 | **Gate đỏ** | Một phép kiểm lẻ đỏ — sửa tại chỗ rồi chạy lại đúng phép đó |
+| 2 | **Thao tác không đảo được** | Deploy (có gate xanh trên đúng SHA) · build · cài đè bản dev |
+| 3 | **Thay đổi chưa commit không rõ của ai** | Dòng `??` đã biết là của phiên khác — để yên, đi tiếp |
+| 4 | **Rủi ro bảo mật** | Hộp UAC (`tools
+ang_quyen.py` nâng quyền im lặng) |
+
+### Những câu KHÔNG được dùng để kết thúc một lượt
+
+Đây là các dạng câu đã thật sự làm dừng sai trong dự án này. Viết ra để nhận mặt:
+
+- *"Tôi đã xong pha N. Ông muốn tôi làm tiếp pha N+1 không?"* — có plan rồi thì làm tiếp.
+- *"Cần ông duyệt trước khi tôi chạy gate/deploy."* — quyền đã cấp, điều kiện đã ghi trong plan.
+- *"Ông muốn tôi đi hướng A hay B?"* khi **một hướng rõ ràng hợp lý hơn** — chọn, nói rõ vì sao
+  chọn, đi tiếp. Chỉ hỏi khi hai hướng **đổi hẳn việc phải làm** và không có căn cứ để chọn.
+- *"Đang chờ làn X báo về."* — chờ ở **tiền cảnh**; trong lúc chờ thì làm việc **không phụ thuộc**
+  kết quả đó. Kết thúc lượt để ngồi chờ là bỏ phí một lượt.
+
+### Ngược lại, có một thứ PHẢI dừng để hỏi
+
+Khi việc chạm vào **sổ sách tiền** hoặc **chính sách với khách** — ví dụ: lượt hỏng vì hạ tầng
+của ta thì khách có trả không (**Q137**), có hoàn tiền không, có đổi giá không. Đó **không phải**
+câu kỹ thuật, và không ai ngoài chủ dự án trả lời được. Ghi câu hỏi ra, làm tiếp mọi việc **không**
+phụ thuộc câu trả lời, rồi hỏi **một lần, gọn**.
+
 ## Global Constraints
 
 Áp cho **mọi** task, không nhắc lại trong từng task:
