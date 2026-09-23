@@ -271,10 +271,29 @@ LOAI_KHO_CHUNG = "giong_kho_chung"
 
 #: 🔑 Thu tu UU TIEN trong kho chung, THEO SO DO — khong phai theo cam tinh.
 #:
-#:    `docs/auto_scan_video_final/L_GIONG_EN.md` do ca 17 giong kho chung lan
-#:    `en` tren may sinh tieng THAT (cung mot kich ban thuyet minh, CER/WER bang
-#:    faster-whisper large-v3 + jiwer, do to EBU R128). 15/17 CER = 0, nen
-#:    phan dinh bang nhip gan ~156 tu/phut (`ngon_ngu.CUM`) + du dinh; mot moi gioi.
+#:    Nguon: `docs/auto_scan_video_final/L_DO_GIONG.md` muc 5-6 (23/09/2026).
+#:    Ca 17 giong `en` doc HAI kich ban tren may sinh tieng THAT roi cham bang
+#:    bay phep do: WER (faster-whisper large-v3 + jiwer), SQUIM_OBJECTIVE
+#:    (PESQ / PESQ cua so te nhat / SI-SDR / STOI), Distill-MOS, DNSMOS P.835.
+#:
+#: 🔴 **BAN CU CHON DOUGLAS THEO MOT TIEU CHI HONG, va day la ly do doi.**
+#:
+#:    `L_GIONG_EN.md` §3 xep theo *"nhip gan ~156 tu/phut ma `ngon_ngu.CUM[en]`
+#:    hua voi LLM"*. Do 34 luot doc that: giong CHAM NHAT trong kho la 181,9
+#:    tu/phut, trung vi 217,7. **Khong giong nao toi gan 156**, nen "gan 156
+#:    nhat" khong xep theo do phu hop — no xep theo *ai doc cham nhat*.
+#:
+#:    Cham lai: Owen hang trung binh 2,9/17 va **hang te nhat chi la 5**;
+#:    Douglas hang trung binh 8,3 va dung **16/17** o SQUIM PESQ. O cot phan
+#:    dinh (PESQ tren cua so 2 giay TE NHAT — "khoanh khac te nhat trong mot
+#:    cau") Owen 3,535 so voi Douglas 2,490; doi chung cho thay mot cu nhieu
+#:    10 dB lam PESQ roi ~2 diem, nen 1,05 la MOT NUA cu nhieu do, khong phai
+#:    nhieu so lieu.
+#:
+#: ⭐ Clara GIU NGUYEN: trong 6 giong do ra `nu`, co co hang trung binh tot nhat
+#:    (8,4). Canh bao DNSMOS thap cua kiem ke 05/09 (`bella_nu` 3,184) duoc xac
+#:    nhan (3,16) — nhung Ivy, ung vien thay the duy nhat, cung 3,16, nen con so
+#:    ay khong tach duoc hai nguoi. Khong co bang chung de doi ⇒ khong doi.
 #:
 #: ⭐ `public_id` cua LTT Voice "khong bao gio doi" (`tables.VoiceProfile`),
 #:    nen ghim no la ghim mot danh tinh, khong phai mot vi tri trong bang.
@@ -283,7 +302,7 @@ LOAI_KHO_CHUNG = "giong_kho_chung"
 #: ⛔ Day KHONG phai "giong mac dinh": no chi SAP cac ung vien DA khop lan +
 #:    gioi. Khong khop gioi thi khong bao gio duoc chon.
 UU_TIEN_KHO_CHUNG: tuple[str, ...] = (
-    "vc_1b65a9e636a54ab59c6a69b8046d3d0a",  # Douglas — nam, thuyet minh
+    "vc_526cb3ffb0d14558aadf199db27c0507",  # Owen — nam, ke chuyen
     "vc_a55b2ad1646349469d5c5a39d4d20dc0",  # Clara — nu, thuyet minh
 )
 

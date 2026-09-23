@@ -39,9 +39,31 @@ Day la mot phan quyet ve **quyen**, khong phai mot thao tac van hanh:
     python tools\soat_giong.py tu-choi <public_id> --ly-do "..."
     python tools\soat_giong.py thieu-bang-chung <public_id> --ly-do "..."
 
+    python tools\soat_giong.py dat-gioi --tu-do-luong <de_xuat_gioi.json> \
+        --nguong 0.95 --ly-do "..."            # IN KE HOACH, khong ghi
+    python tools\soat_giong.py dat-gioi --tu-do-luong <...> ... --that   # GHI
+
 [!] `duyet` chi doi `license_status`. No KHONG bat `dung_chung`. Hai buoc, vi
     do la hai cau hoi khac nhau: *"xuat xu co ro khong"* va *"ta co MUON mang
     no ra kho chung khong"*.
+
+## `dat-gioi` — ghi cot `gioi` tu MOT PHEP DO, khong tu mot phong doan
+
+`VoiceProfile.gioi` mac dinh `""` = KHONG RO, va chu thich cua cot ay (xem
+`apps/ltt_voice/tables.py`) cam doan ho: *"mot cot 'gioi' sai con te hon mot cot
+trong, vi no DUOC TIN"*. Lenh nay khong go dieu cam do — no doi dau vao.
+
+Dau vao la `de_xuat_gioi.json` do `tools/do_gioi_giong.py bao-cao` sinh ra:
+mot phep do ECAPA (MIT) tren CA HAI mat - clip goc va tieng engine sinh ra -
+kem `do_tin`. Lenh chi ghi khi **ba dieu kien** cung dung:
+
+    1. hai mat do CUNG ra mot nhan (clip goc va tieng sinh);
+    2. `do_tin` cua ca hai >= `--nguong` (nguong lay tu bang hieu chinh
+       20 preset engine, xem `docs/auto_scan_video_final/L_DO_GIONG.md`);
+    3. `--that` duoc go. Khong co no thi lenh CHI IN ke hoach.
+
+⛔ Giong khong thoa => **de trong**, va in ra ly do. Do la ca ma `tables.py`
+   goi la "khong biet thi dung lam gi ho nguoi ta".
 """
 from __future__ import annotations
 
@@ -171,6 +193,75 @@ def _dat(db, public_id: str, lenh: str, ly_do: str, nguoi: str) -> int:
     return 0
 
 
+GIOI_HOP_LE = ("nam", "nu")
+
+
+def _ke_hoach_gioi(de_xuat: dict, nguong: float) -> list[tuple]:
+    """`[(public_id, ten, gioi_moi | "", ly_do_bo_qua)]` — tat dinh, sap theo ten.
+
+    ⛔ Tach KHOI phan ghi CSDL, va do la co y: quyet dinh "ghi hay khong" phai
+       kiem duoc bang mot phep kiem khong can CSDL nao.
+    """
+    ra = []
+    for pid, d in sorted(de_xuat.items(), key=lambda kv: str(kv[1].get("ten") or "")):
+        ten = str(d.get("ten") or pid)
+        a, b = d.get("do_sinh"), d.get("do_goc")
+        ta, tb = d.get("do_tin_sinh"), d.get("do_tin_goc")
+        if a not in GIOI_HOP_LE or b not in GIOI_HOP_LE:
+            ra.append((pid, ten, "", "thieu phep do mot trong hai mat"))
+        elif a != b:
+            ra.append((pid, ten, "", f"hai mat khong khop: sinh={a} goc={b}"))
+        elif min(ta or 0.0, tb or 0.0) < nguong:
+            ra.append((pid, ten, "", f"do_tin {min(ta or 0, tb or 0):.3f} < {nguong}"))
+        else:
+            ra.append((pid, ten, a, ""))
+    return ra
+
+
+def _dat_gioi(db, ke_hoach: list[tuple], ly_do: str, nguoi: str,
+              that: bool) -> int:
+    import json as _json
+
+    so_ghi = so_bo = 0
+    for pid, ten, gioi, vi_sao in ke_hoach:
+        ho_so, _cur = _lay(db, pid)
+        if ho_so is None:
+            print(f"  [!] khong co giong `{pid}` ({ten})")
+            continue
+        if not gioi:
+            so_bo += 1
+            print(f"  [ĐỂ TRỐNG] {ten:<40} {vi_sao}")
+            continue
+        truoc = ho_so.gioi or "(trong)"
+        if ho_so.gioi == gioi:
+            print(f"  [=]        {ten:<40} da la `{gioi}`")
+            continue
+        so_ghi += 1
+        print(f"  [{'GHI' if that else 'SE GHI'}]  {ten:<40} {truoc} -> {gioi}")
+        if not that:
+            continue
+        ho_so.gioi = gioi
+        # ⭐ Can cu di CUNG gia tri, trong `ghi_chu` (JSON xuat xu cua giong).
+        #    Mot cot `gioi` khong noi duoc no den tu dau la mot cot se bi hoi
+        #    lai sau sau thang, va luc do khong ai nho.
+        try:
+            gc = _json.loads(ho_so.ghi_chu or "{}")
+            gc = gc if isinstance(gc, dict) else {"ghi_chu_cu": ho_so.ghi_chu}
+        except (ValueError, TypeError):
+            gc = {"ghi_chu_cu": ho_so.ghi_chu}
+        gc["gioi_nguon"] = "do_luong/ecapa_gioi"
+        gc["gioi_can_cu"] = ly_do
+        gc["gioi_nguoi"] = nguoi
+        ho_so.ghi_chu = _json.dumps(gc, ensure_ascii=False)
+    if that:
+        db.commit()
+        print(f"\nDA GHI {so_ghi} giong · de trong {so_bo}.")
+    else:
+        print(f"\nKE HOACH: ghi {so_ghi} giong · de trong {so_bo}. "
+              "Them `--that` de thuc su ghi.")
+    return 0
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Soat xuat xu + curate giong")
     sp = ap.add_subparsers(dest="lenh", required=True)
@@ -184,6 +275,17 @@ def main(argv=None) -> int:
         p.add_argument("--ly-do", required=True,
                        help="can cu cua phan quyet — BAT BUOC ca hai chieu")
         p.add_argument("--nguoi", default="", help="ai soat (mac dinh: user OS)")
+
+    p_g = sp.add_parser("dat-gioi", help="ghi cot `gioi` tu mot phep do")
+    p_g.add_argument("--tu-do-luong", required=True,
+                     help="de_xuat_gioi.json do `do_gioi_giong.py bao-cao` sinh")
+    p_g.add_argument("--nguong", type=float, required=True,
+                     help="do_tin toi thieu — lay tu bang hieu chinh, dung tu nghi")
+    p_g.add_argument("--ly-do", required=True,
+                     help="can cu (dan bao cao + ngay do) — BAT BUOC")
+    p_g.add_argument("--nguoi", default="", help="ai duyet (mac dinh: user OS)")
+    p_g.add_argument("--that", action="store_true",
+                     help="THUC SU ghi. Khong co no thi chi in ke hoach.")
 
     a = ap.parse_args(argv)
 
@@ -205,11 +307,26 @@ def main(argv=None) -> int:
         import getpass
         nguoi = (a.nguoi or getpass.getuser() or "?")[:36]
 
+    ke_hoach = None
+    if a.lenh == "dat-gioi":
+        # [!] Doc + dung ke hoach TRUOC khi mo ket noi — cung ly do voi phep
+        #     kiem `--ly-do` o tren.
+        import json as _json
+        import pathlib as _pl
+        try:
+            de_xuat = _json.loads(_pl.Path(a.tu_do_luong).read_text(encoding="utf-8"))
+        except OSError as e:
+            print(f"⛔ Khong doc duoc `{a.tu_do_luong}`: {e}")
+            return 2
+        ke_hoach = _ke_hoach_gioi(de_xuat, float(a.nguong))
+
     gen = _phien()
     db = next(gen)
     try:
         if a.lenh == "xem":
             return _xem(db, a.tat_ca)
+        if a.lenh == "dat-gioi":
+            return _dat_gioi(db, ke_hoach, ly_do, nguoi, bool(a.that))
         return _dat(db, a.public_id, a.lenh, ly_do, nguoi)
     finally:
         try:
