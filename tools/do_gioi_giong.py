@@ -156,6 +156,17 @@ def sinh(ra: pathlib.Path, chi: str = "", so: int = 0) -> int:
         print("BO QUA: chua co LTT_VOICE_SIDECAR_TOKEN "
               "(chay qua setup\\do_gioi_giong.ps1).")
         return 2
+    # 🔴 CONG PHAI TRA LOI TRUOC KHI BAT DAU, va phai con tra loi o cuoi.
+    #
+    #    `LTTStudioVoice` khoi dong lai cung moi lan deploy. Mot luot dung kho
+    #    chay qua mot lan khoi dong lai se ghi VAI CHUC dong `[!!]` — va neu ai
+    #    do doc bang do ma khong doc log, ho se doc mot lan restart thanh "giong
+    #    nay hong". `san_sang()` KHONG bat duoc ca nay: no chi doc bien moi
+    #    truong (xem chu thich cua chinh no, su co 02/09).
+    if not sidecar_client.song(buoc=True):
+        print("BO QUA: cong giong :8120 khong tra loi (dang deploy / dich vu "
+              "chua len). Cho roi chay lai — kho la cong don.")
+        return 2
 
     kho_p = ra / "kho.json"
     kho = _json(kho_p) if kho_p.is_file() else []
@@ -199,6 +210,14 @@ def sinh(ra: pathlib.Path, chi: str = "", so: int = 0) -> int:
                 van_ban, ref_b64=ref, preset=None if ref else v["giong"])
         except Exception as exc:                    # noqa: BLE001
             print(f"  [!!] {v['ma']}: {type(exc).__name__}: {exc}", flush=True)
+            # ⛔ DUNG HAN khi cong chet, khong "bo qua roi di tiep". Di tiep qua
+            #    mot lan khoi dong lai bien mot su co HA TANG thanh mot hang lo
+            #    o trong trong bang — va mot o trong trong mot bang so trong
+            #    y het mot phep do da lam. Kho la cong don: chay lai la xong.
+            if not sidecar_client.song(buoc=True):
+                print("  ⛔ Cong giong khong con tra loi — DUNG. Chay lai sau.",
+                      flush=True)
+                return 3
             continue
         tep = ra / "tieng" / f"{v['ma']}.wav"
         tep.write_bytes(wav)
