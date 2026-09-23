@@ -307,7 +307,7 @@ def tao_ma_khong_xoa(nguon: str) -> bool:
         if isinstance(n, ast.Constant) and isinstance(n.value, str) and id(n) not in doc:
             chu = n.value.lower()
             tao |= "create database" in chu or "createdb" in chu
-            xoa |= "dropdb" in chu
+            xoa |= "dropdb" in chu or "drop database" in chu
         elif isinstance(n, ast.Call):
             ten = _ten_goi(n)
             tao |= ten.endswith("_tao_neu_thieu")
@@ -324,6 +324,14 @@ def test_bo_quet_DO_duoc_tren_nguon_thieu_duong_xoa():
     assert not tao_ma_khong_xoa(du)
     assert tao_ma_khong_xoa(goi)
     assert not tao_ma_khong_xoa(chi_docstring)
+    # BAT DOI XUNG (do 23/09): bo quet nhan TAO o CA HAI tu vung
+    #   (`create database` SQL va `createdb` CLI) nhung nhan XOA o CHI
+    #   MOT (`dropdb`). Nen mot tep dung cap SQL day du bi bao oan:
+    #   `test_2200` co 4 CREATE DATABASE va 3 DROP DATABASE ma van bi ke
+    #   ten. Hai nua cua mot phep do phai dung CUNG mot tu vung.
+    cap_sql = thieu + '    c.execute("DROP DATABASE IF EXISTS x")'
+    assert not tao_ma_khong_xoa(cap_sql), (
+        'cap CREATE/DROP DATABASE day du la DU duong xoa')
 
 
 def test_moi_tep_tao_CSDL_trong_kho_deu_co_duong_xoa():
