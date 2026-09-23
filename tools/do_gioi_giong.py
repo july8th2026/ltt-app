@@ -409,10 +409,6 @@ def bao_cao(ra: pathlib.Path) -> int:
         theo_giong.setdefault(d["public_id"], {"ten": d["ten"], "ban": []})
         theo_giong[d["public_id"]]["ban"].append(ma)
 
-    print("\n## C. Xep hang 17 giong `en` — cung kich ban, hai ban\n")
-    print("| giong | WER | PESQ | PESQ min cs | SI-SDR | Distill-MOS | "
-          "DNSMOS OVRL | SIG | tu/phut | LUFS-I | TP dBFS |")
-    print("|---|---|---|---|---|---|---|---|---|---|---|")
     def _tb(bans, lay):
         """Trung binh tren CAC BAN kich ban cua mot giong; `None` khi khong co."""
         xs = [x for x in (lay(b) for b in bans) if x is not None]
@@ -443,14 +439,37 @@ def bao_cao(ra: pathlib.Path) -> int:
             "lra": _tb(bans, lambda b: (to.get(b) or {}).get("lra")),
             "true_peak": _tb(bans, lambda b: (to.get(b) or {}).get("true_peak_dbfs")),
         })
+    # 🔴 XEP TRONG TUNG GIOI, khong xep chung mot bang roi lay hai dau.
+    #    `rang_giong._rang_kho_chung` LOC THEO GIOI truoc roi moi xet
+    #    `UU_TIEN_KHO_CHUNG`, nen cau hoi that su la *"giong NAM nao tot nhat"*
+    #    va *"giong NU nao tot nhat"* — hai cau, khong phai mot.
+    for h in hang:
+        h["gioi_do"] = (de_xuat.get(h["pid"]) or {}).get("do_sinh") or "?"
     hang.sort(key=lambda h: -(h["distill_mos"] or 0))
     for h in hang:
-        print(f"| {h['ten']} | {_p(h['wer'])} | {_p(h['pesq'])} | "
+        h["hang_trong_gioi"] = 1 + sum(
+            1 for x in hang if x["gioi_do"] == h["gioi_do"]
+            and (x["distill_mos"] or 0) > (h["distill_mos"] or 0))
+
+    print("\n## C. Xep hang 17 giong `en` — cung kich ban, hai ban\n")
+    print("| # | giong | gioi (do) | WER | PESQ | PESQ min cs | SI-SDR | "
+          "Distill-MOS | DNSMOS OVRL | SIG | tu/phut | LUFS-I | TP dBFS |")
+    print("|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+    for i, h in enumerate(hang, 1):
+        print(f"| {i} | {h['ten']} | {h['gioi_do']} ({h['hang_trong_gioi']}) | "
+              f"{_p(h['wer'])} | {_p(h['pesq'])} | "
               f"{_p(h['pesq_cs'])} | {_p(h['si_sdr'],2)} | "
               f"**{_p(h['distill_mos'],2)}** | {_p(h['dnsmos_ovrl'],2)} | "
               f"{_p(h['dnsmos_sig'],2)} | {_p(h['tu_phut'],1)} | "
               f"{_p(h['lufs_i'],1)} | {_p(h['true_peak'],1)} |")
     _json(ra / "xep_hang_en.json", hang)
+
+    print("\n**Dan dau theo gioi (Distill-MOS):**")
+    for gi_ in ("nam", "nu"):
+        top = [h for h in hang if h["gioi_do"] == gi_][:3]
+        if top:
+            print(f"- `{gi_}`: " + " · ".join(
+                f"{h['ten'].split(' —')[0]} {_p(h['distill_mos'],2)}" for h in top))
 
     # ── Đối chứng: thang đo lộ ra trên CHÍNH kho này ───────────────────────
     dc = {k: v for k, v in m.items() if k.startswith("doi_chung__")}
