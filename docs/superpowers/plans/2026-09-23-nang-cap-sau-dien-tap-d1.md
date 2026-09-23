@@ -1696,7 +1696,49 @@ cây `sidecar/` (chặng đó đo được, 7,4 s), mà là **nạp + quét chí
 đầu sau khi cài đè một bộ **293 MB**. Đúng kiểu: phép đo trước bác "AV quét cây sidecar", tôi đọc
 thành "AV không liên quan" — **hai mệnh đề khác nhau**.
 
-- [ ] **Step 3 mới — mốc rẻ nhất và đúng chỗ nhất: lấy giờ tạo tiến trình từ OS.**
+### ⛔ ĐÍNH CHÍNH LẦN BA (24/09, đo trên 0.2.8) — và lần này tôi sai vì TRỘN HAI LƯỢT
+
+Mốc mới đã chạy. Ba lượt khởi động, đơn vị ms:
+
+| Lượt | process created | `setup()` | `stage_dsh_home` | `sidecar ready` | **Tổng** |
+|---|---|---|---|---|---|
+| **Lạnh** (ngay sau cài đè) | **55** | 30 | **14 564** | **25 411** | **41 067** |
+| Ấm 1 | 6 | 32 | 7 879 | 10 451 | 18 371 |
+| Ấm 2 | 5 | 43 | 10 888 | 9 480 | 20 402 |
+
+🔴 **`process created` chỉ 5–55 ms.** Không có 35 giây nào nằm trước dòng Rust đầu tiên. Giả
+thuyết "nạp/quét `LTTCODE.exe` + DLL" — **sai**.
+
+**Và đây là lý do thật của "35 giây bí ẩn": tôi trộn hai lượt khác nhau.** Lượt nghiệm thu 0.2.7
+khởi động app **ba lần**; tôi lấy `boot_wall_sec` **54,5 s của lượt LẠNH** rồi trừ đi
+`stage_dsh_home` 7,8 s và `sidecar ready` 11,4 s — mà **hai số đó là của lượt ẤM**. Cộng số ấm
+rồi so với tổng lạnh thì dĩ nhiên hụt.
+
+> Bài học đã có tên trong kho: **hỏi phép đo này trả lời chính xác câu nào.** Ba con số nằm cạnh
+> nhau trong cùng một tệp log **không có nghĩa** chúng thuộc cùng một lượt. Tôi đã dựng cả một
+> hướng đi (mốc SPA, rồi mốc OS) trên một phép trừ giữa hai lượt khác nhau.
+
+**Sự thật sau khi đo tử tế:** không có chặng nào "mù" cả. Toàn bộ thời gian nằm trong hai mốc
+**vốn đã có**, và cả hai **chậm gấp đôi khi lạnh**:
+
+| Chặng | Lạnh | Ấm | Tỉ lệ |
+|---|---|---|---|
+| `stage_dsh_home` | 14,6 s | 7,9–10,9 s | ~1,5× |
+| `sidecar ready` | 25,4 s | 9,5–10,5 s | **~2,5×** |
+| **Tổng** | **41 s** | **18–20 s** | ~2,1× |
+
+⇒ **Giá của lần đầu ≈ 2,1× giá mỗi lần**, và phần chênh lớn nhất (+15 s) nằm ở **sidecar boot**,
+không phải ở OS.
+
+- [ ] **Step 3 mới — tối ưu ĐÚNG chỗ:** `sidecar ready` lượt lạnh (25,4 s). Đây mới là chặng lớn
+  nhất, và giờ nó **đã có mốc**, không cần thêm hook nào nữa.
+- [x] ~~lấy giờ tạo tiến trình từ OS~~ — **đã làm (`743f72b`), và kết quả là loại trừ**: 5–55 ms,
+  không phải thủ phạm. Giữ lại vì nó rẻ và từ nay chặn được đúng giả thuyết sai này.
+- [ ] **Step 4:** mục tiêu **p50 ≤ 30 s**. Ấm đã đạt (18–20 s); **lạnh 41 s thì chưa**.
+
+### ⛔ Bản cũ của Step 3 (giữ lại để biết tôi đã sai thế nào)
+
+- [ ] ~~**mốc rẻ nhất và đúng chỗ nhất: lấy giờ tạo tiến trình từ OS.**~~
   Thay vì `Instant::now()` lúc `run()`, đọc **thời điểm OS tạo tiến trình** (`GetProcessTimes`
   trên Windows) và in chênh lệch. Một dòng log là lộ ngay 35 s đó thuộc về ai.
   ⛔ **Chưa cần** `initialization_script` hay `on_page_load` — chúng đo chặng **ngoài** khoảng
