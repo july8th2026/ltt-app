@@ -112,3 +112,29 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+
+      # ⭐ HAI BANH COC NAY TRUOC DAY CHI SONG TRONG `gate.py` (buoc "chuoi chua
+      #    dich" + "ban dich thieu"). Chu du an chot 24/09: BO L3. Ma L3 la thu
+      #    DUY NHAT tung chay chung -- dem 23/09 chinh no bat mot loi i18n that
+      #    (`plan_v1.py` nhap `_` thay vi `_ as _t`), va neu khong co no thi loi
+      #    ay da vao `main` va lam do gate cua moi phien sau.
+      #
+      # ⇒ Ha xuong pre-commit: bat SOM hon va CHAT hon L3 (chan luc commit, khong
+      #   phai cuoi phien). Gia: ~2 giay moi cai, do tren may nay.
+      #
+      # ⛔ `always_run` co ly do, khong phai cho chac: ca hai deu do TOAN KHO
+      #    (mot chuoi chua boc o tep A bi dem du commit chi cham tep B), nen loc
+      #    theo tep dang commit se bo sot -- cung ly le voi `banh coc ruff` o tren.
+      - id: chuoi-chua-dich
+        name: chuoi chua boc _() (chi do khi TANG)
+        entry: python tools/check_i18n.py
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      - id: ban-dich-thieu
+        name: ban dich EN thieu (chi do khi TANG)
+        entry: python tools/check_dich_thieu.py
+        language: system
+        pass_filenames: false
+        always_run: true
