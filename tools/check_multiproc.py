@@ -30,6 +30,10 @@ HAU_TO = "_multiproc_test"
 SUPER = (pathlib.Path(r"C:\LTTPlatform\secrets\postgres-superuser.txt"),
          ROOT / "secrets" / "postgres-superuser.txt")
 
+#: Moi tep test can PostgreSQL that. Them tep moi vao DAY (mot nguon).
+TEP_PG = ("tests/test_214_multi_process_runtime.py",
+          "tests/test_1720_wf_dong_co_pg.py")
+
 
 def _doc_neu_duoc(path: pathlib.Path) -> str:
     """Noi dung tep, hoac chuoi rong neu khong co HOAC khong du quyen.
@@ -183,15 +187,14 @@ def main() -> int:
         print()
         print("  Chay tay:")
         print("    set LTT_TEST_DATABASE_URL=postgresql+psycopg://.../..._test")
-        print("    python -m pytest tests/test_214_multi_process_runtime.py")
+        print("    python -m pytest " + " ".join(TEP_PG))
         return 0
 
     env = dict(os.environ)
     env["LTT_TEST_DATABASE_URL"] = url
     env.pop("LTT_DATABASE_URL", None)       # test tu tro CSDL cua no
     done = subprocess.run(
-        [sys.executable, "-m", "pytest", "-q",
-         "tests/test_214_multi_process_runtime.py"],
+        [sys.executable, "-m", "pytest", "-q", *TEP_PG],
         # 🔴 `encoding=` + `errors=`, KHONG chi `text=True`.
         #
         #    `text=True` giai ma bang bang ma MAC DINH cua he — tren Windows la
