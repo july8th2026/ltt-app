@@ -223,6 +223,47 @@ def tat_ca(*, cong_cu: Optional[dict] = None,
     return ra
 
 
+def type_version_thieu(db, *, dinh_nghia: Optional[dict] = None) -> list:
+    """Node của version ĐÃ PUBLISH trỏ tới `type@version` registry không còn.
+
+    ⭐ Đọc bảng chỉ mục `workflow_version_node` (dẫn xuất của `graph`, sinh ở
+       `dinh_nghia._sinh_chi_muc`) chứ không duyệt JSON: một truy vấn SQL cho
+       toàn hệ thống, và nó chạy được trên PostgreSQL production.
+
+    ⚠️ CÂY NÀY KHÔNG CÓ CỘT TRẠNG THÁI trên `WorkflowVersion` — spec §18.4 nói
+       "chỉ xét version ĐÃ PUBLISH", nhưng `platform_core/models.py` khai
+       `WorkflowVersion` là *"một bản đã xuất bản — BẤT BIẾN sau khi tạo"*:
+       **mọi** hàng của bảng `workflow_version` LÀ một bản đã xuất bản; không
+       có khái niệm `DRAFT` ở tầng này (bản đang soạn nằm ở bảng
+       `workflow_draft` riêng, sửa tại chỗ — spec §4.2, `dinh_nghia.luu_draft`).
+       "Lưu trữ" (điều spec muốn loại trừ) là một thuộc tính của `Workflow`
+       CHA (`archived_at`), không phải của từng version: một workflow bị lưu
+       trữ khiến `workflow/tao_run.py::tao_run` từ chối tạo run mới trên MỌI
+       version của nó (`if not workflow.published_version_id or
+       workflow.archived_at is not None: ...`), nên đó là ranh giới đúng để
+       loại một cảnh báo không còn ai tắt được — đúng lý do test gốc đưa ra
+       (*"một bản đã lưu trữ không còn tạo run mới => không phải rủi ro đang
+       sống"*), chỉ khác chỗ áp luật: ở `Workflow`, không ở `WorkflowVersion`.
+    """
+    from sqlalchemy import select
+
+    from platform_core.models import Workflow, WorkflowVersion, WorkflowVersionNode
+
+    co = dinh_nghia if dinh_nghia is not None else tat_ca()
+    ban_do = {t: nd.type_version for t, nd in co.items()}
+    hang = db.execute(
+        select(WorkflowVersionNode.version_id, WorkflowVersionNode.node_id,
+               WorkflowVersionNode.node_type, WorkflowVersionNode.type_version)
+        .join(WorkflowVersion,
+              WorkflowVersion.id == WorkflowVersionNode.version_id)
+        .join(Workflow, Workflow.id == WorkflowVersion.workflow_id)
+        .where(Workflow.archived_at.is_(None))
+        .order_by(WorkflowVersionNode.version_id,
+                  WorkflowVersionNode.node_id)).all()
+    return [{"version_id": v, "node_id": n, "node_type": t, "type_version": tv}
+            for v, n, t, tv in hang if ban_do.get(t) != tv]
+
+
 __all__ = ["CATEGORY", "Gia", "KIND", "LoiNut", "MA_LOI_APP", "NGUON_PIECE",
            "NodeDefinition", "QUYEN", "RESOURCE_CLASS", "chua_du_hop_dong",
-           "tat_ca", "tu_piece", "tu_toolspec"]
+           "tat_ca", "tu_piece", "tu_toolspec", "type_version_thieu"]
