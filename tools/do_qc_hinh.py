@@ -107,7 +107,21 @@ MOI_N_MAC_DINH = 3
 KHUC_NHAY_S = 1.5
 
 #: Canh dai it nhat bao nhieu giay thi du de cay mot `nhay_hinh` vao giua.
-CANH_DU_DAI_S = 6.0
+#:
+#: 🔴 **6,0 giay la mot con so TU DAT, va no da lam hong mot luot do.**
+#:
+#:    v1 co 125 canh trong 265 giay (trung binh 2,1 giay/canh). Khong canh nao
+#:    khong-bi-bo dai toi 6 giay, nen `_ban_cat` cay **0** `nhay_hinh` — tuc
+#:    luot do chay 45 cho noi ma **khong co mot doi chung duong nao**, va no
+#:    khong he keu len. Bo do khi do chi tra loi duoc *"model cham bao nhieu
+#:    cai la hong"*, khong tra loi duoc *"model co bat duoc mot cai hong that
+#:    khong"* — hai cau khac han nhau.
+#:
+#: ⭐ Nay con so duoc TINH RA tu `KHUC_NHAY_S`: cat mot khuc o giua thi hai nua
+#:    con lai moi nua phai con it nhat `LE_TOI_THIEU_S` de con lay duoc khung o
+#:    `moc ± LECH_KHUNG_GIAY`. Doi `KHUC_NHAY_S` thi nguong nay di theo.
+LE_TOI_THIEU_S = 0.75
+CANH_DU_DAI_S = KHUC_NHAY_S + 2 * LE_TOI_THIEU_S
 
 
 def _ffmpeg() -> str:
@@ -166,6 +180,14 @@ def _ban_cat(ci, *, moi_n: int, so_nhay: int = 4
          and float(c.ket) - float(c.bat) >= CANH_DU_DAI_S),
         key=lambda i: float(canh[i].ket) - float(canh[i].bat), reverse=True)
     nhay = set(ung_vien[:max(0, int(so_nhay))])
+    if int(so_nhay) and not nhay:
+        # 🔴 **KEU LEN, dung im lang.** Mot bo do khong co doi chung duong van
+        #    chay het va van in ra mot bang so — bang so do chi noi duoc "model
+        #    cham bao nhieu cai la hong", khong noi duoc "model co bat duoc mot
+        #    cai hong that khong". Do 23/09: v1 cay 0 `nhay_hinh` (khong canh
+        #    nao dai >= nguong) va khong mot dong nao noi ra.
+        print(f"  [!] KHONG cay duoc `nhay_hinh` nao: khong canh nao dai "
+              f">= {CANH_DU_DAI_S:.2f}s. LUOT NAY KHONG CO DOI CHUNG DUONG.")
 
     for i, c in enumerate(canh):
         b, k = float(c.bat), float(c.ket)
