@@ -689,6 +689,6 @@ def url_mo_nen(nen_tang: str, tu_khoa: str = "", *, tao_adapter=None) -> str:
             url = ham(tu_khoa) if callable(ham) else ""
             if isinstance(url, str) and url.startswith("https://"):
                 return url
-        except Exception:      # noqa: BLE001 — adapter chưa dựng được URL tìm ⇒ về trang chủ nền, không hỏng trang
-            pass
+        except (nen_tang.NenKhongHopLe, ImportError, LookupError, NotImplementedError, ValueError):
+            pass               # adapter chưa dựng được URL tìm ⇒ về trang chủ nền, không làm hỏng trang
     return "https://" + nen.ten_mien[0] if nen.ten_mien else ""
