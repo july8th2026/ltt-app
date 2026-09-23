@@ -1,7 +1,18 @@
-"""P7: verifier ordering, fault policy, bounded retry and credit."""
+"""P7: verifier ordering, fault policy va credit trong bo kiem.
+
+⏭️ 23/09/2026: ba bai *chay that qua runtime* (`structural_retry`,
+   `policy_dung_ngay`, `inconclusive_retry_huu_han`) DA GO cung
+   `platform_core/agent/executor.py` — spec §17.5. Chung lai `tick()` cua
+   runtime v1 qua mot fixture `runtime`, va duong ay khong con.
+
+⚠️ Chinh sach thu lai co gioi han **khong** chet theo: no la luat cua dong co
+   Workflow V2 bay gio (`platform_core/workflow/may_trang_thai.py` —
+   `RETRY_SCHEDULED`), va do la cho phai dung mot bai tuong duong khi lop ay
+   duoc do. `verifier.py` o lai nguyen ven (spec §17.6), nen cac bai don vi
+   ngay duoi van la phep do that cua no.
+"""
 from __future__ import annotations
 
-from tests.conftest import bao_dam_user
 import pytest
 
 
@@ -75,92 +86,3 @@ def test_validator_tinh_verifier_vao_tran_moi_attempt():
         (don_gia + result.step_costs[0]["verifier_unit"])
         * (1 + result.step_costs[0]["max_retry"]))
     assert result.step_costs[0]["verifier_unit"] == 1
-
-
-@pytest.fixture()
-def runtime(tmp_path, monkeypatch):
-    url = f"sqlite:///{(tmp_path / 'verifier-runtime.db').as_posix()}"
-    monkeypatch.setenv("LTT_DATABASE_URL", url)
-    import platform_core.db as dbmod
-    import platform_core.models  # noqa: F401
-    dbmod.reset_engine(); dbmod.Base.metadata.create_all(dbmod.get_engine())
-    session = next(dbmod.get_session())
-    from platform_core.agent import executor
-    from platform_core.registry import ToolSpec
-    spec = ToolSpec(name="fake.image", job_type="fake.image", description="fake",
-                    params_schema={}, returns={"image": "image"},
-                    verifiable=("vlm_judge",))
-    app = type("App", (), {"slug": "fake", "error": "",
-                            "manifest": type("Manifest", (), {
-                                "tools": (spec,), "requires": ("api",)})()})()
-    monkeypatch.setattr(executor, "discover_tools", lambda: {spec.name: spec})
-    monkeypatch.setattr(executor.registry, "discover", lambda: [app])
-    monkeypatch.setattr(executor.registry, "credit_for", lambda *_a, **_k: 2)
-    try:
-        yield session
-    finally:
-        session.close(); dbmod.reset_engine()
-
-
-def _run(runtime, *, max_retry=1, on_fail="regenerate"):
-    from platform_core import credit
-    from platform_core.agent import budget, runs
-    from platform_core.agent.validator import ValidationResult
-    plan = {"version": 1, "budget_max_credit": 30, "steps": [{
-        "id": "s1", "tool": "fake.image", "after": [], "params": {},
-        "verify": {"check": "vlm_judge", "rubric": "quality"},
-        "max_retry": max_retry, "on_fail": on_fail,
-    }]}
-    bao_dam_user(runtime, "u1"); credit.cap_tay(runtime, "u1", 100, by="test")
-    run = runs.create_run(runtime, user_id="u1", goal="verify")
-    budget.set_quote(runtime, run, plan=plan,
-                     validation=ValidationResult(True, (), 8, ()))
-    budget.approve(runtime, run_id=run.id, user_id="u1", approved_by="u1",
-                   expected_version=run.version)
-    runtime.commit()
-    return run
-
-
-def test_structural_retry_dung_cap_va_actual_credit(runtime):
-    from platform_core import jobs
-    from platform_core.agent import executor, runs
-    run = _run(runtime)
-    answers = iter([
-        {"pass": False, "score": .1, "fault": "structural", "reason": "bad"},
-        {"pass": True, "score": .9, "fault": "", "reason": "good"},
-    ])
-    judge = lambda *_: next(answers)
-    executor.tick(runtime, run_id=run.id, user_id="u1", judge=judge); runtime.commit()
-    jobs.complete(runtime, runs.children(runtime, run)[0], {"image": "r1"}); runtime.commit()
-    executor.tick(runtime, run_id=run.id, user_id="u1", judge=judge); runtime.commit()
-    assert len(runs.children(runtime, run)) == 2
-    jobs.complete(runtime, runs.children(runtime, run)[1], {"image": "r2"}); runtime.commit()
-    executor.tick(runtime, run_id=run.id, user_id="u1", judge=judge); runtime.commit()
-    assert run.status == "done" and run.actual == 10
-    assert run.checkpoint["s1"]["attempt"] == 1
-    assert len([e for e in run.decision_log if e.get("event") == "retry"]) == 1
-
-
-def test_policy_dung_ngay_khong_retry(runtime):
-    from platform_core import jobs
-    from platform_core.agent import executor, runs
-    run = _run(runtime, max_retry=2)
-    executor.tick(runtime, run_id=run.id, user_id="u1"); runtime.commit()
-    jobs.complete(runtime, runs.children(runtime, run)[0], {"image": "r"}); runtime.commit()
-    executor.tick(runtime, run_id=run.id, user_id="u1", judge=lambda *_: {
-        "pass": False, "score": 0, "fault": "policy", "reason": "blocked"})
-    runtime.commit()
-    assert run.status == "error" and len(runs.children(runtime, run)) == 1
-
-
-def test_inconclusive_retry_huu_han_roi_dung(runtime):
-    from platform_core import jobs
-    from platform_core.agent import executor, runs
-    run = _run(runtime, max_retry=1)
-    executor.tick(runtime, run_id=run.id, user_id="u1"); runtime.commit()
-    for index in range(2):
-        child = runs.children(runtime, run)[index]
-        jobs.complete(runtime, child, {"image": "r"}); runtime.commit()
-        executor.tick(runtime, run_id=run.id, user_id="u1",
-                      judge=lambda *_: "garbage"); runtime.commit()
-    assert run.status == "error" and len(runs.children(runtime, run)) == 2

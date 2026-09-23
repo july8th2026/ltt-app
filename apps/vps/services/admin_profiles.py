@@ -127,8 +127,18 @@ def list_profiles(db) -> list[dict]:
             VpsProfileHealth.infrastructure_profile_id == row.id).order_by(
                 VpsProfileHealth.observed_at.desc())).scalars().all()
         component_health: dict[str, str] = {}
+        #: Số chỗ bán được **đã đo**, lấy từ `provenance` của bản ghi `capacity`
+        #: gần nhất — `preflight` ghi sẵn `{"sellable_slots": {...}}` ở đó.
+        #:
+        #: ⛔ Không gọi lại Proxmox/OVH để dựng trang này. Một trang quản trị đi
+        #:    hỏi hai nhà cung cấp cho mỗi profile là một trang treo khi nhà
+        #:    cung cấp chậm — đúng lúc người vận hành cần nó nhất.
+        cho_ban_duoc: dict[str, int] = {}
         for health in health_rows:
             component_health.setdefault(health.component, health.status)
+            if health.component == "capacity" and not cho_ban_duoc:
+                cho_ban_duoc = dict(
+                    (health.provenance or {}).get("sellable_slots") or {})
         instances = db.execute(select(VpsInstance).where(
             VpsInstance.infrastructure_profile_id == row.id,
             VpsInstance.trang_thai != "da_xoa")).scalars().all()
@@ -142,7 +152,17 @@ def list_profiles(db) -> list[dict]:
             "id": row.id, "name": row.name, "slug": row.slug, "region": row.region,
             "status": row.status, "accept_new": row.accept_new,
             "is_default": row.is_default, "config_version": row.config_version,
+            # `ready` nay nghia la **bán được** (tầng `CHAN_BAN`), không phải
+            # "cả sáu xanh". Hai câu hỏi khác nhau, nên trang trả lời cả hai:
+            # một profile bán được mà chất lượng đang suy giảm là một trạng
+            # thái thật, và giấu nó đi là quay lại đúng chỗ cũ.
             "ready": ready, "health_reason": reason, "health_at": observed,
+            "ready_day_du": profiles.health_prerequisites(
+                db, row.id,
+                thanh_phan=profiles.REQUIRED_HEALTH_COMPONENTS)[0],
+            "canh_bao": profiles.canh_bao(db, row.id),
+            "chan_ban": list(profiles.CHAN_BAN),
+            "cho_ban_duoc": cho_ban_duoc,
             "health": {component: component_health.get(component, "UNKNOWN")
                        for component in profiles.REQUIRED_HEALTH_COMPONENTS},
             "vm_count": vm_count,

@@ -100,9 +100,7 @@ def thu_mot_chu_ky(db: DbSession, may: VpsInstance, *,
     if gia <= 0:
         # Giá 0 = miễn phí (máy nội bộ, hoặc bảng giá chưa đặt). Vẫn đẩy hạn để
         # vòng quét không hỏi lại máy này mỗi phút.
-        may.paid_until = _moc_ke_tiep(may, thoi_diem)
-        _dat_lai_bang_thong(may)
-        return 0
+        return mo_chu_ky(db, may, gia=0, now=thoi_diem)
 
     so_du = credit.so_du(db, may.user_id)
     if so_du < gia:
@@ -111,6 +109,32 @@ def thu_mot_chu_ky(db: DbSession, may: VpsInstance, *,
 
     credit.tru(db, may.user_id, gia, kind=KIND,
                note=f"VPS {may.plan_id} — {CHU_KY_NGAY} ngay")
+    return mo_chu_ky(db, may, gia=gia, now=thoi_diem)
+
+
+def mo_chu_ky(db: DbSession, may: VpsInstance, *, gia: int,
+              now: datetime | None = None) -> int:
+    """Mở một chu kỳ **đã được trả tiền ở nơi khác**. Trả số credit của chu kỳ.
+
+    ## Vì sao tách khỏi `thu_mot_chu_ky`
+
+    🔴 Đo 22/09/2026: `POST /vps/tao` thu đủ tiền **trước** khi nộp job, rồi job
+       chết ở `OVH_IP_ACQUIRE`. Hai lần liên tiếp của chủ dự án đều thành
+       *thu 1.490 → hoàn 1.490 → xoá máy*, cho một máy chưa từng tồn tại.
+
+    Từ 23/09 đường **tạo mới** đi qua `credit.giu_cho` / `quyet_toan` theo
+    `job_id`: giữ chỗ lúc nhận yêu cầu, quyết toán khi máy lên thật, nhả hết khi
+    job hỏng. Hàm này là phần *sổ sách của VPS* trong nhịp đó — nó không trừ
+    credit, vì `quyet_toan` đã trừ.
+
+    Đường **gia hạn định kỳ** vẫn đi `thu_mot_chu_ky`: ở đó không có job nào để
+    treo giữ chỗ, và máy đang chạy rồi nên không có gì để hoàn.
+
+    ⚠️ Sự kiện `thu_phi` chỉ phát khi `gia > 0`, và nó là **khoá** của vòng quét
+       `bao_tri._hoan_tien_may_hong`. Phát nó lúc mới nhận yêu cầu (như bản cũ)
+       là dựng lại đúng vòng thu-rồi-hoàn dưới một cái tên khác.
+    """
+    thoi_diem = now or _now()
     may.paid_until = _moc_ke_tiep(may, thoi_diem)
     may.xoa_sau = None
 
@@ -129,9 +153,10 @@ def thu_mot_chu_ky(db: DbSession, may: VpsInstance, *,
     #    lúc nào dựng cũng được.** Ghi trước, vẽ sau.
     da_dung_byte = int(may.bang_thong_byte or 0)
     _dat_lai_bang_thong(may)
-    ghi_su_kien(db, may.id, "thu_phi", boi="he_thong",
-                credit=gia, den=may.paid_until.isoformat(),
-                bang_thong_byte=da_dung_byte)
+    if gia > 0:
+        ghi_su_kien(db, may.id, "thu_phi", boi="he_thong",
+                    credit=gia, den=may.paid_until.isoformat(),
+                    bang_thong_byte=da_dung_byte)
     return gia
 
 

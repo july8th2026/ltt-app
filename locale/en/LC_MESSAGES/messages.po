@@ -20529,3 +20529,108 @@ msgstr "Posted from"
 #: apps/video_crawler
 msgid "đến ngày"
 msgstr "to"
+
+#: apps/agent
+msgid "Mở Canvas"
+msgstr "Open Canvas"
+
+#: apps/agent
+msgid "Mục tiêu, ngân sách và các bước đều dựng trong Canvas. Bản nháp tự lưu, báo giá hiện ra trước khi chạy."
+msgstr "Goals, budget and steps are all built in Canvas. Drafts save automatically and the quote appears before you run."
+
+#: apps/agent/routes/runs_v3.py
+msgid "Can header \"Idempotency-Key\" cho moi lan chay."
+msgstr "Every run needs an \"Idempotency-Key\" header."
+
+#: apps/agent/routes/runs_v3.py
+#, python-format
+msgid "Du lieu \"inputs\" vuot qua %(n)d byte."
+msgstr "The \"inputs\" data exceeds %(n)d bytes."
+
+#: apps/agent/routes/runs_v3.py
+msgid "Idempotency-Key nay da dung cho workflow khac."
+msgstr "This Idempotency-Key was already used for a different workflow."
+
+#: apps/agent/routes/runs_v3.py
+#, python-format
+msgid "Idempotency-Key phai dai %(min)d den %(max)d ky tu."
+msgstr "Idempotency-Key must be between %(min)d and %(max)d characters."
+
+#: apps/agent/routes/runs_v3.py
+msgid "Không tìm thấy lượt chạy."
+msgstr "Run not found."
+
+#: apps/agent/routes/runs_v3.py
+msgid "Lượt chạy đã kết thúc."
+msgstr "This run has already finished."
+
+#: server/auth/session.py
+msgid "Phiên đã hết hạn. Vui lòng đăng nhập lại."
+msgstr "Your session has expired. Please sign in again."
+
+#: apps/agent/routes/runs_v3.py
+msgid "Truong \"inputs\" phai la mot object."
+msgstr "The \"inputs\" field must be an object."
+
+msgid "Gói này tạm hết chỗ."
+msgstr "This size is temporarily sold out."
+
+msgid "Tạm hết địa chỉ IP. Chúng tôi đang bổ sung."
+msgstr "No IP addresses available right now. We are adding more."
+
+msgid "Tạm ngưng nhận máy mới."
+msgstr "Not accepting new machines right now."
+
+msgid "Tạm ngưng nhận máy mới trong tháng này."
+msgstr "Not accepting new machines for the rest of this month."
+
+msgid "Máy thường sẵn sàng sau khoảng %(phut)s phút, chậm nhất khoảng %(cham)s phút."
+msgstr "Machines are usually ready in about %(phut)s minutes, at most about %(cham)s minutes."
+
+msgid "Đường truyền ra Internet là <strong>tài nguyên dùng chung</strong> giữa mọi máy. Khi tổng lưu lượng của toàn nền tảng chạm ngưỡng an toàn, máy đang dùng <strong>nhiều nhất</strong> có thể bị giảm tốc <strong>trước</strong> khi chạm hạn mức riêng của chính máy đó — để giữ đường truyền chung không bị nhà cung cấp hãm tốc cho tất cả."
+msgstr "The uplink to the Internet is a <strong>shared resource</strong> across all machines. When total platform traffic reaches a safe threshold, the machine using the <strong>most</strong> bandwidth may be throttled <strong>before</strong> it reaches its own limit — so the shared uplink is not throttled by the provider for everyone."
+
+msgid "Bán được:"
+msgstr "Sellable:"
+
+msgid "CÓ"
+msgstr "YES"
+
+msgid "KHÔNG"
+msgstr "NO"
+
+msgid "Đủ điều kiện bật bán lần đầu:"
+msgstr "Eligible to enable sales:"
+
+msgid "Chất lượng (KHÔNG chặn bán):"
+msgstr "Quality (does NOT block sales):"
+
+msgid "Chặn bán:"
+msgstr "Blocks sales:"
+
+msgid "Chỗ bán được (đo ở lượt preflight gần nhất):"
+msgstr "Sellable slots (measured at the latest preflight):"
+
+msgid "Thuê một máy Windows, trả bằng credit"
+msgstr "Rent a Windows machine, paid with credit"
+
+msgid "Tạo xong trong khoảng %(phut)s phút"
+msgstr "Ready in about %(phut)s minutes"
+
+msgid "Tạo xong rồi báo bạn"
+msgstr "We build it, then tell you"
+
+msgid "Chọn một gói ở bên và bấm “Tạo máy”. Máy sẵn sàng sau khoảng %(phut)s phút, rồi bạn tự cài Windows qua console."
+msgstr "Pick a plan on the side and press “Create machine”. It is ready in about %(phut)s minutes, then you install Windows yourself through the console."
+
+msgid "Chọn một gói ở bên và bấm “Tạo máy”. Chúng tôi dựng máy rồi báo bạn, sau đó bạn tự cài Windows qua console."
+msgstr "Pick a plan on the side and press “Create machine”. We build it and tell you when it is ready, then you install Windows yourself through the console."
+
+msgid "Chất lượng mạng đang suy giảm. Máy vẫn chạy, nhưng kết nối có thể chậm hoặc chập chờn. Chúng tôi đang xử lý."
+msgstr "Network quality is degraded. Your machines keep running, but the connection may be slow or unstable. We are working on it."
+
+msgid "Plan thiếu steps."
+msgstr "Plan is missing steps."
+
+msgid "Step không hợp lệ."
+msgstr "Invalid step."

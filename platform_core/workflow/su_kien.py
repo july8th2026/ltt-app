@@ -47,6 +47,25 @@ def doc(db, run_id: str, *, sau: int = 0) -> list[WorkflowEvent]:
         .order_by(WorkflowEvent.seq)).scalars())
 
 
+def seq_cuoi(db, run_id: str) -> int:
+    """Seq LỚN NHẤT của run — MỘT truy vấn tổng hợp, không đọc hàng nào.
+
+    ⛔ **KHÔNG dùng làm con trỏ poll.** Hàm này từng đứng trong
+       `runs_v3._run_json_v3` đúng vai đó và đã gây MẤT SỰ KIỆN: nó là một
+       truy vấn THỨ HAI, tách khỏi `doc()`, nên ở READ COMMITTED một sự kiện
+       commit vào khe giữa hai truy vấn đẩy con trỏ VƯỢT QUA lô vừa gửi cho
+       client — client xin tiếp từ con trỏ mới và không bao giờ nhận được nó.
+       Con trỏ phải lấy từ chính lô đã trả (`su[-1].seq`): nó có thể LÙI (gửi
+       trùng, client đã chống) nhưng không thể VƯỢT (mất, không ai chống).
+
+    Còn ở đây cho những chỗ thật sự cần "seq lớn nhất của bảng" — ví dụ
+    `ghi()` tự tính `seq` kế tiếp bằng đúng phép `func.max` này.
+    """
+    return int(db.execute(
+        select(func.max(WorkflowEvent.seq))
+        .where(WorkflowEvent.run_id == run_id)).scalar() or 0)
+
+
 def _bay_gio() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
@@ -74,4 +93,4 @@ def purge_expired(db, *, days: int = RETENTION_DAYS,
     return len(rows)
 
 
-__all__ = ["LOAI", "RETENTION_DAYS", "ghi", "doc", "purge_expired"]
+__all__ = ["LOAI", "RETENTION_DAYS", "ghi", "doc", "seq_cuoi", "purge_expired"]

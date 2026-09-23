@@ -266,3 +266,33 @@ có `ltt_error` không.
 Sau deploy: `python tools/kiem_hop_dong_loi_llm.py fixture` PASS và
 `live --minutes 60` phải giữ mismatch 0; `unknown` tăng ⇒ có đường B chưa phát
 v1 — lùi A trước.
+
+## 10. Model không chạy — hỏi cửa nào (N-05)
+
+**🔴 `/live` KHÔNG trả lời được câu "model có chạy được không".** `/live` của
+cổng LLM máy B chỉ xác nhận tiến trình còn sống — nó xanh suốt sự cố 23/08
+(CUDA hỏng) và suốt cả ca một card GPU rụng khỏi bus PCIe, vì tiến trình gateway
+vẫn đứng, cổng vẫn mở, ping vẫn thông. Hỏi `/live` rồi kết luận "model chạy
+được" là suy diễn sai chỗ — đúng lỗi đã xảy ra 23/09/2026 lúc 16:20: hai card
+rụng (lỏng dây PSU), phiên chẩn đoán gọi `/live` (200), kết luận nhầm là "đóng
+khách tránh suất", mất khoảng 40 phút mới lần ra nguyên nhân thật.
+
+**Cửa phải hỏi:** `/health/ready` của **cổng máy B** (`http://192.168.2.66:8299/health/ready`),
+**không phải** `/live` của máy A hay của chính máy B. `/health/ready` đã kiểm
+`GPU.thay_du_hai_card()` từ trước và trả 503 `{"ok": false, "ly_do": "thieu_card"}`
+đúng lúc card rụng — chỉ là trước 23/09 không ai canh cửa đó.
+
+```powershell
+python tools\canh_cong_may_b.py
+```
+
+In JSON một dòng: `{"ok": true, "http": 200, "ly_do": ""}` khi sẵn sàng;
+`{"ok": false, "http": 503, "ly_do": "thieu_card"}` khi thiếu card; hoặc
+`{"ok": false, "http": 0, "ly_do": "khong_noi_duoc: ..."}` khi không nối được
+tới máy B. Mã thoát là `0` (sẵn sàng) hoặc `1` (báo động) — cắm được vào lịch
+theo dõi. Công cụ chỉ đọc qua HTTP, không khởi động lại dịch vụ nào, không sửa
+`/live`, không thêm trường nào vào `llm_gateway/api.py` (tệp đó cấm thêm bất cứ
+thứ gì — mọi trường thêm vào là một thứ rò ra cho người chưa xác thực).
+
+⛔ Việc cắm `tools\canh_cong_may_b.py` vào Task Scheduler chạy định kỳ là một
+quyết định/task riêng của chủ dự án — không tự tạo task hệ thống ở đây.

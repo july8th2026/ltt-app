@@ -106,7 +106,7 @@ def _co_suc_chua(bat: bool) -> None:
     """Giả vờ node Proxmox trả lời (hoặc không).
 
     🔴 **Vì sao phải giả, và vì sao phải nói rõ là giả.** Máy phát triển không
-    nói được tới Proxmox, nên `routes._suc_chua()` trả `None` và trang đi vào
+    nói được tới Proxmox, nên `nguon_luc.do_nguon_luc()` trả `None` và trang đi vào
     nhánh **fail-closed**: bảng giá chỉ đọc, không dựng `<form>`, mọi gói hiện
     "hết chỗ". Đó là một trạng thái **thật và đáng soi** — nhưng nó KHÔNG phải
     trạng thái mà khách đang thấy trên production, nơi node trả lời bình thường.
@@ -117,17 +117,24 @@ def _co_suc_chua(bat: bool) -> None:
        vào bất kỳ tài liệu nào nói về công suất thật — số thật ở
        `docs/VPS/PHAN_TICH_VPS_PROXMOX.md`.
     """
-    from apps.vps import routes
-    from apps.vps.services import capacity
+    from apps.vps import bang_thong
+    from apps.vps.services import capacity, nguon_luc
 
     if not bat:
-        routes._suc_chua = lambda db, profile=None: (None, "may phat trien: khong co Proxmox")
+        # Khong do duoc gi ca: dung ca `suc_chua` lan hai gioi han. Day la
+        # canh fail-closed that — trang phai noi "dang bao tri", KHONG noi
+        # "het cho" (su co 23/09).
+        nguon_luc.do_nguon_luc = lambda db, profile=None: nguon_luc.DoDuoc(
+            None, None, None)
         return
 
     gia = capacity.SucChua(ram_mb_tong=196_608, dia_gb_tong=900,
                            ram_mb_da_hua=24_576, dia_gb_da_hua=240,
                            dia_gb_dang_dung=96, cpu_tong=32, vcpu_da_hua=8)
-    routes._suc_chua = lambda db, profile=None: (gia, "")
+    nguon_luc.do_nguon_luc = lambda db, profile=None: nguon_luc.DoDuoc(
+        suc_chua=gia, free_ipv4=7, gateway_slots=150,
+        da_hua_bang_thong_gb=0,
+        ngan_sach_bang_thong_gb=bang_thong.ngan_sach_hua_gb())
 
 
 def _co_cong_vao(dbmod) -> None:

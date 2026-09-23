@@ -5,9 +5,10 @@
    `apps/agent` là UI Canvas + ToolSpec điều phối, và
    `tests/test_190_public_api_coverage.py::
    test_the_agent_app_is_an_orchestrator_not_a_tool` chốt bất biến: manifest
-   của nó phải khai ĐÚNG `job_types == ("agent.advance",)` — "public nó là
-   public cả một cơ chế chạy" (`docs/PUBLIC_API/APP_DISPOSITION_V1.md`), không
-   phải bản thân một job_type động cơ. `workflow.dong_co` (spec
+   của nó **không được** khai một job_type động cơ — "public nó là public cả
+   một cơ chế chạy" (`docs/PUBLIC_API/APP_DISPOSITION_V1.md`). (Bất biến ấy
+   từng viết là `job_types == ("agent.advance",)`; từ 23/09/2026 `agent.advance`
+   đã gỡ cùng runtime v1 — spec §17.5 — nên nay nó là `job_types == ()`.) `workflow.dong_co` (spec
    `docs/superpowers/specs/2026-09-22-ltt-workflow-platform-v2-design.md`
    §5.1: MỘT job nền đơn chạy vòng cho cả hệ) vẫn phải được MỘT app nào đó
    khai trong `job_types` — nếu không, `platform_core/jobs.py::resolve_handler`
@@ -15,7 +16,7 @@
 
    ⇒ Tách CHỈ phần khai báo `job_types` sang app riêng này. Handler thật,
      `_dong_co`, vẫn sống nguyên trong `apps/agent/jobs.py` (dùng chung than
-     thi hành với `agent.advance`, cùng lưới đỡ `bao_tri` ở
+     thi hành với phần còn lại của app Agent, cùng lưới đỡ `bao_tri` ở
      `apps.agent.manifest._luoi_do_dong_co` — hàm đó chỉ gọi
      `tao_run.danh_thuc_dong_co`, không quan tâm job_type khai ở app nào, nên
      KHÔNG cần chuyển theo). `jobs.py` ở đây chỉ forward sang đó.

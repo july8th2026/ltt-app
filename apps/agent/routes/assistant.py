@@ -1,4 +1,10 @@
-"""Tro ly AI: dung ke hoach, xem truoc va ap dung de xuat."""
+"""Tro ly AI: dung ke hoach, xem truoc va ap dung de xuat.
+
+⚠️ Day la nguoi dung cuoi cung cua **Plan v1** (`planner.plan_once` sinh no,
+   `validator.validate_plan` doc no, `plan_v1` dich no sang Canvas). Spec
+   §17.6 giu ca ba; xoa cum nay la xoa Plan v1 — xem docstring
+   `platform_core/agent/plan_v1.py`.
+"""
 from __future__ import annotations
 
 from __future__ import annotations
@@ -9,7 +15,7 @@ from fastapi import Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from itsdangerous import BadSignature, SignatureExpired
 from sqlalchemy.orm import Session
-from platform_core.agent import metrics, workflows
+from platform_core.agent import metrics, plan_v1, workflows
 from platform_core.models import AgentWorkflow
 from platform_core.agent.planner import PlannerError, plan_once
 from platform_core.agent.validator import validate_plan
@@ -43,7 +49,7 @@ async def workflow_plan(request: Request, _identity: str = Depends(require_login
             raise workflows.WorkflowError("; ".join(item.message for item in result.issues[:5]))
         row = workflows.create(db, user_id=user.id,
                                name=str(body.get("name") or goal[:80]),
-                               canvas=workflows.plan_to_canvas(plan))
+                               canvas=plan_v1.plan_to_canvas(plan))
         planning_success = True
     except (PlannerError, workflows.WorkflowError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from None
@@ -71,7 +77,7 @@ async def workflow_assistant_preview(request: Request, workflow_id: str,
     prompt = str(body.get("prompt") or "").strip()[:4000]
     if mode not in {"analyze", "improve"} or (mode == "improve" and len(prompt) < 3):
         raise HTTPException(status_code=422, detail=_t('Yêu cầu Assistant không hợp lệ.'))
-    canvas = workflows.as_canvas(row); current_plan = workflows.canvas_to_plan(canvas)
+    canvas = workflows.as_canvas(row); current_plan = plan_v1.canvas_to_plan(canvas)
     current_validation = validate_plan(current_plan, db=db, user=user)
     steps = list(current_plan.get("steps") or [])
     patterns = db.query(AgentWorkflow).filter(
@@ -80,7 +86,7 @@ async def workflow_assistant_preview(request: Request, workflow_id: str,
     pattern_context = []
     for item in patterns:
         try:
-            pattern_plan = workflows.canvas_to_plan(workflows.as_canvas(item))
+            pattern_plan = plan_v1.canvas_to_plan(workflows.as_canvas(item))
         except workflows.WorkflowError:
             continue
         pattern_context.append({"name": item.name, "goal": item.goal,
@@ -108,7 +114,7 @@ async def workflow_assistant_preview(request: Request, workflow_id: str,
             if not validation.valid:
                 detail = "; ".join(issue.message for issue in validation.issues[:5])
                 yield "event: error\ndata: " + json.dumps({"detail": detail}, ensure_ascii=False) + "\n\n"; return
-            proposed_canvas = workflows.plan_to_canvas(proposed_plan)
+            proposed_canvas = plan_v1.plan_to_canvas(proposed_plan)
             token = _assistant_serializer().dumps({"workflow_id": row.id,
                 "user_id": user.id, "revision": row.revision,
                 "name": row.name, "canvas": proposed_canvas}, salt=_ASSISTANT_SALT)
@@ -143,7 +149,7 @@ async def workflow_assistant_apply(request: Request, workflow_id: str,
         row = workflows.get_owned(db, workflow_id, user.id)
         if row.revision != int(payload.get("revision", 0)):
             raise workflows.WorkflowConflict("Workflow đã thay đổi; không thể áp dụng đề xuất cũ.")
-        plan = workflows.canvas_to_plan(payload.get("canvas"))
+        plan = plan_v1.canvas_to_plan(payload.get("canvas"))
         validation = validate_plan(plan, db=db, user=user)
         if not validation.valid:
             raise workflows.WorkflowError("Đề xuất không còn hợp lệ với catalog/quyền hiện tại.")

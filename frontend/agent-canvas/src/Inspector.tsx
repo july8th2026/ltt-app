@@ -1,19 +1,13 @@
 import type { PaletteTool } from './editorState'
-import type { AgentRun, AgentRunSummary, CanvasNode } from './workflowApi'
+import type { CanvasNode } from './workflowApi'
 import { fieldLabel, primaryFields } from './nodePresentation'
 import { customerToolLabel } from './presentationAdapter'
-import { RunInspector } from './RunInspector'
 
 type InspectorProps = {
   node?: CanvasNode
   tool?: PaletteTool
   readOnly: boolean
   csrfToken: string
-  run?: AgentRun
-  runHistory?: AgentRunSummary[]
-  onSelectRun?: (id: string) => void
-  onReplay?: (run: AgentRun) => void
-  onRestore?: (run: AgentRun) => void
   onChange: (data: Record<string, unknown>) => void
   connections?: Record<string, { value: string; label: string }[]>
   onConnect?: (field: string, value: string) => void
@@ -22,13 +16,12 @@ type InspectorProps = {
 
 const contentFields = new Set(['prompt', 'topic', 'text', 'url', 'source_url'])
 
-export function Inspector({node, tool, readOnly, run, runHistory, onSelectRun, onReplay,
-  onRestore, onChange, className = ''}: InspectorProps) {
-  const history = <details className="run-history-details"><summary>Lịch sử chạy</summary>
-    <RunInspector run={run} history={runHistory} onSelect={onSelectRun} onReplay={onReplay} onRestore={onRestore}/>
-  </details>
+// ⚠️ Bang chi tiet KHONG con muc "Lich su chay": lich su luot chay la ngu
+//    nghia cua so `AgentRun` v1 (`loadRunHistory`/`restoreRunAsWorkflow`).
+//    Trang thai luot chay v3 nam o `RunV3Panel` trong ngan keo "Chay workflow".
+export function Inspector({node, tool, readOnly, onChange, className = ''}: InspectorProps) {
   if (!node || !tool) return <aside className={`canvas-inspector ${className}`} aria-label="Chi tiết block">
-    <div className="node-inspector"><h2>Chi tiết</h2><p>Chọn một block để xem các tùy chọn tạo nội dung.</p></div>{history}
+    <div className="node-inspector"><h2>Chi tiết</h2><p>Chọn một block để xem các tùy chọn tạo nội dung.</p></div>
   </aside>
 
   const params = (node.data.params ?? {}) as Record<string, unknown>
@@ -52,6 +45,6 @@ export function Inspector({node, tool, readOnly, run, runHistory, onSelectRun, o
             rule.type === 'number' ? Number(event.target.value) : event.target.value)}/></label>
       })}
       {!fields.length && <p className="detail-empty">Block này không cần thêm tùy chọn. Nội dung và thao tác chạy nằm ngay trong block.</p>}
-    </div>{history}
+    </div>
   </aside>
 }

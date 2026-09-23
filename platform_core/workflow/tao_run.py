@@ -20,6 +20,12 @@ from platform_core.workflow import (danh_thuc, may_trang_thai, su_kien,
 
 DONG_CO_JOB = "workflow.dong_co"
 DONG_CO_USER = "__workflow_dong_co__"
+#: Chỉ mục bộ phận `UNIQUE(user_id, dedupe_key) WHERE dedupe_key <> '' AND
+#: status IN ('queued','running')` — `platform_core/models.py`, migration
+#: `c9d4e1a77b02`. Tên này là thứ DUY NHẤT phân biệt "job động cơ đã có người
+#: khác tạo" với mọi vi phạm ràng buộc khác, nên nó là một hằng, không phải
+#: một chuỗi gõ lại giữa thân hàm.
+UX_JOBS_DEDUPE = "ux_jobs_dedupe_active"
 #: Hạn mức (spec §7.3). Đọc từ settings ở plan 06; hằng ở đây là mặc định spec.
 MAX_RUN_DONG_THOI = 5
 _DANG_SONG = ("CREATED", "QUEUED", "RUNNING", "WAITING")
@@ -63,6 +69,39 @@ def chu_dong_co() -> str:
     return slug
 
 
+def _la_trung_khoa_dong_co(exc: IntegrityError) -> bool:
+    """`exc` có ĐÚNG là vi phạm `ux_jobs_dedupe_active` hay không.
+
+    ⛔ HẸP có chủ ý. `except IntegrityError` trần ở chỗ gọi sẽ nuốt luôn một vi
+       phạm khoá ngoại (`jobs.user_id` → `users.id`), một `NOT NULL`, hay một
+       trùng khoá KHÁC — những lỗi đó là lỗi thật và phải nổ.
+
+    PostgreSQL nói thẳng tên ràng buộc trong `Diagnostics.constraint_name`, nên
+    ở production phép so là so TÊN, không phải dò chuỗi thông báo — và khi ĐÃ
+    có tên thì KHÔNG rơi xuống dò chuỗi nữa (một lỗi khoá ngoại có câu SQL in
+    kèm hoàn toàn có thể nhắc tên chỉ mục).
+
+    ⚠️ SQLite (bộ test đơn vị) không có `diag`, và — đo 23/09 trên chính mô
+       hình này — nó KHÔNG đọc ra tên chỉ mục bộ phận mà đọc ra các CỘT:
+       `UNIQUE constraint failed: jobs.user_id, jobs.dedupe_key`. Nên đường lui
+       nhận cả hai dạng, và vẫn hẹp: cặp cột đó chỉ có đúng một ràng buộc duy
+       nhất trong mô hình (`ux_jobs_dedupe_active`), còn `jobs.id` hay bất kỳ
+       cặp nào khác đều trả `False`.
+    """
+    orig = getattr(exc, "orig", None)
+    ten = getattr(getattr(orig, "diag", None), "constraint_name", None)
+    if ten:
+        return ten == UX_JOBS_DEDUPE
+    txt = str(orig or exc)
+    if UX_JOBS_DEDUPE in txt:
+        return True
+    _, co, cot = txt.partition("UNIQUE constraint failed:")
+    if not co:
+        return False
+    return ({x.strip() for x in cot.split(",") if x.strip()}
+            == {"jobs.user_id", "jobs.dedupe_key"})
+
+
 def danh_thuc_dong_co(db) -> None:
     """Nộp job động cơ — TỐI ĐA MỘT job động cơ chờ/chạy trên toàn hệ.
 
@@ -85,10 +124,53 @@ def danh_thuc_dong_co(db) -> None:
         Job.status.in_((JOB_QUEUED, JOB_RUNNING))).limit(1)).scalar()
     if dang_song is not None:
         return
-    jobs.submit(db, user_id=DONG_CO_USER, app_slug=chu_dong_co(),
-                job_type=DONG_CO_JOB, params={}, dedupe_key="workflow:dong_co",
-                max_attempts=3, origin=ORIGIN_WORKFLOW,
-                priority_class="internal")
+    # ⭐ CUỘC ĐUA GIỮA HAI NGƯỜI DÙNG (đo thật trên PostgreSQL 23/09) — câu
+    #    SELECT ở trên và INSERT ở dưới KHÔNG nguyên tử. Hai người dùng KHÁC
+    #    NHAU tạo run cùng lúc: phiên A chưa commit nên phiên B (READ
+    #    COMMITTED) vẫn thấy "chưa có job động cơ nào" ⇒ cả hai cùng INSERT ⇒
+    #    `ux_jobs_dedupe_active` ném `UniqueViolation` vào tay kẻ thua, và
+    #    trước bản sửa này nó bay lên tận route ⇒ MỘT NGƯỜI DÙNG NHẬN 500 dù
+    #    không làm gì sai.
+    #
+    # 🔑 VÌ SAO "TRÙNG KHOÁ" Ở ĐÂY LÀ KẾT QUẢ ĐÚNG, KHÔNG PHẢI LỖI:
+    #    hàm này không đòi "tôi phải là người tạo job động cơ", nó đòi "có MỘT
+    #    job động cơ đang sống". PostgreSQL chỉ ném `UniqueViolation` khi hàng
+    #    kia ĐÃ COMMIT — INSERT của kẻ thua bị CHẶN ở chỉ mục cho tới khi phiên
+    #    thắng kết thúc, và nếu phiên thắng ROLLBACK thì INSERT này đi tiếp
+    #    bình thường. Nghĩa là nhận được lỗi này ⇔ trạng thái đích ĐÃ ĐẠT, do
+    #    người khác đạt hộ. Không có gì để sửa, chỉ có việc đi tiếp.
+    #
+    # ⚠️ SAVEPOINT LỒNG, KHÔNG PHẢI `try` trần: sau khi một câu lệnh vỡ,
+    #    transaction PostgreSQL ở trạng thái abort — mọi câu sau đều hỏng cho
+    #    tới khi cuộn về một savepoint. Bên gọi (`tao_run`) đang giữ một
+    #    savepoint bọc CẢ chuỗi tạo run + khoản giữ chỗ credit; cuộn về savepoint
+    #    ĐÓ sẽ xoá luôn khoản giữ của chính kẻ thua. `begin_nested()` ở đây mở
+    #    một savepoint RIÊNG chỉ bọc INSERT job, nên `ROLLBACK TO` của nó gỡ
+    #    đúng câu vỡ và trả transaction về trạng thái dùng được mà run + hold
+    #    của kẻ thua vẫn nguyên.
+    #
+    # 🔑 Vế "vẫn nguyên" đó dựa vào một hành vi CÓ THẬT, đã đo (SQLAlchemy
+    #    2.0.49, 23/09): `begin_nested()` **autoflush TRƯỚC** khi phát
+    #    `SAVEPOINT`, nên mọi đối tượng còn treo của chuỗi tạo run (run, khoản
+    #    giữ, wakeup, sự kiện) đã nằm NGOÀI savepoint này khi nó mở. Nếu không,
+    #    `db.flush()` bên trong `jobs.submit` sẽ kéo chúng vào trong và
+    #    `ROLLBACK TO` xoá luôn — đúng thứ bản sửa này phải tránh.
+    #
+    # ⛔ Bắt HẸP: chỉ đúng `ux_jobs_dedupe_active` (xem `_la_trung_khoa_dong_co`).
+    #    Một vi phạm khoá ngoại hay một trùng khoá khác vẫn phải nổ.
+    try:
+        with db.begin_nested():
+            jobs.submit(db, user_id=DONG_CO_USER, app_slug=chu_dong_co(),
+                        job_type=DONG_CO_JOB, params={},
+                        dedupe_key="workflow:dong_co",
+                        max_attempts=3, origin=ORIGIN_WORKFLOW,
+                        priority_class="internal")
+    except IntegrityError as exc:
+        if not _la_trung_khoa_dong_co(exc):
+            raise
+        # Người khác vừa tạo đúng thứ ta cần. Bất biến "chỉ MỘT job động cơ
+        # đang sống" (plan 01a) được giữ CHẶT HƠN, không lỏng đi: chính chỉ mục
+        # vừa từ chối hàng thứ hai.
 
 
 def _tim(db, owner_id: str, khoa: str):
@@ -173,5 +255,6 @@ def tao_run(db, *, workflow: Workflow, owner_id: str, trigger_kind: str,
 
 
 __all__ = ["DONG_CO_JOB", "DONG_CO_USER", "MAX_RUN_DONG_THOI",
-           "KhongCoBanPublish", "QuaHanMuc", "TrungKhoaKhacWorkflow",
-           "chu_dong_co", "danh_thuc_dong_co", "tao_run"]
+           "UX_JOBS_DEDUPE", "KhongCoBanPublish", "QuaHanMuc",
+           "TrungKhoaKhacWorkflow", "chu_dong_co", "danh_thuc_dong_co",
+           "tao_run"]

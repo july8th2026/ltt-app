@@ -159,7 +159,7 @@ CROSS_APP_ALLOWED = {
     ("asv_voice", "auto_scan_video"),
     # agent_dong_co chỉ khai job_type `workflow.dong_co`; handler thật vẫn ở
     # apps/agent/jobs.py (xem docstring apps/agent_dong_co/manifest.py) —
-    # tách để apps/agent giữ job_types == ("agent.advance",) (test_190).
+    # tách để apps/agent không phải khai job_type nào (test_190).
     ("agent_dong_co", "agent"),
     # loại B — nợ thật, đường ra là nâng phần dùng chung lên platform_core
     ("auto_scan_video", "ltt_llm"),

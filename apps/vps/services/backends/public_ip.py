@@ -153,18 +153,27 @@ class OvhStaticIpPoolBackend:
 
         # SKIP LOCKED is effective on production PostgreSQL. The conditional
         # UPDATE remains the final arbiter and also makes SQLite tests truthful.
-        candidates = self.db.execute(
-            select(VpsIp.id)
-            .where(
+        #
+        # Lock ONE row per round. R16 (dc516d5c) widened this to LIMIT 20 so it
+        # could step over renewal-cancelled rows, which made one reservation
+        # lock every FREE row: a concurrent reserver then skipped them all and
+        # raised CapacityExhausted with free addresses left (test_1010 real
+        # PostgreSQL race, 23/09/2026). Rejected rows are excluded by id instead.
+        now = _now()
+        rejected: list[str] = []
+        while True:
+            query = select(VpsIp.id).where(
                 VpsIp.infrastructure_profile_id == self.profile_id,
                 VpsIp.state == "FREE",
             )
-            .order_by(VpsIp.id)
-            .with_for_update(skip_locked=True)
-            .limit(20)
-        ).scalars().all()
-        now = _now()
-        for row_id in candidates:
+            if rejected:
+                query = query.where(VpsIp.id.not_in(rejected))
+            row_id = self.db.execute(
+                query.order_by(VpsIp.id).with_for_update(skip_locked=True).limit(1)
+            ).scalar_one_or_none()
+            if row_id is None:
+                break
+            rejected.append(row_id)
             candidate = self.db.get(VpsIp, row_id)
             if candidate is None:
                 continue

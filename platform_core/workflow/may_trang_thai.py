@@ -74,13 +74,17 @@ NODE_CHUYEN: dict[str, frozenset[str]] = {
     "RETRY_SCHEDULED": frozenset({"READY", "CANCELLED"}),
 }
 
-_NODE_BAT_DAU = "PENDING"
+#: Node chưa có ảnh chụp nào. CÔNG KHAI — `apps/agent/routes/runs_v3.py`
+#: đọc hằng này thẳng (không qua `trang_thai_node`) vì nó cần chính đối
+#: tượng `NodeRunSnapshot` cho `cost_credit`/`attempt`/`job_id`, và gọi
+#: `trang_thai_node` sẽ nhân đôi lượt tra `anh_chup_hien_tai`.
+NODE_BAT_DAU = "PENDING"
 
 
 def trang_thai_node(db, run_id: str, node_id: str) -> str:
     """Trạng thái ĐANG CÓ của một node. Chưa có ảnh chụp nào ⇒ `PENDING`."""
     anh = thi_hanh.anh_chup_hien_tai(db, run_id, node_id)
-    return anh.execution_status if anh is not None else _NODE_BAT_DAU
+    return anh.execution_status if anh is not None else NODE_BAT_DAU
 
 
 def chuyen_node(db, run_id: str, node_id: str, *, sang: str, mo_ta: str,
@@ -163,5 +167,5 @@ def tong_chi_phi_hop_le(db, run_id: str) -> int:
 
 
 __all__ = ["RUN_CHUYEN", "RUN_KET_THUC", "RUN_LOI_CUA_TA", "NODE_CHUYEN",
-           "NODE_KET_THUC", "NODE_DANG_CHAY", "chuyen_node", "chuyen_run",
-           "trang_thai_node", "tong_chi_phi_hop_le", "NodeRun"]
+           "NODE_KET_THUC", "NODE_DANG_CHAY", "NODE_BAT_DAU", "chuyen_node",
+           "chuyen_run", "trang_thai_node", "tong_chi_phi_hop_le", "NodeRun"]

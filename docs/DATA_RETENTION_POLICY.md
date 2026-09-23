@@ -104,8 +104,36 @@ Xoá chúng là một hành động **không đảo được** trên máy đang 
 khỏi việc gỡ mã, và thuộc quyết định của chủ sản phẩm. Cho tới lúc đó chúng chỉ
 nằm im — không tiến trình nào còn mở chúng.
 
+## Sổ đăng ký phát hành — nằm ngoài mẫu `backup.ps1` cho tới 23/09/2026
+
+Diễn tập khôi phục 23/09/2026 (`docs/reports/dien-tap-khoi-phuc-2026-09-23.md`,
+câu 4) đo ra ba tệp trong `C:\LTTPlatform\data\` nằm ngoài mẫu sao lưu dữ liệu
+(`deploy/windows/backup.ps1` — danh sách `$patterns`):
+
+- `lttcode_releases.json` — sổ đăng ký phát hành LTTCODE, ghi bởi
+  `tools/release.ps1` ở kho LTTCODEAPP (xem `apps/lttcode/manifest.py`,
+  `apps/lttcode/phat_hanh.py:TEP_MANIFEST`). **Không dựng lại được**: mỗi dòng
+  chứa chữ ký minisign và SHA-256 của một bản đã phát hành, không tính lại
+  được sau khi mất.
+- `nexus_versions.json` — sổ phiên bản LTT Nexus, cùng loại, sửa bằng tay theo
+  `platform_core/nexus/versions.py` ("Vận hành cập nhật bằng cách sửa
+  `data/nexus_versions.json` — không cần deploy code").
+
+Cả hai đã được thêm vào `$patterns` của `backup.ps1` (nằm cùng chỗ với
+`config.json`, `*.db` — bản sao **dữ liệu**, không phải bản sao secrets).
+
+`data/translations/` (`en.json`, `vi.json`) **không** nằm trong danh sách
+trên: đây là tài nguyên nguồn đi kèm code, không phải dữ liệu vận hành.
+`setup/2-cai-dat.ps1` (mục "Tai nguyen nguon di kem code", dòng 683-694)
+robocopy nó từ `$src\data\translations` vào `data\translations` ở **mỗi lần**
+deploy/update — mất thì lần deploy kế tiếp tự nạp lại, không cần backup.
+
 ## Changelog
 
+- 2026-09-23: ghi rõ `lttcode_releases.json`/`nexus_versions.json` (sổ đăng ký
+  phát hành, không dựng lại được) vào phạm vi sao lưu; xác nhận
+  `data/translations/` sinh lại được qua `setup/2-cai-dat.ps1` nên không cần
+  đưa vào backup.
 - 2026-08-12: thêm source draft attachment/TTL/recovery Q89.
 - 2026-08-12: thêm upload/input lifecycle Q85, sweeper và operator reconcile.
 - 2026-08-10: thêm retention Q83 cho input ephemeral và report Quality Lab.
