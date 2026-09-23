@@ -263,7 +263,19 @@ chạy được trên đường khô thì mọi con số của nó đều là m�
 
 ## 8. Việc còn lại
 
-<!-- CON_LAI_DO -->
+* 🔴 **Sửa LỜI NHẮC rồi đo lại** — việc còn lại lớn nhất, và nó có một giả
+  thuyết cụ thể chứ không phải "thử lại xem sao". §4.2: model trả lời câu *"hai
+  khung có khác nhau không"*. Hướng đã có tiền lệ đo được (R-05): bắt model
+  **phân loại trước, phán xét sau** — ví dụ trả về thêm một trường
+  `cung_mot_canh: true|false`, và chỉ cho `dat=false` khi `cung_mot_canh` đúng
+  (tức nhảy hình trong cùng một cảnh) hoặc khi mô tả được một hành động bị cắt
+  ngang. ⛔ Đổi lời nhắc ⇒ **phải** nâng `qc_ai.PHIEN_BAN_QC_AI` (vào vân tay
+  giai đoạn qua `thi_hanh.phien_ban_engine`) và **đo lại**, không đổi một mình.
+* ⚠️ **Đối chứng dương chưa chạy được trên v1/v2** (§4.2). Chạy lại sau khi đã
+  hạ `CANH_DU_DAI_S`, hoặc dùng v3 (cảnh dài hơn) chỉ cho riêng vế này.
+* **`M-09` chặn mọi vòng sửa** (`LOI_TONG.md`): kể cả khi lớp này đủ tin để bật
+  cổng, vòng sửa vẫn chết vì `database is locked` ở `voice_synthesis`. Phải xong
+  M-09 trước khi bật `QC_HINH_LA_TU_VAN = False`.
 * **Lệnh đo cần quyền Administrator** — nó đọc `C:\LTTPlatform\secrets\app.env`
   (ACL đúng, ⛔ đừng nới) để lấy `LTT_DATABASE_URL` + `LTT_TOKEN_ENCRYPTION_KEY`
   cho `api_pool` chọn khoá gọi máy B. Đây là khuôn `setup\do_on_dinh.ps1` mà các
@@ -282,6 +294,16 @@ chạy được trên đường khô thì mọi con số của nó đều là m�
   — lượt đo 23/09 chạy thật với đúng bộ lọc đó, không khớp phim nào, in `BO QUA`
   rồi **thoát 0**: một lượt đo *thành công mà không đo gì*, nhìn từ ngoài giống
   hệt một lượt đang chạy. Nay nó trả `2` và in rõ (`BI_DANH` trong `do_qc_hinh.py`).
+
+  ⚠️ **Và `nang_quyen.py --log` KHÔNG hoạt động trong phiên agent.** Phiên agent
+  trên máy này **đã nâng quyền sẵn** (`IsUserAnAdmin()` trả `True`), nên
+  `nang_quyen.main` đi nhánh *"đã nâng quyền sẵn — chạy thẳng"*, và nhánh đó
+  **bỏ qua `--log` hoàn toàn**: tệp log không bao giờ được tạo. Đó chính là
+  triệu chứng đã làm một lượt đo 23 phút bị đọc nhầm thành "treo vì chờ UAC" rồi
+  bị giết. (Bản vá `PYTHONUNBUFFERED` ở `e130e1d4` chỉ chạm nhánh **không** nâng
+  quyền, tức không tới được môi trường mà agent thật sự chạy.) Đã tách thành một
+  việc riêng cho chủ sở hữu tệp đó; ở làn này, nguồn sự thật là **tệp `-Ra`**,
+  nay ghi **nguyên tử** sau **mỗi** chỗ nối.
 
 * **Chưa đo trên preset có `toc_do` ≠ 1** — phép đổi trục đã có test
   (`test_2120::..._truc_BAN_RA_khi_co_doi_TOC_DO`) nhưng chưa lượt thật nào đi qua.
