@@ -34,7 +34,13 @@ param(
     [string]$Chi = '',
     # 0 = everything still missing. A small number is a dry run of the path
     # before a long run takes the machine lock.
-    [int]$So = 0
+    [int]$So = 0,
+    # 'sinh' builds the corpus. 'kiem-cong' only asks whether :8120 answers --
+    # useful right after a deploy, because the voice service restarts with it
+    # and a cold sidecar needs about twenty seconds to load its model.
+    [ValidateSet('sinh', 'kiem-cong')]
+    [string]$Buoc = 'sinh',
+    [int]$Cho = 120
 )
 
 $ErrorActionPreference = 'Stop'
@@ -65,9 +71,10 @@ Write-Host "  [OK] Nap $soBien bien tu app.env (khong in gia tri)" -ForegroundCo
 $env:PYTHONPATH = $Repo
 $env:PYTHONIOENCODING = 'utf-8'
 
-$doiSo = @('-u', $tool, 'sinh', '--ra', $Ra)
+$doiSo = @('-u', $tool, $Buoc, '--ra', $Ra)
 if ($Chi) { $doiSo += @('--chi', $Chi) }
 if ($So -gt 0) { $doiSo += @('--so', "$So") }
+if ($Buoc -eq 'kiem-cong') { $doiSo = @('-u', $tool, 'kiem-cong', '--cho', "$Cho") }
 
 # See the note of the same name in chay_thu_giong.ps1: with 'Stop', a native
 # exe writing to stderr ends the script before $LASTEXITCODE can be read.

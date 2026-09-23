@@ -120,6 +120,39 @@ def gioi_khai(ten_tep_cu: str, ten_hien_thi: str) -> str:
 #  (1) sinh — cần app.env (LTT_VOICE_SIDECAR_TOKEN), nâng quyền
 # ══════════════════════════════════════════════════════════════════════════
 
+def kiem_cong(cho_s: float) -> int:
+    """Cong giong :8120 co tra loi khong — CHO toi `cho_s` giay.
+
+    ⭐ Tach ra thanh mot buoc rieng vi `sidecar_client.song()` co tran kien nhan
+       **1,5 giay** (co y: no nam tren duong dung trang). Ngay sau mot lan
+       khoi dong lai, cong nap model ~19 s khi nguoi — 1,5 giay tra `False`
+       cho mot cong dang len binh thuong.
+    """
+    import time
+
+    from apps.ltt_voice import sidecar_client
+
+    if not sidecar_client.san_sang():
+        print("CHUA CO TOKEN (chay qua setup\\do_gioi_giong.ps1).")
+        return 2
+    han = time.monotonic() + max(1.0, float(cho_s))
+    lan = 0
+    while True:
+        lan += 1
+        try:
+            d, _h = sidecar_client._goi("/health", timeout=30.0)
+            print(f"CONG SONG sau {lan} lan hoi: {d}")
+            return 0
+        except Exception as exc:                    # noqa: BLE001
+            con = han - time.monotonic()
+            print(f"  [..] lan {lan}: {type(exc).__name__}: {str(exc)[:90]} "
+                  f"(con {con:.0f}s)", flush=True)
+            if con <= 0:
+                print("CONG KHONG TRA LOI.")
+                return 3
+            time.sleep(min(10.0, max(1.0, con)))
+
+
 def _viec_sinh() -> list[dict]:
     """Danh sách việc đọc. Tất định, sắp xếp được, không phụ thuộc CSDL."""
     from apps.ltt_voice import giong_mau
@@ -510,13 +543,18 @@ def bao_cao(ra: pathlib.Path) -> int:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("buoc", choices=["sinh", "do-gioi", "cham-en", "bao-cao"])
+    ap.add_argument("buoc", choices=["sinh", "do-gioi", "cham-en", "bao-cao",
+                                     "kiem-cong"])
     ap.add_argument("--ra", default=RA_MAC_DINH)
     ap.add_argument("--chi", default="", help="sinh: chi lan nay (vi|en|preset)")
     ap.add_argument("--so", type=int, default=0, help="sinh: chi doc N luot dau (thu duong)")
+    ap.add_argument("--cho", type=float, default=120.0,
+                    help="kiem-cong: cho cong tra loi toi bao nhieu giay")
     a = ap.parse_args()
     ra = pathlib.Path(a.ra)
     os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+    if a.buoc == "kiem-cong":
+        return kiem_cong(a.cho)
     if a.buoc == "sinh":
         return sinh(ra, a.chi, a.so)
     if a.buoc == "do-gioi":
