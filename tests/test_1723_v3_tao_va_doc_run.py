@@ -321,3 +321,183 @@ def test_node_co_anh_chup_tra_dung_cost_attempt_job_error(api):
     assert node["cost_credit"] == 7
     assert node["job_id"] == "job-abc"
     assert node["error"] == "vuot_tran_bao_gia"
+
+
+# ── Fix round 2: con trỏ poll không được VƯỢT QUA lô vừa trả ────────────────
+
+def test_su_kien_chen_giua_doc_va_seq_cuoi_khong_duoc_mat(api, monkeypatch):
+    """Sự kiện ghi XEN GIỮA hai truy vấn phải còn nhận được ở nhịp poll kế.
+
+    `_run_json_v3` cũ hỏi CSDL hai lần: `su_kien.doc()` lấy lô, rồi
+    `su_kien.seq_cuoi()` lấy con trỏ. Ở READ COMMITTED, động cơ commit một sự
+    kiện vào đúng khe giữa hai lời gọi đó ⇒ `seq_cuoi` VƯỢT QUA lô vừa gửi.
+    Client xin tiếp từ con trỏ mới ⇒ sự kiện xen giữa không bao giờ được gửi:
+    **mất vĩnh viễn**. `nhapRun` phía client chống TRÙNG, không chống THIẾU.
+
+    Phép kiểm dựng đúng cuộc đua đó: vá `su_kien.doc` để một phiên CSDL KHÁC
+    (đúng vai động cơ — transaction riêng, commit riêng) ghi thêm một sự kiện
+    NGAY SAU khi lô đã được lấy. Chỉ xen MỘT lần, nhịp poll thứ hai chạy trên
+    hàm gốc.
+    """
+    import platform_core.db as dbmod
+    from platform_core.workflow import su_kien
+
+    a, token_a, _, _ = api
+    wf_id = _publish(_uid("v3run-a@example.com"))
+    run_id = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
+                    headers={"X-CSRF-Token": token_a}, json={}).json()["id"]
+
+    goc = su_kien.doc
+    da_xen: list[int] = []
+
+    def doc_roi_dong_co_ghi_xen(db, rid, *, sau=0):
+        lo = goc(db, rid, sau=sau)
+        if rid == run_id and not da_xen:
+            db2 = next(dbmod.get_session())
+            try:
+                ev = su_kien.ghi(db2, rid, "TriggerReceived",
+                                 du_lieu={"nguon": "dong co xen giua"})
+                db2.commit()
+                da_xen.append(int(ev.seq))
+            finally:
+                db2.close()
+        return lo
+
+    monkeypatch.setattr(su_kien, "doc", doc_roi_dong_co_ghi_xen)
+    lo1 = a.get(f"/agent/api/v3/runs/{run_id}").json()
+    assert da_xen, "canh khong dung duoc: khong co su kien nao bi xen vao"
+    seq_xen = da_xen[0]
+
+    # Lô đầu KHÔNG chứa sự kiện xen (nó được ghi sau khi lô đã chốt) — nếu
+    # chứa thì cảnh dựng sai và phần còn lại không đo được gì.
+    assert seq_xen not in [e["seq"] for e in lo1["su_kien"]]
+
+    # ⭐ MỆNH ĐỀ THẬT: nhịp poll kế, xin từ đúng con trỏ server vừa phát, VẪN
+    #    phải nhận được sự kiện bị xen.
+    lo2 = a.get(f"/agent/api/v3/runs/{run_id}",
+                params={"sau": lo1["seq_cuoi"]}).json()
+    assert seq_xen in [e["seq"] for e in lo2["su_kien"]], (
+        f"su kien seq={seq_xen} MAT VINH VIEN: con tro server phat "
+        f"(seq_cuoi={lo1['seq_cuoi']}) da vuot qua lo vua tra "
+        f"(seq cuoi lo = {lo1['su_kien'][-1]['seq']})")
+
+
+def test_con_tro_poll_la_seq_CUOI_LO_chu_khong_phai_max_cua_bang(api,
+                                                                 monkeypatch):
+    """Vế cơ học của ca trên: `seq_cuoi` phải đến từ chính lô đã trả.
+
+    Đo trực tiếp mệnh đề, không qua hai nhịp poll — để khi ca trên đỏ, đây nói
+    rõ HỎNG Ở ĐÂU. Cùng cách dựng cảnh: sự kiện xen vào sau khi lô đã chốt.
+    """
+    import platform_core.db as dbmod
+    from platform_core.workflow import su_kien
+
+    a, token_a, _, _ = api
+    wf_id = _publish(_uid("v3run-a@example.com"))
+    run_id = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
+                    headers={"X-CSRF-Token": token_a}, json={}).json()["id"]
+
+    goc = su_kien.doc
+    da_xen: list[int] = []
+
+    def doc_roi_dong_co_ghi_xen(db, rid, *, sau=0):
+        lo = goc(db, rid, sau=sau)
+        if rid == run_id and not da_xen:
+            db2 = next(dbmod.get_session())
+            try:
+                ev = su_kien.ghi(db2, rid, "TriggerReceived", du_lieu={})
+                db2.commit()
+                da_xen.append(int(ev.seq))
+            finally:
+                db2.close()
+        return lo
+
+    monkeypatch.setattr(su_kien, "doc", doc_roi_dong_co_ghi_xen)
+    lo1 = a.get(f"/agent/api/v3/runs/{run_id}").json()
+    assert lo1["seq_cuoi"] == lo1["su_kien"][-1]["seq"]
+    assert lo1["seq_cuoi"] < da_xen[0]
+
+
+def test_lo_rong_giu_nguyen_con_tro_khach_dang_cam(api):
+    """Vế đối chứng: lô RỖNG (`sau=` đã ở cuối) không được làm con trỏ LÙI.
+
+    `su[-1].seq if su else sau` — nhánh `else` chính là chỗ này. Con trỏ lùi ⇒
+    mỗi nhịp poll gửi lại toàn bộ lịch sử.
+    """
+    a, token_a, _, _ = api
+    wf_id = _publish(_uid("v3run-a@example.com"))
+    run_id = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
+                    headers={"X-CSRF-Token": token_a}, json={}).json()["id"]
+    full = a.get(f"/agent/api/v3/runs/{run_id}").json()
+    tiep = a.get(f"/agent/api/v3/runs/{run_id}",
+                 params={"sau": full["seq_cuoi"]}).json()
+    assert tiep["su_kien"] == []
+    assert tiep["seq_cuoi"] == full["seq_cuoi"]
+
+
+# ── Phiên hết hạn giữa lúc poll: 401 + JSON, không phải 303 sang HTML ───────
+#
+# `fetch()` ĐI THEO 303 → nhận HTML của `/login` với `status: 200` → dòng
+# `response.json()` ngay sau đó nổ với một thông điệp không dính dáng gì tới
+# nguyên nhân thật. Tiêu chí phân biệt "gọi API" với "điều hướng HTML" dùng
+# lại ĐÚNG hàm middleware ngôn ngữ đang dùng (`server/loai_request`), không
+# phát minh tiêu chí thứ hai.
+
+#: Trình duyệt khai TƯỜNG MINH đây là `fetch()` trong trang (Fetch Metadata).
+GOI_DU_LIEU = {"Sec-Fetch-Mode": "cors"}
+#: …và đây là mở cả trang.
+DIEU_HUONG = {"Sec-Fetch-Mode": "navigate"}
+
+
+def test_het_phien_giua_luc_poll_tra_401_json_khong_phai_303_html(api):
+    a, token_a, _, _ = api
+    wf_id = _publish(_uid("v3run-a@example.com"))
+    run_id = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
+                    headers={"X-CSRF-Token": token_a}, json={}).json()["id"]
+
+    a.cookies.clear()          # phiên hết hạn GIỮA LÚC vòng poll đang chạy
+    r = a.get(f"/agent/api/v3/runs/{run_id}", headers=GOI_DU_LIEU,
+              follow_redirects=False)
+    assert r.status_code == 401, r.status_code
+    assert "location" not in {k.lower() for k in r.headers}
+    assert r.headers["content-type"].startswith("application/json")
+    assert r.json()["detail"]["ma"] == "chua_dang_nhap"
+
+
+def test_het_phien_khong_co_fetch_metadata_van_401_neu_accept_json(api):
+    """Lùi về `Accept` khi thiếu Fetch Metadata (Safari < 16.4) — vẫn là
+    cùng một tiêu chí, không phải tiêu chí thứ hai."""
+    a, token_a, _, _ = api
+    wf_id = _publish(_uid("v3run-a@example.com"))
+    run_id = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
+                    headers={"X-CSRF-Token": token_a}, json={}).json()["id"]
+    a.cookies.clear()
+    r = a.get(f"/agent/api/v3/runs/{run_id}",
+              headers={"Accept": "application/json"}, follow_redirects=False)
+    assert r.status_code == 401, r.status_code
+    assert r.json()["detail"]["ma"] == "chua_dang_nhap"
+
+
+def test_doi_chung_dieu_huong_html_VAN_chuyen_huong_sang_dang_nhap(api):
+    """⭐ VẾ ĐỐI CHỨNG BẮT BUỘC: người dùng bình thường mở một trang khi chưa
+    đăng nhập vẫn được đưa tới trang đăng nhập — không được nhận một cục JSON
+    401 giữa trình duyệt."""
+    a, _, _, _ = api
+    a.cookies.clear()
+    r = a.get("/agent/canvas", headers=DIEU_HUONG, follow_redirects=False)
+    assert r.status_code == 303, r.status_code
+    assert r.headers["location"].startswith("/login?next=")
+
+
+def test_doi_chung_client_khong_khai_gi_giu_nguyen_hanh_vi_cu(api):
+    """KHÔNG có bằng chứng ⇒ giữ hành vi cũ (303). `curl`, bộ giám sát, client
+    máy-gọi-máy gửi `Accept: */*` không được đổi nghĩa vì bản vá này."""
+    a, token_a, _, _ = api
+    wf_id = _publish(_uid("v3run-a@example.com"))
+    run_id = a.post(f"/agent/api/v3/workflows/{wf_id}/runs",
+                    headers={"X-CSRF-Token": token_a}, json={}).json()["id"]
+    a.cookies.clear()
+    r = a.get(f"/agent/api/v3/runs/{run_id}", headers={"Accept": "*/*"},
+              follow_redirects=False)
+    assert r.status_code == 303, r.status_code
+    assert r.headers["location"].startswith("/login?next=")

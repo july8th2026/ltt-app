@@ -50,12 +50,16 @@ def doc(db, run_id: str, *, sau: int = 0) -> list[WorkflowEvent]:
 def seq_cuoi(db, run_id: str) -> int:
     """Seq LỚN NHẤT của run — MỘT truy vấn tổng hợp, không đọc hàng nào.
 
-    ⭐ Con trỏ poll (`seq_cuoi` trong payload v3 — `runs_v3._run_json_v3`)
-       dùng số này mỗi nhịp. Gọi `doc(db, run_id, sau=0)` rồi lấy `[-1].seq`
-       trông tiện nhưng kéo TOÀN BỘ lịch sử sự kiện (kể cả cột `du_lieu`
-       JSON) về Python chỉ để đọc một số nguyên — chi phí tăng theo TUỔI của
-       run, đúng thứ tham số `sau=` sinh ra để tránh. `func.max` để CSDL trả
-       một hàng một cột, giống hệt cách `ghi()` tự tính `seq` kế tiếp ở trên.
+    ⛔ **KHÔNG dùng làm con trỏ poll.** Hàm này từng đứng trong
+       `runs_v3._run_json_v3` đúng vai đó và đã gây MẤT SỰ KIỆN: nó là một
+       truy vấn THỨ HAI, tách khỏi `doc()`, nên ở READ COMMITTED một sự kiện
+       commit vào khe giữa hai truy vấn đẩy con trỏ VƯỢT QUA lô vừa gửi cho
+       client — client xin tiếp từ con trỏ mới và không bao giờ nhận được nó.
+       Con trỏ phải lấy từ chính lô đã trả (`su[-1].seq`): nó có thể LÙI (gửi
+       trùng, client đã chống) nhưng không thể VƯỢT (mất, không ai chống).
+
+    Còn ở đây cho những chỗ thật sự cần "seq lớn nhất của bảng" — ví dụ
+    `ghi()` tự tính `seq` kế tiếp bằng đúng phép `func.max` này.
     """
     return int(db.execute(
         select(func.max(WorkflowEvent.seq))

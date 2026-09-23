@@ -129,12 +129,27 @@ def _nodes_json(db: Session, run: WorkflowRun) -> list[dict]:
 
 
 def _run_json_v3(db: Session, run: WorkflowRun, *, sau: int = 0) -> dict:
-    su = su_kien.doc(db, run.id, sau=int(sau or 0))
-    # `seq_cuoi` phải là seq LỚN NHẤT của run, không phải của trang vừa lọc —
-    # client dùng nó làm con trỏ cho lần poll sau, và một con trỏ lùi lại khi
-    # trang rỗng sẽ gửi lại toàn bộ lịch sử mỗi nhịp. `su_kien.seq_cuoi` là
-    # MỘT truy vấn tổng hợp (`func.max`) — KHÔNG gọi lại `doc(sau=0)` ở đây,
-    # nó sẽ đọc lại toàn bộ lịch sử sự kiện của run mỗi lần poll.
+    sau = int(sau or 0)
+    su = su_kien.doc(db, run.id, sau=sau)
+    # ⭐ Con trỏ poll đến từ CHÍNH LÔ vừa trả, không phải từ một truy vấn thứ
+    #    hai hỏi lại bảng.
+    #
+    #    `su_kien.doc()` + `su_kien.seq_cuoi()` là HAI truy vấn. Ở READ
+    #    COMMITTED (mặc định của PostgreSQL), động cơ commit một sự kiện vào
+    #    đúng khe giữa hai truy vấn đó ⇒ `seq_cuoi` trả về một con trỏ **vượt
+    #    qua** lô vừa gửi cho client. Client xin nhịp sau từ con trỏ mới, nên
+    #    những sự kiện nằm giữa **không bao giờ được gửi**: mất VĨNH VIỄN.
+    #    `nhapRun` phía client chống TRÙNG (bỏ seq đã có) chứ không chống
+    #    THIẾU — không ai phát hiện, dòng thời gian chỉ đơn giản khuyết.
+    #
+    #    Lấy `su[-1].seq` thì con trỏ không thể vượt quá thứ đã gửi: cùng lắm
+    #    là lùi lại, và lùi chỉ gây gửi TRÙNG — thứ client đã chống được.
+    #
+    #    Lô RỖNG (`sau=` đã ở cuối) ⇒ giữ nguyên con trỏ khách đang cầm. Trả
+    #    `0` ở đây sẽ làm con trỏ lùi về đầu và gửi lại toàn bộ lịch sử mỗi
+    #    nhịp — đúng thứ `su_kien.seq_cuoi()` từng đứng đây để tránh.
+    #
+    #    Bớt luôn một truy vấn mỗi nhịp poll (1,5 giây/lần, mỗi Canvas đang mở).
     return {
         "id": run.id,
         "workflow_id": run.workflow_id,
@@ -148,7 +163,7 @@ def _run_json_v3(db: Session, run: WorkflowRun, *, sau: int = 0) -> dict:
         "su_kien": [{"seq": e.seq, "loai": e.loai, "node_id": e.node_id,
                      "du_lieu": dict(e.du_lieu or {}),
                      "created_at": _iso(e.created_at)} for e in su],
-        "seq_cuoi": su_kien.seq_cuoi(db, run.id),
+        "seq_cuoi": su[-1].seq if su else sau,
     }
 
 
