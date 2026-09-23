@@ -218,10 +218,14 @@ def _gia_lap_proxmox(monkeypatch, *, ram_gb=64, dia_gb=600, vms=None,
         def danh_sach_vm(self):
             return list(vms or [])
 
-    import apps.vps.routes as routes
-    monkeypatch.setattr(routes, "client_tu_moi_truong", lambda *a, **k: _Client())
+    # 23/09: `routes` khong con tu doc Proxmox — phep do nam o `nguon_luc`.
     from types import SimpleNamespace
-    monkeypatch.setattr(routes.backend_factory, "compute_backend", lambda profile:
+
+    import apps.vps.routes as routes  # noqa: F401 - giu cho phep kiem khac
+    from apps.vps.services import backend_factory
+    # `nguon_luc._suc_chua` tu dung client qua `backend_factory`, nen mot cho
+    # va duy nhat mot cho la du: khong phai gia lap them `_suc_chua`.
+    monkeypatch.setattr(backend_factory, "compute_backend", lambda profile:
                         SimpleNamespace(client=_Client()))
 
 

@@ -20513,3 +20513,15 @@ msgstr "Posted from"
 #: apps/video_crawler
 msgid "đến ngày"
 msgstr "to"
+
+msgid "Gói này tạm hết chỗ."
+msgstr "This size is temporarily sold out."
+
+msgid "Tạm hết địa chỉ IP. Chúng tôi đang bổ sung."
+msgstr "No IP addresses available right now. We are adding more."
+
+msgid "Tạm ngưng nhận máy mới."
+msgstr "Not accepting new machines right now."
+
+msgid "Tạm ngưng nhận máy mới trong tháng này."
+msgstr "Not accepting new machines for the rest of this month."
