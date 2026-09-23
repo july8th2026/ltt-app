@@ -83,7 +83,7 @@ SQLAlchemy (nền tảng, test `pytest`), PowerShell 7 (phát hành), Tauri/Rust
 | 17 | Giảm độ trễ mỗi bước | ⚫ **ĐÓNG — giới hạn phần cứng, đã tách bằng số.** 226/226 lượt LLM: **sinh token 62,2 %** (4 878,9 s) · chờ suất/TTFT 23,3 % · chạy công cụ 14,5 % (82 % của phần đó là `pwsh` chạy thật). Phần mềm không chạm được vào 62,2 % ⇒ **không vờ tối ưu** |
 | 18 | Chạy tiếp khi đóng app | 🟡 **0,5** — tra xong: **phần lớn đã có** (khay giữ sidecar sống, autostart, `lttcode-cli.exe` chạy thật 60,7 s). H18 chấm lại 45 → 78. Còn: chủ dự án quyết có làm scheduler mức hệ điều hành không |
 | 19 | Git/PR thành công cụ gốc | 🟡 **0,5** — `18054a2`: **bốn công cụ chỉ-đọc** `git_status/diff/log/show`, `execFile` không qua shell, `repoDir` **không bao giờ vào argv** (chỉ làm `cwd`, chốt không thoát workspace), `rev` qua regex buộc ký tự đầu là chữ/số ⇒ loại sạch `--force`/`-A`/`; …`/`&& …`. **38/38 phép**, đối chứng âm chốt `execFile` **0 lần gọi**. 🔴 **CHƯA mount vào profile** ⇒ model trong app chưa thấy — đang làm |
-| 20 | Khởi động app (17→49→107 s) | 🟡 **0,5** — `36344e0`. Thêm **2/3 mốc** (`PROCESS_START: OnceLock<Instant>` ở đầu `run()`; đầu `setup()` + cuối `stage_dsh_home()`). Mốc 3 (SPA "interactive") **không làm** — chưa có hook, phải đụng mã thượng nguồn, dừng đúng brief. ✅ `cargo test --lib` **114 passed, 0 failed** |
+| 20 | Khởi động app (17→49→107 s) | 🟡 **0,5** — hai mốc mới đã chạy trên bản 0.2.7 và **lật kết luận**: vỏ Tauri **16 ms** · `stage_dsh_home` **7,4 s** · sidecar ready **4,8–11,4 s** ⇒ cộng ≈ 12–19 s, trong khi tổng thật **54,5 s**. **35–42 s (65–77 %) nằm ở chặng WebView2/SPA chưa ai đo.** Giả thuyết quét AV **không giải thích được**. Mốc 3 thành việc chính |
 
 ### Ngoài plan — việc sinh ra từ lượt diễn tập D1
 
@@ -1451,6 +1451,35 @@ Luật *"dùng lại trước, tự viết sau"* đã được thoả: đã tra,
   - [ ] cuối `stage_dsh_home()` — `desktop/src-tauri/src/sidecar.rs:290-311` (**hàm đã có, chỉ
         thiếu dòng log**)
   - [ ] sự kiện DSH SPA báo "interactive" — **chưa có hook**, phải thêm
+- [x] **Step 3 phần mốc ✅ + SỐ ĐẦU TIÊN (23/09 23:41, bản 0.2.7 đã cài, 3 lượt khởi động)**
+
+  Hai mốc mới in ra thật, và chúng **bác giả thuyết quét-AV** ở trên:
+
+  | Chặng | Số đo | Trước đây |
+  |---|---|---|
+  | Vỏ Tauri → `setup()` | **12–16 ms** | mù |
+  | `stage_dsh_home()` xong | **7 046 – 7 796 ms** | mù |
+  | spawn → `sidecar ready` | **4 815 · 11 315 · 11 387 ms** | chặng duy nhất có số |
+  | **Cộng lại** | **≈ 12 – 19 s** | |
+  | **Tổng thật đo được** | **54,5 s** (`boot_wall_sec`) | |
+
+  🔴 **Còn ≈ 35 – 42 s không ai đo — chiếm 65–77 % thời gian khởi động.** Nó nằm trọn trong
+  **chặng thứ tư: mở WebView2 → SPA DSH tải xong**, đúng cái mốc số 3 mà ta **cố ý chưa làm**
+  vì "chưa có hook, phải đụng mã thượng nguồn".
+
+  **Hai giả thuyết trước đều sai hướng:**
+  - *"Vỏ Tauri chậm"* — **16 ms**. Coi như bằng không.
+  - *"Quét AV cây `sidecar/` 45 536 tệp"* — nếu đúng thì `stage_dsh_home()` (chặng đụng cây đó)
+    phải là chỗ phình ra. Nó chỉ **7,4 s**. Quét AV **không giải thích được** 35–42 s kia.
+
+  ⇒ **Mốc 3 đổi từ "tuỳ chọn" thành VIỆC CHÍNH của Task 20.** Tối ưu bất cứ chặng nào trong ba
+  chặng đã đo là tối ưu 12–19 s trên tổng 54,5 s — cùng lắm cắt được một phần ba, trong khi hai
+  phần ba còn lại vẫn chưa ai nhìn thấy.
+
+  > Bài học lặp lại lần thứ hai trong ngày: **thêm mốc trước, tối ưu sau.** Nếu làm theo plan gốc
+  > (tối ưu "chặng lớn nhất" trong số đã đo) thì đã dồn công vào `sidecar ready` 11 s và bỏ qua
+  > chỗ ăn 40 s.
+
 - [ ] **Step 4:** Đo lại 3 lần lạnh + 1 lần sau reboot. **Đạt khi p50 ≤ 30 s.**
   ⚠️ Nếu số mới xác nhận phần lớn là quét AV ⇒ việc phải làm là **loại trừ thư mục cài khỏi
   Defender** (việc của chủ dự án, không phải sửa mã), chứ không phải tối ưu khởi động.
