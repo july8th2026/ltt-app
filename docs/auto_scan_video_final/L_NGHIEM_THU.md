@@ -113,6 +113,37 @@ ngoài là xoá đúng cái vừa sửa.
 
 ---
 
+## 2b. Quan sát vận hành 24/09 — vòng sửa `dich_sai` CHẠY THẬT, và nó xác nhận luật khoá
+
+Lượt B, phút thứ ~50, đọc từ `asv_stage` của CSDL test trong lúc lượt còn chạy:
+
+```
+media_prepare  audio_prepare  transcribe  edit_plan   succeeded  thu=1 rev=3
+content_process                                       succeeded  thu=2 rev=6
+voice_synthesis                                        RUNNING   thu=2 rev=6
+timing_align compose render qc qc_do_luong qc_ai       pending    thu=1 rev=4
+qc_ai (lượt đầu)                                       done
+```
+
+`qc_ai` chấm một bản dịch là sai ⇒ `sua_chua` (`dich_sai`) ⇒ `content_process`
+chạy lại (lần 2) ⇒ `voice_synthesis` **đọc lại** (lần 2) ⇒ mọi giai đoạn sau về
+`pending` để chạy lại. **Đây là vòng sửa `dich_sai` chạy đầu-cuối trên phim khách
+thật** — đúng cái M-09a ghi là *"chưa ai có phép kiểm đầu-cuối cho nó"*.
+
+⭐ **Và nó biến một lập luận thành một quan sát.** Tôi ghi lý do giữ
+`may_tao_tieng` qua các pha QC *trước* khi thấy chuyện này: phán quyết QC có thể
+đẩy lần chạy ngược về `voice_synthesis`. Nó **đã** đẩy. Nếu khuôn nhả máy sinh
+tiếng lúc `voice_synthesis` báo `succeeded` lần đầu, một phiên khác giành được
+máy, và vòng sửa "đọc lại" này đo trên một máy đang mang trạng thái của lượt khác
+— đúng bẫy M-07, không còn là giả thuyết.
+
+⛔ Khác biệt thật giữa hai khoá, nói lại vì nó dễ bị gom thành một:
+
+| | nhả rồi giành lại |
+|---|---|
+| `cpu_nhieu` | chỉ **chậm hơn** |
+| `may_tao_tieng` · `postgres_test` | có thể **sai kết quả** |
+
 ## 3. Kết quả lượt thật
 
 Bằng chứng từng lượt: `bang_chung/NT_CUOI_<lượt>.md`.

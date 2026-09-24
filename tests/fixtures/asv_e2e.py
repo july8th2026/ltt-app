@@ -1185,6 +1185,18 @@ class KhoaTheoPha:
                        (chia suc tinh ⇒ giu luc cho la phi may)
     ``may_tao_tieng``  giu tu job giong DAU TIEN den het luot.
                        (tai nguyen doc quyen ⇒ ai chen vao lam hong phep do)
+
+    ⚠️ **Vi sao `may_tao_tieng` giu tiep qua `qc_ai`, `qc`, `render` — chu khong
+       nha ngay khi `voice_synthesis` bao `succeeded`.** Thoat nhin day giong K-02
+       (giu khoa luc khong dung), va no KHAC o mot diem quyet dinh: phan quyet cua
+       `qc_ai`/`qc_do_luong` co the day lan chay **NGUOC ve** `voice_synthesis`
+       (`sua_chua`: `doc_sai` -> doc lai doan, `dich_sai` -> dich lai roi doc lai;
+       xem M-01, M-02, M-07). Tuc trong suot cac pha QC, may sinh tieng la thu
+       **co the can lai bat cu luc nao**.
+    ⇒ Nha ra roi gianh lai la mo dung cai cua M-07 canh bao: mot phien khac chen
+      vao giua, va vong sua "doc lai" do mot may da mang tieng cua luot khac.
+    ⛔ Khac biet that giua hai khoa: `cpu_nhieu` nha ra roi gianh lai chi **cham
+       hon**; `may_tao_tieng` nha ra roi gianh lai co the **sai ket qua**.
     con lai            KHONG khoa gi. `advance`, `edit_plan`, `content_process`,
                        `qc_ai` la nhung lan goi mang — chung chay NGOAI khoa.
     """
