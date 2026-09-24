@@ -6720,6 +6720,9 @@ msgstr "Verify the downloaded file (optional, for technically inclined users)"
 msgid "Kiểm tra kết nối chưa đạt; profile đã ngừng nhận máy mới."
 msgstr "The connection check failed; the profile has stopped accepting new machines."
 
+msgid "Kiểm tra hình ảnh"
+msgstr "Checking the picture"
+
 #: apps/taoanh/templates/image_thumbnail_shell.html:27
 msgid "Kiểm tra kết nối rồi thử lại."
 msgstr "Check your connection and try again."
