@@ -321,6 +321,16 @@ là một ca **cụ thể, kiểm được** của *"dịch lại một đoạn 
 
 ### Phán đoán — ⚠️ và một xung đột lợi ích phải khai
 
+> 🔴 ⛔ **PHẠM VI CỦA KẾT LUẬN — đọc trước con số.**
+>
+> *"Vòng sửa **với bộ chấm V1** gây trôi trên đoạn đã đúng"* ⛔ **KHÔNG** suy ra
+> *"vòng sửa có hại"*. Phép cân này có **hai vế**: (a) bao nhiêu đoạn **sai** được
+> sửa, (b) bao nhiêu đoạn **đúng** bị chạm rồi trôi. V1 có báo động giả **43 %**
+> nên vế (b) rất đông. Bộ chấm **V3** hạ FA xuống **23 %** ⇒ số đoạn đúng bị chạm
+> ít hơn hẳn ⇒ ⚠️ **phép cân có thể ĐỔI DẤU**.
+>
+> ⛔ Đừng viết kết luận rộng hơn dữ liệu.
+
 Kết quả **LẪN LỘN**, nghiêng về *"churn nhiều, hại có thật nhưng không đều"*:
 vòng sửa ⛔ không phá một cách hệ thống, nhưng mỗi lần nó chạm vào một đoạn đã
 đúng là một lần **rút thăm lại**, và thuật ngữ là chỗ dễ trượt nhất.
@@ -335,10 +345,19 @@ như một phép rút thăm lặp lại chứ không phải một phép sửa h�
 > lại (§4c). ⇒ Các con số ~18/~5/~4 là **quan sát tay**, ⛔ **không phải một
 > phép đo**, và ⛔ không được dùng để đóng một cổng.
 
-### ⇒ Theo bảng quyết định: chạy lượt đầy đủ
+### ⇒ ⛔ HOÃN lượt đầy đủ — điều phối đổi quyết định 24/09
 
-Kết quả *"lẫn lộn"* ⇒ **cần con số đường sản phẩm**. Nhãn và SHA đã soạn sẵn ở
-§5. ⛔ Chưa chạy — và nó nên chạy **sau** khi `ltt-3.8` rảnh (xem dưới).
+Bảng quyết định nói *"lẫn lộn ⇒ chạy lượt đầy đủ"*. **Ba dữ kiện mới làm nó sai:**
+
+1. ⭐ **Câu hỏi đã được trả lời.** Lượt 67 phút sinh ra để giải thích **85 → 85**;
+   §4f đã giải thích bằng cơ chế (*rút thăm lại*, thành phần bị xáo). **Trả rồi.**
+2. Lượt ấy sẽ đo **cấu hình ta sắp bỏ** (bộ chấm V1). Làn kia đang chốt **V3 +
+   `temperature 0.0`**.
+3. `ltt-3.8` **đang bị tranh** ⇒ con số thu được lẫn cả **tranh tài nguyên**,
+   ⛔ không tách được.
+
+⇒ **MỘT lượt duy nhất, chạy SAU khi V3 về**, trên đúng cấu hình sẽ ship.
+⛔ Không hai lượt. Khung A/B đã dựng sẵn (§6) để chạy bằng **một lệnh**.
 
 ### ⚠️ Chặn vận hành: `ltt-3.8` đang bị tranh
 
@@ -346,6 +365,53 @@ Lượt chấm đầu **chết cả 4 lô** với `concurrency_limited` (429) �
 đang dùng chính model đó cho đường chấm. Sau khi thêm chờ có cấp số nhân, 31
 đoạn mất **308 s** (so với 65 s cho cùng số đoạn ở bước dịch trên `ltt-3.5`).
 ⇒ Chấm `v1`/`v2` **vẫn đang chạy**. ⛔ Không ép thêm request vào `ltt-3.8`.
+
+## 4g. 🔴 `光子` — ta có thể đã sửa từ SAI KIỂU A sang SAI KIỂU B
+
+### Bằng chứng: nó là XƯỞNG GAME, không phải người
+
+```
+v3 seg_0004 (5,48–7,40)   来把枪啊光子!
+tên tệp phim              … #和平精英夏日航海 #和平精英夏日探险 …
+```
+
+| bằng chứng | nguồn |
+|---|---|
+| Phim là video chơi **和平精英** (PUBG Mobile) | hashtag trong tên tệp gốc |
+| 和平精英 / PUBG Mobile do **LightSpeed Studios** (光子工作室群) đồng phát triển | Wikipedia *PUBG Mobile* (REST summary, đọc 24/09) |
+| Câu là **lời gọi thẳng** dạng cầu khiến — *"cho cái súng đi, 光子!"* — người chơi trách **nhà phát triển** về may rủi khi nhặt đồ | ngữ cảnh: hai câu trước/sau bàn về nhặt súng, ⛔ không có nhân vật nào tên 光子 |
+| Xuất hiện **đúng một lần** trong cả ba phim | đếm trên `b2_dich_nen/` |
+
+⇒ `光子` là **tổ chức / thương hiệu**, ⛔ không phải tên người.
+
+### ⚠️ Hệ quả: bản "đã sửa" có thể sai **nặng hơn** bản gốc
+
+```
+v1 (chưa có luật)  ->  "Photon"      ⚠️ dịch nghĩa đen — nhưng 光子 NGHĨA LÀ photon
+v3 (có luật)       ->  "Quang Tử"    ⛔ phiên âm một THƯƠNG HIỆU như một tên người
+```
+
+⭐ Thương hiệu thường **giữ tên đã quen**, ⛔ không phiên âm. ⇒ Ta có thể đã đổi
+từ *sai kiểu A* sang *sai kiểu B* — **rồi tự chấm ✅**. Đúng lớp lỗi của
+`李宗盛` ở §4c, lần này ở **chiều phân loại** chứ không phải chiều đọc âm.
+
+### ⛔ Luật hiện tại KHÔNG phân biệt ba loại — và đó là câu cho chủ dự án
+
+Chủ dự án ra luật bằng ví dụ **`张伟 → Trương Vĩ`**, một **tên người**. Quy tắc 5
+trong `_loi_nhac` áp **một cách** cho **mọi** tên riêng:
+
+| loại | ví dụ trong dữ liệu | luật có lẽ đúng | luật hiện tại làm gì |
+|---|---|---|---|
+| người **có lối viết quen ở VN** | `李宗盛` (nhạc sĩ Đài Loan) | dùng **lối quen** — *Lý Tông Thịnh*, tra được | ⛔ phiên tự do ⇒ ra *"Lý Tông Thành"* |
+| người / địa danh **không quen** | `张伟`, `小美` | **phiên Hán-Việt** ✅ đúng luật | ✅ đúng |
+| **tổ chức / thương hiệu** | `光子` (xưởng game) | ⚠️ **giữ tên đã quen**, ⛔ có lẽ không phiên | ⛔ phiên như tên người |
+
+⛔ **Làn này không tự quyết** — đây là quyết định **sản phẩm**, không phải một
+bản vá lời nhắc. Điều phối mang tới chủ dự án.
+
+⚠️ **Unihan giữ đúng vai:** dùng làm **gợi ý soi** (nó bác được *"Thành"*),
+⛔ **không** nâng lên thành chân lý nền (thiếu giản thể 7/17, âm lệch lối dùng
+trong tên).
 
 ## 5. Bản BẬT vòng sửa — ⏭ **việc kế tiếp**, chặn đã gỡ, SHA đã ghim
 
@@ -372,3 +438,80 @@ cũng sinh ra từ đúng bộ chấm ấy. Chờ bộ chấm mới là **đổi
 cần một lần chạy thật qua hàng đợi job (lượt NT-CUOI B trước đây tốn **67 phút**).
 ⇒ Việc kế tiếp của làn, ⛔ không phải một việc đã xong.
 
+---
+
+# 6. Bộ đo dựng SẴN — ⛔ chạy được bằng một lệnh khi V3 về
+
+⭐ Mọi phán quyết về **dịch** đang chờ bộ chấm. ⇒ Việc đáng giá bây giờ là làm sao
+**khoảnh khắc V3 về thì đo được ngay**, ⛔ không phải ngồi chờ rồi mới dựng khung.
+
+## 6.1 Khung A/B vòng sửa — `tools/bench_b2_ab_vong_sua.py`
+
+```
+python tools/bench_b2_ab_vong_sua.py --kiem            # ⛔ KHÔNG gọi model
+python tools/bench_b2_ab_vong_sua.py --chay --ra <thư mục>
+```
+
+**MỘT biến, và biến đó là vòng sửa.** Giữ cố định: bản chép lời · model dịch ·
+model chấm · `PHIEN_BAN_LOI_NHAC` · `VONG_SUA_TOI_DA = 1` (đúng như sản phẩm).
+
+```
+nhánh A = dịch, ⛔ không vòng sửa            (bản nền)
+nhánh B = dịch -> chấm -> dịch lại đoạn bị gắn cờ
+```
+
+⭐ Mỗi kết quả mang **toàn bộ môi trường** để tái lập, và ⭐ giữ **cả hai** bản
+cạnh nhau (⛔ không chỉ hiệu số) để người sau **soi tay được**:
+
+```
+model_dich  qwen35-api   ·  model_cham  qwen38-api  ·  loi_nhac v3
+vong_sua_toi_da 1  ·  sha_bo_cham 604b82a7  ·  sha_loi_nhac_dich db08e7ad
+```
+
+🔑 **Cổng tài nguyên có trong chính công cụ:** `--chay` **tự dừng** nếu bước chấm
+sẽ rơi vào `qwen38-api` (đang nhường làn khác), trừ khi có `--ep-3-8`. ⛔ Không
+phải một dòng ghi chú — là một lần `return 3`. Đã thử: nó dừng thật.
+
+## 6.2 Thiết kế phép so `ltt-3.5` vs `ltt-3.8` cho DỊCH — ⛔ CHƯA chạy
+
+> Câu chủ dự án giao: *"để **phép đo** chọn 3.5 hay 3.8 cho dịch"*.
+> ⛔ Chưa chạy: `ltt-3.8` đang nhường làn khác (luật 24/09).
+
+**Đo gì** — hai vế, ⛔ không gộp thành một điểm (bài học §9 của B1):
+
+| vế | cách đo | vì sao |
+|---|---|---|
+| **chất lượng** | bộ chấm V3, `temperature 0.0`, trên **cùng** bản chép lời, **cùng** lời nhắc v3 | ⚠️ bộ chấm chạy trên `ltt-3.8` ⇒ ⛔ **nó chấm chính model của nó** ở một nhánh. Phải khai, và nếu được thì chấm **mù** (⛔ không nói model nào) |
+| **thuật ngữ** | đúng bảng §4d (`掐雷` · `纯白给` · `烧酒` · `补人` · `血量`) | ⭐ đây mới là chỗ hỏng **tụ lại**; một điểm tổng quát sẽ **loãng** nó đi |
+
+**Trên dữ liệu nào:** ba phim, **188 đoạn** — cùng bộ đã dùng cho bản nền, ⛔ không
+đổi dữ liệu giữa hai vế.
+
+**Ngưỡng — viết TRƯỚC, và nó là một ngưỡng CHÊNH LỆCH, ⛔ không phải ngưỡng tuyệt đối:**
+
+```
+⇒ 3.8 chỉ được chọn nếu nó hơn 3.5 ĐỦ LỚN để bù giá.
+```
+
+**Giá — đọc từ `platform_core/llm/gia_token.BANG_GIA`, ⛔ không gõ lại:**
+
+| | vào mới /1M | vào cache /1M | ra /1M |
+|---|---|---|---|
+| `ltt-3.5` | **13** | 3 | **20** |
+| `ltt-3.8` | **50** | 10 | **400** |
+| **bội số** | **3,8×** | 3,3× | ⛔ **20×** |
+
+⚠️ **Token RA đắt gấp 20 lần**, và dịch là một tác vụ **nặng đầu ra** (bản dịch
+tiếng Việt dài ~3,5–4,5× văn Hán gốc — đo ở §4.2). ⇒ Chi phí thực của một lượt
+dịch nghiêng hẳn về vế `ra`, tức về phía **bội số 20×**.
+
+⇒ Ngưỡng đề nghị để điều phối chốt (⛔ **làn này không tự quyết**): **3.8 chỉ
+được chọn nếu nó sửa được một lớp hỏng mà 3.5 KHÔNG sửa được** — ⛔ không phải
+"nhỉnh hơn vài phần trăm trên một điểm tổng quát". Căn cứ: §4d đã đo rằng hỏng
+**tụ ở tri thức miền**, và ⛔ **một model to hơn cũng không biết `纯白给` là tiếng
+lóng game** — nên ⚠️ **kết quả nhiều khả năng là "3.8 không hơn ở đúng chỗ đang
+hỏng"**, và phép đo này tồn tại để **kiểm chứng điều đó**, ⛔ không phải để xác
+nhận nó.
+
+⛔ **Và phép đo này ⛔ không trả lời được** *"bảng từ có giúp không"* — đó là một
+phép đo **khác**, và nó vẫn chưa có người chấm (§4d, ràng buộc 3).
