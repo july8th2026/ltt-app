@@ -525,3 +525,82 @@ def test_doi_chieu_BO_dong_bo_cham_khong_cham_duoc():
     so = _so_soi({1: "ro", 2: "khong_loi"})
     r = bc.doi_chieu(so, _cham({1: False}))
     assert r["n"] == 1 and r["dong_khong_cham_duoc"] == [2]
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  6. QUET NGUONG offline — diem MQM co trong so
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_diem_mqm_KHOP_giao_thuc_goc_25_5_1_chan_5_tran_25():
+    """NGUON: `MicrosoftTranslator/GEMBA` `gemba/gemba_mqm_utils.py`
+    `parse_mqm_answer` — `25 if critical else 5 if major else 1`,
+    `if error_counter < 5`, `if final_score > 25: final_score = 25`.
+
+    ⭐ Phep nay chot dung cho ta tung BO MAT: giao thuc goc bien danh sach loi
+       thanh mot DIEM roi moi nguong; ta phan `dat=false` ngay khi co 1 loi
+       `nang`. ⇒ o goc, MOT loi xep qua tay khong lat duoc phan quyet.
+    """
+    assert bc.diem_mqm([]) == 0
+    assert bc.diem_mqm(["nhe"] * 5) == 5            # nam loi NHE van la 5/25
+    assert bc.diem_mqm(["nang"]) == 5
+    assert bc.diem_mqm(["nghiem_trong"]) == 25
+    # ⛔ Chan o 5 loi dau: loi thu sau khong duoc cong.
+    assert bc.diem_mqm(["nhe"] * 5 + ["nghiem_trong"]) == 5
+    # Tran 25.
+    assert bc.diem_mqm(["nghiem_trong", "nghiem_trong"]) == 25
+
+
+def test_quet_nguong_PHAN_BIET_duoc_luat_diem_voi_luat_mot_loi_nang():
+    """🔑 Mot dong CHI co mot loi `nang` bi luat hien hanh gan co, nhung o
+    nguong diem >= 6 thi KHONG — dung cho duong cong sinh ra de do."""
+    muc = {"1": [["nang"]] * 3, "2": [["nang", "nang"]] * 3}
+    pq = {1: "khong_loi", 2: "ro"}
+    d = {(r["ho"], r["nguong"]): r
+         for r in bc.quet_nguong(muc, pq, ("ro",))}
+    # `dem >= 1` = luat hien hanh: gan ca hai => 1 bao dong gia tren 2 dong.
+    assert d[("dem", 1)]["so_gan_co"] == 2
+    assert d[("dem", 1)]["bao_dong_gia"] == 0.5
+    assert d[("dem", 1)]["do_nhay_tu_nhien"] == 1.0
+    # `diem >= 6`: mot loi `nang` = 5 diem => KHONG gan; hai loi = 10 => gan.
+    assert d[("diem", 6)]["so_gan_co"] == 1
+    assert d[("diem", 6)]["bao_dong_gia"] == 0.0
+    assert d[("diem", 6)]["do_nhay_tu_nhien"] == 1.0
+
+
+def test_quet_nguong_MAU_SO_la_tong_so_dong_khong_phai_so_dong_gan_co():
+    """⛔ Cong 15 % noi ve "ti le bao dong gia tren >= 100 cap" — mau so la
+    TONG SO CAP. Doi sang "tren so dong gan co" la doi mot cai cong."""
+    muc = {str(i): [[]] * 3 for i in range(1, 5)}
+    muc["1"] = [["nghiem_trong"]] * 3
+    pq = {i: "khong_loi" for i in range(1, 5)}
+    d = [r for r in bc.quet_nguong(muc, pq, ("ro",))
+         if r["ho"] == "diem" and r["nguong"] == 25][0]
+    assert d["so_gan_co"] == 1 and d["bao_dong_gia"] == 0.25
+
+
+def test_chon_diem_TU_CHOI_khi_khong_diem_nao_dat_do_nhay():
+    """⛔ "Khong co diem nao" phai tra ve None — ⛔ khong duoc ha cong de co
+    mot diem dep."""
+    duong = [{"ho": "diem", "nguong": 9, "bao_dong_gia": 0.0,
+              "do_nhay_tu_nhien": 0.4}]
+    assert bc.chon_diem(duong) is None
+    duong.append({"ho": "diem", "nguong": 3, "bao_dong_gia": 0.2,
+                  "do_nhay_tu_nhien": 0.9})
+    assert bc.chon_diem(duong)["nguong"] == 3
+
+
+def test_muc_tung_luot_TACH_lo_hong_khoi_dong_sach():
+    """⛔ Lo HONG => `None` (chua hoi xong); ma khong duoc nhac toi trong lo
+    CHAY DUOC => `[]` (DAT). Tron hai thu lai la dung bay N-22 mot lan nua."""
+    cham = {"dong": [7, 8], "cac_luot": [
+        {"phan_quyet": {"flores_0007": {"dat": False,
+                                        "loi": [{"muc": "nang"}]}},
+         "loi_lo": [{"ma_lo": ["flores_0008"]}]}]}
+    m = bc.muc_tung_luot(cham)
+    assert m["7"] == [["nang"]]
+    assert m["8"] == [None]
+
+
+def test_chia_doi_XEN_KE_va_KHONG_trung_nhau():
+    a, b = bc.chia_doi([503, 520, 700, 850, 896])
+    assert a == [503, 700, 896] and b == [520, 850]
+    assert not set(a) & set(b)

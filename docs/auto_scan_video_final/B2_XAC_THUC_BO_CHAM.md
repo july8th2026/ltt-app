@@ -671,3 +671,76 @@ nghĩa, cả hai người đọc) · `bang_chung/b2_cham_v3_tren_100_dong_soi_mu
 ⚠️ `gop_phan` trước đó ghép theo `tu`/`n` — sai với dải **rời rạc** của
 `--theo-so` (sinh ra mã của dòng chưa hề hỏi rồi đếm là "thiếu"). Đã vá + chốt
 bằng `test_gop_phan_ghep_dung_DONG_ROI_RAC_cua_phan_theo_so`.
+
+---
+
+# 18. ⭐ TA ĐÃ VỨT BƯỚC CHẤM ĐIỂM — và có TỒN TẠI điểm vận hành đạt cả hai cổng
+
+## 18.1 Tra nguồn: giao thức gốc cho ra một **ĐIỂM**, ta cho ra một **CỜ**
+
+`MicrosoftTranslator/GEMBA`, `gemba/gemba_mqm_utils.py::parse_mqm_answer`
+(sha `a7a7eff`), đọc thẳng:
+
+```python
+final_score += 25 if error_level == 'critical' else 5 if error_level == 'major' else 1
+...
+if error_counter < 5 and not list_mqm_errors:   # chi dem 5 LOI DAU
+...
+if final_score > 25: final_score = 25           # tran 25
+return -final_score                             # mot DIEM, khong phai mot co
+```
+
+⇒ ⭐ **Bước ta thiếu có tên:** biến danh sách lỗi thành **điểm** rồi mới ngưỡng
+trên **tổng**. `qc_ai` phán `dat=false` ngay khi có **≥ 1 lỗi `nang`** — một cờ
+**nhị phân trên mức cao nhất**. Ở giao thức gốc, **một** lỗi bị xếp quá tay ⛔
+**không** lật nổi phán quyết (5 điểm trên trần 25); ở ta thì lật.
+
+⚠️ Và chính xác đó là hình dạng phần dư ở §17.4: `nang` 25/33 ca, lớp rải đều.
+⛔ Không có ngưỡng "đạt/không đạt" nào trong kho GEMBA — điểm ở đó dùng để **tương
+quan/xếp hạng**. Ngưỡng là việc của ta, nên nó phải được **đo**, không phải chọn.
+
+## 18.2 Đường cong — tính lại **offline**, ⛔ không gọi model lần nào
+
+Dữ liệu đã lưu (mức từng lỗi, từng dòng, từng lượt). Trung vị trên 3 lượt, mẫu số
+là **100 dòng** (cùng định nghĩa với cổng 15 %), định nghĩa lỗi `chinh`:
+
+| luật gắn cờ | gắn cờ | **BĐG thật** | **độ nhạy tự nhiên** | hai cổng |
+|---|---|---|---|---|
+| `dem ≥ 1` nang — **V3 hiện hành** | 43 | **33 %** | 100 % | ⛔ |
+| `diem ≥ 2…5` | 43 | 33 % | 100 % | ⛔ |
+| **`diem ≥ 6`** | 20 | **12 %** | **80 %** | ✅ |
+| **`diem ≥ 7…10`** | 17 | **10 %** | **70 %** | ✅ |
+| **`diem ≥ 11…25`** | 14 | **7 %** | **70 %** | ✅ |
+| `dem ≥ 2` nang | 8 | 5 % | 30 % | ⛔ mù |
+| `dem ≥ 3` nang | 1 | 0 % | 10 % | ⛔ mù |
+
+## 18.3 ⭐ Trả lời câu CÓ/KHÔNG: **CÓ**
+
+**Tồn tại** điểm vận hành thoả **cả hai** cổng — và không phải một điểm lẻ mà
+**cả một dải** (`diem ≥ 6` … `≥ 25`). ⇒ ⛔ Khuyết tật **không** nằm ở lời nhắc
+hay ở model: nằm ở **luật quyết định**. Cùng đầu ra thô, cùng model, cùng lời
+nhắc — đổi cách đọc là qua cổng.
+
+⚠️ **Giá phải trả, nói thẳng:** `diem ≥ 6` đổi **20 điểm** độ nhạy (100 % → 80 %)
+lấy **21 điểm** báo động giả (33 % → 12 %). Và `diem ≥ 25` ≈ *"chỉ đếm khi có
+`nghiem_trong`, hoặc 5 lỗi `nang`"* — gần như **bỏ hẳn** mức `nang` đơn lẻ.
+
+## 18.4 Chống chỉnh-trên-bài-thi — chọn một nửa, báo nửa kia
+
+Chia **xen kẽ** theo vị trí trong danh sách đã sắp (⛔ không chia 500–699/700–899:
+10 lỗi rõ nằm 3/7 giữa hai dải đó). Luật chọn viết trước: *trong các điểm có độ
+nhạy ≥ 50 %, lấy điểm báo động giả thấp nhất*.
+
+| | ngưỡng chọn được | **báo trên nửa KIA** | |
+|---|---|---|---|
+| chọn trên A → báo B | `diem ≥ 25` | **BĐG 6 %** (3/50) · **độ nhạy 60 %** (3/5) | ✅ hai cổng |
+| chọn trên B → báo A | `diem ≥ 25` | **BĐG 8 %** (4/50) · **độ nhạy 80 %** (4/5) | ✅ hai cổng |
+
+⚠️ **Mỏng, khai ngay cạnh số: mỗi nửa chỉ có 5 lỗi thật.** Một lỗi đổi bên là
+20 điểm độ nhạy. ⇒ Kết luận *"có điểm vận hành"* là **vững** (cả một dải, hai
+chiều chia đều đạt); con số **chính xác** của độ nhạy thì ⛔ **chưa**.
+
+Bằng chứng: `bang_chung/b2_quet_nguong_v3.json` (cả đường cong + mức từng dòng
+từng lượt, ⛔ không một chữ FLORES) · `tools/…::quet_nguong`, `diem_mqm`.
+Tái lập: `python tools\bench_b2_xac_thuc_bo_cham.py quet --cham <tho> --so-soi
+bang_chung\b2_san_loi_flores.json --ra <ra>`.

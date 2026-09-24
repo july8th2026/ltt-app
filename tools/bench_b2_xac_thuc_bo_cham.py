@@ -774,6 +774,139 @@ def doi_chieu(so_soi: dict, cham: dict, *, nguong_luot: int = 2) -> dict:
     return ra
 
 
+#: Trong so MQM, lay tu giao thuc goc — ⛔ khong phai so ta tu nghi ra.
+#:
+#: NGUON: `MicrosoftTranslator/GEMBA`, `gemba/gemba_mqm_utils.py`,
+#: `parse_mqm_answer` (sha a7a7eff): `final_score += 25 if error_level ==
+#: 'critical' else 5 if error_level == 'major' else 1`, chan o **5 loi dau**
+#: (`if error_counter < 5`) va tran **25** (`if final_score > 25`).
+#:
+#: 🔑 ⭐ **Va day la cho ta da bo mat mot BUOC.** Giao thuc goc bien danh sach
+#:    loi thanh mot **DIEM** roi moi nguong tren TONG; ta phan `dat=false` ngay
+#:    khi co >= 1 loi `nang` — mot co NHI PHAN tren muc cao nhat. ⇒ o giao thuc
+#:    goc, MOT loi bi xep qua tay ⛔ khong lat duoc phan quyet; o ta thi co.
+TRONG_SO_MQM = {"nghiem_trong": 25, "nang": 5, "nhe": 1}
+
+#: Giao thuc goc chi dem **5 loi dau** va tran diem **25**.
+TRAN_SO_LOI_MQM = 5
+TRAN_DIEM_MQM = 25
+
+
+def diem_mqm(muc: list[str]) -> int:
+    """Diem MQM co trong so cua MOT luot — theo dung `parse_mqm_answer`."""
+    diem = 0
+    for m in muc[:TRAN_SO_LOI_MQM]:
+        diem += TRONG_SO_MQM.get(m, 0)
+    return min(diem, TRAN_DIEM_MQM)
+
+
+def muc_tung_luot(cham: dict) -> dict:
+    """`{dong: [[muc,...] moi luot]}` — ⛔ TACH hai kieu mot ma vang mat.
+
+    ⛔ Ma nam trong lo HONG => `None` (chua hoi xong), ⛔ khong phai danh sach
+       rong. Ma khong duoc nhac toi trong mot lo CHAY DUOC => `[]` = khong loi
+       nao = DAT, dung hop dong `doc_ngu_nghia`.
+    """
+    ra: dict = {}
+    for i in cham["dong"]:
+        ma = f"flores_{i:04d}"
+        hang = []
+        for l in cham["cac_luot"]:
+            if ma in l["phan_quyet"]:
+                hang.append([str(x.get("muc") or "")
+                             for x in (l["phan_quyet"][ma].get("loi") or [])])
+            elif ma in _mat_lo(l):
+                hang.append(None)
+            else:
+                hang.append([])
+        ra[str(i)] = hang
+    return ra
+
+
+def _trung_vi(xs: list[float]) -> float:
+    xs = sorted(xs)
+    n = len(xs)
+    return xs[n // 2] if n % 2 else (xs[n // 2 - 1] + xs[n // 2]) / 2
+
+
+def quet_nguong(muc: dict, pq: dict, nhan: tuple[str, ...],
+                dong: list[int] | None = None) -> list[dict]:
+    """Duong cong BAO DONG GIA THAT vs DO NHAY TREN LOI TU NHIEN.
+
+    ⭐ **Mien phi:** tinh lai tren dau ra da luu, ⛔ khong goi model lan nao.
+
+    ⛔ Khong thu MOT diem van hanh roi bao "dat/khong dat": ve **ca duong cong**,
+       roi hoi mot cau CO/KHONG — *co ton tai diem nao thoa CA HAI cong khong?*
+       "Khong co diem nao" ⛔ khong phai that bai, no la mot ket qua QUYET DINH
+       ve thiet ke nay.
+
+    Hai ho luat, ca hai deu lay TRUNG VI tren cac luot (cung cach gop voi `gop_trung_vi`):
+      `diem`  — gan co khi diem MQM co trong so >= `t`
+      `dem`   — gan co khi so loi muc >= `nang` la >= `k`
+    """
+    ds = [i for i in (dong if dong is not None else
+                      sorted(int(x) for x in muc)) if str(i) in muc]
+    ra = []
+    for ho, nguong in (("diem", range(1, TRAN_DIEM_MQM + 1)),
+                       ("dem", range(1, 6))):
+        for t in nguong:
+            gan = loi_that = trung = bdg = 0
+            for i in ds:
+                hang = [h for h in muc[str(i)] if h is not None]
+                if not hang:
+                    continue
+                if ho == "diem":
+                    gia = _trung_vi([diem_mqm(h) for h in hang])
+                else:
+                    gia = _trung_vi(
+                        [sum(1 for m in h if m in ("nang", "nghiem_trong"))
+                         for h in hang])
+                co = gia >= t
+                that = pq.get(i) in nhan
+                gan += co
+                loi_that += that
+                trung += co and that
+                bdg += co and not that
+            ra.append({
+                "ho": ho, "nguong": t, "n": len(ds),
+                "so_gan_co": gan, "so_loi_that": loi_that, "bat_trung": trung,
+                # ⛔ Mau so la TONG SO DONG — cung dinh nghia voi cong 15 %
+                #    ("ti le bao dong gia tren >= 100 cap"), ⛔ khong phai
+                #    "tren so dong bi gan co".
+                "bao_dong_gia": round(bdg / len(ds), 4) if ds else None,
+                "do_nhay_tu_nhien": (round(trung / loi_that, 4)
+                                     if loi_that else None),
+            })
+    return ra
+
+
+def chon_diem(duong: list[dict]) -> dict | None:
+    """Chon diem van hanh — LUAT VIET TRUOC, ⛔ khong chon sau khi thay so.
+
+    Trong cac diem co **do nhay >= `NGUONG_BAT_LOI_TIEM`**, lay diem co **bao
+    dong gia thap nhat**; hoa thi do nhay cao hon; van hoa thi nguong LON hon
+    (bao thu hon, it gan co hon).
+    """
+    ung = [d for d in duong
+           if d["do_nhay_tu_nhien"] is not None
+           and d["do_nhay_tu_nhien"] >= NGUONG_BAT_LOI_TIEM]
+    if not ung:
+        return None
+    return min(ung, key=lambda d: (d["bao_dong_gia"],
+                                   -d["do_nhay_tu_nhien"], -d["nguong"]))
+
+
+def chia_doi(ds: list[int]) -> tuple[list[int], list[int]]:
+    """Chia doi theo CHAN/LE cua vi tri trong danh sach da sap xep.
+
+    ⛔ Khong chia theo 500-699 / 700-899: 10 loi ro nam 3/7 giua hai nua do, va
+       mot nua 3 loi khong do noi do nhay. Chia xen ke can bang hon **va** giu
+       ca hai nua trai deu tren toan dai.
+    """
+    d = sorted(ds)
+    return d[0::2], d[1::2]
+
+
 def bao_cao(d: dict) -> str:
     fa = d.get("bao_dong_gia") or {}
     tiem = d.get("bat_loi_tiem") or {}
@@ -835,6 +968,12 @@ def main(argv=None) -> int:
     g.add_argument("--ra", required=True)
     b = s.add_parser("bao-cao")
     b.add_argument("tep")
+    q = s.add_parser("quet")
+    q.add_argument("--cham", required=True,
+                   help="ban ghi bo cham co `cac_luot` (dau ra THO)")
+    q.add_argument("--so-soi", required=True)
+    q.add_argument("--dinh-nghia", choices=tuple(COI_LA_LOI), default="chinh")
+    q.add_argument("--ra", required=True)
     dc = s.add_parser("doi-chieu")
     dc.add_argument("--so-soi", required=True,
                     help="so soi MU (phan quyet nguoi doc, da commit TRUOC)")
@@ -852,6 +991,46 @@ def main(argv=None) -> int:
     if a.lenh == "bao-cao":
         print(bao_cao(json.loads(
             pathlib.Path(a.tep).read_text(encoding="utf-8"))))
+        return 0
+    if a.lenh == "quet":
+        _d = (lambda x: json.loads(
+            pathlib.Path(x).read_text(encoding="utf-8")))
+        cham = _d(a.cham)["bao_dong_gia"]
+        so_soi = _d(a.so_soi)
+        pq = {int(m["dong_flores"]): str(m["phan_quyet"])
+              for m in so_soi["muc"]}
+        muc = muc_tung_luot(cham)
+        nhan = COI_LA_LOI[a.dinh_nghia]
+        a_nua, b_nua = chia_doi([int(x) for x in muc])
+        ra = {"phien_ban": 1, "ban_loi_nhac": cham.get("ban"),
+              "dinh_nghia_loi": a.dinh_nghia, "nhan": list(nhan),
+              "trong_so_mqm": TRONG_SO_MQM,
+              "nguon_trong_so": ("MicrosoftTranslator/GEMBA "
+                                 "gemba/gemba_mqm_utils.py::parse_mqm_answer"),
+              # ⛔ Duong cong tren CA 100 dong chi de xem HINH DANG — chon
+              #    nguong roi bao so tren cung tap la chinh tren bai thi.
+              "duong_cong_toan_bo": quet_nguong(muc, pq, nhan),
+              "chia_doi": {"A": a_nua, "B": b_nua},
+              "muc_tung_dong": muc}
+        for ten, chon_tren, bao_tren in (("chon_A_bao_B", a_nua, b_nua),
+                                         ("chon_B_bao_A", b_nua, a_nua)):
+            duong_chon = quet_nguong(muc, pq, nhan, dong=chon_tren)
+            diem = chon_diem(duong_chon)
+            if diem is None:
+                ra[ten] = {"diem": None,
+                           "ket_luan": "khong co diem nao dat do nhay tren nua CHON"}
+                continue
+            bao = [d for d in quet_nguong(muc, pq, nhan, dong=bao_tren)
+                   if d["ho"] == diem["ho"] and d["nguong"] == diem["nguong"]][0]
+            ra[ten] = {"diem": diem, "bao_tren_nua_kia": bao,
+                       "so_loi_that_nua_bao": bao["so_loi_that"]}
+        pathlib.Path(a.ra).write_text(
+            json.dumps(ra, ensure_ascii=False, indent=1), encoding="utf-8")
+        for d in ra["duong_cong_toan_bo"]:
+            print(f"[{d['ho']} >= {d['nguong']:>2}] gan co {d['so_gan_co']:>3}"
+                  f" | BDG {d['bao_dong_gia']} | do nhay {d['do_nhay_tu_nhien']}")
+        for ten in ("chon_A_bao_B", "chon_B_bao_A"):
+            print(ten, json.dumps(ra[ten], ensure_ascii=False))
         return 0
     if a.lenh == "doi-chieu":
         _d = (lambda x: json.loads(
