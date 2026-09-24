@@ -232,17 +232,29 @@ def test_hai_output_cung_ten_bi_tu_choi_luc_publish(db, lam):
 
 # ── Bánh cóc chung: node lõi KHÔNG ĐƯỢC tốn tiền ────────────────────────────
 
-def test_banh_coc_moi_node_loi_deu_MIEN_PHI_va_inline_co_bo_thi_hanh():
+def test_banh_coc_gia_node_loi_khop_BO_THI_HANH():
     """⛔ Một node lõi tốn tiền là một bút toán mà `cau_noi` không quản.
 
     Và một node `inline` không có bộ thi hành là một node đứng READY tới khi
     hết TTL 20 giờ — `dang_ky` đã chặn lúc dựng, đây là phép kiểm của chính
     cái chặn ấy (đối chứng: đếm số node trước, để một sổ rỗng không xanh giả).
+    ⚠️ Bản đầu (Task 6) khẳng định **mọi** node lõi miễn phí. Nó đúng khi sổ
+       chỉ có `core.*`, và sai ngay khi `ai.*` vào sổ (việc A) — vì `ai.llm`
+       **phải** `theo_registry`. Đó là một phép kiểm đo nhầm đối tượng: thứ
+       quyết định giá là **bộ thi hành**, không phải "node lõi".
+
+    ⛔ Nay đo HAI CHIỀU, và cả hai đều là tiền: inline/run_con **tốn tiền**
+       là một bút toán `cau_noi` không quản; job **miễn phí** là node chạy
+       tài nguyên thật mà không ai trả — lỗ đi ngược chiều, và dễ lọt hơn
+       vì nó không làm ai kêu.
     """
     from platform_core.workflow import nut_loi
     so = nut_loi.tat_ca()
-    assert len(so) >= 9, sorted(so)
+    assert len(so) >= 12, sorted(so)
     for ten, nd in so.items():
+        if nd.thi_hanh == "job":
+            assert nd.gia.kieu != "mien_phi", (ten, nd.gia)
+            continue
         assert nd.gia.kieu == "mien_phi", (ten, nd.gia)
         if nd.thi_hanh == "inline" and nd.kind != "trigger":
             assert nut_loi.bo_thi_hanh(ten) is not None, ten

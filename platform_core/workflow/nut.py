@@ -24,6 +24,12 @@ QUYEN = frozenset({"network", "credential", "gpu", "filesystem", "subprocess"})
 #: lọt vào sẽ không bao giờ khớp và scheduler xếp chỗ bằng mặc định — im lặng.
 RESOURCE_CLASS = ("cpu", "gpu", "api")
 
+#: Job type của node `piece.*`: chúng chạy trên **runner Node**, không qua
+#: registry ToolSpec của nền tảng. Một hằng vì hai chỗ nói về nó
+#: (`tu_piece` và `__post_init__`), và vì nó là RANH GIỚI giữa hai bộ thi
+#: hành chứ không phải một cái tên cho đẹp.
+JOB_TYPE_PIECE = "workflow.piece"
+
 #: Mã lỗi một node app công bố. Lấy TỪ `cau_noi.py` (`nop_job`, `ap_ket_qua`),
 #: không khai lại theo trí nhớ.
 MA_LOI_APP = ("dau_vao_sai", "vuot_tran_bao_gia", "provider_loi",
@@ -73,6 +79,30 @@ class NodeDefinition:
     tham_so: dict
     thi_hanh: str                       # inline | job | run_con
     job_type: str = ""
+    #: Tên ToolSpec trong registry mà node này **bọc** (`CongCu.ten`).
+    #:
+    #: 🔴 KHAI TƯỜNG MINH, ⛔ KHÔNG SUY RA. Cách "thông minh" là tra ngược
+    #:    `job_type → tên tool`. Đo trên registry hôm nay (19 tool): **ba**
+    #:    `job_type` bị hai tool dùng chung (`prompt_ai_ommi.generate`,
+    #:    `taoanh.generate`, `upscalevideo.render`). Một tra ngược đúng hôm
+    #:    nay và sai **im lặng** vào ngày ai đó thêm tool thứ hai trên
+    #:    `ltt_llm.chat` — nó chọn tool nào thì tuỳ thứ tự dict.
+    #:
+    #: Bắt buộc khi `thi_hanh == "job"` (xem `__post_init__`).
+    ten_toolspec: str = ""
+    #: HẬU KIỂM kết quả job, chạy **trước** khi cầu nối coi là SUCCEEDED:
+    #: `(result, params) -> (trang_thai, ma_loi, chi_tiet)`.
+    #:
+    #: 🔴 Vì sao node tự khai chứ không phải cầu nối tự biết: `job.status`
+    #:    SUCCEEDED **không** đảm bảo kết quả dùng được. Ca đã đo trên máy B
+    #:    (10–12/09, `nut_loi/ai_loi.py`): HTTP 200, job SUCCEEDED,
+    #:    `content` RỖNG. Với `app.image.generate` thì "job xong = có tệp"
+    #:    vẫn đúng; với `text.chat` thì không.
+    #:
+    #: ⛔ Để cầu nối `if type.startswith("ai.")` là hardcode tên không gian
+    #:    trong `platform_core/` (Global Constraint), **và** bắt mọi loại
+    #:    node mới cần hậu kiểm phải sửa lại chính hàm đang giữ sổ tiền.
+    hau_kiem: Optional[Callable[[dict, dict], tuple]] = None
     app_name: str = ""
     side_effect: str = "none"
     idempotency_key_fields: tuple = ()
@@ -104,6 +134,27 @@ class NodeDefinition:
         thua = set(self.quyen) - QUYEN
         if thua:
             raise LoiNut(f"quyen la: {sorted(thua)}")
+        if self.thi_hanh == "job" and not self.ten_toolspec \
+                and self.job_type != JOB_TYPE_PIECE:
+            # ⛔ Ném LÚC DỰNG (tức lúc `import`, chỗ người viết node nhìn
+            #    thấy ngay), không đợi lúc chạy — "chỗ nó lộ ra lúc chạy là
+            #    chỗ đang tiêu tiền của khách" (xem `LoiNut`).
+            #
+            # ⚠️ NGOẠI LỆ DUY NHẤT là `piece.*`, và nó KHÔNG phải một ngoại
+            #    lệ theo TÊN mà theo **bộ thi hành**: node piece chạy trên
+            #    runner Node (`JOB_TYPE_PIECE`), không đi qua registry
+            #    ToolSpec, nên không có ToolSpec nào để khai. `cau_noi` cũng
+            #    từ chối `piece.*` bằng `LoiTienTo` cho tới khi plan 08 mở
+            #    đường riêng cho chúng.
+            #
+            # ⛔ Một bộ thi hành THỨ BA xuất hiện mà không khai gì sẽ rơi
+            #    vào nhánh này và chết ở `import` — đúng như mong muốn.
+            #    `test_1789::test_banh_coc_moi_node_job_khai_ten_CO_THAT…`
+            #    ghim rằng tập ngoại lệ đúng bằng `{JOB_TYPE_PIECE}`.
+            raise LoiNut(
+                f"{self.type!r} khai thi_hanh='job' nhung thieu "
+                "`ten_toolspec` — cau noi job khong suy duoc ten ToolSpec "
+                "tu `type` cho mot khong gian ten khong phai `app.`")
 
 
 def _tieu_de(mo_ta: str, ten: str) -> str:
@@ -131,7 +182,7 @@ def tu_toolspec(cc: CongCu) -> NodeDefinition:
                                   (cc.cong or {}).get("vao") or {}),
         cong_ra=luoc_do.cong_ra(cc.returns, (cc.cong or {}).get("ra") or {}),
         tham_so=luoc_do.sang_json_schema(cc.params_schema),
-        thi_hanh="job", job_type=cc.job_type,
+        thi_hanh="job", job_type=cc.job_type, ten_toolspec=str(cc.ten),
         side_effect=cc.side_effect,
         idempotency_key_fields=tuple(cc.idempotency_fields),
         resource=dict(cc.resource or {}),
@@ -170,7 +221,12 @@ def tu_piece(muc: dict) -> NodeDefinition:
         cong_ra=luoc_do.cong_ra(muc.get("returns") or {},
                                 (muc.get("cong") or {}).get("ra") or {}),
         tham_so=luoc_do.sang_json_schema(muc.get("params") or {}),
-        thi_hanh="job", job_type="workflow.piece",
+        # ⛔ KHÔNG khai `ten_toolspec`, và đó là ĐÚNG: node piece bọc một
+        #    *piece*, không bọc ToolSpec nào. `__post_init__` miễn cho nó
+        #    theo `JOB_TYPE_PIECE` — tức theo BỘ THI HÀNH, không theo tên.
+        #    Hôm nay `cau_noi.nop_job` vẫn từ chối `piece.*` bằng
+        #    `LoiTienTo`; plan 08 phải mở đường riêng cho runner Node.
+        thi_hanh="job", job_type=JOB_TYPE_PIECE,
         side_effect=str(muc.get("side_effect") or "external"),
         gia=Gia.co_dinh(int(muc.get("gia", 0) or 0)),
         credential=auth, quyen=frozenset(quyen),

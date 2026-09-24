@@ -29,6 +29,70 @@ from platform_core.workflow.cong_cu import CongCu
 
 GIOI_HAN_DAU_RA = 256 * 1024
 
+#: Tiền tố của node APP trong đồ thị đã biên dịch (`bien_dich._node`).
+#: Đây là KHÔNG GIAN TÊN DUY NHẤT mà cầu nối job suy được tên ToolSpec từ
+#: `type`, vì `app.<tool>` **theo định nghĩa** mang tên tool ở phần đuôi.
+TIEN_TO_APP = "app."
+
+
+class LoiTienTo(ValueError):
+    """`type` của node không thuộc không gian tên mà cầu nối job đọc được.
+
+    🔴 VÌ SAO LÀ MỘT NGOẠI LỆ, KHÔNG PHẢI MỘT LÁT CẮT
+
+       Bản cũ viết `str(node["type"])[4:]` — số 4 là độ dài `"app."`. Nó
+       đúng cho **một** không gian tên và sai cho mọi không gian khác, và
+       cái sai ấy **không ném**: `"ai.llm"` ra `"lm"`, `"core.if"` ra
+       `".if"`, rồi registry không thấy và node FAILED với
+       `cong_cu_khong_con: 'lm'`. Câu ấy **đổ lỗi cho registry** cho một
+       lỗi của chính cầu nối, và người đọc log đi tìm một tool chưa bao giờ
+       tồn tại. Làn p7 đã ghi lại cái bẫy này trong `nut_loi/ai_llm.py`
+       trước khi nó kịp cắn.
+
+    ⛔ Và **không** thay bằng một số cứng khác. Độ dài đọc từ chính chuỗi
+       tiền tố thì không lệch được; một hằng `4` viết tay thì lệch ngay lần
+       đầu ai đó đổi `"app."` thành thứ khác.
+    """
+
+
+def _dinh_nghia(loai: str):
+    """`NodeDefinition` của một node lõi, hoặc `None`.
+
+    ⚠️ Import CỤC BỘ: `nut_loi` kéo theo `vong_lap` → `bao_gia` →
+       `bien_dich`, và một import ở đầu tệp là một vòng chờ xảy ra.
+    """
+    from platform_core.workflow import nut_loi
+
+    return nut_loi.tat_ca().get(str(loai))
+
+
+def ten_cong_cu(loai: str) -> str:
+    """Tên ToolSpec của một node `app.<tool>`. Tiền tố khác ⇒ `LoiTienTo`.
+
+    ⚠️ ⛔ **Không tra ngược `job_type → tên tool`** cho `ai.*`, dù nó trông
+       thông minh hơn. Đo trên registry hôm nay (19 tool): **ba** `job_type`
+       bị hai tool dùng chung (`prompt_ai_ommi.generate`, `taoanh.generate`,
+       `upscalevideo.render`). Một tra ngược đúng hôm nay và sai vào đúng
+       ngày ai đó thêm tool thứ hai trên `ltt_llm.chat` — im lặng, và nó
+       chọn tool nào thì tuỳ thứ tự dict.
+
+    ⇒ Node `ai.*` phải **KHAI** ToolSpec nó bọc. Trường ấy chưa tồn tại trên
+      `NodeDefinition`, nên tới ngày có nó, hàm này là chỗ duy nhất phải sửa.
+    """
+    chuoi = str(loai or "")
+    if chuoi.startswith(TIEN_TO_APP):
+        ten = chuoi[len(TIEN_TO_APP):]
+        if not ten:
+            raise LoiTienTo(f"loai node {chuoi!r} khong co ten tool o duoi")
+        return ten
+    nd = _dinh_nghia(chuoi)
+    if nd is not None and nd.ten_toolspec:
+        return str(nd.ten_toolspec)
+    raise LoiTienTo(
+        f"loai node {chuoi!r} khong thuoc khong gian {TIEN_TO_APP!r} va "
+        "khong KHAI `ten_toolspec` — cau noi job khong co cach nao biet no "
+        "boc ToolSpec nao")
+
 
 class LoiThamSo(ValueError):
     def __init__(self, ma: str, thong_diep: str):
@@ -84,9 +148,19 @@ def nop_job(db, run: WorkflowRun, node: dict, *,
             cong_cu: Optional[dict[str, CongCu]] = None) -> Optional[str]:
     cc_all = _nguon.tat_ca() if cong_cu is None else cong_cu
     nid = node["id"]
-    ten_cc = str(node["type"])[4:]
     anh = thi_hanh.anh_chup_hien_tai(db, run.id, nid)
     lan = int(anh.attempt_number if anh else 1)
+    try:
+        ten_cc = ten_cong_cu(node["type"])
+    except LoiTienTo as loi:
+        # ⛔ Lỗi CỦA TA, không phải của registry — nên mã là `loi_he_thong`
+        #    (§5.6) và câu lỗi mang TÊN LOẠI THẬT, không mang một cái đuôi
+        #    bị cắt bừa.
+        may_trang_thai.chuyen_node(
+            db, run.id, nid, sang="FAILED",
+            mo_ta="cau noi job khong doc duoc loai node",
+            error=f"loi_he_thong: {loi}"[:2000], attempt_number=lan)
+        return None
     cc = cc_all.get(ten_cc)
     if cc is None:
         # ⭐ F5 (final-review.md): tra `cc_all[...]` bằng tay trước đây ném
@@ -203,8 +277,32 @@ def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
         anh = thi_hanh.anh_chup_hien_tai(db, run.id, node_id)
         lan = int(anh.attempt_number if anh else 1)
         gia_that = int((anh.output_ref or {}).get("_gia_that", 0)) if anh else 0
+        node = _node_cua(db, run, node_id)
         if sig.status == "SUCCEEDED":
             du_lieu = dict(sig.result_ref or {})
+            # ⭐ HẬU KIỂM (spec §12.1). `job.status == SUCCEEDED` **không**
+            #    đảm bảo kết quả dùng được: ca đã đo trên máy B là HTTP 200,
+            #    job SUCCEEDED, `content` RỖNG — "vô hình với quan trắc".
+            #    Node nào biết điều đó thì KHAI một `hau_kiem`; cầu nối chỉ
+            #    hỏi, ⛔ không tự biết loại node nào cần kiểm gì.
+            nd = _dinh_nghia(node["type"])
+            kiem = getattr(nd, "hau_kiem", None) if nd is not None else None
+            if kiem is not None:
+                tt_hk, ma_hk, chi_tiet_hk = kiem(du_lieu,
+                                                node.get("params") or {})
+                if tt_hk != "SUCCEEDED":
+                    # ⛔ KHÔNG ghi `cost_credit`: cùng luật với mọi node
+                    #    FAILED (`test_1718::test_job_loi_khong_tinh_tien`).
+                    #    Khách không trả tiền cho một câu trả lời rỗng.
+                    # ⚠️ Ta VẪN tốn tài nguyên máy B cho lượt ấy. Đó là một
+                    #    khoản lỗ có thật, bị chặn trên bởi `retry.max ≤ 5`,
+                    #    và nó phải được theo dõi chứ không được quên.
+                    may_trang_thai.chuyen_node(
+                        db, run.id, node_id, sang="FAILED",
+                        mo_ta="hau kiem ket qua job",
+                        error=f"{ma_hk}: {chi_tiet_hk}"[:2000],
+                        attempt_number=lan, job_id=sig.ref_id)
+                    return "FAILED"
             bao = du_lieu.get("credit_cost")      # handler báo giá thật (vd theo token)
             chi_phi = int(bao) if bao is not None else gia_that
             do_dai = len(json.dumps(du_lieu, default=str))
@@ -220,7 +318,6 @@ def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
                 du_lieu = {"_tran": _artifact.luu_json(
                     db, owner_id=run.owner_id, key=khoa, du_lieu=du_lieu)}
                 tran_ref = str(du_lieu["_tran"]["artifact_ref"])
-            node = _node_cua(db, run, node_id)
             # M2 (final-review.md): mặc định PHẢI khớp `nop_job` (fail-closed,
             # `0`) — bản cũ mặc định `chi_phi` (fail-OPEN, tức "không trần")
             # khi thiếu `gia_tran`. Không sờ được hôm nay (bộ biên dịch luôn
@@ -246,7 +343,18 @@ def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
             return "SUCCEEDED"
         mo_ho = (sig.result_ref or {}).get("provider_state") == jobs.PROVIDER_AMBIGUOUS
         cc_all = _nguon.tat_ca() if cong_cu is None else cong_cu
-        ten_cc = str(_node_cua(db, run, node_id)["type"])[4:]
+        try:
+            ten_cc = ten_cong_cu(node["type"])
+        except LoiTienTo as loi:
+            # Cùng lỗi, cùng mã, cửa thứ hai: job ĐÃ kết thúc nhưng cầu nối
+            # không đọc nổi loại node. Không chốt trạng thái ở đây là để
+            # node đứng QUEUED tới khi `TRAN_RUN` (20 giờ) hết hạn.
+            may_trang_thai.chuyen_node(
+                db, run.id, node_id, sang="FAILED",
+                mo_ta="cau noi job khong doc duoc loai node",
+                error=f"loi_he_thong: {loi}"[:2000], attempt_number=lan,
+                job_id=sig.ref_id)
+            return "FAILED"
         cc = cc_all.get(ten_cc)
         if cc is None:
             # F5 (final-review.md) — cùng lý do với `nop_job`: tool bị gỡ
@@ -297,5 +405,6 @@ def _node_cua(db, run: WorkflowRun, node_id: str) -> dict:
     return next(n for n in g["nodes"] if n["id"] == node_id)
 
 
-__all__ = ["GIOI_HAN_DAU_RA", "LoiThamSo", "giai_tham_so", "nop_job",
-           "bao_ket_thuc", "ap_ket_qua"]
+__all__ = ["GIOI_HAN_DAU_RA", "TIEN_TO_APP", "LoiThamSo", "LoiTienTo",
+           "ap_ket_qua", "bao_ket_thuc", "giai_tham_so", "nop_job",
+           "ten_cong_cu"]

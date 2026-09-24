@@ -73,5 +73,18 @@ for _nd, _chay in (_dieu_huong.DINH_NGHIA + _du_lieu.DINH_NGHIA
                    + _vong_lap.DINH_NGHIA + _goi_wf.DINH_NGHIA):
     dang_ky(_nd, _chay)
 
+# ── Node AI (plan wf-v2 P7) ─────────────────────────────────────────────
+#
+# ⭐ Ba tệp này gọi `dang_ky(...)` **lúc import**, nên chúng chỉ tồn tại khi
+#    có người import. Làn p7 viết xong nhưng không được sửa tệp này; hậu quả
+#    là ba node đầy đủ mà `nut_loi.tat_ca()` không thấy, palette không vẽ, và
+#    `bien_dich._node_loi` báo `node_khong_ton_tai` cho một thứ đã có thật.
+#    Một mô-đun đăng ký mà không ai import là một mô-đun CHẾT.
+#
+# ⚠️ `noqa: F401` là đúng chỗ ở đây: tác dụng của import là **hiệu ứng phụ**
+#    (`dang_ky` chạy), không phải cái tên được dùng lại phía dưới.
+from platform_core.workflow.nut_loi import ai_llm as _ai_llm  # noqa: E402,F401
+from platform_core.workflow.nut_loi import ai_router as _ai_router  # noqa: E402,F401
+
 
 __all__ = ["THI_HANH_TRONG_DONG_CO", "bo_thi_hanh", "dang_ky", "tat_ca"]
