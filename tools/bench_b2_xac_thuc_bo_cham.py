@@ -691,6 +691,106 @@ def ti_le_bat_loi_tiem(*, db, moi_loai: int, bo_qua: int,
 KHOA_CO_CHU = ("cac_luot", "ly_do", "goc", "chu", "nguon", "dich")
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+#  5b. SENTINEL — bo cham dang cham NOI DUNG hay cham bang THIEN LECH BE MAT?
+# ══════════════════════════════════════════════════════════════════════════════
+
+#: Canh sentinel: ben nao bi GIAU di.
+#:
+#: ⭐ Y tuong lay tu `SapienzaNLP/guardians-mt-eval` (ACL 2024, *"Guardians of
+#:    the MT Meta-Evaluation: Sentinel Metrics Fall In!"*) — ⚠️ kho do la
+#:    **CC BY-NC-SA 4.0**, ⛔ ta KHONG dung ma cua ho; y tuong thi khong co giay
+#:    phep. Ho huan luyen metric chi nhin MOT phia; ta lam dung phep do do bang
+#:    cach GIAU mot phia khoi chinh loi nhac san pham.
+CANH_SENTINEL = ("du", "nguon_mu", "dich_mu")
+
+#: Cong SENTINEL — ⛔ viet TRUOC khi chay.
+#:
+#: Do bang **KHA NANG PHAN BIET** = (ti le bat tren cap DA LAM HONG) − (ti le
+#: gan co tren cap SACH cua nguoi dich). ⛔ Khong do bang "ti le gan co" mot
+#: minh: mot bo cham GAN CO TAT CA cung se "bat" 100 % cap hong, va mot bo cham
+#: LUON IM cung se "khong bao dong gia" — ca hai deu mu, va chi hieu so moi
+#: tach duoc chung ra.
+#:
+#: ⛔ VE THU BA (canh `du`) LA BAT BUOC: thieu no thi mot bo cham luon im cung
+#:    "qua" ca hai canh mu.
+NGUONG_PHAN_BIET_DU = 0.30      # canh du PHAI con phan biet duoc
+NGUONG_PHAN_BIET_MU = 0.15      # canh mu PHAI mat kha nang phan biet
+
+
+def _giau(muc: list[dict], canh: str) -> list[dict]:
+    """Giau mot phia. ⛔ Truong VAN CON, chi RONG — de loi nhac giu nguyen hinh.
+
+    ⚠️ Giu nguyen `ma`: phan quyet van ghep duoc theo ma.
+    """
+    if canh == "du":
+        return [dict(d) for d in muc]
+    khoa = "goc" if canh == "nguon_mu" else "chu"
+    return [{**d, khoa: ""} for d in muc]
+
+
+def do_sentinel(*, db, canh: str, dong_sach: list[int], moi_loai: int,
+                bo_qua: int, luot: int = LUOT_MOI_CAP, ban: str = "v3",
+                thu_muc: pathlib.Path = FLORES_DIR) -> dict:
+    """Chay mot canh sentinel tren CA cap sach LAN cap da lam hong.
+
+    🔴 **Cau hoi co TRUOC moi cau khac.** Neu bo cham van phan duoc khi ta bo
+       mot phia, thi no dang cham bang **thien lech be mat** — va ⛔ moi con so
+       do nhay/bao dong gia truoc do deu RONG.
+
+    ⚠️ **Mot chi tiet co hoc phai khai:** `doc_ngu_nghia` loai moi loi khong
+       trich duoc `doan` trong van ban ĐÃ GUI. O canh `nguon_mu`, mot loi trich
+       tu cau nguon ⇒ ⛔ khong khop duoc ⇒ bi loai **bang may**, khong phai vi
+       model im. Nen canh mu duoc **tro giup** boi chinh bo loc nay; ⇒ mot canh
+       mu VAN phan biet duoc la bang chung **manh hon**, con canh mu mat kha
+       nang phan biet thi ⛔ **chua** tach duoc "model mu" khoi "bo loc cat".
+    """
+    if canh not in CANH_SENTINEL:
+        raise SystemExit(f"canh la {CANH_SENTINEL}, khong phai {canh!r}")
+    can = set(int(x) for x in dong_sach)
+    cap = doc_flores(thu_muc)
+    sach = [{"ma": f"flores_{i:04d}", "goc": zh, "chu": vi}
+            for i, zh, vi in cap if i in can]
+    if len(sach) != len(can):
+        raise SystemExit(f"chi tim duoc {len(sach)}/{len(can)} dong sach")
+    hong = dung_cap_tiem(cap[bo_qua:], moi_loai=moi_loai,
+                         rng=random.Random(HAT_GIONG))
+    muc = _giau(sach + hong, canh)
+    bat_dau = _bay_gio()
+    cac_luot = []
+    for k in range(luot):
+        print(f"  [SENTINEL {canh}] {ban} luot {k + 1}/{luot} — "
+              f"{len(sach)} sach + {len(hong)} hong")
+        cac_luot.append(cham_mot_luot(db, muc, ban))
+    ma_sach = [d["ma"] for d in sach]
+    gop = gop_trung_vi(cac_luot, ma_sach + [d["ma"] for d in hong])
+
+    def _ti(ma_ds):
+        co = [m for m in ma_ds if m in gop]
+        k = sum(1 for m in co if not gop[m]["dat"])
+        return {"n": len(co), "k": k,
+                "ti_le": round(k / len(co), 4) if co else None}
+
+    ra_sach = _ti(ma_sach)
+    theo_loai = {l: _ti([d["ma"] for d in hong if d["loai"] == l])
+                 for l in ("lat_nghia", "sai_thuc_the")}
+    tong_hong = _ti([d["ma"] for d in hong])
+    pb = (None if tong_hong["ti_le"] is None or ra_sach["ti_le"] is None
+          else round(tong_hong["ti_le"] - ra_sach["ti_le"], 4))
+    return {
+        "canh": canh, "ban": ban, "luot": luot,
+        "cua_so_utc": [bat_dau, _bay_gio()],
+        "dong_sach": sorted(can), "n_hong": len(hong),
+        "gan_co_tren_cap_SACH": ra_sach,
+        "bat_tren_cap_HONG": tong_hong,
+        "bat_theo_loai": theo_loai,
+        # ⭐ Con so quyet dinh: hieu so. ⛔ Khong doc mot ve mot minh.
+        "kha_nang_phan_biet": pb,
+        "luoc_do": thong_ke_luoc_do(cac_luot, len(muc)),
+        "gop": gop, "cac_luot": cac_luot,
+    }
+
+
 def ban_ghi_sach(d: dict) -> dict:
     """Ban ghi DU DE TAI LAP ma khong mang mot chu nao cua FLORES.
 
@@ -1032,6 +1132,16 @@ def main(argv=None) -> int:
     g.add_argument("--ra", required=True)
     b = s.add_parser("bao-cao")
     b.add_argument("tep")
+    sn = s.add_parser("sentinel")
+    sn.add_argument("--canh", choices=CANH_SENTINEL, required=True)
+    sn.add_argument("--so-soi", required=True,
+                    help="tep so soi mu: lay `dong_flores` lam cap SACH")
+    sn.add_argument("--n-sach", type=int, default=30)
+    sn.add_argument("--tiem-moi-loai", type=int, default=15)
+    sn.add_argument("--tiem-bo-qua", type=int, default=300)
+    sn.add_argument("--luot", type=int, default=LUOT_MOI_CAP)
+    sn.add_argument("--ban", choices=tuple(BAN_LOI_NHAC), default="v3")
+    sn.add_argument("--ra", required=True)
     q = s.add_parser("quet")
     q.add_argument("--cham", required=True,
                    help="ban ghi bo cham co `cac_luot` (dau ra THO)")
@@ -1157,6 +1267,21 @@ def main(argv=None) -> int:
     db, so_khoa = mt._mo_db()
     print(f"[MOI TRUONG] {so_khoa} khoa pool")
     t0 = time.monotonic()
+    if a.lenh == "sentinel":
+        so = json.loads(
+            pathlib.Path(a.so_soi).read_text(encoding="utf-8"))
+        dong = sorted(int(m["dong_flores"]) for m in so["muc"])[:a.n_sach]
+        r = do_sentinel(db=db, canh=a.canh, dong_sach=dong,
+                        moi_loai=a.tiem_moi_loai, bo_qua=a.tiem_bo_qua,
+                        luot=a.luot, ban=a.ban)
+        pathlib.Path(a.ra).write_text(
+            json.dumps({"phien_ban": 1, "sentinel": r},
+                       ensure_ascii=False, indent=1), encoding="utf-8")
+        print(f"[SENTINEL {a.canh}] gan co tren cap SACH "
+              f"{r['gan_co_tren_cap_SACH']['ti_le']} | bat tren cap HONG "
+              f"{r['bat_tren_cap_HONG']['ti_le']} | KHA NANG PHAN BIET "
+              f"{r['kha_nang_phan_biet']}")
+        return 0
     khoi_fa: dict | None = None
     tiem: dict | None = None
     if a.pha in ("ca", "fa"):

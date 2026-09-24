@@ -1,5 +1,16 @@
 # B2 — XÁC THỰC BỘ CHẤM ngữ nghĩa (làn `xac-thuc-cham`, 24/09/2026)
 
+> 🔴 **ĐỌC TRƯỚC MỌI CON SỐ "ĐỘ NHẠY" TRONG TÀI LIỆU NÀY.**
+>
+> Phép tiêm tự viết của ta có **HAI** họ lỗi (`lat_nghia`, `sai_thuc_the`).
+> Taxonomy đã công bố (DEMETR, MIT, arXiv 2210.13746) có **35**. ⇒ ⭐ Mọi câu
+> *"độ nhạy 100 %"* ở đây thật ra là **"100 % trên 2 trong 35 họ lỗi"**.
+>
+> ⛔ Chỗ mù lớn nhất: **`bo_sot`** — bộ chấm **BÁO** lỗi bỏ sót (5/33 phần dư
+> ở §17.4 là loại này) mà ta ⛔ **chưa bao giờ tiêm** một lỗi bỏ sót nào.
+> Cùng cảnh: **thêm**, **code-mix**, mọi lỗi trôi chảy. Chi tiết: §22.1.
+
+
 > 🔴 **HAI THƯỚC ĐO BÁO ĐỘNG GIẢ TRONG TỆP NÀY — ⛔ ĐỪNG ĐẶT SỐ CỦA CHÚNG CẠNH NHAU.**
 >
 > | | cách **CŨ** | cách **MỚI** |
@@ -56,6 +67,9 @@ Công cụ: `tools/bench_b2_xac_thuc_bo_cham.py` · bằng chứng:
 | **Báo động giả** (FLORES, NGƯỜI dịch) | 100/100 | **45,0%** | 40,0 – 44,4% | 3 |
 | Bắt lỗi tiêm — `lat_nghia` | 15/15 | **100%** | 100 – 100% | 3 |
 | Bắt lỗi tiêm — `sai_thuc_the` | 15/15 | **100%** | 100 – 100% | 3 |
+
+⚠️ **Phạm vi:** "bắt lỗi tiêm" ở đây là **2/35 họ lỗi** (⛔ chưa hề đo `bo_sot`, `them`, trôi chảy) — xem cảnh báo đầu tệp.
+
 
 - 90/100 cặp có đủ 3 lượt; **10 cặp chỉ có 2** — một lô trả JSON hỏng
   (`LuocDoSai`, 1/30 lô = 3,3%). Giả định thuận lợi nhất (mọi cặp 2-lượt hoà đều
@@ -429,6 +443,9 @@ thuyết cho một con số đo trên kênh hỏng.
 | V2 | **16,7%** | 100% | ⛔ **40%** |
 | **V3 + `temp 0.0`** | **23,3%** | ✅ **100%** | ✅ **87%** |
 
+⚠️ **Phạm vi:** "bắt lỗi tiêm" ở đây là **2/35 họ lỗi** (⛔ chưa hề đo `bo_sot`, `them`, trôi chảy) — xem cảnh báo đầu tệp.
+
+
 ⇒ **Độ nhạy: ĐẠT cả hai loại, dư nhiều.** Chỉ còn cổng báo động giả:
 **23,3% > 15%**.
 
@@ -513,6 +530,9 @@ so hai *lời nhắc*.
 | **V1** nhị phân | 43,3% | 100% | 100% | 0% |
 | **V2** phân mức | **16,7%** | 100% | ⛔ **33%** | 0% |
 | **V3** + sàn thực thể | 23,3% | ✅ 100% | ✅ **87%** | 0% |
+
+⚠️ **Phạm vi:** "bắt lỗi tiêm" ở đây là **2/35 họ lỗi** (⛔ chưa hề đo `bo_sot`, `them`, trôi chảy) — xem cảnh báo đầu tệp.
+
 
 ⚠️ V2 trên nền sạch còn **tệ hơn** con số đo trên nền bẩn (33% so với 40%) ⇒ chỗ
 mù thực thể của nó là **thật**, không phải nhiễu kênh. ⛔ V2 loại dứt khoát.
@@ -896,6 +916,8 @@ Chạy lại đối chứng âm: V3 · `temp 0.0` · 3 lượt · 15 cặp mỗi
 | `diem ≥ 11…15` | 7,0 % ✅ | 100 % ✅ | ⛔ 26,7 % | ⛔ vế 2 |
 | `diem ≥ 16…25` | 7,0 % ✅ | 100 % ✅ | ⛔ 20,0 % | ⛔ vế 2 |
 | `dem ≥ 2` nang | 5,0 % ✅ | ⛔ 20,0 % | ⛔ 26,7 % | ⛔ vế 2 |
+⚠️ **Phạm vi:** mọi "độ nhạy" trên tiêm là **2/35 họ lỗi** — ⛔ chưa hề đo `bo_sot`, `them`, trôi chảy (§22.1).
+
 
 ## 20.1 ⭐ Câu trả lời: **KHÔNG** — và nó là một kết quả QUYẾT ĐỊNH
 
@@ -951,6 +973,8 @@ phí**: người đọc tiếp theo là người thật, sàng chỉ đáng giá
 | Độ nhạy — lỗi **tự nhiên** | **10/10 = 100 %** [72,2 ; 100] | ✅ điểm ước lượng |
 | Độ nhạy — tiêm `lat_nghia` | **15/15 = 100 %** [79,6 ; 100] | ✅ điểm ước lượng |
 | Độ nhạy — tiêm **`sai_thuc_the`** | ⛔ **13/15 = 86,7 %** [62,1 ; 96,3] | ⛔ **< 95 %** |
+⚠️ **Phạm vi:** mọi "độ nhạy" trên tiêm là **2/35 họ lỗi** — ⛔ chưa hề đo `bo_sot`, `them`, trôi chảy (§22.1).
+
 
 🔴 **V3 ⛔ CHƯA đạt cổng sàng** — nó **bỏ sót 2/15 lỗi sai thực thể đã tiêm**, và
 ở vai sàng thì mỗi lần bỏ sót là **mất thật**. ⛔ Đừng đọc *"độ nhạy 100 %"* của
@@ -1078,3 +1102,47 @@ lệch bề mặt**, ⛔ không phải bằng đối chiếu nghĩa. ⇒ Đó l�
    hoặc chấp nhận đo *"khả năng phát hiện lỗi"* trên một đích khác và khai rõ,
    hoặc chỉ mượn **đặc tả 35 loại** rồi tự tiêm lên cặp zh→vi của ta.
 4. **C1**: ⛔ chưa cần.
+
+---
+
+# 23. C2 — MẪU CHẤM ESA và **tập mù đã sẵn** cho điều phối (L4)
+
+Giao thức: **ESA** (Kocmi et al., arXiv **2406.11580**) — *"combines the
+continuous rating of DA with the high-level error severity span marking of MQM
+… without the requirement of expensive MQM experts"*. Hiện thực tham chiếu:
+`MicrosoftTranslator/GEMBA` `gemba/gemba_esa.py` (⚠️ **CC BY-SA 4.0** ⇒ dùng
+**giao thức**, ⛔ không chép lời văn). Công cụ chấm của WMT: `AppraiseDev/Appraise`
+(**BSD-3**).
+
+## 23.1 Mẫu chấm — hai chặng
+
+```
+CHANG 1 — danh dau DOAN loi
+  moi loi: { doan (TRICH NGUYEN VAN), muc: major | minor, loai, ly_do }
+  major = pha mach, nguoi doc kho hoac khong hieu duoc dieu cau muon noi
+  minor = la loi that nhung KHONG can tro viec hieu
+  ⛔ Khong trich duoc doan ⇒ ⛔ KHONG tinh la loi (L4 §3).
+  ⭐ Loi BO SOT trich doan o CAU NGUON — cho bi bo sot thi trong ban dich
+     ⛔ khong co gi de trich.
+  ⚠️ Nghi ngo ⇒ ghi `bien`, ⛔ khong ghi loi (L4 §4).
+
+CHANG 2 — cham MOT diem 0..100 DUA TREN cac doan da danh dau
+   0 = khong giu duoc nghia nao        66 = giu phan lon nghia, vai loi ngu phap
+  33 = giu duoc mot phan nghia        100 = nghia va ngu phap hoan hao
+```
+
+## 23.2 Tập mù — ⭐ đã dựng sẵn, đúng L4
+
+| | |
+|---|---|
+| Cỡ | **60 mục**: **43** dòng bộ chấm **gắn cờ** + **17** dòng **không** gắn cờ |
+| Mù | mã `esa_0001…esa_0060`, ⛔ **không** lộ dòng FLORES, ⛔ **không** lộ bộ chấm nói gì |
+| Xáo | `Random(20260925)` |
+| Tệp chấm | ⛔ **NGOÀI kho** (FLORES là CC-BY-SA): `…/scratchpad/dc/esa_bo_mu_CO_CHU_FLORES.json` |
+| Khoá | `bang_chung/b2_esa_khoa_niem_phong.json` — **đã commit TRƯỚC**, ⛔ đừng mở trước khi chấm xong |
+
+⭐ **17 mục không-gắn-cờ là đối chứng giấu:** thiếu chúng, người chấm biết *mọi*
+mục đều bị bộ chấm nghi, và phán quyết sẽ bị neo. ⛔ Đừng bỏ chúng đi cho nhanh.
+
+⚠️ **Khai ngay cạnh mọi con số sinh ra từ vòng này (L4 §5): người chấm là một
+mô hình.** Đây là giới hạn ghi ra được, ⛔ không phải lỗ hổng bị giấu.

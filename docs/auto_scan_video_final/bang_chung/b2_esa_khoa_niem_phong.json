@@ -1,0 +1,310 @@
+{
+ "phien_ban": 1,
+ "muc_dich": "KHOA niem phong cho vong cham ESA cua dieu phoi (L4).",
+ "canh_bao": "⛔ NGUOI CHAM ⛔ KHONG duoc mo tep nay truoc khi ghi xong phan quyet.",
+ "hat_giong": 20260925,
+ "cach_chon": "43 dong bo cham GAN CO + 17 dong KHONG gan co (rut ngau nhien) = 60, da XAO thu tu.",
+ "bo_mu_o_dau": "⛔ NGOAI kho (FLORES CC-BY-SA): scratchpad/esa_bo_mu_CO_CHU_FLORES.json",
+ "khoa": [
+  {
+   "ma": "esa_0001",
+   "dong_flores": 889,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0002",
+   "dong_flores": 875,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0003",
+   "dong_flores": 542,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0004",
+   "dong_flores": 620,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0005",
+   "dong_flores": 661,
+   "bo_cham_gan_co": false
+  },
+  {
+   "ma": "esa_0006",
+   "dong_flores": 669,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0007",
+   "dong_flores": 568,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0008",
+   "dong_flores": 817,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0009",
+   "dong_flores": 748,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0010",
+   "dong_flores": 849,
+   "bo_cham_gan_co": false
+  },
+  {
+   "ma": "esa_0011",
+   "dong_flores": 615,
+   "bo_cham_gan_co": false
+  },
+  {
+   "ma": "esa_0012",
+   "dong_flores": 783,
+   "bo_cham_gan_co": false
+  },
+  {
+   "ma": "esa_0013",
+   "dong_flores": 733,
+   "bo_cham_gan_co": false
+  },
+  {
+   "ma": "esa_0014",
+   "dong_flores": 747,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0015",
+   "dong_flores": 600,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0016",
+   "dong_flores": 707,
+   "bo_cham_gan_co": false
+  },
+  {
+   "ma": "esa_0017",
+   "dong_flores": 702,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0018",
+   "dong_flores": 751,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0019",
+   "dong_flores": 638,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0020",
+   "dong_flores": 640,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0021",
+   "dong_flores": 824,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0022",
+   "dong_flores": 856,
+   "bo_cham_gan_co": false
+  },
+  {
+   "ma": "esa_0023",
+   "dong_flores": 565,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0024",
+   "dong_flores": 767,
+   "bo_cham_gan_co": false
+  },
+  {
+   "ma": "esa_0025",
+   "dong_flores": 552,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0026",
+   "dong_flores": 827,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0027",
+   "dong_flores": 614,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0028",
+   "dong_flores": 757,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0029",
+   "dong_flores": 806,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0030",
+   "dong_flores": 570,
+   "bo_cham_gan_co": false
+  },
+  {
+   "ma": "esa_0031",
+   "dong_flores": 522,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0032",
+   "dong_flores": 519,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0033",
+   "dong_flores": 773,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0034",
+   "dong_flores": 809,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0035",
+   "dong_flores": 765,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0036",
+   "dong_flores": 869,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0037",
+   "dong_flores": 679,
+   "bo_cham_gan_co": false
+  },
+  {
+   "ma": "esa_0038",
+   "dong_flores": 845,
+   "bo_cham_gan_co": false
+  },
+  {
+   "ma": "esa_0039",
+   "dong_flores": 719,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0040",
+   "dong_flores": 759,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0041",
+   "dong_flores": 828,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0042",
+   "dong_flores": 666,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0043",
+   "dong_flores": 810,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0044",
+   "dong_flores": 639,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0045",
+   "dong_flores": 571,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0046",
+   "dong_flores": 701,
+   "bo_cham_gan_co": false
+  },
+  {
+   "ma": "esa_0047",
+   "dong_flores": 830,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0048",
+   "dong_flores": 784,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0049",
+   "dong_flores": 645,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0050",
+   "dong_flores": 583,
+   "bo_cham_gan_co": false
+  },
+  {
+   "ma": "esa_0051",
+   "dong_flores": 637,
+   "bo_cham_gan_co": false
+  },
+  {
+   "ma": "esa_0052",
+   "dong_flores": 844,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0053",
+   "dong_flores": 852,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0054",
+   "dong_flores": 651,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0055",
+   "dong_flores": 721,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0056",
+   "dong_flores": 722,
+   "bo_cham_gan_co": false
+  },
+  {
+   "ma": "esa_0057",
+   "dong_flores": 613,
+   "bo_cham_gan_co": false
+  },
+  {
+   "ma": "esa_0058",
+   "dong_flores": 687,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0059",
+   "dong_flores": 514,
+   "bo_cham_gan_co": true
+  },
+  {
+   "ma": "esa_0060",
+   "dong_flores": 562,
+   "bo_cham_gan_co": false
+  }
+ ]
+}
