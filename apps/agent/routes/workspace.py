@@ -162,30 +162,20 @@ def workflow_asset_preview(request: Request, asset_name: str,
         tieu_de_them={"Cache-Control": "private, no-store"})
 
 
-@router.post("/api/tools/{tool_name}/quote")
-async def workflow_tool_quote(request: Request, tool_name: str,
-                              _identity: str = Depends(require_login),
-                              db: Session = Depends(get_db)):
-    """Authoritative non-mutating node quote for the inline composer."""
-    body = await request.json(); _verify_json_csrf(request, body)
-    user = _user(request)
-    from platform_core import app_access
-    loaded = discover()
-    allowed = {item.slug for item in loaded
-               if app_access.muc_quyen(db, user, item.slug) == app_access.ENABLED}
-    tools = discover_tools(apps=loaded, allowed_slugs=allowed)
-    spec = tools.get(tool_name)
-    if spec is None:
-        raise HTTPException(status_code=404, detail=_t('Tool không tồn tại/không có quyền.'))
-    try:
-        params = validate_tool_params(tool_name, body.get("params", {}), apps=loaded)
-        fanout = int(body.get("fanout", 1)); retry = int(body.get("max_retry", 0))
-        if not 1 <= fanout <= 4 or not 0 <= retry <= 2:
-            raise ToolParamsError("fanout/max_retry không hợp lệ")
-        unit = credit_for(spec.job_type, params, apps=loaded)
-    except (ToolParamsError, RegistryError, ValueError, TypeError) as exc:
-        return {"tool": tool_name, "valid": False, "detail": str(exc),
-                "maximum": None, "authoritative": True}
-    return {"tool": tool_name, "valid": True, "unit": unit, "fanout": fanout,
-            "max_retry": retry, "maximum": unit * fanout * (1 + retry),
-            "authoritative": True}
+# ⛔ CUA BAO GIA CU DA DONG (24/09/2026, chu du an chot).
+#
+#    `POST /api/tools/{tool_name}/quote` tra:
+#        "maximum": unit * fanout * (1 + retry),  "authoritative": True
+#
+#    🔴 HAI thua so `fanout` va `max_retry` KHONG TON TAI o dau trong runtime
+#       v2 (lan p10 do). Tuc cua nay TU XUNG la ban co tham quyen ve mot con so
+#       ma SO TIEN KHONG CHAY THEO — khach doc mot so, sổ chay mot so khac.
+#
+#    ⭐ Thay bang `POST /api/v3/workflows/{id}/bao-gia`: MOT cua cho CA do thi,
+#       goi thang `_gia_node` (dung ham `bao_gia_do_thi` goi, khong duong gia
+#       thu hai). Do duoc: 24 -> 2 request moi phien.
+#
+#    Cua nay da khong con ai goi truoc khi dong: frontend chuyen sang `/bao-gia`,
+#    khong tep `.js` dung san nao, khong template nao. Ghim o
+#    `tests/test_2934_dong_cua_cum_v2.py::DA_DONG`.
+

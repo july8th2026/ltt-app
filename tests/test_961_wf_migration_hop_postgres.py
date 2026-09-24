@@ -139,6 +139,10 @@ def test_BAY_chi_muc_bo_phan_deu_giu_menh_de_WHERE_tren_POSTGRES():
         # P4 — bo quet HET HAN di bang keyset cursor, nen chi muc phai mang
         # `(het_han_luc, id)` theo dung thu tu (`cho_doi.quet_het_han`).
         "ix_waitpoint_het_han",
+        # P9b — "chay lai tu node" (`20260924_2200_run_chay_lai_tu`). Chi muc
+        # BO PHAN vi cot mac dinh la chuoi RONG: gan het moi hang la run thuong,
+        # nen mot chi muc day du se chep ca bang de phuc vu mot thieu so.
+        "ix_wfrun_chay_lai_tu",
     }
     assert set(thay) == mong, f"thieu/thua chi muc bo phan: {set(thay) ^ mong}"
 

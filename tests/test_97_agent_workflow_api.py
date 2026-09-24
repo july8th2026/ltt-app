@@ -112,9 +112,10 @@ def test_validate_server_price_and_palette_are_authoritative(api):
 
     ⛔ 23/09 (spec §17.4): `POST /agent/api/workflows/{id}/validate` da bi go
        cung luong chay v1. Menh de con lai — `/palette` khong duoc lech
-       `discover_tools()`, va `/tools/{ten}/quote` la nguon gia duy nhat — VAN
-       nguyen gia tri va VAN co duong that di qua (`workspace.py`), nen bai nay
-       o lai; chi ba dong goi `/validate` bi cat.
+       `discover_tools()` — VAN nguyen gia tri, nen bai nay o lai.
+
+    ⛔ DINH CHINH 24/09: cau *"`/tools/{ten}/quote` la nguon gia duy nhat"* nay
+       SAI. Cua do da DONG; nguon gia la `POST /api/v3/workflows/{id}/bao-gia`.
     """
     a, token, *_ = api
     _create(a, token)
@@ -174,16 +175,26 @@ def test_validate_server_price_and_palette_are_authoritative(api):
     #    day se lam gate do — dung nhu no nen the.
     assert {tool["name"]: tool["label"] for tool in palette["tools"] if tool["primary"]} == {
         "image.generate": "Tạo hình ảnh", "video.generate": "Tạo video"}
-    quote = a.post("/agent/api/tools/text.prompt_package/quote",
-        headers={"X-CSRF-Token": token}, json={"params": {"title": "Tiêu đề hợp lệ", "story": "Nội dung."},
-        "fanout": 2, "max_retry": 1})
-    assert quote.status_code == 200
-    assert quote.json()["maximum"] == quote.json()["unit"] * 4
-    assert quote.json()["authoritative"] is True
-    bad = a.post("/agent/api/tools/text.prompt_package/quote",
-        headers={"X-CSRF-Token": token}, json={"params": {}})
-    assert bad.status_code == 200 and bad.json()["valid"] is False
-    assert bad.json()["maximum"] is None and bad.json()["authoritative"] is True
+    # ⛔ CUA `/tools/{ten}/quote` DA DONG (24/09) — bon dong goi no da bi cat.
+    #
+    # 🔴 VA DAY LA CHO DANG GHI LAI. Khang dinh cu la:
+    #
+    #        assert quote.json()["maximum"] == quote.json()["unit"] * 4
+    #
+    #    `4` = `fanout 2 × (1 + max_retry 1)`. Tuc CONG THUC SAI co mot PHEP
+    #    KIEM BAO VE NO: hai thua so khong ton tai trong runtime v2 da duoc
+    #    chot lai thanh "dung", nen moi ai nhin vao deu thay mot bat bien xanh.
+    #    Do la ly do no song lau den the.
+    #
+    # ⭐ Bai hoc: mot phep kiem chot HANH VI HIEN TAI ma khong hoi *"hanh vi nay
+    #    co dung khong"* thi no khong bao ve gi — no **dong bang** cai dang co.
+    #    Doi chieu voi so tien la thu khong ai lam, va no mat 24 gio de lo ra khi
+    #    lan p10 do lai tu dau.
+    #
+    #    Cua thay the: `POST /api/v3/workflows/{id}/bao-gia` (mot cua cho ca do
+    #    thi, goi thang `_gia_node`). Viec dong duoc ghim o
+    #    `tests/test_2934_dong_cua_cum_v2.py::DA_DONG`; cua moi duoc ghim o
+    #    `CON_SONG` cung tep.
 
 
 def test_canvas_preferences_are_validated_and_owned_per_user(api):

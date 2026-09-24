@@ -51,6 +51,16 @@ DA_DONG = {
     ("POST", "/api/workflows/{workflow_id}/archive"),
     ("GET", "/api/workflows/{workflow_id}/export"),
     ("POST", "/api/workflows/import"),
+    # ⭐ Cửa báo giá cũ (đóng 24/09, chủ dự án chốt). KHÁC bốn cụm trên ở một
+    #    điểm nặng hơn: nó không chỉ còn sống — nó **tự xưng** `authoritative:
+    #    True` về một con số SAI. `maximum = unit × fanout × (1 + max_retry)`,
+    #    mà **hai thừa số ấy không tồn tại ở đâu trong runtime v2** (làn p10 đo).
+    #    Tức khách đọc một con số, sổ tiền chạy theo một con số khác.
+    #
+    #    Thay bằng `POST /api/v3/workflows/{id}/bao-gia` — MỘT cửa cho cả đồ
+    #    thị, gọi thẳng `_gia_node` (đúng hàm `bao_gia_do_thi` gọi). Đo: 24 → 2
+    #    request mỗi phiên.
+    ("POST", "/api/tools/{tool_name}/quote"),
 }
 
 #: 🔑 ĐỐI CHỨNG. Cửa v2 **còn sống** (kho lưu trữ Canvas v2, `tools/mobile_qa.py`
@@ -62,6 +72,9 @@ CON_SONG = {
     ("GET", "/api/workflows/{workflow_id}"),
     ("PUT", "/api/workflows/{workflow_id}"),
     ("POST", "/api/v3/workflows/{workflow_id}/soan"),
+    # Cửa báo giá MỚI phải sống — nếu không, "đã đóng cửa cũ" chỉ nghĩa là
+    # người soạn mất luôn báo giá.
+    ("POST", "/api/v3/workflows/{workflow_id}/bao-gia"),
 }
 
 
