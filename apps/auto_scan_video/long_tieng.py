@@ -120,6 +120,33 @@ QUY_TAC_TEN_RIENG_VI = {"role": "system", "content": (
     "KHONG phien am Han-Viet va KHONG dich nghia den.\n"
     "  Mot ten xuat hien nhieu lan phai duoc xu ly GIONG NHAU o moi lan.\n")}
 
+#: ⭐ **DUONG B — model tu khai cho no khong chac.** ⛔ CHI THU, ⛔ khong hien
+#: cho khach, ⛔ khong lai vong sua, ⛔ khong chan gi. Dung no vao viec gi la
+#: quyet dinh cua chu du an.
+#:
+#: Do that tren ban nen (`B2_DICH.md` §4i, `tools/bench_b2_duong_b_tu_khai.py`):
+#:   · do nhay  **4/7** ca thuat ngu da biet hong (`师傅`, `烧酒`, `掐雷`, `纯白给`)
+#:   · do on    **19 muc / 3 011 ky tu goc = 0,63 %** — ngan du de soi tay
+#:   · gia      **+1 truong**, ~0 luot goi them (di kem luot dich)
+#:
+#: ⭐ Tac dung phu dang gia hon chinh no: no khai ca **loi CHEP LOI**
+#:    (`避不住`, `提炼枪`, `此一听`) — tuc thu §4e can de tach loi ASR khoi loi
+#:    dich, mot viec ta ⛔ chua co cach nao khac lam.
+#:
+#: 🔴 **RANH GIOI, giu nguyen van:** *model biet no khong biet TU; no khong biet
+#:    no hieu sai CAU.* **0 %** o lop ngu phap — `补人`, `热胀冷缩`, `这才是`
+#:    (ra *"Moi day moi la"* thay vi *"Day moi la"*) deu KHONG duoc khai.
+#:    ⇒ ⛔ Dung doc cot nay nhu mot bo do chat luong.
+#:
+#: ⛔ **Cau hoi co y TRUNG TINH va KHONG mot vi du nao.** ⛔ Khong noi "chuyen
+#:    nganh", ⛔ khong noi "tieng long", ⛔ khong dua mot ca nao trong 7 ca da
+#:    hong vao: *mot vi du trong loi nhac la mot menh lenh ngam* (§4c) — mach thi
+#:    ta do chinh loi mach cua minh.
+QUY_TAC_TU_KHAI = {"role": "system", "content": (
+    "- Trong moi doan, them khoa \"khong_chac\": danh sach nhung tu hoac cum "
+    "TRONG CAU GOC ma ban khong chac chan ve cach chuyen. De danh sach RONG "
+    "neu ban chac chan het.\n")}
+
 
 class LongTiengError(ValueError):
     """Ban long tieng khong dung hop dong."""
@@ -219,12 +246,12 @@ def loi_nhac(lo: list[dict], *, tat_ca: list[dict], ngon_ngu_goc: str,
         "va sap nghe, sau khi da cat.\n"
         "- Xung ho va giong dieu hop voi `giong` da chon.\n"
         "- Khong them thong tin khong co trong cau goc.\n"
-        + ten_rieng +
+        + ten_rieng + QUY_TAC_TU_KHAI["content"] +
         f"- `cam_xuc` phai la MOT trong: {', '.join(CAM_XUC)}.\n"
         f"- `kieu_noi` phai la MOT trong: {', '.join(KIEU_NOI)}.\n"
         "Tra ve DUY NHAT mot doi tuong JSON:\n"
         '{"doan": {"<ma doan>": {"chu": "...", "cam_xuc": "...", '
-        '"kieu_noi": "...", "nhan_manh": ["..."]}}}\n'
+        '"kieu_noi": "...", "nhan_manh": ["..."], "khong_chac": ["..."]}}}\n'
         "Khoa phai la MA DOAN da cho, khong duoc doi, khong duoc bo sot.")
 
     nguoi_dung = json.dumps({
@@ -240,6 +267,39 @@ def loi_nhac(lo: list[dict], *, tat_ca: list[dict], ngon_ngu_goc: str,
 # ══════════════════════════════════════════════════════════════════════════════
 #  Doc phan hoi
 # ══════════════════════════════════════════════════════════════════════════════
+
+#: So muc `khong_chac` giu lai moi doan. Do that: **19 muc / 3 011 ky tu goc =
+#: 0,63 %** tren ba phim (`B2_DICH.md` §4i) — nen tran nay ⛔ khong phai mot cai
+#: kep, no la mot **chan tren cho truong hop benh ly** (model xa danh sach).
+KHONG_CHAC_TOI_DA = 8
+
+#: Do dai toi da cua MOT muc `khong_chac` (ky tu). Muc that la mot tu/cum trong
+#: cau goc (`掐雷`, `纯白给`), nen mot chuoi dai hon the la model dang viet van —
+#: cat de mot phan hoi lac de ⛔ khong phinh so cai.
+KHONG_CHAC_DAI_TOI_DA = 40
+
+
+def _chuoi_ngan(x) -> list[str]:
+    """Danh sach chuoi da cat tran. ⛔ Khong nem — moi dang sai deu ra `[]`.
+
+    🔑 **Vi sao khoan dung o day nhung nghiem khac o `chu`.** `chu` la **thu san
+       pham**: sai luoc do o do phai thanh loi. `khong_chac` la mot **cot chan
+       doan** ⛔ khong ai o ha nguon doc — de no lam hong mot lo loi thoai da tra
+       tien la doi mot thu dat lay mot thu khong dat.
+    """
+    if not isinstance(x, list):
+        return []
+    ra = []
+    for m in x[:KHONG_CHAC_TOI_DA]:
+        # 🔴 `str(m or "")` chu KHONG duoc — no gop `None` voi moi gia tri FALSY
+        #    khac: `0`, `False`, `0.0` deu thanh chuoi rong roi bi bo **im lang**.
+        #    Mot phep kiem da bat dung ca do (`list(range(50))` ra 7 muc chu
+        #    khong phai 8). Cung ho loi voi "hai trang thai gop thanh mot gia tri".
+        t = ("" if m is None else str(m)).strip()[:KHONG_CHAC_DAI_TOI_DA]
+        if t:
+            ra.append(t)
+    return ra
+
 
 def doc_chuyen(goi: dict, ma_da_gui: set[str]) -> dict:
     """`{ma: {chu, cam_xuc, kieu_noi, nhan_manh}}` — chi cho nhung ma DA GUI.
@@ -275,6 +335,11 @@ def doc_chuyen(goi: dict, ma_da_gui: set[str]) -> dict:
             "cam_xuc": cx if cx in CAM_XUC else CAM_XUC[0],
             "kieu_noi": kn if kn in KIEU_NOI else KIEU_NOI[0],
             "nhan_manh": [str(x) for x in nm][:8] if isinstance(nm, list) else [],
+            # ⭐ **`khong_chac` — chi THU, ⛔ khong lam gi voi no.** Xem
+            #    `QUY_TAC_TU_KHAI` va `B2_DICH.md` §4i. Doc **khoan dung**: vang
+            #    mat, sai kieu, hay rong deu ra `[]` — ⛔ mot cot chan doan
+            #    KHONG duoc lam hong mot lo loi thoai.
+            "khong_chac": _chuoi_ngan(v.get("khong_chac")),
         }
 
     thieu = sorted(ma_da_gui - set(ra))

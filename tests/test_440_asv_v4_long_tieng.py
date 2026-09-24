@@ -131,6 +131,33 @@ def test_doi_DOAN_MOI_LO_thi_kich_thuoc_lo_DOI_THAT():
         lt.DOAN_MOI_LO = cu
 
 
+def test_khong_chac_CHI_THU_va_KHONG_duoc_lam_hong_mot_lo():
+    """⭐ DUONG B — `khong_chac` la mot cot CHAN DOAN, ⛔ khong phai thu san pham.
+
+    ⛔ Nen moi dang sai cua no phai ra `[]`, ⛔ khong duoc nem: de mot cot chan
+       doan lam hong mot lo loi thoai **da tra tien** la doi mot thu dat lay mot
+       thu khong dat. Khac han `chu` — sai luoc do o `chu` PHAI thanh loi.
+    """
+    ra = long_tieng.doc_chuyen({"doan": {
+        "s1": {"chu": "a", "khong_chac": ["掐雷", "  ", "x" * 99]},
+        "s2": {"chu": "b"},                       # vang mat
+        "s3": {"chu": "c", "khong_chac": "khong phai list"},   # sai kieu
+        "s4": {"chu": "d", "khong_chac": list(range(50))},     # xa danh sach
+    }}, {"s1", "s2", "s3", "s4"})
+    assert ra["s1"]["khong_chac"][0] == "掐雷"
+    assert len(ra["s1"]["khong_chac"]) == 2, "chuoi rong phai bi bo"
+    assert len(ra["s1"]["khong_chac"][1]) == long_tieng.KHONG_CHAC_DAI_TOI_DA
+    assert ra["s2"]["khong_chac"] == [], "vang mat => [] , ⛔ khong nem"
+    assert ra["s3"]["khong_chac"] == [], "sai kieu => [] , ⛔ khong nem"
+    assert len(ra["s4"]["khong_chac"]) == long_tieng.KHONG_CHAC_TOI_DA
+    # ⛔ Va no ⛔ KHONG duoc ro ri ra tai lieu khach nhan: `dung` chi rap cac
+    #    truong san pham. Dieu phoi chot: chi GHI vao `outputs`, khong hien.
+    tl = long_tieng.dung(_giu(_ban_ghi(), ["seg_0000"]),
+                         {"seg_0000": ra["s1"]}, ma_giong="g",
+                         van_tay_ban="vt", provider="p", model="m")
+    assert "khong_chac" not in tl["muc"][0], "⛔ khong duoc di ra tai lieu khach"
+
+
 def test_quy_tac_TEN_RIENG_chi_ra_khi_dich_VI():
     """🔑 *"Phien am HAN-VIET"* la luat cua **tieng Viet**, khong phai cua moi dich.
 

@@ -348,6 +348,78 @@ của tiếng Việt; bơm nó vào một lượt dịch sang tiếng Anh là d�
 nhắc ghi cứng *"tiếng Việt"* cho mọi nguồn). ⇒ `loi_nhac` chèn **có điều kiện**,
 và bảng token trên là **phép kiểm** cho điều đó: đích `en` giữ nguyên 338.
 
+## 7.7 ⭐ ĐƯỜNG B — bật phần **THU**, và ⛔ chỉ phần thu
+
+`long_tieng.QUY_TAC_TU_KHAI` + trường `khong_chac` mỗi đoạn ·
+`PHIEN_BAN_LOI_NHAC_LONG_TIENG` **2 → 3**. Ghi vào
+`AsvWorkItem.outputs["khong_chac"]` (`giai_doan_noi_dung.py`).
+
+### Ranh giới — điều phối chốt, ⛔ giữ nguyên văn
+
+| | |
+|---|---|
+| ✅ **thu** | thêm trường, ghi vào `outputs` |
+| ⛔ **không** hiển thị cho khách | `long_tieng.dung` ⛔ không rạp trường này vào tài liệu — có **phép kiểm** gác (`test_khong_chac_CHI_THU...`) |
+| ⛔ **không** lái vòng sửa | ⛔ không nơi nào đọc nó để quyết định dịch lại |
+| ⛔ **không** chặn gì | mọi dạng sai đều ra `[]`, ⛔ không ném |
+
+**Dùng nó vào việc gì là quyết định của chủ dự án.**
+
+### Số đã đo (bản nền, `tools/bench_b2_duong_b_tu_khai.py` — §4i)
+
+```
+do nhay   4/7  ca thuat ngu da biet hong  (师傅 · 烧酒 · 掐雷 · 纯白给)
+do on     19 muc / 3 011 ky tu goc = 0,63 %      ⇒ nguoi soi tay duoc
+gia       +1 truong luoc do · ~0 luot goi them
+```
+
+⭐ Tác dụng phụ đáng giá hơn chính nó: nó khai cả **lỗi CHÉP LỜI**
+(`避不住`, `提炼枪`, `此一听`) — tức thứ §4e cần để **tách lỗi ASR khỏi lỗi
+dịch**, một việc ta ⛔ chưa có cách nào khác làm.
+
+### 🔴 RANH GIỚI của nó — giữ nguyên văn
+
+> **Model biết nó không biết TỪ; nó không biết nó hiểu sai CÂU.**
+
+**0 %** ở lớp ngữ pháp: `补人` · `热胀冷缩` · `这才是` (ra *"Mới đây mới là"*
+thay vì *"Đây mới là"*) đều ⛔ **không** được khai. ⇒ ⛔ Đừng đọc cột này như
+một bộ đo chất lượng.
+
+### ⚠️ Cái ta ⛔ CHƯA đo, và phải nói ra
+
+Bốn con số trên đo trên **lời nhắc ĐƯỜNG CHẾT** (`dich_thuat`), ⛔ không phải
+lời nhắc vừa nối. Lời nhắc đường sống khác hẳn (có `ke_ben`, `do_dai_toi_da`,
+`cam_xuc`/`kieu_noi`, và từ §7.6 có thêm quy tắc tên riêng) ⇒ ⛔ **độ nhạy và
+độ ồn trên đường sống là một ô CÒN TRỐNG**. Đó chính là lý do bật **phần thu**:
+để ô đó tự đầy lên bằng lượt chạy thật, ⛔ không phải để dùng ngay.
+
+### Đọc KHOAN DUNG — và vì sao khác hẳn `chu`
+
+`_chuoi_ngan`: vắng mặt · sai kiểu · rỗng ⇒ `[]`; trần **8 mục × 40 ký tự**.
+⛔ Không ném. `chu` là **thứ sản phẩm** nên sai lược đồ ở đó **phải** thành lỗi;
+`khong_chac` là một **cột chẩn đoán** ⛔ không ai ở hạ nguồn đọc — để nó làm hỏng
+một lô lời thoại **đã trả tiền** là đổi một thứ đắt lấy một thứ không đắt.
+
+> 🔴 **Và phép kiểm bắt được một lỗi của chính bản vá này.** Bản đầu viết
+> `str(m or "")` — gộp `None` với **mọi giá trị falsy khác**: `0`, `False`,
+> `0.0` thành chuỗi rỗng rồi bị bỏ **im lặng**. `list(range(50))` ra **7** mục
+> thay vì 8. Cùng họ lỗi với *"hai trạng thái gộp thành một giá trị"*. Đã sửa
+> thành `"" if m is None else str(m)`.
+
+### Token — cộng dồn cả §7.6 và §7.7
+
+| lời nhắc hệ thống | ký tự | token |
+|---|---|---|
+| gốc (trước cả hai) | 1 026 | **338** |
+| + quy tắc tên riêng (§7.6) | 1 804 | 590 |
+| + tự khai (§7.7), đích `vi` | **1 991** | **641** (+303 so với gốc, +90 %) |
+| + tự khai (§7.7), đích `en` | 1 211 | **389** |
+
+⚠️ Trường tự khai ⛔ **không** giới hạn theo đích — một model dịch sang tiếng
+Anh cũng có quyền khai chỗ nó không chắc. Chỉ **quy tắc Hán-Việt** mới gắn với
+`vi`. Chi phí token vào thêm: ~**+0,015 credit/lô** ở `ltt-3.8`,
+~**+0,004** ở `ltt-3.5`.
+
 ## 7.4 ⇒ Bước 2 ĐÃ LÀM (§7.6) · Bước 3 ⛔ CHƯA
 
 **Bước 2** — quy tắc tên riêng vào lời nhắc đường sống — ⭐ **đã làm, xem §7.6**
@@ -355,6 +427,8 @@ và bảng token trên là **phép kiểm** cho điều đó: đích `en` giữ 
 ⛔ không chồng một thay đổi lời nhắc lên một chỗ mà nguyên nhân bất ổn còn chưa rõ.
 
 **Bước 3** (bản nền dịch đo lại trên đường sống) ⛔ **chưa chạy**.
+
+⭐ **Đường B** (§4d) — phần **THU** đã bật, xem §7.7. ⛔ Chỉ thu.
 
 ---
 

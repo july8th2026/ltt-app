@@ -87,7 +87,9 @@ PHIEN_BAN_LOI_NHAC_DICH = 5
 #: ⚠️ Dat lai ve 1 lam van tay `CONTENT_PROCESS` doi **mot lan cuoi** — do la
 #:    cai gia cua viec go su nham lan, va la lan vo hieu **CUOI CUNG** do cap
 #:    doi cu gay ra. ⛔ Sau day, doi loi nhac DICH khong con cham vao no nua.
-PHIEN_BAN_LOI_NHAC_LONG_TIENG = 2
+#: **3** (24/09): them `QUY_TAC_TU_KHAI` — truong `khong_chac`, ⭐ **chi THU**
+#:    (`B2_DICH.md` §7.7). ⛔ Khong hien cho khach, ⛔ khong lai vong sua.
+PHIEN_BAN_LOI_NHAC_LONG_TIENG = 3
 
 #: ⛔ **TEN CU — da go.** Giu mot dong de nguoi doc ma cu tim thay ly do.
 #:    Dung `PHIEN_BAN_LOI_NHAC_DICH` hoac `PHIEN_BAN_LOI_NHAC_LONG_TIENG`.

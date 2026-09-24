@@ -249,7 +249,12 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                                   item_key=ma, fingerprint=vt,
                                   outputs={"chu": v["chu"],
                                            "cam_xuc": v["cam_xuc"],
-                                           "kieu_noi": v["kieu_noi"]})
+                                           "kieu_noi": v["kieu_noi"],
+                                           # ⭐ DUONG B — chi THU vao so, ⛔
+                                           #    khong hien cho khach, ⛔ khong
+                                           #    lai vong sua, ⛔ khong chan gi.
+                                           #    `long_tieng.QUY_TAC_TU_KHAI`.
+                                           "khong_chac": v["khong_chac"]})
         # 🔴 **`commit`, khong phai `flush`** — va no khong phai mot chi tiet ky
         #    thuat, no la dinh nghia cua "diem chot".
         #
@@ -311,5 +316,8 @@ def _lay_lai_doan_da_xong(db, run, xong: set[str]) -> dict[str, dict]:
                 "cam_xuc": o.get("cam_xuc") or long_tieng.CAM_XUC[0],
                 "kieu_noi": o.get("kieu_noi") or long_tieng.KIEU_NOI[0],
                 "nhan_manh": list(o.get("nhan_manh") or []),
+                # ⛔ Doan da xong TRUOC khi co truong nay se khong co no —
+                #    `[]` la cau tra loi dung, ⛔ khong phai mot thieu sot.
+                "khong_chac": list(o.get("khong_chac") or []),
             }
     return ra
