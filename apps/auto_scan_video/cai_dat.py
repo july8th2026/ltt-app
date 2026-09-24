@@ -132,8 +132,10 @@ class CaiDat:
     #: chi sinh tieng Viet, nen do la mot SU THAT ve chung, khong phai doan.
     ngon_ngu_dich: str = ngon_ngu.DICH_MAC_DINH
     #: Nguon loi thoai cho TRANSCRIBE (22/09, lan ocr): `auto` | `embedded` |
-    #: `ocr` | `asr`. Xem `nguon_loi.py`. Ho so cu khong co khoa = `auto`.
-    nguon_loi: str = nguon_loi.CHE_DO_MAC_DINH
+    #: `ocr` | `asr`. Xem `nguon_loi.py`.
+    #: ⛔ Khoa VANG MAT = `CHE_DO_HO_SO_CU` (`auto`), KHONG phai mac dinh hien
+    #:    hanh — mac dinh doi 24/09 va ho so cu thi khong.
+    nguon_loi: str = nguon_loi.CHE_DO_HO_SO_CU
     tu_dien: dict = field(default_factory=dict)
     cat: tuple[float, float] | None = None
     vung: tuple = ()
@@ -198,10 +200,16 @@ def chuan_hoa(tho: Mapping | None) -> dict:
     ra["ngon_ngu_nguon"] = _chuoi(tho, "ngon_ngu_nguon")
     ra["ngon_ngu_dich"] = ngon_ngu.chuan_dich(tho.get("ngon_ngu_dich"))
     ra["tu_dien"] = dict(tho.get("tu_dien") or {})
-    # THUA nhu `KHOA_THUA`: mac dinh `auto` KHONG ghi — ho so (va van tay) cua
-    # moi lan chay truoc 22/09 giu nguyen.
-    nl = nguon_loi.chuan_che_do(tho.get("nguon_loi"))
-    if nl != nguon_loi.CHE_DO_MAC_DINH:
+    # THUA nhu `KHOA_THUA`: `auto` KHONG ghi — ho so (va van tay) cua moi lan
+    # chay truoc 22/09 giu nguyen.
+    #
+    # ⛔ So voi `CHE_DO_HO_SO_CU`, **khong** voi `CHE_DO_MAC_DINH`. Mac dinh doi
+    #    sang `asr` ngay 24/09; neu dong nay bam theo mac dinh thi tu khoanh khac
+    #    do `asr` bi BO DI khi ghi, va moi ho so cu (khong co khoa, y la `auto`)
+    #    duoc DOC LAI thanh `asr`. Mot dong, hai ho so bi viet lai nghia.
+    nl = nguon_loi.chuan_che_do(tho.get("nguon_loi"),
+                                mac_dinh=nguon_loi.CHE_DO_HO_SO_CU)
+    if nl != nguon_loi.CHE_DO_HO_SO_CU:
         ra["nguon_loi"] = nl
 
     dd = tho.get("dac_diem_giong") or {}
@@ -236,7 +244,10 @@ def tu_ho_so(tho: Mapping | None) -> CaiDat:
         giong_id=_chuoi(tho, "giong_id") or _chuoi(tho, KHOA_BI_DANH_GIONG),
         ngon_ngu_nguon=_chuoi(tho, "ngon_ngu_nguon"),
         ngon_ngu_dich=ngon_ngu.chuan_dich(tho.get("ngon_ngu_dich")),
-        nguon_loi=nguon_loi.chuan_che_do(tho.get("nguon_loi")),
+        # ⛔ DOC mot ho so da luu ⇒ khoa vang mat nghia la `auto`, khong phai
+        #    mac dinh hien hanh.
+        nguon_loi=nguon_loi.chuan_che_do(tho.get("nguon_loi"),
+                                         mac_dinh=nguon_loi.CHE_DO_HO_SO_CU),
         dac_diem=DacDiem(gioi=str(dd.get("gioi") or ""),
                          vung=str(dd.get("vung") or ""),
                          phong_cach=str(dd.get("phong_cach") or "")),
