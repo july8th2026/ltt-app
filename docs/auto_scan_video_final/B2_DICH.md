@@ -69,6 +69,7 @@ SỐNG** — lời nhắc lồng tiếng đã qua nghiệm thu, có ngân sách 
 | **đo lại sau cú sập 23:37–23:44** | ✅ **XONG** — `0/20` **tái hiện y hệt** (cộng dồn 40 lô, 376/376 đoạn) | §7.8b |
 | **SEED** (nửa còn lại của "nhiệt độ + seed") | 🔴 **XONG — cổng NHẬN, ⛔ KHÔNG hiệu lực.** Đường dịch ⛔ **không tái lập được** | §7.8c |
 | **`光子` × lồng tiếng** | ✅ **XONG** — va chạm ⛔ **không tái hiện**: `光子` chưa bao giờ ra chữ Hán | §7.8d |
+| **bất biến chữ Hán ở BIÊN** | ✅ **XONG** — `chu_han_lot` → `outputs["han_lot"]`, ⭐ **đánh dấu, ⛔ không huỷ** | §7.8d |
 
 ### 🔴 Ba việc CHỜ điều phối / chủ dự án — ⛔ làn này cố ý không tự làm
 
@@ -95,8 +96,13 @@ SỐNG** — lời nhắc lồng tiếng đã qua nghiệm thu, có ngân sách 
 * ⏭ **Phép cơ chế §4f chạy lại** (29 đoạn **đã đúng** → tốt lên / không đổi /
   tệ đi). Ta mới biết vòng sửa **ĐỔI** đoạn, ⛔ chưa biết đổi theo **hướng nào**
   — và nay ⛔ không có núm nào làm nó rẻ hơn.
-* ⚠️ **Chữ Hán lọt bản ghi vì lỗi ASR: `1/343 = 0,3 %`** (§7.8d). Là một **cửa
-  chặn ở biên**, ⛔ không phải một câu trong lời nhắc.
+* ✅ **Chữ Hán lọt bản ghi vì lỗi ASR (`1/343 = 0,3 %`) — ĐÃ có cửa chặn ở biên**
+  (`long_tieng.chu_han_lot` → `outputs["han_lot"]`, §7.8d). ⭐ Đây là **bộ dò lỗi
+  chép lời THỨ HAI**, độc lập với đường B — hai tín hiệu độc lập cùng trỏ một
+  đoạn thì đáng tin hơn hẳn một. ⏭ **Chưa ai ĐỌC cột này** — như `khong_chac`.
+* 🔑 **`seed`: câu hỏi ĐÃ ĐÓNG VĨNH VIỄN** (§7.8c). Cổng **có** chuyển và **có**
+  kiểm `seed`; bất định là **thượng nguồn** (llama.cpp #7052 · #19981 · #27407).
+  ⛔ **Không còn đường nào ở tầng tham số** — đừng thử lại.
 * **`重庆`** còn sai 1/3 lượt dù nằm ngay trong ví dụ của luật.
 * Hai bài đỏ trong bộ `app:auto_scan_video` (`test_3300` metricx, `test_334`
   ngân sách) — ⚠️ **đã đỏ TRƯỚC** làn này (kiểm trên SHA `b9370220`), ⛔ không
@@ -602,6 +608,43 @@ là tốt nhất."*
 ⭐ Khớp `L_LLM_CONG.md` §4b (4 kết quả khác nhau / 5 lượt **có** seed). Hai phép
 đo **độc lập**, hai cấu hình khác nhau, **một kết luận**.
 
+### ✅ Cổng CÓ chuyển `seed` xuống engine — đo bằng HÀNH VI, ⛔ không đọc mã
+
+Mã cổng nằm trên **máy B** (`H:\LTT_LLM\gateway`), ⛔ không đọc được từ máy A.
+⇒ Đo bằng **hành vi**, và phép đo này dứt khoát:
+
+| gửi | kết quả |
+|---|---|
+| `seed = 7` (số nguyên) | ✅ HTTP 200 |
+| `seed = "khong-phai-so"` (chuỗi) | 🔑 **HTTP 400 `invalid_request`** |
+
+⇒ ⭐ **Một trường bị BỎ QUA ⛔ không thể sinh ra lỗi kiểu.** Việc `seed` sai kiểu
+bị **từ chối** chứng minh nó **đi tới một bộ kiểm** ở hạ nguồn — tức nó **thật
+sự được chuyển**, ⛔ không bị nuốt ở cổng.
+
+⇒ Đường của ta: `ai.goi` → `dieu_phoi.goi(them=)` → `CongVlm.chat` →
+`than_gui.update(them)` (`cong_vlm.py:341`) → thân request → cổng máy B.
+
+### 🔴 ⇒ Tính chất THƯỢNG NGUỒN, ⛔ không phải lỗ hổng của ta. **Đóng câu hỏi.**
+
+Cộng đồng `ggml-org/llama.cpp` đã ghi nhiều lần — **trích số issue**:
+
+| issue | tiêu đề | liên quan thế nào |
+|---|---|---|
+| **#7052** | *Non-deterministic output of the llama.cpp server when using multiple slots* | ⭐ **đúng ca của ta**: cổng chạy `-np 3` (nhiều slot) |
+| **#19981** | *LLM does not produce identical results with identical seed and prompt* | ⭐ đúng triệu chứng: **cùng seed, cùng prompt, khác kết quả** |
+| **#27407** | *spec: greedy output diverges from non-speculative baseline under batched verification on CUDA* | ⭐ cổng chạy **`--spec-type draft-mtp`** — giải mã suy đoán, đúng cơ chế issue này mô tả |
+| **#2838** | *CUDA non-determinism on identical requests* | nền: bất định ở tầng CUDA |
+
+> 🔑 **ĐÓNG VĨNH VIỄN — ⛔ phiên sau đừng đi lại.** `seed` **được chuyển và được
+> kiểm**, và lượt vẫn **đổi 12/12 đoạn**. ⇒ Bất định đến từ **thượng nguồn**
+> (nhiều slot + gộp lô liên tục + giải mã suy đoán), ⛔ **không** từ một núm ta
+> quên bật. **⛔ Không còn đường nào để thử ở tầng tham số.**
+>
+> ⚠️ Muốn tái lập thì phải **đổi CẤU HÌNH ENGINE** (`-np 1`, bỏ `--spec-type`) —
+> tức **đánh đổi thông lượng của cả máy B**, một quyết định ⛔ **không thuộc
+> làn này**. Hoặc **cache theo vân tay**, đúng như `L_LLM_CONG.md` §4b kết luận.
+
 > # 🔴 HỆ QUẢ, và nó đổi cách ta báo MỌI số dịch về sau
 >
 > **Đường dịch của ASV ⛔ KHÔNG tái lập được — ⛔ không núm nào đi qua đường sản
@@ -614,6 +657,10 @@ là tốt nhất."*
 > ⚠️ Chính tệp này đã suýt vi phạm: §7.1 ghi *"9/13"*, và ba lượt trên **cùng**
 > cấu hình cho **7 · 9 · 5**. Con số trung thực là **một khoảng**, ⛔ không phải
 > một điểm.
+
+⚠️ **Và nó chạm VÂN TAY/CACHE:** cùng đầu vào, cùng tham số, **khác đầu ra** ⇒
+vân tay khớp nhưng kết quả ⛔ không phải thứ lần trước sinh ra. ⛔ **Ghi lại,
+⛔ không sửa gì ở đó lúc này** (điều phối chốt).
 
 ⚠️ **⛔ Đừng suy ngược rằng vòng sửa vô hại.** Ta mới biết nó **ĐỔI** đoạn
 (92–100 %), ⛔ **chưa** biết đổi theo **hướng nào**. Phép cơ chế §4f (29 đoạn
