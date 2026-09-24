@@ -22,6 +22,11 @@ RETENTION_DAYS = 90
 LOAI = frozenset({
     "WorkflowStarted", "TriggerReceived", "NodeResumed", "WaitpointOpened",
     "WaitpointSignalled", "BudgetChecked", "SupervisorDecision",
+    # `AgentStep` — spec §12.3 khai NO cung hang voi `SupervisorDecision`
+    # ("Nhat ky quyet dinh ghi `workflow_event` `SupervisorDecision`/
+    # `AgentStep`"). Mot nua bang da co tu truoc; nua kia thieu cho toi khi
+    # `ai.agent` can no (plan P8 Task 2).
+    "AgentStep",
     "WorkflowCompleted", "WorkflowFailed", "WorkflowCancelled",
 })
 

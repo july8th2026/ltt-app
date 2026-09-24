@@ -21287,3 +21287,24 @@ msgstr "The goal is missing."
 
 msgid "Ngân sách không hợp lệ."
 msgstr "The budget is not valid."
+
+msgid "AI: Agent có giới hạn"
+msgstr "AI: Bounded agent"
+
+msgid "Agent tự chọn công cụ trong danh sách trắng. Mỗi lần gọi là một run con; cả lượt nằm trong MỘT ngân sách."
+msgstr "The agent picks tools from an allow-list. Every call is a child run; the whole turn sits inside ONE budget."
+
+msgid "Danh sách TRẮNG: loại node agent được gọi. Không nêu tức là cấm."
+msgstr "ALLOW-list: the node types the agent may call. Not listed means forbidden."
+
+msgid "JSON Schema cho ket_qua. Không khớp -> FAILED dau_ra_sai_luoc_do."
+msgstr "JSON Schema for ket_qua. A mismatch -> FAILED dau_ra_sai_luoc_do."
+
+msgid "Số lần gọi công cụ tối đa."
+msgstr "Maximum number of tool calls."
+
+msgid "Trần credit của CẢ lượt agent. Đây cũng là trần báo giá của node."
+msgstr "Credit ceiling for the WHOLE agent turn. It is also the node's quote ceiling."
+
+msgid "Việc agent phải hoàn thành."
+msgstr "The work the agent must complete."
