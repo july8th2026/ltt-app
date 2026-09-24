@@ -92,9 +92,33 @@ def test_trinh_soan_KHONG_con_loi_goi_CHAY_v2_nao(shell):
 
 
 def test_trinh_soan_CO_dung_duong_chay_v3(shell):
-    """🔑 Vế đối chứng: một `CanvasShell.tsx` rỗng cũng làm bài trên xanh."""
-    for ten in ("createRunV3", "loadRunV3", "cancelRunV3", "publishWorkflowV3"):
-        assert _goi(shell, ten) >= 1, f"thieu loi goi {ten}"
+    """🔑 Vế đối chứng: một `CanvasShell.tsx` rỗng cũng làm bài trên xanh.
+
+    🔴 SỬA 24/09: bản trước đòi đúng tên `loadRunV3`. Làn `p10`/`P9b` đổi cửa
+       ĐỌC từ vòng poll sang **SSE** (`theoDoiRunV3`, gọi ở `CanvasShell.tsx`),
+       nên cái tên cũ biến mất — trong khi **tính chất vẫn nguyên**: trình soạn
+       vẫn đọc run qua đường v3.
+
+    ⛔ Đó là chốt **CÁCH GÕ** thay vì chốt **tính chất** — đúng lớp lỗi phiên
+       ASV vừa gặp ở `test_480` cùng ngày. Một bánh cóc kiểu ấy đỏ khi người ta
+       làm đúng, và sự đỏ oan đẩy người ta đi nới nó.
+
+    ⭐ Nay hỏi đúng bốn **việc**, mỗi việc chấp nhận mọi cửa v3 làm được việc đó:
+       tạo run · ĐỌC run · huỷ run · publish.
+    """
+    viec = {
+        "tao run": ("createRunV3",),
+        "doc run": ("loadRunV3", "theoDoiRunV3"),   # poll HOAC SSE
+        "huy run": ("cancelRunV3",),
+        "publish": ("publishWorkflowV3",),
+    }
+    thieu = [v for v, tens in viec.items()
+             if not any(_goi(shell, t) >= 1 for t in tens)]
+    assert not thieu, f"trinh soan khong lam cac viec v3 nay: {thieu}"
+    # 🔑 Đối chứng của chính vế đối chứng: nếu `_goi` hỏng và luôn trả 0 thì
+    #    khẳng định trên đỏ; nếu nó luôn trả > 0 thì bài vô nghĩa. Chốt rằng
+    #    một tên KHÔNG hề có trong tệp phải đếm ra 0.
+    assert _goi(shell, "ham_khong_bao_gio_ton_tai_o_day") == 0
 
 
 def test_lop_khach_v3_van_GIU_ham_v2_cho_duong_khac(shell):
