@@ -247,6 +247,19 @@ duong = ["platform_core/models.py", "platform_core/db.py",
          "platform_core/nexus/"]
 he_trong = "nen"
 
+# 🔴 KHAI 24/09 (plan wf-v2 P7/T1): bo gac SSRF duoc RUT RA khoi
+#    `public_api/webhooks.py` de node `core.http` dung CHUNG mot ban. Khai
+#    RIENG mot thanh phan, khong nhet vao `core:nen`, vi hai ly do:
+#      - `he_trong = "an_ninh"` — cung muc voi `core:api_cong_khai`;
+#      - do thi phu thuoc (`thanh_phan.do_thi_phu_thuoc`) suy tu import THAT,
+#        nen mot thay doi o day tu keo theo CA `core:api_cong_khai` (webhooks)
+#        lan `core:wf_soan` (nut_loi/http.py) — dung cac nguoi tieu thu that,
+#        thay vi keo ca `core:nen`.
+[thanh_phan."core:an_toan_mang"]
+mo_ta = "Bo gac SSRF + client HTTP an toan. MOT nguon chan ly cho moi cuoc goi ra ma ben ngoai chon dich."
+duong = ["platform_core/an_toan_mang.py"]
+he_trong = "an_ninh"
+
 # --- server -----------------------------------------------------------------
 
 [thanh_phan."server:auth"]
