@@ -459,6 +459,8 @@ git commit -m "feat(asv/hop-dong): bon truong khai cho moi mat xich, may kiem I2
 
 ---
 
+> 🔴 **ĐÍNH CHÍNH Task 1 (25/09) — plan SAI, ⛔ không phải mã sai.** Dòng *„Modify `pipeline.py` (import + kiểm)“* đọc như *„`_kiem_tra_chuoi()` gọi `thieu_khai()`“*. ⛔ **Đừng làm thế.** Nối một **bộ phán xử** vào đường **nạp module** là tái tạo **N-08b**: phép tiêm chết trước khi tới chỗ phán xử, nên ta **mất khả năng đối chứng** chính nó — đúng lý do `test_3004` phải tách `vi_pham`/`bao_dong` thành hàm thuần. ⇒ `thieu_khai` **giữ test-facing**, và lý do đã khai trong `test_453.MO_COI_DA_BIET`.
+
 ## Task 2: Sổ mã lỗi chung (I3)
 
 **Files:**

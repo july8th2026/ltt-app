@@ -15,6 +15,8 @@
 > ⛔ **không còn tặng** cho bộ chấm phần sai vốn là của **chính FLORES**. Cùng bài học
 > với `N-24`: *hai con số từ hai tập khác nhau thì ⛔ không được đặt cạnh nhau.*
 >
+> 📌 **Nguồn của cột „cách CŨ“ là §14 ngay trong tệp này** (sàn lỗi FLORES, `n = 100`, đọc mù): §14.2 cho **10 % / 12 % / 23 %** tuỳ định nghĩa „lỗi“. ⇒ Một bộ chấm **hoàn hảo** đo bằng cách CŨ vẫn hiện **10–23 %** báo động giả, vì phần sai đó là của **chính FLORES**. (⚠️ §14 nằm ở tệp NÀY, ⛔ không phải `B2_KTC_VA_PHAN_QUYET.md` — bản đồ trỏ nhầm tệp một lần, 25/09.)
+>
 > ⇒ Mỗi bảng dưới đây mang **nhãn đơn vị** ngay trên nó. ⛔ Thêm bảng mới mà không dán
 > nhãn là tái lập đúng cái bẫy này.
 
@@ -566,6 +568,17 @@ doanh"* · `溪降` (*canyoning*) → *"chèo thuyền vượt thác"* · `离�
 V3:  bao dong gia do duoc  23,3 %
      san loi FLORES         10 %  (KTC 5,5 – 17,4 %)
   => bao dong gia THAT   ~ 13,3 %   (thay vi 11–19 % uoc tu mau n=25)
+```
+
+> 🔴 **CON SỐ 13,3 % Ở TRÊN ĐÃ BỊ THAY — ⛔ đừng trích nó làm số hiện hành.**
+>
+> Nó là một **phép trừ giữa hai ước lượng đo trên hai tập khác nhau** (báo động giả `n = 30`, dải 200–229 ↔ sàn `n = 100`, dải 500–899), và chính §14.3 giới hạn 3 đã nói trước điều đó. Khi đo **thẳng** trên `n = 100` đã soi mù (§17.1): gắn cờ **43**, lỗi thật **10**, bắt trúng **10** ⇒ **báo động giả THẬT = 33/100 = 33 %**.
+>
+> ⭐ Chỗ sai ⛔ **không** phải giả định *„bắt hết lỗi sẵn có“* — giả định đó hoá ra **đúng** (10/10). Chỗ sai là **số bị trừ**: `23,3 %` đo trên `n = 30` ở một vùng khác, còn `n = 100` cho **43 %**. ⇒ **Hai con số từ hai tập khác nhau thì ⛔ không được đặt cạnh nhau** — cùng bài học với `N-24`.
+>
+> ⇒ Số hiện hành của V3 là **33 %** (cách MỚI, trần hoàn hảo 0 %), và nó **TRƯỢT** cổng 15 %. ⛔ Không nới ngưỡng.
+
+```
 ```
 
 ⭐ Mẫu 25 ban đầu cho sàn **4%**; mẫu 100 cho **10%**. ⇒ ⛔ **Ước lượng cũ quá
