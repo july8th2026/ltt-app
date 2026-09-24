@@ -185,6 +185,10 @@ def chuan_hoa(thoi: dict, *, thoi_luong_nguon: float = 0.0,
         #    engine. Mot con so gop lai khong phan biet duoc hai ca do.
         "tu_bi_bo": {"khong_chu": bo_khong_chu, "thieu_moc": bo_thieu_moc,
                      "moc_nguoc": bo_moc_nguoc},
+        # 🔴 **Tham số engine đi CÙNG bản ghi.** Một bản chép lời không tái lập
+        #    được thì mọi con số đo trên nó — kể cả điểm DỊCH của B2 — cũng không
+        #    tái lập được. ⛔ Đừng để người sau phải đi đọc mã ở commit nào đó.
+        "tham_so_engine": dict((thoi or {}).get("tham_so") or {}),
         "doan": ra,
     }
     if dinh_tuyen:
@@ -292,6 +296,9 @@ def tom_tat(ban: dict) -> dict:
         # ⭐ Di len `outputs` cung `so_tu`: mot `so_tu` thap chi tra loi duoc
         #    *"vi sao thap"* khi no di kem so tu DA BI BO va ly do bo.
         "tu_bi_bo": dict(ban.get("tu_bi_bo") or {}),
+        # ⭐ Lên `outputs` để một lượt đo bất kỳ tái lập được đường chép lời đã
+        #    sinh ra số của nó. ⛔ Không rút gọn thành "đã ghim".
+        "tham_so_engine": dict(ban.get("tham_so_engine") or {}),
         "phu_song": round(
             sum(float(d["ket"]) - float(d["bat"]) for d in doan), 2),
     }

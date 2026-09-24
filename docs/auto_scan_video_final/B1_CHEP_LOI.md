@@ -620,3 +620,134 @@ lỗi** — không một ngoại lệ nào nổi lên, không một dòng log n�
 > ⛔ **Im lặng chỉ lộ khi ta có một con số đáng lẽ phải đổi.** ⇒ Mỗi bản vá cần
 > một **con số dự đoán trước**, và *"chạy xong, không thấy lỗi"* ⛔ **không phải**
 > một bằng chứng.
+
+---
+
+# 10. Chốt cổng phân đoạn — biên tách, vế ba, và ba khai báo
+
+## 10.1 ⛔ Vế 1 một mình **KHÔNG có biên tách nào**
+
+Trước khi nói về biên, phải sửa một giả định dễ mắc (điều phối cũng mắc khi ước
+lượng): sàn của tập xấu **không** phải 0,7273.
+
+```
+ta         tệ nhất : 0,9255   (v1)
+đối chứng tốt nhất : 1,0000   (gộp tất = 1 đoạn, trên phim 2)
+```
+
+⇒ Tập xấu **chạm 1,0000** và **trùm lên** cả tập tốt. ⛔ **Không tồn tại ngưỡng
+vế-1 nào** tách được tốt/xấu.
+
+⭐ Biên tách ở §10.2 tồn tại **chỉ vì vế 2 giết `gộp tất`**. Đó là lý do **cơ
+học** của luật *"đọc hai vế RIÊNG"* — và là lý do ⛔ đọc vế 1 một mình là sai.
+Ghim: `test_VE_1_MOT_MINH_khong_co_bien_tach_NAO`.
+
+## 10.2 Biên tách của **CẶP**, và lề của ca sát nhất
+
+Chỉ một cách cắt tồi sống sót vế 2 (băm 2,0 s: mẩu nào cũng ≤ 7 s), nên sàn là
+vế-1 tốt nhất **của riêng nó**:
+
+```
+sàn  = 0,7273   (băm 2,0 s trên phim 3 — ca xấu sống sót vế 2, tốt nhất)
+trần = 0,9255   (ta, phim 1 — ca tốt tệ nhất)
+
+BIÊN TÁCH của CẶP : (0,7273 … 0,9255]      rộng 0,1982
+```
+
+**Mọi ngưỡng trong biên đó cho CÙNG một phán quyết** (kiểm cơ học 1 982 điểm,
+bước 0,0001): ta ĐẠT 3/3, không một đối chứng tồi nào lọt. ⇒ Việc ta chọn
+**0,90** ⛔ **không đổi được gì** — và đó mới là lập luận, không phải *"tôi ghi
+trước khi đo"*.
+
+### ⚠️ Hai con số phải nói thẳng, ⛔ không để chìm trong bảng
+
+```
+lề của ca sát nhất :  v1  0,9255 − 0,90 = 0,0255
+vị trí của 0,90    :  87,1 % của biên  ⚠️ gần MÉP TRÊN, ⛔ không phải giữa
+```
+
+⚠️ **Một ngưỡng 0,93 sẽ làm phim 1 TRƯỢT.** Ta chọn 0,90 khi **đã biết** số của
+mình (0,9255–1,0000) từ lượt trước — nên nó được cứu bằng **biên độ**, ⛔ không
+bằng lời hứa. Ghim: `test_BIEN_TACH_cua_CAP_va_LE_cua_ca_SAT_NHAT`.
+
+## 10.3 Vế thứ ba: ⛔ **KHÔNG thêm** — và lý do quan trọng hơn kết luận
+
+⛔ Ta **không có gì** để đặt ngưỡng cho nó. *Bao nhiêu đoạn là "cắt quá ít"?*
+Không quy chuẩn nào nói, không phép đo nào của ta nói. ⇒ Thêm vế ba bây giờ là
+**tự bịa một con số** — đúng thứ đã bị từ chối ba lần trong ngày (§8.1 luật G1,
+§8.2 số câu, và chính `lech_doan`).
+
+⭐ Và cái lỗ đo được ở §9.3 là **hành vi không đường nào trong hệ ta thực hiện**:
+gộp tham lam tới sát trần 7 giây phải có người **cố ý viết mã** mới xảy ra.
+Chặn nó bây giờ là **mã phòng thủ cho ca không thể xảy ra** — mua sự yên tâm
+bằng tín dụng giả.
+
+⚠️ Thứ **có thể** xảy ra thật — phân đoạn **thô dần đi** vì ai đó "sửa" chỗ khác
+— **đã bị chặn**: khối 30 giây đỏ **3/3** ở vế 2.
+
+> ⇒ Câu đúng để viết, ⛔ không phải *"cặp này phủ hết"*:
+> **cặp này bắt cắt-giữa-câu (vế 1) và thô-hoá vượt 7 giây (vế 2); nó CỐ Ý không
+> bắt việc gộp trong khoảng ≤ 7 giây, vì việc đó chưa chứng minh được là có hại.**
+
+### ⛔ Điều kiện mở lại — viết ra NGAY, để sau này không cãi
+
+Khi `timing_align` được đo thật: **nếu độ trôi tương quan với độ dài đoạn**, thì
+vế ba được mở, với ngưỡng **suy ra từ chính phép đo đó**. ⛔ Trước đó, không mở,
+và ⛔ không mở bằng suy luận.
+
+## 10.4 Ghim tham số đường chép lời — ⭐ để B2 tái lập được
+
+Một bản chép lời **không tái lập được** thì mọi số đo trên nó — CER, phân đoạn,
+và **mọi điểm DỊCH của B2** — cũng không tái lập được.
+
+⇒ `whisperx_runner.py` nay khai `tham_so` **trong chính payload**, `ban_ghi` mang
+nó thành `tham_so_engine`, và `tom_tat` đẩy lên `outputs`:
+
+| trường | giá trị lượt 24/09 | nguồn |
+|---|---|---|
+| `phien_ban` | whisperx **3.8.6** | `importlib.metadata`, ⛔ không gõ tay |
+| `model_asr` · `batch_size` | `large-v3` · 8 | `giai_doan_chep_loi.MODEL_ASR` |
+| `chunk_size` | **30** | ⭐ `whisperx/asr.py:204`, **mặc định — ta KHÔNG khai**, và chính nó sinh ra khối ~30 s |
+| `ngon_ngu_do_bang` | `detect_language` | ⚠️ ASV gọi với `--language` rỗng |
+| `initial_prompt` | `以下是中文普通话句子。` | whisperX **#645** |
+| `model_can_chinh` | `jonatasgrosman/wav2vec2-large-xlsr-53-chinese-zh-cn` | `alignment.py:42` |
+
+⭐ Ghi **giá trị THẬT đã dùng** (đọc `inspect.signature`), ⛔ không phải giá trị
+mặc định ta *tưởng*.
+
+Bản xuất cho B2 mang khối `tham_so_tai_lap` với **xuất xứ khai thẳng**: nó được
+**dựng lại** từ mã + gói đã cài, ⛔ **không** do lượt chạy tự khai — lượt sinh ra
+các tệp đó chạy ở `edbcbd57`, trước khi có `tham_so_engine`.
+
+## 10.5 ⭐ Luật mới: **tác giả của một cổng phải tự tấn công nó trước**
+
+Phép thứ năm (§9.3) không ai yêu cầu, và nó là thứ tìm ra lỗ duy nhất của cặp
+thước. ⇒ Nâng thành luật:
+
+> ⛔ **Mỗi cổng ta chấp nhận, chính tác giả của nó phải dựng một đối thủ cố ý
+> khai thác giới hạn đã biết của nó, và báo kết quả — kể cả khi đối thủ đó
+> THẮNG.** Một cổng chưa bị chính tác giả tấn công là một cổng chưa được đo.
+
+## 10.6 PHÁN QUYẾT B1
+
+```
+CER                  3/3 ĐẠT   0,0434 · 0,0275 · 0,0526        (ngưỡng 0,12)
+vế 1 · chỗ ngắt      3/3 ĐẠT   0,9255 · 1,0000 · 0,9730        (ngưỡng 0,90)
+vế 2 · ≤ 7,0 s       3/3 ĐẠT   1,0000 · 1,0000 · 1,0000        (ngưỡng 1,00)
+đối chứng            gộp tất 0/3 · băm 2,0 s 0/3 · khối 30 s 0/3   — đỏ đúng chỗ
+```
+
+# ✅ **B1 ĐẠT** — kèm **BA khai báo bắt buộc**, ⛔ không được tách rời
+
+1. ⛔ **`lech_doan` bị BỎ vì HỎNG**, ⛔ **không** phải vì ta trượt nó: băm 2,0 s
+   **lọt** qua nó (0,1121 ✅) trong khi bản cắt theo câu **trượt** (0,3084 ⛔) —
+   cổng thưởng đúng hành vi ràng buộc cấm (§8.3).
+2. ⛔ **Cặp thay thế CỐ Ý không bắt cắt-quá-ít**, và có **lỗ đã đo**: gộp tham
+   lam tới sát 7 s làm bản cắt **thô hơn 40–55 %** mà vẫn qua **cả hai vế**
+   (§9.3). Lý do không vá: §10.3. Điều kiện mở lại: §10.3.
+3. ⚠️ **Ngưỡng vế 1 (0,90) do TA ĐẶT**, chọn khi đã biết số của mình; cứu bằng
+   biên tách **(0,7273 … 0,9255]** — lề của ca sát nhất là **0,0255**, và 0,90
+   nằm ở **87,1 %** của biên, tức **gần mép trên**. Ngưỡng vế 2 (1,00) đến từ
+   quy chuẩn công bố (Netflix TTSG **215758617**).
+
+> ⛔ **Không có ba dòng đó thì "B1 ĐẠT" là một câu nói dối bằng cách bỏ sót.**

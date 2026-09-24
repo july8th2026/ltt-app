@@ -531,3 +531,82 @@ def test_CAP_khong_tra_ve_mot_diem_TONG_HOP():
     so = [k for k, v in kq.items() if isinstance(v, (int, float))
           and not isinstance(v, bool)]
     assert so == [], f"⛔ xuất hiện một điểm tổng hợp: {so}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# BIÊN TÁCH — ⭐ lập luận cứu một ngưỡng TA TỰ ĐẶT, và nó là BIÊN ĐỘ, không
+# phải lời hứa "tôi ghi trước khi đo".
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: Đo thật 24/09 — vế 1 của ba phim, và của ba cách cắt tồi trên ba phim.
+VE1_TA = (0.9255, 1.0000, 0.9730)
+#: (nhãn, vế 1, vế 2) — ⚠️ `gop1` trên v2 đạt **1,0000** ở vế 1.
+VE1_XAU = (("gop1 v1", 0.5000, 0.0), ("gop1 v2", 1.0000, 0.0),
+           ("gop1 v3", 0.5000, 0.0),
+           ("bam2s v1", 0.3582, 1.0), ("bam2s v2", 0.3750, 1.0),
+           ("bam2s v3", 0.7273, 1.0),
+           ("khoi30s v1", 0.4000, 0.0), ("khoi30s v2", 0.3750, 0.0),
+           ("khoi30s v3", 0.6000, 0.0))
+
+
+def test_VE_1_MOT_MINH_khong_co_bien_tach_NAO():
+    """🔴 **Tập xấu chạm 1,0000 ở vế 1** (`gop1` trên v2) — trùm lên cả tập tốt.
+
+    ⇒ ⛔ Không tồn tại ngưỡng vế-1 nào tách được tốt/xấu. Biên tách ở bài dưới
+      tồn tại **chỉ vì vế 2 giết `gop1`**. ⭐ Đó là lý do cơ học của luật *"đọc
+      hai vế RIÊNG"*, và lý do ⛔ đọc vế 1 một mình là sai.
+    """
+    assert max(v1 for _, v1, _ in VE1_XAU) >= max(VE1_TA)
+
+
+def test_BIEN_TACH_cua_CAP_va_LE_cua_ca_SAT_NHAT():
+    """Ngưỡng vế 1 **ta tự đặt** ⇒ phải chứng minh bằng **biên độ**.
+
+    ```
+    biên tách của CẶP : (0,7273 … 0,9255]   rộng 0,1982
+    ngưỡng đã chọn    : 0,90  ->  87,1 % của biên (⚠️ gần MÉP TRÊN, không phải giữa)
+    lề của ca sát nhất: v1 = 0,9255 - 0,90 = 0,0255
+    ```
+
+    ⚠️ **Một ngưỡng 0,93 sẽ làm v1 TRƯỢT.** Người đọc phải thấy điều đó, ⛔ không
+       để nó chìm trong bảng.
+    """
+    from tools import bench_b1_chep_loi as b
+
+    def cap_dat(tau):
+        ta = all(v1 >= tau for v1 in VE1_TA)            # vế 2 của ta = 1,0 cả ba
+        xau = [ten for ten, v1, v2 in VE1_XAU if v1 >= tau and v2 >= 1.0]
+        return ta, tuple(xau)
+
+    goc = cap_dat(b.NGUONG_CHINH_XAC_CHO_NGAT)
+    assert goc == (True, ()), f"phán quyết tại ngưỡng hiện hành đã đổi: {goc}"
+
+    day = max(v1 for _, v1, v2 in VE1_XAU if v2 >= 1.0)   # chỉ ca sống sót vế 2
+    tran = min(VE1_TA)
+    assert (day, tran) == (0.7273, 0.9255)
+    assert day < b.NGUONG_CHINH_XAC_CHO_NGAT <= tran, "⛔ ngưỡng ra ngoài biên tách"
+    # Phán quyết KHÔNG đổi trên toàn biên ⇒ việc ta chọn 0,90 không đổi được gì.
+    for i in range(1, 1983):
+        assert cap_dat(round(day + i / 10000, 4)) == goc
+
+    le = round(tran - b.NGUONG_CHINH_XAC_CHO_NGAT, 4)
+    assert le == 0.0255, f"lề của v1 đã đổi: {le}"
+    vi_tri = (b.NGUONG_CHINH_XAC_CHO_NGAT - day) / (tran - day)
+    assert vi_tri > 0.8, "⚠️ 0,90 nằm gần MÉP TRÊN của biên — khai ra, đừng giấu"
+
+
+def test_tham_so_engine_di_CUNG_ban_ghi_chu_khong_nam_trong_ma():
+    """⛔ Một bản chép lời không tái lập được thì mọi số đo trên nó cũng vậy.
+
+    Kể cả điểm **DỊCH** mà B2 sẽ đo — nên tham số phải ra tận `outputs`.
+    """
+    from apps.auto_scan_video import ban_ghi
+
+    tho = {"segments": [{"start": 0.0, "end": 2.0, "text": "你好",
+                         "words": [{"start": 0.0, "end": 2.0, "word": "你好"}]}],
+           "language": "zh", "engine": "whisperx", "alignment_status": "aligned",
+           "tham_so": {"model_asr": "large-v3", "chunk_size": 30,
+                       "initial_prompt": "x", "model_can_chinh": "y"}}
+    ban = ban_ghi.chuan_hoa(tho, thoi_luong_nguon=2.0)
+    assert ban["tham_so_engine"]["chunk_size"] == 30
+    assert ban_ghi.tom_tat(ban)["tham_so_engine"]["model_asr"] == "large-v3"

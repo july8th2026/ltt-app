@@ -32,6 +32,7 @@ ca ban chep di theo. `asr.py:47-50` nap prompt do vao `all_tokens`, va
 from __future__ import annotations
 
 import argparse
+import inspect
 import json
 
 
@@ -41,6 +42,16 @@ MAU_CO_DAU_CAU = {
     "zh": "以下是中文普通话句子。",
     "ja": "以下は日本語の文章です。",
 }
+
+
+def _phien_ban_whisperx() -> str:
+    """Phiên bản gói THẬT đang chạy. ⛔ Đừng gõ lại một con số vào mã."""
+    try:
+        from importlib.metadata import version
+
+        return str(version("whisperx"))
+    except Exception:                           # noqa: BLE001
+        return ""
 
 
 def main() -> int:
@@ -80,9 +91,48 @@ def main() -> int:
     align_model, metadata = whisperx.load_align_model(language_code=language, device=device)
     aligned = whisperx.align(raw["segments"], align_model, metadata, audio, device,
                              return_char_alignments=False)
+    # 🔴 **GHIM THAM SỐ — ⛔ không phải log, là một phần của BẢN GHI.**
+    #
+    #    Một bản chép lời **không tái lập được** thì mọi con số đo trên nó — CER,
+    #    phân đoạn, và mọi điểm DỊCH mà B2 sẽ đo — cũng không tái lập được. Nên
+    #    các tham số quyết định đầu ra phải đi **cùng** đầu ra, ⛔ không nằm rải
+    #    rác trong mã mà người đọc phải đi tìm.
+    #
+    # ⭐ Ghi **giá trị THẬT đã dùng**, ⛔ không phải giá trị mặc định ta tưởng:
+    #    `chunk_size` không được khai ở đây nên nó là mặc định của
+    #    `FasterWhisperPipeline.transcribe` (`whisperx/asr.py:204  chunk_size=30`)
+    #    — và chính con số đó là thứ đã sinh ra khối ~30 giây.
+    import whisperx.asr as _asr
+    from whisperx.alignment import DEFAULT_ALIGN_MODELS_HF, DEFAULT_ALIGN_MODELS_TORCH
+
+    try:
+        _ck = inspect.signature(
+            _asr.FasterWhisperPipeline.transcribe).parameters["chunk_size"].default
+    except Exception:                           # noqa: BLE001
+        _ck = None                              # ⛔ không đoán: thiếu thì khai thiếu
+    # ⭐ Giá trị ở đây là **MÃ**, ⛔ không phải câu văn: chúng đi vào một bản ghi
+    #    JSON để máy `grep` và để đối chiếu giữa các lượt, không hiện ra cho
+    #    khách. (Và runner này chạy bằng trình thông dịch sidecar, nơi
+    #    `platform_core.i18n` không nhập được.)
+    #      whisperx_mac_dinh_ta_khong_khai  `chunk_size` là mặc định của gói
+    #      tham_so | detect_language        ngôn ngữ đến từ đâu
+    #      whisperx_issue_645               nguồn của `initial_prompt`
+    tham_so = {
+        "engine": "whisperx", "phien_ban": _phien_ban_whisperx(),
+        "model_asr": args.model, "batch_size": 8,
+        "chunk_size": _ck, "chunk_size_nguon": "whisperx_mac_dinh_ta_khong_khai",
+        "ngon_ngu_yeu_cau": args.language or "", "ngon_ngu_dung": language,
+        "ngon_ngu_do_bang": "tham_so" if args.language else "detect_language",
+        "initial_prompt": mau or "",
+        "initial_prompt_nguon": ("whisperx_issue_645" if mau
+                                 else "khong_ap_ngon_ngu_co_dau_cach"),
+        "model_can_chinh": (DEFAULT_ALIGN_MODELS_HF.get(language[:2])
+                            or DEFAULT_ALIGN_MODELS_TORCH.get(language[:2]) or ""),
+        "return_char_alignments": False,
+    }
     payload = {"segments": aligned.get("segments") or [], "language": language,
                "engine": "whisperx", "alignment_status": "aligned",
-               "fallback_reason": ""}
+               "fallback_reason": "", "tham_so": tham_so}
     with open(args.output, "w", encoding="utf-8") as handle:
         json.dump(payload, handle, ensure_ascii=False, allow_nan=False)
     return 0
