@@ -169,6 +169,43 @@ mọi bản dịch cũ tự vô hiệu).
 ⚠️ Và đây là **n = 3 tên riêng trên 3 phim** — ⛔ đủ để nói *"đã sửa ca đã biết"*,
 ⛔ **không** đủ để nói *"phiên Hán-Việt đã đúng"*.
 
+### 🔴 Thử nới n, và phép tra **bác lại một dấu ✅ ở bảng trên**
+
+Nguồn đã tra: **Unihan** (Unicode Consortium, `Unihan_Readings.txt`, trường
+`kVietnamese`) — một nguồn **công bố**, 8 306 ký tự có âm.
+
+⛔ **Không dùng được làm người chấm**, hai lý do đo được:
+
+| | |
+|---|---|
+| **thiếu chữ giản thể** | 张 · 伟 · 陈 · 刘 · 杨 · 赵 · 吴 đều **không có** entry (7/17 ký tự thử). Phim khách là văn **giản thể** |
+| **âm lệch khỏi lối dùng trong TÊN** | 美 → *"mỉ"* (tên dùng **Mỹ**) · 子 → *"tí"* (光子 dùng **Tử**) |
+
+⇒ Theo đúng luật đã đặt: ⛔ **không tự chế danh sách rồi tự chấm**. **n = 3, và
+dừng ở đó.**
+
+### ⚠️ Nhưng phép tra đó **bác một dấu ✅ của chính tôi**
+
+Unihan cho `盛` → **`thịnh`**, ⛔ **không phải** *"thành"* (*thành* là âm của
+成/城). ⇒ `李宗盛` ra **"Lý Tông Thành"** ở **cả** v1 **và** v3 nhiều khả năng
+**SAI** — và tôi đã chấm nó ✅ **hai lần**, bằng mắt, vì nó *trông* như một tên
+Việt hợp lý.
+
+⇒ **Bảng trên phải đọc lại**: cột v3 chứng minh *"không hồi quy so với v1"* và
+*"nhất quán"*, ⛔ **không** chứng minh *"đúng chuẩn Hán-Việt"*. Con số trung
+thực là:
+
+```
+3/3 NHẤT QUÁN và KHÔNG HỒI QUY          ✅ đo được
+?/3 ĐÚNG CHUẨN Hán-Việt                 ⛔ KHÔNG đo được — không có người chấm
+   (và `李宗盛` đang bị NGHI, không được tính là đúng)
+```
+
+⭐ Bài học, và nó đắt: **tôi tự chấm bản dịch của chính tôi.** Hai lượt liền
+`李宗盛` ra *"Thành"* và tôi ghi ✅ cả hai lần — ⛔ một dấu ✅ do người tạo ra kết
+quả tự đặt không phải một phép đo. Chính vì thế điều phối đòi **nguồn tra được**,
+và chính vì thế *"không tra ra nguồn ⇒ khai n = 3 và dừng"* là luật đúng.
+
 ## 4d. ⭐ Hỏng tụ ở THUẬT NGỮ ⇒ trỏ tới BẢNG TỪ, ⛔ không phải đổi model
 
 Phát hiện đáng giá nhất của lượt này, và nó phải đứng **trước** khi ai kịp đề
@@ -186,6 +223,27 @@ miền** (game · ẩm thực vùng · dã ngoại) bơm vào lời nhắc, ⛔ 
 ⚠️ Và đổi model còn **đắt hơn**: `ltt-3.8` là ~4× token vào và ~20× token ra
 (`platform_core/llm/gia_token.BANG_GIA`) — trả gấp bội cho một thứ nó **cũng
 không biết**.
+
+### Các đường đi khả dĩ, kèm GIÁ — ⛔ tôi không chọn, đây là quyết định sản phẩm
+
+⚠️ Bảng từ cho **ba phim này** ⛔ không trả lời được cho **phim khách đưa lên**:
+ta không biết trước khách dịch phim game, ẩm thực hay tài liệu.
+
+| đường | cách làm | giá phải trả | hỏng thế nào |
+|---|---|---|---|
+| **A · khách tự nạp bảng từ** | ô nhập "thuật ngữ riêng" trước khi chạy | ⛔ **công của khách**, và khách thường **không biết trước** phim mình có thuật ngữ gì; thêm một bước rời bỏ ở phễu | khách để trống ⇒ **không có gì đổi**, ta quay lại đúng hiện trạng |
+| **B · model TỰ KHAI chỗ nó không chắc** | thêm một trường `khong_chac: [ma]` vào lược đồ dịch | +token mỗi lô; ⚠️ và **độ tự tin của model là một thứ chưa đo** — nó có thể tự tin ở đúng chỗ nó sai | ⛔ nếu model không biết mình không biết thì trường này **rỗng đều**, và ta trả tiền cho một cột trống |
+| **C · bảng theo LĨNH VỰC, khách chọn** | 3–5 bảng dựng sẵn (game · ẩm thực · dã ngoại · tài liệu) | ⛔ **công của ta** để dựng và **nuôi** từng bảng; phim lai lĩnh vực thì chọn sai bảng | chọn nhầm lĩnh vực ⇒ bơm thuật ngữ **sai miền** vào lời nhắc, ⚠️ có thể **tệ hơn** không có bảng |
+| **D · rút bảng từ TỪ CHÍNH PHIM** | một lượt LLM đọc toàn bộ bản chép lời, liệt kê thuật ngữ + đề xuất cách dịch, rồi bơm vào lời nhắc dịch | +1 lượt gọi mỗi phim (≈ 1/5 chi phí dịch); ⛔ **không có người chấm** cho bảng nó rút ra | bảng rút sai ⇒ **ghim sai** một thuật ngữ cho **toàn phim**, ⚠️ tệ hơn sai lẻ tẻ |
+| **E · không làm gì** | giữ nguyên | 0 | hỏng thuật ngữ ở lại đúng mức hôm nay (§4d) |
+
+⛔ **Tôi không khuyến nghị đường nào** — điều phối mang tới chủ dự án. Ba điều đã
+**đo được** và cần nằm cạnh lựa chọn:
+
+1. hỏng **tụ ở thuật ngữ + lóng**, văn tường thuật trôi chảy;
+2. ⛔ đổi model **không** sửa được lớp hỏng này, và đắt ~4× vào / ~20× ra;
+3. ⛔ ta **chưa có** người chấm nào cho bản dịch — nên mọi đường trên, sau khi
+   làm, ⛔ **vẫn chưa đo được là có giúp không**. Đó là ràng buộc nặng nhất.
 
 ## 4e. ⚠️ Tách lỗi ASR khỏi lỗi dịch — và một giới hạn của CER
 
