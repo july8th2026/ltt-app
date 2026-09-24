@@ -165,6 +165,36 @@ if (-not $coCsdl) {
 $env:LTT_TEST_NANG   = '1'
 $env:LTT_ASV_E2E_RA  = $BaoCao
 
+# !! TIEN TRINH CON DEMUCS PHAI DUNG VENV SAN PHAM, KHONG DUNG TRINH CHAY PYTEST.
+#
+#    `Tim-Python` o tren co Y bo venv san pham vi no khong cai pytest. Nhung
+#    cau do moi dung MOT NUA: trinh ma no roi xuong (Programs\Python\Python313)
+#    co `torch 2.11.0+cpu`, `cuda False`. Nen moi giai doan can card chet ngay:
+#
+#      asv_gpu.audio_prepare  2,29 s  ThieuCard: Nen tang da cap card nhung
+#                                     tien trinh tach khong thay GPU.
+#
+#    Do that 25/09: ca luot chet o giai doan 2 sau 39 giay, 10 giai doan duoi
+#    ket o `pending`, khong co tep ra. Dung su co ma `tach_tieng.py` da mo ta.
+#
+# => Tach hai vai ra, thay vi di tim mot trinh lam duoc ca hai (khong co):
+#      pytest  -> can pytest, KHONG can torch  -> trinh test
+#      demucs  -> can torch+CUDA, KHONG can pytest -> venv SAN PHAM
+#    `LTT_ASV_PYTHON_TACH` la cua ghi de da co san trong
+#    `apps/auto_scan_video/tach_tieng.py` (BIEN_PYTHON_TACH) - o day chi NOI no
+#    vao khuon nghiem thu. Khong cai them goi nao, khong cham venv nao.
+#
+# !! KHONG ghi de neu nguoi chay da dat san: ho co the dang tro toi mot venv khac.
+if (-not $env:LTT_ASV_PYTHON_TACH) {
+    $pyTach = Join-Path $Root 'venv\Scripts\python.exe'
+    if (Test-Path $pyTach) {
+        $env:LTT_ASV_PYTHON_TACH = $pyTach
+        Write-Host "  [OK] demucs se chay bang venv san pham: $pyTach" -ForegroundColor Green
+    } else {
+        Write-Host "  [!!] Khong thay $pyTach - demucs se dung trinh chay pytest, va neu trinh do la ban +cpu thi giai doan tach SE HONG." -ForegroundColor Yellow
+    }
+}
+
 if ($NghiemThuCuoi) {
     $env:LTT_ASV_NT_CUOI = '1'
     if ($RaLuot) { $env:LTT_ASV_NT_RA = $RaLuot }
