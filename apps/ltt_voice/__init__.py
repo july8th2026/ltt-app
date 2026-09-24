@@ -60,6 +60,14 @@ BE_MAT_CONG_KHAI = {
     #    `apps/auto_scan_video/ngon_ngu._kiem` doc no de mot dich khong co
     #    lan giong la loi luc import, khong phai mot lan chay hong o GIONG.
     ("apps.ltt_voice.lan_ngon_ngu", "LAN_HOP_LE"),
+    # 🔑 Hai MA LOI cong khai (24/09). Man mot lan chay cua Auto Scan bat loi
+    #    **THEO MA** (`auto_scan_video/ma_loi.py` -> `quan_sat.LOI_CO_MA`), dung
+    #    vai ma hai hang so nay sinh ra cho: *"khach bat loi theo ma, khong theo
+    #    cau chu"*. Xuat MA ra thay vi de ben do go lai chuoi, vi mot ma go lai la
+    #    ban thu hai cua cung mot ma va no se lech im lang khi ta doi ten.
+    # ⛔ Chi MA: `PhanQuyet`/phep quyet dinh lan giong van thuoc app nay.
+    ("apps.ltt_voice.lan_ngon_ngu", "MA_LOI_LECH_LAN"),
+    ("apps.ltt_voice.lan_ngon_ngu", "MA_LOI_LAN_KHONG_RO"),
     ("apps.ltt_voice.giong_mau", "loc"),
     ("apps.ltt_voice.giong_mau", "tim"),
     ("apps.ltt_voice.giong_mau", "hop_le"),
