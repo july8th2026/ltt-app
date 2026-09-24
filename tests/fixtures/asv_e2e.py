@@ -1312,3 +1312,61 @@ def ghim_python_co_card(monkeypatch) -> dict:
                          "`ctranslate2.get_cuda_device_count()` = 1. Phai doc "
                          "tu chinh lan chay, khong suy ra tu day."),
     }
+
+
+def bang_vong_sua(db, run) -> dict:
+    """Bang BON DONG cua vong sua: `dich_sai`/`doc_sai`/`khong_vua` + tong,
+    o **HAI DAU** vong (`sua_chua` truoc, `sua_chua_con_lai` sau).
+
+    🔴 **Vi sao phai dem o HAI dau.** Mot phep dem o mot dau chi noi duoc *"con 44
+       muc sai"* — mot van de chat luong. Hai dau moi noi duoc *"vong sua co giam
+       khiem khuyet khong"* — mot phat bieu ve BAN CHAT vong sua. Cung mot du lieu,
+       hai cau hoi khac nhau ve suc nang.
+
+    ⭐ Do luot B 24/09: **85 -> 85** (`dich_sai` 60->44, `doc_sai` 10->14,
+       `khong_vua` 15->27). Tong khong doi ⇒ vong sua **di chuyen** khiem khuyet
+       chu khong giam. Neu dung, nang `VONG_SUA_TOI_DA` len 2-3 chi them tien va
+       them thoi gian.
+
+    ⛔ **Nhung do la n=1.** Mot tong bang nhau tren MOT phim, MOT luot co the la
+       trung hop. Ham nay ton tai de A/C/D/E in cung bang do: bang nhau o 3-4 luot
+       thi la ket luan, mot luot giam that thi gia thuyet SAI va phai biet ngay.
+    """
+    from collections import Counter
+
+    from apps.auto_scan_video import su_dung as su_dung_mod
+
+    def dem(nang_luc: str) -> dict:
+        kk: list = []
+        for d in su_dung_mod.cac_dong(db, run):
+            if d.nang_luc != nang_luc:
+                continue
+            kk += list((d.ghi_chu or {}).get("khiem_khuyet") or [])
+        c = Counter(str(k.get("loai") or "?") for k in kk)
+        return {"dich_sai": c.get("dich_sai", 0), "doc_sai": c.get("doc_sai", 0),
+                "khong_vua": c.get("khong_vua", 0),
+                "cat_sai": c.get("cat_sai", 0), "hinh_hong": c.get("hinh_hong", 0),
+                "tong": len(kk)}
+
+    truoc, sau = dem("sua_chua"), dem("sua_chua_con_lai")
+    co_ca_hai = bool(truoc["tong"]) and bool(sau["tong"])
+    return {
+        "truoc_sua": truoc,
+        "sau_sua": sau,
+        # ⛔ MOT PHAN QUYET, khong de nguoi doc tu tru hai bang (cung bai hoc
+        #    `khai_card`): "tong khong doi" la cau tra loi, khong phai hai con so.
+        "tong_co_giam": (sau["tong"] < truoc["tong"]) if co_ca_hai else None,
+        "cau_khai": (
+            "khong co vong sua nao chay (khong co dong `sua_chua`)"
+            if not truoc["tong"] else
+            "vong sua chay va KHONG con muc dang tin nao"
+            if not sau["tong"] else
+            f"tong {truoc['tong']} -> {sau['tong']}: "
+            + ("GIAM" if sau["tong"] < truoc["tong"]
+               else "KHONG DOI" if sau["tong"] == truoc["tong"] else "TANG")
+            + " ⇒ vong sua "
+            + ("giam khiem khuyet" if sau["tong"] < truoc["tong"]
+               else "DI CHUYEN khiem khuyet chu khong giam")),
+        "n_bang_1": ("⛔ Mot luot khong ket luan duoc ve ban chat vong sua. "
+                     "Doi chieu voi bang cua cac luot khac."),
+    }

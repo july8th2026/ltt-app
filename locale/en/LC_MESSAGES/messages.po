@@ -21141,3 +21141,27 @@ msgstr "Run manually"
 
 msgid "Người dùng bấm chạy. Không có lịch, không có webhook."
 msgstr "The user clicks Run. No schedule, no webhook."
+
+msgid "Kiểm kỹ thuật tự động (hình, tiếng, thời lượng)"
+msgstr "Automated technical checks (video, audio, duration)"
+
+msgid "Soát nghĩa bản dịch"
+msgstr "Translation meaning review"
+
+msgid "%(a)s/%(b)s câu bị chấm là dịch chưa sát"
+msgstr "%(a)s of %(b)s lines flagged as not faithful to the source"
+
+msgid "không câu nào bị chấm"
+msgstr "no lines flagged"
+
+msgid "Còn chưa sửa"
+msgstr "Still unfixed"
+
+msgid "%(n)s mục"
+msgstr "%(n)s items"
+
+msgid "Hệ thống đã tự sửa một vòng rồi giao bản này; các mục trên vẫn còn."
+msgstr "The system ran one automatic repair pass and then delivered this version; the items above remain."
+
+msgid "%(n)s đoạn đọc còn chưa khớp lời ở lần đo cuối."
+msgstr "%(n)s segments still did not match the script at the final measurement."

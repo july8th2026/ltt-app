@@ -457,3 +457,69 @@ def test_MOI_cho_ghep_nhan_vao_duong_dan_deu_qua_ten_an_toan():
     assert not xau, (
         "ghep `nhan` vao duong dan ma khong qua `_ten_an_toan`:\n  "
         + "\n  ".join(xau))
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §5. N-02/N-03 — mot nhan khong duoc noi rong hon phep do, va thu DA DO
+#      thi phai hien cho khach
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_co_QC_ky_thuat_khong_duoc_mang_ten_rong():
+    """⛔ `qc_dat` da thanh `qc_ky_thuat_dat`, va khong duoc quay lai.
+
+    🔴 T1..T18 chi do KY THUAT (thoi luong, luong, MD5, dinh dBTP, khung den,
+       VMAF) — khong doc mot chu nao ve NGHIA ban dich. Nhung `jobs.py` vien dan
+       chinh co nay lam ly le giao hang khi het vong sua (*"de QC lam cong gac"*).
+       Mot cai ten rong lam cau do doc nhu that. Dung ho `f4c4f064`.
+    """
+    from apps.auto_scan_video import qc as qc_mod
+
+    tt = qc_mod.tom_tat({"dat": True, "so_muc_hong": 0, "muc_hong": [],
+                         "phien_ban": 4})
+    assert "qc_ky_thuat_dat" in tt
+    assert "qc_dat" not in tt, (
+        "`qc_dat` quay lai — mot cai ten rong tren mot phep do hep")
+
+
+def test_bang_chung_cho_KHACH_phai_hien_so_NGU_NGHIA_va_so_CON_LAI():
+    """⛔ N-03: he thong DA do 44/95 va 85 muc con lai roi khong hien.
+
+    Chot bang AST tren `bang_chung_chat_luong`: no phai doc `pipeline.QC_AI` va
+    `sua_chua_con_lai`. Mot phep kiem dung du lieu gia se xanh ca khi ham do
+    duoc cho mot `outputs` rong, nen cai duoc chot o day la **duong day**.
+    """
+    import ast
+    import inspect
+
+    from apps.auto_scan_video import quan_sat
+
+    nguon = inspect.getsource(quan_sat.bang_chung_chat_luong)
+    ten = {n.attr for n in ast.walk(ast.parse(nguon.lstrip()))
+           if isinstance(n, ast.Attribute)}
+    assert "QC_AI" in ten, "khong doc giai doan `qc_ai` — so 44 van vo hinh"
+    assert "sua_chua_con_lai" in nguon, (
+        "khong doc so cai `sua_chua_con_lai` — so 85 van vo hinh")
+    hang = {n.value for n in ast.walk(ast.parse(nguon.lstrip()))
+            if isinstance(n, ast.Constant) and isinstance(n.value, str)}
+    assert {"so_khong_dat", "ngu_nghia", "con_lai"} <= hang, sorted(
+        h for h in hang if len(h) < 30)
+
+
+def test_man_hinh_KHACH_khong_con_cau_noi_SAI_ve_doan_doc_lai():
+    """⛔ Cau cu: *"N doan DA DUOC DOC LAI vi chua khop loi"*.
+
+    Sai, va sai ve phia co loi cho ta: `so_giong_khong_dat` la so doan VAN CHUA
+    KHOP o lan do CUOI — tuc sau khi da doc lai. Do that luot B: 14 doan, vong
+    sua da chay.
+    """
+    from pathlib import Path
+
+    from apps.auto_scan_video import quan_sat
+
+    tep = (Path(quan_sat.__file__).parent / "templates" / "asv_chi_tiet.html")
+    van = tep.read_text(encoding="utf-8")
+    assert "đã được đọc lại vì chưa khớp lời" not in van
+    assert "chưa khớp lời ở lần đo cuối" in van
+    # Va hai con so moi phai co mat tren man hinh, khong chi trong `outputs`.
+    assert "bang_chung.ngu_nghia" in van
+    assert "bang_chung.con_lai" in van

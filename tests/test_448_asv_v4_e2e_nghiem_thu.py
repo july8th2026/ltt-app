@@ -566,6 +566,9 @@ def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
         # 🔑 CARD CO DUOC CAP KHONG. Khong co dong nay thi moi con so giay o tren
         #    khong tra loi duoc cau hoi dau tien nguoi doc hoi ve hieu nang.
         "card": fx.khai_card(nhat_ky),
+        # 🔑 Bang BON DONG o HAI DAU vong sua (N-02). Mot dau chi noi "con N muc
+        #    sai"; hai dau moi noi "vong sua co giam khiem khuyet khong".
+        "vong_sua": fx.bang_vong_sua(db, run),
         "asr": {"ngon_ngu": bg.get("ngon_ngu") or bg.get("language") or "",
                 "so_doan": len(bg.get("doan") or bg.get("segments") or []),
                 "van": [str(d.get("chu") or d.get("text") or "")

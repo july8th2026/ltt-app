@@ -197,7 +197,7 @@ def test_lan_chay_that_QUA_duoc_cong(run_xong, db):
     assert features.lay_run(db, run_xong.id, "uA").status == RUN_DONE
     s = features.giai_doan_theo_ten(db, run_xong.id, pipeline.QC)
     assert s.status == STAGE_SUCCEEDED
-    assert (s.outputs or {}).get("qc_dat") is True
+    assert (s.outputs or {}).get("qc_ky_thuat_dat") is True
 
 
 def test_QC_hong_thi_RUN_KHONG_ve_done(db, kho_tam, tmp_path, asr_gia,
