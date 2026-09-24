@@ -339,25 +339,42 @@ def test_khong_co_hai_migration_trung_revision_id():
 
 
 def test_do_thi_migration_chi_co_MOT_head():
-    """Hai head nghĩa là hai nhánh schema song song: `upgrade head` sẽ không
-    biết đi đâu, và hai máy chủ có thể chạy hai lược đồ khác nhau."""
-    import re
-    from pathlib import Path
+    """Hai head nghia la hai nhanh schema song song: `upgrade head` se khong
+    biet di dau, va hai may chu co the chay hai luoc do khac nhau.
 
-    root = Path(__file__).resolve().parent.parent / "alembic" / "versions"
-    # RHS co the la mot chuoi, None, hoac mot tuple nhieu chuoi (revision MERGE
-    # noi hai head, vd `down_revision = ("a", "b")`).
-    down = re.compile(r"^down_revision(?::[^=]+)?\s*=\s*(.+)$", re.M)
-    id_re = re.compile(r"['\"]([^'\"]+)['\"]")
-    tat_ca = set(_revision_ids())
-    da_bi_tro_toi = set()
-    for path in root.glob("*.py"):
-        for match in down.finditer(path.read_text(encoding="utf-8")):
-            for m2 in id_re.finditer(match.group(1)):
-                da_bi_tro_toi.add(m2.group(1))
+    🔴 SUA 24/09: ban truoc tu dung do thi bang REGEX. Hom nay regex bat du
+       111/111 tep — tuc no dung vi MAY, khong vi dung. Mot tep viet chu thich
+       kieu khac (`revision: Union[str, None] = ...`) se bi bo sot, va vi
+       `heads = tat_ca - da_bi_tro_toi`, mot revision bi bo sot lam **BIEN MAT
+       mot head that** ⇒ banh coc xanh trong khi `alembic upgrade head` chet.
+       Sai ve phia hanh dong.
 
-    heads = tat_ca - da_bi_tro_toi
-    assert len(heads) == 1, f"phai co dung mot head, dang co: {sorted(heads)}"
+    ⛔ Cung bat bien nay con o `test_560::test_chuoi_migration_chi_co_MOT_dau`,
+       va ban REGEX o day tung bao "3 dau" trong khi `alembic heads` in MOT.
+       Hai cai dem khac nhau cho cung mot cau hoi thi ca hai deu mat tin. Nay
+       ca hai hoi **alembic** — thu ma may chu cung hoi.
+    """
+    import pathlib
+
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+
+    goc = pathlib.Path(__file__).resolve().parent.parent
+    scripts = ScriptDirectory.from_config(Config(str(goc / "alembic.ini")))
+    dau = list(scripts.get_heads())
+    ten = [pathlib.Path(scripts.get_revision(r).path).name for r in dau]
+    assert len(dau) == 1, f"phai co dung mot head, dang co {len(dau)}: {ten}"
+
+    # 🔑 Cau NOI co hoc giua hai cach doc: `_revision_ids()` (regex, con dung
+    #    cho phep kiem trung id ngay tren) phai thay DUNG chung tap revision
+    #    ma alembic thay. Lech mot cai ⇒ DO ngay, thay vi im lang lam hong
+    #    phep dem head o tren. Day la cho bat duoc "regex dung vi may".
+    theo_regex = set(_revision_ids())
+    theo_alembic = {sc.revision for sc in scripts.walk_revisions()}
+    assert theo_regex == theo_alembic, (
+        f"regex va alembic thay hai tap revision khac nhau; "
+        f"regex thieu: {sorted(theo_alembic - theo_regex)} | "
+        f"regex thua: {sorted(theo_regex - theo_alembic)}")
 
 
 def test_khoa_cong_khai_SAI_DANG_bi_tu_choi_ngay_luc_ghep(db):
