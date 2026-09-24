@@ -1,6 +1,8 @@
 {
   "clip": "暴雨天野外露营搭建帐篷生活度过雨天享受户外露营 #暴雨露营 #帐篷露营 #户外露营.mp4",
   "cua_so_s": [0, 60],
+  "luoi_s": 0.5,
+  "luoi_s_ghi_chu": "Luoi thoi gian cua CHINH tep nay, giay. Thuoc doc tu day (tools/do_luong.py::doc_chan_ly_nen_ocr) de tinh TRAN cua no; truoc 25/09 so nay la hang so mo-dun LUOI_CHAN_LY_NEN_S nen mot chan ly nen min hon van bi cham bang tran cua luoi 0,5 s. Moc ghi = moc luoi dau tien TAI HOAC SAU luc phu de hien => muon hon moc that ~U[0; luoi_s].",
   "cach_lam": "Doc tay dai phu de cat moi 0,5 s (khong qua OCR), 22/09/2026. Moc = luoi 0,5 s. Tieu de 0,0 s (暴雨露营) khong phai loi thoai, khong tinh.",
   "dong": [
     [0.5, 2.0, "这才是让人羡慕的生活"],

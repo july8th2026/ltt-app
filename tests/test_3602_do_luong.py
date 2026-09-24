@@ -439,7 +439,8 @@ def test_3602_nguong_03s_KHONG_VOI_TOI_DUOC_tren_luoi_05s():
     """
     from tools.do_luong import NGUONG_PHAN_DOAN, kiem_nguong_voi_toi
 
-    r = kiem_nguong_voi_toi(_REF_LUOI, 0.3, NGUONG_PHAN_DOAN["onset_do_nhay_toi_thieu"])
+    r = kiem_nguong_voi_toi(_REF_LUOI, 0.3,
+                            NGUONG_PHAN_DOAN["onset_do_nhay_toi_thieu"], 0.5)
     assert r["voi_toi_duoc"] is False, "0,80 @ 0,3 s KHONG duoc voi toi"
     assert r["tran_do_nhay_trung_vi"] < 0.70
     assert "CHÂN LÝ NỀN" in r["ghi_chu"].upper() or "chân lý nền" in r["ghi_chu"]
@@ -449,6 +450,100 @@ def test_3602_nguong_05s_thi_voi_toi_duoc():
     """Đối chứng dương: nới dung sai lên bằng lưới thì ngưỡng lại với tới được."""
     from tools.do_luong import kiem_nguong_voi_toi
 
-    r = kiem_nguong_voi_toi(_REF_LUOI, 0.5, 0.80)
+    r = kiem_nguong_voi_toi(_REF_LUOI, 0.5, 0.80, 0.5)
     assert r["voi_toi_duoc"] is True
     assert r["tran_do_nhay_trung_vi"] > 0.95
+
+
+# ── 25/09: LƯỚI là tính chất CỦA DỮ LIỆU, ⛔ không phải hằng số của thước ────
+
+
+def test_3602_luoi_MIN_HON_thi_nguong_080_VOI_TOI_DUOC():
+    """🔴 Phép kiểm QUYẾT ĐỊNH: trần 0,606 là trần của **LƯỚI**, ⛔ không phải
+    của hệ thống.
+
+    Cùng một chân lý nền, cùng dung sai 0,3 s, chỉ đổi **lưới** 0,5 → 0,1 s
+    (bản OCR 10 fps): ngưỡng 0,80 từ ⛔ KHÔNG VỚI TỚI được thành ✅ với tới được.
+
+    ⭐ Đây là thứ biện minh cho việc chạy lại OCR ở 10 fps. Nếu phép kiểm này
+    ⛔ không xanh thì vấn đề ⛔ KHÔNG phải lưới, và ⛔ đừng tiêu một suất CPU.
+    """
+    from tools.do_luong import kiem_nguong_voi_toi
+
+    tho = kiem_nguong_voi_toi(_REF_LUOI, 0.3, 0.80, 0.5)
+    min_ = kiem_nguong_voi_toi(_REF_LUOI, 0.3, 0.80, 0.1)
+
+    assert tho["voi_toi_duoc"] is False, "luoi 0,5 s: 0,80 @ 0,3 s KHONG voi toi"
+    assert min_["voi_toi_duoc"] is True, "luoi 0,1 s: 0,80 @ 0,3 s PHAI voi toi"
+    assert min_["tran_do_nhay_trung_vi"] > tho["tran_do_nhay_trung_vi"] + 0.25
+
+
+def test_3602_tran_KHONG_con_mac_dinh_luoi_05():
+    """⛔ Gọi thiếu `luoi` phải là **lỗi gõ**, ⛔ không phải rơi về 0,5 lặng lẽ.
+
+    🔴 Đúng lỗi 24/09: `kiem_nguong_voi_toi` gọi `doi_chung_he_hoan_hao(ref, ds)`
+    mà ⛔ không truyền lưới ⇒ mọi trần đều tính theo 0,5 s. Bánh cóc ở đây là
+    **chữ ký hàm**: thiếu lưới thì ⛔ không chạy được.
+    """
+    import inspect
+
+    from tools.do_luong import doi_chung_he_hoan_hao, kiem_nguong_voi_toi
+
+    for ham in (doi_chung_he_hoan_hao, kiem_nguong_voi_toi):
+        luoi = inspect.signature(ham).parameters["luoi"]
+        assert luoi.default is inspect.Parameter.empty, (
+            f"{ham.__name__} khong duoc co mac dinh cho `luoi`")
+
+
+def test_3602_chan_ly_nen_khong_khai_luoi_thi_TU_CHOI(tmp_path):
+    """Tiêm: chân lý nền ⛔ không khai `luoi_s` ⇒ ⛔ KHÔNG được đoán."""
+    import json
+
+    from tools.do_luong import ThieuBanKhai, doc_chan_ly_nen_ocr
+
+    tep = tmp_path / "khong_khai.json"
+    tep.write_text(json.dumps({"dong": [[0.5, 2.0, "x"]]}), encoding="utf-8")
+    with pytest.raises(ThieuBanKhai, match="luoi_s"):
+        doc_chan_ly_nen_ocr(tep)
+
+
+def test_3602_sach_chan_ly_nen_THAT_da_khai_luoi():
+    """Đối chứng dương: tệp chân lý nền đang dùng **có** khai, và khai đúng 0,5."""
+    from tools.do_luong import CHAN_LY_NEN_PHAN_DOAN, GOC, doc_chan_ly_nen_ocr
+
+    nen = doc_chan_ly_nen_ocr(GOC / CHAN_LY_NEN_PHAN_DOAN)
+    assert nen["luoi"] == 0.5
+    assert len(nen["dong"]) == 33
+
+
+def test_3602_b1_khong_khai_canh_chinh_thi_TU_CHOI(tmp_path):
+    """N-27: đo MỘT nhánh rồi khai như TRUNG LẬP.
+
+    ⛔ Không phải "sai số" — là **mất khả năng phân biệt**. Nhánh
+    `fallback_unaligned` có 0 bằng chứng, nên một con số ⛔ không kèm tên nhánh
+    đọc ra thành "hệ thống".
+    """
+    import json
+
+    from tools.do_luong import ThieuBanKhai, doc_doan_b1
+
+    tep = tmp_path / "khong_nhanh.json"
+    tep.write_text(json.dumps({"doan": [{"bat": 0.0, "ket": 1.0}]}), encoding="utf-8")
+    with pytest.raises(ThieuBanKhai, match="canh_chinh"):
+        doc_doan_b1(tep)
+
+
+def test_3602_sach_b1_khai_nhanh_thi_di_qua_va_GIU_TEN_NHANH(tmp_path):
+    """Đối chứng dương: khai đủ ⇒ chạy, và tên nhánh **đi kèm** ra ngoài."""
+    import json
+
+    from tools.do_luong import doc_doan_b1
+
+    tep = tmp_path / "co_nhanh.json"
+    tep.write_text(json.dumps({
+        "engine": "whisperx", "canh_chinh": "aligned",
+        "doan": [{"bat": 0.0, "ket": 1.0}, {"bat": 1.0, "ket": 2.5}],
+    }), encoding="utf-8")
+    r = doc_doan_b1(tep)
+    assert r["canh_chinh"] == "aligned" and r["engine"] == "whisperx"
+    assert r["doan"] == [(0.0, 1.0), (1.0, 2.5)]

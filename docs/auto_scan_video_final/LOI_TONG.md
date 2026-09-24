@@ -57,3 +57,15 @@
 |---|---|---|---|---|---|---|---|
 | NEN_V3 | v3 | zh→vi | cả hai | ✅ true | ✅ true | B/C ra tệp dùng được, QC T3/T5 đỏ; A chết (R-01) | `859b3361`, `thay_the=[]`, qc_ai TẮT |
 | NT-CUOI lượt A (10:21) | v3 | zh→vi | giữ hình | — | — | **LOẠI** — chạy trúng 10:21–10:24, deploy phiên khác khởi động lại LTTStudioVoice + 8100 | phải chạy lại |
+
+## Làn `timeline` (R4) — 25/09, điều phối cấp số
+
+> ⭐ Bảng RIÊNG để ⛔ không va vào bảng của làn khác. Chi tiết + số:
+> `KHAO_SAT/R4_TIMELINE_NOI_BO.md`.
+
+| mã | mức | hiện trạng | nơi | làn | trạng thái |
+|---|---|---|---|---|---|
+| N-27 | cao | Thước phân đoạn đo **MỘT nhánh engine** rồi in con số **không kèm tên nhánh** ⇒ đọc ra thành "hệ thống". Cả ba tệp bằng chứng đều `whisperx`/`aligned`; nhánh `fallback_unaligned` có **0 bằng chứng**. ⛔ Không phải sai số — là **mất khả năng phân biệt** | `tools/do_luong.py::doc_doan_b1` · `bang_chung/b1_chep_loi_moi/` | timeline | **ĐÃ SỬA** — `canh_chinh` BẮT BUỘC (`ThieuBanKhai`), tên nhánh in kèm mọi con số. ⚠️ Nhánh fallback **vẫn 0 bằng chứng** — đó là việc ĐO, chưa làm |
+| N-28 | trung | Sáu tham số ASR của ASV là **mặc định thư viện chưa ai ký** (`temperature`, `condition_on_previous_text`, `beam_size`… — `transcription.py` + `whisperx_runner.py` ⛔ không truyền). Cùng họ: *"khớp tuyệt đối EN 98/98 đoạn"* ở `apps/transcript/manifest.py:56-57` ⛔ **không có nguồn** trong kho (số có tệp là **95,50 %**, `30_PARITY_VOI_BOT_THAT.md`) | `apps/autosubvideo/transcription.py` · `whisperx_runner.py:21-27` · `apps/transcript/manifest.py:56` | timeline | MỞ — cần một **hồ sơ có tên** như `platform_core/stt/ho_so.py` đã làm cho 4 bot |
+| ⛔ **CHƯA CẤP SỐ** (điều phối cấp; N-26 và N-29 ⛔ không phải của làn này) | cao | Lưới thời gian của chân lý nền là **hằng số mô-đun** (`LUOI_CHAN_LY_NEN_S = 0.5`), và `kiem_nguong_voi_toi` ⛔ không truyền nó ⇒ thay chân lý nền mịn hơn thì trần **vẫn** tính theo 0,5 s và cổng **vẫn in `0,606 — KHÔNG VỚI TỚI ĐƯỢC`** | `tools/do_luong.py:868,1050` | timeline | **ĐÃ SỬA** — lưới là `luoi_s` **trong tệp chân lý nền**; thiếu ⇒ `ThieuBanKhai`, ⛔ không mặc định. Bánh cóc: `test_3602_tran_KHONG_con_mac_dinh_luoi_05` |
+| N-30 | trung | **App `transcript` (đang phục vụ khách) mù tiếng Hán ở lớp cắt câu.** `SENT_SPLIT_RE` đòi `\s+` ngay sau dấu kết câu; văn Hán ⛔ không có dấu cách ⇒ chạy thật: **3 câu Hán → 1 span**, 3 câu Anh → 3 span. `CUT_HINT_RE` ⛔ không chứa `。`. Chỉ `STRONG_PUNCT` có — và nó ⛔ không phải nơi cắt ⇒ tệp **trông** như đã lo cho CJK | `apps/transcript/services/engine/segment/constants.py:14,15,21` | timeline (⛔ **không sửa**) | **BÁO CHỦ DỰ ÁN** — App này ⛔ không khai phục vụ `zh` (`ho_so.py` chỉ có nhánh tự-dò/en và vi), nên đây là **giới hạn chưa nói ra**, ⛔ chưa phải lỗi sản phẩm. ⛔ Điều phối chốt: ⛔ không chạm app đang có khách |
