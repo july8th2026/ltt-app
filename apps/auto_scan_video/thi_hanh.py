@@ -139,7 +139,25 @@ def phien_ban_engine(stage_ten: str) -> str:
         #    doc hang cua LOI NHAC DO — ⛔ khong phai hang cua `dich_thuat`
         #    (duong chet). Truoc 24/09 hai thu la MOT, va sua loi nhac dich lam
         #    giai doan nay chay lai + dat lai BAY giai doan ha nguon.
-        return f"noi_dung/{van_ban.PHIEN_BAN_LOI_NHAC_LONG_TIENG}/{model}"
+        # 🔴 **N-23 ve THU HAI: `temperature` DOI DAU RA, nen no phai o TRONG
+        #    van tay.** Truoc 24/09 no ⛔ khong co mat o day — va luc do dieu do
+        #    vo hai **chi vi** khong ai ghim no bao gio. Ngay ai do ghim (hom nay)
+        #    thi khuyet tat lo ra: cache se tra ket qua sinh o nhiet do CU cho
+        #    mot cau hinh MOI, ⛔ im lang. Do la **cung ho loi voi N-21**, chi
+        #    khac chieu: N-21 la van tay doi ma loi nhac khong doi; day la loi
+        #    nhac chay khac ma van tay khong doi.
+        # ⭐ Doc `ai.nhiet_do_cho` — CUNG ham ma `goi_tinh_tien` doc — nen van tay
+        #    va cu goi ⛔ khong the lech nhau.
+        # ⚠️ `None` (⛔ khong gui, mac dinh cong) phai ra mot chuoi KHAC voi moi
+        #    gia tri so: *"khong khai"* va *"khai 0,0"* la hai trang thai khac
+        #    nhau, va gop chung lai la dung cai bay "hai trang thai mot gia tri".
+        nhiet = ai.nhiet_do_cho(ai.CHUYEN_LOI_THOAI)
+        nhiet_ma = "cong" if nhiet is None else f"{float(nhiet):.2f}"
+        # ⭐ `PHIEN_BAN_RANG_LUOC_DO` — bat/tat rang buoc `response_format` DOI
+        #    DAU RA, nen no o day vi dung cung ly do voi `temperature`.
+        from . import long_tieng as _lt
+        return (f"noi_dung/{van_ban.PHIEN_BAN_LOI_NHAC_LONG_TIENG}"
+                f"/{model}/t{nhiet_ma}/g{_lt.PHIEN_BAN_RANG_LUOC_DO}")
     if stage_ten == pipeline.VOICE_SYNTHESIS:
         from . import giong_noi
         return f"giong/{giong_noi.PHIEN_BAN_GIONG}"

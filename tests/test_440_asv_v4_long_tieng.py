@@ -459,7 +459,7 @@ def test_KHONG_doan_nao_thuoc_canh_BI_CAT_duoc_gui_cho_model(
     da_gui: list[str] = []
 
     def gia(db_, run_, thao_tac, messages, *, stage, item_key, uoc_credit=0,
-            ctx=None, temperature=None):
+            ctx=None, temperature=None, luoc_do=None):
         # ⭐ Uy quyen phan khong phai dich cho ban dung chung: stub nay do luu
         #    luong cua CONTENT_PROCESS, khong do EDIT_PLAN, va no khong duoc
         #    hong chi vi mot nguoi goi model thu hai xuat hien.
@@ -550,7 +550,7 @@ def test_thu_lai_KHONG_gui_lai_nhung_doan_DA_XONG(
     dem = {"n": 0}
 
     def gia(db_, run_, thao_tac, messages, *, stage, item_key, uoc_credit=0,
-            ctx=None, temperature=None):
+            ctx=None, temperature=None, luoc_do=None):
         # ⭐ Uy quyen phan khong phai dich cho ban dung chung: stub nay do luu
         #    luong cua CONTENT_PROCESS, khong do EDIT_PLAN, va no khong duoc
         #    hong chi vi mot nguoi goi model thu hai xuat hien.
@@ -631,7 +631,7 @@ def test_doi_GIONG_thi_diem_chot_cu_KHONG_duoc_dung_lai(
     dang = lan1
 
     def gia(db_, run_, thao_tac, messages, *, stage, item_key, uoc_credit=0,
-            ctx=None, temperature=None):
+            ctx=None, temperature=None, luoc_do=None):
         # ⭐ Uy quyen phan khong phai dich cho ban dung chung: stub nay do luu
         #    luong cua CONTENT_PROCESS, khong do EDIT_PLAN, va no khong duoc
         #    hong chi vi mot nguoi goi model thu hai xuat hien.

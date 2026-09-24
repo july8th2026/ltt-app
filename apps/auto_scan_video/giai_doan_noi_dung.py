@@ -216,6 +216,9 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         kq = ai.goi_tinh_tien(
             db, run, ai.CHUYEN_LOI_THOAI, messages,
             stage=pipeline.CONTENT_PROCESS,
+            # ⭐ N-23: ep luoc do o tang GIAI MA. 2/21 lo hong -> 0/20,
+            #    gia +0 luot goi (`long_tieng.luoc_do_phan_hoi`).
+            luoc_do=long_tieng.luoc_do_phan_hoi(lo),
             # 🔑 Khoa cua so cai la LO (mot lan goi = mot dong so cai), con diem
             #    chot la DOAN. Hai truc khac nhau va gop chung lai se hong: mot
             #    lo chua 12 doan nhung chi mot lan tinh tien.

@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import ast
 import inspect
+import textwrap
 import pathlib
 
 import pytest
@@ -117,10 +118,24 @@ def test_metricx_KHONG_goi_MT5Stack_voi_hai_doi_so():
     nhan = len(ts) - 1              # tru `self`
     # Cho goi cua ta chi truyen MOT doi so, nen no phai vua voi ban da cai.
     assert nhan >= 1, f"transformers {transformers.__version__}: MT5Stack{ts}"
-    ma = inspect.getsource(mr._mt5_stack)
-    assert "MT5Stack(config, embed_tokens)" not in ma, (
-        "con goi hai doi so — chu ky cua transformers "
-        f"{transformers.__version__} la MT5Stack{inspect.signature(modeling_mt5.MT5Stack.__init__)}")
+
+    # ⚠️ **Doc CAY, khong doc VAN BAN.** Ban dau cho nay tim chuoi
+    #    `"MT5Stack(config, embed_tokens)"` trong `inspect.getsource(...)` — va
+    #    `getsource` tra ve CA DOCSTRING. Chinh docstring cua `_mt5_stack` giai
+    #    thich chu ky 4.x bang cach VIET RA loi goi hai tham so, nen phep kiem
+    #    bao dong tren doan van giai thich vi sao no khong con o do. Ma da dung
+    #    tu dau (`MT5Stack(config)` + `set_input_embeddings`).
+    # ⭐ Va ban cay chat hon ban chuoi: no bat ca dang goi bang TU KHOA
+    #    (`MT5Stack(config, embed_tokens=emb)`) ma phep so chuoi khong thay.
+    than = ast.parse(textwrap.dedent(inspect.getsource(mr._mt5_stack))).body[0]
+    goi = [n for n in ast.walk(than)
+           if isinstance(n, ast.Call) and getattr(n.func, "id", "") == "MT5Stack"]
+    assert goi, "`_mt5_stack` khong con dung `MT5Stack` — phep kiem dang nhin cho khac"
+    for g in goi:
+        assert len(g.args) + len(g.keywords) == 1, (
+            f"con goi {len(g.args) + len(g.keywords)} doi so — chu ky cua "
+            f"transformers {transformers.__version__} la "
+            f"MT5Stack{inspect.signature(modeling_mt5.MT5Stack.__init__)}")
 
 
 def test_metricx_stack_nhan_dung_embedding_da_chia_se():

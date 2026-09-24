@@ -109,6 +109,18 @@ MODEL_THEO_THAO_TAC: dict[str, str] = {
     # ⛔ Dòng này ⇒ `van_ban.van_tay_van_ban` đổi (model nằm TRONG vân tay), nên
     #    mọi bản dịch cũ tự vô hiệu — ⛔ không ai phải nhớ xoá cache.
     "dich_thuat": "ltt-3.5",
+    # 🔴 **Chu du an chot 24/09 (toi): `ltt-3.5` phuc vu duong dich cua app.**
+    #    ⛔ Cau "3.5 hay 3.8" DONG — ⛔ khong so sanh them.
+    #
+    # ⚠️ **Va no di CUNG MOT BAN SUA voi `NHIET_DO_THEO_THAO_TAC`, ⛔ khong tach.**
+    #    Do duoc (`B2_DICH.md` §7.5): `ltt-3.5` **khong ghim** nhiet do mat
+    #    **64,3 %** so lo; **ghim 0,0** thi 83/83, 0/7. ⇒ Chot 3.5 ma khong ghim
+    #    nhiet do la chot mot cau hinh **da do la hong**.
+    #
+    # ⭐ `dich_thuat` (duong CHET) va thao tac nay tro cung mot model, nhung hai
+    #    dong: mot dong la lich su, mot dong la duong SONG. ⛔ Dung gop — chung
+    #    doi doc lap nhau.
+    "chuyen_loi_thoai": "ltt-3.5",
 }
 
 
@@ -447,6 +459,47 @@ def ngan_sach_cho(thao_tac: ThaoTac) -> tuple[int, float | None]:
     return (0, None) if tra is None else (int(tra[0]), float(tra[1]))
 
 
+#: 🔴 **N-23: nhiet do GHIM theo thao tac. Vang mat = giu nguyen hanh vi cu.**
+#:
+#: Truoc 24/09 ⛔ **khong thao tac nao** cua ASV truyen `temperature`:
+#: `goi_tinh_tien` chuyen `None` xuong va `cong_vlm.chat` chi dat khoa khi khac
+#: `None` (`cong_vlm.py:341`) ⇒ than request ⛔ khong mang truong do ⇒ cong may B
+#: ap mac dinh cua chinh no, **`--temp 1.0`** (`L_LLM_CONG.md` §4a, do tren cong
+#: that). ⚠️ `1.0` ⛔ **khong phai mot lua chon san pham** — no la mot **cho trong**.
+#:
+#: ⭐ Tac dung DO DUOC (`B2_DICH.md` §7.5), loi nhac duong song x `ltt-3.5`,
+#:    lo 12 doan, hai phim:
+#:
+#:        khong gui temperature  ->  9/14 lo hong  = 64,3 %
+#:        ghim 0,0 hoac 0,2      ->  2/21 lo hong  =  9,5 %      Fisher p = 0,0011
+#:
+#: 🔑 **Vi sao 0,0 chu khong phai 0,2.** Ca hai cho **cung 0/7** tren phim v1 ⇒
+#:    ⛔ khong co can cu nao chon 0,2. `0,0` cho them **tinh tai lap** — thu moi
+#:    phep do sau nay dua vao. ⛔ Chon 0,2 vi "an toan hon" la mot cam giac,
+#:    khong phai mot so.
+#: ⚠️ Nhung ⛔ **dung doc `0,0` thanh "tai lap duoc"**: `L_LLM_CONG.md` §4b do
+#:    duoc **5 ket qua khac nhau / 5 luot** ngay o `temperature=0` (co che:
+#:    `-np 3` + continuous batching + `--spec-type draft-mtp`). Ghim mua **do bam
+#:    luoc do**, ⛔ khong mua tinh tat dinh.
+#:
+#: ⛔ **CHI `chuyen_loi_thoai`.** Thao tac khac vang mat o day ⇒ van di mac dinh
+#:    cong, y nhu truoc. Do la co y: `qc_ngu_nghia` thuoc lan bo cham, va ghim ho
+#:    ho mot tham so doi dau ra la doi hanh vi cua lan khac **trong im lang** —
+#:    dung loi `MODEL_THEO_THAO_TAC` da tranh (§4b).
+NHIET_DO_THEO_THAO_TAC: dict[str, float] = {
+    CHUYEN_LOI_THOAI.ma: 0.0,
+}
+
+
+def nhiet_do_cho(thao_tac: ThaoTac) -> float | None:
+    """Nhiet do GHIM cua mot thao tac, `None` = ⛔ khong gui (mac dinh cong).
+
+    ⭐ MOT nguon. `goi_tinh_tien` va van tay `CONTENT_PROCESS` cung doc ham nay,
+       nen ⛔ khong the co chuyen "goi mot nhiet do, van tay ghi mot nhiet do".
+    """
+    return NHIET_DO_THEO_THAO_TAC.get(thao_tac.ma)
+
+
 def timeout_xau_nhat(thao_tac: ThaoTac) -> float:
     """Thoi gian XAU NHAT (giay) cua MOT lan `goi_tinh_tien(thao_tac)`.
 
@@ -574,6 +627,7 @@ def doc_json(noi_dung: str, thao_tac: ThaoTac, *,
 def goi(db, thao_tac: ThaoTac, messages: list, *, ctx=None,
         max_tokens: int = 0, temperature: float | None = None,
         timeout_s: float | None = None, muc_nghi: str | None = None,
+        luoc_do: dict | None = None,
         on_dispatch=None, on_rejected=None) -> dict:
     """MOT cua goi model. Tra ve `{"noi_dung", "provider", "model", "su_dung"}`.
 
@@ -647,6 +701,26 @@ def goi(db, thao_tac: ThaoTac, messages: list, *, ctx=None,
     if nghi:
         them["reasoning_effort"] = nghi
 
+    # ⭐ **N-23 ve ba: EP LUOC DO o tang GIAI MA, ⛔ khong phai o loi nhac.**
+    #
+    # Nguon (⛔ khong tu suy) — `ggml-org/llama.cpp`, `tools/server/README.md`:
+    #   *"The `response_format` parameter supports both plain JSON output
+    #     (e.g. `{"type": "json_object"}`) and schema-constrained JSON
+    #     (e.g. `{"type": "json_object", "schema": {...}}` …)"*
+    # llama-server dich luoc do thanh **grammar**, nen token khong hop le ⛔
+    # khong sinh ra duoc. Do la mot **rang buoc**, ⛔ khong phai mot loi nhac
+    # manh hon — va do la ly do no dong duoc ca hai che do hong da do
+    # (`doan` ra MANG · thieu doan).
+    #
+    # ⭐ Duong di: `dieu_phoi.goi(them=...)` -> `CongVlm.chat(them=)` ->
+    #    `than_gui.update(them)` -> cong may B chuyen nguyen than len llama-server
+    #    (`llm_gateway/upstream.py:91`). Da kiem mot lan bang `seed`
+    #    (`L_LLM_CONG.md` §4b: cong ⛔ khong tu choi).
+    #
+    # ⚠️ **Gia: +0 luot goi.** No di kem chinh luot dang goi.
+    if luoc_do:
+        them["them"] = {**(them.get("them") or {}),
+                        "response_format": luoc_do}
     try:
         kq = dieu_phoi.goi(
             db, messages=messages,
@@ -714,7 +788,8 @@ def goi(db, thao_tac: ThaoTac, messages: list, *, ctx=None,
 
 def goi_tinh_tien(db, run, thao_tac: ThaoTac, messages: list, *,
                   stage: str, item_key: str, uoc_credit: int = 0,
-                  ctx=None, temperature: float | None = None) -> dict:
+                  ctx=None, temperature: float | None = None,
+                  luoc_do: dict | None = None) -> dict:
     """`goi` + cua chan ngan sach TRUOC + ghi so cai SAU. Duong tra tien duy nhat.
 
     🔑 **Day la cho pha 06 va pha 08 cung ghi no.** Ca hai deu ket luan rang ghi
@@ -772,8 +847,13 @@ def goi_tinh_tien(db, run, thao_tac: ThaoTac, messages: list, *,
         #    `chuyen_loi_thoai` hong 6/6, trong khi mot tham so da san sang o
         #    ham ngay duoi.
         tran, cho = ngan_sach_cho(thao_tac)
-        kq = goi(db, thao_tac, messages, ctx=ctx, temperature=temperature,
-                 max_tokens=tran, timeout_s=cho)
+        # 🔴 **N-23.** Ben goi khai tuong minh thi thang; khong khai thi lay
+        #    nhiet do GHIM cua thao tac (`NHIET_DO_THEO_THAO_TAC`). Van `None`
+        #    ⇒ ⛔ khong gui truong, tuc mac dinh cong — hanh vi cu, giu nguyen
+        #    cho moi thao tac chua co trong bang.
+        nhiet = temperature if temperature is not None else nhiet_do_cho(thao_tac)
+        kq = goi(db, thao_tac, messages, ctx=ctx, temperature=nhiet,
+                 max_tokens=tran, timeout_s=cho, luoc_do=luoc_do)
     except AiMoHo as exc:
         _ghi(sd.MO_HO, ly_do=str(exc)[:200])
         raise

@@ -81,7 +81,14 @@ LO_NHO = 4
 #: chenh lech truoc/sau cua LOI NHAC bi chon mat.
 #: ⇒ Ghim de lam loi nhac thanh **bien duy nhat**. ⚠️ Cai gia phai khai: day
 #: ⛔ **khong** phai cau hinh khach dang chay.
-NHIET_DO = 0.2
+#: 🔴 **N-23: ⛔ KHONG go lai mot con so o day.** Truoc do tep nay ghim `0,2`
+#: tai cho — mot cau hinh ⛔ khong ai chay. Nay san pham DA ghim nhiet do
+#: (`ai.NHIET_DO_THEO_THAO_TAC`), nen bench phai doc **chinh no**: mot bench go
+#: lai hang so la mot bench do mot cau hinh khac voi thu khach nhan, va do dung
+#: cai loi da lam ca §7.1 phai doc lai.
+def _nhiet_do() -> float | None:
+    from apps.auto_scan_video import ai
+    return ai.nhiet_do_cho(ai.CHUYEN_LOI_THOAI)
 
 #: 🔴 So doan bi model BO trong tung lo — mot KET QUA, ⛔ khong phai tro ngai.
 _BO_DOAN: list[dict] = []
@@ -155,7 +162,7 @@ def _mot_lo(db, lo: list[dict], tat_ca: list[dict], ban_do: dict) -> dict:
         _tran, _cho = ai.ngan_sach_cho(ai.CHUYEN_LOI_THOAI)
         kq = dieu_phoi.goi(db, messages=msg,
                            thu_tu_provider=list(ai.THU_TU_PROVIDER),
-                           model_theo_provider=ban_do, temperature=NHIET_DO,
+                           model_theo_provider=ban_do, temperature=_nhiet_do(),
                            max_tokens=_tran, timeout_s=float(_cho or 300.0))
     noi = getattr(kq, "noi_dung", None) or getattr(kq, "content", "")
     goi = ai.doc_json(str(noi), ai.CHUYEN_LOI_THOAI)
@@ -252,7 +259,7 @@ def chay(*, duong: str = "song", ghim_model: str = "ltt-3.5") -> dict:
         "hang_phien_ban": ("van_ban.PHIEN_BAN_LOI_NHAC_LONG_TIENG"
                            if duong == "song"
                            else "van_ban.PHIEN_BAN_LOI_NHAC_DICH"),
-        "nhiet_do": NHIET_DO,
+        "nhiet_do": _nhiet_do(),
         "model_thao_tac_song": ai.model_cho(ai.CHUYEN_LOI_THOAI),
         "giay": round(time.time() - t0, 1),
         "duong": {"dat": dat, "tong": len(ket), "chi_tiet": ket},

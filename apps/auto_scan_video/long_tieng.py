@@ -54,6 +54,18 @@ PHIEN_BAN_LONG_TIENG = 2
 
 SCHEMA_LONG_TIENG = "asv.long_tieng.v1"
 
+#: 🔑 **Phien ban cua RANG BUOC LUOC DO gui xuong cong** (`luoc_do_phan_hoi`).
+#:
+#: ⛔ Rieng khoi `PHIEN_BAN_LOI_NHAC_LONG_TIENG` vi no ⛔ **khong phai loi nhac**:
+#: no la mot rang buoc o tang **giai ma**. Hai thu doi doc lap nhau, va gop
+#: chung mot hang lai dung ho **N-21** (mot hang chi phoi hai thu khac nhau).
+#:
+#: ⚠️ Va no **PHAI di vao van tay** `CONTENT_PROCESS`: bat/tat rang buoc nay
+#: **doi dau ra**, nen thieu no thi cache tra ket qua cua cau hinh CU — dung ve
+#: thu hai cua N-23.
+#: **1** (24/09): ban dau — ep bang khoa-theo-ma, `required` = cac ma da gui.
+PHIEN_BAN_RANG_LUOC_DO = 1
+
 #: Bang tu vung DONG cho sac thai. Ha nguon doi sang tham so tong hop tieng noi.
 CAM_XUC = ("trung_tinh", "vui", "buon", "gian", "cang_thang", "trang_trong",
            "than_mat", "hoi_hop")
@@ -299,6 +311,53 @@ def _chuoi_ngan(x) -> list[str]:
         if t:
             ra.append(t)
     return ra
+
+
+def luoc_do_phan_hoi(lo: list[dict]) -> dict:
+    """`response_format` ep model tra DUNG bang khoa-theo-ma cua lo nay.
+
+    ⭐ **Nguon, ⛔ khong tu suy** — `ggml-org/llama.cpp`, `tools/server/README.md`:
+    *"The `response_format` parameter supports both plain JSON output
+    (e.g. `{"type": "json_object"}`) and schema-constrained JSON
+    (e.g. `{"type": "json_object", "schema": {...}}` …)"*. llama-server dich
+    luoc do thanh **grammar**, nen mot token khong hop luoc do ⛔ khong sinh ra
+    duoc. Do la mot **rang buoc luc giai ma**, ⛔ khong phai mot loi nhac manh hon.
+
+    🔑 Ta biet TRUOC cac ma cua lo, nen luoc do khai duoc **dich danh**:
+    `required` = dung cac ma da gui, `additionalProperties: false`. Do chinh la
+    hai che do hong DA DO (`B2_DICH.md` §7.5, §7.8): `doan` ra **MANG**, va
+    **thieu doan**.
+
+    ⭐ Do duoc: **20 lo · 188/188 doan · 0 lo hong** (ba phim), so voi **2/21 lo
+    hong** khi chi ghim nhiet do. **Gia: +0 luot goi** — no di kem luot dang goi.
+
+    ⛔ `chu` la truong DUY NHAT `required` o moi doan: `cam_xuc`/`kieu_noi` da co
+       duong ve mac dinh trong `doc_chuyen`, va bat model phai sinh du moi truong
+       la them co hoi hong cho mot thu ta ⛔ khong bat buoc phai co.
+    """
+    ma = [str(d.get("ma") or "") for d in lo]
+    moi_doan = {
+        "type": "object",
+        "properties": {
+            "chu": {"type": "string"},
+            "cam_xuc": {"type": "string"},
+            "kieu_noi": {"type": "string"},
+            "nhan_manh": {"type": "array", "items": {"type": "string"}},
+            "khong_chac": {"type": "array", "items": {"type": "string"}},
+        },
+        "required": ["chu"],
+    }
+    return {"type": "json_object", "schema": {
+        "type": "object",
+        "properties": {"doan": {
+            "type": "object",
+            "properties": {m: moi_doan for m in ma},
+            "required": ma,
+            "additionalProperties": False,
+        }},
+        "required": ["doan"],
+        "additionalProperties": False,
+    }}
 
 
 def doc_chuyen(goi: dict, ma_da_gui: set[str]) -> dict:

@@ -64,22 +64,24 @@ SỐNG** — lời nhắc lồng tiếng đã qua nghiệm thu, có ngân sách 
 | **1 · lược đồ** | ✅ **XONG** — thủ phạm là `temperature` ⛔ chưa ai ghim, ⛔ không phải model/lược đồ | §7.5 |
 | **2 · quy tắc tên riêng vào đường SỐNG** | ✅ **XONG** — 21/33 → 38/39, kèm **1 hồi quy** (`光子`) | §7.6 |
 | **3 · đường B, phần THU** | ✅ **XONG** — `khong_chac` vào `outputs`, ⛔ chỉ thu | §7.7 |
+| **N-23 · ghim model + nhiệt độ + ép lược đồ** | ✅ **XONG** — lô hỏng **64,3 % → 0,0 %** (0/20), giá **+0 lượt gọi** | §7.8 |
+| **đo lại sau khi ghim** | ✅ **XONG** — tên riêng **không đổi**; vòng sửa **vẫn xáo 92 %** | §7.9 |
 
 ### 🔴 Ba việc CHỜ điều phối / chủ dự án — ⛔ làn này cố ý không tự làm
 
-1. ⭐ **Ghim `temperature` cho `chuyen_loi_thoai`** — `giai_doan_noi_dung.py:217`
-   là đường **chạm khách**, ngoài phạm vi đã giao. Số: **64,3 % → 9,5 %** lô
-   hỏng, giá là **một tham số**. ⚠️ **Cần một số hiệu `N-xx`** (sổ dùng chung).
-2. **`光子` / thương hiệu** — quy tắc đã có nhánh *"tổ chức ⇒ giữ nguyên"* nhưng
-   ⛔ không thắng mọi lượt (1/3 lượt ra *"Quang Tử"*). Là quyết định **sản
-   phẩm** (§4g), ⛔ không phải một bản vá lời nhắc nữa.
-3. **`ltt-3.5` vs `ltt-3.8`** — ⛔ **đừng hỏi câu này trước khi ghim nhiệt độ**.
-   Sau khi ghim, phần 20× thật sự mua chỉ còn **9,5 % lô hỏng còn lại**.
+1. ✅ **ĐÃ LÀM — N-23** (điều phối cấp số hiệu 24/09). Xem §7.8.
+2. 🔴 **`光子` / thương hiệu** — ⚠️ **cập nhật sau khi ghim: nó hỏng ỔN ĐỊNH
+   3/3 lượt**, ⛔ không còn là rút thăm. Theo đúng tiêu chí điều phối đặt ra, đây
+   **là lỗi LUẬT**. ⛔ Vẫn chờ chủ dự án (§4g, §7.9) — ⛔ làn này không sửa.
+3. ✅ **ĐÓNG — chủ dự án chốt 24/09 (tối): `ltt-3.5` phục vụ đường dịch.**
+   ⛔ Không so sánh 3.8 nữa. `ltt-3.8` nhường **toàn bộ** cho làn bộ chấm.
 
 ### ⛔ Chưa làm
 
 * **Bước 3** (bản nền dịch đo lại trên đường sống) — chưa chạy.
 * **Độ nhạy/độ ồn của `khong_chac` trên ĐƯỜNG SỐNG** — ô còn trống (§7.7).
+* 🔴 **N-02 (85 → 85) VẪN chưa được giải thích.** Giả thuyết *"nhiệt độ 0 ⇒ vòng
+  sửa thôi xáo"* đã **bị bác**: 11/12 đoạn vẫn đổi (§7.9).
 * **`重庆`** còn sai 1/3 lượt dù nằm ngay trong ví dụ của luật.
 * Hai bài đỏ trong bộ `app:auto_scan_video` (`test_3300` metricx, `test_334`
   ngân sách) — ⚠️ **đã đỏ TRƯỚC** làn này (kiểm trên SHA `b9370220`), ⛔ không
@@ -461,6 +463,133 @@ một lô lời thoại **đã trả tiền** là đổi một thứ đắt lấ
 Anh cũng có quyền khai chỗ nó không chắc. Chỉ **quy tắc Hán-Việt** mới gắn với
 `vi`. Chi phí token vào thêm: ~**+0,015 credit/lô** ở `ltt-3.8`,
 ~**+0,004** ở `ltt-3.5`.
+
+## 7.8 ✅ **N-23 ĐÃ THI HÀNH** — ghim `temperature`, ghim model, và **ép lược đồ**
+
+> 🔴 **Chủ dự án chốt 24/09 (tối): `ltt-3.5` phục vụ đường dịch của app.**
+> ⇒ Câu *"3.5 hay 3.8"* **ĐÓNG**. ⛔ Không so sánh thêm. `ltt-3.8` nhường **toàn
+> bộ** cho làn bộ chấm.
+
+### Cổng N-23 — câu hỏi điều phối bắt kiểm TRƯỚC khi sửa
+
+> *"`temperature` có nằm trong vân tay `CONTENT_PROCESS` không?"*
+
+🔴 **KHÔNG.** Vân tay cũ là `noi_dung/{PHIEN_BAN_LOI_NHAC_LONG_TIENG}/{model}`.
+⇒ **Vế thứ hai của N-23**: một tham số **đổi đầu ra** mà ⛔ **không vào vân tay**
+nghĩa là cache trả kết quả của **nhiệt độ cũ** cho một cấu hình **mới**, ⛔ im
+lặng. Cùng họ lỗi với **N-21**, chỉ khác chiều: N-21 là *vân tay đổi mà lời nhắc
+không đổi*; đây là *lời nhắc chạy khác mà vân tay không đổi*.
+
+⇒ Đã sửa cả hai vế trong **một** bản vá. Vân tay nay:
+
+```
+noi_dung/3/ltt_llm:qwen35-api/t0.00/g1
+            ↑ model ghim      ↑ nhiet do  ↑ rang buoc luoc do
+```
+
+⚠️ `None` (⛔ không gửi) mã hoá thành `tcong`, ⛔ **khác** mọi giá trị số — *"không
+khai"* và *"khai 0,0"* là **hai trạng thái**, gộp lại là đúng bẫy *"hai trạng
+thái một giá trị"*.
+
+### Ba bản sửa, **một** lần vô hiệu cache
+
+| | ở đâu | vì sao |
+|---|---|---|
+| `chuyen_loi_thoai → ltt-3.5` | `ai.MODEL_THEO_THAO_TAC` | chủ dự án chốt |
+| `temperature = 0.0` | `ai.NHIET_DO_THEO_THAO_TAC` | ⛔ **không tách** khỏi dòng trên: 3.5 **không ghim** mất 64,3 % lô |
+| **ép lược đồ** | `long_tieng.luoc_do_phan_hoi` → `response_format` | đóng nốt 2/21 |
+
+⭐ `qc_ngu_nghia` **giữ `ltt-3.8` ghim tường minh** và ⛔ **không** bị ghim nhiệt
+độ — vắng mặt trong bảng = giữ nguyên hành vi cũ, đúng khuôn `MODEL_THEO_THAO_TAC`.
+
+### ⭐ Ép lược đồ — **tra nguồn trước khi tự suy** (luật 10)
+
+**Nguồn:** `ggml-org/llama.cpp`, `tools/server/README.md`:
+
+> *"The `response_format` parameter supports both plain JSON output (e.g.
+> `{"type": "json_object"}`) and schema-constrained JSON (e.g.
+> `{"type": "json_object", "schema": {…}}` …)"*
+
+⇒ llama-server dịch lược đồ thành **grammar**: một token không hợp lược đồ ⛔
+**không sinh ra được**. Đó là một **ràng buộc lúc giải mã**, ⛔ không phải một
+lời nhắc mạnh hơn — và đó là lý do nó đóng được **cả hai** chế độ hỏng đã đo
+(`doan` ra **MẢNG** · **thiếu đoạn**).
+
+⭐ Và ta biết **trước** các mã của lô ⇒ lược đồ khai **đích danh**:
+`required` = đúng các mã đã gửi, `additionalProperties: false`.
+
+### Kết quả — ngưỡng viết TRƯỚC là **≤ 1 % trên ≥ 20 lô**
+
+| cấu hình | lô hỏng | đoạn |
+|---|---|---|
+| ⛔ không ghim gì (SẢN PHẨM cũ) | 9/14 = **64,3 %** | — |
+| ghim `temperature` | 2/21 = **9,5 %** | — |
+| **ghim + ép lược đồ** | **0/20 = 0,0 %** ✅ | **188/188** |
+
+```
+v1  lo 12 x 7 lo  ->  0 hong  83/83
+v2  lo 12 x 7 lo  ->  0 hong  74/74     ⬅ phim VAN hong 2/7 khi chi ghim nhiet do
+v3  lo  6 x 6 lo  ->  0 hong  31/31
+```
+
+### ⭐ GIÁ, tính bằng **số lượt gọi thêm**: **+0**
+
+`response_format` đi **kèm chính lượt đang gọi** — ⛔ không thêm một lần gọi nào,
+⛔ không hạ cỡ lô, ⛔ không vòng thử lại. Hai đường kia (*thử lại khi hỏng*,
+*lô nhỏ hơn*) ⛔ **không cần đo** vì đường này đã đạt ngưỡng ở giá bằng **không**.
+
+---
+
+## 7.9 🔴 Đo lại sau khi ghim — **một hoá đơn tự đóng, một thì không**
+
+### 1. Tên riêng: **38/39 → 38/39**. ⛔ Ghim nhiệt độ ⛔ KHÔNG đổi gì ở đây
+
+| tên | v1 chưa luật | v2 có luật | **v3 luật + ghim 0,0** |
+|---|---|---|---|
+| 重庆 | XX XX XX | OK XX OK | ⚠️ **XX OK OK** |
+| **光子** (tiêu chí ÂM) | - OK OK | XX OK OK | 🔴 **XX XX XX** |
+| 11 ca còn lại | — | OK | **OK OK OK** |
+
+```
+v2 (chua ghim)  38/39 = 97,4 %
+v3 (DA ghim)    38/39 = 97,4 %      ⇒ khong doi
+```
+
+> 🔴 **`光子` nay hỏng ỔN ĐỊNH 3/3 lượt** — trước khi ghim nó hỏng **1/3**.
+> ⇒ Theo đúng tiêu chí điều phối đặt ra (*"còn hỏng **ổn định** ⇒ lúc đó mới là
+> lỗi **luật**"*): đây **là lỗi luật**, ⛔ không phải rút thăm. Nhánh
+> *"tổ chức/thương hiệu ⇒ giữ nguyên"* **thua** nhánh phiên âm một cách nhất quán.
+> ⛔ **Làn này không sửa** — `光子` là quyết định **sản phẩm**, chờ chủ dự án (§4g).
+
+⚠️ `重庆` vẫn **1/3 sai** ⇒ còn **ngẫu nhiên**, ⛔ chưa đủ căn cứ gọi là lỗi luật.
+
+### 2. Mất đoạn: **2/21 → 0/20** ✅ — xem §7.8
+
+### 3. 🔴 Vòng sửa: giả thuyết **SAI**. Ghim nhiệt độ ⛔ **KHÔNG** đóng được N-02
+
+> Giả thuyết điều phối: *"ở `temperature = 0`, dịch lại **cùng** một đầu vào cho
+> **cùng** một đầu ra ⇒ **vòng sửa thôi xáo**"*.
+
+Phép đo (`tools/bench_b2_lap_lai.py`) — **cùng** lô, **cùng** lời nhắc đường
+sống, **đúng** nhiệt độ sản phẩm đang ghim, gọi **3 lượt**:
+
+```
+12 doan so duoc  ->  ON DINH 1  ·  DOI 11  =  92 %
+```
+
+⛔ **11/12 đoạn vẫn ra khác nhau** giữa các lượt. Ví dụ `seg_0003`:
+*"Cách tốt nhất là nhanh chóng vào trong tòa nhà."* · *"Cách tốt nhất là vào
+trong ngay."* · *"Cần vào trong ngay."*
+
+⭐ Và nó **khớp với một nguồn đã có**: `L_LLM_CONG.md` §4b đo **5 kết quả khác
+nhau / 5 lượt** ngay ở `temperature = 0` (cơ chế: `-np 3` + continuous batching
++ `--spec-type draft-mtp` — thứ tự ghép lô đổi theo tải). Hai phép đo **độc lập**,
+trên hai lô khác nhau, **cùng một kết luận**.
+
+> 🔑 ⇒ **Ghim nhiệt độ mua ĐỘ BÁM LƯỢC ĐỒ, ⛔ không mua tính tái lập.**
+> ⇒ Con số **92 %** ngang với **28/29 đoạn đổi** mà §4f đo bằng một đường khác.
+> ⇒ **N-02 (85 → 85) VẪN chưa được giải thích bằng nhiệt độ.** Vòng sửa vẫn là
+> một **phép rút thăm lại**, và ⛔ **không** được đóng sổ nó bằng bản vá N-23.
 
 ## 7.4 ⇒ Bước 2 ĐÃ LÀM (§7.6) · Bước 3 ⛔ CHƯA
 

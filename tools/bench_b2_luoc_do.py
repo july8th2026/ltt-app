@@ -46,8 +46,48 @@ except Exception:                               # noqa: BLE001
 NGUON = GOC / "docs/auto_scan_video_final/bang_chung/b1_chep_loi_moi"
 
 
+def luoc_do_json(lo: list[dict]) -> dict:
+    """`response_format` ep model tra DUNG bang khoa-theo-ma cua lo nay.
+
+    ⭐ **Nguon, ⛔ khong tu suy** — `ggml-org/llama.cpp`, `tools/server/README.md`:
+
+        The `response_format` parameter supports both plain JSON output
+        (e.g. `{"type": "json_object"}`) and schema-constrained JSON
+        (e.g. `{"type": "json_object", "schema": {...}}` or
+        `{"type": "json_schema", "schema": {...}}`)
+
+    ⇒ llama-server dung **grammar-constrained decoding**: ⛔ khong phai mot loi
+    nhac manh hon, ma mot **rang buoc luc giai ma** — token khong hop luoc do
+    ⛔ khong sinh ra duoc.
+
+    🔑 Va ta biet TRUOC cac ma cua lo, nen luoc do khai duoc **dich danh**:
+    `required` = dung cac ma, `additionalProperties: false`. Do chinh la hai che
+    do hong da do (`B2_DICH.md` §7.5): `doan` ra **MANG**, va **thieu doan**.
+    """
+    ma = [str(d["ma"]) for d in lo]
+    doan = {
+        "type": "object",
+        "properties": {m: {
+            "type": "object",
+            "properties": {
+                "chu": {"type": "string"},
+                "cam_xuc": {"type": "string"},
+                "kieu_noi": {"type": "string"},
+                "nhan_manh": {"type": "array", "items": {"type": "string"}},
+                "khong_chac": {"type": "array", "items": {"type": "string"}},
+            },
+            "required": ["chu"],
+        } for m in ma},
+        "required": ma,
+        "additionalProperties": False,
+    }
+    return {"type": "json_object",
+            "schema": {"type": "object", "properties": {"doan": doan},
+                       "required": ["doan"], "additionalProperties": False}}
+
+
 def mot_lo(db, lo: list[dict], tat_ca: list[dict], *, mid: str,
-           temp: float | None) -> dict:
+           temp: float | None, ep: bool = False) -> dict:
     """`temp is None` ⇒ ⛔ **khong gui truong `temperature`** — dung nhu DUONG
     SONG lam: `giai_doan_noi_dung.py:217` goi `ai.goi_tinh_tien` ⛔ khong truyen
     `temperature`, `cong_vlm.py:341` chi dat truong khi no khac `None`.
@@ -69,10 +109,15 @@ def mot_lo(db, lo: list[dict], tat_ca: list[dict], *, mid: str,
     #    (`L_LLM_CONG.md` §3) ⇒ ⛔ ca hai tran deu KHONG cham, nen ket luan
     #    "khong phai cut" van dung — nhung no dung vi so do, ⛔ khong vi 32 768.
     tran, cho = ai.ngan_sach_cho(ai.CHUYEN_LOI_THOAI)
+    # ⭐ `them` di thang xuong than request: `CongVlm.chat` lam
+    #    `than_gui.update(them)` va cong may B chuyen nguyen than len llama-server
+    #    (`llm_gateway/upstream.py:91`). Duong nay da duoc kiem mot lan bang
+    #    `seed` (`L_LLM_CONG.md` §4b: cong ⛔ khong tu choi, 5/5 luot tra 200).
+    them = {"response_format": luoc_do_json(lo)} if ep else None
     kq = dieu_phoi.goi(db, messages=msg,
                        thu_tu_provider=list(ai.THU_TU_PROVIDER),
                        model_theo_provider={p: mid for p in ai.THU_TU_PROVIDER},
-                       temperature=temp, max_tokens=tran,
+                       temperature=temp, max_tokens=tran, them=them,
                        timeout_s=float(cho or 300.0))
     noi = getattr(kq, "noi_dung", None) or getattr(kq, "content", "")
     ma_lo = {d["ma"] for d in lo}
@@ -96,7 +141,7 @@ def mot_lo(db, lo: list[dict], tat_ca: list[dict], *, mid: str,
 
 
 def chay(*, model: str, moi_lo: int, temp: float | None, phim: str,
-         so_lo: int) -> dict:
+         so_lo: int, ep: bool = False) -> dict:
     import platform_core.db as dbmod
     from platform_core.llm import canonical
 
@@ -112,7 +157,7 @@ def chay(*, model: str, moi_lo: int, temp: float | None, phim: str,
     try:
         # ⛔ MOT request mot luc — 3.8 dung chung voi lan khac (luat 24/09).
         for lo in cac_lo:
-            ket.append(mot_lo(db, lo, doan, mid=mid, temp=temp))
+            ket.append(mot_lo(db, lo, doan, mid=mid, temp=temp, ep=ep))
     finally:
         db.close()
     gui = sum(k["gui"] for k in ket)
@@ -122,6 +167,10 @@ def chay(*, model: str, moi_lo: int, temp: float | None, phim: str,
         "temperature": ("⛔ KHONG GUI (mac dinh cong may B) — dung nhu duong song"
                         if temp is None else temp),
         "phim": phim, "so_lo": len(ket),
+        "ep_luoc_do": ep,
+        "⭐ nguon_ep": ("ggml-org/llama.cpp tools/server/README.md — "
+                       "response_format {type: json_object, schema: ...} "
+                       "= grammar-constrained decoding") if ep else "",
         "tong_gui": gui, "tong_nhan": nhan, "tong_thieu": gui - nhan,
         "ti_le_nhan": round(nhan / max(1, gui), 4),
         "so_lo_vi_pham_luoc_do": sum(1 for k in ket
@@ -141,17 +190,19 @@ def main(argv=None) -> int:
     ap.add_argument("--phim", default="v1")
     ap.add_argument("--so-lo", type=int, default=3)
     ap.add_argument("--ra", default="")
+    ap.add_argument("--ep-luoc-do", action="store_true",
+                    help="gui `response_format` ep bang khoa-theo-ma")
     a = ap.parse_args(argv)
     temp = None if a.temp < 0 else a.temp
     kq = chay(model=a.model, moi_lo=a.lo, temp=temp, phim=a.phim,
-              so_lo=a.so_lo)
+              so_lo=a.so_lo, ep=a.ep_luoc_do)
     if a.ra:
         d = Path(a.ra)
         d.mkdir(parents=True, exist_ok=True)
         # 🔴 **`phim` PHAI nam trong ten tep.** Thieu no thi hai luot khac phim
         #    cung cau hinh de len nhau va ban ghi cua luot truoc bien mat —
         #    ⛔ khong mot canh bao nao.
-        nhan = "congmacdinh" if temp is None else f"t{a.temp}"
+        nhan = ("congmacdinh" if temp is None else f"t{a.temp}") + ("_ep" if a.ep_luoc_do else "")
         (d / f"luocdo_{a.model}_{a.phim}_lo{a.lo}_{nhan}.json").write_text(
             json.dumps(kq, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"{kq['model']} · lo {kq['moi_lo']} · temp {kq['temperature']} · "
