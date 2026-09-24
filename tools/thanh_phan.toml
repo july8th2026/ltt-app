@@ -290,6 +290,8 @@ duong = ["platform_core/models.py", "platform_core/db.py",
          "platform_core/i18n.py", "platform_core/gpu.py",
          "platform_core/gpu_claims.py", "platform_core/gpu_lease.py",
          "platform_core/observability.py", "platform_core/runtime_paths.py",
+         # Ban khai giay phep ben thu ba (P6 connector runner).
+         "platform_core/third_party_notices.py",
          "platform_core/frontend_bundle.py", "platform_core/mailer.py",
          "platform_core/admin_console.py", "platform_core/app_projects.py",
          "platform_core/prompt_fragments.py", "platform_core/agent/",
@@ -308,6 +310,19 @@ he_trong = "nen"
 mo_ta = "Bo gac SSRF + client HTTP an toan. MOT nguon chan ly cho moi cuoc goi ra ma ben ngoai chon dich."
 duong = ["platform_core/an_toan_mang.py", "platform_core/http_an_toan.py"]
 he_trong = "an_ninh"
+
+# 🔴 KHAI 24/09 (plan wf-v2 P5c): kho credential + OAuth. Khai RIENG, cung ly
+#    do voi `core:an_toan_mang`: `he_trong = "an_ninh"`, va do thi phu thuoc se
+#    tu keo dung nguoi tieu thu that (`nut_loi/http.py`, `connector_runner`).
+#
+# ⛔ Thieu dong khai nay, gate `--doi` goi chung la "duong khong ai so huu" va
+#    HA CAP xuong ho so `nhanh` — tuc **bo test khong chay**, ma ket qua in ra
+#    van la PASS. Da xay ra that 24/09, ngay truoc mot luot deploy.
+[thanh_phan."core:credential"]
+mo_ta = "Kho credential (MultiFernet) + OAuth2 Google. Bi mat cua khach nam o day."
+duong = ["platform_core/credential.py", "platform_core/oauth_google.py"]
+he_trong = "an_ninh"
+tai_nguyen = ["postgres_test"]
 
 # --- server -----------------------------------------------------------------
 

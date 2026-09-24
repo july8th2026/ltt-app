@@ -86,7 +86,13 @@ DUNG_CHUNG = (
 #: Tep KHONG phai ma — khong co ai so huu cung khong buoc chay ca kho. Test nao DOC
 #: no (tra bang chuoi) thi chay dung test do; cac buoc kiem tinh (i18n, luat van hanh,
 #: ky tu dieu khien...) van chay trong moi luot L1.
-TIEN_TO_TAI_LIEU = ("docs/", "locale/")
+#: 🔴 `spike/` va `bench/` KHONG phai ma chay. Chung khong duoc dong goi,
+#:    khong ai import, va deploy khong chep chung. Nhung chung nam trong
+#:    kho, nen moi tep them vao do tung lam `--doi` FAIL OPEN: "duong khong
+#:    ai so huu" ⇒ gate HA CAP xuong `nhanh` ⇒ **bo test khong chay**, va
+#:    nguoi doc chi thay chu PASS. Do dung la ca da xay ra 24/09 khi mot
+#:    ban dung deploy suyt di ra voi 0 phep test.
+TIEN_TO_TAI_LIEU = ("docs/", "locale/", "spike/", "bench/")
 DUOI_TAI_LIEU = (".md",)
 TEN_TAI_LIEU = (".gitignore", ".gitattributes", ".editorconfig")
 
