@@ -20690,3 +20690,27 @@ msgstr "Internal model."
 
 msgid "text.chat + lược đồ BẮT BUỘC. Không khớp -> FAILED dau_ra_sai_luoc_do (spec §12.1)."
 msgstr "text.chat + a REQUIRED schema. Mismatch -> FAILED dau_ra_sai_luoc_do (spec §12.1)."
+
+msgid "Gọi HTTP"
+msgstr "HTTP request"
+
+msgid "Gọi một HTTP API. Mọi địa chỉ đi qua bộ gác SSRF: chỉ https và chỉ địa chỉ công cộng."
+msgstr "Call an HTTP API. Every address goes through the SSRF guard: https only, and public addresses only."
+
+msgid "Phương thức HTTP."
+msgstr "HTTP method."
+
+msgid "Địa chỉ https."
+msgstr "The https URL."
+
+msgid "Header gửi kèm."
+msgstr "Headers to send."
+
+msgid "Thân gửi đi. Object/mảng -> JSON; chuỗi -> nguyên văn."
+msgstr "The body to send. Object/array -> JSON; string -> verbatim."
+
+msgid "Theo 3xx. Tắt mặc định: header của bạn sẽ đi tới host do đích kia chọn."
+msgstr "Follow 3xx. Off by default: your headers would travel to a host the target picked."
+
+msgid "Mã coi là thành công. Trống -> mọi mã < 400."
+msgstr "Status codes counted as success. Empty -> every code < 400."
