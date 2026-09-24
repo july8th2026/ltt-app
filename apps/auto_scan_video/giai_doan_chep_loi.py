@@ -140,6 +140,18 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             tho = chep_loi(duong, ngon_ngu="" if khai == nn.TU_DOAN else khai,
                            ctx=ctx)
 
+        # 🔑 **CAT LAI theo CAU — chi cho duong ASR.** `embedded`/`ocr` da la ban
+        #    chu do NGUOI lam phim chia; chia lai la lam hong mot phan doan tot
+        #    hon phan doan ta tinh duoc. Duong ASR thi nguoc lai: WhisperX tra ve
+        #    ca khoi VAD ~30 giay lam MOT doan tren van Han (Punkt khong co mo
+        #    hinh `zh` — xem `cat_doan.py`), va mot khe 24 giay thi `timing_align`
+        #    khong con gi de canh.
+        if dinh_tuyen.get("nguon_loi") == nl.ASR:
+            from . import cat_doan
+            tho, chan_cat = cat_doan.cat_lai(
+                tho, ngon_ngu=str(tho.get("language") or khai or ""))
+            dinh_tuyen["cat_lai"] = chan_cat
+
         ban = ban_ghi.chuan_hoa(tho, thoi_luong_nguon=tt["thoi_luong"],
                                 nguon_loi=dinh_tuyen["nguon_loi"],
                                 dinh_tuyen=dinh_tuyen)
@@ -177,6 +189,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                       "van_tay": vt}],
             "tom_tat": {**ban_ghi.tom_tat(ban),
                         # Ly do dinh tuyen (ma, khong chu thoai) cho van hanh.
+                        # ⭐ `cat_lai` di kem: mot `so_doan` dep ma khong noi
+                        #    **bao nhieu doan KHONG cat duoc** la mot con so da
+                        #    giau san phan xau cua chinh no.
                         "dinh_tuyen": {k: dinh_tuyen.get(k) for k in
-                                       ("che_do", "nguon_loi", "ly_do")}},
+                                       ("che_do", "nguon_loi", "ly_do", "cat_lai")
+                                       if dinh_tuyen.get(k) is not None}},
         }

@@ -222,3 +222,153 @@ def test_hardsub_RONG_thi_KHONG_DAT_chu_khong_phai_dat():
                        engine="x", co_card=True)
     assert kq["dat"] is False
     assert kq["lech_doan_dat"] is False
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# N-17 he qua THU HAI: cho noi `autosubvideo` -> ASV vut truong cua engine
+#
+# Lan 1 (da ghi): `fallback_reason`.  Lan 2 (o day): `words`.
+# ⛔ Ca hai deu KHONG lam sai mot con so nao — chung lam mat kha nang PHAN BIET,
+#    nen khong phep kiem nao do. Bon phep duoi day la cai may bat khop do.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_chuan_hoa_doc_duoc_CA_HAI_ten_khoa_cua_tu():
+    """⛔ `whisperx` goi la `word`, `faster-whisper` goi la `text` — **ca hai dung**.
+
+    Do that 24/09: ASV chi doc `text` ⇒ nhanh MAC DINH (`aligned`) cho `so_tu`
+    = **0** trong khi nhanh LUI cho **1031**. Ta tra tien cho `align()` roi nem
+    ket qua di. ⇒ Phep kiem phai chot CA HAI hinh dang, khong phai mot.
+    """
+    from apps.auto_scan_video import ban_ghi
+
+    for khoa in ("text", "word"):
+        tho = {"segments": [{"start": 0.0, "end": 2.0, "chu": "", "text": "你好世界",
+                             "words": [{"start": 0.0, "end": 1.0, khoa: "你好"},
+                                       {"start": 1.0, "end": 2.0, khoa: "世界"}]}],
+               "language": "zh", "engine": "whisperx",
+               "alignment_status": "aligned"}
+        ban = ban_ghi.chuan_hoa(tho, thoi_luong_nguon=2.0)
+        assert ban_ghi.tom_tat(ban)["so_tu"] == 2, f"khoa {khoa!r} bi vut"
+
+
+def test_tu_bi_BO_duoc_DEM_chu_khong_bien_mat_im_lang():
+    """Bỏ 3 từ khác hẳn bỏ 900 từ — mà `continue` làm hai ca trông y hệt nhau.
+
+    WhisperX **thật sự** để một số từ không căn được (`alignment.py` chỉ gắn
+    `start`/`end` khi không phải NaN), nên nhánh này chạy thật.
+    """
+    from apps.auto_scan_video import ban_ghi
+
+    tho = {"segments": [{"start": 0.0, "end": 3.0, "text": "你好世界再见",
+                         "words": [{"start": 0.0, "end": 1.0, "word": "你好"},
+                                   {"word": "世界"},                      # thieu moc
+                                   {"start": 2.0, "end": 3.0, "word": ""}]}],
+           "language": "zh", "engine": "whisperx", "alignment_status": "aligned"}
+    ban = ban_ghi.chuan_hoa(tho, thoi_luong_nguon=3.0)
+    assert ban["tu_bi_bo"] == {"khong_chu": 1, "thieu_moc": 1, "moc_nguoc": 0}
+    assert ban_ghi.tom_tat(ban)["tu_bi_bo"]["thieu_moc"] == 1
+
+
+def test_nhan_ALIGNED_ma_KHONG_co_moc_tu_thi_DO_TO():
+    """⭐ Biến cái nhãn nói dối thành BẤT BIẾN máy kiểm — ⛔ không cảnh báo nhẹ.
+
+    `timing_align` đọc `canh_chinh == "aligned"` và làm việc như thể mỗi đoạn có
+    mốc bên trong. Một khối 24 giây **không mốc nào** mang đúng cái nhãn đó là
+    hai trạng thái rất khác nhau đeo một tên.
+    """
+    import pytest as _p
+
+    from apps.auto_scan_video import ban_ghi
+
+    tho = {"segments": [{"start": 0.0, "end": 24.0, "text": "你好", "words": []}],
+           "language": "zh", "engine": "whisperx", "alignment_status": "aligned"}
+    with _p.raises(ban_ghi.BanGhiError):
+        ban_ghi.chuan_hoa(tho, thoi_luong_nguon=24.0)
+
+    # ⛔ Va bat bien nay CHI rang buoc nhan `aligned`: nhanh lui khai that la
+    #    `fallback_unaligned` thi khong co moc tu la DUNG, khong duoc do.
+    tho["alignment_status"] = "fallback_unaligned"
+    ban_ghi.chuan_hoa(tho, thoi_luong_nguon=24.0)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CAT LAI DOAN — luat cat chep tu whisperX PR #1466, nguong tu Netflix TTSG
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _tu_han(chuoi: str, bat: float, buoc: float = 0.5) -> list[dict]:
+    """Mot ky tu = mot `word`, dung nhu `align()` sinh ra cho `zh`.
+
+    (`alignment.py`: `if model_lang in LANGUAGES_WITHOUT_SPACES: word_idx += 1`
+    o moi ky tu.)
+    """
+    return [{"word": c, "start": bat + i * buoc, "end": bat + (i + 1) * buoc}
+            for i, c in enumerate(chuoi)]
+
+
+def test_cat_khoi_dai_thanh_CAU_tai_dau_ket_cau():
+    """Đúng triệu chứng đo được: một khối ~24 s mang nhiều câu 。"""
+    from apps.auto_scan_video import cat_doan
+
+    chuoi = "大家好今天做红烧肉。首先准备五花肉切块。然后热锅凉油下姜片。"
+    tho = {"language": "zh", "segments": [
+        {"start": 0.0, "end": len(chuoi) * 0.5, "text": chuoi,
+         "words": _tu_han(chuoi, 0.0)}]}
+    moi, chan = cat_doan.cat_lai(tho, ngon_ngu="zh")
+
+    assert chan["so_doan_truoc"] == 1
+    assert chan["so_doan_sau"] == 3
+    assert [d["text"] for d in moi["segments"]] == [
+        "大家好今天做红烧肉。", "首先准备五花肉切块。", "然后热锅凉油下姜片。"]
+    # ⛔ Moi nhat cat phai roi dung sau mot dau ket cau — khong mot cho nao khac.
+    for d in moi["segments"][:-1]:
+        assert d["text"].endswith("。")
+
+
+def test_khoi_KHONG_co_cho_ngat_thi_DE_NGUYEN_va_KHAI_RA():
+    """⛔ Cắt giữa câu TỆ HƠN gộp — khe chứa nửa ý thì bản dịch sai nghĩa.
+
+    ⇒ Không có chỗ ngắt hợp lệ thì để nguyên, và **nói ra** là đã để nguyên.
+    """
+    from apps.auto_scan_video import cat_doan
+
+    chuoi = "大" * 60                                   # 30 giay, khong mot dau cau
+    tho = {"language": "zh", "segments": [
+        {"start": 0.0, "end": 30.0, "text": chuoi, "words": _tu_han(chuoi, 0.0)}]}
+    moi, chan = cat_doan.cat_lai(tho, ngon_ngu="zh")
+
+    assert chan["so_doan_sau"] == 1                     # ⛔ khong che bua
+    assert chan["so_doan_khong_cho_ngat"] == 1          # ...va KHAI RA
+    assert chan["so_doan_qua_dai"] == 1
+    assert moi["segments"][0]["text"] == chuoi          # chu khong mat mot ky tu
+
+
+def test_doan_DA_VUA_KHE_thi_khong_dung_vao():
+    """Ngưỡng 7,0 s là *Netflix TTSG General Requirements* (bài 215758617)."""
+    from apps.auto_scan_video import cat_doan
+
+    chuoi = "你好。世界。"
+    tho = {"language": "zh", "segments": [
+        {"start": 0.0, "end": 3.0, "text": chuoi, "words": _tu_han(chuoi, 0.0)}]}
+    moi, chan = cat_doan.cat_lai(tho, ngon_ngu="zh")
+
+    assert chan["so_doan_sau"] == 1
+    assert moi["segments"][0]["text"] == chuoi
+
+
+def test_KHONG_co_moc_tung_tu_thi_KHONG_cat():
+    """⛔ Cắt một khối 24 s theo tỉ lệ ký tự là **bịa mốc**, không phải cắt.
+
+    Đó đúng là thứ nhánh lui `fallback_unaligned` đưa tới, và nó phải đi ra ở
+    chẩn đoán chứ không đi ra ở một con số `so_doan` đẹp.
+    """
+    from apps.auto_scan_video import cat_doan
+
+    chuoi = "大家好今天做红烧肉。首先准备五花肉切块。"
+    tho = {"language": "zh", "segments": [
+        {"start": 0.0, "end": 24.0, "text": chuoi, "words": []}]}
+    _, chan = cat_doan.cat_lai(tho, ngon_ngu="zh")
+
+    assert chan["so_doan_sau"] == 1
+    assert chan["so_doan_khong_co_moc_tu"] == 1

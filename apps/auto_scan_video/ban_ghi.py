@@ -61,6 +61,34 @@ def _lam_sach(van_ban: str) -> str:
     return " ".join(str(van_ban or "").split())
 
 
+#: Ten khoa chua CHU cua mot tu, theo tung engine. ⛔ **Ca hai deu hop le** —
+#: day khong phai mot engine viet sai chinh ta, ma hai hop dong that.
+#:
+#: 🔴 **Su co 24/09 (N-17, he qua thu hai).** Ham nay tung chi doc `"text"`:
+#:
+#:      whisperx/alignment.py   word_segment = {"word": word_text}      -> "word"
+#:      transcription.py:239    {"start":…, "end":…, "text":…}          -> "text"
+#:
+#:    ⇒ Tren nhanh MAC DINH (`whisperx`, `canh_chinh="aligned"`) moi tu deu cho
+#:    `chu = ""` roi bi `continue` **im lang**: `so_tu` = **0**, trong khi nhanh
+#:    LUI cho **1031**. Ta tra tien cho `load_align_model` + `align` — buoc dat
+#:    nhat cua nhanh — roi **nem ket qua di**, va nhanh `aligned` cho ra dung thu
+#:    `unaligned` cho, chi cham hon.
+#:
+#: ⛔ Khong phep kiem nao do, vi bo sot **khong lam sai ket qua** — no chi lam mat
+#:    kha nang PHAN BIET. Do la ly do `kiem()` nay co bat bien `canh_chinh`.
+KHOA_CHU_TU = ("text", "word")
+
+
+def _chu_tu(tu: dict) -> str:
+    """Chu cua mot tu, doc duoc CA HAI hinh dang engine. ⛔ Dung chon mot ben."""
+    for khoa in KHOA_CHU_TU:
+        chu = _lam_sach(tu.get(khoa))
+        if chu:
+            return chu
+    return ""
+
+
 
 
 def chuan_hoa(thoi: dict, *, thoi_luong_nguon: float = 0.0,
@@ -73,6 +101,9 @@ def chuan_hoa(thoi: dict, *, thoi_luong_nguon: float = 0.0,
     """
     doan_tho = list((thoi or {}).get("segments") or [])
     ra: list[dict] = []
+    # ⭐ Dem tung LY DO bo, khong chi dem tong: ba nguyen nhan duoi day doi hoi ba
+    #    hanh dong khac han nhau (sua khoa · sua model can chinh · bao loi engine).
+    bo_khong_chu = bo_thieu_moc = bo_moc_nguoc = 0
 
     for tho in doan_tho:
         van_ban = _lam_sach(tho.get("text"))
@@ -87,14 +118,23 @@ def chuan_hoa(thoi: dict, *, thoi_luong_nguon: float = 0.0,
 
         tu = []
         for t in (tho.get("words") or []):
-            chu = _lam_sach(t.get("text"))
+            chu = _chu_tu(t)
             if not chu:
+                bo_khong_chu += 1
                 continue
             try:
                 tb, tk = float(t.get("start")), float(t.get("end"))
             except (TypeError, ValueError):
-                continue        # engine doi khi khong gan moc cho mot tu
+                # 🔴 **Bo, nhung ⛔ KHONG im lang.** WhisperX that su de mot so tu
+                #    khong can duoc (ky tu ngoai tu dien cua model can chinh,
+                #    chu so) va khi do `word_segment` **khong co** khoa
+                #    `start`/`end` — `alignment.py` chi gan khi khong phai NaN.
+                #    Bo 3 tu khac han bo 900 tu, ma neu chi `continue` thi hai ca
+                #    trong **y het nhau** o moi cho doc sau nay.
+                bo_thieu_moc += 1
+                continue
             if tk < tb:
+                bo_moc_nguoc += 1
                 continue
             tu.append({"bat": tb, "ket": tk, "chu": chu})
 
@@ -139,6 +179,12 @@ def chuan_hoa(thoi: dict, *, thoi_luong_nguon: float = 0.0,
         # 🔑 Nguon goc loi thoai: `embedded` | `ocr` | `asr` (`nguon_loi.py`).
         #    Ban ghi truoc 22/09 khong co khoa nay = `asr`.
         "nguon_loi": str(nguon_loi or "asr"),
+        # 🔴 **Tu bi BO, theo LY DO.** ⛔ Khong duoc rut gon thanh mot con so
+        #    tong: *"bo 900 tu vi sai khoa"* la mot loi chuong trinh, *"bo 3 tu
+        #    vi model can chinh khong co ky tu do"* la hanh vi binh thuong cua
+        #    engine. Mot con so gop lai khong phan biet duoc hai ca do.
+        "tu_bi_bo": {"khong_chu": bo_khong_chu, "thieu_moc": bo_thieu_moc,
+                     "moc_nguoc": bo_moc_nguoc},
         "doan": ra,
     }
     if dinh_tuyen:
@@ -189,6 +235,20 @@ def kiem(ban: dict) -> None:
                 raise BanGhiError(
                     _t('Bản ghi có từ nằm ngoài đoạn chứa nó.'))
 
+    # 🔴 **BAT BIEN: `aligned` PHAI co moc tung tu.** ⛔ Khong phai canh bao nhe.
+    #
+    #    `canh_chinh` la mot **loi hua** ma ha nguon tin: `timing_align` doc co do
+    #    va lam viec nhu the moi doan co moc ben trong. Su co 24/09 (N-17): co ghi
+    #    `"aligned"` trong khi ban ghi mang **0 tu** — mot khoi 24 giay khong mot
+    #    moc nao ben trong. Hai trang thai rat khac nhau deo **cung mot nhan**, va
+    #    khong phep kiem nao do vi khong con so nao SAI, chi mat kha nang phan biet.
+    #
+    # ⇒ Nhan phai duoc mot cai may bat khop, khong phai mot con nguoi nho ra.
+    if str(ban.get("canh_chinh") or "") == "aligned":
+        if not sum(len(d.get("tu") or []) for d in doan):
+            raise BanGhiError(_t(
+                'Bản ghi khai đã căn chỉnh nhưng không có mốc từng từ nào.'))
+
 
 def van_tay_ban_ghi(*, checksum_tieng: str, model: str, ngon_ngu: str,
                     phien_ban_ma: int, nguon_loi: str = "") -> str:
@@ -229,6 +289,9 @@ def tom_tat(ban: dict) -> dict:
         #    bat nguoi doc di doc ma nguon.
         "ly_do_roi": ban.get("ly_do_roi", ""),
         "nguon_loi": ban.get("nguon_loi", "asr"),
+        # ⭐ Di len `outputs` cung `so_tu`: mot `so_tu` thap chi tra loi duoc
+        #    *"vi sao thap"* khi no di kem so tu DA BI BO va ly do bo.
+        "tu_bi_bo": dict(ban.get("tu_bi_bo") or {}),
         "phu_song": round(
             sum(float(d["ket"]) - float(d["bat"]) for d in doan), 2),
     }
