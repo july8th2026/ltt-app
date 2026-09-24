@@ -19,27 +19,23 @@ tao vong import.
 from __future__ import annotations
 
 from platform_core.i18n import _ as _t
-import hashlib
 import os
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
-from itsdangerous import URLSafeTimedSerializer
 from sqlalchemy.orm import Session
 
 from apps.agent.manifest import MANIFEST
 from platform_core.agent import workflows
 from platform_core.agent.tools import resolve_params_schema
 from platform_core.models import (APP_PROJECT_ACTIVE, AgentWorkflow,
-                                  AgentWorkflowShare, AppProject)
+                                  AppProject)
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.deps import user_hien_tai
 
 router = APIRouter(tags=["agent"])
 _ASSET_LIMIT = 90 * 1024 * 1024
 _ASSET_MIME_PREFIXES = ("image/", "video/", "audio/")
-_ASSISTANT_SALT = "ltt-agent-assistant-proposal-v1"
 _PREFERENCES_SLUG = "agent.preferences"
 _DEFAULT_PREFERENCES = {"theme": "dark", "catalog_mode": "simple",
                         "presentation_version": "creative-v1"}
@@ -49,14 +45,6 @@ def _canvas_presentation_mode() -> str:
     """Creative is the default; legacy keeps the H20 renderer as rollback."""
     configured = os.environ.get("LTT_AGENT_CANVAS_PRESENTATION", "creative")
     return "legacy" if configured.strip().lower() == "legacy" else "creative"
-
-
-def _assistant_serializer() -> URLSafeTimedSerializer:
-    secret = (os.environ.get("LTT_SESSION_SECRET") or "").strip()
-    if not secret:
-        raise RuntimeError(_t('Assistant proposal signer chưa được cấu hình.'))
-    return URLSafeTimedSerializer(secret)
-
 
 def _user(request: Request):
     user = user_hien_tai(request)
@@ -152,16 +140,6 @@ def _preferences_json(row: AppProject | None) -> dict:
                 saved.get("catalog_mode") in {"simple", "advanced"}):
             payload["catalog_mode"] = saved["catalog_mode"]
     return {**payload, "revision": row.revision if row else 0}
-
-def _active_share(db: Session, token: str) -> AgentWorkflowShare:
-    digest = hashlib.sha256(token.encode()).hexdigest()
-    row = db.query(AgentWorkflowShare).filter_by(token_hash=digest).first()
-    now = datetime.now(timezone.utc)
-    expires = row.expires_at if row and row.expires_at.tzinfo else (
-        row.expires_at.replace(tzinfo=timezone.utc) if row else now)
-    if row is None or row.revoked_at is not None or expires <= now:
-        raise HTTPException(status_code=404, detail=_t('Share không tồn tại hoặc đã hết hạn.'))
-    return row
 
 def _require_admin_user(request: Request):
     user = _user(request)

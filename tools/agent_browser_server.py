@@ -44,7 +44,7 @@ app = create_app(env={
     "LTT_ADMIN_PASSWORD_HASH": "",
 })
 
-from apps.agent import routes as agent_routes
+from apps.agent import routes as agent_routes  # noqa: F401  (nap route)
 
 
 def _fake_plan(_db, *, goal, budget_max_credit, **_kwargs):
@@ -65,14 +65,14 @@ def _fake_plan(_db, *, goal, budget_max_credit, **_kwargs):
     }]}
 
 
-# Gan vao TUNG module chua route, khong vao package: `plan_once` duoc import
-# theo gia tri, nen `agent_routes.plan_once = ...` chi them mot thuoc tinh
-# khong ai doc - fixture se lang le goi planner that va tieu tien API.
-for _mod in (agent_routes.assistant,):      # POST /agent/api/workflows/plan
-    # Doi ten phai no o day, khong duoc lang le bo qua: gan de len mot module
-    # khong co `plan_once` nghia la route that van goi planner that va tieu tien.
-    assert hasattr(_mod, "plan_once"), f"{_mod.__name__} khong con dung plan_once"
-    _mod.plan_once = _fake_plan
+# 🗑️ 24/09/2026 (plan wf-v2 P8 Task 5): `apps/agent/routes/assistant.py` DA BI
+#    XOA cung ca cum v2, nen khong con route nao goi `plan_once`. Doan gan de
+#    cu da bo. `_fake_plan` giu lai vi fixture Canvas duoi day con dung no de
+#    dung mot ke hoach mau — no khong con la mot lop chan giua route va planner.
+#
+# ⛔ Neu mot ngay nao do co route AI moi, dung chep lai doan cu: cua moi la
+#    `/agent/api/v3/workflows/{id}/soan`, va no goi
+#    `platform_core.agent.ke_hoach_v3.soan_draft` chu khong phai `plan_once`.
 
 import apps.taoanh.jobs as image_jobs
 import apps.thumbnail.jobs as thumbnail_jobs

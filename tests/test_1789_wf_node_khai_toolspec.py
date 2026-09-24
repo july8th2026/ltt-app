@@ -287,6 +287,13 @@ CHUA_BAT = {
     "http": "core.http con thieu KHO CREDENTIAL cho header Authorization "
             "(phase goc 7 moi xong mot nua) - bat som la moi khach dan token "
             "vao `WorkflowVersion`",
+    # ⚠️ KHAC HAN ly do cua `http`: `ai.agent` SAN SANG (test_2921: 15 passed,
+    #    ke ca bon phep tien). Thu con thieu la MOT DONG IMPORT, va dong ay
+    #    nam trong tep ma lan p8 KHONG duoc sua (ranh gioi lan: `nut_loi/
+    #    __init__.py` thuoc lan p5c). Het han khi dieu phoi gop hai lan.
+    #        from platform_core.workflow.nut_loi import ai_agent  # noqa
+    "ai_agent": "cho dieu phoi them MOT dong import vao `nut_loi/__init__.py` "
+                "- tep do ngoai ranh gioi lan p8 (xem P8 task-2-report.md)",
 }
 
 
