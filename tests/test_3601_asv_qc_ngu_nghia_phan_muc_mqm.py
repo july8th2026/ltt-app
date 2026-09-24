@@ -219,3 +219,24 @@ def test_ly_do_gop_CHI_tu_cac_loi_da_sinh_ra_phan_quyet():
               {"loai": "lat_nghia", "muc": "nang", "doan": "tăng",
                "ly_do": "đảo nghĩa"}])
     assert "đảo nghĩa" in d["ly_do"] and "chỉ là sắc thái" not in d["ly_do"]
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  7. V3 — sàn mức cho SAI THỰC THỂ (đo mới thêm, không phải linh cảm)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_loi_nhac_NEU_SAN_MUC_cho_sai_thuc_the():
+    """🔴 V2 (phân mức, chưa có luật này) tụt độ nhạy `sai_thuc_the` 100% → 40%.
+
+    Soi ra: **9/9** ca bỏ sót đều là model **CÓ THẤY** lỗi và **CÓ** gọi đúng
+    tên `sai_thuc_the` — rồi chấm `nhe`. ⇒ lỗi **xếp mức**, không phải lỗi phát
+    hiện. Một con số hay một cái tên sai không làm câu khó hiểu; nó làm người
+    xem **tin chắc một sự việc không có thật**.
+
+    ⛔ Gỡ dòng này ra khỏi lời nhắc là trả bộ chấm về chỗ mù 60% lỗi thực thể.
+    """
+    he_thong = qc_ai.loi_nhac_ngu_nghia(
+        [{"ma": "seg_0001", "goc": GOC, "chu": DICH}])[0]["content"]
+    for tu in ("SO", "TEN RIENG", "DON VI", "NGAY THANG"):
+        assert tu in he_thong, f"lời nhắc không nêu {tu}"
+    assert "`nang`" in he_thong and "`nhe`" in he_thong

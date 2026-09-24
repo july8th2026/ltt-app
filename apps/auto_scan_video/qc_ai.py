@@ -172,6 +172,18 @@ def loi_nhac_ngu_nghia(lo: list[dict], ngon_ngu_dich: str = "vi") -> list[dict]:
         "- `nang`: pha mach, nhung van hieu duoc dieu cau muon noi.\n"
         "- `nhe`: la loi that, nhung KHONG can tro hieu (sac thai, mot bo ngu "
         "phu, cach dien dat).\n"
+        # 🔴 **San muc cho SAI THUC THE — do 24/09, va no la mot phep do chu
+        #    khong phai mot linh cam.** Ban V2 (phan muc, chua co ba dong nay)
+        #    tut do nhay `sai_thuc_the` tu 100 % xuong **40 %** tren 15 cap da
+        #    lam hong co chu y. Soi ra: **9/9** ca bi bo sot deu la model **CO
+        #    THAY** loi va **CO** goi dung ten `sai_thuc_the` — roi cham `nhe`.
+        #    ⇒ Khong phai loi phat hien, la loi XEP MUC.
+        #
+        # ⭐ Neo vao hau qua, dung khuon ba muc o tren: mot con so hay mot cai
+        #    ten sai khong lam cau kho hieu — no lam nguoi xem **tin chac mot
+        #    su viec khong co that**, tuc nang hon han mot cho vung ve.
+        "Rieng SO, TEN RIENG, DON VI, NGAY THANG bi doi: nguoi xem se tin mot "
+        "su viec KHONG co that, nen it nhat la `nang` — ⛔ khong bao gio `nhe`.\n"
         f"Loai loi: {', '.join(LOAI_LOI)}.\n"
         "Quy tac:\n"
         "- `doan` BAT BUOC: trich NGUYEN VAN doan bi loi, lay tu cau goc hoac "
