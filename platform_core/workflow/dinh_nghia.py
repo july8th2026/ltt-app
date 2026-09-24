@@ -166,10 +166,52 @@ def xuat_ban_draft(db, workflow_id: str, *, created_by: str,
     if draft is None:
         raise bien_dich.LoiBienDich("do_thi_rong", "chua co ban nhap")
     graph = bien_dich.bien_dich(draft.document or {}, cong_cu=cong_cu)
+    _kiem_credential(db, workflow_id, graph)
     _ghim_subworkflow(db, workflow_id, graph)
     gia = bao_gia.bao_gia_do_thi(graph, cong_cu=cong_cu)
     return xuat_ban(db, workflow_id, graph, created_by=created_by,
                     estimated_max=gia.toi_da)
+
+
+def _kiem_credential(db, workflow_id: str, graph: dict) -> None:
+    """Moi `credential_ref` trong do thi phai **dung duoc** (spec §9.1).
+
+    🔴 CHAN O PUBLISH, KHONG PHAI LUC CHAY. Mot ref cua nguoi khac phat hien
+       luc chay la mot run da tieu tien roi moi FAILED; phat hien luc publish
+       la mot thong bao truoc khi khach bam Chay lan nao.
+
+    ⛔ **Khong giai ma gi o day.** `credential.kiem_ref` chi hoi ba cau: ref co
+       thuoc chu workflow khong, con hieu luc khong, `kieu` co nam trong
+       `NodeDefinition.credential` khong. Dong co, validator va API khong bao
+       gio cham ban ro (spec §9.4).
+    """
+    from platform_core import credential as kho
+    from platform_core.models import Workflow
+    from platform_core.workflow import bien_dich, nut
+
+    refs = [(str(n.get("id", "")), str(n.get("type", "")),
+             str(n.get("credential_ref") or ""))
+            for n in (graph.get("nodes") or [])]
+    refs = [r for r in refs if r[2]]
+    if not refs:
+        return
+    wf = db.get(Workflow, workflow_id)
+    owner = str(getattr(wf, "owner_id", "") or "")
+    so = nut.tat_ca()
+    for nid, loai, ref in refs:
+        nd = so.get(loai)
+        try:
+            kho.kiem_ref(db, ref, owner_id=owner,
+                         kieu_cho_phep=tuple(getattr(nd, "credential", ()) or ()))
+        except kho.LoiCredential as loi:
+            # ⛔ MOT ma cho ca ba ca (khong thay / da thu hoi / sai kieu): phan
+            #    biet chung o bề mat publish la mot may dem cho nguoi ngoai biet
+            #    id nao ton tai — cung bai voi `credential._hang`. Ly do that
+            #    di vao `chi_tiet`, thu chi chu workflow doc.
+            raise bien_dich.LoiBienDich(
+                "credential_khong_hop_le",
+                f"node {nid!r}: credential khong dung duoc ({loi.ma})",
+                nid) from loi
 
 
 def _ghim_subworkflow(db, workflow_id: str, graph: dict) -> None:

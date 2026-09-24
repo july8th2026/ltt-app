@@ -75,3 +75,11 @@ demucs>=4.0,<5.0             # tach nhac/loi (tier high_quality)
 #     them chung, no chi dung lai.
 imagehash>=4.3,<5.0
 open_clip_torch>=2.24,<3.0
+# workflow platform V2 (plan wf-v2 P5c): OAuth2 Google cho kho credential.
+# ADOPT, khong tu viet: `rfc7636.create_s256_code_challenge` (PKCE S256 la
+# base64url KHONG DEM cua SHA-256 -- cai dem `=` la cho nguoi ta sai, va sai
+# thi Google tra `invalid_grant` khong noi vi sao) + RFC 6749 §4.1.1 dung URL
+# uy quyen. ⛔ KHONG dung `authlib.integrations.httpx_client`: ban 1.8.0 khai
+# tu no la deprecated (doi sang httpx2); luot POST diem token di thang bang
+# `httpx` da co o tren.
+authlib>=1.6.9,<2.0

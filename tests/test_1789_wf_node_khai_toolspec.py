@@ -283,18 +283,15 @@ def test_banh_coc_cau_noi_khong_biet_ai_la_gi():
 
 #: Mo-dun node co `dang_ky` nhung CO Y chua noi vao `nut_loi/__init__.py`.
 #: Moi dong phai co ly do, va ly do phai het han duoc.
-CHUA_BAT = {
-    "http": "core.http con thieu KHO CREDENTIAL cho header Authorization "
-            "(phase goc 7 moi xong mot nua) - bat som la moi khach dan token "
-            "vao `WorkflowVersion`",
-    # ⚠️ KHAC HAN ly do cua `http`: `ai.agent` SAN SANG (test_2921: 15 passed,
-    #    ke ca bon phep tien). Thu con thieu la MOT DONG IMPORT, va dong ay
-    #    nam trong tep ma lan p8 KHONG duoc sua (ranh gioi lan: `nut_loi/
-    #    __init__.py` thuoc lan p5c). Het han khi dieu phoi gop hai lan.
-    #        from platform_core.workflow.nut_loi import ai_agent  # noqa
-    "ai_agent": "cho dieu phoi them MOT dong import vao `nut_loi/__init__.py` "
-                "- tep do ngoai ranh gioi lan p8 (xem P8 task-2-report.md)",
-}
+#: ⭐ RONG tu 24/09/2026 (P5c/T5): `core.http` da duoc BAT.
+#:
+#: Ly do khoa cu — *"con thieu KHO CREDENTIAL cho header Authorization; bat
+#: som la moi khach dan token vao `WorkflowVersion`"* — het hieu luc khi
+#: `platform_core/credential.py` ton tai. Danh sach nay RONG la mot trang thai
+#: HOP LE va la trang thai MONG MUON; phep kiem duoi day van chay (mo-dun moi
+#: khong duoc import van DO), va phep doi chung van chan viec liet ke lai mot
+#: mo-dun DA bat.
+CHUA_BAT: dict[str, str] = {}
 
 
 def test_moi_mo_dun_dang_ky_node_deu_duoc_IMPORT_hoac_khai_la_chua_bat():

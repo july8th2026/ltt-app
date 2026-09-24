@@ -124,11 +124,17 @@ def test_dinh_nghia_node_hop_le():
     nd = nut_http.CORE_HTTP
     assert nd.type_version == 1
     assert nd.category == "NETWORK"
-    assert nd.quyen == frozenset({"network"})
-    # `publish_duoc=False` cho toi khi `bien_dich._node` biet dich `core.*`
-    # - cung ly do `trigger.manual` va `ai.*` hom nay deu False.
-    assert nd.publish_duoc is False
-    assert set(nd.ma_loi) == set(nut_http.MA_LOI_HTTP)
+    assert nd.quyen == frozenset({"network", "credential"})
+    # ⭐ DA BAT 24/09/2026 (P5c/T5). Ly do khoa cu — *"thieu kho credential cho
+    #    header Authorization"* — het hieu luc khi `platform_core/credential.py`
+    #    ton tai: ref duoc kiem luc publish, bi mat chi giai ma trong tien trinh
+    #    job, va no bi che o ca `output` lan `error`.
+    assert nd.publish_duoc is True
+    assert nd.credential == nut_http.KIEU_CREDENTIAL
+    assert set(nut_http.MA_LOI_HTTP) <= set(nd.ma_loi)
+    # Ma cua KHO credential cung phai duoc cong bo: mot node FAILED voi mot ma
+    # khong nam trong `ma_loi` la mot ma khong ai dich duoc o giao dien.
+    assert "credential_bi_thu_hoi" in nd.ma_loi
 
 
 def test_tham_so_khai_du_bon_thu_brief_doi():

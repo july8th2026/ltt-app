@@ -451,8 +451,20 @@ def _node_loi(n: dict, nid: str, loai: str) -> dict:
         raise LoiBienDich("loai_node_chua_ho_tro", loai, nid)
     params = dict(n.get("params") or {})
     _kiem_tham_so_loi(nd, params, nid)
+    # 🔴 Truoc 24/09/2026 dong nay ghi cung `""`. Mot o LUON RONG thi khong ai
+    #    gan duoc credential cho `core.http`, va he qua that la nguoi soan phai
+    #    go token vao `params` — tuc vao `workflow_version`, mot ban ghi duoc
+    #    NHAN BAN khi khach "Save as" va tra nguyen ven cho trinh soan thao.
+    ref = str(n.get("credential_ref") or "")
+    if ref and not nd.credential:
+        # ⛔ Node nay khong goi ra ngoai, nen mot ref o day la mot hieu nham
+        #    cua nguoi soan — va mot hieu nham im lang ve bao mat la thu te
+        #    nhat: ho tuong da gan khoa, thuc ra chua.
+        raise LoiBienDich(
+            "credential_khong_ho_tro",
+            f"node {loai!r} khong nhan credential nao", nid)
     return {"id": nid, "type": loai, "type_version": nd.type_version,
-            "params": params, "credential_ref": "",
+            "params": params, "credential_ref": ref,
             "settings": dict(n.get("settings") or {}),
             "thi_hanh": nd.thi_hanh}
 
