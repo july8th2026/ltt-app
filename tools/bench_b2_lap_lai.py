@@ -54,7 +54,8 @@ except Exception:                               # noqa: BLE001
 NGUON = GOC / "docs/auto_scan_video_final/bang_chung/b1_chep_loi_moi"
 
 
-def _mot_luot(db, lo: list[dict], tat_ca: list[dict], *, mid: str) -> dict:
+def _mot_luot(db, lo: list[dict], tat_ca: list[dict], *, mid: str,
+              ep: bool = True, seed: int | None = None) -> dict:
     """`{ma: chu}` cho mot lan goi. ⛔ Khong nem khi thieu doan — thieu la DU LIEU."""
     from platform_core.llm import dieu_phoi
 
@@ -63,7 +64,20 @@ def _mot_luot(db, lo: list[dict], tat_ca: list[dict], *, mid: str) -> dict:
     msg = L.loi_nhac(lo, tat_ca=tat_ca, ngon_ngu_goc="zh",
                      dac_diem_giong={}, ngon_ngu_dich="vi")
     tran, cho = ai.ngan_sach_cho(ai.CHUYEN_LOI_THOAI)
-    kq = dieu_phoi.goi(db, messages=msg,
+    # ⭐ **Cau hinh SAN PHAM hom nay** = ghim nhiet do + EP LUOC DO (N-23).
+    #    Luot do dau (11/12 doi) chay TRUOC khi noi `response_format`, nen no
+    #    ⛔ khong phai cau hinh dang chay. Mac dinh `ep=True` de bench ⛔ khong
+    #    tu troi khoi san pham mot lan nua.
+    them: dict = {}
+    if ep:
+        them["response_format"] = L.luoc_do_phan_hoi(lo)
+    # ⚠️ `seed` — `llama.cpp` co `-s, --seed` (tools/server/README.md) va cong
+    #    may B ⛔ khong tu choi truong nay (`L_LLM_CONG.md` §4b: 5/5 luot tra 200).
+    #    Nhung lan do do KHONG o cau hinh hom nay (chua ghim nhiet do, chua ep
+    #    luoc do) ⇒ o day do lai tren dung cau hinh dang chay.
+    if seed is not None:
+        them["seed"] = int(seed)
+    kq = dieu_phoi.goi(db, messages=msg, them=(them or None),
                        thu_tu_provider=list(ai.THU_TU_PROVIDER),
                        model_theo_provider={p: mid for p in ai.THU_TU_PROVIDER},
                        # ⭐ ⛔ Khong go lai so: doc dung nhiet do SAN PHAM ghim.
@@ -81,7 +95,8 @@ def _mot_luot(db, lo: list[dict], tat_ca: list[dict], *, mid: str) -> dict:
             for m, v in tho.items() if m in ma_lo and isinstance(v, dict)}
 
 
-def chay(*, model: str, phim: str, lan: int, so_doan: int) -> dict:
+def chay(*, model: str, phim: str, lan: int, so_doan: int,
+         ep: bool = True, seed: int | None = None) -> dict:
     import platform_core.db as dbmod
     from platform_core.llm import canonical
 
@@ -96,7 +111,7 @@ def chay(*, model: str, phim: str, lan: int, so_doan: int) -> dict:
     db = next(dbmod.get_session())
     try:
         for _ in range(lan):                    # ⛔ MOT request mot luc
-            luot.append(_mot_luot(db, doan, doan, mid=mid))
+            luot.append(_mot_luot(db, doan, doan, mid=mid, ep=ep, seed=seed))
     finally:
         db.close()
 
@@ -119,6 +134,7 @@ def chay(*, model: str, phim: str, lan: int, so_doan: int) -> dict:
     return {
         "model": model, "phim": phim, "lan": lan, "so_doan_gui": len(doan),
         "nhiet_do": ai.nhiet_do_cho(ai.CHUYEN_LOI_THOAI),
+        "ep_luoc_do": ep, "seed": seed,
         "⚠️ nhiet_do_la_gi": ("doc tu `ai.NHIET_DO_THEO_THAO_TAC` — dung thu "
                              "san pham ghim, ⛔ khong phai mot hang cua bench"),
         "doan_so_duoc": tong,
@@ -137,15 +153,20 @@ def main(argv=None) -> int:
     ap.add_argument("--lan", type=int, default=3)
     ap.add_argument("--so-doan", type=int, default=12)
     ap.add_argument("--ra", default="")
+    ap.add_argument("--khong-ep", action="store_true",
+                    help="⛔ KHONG gui response_format (⛔ khac san pham)")
+    ap.add_argument("--seed", type=int, default=None)
     a = ap.parse_args(argv)
-    kq = chay(model=a.model, phim=a.phim, lan=a.lan, so_doan=a.so_doan)
+    kq = chay(model=a.model, phim=a.phim, lan=a.lan, so_doan=a.so_doan,
+              ep=not a.khong_ep, seed=a.seed)
     if a.ra:
         d = Path(a.ra)
         d.mkdir(parents=True, exist_ok=True)
-        (d / f"laplai_{a.model}_{a.phim}_lan{a.lan}.json").write_text(
+        _n = ("ep" if not a.khong_ep else "khongep") + (f"_seed{a.seed}" if a.seed is not None else "")
+        (d / f"laplai_{a.model}_{a.phim}_lan{a.lan}_{_n}.json").write_text(
             json.dumps(kq, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"{kq['model']} · {kq['phim']} · {kq['lan']} luot · "
-          f"nhiet do {kq['nhiet_do']}")
+          f"nhiet do {kq['nhiet_do']} · ep luoc do {kq['ep_luoc_do']} · seed {kq['seed']}")
     print(f"  doan so duoc {kq['doan_so_duoc']} · ON DINH {kq['doan_ON_DINH']} · "
           f"DOI {kq['doan_DOI']} ({kq['ti_le_doi']:.0%})")
     for c in kq["chi_tiet_doan_DOI"][:6]:

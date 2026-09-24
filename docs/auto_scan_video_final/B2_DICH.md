@@ -66,13 +66,18 @@ SỐNG** — lời nhắc lồng tiếng đã qua nghiệm thu, có ngân sách 
 | **3 · đường B, phần THU** | ✅ **XONG** — `khong_chac` vào `outputs`, ⛔ chỉ thu | §7.7 |
 | **N-23 · ghim model + nhiệt độ + ép lược đồ** | ✅ **XONG** — lô hỏng **64,3 % → 0,0 %** (0/20), giá **+0 lượt gọi** | §7.8 |
 | **đo lại sau khi ghim** | ✅ **XONG** — tên riêng **không đổi**; vòng sửa **vẫn xáo 92 %** | §7.9 |
+| **đo lại sau cú sập 23:37–23:44** | ✅ **XONG** — `0/20` **tái hiện y hệt** (cộng dồn 40 lô, 376/376 đoạn) | §7.8b |
+| **SEED** (nửa còn lại của "nhiệt độ + seed") | 🔴 **XONG — cổng NHẬN, ⛔ KHÔNG hiệu lực.** Đường dịch ⛔ **không tái lập được** | §7.8c |
+| **`光子` × lồng tiếng** | ✅ **XONG** — va chạm ⛔ **không tái hiện**: `光子` chưa bao giờ ra chữ Hán | §7.8d |
 
 ### 🔴 Ba việc CHỜ điều phối / chủ dự án — ⛔ làn này cố ý không tự làm
 
 1. ✅ **ĐÃ LÀM — N-23** (điều phối cấp số hiệu 24/09). Xem §7.8.
-2. 🔴 **`光子` / thương hiệu** — ⚠️ **cập nhật sau khi ghim: nó hỏng ỔN ĐỊNH
-   3/3 lượt**, ⛔ không còn là rút thăm. Theo đúng tiêu chí điều phối đặt ra, đây
-   **là lỗi LUẬT**. ⛔ Vẫn chờ chủ dự án (§4g, §7.9) — ⛔ làn này không sửa.
+2. ✅ **ĐÓNG — chủ dự án chốt 24/09 luật tên riêng** (§4h). Luật đã chốt **đúng
+   bằng** `QUY_TAC_TEN_RIENG_VI` đang chạy ⇒ ⛔ **KHÔNG sửa lời nhắc thêm**.
+   ⚠️ `光子` hỏng 3/3 và `重庆` 1/3 ở lượt đo sau khi ghim (§7.9) — điều phối đọc
+   đây **rất có thể là rút thăm**, ⛔ không phải lỗi luật. ⇒ Việc còn lại là
+   **đo lại**, ⛔ không phải sửa luật.
 3. ✅ **ĐÓNG — chủ dự án chốt 24/09 (tối): `ltt-3.5` phục vụ đường dịch.**
    ⛔ Không so sánh 3.8 nữa. `ltt-3.8` nhường **toàn bộ** cho làn bộ chấm.
 
@@ -80,8 +85,18 @@ SỐNG** — lời nhắc lồng tiếng đã qua nghiệm thu, có ngân sách 
 
 * **Bước 3** (bản nền dịch đo lại trên đường sống) — chưa chạy.
 * **Độ nhạy/độ ồn của `khong_chac` trên ĐƯỜNG SỐNG** — ô còn trống (§7.7).
+  ⚠️ Và `57 %`/`0,63 %` của §4i đo ở **nhiệt độ chưa ghim** ⇒ phải đo lại **trước**
+  khi dựng bảng từ.
+* ⏭ **BẢNG TỪ `B → D` (+ `A` tuỳ chọn)** — điều phối chốt 24/09, ⛔ **chưa làm**,
+  xếp **sau** việc nhiệt độ (§4d).
 * 🔴 **N-02 (85 → 85) VẪN chưa được giải thích.** Giả thuyết *"nhiệt độ 0 ⇒ vòng
-  sửa thôi xáo"* đã **bị bác**: 11/12 đoạn vẫn đổi (§7.9).
+  sửa thôi xáo"* đã **bị bác**: 11/12 đoạn vẫn đổi (§7.9), và **ghim seed cũng
+  không cứu** — 12/12 đổi (§7.8c).
+* ⏭ **Phép cơ chế §4f chạy lại** (29 đoạn **đã đúng** → tốt lên / không đổi /
+  tệ đi). Ta mới biết vòng sửa **ĐỔI** đoạn, ⛔ chưa biết đổi theo **hướng nào**
+  — và nay ⛔ không có núm nào làm nó rẻ hơn.
+* ⚠️ **Chữ Hán lọt bản ghi vì lỗi ASR: `1/343 = 0,3 %`** (§7.8d). Là một **cửa
+  chặn ở biên**, ⛔ không phải một câu trong lời nhắc.
 * **`重庆`** còn sai 1/3 lượt dù nằm ngay trong ví dụ của luật.
 * Hai bài đỏ trong bộ `app:auto_scan_video` (`test_3300` metricx, `test_334`
   ngân sách) — ⚠️ **đã đỏ TRƯỚC** làn này (kiểm trên SHA `b9370220`), ⛔ không
@@ -540,6 +555,117 @@ v3  lo  6 x 6 lo  ->  0 hong  31/31
 
 ---
 
+## 7.8b ✅ ĐO LẠI TỪ ĐẦU sau cú sập `23:37–23:44` — **0/20 tái hiện y hệt**
+
+Điều phối bắt đo lại vì số cũ *"chạy quanh cú sập"*. Đã chạy lại **toàn bộ** phép
+ép lược đồ sau `23:58`, cùng cấu hình:
+
+| phim | lô | trước sập | **sau sập** |
+|---|---|---|---|
+| v1 | 12 × 7 | 0 hỏng · 83/83 | **0 hỏng · 83/83** |
+| v2 | 12 × 7 | 0 hỏng · 74/74 | **0 hỏng · 74/74** |
+| v3 | 6 × 6 | 0 hỏng · 31/31 | **0 hỏng · 31/31** |
+
+```
+CONG DON hai luot:  40 lo · 376/376 doan · 0 lo hong = 0,0 %
+```
+
+⭐ Hai lượt **độc lập**, cách nhau một lần restart cả ba dịch vụ, ra **cùng một
+con số** ⇒ `0/20` ⛔ không phải vết của cú sập.
+
+⚠️ Và mốc giờ đã kiểm: lượt gọi model muộn nhất của loạt CŨ kết thúc **23:35:39**,
+trước cửa sổ **81 giây** ⇒ ⛔ không lượt nào vắt qua. Thứ **phải vứt** là **bộ
+test** chạy *trong* cửa sổ (11 đỏ → **5** khi chạy lại sau `23:44`).
+
+---
+
+## 7.8c 🔴 **SEED — cổng NHẬN, và nó ⛔ KHÔNG có hiệu lực.** Đường này ⛔ KHÔNG tái lập được
+
+Nửa còn lại của *"chốt nhiệt độ + seed"*. **Nguồn** (⛔ không đoán):
+`ggml-org/llama.cpp`, `tools/server/README.md` — `-s, --seed SEED | RNG seed
+(default: -1, use random seed for -1)`. Cổng máy B ⛔ không từ chối trường này
+(`L_LLM_CONG.md` §4b: 5/5 lượt trả 200).
+
+⇒ Đo lại trên **đúng cấu hình đang chạy hôm nay** (ghim `temperature 0,0` **+ ép
+lược đồ**) — ô mà §4b ⛔ chưa có:
+
+| cấu hình | đoạn ỔN ĐỊNH | đoạn ĐỔI |
+|---|---|---|
+| temp 0,0, ⛔ chưa ép lược đồ, ⛔ không seed | 1 | 11 |
+| **temp 0,0 + ép lược đồ + `seed=20260925`** | **0** | **12 / 12** |
+
+🔴 **Ghim seed ⛔ không mua được gì.** Ba lượt **cùng lô, cùng seed, cùng nhiệt
+độ, cùng lược đồ** ra **ba bản khác nhau** ở **mọi** đoạn. Ví dụ `seg_0003`:
+*"Cách tốt nhất là vào trong ngay."* · *"…vào trong nhà ngay."* · *"Vào nhà ngay
+là tốt nhất."*
+
+⭐ Khớp `L_LLM_CONG.md` §4b (4 kết quả khác nhau / 5 lượt **có** seed). Hai phép
+đo **độc lập**, hai cấu hình khác nhau, **một kết luận**.
+
+> # 🔴 HỆ QUẢ, và nó đổi cách ta báo MỌI số dịch về sau
+>
+> **Đường dịch của ASV ⛔ KHÔNG tái lập được — ⛔ không núm nào đi qua đường sản
+> phẩm làm nó tái lập.** Cơ chế hợp lý: `-np 3` + continuous batching +
+> `--spec-type draft-mtp` (`L_LLM_CONG.md` §4b) — thứ tự ghép lô đổi theo tải.
+>
+> ⇒ ⭐ **Mọi phép đo chất lượng dịch phải báo kèm PHƯƠNG SAI giữa các lượt,
+> ⛔ không được báo một con số.** Một lượt ⛔ không phải một phép đo.
+>
+> ⚠️ Chính tệp này đã suýt vi phạm: §7.1 ghi *"9/13"*, và ba lượt trên **cùng**
+> cấu hình cho **7 · 9 · 5**. Con số trung thực là **một khoảng**, ⛔ không phải
+> một điểm.
+
+⚠️ **⛔ Đừng suy ngược rằng vòng sửa vô hại.** Ta mới biết nó **ĐỔI** đoạn
+(92–100 %), ⛔ **chưa** biết đổi theo **hướng nào**. Phép cơ chế §4f (29 đoạn
+**đã đúng** → tốt lên / không đổi / tệ đi) vẫn là phép trả lời câu đó, và nay
+⛔ **không** chạy được rẻ hơn bằng cách ghim núm nào.
+
+---
+
+## 7.8d ⚠️ `光子` và LỒNG TIẾNG — va chạm ⛔ KHÔNG tái hiện
+
+Điều phối hỏi: *"giữ nguyên dạng"* có đẩy **chữ Hán** vào bản ghi tiếng Việt —
+thứ giọng đọc ⛔ không phát âm nổi — hay không. **Chuỗi THẬT**, ⛔ không tóm tắt:
+
+| lời nhắc | `光子` ra |
+|---|---|
+| v1 (chưa luật) | *"Mang súng ra đi **Photon**!"* |
+| v2 (có luật) | *"Đưa súng đi **Quang Tử**!"* · *"Lấy súng ra đi **Photon**!"* ×2 |
+| v3 (luật + ghim) | *"…**Quang Tử**!"* ×3 |
+
+⇒ 🔑 **`光子` ⛔ CHƯA BAO GIỜ ra chữ Hán.** Nó ra **"Photon"** (Latin) hoặc
+**"Quang Tử"** (Hán-Việt) — **cả hai đều đọc được** bằng giọng Việt. ⇒ Va chạm
+*"thương hiệu giữ dạng ⇒ chữ Hán lọt vào bản ghi"* ⛔ **không tái hiện**.
+
+### Quét chữ Hán trên MỌI đầu ra đã có
+
+```
+b2_dich_nen    0 / 188 doan
+b2_ten_rieng   0 / 119 dau ra
+b2_lap_lai     1 /  36 ban      <- ⚠️ mot ca
+--------------------------------------------
+tong           1 / 343  =  0,3 %
+```
+
+⚠️ **Và ca duy nhất ấy ⛔ KHÔNG phải thương hiệu:**
+
+```
+seg_0005   "…dùng súng提炼 để dụ nó."
+```
+
+`提炼` đến từ `提炼枪` — một **lỗi CHÉP LỜI** mà chính đường B đã khai (§4i liệt
+`提炼枪` trong danh sách lỗi ASR). ⇒ Nguyên nhân là **ASR**, ⛔ không phải nhánh
+*"tổ chức/thương hiệu giữ nguyên dạng"*.
+
+> ⇒ ⛔ **Chưa có căn cứ đề nghị chủ dự án sửa luật.** Câu bổ sung *"thương hiệu
+> giữ dạng **đọc được**"* giải một bài toán mà **dữ liệu ⛔ chưa cho thấy tồn
+> tại**. ⚠️ Rủi ro thật nằm ở chỗ khác: **chữ Hán lọt vào bản ghi vì lỗi ASR**,
+> `1/343 = 0,3 %` — và đó là một **cửa chặn ở biên**, ⛔ không phải một câu trong
+> lời nhắc.
+
+⚠️ `n = 3` phim, và `光子` là **tên thương hiệu DUY NHẤT** trong cả ba ⇒ ⛔ kết
+luận này ⛔ không nói gì về một phim có nhiều thương hiệu Trung Quốc.
+
 ## 7.9 🔴 Đo lại sau khi ghim — **một hoá đơn tự đóng, một thì không**
 
 ### 1. Tên riêng: **38/39 → 38/39**. ⛔ Ghim nhiệt độ ⛔ KHÔNG đổi gì ở đây
@@ -837,6 +963,27 @@ ta không biết trước khách dịch phim game, ẩm thực hay tài liệu.
 | **D · rút bảng từ TỪ CHÍNH PHIM** | một lượt LLM đọc toàn bộ bản chép lời, liệt kê thuật ngữ + đề xuất cách dịch, rồi bơm vào lời nhắc dịch | +1 lượt gọi mỗi phim (≈ 1/5 chi phí dịch); ⛔ **không có người chấm** cho bảng nó rút ra | bảng rút sai ⇒ **ghim sai** một thuật ngữ cho **toàn phim**, ⚠️ tệ hơn sai lẻ tẻ |
 | **E · không làm gì** | giữ nguyên | 0 | hỏng thuật ngữ ở lại đúng mức hôm nay (§4d) |
 
+> 🔴 **ĐÃ CHỐT 24/09 — điều phối chọn `B → D`, `A` tuỳ chọn.** ⛔ **CHƯA LÀM.**
+>
+> | | đường | vì sao |
+> |---|---|---|
+> | 1 | **B** — model tự khai từ nó không chắc | rẻ nhất; phần **thu** đã bật (§7.7); tiện thể là **bộ dò lỗi chép lời** |
+> | 2 | **D** — rút bảng từ **TỪ CHÍNH PHIM** | ⭐ chỗ nó thắng một bảng tĩnh: sinh ra **từ phim khách đưa lên**, nên trả lời được *"phim game hay ẩm thực?"* — câu ta ⛔ **không biết trước** |
+> | 3 | **A** — khách tự nạp bảng từ, **ĐÈ LÊN** kết quả tự động | rẻ, và là thứ khách doanh nghiệp sẽ hỏi |
+>
+> ⛔ **Xếp SAU việc nhiệt độ, và lý do là một con số:** `57 %` độ nhạy và
+> `0,63 %` độ ồn của đường B **đo ở nhiệt độ CHƯA ghim** ⇒ ⚠️ cả hai **có thể
+> đổi**. ⛔ Đừng dựng một thiết kế trên hai con số sắp phải đo lại.
+>
+> ⚠️ **Giới hạn ghi vào thiết kế NGAY TỪ ĐẦU:** *model biết nó không biết **TỪ**;
+> nó ⛔ không biết nó hiểu sai **CÂU*** — **0 %** ở lớp ngữ pháp (§4i).
+> ⇒ `B→D` ⛔ **không thay** được bộ chấm, nó **giảm tải** cho bộ chấm.
+>
+> ⭐ **Khi tới lượt, đo HAI vế** — vế hai là vế ta suýt quên ở **mọi** lần sửa
+> lời nhắc hôm nay:
+> 1. bao nhiêu trong **7 ca hỏng đã biết** được đóng;
+> 2. ⭐ **có ca nào vốn ĐÚNG bị bảng từ làm hỏng không.**
+
 ⛔ **Tôi không khuyến nghị đường nào** — điều phối mang tới chủ dự án. Ba điều đã
 **đo được** và cần nằm cạnh lựa chọn:
 
@@ -966,12 +1113,24 @@ Lượt chấm đầu **chết cả 4 lô** với `concurrency_limited` (429) �
 đoạn mất **308 s** (so với 65 s cho cùng số đoạn ở bước dịch trên `ltt-3.5`).
 ⇒ Chấm `v1`/`v2` **vẫn đang chạy**. ⛔ Không ép thêm request vào `ltt-3.8`.
 
-## 4h. Lời nhắc **v4** — luật TẠM ba nhánh, và bảng trước/sau CẢ TẬP
+## 4h. Lời nhắc **v4** — ba nhánh, và bảng trước/sau CẢ TẬP
 
-> ⛔ **Đây là luật TẠM do ĐIỀU PHỐI thu hẹp, chưa phải chủ dự án chốt ba nhánh.**
-> Chủ dự án ra luật bằng ví dụ `张伟 → Trương Vĩ` — một **tên người**; đem nó áp
-> lên một **thương hiệu** là **ta** nới rộng, nên thu về là **trả lại** lời họ
-> nói. ⛔ Đừng đọc bảng này như thể ba nhánh đã được chốt.
+> 🔴 **CHỦ DỰ ÁN ĐÃ CHỐT 24/09.** Luật tên riêng ⛔ **không còn là "luật tạm"**:
+>
+> ```
+> 1. CÓ lối viết quen tiếng Việt  ⇒ dùng lối quen   首尔→Seoul · 李宗盛→Lý Tông Thịnh
+> 2. KHÔNG có / không chắc        ⇒ LOẠI THỰC THỂ mới quyết định
+>      người · địa danh           ⇒ phiên Hán-Việt   张伟→Trương Vĩ
+>      tổ chức · thương hiệu      ⇒ giữ nguyên dạng  光子 ⛔ không phiên
+> ```
+>
+> ⭐ Đây **đúng** là luật đã nằm trong `QUY_TAC_TEN_RIENG_VI` (lời nhắc đường
+> sống, §7.6) ⇒ ⛔ **KHÔNG sửa lời nhắc thêm lần nào vì chuyện này.**
+>
+> ⚠️ **Phần dưới giữ nguyên làm LỊCH SỬ, ⛔ đừng dọn đi.** Nó ghi ba lần
+> *sửa-một-hỏng-một* và — đáng giá nhất — việc **trục cắt sai lúc đầu**
+> (cắt theo *loại thực thể* trong khi trục thật là *"đã có lối quen hay chưa"*,
+> §4h dưới). Đó là thứ ngăn người sau đi lại đúng con đường ấy.
 
 `PHIEN_BAN_LOI_NHAC` **3 → 4**. Quy tắc 5 tách: **5a** người/địa danh → phiên
 Hán-Việt · **5b** người thật có lối viết quen → dùng lối quen · **5c** tổ
