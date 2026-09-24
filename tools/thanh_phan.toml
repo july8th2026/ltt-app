@@ -257,7 +257,7 @@ he_trong = "nen"
 #        thay vi keo ca `core:nen`.
 [thanh_phan."core:an_toan_mang"]
 mo_ta = "Bo gac SSRF + client HTTP an toan. MOT nguon chan ly cho moi cuoc goi ra ma ben ngoai chon dich."
-duong = ["platform_core/an_toan_mang.py"]
+duong = ["platform_core/an_toan_mang.py", "platform_core/http_an_toan.py"]
 he_trong = "an_ninh"
 
 # --- server -----------------------------------------------------------------
