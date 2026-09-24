@@ -105,7 +105,7 @@ def _bay_gio():
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
-def giai_tham_so(db, run_id: str, params: dict) -> dict:
+def giai_tham_so(db, run_id: str, params: dict, vong=()) -> dict:
     def _giai(v: Any) -> Any:
         if isinstance(v, dict):
             return {k: _giai(x) for k, x in v.items()}
@@ -115,7 +115,7 @@ def giai_tham_so(db, run_id: str, params: dict) -> dict:
         if tc is None:
             return v
         nguon, cong = tc
-        anh = thi_hanh.anh_chup_hien_tai(db, run_id, nguon)
+        anh = thi_hanh.anh_chup_hien_tai(db, run_id, nguon, vong)
         if anh is None or anh.execution_status != "SUCCEEDED":
             raise LoiThamSo("dau_vao_sai", f"{nguon} chua SUCCEEDED")
         ra = anh.output_ref or {}
@@ -134,21 +134,41 @@ def giai_tham_so(db, run_id: str, params: dict) -> dict:
 
 
 def _khoa_idem(run: WorkflowRun, node: dict, lan: int, cc: CongCu,
-               params: dict) -> str:
+               params: dict, vong=()) -> str:
+    """Khoá khử trùng của MỘT lượt nộp job.
+
+    🔴 `duong` THAY CHO `node["id"]`, và đó là chỗ nguy hiểm nhất của cả
+       việc khoá `node_run` theo đường thi hành.
+
+       Với `node["id"]` trần, một node THÂN `foreach` có tham số không phụ
+       thuộc `loop.item` sinh **cùng một `dedupe_key`** ở mọi vòng. Và
+       `jobs.submit` khử trùng theo `dedupe_key`: nó **trả lại job của vòng
+       1**. Kết quả: `foreach` 5 phần tử chạy **một** job, bốn vòng còn lại
+       nhận lại kết quả cũ — không lỗi, không cảnh báo, không ai biết.
+
+       Cả HAI nhánh đều dính: nhánh `side_effect == "none"` vì `lan` giống
+       nhau ở mọi vòng, nhánh kia vì `idempotency_fields` đọc cùng `params`.
+
+    ⚠️ THAY, không phải THÊM: với `vong = ()` thì `duong == node["id"]`, nên
+       khoá của mọi node ngoài vòng lặp **không đổi một bit** — các job đang
+       chạy trên production giữ nguyên khoá của chúng.
+    """
+    duong = thi_hanh.khoa_node(str(node["id"]), vong)
     if cc.side_effect == "none" or not cc.idempotency_fields:
-        goc = [run.id, node["id"], lan]
+        goc = [run.id, duong, lan]
     else:
-        goc = [run.id, node["id"],
+        goc = [run.id, duong,
                {k: params.get(k) for k in cc.idempotency_fields}]
     return hashlib.sha256(json.dumps(goc, sort_keys=True, default=str)
                           .encode()).hexdigest()[:64]
 
 
 def nop_job(db, run: WorkflowRun, node: dict, *,
-            cong_cu: Optional[dict[str, CongCu]] = None) -> Optional[str]:
+            cong_cu: Optional[dict[str, CongCu]] = None,
+            vong=()) -> Optional[str]:
     cc_all = _nguon.tat_ca() if cong_cu is None else cong_cu
     nid = node["id"]
-    anh = thi_hanh.anh_chup_hien_tai(db, run.id, nid)
+    anh = thi_hanh.anh_chup_hien_tai(db, run.id, nid, vong)
     lan = int(anh.attempt_number if anh else 1)
     try:
         ten_cc = ten_cong_cu(node["type"])
@@ -159,7 +179,8 @@ def nop_job(db, run: WorkflowRun, node: dict, *,
         may_trang_thai.chuyen_node(
             db, run.id, nid, sang="FAILED",
             mo_ta="cau noi job khong doc duoc loai node",
-            error=f"loi_he_thong: {loi}"[:2000], attempt_number=lan)
+            error=f"loi_he_thong: {loi}"[:2000], attempt_number=lan,
+            vong=vong)
         return None
     cc = cc_all.get(ten_cc)
     if cc is None:
@@ -173,17 +194,18 @@ def nop_job(db, run: WorkflowRun, node: dict, *,
         # run kết thúc ngay trong lượt này thay vì quay vòng đến khi hết hạn.
         may_trang_thai.chuyen_node(
             db, run.id, nid, sang="FAILED", mo_ta="cong cu bien mat khoi registry",
-            error=f"cong_cu_khong_con: {ten_cc!r}", attempt_number=lan)
+            error=f"cong_cu_khong_con: {ten_cc!r}", attempt_number=lan,
+            vong=vong)
         return None
     try:
-        params = giai_tham_so(db, run.id, node.get("params") or {})
+        params = giai_tham_so(db, run.id, node.get("params") or {}, vong)
     except LoiThamSo as loi:
         # `str(loi)` da la "<ma>: <chi tiet>" (LoiThamSo.__init__) - khong lap
         # lai `loi.ma` lan nua o day (review round 1: ma "dau_vao_sai" bi lap
         # ba lan khi ghep them prefix rieng).
         may_trang_thai.chuyen_node(
             db, run.id, nid, sang="FAILED", mo_ta="giai tham so",
-            error=str(loi), attempt_number=lan)
+            error=str(loi), attempt_number=lan, vong=vong)
         return None
     gia_that = int(cc.tinh_gia(params))
     tran = int(node.get("gia_tran", 0))
@@ -191,14 +213,15 @@ def nop_job(db, run: WorkflowRun, node: dict, *,
         may_trang_thai.chuyen_node(
             db, run.id, nid, sang="FAILED", mo_ta="vuot tran bao gia",
             error=f"vuot_tran_bao_gia: {gia_that} > {tran}",
-            attempt_number=lan)
+            attempt_number=lan, vong=vong)
         return None
     wp = cho_doi.tao_waitpoint(db, run_id=run.id, owner_id=run.owner_id,
                                kind="JOB", required_successes=1)
-    cho_doi.chan_node(db, run_id=run.id, node_id=nid, waitpoint_id=wp.id)
+    cho_doi.chan_node(db, run_id=run.id, node_id=nid, waitpoint_id=wp.id,
+                      vong=vong)
     tham_so = dict(params)
     tham_so["owner_id"] = run.owner_id           # như submit_child (v1)
-    khoa = _khoa_idem(run, node, lan, cc, params)
+    khoa = _khoa_idem(run, node, lan, cc, params, vong)
     tham_so["_idem"] = khoa
     # Làn + admission ĐÚNG con đường canonical (`public_api/invocation.py`
     # `submit()`, dòng ~500-560): làn do `ToolSpec.lane_for` chọn (không cứng
@@ -229,7 +252,7 @@ def nop_job(db, run: WorkflowRun, node: dict, *,
                       admission_resource=tai_nguyen, admission_slots=so_suat)
     may_trang_thai.chuyen_node(
         db, run.id, nid, sang="QUEUED", mo_ta="da nop job", job_id=job.id,
-        attempt_number=lan, output_ref={"_gia_that": gia_that})
+        attempt_number=lan, output_ref={"_gia_that": gia_that}, vong=vong)
     return job.id
 
 
@@ -261,11 +284,12 @@ def bao_ket_thuc(db, job: Job) -> None:
 
 
 def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
-               cong_cu: Optional[dict[str, CongCu]] = None) -> Optional[str]:
-    hien = may_trang_thai.trang_thai_node(db, run.id, node_id)
+               cong_cu: Optional[dict[str, CongCu]] = None,
+               vong=()) -> Optional[str]:
+    hien = may_trang_thai.trang_thai_node(db, run.id, node_id, vong)
     if hien not in ("QUEUED", "RUNNING"):
         return None
-    for wp_id in cho_doi.waitpoint_cua_node(db, run.id, node_id):
+    for wp_id in cho_doi.waitpoint_cua_node(db, run.id, node_id, vong):
         wp = db.get(Waitpoint, wp_id)
         if wp is None or wp.kind != "JOB" or wp.status != "PENDING":
             continue
@@ -274,7 +298,7 @@ def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
         if sig is None:
             continue
         wp.status = "COMPLETED"
-        anh = thi_hanh.anh_chup_hien_tai(db, run.id, node_id)
+        anh = thi_hanh.anh_chup_hien_tai(db, run.id, node_id, vong)
         lan = int(anh.attempt_number if anh else 1)
         gia_that = int((anh.output_ref or {}).get("_gia_that", 0)) if anh else 0
         node = _node_cua(db, run, node_id)
@@ -301,7 +325,7 @@ def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
                         db, run.id, node_id, sang="FAILED",
                         mo_ta="hau kiem ket qua job",
                         error=f"{ma_hk}: {chi_tiet_hk}"[:2000],
-                        attempt_number=lan, job_id=sig.ref_id)
+                        attempt_number=lan, job_id=sig.ref_id, vong=vong)
                     return "FAILED"
             bao = du_lieu.get("credit_cost")      # handler báo giá thật (vd theo token)
             chi_phi = int(bao) if bao is not None else gia_that
@@ -328,14 +352,14 @@ def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
             may_trang_thai.chuyen_node(
                 db, run.id, node_id, sang="SUCCEEDED", mo_ta="job xong",
                 output_ref=du_lieu, cost_credit=chi_phi, attempt_number=lan,
-                job_id=sig.ref_id)
+                job_id=sig.ref_id, vong=vong)
             if tran_ref:
                 # LINEAGE — `created_by_snapshot_id` phải trỏ vào ảnh chụp
                 # ĐANG GIỮ ref, để "tệp này từ đâu ra" trả lời được bằng MỘT
                 # cột. Ảnh chụp đó là hàng SUCCEEDED vừa ghi ở trên: mô hình C
                 # INSERT một hàng MỚI mỗi lần chuyển, nên lúc `luu_json` chạy
                 # nó CHƯA tồn tại (`anh` khi đó còn là hàng QUEUED/RUNNING).
-                moi = thi_hanh.anh_chup_hien_tai(db, run.id, node_id)
+                moi = thi_hanh.anh_chup_hien_tai(db, run.id, node_id, vong)
                 if moi is not None:
                     db.get(Artifact, tran_ref).created_by_snapshot_id = moi.id
             run.actual_cost = int(run.actual_cost or 0) + chi_phi
@@ -353,7 +377,7 @@ def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
                 db, run.id, node_id, sang="FAILED",
                 mo_ta="cau noi job khong doc duoc loai node",
                 error=f"loi_he_thong: {loi}"[:2000], attempt_number=lan,
-                job_id=sig.ref_id)
+                job_id=sig.ref_id, vong=vong)
             return "FAILED"
         cc = cc_all.get(ten_cc)
         if cc is None:
@@ -367,7 +391,7 @@ def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
             may_trang_thai.chuyen_node(
                 db, run.id, node_id, sang="FAILED", mo_ta="job ket thuc",
                 error=f"cong_cu_khong_con: {ten_cc!r}", attempt_number=lan,
-                job_id=sig.ref_id)
+                job_id=sig.ref_id, vong=vong)
             return "FAILED"
         sang = "ABANDONED" if (mo_ho and cc.side_effect == "irreversible") else (
             "CANCELLED" if sig.status == "CANCELLED" else "FAILED")
@@ -383,18 +407,19 @@ def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
         #    thắng `settings.retry`, không phải ngược lại.
         node = _node_cua(db, run, node_id)
         if thu_lai.quyet_dinh(sang=sang, node=node, lan=lan) == "RETRY_SCHEDULED":
-            han = thu_lai.hen(db, run_id=run.id, node=node, lan=lan)
+            han = thu_lai.hen(db, run_id=run.id, node=node, lan=lan,
+                              vong=vong)
             may_trang_thai.chuyen_node(
                 db, run.id, node_id, sang="RETRY_SCHEDULED",
                 mo_ta="job ket thuc, con luot thu lai",
                 error=f"{ma}: {chi_tiet}"[:2000],
-                attempt_number=lan + 1, job_id=sig.ref_id,
+                attempt_number=lan + 1, job_id=sig.ref_id, vong=vong,
                 output_ref={thu_lai.KHOA_HAN: han.isoformat()})
             return "RETRY_SCHEDULED"
         may_trang_thai.chuyen_node(
             db, run.id, node_id, sang=sang, mo_ta="job ket thuc",
             error=f"{ma}: {chi_tiet}"[:2000],
-            attempt_number=lan, job_id=sig.ref_id)
+            attempt_number=lan, job_id=sig.ref_id, vong=vong)
         return sang
     return None
 

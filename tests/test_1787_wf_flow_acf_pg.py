@@ -342,3 +342,91 @@ def test_wakeup_node_run_id_khong_bao_gio_vuot_cot_tren_PG(db):
     db.commit()
     w = db.query(Wakeup).filter_by(run_id="r-pg-1").one()
     assert len(w.node_run_id) <= 64 and w.node_run_id.startswith("#")
+
+
+# ── FLOW C ĐẦY ĐỦ: thân có node SINH JOB, ≥ 2 vòng ─────────────────────────
+
+def test_FLOW_C_than_co_node_JOB_chay_du_moi_vong(db):
+    """🔴 Điều kiện ra THẬT của P3 (spec §18.5 FLOW C): thân là một **app mock**.
+
+    Mỗi vòng phải là **một job riêng**. Hai cái bẫy, cả hai im lặng:
+
+    1. `node_run` khoá `(run_id, node_id)` ⇒ vòng 2 ghi đè trạng thái vòng 1;
+    2. `cau_noi._khoa_idem` không mang chỉ số vòng ⇒ `jobs.submit` khử trùng và
+       trả lại **job của vòng 1**, nên 5 phần tử chạy **một** job.
+
+    Không cái nào ném. Cả hai cho ra một run SUCCEEDED trông bình thường.
+    """
+    from platform_core import jobs
+    from platform_core.job_scheduler import ORIGIN_WORKFLOW
+    from platform_core.models import Job
+    from platform_core.workflow import tao_run, thi_hanh
+
+    w = _publish(db, [
+        _core("f", "foreach", items="[1, 2, 3]", max_items=5),
+        _app("x"),
+        _core("fe", "foreach_end", foreach="f")],
+        [_canh("f", "x"), _canh("x", "fe")])
+    run = _chay(db, w)
+
+    da_tra = 0
+    for _ in range(12):
+        _vong(db, run, lan=1)
+        cho = db.query(Job).filter(
+            Job.plan_id == run.id, Job.origin == ORIGIN_WORKFLOW,
+            Job.job_type != tao_run.DONG_CO_JOB,
+            Job.status == "queued").all()
+        if not cho:
+            break
+        for j in cho:
+            da_tra += 1
+            jobs.complete(db, j, {"text": f"ket qua {da_tra}"})
+        db.commit()
+
+    # ⭐ BA job, không phải một: mỗi vòng một `dedupe_key` riêng.
+    job = db.query(Job).filter(
+        Job.plan_id == run.id, Job.origin == ORIGIN_WORKFLOW,
+        Job.job_type != tao_run.DONG_CO_JOB).all()
+    assert len(job) == 3, [j.dedupe_key for j in job]
+    assert len({j.dedupe_key for j in job}) == 3
+
+    assert run.status == "SUCCEEDED", run.status
+    ra = thi_hanh.anh_chup_hien_tai(db, run.id, "fe").output_ref
+    assert len(ra["results"]) == 3 and ra["errors"] == []
+    # Ba lượt app mock, mỗi lượt 3 credit — KHÔNG phải một lượt.
+    assert run.actual_cost == 9
+
+
+def test_FLOW_C_moi_vong_MOT_hang_node_run_rieng(db):
+    """`node_run` phải mang ĐƯỜNG THI HÀNH, không phải node_id trần.
+
+    Đối chứng: node NGOÀI thân vẫn mang id trần — nếu mọi hàng đều bị đổi khoá
+    thì giao diện và mọi phép kiểm cũ vỡ, và phép này bắt được điều đó.
+    """
+    from platform_core import jobs
+    from platform_core.job_scheduler import ORIGIN_WORKFLOW
+    from platform_core.models import Job, NodeRun
+    from platform_core.workflow import tao_run
+
+    w = _publish(db, [
+        _core("f", "foreach", items="[1, 2]", max_items=5),
+        _app("x"),
+        _core("fe", "foreach_end", foreach="f"),
+        _core("sau", "transform", gia_tri='"xong"')],
+        [_canh("f", "x"), _canh("x", "fe"), _canh("fe", "sau")])
+    run = _chay(db, w)
+    for _ in range(10):
+        _vong(db, run, lan=1)
+        cho = db.query(Job).filter(
+            Job.plan_id == run.id, Job.origin == ORIGIN_WORKFLOW,
+            Job.job_type != tao_run.DONG_CO_JOB, Job.status == "queued").all()
+        if not cho:
+            break
+        for j in cho:
+            jobs.complete(db, j, {"text": "x"})
+        db.commit()
+
+    khoa = {r.node_id for r in db.query(NodeRun).filter_by(run_id=run.id).all()}
+    assert {"f", "fe", "sau"} <= khoa, khoa          # doi chung: id tran
+    assert {"f:0/x", "f:1/x"} <= khoa, khoa          # duong thi hanh
+    assert "x" not in khoa, "node than van con hang id tran - hai vong de nhau"

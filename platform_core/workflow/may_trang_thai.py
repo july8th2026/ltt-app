@@ -86,14 +86,18 @@ NODE_CHUYEN: dict[str, frozenset[str]] = {
 NODE_BAT_DAU = "PENDING"
 
 
-def trang_thai_node(db, run_id: str, node_id: str) -> str:
-    """Trạng thái ĐANG CÓ của một node. Chưa có ảnh chụp nào ⇒ `PENDING`."""
-    anh = thi_hanh.anh_chup_hien_tai(db, run_id, node_id)
+def trang_thai_node(db, run_id: str, node_id: str, vong=()) -> str:
+    """Trạng thái ĐANG CÓ của một node. Chưa có ảnh chụp nào ⇒ `PENDING`.
+
+    `vong` = ngữ cảnh vòng lặp `((tên vòng, chỉ số), …)`; rỗng cho node
+    ngoài mọi `foreach` (`thi_hanh.khoa_node`).
+    """
+    anh = thi_hanh.anh_chup_hien_tai(db, run_id, node_id, vong)
     return anh.execution_status if anh is not None else NODE_BAT_DAU
 
 
 def chuyen_node(db, run_id: str, node_id: str, *, sang: str, mo_ta: str,
-                error: str = "", **thong_tin) -> bool:
+                error: str = "", vong=(), **thong_tin) -> bool:
     """Chuyển một node sang trạng thái mới. Trả `False` nếu bị TỪ CHỐI.
 
     ⭐ **Lần chuyển bị từ chối vẫn ghi một ảnh chụp** (`is_valid=False`), đúng
@@ -111,12 +115,13 @@ def chuyen_node(db, run_id: str, node_id: str, *, sang: str, mo_ta: str,
     (chuyển không nằm trong bảng) quan trọng hơn lý do miền mà bên gọi định
     ghi cho một chuyển KHÁC (chuyển không xảy ra).
     """
-    hien = trang_thai_node(db, run_id, node_id)
+    hien = trang_thai_node(db, run_id, node_id, vong)
     duoc = NODE_CHUYEN.get(hien, frozenset())
     hop_le = sang in duoc
 
     thi_hanh.ghi_chuyen(
-        db, run_id, node_id, execution_status=(sang if hop_le else hien),
+        db, run_id, node_id, vong=vong,
+        execution_status=(sang if hop_le else hien),
         description=mo_ta, is_valid=hop_le,
         error=(error if hop_le else
                f"chuyen bi tu choi: {hien} -> {sang} khong nam trong bang"),

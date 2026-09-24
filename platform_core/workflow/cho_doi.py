@@ -39,8 +39,17 @@ def tao_waitpoint(db, *, run_id: str, owner_id: str, kind: str,
     return wp
 
 
-def chan_node(db, *, run_id: str, node_id: str, waitpoint_id: str) -> None:
-    """Gắn một node vào một waitpoint. Luỹ đẳng — gọi hai lần vẫn một hàng."""
+def chan_node(db, *, run_id: str, node_id: str, waitpoint_id: str,
+              vong=()) -> None:
+    """Gắn một node vào một waitpoint. Luỹ đẳng — gọi hai lần vẫn một hàng.
+
+    ⚠️ `node_id` lưu ở đây là ĐƯỜNG THI HÀNH (`thi_hanh.khoa_node`), cùng
+       khoá với `node_run`: hai vòng `foreach` chờ hai waitpoint khác nhau,
+       và một khoá chung sẽ làm vòng 2 "đã bị chặn" ngay khi vòng 1 bị chặn.
+    """
+    from platform_core.workflow.thi_hanh import khoa_node
+
+    node_id = khoa_node(node_id, vong)
     khoa = (run_id, node_id, waitpoint_id)
     if db.get(NodeRunWaitpoint, khoa) is not None:
         return
@@ -56,7 +65,10 @@ def node_dang_bi_chan(db, waitpoint_id: str) -> list[str]:
         .order_by(NodeRunWaitpoint.node_id)).scalars())
 
 
-def waitpoint_cua_node(db, run_id: str, node_id: str) -> list[str]:
+def waitpoint_cua_node(db, run_id: str, node_id: str, vong=()) -> list[str]:
+    from platform_core.workflow.thi_hanh import khoa_node
+
+    node_id = khoa_node(node_id, vong)
     return list(db.execute(
         select(NodeRunWaitpoint.waitpoint_id)
         .where(NodeRunWaitpoint.run_id == run_id,

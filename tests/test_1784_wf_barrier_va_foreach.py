@@ -277,17 +277,85 @@ def test_on_item_error_ba_cach(db, lam, cach, tt_f, tt_fe):
                                                      else 0)
 
 
-def test_than_co_node_JOB_bi_tu_choi_luc_publish_voi_cau_ro(db, lam):
-    """⛔ Từ chối, đừng chạy nửa vời. Thân có node job đi qua run con (§5.9,
-    `body_workflow`) — Task 7. Nói thẳng ra thay vì treo lúc chạy."""
-    from platform_core.workflow.bien_dich import LoiBienDich
-    with pytest.raises(LoiBienDich) as e:
-        lam([_core("f", "foreach", items="[1]", max_items=5),
-             {"id": "a", "type": "tool", "position": {"x": 0, "y": 0},
-              "data": {"tool": "text.chat", "params": {}}},
-             _core("fe", "foreach_end", foreach="f")],
-            [_canh("f", "a"), _canh("a", "fe")])
-    assert e.value.ma == "than_foreach_co_node_job"
+def test_than_co_node_JOB_chay_duoc_moi_vong_MOT_job(db, lam):
+    """⭐ Rào cũ đã GỠ: thân `foreach` nay nhận node sinh job.
+
+    Bản trước từ chối lúc publish (`than_foreach_co_node_job`) vì `node_run`
+    khoá `(run_id, node_id)` — 30 vòng không có chỗ cho 30 trạng thái. Nay
+    `node_run` khoá theo **đường thi hành** (`thi_hanh.khoa_node`, cùng bộ sinh
+    khoá Task 1 đã dùng cho `wakeup`), nên mỗi vòng có trạng thái riêng.
+
+    ⛔ Phép này đo **hai** thứ, và cái thứ hai mới là cái im lặng: ba vòng phải
+       ra **ba job**, tức `cau_noi._khoa_idem` mang chỉ số vòng. Thiếu nó,
+       `jobs.submit` khử trùng và trả lại job của vòng 1 — ba phần tử chạy một
+       job, không lỗi, không cảnh báo.
+    """
+    from platform_core import jobs
+    from platform_core.job_scheduler import ORIGIN_WORKFLOW
+    from platform_core.models import Job
+    from platform_core.workflow import tao_run, thi_hanh
+
+    run = lam([_core("f", "foreach", items="[1, 2, 3]", max_items=5),
+               {"id": "x", "type": "tool", "position": {"x": 0, "y": 0},
+                "data": {"tool": "text.chat", "params": {}}},
+               _core("fe", "foreach_end", foreach="f")],
+              [_canh("f", "x"), _canh("x", "fe")])
+
+    def _cho():
+        return db.query(Job).filter(
+            Job.plan_id == run.id, Job.origin == ORIGIN_WORKFLOW,
+            Job.job_type != tao_run.DONG_CO_JOB, Job.status == "queued").all()
+
+    for _ in range(10):
+        _chay(db, run)
+        cho = _cho()
+        if not cho:
+            break
+        for j in cho:
+            jobs.complete(db, j, {"text": "x"})
+
+    tat_ca = db.query(Job).filter(
+        Job.plan_id == run.id, Job.origin == ORIGIN_WORKFLOW,
+        Job.job_type != tao_run.DONG_CO_JOB).all()
+    assert len(tat_ca) == 3, [j.dedupe_key for j in tat_ca]
+    assert len({j.dedupe_key for j in tat_ca}) == 3      # ba khoa KHAC nhau
+    assert run.status == "SUCCEEDED", run.status
+    assert len(thi_hanh.anh_chup_hien_tai(db, run.id, "fe")
+               .output_ref["results"]) == 3
+    assert run.actual_cost == 9                          # ba luot, khong phai mot
+
+
+def test_moi_vong_MOT_hang_node_run_rieng(db, lam):
+    """Đối chứng của phép trên: node NGOÀI thân vẫn mang id TRẦN.
+
+    Nếu mọi hàng đều bị đổi khoá thì giao diện và ~120 khẳng định test cũ vỡ —
+    phép này bắt được điều đó.
+    """
+    from platform_core import jobs
+    from platform_core.job_scheduler import ORIGIN_WORKFLOW
+    from platform_core.models import Job, NodeRun
+    from platform_core.workflow import tao_run
+
+    run = lam([_core("f", "foreach", items="[1, 2]", max_items=5),
+               {"id": "x", "type": "tool", "position": {"x": 0, "y": 0},
+                "data": {"tool": "text.chat", "params": {}}},
+               _core("fe", "foreach_end", foreach="f"),
+               _core("sau", "transform", gia_tri='"xong"')],
+              [_canh("f", "x"), _canh("x", "fe"), _canh("fe", "sau")])
+    for _ in range(10):
+        _chay(db, run)
+        cho = db.query(Job).filter(
+            Job.plan_id == run.id, Job.origin == ORIGIN_WORKFLOW,
+            Job.job_type != tao_run.DONG_CO_JOB, Job.status == "queued").all()
+        if not cho:
+            break
+        for j in cho:
+            jobs.complete(db, j, {"text": "x"})
+
+    khoa = {r.node_id for r in db.query(NodeRun).filter_by(run_id=run.id).all()}
+    assert {"f", "fe", "sau"} <= khoa, khoa          # id TRAN, khong doi
+    assert {"f:0/x", "f:1/x"} <= khoa, khoa          # duong thi hanh
+    assert "x" not in khoa, "node than van con hang id tran - hai vong de nhau"
 
 
 def test_foreach_thieu_foreach_end_bi_tu_choi_luc_publish(db, lam):
@@ -361,3 +429,42 @@ def test_doi_chung_join_ALL_thi_nhanh_chet_KEO_join_di_theo(db, lam):
                _canh("a", "j"), _canh("b", "j")])
     _chay(db, run)
     assert mtt.trang_thai_node(db, run.id, "j") == "SKIPPED"
+
+
+def test_giao_dien_van_thay_node_than_duoi_ID_TRAN(db, lam):
+    """`runs_v3._nodes_json` gộp các đường thi hành về đúng `node_id` trần.
+
+    ⭐ Đây là lý do frontend **không phải sửa**: `CanvasShell.tsx` so
+       `item.node_id === node.id`, và nó vẫn so được. Nếu API trả `f:0/x` thì
+       node thân mất màu trên Canvas — im lặng, vì không có lỗi nào.
+    """
+    from apps.agent.routes.runs_v3 import _nodes_json
+    from platform_core import jobs
+    from platform_core.job_scheduler import ORIGIN_WORKFLOW
+    from platform_core.models import Job
+    from platform_core.workflow import tao_run
+
+    run = lam([_core("f", "foreach", items="[1, 2]", max_items=5),
+               {"id": "x", "type": "tool", "position": {"x": 0, "y": 0},
+                "data": {"tool": "text.chat", "params": {}}},
+               _core("fe", "foreach_end", foreach="f")],
+              [_canh("f", "x"), _canh("x", "fe")])
+    _chay(db, run)
+    theo_id = {n["node_id"]: n for n in _nodes_json(db, run)}
+    assert set(theo_id) == {"f", "x", "fe"}, sorted(theo_id)
+    assert theo_id["x"]["status"] == "RUNNING"       # dang chay, khong PENDING
+
+    for _ in range(10):
+        _chay(db, run)
+        cho = db.query(Job).filter(
+            Job.plan_id == run.id, Job.origin == ORIGIN_WORKFLOW,
+            Job.job_type != tao_run.DONG_CO_JOB, Job.status == "queued").all()
+        if not cho:
+            break
+        for j in cho:
+            jobs.complete(db, j, {"text": "x"})
+
+    theo_id = {n["node_id"]: n for n in _nodes_json(db, run)}
+    assert theo_id["x"]["status"] == "SUCCEEDED"
+    assert theo_id["x"]["attempt"] == 2              # HAI luot, khong phai 2 lan thu
+    assert theo_id["x"]["cost_credit"] == 6          # cong ca hai luot

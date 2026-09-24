@@ -532,31 +532,6 @@ def cau_truc(document: dict, *,
     return CauTruc(nodes, ra_edges, thu_tu, to_tien, cong_ra_cua)
 
 
-def _kiem_than_foreach(graph: dict) -> None:
-    """Thân `foreach` chỉ được chứa node `inline` — chặn ở PUBLISH.
-
-    ⛔ Lý do đầy đủ ở `nut_loi/vong_lap.py`: `node_run` khoá theo
-       `(run_id, node_id)` nên một node thân chạy 30 lần **không có chỗ** để 30
-       trạng thái sống. Thân có node job phải đi qua run con (`body_workflow`,
-       §5.9) — Task 7.
-
-    ⚠️ Từ chối ở publish, không lúc chạy: một đồ thị chạy được nửa vòng rồi
-       treo đã tiêu tiền thật, và người khai không có cách nào biết trước.
-    """
-    from platform_core.workflow import bao_gia
-
-    theo_id = {str(n["id"]): n for n in graph.get("nodes") or []}
-    for f, (_dong, than) in bao_gia.than_foreach(graph).items():
-        job = sorted(k for k in than
-                     if str(theo_id[k].get("thi_hanh")) != "inline")
-        if job:
-            raise LoiBienDich(
-                "than_foreach_co_node_job",
-                f"than cua {f!r} co node khong chay inline: {job}. Than co "
-                "node job phai di qua run con (`body_workflow`, spec 5.9) - "
-                "chua ho tro o ban nay.", f)
-
-
 def _kiem_ghi_bien(nodes: list[dict], to_tien: dict) -> None:
     """§6.5: hai `core.set` ghi cùng khoá mà không ai là tổ tiên ⇒ TỪ CHỐI.
 
@@ -634,8 +609,10 @@ def bien_dich(document: dict, *,
                     f"cong ra {tc.cong!r}; cong co that: "
                     f"{sorted(cong_ra_cua[tc.node])}", nid)
 
-    do_thi_tam = {"nodes": nodes, "edges": ra_edges, "thu_tu": thu_tu}
-    _kiem_than_foreach(do_thi_tam)
+    # ⚠️ `than_foreach` vẫn được gọi ở `bao_gia` (nhân trần chi phí) và ở
+    #    `nut_loi/vong_lap` (lái vòng). Ở đây không còn phép cấm nào:
+    #    thân `foreach` NAY nhận cả node sinh job, vì `node_run` đã khoá
+    #    theo ĐƯỜNG THI HÀNH (`thi_hanh.khoa_node`).
     _kiem_ghi_bien(nodes, to_tien)
     _kiem_ten_output(nodes)
 

@@ -78,24 +78,31 @@ chỉ là đuôi"* và *"chạy lại một phép kiểm đỏ không phải b�
 | F | `test_FLOW_F_run_con_KHONG_giu_khoan_thu_hai_tren_PG` | sổ credit THẬT: `so_da_giu(con) == 0`, `so_da_giu(cha) == estimated_max` |
 | — | `test_wakeup_node_run_id_khong_bao_gio_vuot_cot_tren_PG` | khoá băm của Task 1 vừa cột `String(64)` |
 
-## 🔴 FLOW C CHƯA ĐẠT ĐẦY ĐỦ — khai ra, không làm tròn
+## ~~FLOW C chưa đạt đầy đủ~~ → **ĐÃ ĐÓNG** (việc C, 24/09)
 
-Spec §18.5 viết thân FLOW C là **app mock** (node job) và đòi *"trần song song
-tôn trọng"*. Bản này:
+⚠️ Bản đầu của báo cáo này khai FLOW C **chưa đạt**: thân `foreach` chỉ nhận
+node inline, vì `node_run` khoá `(run_id, node_id)` nên 30 vòng không có chỗ cho
+30 trạng thái. Tôi đề nghị đẩy sang phase sau.
 
-- thân `foreach` chỉ nhận node **inline**; thân có node job bị **từ chối lúc
-  publish** (`than_foreach_co_node_job`). Lý do đo được: `node_run` khoá
-  `(run_id, node_id)` nên 30 vòng lặp **không có chỗ** cho 30 trạng thái, và mô
-  hình C cấm sửa ảnh chụp. Đường ra là khoá `node_run` theo **đường thi hành**
-  (đúng cách Activepieces giải, quyết định `000015`) — một migration trên bảng
-  đang chạy thật mà plan P3 không mở.
-- `parallelism` được ghi vào `ForeachVong` nhưng thân chạy **tuần tự** ⇒ *"trần
-  song song tôn trọng"* **chưa đo được**, vì chưa có cái gì chạy song song.
+🔴 **Điều phối bác, và bác đúng:** FLOW C là **điều kiện ra của phase**, nên giao
+nó cho phase sau nghĩa là đóng phase bằng một điều kiện ra rỗng ruột — cùng hạng
+lỗi Task 1 vừa sửa, chỉ khác bảng.
 
-⇒ FLOW C ở đây chứng minh **thứ tự kết quả** và **trạng thái theo chỉ số**,
-  KHÔNG chứng minh **app trong thân** và **trần song song**. Điều kiện ra của
-  P3 vì vậy **chưa đóng**; nó cần đúng một việc: khoá `node_run` theo đường thi
-  hành.
+⇒ `node_run` nay khoá theo **đường thi hành**, dùng lại nguyên `duong_thi_hanh`
+của Task 1 và **không cần migration**. Thân `foreach` nhận node sinh job; ba
+vòng ra **ba job** với ba `dedupe_key`. Toàn văn:
+`task-C-node-run-duong-thi-hanh.md`.
+
+```
+$ pytest -v tests/test_1787_wf_flow_acf_pg.py
+… test_FLOW_C_than_co_node_JOB_chay_du_moi_vong        PASSED
+… test_FLOW_C_moi_vong_MOT_hang_node_run_rieng         PASSED
+13 passed in 13.51s
+```
+
+⚠️ Còn **một** vế của §18.5 chưa đo: *"trần song song tôn trọng"*.
+`parallelism` nay có hiệu lực thật (tối đa `P` chỉ số có job chờ cùng lúc) nhưng
+**chưa có phép kiểm đếm số job đồng thời**.
 
 ## Điều kiện ra khác, đã đạt
 
