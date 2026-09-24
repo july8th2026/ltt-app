@@ -33,8 +33,28 @@ def test_tat_ca_hop_ba_nguon():
     assert ra["app.t.x"].kind == "app" and ra["app.t.x"].publish_duoc is True
 
 
-def test_piece_mac_dinh_rong_nhung_khe_cam_goi_duoc():
-    assert nut.NGUON_PIECE() == []
+def test_nguon_piece_MAC_DINH_rong_va_allowlist_CO_TRAN(monkeypatch):
+    """⭐ Tripwire nổ đúng hẹn (24/09): phase gốc 8 nạp piece thật vào palette.
+
+    Bản trước chốt `nut.NGUON_PIECE() == []`. Hai vấn đề, và cái thứ hai mới
+    là cái đáng sửa:
+
+    1. *"nguồn mặc định rỗng"* là **sự thật nhất thời** — nó hết đúng khi có
+       connector thật. Mệnh đề **bền** là: hàm mặc định rỗng, và allowlist
+       **có trần**.
+    2. ⛔ `NGUON_PIECE` là một **biến toàn cục bị ghi đè lúc import**. Đo được:
+       gọi trong một tiến trình sạch ra **0**, chạy dưới pytest ra **7** —
+       tức bài kiểm đọc một giá trị **phụ thuộc thứ tự import**, cùng hạng với
+       ca `lru_cache` bị đầu độc. Nên chốt **hàm mặc định**, không chốt biến.
+    """
+    assert nut._nguon_piece_rong() == [], "ham MAC DINH phai rong"
+
+    # 🔑 Vế bền: loader tính theo piece **NẠP**, ⛔ không theo catalog (730
+    #    piece). Một allowlist không trần thì "allowlist" chỉ là một cái tên.
+    ds = nut.NGUON_PIECE()
+    assert isinstance(ds, list) and len(ds) <= 20, (
+        f"allowlist phai CO TRAN, dang co {len(ds)} piece — neu catalog da tran "
+        f"vao day thi chi phi nap khong con theo so piece dung that")
     nd = nut.tu_piece({
         "type": "piece.google-sheets.find_rows", "type_version": 1,
         "title": "Tim dong", "description": "Tim dong trong Google Sheets",

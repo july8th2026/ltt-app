@@ -96,9 +96,19 @@ def test_FLOW_G_bao_gia_ra_mot_tran_CO_SO(cc):
     assert kq["graph"]["he_so_lap"]["video"] == 20      # max_items cua foreach
 
 
-# ── 2. 🔴 Hai trong sáu thành phần CHƯA CÓ — đo bản khai, không đọc plan ────
+# ── 2. Năm trong sáu thành phần ĐÃ CÓ — đo bản khai, không đọc plan ────────
 
-def test_sau_thanh_phan_FLOW_G_hai_cai_chua_co(cc):
+def test_nam_thanh_phan_FLOW_G_da_co_va_cron_van_la_HANG(cc):
+    """⭐ TRIPWIRE ĐÃ NỔ ĐÚNG HẸN (24/09) — và đây là lượt NÂNG nó.
+
+    Bản trước chốt *"sheets và cron CHƯA có"*, và tự viết sẵn việc phải làm:
+    *"Sheets ĐÃ lên palette ⇒ hãy NÂNG phép kiểm này thay vì để nó xanh."*
+    Phase gốc 8 đưa `google_sheets` lên palette ⇒ nó đỏ đúng lúc nó phải đỏ.
+
+    ⛔ Cách sai là xoá khẳng định cho hết đỏ. Cách đúng là **đổi mệnh đề**: từ
+       *"chưa có"* sang *"đã có, và đây là tên thật"* — vì thứ đáng chốt bây
+       giờ là **piece nào thật sự lên palette**, không phải **sự vắng mặt**.
+    """
     muc = {m["type"] for m in ke_hoach_v3.danh_muc(cong_cu=cc)}
     co = {"filter": "core.filter", "foreach": "core.foreach",
           "human": "core.human"}
@@ -107,14 +117,18 @@ def test_sau_thanh_phan_FLOW_G_hai_cai_chua_co(cc):
     assert any(t.startswith("app.video.") for t in muc), "video"
 
     so = nut.tat_ca(cong_cu=cc)
-    sheets = [t for t in so if "sheet" in t.lower()]
+    sheets = sorted(t for t in so if "sheet" in t.lower())
+    assert sheets, "Sheets phai co tren palette sau phase goc 8"
+    # 🔑 Chốt TÊN THẬT, không chốt "có gì đó chứa chữ sheet": 8/13 tên spec
+    #    §11.6 đoán ra là KHÔNG TỒN TẠI (phase 8 đo bằng `xuat_catalog`), nên
+    #    một phép kiểm chỉ hỏi "có chứa chuỗi" sẽ xanh cho một tên bịa.
+    assert "piece.google_sheets.find_rows" in sheets, sheets
+
+    # ⚠️ `cron` VẪN không phải node, và đó KHÔNG phải thiếu sót — xem bài dưới.
     cron = [t for t in so if "cron" in t.lower() or "schedule" in t.lower()]
-    assert sheets == [], (
-        "Sheets ĐÃ lên palette — FLOW G nay đạt được 6/6, hãy nâng phép kiểm "
-        f"này thay vì để nó xanh: {sheets}")
     assert cron == [], (
-        "Có node cron — FLOW G nay đạt được 6/6, hãy nâng phép kiểm này: "
-        f"{cron}")
+        "Co node cron: lich van nam o HANG `workflow_trigger`, nen mot NODE "
+        f"cron la hai cho khai cung mot dieu. {cron}")
 
 
 def test_cron_la_MOT_HANG_chu_khong_phai_mot_NODE():
