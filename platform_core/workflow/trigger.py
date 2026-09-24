@@ -176,7 +176,7 @@ class _TheoCron:
         except StopIteration as loi:
             raise ValueError(
                 "bieu thuc cron khong co moc nao trong 50 nam toi") from loi
-        khoang = min((b - a).total_seconds() for a, b in zip(moc, moc[1:]))
+        khoang = min((b - a).total_seconds() for a, b in zip(moc, moc[1:], strict=False))
         if khoang < self.CHU_KY_TOI_THIEU_S:
             raise ValueError(
                 f"chu ky toi thieu {self.CHU_KY_TOI_THIEU_S} giay (5 phut), "
@@ -204,6 +204,52 @@ class _TheoCron:
             return None
 
 
+class _SuKien:
+    """`EVENT` — chạy khi một workflow KHÁC kết thúc (spec §8.4).
+
+    ⛔ Phạm vi HẸP, và spec nói thẳng vì sao: *"Sự kiện của job ngoài workflow
+       (`job.finished` theo tool) **không** làm: nó buộc `jobs.py` ghi vào bảng
+       của workflow cho mọi job, phá luật §3.1-3."*
+
+    Loại này **không có lịch** (`next_fire_at` là `NULL`), nên `den_han()`
+    không bao giờ nhặt nó — nó được `ban_trigger.ban_su_kien` quét theo con trỏ
+    `(created_at, id)` lưu ở `trigger.con_tro`.
+    """
+
+    kind = "EVENT"
+
+    def toi_han(self, cau_hinh: dict, bay_gio: datetime) -> bool:
+        return False
+
+    def lan_ke_tiep(self, cau_hinh: dict,
+                    bay_gio: datetime) -> Optional[datetime]:
+        return None
+
+    def kiem(self, cau_hinh: dict) -> None:
+        """Bộ lọc phải **biên dịch được**, kiểm LÚC TẠO.
+
+        ⚠️ Chỉ kiểm CÚ PHÁP (`ngon_ngu.kiem`), ⛔ không thử TÍNH nó trên một
+           sự kiện giả: một bộ lọc hợp lệ như `event.outputs.ten == 'x'` sẽ ném
+           trên một `outputs` rỗng, và từ chối nó lúc tạo là từ chối một thứ
+           đúng. Bộ lọc ném lúc CHẠY đã có đường riêng (điểm chờ/ trigger ghi
+           lỗi), và đó mới là chỗ biết dữ liệu thật.
+        """
+        from platform_core.workflow import ngon_ngu
+        from platform_core.workflow.chinh_sach import LoiNgonNgu
+
+        loc = str((cau_hinh or {}).get("loc") or "").strip()
+        if not loc:
+            return
+        try:
+            # ⚠️ `ten_cho_phep` THAY THẾ namespace §6.2 mặc định (`chinh_sach.
+            #    kiem_ngon_ngu`), không cộng thêm — và đúng như vậy ở đây: môi
+            #    trường của một bộ lọc sự kiện CHỈ có `event`. Cho nó thấy
+            #    `nodes`/`vars` là hứa một thứ lúc chạy không tồn tại.
+            ngon_ngu.kiem(loc, ten_cho_phep={"event"})
+        except LoiNgonNgu as e:
+            raise ValueError(f"bo loc su kien khong hop le: {e}") from e
+
+
 SO_DANG_KY: dict[str, LoaiTrigger] = {}
 
 
@@ -219,6 +265,7 @@ for _k in ("MANUAL", "API", "WEBHOOK"):
     dang_ky(_KhongCoLich(_k))
 dang_ky(_TheoLich())
 dang_ky(_TheoCron())
+dang_ky(_SuKien())
 
 
 def tao(db, *, workflow_id: str, owner_id: str, kind: str,

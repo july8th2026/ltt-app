@@ -138,4 +138,124 @@ def ban_den_han(db, *, gioi_han: int = 200,
     return ra
 
 
-__all__ = ["BO_LO", "TRAN_LOI_LIEN_TIEP", "ban_den_han", "ban_mot"]
+# ── `trigger.event` (spec §8.4) ─────────────────────────────────────────────
+
+#: Ba dòng `workflow_event` nghĩa là *"một run đã kết thúc"* — và spec §8.4
+#: chốt rằng đó là **toàn bộ** nguồn sự kiện trong phạm vi.
+LOAI_KET_THUC = ("WorkflowCompleted", "WorkflowFailed", "WorkflowCancelled")
+
+
+def _con_tro_cua(t: WorkflowTrigger) -> Optional[tuple]:
+    """`(created_at, id)` đã xử lý tới, hoặc `None`.
+
+    ⚠️ Con trỏ là một CẶP, không phải `created_at` một mình: nhiều run kết
+       thúc trong cùng một micro-giây là chuyện thường trên máy nhanh, và một
+       con trỏ chỉ có thời gian sẽ **bỏ sót** dòng thứ hai hoặc **lặp** dòng
+       thứ nhất mãi mãi. Spec §8.4 khai đúng cặp này.
+    """
+    ct = t.con_tro or {}
+    luc = ct.get("created_at")
+    if not luc:
+        return None
+    try:
+        goc = datetime.fromisoformat(str(luc))
+    except ValueError:
+        return None
+    if goc.tzinfo is not None:
+        goc = goc.replace(tzinfo=None)
+    return goc, str(ct.get("id") or "")
+
+
+def _khop(loc: str, ev) -> bool:
+    from platform_core.workflow import ngon_ngu
+
+    if not loc:
+        return True
+    du = ev.du_lieu or {}
+    return bool(ngon_ngu.tinh(loc, {"event": {
+        "id": ev.id, "run_id": ev.run_id, "loai": ev.loai,
+        "status": str(du.get("status") or ""),
+        "outputs": dict(du.get("outputs") or {})}}))
+
+
+def ban_su_kien(db, *, gioi_han: int = 200) -> dict:
+    """Quét `workflow_event` cho mọi `trigger.event` đang bật (spec §8.4).
+
+    ⛔ **Không nghe sự kiện của chính workflow mình.** Một workflow bật
+       `trigger.event` trên chính nó là một vòng có **tiền thật**: mỗi run sinh
+       một sự kiện kết thúc, sự kiện ấy sinh một run. Không có phép chặn này
+       thì một lần cấu hình nhầm tiêu sạch credit của khách trong một đêm.
+
+    ⭐ HAI chốt khử trùng, và cần cả hai:
+       - con trỏ keyset `(created_at, id)` — để không quét lại;
+       - khoá `evt:<trigger_id>:<event_id>` — để một con trỏ **mất** (khôi phục
+         CSDL, sửa tay) không thành một loạt run trùng.
+    """
+    from sqlalchemy import select, tuple_
+
+    from platform_core.models import WorkflowEvent
+
+    ra = {"da_ban": 0, "bo_qua": 0, "loi": 0}
+    triggers = list(db.execute(
+        select(WorkflowTrigger).where(
+            WorkflowTrigger.enabled.is_(True),
+            WorkflowTrigger.kind == "EVENT")).scalars())
+    for t in triggers:
+        dk = [WorkflowEvent.loai.in_(LOAI_KET_THUC)]
+        ct = _con_tro_cua(t)
+        if ct is not None:
+            dk.append(tuple_(WorkflowEvent.created_at, WorkflowEvent.id)
+                      > tuple_(ct[0], ct[1]))
+        hang = list(db.execute(
+            select(WorkflowEvent).where(*dk)
+            .order_by(WorkflowEvent.created_at, WorkflowEvent.id)
+            .limit(max(1, int(gioi_han)))).scalars())
+        if not hang:
+            continue
+        loc = str((t.config or {}).get("loc") or "")
+        wf = db.get(Workflow, t.workflow_id)
+        for ev in hang:
+            try:
+                with db.begin_nested():
+                    _ban_mot_su_kien(db, t, wf, ev, loc=loc, ra=ra)
+            except Exception:                            # noqa: BLE001
+                ra["loi"] += 1
+                log.exception("trigger %s: su kien %s loi", t.id, ev.id)
+            # ⭐ Con trỏ tiến KỂ CẢ khi dòng này lỗi hay không khớp: đứng lại ở
+            #    một dòng hỏng nghĩa là mọi dòng sau nó không bao giờ tới lượt.
+            t.con_tro = {"created_at": _iso(ev.created_at), "id": ev.id}
+        db.flush()
+    return ra
+
+
+def _ban_mot_su_kien(db, t: WorkflowTrigger, wf, ev, *, loc: str,
+                     ra: dict) -> None:
+    from platform_core.models import WorkflowRun
+
+    if wf is None:
+        return
+    # ⛔ Sự kiện của CHÍNH workflow này ⇒ bỏ. Xem docstring `ban_su_kien`.
+    nguon = db.get(WorkflowRun, ev.run_id)
+    if nguon is not None and nguon.workflow_id == t.workflow_id:
+        ra["bo_qua"] += 1
+        return
+    if not _khop(loc, ev):
+        ra["bo_qua"] += 1
+        return
+    _run, moi = tao_run.tao_run(
+        db, workflow=wf, owner_id=t.owner_id, trigger_kind="event",
+        idempotency_key=khoa_idem.khoa_event(t.id, ev.id),
+        inputs={"event": {"id": ev.id, "run_id": ev.run_id, "loai": ev.loai}})
+    if moi:
+        ra["da_ban"] += 1
+        t.last_fired_at = _bay_gio()
+    else:
+        ra["bo_qua"] += 1
+
+
+def _iso(luc: datetime) -> str:
+    return (luc.replace(tzinfo=None) if luc.tzinfo else luc).isoformat()
+
+
+__all__ = ["BO_LO", "LOAI_KET_THUC", "TRAN_LOI_LIEN_TIEP", "ban_den_han",
+           "ban_mot", "ban_su_kien"]

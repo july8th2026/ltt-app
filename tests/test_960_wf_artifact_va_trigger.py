@@ -172,7 +172,7 @@ def test_backend_co_VONG_DOI_RIENG_thi_ta_KHONG_tu_xoa(db):
 # ── 5.4 Trigger ──────────────────────────────────────────────────────────────
 
 def test_moi_loai_trigger_la_MOT_mo_dun(db):
-    """⭐ `CRON` thêm vào ở plan wf-v2 P4 (spec §8.2) — và nó vào bằng đúng
+    """⭐ `CRON` và `EVENT` thêm vào ở plan wf-v2 P4 (spec §8.2) — và nó vào bằng đúng
     cách mà `test_them_loai_THU_NAM…` bên dưới đòi: một lớp + một `dang_ky()`,
     không một nhánh `if` nào trong lõi.
 
@@ -183,7 +183,7 @@ def test_moi_loai_trigger_la_MOT_mo_dun(db):
     from platform_core.workflow import trigger
 
     assert set(trigger.SO_DANG_KY) == {"MANUAL", "API", "SCHEDULE", "WEBHOOK",
-                                       "CRON"}
+                                       "CRON", "EVENT"}
 
 
 def test_them_loai_THU_NAM_khong_sua_platform_core(db):
