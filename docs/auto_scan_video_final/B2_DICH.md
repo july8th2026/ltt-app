@@ -266,6 +266,87 @@ không**, nhưng chúng là **danh từ mang nghĩa của câu**. ⛔ *"CER 0,04
 ⚠️ Việc model **tự phục hồi cả ba** là **may**, ⛔ không phải bảo đảm — và nó làm
 việc quy trách nhiệm **khó hơn**, không dễ hơn.
 
+## 4f. ⭐ Vòng sửa GIÚP hay PHÁ — đo CƠ CHẾ, ⛔ chưa đốt 67 phút
+
+> ⚠️ **Mọi con số mục này chỉ nói về vòng sửa với bộ chấm V1**
+> (`qc_ai.py` `604b82a7`, 2026-09-23) — ⛔ **không nói gì** về bộ chấm V3.
+
+### Bước 1 — chấm bản nền (phim 3)
+
+```
+31 đoạn  ->  2 bị gắn cờ   (model chấm qwen38-api = ltt-3.8, ghim tường minh)
+```
+
+⚠️ **Tiền đề *"FA ~43 % ⇒ phần bị báo nhầm sẽ đông"* KHÔNG tái hiện ở đây.** Soi
+tay cả hai:
+
+| mã | lý do bộ chấm nêu | phán đoán tay |
+|---|---|---|
+| `seg_0010` | dịch `趁` thành *"Khiến"* | ✅ **báo ĐÚNG** — `趁` = *nhân lúc*, không phải *khiến* |
+| `seg_0005` | `架着门口` ra *"chặn cửa"* thay vì *"chĩa súng canh cửa"* | ✅ **báo ĐÚNG** (chặn ≠ canh) |
+
+⇒ **0/2 báo nhầm** trên phim này. ⛔ Nên ⛔ **không** có tập "bị báo nhầm" để
+chạy bước 3 như thiết kế.
+
+### Bước 3′ — đổi phép đo cho đúng câu hỏi
+
+Câu cần trả lời là *"dịch lại một đoạn **vốn đã đúng** có làm nó tệ đi không?"*.
+⇒ ⭐ Lấy thẳng **29 đoạn bộ chấm cho ĐẠT**, cho đi qua đúng đường dịch lại, so
+với bản nền. Phép này **không phụ thuộc** vào tỉ lệ báo nhầm của bộ chấm.
+
+```
+29 đoạn ĐÃ ĐÚNG  ->  28 đoạn ĐỔI  (chỉ 1 giữ nguyên nguyên văn)
+```
+
+Soi tay 28 đoạn đổi:
+
+| loại | đếm | ví dụ |
+|---|---|---|
+| **không đổi nghĩa** (churn) | **~18** | *"xin lỗi"* → *"xin lỗi nhé"* · *"vào tòa nhà"* → *"vào trong tòa nhà"* |
+| **tốt lên** | **~5** | *"kẻ khác"* → *"địch"* · *"tặng trắng"* → *"tự chết"* (`纯白给`) |
+| ⛔ **tệ đi** | **~4** | xem dưới |
+
+### 🔴 Và chỗ "tệ đi" rơi trúng đúng điểm yếu đã biết: THUẬT NGỮ
+
+| mã | bản nền | sau khi dịch lại |
+|---|---|---|
+| `seg_0022` | *"quăng một quả **lựu đạn** giả"* ✅ | *"thử đặt **mìn** giả"* ⛔ |
+| `seg_0025` | *"trực tiếp quăng **lựu đạn**"* ✅ | *"trực tiếp **cài bom**"* ⛔ |
+| `seg_0008` | *"**lượng máu**"* ✅ | *"**huyết lượng**"* ⛔ (âm Hán-Việt sống, trái quy tắc 1 *"tự nhiên, văn nói"*) |
+
+⭐ `雷` được dịch **ĐÚNG** (*lựu đạn*) ở bản nền và **TRÔI sang sai** (*mìn* /
+*bom*) sau khi dịch lại — **hai đoạn, cùng một thuật ngữ, cùng một chiều**. Đó
+là một ca **cụ thể, kiểm được** của *"dịch lại một đoạn vốn đã đúng làm nó tệ
+đi"*.
+
+### Phán đoán — ⚠️ và một xung đột lợi ích phải khai
+
+Kết quả **LẪN LỘN**, nghiêng về *"churn nhiều, hại có thật nhưng không đều"*:
+vòng sửa ⛔ không phá một cách hệ thống, nhưng mỗi lần nó chạm vào một đoạn đã
+đúng là một lần **rút thăm lại**, và thuật ngữ là chỗ dễ trượt nhất.
+
+⭐ Điều này **giải thích được** N-02 (85 → 85, `dich_sai` 60→44 nhưng `doc_sai`
+10→14 và `khong_vua` 15→27): **tổng không đổi vì thành phần bị xáo lại**, đúng
+như một phép rút thăm lặp lại chứ không phải một phép sửa hội tụ.
+
+> ⚠️ ⛔ **Xung đột lợi ích, khai thẳng:** ba bảng trên do **tôi** phán đoán, và
+> **tôi là người tạo ra cả hai bản dịch**. Hôm nay tôi đã sai một lần đúng kiểu
+> đó — chấm ✅ cho `李宗盛` → *"Lý Tông Thành"* hai lượt liền, tới khi Unihan bác
+> lại (§4c). ⇒ Các con số ~18/~5/~4 là **quan sát tay**, ⛔ **không phải một
+> phép đo**, và ⛔ không được dùng để đóng một cổng.
+
+### ⇒ Theo bảng quyết định: chạy lượt đầy đủ
+
+Kết quả *"lẫn lộn"* ⇒ **cần con số đường sản phẩm**. Nhãn và SHA đã soạn sẵn ở
+§5. ⛔ Chưa chạy — và nó nên chạy **sau** khi `ltt-3.8` rảnh (xem dưới).
+
+### ⚠️ Chặn vận hành: `ltt-3.8` đang bị tranh
+
+Lượt chấm đầu **chết cả 4 lô** với `concurrency_limited` (429) — một làn khác
+đang dùng chính model đó cho đường chấm. Sau khi thêm chờ có cấp số nhân, 31
+đoạn mất **308 s** (so với 65 s cho cùng số đoạn ở bước dịch trên `ltt-3.5`).
+⇒ Chấm `v1`/`v2` **vẫn đang chạy**. ⛔ Không ép thêm request vào `ltt-3.8`.
+
 ## 5. Bản BẬT vòng sửa — ⏭ **việc kế tiếp**, chặn đã gỡ, SHA đã ghim
 
 ⭐ Chặn ở §2 **đã gỡ** (§4b): dịch nay đi `ltt-3.5` **trong chính đường sản
