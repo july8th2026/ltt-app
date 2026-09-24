@@ -1,0 +1,80 @@
+"""`ai.router` — chọn MỘT nhánh trong enum khai sẵn qua LLM (spec §12.1, ADR Q8).
+
+Plan wf-v2 P7 Task 2. "không khớp ⇒ nhánh `mac_dinh`" — `chon_nhanh()` là
+phần LÕI của node: một hàm THUẦN, không đụng job/engine, nên kiểm được đầy
+đủ bằng test đơn vị mà không cần máy B (`test_2903`).
+
+⭐ `core.if` **không bao giờ** gọi LLM; chỉ `ai.router` gọi (spec §12.1) —
+   tệp này không thay thế và không đụng `core.if`/`core.switch` (phạm vi
+   node điều khiển của làn p3, `nut_loi/core_*.py`).
+
+⛔ CHƯA nối vào `cau_noi.nop_job` — cùng lý do đã ghi ở `ai_llm.py`.
+"""
+from __future__ import annotations
+
+from platform_core.i18n import N_
+from platform_core.workflow import he_kieu
+from platform_core.workflow.nut import Gia, NodeDefinition
+from platform_core.workflow.nut_loi import ai_llm, ai_loi, dang_ky
+
+#: Nhánh dùng khi model không trả đúng một trong các nhánh đã khai (spec
+#: §12.1). Cũng là `default` của tham số `mac_dinh` trên node.
+NHANH_MAC_DINH = "mac_dinh"
+
+
+def chon_nhanh(dau_ra, nhanh_hop_le, *, mac_dinh: str = NHANH_MAC_DINH) -> str:
+    """`dau_ra` (content thô model trả) khớp ĐÚNG một nhánh trong
+    `nhanh_hop_le` -> nhánh đó. Khác đi (rỗng, `None`, không khớp, hoặc chỉ
+    khớp MỘT PHẦN kèm chữ khác — vd model trả `"spam vi ..."` thay vì đúng
+    `"spam"`) -> `mac_dinh`.
+
+    ⛔ So khớp CHÍNH XÁC (sau `strip`), không phải `in`/substring: khớp lỏng
+       sẽ cho một câu giải thích dài có chứa tên nhánh đi qua như thể model
+       đã "chọn" — sai với "chọn MỘT nhánh" của spec, và không phân biệt
+       được với ca model chỉ NHẮC tới nhãn nhánh trong lời giải thích.
+    """
+    ung_vien = (dau_ra or "").strip()
+    return ung_vien if ung_vien in set(nhanh_hop_le) else mac_dinh
+
+
+AI_ROUTER = dang_ky(NodeDefinition(
+    type="ai.router", type_version=1, kind="ai", category="AI",
+    title=N_("AI: Chọn nhánh"),
+    description=N_("Model chọn một nhánh trong danh sách ai_choice đã khai; "
+                    "không khớp -> nhánh mac_dinh. core.if không gọi LLM, "
+                    "chỉ node này (spec §12.1)."),
+    icon="🔀",
+    cong_vao=(
+        ("prompt", he_kieu.Cong(type="text", required=True, nhan="prompt")),
+        ("model", he_kieu.Cong(type="text", required=False, nhan="model")),
+    ),
+    cong_ra=(
+        ("nhanh", he_kieu.Cong(type="text", required=True, nhan="nhanh")),
+    ),
+    tham_so={
+        "type": "object",
+        "properties": {
+            "prompt": {"type": "string", "x-ltt-control": "textarea",
+                       "description": N_("Câu lệnh gửi model.")},
+            "model": {"type": "string", "enum": ["ltt-3.8", "ltt-3.5"],
+                      "default": "ltt-3.8"},
+            # ⛔ ADR Q8: `ai_choice` là enum các NHÁNH của CHÍNH node này
+            #    (danh sách hằng người dùng khai lúc thiết kế workflow) —
+            #    KHÔNG phải `ToolSpec.tuy_chon_dong` (enum theo người dùng
+            #    cuối, spec §4.6) và không sinh `x-ltt-dong`.
+            "ai_choice": {"type": "array", "items": {"type": "string"},
+                          "minItems": 1,
+                          "description": N_("Danh sách nhánh hợp lệ.")},
+            "mac_dinh": {"type": "string", "default": NHANH_MAC_DINH},
+        },
+        "required": ["prompt", "ai_choice"], "additionalProperties": False,
+    },
+    thi_hanh="job", job_type=ai_llm.JOB_TYPE_TEXT_CHAT,
+    side_effect="external", idempotency_key_fields=(),
+    resource={"class": "api"}, gia=Gia.theo_registry(ai_llm.JOB_TYPE_TEXT_CHAT),
+    credential=(), quyen=frozenset({"network"}),
+    cho=("JOB",), ma_loi=ai_loi.MA_LOI_AI,
+    publish_duoc=False))
+
+
+__all__ = ["AI_ROUTER", "NHANH_MAC_DINH", "chon_nhanh"]
