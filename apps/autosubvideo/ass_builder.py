@@ -17,7 +17,7 @@ from pathlib import Path
 import logging
 
 from apps.autosubvideo.schemas import SubtitleStyleConfig
-from apps.autosubvideo.segmenter import SubtitleEvent
+from apps.autosubvideo.segmenter import SubtitleEvent, has_wide, split_units
 
 logger = logging.getLogger(__name__)
 
@@ -280,6 +280,9 @@ def _highlight_word_by_word(ev: SubtitleEvent, color: str) -> str:
     Karaoke-style: use ASS \\kf tags to highlight each word sequentially.
     Duration per word = total event duration / word count.
     """
+    if has_wide(ev.display_text):
+        return _karaoke_wide(ev)
+
     raw = _sanitize_ass_text(ev.display_text).replace("\\N", " \\N ")
     words = raw.split()
 
@@ -298,6 +301,25 @@ def _highlight_word_by_word(ev: SubtitleEvent, color: str) -> str:
             parts.append(f"{{\\kf{per_word}}}{word}")
 
     return " ".join(parts).replace(" \\N ", "\\N")
+
+
+def _karaoke_wide(ev: SubtitleEvent) -> str:
+    """Karaoke for text with Han/wide characters: one `\\kf` per unit.
+
+    Splitting on spaces (the Latin path above) finds ONE word in a Chinese
+    line, and a single word returns without any tag — so `word` highlight
+    silently did nothing on Chinese subtitles. Units come from
+    `segmenter.split_units`: each wide character, or each Latin word.
+    """
+    lines = [split_units(line)
+             for line in _sanitize_ass_text(ev.display_text).split("\\N")]
+    n = sum(len(u) for u in lines)
+    if n <= 1:
+        return _sanitize_ass_text(ev.display_text)
+    per = max(int((ev.end - ev.start) * 100) // n, 1)
+    return "\\N".join(
+        "".join((" " if sp else "") + f"{{\\kf{per}}}{u}" for u, sp in units)
+        for units in lines)
 
 
 def _highlight_underline(text: str, color: str) -> str:

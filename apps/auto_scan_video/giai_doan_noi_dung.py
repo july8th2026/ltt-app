@@ -48,7 +48,7 @@ import logging
 from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
 
-from . import (ai, assets, ban_bien_tap, ban_ghi, long_tieng, pipeline,
+from . import (ai, assets, ban_bien_tap, ban_ghi, lat_cat, long_tieng, pipeline,
                rang_giong, su_dung)
 from .giai_doan_media import ThieuNguon
 
@@ -98,7 +98,7 @@ def _doc_ban_bien_tap(db, kho: Storage, run) -> tuple[object, object]:
             canh_mod.tu_dict(goi.get("chi_muc") or {}))
 
 
-def _giong_da_chot(db, run) -> tuple[str, dict]:
+def _giong_da_chot(db, run, *, ban_ghi: dict, ctx=None) -> tuple[str, dict, str]:
     """Chot VoiceBinding va DONG BANG no vao ban long tieng.
 
     🔑 Pha 09 cho phep `AUTO_MATCH` **hoan lai** khi chua co ho so noi dung. Den
@@ -106,17 +106,50 @@ def _giong_da_chot(db, run) -> tuple[str, dict]:
        xung ho, giong dieu, do trang trong deu bam vao no — nen viet truoc roi
        chon giong sau la viet mu.
 
+    ⇒ Nen day chinh la cho **dung** ho so, ngay truoc khi no het duoc hoan:
+      `ho_so_noi_dung.bao_dam` doc bang chung lan chay DA tra tien (F0 cua stem
+      `vocals` do o `audio_prepare`, ban chep loi cua `transcribe`) va ghi
+      `dac_diem_giong` xuong `run.settings`. Ca hai nguon nam TRUOC `edit_plan`,
+      nen duong nay chay y het nhau o hai preset — ke ca preset giu hinh, cai
+      **khong** chay mot lan `edit_plan` nao co nghia.
+
     ⛔ Nen `ma_giong()` **nem** khi chua chot, thay vi rot ve giong mac dinh. Mot
        giong mac dinh o day khong hong ra loi nao: no cho ra mot ban long tieng
-       nghe duoc, chi la khong phai giong khach dat.
+       nghe duoc, chi la khong phai giong khach dat. Cai doi tu 23/09 la CAU
+       LOI: `vi_sao_chua_rang` noi thieu gi, thay vi mot cau chung chung ve mot
+       "ho so noi dung" ma khach khong biet la thu gi.
     """
     # `tu_thiet_lap` van nhan mot dict — `rang_giong` KHONG duoc import
     # `cai_dat` (vong tron: `cai_dat` doc `CHE_DO_GIONG_MAC_DINH` cua no).
     # Nen ta chuan hoa TRUOC roi dua vao.
-    from . import cai_dat as cd
+    from . import cai_dat as cd, ho_so_noi_dung
+
     yc = rang_giong.tu_thiet_lap(cd.chuan_hoa(run.settings))
-    kq = rang_giong.rang(db, owner_id=run.owner_id, yeu_cau=yc)
-    return kq.ma_giong(), dict(kq.can_cu or {})
+    if rang_giong.can_cho_ho_so(yc):
+        ho_so = ho_so_noi_dung.bao_dam(db, run, ban_ghi=ban_ghi, ctx=ctx)
+        log.info("run %s: ho so noi dung %s", run.id, ho_so_noi_dung.mo_ta(ho_so))
+        # Doc LAI tu thiet lap da ghi: mot duong doc duy nhat cho ca hai luot
+        # (luot dau vua sinh ho so, luot chay lai doc ho so cu) — hai duong doc
+        # la hai co hoi chon ra hai giong khac nhau cho cung mot lan chay.
+        yc = rang_giong.tu_thiet_lap(cd.chuan_hoa(run.settings))
+
+    kq = rang_giong.rang_noi_long(db, owner_id=run.owner_id, yeu_cau=yc)
+    if not kq.da_chot:
+        # ⭐ Cau + MA. Khong co ma thi cau nay dung lai o cot `error` — mot cot
+        #    ma man hinh cua khach co y khong doc (`quan_sat.LOI_CO_MA`), vi chu
+        #    tu do cua van hanh co the mang duong dan hay ten model.
+        raise rang_giong.ChuaRangError(rang_giong.vi_sao_chua_rang(kq),
+                                       ma_loi=rang_giong.ma_chua_rang(kq))
+    # 🔴 **`nguon` tra ve RIENG, khong nhet vao `can_cu`.** No la mot TRUONG cua
+    #    `KetQua`, con `tom_tat` cua giai doan nay lai doc `can_cu["nguon"]` —
+    #    nen truoc 23/09 `nguon_giong` cua MOI lan chay deu la chuoi rong. Mot
+    #    cot bao cao luon rong khong keu len bao gio; no chi tra loi sai cau hoi
+    #    "vi sao giong nay".
+    #
+    # ⛔ Va khong nhet vao `can_cu` vi `can_cu` di THANG vao loi nhac (`dac_diem`
+    #    duoi kia roi ve `can_cu` khi khong co khoa `dac_diem`). Them mot khoa o
+    #    day la doi loi nhac cua duong `USER_SELECTED` da nghiem thu.
+    return kq.ma_giong(), dict(kq.can_cu or {}), kq.nguon
 
 
 def chay(db, kho: Storage, *, run, ctx=None) -> dict:
@@ -131,13 +164,15 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         raise long_tieng.LongTiengError(
             _t('Bản biên tập không giữ lại đoạn thoại nào.'))
 
-    ma_giong, can_cu = _giong_da_chot(db, run)
+    ma_giong, can_cu, nguon_giong = _giong_da_chot(db, run, ban_ghi=goc, ctx=ctx)
+    from . import cai_dat as cd
+    dich = cd.doc(run).ngon_ngu_dich
     provider = ai.THU_TU_PROVIDER[0]
     model = ai.model_cho(ai.CHUYEN_LOI_THOAI, provider=provider)
 
     vt = long_tieng.van_tay_long_tieng(
         checksum_ban_ghi=checksum, van_tay_ban=ban.van_tay(),
-        ma_giong=ma_giong, provider=provider, model=model)
+        ma_giong=ma_giong, provider=provider, model=model, ngon_ngu_dich=dich)
 
     # ⭐ Diem chot mang van tay nay. Doi giong hay doi ban bien tap => van tay
     #    doi => khong doan nao duoc tinh la da lam roi.
@@ -148,14 +183,35 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     chuyen: dict[str, dict] = _lay_lai_doan_da_xong(db, run, xong)
 
     lo_lo = long_tieng.chia_lo(con_lai)
+
+    # 🔑 LAT CAT (`lat_cat.py`): 120 phut video ~ 150 lo x ~142 s — gap ~6 lan
+    #    tran job. Truoc MOI lo hoi co con du cho cho mot lo te nhat khong; het
+    #    thi nhuong, job ke tiep doc diem chot va di tiep. Lo la nguyen tu (thieu
+    #    mot doan thi `doc_chuyen` nem), nen luot sau chia lai `con_lai` ra
+    #    DUNG cac lo con lai cua lan chay mot mach.
+    lc = lat_cat.mo(db, run, pipeline.CONTENT_PROCESS, van_tay=vt,
+                    du_phong_s=(lat_cat.timeout_goi_ai(ai.CHUYEN_LOI_THOAI)
+                                + lat_cat.DU_PHONG_NGOAI_GOI_S))
+    # `so_lo` cua tom tat = so lo DA GUI cua ca giai doan, cong qua cac luot.
+    so_lo_truoc = int(lc.trang_thai.get("so_lo") or 0) if lc.noi_tiep else 0
+    # ⭐ Khoa so cai cua lo theo vi tri TRONG `doan_giu`, khong theo vi tri
+    #    trong `con_lai`: luot noi tiep bat dau lai `i` tu 0, va `lo_000` thu
+    #    hai se dung `UNIQUE(run_id, ma_dispatch)` — `DaGhiRoi` bi nuot va mot
+    #    lan goi DA GIAO bien mat khoi so cai.
+    vi_tri_cua = {str(d.get("ma") or ""): k for k, d in enumerate(doan_giu)}
+    co_lo = max(1, int(long_tieng.DOAN_MOI_LO))
+
     for i, lo in enumerate(lo_lo):
+        lc.kiem(vi_tri=i, trang_thai={"so_lo": so_lo_truoc + i})
+        dau = vi_tri_cua.get(str(lo[0].get("ma") or ""), 0)
         if ctx is not None and getattr(ctx, "progress", None):
-            ctx.progress(5 + int(85 * i / max(1, len(lo_lo))), _t('Đang viết lời thoại'))
+            ctx.progress(5 + int(85 * dau / max(1, len(doan_giu))),
+                         _t('Đang viết lời thoại'))
 
         ma_da_gui = {str(d.get("ma") or "") for d in lo}
         messages = long_tieng.loi_nhac(
             lo, tat_ca=doan_giu, ngon_ngu_goc=str(goc.get("ngon_ngu") or ""),
-            dac_diem_giong=dac_diem)
+            dac_diem_giong=dac_diem, ngon_ngu_dich=dich)
 
         kq = ai.goi_tinh_tien(
             db, run, ai.CHUYEN_LOI_THOAI, messages,
@@ -163,7 +219,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             # 🔑 Khoa cua so cai la LO (mot lan goi = mot dong so cai), con diem
             #    chot la DOAN. Hai truc khac nhau va gop chung lai se hong: mot
             #    lo chua 12 doan nhung chi mot lan tinh tien.
-            item_key=f"lo_{i:03d}",
+            item_key=f"lo_{dau // co_lo:03d}",
             ctx=ctx)
 
         # 🔴 **`noi_dung` la MOT CHUOI, khong phai mot dict.** `ai.goi` tra ve
@@ -208,10 +264,12 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         #    lan dau tien trong ca kho hai duong do chay canh nhau — pha 11 co
         #    `goi_tinh_tien` nhung chua duoc noi vao chuoi.
         db.commit()
+        lc.xong_mot()
 
     tai_lieu = long_tieng.dung(giu, chuyen, ma_giong=ma_giong,
                                van_tay_ban=ban.van_tay(),
-                               provider=provider, model=model)
+                               provider=provider, model=model,
+                               ngon_ngu_dich=dich)
     long_tieng.kiem(tai_lieu, giu)
 
     goi = json.dumps(tai_lieu, sort_keys=True, ensure_ascii=False).encode("utf-8")
@@ -228,8 +286,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                   "van_tay": vt}],
         "tom_tat": {**long_tieng.tom_tat(tai_lieu),
                     "so_doan_goc": len(goc.get("doan") or []),
-                    "so_lo": len(lo_lo),
-                    "nguon_giong": str(can_cu.get("nguon") or "")},
+                    "so_lo": so_lo_truoc + len(lo_lo),
+                    "nguon_giong": nguon_giong},
     }
 
 

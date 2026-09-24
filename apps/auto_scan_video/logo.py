@@ -148,3 +148,72 @@ def rong_px(mot: dict, rong_khung: int) -> int:
     if rong <= 0:
         raise LogoLoi(_t('Không biết chiều rộng khung hình để đặt logo.'))
     return max(2, (round(rong * float(mot["rong"])) // 2) * 2)
+
+
+# ── Cua nhap tu bieu mau (chuyen tu `routes.py` 22/09: routes chi lo HTTP) ──
+
+async def doc_tu_bieu_mau(hinh_hoc_json: str, tep: list | None
+                    ) -> tuple[list[dict], list[tuple[bytes, str]]]:
+    """`(hinh hoc da kiem, [(bytes, kieu)])` — CUNG do dai, hoac nem.
+
+    ⛔ **Khong zip mu hai danh sach.** Lech so luong hay lech thu tu deu KHONG
+       lam gi hong — chung chi lam logo thu nhat mang anh cua logo thu hai, dat
+       o toa do cua logo thu nhat. Cung hinh dang loi ma `dung_lenh` da phai
+       tu kiem cho `duong_lop` va `duong_chu`.
+
+    ⚠️ Va tran kich thuoc ap **trong luc doc**, khong sau: mot tep 100 MB khong
+       duoc cap phat 100 MB roi moi bi tu choi.
+    """
+    import json
+
+    from . import features
+
+    ds = chuan_hoa(json.loads(hinh_hoc_json) if hinh_hoc_json.strip()
+                            else [])
+    ds_tep = [t for t in (tep or []) if getattr(t, "filename", "")]
+    if len(ds_tep) != len(ds):
+        raise LogoLoi(_t(
+            'Số ảnh logo ({co}) không khớp số logo đã đặt ({can}).').format(
+                co=len(ds_tep), can=len(ds)))
+
+    tran = features.tran_logo_byte()
+    anh: list[tuple[bytes, str]] = []
+    for t in ds_tep:
+        du_lieu = await t.read()
+        if len(du_lieu) > tran:
+            raise LogoLoi(_t('Ảnh logo vượt quá {mb} MB.').format(
+                mb=tran // (1024 * 1024)))
+        if not du_lieu:
+            raise LogoLoi(_t('Ảnh logo rỗng.'))
+        anh.append((du_lieu, (t.content_type or "").split(";")[0].strip().lower()))
+    return ds, anh
+
+
+def gan_vao_run(db, kho, *, run, ds_hinh_hoc: list[dict],
+                      anh: list[tuple[bytes, str]]) -> None:
+    """Luu anh, gan khoa vao `run.settings["logo"]`, roi ghi lai settings.
+
+    ⭐ Chay SAU `tao_run` va TRUOC `commit`, nen hoac ca run lan logo cung thanh,
+       hoac ca hai cung khong — cung bat bien I2 ma `tao_run` giu cho tien.
+    """
+    if not ds_hinh_hoc:
+        return
+    from . import cai_dat as cai_dat_mod, features
+
+    khoa = features.gan_logo(db, kho, run=run, anh=anh)
+    cai = dict(run.settings or {})
+    # ⛔ `strict=True`: lech do dai o day lam logo thu nhat mang khoa cua
+    #    logo thu hai — khong hong gi ca, chi SAI. `doc_tu_bieu_mau` da doi chieu
+    #    mot lan, va chot nay la lan thu hai o dung cho hai mang gap nhau.
+    #
+    # ⭐ Chinh `ruff B905` bat duoc dong nay, sau khi toi vua viet mot bai
+    #    kiem cam dung viec ay o `doc_tu_bieu_mau`. Mot bo lint doc CU PHAP thay
+    #    duoc thu mot bai kiem doc HANH VI bo sot.
+    cai["logo"] = [dict(h, khoa=k)
+                   for h, k in zip(ds_hinh_hoc, khoa, strict=True)]
+    # ⭐ Chuan hoa LAI sau khi them logo. Mot ho so duoc ghi hai lan ma
+    #    chi chuan hoa mot lan la mot ho so co the ra khoi dang chuan o
+    #    lan thu hai — va `cai_dat.chuan_hoa` luy dang nen goi lai khong
+    #    ton gi.
+    run.settings = cai_dat_mod.chuan_hoa(cai)
+    db.flush()

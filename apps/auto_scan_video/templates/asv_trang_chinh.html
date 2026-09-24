@@ -54,7 +54,7 @@
           `routes.tao`: no uu tien `upload_id` va se tao mot lan chay tro vao
           mot tep chua ton tai. #}
     <input type="hidden" name="upload_id" id="asv-upload-id" value="">
-    <input type="hidden" id="asv-ve" data-url="{{ app.route_prefix }}/ve"
+    <input type="hidden" id="asv-ve" data-url="{{ app.route_prefix }}/tai-len"
            data-tran-ben-vung="{{ tran_ben_vung_mb }}"
            data-kieu-ben-vung="{{ kieu_ben_vung|join(',') }}">
 
@@ -125,6 +125,48 @@
           {% endfor %}
         </fieldset>
 
+        {# ── Cặp ngôn ngữ (asv-final 23/09, `ngon_ngu.py`) ───────────────────
+
+           🔑 Ở TẦNG CƠ BẢN, không nằm trong `Tuỳ chọn nâng cao`. Hai ô này
+              không phải tinh chỉnh: chúng quyết định ASR nghe bằng bảng chữ
+              nào, LLM dịch sang đâu, và **giọng nào còn chọn được**. Một khách
+              làm video tiếng Trung mà không thấy ô nguồn sẽ không có cách nào
+              biết hệ thống đang đoán giùm mình.
+
+           ⭐ Nguồn có `Tự nhận ra` vì đó là câu trả lời ĐÚNG của phần lớn
+              khách: họ biết video nói tiếng gì nhưng không biết ASR có nghe ra
+              không. `ngon_ngu.kiem_nguon_da_doan` chốt lại ngay sau ASR, nên
+              một lần đoán sai dừng ở cửa chứ không chạy tiếp tới LLM.
+
+           ⛔ Miền giá trị đến TỪ `ngon_ngu.cho_giao_dien()`. Gõ `zh`/`vi` vào
+              đây là tạo bản thứ hai của hợp đồng 22/09, và nó sẽ trôi. #}
+        <div class="asv-o" id="asv-nhom-ngon-ngu">
+          <div class="asv-luoi-tinh-chinh">
+            <label class="asv-o" for="asv-nn-nguon">
+              <span><strong>{{ _("Video nói tiếng gì") }}</strong></span>
+              <select id="asv-nn-nguon" name="ngon_ngu_nguon">
+                {% for ma, ten in ngon_ngu.nguon %}
+                  <option value="{{ ma }}"
+                          {% if ma == ngon_ngu_nguon_chon %}selected{% endif %}>{{ _(ten) }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label class="asv-o" for="asv-nn-dich">
+              <span><strong>{{ _("Lồng tiếng sang") }}</strong></span>
+              <select id="asv-nn-dich" name="ngon_ngu_dich">
+                {% for ma, ten in ngon_ngu.dich %}
+                  <option value="{{ ma }}"
+                          {% if ma == ngon_ngu_dich_chon %}selected{% endif %}>{{ _(ten) }}</option>
+                {% endfor %}
+              </select>
+            </label>
+          </div>
+          {# ⭐ Câu này do JS viết: nó nói HỆ QUẢ của ô đích lên danh sách giọng
+             ("còn N giọng đọc tiếng Anh"). Một ô đổi mà danh sách bên dưới im
+             lặng ngắn đi là cách chắc chắn nhất để khách tưởng giọng bị mất. #}
+          <p class="asv-ghi-chu" id="asv-nn-tt" aria-live="polite"></p>
+        </div>
+
         <div class="asv-o">
           <label for="asv-giong"><strong>{{ _("Giọng đọc") }}</strong></label>
 
@@ -185,6 +227,9 @@
                       data-nguon="{{ 'mau' if g.la_mau else 'rieng' }}"
                       data-gioi="{{ g.gioi }}" data-vung="{{ g.vung }}"
                       data-phong-cach="{{ g.phong_cach }}"
+                      {# ⭐ Rỗng = giọng nhân bản của khách; `giong.js` KHÔNG ẩn
+                         chúng theo làn. Xem `gia.giong_cho_giao_dien`. #}
+                      data-lan="{{ g.ngon_ngu }}"
                       {% if g.duong_nghe %}data-nghe="{{ g.duong_nghe }}"{% endif %}
                       >{{ g.ten }}{% if not g.duong_nghe %} · {{ _("chưa có mẫu nghe") }}{% endif %}</option>
             {% endfor %}
@@ -213,6 +258,33 @@
     {# ── Nang cao — DONG mac dinh ──────────────────────────────────────── #}
     <details class="asv-nang-cao">
       <summary>{{ _("Tuỳ chọn nâng cao") }}</summary>
+
+      {# ── Nguồn lời thoại gốc (asv-final 23/09, `nguon_loi.py`) ───────────
+
+         🔑 Mặc định `Tự chọn nguồn tốt nhất` đúng cho gần hết khách, nên ô này
+            ở NÂNG CAO chứ không ở tầng cơ bản — khác cặp ngôn ngữ.
+
+         ⛔ Nhưng nó KHÔNG phải ô trang trí: ba chế độ còn lại là ÉP, và ép một
+            nguồn video không có thì `nguon_loi.dinh_tuyen` **dừng lần chạy**
+            (`KhongCoNguon`). Câu ghi chú dưới nói đúng điều đó, vì một khách ép
+            "chữ trên hình" cho video không có hardsub cần biết trước hậu quả
+            chứ không phải sau khi đã bị giữ credit.
+
+         ⭐ Nguồn THẬT đã dùng hiện ở màn một lần chạy (`Bằng chứng chất
+            lượng`) — đó là chỗ ô này về đích. #}
+      <div class="asv-nhom" id="asv-nhom-nguon-loi">
+        <h3>{{ _("Lời thoại gốc lấy từ đâu") }}</h3>
+        <fieldset class="asv-o">
+          <legend class="asv-an-doc">{{ _("Nguồn lời thoại") }}</legend>
+          {% for ma, ten, mo_ta in nguon_loi %}
+            <label class="asv-chon">
+              <input type="radio" name="nguon_loi" value="{{ ma }}"
+                     {% if ma == nguon_loi_chon %}checked{% endif %}>
+              <span><strong>{{ _(ten) }}</strong><small>{{ _(mo_ta) }}</small></span>
+            </label>
+          {% endfor %}
+        </fieldset>
+      </div>
 
       <div class="asv-nhom">
         <h3>{{ _("Cách đọc tên riêng") }}</h3>
@@ -283,6 +355,74 @@
             {{ _("Để trống thì giữ cả video.") }}
           </p>
         </div>
+      </div>
+
+      {# ── Khung hinh & toc do (asv-final 22/09, `bien_tap.py`) ──────────────
+         Cung khuon `data-preset-can` voi vung che: cat khung / phong / doi ti le
+         la bo loc diem anh (vat ly: `-c:v copy` khong giai ma khung nao); toc do
+         la loi hua do dai cua preset giu hinh. Mien gia tri den TU
+         `bien_tap.cho_giao_dien()` — khong go so vao day. #}
+      <div class="asv-nhom" id="asv-nhom-bien-tap"
+           data-preset-can="{{ preset_can_cho_vung }}"
+           data-canh-min="{{ bien_tap.canh_min_pct }}">
+        <h3>{{ _("Khung hình và tốc độ") }}</h3>
+        <p class="asv-ghi-chu asv-vung-chan" id="asv-bt-chan" hidden>
+          {{ _("Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên không thể cắt khung, phóng to, đổi tỉ lệ hay đổi tốc độ. Chọn “Rút gọn có biên tập” nếu bạn muốn biên tập khung hình.") }}
+        </p>
+        <div class="asv-bt-o">
+          <div class="asv-luoi-tinh-chinh">
+            <label class="asv-o">
+              <span>{{ _("Tốc độ") }}</span>
+              <select id="asv-bt-toc">
+                <option value="1">1×</option>
+                <option value="1.1">1,1×</option>
+                <option value="1.25">1,25×</option>
+                <option value="{{ bien_tap.toc_do_max }}">{{ bien_tap.toc_do_max }}×</option>
+              </select>
+            </label>
+            <label class="asv-o">
+              <span>{{ _("Tỉ lệ khung hình") }}</span>
+              <select id="asv-bt-ti-le">
+                <option value="">{{ _("Giữ nguyên") }}</option>
+                {% for tl in bien_tap.ti_le %}<option value="{{ tl }}">{{ tl }}</option>{% endfor %}
+              </select>
+            </label>
+            <label class="asv-o">
+              <span>{{ _("Cách đổi tỉ lệ") }}</span>
+              <select id="asv-bt-cach">
+                <option value="cat">{{ _("Cắt quanh tâm") }}</option>
+                <option value="nen_mo">{{ _("Giữ trọn hình, nền mờ") }}</option>
+              </select>
+            </label>
+            <label class="asv-o">
+              <span>{{ _("Phóng to (×)") }}</span>
+              <input type="number" id="asv-bt-zoom" min="1" max="{{ bien_tap.zoom_max }}"
+                     step="0.1" value="1" inputmode="decimal">
+            </label>
+            <label class="asv-o">
+              <span>{{ _("Tâm ngang (%)") }}</span>
+              <input type="number" id="asv-bt-tam-x" min="0" max="100" step="1" value="50">
+            </label>
+            <label class="asv-o">
+              <span>{{ _("Tâm dọc (%)") }}</span>
+              <input type="number" id="asv-bt-tam-y" min="0" max="100" step="1" value="50">
+            </label>
+          </div>
+          <p class="asv-nhan">{{ _("Cắt bớt mép khung hình (%)") }}</p>
+          <div class="asv-luoi-tinh-chinh">
+            {% for ma, nhan in [("trai", _("Trái")), ("phai", _("Phải")), ("tren", _("Trên")), ("duoi", _("Dưới"))] %}
+            <label class="asv-o">
+              <span>{{ nhan }}</span>
+              <input type="number" id="asv-bt-cat-{{ ma }}" min="0"
+                     max="{{ 100 - bien_tap.canh_min_pct }}" step="1" value="0">
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+        <input type="hidden" name="bien_tap" id="asv-bien-tap" value="">
+        <p class="asv-ghi-chu" id="asv-bt-tt" aria-live="polite">
+          {{ _("Để mặc định thì giữ nguyên khung hình và tốc độ.") }}
+        </p>
       </div>
 
       {# 🔴 Vung che chi song duoc o preset CAT, va do la mot rang buoc vat ly
@@ -434,6 +574,21 @@
         <p class="asv-ghi-chu asv-vung-chan" id="asv-phu-de-chan" hidden>
           {{ _("Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên không thể khắc phụ đề lên hình. Bạn vẫn xuất được tệp phụ đề rời ở ngay dưới.") }}
         </p>
+        {# ⭐ Tự động chỉ tránh được dải phụ đề gốc khi khách ĐÃ đánh dấu nó
+           (nút “Đánh dấu phụ đề gốc” ở khối vùng che). Đo 22/09 trên 4 clip
+           thật: dải hardsub nằm ở 76–98% chiều cao, đúng chỗ kiểu mặc định đặt
+           chữ. JS hiện câu này khi chưa có dải nào. #}
+        <p class="asv-ghi-chu" id="asv-phu-de-goi-y" hidden>
+          {{ _("Video nguồn thường đã có phụ đề cứng ở dải dưới. Hãy đánh dấu vùng phụ đề gốc ở mục vùng che: dải đó sẽ được làm mờ và phụ đề mới đặt đè lên, không chồng hai lớp chữ.") }}
+        </p>
+        <label class="asv-o" id="asv-phu-de-chu-o" hidden>
+          <span>{{ _("Nguồn chữ") }}</span>
+          <select id="asv-phu-de-chu">
+            {% for c_ma, c_ten in phu_de.chu %}
+              <option value="{{ c_ma }}">{{ _(c_ten) }}</option>
+            {% endfor %}
+          </select>
+        </label>
         <label class="asv-o" id="asv-phu-de-kieu-o" hidden>
           <span>{{ _("Kiểu chữ") }}</span>
           <select id="asv-phu-de-kieu">
@@ -499,6 +654,19 @@
             <small>{{ _("Tệp tải về được, dùng cho YouTube hay để chỉnh lại về sau. Không đổi một điểm ảnh nào của video.") }}</small></span>
         </label>
         <input type="hidden" name="phu_de" id="asv-phu-de" value="">
+        {# 🔑 Xem trước dựng ở MÁY CHỦ bằng đúng hồ sơ + `.ass` + chuỗi lọc của
+           bản render (`phu_de.xem_truoc`), trên khung hình đang dừng của video
+           bạn chọn. Không vẽ phụ đề bằng CSS: một bản vẽ thứ hai sẽ lệch. #}
+        <div class="asv-phu-de-xem" id="asv-phu-de-xem"
+             data-duong="{{ app.route_prefix }}/phu-de/xem-truoc"
+             data-tu-dong="{{ phu_de.che_do_tu_dong }}">
+          <button type="button" class="btn ghost" id="asv-phu-de-xem-nut" disabled>
+            {{ _("Xem trước phụ đề trên khung hình này") }}
+          </button>
+          <p class="asv-ghi-chu" id="asv-phu-de-xem-loi" hidden></p>
+          <img id="asv-phu-de-xem-anh" alt="{{ _('Xem trước phụ đề') }}" hidden
+               style="max-width:100%;display:block;margin-top:8px">
+        </div>
       </div>
 
       {# 🔑 Âm thanh (V6 pha 23) — MỘT thanh mức, không phải hai.
@@ -633,6 +801,9 @@
   "nghe_chua_co": {{ _("Giọng này đang được chuẩn bị bản nghe thử.")|tojson }},
   "nghe_hong": {{ _("Không phát được bản nghe thử.")|tojson }},
   "giong_khong_khop": {{ _("Không có giọng nào khớp bộ lọc — hãy bỏ bớt điều kiện.")|tojson }},
+  "giong_het_lan": {{ _("Chưa có giọng nào đọc được ngôn ngữ này — hãy đổi ngôn ngữ đích, hoặc nhân bản một giọng ở LTT VOICE.")|tojson }},
+  "nn_con_giong": {{ _("Còn %(so)s giọng đọc được bản %(lan)s.")|tojson }},
+  "nn_het_giong": {{ _("Chưa có giọng nào đọc được bản %(lan)s.")|tojson }},
   "giong_chua_mau": {{ _("chưa có mẫu nghe")|tojson }},
   "giong_da_lam_moi": {{ _("Đã cập nhật danh sách: %(so)s giọng.")|tojson }},
   "giong_lam_moi_hong": {{ _("Không làm mới được danh sách giọng.")|tojson }},
@@ -673,6 +844,7 @@
   "lp_trong": {{ _("Dòng chữ không được để trống.")|tojson }},
   "lp_mot_dong": {{ _("Lớp phủ chữ chỉ nhận MỘT dòng.")|tojson }},
   "tai_thu_lai": {{ _("Đang thử lại lần %(lan)s…")|tojson }},
+  "tai_tiep_tuc": {{ _("Tiếp tục tải lên từ %(pct)s%%…")|tojson }},
   "tai_hong_lon": {{ _("Tải lên bị gián đoạn. Video này lớn hơn %(mb)s MB nên không gửi kèm biểu mẫu được — hãy bấm “Thử tải lên lại”.")|tojson }},
   "tai_hong_nho": {{ _("Tải lên trực tiếp không chạy được. Đang gửi theo đường thường…")|tojson }},
   "vuot_tran_kieu": {{ _("vượt quá %(mb)s MB — định dạng này chỉ gửi được bản nhỏ. Hãy đổi sang MP4 hoặc MOV.")|tojson }},
@@ -684,7 +856,12 @@
   "lg_xoa_mot": {{ _("Xoá logo này")|tojson }},
   "lg_het_cho": {{ _("Tối đa %(n)s logo.")|tojson }},
   "lg_qua_lon": {{ _("Ảnh vượt quá %(mb)s MB.")|tojson }},
-  "lg_sai_kieu": {{ _("Chỉ nhận PNG, JPEG hoặc WebP.")|tojson }}
+  "lg_sai_kieu": {{ _("Chỉ nhận PNG, JPEG hoặc WebP.")|tojson }},
+  "bt_mac_dinh": {{ _("Để mặc định thì giữ nguyên khung hình và tốc độ.")|tojson }},
+  "bt_tom_tat": {{ _("Sẽ áp dụng: %(ds)s.")|tojson }},
+  "bt_cat_mep": {{ _("cắt mép")|tojson }},
+  "bt_phong": {{ _("phóng to %(z)s×")|tojson }},
+  "bt_cat_qua_nhieu": {{ _("Cắt mép quá nhiều — mỗi chiều phải còn ít nhất %(p)s%% khung hình.")|tojson }}
 }
 </script>
 {#- Pha 06: man Studio la TAM module, khong con mot tep phinh.
@@ -696,6 +873,10 @@
 
      `defer` giu nguyen thu tu thuc thi theo thu tu tai lieu, nen `asv/nen.js`
      luon chay truoc. -#}
+{#- MD5 tung phan cho `Content-MD5` (WebCrypto khong co MD5). Thu vien ben
+     thu ba, ten tep MANG phien ban nen khong can `?v=`. Nguon + sha256:
+     `server/static/vendor/spark-md5-3.0.2/NGUON.txt`. -#}
+<script src="/static/vendor/spark-md5-3.0.2/spark-md5.min.js" defer></script>
 {% for tep in asv_studio_js %}
 <script src="/static/{{ tep }}?v={{ asset_ver }}" defer></script>
 {%- endfor %}

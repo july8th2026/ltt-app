@@ -27,14 +27,13 @@ vi **chuoi la co dinh** — khong co do thi de dung, khong co node de keo tha
 """
 from __future__ import annotations
 
-import json
 import logging
 import tempfile
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import (HTMLResponse, JSONResponse,
-                               RedirectResponse, StreamingResponse)
+                               RedirectResponse, Response, StreamingResponse)
 from sqlalchemy.orm import Session
 
 from platform_core.i18n import N_, _ as _t
@@ -43,9 +42,11 @@ from server.auth.session import require_login
 from server.deps import get_db, user_hien_tai
 from server.templating import templates
 
-from . import cat_dau_cuoi, hop_dong_v4, features, gia, pipeline, quan_sat, vung_che, rang_giong
+from . import dich_vu_tao, hop_dong_v4, features, gia, pipeline, quan_sat
+from . import bien_tap as bien_tap_mod
 from . import (am_thanh as am_thanh_mod, cai_dat as cai_dat_mod, logo as logo_mod,
-               lop_phu as lop_phu_mod, phu_de as phu_de_mod, tu_dien as tu_dien_mod)
+               lop_phu as lop_phu_mod, ngon_ngu as ngon_ngu_mod,
+               nguon_loi as nguon_loi_mod, phu_de as phu_de_mod)
 from .manifest import MANIFEST
 
 log = logging.getLogger(__name__)
@@ -59,7 +60,8 @@ router = APIRouter(tags=["auto_scan_video"])
 #:
 #: ⇒ Prompt 20 muc 8 doi giu app khong cong khai toi luc nghiem thu, va thu lam
 #:   duoc dieu do la CO NAY, khong phai `enabled`.
-CO_MO = "LTT_AUTO_SCAN_VIDEO"
+#: ⭐ Mot nguon: `dich_vu_tao.CO_MO` — cong noi bo doc CUNG co.
+CO_MO = dich_vu_tao.CO_MO
 
 
 def _cong_co() -> None:
@@ -71,8 +73,7 @@ def _cong_co() -> None:
 
     ⭐ Va 404 chu khong 403: 403 xac nhan co mot thu o day.
     """
-    import os
-    if str(os.environ.get(CO_MO, "")).strip() != "1":
+    if not dich_vu_tao.da_mo():
         raise HTTPException(status_code=404)
 
 #: Kieu tep nhan o cua vao. `MVP_CONTRACT.md` §2 chot chinh sach; day chi la
@@ -110,6 +111,7 @@ NHAN_GIAI_DOAN = {
     pipeline.COMPOSE: N_('Dựng bản ghép'),
     pipeline.RENDER: N_('Kết xuất video'),
     pipeline.QC: N_('Kiểm chất lượng'),
+    pipeline.QC_DO_LUONG: N_('Nghe lại giọng đọc'),
     # ⭐ Nhãn nói **việc gì đang xảy ra**, không nói tên kỹ thuật `qc_ai`.
     #    Bước này mặc định TẮT (`LTT_ASV_QC_AI`), và khi tắt nó chạy qua
     #    tức thì — khách vẫn thấy đủ chuỗi bước thay vì thấy một chuỗi
@@ -178,6 +180,20 @@ def _ngu_canh_studio(db, u, loi: str = "", nap_lai: dict | None = None) -> dict:
         "giong_chon": nl.get("giong_id") or "",
         "che_do_giong_chon": (nl.get("che_do_giong")
                               or hop_dong_v4.CHE_DO_GIONG_MAC_DINH),
+        #: ── Cap ngon ngu + nguon loi thoai (asv-final 23/09) ───────────────
+        #:
+        #: ⭐ Ba o nay nap lai duoc, khac `vung`: chung noi "xu ly the nao",
+        #:    khong noi "o cho nao tren khung hinh nay". Xem docstring tren.
+        #:
+        #: ⛔ Mien gia tri lay TU `ngon_ngu`/`nguon_loi`, khong go `zh`/`ocr`
+        #:    vao template — cung luat voi `preset_can_cho_vung`.
+        "ngon_ngu": ngon_ngu_mod.cho_giao_dien(),
+        "ngon_ngu_nguon_chon": nl.get("ngon_ngu_nguon") or ngon_ngu_mod.TU_DOAN,
+        "ngon_ngu_dich_chon": (nl.get("ngon_ngu_dich")
+                               or ngon_ngu_mod.DICH_MAC_DINH),
+        "nguon_loi": nguon_loi_mod.cho_giao_dien(),
+        "nguon_loi_chon": (nl.get("nguon_loi")
+                           or nguon_loi_mod.CHE_DO_MAC_DINH),
         "nap_lai_tu": nl.get("_tu_run") or "",
         "preset": gia.PRESET_BANG,
         "preset_mac_dinh": gia.preset_mac_dinh(),
@@ -211,6 +227,7 @@ def _ngu_canh_studio(db, u, loi: str = "", nap_lai: dict | None = None) -> dict:
         #: Danh sach kieu + che do phu de. Cung ly do voi hai khoi tren.
         "phu_de": phu_de_mod.cho_giao_dien(),
         "am_thanh": am_thanh_mod.cho_giao_dien(),
+        "bien_tap": bien_tap_mod.cho_giao_dien(),
         "logo_toi_da": logo_mod.SO_LOGO_TOI_DA,
         "logo_tran_mb": features.tran_logo_byte() // (1024 * 1024),
         "nhan_trang_thai": NHAN_TRANG_THAI,
@@ -258,39 +275,6 @@ def trang_chinh(request: Request, _g: None = Depends(_cong_co),
                        _ngu_canh_studio(db, u, loi, nap_lai))
 
 
-@router.post("/ve")
-async def cap_ve(request: Request,
-                 ten_tep: str = Form(...),
-                 kieu: str = Form(...),
-                 co: int = Form(...),
-                 csrf_token: str = Form(""),
-                 _g: None = Depends(_cong_co),
-                 user: str = Depends(require_login),
-                 db: Session = Depends(get_db)):
-    """Cap mot ve tai len TRUC TIEP browser -> kho (G6).
-
-    🔑 Tep khong di qua tien trinh nay, va khong di qua Cloudflare. Do la ca ly
-       do tran 90 MB bien mat: `routes.py:79 TRAN_TAI_LEN` ton tai vi Cloudflare
-       cat o 100 MB **tren duong vao may chu** — mot duong ma tep khong con di.
-    """
-    if not verify_csrf_token(request, csrf_token):
-        raise HTTPException(status_code=400, detail=_t('Phiên đã hết hạn.'))
-    u = user_hien_tai(request)
-    if u is None:
-        raise HTTPException(status_code=401)
-    from platform_core import upload_sessions
-    from platform_core.storage import get_storage
-    try:
-        ra = features.tao_ve_tai_len(
-            db, get_storage(), owner_id=u.id, ten_tep=ten_tep, kieu=kieu,
-            co_du_kien=co)
-        db.commit()
-    except upload_sessions.UploadSessionError as exc:
-        db.rollback()
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return JSONResponse(ra)
-
-
 @router.post("/tao", response_class=HTMLResponse)
 async def tao(request: Request,
               upload_id: str = Form(""),
@@ -299,6 +283,11 @@ async def tao(request: Request,
               preset: str = Form(""),
               che_do_giong: str = Form(""),
               giong_id: str = Form(""),
+              #: Cap ngon ngu (22/09): nguon {auto,zh,en,vi}, dich {vi,en}.
+              ngon_ngu_nguon: str = Form(""),
+              ngon_ngu_dich: str = Form(""),
+              #: Nguon loi thoai: auto|embedded|ocr|asr (`nguon_loi.py`).
+              nguon_loi: str = Form(""),
               tu_dien: str = Form(""),
               #: Vung che, JSON do trinh sua vung dung. Rong = khong co vung nao,
               #: va do la truong hop BINH THUONG cua phan lon lan chay.
@@ -317,6 +306,7 @@ async def tao(request: Request,
               #: Rong = khong phu de, va do la truong hop BINH THUONG.
               phu_de: str = Form(""),
               am_thanh: str = Form(""),  # JSON ho so am thanh (V6 pha 23); rong = mac dinh
+              bien_tap: str = Form(""),  # JSON cat khung/zoom/ti le/toc do (asv-final)
               csrf_token: str = Form(""),
               _g: None = Depends(_cong_co),
                 user: str = Depends(require_login),
@@ -328,139 +318,20 @@ async def tao(request: Request,
     if u is None:
         raise HTTPException(status_code=401)
 
-    if not gia.che_do_hop_le(che_do):
-        return _lai_voi_loi(request, db, u,
-                            _t('Chế độ thời gian không hợp lệ.'))
-
-    # ── Hai lua chon ma pha 21 mo ra ────────────────────────────────────────
-    #
-    # 🔴 Truoc pha 21 khong route nao nhan `preset`, nen moi lan chay deu roi ve
-    #    mac dinh va ca duong `smart_localize` khong ai voi toi duoc.
-    #
-    # ⛔ Rong = mac dinh, **khong** = "nhan bua". Mot gia tri khong hop le phai bi
-    #    tu choi ngay o cua chu khong di xuong worker roi hong o giua chuoi.
-    preset = preset or gia.preset_mac_dinh()
-    if not gia.preset_hop_le(preset):
-        return _lai_voi_loi(request, db, u, _t('Kiểu xử lý không hợp lệ.'))
-
-    che_do_giong = che_do_giong or hop_dong_v4.CHE_DO_GIONG_MAC_DINH
-    if not gia.che_do_giong_hop_le(che_do_giong):
-        return _lai_voi_loi(request, db, u, _t('Cách chọn giọng không hợp lệ.'))
-
-    # ⭐ Bat SOM, TRUOC khi giu credit: giong trong, giong cua nguoi khac, giong da
-    #    tat deu bi tu choi o day (V6 pha 19). Xem `rang_giong.kiem_o_cua`.
+    # ⭐ Moi phep duyet (che do, preset, cap ngon ngu, giong, vung, cat, lop phu,
+    #    tu dien, phu de, am thanh) nam o `dich_vu_tao.dung_cai_dat` — CUNG ham
+    #    ma `cong_noi_bo.submit_run` goi, TRUOC khi giu credit. Route chi doc form.
     try:
-        rang_giong.kiem_o_cua(db, owner_id=str(getattr(u, "id", "")), che_do=che_do_giong, giong_id=giong_id)
-    except rang_giong.RangGiongError as exc:
+        ho_so = dich_vu_tao.dung_cai_dat(db, owner_id=str(getattr(u, "id", "")), tho={
+            "timing_mode": che_do, "preset": preset, "che_do_giong": che_do_giong,
+            "giong_id": giong_id, "ngon_ngu_nguon": ngon_ngu_nguon,
+            "ngon_ngu_dich": ngon_ngu_dich, "vung": vung, "cat": cat,
+            "lop_phu": lop_phu, "tu_dien": tu_dien, "phu_de": phu_de,
+            "am_thanh": am_thanh, "bien_tap": bien_tap,
+            "nguon_loi": nguon_loi})
+    except dich_vu_tao.LoiCaiDat as exc:
         return _lai_voi_loi(request, db, u, str(exc))
-
-    # ── Vung che ────────────────────────────────────────────────────────────
-    #
-    # ⭐ Kiem o CUA, va kiem bang `vung_che.chuan_hoa` chu khong bang mot doan
-    #    kiem viet tai cho. Bon luat hinh hoc song o mot module vi chung phai
-    #    dung o ca ba noi — luc ve, luc luu, luc thi hanh — va ba ban cua mot
-    #    quy tac la ba ban se lech.
-    #
-    # ⛔ Sai thi TU CHOI, khong doan va khong lam ngo. Mot hop bi bo im lang la
-    #    mot khach tra tien cho mot lan chay **khong che gi ca**, va ho chi biet
-    #    khi xem video da giao.
-    try:
-        ds_vung = vung_che.chuan_hoa(json.loads(vung) if vung.strip() else [])
-    except vung_che.VungLoi as exc:
-        return _lai_voi_loi(request, db, u, str(exc))
-    except (ValueError, TypeError):
-        return _lai_voi_loi(request, db, u, _t('Vùng che không đọc được.'))
-
-    # ── Cua so cat dau/cuoi ─────────────────────────────────────────────────
-    #
-    # ⭐ Tang thu nhat trong ba tang. Hai tang kia: giao dien an hai tay cam khi
-    #    preset la giu hinh, va `giai_doan_ban_dung` chi giao voi cua so o duong
-    #    cat — no khong tin giao dien.
-    #
-    # 🔑 Va tang nay tu choi **truoc khi giu credit**. Doan ngay tren da noi ra
-    #    nguyen tac do bang chinh chu cua no: *"mot cau tra loi o day tot hon mot
-    #    lan chay hong o phut thu muoi"*. Voi trim thi con dat hon — mot lan chay
-    #    bi `ban_dung.kiem` chan la mot lan chay da di qua chin giai doan.
-    try:
-        cua_so_cat = cat_dau_cuoi.chuan_hoa(json.loads(cat) if cat.strip() else None)
-    except cat_dau_cuoi.CatLoi as exc:
-        return _lai_voi_loi(request, db, u, str(exc))
-    except (ValueError, TypeError):
-        return _lai_voi_loi(request, db, u, _t('Đoạn cắt không đọc được.'))
-    # ⭐ CUNG mot cau voi cau giao dien hien khi khoa hai o (`asv-cat-chan`).
-    #    Mot y, mot chuoi: hai cach dien dat cho cung mot luat la hai ban dich
-    #    phai giu dong bo, va la hai co hoi de chung lech nhau.
-    if cua_so_cat and preset != hop_dong_v4.PRESET_CAT_THONG_MINH:
-        return _lai_voi_loi(request, db, u, _t(
-            'Kiểu “Giữ nguyên hình ảnh” hứa video ra dài đúng bằng video vào, '
-            'nên không cắt bớt được. Chọn “Rút gọn có biên tập” nếu bạn muốn cắt.'))
-
-    # ── Lop phu chu (V6 pha 11) ─────────────────────────────────────────────
-    #
-    # ⭐ Tang thu nhat trong ba tang, y het `vung`. Va no dung o day — TRUOC khi
-    #    giu credit — chu khong o `ban_dung.kiem`: mot lan chay bi chan o do la
-    #    mot lan chay da di qua chin giai doan.
-    try:
-        ds_lop_phu = lop_phu_mod.chuan_hoa(
-            json.loads(lop_phu) if lop_phu.strip() else [])
-    except lop_phu_mod.LopPhuLoi as exc:
-        return _lai_voi_loi(request, db, u, str(exc))
-    except (ValueError, TypeError):
-        return _lai_voi_loi(request, db, u, _t('Lớp phủ chữ không đọc được.'))
-    # 🔴 Cung mot cau voi cau giao dien hien khi khoa cong cu, va cung mot ly do
-    #    VAT LY voi vung che: `drawtext` la mot bo loc, bo loc doi hoi giai ma,
-    #    `-c:v copy` khong giai ma khung nao.
-    if ds_lop_phu and preset != hop_dong_v4.PRESET_CAT_THONG_MINH:
-        return _lai_voi_loi(request, db, u, _t(
-            'Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên '
-            'không thể vẽ chữ lên hình. Chọn “Rút gọn có biên tập” nếu bạn muốn '
-            'thêm lớp phủ chữ.'))
-
-    # ⚠️ Cung luat voi vung che: sai thi TU CHOI, khong doan. Mot dong
-    #    `Ten - cach doc` khong duoc tu hieu thanh dau `=` — doan dung mot
-    #    lan thi lan sau khach tin rang ta luon doan dung.
-    try:
-        bang_tu_dien = tu_dien_mod.phan_tich(tu_dien)
-    except tu_dien_mod.TuDienLoi as exc:
-        return _lai_voi_loi(request, db, u, str(exc))
-
-    # ⛔ Ban THO. Ho so that duoc `cai_dat_mod.chuan_hoa` sinh ra o duoi:
-    #    no khai `schema`, gom `giong_id`/`voice_id` lam mot, va dat moi
-    #    mac dinh o DUNG MOT cho. Truoc pha 07, muoi cho doc tu dat mac
-    #    dinh cua rieng minh va hai trong so do da lech ve `timing_mode`.
-    cai_dat = {"timing_mode": che_do, "preset": preset,
-               "che_do_giong": che_do_giong, "giong_id": giong_id,
-               "vung": ds_vung,
-               "tu_dien": bang_tu_dien,
-               # ⚠️ Giu `voice_id` cho tuong thich nguoc: `giai_doan_giong` doc
-               #    no lam duong lui cho nhung run tao truoc pha 15.
-               "voice_id": giong_id}
-    # ⛔ L4 cua `cat_dau_cuoi`: khong thu hep gi thi KHONG ghi khoa nao.
-    #
-    #    `chuan_hoa` da tra `None` cho ca "vang mat" lan "(0.0, 1.0)", nen hai
-    #    truong hop do khong the phan biet duoc o duoi — va do la chu y: chung
-    #    la CUNG mot y dinh. Ghi mot khoa cho chung se lam moi lan chay khong
-    #    cat cung mang mot truong ma khong lan nao dung toi.
-    if cua_so_cat:
-        cai_dat["cat"] = [cua_so_cat[0], cua_so_cat[1]]
-    # ⛔ Cung luat: khong co lop nao thi KHONG ghi khoa. Mot mang rong ghi vao
-    #    moi lan chay la mot truong khong ai doc, va no lam ho so cua nhung lan
-    #    chay khong dung tinh nang nay khac di ma khong vi ly do gi.
-    if ds_lop_phu:
-        cai_dat["lop_phu"] = ds_lop_phu
-
-    # ⭐ Doc + duyet nam o `phu_de.tu_form` / `am_thanh.tu_form`: route khong chua nghiep vu.
-    # ⛔ `tu_form` chan truc DOT o preset giu hinh, nhung **khong** chan truc
-    #    `.srt` — khac ba tinh nang tren. Am thanh khong cham diem anh: ca hai preset.
-    try:
-        ho_so_phu_de = phu_de_mod.tu_form(phu_de, preset=preset)
-        ho_so_am = am_thanh_mod.tu_form(am_thanh)
-    except (phu_de_mod.PhuDeLoi, am_thanh_mod.AmThanhLoi) as exc:
-        return _lai_voi_loi(request, db, u, str(exc))
-    if ho_so_phu_de:
-        cai_dat["phu_de"] = ho_so_phu_de
-    if ho_so_am:
-        cai_dat["am_thanh"] = ho_so_am
+    preset = ho_so["preset"]
 
     # ── Logo (V6 pha 11b) ───────────────────────────────────────────────────
     #
@@ -468,7 +339,7 @@ async def tao(request: Request,
     #    `run.id`, va `ban_dung.kiem` doi moi khoa la mot `AsvAsset` cua chinh
     #    lan chay do.
     try:
-        ds_logo_hh, anh_logo = await _doc_logo(logo, logo_anh)
+        ds_logo_hh, anh_logo = await logo_mod.doc_tu_bieu_mau(logo, logo_anh)
     except (logo_mod.LogoLoi, ValueError, TypeError) as exc:
         return _lai_voi_loi(request, db, u, str(exc) if isinstance(
             exc, logo_mod.LogoLoi) else _t('Logo không đọc được.'))
@@ -488,8 +359,8 @@ async def tao(request: Request,
             _kho = get_storage()
             run = features.tao_run_tu_ve(
                 db, _kho, owner_id=u.id, upload_id=upload_id,
-                settings=cai_dat_mod.chuan_hoa(cai_dat))
-            _gan_logo_vao_run(db, _kho, run=run, ds_hinh_hoc=ds_logo_hh,
+                settings=ho_so)
+            logo_mod.gan_vao_run(db, _kho, run=run, ds_hinh_hoc=ds_logo_hh,
                               anh=anh_logo)
             db.commit()
         except features.AsvError as exc:
@@ -545,9 +416,9 @@ async def tao(request: Request,
             run = features.tao_run_tu_tai_len(
                 db, owner_id=u.id, duong_tep=str(tep),
                 ten_tep=video.filename or "video.mp4",
-                settings=cai_dat_mod.chuan_hoa(cai_dat))
+                settings=ho_so)
             from platform_core.storage import get_storage as _lay_kho
-            _gan_logo_vao_run(db, _lay_kho(), run=run, ds_hinh_hoc=ds_logo_hh,
+            logo_mod.gan_vao_run(db, _lay_kho(), run=run, ds_hinh_hoc=ds_logo_hh,
                               anh=anh_logo)
             db.commit()
         except features.AsvError as exc:
@@ -556,67 +427,6 @@ async def tao(request: Request,
 
     return RedirectResponse(f"{MANIFEST.route_prefix}/run/{run.id}",
                             status_code=303)
-
-
-async def _doc_logo(hinh_hoc_json: str, tep: list | None
-                    ) -> tuple[list[dict], list[tuple[bytes, str]]]:
-    """`(hinh hoc da kiem, [(bytes, kieu)])` — CUNG do dai, hoac nem.
-
-    ⛔ **Khong zip mu hai danh sach.** Lech so luong hay lech thu tu deu KHONG
-       lam gi hong — chung chi lam logo thu nhat mang anh cua logo thu hai, dat
-       o toa do cua logo thu nhat. Cung hinh dang loi ma `dung_lenh` da phai
-       tu kiem cho `duong_lop` va `duong_chu`.
-
-    ⚠️ Va tran kich thuoc ap **trong luc doc**, khong sau: mot tep 100 MB khong
-       duoc cap phat 100 MB roi moi bi tu choi.
-    """
-    ds = logo_mod.chuan_hoa(json.loads(hinh_hoc_json) if hinh_hoc_json.strip()
-                            else [])
-    ds_tep = [t for t in (tep or []) if getattr(t, "filename", "")]
-    if len(ds_tep) != len(ds):
-        raise logo_mod.LogoLoi(_t(
-            'Số ảnh logo ({co}) không khớp số logo đã đặt ({can}).').format(
-                co=len(ds_tep), can=len(ds)))
-
-    tran = features.tran_logo_byte()
-    anh: list[tuple[bytes, str]] = []
-    for t in ds_tep:
-        du_lieu = await t.read()
-        if len(du_lieu) > tran:
-            raise logo_mod.LogoLoi(_t('Ảnh logo vượt quá {mb} MB.').format(
-                mb=tran // (1024 * 1024)))
-        if not du_lieu:
-            raise logo_mod.LogoLoi(_t('Ảnh logo rỗng.'))
-        anh.append((du_lieu, (t.content_type or "").split(";")[0].strip().lower()))
-    return ds, anh
-
-
-def _gan_logo_vao_run(db, kho, *, run, ds_hinh_hoc: list[dict],
-                      anh: list[tuple[bytes, str]]) -> None:
-    """Luu anh, gan khoa vao `run.settings["logo"]`, roi ghi lai settings.
-
-    ⭐ Chay SAU `tao_run` va TRUOC `commit`, nen hoac ca run lan logo cung thanh,
-       hoac ca hai cung khong — cung bat bien I2 ma `tao_run` giu cho tien.
-    """
-    if not ds_hinh_hoc:
-        return
-    khoa = features.gan_logo(db, kho, run=run, anh=anh)
-    cai = dict(run.settings or {})
-    # ⛔ `strict=True`: lech do dai o day lam logo thu nhat mang khoa cua
-    #    logo thu hai — khong hong gi ca, chi SAI. `_doc_logo` da doi chieu
-    #    mot lan, va chot nay la lan thu hai o dung cho hai mang gap nhau.
-    #
-    # ⭐ Chinh `ruff B905` bat duoc dong nay, sau khi toi vua viet mot bai
-    #    kiem cam dung viec ay o `_doc_logo`. Mot bo lint doc CU PHAP thay
-    #    duoc thu mot bai kiem doc HANH VI bo sot.
-    cai["logo"] = [dict(h, khoa=k)
-                   for h, k in zip(ds_hinh_hoc, khoa, strict=True)]
-    # ⭐ Chuan hoa LAI sau khi them logo. Mot ho so duoc ghi hai lan ma
-    #    chi chuan hoa mot lan la mot ho so co the ra khoi dang chuan o
-    #    lan thu hai — va `cai_dat.chuan_hoa` luy dang nen goi lai khong
-    #    ton gi.
-    run.settings = cai_dat_mod.chuan_hoa(cai)
-    db.flush()
 
 
 def _lai_voi_loi(request: Request, db, u, thong_bao: str) -> HTMLResponse:
@@ -652,11 +462,18 @@ def chi_tiet(request: Request, run_id: str,
         #    khong thay duoc mot dong nao trong so do. Ho tra tien cho mot quyet
         #    dinh ho khong duoc xem.
         "canh": quan_sat.dong_canh(db, get_storage(), run),
+        # ⭐ Bang chung chat luong (asv-final 23/09). Bon so nay da nam san
+        #    trong `asv_stage.outputs` tu hai ngay nay va khong cai nao voi toi
+        #    duoc man hinh cua nguoi tra tien — xem docstring cua ham.
+        "bang_chung": quan_sat.bang_chung_chat_luong(db, run),
         # ⭐ Hai bang nhan de man "Cai dat da dung" doc duoc `run.settings` bang
         #    TIENG VIET. Khong go lai nhan o template: chung song o `gia.py`, va
         #    hai ban cua mot nhan la hai ban se lech.
         "preset": gia.PRESET_BANG,
         "che_do": gia.CHE_DO_THOI_GIAN,
+        # ⛔ Cung luat: nhan ngon ngu + nguon loi song o module cua chung.
+        "ngon_ngu_nhan": ngon_ngu_mod.NHAN,
+        "nguon_loi_nhan": nguon_loi_mod.NHAN_CHE_DO,
         # ⭐ Hai con so cua ho so (V6 pha 07). Truoc do khong ai tra loi duoc
         #    *"ho so nay theo schema nao"* va *"ca cau hinh bam ra gi"* — va cau
         #    thu hai la cau hoi DAU TIEN khi mot khach hoi vi sao hai lan chay
@@ -790,6 +607,25 @@ def uoc_tinh(request: Request, giay: float = 0.0,
     })
 
 
+@router.post("/phu-de/xem-truoc")
+def xem_truoc_phu_de(request: Request, anh: UploadFile = File(...),
+                     phu_de: str = Form(""), vung: str = Form(""),
+                     preset: str = Form(""), ngon_ngu_nguon: str = Form(""),
+                     ngon_ngu_dich: str = Form(""), csrf_token: str = Form(""),
+                     _g: None = Depends(_cong_co),
+                     user: str = Depends(require_login)):
+    """Mot khung PNG xem truoc phu de. Duyet + dung o `phu_de.xem_truoc_tu_form`."""
+    if not verify_csrf_token(request, csrf_token):
+        raise HTTPException(status_code=400, detail=_t('Phiên đã hết hạn.'))
+    try:
+        png = phu_de_mod.xem_truoc_tu_form(
+            phu_de, anh=anh.file.read(phu_de_mod.XEM_TRUOC_TRAN_BYTE + 1),
+            vung=vung, preset=preset, nguon=ngon_ngu_nguon, dich=ngon_ngu_dich)
+    except phu_de_mod.PhuDeLoi as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return Response(png, media_type="image/png", headers={"Cache-Control": "no-store"})
+
+
 @router.get("/giong")
 def danh_muc_giong(request: Request,
                    gioi: str = "", vung: str = "", phong_cach: str = "",
@@ -897,3 +733,12 @@ def _run_cua_toi(db, run_id: str, u):
     except features.AsvError:
         raise HTTPException(status_code=404,
                             detail=_t('Không tìm thấy lần chạy.')) from None
+
+
+# ── Tai len NHIEU PHAN (tiep tuc duoc sau khi dut) ──────────────────────────
+# Thay `/ve` (mot presigned PUT cho ca tep: dut o 73% = gui lai tu 0%). Route o
+# tep rieng vi tran 900 dong cua tep nay (`test_455`). Import o CUOI: tep kia
+# dung `_cong_co` dinh nghia o tren.
+from .routes_tai_len import router as _router_tai_len  # noqa: E402
+
+router.include_router(_router_tai_len)

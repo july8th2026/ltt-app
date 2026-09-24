@@ -1,26 +1,22 @@
-"""Tach CANH va lay khung hinh dai dien — tat dinh, re, va khong goi model nao.
+"""Tach CANH va lay khung hinh dai dien — tat dinh, va khong goi model nao.
 
-## Vi sao ffmpeg lam viec nay chu khong phai Python
+## Bo tach: PySceneDetect (BSD-3-Clause), da benchmark — khong tu che
 
-⛔ Giai ma tung khung hinh vao Python roi so sanh la cach de nhat de bien mot
-   video 40 phut thanh mot lan hong bo nho. Mot khung 1080p la ~6 MB o dang tho;
-   60.000 khung la 350 GB di qua RAM.
+⭐ ASV final (lan ky-thuat) do bon ung vien tren 9 clip tong hop co moc cat BIET
+   TRUOC + 2 video that gan nhan tay (`docs/auto_scan_video_final/L_KY_THUAT.md`):
+   ffmpeg `select=gt(scene,T)`, ffmpeg `scdet`, PySceneDetect Content/Adaptive/
+   Hash. Ban cu (`select` 0,4, nguong "CHUA DO") thua ro: bo sot moi mot cat
+   giua hai canh tinh (talking head) va moi cat trong canh toi. Da xoa.
 
-⭐ `ffmpeg` co san bo loc `select='gt(scene,T)'`: no so sanh **trong luong** hai
-   khung lien tiep va chi in ra moc thoi gian nhung cho doi canh. Ta doc `stderr`,
-   khong doc pixel nao. Bo nho gan nhu khong doi theo do dai video — va do la
-   dieu `long-video memory bound` cua pha nay doi.
+🔑 Bo nho: PySceneDetect doc TUNG khung (OpenCV) va thu nho tu dong
+   (`auto_downscale`) truoc khi so — bo nho khong doi theo do dai video, khong
+   giu mot danh sach khung nao.
 
 ## 🔑 Tat dinh nghia la gi o day
 
-Cung mot tep + cung `NGUONG_DOI_CANH` => cung danh sach moc. Khong lay mau ngau
-nhien, khong dung thoi gian thuc, khong dua vao so nhan CPU. `van_tay` cua giai
-doan gom ca nguong, nen doi nguong la doi van tay va cache truot dung cach.
-
-⚠️ **`scene` cua ffmpeg khong phai mot ngưỡng tuyet doi ve "canh moi"** — no la
-   mot phep do khac biet, va gia tri tot phu thuoc noi dung. 0,4 la con so bo
-   loc nay thuong duoc dung; no CHUA DUOC DO tren tep that cua khach. Ghi ro o
-   day de khong ai doc no nhu mot hang so da chot.
+Cung mot tep + cung `PHIEN_BAN_CANH` => cung danh sach moc. Khong lay mau ngau
+nhien, khong dung thoi gian thuc. `thi_hanh.phien_ban_engine` gom
+`PHIEN_BAN_CANH`, nen doi bo tach/tham so la doi van tay va cache truot dung cach.
 
 ## Vi sao so khung mau bi CHAN
 
@@ -34,8 +30,7 @@ from __future__ import annotations
 
 import json
 import logging
-import re
-import subprocess
+import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -43,15 +38,26 @@ from platform_core import media
 
 log = logging.getLogger(__name__)
 
-#: Nguong doi canh cua bo loc `select='gt(scene,T)'`.
-#:
-#: ⚠️ CHUA DO tren tep that cua khach — xem docstring dau tep.
-NGUONG_DOI_CANH = 0.4
+#: Bo tach canh: PySceneDetect `ContentDetector`. Chon bang benchmark
+#: (`docs/auto_scan_video_final/L_KY_THUAT.md` §3): tren 9 clip tong hop + 2 video
+#: that gan nhan tay, F1 = 0,95 (P 0,92 / R 0,98) — dung dau, tren ca
+#: `AdaptiveDetector` (0,93) va bo cu `select=gt(scene,0.4)` (0,73).
+BO_TACH = "pyscenedetect.ContentDetector"
+#: `threshold` cua `ContentDetector`. **Da do**, khong phai mac dinh thu vien
+#: (27): 35 bo bot bao dong gia o canh quay lia / canh dong nhanh ma khong mat
+#: mot cat nao trong bo do (27: FP 25, 35: FP 14, cung 3-4 FN).
+NGUONG_DOI_CANH = 35.0
+#: So khung toi thieu mot canh cua detector (mac dinh thu vien, 15 khung).
+KHUNG_CANH_TOI_THIEU = 15
+
+#: Vao van tay giai doan (`thi_hanh.phien_ban_engine`). Doi bo tach, tham so,
+#: hay phien ban lon cua thu vien => doi chuoi nay => cache truot.
+PHIEN_BAN_CANH = f"psd0.6/{BO_TACH}/{NGUONG_DOI_CANH}/{KHUNG_CANH_TOI_THIEU}/v1"
 
 #: Canh ngan hon nay thi gop vao canh truoc.
 #:
-#: 🔑 Bo loc `scene` bao dong tren mot cu chop den hay mot khung nhieu, va nhung
-#:    "canh" 0,2 giay do khong phai canh — chung la nhieu. Gop chung lai truoc
+#: 🔑 Moi bo tach deu bao dong tren mot cu chop den (benchmark: chop trang 3
+#:    khung la FP o MOI bo), va nhung "canh" 0,2 giay do khong phai canh. Gop chung lai truoc
 #:    khi lay mau, neu khong ta tra tien VLM cho mot khung nhieu.
 CANH_NGAN_NHAT_S = 1.0
 
@@ -114,23 +120,55 @@ class ChiMucCanh:
 #  Tim ranh gioi canh
 # ══════════════════════════════════════════════════════════════════════════════
 
-_MOC = re.compile(r"pts_time:([0-9]+\.?[0-9]*)")
+def tim_moc(duong: str, *, hoi_huy=None, timeout: int = 1800) -> list[float]:
+    """Moc doi canh (giay) cua `duong` theo `BO_TACH`. Adapter DUY NHAT cua
+    PySceneDetect — moi tham so doc tu hang so o dau tep.
 
-
-def doc_moc_tu_ffmpeg(stderr: str) -> list[float]:
-    """Doc moc doi canh tu dau ra `metadata=print` cua ffmpeg.
-
-    ⭐ Tach thanh ham rieng de phep kiem chay duoc **khong can ffmpeg**: mot bo
-       do phu thuoc mot nhi phan ben ngoai la mot bo do khong chay tren may
-       khong co no, va luc do no im lang thay vi do.
+    ⭐ Huy/qua han: mot luong canh goi `SceneManager.stop()` (an toan luong theo
+       tai lieu thu vien) — `detect_scenes` dung o khung ke tiep.
     """
-    ra = []
-    for m in _MOC.finditer(stderr or ""):
-        try:
-            ra.append(float(m.group(1)))
-        except ValueError:
-            continue
-    return sorted(set(ra))
+    try:
+        from scenedetect import ContentDetector, SceneManager, open_video
+    except ImportError as exc:        # pragma: no cover - moi truong thieu goi
+        raise CanhError(f"thieu PySceneDetect: {exc}") from exc
+
+    try:
+        video = open_video(str(duong), backend="opencv")
+    except Exception as exc:          # noqa: BLE001 - tep hong / khong mo duoc
+        raise CanhError(f"khong mo duoc video: {exc}") from exc
+    sm = SceneManager()
+    sm.add_detector(ContentDetector(threshold=NGUONG_DOI_CANH,
+                                    min_scene_len=KHUNG_CANH_TOI_THIEU))
+
+    xong = threading.Event()
+    ly_do: list[str] = []
+
+    def _canh():
+        import time
+        bat = time.monotonic()
+        while not xong.wait(0.5):
+            if hoi_huy is not None and hoi_huy():
+                ly_do.append("da huy")
+            elif time.monotonic() - bat > timeout:
+                ly_do.append("qua han")
+            if ly_do:
+                sm.stop()
+                return
+
+    t = threading.Thread(target=_canh, daemon=True)
+    t.start()
+    try:
+        sm.detect_scenes(video, show_progress=False)
+    except Exception as exc:          # noqa: BLE001 - loi giai ma giua chung
+        raise CanhError(f"PySceneDetect loi: {exc}") from exc
+    finally:
+        xong.set()
+        t.join(timeout=2)
+    if not ly_do and hoi_huy is not None and hoi_huy():
+        ly_do.append("da huy")      # huy trong nua giay cuoi, truoc luot canh
+    if ly_do:
+        raise CanhError(ly_do[0])
+    return sorted({round(c.get_seconds(), 3) for c in sm.get_cut_list()})
 
 
 def gop_canh_ngan(moc: list[float], thoi_luong: float,
@@ -205,24 +243,17 @@ def chan_so_khung(canh: list, *, toi_da: int = KHUNG_TOI_DA) -> list:
 
 def phan_tich(duong: str, *, thoi_luong: float = 0.0, nguong: float = NGUONG_DOI_CANH,
               hoi_huy=None, timeout: int = 1800) -> ChiMucCanh:
-    """Chay ffmpeg mot lan, tra ve `ChiMucCanh`. KHONG doc pixel nao vao Python."""
+    """Tach canh mot lan, tra ve `ChiMucCanh`.
+
+    `nguong` chi de ghi vao chi muc; bo tach luon dung `NGUONG_DOI_CANH` (mot
+    nguon chan ly, nam trong `PHIEN_BAN_CANH`).
+    """
     if thoi_luong <= 0:
         thoi_luong = float(media.duration_seconds(duong) or 0.0)
     if thoi_luong <= 0:
         raise CanhError("khong doc duoc thoi luong nguon")
 
-    cmd = [media.ffmpeg_bin(), "-hide_banner", "-nostdin", "-i", str(duong),
-           "-filter:v", f"select='gt(scene,{nguong})',metadata=print",
-           "-an", "-f", "null", "-"]
-    try:
-        r = subprocess.run(cmd, capture_output=True, timeout=timeout)
-    except (OSError, subprocess.SubprocessError) as exc:
-        raise CanhError(f"ffmpeg khong chay duoc: {exc}") from exc
-    if hoi_huy is not None and hoi_huy():
-        raise CanhError("da huy")
-
-    loi = (r.stderr or b"").decode("utf-8", "replace")
-    moc = doc_moc_tu_ffmpeg(loi)
+    moc = tim_moc(duong, hoi_huy=hoi_huy, timeout=timeout)
     khoang = gop_canh_ngan(moc, thoi_luong)
 
     canh = [Canh(f"canh_{i:04d}", b, k, tuple(moc_khung_mau(b, k)))
@@ -230,6 +261,7 @@ def phan_tich(duong: str, *, thoi_luong: float = 0.0, nguong: float = NGUONG_DOI
     canh = chan_so_khung(canh)
 
     return ChiMucCanh(tuple(canh), thoi_luong, nguong, {
+        "bo_tach": BO_TACH,
         "moc_tho": len(moc),
         "da_gop": len(moc) + 1 - len(khoang) if moc else 0,
     })
@@ -255,6 +287,47 @@ def lenh_rut_khung(duong: str, moc: float, ra: str,
             "-frames:v", "1",
             "-vf", f"scale='min({int(canh_dai)},iw)':-2",
             "-q:v", str(CHAT_LUONG_JPEG), "-y", str(ra)]
+
+
+#: Tran thoi gian cua MOT lenh `ffmpeg` rut khung. MOT nguon cho ca lenh goi
+#: lan phep tinh du phong cua lat cat (`edit_plan` va `qc_ai` deu doc no).
+CHO_RUT_KHUNG_S = 120
+
+
+def rut_khung(duong: str, moc, *, cho_s: float = CHO_RUT_KHUNG_S) -> tuple:
+    """Rut cac khung o `moc` (giay) thanh bytes JPEG.
+
+    🔑 **MOT ban sao cho ca hai nguoi goi.** `edit_plan` rut khung cua mot CANH
+       tren tep nguon; `qc_ai` rut khung hai ben mot CHO NOI tren tep da render.
+       Hai cau hoi khac nhau, nhung phep rut khung thi y het — va hai ban sao
+       cua no se lech nhau o mot nhanh nao do (tran thoi gian, xu ly khung hong,
+       co giai phong thu muc tam khong), nhanh lech la nhanh it duoc chay nhat.
+
+    ⛔ Khung di thang tu dia vao bo nho roi ra `messages` — khong luu vao kho.
+       Chung la **dau vao cua mot cau hoi**, khong phai san pham giao cho khach;
+       luu chung la them mot vong doi phai quet doi lay khong gi.
+
+    ⚠️ Mot khung hong thi bo RIENG khung do. Mot cau hoi hai khung ma mot khung
+       hong van la mot cau hoi tra loi duoc (kem hon); nem ca cau hoi di thi
+       khong. Nguoi goi doc `len()` de biet no da hoi bang may khung.
+    """
+    import subprocess
+    import tempfile
+
+    ra: list = []
+    with tempfile.TemporaryDirectory(prefix="asv_khung_") as tam:
+        for j, m in enumerate(moc):
+            tep = Path(tam) / f"k{j:02d}.jpg"
+            cmd = lenh_rut_khung(duong, float(m), str(tep))
+            try:
+                subprocess.run(cmd, capture_output=True, timeout=float(cho_s),
+                               check=False)
+                if tep.exists() and tep.stat().st_size > 0:
+                    ra.append(tep.read_bytes())
+            except (OSError, subprocess.SubprocessError) as exc:
+                log.warning("khong rut duoc khung o giay %.3f (%s)",
+                            float(m), type(exc).__name__)
+    return tuple(ra)
 
 
 def kiem_chi_muc(ci: ChiMucCanh) -> None:

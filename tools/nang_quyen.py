@@ -92,6 +92,12 @@ def chay(lenh: str, cho_giay: float = 1800.0, log: str = "") -> tuple[int, str]:
     ps1.write_text(
         "$ErrorActionPreference = 'Continue'\n"
         "$env:PYTHONIOENCODING = 'utf-8'\n"
+        # 🔴 Thieu dong nay thi loi hua o docstring — "Log doc duoc TRONG LUC
+        #    chay" — SAI voi moi tien trinh con Python: stdout bi chuyen huong
+        #    la stdout ghi theo KHOI, nen tep log trong hang chuc phut du viec
+        #    van dang chay. 23/09: mot luot do 22 phut bi chan doan nham la
+        #    TREO dung vi the, va ca may bi chan theo.
+        "$env:PYTHONUNBUFFERED = '1'\n"
         f"$env:PATH = '{duong_path};' + $env:PATH\n"
         f"Set-Location '{pathlib.Path.cwd()}'\n"
         f'cmd /c "{lenh} > ""{tam}"" 2>&1"\n'

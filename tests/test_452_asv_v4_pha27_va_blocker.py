@@ -64,9 +64,20 @@ def test_EDIT_PLAN_THUC_SU_goi_VLM_chu_khong_truyen_hieu_rong():
        chinh ta cua ma nguon.
     """
     cay = ast.parse(inspect.getsource(gdbbt.chay))
+
+    # ⚠️ Dich `hieu` co the la MOT ten (`hieu = ...`) hoac mot **bo** (23/09:
+    #    `hieu, hong = _doc_cac_canh(...)`, vi giai doan nay nay tra ve ca danh
+    #    sach canh DOC HONG). Phep kiem nay noi ve "co nhanh nao dan `hieu` toi
+    #    VLM khong" — khong noi ve hinh dang cua ve trai.
+    def _dat_hieu(t) -> bool:
+        if isinstance(t, ast.Name):
+            return t.id == "hieu"
+        if isinstance(t, (ast.Tuple, ast.List)):
+            return any(_dat_hieu(x) for x in t.elts)
+        return False
+
     gan_hieu = [n for n in ast.walk(cay) if isinstance(n, ast.Assign)
-                and any(isinstance(t, ast.Name) and t.id == "hieu"
-                        for t in n.targets)]
+                and any(_dat_hieu(t) for t in n.targets)]
     assert gan_hieu, "`chay` khong con gan `hieu` — phep kiem nay da lac"
 
     # ⭐ `hieu = ()` VAN dung o nhanh `PRESET_GIU_HINH`, va do la dung: preset

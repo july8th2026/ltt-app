@@ -46,7 +46,11 @@ import json
 from platform_core.i18n import _ as _t
 
 #: Doi bat cu thu gi o duoi day thi tang so nay — no di vao van tay.
-PHIEN_BAN_LONG_TIENG = 1
+#:
+#: 2 (23/09/2026): loi nhac mang `do_dai_toi_da` — mot TRAN DEM DUOC cho moi
+#: doan, tinh tu `ngon_ngu.ngan_sach_do_dai` (nhip DO DUOC 3,35 am tiet/giay
+#: thay cho con so 4,5 chua do). Doi ban long tieng da sinh, nen phai doi van tay.
+PHIEN_BAN_LONG_TIENG = 2
 
 SCHEMA_LONG_TIENG = "asv.long_tieng.v1"
 
@@ -129,12 +133,15 @@ def ngu_canh_ke(tat_ca: list[dict], vi_tri: int, *, ke: int | None = None) -> di
 # ══════════════════════════════════════════════════════════════════════════════
 
 def loi_nhac(lo: list[dict], *, tat_ca: list[dict], ngon_ngu_goc: str,
-             dac_diem_giong: dict, y_canh: dict | None = None) -> list[dict]:
+             dac_diem_giong: dict, y_canh: dict | None = None,
+             ngon_ngu_dich: str = "vi") -> list[dict]:
     """Dung loi nhac cho MOT lo. Tra ve `messages` cho `ai.goi_tinh_tien`.
 
     ⛔ Yeu cau tra ve JSON co khoa la **ma doan**, khong phai mot mang. Xem ghi
        chu dau tep ve vi sao vi tri khong dung lam dinh danh duoc.
     """
+    from . import ngon_ngu
+
     y_canh = y_canh or {}
     muc = []
     chi_so = {d.get("ma"): i for i, d in enumerate(tat_ca)}
@@ -146,19 +153,27 @@ def loi_nhac(lo: list[dict], *, tat_ca: list[dict], ngon_ngu_goc: str,
         except (TypeError, ValueError):
             dai = 0.0
         m = {"ma": ma, "goc": goc, "thoi_luong_giay": round(dai, 2),
+             # 🔑 **TRAN DEM DUOC, khong phai mot nhip de model tu nhan.**
+             #    Xem `ngon_ngu.ngan_sach_do_dai`. Truoc 23/09 cho nay chi co
+             #    `thoi_luong_giay`, va pha 15 phai don hau qua bang 11 luot
+             #    viet lai / 751 giay tren mot phim 107 giay.
+             "do_dai_toi_da": ngon_ngu.ngan_sach_do_dai(dai, ngon_ngu_dich),
              "ke_ben": ngu_canh_ke(tat_ca, chi_so.get(ma, 0))}
         y = y_canh.get(ma)
         if y:
             m["y_canh"] = y
         muc.append(m)
 
+    c = ngon_ngu.cum(ngon_ngu_dich)
     he_thong = (
-        "Ban la bien tap vien long tieng tieng Viet. Ban KHONG dich tung chu: "
-        "ban viet lai cau thoai sao cho nguoi Viet nghe thay tu nhien, dung y, "
+        f"Ban la bien tap vien long tieng {c['tieng']}. Ban KHONG dich tung chu: "
+        f"ban viet lai cau thoai sao cho {c['nguoi']} nghe thay tu nhien, dung y, "
         "va **doc vua khoang thoi gian da cho**.\n"
         "Quy tac:\n"
         "- Giu nguyen y nghia va thai do cua cau goc.\n"
-        "- Do dai cau phai doc vua `thoi_luong_giay` (khoang 4,5 am tiet/giay).\n"
+        f"- Do dai cau phai doc vua `thoi_luong_giay` ({c['nhip']}).\n"
+        f"- **KHONG QUA `do_dai_toi_da` {c['don_vi']}** — dem lai truoc khi tra ve.\n"
+        f"  Thieu mot chut thi duoc; qua mot chut thi cau bi tran sang canh sau.\n"
         "- Giu mach voi cac cau o `ke_ben` — do la nhung cau khan gia vua nghe "
         "va sap nghe, sau khi da cat.\n"
         "- Xung ho va giong dieu hop voi `giong` da chon.\n"
@@ -231,7 +246,7 @@ def doc_chuyen(goi: dict, ma_da_gui: set[str]) -> dict:
 # ══════════════════════════════════════════════════════════════════════════════
 
 def dung(ban_ghi_giu: dict, chuyen: dict, *, ma_giong: str, van_tay_ban: str,
-         provider: str, model: str) -> dict:
+         provider: str, model: str, ngon_ngu_dich: str = "vi") -> dict:
     """Dung ban long tieng tu ban chep loi DA LOC + bang `{ma: ket qua}`.
 
     ⭐ Tai lieu nay la mot **sieu tap** cua tai lieu van ban cu, khong phai mot
@@ -280,7 +295,7 @@ def dung(ban_ghi_giu: dict, chuyen: dict, *, ma_giong: str, van_tay_ban: str,
         "schema_long_tieng": SCHEMA_LONG_TIENG,
         "phien_ban_long_tieng": PHIEN_BAN_LONG_TIENG,
         "ngon_ngu_goc": str((ban_ghi_giu or {}).get("ngon_ngu") or ""),
-        "ngon_ngu_dich": "vi",
+        "ngon_ngu_dich": str(ngon_ngu_dich or "vi"),
         "provider": str(provider or ""),
         "model": str(model or ""),
         # 🔑 Giong bi **DONG BANG** vao tai lieu. Doi giong sau khi da viet loi la
@@ -330,7 +345,7 @@ def kiem(tai_lieu: dict, ban_ghi_giu: dict | None = None) -> None:
 
 
 def van_tay_long_tieng(*, checksum_ban_ghi: str, van_tay_ban: str, ma_giong: str,
-                       provider: str, model: str) -> str:
+                       provider: str, model: str, ngon_ngu_dich: str = "vi") -> str:
     """Van tay cua ban long tieng.
 
     Nam thanh phan, va thieu bat cu cai nao deu lam cache noi doi:
@@ -341,6 +356,7 @@ def van_tay_long_tieng(*, checksum_ban_ghi: str, van_tay_ban: str, ma_giong: str
         "ban_ghi": checksum_ban_ghi,
         "ban": van_tay_ban,
         "giong": ma_giong,
+        "ngon_ngu_dich": ngon_ngu_dich,
         "provider": provider,
         "model": model,
         "phien_ban": PHIEN_BAN_LONG_TIENG,

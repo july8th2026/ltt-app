@@ -20,6 +20,7 @@ from apps.auto_scan_video.lop_phu import LopPhuLoi
 from apps.auto_scan_video.phu_de import PhuDeLoi
 from apps.auto_scan_video.logo import LogoLoi
 from apps.auto_scan_video.am_thanh import AmThanhLoi
+from apps.auto_scan_video.bien_tap import BienTapLoi
 from apps.auto_scan_video.tu_dien import TuDienLoi
 from apps.auto_scan_video.vung_che import VungLoi
 from apps.auto_scan_video.ban_ghi import BanGhiError
@@ -45,6 +46,8 @@ from apps.auto_scan_video.ban_bien_tap import BanBienTapError
 from apps.auto_scan_video.giai_doan_ban_bien_tap import ThieuChiMuc
 from apps.auto_scan_video.hieu_canh import HieuCanhError
 from apps.auto_scan_video.rang_giong import ChuaRangError, RangGiongError
+from apps.auto_scan_video.ngon_ngu import NgonNguError
+from apps.auto_scan_video.nguon_loi import KhongCoNguon
 from apps.auto_scan_video.su_dung import DaGhiRoi, DoiSoatLech, SuDungError
 from apps.auto_scan_video.thi_hanh import QcChan
 from apps.auto_scan_video.giai_doan_media import ThieuNguon
@@ -118,6 +121,8 @@ BANG = {
     # V6 pha 23 — cung nhom: `am_thanh.tu_cai_dat` duyet lai ho so da luu TRONG
     # job `timing_align`; ho so hong thi ba luot thu lai hong y het.
     AmThanhLoi: loi.NGUOI_DUNG,
+    # asv-final: ho so bien tap khung/toc do — cung nhom, cung ly do.
+    BienTapLoi: loi.NGUOI_DUNG,
     # ⭐ THU LAI la viec dung: nen tang co the cap mot card KHAC lan sau. Truoc
     #    pha 13 truong hop nay khong nem gi ca — no **im lang chay CPU**, cham
     #    hon 9,5 lan, va giu suat `tach_nguon_cuc_bo` suot ~37 phut o tran 2 gio.
@@ -214,6 +219,10 @@ BANG = {
     #:    buoc chua chot, tuc mot loi LAP TRINH o tang goi: thu lai khong lam
     #:    `HoSoNoiDung` xuat hien.
     RangGiongError: loi.NGUOI_DUNG,
+    #: Cap ngon ngu ngoai hop dong (22/09) — chay lai hong y het.
+    NgonNguError: loi.NGUOI_DUNG,
+    #: Ep mot nguon loi ma video khong co (23/09) — chay lai hong y het.
+    KhongCoNguon: loi.NGUOI_DUNG,
     ChuaRangError: loi.NGUOI_DUNG,
     #: ⭐ `CanhError` la `TAM_THOI`: gan nhu luon la mot lan ffmpeg khong
     #:    chay duoc. No cung dung cho "chi muc sai hinh dang" — thu lai vo
@@ -373,9 +382,25 @@ def test_moi_lop_ngoai_le_cua_app_deu_duoc_phan_loai():
         # 🔑 `ThieuBanBienTap` ke thua `ThieuNguon` — da co trong BANG. No chi dat
         #    ten cho MOT truong hop thieu thuong nguon cu the.
         "ThieuBanBienTap",
+        # 🔑 Cung khuon: `ThieuTieng` (qc_do_luong) ke thua `ThieuNguon` — da co
+        #    trong BANG; no chi dat ten cho MOT truong hop thieu thuong nguon.
+        "ThieuTieng",
+        # 🔑 Cung khuon (23/09): `ThieuBangChungCanh` (edit_plan) ke thua
+        #    `ThieuNguon`. "VLM khong doc duoc het cac canh" DUNG la mot thuong
+        #    nguon thieu, va `THIEU_THUONG_NGUON` cho dung hanh vi — khong thu
+        #    lai o tang job, vi lan hoi lai da xay ra trong chinh giai doan.
+        "ThieuBangChungCanh",
         # 🔑 Chi song trong `giai_doan_giong._viet_lai`, bi bat ngay tai cho de
         #    dung bac thang nan — khong bao gio len toi bien cua nen tang.
         "_KhongNanDuoc",
+        # 🔑 Cong NOI BO + dich vu nop (22/09): nem TRUOC khi co job, o tang
+        #    goi (route/port), khong bao gio len toi bien cua nen tang.
+        "LoiCaiDat", "LoiCongNoiBo", "LoiDauVao", "LoiKhongTimThay",
+        "LoiThieuCredit", "LoiXungDot", "LoiChuaMo",
+        # 🔑 KHONG phai loi: tin hieu nhuong cua lat cat (`lat_cat.py`).
+        #    `thi_hanh.chay_giai_doan` bat no TRUOC nhanh `except Exception`,
+        #    ghi con tro va tra ve binh thuong — khong bao gio len toi bien.
+        "TiepNoi",
     }
 
     # ⚠️ Gom lop cha theo CA HAI dang: `class X(MediaError)` (`ast.Name`) va
