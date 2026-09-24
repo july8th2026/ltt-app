@@ -131,6 +131,56 @@ def test_doi_DOAN_MOI_LO_thi_kich_thuoc_lo_DOI_THAT():
         lt.DOAN_MOI_LO = cu
 
 
+def test_khong_chac_CHI_THU_va_KHONG_duoc_lam_hong_mot_lo():
+    """⭐ DUONG B — `khong_chac` la mot cot CHAN DOAN, ⛔ khong phai thu san pham.
+
+    ⛔ Nen moi dang sai cua no phai ra `[]`, ⛔ khong duoc nem: de mot cot chan
+       doan lam hong mot lo loi thoai **da tra tien** la doi mot thu dat lay mot
+       thu khong dat. Khac han `chu` — sai luoc do o `chu` PHAI thanh loi.
+    """
+    ra = long_tieng.doc_chuyen({"doan": {
+        "s1": {"chu": "a", "khong_chac": ["掐雷", "  ", "x" * 99]},
+        "s2": {"chu": "b"},                       # vang mat
+        "s3": {"chu": "c", "khong_chac": "khong phai list"},   # sai kieu
+        "s4": {"chu": "d", "khong_chac": list(range(50))},     # xa danh sach
+    }}, {"s1", "s2", "s3", "s4"})
+    assert ra["s1"]["khong_chac"][0] == "掐雷"
+    assert len(ra["s1"]["khong_chac"]) == 2, "chuoi rong phai bi bo"
+    assert len(ra["s1"]["khong_chac"][1]) == long_tieng.KHONG_CHAC_DAI_TOI_DA
+    assert ra["s2"]["khong_chac"] == [], "vang mat => [] , ⛔ khong nem"
+    assert ra["s3"]["khong_chac"] == [], "sai kieu => [] , ⛔ khong nem"
+    assert len(ra["s4"]["khong_chac"]) == long_tieng.KHONG_CHAC_TOI_DA
+    # ⛔ Va no ⛔ KHONG duoc ro ri ra tai lieu khach nhan: `dung` chi rap cac
+    #    truong san pham. Dieu phoi chot: chi GHI vao `outputs`, khong hien.
+    tl = long_tieng.dung(_giu(_ban_ghi(), ["seg_0000"]),
+                         {"seg_0000": ra["s1"]}, ma_giong="g",
+                         van_tay_ban="vt", provider="p", model="m")
+    assert "khong_chac" not in tl["muc"][0], "⛔ khong duoc di ra tai lieu khach"
+
+
+def test_quy_tac_TEN_RIENG_chi_ra_khi_dich_VI():
+    """🔑 *"Phien am HAN-VIET"* la luat cua **tieng Viet**, khong phai cua moi dich.
+
+    ⚠️ `ngon_ngu.DICH_HOP_LE` co ca `en` (`kiem_cap`). Chen luat nay vo dieu kien
+       la dung lai **F-05** — loi nhac ghi cung "tieng Viet" cho moi nguon.
+
+    ⛔ Bai kiem CA HAI chieu. Thieu ve `en` thi mot ban vo hieu hoa dieu kien
+       (chen vo dieu kien) van xanh, va bai dang gac chinh no.
+    """
+    bg = _ban_ghi()
+    def _he(dich):
+        return long_tieng.loi_nhac(bg["doan"][:2], tat_ca=bg["doan"],
+                                   ngon_ngu_goc="zh", dac_diem_giong={},
+                                   ngon_ngu_dich=dich)[0]["content"]
+    moc = long_tieng.QUY_TAC_TEN_RIENG_VI["content"]
+    assert moc in _he("vi"), "dich `vi` phai mang quy tac ten rieng"
+    assert moc not in _he("en"), "dich `en` ⛔ KHONG duoc mang luat Han-Viet"
+    # ⭐ Vi du phai CO DAU: ban `dich_thuat` v2 viet vi du khong dau va model
+    #    chep HINH DANG cua vi du — mot ten von dung tut thanh khong dau
+    #    (`B2_DICH.md` §4c). Chot lai bang mot phep kiem, khong bang tri nho.
+    assert "Trương Vĩ" in moc and "Lý Tông Thịnh" in moc
+
+
 def test_loi_nhac_YEU_CAU_khoa_la_ma_doan():
     """Chot chinh loi nhac: doi tuong co khoa, khong phai mang."""
     bg = _ban_ghi()
@@ -409,7 +459,7 @@ def test_KHONG_doan_nao_thuoc_canh_BI_CAT_duoc_gui_cho_model(
     da_gui: list[str] = []
 
     def gia(db_, run_, thao_tac, messages, *, stage, item_key, uoc_credit=0,
-            ctx=None, temperature=None):
+            ctx=None, temperature=None, luoc_do=None):
         # ⭐ Uy quyen phan khong phai dich cho ban dung chung: stub nay do luu
         #    luong cua CONTENT_PROCESS, khong do EDIT_PLAN, va no khong duoc
         #    hong chi vi mot nguoi goi model thu hai xuat hien.
@@ -500,7 +550,7 @@ def test_thu_lai_KHONG_gui_lai_nhung_doan_DA_XONG(
     dem = {"n": 0}
 
     def gia(db_, run_, thao_tac, messages, *, stage, item_key, uoc_credit=0,
-            ctx=None, temperature=None):
+            ctx=None, temperature=None, luoc_do=None):
         # ⭐ Uy quyen phan khong phai dich cho ban dung chung: stub nay do luu
         #    luong cua CONTENT_PROCESS, khong do EDIT_PLAN, va no khong duoc
         #    hong chi vi mot nguoi goi model thu hai xuat hien.
@@ -581,7 +631,7 @@ def test_doi_GIONG_thi_diem_chot_cu_KHONG_duoc_dung_lai(
     dang = lan1
 
     def gia(db_, run_, thao_tac, messages, *, stage, item_key, uoc_credit=0,
-            ctx=None, temperature=None):
+            ctx=None, temperature=None, luoc_do=None):
         # ⭐ Uy quyen phan khong phai dich cho ban dung chung: stub nay do luu
         #    luong cua CONTENT_PROCESS, khong do EDIT_PLAN, va no khong duoc
         #    hong chi vi mot nguoi goi model thu hai xuat hien.

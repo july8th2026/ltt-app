@@ -400,7 +400,12 @@ def test_van_tay_doi_khi_LOI_NHAC_doi(monkeypatch):
     goc = dict(checksum_ban_ghi="aaa", provider="p", model="m",
                ngon_ngu_dich="vi")
     truoc = van_ban.van_tay_van_ban(**goc)
-    monkeypatch.setattr(van_ban, "PHIEN_BAN_LOI_NHAC", 2)
+    # 🔴 **Ghim `2` ở đây là một quả bom hẹn giờ, và nó vừa nổ (24/09).** Khi
+    #    `PHIEN_BAN_LOI_NHAC` thật sự lên `2`, phép tiêm thành **no-op**: vân tay
+    #    không đổi, bài đỏ — mà mã thì đúng. ⛔ Một đối chứng phải tiêm một giá
+    #    trị **khác giá trị hiện hành**, không phải một hằng gõ tay.
+    monkeypatch.setattr(van_ban, "PHIEN_BAN_LOI_NHAC_DICH",
+                        van_ban.PHIEN_BAN_LOI_NHAC_DICH + 1)
     assert van_ban.van_tay_van_ban(**goc) != truoc
 
 
@@ -442,3 +447,80 @@ def test_cong_thoat_CONTENT_chay_o_lan_API_va_giu_lineage(tmp_path, monkeypatch)
     from tests.fixtures.asv_media import cua_ai_gia
 
     cua_ai_gia(monkeypatch)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# N-21 — MỘT hằng cho MỘT lời nhắc. ⛔ Không dùng chung.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: Mỗi module ⇒ lời nhắc nó **thuộc về**. Hai module cùng một lời nhắc thì được
+#: đọc chung một hằng; hai lời nhắc khác nhau thì ⛔ **không**.
+CHU_CUA_LOI_NHAC = {
+    "van_ban": "dich",          # tài liệu + vân tay của `dich_thuat._loi_nhac`
+    "dich_thuat": "dich",
+    "long_tieng": "long_tieng",
+    "thi_hanh": "long_tieng",   # vân tay CONTENT_PROCESS chạy `long_tieng`
+}
+
+
+def test_MOI_hang_PHIEN_BAN_LOI_NHAC_chi_phoi_DUNG_MOT_loi_nhac():
+    """🔴 **Phép bắt cơ học cho N-21.**
+
+    Trước 24/09 **một** hằng `PHIEN_BAN_LOI_NHAC` bị **ba** vân tay đọc, nên sửa
+    lời nhắc của đường **chết** làm vô hiệu kết quả của hai đường **sống** ⇒ mọi
+    đoạn dịch lại (**có tính tiền**) + **bảy** giai đoạn hạ nguồn bị đặt lại.
+
+    ⛔ Không có phép bắt này thì luật sẽ hỏng lại trong ba tuần.
+    """
+    import ast
+    from pathlib import Path
+
+    goc = Path(__file__).resolve().parent.parent / "apps" / "auto_scan_video"
+    doc_boi: dict[str, set[str]] = {}
+    for tep in goc.glob("*.py"):
+        cay = ast.parse(tep.read_text(encoding="utf-8"))
+        for n in ast.walk(cay):
+            # ⛔ Chỉ đếm chỗ ĐỌC (`Load`), ⛔ không đếm chỗ KHAI (`Store`):
+            #    `van_ban.py` khai **cả hai** hằng, nên nếu đếm cả chỗ khai thì
+            #    nó thành "người đọc" của cả hai và bài này đỏ vì chính cấu trúc
+            #    nó đang bảo vệ. (Đã đỏ đúng như vậy ở lần chạy đầu.)
+            if not isinstance(n, (ast.Attribute, ast.Name)):
+                continue
+            if not isinstance(getattr(n, "ctx", None), ast.Load):
+                continue
+            ten = n.attr if isinstance(n, ast.Attribute) else n.id
+            if ten.startswith("PHIEN_BAN_LOI_NHAC"):
+                doc_boi.setdefault(ten, set()).add(tep.stem)
+
+    assert doc_boi, "⛔ không thấy hằng nào — phép kiểm đang đo chính nó"
+    for hang, cac_module in sorted(doc_boi.items()):
+        chu = {CHU_CUA_LOI_NHAC.get(m, m) for m in cac_module}
+        assert len(chu) == 1, (
+            f"⛔ N-21: hằng {hang!r} bị {sorted(cac_module)} đọc, tức nó chi "
+            f"phối {len(chu)} lời nhắc khác nhau ({sorted(chu)}). Tách ra: một "
+            f"hằng cho mỗi lời nhắc.")
+
+
+def test_DOI_CHUNG_tang_hang_DICH_thi_van_tay_LONG_TIENG_khong_nhuc_nhich(monkeypatch):
+    """⭐ **Hai vế — thiếu vế hai thì bài đang đo chính nó.**
+
+    (a) tăng hằng của lời nhắc **DỊCH** ⇒ vân tay giai đoạn `CONTENT_PROCESS`
+        (chạy `long_tieng`) **KHÔNG đổi**;
+    (b) tăng hằng của lời nhắc **LONG_TIENG** ⇒ vân tay ấy **CÓ đổi**.
+    """
+    from apps.auto_scan_video import pipeline, thi_hanh, van_ban
+
+    def _vt():
+        return thi_hanh.phien_ban_engine(pipeline.CONTENT_PROCESS)
+
+    truoc = _vt()
+    monkeypatch.setattr(van_ban, "PHIEN_BAN_LOI_NHAC_DICH",
+                        van_ban.PHIEN_BAN_LOI_NHAC_DICH + 1)
+    assert _vt() == truoc, (
+        "⛔ N-21 tái phát: đổi lời nhắc DỊCH vẫn kéo theo CONTENT_PROCESS")
+
+    monkeypatch.setattr(van_ban, "PHIEN_BAN_LOI_NHAC_LONG_TIENG",
+                        van_ban.PHIEN_BAN_LOI_NHAC_LONG_TIENG + 1)
+    assert _vt() != truoc, (
+        "⛔ vế đối chứng hỏng: đổi lời nhắc của CHÍNH nó mà vân tay không đổi "
+        "— bài này đang đo chính nó")

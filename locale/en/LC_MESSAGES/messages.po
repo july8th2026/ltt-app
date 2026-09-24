@@ -1042,6 +1042,10 @@ msgid "Bản ghi có đoạn rỗng."
 msgstr "The transcript has an empty segment."
 
 #: apps/auto_scan_video
+msgid "Bản ghi khai đã căn chỉnh nhưng không có mốc từng từ nào."
+msgstr "The transcript claims word-level alignment but carries no word timestamps."
+
+#: apps/auto_scan_video
 msgid "Bản ghi có đoạn thiếu mốc thời gian."
 msgstr "The transcript has a segment with no timestamp."
 

@@ -227,7 +227,7 @@ def test_vong_nan_co_TRAN_CUNG(tmp_path, monkeypatch, db, kho_tam, asr_gia,
     dem = {"n": 0}
 
     def gia_nan(db_, run_, thao_tac, messages, *, stage, item_key, uoc_credit=0,
-                ctx=None, temperature=None):
+                ctx=None, temperature=None, luoc_do=None):
         # ⚠️ `noi_dung` la CHUOI (pha 22): cua that tra ve nguyen van phan
         #    hoi cua model, va `ai.doc_json` moi la bo doc.
         import json

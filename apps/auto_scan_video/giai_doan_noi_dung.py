@@ -216,6 +216,9 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         kq = ai.goi_tinh_tien(
             db, run, ai.CHUYEN_LOI_THOAI, messages,
             stage=pipeline.CONTENT_PROCESS,
+            # ⭐ N-23: ep luoc do o tang GIAI MA. 2/21 lo hong -> 0/20,
+            #    gia +0 luot goi (`long_tieng.luoc_do_phan_hoi`).
+            luoc_do=long_tieng.luoc_do_phan_hoi(lo),
             # 🔑 Khoa cua so cai la LO (mot lan goi = mot dong so cai), con diem
             #    chot la DOAN. Hai truc khac nhau va gop chung lai se hong: mot
             #    lo chua 12 doan nhung chi mot lan tinh tien.
@@ -249,7 +252,12 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                                   item_key=ma, fingerprint=vt,
                                   outputs={"chu": v["chu"],
                                            "cam_xuc": v["cam_xuc"],
-                                           "kieu_noi": v["kieu_noi"]})
+                                           "kieu_noi": v["kieu_noi"],
+                                           # ⭐ DUONG B — chi THU vao so, ⛔
+                                           #    khong hien cho khach, ⛔ khong
+                                           #    lai vong sua, ⛔ khong chan gi.
+                                           #    `long_tieng.QUY_TAC_TU_KHAI`.
+                                           "khong_chac": v["khong_chac"]})
         # 🔴 **`commit`, khong phai `flush`** — va no khong phai mot chi tiet ky
         #    thuat, no la dinh nghia cua "diem chot".
         #
@@ -311,5 +319,8 @@ def _lay_lai_doan_da_xong(db, run, xong: set[str]) -> dict[str, dict]:
                 "cam_xuc": o.get("cam_xuc") or long_tieng.CAM_XUC[0],
                 "kieu_noi": o.get("kieu_noi") or long_tieng.KIEU_NOI[0],
                 "nhan_manh": list(o.get("nhan_manh") or []),
+                # ⛔ Doan da xong TRUOC khi co truong nay se khong co no —
+                #    `[]` la cau tra loi dung, ⛔ khong phai mot thieu sot.
+                "khong_chac": list(o.get("khong_chac") or []),
             }
     return ra

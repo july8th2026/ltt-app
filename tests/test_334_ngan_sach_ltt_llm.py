@@ -702,17 +702,33 @@ class TestBanSaoConLai:
         khai sai không đọc ảnh). Bật cờ đúng mà không chỉ định thì chúng âm thầm
         sang 3.8 — đắt hơn nhiều lần mỗi token (`gia_token.BANG_GIA`), chậm hơn,
         tranh 3090 với job ảnh, và vân tay `EDIT_PLAN` không đổi nên cache không
-        vô hiệu. ⇒ ASV phải chỉ định 3.5 cho việc ảnh ở chính `ai.py`."""
+        vô hiệu. ⇒ ASV phải chỉ định 3.5 cho việc ảnh ở chính `ai.py`.
+
+        ⚠️ **Nhánh "không thị giác" đọc `MODEL_THEO_THAO_TAC`, không đọc mặc
+           định của app.** Bản trước khai *mọi* thao tác không-ảnh đi theo
+           `manifest.model_llm_noi_bo`, và điều đó đúng cho tới khi `ai.py` có
+           một bảng ghim **theo từng thao tác** (chủ dự án chốt 24/09: dịch đi
+           `ltt-3.5`, đo ở `B2_DICH.md` §3). Bản khai cũ đỏ trên `dich_thuat`
+           — nó tố cáo một quyết định đã đo, không tố cáo một lỗi.
+
+        ⭐ Cái được giữ nguyên là mệnh đề đáng giá: một thao tác **không** có
+           tên trong bảng ghim thì ⛔ không được tự trôi đi đâu khác — nó phải
+           đúng bằng mặc định của app. Thêm một dòng vào bảng vẫn là một thay
+           đổi tường minh, và bỏ ghim `MODEL_THI_GIAC_NOI_BO` vẫn đỏ."""
         from apps.auto_scan_video import ai
         from platform_core.llm import canonical
         assert ai.MODEL_THI_GIAC_NOI_BO == "ltt-3.5"
         mid_35 = canonical.ALIAS_SANG_ID["ltt-3.5"]
+        mac_dinh = canonical.ALIAS_SANG_ID[canonical.model_noi_bo_cua(ai.SLUG)]
         for t in ai.THAO_TAC:
             if t.can_thi_giac:
                 assert ai.model_cho(t) == mid_35, t.ma
-            else:
-                assert ai.model_cho(t) == canonical.ALIAS_SANG_ID[
-                    canonical.model_noi_bo_cua(ai.SLUG)], t.ma
+                continue
+            ghim = ai.MODEL_THEO_THAO_TAC.get(t.ma)
+            cho_doi = canonical.ALIAS_SANG_ID[ghim] if ghim else mac_dinh
+            assert ai.model_cho(t) == cho_doi, (
+                f"{t.ma}: ghim {ghim!r} trong MODEL_THEO_THAO_TAC" if ghim
+                else f"{t.ma}: không ghim, phải đi theo mặc định của app")
 
 
 class TestThuLaiKhiParserVo:

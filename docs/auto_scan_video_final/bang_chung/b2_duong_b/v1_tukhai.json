@@ -1,0 +1,36 @@
+{
+ "phim": {
+  "ma": "v1",
+  "ten": "廉价的牛肠…#美食.mp4"
+ },
+ "model": "qwen35-api",
+ "so_doan": 83,
+ "so_ky_tu_goc": 1168,
+ "giay": 152.5,
+ "lo_hong": [],
+ "do_nhay": {
+  "can_bat": [
+   "师傅",
+   "烧酒",
+   "热胀冷缩"
+  ],
+  "bat_duoc": [
+   "师傅",
+   "烧酒"
+  ],
+  "ti_le": 0.6667
+ },
+ "do_on": {
+  "tong_khai": 5,
+  "ngoai_7_ca": 2,
+  "ti_le_tren_ky_tu_goc": 0.0043,
+  "danh_sach": [
+   "沙砾",
+   "烧酒",
+   "师傅",
+   "烧酒",
+   "纸香"
+  ]
+ },
+ "⛔": "Danh sach 7 ca CHI dung de cham SAU khi chay — khong vao loi nhac."
+}

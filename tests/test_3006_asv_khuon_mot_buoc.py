@@ -57,7 +57,10 @@ def test_chay_mot_buoc_KHONG_chay_cac_buoc_truoc(moi_truong, tmp_path, monkeypat
     asv_mot_buoc.chay_mot_buoc(
         moi_truong, ten_giai_doan=pipeline.TRANSCRIBE,
         duong_video=None, cai_dat={"nguon_loi": "asr"},
-        gieo={pipeline.MEDIA_PREPARE: "asset:tieng.wav"}, xin_card=False)
+        gieo={pipeline.MEDIA_PREPARE: "bench/tieng.wav"}, xin_card=False,
+        # ⛔ `nhanh_mong_doi` la BAT BUOC cho `transcribe`. `None` = khai TUONG MINH
+        #    rang bai nay khong quan tam nhanh nao (moi `chay` da bi thay).
+        nhanh_mong_doi=None)
 
     assert goi == [pipeline.TRANSCRIBE], f"da chay ca cac buoc khac: {goi}"
 
@@ -107,3 +110,66 @@ def test_buoc_DAU_khong_doi_gieo_gi():
     from tests.fixtures import asv_mot_buoc
 
     assert asv_mot_buoc.can_gieo(pipeline.MEDIA_PREPARE) == set()
+
+
+def test_khoa_GIEO_bia_ra_bi_tu_choi_O_CUA_chu_khong_o_KHO(moi_truong):  # noqa: F811
+    """⛔ Khoá gieo phải là khoá kho **hợp lệ** — nói SỚM, không để kho nói hộ.
+
+    🔴 Đo thật 24/09: bench B1 gieo `"bench:<tên phim>.wav"` và chết ở
+       `platform_core.storage.StorageError: key không hợp lệ` — vì `:` bị rào chặn
+       path traversal từ chối. Thông điệp đó chỉ vào **kho**, trong khi nguyên nhân
+       là **khoá gieo bịa ra**, cách đó bảy bước.
+
+    ⇒ Cùng lý do `ThieuDauVaoGieo` tồn tại: một thông điệp chỉ đúng chỗ **sẽ** bị
+      đọc thành *"sản phẩm hỏng"*.
+    """
+    from apps.auto_scan_video import pipeline
+    from tests.fixtures import asv_mot_buoc
+
+    with pytest.raises(asv_mot_buoc.ThieuDauVaoGieo) as e:
+        asv_mot_buoc.chay_mot_buoc(
+            moi_truong, ten_giai_doan=pipeline.TRANSCRIBE, cai_dat={},
+            gieo={pipeline.MEDIA_PREPARE: "bench:tieng.wav"}, xin_card=False,
+            nhanh_mong_doi=None)
+    assert "khoa kho hop le" in str(e.value)
+
+
+def test_buoc_co_NHIEU_NHANH_thi_PHAI_khai_nhanh_mong_doi(moi_truong):  # noqa: F811
+    """⛔ **Ghi lại không phải là canh.** Ba lần trong một phiên khuôn đo **chính nó**:
+
+        K-01  không xin card
+        K-05  không ghim trình thông dịch
+        24/09 không nạp `app.env` ⇒ `whisperx_available()` False ⇒ đo **nhánh lui**
+
+    Lần thứ ba tôi đã thêm một trường `nhanh_engine` vào bản ghi — nhưng một trường
+    trong JSON chỉ cứu người **đọc kỹ báo cáo sau đó**; nó không cứu lượt đang chạy,
+    và không cứu người chỉ nhìn con số giây.
+
+    ⛔ Và `nhanh_mong_doi` **không có mặc định**: một mặc định làm người viết bench
+       sau **không khai**, và ta quay lại đúng hôm nay.
+    """
+    from apps.auto_scan_video import pipeline
+    from tests.fixtures import asv_mot_buoc
+
+    with pytest.raises(asv_mot_buoc.NhanhSaiError) as e:
+        asv_mot_buoc.chay_mot_buoc(
+            moi_truong, ten_giai_doan=pipeline.TRANSCRIBE, cai_dat={},
+            gieo={pipeline.MEDIA_PREPARE: "bench/tieng.wav"}, xin_card=False)
+    assert "BAT BUOC" in str(e.value)
+
+
+def test_do_XONG_ma_nhanh_LECH_thi_NEM_chu_khong_ghi_so():
+    """⛔ Một con số của nhánh **không định đo** không trả lời câu hỏi nào của ta."""
+    from apps.auto_scan_video import pipeline
+    from tests.fixtures import asv_mot_buoc as mb
+
+    out = {"canh_chinh": "fallback_unaligned",
+           "ly_do_roi": "whisperx_sidecar_unavailable"}
+    assert mb.nhanh_da_chay(pipeline.TRANSCRIBE, out) == "faster-whisper"
+    with pytest.raises(mb.NhanhSaiError) as e:
+        mb._kiem_nhanh_da_chay(pipeline.TRANSCRIBE, "whisperx", out)
+    cau = str(e.value)
+    assert "whisperx" in cau and "faster-whisper" in cau
+    assert "whisperx_sidecar_unavailable" in cau, "cau loi khong noi VI SAO"
+    # Khai tuong minh "nhanh nao cung duoc" thi khong nem.
+    mb._kiem_nhanh_da_chay(pipeline.TRANSCRIBE, None, out)

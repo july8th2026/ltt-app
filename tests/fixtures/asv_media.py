@@ -173,8 +173,12 @@ def cua_ai_gia(monkeypatch, *, chu=None):
     """
     from apps.auto_scan_video import ai, long_tieng
 
+    # ⚠️ Chu ky phai BAM theo `ai.goi_tinh_tien`: ban gia thieu mot tham so thi
+    #    moi phep kiem chay het chuoi do bang `TypeError`, va thong diep ⛔ khong
+    #    tro vao cho that. `luoc_do` them 24/09 (N-23 ve ba, ep luoc do o tang
+    #    giai ma) da lam dung nhu vay voi bon bai cua `test_440`.
     def gia(db, run, thao_tac, messages, *, stage, item_key, uoc_credit=0,
-            ctx=None, temperature=None):
+            ctx=None, temperature=None, luoc_do=None):
         # ⭐ Phan hoi BAM VAO dau vao: mot ban gia tra ve du lieu co dinh se khong
         #    bao gio phat hien duoc loi ghep sai ma doan.
         import json
