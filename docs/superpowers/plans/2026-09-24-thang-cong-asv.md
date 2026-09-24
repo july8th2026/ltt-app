@@ -19,6 +19,23 @@ MetricX-24-Hybrid QE · RapidOCR · faster-whisper/whisperx · FLORES-200.
 
 **Spec:** `docs/superpowers/specs/2026-09-24-thang-cong-asv-design.md`
 
+## ⛔ THỨ TỰ BẮT BUỘC: COMMIT TRƯỚC, TIÊM SAU
+
+🔴 **Lỗi trong bản plan đầu đã phá việc thật.** Bản đầu xếp *"tiêm lỗi → `git checkout --`
+để hoàn nguyên"* ở bước 6 và *"commit"* ở bước 7. Làn `hop-dong` làm đúng theo đó và
+`git checkout --` **xoá sạch toàn bộ `pipeline.py` chưa commit** — mất cả lượt việc.
+
+⇒ **Ở MỌI task, thứ tự là:**
+```
+1..n-2  viết phép kiểm ĐỎ trước · sửa · chạy XANH
+n-1     COMMIT        <- việc đã an toàn trên đĩa
+n       ĐỐI CHỨNG: tiêm lỗi -> chứng minh ĐỎ -> `git checkout --` hoàn nguyên
+        (giờ `checkout` chỉ bỏ phép tiêm, không bỏ việc)
+```
+⛔ Đừng dùng `git checkout --`/`git restore` khi trong cây còn thay đổi chưa commit mà
+bạn muốn giữ. ⭐ Cách an toàn hơn nếu phải tiêm trước khi commit: `git stash` phép tiêm,
+hoặc tiêm vào **bản sao trong `tmp_path`** thay vì vào tệp thật.
+
 ## Global Constraints
 
 - ⛔ **Không deploy, không `public=True`, không bật cờ `LTT_AUTO_SCAN_VIDEO`** (§24 đề bài).
