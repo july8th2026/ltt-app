@@ -76,6 +76,33 @@ hoặc tiêm vào **bản sao trong `tmp_path`** thay vì vào tệp thật.
 
 ---
 
+## 🔴 THU HẸP PHẠM VI — chủ dự án chốt 24/09 (chiều)
+
+> *"Về hình ảnh và nội dung video, ta **chưa cần xử lý sâu**. Tập trung chính vào
+> **dịch ngôn ngữ voice to voice** trước để hoàn thiện nó và **cho ra sản phẩm** đã.
+> Nó là **gốc** của mọi hạng mục về sau. Các bước khác **chỉ báo**, chưa cần kỹ về
+> chất lượng sâu quá."*
+
+⇒ Thang cổng chia **hai hạng**, và ⛔ chỉ hạng A được siết:
+
+| hạng | mắt xích | làm gì |
+|---|---|---|
+| **A — LÕI voice→voice** | `audio_prepare` · **`transcribe`** · **`content_process` (dịch)** · **`voice_synthesis`** · **`timing_align`** | **siết đủ**: ngưỡng đặt trước · đối chứng · phải ĐẠT mới đi tiếp |
+| **B — chỉ BÁO** | `media_prepare` · `edit_plan` · `compose` · `render` · `qc` · `qc_do_luong` · `qc_ai` | chạy được, **ghi số vào bản ghi**, ⛔ **không** làm cổng chặn, ⛔ không điều tra sâu |
+
+⛔ **Việc DỪNG ngay (không phải hoãn — dừng):** cổng VMAF đọc khung xấu nhất (N-13) ·
+điều tra `so_canh` (N-07) · siết lớp kiểm hình. Tất cả thuộc **hình ảnh/nội dung**.
+Ghi trạng thái hiện có vào sổ rồi **để đó**.
+
+⭐ **Vì sao `timing_align` VẪN thuộc lõi dù nghe như "canh chỉnh kỹ thuật":** sản phẩm
+là **lồng tiếng**. Một bản dịch đúng từng chữ mà **rơi sai khe** thì khách nghe thấy
+tiếng lệch môi — tức nó hỏng ở đúng thứ khách mua. ⇒ `fallback_unaligned` (mốc thời
+gian **không căn** đi vào `timing_align`) nay là vấn đề **hạng A**, không phải ghi chú.
+
+⛔ **Và "cho ra sản phẩm" đổi tiêu chí ĐẠT của cả thang:** đích không còn là *"12 mắt
+xích đều qua cổng"* mà là **một lượt voice→voice chạy trọn, nghe được, trên phim thật**.
+Mắt xích hạng B chỉ cần **không chặn** lượt đó.
+
 ## Khung 12 mắt xích — bảng cổng (toàn cục, để thấy tổng công việc)
 
 | # | mắt xích | thứ tự | phép đo quyết định ĐẠT | ngưỡng (đặt trước) | trạng thái |
