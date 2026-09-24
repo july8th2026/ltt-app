@@ -269,7 +269,8 @@ CHUOI: tuple[GiaiDoan, ...] = (
                  "tra `{}` LANG LE, va `co_thoai` di vao loi nhac cua model voi gia "
                  "tri sai — trong khi chinh `co_thoai` la thu lam bang chung hinh "
                  "co nghia (giai_doan_ban_bien_tap.py:374)",
-                 "smart_localize doi do phu bang chung canh = 1,0 "
+                 "preset CAT (hop_dong_v4.PRESET_CAT_THONG_MINH) doi do phu bang chung canh "
+                 "= 1,0 "
                  "(PHU_BANG_CHUNG_TOI_THIEU, giai_doan_ban_bien_tap.py:219,236)",
                  "canh bi vong sua phai duoc hoi LAI that: thieu `muoi=` thi cache "
                  "tra ve dung phan quyet da bi tu choi "
