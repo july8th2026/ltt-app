@@ -279,9 +279,70 @@ Con số này đọc được theo **mốc neo** và theo **so sánh giữa các
 *"số đo không ổn định"* — cái lắc nằm ở **cách diễn đạt**, ⛔ không ở **chất lượng tổng thể**.
 ⚠️ Điều này ⛔ **không** miễn cho ta luật ≥ 3 lượt: ta biết được nó **vì** đã chạy 3 lượt.
 
+### 🔴 45,17 là TỐT hay TỆ? — **MỐC CÔNG BỐ đã tra được**
+
+⭐ ⛔ Không đoán. `chrF++` trên FLORES là thứ **cả ngành đã đo và công bố**.
+
+**Nguồn:** `naver/nllb-pruning` @ `a8d16434`, tệp `scores/FLORES-dev-53-3B.tsv` và
+`scores/FLORES-dev-53-54B.tsv`. Cột: `direction · spBLEU · chrF++ · len_ratio`.
+Dòng **nguyên văn** cho `zho_Hans-vie_Latn`:
+
+```
+FLORES-dev-53-3B.tsv    zho_Hans-vie_Latn   30.49   50.25   0.992
+FLORES-dev-53-54B.tsv   zho_Hans-vie_Latn   32.07   51.19   0.970
+```
+
+| hệ | chrF++ | len_ratio |
+|---|---|---|
+| NLLB-200 **MoE 54B** | **51,19** | 0,970 |
+| NLLB-200 **dense 3,3B** | **50,25** | 0,992 |
+| ⭐ **ta — `ltt-3.5`** | **45,17** *(KTC95 bootstrap trên 100 dòng: [42,70 ; 47,57])* | **0,897** |
+
+⇒ ⭐ **Ta thấp hơn NLLB-3,3B khoảng 5,1 điểm chrF++.** KTC95 của ta (trần **48,06**
+ở lượt tốt nhất) ⛔ **không chạm tới 50,25** ⇒ khoảng cách ⛔ **không** giải thích
+được chỉ bằng nhiễu lấy mẫu của 100 dòng.
+
+⭐ **Và cột `len_ratio` của chính bảng công bố là một xác nhận độc lập:** ngành
+coi **tỉ lệ độ dài** là thứ **phải đi kèm** điểm chrF++ — đúng luật ta vừa chốt.
+NLLB dịch ở độ dài **gần ngang** tham chiếu (0,97–0,99); ta ở **0,897**, tức
+**ngắn hơn ~10 %**. ⚠️ ⇒ **Một phần** khoảng cách 5,1 điểm là **ĐỘ DÀI**, ⛔ không
+phải toàn bộ là chất lượng. ⛔ Chưa tách được hai phần ấy.
+
+### ⚠️ Ba bẫy "mượn số" — chặn từng cái, ⛔ không mượn số mà bỏ điều kiện
+
+| bẫy | trạng thái |
+|---|---|
+| **`chrF` ⛔ ≠ `chrF++`** | ✅ **khớp** — cột trong tệp tên đúng là `chrF++` |
+| **`dev` hay `devtest`?** | ✅ **khớp** — tệp tên `FLORES-**dev**`, ta cũng dùng `dev` |
+| **cùng bộ tham số `sacrebleu`?** | ⚠️ **⛔ CHƯA xác minh** — xem dưới |
+
+- ⚠️ **Tham số `sacrebleu` của họ ⛔ không được khai.** README của repo chỉ ghi
+  `pip install … sacrebleu --upgrade`, ⛔ không nêu phiên bản, cờ, hay chữ ký.
+  Cột mang tên `chrF++` nên `word_order = 2` gần như chắc, nhưng ⛔ **chưa chắc**.
+  **Chữ ký CỦA TA, khai ra để ai cũng so lại được:**
+  ```
+  nrefs:1|case:mixed|eff:yes|nc:6|nw:2|space:no|version:2.6.0
+  ```
+  (`CHRF(word_order=2)` — char_order 6, word_order 2, beta 2, ⛔ không lowercase,
+  ⛔ không tính khoảng trắng, `corpus_score`.)
+- 🔴 **Cỡ tập ⛔ KHÁC NHAU, và tập của ta ⛔ KHÔNG phải mẫu ngẫu nhiên.** Họ chấm
+  trên **toàn bộ** `dev`; ta chấm trên **100 dòng ĐẦU (0–99)**. ⛔ 100 dòng đầu
+  ⛔ không phải một mẫu ngẫu nhiên của `dev` ⇒ ngoài nhiễu lấy mẫu còn có thể có
+  **lệch hệ thống** mà KTC bootstrap ⛔ **không** bắt được.
+  ⇒ ⭐ Muốn khớp hoàn toàn thì phải dịch **cả 997 dòng** `dev`. ⛔ Chưa làm.
+- ⚠️ **Hai hệ ⛔ không cùng loại việc.** NLLB là **model dịch chuyên dụng**; `ltt-3.5`
+  là **LLM đa dụng chạy qua lời nhắc + ép lược đồ**, và trong sản phẩm nó còn phải
+  giữ `ma`, cảm xúc, kiểu nói. ⛔ Khoảng cách 5,1 điểm ⛔ không đọc được thành
+  *"đường dịch của ta hỏng"*.
+
+⭐ **Nghĩa (kết cục 2 trong ba kết cục):** ta **thấp hơn hẳn** mức công bố, và nay
+**biết còn bao xa** — ~5 điểm chrF++, trong đó **một phần là độ dài**. Đó là một
+đích đo được, ⛔ không phải một cảm giác.
+
 ### MetricX QE trên cùng tệp
 
-*(đang xếp hàng sau lượt `nghiem-thu-asv` đang giữ `cpu_nhieu` — điền ngay khi xong)*
+*(⛔ vẫn xếp hàng — `nghiem-thu-asv` đang giữ `cpu_nhieu` 31 phút. ⛔ Không chen.
+Điền ngay khi xong, kèm câu **đồng thuận** chrF++ vs MetricX.)*
 
 ---
 

@@ -1,0 +1,33 @@
+{
+  "cau_hoi": "Mot he dich may DA CONG BO dat chrF++ bao nhieu tren FLORES zh->vi?",
+  "nguon": {
+    "repo": "https://github.com/naver/nllb-pruning",
+    "commit": "a8d16434ab5c67f8cfed0b972b190e8e28820ee0",
+    "tep": ["scores/FLORES-dev-53-3B.tsv", "scores/FLORES-dev-53-54B.tsv"],
+    "cot": "direction\tspBLEU\tchrF++\tlen_ratio"
+  },
+  "dong_nguyen_van": {
+    "nllb_dense_3B": "zho_Hans-vie_Latn\t30.49\t50.25\t0.992",
+    "nllb_moe_54B": "zho_Hans-vie_Latn\t32.07\t51.19\t0.970"
+  },
+  "ta": {
+    "he": "ltt-3.5 (LLM da dung + loi nhac v3 + ep luoc do, t=0.0)",
+    "chrf_pp_trung_vi": 45.171,
+    "chrf_pp_cac_luot": [44.841, 45.469, 45.171],
+    "ktc95_bootstrap_100_dong": [[42.50, 47.07], [43.09, 48.06], [42.70, 47.57]],
+    "len_ratio": 0.897,
+    "chu_ky_sacrebleu": "nrefs:1|case:mixed|eff:yes|nc:6|nw:2|space:no|version:2.6.0"
+  },
+  "⚠️ ba_bay_muon_so": {
+    "chrF_vs_chrF++": "KHOP - cot ten dung la `chrF++`",
+    "dev_vs_devtest": "KHOP - ca hai la split `dev`",
+    "tham_so_sacrebleu": "⛔ CHUA XAC MINH - README cua ho chi ghi `pip install sacrebleu --upgrade`, khong neu phien ban/co/chu ky. Chu ky CUA TA da khai o tren."
+  },
+  "🔴 gioi_han": [
+    "CO TAP KHAC NHAU: ho cham tren TOAN BO dev; ta cham tren 100 dong DAU (0-99). 100 dong dau KHONG phai mau ngau nhien => co the con lech HE THONG ma KTC bootstrap khong bat duoc.",
+    "len_ratio cua ta 0,897 vs cua ho 0,970-0,992 => MOT PHAN khoang cach 5,1 diem la DO DAI, chua tach duoc khoi chat luong.",
+    "NLLB la model DICH CHUYEN DUNG; ltt-3.5 la LLM DA DUNG qua loi nhac + ep luoc do, con phai giu `ma`/cam xuc/kieu noi => khong cung loai viec.",
+    "FLORES co ~10 % dong loi ro => 'khop FLORES' khong bang 'dung'."
+  ],
+  "⭐ ket_luan": "Ta thap hon NLLB dense 3,3B khoang 5,1 diem chrF++ (45,17 vs 50,25). KTC95 cua ta tran 48,06 => khoang cach KHONG giai thich duoc chi bang nhieu lay mau cua 100 dong. Mot phan la DO DAI."
+}
