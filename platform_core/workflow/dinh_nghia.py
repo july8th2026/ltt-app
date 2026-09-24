@@ -166,9 +166,70 @@ def xuat_ban_draft(db, workflow_id: str, *, created_by: str,
     if draft is None:
         raise bien_dich.LoiBienDich("do_thi_rong", "chua co ban nhap")
     graph = bien_dich.bien_dich(draft.document or {}, cong_cu=cong_cu)
+    _ghim_subworkflow(db, workflow_id, graph)
     gia = bao_gia.bao_gia_do_thi(graph, cong_cu=cong_cu)
     return xuat_ban(db, workflow_id, graph, created_by=created_by,
                     estimated_max=gia.toi_da)
+
+
+def _ghim_subworkflow(db, workflow_id: str, graph: dict) -> None:
+    """Ghim `version_id` của mọi `core.call_workflow`, và ghi `gia_con`.
+
+    Spec §5.10: *"`version_id` … ghim lúc **publish cha**: compiler thay
+    `"latest"` bằng id version publish hiện tại, ghi vào graph cha"*.
+
+    🔴 BA THỨ ĐƯỢC CHỐT Ở ĐÂY, VÀ CHỈ Ở ĐÂY
+
+    1. **`version_id` ghim** ⇒ một lần publish lại workflow con không đổi hành
+       vi của cha đang chạy. Cùng bất biến `WorkflowRun.version_id` giữ cho run.
+    2. **`gia_con` do NỀN TẢNG ghi**, đọc từ `WorkflowVersion.estimated_max`
+       của con. ⛔ Client không khai được (`additionalProperties: false` từ chối
+       `gia_con` trong draft) — *"một trường trong body của người gọi không thể
+       là nguồn của một con số nền tảng dùng để giữ tiền của chính người gọi
+       ấy"* (`bao_gia.py`).
+    3. **Độ sâu** (`graph["do_sau_goi"]`) tính TĨNH: mọi `version_id` đã ghim và
+       version là **bất biến**, nên cây gọi hữu hạn và đo được lúc publish. Chặn
+       ở publish rẻ hơn chặn lúc chạy đúng một lượt tiêu tiền.
+    """
+    from platform_core.models import Workflow, WorkflowVersion
+    from platform_core.workflow import bien_dich, run_con
+
+    sau_nhat = 0
+    for node in graph.get("nodes") or []:
+        if str(node.get("type")) != run_con.LOAI_GOI:
+            continue
+        nid = str(node.get("id", ""))
+        p = node.setdefault("params", {})
+        wid = str(p.get("workflow_id") or "")
+        if wid == workflow_id:
+            raise bien_dich.LoiBienDich(
+                "goi_de_quy",
+                f"node {nid!r} goi chinh workflow nay -- mot cay goi phai huu "
+                "han moi tinh duoc tran chi phi", nid)
+        con = db.get(Workflow, wid)
+        if con is None or con.owner_id != db.get(Workflow, workflow_id).owner_id:
+            raise bien_dich.LoiBienDich(
+                "workflow_con_khong_ton_tai",
+                f"node {nid!r}: khong co workflow {wid!r} cua cung nguoi dung",
+                nid)
+        xin = str(p.get("version_id") or "latest")
+        vid = con.published_version_id if xin == "latest" else xin
+        ver = db.get(WorkflowVersion, vid) if vid else None
+        if ver is None or ver.workflow_id != wid:
+            raise bien_dich.LoiBienDich(
+                "workflow_con_chua_publish",
+                f"node {nid!r}: workflow {wid!r} chua co ban publish nao de "
+                "ghim", nid)
+        p["version_id"] = ver.id
+        p["gia_con"] = int(ver.estimated_max or 0)
+        sau_nhat = max(sau_nhat,
+                       1 + int((ver.graph or {}).get("do_sau_goi", 0) or 0))
+    if sau_nhat > run_con.DO_SAU_TOI_DA:
+        raise bien_dich.LoiBienDich(
+            "qua_sau_subworkflow",
+            f"cay goi sau {sau_nhat} tang > tran {run_con.DO_SAU_TOI_DA} "
+            "(spec §10)")
+    graph["do_sau_goi"] = sau_nhat
 
 
 def _sinh_chi_muc(db, version: WorkflowVersion) -> None:

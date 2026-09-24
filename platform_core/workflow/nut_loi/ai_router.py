@@ -70,6 +70,10 @@ AI_ROUTER = dang_ky(NodeDefinition(
         "required": ["prompt", "ai_choice"], "additionalProperties": False,
     },
     thi_hanh="job", job_type=ai_llm.JOB_TYPE_TEXT_CHAT,
+    # Cùng ToolSpec, cùng hậu kiểm với `ai.llm` — đọc từ `ai_llm`, không gõ lại
+    # chuỗi. `ai.router` chọn nhánh từ `content`, nên một `content` RỖNG phải
+    # hỏng ở đây chứ không đi tiếp để `chon_nhanh` lặng lẽ trả `mac_dinh`.
+    ten_toolspec=ai_llm.TEN_TOOLSPEC, hau_kiem=ai_llm.hau_kiem,
     side_effect="external", idempotency_key_fields=(),
     resource={"class": "api"}, gia=Gia.theo_registry(ai_llm.JOB_TYPE_TEXT_CHAT),
     credential=(), quyen=frozenset({"network"}),

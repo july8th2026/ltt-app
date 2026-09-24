@@ -64,8 +64,13 @@ NODE_CHUYEN: dict[str, frozenset[str]] = {
     # ⭐ `READY → FAILED`: cầu nối job có thể từ chối một node TRƯỚC KHI nộp job
     #    (vượt trần báo giá, tham số không giải được) — node chưa từng vào
     #    `QUEUED` (spec §5.8, Task 9 `cau_noi.nop_job`).
+    # ⭐ `READY → SUCCEEDED`: node INLINE (`core.if`/`switch`/`stop`…, spec
+    #    §5.1) chạy TRONG động cơ — không hàng đợi, không job, nên nó không đi
+    #    qua `QUEUED`. Thiếu lối này thì `chuyen_node` từ chối im lặng, node
+    #    đứng READY, và vòng nộp job sau đó gửi một node lõi vào registry công
+    #    cụ (`cong_cu_khong_con: '.if'`) — đúng lỗi đã đo khi dựng Task 4.
     "READY": frozenset({"QUEUED", "RUNNING", "WAITING", "SKIPPED",
-                        "CANCELLED", "FAILED"}),
+                        "CANCELLED", "FAILED", "SUCCEEDED"}),
     "QUEUED": frozenset({"RUNNING", "SUCCEEDED", "FAILED", "ABANDONED",
                          "RETRY_SCHEDULED", "CANCELLED"}),
     "RUNNING": frozenset({"SUCCEEDED", "FAILED", "WAITING", "RETRY_SCHEDULED",
@@ -81,14 +86,18 @@ NODE_CHUYEN: dict[str, frozenset[str]] = {
 NODE_BAT_DAU = "PENDING"
 
 
-def trang_thai_node(db, run_id: str, node_id: str) -> str:
-    """Trạng thái ĐANG CÓ của một node. Chưa có ảnh chụp nào ⇒ `PENDING`."""
-    anh = thi_hanh.anh_chup_hien_tai(db, run_id, node_id)
+def trang_thai_node(db, run_id: str, node_id: str, vong=()) -> str:
+    """Trạng thái ĐANG CÓ của một node. Chưa có ảnh chụp nào ⇒ `PENDING`.
+
+    `vong` = ngữ cảnh vòng lặp `((tên vòng, chỉ số), …)`; rỗng cho node
+    ngoài mọi `foreach` (`thi_hanh.khoa_node`).
+    """
+    anh = thi_hanh.anh_chup_hien_tai(db, run_id, node_id, vong)
     return anh.execution_status if anh is not None else NODE_BAT_DAU
 
 
 def chuyen_node(db, run_id: str, node_id: str, *, sang: str, mo_ta: str,
-                error: str = "", **thong_tin) -> bool:
+                error: str = "", vong=(), **thong_tin) -> bool:
     """Chuyển một node sang trạng thái mới. Trả `False` nếu bị TỪ CHỐI.
 
     ⭐ **Lần chuyển bị từ chối vẫn ghi một ảnh chụp** (`is_valid=False`), đúng
@@ -106,12 +115,13 @@ def chuyen_node(db, run_id: str, node_id: str, *, sang: str, mo_ta: str,
     (chuyển không nằm trong bảng) quan trọng hơn lý do miền mà bên gọi định
     ghi cho một chuyển KHÁC (chuyển không xảy ra).
     """
-    hien = trang_thai_node(db, run_id, node_id)
+    hien = trang_thai_node(db, run_id, node_id, vong)
     duoc = NODE_CHUYEN.get(hien, frozenset())
     hop_le = sang in duoc
 
     thi_hanh.ghi_chuyen(
-        db, run_id, node_id, execution_status=(sang if hop_le else hien),
+        db, run_id, node_id, vong=vong,
+        execution_status=(sang if hop_le else hien),
         description=mo_ta, is_valid=hop_le,
         error=(error if hop_le else
                f"chuyen bi tu choi: {hien} -> {sang} khong nam trong bang"),

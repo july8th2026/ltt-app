@@ -17,8 +17,11 @@ from sqlalchemy import select
 
 from platform_core import jobs
 from platform_core.models import Job, Wakeup, WorkflowRun, WorkflowVersion
-from platform_core.workflow import cau_noi, danh_thuc, may_trang_thai as mtt, su_kien
+from platform_core.workflow import (cau_noi, danh_thuc, may_trang_thai as mtt,
+                                    moi_truong, nut_loi, run_con, su_kien,
+                                    thi_hanh, thu_lai)
 from platform_core.workflow.cong_cu import CongCu
+from platform_core.workflow.nut_loi import vong_lap
 
 log = logging.getLogger(__name__)
 
@@ -26,7 +29,13 @@ log = logging.getLogger(__name__)
 #: `test_965` ghim quan hệ này).
 TRAN_RUN = timedelta(hours=20)
 _KICH = {"DATA": frozenset({"SUCCEEDED"}),
+         "CONTROL": frozenset({"SUCCEEDED"}),
          "ERROR": frozenset({"FAILED", "ABANDONED"})}
+
+#: Spec §5.1: *"giới hạn 500 bước inline mỗi run mỗi vòng, vượt thì để vòng
+#: sau — chống vòng vô hạn"*. Node inline không sinh job nên không có gì khác
+#: chặn một chuỗi `if → if → if` dài; con số này là cái chặn đó.
+TRAN_BUOC_INLINE = 500
 _CAI_CACHE: dict[str, dict] = {}
 
 
@@ -44,35 +53,139 @@ def _do_thi(db, version_id: str) -> dict:
     return g
 
 
-def _lan_truyen(db, run: WorkflowRun, g: dict) -> tuple[dict[str, str], bool]:
+def _nhanh_da_chon(db, run: WorkflowRun, nid: str) -> str:
+    """Tên nhánh mà một node rẽ đã chọn (`core.if`/`core.switch`, §5.4).
+
+    Rỗng cho mọi node KHÔNG rẽ nhánh — và đó là lý do luật dưới đây không đổi
+    hành vi của đồ thị chỉ có node app: một cạnh không mang `condition` không
+    bao giờ hỏi tới hàm này.
+    """
+    anh = thi_hanh.anh_chup_hien_tai(db, run.id, nid)
+    return str((anh.output_ref or {}).get(moi_truong.KHOA_NHANH, "")) if anh else ""
+
+
+def _than_foreach(g: dict) -> frozenset:
+    """Mọi node nằm trong thân một `foreach` — do vòng lặp LÁI, không do
+    vòng lan truyền cấp run.
+
+    🔴 Vì sao phải loại chúng ra: `core.foreach` chạy thân theo TỪNG CHỈ SỐ
+       (khoá `f:0/x`, `f:1/x`…). Nếu vòng lan truyền cấp run cũng thấy `x`
+       là PENDING và đưa nó sang READY, `_pha_inline` sẽ chạy nó **thêm một
+       lần nữa** ở khoá id trần — ngoài mọi vòng lặp, nên `loop` không tồn
+       tại và node hỏng với `bieu_thuc_loi: ten 'loop' khong doc duoc`.
+       (Đo được ngay lượt đầu sau khi đổi khoá `node_run`.)
+
+    ⚠️ Hỏi THẲNG `bao_gia.than_foreach` — cùng nguồn mà trần chi phí dùng.
+       Một định nghĩa "thân" thứ hai ở đây là một chỗ để tiền và thứ thật
+       sự chạy nói hai chuyện khác nhau.
+    """
+    from platform_core.workflow import bao_gia
+
+    ra: set = set()
+    for dong, than in bao_gia.than_foreach(g).values():
+        ra.update(than)
+        # ⭐ `foreach_end` nằm trong tập này nhưng KHÁC thân ở một điểm: nó
+        #    vẫn ở trong `tt` để node ĐỨNG SAU nó đọc được trạng thái. Nó
+        #    chỉ không được lan truyền TỰ chuyển — chính `core.foreach`
+        #    chốt nó (SUCCEEDED khi vòng xong, SKIPPED khi vòng hỏng).
+        if dong:
+            ra.add(dong)
+    return frozenset(ra)
+
+
+def _cuoi_foreach(g: dict) -> frozenset:
+    """Các node `core.foreach_end` — do vòng lặp chốt, không do lan truyền."""
+    from platform_core.workflow import bao_gia
+
+    return frozenset(dong for dong, _than
+                     in bao_gia.than_foreach(g).values() if dong)
+
+
+def _nguong_join(g: dict, nid: str, so_canh: int) -> int:
+    """Bao nhiêu cạnh vào phải kích hoạt thì node này READY?
+
+    Mặc định của đồ thị là **mọi cạnh** — tức `ALL`, và đó đã là một Join. Chỉ
+    node `core.join` khai `ANY`/`N_OF_M` mới hạ ngưỡng.
+
+    ⚠️ Một node không có cạnh vào nào (điểm bắt đầu) có ngưỡng 0 ⇒ READY ngay,
+       y như trước. `all([])` cũ cũng cho đúng kết quả ấy; viết ra để lần đọc
+       sau không phải suy lại.
+    """
+    node = next((n for n in g["nodes"] if n["id"] == nid), None)
+    if node is None or str(node.get("type")) != "core.join":
+        return so_canh
+    p = node.get("params") or {}
+    che_do = str(p.get("che_do") or "ALL")
+    if che_do == "ANY":
+        return 1 if so_canh else 0
+    if che_do == "N_OF_M":
+        return max(1, min(so_canh, int(p.get("can") or 1)))
+    return so_canh
+
+
+def _lan_truyen(db, run: WorkflowRun, g: dict,
+                bo_qua: frozenset = frozenset()
+                ) -> tuple[dict[str, str], bool]:
     """Trả `(trang_thai_moi_node, co_doi)` — `co_doi` cho bên gọi biết pha này
     có tự chuyển node nào không (SKIPPED/READY), để quyết định có cần ghi một
     wakeup "tick" hay không (Important #2 — xem `xu_ly_run`)."""
-    tt = {n["id"]: mtt.trang_thai_node(db, run.id, n["id"]) for n in g["nodes"]}
-    vao: dict[str, list[dict]] = {n["id"]: [] for n in g["nodes"]}
+    # ⚠️ Thân `foreach` ra khỏi `tt` hẳn; `foreach_end` thì Ở LẠI (node sau
+    #    nó phải đọc được trạng thái) nhưng không được lan truyền chuyển.
+    cuoi = _cuoi_foreach(g)
+    tt = {n["id"]: mtt.trang_thai_node(db, run.id, n["id"])
+          for n in g["nodes"] if n["id"] not in bo_qua or n["id"] in cuoi}
+    vao: dict[str, list[dict]] = {k: [] for k in tt}
     for e in g["edges"]:
-        vao[e["target_node"]].append(e)
+        if e["target_node"] in vao and e["source_node"] in tt:
+            vao[e["target_node"]].append(e)
+    # ⭐ §5.4: *"Cạnh CONTROL mang `condition = <tên nhánh>`; CHỈ cạnh khớp
+    #    nhánh được kích hoạt."* Nên một cạnh có `condition` cần HAI điều kiện:
+    #    nguồn kết thúc đúng kiểu, VÀ nhánh nguồn chọn khớp tên. Không khớp
+    #    ⇒ cạnh CHẾT ⇒ đích SKIPPED qua đúng nhánh `chet` đã có sẵn dưới đây.
+    nhanh: dict[str, str] = {}
+
+    def _kich_hoat(e: dict, tt_nguon: str) -> bool:
+        if tt_nguon not in _KICH.get(e["kind"], frozenset()):
+            return False
+        dk = str(e.get("condition") or "")
+        if not dk:
+            return True
+        src = e["source_node"]
+        if src not in nhanh:
+            nhanh[src] = _nhanh_da_chon(db, run, src)
+        return nhanh[src] == dk
+
     co_doi = False
     doi = True
     while doi:
         doi = False
         for nid in g["thu_tu"]:
-            if tt[nid] != "PENDING":
+            if nid not in tt or nid in cuoi or tt[nid] != "PENDING":
                 continue
             canh = vao[nid]
-            kich = [tt[e["source_node"]] in _KICH.get(e["kind"], frozenset())
-                    for e in canh]
+            kich = [_kich_hoat(e, tt[e["source_node"]]) for e in canh]
             chet = [tt[e["source_node"]] in mtt.NODE_KET_THUC and not k
                     for e, k in zip(canh, kich, strict=True)]
-            if any(chet):
+            # ⭐ `core.join` đổi NGƯỠNG, không đổi luật. Mặc định của đồ thị là
+            #    `ALL` (mọi cạnh vào phải kích hoạt) — đó đã là một Join, nên
+            #    node `core.join` chế độ ALL không thêm gì. `ANY`/`N_OF_M` chỉ
+            #    hạ ngưỡng xuống, và ngưỡng ấy sống Ở ĐÂY chứ không trong bộ thi
+            #    hành của node: một node chỉ được chạy KHI ĐÃ READY, nên một
+            #    luật READY nằm trong bộ thi hành là một luật không bao giờ tới.
+            can = _nguong_join(g, nid, len(canh))
+            du = sum(1 for k in kich if k)
+            con_co_the = du + sum(1 for e, k in zip(canh, kich, strict=True)
+                                  if not k
+                                  and tt[e["source_node"]] not in mtt.NODE_KET_THUC)
+            if du >= can:
+                mtt.chuyen_node(db, run.id, nid, sang="READY", mo_ta="du dau vao")
+                tt[nid] = "READY"
+                doi = True
+                co_doi = True
+            elif con_co_the < can or (can == len(canh) and any(chet)):
                 mtt.chuyen_node(db, run.id, nid, sang="SKIPPED",
                                 mo_ta="nguon khong kich hoat")
                 tt[nid] = "SKIPPED"
-                doi = True
-                co_doi = True
-            elif all(kich):
-                mtt.chuyen_node(db, run.id, nid, sang="READY", mo_ta="du dau vao")
-                tt[nid] = "READY"
                 doi = True
                 co_doi = True
     return tt, co_doi
@@ -81,6 +194,10 @@ def _lan_truyen(db, run: WorkflowRun, g: dict) -> tuple[dict[str, str], bool]:
 def _ket_run(db, run: WorkflowRun, g: dict, tt: dict[str, str]) -> Optional[str]:
     if not all(s in mtt.NODE_KET_THUC for s in tt.values()):
         return None
+    # ⚠️ `tt` đã KHÔNG chứa node thân `foreach` (xem `_than_foreach`), nên
+    #    "mọi node kết thúc" ở đây nghĩa là mọi node CẤP RUN. Trạng thái của
+    #    thân nằm trong `foreach_muc`, và `core.foreach` chỉ rời `WAITING`
+    #    khi không còn chỉ số nào chưa xong.
     co_nhanh_loi = {e["source_node"] for e in g["edges"] if e["kind"] == "ERROR"}
     # ⭐ F4 (final-review.md): CANCELLED phải đếm là "hỏng" giống FAILED/
     # ABANDONED. Trước fix, một node bị huỷ TỪ NGOÀI (vd admin huỷ đúng một
@@ -113,6 +230,114 @@ def _ket_run(db, run: WorkflowRun, g: dict, tt: dict[str, str]) -> Optional[str]
     return sang
 
 
+
+def _moi_khoa_node(db, run: WorkflowRun, g: dict) -> list:
+    """Mọi KHOÁ node của một run: id trần trong đồ thị **cộng** các đường
+    thi hành đã sinh (thân `foreach`).
+
+    ⛔ Quét `graph["nodes"]` một mình là bỏ sót thân vòng lặp: một run bị
+       huỷ sẽ để lại hàng `node_run` của thân ở trạng thái KHÔNG kết thúc,
+       và không ai dọn chúng.
+    """
+    from platform_core.models import NodeRun
+
+    khoa = {str(n["id"]) for n in g.get("nodes") or []}
+    khoa.update(r.node_id for r in
+                db.query(NodeRun).filter_by(run_id=run.id).all())
+    return sorted(khoa)
+
+
+def _chay_mot_inline(db, run: WorkflowRun, g: dict, node: dict,
+                     cong_cu=None) -> str:
+    """Thi hành MỘT node inline. Trả trạng thái mới, hoặc `"DUNG:<tt>"` nếu nó
+    dừng cả run.
+
+    ⛔ Không hàng đợi, không lease, không bút toán — `dieu_khien.py` nói vì sao:
+       *"một job là một bút toán. Rẽ nhánh tạo một dòng trong sổ tiền, dù nó chỉ
+       so sánh hai giá trị."*
+    """
+    nid = str(node["id"])
+    ham = nut_loi.bo_thi_hanh(str(node["type"]))
+    if ham is None:
+        # Cùng hạng lỗi với `cau_noi.nop_job` khi tool biến mất khỏi registry:
+        # nói thẳng ra bằng một FAILED có mã, thay vì để node đứng READY tới
+        # khi `TRAN_RUN` (20 giờ) tự hết hạn.
+        mtt.chuyen_node(db, run.id, nid, sang="FAILED",
+                        mo_ta="khong co bo thi hanh inline",
+                        error=f"loi_he_thong: {node['type']!r} khong co bo thi hanh")
+        return "FAILED"
+    anh = thi_hanh.anh_chup_hien_tai(db, run.id, nid)
+    lan = int(anh.attempt_number if anh else 1)
+    try:
+        kq = ham(db, run, node, g=g, cong_cu=cong_cu,
+                 moi_truong=moi_truong.moi_truong_run(db, run, g, nid))
+    except Exception as loi:                      # noqa: BLE001
+        # Một node inline ngã KHÔNG được kéo theo cả lượt `mot_vong` (cùng hình
+        # dạng Important #1): ghi FAILED cho chính nó, run đi tiếp theo nhánh
+        # ERROR nếu có.
+        log.exception("dong co: node inline %s cua run %s nga", nid, run.id)
+        mtt.chuyen_node(db, run.id, nid, sang="FAILED", mo_ta="node inline nga",
+                        error=f"loi_he_thong: {type(loi).__name__}",
+                        attempt_number=lan)
+        return "FAILED"
+    ra = dict(kq.output or {})
+    if kq.nhanh:
+        ra[moi_truong.KHOA_NHANH] = kq.nhanh
+    mtt.chuyen_node(db, run.id, nid, sang=kq.sang, mo_ta="node inline",
+                    error=kq.error, attempt_number=lan, output_ref=ra)
+    if kq.dung_run and kq.sang == "SUCCEEDED":
+        return "DUNG:" + kq.dung_run
+    return kq.sang
+
+
+def _dung_run(db, run: WorkflowRun, g: dict, sang: str, ly_do: str) -> str:
+    """`core.stop`: mọi node chưa kết thúc thành SKIPPED, rồi run kết thúc.
+
+    ⭐ SKIPPED chứ không CANCELLED: `_ket_run` đếm CANCELLED là "hỏng" (F4), và
+       một node không chạy vì luồng đã rẽ đi chỗ khác **không hỏng**. Đây đúng
+       nghĩa `SKIPPED` mà §5.5 đã định.
+    """
+    for nid in _moi_khoa_node(db, run, g):
+        if mtt.trang_thai_node(db, run.id, nid) not in mtt.NODE_KET_THUC:
+            mtt.chuyen_node(db, run.id, nid, sang="SKIPPED", mo_ta=ly_do)
+    if run.status == "QUEUED":
+        mtt.chuyen_run(db, run.id, sang="RUNNING")
+    su_kien.ghi(db, run.id,
+                "WorkflowFailed" if sang == "FAILED" else "WorkflowCompleted",
+                du_lieu={"status": sang, "ly_do": ly_do})
+    mtt.chuyen_run(db, run.id, sang=sang, ly_do=ly_do)
+    return sang
+
+
+def _pha_inline(db, run: WorkflowRun, g: dict,
+                cong_cu=None) -> Optional[str]:
+    """Chạy MỌI node inline sẵn sàng, liên tiếp, tới khi hết (spec §5.1).
+
+    Trả trạng thái kết thúc run nếu một `core.stop` dừng nó, ngược lại `None`.
+
+    ⛔ `TRAN_BUOC_INLINE` là chặn trên của MỘT vòng, không phải của cả run:
+       *"vượt thì để vòng sau"*. Ném ở đây thì một đồ thị hợp lệ mà dài sẽ chết
+       thay vì chạy chậm.
+    """
+    than = _than_foreach(g)
+    inline = {str(n["id"]): n for n in g["nodes"]
+              if str(n.get("thi_hanh")) in nut_loi.THI_HANH_TRONG_DONG_CO
+              and str(n["id"]) not in than}
+    if not inline:
+        return None
+    for _ in range(TRAN_BUOC_INLINE):
+        tt, _doi = _lan_truyen(db, run, g, than)
+        san_sang = [nid for nid in g["thu_tu"]
+                    if nid in inline and tt.get(nid) == "READY"]
+        if not san_sang:
+            return None
+        for nid in san_sang:
+            ket = _chay_mot_inline(db, run, g, inline[nid], cong_cu)
+            if ket.startswith("DUNG:"):
+                return _dung_run(db, run, g, ket[5:], f"core.stop tai {nid}")
+    return None
+
+
 def xu_ly_run(db, run_id: str, *,
               cong_cu: Optional[dict[str, CongCu]] = None) -> str:
     run = db.get(WorkflowRun, run_id)
@@ -123,7 +348,24 @@ def xu_ly_run(db, run_id: str, *,
         mtt.chuyen_run(db, run.id, sang="RUNNING")
     for n in g["nodes"]:
         cau_noi.ap_ket_qua(db, run, n["id"], cong_cu=cong_cu)
-    tt, _ = _lan_truyen(db, run, g)
+    # ⭐ Retry cấp node (spec §5.6): `RETRY_SCHEDULED` đã tới hạn quay về READY
+    #    TRƯỚC vòng lan truyền, để nó được nộp lại ngay trong lượt này thay vì
+    #    phải đợi thêm một lượt động cơ nữa.
+    thu_lai.den_han(db, run.id, g["nodes"])
+    # ⭐ Run con đã kết thúc ⇒ chốt node `core.call_workflow` đang WAITING
+    #    TRƯỚC vòng lan truyền, để nhánh sau nó đi tiếp ngay lượt này.
+    run_con.ap_ket_qua_con(db, run, g)
+    # ⭐ RESUME vòng lặp: một job của THÂN `foreach` vừa xong ⇒ đẩy vòng đó
+    #    đi tiếp. Không có bước này, một `foreach` có node job đứng WAITING
+    #    tới hạn `TRAN_RUN` 20 giờ.
+    vong_lap.tiep_vong(db, run, g, cong_cu=cong_cu)
+    # ⭐ Node inline chạy LIÊN TIẾP trong cùng vòng (spec §5.1) — trước vòng nộp
+    #    job, để một `if` vừa rẽ xong là nhánh của nó được nộp ngay lượt này.
+    than = _than_foreach(g)
+    dung = _pha_inline(db, run, g, cong_cu)
+    if dung:
+        return dung
+    tt, _ = _lan_truyen(db, run, g, than)
     ket = _ket_run(db, run, g, tt)
     if ket:
         return ket
@@ -132,12 +374,23 @@ def xu_ly_run(db, run_id: str, *,
     for nid in g["thu_tu"]:
         if dang >= tran:
             break
-        if tt[nid] != "READY":
+        if tt.get(nid) != "READY":
             continue
         node = next(n for n in g["nodes"] if n["id"] == nid)
+        if str(node.get("thi_hanh")) != "job":
+            # ⛔ Node inline KHÔNG bao giờ được rơi vào vòng nộp job: `nop_job`
+            #    tra registry công cụ bằng `type[4:]`, nên `core.if` thành
+            #    `".if"` và node FAILED `cong_cu_khong_con`. `_pha_inline` đã
+            #    chạy hết phần inline trước đó; cái gì còn READY ở đây là một
+            #    node inline KHÔNG có bộ thi hành, và `_chay_mot_inline` đã nói
+            #    ra điều đó bằng một FAILED có mã.
+            continue
         if cau_noi.nop_job(db, run, node, cong_cu=cong_cu):
             dang += 1
-    tt, co_doi = _lan_truyen(db, run, g)    # node FAILED lúc nộp ⇒ lan tiếp
+    dung = _pha_inline(db, run, g, cong_cu)          # node inline mở ra sau vòng nộp
+    if dung:
+        return dung
+    tt, co_doi = _lan_truyen(db, run, g, than)    # node FAILED lúc nộp ⇒ lan tiếp
     ket = _ket_run(db, run, g, tt)
     if ket:
         return ket
@@ -170,11 +423,21 @@ def huy_run(db, run_id: str, ly_do: str) -> bool:
     if run is None or run.status in mtt.RUN_KET_THUC:
         return False
     g = _do_thi(db, run.version_id)
-    for n in g["nodes"]:
-        if mtt.trang_thai_node(db, run.id, n["id"]) not in mtt.NODE_KET_THUC:
-            mtt.chuyen_node(db, run.id, n["id"], sang="CANCELLED", mo_ta=ly_do)
+    for nid in _moi_khoa_node(db, run, g):
+        if mtt.trang_thai_node(db, run.id, nid) not in mtt.NODE_KET_THUC:
+            mtt.chuyen_node(db, run.id, nid, sang="CANCELLED", mo_ta=ly_do)
     for job in db.execute(select(Job).where(Job.plan_id == run.id)).scalars():
         jobs.cancel(db, job)                 # chỉ đổi job queued/running
+    # ⭐ HUỶ CHA ⇒ HUỶ CON (spec §18.5 FLOW F). Đây là một lỗ **tiền thật**, không
+    #    phải một chi tiết cho gọn: một run con sống sót sau khi cha bị huỷ vẫn
+    #    nộp job, vẫn tiêu credit — và `ket_so` của cha đã chạy xong nên
+    #    `tong_chi_phi_con` không bao giờ đọc tới phần chi phí ấy. Khách trả cho
+    #    một việc họ đã bấm Huỷ, và không dòng nào trong sổ nói vì sao.
+    #
+    # ⚠️ Đệ quy an toàn vì `run_con.DO_SAU_TOI_DA` được cưỡng chế lúc publish, và
+    #    vì lượt gọi lại gặp con đã CANCELLED sẽ trả `False` ngay ở cửa.
+    for cid in run_con.con_dang_chay(db, run.id):
+        huy_run(db, cid, f"cha bi huy: {ly_do}"[:200])
     su_kien.ghi(db, run.id, "WorkflowCancelled", du_lieu={"ly_do": ly_do})
     return mtt.chuyen_run(db, run.id, sang="CANCELLED", ly_do=ly_do)
 
@@ -315,4 +578,5 @@ def mot_vong(db_factory: Callable, *, gioi_han: int = 50) -> dict:
             "con_viec": ke is not None, "han_ke_tiep": ke}
 
 
-__all__ = ["TRAN_RUN", "mot_vong", "xu_ly_run", "huy_run", "ttl"]
+__all__ = ["TRAN_BUOC_INLINE", "TRAN_RUN", "mot_vong", "xu_ly_run",
+           "huy_run", "ttl"]

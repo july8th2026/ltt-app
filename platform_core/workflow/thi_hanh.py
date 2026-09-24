@@ -7,9 +7,33 @@ Mô hình **C** (chốt `Q3`, `12_19 §16.2`). Nguồn thiết kế: `23_24 §4.
 """
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Sequence
 
 from platform_core.models import NodeRun, NodeRunSnapshot, WorkflowRun
+from platform_core.workflow import danh_thuc
+
+
+def khoa_node(node_id: str, vong: Sequence[tuple] = ()) -> str:
+    """Khoá của MỘT lần node chạy — `node_id` trần, hoặc `f1:0/node_id`.
+
+    🔴 VÌ SAO `node_run` PHẢI KHOÁ THEO ĐƯỜNG THI HÀNH
+
+       `node_run` có khoá chính `(run_id, node_id)`. Một node trong thân
+       `foreach` chạy 30 lần cần 30 trạng thái, và mô hình C **cấm sửa ảnh
+       chụp** — nên với khoá cũ, vòng 2 **đè** trạng thái vòng 1 và
+       `M7` ("100 kết quả, 0 lượt lặp") báo đạt trong khi tiền đã tiêu
+       nhiều lần.
+
+    ⭐ Dùng lại **nguyên** `danh_thuc.duong_thi_hanh` của Task 1 — cùng
+       hình dạng khoá (`loop_1:3/loop_2:0/approval`, Activepieces quyết
+       định `000015`), cùng phép băm khi vượt 64 ký tự, nên **không cần
+       migration**: ba cột `node_id` đều là `String(64)` y như
+       `Wakeup.node_run_id`. ⛔ Không viết một bộ sinh khoá thứ hai.
+
+    ⚠️ `vong = ()` ⇒ trả về đúng `node_id`. Đó là lý do mọi đồ thị không có
+       vòng lặp, và mọi phép kiểm đã có, giữ nguyên nghĩa.
+    """
+    return danh_thuc.duong_thi_hanh(str(node_id), vong=tuple(vong))
 
 
 def tao_run(db, *, workflow_id: str, version_id: str, owner_id: str,
@@ -44,7 +68,8 @@ def ghi_chuyen(db, run_id: str, node_id: str, *, execution_status: str,
                attempt_number: int = 1, is_valid: bool = True,
                error: str = "", job_id: str = "",
                output_ref: Optional[dict] = None,
-               cost_credit: int = 0) -> NodeRunSnapshot:
+               cost_credit: int = 0,
+               vong: Sequence[tuple] = ()) -> NodeRunSnapshot:
     """Ghi MỘT lần chuyển trạng thái của MỘT node. Không sửa gì đã ghi.
 
     Đây là toàn bộ đường ghi của mô hình C, và nó có đúng hai thao tác:
@@ -65,9 +90,10 @@ def ghi_chuyen(db, run_id: str, node_id: str, *, execution_status: str,
 
     ⛔ Nhưng ghi lại **không phải** chấp nhận: con trỏ đứng yên.
     """
-    truoc = db.get(NodeRun, (run_id, node_id))
+    khoa = khoa_node(node_id, vong)
+    truoc = db.get(NodeRun, (run_id, khoa))
     snapshot = NodeRunSnapshot(
-        run_id=run_id, node_id=node_id,
+        run_id=run_id, node_id=khoa,
         previous_snapshot_id=(truoc.latest_snapshot_id if truoc else ""),
         execution_status=execution_status, run_status=run_status,
         attempt_number=max(1, int(attempt_number or 1)),
@@ -81,7 +107,7 @@ def ghi_chuyen(db, run_id: str, node_id: str, *, execution_status: str,
         return snapshot
 
     if truoc is None:
-        db.add(NodeRun(run_id=run_id, node_id=node_id,
+        db.add(NodeRun(run_id=run_id, node_id=khoa,
                        latest_snapshot_id=snapshot.id))
     else:
         truoc.latest_snapshot_id = snapshot.id
@@ -89,10 +115,25 @@ def ghi_chuyen(db, run_id: str, node_id: str, *, execution_status: str,
     return snapshot
 
 
-def anh_chup_hien_tai(db, run_id: str, node_id: str
+def anh_chup_theo_khoa(db, run_id: str, khoa: str) -> Optional[NodeRunSnapshot]:
+    """Ảnh chụp của MỘT khoá đã dựng sẵn (`"x"` hoặc `"f:0/x"`).
+
+    ⚠️ Khác `anh_chup_hien_tai`: hàm kia nhận `node_id` **trần** + ngữ cảnh vòng
+       rồi tự dựng khoá, nên nó TỪ CHỐI một chuỗi đã có `:` hoặc `/` — đúng như
+       vậy, vì nhận cả hai kiểu ở một cửa là cách để một khoá dựng sai đi lọt.
+       Hàm này dành cho bên đã cầm khoá trong tay (vd đọc thẳng từ `node_run`).
+    """
+    con_tro = db.get(NodeRun, (run_id, str(khoa)))
+    if con_tro is None:
+        return None
+    return db.get(NodeRunSnapshot, con_tro.latest_snapshot_id)
+
+
+def anh_chup_hien_tai(db, run_id: str, node_id: str,
+                      vong: Sequence[tuple] = ()
                       ) -> Optional[NodeRunSnapshot]:
     """Trạng thái ĐANG CÓ của một node — một lần đọc con trỏ, không quét lịch sử."""
-    con_tro = db.get(NodeRun, (run_id, node_id))
+    con_tro = db.get(NodeRun, (run_id, khoa_node(node_id, vong)))
     if con_tro is None:
         return None
     return db.get(NodeRunSnapshot, con_tro.latest_snapshot_id)
