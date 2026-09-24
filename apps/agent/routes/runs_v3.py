@@ -283,6 +283,33 @@ def _gop_than_foreach(db: Session, run: WorkflowRun,
     return ra, khong_xac_dinh
 
 
+#: `waiting_kind` rỗng ⇒ node không (hay không còn) `WAITING`. Giá trị khớp
+#: NGUYÊN `Waitpoint.kind` (`models.py`: `DELAY | JOB | WEBHOOK | HUMAN |
+#: CHILD_RUN | BARRIER`) — không đặt tên hiển thị thứ hai ở đây, để một tên
+#: đổi ở `models.py` không lặng lẽ làm hai nơi nói khác nhau. `RunV3Panel.tsx`
+#: là nơi dịch nó ra nhãn tiếng Việt cho người xem.
+def _waiting_kind(db: Session, run_id: str, node_id: str) -> str:
+    """Node đang `WAITING` vì lý do GÌ — spec §14 "phân biệt WAITING vì đang
+    chờ người duyệt với WAITING vì lỗi" (coordinator, khi mở lại `main` mang
+    theo phase 5+6). Trả `kind` của waitpoint CÒN MỞ (`status == "PENDING"`)
+    chặn node này; có nhiều (N-of-M chưa đủ) thì nối bằng `,` — hiếm khi xảy
+    ra (đa số node WAITING chỉ có đúng MỘT waitpoint), nhưng không được che
+    giấu nếu nó xảy ra: một node chờ ĐỒNG THỜI cả `HUMAN` và `WEBHOOK` là một
+    sự thật về đồ thị, không phải lỗi hiển thị cần rút gọn về một giá trị.
+    """
+    from platform_core.models import Waitpoint
+    from platform_core.workflow import cho_doi
+
+    wp_ids = cho_doi.waitpoint_cua_node(db, run_id, node_id)
+    if not wp_ids:
+        return ""
+    kinds = list(db.execute(
+        select(Waitpoint.kind)
+        .where(Waitpoint.id.in_(wp_ids), Waitpoint.status == "PENDING")
+        .order_by(Waitpoint.kind)).scalars())
+    return ",".join(dict.fromkeys(kinds))  # thu tu on dinh, khong lap
+
+
 def _nodes_json(db: Session, run: WorkflowRun) -> list[dict]:
     """Trạng thái hiện tại của MỌI node trong đồ thị đã ghim.
 
@@ -303,13 +330,14 @@ def _nodes_json(db: Session, run: WorkflowRun) -> list[dict]:
             #    trần mà ở các ĐƯỜNG THI HÀNH `f:0/x`, `f:1/x`… Gộp chúng lại
             #    dưới đúng `node_id` trần — giao diện (`CanvasShell.tsx` so
             #    `item.node_id === node.id`) vì vậy KHÔNG phải sửa.
-            ra.append(theo_than[nid] | {"node_id": nid})
+            ra.append(theo_than[nid] | {"node_id": nid, "waiting_kind": ""})
             continue
         if anh is None and nid in khong_xac_dinh:
             # ⛔ KHÔNG `PENDING` — xem `TRANG_THAI_KHONG_XAC_DINH`.
             ra.append({
                 "node_id": nid, "status": TRANG_THAI_KHONG_XAC_DINH,
                 "attempt": 0, "cost_credit": 0, "job_id": "",
+                "waiting_kind": "",
                 "error": _t('Không gộp được trạng thái: một đường thi hành '
                             'trong vòng lặp lồng sâu đã bị băm (quá 64 ký '
                             'tự), không thể biết chắc đây có phải node này.')})
@@ -319,7 +347,7 @@ def _nodes_json(db: Session, run: WorkflowRun) -> list[dict]:
             # `1` — `1` sẽ nói dối rằng node đã chạy một lượt.
             ra.append({"node_id": nid, "status": may_trang_thai.NODE_BAT_DAU,
                        "attempt": 0, "cost_credit": 0, "job_id": "",
-                       "error": ""})
+                       "waiting_kind": "", "error": ""})
             continue
         ra.append({
             "node_id": nid,
@@ -327,6 +355,8 @@ def _nodes_json(db: Session, run: WorkflowRun) -> list[dict]:
             "attempt": int(anh.attempt_number),
             "cost_credit": int(anh.cost_credit),
             "job_id": anh.job_id,
+            "waiting_kind": (_waiting_kind(db, run.id, nid)
+                            if anh.execution_status == "WAITING" else ""),
             "error": anh.error,
         })
     return ra
