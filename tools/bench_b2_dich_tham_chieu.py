@@ -467,6 +467,48 @@ def cuoc_dau(diem: dict[int, float], nhan: dict[int, str], *, dinh_nghia: str) -
     }
 
 
+def doc_co_v3(tep: pathlib.Path) -> dict[int, bool]:
+    """`{dong_flores: da_gan_co}` cua bo cham V3 (tu nan), tu ban ghi DA COMMIT."""
+    g = json.loads(tep.read_text(encoding="utf-8"))["bao_dong_gia"]["gop"]
+    return {int(k.split("_")[1]): (not v["dat"]) for k, v in g.items()}
+
+
+def ghep(diem: dict[int, float], co_v3: dict[int, bool], nhan: dict[int, str], *,
+         dinh_nghia: str = "chinh", nguong: float = 6.0) -> dict:
+    """Do phep GHEP: MetricX loc truoc o `nguong`, V3 xu phan du.
+
+    ⭐ Hai cach ghep, va chung ⛔ KHONG giong nhau — phai do ca hai:
+
+    - `hop` (thac nuoc that): co = MetricX ∪ V3. Day la thu mot thac nuoc THUC SU
+      tra ve — V3 chi duoc GOI tren phan MetricX bo qua, nhung dong nao MetricX
+      da gan co thi van la co. ⇒ Cai loi la **CHI PHI** (bot loi goi V3),
+      ⛔ khong phai do chinh xac: hop chi co the LAM TANG so bao dong gia.
+    - `giao`: co = MetricX ∩ V3 (MetricX dung de **phu quyet**). Ha bao dong gia,
+      nhung ha ca do nhay.
+
+    ⚠️ San nay ⛔ KHONG kiem duoc cai loi that su cua phep ghep: no toan loi TU
+       NHIEN, TINH VI trong mot ban dich NGUOI — ⛔ khong co mot dong `san` nao
+       (khong dich / dich nham ca cau), tuc ⛔ khong co dung cai loai hong ma
+       MetricX bat gioi (99 %). Con so duoi day vi the do phep ghep o **dung cho
+       no yeu nhat**. ⛔ Doc nhu mot can duoi, ⛔ khong phai mot phan quyet.
+    """
+    khoa = sorted(set(diem) & set(co_v3) & set(nhan))
+    that = {k: (nhan[k] in DINH_NGHIA[dinh_nghia]) for k in khoa}
+    co_mx = {k: diem[k] > nguong for k in khoa}  # diem CAO = te => HONG
+    ra = {
+        "nguong_metricx": nguong, "dinh_nghia": dinh_nghia, "n": len(khoa),
+        "metricx_mot_minh": bang_2x2(co_mx, that),
+        "v3_mot_minh": bang_2x2({k: co_v3[k] for k in khoa}, that),
+        "ghep_hop": bang_2x2({k: co_mx[k] or co_v3[k] for k in khoa}, that),
+        "ghep_giao": bang_2x2({k: co_mx[k] and co_v3[k] for k in khoa}, that),
+        # Cai loi CHI PHI: bao nhieu dong khong phai goi V3 nua.
+        "dong_metricx_da_chot": sum(1 for k in khoa if co_mx[k]),
+        "ti_le_loi_goi_v3_tiet_kiem": sum(1 for k in khoa if co_mx[k]) / len(khoa),
+        "so_dong_muc_san_tren_san_nay": 0,
+    }
+    return ra
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 #  6. IN
 # ══════════════════════════════════════════════════════════════════════════════
@@ -624,6 +666,102 @@ def lenh_doi(a: argparse.Namespace) -> int:
     return 0
 
 
+def lenh_ghep(a: argparse.Namespace) -> int:
+    d = _doc_tho(a.tho)
+    diem = d["metricx"][a.che_do]["dau"]
+    r = ghep(diem, doc_co_v3(pathlib.Path(a.v3)),
+             doc_nhan_soi_mu(pathlib.Path(a.nhan)),
+             dinh_nghia=a.dinh_nghia, nguong=a.nguong)
+    print(f"\n╔═ PHEP GHEP — MetricX ({a.che_do}) @ {r['nguong_metricx']} loc truoc, "
+          f"V3 xu phan du · n={r['n']} ═╗")
+    print("  ⚠️ CACH MOI (doi chieu nguoi soi MU). ⛔ Khong so voi bang 'cach cu' "
+          "(V1 43,3% · V2 16,7% · V3 23,3%) — khac THUOC.\n")
+    for ten in ("metricx_mot_minh", "v3_mot_minh", "ghep_hop", "ghep_giao"):
+        _in_bang(r[ten], ten)
+    print(f"\n  Cai loi CHI PHI: MetricX chot san {r['dong_metricx_da_chot']}/{r['n']} dong "
+          f"({r['ti_le_loi_goi_v3_tiet_kiem']:.1%} loi goi V3 tiet kiem duoc)")
+    print(f"\n  ⚠️ San nay co {r['so_dong_muc_san_tren_san_nay']} dong muc `san` "
+          "(khong dich / dich nham ca cau) — tuc ⛔ KHONG co dung loai hong ma\n"
+          "     MetricX bat gioi (99%). Bang tren do phep ghep o dung cho no YEU\n"
+          "     nhat ⇒ doc nhu mot CAN DUOI, ⛔ khong phai mot phan quyet.")
+    if a.ra:
+        pathlib.Path(a.ra).write_text(json.dumps(r, ensure_ascii=False, indent=1),
+                                      encoding="utf-8")
+    return 0
+
+
+def lenh_bench(a: argparse.Namespace) -> int:
+    """Cham ban dich THAT cua ta tren FLORES. ⛔ Chi chay sau khi `xac-thuc` xanh.
+
+    Moi `--dich` la MOT LUOT: JSON `{chi_so_dong: "cau da dich"}` (chi so FLORES
+    dev). ⛔ Tep nay khong goi model dich — no chi cham.
+
+    🔴 **BAT BUOC >= 3 LUOT.** Duong dich ⛔ KHONG TAI LAP DUOC: temp 0,0 + ep
+       luoc do + seed van cho ba ban khac nhau o MOI doan (0 on dinh / 12 doi).
+       ⇒ mot luot ⛔ khong phai mot con so. Bao **trung vi + khoang**, ⛔ khong
+       bao mot so tran.
+    ⚠️ FLORES co ~10 % dong loi ro ⇒ "khop FLORES" ⛔ khong bang "dung".
+    """
+    if len(a.dich) < 3:
+        raise SystemExit(
+            f"chi co {len(a.dich)} luot, can >= 3 — duong dich khong tai lap duoc,\n"
+            "mot luot khong phai mot con so (xem docstring)")
+    xt = _nap_xac_thuc()
+    dong = {i: (zh, vi) for i, zh, vi in xt.doc_flores()}
+
+    luot: list[dict] = []
+    for k, tep in enumerate(a.dich, 1):
+        ban = {int(i): str(c) for i, c in
+               json.loads(pathlib.Path(tep).read_text(encoding="utf-8")).items()}
+        thieu = set(ban) - set(dong)
+        if thieu:
+            raise SystemExit(f"luot {k}: {len(thieu)} chi so khong co trong FLORES dev")
+        if len(ban) < N_TOI_THIEU:
+            raise SystemExit(f"luot {k}: chi co {len(ban)} cau, can >= {N_TOI_THIEU}")
+        khoa = sorted(ban)
+        r: dict[str, object] = {"tep": tep, "n": len(khoa)}
+
+        # chrF++ — NHE, ⛔ khong can khoa. Diem CUM (corpus) la cach cong bo chuan.
+        try:
+            from sacrebleu.metrics import CHRF
+            r["chrf"] = CHRF(word_order=2).corpus_score(
+                [ban[i] for i in khoa], [[dong[i][1] for i in khoa]]).score
+        except ImportError:
+            print("⚠️  chua cai `sacrebleu` — bo qua chrF++", file=sys.stderr)
+
+        if not a.bo_metricx:  # NANG — di qua chay_nang.py
+            from apps.asv_gpu.do_luong import metricx
+            diem = metricx.do_dich(
+                [{"ma": str(i), "nguon": dong[i][0], "dich": ban[i]} for i in khoa],
+                ngon_ngu_nguon="zh", ngon_ngu_dich="vi",
+                thiet_bi=a.thiet_bi, lo=a.lo, timeout_s=7200)
+            v = [float(diem[str(i)]) for i in khoa]
+            r["metricx_trung_vi"] = statistics.median(v)
+            r["metricx_trung_binh"] = statistics.fmean(v)
+            r["metricx_ktc"] = ktc_trung_binh(v)
+            r["metricx_qua_nguong_san_pham"] = sum(
+                1 for x in v if x > metricx.NGUONG_DO[("zh", "vi")])
+        luot.append(r)
+
+    print(f"\n╔═ BAN DICH CUA TA tren FLORES zh->vi · {len(luot)} LUOT ═╗")
+    print("  ⚠️ Duong dich KHONG tai lap duoc ⇒ doc TRUNG VI + KHOANG, ⛔ khong doc mot luot.")
+    for ten, khoa_r, cao_tot in (("chrF++ (cum)", "chrf", True),
+                                 ("MetricX QE (trung vi)", "metricx_trung_vi", False)):
+        v = [r[khoa_r] for r in luot if khoa_r in r]
+        if not v:
+            continue
+        print(f"\n  {ten}  ({'cao la tot' if cao_tot else 'THAP la tot'})")
+        for k, x in enumerate(v, 1):
+            print(f"    luot {k}: {x:.3f}")
+        print(f"    ⭐ trung vi {statistics.median(v):.3f}  "
+              f"khoang [{min(v):.3f} ; {max(v):.3f}]  (bien do {max(v) - min(v):.3f})")
+    print("\n  ⚠️ FLORES co ~10 % dong loi ro ⇒ 'khop FLORES' ⛔ khong bang 'dung'.")
+    if a.ra:
+        pathlib.Path(a.ra).write_text(json.dumps({"luot": luot}, ensure_ascii=False,
+                                                 indent=1), encoding="utf-8")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     con = p.add_subparsers(dest="lenh", required=True)
@@ -640,6 +778,25 @@ def main(argv: list[str] | None = None) -> int:
     x = con.add_parser("xac-thuc", help="bang bon muc + KTC (ngoai khoa)")
     x.add_argument("--tho", required=True)
     x.set_defaults(fn=lenh_xac_thuc)
+
+    b = con.add_parser("bench", help="cham ban dich THAT cua ta (>= 3 luot)")
+    b.add_argument("--dich", required=True, nargs="+", metavar="LUOT.json",
+                   help='>= 3 tep, moi tep MOT luot: {chi_so: "cau da dich"}')
+    b.add_argument("--thiet-bi", default="auto", choices=("auto", "cpu", "cuda"))
+    b.add_argument("--lo", type=int, default=16)
+    b.add_argument("--bo-metricx", action="store_true", help="chi chrF (nhe)")
+    b.add_argument("--ra")
+    b.set_defaults(fn=lenh_bench)
+
+    g = con.add_parser("ghep", help="MetricX loc truoc + V3 xu phan du (ngoai khoa)")
+    g.add_argument("--tho", required=True)
+    g.add_argument("--nhan", required=True, help="b2_san_loi_flores.json (soi mu)")
+    g.add_argument("--v3", required=True, help="b2_cham_v3_tren_100_dong_soi_mu.json")
+    g.add_argument("--nguong", type=float, default=6.0, help="nguong san pham MetricX")
+    g.add_argument("--che-do", default="qe")
+    g.add_argument("--dinh-nghia", default="chinh")
+    g.add_argument("--ra")
+    g.set_defaults(fn=lenh_ghep)
 
     d = con.add_parser("doi", help="cuoc dau 2x2 vs bo cham tu nan (ngoai khoa)")
     d.add_argument("--tho", required=True)

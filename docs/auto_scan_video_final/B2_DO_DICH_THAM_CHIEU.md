@@ -1,98 +1,114 @@
 # B2 — Bộ đo dịch: xác thực **trước**, rồi cho MetricX **đấu** với bộ chấm tự nặn
 
-> Làn `do-dich`, 24–25/09/2026. Bằng chứng thô:
-> `bang_chung/b2_do_dich_tho.json` (điểm từng cặp) ·
-> `bang_chung/b2_do_dich_cuoc_dau.json` (cả đường cong ngưỡng).
-> Dựng lại: `tools/bench_b2_dich_tham_chieu.py` (`cham-tho` → `xac-thuc` → `doi`).
+> Làn `do-dich`, 24–25/09/2026. Bằng chứng thô: `bang_chung/b2_do_dich_tho.json` ·
+> `bang_chung/b2_do_dich_cuoc_dau.json` · `bang_chung/b2_do_dich_ghep.json`.
+> Dựng lại: `tools/bench_b2_dich_tham_chieu.py`.
 
-⛔ **Chưa đo bản dịch của ta.** Đường dịch đang được sửa (ghim nhiệt độ + chuyển
-`ltt-3.5`) ⇒ đo bây giờ là đo một cấu hình sắp biến mất. Lệnh `bench` đã dựng sẵn,
-chạy một lệnh khi điều phối gọi.
+---
+
+# 🔴 ĐỌC TRƯỚC — hai giới hạn treo trên **MỌI** con số dưới đây
+
+⛔ **Không ai được trích một bảng nào trong tài liệu này mà bỏ mục này.**
+Hai giới hạn **cộng dồn**, ⛔ không thay thế nhau.
+
+## 🔴 (1) Vòng tròn LLM — sân đấu có thể đang đo **độ giống nhau giữa hai LLM**
+
+Chân lý nền của sân đấu là phán quyết của **hai người soi — và cả hai đều là LLM**
+(chính hai tệp bằng chứng tự khai vậy). Bộ chấm **V3 cũng là một LLM** chấm bằng
+lời nhắc. MetricX là một model **hồi quy tinh chỉnh**, khác họ. ⇒ Nếu vòng tròn này
+là thật thì:
+
+- V3 thắng ⛔ **không** chứng minh V3 **tốt hơn** — chỉ chứng minh V3 **giống người chấm hơn**;
+- MetricX thua ⛔ **không** chứng minh MetricX **kém** — có thể nó **bất đồng với một chân lý nền sai**.
+
+⚠️ Và đồng thuận giữa hai người soi (30 dòng chung, bất đồng 2/30) cho
+**kappa 0,714 nhưng KTC95 [0,00 ; 1,00]** ⇒ ⭐ **chân lý nền của ta chưa bao giờ được ghim.**
+
+⛔ Làn này ⛔ **không** tự giải vòng tròn — điều phối đang mang câu hỏi *"phá vòng
+tròn bằng cách nào"* tới chủ dự án.
+
+## 🔴 (2) HAI CÁCH đo báo động giả — ⛔ hai ĐƠN VỊ, ⛔ không so trực tiếp
+
+```
+cách CŨ  — giả định "FLORES luôn đúng": mọi cờ trên FLORES = báo động giả
+           ⇒ mang sẵn sàn lỗi FLORES bên trong. Một bộ chấm HOÀN HẢO cũng
+             trượt: trần 23 % > ngưỡng 15 % ở định nghĩa rộng nhất.
+           V1 43,3 %  ·  V2 16,7 %  ·  V3 23,3 %
+
+cách MỚI — đối chiếu phán quyết NGƯỜI SOI MÙ (ghi trước, mù, đã commit)
+           V3 33 %  ·  MetricX QE 39 %  (cùng ngân sách 43 cờ)
+```
+
+⭐ **Mọi bảng trong tài liệu này dùng CÁCH MỚI**, và mỗi bảng đều được **dán nhãn**.
+⛔ Câu kiểu *"V3 tăng từ 23,3 % lên 33 %"* là **SAI** — hai số khác thước, và
+V3 ⛔ **không hề tệ đi**.
+
+---
 
 ## §0. Bộ đo nào, nguồn, giấy phép
 
 | Lớp | Công cụ | Nguồn | Giấy phép | Trạng thái |
 |---|---|---|---|---|
-| Điểm dịch (QE **và** tham chiếu) | **MetricX-24-Hybrid-Large** `v2p6-bfloat16` | `google-research/metricx` @ `fc4978eb` · HF `google/metricx-24-hybrid-large-v2p6-bfloat16` @ `febb720e` | **Apache-2.0** (mã **và** weights) | ⭐ **đã có trong kho**, chạy trong `qc-venv`, đã khai `THIRD_PARTY_METRICS.md` §1 #6 |
-| Khoảng tin cậy | `scipy.stats.bootstrap` (BCa, 10 000 lượt) | PyPI | BSD-3-Clause | đã cài |
-| Đếm 2×2 · KTC tỉ lệ · kappa | `tools/do_luong.py` (`sklearn` + `scipy`) | trong kho, trên `main` | — | ⭐ **cùng một thước cho cả hai bên** |
-| chrF / chrF++ / BLEU | `sacrebleu` | `mjpost/sacrebleu` | **Apache-2.0** | ⛔ **CHƯA CÀI — chờ chủ dự án duyệt** (xem §5) |
-| COMET / xCOMET / CometKiwi | — | — | **CC BY-NC-SA 4.0** | ⛔ **LOẠI** (`THIRD_PARTY_METRICS.md` §2) |
+| Điểm dịch (QE **và** tham chiếu) | **MetricX-24-Hybrid-Large** `v2p6-bfloat16` | `google-research/metricx` @ `fc4978eb` · HF @ `febb720e` | **Apache-2.0** (mã + weights) | ⭐ đã có sẵn trong kho, `qc-venv` |
+| chrF / chrF++ / BLEU | **`sacrebleu` 2.6.0** | `mjpost/sacrebleu` | **Apache-2.0** | ✅ **đã cài + đã khai** (§5) |
+| Khoảng tin cậy | `scipy.stats.bootstrap` (BCa, 10 000 lượt) | PyPI | BSD-3-Clause | đã có |
+| Đếm 2×2 · KTC tỉ lệ · kappa | `tools/do_luong.py` | trong kho, `main` | — | ⭐ **cùng một thước cho cả hai bên** |
+| COMET / xCOMET / CometKiwi | — | — | **CC BY-NC-SA 4.0** | ⛔ **LOẠI** |
 
-⭐ **Không tự viết lớp TÍNH.** Thứ làn này viết chỉ là lớp **NỐI**: chọn câu, làm
-hỏng "nhẹ", ghép mức "sàn", gọi runner, xếp bảng.
+⭐ **Không tự viết lớp TÍNH.** Phần làn này viết chỉ là lớp **NỐI**.
 
-⭐ **Hai chế độ, một checkpoint.** `metricx-24-**hybrid**` được huấn luyện cho cả hai:
+⭐ **Hai chế độ, một checkpoint.** `metricx-24-**hybrid**` huấn luyện cho cả hai:
+`QE = "source: {zh} candidate: {vi}"` · `tham chiếu = … + " reference: {vi_người}"`.
+Định dạng lấy **y nguyên** từ `metricx24/predict.py` ở đúng commit đã ghim.
+Đường QC sản phẩm (QE) ⛔ **không bị đụng**; runner tham chiếu là tệp riêng.
 
-```
-QE          : "source: {zh} candidate: {vi}"
-tham chiếu  : "source: {zh} candidate: {vi} reference: {vi_người}"
-```
-
-Định dạng lấy **y nguyên** từ `metricx24/predict.py::get_dataset._make_input` ở đúng
-commit đã ghim — ⛔ không tự bịa. Đường QC sản phẩm (`apps/asv_gpu/do_luong/metricx.py`)
-chạy **QE** và ⛔ **không bị tệp này đụng vào**; runner tham chiếu là tệp riêng
-(`tools/_metricx_tham_chieu_runner.py`) dùng lại `ban_ghim.py` + `mt5_regression.py`.
-
-⭐ **Chế độ dùng được thật là QE.** Phim khách ⛔ không có bản dịch đối chiếu. Chế độ
-tham chiếu chỉ chạy được ở nơi đã có bản dịch người (FLORES) ⇒ nó là công cụ **đo
-bộ đo**, không phải công cụ vận hành.
+⭐ **Chế độ dùng được thật là QE** — phim khách ⛔ không có bản dịch đối chiếu.
 
 ---
 
-## §1. Bước A — XÁC THỰC bộ đo (bảng bốn mức)
+## §1. Bước A — XÁC THỰC bộ đo
 
-100 dòng FLORES-200 dev (zh→vi), mỗi dòng đủ cả bốn mức, hạt giống `20260924`.
-Điểm MQM `[0,25]`, **thấp là tốt**. KTC95 bootstrap BCa.
+> 🏷️ **Phép TIÊM LỖI.** ⛔ Không thuộc cách cũ hay cách mới: ở đây ⛔ không có mẫu
+> số báo động giả nào cả — ta **biết** dòng nào bị làm hỏng vì **chính ta làm hỏng**.
 
-### MetricX — chế độ **QE** (không tham chiếu)
+100 dòng FLORES-200 dev (zh→vi), hạt giống `20260924`. MQM `[0,25]`, **thấp là tốt**.
 
-| mức | n | trung bình | trung vị | KTC95 |
-|---|---|---|---|---|
-| `trần` (bản dịch người) | 100 | **1,922** | 1,422 | [1,649 ; 2,276] |
-| `nhẹ` (hoán vị / bỏ một từ) | 100 | 2,556 | 2,148 | [2,222 ; 2,978] |
-| `nặng` (lật nghĩa / sai thực thể) | 100 | 4,627 | 4,328 | [4,153 ; 5,110] |
-| `sàn` (bản dịch của dòng KHÁC) | 100 | **17,215** | 17,312 | [16,193 ; 18,210] |
-
-### MetricX — chế độ **tham chiếu**
-
-| mức | n | trung bình | trung vị | KTC95 |
-|---|---|---|---|---|
-| `trần` | 100 | **0,888** | 0,699 | [0,769 ; 1,073] |
-| `nhẹ` | 100 | 1,772 | 1,438 | [1,539 ; 2,074] |
-| `nặng` | 100 | 4,508 | 4,625 | [4,128 ; 4,882] |
-| `sàn` | 100 | **20,826** | 21,500 | [20,043 ; 21,519] |
+| mức | QE: t.bình (KTC95) | tham chiếu: t.bình (KTC95) |
+|---|---|---|
+| `trần` (bản dịch người) | **1,922** [1,649 ; 2,276] | **0,888** [0,769 ; 1,073] |
+| `nhẹ` (hoán vị / bỏ một từ) | 2,556 [2,222 ; 2,978] | 1,772 [1,539 ; 2,074] |
+| `nặng` (lật nghĩa / sai thực thể) | 4,627 [4,153 ; 5,110] | 4,508 [4,128 ; 4,882] |
+| `sàn` (bản dịch dòng KHÁC) | **17,215** [16,193 ; 18,210] | **20,826** [20,043 ; 21,519] |
 
 ### ⭐ Trần vs nhiễu nhẹ — **tách được**
 
-KTC của **hiệu THEO CẶP** (bốn mức đo trên cùng tập dòng ⇒ bốc theo cặp khử được
-nhiễu độ-khó-của-dòng). Tách được ⇔ KTC ⛔ không chứa 0.
+KTC của **hiệu THEO CẶP** (bốn mức trên cùng tập dòng ⇒ bốc theo cặp khử nhiễu
+độ-khó-của-dòng). Tách được ⇔ KTC ⛔ không chứa 0.
 
-| bước | QE: hiệu (KTC95) | tách? | tham chiếu: hiệu (KTC95) | tách? |
-|---|---|---|---|---|
-| `trần`→`nhẹ` | **0,634** [0,488 ; 0,833] | ✅ | **0,884** [0,715 ; 1,160] | ✅ |
-| `nhẹ`→`nặng` | 2,071 [1,590 ; 2,512] | ✅ | 2,737 [2,274 ; 3,148] | ✅ |
-| `nặng`→`sàn` | 12,588 [11,405 ; 13,731] | ✅ | 16,317 [15,412 ; 17,154] | ✅ |
+| bước | QE: hiệu (KTC95) | tham chiếu: hiệu (KTC95) |
+|---|---|---|
+| `trần`→`nhẹ` | **0,634** [0,488 ; 0,833] ✅ | **0,884** [0,715 ; 1,160] ✅ |
+| `nhẹ`→`nặng` | 2,071 [1,590 ; 2,512] ✅ | 2,737 [2,274 ; 3,148] ✅ |
+| `nặng`→`sàn` | 12,588 [11,405 ; 13,731] ✅ | 16,317 [15,412 ; 17,154] ✅ |
 
-Tỉ lệ **dòng** xếp đúng hướng ở bước `trần`→`nhẹ`: **90 %** (QE) · **99 %** (tham chiếu).
-
-⇒ **Bốn mức xếp ĐÚNG thứ tự ở cả hai chế độ, và `trần` tách khỏi `nhẹ` ở cả hai.**
+Tỉ lệ **dòng** xếp đúng hướng ở `trần`→`nhẹ`: **90 %** (QE) · **99 %** (tham chiếu).
+⇒ **Bốn mức xếp ĐÚNG thứ tự ở cả hai chế độ, và `trần` tách khỏi `nhẹ`.** ✅
 
 ### ⭐ Vế hai — chạy một **HỆ HOÀN HẢO** qua cổng
 
 Tiêm lỗi chứng minh cổng biết nói **ĐỎ**; hệ hoàn hảo chứng minh nó biết nói **XANH**.
-Ở ngưỡng **sản phẩm** `NGUONG_DO[("zh","vi")] = 6,0`, đưa chính **bản dịch người**
-của FLORES qua cổng:
+Ở ngưỡng **sản phẩm** `NGUONG_DO[("zh","vi")] = 6,0`, đưa chính bản dịch **người** qua:
 
-| chế độ | bản dịch NGƯỜI bị đánh HỎNG | KTC95 |
-|---|---|---|
-| QE | **1/100 = 1,0 %** | [0,2 % ; 5,4 %] |
-| tham chiếu | **0/100 = 0,0 %** | [0,0 % ; 3,7 %] |
+> 🏷️ **CÁCH MỚI.** ⭐ Dòng **duy nhất** MetricX gắn cờ **LÀ một lỗi thật** (người soi mù
+> gọi `ro`) ⇒ FP = **0**. Dưới **cách cũ** con số này sẽ hiện là *"1 % báo động giả"*
+> — ⛔ và đó là một quy kết SAI cho một lần bắt ĐÚNG.
 
-✅ **Cổng biết nói XANH.** ⛔ Đây ⛔ không phải cái đã xảy ra với cổng bị bắt quả tang
-hôm qua (trần 0,606 nằm dưới chính ngưỡng 0,80 của nó).
+| | cờ | TP | FP | **BĐG (FP/n)** | độ nhạy |
+|---|---|---|---|---|---|
+| MetricX QE @ 6,0 | 1 | **1** | **0** | ✅ **0,0 %** [0,0 ; 3,7] | ⛔ 10 % [1,8 ; 40,4] |
 
-⚠️ Nhưng ngưỡng 6,0 **mua sự sạch sẽ ấy bằng độ nhạy**. Cùng ngưỡng đó, tỉ lệ bắt được:
+✅ **Cổng biết nói XANH** — ⛔ không phải ca *"trần 0,606 dưới chính ngưỡng 0,80"*.
+⚠️ Nhưng ngưỡng 6,0 mua sự sạch sẽ ấy bằng **độ nhạy**. Cùng ngưỡng, tỉ lệ bắt (tiêm lỗi):
 
 | mức | QE | tham chiếu |
 |---|---|---|
@@ -100,144 +116,173 @@ hôm qua (trần 0,606 nằm dưới chính ngưỡng 0,80 của nó).
 | `nặng` | 30/100 | 22/100 |
 | `sàn` | **99/100** | **100/100** |
 
-⇒ Ở ngưỡng sản phẩm, MetricX là **bộ bắt hỏng THÔ**: gần như chắc chắn bắt được
-"không dịch / dịch nhầm cả câu", bắt được ~1/4–1/3 lật nghĩa & sai thực thể,
-⛔ **gần như mù với nhiễu nhẹ**.
+⇒ Ở ngưỡng sản phẩm, MetricX là **bộ bắt hỏng THÔ**: gần như chắc chắn bắt
+"không dịch / dịch nhầm cả câu", ~1/4–1/3 lật nghĩa, ⛔ **gần như mù với nhiễu nhẹ**.
 
 ---
 
 ## §2. ⭐ Bước B — CUỘC ĐẤU trên 100 dòng đã SOI MÙ
 
-**Sân đấu ⛔ không ai đổi luật giữa chừng:** phán quyết người soi ghi **trước**, **mù**,
-**đã commit** (`bang_chung/b2_san_loi_flores.json`, nhánh `phien/asvf-xac-thuc`).
-100 dòng FLORES (dải 500–899): **10 `lỗi rõ`** · 2 `zh_lệch` · 11 `biên` · 77 `không lỗi`.
-Ứng viên là **chính bản dịch người** của FLORES — đúng thứ người soi đã phán quyết.
-Định nghĩa "lỗi thật" = `chinh` (`ro`), **cùng một thước** cả hai bên qua `tools/do_luong.py`.
+> 🏷️ **CÁCH MỚI** — đối chiếu phán quyết soi mù, ghi **trước**, **mù**, **đã commit**
+> (`bang_chung/b2_san_loi_flores.json`). ⛔ Không so với bảng cách cũ.
 
-### Đường cong với đường cong, ⛔ không phải điểm tốt nhất với một điểm tồi
-
-MetricX cho điểm liên tục ⇒ có cả một đường ngưỡng. Vài mốc (chế độ QE):
-
-| ngưỡng | gắn cờ | TP | FP | BĐG (FP/n) | độ nhạy | qua cổng? |
-|---|---|---|---|---|---|---|
-| 0,598 | 17 | 0 | 17 | 17,0 % | 0,0 % | ⛔ |
-| 0,809 | 36 | 3 | 33 | 33,0 % | 30,0 % | ⛔ |
-| **0,965** | **43** | **4** | **39** | **39,0 %** | **40,0 %** | ⛔ |
-| 1,648 | 66 | 5 | 61 | 61,0 % | 50,0 % | ⛔ |
-| 2,938 | 89 | 7 | 82 | 82,0 % | 70,0 % | ⛔ |
-
-⛔ **Không một ngưỡng nào** — ở **cả hai** chế độ — qua được đồng thời
-BĐG ≤ 15 % **và** độ nhạy ≥ 50 %.
+100 dòng FLORES (500–899): **10 `lỗi rõ`** · 2 `zh_lệch` · 11 `biên` · 77 `không lỗi`.
+Ứng viên là **chính bản dịch người** — đúng thứ người soi đã phán quyết.
+Cùng thước qua `tools/do_luong.py`. Định nghĩa "lỗi thật" = `chinh` (`ro`).
 
 ### Đối đầu ở **cùng ngân sách gắn cờ** (43 cờ — đúng bằng V3)
 
-| | gắn cờ | TP | FP | BĐG (FP/n) | độ nhạy |
+| | cờ | TP | FP | BĐG (FP/n) | độ nhạy |
 |---|---|---|---|---|---|
 | **V3 (tự nặn)** | 43 | **10** | 33 | **33,0 %** ⛔ | **10/10 = 100 %** ✅ |
 | MetricX **QE** | 43 | 4 | 39 | 39,0 % ⛔ | 4/10 = 40 % ⛔ |
 | MetricX **tham chiếu** | 43 | 3 | 40 | 40,0 % ⛔ | 3/10 = 30 % ⛔ |
 | *đoán mù* | *43* | *~4,3* | *~38,7* | *~38,7 %* | *~43 %* |
 
-⇒ **V3 trội hơn MetricX trên CẢ HAI trục** ở cùng ngân sách. Fisher chính xác cho
-độ nhạy: QE 4/10 vs V3 10/10 **p = 0,011**; tham chiếu 3/10 vs 10/10 **p = 0,0031**.
+⛔ **Không một ngưỡng nào**, ở **cả hai** chế độ, qua được đồng thời BĐG ≤ 15 % **và**
+độ nhạy ≥ 50 %. Fisher cho độ nhạy: QE 4/10 vs V3 10/10 **p = 0,011**; tham chiếu **p = 0,0031**.
 
-### ⭐ Và MetricX ⛔ không phân biệt được gì trên sân này
+### ⭐ MetricX ⛔ không phân biệt được gì trên sân này
 
 | chế độ | AUC | KTC95 |
 |---|---|---|
 | QE | 0,646 | **[0,424 ; 0,849]** |
 | tham chiếu | 0,618 | **[0,412 ; 0,816]** |
 
-⭐ **KTC của cả hai đều CHỨA 0,5.** Trên sân này ta ⛔ **không phân biệt được MetricX
-với đoán mù** — và TP=4 ở ngân sách 43 đúng bằng kỳ vọng ngẫu nhiên (~4,3).
+⭐ **KTC cả hai đều CHỨA 0,5** ⇒ ⛔ không phân biệt được với **đoán mù**; TP=4 ở ngân
+sách 43 đúng bằng kỳ vọng ngẫu nhiên (~4,3).
 
-### Chống chỉnh-trên-bài-thi
-
-Chọn ngưỡng trên một nửa (phân tầng theo nhãn), báo số trên nửa kia, hai chiều:
-⛔ **không nửa nào có một ngưỡng qua được cổng để mà đem đi báo.** Phép này vì thế
-⛔ không thêm thông tin — nó chỉ xác nhận ⛔ không có điểm vận hành nào để chỉnh.
+**Chống chỉnh-trên-bài-thi:** chọn ngưỡng trên một nửa (phân tầng), báo trên nửa kia,
+hai chiều ⇒ ⛔ **không nửa nào có ngưỡng qua cổng để mà đem đi báo.**
 
 ---
 
-## §3. ⚠️ Ba điều giữ cho cuộc đấu khỏi bị đọc quá rộng
+## §3. ⭐ Phép GHÉP — **đã đo, và nó ⛔ KHÔNG trả công**
 
-1. ⭐ **Chế độ tham chiếu trên sân này là phép ĐỒNG NHẤT.** FLORES ⛔ không có bản
-   dịch thứ hai, nên ứng viên **chính là** bản tham chiếu. Con số ấy đo một hằng số,
-   ⛔ không đo năng lực — nó có mặt để **chứng minh** điều đó, ⛔ không để phán quyết.
-   ⇒ Phán quyết của cuộc đấu đứng trên **chế độ QE**.
-2. ⚠️ **Chân lý nền do LLM tạo ra.** Cả hai người soi đều là LLM — chính hai tệp bằng
-   chứng tự khai vậy. V3 **cũng** là một LLM chấm bằng lời nhắc; MetricX là một model
-   hồi quy tinh chỉnh. ⇒ Một phần ưu thế của V3 có thể là **cùng họ với người chấm
-   điểm**, ⛔ không hẳn là năng lực. Đồng thuận hai người soi trên 30 dòng chung:
-   bất đồng 2/30, **kappa 0,714 nhưng KTC [0,00 ; 1,00]** — ⛔ **vô nghĩa** ở cỡ mẫu này.
-3. ⚠️ **Hai phép đo HỎI HAI CÂU KHÁC NHAU.** §1 hỏi *"có bắt được lỗi TIÊM vào một
-   bản dịch không?"* — MetricX trả lời **có**, rõ ràng. §2 hỏi *"có phát hiện được
-   lỗi TỰ NHIÊN, tinh vi, trong một bản dịch NGƯỜI không?"* — MetricX trả lời **không**.
-   ⛔ Hai câu trả lời ⛔ không mâu thuẫn, và ⛔ không được thay cho nhau.
-   `n = 100` với **10** dương tính ⇒ mỗi kết luận ở §2 đứng trên 10 sự kiện.
+> 🏷️ **CÁCH MỚI.** Đề nghị của chính làn này ở bản trước: *MetricX @6,0 lọc trước,
+> V3 xử phần dư.* ⭐ **Đo rồi: ⛔ không trả công.**
 
-⛔ **Không nới ngưỡng 15 % / 50 % cho bên nào**, và ⛔ không kết luận rộng hơn dữ liệu.
+| cấu hình | cờ | TP | FP | BĐG (FP/n) | độ nhạy |
+|---|---|---|---|---|---|
+| MetricX QE @6,0 một mình | 1 | 1 | 0 | ✅ 0,0 % [0,0 ; 3,7] | ⛔ 10 % |
+| V3 một mình | 43 | 10 | 33 | ⛔ 33,0 % [24,6 ; 42,7] | ✅ 100 % |
+| **ghép `hợp`** (thác nước thật) | 43 | 10 | 33 | ⛔ 33,0 % [24,6 ; 42,7] | ✅ 100 % |
+| **ghép `giao`** (MetricX phủ quyết) | 1 | 1 | 0 | ✅ 0,0 % | ⛔ 10 % |
+
+⭐ **Ghép `hợp` giống V3 một mình ĐẾN TỪNG Ô.** Dòng duy nhất MetricX gắn cờ thì
+V3 **đã gắn rồi** ⇒ MetricX ⛔ không thêm một phát hiện nào, và tiết kiệm lời gọi V3
+được **1/100 = 1,0 %** — ⛔ không đáng một tầng kiến trúc.
+Ghép `giao` hạ BĐG về 0 % nhưng ⛔ **vứt 9/10 lỗi** — trượt cổng độ nhạy.
+
+⚠️ **Nhưng sân này ⛔ KHÔNG kiểm được cái lợi mà phép ghép được đề nghị vì nó.**
+Sân toàn lỗi **tự nhiên, tinh vi** trong một bản dịch **người**; nó có **0 dòng**
+mức `sàn` (không dịch / dịch nhầm cả câu) — tức ⛔ **không có** đúng loại hỏng mà
+MetricX bắt giỏi (**99 %**, §1). ⇒ Bảng trên là một **cận dưới**, ⛔ không phải phán quyết.
+
+⭐ **Kết luận đúng:** phép ghép ⛔ **không được biện minh bởi dữ liệu hiện có**. Muốn
+biện minh nó thì phải có một sân **chứa ca thảm hoạ thật** (đoạn phim khách bị bỏ
+dịch / sót chữ Hán) — ⛔ sân đó chưa tồn tại.
 
 ---
 
 ## §4. Phán quyết
 
-⭐ **MetricX THUA cuộc đấu** — kết cục 3 trong bảng của điều phối:
+⭐ **MetricX THUA cuộc đấu** — kết cục 3: *ta có bằng chứng bộ chấm tự nặn là
+**cần thiết**, ⛔ không phải một lựa chọn tuỳ hứng.*
 
-> *"MetricX thua ⇒ ⭐ **kết quả đáng giá** — ta có bằng chứng bộ chấm tự nặn là
-> **cần thiết**, ⛔ không phải một lựa chọn tuỳ hứng."*
+⛔ **Nhưng ⛔ không phải "V3 đạt".** V3 **cũng trượt** (33 % > 15 %).
+⇒ **⛔ Chưa bên nào qua cổng**, MetricX ⛔ không phải đường tắt để bỏ V3,
+và ⛔ **phép ghép cũng không** (§3).
 
-⛔ **Nhưng ⛔ không phải "V3 đạt".** V3 **cũng trượt** cổng (BĐG 33 % > 15 %). Kết quả
-đúng là: **⛔ chưa bên nào qua cổng**, và MetricX ⛔ không phải đường tắt để bỏ V3.
-
-**Đọc đúng:** hai thứ này ⛔ không thay thế nhau, chúng **bắt hai loại hỏng khác nhau**.
-
-| | MetricX QE @ 6,0 | V3 (tự nặn) |
+| | MetricX QE @6,0 | V3 (tự nặn) |
 |---|---|---|
-| Không dịch / dịch nhầm cả câu (`sàn`) | ✅ **99 %** | *(chưa đo trên mức này)* |
+| Không dịch / nhầm cả câu (`sàn`) | ✅ **99 %** | *(chưa đo)* |
 | Lật nghĩa · sai thực thể (`nặng`) | ⚠️ 30 % | *(chưa đo)* |
 | Nhiễu nhẹ | ⛔ 7 % | *(chưa đo)* |
-| Lỗi tự nhiên tinh vi trong bản người | ⛔ **ngang đoán mù** | ✅ 10/10 (⚠️ có thể do cùng họ) |
-| Báo động giả trên bản dịch người | ✅ **1 %** | ⛔ **33 %** |
+| Lỗi tự nhiên tinh vi (bản người) | ⛔ **ngang đoán mù** | ✅ 10/10 ⚠️ *(có thể do cùng họ — mục 🔴 (1))* |
+| Báo động giả (cách mới) | ✅ **0 %** | ⛔ **33 %** |
 
-⇒ **Đề nghị = kết cục 2 (ghép), theo đúng thứ tự chi phí:**
-**MetricX QE ở ngưỡng 6,0 lọc trước** (gần như miễn phí, 1 % báo động giả, tóm
-99 % ca thảm hoạ) **→ V3 chỉ xử phần dư.** Việc còn lại của làn V3 vì thế hẹp hơn:
-⛔ không phải "bắt mọi thứ" mà là "hạ 33 % báo động giả trên phần MetricX bỏ qua".
+🔴 **Và toàn bộ bảng này treo trên mục 🔴 (1).** Nếu chân lý nền đang đo độ giống
+nhau giữa hai LLM thì cột phải ⛔ không đọc được như năng lực.
 
-## §5. ⛔ Việc đang CHỜ chủ dự án duyệt — `sacrebleu`
+---
 
-⛔ **Chưa cài.** Xin duyệt, kèm đủ thông tin để quyết:
+## §5. ✅ `sacrebleu` — đã cài + đã khai
 
-- **Giấy phép: Apache-2.0** (`pyproject.toml`, `mjpost/sacrebleu`) — thương mại ✅, phân phối lại ✅.
-- **Phụ thuộc kéo theo:** `portalocker` · `regex` · `tabulate>=0.8.9` · `numpy>=1.17` ·
-  `colorama` · `lxml`. Trong `C:\LTTPlatform\venv` **đã có** `regex`, `numpy`, `colorama`,
-  `lxml` ⇒ thực tế chỉ thêm **`portalocker`** (BSD-3-Clause) và **`tabulate`** (MIT).
-  ⛔ Không kéo theo model, không tải gì lúc chạy cho chrF.
-- **Được gì:** chrF++ là bộ đo **ký tự**, hợp tiếng Việt hơn BLEU, rẻ (không GPU), và là
-  bản tham chiếu của cộng đồng WMT ⇒ số của ta so được với số công bố bên ngoài.
-- **Rủi ro nếu bỏ qua:** ⛔ không có — MetricX đã gánh xong phần xác thực ở §1.
-  chrF++ chỉ là **đối chứng thứ hai, độc lập** cho bảng bốn mức.
+| gói | vai | giấy phép | khai ở đâu |
+|---|---|---|---|
+| `sacrebleu==2.6.0` | chrF/chrF++/BLEU | **Apache-2.0** | `requirements-dev.txt` + `THIRD_PARTY_METRICS.md` §1 #11 |
+| `tabulate==0.10.0` | phụ thuộc | **MIT** | `requirements-dev.txt` |
+| `portalocker==2.10.1` | phụ thuộc | **BSD-3-Clause** | `requirements-dev.txt` *(đã có sẵn)* |
+| `pywin32>=306,<400` | ⚠️ phụ thuộc **của `portalocker`** | PSF-2.0 | `requirements.txt` *(đã có sẵn)* |
 
-⚠️ **Cài rồi thì PHẢI khai vào `requirements`.** Một giờ trước phiên này, production
-**sập 15 phút** vì `pywintypes` có mặt trong venv phát triển mà ⛔ không ai khai.
-⛔ Đừng dựng lại ca ấy.
+🔴 **Khai CẢ CHUỖI, không chỉ gói đầu.** `sacrebleu` → `tabulate` + `portalocker`
+→ **`pywin32`** — đúng cái gói vừa làm **sập production 15 phút** vì có mặt trong
+venv phát triển mà ⛔ không ai khai. Lượt này **không kéo thêm gói mới nào** (cả ba
+đã có trong máy), nhưng **hai dòng chưa từng được khai** (`sacrebleu`, `tabulate`)
+nay đã khai.
 
-## §6. Chạy lại
+⭐ Đã kiểm: `THIRD_PARTY_NOTICES.md` là tệp **riêng của LTT Nexus** (nghĩa vụ AGPL khi
+**phân phối**) ⇒ ⛔ không phải chỗ của một công cụ đo chỉ chạy lúc phát triển.
+Sổ đúng là `THIRD_PARTY_METRICS.md` — *"mỗi câu hỏi hỏi đúng MỘT chỗ"*.
+
+---
+
+## §6. ⛔ Đo bản dịch của ta — bench **đã sẵn**, còn **hai chặn**
+
+Lệnh `bench` đã dựng xong và **đã kiểm chạy** (chrF++ qua 3 lượt giả, xếp hạng đúng
+chiều; chặn `< 3 lượt` có hiệu lực):
 
 ```powershell
-# 1. bước TÍNH (nặng — GPU/CPU) — giữ khoá đúng lệnh tính, nhả ngay khi xong
+# chrF NHE => ⛔ khong can khoa
+python tools\bench_b2_dich_tham_chieu.py bench --dich luot1.json luot2.json luot3.json --bo-metricx
+# kem MetricX QE (NANG) => qua chay_nang.py, nha khoa ngay khi xong
+python "C:\Users\Thang Tuong\.claude\ltt\chay_nang.py" --phien do-dich -- ^
+  python tools\bench_b2_dich_tham_chieu.py bench --dich luot1.json luot2.json luot3.json
+```
+
+Bench **ép ≥ 3 lượt** và báo **trung vị + khoảng** cho **chrF++** và **MetricX QE**
+**riêng rẽ** (⛔ không gộp thành một điểm), vì **đường dịch ⛔ không tái lập được**
+(temp 0,0 + ép lược đồ + seed vẫn cho ba bản khác nhau ở **mọi** đoạn).
+
+⛔ **Hai thứ chặn, và chúng ⛔ không nằm trong tay làn này:**
+
+1. ⛔ **Ghim nhiệt độ + ép lược đồ chưa có trên nhánh này.** Đo kiểm trên cây này:
+   `long_tieng.py` ⛔ **không có** `NHIET_DO_DICH`, và lời gọi ⛔ không truyền
+   `temperature` ⇒ cổng vẫn áp **`--temp 1.0`**. Thay đổi ấy là **Task 9 của làn khác**,
+   ⛔ chưa lên `main`. Đo bây giờ trên cây này = đo **đúng cấu hình sắp biến mất**.
+2. 🔴 **Sinh bản dịch cần khoá API của sổ POOL — tức CSDL production.**
+   `ai.goi` cần một `db` có sổ khoá (`LTT_ASV_POOL_URL` trỏ **DB production**),
+   cộng `LTT_LLM_BASE_URL` + `LTT_TOKEN_ENCRYPTION_KEY` từ `secrets\app.env`, nạp
+   qua một bước **nâng quyền**. ⛔ Làn này ⛔ **không tự đụng vào dữ liệu production**
+   khi chưa được chủ dự án cho phép **rõ ràng**.
+
+⇒ ⭐ **Cần điều phối chốt hai điều:** (a) nhánh/SHA nào đã có ghim nhiệt độ để đo,
+(b) cho phép dùng sổ khoá production hay cấp một đường sinh bản dịch khác.
+Có hai thứ đó thì bench chạy **một lệnh**.
+
+⚠️ Và nhắc lại giới hạn đã đo: **FLORES có ~10 % dòng lỗi rõ** (KTC [5,5 ; 17,4])
+⇒ *"khớp FLORES"* ⛔ **không** bằng *"đúng"*.
+
+---
+
+## §7. Chạy lại
+
+```powershell
+# 1. buoc TINH (nang) — giu khoa dung lenh tinh, nha ngay khi xong
 python "C:\Users\Thang Tuong\.claude\ltt\chay_nang.py" --phien do-dich -- ^
   python -X utf8 tools\bench_b2_dich_tham_chieu.py cham-tho ^
   --n 100 --nhan <...>\b2_san_loi_flores.json --ra tho.json
 
-# 2. phân tích (nhẹ — NGOÀI khoá)
+# 2. phan tich (nhe — NGOAI khoa)
 python tools\bench_b2_dich_tham_chieu.py xac-thuc --tho tho.json
-python tools\bench_b2_dich_tham_chieu.py doi --tho tho.json --nhan <...>\b2_san_loi_flores.json
+python tools\bench_b2_dich_tham_chieu.py doi  --tho tho.json --nhan <...>\b2_san_loi_flores.json
+python tools\bench_b2_dich_tham_chieu.py ghep --tho tho.json --nhan <...>\b2_san_loi_flores.json ^
+  --v3 <...>\b2_cham_v3_tren_100_dong_soi_mu.json
 ```
 
-⚠️ `doc_flores()` và hai phép làm hỏng "nặng" nằm ở `tools/bench_b2_xac_thuc_bo_cham.py`
-(**làn khác sở hữu**, chưa lên `main`). Khi chưa có, trỏ `LTT_XAC_THUC_DIR` vào thư mục
-chứa tệp đó. ⛔ Đừng viết bộ đọc FLORES mới.
+⚠️ `doc_flores()` + hai phép làm hỏng "nặng" nằm ở `tools/bench_b2_xac_thuc_bo_cham.py`
+(**làn khác sở hữu**, chưa lên `main`) ⇒ trỏ `LTT_XAC_THUC_DIR` vào thư mục chứa nó.
+⛔ Đừng viết bộ đọc FLORES mới.
 
 Lượt đã chạy: **cuda**, bf16, lô 16 — 1 000 cặp trong **58 giây**, khoá giữ **1,0 phút**.

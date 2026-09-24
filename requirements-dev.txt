@@ -47,3 +47,19 @@ filelock==3.25.2
 portalocker==2.10.1
 pre-commit==4.5.1            # DA bat 06/09; hook co rao cho cay chua dong bo
 selenium==4.41.0
+
+    # -- Bo do dich (tools/bench_b2_dich_tham_chieu.py) ----------------------
+#
+# [!] KHAI CA CHUOI, khong chi goi dau. `sacrebleu` keo `tabulate` va
+#    `portalocker`, va `portalocker` keo `pywin32`. Ngay 24/09 production sap
+#    15 phut vi dung kieu phu thuoc AN nay: `pywintypes` co mat trong venv phat
+#    trien nen moi thu xanh, khong ai khai, va may chu khong co no.
+#    `pywin32` nay da duoc khai o `requirements.txt` (ban runtime, `>=306,<400`);
+#    `portalocker` da co o tren. Dong THEM THAT SU cua lan nay chi la hai dong
+#    duoi -- nhung ca chuoi duoc ghi ra day de lan sau khong phai do lai.
+#
+# Giay phep: sacrebleu Apache-2.0 - tabulate MIT - portalocker BSD-3-Clause.
+# Chi tiet + ly do chon chrF++ thay BLEU: docs/auto_scan_video_final/
+# THIRD_PARTY_METRICS.md §1 #11.
+sacrebleu==2.6.0             # chrF / chrF++ / BLEU; ban tham chieu WMT
+tabulate==0.10.0             # phu thuoc cua sacrebleu
