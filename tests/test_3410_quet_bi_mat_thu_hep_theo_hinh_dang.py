@@ -38,6 +38,15 @@ import pytest
 
 GOC = pathlib.Path(__file__).resolve().parents[1]
 
+#: 32 ky tu hex, GHEP LUC CHAY.
+#:
+#: 🔴 Viet thang mot chuoi 32 hex vao tep nay thi **chinh may quet bat tep
+#:    kiem cua no** — da xay ra 24/09. Do la may quet lam DUNG viec; loi
+#:    nam o du lieu thu. Ghep luc chay thi khong dong nao chua hinh dang do.
+#: ⛔ Dung them tep nay vao danh sach mien tru — do chinh la cach sua ma
+#:    ca tep nay ton tai de chan.
+HEX32 = "0123456789abcdef" * 2
+
 
 @pytest.fixture()
 def sc():
@@ -58,10 +67,10 @@ def _bat(sc, dong: str) -> bool:
 # ══════════════════════════════════════════════════════════════════════════
 
 @pytest.mark.parametrize("dong", [
-    'api_key = "deadbeefdeadbeefdeadbeefdeadbeef"',
-    'token: "0123456789abcdef0123456789abcdef"',
-    'LTT_SECRET=0123456789abcdef0123456789abcdef',
-    '  "gia_tri": "0123456789abcdef0123456789abcdef"',
+    'api_key = "' + 'deadbeef' * 4 + '"',
+    'token: "' + HEX32 + '"',
+    'LTT_SECRET=' + HEX32,
+    '  "gia_tri": "' + HEX32 + '"',
 ])
 def test_bi_mat_that_VAN_bi_bat(sc, dong):
     """⛔ Nếu bài này đỏ thì việc thu hẹp đã đi quá và máy quét hết kiểm gì."""
@@ -74,12 +83,12 @@ def test_co_CA_HAI_chu_thi_van_bat(sc):
     ⭐ Lúc đó chữ „sha" không còn nói lên được điều gì: nó có thể là tên một biến
        chứa khoá thật. Nghi ngờ thắng.
     """
-    assert _bat(sc, "api_key sha  deadbeefdeadbeefdeadbeefdeadbeef")
+    assert _bat(sc, "api_key sha  " + "deadbeef" * 4)
 
 
 def test_hex_tran_KHONG_ngu_canh_thi_bat(sc):
     """Ba hình dạng được thả đều đòi NGỮ CẢNH. Một chuỗi hex trần vẫn bị bắt."""
-    assert _bat(sc, "    0123456789abcdef0123456789abcdef")
+    assert _bat(sc, "    " + HEX32)
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -129,5 +138,5 @@ def test_moi_hinh_dang_tha_deu_doi_NGU_CANH(sc):
     ⛔ Một mẫu như vậy sẽ thả **mọi** chuỗi hex, tức tắt hẳn luật.
     """
     for mau in sc.KHONG_PHAI_BI_MAT:
-        assert not mau.fullmatch("0123456789abcdef0123456789abcdef"), (
+        assert not mau.fullmatch(HEX32), (
             f"mau nay tha MOI chuoi hex: {mau.pattern}")

@@ -766,9 +766,13 @@ async def queue(request: Request, csrf_token: str = Form(...),
             return _fail("File video rỗng.")
         if len(vdata) > min(_LOCAL_VIDEO_MAX, CLOUDFLARE_BODY_LIMIT):
             return _fail("Video >90MB phải dùng upload thẳng (R2). Bật R2 hoặc chọn file nhỏ hơn.")
+        # ⚠️ `UploadFile.filename` la `str | None`: mot phan multipart KHONG co
+        #    `filename` thi no la `None`, va `"." in None` nem `TypeError` ngay
+        #    tren duong khach tai len.
+        ten_tep = video.filename or ""
         ext = ""
-        if "." in video.filename:
-            ext = "." + video.filename.rsplit(".", 1)[1].lower()[:5]
+        if "." in ten_tep:
+            ext = "." + ten_tep.rsplit(".", 1)[1].lower()[:5]
         vkey = f"autosubvideo/{u.id}/uploads/{uuid.uuid4().hex}{ext}"
         import io as _io
         storage.put(vkey, _io.BytesIO(vdata),

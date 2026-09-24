@@ -134,17 +134,21 @@ def doc_khung(video: str, *, fps: float, bat: float = 0.0, ket=None, cat=None):
         lenh += ["-t", str(float(ket) - float(bat or 0))]
     lenh += ["-an", "-vf", ",".join(loc), "-f", "rawvideo", "-pix_fmt", "bgr24", "-"]
     p = subprocess.Popen(lenh, stdout=subprocess.PIPE)
+    ong = p.stdout
+    if ong is None:                 # khong xay ra voi `stdout=PIPE` — nhung mot
+        p.wait()                    # `None` truot xuong duoi thanh AttributeError
+        raise RuntimeError("ffmpeg: khong mo duoc duong ong stdout")
     co = w * h * 3
     i = 0
     try:
         while True:
-            buf = p.stdout.read(co)
+            buf = ong.read(co)
             if len(buf) < co:
                 break
             yield float(bat or 0) + i / float(fps), np.frombuffer(buf, np.uint8).reshape(h, w, 3)
             i += 1
     finally:
-        p.stdout.close()
+        ong.close()
         p.wait()
 
 
