@@ -2073,7 +2073,14 @@ def main() -> int:
             print("        Chua co L3 nao: chay `python tools/gate.py` MOT lan"
                   " khi moi pha xong.")
     else:
-        print("RESULT:", ket)
+        print(dong_ket_qua_ha_cap(ket, ha_cap_tu=ha_cap_tu))
+        if ha_cap_tu and not failed:
+            # ⛔ Khong de mot chu PASS dung mot minh o cuoi man hinh: ly do ha
+            #    cap phai nam NGAY duoi no, khong phai o dau dau ra (noi
+            #    `| tail` cat mat — dung cach toi tu che mat no 24/09).
+            print(f"        Ly do: {ly_do_ha_cap or '(khong ghi)'}")
+            print("        Bo test day du CHUA chay. Doc `.gate/<id>.json`:"
+                  " `ho_so` phai la `day-du` moi la phan quyet du.")
 
     # 🔴 DO THI IN SAN DUONG DI TIEP — xem khoi "NHIP MOT L3" o cuoi tep.
     #    Nguoi vua thay mot dong FAIL se lam thu de nhat trong tam tay; neu thu do
@@ -2363,6 +2370,30 @@ def tu_choi_vi_chua_do_duoc(ho_so: str, ly_do: str) -> str:
         "  python tools/gate.py --pham-vi <tp>[,<tp>...]            (L2 theo thanh phan)",
         "=" * 62,
     ])
+
+
+def dong_ket_qua_ha_cap(ket: str, *, ha_cap_tu: str) -> str:
+    """Dong `RESULT` cua mot luot BI HA CAP — phai TRONG KHAC luot day du.
+
+    🔴 SU CO 24/09: gate in `RESULT: PASS` va bo test KHONG HE CHAY. Luot
+       `--doi` khong thu hep duoc nen ha cap xuong `nhanh`; canh bao co in ra,
+       nhung DONG CUOI CUNG trong y het mot luot day du. Nguoi doc lay dong
+       cuoi lam phan quyet — va suyt deploy 20 phep do len production duoi danh
+       nghia "gate xanh". Chi so `.gate/*.json` (`ho_so: nhanh`) moi noi ra.
+
+    ⛔ Day la LAN THU TU cua cung mot luat da ap cho `--quick`, `--vong-lap`,
+       `--ho-so pham-vi`: **mot che do chay it hon thi dong ket qua cua no PHAI
+       trong khac.** No lot vi sau khi ha cap, `ho_so` thanh `"nhanh"` nen
+       khong con khop nhanh `("pham-vi", "doi")`.
+
+    ⭐ Va no NGUY HON ba ca kia o mot diem: ba co kia do NGUOI GO, nen nguoi go
+       biet minh dang chay it hon. Ha cap thi GATE TU QUYET — nguoi chay khong
+       he xin, va khong co gi trong lenh ho vua go nhac ho dieu do.
+    """
+    if not ha_cap_tu:
+        return f"RESULT: {ket}"
+    return (f"RESULT: {ket}  [HA CAP tu `--{ha_cap_tu}` xuong `nhanh`"
+            f" - BO TEST KHONG CHAY]")
 
 
 def canh_bao_khong_phu_bo_test(ho_so: str) -> str:

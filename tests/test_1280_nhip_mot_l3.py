@@ -222,6 +222,33 @@ def test_khong_thu_hep_duoc_thi_HA_CAP_chu_khong_nang_cap():
     assert all(ord(c) < 128 for c in van), "dong in ra phai ASCII (cp1252)"
 
 
+def test_dong_RESULT_cua_luot_HA_CAP_phai_TU_KHAI():
+    """🔴 SỰ CỐ 24/09: gate in `RESULT: PASS`, và bộ test **không hề chạy**.
+
+    Lượt `--doi` không thu hẹp được ⇒ hạ cấp xuống `nhanh`. Cảnh báo có in ra,
+    nhưng **dòng RESULT cuối cùng trông y hệt một lượt đầy đủ**. Người đọc lấy
+    dòng cuối làm phán quyết — tôi cũng thế, và suýt deploy 20 phép đỏ lên
+    production dưới danh nghĩa "gate xanh". Chỉ sổ `.gate/*.json` (`ho_so:
+    nhanh`) mới nói ra sự thật.
+
+    ⛔ Cùng luật đã áp cho `--quick`, `--vong-lap`, `--ho-so pham-vi`: **một chế
+       độ chạy ít hơn thì dòng kết quả của nó PHẢI trông khác.** Ca hạ cấp là
+       lần thứ TƯ của cùng luật ấy, và nó lọt vì sau khi hạ cấp `ho_so` thành
+       `"nhanh"` nên không còn khớp nhánh `("pham-vi", "doi")`.
+
+    ⭐ Nguy hơn ba ca kia ở một điểm: ba cờ kia do người gõ, nên người gõ BIẾT
+       mình chạy ít hơn. Hạ cấp thì **gate tự quyết**, người chạy không hề xin.
+    """
+    dong = gate.dong_ket_qua_ha_cap("PASS", ha_cap_tu="doi")
+    assert "PASS" in dong
+    assert "HA CAP" in dong, "dong ket qua phai noi ra viec ha cap"
+    assert "BO TEST KHONG CHAY" in dong, "phai noi dung thu bi bo"
+    assert all(ord(c) < 128 for c in dong), "dong in ra phai ASCII (cp1252)"
+    # 🔑 Đối chứng: lượt KHÔNG hạ cấp phải trả về dòng thường, nếu không thì
+    #    khẳng định trên xanh cho mọi lượt và bài này không phân biệt được gì.
+    assert gate.dong_ket_qua_ha_cap("PASS", ha_cap_tu="") == "RESULT: PASS"
+
+
 def test_diff_RONG_thi_TU_CHOI_chu_khong_ha_cap(monkeypatch):
     """🔴 HỒI QUY 24/09 (phiên ASV đo được): bản vá hạ cấp gộp BA ca `return None`
     làm một, trong đó hai ca **không phải** vấn đề phạm vi:
