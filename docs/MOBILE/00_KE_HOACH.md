@@ -212,8 +212,8 @@ tuyệt đối không gọi là full PASS.
 
 ## 3. KỶ LUẬT LỆNH NẶNG (5 phiên đang chạy — 10 lõi vật lý)
 
-Trước **mọi** lệnh nặng (`gate.py` mọi chế độ, `test_nhanh.py`, ≥3 tệp test,
-`build_system_profile.py`):
+Trước **mọi** lệnh nặng (lệnh nào là nặng: `docs/QUY_TAC_CHAY_LENH_NANG.md` §1 —
+⛔ đừng kê lại danh sách ở đây):
 
 ```
 python tools\cua_so_yen.py trang-thai

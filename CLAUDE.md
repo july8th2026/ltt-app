@@ -59,9 +59,11 @@ docs/00_LTT_OPERATING_CONTRACT.md      ← đọc trước việc thực chất
    tiếp (đo thật, E2E) thì L1/L2 xanh → gộp `main` → deploy → báo, rồi làm tiếp — không dừng.
    Chỉ dừng khi: gate đỏ · thao tác không đảo được · thay đổi không rõ của ai · rủi ro
    bảo mật (hợp đồng §10, §10b).
-3. **Kiểm CPU trước lệnh nặng** (gate mọi chế độ, `test_nhanh.py`, ≥ 3 tệp test):
-   `python tools\cua_so_yen.py trang-thai` (có người giữ khoá → chờ) +
-   `python tools\tai_may.py` (`QUÁ TẢI` → chờ). pytest gõ tay `-n` tối đa 7 (chủ dự án đổi 6 → 7, 23/09). Hợp đồng §4.8.
+3. **Kiểm CPU trước lệnh nặng**: `python tools\cua_so_yen.py trang-thai` (có người
+   giữ khoá → chờ) + `python tools\tai_may.py` (`QUÁ TẢI` → chờ).
+   ⛔ **Lệnh nào là "nặng" thì hỏi `docs/QUY_TAC_CHAY_LENH_NANG.md` §1** — chỉ nơi
+   đó định nghĩa (phân loại theo **khả năng đốt CPU**, không theo số tệp test).
+   Trần `-n` là `gate.TRAN_N_GO_TAY` — đọc hằng số, ⛔ đừng gõ lại số.
 4. **Dòng `??` lạ trong `git status` là một PHIÊN KHÁC**, không phải rác. Không
    `stash`, `reset`, `checkout --`. `git add` tường minh từng tệp.
 5. **Deploy xuất HEAD cây chính** (`git archive` — mọi commit trên `main` của mọi phiên)

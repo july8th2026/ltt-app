@@ -5,8 +5,10 @@
 ## Luật (một nguồn mỗi luật — đọc, đừng chép)
 
 - Quy tắc agent + máy: `C:\Users\Thang Tuong\.claude\ltt\QUY_TAC_AGENT_VA_TOKEN.md` mục B + C.
-  Máy A là **production**. Lệnh nặng (≥ 3 tệp test, build, tải model lớn, benchmark GPU) qua
-  `python "C:\Users\Thang Tuong\.claude\ltt\chay_nang.py" --phien <làn> -- <lệnh>`. `-n` ≤ 6.
+  Máy A là **production**. Lệnh nặng đi qua
+  `python "C:\Users\Thang Tuong\.claude\ltt\chay_nang.py" --phien <làn> -- <lệnh>`.
+  ⛔ **Lệnh nào là nặng, và trần `-n` bao nhiêu**: `docs/QUY_TAC_CHAY_LENH_NANG.md`
+  §1 và §4 (`gate.TRAN_N_GO_TAY`) — đừng gõ lại con số ở đây.
 - Luật chết người của kho: `CLAUDE.md` + `AGENTS.md` ở gốc cây của bạn (CRLF/LF không lật,
   không BOM, `.ps1` thuần ASCII, không Python inline qua PowerShell).
 - ⛔ Không deploy. Không sửa `C:\LTTPlatform\app\`. Không đụng `D:\LTTSTUDIOSAPP` (cây chính)
