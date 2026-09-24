@@ -664,3 +664,33 @@ def test_tai_lieu_cay_rieng_khong_tro_toi_tep_khong_ton_tai():
     assert not thieu, (
         f"cay_rieng.py tro toi tools/{{{', '.join(sorted(thieu))}}} "
         "nhung tep do khong ton tai")
+
+
+def test_moi_tep_workflow_deu_CO_CHU_trong_thanh_phan_toml():
+    """🔴 Danh sach go tay thi MUC — va no da muc trong vai gio (24/09).
+
+    Sang 24/09 toi khai `platform_core/workflow/` thanh hai thanh phan bang
+    cach **liet ke tung tep**. Chieu cung ngay P2 de `goi_y.py`, va no thanh
+    *duong khong ai so huu* => `--doi`/`--pham-vi` lai FAIL OPEN va doi
+    "chay TAT CA" — dung benh ma viec khai nay sinh ra de chua.
+
+    ⛔ Phep do dau cua toi con te hon: no hoi chuoi `platform_core/workflow/`
+       co trong toml khong — chuoi do nam trong MOI dong khai, nen phep kiem
+       LUON dung va bao `[]`. Mot phep do rong.
+
+    ⭐ Dung `thanh_phan_cua` chu khong `bi_anh_huong`: `bi_anh_huong` tra None
+       cho NHIEU ly do khac loai ("khong ai so huu", "cham tep dung chung"),
+       nen no khong tra loi dung cau hoi o day. `thanh_phan_cua` hoi dung mot
+       menh de: tep nay ai so huu.
+    """
+    thu_muc = GOC / "platform_core" / "workflow"
+    tep = [p for p in sorted(thu_muc.rglob("*.py")) if p.name != "__init__.py"]
+    bang = tp.cac_thanh_phan(GOC)
+    mo_coi = [p.relative_to(GOC).as_posix() for p in tep
+              if tp.thanh_phan_cua(p.relative_to(GOC).as_posix(), bang) is None]
+    assert not mo_coi, (
+        f"tep workflow khong ai so huu: {mo_coi}. Them vao `core:wf_dong_co` "
+        f"hoac `core:wf_soan` trong tools/thanh_phan.toml — neu khong, MOI luot "
+        f"gate cham toi chung se bi day len chay TAT CA.")
+    # 🔑 Doi chung: duong dan sai thi `tep` rong va khang dinh tren xanh rong.
+    assert len(tep) >= 20, f"chi thay {len(tep)} tep workflow - pham vi sai?"
