@@ -428,3 +428,99 @@ chứa **13 dòng chữ UI game**, không phải lời thoại.
 Mỗi lần trích 0,9730, phải trích kèm câu này. Và v3 cũng là phim có **p95 lệch
 mốc OCR cao nhất** (tới 0,65 s ở 4 fps) ⇒ nó là phim **gần điểm gãy ≈ 12 % nhất**
 trong ba phim. Hai yếu tố đó cộng dồn trên **cùng một phim**.
+
+---
+
+# 14. 🔴 ĐƠN VỊ CỦA TẪT CẢ CÁC BẢNG BÁO ĐỘNG GIẢ — ⛔ ĐỬhNG ĐẶT CẠNH NHAU
+
+🔴 **BÁO ĐỘNG GIẢ ĐO BẰNG HAI CÁCH KHÁC NHAU LÀ HAI ĐƠN VỊ KHÁC NHAU.**
+
+| | **cách CŨ** | **cách MỚI** |
+|---|---|---|
+| giả định | *"FLORES luôn đúng"* ⇒ **mọi** lần gắn cờ = một báo động giả | đối chiếu **người soi mù**; lỗi thật = gắn cờ **ĐÚNG** |
+| mang sẵn | **sàn lỗi FLORES (10–23 %)** bên trong con số | ⛔ không |
+| trần của bộ chấm hoàn hảo | **10 % / 12 % / 23 %** | **0 %** |
+| bảng thuộc cách này | `V1 43,3 % · V2 16,7 % · V3 23,3 %` (dải giữ riêng, n = 30) | `V3 33 %` (soi mù, n = 100) |
+
+> ⛔ **Đặt hai bảng ấy cạnh nhau là lặp lại đúng lỗi *"hai con số từ hai tập
+> khác nhau"* — lần này ở cấp ĐỊNH NGHĨA CỦA CHÍNH PHÉP ĐO**, chứ ⛔ không phải
+> ở cấp mẫu.
+
+⭐ **Và đây là câu phải giữ nguyên văn:**
+
+> ⭐ **Chuyển sang đối chiếu người soi mù ⛔ không phải một cải tiến cho đẹp —
+> nó là ĐIỀU KIỆN ĐỂ CỔNG CÓ NGHĨA.**
+
+⚠️ **Vị trí bảng gốc:** các bảng `V1/V2/V3` nằm trong
+`docs/auto_scan_video_final/B2_XAC_THUC_BO_CHAM.md`, thuộc làn
+`phien/asvf-xac-thuc` và **chưa có trên `main`** ⇒ làn này ⛔ **không sửa được**.
+⇒ Đánh dấu đơn vị **ngay trên mỗi bảng ấy** là việc của làn sở hữu — điều phối
+chuyển giúp. Mục này là **nguồn chân lý** cho việc đánh dấu đó.
+
+---
+
+# 15. 🔴 QUÉT TIẾP: `tools/cham_doi_chung.py` — MỘT LỖ THẬT
+
+Cổng lớp 1 của bộ chấm ảnh: 44 cặp (gốc vs bản suy giảm), người chấm chọn bên
+đẹp hơn. `DAT_TOI_THIEU = 0,90` tổng · `SAN_TUNG_KIEU = 0,80` mỗi trục.
+
+Chân lý nền **chính xác theo kiến tạo** (suy giảm là hàm một chiều) ⇒ trần = 1,00.
+Nhưng luật §8 còn một vế nữa: **sàn may rủi**. Trả lời **hằng số** (luôn chọn A)
+được bao nhiêu?
+
+| trục | n | A | B | **hằng số tốt nhất** | vượt sàn 0,80? |
+|---|---|---|---|---|---|
+| compression | 20 | 10 | 10 | 50,0 % | ⛔ không |
+| blur | 8 | 5 | 3 | 62,5 % | ⛔ không |
+| noise | 8 | 5 | 3 | 62,5 % | ⛔ không |
+| **bicubic** | **8** | **7** | **1** | 🔴 **87,5 %** | 🔴 **CÓ — LỌT** |
+| **tổng** | 44 | 27 | 17 | 61,4 % | (ngưỡng tổng 0,90 ⇒ ⛔ không lọt) |
+
+## 15.1 🔴 Phát hiện
+
+> Trên trục **`bicubic`**, một người chấm **⛔ không hề nhìn ảnh**, chỉ luôn trả
+> lời *"A"*, ghi **87,5 %** và **đạt** `SAN_TUNG_KIEU = 0,80`.
+
+⚠️ Docstring khai *"Đoán hú hoạ cho ~50 %"*. Đúng cho **tổng** (61,4 %, lệch khỏi
+50/50 ⛔ không có ý nghĩa thống kê, binom `p = 0,17`), nhưng **sai cho từng trục**.
+
+🔴 **Và nó ⛔ KHÔNG phải may rủi của một lượt.** `BI_MAT` là **hằng số**, `ma`
+(`dc-001`…) và `dataset_sample_id` **tất định** ⇒ khoá trả lời là **cố định**. Chạy
+lại ba lần: **7/1 cả ba lần**. Mỗi lượt chấm đều đối mặt **đúng** sàn 87,5 % ấy.
+
+## 15.2 Phạm vi — ⛔ đừng đọc quá lên
+
+✅ **Cổng TỔNG vẫn đứng**: 61,4 % < 90 % ⇒ người chấm hằng số vẫn **trượt** toàn cục.
+🔴 **Cái hỏng là bảo đảm THEO TRỤC**, mà `SAN_TUNG_KIEU` sinh ra **chính xác để** chặn
+*"một trục yếu nấp sau con số tổng"* (docstring của nó nói vậy). Trên `bicubic`,
+bảo đảm ấy **vô hiệu**: nó ⛔ không phân biệt được *"chấm đúng"* với *"đoán bừa"*.
+
+⚠️ ⛔ Điều này ⛔ **không** nói điểm `bicubic` đã có là sai. Nó nói một điểm
+`bicubic` ≥ 0,80 là **bằng chứng YẾU**, vì đoán bừa cũng đạt được.
+
+## 15.3 Thuốc (rẻ) — ⛔ làn này KHÔNG tự sửa
+
+`tools/cham_doi_chung.py` ⛔ không thuộc làn này. Đề xuất, để điều phối giao:
+
+1. **Cân khoá theo từng trục** — ép mỗi trục có số A/B bằng nhau (`bicubic` 4/4)
+   thay vì để HMAC tự rơi. Giữ được tính mù (người chấm vẫn ⛔ không biết bên nào).
+2. Hoặc **tăng số cặp** mỗi trục yếu (8 → 20 như `compression`).
+3. Và **ghi sàn may rủi thực đo cạnh mỗi ngưỡng** — ⛔ đừng để *"~50 %"* trong
+   lời khi khoá thật cho 87,5 %.
+
+## 15.4 Các cổng còn lại đã xem
+
+| cổng | loại | phán quyết |
+|---|---|---|
+| `cong_chat_luong_voice.py` (`3σ` + `SAN_DUNG_SAI`) | **so với baseline** ⇒ luật **ÁP** | ⚠️ **chưa đo được** — cần lặp lại nhiều lượt trên máy rảnh (GPU) ⇒ ⛔ không làm trong làn này; **khai là chưa làm** |
+| `canh_bao_ttft_b.py` (`NGUONG_P95_AM_S`…) | **ràng buộc** (độ trễ ≤ ngưỡng) | ✅ luật ⛔ **không áp** — ⛔ không có chân lý nền để nhiễu |
+| `gate.py` `TRAN_N_GO_TAY` · `tai_may.py` ngưỡng RAM | **ràng buộc** tài nguyên | ✅ luật ⛔ không áp |
+| `bradley_terry.py` `NGUONG_HOI_TU` | **tiêu chí số học**, ⛔ không phải cổng chất lượng | ✅ luật ⛔ không áp |
+
+⭐ **Quy tắc phân loại** (dùng lại được cho cổng mới bất kỳ):
+
+```
+cổng đối chiếu với MỘT PHÉP ĐO KHÁC   ->  luật §8 ÁP: phải đo TRẦN
+cổng so với MỘT CON SỐ CỐ ĐỊNH (ràng buộc) ->  luật §8 ⛔ KHÔNG ÁP (trần = 1,00)
+cổng có LỰA CHỌN RờI RẠC (A/B, đạt/trượt)  ->  phải đo thêm SÀN MAY RỦI
+```
