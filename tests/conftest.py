@@ -72,6 +72,31 @@ _NGUONG_TEP_NANG = 20
 _KHOA_PHIEN = None
 
 
+def pytest_sessionstart(session):
+    """Tao CSDL scratch RIENG cua lan nay (Task 0 / N-10).
+
+    🔴 **`Base.metadata.create_all()` tao BANG, khong tao CSDL.** Thieu buoc nay thi
+       moi bai PG chet `psycopg.OperationalError: database "..." does not exist` (do
+       that 24/09 tren `tests/test_2080_asv_cache_lease.py`).
+
+    ⛔ **Phai la `pytest_sessionstart`, KHONG phai `pytest_collection_modifyitems`.**
+       Ban dau toi dat khoi nay trong `pytest_collection_modifyitems` — ham do
+       `return` som khi so tep thu duoc duoi `_NGUONG_TEP_NANG`, nen chay MOT tep
+       (dung cach do bai PG) bo qua no hoan toan, va CSDL khong bao gio duoc tao.
+       Trieu chung y het nhu chua sua gi.
+
+    ⛔ Boc `try` rong va im lang: may phat trien khong co PostgreSQL van phai chay
+       duoc bo test (cac bai PG tu `skip` qua `skip_without_postgres`).
+    """
+    try:
+        from tests import pg_scratch
+        u = pg_scratch.scratch_url()
+        if u:
+            pg_scratch.bao_dam_csdl(u)
+    except Exception as e:  # noqa: BLE001
+        print(f"  [pg scratch] khong tao duoc CSDL rieng: {type(e).__name__}: {e}")
+
+
 def pytest_collection_modifyitems(session, config, items):
     """🔴 Lo CUOI CUNG cua khoa: `pytest` go tay hoan toan VO HINH.
 
@@ -106,6 +131,24 @@ def pytest_collection_modifyitems(session, config, items):
         _KHOA_PHIEN = CuaSoYen(
             os.environ.get("LTT_PHIEN") or f"pytest:{os.getpid()}",
             "pytest go tay", cho_toi_da_s=900.0,
+            # ⛔ KHONG con `postgres_test` (Task 0 / N-10, 24/09).
+            #
+            # 🔴 Khoa do khong bao ve mot tai nguyen doc quyen — no bao ve **mot
+            #    cai ten**: moi lan dung chung `lttplatform_test`, va
+            #    `test_423.moi_truong` goi `drop_all` tren no. Nay
+            #    `pg_scratch.scratch_url` cho moi lan mot ten rieng
+            #    (`lttplatform_test_<lan>`), nen khong con gi de tranh.
+            #
+            # ⛔ Do 24/09: mot lan giu khoa nay **78 phut** va mot lan phien khac
+            #    xep hang sau no — cho mot thu **le ra khong chan ai**.
+            #
+            # ⚠️ `cpu_nhieu` thi GIU: no chia **suc tinh**, va suc tinh khong nhan
+            #    ban duoc. Dung gop hai loai khoa lam mot.
+            # ⚠️ `postgres_test` GIU LAI — Task 0 (N-10) chan o QUYEN, khong o ma:
+            #    vai `ltt_app` co `rolcreatedb = False`, nen CSDL rieng moi lan khong
+            #    tu sinh ra duoc (do 24/09). Bo khoa nay TRUOC khi co CSDL rieng la
+            #    mo duong cho hai lan `drop_all` de len nhau.
+            # ⇒ Go dong nay ngay khi `LTT_PG_SCRATCH_THEO_LAN` thanh mac dinh.
             tai_nguyen=("cpu_nhieu", "postgres_test"))
         _KHOA_PHIEN.__enter__()
     except Exception as e:  # noqa: BLE001
