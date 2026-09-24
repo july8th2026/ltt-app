@@ -33,15 +33,23 @@ CONG_RDP = 3389
 CHO_GIAY = 6
 
 
-def _cong_mo(ip: str, cong: int, cho: float = CHO_GIAY) -> bool:
-    """Ket noi TCP that. `True` = bat tay duoc; timeout/refused = dong."""
+def _cong_mo(ip: str, cong: int, cho: float = CHO_GIAY) -> tuple[bool, str]:
+    """Ket noi TCP that. Tra `(mo, vi_sao)`.
+
+    ⛔ Khong nuot `OSError` lang le: o day "khong ket noi duoc" LA ket qua can
+       do, nhung **ly do** phan biet hai the gioi khac han — `TimeoutError`
+       nghia la goi tin bi DROP (co luat chan, dung y muon), con
+       `ConnectionRefusedError` nghia la goi tin toi noi va **khong ai nghe**
+       (khong co luat chan; dich vu chi tinh co khong chay). Vut ly do di la
+       bien mot phep kiem an ninh thanh mot phep kiem may rui.
+    """
     s = socket.socket()
     s.settimeout(cho)
     try:
         s.connect((ip, cong))
-        return True
-    except OSError:
-        return False
+        return True, "bat tay duoc"
+    except OSError as exc:
+        return False, type(exc).__name__
     finally:
         s.close()
 
@@ -123,12 +131,13 @@ def main(argv=None) -> int:
 
     print("\n== 1. Cong 22 tren tung dia chi (do TU BEN NGOAI) ==")
     for ip in da_ban + duoc_giu:
-        mo = _cong_mo(ip, CONG_QUAN_TRI)
-        print(f"  {ip:18s} 22 {'MO  <-- LO CONG QUAN TRI' if mo else 'dong'}")
+        mo, vi_sao = _cong_mo(ip, CONG_QUAN_TRI)
+        print(f"  {ip:18s} 22 {'MO  <-- LO CONG QUAN TRI' if mo else f'dong ({vi_sao})'}")
         if mo:
             loi.append(f"cong 22 MO tren {ip} — cong quan tri lo ra dia chi khong phai cua no")
-    mo_qt = _cong_mo(ip_quan_tri, CONG_QUAN_TRI)
-    print(f"  {ip_quan_tri:18s} 22 {'mo (dung)' if mo_qt else 'DONG <-- mat duong quan tri'}")
+    mo_qt, vi_sao_qt = _cong_mo(ip_quan_tri, CONG_QUAN_TRI)
+    print(f"  {ip_quan_tri:18s} 22 "
+          f"{'mo (dung)' if mo_qt else f'DONG <-- mat duong quan tri ({vi_sao_qt})'}")
     if not mo_qt:
         loi.append(f"cong 22 DONG tren chinh IP quan tri {ip_quan_tri} — khong con duong vao")
 
@@ -141,9 +150,10 @@ def main(argv=None) -> int:
 
     print("\n== 3. RDP van thong toi may khach ==")
     for ip in da_ban:
-        mo = _cong_mo(ip, CONG_RDP)
+        mo, vi_sao = _cong_mo(ip, CONG_RDP)
         # Chua cai Windows thi 3389 dong la DUNG — nen day la thong tin, khong phai loi.
-        print(f"  {ip:18s} 3389 {'mo' if mo else 'dong (dung neu Windows chua cai)'}")
+        print(f"  {ip:18s} 3389 "
+              f"{'mo' if mo else f'dong ({vi_sao}) — dung neu Windows chua cai'}")
 
     print()
     if loi:

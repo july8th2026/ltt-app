@@ -121,6 +121,55 @@ def chi_so_chua_xong(db, vong: ForeachVong) -> list[int]:
         .order_by(ForeachMuc.chi_so)).scalars())
 
 
+def muc_chua_xong(db, vong: ForeachVong, *, sau_chi_so: int = -1,
+                  gioi_han: int = 16) -> list[tuple[int, Any]]:
+    """`[(chi_so, dau_vao)]` của những phần tử **CHƯA XONG**, đi bằng KEYSET.
+
+    🔴 VÌ SAO HÀM NÀY TỒN TẠI — một con số, không phải một sở thích
+
+    Làn p3b đo trên PostgreSQL thật
+    (`docs/superpowers/reports/p3b-do-tai/report.md`): bộ lái vòng lặp tải
+    **toàn bảng** `foreach_muc` mỗi tick rồi bỏ `xong` bằng Python, nên tổng
+    công là **`N²/P`** — dự đoán 125 000 hàng cho `N=1000, P=8`, đo được
+    **127 000** và **31,67 giây** bookkeeping thuần cho MỘT run.
+
+    ⭐ Và đây là chỗ dễ đo nhầm nhất: số **câu SQL** mỗi tick gần như KHÔNG đổi
+       theo N (226 → 409 qua cả ba mức). Một phép kiểm đếm câu sẽ báo "không có
+       vấn đề". Thứ suy biến là số **HÀNG** nạp.
+
+    ⛔ `sau_chi_so` là KEYSET (`chi_so > :sau`), không phải `OFFSET`: `OFFSET k`
+       vẫn bắt CSDL đi qua k hàng đầu, nên nó chỉ dời chỗ của chính `O(N²)` chứ
+       không xoá nó. Chỉ số bộ phận `ix_foreach_muc_chua_xong` phục vụ đúng
+       hình dạng `WHERE vong_id = … AND xong = false ORDER BY chi_so`.
+
+    ⚠️ Trả **tuple thuần**, không trả đối tượng ORM, và đó là chủ ý:
+       `ghi_ket_qua()` gọi `db.expire_all()` (nó phải, xem docstring ở đó), nên
+       một hàng ORM cầm sẵn sẽ **nạp lại một câu SQL cho mỗi lần đọc thuộc
+       tính** sau đó — đúng thứ hàm này sinh ra để bỏ.
+    """
+    hang = db.execute(
+        select(ForeachMuc.chi_so, ForeachMuc.dau_vao)
+        .where(ForeachMuc.vong_id == vong.id,
+               ForeachMuc.xong.is_(False),
+               ForeachMuc.chi_so > int(sau_chi_so))
+        .order_by(ForeachMuc.chi_so)
+        .limit(max(1, int(gioi_han)))).all()
+    return [(int(i), (dv or {}).get("v")) for i, dv in hang]
+
+
+def ket_qua_theo_chi_so(db, vong: ForeachVong) -> list[tuple[int, dict]]:
+    """`[(chi_so, ket_qua)]` của MỌI phần tử, theo thứ tự đầu vào.
+
+    ⚠️ Đây là phép đọc `O(N)` **một lần**, ở cuối vòng lặp — chỗ duy nhất thật
+       sự cần cả bảng (gom `results` + `errors`). Nó khác hẳn một phép đọc
+       `O(N)` **mỗi tick**, và tách hai vai đó ra là toàn bộ bản sửa.
+    """
+    return [(int(i), dict(kq or {})) for i, kq in db.execute(
+        select(ForeachMuc.chi_so, ForeachMuc.ket_qua)
+        .where(ForeachMuc.vong_id == vong.id)
+        .order_by(ForeachMuc.chi_so)).all()]
+
+
 def so_luot_chay(db, vong: ForeachVong) -> int:
     return len(db.query(ForeachMuc).filter_by(vong_id=vong.id,
                                               xong=True).all())

@@ -90,3 +90,14 @@ moto[s3]>=5.0,<6.0
 #     kien de parity con DO DUOC; mot ban thay the 'tuong duong' o day la mot
 #     thay doi hanh vi khong ai ky ten.
 rapidfuzz>=3.9,<4.0
+
+# Lich cron cua `trigger.cron` (plan wf-v2 P4 T7, spec Sec8.2).
+#
+# [*] cronsim, KHONG croniter -- va day la mot doi y so voi spec Sec8.2, co ly do
+#    tra duoc: `pallets-eco/croniter#258` (MO, 08/2026) -- *"get_next skips a
+#    fire time when the DST shift is not a whole hour; get_prev and match
+#    disagree"* -- va `#259`. cronsim (BSD-3-Clause, cuu508, dung trong
+#    Healthchecks) bam theo cron cua Debian, KE CA cach no xu ly DST, va co
+#    `reverse=True` -- thu ta CAN de tim moc lich BI LO gan nhat khi may vua bat
+#    lai (n8n#34628 "Missed schedule trigger can cause unexpectedly long delays").
+cronsim>=2.7,<3.0

@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 from typing import Optional, Sequence
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from platform_core.models import Wakeup
 
@@ -113,6 +114,31 @@ def hen(db, *, run_id: str, kind: str, due_at: datetime,
     db.add(w)
     db.flush()
     return w
+
+
+def hen_luy_dang(db, *, run_id: str, kind: str, due_at: datetime,
+                 node_run_id: str = "") -> Optional[Wakeup]:
+    """`hen()` nhưng nuốt ĐÚNG một lỗi: trùng `uq_wakeup_khu_trung`.
+
+    ⭐ Vì sao cần bản này bên cạnh `hen()`: `hen()` để ràng buộc NỔI LÊN, và
+       điều đó đúng cho bên gọi đang ở trong một transaction mà một wakeup
+       trùng là bất thường. Nhưng bên gọi của `noi_lai` thì ngược lại — tín
+       hiệu tới hai lần (webhook gửi lại, hai worker cùng thấy) là ca BÌNH
+       THƯỜNG, và để nó ném sẽ cuộn mất cả lần đóng waitpoint.
+
+    ⚠️ `begin_nested()` chứ không `try` trần: sau khi một câu lệnh vỡ,
+       transaction PostgreSQL ở trạng thái abort và mọi câu sau đều hỏng cho
+       tới khi cuộn về một savepoint (cùng bài học `tao_run.danh_thuc_dong_co`).
+
+    ⛔ Bắt HẸP: chỉ `IntegrityError`. Mất kết nối, khoá ngoại thiếu, lỗi
+       serialization vẫn phải nổ.
+    """
+    try:
+        with db.begin_nested():
+            return hen(db, run_id=run_id, kind=kind, due_at=due_at,
+                       node_run_id=node_run_id)
+    except IntegrityError:
+        return None
 
 
 def den_han(db, gioi_han: int = 200) -> list[Wakeup]:

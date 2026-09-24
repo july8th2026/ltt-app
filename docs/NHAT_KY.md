@@ -96,6 +96,85 @@ rõ. Đã viết vào `dieu_khoan.py` mục 1 + bản EN.
   deploy khởi động, nên bản xuất lấy commit mới. Lần này thoát vì delta chỉ là
   79 dòng nhật ký. Đường deploy nên nhận `--sha` tường minh.
 
+## 2026-09-24 (chiều) — 102 GB điểm khôi phục, và `stable` 0.2.14 tới tay khách
+
+Tiếp phiên sáng. Chủ dự án chuẩn bị dùng LTTCODE vận hành việc thật; dọn dữ liệu phiên cũ thì
+phát hiện **`dsh-checkpoint-rewind` = 102 GB** cho **5 điểm khôi phục của MỘT kho**.
+
+### ⭐ Vì sao 102 GB — năm nguyên nhân chồng lên nhau
+
+| # | Nguyên nhân | Nguồn |
+|---|---|---|
+| 1 | Chụp **cả cây làm việc**, gồm `target/` (**30 GB** build Rust) — thứ dựng lại được trong vài phút | `provider: copy`, chọn có chủ ý vì `git stash create` bỏ sót tệp untracked |
+| 2 | Gói **có** danh sách loại trừ mặc định nhưng **không có `target`**, và **không đọc `.gitignore`**; ta **chưa bao giờ khai `excludeGlobs`** | `constants.mjs:144-147` |
+| 3 | Chụp ở **mỗi step** + mỗi write/edit + mỗi lệnh shell (`intervalMinutes: 0` = mỗi step, **không** phải mỗi lượt) | `index.mjs:870-873, 458-462` |
+| 4 | Bản chụp **đầu tiên của mỗi phiên** không hardlink được ⇒ phiên mới = 24 GB nữa | — |
+| 5 | Hạn mức 512 MiB là **MỀM**: `keepNewestPerSession` **thắng** hạn mức | `checkpoints.mjs:76-99` |
+
+Cộng chỗ rò thứ sáu khác loại: **không một dòng log nào** cho thấy nó lớn lên. Phát hiện được
+chỉ vì tình cờ dọn.
+
+### ⛔ Bẫy suýt làm mọi thứ NẶNG HƠN
+
+`excludeGlobs` khai trong config là **THAY THẾ, không gộp** (`index.mjs:229`). Thêm mỗi `target`
+là **mất luôn** `node_modules`, `dist`, `build`… Phải chép lại đủ 13 mục mặc định rồi mới cộng thêm.
+
+### Kết quả đo (gọi thẳng `CopySnapshotProvider` thật, không đọc cấu hình rồi suy)
+
+| Mốc | Mỗi bản chụp |
+|---|---|
+| Ban đầu | ~24 GB |
+| + loại `target`, `.playwright-mcp` | 296,7 MB |
+| + loại `.cache` (9 tệp zip/whl tải sẵn) | 118,6 MB |
+| + loại `desktop/sidecar/node.exe` (89 MB) | **25,2 MB** |
+
+**Giảm 960 lần.** Glob cho tệp phải **neo theo đường dẫn**: `node.exe` trần sẽ thành `['**','node.exe']`,
+khớp ở mọi độ sâu.
+
+### Tự dọn: MỘT sweep cho cả `dsh-home`, thứ tự theo GIÁ TRỊ
+
+Chủ dự án chốt *"thông suốt, không chắp vá gây bug chồng chéo"* ⇒ **không** ba cơ chế dọn rời nhau.
+Rác xoá ngay · `perm-gate`/`storages` cắt theo trần (tái tạo được) · **`sessions/` đắt nhất**:
+**cảnh báo ở 5 GiB, chỉ xoá khi vượt hẳn 6 GiB**, ghi rõ phiên nào bị xoá.
+
+⭐ **An toàn theo CẤU TRÚC, không theo danh sách loại trừ:** sweep chỉ ghép đúng tên
+`events.jsonl`/`snapshots/`, **không bao giờ `read_dir` gốc `perm-gate/`** — nên `rules.yml`
+(giữ quyền khách đã duyệt) không thể bị chạm, kể cả khi sau này có tệp mới xuất hiện ở đó.
+
+### ⭐ Một phép kiểm xanh vì KHÔNG CÓ GÌ ĐỂ XOÁ
+
+Phép "`rules.yml` sống sót" ban đầu đo một tệp **không tồn tại** ⇒ xanh kể cả khi sweep xoá sạch.
+Đã dựng chủ thể thật và chốt **hai chiều**: `events.jsonl` 72 MB → **67 108 800 B** (đúng 64 MiB),
+`snapshots/` 225 MB → 180 MB (**cắt xác nhận**); `rules.yml` **hash trước = sau** (**sống sót
+xác nhận**). Thiếu chiều thứ nhất thì chiều thứ hai vô nghĩa — có thể sweep chưa chạy lần nào.
+
+### Phát hành
+
+`stable` **0.2.14** (từ 0.2.12). Năm phép sau khi phát: khách ở 0.2.12 → nhận 0.2.14 · máy đã
+0.2.14 → **HTTP 204** · kênh `dev` tách riêng · tải qua Cloudflare **206** · trang chủ hiện
+`LTTCODE_0.2.14_stable_x64-setup.exe`.
+
+⛔ **Không được `-SkipBuild` bản dev rồi phát sang `stable`** — `release.ps1:79` đặt
+`LTTCODE_UPDATE_CHANNEL` **lúc build**, kênh **nằm trong nhị phân**. Đi tắt thì mọi khách cập
+nhật sẽ vĩnh viễn hỏi kênh `dev`.
+
+### Chuẩn bị vận hành: bằng chứng phải sống sót, tìm được, và ghép được
+
+- `lttcode.log` trần 5 MB → **50 MB, 5 thế hệ**, và **xoay giữa phiên** — trước đó `rotate_log`
+  chỉ chạy **một lần trước vòng lặp crash-restart**, nên phiên dài **không bao giờ** được xoay.
+- `collect_session_errors.ps1` lọc `lttcode.log*` — **không khớp** `lttcode.1.log`; công cụ thu
+  thập **vốn đã bỏ qua** toàn bộ thế hệ cũ.
+- 🔴 **Lượt THÀNH CÔNG không mang `requestId`** (chỉ lượt lỗi mới có) ⇒ ~95 % lượt **không ghép
+  được** với `credit_entries`/`ttft_s`/`cho_residency_s` mà máy chủ **đã ghi sẵn**. Nay đặt vào
+  `finish.replayState` (`ReplayEnvelope`, adapter-private, harness ghi nguyên văn xuống JSONL).
+
+### Tính năng quét QR ghép điện thoại: KHÔNG tồn tại
+
+Quét toàn bộ gói bản đã cài + `deepseek-ai/deepseek-harness` (0 issue liên quan): không có.
+`dsh-api-remotes` là BFF chuyển sự kiện **trong cùng tiến trình** — README ghi *"No companion is
+published"*. Và mô hình xác thực DSH là **token một lần trong URL** → cookie, ghim `127.0.0.1`
+— **không phải tài khoản**, không thu hồi được.
+
 ## 2026-09-24 — Bốn lớp của MỘT lỗi: cảnh báo agent chạy tới lớp thứ tư mới ra được log
 
 Phiên nâng cấp LTTCODE sau diễn tập D1 (plan `docs/superpowers/plans/2026-09-23-nang-cap-sau-dien-tap-d1.md`).

@@ -30,6 +30,7 @@ from platform_core.workflow import (bao_gia, chinh_sach, foreach as _foreach,
                                     ngon_ngu)
 from platform_core.workflow.chinh_sach import LoiNgonNgu
 from platform_core.workflow.nut import Gia, NodeDefinition
+from platform_core.workflow.nut_loi import cho
 from platform_core.workflow.nut_loi.chay import KetQua
 
 #: §5.9: `on_item_error ∈ {fail, skip, collect}`. ⛔ Danh sách ĐÓNG. Mặc định
@@ -111,7 +112,29 @@ def _vong_cua(db, run_id: str, node_id: str):
                                            node_id=str(node_id)).first()
 
 
+#: Bao nhiêu hàng `foreach_muc` lấy về mỗi LẦN HỎI trong một tick.
+#:
+#: 🔴 Không phải một con số cho đẹp. Bản cũ đọc **cả bảng** mỗi tick, và làn
+#:    p3b đo trên PostgreSQL thật (`docs/superpowers/reports/p3b-do-tai/`):
+#:    tổng công là `N²/P` — **127 000 hàng, 31,67 giây** bookkiping thuần cho
+#:    MỘT run ở `N=1000, P=8`, tức trần `max_items ≤ 1000` hôm nay đã là một
+#:    rào trước khi mở cho khách.
+#:
+#: ⭐ Vì sao lấy theo LÔ chứ không lấy đúng `parallelism` hàng: một thân toàn
+#:    node **inline** hoàn tất ngay trong tick, nên nó không bao giờ tăng
+#:    `dang_cho` — lấy đúng `P` hàng sẽ bắt nó hỏi `N/P` lần trong cùng một
+#:    tick. Lô rộng hơn `P` một chút giữ cả hai ca ở mức thấp: thân job đọc
+#:    ~một lô mỗi tick (HẰNG theo N), thân inline đọc tổng cộng ~N hàng cho cả
+#:    vòng lặp (TUYẾN TÍNH theo N).
+LO_DOC = 16
+
+
 def _muc_theo_chi_so(db, vong) -> dict:
+    """⛔ ĐÃ GỠ KHỎI ĐƯỜNG NÓNG — còn lại chỉ cho phép kiểm đối chứng.
+
+    Đọc **cả bảng** `foreach_muc` của một vòng. Bên lái vòng lặp không được gọi
+    hàm này nữa: gọi nó mỗi tick chính là `O(N²/P)` mà `LO_DOC` mô tả.
+    """
     from platform_core.models import ForeachMuc
 
     return {int(m.chi_so): m for m in
@@ -130,8 +153,11 @@ def _mot_phan_tu(db, run, g, node, than, i: int, phan_tu, *, cong_cu):
 
     nid = str(node["id"])
     ngu = ((nid, i),)
-    loop = {"item": phan_tu, "index": i, "total": int(_vong_cua(
-        db, run.id, nid).so_muc)}
+    # ⚠️ `so_muc` đọc từ hàng `foreach_vong` đã nạp sẵn trong phiên (`db.get`
+    #    đi qua identity map), không phải một `SELECT … WHERE run_id AND
+    #    node_id` mới cho MỖI phần tử — hàm này chạy N lần mỗi run.
+    loop = {"item": phan_tu, "index": i,
+            "total": int(_vong_cua(db, run.id, nid).so_muc)}
     phu: dict[str, dict] = {}
     from platform_core.workflow import nut_loi
 
@@ -141,6 +167,24 @@ def _mot_phan_tu(db, run, g, node, than, i: int, phan_tu, *, cong_cu):
         if tt in ("QUEUED", "RUNNING", "WAITING"):
             # Job của phần tử này chưa xong — thử áp kết quả trước khi bỏ cuộc.
             cau_noi.ap_ket_qua(db, run, bid, cong_cu=cong_cu, vong=ngu)
+            # ⭐ …và nếu nó là một node CHỜ (`core.delay`/`wait`/`human`) thì
+            #    thử mở điểm chờ CỦA CHÍNH VÒNG NÀY. `ngu = ((nid, i),)` là thứ
+            #    tách `f:0/d` khỏi `f:1/d`; thiếu nó, vòng 2 đọc điểm chờ của
+            #    vòng 1 và bỏ qua lần chờ của nó (activepieces `000015`).
+            if tt == "WAITING" and str(bn.get("thi_hanh")) == "run_con":
+                # ⭐ `core.call_workflow` trong thân vòng lặp: run con của
+                #    CHÍNH chỉ số này. `ap_ket_qua_con` cấp run đi khoá trần
+                #    nên nó không bao giờ thấy `f:0/g` — đo được 24/09: hai
+                #    run con xong, cha đứng WAITING 20 giờ, tiền vẫn bị giữ.
+                from platform_core.workflow import run_con as _run_con
+                _run_con.ap_ket_qua_mot(db, run, bn, vong=ngu)
+            if tt == "WAITING" and cho.la_node_cho(bn):
+                kq = cho.tiep_mot(db, run, bn, vong=ngu)
+                if kq is not None:
+                    _chot(db, run, bid, sang=kq.sang,
+                          ra=dict(kq.output or {}),
+                          mo_ta=f"diem cho da mo [{i}]", error=kq.error,
+                          vong=ngu)
             tt = may_trang_thai.trang_thai_node(db, run.id, bid, ngu)
             if tt in ("QUEUED", "RUNNING", "WAITING"):
                 return ("cho", "")
@@ -165,13 +209,19 @@ def _mot_phan_tu(db, run, g, node, than, i: int, phan_tu, *, cong_cu):
         if ham is None:
             return ("hong", f"loi_he_thong: {bn['type']!r} khong co bo thi hanh")
         try:
-            kq = ham(db, run, bn, g=g, cong_cu=cong_cu,
+            kq = ham(db, run, bn, g=g, cong_cu=cong_cu, vong=ngu,
                      moi_truong=_mt_than(db, run, g, phu=phu, loop=loop))
         except Exception as loi:                          # noqa: BLE001
             kq = KetQua(sang="FAILED",
                         error=f"loi_he_thong: {type(loi).__name__}: {loi}")
         _chot(db, run, bid, sang=kq.sang, ra=dict(kq.output or {}),
               mo_ta=f"than foreach {nid}[{i}]", error=kq.error, vong=ngu)
+        # ⭐ `WAITING` KHÔNG phải hỏng: một `core.delay` trong thân vòng lặp
+        #    vừa mở điểm chờ của chỉ số này. Phần tử ấy "đang chờ", y như một
+        #    phần tử có node job chưa xong — nó chiếm một suất `parallelism`
+        #    và sẽ được `tiep_mot` đẩy tiếp ở lượt động cơ sau.
+        if kq.sang == "WAITING":
+            return ("cho", "")
         if kq.sang != "SUCCEEDED":
             return ("hong", kq.error or "than_foreach_loi")
         phu[bid] = {"status": "SUCCEEDED", "output": dict(kq.output or {}),
@@ -205,28 +255,34 @@ def _lai_vong(db, run, node: dict, g: dict, *, cong_cu=None) -> KetQua:
     cach = str(p.get("on_item_error") or "fail")
     tran_song_song = max(1, int(vong.parallelism or 1))
 
-    muc = _muc_theo_chi_so(db, vong)
+    # ⭐ KEYSET, không phải "đọc cả bảng rồi lọc bằng Python". Phần tử đã xong
+    #    không bao giờ được nạp lại; con trỏ `sau` chỉ đi tới.
     dang_cho = 0
-    for i in sorted(muc):
-        if muc[i].xong:
-            continue
-        if dang_cho >= tran_song_song:
+    sau = -1
+    lo = max(tran_song_song, LO_DOC)
+    while dang_cho < tran_song_song:
+        hang = _foreach.muc_chua_xong(db, vong, sau_chi_so=sau, gioi_han=lo)
+        if not hang:
             break
-        trang_thai, gia_tri = _mot_phan_tu(
-            db, run, g, node, than, i, (muc[i].dau_vao or {}).get("v"),
-            cong_cu=cong_cu)
-        if trang_thai == "cho":
-            dang_cho += 1
-            continue
-        if trang_thai == "hong":
-            if cach == "fail":
-                return KetQua(sang="FAILED",
-                              error=f"than_foreach_loi[{i}]: {gia_tri}"[:2000])
-            khoa = KHOA_LOI if cach == "collect" else KHOA_BO
-            _foreach.ghi_ket_qua(db, vong, chi_so=i,
-                                 ket_qua={khoa: str(gia_tri)[:500]})
-            continue
-        _foreach.ghi_ket_qua(db, vong, chi_so=i, ket_qua={"v": gia_tri})
+        for i, phan_tu in hang:
+            if dang_cho >= tran_song_song:
+                break
+            sau = i
+            trang_thai, gia_tri = _mot_phan_tu(
+                db, run, g, node, than, i, phan_tu, cong_cu=cong_cu)
+            if trang_thai == "cho":
+                dang_cho += 1
+                continue
+            if trang_thai == "hong":
+                if cach == "fail":
+                    return KetQua(
+                        sang="FAILED",
+                        error=f"than_foreach_loi[{i}]: {gia_tri}"[:2000])
+                khoa = KHOA_LOI if cach == "collect" else KHOA_BO
+                _foreach.ghi_ket_qua(db, vong, chi_so=i,
+                                     ket_qua={khoa: str(gia_tri)[:500]})
+                continue
+            _foreach.ghi_ket_qua(db, vong, chi_so=i, ket_qua={"v": gia_tri})
 
     if _foreach.chi_so_chua_xong(db, vong):
         # ⚠️ `WAITING` chứ không `RUNNING`: node này không tính toán gì trong lúc
@@ -234,11 +290,12 @@ def _lai_vong(db, run, node: dict, g: dict, *, cong_cu=None) -> KetQua:
         #    song của run — đúng, vì thân nó đang chạy job thật.
         return KetQua(sang="WAITING", output={"so_muc": int(vong.so_muc)})
 
-    ket = _muc_theo_chi_so(db, vong)
-    ket_qua = [ (ket[i].ket_qua or {}) for i in sorted(ket) ]
-    results = [r["v"] for r in ket_qua if "v" in r]
-    errors = [{"index": i, "error": (ket[i].ket_qua or {})[KHOA_LOI]}
-              for i in sorted(ket) if KHOA_LOI in (ket[i].ket_qua or {})]
+    # ⚠️ Đây là phép đọc `O(N)` **một lần**, ở cuối vòng — khác hẳn một phép
+    #    đọc `O(N)` **mỗi tick**, và tách hai vai đó ra là toàn bộ bản sửa.
+    ket = _foreach.ket_qua_theo_chi_so(db, vong)
+    results = [r["v"] for _i, r in ket if "v" in r]
+    errors = [{"index": i, "error": r[KHOA_LOI]}
+              for i, r in ket if KHOA_LOI in r]
     if dong:
         _chot(db, run, dong, sang="SUCCEEDED",
               ra={"results": results, "errors": errors},
