@@ -95,3 +95,87 @@ python tools\bench_b2_xac_thuc_bo_cham.py bang-chung b2.json --ra docs\auto_scan
 ShareAlike) — `ban_ghi_sach` cưỡng chế điều đó, `test_3600` chốt nó. Giấy phép:
 `THIRD_PARTY_METRICS.md` §1 dòng 11. Hai tiến trình chạy song song = trần 2
 request/model; ⛔ không giữ `cpu_nhieu` (chỉ chờ mạng máy B).
+
+---
+
+# 7. TRA NGUỒN trước khi sửa (luật 10) — và nguồn nói CÁCH CHẤM NHỊ PHÂN LÀ SAI THIẾT KẾ
+
+⛔ Mục này viết **trước** khi sửa một chữ nào trong lời nhắc. Bản brief đầu bảo
+*"đọc lý do rồi sửa lời nhắc"* — tức bảo tự suy. Đây là bước tra nguồn thay thế.
+
+## 7.1 Phát hiện lớn hơn một bản vá: **nhị phân là chỗ độ đặc hiệu chết**
+
+Bộ chấm của ta hỏi model một câu **nhị phân** — `dat: true/false`. Không một giao
+thức nào trong tài liệu làm thế. **Tất cả** đều yêu cầu model liệt kê **từng lỗi**
+kèm **phân loại** và **mức nghiêm trọng**, rồi **tính điểm** từ đó:
+
+| Giao thức | Nguồn | Đầu ra | Giấy phép |
+|---|---|---|---|
+| **GEMBA-MQM** | Kocmi & Federmann, WMT 2023 · arXiv **2310.13988** · `MicrosoftTranslator/GEMBA` | lỗi = `phân loại/tiểu loại - "đoạn trích"`, mức `critical/major/minor` | **CC BY-SA 4.0** (`LICENSE.md`) |
+| **GEMBA-ESA** | cùng repo, `gemba/gemba_esa.py` | hai chặng: đánh dấu đoạn lỗi (`major/minor`) → chấm 0–100 **dựa trên đoạn lỗi đó** | CC BY-SA 4.0 |
+| **AutoMQM** | Fernandes et al., WMT 2023 · arXiv **2308.07286** | lỗi + phân loại; *"improves performance compared to just prompting for scores"* | không thấy mã mở |
+| **MQM-APE** | Lu et al. 2024 · arXiv **2409.14335** · `Coldmist-Lu/MQM_APE` | GEMBA-MQM **+ bộ lọc lỗi** | ⛔ **KHÔNG có tệp LICENSE** ⇒ mặc định giữ toàn quyền |
+| **xCOMET** | arXiv 2310.10482 | điểm + đoạn lỗi | ⛔ **CC-BY-NC-SA-4.0** — đã ở §2 DO NOT SHIP |
+
+🔑 **Cơ chế hạ báo động giả nằm ở THANG ĐIỂM, không ở lời văn.** `GEMBA/gemba/
+gemba_mqm_utils.py::parse_mqm_answer`: `critical = 25 · major = 5 · minor = 1`,
+chặn ở **5 lỗi đầu** và trần **25**. ⇒ một câu có năm lỗi **minor** vẫn chấm
+5/25, tức **vẫn tốt**.
+
+⭐ **Và đó đúng là hình dạng báo động giả của ta.** Đọc `ly_do` của 122 lượt báo
+động giả: gần hết là **minor** theo MQM — mất sắc thái (*"nổi tiếng"* không đủ
+*"tai tiếng"*), thiếu một bổ ngữ (*"thiếu 地区"*, *"thiếu 空军"*), thêm một chữ
+(*"thêm phản lực"*), thay tên riêng bằng đại từ (*"Đài Loan" → "nước này"*). Bộ
+chấm của ta **không có chỗ để nói "minor"** — nó chỉ có `false`. ⇒ Mọi nhận xét
+tinh tế đều rơi xuống cùng một ô với *"lật nghĩa"*.
+
+⇒ **Không phải lời nhắc dài hơn. Là thiếu một CHIỀU.**
+
+## 7.2 Ba câu hỏi — trả lời từ nguồn
+
+**1. Cộng đồng hạ báo động giả bằng cách nào?** Ba cơ chế, cả ba đều đã đo:
+- **Phân mức nghiêm trọng** thay vì nhị phân, và **trọng số** (25/5/1) — GEMBA-MQM.
+  Định nghĩa neo vào **hậu quả cho người đọc**: *critical* cản hiểu; *major* phá
+  mạch nhưng vẫn hiểu được; *minor* là lỗi nhưng không cản hiểu.
+- **Bắt trích dẫn ĐOẠN lỗi** (`- "involvement"`), không cho nhận xét chung chung —
+  GEMBA-MQM, xCOMET, AutoMQM đều vậy. Đúng giả thuyết của điều phối.
+- **Lọc lỗi bằng hậu kiểm** — MQM-APE: sửa bản dịch theo **từng** lỗi, rồi hỏi bản
+  sửa có **tốt lên** không; lỗi nào sửa mà không tốt lên thì **vứt**. Đặt tên cho
+  đúng thứ ta đang gặp: *non-impactful errors*.
+
+**2. Có bộ lời nhắc đã công bố cho zh→vi không?** Không có zh→vi riêng. GEMBA-MQM
+**cố ý dùng lời nhắc bất khả tri ngôn ngữ** (*"language-agnostic prompts, thus
+avoiding the need for manual prompt preparation for new languages"*) với 3 ví dụ
+cố định (ende/encs/**zhen**). ⇒ Dùng được cho zh→vi **theo thiết kế**.
+⛔ **Nhưng giấy phép chặn việc CHÉP:** GEMBA là **CC BY-SA 4.0** — ShareAlike, nên
+dán nguyên văn lời nhắc vào một sản phẩm đóng sẽ kéo ShareAlike theo. MQM-APE
+**không có LICENSE** ⇒ còn chặt hơn. ⇒ **Dùng lại GIAO THỨC** (ý tưởng + thang
+điểm MQM, vốn là chuẩn MQM chứ không phải của GEMBA), ⛔ **không chép lời văn**.
+
+**3. `do_tin` tự khai có hiệu chỉnh không? — KHÔNG, và có nên bỏ cổng 0,70.**
+- arXiv **2603.25052**: *LLM khai điểm tin cậy "largely detached from their actual
+  accuracy"*; và ⭐ **khi model vừa lập luận vừa tự khai độ tin thì chính quá trình
+  lập luận phá tín hiệu độ tin, làm lệch hiệu chỉnh NẶNG THÊM**. Lời nhắc của ta
+  đòi **đúng** hai thứ đó trong một phản hồi: `ly_do` **và** `do_tin`.
+- arXiv **2605.12446** (ORCE): *"LLMs often produce answers with high certainty even
+  when they are incorrect"*.
+- Và số của chính ta khớp: **98,4%** báo động giả có `do_tin ≥ 0,70`, trung vị 0,85.
+⇒ ⛔ `DO_TIN_TOI_THIEU = 0,70` **không cứu được bằng lời nhắc**. Phải bỏ, hoặc thay
+bằng một tín hiệu **đo được**.
+
+## 7.3 ⭐ Một tín hiệu thay thế, đã đo, MIỄN PHÍ từ dữ liệu đang có
+
+Cổng đang chạy `--temp 1.0` nên ba lượt của ta là ba mẫu độc lập. Đổi luật gộp từ
+**đa số (≥2/3)** sang **đồng thuận (3/3)**:
+
+| Luật gộp | Báo động giả | Bắt `lat_nghia` | Bắt `sai_thuc_the` |
+|---|---|---|---|
+| đa số ≥ 2/3 (hiện tại) | 43–45% | 100% | 100% |
+| **đồng thuận 3/3** | **23%** | **100%** | **100%** |
+
+Cả 30 cặp tiêm đều bị bắt ở **cả ba** lượt (`so_bao_sai = 3/3`, không một cặp nào
+thấp hơn) ⇒ siết lên đồng thuận **không mất một chút độ nhạy nào** mà cắt gần một
+nửa báo động giả. ⛔ Vẫn **23% > 15%**, nên nó **không đủ một mình** — nhưng nó là
+bằng chứng trực tiếp rằng *self-consistency* phân biệt được còn `do_tin` thì không.
+⚠️ Cái giá: đường sản phẩm hiện gọi **một** lượt mỗi lô; đòi 3/3 là **gấp ba** chi
+phí lớp này. Đó là một quyết định về GIÁ, phải hỏi chủ dự án.

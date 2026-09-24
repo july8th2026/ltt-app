@@ -49,6 +49,50 @@ KHUNG_MOI_CHO_NOI = 2
 LECH_KHUNG_GIAY = 0.4
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+#  Lop ngu nghia co duoc KHAI CHO KHACH khong — va cau tra loi la mot PHEP DO
+# ══════════════════════════════════════════════════════════════════════════════
+
+#: Ti le bao dong gia DA DO cua lop ngu nghia, tren ban dich CUA NGUOI.
+#:
+#: 🔴 Do 24/09 tren 100 cap FLORES-200 zh->vi (ban dich chuyen nghiep), 3 luot
+#:    moi cap: **45,0 %** (dai tung luot 40,0-44,4 %).
+#:    `docs/auto_scan_video_final/B2_XAC_THUC_BO_CHAM.md`.
+#:
+#: ⛔ Doi so nay bang cach DO LAI, khong bang cach go mot so de p hon:
+#:    `python tools\bench_b2_xac_thuc_bo_cham.py ...` (muc §6 cua tai lieu tren).
+TI_LE_BAO_DONG_GIA_DA_DO = 0.45
+
+#: Duoi muc nay thi con so ngu nghia moi duoc khai cho khach.
+NGUONG_KHAI_CHO_KHACH = 0.15
+
+
+def khai_cho_khach() -> bool:
+    """Con so "N/M cau dich chua sat" co duoc hien cho khach khong.
+
+    🔴 **Chu du an chot 24/09: KHONG, cho toi khi bao dong gia ve duoi 15 %.**
+       Luot that cham 44/95 (46 %) la dich chua sat; chinh bo cham do gan
+       **45 %** cho ban dich cua NGUOI DICH CHUYEN NGHIEP. Tuc no khong phan
+       biet duoc ban dich cua ta voi mot ban hoan hao — va khai mot con so ma
+       mot nua la bao dong gia la lam khach hieu sai ve san pham ho vua mua.
+
+    ⭐ **Cong nay la mot PHEP TINH tu con so da do, khong phai mot co bat tay.**
+       Ai ha duoc bao dong gia xuong thi sua `TI_LE_BAO_DONG_GIA_DA_DO` — va man
+       hinh tu bat lai. Khong ai bat duoc no ma khong khai mot phep do, va khong
+       ai phai nho di bat lai mot co.
+
+    ⚠️ Chi che o BE MAT CUA KHACH. Phan quyet van vao artifact, van vao
+       `stage.outputs`, van hien o bao cao van hanh — cung ranh gioi voi
+       `sua_chua.QC_HINH_LA_TU_VAN`. "Khong khoe" khac "khong ai duoc biet".
+
+    ⛔ Hai con so KIA cua `bang_chung_chat_luong` (`so_giong_khong_dat`,
+       `so_canh_bao_tieng`) **van giu** — chung den tu thuoc khac (ASR + WER/CER,
+       SQUIM), chua bi nghi ngo, va go chung di la lay mot loi khai qua tay doi
+       lay mot loi khai thieu.
+    """
+    return TI_LE_BAO_DONG_GIA_DA_DO <= NGUONG_KHAI_CHO_KHACH
+
+
 class QcAiError(ValueError):
     """Phan hoi QC bang AI khong dung hop dong."""
 

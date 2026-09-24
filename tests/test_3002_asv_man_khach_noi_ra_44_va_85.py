@@ -86,16 +86,35 @@ def trang(moi_truong, tmp_path):  # noqa: F811
     return a.get(f"/auto-scan-video/run/{run_id}").text
 
 
-def test_man_khach_NOI_RA_44_tren_95_cau_dich_chua_sat(trang):
-    """⛔ Lượt B giao một video mà hệ thống tự chấm 46% câu là dịch chưa sát.
+def test_man_khach_KHONG_con_noi_44_tren_95_vi_THUOC_DO_HONG(trang):
+    """🔴 **Phép kiểm này đã bị LẬT NGƯỢC 24/09, và lý do là một phép đo.**
 
-    Màn hình **không nói** — và đó là khiếm khuyết TRUNG THỰC, nặng hơn khiếm
-    khuyết chất lượng: khách không thể hỏi về một con số không ai cho họ thấy.
+    Bản đầu đòi màn hình **phải** nói *"44/95 câu bị chấm là dịch chưa sát"* —
+    N-03, khiếm khuyết TRUNG THỰC: khách không hỏi được về một con số không ai
+    cho họ thấy. Lập luận đó đúng **với điều kiện con số có nghĩa**.
+
+    ⛔ Nó không có. Xác thực bộ chấm trên **100 cặp FLORES-200 zh→vi do NGƯỜI
+       dịch** (`B2_XAC_THUC_BO_CHAM.md`): chính bộ chấm này gán **45,0%** là
+       *"dịch chưa sát"* cho bản dịch **chuyên nghiệp**, trong khi lượt thật của
+       ta bị gán **46%**. Hai con số trùng nhau ⇒ nó **không phân biệt được**
+       bản dịch của ta với một bản hoàn hảo.
+
+    ⇒ Khai "44/95 câu dịch chưa sát" là làm khách hiểu sai về sản phẩm họ vừa
+      mua — một khiếm khuyết trung thực theo **chiều ngược lại**. Hai con số kia
+      (14 đoạn chưa khớp lời · 8 cảnh báo tiếng) **vẫn giữ**: chúng đến từ thước
+      khác (ASR + WER/CER, SQUIM), chưa bị nghi ngờ.
+
+    ⭐ Và cổng là một **phép tính từ con số đã đo**, không phải một cờ bật tay —
+       hạ được `qc_ai.TI_LE_BAO_DONG_GIA_DA_DO` xuống ≤ 15% thì màn hình tự bật
+       lại, và phép kiểm này tự đỏ để người sửa biết mà lật nó về.
     """
-    assert "Soát nghĩa bản dịch" in trang
-    assert "44" in trang and "95" in trang
-    khoi = trang.split("Soát nghĩa bản dịch", 1)[1][:300]
-    assert "44" in khoi, khoi
+    from apps.auto_scan_video import qc_ai
+
+    assert qc_ai.khai_cho_khach() is False, (
+        "Báo động giả đã về dưới ngưỡng — lật phép kiểm này về bản N-03 gốc "
+        "(đòi màn hình NÓI RA 44/95), đừng xoá nó.")
+    assert "Soát nghĩa bản dịch" not in trang
+    assert "dịch chưa sát" not in trang
 
 
 def test_man_khach_NOI_RA_85_muc_con_chua_sua(trang):
