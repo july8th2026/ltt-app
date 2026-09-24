@@ -222,3 +222,107 @@ tren_luoi_05s` khoá kết luận này lại.
   hụt **11–19 %** và lệch về phía **bi quan**, nên số dùng được; nhưng nó **im
   lặng bỏ** ~5–10 **onset sau khoảng lặng** mỗi phim. Đó là **lỗ độ phủ**,
   ⛔ không phải số sai — và là lý do phép (c) tồn tại cạnh phép (a).
+
+---
+
+# 8. ⭐ LUẬT MỚI — trước khi tin một cổng, chạy một HỆ HOÀN HẢO qua nó
+
+> ⭐ **Hệ hoàn hảo ⛔ không đạt ⇒ cổng đang đo CHÂN LÝ NỀN của ta, ⛔ không đo
+> sản phẩm. Sửa **chân lý nền** hoặc **dung sai**, ⛔ ĐỬhNG sửa hệ thống.**
+
+`tools/do_luong.py::tran_cua_cong` — dùng được cho **mọi** cổng.
+
+## 8.1 Vì sao nó bắt được thứ đối chứng tiêm-lỗi ⛔ không bắt được
+
+```
+tiêm lỗi      chứng minh cổng biết nói  ĐỎ
+hệ hoàn hảo   chứng minh cổng biết nói  XANH
+```
+
+⭐ Ta đã làm vế một **suốt**, ⛔ chưa bao giờ làm vế hai. Một cổng chỉ biết nói
+ĐỎ là một cổng **luôn đúng** theo nghĩa vô dụng nhất. Rẻ tới mức ⛔ không có cớ
+bỏ qua: ⛔ không cần chạy sản phẩm, chỉ cần hàm cổng + một bộ sinh dữ liệu hoàn hảo.
+
+## 8.2 🔴 Hai ca, HAI câu trả lới ngược nhau — phải ĐO, ⛔ đừng suy
+
+| cổng | chân lý nền | lưới | dung sai | **trần của thước** | ngưỡng | phán quyết |
+|---|---|---|---|---|---|---|
+| onset (mới) | `l_ocr_gt_v2.json` đọc tay | **0,5 s** | 0,3 s | **0,606** [0,424 ; 0,758] | 0,80 | 🔴 **KHÔNG VỚI TỚI ĐƯỢC** |
+| onset (mới) | như trên | 0,5 s | **0,5 s** | **1,000** | 0,80 | ✅ với tới được |
+| **B1 vế 1** `chinh_xac_cho_ngat` | **OCR 4 fps** | **0,25 s** | 0,3 s | **1,0000** [1,0000 ; 1,0000] | 0,90 | ✅ **ĐỨNG** |
+
+⭐ **Lưới mịn hơn dung sai ⇒ lượng tử hoá ⛔ không bao giờ làm mất một lần khớp.**
+`0,25 < 0,3` ⇒ vế 1 an toàn. `0,5 > 0,3` ⇒ thước onset sụp. Đó là toàn bộ khác
+biệt giữa hai dòng, và nó ⛔ không đoán được nếu ⛔ không tra lưới thật.
+
+---
+
+# 9. 🔴 B1 có mất ĐẠT không? — **KHÔNG.** Và tôi sửa một câu tôi đã viết
+
+## 9.1 Kết quả
+
+Chạy **hàm thật** `bench_b1_chep_loi.chinh_xac_cho_ngat` (nạp đọc từ làn
+`asvf-nghiem-thu-v2`, ⛔ không sửa) với một hệ hoàn hảo:
+
+| phim | trần @ ±0,3 s | trần @ ±0,5 s | sàn may rủi (mốc ngẫu nhiên) | đã báo cho bản của ta |
+|---|---|---|---|---|
+| v1 | **1,0000** | 1,0000 | 0,1915 | 0,9255 ✅ |
+| v2 | **1,0000** | 1,0000 | 0,2439 | 1,0000 ✅ |
+| v3 | **1,0000** | 1,0000 | 0,1892 | 0,9730 ✅ |
+
+⇒ **Vế 1 ĐỨNG.** Ngưỡng 0,90 nằm **dưới** trần 1,0000 ⇒ cổng biết nói XANH.
+Và sàn may rủi 0,19–0,24 ⇒ nó ⛔ **không** qua được bằng may.
+
+## 9.2 ⚠️ TÔI SỬA CÂU CỦA CHÍNH TÔI
+
+Tôi đã viết *"**B1 ĐẠT** phải đọc là **ĐẠT ở mức ±0,5 s**"*. 🔴 **Câu đó SAI.**
+
+Nó đúng cho **thước onset MỚI** của tôi — thứ dùng tệp đọc tay lưới **0,5 s**.
+Nó ⛔ **không** đúng cho **cổng B1 thật**, vì vế 1 đối chiếu với **OCR 4 fps
+(lưới 0,25 s)**, mịn **hơn** dung sai 0,3 s.
+
+> ⭐ **"B1 ĐẠT" đọc nguyên như cũ: đạt ở ±0,3 s, và phép ấy đo được.**
+> ⛔ Không phải một phạm vi bị bỏ sót. ⛔ Không cần viết lại phán quyết B1.
+
+⭐ Tôi suýt chuồn một cảnh báo từ **thước này** sang **thước khác** chỉ vì chúng
+cùng con số "0,3 s". Hai thước cùng dung sai mà **khác chân lý nền** là hai thước
+**khác nhau**. ⇒ Luật §8 phải chạy **trên từng cổng**, ⛔ không suy sang ngang.
+
+## 9.3 ⚠️ Biên an toàn của vế 1 — mỏng hơn con số 1,0000 trông thấy
+
+Trần 1,0000 giả định chân lý nền OCR chỉ **lượng tử hoá**. Thực tế `L_OCR.md` §3
+đo ở 4 fps: lệch mốc trung bình 0,04–0,14 s nhưng **p95 tới 0,65 s** — **vượt**
+dung sai 0,3 s. Độ nhạy của trần theo tỉ lệ mốc bị trôi quá 0,3 s (phim v3):
+
+| tỉ lệ mốc trôi > 0,3 s | 0 % | 2 % | 5 % | **10 %** | 15 % | 20 % |
+|---|---|---|---|---|---|---|
+| trần vế 1 | 1,0000 | 1,0000 | 0,9459 | **0,9189** | 0,8649 | 0,8108 |
+| ≥ 0,90 ? | ✅ | ✅ | ✅ | ✅ | ⛔ | ⛔ |
+
+⇒ **Điểm gãy ≈ 12 %.** Vế 1 còn biên, nhưng ⛔ không dư dả. ⚠️ Ai hạ fps đọc OCR
+(4 → 3 → 2) là **đang ăn vào biên này**, và ở 2 fps bảng `L_OCR` §3 cho lệch
+0,18–0,25 s tb — lúc đó phải đo lại trần **trước**, ⛔ đừng giả định cổng còn đứng.
+
+⚠️ Riêng **v3**: chân lý nền đã được khai là **NHIỄM** (13 dòng chữ UI game,
+`B1_CHEP_LOI.md` dòng 173) ⇒ con số 0,9730 của nó đứng trên một nền đã biết là bẩn.
+
+---
+
+# 10. ⚠️ BẪY CỦA MỌI ĐỐI CHỨNG DỰNG TAY — fixture quá đặn
+
+Fixture của tôi **xanh SAI hai lần** trước khi đúng:
+
+| fixture | vì sao xanh sai |
+|---|---|
+| mốc cách đều **0,5 s** | mốc bị xê dịch **khớp nhầm sang mốc HÀNG XÓM** ⇒ độ nhạy cao giả |
+| mốc cách đều **2,0 s** | đối chứng *"băm 2 s"* khớp **HOÀN HẢO** — trên một lưới đều thì băm đều chính là câu trả lời **ĐÚNG** |
+
+> 🔑 **Một fixture quá đặn biến một đối chứng suy biến thành một bản TỐT.**
+
+⛔ Đây ⛔ không phải bẫy riêng của thước phân đoạn — nó là bẫy chung của **mọi**
+đối chứng dựng tay. Dữ liệu giả lập đều đặn mang một **cấu trúc** mà dữ liệu thật
+⛔ không có, và bản suy biến có thể **ăn may** đúng cấu trúc ấy.
+
+⭐ Thuốc: fixture phải mang **độ không đều của dữ liệu thật** (khoảng cách bốc
+ngẫu nhiên, hạt ghim), và luôn kiểm *"bản suy biến có thực sự THUA bản thật không"*
+— ⛔ không chỉ kiểm *"bản thật có đạt không"*.

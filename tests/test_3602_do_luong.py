@@ -452,3 +452,48 @@ def test_3602_nguong_05s_thi_voi_toi_duoc():
     r = kiem_nguong_voi_toi(_REF_LUOI, 0.5, 0.80)
     assert r["voi_toi_duoc"] is True
     assert r["tran_do_nhay_trung_vi"] > 0.95
+
+
+# ───────────────────────────────────────────────────────────────────────────
+# ⭐ LUẬT: cổng phải biết nói XANH, không chỉ biết nói ĐỎ
+# ───────────────────────────────────────────────────────────────────────────
+
+
+def test_3602_tran_cong_bat_duoc_cong_khong_the_xanh():
+    """Cổng đòi 0,90 trên chân lý nền lưới thô ⇒ hệ hoàn hảo cũng trượt."""
+    from tools.do_luong import tran_cua_cong
+
+    moc = [float(i) * 2.0 for i in range(40)]
+
+    def sinh(rng):
+        # chân lý nền ghi mốc MUỘN tới 0,5 s; hệ hoàn hảo phát đúng mốc thật
+        return [(m, m + rng.uniform(0, 0.5)) for m in moc]
+
+    def cong(mau):
+        return sum(1 for that, nen in mau if abs(that - nen) <= 0.3) / len(mau)
+
+    r = tran_cua_cong(cong, sinh, nguong=0.90, lan=400)
+    assert r["voi_toi_duoc"] is False
+    assert r["tran_trung_vi"] < 0.75
+    assert "ĐỪNG sửa hệ thống" in r["ghi_chu"]
+
+
+def test_3602_tran_cong_xanh_khi_luoi_min_hon_dung_sai():
+    """⭐ Ca B1 vế 1: lưới 0,25 s < dung sai 0,3 s ⇒ hệ hoàn hảo đạt 1,0.
+
+    Cùng một câu hỏi, câu trả lời NGƯỢC với phép kiểm trên — nên phải ĐO,
+    ⛔ đừng suy từ ca trước.
+    """
+    from tools.do_luong import tran_cua_cong
+
+    moc = [float(i) * 2.0 for i in range(40)]
+
+    def sinh(rng):
+        return [(m, m + rng.uniform(0, 0.25)) for m in moc]
+
+    def cong(mau):
+        return sum(1 for that, nen in mau if abs(that - nen) <= 0.3) / len(mau)
+
+    r = tran_cua_cong(cong, sinh, nguong=0.90, lan=400)
+    assert r["voi_toi_duoc"] is True
+    assert r["tran_trung_vi"] == pytest.approx(1.0)
