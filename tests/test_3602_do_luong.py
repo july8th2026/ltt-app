@@ -547,3 +547,71 @@ def test_3602_sach_b1_khai_nhanh_thi_di_qua_va_GIU_TEN_NHANH(tmp_path):
     r = doc_doan_b1(tep)
     assert r["canh_chinh"] == "aligned" and r["engine"] == "whisperx"
     assert r["doan"] == [(0.0, 1.0), (1.0, 2.5)]
+
+
+# ── 25/09: cổng đổi sang ĐỘ CHÍNH XÁC — và nó ⛔ KHÔNG đứng một mình ─────────
+
+
+def test_3602_do_chinh_xac_MOT_MINH_la_thuoc_BIP():
+    """🔴 `B2:207` đã cảnh báo, và 25/09 ta suýt mắc lại.
+
+    Bản *"gộp tất"* (một đoạn ôm cả phim) đạt **độ chính xác 1,000** — nó phát
+    đúng một onset và onset ấy trúng. ⇒ ⛔ Gate bằng độ chính xác MỘT MÌNH là
+    đúng cái bẫy đã giết thước `lech_doan`, chỉ đổi chiều.
+
+    ⭐ Thứ hạ nó là **trần độ dài khe** — và trần ấy ⛔ không cần chân lý nền.
+    Nên cổng phải là **cặp**: độ chính xác ∧ khe ≤ 7 s.
+    """
+    from tools.do_luong import (NGUONG_PHAN_DOAN, do_khong_can_nen,
+                                doi_chung_gop_tat, khop_onset)
+
+    gop = doi_chung_gop_tat(_REF_LUOI)
+    cx = khop_onset(_REF_LUOI, gop, 0.3)["do_chinh_xac"]["ti_le"]
+    assert cx >= NGUONG_PHAN_DOAN["onset_do_chinh_xac_toi_thieu"], (
+        "ban suy bien PHAI qua duoc cong do-chinh-xac — do la ly do no khong "
+        "duoc dung mot minh")
+
+    kn = do_khong_can_nen(gop)
+    assert kn["so_khe_tren_7_s"] == kn["n"], "tran do dai khe PHAI ha ban gop tat"
+
+
+def test_3602_thuoc_khong_can_nen_KHONG_doc_chan_ly_nen():
+    """⭐ Nhánh này ⛔ không nhận chân lý nền ⇒ ⛔ không có lưới, bias, 107-vs-74."""
+    import inspect
+
+    from tools.do_luong import do_khong_can_nen
+
+    ts = set(inspect.signature(do_khong_can_nen).parameters)
+    assert ts == {"doan", "chu"}, f"khong duoc nhan chan ly nen, nhan: {ts}"
+
+
+def test_3602_thuoc_khong_can_nen_KHAI_VANG_MAT_thay_vi_bia():
+    """CPL/LPB ⛔ không tính được trên bản ghi (⛔ không có cấu trúc dòng).
+
+    ⛔ Khai vắng mặt, ⛔ không trả `0` — `0` và *"không đo được"* là hai trạng
+    thái khác nhau (bài học `hai-trang-thai-gop-thanh-mot-gia-tri`).
+    """
+    from tools.do_luong import do_khong_can_nen
+
+    r = do_khong_can_nen([(0.0, 2.0), (2.0, 5.0)], ["một hai", "ba bốn năm"])
+    for khoa in ("CPL", "LPB"):
+        assert isinstance(r[khoa], str) and "⛔" in r[khoa], (
+            f"{khoa} phai KHAI vang mat, khong duoc tra mot con so")
+    assert r["so_khe_tren_7_s"] == 0 and r["so_khe_duoi_5_6_s"] == 0
+    assert "CPS_ghi_chu" in r, "CPS phai di kem cau canh bao ve don vi"
+
+
+def test_3602_nguong_phu_de_KHONG_duoc_chep_sang_long_tieng():
+    """N-34: mượn ngưỡng thì phải mượn cả ĐIỀU KIỆN.
+
+    `do_khong_can_nen` ⛔ KHÔNG được chứa một ngưỡng phán quyết nào: 9 kt/s và
+    16 kt/dòng của Netflix là ngưỡng **đọc** cho phụ đề, ⛔ không phải ngưỡng
+    **nói** cho lồng tiếng — và lời tiếng Việt dài 3,5–4,5× văn Hán thì ở bước
+    này còn **chưa tồn tại**.
+    """
+    from tools.do_luong import do_khong_can_nen
+
+    r = do_khong_can_nen([(0.0, 1.0)], ["一二三四五六七八九十"])
+    assert not any(k.startswith(("dat", "phan_quyet", "nguong")) for k in r), (
+        "thuoc nay BAO CAO, khong PHAN QUYET")
+    assert r["CPS_nguon_trung_vi"] == 10.0

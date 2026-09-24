@@ -680,3 +680,89 @@ công khai của một app đang phục vụ khách).
 
 ⛔ **Không** dùng `make_timeline_v2` nữa (đính chính đầu tệp): lớp cắt câu của (A) mù
 tiếng Hán ⇒ sẽ tái tạo đúng lỗi `cat_doan.py` sinh ra để chữa.
+
+---
+
+## 12. ⭐ `N-34` — LUẬT: ⛔ đừng chuyển một con số giữa hai phép đo chỉ vì chúng **cùng tên**
+
+```
+Hai phép đo cùng tên  ⛔ KHÔNG phải hai phép đo cùng ĐỐI TƯỢNG.
+Trước khi mượn một con số, hỏi: nó đo CÁI GÌ so với CÁI GÌ?
+```
+
+| ca | con số | thật ra nó đo | chỗ bị mượn nhầm |
+|---|---|---|---|
+| 1 (làn này, 25/09) | *"OCR chậm hơn ASR **0,34 s**"* (`L_OCR.md:133`) | OCR **vs faster-whisper có `vad_filter`**, cửa sổ 60 s | đem áp cho **`whisperx + cat_doan`** — một bộ phân đoạn **khác** |
+| 2 (điều phối, 24/09) | cảnh báo gắn với *"±0,3 s"* | dung sai của thước **này** | chuồn sang thước **kia** chỉ vì cùng in `0,3 s` |
+
+**Ca 1 bị bắt thế nào:** trừ bias ⇒ điểm **sụp 0,692 → 0,009**, ⭐ **thấp hơn cả đối chứng
+suy biến** *"gộp tất"*. ⇒ Một phép sửa làm điểm tệ hơn bản không sửa là dấu hiệu **giả
+thuyết sai**, ⛔ không phải hệ thống tệ. Đo thẳng thì rõ: trung vị **+0,069 s**, p95 |Δ|
+**0,127 s**, **ÂM 0/74** — ASV ⛔ chưa một lần nào bắt đầu trước phụ đề.
+
+> 🔑 ⭐ **Sửa mà điểm TỆ ĐI thì nghi giả thuyết trước, ⛔ đừng nghi hệ thống.**
+
+⚠️ **Cùng họ, đang sống:** ngưỡng Netflix **9 ký tự/giây** là tốc độ **ĐỌC** của người xem
+phụ đề. Lồng tiếng bị ràng bởi tốc độ **NÓI**, và bởi lời **tiếng Việt** (dài 3,5–4,5×
+văn Hán) mà ở bước B1 ⛔ **chưa tồn tại**. ⇒ ⛔ Đừng chép. Bánh cóc:
+`test_3602_nguong_phu_de_KHONG_duoc_chep_sang_long_tieng` bắt `do_khong_can_nen` ⛔ không
+được chứa một khoá phán quyết nào.
+
+---
+
+## 13. Cổng đổi: **độ CHÍNH XÁC**, ⛔ không phải độ nhạy — và nó ⛔ KHÔNG đứng một mình
+
+### 13.1 Hai câu hỏi, cạnh nhau (in thẳng trong `do_luong.py phan-doan`)
+
+| | câu | số | phán quyết |
+|---|---|---|---|
+| **cũ** ⛔ rút | *"ta có cắt ĐỦ chỗ phụ đề cắt không?"* | độ nhạy **0,692 = 74/107** | ⛔ **SAI MỤC ĐÍCH** — 107 là đơn vị **hiển thị** |
+| **mới** ✅ cổng | *"mọi chỗ ta CẮT có trúng ranh giới thật không?"* | độ chính xác **1,000 [0,95 ; 1,00]** | ✅ **ĐẠT** |
+
+⭐ 0,692 ⛔ **không bị xoá** — nó ghi kèm đúng câu nó trả lời: *"ASV cắt **ít** hơn phụ đề,
+và **mọi** chỗ nó cắt đều trúng."* Một **sự thật**, ⛔ không phải một khuyết tật.
+
+### 13.2 🔴 Và suýt mắc lại đúng bẫy cũ — bắt được lúc chạy
+
+`ĐC gộp tất` (một đoạn ôm cả phim) cũng đạt **độ chính xác 1,000 [0,21 ; 1,00]**: nó phát
+đúng một onset, và onset ấy trúng. ⇒ ⛔ **Cổng bằng độ chính xác MỘT MÌNH là thước bịp** —
+đúng câu `B2:207` đã viết, chỉ đổi chiều.
+
+⭐ Thứ hạ nó là **trần độ dài khe**, và trần ấy ⛔ **không cần chân lý nền**:
+`gộp tất` có **1/1** khe > 7 s. ⇒ Cổng là một **cặp**:
+
+```
+độ chính xác onset ≥ 0,80      (cần chân lý nền)
+        ∧
+mọi khe ≤ 7 s                  (⛔ KHÔNG cần chân lý nền)
+```
+
+Bánh cóc: `test_3602_do_chinh_xac_MOT_MINH_la_thuoc_BIP`.
+
+### 13.3 Thước ⛔ KHÔNG đọc chân lý nền — `do_khong_can_nen()`
+
+⇒ ⭐ Bài toán **lưới**, **bias**, và **107-vs-74** đều **biến mất**: ⛔ không có bên thứ
+hai để lệch với.
+
+```
+74 khe · trung vị 1,741 s · p05 1,147 s · p95 6,024 s · [0,880 ; 6,748] s
+khe < 5/6 s: 0    khe > 7 s: 0    chồng lấn: 0    hở trung vị 0,0 s
+CPS nguồn: trung vị 6,22 · p95 6,87 ký tự Hán/giây
+```
+
+⚠️ **Ba điều khai thẳng:**
+1. ⛔ **CHƯA CÓ NGƯỠNG** cho lồng tiếng. Hàm ⛔ không chứa một khoá phán quyết nào — nó
+   **báo cáo**. Đặt ngưỡng phải **đo**, ⛔ không chép của phụ đề (§12).
+2. **CPL/LPB ⛔ không tính được** trên bản ghi: nó ⛔ không có cấu trúc **dòng** (ngắt dòng
+   sinh ở `phu_de.py`). ⭐ Khai **vắng mặt**, ⛔ không trả `0` — `0` và *"không đo được"* là
+   hai trạng thái khác nhau.
+3. **CPS nguồn là tốc độ NÓI** của văn Hán, ⛔ **không** so được với 9 kt/s của Netflix
+   (tốc độ **ĐỌC** của phụ đề đích).
+
+### 13.4 ⛔ Khai thẳng: đây là **ĐỔI CÂU HỎI**, ⛔ không phải sửa thước
+
+Thước cũ ⛔ không hỏng về **phép tính** — nó hỏng về **mục đích**. Ai đọc lại `B2 §6` sẽ
+thấy ba số ở đó vẫn đúng như đã in; thứ đổi là **số nào được quyền phán quyết**.
+⚠️ `SubER` (Apache-2.0) ⛔ **chưa dùng**: nó **vẫn cần chân lý nền**, và nó là thước cho
+**phụ đề**. Chỉ nhánh **CPS/CPL/LPB** là không cần nền — và đó là nhánh đã dựng ở đây.
+⛔ Gói `suber` ⛔ chưa cài trên máy này (đã kiểm).
