@@ -84,7 +84,7 @@ def doc_flores(thu_muc: pathlib.Path = FLORES_DIR) -> list[tuple[int, str, str]]
             if a[i].strip() and b[i].strip()]
 
 
-def _mot_lo(db, lo: list[dict], mid: str) -> dict:
+def _mot_lo(db, lo: list[dict], mid: str, y_canh: dict | None = None) -> dict:
     """`{ma: chu}` cho mot lo, qua DUNG duong san pham (ep luoc do + nhiet do ghim)."""
     from platform_core.llm import dieu_phoi
 
@@ -93,7 +93,7 @@ def _mot_lo(db, lo: list[dict], mid: str) -> dict:
     # ⛔ `tat_ca=lo`: FLORES la nhung cau ROI RAC, ⛔ khong phai mot mach hoi
     #    thoai. Dua ca tap lam `ke_ben` se bia ra mot ngu canh KHONG ton tai.
     msg = L.loi_nhac(lo, tat_ca=lo, ngon_ngu_goc="zh",
-                     dac_diem_giong={}, ngon_ngu_dich="vi")
+                     dac_diem_giong={}, ngon_ngu_dich="vi", y_canh=y_canh)
     tran, cho = ai.ngan_sach_cho(ai.CHUYEN_LOI_THOAI)
     kq = dieu_phoi.goi(
         db, messages=msg, thu_tu_provider=list(ai.THU_TU_PROVIDER),
@@ -113,7 +113,8 @@ def _mot_lo(db, lo: list[dict], mid: str) -> dict:
             for m, v in tho.items() if m in ma_lo and isinstance(v, dict)}
 
 
-def chay(*, model: str, so_dong: int, lan: int, moi_lo: int) -> dict:
+def chay(*, model: str, so_dong: int, lan: int, moi_lo: int,
+         lan_b: int = 0) -> dict:
     import platform_core.db as dbmod
     from platform_core.llm import canonical
 
@@ -142,7 +143,8 @@ def chay(*, model: str, so_dong: int, lan: int, moi_lo: int) -> dict:
     tham_chieu = {f"flores_{i:04d}": vi for i, _zh, vi in cap}
 
     db = next(dbmod.get_session())
-    cac_luot = []
+    cac_luot: list[dict] = []
+    cac_luot_b: list[dict] = []
     t0 = time.time()
     try:
         for _ in range(lan):
@@ -150,6 +152,24 @@ def chay(*, model: str, so_dong: int, lan: int, moi_lo: int) -> dict:
             for lo in L.chia_lo(doan, moi_lo=moi_lo):
                 ra.update(_mot_lo(db, lo, mid))
             cac_luot.append(ra)
+        # ⭐ **Nhanh B: dich LAI dung nhung dong ay, CO `y_canh`** — mo phong
+        #    DUNG vong sua that: ly do + trich nguon + BAN CU (chinh ket qua
+        #    nhanh A). Muc dich: do xem LUAT `y_canh` (v4) co lam tut chrF++
+        #    khong, tren mot tap CO tham chieu nguoi dich.
+        # ⚠️ `y_canh` o day la mot nghi ngo TRUNG TINH ("kiem lai nghia") —
+        #    ⛔ khong khang dinh mot khuyet tat cu the, vi FLORES ⛔ khong co
+        #    phan quyet nao. => No do TAC DUNG PHU cua luat, ⛔ khong do "ly do
+        #    dung co giup khong".
+        for i in range(lan_b):
+            goc_a = cac_luot[min(i, len(cac_luot) - 1)]
+            ra = {}
+            for lo in L.chia_lo(doan, moi_lo=moi_lo):
+                yc = {d["ma"]: {"nghi_ngo": "kiem lai nghia cua cau",
+                                "trich_nguon": d["chu"][:160],
+                                "trich_ban_cu": goc_a.get(d["ma"], "")[:160]}
+                      for d in lo if goc_a.get(d["ma"])}
+                ra.update(_mot_lo(db, lo, mid, y_canh=yc or None))
+            cac_luot_b.append(ra)
     finally:
         db.close()
 
@@ -162,6 +182,7 @@ def chay(*, model: str, so_dong: int, lan: int, moi_lo: int) -> dict:
             #    docstring dau tep. No o day de lan do co cai ma so voi.
             "tham_chieu_vi": vi,
             "cac_luot": [l.get(ma, "") for l in cac_luot],
+            "cac_luot_CO_y_canh": [l.get(ma, "") for l in cac_luot_b],
         })
     thieu = sum(1 for m in muc for x in m["cac_luot"] if not x)
     return {
@@ -169,7 +190,8 @@ def chay(*, model: str, so_dong: int, lan: int, moi_lo: int) -> dict:
             "model": model, "model_id": mid,
             "nhiet_do": ai.nhiet_do_cho(ai.CHUYEN_LOI_THOAI),
             "ep_luoc_do": True,
-            "so_luot": lan, "doan_moi_lo": moi_lo,
+            "so_luot": lan, "so_luot_CO_y_canh": lan_b,
+            "doan_moi_lo": moi_lo,
             "so_dong": len(cap),
             "dai_dong_flores": [cap[0][0], cap[-1][0]] if cap else [],
             "split_flores": "dev",
@@ -198,9 +220,12 @@ def main(argv=None) -> int:
     ap.add_argument("--so-dong", type=int, default=100)
     ap.add_argument("--lan", type=int, default=3)
     ap.add_argument("--moi-lo", type=int, default=12)
+    ap.add_argument("--lan-b", type=int, default=0,
+                    help="so luot dich LAI CO `y_canh` (nhanh B)")
     ap.add_argument("--ra", default="")
     a = ap.parse_args(argv)
-    kq = chay(model=a.model, so_dong=a.so_dong, lan=a.lan, moi_lo=a.moi_lo)
+    kq = chay(model=a.model, so_dong=a.so_dong, lan=a.lan,
+              moi_lo=a.moi_lo, lan_b=a.lan_b)
     n = kq["⭐ nhan_cau_hinh"]
     print(f"FLORES dev zh->vi · {n['so_dong']} dong · {n['model']} · "
           f"t={n['nhiet_do']} · ep luoc do={n['ep_luoc_do']} · {n['so_luot']} luot")

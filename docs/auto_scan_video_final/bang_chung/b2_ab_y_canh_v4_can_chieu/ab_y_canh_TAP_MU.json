@@ -1,0 +1,98 @@
+{
+ "⭐ huong_dan": "Moi muc co MOT cau nguon `zh` va HAI ban dich. Voi tung muc: ban nao TOT HON, hay NGANG NHAU? Kem DOAN TRICH + ly do. Khong trich duoc => khong tinh la loi. Nghi ngo => ghi 'bien'.",
+ "⛔ khong_co_gi_trong_day_noi_ve_nhanh": true,
+ "⚠️ DAY LA TAP DA CAN": "Can theo CHIEU lech do dai (so cap B-ngan = so cap B-dai). Tap CHUA CAN van nam nguyen o `b2_ab_y_canh_v4/` — ⛔ khong xoa.",
+ "so_muc": 15,
+ "muc": [
+  {
+   "ma": "b24072ba48",
+   "zh": "师傅手中的剪刀顺着肠壁游走,",
+   "ban_1": "Kéo dao theo thành ruột.",
+   "ban_2": "Thay bếp cầm kéo lướt dọc ruột."
+  },
+  {
+   "ma": "6694a74c2e",
+   "zh": "牛肠也由于热胀冷缩而迅速收紧,",
+   "ban_1": "Ruột bò co lại nhanh vì nhiệt độ.",
+   "ban_2": "Ruột bò cũng co lại vì nhiệt."
+  },
+  {
+   "ma": "772f382a60",
+   "zh": "看到没有,这就是纯白给。",
+   "ban_1": "Thấy chưa, đây là trắng tay.",
+   "ban_2": "Thấy chưa, đây là trắng tay."
+  },
+  {
+   "ma": "f9fdf289b0",
+   "zh": "看到没有,这就是纯白给。",
+   "ban_1": "Thấy chưa, đây là trắng tay.",
+   "ban_2": "Thấy chưa, đây là trắng tay."
+  },
+  {
+   "ma": "b588e500b5",
+   "zh": "去腥除味的两瓶烧酒也紧随其后,",
+   "ban_1": "Hai chai rượu đi theo để khử mùi.",
+   "ban_2": "Hai chai rượu soju cũng theo sau."
+  },
+  {
+   "ma": "ce5ae640f5",
+   "zh": "师傅手中的剪刀顺着肠壁游走,",
+   "ban_1": "Kéo dao theo thành ruột.",
+   "ban_2": "Thay bếp cầm kéo lướt dọc ruột."
+  },
+  {
+   "ma": "8bf275499f",
+   "zh": "这人肯定会往里面冲,架着门口往左边走,用提炼枪让他来接子弹。",
+   "ban_1": "Anh ta chắc chắn sẽ lao vào, chặn cửa đi trái, dùng súng bắt anh ta hứng đạn.",
+   "ban_2": "Hắn sẽ lao vào, ta chặn cửa bên trái, dùng súng máy để hắn hứng đạn."
+  },
+  {
+   "ma": "0094795d3b",
+   "zh": "这才是让人羡慕的生活。",
+   "ban_1": "Đây mới là cuộc sống đáng mơ ước.",
+   "ban_2": "Đây mới là cuộc sống đáng mơ."
+  },
+  {
+   "ma": "4a54f05c98",
+   "zh": "趁敌人还没上来,咱们直接趴下,用盒子当掩体,他就发现不了我们。",
+   "ban_1": "Chờ địch chưa lên, ta nằm xuống, dùng hộp làm che chắn, hắn không thấy.",
+   "ban_2": "Khi địch chưa lên, ta nằm xuống, dùng hộp che, anh ta không thấy."
+  },
+  {
+   "ma": "19010798e3",
+   "zh": "看到没有,这就是纯白给。",
+   "ban_1": "Thấy chưa, đây là trắng tay.",
+   "ban_2": "Thấy chưa, đây là trắng tay."
+  },
+  {
+   "ma": "6e6c78a1b1",
+   "zh": "去腥除味的两瓶烧酒也紧随其后,",
+   "ban_1": "Hai chai rượu soju cũng theo sau.",
+   "ban_2": "Hai chai rượu đi theo để khử mùi."
+  },
+  {
+   "ma": "c1bce9ddda",
+   "zh": "师傅手中的剪刀顺着肠壁游走,",
+   "ban_1": "Thay bếp cầm kéo lướt dọc ruột.",
+   "ban_2": "Kéo dao theo thành ruột."
+  },
+  {
+   "ma": "082f2852fd",
+   "zh": "这人肯定会往里面冲,架着门口往左边走,用提炼枪让他来接子弹。",
+   "ban_1": "Anh ta chắc chắn sẽ lao vào, chặn cửa đi trái, dùng súng bắt anh ta hứng đạn.",
+   "ban_2": "Hắn sẽ lao vào, ta chặn cửa bên trái, dùng súng máy để hắn hứng đạn."
+  },
+  {
+   "ma": "99b9d5de9e",
+   "zh": "这人肯定会往里面冲,架着门口往左边走,用提炼枪让他来接子弹。",
+   "ban_1": "Hắn sẽ lao vào, ta chặn cửa bên trái, dùng súng máy để hắn hứng đạn.",
+   "ban_2": "Anh ta chắc chắn sẽ lao vào, chặn cửa đi trái, dùng súng bắt anh ta hứng đạn."
+  },
+  {
+   "ma": "42963c6b3f",
+   "zh": "这人的操作你们可千万别学啊,楼下还有脚步,他们不敢上来,那我们就直接掐雷。",
+   "ban_1": "Đừng học theo người này nhé, nghe tiếng bước chân dưới lầu rồi, họ không dám lên, ta sẽ trực tiếp đặt mìn.",
+   "ban_2": "Đừng học người này, nghe bước chân dưới lầu, họ không dám lên, ta sẽ náu luu ngay."
+  }
+ ]
+}
