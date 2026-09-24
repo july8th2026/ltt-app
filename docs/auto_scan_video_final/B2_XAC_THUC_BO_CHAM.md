@@ -924,3 +924,157 @@ ngưỡng hạ được BĐG xuống dưới 15 % đều kéo `sai_thuc_the` xu�
 lỗi tiêm **theo từng loại** ở mọi ngưỡng; `bang_chung/b2_tiem_v3_nen_sach.json`
 là bản ghi sạch của lượt tiêm. ⇒ Cuộc đấu MetricX phải so **cả hai vế**:
 ⛔ một đường cong BĐG–độ-nhạy-tự-nhiên **không đủ** để tuyên bố ai thắng.
+
+---
+
+# 21. ĐỔI VAI: V3 thôi làm CỔNG, làm BỘ SÀNG — hai cổng MỚI, viết trước
+
+⛔ **Cổng 15 % báo động giả KHÔNG áp cho vai sàng** — nó sinh ra cho một **cổng
+tự động** chặn khách. Vai sàng có hai cổng khác:
+
+```
+1. DO NHAY  >= 95 %  — bo sot la MAT THAT, ⛔ khong cuu duoc o buoc sau
+2. THU GON  <= 50 %  so muc bi gan co — sang phai cat duoc it nhat MOT NUA
+                      viec doc; gan co 90/100 thi no vo dung
+```
+
+⚠️ **Khai thẳng, ⛔ không giả vờ đây là cổng mù:** con số 43/100 **đã biết** khi
+viết cổng 2. Nên cổng 2 ⛔ **không** phải một tiên đoán — nó là một **ngưỡng chi
+phí**: người đọc tiếp theo là người thật, sàng chỉ đáng giá khi cắt quá nửa việc
+đọc. Cổng 1 thì **chưa** biết trước (đo tiêm chạy sau).
+
+## 21.1 V3 ở luật đang chạy (`dem ≥ 1` nang), đo theo hai cổng mới
+
+| | đo được | cổng sàng |
+|---|---|---|
+| **Thu gọn** | **43/100** [33,7 ; 52,8] | ✅ ≤ 50 % (⚠️ cận trên KTC **52,8 %** — sát mép) |
+| Độ nhạy — lỗi **tự nhiên** | **10/10 = 100 %** [72,2 ; 100] | ✅ điểm ước lượng |
+| Độ nhạy — tiêm `lat_nghia` | **15/15 = 100 %** [79,6 ; 100] | ✅ điểm ước lượng |
+| Độ nhạy — tiêm **`sai_thuc_the`** | ⛔ **13/15 = 86,7 %** [62,1 ; 96,3] | ⛔ **< 95 %** |
+
+🔴 **V3 ⛔ CHƯA đạt cổng sàng** — nó **bỏ sót 2/15 lỗi sai thực thể đã tiêm**, và
+ở vai sàng thì mỗi lần bỏ sót là **mất thật**. ⛔ Đừng đọc *"độ nhạy 100 %"* của
+§17 thành *"không bỏ sót"*: 100 % đó là trên **10 lỗi tự nhiên**, KTC xuống tận
+**72,2 %**.
+
+⚠️ **Và ⛔ không một cỡ mẫu nào hiện có chứng minh nổi mức 95 %:** n = 10 và
+n = 15 cho KTC rộng hơn khoảng cách tới ngưỡng. ⇒ Cổng *"≥ 95 %"* chỉ có nghĩa
+sau khi có tập lớn (**C3**). Đó chính là lý do C3 đi trước.
+
+## 21.2 ⛔ Cái giá của đường này — ghi để ⛔ không ai tưởng bài toán đã xong
+
+Đường sàng + người chấm ⛔ **không tự động hoá được**: mỗi lượt cần **một người
+chấm** 43 mục. ⇒ Nó là lời giải cho **PHÉP ĐO của ta**, ⛔ **không** phải lời
+giải cho sản phẩm chạy tự động với khách. Bài toán **cổng tự động vẫn MỞ** — và
+§20 vừa chứng minh lời nhắc tự nặn ⛔ không giải được nó.
+
+---
+
+# 22. PHA C — khảo sát nguồn cộng đồng. ⛔ CHƯA cài gì
+
+⛔ Không tệp nào được tải về, không gói nào được cài. Dưới đây là **giấy phép,
+phụ thuộc và cái bẫy** của từng thứ, để điều phối quyết.
+
+## 22.1 🔴 C3 — DEMETR: giấy phép TỐT, nhưng **ĐÍCH SAI**
+
+`marzenakrp/demetr` · **MIT** ✅ · 35 tệp JSON, ~850 KB mỗi tệp (**~30 MB**) ·
+⛔ không kéo phụ thuộc nào (chỉ là dữ liệu).
+
+🔴 **Bẫy lớn nhất, README nói thẳng:** *"DEMETR contains only translations **into
+English**"*. Tiếng Trung là **ngôn ngữ NGUỒN** ⇒ cặp là **zh→en**, còn bộ chấm
+của ta là **zh→vi**. ⇒ Đo trên DEMETR là đo **một hệ thống khác** (lời nhắc đòi
+phán quyết về bản **tiếng Việt**), đúng cái §6 cấm.
+
+⚠️ **Và cỡ mẫu nhỏ hơn ta tưởng:** 1.000 mục mỗi loại **chia cho 10 ngôn ngữ
+nguồn** ⇒ **≈ 100 mục zh** mỗi loại, ⛔ không phải 1.000. (Vẫn hơn 15 của ta
+**~6,7×** ⇒ KTC hẹp hơn nhiều.)
+
+⚠️ Script tạo nhiễu ⛔ **không công khai** (*"contact us for scripts"*) ⇒ muốn
+áp công thức của họ lên cặp zh→vi của ta thì phải **tự hiện thực lại** — nhưng
+**đặc tả** (tên loại + mức + mô tả) thì có sẵn trong chính tên tệp và trường
+`pert_desc`, và MIT cho phép dùng.
+
+### Ánh xạ 35 loại → 2 loại của ta — ⭐ và chỗ mù nó soi ra
+
+| loại của ta | DEMETR |
+|---|---|
+| `lat_nghia` | `critical_id7_antonym` · `critical_id8_negation` · `major_id3_hypernym` · `major_id17_tense` · `major_id18_aspect` · `major_id19_question` |
+| `sai_thuc_the` | `critical_id9_ne_replaced` · `critical_id10_numbers_replaced` · `critical_id11_gender` · `critical_id25_ne_removed` |
+
+🔴 **23/35 loại ⛔ KHÔNG ánh xạ được — và đó là chỗ mù ta chưa biết mình có:**
+- **Bỏ sót**: `id5_pp_removed` · `id21_adj_adv_removed` · `id22_verb_removed` ·
+  `id23_noun_removed` · `id24_subj_removed`
+- **Thêm**: `critical_id6_addition`
+- **Trôi chảy/bề mặt**: `id1/id2_repeat` · `id12…id16` · `id26…id32`
+- **Khác**: `critical_id4_codemix` · `critical_id20_shuffled` · ba tệp `base_*`
+
+⭐ **Đáng nói nhất: `bo_sot`.** Bộ chấm của ta **báo** lỗi `bo_sot` (5/33 phần dư
+ở §17.4 là loại này) nhưng ta ⛔ **chưa bao giờ tiêm** một lỗi bỏ sót nào ⇒ ta
+⛔ **không biết** độ nhạy của mình ở đúng loại mà MetricX vốn mạnh. Phép tiêm
+tự viết của ta chỉ phủ **2/35** họ lỗi.
+
+## 22.2 C2 — ESA: giao thức chấm cho điều phối
+
+Nguồn: **arXiv 2406.11580** (Kocmi et al.) — *"combines the continuous rating of
+DA with the high-level error severity span marking of MQM … faster and cheaper
+than MQM at the same quality level, **without the requirement of expensive MQM
+experts**"*. Hiện thực tham chiếu: `MicrosoftTranslator/GEMBA`
+`gemba/gemba_esa.py` (⚠️ **CC BY-SA 4.0** — dùng **giao thức**, ⛔ không chép lời
+văn); công cụ chấm của WMT là `AppraiseDev/Appraise` (**BSD-3**).
+
+**Mẫu chấm hai chặng** (viết lại bằng lời của ta, ⛔ không chép):
+
+```
+CHANG 1 — danh dau DOAN loi tren ban dich
+   moi doan: [muc] = major | minor
+   major = pha mach, lam nguoi doc kho hoac khong hieu duoc
+   minor = la loi that nhung KHONG can tro viec hieu
+   ⛔ Phai TRICH doan, khong duoc nhan xet chung chung.
+   Loi BO SOT trich doan o CAU NGUON (loi khong nam trong ban dich).
+
+CHANG 2 — cham mot diem 0..100 DUA TREN cac doan da danh dau
+   moc:  0 = khong giu duoc nghia nao
+        33 = giu duoc mot phan nghia
+        66 = giu duoc phan lon nghia, vai loi ngu phap
+       100 = nghia va ngu phap hoan hao
+```
+
+⇒ Điều phối chấm **theo đúng mẫu này** thì số của ta **so sánh được với số của
+thiên hạ**, và ⛔ không ai phải bịa một thang riêng.
+
+## 22.3 C1 — `mt-metrics-eval`: Apache-2.0, nhưng phụ thuộc NẶNG
+
+`google-research/mt-metrics-eval` · **Apache-2.0** ✅ · `setup.py` kéo:
+`apache_beam` · `dacite` · `numpy` · `scipy` · `absl-py`.
+
+⚠️ **`apache_beam` là một khung xử lý dữ liệu phân tán** — nặng, và ⛔ không cần
+cho việc đếm của ta. ⇒ Đề xuất: ⛔ **chưa cài**; `tools/do_luong.py` (đã có,
+`sklearn` + `scipy`) đang phủ đúng phần ta cần. Chỉ kéo `mt-metrics-eval` khi
+cần **đúng phép tương quan hệ thống-cấp của WMT** (Kendall/Pearson theo cặp
+hệ thống) — thứ ta **chưa** dùng tới.
+
+## 22.4 🔴 C4 — sentinel metrics: **KHÔNG dùng được, giấy phép NC**
+
+`SapienzaNLP/guardians-mt-eval` (ACL 2024) · 🔴 **CC BY-NC-SA 4.0** —
+**NonCommercial**. Ta **bán credit** ⇒ ⛔ **không dùng được**, cùng rổ với
+xCOMET ở §2 DO NOT SHIP. Phụ thuộc cũng nặng (`torch`, `unbabel-comet`,
+`pytorch-lightning`, `wandb`).
+
+⭐ **Nhưng ý tưởng thì đọc được, và ta đã tự nghĩ ra một nửa:** phép *"chạy bản
+dịch NGƯỜI qua cổng"* của §2 chính là một **sentinel** — một đầu vào mà ta biết
+trước câu trả lời phải là gì. ⚠️ Phần ta **thiếu** so với họ: sentinel **chỉ
+nhìn NGUỒN** (bỏ bản dịch đi) và sentinel **chỉ nhìn BẢN DỊCH** (bỏ nguồn đi).
+Nếu bộ chấm vẫn phán được khi đã bỏ một phía, thì nó đang chấm bằng **thiên
+lệch bề mặt**, ⛔ không phải bằng đối chiếu nghĩa. ⇒ Đó là một đối chứng ta
+⛔ chưa hề có, và nó **miễn phí** để dựng (⛔ không cần mã của họ).
+
+## 22.5 Đề xuất thứ tự — chờ điều phối chốt, ⛔ chưa làm
+
+1. **C2 (ESA)** trước: ⛔ không tốn một byte tải về, và nó mở khoá vai "điều
+   phối chấm" ở §21.
+2. **C4 sentinel nguồn-mù/dịch-mù**: dựng bằng chính bộ đo đang có, ⛔ không
+   cài gì, và nó kiểm đúng nghi ngờ gốc của cả tài liệu này.
+3. **C3 (DEMETR)**: ⚠️ quyết định **đích sai** (zh→en) phải được chốt trước —
+   hoặc chấp nhận đo *"khả năng phát hiện lỗi"* trên một đích khác và khai rõ,
+   hoặc chỉ mượn **đặc tả 35 loại** rồi tự tiêm lên cặp zh→vi của ta.
+4. **C1**: ⛔ chưa cần.
