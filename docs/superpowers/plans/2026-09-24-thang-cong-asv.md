@@ -64,6 +64,96 @@ MetricX-24-Hybrid QE · RapidOCR · faster-whisper/whisperx · FLORES-200.
 
 ---
 
+## Task 0: Bỏ khoá `postgres_test` — mỗi làn một CSDL scratch riêng (N-10)
+
+**Vì sao làm TRƯỚC mọi thứ:** khoá này vừa chặn một làn phiên khác **78 phút**, và nó
+tồn tại **không** vì tài nguyên độc quyền thật — mà vì **mọi làn dùng chung MỘT tên CSDL**.
+Cho mỗi làn một tên riêng thì hết xung đột và **không cần khoá nào**. ⭐ Nó đóng luôn
+**M-11** (một `AsvRun` mồ côi của làn khác tự nộp job vô hạn, `jobs` phình 1.274 dòng):
+mỗi làn không còn thấy rác của làn khác.
+
+⚠️ Đây **khác** `cpu_nhieu`: khoá CPU chia **sức tính** nên không bỏ được. `postgres_test`
+chỉ chia một **cái tên**.
+
+**Files:**
+- Modify: `tests/fixtures/pg_scratch.py` (hàm `scratch_url`)
+- Modify: `tests/conftest.py:109` (bỏ `"postgres_test"` khỏi `tai_nguyen=`)
+- Test: `tests/test_<N0>_pg_scratch_theo_lan.py` (lấy `<N0>` từ `check_so_test.py`)
+
+**Interfaces:**
+- Produces: `pg_scratch.scratch_url(lan: str = "") -> str` — tên CSDL chứa cả `lan`;
+  rỗng ⇒ suy từ tên worktree.
+
+- [ ] **Bước 1: Viết phép kiểm ĐỎ trước**
+
+```python
+def test_hai_lan_khac_nhau_cho_hai_CSDL_khac_nhau():
+    """Khoa `postgres_test` chi bao ve MOT CAI TEN, khong bao ve tai nguyen doc quyen.
+
+    Do 24/09: mot lan giu khoa 78 phut, mot lan phien khac xep hang sau no — cho
+    mot thu le ra khong chan ai.
+    """
+    from tests.fixtures import pg_scratch
+    a = pg_scratch.scratch_url("asvf-b1")
+    b = pg_scratch.scratch_url("asvf-dich")
+    assert a != b
+    assert "test" in a and "test" in b   # `scratch_url` doi ten chua "test"
+
+
+def test_ten_CSDL_hop_le_voi_postgres():
+    """Ten PostgreSQL: <= 63 ky tu, chu thuong, khong dau gach ngang."""
+    from tests.fixtures import pg_scratch
+    ten = pg_scratch.scratch_url("asvf-nghiem-thu-v2").rsplit("/", 1)[-1]
+    assert len(ten) <= 63 and ten == ten.lower() and "-" not in ten
+```
+
+- [ ] **Bước 2: Chạy để chắc nó ĐỎ**
+
+Run: `python -m pytest tests/test_<N0>_pg_scratch_theo_lan.py -q`
+Expected: FAIL — `scratch_url() takes 0 positional arguments`
+
+- [ ] **Bước 3: Sửa `scratch_url` nhận `lan`**
+
+```python
+def _chuan_ten(lan: str) -> str:
+    """`asvf-nghiem-thu-v2` -> `asvf_nghiem_thu_v2`, cat cho vua 63 ky tu."""
+    tho = re.sub(r"[^a-z0-9_]", "_", lan.lower())
+    return tho[:40].strip("_")
+
+
+def scratch_url(lan: str = "") -> str:
+    lan = lan or _lan_tu_worktree()
+    return f"{_goc_url()}/lttplatform_test_{_chuan_ten(lan)}"
+```
+
+- [ ] **Bước 4: Chạy lại — XANH**
+
+Run: `python -m pytest tests/test_<N0>_pg_scratch_theo_lan.py -q`
+Expected: PASS
+
+- [ ] **Bước 5: Bỏ `postgres_test` khỏi `tests/conftest.py:109`**, ⛔ giữ `cpu_nhieu`.
+
+- [ ] **Bước 6: ĐỐI CHỨNG cô lập — bước KHÔNG ĐƯỢC BỎ**
+
+Mở **hai** tiến trình cùng dùng CSDL scratch với hai `lan` khác nhau; một bên gọi
+`drop_all`, bên kia đang ghi. Bên kia **phải không bị ảnh hưởng**.
+⛔ Không có bước này thì ta chỉ chứng minh **tên khác nhau**, chưa chứng minh **cô lập** —
+mà cô lập mới là thứ khoá đang bảo vệ.
+
+- [ ] **Bước 7: Dọn M-11**
+
+Sau khi mỗi làn có CSDL riêng, xoá `lttplatform_test` cũ (1.274 dòng rác + một `AsvRun`
+mồ côi). ⚠️ Kiểm **không phiên nào đang dùng nó** trước khi xoá (`pg_stat_activity`).
+
+- [ ] **Bước 8: Commit**
+
+```bash
+git add tests/fixtures/pg_scratch.py tests/conftest.py tests/test_<N0>_pg_scratch_theo_lan.py
+git commit -m "feat(test/pg): moi lan mot CSDL scratch rieng - bo khoa postgres_test, dong M-11"
+```
+
+---
+
 ## Task 1: Bốn trường hợp đồng trên `GiaiDoan`
 
 **Files:**
