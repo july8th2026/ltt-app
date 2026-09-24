@@ -744,3 +744,85 @@ Bằng chứng: `bang_chung/b2_quet_nguong_v3.json` (cả đường cong + mức
 từng lượt, ⛔ không một chữ FLORES) · `tools/…::quet_nguong`, `diem_mqm`.
 Tái lập: `python tools\bench_b2_xac_thuc_bo_cham.py quet --cham <tho> --so-soi
 bang_chung\b2_san_loi_flores.json --ra <ra>`.
+
+---
+
+# 19. BÀN GIAO cho cuộc đấu MetricX — và DỪNG nhánh lời nhắc tự nặn
+
+⭐ **Chủ dự án chốt (24/09 khuya):** *"nghiên cứu từ cộng đồng GitHub để giải bài
+toán thay vì tự suy luận; ⛔ không xây hệ thống khi có thể lấy từ cộng đồng"* —
+luật này nay áp cho **cả lời giải**, không chỉ cho bộ đo.
+
+⇒ ⛔ **DỪNG** nhánh V1→V2→V3: không V4, không sửa lời nhắc, không biến thể.
+`MetricX-24-Hybrid` (Apache-2.0, đã khai ở `THIRD_PARTY_METRICS.md`, chạy trong
+`qc-venv`) là **model được huấn luyện để chấm chất lượng dịch** — nó phải được
+thử **trước** một lời nhắc ta tự nghĩ ra, không phải sau.
+
+⭐ **Công sức V1→V3 ⛔ không phí:** nó để lại **chân lý nền đã soi mù** (100 dòng,
+hai người đọc) và **cách tính** mà cuộc đấu dựa vào. ⚠️ Nhưng nó đáng lẽ là bước
+**HAI**, ⛔ không phải bước **MỘT**.
+
+## 19.1 Ba thứ bàn giao
+
+**(1) Đường cong ngưỡng của V3** — ⛔ để so **công bằng**, đừng so V3-ở-điểm-tồi
+với MetricX-ở-điểm-tốt-nhất. KTC Wilson, `scipy`:
+
+| luật gắn cờ | **BĐG** (trên 100 dòng) | **độ nhạy tự nhiên** |
+|---|---|---|
+| `dem ≥ 1` nang — **điểm V3 đang chạy** | 33,0 % [24,6 ; 42,7] | 100 % [72,2 ; 100] |
+| `diem ≥ 6` | **12,0 %** [7,0 ; 19,8] | **80 %** [49,0 ; 94,3] |
+| `diem ≥ 7…10` | 10,0 % [5,5 ; 17,4] | 70 % [39,7 ; 89,2] |
+| `diem ≥ 11…25` | 7,0 % [3,4 ; 13,7] | 70 % [39,7 ; 89,2] |
+
+⭐ **Trả lời câu CÓ/KHÔNG: CÓ** — tồn tại cả một dải điểm vận hành thoả **cả
+hai** cổng. ⛔ **Vẫn không triển khai**: nó phải thi đấu với MetricX trước.
+
+**(2) Bằng chứng đã commit** (đường dẫn chính xác, gốc `docs/auto_scan_video_final/`):
+
+| tệp | có gì |
+|---|---|
+| `bang_chung/b2_san_loi_flores.json` | **chân lý nền** — 100 dòng, người đọc 1, mù, commit TRƯỚC |
+| `bang_chung/b2_san_loi_flores_nguoi_doc_2.json` | mẫu con 30 dòng, người đọc 2 |
+| `bang_chung/b2_cham_v3_tren_100_dong_soi_mu.json` | phán quyết V3 từng dòng (sổ `gop`) |
+| `bang_chung/b2_doi_chieu_v3_voi_soi_mu.json` | bảng 2×2 · ba định nghĩa lỗi · cả hai người đọc |
+| `bang_chung/b2_quet_nguong_v3.json` | đường cong + **mức từng lỗi từng dòng từng lượt** |
+
+**(3) ⛔ CÙNG một cách đếm** — `tools/do_luong.py` trên `main`:
+
+```
+dl.nhan_nguoi_doc(<b2_san_loi_flores.json>)   -> {dong: phan_quyet}
+dl.co_gan_co(<ban ghi bo cham>)               -> {dong: bi_gan_co | None}
+   # None = CHUA HOI XONG (so_luot == 0) ⇒ ⛔ bo khoi ca hai vector
+that = 1 neu phan_quyet == "ro"     # dinh nghia `chinh`
+dl.ma_tran_va_diem(that, du_doan)             -> tn/fp/fn/tp
+dl.ti_le_kem_ktc(k, n)                        -> ti le + KTC Wilson
+```
+
+Chạy lại trên bằng chứng đã commit cho **đúng** bảng của §17:
+`tn 57 · fp 33 · fn 0 · tp 10`.
+
+🔴 **MỘT chỗ dễ làm cuộc đấu vô nghĩa, đọc kỹ:** `ma_tran_va_diem` trả
+`bao_dong_gia_tren_gan_co` = **FP/số gắn cờ** = **76,7 %**. ⛔ Đó **KHÔNG** phải
+con số của cổng. Cổng 15 % nói *"tỉ lệ báo động giả trên ≥ 100 cặp"* ⇒ mẫu số là
+**tổng số cặp** ⇒ `ti_le_kem_ktc(fp, n)` = **33,0 %**. Hai số cùng tên, khác mẫu
+số, lệch **43 điểm**. ⛔ Hai bên phải khai mẫu số trước khi so.
+
+## 19.2 ⚠️ Mốc giờ — lượt nào còn đứng sau sự cố 23:37–23:44 (24/09)
+
+Production sập ~15 phút do một phiên khác deploy. Đã soát **cửa sổ giờ** của mọi
+lượt gọi máy B của làn này:
+
+| lượt | cửa sổ (giờ máy, UTC+7) | |
+|---|---|---|
+| **V3, 100 dòng** (§17, §18) | **22:11 → 22:59** | ✅ trước sự cố — **mọi số vẫn đứng** |
+| quét ngưỡng (§18) | 23:07 | ✅ **offline**, ⛔ không gọi model một lần nào |
+| V2, phần 3 và 4 | 23:31→23:38 · 23:38→23:46 | 🔴 **VẮT QUA ⇒ đã VỨT**, ⛔ không cứu |
+
+⇒ ⛔ **Không một con số nào của §17/§18 bị ảnh hưởng.** V2 trên 100 dòng **không
+được phân tích và không được báo** (làn dừng theo lệnh điều phối); dữ liệu thô
+nằm ngoài kho, ⛔ chưa có kết luận nào rút ra từ nó.
+
+⭐ Và bộ đo nay **ghi mốc giờ UTC** của từng phần (`cua_so_utc`,
+`cua_so_utc_cac_phan`) — vì một lượt vắt qua sự cố cho **mẫu số thiếu** mà ⛔
+**không báo lỗi**: nó chỉ ra một tỉ lệ **khác**, ⛔ không phân biệt được từ bên
+ngoài. Chốt bằng `test_ban_ghi_GHI_CUA_SO_UTC_de_kiem_lai_su_co`.

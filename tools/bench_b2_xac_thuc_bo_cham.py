@@ -63,6 +63,7 @@ goi TUAN TU, tuc mot request mot luc.
 from __future__ import annotations
 
 import argparse
+import datetime
 import hashlib
 import json
 import os
@@ -538,6 +539,12 @@ def _ti_le(cac_luot: list[dict], ma: list[str], gop: dict) -> dict:
 #  5. Giao dien cua Task 10
 # ══════════════════════════════════════════════════════════════════════════════
 
+def _bay_gio() -> str:
+    """Moc gio UTC, dang ISO — ⛔ khong dung gio may (may nay UTC+7)."""
+    return datetime.datetime.now(datetime.timezone.utc).isoformat(
+        timespec="seconds")
+
+
 def ti_le_bao_dong_gia(n: int, *, db=None, luot: int = LUOT_MOI_CAP,
                        tu: int = 0, ban: str = "v3",
                        dong: list[int] | None = None,
@@ -566,13 +573,19 @@ def ti_le_bao_dong_gia(n: int, *, db=None, luot: int = LUOT_MOI_CAP,
         cap = doc_flores(thu_muc)[tu:tu + n]
     muc = [{"ma": f"flores_{i:04d}", "goc": zh, "chu": vi} for i, zh, vi in cap]
     ma = [m["ma"] for m in muc]
+    bat_dau = _bay_gio()
     cac_luot = []
     for k in range(luot):
         print(f"  [FLORES] {ban} luot {k + 1}/{luot} — {len(muc)} cap NGUOI"
               f" DICH (dong {tu}..{tu + len(muc) - 1})")
         cac_luot.append(cham_mot_luot(db, muc, ban))
     gop = gop_trung_vi(cac_luot, ma)
+    # 🔴 **Moc gio la mot phan cua phep do, khong phai trang tri.** Mot luot
+    #    vat qua mot su co (deploy, restart, mat dien) cho ra mau so THIEU ma
+    #    ⛔ khong bao loi — no chi ra mot ti le KHAC, ⛔ khong phan biet duoc tu
+    #    ben ngoai. Khong ghi cua so nay thi khong ai kiem lai duoc.
     return {"n": len(muc), "luot": luot, "tu": tu, "ban": ban, "gop": gop,
+            "cua_so_utc": [bat_dau, _bay_gio()],
             "dong": [i for i, _z, _v in cap],
             "luoc_do": thong_ke_luoc_do(cac_luot, len(muc)),
             "cac_luot": cac_luot, **_ti_le(cac_luot, ma, gop)}
@@ -617,6 +630,10 @@ def gop_phan(cac_phan: list[dict]) -> dict:
     gop = gop_trung_vi(cac_luot, ma)
     return {"n": len(ma), "luot": next(iter(luot)),
             "tu_cac_phan": [p["tu"] for p in cac_phan], "gop": gop,
+            # ⛔ Giu cua so cua TUNG phan, ⛔ khong gop thanh mot khoang lien
+            #    tuc: cac phan chay roi rac, mot khoang gop se nuot cho ho o
+            #    giua — dung cho su co co the da xay ra.
+            "cua_so_utc_cac_phan": [p.get("cua_so_utc") for p in cac_phan],
             "dong": [int(m.split("_")[1]) for m in ma],
             "cac_luot": cac_luot, **_ti_le(cac_luot, ma, gop)}
 

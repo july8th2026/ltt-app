@@ -604,3 +604,19 @@ def test_chia_doi_XEN_KE_va_KHONG_trung_nhau():
     a, b = bc.chia_doi([503, 520, 700, 850, 896])
     assert a == [503, 700, 896] and b == [520, 850]
     assert not set(a) & set(b)
+
+
+def test_ban_ghi_GHI_CUA_SO_UTC_de_kiem_lai_su_co(monkeypatch):
+    """🔴 Mot luot vat qua su co (deploy/restart) cho mau so THIEU ma ⛔ khong
+    bao loi — no chi ra mot ti le KHAC. Khong co moc gio thi ⛔ khong ai kiem
+    lai duoc luot nao con dung (24/09: production sap 23:37-23:44)."""
+    monkeypatch.setattr(bc, "doc_flores", lambda *a, **k: [(5, "x", "y")])
+    monkeypatch.setattr(bc, "cham_mot_luot",
+                        lambda db, m, ban="v3": _luot(flores_0005=True))
+    r = bc.ti_le_bao_dong_gia(1, db=None, luot=1)
+    cua = r["cua_so_utc"]
+    assert len(cua) == 2 and cua[0] <= cua[1]
+    assert cua[0].endswith("+00:00")          # ⛔ UTC, khong phai gio may
+    g = bc.gop_phan([{**r, "dong": [5]}])
+    assert g["cua_so_utc_cac_phan"] == [cua]
+
