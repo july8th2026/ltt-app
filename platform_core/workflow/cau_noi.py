@@ -21,7 +21,7 @@ from platform_core.job_scheduler import ORIGIN_WORKFLOW
 from platform_core.models import (JOB_CANCELLED, JOB_DONE, Artifact, Job,
                                   Waitpoint, WaitpointSignal, WorkflowRun)
 from platform_core.workflow import (cho_doi, danh_thuc, may_trang_thai,
-                                    thi_hanh)
+                                    thi_hanh, thu_lai)
 from platform_core.workflow import artifact as _artifact
 from platform_core.workflow import cong_cu as _nguon
 from platform_core.workflow.bien_dich import la_tham_chieu
@@ -268,6 +268,21 @@ def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
         ma = {"ABANDONED": "ket_qua_mo_ho", "CANCELLED": "bi_huy"}.get(
             sang, "provider_loi")
         chi_tiet = str((sig.result_ref or {}).get("error", ""))
+        # ⭐ Retry CẤP NODE (spec §5.6) — chỉ xảy ra ở ĐÂY, tức khi job đã kết
+        #    thúc ERROR và retry của chính job đã cạn. `thu_lai` không có bộ
+        #    đếm riêng: nó đọc `settings.retry`, hỏi `jobs.gian_cach_retry` về
+        #    giãn cách, và hẹn một wakeup. `KHONG_THU_LAI` (ABANDONED/CANCELLED)
+        #    thắng `settings.retry`, không phải ngược lại.
+        node = _node_cua(db, run, node_id)
+        if thu_lai.quyet_dinh(sang=sang, node=node, lan=lan) == "RETRY_SCHEDULED":
+            han = thu_lai.hen(db, run_id=run.id, node=node, lan=lan)
+            may_trang_thai.chuyen_node(
+                db, run.id, node_id, sang="RETRY_SCHEDULED",
+                mo_ta="job ket thuc, con luot thu lai",
+                error=f"{ma}: {chi_tiet}"[:2000],
+                attempt_number=lan + 1, job_id=sig.ref_id,
+                output_ref={thu_lai.KHOA_HAN: han.isoformat()})
+            return "RETRY_SCHEDULED"
         may_trang_thai.chuyen_node(
             db, run.id, node_id, sang=sang, mo_ta="job ket thuc",
             error=f"{ma}: {chi_tiet}"[:2000],

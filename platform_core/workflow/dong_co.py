@@ -17,7 +17,8 @@ from sqlalchemy import select
 
 from platform_core import jobs
 from platform_core.models import Job, Wakeup, WorkflowRun, WorkflowVersion
-from platform_core.workflow import cau_noi, danh_thuc, may_trang_thai as mtt, su_kien
+from platform_core.workflow import (cau_noi, danh_thuc, may_trang_thai as mtt,
+                                    su_kien, thu_lai)
 from platform_core.workflow.cong_cu import CongCu
 
 log = logging.getLogger(__name__)
@@ -123,6 +124,10 @@ def xu_ly_run(db, run_id: str, *,
         mtt.chuyen_run(db, run.id, sang="RUNNING")
     for n in g["nodes"]:
         cau_noi.ap_ket_qua(db, run, n["id"], cong_cu=cong_cu)
+    # ⭐ Retry cấp node (spec §5.6): `RETRY_SCHEDULED` đã tới hạn quay về READY
+    #    TRƯỚC vòng lan truyền, để nó được nộp lại ngay trong lượt này thay vì
+    #    phải đợi thêm một lượt động cơ nữa.
+    thu_lai.den_han(db, run.id, g["nodes"])
     tt, _ = _lan_truyen(db, run, g)
     ket = _ket_run(db, run, g, tt)
     if ket:
