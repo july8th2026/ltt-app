@@ -149,6 +149,11 @@ async def hook_waitpoint(waitpoint_id: str, request: Request):
             return JSONResponse({"ma": "khong_tim_thay"}, status_code=404)
         if ket is noi_lai.TOKEN_SAI:
             return JSONResponse({"ma": "token_sai"}, status_code=401)
+        if ket is noi_lai.DU_LIEU_SAI:
+            return JSONResponse(
+                {"ma": "du_lieu_sai",
+                 "thong_diep": f"can `quyet_dinh` la mot trong "
+                               f"{list(noi_lai.QUYET_DINH)}"}, status_code=400)
         if ket is noi_lai.DA_DONG:
             # ⭐ 409 chứ không 200: gửi lại vào một điểm chờ ĐÃ ĐÓNG không phải
             #    một lần resume thành công, và nói thế là nói dối người tích hợp.

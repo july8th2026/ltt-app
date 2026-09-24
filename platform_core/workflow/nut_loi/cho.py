@@ -183,6 +183,24 @@ def tiep_mot(db, run, node: dict, *, vong=()) -> Optional[KetQua]:
         if wp.due_at is not None and _khong_tzinfo(wp.due_at) <= luc:
             noi_lai.mo(db, wp, status="SUCCEEDED", ra={}, nguon="dong ho")
             return KetQua(output={"cho_den": wp.due_at.isoformat()})
+        if kind == "EVENT":
+            # ⭐ Sự kiện được hỏi **lười**, ngay tại đây, thay vì bởi một bộ
+            #    phát riêng. Lý do không phải cho gọn: bộ phát riêng sẽ phải
+            #    **tìm lại** node (và chỉ số vòng) từ một hàng waitpoint, còn
+            #    hàm này đã cầm sẵn cả `node` lẫn `vong` — và chính việc "tìm
+            #    lại ngữ cảnh" là chỗ đẻ ra một bộ sinh khoá thứ hai.
+            try:
+                ev = _su_kien_khop(db, run, node, wp)
+            except LoiNgonNgu as loi:
+                noi_lai.mo(db, wp, status="FAILED",
+                           ra={"error": f"bieu_thuc_loi: {loi}"[:500]},
+                           la_loi=True, nguon="loc hong")
+                return KetQua(sang="FAILED",
+                              error=f"bieu_thuc_loi: {loi}"[:2000])
+            if ev is not None:
+                noi_lai.mo(db, wp, status="SUCCEEDED", ra={"event": ev},
+                           nguon=str(ev.get("id") or ""))
+                return KetQua(output={"event": ev})
         if wp.het_han_luc is not None \
                 and _khong_tzinfo(wp.het_han_luc) <= luc:
             noi_lai.mo(db, wp, status="FAILED", ra={"het_han": True},
@@ -237,6 +255,138 @@ def tiep_cho(db, run, g: dict, *, bo_qua=frozenset()) -> int:
 #: theo đúng chuỗi này.
 NHANH_HET_HAN = "het_han"
 
+#: Hai nhánh của `core.human`. Tên CỐ ĐỊNH, và trùng đúng hai giá trị
+#: `che_do_het_han` (`approve` / `reject`) của spec §5.7 — nên "hết hạn thì
+#: định tuyến" không cần một bảng ánh xạ thứ hai.
+NHANH_HUMAN = ("approve", "reject")
+
+#: Chế độ của `core.wait`. ⛔ Danh sách ĐÓNG.
+CHE_DO_WAIT = ("webhook", "event")
+
+#: Loại `workflow_event` mà `core.wait mode=event` nghe được (spec §8.4:
+#: *"Nguồn sự kiện trong phạm vi: **chỉ** `workflow.run.finished`"*).
+LOAI_SU_KIEN = ("WorkflowCompleted", "WorkflowFailed", "WorkflowCancelled")
+
+
+def _token_moi() -> tuple[str, str]:
+    """`(token thô, sha256)` — token URL một-lần của `core.wait mode=webhook`.
+
+    ⛔ Chỉ bản BĂM vào CSDL. Bản thô đi ra `output_ref` của node đúng một lần,
+       để đồ thị gửi nó đi (email, Slack, một node HTTP). Lưu bản thô là lưu
+       một chìa khoá mở được điểm chờ của khách.
+    """
+    import secrets
+
+    tho = secrets.token_urlsafe(32)
+    return tho, noi_lai.bam_token(tho)
+
+
+def chay_wait(db, run, node: dict, *, moi_truong: dict, vong=(), **_) -> KetQua:
+    """`core.wait` — chờ một cú POST (`webhook`) hoặc một sự kiện (`event`).
+
+    ⭐ ADOPT Activepieces: điểm chờ được tạo **trước** khi URL được phát ra
+       (spec §5.7 — *"tín hiệu tới trước khi WAITING"* không tồn tại vì hàng
+       waitpoint đã có). `activepieces#14388` (*"Support multiple pauses within
+       a single step run"*) là ca mà khoá theo đường thi hành giải hộ ta.
+    """
+    p = node.get("params") or {}
+    che_do = str(p.get("mode") or "webhook")
+    if che_do not in CHE_DO_WAIT:
+        return KetQua(sang="FAILED",
+                      error=f"dau_vao_sai: mode phai la mot trong "
+                            f"{list(CHE_DO_WAIT)}")
+    kind = "WEBHOOK" if che_do == "webhook" else "EVENT"
+    han_s = p.get("timeout_s")
+    cu, _khoa = _tim(db, run, str(node["id"]), kind, vong=vong)
+    tho = ""
+    bam = ""
+    if cu is None and kind == "WEBHOOK":
+        tho, bam = _token_moi()
+    wp = mo_diem_cho(db, run, node, kind=kind, due_at=None,
+                     che_do_het_han=str(p.get("het_han") or ""),
+                     vong=vong, token_hash=bam,
+                     han_rieng_s=float(han_s) if han_s else None)
+    kq = tiep_mot(db, run, node, vong=vong)
+    if kq is not None:
+        return kq
+    ra: dict = {}
+    if kind == "WEBHOOK":
+        ra = {"url": f"/hooks/wp/{wp.id}", "token": tho}
+    return KetQua(sang="WAITING", output=ra)
+
+
+def chay_human(db, run, node: dict, *, moi_truong: dict, vong=(),
+               **_) -> KetQua:
+    """`core.human` — chờ người duyệt (spec §5.7, ADOPT Flowise/Langflow).
+
+    ⭐ Hai thứ lấy từ họ, và cả hai là *quyết định*, không phải mã:
+       resume bằng **API** (không phải một callback trong tiến trình), và
+       **hết hạn thì ĐỊNH TUYẾN** chứ không treo. Mặc định `che_do_het_han`
+       của node này là `reject` (spec §5.7) — ⛔ không phải `approve`: một
+       workflow duyệt-trước-khi-đăng mà tự duyệt khi người bận là đúng thứ
+       `core.human` sinh ra để chặn.
+    """
+    p = node.get("params") or {}
+    cu, _khoa = _tim(db, run, str(node["id"]), "HUMAN", vong=vong)
+    tho = ""
+    bam = ""
+    if cu is None:
+        tho, bam = _token_moi()
+    han_s = p.get("timeout_s")
+    wp = mo_diem_cho(db, run, node, kind="HUMAN", due_at=None,
+                     che_do_het_han=str(p.get("het_han") or ""),
+                     vong=vong, token_hash=bam,
+                     han_rieng_s=float(han_s) if han_s else None)
+    kq = tiep_mot(db, run, node, vong=vong)
+    if kq is not None:
+        return kq
+    return KetQua(sang="WAITING",
+                  output={"url": f"/hooks/wp/{wp.id}", "token": tho,
+                          "cau_hoi": str(p.get("cau_hoi") or ""),
+                          "het_han_luc": (wp.het_han_luc.isoformat()
+                                          if wp.het_han_luc else "")})
+
+
+def _su_kien_khop(db, run, node: dict, wp) -> Optional[dict]:
+    """Sự kiện đầu tiên KHỚP bộ lọc của một `core.wait mode=event`.
+
+    ⚠️ Quét từ `wp.created_at` trở đi, không quét cả bảng: điểm chờ chỉ nghe
+       những gì xảy ra SAU khi nó mở. Đây cũng là lý do waitpoint phải được
+       tạo trước khi node rời `READY`.
+
+    ⛔ Phạm vi HẸP theo spec §8.4: chỉ dòng kết thúc run (`LOAI_SU_KIEN`).
+       Sự kiện của job ngoài workflow *"buộc `jobs.py` ghi vào bảng của
+       workflow cho mọi job, phá luật §3.1-3"*.
+    """
+    from sqlalchemy import select
+
+    from platform_core.models import WorkflowEvent
+
+    loc = str((node.get("params") or {}).get("loc") or "")
+    hang = db.execute(
+        select(WorkflowEvent)
+        .where(WorkflowEvent.loai.in_(LOAI_SU_KIEN),
+               WorkflowEvent.created_at >= wp.created_at,
+               WorkflowEvent.run_id != run.id)
+        .order_by(WorkflowEvent.created_at, WorkflowEvent.id)
+        .limit(200)).scalars()
+    for ev in hang:
+        mt = {"event": {"id": ev.id, "run_id": ev.run_id, "loai": ev.loai,
+                        "status": str((ev.du_lieu or {}).get("status") or ""),
+                        "outputs": dict((ev.du_lieu or {}).get("outputs") or {})}}
+        if not loc:
+            return mt["event"]
+        try:
+            if bool(ngon_ngu.tinh(loc, mt)):
+                return mt["event"]
+        except LoiNgonNgu:
+            # Bộ lọc hỏng ⇒ điểm chờ này không bao giờ khớp được. Nói ra bằng
+            # một ngoại lệ ở bên gọi, ⛔ không bỏ qua im lặng.
+            raise
+    return None
+
+
+_CHO_VAO = (("in", he_kieu.Cong(type="any", required=False, nhan="in")),)
 
 DINH_NGHIA = (
     (NodeDefinition(
@@ -259,7 +409,60 @@ DINH_NGHIA = (
         cho=("DELAY",), ma_loi=("bieu_thuc_loi", "dau_vao_sai",
                                 "het_han_cho"),
         publish_duoc=True), chay_delay),
+    (NodeDefinition(
+        type="core.wait", type_version=1, kind="control", category="FLOW",
+        title=N_("Chờ tín hiệu"),
+        description=N_("Chờ một cú gọi webhook hoặc một sự kiện khớp bộ lọc."),
+        icon="⇩",
+        cong_vao=_CHO_VAO,
+        cong_ra=(("url", he_kieu.Cong(type="text", required=False, nhan="url")),
+                 ("token", he_kieu.Cong(type="text", required=False,
+                                        nhan="token")),
+                 ("event", he_kieu.Cong(type="any", required=False,
+                                        nhan="event")),
+                 ("than", he_kieu.Cong(type="any", required=False,
+                                       nhan="than"))),
+        tham_so={"type": "object",
+                 "properties": {
+                     "mode": {"type": "enum", "values": list(CHE_DO_WAIT)},
+                     "timeout_s": {"type": "int", "max": TRAN_DURATION_S},
+                     "loc": {"type": "bieu_thuc"},
+                     "het_han": {"type": "enum",
+                                 "values": list(han_cho.CHE_DO_HET_HAN)}},
+                 "required": ["mode"], "additionalProperties": False},
+        thi_hanh="inline", gia=Gia.mien_phi(), quyen=frozenset(),
+        # ⚠️ HAI loại: một node `core.wait` chỉ mở MỘT trong hai, nhưng
+        #    `tiep_mot` phải tra được cả hai — `mode` nằm trong `params`, còn
+        #    `cho` là thứ nền tảng đọc mà KHÔNG cần biết tên tham số của node.
+        cho=("WEBHOOK", "EVENT"),
+        ma_loi=("bieu_thuc_loi", "dau_vao_sai", "het_han_cho"),
+        publish_duoc=True), chay_wait),
+    (NodeDefinition(
+        type="core.human", type_version=1, kind="control", category="FLOW",
+        title=N_("Chờ người duyệt"),
+        description=N_("Dừng cho tới khi có người duyệt hoặc từ chối."),
+        icon="✋",
+        cong_vao=_CHO_VAO,
+        cong_ra=(("url", he_kieu.Cong(type="text", required=False, nhan="url")),
+                 ("token", he_kieu.Cong(type="text", required=False,
+                                        nhan="token")),
+                 ("quyet_dinh", he_kieu.Cong(type="text", required=False,
+                                             nhan="quyet_dinh")),
+                 ("du_lieu", he_kieu.Cong(type="any", required=False,
+                                          nhan="du_lieu"))),
+        tham_so={"type": "object",
+                 "properties": {
+                     "cau_hoi": {"type": "string"},
+                     "timeout_s": {"type": "int", "max": TRAN_DURATION_S},
+                     "het_han": {"type": "enum",
+                                 "values": list(han_cho.CHE_DO_HET_HAN)}},
+                 "required": [], "additionalProperties": False},
+        thi_hanh="inline", gia=Gia.mien_phi(), quyen=frozenset(),
+        cho=("HUMAN",), ma_loi=("het_han_cho",),
+        publish_duoc=True), chay_human),
 )
 
-__all__ = ["DINH_NGHIA", "KIND_WAKEUP", "NHANH_HET_HAN", "TRAN_DURATION_S",
-           "chay_delay", "la_node_cho", "mo_diem_cho", "tiep_cho", "tiep_mot"]
+__all__ = ["CHE_DO_WAIT", "DINH_NGHIA", "KIND_WAKEUP", "LOAI_SU_KIEN",
+           "NHANH_HET_HAN", "NHANH_HUMAN", "TRAN_DURATION_S", "chay_delay",
+           "chay_human", "chay_wait", "la_node_cho", "mo_diem_cho",
+           "tiep_cho", "tiep_mot"]

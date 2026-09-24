@@ -48,12 +48,24 @@ class KetNoiLai(Enum):
     TOKEN_SAI = "token_sai"
     DA_DONG = "da_dong"
     DA_MO = "da_mo"
+    DU_LIEU_SAI = "du_lieu_sai"
 
+
+#: Khoá mà `nut_loi/cho.tiep_mot` đọc ra TÊN NHÁNH từ `waitpoint.output_ref`.
+#: Cùng chuỗi mà `moi_truong.KHOA_NHANH` dùng cho ảnh chụp node — một tên, vì
+#: nó đi thẳng từ đây vào `output_ref` của node và Canvas chỉ vẽ một cổng.
+KHOA_NHANH = "_nhanh"
+
+#: Quyết định hợp lệ của `core.human`. ⛔ Danh sách ĐÓNG: một chuỗi lạ ở đây
+#: là một run đi vào một nhánh không có cạnh nào — tức mọi đích SKIPPED và
+#: workflow kết thúc "thành công" mà chẳng làm gì.
+QUYET_DINH = ("approve", "reject")
 
 KHONG_CO = KetNoiLai.KHONG_CO
 TOKEN_SAI = KetNoiLai.TOKEN_SAI
 DA_DONG = KetNoiLai.DA_DONG
 DA_MO = KetNoiLai.DA_MO
+DU_LIEU_SAI = KetNoiLai.DU_LIEU_SAI
 
 #: Trạng thái `waitpoint` còn nhận tín hiệu. Mọi thứ khác là đã chốt.
 DANG_CHO = "PENDING"
@@ -129,10 +141,21 @@ def mo_bang_token(db, waitpoint_id: str, *, token: str,
     can = str(wp.token_hash or "")
     if not can or bam_token(token) != can:
         return TOKEN_SAI
-    return mo(db, wp, status="SUCCEEDED", ra=dict(du_lieu or {}),
-              nguon="hooks/wp")
+    ra = dict(du_lieu or {})
+    if wp.kind == "HUMAN":
+        # ⭐ `core.human` phải mang QUYẾT ĐỊNH ra nhánh, không chỉ mang dữ liệu.
+        #    ⛔ Không có mặc định: thiếu `quyet_dinh` ⇒ `DU_LIEU_SAI` (400), chứ
+        #       không âm thầm coi là `approve`. Một lần duyệt mà người gửi
+        #       không hề nói "duyệt" là đúng thứ node này sinh ra để chặn.
+        qd = str((ra.get("than") or {}).get("quyet_dinh")
+                 if isinstance(ra.get("than"), dict) else "")
+        if qd not in QUYET_DINH:
+            return DU_LIEU_SAI
+        ra[KHOA_NHANH] = qd
+        ra["quyet_dinh"] = qd
+    return mo(db, wp, status="SUCCEEDED", ra=ra, nguon="hooks/wp")
 
 
-__all__ = ["DANG_CHO", "DA_DONG", "DA_MO", "KHONG_CO", "TOKEN_SAI",
-           "KetNoiLai", "bam_token", "danh_thuc_node_cua", "mo",
-           "mo_bang_token"]
+__all__ = ["DANG_CHO", "DA_DONG", "DA_MO", "DU_LIEU_SAI", "KHOA_NHANH",
+           "KHONG_CO", "QUYET_DINH", "TOKEN_SAI", "KetNoiLai", "bam_token",
+           "danh_thuc_node_cua", "mo", "mo_bang_token"]
