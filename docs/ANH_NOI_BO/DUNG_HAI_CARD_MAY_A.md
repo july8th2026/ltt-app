@@ -1,5 +1,11 @@
 # Dùng hai card 5060 Ti của máy A — hướng nào, và vì sao
 
+> # ⚠️ BẢN GHI 08/2026 — MÁY A NAY CÒN **MỘT** CARD
+>
+> Tiêu đề và mọi số trong tệp này thuộc thời máy A có **hai** card 5060 Ti. Máy A
+> nay còn **một**. Đừng đọc tệp này như hiện trạng, và đừng sửa nó — nó là bản
+> ghi có ngày. Cấu hình hôm nay: [`../HAI_MAY_A_VA_B.md`](../HAI_MAY_A_VA_B.md).
+
 **2026-08-24.** Chủ sản phẩm: *"máy A có 2 card 5060 Ti 16 GB. Có phương án nào để
 hai card đó cũng hỗ trợ được không — ví dụ để ComfyUI trên 1 card máy A, chia bớt
 công việc? Mục tiêu tối ưu chất lượng, tốc độ."*
