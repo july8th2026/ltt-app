@@ -714,7 +714,12 @@ là **100 dòng** (cùng định nghĩa với cổng 15 %), định nghĩa lỗi
 | `dem ≥ 2` nang | 8 | 5 % | 30 % | ⛔ mù |
 | `dem ≥ 3` nang | 1 | 0 % | 10 % | ⛔ mù |
 
-## 18.3 ⭐ Trả lời câu CÓ/KHÔNG: **CÓ**
+## 18.3 ~~Trả lời câu CÓ/KHÔNG: **CÓ**~~ — 🔴 **ĐÃ BỊ LẬT ở §20**
+
+> 🔴 **Mục này đo SAI vế hai.** "Độ nhạy" dưới đây là trên lỗi **TỰ NHIÊN** của
+> FLORES; cổng đòi **≥ 50 % MỖI LOẠI TIÊM**. Đo đúng vế hai (§20) cho ra
+> **KHÔNG có một điểm nào**. ⛔ Giữ nguyên văn để thấy sai ở đâu, ⛔ không đọc
+> nó như một kết luận.
 
 **Tồn tại** điểm vận hành thoả **cả hai** cổng — và không phải một điểm lẻ mà
 **cả một dải** (`diem ≥ 6` … `≥ 25`). ⇒ ⛔ Khuyết tật **không** nằm ở lời nhắc
@@ -774,8 +779,8 @@ với MetricX-ở-điểm-tốt-nhất. KTC Wilson, `scipy`:
 | `diem ≥ 7…10` | 10,0 % [5,5 ; 17,4] | 70 % [39,7 ; 89,2] |
 | `diem ≥ 11…25` | 7,0 % [3,4 ; 13,7] | 70 % [39,7 ; 89,2] |
 
-⭐ **Trả lời câu CÓ/KHÔNG: CÓ** — tồn tại cả một dải điểm vận hành thoả **cả
-hai** cổng. ⛔ **Vẫn không triển khai**: nó phải thi đấu với MetricX trước.
+🔴 **ĐÃ BỊ LẬT — đọc §20.** Cột "độ nhạy" trên là trên lỗi **tự nhiên**, ⛔ không
+phải vế hai của cổng. Đo đúng vế hai: **KHÔNG tồn tại điểm nào** thoả cả hai.
 
 **(2) Bằng chứng đã commit** (đường dẫn chính xác, gốc `docs/auto_scan_video_final/`):
 
@@ -826,3 +831,52 @@ nằm ngoài kho, ⛔ chưa có kết luận nào rút ra từ nó.
 `cua_so_utc_cac_phan`) — vì một lượt vắt qua sự cố cho **mẫu số thiếu** mà ⛔
 **không báo lỗi**: nó chỉ ra một tỉ lệ **khác**, ⛔ không phân biệt được từ bên
 ngoài. Chốt bằng `test_ban_ghi_GHI_CUA_SO_UTC_de_kiem_lai_su_co`.
+
+---
+
+# 20. 🔴 VẾ HAI CỦA CỔNG — đo rồi: **KHÔNG có một điểm vận hành nào**
+
+⚠️ §18–19 báo *"CÓ"* dựa trên độ nhạy trên lỗi **TỰ NHIÊN** (80 %). Cổng viết
+trước đòi **≥ 50 % MỖI LOẠI TIÊM**. Đó là **hai con số khác nhau**, và đây là
+con số đúng của cổng.
+
+Chạy lại đối chứng âm: V3 · `temp 0.0` · 3 lượt · 15 cặp mỗi loại · dòng FLORES
+≥ 300 · nền sạch (**0** lô hỏng) · cửa sổ UTC `17:09→17:21` (⛔ ngoài sự cố
+23:37–23:44 giờ máy).
+
+| luật gắn cờ | BĐG | `lat_nghia` | **`sai_thuc_the`** | cổng |
+|---|---|---|---|---|
+| `dem ≥ 1` nang — **V3 đang chạy** | 33,0 % | 100 % | **86,7 %** [62,1;96,3] | ⛔ vế 1 |
+| `diem ≥ 2…5` | 33,0 % | 100 % | 86,7 % | ⛔ vế 1 |
+| **`diem ≥ 6…10`** | **10–12 %** ✅ | 100 % ✅ | ⛔ **46,7 %** [24,8;69,9] | ⛔ vế 2 |
+| `diem ≥ 11…15` | 7,0 % ✅ | 100 % ✅ | ⛔ 26,7 % | ⛔ vế 2 |
+| `diem ≥ 16…25` | 7,0 % ✅ | 100 % ✅ | ⛔ 20,0 % | ⛔ vế 2 |
+| `dem ≥ 2` nang | 5,0 % ✅ | ⛔ 20,0 % | ⛔ 26,7 % | ⛔ vế 2 |
+
+## 20.1 ⭐ Câu trả lời: **KHÔNG** — và nó là một kết quả QUYẾT ĐỊNH
+
+⛔ **Không một điểm nào trong 30 luật quét được thoả cả hai vế.** Và cơ chế đọc
+thẳng ra từ bảng: **đúng một bậc** — `diem ≥ 5` → `≥ 6` — báo động giả rơi
+**33 % → 12 %** trong khi `sai_thuc_the` rơi **86,7 % → 46,7 %**. ⭐ Cùng một
+bậc thang mua cả hai: **cái giá của báo động giả CHÍNH LÀ chỗ mù thực thể.**
+
+🔑 Vì sao, và nó khớp đúng chẩn đoán của điều phối: `diem ≥ 6` đòi **hai** lỗi
+`nang` (5+5) hoặc một `nghiem_trong`. Một lỗi **sai thực thể đơn lẻ** bị model
+chấm `nhe` (1 điểm) ⇒ ⛔ **không kích nổi cổng**. ⇒ Dải ngưỡng này **dựng lại
+đúng chỗ mù đã giết V2** (V2: `sai_thuc_the` 33 %), chỉ bằng một đường khác.
+
+⇒ ⭐ **Bằng chứng: thiết kế "lời nhắc tự nặn + một ngưỡng" này ⛔ KHÔNG đạt được
+cổng** — không phải ở một điểm, mà trên **toàn bộ** không gian ngưỡng đã quét.
+⛔ Đây không phải thất bại cần vá; nó là câu trả lời, và nó **đóng** nhánh V1→V3.
+
+⚠️ **Khai thẳng cỡ mẫu:** 15 cặp mỗi loại ⇒ KTC rất rộng (46,7 % là [24,8;69,9],
+tức chưa loại trừ được 50 % về mặt thống kê ở **một** điểm). ⛔ Nhưng kết luận
+"không có điểm nào" không dựa vào một điểm: nó dựa vào **cả hình dạng** — mọi
+ngưỡng hạ được BĐG xuống dưới 15 % đều kéo `sai_thuc_the` xuống ≤ 46,7 %.
+
+## 20.2 Bổ sung cho bàn giao (§19)
+
+`bang_chung/b2_quet_nguong_v3.json` nay có **`duong_cong_tiem`** — độ nhạy trên
+lỗi tiêm **theo từng loại** ở mọi ngưỡng; `bang_chung/b2_tiem_v3_nen_sach.json`
+là bản ghi sạch của lượt tiêm. ⇒ Cuộc đấu MetricX phải so **cả hai vế**:
+⛔ một đường cong BĐG–độ-nhạy-tự-nhiên **không đủ** để tuyên bố ai thắng.
