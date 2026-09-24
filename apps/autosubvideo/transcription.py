@@ -243,14 +243,20 @@ def _transcribe_faster(media_path: str, *, language: str, model_name: str,
     #    bước dịch** ở hạ nguồn, không riêng bước cắt đoạn. ⛔ Không phải mẹo để
     #    qua một cổng — nhánh này còn không đi qua cổng đó.
     #    Đo 24/09: 0 dấu câu / 646 ký tự trên nhánh mặc định trước khi vá.
+    # ⚠️ `detect_language` đòi **mảng float 1-D 16 kHz**, ⛔ KHÔNG nhận đường dẫn
+    #    (`faster_whisper.WhisperModel.detect_language(audio: np.ndarray)`).
+    #    Bản vá đầu đưa `media_path` vào ⇒ ném ⇒ bị nuốt ⇒ `mau=None` ⇒ prompt
+    #    **không hề chạy**, và bản chép ra y hệt lượt chưa vá — ⭐ đúng cái bẫy đã
+    #    ghi ở `edbcbd57`, bắt được bằng đúng cách đó: kết quả không đổi MỘT ký tự.
+    from faster_whisper.audio import decode_audio
+
+    tieng = decode_audio(media_path, sampling_rate=16000)
     ngon = (language or "").lower()
     if not ngon:
-        try:
-            ngon = str(model.detect_language(media_path)[0] or "").lower()
-        except Exception:                       # noqa: BLE001
-            ngon = ""                           # ⛔ dò hỏng thì đi tiếp, không chết
+        ngon = str(model.detect_language(tieng)[0] or "").lower()
     mau = MAU_CO_DAU_CAU.get(ngon[:2], None)
-    segments, info = model.transcribe(media_path, language=ngon or None,
+    # Truyền lại chính mảng đã giải mã: ⛔ đừng giải mã tệp hai lần.
+    segments, info = model.transcribe(tieng, language=ngon or None,
                                       word_timestamps=True, vad_filter=True,
                                       beam_size=5, initial_prompt=mau)
     out = []
