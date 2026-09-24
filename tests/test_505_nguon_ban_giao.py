@@ -264,9 +264,40 @@ def _gitignored_bi_ma_runtime_nhac() -> set:
                         capture_output=True, text=True).stdout.split("\n")
     chay_that = [f for f in ma if f.strip()
                  and not f.startswith(("tools/", "tests/", "bench/"))]
-    than = "\n".join((GOC / f).read_text(encoding="utf-8", errors="replace")
-                     for f in chay_that if (GOC / f).is_file())
-    return {d for d in ung_vien if pathlib.PurePosixPath(d).name in than}
+    # 🔴 CHI MA THUC THI, ⛔ khong ke docstring/chu thich.
+    #
+    #    `.env` con lot mot lan nua sau khi da so theo ranh gioi tu: tham
+    #    chieu DUY NHAT cua no trong ca kho la mot **docstring** o
+    #    `public_api/examples.py`. Mot dong van xuoi noi "tep .env" KHONG lam
+    #    cho `.env` thanh thu ma production doc — nhung phep kiem lai ket luan
+    #    the, roi doi khai no vao `$VAN_CHUYEN`, tuc doi DEPLOY CHEP mot tep
+    #    BI MAT len may chu. Sai ve phia hanh dong.
+    #
+    # ⭐ Cung lop loi voi `test_332` (do vi mot chuoi trong docstring) va voi
+    #    `test_60` (da phai loc dung cach nay tu truoc). Kho CO SAN
+    #    `ma_thuc_thi`; dung lai thay vi doc van ban tho.
+    from tests.test_60_app_registry import ma_thuc_thi
+
+    than = "\n".join(
+        ma_thuc_thi((GOC / f).read_text(encoding="utf-8", errors="replace"))
+        for f in chay_that if (GOC / f).is_file())
+    # 🔴 SO THEO RANH GIOI TU, ⛔ KHONG so chuoi con tu do.
+    #
+    #    Ca 24/09: `.env` bi tinh la "ma runtime co nhac" — vi `.env` la CHUOI
+    #    CON cua **`os.environ`**, co o hang chuc tep. Bat ky ai dat mot `.env`
+    #    trong cay deu lam phep kiem nay do, va thong diep thi tro sang
+    #    `$VAN_CHUYEN` — tuc no to giac mot chuyen khong xay ra.
+    #
+    # ⛔ Va day la CUNG MOT bai hoc ma tep nay da hoc ba dong duoi:
+    #    `test__phu_boi_khong_khop_gan_dung` chot rang mau phai so THEO TUNG
+    #    DOAN duong dan. Bai hoc do duoc sua o `_phu_boi` va **bo sot o day** —
+    #    hai phep so cung tra loi cau "tep nay co duoc nhac khong", mot cai da
+    #    sac, mot cai van cun.
+    def _duoc_nhac(ten: str) -> bool:
+        return re.search(rf"(?<![A-Za-z0-9_]){re.escape(ten)}(?![A-Za-z0-9_])",
+                         than) is not None
+
+    return {d for d in ung_vien if _duoc_nhac(pathlib.PurePosixPath(d).name)}
 
 
 def test__phu_boi_khong_khop_gan_dung():
@@ -462,3 +493,26 @@ def test_duong_lui_van_con_khi_khong_co_git():
         "khong con duong lui ve cay song khi khong doc duoc commit")
     assert "chep TU CAY SONG (duong lui)" in VAN_BAN, (
         "duong lui phai NOI RA rang no la duong lui")
+
+
+def test_ten_tep_chi_tinh_la_DUOC_NHAC_khi_dung_ranh_gioi_tu():
+    """🔑 Doi chung cho phep do o `_gitignored_bi_ma_runtime_nhac`.
+
+    `.env` la chuoi con cua `os.environ`. Neu so chuoi con tho thi bat ky cay
+    nao co mot tep `.env` cung lam phep kiem do — va thong diep tro sang
+    `$VAN_CHUYEN`, tuc no to giac mot chuyen khong he xay ra.
+
+    ⭐ Cung bai hoc voi `test__phu_boi_khong_khop_gan_dung` ngay tren: hai phep
+       so cung tra loi mot cau hoi, va bai hoc chi duoc ap vao MOT cai.
+    """
+    import re as _re
+
+    def nhac(ten, than):
+        return _re.search(
+            rf"(?<![A-Za-z0-9_]){_re.escape(ten)}(?![A-Za-z0-9_])", than)
+
+    assert not nhac(".env", 'v = os.environ.get("X")'), "os.environ khong phai .env"
+    assert not nhac(".env", "load_dotenv()"), "dotenv khong phai .env"
+    # 🔑 Ve con lai: mot tham chieu THAT van phai duoc bat.
+    assert nhac(".env", 'doc(".env")')
+    assert nhac("config.json", 'P = "data/config.json"')
