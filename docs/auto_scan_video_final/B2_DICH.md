@@ -57,6 +57,77 @@ SỐNG** — lời nhắc lồng tiếng đã qua nghiệm thu, có ngân sách 
 
 ---
 
+# 7. BƯỚC 1 — ĐO ĐƯỜNG SỐNG **TRƯỚC KHI SỬA**
+
+> ⛔ Không có số *"trước"* thì mọi số *"sau"* ⛔ không quy được cho bản sửa.
+> Lời nhắc đường sống (`long_tieng.loi_nhac`) chạy **y nguyên**, ⛔ chưa sửa gì.
+
+⚠️ **Model: ghim `ltt-3.5`**, vì thao tác sống `chuyen_loi_thoai` đi `ltt-3.8`
+mà 3.8 **đang nhường làn khác**. ⇒ Đây là *lời nhắc đường sống × `ltt-3.5`*,
+⛔ **không** phải tổ hợp đang chạy thật (*× `ltt-3.8`*). Ô đó **còn trống**.
+
+## 7.1 Kết quả: **9/13** — và cách nó sai thì không ai đoán được
+
+| tên | mong | đường sống ra | |
+|---|---|---|---|
+| 首尔 · 东京 · 北京 · 上海 · 广州 · 纽约 | (địa danh quen) | Seoul · Tokyo · Bắc Kinh · Thượng Hải · Quảng Châu · New York | ✅ |
+| 腾讯 · 华为 | Tencent · Huawei | Tencent · Huawei | ✅ |
+| 小美 | Tiểu Mỹ | Tiểu Mỹ | ✅ |
+| **重庆** | Trùng Khánh | ⛔ **"Chongqing"** (**bính âm**) | ⛔ |
+| **张伟** | Trương Vĩ | ⛔ **"Zhang Wei"** (**bính âm**) | ⛔ |
+| **李小龙** | Lý Tiểu Long | ⛔ **"Bruce Lee"** (**tiếng Anh**) | ⛔ |
+| **李宗盛** | Lý Tông Thịnh | ⛔ "Lý Tông **Thành**" | ⛔ |
+| `光子` (tiêu chí âm) | ⛔ không ra "Quang Tử" | "Photon" | ✅ |
+
+🔴 **Ba trong bốn ca hỏng là BÍNH ÂM hoặc TIẾNG ANH**, ⛔ không phải phiên sai
+dấu. Với một sản phẩm **lồng tiếng**, nghĩa là **giọng đọc sẽ phát âm
+*"Zhang Wei"*, *"Bruce Lee"*, *"Chongqing"*** giữa một câu tiếng Việt. Đó là
+một khiếm khuyết **khách nghe thấy**, ⛔ không phải một lỗi trên giấy.
+
+⚠️ **Và nó KHÔNG ổn định:** chạy hai lần ở `temperature 0.2` cho **8/13** rồi
+**9/13**; `重庆` ra *"Chung Quỳ"* ở lượt đầu và *"Chongqing"* ở lượt sau. ⇒ ⛔
+Đừng đọc 9/13 như một hằng số.
+
+## 7.2 So với đường chết — và vì sao phép so này **có** nghĩa
+
+```
+đường CHẾT  (`dich_thuat`)   + luật v5      ->  13/13
+đường SỐNG  (`long_tieng`)   + KHÔNG luật   ->   9/13  (8/13 ở lượt lặp)
+```
+
+⛔ Hai lời nhắc khác nhau nên ⛔ **không** kết luận *"model kém hơn"*. Thứ phép
+so này nói là: **luật quy tắc 5 có tác dụng thật**, và đường sống **đang thiếu
+nó**. Đó là căn cứ cho Bước 2.
+
+## 7.3 ⚠️ Một phát hiện NGOÀI dự kiến, và nó thuộc về câu 3.5-vs-3.8
+
+Ở **cỡ lô sản phẩm** (`long_tieng.DOAN_MOI_LO = 12`), lời nhắc đường sống ×
+`ltt-3.5` trả về **1/12 đoạn** (`ThieuDoan: thiếu 11 đoạn`) — ⛔ **không** phải
+cụt, vì trần token ra là **32 768**. Một lượt khác trả `doan` là **một MẢNG**,
+đúng cái mà docstring của `long_tieng.loi_nhac` cảnh báo (*"khoá phải là MÃ
+ĐOẠN, không phải một mảng"* — vì vị trí ⛔ không dùng làm định danh được).
+
+Hạ xuống **4 đoạn/lô** thì ổn định: **14/14 đoạn, 0 thiếu, 0 vi phạm lược đồ**.
+
+> 🔴 ⇒ Con số này thuộc về **§6.2**: nếu `ltt-3.5` ⛔ **không gánh nổi** lược đồ
+> bốn trường (`chu`+`cam_xuc`+`kieu_noi`+`nhan_manh`) + `ke_ben` ở **cỡ lô
+> thật**, thì *"3.8 đắt gấp 20×"* ⛔ **không còn là một lựa chọn tự do** — nó
+> có thể là **cái giá của việc chạy được**.
+>
+> ⚠️ ⛔ **Chưa kết luận:** ta ⛔ **chưa** đo `ltt-3.8` trên cùng phép thử (3.8
+> đang nhường). Có thể 3.8 cũng bỏ đoạn, và lúc đó vấn đề là **lược đồ**, ⛔
+> không phải model. Đó là phép đo **đầu tiên** phải chạy khi có suất 3.8.
+
+## 7.4 ⇒ Bước 2 và Bước 3: ⛔ CHƯA làm
+
+Bước 2 (sửa lời nhắc đường sống **một lần** theo trục v5, đo lại 13 ca **+ ngân
+sách độ dài** + token lời nhắc trước/sau) và Bước 3 (bản nền dịch đo lại trên
+đường sống) ⛔ **chưa chạy** — chúng sửa lời nhắc của **đường sống đã nghiệm
+thu**, và Bước 1 vừa cho thấy đường đó còn một **vấn đề lược đồ** chưa rõ thuộc
+về model hay lời nhắc. ⇒ ⛔ Không chồng hai thay đổi lên một chỗ đang lung lay.
+
+---
+
 ## ⚠️ ĐỌC TRƯỚC MỌI CON SỐ
 
 ⛔ **Chưa có bộ chấm đáng tin.** Đường chấm ngữ nghĩa (`qc_ai`) đang **trong

@@ -72,12 +72,103 @@ CA = [
 #: chi **AM**: no khong duoc ra mot phien am Han-Viet.
 #: `光子` la xuong game (`B2_DICH.md` §4g); vi.wikipedia ⛔ khong co bai
 #: `光子工作室群` ⇒ ⛔ khong co dap an duong de cham.
+#: ⛔ Lo NHO hon co san pham — xem ghi chu o `_dich_duong_song`.
+LO_NHO = 4
+
+#: 🔴 So doan bi model BO trong tung lo — mot KET QUA, ⛔ khong phai tro ngai.
+_BO_DOAN: list[dict] = []
+
 CAM = [("光子", "来把枪啊光子!", ["Quang Tử", "Quang Tu"],
         "vi.wikipedia KHONG co bai -> ⛔ khong co dap an duong")]
 
 
+def _dich_duong_song(cau_list: list[str], *, ghim_model: str = "") -> dict:
+    """Qua **LOI NHAC CUA DUONG SONG** (`long_tieng.loi_nhac` + `CHUYEN_LOI_THOAI`).
+
+    🔴 Day moi la thu san pham dung. `dich_thuat` la **duong CHET**
+       (`thi_hanh.py:121`; `ai.DICH_THUAT` chi xuat hien trong chinh no).
+
+    ⚠️ `ghim_model`: thao tac song la `chuyen_loi_thoai` -> **qwen38-api**, ma
+       `ltt-3.8` dang **NHUONG lan khac** (luat 24/09). ⇒ Ghim `ltt-3.5` de do
+       duoc **hom nay**, va **KHAI THANG** rang day la
+       *loi nhac DUONG SONG x ltt-3.5*, ⛔ **khong** phai to hop dang chay that.
+    """
+    import platform_core.db as dbmod
+    from platform_core.llm import canonical, dieu_phoi
+
+    from apps.auto_scan_video import ai, long_tieng as L
+
+    doan = [{"ma": f"seg_{i:04d}", "chu": c, "bat": 0.0, "ket": 4.0}
+            for i, c in enumerate(cau_list, start=1)]
+    mid = canonical.ALIAS_SANG_ID.get(ghim_model or "", "")
+    ban_do = ({p: mid for p in ai.THU_TU_PROVIDER} if mid
+              else ai.ban_do_model(ai.CHUYEN_LOI_THOAI))
+    # ⛔ Chia lo NHU SAN PHAM (`long_tieng.chia_lo`). Gui 14 doan mot lan thi
+    #    phan hoi cut va `doc_chuyen` nem "Model khong tra ve bang doan" — mot
+    #    trieu chung tro NHAM vao model trong khi loi o ben GOI.
+    ra: dict = {}
+    db = next(dbmod.get_session())
+    try:
+        # 🔴 **`moi_lo=LO_NHO` chu khong phai 12 (`long_tieng.DOAN_MOI_LO`) — va
+        #    do la MOT KET QUA, khong phai mot tien nghi.** Do that 24/09: loi
+        #    nhac DUONG SONG x `ltt-3.5`, lo 12 doan ⇒ model tra ve **1/12**
+        #    (`ThieuDoan: thieu 11 doan`), du tran token ra la 32 768 nen ⛔
+        #    khong phai cut. ⇒ 3.5 khong gánh noi luoc do 4 truong
+        #    (`chu`+`cam_xuc`+`kieu_noi`+`nhan_manh`) + `ke_ben` o co lo san pham.
+        # ⚠️ Con so nay phai di vao §6.2: neu 3.5 khong lam duoc viec o co lo
+        #    that thi "20x dat hon" ⛔ khong con la mot lua chon tu do.
+        for lo in L.chia_lo(doan, moi_lo=LO_NHO):
+            ra.update(_mot_lo(db, lo, doan, ban_do))
+    finally:
+        db.close()
+    return ra
+
+
+def _mot_lo(db, lo: list[dict], tat_ca: list[dict], ban_do: dict) -> dict:
+    from platform_core.llm import dieu_phoi
+
+    from apps.auto_scan_video import ai, long_tieng as L
+
+    msg = L.loi_nhac(lo, tat_ca=tat_ca, ngon_ngu_goc="zh",
+                     dac_diem_giong={}, ngon_ngu_dich="vi")
+    if True:
+        # ⛔ PHAI xin tran token ra THEO TEN CUA. Bo qua no ⇒ mac dinh cua
+        #    `dieu_phoi` cat phan hoi giua chung, va `doc_chuyen` nem
+        #    "Model khong tra ve bang doan" — mot trieu chung tro NHAM vao model
+        #    trong khi loi la o ben GOI. Do that: 2 doan chay tot, 14 doan chet.
+        kq = dieu_phoi.goi(db, messages=msg,
+                           thu_tu_provider=list(ai.THU_TU_PROVIDER),
+                           model_theo_provider=ban_do, temperature=0.2,
+                           max_tokens=ai.tran_token_ra(), timeout_s=300.0)
+    noi = getattr(kq, "noi_dung", None) or getattr(kq, "content", "")
+    goi = ai.doc_json(str(noi), ai.CHUYEN_LOI_THOAI)
+    # 🔴 **GHI so doan BI BO, ⛔ dung nem.** `doc_chuyen` nem `ThieuDoan` — dung
+    #    cho SAN PHAM (mot lo thieu doan la mot lo hong). Nhung o day ta dang
+    #    **do chinh hien tuong do**, va nem thi mat luon ca phep do.
+    # ⚠️ Ti le bo doan la mot KET QUA, khong phai mot tro ngai.
+    tho = (goi or {}).get("doan")
+    ma_lo = {d["ma"] for d in lo}
+    # 🔴 **MOT MANG, khong phai mot bang khoa-theo-ma.** Dung ca ma docstring
+    #    cua `long_tieng.loi_nhac` canh bao: *"Yeu cau tra ve JSON co khoa la MA
+    #    DOAN, khong phai mot mang"* — vi vi tri ⛔ khong dung lam dinh danh
+    #    duoc. Ghi ra la mot **vi pham luoc do**, ⛔ khong lang le ghep theo vi tri.
+    vi_pham = ""
+    if isinstance(tho, list):
+        vi_pham = "doan = MANG (⛔ vi pham luoc do: phai la bang khoa theo ma)"
+        tho = {}
+    elif not isinstance(tho, dict):
+        vi_pham = f"doan = {type(tho).__name__} (⛔ khong doc duoc)"
+        tho = {}
+    ra = {m: str((v or {}).get("chu") or "")
+          for m, v in tho.items() if m in ma_lo and isinstance(v, dict)}
+    _BO_DOAN.append({"lo": sorted(ma_lo), "nhan_duoc": sorted(ra),
+                     "thieu": sorted(ma_lo - set(ra)),
+                     **({"vi_pham_luoc_do": vi_pham} if vi_pham else {})})
+    return ra
+
+
 def _dich(cau_list: list[str]) -> dict:
-    """Dich qua DUNG duong san pham. ⛔ Khong ghim gi tai cho goi."""
+    """⛔ DUONG CHET (`dich_thuat`). Giu de doi chieu, ⛔ khong phai duong san pham."""
     import platform_core.db as dbmod
 
     from apps.auto_scan_video import dich_thuat as D
@@ -92,12 +183,13 @@ def _dich(cau_list: list[str]) -> dict:
         db.close()
 
 
-def chay() -> dict:
+def chay(*, duong: str = "song", ghim_model: str = "ltt-3.5") -> dict:
     from apps.auto_scan_video import ai, van_ban
 
     cau = [c for _, c, *_ in CA] + [c for _, c, *_ in CAM]
     t0 = time.time()
-    ra = _dich(cau)
+    ra = (_dich_duong_song(cau, ghim_model=ghim_model) if duong == "song"
+          else _dich(cau))
 
     ket = []
     for i, (han, _c, dap_an, nguon, loai) in enumerate(CA, start=1):
@@ -111,9 +203,29 @@ def chay() -> dict:
         am.append({"han": han, "⛔ khong_duoc_ra": cam, "ly_do": vi_sao,
                    "ra": vi, "dat": not any(x.lower() in vi.lower() for x in cam)})
     dat = sum(1 for k in ket if k["dat"])
+    thieu = sum(len(x["thieu"]) for x in _BO_DOAN)
     return {
+        "🔴 bo_doan": {
+            "tong_gui": sum(len(x["lo"]) for x in _BO_DOAN), "thieu": thieu,
+            "moi_lo": LO_NHO, "co_lo_san_pham": 12,
+            "so_lo_vi_pham_luoc_do": sum(1 for x in _BO_DOAN
+                                         if x.get("vi_pham_luoc_do")),
+            "⚠️": ("Loi nhac DUONG SONG x ltt-3.5 BO DOAN. Do that: lo 12 doan "
+                  "-> tra ve 1/12. Tran token ra 32 768 nen ⛔ KHONG phai cut. "
+                  "⇒ Con so nay thuoc ve cau hoi 3.5-vs-3.8 (§6.2): neu 3.5 "
+                  "khong gánh noi luoc do 4 truong + `ke_ben` o co lo that thi "
+                  "\"20x dat hon\" ⛔ khong con la mot lua chon tu do."),
+            "chi_tiet": _BO_DOAN},
+        "duong_chay": duong,
+        "⚠️ duong_la_gi": ("LOI NHAC DUONG SONG (`long_tieng.loi_nhac` + "
+                          "CHUYEN_LOI_THOAI)" if duong == "song"
+                          else "⛔ DUONG CHET (`dich_thuat`) — khong ai goi"),
+        "model_ghim": ghim_model if duong == "song" else "",
+        "⚠️ model": ("⛔ GHIM ltt-3.5 vi 3.8 dang NHUONG lan khac; to hop CHAY "
+                    "THAT la loi nhac nay x ltt-3.8" if duong == "song"
+                    else ""),
         "phien_ban_loi_nhac": van_ban.PHIEN_BAN_LOI_NHAC,
-        "model": ai.model_cho(ai.DICH_THUAT),
+        "model_thao_tac_song": ai.model_cho(ai.CHUYEN_LOI_THOAI),
         "giay": round(time.time() - t0, 1),
         "duong": {"dat": dat, "tong": len(ket), "chi_tiet": ket},
         "am": {"dat": sum(1 for a in am if a["dat"]), "tong": len(am),
@@ -126,14 +238,18 @@ def chay() -> dict:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--ra", default="")
+    ap.add_argument("--duong", choices=("song", "chet"), default="song")
+    ap.add_argument("--ghim", default="ltt-3.5")
     a = ap.parse_args(argv)
-    kq = chay()
+    kq = chay(duong=a.duong, ghim_model=a.ghim)
     if a.ra:
         d = Path(a.ra)
         d.mkdir(parents=True, exist_ok=True)
-        (d / f"ten_rieng_v{kq['phien_ban_loi_nhac']}.json").write_text(
+        (d / f"ten_rieng_{kq['duong_chay']}_v{kq['phien_ban_loi_nhac']}.json").write_text(
             json.dumps(kq, ensure_ascii=False, indent=1), encoding="utf-8")
-    print(f"loi nhac v{kq['phien_ban_loi_nhac']} · {kq['model']} · {kq['giay']} s")
+    print(f"[{kq['duong_chay'].upper()}] {kq['⚠️ duong_la_gi']}")
+    print(f"  loi nhac v{kq['phien_ban_loi_nhac']} · model ghim "
+          f"{kq['model_ghim'] or '(khong)'} · {kq['giay']} s")
     print(f"  DUONG: {kq['duong']['dat']}/{kq['duong']['tong']}")
     for k in kq["duong"]["chi_tiet"]:
         print(f"    {'✅' if k['dat'] else '⛔'} {k['han']:6} [{k['loai']:18}] "
