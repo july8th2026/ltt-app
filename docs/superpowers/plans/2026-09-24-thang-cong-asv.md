@@ -111,9 +111,14 @@ mình, nhưng **SỐ** thì lấy từ bảng này, và **điều phối cấp**
 | N-23 | đường sống ⛔ **không ghim `temperature`** ⇒ cổng áp 1.0 — **ba** triệu chứng một gốc | `asvf-nghiem-thu-v2` |
 | N-24 | phép kiểm chốt **VĂN BẢN/TÊN** thay vì **TÍNH CHẤT** — 3 ca, 3 làn, 1 ngày | `asv-final` |
 | N-25 | thước đọc **VĂN BẢN của mã** để suy ra **HÀNH VI TỆP** — sai **hai chiều**, và nó đang đo số KHÔNG | `phien/no-kien-truc` |
+| N-29 | bánh cóc **QUA được mà không cần NHÌN** — khóa 7A/1B ⇒ „luôn trả A“ đạt 87,5 % > sàn trục 0,80 | `gop-asv` |
+| N-30 | app phiên âm ⛔ không cắt được câu Hán (`\s+` sau `。`) — **khuyết tật đang sống ở app khác** | `gop-asv` (chỉ ghi sổ) |
+| N-31 | lưới chân lý nền ghim **hằng số trong thước**, ⛔ không đọc từ dữ liệu | `gop-asv` (chỉ ghi sổ) |
 
 ⛔ **`N-13` đang bị dùng HAI lần** trên `asv-final` (cổng VMAF **và** *"một hằng làm ba
 việc"*) — va **trước** khi có cấp số tập trung. Ca thứ hai sẽ được đánh lại số khi gộp.
+
+⛔ **`N-10` CHƯA BAO GIỜ ĐƯỢC CẤP — để TRỐNG VĨNH VIỄN.** Nó ⛔ không có dòng trong `LOI_TONG.md`, ⛔ không có trong bảng này, và chỉ được **nhắc** trong plan (Task 0) — tức nhắc nhầm. ⭐ **⛔ Đừng tái sử dụng số này:** một khoảng trống được **khai** rẻ hơn nhiều một số mang **hai nghĩa**, và ta đã mất hai lượt vì đúng chuyện đó (`N-13`, `N-15`).
 
 ⭐ **Luật:** số kế tiếp trống là **N-26**. Làn ⛔ **không tự đặt** — hỏi điều phối, điều
 phối cập nhật bảng này. Đây là cùng một bài toán mà `check_so_test` đã giải cho **dải số

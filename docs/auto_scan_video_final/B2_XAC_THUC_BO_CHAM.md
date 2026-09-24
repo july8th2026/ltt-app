@@ -1,5 +1,24 @@
 # B2 — XÁC THỰC BỘ CHẤM ngữ nghĩa (làn `xac-thuc-cham`, 24/09/2026)
 
+> 🔴 **HAI THƯỚC ĐO BÁO ĐỘNG GIẢ TRONG TỆP NÀY — ⛔ ĐỪNG ĐẶT SỐ CỦA CHÚNG CẠNH NHAU.**
+>
+> | | cách **CŨ** | cách **MỚI** |
+> |---|---|---|
+> | giả định | „FLORES luôn đúng“ ⇒ mọi lần gắn cờ = BĐG | đối chiếu **người soi mù** |
+> | sàn lỗi FLORES mang sẵn | **10–23 %** | 0 % (đã trừ) |
+> | **trần hoàn hảo** | **10/12/23 %** | **0 %** |
+> | cỡ mẫu | `n = 30` | `n = 100` |
+> | số đã công bố | V1 **43,3** · V2 **16,7** · V3 **23,3** | V3 **33 %** · MetricX **39 %** |
+>
+> ⭐ **Vì sao quan trọng:** *„V3 23,3 % → 33 %“* trông như **tệ đi**, nhưng hai con số
+> đó ⛔ **không cùng đơn vị** — V3 ⛔ **không hề tệ đi**, nó chỉ được đo bằng một thước
+> ⛔ **không còn tặng** cho bộ chấm phần sai vốn là của **chính FLORES**. Cùng bài học
+> với `N-24`: *hai con số từ hai tập khác nhau thì ⛔ không được đặt cạnh nhau.*
+>
+> ⇒ Mỗi bảng dưới đây mang **nhãn đơn vị** ngay trên nó. ⛔ Thêm bảng mới mà không dán
+> nhãn là tái lập đúng cái bẫy này.
+
+
 > **Câu hỏi duy nhất:** lượt chạy thật chấm **44/95 mục (46%)** là *dịch sai*.
 > **46% đó là bản dịch tệ thật, hay bộ chấm quá tay?**
 
@@ -253,6 +272,9 @@ VA do nhay  >= 50%  MOI loai tiem (lat_nghia / sai_thuc_the)
 Đo trên dòng FLORES **200–229** (báo động giả) và **300+** (tiêm) — rời hẳn dải
 phán quyết 0–99/100+, nên V2 không bị đo trên chính dải đã dùng để chỉnh.
 
+
+> 📏 **ĐƠN VỊ: CÁCH ĐO CŨ** — giả định *„FLORES luôn đúng“* ⇒ **MỌI** lần gắn cờ bị tính là báo động giả. ⚠️ Thước này mang sẵn **sàn lỗi FLORES 10–23 %**, nên **trần hoàn hảo** của nó là **10/12/23 %**, ⛔ không phải 0 %. `n = 30`. ⛔ **Không so ngang** với bảng „CÁCH ĐO MỚI“ bên dưới.
+
 | | báo động giả | `lat_nghia` | `sai_thuc_the` |
 |---|---|---|---|
 | **V1, dải giữ riêng** | **43,3%** (dải 43,3–56,7%) | **100%** (15/15) | **100%** (15/15) |
@@ -281,6 +303,9 @@ phán quyết 0–99/100+, nên V2 không bị đo trên chính dải đã dùng
 
 Đo trên **dải giữ riêng** (báo động giả: dòng 200–229 · tiêm: dòng 300+), 3 lượt,
 một lượt gọi/lô như đường sản phẩm.
+
+
+> 📏 **ĐƠN VỊ: CÁCH ĐO CŨ** — giả định *„FLORES luôn đúng“* ⇒ **MỌI** lần gắn cờ bị tính là báo động giả. ⚠️ Thước này mang sẵn **sàn lỗi FLORES 10–23 %**, nên **trần hoàn hảo** của nó là **10/12/23 %**, ⛔ không phải 0 %. `n = 30`. ⛔ **Không so ngang** với bảng „CÁCH ĐO MỚI“ bên dưới.
 
 | | báo động giả | `lat_nghia` | `sai_thuc_the` | lô hỏng JSON |
 |---|---|---|---|---|
@@ -370,6 +395,9 @@ bẫy *"hai trạng thái gộp thành một giá trị"* của chính kho này,
 vào nó.
 
 Đếm lại mọi lượt đã lưu (miễn phí — dữ liệu có sẵn):
+
+
+> 📏 **ĐƠN VỊ: CÁCH ĐO CŨ** — giả định *„FLORES luôn đúng“* ⇒ **MỌI** lần gắn cờ bị tính là báo động giả. ⚠️ Thước này mang sẵn **sàn lỗi FLORES 10–23 %**, nên **trần hoàn hảo** của nó là **10/12/23 %**, ⛔ không phải 0 %. `n = 30`. ⛔ **Không so ngang** với bảng „CÁCH ĐO MỚI“ bên dưới.
 
 | bản | FA đã báo | **FA đúng** | lô hỏng | nền |
 |---|---|---|---|---|
@@ -595,6 +623,9 @@ thấy bộ chấm nói gì.
 Tỉ lệ gắn cờ thô từng phần: 40 · 40 · 30 · 60 · 45 % ⇒ **43/100**.
 
 ## 17.1 Bảng 2×2 (n = 100, người đọc 1)
+
+
+> 📏 **ĐƠN VỊ: CÁCH ĐO MỚI** — đối chiếu **người soi mù** (phán quyết ghi trước, commit trước) ⇒ chỉ lần gắn cờ **sai thật** mới tính. **Trần hoàn hảo = 0 %**. `n = 100`. ⛔ **Không so ngang** với bảng „CÁCH ĐO CŨ“ bên trên.
 
 | coi là lỗi | gắn cờ | lỗi thật | bắt trúng | **BÁO ĐỘNG GIẢ THẬT** | **bỏ sót** |
 |---|---|---|---|---|---|
