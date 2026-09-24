@@ -7,6 +7,8 @@ do vao van tay.
 """
 from __future__ import annotations
 
+import ast
+import pathlib
 import sys
 import types
 
@@ -110,3 +112,96 @@ def test_model_asr_chua_ghim_thi_KHONG_KHA_DUNG():
     from apps.asv_gpu.do_luong import giong
     with pytest.raises(venv.KhongKhaDung):
         giong.do_giong([], ngon_ngu="vi", model="tiny-khong-ghim")
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Thiếu thư viện trong `qc-venv` phải KÊU LÊN, và kêu đúng LOẠI
+# ══════════════════════════════════════════════════════════════════════════════
+
+#: Mọi script chạy **bên trong** `qc-venv` (`venv.chay` gọi chúng như tiến trình
+#: con). ⛔ Không đoán theo tên: thiếu một dòng ở đây là im lặng bỏ qua một runner.
+RUNNER = ("gioi_runner.py", "giong_runner.py", "squim_runner.py", "ocr_khung.py",
+          "_metricx/chay.py")
+
+_GOC_DO = pathlib.Path(venv.__file__).parent
+
+
+def test_MOI_runner_qc_venv_deu_co_mat_trong_bang():
+    """⛔ Một bảng quét-tất-cả thiếu một dòng vẫn XANH — chỉ là nó quét ít hơn."""
+    # ⚠️ `_runner.py` KHONG phai mot runner — no la GIAO THUC dung chung
+    #    (`mo()`, `ghi()`, `khong_kha_dung()`) ma cac runner goi. Bo no ra la co
+    #    y, va ghi ra day de lan sau khong ai "sua" bang cach them no vao bang.
+    that = {p.name for p in _GOC_DO.glob("*_runner.py")
+            if p.name != "_runner.py"} | {"ocr_khung.py"}
+    khai = {pathlib.PurePosixPath(r).name for r in RUNNER}
+    assert that <= khai, f"runner chua khai trong RUNNER: {sorted(that - khai)}"
+    for r in RUNNER:
+        assert (_GOC_DO / r).is_file(), r
+
+
+def _bat_loi_nhap(duong: pathlib.Path) -> list[ast.ExceptHandler]:
+    """Các nhánh `except` THẬT SỰ bắt `ImportError`/`ModuleNotFoundError`.
+
+    ⚠️ **Đọc CÂY, ⛔ không đọc VĂN BẢN — và bản đầu của chính bài này đã sai
+       đúng chỗ đó (N-24).** Nó hỏi `"ImportError" in ma`, nên nó khớp với
+       **chú thích** giải thích luật, và phép tiêm gỡ nhánh `except` thật vẫn
+       cho XANH. Một phép kiểm chỉ chứng minh được rằng nó *chưa đỏ*.
+    """
+    ten_bat = {"ImportError", "ModuleNotFoundError"}
+    ra = []
+    for n in ast.walk(ast.parse(duong.read_text(encoding="utf-8"))):
+        if not isinstance(n, ast.ExceptHandler) or n.type is None:
+            continue
+        loai = n.type.elts if isinstance(n.type, ast.Tuple) else [n.type]
+        if any(getattr(t, "id", "") in ten_bat for t in loai):
+            ra.append(n)
+    return ra
+
+
+def _phat_dau_khong_kha_dung(h: ast.ExceptHandler) -> bool:
+    """Thân CỦA CHÍNH nhánh đó có phát dấu `KHONG_KHA_DUNG` không.
+
+    ⭐ Hỏi trong thân nhánh, ⛔ không hỏi cả tệp: `squim_runner` gọi
+       `khong_kha_dung` ở **ba** chỗ khác nhau, nên một phép đếm mức TỆP vẫn
+       xanh sau khi nhánh bắt lỗi nhập bị gỡ răng.
+
+    Hai cách hợp lệ, cả hai đều có thật: gọi `_runner.khong_kha_dung(...)`, hoặc
+    `print` một chuỗi mang dấu — đường của `_metricx/chay.py`, tệp chạy độc lập
+    trong `qc-venv` nên ⛔ không nhập được `_runner`.
+    """
+    for n in ast.walk(h):
+        if isinstance(n, ast.Call):
+            goi = getattr(n.func, "attr", "") or getattr(n.func, "id", "")
+            if goi == "khong_kha_dung":
+                return True
+        if (isinstance(n, ast.Constant) and isinstance(n.value, str)
+                and "KHONG_KHA_DUNG" in n.value):
+            return True
+    return False
+
+
+@pytest.mark.parametrize("ten", RUNNER)
+def test_thieu_thu_vien_trong_qc_venv_ra_KHONG_KHA_DUNG_chu_khong_phai_LOI(ten):
+    """🔴 **„Cài đặt thiếu“ và „bộ đo chạy mà hỏng“ là HAI LOẠI, ⛔ đừng gộp.**
+
+    `qc-venv` là một venv RIÊNG (`C:\\LTTPlatform\\qc-venv`), dựng bằng
+    `setup/cai_qc_models.ps1`. Một gói vắng ở đó ⇒ `ModuleNotFoundError` trong
+    **tiến trình con**. Giao thức của `venv.chay` là: log có dấu `KHONG_KHA_DUNG`
+    ⇒ `KhongKhaDung` ⇒ báo cáo ghi `trang_thai: "khong_kha_dung"` kèm `ly_do`.
+    ⛔ Không có dấu đó thì cùng sự việc rơi vào `DoLuongLoi` ⇒ `"loi"`.
+
+    ⚠️ Cả hai đều ĐƯỢC GHI (⛔ không im lặng — `bo_do.chay_tat_ca` bắt cả hai),
+       nên đây **không** phải lỗi mất tín hiệu. Nó là lỗi **PHÂN LOẠI**, và nó
+       đắt vì hai loại đó gọi hai người khác nhau: `khong_kha_dung` là việc của
+       **người vận hành** (dựng lại venv), `loi` là việc của **người viết mã**.
+
+    🔴 Đo 25/09: bốn runner kia đều phân biệt; riêng `_metricx/chay.py` thì
+       không — `_nap()` nhập `torch`/`transformers` muộn và để `ImportError` bay
+       lên nguyên vẹn. Sửa tại chỗ, và bài này giữ cho nó không quay lại.
+    """
+    bat = _bat_loi_nhap(_GOC_DO / ten)
+    assert bat, (
+        f"{ten}: khong bat loi NHAP nao — mot goi vang se bao cao thanh `loi` "
+        "(viec cua nguoi viet ma) thay vi `khong_kha_dung` (viec cua nguoi van hanh)")
+    assert any(_phat_dau_khong_kha_dung(h) for h in bat), (
+        f"{ten}: co bat loi nhap nhung nhanh xu ly KHONG phat dau "
+        "`KHONG_KHA_DUNG` — `venv.chay` se doc no thanh `DoLuongLoi`")

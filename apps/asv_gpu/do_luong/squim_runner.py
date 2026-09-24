@@ -67,7 +67,9 @@ def main() -> None:
         _runner.khong_kha_dung(f"thieu thu vien trong qc-venv: {exc}")
 
     p = _weights(vao["url"], vao["sha256"])
-    thiet_bi = "cuda" if torch.cuda.is_available() else "cpu"
+    # 🔑 Thiet bi theo **lease**, khong theo `is_available()`. Xem
+    #    `_runner.chon_thiet_bi` — ban cu lay card khi khong co lease.
+    thiet_bi, ly_do_thiet_bi = _runner.chon_thiet_bi(vao)
     model = squim_objective_base()
     model.load_state_dict(torch.load(p, weights_only=True))
     model.eval().to(thiet_bi)
@@ -107,7 +109,9 @@ def main() -> None:
     dh.danh_dau("cham")
     del model
     _runner.ghi(ra, {"ket_qua": ket,
-                     "tai_nguyen": dh.ket(thiet_bi=thiet_bi, so_doan=len(ket))})
+                     "tai_nguyen": dh.ket(thiet_bi=thiet_bi,
+                                          ly_do_thiet_bi=ly_do_thiet_bi,
+                                          so_doan=len(ket))})
 
 
 if __name__ == "__main__":

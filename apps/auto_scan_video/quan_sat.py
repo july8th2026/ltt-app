@@ -36,7 +36,7 @@ from platform_core.models import Job
 
 from platform_core.i18n import N_
 
-from . import features, pipeline, rang_giong
+from . import features, ma_loi, pipeline, rang_giong
 
 #: Chuoi hien cho khach khi mot giai doan hong ma ta khong co thong diep an toan.
 #: ⚠️ Khong bao gio boc `str(exc)` tho vao day.
@@ -366,33 +366,16 @@ def tom_tat_loi_cho_khach(db, run) -> str:
 #: Ma loi ON DINH (`thi_hanh` ghi vao `outputs.ma_loi` cua giai doan hong) ⇒ cau
 #: cho khach. Chi nhung ma ma "Thu lai buoc nay" **chac chan** hong y het.
 #:
-#: ⛔ Khoa la ma cong khai cua `ltt_voice.lan_ngon_ngu` — go lai o day vi bang
-#:    nay la MOT NGUOI BAT LOI THEO MA, dung vai ma hang so do sinh ra cho
-#:    (*"khach bat loi theo ma, khong theo cau chu"*). `test_409` §8 chot hai
-#:    ben bang nhau, nen doi ma o `ltt_voice` thi bang nay do ngay.
-LOI_CO_MA = {
-    # W4': kich ban long tieng va giong khac lan. Giong da DONG BANG vao ban
-    # long tieng, nen thu lai buoc doc van gap dung giong do.
-    "voice_language_mismatch": N_(
-        "Giọng đã chọn không cùng ngôn ngữ với lời lồng tiếng, nên chúng tôi "
-        "dừng lại trước khi đọc thay vì giao một bản đọc sai giọng. Hãy tạo "
-        "lần chạy mới với một giọng cùng ngôn ngữ với lời lồng tiếng."),
-    "voice_language_unknown": N_(
-        "Giọng đã chọn chưa xác định được ngôn ngữ nên chưa dùng để đọc được. "
-        "Hãy tạo lần chạy mới với một giọng đã ghi rõ Tiếng Việt hoặc Tiếng Anh."),
-    # ── AUTO_MATCH khong rang duoc giong (asv-final 23/09) ──────────────────
-    #
-    # 🔴 `rang_giong.vi_sao_chua_rang` viet mot cau NOI RO thieu gi tu 23/09, va
-    #    cau do dung lai o cot `error`: man nay doc `outputs.ma_loi`. Khach vi
-    #    the doc mot cau chung chung kem mot nut "Thu lai buoc nay" **chac chan
-    #    hong** — AUTO_MATCH tren cung ban chep loi cho ra dung ket qua do.
-    #
-    # ⛔ Va cau tra loi khong phai "thu lai": la TU CHON mot giong. `LOI_CO_MA`
-    #    an nut thu lai (xem `asv_tien_do.html`), nen ba ma nay vao dung cho.
-    #
-    # ⭐ Khong chep cau vao day: `rang_giong.CAU_CHUA_RANG` la ban duy nhat.
-    **rang_giong.CAU_CHUA_RANG,
-}
+#: ⭐ **DAN XUAT tu `ma_loi.SO_MA`, khong go lai.** Truoc 24/09 bang nay go lai
+#:    hai cau lech-lan cua `ltt_voice` VA spread `rang_giong.CAU_CHUA_RANG` —
+#:    tuc mot nua no la ban thu hai cua cung mot cau, mot nua la ban duy nhat.
+#:    `ma_loi.py` gio la so duy nhat va tep nay tro toi no; `test_3200` so bang
+#:    `is` nen mot ban sao khong lot qua duoc.
+#:
+#: ⚠️ Hom nay `LOI_CO_MA` == `SO_MA`: **moi** ma on dinh hien co deu la ma ma thu
+#:    lai chac chan hong. Neu mai co mot ma thu lai duoc thi tach o day (loc
+#:    `SO_MA`), ⛔ khong phai bang cach go lai cau.
+LOI_CO_MA = dict(ma_loi.SO_MA)
 
 
 def loi_co_ma_cho_khach(db, run) -> str:
@@ -608,12 +591,14 @@ def bang_chung_chat_luong(db, run) -> dict | None:
             "do_phu_pt": round(100.0 * float(bt.get("do_phu_bang_chung") or 0)),
         }
 
-    # ── Cong QC tat dinh (T1..T18) ──────────────────────────────────────────
+    # ── Cong QC tat dinh (T1..T18) — CHI KY THUAT ───────────────────────────
     q = _outputs(db, run, pipeline.QC)
     if q.get("qc_phien_ban"):
         hong = [str(m) for m in (q.get("qc_muc_hong") or [])]
         ra["qc"] = {
-            "dat": bool(q.get("qc_dat")),
+            # ⚠️ `ky_thuat_dat`, khong phai "dat": co nay khong doc nghia ban dich
+            #    hay chat luong giong. Xem `qc.tom_tat` va `LOI_TONG.md` N-02.
+            "ky_thuat_dat": bool(q.get("qc_ky_thuat_dat")),
             "so_muc_hong": int(q.get("qc_so_muc_hong") or 0),
             # ⭐ Ma VA nhan. Ma de nguoi ho tro noi chuyen duoc voi bao cao
             #    trong kho; nhan de khach hieu phep kiem do hoi cai gi.
@@ -637,5 +622,36 @@ def bang_chung_chat_luong(db, run) -> dict | None:
                 for ten, tt in (dl.get("do_luong") or {}).items()
             ],
         }
+
+    # ── Lop NGU NGHIA, va so muc CON LAI chua sua ───────────────────────────
+    #
+    # 🔴 **N-03: he thong DA DO 44/95 muc dich chua sat va 85 muc con lai, luu vao
+    #    `outputs` + so cai, roi KHONG hien cho khach.** Luot B 24/09 giao mot
+    #    video ma he thong tu cham 46% cau la dich chua sat, va man hinh khong noi.
+    #
+    # ⛔ Khiem khuyet CHAT LUONG thi da khai (`so_giong_khong_dat` o duoi). Day la
+    #    khiem khuyet TRUNG THUC, va no nang hon: khach khong the hoi ve mot con
+    #    so khong ai cho ho thay.
+    #
+    # ⭐ Khong can do gi moi — du lieu co san, chi la chua ai noi. Nen day khong
+    #    phai mot danh doi giua chi phi va chat luong; khong co gi de can.
+    na = _outputs(db, run, pipeline.QC_AI)
+    if na.get("qc_ai_bat") and int(na.get("so_co_phan_quyet") or 0):
+        ra["ngu_nghia"] = {
+            "so_muc": int(na.get("so_muc") or 0),
+            "so_co_phan_quyet": int(na.get("so_co_phan_quyet") or 0),
+            "so_khong_dat": int(na.get("so_khong_dat") or 0),
+        }
+
+    # So muc DANG TIN con lai sau khi het vong sua (`sua_chua_con_lai`).
+    try:
+        from . import su_dung as su_dung_mod
+        con = [d for d in su_dung_mod.cac_dong(db, run)
+               if d.nang_luc == "sua_chua_con_lai"]
+        if con:
+            ra["con_lai"] = {"so_muc": int(sum(float(d.so_luong or 0)
+                                              for d in con))}
+    except Exception:                       # noqa: BLE001 - so cai hong khong
+        pass                                # duoc giet man hinh cua khach
 
     return ra or None

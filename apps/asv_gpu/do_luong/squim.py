@@ -44,8 +44,12 @@ PHIEN_BAN = f"squim_objective_dns2020/{SHA256_WEIGHTS[:12]}/cua_so{CUA_SO_S}"
 
 def do_squim(doan: list[dict], *, gpu_uuid: str = "", is_cancelled=None) -> dict:
     ds = [{"ma": str(d["ma"]), "tep": str(d["tep"])} for d in doan or []]
+    # ⭐ `buoc_gpu` = "nen tang DA cap card", khong phai "may co card". Do
+    #    24/09: GPU 3,87 s / CPU 9,38 s (2,4x) tren 6 doan x 8 s, diem lech
+    #    <= 0,0001 ⇒ card la duong dung. Nhung no chi duoc dung khi CO lease:
+    #    `chan_card=True` che card o luot khong lease. Xem `_runner.chon_thiet_bi`.
     return venv.chay(SCRIPT, {"doan": ds, "url": URL_WEIGHTS,
                               "sha256": SHA256_WEIGHTS, "cua_so_s": CUA_SO_S,
-                              "buoc_s": BUOC_S},
+                              "buoc_s": BUOC_S, "buoc_gpu": bool(gpu_uuid)},
                      timeout_s=600 + 2 * len(ds), gpu_uuid=gpu_uuid,
-                     is_cancelled=is_cancelled)
+                     is_cancelled=is_cancelled, chan_card=True)

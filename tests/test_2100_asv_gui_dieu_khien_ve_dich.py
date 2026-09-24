@@ -153,16 +153,28 @@ def test_nguon_loi_ep_OCR_di_toi_GIAI_DOAN_chep_loi(moi_truong, tmp_path):
     assert cai.nguon_loi == nguon_loi.OCR
 
 
-def test_nguon_loi_MAC_DINH_khong_ghi_khoa_nao(moi_truong, tmp_path):
-    """⛔ Luat `KHOA_THUA`: khong ep nguon thi ho so giu nguyen hinh dang cu —
-    tuc van tay cua nhung lan chay khong dung tinh nang nay KHONG doi."""
+def test_nguon_loi_AUTO_khong_ghi_khoa_nao(moi_truong, tmp_path):
+    """⛔ Luat `KHOA_THUA`: ho so chon `auto` giu nguyen hinh dang cu — tuc van tay
+    cua nhung lan chay khong dung tinh nang nay KHONG doi.
+
+    🔴 **Bai nay doi ten va doi cach goi ngay 24/09 (Task 5), va do la ket qua
+       DUNG.** Truoc do no ten `..._MAC_DINH_...` va **khong nop `nguon_loi`** —
+       tuc no ngam dua vao "mac dinh la `auto`". Mac dinh nay la **`asr`**
+       (san pham la long tieng voice->voice), nen mot lan chay khong chon gi SE
+       ghi `nguon_loi: asr` — dung nhu no phai the.
+
+    ⇒ Thu `KHOA_THUA` bo di la `auto` (`nguon_loi.CHE_DO_HO_SO_CU`), khong phai
+      "mac dinh hien hanh". Nen bai nay nay **nop `auto` tuong minh**: no kiem mot
+      tinh chat cua luat `KHOA_THUA`, khong kiem mac dinh la gi.
+    """
     from tests.fixtures import asv_media as fx
 
     fx.require_ffmpeg()
     _app, a, csrf, _b, _cb = moi_truong
     chu = _id_cua("asv-a@example.com")
 
-    assert _mt._tao_run_cho(a, csrf, tmp_path).status_code == 200
+    assert _mt._tao_run_cho(a, csrf, tmp_path,
+                            nguon_loi="auto").status_code == 200
     assert "nguon_loi" not in (_run_moi_nhat(chu).settings or {})
 
 

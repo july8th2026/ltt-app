@@ -129,7 +129,11 @@ def dung_cai_dat(db, *, owner_id: str, tho: Mapping) -> dict:
         raise LoiCaiDat(str(exc)) from None
 
     # Nguon loi thoai (auto|embedded|ocr|asr) — kiem o CUA, truoc credit.
-    nl = str(tho.get("nguon_loi") or "").strip().lower()
+    # ⭐ Duong YEU CAU MOI ⇒ mac dinh HIEN HANH (`asr` tu 24/09). Khac han duong
+    #    DOC ho so da luu, noi khoa vang mat nghia la `auto` — xem
+    #    `nguon_loi.CHE_DO_HO_SO_CU`.
+    nl = (str(tho.get("nguon_loi") or "").strip().lower()
+          or nguon_loi_mod.CHE_DO_MAC_DINH)
     if nl and nl not in nguon_loi_mod.CHE_DO_HOP_LE:
         raise LoiCaiDat(_t('Nguồn lời thoại không hợp lệ.'))
 

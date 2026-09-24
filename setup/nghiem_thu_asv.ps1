@@ -52,7 +52,19 @@ param(
     # qc_ai van chay va van thanh cong, chi la no khong goi model.
     [switch]$QcAi,
     # Noi ghi bao cao nghiem thu. Rong = ghi de ban trong kho.
-    [string]$BaoCao = ''
+    [string]$BaoCao = '',
+    # Chay bo NGHIEM THU CUOI (nam luot A/B/C/D/E, cap ngon ngu tuong minh)
+    # thay cho bo pha 22.
+    #
+    # !! Van la MOT ten bo test go trong ma, khong phai mot duong dan tuy y:
+    #    ly do o phan .DESCRIPTION ("VI SAO HEP") khong doi.
+    [switch]$NghiemThuCuoi,
+    # Thu muc ghi JSON tung luot cua bo nghiem thu cuoi.
+    [string]$RaLuot = '',
+    # Chi chay mot so luot, vd 'A,B'. Rong = ca nam.
+    [string]$Luot = '',
+    # Duong dan phim nguon cho bo nghiem thu cuoi (mac dinh: thu muc fixture).
+    [string]$Phim = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -60,6 +72,9 @@ if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
 
 $envFile = Join-Path $Root 'secrets\app.env'
 $boTest  = Join-Path $Repo 'tests\test_448_asv_v4_e2e_nghiem_thu.py'
+if ($NghiemThuCuoi) {
+    $boTest = Join-Path $Repo 'tests\test_3001_asv_nghiem_thu_cuoi.py'
+}
 
 foreach ($p in @($envFile, $boTest)) {
     if (-not (Test-Path $p)) { throw "Khong thay $p" }
@@ -149,6 +164,23 @@ if (-not $coCsdl) {
 
 $env:LTT_TEST_NANG   = '1'
 $env:LTT_ASV_E2E_RA  = $BaoCao
+
+if ($NghiemThuCuoi) {
+    $env:LTT_ASV_NT_CUOI = '1'
+    if ($RaLuot) { $env:LTT_ASV_NT_RA = $RaLuot }
+    if ($Luot)   { $env:LTT_ASV_NT_LUOT = $Luot }
+    if ($Phim)   { $env:LTT_ASV_NT_PHIM = $Phim }
+    Write-Host "  [**] Bo: NGHIEM THU CUOI (nam luot A/B/C/D/E)" -ForegroundColor Cyan
+    # !! `-QcAi` la BAT BUOC o day, khong phai mac dinh im lang: R-07 trong
+    #    `docs/auto_scan_video_final/LOI_TONG.md` ghi rang tat `qc_ai` thi lop
+    #    ngu nghia va lop thi giac KHONG chay, va bao cao van xanh. Bo test tu
+    #    `assert` lai dieu do, nen o day chi can noi truoc.
+    if (-not $QcAi) {
+        Write-Host "  [!!] -QcAi CHUA bat: bo nghiem thu cuoi se TU CHOI chay" -ForegroundColor Yellow
+    }
+} else {
+    Remove-Item Env:LTT_ASV_NT_CUOI -ErrorAction SilentlyContinue
+}
 
 if ($QcAi) {
     $env:LTT_ASV_QC_AI = '1'

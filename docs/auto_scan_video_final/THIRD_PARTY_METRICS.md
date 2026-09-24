@@ -22,8 +22,29 @@
 | 8 | **Giới tính của một giọng, đo từ tiếng** (`apps/asv_gpu/do_luong/gioi.py`) | JaesungHuh/voice-gender-classifier (mã nhúng ở `do_luong/_ecapa_gioi/`, dẫn xuất từ TaoRuijie/ECAPA-TDNN) | GitHub `49bcbecfd929…` · HF rev `db1222153bd6…` | `model.safetensors` (ECAPA-TDNN + 1 lớp tuyến tính, 61.907.512 B) | **MIT** (`LICENSE` của repo GitHub) | **MIT** (`license: mit` ở YAML front-matter model card HF) | ✅ | ✅ kèm LICENSE + NOTICE | HF → `HF_HOME` | `2d8e0be1fdf159d60d5087416e6f6277c5e30ce9e33a61c767a9a409e6c503c5` | do-giong |
 | 9 | Chấm MOS để **xếp hạng giọng** (ngoài đường chạy của khách — `tools/do_gioi_giong.py`) | microsoft/Distill-MOS (+ `xls-r-sqa` 0.1.0, lcn-kul) | `distillmos` 0.9.1 (PyPI) | `distillmos/weights/distill_mos_v7.pt` (16.907.522 B) | **MIT** (`LICENSE`: "Copyright (c) Microsoft Corporation") | **MIT** — weights nằm NGAY TRONG cây MIT, model card ghi `\| License \| MIT \|` | ✅ | ✅ | PyPI (weights đi kèm gói) | `b18b3ac60227267cfb91e5d00ce22cc7b73716fd92f269484da1446e27031a40` | do-giong |
 | 10 | DNSMOS P.835 (SIG/BAK/OVRL) — dùng ở LTT Voice và ở bảng xếp hạng giọng | microsoft/DNS-Challenge qua `voice_sidecar/dnsmos.py` (đã có trong kho từ 31/08) | commit `82f1b17e7776a43eee395d0f45bae8abb700ad00` | `sig_bak_ovr.onnx` (1.157.965 B) | **MIT** (`LICENSE-CODE`) | **CC BY 4.0** (`LICENSE` gốc — xem §2b) | ✅ | ✅ kèm ghi công | GitHub → `HF_HOME\dnsmos` | `269fbebdb513aa23cddfbb593542ecc540284a91849ac50516870e1ac78f6edd` | do-giong |
+| 11 | **Chân lý nền** để xác thực bộ chấm ngữ nghĩa (bản dịch zh→vi **do người dịch**) — `tools/bench_b2_xac_thuc_bo_cham.py`, ⛔ **không** nằm trong đường chạy của khách | facebookresearch/flores (FLORES-200) | `flores200_dataset.tar.gz` (bản 2022-06-30, tệp trong tar mtime 2022-06-29) | `dev/zho_Hans.dev` + `dev/vie_Latn.dev` (997 câu song song) | — (dữ liệu, không có mã) | **CC-BY-SA-4.0** | ✅ | ⚠️ **ShareAlike** — xem ghi chú dưới | `https://dl.fbaipublicfiles.com/nllb/flores200_dataset.tar.gz` | `b8b0b76783024b85797e5cc75064eb83fc5288b41e9654dabc7be6ae944011f6` (25.585.843 B) | xac-thuc-cham |
 
 ### Nghĩa vụ ghi công phải thực hiện
+- **CC-BY-SA-4.0 (FLORES-200)**: ⚠️ **ShareAlike**, nên ta xử lý nó như một bộ đo
+  **chỉ mượn**, không phải một tài sản của kho:
+  * ⛔ **Không commit câu nguồn/câu dịch FLORES vào kho**, và ⛔ không commit các
+    cặp **đã làm hỏng có chủ ý** (chúng là *tác phẩm phái sinh* của FLORES).
+    Bằng chứng chỉ ghi **chỉ số dòng FLORES + phán quyết + tỉ lệ** — ⛔ **không
+    cả `ly_do` của model**, vì `ly_do` trích thẳng đoạn nguồn lẫn bản dịch vào
+    trong nó. `bench_b2_xac_thuc_bo_cham.ban_ghi_sach` cưỡng chế điều này bằng
+    cơ học (`test_3600`), không bằng một ý định tốt.
+  * ⛔ **Không đưa vào đường sản phẩm.** Nó chỉ chạy trong công cụ đo
+    (`tools/bench_b2_xac_thuc_bo_cham.py`), không nằm trong `apps/`.
+  * Tải về `C:\LTTPlatform\hf-cache\flores200\` lúc đo, kiểm `sha256` trước khi
+    giải nén; thiếu/sai ⇒ công cụ dừng, ⛔ không tự đoán.
+  * Ghi công: NLLB Team và cộng sự, *No Language Left Behind* (2022).
+  * 🔴 **Kho gốc có HAI tệp giấy phép** (`LICENSE_CC-BY-SA` và
+    `LICENSE_CC-BY-NC4.0`) ⇒ một cái nhìn lướt rất dễ gán nhầm điều khoản **NC**.
+    `README.md` ở gốc `facebookresearch/flores` phân rạch ròi (đọc 24/09/2026):
+    *FLORES-200: CC-BY-SA 4.0 · NLLB-SEED: CC-BY-SA 4.0 · **NLLB-MD: CC-BY-NC 4.0**
+    · Toxicity-200: CC-BY-SA 4.0*. Điều khoản NC thuộc về **NLLB-MD**, không phải
+    FLORES-200. (Model card HF `facebook/flores`, `openlanguagedata/flores_plus` và
+    `Muennighoff/flores200` đều khai `cc-by-sa-4.0` — ba nguồn khớp nhau.)
 
 - **CC BY 4.0 (SQUIM_OBJECTIVE)**: bản ra thương mại phải ghi công tác giả. Chỗ
   ghi: trang *Giới thiệu / Giấy phép* của nền tảng — ⚠️ **chưa làm**, việc còn mở.

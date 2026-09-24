@@ -249,6 +249,18 @@ APP_DUOC_DUNG_APP: dict = {
         ("apps.ltt_voice.tham_so_cong_khai", "TRAN_MOI_LUOT_SINH"),
         # Tap lan giong = tap ngon ngu dich (`auto_scan_video/ngon_ngu.py`).
         ("apps.ltt_voice.lan_ngon_ngu", "LAN_HOP_LE"),
+        # ⭐ Hai MA LOI cong khai, cho `auto_scan_video/ma_loi.py` (24/09).
+        #
+        # 🔴 Man mot lan chay bat loi **THEO MA** (`quan_sat.LOI_CO_MA` ->
+        #    `ma_loi.SO_MA`), dung vai ma hai hang so nay sinh ra cho: *"khach bat
+        #    loi theo ma, khong theo cau chu"*. Nhap ma vao la cach DUY NHAT de
+        #    doi ten o `ltt_voice` lam ASV do ngay; go lai chuoi o ben nay la tao
+        #    ban thu hai cua cung mot ma, va no se lech im lang.
+        #
+        # ⛔ Chi MA, khong mo `PhanQuyet`/`quyet_dinh`: phep quyet dinh lan giong
+        #    thuoc `ltt_voice`, ASV chi doc ket qua.
+        ("apps.ltt_voice.lan_ngon_ngu", "MA_LOI_LECH_LAN"),
+        ("apps.ltt_voice.lan_ngon_ngu", "MA_LOI_LAN_KHONG_RO"),
         # 🔴 Chuan hoa van ban truoc khi doc — bo qua no la mot lo da co that:
         #    ngay thang doc thanh chuoi ky tu, URL doc tung chu cai, ky tu vo
         #    hinh thanh token la. Chi `chuan_hoa`, KHONG mo `chuan_bi` (ham do

@@ -21284,6 +21284,30 @@ msgstr "Follow 3xx. Off by default: your headers would travel to a host the targ
 msgid "Mã coi là thành công. Trống -> mọi mã < 400."
 msgstr "Status codes counted as success. Empty -> every code < 400."
 
+msgid "Kiểm kỹ thuật tự động (hình, tiếng, thời lượng)"
+msgstr "Automated technical checks (video, audio, duration)"
+
+msgid "Soát nghĩa bản dịch"
+msgstr "Translation meaning review"
+
+msgid "%(a)s/%(b)s câu bị chấm là dịch chưa sát"
+msgstr "%(a)s of %(b)s lines flagged as not faithful to the source"
+
+msgid "không câu nào bị chấm"
+msgstr "no lines flagged"
+
+msgid "Còn chưa sửa"
+msgstr "Still unfixed"
+
+msgid "%(n)s mục"
+msgstr "%(n)s items"
+
+msgid "Hệ thống đã tự sửa một vòng rồi giao bản này; các mục trên vẫn còn."
+msgstr "The system ran one automatic repair pass and then delivered this version; the items above remain."
+
+msgid "%(n)s đoạn đọc còn chưa khớp lời ở lần đo cuối."
+msgstr "%(n)s segments still did not match the script at the final measurement."
+
 msgid "Hạ tầng từ chối bước này nên máy chưa dựng xong. Đội vận hành đã nhận được nhật ký; thử lại sau ít phút."
 msgstr "The infrastructure refused this step, so the machine is not finished. The operations team has the logs; try again in a few minutes."
 
