@@ -208,15 +208,28 @@ không**, nhưng chúng là **danh từ mang nghĩa của câu**. ⛔ *"CER 0,04
 ⚠️ Việc model **tự phục hồi cả ba** là **may**, ⛔ không phải bảo đảm — và nó làm
 việc quy trách nhiệm **khó hơn**, không dễ hơn.
 
-## 5. ⛔ Bản BẬT vòng sửa — CHƯA chạy, và lý do là một chặn thật
+## 5. Bản BẬT vòng sửa — ⏭ **việc kế tiếp**, chặn đã gỡ, SHA đã ghim
 
-Để so được, bản BẬT phải khác bản NỀN **đúng một biến**: vòng sửa. Nhưng vòng
-sửa chạy **trong đường sản phẩm**, mà đường đó lấy model từ
-`manifest.model_llm_noi_bo = "ltt-3.8"` (§2). ⇒ Chạy bây giờ thì hai bản khác
-**hai** biến — model **và** vòng sửa — và hiệu số giữa chúng ⛔ **không quy được
-cho ai**, đúng cái bệnh bản nền sinh ra để chữa.
+⭐ Chặn ở §2 **đã gỡ** (§4b): dịch nay đi `ltt-3.5` **trong chính đường sản
+phẩm**, còn `qc_ngu_nghia` được ghim `ltt-3.8` tường minh. ⇒ Bản BẬT và bản NỀN
+nay khác **đúng một** biến: **vòng sửa**.
 
-⚠️ Thêm nữa: vòng sửa gọi `qc_ai`, đang **trong xưởng** ở làn khác. Đo một vòng
-sửa chạy bằng một bộ chấm đang bị sửa là đo một thứ **sẽ đổi**.
+**SHA phải ghim và ghi vào kết quả** (⛔ bộ chấm đang trong xưởng ở làn khác):
 
-⇒ ⛔ Chờ điều phối xếp thứ tự, ⛔ không tự sửa chỗ dùng chung.
+```
+apps/auto_scan_video/qc_ai.py   604b82a7eccee07473541873b8ca11bf049a8d60   2026-09-23
+VONG_SUA_TOI_DA = 1             (sua_chua.py:73)
+```
+
+Nhãn bắt buộc dán thẳng vào bản ghi:
+
+> **vòng sửa với bộ chấm V1 — ĐÃ BIẾT hỏng, báo động giả 43 %**
+
+⭐ ⛔ **Không chờ bộ chấm mới.** Câu hỏi này về **hiện trạng**: *"vòng sửa như nó
+đang tồn tại hôm nay đang giúp hay đang phá?"* — và quan sát **85 → 85** (N-02)
+cũng sinh ra từ đúng bộ chấm ấy. Chờ bộ chấm mới là **đổi mất câu hỏi**.
+
+⚠️ **Trạng thái: CHƯA chạy.** Vòng sửa được điều phối trong `jobs._vong_sua`,
+cần một lần chạy thật qua hàng đợi job (lượt NT-CUOI B trước đây tốn **67 phút**).
+⇒ Việc kế tiếp của làn, ⛔ không phải một việc đã xong.
+
