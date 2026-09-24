@@ -1057,3 +1057,81 @@ khai của một app đang phục vụ khách), và ⛔ không phải bảo trì
 
 ⇒ **D5 còn HAI cần gạt**: **1 (rút gọn, chính — phải đóng 54,5 %)** và **3 (giãn/nén, phụ)**.
 `can_gat_2_phan_phoi` giữ trong mã kèm phán quyết này, ⛔ **không gọi** ở đường sản phẩm.
+
+---
+
+## 18. 🔴 Trước khi tiêu một lượt LLM: hai phép quét **miễn phí** đổi cả bài toán
+
+### 18.1 Rút gọn phải sâu tới đâu mới đổi được gì
+
+`n = 187`, trần tăng tốc 1,15, `3,284` âm tiết/giây. ⛔ Không LLM — chỉ nhân số âm tiết.
+
+| mức | khe VỪA | % | KTC 95 % |
+|---|---|---|---|
+| 🔴 dài như **NLLB** (+10,6 %) | 56/187 | **29,9 %** | [0,238 ; 0,369] |
+| **bản dịch HIỆN NAY** | 83/187 | **44,4 %** | [0,374 ; 0,515] |
+| rút 10 % | 113/187 | 60,4 % | [0,533 ; 0,672] |
+| rút 20 % | 140/187 | 74,9 % | [0,682 ; 0,805] |
+| rút 30 % | 162/187 | 86,6 % | [0,810 ; 0,908] |
+| rút 40 % | 179/187 | 95,7 % | [0,918 ; 0,978] |
+
+⭐ `44,4 %` khớp **đúng** §15.3 (55,6 % còn hỏng sau cần gạt 3) — hai đường, một số.
+
+> 🔴 Muốn khe vừa ~87 % thì phải **rút 30 %** — trên một bản dịch **đã ngắn hơn NLLB
+> 10 %** và **đã trả điểm chrF++** cho độ ngắn ấy. ⇒ Cần gạt 1 ⛔ không phải *"gọt một
+> chút"*; nó là **cắt gần một phần ba lời**.
+
+⚠️ Và chiều ngược lại đã đo được: **dịch hay hơn** (dài như NLLB) kéo khe vừa xuống
+**29,9 %**. ⇒ Hai phía ⛔ không chỉ *"kéo ngược nhau"* — độ dốc rất lớn ở **cả hai** chiều.
+
+### 18.2 ⭐ Và một cần gạt ta ĐÃ ĐỌC nhưng **bỏ sót**: **GỘP KHE**
+
+`VideoLingo` giải *"quá nhanh"* ⛔ **không** bằng rút gọn chữ — mà bằng **gộp khối liền
+kề** (`core/_8_2_dub_chunks.py::merge_rows`, `MAX_MERGE_COUNT = 5`, và vòng trong dừng ở
+`merge_count == 2`). Tôi đọc đúng đặc tả ở §15.2 rồi **dựng ba cần gạt khác**, ⛔ bỏ qua
+chính cơ chế **chủ lực** của họ.
+
+⭐ Và nó hợp với ta **hơn** cần gạt 2: gộp ⛔ **không cần khoảng lặng** — nó chỉ cần khe
+**liền nhau**, mà `cat_doan` thì cho khe liền nhau (hở trung vị **0,0 s**).
+
+```
+                      | không gộp   gộp≤2    gộp≤3    gộp≤5
+  bản dịch HIỆN NAY   |   44,4 %    58,1 %   66,7 %   73,5 %
+  rút 10 %            |   60,4 %    73,4 %   80,5 %   86,0 %
+  rút 20 %            |   74,9 %    85,1 %   91,0 %   94,1 %
+  rút 30 %            |   86,6 %    94,1 %   95,1 %   98,1 %
+```
+
+> 🔑 ⭐ **Mỗi bậc gộp mua khoảng một bậc "rút 10 %" — mà ⛔ KHÔNG tốn một điểm chrF++ nào.**
+> `gộp ≤5` một mình đạt **73,5 %**, xấp xỉ mức phải **rút 20 %** mới có.
+> `gộp ≤3 + rút 10 %` = **80,5 %**, trong khi ⛔ không gộp thì phải **rút 30 %** mới tới 86,6 %.
+
+### 18.3 🔴 Nhưng gộp ⛔ KHÔNG miễn phí — nó trả bằng **chính con số cổng đang canh**
+
+| trần gộp | số khe | **khe > 7 s** | trung vị | p95 | max |
+|---|---|---|---|---|---|
+| 1 (hiện nay) | 187 | ✅ **0/187** | 2,68 s | 6,06 s | 6,75 s |
+| ≤2 | 124 | 🔴 15/124 (12,1 %) | 3,95 s | 8,45 s | 11,85 s |
+| ≤3 | 105 | 🔴 26/105 (24,8 %) | 4,66 s | 11,04 s | 15,66 s |
+| ≤5 | 83 | 🔴 29/83 (**34,9 %**) | 4,87 s | 17,78 s | **20,81 s** |
+
+⭐ Đây là chỗ nối thẳng vào **§13.2**: cổng D5 là một **cặp** — *độ chính xác onset* **∧**
+*mọi khe ≤ 7 s*. Vế thứ hai là thứ hạ được bản suy biến *"gộp tất"*.
+
+> 🔴 ⭐ **Gộp khe mua độ vừa bằng ĐÚNG con số mà cổng đang canh.** `gộp ≤5` đẩy 34,9 % khe
+> vượt trần Netflix 7,0 s, và khe dài nhất **20,8 s** — ⛔ không xa *"gộp tất"* bao nhiêu
+> về bản chất, chỉ khác mức độ.
+
+⚠️ ⇒ ⛔ **Đừng đọc bảng §18.2 thành "gộp là bữa trưa miễn phí".** Nó ⛔ không tốn điểm
+**dịch**; nó tốn **độ mịn khớp môi** và **trần khe** — hai thứ cổng sinh ra để giữ.
+
+### 18.4 Câu phải trả lời trước khi chọn mức LLM
+
+```
+⛔ KHÔNG hỏi  : "rút gọn bao nhiêu thì khe vừa?"
+⭐ HỎI        : "ta chịu được trần khe bao nhiêu giây, và CÒN LẠI bao nhiêu
+                 phần trăm phải trả bằng chất lượng dịch?"
+```
+
+⇒ Chọn trần gộp **trước** thì mức rút gọn cần thiết **rơi xuống hẳn** — và đó mới là mức
+đáng đem đi đo chrF++, ⛔ không phải quét cả dải 10–40 % bằng LLM.
