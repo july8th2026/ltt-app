@@ -21142,6 +21142,12 @@ msgstr "Run manually"
 msgid "Người dùng bấm chạy. Không có lịch, không có webhook."
 msgstr "The user clicks Run. No schedule, no webhook."
 
+msgid "Chờ"
+msgstr "Wait"
+
+msgid "Dừng một khoảng thời gian rồi chạy tiếp."
+msgstr "Pause for a period of time, then continue."
+
 msgid "Rẽ nhánh"
 msgstr "Branch"
 

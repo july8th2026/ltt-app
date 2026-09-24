@@ -39,6 +39,23 @@ def tao_waitpoint(db, *, run_id: str, owner_id: str, kind: str,
     return wp
 
 
+def theo_khoa(db, owner_id: str, khoa: str) -> Optional[Waitpoint]:
+    """Điểm chờ theo khoá khử trùng, hoặc `None`.
+
+    ⚠️ Tra theo ĐÚNG cặp cột của chỉ mục `ux_waitpoint_idem`
+       (`owner_id, idempotency_key`) — không tra theo `idempotency_key` một
+       mình. Cùng bài học với route API `/runs` (spec §8.1): tra lệch chỉ mục
+       thì hai người dùng khác nhau va vào nhau, và câu trả lời sai là một
+       điểm chờ **của người khác**.
+    """
+    if not khoa:
+        return None
+    return db.execute(
+        select(Waitpoint).where(Waitpoint.owner_id == owner_id,
+                                Waitpoint.idempotency_key == khoa)
+    ).scalars().first()
+
+
 def chan_node(db, *, run_id: str, node_id: str, waitpoint_id: str,
               vong=()) -> None:
     """Gắn một node vào một waitpoint. Luỹ đẳng — gọi hai lần vẫn một hàng.

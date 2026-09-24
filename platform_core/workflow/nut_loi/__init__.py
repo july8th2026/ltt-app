@@ -69,8 +69,15 @@ from platform_core.workflow.nut_loi import du_lieu as _du_lieu  # noqa: E402
 from platform_core.workflow.nut_loi import goi_wf as _goi_wf  # noqa: E402
 from platform_core.workflow.nut_loi import vong_lap as _vong_lap  # noqa: E402
 
+# ── Node CHỜ (plan wf-v2 P4) ─────────────────────────────────────────────────
+# `core.delay` · `core.wait` · `core.human`. Cùng một tệp vì cả ba dùng CHUNG
+# một cơ chế (waitpoint theo đường thi hành + wakeup + cửa resume) — tách ra là
+# dựng ba lần rồi hoà, đúng lý do plan gộp phase gốc 5 và 6.
+from platform_core.workflow.nut_loi import cho as _cho  # noqa: E402
+
 for _nd, _chay in (_dieu_huong.DINH_NGHIA + _du_lieu.DINH_NGHIA
-                   + _vong_lap.DINH_NGHIA + _goi_wf.DINH_NGHIA):
+                   + _vong_lap.DINH_NGHIA + _goi_wf.DINH_NGHIA
+                   + _cho.DINH_NGHIA):
     dang_ky(_nd, _chay)
 
 # ── Node AI (plan wf-v2 P7) ─────────────────────────────────────────────

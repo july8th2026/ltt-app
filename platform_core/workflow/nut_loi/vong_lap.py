@@ -30,6 +30,7 @@ from platform_core.workflow import (bao_gia, chinh_sach, foreach as _foreach,
                                     ngon_ngu)
 from platform_core.workflow.chinh_sach import LoiNgonNgu
 from platform_core.workflow.nut import Gia, NodeDefinition
+from platform_core.workflow.nut_loi import cho
 from platform_core.workflow.nut_loi.chay import KetQua
 
 #: §5.9: `on_item_error ∈ {fail, skip, collect}`. ⛔ Danh sách ĐÓNG. Mặc định
@@ -166,6 +167,17 @@ def _mot_phan_tu(db, run, g, node, than, i: int, phan_tu, *, cong_cu):
         if tt in ("QUEUED", "RUNNING", "WAITING"):
             # Job của phần tử này chưa xong — thử áp kết quả trước khi bỏ cuộc.
             cau_noi.ap_ket_qua(db, run, bid, cong_cu=cong_cu, vong=ngu)
+            # ⭐ …và nếu nó là một node CHỜ (`core.delay`/`wait`/`human`) thì
+            #    thử mở điểm chờ CỦA CHÍNH VÒNG NÀY. `ngu = ((nid, i),)` là thứ
+            #    tách `f:0/d` khỏi `f:1/d`; thiếu nó, vòng 2 đọc điểm chờ của
+            #    vòng 1 và bỏ qua lần chờ của nó (activepieces `000015`).
+            if tt == "WAITING" and cho.la_node_cho(bn):
+                kq = cho.tiep_mot(db, run, bn, vong=ngu)
+                if kq is not None:
+                    _chot(db, run, bid, sang=kq.sang,
+                          ra=dict(kq.output or {}),
+                          mo_ta=f"diem cho da mo [{i}]", error=kq.error,
+                          vong=ngu)
             tt = may_trang_thai.trang_thai_node(db, run.id, bid, ngu)
             if tt in ("QUEUED", "RUNNING", "WAITING"):
                 return ("cho", "")
@@ -190,13 +202,19 @@ def _mot_phan_tu(db, run, g, node, than, i: int, phan_tu, *, cong_cu):
         if ham is None:
             return ("hong", f"loi_he_thong: {bn['type']!r} khong co bo thi hanh")
         try:
-            kq = ham(db, run, bn, g=g, cong_cu=cong_cu,
+            kq = ham(db, run, bn, g=g, cong_cu=cong_cu, vong=ngu,
                      moi_truong=_mt_than(db, run, g, phu=phu, loop=loop))
         except Exception as loi:                          # noqa: BLE001
             kq = KetQua(sang="FAILED",
                         error=f"loi_he_thong: {type(loi).__name__}: {loi}")
         _chot(db, run, bid, sang=kq.sang, ra=dict(kq.output or {}),
               mo_ta=f"than foreach {nid}[{i}]", error=kq.error, vong=ngu)
+        # ⭐ `WAITING` KHÔNG phải hỏng: một `core.delay` trong thân vòng lặp
+        #    vừa mở điểm chờ của chỉ số này. Phần tử ấy "đang chờ", y như một
+        #    phần tử có node job chưa xong — nó chiếm một suất `parallelism`
+        #    và sẽ được `tiep_mot` đẩy tiếp ở lượt động cơ sau.
+        if kq.sang == "WAITING":
+            return ("cho", "")
         if kq.sang != "SUCCEEDED":
             return ("hong", kq.error or "than_foreach_loi")
         phu[bid] = {"status": "SUCCEEDED", "output": dict(kq.output or {}),
