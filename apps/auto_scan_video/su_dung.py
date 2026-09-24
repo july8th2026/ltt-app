@@ -301,7 +301,7 @@ def danh_dau_xong(db: Session, run: AsvRun, *, stage: str, item_key: str,
 
 
 def mo_lai_don_vi(db: Session, run: AsvRun, *, stage: str,
-                  item_key: str) -> bool:
+                  item_key: str, y_canh: dict | None = None) -> bool:
     """Mo lai MOT don vi da xong de no duoc lam lai. Tra ve co doi gi khong.
 
     🔴 **Day la ngoai le DUY NHAT cua luat "chi tien len" o `danh_dau_xong`.**
@@ -347,16 +347,44 @@ def mo_lai_don_vi(db: Session, run: AsvRun, *, stage: str,
     #    bang mot phep kiem: ca hai deu xanh rieng le, va cho hong la **moi noi**
     #    — thu duy nhat biet ca hai ben.
     rev = int(it.revision or 1)
+    # ⭐ **`y_canh` di THEO don vi, chu khong theo giai doan.** Vong sua cam ten
+    #    MOT doan va MOT ly do; giai doan chay lai thi doc lai chinh cho nay de
+    #    biet *vi sao* doan nay bi lam lai (`giai_doan_noi_dung`).
+    # 🔴 Truoc 25/09 ly do ay bi VUT: giai doan chay lai bang loi nhac y het lan
+    #    dau, nen vong sua chi la mot lan RUT THAM LAI (`B2_DICH.md` §7.10).
+    gia_tri: dict = {"revision": rev + 1, "status": ITEM_INVALIDATED}
+    if y_canh:
+        # ⛔ GOP vao `outputs`, ⛔ khong ghi de: `outputs` con giu ban cu, va
+        #    ban cu la thu `trich_ban_cu` noi toi.
+        gia_tri["outputs"] = {**(it.outputs or {}), "y_canh": dict(y_canh)}
     ket_qua = db.execute(
         update(AsvWorkItem)
         .where(AsvWorkItem.id == it.id, AsvWorkItem.revision == rev)
-        .values(revision=rev + 1, status=ITEM_INVALIDATED))
+        .values(**gia_tri))
     if ket_qua.rowcount != 1:
         raise XungDotDonVi(
             _t('Đơn vị việc đã được cập nhật ở tiến trình khác.'))
     db.flush()
     db.expire(it)
     return True
+
+
+def y_canh_dang_cho(db: Session, run: AsvRun, *, stage: str) -> dict[str, dict]:
+    """`{item_key: y_canh}` cua cac don vi DA BI MO LAI va chua lam lai xong.
+
+    ⭐ Chi `ITEM_INVALIDATED`: mot don vi `succeeded` ⛔ khong duoc mang `y_canh`
+       vao luot sau: no **da** duoc lam lai roi, va dua lai cung mot nghi ngo la
+       bat model sua mot thu no vua sua.
+    """
+    dong = db.execute(select(AsvWorkItem).where(
+        AsvWorkItem.run_id == run.id, AsvWorkItem.stage == stage,
+        AsvWorkItem.status == ITEM_INVALIDATED)).scalars().all()
+    ra: dict[str, dict] = {}
+    for it in dong:
+        y = (it.outputs or {}).get("y_canh")
+        if isinstance(y, dict) and y:
+            ra[str(it.item_key)] = dict(y)
+    return ra
 
 
 def da_xong(db: Session, run: AsvRun, *, stage: str,

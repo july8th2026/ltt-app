@@ -10,6 +10,7 @@ Bon nhom, theo dung bon dieu cong thoat cua pha doi:
 from __future__ import annotations
 
 import json
+import textwrap
 
 import pytest
 
@@ -156,6 +157,101 @@ def test_khong_chac_CHI_THU_va_KHONG_duoc_lam_hong_mot_lo():
                          {"seg_0000": ra["s1"]}, ma_giong="g",
                          van_tay_ban="vt", provider="p", model="m")
     assert "khong_chac" not in tl["muc"][0], "⛔ khong duoc di ra tai lieu khach"
+
+
+def test_y_canh_DI_VAO_loi_nhac_va_KHONG_lam_ban_duong_THUONG():
+    """🔴 Vong sua truoc 25/09 **mu tu thiet ke**: `y_canh` co tham so, loi
+    nhac co cho nhet, nhung ⛔ khong nguoi goi nao truyen — nen doan bi che
+    duoc dich lai bang loi nhac Y HET lan dau (`B2_DICH.md` §7.10).
+
+    ⛔ **DOI CHUNG HAI CHIEU la phan khong duoc bo:**
+      (a) doan CO `y_canh`   => loi nhac mang DOAN TRICH + luat "kiem lai";
+      (b) lo KHONG co doan nao => loi nhac **y het ban nen**.
+    Thieu ve (b) thi ta ⛔ khong biet minh co lam ban duong THUONG hay khong,
+    va moi so do cu cua duong thuong het so sanh duoc.
+    """
+    bg = _ban_ghi()
+    lo = bg["doan"][:2]
+
+    def _msg(y=None):
+        return long_tieng.loi_nhac(lo, tat_ca=bg["doan"], ngon_ngu_goc="zh",
+                                   dac_diem_giong={}, ngon_ngu_dich="vi",
+                                   y_canh=y)
+
+    # (b) ⛔ DOI CHUNG: khong `y_canh` => y het ban nen, TUNG BYTE.
+    nen = _msg()
+    assert nen == _msg({}), "`y_canh` rong ⛔ khong duoc doi gi"
+    assert "NGHI NGO" not in nen[0]["content"], (
+        "lo khong co doan bi che ⛔ KHONG duoc mang luat `y_canh`")
+    assert "y_canh" not in json.loads(nen[-1]["content"])["doan"][0]
+
+    # (a) co `y_canh` => luat xuat hien VA doan trich di vao payload.
+    ma = str(lo[0]["ma"])
+    co = _msg({ma: {"nghi_ngo": "sai thuc the",
+                    "trich_nguon": "壁球",
+                    "trich_ban_cu": "quần vợt"}})
+    he = co[0]["content"]
+    assert "NGHI NGO" in he and "GIU NGUYEN" in he
+    # 🔴 Cau chu phai cho model DUONG LUI: bo cham co bao dong gia, nen
+    #    ra lenh "hay sua" la cach bien mot bao dong gia thanh mot hong that.
+    assert "KHONG duoc doi mot cau dang dung" in he
+    goi = json.loads(co[-1]["content"])["doan"]
+    y = {d["ma"]: d.get("y_canh") for d in goi}[ma]
+    assert y["trich_nguon"] == "壁球", "phai mang DOAN TRICH, ⛔ khong chi nhan"
+    assert y["trich_ban_cu"] == "quần vợt"
+    # Doan THU HAI trong cung lo ⛔ khong duoc mang `y_canh` cua doan kia.
+    assert {d["ma"]: d.get("y_canh") for d in goi}[str(lo[1]["ma"])] is None
+
+
+def test_NGUOI_GOI_that_su_TRUYEN_y_canh_cho_loi_nhac():
+    """🔴 **Phep bat DUNG khuyet tat da xay ra**, ⛔ khong phai mot bien the.
+
+    Khuyet tat that (truoc 25/09): `loi_nhac` **co** tham so `y_canh`, loi nhac
+    **co** cho nhet no — va ⛔ **khong mot nguoi goi nao truyen**. Vong sua vi
+    the dich lai doan bi che bang loi nhac Y HET lan dau.
+
+    ⛔ **Bai kiem don vi o tren ⛔ KHONG bat duoc chuyen do**: chung goi
+       `loi_nhac` truc tiep nen luon truyen `y_canh`. Da thu tiem loi (bo
+       `y_canh=` o `giai_doan_noi_dung`) — hai bai kia van XANH.
+    ⭐ => Phai doc CAY cua chinh NGUOI GOI. Mot tham so khong ai truyen la mot
+       tham so khong ton tai.
+    """
+    import ast
+    import inspect
+
+    from apps.auto_scan_video import giai_doan_noi_dung as gdn
+
+    cay = ast.parse(textwrap.dedent(inspect.getsource(gdn.chay)))
+    goi = [n for n in ast.walk(cay)
+           if isinstance(n, ast.Call)
+           and isinstance(n.func, ast.Attribute)
+           and n.func.attr == "loi_nhac"]
+    assert goi, "`chay` khong con goi `long_tieng.loi_nhac` — bai dang nhin cho khac"
+    for g in goi:
+        ten = {k.arg for k in g.keywords}
+        assert "y_canh" in ten, (
+            "`giai_doan_noi_dung.chay` ⛔ KHONG truyen `y_canh` cho `loi_nhac` "
+            "=> vong sua lai mu, va N-02 quay lai")
+
+
+def test_y_canh_cho_CAT_va_bo_truong_rong():
+    """`sua_chua.y_canh_cho` phai KIEM SOAT dinh dang, ⛔ khong do van tho vao.
+
+    ⚠️ *Vi du trong loi nhac la mot MENH LENH ngam* — `y_canh` di THANG vao
+    loi nhac, nen **hinh dang** cua no dang day model.
+    """
+    from apps.auto_scan_video import sua_chua
+
+    kk = sua_chua.KhiemKhuyet(
+        sua_chua.DICH_SAI, ma="s1", ly_do="  x" + "y" * 500,
+        bang_chung={"nguon": "n" * 500, "dich": ""})
+    y = sua_chua.y_canh_cho(kk)
+    assert len(y["nghi_ngo"]) == sua_chua.Y_CANH_TOI_DA
+    assert len(y["trich_nguon"]) == sua_chua.Y_CANH_TOI_DA
+    assert "trich_ban_cu" not in y, "truong rong ⛔ khong duoc nhet vao loi nhac"
+    # ⛔ Khong co gi dung duoc => `{}`, va `{}` ⛔ khong duoc vao loi nhac.
+    assert sua_chua.y_canh_cho(sua_chua.KhiemKhuyet(
+        sua_chua.DICH_SAI, ma="s1")) == {}
 
 
 def test_chu_HAN_lot_ban_ghi_bi_DANH_DAU_va_KHONG_lam_hong_luot():

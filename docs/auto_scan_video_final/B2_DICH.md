@@ -792,6 +792,94 @@ rút lại), và **phải khai ra rằng người soi là tôi** — đúng xung
 ⛔ **CHƯA chạy** — nó cần một lượt soi tay nghiêm túc, và điều phối xếp bảng từ
 `B→D` trước hay sau là quyết định của điều phối.
 
+## 7.11 ⭐ NỐI `y_canh` — vòng sửa thôi **mù**
+
+> 🔴 **Khuyết tật:** `loi_nhac` **có** tham số `y_canh` (`:214`), lời nhắc **có**
+> chỗ nhét nó (`:240`), và ⛔ **không một người gọi nào truyền**. ⇒ Đoạn bị chê
+> được dịch lại bằng lời nhắc **y hệt** — ⛔ không một bit nào về *vì sao*.
+> ⇒ Nó ⛔ không phải vòng **sửa**; nó là một lần **rút thăm lại** (§7.10).
+
+### Đường nối — bốn chỗ, mỗi chỗ một câu
+
+```
+sua_chua.y_canh_cho(kk)           dung `y_canh` CO DINH DANG KIEM SOAT tu mot khiem khuyet
+jobs.py:_vong_sua                 truyen `y_canh` kem `mo_lai_don_vi` (theo TUNG don vi)
+su_dung.mo_lai_don_vi(y_canh=)    gop vao `outputs` cua don vi, GIU ban cu
+su_dung.y_canh_dang_cho(...)      doc lai cho cac don vi `ITEM_INVALIDATED`
+giai_doan_noi_dung                loc theo ma cua LO roi truyen vao `loi_nhac`
+```
+
+### ⛔ Bốn ràng buộc — và cái thứ ba là cái đắt nhất
+
+**1. ĐOẠN TRÍCH, ⛔ không phải nhãn trần.** `y_canh_cho` dựng ba trường có tên:
+
+```
+nghi_ngo      ly do cua bo cham, cat 160 ky tu
+trich_nguon   cau goc bo cham chi ra
+trich_ban_cu  ban dich CU bi nghi
+```
+
+⭐ *"sai thực thể"* gần như vô dụng; *"`壁球` → «quần vợt»"* thì dùng được. Cùng
+bài học với bộ dò chữ Hán: **một cờ nói *có gì đó* sai; một đoạn trích nói *sai
+ở đâu***.
+
+**2. Ví dụ trong lời nhắc là MỆNH LỆNH NGẦM** (§4c). `y_canh` đi **thẳng** vào
+lời nhắc ⇒ **hình dạng** của nó đang dạy model ⇒ ⛔ không đổ văn thô của bộ chấm
+vào; ba trường có tên, cắt độ dài, trường rỗng bị **bỏ hẳn**.
+
+**3. 🔴 Bộ chấm đang TRƯỢT CỔNG ⇒ `y_canh` MANG THEO BÁO ĐỘNG GIẢ.**
+⇒ Lời nhắc ⛔ **KHÔNG** ra lệnh *"hãy sửa lỗi này"*:
+
+```
+"Day la NGHI NGO, KHONG phai phan quyet — buoc kiem do CO BAO DONG GIA."
+"Neu ban cu DA DUNG thi GIU NGUYEN no."
+"KHONG duoc doi mot cau dang dung chi vi no bi nghi ngo."
+```
+
+⭐ Ép sửa một chỗ **vốn đúng** là cách chắc chắn nhất **biến một báo động giả
+thành một hỏng thật**. Câu chữ phải cho model một **đường lui**.
+
+**4. ⛔ Đối chứng HAI CHIỀU** — và vế hai mới là vế bảo vệ đường thường:
+
+| | |
+|---|---|
+| đoạn **có** `y_canh` | lời nhắc mang **đoạn trích** + luật *"kiểm lại"* |
+| lô **không** đoạn nào | lời nhắc **y hệt bản nền, từng byte** (`nen == _msg({})`) |
+
+⇒ Luật `y_canh` **chỉ** chèn khi lô thật sự có đoạn mang nó. Thiếu vế hai thì ta
+⛔ không biết mình có làm bẩn đường **thường** hay không — và mọi số cũ của
+đường thường hết so sánh được.
+
+### 🔴 Phép kiểm bắt ĐÚNG khuyết tật đã xảy ra, ⛔ không phải một biến thể
+
+⚠️ Ba bài đơn vị ở trên gọi `loi_nhac` **trực tiếp** nên **luôn** truyền `y_canh`
+⇒ chúng ⛔ **không** bắt được khuyết tật thật. **Đã thử tiêm:** bỏ `y_canh=` ở
+`giai_doan_noi_dung` ⇒ cả ba **vẫn XANH**.
+
+⇒ ⭐ `test_NGUOI_GOI_that_su_TRUYEN_y_canh_cho_loi_nhac` đọc **CÂY (AST) của
+chính người gọi**: mọi lời gọi `loi_nhac` trong `chay` phải có từ khoá `y_canh`.
+Tiêm lại ⇒ **ĐỎ đúng chỗ**.
+
+> 🔑 **Một tham số không ai truyền là một tham số không tồn tại** — và chỉ một
+> phép kiểm nhìn **người gọi** mới nói được điều đó.
+
+### ⏭ Nay phép A/B **có nghĩa** — ⛔ chưa chạy
+
+```
+A  dich lai KHONG y_canh   (dung san pham HOM QUA)
+B  dich lai CO  y_canh     (san pham sau ban va nay)
+cung doan · cung cau hinh · >= 3 luot moi nhanh
+```
+
+⭐ Đo **CHIỀU**, ⛔ không đo *"có đổi không"* — đường dịch ⛔ không tái lập được
+nên **mọi thứ đều đổi**. Câu thật: **trong số đoạn đổi, bao nhiêu TỐT LÊN / TỆ
+ĐI?**
+
+⛔ **Người soi ⛔ không phải tôi và ⛔ không phải bộ chấm.** Chủ dự án chốt
+**điều phối chấm** ⇒ làn này chuẩn bị **cặp mù** (bỏ nhãn nhánh, xáo thứ tự).
+⭐ Và nhánh **A** trả luôn ẩn số §7.10: *xác suất một lượt rút lại làm đoạn đúng
+tệ đi*. **Một phép đo, hai câu trả lời.**
+
 ## 7.9 🔴 Đo lại sau khi ghim — **một hoá đơn tự đóng, một thì không**
 
 ### 1. Tên riêng: **38/39 → 38/39**. ⛔ Ghim nhiệt độ ⛔ KHÔNG đổi gì ở đây

@@ -315,6 +315,12 @@ def _sua_chua_neu_can(db, run, theo_ten) -> list[str]:
     theo_giai_doan: dict[str, list[str]] = {}
     for ma, gd in gon.items():
         theo_giai_doan.setdefault(gd, []).append(ma)
+    # ⭐ **LY DO di theo don vi.** Truoc 25/09 cho nay chi mang `{ma: giai_doan}`
+    #    — tuc *"lam lai cai nay"* ma ⛔ **khong** noi *"vi sao"*. Giai doan chay
+    #    lai dung loi nhac y het lan dau, nen vong sua chi la mot lan RUT THAM
+    #    LAI, va do chinh la co che giai thich N-02 (`B2_DICH.md` §7.10).
+    y_theo_gd = {gd: sua_chua.y_canh_theo_don_vi(ke, gd)
+                 for gd in theo_giai_doan}
 
     dat_lai: list[str] = []
     #: 🔴 **Ha nguon giu RIENG, va mot bo do 3 phut da chung minh vi sao.**
@@ -335,7 +341,8 @@ def _sua_chua_neu_can(db, run, theo_ten) -> list[str]:
     for gd, cac_ma in sorted(theo_giai_doan.items()):
         for ma in cac_ma:
             try:
-                su_dung.mo_lai_don_vi(db, run, stage=gd, item_key=ma)
+                su_dung.mo_lai_don_vi(db, run, stage=gd, item_key=ma,
+                                      y_canh=y_theo_gd.get(gd, {}).get(ma))
             except su_dung.XungDotDonVi:
                 # ⚠️ Mot tien trinh khac dang cham don vi nay ngay luc nay. Bo
                 #    qua **rieng no**, dung giet ca vong sua: nhung don vi khac

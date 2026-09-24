@@ -181,6 +181,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     dac_diem = dict(can_cu.get("dac_diem") or {}) or can_cu
     con_lai = [d for d in doan_giu if str(d.get("ma") or "") not in xong]
     chuyen: dict[str, dict] = _lay_lai_doan_da_xong(db, run, xong)
+    # ⭐ Ly do bi che cua nhung don vi VONG SUA vua mo lai. Rong o lan chay dau
+    #    — tuc duong THUONG ⛔ khong bi cham (`su_dung.y_canh_dang_cho`).
+    y_canh_cho_lo = su_dung.y_canh_dang_cho(db, run,
+                                            stage=pipeline.CONTENT_PROCESS)
 
     lo_lo = long_tieng.chia_lo(con_lai)
 
@@ -211,7 +215,12 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         ma_da_gui = {str(d.get("ma") or "") for d in lo}
         messages = long_tieng.loi_nhac(
             lo, tat_ca=doan_giu, ngon_ngu_goc=str(goc.get("ngon_ngu") or ""),
-            dac_diem_giong=dac_diem, ngon_ngu_dich=dich)
+            dac_diem_giong=dac_diem, ngon_ngu_dich=dich,
+            # ⭐ **LY DO bi che di vao luot dich lai.** `y_canh` loc theo dung
+            #    cac ma cua LO nay, nen mot lo ⛔ khong co doan bi che se cho ra
+            #    loi nhac **y het ban nen** (`long_tieng.loi_nhac` chi chen luat
+            #    `y_canh` khi lo that su co doan mang no).
+            y_canh={m: y for m, y in y_canh_cho_lo.items() if m in ma_da_gui})
 
         kq = ai.goi_tinh_tien(
             db, run, ai.CHUYEN_LOI_THOAI, messages,
