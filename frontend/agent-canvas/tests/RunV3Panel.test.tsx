@@ -20,7 +20,7 @@ describe('RunV3Panel — trạng thái node không được nói dối', () => {
   it('KHONG_XAC_DINH hiện nhãn riêng, KHÔNG hiện "Chờ"', () => {
     render(<RunV3Panel run={runGoc([
       { node_id: 'trong_foreach_sau', status: 'KHONG_XAC_DINH', attempt: 0,
-        cost_credit: 0, job_id: '', error: 'khong gop duoc', waiting_kind: '' },
+        cost_credit: 0, job_id: '', error: 'khong gop duoc', waiting_kind: '', het_han: false },
     ])} onCancel={() => {}} />)
     const hang = document.querySelector('[data-node-status="KHONG_XAC_DINH"]')
     expect(hang).toBeTruthy()
@@ -31,9 +31,9 @@ describe('RunV3Panel — trạng thái node không được nói dối', () => {
   it('WAITING vì HUMAN đọc khác WAITING vì WEBHOOK', () => {
     render(<RunV3Panel run={runGoc([
       { node_id: 'duyet', status: 'WAITING', attempt: 1, cost_credit: 0,
-        job_id: '', error: '', waiting_kind: 'HUMAN' },
+        job_id: '', error: '', waiting_kind: 'HUMAN', het_han: false },
       { node_id: 'hook', status: 'WAITING', attempt: 1, cost_credit: 0,
-        job_id: '', error: '', waiting_kind: 'WEBHOOK' },
+        job_id: '', error: '', waiting_kind: 'WEBHOOK', het_han: false },
     ])} onCancel={() => {}} />)
     const duyet = document.querySelector('[data-node-status="WAITING"][data-waiting-kind="HUMAN"]')
     const hook = document.querySelector('[data-node-status="WAITING"][data-waiting-kind="WEBHOOK"]')
@@ -46,7 +46,7 @@ describe('RunV3Panel — trạng thái node không được nói dối', () => {
   it('PENDING thường vẫn hiện "Chờ" như trước (không hồi quy)', () => {
     render(<RunV3Panel run={runGoc([
       { node_id: 'a', status: 'PENDING', attempt: 0, cost_credit: 0,
-        job_id: '', error: '', waiting_kind: '' },
+        job_id: '', error: '', waiting_kind: '', het_han: false },
     ])} onCancel={() => {}} />)
     expect(screen.getByText('Chờ')).toBeInTheDocument()
   })

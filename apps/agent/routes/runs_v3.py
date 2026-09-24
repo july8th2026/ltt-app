@@ -330,14 +330,15 @@ def _nodes_json(db: Session, run: WorkflowRun) -> list[dict]:
             #    trần mà ở các ĐƯỜNG THI HÀNH `f:0/x`, `f:1/x`… Gộp chúng lại
             #    dưới đúng `node_id` trần — giao diện (`CanvasShell.tsx` so
             #    `item.node_id === node.id`) vì vậy KHÔNG phải sửa.
-            ra.append(theo_than[nid] | {"node_id": nid, "waiting_kind": ""})
+            ra.append(theo_than[nid] | {"node_id": nid, "waiting_kind": "",
+                                        "het_han": False})
             continue
         if anh is None and nid in khong_xac_dinh:
             # ⛔ KHÔNG `PENDING` — xem `TRANG_THAI_KHONG_XAC_DINH`.
             ra.append({
                 "node_id": nid, "status": TRANG_THAI_KHONG_XAC_DINH,
                 "attempt": 0, "cost_credit": 0, "job_id": "",
-                "waiting_kind": "",
+                "waiting_kind": "", "het_han": False,
                 "error": _t('Không gộp được trạng thái: một đường thi hành '
                             'trong vòng lặp lồng sâu đã bị băm (quá 64 ký '
                             'tự), không thể biết chắc đây có phải node này.')})
@@ -347,7 +348,7 @@ def _nodes_json(db: Session, run: WorkflowRun) -> list[dict]:
             # `1` — `1` sẽ nói dối rằng node đã chạy một lượt.
             ra.append({"node_id": nid, "status": may_trang_thai.NODE_BAT_DAU,
                        "attempt": 0, "cost_credit": 0, "job_id": "",
-                       "waiting_kind": "", "error": ""})
+                       "waiting_kind": "", "het_han": False, "error": ""})
             continue
         ra.append({
             "node_id": nid,
@@ -357,6 +358,21 @@ def _nodes_json(db: Session, run: WorkflowRun) -> list[dict]:
             "job_id": anh.job_id,
             "waiting_kind": (_waiting_kind(db, run.id, nid)
                             if anh.execution_status == "WAITING" else ""),
+            # ⭐ Node CHỜ NGƯỜI kết thúc vì HẾT HẠN, không vì ai trả lời (§18.7
+            #    "human hết hạn"). `nut_loi/cho._ket_het_han` đặt
+            #    `output["het_han"] = True` cho mọi chế độ định tuyến
+            #    (`route`/`approve`/`reject`), nên đây là chỗ DUY NHẤT phân
+            #    biệt được "người duyệt đã bấm" với "hết giờ nên tự đi nhánh".
+            #
+            # 🔴 Không có trường này, hai chuyện ấy hiện y hệt nhau trên màn
+            #    hình: cùng `SUCCEEDED`, cùng `waiting_kind` rỗng. Một
+            #    workflow duyệt-trước-khi-đăng tự đi tiếp vì người bận sẽ
+            #    trông giống hệt một workflow được duyệt thật — đúng hạng lỗi
+            #    "màn hình nói sai" mà P9 task 3 đã chống.
+            #
+            # ⚠️ MỘT boolean, ⛔ không phải cả `output_ref`: hàm này chạy MỖI
+            #    GIÂY trong luồng SSE.
+            "het_han": (anh.output_ref or {}).get("het_han") is True,
             "error": anh.error,
         })
     return ra
@@ -770,3 +786,132 @@ async def v3_thu_lai_node(request: Request, run_id: str, node_id: str,
     db.commit()
     db.refresh(run)
     return JSONResponse(_run_json_v3(db, run), headers=_NO_STORE)
+
+
+# ── Chạy lại TỪ MỘT NODE (spec §14, P9b task 4) ──────────────────────────────
+#
+# 🔴 CỬA NÀY TẠO MỘT RUN MỚI ⇒ MỘT KHOẢN GIỮ MỚI. Đó là đúng, không phải một
+#    ngoại lệ phải xin: một lượt chạy lại là một lần chạy **độc lập**, người
+#    dùng bấm, tiêu tiền mới. Nên nó đi qua **toàn bộ** `tao_run.tao_run` —
+#    giữ tiền một lần, `MAX_RUN_DONG_THOI`, `Idempotency-Key` — ⛔ không mở
+#    một đường tạo run thứ hai.
+#
+# ⛔ KHÔNG dùng lại `hold_id` của run cũ: khoản ấy đã (hoặc sẽ) được quyết
+#    toán cho run cũ. ⛔ KHÔNG mượn `parent_run_id`: run con **không** có hold
+#    riêng (`run_con.py`; `ket_so` cộng chi phí con lên cha), nên mượn quan hệ
+#    ấy là lặng lẽ biến một lượt chạy lại thành một run **không trả tiền** —
+#    và mọi phép kiểm về hold vẫn xanh.
+
+#: Trạng thái mà một node ở run cũ phải có thì output của nó mới sao được.
+#: `SKIPPED` nằm đây vì nó cũng là một **kết luận** của đồ thị (nhánh không
+#: chạy), và một nhánh đã kết luận không cần kết luận lại.
+_SAO_DUOC = ("SUCCEEDED", "SKIPPED")
+
+
+def _sao_output(db: Session, run_cu: WorkflowRun, run_moi: WorkflowRun,
+                node_id: str) -> list[str]:
+    """Sao **tham chiếu** output các node không phải hậu duệ của `node_id`.
+
+    ⛔ Không chép byte: `output_ref` chỉ giữ tham chiếu artifact (`models.py`
+       `NodeRunSnapshot`), nên "sao" ở đây là sao một con trỏ. `artifact_ref`
+       kiểm `owner_id` khi đọc (§15.2), và hai run cùng một chủ.
+
+    ⭐ Sao **cả** `output_ref`, kể cả khoá nội bộ `_nhanh`: `dong_co.
+       _nhanh_da_chon` đọc đúng khoá ấy để biết một `core.if`/`core.switch` đã
+       rẽ đường nào. Lọc nó đi là sao một node rẽ nhánh mà **không** sao quyết
+       định rẽ — lan truyền sau đó đứng im, không có lỗi nào.
+
+    🔴 `cost_credit=0` — khách đã trả cho **chính công việc ấy** ở run cũ.
+       `ket_so` cộng `cost_credit` của các ảnh chụp hợp lệ, nên một con số
+       khác 0 ở đây là thu tiền lần thứ hai cho một job chưa từng chạy lại.
+    """
+    ver = db.get(WorkflowVersion, run_cu.version_id)
+    do_thi = (ver.graph if ver is not None else {}) or {}
+    da_sao: list[str] = []
+    for nid in bao_gia.co_the_tai_dung(do_thi, node_id):
+        anh = thi_hanh.anh_chup_hien_tai(db, run_cu.id, nid)
+        if anh is None or anh.execution_status not in _SAO_DUOC:
+            # Node `FAILED`/chưa chạy không có gì để sao — nó chạy lại thật.
+            continue
+        if anh.execution_status == "SKIPPED":
+            # `PENDING -> SKIPPED` có trong `NODE_CHUYEN`; không cần qua READY.
+            may_trang_thai.chuyen_node(
+                db, run_moi.id, nid, sang="SKIPPED",
+                mo_ta=f"sao tu run {run_cu.id}",
+                attempt_number=int(anh.attempt_number or 1))
+            da_sao.append(nid)
+            continue
+        # ⛔ Không có đường tắt `PENDING -> SUCCEEDED` trong bảng chuyển, và
+        #    KHÔNG được thêm một đường như vậy chỉ để tiện ở đây: bảng ấy là
+        #    thứ duy nhất nói được "trạng thái nào đi tới trạng thái nào".
+        may_trang_thai.chuyen_node(db, run_moi.id, nid, sang="READY",
+                                   mo_ta=f"sao tu run {run_cu.id}")
+        may_trang_thai.chuyen_node(
+            db, run_moi.id, nid, sang="SUCCEEDED",
+            mo_ta=f"sao output tu run {run_cu.id}",
+            attempt_number=int(anh.attempt_number or 1),
+            # Giữ `job_id` CỦA RUN CŨ: đó là job đã thật sự sinh ra artifact
+            # này, và là con trỏ duy nhất đi ngược về nó. Bịa một id mới, hay
+            # để rỗng, đều làm mất đường truy vết của một kết quả đang được
+            # dùng tiếp.
+            job_id=anh.job_id,
+            output_ref=dict(anh.output_ref or {}),
+            cost_credit=0)
+        da_sao.append(nid)
+    return da_sao
+
+
+@router.post("/api/v3/runs/{run_id}/chay-lai-tu/{node_id}")
+async def v3_chay_lai_tu_node(request: Request, run_id: str, node_id: str,
+                              idempotency_key: str = Header(
+                                  default="", alias="Idempotency-Key"),
+                              _identity: str = Depends(require_login),
+                              db: Session = Depends(get_db)):
+    """Run MỚI cùng version, tái dùng output các node không phải hậu duệ (§14).
+
+    ⭐ Đòi `Idempotency-Key` vì **cùng lý do** cửa tạo run đòi: cửa này tiêu
+       tiền, và một mặc định "cho qua" biến đường an toàn thành đường khách
+       phải nhớ. Dùng lại nguyên `_khoa_idempotency`, ⛔ không đặt luật thứ hai.
+    """
+    body = await request.json() if await request.body() else {}
+    _verify_json_csrf(request, body if isinstance(body, dict) else {})
+    khoa = _khoa_idempotency(idempotency_key)
+    user = _user(request)
+    run_cu = _run_cua_toi(db, run_id, user.id)
+    _node_trong_do_thi(db, run_cu, node_id)      # 404 `node_khong_ton_tai`
+    wf = _wf_cua_toi(db, run_cu.workflow_id, user.id)
+    try:
+        run_moi, moi = tao_run.tao_run(
+            db, workflow=wf, owner_id=user.id, trigger_kind="manual",
+            idempotency_key=khoa,
+            # ⭐ `inputs` của run CŨ đi theo: biểu thức của đồ thị đọc
+            #    `inputs.*`, nên một lượt chạy lại không mang chúng là chạy
+            #    lại **một bài toán khác**.
+            inputs=_inputs_cua(db, run_cu),
+            ghim_version_id=run_cu.version_id,
+            chay_lai_tu_run_id=run_cu.id)
+    except tao_run.TrungKhoaKhacWorkflow:
+        raise HTTPException(status_code=409, detail={
+            "ma": "khoa_dung_cho_workflow_khac",
+            "thong_diep": _t('Idempotency-Key nay da dung cho workflow khac.')
+        }) from None
+    except tao_run.KhongCoBanPublish as loi:
+        raise HTTPException(status_code=422, detail={
+            "ma": "chua_publish", "thong_diep": str(loi)}) from None
+    except tao_run.QuaHanMuc as loi:
+        raise HTTPException(status_code=429, detail={
+            "ma": "qua_han_muc", "thong_diep": str(loi)}) from None
+    except credit.ThieuCreditError as loi:
+        raise HTTPException(status_code=402, detail={
+            "ma": "thieu_credit", "thong_diep": str(loi)}) from None
+    except RegistryError as loi:
+        raise HTTPException(status_code=503, detail={
+            "ma": "dong_co_chua_san_sang", "thong_diep": str(loi)}) from None
+    if moi:
+        # ⛔ CHỈ khi vừa tạo. Phát lại một run đã có mà sao thêm một lượt nữa
+        #    là ghi đè trạng thái của một lượt chạy **đang chạy**.
+        _sao_output(db, run_cu, run_moi, node_id)
+    db.commit()
+    db.refresh(run_moi)
+    return JSONResponse(_run_json_v3(db, run_moi),
+                        status_code=201 if moi else 200, headers=_NO_STORE)

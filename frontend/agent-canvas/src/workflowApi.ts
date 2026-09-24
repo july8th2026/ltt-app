@@ -564,7 +564,12 @@ export type RunV3Node = { node_id: string; status: string; attempt: number
   // khop nguyen `Waitpoint.kind`) -- rong khi node khong `WAITING`. Them P9
   // task 3 (coordinator, mo lai `main`/phase 5+6): mot node cho NGUOI DUYET
   // phai hien KHAC mot node cho webhook/loi, khong duoc gop chung nhan.
-  waiting_kind: string }
+  waiting_kind: string
+  // Node CHO NGUOI ket thuc vi HET HAN, khong vi ai tra loi (§18.7 "human het
+  // han", P9b task 5). Khong co co nay thi mot node tu di nhanh `reject` vi
+  // het gio hien Y HET mot node vua duoc nguoi duyet bam: cung `SUCCEEDED`,
+  // cung `waiting_kind` rong.
+  het_han: boolean }
 export type RunV3Event = { seq: number; loai: string; node_id: string
   du_lieu: Record<string, unknown>; created_at: string }
 export type RunV3 = { id: string; workflow_id: string; version_id: string

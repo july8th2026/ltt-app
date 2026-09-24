@@ -38,7 +38,8 @@ def khoa_node(node_id: str, vong: Sequence[tuple] = ()) -> str:
 
 def tao_run(db, *, workflow_id: str, version_id: str, owner_id: str,
             trigger_kind: str = "manual", idempotency_key: str = "",
-            estimated_max: int = 0) -> WorkflowRun:
+            estimated_max: int = 0,
+            chay_lai_tu_run_id: str = "") -> WorkflowRun:
     """Mở một lượt chạy, GHIM `version_id`.
 
     ⚠️ KHÔNG có `SELECT` chống trùng `idempotency_key` ở đây, và đó là chủ ý:
@@ -57,7 +58,13 @@ def tao_run(db, *, workflow_id: str, version_id: str, owner_id: str,
     run = WorkflowRun(
         workflow_id=workflow_id, version_id=version_id, owner_id=owner_id,
         trigger_kind=trigger_kind, idempotency_key=idempotency_key or "",
-        estimated_max=max(0, int(estimated_max or 0)))
+        estimated_max=max(0, int(estimated_max or 0)),
+        # ⭐ Nguồn gốc của một lượt CHẠY LẠI (spec §14). ⛔ KHÔNG phải
+        #    `parent_run_id`: run con không có `hold_id` riêng (cha đã giữ),
+        #    còn một lượt chạy lại là run ĐỘC LẬP, có khoản giữ của chính nó.
+        #    Gộp hai quan hệ vào một cột thì câu hỏi "run này có hold riêng
+        #    không" trả lời sai cho một nửa số hàng, im lặng (`models.py`).
+        chay_lai_tu_run_id=str(chay_lai_tu_run_id or ""))
     db.add(run)
     db.flush()
     return run

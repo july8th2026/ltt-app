@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import uuid
 
+from tests.test_1711_wf_luoc_do_dong_co import db  # noqa: F401,F811
 from tests.test_1723_v3_tao_va_doc_run import (CC, _chay, _publish,  # noqa: F401
                                                _uid, api)
 
@@ -23,14 +24,14 @@ from tests.test_1723_v3_tao_va_doc_run import (CC, _chay, _publish,  # noqa: F40
 def _chuyen(run_id: str, node_id: str, *, sang: str, **kw) -> bool:
     import platform_core.db as dbmod
     from platform_core.workflow import may_trang_thai
-    db = next(dbmod.get_session())
+    phien = next(dbmod.get_session())
     try:
-        ok = may_trang_thai.chuyen_node(db, run_id, node_id, sang=sang,
+        ok = may_trang_thai.chuyen_node(phien, run_id, node_id, sang=sang,
                                         mo_ta="dien tap 3453", **kw)
-        db.commit()
+        phien.commit()
         return ok
     finally:
-        db.close()
+        phien.close()
 
 
 def _thu_lai(client, token, run_id, node_id):
@@ -43,12 +44,12 @@ def _thu_lai(client, token, run_id, node_id):
 def _hold(email: str) -> int:
     import platform_core.db as dbmod
     from platform_core.models import CREDIT_HOLD, CreditEntry
-    db = next(dbmod.get_session())
+    phien = next(dbmod.get_session())
     try:
-        return db.query(CreditEntry).filter_by(
+        return phien.query(CreditEntry).filter_by(
             user_id=_uid(email), kind=CREDIT_HOLD).count()
     finally:
-        db.close()
+        phien.close()
 
 
 # ── §18.7 "huỷ" ──────────────────────────────────────────────────────────────
@@ -137,9 +138,9 @@ def test_publish_ban_moi_giua_chung__run_cu_GHIM_va_diff_NOI_RA(api):  # noqa: F
     assert _chuyen(cu["id"], "a", sang="READY")
 
     # Publish bản MỚI trong lúc run cũ còn sống.
-    db = next(dbmod.get_session())
+    phien = next(dbmod.get_session())
     try:
-        dinh_nghia.luu_draft(db, wf_id, document={
+        dinh_nghia.luu_draft(phien, wf_id, document={
             "version": 3, "goal": "", "budget_max_credit": 0,
             "active_page_id": "p1",
             "pages": [{"id": "p1", "name": "", "edges": [], "nodes": [
@@ -147,11 +148,11 @@ def test_publish_ban_moi_giua_chung__run_cu_GHIM_va_diff_NOI_RA(api):  # noqa: F
                  "data": {"tool": "text.chat", "params": {}}},
                 {"id": "b", "type": "tool", "position": {"x": 200, "y": 0},
                  "data": {"tool": "text.chat", "params": {}}}]}]}, revision=1)
-        ver2 = dinh_nghia.xuat_ban_draft(db, wf_id, created_by=uid, cong_cu=CC)
-        db.get(Workflow, wf_id).published_version_id = ver2.id
-        db.commit(); ver2_id = ver2.id
+        ver2 = dinh_nghia.xuat_ban_draft(phien, wf_id, created_by=uid, cong_cu=CC)
+        phien.get(Workflow, wf_id).published_version_id = ver2.id
+        phien.commit(); ver2_id = ver2.id
     finally:
-        db.close()
+        phien.close()
     moi = _chay(a, token_a, wf_id).json()
 
     # 1. Run cũ KHÔNG bị kéo sang đồ thị mới.
@@ -166,3 +167,93 @@ def test_publish_ban_moi_giua_chung__run_cu_GHIM_va_diff_NOI_RA(api):  # noqa: F
     assert body["khac_version"] is True
     # `b` chỉ có ở một bên ⇒ phải nằm trong `khac`, không được lặng lẽ biến mất.
     assert "b" in body["khac"]
+
+
+# ── §18.7 "human hết hạn" ────────────────────────────────────────────────────
+#
+# 🔴 Ca này KHÔNG phải "một node hỏng". Nó là ca màn hình dễ NÓI SAI nhất của
+#    cả phase: một node `core.human` hết giờ sẽ tự đi nhánh `reject` (mặc định
+#    của spec §5.7) và kết thúc `SUCCEEDED` — **y hệt** một node vừa được
+#    người duyệt bấm. Một workflow duyệt-trước-khi-đăng tự đi tiếp vì người
+#    bận trông giống hệt một workflow được duyệt thật.
+
+def _ver(sess, *, workflow_id: str, graph: dict):
+    from platform_core.models import WorkflowVersion
+    v = WorkflowVersion(workflow_id=workflow_id, seq=1, graph=graph,
+                        graph_hash="h" * 64)
+    sess.add(v); sess.flush()
+    return v
+
+
+def test_human_het_han__man_hinh_PHAN_BIET_duoc_voi_nguoi_duyet_that(db):  # noqa: F811
+    """⭐ Hai ảnh chụp chỉ khác nhau ở MỘT điều, và cửa quan sát phải nói ra.
+
+    Phép này đo **tầng quan sát**, nên hai ảnh chụp được dựng tường minh: một
+    cái mang `het_han=True` (đúng thứ `nut_loi/cho._ket_het_han` ghi), một cái
+    mang quyết định của người duyệt. Câu hỏi là *"gói trả ra có phân biệt được
+    hai cái đó không"* — và không có `het_han` thì câu trả lời là KHÔNG.
+    """
+    from apps.agent.routes.runs_v3 import _nodes_json
+    from platform_core.models import WorkflowRun
+    from platform_core.workflow import may_trang_thai
+
+    g = {"nodes": [{"id": "duyet", "type": "core.human", "params": {}}],
+         "thu_tu": ["duyet"], "edges": []}
+    ver = _ver(db, workflow_id="w1", graph=g)
+
+    def mot_run(output_ref: dict) -> dict:
+        run = WorkflowRun(owner_id="u1", workflow_id="w1", version_id=ver.id)
+        db.add(run); db.flush()
+        assert may_trang_thai.chuyen_node(db, run.id, "duyet", sang="READY",
+                                          mo_ta="t3453")
+        assert may_trang_thai.chuyen_node(
+            db, run.id, "duyet", sang="SUCCEEDED", mo_ta="t3453",
+            output_ref=output_ref)
+        db.flush()
+        return {n["node_id"]: n for n in _nodes_json(db, run)}["duyet"]
+
+    # (a) HẾT GIỜ: `_ket_het_han` với chế độ mặc định `reject` của `core.human`.
+    het = mot_run({"het_han": True, "quyet_dinh": "reject", "_nhanh": "reject"})
+    # (b) NGƯỜI DUYỆT THẬT bấm từ chối — cùng nhánh, cùng trạng thái.
+    nguoi = mot_run({"quyet_dinh": "reject", "_nhanh": "reject"})
+
+    # Hai cái giống nhau ở MỌI thứ màn hình vẫn hiện...
+    assert het["status"] == nguoi["status"] == "SUCCEEDED"
+    assert het["waiting_kind"] == nguoi["waiting_kind"] == ""
+    assert het["error"] == nguoi["error"] == ""
+    # ... nên nếu cửa quan sát không nói ra, không gì phân biệt được chúng.
+    assert het["het_han"] is True
+    assert nguoi["het_han"] is False
+
+
+def test_node_chua_chay_va_node_dang_cho_deu_KHONG_bi_gan_het_han(db):  # noqa: F811
+    """Đối chứng âm: `het_han` chỉ bật cho node THẬT SỰ hết hạn.
+
+    Một cờ luôn bật, hay bật nhầm cho node chưa chạy, cũng vô dụng y như một
+    cờ luôn tắt — và tệ hơn, vì người ta sẽ tin nó.
+    """
+    from apps.agent.routes.runs_v3 import _nodes_json
+    from platform_core.models import WorkflowRun
+    from platform_core.workflow import cho_doi, may_trang_thai
+
+    g = {"nodes": [{"id": "duyet", "type": "core.human", "params": {}},
+                   {"id": "sau", "type": "tool", "params": {}}],
+         "thu_tu": ["duyet", "sau"], "edges": []}
+    ver = _ver(db, workflow_id="w1", graph=g)
+    run = WorkflowRun(owner_id="u1", workflow_id="w1", version_id=ver.id)
+    db.add(run); db.flush()
+
+    wp = cho_doi.tao_waitpoint(db, run_id=run.id, owner_id="u1", kind="HUMAN")
+    cho_doi.chan_node(db, run_id=run.id, node_id="duyet", waitpoint_id=wp.id)
+    assert may_trang_thai.chuyen_node(db, run.id, "duyet", sang="READY",
+                                      mo_ta="t3453")
+    assert may_trang_thai.chuyen_node(db, run.id, "duyet", sang="WAITING",
+                                      mo_ta="t3453", job_id="")
+    db.flush()
+
+    nut = {n["node_id"]: n for n in _nodes_json(db, run)}
+    # Đang CHỜ người duyệt — chưa hết hạn.
+    assert (nut["duyet"]["status"], nut["duyet"]["waiting_kind"]) == ("WAITING", "HUMAN")
+    assert nut["duyet"]["het_han"] is False
+    # Chưa chạy lần nào.
+    assert nut["sau"]["status"] == "PENDING" and nut["sau"]["het_han"] is False

@@ -180,15 +180,36 @@ def _tim(db, owner_id: str, khoa: str):
 
 
 def tao_run(db, *, workflow: Workflow, owner_id: str, trigger_kind: str,
-            idempotency_key: str, inputs: dict | None = None
+            idempotency_key: str, inputs: dict | None = None,
+            ghim_version_id: str = "", chay_lai_tu_run_id: str = ""
             ) -> tuple[WorkflowRun, bool]:
+    """Cửa tạo run DUY NHẤT (xem docstring đầu tệp).
+
+    `ghim_version_id` — ghim một version **khác** bản publish hiện hành. Chỉ
+    một bên gọi dùng: *"chạy lại từ node"* (§14), thứ phải chạy **đúng đồ thị
+    của run cũ**. Chạy lại trên một đồ thị đã đổi là sao output của những node
+    **có thể không còn tồn tại** sang một đồ thị **có thể không có chúng** —
+    và không ai báo.
+
+    ⛔ Version ghim phải thuộc **chính** workflow này. Không kiểm điều đó là mở
+       một cửa ghim đồ thị của người khác vào một run của mình: `owner_id` của
+       run đúng, `workflow_id` đúng, chỉ `graph` là của người lạ.
+
+    `chay_lai_tu_run_id` — nguồn gốc, ghi thẳng vào cột cùng tên. ⛔ KHÔNG dùng
+    `parent_run_id` thay: run con không có `hold_id` riêng, một lượt chạy lại
+    **có**. Lượt chạy lại vẫn đi qua **toàn bộ** cửa này, nên nó vẫn giữ tiền
+    một lần, vẫn chịu `MAX_RUN_DONG_THOI`, vẫn chống bấm hai lần.
+    """
     if workflow.owner_id != owner_id:
         raise KhongCoBanPublish("workflow khong thuoc nguoi goi")
     if not workflow.published_version_id or workflow.archived_at is not None:
         raise KhongCoBanPublish("workflow chua publish hoac da luu tru")
-    ver = db.get(WorkflowVersion, workflow.published_version_id)
+    ver = db.get(WorkflowVersion, str(ghim_version_id or "")
+                 or workflow.published_version_id)
     if ver is None:
         raise KhongCoBanPublish("version publish khong ton tai")
+    if ver.workflow_id != workflow.id:
+        raise KhongCoBanPublish("version khong thuoc workflow nay")
 
     if idempotency_key:
         cu = _tim(db, owner_id, idempotency_key)
@@ -225,7 +246,8 @@ def tao_run(db, *, workflow: Workflow, owner_id: str, trigger_kind: str,
                 db, workflow_id=workflow.id, version_id=ver.id,
                 owner_id=owner_id, trigger_kind=trigger_kind,
                 idempotency_key=idempotency_key,
-                estimated_max=int(ver.estimated_max or 0))
+                estimated_max=int(ver.estimated_max or 0),
+                chay_lai_tu_run_id=chay_lai_tu_run_id)
             tien.giu_cho_run(db, run)                 # ném ThieuCreditError
             may_trang_thai.chuyen_run(db, run.id, sang="QUEUED")
             danh_thuc.hen(db, run_id=run.id, kind="start", due_at=_bay_gio())
