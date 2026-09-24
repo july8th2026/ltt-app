@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import io
 import json
+import logging
 import tempfile
 from pathlib import Path
 
@@ -44,6 +45,8 @@ from platform_core.storage import Storage
 
 from . import assets, ban_ghi, nhap_media, pipeline
 from .giai_doan_media import ThieuNguon
+
+log = logging.getLogger(__name__)
 
 #: Model ASR. Ten nay di vao van tay: doi model = ban ghi khac = cache cu vo hieu.
 MODEL_ASR = "large-v3"
@@ -155,6 +158,16 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         ban = ban_ghi.chuan_hoa(tho, thoi_luong_nguon=tt["thoi_luong"],
                                 nguon_loi=dinh_tuyen["nguon_loi"],
                                 dinh_tuyen=dinh_tuyen)
+
+        # 🔴 N-39: ao giac ASR (credit phu de cuoi tep — kieu hong DA BIET cua
+        #    Whisper tieng Trung). Gan co bang HAI tin hieu cau truc, ⛔ KHONG
+        #    xoa. ⭐ Va no phai NOI LEN: mot con so nam im trong JSON thi bang
+        #    khong co. Log MA doan + hai con so — ⛔ KHONG log loi thoai.
+        if (n_ao := ban_ghi.danh_dau_nghi_ao_giac(ban)):
+            log.warning(
+                "asv_chep_loi nghi AO GIAC ASR: %d doan | %s", n_ao,
+                [(d["ma"], d["nghi_ao_giac"]["ky_tu_moi_giay"])
+                 for d in ban["doan"] if d.get("nghi_ao_giac")])
 
         # ⛔ Ban ghi khong duoc keo dai hon chinh ban tieng. Neu co, moc thoi
         #    gian da troi, va TIMING se dat tieng vao mot cho khong co hinh.

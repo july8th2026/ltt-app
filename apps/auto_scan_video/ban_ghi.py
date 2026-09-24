@@ -280,6 +280,82 @@ def dem_doan_thieu_moc_tu(ban: dict) -> int:
     return sum(1 for d in (ban.get("doan") or []) if not (d.get("tu") or []))
 
 
+#: 🔴 N-39 — nguong TOC DO NGUON de nghi mot doan la AO GIAC ASR (ky tu/giay).
+#:
+#: ⛔ **KHONG lot theo MAU CHU** (`中文字幕志愿者`…): mot danh sach den thi **gion**,
+#:    va no bo sot moi ao giac co chu khac. Ta lot theo **CAU TRUC**.
+#:
+#: ⭐ **HIEU CHINH tren 188 doan that cua ba phim** (25/09), ⛔ khong phai mot so
+#:    nghi ra:
+#:
+#:        doan CO moc tu (n=187): trung vi 5,68 · p95 8,27 · **MAX 9,43** kt/s
+#:        ca ao giac `v1/seg_0083`                     : **294,1** kt/s  (31x max)
+#:
+#:    `30,0` nam o **3,2x** muc that cao nhat da do, va **1/10** ca ao giac —
+#:    ⭐ rong rai ve **ca hai** phia. Do tren 187 doan that: **0 doan** cham toi.
+NGUONG_KY_TU_MOI_GIAY = 30.0
+
+
+def nghi_ao_giac(doan: dict, *, canh_chinh: str) -> dict | None:
+    """Doan nay co phai AO GIAC ASR khong? `None` = khong nghi.
+
+    ⭐ **DOI HAI tin hieu CUNG dong y** — ⛔ mot minh thi khong du:
+
+        (a) ZERO moc tu, trong mot ban ghi khai `aligned`
+        (b) toc do nguon BAT KHA: > `NGUONG_KY_TU_MOI_GIAY`
+
+    ⛔ **(a) mot minh** se loai mot **cau that** ma engine khong can noi (ky tu
+       la) ⇒ mat noi dung cua khach.
+    ⛔ **(b) mot minh** co the bat mot khe bi **cat sai**, ⛔ khong phai ao giac.
+    ⭐ Hai cai cung dong y thi gan nhu chac chan ⛔ khong phai tieng nguoi.
+
+    ⚠️ Vi sao do **toc do NGUON** chu khong do **he so nen** (2,41x that so voi
+       89,56x cua ca ao giac): he so nen can **ban dich**, ma o buoc nay ban dich
+       ⛔ chua ton tai. Cung mot hien tuong, phat hien SOM hon mot giai doan —
+       va do la truoc khi khach **tra tien dich**.
+    """
+    if str(canh_chinh or "") != "aligned":
+        return None
+    if doan.get("tu"):
+        return None                       # (a) khong thoa
+    chu = "".join(str(doan.get("chu") or "").split())
+    dai = float(doan.get("ket", 0)) - float(doan.get("bat", 0))
+    if not chu or dai <= 0:
+        return None
+    cps = len(chu) / dai
+    if cps <= NGUONG_KY_TU_MOI_GIAY:
+        return None                       # (b) khong thoa
+    return {
+        "ly_do": "zero_moc_tu_va_toc_do_bat_kha",
+        "ky_tu_moi_giay": round(cps, 1),
+        "nguong": NGUONG_KY_TU_MOI_GIAY,
+        "khe_s": round(dai, 3),
+        "so_ky_tu": len(chu),
+    }
+
+
+def danh_dau_nghi_ao_giac(ban: dict) -> int:
+    """Gan co `nghi_ao_giac` vao doan bi nghi. Tra ve SO doan da gan.
+
+    ⛔ **DANH DAU, ⛔ KHONG XOA.** Doan o lai trong ban ghi cung **ly do** va
+       **hai con so** da kich hoat no. ⭐ Danh dau thi **dao nguoc duoc**; xoa
+       thi khong — va ta ⛔ khong xoa du lieu cua khach vi mot **suy doan**.
+
+    ⇒ Buoc DICH va buoc DOC TIENG doc co nay de **BO QUA** doan ay: khach ⛔ khong
+      tra tien cho mot cau vo nghia va ⛔ khong nghe thay no.
+      ⚠️ Viec NOI co vao hai buoc do nam o `giai_doan_noi_dung.py` / `long_tieng.py`
+         — **lan khac so huu**. Ham nay chi SINH ra co.
+    """
+    canh = str(ban.get("canh_chinh") or "")
+    dem = 0
+    for d in ban.get("doan") or []:
+        co = nghi_ao_giac(d, canh_chinh=canh)
+        if co:
+            d["nghi_ao_giac"] = co
+            dem += 1
+    return dem
+
+
 def van_tay_ban_ghi(*, checksum_tieng: str, model: str, ngon_ngu: str,
                     phien_ban_ma: int, nguon_loi: str = "") -> str:
     """Van tay cua ban ghi (Prompt 10 muc 7).
@@ -315,6 +391,10 @@ def tom_tat(ban: dict) -> dict:
         # 🔴 N-39: mot doan `aligned` ma ⛔ khong co moc tu nao. > 0 la dau hieu
         #    ao giac ASR (credit phu de cuoi tep) hoac mot doan khong can duoc.
         "so_doan_thieu_moc_tu": dem_doan_thieu_moc_tu(ban),
+        # 🔴 N-39: doan DA duoc gan co (hai tin hieu cung dong y).
+        #    ⭐ Khac `so_doan_thieu_moc_tu`: cai kia la NGHI, cai nay la CHOT.
+        "so_doan_nghi_ao_giac": sum(
+            1 for d in doan if d.get("nghi_ao_giac")),
         "ngon_ngu": ban.get("ngon_ngu", ""),
         "engine": ban.get("engine", ""),
         "canh_chinh": ban.get("canh_chinh", ""),

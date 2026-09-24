@@ -521,3 +521,78 @@ def test_407_N39_nhanh_fallback_KHONG_bi_dem_oan():
     ban = {"canh_chinh": "fallback_unaligned",
            "doan": [{"ma": "seg_0001", "bat": 0.0, "ket": 2.0, "chu": "a", "tu": []}]}
     assert ban_ghi.dem_doan_thieu_moc_tu(ban) == 0
+
+
+# ── N-39: gắn cờ ảo giác bằng HAI tín hiệu CẤU TRÚC ─────────────────────────
+
+_AO_GIAC = {"ma": "seg_0083", "bat": 265.0, "ket": 265.034,
+            "chu": "中文字幕志愿者 李宗盛", "tu": []}
+
+
+def test_407_N39_ao_giac_bi_GAN_CO_boi_hai_tin_hieu():
+    """Ca thật đã đo: 10 ký tự Hán trong 0,034 s = 294,1 kt/s, ⛔ không mốc từ."""
+    from apps.auto_scan_video import ban_ghi
+
+    co = ban_ghi.nghi_ao_giac(_AO_GIAC, canh_chinh="aligned")
+    assert co and co["ly_do"] == "zero_moc_tu_va_toc_do_bat_kha"
+    assert co["ky_tu_moi_giay"] == 294.1
+
+
+def test_407_N39_MOI_MINH_mot_tin_hieu_thi_KHONG_gan_co():
+    """⭐ Vế đắt nhất: một tín hiệu ⛔ KHÔNG đủ — cả hai chiều.
+
+    (a) một mình  -> loại một CÂU THẬT engine không căn nổi ⇒ mất nội dung khách
+    (b) một mình  -> có thể chỉ là một khe bị CẮT SAI
+    """
+    from apps.auto_scan_video import ban_ghi
+
+    # (a) thoả, (b) KHÔNG: không mốc từ nhưng tốc độ bình thường
+    cham = {**_AO_GIAC, "ket": 265.0 + 10 / 6.0}
+    assert ban_ghi.nghi_ao_giac(cham, canh_chinh="aligned") is None
+
+    # (b) thoả, (a) KHÔNG: khe cực ngắn nhưng CÓ mốc từ
+    co_moc = {**_AO_GIAC, "tu": [{"bat": 265.0, "ket": 265.03, "chu": "中"}]}
+    assert ban_ghi.nghi_ao_giac(co_moc, canh_chinh="aligned") is None
+
+    # nhánh chưa căn chỉnh: `tu=[]` là ĐÚNG kỳ vọng ⇒ ⛔ không gắn cờ
+    assert ban_ghi.nghi_ao_giac(_AO_GIAC, canh_chinh="fallback_unaligned") is None
+
+
+def test_407_N39_nguong_DUOI_muc_that_cao_nhat_da_do():
+    """🔴 Đối chứng NGƯỢC — ⛔ thiếu vế này là bật một cái lưới quét sạch.
+
+    Đo trên 187 đoạn THẬT của ba phim (25/09): tốc độ nguồn trung vị **5,68**,
+    p95 **8,27**, **MAX 9,43** ký tự/giây. Ngưỡng **30,0** nằm ở **3,2× mức
+    thật cao nhất**. Ai hạ ngưỡng xuống gần mức thật thì phép kiểm này đỏ.
+    """
+    from apps.auto_scan_video import ban_ghi
+
+    MAX_THAT_DA_DO = 9.43
+    assert ban_ghi.NGUONG_KY_TU_MOI_GIAY >= 3.0 * MAX_THAT_DA_DO
+
+    # Bốn đoạn NGẮN hợp lệ đã đo (giây) — ⛔ KHÔNG cái nào được gắn cờ.
+    for khe_s, so_ky_tu in ((0.74, 4), (0.88, 5), (0.941, 6)):
+        d = {"ma": "x", "bat": 0.0, "ket": khe_s, "chu": "字" * so_ky_tu,
+             "tu": [{"bat": 0.0, "ket": khe_s, "chu": "字"}]}
+        assert ban_ghi.nghi_ao_giac(d, canh_chinh="aligned") is None
+
+
+def test_407_N39_DANH_DAU_chu_khong_XOA():
+    """⛔ Đoạn Ở LẠI trong bản ghi, kèm lý do và hai con số đã kích hoạt.
+
+    ⭐ Đánh dấu thì **đảo ngược được**; xoá thì không — và ⛔ ta không xoá dữ
+    liệu của khách vì một **suy đoán**.
+    """
+    from apps.auto_scan_video import ban_ghi
+
+    ban = {"canh_chinh": "aligned", "doan": [
+        {"ma": "seg_0001", "bat": 0.0, "ket": 2.0, "chu": "好",
+         "tu": [{"bat": 0.0, "ket": 2.0, "chu": "好"}]},
+        dict(_AO_GIAC),
+    ]}
+    assert ban_ghi.danh_dau_nghi_ao_giac(ban) == 1
+    assert len(ban["doan"]) == 2, "⛔ KHONG duoc xoa doan"
+    assert ban["doan"][1]["nghi_ao_giac"]["nguong"] == ban_ghi.NGUONG_KY_TU_MOI_GIAY
+    assert "nghi_ao_giac" not in ban["doan"][0]
+    assert ban_ghi.tom_tat(ban)["so_doan_nghi_ao_giac"] == 1
+
