@@ -447,7 +447,17 @@ def test_the_console_cannot_reach_an_internal_target(portal, url):
 
 def test_a_resend_revalidates_the_target_before_sending(portal, monkeypatch):
     """The URL was safe when it was registered; it is checked again on the way
-    out, because DNS can be repointed after the fact."""
+    out, because DNS can be repointed after the fact.
+
+    ⭐ Viết lại 24/09/2026 (P5b/T1). Bản cũ đo **cơ chế** — nó thay
+    `webhooks.validate_target` rồi hỏi "hàm đó có được gọi không". Từ khi
+    `send_delivery` đổi sang client **ghim IP**
+    (`platform_core/http_an_toan.py`) hàm ấy không còn trên đường đi, nên
+    phép đo cũ đỏ dù tính chất **chặt hơn trước**. Bản này đo đúng tính chất:
+    DNS trỏ ngược vào trong ⇒ cuộc gọi bị từ chối, và bộ gác thật sự nhìn
+    thấy địa chỉ của mục tiêu.
+    """
+    import platform_core.an_toan_mang as an_toan_mang
     from platform_core.public_api import delivery as delivery_mod
 
     user_id, token = _account(portal)
@@ -456,16 +466,22 @@ def test_a_resend_revalidates_the_target_before_sending(portal, monkeypatch):
     _post(portal, f"/developers/webhooks/deliveries/{delivery.id}/resend")
 
     seen = []
-    monkeypatch.setattr(
-        webhooks, "validate_target",
-        lambda url, **kwargs: seen.append(url))
-    try:
+    that = an_toan_mang.kiem_dia_chi
+
+    def _ghi(address, *a, **k):
+        seen.append(str(address))
+        return that(address, *a, **k)
+
+    monkeypatch.setattr(an_toan_mang, "kiem_dia_chi", _ghi)
+
+    with pytest.raises(Exception) as loi:           # noqa: BLE001
         delivery_mod.send_delivery(
             _subscription_of(user_id), _delivery_rows(user_id)[0],
-            resolver=lambda host: ["203.0.113.10"])
-    except Exception:                          # noqa: BLE001 - no real receiver
-        pass
-    assert seen and seen[0] == RECEIVER
+            resolver=lambda host: ["127.0.0.1"])
+    assert "not allowed" in str(getattr(loi.value, "detail", loi.value)).lower()
+    # Đối chứng: bộ gác thật sự được hỏi, và được hỏi về **đích của lượt gửi
+    # này** — nếu không, phép trên có thể đỏ vì một lý do nào khác.
+    assert seen == ["127.0.0.1"], seen
 
 
 def _subscription_of(user_id: str):
