@@ -286,3 +286,44 @@ def test_banh_coc_MOT_khoan_giu_cho_CA_CAY():
             goi[f.as_posix()] = cho
     assert goi, "khong tim thay loi goi nao - phep kiem nay dang do tap rong"
     assert set(goi) == {"platform_core/workflow/tao_run.py"}, goi
+
+
+def test_huy_CHA_thi_huy_luon_CON(db, xuong):
+    """Spec §18.5 FLOW F: *"huỷ cha huỷ con"*.
+
+    🔴 Đây là một lỗ **tiền thật**, không phải một chi tiết cho gọn: một run con
+    sống sót sau khi cha bị huỷ vẫn nộp job, vẫn tiêu credit — và `ket_so` của
+    cha đã chạy xong nên `tong_chi_phi_con` không bao giờ đọc tới phần ấy.
+    """
+    from platform_core.models import JOB_CANCELLED, Job
+    from platform_core.workflow import dong_co, thi_hanh
+    con = xuong.publish([{"id": "a", "type": "tool",
+                          "position": {"x": 0, "y": 0},
+                          "data": {"tool": "text.chat", "params": {}}}])
+    cha = xuong.publish([_core("g", "call_workflow", workflow_id=con.id,
+                               version_id="latest", inputs={})])
+    run = xuong.chay(cha)
+    _vong(db, run, lan=1)
+    [rc] = _con_cua(db, run)
+    job = db.get(Job, thi_hanh.anh_chup_hien_tai(db, rc.id, "a").job_id)
+    assert job.status != JOB_CANCELLED             # doi chung: dang song
+
+    assert dong_co.huy_run(db, run.id, "khach bam Huy") is True
+    assert run.status == "CANCELLED" and rc.status == "CANCELLED"
+    assert db.get(Job, job.id).status == JOB_CANCELLED
+
+
+def test_huy_cha_khong_nga_khi_con_da_ket_thuc(db, xuong):
+    """Đối chứng: con đã xong thì lượt huỷ cha không đụng vào nó."""
+    from platform_core.workflow import dong_co
+    con = xuong.publish([_core("t", "transform", gia_tri="1")])
+    cha = xuong.publish([_core("g", "call_workflow", workflow_id=con.id,
+                               version_id="latest", inputs={}),
+                         _core("cho", "transform", gia_tri="2")],
+                        [_canh("g", "cho")])
+    run = xuong.chay(cha)
+    _vong(db, run, lan=2)
+    [rc] = _con_cua(db, run)
+    assert rc.status == "SUCCEEDED"
+    dong_co.huy_run(db, run.id, "khach bam Huy")
+    assert rc.status == "SUCCEEDED"                # KHONG bi ghi de

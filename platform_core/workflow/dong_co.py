@@ -354,6 +354,16 @@ def huy_run(db, run_id: str, ly_do: str) -> bool:
             mtt.chuyen_node(db, run.id, n["id"], sang="CANCELLED", mo_ta=ly_do)
     for job in db.execute(select(Job).where(Job.plan_id == run.id)).scalars():
         jobs.cancel(db, job)                 # chỉ đổi job queued/running
+    # ⭐ HUỶ CHA ⇒ HUỶ CON (spec §18.5 FLOW F). Đây là một lỗ **tiền thật**, không
+    #    phải một chi tiết cho gọn: một run con sống sót sau khi cha bị huỷ vẫn
+    #    nộp job, vẫn tiêu credit — và `ket_so` của cha đã chạy xong nên
+    #    `tong_chi_phi_con` không bao giờ đọc tới phần chi phí ấy. Khách trả cho
+    #    một việc họ đã bấm Huỷ, và không dòng nào trong sổ nói vì sao.
+    #
+    # ⚠️ Đệ quy an toàn vì `run_con.DO_SAU_TOI_DA` được cưỡng chế lúc publish, và
+    #    vì lượt gọi lại gặp con đã CANCELLED sẽ trả `False` ngay ở cửa.
+    for cid in run_con.con_dang_chay(db, run.id):
+        huy_run(db, cid, f"cha bi huy: {ly_do}"[:200])
     su_kien.ghi(db, run.id, "WorkflowCancelled", du_lieu={"ly_do": ly_do})
     return mtt.chuyen_run(db, run.id, sang="CANCELLED", ly_do=ly_do)
 
