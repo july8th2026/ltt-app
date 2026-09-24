@@ -47,3 +47,34 @@ filelock==3.25.2
 portalocker==2.10.1
 pre-commit==4.5.1            # DA bat 06/09; hook co rao cho cay chua dong bo
 selenium==4.41.0
+
+    # -- Bo DO (tools/do_luong.py) -----------------------------------------
+    #
+    # [!] Luat 24/09/2026: cong cu do phai NGHIEN CUU, TAI VE, DUNG LAI -
+    #    khong tu viet, de tranh sai so. Ba loi trong MOT ngay deu la "dem sai
+    #    mau so", dung phan ma thu vien chuan lam ho.
+    #
+    # [!] VI SAO PHAI KHAI O DAY, dung ngay hom production sap 15 phut vi
+    #    `pywintypes` nhap o MUC MODULE ma venv phat trien co san nen khong
+    #    phep kiem nao thay. `tools/do_luong.py` nhap numpy/scipy/sklearn o
+    #    muc module y het. Khong khai = se bien mat IM LANG o may khac.
+    #
+    # [!] Bon goi duoi day DA CO SAN tren may nay tu truoc va van CHUA TUNG
+    #    duoc khai o bat ky tep requirements nao - khai lan dau tai day.
+numpy==2.4.4
+scipy==1.17.1                # KTC Wilson (binomtest), Fisher; KHONG tu tinh +-sqrt
+scikit-learn==1.8.0          # confusion_matrix, cohen_kappa_score, P/R/F
+jiwer==4.0.0                 # CER/WER; KHONG tu cai Levenshtein
+
+    # Thuoc PHAN DOAN B1: SegmentationPrecision/Recall(tolerance=0,3 s).
+    #
+    # MIT (xac tu LICENSE TRONG WHEEL - PyPI metadata TRONG, xem
+    # THIRD_PARTY_NOTICES.md). Keo theo pandas + pyannote-core +
+    # pyannote-database. KHONG keo torch, KHONG keo pyannote.audio.
+    #
+    # [!] No dem ranh gioi bang `[segment.end for segment in reference][:-1]`
+    #    - CHI lay moc KET, va BO moc cuoi. Dung cho mot phan hoach lien mach;
+    #    timeline cua ta co khoang lang nen no hut 11-19 % (do that tren ba
+    #    phim). Lech ve phia BI QUAN nen so dung duoc, NHUNG no im lang bo
+    #    ~5-10 ONSET sau khoang lang moi phim - xem `onset` trong do_luong.py.
+pyannote.metrics==4.1

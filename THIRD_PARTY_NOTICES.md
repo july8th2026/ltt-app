@@ -73,3 +73,51 @@ components may obtain the source from the URLs above.
 - The **LTT Nexus Agent** and control plane are LTT's own proprietary software,
   are not derived from RustDesk, run in a separate process communicating only
   over a local IPC contract, and are not covered by this notice.
+
+---
+
+# Measurement / build-time dependencies (NOT distributed)
+
+These are used by LTT's **quality gates and benchmarks** (`tools/do_luong.py`).
+They run on LTT's own machines and are **not shipped to users**, so no
+distribution obligation attaches. They are listed because the project rule of
+2026-09-24 — *measurement tools must be researched, downloaded and reused, never
+hand-written* — makes them load-bearing for published numbers.
+
+## pyannote.metrics (speech segmentation / detection metrics)
+
+- **Component:** `pyannote.metrics` — boundary-tolerance segmentation metrics
+  (`SegmentationPrecision` / `SegmentationRecall`, `tolerance=` in seconds) and
+  speech-detection metrics with a `collar`. Used for the B1 segmentation gate
+  (*boundary accuracy +/-0,3 s*) in place of LTT's hand-written metric.
+- **Version:** `4.1` (installed 2026-09-24).
+- **License:** **MIT** - Copyright (c) 2014 CNRS (Herve Bredin). Verified from
+  the LICENSE file shipped inside the installed wheel
+  (`pyannote_metrics-4.1.dist-info/licenses/LICENSE`), which matches the
+  repository LICENSE:
+  https://github.com/pyannote/pyannote-metrics/blob/main/LICENSE
+- **Metadata gap, recorded as a gap, not as "no issue":** the PyPI package
+  carries **no** `License` field and **no** license classifier. The MIT
+  determination therefore rests on the LICENSE file (wheel + repo), not on
+  package metadata.
+- **Code license is not model license.** This is the **metrics** package: it
+  ships no model weights and loads none. The non-commercial / gated concerns in
+  the pyannote ecosystem attach to `pyannote.audio` **model weights** on Hugging
+  Face, which LTT does **not** install or use here.
+- **Transitive dependencies pulled in:** `pandas` 3.0.6, `pyannote-core` 6.0.1,
+  `pyannote-database` 6.1.1 (both MIT). `numpy`, `scikit-learn`, `scipy` were
+  already present. **No `torch`, no `pyannote.audio`** - confirmed from
+  `install_requires` and from the install log. (`torch` exists on this machine
+  from unrelated work; `pyannote.metrics` did not pull it.) `sympy`,
+  `matplotlib`, `docopt`, `tabulate` are **extras only** (`[cli]`, `[plot]`,
+  `[doc]`) and are not installed.
+- **Modifications by LTT:** none. Used unmodified as a library.
+
+### Definition borrowed, not just the runtime
+
+`sed_eval` (MIT, https://github.com/TUT-ARG/sed_eval/blob/master/LICENSE.txt)
+defines the onset/offset tolerance rule LTT falls back on when a timeline has
+silence gaps. LTT does **not install** `sed_eval` - it drags in `dcase_util`,
+`librosa`, `matplotlib`, `soundfile` and more. Only the **definition** is
+borrowed and re-implemented over `scipy`. Borrowing a spec is cheap; borrowing a
+runtime is not.
