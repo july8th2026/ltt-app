@@ -157,12 +157,17 @@ def _loi_nhac(lo: list[dict], ngon_ngu_goc: str) -> list[dict]:
             "3. Khong them giai thich, khong them ma moi.\n"
             "4. Giu do dai gan voi cau goc — ban dich se duoc doc thanh tieng va "
             "phai vua khung thoi gian cua no.\n"
-            "5. TEN RIENG (nguoi, dia danh, to chuc, thuong hieu nguoi Han) phai "
-            "phien AM HAN-VIET, CO DAU tieng Viet day du, vi du: "
-            "张伟 -> Trương Vĩ, 小美 -> Tiểu Mỹ, 李宗盛 -> Lý Tông Thành, "
-            "光子 -> Quang Tử. KHONG dich nghia den ten rieng, KHONG doi sang "
-            "tieng Anh, va KHONG bo dau. Mot ten xuat hien nhieu lan phai duoc "
-            "phien GIONG NHAU o moi lan."
+            "5. TEN RIENG — xu ly theo BA loai:\n"
+            "5a. NGUOI va DIA DANH: phien AM HAN-VIET, CO DAU tieng Viet day "
+            "du. Vi du: 张伟 -> Trương Vĩ, 小美 -> Tiểu Mỹ, 王芳 -> Vương "
+            "Phương, 北京 -> Bắc Kinh. KHONG dich nghia den, KHONG doi sang "
+            "tieng Anh, KHONG bo dau.\n"
+            "5b. NGUOI THAT da co LOI VIET QUEN trong tieng Viet: dung dung loi "
+            "quen do. Vi du: 李宗盛 -> Lý Tông Thịnh, 成龙 -> Thành Long.\n"
+            "5c. TO CHUC, THUONG HIEU, TEN SAN PHAM, xuong phim, hang game: "
+            "GIU NGUYEN ten goc hoac ten tieng Anh da quen — KHONG phien am "
+            "Han-Viet. Vi du: 腾讯 -> Tencent, 华为 -> Huawei, 光子 -> 光子.\n"
+            "Mot ten xuat hien nhieu lan phai duoc xu ly GIONG NHAU o moi lan."
             + (f"\nNgon ngu nguon: {ngon_ngu_goc}." if ngon_ngu_goc else "")
         )},
         {"role": "user", "content": json.dumps(bang, ensure_ascii=False)},

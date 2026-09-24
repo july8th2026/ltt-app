@@ -1,0 +1,38 @@
+{
+ "phim": {
+  "ma": "v3",
+  "ten": "深度解析丨跳伞….mp4"
+ },
+ "model": "qwen35-api",
+ "so_doan": 31,
+ "so_ky_tu_goc": 718,
+ "giay": 65.7,
+ "lo_hong": [],
+ "do_nhay": {
+  "can_bat": [
+   "掐雷",
+   "纯白给",
+   "补人"
+  ],
+  "bat_duoc": [
+   "掐雷",
+   "纯白给"
+  ],
+  "ti_le": 0.6667
+ },
+ "do_on": {
+  "tong_khai": 7,
+  "ngoai_7_ca": 5,
+  "ti_le_tren_ky_tu_goc": 0.0097,
+  "danh_sach": [
+   "提炼枪",
+   "白给",
+   "光子",
+   "掐个假雷",
+   "掐雷",
+   "此一听",
+   "假装本人"
+  ]
+ },
+ "⛔": "Danh sach 7 ca CHI dung de cham SAU khi chay — khong vao loi nhac."
+}

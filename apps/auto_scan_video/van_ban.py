@@ -47,7 +47,15 @@ SCHEMA_VAN_BAN = 1
 #:    chuoc hinh thuc cua vi du, khong chi noi dung cua luat. (Cung ho voi ghi
 #:    chu o `dich_thuat.MODEL_CHINH`: *mot vi du trong docstring la ma ma nguoi
 #:    ta chep*.)
-PHIEN_BAN_LOI_NHAC = 3
+#: ⚠️ 4 (24/09): quy tắc 5 tách làm **BA nhánh** — người/địa danh phiên Hán-Việt ·
+#: người thật có lối viết quen dùng lối quen · **tổ chức/thương hiệu GIỮ NGUYÊN,
+#: không phiên**.
+#:
+#: ⛔ **Đây là luật TẠM do điều phối THU HẸP, chưa phải chủ dự án chốt ba nhánh.**
+#: Chủ dự án ra luật bằng ví dụ `张伟 → Trương Vĩ` — một **tên người**; đem nó áp
+#: lên một **thương hiệu** là **ta** nới rộng. Thu về là **trả lại** lời họ nói.
+#: Bằng chứng: `光子` trong phim v3 là **xưởng game** (`B2_DICH.md` §4g).
+PHIEN_BAN_LOI_NHAC = 4
 
 
 class VanBanError(ValueError):

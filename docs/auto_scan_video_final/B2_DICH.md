@@ -366,6 +366,101 @@ Lượt chấm đầu **chết cả 4 lô** với `concurrency_limited` (429) �
 đoạn mất **308 s** (so với 65 s cho cùng số đoạn ở bước dịch trên `ltt-3.5`).
 ⇒ Chấm `v1`/`v2` **vẫn đang chạy**. ⛔ Không ép thêm request vào `ltt-3.8`.
 
+## 4h. Lời nhắc **v4** — luật TẠM ba nhánh, và bảng trước/sau CẢ TẬP
+
+> ⛔ **Đây là luật TẠM do ĐIỀU PHỐI thu hẹp, chưa phải chủ dự án chốt ba nhánh.**
+> Chủ dự án ra luật bằng ví dụ `张伟 → Trương Vĩ` — một **tên người**; đem nó áp
+> lên một **thương hiệu** là **ta** nới rộng, nên thu về là **trả lại** lời họ
+> nói. ⛔ Đừng đọc bảng này như thể ba nhánh đã được chốt.
+
+`PHIEN_BAN_LOI_NHAC` **3 → 4**. Quy tắc 5 tách: **5a** người/địa danh → phiên
+Hán-Việt · **5b** người thật có lối viết quen → dùng lối quen · **5c** tổ
+chức/thương hiệu → **giữ nguyên, không phiên**.
+
+### ⚠️ Đo lại CẢ TẬP, ⛔ không chỉ `光子`
+
+| tên | v1 (chưa luật) | v2 (ví dụ không dấu) | v3 (ví dụ có dấu) | **v4 (ba nhánh)** |
+|---|---|---|---|---|
+| `光子` (thương hiệu) | *Photon* | *Quang Tu* | ⛔ *Quang Tử* | ⚠️ **Photon** |
+| `小美` (người) | Tiểu Mỹ | Tiểu Mỹ | Tiểu Mỹ | ✅ **Tiểu Mỹ** |
+| `李宗盛` (người quen) | *Lý Tông Thành* | ⛔ *Lý Tông Thanh* | *Lý Tông Thành* | ✅ **Lý Tông Thịnh** |
+| `韩国` (địa danh) | Hàn | Hàn | Hàn Quốc | ✅ **Hàn Quốc** |
+| `首尔` (địa danh) | Seoul | Seoul | ✅ **Seoul** | ⛔ **Sê-ôl** ⬅ **HỒI QUY** |
+| chữ Hán sót / rỗng | 0 / 0 | 1 / 0 | 0 / 0 | **0 / 0** |
+
+### 🔴 v4 sửa `李宗盛` nhưng **làm hỏng `首尔`** — và nó chỉ ra một LỖ trong chính phân loại
+
+```
+v3  老板硬是在寸土寸金的首尔…  ->  "…tại Seoul nơi đất chật người đông"   ✅
+v4  (cùng câu)                ->  "…ở Sê-ôl đất đai đắt đỏ…"             ⛔
+```
+
+⚠️ `首尔` = **Seoul** — một **địa danh** đã có **lối viết quen** trong tiếng
+Việt. Nhánh **5a** bảo *"địa danh ⇒ phiên Hán-Việt"*, và model làm đúng lời: nó
+phiên ra *"Sê-ôl"*. Nhánh **5b** (lối quen) lại chỉ nói **"NGƯỜI thật"**.
+
+> ⭐ ⇒ *"Lối viết quen"* ⛔ **không phải thuộc tính của NGƯỜI** — nó là thuộc tính
+> của **cái tên**. Địa danh cũng có, thương hiệu cũng có. Phân loại ba nhánh
+> đang cắt theo **loại thực thể**, trong khi trục thật là **"đã có lối quen hay
+> chưa"**.
+
+⛔ **Làn này không tự sửa tiếp.** Bản vá có thể chỉ là một chữ (5b: *"người thật"*
+→ *"người thật hoặc địa danh"*), nhưng: (a) luật là của điều phối, và (b) mỗi
+lần đổi lời nhắc là **một lượt đo lại cả tập** — hôm nay đã ba lần, và mỗi lần
+sửa một chỗ thì hỏng một chỗ khác. ⇒ Báo, ⛔ không lặp thêm một vòng.
+
+**Điểm hiện tại:** v4 so với v3 = **+1 sửa** (`李宗盛`), **−1 hỏng** (`首尔`),
+3 giữ nguyên.
+
+## 4i. ⭐ ĐƯỜNG B đã ĐO — model **có** biết chỗ nó không biết, và danh sách **ngắn**
+
+⛔ Không chờ quyết định sản phẩm: đường B của §4d là một **câu hỏi thực nghiệm**,
+trả lời được bằng bản nền `ltt-3.5` — ⛔ không cần `ltt-3.8`, ⛔ không cần bộ chấm.
+
+**Thiết kế** (`tools/bench_b2_duong_b_tu_khai.py`): bảo model, **trong lúc dịch**,
+liệt kê từ/cụm **trong câu gốc** nó *không chắc*. ⛔ Không nói ta tìm gì, ⛔ không
+một ví dụ nào từ 7 ca đã hỏng — *ví dụ là mệnh lệnh ngầm*, đưa `掐雷` vào thì ta
+đo chính lời mách của mình.
+
+| phim | bắt / cần bắt | khai tổng | ngoài 7 ca |
+|---|---|---|---|
+| v1 | **2/3** (`师傅`, `烧酒`) | 5 | 2 |
+| v2 | **0/1** | 7 | 7 |
+| v3 | **2/3** (`掐雷`, `纯白给`) | 7 | 5 |
+| **tổng** | ⭐ **4/7 = 57 %** | **19** | 14 |
+
+### Độ ồn: **19 mục / 3 011 ký tự gốc = 0,63 %**
+
+⛔ **Không phải 200/718.** Danh sách đủ ngắn để một người soi tay trong vài phút.
+
+### ⭐ Và "ồn" hoá ra **phần lớn KHÔNG phải ồn**
+
+```
+v1  沙砾 · 纸香
+v2  直冷 · 避不住 · 小壁 · 榨了点爆米花 · 投影目录 · 卷土重来 · 起过烧油
+v3  提炼枪 · 白给 · 光子 · 掐个假雷 · 此一听 · 假装本人
+```
+
+⚠️ `避不住` · `提炼枪` · `此一听` · `直冷` · `小壁` · `起过烧油` là **lỗi ASR** —
+đúng lớp §4e nói phải tách ra. Và nó khai cả **`光子`**, chính cái tên §4g đang
+tranh luận.
+
+> ⭐ ⇒ Đường B **rẻ và sống**, và nó có một **tác dụng phụ đáng giá hơn**: nó là
+> một **bộ dò lỗi CHÉP LỜI**, tức thứ §4e cần để tách lỗi ASR khỏi lỗi dịch —
+> ⛔ một việc ta chưa có cách nào làm.
+
+### ⛔ Nhưng nó KHÔNG bắt lớp NGỮ PHÁP
+
+3 ca trượt: `补人` · `热胀冷缩` · `这才是` (→ *"Mới đây"*). ⚠️ `这才是` là lỗi
+**ngữ pháp**, ⛔ không phải thuật ngữ — và model **không hề thấy mình sai**.
+
+> ⇒ **Model biết nó không biết TỪ; nó không biết nó hiểu sai CÂU.** Đó là ranh
+> giới của đường B, và nó phải nằm cạnh mọi con số ở trên.
+
+⛔ **Vẫn không khuyến nghị.** Giá của đường B, để điều phối mang đi: **+1 trường
+trong lược đồ, ~0 lượt gọi thêm** (đi kèm lượt dịch), đổi lấy **57 % lớp thuật
+ngữ + một bộ dò lỗi ASR**, ⛔ và **0 %** lớp ngữ pháp.
+
 ## 4g. 🔴 `光子` — ta có thể đã sửa từ SAI KIỂU A sang SAI KIỂU B
 
 ### Bằng chứng: nó là XƯỞNG GAME, không phải người
@@ -501,6 +596,29 @@ phải một dòng ghi chú — là một lần `return 3`. Đã thử: nó dừ
 | `ltt-3.8` | **50** | 10 | **400** |
 | **bội số** | **3,8×** | 3,3× | ⛔ **20×** |
 
+### ⚠️ Tự thiên vị khi 3.8 chấm chính nó — TRA NGUỒN trước, ⛔ không tự dựng
+
+Hiện tượng **đã được đo và đặt tên**: *self-preference bias* (SPB) của
+LLM-as-a-judge. Hai nguồn đọc 24/09 (arXiv API):
+
+| nguồn | nói gì | dùng gì ở đây |
+|---|---|---|
+| **arXiv 2608.18091** *"Self- and Other-Labels Induce Bidirectional Bias in LLM Judges"* | ⭐ **Dưới đánh giá MÙ, tự thiên vị BIẾN MẤT** (còn một hiệu ứng nhỏ theo **chiều ngược lại** sau khi khống chế chất lượng và **độ khắt khe của giám khảo**). Thiên vị phần lớn do **NHÃN** gây ra, và nhãn gây lệch **hai chiều** | ⇒ **chấm mù không phải "một nửa" — nó là biện pháp chính**. ⛔ Nhưng phải khống chế thêm **độ khắt khe** |
+| **arXiv 2604.22891** *"Quantifying and Mitigating Self-Preference Bias of LLM Judges"* | Khung **tự động**: dựng **cặp CÙNG CHẤT LƯỢNG** (chênh lệch không đáng kể) để **tách** *khả năng phân biệt* khỏi *xu hướng thiên vị*, ⛔ không cần người gán nhãn. Cảnh báo: đo cũ **lẫn** năng lực sinh với lập trường đánh giá | ⇒ thêm một **bộ hiệu chuẩn**: nếu giám khảo vẫn nghiêng về phía 3.8 trên các cặp **đã biết là ngang nhau**, ta có một **độ lệch đo được để trừ đi** |
+
+⇒ Thiết kế chống SPB cho §6.2, **ba lớp**, ⛔ không phải một:
+
+1. **Mù** — bộ chấm chỉ thấy `goc` + `tieng_viet`, ⛔ **không** thấy model nào
+   sinh ra (hiện `qc_ai.loi_nhac_ngu_nghia` **đã** như vậy — ✅ giữ nguyên).
+2. **Cùng một giám khảo, cùng `temperature 0.0`, cùng thứ tự** cho cả hai nhánh
+   ⇒ khống chế *độ khắt khe*.
+3. ⭐ **Cặp cùng chất lượng** làm hiệu chuẩn ⇒ đo **độ lệch còn lại** và trừ.
+
+⚠️ **Giới hạn phải khai:** cả hai nguồn đều nói đo trên **văn sinh ra** thì
+**phong cách** và **chất lượng bị lẫn** — bản dịch của 3.8 mang dấu vết phong
+cách của chính nó, nên ⛔ mù **không** xoá được hết. ⇒ Lớp 3 là thứ cho ta một
+**con số**, ⛔ không phải một lời hứa.
+
 ⚠️ **Token RA đắt gấp 20 lần**, và dịch là một tác vụ **nặng đầu ra** (bản dịch
 tiếng Việt dài ~3,5–4,5× văn Hán gốc — đo ở §4.2). ⇒ Chi phí thực của một lượt
 dịch nghiêng hẳn về vế `ra`, tức về phía **bội số 20×**.
@@ -512,6 +630,24 @@ dịch nghiêng hẳn về vế `ra`, tức về phía **bội số 20×**.
 lóng game** — nên ⚠️ **kết quả nhiều khả năng là "3.8 không hơn ở đúng chỗ đang
 hỏng"**, và phép đo này tồn tại để **kiểm chứng điều đó**, ⛔ không phải để xác
 nhận nó.
+
+### ⛔ Ngưỡng *"hơn bao nhiêu thì đáng"* — viết TRƯỚC khi đo
+
+```
+chi phí RA:  ltt-3.5 = 20 credit/1M   ·   ltt-3.8 = 400 credit/1M   ⇒ 20×
+```
+
+⇒ Đề nghị để điều phối chốt, ⛔ làn này không tự quyết:
+
+| điều kiện | 3.8 có đáng không |
+|---|---|
+| 3.8 sửa được **một LỚP hỏng** 3.5 không sửa được (ví dụ: cả 7 ca thuật ngữ) | ⭐ **đáng xét** |
+| 3.8 hơn trên một **điểm tổng quát** vài phần trăm | ⛔ **không đáng** — 20× cho vài phần trăm |
+| 3.8 hơn ở **văn tường thuật** (chỗ 3.5 **đã** trôi chảy) | ⛔ **không đáng** — cải thiện chỗ không hỏng |
+
+⚠️ Và §4d đã đo rằng hỏng **tụ ở tri thức miền** ⇒ ⛔ một model to hơn **cũng
+không biết** `纯白给` là tiếng lóng game. Phép đo này tồn tại để **kiểm chứng**
+điều đó, ⛔ **không** để xác nhận nó.
 
 ⛔ **Và phép đo này ⛔ không trả lời được** *"bảng từ có giúp không"* — đó là một
 phép đo **khác**, và nó vẫn chưa có người chấm (§4d, ràng buộc 3).

@@ -7,7 +7,7 @@
  "duong_goi": "san_pham",
  "model_bi_danh": "ltt-3.5",
  "model_that": "qwen35-api",
- "phien_ban_loi_nhac": 3,
+ "phien_ban_loi_nhac": 4,
  "nhiet_do": 0.2,
  "vong_sua": false,
  "vong_sua_ghi_chu": "⛔ TAT — day la ban NEN",
@@ -16,7 +16,7 @@
  "so_doan_dich_duoc": 83,
  "so_doan_THIEU": 0,
  "lo_hong": [],
- "giay": 154.0,
+ "giay": 151.2,
  "doan": [
   {
    "ma": "seg_0001",
@@ -30,21 +30,21 @@
    "bat": 5.813,
    "ket": 12.335,
    "chu_goc": "可要问起有什么能动摇它的地位,那一定是这盘滋辣冒油的烤牛肠。",
-   "chu_dich": "Nhưng nếu hỏi có món gì có thể lay chuyển vị trí của nó, thì chắc chắn là đĩa lòng bò nướng cay dầu mỡ này."
+   "chu_dich": "Nhưng nếu hỏi có gì làm lung lay vị thế của nó, thì chắc chắn là đĩa bò nướng mỡ béo này."
   },
   {
    "ma": "seg_0003",
    "bat": 12.335,
    "ket": 16.176,
    "chu_goc": "油花四溅的视觉冲击让外人紧锁眉头,",
-   "chu_dich": "Cảnh dầu mỡ bắn tung tóe gây ấn tượng thị giác khiến người ngoài nhíu mày,"
+   "chu_dich": "Hình ảnh dầu mỡ bắn tung tóe khiến người ngoài nhíu mày,"
   },
   {
    "ma": "seg_0004",
    "bat": 16.176,
    "ket": 19.798,
    "chu_goc": "可却被当地人当成了补充能量的救赎。",
-   "chu_dich": "nhưng lại được người bản địa xem như cứu cánh để bổ sung năng lượng."
+   "chu_dich": "Nhưng lại được người bản xứ xem là cứu cánh bổ sung năng lượng."
   },
   {
    "ma": "seg_0005",
@@ -58,63 +58,63 @@
    "bat": 21.838,
    "ket": 24.259,
    "chu_goc": "约合人民币一百三十四元,",
-   "chu_dich": "tương đương khoảng 134 nhân dân tệ,"
+   "chu_dich": "Tương đương khoảng 134 nhân dân tệ,"
   },
   {
    "ma": "seg_0007",
    "bat": 24.259,
    "ket": 28.941,
    "chu_goc": "老板硬是在寸土寸金的首尔一天狂卖五百份,",
-   "chu_dich": "chủ quán vẫn mạnh tay bán tới 500 phần mỗi ngày tại Seoul nơi đất chật người đông,"
+   "chu_dich": "Chủ quán vẫn là ở Sê-ôl đất đai đắt đỏ bán được 500 phần mỗi ngày,"
   },
   {
    "ma": "seg_0008",
    "bat": 28.941,
    "ket": 30.001,
    "chu_goc": "想要牛肠好吃,",
-   "chu_dich": "muốn lòng bò ngon,"
+   "chu_dich": "Muốn bò nướng ngon,"
   },
   {
    "ma": "seg_0009",
    "bat": 30.481,
    "ket": 32.983,
    "chu_goc": "食材必离不开新鲜二字,",
-   "chu_dich": "thì nguyên liệu nhất định phải tươi mới,"
+   "chu_dich": "Nguyên liệu nhất định phải có chữ tươi,"
   },
   {
    "ma": "seg_0010",
    "bat": 32.983,
    "ket": 36.265,
    "chu_goc": "从屠宰场运送过来的牛肠还带着温热,",
-   "chu_dich": "lòng bò từ nhà giết mổ vận đến vẫn còn ấm,"
+   "chu_dich": "Bò ruột từ lò mổ chở đến vẫn còn ấm,"
   },
   {
    "ma": "seg_0011",
    "bat": 36.265,
    "ket": 39.987,
    "chu_goc": "此时要立刻扔进凉水里锁住水分,",
-   "chu_dich": "lúc này phải ngay lập tức bỏ vào nước lạnh để giữ nước,"
+   "chu_dich": "Lúc này phải ngay lập tức bỏ vào nước lạnh để giữ nước,"
   },
   {
    "ma": "seg_0012",
    "bat": 39.987,
    "ket": 42.909,
    "chu_goc": "避免滋生细菌产生苦味,",
-   "chu_dich": "tránh sinh khuẩn tạo vị đắng,"
+   "chu_dich": "Tránh vi khuẩn sinh sôi gây vị đắng,"
   },
   {
    "ma": "seg_0013",
    "bat": 42.909,
    "ket": 45.471,
    "chu_goc": "但这只是最不起眼的环节,",
-   "chu_dich": "nhưng đây chỉ là khâu ít quan trọng nhất,"
+   "chu_dich": "Nhưng đây chỉ là khâu ít ai để ý,"
   },
   {
    "ma": "seg_0014",
    "bat": 45.471,
    "ket": 48.493,
    "chu_goc": "清洗牛肠才是最关键的一步。",
-   "chu_dich": "rửa sạch lòng bò mới là bước then chốt."
+   "chu_dich": "Rửa sạch bò ruột mới là bước quan trọng nhất."
   },
   {
    "ma": "seg_0015",
@@ -128,35 +128,35 @@
    "bat": 50.474,
    "ket": 53.976,
    "chu_goc": "苹果沙砾洋葱等配菜悉数入锅,",
-   "chu_dich": "táo, sỏi, hành tây và các món phụ khác đều bỏ vào nồi,"
+   "chu_dich": "Táo, cát, hành tây và các món phụ khác đều bỏ vào nồi,"
   },
   {
    "ma": "seg_0017",
    "bat": 53.976,
    "ket": 57.677,
    "chu_goc": "去腥除味的两瓶烧酒也紧随其后,",
-   "chu_dich": "hai chai rượu soju để khử mùi cũng theo sau,"
+   "chu_dich": "Hai chai rượu đi kèm để khử mùi cũng theo sau,"
   },
   {
    "ma": "seg_0018",
    "bat": 57.677,
    "ket": 61.039,
    "chu_goc": "小火熬煮一小时直至蔬菜软烂,",
-   "chu_dich": "nấu nhỏ lửa một tiếng đồng hồ cho đến khi rau củ mềm nhừ,"
+   "chu_dich": "Nấu nhỏ lửa một tiếng đồng hồ cho đến khi rau củ mềm nhừ,"
   },
   {
    "ma": "seg_0019",
    "bat": 61.039,
    "ket": 63.7,
    "chu_goc": "植物清香完全融化到汤里,",
-   "chu_dich": "mùi thơm của thực vật hoàn toàn hòa tan vào nước,"
+   "chu_dich": "Hương thơm của thực vật hòa tan hoàn toàn vào nước,"
   },
   {
    "ma": "seg_0020",
    "bat": 63.7,
    "ket": 67.022,
    "chu_goc": "这便是清洗牛肠的独门配方。",
-   "chu_dich": "đây chính là công thức độc quyền để rửa lòng bò."
+   "chu_dich": "Đây chính là bí quyết rửa sạch bò ruột."
   },
   {
    "ma": "seg_0021",
@@ -170,28 +170,28 @@
    "bat": 68.883,
    "ket": 70.883,
    "chu_goc": "把它全部倒入水槽中,",
-   "chu_dich": "đổ tất cả vào chậu rửa,"
+   "chu_dich": "họ đổ hết vào trong chậu rửa,"
   },
   {
    "ma": "seg_0023",
    "bat": 70.883,
    "ket": 73.724,
    "chu_goc": "粉嫩的牛肠也趁热泡进去,",
-   "chu_dich": "Ruột bò hồng hào cũng được nhúng vào ngay khi còn nóng,"
+   "chu_dich": "ruột bò hồng nhạt cũng được nhúng vào khi còn nóng,"
   },
   {
    "ma": "seg_0024",
    "bat": 73.724,
    "ket": 75.825,
    "chu_goc": "让其变得更加柔软。",
-   "chu_dich": "để nó mềm hơn."
+   "chu_dich": "để cho chúng mềm hơn."
   },
   {
    "ma": "seg_0025",
    "bat": 75.825,
    "ket": 76.565,
    "chu_goc": "紧接着,",
-   "chu_dich": "Ngay sau đó,"
+   "chu_dich": "Tiếp theo,"
   },
   {
    "ma": "seg_0026",
@@ -205,28 +205,28 @@
    "bat": 78.946,
    "ket": 83.007,
    "chu_goc": "原本热腾腾的汤瞬间被冰块积得变了温。",
-   "chu_dich": "nước nóng hổi ban đầu lập tức bị đá làm lạnh."
+   "chu_dich": "nước súp nóng hổi lập tức bị đá làm lạnh đi."
   },
   {
    "ma": "seg_0028",
    "bat": 83.007,
    "ket": 86.668,
    "chu_goc": "牛肠也由于热胀冷缩而迅速收紧,",
-   "chu_dich": "Ruột bò cũng co lại nhanh do nhiệt độ thay đổi,"
+   "chu_dich": "Ruột bò cũng nhanh chóng co lại vì nhiệt độ nóng lạnh,"
   },
   {
    "ma": "seg_0029",
    "bat": 86.668,
    "ket": 89.529,
    "chu_goc": "不仅锁住了最原始的鲜甜,",
-   "chu_dich": "không chỉ giữ được vị ngọt tươi nguyên bản,"
+   "chu_dich": "không chỉ giữ lại vị ngọt tươi nguyên bản,"
   },
   {
    "ma": "seg_0030",
    "bat": 89.529,
    "ket": 93.11,
    "chu_goc": "更赋予了牛肠极其爽脆的韧劲。",
-   "chu_dich": "mà còn khiến ruột bò giòn dai vô cùng."
+   "chu_dich": "mà còn khiến ruột bò giòn dai hơn hẳn."
   },
   {
    "ma": "seg_0031",
@@ -240,35 +240,35 @@
    "bat": 96.351,
    "ket": 98.172,
    "chu_goc": "整齐码在铁盘上,",
-   "chu_dich": "xếp ngay ngắn trên khay sắt,"
+   "chu_dich": "sắp xếp ngay ngắn trên khay sắt,"
   },
   {
    "ma": "seg_0033",
    "bat": 98.172,
    "ket": 101.313,
    "chu_goc": "随后再一根根灌入清水冲洗干净。",
-   "chu_dich": "sau đó từng cái lại được dội nước sạch rửa sạch."
+   "chu_dich": "rồi từng cái một dội nước sạch để rửa sạch."
   },
   {
    "ma": "seg_0034",
    "bat": 101.313,
    "ket": 106.895,
    "chu_goc": "这还不是最麻烦的,去除油脂和筋膜才是最考验耐心的环节。",
-   "chu_dich": "Việc này chưa phải là khó nhất, việc loại bỏ mỡ và gân mới là thử thách về sự kiên nhẫn nhất."
+   "chu_dich": "Đây chưa phải là phần khó nhất, việc tách mỡ và gân mới là phần đòi hỏi sự kiên nhẫn nhất."
   },
   {
    "ma": "seg_0035",
    "bat": 106.895,
    "ket": 110.177,
    "chu_goc": "师傅手中的剪刀顺着肠壁游走,",
-   "chu_dich": "Dao trong tay thầy lướt dọc theo thành ruột,"
+   "chu_dich": "Dao trong tay người thợ lướt dọc theo thành ruột,"
   },
   {
    "ma": "seg_0036",
    "bat": 110.177,
    "ket": 113.058,
    "chu_goc": "剪去外层多余的油脂筋膜,",
-   "chu_dich": "cắt bỏ lớp mỡ và gân thừa bên ngoài,"
+   "chu_dich": "cắt bỏ lớp mỡ và gân thừa ở bên ngoài,"
   },
   {
    "ma": "seg_0037",
@@ -282,7 +282,7 @@
    "bat": 114.878,
    "ket": 116.979,
    "chu_goc": "要保留少部分油脂,",
-   "chu_dich": "phải giữ lại một chút mỡ,"
+   "chu_dich": "cần giữ lại một chút mỡ,"
   },
   {
    "ma": "seg_0039",
@@ -296,70 +296,70 @@
    "bat": 119.7,
    "ket": 121.801,
    "chu_goc": "吃起来才够润。",
-   "chu_dich": "ăn mới đủ độ béo ngậy."
+   "chu_dich": "ăn vào mới đủ độ béo ngậy."
   },
   {
    "ma": "seg_0041",
    "bat": 121.961,
    "ket": 127.543,
    "chu_goc": "但为了完全去除牛肠自带的脏气味,还需要做更细致的处理。",
-   "chu_dich": "Nhưng để triệt để loại bỏ mùi hôi tự nhiên của ruột bò, vẫn cần xử lý kỹ hơn."
+   "chu_dich": "Nhưng để triệt để loại bỏ mùi hôi bẩn vốn có của ruột bò, vẫn cần xử lý kỹ hơn."
   },
   {
    "ma": "seg_0042",
    "bat": 127.543,
    "ket": 129.664,
    "chu_goc": "新鲜的猕猴桃、菠萝、",
-   "chu_dich": "Kiwi tươi, dứa,"
+   "chu_dich": "Khỉu vi tươi, dứa,"
   },
   {
    "ma": "seg_0043",
    "bat": 129.664,
    "ket": 131.345,
    "chu_goc": "香蕉混合烧酒,",
-   "chu_dich": "Chuối trộn rượu Soju,"
+   "chu_dich": "chuối trộn rượu,"
   },
   {
    "ma": "seg_0044",
    "bat": 131.345,
    "ket": 132.865,
    "chu_goc": "倒入搅拌机中,",
-   "chu_dich": "Đổ vào máy xay,"
+   "chu_dich": "đổ vào máy xay,"
   },
   {
    "ma": "seg_0045",
    "bat": 132.865,
    "ket": 134.906,
    "chu_goc": "一起打成细碎的果泥,",
-   "chu_dich": "Xay chung thành hỗn hợp trái cây nhuyễn,"
+   "chu_dich": "cùng xay nhuyễn thành hỗn hợp trái cây,"
   },
   {
    "ma": "seg_0046",
    "bat": 134.906,
    "ket": 138.448,
    "chu_goc": "然后用刷子均匀地涂抹在牛肠上。",
-   "chu_dich": "Sau đó dùng chổi quét đều lên bề mặt ruột bò."
+   "chu_dich": "sau đó dùng bàn chải quét đều lên bề mặt ruột bò."
   },
   {
    "ma": "seg_0047",
    "bat": 138.448,
    "ket": 142.089,
    "chu_goc": "果蔬中的天然霉扮演着嫩肉粉的角色,",
-   "chu_dich": "Men tự nhiên trong trái cây rau củ đóng vai trò như bột mềm thịt,"
+   "chu_dich": "Men tự nhiên trong trái cây rau củ đóng vai trò như bột làm mềm thịt,"
   },
   {
    "ma": "seg_0048",
    "bat": 142.089,
    "ket": 145.49,
    "chu_goc": "能充分分解牛肠里坚韧的纤维,",
-   "chu_dich": "Có thể phân hủy triệt để các sợi dai trong ruột bò,"
+   "chu_dich": "có thể phân hủy triệt để các sợi dai trong ruột bò,"
   },
   {
    "ma": "seg_0049",
    "bat": 145.49,
    "ket": 149.372,
    "chu_goc": "更顺带着添上了一股子淡淡的果香。",
-   "chu_dich": "Và cũng mang lại thêm một chút hương trái cây nhẹ nhàng."
+   "chu_dich": "đồng thời mang lại thêm một chút hương trái cây nhẹ nhàng."
   },
   {
    "ma": "seg_0050",
@@ -380,56 +380,56 @@
    "bat": 154.895,
    "ket": 157.016,
    "chu_goc": "在流水下疯狂搓洗,",
-   "chu_dich": "Dưới vòi nước liên tục chà xát mạnh,"
+   "chu_dich": "chà xát điên cuồng dưới vòi nước,"
   },
   {
    "ma": "seg_0053",
    "bat": 157.016,
    "ket": 160.578,
    "chu_goc": "确保每个部位都不残留任何杂质。",
-   "chu_dich": "Đảm bảo không còn bất kỳ tạp chất nào ở bất kỳ đâu."
+   "chu_dich": "đảm bảo không còn sót lại bất kỳ tạp chất nào ở bất kỳ vị trí nào."
   },
   {
    "ma": "seg_0054",
    "bat": 160.578,
    "ket": 165.8,
    "chu_goc": "清洗完毕,再撒入厚厚一层面粉,反复地揉,反复地搓。",
-   "chu_dich": "Rửa xong, rắc một lớp bột dày, xoa đều, chà đều."
+   "chu_dich": "Sau khi rửa sạch, rắc một lớp bột mì dày lên, xoa đi xoa lại, chà đi chà lại."
   },
   {
    "ma": "seg_0055",
    "bat": 165.8,
    "ket": 171.923,
    "chu_goc": "面粉那股子黏性,能彻底吸走牛肠表面滑溜溜的黏液和脏东西。",
-   "chu_dich": "Độ dính của bột đó có thể hút sạch chất nhờn trơn trượt và bẩn trên bề mặt ruột bò."
+   "chu_dich": "Độ dính của bột mì có thể hút sạch hoàn toàn lớp nhớt trơn trượt và bẩn trên bề mặt ruột bò."
   },
   {
    "ma": "seg_0056",
    "bat": 171.923,
    "ket": 174.985,
    "chu_goc": "流水一冲,瞬间变得亮亮堂堂。",
-   "chu_dich": "Nước chảy qua, ngay lập tức trở nên sáng bóng."
+   "chu_dich": "Nước chảy qua một lần, ngay lập tức trở nên sáng bóng."
   },
   {
    "ma": "seg_0057",
    "bat": 174.985,
    "ket": 177.806,
    "chu_goc": "最后,倒上两瓶灵魂烧酒,",
-   "chu_dich": "Cuối cùng, rót hai chai rượu Soju linh hồn,"
+   "chu_dich": "Cuối cùng, rót hai chai rượu linh hồn,"
   },
   {
    "ma": "seg_0058",
    "bat": 177.826,
    "ket": 181.629,
    "chu_goc": "这股直冲天灵盖的异味才被彻底平息。",
-   "chu_dich": "Mùi hôi này mới được triệt để làm dịu đi."
+   "chu_dich": "mùi hôi xông thẳng lên đỉnh đầu mới được dập tắt hoàn toàn."
   },
   {
    "ma": "seg_0059",
    "bat": 181.629,
    "ket": 187.694,
    "chu_goc": "晚饭时间一到,店内坐无虚席,后厨的铁板也开始热闹了起来。",
-   "chu_dich": "Giờ ăn tối đến, quán nhà chật kín người, bếp cũng bắt đầu nhộn nhịp."
+   "chu_dich": "Khi đến giờ ăn tối, quán nhà đầy khách, bếp sau cũng bắt đầu nhộn nhịp."
   },
   {
    "ma": "seg_0060",
@@ -443,28 +443,28 @@
    "bat": 189.575,
    "ket": 192.057,
    "chu_goc": "而是由师傅们煎到九分熟,",
-   "chu_dich": "nhưng lại do các thầy chiên chín chín phần mười,"
+   "chu_dich": "mà là do các thầy bếp chiên đến chín phần chín,"
   },
   {
    "ma": "seg_0062",
    "bat": 192.057,
    "ket": 195.7,
    "chu_goc": "白花花的牛肠在铁板上滋拉作响,",
-   "chu_dich": "ruột bò trắng tinh trên tấm sắt kêu xèo xèo,"
+   "chu_dich": "những đoạn ruột bò trắng tinh trên mặt bếp sắt phát ra tiếng xèo xèo,"
   },
   {
    "ma": "seg_0063",
    "bat": 195.7,
    "ket": 198.402,
    "chu_goc": "肠壁内的脂肪受热融化,",
-   "chu_dich": "chất béo trong thành ruột tan chảy dưới nhiệt,"
+   "chu_dich": "chất béo bên trong thành ruột bò tan chảy dưới nhiệt độ,"
   },
   {
    "ma": "seg_0064",
    "bat": 198.402,
    "ket": 202.305,
    "chu_goc": "表皮也由洁白转为焦褐色。师傅们的煎饭,",
-   "chu_dich": "bề mặt cũng chuyển từ trắng sang nâu cháy. việc chiên của các thầy,"
+   "chu_dich": "bề mặt cũng chuyển từ trắng sang màu nâu đen. Quá trình chiên của các thầy,"
   },
   {
    "ma": "seg_0065",
@@ -485,21 +485,21 @@
    "bat": 208.277,
    "ket": 211.379,
    "chu_goc": "每一刀下去都能看到爆出的油花。",
-   "chu_dich": "mỗi nhát dao đều thấy dầu bắn ra."
+   "chu_dich": "mỗi lần dao cắt xuống đều thấy dầu mỡ bắn ra."
   },
   {
    "ma": "seg_0068",
    "bat": 211.379,
    "ket": 213.04,
    "chu_goc": "为了让口感更爽利,",
-   "chu_dich": "để khẩu vị thêm sảng khoái,"
+   "chu_dich": "để cho vị giác thêm sảng khoái,"
   },
   {
    "ma": "seg_0069",
    "bat": 213.04,
    "ket": 215.181,
    "chu_goc": "师傅顺势侧起烤盘,",
-   "chu_dich": "thầy thuận thế nghiêng chảo nướng,"
+   "chu_dich": "thầy bếp thuận thế nghiêng chảo nướng,"
   },
   {
    "ma": "seg_0070",
@@ -513,21 +513,21 @@
    "bat": 216.662,
    "ket": 219.463,
    "chu_goc": "只留下一层浅淡的底油。",
-   "chu_dich": "chỉ để lại một lớp dầu mỏng."
+   "chu_dich": "chỉ để lại một lớp dầu mỏng dưới đáy."
   },
   {
    "ma": "seg_0072",
    "bat": 219.463,
    "ket": 221.704,
    "chu_goc": "待铁板中央被腾出空位,",
-   "chu_dich": "khi vị trí giữa tấm sắt được dọn trống,"
+   "chu_dich": "khi mặt bếp sắt ở giữa đã được dọn sạch,"
   },
   {
    "ma": "seg_0073",
    "bat": 221.704,
    "ket": 225.786,
    "chu_goc": "立马塞满碧绿的韭菜与辛辣的洋葱,",
-   "chu_dich": "ngay lập tức nhồi đầy hành hẹ xanh và hành tây cay,"
+   "chu_dich": "ngay lập tức lấp đầy bằng hành lá xanh mướt và hành tây cay nồng,"
   },
   {
    "ma": "seg_0074",
@@ -541,42 +541,42 @@
    "bat": 228.648,
    "ket": 233.53,
    "chu_goc": "蔬菜的清甜与大蒜的香气很快与脂香融合。",
-   "chu_dich": "ngọt thanh của rau và hương tỏi nhanh chóng hòa quyện với mùi mỡ."
+   "chu_dich": "độ ngọt thanh của rau củ và hương tỏi nhanh chóng hòa quyện với mùi mỡ."
   },
   {
    "ma": "seg_0076",
    "bat": 233.79,
    "ket": 239.691,
    "chu_goc": "端上桌时,牛肠的外层已经焦酥,内里却依然滑嫩多汁。",
-   "chu_dich": "khi mang lên bàn, lớp ngoài ruột bò đã giòn rụm, trong vẫn mềm mượt và nhiều nước."
+   "chu_dich": "khi mang lên bàn, lớp ngoài của ruột bò đã giòn rụm, trong khi bên trong vẫn mềm mịn và nhiều nước."
   },
   {
    "ma": "seg_0077",
    "bat": 239.691,
    "ket": 244.953,
    "chu_goc": "加起一块蘸上特制的酸甜酱汁,再配上一口本地烧酒。",
-   "chu_dich": "cầm một miếng chấm vào sốt chua ngọt đặc biệt, rồi uống một ngụm rượu nấu địa phương."
+   "chu_dich": "cầm một miếng chấm vào sốt chua ngọt đặc biệt, rồi uống kèm một ngụm rượu soju địa phương."
   },
   {
    "ma": "seg_0078",
    "bat": 244.953,
    "ket": 248.814,
    "chu_goc": "酒香纸香与果香的回甘在口中炸开,",
-   "chu_dich": "hương rượu, hương giấy và vị ngọt hậu của trái cây bùng nổ trong miệng,"
+   "chu_dich": "hương rượu, hương giấy và vị ngọt hậu của trái cây trong miệng bùng nổ,"
   },
   {
    "ma": "seg_0079",
    "bat": 248.814,
    "ket": 252.434,
    "chu_goc": "无法言表的满足感瞬间涌上心头。",
-   "chu_dich": "cảm giác thỏa mãn khó tả lập tức trào dâng trong tim."
+   "chu_dich": "cảm giác thỏa mãn khó tả lập tức tràn ngập tim."
   },
   {
    "ma": "seg_0080",
    "bat": 252.434,
    "ket": 257.055,
    "chu_goc": "三万韩元一份的烤牛肠或许不是这里最昂贵的美食,",
-   "chu_dich": "ba vạn won một phần thịt bò nướng có lẽ không phải món đắt nhất ở đây,"
+   "chu_dich": "một phần nướng ruột bò ba vạn won có lẽ không phải món ăn đắt nhất ở đây,"
   },
   {
    "ma": "seg_0081",
@@ -590,14 +590,14 @@
    "bat": 259.876,
    "ket": 263.497,
    "chu_goc": "这何尝不是卸下防备后最大的快乐。",
-   "chu_dich": "Chẳng phải là niềm vui lớn nhất sau khi buông lỏng cảnh giác."
+   "chu_dich": "Chẳng phải đó là niềm vui lớn nhất sau khi buông lỏng cảnh giác."
   },
   {
    "ma": "seg_0083",
    "bat": 263.517,
    "ket": 263.551,
    "chu_goc": "中文字幕志愿者 李宗盛",
-   "chu_dich": "Tình nguyện viên phụ đề tiếng Trung Lý Tông Thành"
+   "chu_dich": "Người tình nguyện phụ đề tiếng Trung Lý Tông Thịnh"
   }
  ],
  "mau_doc_tay": [
@@ -613,10 +613,9 @@
   82
  ],
  "⚠️ gioi_han": [
-  "BAN NEN qua DUONG SAN PHAM: vong sua TAT, model do `ai.model_cho(DICH_THUAT)`",
-  "chon (= ltt-3.5 / qwen35-api), loi nhac PHIEN_BAN_LOI_NHAC=3, nhiet do 0.2.",
-  "⛔ CHUA cham bang may: bo cham ngu nghia (`qc_ai`) dang trong xuong o lan khac.",
-  "⚠️ Mot phan 'loi dich' la LOI ASR doi lot: nguon co 跳散<-跳伞, 天然霉<-天然酶.",
-  "⇒ Day la DAU VAO de doi chieu, ⛔ khong phai mot ban da nghiem thu."
+  "BAN NEN qua DUONG SAN PHAM, loi nhac v4 (ba nhanh ten rieng — LUAT TAM cua dieu phoi).",
+  "⛔ v4 sua duoc 李宗盛 NHUNG lam hong 首尔 (Seoul -> \"Se-ol\") — xem B2_DICH.md §4h.",
+  "⛔ CHUA cham bang may: bo cham ngu nghia dang trong xuong o lan khac.",
+  "⚠️ Mot phan \"loi dich\" la LOI ASR doi lot — xem §4e va §4i."
  ]
 }

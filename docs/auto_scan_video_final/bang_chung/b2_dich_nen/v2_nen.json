@@ -7,7 +7,7 @@
  "duong_goi": "san_pham",
  "model_bi_danh": "ltt-3.5",
  "model_that": "qwen35-api",
- "phien_ban_loi_nhac": 3,
+ "phien_ban_loi_nhac": 4,
  "nhiet_do": 0.2,
  "vong_sua": false,
  "vong_sua_ghi_chu": "⛔ TAT — day la ban NEN",
@@ -16,7 +16,7 @@
  "so_doan_dich_duoc": 74,
  "so_doan_THIEU": 0,
  "lo_hong": [],
- "giay": 125.2,
+ "giay": 123.5,
  "doan": [
   {
    "ma": "seg_0001",
@@ -30,35 +30,35 @@
    "bat": 1.672,
    "ket": 6.676,
    "chu_goc": "女人在暴雨森林中露营,搭建帐篷度过暴雨天,享受悠闲的露营生活。",
-   "chu_dich": "Phụ nữ cắm trại giữa rừng mưa bão, dựng lều qua ngày mưa, tận hưởng cuộc sống cắm trại thư thái."
+   "chu_dich": "Người phụ nữ cắm trại giữa rừng mưa, dựng lều qua ngày mưa, tận hưởng cuộc sống thảnh thơi."
   },
   {
    "ma": "seg_0003",
    "bat": 6.676,
    "ket": 9.178,
    "chu_goc": "这天小美驾驶越野车停在山腰间,",
-   "chu_dich": "Hôm nay Tiểu Mỹ lái xe địa hình dừng giữa sườn núi,"
+   "chu_dich": "Hôm nay Tiểu Mỹ lái xe địa hình dừng ở giữa sườn núi,"
   },
   {
    "ma": "seg_0004",
    "bat": 9.178,
    "ket": 11.5,
    "chu_goc": "连绵不断地暴雨小美便穿上雨衣,",
-   "chu_dich": "Mưa liên miên không dứt nên Tiểu Mỹ liền mặc áo mưa,"
+   "chu_dich": "Mưa liên miên không dứt, Tiểu Mỹ liền mặc áo mưa,"
   },
   {
    "ma": "seg_0005",
    "bat": 11.5,
    "ket": 13.121,
    "chu_goc": "她打开车尾后备箱门,",
-   "chu_dich": "Cô mở cửa cốp xe phía sau,"
+   "chu_dich": "Cô mở cốp xe phía sau,"
   },
   {
    "ma": "seg_0006",
    "bat": 13.121,
    "ket": 14.342,
    "chu_goc": "取出空气帐篷,",
-   "chu_dich": "Rút ra lều hơi,"
+   "chu_dich": "Lấy ra lều hơi,"
   },
   {
    "ma": "seg_0007",
@@ -72,28 +72,28 @@
    "bat": 15.463,
    "ket": 16.904,
    "chu_goc": "接入电动的充气泵,",
-   "chu_dich": "Kết nối bơm hơi điện,"
+   "chu_dich": "Kết nối máy bơm hơi điện,"
   },
   {
    "ma": "seg_0009",
    "bat": 16.904,
    "ket": 18.305,
    "chu_goc": "往内部打入空气,",
-   "chu_dich": "Đẩy hơi vào bên trong,"
+   "chu_dich": "Bơm không khí vào bên trong,"
   },
   {
    "ma": "seg_0010",
    "bat": 18.305,
    "ket": 20.026,
    "chu_goc": "帐篷便很快直冷了起来,",
-   "chu_dich": "Lều nhanh chóng dựng thẳng đứng lên,"
+   "chu_dich": "Lều nhanh chóng phồng lên,"
   },
   {
    "ma": "seg_0011",
    "bat": 20.026,
    "ket": 22.488,
    "chu_goc": "圆拱形状内部的空间更是相当宽敞。",
-   "chu_dich": "Không gian bên trong hình vòm tròn càng rộng rãi hơn."
+   "chu_dich": "Không gian bên trong hình vòm tròn càng thêm rộng rãi."
   },
   {
    "ma": "seg_0012",
@@ -114,7 +114,7 @@
    "bat": 26.931,
    "ket": 28.232,
    "chu_goc": "卷起帐篷的门帘,",
-   "chu_dich": "Cuộn lại màn cửa lều,"
+   "chu_dich": "Cuộn lại tấm rèm cửa lều,"
   },
   {
    "ma": "seg_0015",
@@ -135,14 +135,14 @@
    "bat": 30.674,
    "ket": 32.415,
    "chu_goc": "有了遮风挡雨的避不住后,",
-   "chu_dich": "Đã có nơi trú ẩn che gió chắn mưa,"
+   "chu_dich": "Đã có nơi trú ẩn che mưa chắn gió,"
   },
   {
    "ma": "seg_0018",
    "bat": 32.415,
    "ket": 33.776,
    "chu_goc": "女人便倒车入库,",
-   "chu_dich": "Người phụ nữ lùi xe vào chỗ đậu,"
+   "chu_dich": "Người phụ nữ liền lùi xe vào chỗ đỗ,"
   },
   {
    "ma": "seg_0019",
@@ -156,14 +156,14 @@
    "bat": 36.038,
    "ket": 38.019,
    "chu_goc": "把露营的装备从车内取出,",
-   "chu_dich": "Rút các thiết bị cắm trại ra khỏi xe,"
+   "chu_dich": "Lấy đồ cắm trại ra khỏi xe,"
   },
   {
    "ma": "seg_0021",
    "bat": 38.019,
    "ket": 39.32,
    "chu_goc": "存放在帐篷之中,",
-   "chu_dich": "Để trong lều,"
+   "chu_dich": "Được cất giữ trong lều,"
   },
   {
    "ma": "seg_0022",
@@ -177,14 +177,14 @@
    "bat": 40.541,
    "ket": 43.023,
    "chu_goc": "此刻的大暴雨让室内已经满是积水,",
-   "chu_dich": "Bão lớn lúc này khiến trong lều đã đầy nước,"
+   "chu_dich": "Lúc này mưa lớn khiến bên trong đã đầy nước,"
   },
   {
    "ma": "seg_0024",
    "bat": 43.023,
    "ket": 44.984,
    "chu_goc": "她便利用毛巾将积水擦干,",
-   "chu_dich": "Cô ấy dùng khăn lau khô nước đọng,"
+   "chu_dich": "Cô ấy dùng khăn để lau khô nước đọng,"
   },
   {
    "ma": "seg_0025",
@@ -198,7 +198,7 @@
    "bat": 49.852,
    "ket": 54.015,
    "chu_goc": "并把车内等候多时的狗子抱出,来到营地陪伴女人一起露营。",
-   "chu_dich": "Rồi bế chú chó đã chờ lâu trong xe ra, đến trại cắm trại cùng cô."
+   "chu_dich": "Và bế con chó đã đợi lâu trong xe ra, đến trại cắm trại cùng cô gái."
   },
   {
    "ma": "seg_0027",
@@ -212,35 +212,35 @@
    "bat": 55.275,
    "ket": 57.697,
    "chu_goc": "小美还特意利用小锤锤敲打地钉,",
-   "chu_dich": "Tiểu Mỹ còn đặc biệt dùng cái búa nhỏ gõ vào cọc lều,"
+   "chu_dich": "Tiểu Mỹ còn đặc biệt dùng cái búa nhỏ để đóng cọc đất,"
   },
   {
    "ma": "seg_0029",
    "bat": 57.697,
    "ket": 59.378,
    "chu_goc": "把帐篷的四周牢牢固定,",
-   "chu_dich": "Gắn chặt bốn phía lều,"
+   "chu_dich": "cố định chắc chắn bốn phía của lều,"
   },
   {
    "ma": "seg_0030",
    "bat": 59.378,
    "ket": 60.619,
    "chu_goc": "即使遇到暴风雨,",
-   "chu_dich": "Ngay cả khi gặp bão tố,"
+   "chu_dich": "dù gặp bão tố,"
   },
   {
    "ma": "seg_0031",
    "bat": 60.619,
    "ket": 62.36,
    "chu_goc": "也能稳如老狗从容面对。",
-   "chu_dich": "Cũng vững vàng đối mặt."
+   "chu_dich": "cũng vững như bàn thạch đối mặt."
   },
   {
    "ma": "seg_0032",
    "bat": 62.36,
    "ket": 65.942,
    "chu_goc": "紧接着把车内的各类露营装备从后备箱搬进帐篷中。",
-   "chu_dich": "Tiếp theo, cô mang các thiết bị cắm trại từ trong xe vào lều."
+   "chu_dich": "Tiếp theo mang các thiết bị cắm trại trong xe từ cốp sau vào lều."
   },
   {
    "ma": "seg_0033",
@@ -254,28 +254,28 @@
    "bat": 67.863,
    "ket": 72.686,
    "chu_goc": "小美先把空气沙发摆放在帐篷之中,打入空气完成沙发的组装搭建。",
-   "chu_dich": "Tiểu Mỹ trước hết đặt ghế sofa hơi vào trong lều, bơm khí để hoàn thành việc lắp đặt ghế sofa."
+   "chu_dich": "Tiểu Mỹ trước tiên đặt ghế sofa hơi vào trong lều, bơm khí để hoàn thành lắp đặt ghế."
   },
   {
    "ma": "seg_0035",
    "bat": 72.686,
    "ket": 78.75,
    "chu_goc": "上面只需铺设上舒适柔软的毛毯,以及弹性十足的枕头,就能方便自己随时躺下休息。",
-   "chu_dich": "Chỉ cần trải lên tấm thảm êm ái mềm mại, cùng chiếc gối đàn hồi tốt, là có thể dễ dàng nằm nghỉ bất cứ lúc nào."
+   "chu_dich": "Trên chỉ cần trải tấm thảm êm ái mềm mại, cùng chiếc gối đàn hồi tốt, là có thể tiện lợi nằm nghỉ bất cứ lúc nào."
   },
   {
    "ma": "seg_0036",
    "bat": 78.75,
    "ket": 83.273,
    "chu_goc": "面前的空间女人搭建上折叠的露营桌椅,以及可以存放物资的收纳柜。",
-   "chu_dich": "Không gian trước mặt cô được dựng thêm bàn ghế xếp gọn, cùng tủ đựng đồ để chứa vật tư."
+   "chu_dich": "Không gian phía trước cô gái dựng thêm bàn ghế xếp cắm trại, cùng tủ đựng đồ chứa vật tư."
   },
   {
    "ma": "seg_0037",
    "bat": 83.273,
    "ket": 86.035,
    "chu_goc": "为了方便生活做饭,先把灶台搭建好。",
-   "chu_dich": "Để tiện nấu ăn sinh hoạt, trước hết dựng sẵn bếp."
+   "chu_dich": "Để tiện sinh hoạt nấu ăn, trước tiên dựng bếp xong."
   },
   {
    "ma": "seg_0038",
@@ -289,14 +289,14 @@
    "bat": 91.21,
    "ket": 95.111,
    "chu_goc": "考虑到这里暴雨天很潮湿,小美还特意整了一台小壁。",
-   "chu_dich": "Vì nơi đây trời mưa bão rất ẩm, Tiểu Mỹ còn đặc biệt sắm thêm một chiếc máy sưởi."
+   "chu_dich": "Vì nơi đây trời mưa lớn rất ẩm, Tiểu Mỹ còn đặc biệt sắm một máy sưởi nhỏ."
   },
   {
    "ma": "seg_0040",
    "bat": 95.111,
    "ket": 97.552,
    "chu_goc": "温暖的空气让帐篷内变得干燥舒适。",
-   "chu_dich": "Không khí ấm áp khiến trong lều trở nên khô ráo dễ chịu."
+   "chu_dich": "Không khí ấm áp khiến bên trong lều trở nên khô ráo thoải mái."
   },
   {
    "ma": "seg_0041",
@@ -310,49 +310,49 @@
    "bat": 100.953,
    "ket": 107.294,
    "chu_goc": "不但配有干净的泉水可以随时取用,还有电力充足的户外电源,足以满足帐篷内的用电需求。",
-   "chu_dich": "Không chỉ có nguồn nước sạch có thể lấy bất cứ lúc nào, còn có bộ sạc ngoài trời đầy điện, đủ để đáp ứng nhu cầu điện bên trong lều."
+   "chu_dich": "Không chỉ có nguồn nước suối sạch sẽ để lấy bất cứ lúc nào, còn có bộ nguồn điện ngoài trời đầy đủ công suất, đủ để đáp ứng nhu cầu điện trong lều."
   },
   {
    "ma": "seg_0043",
    "bat": 107.294,
    "ket": 111.196,
    "chu_goc": "这时营地的搭建初步完成。",
-   "chu_dich": "Lúc này việc dựng trại đã hoàn thành sơ bộ."
+   "chu_dich": "Lúc này, việc dựng trại đã hoàn thành sơ bộ."
   },
   {
    "ma": "seg_0044",
    "bat": 111.196,
    "ket": 116.617,
    "chu_goc": "女人便在灶台上起锅烧油,煎烤虾饺作为下午茶点,还给自己煮了点面条。",
-   "chu_dich": "Người phụ nữ liền bắc nồi lên bếp, chiên tôm hủ tiếu làm điểm tâm chiều, còn nấu thêm chút mì cho bản thân."
+   "chu_dich": "Người phụ nữ liền bắc bếp, đun dầu, chiên nướng tôm làm điểm tâm chiều, còn tự nấu thêm chút mì."
   },
   {
    "ma": "seg_0045",
    "bat": 116.617,
    "ket": 119.958,
    "chu_goc": "一碗炸酱面,非常美味,独自坐在帐篷里享用。",
-   "chu_dich": "Một tô mì tương chiên, rất ngon, ngồi một mình trong lều thưởng thức."
+   "chu_dich": "Một bát mì thịt đậu chiên, rất ngon, ngồi một mình trong lều thưởng thức."
   },
   {
    "ma": "seg_0046",
    "bat": 123.048,
    "ket": 126.93,
    "chu_goc": "吃饱喝足后,小美喝着热茶,欣赏着山中的风景。",
-   "chu_dich": "Đã no nê rồi, Tiểu Mỹ uống trà nóng, ngắm cảnh giữa núi rừng."
+   "chu_dich": "Sau khi ăn no uống đủ, Tiểu Mỹ uống trà nóng, ngắm cảnh đẹp giữa núi rừng."
   },
   {
    "ma": "seg_0047",
    "bat": 126.93,
    "ket": 128.571,
    "chu_goc": "为了应对已将到来的夜晚,",
-   "chu_dich": "Để đối phó với đêm đã sắp đến,"
+   "chu_dich": "Để đối phó với đêm tối sắp đến,"
   },
   {
    "ma": "seg_0048",
    "bat": 128.571,
    "ket": 130.952,
    "chu_goc": "她便在帐篷内亮起更多的露营灯光,",
-   "chu_dich": "Cô ấy bật thêm nhiều đèn cắm trại trong lều,"
+   "chu_dich": "Cô ấy bật thêm nhiều đèn cắm trại bên trong lều,"
   },
   {
    "ma": "seg_0049",
@@ -380,7 +380,7 @@
    "bat": 135.435,
    "ket": 137.096,
    "chu_goc": "和狗子一起躲在帐篷里,",
-   "chu_dich": "Cùng Gấu Tử trốn trong lều,"
+   "chu_dich": "Ẩn náu trong lều cùng Cún,"
   },
   {
    "ma": "seg_0053",
@@ -394,7 +394,7 @@
    "bat": 138.357,
    "ket": 144.36,
    "chu_goc": "没多久的时间,天色变黑了下来,四周一片漆黑,温馨的帐篷氛围给了女人家的感觉。",
-   "chu_dich": "Chưa bao lâu, trời tối hẳn, bốn phía đen kịt, không khí ấm áp trong lều mang lại cảm giác như nhà."
+   "chu_dich": "Không bao lâu, trời tối sầm lại, bốn phía đen kịt, không khí ấm áp trong lều mang lại cảm giác như ở nhà."
   },
   {
    "ma": "seg_0055",
@@ -415,56 +415,56 @@
    "bat": 147.582,
    "ket": 149.243,
    "chu_goc": "利用厨房煎烤香肠,",
-   "chu_dich": "Sử dụng bếp để chiên nướng xúc xích,"
+   "chu_dich": "Dùng bếp trong nhà chiên nướng xúc xích,"
   },
   {
    "ma": "seg_0058",
    "bat": 149.243,
    "ket": 151.084,
    "chu_goc": "今晚的大餐便大功告成,",
-   "chu_dich": "Bữa tối nay đã hoàn thành,"
+   "chu_dich": "Bữa tối lớn của tối nay đã hoàn thành,"
   },
   {
    "ma": "seg_0059",
    "bat": 151.084,
    "ket": 153.626,
    "chu_goc": "吃着大餐还给狗子也安排上了美食,",
-   "chu_dich": "Ăn bữa ngon còn sắp xếp thêm món ăn cho Gấu Tử,"
+   "chu_dich": "Ăn bữa ăn lớn và cũng sắp xếp thêm món ngon cho Cún,"
   },
   {
    "ma": "seg_0060",
    "bat": 153.626,
    "ket": 154.707,
    "chu_goc": "吃饱喝足后,",
-   "chu_dich": "Đã no nê rồi,"
+   "chu_dich": "Sau khi ăn no uống đủ,"
   },
   {
    "ma": "seg_0061",
    "bat": 154.707,
    "ket": 156.108,
    "chu_goc": "女人榨了点爆米花,",
-   "chu_dich": "Cô ấy rang thêm chút bỏng ngô,"
+   "chu_dich": "Cô ấy làm nổ một chút bỏng ngô,"
   },
   {
    "ma": "seg_0062",
    "bat": 156.108,
    "ket": 157.269,
    "chu_goc": "拉开投影目录,",
-   "chu_dich": "Mở menu trình chiếu,"
+   "chu_dich": "Mở menu chiếu phim,"
   },
   {
    "ma": "seg_0063",
    "bat": 157.269,
    "ket": 158.149,
    "chu_goc": "看看视频,",
-   "chu_dich": "Xem chút video,"
+   "chu_dich": "Xem vài đoạn video,"
   },
   {
    "ma": "seg_0064",
    "bat": 158.149,
    "ket": 159.77,
    "chu_goc": "度过悠闲静谧的夜晚,",
-   "chu_dich": "Đã qua một đêm thư giãn yên tĩnh,"
+   "chu_dich": "Để qua một đêm yên tĩnh thư thái,"
   },
   {
    "ma": "seg_0065",
@@ -485,14 +485,14 @@
    "bat": 164.776,
    "ket": 171.524,
    "chu_goc": "第二天一早,小美早早醒来,拉开四周的窗帘,看看室外的美丽风景,随后带着狗子出门溜达。",
-   "chu_dich": "Sáng sớm hôm sau, Tiểu Mỹ thức dậy sớm, vén rèm cửa bốn phía, ngắm phong cảnh đẹp bên ngoài, sau đó dắt con chó đi dạo."
+   "chu_dich": "Sáng hôm sau, Tiểu Mỹ thức dậy sớm, kéo rèm cửa bốn phía, ngắm cảnh đẹp ngoài trời, sau đó dắt chó ra ngoài đi dạo."
   },
   {
    "ma": "seg_0068",
    "bat": 171.524,
    "ket": 173.226,
    "chu_goc": "清晨的空气相当舒爽,",
-   "chu_dich": "Không khí buổi sáng sớm khá dễ chịu,"
+   "chu_dich": "Không khí buổi sáng khá dễ chịu,"
   },
   {
    "ma": "seg_0069",
@@ -506,14 +506,14 @@
    "bat": 174.968,
    "ket": 176.13,
    "chu_goc": "回到帐篷之中,",
-   "chu_dich": "Quay trở lại trong lều,"
+   "chu_dich": "Quay lại trong lều,"
   },
   {
    "ma": "seg_0071",
    "bat": 176.13,
    "ket": 177.431,
    "chu_goc": "小美起过烧油,",
-   "chu_dich": "Tiểu Mỹ đun dầu nóng,"
+   "chu_dich": "Tiểu Mỹ đun dầu để nấu ăn,"
   },
   {
    "ma": "seg_0072",
@@ -527,14 +527,14 @@
    "bat": 178.653,
    "ket": 184.781,
    "chu_goc": "然而此时暴雨又卷土重来,电闪雷鸣下的狗子非常害怕,女人便躲在帐篷里享用早餐。",
-   "chu_dich": "Tuy nhiên lúc này mưa lớn lại trở lại, con chó rất sợ dưới sấm sét, cô ấy thì trốn trong lều ăn sáng."
+   "chu_dich": "Tuy nhiên lúc này mưa lớn lại quay lại, chó rất sợ dưới sấm sét, cô ấy thì trốn trong lều ăn sáng."
   },
   {
    "ma": "seg_0074",
    "bat": 184.781,
    "ket": 190.007,
    "chu_goc": "四周窗户上已经起了水,不过她打算在这里继续生活,露营生活上一段时间。",
-   "chu_dich": "Cửa sổ bốn phía đã đọng nước, nhưng cô ấy định ở lại đây tiếp tục sống, cắm trại thêm một thời gian."
+   "chu_dich": "Cửa sổ bốn phía đã đọng nước, nhưng cô ấy định ở lại đây tiếp tục sống, cắm trại một thời gian."
   }
  ],
  "mau_doc_tay": [
@@ -550,10 +550,9 @@
   73
  ],
  "⚠️ gioi_han": [
-  "BAN NEN qua DUONG SAN PHAM: vong sua TAT, model do `ai.model_cho(DICH_THUAT)`",
-  "chon (= ltt-3.5 / qwen35-api), loi nhac PHIEN_BAN_LOI_NHAC=3, nhiet do 0.2.",
-  "⛔ CHUA cham bang may: bo cham ngu nghia (`qc_ai`) dang trong xuong o lan khac.",
-  "⚠️ Mot phan 'loi dich' la LOI ASR doi lot: nguon co 跳散<-跳伞, 天然霉<-天然酶.",
-  "⇒ Day la DAU VAO de doi chieu, ⛔ khong phai mot ban da nghiem thu."
+  "BAN NEN qua DUONG SAN PHAM, loi nhac v4 (ba nhanh ten rieng — LUAT TAM cua dieu phoi).",
+  "⛔ v4 sua duoc 李宗盛 NHUNG lam hong 首尔 (Seoul -> \"Se-ol\") — xem B2_DICH.md §4h.",
+  "⛔ CHUA cham bang may: bo cham ngu nghia dang trong xuong o lan khac.",
+  "⚠️ Mot phan \"loi dich\" la LOI ASR doi lot — xem §4e va §4i."
  ]
 }
