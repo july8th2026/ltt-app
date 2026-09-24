@@ -12,6 +12,91 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-25 (rạng sáng) — **PostgreSQL bị giết lúc 02:00:14**, và bão lease đã xoá mất bằng chứng
+
+### Sự cố
+
+`postgresql-x64-17` = **Stopped**. Bề mặt **không lộ**: `cloudflared`, `LTTStudioWeb`,
+`LTTStudioWorker` vẫn `Running`, `/` và `/login` vẫn **HTTP 200** — nhưng mọi thao tác
+chạm CSDL đều hỏng. Một làn agent phát hiện khi phép đo của nó chết.
+
+**Bằng chứng nói "bị giết", không phải "dừng sạch":**
+
+- ⛔ không có dòng shutdown trong log PG (một lần dừng có chủ ý luôn ghi
+  `received fast shutdown request`);
+- ⛔ không có event SCM nào trong 15 phút trước đó;
+- `postmaster.pid` **mồ côi** — pid 6184, ghi lúc 24/09 22:03:28, tiến trình đã chết;
+- ⛔ không còn tiến trình `postgres*` nào sống;
+- máy **rảnh** lúc đó (CPU 23 % / 20 lõi, RAM trống 37,8 GiB) ⇒ ⛔ **không phải OOM**.
+
+**Khôi phục:** `Start-Service postgresql-x64-17` → `Running` sau ~50 s (phục hồi crash).
+Xác minh CSDL **thật sự phục vụ**, không chỉ "dịch vụ xanh": các dòng lease lúc 02:05:41
+chứng minh app đang gửi truy vấn và PG đang trả lời.
+
+⚠️ **Nguyên nhân chưa truy được.** Trùng trong vòng ~1 phút với một làn dọn bản ghi khoá
+mồ côi bằng cách "giết cả cây 35 tiến trình". Tương quan mạnh, ⛔ **chưa phải bằng chứng** —
+đã hỏi làn đó dán nguyên văn lệnh kill. `taskkill /T /PID` thì ⛔ không thể chạm postgres;
+giết **theo tên** thì chạm được.
+
+**Thu hẹp thêm bằng một sự VẮNG MẶT:** log `Application` trong 2 giờ trước đó ⛔ **không có**
+`Application Error`, ⛔ không `Windows Error Reporting`, ⛔ không event crash nào của PostgreSQL —
+chỉ có các dòng khởi động lại do chính phiên này gây ra (02:04:10 → 02:04:59). Một postmaster
+**crash** thường để lại WER; một postmaster bị `TerminateProcess` (Stop-Process / taskkill) để lại
+**đúng con số không**. ⇒ Nghiêng mạnh về **bị giết từ bên ngoài**, ⛔ không phải crash, ⛔ không OOM,
+⛔ không dừng sạch.
+
+**Lệnh dọn khoá của làn agent — đã dán nguyên văn và phân tích:** nó duyệt **CHA–CON** từ một khớp
+`CommandLine`, ⛔ **không** khớp theo tên (⛔ không `python*`, ⛔ không `*postgres*`), và
+`Stop-Process -Id` chỉ nhận PID lấy từ phép duyệt. postmaster chạy dưới `services.exe` ⇒ ⛔ không
+thể là hậu duệ. Mốc cũng nghiêng cùng chiều: PG chết 02:00:14, các lượt giết rơi vào ~02:00:25
+(**sau** 11 giây).
+
+⚠️ **Nhưng đường đó ⛔ chưa đóng được:** `$root` trả về **BỐN** pid (`24424 4736 22676 19448`) vì
+`Where-Object` khớp nhiều tiến trình, và ⛔ không pid nào được kiểm trước khi làm gốc duyệt. Một pid
+**đã chết và bị tái dùng** sẽ kéo cả cây của một tiến trình lạ vào danh sách — cây nở ra **35 tiến
+trình**, nhiều hơn dự tính. ⇒ Làn đó ⛔ **không tuyên bố vô can**, và đó là cách báo cáo đúng.
+
+**Quy tắc dọn khoá từ nay** (áp cho mọi phiên): in `CommandLine` của **từng** pid trước khi giết ·
+giết bằng `taskkill /T /PID <một pid ĐÃ XÁC MINH>` · ⛔ **không bao giờ** lấy một **mảng** làm gốc
+duyệt · và ⛔ **từ chối** mọi pid có cha là `services.exe`.
+
+### 🔴 N-47 — `toc_do.hop_le()` kẹp IM LẶNG về `TOC_DO_MAX = 2.0`
+
+Phép mồi của pha B cố ý giãn tới `2,20` để thử xem bộ đo có mù. `toc_do.TOC_DO_MAX = 2.0` và
+`hop_le()` **kẹp im lặng** ⇒ tệp sinh ra ở **2,00**, ⛔ không báo gì. Bị bắt vì chốt chặn đối chiếu
+thời lượng (`gốc / tốc_độ`) loại **12/12** điểm với lệch **đúng 10,0 %** = `2,20 / 2,00`.
+
+⭐ ⛔ Không có chốt ấy thì bảng sẽ có một cột mang nhãn *„2,20“* mà **thực ra là 2,00** — và con số
+đó trông hoàn toàn hợp lý. Đúng họ **„hai trạng thái gộp thành một giá trị“**. Trong sản phẩm nhánh
+này đang **ngủ** (`TRAN_TANG_TOC = 1,15` ⇒ ⛔ không bao giờ chạm 2,0), nên hạng B — nhưng phải kêu.
+
+### ✅ Kết quả dùng được: bộ đo tốc độ **KHÔNG mù**
+
+```
+mức     CER       STOI      n
+1.00   0.0324    0.99135   12
+1.80   0.07305   0.9699    12
+2.20      —         —       0   ⛔ khong dat duoc (bi kep ve 2.00)
+```
+
+`CER(1,80) / CER(1,00) = **2,26×**` ⇒ vòng ASR **có nhìn thấy** méo do kéo giãn. Lo ngại „ASR được
+huấn luyện bất biến với tốc độ (speed perturbation) nên sẽ phẳng lì“ ⇒ **bác bỏ trên dữ liệu của ta**.
+⇒ Đường cong tốc độ **đáng đọc**.
+
+### 🔴 N-46 — `LEASE_RETRY_S` không jitter ⇒ thundering herd đồng pha
+
+`platform_core/job_runner.py:1538` đặt `LEASE_RETRY_S = 20.0`, ⛔ **không jitter**.
+Log PG cho thấy **8+ lần `INSERT` lease `maintenance` trong CÙNG MỘT giây** (02:00:14,
+rồi lặp lại 02:05:40–41) ⇒ khoảng 10 tiến trình khởi động cùng lúc nên đồng hồ 20 s
+**khớp nhau vĩnh viễn**. Mỗi lần là một transaction rollback + một dòng `ERROR` trong log PG.
+
+🔑 **Tác hại đã xảy ra thật, ⛔ không phải giả định:** 30 dòng cuối của log PG ngay tại
+thời điểm sự cố **toàn là rác lease** — tiếng ồn đã đẩy nguyên nhân ra khỏi cửa sổ đọc.
+⭐ Một lỗi "chỉ ồn thôi" đã **mua mất khả năng chẩn đoán** đúng lúc cần nó nhất.
+Thuốc chuẩn của cộng đồng: **jitter ngẫu nhiên** trên khoảng retry.
+
+⛔ Chưa vá — ghi sổ, hạng A.
+
 ## 2026-09-24 (tối) — Deploy wf-v2: cửa OAuth mở, và **production ngừng 7 phút** vì một gói không ai khai
 
 Plan `2026-09-24-wf-v2-MASTER.md` đạt **13/14 phase** — toàn bộ làn P2→P11 đã gộp `main`,
