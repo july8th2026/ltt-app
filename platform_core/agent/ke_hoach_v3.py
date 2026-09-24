@@ -24,7 +24,7 @@ bỏ cả ba: model sinh thẳng hình dạng mà **cổng publish** đọc.
 
 ⛔ **Mô-đun này KHÔNG publish** (spec §12.2: *"Agent không publish: nó ghi
    draft, người dùng xem báo giá rồi bấm publish"*). Nó không import
-   `dinh_nghia`; bánh cóc cơ học `test_2923` ghim rằng không có đường gọi nào
+   `dinh_nghia`; bánh cóc cơ học `test_2933` ghim rằng không có đường gọi nào
    từ đây tới `xuat_ban*`.
 """
 from __future__ import annotations

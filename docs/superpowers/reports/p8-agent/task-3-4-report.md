@@ -7,7 +7,7 @@
 phép**, và `get_handoff_destinations(agent)` đọc ngược tập quyền **từ những
 công cụ có thật trong đồ thị** (`tool.metadata[METADATA_KEY_HANDOFF_DESTINATION]`),
 không từ một bảng khai song song. ⇒ Quyền là một **sự kiện về mã**, đo được.
-Đó là hình dạng `HANH_DONG` + `test_2923`.
+Đó là hình dạng `HANH_DONG` + `test_2933`.
 
 ## Task 3 — `platform_core/agent/supervisor.py`
 
@@ -46,7 +46,7 @@ READY là bỏ qua `retry.max`, backoff và `_khoa_idem` theo lượt.
    ⛔ Không đăng ký một cửa luôn từ chối: một hành động **vắng mặt** đọc được,
    một cửa giả thì không (nợ §5 của plan sinh ra đúng từ những cửa như thế).
 
-## Task 4 — `tests/test_2923_banh_coc_hanh_dong_cam.py`
+## Task 4 — `tests/test_2933_banh_coc_hanh_dong_cam.py`
 
 Dựng đồ thị gọi bằng `ast` trên **toàn bộ** `platform_core/` (giải bí danh
 `import`, cả import trong thân hàm), BFS từ `supervisor.HANH_DONG` +
@@ -81,9 +81,9 @@ Mỗi ca có **vế đối chứng**: bản thật không có cạnh ấy.
 ## Đỏ trước / xanh sau
 
 ```
-test_2922: 3 failed, 15 passed   (settings đặt sai tầng; `WorkflowRun` không có `updated_at`)
-test_2922: 18 passed in 4.82s
-test_2923: 10 passed in 9.93s    (gồm 4 ca tiêm lỗi — bánh cóc cắn)
+test_2932: 3 failed, 15 passed   (settings đặt sai tầng; `WorkflowRun` không có `updated_at`)
+test_2932: 18 passed in 4.82s
+test_2933: 10 passed in 9.93s    (gồm 4 ca tiêm lỗi — bánh cóc cắn)
 ```
 
 ## Chưa làm được / không phủ

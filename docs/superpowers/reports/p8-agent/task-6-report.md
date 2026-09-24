@@ -6,7 +6,7 @@
 
 ## Kết quả: **4/6 thành phần**, và hai cái thiếu là phép đo
 
-`tests/test_2925_flow_g.py` — 5 passed in 1,84 s.
+`tests/test_2935_flow_g.py` — 5 passed in 1,84 s.
 
 | Thành phần | Trạng thái |
 |---|---|
@@ -48,7 +48,7 @@ uoc token:            ~5 081
    đo thật sẽ vi phạm luật ấy. Một CSDL scratch cũng không thay được: bản khai
    provider/khoá API sống ở CSDL production. ⇒ Chất lượng đồ thị `ltt-3.5` sinh
    ra **chưa có số**, và bộ test này **không** nói gì về nó.
-2. ⚠️ **`tools/chay_test_pg.py` KHÔNG làm `test_2921`/`test_2922` chạy trên
+2. ⚠️ **`tools/chay_test_pg.py` KHÔNG làm `test_2931`/`test_2932` chạy trên
    PostgreSQL.** Chạy thử ra `33 passed`, nhưng fixture `db`
    (`tests/test_1711_wf_luoc_do_dong_co.py:8`) **ghi đè** `LTT_DATABASE_URL`
    bằng một tệp SQLite — nên con số ấy là một phép đo **đọc thứ đại diện**.

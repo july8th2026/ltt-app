@@ -1,6 +1,6 @@
 """Supervisor (spec §12.4) — hành động **có luật**. Plan wf-v2 P8 Task 3.
 
-Bánh cóc *"hành động cấm không có đường gọi"* là **Task 4** (`test_2923`, đọc
+Bánh cóc *"hành động cấm không có đường gọi"* là **Task 4** (`test_2933`, đọc
 AST). Tệp này đo phần còn lại: mỗi hành động ĐƯỢC PHÉP có đúng luật của nó, và
 mỗi lần TỪ CHỐI **không đổi gì** ngoài một dòng nhật ký.
 

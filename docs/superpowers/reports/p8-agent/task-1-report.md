@@ -24,13 +24,13 @@
 ## Đỏ trước / xanh sau
 
 ```
-ERROR tests/test_2920_planner_draft_v3.py
+ERROR tests/test_2930_planner_draft_v3.py
 E   ImportError: cannot import name 'ke_hoach_v3' from 'platform_core.agent'
 1 error in 0.97s
 ```
 
 ```
-tests/test_2920_planner_draft_v3.py ...............   [100%]
+tests/test_2930_planner_draft_v3.py ...............   [100%]
 15 passed in 0.86s          (chạy lại SAU khi gộp `main` 054a67c8: 15 passed)
 ```
 

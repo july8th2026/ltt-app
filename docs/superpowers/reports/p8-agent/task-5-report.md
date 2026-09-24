@@ -30,21 +30,21 @@ tưởng nó sống.
 | Tệp | `apps/agent/routes/assistant.py` · `sharing.py` · `library.py` |
 | Hàm | `workflows._snapshot` / `snapshots` / `restore_snapshot` · tham số `save(reason=…)` · `_shared._active_share` / `_assistant_serializer` / `_ASSISTANT_SALT` |
 
-**CÒN SỐNG** (đối chứng trong `test_2924`): `/api/workflows` GET/POST,
+**CÒN SỐNG** (đối chứng trong `test_2934`): `/api/workflows` GET/POST,
 `/api/workflows/{id}` GET/PUT — kho lưu trữ Canvas v2 mà `tools/mobile_qa.py`
 và `tools/agent_browser_server.py` còn dùng — và cửa mới
 `POST /api/v3/workflows/{id}/soan`.
 
 ⛔ **Không xoá bảng, không xoá dữ liệu.** `agent_workflow_shares` /
 `agent_workflow_snapshots` ở lại: xoá bảng là thao tác **không đảo được** và
-cần migration (ngoài ranh giới làn). `test_2924` chốt rằng **không còn đường
+cần migration (ngoài ranh giới làn). `test_2934` chốt rằng **không còn đường
 ghi** nào vào `AgentWorkflowShare` trong `apps/`+`platform_core/`+`server/`.
 
 ## Đỏ trước / xanh sau
 
 ```
-tests/test_2924_dong_cua_cum_v2.py   7 failed in 3.08s      (trước khi xoá)
-tests/test_2924_dong_cua_cum_v2.py   7 passed in 3.03s
+tests/test_2934_dong_cua_cum_v2.py   7 failed in 3.08s      (trước khi xoá)
+tests/test_2934_dong_cua_cum_v2.py   7 passed in 3.03s
 lan toả: 1352 passed, 32 skipped in 68,33 s
    (core:wf_soan 63 tệp + test_292x + test_96/97/101/131/86/211)
 ```
