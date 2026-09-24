@@ -1012,14 +1012,53 @@ B NGAN hon A : 18/27      bang nhau : 3/27      B DAI hon : 6/27
 > mức cụ thể, ⛔ đừng thêm chi tiết"* đẩy nhánh B **ngắn lại một cách hệ thống**
 > ⇒ người chấm có thể đoán nhánh bằng **độ dài**, ⛔ không bằng chất lượng.
 >
+> ## 🔑 ⚠️ `0,875` ÁP CHO **ĐOẠN ĐƯỢC SỬA**, ⛔ KHÔNG CHO TOÀN BẢN DỊCH
+>
+> ⛔ **Đừng trích con số này rộng ra.** `QUY_TAC_Y_CANH` **chỉ** được chèn khi lô
+> thật sự có đoạn mang `y_canh` ⇒ nó **chỉ** chạm những đoạn **bị gắn cờ và được
+> dịch lại**. Đường **thường** ⛔ **không** đổi một byte nào — lời nhắc FLORES
+> **y hệt** ở v3 và v4.
+>
+> ⇒ ⭐ **Bán kính ảnh hưởng = tỉ lệ đoạn bị gắn cờ**, ⛔ không phải 100 % bản dịch.
+> ⚠️ Điều phối đã suýt trích nó rộng ra (*"v4 đẩy ta về phía mất ~8 điểm
+> chrF++"*) và **đã rút**.
+>
+> ⭐ Và bán kính nhỏ ⛔ **không phải may**: nó nhỏ **vì bản vá có phạm vi chặt** —
+> một luật **chỉ bật khi có dữ liệu cần nó**, và **có phép kiểm gác** đúng điều
+> đó (`test_quy_tac_TEN_RIENG_chi_ra_khi_dich_VI` cùng khuôn). ⇒ **Tính chất
+> đáng giữ**, ⛔ không phải một chi tiết.
+>
 > ⇒ ⛔ **Phải báo TRƯỚC khi chấm** — đúng ràng buộc điều phối đặt ra, và lần này
 > nó **bắt được một cái thật**. ⛔ Đừng đọc phán quyết v4 như một phép mù sạch.
 
-⇒ Ba đường đi, ⛔ làn này ⛔ không tự chọn:
-1. **chấm v4 như cũ**, và **trừ** phần người chấm có thể đoán bằng độ dài;
-2. **cân độ dài**: chỉ giữ các cặp có `|len(A) − len(B)| ≤ 1` (⇒ `n` nhỏ hơn);
-3. **sửa lại câu cấm** cho nó ⛔ không kéo độ dài (⚠️ lại một vòng sửa lời nhắc —
-   và §4c cảnh báo mỗi vòng là một lượt đo lại **cả tập**).
+### ✅ Đã xử: **cân theo CHIỀU**, ⛔ không lọc theo ĐỘ LỚN
+
+Điều phối chọn *"lọc `|len(A) − len(B)| ≤ 1`"*. **Đã làm và ĐỎ:**
+
+```
+loc |dif| <= 1 :  15/27 cap · 5/9 doan · B ngan hon 12/15 = 80 %  ⛔ TE HON goc (67 %)
+loc |dif| == 0 :   3/27 cap · 1/9 doan ·                     0 %  ⛔ het luc thong ke
+loc |dif| <= 2 :  24/27 cap · 8/9 doan ·                    62 %
+```
+
+> 🔑 **Rò rỉ nằm ở CHIỀU, ⛔ không ở ĐỘ LỚN.** Lọc theo độ lớn giữ lại **đúng**
+> những cặp *"B ngắn hơn một từ"* ⇒ nó **cô đặc** chiều thay vì xoá nó.
+
+⇒ **Đường 2′ — cân theo chiều** (số cặp B-ngắn = số cặp B-dài):
+
+```
+6 cap B-ngan + 6 cap B-dai + 3 cap bang = 15 cap · 8/9 doan
+doan "ngan hon = B" dung 6/15 = 40 %      (50 % = mu that)
+```
+
+⚠️ **Thiên lệch còn lại, phải khai:** cặp ⛔ **không đều** giữa các đoạn (1–3
+cặp/đoạn) ⇒ một đoạn nặng 3 phiếu, một đoạn nặng 1. ⇒ ⛔ **Đừng đọc *"số cặp
+thắng"* thành *"số đoạn thắng"*** — chấm **theo ĐOẠN**.
+
+⚠️ Và bộ lọc `≤ 1` (đã bỏ) thiên lệch chọn mẫu **rõ**: giữ **trọn 5** đoạn, bỏ
+**trọn 4**, các đoạn bị bỏ đều **dài hơn** (trung vị **13** vs **8** từ).
+
+⭐ Tập **chưa cân** giữ nguyên ở `b2_ab_y_canh_v4/` — ⛔ không xoá.
 
 ## 7.9 🔴 Đo lại sau khi ghim — **một hoá đơn tự đóng, một thì không**
 
