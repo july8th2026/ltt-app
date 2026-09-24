@@ -157,6 +157,58 @@ do **cờ tính năng** `LTT_AUTO_SCAN_VIDEO`, và bật cờ đó **là mở ch
 §24 của đề bài cấm. ⇒ Việc còn mở đúng là *"chốt trên tên miền thật — **chờ chủ
 dự án cho mở khách**"*, không phải *"chờ bảng"*.
 
+## 2d. ⭐ ĐỔI HƯỚNG (chủ dự án, 24/09) — thang ĐO TỪNG BƯỚC thay cho lượt đầy-chuỗi
+
+⛔ **Dừng sau lượt C. KHÔNG chạy D và E.**
+
+### Vì sao đổi — và lý do khớp với chính dữ liệu làn này đo được
+
+Một lượt đầy-chuỗi mất **67 phút** và trả về một mớ lỗi ở **nhiều tầng cùng lúc**;
+nó **không** nói được mắt xích nào là gốc:
+
+| lượt | kết quả | nó chứng minh được gì |
+|---|---|---|
+| A | `error` ở `content_process` | một **tiền đề chưa khai** (N-06) |
+| B | `done` | *"chuỗi chạy được"* — kèm **85** khiếm khuyết còn lại (N-01) |
+
+Cả hai đều là *"chuỗi chạy được"* mà **không** là *"từng bước đúng"*. Một phép đo
+đầu-cuối trả lời câu *"có ra tệp không"*; nó không trả lời *"bước nào sai"*.
+
+### Hướng mới
+
+Siết **từng mắt xích một**, theo thứ tự, và mỗi bước phải **thật sự đạt** rồi mới
+sang bước sau. Trước khi đo mỗi bước: soát mã vận hành của bước đó (tối ưu chưa,
+logic kín chưa) và **tra cộng đồng GitHub** xem có phương án tốt hơn (hợp đồng §1b,
+`CLAUDE.md` luật 10). Khi mọi bước đã đạt thì chạy thông cả hệ là xong.
+
+### Cái gì của làn này dùng lại — và hai thứ quý nhất
+
+| dùng lại | vì sao nó cần cho thang mới |
+|---|---|
+| `fx.card_cho_job` + `fx.ghim_python_co_card` | ⭐ mỗi bench đo **SẢN PHẨM**, không đo khuôn (K-01, K-05) |
+| `fx.KhoaTheoPha` | ⭐ chạy bench liên tục mà **không chặn cả máy** (K-02) |
+| `fx.khai_card`, `fx.bang_vong_sua` | phán quyết thay cho hai danh sách |
+| `_ten_an_toan`, khối đo bọc `try` | một lỗi trong mã đo không xoá kết quả |
+
+### Việc phải làm, thứ tự
+
+1. **Tách khuôn thành từng bước gọi riêng được** — chạy **một** giai đoạn trên một
+   tệp đầu vào có sẵn. ⛔ Hiện muốn đo `transcribe` phải đi qua `media_prepare` +
+   `audio_prepare` trước: **3 phút để đo một bước 20 giây**.
+2. **Hợp đồng vào/ra của mỗi bước**, để về sau xen bước mới vào giữa mà không phải
+   sửa các bước khác. ⛔ Ghi cái **thấy trong mã**, **không** thiết kế lại — bản đồ
+   thật trước, kể cả chỗ nó xấu.
+3. **Bước đầu tiên: `transcribe`** (văn bản nguồn). Mọi thứ sau nó đứng trên nó.
+
+### Hoãn CÓ CHỦ Ý — không phải bỏ quên
+
+* **N-06** (AUTO_MATCH đòi nguồn có tiếng nói) → trả lời ở **bước hồ sơ giọng**.
+* **N-07** (`so_canh = 1`) → trả lời ở **bước cắt cảnh**.
+
+⛔ Và **giữ nguyên** mọi bằng chứng đã có: `NT_CUOI_A.md`, `NT_CUOI_B.md`, bảng bốn
+dòng, N-01…N-07. Lượt B vẫn là **bằng chứng đầu-cuối đầu tiên** của vòng sửa, và
+N-01 vẫn là lỗi **chặn mở khách**.
+
 ## 3. Kết quả lượt thật
 
 Bằng chứng từng lượt: `bang_chung/NT_CUOI_<lượt>.md`.
