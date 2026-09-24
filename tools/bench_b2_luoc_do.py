@@ -47,18 +47,33 @@ NGUON = GOC / "docs/auto_scan_video_final/bang_chung/b1_chep_loi_moi"
 
 
 def mot_lo(db, lo: list[dict], tat_ca: list[dict], *, mid: str,
-           temp: float) -> dict:
+           temp: float | None) -> dict:
+    """`temp is None` ⇒ ⛔ **khong gui truong `temperature`** — dung nhu DUONG
+    SONG lam: `giai_doan_noi_dung.py:217` goi `ai.goi_tinh_tien` ⛔ khong truyen
+    `temperature`, `cong_vlm.py:341` chi dat truong khi no khac `None`.
+    ⇒ o cau hinh nay model chay bang **mac dinh cua cong may B**, mot so ⛔
+    khong khai o dau trong cay nay."""
     from platform_core.llm import dieu_phoi
 
     from apps.auto_scan_video import ai, long_tieng as L
 
     msg = L.loi_nhac(lo, tat_ca=tat_ca, ngon_ngu_goc="zh",
                      dac_diem_giong={}, ngon_ngu_dich="vi")
+    # 🔴 **Tran token ra va timeout PHAI lay tu `ngan_sach_cho`, ⛔ khong phai
+    #    `tran_token_ra()`.** Duong SONG di qua `ai.goi_tinh_tien`, va ham do
+    #    lay `tran, cho = ngan_sach_cho(thao_tac)` (`ai.py:774`) ⇒ **16 384**,
+    #    ⛔ khong phai 32 768 cua `tran_token_ra()`.
+    # ⚠️ Ban dau tep nay xin `tran_token_ra()`, va `B2_DICH.md` §7.3 da suy tu
+    #    con so do rang "⛔ khong phai cut, vi tran ra la 32 768". Tran THAT cua
+    #    san pham chi bang MOT NUA. Do lo 12 doan: token ra ~2,8-5,0k
+    #    (`L_LLM_CONG.md` §3) ⇒ ⛔ ca hai tran deu KHONG cham, nen ket luan
+    #    "khong phai cut" van dung — nhung no dung vi so do, ⛔ khong vi 32 768.
+    tran, cho = ai.ngan_sach_cho(ai.CHUYEN_LOI_THOAI)
     kq = dieu_phoi.goi(db, messages=msg,
                        thu_tu_provider=list(ai.THU_TU_PROVIDER),
                        model_theo_provider={p: mid for p in ai.THU_TU_PROVIDER},
-                       temperature=temp, max_tokens=ai.tran_token_ra(),
-                       timeout_s=600.0)
+                       temperature=temp, max_tokens=tran,
+                       timeout_s=float(cho or 300.0))
     noi = getattr(kq, "noi_dung", None) or getattr(kq, "content", "")
     ma_lo = {d["ma"] for d in lo}
     try:
@@ -80,7 +95,7 @@ def mot_lo(db, lo: list[dict], tat_ca: list[dict], *, mid: str,
             "ma_bia_them": len(thua), "hinh_dang": "bang khoa theo ma ✅"}
 
 
-def chay(*, model: str, moi_lo: int, temp: float, phim: str,
+def chay(*, model: str, moi_lo: int, temp: float | None, phim: str,
          so_lo: int) -> dict:
     import platform_core.db as dbmod
     from platform_core.llm import canonical
@@ -104,7 +119,9 @@ def chay(*, model: str, moi_lo: int, temp: float, phim: str,
     nhan = sum(k["nhan"] for k in ket)
     return {
         "model": model, "model_id": mid, "moi_lo": moi_lo,
-        "temperature": temp, "phim": phim, "so_lo": len(ket),
+        "temperature": ("⛔ KHONG GUI (mac dinh cong may B) — dung nhu duong song"
+                        if temp is None else temp),
+        "phim": phim, "so_lo": len(ket),
         "tong_gui": gui, "tong_nhan": nhan, "tong_thieu": gui - nhan,
         "ti_le_nhan": round(nhan / max(1, gui), 4),
         "so_lo_vi_pham_luoc_do": sum(1 for k in ket
@@ -118,17 +135,24 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--model", default="ltt-3.8")
     ap.add_argument("--lo", type=int, default=12)
+    # ⭐ `--temp -1` ⇒ ⛔ KHONG gui truong `temperature`, tuc **dung cau hinh
+    #    DUONG SONG**. ⛔ Dung doc `-1` la "nhiet do am".
     ap.add_argument("--temp", type=float, default=0.0)
     ap.add_argument("--phim", default="v1")
     ap.add_argument("--so-lo", type=int, default=3)
     ap.add_argument("--ra", default="")
     a = ap.parse_args(argv)
-    kq = chay(model=a.model, moi_lo=a.lo, temp=a.temp, phim=a.phim,
+    temp = None if a.temp < 0 else a.temp
+    kq = chay(model=a.model, moi_lo=a.lo, temp=temp, phim=a.phim,
               so_lo=a.so_lo)
     if a.ra:
         d = Path(a.ra)
         d.mkdir(parents=True, exist_ok=True)
-        (d / f"luocdo_{a.model}_lo{a.lo}_t{a.temp}.json").write_text(
+        # 🔴 **`phim` PHAI nam trong ten tep.** Thieu no thi hai luot khac phim
+        #    cung cau hinh de len nhau va ban ghi cua luot truoc bien mat —
+        #    ⛔ khong mot canh bao nao.
+        nhan = "congmacdinh" if temp is None else f"t{a.temp}"
+        (d / f"luocdo_{a.model}_{a.phim}_lo{a.lo}_{nhan}.json").write_text(
             json.dumps(kq, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"{kq['model']} · lo {kq['moi_lo']} · temp {kq['temperature']} · "
           f"{kq['so_lo']} lo")

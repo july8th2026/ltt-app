@@ -109,14 +109,19 @@ def _dich_duong_song(cau_list: list[str], *, ghim_model: str = "") -> dict:
     ra: dict = {}
     db = next(dbmod.get_session())
     try:
-        # 🔴 **`moi_lo=LO_NHO` chu khong phai 12 (`long_tieng.DOAN_MOI_LO`) — va
-        #    do la MOT KET QUA, khong phai mot tien nghi.** Do that 24/09: loi
-        #    nhac DUONG SONG x `ltt-3.5`, lo 12 doan ⇒ model tra ve **1/12**
-        #    (`ThieuDoan: thieu 11 doan`), du tran token ra la 32 768 nen ⛔
-        #    khong phai cut. ⇒ 3.5 khong gánh noi luoc do 4 truong
-        #    (`chu`+`cam_xuc`+`kieu_noi`+`nhan_manh`) + `ke_ben` o co lo san pham.
-        # ⚠️ Con so nay phai di vao §6.2: neu 3.5 khong lam duoc viec o co lo
-        #    that thi "20x dat hon" ⛔ khong con la mot lua chon tu do.
+        # 🔴 **`moi_lo=LO_NHO` chu khong phai 12 (`long_tieng.DOAN_MOI_LO`).**
+        #
+        # ⚠️ **Ly do GOC cua dong nay DA BI BAC** (`B2_DICH.md` §7.5). No tung
+        #    ghi: *"lo 12 ⇒ 3.5 tra ve 1/12 ⇒ 3.5 khong gánh noi luoc do o co lo
+        #    san pham"*. Do lai voi `temperature` GHIM: cung model, cung lo 12,
+        #    cung luoc do ⇒ **83/83 doan, 0 lo hong**. Thu phạm la duong song
+        #    ⛔ **khong ghim `temperature`** (cong may B ap 1.0) — ⛔ khong phai
+        #    co lo, ⛔ khong phai nang luc model.
+        #
+        # ⭐ Lo 4 GIU LAI, nhung vi mot ly do KHAC va phai noi ra: tep nay do
+        #    **ten rieng**, va mot lo hong o day lam mat ca mot cum ca kiem. Lo
+        #    nho ha ty le mat mau. ⛔ No ⛔ khong con la bang chung ve nang luc
+        #    cua model.
         for lo in L.chia_lo(doan, moi_lo=LO_NHO):
             ra.update(_mot_lo(db, lo, doan, ban_do))
     finally:

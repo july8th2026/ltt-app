@@ -101,6 +101,11 @@ nó**. Đó là căn cứ cho Bước 2.
 
 ## 7.3 ⚠️ Một phát hiện NGOÀI dự kiến, và nó thuộc về câu 3.5-vs-3.8
 
+> 🔴 **ĐÃ BỊ BÁC — đọc §7.5 trước.** Con số `1/12` dưới đây có thật, nhưng
+> nguyên nhân ⛔ **không phải** *"3.5 không gánh nổi lược đồ"*: đường sống
+> ⛔ **không ghim `temperature`** và cổng máy B áp `1.0`. Ghim nhiệt độ ⇒
+> cùng model, cùng lô 12, cùng lược đồ: **83/83, 0 lô hỏng**.
+
 Ở **cỡ lô sản phẩm** (`long_tieng.DOAN_MOI_LO = 12`), lời nhắc đường sống ×
 `ltt-3.5` trả về **1/12 đoạn** (`ThieuDoan: thiếu 11 đoạn`) — ⛔ **không** phải
 cụt, vì trần token ra là **32 768**. Một lượt khác trả `doan` là **một MẢNG**,
@@ -117,6 +122,106 @@ Hạ xuống **4 đoạn/lô** thì ổn định: **14/14 đoạn, 0 thiếu, 0 
 > ⚠️ ⛔ **Chưa kết luận:** ta ⛔ **chưa** đo `ltt-3.8` trên cùng phép thử (3.8
 > đang nhường). Có thể 3.8 cũng bỏ đoạn, và lúc đó vấn đề là **lược đồ**, ⛔
 > không phải model. Đó là phép đo **đầu tiên** phải chạy khi có suất 3.8.
+
+## 7.5 🔴 PHÉP LƯỢC ĐỒ — và nó **lật** §7.3. Thủ phạm là `temperature`, ⛔ không phải model, ⛔ không phải lược đồ
+
+> ⛔ **Đọc mục này trước §7.3.** §7.3 kết luận *"`ltt-3.5` không gánh nổi lược đồ
+> ở cỡ lô thật"* từ **một** lượt trả `1/12`. Phép đo dưới đây cho thấy con số ấy
+> **có thật**, nhưng nguyên nhân ⛔ **không phải** thứ §7.3 quy cho.
+
+### Cái §7.3 không biết: đường sống **không ghim `temperature`**
+
+```
+giai_doan_noi_dung.py:217   ai.goi_tinh_tien(...)        ⛔ KHONG truyen temperature
+ai.py:775                   goi(..., temperature=None)
+cong_vlm.py:341             chi dat khoa khi khac None   ⇒ than request KHONG mang temperature
+```
+
+⇒ Cổng máy B áp mặc định của chính nó. Làn `llm-cong` đã đo và ghi con số đó:
+**`--temp 1.0`** cho **cả hai** hồ sơ `qwen35-api`/`qwen38-api`
+(`L_LLM_CONG.md` §4a, `llama-swap.yaml` trên máy B).
+
+🔑 ⇒ Mọi số dịch của đường sống từ trước tới nay — **kể cả 9/13 và 8/13 ở §7.1** —
+là số của **`temperature ≈ 1,0`**, ⛔ không phải của `0,2` như §7.1 ghi. §7.1 ghim
+`0,2` ở **bench**, nhưng bench đi qua `dieu_phoi.goi` với `temperature` truyền
+tường minh, còn **sản phẩm thì không truyền**. Hai cấu hình khác nhau.
+
+### Phép đo — MỘT biến, và biến đó là `temperature`
+
+`tools/bench_b2_luoc_do.py --temp -1` ⇒ ⛔ **không gửi** trường `temperature`,
+tức **đúng cấu hình đường sống**. Mọi thứ khác giữ nguyên: lời nhắc
+`long_tieng.loi_nhac` y nguyên · `long_tieng.chia_lo(moi_lo=12)` · cùng bản chép
+lời `b1_chep_loi_moi/` · cùng `ltt-3.5`.
+
+| phim | `temperature` | lô hỏng | đoạn nhận | vi phạm lược đồ |
+|---|---|---|---|---|
+| v1 | ⛔ **không gửi (SẢN PHẨM)** | **3/7** | 47/83 | 3 |
+| v1 | ghim **0,0** | **0/7** | **83/83** | 0 |
+| v1 | ghim **0,2** | **0/7** | **83/83** | 0 |
+| v2 | ⛔ **không gửi (SẢN PHẨM)** | **6/7** | 25/74 | 3 |
+| v2 | ghim **0,0** | **2/7** | 51/74 | 1 |
+
+```
+ghim nhiet do   2/21 lo hong   =  9,5 %
+SAN PHAM        9/14 lo hong   = 64,3 %      Fisher mot phia p = 0,0011
+```
+
+⭐ *"Lô hỏng"* ở đây là **theo nghĩa sản phẩm**: vi phạm lược đồ **hoặc** thiếu
+đoạn — vì `long_tieng.doc_chuyen` ném `ThieuDoan` cho cả hai (`long_tieng.py:240`).
+
+### ⇒ Trả lời ba kết cục §7.3 đặt ra: ⛔ **không kết cục nào**
+
+Ba kết cục §7.3 viết ra đều giả định biến là **model**. Biến thật là một **núm
+chưa ai ghim**:
+
+| §7.3 hỏi | câu trả lời đo được |
+|---|---|
+| 3.8 đủ 12 · 3.5 rơi ⇒ *"20× là giá của việc chạy được"* | ⛔ **SAI** — `ltt-3.5` giữ đủ **83/83** ở lô 12 khi `temperature` được ghim |
+| cả hai rơi ⇒ vấn đề là **lược đồ** | ⛔ **SAI** — cùng lược đồ, cùng lô 12, cùng model: 0/7 hỏng khi ghim |
+| 3.5 cần hạ cỡ lô | ⛔ **Không cần.** `bench_b2_ten_rieng.LO_NHO = 4` ra đời từ tiền đề §7.3 — tiền đề ấy nay đổ |
+
+🔴 **Và điều này chạm KHÁCH, không chỉ chạm phép đo:** đường sống hôm nay chạy
+`ltt-3.8` **không ghim `temperature`**. Nếu `ltt-3.8` cũng nhạy như `ltt-3.5`
+thì một phần lô hỏng mà khách gặp là **cái núm này**, ⛔ không phải model.
+
+### ⚠️ Ghim `temperature` ⛔ KHÔNG phải một liều thuốc — nó chỉ **giảm**
+
+`v2 × ghim 0,0` vẫn **2/7 lô hỏng** (một lô trả `doan` là **MẢNG**, một lô trả
+`1/12`). ⇒ ⛔ Đừng đọc bảng trên thành *"ghim 0,0 là xong"*. Hai điều còn đúng:
+
+1. ⭐ **Phim v2 khó hơn v1 ở CẢ HAI cấu hình** (6/7 vs 3/7 ở sản phẩm; 2/7 vs 0/7
+   khi ghim) ⇒ ⛔ dữ liệu cũng là một biến, và `n = 2` phim ⛔ không đủ để tách nó.
+2. Làn `llm-cong` đã đo: ⛔ **`temperature = 0` KHÔNG làm lượt tái lập được**
+   (5 kết quả khác nhau / 5 lượt — `L_LLM_CONG.md` §4b; cơ chế: `-np 3` +
+   continuous batching + `--spec-type draft-mtp`). ⇒ Ghim nhiệt độ mua **độ bám
+   lược đồ**, ⛔ **không** mua tính tất định.
+
+⇒ Đường sửa đúng cho lược đồ vẫn là thứ `L_LLM_CONG.md` §3 đã chỉ:
+**grammar / `response_format`**, hoặc một **vòng thử lại** ở mức lô. Ghim
+`temperature` là một bước **rẻ và đo được**, ⛔ không phải bước cuối.
+
+### ⚠️ Hai lỗi của chính tôi trong lượt này — khai thẳng
+
+1. 🔴 **Suýt kết tội `temperature` từ n = 3 lô.** Lượt đầu: `0,2` hỏng 1/3 lô,
+   `0,0` hỏng 0/3 ⇒ *"0,0 chữa được"*. Nới lên 7 lô: **cả hai đều 0/7**. Ba lô
+   ⛔ không phân biệt được một biến cố ~10 %. Đúng bài học
+   *"chạy lại một phép kiểm đỏ không phải bằng chứng"* — phải hỏi **tỉ lệ hỏng
+   nội tại** trước. Kết luận thật chỉ đứng được khi cấu hình **sản phẩm** vào cuộc.
+2. **Bench xin sai trần token ra.** Tệp này ban đầu xin `ai.tran_token_ra()`
+   = **32 768**, còn đường sống đi qua `ai.goi_tinh_tien` → `ngan_sach_cho`
+   = **16 384** (`ai.py:774`). §7.3 đã suy từ con số 32 768 rằng *"⛔ không phải
+   cụt"*. Đã sửa bench về trần sản phẩm. ⭐ Kết luận *"không phải cụt"* **vẫn
+   đúng** — token ra đo được của một lô 12 đoạn là ~2,8–5,0 k (`L_LLM_CONG.md` §3),
+   ⛔ không chạm trần nào — nhưng nó đúng **vì số đó**, ⛔ không vì 32 768.
+
+### 🔴 Việc cần điều phối xếp: ghim `temperature` cho `chuyen_loi_thoai`
+
+⛔ **Làn này không tự sửa** — `giai_doan_noi_dung.py` là đường **chạm khách** và
+nằm ngoài phạm vi đã giao. Số để mang đi: **9,5 % so với 64,3 % lô hỏng**, giá
+của bản sửa là **một tham số**, và ⛔ nó **không** đổi model, ⛔ không đổi lời
+nhắc, ⛔ không đụng sổ sách.
+
+⚠️ **Cần một số hiệu `N-xx`** (sổ dùng chung — ⛔ làn này không tự đặt).
 
 ## 7.4 ⇒ Bước 2 và Bước 3: ⛔ CHƯA làm
 
