@@ -1275,3 +1275,84 @@ hình). ⛔ Tôi ⛔ không tự dựng sidecar trên máy production.
 ⭐ Lưu ý phạm vi: §20.1–20.2 trả lời *"gộp có làm giọng TRÔI không"* (⛔ không).
 Nó ⛔ **không** trả lời *"gộp làm TRÀN khe tăng hay giảm"* — đó vẫn là câu mở, và dấu
 của nó ⛔ **không đoán được**.
+
+---
+
+## 21. ⭐ PHÂN PHỐI HỆ SỐ NÉN — số quyết định, và nó ⛔ KHÔNG đạt tiêu chí
+
+> ⚠️ **Phạm vi:** đây là **ước tính giải tích**, ⛔ không phải đo trên tiếng thật. Nó đứng
+> trên **một** giả định: tốc độ nói **⛔ không đổi** theo độ dài khe (`3,284` âm tiết/giây,
+> đo trên 18 đoạn TTS thật). ⭐ Phép đo **tràn khe bằng TTS thật** vẫn là thứ **kiểm chứng**
+> nó — chỉ là nó ⛔ **không chặn** quyết định.
+
+### 21.1 Bảng chính
+
+`hệ số nén cần = (số âm tiết / 3,284) / độ dài khe`
+
+| cách | khe | trung vị | p75 | p90 | **p95** | max | **% cần nén > 1,15** |
+|---|---|---|---|---|---|---|---|
+| ⛔ không gộp | 187 | 1,193 | 1,443 | 1,690 | 1,865 | 2,41 | **55,6 %** [0,48 ; 0,63] |
+| gộp ≤2 | 124 | 1,100 | 1,333 | 1,563 | 1,743 | 2,07 | 41,9 % |
+| gộp ≤3 | 105 | 1,075 | 1,264 | 1,546 | 1,628 | 1,93 | 33,3 % |
+| **gộp ≤5** | 83 | **1,070** | 1,171 | 1,424 | **1,559** | 1,81 | **26,5 %** [0,18 ; 0,37] |
+| ~~gộp TỰ DO~~ | 59 | 1,020 | 1,100 | 1,141 | **1,171** | 1,50 | ~~5,1 %~~ 🔴 **LOẠI** |
+
+### 21.2 🔴 `gộp TỰ DO` đạt tiêu chí — bằng cách **suy biến**
+
+Nó gần chạm đúng thứ điều phối đặt ra (`p90 = 1,141 ≤ 1,15`, p95 `1,171`). ⛔ Nhưng:
+
+```
+khe dài nhất  189,96 s      ·  gộp nhiều nhất 74 khe vào MỘT
+văn bản dài nhất 3.535 ký tự  >  TRAN_MOI_LUOT_SINH = 1.500
+```
+
+⇒ 🔴 Nó **vượt trần chất lượng của chính máy đọc** ⇒ `doc_mot_doan` sẽ **từ chối**
+(`giong_noi.py:258-262`, *"⛔ KHONG tu chia nho"*). Và một khe **190 giây** ⛔ không khác
+bản đối chứng *"gộp tất"* bao nhiêu về bản chất.
+
+⭐ Đây đúng là thứ **cặp cổng §13.2** sinh ra để bắt — và nó vừa bắt được, trên chính
+phân tích của tôi. ⇒ ⛔ **Đừng đọc dòng `5,1 %`.**
+
+### 21.3 Phán quyết: tiêu chí ⛔ KHÔNG đạt ở bất kỳ mức DÙNG ĐƯỢC nào
+
+```
+điều phối: "p95 <= 1,15  ⇒  gộp MỘT MÌNH là đủ, D5 xong"
+thực tế  :  gộp <=5  ->  p95 = 1,559     ⛔ KHÔNG đạt
+            gộp <=3  ->  p95 = 1,628     ⛔ KHÔNG đạt
+```
+
+⭐ **Nhưng gộp vẫn trả rất nhiều, miễn phí:** `55,6 % → 26,5 %` — **hơn một nửa số khe
+có vấn đề biến mất**, ⛔ không tốn một điểm chrF++, ⛔ không một lượt LLM, và ⛔ không gây
+trôi (§20).
+
+### 21.4 ⭐ Và còn một cần gạt MIỄN PHÍ nữa: **trần tăng tốc của ta là số MƯỢN, chưa đo**
+
+`thoi_gian.py:50-55` nói thẳng: *"**1,15 là mặc định của Subdub**"*. ⇒ Nó là một **ngưỡng
+mượn**, và luật của kho là **mượn thì phải đo lại** — ⛔ chưa ai đo trên **giọng của ta**.
+
+| trần | nguồn | % khe cần nén vượt (sau gộp ≤5) |
+|---|---|---|
+| **1,15** | **TA** — mượn Subdub, ⛔ chưa đo | **26,5 %** [0,18 ; 0,37] |
+| 1,20 | VideoLingo `speed_factor.accept` | 24,1 % |
+| 1,30 | open-dubbing `MAX_SPEED` | **16,9 %** [0,10 ; 0,26] |
+| 1,40 | VideoLingo `speed_factor.max` | 13,3 % |
+
+⇒ ⭐ Ta đang dùng **trần chặt nhất trong ba dự án tham chiếu**, và ⛔ **chưa một phép đo
+nào** đỡ con số ấy. Nới lên `1,30` (mức open-dubbing) kéo `26,5 % → 16,9 %` — ⛔ không
+tốn chữ nào của bản dịch.
+
+⚠️ ⛔ **Nhưng ⛔ đừng nới bằng cách chép 1,30 của họ** — đó đúng là `N-34` lần thứ tư.
+Nới phải **đo trên giọng của ta**: một phép nghe/chấm ở `1,15 / 1,20 / 1,30`, và nó là
+một **lượt TTS thật** — cùng chỗ đang bị chặn ở §20.3.
+
+### 21.5 Ba ngả còn lại, kèm giá
+
+| ngả | được | giá |
+|---|---|---|
+| **A.** gộp ≤5, ⛔ giữ mọi thứ khác | 55,6 % → **26,5 %** | khe max **20,8 s**; 29/83 khe > 7 s |
+| **B.** A + nới trần lên 1,30 | → **16,9 %** | ⚠️ phải **đo giọng** trước (TTS thật) |
+| **C.** A + rút gọn LLM | mỗi 10 % rút ≈ một bậc | 🔴 `len_ratio < 0,85` ⇒ chrF++ **39,31** (so với **49,85** khi ≥ 0,95) |
+
+⭐ **B rẻ hơn C rất nhiều** — nó ⛔ không chạm bản dịch. ⇒ Thứ tự đáng thử:
+**gộp → đo trần giọng → (chỉ khi còn thiếu) rút gọn.**
+⚠️ Cả B và C đều cần **một lượt nặng**; nhưng B cần **TTS** (đang chặn), C cần **LLM**.
