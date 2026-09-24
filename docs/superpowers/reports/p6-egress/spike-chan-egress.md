@@ -91,3 +91,47 @@ tưởng hai lớp ngang hàng.
   con hoặc worker mới không nạp lại `-r` preload, egress của tiến trình con không
   bị chặn (cần `--require` áp cho cả worker, hoặc chặn `child_process`/`Worker`
   hẳn bằng permission model — đã có `--allow-child-process`).
+
+---
+
+## 🔴 ĐO BỔ SUNG (điều phối, 24/09): lỗ `child_process` — **đã đo, và nó thủng**
+
+Báo cáo trên xếp `child_process` vào *"chưa vá / chưa đo"*. Nhưng đây là lỗ **quyết định kiến
+trúc**, nên không được để ở dạng chưa đo. Kết quả:
+
+```
+$ node -r ./preload-socket-only.js -e "require('https').get('https://example.com/'…)"
+PARENT_BLOCKED EGRESS_BLOCKED:net.Socket.connect:example.com
+
+$ node -r ./preload-socket-only.js ./piece-child-process.js
+CHILD_REACHED 200
+```
+
+Cha bị chặn. Con **ra Internet, HTTP 200**. Lý do cơ học: `-r <preload>` là cờ dòng lệnh của
+**tiến trình đó**, nó không đi theo `spawn`. Một piece chỉ cần
+
+```js
+require('child_process').spawnSync(process.execPath, ['-e', "…require('https')…"])
+```
+
+là đi vòng qua **toàn bộ** lớp vá trong tiến trình — kể cả phương án b2/b3 vừa đo là "chặn 100 %".
+
+### Hệ quả: đổi vai của lớp vá, không chỉ đổi phương án
+
+⛔ **Vá trong tiến trình KHÔNG thể là RANH GIỚI an ninh cho mã không tin cậy.** Nó là **lớp phòng
+thủ theo chiều sâu** — chặn piece *viết ẩu* gọi nhầm nội mạng, không chặn piece *cố ý*. Đây đúng
+điều đội Activepieces nói trong `activepieces#11547` (dẫn CVE-2025-68668 của n8n): sandbox
+trong-tiến-trình không đủ cho mã không tin cậy có quyền mạng.
+
+⚠️ Và **Job Object (`win32job`, §11.2) không lấp lỗ này**: nó giới hạn CPU/bộ nhớ/cây tiến trình,
+**không** lọc socket. Đưa nó vào chỗ này là nhầm vai.
+
+### Việc phải làm trước khi mở khách — chưa làm, ⛔ chưa được đoán
+
+Ranh giới thật phải ở **mức hệ điều hành**. Ba hướng cần **đo** (⛔ không chọn bằng suy luận):
+tài khoản Windows riêng cho runner + luật tường lửa outbound theo **SID** · AppContainer +
+network capability · namespace mạng (container/WSL2). Mỗi hướng phải trả lời đúng phép thử
+`piece-child-process.js` ở trên, không phải trả lời trên giấy.
+
+**Tái chạy:** `node -r ./preload-socket-only.js ./piece-child-process.js` trong `spike/egress/`.
+
