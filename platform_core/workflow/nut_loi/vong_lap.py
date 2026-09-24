@@ -171,6 +171,13 @@ def _mot_phan_tu(db, run, g, node, than, i: int, phan_tu, *, cong_cu):
             #    thử mở điểm chờ CỦA CHÍNH VÒNG NÀY. `ngu = ((nid, i),)` là thứ
             #    tách `f:0/d` khỏi `f:1/d`; thiếu nó, vòng 2 đọc điểm chờ của
             #    vòng 1 và bỏ qua lần chờ của nó (activepieces `000015`).
+            if tt == "WAITING" and str(bn.get("thi_hanh")) == "run_con":
+                # ⭐ `core.call_workflow` trong thân vòng lặp: run con của
+                #    CHÍNH chỉ số này. `ap_ket_qua_con` cấp run đi khoá trần
+                #    nên nó không bao giờ thấy `f:0/g` — đo được 24/09: hai
+                #    run con xong, cha đứng WAITING 20 giờ, tiền vẫn bị giữ.
+                from platform_core.workflow import run_con as _run_con
+                _run_con.ap_ket_qua_mot(db, run, bn, vong=ngu)
             if tt == "WAITING" and cho.la_node_cho(bn):
                 kq = cho.tiep_mot(db, run, bn, vong=ngu)
                 if kq is not None:

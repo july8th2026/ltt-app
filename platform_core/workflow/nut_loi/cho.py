@@ -174,8 +174,8 @@ def tiep_mot(db, run, node: dict, *, vong=()) -> Optional[KetQua]:
        không xảy ra.
     """
     nid = str(node["id"])
-    kinds = tuple(getattr(
-        _dinh_nghia_cua(node), "cho", ()) or ("DELAY",))
+    kinds = tuple(k for k in (getattr(_dinh_nghia_cua(node), "cho", ()) or ())
+                  if str(k).upper() in KIND_CUA_TOI)
     for kind in kinds:
         wp, _khoa = _tim(db, run, nid, kind, vong=vong)
         if wp is None:
@@ -225,9 +225,29 @@ def _dinh_nghia_cua(node: dict):
     return nut_loi.tat_ca().get(str(node.get("type")))
 
 
+#: Những loại waitpoint mà MÔ-ĐUN NÀY mở và đóng. ⛔ Không phải "mọi giá trị
+#: `NodeDefinition.cho`".
+#:
+#: 🔴 ĐÂY LÀ MỘT LỖI ĐÃ ĐO, KHÔNG PHẢI MỘT PHÒNG XA
+#:
+#:    Bản đầu của `la_node_cho` trả `True` cho **mọi** node có `cho` khác rỗng.
+#:    `core.call_workflow` khai `cho=("run_con",)` — điểm chờ của nó do
+#:    `run_con.ap_ket_qua_con` chốt, không do đây — nên `tiep_cho` nhặt nó lên,
+#:    `tiep_mot` không tìm thấy hàng `waitpoint` nào và trả
+#:    `FAILED loi_he_thong`. Mọi run có `core.call_workflow` hỏng ngay ở lượt
+#:    động cơ kế tiếp (`test_1786::test_chi_phi_that_cua_CON_cong_len_CHA` đỏ).
+#:
+#: ⇒ Quyền sở hữu phải nói ra bằng một tập ĐÓNG. Một node loại mới khai một
+#:   `cho` lạ sẽ **không** bị mô-đun này nhận vơ; nó phải có bộ chốt của nó.
+KIND_CUA_TOI = frozenset({"DELAY", "WEBHOOK", "EVENT", "HUMAN"})
+
+
 def la_node_cho(node: dict) -> bool:
+    """Node này có điểm chờ do **mô-đun này** lái không?"""
     nd = _dinh_nghia_cua(node)
-    return bool(nd is not None and nd.cho)
+    if nd is None or not nd.cho:
+        return False
+    return any(str(k).upper() in KIND_CUA_TOI for k in nd.cho)
 
 
 def tiep_cho(db, run, g: dict, *, bo_qua=frozenset()) -> int:
@@ -470,7 +490,8 @@ DINH_NGHIA = (
         publish_duoc=True), chay_human),
 )
 
-__all__ = ["CHE_DO_WAIT", "DINH_NGHIA", "KIND_WAKEUP", "LOAI_SU_KIEN",
+__all__ = ["CHE_DO_WAIT", "DINH_NGHIA", "KIND_CUA_TOI", "KIND_WAKEUP",
+           "LOAI_SU_KIEN",
            "NHANH_HET_HAN", "NHANH_HUMAN", "TRAN_DURATION_S", "chay_delay",
            "chay_human", "chay_wait", "la_node_cho", "mo_diem_cho",
            "tiep_cho", "tiep_mot"]

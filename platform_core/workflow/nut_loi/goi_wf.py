@@ -12,13 +12,14 @@ một `workflow_run` con và chờ. Toàn bộ lập luận về tiền ở
 from __future__ import annotations
 
 from platform_core.i18n import N_
-from platform_core.workflow import he_kieu, ngon_ngu, run_con
+from platform_core.workflow import (he_kieu, ngon_ngu, run_con,
+                                    thi_hanh)
 from platform_core.workflow.chinh_sach import LoiNgonNgu
 from platform_core.workflow.nut import Gia, NodeDefinition
 from platform_core.workflow.nut_loi.chay import KetQua
 
 
-def chay_call_workflow(db, run, node: dict, *, moi_truong: dict,
+def chay_call_workflow(db, run, node: dict, *, moi_truong: dict, vong=(),
                        **_) -> KetQua:
     p = node.get("params") or {}
     try:
@@ -27,7 +28,13 @@ def chay_call_workflow(db, run, node: dict, *, moi_truong: dict,
     except LoiNgonNgu as loi:
         return KetQua(sang="FAILED", error=f"bieu_thuc_loi: {loi}"[:2000])
     try:
-        con = run_con.tao_run_con(db, cha=run, node_id=str(node["id"]),
+        # 🔴 `parent_node_id` phải là ĐƯỜNG THI HÀNH, không phải id trần:
+        #    `run_con.bao_cha` hẹn wakeup theo chính chuỗi này, nên hai vòng
+        #    `foreach` gọi cùng một node con sẽ sinh CÙNG một `node_run_id`
+        #    nếu ở đây ghi id trần — `uq_wakeup_khu_trung` ném, hoặc tệ hơn,
+        #    vòng 2 nhận wakeup của vòng 1.
+        con = run_con.tao_run_con(db, cha=run,
+                                  node_id=thi_hanh.khoa_node(node["id"], vong),
                                   version_id=str(p.get("version_id") or ""),
                                   inputs=inputs)
     except run_con.QuaSau as loi:
