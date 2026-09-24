@@ -74,7 +74,9 @@ def main() -> None:
     except ImportError as exc:
         _runner.khong_kha_dung(f"thieu thu vien trong qc-venv: {exc}")
 
-    thiet_bi = "cuda" if torch.cuda.is_available() else "cpu"
+    # 🔑 Thiet bi theo **lease**, khong theo `is_available()`. Xem
+    #    `_runner.chon_thiet_bi`.
+    thiet_bi, ly_do_thiet_bi = _runner.chon_thiet_bi(vao)
     try:
         model = ban_ghim.nap(thiet_bi)
     except Exception as exc:                   # noqa: BLE001
@@ -138,7 +140,9 @@ def main() -> None:
     dh.danh_dau("cham")
     del model
     _runner.ghi(ra, {"ket_qua": ket,
-                     "tai_nguyen": dh.ket(thiet_bi=thiet_bi, so_clip=len(ket))})
+                     "tai_nguyen": dh.ket(thiet_bi=thiet_bi,
+                                          ly_do_thiet_bi=ly_do_thiet_bi,
+                                          so_clip=len(ket))})
 
 
 if __name__ == "__main__":

@@ -32,6 +32,48 @@ def khong_kha_dung(ly_do: str) -> None:
     sys.exit(3)
 
 
+def chon_thiet_bi(vao: dict) -> tuple[str, str]:
+    """(`"cuda"`|`"cpu"`, ly do) theo **lease** chu khong theo `is_available()`.
+
+    🔑 Cung hop dong ma `apps/auto_scan_video/demucs_runner.chon_thiet_bi` da
+       chot, va o day vi dung mot ly do: ban cu viet
+       `"cuda" if torch.cuda.is_available() else "cpu"`, tuc **lay card khi
+       KHONG co lease**. May A co MOT card, dung chung voi `voice_sidecar` dang
+       phuc vu khach that, nen mot nguoi dung card ngoai so sach la dung cai ma
+       `gpu_lease` sinh ra de chan.
+
+    Hai truong hop, va phan biet chung la ca y nghia cua `buoc_gpu`:
+
+      * `buoc_gpu=False` — nen tang **khong** cap card. CPU la duong DA KHAI,
+        khong phai mot cho tut xuong. `venv.chay(chan_card=True)` con ghim
+        `CUDA_VISIBLE_DEVICES=-1` nen torch cung khong thay card.
+      * `buoc_gpu=True` — nen tang da giu cho mot card va da ghim no. Torch
+        khong thay CUDA o day nghia la viec cap card DA HONG ⇒ phai keu
+        (`KHONG_KHA_DUNG`), khong duoc im lang cham diem bang CPU: mot bo do
+        lui im lang giu nguyen suat `tach_nguon_cuc_bo` hang phut trong khi
+        bao cao doc y nhu mot luot chay tren card.
+    """
+    buoc_gpu = bool(vao.get("buoc_gpu"))
+    try:
+        import torch
+        co = bool(torch.cuda.is_available())
+    except Exception as exc:                    # noqa: BLE001 - torch hong
+        if buoc_gpu:
+            khong_kha_dung(f"nen tang cap card nhung torch khong nap duoc: {exc}")
+        return "cpu", f"torch khong nap duoc: {type(exc).__name__}"
+    if buoc_gpu:
+        if not co:
+            khong_kha_dung(
+                "nen tang cap card (buoc_gpu) nhung torch.cuda.is_available() "
+                "la False — viec cap/ghim card da hong")
+        return "cuda", "nen tang cap card"
+    if co:
+        # ⛔ Thay card ma KHONG co lease ⇒ khong cham. Ghi ly do ra hop dong ket
+        #    qua de mot lan chay CPU khong bao gio doc giong mot lan co card.
+        return "cpu", "khong co lease (thay card nhung khong duoc cap)"
+    return "cpu", "may khong co card"
+
+
 def _rss_dinh_mb() -> float:
     """Dinh bo nho lam viec cua CHINH tien trinh nay (MB)."""
     if os.name == "nt":

@@ -5,6 +5,14 @@
 > `tools/bench_gpu_may_a.py`, JSON tho `bang_chung/gpu_may_a/`. Nen:
 > `L_TOC_DO_GPU.md`, `L_OCR.md` §5.
 
+## 0. ⭐ Tra loi dieu chu du an dat (*"CPU manh hon thi dung CPU"*)
+
+**Card chi thang tren buoc dai hon ~3–4 giay.** Do that: duoi nguong do CPU
+thang hoac bang (T13 0,67 s · giai ma 0,65 s · MetricX-cham 0,82 s); tren nguong
+card thang ro (SQUIM 9,4 · ECAPA 13,6 · demucs 72 · ASR 251). Phi khoi dong CUDA
++ phi xin lease la mot hang so ~2–3 giay, nen moi buoc ngan hon no thi chuyen len
+card la lo.
+
 ## 1. Kiem ke 12 giai doan
 
 | Giai doan | Thu vien | Hien tai | Lease | Tep:dong |
@@ -63,17 +71,60 @@ PostgreSQL. 🔴 Bay da vap: `CUDA_VISIBLE_DEVICES=""` bi Windows **xoa han** qu
 `subprocess` ⇒ nhanh "CPU" dau bao `thiet_bi: cuda`. Phai dung `-1`. Bang tren
 do lai sau khi sua, ca hai ben **nong**.
 
-## 4. De xuat (⛔ chua sua ma)
+## 4. Da lam · de xuat · va mot muc HOAN CO CHU Y
+
+### ✅ DA LAM trong lan nay (`50d13721`)
+
+**SQUIM + ECAPA chon thiet bi theo LEASE, khong theo `is_available()`.** 2,4x va
+2,5x voi ket qua lech ≤ 0,0002 ⇒ toi uu that, khong phai hai phep do khac nhau.
+Ban cu `"cuda" if torch.cuda.is_available() else "cpu"` sai hai chieu:
+
+- co lease ma ghim hong ⇒ **lui CPU im lang** (giu suat `tach_nguon_cuc_bo` hang
+  phut trong khi bao cao doc y nhu co card);
+- KHONG lease ⇒ **lay card ngoai so sach**, tranh voi `voice_sidecar` dang phuc
+  vu khach that tren card DUY NHAT cua may A.
+
+| Tep | Doi gi |
+|---|---|
+| `do_luong/_runner.py` | `chon_thiet_bi(vao)` — `buoc_gpu` True + torch khong thay card ⇒ `KHONG_KHA_DUNG` (**keu**, khong lui); False ⇒ cpu + ghi `ly_do_thiet_bi` |
+| `do_luong/venv.py` | `chay(chan_card=True)` — khong lease thi **che card** khoi tien trinh con |
+| `do_luong/squim.py`, `gioi.py` | khai `buoc_gpu=bool(gpu_uuid)` + `chan_card=True` |
+| `do_luong/squim_runner.py`, `gioi_runner.py` | dung `chon_thiet_bi`, tra `ly_do_thiet_bi` ra hop dong |
+| `platform_core/gpu.py` | `KHONG_CARD = "-1"` + `env_khong_card()` — I11 cam app tu cham bien do, va bay §3c chi duoc ghi MOT cho |
+| `tests/test_3200_…` | 19 phep, khong nap model that |
+
+**Doi chung (tiem SAU khi commit, dung thu tu bat buoc):** 6 loi tiem, ca 6 bi
+bat — che card bang chuoi rong · khong lease van lay card · lui CPU im lang ·
+`squim` thoi `chan_card` · `gioi` thoi `buoc_gpu` · **`metricx` bi "don cho dong bo"**.
+
+### ⛔ HOAN CO CHU Y: MetricX-24 sang CPU (dieu phoi chot 24/09)
+
+Do duoc thi de xuat nay co ly: **0,98x** (GPU 10,49 s / CPU 10,31 s o lo 6 cap)
+ma card an **2,6 GiB** tren card 16 GiB dung chung voi Voice. Nhung **hoan**, vi
+buoc **B2** cua thang cong sap dung MetricX lam **trong tai** cho ca viec siet
+dich (xac thuc bo cham tren FLORES, roi so `ltt-3.5` voi moc `ltt-3.8`) — va
+chinh phep do nay cho **diem lech ≤ 0,031 giua bf16 (GPU) va fp32 (CPU)**.
+
+⇒ Doi duong chay **giua** mot chien dich do la tu tao ra bien thu hai: khi so
+dich doi, khong biet do **model** hay do **bo cham doi do chinh xac so hoc**. Va
+cache dung chung se **tron hai thang diem** — dung cai `PHIEN_BAN` ton tai de chan.
+
+**Ba dieu kien mo lai:** (1) B2 xong · (2) co phep do o **lo lon** (lan nay chi do
+lo 6 cap; nguong cat co the nam o lo lon hon) · (3) `PHIEN_BAN` bo do duoc **nang
+cung luot**. `metricx.py` khong doi mot dong, va
+`test_3200::test_metricx_CHUA_chan_card_va_day_la_co_y` chot lai de khong ai "don
+cho dong bo" voi squim/gioi truoc khi du ba dieu kien.
+
+### De xuat con lai (chua lam)
 
 1. **Cap lease GPU cho bo nghiem thu** (`test_448…:201`) — hom nay `gpu_cap: ""`
    nen `audio_prepare` chay CPU (+29,8 s) VA `render` lui `libx264` (+2,3 s).
-   Rui ro 0. Bang chung moi: `tom_tat` cua `render` **khong ghi bo ma hoa**.
+   Rui ro 0. Bang chung moi cua lan nay: `tom_tat` cua `render` **khong ghi bo ma
+   hoa**, nen khong ai thay no da lui.
 2. **Ghi bo ma hoa + VMAF vao `tom_tat`** (`giai_doan_ket_xuat.py`,
-   `giai_doan_qc.py`). Rui ro 0.
-3. **MetricX ve `thiet_bi="cpu"` khi lo nho** (`metricx.py:44`) — tra lai
-   **2,6 GiB** VRAM, mat 0,2 s. Rui ro: diem lech ≤ 0,031 ⇒ phai bump
-   `PHIEN_BAN` bo do. Can do o lo LON truoc khi chot nguong.
-4. **Khong lam**: nvdec cho T13/`scdet`, OCR GPU, VMAF GPU, PySceneDetect.
+   `giai_doan_qc.py`). Rui ro 0. Khong co no thi cau "render chay nvenc chua" va
+   "VMAF bao nhieu" phai do lai moi lan.
+3. **Khong lam**: nvdec cho T13/`scdet` (§3b), OCR GPU, VMAF GPU, PySceneDetect.
 
 **VRAM cong don** — ba giai doan GPU dung chung suat `tach_nguon_cuc_bo`, khong
 chay chong. Xau nhat do duoc: nen 1.298 + Voice 641 + transcribe 6.334 =
@@ -85,13 +136,10 @@ khai 5.200 dung. Tach suat thi + demucs 1.083 = 9.356, van thua.
 | Buoc | Vi sao |
 |---|---|
 | PySceneDetect | 4,54 s ca phim, khong co nhanh GPU. Bo tach ffmpeg co GPU cho **moc KHAC** (24 ≠ 22) va F1 thap hon (L_KY_THUAT §3) ⇒ doi ket qua, khong phai toi uu |
-| Rut khung · giai ma · T13 · timing_align · compose · media_prepare | moi buoc 0,3–3,3 s; nvdec do duoc **cham 2,6x** o T13 (tai khung ve RAM cho bo loc CPU) |
-| MetricX lo nho | GPU khong nhanh hon ma an 2,6 GiB cua card dung chung voi Voice |
-| VMAF (T18) | 62 s, la nut thuc — nhung ffmpeg nay khong co `libvmaf_cuda` |
+| Rut khung · giai ma · T13 · timing_align · compose · media_prepare | moi buoc 0,3–3,3 s, duoi nguong §0; nvdec do duoc **cham 2,6x** (§3b) |
+| MetricX lo nho | 0,98x ma an 2,6 GiB — va dang **hoan co chu y** cho B2 (§4) |
+| VMAF (T18) | 62 s, la nut thuc, nhung khong co `libvmaf_cuda` trong ban ffmpeg nay (§3b) |
 | OCR hardsub | 1,6x, doi lai CUDA 13 + tranh card; `nguon_loi.py:224` ghi `gpu_uuid=""` co chu y |
 | DNSMOS | onnxruntime `qc-venv` la ban CPU, chay ngoai duong san pham |
 
-⛔ Nguyen tac: **card chi thang khi buoc dai hon phi khoi dong CUDA**. Do that,
-nguong o **3–4 giay**: duoi no CPU thang hoac bang (T13 0,67 · giai ma 0,65 ·
-MetricX-cham 0,82); tren no card thang ro (SQUIM 9,4 · ECAPA 13,6 · demucs 72 ·
-ASR 251).
+⇒ Tat ca deu la mot he qua cua §0: **card chi thang tren buoc dai hon ~3–4 giay**.
