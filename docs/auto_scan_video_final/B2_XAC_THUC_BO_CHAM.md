@@ -1146,3 +1146,72 @@ mục đều bị bộ chấm nghi, và phán quyết sẽ bị neo. ⛔ Đừng
 
 ⚠️ **Khai ngay cạnh mọi con số sinh ra từ vòng này (L4 §5): người chấm là một
 mô hình.** Đây là giới hạn ghi ra được, ⛔ không phải lỗ hổng bị giấu.
+
+---
+
+# 24. ⭐ C4 SENTINEL — bộ chấm chấm NỘI DUNG hay chấm bằng THIÊN LỆCH BỀ MẶT?
+
+Câu này có **trước** mọi câu khác: nếu bộ chấm vẫn phán được khi ta **giấu một
+phía**, thì ⛔ mọi số độ nhạy và báo động giả đều rỗng.
+
+Ý tưởng từ `SapienzaNLP/guardians-mt-eval` (ACL 2024) — ⚠️ kho đó là
+**CC BY-NC-SA 4.0** ⇒ ⛔ **không dùng mã của họ**; ý tưởng thì không có giấy
+phép. Ta giấu một phía ngay trong **chính lời nhắc sản phẩm**.
+
+## 24.1 Đo bằng KHẢ NĂNG PHÂN BIỆT, ⛔ không đọc một vế một mình
+
+```
+KHA NANG PHAN BIET = (ti le BAT tren cap DA LAM HONG) − (ti le GAN CO tren cap SACH)
+```
+⛔ Vì một bộ chấm **gắn cờ tất cả** cũng "bắt" 100 % cặp hỏng, và một bộ chấm
+**luôn im** cũng "không báo động giả" — chỉ hiệu số mới tách được chúng ra.
+Cổng viết **trước**: cạnh `đủ` ≥ **0,30** · cạnh mù ≤ **0,15**.
+
+## 24.2 Kết quả (30 cặp sạch + 30 cặp đã làm hỏng, V3, `temp 0.0`, 3 lượt, nền sạch 0 % lô hỏng)
+
+| cạnh | gắn cờ trên **sạch** | bắt trên **hỏng** | **phân biệt** | |
+|---|---|---|---|---|
+| **đủ hai phía** ¹ | 11/30 = 36,7 % | 28/30 = 93,3 % | **+0,567** | ✅ ≥ 0,30 |
+| **nguồn-mù** (giấu câu zh) | 3/30 = 10,0 % | 12/30 = 40,0 % | ⛔ **+0,300** | ⛔ > 0,15 |
+| **dịch-mù** (giấu bản vi) ² | **30/30 = 100 %** | 20/30 = 66,7 % | **−0,333** | thoái hoá |
+
+¹ ⛔ Không gọi lại model: dùng lại lượt **cùng ngày, cùng thiết lập**
+(`b2_cham_v3_tren_100_dong_soi_mu.json` 30 dòng đầu + `b2_tiem_v3_nen_sach.json`).
+² 🔴 **Sự cố của chính tôi:** tôi thêm họ `bo_sot` vào `LOAI_TIEM` **giữa hai
+cạnh** ⇒ cạnh `dich_mu` nhận **45** cặp hỏng còn `nguon_mu` **30**. Đã giới hạn
+cả hai về **hai họ chung** để so. ⚠️ Đúng bẫy *"cây đổi trong lúc chạy"* — ghi ra
+để ⛔ không ai đọc hai cột như thể chúng cùng một tập.
+
+## 24.3 🔴 Câu trả lời: **một phần** — và nó ⛔ không rỗng, nhưng ⛔ cũng không sạch
+
+1. ✅ **Bộ chấm CÓ dùng câu nguồn.** Giấu bản dịch ⇒ nó **thoái hoá thành gắn cờ
+   TẤT CẢ** (30/30 cặp sạch của người dịch), tức mất sạch khả năng phán — đúng
+   thứ một sentinel phải thấy. ⛔ Kịch bản xấu nhất (*"bộ chấm bịa hoàn toàn"*)
+   **không** xảy ra.
+2. 🔴 **Nhưng hơn MỘT NỬA khả năng phân biệt sống sót khi giấu câu nguồn:**
+   `0,300 / 0,567 = 53 %`. ⇒ **quá nửa** tín hiệu của ta đến từ chỗ **bản tiếng
+   Việt tự nó nghe sai**, ⛔ không phải từ việc đối chiếu với câu gốc.
+
+⚠️ **Và đây là giới hạn của PHÉP TIÊM chứ không chỉ của bộ chấm:** phép tiêm tự
+viết đổi từ trái nghĩa / đổi tên riêng — những thứ **phá mạch ngay trong câu
+tiếng Việt**. ⇒ Một phần *"độ nhạy 100 %"* của §3/§13 là **đơn ngữ**, và ⛔ nó
+⛔ không hứa gì về lỗi dịch thật sự (câu tiếng Việt trôi chảy nhưng **sai so với
+nguồn**) — đúng hình dạng lỗi FLORES thật (`壁球` → *"quần vợt"* đọc rất xuôi).
+
+⭐ **Con số 0,300 còn là một CẬN DƯỚI:** `doc_ngu_nghia` loại mọi lỗi không trích
+được `doan` trong văn bản đã gửi, nên ở cạnh nguồn-mù, lỗi nào trích từ **câu
+nguồn** đều bị **máy** cắt. Cạnh mù bị **trói tay** mà vẫn phân biệt được 0,300.
+
+## 24.4 Việc rút ra — ⛔ chưa làm, chờ điều phối
+
+- ⭐ **C3 càng cần hơn**, và cần đúng loại: phép tiêm phải sinh lỗi **trôi chảy
+  trong tiếng Việt nhưng sai so với nguồn** (họ `bo_sot` vừa thêm là bước đầu —
+  bỏ một cụm để lại một câu **hoàn toàn xuôi**).
+- ⛔ **Đừng đọc lại §3/§13/§17 như cũ:** mọi "độ nhạy" ở đó có **≥ 53 %** phần
+  đến từ tín hiệu đơn ngữ (đo trên chính tập tiêm ấy).
+- ⚠️ Cạnh `dich_mu` "qua" cổng ≤ 0,15 vì **thoái hoá**, ⛔ không phải vì tinh
+  tường. Cổng như viết ⛔ không tách được hai chuyện đó ⇒ đọc kèm cột "gắn cờ
+  trên sạch".
+
+Bằng chứng: `bang_chung/b2_sentinel_v3.json` (⛔ không một chữ FLORES).
+Tái lập: `python tools\bench_b2_xac_thuc_bo_cham.py sentinel --canh {du,nguon_mu,dich_mu} --so-soi bang_chung\b2_san_loi_flores.json --n-sach 30 --luot 3 --ra <ra>`
