@@ -222,12 +222,16 @@ def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
                 tong_giay=tong_giay_ra, hoi_huy=hoi_huy))
 
         dich = str(thu_muc / "master.wav")
+        # ⭐ asv-final R-03: `ghim` hung bao cao ghim tran (dinh that cua BAN
+        #    GIAO, da do bang chinh tham so ma hoa cua `ket_xuat`) va di thang
+        #    sang `kiem_ban_ra` — do mot lan, ghi vao ho so giai doan.
+        ghim: dict = {}
         am_master.tron_cuoi(nen, cac_lo, dich, tong_giay=tong_giay_ra,
-                            hoi_huy=hoi_huy, am=am)
+                            hoi_huy=hoi_huy, am=am, ghim=ghim)
 
         do_duoc = am_master.kiem_ban_ra(
             dich, mong_doi_giay=tong_giay_ra,
-            dung_sai_giay=hop_dong_v4.DUNG_SAI_DO_DAI_S)
+            dung_sai_giay=hop_dong_v4.DUNG_SAI_DO_DAI_S, ghim=ghim)
         # ⭐ Ghi thu DA AP, khong chi thu khach chon: fade bi cat theo do dai ban
         #    phoi (`fade_ap_dung`), va mot lan cat khong ghi lai la mot lan lang le.
         fv, fr = am_master.fade_ap_dung(am, tong_giay_ra)

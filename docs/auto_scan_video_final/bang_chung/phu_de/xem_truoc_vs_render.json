@@ -1,0 +1,141 @@
+{
+ "video": "暴雨天野外露营搭建帐篷生活度过雨天享受户",
+ "khung": [
+  864,
+  576
+ ],
+ "giay_nguon": 30.0,
+ "khoang_giu": [
+  [
+   0.0,
+   1.0
+  ],
+  [
+   2.0,
+   4.0
+  ]
+ ],
+ "t_ra": 2.0,
+ "vung": [
+  {
+   "loai": "danh_dau_phu_de",
+   "x0": 0.1,
+   "x1": 0.9,
+   "y0": 0.904,
+   "y1": 0.976
+  }
+ ],
+ "che_do": {
+  "tat": {
+   "ho_so_render": {
+    "che_do": "tat",
+    "xuat_srt": true,
+    "phan_doan": "sentence"
+   },
+   "su_kien_chu": [
+    "Lòng bò chở từ lò mổ về vẫn còn ấm, và rửa sạch mới là bước quan trọng nhất"
+   ],
+   "khong_mat_diem_anh_khac": 0,
+   "khong_mat_sai_lon_nhat": 0,
+   "md5_xem_truoc": "ee6ccffc88decb050ae6bd1afc7e2e61",
+   "md5_render": "ee6ccffc88decb050ae6bd1afc7e2e61",
+   "that_psnr_db": 34.99
+  },
+  "tu_dong": {
+   "ho_so_render": {
+    "che_do": "tu_dong",
+    "xuat_srt": false,
+    "phan_doan": "sentence",
+    "kieu": "default",
+    "dai_phu_de_goc": {
+     "y0": 0.904,
+     "y1": 0.976,
+     "da_che": true
+    }
+   },
+   "su_kien_chu": [
+    "Lòng bò chở từ lò mổ về vẫn còn ấm, và rửa sạch mới là bước quan trọng nhất"
+   ],
+   "khong_mat_diem_anh_khac": 0,
+   "khong_mat_sai_lon_nhat": 0,
+   "md5_xem_truoc": "8fc7c15ddccbae8f1da9d6a97a2fa018",
+   "md5_render": "8fc7c15ddccbae8f1da9d6a97a2fa018",
+   "that_psnr_db": 33.47
+  },
+  "nguon": {
+   "ho_so_render": {
+    "che_do": "nguon",
+    "xuat_srt": false,
+    "phan_doan": "sentence",
+    "kieu": "default"
+   },
+   "su_kien_chu": [
+    "从屠宰场运送过来的牛肠还带着温热，清洗牛肠才是最关键的一步"
+   ],
+   "khong_mat_diem_anh_khac": 0,
+   "khong_mat_sai_lon_nhat": 0,
+   "md5_xem_truoc": "0e8d1352ddbc697cad0a83b0302d39ff",
+   "md5_render": "0e8d1352ddbc697cad0a83b0302d39ff",
+   "that_psnr_db": 33.58
+  },
+  "dich": {
+   "ho_so_render": {
+    "che_do": "dich",
+    "xuat_srt": false,
+    "phan_doan": "sentence",
+    "kieu": "default"
+   },
+   "su_kien_chu": [
+    "Lòng bò chở từ lò mổ về vẫn còn ấm, và rửa sạch mới là bước quan trọng nhất"
+   ],
+   "khong_mat_diem_anh_khac": 0,
+   "khong_mat_sai_lon_nhat": 0,
+   "md5_xem_truoc": "4713580c88d7aca399beded74a3c57aa",
+   "md5_render": "4713580c88d7aca399beded74a3c57aa",
+   "that_psnr_db": 33.45
+  },
+  "tu_chon": {
+   "ho_so_render": {
+    "che_do": "tu_chon",
+    "xuat_srt": false,
+    "phan_doan": "sentence",
+    "chu": "nguon",
+    "kieu": "tiktok_bold",
+    "tinh_chinh": {
+     "font_size": 40,
+     "font_color": "#FFE000",
+     "outline_width": 4,
+     "alignment": 8
+    }
+   },
+   "su_kien_chu": [
+    "从屠宰场运送过来的牛肠还带着温热，清洗牛肠才是最关键的一步"
+   ],
+   "khong_mat_diem_anh_khac": 0,
+   "khong_mat_sai_lon_nhat": 0,
+   "md5_xem_truoc": "5318f348672e29a55c2500a81850978c",
+   "md5_render": "5318f348672e29a55c2500a81850978c",
+   "that_psnr_db": 33.34
+  }
+ },
+ "khac_tung_cap_phan_tram": {
+  "tat|tu_dong": 8.304,
+  "tat|nguon": 6.713,
+  "tat|dich": 8.323,
+  "tat|tu_chon": 6.231,
+  "tu_dong|nguon": 12.227,
+  "tu_dong|dich": 11.99,
+  "tu_dong|tu_chon": 14.535,
+  "nguon|dich": 9.886,
+  "nguon|tu_chon": 12.944,
+  "dich|tu_chon": 14.554
+ },
+ "ti_le_diem_sang_trong_dai_hardsub": {
+  "khung_goc": 0.198,
+  "tat": 0.0,
+  "tu_dong": 0.2797,
+  "nguon": 0.1338,
+  "dich": 0.1601,
+  "tu_chon": 0.0
+ }
+}

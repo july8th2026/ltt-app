@@ -3720,6 +3720,22 @@ button.lv-the-song.nghe-loi,.lv-chon-nghe.nghe-loi{
   grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px 16px}
 .asv-cai-dat li{font-size:13px;color:var(--muted)}
 
+/* ── Bang chung chat luong (asv-final 23/09) ─────────────── */
+/* ⛔ KHONG dung lai `.asv-cai-dat`: luoi 190px cua no hop voi nhung su that
+      MOT DONG ("Kieu xu ly: X"), con moi muc o day mang mot danh sach con.
+      Nhet chung vao bon cot lam bon su that khong lien quan nam ngang hang
+      nhau va khong cai nao doc tron mot cau. */
+.asv-bang-chung{margin:0 0 20px}
+.asv-bc-ds{list-style:none;margin:0;padding:0;display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px 24px;
+  align-items:start}
+.asv-bc-ds>li{font-size:13px;color:var(--muted);min-width:0}
+.asv-bc-ds>li>ul{list-style:none;margin:4px 0 0;padding:0}
+.asv-bc-ds>li>ul>li{padding-left:12px;position:relative}
+.asv-bc-ds>li>ul>li::before{content:"·";position:absolute;left:2px}
+.asv-bc-ds code{font-size:11px;opacity:.75}
+.asv-bc-ds p{margin:4px 0 0}
+
 /* ── Ket qua: nguon canh ket qua ─────────────────────────────────────────── */
 .asv-doi-chieu{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:0 0 16px}
 .asv-doi-chieu figure{margin:0;display:flex;flex-direction:column;gap:6px}

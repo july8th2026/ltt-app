@@ -182,10 +182,14 @@ def cap_nhat_giai_doan(db: Session, stage: AsvStage, **truong) -> AsvStage:
     return stage
 
 
-def danh_dau_dang_chay(db: Session, stage: AsvStage, job_id: str) -> AsvStage:
+def danh_dau_dang_chay(db: Session, stage: AsvStage, job_id: str, *,
+                       noi_tiep: bool = False) -> AsvStage:
+    """Giai doan da co job. `noi_tiep=True` (luot lat cat ke tiep, `lat_cat.py`)
+    KHONG tang `attempt`: noi tiep khong phai thu lai, va dem no la lan thu se
+    lam mot video dai het `LAN_THU_GIAI_DOAN_TOI_DA` ma khong hong lan nao."""
+    them = {} if noi_tiep else {"attempt": int(stage.attempt) + 1}
     return cap_nhat_giai_doan(db, stage, status=STAGE_QUEUED, job_id=job_id,
-                              attempt=int(stage.attempt) + 1,
-                              started_at=_now())
+                              started_at=_now(), **them)
 
 
 def danh_dau_xong(db: Session, stage: AsvStage, *, outputs: dict,
@@ -539,40 +543,6 @@ KIEU_VIDEO_HOP_LE = ("video/mp4", "video/quicktime", "video/x-m4v")
 #: Tran cua duong ben vung. Bang tran cua `upload_sessions` (2 GiB) chu khong
 #: phai tran 90 MB cua Cloudflare — vi tep KHONG di qua Cloudflare nua.
 TRAN_BEN_VUNG = 2 * 1024 * 1024 * 1024
-
-
-def tao_ve_tai_len(db: Session, kho, *, owner_id: str, ten_tep: str,
-                   kieu: str, co_du_kien: int) -> dict:
-    """Ve tai len TRUC TIEP browser -> kho. Tra ve mo ta de client tu PUT.
-
-    🔑 Toan bo diem cua ham nay: **tep khong bao gio di qua tien trinh app**.
-       V2 doc `await video.read()` roi giu bytes do trong khi vua ghi mot ban
-       tam vua day len kho — ca video nam trong RAM hai lan, va tran 90 MB ton
-       tai chinh vi dieu do.
-
-    ⭐ Khong co gi moi duoc xay o day. `platform_core.upload_sessions` da lam
-       viec nay, da co mot nguoi goi that (`apps/autosubvideo/services/
-       source_drafts.py:33-49`), va da mang san han muc chong lam dung (20 phien,
-       2 GiB dang bay, 12 ve/phut) cung phep kiem chu ky magic byte.
-
-    Tra `{"mode": "direct", ...}` khi kho cap duoc ve, `{"mode": "local"}` khi
-    khong — luc do client quay ve duong multipart nho.
-    """
-    from platform_core import upload_sessions
-
-    phien = upload_sessions.create(
-        db, user_id=owner_id, app_slug=SLUG, filename=ten_tep,
-        content_type=kieu, expected_size=int(co_du_kien),
-        max_size=TRAN_BEN_VUNG, allowed_types=KIEU_VIDEO_HOP_LE)
-    dich = upload_sessions.upload_target(kho, phien)
-    if dich is None:
-        # Kho khong cap duoc presigned PUT (LocalStorage). Bo ve di thay vi de
-        # lai mot dong `pending` khong bao gio duoc dung.
-        db.delete(phien)
-        db.flush()
-        return {"mode": "local"}
-    return {"mode": "direct", "upload_id": phien.id, "url": dich.url,
-            "method": dich.method, "headers": dich.headers or {}}
 
 
 def tao_run_tu_ve(db: Session, kho, *, owner_id: str, upload_id: str,

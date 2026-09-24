@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import subprocess
 import sys
@@ -10,7 +11,10 @@ import threading
 import time
 from pathlib import Path
 
-_MODELS: dict[tuple[str, str, str], object] = {}
+log = logging.getLogger(__name__)
+
+#: Khoá gồm cả `device_index`: hai card khác nhau là hai model khác nhau.
+_MODELS: dict[tuple[str, str, str, int], object] = {}
 _MODEL_LOCK = threading.Lock()
 
 
@@ -109,29 +113,122 @@ def _transcribe_whisperx(media_path: str, *, language: str, model_name: str,
             pass
 
 
-def _get_faster_model(model_name: str):
+def _chi_so_card(gpu_uuid: str) -> int:
+    """CUDA ordinal của card nền tảng đã cấp. `-1` = torch không thấy card đó.
+
+    🔑 Vì sao hỏi **torch** chứ không hỏi `platform_core.gpu.by_uuid().index`:
+       `index` của `nvidia-smi` là số thứ tự TOÀN MÁY và không đổi theo
+       `CUDA_VISIBLE_DEVICES`, còn `device_index` của CTranslate2 là số thứ tự
+       trong tập card CUDA **nhìn thấy được**. Hai số đó bằng nhau khi tiến
+       trình thấy mọi card và khác nhau khi không — một chỗ lệch im lặng đủ để
+       đẩy job sang card đang phục vụ LTT VOICE.
+
+    ⛔ Đường này chạy TRONG tiến trình worker, nên không ghim card bằng
+       `CUDA_VISIBLE_DEVICES` được (`platform_core.gpu.env_for` chỉ ghim được
+       tiến trình CON — xem `whisperx_runner`, `demucs_runner`, `do_luong/venv`).
+       `device_index` là cách ghim duy nhất còn lại ở đây.
+    """
+    try:
+        import torch
+    except ImportError:
+        return -1
+    can = gpu_uuid.strip().lower().removeprefix("gpu-")
+    if not can:
+        return -1
+    try:
+        so = torch.cuda.device_count()
+    except (AssertionError, RuntimeError):
+        return -1
+    for i in range(so):
+        try:
+            u = str(torch.cuda.get_device_properties(i).uuid).lower()
+        except (AttributeError, RuntimeError):
+            continue
+        if u.removeprefix("gpu-") == can:
+            return i
+    return -1
+
+
+def _thiet_bi_asr(gpu_uuid: str) -> tuple[str, str, int, str]:
+    """(device, compute_type, device_index, lý do lùi về CPU).
+
+    🔴 Bản trước mặc định `device="cuda"` **bất kể có lease hay không**, rồi
+       `except Exception` nuốt mọi lỗi và lùi về `cpu/int8` **không để lại dấu
+       vết nào**. Hai hậu quả đã trả giá thật:
+
+       1. Không có lease mà vẫn lấy card ⇒ tranh card với LTT VOICE (khách trả
+          tiền, `voice_sidecar`) mà nền tảng không hề biết — đúng thứ
+          `platform_core.gpu_lease` sinh ra để chặn.
+       2. Lùi về CPU im lặng ⇒ một lượt chạy chậm hàng chục lần mà báo cáo vẫn
+          ghi "chạy GPU". Nghiệm thu `NEN_V3` (23/09) đoán sai đúng chỗ này.
+
+    ⭐ Nên quy tắc ở đây là: **chỉ dùng card khi nền tảng đã cấp VÀ ghim được**.
+       Người vận hành vẫn ép được bằng `LTT_AUTOSUB_WHISPER_DEVICE` —
+       đó là một quyết định NÓI RA, không phải một mặc định lặng lẽ.
+    """
+    ep = os.environ.get("LTT_AUTOSUB_WHISPER_DEVICE", "").strip()
+    ep_kieu = os.environ.get("LTT_AUTOSUB_WHISPER_COMPUTE", "").strip()
+    if ep:
+        return ep, (ep_kieu or ("float16" if ep == "cuda" else "int8")), 0, ""
+    if not gpu_uuid.strip():
+        return "cpu", (ep_kieu or "int8"), 0, "nen tang khong cap card (khong co lease)"
+    i = _chi_so_card(gpu_uuid)
+    if i < 0:
+        return "cpu", (ep_kieu or "int8"), 0, (
+            f"nen tang cap card {gpu_uuid[:20]} nhung torch khong thay no")
+    return "cuda", (ep_kieu or "float16"), i, ""
+
+
+def _get_faster_model(model_name: str, *, gpu_uuid: str = "") -> tuple[object, dict]:
+    """Model faster-whisper + bản khai NÓ ĐANG CHẠY Ở ĐÂU.
+
+    ⚠️ `import torch` **trước** `faster_whisper`: bản `torch …+cu128` đăng ký
+       thư mục DLL của nó (`torch/lib`, nơi có `cublas64_12.dll`,
+       `cudnn*64_9.dll`) qua `os.add_dll_directory`, và trên Windows
+       CTranslate2 tìm cuBLAS/cuDNN ở đó. Đảo thứ tự thì `WhisperModel(
+       device="cuda")` ném `Could not load library cublas64_12.dll` —
+       `apps/asv_gpu/do_luong/giong_runner.py` đã gặp và ghi lại đúng bẫy này.
+
+    ⛔ Không nuốt lỗi: mỗi lần lùi về CPU đều ghi log VÀ trả lý do ra ngoài.
+    """
+    try:
+        import torch  # noqa: F401  (đăng ký thư mục DLL CUDA trên Windows)
+    except ImportError:
+        pass
     from faster_whisper import WhisperModel
-    device = os.environ.get("LTT_AUTOSUB_WHISPER_DEVICE", "cuda").strip() or "cuda"
-    compute = os.environ.get("LTT_AUTOSUB_WHISPER_COMPUTE", "float16").strip() or "float16"
-    key = (model_name, device, compute)
+
+    device, compute, chi_so, ly_do = _thiet_bi_asr(gpu_uuid)
+    key = (model_name, device, compute, chi_so)
     with _MODEL_LOCK:
         if key not in _MODELS:
             try:
-                _MODELS[key] = WhisperModel(model_name, device=device, compute_type=compute)
-            except Exception:
+                _MODELS[key] = WhisperModel(model_name, device=device,
+                                            compute_type=compute,
+                                            device_index=chi_so)
+            except Exception as exc:                          # noqa: BLE001
                 if device == "cpu":
                     raise
-                key = (model_name, "cpu", "int8")
+                ly_do = f"{type(exc).__name__}: {exc}"[:300]
+                log.warning("faster-whisper khong nap duoc tren %s/%s -> lui ve "
+                            "cpu/int8: %s", device, compute, ly_do)
+                device, compute, chi_so = "cpu", "int8", 0
+                key = (model_name, device, compute, chi_so)
                 if key not in _MODELS:
-                    _MODELS[key] = WhisperModel(model_name, device="cpu", compute_type="int8")
-        return _MODELS[key]
+                    _MODELS[key] = WhisperModel(model_name, device="cpu",
+                                                compute_type="int8")
+        if ly_do:
+            log.info("faster-whisper chay tren CPU: %s", ly_do)
+        return _MODELS[key], {"asr_device": device, "asr_compute": compute,
+                              "asr_device_index": chi_so,
+                              "asr_cpu_reason": ly_do}
 
 
 def _transcribe_faster(media_path: str, *, language: str, model_name: str,
-                       on_progress=None, is_cancelled=None) -> dict:
+                       on_progress=None, is_cancelled=None,
+                       gpu_uuid: str = "") -> dict:
     if on_progress:
         on_progress(8, "fallback faster-whisper")
-    model = _get_faster_model(model_name)
+    model, khai = _get_faster_model(model_name, gpu_uuid=gpu_uuid)
     segments, info = model.transcribe(media_path, language=language or None,
                                       word_timestamps=True, vad_filter=True,
                                       beam_size=5)
@@ -148,7 +245,7 @@ def _transcribe_faster(media_path: str, *, language: str, model_name: str,
             on_progress(min(86, 12 + index), "đang chép lời")
     return {"segments": out, "language": str(getattr(info, "language", language or "")),
             "engine": "faster-whisper", "alignment_status": "fallback_unaligned",
-            "fallback_reason": "whisperx_sidecar_unavailable"}
+            "fallback_reason": "whisperx_sidecar_unavailable", **khai}
 
 
 def _env_ghim_gpu(gpu_uuid: str) -> dict:
@@ -168,10 +265,13 @@ def transcribe_file(media_path: str, *, language: str = "", model_name: str = "l
                                         model_name=model_name, on_progress=on_progress,
                                         is_cancelled=is_cancelled, gpu_uuid=gpu_uuid)
         except TranscriptionError as exc:
+            log.warning("WhisperX sidecar hong -> lui ve faster-whisper: %s",
+                        str(exc)[:300])
             fallback = _transcribe_faster(media_path, language=language,
                                           model_name=model_name, on_progress=on_progress,
-                                          is_cancelled=is_cancelled)
+                                          is_cancelled=is_cancelled, gpu_uuid=gpu_uuid)
             fallback["fallback_reason"] = str(exc)[:300]
             return fallback
     return _transcribe_faster(media_path, language=language, model_name=model_name,
-                              on_progress=on_progress, is_cancelled=is_cancelled)
+                              on_progress=on_progress, is_cancelled=is_cancelled,
+                              gpu_uuid=gpu_uuid)

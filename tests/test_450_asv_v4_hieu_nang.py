@@ -294,7 +294,7 @@ def test_DO_TAI_hai_preset(moi_truong, tmp_path, monkeypatch):
     for l in luot:
         assert l["trang_thai"] == "done", (l["nhan"], l["nhat_ky"])
         assert [g["ten"] for g in l["giai_doan"] if g["ten"] != "advance"], l["nhan"]
-    assert len(pipeline.CHUOI) == 10
+    assert len(pipeline.CHUOI) == 12
 
 
 def _may() -> dict:

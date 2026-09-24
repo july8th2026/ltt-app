@@ -385,7 +385,7 @@ def _apply_line_breaks(
 ) -> list[SubtitleEvent]:
     """Insert line breaks (\\N) for multi-line display in ASS."""
     for ev in events:
-        lines = _wrap_text(ev.text, cfg.max_chars_per_line, cfg.max_lines)
+        lines = wrap_lines(ev.text, cfg.max_chars_per_line, cfg.max_lines)
         ev.display_text = "\\N".join(lines)
         ev.line_count = len(lines)
     return events
@@ -433,6 +433,112 @@ def _wrap_text(text: str, max_chars: int, max_lines: int) -> list[str]:
     if current_line:
         lines.append(" ".join(current_line))
 
+    return lines[:max_lines]
+
+
+# ── CJK-aware wrapping ──────────────────────────────────────────────────────
+#
+# `_wrap_text` splits on spaces only. Chinese/Japanese text has no spaces, so a
+# whole Han sentence came out as ONE line of any length (measured 22/09 with a
+# 30-character Douyin line: 1 line, no break). `wrap_lines` keeps `_wrap_text`
+# byte-for-byte for space-separated text and adds a width-aware path when the
+# text contains East Asian Wide/Fullwidth characters.
+
+#: Characters that must not START a line (basic kinsoku). Splitting before
+#: them leaves a comma or closing bracket alone at the head of line 2.
+_NO_LINE_START = set("，。！？、；：）」』】》〉,.!?;:)]}…”’")
+
+
+def is_wide(ch: str) -> bool:
+    """True for East Asian Wide/Fullwidth characters (Han, kana, fullwidth)."""
+    import unicodedata
+    return unicodedata.east_asian_width(ch) in ("W", "F")
+
+
+def has_wide(text: str) -> bool:
+    return any(is_wide(c) for c in text or "")
+
+
+def display_width(text: str) -> int:
+    """Columns: a wide character counts 2, anything else 1."""
+    return sum(2 if is_wide(c) else 1 for c in text or "")
+
+
+def split_units(text: str) -> list[tuple[str, bool]]:
+    """Wrap units: every wide char is its own unit; other runs split on spaces.
+
+    Returns `(unit, space_before)` pairs so a line can be re-joined exactly
+    (no space is invented between two Han characters, none is lost between two
+    Latin words).
+    """
+    units: list[tuple[str, bool]] = []
+    buf, buf_space, pending_space = "", False, False
+    for ch in text or "":
+        if ch.isspace():
+            if buf:
+                units.append((buf, buf_space))
+                buf = ""
+            pending_space = bool(units)
+            continue
+        if is_wide(ch):
+            if buf:
+                units.append((buf, buf_space))
+                buf = ""
+                pending_space = False
+            units.append((ch, pending_space))
+            pending_space = False
+            continue
+        if not buf:
+            buf_space, pending_space = pending_space, False
+        buf += ch
+    if buf:
+        units.append((buf, buf_space))
+    return units
+
+
+def _join_units(units: list[tuple[str, bool]]) -> str:
+    if not units:
+        return ""
+    return units[0][0] + "".join((" " if sp else "") + u for u, sp in units[1:])
+
+
+def wrap_lines(text: str, max_chars: int = 42, max_lines: int = 2) -> list[str]:
+    """Public line wrapper, CJK-aware. `max_chars` is in Latin columns.
+
+    Space-separated text goes through `_wrap_text` unchanged. Text with wide
+    characters is measured with `display_width` (a Han character = 2 columns)
+    and may break between any two units except before `_NO_LINE_START`.
+    Like `_wrap_text`, the last allowed line takes whatever remains.
+    """
+    if not has_wide(text):
+        return _wrap_text(text, max_chars, max_lines)
+    units = split_units(text)
+    if not units:
+        return [text]
+    whole = _join_units(units)
+    if display_width(whole) <= max_chars or len(units) == 1:
+        return [whole]
+    ok = [i for i in range(1, len(units)) if units[i][0][0] not in _NO_LINE_START]
+
+    if max_lines == 2:
+        best: tuple[int, str, str] | None = None
+        for i in ok:
+            a, b = _join_units(units[:i]), _join_units(units[i:])
+            wa, wb = display_width(a), display_width(b)
+            if wa <= max_chars and wb <= max_chars and (best is None or abs(wa - wb) < best[0]):
+                best = (abs(wa - wb), a, b)
+        if best:
+            return [best[1], best[2]]
+
+    lines: list[str] = []
+    start = 0
+    for i in range(1, len(units)):
+        if i in ok and display_width(_join_units(units[start:i + 1])) > max_chars:
+            lines.append(_join_units(units[start:i]))
+            start = i
+            if len(lines) >= max_lines - 1:
+                break
+    lines.append(_join_units(units[start:]))
     return lines[:max_lines]
 
 

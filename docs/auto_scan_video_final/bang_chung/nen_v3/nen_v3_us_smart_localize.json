@@ -1,0 +1,1044 @@
+{
+  "schema": "nen_v3.1",
+  "preset": "smart_localize",
+  "ghi_luc": "2026-09-23T02:05:11",
+  "model_that": true,
+  "so_khoa_ltt_llm": 1,
+  "giong_that": true,
+  "thay_the": [],
+  "ngon_ngu": {
+    "nguon": "zh",
+    "dich": "vi"
+  },
+  "che_do_giong": "USER_SELECTED",
+  "giong_id": "Minh Đức",
+  "whisper_cpu": true,
+  "qc_ai": false,
+  "nguon": {
+    "ten": "深度解析丨跳伞慢了该怎么打教你用细节操作来化解危机 #和平精英夏日航海 #和平精英夏日探险.mp4",
+    "byte": 22051193,
+    "thoi_luong": 106.833
+  },
+  "luot": {
+    "nhan": "smart_localize",
+    "preset": "smart_localize",
+    "che_do_giong": "USER_SELECTED",
+    "tang_vat": {
+      "media_prepare": "C:\\Users\\THANGT~1\\AppData\\Local\\Temp\\asv_tang_vat\\smart_localize\\media_prepare.wav",
+      "audio_prepare": "C:\\Users\\THANGT~1\\AppData\\Local\\Temp\\asv_tang_vat\\smart_localize\\audio_prepare.wav",
+      "voice_synthesis": "C:\\Users\\THANGT~1\\AppData\\Local\\Temp\\asv_tang_vat\\smart_localize\\voice_synthesis.wav",
+      "timing_align": "C:\\Users\\THANGT~1\\AppData\\Local\\Temp\\asv_tang_vat\\smart_localize\\timing_align.wav",
+      "render": "C:\\Users\\THANGT~1\\AppData\\Local\\Temp\\asv_tang_vat\\smart_localize\\render.mp4"
+    },
+    "giong_id": "Minh Đức",
+    "trang_thai_run": "error",
+    "giay_tong": 1333.1,
+    "giai_doan": [
+      {
+        "ten": "media_prepare",
+        "trang_thai": "succeeded",
+        "phien_ban_engine": "chuan_hoa/1",
+        "credit": 0,
+        "loi": "",
+        "tom_tat": {
+          "stage": "media_prepare",
+          "checksum_nguon": "430af0970e50...58f1ea5aa9a81d95d9b9965d6714f9bb",
+          "thoi_luong": 106.833333,
+          "codec_video": "h264",
+          "doc": false,
+          "vfr": false,
+          "ffmpeg": "8.0.1-full_build-www.gyan.dev"
+        }
+      },
+      {
+        "ten": "audio_prepare",
+        "trang_thai": "succeeded",
+        "phien_ban_engine": "tach/1",
+        "credit": 0,
+        "loi": "",
+        "tom_tat": {
+          "stage": "audio_prepare",
+          "thiet_bi": "cpu",
+          "gpu_cap": "",
+          "ten_card": "",
+          "so_khoi": 1,
+          "khoi_giay": 298.35,
+          "stem_giu": [
+            "drums",
+            "bass",
+            "other"
+          ],
+          "lufs": -16.15,
+          "dinh_that": -1.43,
+          "thoi_luong": 106.835011,
+          "khoa_chung": "ed3599b93552...af7860f5e19e7dffa2102a1c023a21f4"
+        }
+      },
+      {
+        "ten": "transcribe",
+        "trang_thai": "succeeded",
+        "phien_ban_engine": "chep_loi/2",
+        "credit": 0,
+        "loi": "",
+        "tom_tat": {
+          "stage": "transcribe",
+          "so_doan": 6,
+          "so_tu": 0,
+          "ngon_ngu": "zh",
+          "engine": "whisperx",
+          "canh_chinh": "aligned",
+          "phu_song": 95.52,
+          "khoa_chung": "1cff7c64fc76...5dea911dd38cf8ee2ed6a64c37f9c136"
+        }
+      },
+      {
+        "ten": "edit_plan",
+        "trang_thai": "succeeded",
+        "phien_ban_engine": "ban_bien_tap/2/1/0.4",
+        "credit": 0,
+        "loi": "",
+        "tom_tat": {
+          "stage": "edit_plan",
+          "preset": "smart_localize",
+          "so_canh": 6,
+          "so_giu": 6,
+          "so_cat": 0,
+          "so_canh_da_doc": 4,
+          "so_co_bang_chung": 4,
+          "ti_le_giu": 1.0
+        }
+      },
+      {
+        "ten": "content_process",
+        "trang_thai": "succeeded",
+        "phien_ban_engine": "noi_dung/1/ltt_llm:qwen38-api",
+        "credit": 0,
+        "loi": "",
+        "tom_tat": {
+          "stage": "content_process",
+          "so_doan": 6,
+          "ma_giong": "Minh Đức",
+          "sac_thai": {
+            "cang_thang": 5,
+            "vui": 1
+          },
+          "so_ky_tu": 1998,
+          "so_doan_goc": 6,
+          "so_lo": 1,
+          "nguon_giong": ""
+        }
+      },
+      {
+        "ten": "voice_synthesis",
+        "trang_thai": "succeeded",
+        "phien_ban_engine": "giong/1",
+        "credit": 0,
+        "loi": "",
+        "tom_tat": {
+          "stage": "voice_synthesis",
+          "so_doan": 6,
+          "so_doan_moi_sinh": 6,
+          "so_luot_doc": 17,
+          "so_doan_dung_lai": 0,
+          "tong_giay": 100.4,
+          "preset": "Minh Đức",
+          "ma_giong": "Minh Đức",
+          "so_vua": 3,
+          "so_co_gian": 1,
+          "so_can_sua": 2,
+          "so_vong_tong": 11,
+          "lech_lon_nhat": 0.3002,
+          "tung_doan": [
+            {
+              "ma": "seg_0001",
+              "trang_thai": "vua",
+              "giay": 18.82,
+              "khe": 19.879,
+              "lech": -0.0533,
+              "so_vong": 1,
+              "he_so_co_gian": 1.0
+            },
+            {
+              "ma": "seg_0002",
+              "trang_thai": "co_gian",
+              "giay": 19.22,
+              "khe": 17.172,
+              "lech": 0.1193,
+              "so_vong": 2,
+              "he_so_co_gian": 1.1193
+            },
+            {
+              "ma": "seg_0003",
+              "trang_thai": "can_sua",
+              "giay": 17.46,
+              "khe": 13.818,
+              "lech": 0.2636,
+              "so_vong": 2,
+              "he_so_co_gian": 1.2636
+            },
+            {
+              "ma": "seg_0004",
+              "trang_thai": "vua",
+              "giay": 12.64,
+              "khe": 14.553,
+              "lech": -0.1315,
+              "so_vong": 2,
+              "he_so_co_gian": 1.0
+            },
+            {
+              "ma": "seg_0005",
+              "trang_thai": "vua",
+              "giay": 26.34,
+              "khe": 25.542,
+              "lech": 0.0312,
+              "so_vong": 2,
+              "he_so_co_gian": 1.0
+            },
+            {
+              "ma": "seg_0006",
+              "trang_thai": "can_sua",
+              "giay": 5.92,
+              "khe": 4.553,
+              "lech": 0.3002,
+              "so_vong": 2,
+              "he_so_co_gian": 1.3002
+            }
+          ]
+        }
+      },
+      {
+        "ten": "timing_align",
+        "trang_thai": "succeeded",
+        "phien_ban_engine": "thoi_gian/1",
+        "credit": 0,
+        "loi": "",
+        "tom_tat": {
+          "stage": "timing_align",
+          "so_doan": 6,
+          "so_doan_bi_cat": 0,
+          "so_doan_tang_toc": 3,
+          "he_so_toc_lon_nhat": 1.15,
+          "troi_toi_da_ms": 2770,
+          "ket_cuoi_ms": 106208,
+          "che_do": "fit_original",
+          "ban_do": {
+            "phien_ban": 1,
+            "giu": [
+              [
+                0.0,
+                106.833
+              ]
+            ],
+            "thoi_luong_nguon": 106.8333,
+            "thoi_luong_ra": 106.833
+          },
+          "so_cho_noi": 0,
+          "master": {
+            "thoi_luong": 106.833,
+            "lech_giay": -0.0,
+            "lufs": -14.15,
+            "dinh_that": -3.44,
+            "am_thanh": {
+              "nen_db": -6.0,
+              "giam_theo_loi": false,
+              "fade_vao": 0.0,
+              "fade_ra": 0.0
+            }
+          }
+        }
+      },
+      {
+        "ten": "compose",
+        "trang_thai": "succeeded",
+        "phien_ban_engine": "ban_dung/1",
+        "credit": 0,
+        "loi": "",
+        "tom_tat": {
+          "stage": "compose",
+          "so_lop_tieng": 6,
+          "so_lop_tang_toc": 3,
+          "che_do_hinh": "copy",
+          "cach_render": "cat_ma_hoa_lai",
+          "thoi_luong_giay": 106.833,
+          "ffmpeg": "8.0.1-full_build-www.gyan.dev"
+        }
+      },
+      {
+        "ten": "render",
+        "trang_thai": "succeeded",
+        "phien_ban_engine": "ket_xuat/2",
+        "credit": 0,
+        "loi": "",
+        "tom_tat": {
+          "stage": "render",
+          "thoi_luong_giay": 106.833,
+          "co_byte": 22501763,
+          "codec_video": "h264",
+          "codec_tieng": "aac",
+          "so_lop_tieng": 6,
+          "chan_doan": ""
+        }
+      },
+      {
+        "ten": "qc",
+        "trang_thai": "failed_terminal",
+        "phien_ban_engine": "qc/4",
+        "credit": 0,
+        "loi": "Bản kết xuất không đạt 1 mục kiểm chất lượng: T5.",
+        "tom_tat": {
+          "stage": "qc",
+          "qc_dat": false,
+          "qc_so_muc_hong": 1,
+          "qc_muc_hong": [
+            "T5"
+          ],
+          "qc_phien_ban": 4
+        }
+      },
+      {
+        "ten": "qc_ai",
+        "trang_thai": "pending",
+        "phien_ban_engine": "qc_ai/1+loi_nhac/1",
+        "credit": 0,
+        "loi": "",
+        "tom_tat": {}
+      }
+    ],
+    "nhat_ky_job": [
+      {
+        "job_type": "auto_scan_video.advance",
+        "giay": 0.02,
+        "loi": ""
+      },
+      {
+        "job_type": "asv_media.media_prepare",
+        "giay": 0.28,
+        "loi": ""
+      },
+      {
+        "job_type": "auto_scan_video.advance",
+        "giay": 0.01,
+        "loi": ""
+      },
+      {
+        "job_type": "asv_gpu.audio_prepare",
+        "giay": 66.47,
+        "loi": ""
+      },
+      {
+        "job_type": "auto_scan_video.advance",
+        "giay": 0.02,
+        "loi": ""
+      },
+      {
+        "job_type": "asv_gpu.transcribe",
+        "giay": 27.08,
+        "loi": ""
+      },
+      {
+        "job_type": "auto_scan_video.advance",
+        "giay": 0.02,
+        "loi": ""
+      },
+      {
+        "job_type": "auto_scan_video.edit_plan",
+        "giay": 163.78,
+        "loi": ""
+      },
+      {
+        "job_type": "auto_scan_video.advance",
+        "giay": 0.01,
+        "loi": ""
+      },
+      {
+        "job_type": "auto_scan_video.content_process",
+        "giay": 84.09,
+        "loi": ""
+      },
+      {
+        "job_type": "auto_scan_video.advance",
+        "giay": 0.02,
+        "loi": ""
+      },
+      {
+        "job_type": "asv_voice.voice_synthesis",
+        "giay": 942.65,
+        "loi": ""
+      },
+      {
+        "job_type": "auto_scan_video.advance",
+        "giay": 0.03,
+        "loi": ""
+      },
+      {
+        "job_type": "asv_media.timing_align",
+        "giay": 10.96,
+        "loi": ""
+      },
+      {
+        "job_type": "auto_scan_video.advance",
+        "giay": 0.02,
+        "loi": ""
+      },
+      {
+        "job_type": "asv_media.compose",
+        "giay": 0.43,
+        "loi": ""
+      },
+      {
+        "job_type": "auto_scan_video.advance",
+        "giay": 0.02,
+        "loi": ""
+      },
+      {
+        "job_type": "asv_media.render",
+        "giay": 4.85,
+        "loi": ""
+      },
+      {
+        "job_type": "auto_scan_video.advance",
+        "giay": 0.02,
+        "loi": ""
+      },
+      {
+        "job_type": "asv_media.qc",
+        "giay": 4.61,
+        "loi": "LoiNguoiGoi: Bản kết xuất không đạt 1 mục kiểm chất lượng: T5."
+      },
+      {
+        "job_type": "auto_scan_video.advance",
+        "giay": 0.04,
+        "loi": ""
+      }
+    ],
+    "asr": {
+      "ngon_ngu": "zh",
+      "so_doan": 6,
+      "van": [
+        "如果跳散慢呢该怎么打这人落地房子都不进那他肯定是捡到枪了现在最好的办法就是赶紧进楼来把枪啊光子这人肯定会往里面冲架着门口往左边走用提炼枪让他来接子弹跳散慢会让我们错失进攻的机会接下来别人会源源不断的进攻我们一定要想办法把楼给守住手滑了不好意思",
+        "楼梯来脚步了我们现在这个血量可以说天崩开局如果想完成极限反杀那接下来这个操作你们一定要学一下趁敌人还没上来咱们直接趴下用盒子当掩体他就发现不了我们开个玩笑啊盒子是不能当掩体的这里我们特意往墙角多走那两步才趴下为的就是卡敌人视野差让他第一时间看不到我们位置",
+        "这个时候你们仔细听楼下又来人了打药的时候不要待在原地镇敌人还没到我们可以先把有利的位置选下来只要我们占据了地形优势来再多的人也不用怕你们玩的时候千万别冲这么快速度越快损失的反应时间就越多一旦我们拉出去这人几乎没有反应时间",
+        "看到没有这就是纯白给这个时候外面的脚步越来越多全都是冲着我们来的趁现在赶紧把人补了这里要注意不要把大量的时间用在补人身上没补掉就赶紧回头小心身后的人真正的高手从来都不会盲目进攻先掐个假雷看他会如何应对",
+        "这人很稳啊看来是遇到高手了哎不是这哥们居然是来救人的这人的操作你们可千万别学啊楼下还有脚步他们不敢上来那我们就直接掐雷此一听有人又跳伞回来了至于这里的细节咱们直接把雷丢在二楼门口防止楼顶的人跳下来真是说什么来什么他冲这么快肯定是想下楼帮队友假装本人把他队友骗上来这人也是犯了同样的错误冲太快就会失去开枪的机会",
+        "直接拿下最后问你们个问题如果攻楼的时候遇到这种卡着楼梯的你们会怎么办"
+      ]
+    },
+    "ban_bien_tap": {
+      "stage": "edit_plan",
+      "preset": "smart_localize",
+      "so_canh": 6,
+      "so_giu": 6,
+      "so_cat": 0,
+      "so_canh_da_doc": 4,
+      "so_co_bang_chung": 4,
+      "ti_le_giu": 1.0
+    },
+    "ban_dung": {
+      "stage": "compose",
+      "so_lop_tieng": 6,
+      "so_lop_tang_toc": 3,
+      "che_do_hinh": "copy",
+      "cach_render": "cat_ma_hoa_lai",
+      "thoi_luong_giay": 106.833,
+      "ffmpeg": "8.0.1-full_build-www.gyan.dev"
+    },
+    "ket_xuat": {
+      "stage": "render",
+      "thoi_luong_giay": 106.833,
+      "co_byte": 22501763,
+      "codec_video": "h264",
+      "codec_tieng": "aac",
+      "so_lop_tieng": 6,
+      "chan_doan": ""
+    },
+    "ban_long_tieng": {
+      "so_muc": 6,
+      "ngon_ngu": "",
+      "chu": [
+        "Nếu nhảy dù chậm thì đánh ra sao? Hắn đáp xuống mà không vào nhà, chắc hẳn đã nhặt được súng. Cách tốt nhất lúc này là lao thẳng vào trong lấy súng ngay, Photon. Hắn sẽ chắc chắn xông vào, ta canh cửa sẵn, vòng sang bên trái, giữ súng nhắm sẵn, bắt hắn phải nhận đạn. Nhảy chậm sẽ khiến ta mất cơ hội tấn công, địch liên tục áp lên, mình phải giữ cho được tòa nhà. Lỡ tay rồi, xin lỗi với mọi người nhé.",
+        "Cầu thang có tiếng chân rồi. Máu hiện tại có thể nói là mở đầu cực tệ. Muốn phản sát cực đại thì thao tác sau này các bạn phải học. Nhân địch chưa lên, mình nằm xuống, dùng thùng làm vật cản, hắn khó thấy. Trêu thôi, thùng không cản được. Mình đi thêm vài bước sát góc rồi mới nằm, để né góc nhìn địch, khiến hắn không thấy mình ngay.",
+        "Lúc này nghe kỹ, dưới lầu lại có người. Khi uống thuốc, đừng đứng yên.趁 địch chưa tới, mình chọn trước vị trí tốt. Có lợi thế địa hình thì địch đông mấy cũng không sợ. Các bạn chơi đừng lao nhanh thế. Tốc độ càng cao, thời gian phản ứng càng ít. Một khi mình kéo ra, địch gần như không kịp phản ứng.",
+        "Thấy chưa, đây là tự chui đầu vào bẫy. Lúc này tiếng chân ngoài kia càng ngày càng nhiều, toàn nhắm vào mình. Nhân lúc này nhanh xử người đi. Chú ý, đừng tốn quá nhiều thời gian hạ địch. Chưa hạ được thì quay lại ngay, đề phòng người phía sau. Cao thủ thật chẳng bao giờ tấn công mù quáng, thả quả lựu đạn giả trước để xem địch phản ứng thế nào.",
+        "Người này vững quá, xem ra gặp cao thủ rồi. À không, tên này lại là đi cứu người. Cách chơi của hắn, các bạn千万别 học. Dưới lầu vẫn còn tiếng chân, địch không dám lên, thì mình thả lựu đạn trước. Nghe lại đây, có người nhảy dù trở lại. Chi tiết chỗ này, mình ném thẳng lựu đạn ra cửa tầng hai, phòng người trên sân thượng nhảy xuống. Thật đúng là nói gì có nấy. Hắn lao nhanh thế, chắc muốn xuống dưới cứu đội bạn. Giả làm chính chủ để lừa đối thủ lên. Người này cũng sai y hệt, lao quá nhanh thì sẽ mất cơ hội nổ súng.",
+        "Xử luôn. Cuối cùng hỏi các bạn: khi tấn công tòa nhà gặp địch canh cầu thang thế này, bạn sẽ làm gì?"
+      ]
+    },
+    "qc": {
+      "dat": false,
+      "muc_hong": [
+        "T5"
+      ],
+      "muc": [
+        {
+          "co_tieng": true,
+          "co_video": true,
+          "ma": "T1",
+          "mo_ta": "tep ra co du luong hinh va luong tieng",
+          "trang_thai": "dat"
+        },
+        {
+          "lech": 0.0,
+          "ma": "T2",
+          "mo_ta": "thoi luong ban ra so voi MONG DOI cua che do",
+          "mong_doi": 106.833,
+          "nguong": 0.5,
+          "thoi_luong_nguon": 106.833,
+          "thoi_luong_ra": 106.833,
+          "trang_thai": "dat"
+        },
+        {
+          "che_do_render": "cat_ma_hoa_lai",
+          "ma": "T3",
+          "mo_ta": "che do CAT ma hoa lai luong hinh — bam khong the bang nguon, va so no la chot mot dieu ta co y khong lam",
+          "trang_thai": "khong_ap_dung"
+        },
+        {
+          "dich": -14.0,
+          "dung_sai": 1.0,
+          "lufs": -14.2,
+          "ma": "T4",
+          "mo_ta": "am luong tich hop",
+          "trang_thai": "dat"
+        },
+        {
+          "dinh_that": -0.33,
+          "ma": "T5",
+          "mo_ta": "dinh that",
+          "toi_da": -1.5,
+          "trang_thai": "hong"
+        },
+        {
+          "ma": "T6",
+          "mo_ta": "moi doan con lai deu co tep tieng",
+          "so_can": 6,
+          "so_thieu": 0,
+          "thieu": [],
+          "trang_thai": "dat"
+        },
+        {
+          "doan": "",
+          "ma": "T7",
+          "mo_ta": "moi doan nam dung cho ke hoach da dinh",
+          "nguong": 0.3,
+          "trang_thai": "dat",
+          "troi_lon_nhat_s": 0.0
+        },
+        {
+          "ma": "T8",
+          "mo_ta": "MVP khong CHEN khoang lang nao — ADR-003 doi mo hinh thoi gian sang MUON khoang lang san co lam ngan sach, nen ba dung sai nay khong con chu the de do",
+          "trang_thai": "khong_ap_dung"
+        },
+        {
+          "ma": "T9",
+          "mo_ta": "MVP khong CHEN khoang lang nao — ADR-003 doi mo hinh thoi gian sang MUON khoang lang san co lam ngan sach, nen ba dung sai nay khong con chu the de do",
+          "trang_thai": "khong_ap_dung"
+        },
+        {
+          "ma": "T10",
+          "mo_ta": "MVP khong CHEN khoang lang nao — ADR-003 doi mo hinh thoi gian sang MUON khoang lang san co lam ngan sach, nen ba dung sai nay khong con chu the de do",
+          "trang_thai": "khong_ap_dung"
+        },
+        {
+          "doan_vuot": [],
+          "ma": "T11",
+          "mo_ta": "troi tich luy trong tran ngan sach cua 3 doan ke tiep",
+          "so_doan_vuot": 0,
+          "tran_so_doan": 3,
+          "trang_thai": "dat",
+          "troi_toi_da_ms": 2770
+        },
+        {
+          "ma": "T12",
+          "mo_ta": "so doan bi cat da duoc bao cao",
+          "so_doan_bi_cat": 0,
+          "trang_thai": "dat"
+        },
+        {
+          "ma": "T13",
+          "mo_ta": "khong lay duoc khung nao de do do sang",
+          "trang_thai": "khong_ap_dung"
+        },
+        {
+          "che_do_render": "cat_ma_hoa_lai",
+          "ma": "T14",
+          "mo_ta": "che do CAT co quyen ma hoa lai — khong co loi hua nao ve bo ma hoa hay kich thuoc de doi chieu",
+          "trang_thai": "khong_ap_dung"
+        },
+        {
+          "ma": "T15",
+          "mo_ta": "ban dung khong mang su kien phu de nao",
+          "trang_thai": "khong_ap_dung"
+        },
+        {
+          "lech": 0.033,
+          "ma": "T16",
+          "mo_ta": "luong hinh va luong tieng dai bang nhau",
+          "thoi_luong_tieng": 106.833,
+          "thoi_luong_video": 106.8,
+          "toi_da": 0.5,
+          "trang_thai": "dat"
+        }
+      ]
+    },
+    "so_ke": {
+      "theo_nang_luc": [
+        {
+          "app_chu": "ltt_llm",
+          "nang_luc": "doc_canh",
+          "don_vi": "token",
+          "so_luong": 14556.0,
+          "credit": 0,
+          "da_giao": 6,
+          "tu_choi": 0,
+          "mo_ho": 0
+        },
+        {
+          "app_chu": "ltt_llm",
+          "nang_luc": "chuyen_loi_thoai",
+          "don_vi": "token",
+          "so_luong": 7360.0,
+          "credit": 0,
+          "da_giao": 1,
+          "tu_choi": 0,
+          "mo_ho": 0
+        },
+        {
+          "app_chu": "ltt_llm",
+          "nang_luc": "rut_ngan_cho_vua",
+          "don_vi": "token",
+          "so_luong": 50144.0,
+          "credit": 0,
+          "da_giao": 11,
+          "tu_choi": 0,
+          "mo_ho": 0
+        },
+        {
+          "app_chu": "ltt_voice",
+          "nang_luc": "tong_hop_tieng",
+          "don_vi": "giay",
+          "so_luong": 100.4,
+          "credit": 0,
+          "da_giao": 6,
+          "tu_choi": 0,
+          "mo_ho": 0
+        }
+      ],
+      "tong": {
+        "credit": 0,
+        "da_giao": 24,
+        "tu_choi": 0,
+        "mo_ho": 0
+      },
+      "mo_ho_chua_giai_quyet": 0
+    },
+    "doi_soat": {
+      "khop": true,
+      "so_don_vi": 30,
+      "so_dong_da_giao": 24,
+      "don_vi_co_tien_khong_co_so_cai": [],
+      "so_cai_khong_co_don_vi": []
+    },
+    "tom_tat_khach": {
+      "trang_thai": "error",
+      "so_buoc_xong": 9,
+      "so_buoc": 11,
+      "phan_tram": 82,
+      "credit_da_giu": 14,
+      "credit_da_tinh": 0,
+      "chi_phi_theo_nang_luc": [
+        {
+          "nang_luc": "doc_canh",
+          "don_vi": "token",
+          "so_luong": 14556.0,
+          "credit": 0,
+          "nhan": "Xem từng cảnh",
+          "nhan_don_vi": "token"
+        },
+        {
+          "nang_luc": "chuyen_loi_thoai",
+          "don_vi": "token",
+          "so_luong": 7360.0,
+          "credit": 0,
+          "nhan": "Viết lời thoại tiếng Việt",
+          "nhan_don_vi": "token"
+        },
+        {
+          "nang_luc": "rut_ngan_cho_vua",
+          "don_vi": "token",
+          "so_luong": 50144.0,
+          "credit": 0,
+          "nhan": "Rút gọn cho vừa thời lượng",
+          "nhan_don_vi": "token"
+        },
+        {
+          "nang_luc": "tong_hop_tieng",
+          "don_vi": "giay",
+          "so_luong": 100.4,
+          "credit": 0,
+          "nhan": "Đọc lời lồng tiếng",
+          "nhan_don_vi": "giây"
+        }
+      ],
+      "da_quyet_toan": true,
+      "hoan_lai": 14,
+      "loi": "qc: giai doan nay khong hoan tat"
+    },
+    "vi_sao_hong": [],
+    "credit_con_lai": 1000,
+    "ra": {
+      "byte": 22501763,
+      "thoi_luong": 106.833,
+      "codec_video": "h264",
+      "codec_tieng": "aac",
+      "khung": [
+        836,
+        576
+      ],
+      "vung_co_tieng": [
+        [
+          0.0,
+          1.5
+        ],
+        [
+          5.0,
+          6.0
+        ],
+        [
+          10.5,
+          13.5
+        ],
+        [
+          15.0,
+          16.5
+        ],
+        [
+          21.0,
+          22.0
+        ],
+        [
+          28.0,
+          29.0
+        ],
+        [
+          29.5,
+          30.5
+        ],
+        [
+          41.5,
+          42.5
+        ],
+        [
+          43.0,
+          44.0
+        ],
+        [
+          44.5,
+          46.0
+        ],
+        [
+          47.5,
+          48.5
+        ],
+        [
+          49.0,
+          50.5
+        ],
+        [
+          52.5,
+          54.5
+        ],
+        [
+          61.0,
+          62.0
+        ],
+        [
+          62.5,
+          64.5
+        ],
+        [
+          66.5,
+          68.5
+        ],
+        [
+          69.0,
+          70.0
+        ],
+        [
+          71.0,
+          72.5
+        ],
+        [
+          74.0,
+          77.0
+        ],
+        [
+          77.5,
+          78.5
+        ],
+        [
+          79.0,
+          80.0
+        ],
+        [
+          82.0,
+          83.5
+        ],
+        [
+          84.5,
+          85.5
+        ],
+        [
+          88.0,
+          91.0
+        ],
+        [
+          91.5,
+          92.5
+        ],
+        [
+          95.5,
+          98.0
+        ],
+        [
+          98.5,
+          102.0
+        ]
+      ],
+      "phu_song_loi": null,
+      "am_luong": {
+        "lufs": -14.2,
+        "dinh_that": -0.33
+      },
+      "do_cua_phep_do": {
+        "so_cua_so": 213,
+        "nen_p20_db": -18.78,
+        "nguong_db": -16.78,
+        "thap_nhat_db": -37.92,
+        "cao_nhat_db": -13.42,
+        "so_cua_so_tren_nguong": 112,
+        "ti_le_tren_nguong": 0.526,
+        "muc_cua_so_db": [
+          -16.47,
+          -16.25,
+          -15.55,
+          -18.44,
+          -16.71,
+          -16.91,
+          -18.96,
+          -18.32,
+          -16.87,
+          -18.47,
+          -15.95,
+          -15.39,
+          -17.06,
+          -15.46,
+          -17.92,
+          -15.94,
+          -20.96,
+          -15.15,
+          -21.11,
+          -17.5,
+          -18.78,
+          -16.04,
+          -16.01,
+          -14.27,
+          -16.0,
+          -16.41,
+          -16.47,
+          -17.12,
+          -17.48,
+          -19.45,
+          -16.36,
+          -16.61,
+          -16.67,
+          -20.62,
+          -19.71,
+          -16.62,
+          -16.81,
+          -16.67,
+          -21.64,
+          -32.27,
+          -16.6,
+          -17.66,
+          -16.1,
+          -15.8,
+          -22.03,
+          -18.5,
+          -16.82,
+          -16.65,
+          -23.57,
+          -15.79,
+          -17.74,
+          -21.14,
+          -18.87,
+          -19.33,
+          -18.36,
+          -18.51,
+          -14.59,
+          -15.3,
+          -18.57,
+          -14.37,
+          -16.02,
+          -16.81,
+          -18.76,
+          -17.13,
+          -17.74,
+          -21.26,
+          -14.51,
+          -17.21,
+          -20.38,
+          -15.58,
+          -18.28,
+          -15.84,
+          -17.11,
+          -17.52,
+          -15.75,
+          -19.79,
+          -18.4,
+          -15.63,
+          -23.33,
+          -28.92,
+          -27.98,
+          -15.97,
+          -17.8,
+          -14.69,
+          -14.73,
+          -19.28,
+          -15.36,
+          -16.61,
+          -19.34,
+          -14.93,
+          -16.11,
+          -16.23,
+          -19.44,
+          -14.67,
+          -17.37,
+          -16.63,
+          -16.74,
+          -17.83,
+          -15.44,
+          -15.5,
+          -16.49,
+          -19.33,
+          -15.35,
+          -16.8,
+          -17.71,
+          -16.55,
+          -15.18,
+          -15.62,
+          -16.63,
+          -22.41,
+          -22.89,
+          -19.29,
+          -17.01,
+          -22.24,
+          -21.95,
+          -15.65,
+          -17.22,
+          -15.51,
+          -18.66,
+          -19.88,
+          -14.34,
+          -18.06,
+          -14.85,
+          -15.65,
+          -17.2,
+          -16.75,
+          -15.93,
+          -16.2,
+          -16.26,
+          -18.56,
+          -15.24,
+          -18.16,
+          -20.06,
+          -15.03,
+          -16.17,
+          -15.25,
+          -15.82,
+          -18.1,
+          -15.5,
+          -16.32,
+          -19.63,
+          -20.25,
+          -15.87,
+          -14.64,
+          -15.65,
+          -16.82,
+          -15.32,
+          -21.42,
+          -15.65,
+          -15.9,
+          -13.42,
+          -14.54,
+          -14.99,
+          -14.79,
+          -21.18,
+          -13.73,
+          -15.63,
+          -16.83,
+          -15.56,
+          -15.15,
+          -17.39,
+          -14.15,
+          -18.41,
+          -17.75,
+          -16.36,
+          -14.27,
+          -15.44,
+          -19.76,
+          -18.01,
+          -16.01,
+          -16.27,
+          -18.3,
+          -16.94,
+          -17.14,
+          -14.85,
+          -17.02,
+          -15.33,
+          -14.3,
+          -13.98,
+          -13.6,
+          -15.85,
+          -13.72,
+          -18.57,
+          -15.81,
+          -16.76,
+          -19.61,
+          -17.07,
+          -14.36,
+          -17.21,
+          -17.28,
+          -17.34,
+          -14.41,
+          -16.63,
+          -15.24,
+          -14.34,
+          -15.0,
+          -17.48,
+          -15.31,
+          -15.31,
+          -15.94,
+          -16.03,
+          -14.6,
+          -15.76,
+          -16.28,
+          -19.06,
+          -17.47,
+          -16.63,
+          -19.41,
+          -17.94,
+          -21.11,
+          -29.03,
+          -31.91,
+          -37.92
+        ]
+      }
+    },
+    "tai_ve": {
+      "ma_chu": 200,
+      "byte_chu": 22501763,
+      "ma_nguoi_khac": 404
+    }
+  },
+  "giay": 1333.1
+}

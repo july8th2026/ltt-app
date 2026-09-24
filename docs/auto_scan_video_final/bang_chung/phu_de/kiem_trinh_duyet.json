@@ -1,0 +1,47 @@
+{
+ "che_do": {
+  "tat": {
+   "http": 200,
+   "sha256": "bc109c44913d7d42",
+   "phu_de_gui": "",
+   "o_kieu_hien": false,
+   "o_nguon_chu_hien": false
+  },
+  "tu_dong": {
+   "http": 200,
+   "sha256": "4ef3827faec3bca5",
+   "phu_de_gui": "{\"che_do\":\"tu_dong\",\"xuat_srt\":false}",
+   "o_kieu_hien": false,
+   "o_nguon_chu_hien": false
+  },
+  "nguon": {
+   "http": 200,
+   "sha256": "eb1b7740f8c10aa4",
+   "phu_de_gui": "{\"che_do\":\"nguon\",\"xuat_srt\":false}",
+   "o_kieu_hien": false,
+   "o_nguon_chu_hien": false
+  },
+  "dich": {
+   "http": 200,
+   "sha256": "30fb49cb447aadb1",
+   "phu_de_gui": "{\"che_do\":\"dich\",\"xuat_srt\":false}",
+   "o_kieu_hien": false,
+   "o_nguon_chu_hien": false
+  },
+  "tu_chon": {
+   "http": 200,
+   "sha256": "f6ceee6d85dd6349",
+   "phu_de_gui": "{\"che_do\":\"tu_chon\",\"xuat_srt\":false,\"kieu\":\"tiktok_bold\",\"chu\":\"nguon\"}",
+   "o_kieu_hien": true,
+   "o_nguon_chu_hien": true
+  }
+ },
+ "console_loi": [],
+ "request_hong": [
+  "blob:http://127.0.0.1:8207/c1f1f6f7-82fb-4e29-980e-96f09fa33479"
+ ],
+ "nut_xem_bat": true,
+ "goi_y_khi_chua_danh_dau": true,
+ "goi_y_sau_khi_danh_dau": false,
+ "so_png_khac_nhau": 5
+}

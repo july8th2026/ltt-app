@@ -1,0 +1,24 @@
+MetricX-24 QE runner for LTT Studios Auto Scan Video
+
+This directory contains code derived from google-research/metricx
+  https://github.com/google-research/metricx
+  commit fc4978eb064670f7cc33e93ea4f52d38396b8ae6 (2024-12-12)
+  Copyright 2024 Google LLC
+  Licensed under the Apache License, Version 2.0 (see LICENSE in this directory,
+  byte-identical to the upstream LICENSE, git blob 7a4a3ea2424c09fbe48d455aed1eaa94d9124835).
+
+Files:
+  mt5_regression.py  derived from metricx24/models.py (MT5ForRegression).
+                     Modified by LTT Studios on 2026-09-22: inference-only
+                     forward pass (training loss, head-mask and model-parallel
+                     branches removed); decoder start token is created on the
+                     encoder output's device instead of a hard-coded "cuda".
+                     Weight layout, output token 250089 and [0, 25] clamp unchanged.
+  chay.py            input format "source: <src> candidate: <mt>" with EOS removed
+                     and max length 1536 follows metricx24/predict.py (QE mode).
+  ban_ghim.py, tai.py, phien_ban.json   written by LTT Studios.
+
+Model weights are NOT stored here. They are downloaded at setup time into
+HF_HOME from Hugging Face at pinned revisions, and verified by sha256:
+  google/metricx-24-hybrid-large-v2p6-bfloat16 @ febb720e29a059df2e8af3ffd71dcdc9e0a24910  (Apache-2.0)
+  google/mt5-xl (tokenizer files only)          @ 63fc6450d80515b48e026b69ef2fbbd426433e84  (Apache-2.0)

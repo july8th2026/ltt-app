@@ -1,0 +1,81 @@
+{
+ "tts": [],
+ "llm": [
+  {
+   "ma": "seg_0001",
+   "vong": 0,
+   "nhan": "ok",
+   "giay_tuong": 67.02,
+   "token_vao": 448,
+   "token_ra": 4227,
+   "suy_nghi_ky_tu": 12376,
+   "finish_reason": "stop",
+   "am_tiet_ra": 83
+  },
+  {
+   "ma": "seg_0002",
+   "vong": 0,
+   "nhan": "ok",
+   "giay_tuong": 66.07,
+   "token_vao": 431,
+   "token_ra": 4212,
+   "suy_nghi_ky_tu": 11958,
+   "finish_reason": "stop",
+   "am_tiet_ra": 71
+  },
+  {
+   "ma": "seg_0003",
+   "vong": 0,
+   "nhan": "ok",
+   "giay_tuong": 66.65,
+   "token_vao": 406,
+   "token_ra": 4198,
+   "suy_nghi_ky_tu": 11630,
+   "finish_reason": "stop",
+   "am_tiet_ra": 57
+  },
+  {
+   "ma": "seg_0004",
+   "vong": 0,
+   "nhan": "ok",
+   "giay_tuong": 67.05,
+   "token_vao": 415,
+   "token_ra": 4210,
+   "suy_nghi_ky_tu": 10362,
+   "finish_reason": "stop",
+   "am_tiet_ra": 66
+  },
+  {
+   "ma": "seg_0005",
+   "vong": 0,
+   "nhan": "ok",
+   "giay_tuong": 72.11,
+   "token_vao": 498,
+   "token_ra": 4254,
+   "suy_nghi_ky_tu": 12076,
+   "finish_reason": "stop",
+   "am_tiet_ra": 102
+  },
+  {
+   "ma": "seg_0006",
+   "vong": 0,
+   "nhan": "ok",
+   "giay_tuong": 71.0,
+   "token_vao": 316,
+   "token_ra": 4154,
+   "suy_nghi_ky_tu": 12296,
+   "finish_reason": "stop",
+   "am_tiet_ra": 21
+  }
+ ],
+ "tom_tat": {
+  "tts": {},
+  "llm": {
+   "so_luot": 6,
+   "giay_tuong_trung_binh": 68.32,
+   "giay_tuong_tong": 409.9,
+   "token_ra_trung_binh": 4209.2,
+   "suy_nghi_ky_tu_trung_binh": 11783
+  }
+ }
+}

@@ -1,0 +1,291 @@
+{
+  "schema": "nen_v3.1",
+  "preset": "localize_preserve_picture",
+  "ghi_luc": "2026-09-23T01:21:17",
+  "model_that": true,
+  "so_khoa_ltt_llm": 1,
+  "giong_that": true,
+  "thay_the": [],
+  "ngon_ngu": {
+    "nguon": "zh",
+    "dich": "vi"
+  },
+  "whisper_cpu": true,
+  "qc_ai": false,
+  "nguon": {
+    "ten": "深度解析丨跳伞慢了该怎么打教你用细节操作来化解危机 #和平精英夏日航海 #和平精英夏日探险.mp4",
+    "byte": 22051193,
+    "thoi_luong": 106.833
+  },
+  "luot": {
+    "nhan": "localize_preserve_picture",
+    "preset": "localize_preserve_picture",
+    "che_do_giong": "AUTO_MATCH",
+    "tang_vat": {
+      "media_prepare": "C:\\Users\\THANGT~1\\AppData\\Local\\Temp\\asv_tang_vat\\localize_preserve_picture\\media_prepare.wav",
+      "audio_prepare": "C:\\Users\\THANGT~1\\AppData\\Local\\Temp\\asv_tang_vat\\localize_preserve_picture\\audio_prepare.wav"
+    },
+    "giong_id": "",
+    "trang_thai_run": "error",
+    "giay_tong": 133.5,
+    "giai_doan": [
+      {
+        "ten": "media_prepare",
+        "trang_thai": "succeeded",
+        "phien_ban_engine": "chuan_hoa/1",
+        "credit": 0,
+        "loi": "",
+        "tom_tat": {
+          "stage": "media_prepare",
+          "checksum_nguon": "430af0970e50...58f1ea5aa9a81d95d9b9965d6714f9bb",
+          "thoi_luong": 106.833333,
+          "codec_video": "h264",
+          "doc": false,
+          "vfr": false,
+          "ffmpeg": "8.0.1-full_build-www.gyan.dev"
+        }
+      },
+      {
+        "ten": "audio_prepare",
+        "trang_thai": "succeeded",
+        "phien_ban_engine": "tach/1",
+        "credit": 0,
+        "loi": "",
+        "tom_tat": {
+          "stage": "audio_prepare",
+          "thiet_bi": "cpu",
+          "gpu_cap": "",
+          "ten_card": "",
+          "so_khoi": 1,
+          "khoi_giay": 298.35,
+          "stem_giu": [
+            "drums",
+            "bass",
+            "other"
+          ],
+          "lufs": -16.15,
+          "dinh_that": -1.43,
+          "thoi_luong": 106.835011,
+          "khoa_chung": "a54b6f72f382...6af563c354751023209ef37a5e822b45"
+        }
+      },
+      {
+        "ten": "transcribe",
+        "trang_thai": "succeeded",
+        "phien_ban_engine": "chep_loi/2",
+        "credit": 0,
+        "loi": "",
+        "tom_tat": {
+          "stage": "transcribe",
+          "so_doan": 6,
+          "so_tu": 0,
+          "ngon_ngu": "zh",
+          "engine": "whisperx",
+          "canh_chinh": "aligned",
+          "phu_song": 95.52,
+          "khoa_chung": "9f94f4ea1025...66b527c3adbbaf948b4823a3c61ddd32"
+        }
+      },
+      {
+        "ten": "edit_plan",
+        "trang_thai": "succeeded",
+        "phien_ban_engine": "ban_bien_tap/2/1/0.4",
+        "credit": 0,
+        "loi": "",
+        "tom_tat": {
+          "stage": "edit_plan",
+          "preset": "localize_preserve_picture",
+          "so_canh": 1,
+          "so_giu": 1,
+          "so_cat": 0,
+          "so_canh_da_doc": 0,
+          "bat_bien_giu_hinh": true
+        }
+      },
+      {
+        "ten": "content_process",
+        "trang_thai": "failed_terminal",
+        "phien_ban_engine": "noi_dung/1/ltt_llm:qwen38-api",
+        "credit": 0,
+        "loi": "Chưa chọn được giọng cho lần chạy này — cần hồ sơ nội dung trước khi tự khớp.",
+        "tom_tat": {}
+      },
+      {
+        "ten": "voice_synthesis",
+        "trang_thai": "pending",
+        "phien_ban_engine": "giong/1",
+        "credit": 0,
+        "loi": "",
+        "tom_tat": {}
+      },
+      {
+        "ten": "timing_align",
+        "trang_thai": "pending",
+        "phien_ban_engine": "thoi_gian/1",
+        "credit": 0,
+        "loi": "",
+        "tom_tat": {}
+      },
+      {
+        "ten": "compose",
+        "trang_thai": "pending",
+        "phien_ban_engine": "ban_dung/1",
+        "credit": 0,
+        "loi": "",
+        "tom_tat": {}
+      },
+      {
+        "ten": "render",
+        "trang_thai": "pending",
+        "phien_ban_engine": "ket_xuat/2",
+        "credit": 0,
+        "loi": "",
+        "tom_tat": {}
+      },
+      {
+        "ten": "qc",
+        "trang_thai": "pending",
+        "phien_ban_engine": "qc/4",
+        "credit": 0,
+        "loi": "",
+        "tom_tat": {}
+      },
+      {
+        "ten": "qc_ai",
+        "trang_thai": "pending",
+        "phien_ban_engine": "qc_ai/1+loi_nhac/1",
+        "credit": 0,
+        "loi": "",
+        "tom_tat": {}
+      }
+    ],
+    "nhat_ky_job": [
+      {
+        "job_type": "auto_scan_video.advance",
+        "giay": 0.02,
+        "loi": ""
+      },
+      {
+        "job_type": "asv_media.media_prepare",
+        "giay": 0.31,
+        "loi": ""
+      },
+      {
+        "job_type": "auto_scan_video.advance",
+        "giay": 0.01,
+        "loi": ""
+      },
+      {
+        "job_type": "asv_gpu.audio_prepare",
+        "giay": 73.32,
+        "loi": ""
+      },
+      {
+        "job_type": "auto_scan_video.advance",
+        "giay": 0.02,
+        "loi": ""
+      },
+      {
+        "job_type": "asv_gpu.transcribe",
+        "giay": 58.96,
+        "loi": ""
+      },
+      {
+        "job_type": "auto_scan_video.advance",
+        "giay": 0.02,
+        "loi": ""
+      },
+      {
+        "job_type": "auto_scan_video.edit_plan",
+        "giay": 0.03,
+        "loi": ""
+      },
+      {
+        "job_type": "auto_scan_video.advance",
+        "giay": 0.02,
+        "loi": ""
+      },
+      {
+        "job_type": "auto_scan_video.content_process",
+        "giay": 0.04,
+        "loi": "LoiNguoiGoi: Chưa chọn được giọng cho lần chạy này — cần hồ sơ nội dung trước khi tự khớp."
+      },
+      {
+        "job_type": "auto_scan_video.advance",
+        "giay": 0.02,
+        "loi": ""
+      }
+    ],
+    "asr": {
+      "ngon_ngu": "zh",
+      "so_doan": 6,
+      "van": [
+        "如果跳散慢呢该怎么打这人落地房子都不进那他肯定是捡到枪了现在最好的办法就是赶紧进楼来把枪啊光子这人肯定会往里面冲架着门口往左边走用提炼枪让他来接子弹跳散慢会让我们错失进攻的机会接下来别人会源源不断的进攻我们一定要想办法把楼给守住手滑了不好意思",
+        "楼梯来脚步了我们现在这个血量可以说天崩开局如果想完成极限反杀那接下来这个操作你们一定要学一下趁敌人还没上来咱们直接趴下用盒子当掩体他就发现不了我们开个玩笑啊盒子是不能当掩体的这里我们特意往墙角多走那两步才趴下为的就是卡敌人视野差让他第一时间看不到我们位置",
+        "这个时候你们仔细听楼下又来人了打药的时候不要待在原地镇敌人还没到我们可以先把有利的位置选下来只要我们占据了地形优势来再多的人也不用怕你们玩的时候千万别冲这么快速度越快损失的反应时间就越多一旦我们拉出去这人几乎没有反应时间",
+        "看到没有这就是纯白给这个时候外面的脚步越来越多全都是冲着我们来的趁现在赶紧把人补了这里要注意不要把大量的时间用在补人身上没补掉就赶紧回头小心身后的人真正的高手从来都不会盲目进攻先掐个假雷看他会如何应对",
+        "这人很稳啊看来是遇到高手了哎不是这哥们居然是来救人的这人的操作你们可千万别学啊楼下还有脚步他们不敢上来那我们就直接掐雷此一听有人又跳伞回来了至于这里的细节咱们直接把雷丢在二楼门口防止楼顶的人跳下来真是说什么来什么他冲这么快肯定是想下楼帮队友假装本人把他队友骗上来这人也是犯了同样的错误冲太快就会失去开枪的机会",
+        "直接拿下最后问你们个问题如果攻楼的时候遇到这种卡着楼梯的你们会怎么办"
+      ]
+    },
+    "ban_bien_tap": {
+      "stage": "edit_plan",
+      "preset": "localize_preserve_picture",
+      "so_canh": 1,
+      "so_giu": 1,
+      "so_cat": 0,
+      "so_canh_da_doc": 0,
+      "bat_bien_giu_hinh": true
+    },
+    "ban_dung": {},
+    "ket_xuat": {},
+    "ban_long_tieng": {
+      "so_muc": 0,
+      "ngon_ngu": "",
+      "chu": []
+    },
+    "qc": {
+      "dat": false,
+      "muc_hong": [],
+      "muc": []
+    },
+    "so_ke": {
+      "theo_nang_luc": [],
+      "tong": {
+        "credit": 0,
+        "da_giao": 0,
+        "tu_choi": 0,
+        "mo_ho": 0
+      },
+      "mo_ho_chua_giai_quyet": 0
+    },
+    "doi_soat": {
+      "khop": true,
+      "so_don_vi": 0,
+      "so_dong_da_giao": 0,
+      "don_vi_co_tien_khong_co_so_cai": [],
+      "so_cai_khong_co_don_vi": []
+    },
+    "tom_tat_khach": {
+      "trang_thai": "error",
+      "so_buoc_xong": 4,
+      "so_buoc": 11,
+      "phan_tram": 36,
+      "credit_da_giu": 14,
+      "credit_da_tinh": 0,
+      "chi_phi_theo_nang_luc": [],
+      "da_quyet_toan": true,
+      "hoan_lai": 14,
+      "loi": "content_process: giai doan nay khong hoan tat"
+    },
+    "vi_sao_hong": [],
+    "credit_con_lai": 1000,
+    "ra": {},
+    "tai_ve": {
+      "ma_chu": 404,
+      "byte_chu": 36548,
+      "ma_nguoi_khac": 404
+    }
+  },
+  "giay": 133.8
+}

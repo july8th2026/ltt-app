@@ -53,8 +53,8 @@ Cột "Pha V6": `00`–`34`, hoặc `V4`/`V5` khi đã giao trước V6, hoặc 
 | Trình sửa vùng kéo-thả trên khung hình | REIMPLEMENT_CLEAN — thuộc GUI của ASV | 12 | XONG | `8c4a1d35` + `8cd5b281`, `test_462` |
 | Toạ độ chuẩn hoá 0..1 | EXTEND_LTT_CAPABILITY? Không — ban_dung là của ASV ⇒ KEEP_ASV + mở rộng | V5 | XONG | `vung_che.py` luật L1, `test_456` |
 | Làm mờ vùng | ADAPT_VIRAL_IDEA | V5 | XONG | `vung_che.py`, `test_457` |
-| Xoá logo bằng điền nền | DEFER — cần đo VRAM trước khi khai | 13 | LOAI | đo ở pha 13: đạt cổng tài nguyên, **trượt** cổng chất lượng ⇒ để tắt — `PHA13_NHAN_DIEN_WATERMARK.md` |
-| Tự dò logo | DEFER (phụ thuộc job GPU mới) | 13 | XONG | `tools/do_watermark.py` — dựng xong nhưng **để tắt**: bộ dò tìm vùng tĩnh, không tìm watermark |
+| Xoá logo bằng điền nền | DEFER — cần đo VRAM trước khi khai | 13 | LOAI | đo ở pha 13: đạt cổng tài nguyên, **trượt** cổng chất lượng ⇒ để tắt — `PHA13_NHAN_DIEN_WATERMARK.md` (đã xoá ở ASV final, xem lịch sử git `e84b22a2`) |
+| Tự dò logo | DEFER (phụ thuộc job GPU mới) | 13 | XONG | `tools/do_watermark.py` — dựng xong nhưng **để tắt**; **ĐÃ XOÁ ở ASV final** (heuristic tự chế, không ai gọi — `docs/auto_scan_video_final/L_KY_THUAT.md`): bộ dò tìm vùng tĩnh, không tìm watermark |
 | Tự dò dải phụ đề gốc | ADAPT_VIRAL_IDEA, hậu MVP | 15 | CHUA | chưa có bộ dò dải phụ đề gốc; đi cùng định tuyến nguồn lời của pha 15 |
 | Vùng che ↔ vùng chữ tránh nhau | REIMPLEMENT_CLEAN (đặc tả) | 12 | CHUA | chưa có luật tránh nhau giữa vùng che và vùng chữ |
 | **Định tuyến nguồn lời** (sub nhúng → hardsub OCR → ASR) | ADAPT_VIRAL_IDEA → đặt ở asv_media/asv_gpu, không ở orchestrator | 15 | CHUA | hạng MÓNG — `MA_TRAN_KHOANG_TRONG.md` |

@@ -1,0 +1,41 @@
+{% extends "base_public.html" %}
+{% block title %}{{ _("Ghi công bên thứ ba") }} · LTT AI Studio{% endblock %}
+{% block content %}
+<div class="c4-tai-lieu">
+
+<div class="card">
+  <h1 class="u-mt0 tl-h1">{{ _("Ghi công bên thứ ba") }}</h1>
+  <p>{{ _("Một số phần mềm/model mã nguồn mở nền tảng dùng để vận hành yêu cầu ghi công tác giả theo giấy phép của chúng. Bảng dưới đây liệt kê những phụ thuộc đó — sinh trực tiếp từ bản khai giấy phép nội bộ, không gõ tay, để không lệch với thực tế đang chạy.") }}</p>
+</div>
+
+<div class="card">
+  {% if muc %}
+  <div class="tl-bang" tabindex="0">
+  <table class="table">
+    <thead><tr>
+      <th scope="col">{{ _("Phần mềm / model") }}</th>
+      <th scope="col">{{ _("Giấy phép") }}</th>
+    </tr></thead>
+    <tbody>
+      {% for m in muc %}
+      {# `repo_goi`/`model_checkpoint`/`license_weights` đọc thẳng từ bảng
+         markdown §1 của THIRD_PARTY_METRICS.md — bỏ dấu `` ` `` và `**`
+         markdown khi hiện, KHÔNG đổi nội dung (bộ đọc `third_party_notices`
+         giữ nguyên bản gốc cho test và cho các nơi khác đọc lại). #}
+      <tr>
+        <td><code>{{ m.repo_goi.replace('`', '') }}</code>{% if m.model_checkpoint and m.model_checkpoint not in ("", "—") %} — <code>{{ m.model_checkpoint.replace('`', '') }}</code>{% endif %}</td>
+        {# Dinh danh giay phep, bo chu thich tieng Viet trong ngoac: trang nay
+           phuc vu ca khach doc ban tieng Anh. #}
+        <td>{{ dinh_danh(m.license_weights) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <p class="muted">{{ _("Không có mục nào cần ghi công vào lúc này.") }}</p>
+  {% endif %}
+</div>
+
+</div>
+{% endblock %}

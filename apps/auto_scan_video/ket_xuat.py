@@ -74,7 +74,12 @@ from .tach_tieng import LUFS_DICH as LUFS_DICH_RA
 #: ⭐ 1 → 2 o pha 18: them `loudnorm` tren ban tron cuoi. Neu khong nang so nay
 #:    thi moi lan chay lai se dung lai tep cu tu cache va ban va **khong bao gio
 #:    chay** — dung mon no ma pha 15 vua tra, va lan nay no duoc tra ngay.
-PHIEN_BAN_KET_XUAT = 2
+#:
+#: ⭐ 2 → 3 (asv-final, R-02): duong SAO CHEP bo `-shortest`. Tep ra doi byte
+#:    (lai du khung hinh cuoi), nen mot ban render cu **khong** con tra loi
+#:    duoc cau hoi nay — thieu buoc tang nay thi lan chay lai serve lai dung ban
+#:    thieu khung ma T3 vua bat duoc.
+PHIEN_BAN_KET_XUAT = 3
 
 #: Bien do lech cho phep giua thoi luong MONG DOI (ban dung) va thoi luong DO
 #: DUOC o tep ra. Khong phai mot con so tuy y: `-c:v copy` giu nguyen khung hinh
@@ -195,6 +200,7 @@ def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str,
                 .format(p=preset, c=cach))
 
     ra = ban["ra"]
+    nhan_tieng = "1:a:0"
     # 🔴 **Thu tu dau vao la mot phan cua hop dong, va no khong duoc doan.**
     #
     #    `0` = hinh, `1` = ban phoi am, `2..` = logo. `che_do_render._loc_logo`
@@ -256,19 +262,36 @@ def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str,
             raise KetXuatError(
                 _t('Số tệp chữ ({co}) không khớp số lớp phủ trong bản dựng ({can}).')
                 .format(co=len(dchu), can=len(lp)))
-        cmd += ["-filter_complex",
-                cdr.loc_cat_noi(khoang, vung=(hinh.get("vung") or ()),
-                                lop_phu=lp, duong_chu=dchu,
-                                cao_khung=int(hinh.get("cao_khung") or 0),
-                                ds_logo=ds_logo_ban,
-                                rong_khung=int(hinh.get("rong_khung") or 0),
-                                chi_so_logo_dau=CHI_SO_LOGO_DAU,
-                                # ⭐ `.ass` KHONG la mot `-i`: `ass=` la bo loc
-                                #    doc tep truc tiep, nen no khong an mot chi
-                                #    so dau vao. Do la ly do `CHI_SO_LOGO_DAU`
-                                #    khong phai doi khi pha 14 them phu de.
-                                duong_ass=duong_ass),
-                "-map", "[ra]"]
+        # ⭐ Logo, vien chu va phu de dat theo khung BAN RA — khac khung nguon
+        #    khi co cat khung / phong / doi ti le (`ban_dung.khung_ra`).
+        rong_ra, cao_ra = ban_dung.khung_ra(hinh)
+        bien_tap = hinh.get("bien_tap") or None
+        loc = cdr.loc_cat_noi(khoang, vung=(hinh.get("vung") or ()),
+                              lop_phu=lp, duong_chu=dchu,
+                              cao_khung=cao_ra,
+                              ds_logo=ds_logo_ban,
+                              rong_khung=rong_ra,
+                              chi_so_logo_dau=CHI_SO_LOGO_DAU,
+                              # ⭐ `.ass` KHONG la mot `-i`: `ass=` la bo loc
+                              #    doc tep truc tiep, nen no khong an mot chi
+                              #    so dau vao. Do la ly do `CHI_SO_LOGO_DAU`
+                              #    khong phai doi khi pha 14 them phu de.
+                              duong_ass=duong_ass,
+                              bien_tap=bien_tap,
+                              rong_nguon=int(hinh.get("rong_khung") or 0),
+                              cao_nguon=int(hinh.get("cao_khung") or 0))
+        # 🔑 Toc do: ve TIENG nam trong CUNG `-filter_complex` — mot do thi loc,
+        #    mot lan ma hoa (pha 26), va `setpts`/`atempo` cung mot he so.
+        ve_tieng = cdr.loc_toc_do_tieng(bien_tap)
+        if ve_tieng:
+            loc = f"{loc};{ve_tieng}"
+            nhan_tieng = "[a_ra]"
+        cmd += ["-filter_complex", loc, "-map", "[ra]"]
+        if ve_tieng:
+            # 🔴 Do 22/09: mac dinh mp4 giu CFR 25 cua duong vao va BO khung sau
+            #    `setpts` — moc hinh troi len toi mot khung (+40 ms) so voi tieng.
+            #    `passthrough` giu moi khung dung moc da nen (VFR 31,25 fps o 1,25x).
+            cmd += ["-fps_mode", "passthrough"]
         cmd += list(cdr.tham_so(bo))
 
     # ── Tieng: BAN PHOI cua pha 16, khong tron lai ───────────────────────
@@ -276,7 +299,7 @@ def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str,
     # ⭐ Ban phoi da tron nen + moi lop tieng va da chuan am luong MOT lan. Tron
     #    lai o day la chuan hoa hai lan tren cung mot dong tin hieu — va lan thu
     #    hai thang mot cach im lang.
-    cmd += ["-map", "1:a:0"]
+    cmd += ["-map", nhan_tieng]
 
     cmd += [
         "-c:a", str(ra["codec_tieng"]),
@@ -286,10 +309,37 @@ def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str,
     ]
     if ra.get("faststart"):
         cmd += ["-movflags", "+faststart"]
-    # `-shortest`: neu tieng dai hon hinh thi cat theo hinh. Khong co no, mot
-    # doan tieng tran qua cuoi video se keo dai tep ra bang mot khung hinh dong
-    # bang — dung nguyen van khuon cua `replace_audio`.
-    cmd.append("-shortest")
+    # 🔴 **`-shortest` va preset GIU HINH khong the cung ton tai** (asv-final,
+    #    R-02 — do 23/09 tren phim khach that).
+    #
+    #    `-shortest` ket thuc khi luong RA NGAN NHAT het. O duong `-c:v copy`,
+    #    luong tieng la thu duoc ma hoa lai (AAC, khung 1024 mau) con luong hinh
+    #    di thang tu nguon — nen khi luong hinh cua NGUON dai hon luong tieng,
+    #    ffmpeg **vut bo cac goi hinh cuoi cung**. Do tren bon phim that
+    #    (`docs/auto_scan_video_final/L_FIX_QC_AM.md` §1):
+    #
+    #        phim            hinh/tieng nguon      `-shortest`      bo
+    #        牛肠   265,000 / 264,961 (tieng dai hon)  7950/7950 khung  0
+    #        暴雨   189,967 / 190,009 (tieng dai hon)  5699/5699 khung  0
+    #        深度解析 106,833 / 106,816 (HINH dai hon)  3203/3205 khung  **2**
+    #        气枪   275,008 / 275,029 (tieng dai hon)  8242/8242 khung  0
+    #
+    #    Ban ra cua phim thu ba mat 2 khung cuoi ⇒ MD5 luong hinh khac nguon ⇒
+    #    QC T3 HONG. Va T3 dung: loi hua cua preset nay la *khong mot diem anh
+    #    nao doi*, con o day 66 ms hinh bi cat **im lang**.
+    #
+    # ⭐ Vi sao bo `-shortest` o duong sao chep la AN TOAN: ban phoi da bi
+    #    `am_master.tron_cuoi` cat bang `-t tong_giay` (= thoi luong nguon), nen
+    #    no khong the tran qua cuoi video qua mot lam tron; va neu no tran that
+    #    thi T16 (lech hinh/tieng <= 0,5 s) bat duoc. Doi lai, `-shortest` o day
+    #    KHONG bao gio bat duoc gi: no lang le cat hinh.
+    #
+    # ⛔ O preset CAT thi giu nguyen: luong hinh la ban do chinh chuoi loc sinh
+    #    ra (co `trim`/`concat`/`setpts`), tieng tran qua cuoi se keo tep ra dai
+    #    them bang mot khung dong bang — dung khuon `replace_audio`, va T3 khong
+    #    ap dung o do nen khong co loi hua nao bi `-shortest` pha.
+    if cach != cdr.SAO_CHEP:
+        cmd.append("-shortest")
     if tien_do:
         cmd += ["-progress", "pipe:1", "-nostats"]
     cmd.append(duong_ra)
@@ -493,4 +543,12 @@ def kiem_tep_ra(duong: str, ban: dict, *, soi) -> dict:
         raise KetXuatError(
             _t('Tệp kết quả dài {that:.1f}s, bản dựng mong đợi {mong:.1f}s.')
             .format(that=that, mong=mong))
+    # ⭐ Khung ban ra da khai (bien tap khung) thi tep ra phai DUNG kich thuoc do:
+    #    logo, vien chu va phu de da dat theo no.
+    kr = (ban.get("hinh") or {}).get("khung_ra")
+    if kr and (int(tt.get("rong") or 0), int(tt.get("cao") or 0)) != (
+            int(kr[0]), int(kr[1])):
+        raise KetXuatError(
+            _t('Tệp kết quả khung {a}, bản dựng khai {b}.').format(
+                a=f"{tt.get('rong')}x{tt.get('cao')}", b=f"{kr[0]}x{kr[1]}"))
     return tt
