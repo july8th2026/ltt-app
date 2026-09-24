@@ -309,3 +309,54 @@ def test_doc_flores_ghep_theo_CHI_SO_DONG(tmp_path):
     (d / "zho_Hans.dev").write_text("一\n二\n", encoding="utf-8")
     (d / "vie_Latn.dev").write_text("mot\nhai\n", encoding="utf-8")
     assert bc.doc_flores(tmp_path) == [(0, "一", "mot"), (1, "二", "hai")]
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  8. Cổng NỀN SẠCH — phải qua TRƯỚC khi so hai lời nhắc
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_nguong_nen_sach_viet_truoc():
+    """⛔ Trần lấy đúng mức V1 đã đo (1/30 lô): không được làm nền tệ hơn lúc
+    chưa đụng vào. Đổi hai hằng số này = đổi kết luận."""
+    assert bc.NGUONG_LO_HONG == 0.033
+    assert bc.NGUONG_DO_PHU == 28 / 30
+
+
+def test_thong_ke_luoc_do_dem_LO_chu_khong_dem_MUC():
+    """🔑 Mất theo LÔ nghĩa là mất cả một cụm, không phải mẫu ngẫu nhiên.
+
+    30 mục = 3 lô mỗi lượt. Một lô hỏng ở lượt 2 ⇒ 1/9 lô, và độ phủ lượt đó
+    tụt xuống 20/30 — hai con số nói hai điều khác nhau, cả hai đều cần.
+    """
+    def luot(n_ma, n_hong):
+        return {"phan_quyet": {f"m{i}": {"dat": True} for i in range(n_ma)},
+                "loi_lo": [{"ma_lo": [], "loi": "LuocDoSai"}] * n_hong}
+
+    tk = bc.thong_ke_luoc_do([luot(30, 0), luot(20, 1), luot(30, 0)], 30)
+    assert tk["tong_lo"] == 9 and tk["so_lo_hong"] == 1
+    assert tk["ti_le_lo_hong"] == round(1 / 9, 4)
+    assert tk["do_phu_tung_luot"] == [1.0, round(20 / 30, 4), 1.0]
+    assert tk["nen_sach"] is False
+
+
+def test_nen_sach_doi_CA_HAI_ve():
+    """⛔ Một vế thôi thì không đủ: 0 lô hỏng mà mỗi lượt chỉ trả lời 15/30 mục
+    vẫn là một kênh mất dữ liệu."""
+    def luot(n_ma, n_hong=0):
+        return {"phan_quyet": {f"m{i}": {} for i in range(n_ma)},
+                "loi_lo": [{"loi": "x"}] * n_hong}
+
+    assert bc.thong_ke_luoc_do([luot(30)] * 3, 30)["nen_sach"] is True
+    assert bc.thong_ke_luoc_do([luot(15)] * 3, 30)["nen_sach"] is False
+    assert bc.thong_ke_luoc_do([luot(30), luot(30), luot(30, 1)],
+                               30)["nen_sach"] is False
+
+
+def test_nhiet_do_ngu_nghia_DA_GHIM_va_bench_dung_CUNG_gia_tri():
+    """⛔ Đo ở một nhiệt độ khác đường sản phẩm là đo một hệ thống khác."""
+    import inspect
+
+    from apps.auto_scan_video import qc_ai
+
+    assert qc_ai.NHIET_DO_NGU_NGHIA == 0.0
+    assert "qc_ai.NHIET_DO_NGU_NGHIA" in inspect.getsource(bc.cham_mot_luot)

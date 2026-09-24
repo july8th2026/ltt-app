@@ -48,6 +48,32 @@ KHUNG_MOI_CHO_NOI = 2
 #: Cach cho noi bao nhieu giay thi lay khung.
 LECH_KHUNG_GIAY = 0.4
 
+#: Nhiet do GHIM cho lop ngu nghia. `None` = de mac dinh cua cong.
+#:
+#: 🔴 **Ghim vi mot phep do, khong vi mot so thich.** Do 24/09 tren dai giu
+#:    rieng, ti le **lo tra JSON hong** (`LuocDoSai`, mat tron 10 muc mot lan):
+#:
+#:        loi nhac NHI PHAN (V1)          1/30 lo = 3,3 %
+#:        loi nhac PHAN MUC MQM (V3)      2/9  lo =  22 %
+#:
+#:    Dau ra MQM dai hon han dau ra nhi phan (mot danh sach loi kem ly do, thay
+#:    cho mot co `true/false`), nen no lam **lo** dung diem yeu bam luoc do ma
+#:    `--temp 1.0` cua cong von che di.
+#:
+#: ⚠️ Mat theo **LO**, khong theo **MUC** ⇒ mat ca mot cum chu khong phai mot
+#:    mau ngau nhien. Mot phep do tren kenh do khong phai phep do kem — no
+#:    **khong ton tai**. Nen day la buoc phai lam TRUOC khi so hai loi nhac.
+#:
+#: ⭐ Cung don thuoc voi Task 11b (`docs/superpowers/plans/…-thang-cong-asv.md`):
+#:    *ghim nhiet do TRUOC, do lai ti le qua luoc do, ROI moi sua loi nhac* —
+#:    neu khong ta se di sua loi nhac cho mot van de do nhiet do gay ra.
+#:
+#: ⛔ Ghim nhiet do **khong** lam lan chay tat dinh: do 24/09 cho thay `seed`
+#:    khong co hieu luc tren cong nay va `temperature=0.0` van cho ket qua khac
+#:    nhau giua cac luot. No chi thu hep dai lay mau, tuc lam luoc do de dung
+#:    vung hon — ⛔ dung doc no thanh "gio moi luot giong nhau".
+NHIET_DO_NGU_NGHIA: float | None = 0.0
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  Lop ngu nghia co duoc KHAI CHO KHACH khong — va cau tra loi la mot PHEP DO

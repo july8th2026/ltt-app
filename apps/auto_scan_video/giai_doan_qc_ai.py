@@ -225,7 +225,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         try:
             kq = ai.goi_tinh_tien(db, run, ai.QC_NGU_NGHIA,
                                   qc_ai.loi_nhac_ngu_nghia(lo, dich),
-                                  stage=pipeline.QC_AI, item_key=ma_lo, ctx=ctx)
+                                  stage=pipeline.QC_AI, item_key=ma_lo, ctx=ctx,
+                                  temperature=qc_ai.NHIET_DO_NGU_NGHIA)
             phan_lo: list[dict] = []
             for pq in qc_ai.doc_ngu_nghia(
                     ai.doc_ket_qua(kq, ai.QC_NGU_NGHIA),

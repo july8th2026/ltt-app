@@ -112,6 +112,22 @@ LUOT_MOI_CAP = 3
 #: Hat giong cho phep chon cau + phep lam hong. Tai lap duoc.
 HAT_GIONG = 20260924
 
+# ── Cong NEN SACH: phai qua TRUOC khi duoc so hai loi nhac voi nhau ──────────
+#
+# 🔴 **22 % lo hong JSON khong phai mot khiem khuyet cua phep do — no lam phep
+#    do KHONG TON TAI.** Mot lo hong mat tron 10 muc, tuc mat **ca mot cum**,
+#    khong phai mot mau ngau nhien. Ti le tinh tren phan con lai khong noi ve
+#    tong the nao ca.
+#
+# ⛔ Muc tran lay dung muc **V1** da do duoc (1/30 lo): ta khong duoc lam nen te
+#    hon luc chua dung vao. ⛔ Khong noi hai con so nay de mot ban sua di qua.
+
+#: Tran ti le LO tra JSON hong.
+NGUONG_LO_HONG = 0.033
+
+#: San do phu moi luot (so ma co phan quyet / so ma da gui).
+NGUONG_DO_PHU = 28 / 30
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  1. FLORES — tai, kiem sha256, doc
@@ -286,7 +302,10 @@ def cham_mot_luot(db, muc: list[dict]) -> dict:
         try:
             kq = ai.goi(db, ai.QC_NGU_NGHIA,
                         qc_ai.loi_nhac_ngu_nghia(lo, "vi"),
-                        max_tokens=tran, timeout_s=cho)
+                        max_tokens=tran, timeout_s=cho,
+                        # ⛔ Cung nhiet do voi duong san pham. Do o mot nhiet do
+                        #    khac la do mot he thong khac.
+                        temperature=qc_ai.NHIET_DO_NGU_NGHIA)
             for pq in qc_ai.doc_ngu_nghia(ai.doc_ket_qua(kq, ai.QC_NGU_NGHIA),
                                           ma_lo, van_ban):
                 ra[pq["ma"]] = {"dat": bool(pq["dat"]),
@@ -337,6 +356,32 @@ def _tung_luot(cac_luot: list[dict], ma: list[str]) -> list[float]:
     return ra
 
 
+def thong_ke_luoc_do(cac_luot: list[dict], so_ma: int) -> dict:
+    """NEN co sach khong: ti le lo hong + do phu tung luot.
+
+    🔑 **Do nay phai dung truoc moi so sanh loi nhac.** Mat theo LO nghia la mat
+       ca mot cum; mot ti le bao dong gia tinh tren phan con lai khong noi ve
+       tong the nao ca. ⛔ Nen khong dat cong nay thi con so ben canh no **khong
+       duoc doc**, du no dep den may.
+    """
+    so_lo = sum(len(l["loi_lo"]) for l in cac_luot)
+    # Moi luot chia `so_ma` thanh cac lo `DOAN_MOI_LO`; lo hong nam trong
+    # `loi_lo`, lo chay duoc thi khong de lai dau — nen tong so lo tinh ra.
+    from apps.auto_scan_video import qc_ai
+    lo_moi_luot = -(-so_ma // qc_ai.DOAN_MOI_LO)
+    tong_lo = lo_moi_luot * len(cac_luot)
+    do_phu = [round(len(l["phan_quyet"]) / so_ma, 4) for l in cac_luot]
+    ti_le = round(so_lo / tong_lo, 4) if tong_lo else None
+    return {
+        "tong_lo": tong_lo, "so_lo_hong": so_lo, "ti_le_lo_hong": ti_le,
+        "do_phu_tung_luot": do_phu,
+        "do_phu_thap_nhat": min(do_phu) if do_phu else None,
+        "nguong_lo_hong": NGUONG_LO_HONG, "nguong_do_phu": round(NGUONG_DO_PHU, 4),
+        "nen_sach": bool(ti_le is not None and ti_le <= NGUONG_LO_HONG
+                         and do_phu and min(do_phu) >= NGUONG_DO_PHU),
+    }
+
+
 def _ti_le(cac_luot: list[dict], ma: list[str], gop: dict) -> dict:
     tung = _tung_luot(cac_luot, ma)
     n = len(gop)
@@ -376,6 +421,7 @@ def ti_le_bao_dong_gia(n: int, *, db=None, luot: int = LUOT_MOI_CAP,
         cac_luot.append(cham_mot_luot(db, muc))
     gop = gop_trung_vi(cac_luot, ma)
     return {"n": len(muc), "luot": luot, "tu": tu, "gop": gop,
+            "luoc_do": thong_ke_luoc_do(cac_luot, len(muc)),
             "cac_luot": cac_luot, **_ti_le(cac_luot, ma, gop)}
 
 
