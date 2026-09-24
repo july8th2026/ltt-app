@@ -851,3 +851,100 @@ Cùng tên *"tỉ lệ cần nắn"*, hai **đối tượng** khác nhau: **41,7
 | ⭐ hai điểm **open-dubbing** làm tốt hơn (kéo tới **biến cố thật** kế tiếp; **cắt lặng thừa TRƯỚC** khi tính hệ số) | ⛔ **CHƯA đọc** |
 | cần gạt 1 (LLM rút gọn) ⇒ **≥ 3 lượt**, báo trung vị + khoảng | ⛔ chưa chạy (⚠️ lượt **nặng**) |
 | ⚠️ `max 89,56×` — một khe cực ngắn | ⛔ chưa soi; nghi một đoạn < 0,1 s, phải xem trước khi nó bẻ cong thống kê |
+
+---
+
+## 15. `D5` — bốn việc trước dòng mã, và một cần gạt **CHẾT**
+
+### 15.1 ⭐ Soi `max 89,56×` trước: nó là khe **HỎNG**, ⛔ không phải khe khó
+
+```
+v1/seg_0083   khe 0,034 s   tu=[]  (⛔ KHÔNG mốc từ nào)
+chữ: 中文字幕志愿者 李宗盛  ->  "Người tình nguyện phụ đề tiếng Trung Lý Tông Thịnh"
+```
+
+⇒ Đây là **ảo giác credit phụ đề** — kiểu hỏng kinh điển của Whisper tiếng Trung ở
+**cuối tệp** (đoạn 83/83 của v1). ⛔ Không phải lời thoại, ⛔ không phải một khe khó.
+
+| | giữ 188 | bỏ đoạn hỏng (187) |
+|---|---|---|
+| ⛔ không vừa | 73,9 % [67,2 ; 79,7] | **73,8 % [67,1 ; 79,6]** |
+| hệ số cần nén, max | **89,56×** | 🔴 **2,41×** |
+
+⭐ **Hai kết luận, ⛔ đừng gộp:** *tỉ lệ* ⛔ **không** bị bẻ cong (73,9 → 73,8 %);
+*biên thiết kế* thì **đổi hẳn** (90× → 2,41×). Thiết kế quanh 90× là thiết kế quanh
+một **ảo giác**.
+
+⚠️ Và nó lộ một lỗ: bất biến *"`aligned` ⇒ phải có mốc từ"* (`ban_ghi.py:251-252`)
+kiểm **`sum` trên cả bản ghi**, nên một đoạn `tu=[]` lọt qua khi các đoạn khác đủ từ.
+Đoạn ảo giác ấy **đã được dịch** và sẽ **được đọc thành tiếng**. *(số hiệu: chờ cấp)*
+
+### 15.2 Đặc tả đã đọc — ⛔ mượn CÁCH SUY, ⛔ không mượn SỐ
+
+**VideoLingo** `core/_8_2_dub_chunks.py` — thang 4 bậc (nguyên văn):
+
+```
+est_dur / accept > tol_dur     -> 2   ⛔ trần tốc độ cũng không cứu
+est_dur > tol_dur              -> 1   nén trong tầm
+est_dur < duration - tolerance -> -1  quá chậm
+còn lại                        -> 0
+```
+
+7 hằng (`config.yaml`): `speed_factor.min 1` · `accept 1.2` · `max 1.4` ·
+`tolerance 1.5` · `min_subtitle_duration 2.5` · `min_trim_duration 3.5` ·
+`MAX_MERGE_COUNT 5` (`_8_2:12`).
+
+**open-dubbing** `open_dubbing/text_to_speech.py` (Apache-2.0), hai điểm hơn:
+
+1. `get_start_time_of_next_speech_utterance` → khe kéo tới **biến cố THẬT** kế tiếp
+   (bỏ qua `for_dubbing=False`), lùi về hết tệp; `_calculate_target_utterance_speed`
+   dùng nó làm `reference_length`.
+2. `_convert_text_to_speech_without_end_silence` — *"TTS add silence at the end that
+   we want to remove to prevent increasing the speech of next segments"* ⇒ **cắt lặng
+   thừa TRƯỚC** khi tính hệ số. (`MAX_SPEED = 1.3` của họ ⛔ cũng không chép.)
+
+🔴 **Số ⛔ không chép**: `tolerance 1.5` / `accept 1.2` đo trên **cặp ngôn ngữ khác**,
+**giọng khác**. Số của ta: **0,737** âm tiết/ký tự Hán và **3,284** âm tiết/giây.
+
+### 15.3 🔴 Đo TỪNG cần gạt — và **cần gạt 2 gần như CHẾT**
+
+`n = 187` (đã bỏ đoạn hỏng), trần tăng tốc **1,15**:
+
+| trạng thái | ⛔ không vừa | 🔴 còn hỏng sau cần gạt 3 |
+|---|---|---|
+| gốc | 138/187 = **73,8 %** | 104/187 = **55,6 %** |
+| sau **cần gạt 2** | 146/187 = 78,1 % | 102/187 = **54,5 %** |
+
+⇒ ⭐ **Cần gạt 2 đóng thêm đúng 2 khe (1,1 %)** — và còn làm **tăng** số khe phải
+động tới giọng (138 → 146), vì nó lấy chỗ của khe sau.
+
+**Vì sao:** sau `cat_doan` ⛔ **không còn khoảng lặng để phân phối**:
+
+```
+hở giữa hai khe — trung vị 0,000 s trên cả ba phim
+tổng hở cả phim: v1 3,4 s · v2 8,5 s · v3 7,5 s
+```
+
+`cat_doan` cắt tại dấu câu theo mốc từ ⇒ các khe **dính liền nhau**. Nên
+`TY_LE_MUON_KHOANG_LANG = 0.7` (`thoi_gian.py:48`) đang **mượn 70 % của ~0 giây**.
+
+> 🔑 ⭐ **Cần gạt 2 ⛔ không sai — nó ĐÓI đầu vào.** Khoảng lặng **có thật** trong
+> tiếng, nhưng bản ghi ⛔ không mang nó: mốc từ của WhisperX kết ở từ cuối, và khe
+> sau mở ở từ kế — khoảng im giữa hai câu **vô hình**.
+
+⇒ ⭐ Đây chính là chỗ **`vad.py`** (§11.6) trả tiền: nó là nguồn **duy nhất** đã có
+cho bản đồ khoảng lặng thật. ⛔ Không có nó, cần gạt 2 ⛔ không đáng xây.
+
+### 15.4 Còn lại — và cần gạt 1 phải gánh bao nhiêu
+
+```
+sau cần gạt 2 + 3 :  54,5 %  (102/187) VẪN không vừa
+=> cần gạt 1 (LLM rút gọn) phải đóng PHẦN LỚN khối lượng, ⛔ không phải phần dư
+```
+
+⇒ ⭐ Thứ tự *"1 → 2 → 3"* ⛔ **không đổi**, nhưng **trọng số** thì đổi hẳn:
+**1 là cần gạt chính**, 3 là phụ, **2 nằm chờ `vad.py`**.
+
+⛔ **Chưa chạy cần gạt 1** — nó qua LLM ⇒ ⛔ không tái lập ⇒ phải **≥ 3 lượt**, báo
+**trung vị + khoảng**, và là **lượt nặng**. ⭐ Mã đã sẵn: `can_gat_1_rut_gon` nhận
+hàm rút gọn từ **ngoài**, nên bộ kiểm chạy ⛔ không tốn một lượt LLM nào.
