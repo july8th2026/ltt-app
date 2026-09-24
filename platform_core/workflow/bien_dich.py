@@ -71,7 +71,8 @@ _NS_NODES = "nodes"
 #: Ba mặt của một node tổ tiên (§6.2). `output` có cổng; `status`/`error` thì
 #: không — chúng tồn tại cho MỌI node, không phải một cổng khai trong
 #: NodeDefinition, nên kiểm cổng tồn tại với chúng là kiểm một thứ không có.
-_MAT_NODE = ("output", "status", "error")
+MAT_NODE = ("output", "status", "error")
+_MAT_NODE = MAT_NODE
 
 
 class ThamChieu(NamedTuple):
@@ -204,21 +205,51 @@ def trich_tham_chieu(bieu_thuc: str) -> tuple[ThamChieu, ...]:
     return tuple(ra)
 
 
-def _doi(gia_tri: Any, node_id: str) -> Any:
-    """`$a.b` (Canvas cũ) → `{{ nodes.a.output.b }}`; chặn `{{ }}` khác."""
+def _doi(gia_tri: Any, node_id: str, *, nghiem: bool = True) -> Any:
+    """`$a.b` (Canvas cũ) → `{{ nodes.a.output.b }}`; chặn `{{ }}` khác.
+
+    🔑 `nghiem=False` ⇒ **chỉ đổi, không phán quyết**. Đo trên trình duyệt
+       24/09: người dùng gõ `"Vẽ: {{ nodes"` (một biểu thức đang gõ DỞ) thì
+       `cau_truc()` ném `bieu_thuc_chua_ho_tro`, và cửa gợi ý mất sạch phần
+       `nodes.*` — đúng giây họ cần nó. Cấu trúc đồ thị (ai là tổ tiên của ai)
+       **không phụ thuộc** vào việc một chuỗi tham số đã gõ xong hay chưa.
+    ⛔ Cổng publish vẫn NGHIÊM: `bien_dich()` gọi lại hàm này với `nghiem=True`
+       trên đúng tham số ấy, nên không có gì lọt thêm.
+    """
     if isinstance(gia_tri, dict):
-        return {k: _doi(v, node_id) for k, v in gia_tri.items()}
+        return {k: _doi(v, node_id, nghiem=nghiem) for k, v in gia_tri.items()}
     if isinstance(gia_tri, list):
-        return [_doi(v, node_id) for v in gia_tri]
+        return [_doi(v, node_id, nghiem=nghiem) for v in gia_tri]
     if isinstance(gia_tri, str):
         m = _CU.match(gia_tri.strip())
         if m:
             return "{{ nodes.%s.output.%s }}" % (m.group(1), m.group(2))
-        if "{{" in gia_tri and la_tham_chieu(gia_tri) is None:
+        if nghiem and "{{" in gia_tri and la_tham_chieu(gia_tri) is None:
             raise LoiBienDich("bieu_thuc_chua_ho_tro",
                               "chi ho tro {{ nodes.<id>.output.<cong> }}",
                               node_id)
     return gia_tri
+
+
+def cong_params_nhan(bieu_thuc: str) -> bool:
+    """Cổng `params` của publish có nhận `{{ <biểu thức> }}` này không?
+
+    ⭐ Hỏi bằng cách **gọi chính cái cổng** (`_doi`), không bằng một bản mô tả
+       của nó. Hôm nay `_doi` chỉ nhận đúng `{{ nodes.<id>.output.<cổng> }}`
+       (plan 01a) trong khi ngôn ngữ §6 đã có hàm, `trigger`, `vars`… — một
+       khoảng cách THẬT giữa hai tầng. Cửa gợi ý phải nói ra khoảng cách đó
+       thay vì mời người dùng viết một biểu thức sẽ bị từ chối lúc publish; và
+       ngày ai đó nới `_doi`, câu trả lời ở đây **tự đổi theo**, không có bảng
+       nào phải sửa.
+
+    ⚠️ Chỉ trả lời về HÌNH DẠNG biểu thức. Tổ tiên và cổng tồn tại là câu hỏi
+       khác, do `CauTruc` trả lời.
+    """
+    try:
+        _doi({"_": "{{ %s }}" % bieu_thuc}, "")
+    except LoiBienDich:
+        return False
+    return True
 
 
 def _tham_chieu_trong(gia_tri: Any) -> set[ThamChieu]:
@@ -236,7 +267,7 @@ def _tham_chieu_trong(gia_tri: Any) -> set[ThamChieu]:
     return ra
 
 
-def _node(n: dict, cc: dict[str, CongCu]) -> dict:
+def _node(n: dict, cc: dict[str, CongCu], *, nghiem: bool = True) -> dict:
     nid = str(n.get("id", ""))
     if not _ID.match(nid):
         raise LoiBienDich("id_khong_hop_le", f"id node {nid[:70]!r}", nid[:64])
@@ -254,13 +285,45 @@ def _node(n: dict, cc: dict[str, CongCu]) -> dict:
     if tool is None:
         raise LoiBienDich("node_khong_ton_tai", ten, nid)
     return {"id": nid, "type": f"app.{ten}", "type_version": tool.type_version,
-            "params": _doi(dict(params), nid),
+            "params": _doi(dict(params), nid, nghiem=nghiem),
             "credential_ref": str(n.get("credential_ref") or ""),
             "settings": dict(settings), "thi_hanh": "job"}
 
 
-def bien_dich(document: dict, *,
-              cong_cu: Optional[dict[str, CongCu]] = None) -> dict:
+class CauTruc(NamedTuple):
+    """Phần CẤU TRÚC của một tài liệu draft — chưa đọc một biểu thức nào.
+
+    🔑 VÌ SAO TÁCH RA. Quan hệ **tổ tiên** và tập **cổng ra thật** là câu trả
+       lời cho *"node này được đọc của ai"*. `bien_dich()` hỏi câu đó để **từ
+       chối lúc publish**; cửa gợi ý (`goi_y.py`) hỏi đúng câu đó để **không
+       mời người dùng viết một biểu thức sẽ bị từ chối**. Hai bên phải hỏi
+       CÙNG MỘT CHỖ: một bản sao của luật tổ tiên ở tầng gợi ý là một bản sao
+       sẽ trôi, và ngày nó trôi thì trình soạn gợi ý một thứ mà cổng publish
+       ném lại vào mặt người dùng.
+
+    ⛔ Hàm dựng nó **không đọc `params`**: một bản nháp đang gõ dở có thể mang
+       một biểu thức chưa xong, và điều đó không được làm mất gợi ý.
+    """
+
+    nodes: list[dict]
+    edges: list[dict]
+    #: Thứ tự tô-pô (Kahn) — `graph.thu_tu`.
+    thu_tu: list[str]
+    #: `{id: tập id tổ tiên}`.
+    to_tien: dict[str, set[str]]
+    #: `{id: tập cổng RA thật}` theo `CongCu.returns`.
+    cong_ra: dict[str, frozenset[str]]
+
+
+def cau_truc(document: dict, *,
+             cong_cu: Optional[dict[str, CongCu]] = None,
+             nghiem: bool = True) -> CauTruc:
+    """Gộp trang → node/cạnh → Kahn → tổ tiên → cổng ra. Sai thì ném.
+
+    `nghiem=False` bỏ qua phán quyết về HÌNH DẠNG biểu thức trong `params`
+    (xem `_doi`) — cấu trúc vẫn đúng, và một biểu thức đang gõ dở không làm
+    mất gợi ý của chính người đang gõ.
+    """
     cc = _nguon.tat_ca() if cong_cu is None else cong_cu
     nodes: list[dict] = []
     edges: list[dict] = []
@@ -268,7 +331,7 @@ def bien_dich(document: dict, *,
     for trang in document.get("pages") or []:
         pid = str(trang.get("id", ""))
         for n in trang.get("nodes") or []:
-            nd = _node(n, cc)
+            nd = _node(n, cc, nghiem=nghiem)
             if nd["id"] in trang_cua:
                 raise LoiBienDich("id_trung", nd["id"], nd["id"])
             trang_cua[nd["id"]] = pid
@@ -322,8 +385,20 @@ def bien_dich(document: dict, *,
     # quan không được phép làm sập đường publish của người khác.
     cong_ra_cua = {n["id"]: frozenset(cc[n["type"][4:]].returns or {})
                    for n in nodes}
+    return CauTruc(nodes, ra_edges, thu_tu, to_tien, cong_ra_cua)
+
+
+def bien_dich(document: dict, *,
+              cong_cu: Optional[dict[str, CongCu]] = None) -> dict:
+    ct = cau_truc(document, cong_cu=cong_cu)
+    nodes, ra_edges, thu_tu = ct.nodes, ct.edges, ct.thu_tu
+    to_tien, cong_ra_cua = ct.to_tien, ct.cong_ra
     for n in nodes:
         nid = n["id"]
+        # ⛔ Phán quyết về HÌNH DẠNG biểu thức nằm ở ĐÂY, không ở `cau_truc`:
+        #    `cau_truc` còn phục vụ cửa gợi ý, nơi một biểu thức gõ dở là
+        #    chuyện thường. Cổng publish thì không tha (test_1714).
+        _doi(n["params"], nid)
         for tc in sorted(_tham_chieu_trong(n["params"])):
             doc = (f"nodes.{tc.node}.output.{tc.cong}" if tc.loai == "output"
                    else f"nodes.{tc.node}.{tc.loai}")
@@ -367,5 +442,6 @@ def bien_dich(document: dict, *,
     }
 
 
-__all__ = ["SCHEMA", "LoiBienDich", "ThamChieu", "bien_dich",
-           "doan_bieu_thuc", "la_tham_chieu", "trich_tham_chieu"]
+__all__ = ["MAT_NODE", "SCHEMA", "CauTruc", "LoiBienDich", "ThamChieu",
+           "bien_dich", "cau_truc", "cong_params_nhan", "doan_bieu_thuc",
+           "la_tham_chieu", "trich_tham_chieu"]

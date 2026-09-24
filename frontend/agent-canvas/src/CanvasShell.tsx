@@ -31,10 +31,11 @@ import { taiPalette } from './paletteApi'
 //
 //    `tests/test_1728_canvas_khong_goi_duong_chet.py` chot dieu nay bang bang
 //    dinh tuyen THAT, nen mot lan import lai se do ngay.
-import { loadOrCreateWorkflowV3, loadPreferences,
+import { goiYBieuThuc, loadOrCreateWorkflowV3, loadPreferences,
   savePreferences, saveWorkflowV3,
   quoteTool, WorkflowConflictError, type CanvasDocument,
-  type CanvasEdge, type CanvasNode, type Workflow } from './workflowApi'
+  type CanvasEdge, type CanvasNode, type GoiYBieuThuc,
+  type Workflow } from './workflowApi'
 // Cua v3: trinh soan LUU -> PUBLISH -> TAO run -> DOC. No khong con "lai"
 // dong co bang `tickRun` nua; may chu tu tien, client chi poll.
 import { cancelRunV3, createRunV3, loadRunV3, publishWorkflowV3,
@@ -206,6 +207,9 @@ function Editor() {
   const [commandOpen,setCommandOpen]=useState(false)
   const [commandQuery,setCommandQuery]=useState('')
   const [liveQuotes,setLiveQuotes]=useState<Record<string,number>>({})
+  //: Goi y §6 cho node dang chon. ⛔ May chu sinh; trinh duyet
+  //  khong co bang nao de lui ve khi no vang.
+  const [goiY,setGoiY]=useState<GoiYBieuThuc|undefined>(undefined)
   const [retryNonce, setRetryNonce] = useState(0)
   const [run, setRun] = useState<RunV3|null>(null)
   const [runError, setRunError] = useState('')
@@ -354,6 +358,23 @@ function Editor() {
     })).then(rows=>setLiveQuotes(Object.fromEntries(rows.filter(Boolean) as readonly (readonly [string,number])[])))},450)
     return()=>window.clearTimeout(timer)
   },[page.nodes,csrf,offline])
+
+  // ── Goi y bieu thuc §6 cho node dang chon (P2 Task 8) ────────────────────
+  //
+  // ⭐ GUI KEM tai lieu dang go, khong doi autosave: node nguoi dung vua tha
+  //    xuong phai co trong goi y NGAY, chu khong sau 800 ms.
+  // ⛔ Hong thi `undefined`, KHONG lui ve mot danh sach cuc bo: mot goi y sai
+  //    dan thang vao o tham so va se bi tu choi luc publish.
+  useEffect(()=>{
+    if (!workflow || !selectedNode || offline) { setGoiY(undefined); return }
+    let active = true
+    const timer = window.setTimeout(()=>{
+      void goiYBieuThuc(workflow.id, selectedNode.id, state.document, csrf)
+        .then(ket=>{ if (active) setGoiY(ket) })
+        .catch(()=>{ if (active) setGoiY(undefined) })
+    }, 200)
+    return ()=>{ active = false; window.clearTimeout(timer) }
+  },[workflow?.id,selectedNode?.id,state.document,csrf,offline])
 
   const themNode = useCallback((nd: NodeDefinition, position?: { x: number; y: number }) => {
     if (readOnly) return
@@ -753,7 +774,7 @@ function Editor() {
                   onChange={event=>dispatch({type:'nodeLabel',id:selectedNode.id,label:event.target.value})}/>
                 <FormTuLuocDo luocDo={selectedDinhNghia.tham_so}
                   giaTri={(selectedNode.data.params ?? {}) as Record<string, unknown>}
-                  readOnly={readOnly}
+                  readOnly={readOnly} goiY={goiY}
                   onChange={(ten, v) => dispatch({type:'update',id:selectedNode.id,data:{ params: {
                     ...(selectedNode.data.params as Record<string, unknown>), [ten]: v } }})} />
                 <footer className="inspector-gia">{liveQuotes[selectedNode.id]===undefined

@@ -92,7 +92,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 from zoneinfo import ZoneInfo
 
-__all__ = ["BANG_HAM", "LoiHam", "MUI_GIO_MAC_DINH", "nguon_slug"]
+__all__ = ["BANG_HAM", "LoiHam", "MUI_GIO_MAC_DINH", "NHOM_HAM", "nguon_slug"]
 
 #: §6.3: mui gio bat buoc tuong minh, mac dinh gio Viet Nam.
 MUI_GIO_MAC_DINH = "Asia/Ho_Chi_Minh"
@@ -906,7 +906,15 @@ _NHOM_NGAY: dict[str, Callable[..., Any]] = {
 #:
 #: ⛔ Them mot nhom vao day la mot QUYET DINH ve be mat, khong phai mot lan
 #:   them ham. `test_1765` so bang nay voi van ban spec theo ca hai chieu.
+#: Bảy nhóm của §6.3, **có tên** — để một bề mặt cần xếp nhóm (palette gợi ý
+#: biểu thức của Canvas) không phải dựng bảng phân nhóm thứ hai và để nó trôi.
+#: ⚠️ `BANG_HAM` dựng TỪ đây, nên không có đường nào cho hai bên lệch nhau.
+NHOM_HAM: dict[str, dict[str, Callable[..., Any]]] = {
+    "chuoi": _NHOM_CHUOI, "so": _NHOM_SO, "kieu": _NHOM_KIEU,
+    "json": _NHOM_JSON, "danh_sach": _NHOM_DANH_SACH,
+    "object": _NHOM_OBJECT, "ngay": _NHOM_NGAY,
+}
+
 BANG_HAM: dict[str, Callable[..., Any]] = {
-    **_NHOM_CHUOI, **_NHOM_SO, **_NHOM_KIEU, **_NHOM_JSON,
-    **_NHOM_DANH_SACH, **_NHOM_OBJECT, **_NHOM_NGAY,
+    ten: ham for nhom in NHOM_HAM.values() for ten, ham in nhom.items()
 }

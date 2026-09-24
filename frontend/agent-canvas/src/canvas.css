@@ -362,6 +362,26 @@ body.agent-canvas-immersive .canvas-shell[data-presentation=creative] .canvas-bo
   font-size:11px; }
 .o-cong-tac-bieu-thuc[aria-pressed="true"] { border-color:var(--brand-primary,#ef3731); }
 
+/* ── Hop goi y bieu thuc §6 (P2 Task 8) ─────────────────────────────────────
+   ⚠️ jsdom khong doc CSS: 100% bai vitest van xanh voi mot hop VO HINH. Nen
+   ba thuoc tinh duoi day (`position`, `z-index`, nen dac) la thu chi kiem
+   duoc tren trinh duyet that — bai hoc 24/09 ngay o khoi ghi chu ben tren. */
+.o-bieu-thuc { position:relative; display:block; }
+.o-bieu-thuc > input { width:100%; }
+.goi-y-bieu-thuc { position:absolute; z-index:20; left:0; right:0; top:100%;
+  margin:2px 0 0; padding:4px; list-style:none; max-height:220px;
+  overflow-y:auto; border:1px solid var(--vien,#2a3139); border-radius:8px;
+  background:var(--nen-noi,#151a20); box-shadow:0 8px 24px rgba(0,0,0,.35); }
+.goi-y-bieu-thuc li { display:flex; gap:8px; align-items:baseline;
+  padding:4px 8px; border-radius:6px; cursor:pointer; }
+.goi-y-bieu-thuc li[aria-selected="true"] { background:var(--nen-chon,#243041); }
+.goi-y-bieu-thuc li strong { font-family:ui-monospace,monospace; font-size:12px; }
+.goi-y-bieu-thuc li small { opacity:.65; font-size:11px; }
+/* Cong publish hom nay chua nhan dang bieu thuc nay — hien MO, khong an:
+   giau no di la noi doi ve cai ngon ngu dang co. */
+.goi-y-bieu-thuc li.chua-publish-duoc strong { opacity:.6; }
+.goi-y-bieu-thuc li small.canh-bao { color:var(--nguy-hiem,#f87171); opacity:.9; }
+
 /* Node bi publish tu choi (422). Dau nay nam tren chinh `.react-flow__node`. */
 .react-flow__node.node-do-loi .node-khung { border-color:var(--nguy-hiem,#f87171); }
 

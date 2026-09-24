@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { approveRun, cancelRunV3, cloneWorkflow, createAutosave, createRun,
-  createRunV3, exportWorkflow, importWorkflow,
+  createRunV3, exportWorkflow, goiYBieuThuc, importWorkflow,
   fromV3, loadRun, loadRunHistory, loadRunV3, loadWorkflowV3,
   publishWorkflowV3, restoreRunAsWorkflow,
   RUN_V3_KET_THUC,
@@ -389,6 +389,24 @@ describe('Accept: application/json tren moi loi goi API', () => {
     // ben trong apiFetch(), noi Accept duoc gan cho moi loi goi.
     const rawFetchCalls = workflowApiSource.match(/(?<![.\w])fetch\(/g) ?? []
     expect(rawFetchCalls).toHaveLength(1)
+  })
+
+  // Cua goi y §6 (P2 Task 8). ⚠️ No la duong ma CA hop autocomplete phu
+  // thuoc vao: mot cu 302 ve /login o day lam hop goi y rong trong im lang —
+  // dung hinh dang su co `da7fce81` da gay cho palette.
+  it('goiYBieuThuc POST dung duong, gui Accept + CSRF va tai lieu v3', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ node_id: 'n1', muc: [], ham: [], loi: null }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    await goiYBieuThuc('w1', 'n1', workflow.canvas, 'csrf-test')
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(String(url)).toBe('/agent/api/v3/workflows/w1/bieu-thuc/goi-y')
+    expect(init?.method).toBe('POST')
+    const headers = new Headers(init!.headers)
+    expect(headers.get('Accept')).toBe('application/json')
+    expect(headers.get('X-CSRF-Token')).toBe('csrf-test')
+    // Tai lieu gui di phai la v3 (canh mang CONG), khong phai v2.
+    expect(JSON.parse(String(init?.body)).document.version).toBe(3)
   })
 
   it('PUT (saveWorkflow) gui Accept ma khong de de ghi Content-Type', async () => {
