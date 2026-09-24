@@ -792,10 +792,22 @@ def _in_doi_chung(r: dict) -> bool:
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Lop dem va thong ke — dung thu vien chuan")
-    p.add_argument("lenh", choices=["doi-chung", "kappa", "quyet-dinh"])
+    p.add_argument("lenh", choices=["doi-chung", "kappa", "quyet-dinh", "phan-doan"])
     p.add_argument("--bang-chung", type=pathlib.Path, default=None)
     p.add_argument("--json", action="store_true", help="in JSON tho")
+    p.add_argument("--hyp", type=pathlib.Path, default=None, help="tep b1_chep_loi_moi/*.json")
+    p.add_argument("--ref", type=pathlib.Path, default=None, help="chan ly nen phan doan")
     a = p.parse_args(argv)
+    if a.lenh == "phan-doan":
+        ref = a.ref or (GOC / CHAN_LY_NEN_PHAN_DOAN)
+        if a.hyp is None:
+            raise SystemExit("can --hyp <b1_chep_loi_moi/vN.json>")
+        r = lenh_phan_doan(a.hyp, ref)
+        if a.json:
+            print(json.dumps(r, ensure_ascii=False, indent=2, default=str))
+        else:
+            _in_phan_doan(r)
+        return 0
     if a.lenh == "quyet-dinh":
         rs = lenh_quyet_dinh()
         if a.json:
@@ -821,8 +833,6 @@ def main(argv: list[str] | None = None) -> int:
     return 0 if _in_doi_chung(r) else 1
 
 
-if __name__ == "__main__":
-    raise SystemExit(main())
 
 
 # ───────────────────────────────────────────────────────────────────────────
@@ -994,3 +1004,130 @@ def doi_chung_bam_deu(
         ra.append((t, min(t + buoc, cuoi)))
         t += buoc
     return ra
+
+
+def doi_chung_he_hoan_hao(
+    ref: Sequence[tuple[float, float]],
+    dung_sai: float,
+    luoi: float = LUOI_CHAN_LY_NEN_S,
+    lan: int = 4000,
+    hat: int = 20260924,
+) -> dict:
+    """🔴 ĐỐI CHỨNG QUAN TRỌNG NHẤT: một hệ HOÀN HẢO chấm được bao nhiêu?
+
+    Chân lý nền OCR ghi mốc trên **lưới 0,5 s**, và ghi bằng cách lấy mốc lưới
+    đầu tiên **tại hoặc sau** lúc phụ đề hiện ⇒ mốc nền **muộn hơn** mốc thật
+    một lượng ~`U[0, luoi]`. Đo 24/09 xác nhận chiều ấy: 74 % lệch là ÂM, trung
+    vị −0,148 s.
+
+    ⇒ Kể cả một hệ ⛔ **không sai một mili giây nào** cũng sẽ trượt một phần
+    onset, chỉ vì chân lý nền đặt mốc muộn. Hàm này đo **trần thật sự** của
+    thước.
+
+    ⭐ Không có đối chứng này thì một con số thấp trông như lỗi của hệ thống,
+    và ta sẽ đi sửa một khuyết tật ⛔ không tồn tại. Đúng bài học
+    `khong-doi-chung-thi-so-khong-khong-phai-phat-hien`.
+    """
+    rng = np.random.default_rng(hat)
+    diem = []
+    for _ in range(lan):
+        hoan_hao = [(b - rng.uniform(0, luoi), k) for b, k in ref]
+        diem.append(khop_onset(ref, hoan_hao, dung_sai)["do_nhay"]["ti_le"])
+    m = np.asarray(diem, dtype=float)
+    return {
+        "dung_sai": dung_sai,
+        "luoi": luoi,
+        "tran_do_nhay_trung_vi": float(np.median(m)),
+        "tran_dao_dong": (float(np.percentile(m, 2.5)), float(np.percentile(m, 97.5))),
+        "lan": lan,
+    }
+
+
+def kiem_nguong_voi_toi(
+    ref: Sequence[tuple[float, float]], dung_sai: float, nguong: float
+) -> dict:
+    """`dat=False` ⇒ ngưỡng này ⛔ KHÔNG hệ nào với tới được, kể cả hệ hoàn hảo."""
+    tran = doi_chung_he_hoan_hao(ref, dung_sai)
+    return {
+        **tran,
+        "nguong": nguong,
+        "voi_toi_duoc": tran["tran_dao_dong"][1] >= nguong,
+        "ghi_chu": (
+            "ngưỡng nằm TRÊN trần của thước ⇒ sửa CHÂN LÝ NỀN hoặc nới dung sai,"
+            " ⛔ đừng sửa hệ thống"
+            if tran["tran_dao_dong"][1] < nguong
+            else "ngưỡng nằm trong tầm với"
+        ),
+    }
+
+
+#: Chân lý nền phân đoạn DUY NHẤT đang có (đọc tay, 33 dòng, cửa sổ 0,5-61 s
+#: của phim v2 `暴雨露营` 190 s).
+#:
+#: 🔴 ⛔ v4 `气枪` KHÔNG có bằng chứng phân đoạn ở BẤT KỲ cây nào trong ~120
+#: worktree (quét 24/09). ⇒ mọi câu nói "bốn phim" về phân đoạn là SAI — **ba
+#: phim**, và chân lý nền thì chỉ **một**. Ghi ở đây để ⛔ không ai đi tìm nữa.
+CHAN_LY_NEN_PHAN_DOAN = "docs/auto_scan_video_final/l_ocr_gt_v2.json"
+
+
+def lenh_phan_doan(tep_hyp: pathlib.Path, tep_ref: pathlib.Path) -> dict:
+    """BA số cạnh nhau + BỐN đối chứng + trần của thước. ⛔ Không điểm tổng hợp."""
+    ref = doc_chan_ly_nen_ocr(tep_ref)
+    cua_so = (min(b for b, _ in ref), max(k for _, k in ref))
+    hyp = [
+        (b, k) for b, k in doc_doan_b1(tep_hyp) if k > cua_so[0] and b < cua_so[1]
+    ]
+    ban = {
+        "bản của ta (whisperx)": hyp,
+        "ĐC gộp tất": doi_chung_gop_tat(hyp),
+        "ĐC băm 2 s": doi_chung_bam_deu(hyp, 2.0),
+        "ĐC khối 30 s": doi_chung_bam_deu(hyp, 30.0),
+    }
+    ra: dict = {"cua_so": cua_so, "n_ref": len(ref), "n_hyp": len(hyp), "muc": {}}
+    for ds in (NGUONG_PHAN_DOAN["onset_dung_sai_s"], LUOI_CHAN_LY_NEN_S):
+        khoi = {
+            ten: {
+                "a_ranh_gioi": ranh_gioi_pyannote(ref, seg, ds),
+                "b_do_dai": do_dai_doan(seg, NGUONG_PHAN_DOAN["do_dai_toi_da_s"]),
+                "c_onset": khop_onset(ref, seg, ds),
+            }
+            for ten, seg in ban.items()
+        }
+        khoi["__tran__"] = kiem_nguong_voi_toi(
+            ref, ds, NGUONG_PHAN_DOAN["onset_do_nhay_toi_thieu"]
+        )
+        ra["muc"][ds] = khoi
+    return ra
+
+
+def _in_phan_doan(r: dict) -> None:
+    print("╔═ THƯỚC PHÂN ĐOẠN B1 — BA SỐ CẠNH NHAU, ⛔ không điểm tổng hợp ═╗")
+    print(f"  chân lý nền {r['n_ref']} dòng, cửa sổ {r['cua_so'][0]:.1f}-{r['cua_so'][1]:.1f} s"
+          f" · bản của ta {r['n_hyp']} đoạn trong cửa sổ")
+    print("  ⚠️ MỘT phim (v2), MỘT chân lý nền."
+          " ⛔ v4 không có dữ liệu phân đoạn ở đâu cả.")
+    print()
+    for ds, khoi in r["muc"].items():
+        tran = khoi["__tran__"]
+        print("═" * 78)
+        print(f"DUNG SAI {ds} s   (lưới chân lý nền {tran['luoi']} s)")
+        print(f"  trần của thước: hệ HOÀN HẢO cũng chỉ đạt độ nhạy "
+              f"{tran['tran_do_nhay_trung_vi']:.3f} "
+              f"[{tran['tran_dao_dong'][0]:.3f} ; {tran['tran_dao_dong'][1]:.3f}]")
+        print(f"  ngưỡng {tran['nguong']:.2f} ⇒ "
+              f"{'✅ với tới được' if tran['voi_toi_duoc'] else '🔴 KHÔNG VỚI TỚI ĐƯỢC'}"
+              f" — {tran['ghi_chu']}")
+        print(f"  {'bản':26s}{'(a) ranh giới F1':>18s}{'(b) vi phạm >7 s':>18s}"
+              f"{'(c) onset độ nhạy':>20s}")
+        for ten, o in khoi.items():
+            if ten == "__tran__":
+                continue
+            a, b, c = o["a_ranh_gioi"], o["b_do_dai"], o["c_onset"]
+            cn = (f"{c['do_nhay']['ti_le']:.3f} [{c['do_nhay']['ktc'][0]:.2f};"
+                  f"{c['do_nhay']['ktc'][1]:.2f}]") if c["do_nhay"] else "—"
+            print(f"  {ten:26s}{a['f1']:18.3f}{b['vi_pham']:>10}/{b['n']:<7}{cn:>20s}")
+        print()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

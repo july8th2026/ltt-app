@@ -343,3 +343,112 @@ def test_3602_bang_quyet_dinh_chay_duoc_va_phu_ca_hai_ket_luan_chinh():
     ten = " | ".join(r["ten"] for r in rs)
     assert "V3 TRƯỢT cổng 15 %" in ten and "V2 loại dứt khoát" in ten
     assert all(r["phan_quyet"] in {"ĐỨNG", "KHÔNG ĐỦ ĐỠ", "TRƯỢT cổng", "ĐẠT cổng"} for r in rs)
+
+
+# ───────────────────────────────────────────────────────────────────────────
+# THƯỚC PHÂN ĐOẠN — ba số cạnh nhau, và một ngưỡng phải VỚI TỚI ĐƯỢC
+# ───────────────────────────────────────────────────────────────────────────
+
+#: Chân lý nền giả lập: 33 mốc trên lưới 0,5 s, khoảng cách KHÔNG ĐỀU
+#: (thật: 33 dòng / 61 s, trung bình ~1,9 s) — y như `l_ocr_gt_v2.json`.
+#:
+#: ⚠️ Khoảng cách phải THỰC TẾ, và phải KHÔNG ĐỀU. Hai bản fixture trước đều
+#: cho phép kiểm xanh sai:
+#:   · cách đều 0,5 s  -> mốc xê dịch khớp nhầm sang mốc HÀNG XÓM
+#:   · cách đều 2,0 s  -> đối chứng "băm 2 s" khớp HOÀN HẢO, vì trên một lưới
+#:                        đều thì băm đều chính là câu trả lời ĐÚNG
+#: Một fixture quá đặn biến một đối chứng suy biến thành một bản tốt.
+def _ref_gia_lap() -> list[tuple[float, float]]:
+    rng = __import__("random").Random(20260924)
+    t, ra = 0.5, []
+    for _ in range(33):
+        ra.append((t, t + 1.0))
+        t = round((t + rng.choice([1.0, 1.5, 2.0, 2.5, 3.0])) * 2) / 2
+    return ra
+
+
+_REF_LUOI = _ref_gia_lap()
+
+
+def test_3602_onset_bat_duoc_ban_suy_bien():
+    """Bốn đối chứng: gộp tất / băm 2 s / khối 30 s phải THUA bản thật."""
+    from tools.do_luong import doi_chung_bam_deu, doi_chung_gop_tat, khop_onset
+
+    that = [(b + 0.05, k) for b, k in _REF_LUOI]
+    tot = khop_onset(_REF_LUOI, that, 0.3)["do_nhay"]["ti_le"]
+    for suy_bien in (
+        doi_chung_gop_tat(_REF_LUOI),
+        doi_chung_bam_deu(_REF_LUOI, 2.0),
+        doi_chung_bam_deu(_REF_LUOI, 30.0),
+    ):
+        xau = khop_onset(_REF_LUOI, suy_bien, 0.3)["do_nhay"]["ti_le"]
+        assert xau < tot, "thuoc KHONG ha duoc ban suy bien => thuoc hong"
+
+
+def test_3602_onset_ghep_toi_uu_khong_phu_thuoc_thu_tu():
+    """`linear_sum_assignment` ⇒ đảo thứ tự đoạn ⛔ không đổi kết quả."""
+    import random
+
+    from tools.do_luong import khop_onset
+
+    hyp = [(b + 0.1, k) for b, k in _REF_LUOI]
+    a = khop_onset(_REF_LUOI, hyp, 0.3)["khop"]
+    dao = hyp[:]
+    random.Random(7).shuffle(dao)
+    assert khop_onset(_REF_LUOI, dao, 0.3)["khop"] == a
+
+
+def test_3602_mot_onset_khong_duoc_khop_hai_lan():
+    """Hai đoạn giả cùng bám một onset ⇒ chỉ MỘT được tính."""
+    from tools.do_luong import khop_onset
+
+    c = khop_onset([(10.0, 11.0)], [(10.02, 10.5), (10.04, 10.6), (10.06, 10.7)], 0.3)
+    assert c["khop"] == 1 and c["n_hyp"] == 3
+    assert c["do_chinh_xac"]["ti_le"] == pytest.approx(1 / 3)
+
+
+def test_3602_do_dai_doan_bat_dung_vi_pham():
+    from tools.do_luong import do_dai_doan
+
+    r = do_dai_doan([(0, 3.0), (3.0, 11.0), (11.0, 12.0)], 7.0)
+    assert r["vi_pham"] == 1 and r["n"] == 3
+    assert r["dai_nhat_s"] == pytest.approx(8.0)
+
+
+def test_3602_ranh_gioi_pyannote_hut_khi_co_khoang_lang():
+    """⭐ Ghi lại bằng PHÉP KIỂM cái bẫy đã đo: pyannote đếm `n-1` mốc KẾT.
+
+    Với timeline CÓ KHOẢNG LẶNG, số mốc thật lớn hơn hẳn. Nếu bản pyannote nào
+    đó sửa hành vi này, phép kiểm đỏ và ta biết để đọc lại số.
+    """
+    from tools.do_luong import _dem_ranh_gioi_that, ranh_gioi_pyannote
+
+    co_lang = [(0.0, 1.0), (3.0, 4.0), (9.0, 10.0)]
+    r = ranh_gioi_pyannote(co_lang, co_lang, 0.3)
+    assert r["n_ranh_gioi_pyannote_dem"] == 2
+    assert _dem_ranh_gioi_that(co_lang) == 6
+    assert r["n_ranh_gioi_that"] > r["n_ranh_gioi_pyannote_dem"]
+
+
+def test_3602_nguong_03s_KHONG_VOI_TOI_DUOC_tren_luoi_05s():
+    """🔴 Kết quả 24/09: ngưỡng onset 0,80 ở dung sai 0,3 s là ngưỡng HỎNG.
+
+    Chân lý nền trên lưới 0,5 s đặt mốc MUỘN ~U[0; 0,5] s, nên một hệ hoàn hảo
+    cũng chỉ đạt ~0,61. ⛔ Không hệ nào với tới 0,80. Ai hạ ngưỡng hay làm mịn
+    chân lý nền thì phép kiểm này đỏ — và đó là lúc phải đọc lại con số.
+    """
+    from tools.do_luong import NGUONG_PHAN_DOAN, kiem_nguong_voi_toi
+
+    r = kiem_nguong_voi_toi(_REF_LUOI, 0.3, NGUONG_PHAN_DOAN["onset_do_nhay_toi_thieu"])
+    assert r["voi_toi_duoc"] is False, "0,80 @ 0,3 s KHONG duoc voi toi"
+    assert r["tran_do_nhay_trung_vi"] < 0.70
+    assert "CHÂN LÝ NỀN" in r["ghi_chu"].upper() or "chân lý nền" in r["ghi_chu"]
+
+
+def test_3602_nguong_05s_thi_voi_toi_duoc():
+    """Đối chứng dương: nới dung sai lên bằng lưới thì ngưỡng lại với tới được."""
+    from tools.do_luong import kiem_nguong_voi_toi
+
+    r = kiem_nguong_voi_toi(_REF_LUOI, 0.5, 0.80)
+    assert r["voi_toi_duoc"] is True
+    assert r["tran_do_nhay_trung_vi"] > 0.95
