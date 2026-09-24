@@ -172,10 +172,12 @@ def f0_tu_giai_doan(db, run) -> float:
     """
     from . import features, pipeline
 
-    try:
-        gd = features.giai_doan_theo_ten(db, run.id, pipeline.AUDIO_PREPARE)
-    except Exception:                                      # noqa: BLE001
-        return 0.0
+    # ⛔ KHONG bat ngoai le quanh cho doc CSDL nay. `giai_doan_theo_ten` DA tra
+    #    `None` khi khong co giai doan, nen mot ngoai le o day chi con mot nghia:
+    #    CSDL hong. Bien no thanh `0.0` la khai "khong do duoc F0" trong khi su
+    #    that la "khong doc duoc CSDL" — `AUTO_MATCH` mat mat `gioi`, chon giong
+    #    bang hai mat con lai, va khong co mot dong nao noi vi sao.
+    gd = features.giai_doan_theo_ten(db, run.id, pipeline.AUDIO_PREPARE)
     try:
         return float(((gd.outputs or {}) if gd else {}).get("f0_trung_vi") or 0.0)
     except (TypeError, ValueError):

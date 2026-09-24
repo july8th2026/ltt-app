@@ -116,8 +116,13 @@ def _stream(kh, khoa_tho, dung):
                                 break          # CAT giua chung — dung duong L-08
                         _cong("stream")
                         _cong("huy")
-        except Exception:                       # noqa: BLE001
+        except Exception as exc:                # noqa: BLE001
+            # ⭐ Dem RIENG theo loai. `stream_hong` gop ca "server tra 503" voi
+            #    "may nay khong phan giai duoc ten mien" thanh mot con so, va
+            #    mot bai soak ket luan "cong hong 9%" tu mot loi mang cuc bo la
+            #    mot ket luan sai ve dung thu no dang do.
             _cong("stream_hong")
+            _cong(f"stream_hong:{type(exc).__name__}")
         time.sleep(2)
 
 
