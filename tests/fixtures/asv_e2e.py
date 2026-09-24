@@ -1163,7 +1163,20 @@ class KhoaTheoPha:
                        `qc_ai` la nhung lan goi mang — chung chay NGOAI khoa.
     """
 
-    def __init__(self, phien: str, *, bat: bool = True, so_loi: int = 0):
+    def __init__(self, phien: str, *, bat: bool = True, so_loi: int = 0,
+                 giu_suot: tuple = ()):
+        #: Khoa giu SUOT ca luot, giu ngay tu `__enter__`.
+        #:
+        #: ⚠️ `postgres_test` thuoc nhom nay, va **khong** duoc chuyen sang giu
+        #:    theo pha: khuon nghiem thu goi `Base.metadata.drop_all()` tren CSDL
+        #:    scratch DUNG CHUNG (`test_423.moi_truong`). Mot phien chen vao giua
+        #:    khong lam luot nay cham — no lam luot kia thay `relation "jobs" does
+        #:    not exist` (su co 17/09, `tests/test_1500`). Do la khoa tai nguyen
+        #:    DOC QUYEN, khong phai khoa suc tinh.
+        #:
+        #: ⛔ Va no phai duoc giu TRUOC khi `moi_truong` chay, tuc truoc than bai
+        #:    test — xem `test_3001` dat bo canh khoa DAU danh sach tham so.
+        self.giu_suot = tuple(giu_suot)
         self.phien = phien
         self.bat = bat
         self.so_loi = so_loi
@@ -1203,6 +1216,10 @@ class KhoaTheoPha:
             yield tuple(sorted(can))
 
     def __enter__(self):
+        for tn in sorted(self.giu_suot):
+            cs = self._cua_so(tn, f"nghiem thu ASV - ca luot ({tn})")
+            cs.__enter__()
+            self._giu_dai[tn] = cs
         return self
 
     def __exit__(self, *_exc) -> None:

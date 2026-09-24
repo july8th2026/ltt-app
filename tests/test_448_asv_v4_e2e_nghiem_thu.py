@@ -307,12 +307,26 @@ def _mot_job(db, jobs, _provider_failure_kind, handler, job, ctx,
 
 
 def _nop_qua_form(client, csrf: str, nguon: Path, *, preset: str,
-                  che_do_giong: str, giong_id: str) -> str:
-    """Nop qua CHINH cai form khach dung. Tra ve `run_id`."""
+                  che_do_giong: str, giong_id: str,
+                  ngon_ngu_nguon: str = "", ngon_ngu_dich: str = "",
+                  nguon_loi: str = "") -> str:
+    """Nop qua CHINH cai form khach dung. Tra ve `run_id`.
+
+    Cap ngon ngu phai nop TUONG MINH khi nghiem thu mot cap cu the. Bo trong thi
+    `routes.tao` lay mac dinh (`tu_doan` -> `vi`), nen mot luot *"nghiem thu
+    vi->en"* se im lang chay `-> vi` va bao cao van XANH. Do la dung bay G-02 (o
+    bao cao NEN_V3 moi luot cua khach la `auto -> vi`), chi o phia BO DO thay vi
+    phia template.
+    """
     from apps.auto_scan_video import hop_dong_v4
 
     du_lieu = {"csrf_token": csrf, "che_do": "fit_original", "preset": preset,
                "che_do_giong": che_do_giong, "giong_id": giong_id}
+    for ten, gt in (("ngon_ngu_nguon", ngon_ngu_nguon),
+                    ("ngon_ngu_dich", ngon_ngu_dich),
+                    ("nguon_loi", nguon_loi)):
+        if gt:
+            du_lieu[ten] = gt
     with open(nguon, "rb") as f:
         r = client.post("/auto-scan-video/tao", data=du_lieu,
                         files={"video": (nguon.name, f, "video/mp4")})
@@ -392,7 +406,8 @@ def _tom_tat(giai_doan: list[dict], ten: str) -> dict:
 
 def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
               nhan: str, preset: str, che_do_giong: str, giong_id: str,
-              su_that=None, khoa=None) -> dict:
+              su_that=None, khoa=None, ngon_ngu_nguon: str = "",
+              ngon_ngu_dich: str = "", nguon_loi: str = "") -> dict:
     """Mot lan chay day du, tu form den tep tai ve. Tra ve phan bao cao.
 
     ⚠️ `su_that=None` khi nguon la PHIM KHACH THAT: phim that khong di kem cau
@@ -410,7 +425,9 @@ def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
 
     t0 = time.time()
     run_id = _nop_qua_form(client_chu, csrf, nguon, preset=preset,
-                           che_do_giong=che_do_giong, giong_id=giong_id)
+                           che_do_giong=che_do_giong, giong_id=giong_id,
+                           ngon_ngu_nguon=ngon_ngu_nguon,
+                           ngon_ngu_dich=ngon_ngu_dich, nguon_loi=nguon_loi)
 
     db = next(dbmod.get_session())
     try:
@@ -501,6 +518,9 @@ def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
 
     return {
         "nhan": nhan, "preset": preset, "che_do_giong": che_do_giong,
+        "cap_ngon_ngu": {"nguon": ngon_ngu_nguon or "(mac dinh)",
+                         "dich": ngon_ngu_dich or "(mac dinh)",
+                         "nguon_loi": nguon_loi or "(mac dinh)"},
         "tang_vat": tang_vat,
         "giong_id": giong_id,
         "trang_thai_run": run.status, "giay_tong": round(time.time() - t0, 1),
