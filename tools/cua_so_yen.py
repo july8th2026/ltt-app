@@ -240,6 +240,41 @@ def _mo_ta(ban_ghi: dict) -> str:
 #:    dang dung mot phan dang ke cua may.
 SO_LOI_KHI_KHONG_KHAI = 8
 
+#: So lan toi da MOT lan goi `thu_giu` duoc gianh lai mot tep khoa (rac, hoac
+#: khoa treo).
+#:
+#: ⛔ KHONG lap vo han. Moi vong them o day la mot tep vua bien mat roi hien ra
+#:    lai duoi tay ta — tuc mot phien KHAC dang giu nhip, va lap mai chi la
+#:    chiem CPU de thua nhanh hon. Het tran ⇒ tra False = XEP LAI HANG (nguoi
+#:    goi ngu mot giay roi xin lai), va IN RO rang da het tran.
+TRAN_GIANH_LAI = 5
+
+
+def _xoa_de_gianh(tep: Path, tai_nguyen: str) -> bool:
+    """Xoa tep khoa de gianh lay no. False = ta THUA cuoc dua, phai xep lai hang.
+
+    🔴 **N-42.** Tren Windows `unlink` nem `PermissionError` (WinError 5) khi
+       mot tien trinh KHAC dang mo tep — tuc HAI phien cung lao vao gianh MOT
+       khoa treo, va moi phien tru mot se gap loi nay. Canh do la BINH THUONG
+       chu khong hiem: ~10 phien xep hang sau mot chu khoa vua chet thi tat ca
+       cung tinh day va cung lao vao.
+
+    ⭐ **Thua mot cuoc dua thi CHO, ⛔ khong phai CHET.** Ban cu de ngoai le
+       thoat ra khoi `thu_giu`, keo theo `chay_nang.py` chet ma ⛔ khong chay
+       mot luot nao — mot ket cuc dang le chi la "xin lai sau mot giay" bi doc
+       thanh mot loi chi mang.
+
+    ⛔ Va ⛔ khong nuot im lang (N-19): ket cuc binh thuong van phai NOI RA, vi
+       mot cuoc dua khong ai thay thi khong ai do duoc no xay ra bao nhieu lan.
+    """
+    try:
+        tep.unlink(missing_ok=True)
+    except OSError as loi:
+        _in(f"  [cua so yen] thua cuoc gianh khoa treo ({tai_nguyen}), "
+            f"xep lai hang: {type(loi).__name__}: {loi}")
+        return False
+    return True
+
 
 def thu_giu(phien: str, lenh: str, tai_nguyen: str = MAC_DINH, *,
             so_loi: int = 0) -> bool:
@@ -247,38 +282,50 @@ def thu_giu(phien: str, lenh: str, tai_nguyen: str = MAC_DINH, *,
 
     `so_loi` la so loi luot nay se dung. Ghi vao ban ghi de mot luot KHAC tinh
     duoc ngan sach con lai cua **may**, thay vi cua rieng no.
+
+    ⭐ "MOT lan" o day la mot lan XIN. Ben trong van co the phai gianh lai vai
+       lan khi tep khoa la rac hoac la khoa treo — co tran `TRAN_GIANH_LAI`.
+       Moi duong that bai deu tra **False** (= xep lai hang), ⛔ khong nem.
     """
     tep = _tep(tai_nguyen)
-    ban_ghi = {
-        "phien": phien,
-        "pid": os.getpid(),
-        "may": socket.gethostname(),
-        "lenh": lenh,
-        "tai_nguyen": tai_nguyen,
-        "so_loi": max(0, int(so_loi)),
-        "bat_dau_epoch": time.time(),
-        "bat_dau": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-    }
-    try:
-        # O_EXCL: hai tien trinh cung goi thi dung MOT thang thang. Doc-roi-ghi
-        # khong lam duoc dieu do, va cua so dua chinh la luc dong nhat.
-        fd = os.open(tep, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-    except FileExistsError:
-        cu = _doc(tai_nguyen)
-        if cu is None:
-            # Tep co that nhung khong doc duoc: rac tu mot lan ngat giua chung.
-            tep.unlink(missing_ok=True)
-            return thu_giu(phien, lenh, tai_nguyen)
-        ly_do = _treo(cu)
-        if not ly_do:
-            return False
-        _in(f"  [cua so yen] doat khoa treo ({tai_nguyen}): "
-              f"{_mo_ta(cu)} - {ly_do}")
-        tep.unlink(missing_ok=True)
-        return thu_giu(phien, lenh, tai_nguyen)
-    with os.fdopen(fd, "w", encoding="utf-8") as f:
-        f.write(json.dumps(ban_ghi, ensure_ascii=False))
-    return True
+    for _ in range(TRAN_GIANH_LAI):
+        try:
+            # O_EXCL: hai tien trinh cung goi thi dung MOT thang thang.
+            # Doc-roi-ghi khong lam duoc dieu do, va cua so dua chinh la luc
+            # dong nhat.
+            fd = os.open(tep, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        except FileExistsError:
+            cu = _doc(tai_nguyen)
+            if cu is None:
+                # Tep co that nhung khong doc duoc: rac tu mot lan ngat giua
+                # chung.
+                if not _xoa_de_gianh(tep, tai_nguyen):
+                    return False
+                continue
+            ly_do = _treo(cu)
+            if not ly_do:
+                return False
+            _in(f"  [cua so yen] doat khoa treo ({tai_nguyen}): "
+                  f"{_mo_ta(cu)} - {ly_do}")
+            if not _xoa_de_gianh(tep, tai_nguyen):
+                return False
+            continue
+        ban_ghi = {
+            "phien": phien,
+            "pid": os.getpid(),
+            "may": socket.gethostname(),
+            "lenh": lenh,
+            "tai_nguyen": tai_nguyen,
+            "so_loi": max(0, int(so_loi)),
+            "bat_dau_epoch": time.time(),
+            "bat_dau": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        }
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(json.dumps(ban_ghi, ensure_ascii=False))
+        return True
+    _in(f"  [cua so yen] gianh lai {TRAN_GIANH_LAI} lan khong duoc "
+        f"({tai_nguyen}) - xep lai hang")
+    return False
 
 
 def nha(phien: str = "", *, ep: bool = False,
