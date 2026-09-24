@@ -1,0 +1,45 @@
+{
+ "ten_cau_hinh": "C_t0.0_EP_LUOC_DO_seed",
+ "so_luot": 3,
+ "nguong_san_pham": 6.0,
+ "luot": [
+  {
+   "luot": 1,
+   "n": 12,
+   "trung_vi": 4.2969,
+   "trung_binh": 5.250008333333334,
+   "ktc": [
+    3.692770696328832,
+    7.723315056405106
+   ],
+   "qua_nguong_san_pham": 3
+  },
+  {
+   "luot": 2,
+   "n": 12,
+   "trung_vi": 2.89845,
+   "trung_binh": 3.5664,
+   "ktc": [
+    2.5091165840204694,
+    5.743562158540678
+   ],
+   "qua_nguong_san_pham": 1
+  },
+  {
+   "luot": 3,
+   "n": 11,
+   "trung_vi": 4.2188,
+   "trung_binh": 6.607245454545454,
+   "ktc": [
+    3.9667886971344566,
+    10.766846932017181
+   ],
+   "qua_nguong_san_pham": 5
+  }
+ ],
+ "trung_vi_cac_luot": 4.2188,
+ "khoang": [
+  2.89845,
+  4.2969
+ ]
+}

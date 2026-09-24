@@ -228,7 +228,67 @@ Sổ đúng là `THIRD_PARTY_METRICS.md` — *"mỗi câu hỏi hỏi đúng M�
 
 ---
 
-## §6. ⛔ Đo bản dịch của ta — bench **đã sẵn**, còn **hai chặn**
+## §6. ⭐ Đo bản dịch của ta — **đo thứ ĐÃ CÓ**, ⛔ không sinh bản mới
+
+⭐ ⛔ Không đụng sổ khoá production. Đo thẳng bằng chứng **đã commit** của làn B2
+(nhánh `phien/asvf-nghiem-thu-v2`, **chỉ đọc**). Lệnh: `qe-co-san`.
+
+### 🔴 chrF++ ⛔ KHÔNG đo được — và đây là con số ta **mất**
+
+⭐ chrF++ là **tín hiệu DUY NHẤT hiện không dính vòng tròn LLM** (mục 🔴 (1)): nó so
+với **bản dịch người của FLORES**, ⛔ không qua một LLM nào. **Nhưng** mọi bản dịch
+làn B2 đã sinh đều là **đoạn PHIM của khách** — ⛔ **không có bản dịch tham chiếu**.
+chrF++ ⛔ **không có gì để so**.
+
+⇒ ⭐ **Cấu hình còn THIẾU, gọi đúng tên để điều phối nhờ làn B2 sinh:**
+
+> **`FLORES dev zh→vi, ≥ 100 dòng, ltt-3.5, t = 0,0, ÉP LƯỢC ĐỒ, ≥ 3 lượt`**
+> (⛔ không phải đoạn phim — phải là **chính dòng FLORES**, vì chỉ FLORES mới có
+> bản dịch người để chrF++ so.)
+
+Có tệp đó thì `bench --dich luot1 luot2 luot3` chạy **một lệnh** và trả cả chrF++
+lẫn MetricX QE. ⛔ Làn này ⛔ không tự sinh.
+
+### MetricX QE trên bản dịch đã có — **ba cấu hình, ⛔ KHÔNG gộp**
+
+> 🏷️ Mọi số dưới đây là **MetricX QE** ⇒ **treo trên mục 🔴 (1)**. Ngưỡng sản phẩm
+> `6,0`. **Thấp là tốt.**
+
+| cấu hình | nguồn | đơn vị | n | trung vị | khoảng | qua ngưỡng 6,0 |
+|---|---|---|---|---|---|---|
+| **A** — lời nhắc v4, **t = 0,2**, ⛔ **không ép** | `b2_dich_nen/v{1,2,3}_nen` | 🔴 **3 PHIM khác nhau**, ⛔ không phải lượt lặp | 83 / 74 / 31 | 1,727 · 1,699 · 2,328 | ⛔ *không áp dụng* | 3/83 · 4/74 · 1/31 |
+| **B** — **t = 0,0**, ⛔ không ép | `b2_lap_lai/…_lan3` | ✅ **3 lượt lặp** (phim v3) | 11 / 11 / 10 | **2,930** | [2,578 ; 3,125] | 2 · 1 · 0 |
+| **C** — **t = 0,0**, ✅ **ÉP LƯỢC ĐỒ** *(cấu hình đã ghim)* | `b2_lap_lai/…_lan3_ep_seed20260925` | ✅ **3 lượt lặp** (phim v3) | 12 / 12 / 11 | **4,219** | [2,898 ; 4,297] | 3 · 1 · 5 |
+
+🔴 **A ⛔ không có "trung vị + khoảng".** Ba tệp của A là **ba phim khác nhau**, mỗi
+phim **một lượt** ⇒ khoảng giữa chúng đo **độ khó của phim**, ⛔ **không** đo độ
+không tái lập. Gộp lại là dựng lại đúng lỗi *"hai con số từ hai tập khác nhau"*.
+Công cụ nay **tự phát hiện và từ chối** in khoảng cho trường hợp này.
+
+⛔ **KHÔNG được đọc bảng này thành "C tệ hơn B".** Ba lý do:
+1. **n = 10–12** mỗi lượt, và KTC của các lượt **chồng lên nhau rất nhiều**
+   (C lượt 3: [3,967 ; 10,767]). ⛔ Không tách được.
+2. ⚠️ **Tập của B và C bị THIÊN LỆCH theo cùng một kiểu nhưng ⛔ không giống nhau:**
+   cả hai lấy từ `chi_tiet_doan_DOI` — tức **chỉ những đoạn ĐÃ ĐỔI giữa các lượt**,
+   ⛔ bỏ các đoạn ổn định. B: 11/12 đoạn đổi; C: 12/12. ⇒ Đây là **tập các đoạn khó
+   nhất**, ⛔ không phải tập đại diện.
+3. B và C ⛔ **không cùng tập đoạn** (11 vs 12, chọn khác nhau) ⇒ ⛔ không so cặp được.
+
+⭐ **Thứ bảng này NÓI ĐƯỢC:** ở cả ba cấu hình, **trung vị nằm sâu dưới ngưỡng 6,0**
+(1,7–4,2) và tỉ lệ vượt ngưỡng thấp (0–5 trên 10–83 đoạn) ⇒ ⛔ **không thấy dấu hiệu
+sụp** của đường dịch theo thước MetricX QE. **Thứ nó ⛔ KHÔNG nói được:** cấu hình
+nào tốt hơn cấu hình nào.
+
+### ⚠️ Nhắc lại giới hạn đã đo
+
+- **FLORES có ~10 % dòng lỗi rõ** (KTC [5,5 ; 17,4]) ⇒ *"khớp FLORES"* ⛔ **không** bằng *"đúng"*.
+- Đường dịch **⛔ không tái lập được** (t 0,0 + ép lược đồ + seed vẫn cho ba bản
+  khác nhau) ⇒ ⛔ **một lượt ⛔ không phải một con số** — đó là lý do bảng trên báo
+  **trung vị + khoảng** ở đúng hai dòng có lượt lặp thật.
+
+---
+
+## §6b. (lịch sử) Hai nút chặn của bản trước — **đã gỡ**
 
 Lệnh `bench` đã dựng xong và **đã kiểm chạy** (chrF++ qua 3 lượt giả, xếp hạng đúng
 chiều; chặn `< 3 lượt` có hiệu lực):
@@ -245,24 +305,19 @@ Bench **ép ≥ 3 lượt** và báo **trung vị + khoảng** cho **chrF++** v�
 **riêng rẽ** (⛔ không gộp thành một điểm), vì **đường dịch ⛔ không tái lập được**
 (temp 0,0 + ép lược đồ + seed vẫn cho ba bản khác nhau ở **mọi** đoạn).
 
-⛔ **Hai thứ chặn, và chúng ⛔ không nằm trong tay làn này:**
+Bản trước nêu hai nút chặn; ⭐ **cả hai đã gỡ bằng cách RẺ hơn — ⛔ không xin quyền:**
 
-1. ⛔ **Ghim nhiệt độ + ép lược đồ chưa có trên nhánh này.** Đo kiểm trên cây này:
-   `long_tieng.py` ⛔ **không có** `NHIET_DO_DICH`, và lời gọi ⛔ không truyền
-   `temperature` ⇒ cổng vẫn áp **`--temp 1.0`**. Thay đổi ấy là **Task 9 của làn khác**,
-   ⛔ chưa lên `main`. Đo bây giờ trên cây này = đo **đúng cấu hình sắp biến mất**.
-2. 🔴 **Sinh bản dịch cần khoá API của sổ POOL — tức CSDL production.**
-   `ai.goi` cần một `db` có sổ khoá (`LTT_ASV_POOL_URL` trỏ **DB production**),
-   cộng `LTT_LLM_BASE_URL` + `LTT_TOKEN_ENCRYPTION_KEY` từ `secrets\app.env`, nạp
-   qua một bước **nâng quyền**. ⛔ Làn này ⛔ **không tự đụng vào dữ liệu production**
-   khi chưa được chủ dự án cho phép **rõ ràng**.
+1. ~~Ghim nhiệt độ chưa lên nhánh này~~ ⇒ ⛔ **không cần**: ta ⛔ không sinh bản dịch
+   nữa, ta **đo bản đã sinh**, và bản ấy **đã** sinh dưới cấu hình đã ghim (cấu hình
+   **C**). Thứ cần ⛔ không phải mã mà là **NHÃN cấu hình** — nhãn ấy nằm ngay trong
+   **tên tệp + trường JSON** của bằng chứng (`temperature`, `ep_luoc_do`,
+   `phien_ban_loi_nhac`), ⛔ nên không phải suy từ ngày giờ.
+2. ~~Sinh bản dịch cần sổ khoá production~~ ⇒ ⛔ **không đụng tới**. ⭐ Bản dịch
+   **đã tồn tại và đã commit** ⇒ ⛔ không mở một bề mặt quyền mới nào trên CSDL
+   production.
 
-⇒ ⭐ **Cần điều phối chốt hai điều:** (a) nhánh/SHA nào đã có ghim nhiệt độ để đo,
-(b) cho phép dùng sổ khoá production hay cấp một đường sinh bản dịch khác.
-Có hai thứ đó thì bench chạy **một lệnh**.
-
-⚠️ Và nhắc lại giới hạn đã đo: **FLORES có ~10 % dòng lỗi rõ** (KTC [5,5 ; 17,4])
-⇒ *"khớp FLORES"* ⛔ **không** bằng *"đúng"*.
+⇒ Nút chặn **còn lại đúng một**, và nó ⛔ không phải quyền mà là **dữ liệu**:
+⛔ chưa ai dịch **FLORES** dưới cấu hình đã ghim ⇒ ⛔ chưa có chrF++ (xem §6).
 
 ---
 

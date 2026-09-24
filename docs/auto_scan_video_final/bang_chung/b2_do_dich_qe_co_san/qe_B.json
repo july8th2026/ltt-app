@@ -1,0 +1,45 @@
+{
+ "ten_cau_hinh": "B_t0.0_KHONG_ep",
+ "so_luot": 3,
+ "nguong_san_pham": 6.0,
+ "luot": [
+  {
+   "luot": 1,
+   "n": 11,
+   "trung_vi": 2.5781,
+   "trung_binh": 3.714481818181818,
+   "ktc": [
+    2.5880557362525085,
+    5.171685382601315
+   ],
+   "qua_nguong_san_pham": 2
+  },
+  {
+   "luot": 2,
+   "n": 11,
+   "trung_vi": 3.125,
+   "trung_binh": 3.3998545454545455,
+   "ktc": [
+    2.625701343691011,
+    5.396300813480108
+   ],
+   "qua_nguong_san_pham": 1
+  },
+  {
+   "luot": 3,
+   "n": 10,
+   "trung_vi": 2.9297,
+   "trung_binh": 3.1781300000000003,
+   "ktc": [
+    2.4140656402688023,
+    4.13204
+   ],
+   "qua_nguong_san_pham": 0
+  }
+ ],
+ "trung_vi_cac_luot": 2.9297,
+ "khoang": [
+  2.5781,
+  3.125
+ ]
+}

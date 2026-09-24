@@ -666,6 +666,93 @@ def lenh_doi(a: argparse.Namespace) -> int:
     return 0
 
 
+def doc_ban_dich_co_san(tep: pathlib.Path) -> list[dict[str, tuple[str, str]]]:
+    """`[{ma: (zh, vi)}]` — MOT phan tu cho MOI LUOT, tu bang chung lan B2.
+
+    Hai hinh dang da gap (⛔ doc ca hai, dung doan):
+      - `doan[]` voi `chu_goc`/`chu_dich`            ⇒ MOT luot
+      - `chi_tiet_doan_DOI[]` voi `goc` + `cac_ban[]` ⇒ NHIEU luot (mot ban / luot)
+
+    ⚠️ ⛔ KHONG co ban dich tham chieu trong bat ky tep nao: day la doan PHIM
+       cua khach, ⛔ khong phai FLORES ⇒ chi cham duoc **QE**, ⛔ khong chrF.
+    """
+    d = json.loads(tep.read_text(encoding="utf-8"))
+    doan = d.get("doan")
+    if isinstance(doan, list) and doan and "chu_dich" in doan[0]:
+        return [{str(x["ma"]): (str(x["chu_goc"]), str(x["chu_dich"]))
+                 for x in doan if x.get("chu_goc") and x.get("chu_dich")}]
+    ds = d.get("chi_tiet_doan_DOI")
+    if isinstance(ds, list) and ds and "cac_ban" in ds[0]:
+        so = max(len(x["cac_ban"]) for x in ds)
+        return [{str(x["ma"]): (str(x["goc"]), str(x["cac_ban"][k]))
+                 for x in ds if k < len(x["cac_ban"])} for k in range(so)]
+    raise SystemExit(f"{tep.name}: ⛔ khong nhan ra hinh dang ban dich")
+
+
+def lenh_qe_co_san(a: argparse.Namespace) -> int:
+    """Cham MetricX QE tren ban dich DA CO cua lan B2 — ⛔ khong sinh ban moi.
+
+    ⭐ MOT cau hinh moi lan goi (`--ten`). ⛔ KHONG gop hai cau hinh thanh mot so:
+       do dung loi "hai con so tu hai tap khac nhau".
+    """
+    from apps.asv_gpu.do_luong import metricx
+
+    luot: list[dict[str, tuple[str, str]]] = []
+    for t in a.tep:
+        luot += doc_ban_dich_co_san(pathlib.Path(t))
+    if not luot:
+        raise SystemExit("khong doc duoc luot nao")
+
+    # 🔴 LUOT LAP LAI hay DAU VAO KHAC NHAU? Hai thu nay ⛔ KHONG duoc gop.
+    #    "Trung vi + khoang" chi co nghia cho LUOT LAP LAI (cung dau vao, chay
+    #    lai) — no do DO KHONG TAI LAP. Nhieu TEP = nhieu dau vao khac nhau (vd
+    #    ba PHIM khac nhau), va khoang giua chung do DO KHO CUA PHIM, ⛔ khong do
+    #    do khong tai lap. Gop hai thu do lai la dung lai loi "hai con so tu hai
+    #    tap khac nhau".
+    lap_lai = len(a.tep) == 1 and len(luot) > 1
+
+    cap = [{"ma": f"{k}|{ma}", "nguon": zh, "dich": vi}
+           for k, r in enumerate(luot) for ma, (zh, vi) in r.items()]
+    diem = metricx.do_dich(cap, ngon_ngu_nguon="zh", ngon_ngu_dich="vi",
+                           thiet_bi=a.thiet_bi, lo=a.lo, timeout_s=7200)
+    tv: list[float] = []
+    chi_tiet = []
+    nguong = metricx.NGUONG_DO[("zh", "vi")]
+    for k, r in enumerate(luot):
+        v = [float(diem[f"{k}|{ma}"]) for ma in r]
+        tv.append(statistics.median(v))
+        chi_tiet.append({"luot": k + 1, "n": len(v), "trung_vi": statistics.median(v),
+                         "trung_binh": statistics.fmean(v), "ktc": ktc_trung_binh(v),
+                         "qua_nguong_san_pham": sum(1 for x in v if x > nguong)})
+    dv = "luot lap lai" if lap_lai else "DAU VAO KHAC NHAU"
+    ra = {"ten_cau_hinh": a.ten, "so_phan": len(luot), "la_luot_lap_lai": lap_lai,
+          "don_vi_phan": dv, "nguong_san_pham": nguong, "luot": chi_tiet}
+    print(f"\n╔═ MetricX QE — cau hinh `{a.ten}` · {len(luot)} {dv} ═╗")
+    print("  ⚠️ ⛔ KHONG co chrF: day la doan PHIM (khong co ban dich tham chieu).")
+    for c in chi_tiet:
+        print(f"    {'luot' if lap_lai else 'dau vao'} {c['luot']}: n={c['n']:<4} "
+              f"trung vi {c['trung_vi']:>7.3f}  trung binh {c['trung_binh']:>7.3f} "
+              f"KTC [{c['ktc'][0]:.3f} ; {c['ktc'][1]:.3f}]"
+              f"  · qua nguong {nguong}: {c['qua_nguong_san_pham']}/{c['n']}")
+    if not lap_lai:
+        print(f"  🔴 {len(luot)} tep = {len(luot)} DAU VAO KHAC NHAU (vd phim khac nhau),"
+              " ⛔ KHONG phai luot lap lai.\n"
+              "     ⇒ ⛔ KHONG bao 'trung vi + khoang' o day: khoang giua chung do DO KHO\n"
+              "        CUA DAU VAO, ⛔ khong do do khong tai lap. Doc TUNG dong rieng.")
+    elif len(tv) >= 3:
+        ra["trung_vi_cac_luot"] = statistics.median(tv)
+        ra["khoang"] = [min(tv), max(tv)]
+        print(f"  ⭐ trung vi cac luot {statistics.median(tv):.3f}  "
+              f"khoang [{min(tv):.3f} ; {max(tv):.3f}]  (bien do {max(tv) - min(tv):.3f})")
+    else:
+        print(f"  ⚠️ CHI {len(tv)} luot — ⛔ KHONG du de bao trung vi + khoang "
+              "(duong dich khong tai lap duoc, can >= 3). Con so tren la MOT LUOT.")
+    if a.ra:
+        pathlib.Path(a.ra).write_text(json.dumps(ra, ensure_ascii=False, indent=1),
+                                      encoding="utf-8")
+    return 0
+
+
 def lenh_ghep(a: argparse.Namespace) -> int:
     d = _doc_tho(a.tho)
     diem = d["metricx"][a.che_do]["dau"]
@@ -778,6 +865,14 @@ def main(argv: list[str] | None = None) -> int:
     x = con.add_parser("xac-thuc", help="bang bon muc + KTC (ngoai khoa)")
     x.add_argument("--tho", required=True)
     x.set_defaults(fn=lenh_xac_thuc)
+
+    q = con.add_parser("qe-co-san", help="MetricX QE tren ban dich DA CO cua lan B2")
+    q.add_argument("--tep", required=True, nargs="+", metavar="BANG_CHUNG.json")
+    q.add_argument("--ten", required=True, help="TEN CAU HINH (vd `t0.2_khong_ep`)")
+    q.add_argument("--thiet-bi", default="auto", choices=("auto", "cpu", "cuda"))
+    q.add_argument("--lo", type=int, default=16)
+    q.add_argument("--ra")
+    q.set_defaults(fn=lenh_qe_co_san)
 
     b = con.add_parser("bench", help="cham ban dich THAT cua ta (>= 3 luot)")
     b.add_argument("--dich", required=True, nargs="+", metavar="LUOT.json",
