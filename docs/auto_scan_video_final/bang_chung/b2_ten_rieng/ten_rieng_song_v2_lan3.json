@@ -1,0 +1,204 @@
+{
+ "🔴 bo_doan": {
+  "tong_gui": 14,
+  "thieu": 0,
+  "moi_lo": 4,
+  "co_lo_san_pham": 12,
+  "so_lo_vi_pham_luoc_do": 0,
+  "⚠️": "Loi nhac DUONG SONG x ltt-3.5 BO DOAN. Do that: lo 12 doan -> tra ve 1/12. Tran token ra 32 768 nen ⛔ KHONG phai cut. ⇒ Con so nay thuoc ve cau hoi 3.5-vs-3.8 (§6.2): neu 3.5 khong gánh noi luoc do 4 truong + `ke_ben` o co lo that thi \"20x dat hon\" ⛔ khong con la mot lua chon tu do.",
+  "chi_tiet": [
+   {
+    "lo": [
+     "seg_0001",
+     "seg_0002",
+     "seg_0003",
+     "seg_0004"
+    ],
+    "nhan_duoc": [
+     "seg_0001",
+     "seg_0002",
+     "seg_0003",
+     "seg_0004"
+    ],
+    "thieu": []
+   },
+   {
+    "lo": [
+     "seg_0005",
+     "seg_0006",
+     "seg_0007",
+     "seg_0008"
+    ],
+    "nhan_duoc": [
+     "seg_0005",
+     "seg_0006",
+     "seg_0007",
+     "seg_0008"
+    ],
+    "thieu": []
+   },
+   {
+    "lo": [
+     "seg_0009",
+     "seg_0010",
+     "seg_0011",
+     "seg_0012"
+    ],
+    "nhan_duoc": [
+     "seg_0009",
+     "seg_0010",
+     "seg_0011",
+     "seg_0012"
+    ],
+    "thieu": []
+   },
+   {
+    "lo": [
+     "seg_0013",
+     "seg_0014"
+    ],
+    "nhan_duoc": [
+     "seg_0013",
+     "seg_0014"
+    ],
+    "thieu": []
+   }
+  ]
+ },
+ "duong_chay": "song",
+ "⚠️ duong_la_gi": "LOI NHAC DUONG SONG (`long_tieng.loi_nhac` + CHUYEN_LOI_THOAI)",
+ "model_ghim": "ltt-3.5",
+ "⚠️ model": "⛔ GHIM ltt-3.5 vi 3.8 dang NHUONG lan khac; to hop CHAY THAT la loi nhac nay x ltt-3.8",
+ "phien_ban_loi_nhac": 2,
+ "hang_phien_ban": "van_ban.PHIEN_BAN_LOI_NHAC_LONG_TIENG",
+ "nhiet_do": 0.2,
+ "model_thao_tac_song": "qwen38-api",
+ "giay": 109.2,
+ "duong": {
+  "dat": 13,
+  "tong": 13,
+  "chi_tiet": [
+   {
+    "han": "首尔",
+    "loai": "quen·noi",
+    "dap_an": "Seoul",
+    "nguon_dap_an": "wiki zh->vi",
+    "ra": "Seoul bán 500.",
+    "dat": true
+   },
+   {
+    "han": "东京",
+    "loai": "quen·noi",
+    "dap_an": "Tokyo",
+    "nguon_dap_an": "wiki zh->vi (东京都)",
+    "ra": "Hôm qua đi Tokyo.",
+    "dat": true
+   },
+   {
+    "han": "北京",
+    "loai": "quen·noi",
+    "dap_an": "Bắc Kinh",
+    "nguon_dap_an": "wiki zh->vi",
+    "ra": "Mai đi Bắc Kinh.",
+    "dat": true
+   },
+   {
+    "han": "上海",
+    "loai": "quen·noi",
+    "dap_an": "Thượng Hải",
+    "nguon_dap_an": "wiki zh->vi",
+    "ra": "Mùa hè Thượng Hải.",
+    "dat": true
+   },
+   {
+    "han": "广州",
+    "loai": "quen·noi",
+    "dap_an": "Quảng Châu",
+    "nguon_dap_an": "wiki zh->vi",
+    "ra": "Quảng Châu thành phố này có rất nhiều món ăn ngon.",
+    "dat": true
+   },
+   {
+    "han": "重庆",
+    "loai": "quen·noi",
+    "dap_an": "Trùng Khánh",
+    "nguon_dap_an": "wiki zh->vi",
+    "ra": "Trùng Khánh lẩu này nổi tiếng nhất rồi mà.",
+    "dat": true
+   },
+   {
+    "han": "纽约",
+    "loai": "quen·noi",
+    "dap_an": "New York",
+    "nguon_dap_an": "wiki zh->vi (Thành phố New York)",
+    "ra": "Anh ta ở New York mười năm rồi.",
+    "dat": true
+   },
+   {
+    "han": "李宗盛",
+    "loai": "quen·nguoi",
+    "dap_an": "Lý Tông Thịnh",
+    "nguon_dap_an": "wiki zh->vi",
+    "ra": "Bài hát này là của Lý Tông Thịnh.",
+    "dat": true
+   },
+   {
+    "han": "李小龙",
+    "loai": "quen·nguoi",
+    "dap_an": "Lý Tiểu Long",
+    "nguon_dap_an": "wiki zh->vi",
+    "ra": "Lý Tiểu Long là võ sĩ.",
+    "dat": true
+   },
+   {
+    "han": "腾讯",
+    "loai": "quen·to_chuc",
+    "dap_an": "Tencent",
+    "nguon_dap_an": "wiki zh->vi",
+    "ra": "Game này do Tencent làm.",
+    "dat": true
+   },
+   {
+    "han": "华为",
+    "loai": "quen·to_chuc",
+    "dap_an": "Huawei",
+    "nguon_dap_an": "wiki zh->vi",
+    "ra": "Anh ấy mua Huawei.",
+    "dat": true
+   },
+   {
+    "han": "张伟",
+    "loai": "khong_quen·nguoi",
+    "dap_an": "Trương Vĩ",
+    "nguon_dap_an": "chinh cau chu du an ra luat",
+    "ra": "Trương Vĩ hôm nay vắng.",
+    "dat": true
+   },
+   {
+    "han": "小美",
+    "loai": "khong_quen·nguoi",
+    "dap_an": "Tiểu Mỹ",
+    "nguon_dap_an": "suy tu nhanh 5.2 (cung luat voi 张伟)",
+    "ra": "Tiểu Mỹ dựng lều giữa sườn núi.",
+    "dat": true
+   }
+  ]
+ },
+ "am": {
+  "dat": 1,
+  "tong": 1,
+  "chi_tiet": [
+   {
+    "han": "光子",
+    "⛔ khong_duoc_ra": [
+     "Quang Tử",
+     "Quang Tu"
+    ],
+    "ly_do": "vi.wikipedia KHONG co bai -> ⛔ khong co dap an duong",
+    "ra": "Lấy súng ra đi Photon!",
+    "dat": true
+   }
+  ]
+ },
+ "⚠️": "Dap an TRA TU NGUON (wiki zh->vi, doc 24/09). Ca khong tra ra dap an chac ⇒ LOAI khoi phan cham duong, chi giu tieu chi AM."
+}

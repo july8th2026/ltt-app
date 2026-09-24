@@ -70,7 +70,13 @@ PHIEN_BAN = f"{ban_ghim.PHIEN_BAN}/cua_so{CUA_SO_S}"
 
 def do_gioi(clip: list[dict], *, gpu_uuid: str = "", is_cancelled=None) -> dict:
     ds = [{"ma": str(d["ma"]), "tep": str(d["tep"])} for d in clip or []]
+    # ⭐ Do 24/09: GPU 5,33 s / CPU 13,58 s (2,5x) tren 6 clip x 8 s, `p_nam`
+    #    lech <= 0,0002 ⇒ card la duong dung. Va `buoc_gpu` + `chan_card` la
+    #    cho khac biet that: nguoi goi CHINH cua bo do nay la
+    #    `tools/do_gioi_giong.py` — no goi **khong** gpu_uuid, nen ban cu lay
+    #    card ma `gpu_lease` khong he ghi so. Xem `_runner.chon_thiet_bi`.
     return venv.chay(SCRIPT, {"clip": ds, "cua_so_s": CUA_SO_S, "buoc_s": BUOC_S,
-                              "nguong_rms": NGUONG_RMS},
+                              "nguong_rms": NGUONG_RMS,
+                              "buoc_gpu": bool(gpu_uuid)},
                      timeout_s=300 + 5 * len(ds), gpu_uuid=gpu_uuid,
-                     is_cancelled=is_cancelled)
+                     is_cancelled=is_cancelled, chan_card=True)

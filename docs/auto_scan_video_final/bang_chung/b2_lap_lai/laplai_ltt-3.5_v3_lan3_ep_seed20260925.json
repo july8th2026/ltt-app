@@ -1,0 +1,138 @@
+{
+ "model": "ltt-3.5",
+ "phim": "v3",
+ "lan": 3,
+ "so_doan_gui": 12,
+ "nhiet_do": 0.0,
+ "ep_luoc_do": true,
+ "seed": 20260925,
+ "⚠️ nhiet_do_la_gi": "doc tu `ai.NHIET_DO_THEO_THAO_TAC` — dung thu san pham ghim, ⛔ khong phai mot hang cua bench",
+ "doan_so_duoc": 12,
+ "doan_ON_DINH": 0,
+ "doan_DOI": 12,
+ "ti_le_doi": 1.0,
+ "so_luot_trong_do_moi_doan_xuat_hien": {
+  "3": 12
+ },
+ "chi_tiet_doan_DOI": [
+  {
+   "ma": "seg_0001",
+   "goc": "如果跳伞慢了该怎么打?",
+   "so_ban_khac_nhau": 3,
+   "cac_ban": [
+    "Nhảy chậm sao?",
+    "Nhảy chậm đánh sao?",
+    "Nhảy dù chậm đánh sao?"
+   ]
+  },
+  {
+   "ma": "seg_0002",
+   "goc": "这人落地房子都不进,那他肯定是捡到枪了。",
+   "so_ban_khac_nhau": 3,
+   "cac_ban": [
+    "Landing không vào nhà, chắc là có súng rồi.",
+    "Người này rơi không vào nhà, chắc là nhặt súng rồi.",
+    "Xuống không vào, chắc nhặt súng."
+   ]
+  },
+  {
+   "ma": "seg_0003",
+   "goc": "现在最好的办法就是赶紧进楼。",
+   "so_ban_khac_nhau": 3,
+   "cac_ban": [
+    "Cách tốt nhất là vào trong ngay.",
+    "Cách tốt nhất là vào trong nhà ngay.",
+    "Vào nhà ngay là tốt nhất."
+   ]
+  },
+  {
+   "ma": "seg_0004",
+   "goc": "来把枪啊光子!",
+   "so_ban_khac_nhau": 3,
+   "cac_ban": [
+    "Cầm súng đi Photon!",
+    "Nhanh lấy súng Photon đi!",
+    "Đưa súng đi Photon!"
+   ]
+  },
+  {
+   "ma": "seg_0005",
+   "goc": "这人肯定会往里面冲,架着门口往左边走,用提炼枪让他来接子弹。",
+   "so_ban_khac_nhau": 3,
+   "cac_ban": [
+    "Hắn sẽ lao vào trong, chặn cửa bên trái, dùng súng tinh chế để hắn hứng đạn.",
+    "Nó sẽ lao vào, chặn cửa bên trái, dùng súng tinh chế để nó hứng đạn.",
+    "Nó sẽ lao vào, chặn cửa bên trái."
+   ]
+  },
+  {
+   "ma": "seg_0006",
+   "goc": "跳伞慢会让我们错失进攻的机会,接下来别人会源源不断的进攻,我们一定要想办法把楼给守住。",
+   "so_ban_khac_nhau": 3,
+   "cac_ban": [
+    "Dùng súng tinh chế để nó hứng đạn.",
+    "Nhảy chậm mất cơ hội tấn công, địch sẽ liên tục công kích, phải giữ vững tòa nhà.",
+    "Nhảy chậm mất cơ hội, địch sẽ liên tục tấn công, phải giữ được tòa nhà."
+   ]
+  },
+  {
+   "ma": "seg_0007",
+   "goc": "手滑了,不好意思。",
+   "so_ban_khac_nhau": 2,
+   "cac_ban": [
+    "Tay trượt rồi, xin lỗi mọi người.",
+    "Tay trượt rồi, xin lỗi."
+   ]
+  },
+  {
+   "ma": "seg_0008",
+   "goc": "楼梯来脚步了,我们现在这个血量可以说天崩开局。",
+   "so_ban_khac_nhau": 3,
+   "cac_ban": [
+    "Có tiếng bước lên cầu thang, máu hiện tại rất tệ, mở đầu khó khăn.",
+    "Có tiếng bước lên cầu thang, máu mình hiện tại rất tệ.",
+    "Thang máy có tiếng bước chân rồi."
+   ]
+  },
+  {
+   "ma": "seg_0009",
+   "goc": "如果想完成极限反杀,那接下来这个操作你们一定要学一下。",
+   "so_ban_khac_nhau": 3,
+   "cac_ban": [
+    "Muốn lật ngược tình thế, hãy học kỹ thao tác này.",
+    "Muốn phản sát thì học kỹ thuật này nhé.",
+    "Máu chúng ta hiện tại rất thấp."
+   ]
+  },
+  {
+   "ma": "seg_0010",
+   "goc": "趁敌人还没上来,咱们直接趴下,用盒子当掩体,他就发现不了我们。",
+   "so_ban_khac_nhau": 3,
+   "cac_ban": [
+    "Chờ địch chưa lên, mình nằm xuống, dùng hộp làm che chắn, địch không thấy.",
+    "Chờ địch chưa lên, nằm xuống, dùng hộp làm che chắn, hắn không thấy.",
+    "Nếu muốn lật ngược, hãy học cách này."
+   ]
+  },
+  {
+   "ma": "seg_0011",
+   "goc": "开个玩笑啊,盒子是不能当掩体的。",
+   "so_ban_khac_nhau": 3,
+   "cac_ban": [
+    "Chờ địch chưa lên, chúng ta nằm xuống.",
+    "Đùa thôi, hộp không làm che chắn được đâu.",
+    "Đùa thôi, hộp không thể làm che chắn được."
+   ]
+  },
+  {
+   "ma": "seg_0012",
+   "goc": "这里我们特意往墙角多走那两步才趴下,为的就是卡敌人视野差,让他第一时间看不到我们位置。",
+   "so_ban_khac_nhau": 3,
+   "cac_ban": [
+    "Chúng tôi đi thêm hai bước vào góc tường mới nằm, để che tầm nhìn địch.",
+    "Dùng hộp làm che chắn, địch không thấy.",
+    "Mình đi thêm hai bước vào góc tường mới nằm, để hạn chế địch nhìn thấy vị trí."
+   ]
+  }
+ ]
+}

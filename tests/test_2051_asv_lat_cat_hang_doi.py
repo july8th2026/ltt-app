@@ -66,7 +66,7 @@ def chuoi_gia(monkeypatch, giong_gia):
     goi: list = []
 
     def gia(db_, run_, thao_tac, messages, *, stage, item_key, uoc_credit=0,
-            ctx=None, temperature=None):
+            ctx=None, temperature=None, luoc_do=None):
         goi.append((run_.id, thao_tac.ma, item_key))
         if thao_tac.ma == ai.DOC_CANH.ma:
             dh.t += GIAY["doc_canh"]

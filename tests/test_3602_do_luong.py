@@ -615,3 +615,153 @@ def test_3602_nguong_phu_de_KHONG_duoc_chep_sang_long_tieng():
     assert not any(k.startswith(("dat", "phan_quyet", "nguong")) for k in r), (
         "thuoc nay BAO CAO, khong PHAN QUYET")
     assert r["CPS_nguon_trung_vi"] == 10.0
+
+
+# ───────────────────────────────────────────────────────────────────────────
+# ⭐ LUẬT: cổng phải biết nói XANH, không chỉ biết nói ĐỎ
+# ───────────────────────────────────────────────────────────────────────────
+
+
+def test_3602_tran_cong_bat_duoc_cong_khong_the_xanh():
+    """Cổng đòi 0,90 trên chân lý nền lưới thô ⇒ hệ hoàn hảo cũng trượt."""
+    from tools.do_luong import tran_cua_cong
+
+    moc = [float(i) * 2.0 for i in range(40)]
+
+    def sinh(rng):
+        # chân lý nền ghi mốc MUỘN tới 0,5 s; hệ hoàn hảo phát đúng mốc thật
+        return [(m, m + rng.uniform(0, 0.5)) for m in moc]
+
+    def cong(mau):
+        return sum(1 for that, nen in mau if abs(that - nen) <= 0.3) / len(mau)
+
+    r = tran_cua_cong(cong, sinh, nguong=0.90, lan=400)
+    assert r["voi_toi_duoc"] is False
+    assert r["tran_trung_vi"] < 0.75
+    assert "ĐỪNG sửa hệ thống" in r["ghi_chu"]
+
+
+def test_3602_tran_cong_xanh_khi_luoi_min_hon_dung_sai():
+    """⭐ Ca B1 vế 1: lưới 0,25 s < dung sai 0,3 s ⇒ hệ hoàn hảo đạt 1,0.
+
+    Cùng một câu hỏi, câu trả lời NGƯỢC với phép kiểm trên — nên phải ĐO,
+    ⛔ đừng suy từ ca trước.
+    """
+    from tools.do_luong import tran_cua_cong
+
+    moc = [float(i) * 2.0 for i in range(40)]
+
+    def sinh(rng):
+        return [(m, m + rng.uniform(0, 0.25)) for m in moc]
+
+    def cong(mau):
+        return sum(1 for that, nen in mau if abs(that - nen) <= 0.3) / len(mau)
+
+    r = tran_cua_cong(cong, sinh, nguong=0.90, lan=400)
+    assert r["voi_toi_duoc"] is True
+    assert r["tran_trung_vi"] == pytest.approx(1.0)
+
+
+# ───────────────────────────────────────────────────────────────────────────
+# 🔴 RÀNG BUỘC ẨN: `fps` đọc OCR ↔ hiệu lực của cổng B1
+# ───────────────────────────────────────────────────────────────────────────
+
+
+def _hang_so_bang_ast(tep: pathlib.Path, ten: str) -> float:
+    """Đọc một hằng số bằng AST — ⛔ không import (module kéo ffmpeg/GPU).
+
+    Bài học `doc-thu-dai-dien-thay-vi-doc-thu-that`: đọc **đúng tệp nguồn**
+    đang chạy, ⛔ không đọc một bản chép trong tài liệu.
+    """
+    import ast
+
+    cay = ast.parse(tep.read_text(encoding="utf-8"))
+    for nut in cay.body:
+        if isinstance(nut, ast.Assign):
+            for dich in nut.targets:
+                if isinstance(dich, ast.Name) and dich.id == ten:
+                    return float(ast.literal_eval(nut.value))
+    raise AssertionError(f"khong tim thay hang so `{ten}` trong {tep.name}")
+
+
+def test_3602_fps_doc_ocr_khong_duoc_ha_duoi_muc_da_hieu_luc():
+    """🔴 Hạ `FPS_DOC` là vô hiệu hoá cổng B1 — ⛔ và nó hỏng IM LẶNG.
+
+    `fps` đọc OCR quyết định độ phân giải mốc của **hardsub**, mà hardsub là
+    **chân lý nền** của `chinh_xac_cho_ngat` (dung sai ±0,3 s, ngưỡng ≥ 0,90).
+
+        4 fps ⇒ lưới 0,25 s < 0,3 s ⇒ trần cổng = 1,0000  ✅
+        điểm gãy ≈ 12 % mốc trôi quá 0,3 s ⇒ trần tụt dưới 0,90
+
+    ⚠️ Đây đúng khuôn `hai-cho-khai-cung-mot-dieu-khong-ai-bat-khop`: giá trị
+    `fps` và tính hợp lệ của một cổng chất lượng khai ở **hai nơi**, và trước
+    hôm nay ⛔ **không chỗ nào trong mã nói chúng ràng buộc nhau**. Ai hạ fps
+    để tiết kiệm GPU sẽ tắt một cổng mà ⛔ không gì kêu lên.
+
+    ⇒ Phép kiểm này **là** chỗ kêu lên.
+    """
+    tep = (
+        pathlib.Path(__file__).resolve().parent.parent
+        / "apps" / "auto_scan_video" / "nguon_loi.py"
+    )
+    fps = _hang_so_bang_ast(tep, "FPS_DOC")
+    da_do = _hang_so_bang_ast(tep, "FPS_DOC_DA_DO_TRAN_CONG_B1")
+    assert fps >= da_do, (
+        f"FPS_DOC={fps} tut duoi muc da do tran cong B1 ({da_do}).\n"
+        "Cong B1 `chinh_xac_cho_ngat` co the da MAT HIEU LUC trong im lang.\n"
+        "=> Chay lai tools/do_luong.py::tran_cua_cong TRUOC, chi ha neu tran "
+        ">= 0,90, roi cap nhat FPS_DOC_DA_DO_TRAN_CONG_B1."
+    )
+    # ⛔ Lưới phải MỊN HƠN dung sai, nếu không lượng tử hoá tự nó ăn mất khớp.
+    assert 1.0 / fps < 0.3, f"luoi {1.0/fps:.3f}s KHONG min hon dung sai 0,3s"
+
+
+def test_3602_san_may_rui_cua_cham_doi_chung_truc_bicubic():
+    """🔴 Ghim phát hiện 25/09: trục `bicubic` có sàn may rủi TRÊN ngưỡng.
+
+    `tools/cham_doi_chung.py` sinh 44 cặp mù; khoá trả lời do HMAC quyết định
+    và **tất định** (`BI_MAT` là hằng số, `ma`/`dataset_sample_id` cố định).
+    Trên trục `bicubic` khoá rơi **7 A / 1 B** ⇒ một người chấm ⛔ không hề
+    nhìn ảnh, luôn trả lời "A", ghi **87,5 %** và **đạt** `SAN_TUNG_KIEU`.
+
+    ⛔ Phép kiểm này ⛔ KHÔNG đòi sửa — tệp ấy thuộc làn khác. Nó **ghim hiện
+    trạng** để khi ai đó cân lại khoá, chỗ này ĐỎ và tài liệu được đọc lại.
+    ⭐ Đúng khuôn "đặc tả hiện trạng": nó **sẽ đỏ** khi cổng được sửa, và lúc
+    đó **xoá nó** là hành động đúng.
+    """
+    from collections import Counter
+
+    from apps.qualitylab.calibration import blind_assignment, resolve_artifact_token
+
+    import tools.cham_doi_chung as c
+
+    theo: dict[str, Counter] = {}
+    stt = 0
+    for lat in c.LAT:
+        for kieu, cac in c.MUC.items():
+            for _muc in cac:
+                stt += 1
+                ma = f"dc-{stt:03d}"
+                case = {
+                    "id": ma, "media_kind": "image", "degradation": kieu, "slice": lat,
+                    "candidate_key": f"{ma}/te", "baseline_key": f"{ma}/goc",
+                    "dataset_sample_id": f"tonghop-{lat}-{stt:03d}",
+                }
+                g = blind_assignment(case, "claude", c.BI_MAT)
+                kt = resolve_artifact_token(case, "claude", g["left_artifact_token"], c.BI_MAT)
+                theo.setdefault(kieu, Counter())[
+                    "B" if kt == case["candidate_key"] else "A"
+                ] += 1
+
+    san = {k: max(v.values()) / sum(v.values()) for k, v in theo.items()}
+    assert san["bicubic"] == pytest.approx(7 / 8), "khoa `bicubic` da doi — doc lai §15"
+    assert san["bicubic"] >= c.SAN_TUNG_KIEU, (
+        "san may rui cua `bicubic` da xuong duoi SAN_TUNG_KIEU — LO DA DUOC VA.\n"
+        "=> Doc lai docs/auto_scan_video_final/B2_KTC_VA_PHAN_QUYET.md §15 va XOA "
+        "phep kiem nay."
+    )
+    # ⭐ Cổng TỔNG vẫn đứng: người chấm hằng số phải trượt toàn cục.
+    tong = Counter()
+    for v in theo.values():
+        tong.update(v)
+    assert max(tong.values()) / sum(tong.values()) < c.DAT_TOI_THIEU

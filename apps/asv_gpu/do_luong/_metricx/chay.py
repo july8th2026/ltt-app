@@ -98,6 +98,20 @@ def main(argv: list[str]) -> int:
     d = json.loads(vao.read_text(encoding="utf-8"))
     try:
         kq = cham(d["cap"], thiet_bi=d.get("thiet_bi", "auto"), lo=int(d.get("lo", 16)))
+    except ImportError as e:
+        # ⚠️ **THIEU THU VIEN la "khong do duoc", KHONG phai "bo do hong".**
+        #
+        #    `_nap()` nhap `torch`/`transformers`/`mt5_regression` muon. Thieu
+        #    mot goi trong qc-venv thi `ModuleNotFoundError` bay len nguyen ven,
+        #    tien trinh thoat khac 0 ma KHONG mang dau `KHONG_KHA_DUNG`, nen
+        #    `venv.chay` nem `DoLuongLoi` va bao cao ghi `trang_thai: "loi"`.
+        #
+        # ⛔ Hai tinh huong KHAC LOAI bi gop lam mot: "cai dat thieu" (nguoi
+        #    van hanh sua) va "bo do chay ma hong" (nguoi viet ma sua). Bon
+        #    runner con lai (`gioi`/`giong`/`squim`/`ocr_khung`) deu da phan
+        #    biet; rieng tep nay thi chua.
+        print(f"KHONG_KHA_DUNG: thieu thu vien trong qc-venv: {e}", flush=True)
+        return 3
     except ban_ghim.KhongKhaDung as e:
         print(str(e), flush=True)
         return 3

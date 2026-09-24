@@ -111,6 +111,34 @@ MIEN_TRU_HTTP = {
     # → kuaishou.com (trang + GraphQL web) và CDN video Kuaishou: yt-dlp không có extractor Kuaishou. Allowlist CDN +
     #   chặn IP nội bộ kể cả sau redirect + trần dung lượng. Không phải nhà cung cấp AI. (video_crawler, 22/09)
     "apps/video_crawler/adapters/kuaishou_web.py",
+    # → TẢI MODEL GHIM, ⛔ không phải một lời gọi nhà cung cấp. Xem
+    #   `MIEN_TRU_TAI_MODEL_GHIM` ngay dưới — miễn trừ này CÓ ĐIỀU KIỆN.
+    "apps/asv_gpu/do_luong/ocr_khung.py",
+}
+
+#: 🔴 Miễn trừ **CÓ ĐIỀU KIỆN**, ⛔ không phải một tấm vé theo tên tệp.
+#:
+#:    Mục ở đây được miễn vì một TÍNH CHẤT, và tính chất ấy có phép kiểm riêng
+#:    ngay dưới (`test_mien_tru_TAI_MODEL_that_su_KIEM_checksum`): tệp tải một
+#:    hiện vật ở **URL ghim** rồi **kiểm SHA-256 sau khi tải**, sai thì **lỗi,
+#:    không chạy**. Ai gỡ phép kiểm checksum đi thì rào đỏ — miễn trừ tự hết.
+#:
+#: ⭐ Và vì sao ⛔ KHÔNG có đường `platform_core` cho nó: `ocr_khung.py` là một
+#:    **tiến trình con** chạy trong `C:\LTTPlatform\qc-venv` — một venv **cố ý**
+#:    chỉ có gói của bộ đo (`setup/qc_models_requirements.txt`), không có gói
+#:    nền tảng. Docstring của chính tệp ghi: *"Khong import gi cua nen tang"*.
+#:    Đường đi qua `platform_core` **không tồn tại** ở đó, chứ không phải chưa ai
+#:    làm.
+#:
+#: ⛔ Đường ĐÃ LOẠI (24/09): đổi sang `huggingface_hub` như ba runner anh em.
+#:    Gói đó **KHÔNG có trong `setup/qc_models_requirements.txt`** — nó có mặt
+#:    nhờ `transformers` kéo vào. Tức nó sẽ đổi một nhập **stdlib luôn có** lấy
+#:    một **phụ thuộc chưa khai**, đúng khuôn vừa làm sập production hôm nay
+#:    (`pywintypes` ở mức module, chỉ venv sạch của máy chủ mới thấy). Thêm nữa,
+#:    upstream RapidOCR v3.9.2 (`python/rapidocr/default_models.yaml`, tag
+#:    v3.9.2) ghim **chỉ** ModelScope, nên bản HF chưa chứng minh được trùng byte.
+MIEN_TRU_TAI_MODEL_GHIM = {
+    "apps/asv_gpu/do_luong/ocr_khung.py": ("MODEL", "bao_dam_model"),
 }
 
 
@@ -278,6 +306,53 @@ def test_khong_APP_nao_tu_dung_HTTP():
        sáu app.
     """
     assert _quet(do_http_o_app, MIEN_TRU_HTTP, chi_app=True) == []
+
+
+def test_mien_tru_TAI_MODEL_nam_TRONG_mien_tru_HTTP():
+    """Một điều kiện gắn vào thứ không được miễn là một điều kiện vô nghĩa."""
+    thua = set(MIEN_TRU_TAI_MODEL_GHIM) - MIEN_TRU_HTTP
+    assert thua == set(), f"khai dieu kien cho tep khong duoc mien tru: {sorted(thua)}"
+
+
+@pytest.mark.parametrize("tep,ten", sorted(MIEN_TRU_TAI_MODEL_GHIM.items()))
+def test_mien_tru_TAI_MODEL_that_su_KIEM_checksum(tep, ten, tmp_path, monkeypatch):
+    """⭐ Đo HÀNH VI, ⛔ không đọc văn bản của mã (bài học N-24/N-25).
+
+    Hai phép tiêm, và vế hai mới là vế chịu lực:
+
+      1. tải về **rác** ⇒ phải **nổ**;
+      2. tải về **đúng thứ đã ghim** ⇒ phải **im**.
+
+    ⛔ Thiếu vế 2 thì một `raise` vô điều kiện cũng xanh — tức phép kiểm không
+       phân biệt được *"có kiểm"* với *"luôn từ chối"*.
+    """
+    import hashlib
+    import importlib.util
+
+    ten_hang, ten_ham = ten
+    spec = importlib.util.spec_from_file_location("_mien_tru_tai_model", GOC / tep)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)              # tệp chỉ nhập stdlib ở mức module
+
+    rac = b"day khong phai model"
+    monkeypatch.setenv("HF_HOME", str(tmp_path))
+    monkeypatch.setattr(mod.urllib.request, "urlretrieve",
+                        lambda u, dich: pathlib.Path(dich).write_bytes(rac))
+
+    # vế 1 — rác phải nổ, và phải nổ VÌ checksum
+    with pytest.raises(SystemExit) as loi:
+        getattr(mod, ten_ham)()
+    assert "checksum" in str(loi.value).lower(), (
+        f"{tep} tu choi, nhung khong phai vi checksum: {loi.value!r}")
+
+    # vế 2 — ghim lại đúng SHA của thứ vừa tải ⇒ phải đi qua
+    sha = hashlib.sha256(rac).hexdigest()
+    monkeypatch.setattr(mod, ten_hang,
+                        {k: (u, sha) for k, (u, _) in getattr(mod, ten_hang).items()})
+    ra = getattr(mod, ten_ham)()
+    assert ra and all(pathlib.Path(v).is_file() for v in ra.values()), (
+        f"{tep} tu choi ca thu DUNG SHA — day la mot `raise` vo dieu kien, "
+        "khong phai mot phep kiem checksum")
 
 
 def test_MIEN_TRU_chi_tro_toi_tep_CO_THAT():

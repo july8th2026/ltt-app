@@ -160,11 +160,25 @@ def _dang_ky_may() -> dict:
 NGAN_SACH_HOAN_S = 90.0
 
 
-def _chay_hang_doi(db, *, toi_da: int = 200) -> list[dict]:
+def _chay_hang_doi(db, *, toi_da: int = 200, khoa=None) -> list[dict]:
     """Dong vai worker THAT, va do gio tung job.
 
     Khong dung lai `test_402._chay_het_hang_doi`: cai do khong do gio, va gio
     tung giai doan la mot trong nhung thu pha 22 phai giao nop.
+
+    🔴 **Truoc 24/09 ham nay do CHINH NO, khong do san pham** — o mot cho thu hai
+       va cung ho voi bay `_provider_failure_kind` duoi day: no dung
+       `JobContext(job.id)` **khong co `gpu_uuid`**, trong khi worker that lay
+       card tu `gpu_lease` (`job_runner.py:299`). Thieu card thi `ctx.has_gpu` la
+       False, `ctx.gpu_env()` khong ghim `CUDA_VISIBLE_DEVICES`, va demucs + ASR
+       chay tren **CPU**. Moi con so giay cua bao cao NEN_V3 la so cua khuon.
+       Nay no di qua `fx.card_cho_job`, thu goi chinh `_vram_can` + `_giu_gpu`
+       cua worker that.
+
+    ⚠️ `khoa` (`fx.KhoaTheoPha`) boc **tung pha tinh**, khong boc ca luot: luot
+       nay phan lon thoi gian la cho may B/sidecar, va giu `cpu_nhieu` trong luc
+       cho lam ca may doi mot lan goi mang (luat chu du an 23/09). `None` = khong
+       khoa gi, dung cho cac bai chay tren dau vao nhe.
 
     🔴 **Ban dau ham nay KHONG dong vai worker that o dung cho quan trong nhat.**
 
@@ -187,6 +201,8 @@ def _chay_hang_doi(db, *, toi_da: int = 200) -> list[dict]:
        lai bang mot chuoi `isinstance`. Mot ban sao se lech o mot nhanh nao do,
        va nhanh lech se la nhanh it duoc chay nhat.
     """
+    from contextlib import nullcontext
+
     from platform_core import jobs
     from platform_core.job_runner import JobContext, _provider_failure_kind
 
@@ -198,60 +214,119 @@ def _chay_hang_doi(db, *, toi_da: int = 200) -> list[dict]:
             break
         db.commit()
         handler = jobs.resolve_handler(job.job_type)
-        ctx = JobContext(job.id)
-        ctx.job_type = job.job_type
         t0 = time.time()
         loi = ""
         hoan = 0.0
-        try:
-            ket_qua = handler(dict(job.params), ctx) or {}
-            jobs.complete(db, job, ket_qua)
-        except Exception as exc:            # noqa: BLE001 - worker that cung bat het
-            loai, cho = _provider_failure_kind(
-                exc, provider_state=str(getattr(job, "provider_state", "") or ""))
-            con_lai = NGAN_SACH_HOAN_S - da_hoan_s
-            if loai == "resource_wait" and con_lai > 0:
-                # ⚠️ Ngu THAT, khong chi doi `next_run_at`: `jobs.claim` loc theo
-                #    moc do, nen khong ngu thi vong lap quay khong va het `toi_da`
-                #    trong vai mili-giay — mot kieu "het gio" doc y het "khong con
-                #    viec".
-                hoan = min(float(cho or 20), con_lai)
-                jobs.defer_resource(
-                    db, job, retry_after=cho,
-                    resource=str(getattr(job, "admission_resource", "") or ""))
-                da_hoan_s += hoan
-                loi = f"HOAN {type(exc).__name__}: {exc}"
+        # ⭐ Khoa may TRUOC card, va card TRUOC handler — dung thu tu cua worker
+        #    that (`job_runner`: admission -> `_giu_gpu` -> handler). Doi thu tu
+        #    la giu card trong luc ngoi cho mot khoa khac.
+        bao_khoa = (khoa.quanh_job(job.job_type) if khoa is not None
+                    else nullcontext(()))
+        with bao_khoa as tai_nguyen_khoa, \
+                fx.card_cho_job(job.job_type, job.id) as (gpu_uuid, het_gpu):
+            if het_gpu:
+                # Loai job nay CAN card, may CO card, nhung dang bi giu het.
+                # Worker that tra job ve hang doi — lam y het, khong chay CPU.
+                jobs.defer_resource(db, job, retry_after=20, resource="gpu")
+                loi, hoan = "HOAN het GPU", 20.0
             else:
-                loi = f"{type(exc).__name__}: {exc}"
-                if loai == "resource_wait":
-                    # ⛔ Het ngan sach hoan. Van la that bai, nhung phai NOI RA
-                    #    rang no den tu tai nguyen ban chu khong tu san pham.
-                    loi = (f"HET NGAN SACH HOAN sau {da_hoan_s:.0f}s "
-                           f"(tai nguyen ban): {loi}")
-                # ⛔ Ghi `loi`, KHONG `str(exc)`.
-                #
-                # 🔴 Dong cu vut mat chinh cai tien to vua dung o tren: `Job.error`
-                #    trong CSDL nhan chuoi tho, trong khi `nhat_ky` nhan ban co
-                #    tien to. Hai nguoi doc cung mot su kien thay hai cau khac
-                #    nhau — va nguoi soi CSDL la nguoi thay ban NGHEO hon.
-                jobs.fail(db, job, loi, retry=False)
+                ctx = JobContext(job.id, gpu_uuid=gpu_uuid)
+                ctx.job_type = job.job_type
+                loi, hoan = _mot_job(db, jobs, _provider_failure_kind, handler,
+                                     job, ctx, da_hoan_s)
+        # ── NGOAI moi khoa tu day tro xuong ──────────────────────────────────
+        # ⛔ Giac ngu `hoan` PHAI o ngoai `with`: ngu trong khi giu `cpu_nhieu`
+        #    la dung viec "giu khoa luc CHO" ma luat 23/09 cam.
+        loai_job = job.job_type
+        da_hoan_s += hoan
         db.commit()
         if hoan:
             time.sleep(hoan)
-        nhat_ky.append({"job_type": job.job_type,
+        nhat_ky.append({"job_type": loai_job,
                         "giay": round(time.time() - t0, 2), "loi": loi,
+                        "can_card": bool(_can_card(loai_job)),
+                        "gpu_uuid": gpu_uuid[:20],
+                        "khoa": list(tai_nguyen_khoa),
                         **({"hoan_s": round(hoan, 1)} if hoan else {})})
     db.expire_all()
     return nhat_ky
 
 
+def _can_card(job_type: str) -> int:
+    """VRAM worker that se xin cho loai job nay. 0 = job nay khong dung card."""
+    from platform_core.job_runner import _vram_can
+    return _vram_can(job_type)
+
+
+def _mot_job(db, jobs, _provider_failure_kind, handler, job, ctx,
+             da_hoan_s: float) -> tuple[str, float]:
+    """Chay MOT job nhu worker that. Tra `(loi, hoan_s)`.
+
+    Tach ra khoi `_chay_hang_doi` de phan than cua no khong nam trong hai lop
+    `with` (khoa may + card) — mot khoi `try/except` dai trong hai `with` rat de
+    them mot `return` som roi giu khoa qua ca vong sau.
+    """
+    loi = ""
+    hoan = 0.0
+    try:
+        ket_qua = handler(dict(job.params), ctx) or {}
+        jobs.complete(db, job, ket_qua)
+    except Exception as exc:            # noqa: BLE001 - worker that cung bat het
+        loai, cho = _provider_failure_kind(
+            exc, provider_state=str(getattr(job, "provider_state", "") or ""))
+        con_lai = NGAN_SACH_HOAN_S - da_hoan_s
+        if loai == "resource_wait" and con_lai > 0:
+            # ⚠️ Ngu THAT, khong chi doi `next_run_at`: `jobs.claim` loc theo
+            #    moc do, nen khong ngu thi vong lap quay khong va het `toi_da`
+            #    trong vai mili-giay — mot kieu "het gio" doc y het "khong con
+            #    viec".
+            #
+            # ⭐ Va giac ngu do nam **NGOAI** khoi `with` khoa may cua nguoi goi
+            #    (`_chay_hang_doi` ngu sau khi thoat `quanh_job`): ngu trong khi
+            #    giu `cpu_nhieu` la dung cai luat 23/09 cam.
+            hoan = min(float(cho or 20), con_lai)
+            jobs.defer_resource(
+                db, job, retry_after=cho,
+                resource=str(getattr(job, "admission_resource", "") or ""))
+            loi = f"HOAN {type(exc).__name__}: {exc}"
+        else:
+            loi = f"{type(exc).__name__}: {exc}"
+            if loai == "resource_wait":
+                # ⛔ Het ngan sach hoan. Van la that bai, nhung phai NOI RA
+                #    rang no den tu tai nguyen ban chu khong tu san pham.
+                loi = (f"HET NGAN SACH HOAN sau {da_hoan_s:.0f}s "
+                       f"(tai nguyen ban): {loi}")
+            # ⛔ Ghi `loi`, KHONG `str(exc)`.
+            #
+            # 🔴 Dong cu vut mat chinh cai tien to vua dung o tren: `Job.error`
+            #    trong CSDL nhan chuoi tho, trong khi `nhat_ky` nhan ban co
+            #    tien to. Hai nguoi doc cung mot su kien thay hai cau khac
+            #    nhau — va nguoi soi CSDL la nguoi thay ban NGHEO hon.
+            jobs.fail(db, job, loi, retry=False)
+    return loi, hoan
+
+
 def _nop_qua_form(client, csrf: str, nguon: Path, *, preset: str,
-                  che_do_giong: str, giong_id: str) -> str:
-    """Nop qua CHINH cai form khach dung. Tra ve `run_id`."""
+                  che_do_giong: str, giong_id: str,
+                  ngon_ngu_nguon: str = "", ngon_ngu_dich: str = "",
+                  nguon_loi: str = "") -> str:
+    """Nop qua CHINH cai form khach dung. Tra ve `run_id`.
+
+    Cap ngon ngu phai nop TUONG MINH khi nghiem thu mot cap cu the. Bo trong thi
+    `routes.tao` lay mac dinh (`tu_doan` -> `vi`), nen mot luot *"nghiem thu
+    vi->en"* se im lang chay `-> vi` va bao cao van XANH. Do la dung bay G-02 (o
+    bao cao NEN_V3 moi luot cua khach la `auto -> vi`), chi o phia BO DO thay vi
+    phia template.
+    """
     from apps.auto_scan_video import hop_dong_v4
 
     du_lieu = {"csrf_token": csrf, "che_do": "fit_original", "preset": preset,
                "che_do_giong": che_do_giong, "giong_id": giong_id}
+    for ten, gt in (("ngon_ngu_nguon", ngon_ngu_nguon),
+                    ("ngon_ngu_dich", ngon_ngu_dich),
+                    ("nguon_loi", nguon_loi)):
+        if gt:
+            du_lieu[ten] = gt
     with open(nguon, "rb") as f:
         r = client.post("/auto-scan-video/tao", data=du_lieu,
                         files={"video": (nguon.name, f, "video/mp4")})
@@ -331,7 +406,8 @@ def _tom_tat(giai_doan: list[dict], ten: str) -> dict:
 
 def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
               nhan: str, preset: str, che_do_giong: str, giong_id: str,
-              su_that=None) -> dict:
+              su_that=None, khoa=None, ngon_ngu_nguon: str = "",
+              ngon_ngu_dich: str = "", nguon_loi: str = "") -> dict:
     """Mot lan chay day du, tu form den tep tai ve. Tra ve phan bao cao.
 
     ⚠️ `su_that=None` khi nguon la PHIM KHACH THAT: phim that khong di kem cau
@@ -349,13 +425,15 @@ def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
 
     t0 = time.time()
     run_id = _nop_qua_form(client_chu, csrf, nguon, preset=preset,
-                           che_do_giong=che_do_giong, giong_id=giong_id)
+                           che_do_giong=che_do_giong, giong_id=giong_id,
+                           ngon_ngu_nguon=ngon_ngu_nguon,
+                           ngon_ngu_dich=ngon_ngu_dich, nguon_loi=nguon_loi)
 
     db = next(dbmod.get_session())
     try:
         from apps.auto_scan_video.tables import AsvRun
 
-        nhat_ky = _chay_hang_doi(db)
+        nhat_ky = _chay_hang_doi(db, khoa=khoa)
         run = db.get(AsvRun, run_id)
         db.refresh(run)
 
@@ -375,39 +453,66 @@ def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
         ban_dich = _doc_artifact(db, kho, run, pipeline.CONTENT_PROCESS, "json")
         bao_qc = _doc_artifact(db, kho, run, pipeline.QC, "json")
 
+        # 🔴 **Mot loi trong MA DO khong duoc xoa ket qua cua mot lan chay da
+        #    `done`.** Do that 24/09: luot B chay 67 phut, `run.status == "done"`,
+        #    12/12 giai doan `succeeded` — roi khuon chet o dong tai tep ban giao
+        #    (`OSError [Errno 22]`), va bao cao cua ca luot bien mat cung no. Phai
+        #    di cuu so lieu bang tay tu `asv_stage`.
+        #
+        # ⛔ Day la cung mot lop loi voi `_giu_tang_vat` (bao cao phu thuoc vao
+        #    viec khuon song sot qua chinh phep do cua no), nhung o mot doan DAI
+        #    hon: moi thu tu day den `return` la DO, khong phai SAN PHAM.
+        #
+        # 🔑 Nen phan do tep ban giao duoc boc rieng, va loi cua no di VAO bao cao.
+        #    Mot bao cao thieu `ra` nhung co `giai_doan` + `trang_thai_run` van tra
+        #    loi duoc cau hoi quan trong nhat; mot ngoai le thi khong tra loi gi.
         ra = {}
+        loi_do_ban_ra = ""
         gd_ra = features.giai_doan_theo_ten(db, run_id, pipeline.RENDER)
         khoa_ra = next((k for k in ((gd_ra.outputs or {}).get("khoa_asset") or [])
                         if k.endswith(".mp4")), "")
-        tep_ra = tam / f"ra_{nhan}.mp4"
-        if khoa_ra:
-            with kho.open(khoa_ra) as f:
-                tep_ra.write_bytes(f.read())
-            soi = fx.soi(str(tep_ra))
-            luong = {s["codec_type"]: s for s in soi["streams"]}
-            ra = {
-                "byte": tep_ra.stat().st_size,
-                "thoi_luong": round(float(soi["format"]["duration"]), 3),
-                "codec_video": luong.get("video", {}).get("codec_name", ""),
-                "codec_tieng": luong.get("audio", {}).get("codec_name", ""),
-                "khung": [luong.get("video", {}).get("width"),
-                          luong.get("video", {}).get("height")],
-                "vung_co_tieng": [list(v) for v in fx.vung_co_tieng(str(tep_ra))],
-                "phu_song_loi": (
-                    fx.phu_song_loi(fx.vung_co_tieng(str(tep_ra)), su_that.loi)
-                    if su_that is not None else None),
-                "am_luong": _do_am(str(tep_ra)),
-                # 🔑 **So do CUA CHINH PHEP DO, khong phai cua san pham.**
-                #    `vung_co_tieng` lay NEN bang trung vi moi cua so, va
-                #    docstring cua no dat mot tien de: "mot ban long tieng noi
-                #    khoang mot phan ba thoi luong, nen trung vi roi vao nen".
-                #    Ngay preset cat that su cat mot canh IM LANG, ti le noi
-                #    tang len va tien de do co the vo — luc do bao cao se noi
-                #    "khong co tieng long" ve mot tep nghe ro tung cau.
-                # ⇒ Ghi lai nen/nguong/dinh de lan sau khong phai doan.
-                "do_cua_phep_do": _do_phan_bo(str(tep_ra)),
-            }
+        # ⛔ `_ten_an_toan`, KHONG `nhan` tho. Day la cho goi THU HAI cua cung
+        #    mot bay, va no do 67 phut SAU cho thu nhat: ban va 24/09 sua
+        #    `_giu_tang_vat` roi dung o do, trong khi dong nay cung dat mot nhan
+        #    tu do vao mot ten tep. `OSError [Errno 22]` tren
+        #    `ra_B::zh->vi::....mp4`.
+        #
+        # 🔴 **Dung ho M-08: mot ham giang bay, NAM nguoi goi, va ban va dau chi
+        #    cham mot.** Bai hoc do da nam trong `LOI_TONG.md` cua chinh phien nay
+        #    (M-09a) va toi vua lap lai no. Nay `test_3000` quet BANG AST moi cho
+        #    ghep `nhan` vao duong dan, thay vi chot tung cho toi tinh co nhin.
+        tep_ra = tam / f"ra_{_ten_an_toan(nhan)}.mp4"
+        try:
+          if khoa_ra:
+              with kho.open(khoa_ra) as f:
+                  tep_ra.write_bytes(f.read())
+              soi = fx.soi(str(tep_ra))
+              luong = {s["codec_type"]: s for s in soi["streams"]}
+              ra = {
+                  "byte": tep_ra.stat().st_size,
+                  "thoi_luong": round(float(soi["format"]["duration"]), 3),
+                  "codec_video": luong.get("video", {}).get("codec_name", ""),
+                  "codec_tieng": luong.get("audio", {}).get("codec_name", ""),
+                  "khung": [luong.get("video", {}).get("width"),
+                            luong.get("video", {}).get("height")],
+                  "vung_co_tieng": [list(v) for v in fx.vung_co_tieng(str(tep_ra))],
+                  "phu_song_loi": (
+                      fx.phu_song_loi(fx.vung_co_tieng(str(tep_ra)), su_that.loi)
+                      if su_that is not None else None),
+                  "am_luong": _do_am(str(tep_ra)),
+                  # 🔑 **So do CUA CHINH PHEP DO, khong phai cua san pham.**
+                  #    `vung_co_tieng` lay NEN bang trung vi moi cua so, va
+                  #    docstring cua no dat mot tien de: "mot ban long tieng noi
+                  #    khoang mot phan ba thoi luong, nen trung vi roi vao nen".
+                  #    Ngay preset cat that su cat mot canh IM LANG, ti le noi
+                  #    tang len va tien de do co the vo — luc do bao cao se noi
+                  #    "khong co tieng long" ve mot tep nghe ro tung cau.
+                  # ⇒ Ghi lai nen/nguong/dinh de lan sau khong phai doan.
+                  "do_cua_phep_do": _do_phan_bo(str(tep_ra)),
+              }
 
+        except Exception as exc:         # noqa: BLE001
+            loi_do_ban_ra = f"{type(exc).__name__}: {exc}"
         # ⛔ Doc TRUOC khi phien dong: `AsvUsage` la doi tuong ORM, va doc
         #    no sau khi phien dong se nem `DetachedInstanceError`.
         from sqlalchemy import select as _select
@@ -435,15 +540,35 @@ def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
     bg, bd, qc = _json(ban_ghi), _json(ban_dich), _json(bao_qc)
     # ⭐ Chi giu tang vat khi lan chay KHONG dat — mot luot xanh khong can bang
     #    chung, va chep hai tep media cho moi luot xanh la mot cai gia tra mai.
-    tang_vat = ({} if run.status == "done"
-                else _giu_tang_vat(db, kho, run, nhan, giai_doan))
+    # ⛔ **Mot loi TRONG buoc giu tang vat khong duoc xoa bao cao cua lan
+    #    chay.** Buoc nay chi chay khi lan chay da hong, tuc dung luc bao cao la
+    #    thu duy nhat con lai. Do that 24/09: mot nhan co dau hai cham lam
+    #    `mkdir` nem, va ca bao cao cua luot do bien mat cung no — nguoi doc thay
+    #    `FileNotFoundError: 'B:'` chu khong thay vi sao lan chay hong.
+    #
+    # 🔑 Nen loi o day duoc GHI VAO bao cao chu khong duoc nem ra.
+    tang_vat: dict = {}
+    if run.status != "done":
+        try:
+            tang_vat = _giu_tang_vat(db, kho, run, nhan, giai_doan)
+        except Exception as exc:         # noqa: BLE001
+            tang_vat = {"_loi_giu_tang_vat": f"{type(exc).__name__}: {exc}"}
 
     return {
         "nhan": nhan, "preset": preset, "che_do_giong": che_do_giong,
+        "cap_ngon_ngu": {"nguon": ngon_ngu_nguon or "(mac dinh)",
+                         "dich": ngon_ngu_dich or "(mac dinh)",
+                         "nguon_loi": nguon_loi or "(mac dinh)"},
         "tang_vat": tang_vat,
         "giong_id": giong_id,
         "trang_thai_run": run.status, "giay_tong": round(time.time() - t0, 1),
         "giai_doan": giai_doan, "nhat_ky_job": nhat_ky,
+        # 🔑 CARD CO DUOC CAP KHONG. Khong co dong nay thi moi con so giay o tren
+        #    khong tra loi duoc cau hoi dau tien nguoi doc hoi ve hieu nang.
+        "card": fx.khai_card(nhat_ky),
+        # 🔑 Bang BON DONG o HAI DAU vong sua (N-02). Mot dau chi noi "con N muc
+        #    sai"; hai dau moi noi "vong sua co giam khiem khuyet khong".
+        "vong_sua": fx.bang_vong_sua(db, run),
         "asr": {"ngon_ngu": bg.get("ngon_ngu") or bg.get("language") or "",
                 "so_doan": len(bg.get("doan") or bg.get("segments") or []),
                 "van": [str(d.get("chu") or d.get("text") or "")
@@ -471,6 +596,9 @@ def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
         "vi_sao_hong": vi_sao,
         "credit_con_lai": con_lai,
         "ra": ra,
+        # ⚠️ `ra` rong co HAI nghia rat khac nhau: khong co tep ban giao, hay co
+        #    ma khuon do khong noi. Truong nay tach chung ra.
+        "loi_do_ban_ra": loi_do_ban_ra,
         "tai_ve": {"ma_chu": tai.status_code, "byte_chu": len(tai.content),
                    "ma_nguoi_khac": tai_khac.status_code},
     }
@@ -658,6 +786,17 @@ def _chan_tai_nguyen_ban(bc: dict) -> None:
     ]))
 
 
+def _ten_an_toan(nhan: str) -> str:
+    """`nhan` -> mot ten thu muc dung duoc tren Windows.
+
+    Giu chu, so, `-`, `_`, `.`; moi thu khac thanh `_`. Khong dung `re` cho mot
+    phep loc mot dong, va khong cat ngan: mot nhan bi cat mat duoi la hai luot
+    khac nhau ghi vao cung mot thu muc.
+    """
+    an_toan = "".join(c if (c.isalnum() or c in "-_.") else "_" for c in nhan)
+    return an_toan.strip("._") or "khong_ten"
+
+
 def _giu_tang_vat(db, kho, run, nhan: str, giai_doan: list[dict]) -> dict:
     """Chep ban phoi + ban giao ra mot cho SONG LAU khi lan chay khong dat QC.
 
@@ -677,7 +816,23 @@ def _giu_tang_vat(db, kho, run, nhan: str, giai_doan: list[dict]) -> dict:
     import shutil
     import tempfile
 
-    thu_muc = Path(tempfile.gettempdir()) / "asv_tang_vat" / nhan
+    # 🔴 **`nhan` la mot NHAN, khong phai mot doan duong dan.**
+    #
+    #    Do that 24/09: lan `nghiem-thu-v2` dat nhan `"B::zh->vi::localize_..."`
+    #    va dong duoi day no thanh `WindowsPath("B::zh->vi::...")`. Windows doc
+    #    `B:` la mot **o dia**, nen `mkdir` nem `[WinError 3] cannot find the
+    #    path specified: 'B:'` — mot thong bao khong nhac mot chu nao den nhan,
+    #    den tang vat, hay den lan chay.
+    #
+    # ⛔ Va no do o dung cho te nhat: `_giu_tang_vat` chi chay khi lan chay
+    #    **KHONG dat**, nen mot nhan xau khong bao gio lo o luot xanh — no cho
+    #    den luot do roi xoa luon bao cao cua luot do.
+    #
+    # ⭐ Nen ham nay phai tu lam sach, chu khong dat dieu kien len nguoi goi:
+    #    mot ham nhan chuoi tu do roi dung no lam duong dan la ham co nghia vu
+    #    lam sach. Mot luat "dung dat hai dau hai cham trong nhan" thi khong ai
+    #    doc, va khong gi kiem.
+    thu_muc = Path(tempfile.gettempdir()) / "asv_tang_vat" / _ten_an_toan(nhan)
     if thu_muc.exists():
         shutil.rmtree(thu_muc, ignore_errors=True)
     thu_muc.mkdir(parents=True, exist_ok=True)
@@ -1165,7 +1320,13 @@ def test_G17_hai_preset_tren_PHIM_KHACH_THAT(moi_truong, tmp_path, monkeypatch):
         for nhan, preset in (("giu_hinh", hop_dong_v4.PRESET_GIU_HINH),
                              ("cat_thong_minh", hop_dong_v4.PRESET_CAT_THONG_MINH)):
             kq = _mot_luot(
-                a, csrf_a, b, tep, tmp_path / f"{tep.stem}_{nhan}",
+                # ⚠️ CHO THU BA cua cung mot bay, va o day no CHUA do — `nhan`
+                #    tai G17 la `giu_hinh`/`cat_thong_minh` (hop le) va `tep.stem`
+                #    la ten tep (hop le). Nhung G17 lai truyen
+                #    `nhan=f"{tep.name}::{nhan}"` xuong `_mot_luot`, tuc no VAN
+                #    chay qua dong `ra_{nhan}.mp4` — va do la cho da do that.
+                #    Sua ca hai, khong doi cho thu ba do lan thu ba.
+                a, csrf_a, b, tep, tmp_path / _ten_an_toan(f"{tep.stem}_{nhan}"),
                 nhan=f"{tep.name}::{nhan}", preset=preset,
                 che_do_giong=hop_dong_v4.CHE_DO_GIONG_TU_CHON,
                 giong_id="Minh Đức")

@@ -1,0 +1,64 @@
+{
+ "model": "ltt-3.5",
+ "model_id": "qwen35-api",
+ "moi_lo": 12,
+ "temperature": 0.0,
+ "phim": "v2",
+ "so_lo": 7,
+ "tong_gui": 74,
+ "tong_nhan": 51,
+ "tong_thieu": 23,
+ "ti_le_nhan": 0.6892,
+ "so_lo_vi_pham_luoc_do": 1,
+ "chi_tiet": [
+  {
+   "gui": 12,
+   "nhan": 12,
+   "thieu": 0,
+   "ma_bia_them": 0,
+   "hinh_dang": "bang khoa theo ma ✅"
+  },
+  {
+   "gui": 12,
+   "nhan": 0,
+   "thieu": 12,
+   "hinh_dang": "⛔ MANG (vi pham luoc do)"
+  },
+  {
+   "gui": 12,
+   "nhan": 12,
+   "thieu": 0,
+   "ma_bia_them": 0,
+   "hinh_dang": "bang khoa theo ma ✅"
+  },
+  {
+   "gui": 12,
+   "nhan": 12,
+   "thieu": 0,
+   "ma_bia_them": 0,
+   "hinh_dang": "bang khoa theo ma ✅"
+  },
+  {
+   "gui": 12,
+   "nhan": 12,
+   "thieu": 0,
+   "ma_bia_them": 0,
+   "hinh_dang": "bang khoa theo ma ✅"
+  },
+  {
+   "gui": 12,
+   "nhan": 1,
+   "thieu": 11,
+   "ma_bia_them": 0,
+   "hinh_dang": "bang khoa theo ma ✅"
+  },
+  {
+   "gui": 2,
+   "nhan": 2,
+   "thieu": 0,
+   "ma_bia_them": 0,
+   "hinh_dang": "bang khoa theo ma ✅"
+  }
+ ],
+ "⛔ toc_do": "KHONG ghi giay: 3.8 dang DUNG CHUNG, so giay vo nghia."
+}

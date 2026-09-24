@@ -115,3 +115,127 @@ def test_phien_ban_engine_KHONG_nap_ca_cay_module_luc_import():
     for nang in ("tach_tieng", "ban_ghi", "dich_thuat", "giong_noi", "ket_xuat"):
         assert nang not in ten_dau_tep, (
             f"`{nang}` bi import o dau `thi_hanh.py` — moi worker deu phai nap no")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  N-23 — `temperature` ghim, va no PHAI o trong van tay
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_N23_nhiet_do_ghim_CHI_cho_chuyen_loi_thoai():
+    """⛔ Ghim ho mot lan khac mot tham so doi dau ra = doi hanh vi cua ho trong
+    im lang. `qc_ngu_nghia` thuoc lan bo cham — vang mat = giu nguyen mac dinh
+    cong, dung khuon `MODEL_THEO_THAO_TAC`.
+    """
+    from apps.auto_scan_video import ai
+
+    assert ai.nhiet_do_cho(ai.CHUYEN_LOI_THOAI) == 0.0
+    assert ai.nhiet_do_cho(ai.QC_NGU_NGHIA) is None
+    assert ai.nhiet_do_cho(ai.DOC_CANH) is None
+
+
+def test_N23_doi_nhiet_do_thi_van_tay_CONTENT_PROCESS_PHAI_doi(monkeypatch):
+    """🔴 Ve THU HAI cua N-23: mot tham so DOI DAU RA ma khong vao van tay thi
+    cache tra ket qua cua nhiet do CU cho mot cau hinh MOI — im lang.
+
+    ⛔ Bai kiem CA BA trang thai, vi *"khong khai"* va *"khai 0,0"* la hai thu
+       khac nhau: gop chung lai la dung bay "hai trang thai mot gia tri".
+    """
+    from apps.auto_scan_video import ai
+
+    def _vt():
+        return thi_hanh.phien_ban_engine(pipeline.CONTENT_PROCESS)
+
+    goc = _vt()
+    monkeypatch.setitem(ai.NHIET_DO_THEO_THAO_TAC, ai.CHUYEN_LOI_THOAI.ma, 0.7)
+    khac = _vt()
+    monkeypatch.delitem(ai.NHIET_DO_THEO_THAO_TAC, ai.CHUYEN_LOI_THOAI.ma)
+    khong_khai = _vt()
+
+    assert goc != khac, "doi nhiet do ma van tay khong doi => cache tra ban cu"
+    assert khong_khai not in (goc, khac), (
+        "'khong gui temperature' phai la mot trang thai RIENG, khong duoc trung "
+        "voi bat ky gia tri so nao")
+
+
+def test_N23_goi_tinh_tien_GUI_dung_nhiet_do_da_ghim(monkeypatch):
+    """⭐ Van tay va cu goi phai doc CUNG mot nguon — neu khong, van tay ghi mot
+    dang va model nhan mot dang.
+
+    ⛔ Va ben goi khai tuong minh thi van thang: `nhiet_do_cho` la MAC DINH,
+       khong phai mot cai khoa.
+    """
+    from apps.auto_scan_video import ai
+
+    thay: dict = {}
+
+    def _gia(db, thao_tac, messages, **kw):
+        thay[thao_tac.ma] = kw.get("temperature")
+        return {"noi_dung": "{}", "provider": "p", "model": "m"}
+
+    monkeypatch.setattr(ai, "goi", _gia)
+    ai.goi_tinh_tien(None, None, ai.CHUYEN_LOI_THOAI, [], stage="s", item_key="i")
+    assert thay[ai.CHUYEN_LOI_THOAI.ma] == 0.0
+
+    ai.goi_tinh_tien(None, None, ai.QC_NGU_NGHIA, [], stage="s", item_key="i")
+    assert thay[ai.QC_NGU_NGHIA.ma] is None, "⛔ khong duoc ghim ho lan bo cham"
+
+    ai.goi_tinh_tien(None, None, ai.CHUYEN_LOI_THOAI, [], stage="s",
+                     item_key="i", temperature=0.9)
+    assert thay[ai.CHUYEN_LOI_THOAI.ma] == 0.9, "ben goi khai tuong minh phai thang"
+
+
+def test_N23_ve_BA_ep_luoc_do_o_tang_GIAI_MA():
+    """⭐ `response_format` ep bang khoa-theo-ma — DUNG cac ma da gui.
+
+    Do duoc: 2/21 lo hong (chi ghim nhiet do) -> **0/20 lo, 188/188 doan**.
+    ⛔ Bai nay chot HINH DANG, khong chot con so do.
+    """
+    from apps.auto_scan_video import long_tieng
+
+    ld = long_tieng.luoc_do_phan_hoi([{"ma": "s1"}, {"ma": "s2"}])
+    doan = ld["schema"]["properties"]["doan"]
+    assert ld["type"] == "json_object"
+    assert doan["required"] == ["s1", "s2"], "phai ep DU cac ma da gui"
+    assert doan["additionalProperties"] is False, "⛔ khong cho bia them ma"
+    # ⛔ `doan` phai la OBJECT — che do hong da do la model tra ve mot MANG.
+    assert doan["type"] == "object"
+    assert ld["schema"]["required"] == ["doan"]
+
+
+def test_N23_doi_PHIEN_BAN_RANG_LUOC_DO_thi_van_tay_PHAI_doi(monkeypatch):
+    """Bat/tat rang buoc luoc do DOI DAU RA ⇒ phai o trong van tay.
+
+    ⛔ Thieu no thi cache tra ket qua cua cau hinh CU — dung ve thu hai N-23.
+    """
+    from apps.auto_scan_video import long_tieng
+
+    goc = thi_hanh.phien_ban_engine(pipeline.CONTENT_PROCESS)
+    monkeypatch.setattr(long_tieng, "PHIEN_BAN_RANG_LUOC_DO",
+                        long_tieng.PHIEN_BAN_RANG_LUOC_DO + 1)
+    assert thi_hanh.phien_ban_engine(pipeline.CONTENT_PROCESS) != goc
+
+
+def test_N23_goi_tinh_tien_CHUYEN_luoc_do_xuong_than_request(monkeypatch):
+    """⭐ `luoc_do` phai toi `dieu_phoi.goi(them={"response_format": ...})`.
+
+    ⛔ Mot tham so duoc nhan roi bi bo giua duong la loai hong im lang nhat:
+       ma doc nhu da bat, va hanh vi thi khong doi.
+    """
+    from apps.auto_scan_video import ai
+
+    thay: dict = {}
+
+    class _Kq:
+        noi_dung = "{}"
+        provider = "p"
+        model = "m"
+        su_dung = None
+
+    def _gia(db, **kw):
+        thay.update(kw)
+        return _Kq()
+
+    from platform_core.llm import dieu_phoi
+    monkeypatch.setattr(dieu_phoi, "goi", _gia)
+    ai.goi(None, ai.CHUYEN_LOI_THOAI, [], luoc_do={"type": "json_object"})
+    assert thay.get("them", {}).get("response_format") == {"type": "json_object"}

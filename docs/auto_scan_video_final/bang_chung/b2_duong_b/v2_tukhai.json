@@ -1,0 +1,33 @@
+{
+ "phim": {
+  "ma": "v2",
+  "ten": "暴雨天野外露营….mp4"
+ },
+ "model": "qwen35-api",
+ "so_doan": 74,
+ "so_ky_tu_goc": 1125,
+ "giay": 123.6,
+ "lo_hong": [],
+ "do_nhay": {
+  "can_bat": [
+   "这才是"
+  ],
+  "bat_duoc": [],
+  "ti_le": 0.0
+ },
+ "do_on": {
+  "tong_khai": 7,
+  "ngoai_7_ca": 7,
+  "ti_le_tren_ky_tu_goc": 0.0062,
+  "danh_sach": [
+   "直冷",
+   "避不住",
+   "小壁",
+   "榨了点爆米花",
+   "投影目录",
+   "卷土重来",
+   "起过烧油"
+  ]
+ },
+ "⛔": "Danh sach 7 ca CHI dung de cham SAU khi chay — khong vao loi nhac."
+}

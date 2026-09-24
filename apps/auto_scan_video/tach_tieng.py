@@ -46,6 +46,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -102,6 +103,34 @@ def rut_ban_day_du(nguon: str, dich: str, *, hoi_huy=None,
 TIMEOUT_TACH_S = 5400
 
 
+#: Python chay tien trinh con demucs. ⛔ Mac dinh la `sys.executable`, tuc
+#: **khong doi gi o production**: worker chay bang `C:\LTTPlatform\venv` va do
+#: chinh la venv co `torch 2.11.0+cu128`.
+#:
+#: 🔴 **Vi sao can mot cua ghi de, va vi sao no khong phai mot cua sau.**
+#:
+#:    Do that 24/09, lan `nghiem-thu-v2`, tren phim khach that: nen tang cap card
+#:    dung (`JobContext.gpu_uuid` khac rong, `gpu_lease` da giu), nhung tien
+#:    trinh con nem `ThieuCard` — vi bo nghiem thu chay bang **trinh thong dich
+#:    test** (`…\\Programs\Python\Python313`) va torch o do la `2.11.0+cpu`,
+#:    `cuda False`. Hai venv, hai cau tra loi khac nhau cho cung mot cau hoi.
+#:
+#: ⛔ Va `setup/nghiem_thu_asv.ps1` **khong the** chay pytest bang venv san pham:
+#:    venv do co y khong cai pytest (no cai thu SAN PHAM chay). Nen khong co cach
+#:    nao de ca hai dung MOT trinh thong dich — pytest can mot cai, demucs can
+#:    cai kia.
+#:
+#: ⭐ Cung hinh dang voi `apps/asv_gpu/do_luong/venv.py:LTT_QC_PYTHON` (mot duong
+#:    mac dinh + mot bien ghi de). Khong phat minh giao thuc moi cho cung mot
+#:    van de.
+BIEN_PYTHON_TACH = "LTT_ASV_PYTHON_TACH"
+
+
+def python_tach() -> Path:
+    """Trinh thong dich chay `demucs_runner`. `sys.executable` neu khong ghi de."""
+    return Path(os.environ.get(BIEN_PYTHON_TACH) or sys.executable)
+
+
 def tach_nguon(vao_wav: str, thu_muc_ra: str, *, gpu_env: dict | None = None,
                buoc_gpu: bool = False, hoi_huy=None,
                timeout: int = TIMEOUT_TACH_S) -> dict:
@@ -117,12 +146,11 @@ def tach_nguon(vao_wav: str, thu_muc_ra: str, *, gpu_env: dict | None = None,
        mot job.
     """
     Path(thu_muc_ra).mkdir(parents=True, exist_ok=True)
-    cmd = [sys.executable, "-m", "apps.auto_scan_video.demucs_runner",
+    cmd = [str(python_tach()), "-m", "apps.auto_scan_video.demucs_runner",
            vao_wav, thu_muc_ra]
     if buoc_gpu:
         cmd.append("--buoc-gpu")
 
-    import os
     moi_truong = dict(gpu_env) if gpu_env else dict(os.environ)
     # `-m` can thu muc goc cua kho trong duong import.
     #

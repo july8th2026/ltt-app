@@ -1,0 +1,32 @@
+{
+ "phim": {
+  "ma": "v3",
+  "ten": "深度解析丨跳伞….mp4"
+ },
+ "nhan": "vong sua voi bo cham V1 — DA BIET hong, bao dong gia 43 %. ⛔ Khong noi gi ve vong sua voi bo cham V3.",
+ "sha_bo_cham": "604b82a7eccee07473541873b8ca11bf049a8d60",
+ "model_cham": "qwen38-api",
+ "so_doan": 31,
+ "so_cham_duoc": 31,
+ "so_bi_gan_co": 2,
+ "lo_hong": [],
+ "giay": 308.2,
+ "bi_gan_co": [
+  {
+   "ma": "seg_0005",
+   "dat": false,
+   "ly_do": "Bản bỏ 'tinh luyện' trong '提炼枪' và dịch '架着门口' thành 'chặn cửa', làm lệch ý 'chĩa súng canh cửa'.",
+   "do_tin": 0.8,
+   "goc": "这人肯定会往里面冲,架着门口往左边走,用提炼枪让他来接子弹。",
+   "dich_nen": "Người này chắc chắn sẽ lao vào trong, chặn cửa đi sang trái, dùng súng để bắt anh ta hứng đạn."
+  },
+  {
+   "ma": "seg_0010",
+   "dat": false,
+   "ly_do": "Dịch '趁' thành 'Khiến', làm sai từ 'nhân lúc/khi' thành 'khiến cho'.",
+   "do_tin": 0.95,
+   "goc": "趁敌人还没上来,咱们直接趴下,用盒子当掩体,他就发现不了我们。",
+   "dich_nen": "Khiến kẻ địch chưa lên, chúng ta trực tiếp nằm xuống, dùng hộp làm che chắn, anh ta sẽ không phát hiện ra chúng ta."
+  }
+ ]
+}

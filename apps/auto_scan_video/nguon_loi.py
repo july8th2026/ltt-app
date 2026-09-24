@@ -40,7 +40,33 @@ EMBEDDED = "embedded"
 OCR = "ocr"
 ASR = "asr"
 CHE_DO_HOP_LE = (AUTO, EMBEDDED, OCR, ASR)
-CHE_DO_MAC_DINH = AUTO
+
+#: Nguon loi thoai cho mot YEU CAU MOI khi khach khong chon gi.
+#:
+#: 🔴 **`ASR` tu 24/09.** San pham la **long tieng voice->voice** (chu du an chot);
+#:    hardsub chi de **doi chieu**. Do B0: ca 4 phim mau co hardsub Han 98,8-100 %
+#:    ⇒ voi `auto` thi **ca bon** di duong `ocr`, va luot A/B/C 24/09 xac nhan
+#:    (`nguon_loi="ocr"`, `engine=rapidocr/...`). Tuc duong `asr` — **luong CHINH** —
+#:    chua tung chay that mot lan nao, va moi con so cua ba luot nghiem thu deu noi
+#:    ve duong PHU.
+CHE_DO_MAC_DINH = ASR
+
+#: Y nghia cua **khoa VANG MAT** trong mot ho so DA LUU. ⛔ **DONG BANG o `auto`.**
+#:
+#: 🔴 **Vi sao phai tach khoi `CHE_DO_MAC_DINH`, va day la ca ban sua cua Task 5.**
+#:
+#:    Truoc 24/09 mot hang so lam BA viec: (1) mac dinh cho yeu cau moi;
+#:    (2) nghia cua khoa vang mat khi DOC mot ho so da luu (`cai_dat.py:136`);
+#:    (3) gia tri duoc BO DI khi GHI (`cai_dat.py:203`, luat `KHOA_THUA`).
+#:
+#: ⛔ Nen lat mot minh no se **viet lai nghia cua moi ho so da luu**: mot lan chay
+#:    luu voi `auto` (khoa bi bo vi no la mac dinh) se duoc doc lai thanh `asr`.
+#:    Chinh chu thich o `cai_dat.py:135` — *"Ho so cu khong co khoa = `auto`"* —
+#:    tro thanh SAI ngay khoanh khac do, va khong gi keu len.
+#:
+#: ⭐ Cung ho voi bai hoc "hai trang thai gop thanh mot gia tri": *vang mat* nghia
+#:    la *mac dinh*, va mac dinh la mot muc tieu DI DONG. Tach ra thi no dung yen.
+CHE_DO_HO_SO_CU = AUTO
 
 #: Phien ban logic dinh tuyen (+ logic hardsub). Vao PHIEN_BAN_MA cua TRANSCRIBE.
 PHIEN_BAN_DINH_TUYEN = f"{1}.{phu_de_cung.PHIEN_BAN}"
@@ -56,7 +82,34 @@ _MA_LUONG = {"chi": "zh", "zho": "zh", "chs": "zh", "cht": "zh", "zh": "zh",
 #: Pass 1 (tim dai): so khung full-frame rai deu ca video.
 SO_KHUNG_DO = 40
 #: Pass 2 (doc dai): khung/giay. Do trong L_OCR.md §3.
+#:
+#: 🔴 ⛔ KHONG HA SO NAY DE TIET KIEM GPU truoc khi doc doan duoi day.
+#:
+#:    `fps` o day KHONG chi la chi phi. No quyet dinh do phan giai moc thoi
+#:    gian cua HARDSUB, ma hardsub la CHAN LY NEN cua cong chat luong B1
+#:    (`tools/bench_b1_chep_loi.py::chinh_xac_cho_ngat`, dung sai +/-0,3 s,
+#:    nguong >= 0,90).
+#:
+#:    Do 25/09/2026 bang `tools/do_luong.py::tran_cua_cong` (chay mot HE
+#:    HOAN HAO qua chinh cong ay):
+#:
+#:        4 fps -> luoi 0,25 s  <  dung sai 0,3 s  ->  tran cong = 1,0000  OK
+#:        diem GAY ~ 12 % so moc troi qua 0,3 s   ->  tran tut duoi 0,90
+#:        L_OCR.md §3 do p95 troi 0,65 s ngay o 4 fps => bien CON, nhung MONG
+#:        2 fps -> lech trung binh 0,18-0,25 s    ->  DANG AN VAO BIEN
+#:
+#: ⚠️ Ha 4 -> 3 -> 2 fps lam cong B1 **mat hieu luc TRONG IM LANG**: no van
+#:    chay, van in mot con so, va con so ay do LUOI CUA CHAN LY NEN chu khong
+#:    do san pham. Khong gi keu len.
+#:
+#: ⇒ Muon ha: chay lai `tran_cua_cong` TRUOC, va chi ha neu tran van >= 0,90.
+#:    Rang buoc nay duoc ghim bang `tests/test_3602::test_3602_fps_doc_ocr_
+#:    khong_duoc_ha_duoi_muc_da_hieu_luc`.
 FPS_DOC = 4.0
+
+#: ⛔ Muc `FPS_DOC` da duoc do va con hieu luc (xem khoi tren). Ha xuong duoi
+#: muc nay = vo hieu hoa cong B1. Phep kiem doc HAI hang so nay va bat khop.
+FPS_DOC_DA_DO_TRAN_CONG_B1 = 4.0
 TI_LE_HAN_TOI_THIEU = 0.8
 
 
@@ -64,9 +117,14 @@ class KhongCoNguon(ValueError):
     """Che do EP mot nguon ma video khong co nguon do. Thong diep cho khach."""
 
 
-def chuan_che_do(gia_tri) -> str:
+def chuan_che_do(gia_tri, *, mac_dinh: str = "") -> str:
+    """Chuan hoa mot ma che do. `mac_dinh` rong = `CHE_DO_MAC_DINH`.
+
+    ⚠️ Nguoi DOC mot ho so da luu phai truyen `mac_dinh=CHE_DO_HO_SO_CU` — xem
+       docstring cua hang do. Nguoi nhan mot YEU CAU MOI thi de trong.
+    """
     v = str(gia_tri or "").strip().lower()
-    return v if v in CHE_DO_HOP_LE else CHE_DO_MAC_DINH
+    return v if v in CHE_DO_HOP_LE else (mac_dinh or CHE_DO_MAC_DINH)
 
 
 #: Nhan cho KHACH doc, theo CHE DO ho chon o Studio. `N_` = danh dau de trich.

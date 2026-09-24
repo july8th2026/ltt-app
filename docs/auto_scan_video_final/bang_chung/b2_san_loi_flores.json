@@ -1,0 +1,662 @@
+{
+ "phien_ban": 1,
+ "cau_hoi": "Ti le loi NOI TAI cua ban dich FLORES-200 zh->vi",
+ "vi_sao": "'Moi phan quyet tren FLORES = bao dong gia theo dinh nghia' la mot GIA DINH. Neu FLORES co loi that thi mot phan cua ti le bao dong gia la phat hien DUNG, khong phai bao dong gia.",
+ "giao_thuc": {
+  "mu": "Nguoi doc KHONG thay phan quyet cua bo cham; bo cham CHUA he chay tren dai 500-899.",
+  "dai": "dong 500-699 (n=50, seed 20260924) + 700-899 (n=50, seed 20260925)",
+  "bat_buoc_trich_doan": "Ca khong trich duoc doan nguon => KHONG tinh la loi.",
+  "nguoi_doc_1": "agent `xac-thuc-cham`",
+  "nguoi_doc_2": "DIEU PHOI — chua doc; mau con o `mau_con_cho_nguoi_doc_2`"
+ },
+ "gioi_han": [
+  "NGUOI DOC 1 LA MOT LLM — cung ho voi thu dang bi nghi. Day la Y KIEN THU HAI, khong phai chan ly nen.",
+  "n=100, KTC 95% cua 10/100 ~ 5,5%-17,4% => van rong.",
+  "Dai do san FLORES (500-899) KHAC dai do bao dong gia (200-229) => phep tru chi la uoc luong."
+ ],
+ "ket_qua": {
+  "n": 100,
+  "ro": 10,
+  "zh_lech": 2,
+  "bien": 11,
+  "khong_loi": 77,
+  "ti_le_ro": 0.1,
+  "ti_le_ro_va_zh_lech": 0.12,
+  "ti_le_ke_ca_bien": 0.23
+ },
+ "mau_con_cho_nguoi_doc_2": [
+  514,
+  522,
+  530,
+  537,
+  556,
+  570,
+  571,
+  583,
+  600,
+  610,
+  613,
+  614,
+  618,
+  620,
+  628,
+  651,
+  661,
+  674,
+  686,
+  707,
+  730,
+  757,
+  759,
+  767,
+  773,
+  800,
+  806,
+  809,
+  814,
+  824
+ ],
+ "lenh_in_mau_con": "python -c \"import sys;sys.path.insert(0,'.');from tools import bench_b2_xac_thuc_bo_cham as bc;d=dict((c[0],c) for c in bc.doc_flores());[print(i,d[i][1],chr(10),d[i][2]) for i in MAU_CON]\"",
+ "muc": [
+  {
+   "dong_flores": 503,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 509,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 514,
+   "phan_quyet": "bien",
+   "doan_nguon": "更加重要",
+   "ly_do": "'quan trong hon' -> 'tap trung hon'"
+  },
+  {
+   "dong_flores": 519,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 522,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 530,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 537,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 542,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 552,
+   "phan_quyet": "ro",
+   "doan_nguon": "营养补品",
+   "ly_do": "supplements dinh duong -> 'tap luyen bo sung' (training)"
+  },
+  {
+   "dong_flores": 556,
+   "phan_quyet": "bien",
+   "doan_nguon": "基本组成模块之一",
+   "ly_do": "'mot trong cac khoi co ban' -> 'nen tang co ban'"
+  },
+  {
+   "dong_flores": 562,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 565,
+   "phan_quyet": "ro",
+   "doan_nguon": "参与定期训练的人",
+   "ly_do": "nguoi tap luyen DINH KY -> 'hoat dong binh thuong'"
+  },
+  {
+   "dong_flores": 567,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 568,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 570,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 571,
+   "phan_quyet": "ro",
+   "doan_nguon": "个体",
+   "ly_do": "ca the (sinh hoc) -> 'co nguoi' + 'tinh cach' da hinh"
+  },
+  {
+   "dong_flores": 583,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 585,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 588,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 594,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 600,
+   "phan_quyet": "zh_lech",
+   "doan_nguon": "发生化学变化",
+   "ly_do": "ZH noi doi trang thai KHI co bien doi hoa hoc; VI noi doi ma KHONG doi"
+  },
+  {
+   "dong_flores": 605,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 609,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 610,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 613,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 614,
+   "phan_quyet": "bien",
+   "doan_nguon": "大船",
+   "ly_do": "'Great Fleet' -> 'Quan doan vi dai'"
+  },
+  {
+   "dong_flores": 615,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 617,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 618,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 620,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 626,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 628,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 637,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 638,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 639,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 640,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 642,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 643,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 645,
+   "phan_quyet": "bien",
+   "doan_nguon": "没有任何事情需要特意学习",
+   "ly_do": "'khong gi can hoc dac biet' -> 'chang co thu gi HAY de hoc'"
+  },
+  {
+   "dong_flores": 651,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 653,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 661,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 666,
+   "phan_quyet": "zh_lech",
+   "doan_nguon": "迪士尼乐园",
+   "ly_do": "ZH: Disneyland; VI: 'The gioi Disney' (Disney World) — hai cong vien khac nhau"
+  },
+  {
+   "dong_flores": 669,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 674,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 679,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 685,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 686,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 687,
+   "phan_quyet": "bien",
+   "doan_nguon": "巨额财富",
+   "ly_do": "'khoi cua cai' -> 'nhung chi tiet the hien su giau sang'"
+  },
+  {
+   "dong_flores": 690,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 701,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 702,
+   "phan_quyet": "ro",
+   "doan_nguon": "离出发日期应至少有 6 个月",
+   "ly_do": "hieu luc 6 thang TU ngay di -> '6 thang TRUOC chuyen di'"
+  },
+  {
+   "dong_flores": 707,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 719,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 721,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 722,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 728,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 730,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 733,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 739,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 747,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 748,
+   "phan_quyet": "bien",
+   "doan_nguon": "修剪整齐的地面",
+   "ly_do": "'khuon vien duoc cham chut' -> 'mat dat bang phang'"
+  },
+  {
+   "dong_flores": 751,
+   "phan_quyet": "ro",
+   "doan_nguon": "任何规模的小镇",
+   "ly_do": "'bat ke quy mo' gan vao THI TRAN -> gan vao CAI LEU"
+  },
+  {
+   "dong_flores": 757,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 759,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 760,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 765,
+   "phan_quyet": "ro",
+   "doan_nguon": "允许他们住单间",
+   "ly_do": "phong RIENG cho gia dinh -> 'phong danh rieng cho TRE EM'"
+  },
+  {
+   "dong_flores": 767,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 772,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 773,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 775,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 783,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 784,
+   "phan_quyet": "ro",
+   "doan_nguon": "珍稀动物",
+   "ly_do": "thu QUY HIEM -> 'thu ngoai nhap'"
+  },
+  {
+   "dong_flores": 787,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 800,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 806,
+   "phan_quyet": "ro",
+   "doan_nguon": "山寨货",
+   "ly_do": "hang NHAI -> 'bi ngung kinh doanh'"
+  },
+  {
+   "dong_flores": 809,
+   "phan_quyet": "ro",
+   "doan_nguon": "溪降",
+   "ly_do": "canyoning (do khe) -> 'cheo thuyen vuot thac'"
+  },
+  {
+   "dong_flores": 810,
+   "phan_quyet": "bien",
+   "doan_nguon": "相对较少的训练",
+   "ly_do": "'tuong doi IT tap luyen' -> 'tap huan tuong doi HOAC the trang tot'"
+  },
+  {
+   "dong_flores": 814,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 817,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 824,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 827,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 828,
+   "phan_quyet": "bien",
+   "doan_nguon": "剥削他人",
+   "ly_do": "'boc lot nguoi khac' -> 'tran lot'"
+  },
+  {
+   "dong_flores": 830,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 832,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 844,
+   "phan_quyet": "bien",
+   "doan_nguon": "绝不是现代才出现的现象",
+   "ly_do": "'tuyet khong phai hien tuong hien dai' -> 'chua the goi la duong dai'"
+  },
+  {
+   "dong_flores": 845,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 847,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 849,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 852,
+   "phan_quyet": "ro",
+   "doan_nguon": "毛利窑烤",
+   "ly_do": "hangi (mon an) -> 'lo' + 'lay mau' thay cho 'nem'"
+  },
+  {
+   "dong_flores": 856,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 857,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 862,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 869,
+   "phan_quyet": "bien",
+   "doan_nguon": "地上的床垫或垫子",
+   "ly_do": "'dem/tam lot tren dat' -> 'tham hay san'"
+  },
+  {
+   "dong_flores": 873,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 875,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 882,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 889,
+   "phan_quyet": "bien",
+   "doan_nguon": "南极洲内陆",
+   "ly_do": "NOI DIA Nam Cuc -> 'Luc dia Nam Cuc'"
+  },
+  {
+   "dong_flores": 892,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 896,
+   "phan_quyet": "khong_loi",
+   "doan_nguon": "",
+   "ly_do": ""
+  }
+ ]
+}

@@ -110,11 +110,17 @@ mình, nhưng **SỐ** thì lấy từ bảng này, và **điều phối cấp**
 | N-22 | `gop_phan` ghép theo `tu`/`n` nên sai với **dải rời rạc** ⇒ mẫu số phồng | `asvf-xac-thuc` |
 | N-23 | đường sống ⛔ **không ghim `temperature`** ⇒ cổng áp 1.0 — **ba** triệu chứng một gốc | `asvf-nghiem-thu-v2` |
 | N-24 | phép kiểm chốt **VĂN BẢN/TÊN** thay vì **TÍNH CHẤT** — 3 ca, 3 làn, 1 ngày | `asv-final` |
+| N-25 | thước đọc **VĂN BẢN của mã** để suy ra **HÀNH VI TỆP** — sai **hai chiều**, và nó đang đo số KHÔNG | `phien/no-kien-truc` |
+| N-29 | bánh cóc **QUA được mà không cần NHÌN** — khóa 7A/1B ⇒ „luôn trả A“ đạt 87,5 % > sàn trục 0,80 | `gop-asv` |
+| N-30 | app phiên âm ⛔ không cắt được câu Hán (`\s+` sau `。`) — **khuyết tật đang sống ở app khác** | `gop-asv` (chỉ ghi sổ) |
+| N-31 | lưới chân lý nền ghim **hằng số trong thước**, ⛔ không đọc từ dữ liệu | `gop-asv` (chỉ ghi sổ) |
 
 ⛔ **`N-13` đang bị dùng HAI lần** trên `asv-final` (cổng VMAF **và** *"một hằng làm ba
 việc"*) — va **trước** khi có cấp số tập trung. Ca thứ hai sẽ được đánh lại số khi gộp.
 
-⭐ **Luật:** số kế tiếp trống là **N-25**. Làn ⛔ **không tự đặt** — hỏi điều phối, điều
+⛔ **`N-10` CHƯA BAO GIỜ ĐƯỢC CẤP — để TRỐNG VĨNH VIỄN.** Nó ⛔ không có dòng trong `LOI_TONG.md`, ⛔ không có trong bảng này, và chỉ được **nhắc** trong plan (Task 0) — tức nhắc nhầm. ⭐ **⛔ Đừng tái sử dụng số này:** một khoảng trống được **khai** rẻ hơn nhiều một số mang **hai nghĩa**, và ta đã mất hai lượt vì đúng chuyện đó (`N-13`, `N-15`).
+
+⭐ **Luật:** số kế tiếp trống là **N-26**. Làn ⛔ **không tự đặt** — hỏi điều phối, điều
 phối cập nhật bảng này. Đây là cùng một bài toán mà `check_so_test` đã giải cho **dải số
 test**: ⛔ không ai đếm trên bản của mình, ⭐ có **một** chỗ cấp phát.
 
@@ -125,6 +131,25 @@ test**: ⛔ không ai đếm trên bản của mình, ⭐ có **một** chỗ c�
 2. **Thuật ngữ + tiếng lóng cho phim khách bất kỳ** — năm đường kèm giá ở
    `B2_DICH.md` §4d. ⛔ Điều phối không chọn hộ.
 
+
+---
+
+## ⛔ THỨ TỰ BẮT BUỘC: COMMIT TRƯỚC, TIÊM SAU
+
+🔴 **Lỗi trong bản plan đầu đã phá việc thật.** Bản đầu xếp *"tiêm lỗi → `git checkout --`
+để hoàn nguyên"* ở bước 6 và *"commit"* ở bước 7. Làn `hop-dong` làm đúng theo đó và
+`git checkout --` **xoá sạch toàn bộ `pipeline.py` chưa commit** — mất cả lượt việc.
+
+⇒ **Ở MỌI task, thứ tự là:**
+```
+1..n-2  viết phép kiểm ĐỎ trước · sửa · chạy XANH
+n-1     COMMIT        <- việc đã an toàn trên đĩa
+n       ĐỐI CHỨNG: tiêm lỗi -> chứng minh ĐỎ -> `git checkout --` hoàn nguyên
+        (giờ `checkout` chỉ bỏ phép tiêm, không bỏ việc)
+```
+⛔ Đừng dùng `git checkout --`/`git restore` khi trong cây còn thay đổi chưa commit mà
+bạn muốn giữ. ⭐ Cách an toàn hơn nếu phải tiêm trước khi commit: `git stash` phép tiêm,
+hoặc tiêm vào **bản sao trong `tmp_path`** thay vì vào tệp thật.
 
 ## Global Constraints
 
@@ -195,6 +220,33 @@ test**: ⛔ không ai đếm trên bản của mình, ⭐ có **một** chỗ c�
 
 ---
 
+## 🔴 THU HẸP PHẠM VI — chủ dự án chốt 24/09 (chiều)
+
+> *"Về hình ảnh và nội dung video, ta **chưa cần xử lý sâu**. Tập trung chính vào
+> **dịch ngôn ngữ voice to voice** trước để hoàn thiện nó và **cho ra sản phẩm** đã.
+> Nó là **gốc** của mọi hạng mục về sau. Các bước khác **chỉ báo**, chưa cần kỹ về
+> chất lượng sâu quá."*
+
+⇒ Thang cổng chia **hai hạng**, và ⛔ chỉ hạng A được siết:
+
+| hạng | mắt xích | làm gì |
+|---|---|---|
+| **A — LÕI voice→voice** | `audio_prepare` · **`transcribe`** · **`content_process` (dịch)** · **`voice_synthesis`** · **`timing_align`** | **siết đủ**: ngưỡng đặt trước · đối chứng · phải ĐẠT mới đi tiếp |
+| **B — chỉ BÁO** | `media_prepare` · `edit_plan` · `compose` · `render` · `qc` · `qc_do_luong` · `qc_ai` | chạy được, **ghi số vào bản ghi**, ⛔ **không** làm cổng chặn, ⛔ không điều tra sâu |
+
+⛔ **Việc DỪNG ngay (không phải hoãn — dừng):** cổng VMAF đọc khung xấu nhất (N-13) ·
+điều tra `so_canh` (N-07) · siết lớp kiểm hình. Tất cả thuộc **hình ảnh/nội dung**.
+Ghi trạng thái hiện có vào sổ rồi **để đó**.
+
+⭐ **Vì sao `timing_align` VẪN thuộc lõi dù nghe như "canh chỉnh kỹ thuật":** sản phẩm
+là **lồng tiếng**. Một bản dịch đúng từng chữ mà **rơi sai khe** thì khách nghe thấy
+tiếng lệch môi — tức nó hỏng ở đúng thứ khách mua. ⇒ `fallback_unaligned` (mốc thời
+gian **không căn** đi vào `timing_align`) nay là vấn đề **hạng A**, không phải ghi chú.
+
+⛔ **Và "cho ra sản phẩm" đổi tiêu chí ĐẠT của cả thang:** đích không còn là *"12 mắt
+xích đều qua cổng"* mà là **một lượt voice→voice chạy trọn, nghe được, trên phim thật**.
+Mắt xích hạng B chỉ cần **không chặn** lượt đó.
+
 ## Khung 12 mắt xích — bảng cổng (toàn cục, để thấy tổng công việc)
 
 | # | mắt xích | thứ tự | phép đo quyết định ĐẠT | ngưỡng (đặt trước) | trạng thái |
@@ -218,93 +270,84 @@ test**: ⛔ không ai đếm trên bản của mình, ⭐ có **một** chỗ c�
 
 ---
 
-## Task 0: Bỏ khoá `postgres_test` — mỗi làn một CSDL scratch riêng (N-10)
+## Task 0: Bỏ khoá `postgres_test` — mỗi làn một SCHEMA riêng (N-10)
 
 **Vì sao làm TRƯỚC mọi thứ:** khoá này vừa chặn một làn phiên khác **78 phút**, và nó
-tồn tại **không** vì tài nguyên độc quyền thật — mà vì **mọi làn dùng chung MỘT tên CSDL**.
-Cho mỗi làn một tên riêng thì hết xung đột và **không cần khoá nào**. ⭐ Nó đóng luôn
-**M-11** (một `AsvRun` mồ côi của làn khác tự nộp job vô hạn, `jobs` phình 1.274 dòng):
-mỗi làn không còn thấy rác của làn khác.
+tồn tại **không** vì tài nguyên độc quyền thật — mà vì **mọi làn dùng chung MỘT không
+gian tên**. Cho mỗi làn một không gian riêng thì hết xung đột và **không cần khoá nào**.
 
-⚠️ Đây **khác** `cpu_nhieu`: khoá CPU chia **sức tính** nên không bỏ được. `postgres_test`
-chỉ chia một **cái tên**.
+⚠️ Đây **khác** `cpu_nhieu`: khoá CPU chia **sức tính** nên không bỏ được.
+
+### 🔴 Dùng SCHEMA, ⛔ KHÔNG dùng CSDL riêng — đã đo 24/09
+
+Bản đầu của task này định cho mỗi làn một **CSDL** riêng. ⛔ Không đi được, và đường
+schema tốt hơn ở ba điểm:
+
+```
+ltt_app  rolcreatedb=False        -> KHONG tao duoc CSDL
+pg_hba   scram-sha-256 moi duong  -> chi chu du an co mat khau `postgres`
+ltt_app  CREATE SCHEMA / DROP SCHEMA CASCADE  -> OK (da do)
+```
+
+1. ⛔ **Không đổi thế an ninh production** — không phải cấp `CREATEDB` cho vai mà app
+   dùng thật (nó mở rộng thứ một khoá app bị lộ làm được, cho một lợi ích **chỉ bộ
+   test** cần).
+2. ⭐ **`DROP SCHEMA ... CASCADE` dọn sạch** ⇒ trả lời luôn **N-11**: kho đã có 18 CSDL
+   test theo cây của ba công cụ cũ, và thêm hậu tố thứ tư **không có đường dọn** thì Task
+   này đổi *một khoá chặn 78 phút* thành *N CSDL mồ côi tích tụ*.
+3. Không trần số làn (bể cố định thì có trần; `CREATEDB` thì tích tụ vô hạn).
+
+⚠️ **Rủi ro đã đo, không đoán:** có 13 tệp gõ `public.`; liệt kê thật chỉ ra
+`public.f_unaccent` (một **hàm cấp CSDL** — dùng chung được, đúng) cùng
+`public.name` / `public.execution_mode` / `public.deprecated`. ⛔ **Kiểm từng chỗ**:
+hàm cấp CSDL thì **giữ**, bảng/cột thì **bỏ tiền tố**. ⛔ Đừng tin con số 13.
 
 **Files:**
-- Modify: `tests/fixtures/pg_scratch.py` (hàm `scratch_url`)
-- Modify: `tests/conftest.py:109` (bỏ `"postgres_test"` khỏi `tai_nguyen=`)
-- Test: `tests/test_<N0>_pg_scratch_theo_lan.py` (lấy `<N0>` từ `check_so_test.py`)
+- Modify: `tests/fixtures/pg_scratch.py`
+- Modify: `tests/conftest.py:109` (bỏ `"postgres_test"` khỏi `tai_nguyen=`, ⛔ giữ `cpu_nhieu`)
+- Test: `tests/test_<N0>_pg_schema_theo_lan.py` (lấy `<N0>` từ `check_so_test.py`)
 
 **Interfaces:**
-- Produces: `pg_scratch.scratch_url(lan: str = "") -> str` — tên CSDL chứa cả `lan`;
-  rỗng ⇒ suy từ tên worktree.
+- Produces: `pg_scratch.schema_lan(lan: str = "") -> str` (rỗng ⇒ suy từ tên worktree);
+  `pg_scratch.don_schema(lan: str) -> None`
 
 - [ ] **Bước 1: Viết phép kiểm ĐỎ trước**
 
 ```python
-def test_hai_lan_khac_nhau_cho_hai_CSDL_khac_nhau():
-    """Khoa `postgres_test` chi bao ve MOT CAI TEN, khong bao ve tai nguyen doc quyen.
-
-    Do 24/09: mot lan giu khoa 78 phut, mot lan phien khac xep hang sau no — cho
-    mot thu le ra khong chan ai.
-    """
+def test_hai_lan_khac_nhau_cho_hai_SCHEMA_khac_nhau():
     from tests.fixtures import pg_scratch
-    a = pg_scratch.scratch_url("asvf-b1")
-    b = pg_scratch.scratch_url("asvf-dich")
-    assert a != b
-    assert "test" in a and "test" in b   # `scratch_url` doi ten chua "test"
+    assert pg_scratch.schema_lan("asvf-b1") != pg_scratch.schema_lan("asvf-dich")
 
 
-def test_ten_CSDL_hop_le_voi_postgres():
-    """Ten PostgreSQL: <= 63 ky tu, chu thuong, khong dau gach ngang."""
-    from tests.fixtures import pg_scratch
-    ten = pg_scratch.scratch_url("asvf-nghiem-thu-v2").rsplit("/", 1)[-1]
+def test_ten_schema_hop_le_voi_postgres():
+    """<= 63 ky tu, chu thuong, khong dau gach ngang, khong bat dau bang so."""
+    ten = pg_scratch.schema_lan("asvf-nghiem-thu-v2")
     assert len(ten) <= 63 and ten == ten.lower() and "-" not in ten
+    assert not ten[0].isdigit()
 ```
 
-- [ ] **Bước 2: Chạy để chắc nó ĐỎ**
-
-Run: `python -m pytest tests/test_<N0>_pg_scratch_theo_lan.py -q`
-Expected: FAIL — `scratch_url() takes 0 positional arguments`
-
-- [ ] **Bước 3: Sửa `scratch_url` nhận `lan`**
-
-```python
-def _chuan_ten(lan: str) -> str:
-    """`asvf-nghiem-thu-v2` -> `asvf_nghiem_thu_v2`, cat cho vua 63 ky tu."""
-    tho = re.sub(r"[^a-z0-9_]", "_", lan.lower())
-    return tho[:40].strip("_")
-
-
-def scratch_url(lan: str = "") -> str:
-    lan = lan or _lan_tu_worktree()
-    return f"{_goc_url()}/lttplatform_test_{_chuan_ten(lan)}"
-```
-
+- [ ] **Bước 2: Chạy để chắc nó ĐỎ** — `AttributeError: schema_lan`
+- [ ] **Bước 3: Viết `schema_lan` + đặt `search_path` theo làn ở chỗ mở kết nối;
+      `create_all`/`drop_all` bám đúng schema đó.**
 - [ ] **Bước 4: Chạy lại — XANH**
+- [ ] **Bước 5: Bỏ `postgres_test` khỏi `conftest.py`.** ⚠️ Giữ **opt-in**
+      (`LTT_PG_SCRATCH_THEO_LAN=1`) cho tới khi bước 7 xanh — mặc định là hiện trạng.
+      ⛔ Không lui im lặng, và ⛔ cũng không bật sớm.
+- [ ] **Bước 6: COMMIT** ⛔ trước khi tiêm bất cứ gì (xem mục "THỨ TỰ BẮT BUỘC" ở đầu plan).
+- [ ] **Bước 7: ĐỐI CHỨNG cô lập — bước KHÔNG ĐƯỢC BỎ**
 
-Run: `python -m pytest tests/test_<N0>_pg_scratch_theo_lan.py -q`
-Expected: PASS
+Hai tiến trình, hai schema; một bên `drop_all`, bên kia đang ghi. Bên kia **phải không
+bị ảnh hưởng**. ⛔ Không có bước này thì ta chỉ chứng minh **tên khác nhau**, chưa chứng
+minh **cô lập** — mà cô lập mới là thứ khoá đang bảo vệ. Xanh ⇒ bật mặc định.
 
-- [ ] **Bước 5: Bỏ `postgres_test` khỏi `tests/conftest.py:109`**, ⛔ giữ `cpu_nhieu`.
+- [ ] **Bước 8: Đường DỌN + một phép kiểm chốt rằng nó CHẠY**
 
-- [ ] **Bước 6: ĐỐI CHỨNG cô lập — bước KHÔNG ĐƯỢC BỎ**
+`don_schema` gọi `DROP SCHEMA <làn> CASCADE` ở cuối phiên. ⛔ Một phép kiểm chỉ đọc mã
+`don_schema` thì **xanh cả khi không ai gọi nó** — phải chốt **lời gọi** (AST) hoặc chứng
+minh schema **thật sự mất** sau một lượt.
 
-Mở **hai** tiến trình cùng dùng CSDL scratch với hai `lan` khác nhau; một bên gọi
-`drop_all`, bên kia đang ghi. Bên kia **phải không bị ảnh hưởng**.
-⛔ Không có bước này thì ta chỉ chứng minh **tên khác nhau**, chưa chứng minh **cô lập** —
-mà cô lập mới là thứ khoá đang bảo vệ.
-
-- [ ] **Bước 7: Dọn M-11**
-
-Sau khi mỗi làn có CSDL riêng, xoá `lttplatform_test` cũ (1.274 dòng rác + một `AsvRun`
-mồ côi). ⚠️ Kiểm **không phiên nào đang dùng nó** trước khi xoá (`pg_stat_activity`).
-
-- [ ] **Bước 8: Commit**
-
-```bash
-git add tests/fixtures/pg_scratch.py tests/conftest.py tests/test_<N0>_pg_scratch_theo_lan.py
-git commit -m "feat(test/pg): moi lan mot CSDL scratch rieng - bo khoa postgres_test, dong M-11"
-```
+- [ ] **Bước 9: Kiểm 4 chỗ `public.*`** ở trên; sửa chỗ nào là bảng/cột.
+- [ ] **Bước 10: Commit**
 
 ---
 
@@ -415,6 +458,8 @@ git commit -m "feat(asv/hop-dong): bon truong khai cho moi mat xich, may kiem I2
 ```
 
 ---
+
+> 🔴 **ĐÍNH CHÍNH Task 1 (25/09) — plan SAI, ⛔ không phải mã sai.** Dòng *„Modify `pipeline.py` (import + kiểm)“* đọc như *„`_kiem_tra_chuoi()` gọi `thieu_khai()`“*. ⛔ **Đừng làm thế.** Nối một **bộ phán xử** vào đường **nạp module** là tái tạo **N-08b**: phép tiêm chết trước khi tới chỗ phán xử, nên ta **mất khả năng đối chứng** chính nó — đúng lý do `test_3004` phải tách `vi_pham`/`bao_dong` thành hàm thuần. ⇒ `thieu_khai` **giữ test-facing**, và lý do đã khai trong `test_453.MO_COI_DA_BIET`.
 
 ## Task 2: Sổ mã lỗi chung (I3)
 
@@ -739,17 +784,17 @@ ghim. ⚠️ `temperature=0.0` **không** làm kết quả tái lập (xem bư�
 **Interfaces:**
 - Produces: `bench_b2_xac_thuc_bo_cham.ti_le_bao_dong_gia(n: int) -> dict`
 
-- [ ] **Bước 1: ngưỡng ĐẠT — viết TRƯỚC**
+- [x] **Bước 1: ngưỡng ĐẠT — viết TRƯỚC**
 ```
 Bộ chấm ĐÁNG TIN khi: tỉ lệ báo động giả ≤ 15% trên ≥ 100 cặp FLORES zh→vi.
 Vì sao: model CÙNG LOẠI ở lớp kiểm hình cho 9/9 báo động giả (M-10) ⇒ nghi ngờ có
 cơ sở. > 15% ⇒ con số 44/95 KHÔNG dùng được để kết luận về bản dịch.
 ```
-- [ ] **Bước 2:** tải FLORES-200 `zho_Hans` + `vie` (kiểm giấy phép: CC-BY-SA-4.0 — ghi vào `THIRD_PARTY_METRICS.md`).
-- [ ] **Bước 3:** đưa **cặp nguồn + bản dịch CHUẨN CỦA NGƯỜI** cho bộ chấm `qc_ai` ngữ nghĩa. Mọi phán quyết "dịch sai" = **báo động giả theo định nghĩa**.
-- [ ] **Bước 4:** ĐỐI CHỨNG âm: đưa 30 cặp **đã làm hỏng có chủ ý** (đảo nghĩa, sai thực thể) ⇒ bộ chấm phải bắt được. ⛔ Không có bước này thì tỉ lệ báo động giả 0% có thể chỉ là bộ chấm **không bao giờ báo gì**.
-- [ ] **Bước 5:** ghi kết quả + phán quyết vào `B2_XAC_THUC_BO_CHAM.md`.
-- [ ] **Bước 6: commit**
+- [x] **Bước 2:** tải FLORES-200 `zho_Hans` + `vie` (kiểm giấy phép: CC-BY-SA-4.0 — ghi vào `THIRD_PARTY_METRICS.md`).
+- [x] **Bước 3:** đưa **cặp nguồn + bản dịch CHUẨN CỦA NGƯỜI** cho bộ chấm `qc_ai` ngữ nghĩa. Mọi phán quyết "dịch sai" = **báo động giả theo định nghĩa**.
+- [x] **Bước 4:** ĐỐI CHỨNG âm: đưa 30 cặp **đã làm hỏng có chủ ý** (đảo nghĩa, sai thực thể) ⇒ bộ chấm phải bắt được. ⛔ Không có bước này thì tỉ lệ báo động giả 0% có thể chỉ là bộ chấm **không bao giờ báo gì**.
+- [x] **Bước 5:** ghi kết quả + phán quyết vào `B2_XAC_THUC_BO_CHAM.md`.
+- [x] **Bước 6: commit**
 
 ---
 

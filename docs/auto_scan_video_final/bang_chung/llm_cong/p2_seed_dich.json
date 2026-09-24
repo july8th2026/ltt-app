@@ -1,0 +1,370 @@
+{
+ "khi": "2026-09-24 11:49:40",
+ "pha": [
+  "seed",
+  "dich"
+ ],
+ "seed": {
+  "model": "qwen38-api",
+  "seed": 20260924,
+  "vong": 5,
+  "co_seed": {
+   "n_ok": 5,
+   "so_khac_nhau": 4,
+   "dong_nhat": false,
+   "ban": [
+    {
+     "giay": 87.78,
+     "loi": "",
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "noi_dung": "{\"doan\":{\"s1\":{\"chu\":\"Kim chi ngày nào cũng gần như không thể thiếu.\",\"cam_xuc\":\"trung_tinh\",\"kieu_noi\":\"ke_chuyen\",\"nhan_manh\":[\"không thể thiếu\"]},\"s2\":{\"chu\":\"Chắc hẳn là đĩa ruột bò nướng cay, béo ngậy.\",\"cam_xuc\":\"trung_tinh\",\"kieu_noi\":\"ke_chuyen\",\"nhan_manh\":[\"ruột bò nướng\"]},\"s3\":{\"chu\":\"Mang từ lò mổ về, ruột bò vẫn còn hơi ấm.\",\"cam_xuc\":\"trung_tinh\",\"kieu_noi\":\"ke_chuyen\",\"nhan_manh\":[\"hơi ấm\"]},\"s4\":{\"chu\":\"Ngay lúc này, cho vào nước lạnh để giữ nước.\",\"cam_xuc\":\"trung_tinh\",\"kieu_noi\":\"thuyet_minh\",\"nhan_manh\":[\"nước lạnh\"]}}}",
+     "token_vao": 824,
+     "token_ra": 4311,
+     "ky_tu_suy_nghi": 10030
+    },
+    {
+     "giay": 73.68,
+     "loi": "",
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "noi_dung": "{\n  \"doan\": {\n    \"s1\": {\n      \"chu\": \"Cải muối gần như ngày nào cũng không thể thiếu.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"cải muối\", \"hàng ngày\"]\n    },\n    \"s2\": {\n      \"chu\": \"Chắc là đĩa lòng bò nướng cay xé, mỡ màng.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"lòng bò nướng\", \"cay xé\"]\n    },\n    \"s3\": {\n      \"chu\": \"Lòng bò chở từ lò mổ về vẫn còn hơi ấm.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"lò mổ\", \"còn ấm\"]\n    },\n    \"s4\": {\n      \"chu\": \"Lúc này phải nhúng ngay vào nước lạnh giữ ẩm.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"nước lạnh\", \"giữ ẩm\"]\n    }\n  }\n}",
+     "token_vao": 824,
+     "token_ra": 4433,
+     "ky_tu_suy_nghi": 10945
+    },
+    {
+     "giay": 72.14,
+     "loi": "",
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "noi_dung": "{\n  \"doan\": {\n    \"s1\": {\n      \"chu\": \"Cải muối gần như ngày nào cũng không thể thiếu.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"cải muối\", \"hàng ngày\"]\n    },\n    \"s2\": {\n      \"chu\": \"Chắc là đĩa lòng bò nướng cay xé, mỡ màng.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"lòng bò nướng\", \"cay xé\"]\n    },\n    \"s3\": {\n      \"chu\": \"Lòng bò chở từ lò mổ về vẫn còn hơi ấm.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"lò mổ\", \"còn ấm\"]\n    },\n    \"s4\": {\n      \"chu\": \"Lúc này phải nhúng ngay vào nước lạnh giữ ẩm.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"nước lạnh\", \"giữ ẩm\"]\n    }\n  }\n}",
+     "token_vao": 824,
+     "token_ra": 4433,
+     "ky_tu_suy_nghi": 10945
+    },
+    {
+     "giay": 79.73,
+     "loi": "",
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "noi_dung": "{\n  \"doan\": {\n    \"s1\": {\n      \"chu\": \"Cải muối gần như ngày nào cũng không thể thiếu\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"cải muối\", \"hàng ngày\"]\n    },\n    \"s2\": {\n      \"chu\": \"Chắc là đĩa lòng bò nướng cay xé, mỡ màng\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"lòng bò nướng\", \"cay xé\"]\n    },\n    \"s3\": {\n      \"chu\": \"Lòng bò chở từ lò mổ về vẫn còn hơi ấm\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"lò mổ\", \"vẫn ấm\"]\n    },\n    \"s4\": {\n      \"chu\": \"Lúc này phải nhúng ngay vào nước lạnh giữ ẩm\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"nước lạnh\", \"giữ ẩm\"]\n    }\n  }\n}",
+     "token_vao": 824,
+     "token_ra": 4433,
+     "ky_tu_suy_nghi": 10747
+    },
+    {
+     "giay": 81.04,
+     "loi": "",
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "noi_dung": "{\n  \"doan\": {\n    \"s1\": {\n      \"chu\": \"Bắp muối, gần như ngày nào cũng phải có\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"bắp muối\", \"ngày nào\"]\n    },\n    \"s2\": {\n      \"chu\": \"Đúng là đĩa ruột bò nướng cay, mỡ rịn\",\n      \"cam_xuc\": \"vui\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"ruột bò\", \"nướng cay\", \"mỡ rịn\"]\n    },\n    \"s3\": {\n      \"chu\": \"Ruột bò vừa chở từ lò mổ về còn ấm\",\n      \"cam_xuc\": \"trang_trong\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"ruột bò\", \"lò mổ\", \"còn ấm\"]\n    },\n    \"s4\": {\n      \"chu\": \"Bây giờ bỏ ngay vào nước lạnh để giữ ẩm\",\n      \"cam_xuc\": \"cang_thang\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"bỏ ngay\", \"nước lạnh\", \"giữ ẩm\"]\n    }\n  }\n}",
+     "token_vao": 824,
+     "token_ra": 4440,
+     "ky_tu_suy_nghi": 10695
+    }
+   ]
+  },
+  "khong_seed": {
+   "n_ok": 5,
+   "so_khac_nhau": 5,
+   "ban": [
+    {
+     "giay": 72.0,
+     "loi": "",
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "noi_dung": "{\n  \"doan\": {\n    \"s1\": {\n      \"chu\": \"Kim chi gần như ngày nào cũng không thể thiếu.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"không thể thiếu\"]\n    },\n    \"s2\": {\n      \"chu\": \"Chắc hẳn là đĩa lòng bò nướng cay, mỡ bóng.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"lòng bò nướng\", \"mỡ bóng\"]\n    },\n    \"s3\": {\n      \"chu\": \"Lòng bò mới chuyển từ lò mổ về vẫn còn ấm.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"lò mổ\", \"còn ấm\"]\n    },\n    \"s4\": {\n      \"chu\": \"Lúc này phải thả ngay vào nước lạnh giữ ẩm.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"nước lạnh\", \"giữ ẩm\"]\n    }\n  }\n}",
+     "token_vao": 824,
+     "token_ra": 4426,
+     "ky_tu_suy_nghi": 10885
+    },
+    {
+     "giay": 62.94,
+     "loi": "",
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "noi_dung": "{\n  \"doan\": {\n    \"s1\": {\n      \"chu\": \"Kim chi gần như không thể thiếu mỗi ngày.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"kim chi\"]\n    },\n    \"s2\": {\n      \"chu\": \"Chắc là đĩa ruột bò nướng cay xộc, béo ngậy.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"ruột bò nướng\", \"béo ngậy\"]\n    },\n    \"s3\": {\n      \"chu\": \"Ruột bò vừa chở từ lò mổ về còn ấm.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"lò mổ\", \"còn ấm\"]\n    },\n    \"s4\": {\n      \"chu\": \"Lúc này, thả ngay vào nước lạnh để giữ ẩm.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"nước lạnh\", \"giữ ẩm\"]\n    }\n  }\n}",
+     "token_vao": 824,
+     "token_ra": 3855,
+     "ky_tu_suy_nghi": 8892
+    },
+    {
+     "giay": 70.24,
+     "loi": "",
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "noi_dung": "{\n  \"doan\": {\n    \"s1\": {\n      \"chu\": \"Cải muối gần như món ăn thiết yếu hằng ngày\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"cải muối\", \"thiết yếu\"]\n    },\n    \"s2\": {\n      \"chu\": \"Đó hẳn là đĩa ruột bò nướng xốt dầu cay\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"ruột bò\", \"xốt dầu cay\"]\n    },\n    \"s3\": {\n      \"chu\": \"Ruột bò vừa từ lò mổ chuyển tới còn hơi ấm\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"lò mổ\", \"còn hơi ấm\"]\n    },\n    \"s4\": {\n      \"chu\": \"Bây giờ phải thả ngay vào nước lạnh giữ nước\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"ngay\", \"nước lạnh\"]\n    }\n  }\n}",
+     "token_vao": 824,
+     "token_ra": 4432,
+     "ky_tu_suy_nghi": 10667
+    },
+    {
+     "giay": 90.61,
+     "loi": "",
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "noi_dung": "{\n  \"doan\": {\n    \"s1\": {\n      \"chu\": \"Kim chi gần như món không thể thiếu hằng ngày\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"hằng ngày\"]\n    },\n    \"s2\": {\n      \"chu\": \"Chắc chắn đây là đĩa lòng bò nướng cay béo\",\n      \"cam_xuc\": \"cang_thang\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"lòng bò nướng\", \"cay béo\"]\n    },\n    \"s3\": {\n      \"chu\": \"Lòng bò vừa vận chuyển từ lò mổ về còn ấm\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"vừa vận chuyển\", \"còn ấm\"]\n    },\n    \"s4\": {\n      \"chu\": \"Lúc này phải thả ngay vào nước lạnh giữ ẩm\",\n      \"cam_xuc\": \"cang_thang\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"thả ngay\", \"nước lạnh\", \"giữ ẩm\"]\n    }\n  }\n}",
+     "token_vao": 824,
+     "token_ra": 4427,
+     "ky_tu_suy_nghi": 12221
+    },
+    {
+     "giay": 102.12,
+     "loi": "",
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "noi_dung": "{\"doan\":{\"s1\":{\"chu\":\"Mỗi ngày gần như đều không thể thiếu kim chi.\",\"cam_xuc\":\"trung_tinh\",\"kieu_noi\":\"ke_chuyen\",\"nhan_manh\":[\"kim chi\"]},\"s2\":{\"chu\":\"Đó hẳn là đĩa ruột bò nướng cay dầu này.\",\"cam_xuc\":\"vui\",\"kieu_noi\":\"doi_thoai\",\"nhan_manh\":[\"ruột bò\",\"cay dầu\"]},\"s3\":{\"chu\":\"Lúc chuyển từ lò mổ tới, ruột bò vẫn còn ấm.\",\"cam_xuc\":\"trung_tinh\",\"kieu_noi\":\"thuyet_minh\",\"nhan_manh\":[\"lò mổ\",\"ấm\"]},\"s4\":{\"chu\":\"Lúc này phải bỏ ngay vào nước lạnh giữ ẩm.\",\"cam_xuc\":\"hoi_hop\",\"kieu_noi\":\"thuyet_minh\",\"nhan_manh\":[\"ngay\",\"nước lạnh\"]}}}",
+     "token_vao": 824,
+     "token_ra": 4316,
+     "ky_tu_suy_nghi": 11213
+    }
+   ]
+  }
+ },
+ "dich": {
+  "n_doan": 12,
+  "lap": 2,
+  "ma_doan": [
+   "s1",
+   "s2",
+   "s3",
+   "s4",
+   "s5",
+   "s6",
+   "s7",
+   "s8",
+   "s9",
+   "s10",
+   "s11",
+   "s12"
+  ],
+  "theo_model": {
+   "ltt-3.8": {
+    "model_id": "qwen38-api",
+    "ban": [
+     {
+      "giay": 117.62,
+      "loi": "",
+      "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+      "finish_reason": "stop",
+      "noi_dung": "{\n  \"doan\": {\n    \"s1\": {\n      \"chu\": \"Kim chi gần như mỗi ngày đều không thể thiếu\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"kim chi\", \"không thể thiếu\"]\n    },\n    \"s2\": {\n      \"chu\": \"Đó hẳn là đĩa ruột bò nướng mỡ sủi cay\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"ruột bò nướng\", \"mỡ sủi\"]\n    },\n    \"s3\": {\n      \"chu\": \"Ruột bò chở từ trại giết mổ về vẫn còn ấm\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"ruột bò\", \"còn ấm\"]\n    },\n    \"s4\": {\n      \"chu\": \"Lúc này phải thả ngay vào nước lạnh giữ ẩm\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"nước lạnh\", \"giữ ẩm\"]\n    },\n    \"s5\": {\n      \"chu\": \"Hai chai rượu gạo khử tanh khử mùi theo sau\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"rượu gạo\", \"khử tanh\"]\n    },\n    \"s6\": {\n      \"chu\": \"Ruột bò chần xong cắt thành đoạn ba mươi phân\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"ruột bò\", \"ba mươi phân\"]\n    },\n    \"s7\": {\n      \"chu\": \"Lọc bỏ mỡ và gân chính là bước cần kiên nhẫn nhất\",\n      \"cam_xuc\": \"trang_trong\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"mỡ\", \"gân\", \"kiên nhẫn\"]\n    },\n    \"s8\": {\n      \"chu\": \"Dâu kiwi, dứa, chuối tươi trộn đều với rượu gạo\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"dâu kiwi\", \"rượu gạo\"]\n    },\n    \"s9\": {\n      \"chu\": \"Ruột bò trắng nõn xèo xèo trên mặt vỉ sắt\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"ruột bò\", \"vỉ sắt\"]\n    },\n    \"s10\": {\n      \"chu\": \"Ngay lập tức nhét cần xanh cùng hành tây cay\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"cần xanh\", \"hành tây cay\"]\n    },\n    \"s11\": {\n      \"chu\": \"Tiểu Mỹ lái xe địa hình dừng ở giữa núi\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"Tiểu Mỹ\", \"xe địa hình\", \"giữa núi\"]\n    },\n    \"s12\": {\n      \"chu\": \"Mưa to triền miên, Tiểu Mỹ liền mặc áo mưa\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"mưa to\", \"áo mưa\"]\n    }\n  }\n}",
+      "token_vao": 1696,
+      "token_ra": 5027,
+      "ky_tu_suy_nghi": 10945,
+      "hinh_dang_doan": "dict",
+      "ban_doc_san_pham": "dat"
+     },
+     {
+      "giay": 117.62,
+      "loi": "",
+      "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+      "finish_reason": "stop",
+      "noi_dung": "{\n  \"doan\": {\n    \"s1\": {\n      \"chu\": \"Kim chi gần như không thể thiếu mỗi ngày.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"kim chi\"]\n    },\n    \"s2\": {\n      \"chu\": \"Chắc nhất là đĩa lòng bò nướng cay, béo ngậy.\",\n      \"cam_xuc\": \"hoi_hop\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"lòng bò nướng\"]\n    },\n    \"s3\": {\n      \"chu\": \"Lòng bò chuyển từ lò mổ về còn ấm nóng.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"lòng bò\"]\n    },\n    \"s4\": {\n      \"chu\": \"Phải cho ngay vào nước lạnh để giữ nước.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"nước lạnh\"]\n    },\n    \"s5\": {\n      \"chu\": \"Hai chai rượu gạo khử tanh theo ngay sau.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"rượu gạo\"]\n    },\n    \"s6\": {\n      \"chu\": \"Lòng bò chần xong cắt thành đoạn ba mươi phân.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"ba mươi phân\"]\n    },\n    \"s7\": {\n      \"chu\": \"Cạo mỡ, bóc gân mới là khâu thử thách nhất.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"bóc gân\"]\n    },\n    \"s8\": {\n      \"chu\": \"Trái kiwi, dứa, chuối tươi trộn rượu gạo.\",\n      \"cam_xuc\": \"vui\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"trái kiwi\"]\n    },\n    \"s9\": {\n      \"chu\": \"Lòng bò trắng phau xèo xèo trên vỉ sắt.\",\n      \"cam_xuc\": \"hoi_hop\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"vỉ sắt\"]\n    },\n    \"s10\": {\n      \"chu\": \"Rồi nhét đầy tỏi tây xanh và hành tây cay.\",\n      \"cam_xuc\": \"vui\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"tỏi tây\"]\n    },\n    \"s11\": {\n      \"chu\": \"Hôm đó Tiểu Mỹ lái xe địa hình vào núi.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"Tiểu Mỹ\"]\n    },\n    \"s12\": {\n      \"chu\": \"Mưa lớn kéo dài, Tiểu Mỹ khoác áo mưa.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"áo mưa\"]\n    }\n  }\n}",
+      "token_vao": 1696,
+      "token_ra": 4945,
+      "ky_tu_suy_nghi": 11501,
+      "hinh_dang_doan": "dict",
+      "ban_doc_san_pham": "dat"
+     }
+    ],
+    "tom_tat": {
+     "n": 2,
+     "n_ok": 2,
+     "giay": [
+      117.62,
+      117.62
+     ],
+     "token_vao": [
+      1696,
+      1696
+     ],
+     "token_ra": [
+      5027,
+      4945
+     ],
+     "model_cong_tra": [
+      "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf"
+     ]
+    },
+    "chi_phi_mot_luot": {
+     "loi": "AttributeError: 'types.SimpleNamespace' object has no attribute 'token_vao_moi'"
+    },
+    "cap_de_cham": [
+     {
+      "ma": "s1",
+      "nguon": "泡菜几乎是每天必不可少的存在",
+      "dich": "Kim chi gần như mỗi ngày đều không thể thiếu"
+     },
+     {
+      "ma": "s2",
+      "nguon": "那一定是这盘滋辣冒油的烤牛肠",
+      "dich": "Đó hẳn là đĩa ruột bò nướng mỡ sủi cay"
+     },
+     {
+      "ma": "s3",
+      "nguon": "从屠宰场运送过来的牛肠还带着温热",
+      "dich": "Ruột bò chở từ trại giết mổ về vẫn còn ấm"
+     },
+     {
+      "ma": "s4",
+      "nguon": "此时要立刻扔进凉水里锁住水分",
+      "dich": "Lúc này phải thả ngay vào nước lạnh giữ ẩm"
+     },
+     {
+      "ma": "s5",
+      "nguon": "去腥除味的两瓶烧酒也紧随其后",
+      "dich": "Hai chai rượu gạo khử tanh khử mùi theo sau"
+     },
+     {
+      "ma": "s6",
+      "nguon": "烫好的牛肠修剪成30公分小段",
+      "dich": "Ruột bò chần xong cắt thành đoạn ba mươi phân"
+     },
+     {
+      "ma": "s7",
+      "nguon": "去除油脂和筋膜才是最考验耐心的环节",
+      "dich": "Lọc bỏ mỡ và gân chính là bước cần kiên nhẫn nhất"
+     },
+     {
+      "ma": "s8",
+      "nguon": "新鲜的猕猴桃 菠萝 香蕉混合烧酒",
+      "dich": "Dâu kiwi, dứa, chuối tươi trộn đều với rượu gạo"
+     },
+     {
+      "ma": "s9",
+      "nguon": "白花花的牛肠在铁板上滋拉作响",
+      "dich": "Ruột bò trắng nõn xèo xèo trên mặt vỉ sắt"
+     },
+     {
+      "ma": "s10",
+      "nguon": "立马塞满碧绿的韭菜与辛辣的洋葱",
+      "dich": "Ngay lập tức nhét cần xanh cùng hành tây cay"
+     },
+     {
+      "ma": "s11",
+      "nguon": "这天小美驾驶越野车停在山腰间",
+      "dich": "Tiểu Mỹ lái xe địa hình dừng ở giữa núi"
+     },
+     {
+      "ma": "s12",
+      "nguon": "连绵不断地暴雨小美便穿上了雨衣",
+      "dich": "Mưa to triền miên, Tiểu Mỹ liền mặc áo mưa"
+     }
+    ]
+   },
+   "ltt-3.5": {
+    "model_id": "qwen35-api",
+    "ban": [
+     {
+      "giay": 35.82,
+      "loi": "",
+      "model_cong_tra": "H:/LTT_LLM/models/Qwen3.5-9B-Q6_K-unsloth.gguf",
+      "finish_reason": "stop",
+      "noi_dung": "{\"doan\": {\"s1\": {\"chu\": \"Mỗi ngày đều thiếu không thể không có dưa chua\", \"cam_xuc\": \"hoi_hop\", \"kieu_noi\": \"ke_chuyen\", \"nhan_manh\": [\"mỗi ngày\", \"thiếu không thể không có\"]}, \"s2\": {\"chu\": \"Chắc chắn là đĩa bò lòng nướng ớt cay\", \"cam_xuc\": \"vui\", \"kieu_noi\": \"ke_chuyen\", \"nhan_manh\": [\"chắc chắn\", \"bò lòng nướng\"]}, \"s3\": {\"chu\": \"Bò lòng từ屠宰 trường còn nóng hổi\", \"cam_xuc\": \"vui\", \"kieu_noi\": \"ke_chuyen\", \"nhan_manh\": [\"lạnh\", \"nóng hổi\"]}, \"s4\": {\"chu\": \"Cần ngay lập tức cho vào nước lạnh để giữ nước\", \"cam_xuc\": \"thuyet_minh\", \"kieu_noi\": \"ke_chuyen\", \"nhan_manh\": [\"ngay lập tức\", \"giữ nước\"]}, \"s5\": {\"chu\": \"Hai chai rượu đốt để khử mùi cũng theo sau\", \"cam_xuc\": \"hoi_hop\", \"kieu_noi\": \"ke_chuyen\", \"nhan_manh\": [\"hai chai\", \"khử mùi\"]}, \"s6\": {\"chu\": \"Bò lòng luộc cắt thành đoạn 30 centimet\", \"cam_xuc\": \"hoi_hop\", \"kieu_noi\": \"ke_chuyen\", \"nhan_manh\": [\"luộc\", \"cắt\"]}, \"s7\": {\"chu\": \"Cạo mỡ và gân là thử thách chịu đựng\", \"cam_xuc\": \"hoi_hop\", \"kieu_noi\": \"ke_chuyen\", \"nhan_manh\": [\"cạo mỡ\", \"thử thách\"]}, \"s8\": {\"chu\": \"Đầu tiên là hỗn hợp chuối đu đủ và rượu\", \"cam_xuc\": \"vui\", \"kieu_noi\": \"ke_chuyen\", \"nhan_manh\": [\"hỗn hợp\", \"chuối\"]}, \"s9\": {\"chu\": \"Bò lòng trắng xào trên chảo sắt kêu rè rè\", \"cam_xuc\": \"hoi_hop\", \"kieu_noi\": \"ke_chuyen\", \"nhan_manh\": [\"trắng\", \"sắt\"]}, \"s10\": {\"chu\": \"Ngay lập tức đổ đầy hành và ớt cay vào\", \"cam_xuc\": \"vui\", \"kieu_noi\": \"ke_chuyen\", \"nhan_manh\": [\"ngay lập tức\", \"đổ đầy\"]}, \"s11\": {\"chu\": \"Hôm nay bé lái xe đi giữa sườn núi\", \"cam_xuc\": \"hoi_hop\", \"kieu_noi\": \"ke_chuyen\", \"nhan_manh\": [\"hôm nay\", \"sườn núi\"]}, \"s12\": {\"chu\": \"Trời mưa liên tục thì đội mũ chống thấm\", \"cam_xuc\": \"hoi_hop\", \"kieu_noi\": \"ke_chuyen\", \"nhan_manh\": [\"mưa\", \"mũ\"]}}}",
+      "token_vao": 1658,
+      "token_ra": 2768,
+      "ky_tu_suy_nghi": 6755,
+      "hinh_dang_doan": "dict",
+      "ban_doc_san_pham": "dat"
+     },
+     {
+      "giay": 37.62,
+      "loi": "",
+      "model_cong_tra": "H:/LTT_LLM/models/Qwen3.5-9B-Q6_K-unsloth.gguf",
+      "finish_reason": "stop",
+      "noi_dung": "{\"doan\": {\"s1\": {\"chu\": \"Chế vị muối chua gần như là món ăn không thể thiếu hàng ngày\", \"cam_xuc\": \"vui\", \"kieu_noi\": \"ke_chuyen\", \"nhan_manh\": [\"muối chua\", \"không thể thiếu\"]}, \"s2\": {\"chu\": \"Chắc chắn phải là đĩa ruốc bò nướng thơm nức nóng\", \"cam_xuc\": \"vui\", \"kieu_noi\": \"ke_chuyen\", \"nhan_manh\": [\"chắc chắn\", \"ruốc bò nướng\"]}, \"s3\": {\"chu\": \"Ruốc bò刚从屠宰场送来, nhiệt độ cơ thể vẫn còn ấm\", \"cam_xuc\": \"trang_trong\", \"kieu_noi\": \"ke_chuyen\", \"nhan_manh\": [\"ruốc bò\", \"nóng\"]}, \"s4\": {\"chu\": \"Phải lập tức bỏ xuống nước đá lạnh để giữ nước thịt\", \"cam_xuc\": \"vui\", \"kieu_noi\": \"ke_chuyen\", \"nhan_manh\": [\"giữ nước\", \"nước đá\"]}, \"s5\": {\"chu\": \"Hai chai rượu đi kèm nhằm khử mùi, thật tiện lợi\", \"cam_xuc\": \"vui\", \"kieu_noi\": \"ke_chuyen\", \"nhan_manh\": [\"rượu\", \"khử mùi\"]}, \"s6\": {\"chu\": \"Ruốc bò luộc kỹ cắt thành từng đoạn ngắn ba mươi cm\", \"cam_xuc\": \"vui\", \"kieu_noi\": \"ke_chuyen\", \"nhan_manh\": [\"cắt đoạn\", \"ba mươi cm\"]}, \"s7\": {\"chu\": \"Lột bỏ lớp mỡ và gân, bước này đòi hỏi sự kiên nhẫn\", \"cam_xuc\": \"trang_trong\", \"kieu_noi\": \"thuyet_minh\", \"nhan_manh\": [\"lột mỡ\", \"kiên nhẫn\"]}, \"s8\": {\"chu\": \"Trái đu đủ, dứa, chuối trộn cùng rượu tạo vị ngọt lạ\", \"cam_xuc\": \"vui\", \"kieu_noi\": \"ke_chuyen\", \"nhan_manh\": [\"trái cây\", \"trộn\"]}, \"s9\": {\"chu\": \"Ruốc trắng ngà trên chảo kêu rít, nghe rất诱人\", \"cam_xuc\": \"vui\", \"kieu_noi\": \"ke_chuyen\", \"nhan_manh\": [\"chảo rít\", \"bột ruốc\"]}, \"s10\": {\"chu\": \"Ngay lập tức phủ lên rau mùi và hành tây cay xè\", \"cam_xuc\": \"vui\", \"kieu_noi\": \"ke_chuyen\", \"nhan_manh\": [\"rau mùi\", \"hành tây\"]}, \"s11\": {\"chu\": \"Hôm nay Tiểu Mĩ lái xe ô tô dừng ở lưng chừng núi\", \"cam_xuc\": \"hơi_hop\", \"kieu_noi\": \"ke_chuyen\", \"nhan_manh\": [\"lái xe\", \"dừng lại\"]}, \"s12\": {\"chu\": \"Mưa liên tục, Tiểu Mĩ mặc áo mưa rồi bước ra\", \"cam_xuc\": \"hơi_hop\", \"kieu_noi\": \"ke_chuyen\", \"nhan_manh\": [\"mưa\", \"áo mưa\"]}}",
+      "token_vao": 1658,
+      "token_ra": 2803,
+      "ky_tu_suy_nghi": 7423,
+      "luoc_do": "LuocDoSai: chuyen_loi_thoai: JSON hong (Expecting ',' delimiter: line 1 column 1829 (char 1828))"
+     }
+    ],
+    "tom_tat": {
+     "n": 2,
+     "n_ok": 2,
+     "giay": [
+      35.82,
+      37.62
+     ],
+     "token_vao": [
+      1658,
+      1658
+     ],
+     "token_ra": [
+      2768,
+      2803
+     ],
+     "model_cong_tra": [
+      "H:/LTT_LLM/models/Qwen3.5-9B-Q6_K-unsloth.gguf"
+     ]
+    },
+    "chi_phi_mot_luot": {
+     "loi": "AttributeError: 'types.SimpleNamespace' object has no attribute 'token_vao_moi'"
+    },
+    "cap_de_cham": [
+     {
+      "ma": "s1",
+      "nguon": "泡菜几乎是每天必不可少的存在",
+      "dich": "Mỗi ngày đều thiếu không thể không có dưa chua"
+     },
+     {
+      "ma": "s2",
+      "nguon": "那一定是这盘滋辣冒油的烤牛肠",
+      "dich": "Chắc chắn là đĩa bò lòng nướng ớt cay"
+     },
+     {
+      "ma": "s3",
+      "nguon": "从屠宰场运送过来的牛肠还带着温热",
+      "dich": "Bò lòng từ屠宰 trường còn nóng hổi"
+     },
+     {
+      "ma": "s4",
+      "nguon": "此时要立刻扔进凉水里锁住水分",
+      "dich": "Cần ngay lập tức cho vào nước lạnh để giữ nước"
+     },
+     {
+      "ma": "s5",
+      "nguon": "去腥除味的两瓶烧酒也紧随其后",
+      "dich": "Hai chai rượu đốt để khử mùi cũng theo sau"
+     },
+     {
+      "ma": "s6",
+      "nguon": "烫好的牛肠修剪成30公分小段",
+      "dich": "Bò lòng luộc cắt thành đoạn 30 centimet"
+     },
+     {
+      "ma": "s7",
+      "nguon": "去除油脂和筋膜才是最考验耐心的环节",
+      "dich": "Cạo mỡ và gân là thử thách chịu đựng"
+     },
+     {
+      "ma": "s8",
+      "nguon": "新鲜的猕猴桃 菠萝 香蕉混合烧酒",
+      "dich": "Đầu tiên là hỗn hợp chuối đu đủ và rượu"
+     },
+     {
+      "ma": "s9",
+      "nguon": "白花花的牛肠在铁板上滋拉作响",
+      "dich": "Bò lòng trắng xào trên chảo sắt kêu rè rè"
+     },
+     {
+      "ma": "s10",
+      "nguon": "立马塞满碧绿的韭菜与辛辣的洋葱",
+      "dich": "Ngay lập tức đổ đầy hành và ớt cay vào"
+     },
+     {
+      "ma": "s11",
+      "nguon": "这天小美驾驶越野车停在山腰间",
+      "dich": "Hôm nay bé lái xe đi giữa sườn núi"
+     },
+     {
+      "ma": "s12",
+      "nguon": "连绵不断地暴雨小美便穿上了雨衣",
+      "dich": "Trời mưa liên tục thì đội mũ chống thấm"
+     }
+    ]
+   }
+  }
+ }
+}

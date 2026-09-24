@@ -34,7 +34,65 @@ SCHEMA_VAN_BAN = 1
 
 #: Phien ban cua LOI NHAC (prompt). Doi loi nhac = doi ban dich, ke ca khi moi
 #: thu khac giu nguyen — nen no phai vao van tay (Prompt 11 muc 7).
-PHIEN_BAN_LOI_NHAC = 1
+#:
+#: 2 (24/09): them quy tac 5 — TEN RIENG phien am HAN-VIET. Ly do co BANG CHUNG,
+#: ⛔ khong phai phong doan: ban nen doc tay 30 cau thay `光子` ra "Photon"
+#: trong khi loi nhac khong he co quy tac nao ve ten rieng (`B2_DICH.md` §4.1).
+#:
+#: 🔴 3 (24/09, cung ngay): **vi du trong loi nhac viet KHONG DAU, va model chep
+#: dung cai do.** Ban v2 sua duoc `光子` -> "Quang Tu" nhung lam `李宗盛` TUT tu
+#: "Lý Tông Thành" xuong "Lý Tông Thanh" — mat dau, khop y het bon vi du ASCII
+#: ta dua vao. ⇒ v3 viet vi du CO DAU day du va cam bo dau tuong minh.
+#: ⭐ Bai hoc: **mot vi du trong loi nhac la mot MENH LENH ngam** — model bat
+#:    chuoc hinh thuc cua vi du, khong chi noi dung cua luat. (Cung ho voi ghi
+#:    chu o `dich_thuat.MODEL_CHINH`: *mot vi du trong docstring la ma ma nguoi
+#:    ta chep*.)
+#: ⚠️ 4 (24/09): quy tắc 5 tách làm **BA nhánh** — người/địa danh phiên Hán-Việt ·
+#: người thật có lối viết quen dùng lối quen · **tổ chức/thương hiệu GIỮ NGUYÊN,
+#: không phiên**.
+#:
+#: ⛔ **Đây là luật TẠM do điều phối THU HẸP, chưa phải chủ dự án chốt ba nhánh.**
+#: Chủ dự án ra luật bằng ví dụ `张伟 → Trương Vĩ` — một **tên người**; đem nó áp
+#: lên một **thương hiệu** là **ta** nới rộng. Thu về là **trả lại** lời họ nói.
+#: Bằng chứng: `光子` trong phim v3 là **xưởng game** (`B2_DICH.md` §4g).
+#: 🔴 **N-21: MOT hang cho MOI loi nhac. ⛔ Khong dung chung.**
+#:
+#: Truoc 24/09 chi co **mot** `PHIEN_BAN_LOI_NHAC`, va **BA** van tay doc no:
+#: `van_tay_van_ban` (duong CHET `dich_thuat`) · `long_tieng.van_tay_long_tieng`
+#: (SONG) · van tay giai doan `CONTENT_PROCESS` (`thi_hanh.py`, SONG).
+#: ⇒ Sua loi nhac cua duong **chet** roi tang hang — dung nhu docstring dan —
+#: **vo hieu hoa ket qua cua hai duong SONG**: `su_dung.da_xong(fingerprint=)`
+#: tra RONG ⇒ moi doan dich lai, **moi doan mot luot CO TINH TIEN**; roi
+#: `features.vo_hieu_ha_nguon` dat lai **BAY** giai doan (`voice_synthesis` ·
+#: `timing_align` · `compose` · `render` · `qc` · `qc_do_luong` · `qc_ai`).
+#: ⇒ Khach that se tra tien lai cho **LLM + TTS + render** vi mot thay doi
+#: **chua tung cham vao loi nhac ho dung**. Da xay ra 24/09: tang 1 -> 5 trong
+#: mot ngay cho quy tac Han-Viet cua `dich_thuat`.
+#:
+#: ⭐ Chua ai mat tien (`LTT_AUTO_SCAN_VIDEO` tat, chua co khach) ⇒ **day la luc
+#:    re nhat de sua, va no se khong bao gio re hon**.
+#:
+#: 🔑 Luat moi, co phep bat co hoc gac (`test_408::test_MOI_hang_PHIEN_BAN_...`):
+#:    **moi hang duoi day chi phoi DUNG MOT loi nhac.**
+
+#: Phien ban loi nhac cua `dich_thuat._loi_nhac` (⛔ duong CHET — `thi_hanh.py`
+#: ghi ro khong ai goi). 5 = sau nam lan sua quy tac ten rieng ngay 24/09.
+PHIEN_BAN_LOI_NHAC_DICH = 5
+
+#: Phien ban loi nhac cua `long_tieng.loi_nhac` — ⭐ **duong SONG**
+#: (`CONTENT_PROCESS`).
+#: **2** (24/09): them `QUY_TAC_TEN_RIENG_VI` — quy tac ten rieng, CHI cho dich
+#: `vi`. Truoc do duong song ⛔ **khong co quy tac nao ve ten rieng**, va do
+#: duoc **7/13 · 9/13 · 5/13** tren tap kiem ten (`B2_DICH.md` §7.6).
+#: ⚠️ Dat lai ve 1 lam van tay `CONTENT_PROCESS` doi **mot lan cuoi** — do la
+#:    cai gia cua viec go su nham lan, va la lan vo hieu **CUOI CUNG** do cap
+#:    doi cu gay ra. ⛔ Sau day, doi loi nhac DICH khong con cham vao no nua.
+#: **3** (24/09): them `QUY_TAC_TU_KHAI` — truong `khong_chac`, ⭐ **chi THU**
+#:    (`B2_DICH.md` §7.7). ⛔ Khong hien cho khach, ⛔ khong lai vong sua.
+PHIEN_BAN_LOI_NHAC_LONG_TIENG = 3
+
+#: ⛔ **TEN CU — da go.** Giu mot dong de nguoi doc ma cu tim thay ly do.
+#:    Dung `PHIEN_BAN_LOI_NHAC_DICH` hoac `PHIEN_BAN_LOI_NHAC_LONG_TIENG`.
 
 
 class VanBanError(ValueError):
@@ -86,7 +144,7 @@ def dung(ban_ghi_goc: dict, ban_dich: dict, *, provider: str, model: str) -> dic
         "ngon_ngu_dich": "vi",
         "provider": str(provider or ""),
         "model": str(model or ""),
-        "loi_nhac": PHIEN_BAN_LOI_NHAC,
+        "loi_nhac": PHIEN_BAN_LOI_NHAC_DICH,
         "muc": muc,
     }
     kiem(tai_lieu, ban_ghi_goc)
@@ -139,14 +197,14 @@ def van_tay_van_ban(*, checksum_ban_ghi: str, provider: str, model: str,
 
     Nam thanh phan, va ly do tung cai:
       `checksum_ban_ghi` doi loi goc      -> phai dich lai
-      `PHIEN_BAN_LOI_NHAC` doi loi nhac   -> ban dich khac, du dau vao giu nguyen
+      `PHIEN_BAN_LOI_NHAC_DICH` doi        -> ban dich khac, du dau vao giu nguyen
       `provider` + `model`                -> **doi model la doi san pham**
       `ngon_ngu_dich`                     -> dich sang thu tieng khac
       `SCHEMA_VAN_BAN`                    -> hinh dang khac
     """
     goi = json.dumps({
         "ban_ghi": checksum_ban_ghi,
-        "loi_nhac": PHIEN_BAN_LOI_NHAC,
+        "loi_nhac": PHIEN_BAN_LOI_NHAC_DICH,
         "provider": provider,
         "model": model,
         "ngon_ngu": ngon_ngu_dich,

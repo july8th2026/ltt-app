@@ -1,0 +1,132 @@
+{
+ "phien_ban_loi_nhac": 5,
+ "model": "qwen35-api",
+ "giay": 30.9,
+ "duong": {
+  "dat": 13,
+  "tong": 13,
+  "chi_tiet": [
+   {
+    "han": "首尔",
+    "loai": "quen·noi",
+    "dap_an": "Seoul",
+    "nguon_dap_an": "wiki zh->vi",
+    "ra": "Ông chủ ở Seoul bán được 500 bản.",
+    "dat": true
+   },
+   {
+    "han": "东京",
+    "loai": "quen·noi",
+    "dap_an": "Tokyo",
+    "nguon_dap_an": "wiki zh->vi (东京都)",
+    "ra": "Anh ấy đi Tokyo hôm qua.",
+    "dat": true
+   },
+   {
+    "han": "北京",
+    "loai": "quen·noi",
+    "dap_an": "Bắc Kinh",
+    "nguon_dap_an": "wiki zh->vi",
+    "ra": "Chúng tôi ngày mai đến Bắc Kinh.",
+    "dat": true
+   },
+   {
+    "han": "上海",
+    "loai": "quen·noi",
+    "dap_an": "Thượng Hải",
+    "nguon_dap_an": "wiki zh->vi",
+    "ra": "Mùa hè Thượng Hải rất nóng.",
+    "dat": true
+   },
+   {
+    "han": "广州",
+    "loai": "quen·noi",
+    "dap_an": "Quảng Châu",
+    "nguon_dap_an": "wiki zh->vi",
+    "ra": "Quảng Châu có rất nhiều món ngon.",
+    "dat": true
+   },
+   {
+    "han": "重庆",
+    "loai": "quen·noi",
+    "dap_an": "Trùng Khánh",
+    "nguon_dap_an": "wiki zh->vi",
+    "ra": "Lẩu Trùng Khánh nổi tiếng nhất.",
+    "dat": true
+   },
+   {
+    "han": "纽约",
+    "loai": "quen·noi",
+    "dap_an": "New York",
+    "nguon_dap_an": "wiki zh->vi (Thành phố New York)",
+    "ra": "Anh ấy sống ở New York 10 năm.",
+    "dat": true
+   },
+   {
+    "han": "李宗盛",
+    "loai": "quen·nguoi",
+    "dap_an": "Lý Tông Thịnh",
+    "nguon_dap_an": "wiki zh->vi",
+    "ra": "Bài hát này là Lý Tông Thịnh viết.",
+    "dat": true
+   },
+   {
+    "han": "李小龙",
+    "loai": "quen·nguoi",
+    "dap_an": "Lý Tiểu Long",
+    "nguon_dap_an": "wiki zh->vi",
+    "ra": "Lý Tiểu Long là một võ sĩ.",
+    "dat": true
+   },
+   {
+    "han": "腾讯",
+    "loai": "quen·to_chuc",
+    "dap_an": "Tencent",
+    "nguon_dap_an": "wiki zh->vi",
+    "ra": "Trò chơi này do Tencent làm.",
+    "dat": true
+   },
+   {
+    "han": "华为",
+    "loai": "quen·to_chuc",
+    "dap_an": "Huawei",
+    "nguon_dap_an": "wiki zh->vi",
+    "ra": "Anh ấy mua một chiếc điện thoại Huawei.",
+    "dat": true
+   },
+   {
+    "han": "张伟",
+    "loai": "khong_quen·nguoi",
+    "dap_an": "Trương Vĩ",
+    "nguon_dap_an": "chinh cau chu du an ra luat",
+    "ra": "Trương Vĩ hôm nay không đi làm.",
+    "dat": true
+   },
+   {
+    "han": "小美",
+    "loai": "khong_quen·nguoi",
+    "dap_an": "Tiểu Mỹ",
+    "nguon_dap_an": "suy tu nhanh 5.2 (cung luat voi 张伟)",
+    "ra": "Tiểu Mỹ đang dựng lều ở sườn núi.",
+    "dat": true
+   }
+  ]
+ },
+ "am": {
+  "dat": 1,
+  "tong": 1,
+  "chi_tiet": [
+   {
+    "han": "光子",
+    "⛔ khong_duoc_ra": [
+     "Quang Tử",
+     "Quang Tu"
+    ],
+    "ly_do": "vi.wikipedia KHONG co bai -> ⛔ khong co dap an duong",
+    "ra": "Lấy súng ra Photon!",
+    "dat": true
+   }
+  ]
+ },
+ "⚠️": "Dap an TRA TU NGUON (wiki zh->vi, doc 24/09). Ca khong tra ra dap an chac ⇒ LOAI khoi phan cham duong, chi giu tieu chi AM."
+}

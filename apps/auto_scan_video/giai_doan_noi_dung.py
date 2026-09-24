@@ -48,8 +48,8 @@ import logging
 from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
 
-from . import (ai, assets, ban_bien_tap, ban_ghi, lat_cat, long_tieng, pipeline,
-               rang_giong, su_dung)
+from . import (ai, assets, ban_bien_tap, ban_ghi, lat_cat, long_tieng, ngon_ngu,
+               pipeline, rang_giong, su_dung)
 from .giai_doan_media import ThieuNguon
 
 log = logging.getLogger(__name__)
@@ -216,6 +216,9 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         kq = ai.goi_tinh_tien(
             db, run, ai.CHUYEN_LOI_THOAI, messages,
             stage=pipeline.CONTENT_PROCESS,
+            # ⭐ N-23: ep luoc do o tang GIAI MA. 2/21 lo hong -> 0/20,
+            #    gia +0 luot goi (`long_tieng.luoc_do_phan_hoi`).
+            luoc_do=long_tieng.luoc_do_phan_hoi(lo),
             # 🔑 Khoa cua so cai la LO (mot lan goi = mot dong so cai), con diem
             #    chot la DOAN. Hai truc khac nhau va gop chung lai se hong: mot
             #    lo chua 12 doan nhung chi mot lan tinh tien.
@@ -245,11 +248,31 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         # ⛔ Ghi diem chot NGAY sau moi lo, khong doi den cuoi: mot lan sap o lo
         #    thu bay khong duoc lam mat sau lo dau.
         for ma, v in moi.items():
+            # ⭐ **BAT BIEN O BIEN: ban ghi tieng Viet ⛔ khong chua chu Han.**
+            #    ⛔ **DANH DAU, ⛔ KHONG HUY.** 0,3 % la hiem, nhung de khach
+            #    mat CA LUOT vi mot ky tu thi te hon han mot doan bi gan co.
+            #    ⇒ ghi vao `outputs` kem DOAN TRICH; ⛔ khong nem, ⛔ khong chan.
+            # ⚠️ Chi cho dich `vi`: mot ban dich sang tieng Anh ⛔ cung khong nen
+            #    co chu Han, nhung bat bien nay do tren du lieu `vi` va ⛔ chua
+            #    do tren `en` — ⛔ dung khai rong hon thu da do.
+            han = (long_tieng.chu_han_lot(v["chu"])
+                   if dich == ngon_ngu.VI else [])
+            if han:
+                log.warning("run %s doan %s: chu Han lot ban ghi %r",
+                            run.id, ma, han[:3])
             su_dung.danh_dau_xong(db, run, stage=pipeline.CONTENT_PROCESS,
                                   item_key=ma, fingerprint=vt,
                                   outputs={"chu": v["chu"],
                                            "cam_xuc": v["cam_xuc"],
-                                           "kieu_noi": v["kieu_noi"]})
+                                           "kieu_noi": v["kieu_noi"],
+                                           # ⭐ DUONG B — chi THU vao so, ⛔
+                                           #    khong hien cho khach, ⛔ khong
+                                           #    lai vong sua, ⛔ khong chan gi.
+                                           #    `long_tieng.QUY_TAC_TU_KHAI`.
+                                           "khong_chac": v["khong_chac"],
+                                           # ⛔ Rong = sach. Xem tren: danh
+                                           #    dau, ⛔ khong huy lan chay.
+                                           "han_lot": han})
         # 🔴 **`commit`, khong phai `flush`** — va no khong phai mot chi tiet ky
         #    thuat, no la dinh nghia cua "diem chot".
         #
@@ -311,5 +334,8 @@ def _lay_lai_doan_da_xong(db, run, xong: set[str]) -> dict[str, dict]:
                 "cam_xuc": o.get("cam_xuc") or long_tieng.CAM_XUC[0],
                 "kieu_noi": o.get("kieu_noi") or long_tieng.KIEU_NOI[0],
                 "nhan_manh": list(o.get("nhan_manh") or []),
+                # ⛔ Doan da xong TRUOC khi co truong nay se khong co no —
+                #    `[]` la cau tra loi dung, ⛔ khong phai mot thieu sot.
+                "khong_chac": list(o.get("khong_chac") or []),
             }
     return ra

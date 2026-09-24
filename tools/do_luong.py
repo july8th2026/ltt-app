@@ -1302,5 +1302,74 @@ def _in_phan_doan(r: dict) -> None:
         print()
 
 
+# ───────────────────────────────────────────────────────────────────────────
+# ⭐ LUẬT: TRƯỚC KHI TIN MỘT CỔNG, CHẠY MỘT HỆ HOÀN HẢO QUA NÓ
+# ───────────────────────────────────────────────────────────────────────────
+
+
+def tran_cua_cong(
+    chay_cong,
+    sinh_he_hoan_hao,
+    nguong: float,
+    lan: int = 2000,
+    hat: int = 20260925,
+) -> dict:
+    """⭐ Cổng này có biết nói XANH không? — chạy một hệ HOÀN HẢO qua nó.
+
+    🔴 LUẬT (chủ dự án chốt 25/09/2026)
+
+        **Trước khi tin một cổng, chạy một HỆ HOÀN HẢO qua nó.** Hệ hoàn hảo
+        ⛔ không đạt ⇒ cổng đang đo **chân lý nền của ta**, ⛔ không đo sản
+        phẩm. Sửa **chân lý nền** hoặc **dung sai**, ⛔ **đừng sửa hệ thống**.
+
+    ⭐ VÌ SAO NÓ BẮT ĐƯỢC THỨ MỌI ĐỐI CHỨNG TIÊM-LỖI KHÔNG BẮT ĐƯỢC
+
+        tiêm lỗi      chứng minh cổng biết nói **ĐỎ**
+        hệ hoàn hảo   chứng minh cổng biết nói **XANH**
+
+    Ta đã làm vế một suốt, ⛔ chưa bao giờ làm vế hai. Một cổng chỉ biết nói ĐỎ
+    là một cổng **luôn đúng** theo nghĩa vô dụng nhất.
+
+    🔴 Ca thật 24/09: thước ONSET ở dung sai 0,3 s trên chân lý nền lưới 0,5 s
+    — hệ hoàn hảo chỉ đạt **0,606**, ngưỡng là **0,80**. ⛔ Không hệ nào với tới.
+    Bản của ta đạt 0,636; Fisher `p = 1,0` so với hệ hoàn hảo ⇒ ⛔ **không phân
+    biệt được ta với một hệ không sai một mili giây nào**. Nếu đã phát hành cổng
+    ấy, ta sẽ đuổi theo một khuyết tật ⛔ **không tồn tại**.
+
+    ⭐ Ca ngược 25/09: vế 1 của B1 (`chinh_xac_cho_ngat`, dung sai 0,3 s, chân
+    lý nền OCR **4 fps = lưới 0,25 s**) — hệ hoàn hảo đạt **1,0000** trên cả ba
+    phim ⇒ cổng ấy **ĐỨNG**. ⛔ Cùng một câu hỏi, hai câu trả lời khác nhau:
+    phải ĐO, ⛔ đừng suy từ ca trước.
+
+    ⚠️ Rẻ tới mức ⛔ không có cớ bỏ qua: nó ⛔ không cần chạy sản phẩm, chỉ cần
+    hàm cổng và một bộ sinh dữ liệu hoàn hảo.
+
+    Tham số
+    -------
+    `chay_cong(mau) -> float`   chấm một mẫu, trả điểm của cổng.
+    `sinh_he_hoan_hao(rng)`     sinh một mẫu từ một hệ ⛔ KHÔNG sai gì, đi qua
+                                đúng đường biến dạng của chân lý nền thật
+                                (lượng tử hoá, trôi mốc, cửa sổ…).
+    """
+    rng = np.random.default_rng(hat)
+    diem = np.asarray(
+        [float(chay_cong(sinh_he_hoan_hao(rng))) for _ in range(lan)], dtype=float
+    )
+    tran_tren = float(np.percentile(diem, 97.5))
+    return {
+        "tran_trung_vi": float(np.median(diem)),
+        "tran_dao_dong": (float(np.percentile(diem, 2.5)), tran_tren),
+        "nguong": nguong,
+        "voi_toi_duoc": tran_tren >= nguong,
+        "lan": lan,
+        "ghi_chu": (
+            "🔴 NGƯỠNG TRÊN TRẦN CỦA THƯỚC ⇒ cổng đang đo CHÂN LÝ NỀN của ta."
+            " Sửa chân lý nền hoặc nới dung sai, ⛔ ĐỪNG sửa hệ thống."
+            if tran_tren < nguong
+            else "✅ hệ hoàn hảo ĐẠT ⇒ cổng biết nói XANH; ngưỡng trong tầm với."
+        ),
+    }
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

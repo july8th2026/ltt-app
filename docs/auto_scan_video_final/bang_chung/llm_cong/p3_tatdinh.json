@@ -1,0 +1,65 @@
+{
+ "khi": "2026-09-24 12:00:10",
+ "pha": [
+  "tatdinh"
+ ],
+ "tat_dinh": {
+  "model": "qwen38-api",
+  "vong": 5,
+  "n_ok": 5,
+  "so_khac_nhau": 5,
+  "dong_nhat": false,
+  "ban": [
+   {
+    "giay": 99.49,
+    "loi": "",
+    "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+    "finish_reason": "stop",
+    "noi_dung": "{\n  \"doan\": {\n    \"s1\": {\n      \"chu\": \"Kim chi gần như ngày nào cũng không thể thiếu.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"không thể thiếu\"]\n    },\n    \"s2\": {\n      \"chu\": \"Chắc chắn là đĩa ruột bò nướng cay, mỡ rịn.\",\n      \"cam_xuc\": \"vui\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"ruột bò nướng cay\", \"mỡ rịn\"]\n    },\n    \"s3\": {\n      \"chu\": \"Ruột bò vừa chở từ lò mổ về vẫn còn ấm.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"vẫn còn ấm\"]\n    },\n    \"s4\": {\n      \"chu\": \"Lúc này phải thả ngay vào nước lạnh giữ ẩm.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"thả ngay\", \"giữ ẩm\"]\n    }\n  }\n}",
+    "token_vao": 824,
+    "token_ra": 4419,
+    "ky_tu_suy_nghi": 10769
+   },
+   {
+    "giay": 100.53,
+    "loi": "",
+    "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+    "finish_reason": "stop",
+    "noi_dung": "{\n  \"doan\": {\n    \"s1\": {\n      \"chu\": \"Kim chi gần như ngày nào cũng có mặt.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"kim chi\", \"ngày nào cũng có mặt\"]\n    },\n    \"s2\": {\n      \"chu\": \"Đó chính là đĩa ruột bò nướng cay, mỡ chảy.\",\n      \"cam_xuc\": \"vui\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"ruột bò nướng\", \"cay\", \"mỡ chảy\"]\n    },\n    \"s3\": {\n      \"chu\": \"Ruột bò chở từ lò mổ về vẫn còn ấm.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"lò mổ\", \"vẫn còn ấm\"]\n    },\n    \"s4\": {\n      \"chu\": \"Phải thả ngay vào nước lạnh để giữ ẩm.\",\n      \"cam_xuc\": \"trang_trong\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"nước lạnh\", \"giữ ẩm\"]\n    }\n  }\n}",
+    "token_vao": 824,
+    "token_ra": 4425,
+    "ky_tu_suy_nghi": 10657
+   },
+   {
+    "giay": 99.99,
+    "loi": "",
+    "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+    "finish_reason": "stop",
+    "noi_dung": "{\n  \"doan\": {\n    \"s1\": {\n      \"chu\": \"Kim chi gần như ngày nào cũng không thể thiếu.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"Kim chi\", \"không thể thiếu\"]\n    },\n    \"s2\": {\n      \"chu\": \"Đó hẳn là đĩa ruột bò nướng cay, mỡ rịn.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"ruột bò nướng\", \"mỡ rịn\"]\n    },\n    \"s3\": {\n      \"chu\": \"Ruột bò từ lò mổ chuyển đến vẫn còn ấm nóng.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"lò mổ\", \"ấm nóng\"]\n    },\n    \"s4\": {\n      \"chu\": \"Lúc này phải thả ngay vào nước lạnh giữ ẩm.\",\n      \"cam_xuc\": \"cang_thang\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"ngay\", \"nước lạnh\", \"giữ ẩm\"]\n    }\n  }\n}",
+    "token_vao": 824,
+    "token_ra": 4431,
+    "ky_tu_suy_nghi": 10915
+   },
+   {
+    "giay": 68.3,
+    "loi": "",
+    "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+    "finish_reason": "stop",
+    "noi_dung": "{\n  \"doan\": {\n    \"s1\": {\n      \"chu\": \"Kim chi gần như ngày nào cũng phải có.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"Kim chi\"]\n    },\n    \"s2\": {\n      \"chu\": \"Chắc là đĩa ruột bò nướng cay, mỡ xèo.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"ruột bò nướng\"]\n    },\n    \"s3\": {\n      \"chu\": \"Ruột bò từ lò mổ mang về còn ấm.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"lò mổ\"]\n    },\n    \"s4\": {\n      \"chu\": \"Phải thả ngay vào nước lạnh để giữ ẩm.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"nước lạnh\"]\n    }\n  }\n}",
+    "token_vao": 824,
+    "token_ra": 3051,
+    "ky_tu_suy_nghi": 7216
+   },
+   {
+    "giay": 79.27,
+    "loi": "",
+    "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+    "finish_reason": "stop",
+    "noi_dung": "{\n  \"doan\": {\n    \"s1\": {\n      \"chu\": \"Kim chi gần như ngày nào cũng phải có.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"Kim chi\", \"phải có\"]\n    },\n    \"s2\": {\n      \"chu\": \"Đó hẳn là đĩa ruột bò nướng cay, mỡ chảy.\",\n      \"cam_xuc\": \"vui\",\n      \"kieu_noi\": \"ke_chuyen\",\n      \"nhan_manh\": [\"Đó hẳn là\", \"ruột bò nướng cay\", \"mỡ chảy\"]\n    },\n    \"s3\": {\n      \"chu\": \"Ruột bò từ lò mổ chuyển tới vẫn còn hơi ấm.\",\n      \"cam_xuc\": \"trung_tinh\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"lò mổ\", \"vẫn còn hơi ấm\"]\n    },\n    \"s4\": {\n      \"chu\": \"Lúc này phải thả ngay vào nước lạnh giữ ẩm.\",\n      \"cam_xuc\": \"cang_thang\",\n      \"kieu_noi\": \"thuyet_minh\",\n      \"nhan_manh\": [\"thả ngay\", \"nước lạnh\", \"giữ ẩm\"]\n    }\n  }\n}",
+    "token_vao": 824,
+    "token_ra": 4439,
+    "ky_tu_suy_nghi": 10632
+   }
+  ]
+ }
+}

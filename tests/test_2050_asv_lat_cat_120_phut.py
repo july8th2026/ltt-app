@@ -98,7 +98,7 @@ def noi_dung_gia(monkeypatch):
         `except` nao cua giai doan nuot duoc."""
 
     def gia(db_, run_, thao_tac, messages, *, stage, item_key, uoc_credit=0,
-            ctx=None, temperature=None):
+            ctx=None, temperature=None, luoc_do=None):
         mas = [str(d["ma"]) for d in json.loads(messages[-1]["content"])["doan"]]
         if hong["o_lan"] and len(nhat_ky) + 1 == hong["o_lan"]:
             hong["o_lan"] = 0
@@ -261,7 +261,7 @@ def qc_gia(monkeypatch):
     nhat_ky: list = []
 
     def gia(db_, run_, thao_tac, messages, *, stage, item_key, uoc_credit=0,
-            ctx=None, temperature=None):
+            ctx=None, temperature=None, luoc_do=None):
         dh.t += GIAY_MOI_LO
         nhat_ky.append(item_key)
         so = int(item_key.split("_")[1])
