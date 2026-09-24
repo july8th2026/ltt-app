@@ -32,7 +32,7 @@ param(
     # Chuyen thang xuong lop TRONG, va lop trong moi la noi anh xa tu khoa ->
     # tep. Lop nay khong biet ten tep nao, nen no khong the duoc dung de chay
     # mot tep bat ky voi moi truong production.
-    [ValidateSet('on-dinh', 'ngan-sach')]
+    [ValidateSet('on-dinh', 'ngan-sach', 'do-giong')]
     [string]$Do = 'on-dinh'
 )
 

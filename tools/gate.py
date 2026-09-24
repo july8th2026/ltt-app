@@ -2259,7 +2259,8 @@ def lenh_chay_lai(steps: list[Step]) -> list[str]:
                     pass
             tep = _tep_test_do(dau_ra)
             if tep:
-                n = " -n 6" if len(tep) >= 3 else ""
+                # Tran -n: chu du an doi 6 -> 7 ngay 23/09 (hop dong §4.8).
+                n = " -n 7" if len(tep) >= 3 else ""
                 ra.append(f"python -m pytest{n} -q {' '.join(tep)}")
                 continue
         argv = ["python" if a == sys.executable else a for a in s.argv]

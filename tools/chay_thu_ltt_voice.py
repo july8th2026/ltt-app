@@ -237,7 +237,11 @@ def main(argv=None) -> int:
                     [ffprobe_bin(), "-v", "error", "-show_entries",
                      "format=duration", "-of",
                      "default=noprint_wrappers=1:nokey=1", a.tai_ve],
-                    capture_output=True, text=True, timeout=30)
+                    # R-06: `text=True` khong khai `encoding` -> tren Windows
+                    # Python doan bang locale (cp1252 may tieng Viet), va VO
+                    # ngay khi ffprobe loi va ghi duong dan (co the co ky tu
+                    # ngoai Latin-1) ra stderr. ep UTF-8, dung nhu ffprobe ghi.
+                    capture_output=True, text=True, encoding="utf-8", timeout=30)
                 that = float((out.stdout or "0").strip() or 0)
                 goc = float(r.get("duration_s") or 0)
                 if goc > 0 and that > 0:

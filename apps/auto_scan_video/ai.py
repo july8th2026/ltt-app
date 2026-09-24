@@ -130,6 +130,16 @@ class ThaoTac:
     truong_bat_buoc: tuple[str, ...] = ()
     #: Pha nao la nguoi goi dau tien. Chi de tra cuu.
     pha: str = ""
+    #: 🔑 Muc SUY NGHI cua model cho thao tac nay. Rong = de may chu quyet
+    #: (`ngan_sach.nghi_mac_dinh` — `medium` cho ltt-3.8 tu L-33).
+    #:
+    #: ⭐ Khai o BANG THAO TAC chu khong o cho goi, cung ly do voi
+    #:    `can_thi_giac`: "cau hoi nay kho den dau" la mot thuoc tinh cua THAO
+    #:    TAC, khong phai cua mot dong ma goi no.
+    #:
+    #: ⛔ `none` KHONG duoc dung — `ltt_llm` tu choi no tu 14/09 (tat suy nghi
+    #:    lam chat luong sap: 2 token thay vi ~1.180).
+    muc_nghi: str = ""
 
 
 DICH_THUAT = ThaoTac("dich_thuat", False, ("doan",), pha="14")
@@ -147,9 +157,37 @@ DICH_THUAT = ThaoTac("dich_thuat", False, ("doan",), pha="14")
 #:    thieu chung khong lam quyet dinh sai — con thieu `de_xuat` hay `do_tin`
 #:    thi lam.
 DOC_CANH = ThaoTac("doc_canh", True, ("de_xuat", "do_tin"), pha="11")
-HO_SO_NOI_DUNG = ThaoTac("ho_so_noi_dung", True, ("the_loai", "nhip"), pha="11")
+#: 🔴 **`can_thi_giac=False` tu 23/09/2026, va no la mot phep SUA, khong phai
+#:    mot phep toi uu.** Khai cu la `True`, tuc thao tac nay doi mot model co
+#:    thi giac. Nhung `hieu_canh.loi_nhac_ho_so` **khong gui mot khung hinh
+#:    nao** — no gui bang tom tat canh (van ban) va loi thoai (van ban). Mot
+#:    thao tac thuan van ban khai minh la thi giac se:
+#:      · bat lan chay doi mot model dat hon va hiem hon (`model_cho` loc theo
+#:        dung co nay), va
+#:      · khong bao gio dung duoc o preset `localize_preserve_picture`, cai
+#:        khong doc mot canh nao ca.
+#:    Khai sai nay khong lo ra suot ba pha vi thao tac chua co NGUOI GOI nao.
+HO_SO_NOI_DUNG = ThaoTac("ho_so_noi_dung", False, ("the_loai", "nhip"), pha="11")
 CHUYEN_LOI_THOAI = ThaoTac("chuyen_loi_thoai", False, ("doan",), pha="14")
-RUT_NGAN_CHO_VUA = ThaoTac("rut_ngan_cho_vua", False, ("doan",), pha="15")
+#: 🔴 **`muc_nghi="low"`, va no la mot phep do chu khong mot y thich (23/09).**
+#:
+#:    `tools/do_toc_do_giong.py --che-do llm`, sau doan THAT cua luot nen v3,
+#:    mot vong moi muc:
+#:
+#:        medium : 68,3 giay/luot · 4.209 token ra · 11.783 ky tu suy nghi
+#:        low    : 47,7 giay/luot · 3.337 token ra ·  8.652 ky tu suy nghi
+#:
+#:    ⇒ **-30% thoi gian**, cung 6/6 luot `stop`, cung 6/6 cau viet lai NGAN HON
+#:      ban vao (89->66, 73->55, 65->53, 75->61, 115->102, 23->18 am tiet).
+#:
+#: ⭐ Va do la thao tac DE NHAT trong nam thao tac: no khong doc anh, khong dung
+#:    ho so, khong sap lo — no rut ngan MOT cau da viet san. Tra gia suy nghi
+#:    muc `medium` cho no la tra cho mot do kho khong co.
+#:
+#: ⛔ `none` khong phai mot lua chon: `ltt_llm` tu choi no tu 14/09 (tat suy
+#:    nghi lam chat luong sap — 2 token thay vi ~1.180).
+RUT_NGAN_CHO_VUA = ThaoTac("rut_ngan_cho_vua", False, ("doan",), pha="15",
+                           muc_nghi="low")
 #: 🔴 **`("doan",)`, khong phai `("dat", "ly_do")` — va do la B22-01 lan hai.**
 #:
 #:    `qc_ai.loi_nhac_ngu_nghia` doi dung mot hinh dang:
@@ -170,10 +208,27 @@ RUT_NGAN_CHO_VUA = ThaoTac("rut_ngan_cho_vua", False, ("doan",), pha="15")
 #: ⚠️ Bat duoc TRUOC khi noi vao mach, bang cach cho mot phan hoi tuan thu
 #:    di qua `doc_json` — khong bang cach doc hai tep roi so trong dau.
 QC_NGU_NGHIA = ThaoTac("qc_ngu_nghia", False, ("doan",), pha="19")
+#: 🔑 **QC HINH — nhin hai khung hai ben MOT cho noi cua BAN RA** (M-02, 23/09).
+#:
+#: ⭐ `can_thi_giac=True` va no la khai DUNG, khac `HO_SO_NOI_DUNG` (khai thi
+#:    giac ma khong gui khung nao): loi nhac nay gui khung JPEG that, va cau hoi
+#:    *"cho noi nay co dut mach nhin khong"* khong tra loi duoc tu van ban.
+#:
+#: 🔴 `truong_bat_buoc = ("dat", "do_tin")` — dung hai truong `sua_chua` THUC SU
+#:    doc, khong phai ca luoc do. Cung phep chon voi `DOC_CANH`, va cung ly do:
+#:    thieu `ly_do` lam bao cao kho doc, con thieu `dat`/`do_tin` lam **quyet
+#:    dinh sai**.
+#:
+#: ⛔ Va thieu `dat` phai NO, khong duoc mac dinh thanh `True`. Ban dau
+#:    `qc_ai.doc_hinh` viet `bool(goi.get("dat", True))`: mot phan hoi thieu
+#:    truong doc ra thanh "cho noi nay DAT" — tuc mot cau hoi khong duoc tra loi
+#:    bien thanh mot loi khai rang ban ra lanh lan. Im lang khong phai mot phan
+#:    doan.
+QC_HINH = ThaoTac("qc_hinh", True, ("dat", "do_tin"), pha="19")
 
 THAO_TAC: tuple[ThaoTac, ...] = (
     DICH_THUAT, DOC_CANH, HO_SO_NOI_DUNG, CHUYEN_LOI_THOAI,
-    RUT_NGAN_CHO_VUA, QC_NGU_NGHIA)
+    RUT_NGAN_CHO_VUA, QC_NGU_NGHIA, QC_HINH)
 
 THEO_MA = {t.ma: t for t in THAO_TAC}
 
@@ -344,6 +399,24 @@ def ngan_sach_cho(thao_tac: ThaoTac) -> tuple[int, float | None]:
     return (0, None) if tra is None else (int(tra[0]), float(tra[1]))
 
 
+def timeout_xau_nhat(thao_tac: ThaoTac) -> float:
+    """Thoi gian XAU NHAT (giay) cua MOT lan `goi_tinh_tien(thao_tac)`.
+
+    Khai `NGAN_SACH_RA` thi lay timeout do; khong thi la mac dinh cua
+    `dieu_phoi.goi(timeout_s)` — doc bang `inspect`, khong go lai so. Nhan so
+    provider vi `dieu_phoi` thu lan luot tung cai. `lat_cat` dung de tinh du
+    phong; o day vi chi `ai.py` duoc cham `dieu_phoi` (`test_434`).
+    """
+    import inspect
+
+    from platform_core.llm import dieu_phoi
+
+    _tran, cho = ngan_sach_cho(thao_tac)
+    moi = float(cho) if cho else float(
+        inspect.signature(dieu_phoi.goi).parameters["timeout_s"].default)
+    return moi * max(1, len(THU_TU_PROVIDER))
+
+
 def cua_so_ngu_canh(thao_tac: ThaoTac) -> int:
     """Cua so ngu canh THAT cua model se dung.
 
@@ -452,7 +525,7 @@ def doc_json(noi_dung: str, thao_tac: ThaoTac, *,
 
 def goi(db, thao_tac: ThaoTac, messages: list, *, ctx=None,
         max_tokens: int = 0, temperature: float | None = None,
-        timeout_s: float | None = None,
+        timeout_s: float | None = None, muc_nghi: str | None = None,
         on_dispatch=None, on_rejected=None) -> dict:
     """MOT cua goi model. Tra ve `{"noi_dung", "provider", "model", "su_dung"}`.
 
@@ -511,6 +584,20 @@ def goi(db, thao_tac: ThaoTac, messages: list, *, ctx=None,
     them: dict = {}
     if timeout_s is not None:
         them["timeout_s"] = float(timeout_s)
+
+    # 🔑 **Muc suy nghi cua THAO TAC, va no la mot cai van gia.**
+    #
+    #    Do that 23/09 (`docs/auto_scan_video_final/L_FIX_TOC_DO.md`): mot luot
+    #    `rut_ngan_cho_vua` — viet lai MOT cau cho ngan hon — tieu **4.209 token
+    #    ra / 11.783 ky tu suy nghi / 68,3 giay** o muc mac dinh `medium`, trong
+    #    khi ca luot doc cau do bang may sinh tieng chi mat 14,2 giay. Mot cau
+    #    hoi co do kho cua no, va mac dinh cua nen tang khong biet dieu do.
+    #
+    # ⚠️ `None` = **khong khai**, va may chu giu mac dinh cua no
+    #    (`ngan_sach.nghi_mac_dinh`). Khong go lai mot muc o day.
+    nghi = str(muc_nghi if muc_nghi is not None else thao_tac.muc_nghi or "")
+    if nghi:
+        them["reasoning_effort"] = nghi
 
     try:
         kq = dieu_phoi.goi(

@@ -412,6 +412,14 @@ def sweep(db, storage, *, now: datetime | None = None,
         if dry_run:
             continue
         try:
+            if session.status == UPLOAD_PENDING:
+                # Luot tai NHIEU PHAN bo do: cac phan nam ngoai `key` (R2 tinh
+                # tien luu tru cho chung toi khi bi huy). `delete(key)` khong
+                # cham toi chung. Backend khong ho tro -> False, khong ton gi.
+                # `getattr`: kho gia trong test khong ke thua `Storage`.
+                huy = getattr(storage, "multipart_abort", None)
+                if huy is not None:
+                    huy(key)
             storage.delete(key)
             session.status = UPLOAD_DELETED
             session.updated_at = current

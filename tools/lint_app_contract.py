@@ -129,6 +129,33 @@ APP_DUOC_DUNG_APP: dict = {
         ("apps.agent.jobs", "handle"),
     },
 
+    # ── Auto Scan Video goi SO DANG KY BO DO cua executor GPU (22/09) ──────
+    #
+    # ⭐ Chieu NGUOC cua ba canh tren, va co ly do: bo do bang model (whisper,
+    #    SQUIM, MetricX) chay tren card trong `qc-venv`, nen chung song o
+    #    `asv_gpu` — app khai `requires=("gpu",)` trung thuc. Nhung vong doi giai
+    #    doan (van tay, cache, promote) va viec doc artifact cua run la cua app
+    #    cha, nen giai doan `qc_do_luong` nam o `auto_scan_video` va goi sang.
+    #
+    # ⛔ Chi MOT ten: so dang ky `bo_do`. Tung bo do (giong, squim, metricx) la
+    #    chi tiet cua `asv_gpu`; app cha voi thang vao chung la dung thu canh nay
+    #    sinh ra de chan.
+    # ⛔ MOT muc duy nhat cho cap nay: hai lan (`giong`, `ocr`) moi ben them
+    #    mot muc, va khoa dict trung thi muc sau DE LEN muc truoc — mot nua
+    #    be mat duoc phep bien mat lang le. `ruff F601` bat duoc luc gop.
+    ("auto_scan_video", "asv_gpu"): {
+        ("apps.asv_gpu.do_luong", "bo_do"),
+        ("apps.asv_gpu.do_luong", "venv"),
+        ("apps.asv_gpu.do_luong", "ocr_khung"),
+    },
+    # 🔑 Bo do `giong` chuan hoa kich ban va ban ASR bang CHINH ham ASV goi truoc
+    #    khi dua chu cho may doc (`text_pipeline.chuan_hoa`, be mat da khai cua
+    #    `ltt_voice`). Mot ban chep thu hai cua phep doc so/tu dien se lech, va
+    #    WER se do su lech do thay vi do loi doc. Chi DOC, khong goi may.
+    ("asv_gpu", "ltt_voice"): {
+        ("apps.ltt_voice", "text_pipeline"),
+    },
+
     # ── Auto Scan Video BOC duong chep loi cua autosubvideo ─────────────────
     #
     # ⭐ Day la mot canh xuyen-san-pham that, khac hai canh o tren. Ly do no la
@@ -144,11 +171,9 @@ APP_DUOC_DUNG_APP: dict = {
     #    dung dieu O10 va cong thoat pha 10 doi.
     ("auto_scan_video", "autosubvideo"): {
         ("apps.autosubvideo.transcription", "transcribe_file"),
-        # Pha 07: phan vai nguoi noi. Cung ly do BOC nhu tren — `diarize` khai
-        # `gpu_vram_mb=2000` nhung app chu khai `requires=("ffmpeg",)`, nen nop
-        # job sang do la de viec GPU roi vao lan ffmpeg.
-        ("apps.autosubvideo.ai_workflows", "diarize_file"),
-        ("apps.autosubvideo.ai_workflows", "assign_speakers"),
+        # ⛔ `diarize_file`/`assign_speakers` DA RUT (22/09, asv-final): san pham
+        #    la MOT giong thuyet minh, khong ai doc `nguoi_noi` — phan vai chi
+        #    ton GPU. Mo lai = mot ADR cho da giong, khong phai mot dong o day.
         # ── Tang TAC GIA phu de (V6 pha 14) ─────────────────────────────
         #
         # ⭐ Cung khuon BOC nhu ba ten tren, nhung mot ly do khac han: ba ten
@@ -169,7 +194,17 @@ APP_DUOC_DUNG_APP: dict = {
         ("apps.autosubvideo.ass_builder", "build_srt"),
         # Pha 16: mo hinh kieu chu — duyet tinh chinh bang chinh no.
         ("apps.autosubvideo.schemas", "SubtitleStyleConfig"),
+        # asv-final lan phu-de: ngat dong chu Han + kiem glyph that cua font.
+        ("apps.autosubvideo.segmenter", "wrap_lines"),
+        ("apps.autosubvideo.font_checker", "missing_glyphs"),
     },
+
+    # ── Auto Scan Video chay BO DO / OCR trong venv do luong (22/09) ───────
+    #
+    # ⭐ `apps/asv_gpu/do_luong/` la giao thuc chay mot bo do trong venv rieng
+    #    (qc-venv) — model/goi nang khong vao venv san pham. TRANSCRIBE (lan
+    #    ocr) goi runner OCR hardsub qua `venv.chay`; van tay engine doc
+    #    `ocr_khung.ENGINE` (ban model ghim). Chi hai module, khong ten rieng.
 
     # ── Auto Scan Video doc NGAN SACH TOKEN cua model nha ───────────────────
     #
@@ -212,6 +247,8 @@ APP_DUOC_DUNG_APP: dict = {
         ("apps.ltt_voice", "features"),
         ("apps.ltt_voice", "sidecar_client"),
         ("apps.ltt_voice.tham_so_cong_khai", "TRAN_MOI_LUOT_SINH"),
+        # Tap lan giong = tap ngon ngu dich (`auto_scan_video/ngon_ngu.py`).
+        ("apps.ltt_voice.lan_ngon_ngu", "LAN_HOP_LE"),
         # 🔴 Chuan hoa van ban truoc khi doc — bo qua no la mot lo da co that:
         #    ngay thang doc thanh chuoi ky tu, URL doc tung chu cai, ky tu vo
         #    hinh thanh token la. Chi `chuan_hoa`, KHONG mo `chuan_bi` (ham do
@@ -244,6 +281,13 @@ APP_DUOC_DUNG_APP: dict = {
         ("apps.ltt_voice.giong_mau", "NHAN_GIOI"),
         ("apps.ltt_voice.giong_mau", "NHAN_VUNG"),
         ("apps.ltt_voice.giong_mau", "NHAN_PHONG_CACH"),
+        # ── asv-final F-03: kho CHUNG cho lan giong mau khong phu (`en`) ────
+        #
+        # 🔑 20/20 preset la lan `vi` => dich `en` cua AUTO_MATCH khong con gi
+        #    de khop. Ham nay da qua cong license U-05, da bo giong khong
+        #    `active`/chua ro gioi, va sap tat dinh. Chi DOC giong DA o kho
+        #    chung; dung giong van phai qua `giai_giong`.
+        ("apps.ltt_voice.tham_chieu", "ung_vien_kho_chung"),
         # ── V5 cua Auto Scan: nghe thu giong TRUOC khi chon ─────────────────
         #
         # 🔑 Man chon giong cua Auto Scan hoi dung cau `nghe_thu.py` mo dau:
@@ -454,16 +498,31 @@ def lint() -> list:
             noi_dung = _read(f)
 
             # ── BIEN `apps/` -> `apps/` (A-01) ───────────────────────────
-            for m3 in re.finditer(
-                    r"^\s*from\s+(apps\.[A-Za-z0-9_.]+)\s+import\s+(.+)$",
-                    noi_dung, re.M):
-                mod, ten_raw = m3.group(1), m3.group(2).split("#")[0]
+            #
+            # 🔴 Doc bang AST, KHONG bang regex. Ban regex cu doc
+            #    `from x import (A, B, C)` ra ba ten `"(A"`, `"B"`, `"C)"` —
+            #    hai bao dong gia. Te hon: mot import NHIEU DONG co ngoac
+            #    (`from x import (\n    A,\n    B,\n)`) khong khop dong nao,
+            #    nen no VO HINH voi phep kiem ranh gioi — tuc mot app co the
+            #    voi vao ruot app khac ma cong cu cuong che khong thay.
+            #    Ca hai lo ra ngay 23/09 khi `ho_so_noi_dung.py` nhap ba nhan
+            #    DA nam trong be mat cho phep ma van bi bao do.
+            try:
+                cay_nhap = ast.parse(noi_dung)
+            except SyntaxError:
+                cay_nhap = None
+            for nut in (ast.walk(cay_nhap) if cay_nhap else ()):
+                if not isinstance(nut, ast.ImportFrom) or nut.level:
+                    continue
+                mod = nut.module or ""
+                if not mod.startswith("apps."):
+                    continue
                 phan = mod.split(".")
                 if len(phan) < 2 or phan[1] == app:
                     continue                  # trong cung app — khong phai canh
                 cho_phep = APP_DUOC_DUNG_APP.get((app, phan[1]), set())
-                for ten in (t.strip().split(" as ")[0].strip()
-                            for t in ten_raw.split(",")):
+                for bi_danh in nut.names:
+                    ten = bi_danh.name
                     if not ten or (mod, ten) in cho_phep:
                         continue
                     findings.append(Finding(

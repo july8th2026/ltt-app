@@ -131,7 +131,15 @@ MANIFEST = AppManifest(
         "auto_scan_video.advance": 120,
         #: Dich chia lo, moi lo mot luot goi model. Mot ban ghi dai co the la
         #: hang chuc luot, nen tran phai rong hon nhieu.
+        #:
+        #: ⭐ Tu 22/09 tran nay la tran cua MOT LUOT, khong phai cua ca giai
+        #:    doan: `lat_cat.py` nhuong truoc khi cham no va noi tiep bang job
+        #:    moi. Video 120 phut (~150 lo) = ~7 luot, khong luot nao cham tran.
         "auto_scan_video.content_process": 3600,
+        #: Doc canh bang VLM, moi canh mot luot. Truoc 22/09 KHONG khai, tuc
+        #: an mac dinh lop `api` (30 phut) cua `job_runner` — mot con so khong ai
+        #: chon. Khai tuong minh cung gia tri; `lat_cat` doc no de nhuong.
+        "auto_scan_video.edit_plan": 1800,
         #: QC ngu nghia cung chia lo va cung goi model moi lo. It luot hon
         #: `content_process` (soat ngan hon dich) nhung cung bac do lon, nen
         #: dung mot nua chu khong dung mot con so nho tuy tien.
