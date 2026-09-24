@@ -15,6 +15,8 @@
 > ⛔ **không còn tặng** cho bộ chấm phần sai vốn là của **chính FLORES**. Cùng bài học
 > với `N-24`: *hai con số từ hai tập khác nhau thì ⛔ không được đặt cạnh nhau.*
 >
+> 📌 **Nguồn của cột „cách CŨ“ là §14 ngay trong tệp này** (sàn lỗi FLORES, `n = 100`, đọc mù): §14.2 cho **10 % / 12 % / 23 %** tuỳ định nghĩa „lỗi“. ⇒ Một bộ chấm **hoàn hảo** đo bằng cách CŨ vẫn hiện **10–23 %** báo động giả, vì phần sai đó là của **chính FLORES**. (⚠️ §14 nằm ở tệp NÀY, ⛔ không phải `B2_KTC_VA_PHAN_QUYET.md` — bản đồ trỏ nhầm tệp một lần, 25/09.)
+>
 > ⇒ Mỗi bảng dưới đây mang **nhãn đơn vị** ngay trên nó. ⛔ Thêm bảng mới mà không dán
 > nhãn là tái lập đúng cái bẫy này.
 
@@ -568,6 +570,17 @@ V3:  bao dong gia do duoc  23,3 %
   => bao dong gia THAT   ~ 13,3 %   (thay vi 11–19 % uoc tu mau n=25)
 ```
 
+> 🔴 **CON SỐ 13,3 % Ở TRÊN ĐÃ BỊ THAY — ⛔ đừng trích nó làm số hiện hành.**
+>
+> Nó là một **phép trừ giữa hai ước lượng đo trên hai tập khác nhau** (báo động giả `n = 30`, dải 200–229 ↔ sàn `n = 100`, dải 500–899), và chính §14.3 giới hạn 3 đã nói trước điều đó. Khi đo **thẳng** trên `n = 100` đã soi mù (§17.1): gắn cờ **43**, lỗi thật **10**, bắt trúng **10** ⇒ **báo động giả THẬT = 33/100 = 33 %**.
+>
+> ⭐ Chỗ sai ⛔ **không** phải giả định *„bắt hết lỗi sẵn có“* — giả định đó hoá ra **đúng** (10/10). Chỗ sai là **số bị trừ**: `23,3 %` đo trên `n = 30` ở một vùng khác, còn `n = 100` cho **43 %**. ⇒ **Hai con số từ hai tập khác nhau thì ⛔ không được đặt cạnh nhau** — cùng bài học với `N-24`.
+>
+> ⇒ Số hiện hành của V3 là **33 %** (cách MỚI, trần hoàn hảo 0 %), và nó **TRƯỢT** cổng 15 %. ⛔ Không nới ngưỡng.
+
+```
+```
+
 ⭐ Mẫu 25 ban đầu cho sàn **4%**; mẫu 100 cho **10%**. ⇒ ⛔ **Ước lượng cũ quá
 thấp**, và nó kéo kết luận sai hướng. Đây đúng lý do điều phối bắt nâng cỡ mẫu
 **trước** khi mang câu hỏi đi.
@@ -745,7 +758,12 @@ là **100 dòng** (cùng định nghĩa với cổng 15 %), định nghĩa lỗi
 | `dem ≥ 2` nang | 8 | 5 % | 30 % | ⛔ mù |
 | `dem ≥ 3` nang | 1 | 0 % | 10 % | ⛔ mù |
 
-## 18.3 ⭐ Trả lời câu CÓ/KHÔNG: **CÓ**
+## 18.3 ~~Trả lời câu CÓ/KHÔNG: **CÓ**~~ — 🔴 **ĐÃ BỊ LẬT ở §20**
+
+> 🔴 **Mục này đo SAI vế hai.** "Độ nhạy" dưới đây là trên lỗi **TỰ NHIÊN** của
+> FLORES; cổng đòi **≥ 50 % MỖI LOẠI TIÊM**. Đo đúng vế hai (§20) cho ra
+> **KHÔNG có một điểm nào**. ⛔ Giữ nguyên văn để thấy sai ở đâu, ⛔ không đọc
+> nó như một kết luận.
 
 **Tồn tại** điểm vận hành thoả **cả hai** cổng — và không phải một điểm lẻ mà
 **cả một dải** (`diem ≥ 6` … `≥ 25`). ⇒ ⛔ Khuyết tật **không** nằm ở lời nhắc
@@ -805,8 +823,8 @@ với MetricX-ở-điểm-tốt-nhất. KTC Wilson, `scipy`:
 | `diem ≥ 7…10` | 10,0 % [5,5 ; 17,4] | 70 % [39,7 ; 89,2] |
 | `diem ≥ 11…25` | 7,0 % [3,4 ; 13,7] | 70 % [39,7 ; 89,2] |
 
-⭐ **Trả lời câu CÓ/KHÔNG: CÓ** — tồn tại cả một dải điểm vận hành thoả **cả
-hai** cổng. ⛔ **Vẫn không triển khai**: nó phải thi đấu với MetricX trước.
+🔴 **ĐÃ BỊ LẬT — đọc §20.** Cột "độ nhạy" trên là trên lỗi **tự nhiên**, ⛔ không
+phải vế hai của cổng. Đo đúng vế hai: **KHÔNG tồn tại điểm nào** thoả cả hai.
 
 **(2) Bằng chứng đã commit** (đường dẫn chính xác, gốc `docs/auto_scan_video_final/`):
 
@@ -857,3 +875,52 @@ nằm ngoài kho, ⛔ chưa có kết luận nào rút ra từ nó.
 `cua_so_utc_cac_phan`) — vì một lượt vắt qua sự cố cho **mẫu số thiếu** mà ⛔
 **không báo lỗi**: nó chỉ ra một tỉ lệ **khác**, ⛔ không phân biệt được từ bên
 ngoài. Chốt bằng `test_ban_ghi_GHI_CUA_SO_UTC_de_kiem_lai_su_co`.
+
+---
+
+# 20. 🔴 VẾ HAI CỦA CỔNG — đo rồi: **KHÔNG có một điểm vận hành nào**
+
+⚠️ §18–19 báo *"CÓ"* dựa trên độ nhạy trên lỗi **TỰ NHIÊN** (80 %). Cổng viết
+trước đòi **≥ 50 % MỖI LOẠI TIÊM**. Đó là **hai con số khác nhau**, và đây là
+con số đúng của cổng.
+
+Chạy lại đối chứng âm: V3 · `temp 0.0` · 3 lượt · 15 cặp mỗi loại · dòng FLORES
+≥ 300 · nền sạch (**0** lô hỏng) · cửa sổ UTC `17:09→17:21` (⛔ ngoài sự cố
+23:37–23:44 giờ máy).
+
+| luật gắn cờ | BĐG | `lat_nghia` | **`sai_thuc_the`** | cổng |
+|---|---|---|---|---|
+| `dem ≥ 1` nang — **V3 đang chạy** | 33,0 % | 100 % | **86,7 %** [62,1;96,3] | ⛔ vế 1 |
+| `diem ≥ 2…5` | 33,0 % | 100 % | 86,7 % | ⛔ vế 1 |
+| **`diem ≥ 6…10`** | **10–12 %** ✅ | 100 % ✅ | ⛔ **46,7 %** [24,8;69,9] | ⛔ vế 2 |
+| `diem ≥ 11…15` | 7,0 % ✅ | 100 % ✅ | ⛔ 26,7 % | ⛔ vế 2 |
+| `diem ≥ 16…25` | 7,0 % ✅ | 100 % ✅ | ⛔ 20,0 % | ⛔ vế 2 |
+| `dem ≥ 2` nang | 5,0 % ✅ | ⛔ 20,0 % | ⛔ 26,7 % | ⛔ vế 2 |
+
+## 20.1 ⭐ Câu trả lời: **KHÔNG** — và nó là một kết quả QUYẾT ĐỊNH
+
+⛔ **Không một điểm nào trong 30 luật quét được thoả cả hai vế.** Và cơ chế đọc
+thẳng ra từ bảng: **đúng một bậc** — `diem ≥ 5` → `≥ 6` — báo động giả rơi
+**33 % → 12 %** trong khi `sai_thuc_the` rơi **86,7 % → 46,7 %**. ⭐ Cùng một
+bậc thang mua cả hai: **cái giá của báo động giả CHÍNH LÀ chỗ mù thực thể.**
+
+🔑 Vì sao, và nó khớp đúng chẩn đoán của điều phối: `diem ≥ 6` đòi **hai** lỗi
+`nang` (5+5) hoặc một `nghiem_trong`. Một lỗi **sai thực thể đơn lẻ** bị model
+chấm `nhe` (1 điểm) ⇒ ⛔ **không kích nổi cổng**. ⇒ Dải ngưỡng này **dựng lại
+đúng chỗ mù đã giết V2** (V2: `sai_thuc_the` 33 %), chỉ bằng một đường khác.
+
+⇒ ⭐ **Bằng chứng: thiết kế "lời nhắc tự nặn + một ngưỡng" này ⛔ KHÔNG đạt được
+cổng** — không phải ở một điểm, mà trên **toàn bộ** không gian ngưỡng đã quét.
+⛔ Đây không phải thất bại cần vá; nó là câu trả lời, và nó **đóng** nhánh V1→V3.
+
+⚠️ **Khai thẳng cỡ mẫu:** 15 cặp mỗi loại ⇒ KTC rất rộng (46,7 % là [24,8;69,9],
+tức chưa loại trừ được 50 % về mặt thống kê ở **một** điểm). ⛔ Nhưng kết luận
+"không có điểm nào" không dựa vào một điểm: nó dựa vào **cả hình dạng** — mọi
+ngưỡng hạ được BĐG xuống dưới 15 % đều kéo `sai_thuc_the` xuống ≤ 46,7 %.
+
+## 20.2 Bổ sung cho bàn giao (§19)
+
+`bang_chung/b2_quet_nguong_v3.json` nay có **`duong_cong_tiem`** — độ nhạy trên
+lỗi tiêm **theo từng loại** ở mọi ngưỡng; `bang_chung/b2_tiem_v3_nen_sach.json`
+là bản ghi sạch của lượt tiêm. ⇒ Cuộc đấu MetricX phải so **cả hai vế**:
+⛔ một đường cong BĐG–độ-nhạy-tự-nhiên **không đủ** để tuyên bố ai thắng.

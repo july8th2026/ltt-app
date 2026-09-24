@@ -48,8 +48,8 @@ import logging
 from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
 
-from . import (ai, assets, ban_bien_tap, ban_ghi, lat_cat, long_tieng, pipeline,
-               rang_giong, su_dung)
+from . import (ai, assets, ban_bien_tap, ban_ghi, lat_cat, long_tieng, ngon_ngu,
+               pipeline, rang_giong, su_dung)
 from .giai_doan_media import ThieuNguon
 
 log = logging.getLogger(__name__)
@@ -248,6 +248,18 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         # ⛔ Ghi diem chot NGAY sau moi lo, khong doi den cuoi: mot lan sap o lo
         #    thu bay khong duoc lam mat sau lo dau.
         for ma, v in moi.items():
+            # ⭐ **BAT BIEN O BIEN: ban ghi tieng Viet ⛔ khong chua chu Han.**
+            #    ⛔ **DANH DAU, ⛔ KHONG HUY.** 0,3 % la hiem, nhung de khach
+            #    mat CA LUOT vi mot ky tu thi te hon han mot doan bi gan co.
+            #    ⇒ ghi vao `outputs` kem DOAN TRICH; ⛔ khong nem, ⛔ khong chan.
+            # ⚠️ Chi cho dich `vi`: mot ban dich sang tieng Anh ⛔ cung khong nen
+            #    co chu Han, nhung bat bien nay do tren du lieu `vi` va ⛔ chua
+            #    do tren `en` — ⛔ dung khai rong hon thu da do.
+            han = (long_tieng.chu_han_lot(v["chu"])
+                   if dich == ngon_ngu.VI else [])
+            if han:
+                log.warning("run %s doan %s: chu Han lot ban ghi %r",
+                            run.id, ma, han[:3])
             su_dung.danh_dau_xong(db, run, stage=pipeline.CONTENT_PROCESS,
                                   item_key=ma, fingerprint=vt,
                                   outputs={"chu": v["chu"],
@@ -257,7 +269,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                                            #    khong hien cho khach, ⛔ khong
                                            #    lai vong sua, ⛔ khong chan gi.
                                            #    `long_tieng.QUY_TAC_TU_KHAI`.
-                                           "khong_chac": v["khong_chac"]})
+                                           "khong_chac": v["khong_chac"],
+                                           # ⛔ Rong = sach. Xem tren: danh
+                                           #    dau, ⛔ khong huy lan chay.
+                                           "han_lot": han})
         # 🔴 **`commit`, khong phai `flush`** — va no khong phai mot chi tiet ky
         #    thuat, no la dinh nghia cua "diem chot".
         #

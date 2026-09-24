@@ -1,0 +1,237 @@
+{
+ "phien_ban": 1,
+ "hat_giong": 20260924,
+ "nguong_bao_dong_gia": 0.15,
+ "nguong_bat_loi_tiem": 0.5,
+ "giay": 730.9,
+ "bao_dong_gia": null,
+ "bat_loi_tiem": {
+  "n": 30,
+  "luot": 3,
+  "moi_loai": 15,
+  "ban": "v3",
+  "theo_loai": {
+   "lat_nghia": {
+    "n_hoi": 15,
+    "n_co_phan_quyet": 15,
+    "so_bat_duoc": 15,
+    "ti_le_trung_vi": 1.0,
+    "ti_le_tung_luot": [
+     1.0,
+     1.0,
+     1.0
+    ],
+    "dai": [
+     1.0,
+     1.0
+    ],
+    "dat_nguong_mach": true
+   },
+   "sai_thuc_the": {
+    "n_hoi": 15,
+    "n_co_phan_quyet": 15,
+    "so_bat_duoc": 13,
+    "ti_le_trung_vi": 0.8667,
+    "ti_le_tung_luot": [
+     0.8667,
+     0.8667,
+     0.8667
+    ],
+    "dai": [
+     0.8667,
+     0.8667
+    ],
+    "dat_nguong_mach": true
+   }
+  },
+  "gop": {
+   "tiem_lat_nghia_0300": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_lat_nghia_0301": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_lat_nghia_0306": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_lat_nghia_0308": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_lat_nghia_0312": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_lat_nghia_0313": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_lat_nghia_0314": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_lat_nghia_0315": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_lat_nghia_0318": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_lat_nghia_0320": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_lat_nghia_0321": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_lat_nghia_0322": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_lat_nghia_0324": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_lat_nghia_0325": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_lat_nghia_0327": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_sai_thuc_the_0300": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_sai_thuc_the_0301": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_sai_thuc_the_0302": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_sai_thuc_the_0303": {
+    "dat": true,
+    "so_luot": 3,
+    "so_bao_sai": 0
+   },
+   "tiem_sai_thuc_the_0304": {
+    "dat": true,
+    "so_luot": 3,
+    "so_bao_sai": 0
+   },
+   "tiem_sai_thuc_the_0305": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_sai_thuc_the_0307": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_sai_thuc_the_0308": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_sai_thuc_the_0309": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_sai_thuc_the_0311": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_sai_thuc_the_0312": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_sai_thuc_the_0313": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_sai_thuc_the_0315": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_sai_thuc_the_0318": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_sai_thuc_the_0319": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   }
+  },
+  "cua_so_utc": [
+   "2026-09-24T17:09:30+00:00",
+   "2026-09-24T17:21:41+00:00"
+  ],
+  "dong_flores_da_dung": [
+   300,
+   301,
+   306,
+   308,
+   312,
+   313,
+   314,
+   315,
+   318,
+   320,
+   321,
+   322,
+   324,
+   325,
+   327,
+   300,
+   301,
+   302,
+   303,
+   304,
+   305,
+   307,
+   308,
+   309,
+   311,
+   312,
+   313,
+   315,
+   318,
+   319
+  ]
+ },
+ "ghi_chu": "V3 + temp 0.0, 3 luot, 15 cap tiem moi loai, dong FLORES >= 300. ⛔ Khong mot chu nao cua FLORES."
+}

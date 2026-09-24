@@ -69,6 +69,8 @@ SỐNG** — lời nhắc lồng tiếng đã qua nghiệm thu, có ngân sách 
 | **đo lại sau cú sập 23:37–23:44** | ✅ **XONG** — `0/20` **tái hiện y hệt** (cộng dồn 40 lô, 376/376 đoạn) | §7.8b |
 | **SEED** (nửa còn lại của "nhiệt độ + seed") | 🔴 **XONG — cổng NHẬN, ⛔ KHÔNG hiệu lực.** Đường dịch ⛔ **không tái lập được** | §7.8c |
 | **`光子` × lồng tiếng** | ✅ **XONG** — va chạm ⛔ **không tái hiện**: `光子` chưa bao giờ ra chữ Hán | §7.8d |
+| **bất biến chữ Hán ở BIÊN** | ✅ **XONG** — `chu_han_lot` → `outputs["han_lot"]`, ⭐ **đánh dấu, ⛔ không huỷ** | §7.8d |
+| **A/B vòng sửa (§4f)** | 🔴 **RỖNG — hai nhánh CÙNG MỘT MÃ.** N-02 ⇒ **đã giải thích** | §7.10 |
 
 ### 🔴 Ba việc CHỜ điều phối / chủ dự án — ⛔ làn này cố ý không tự làm
 
@@ -89,14 +91,21 @@ SỐNG** — lời nhắc lồng tiếng đã qua nghiệm thu, có ngân sách 
   khi dựng bảng từ.
 * ⏭ **BẢNG TỪ `B → D` (+ `A` tuỳ chọn)** — điều phối chốt 24/09, ⛔ **chưa làm**,
   xếp **sau** việc nhiệt độ (§4d).
-* 🔴 **N-02 (85 → 85) VẪN chưa được giải thích.** Giả thuyết *"nhiệt độ 0 ⇒ vòng
-  sửa thôi xáo"* đã **bị bác**: 11/12 đoạn vẫn đổi (§7.9), và **ghim seed cũng
-  không cứu** — 12/12 đổi (§7.8c).
-* ⏭ **Phép cơ chế §4f chạy lại** (29 đoạn **đã đúng** → tốt lên / không đổi /
-  tệ đi). Ta mới biết vòng sửa **ĐỔI** đoạn, ⛔ chưa biết đổi theo **hướng nào**
-  — và nay ⛔ không có núm nào làm nó rẻ hơn.
-* ⚠️ **Chữ Hán lọt bản ghi vì lỗi ASR: `1/343 = 0,3 %`** (§7.8d). Là một **cửa
-  chặn ở biên**, ⛔ không phải một câu trong lời nhắc.
+* ✅ **N-02 (85 → 85) ĐÃ ĐƯỢC GIẢI THÍCH — bằng CƠ CHẾ, đọc từ mã** (§7.10):
+  vòng sửa chỉ chạm đoạn **bị gắn cờ**, và dịch lại bằng lời nhắc **y hệt**
+  (`y_canh` ⛔ không ai truyền) ⇒ một **phép rút thăm lại ⛔ không có chiều**
+  ⇒ tổng giữ nguyên, thành phần bị xáo.
+* 🔴 **Phép A/B §4f ⛔ KHÔNG chạy được: hai nhánh là CÙNG MỘT MÃ** (§7.10).
+* ⏭ **Ẩn số cuối, ⛔ không cần nhánh B, ⛔ không cần bộ chấm:** xác suất một
+  lượt **rút lại** làm một đoạn **đã đúng** tệ đi. ~12 đoạn, người soi **mù với
+  thứ tự**, và **khai rõ người soi là ai**.
+* ✅ **Chữ Hán lọt bản ghi vì lỗi ASR (`1/343 = 0,3 %`) — ĐÃ có cửa chặn ở biên**
+  (`long_tieng.chu_han_lot` → `outputs["han_lot"]`, §7.8d). ⭐ Đây là **bộ dò lỗi
+  chép lời THỨ HAI**, độc lập với đường B — hai tín hiệu độc lập cùng trỏ một
+  đoạn thì đáng tin hơn hẳn một. ⏭ **Chưa ai ĐỌC cột này** — như `khong_chac`.
+* 🔑 **`seed`: câu hỏi ĐÃ ĐÓNG VĨNH VIỄN** (§7.8c). Cổng **có** chuyển và **có**
+  kiểm `seed`; bất định là **thượng nguồn** (llama.cpp #7052 · #19981 · #27407).
+  ⛔ **Không còn đường nào ở tầng tham số** — đừng thử lại.
 * **`重庆`** còn sai 1/3 lượt dù nằm ngay trong ví dụ của luật.
 * Hai bài đỏ trong bộ `app:auto_scan_video` (`test_3300` metricx, `test_334`
   ngân sách) — ⚠️ **đã đỏ TRƯỚC** làn này (kiểm trên SHA `b9370220`), ⛔ không
@@ -602,6 +611,43 @@ là tốt nhất."*
 ⭐ Khớp `L_LLM_CONG.md` §4b (4 kết quả khác nhau / 5 lượt **có** seed). Hai phép
 đo **độc lập**, hai cấu hình khác nhau, **một kết luận**.
 
+### ✅ Cổng CÓ chuyển `seed` xuống engine — đo bằng HÀNH VI, ⛔ không đọc mã
+
+Mã cổng nằm trên **máy B** (`H:\LTT_LLM\gateway`), ⛔ không đọc được từ máy A.
+⇒ Đo bằng **hành vi**, và phép đo này dứt khoát:
+
+| gửi | kết quả |
+|---|---|
+| `seed = 7` (số nguyên) | ✅ HTTP 200 |
+| `seed = "khong-phai-so"` (chuỗi) | 🔑 **HTTP 400 `invalid_request`** |
+
+⇒ ⭐ **Một trường bị BỎ QUA ⛔ không thể sinh ra lỗi kiểu.** Việc `seed` sai kiểu
+bị **từ chối** chứng minh nó **đi tới một bộ kiểm** ở hạ nguồn — tức nó **thật
+sự được chuyển**, ⛔ không bị nuốt ở cổng.
+
+⇒ Đường của ta: `ai.goi` → `dieu_phoi.goi(them=)` → `CongVlm.chat` →
+`than_gui.update(them)` (`cong_vlm.py:341`) → thân request → cổng máy B.
+
+### 🔴 ⇒ Tính chất THƯỢNG NGUỒN, ⛔ không phải lỗ hổng của ta. **Đóng câu hỏi.**
+
+Cộng đồng `ggml-org/llama.cpp` đã ghi nhiều lần — **trích số issue**:
+
+| issue | tiêu đề | liên quan thế nào |
+|---|---|---|
+| **#7052** | *Non-deterministic output of the llama.cpp server when using multiple slots* | ⭐ **đúng ca của ta**: cổng chạy `-np 3` (nhiều slot) |
+| **#19981** | *LLM does not produce identical results with identical seed and prompt* | ⭐ đúng triệu chứng: **cùng seed, cùng prompt, khác kết quả** |
+| **#27407** | *spec: greedy output diverges from non-speculative baseline under batched verification on CUDA* | ⭐ cổng chạy **`--spec-type draft-mtp`** — giải mã suy đoán, đúng cơ chế issue này mô tả |
+| **#2838** | *CUDA non-determinism on identical requests* | nền: bất định ở tầng CUDA |
+
+> 🔑 **ĐÓNG VĨNH VIỄN — ⛔ phiên sau đừng đi lại.** `seed` **được chuyển và được
+> kiểm**, và lượt vẫn **đổi 12/12 đoạn**. ⇒ Bất định đến từ **thượng nguồn**
+> (nhiều slot + gộp lô liên tục + giải mã suy đoán), ⛔ **không** từ một núm ta
+> quên bật. **⛔ Không còn đường nào để thử ở tầng tham số.**
+>
+> ⚠️ Muốn tái lập thì phải **đổi CẤU HÌNH ENGINE** (`-np 1`, bỏ `--spec-type`) —
+> tức **đánh đổi thông lượng của cả máy B**, một quyết định ⛔ **không thuộc
+> làn này**. Hoặc **cache theo vân tay**, đúng như `L_LLM_CONG.md` §4b kết luận.
+
 > # 🔴 HỆ QUẢ, và nó đổi cách ta báo MỌI số dịch về sau
 >
 > **Đường dịch của ASV ⛔ KHÔNG tái lập được — ⛔ không núm nào đi qua đường sản
@@ -614,6 +660,10 @@ là tốt nhất."*
 > ⚠️ Chính tệp này đã suýt vi phạm: §7.1 ghi *"9/13"*, và ba lượt trên **cùng**
 > cấu hình cho **7 · 9 · 5**. Con số trung thực là **một khoảng**, ⛔ không phải
 > một điểm.
+
+⚠️ **Và nó chạm VÂN TAY/CACHE:** cùng đầu vào, cùng tham số, **khác đầu ra** ⇒
+vân tay khớp nhưng kết quả ⛔ không phải thứ lần trước sinh ra. ⛔ **Ghi lại,
+⛔ không sửa gì ở đó lúc này** (điều phối chốt).
 
 ⚠️ **⛔ Đừng suy ngược rằng vòng sửa vô hại.** Ta mới biết nó **ĐỔI** đoạn
 (92–100 %), ⛔ **chưa** biết đổi theo **hướng nào**. Phép cơ chế §4f (29 đoạn
@@ -665,6 +715,82 @@ seg_0005   "…dùng súng提炼 để dụ nó."
 
 ⚠️ `n = 3` phim, và `光子` là **tên thương hiệu DUY NHẤT** trong cả ba ⇒ ⛔ kết
 luận này ⛔ không nói gì về một phim có nhiều thương hiệu Trung Quốc.
+
+## 7.10 🔴 §4f: phép A/B **ĐỘT BIẾN THÀNH RỖNG** — hai nhánh là **cùng một mã**
+
+> Điều phối giao: *nhánh A (dịch lại trơn) vs nhánh B (qua vòng sửa), ≥3 lượt,
+> so phân phối + chiều.* ⛔ **Phép này ⛔ không chạy được — và lý do chính là
+> phát hiện.** Đọc mã trước khi đốt một lượt gọi nào.
+
+### Vòng sửa `dich_sai` làm ĐÚNG hai việc, ⛔ không việc thứ ba
+
+```
+jobs.py:335   su_dung.mo_lai_don_vi(db, run, stage=gd, item_key=ma)   <- CHI doan bi gan co
+jobs.py:350   features._dat_lai_giai_doan(db, s)                      <- dat lai dong giai doan
+```
+
+Rồi `content_process` chạy lại và dựng lời nhắc bằng
+`long_tieng.loi_nhac(lo, tat_ca=…, ngon_ngu_goc=…, dac_diem_giong=…, ngon_ngu_dich=…)`.
+
+> 🔑 **`y_canh` ⛔ KHÔNG được truyền.** Tham số ấy **có tồn tại**
+> (`long_tieng.py:214`, và lời nhắc **có** chỗ nhét nó — `long_tieng.py:240`),
+> nhưng ⛔ **không người gọi nào truyền**. `grep y_canh` trên cả `apps/`: chỉ
+> thấy định nghĩa, ⛔ không thấy một lần truyền.
+
+⇒ ⭐ **Đoạn bị gắn cờ được dịch lại bằng lời nhắc Y HỆT lần đầu** — ⛔ không một
+bit nào về *"vì sao nó bị chê"* đi vào lời nhắc.
+
+### ⇒ Nhánh B **≡** nhánh A. Phép A/B là một phép so **một thứ với chính nó**
+
+```
+nhanh A  = goi lai `long_tieng.loi_nhac` tren doan do
+nhanh B  = goi lai `long_tieng.loi_nhac` tren doan do      <- CUNG MOT DONG MA
+```
+
+⛔ Chạy nó sẽ tốn `12 đoạn × 2 nhánh × 3 lượt = 72` lượt gọi để phát hiện lại
+một **sự thật đọc được trong mã**. ⭐ Và kết quả đã biết trước: `A ≈ B`, vì
+chúng **là một**.
+
+### ⭐ ⇒ N-02 (85 → 85) **ĐƯỢC GIẢI THÍCH**, và giải thích bằng cơ chế
+
+1. Vòng sửa **chỉ** chạm đoạn bị gắn cờ (`mo_lai_don_vi` nhận **một** `item_key`);
+2. đoạn ấy được **rút thăm lại** từ **đúng** phân phối cũ (cùng lời nhắc);
+3. ⇒ ⛔ **không có áp lực theo chiều nào** — kỳ vọng thay đổi điểm ≈ **0**;
+4. ⇒ tổng giữ nguyên, **thành phần bị xáo**.
+
+Đúng bằng số N-02 quan sát: `85 → 85`, `dich_sai 60→44` nhưng `doc_sai 10→14`
+và `khong_vua 15→27`. ⭐ Một phép rút thăm lặp lại, ⛔ không phải một phép sửa.
+
+### 🔴 Và nó SỬA một hiểu sai của chính §1 và §4f
+
+§1 viết: *"vòng sửa nhiều khả năng đang **dịch lại những câu vốn đã đúng**"*, và
+§4f đo bằng cách cho **29 đoạn ĐẠT** đi qua đường dịch lại.
+
+⛔ **Sai về sản phẩm.** Vòng sửa ⛔ **không bao giờ** chạm đoạn **không bị gắn
+cờ** — `mo_lai_don_vi` cấm đúng điều đó, và `jobs.py:320` ghi rõ vì sao (*"phạm
+vi nhỏ nhất an toàn"*). ⇒ Đoạn đúng **chỉ** bị dịch lại khi bộ chấm **gắn cờ
+NHẦM** nó.
+
+> ⇒ ⭐ **Thiệt hại thật = (tỉ lệ báo động giả) × (xác suất lượt rút lại tệ hơn).**
+> ⛔ Không phải *"28/29 đoạn đã đúng bị đổi"* — con số ấy đo một đường
+> **sản phẩm ⛔ không đi**.
+
+### ⇒ Phép CÒN LẠI đáng chạy, và nó ⛔ không cần nhánh B, ⛔ không cần bộ chấm
+
+Chỉ còn **một** ẩn số: **xác suất một lượt rút lại làm đoạn đúng TỆ ĐI**.
+
+```
+lay ~12 doan DA DUNG  ->  rut lai 1 lan  ->  NGUOI soi: tot len / khong doi / te di
+```
+
+⭐ ⛔ Không cần nhánh đối chứng, vì *"rút lại"* **chính là** thứ vòng sửa làm.
+⛔ Không cần bộ chấm — nó đang trượt cổng và thuộc làn khác.
+⚠️ **Người soi phải MÙ với thứ tự** (⛔ không biết bản nào là gốc, bản nào là
+rút lại), và **phải khai ra rằng người soi là tôi** — đúng xung đột lợi ích §4f
+đã tự khai.
+
+⛔ **CHƯA chạy** — nó cần một lượt soi tay nghiêm túc, và điều phối xếp bảng từ
+`B→D` trước hay sau là quyết định của điều phối.
 
 ## 7.9 🔴 Đo lại sau khi ghim — **một hoá đơn tự đóng, một thì không**
 

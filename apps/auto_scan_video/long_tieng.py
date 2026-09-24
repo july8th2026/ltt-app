@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 
 from platform_core.i18n import _ as _t
 
@@ -310,6 +311,41 @@ def _chuoi_ngan(x) -> list[str]:
         t = ("" if m is None else str(m)).strip()[:KHONG_CHAC_DAI_TOI_DA]
         if t:
             ra.append(t)
+    return ra
+
+
+#: 🔑 **BAT BIEN O BIEN: ban ghi tieng Viet ⛔ khong duoc chua chu Han.**
+#:
+#: ⭐ **Vi sao o BIEN chu khong phai mot cau trong loi nhac.** Do that tren 343
+#: chuoi dau ra (`B2_DICH.md` §7.8d): **1** ca lot chu Han — `"…dùng súng提炼…"`.
+#: Va no ⛔ **khong** den tu luat ten rieng (`光子` ra *"Photon"*/*"Quang Tử"*,
+#: ⛔ chua bao gio ra chu Han) ma tu mot **loi CHEP LOI**: `提炼` <- `提炼枪`.
+#: ⇒ Them mot cau vao loi nhac la va mot thu **khong phai nguyen nhan**.
+#:
+#: ⭐ **Va no la BO DO LOI CHEP LOI THU HAI, doc lap voi duong B** (`khong_chac`,
+#: §7.7). Hai tin hieu doc lap cung tro mot doan thi dang tin hon han mot.
+#:
+#: ⚠️ Chu Han la thu giong doc tieng Viet ⛔ **khong phat am noi** — nen day la
+#: mot khiem khuyet **khach NGHE THAY**, khong phai mot loi tren giay.
+_CHU_HAN = re.compile(r"[一-鿿]+")
+
+#: So ky tu lay quanh moi ca de nguoi soi biet no nam o dau trong cau.
+HAN_TRICH_KE = 12
+
+
+def chu_han_lot(chu: str) -> list[str]:
+    """Cac DOAN TRICH quanh moi cum chu Han trong `chu`. Rong = sach.
+
+    ⛔ **Tra ve DOAN TRICH, khong phai `True`/`False`.** Mot co boolean noi
+       *"co gi do sai"*; mot doan trich noi **sai o dau**, va do la khac biet
+       giua mot bao dong nguoi ta soi duoc va mot bao dong nguoi ta tat di.
+    """
+    van = str(chu or "")
+    ra = []
+    for m in _CHU_HAN.finditer(van):
+        d = max(0, m.start() - HAN_TRICH_KE)
+        c = min(len(van), m.end() + HAN_TRICH_KE)
+        ra.append(van[d:c])
     return ra
 
 

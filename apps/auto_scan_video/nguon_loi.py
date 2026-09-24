@@ -82,7 +82,34 @@ _MA_LUONG = {"chi": "zh", "zho": "zh", "chs": "zh", "cht": "zh", "zh": "zh",
 #: Pass 1 (tim dai): so khung full-frame rai deu ca video.
 SO_KHUNG_DO = 40
 #: Pass 2 (doc dai): khung/giay. Do trong L_OCR.md §3.
+#:
+#: 🔴 ⛔ KHONG HA SO NAY DE TIET KIEM GPU truoc khi doc doan duoi day.
+#:
+#:    `fps` o day KHONG chi la chi phi. No quyet dinh do phan giai moc thoi
+#:    gian cua HARDSUB, ma hardsub la CHAN LY NEN cua cong chat luong B1
+#:    (`tools/bench_b1_chep_loi.py::chinh_xac_cho_ngat`, dung sai +/-0,3 s,
+#:    nguong >= 0,90).
+#:
+#:    Do 25/09/2026 bang `tools/do_luong.py::tran_cua_cong` (chay mot HE
+#:    HOAN HAO qua chinh cong ay):
+#:
+#:        4 fps -> luoi 0,25 s  <  dung sai 0,3 s  ->  tran cong = 1,0000  OK
+#:        diem GAY ~ 12 % so moc troi qua 0,3 s   ->  tran tut duoi 0,90
+#:        L_OCR.md §3 do p95 troi 0,65 s ngay o 4 fps => bien CON, nhung MONG
+#:        2 fps -> lech trung binh 0,18-0,25 s    ->  DANG AN VAO BIEN
+#:
+#: ⚠️ Ha 4 -> 3 -> 2 fps lam cong B1 **mat hieu luc TRONG IM LANG**: no van
+#:    chay, van in mot con so, va con so ay do LUOI CUA CHAN LY NEN chu khong
+#:    do san pham. Khong gi keu len.
+#:
+#: ⇒ Muon ha: chay lai `tran_cua_cong` TRUOC, va chi ha neu tran van >= 0,90.
+#:    Rang buoc nay duoc ghim bang `tests/test_3602::test_3602_fps_doc_ocr_
+#:    khong_duoc_ha_duoi_muc_da_hieu_luc`.
 FPS_DOC = 4.0
+
+#: ⛔ Muc `FPS_DOC` da duoc do va con hieu luc (xem khoi tren). Ha xuong duoi
+#: muc nay = vo hieu hoa cong B1. Phep kiem doc HAI hang so nay va bat khop.
+FPS_DOC_DA_DO_TRAN_CONG_B1 = 4.0
 TI_LE_HAN_TOI_THIEU = 0.8
 
 

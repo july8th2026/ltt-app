@@ -180,6 +180,39 @@ MO_COI_DA_BIET = frozenset({
     #    ⭐ DIEU KIEN GO RA: mot duong chay san pham that su can gioi tinh DO
     #       DUOC (vi du kho chung nhan giong moi khong co catalog di kem). Khong
     #       phai khi ai do thay danh sach dai.
+    # ── `thieu_khai` (`pipeline.py`) — BỘ PHÁN XỬ HỢP ĐỒNG, ⛔ CỐ Ý không nối.
+    #
+    #    🔴 Nối nó vào `_kiem_tra_chuoi()` (tức vào đường NẠP MODULE) là **tái tạo
+    #       N-08b**: phép tiêm sẽ chết ở lúc nạp module và ⛔ không bao giờ tới
+    #       được phần phán xử ⇒ ta **mất khả năng đối chứng** chính nó. Đó đúng là
+    #       lý do `test_3004` phải tách `vi_pham`/`bao_dong` thành hàm **thuần
+    #       nhận đồ thị làm dữ liệu**. `thieu_khai` cùng loại, cùng chữ ký
+    #       (`thieu_khai(chuoi=...)`), và người gọi ĐÚNG của nó là **phép kiểm**
+    #       (`test_3200_asv_hop_dong_mat_xich`).
+    #
+    #    ⚠️ Plan Task 1 ghi *"Modify `pipeline.py` (import + kiểm)"* ⇒ **plan SAI,
+    #       ⛔ không phải mã sai** (điều phối chốt 25/09). Plan đã được sửa.
+    #
+    #    ⭐ ĐIỀU KIỆN GỠ RA: ngày có một đường chạy thật cần hỏi câu đó **lúc chạy**
+    #       (không phải lúc nạp) — ví dụ một cửa quản trị in ra mắt xích còn thiếu.
+    "thieu_khai",
+
+    # ── `la_ma` + `cau_cho_khach` (`ma_loi.py`) — ⛔ KHÔNG phải miễn trừ trần:
+    #    đây là **N-32**, một khuyết tật THẬT đang được hoãn có chủ ý.
+    #
+    #    🔴 Cửa lỗi cho khách (G-04) **chưa ai nối**. Plan Task 2 khai sản phẩm là
+    #       `pipeline.ma_loi_la(ma)` — hàm đó ⛔ **chưa hề tồn tại**. Và chính
+    #       `ma_loi.py` tự viết: *"`HOAN_CREDIT` CHƯA CÓ NGƯỜI ĐỌC"*. ⇒ Khách gặp
+    #       lỗi sẽ ⛔ không nhận được câu nào — sổ mã có, mà không ai đọc nó ra.
+    #
+    #    ⛔ HOÃN CÓ CHỦ Ý (điều phối chốt 25/09), hai lý do: (a) đây là **tính năng
+    #       chạm khách**, ⛔ không phải việc dọn bánh cóc; (b) chủ dự án vừa thu hẹp
+    #       phạm vi về **lõi voice→voice**.
+    #
+    #    ⭐ ĐIỀU KIỆN GỠ RA: khi `N-32` được đóng — tức có người gọi thật từ màn
+    #       lỗi. ⛔ Đừng gỡ hai tên này khỏi đây bằng cách xoá hàm.
+    "la_ma", "cau_cho_khach",
+
     "do_gioi",
 
     # ── Tien ich co nguoi goi trong TUONG LAI gan, hoac chi dung tu test/tool.
