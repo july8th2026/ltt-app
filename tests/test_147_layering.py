@@ -151,27 +151,67 @@ def test_server_khong_biet_ten_app_ngoai_danh_sach_da_khai():
 #:    Chưa làm trong pha 14 vì việc đó sửa `platform_core/` VÀ ba app **đang
 #:    phục vụ khách trả tiền** của lane khác — đúng thứ `CLAUDE.md` bảo dừng
 #:    lại và nói rõ thay vì kèm vào một đợt mười hạng mục. Ghi ở RISK-14-01.
-CROSS_APP_ALLOWED = {
-    ("taovideo", "upscalevideo"),
-    # loại A — cùng một sản phẩm, tách vì quyền nhặt job lọc theo app
-    ("asv_media", "auto_scan_video"),
-    ("asv_gpu", "auto_scan_video"),
-    ("asv_voice", "auto_scan_video"),
-    # agent_dong_co chỉ khai job_type `workflow.dong_co`; handler thật vẫn ở
-    # apps/agent/jobs.py (xem docstring apps/agent_dong_co/manifest.py) —
-    # tách để apps/agent không phải khai job_type nào (test_190).
-    ("agent_dong_co", "agent"),
-    # loại B — nợ thật, đường ra là nâng phần dùng chung lên platform_core
-    ("auto_scan_video", "ltt_llm"),
-    ("auto_scan_video", "autosubvideo"),
-    ("auto_scan_video", "ltt_voice"),
-}
+#: 🔴 DẪN XUẤT, ⛔ không chép. Đo 24/09 nói vì sao.
+#:
+#:    Cùng một sự thật từng được khai ở **BA** chỗ: hợp đồng app
+#:    (`tools/lint_app_contract.py::APP_DUOC_DUNG_APP`), danh sách này, và
+#:    `test_421::VO_TUONG_THICH`. Ngày 22–23/09 hai cạnh mới ra đời
+#:    (`auto_scan_video → asv_gpu`, `asv_gpu → ltt_voice`); tác giả khai vào
+#:    hợp đồng — kèm bề mặt và lý do — và `test_308` đo bằng AST rồi chốt
+#:    `thực tế == APP_DUOC_DUNG_APP`, nên **hợp đồng đúng và có người canh**.
+#:
+#: ⛔ Chỉ danh sách NÀY lạc hậu, và nó còn **sai chiều**: nó có
+#:    `("asv_gpu", "auto_scan_video")` mà thiếu chiều ngược lại — dù hai chiều
+#:    là cùng một quan hệ (bốn thư mục `asv_*` là MỘT sản phẩm).
+#:
+#: ⇒ Chữa gốc, ⛔ không chữa triệu chứng: bản sao thứ ba **biến mất**. Nay chỉ
+#:   còn một sổ, và sổ đó đã có phép kiểm đối chiếu với thực tế.
+#:
+#: ── Phân loại (giữ lại, vì nó là thứ `APP_DUOC_DUNG_APP` không nói) ────────
+#:
+#: ⭐ LOẠI A — `asv_media` · `asv_gpu` · `asv_voice` ↔ `auto_scan_video`
+#:
+#:    **Không phải app độc lập.** `surface="runtime"`,
+#:    `catalog_parent="auto_scan_video"`, không thẻ catalog, không mục nav,
+#:    không bán riêng. Chúng là thư mục riêng vì đúng một lý do kỹ thuật:
+#:    quyền nhặt job lọc theo **APP**, không theo `job_type`
+#:    (`platform_core/jobs.py:158-164`). ⇒ Câu *"gỡ một app là gãy app kia"*
+#:    không áp dụng — đây là import TRONG một sản phẩm.
+#:
+#: ⚠️ LOẠI B — `auto_scan_video` → `ltt_llm` · `autosubvideo` · `ltt_voice`,
+#:    và (từ 22/09) `asv_gpu` → `ltt_voice`. Đây MỚI là nợ. Ghi ở RISK-14-01.
+#:
+#: 🔴 ĐƯỜNG RA của loại B — **HOÃN, có điều kiện mở lại** (chủ dự án, 24/09):
+#:
+#:    Đường đúng là nâng `ltt_voice.text_pipeline` lên `platform_core` (một mối
+#:    lo dùng chung đặt nhầm chỗ), ⛔ không phải ToolSpec handoff — handoff một
+#:    hàm thuần chỉ thêm một vòng hàng đợi cho một phép biến đổi chuỗi.
+#:
+#:    ⛔ Giá **hiện tại** là thứ chặn: việc đó đổi `PHIEN_BAN_CHUAN_HOA`, mà
+#:       `asv_gpu.do_luong.giong.PHIEN_BAN` gộp hằng ấy vào vân tay bộ đo ⇒
+#:       **mọi số WER đã đo mất gốc so sánh**. Cộng thêm: sửa `platform_core/`
+#:       VÀ `ltt_voice` — một app **đang phục vụ khách trả tiền**.
+#:    ⭐ MỞ LẠI khi có một mốc WER mới cần dựng dù sao: lúc đó cái giá đắt nhất
+#:       đã phải trả vì lý do khác.
+#:
+#: ⛔ ĐƯỜNG ĐÃ LOẠI — gộp bốn thư mục `asv_*` làm một app: chặn bởi
+#:    `platform_core/jobs.py:158-164`. Một app khai `requires=("ffmpeg","gpu")`
+#:    trên đội hình chia làn sẽ **`queued` mãi mà không lỗi nào báo**
+#:    (`test_389...::test_app_gop_ca_hai_nang_luc_bi_ca_HAI_lan_le_tu_choi` tái
+#:    hiện bằng một app thật). Chế độ hỏng đó là lý do đủ.
+def _cap_cheo_duoc_phep() -> set[tuple[str, str]]:
+    """MỘT nguồn: hợp đồng app. `test_308` canh cho nó khớp thực tế."""
+    from tools.lint_app_contract import APP_DUOC_DUNG_APP
+
+    return set(APP_DUOC_DUNG_APP)
 
 
-def test_apps_never_import_another_app():
-    """App gọi thẳng app khác thì gỡ một app là gãy app kia. Trao đổi giữa app
-    phải đi qua ToolSpec/job của nền tảng."""
-    offenders = {}
+CROSS_APP_ALLOWED = _cap_cheo_duoc_phep()
+
+
+def _import_cheo(duoc_phep) -> dict[str, set[str]]:
+    """Cạnh `apps/<a>/… → apps.<b>` không nằm trong `duoc_phep`."""
+    offenders: dict[str, set[str]] = {}
     for path in (ROOT / "apps").rglob("*.py"):
         if "__pycache__" in path.parts:
             continue
@@ -179,10 +219,61 @@ def test_apps_never_import_another_app():
         text = path.read_text(encoding="utf-8")
         for match in re.finditer(r"(?:from|import)\s+apps\.([a-z_０-９\w]+)", text):
             other = match.group(1)
-            if other != owner and (owner, other) not in CROSS_APP_ALLOWED:
+            if other != owner and (owner, other) not in duoc_phep:
                 offenders.setdefault(
                     str(path.relative_to(ROOT)).replace("\\", "/"), set()).add(other)
+    return offenders
+
+
+def test_apps_never_import_another_app():
+    """App gọi thẳng app khác thì gỡ một app là gãy app kia. Trao đổi giữa app
+    phải đi qua ToolSpec/job của nền tảng."""
+    offenders = _import_cheo(_cap_cheo_duoc_phep())
     assert offenders == {}, f"app import chéo: { {k: sorted(v) for k, v in offenders.items()} }"
+
+
+#: Cạnh dùng làm CÔNG TẮC cho hai phép tiêm dưới đây. Nó phải là một cạnh THẬT
+#: đang tồn tại trong mã, nếu không cả hai phép chỉ đo một danh sách rỗng.
+_CANH_THU = ("asv_gpu", "ltt_voice")
+_TEP_THU = "apps/asv_gpu/do_luong/chuan_hoa_loi.py"
+
+
+def test_CONG_TAC_o_HOP_DONG_lat_phep_kiem_nay_DO_roi_XANH(monkeypatch):
+    """⭐ Bằng chứng **nối**, hai chiều, trên CÙNG một tệp trong CÙNG một lượt.
+
+    ⛔ Không có phép này thì "dẫn xuất" chỉ là chép một giá trị lúc nạp module —
+       và một bản chép thì lệch lại được, đúng như bản sao thứ ba đã lệch.
+
+    Chỉ MỘT thứ đổi giữa hai vế: một dòng trong `APP_DUOC_DUNG_APP`.
+    """
+    from tools import lint_app_contract as lint
+
+    # vế ĐỎ — gỡ dòng khỏi sổ
+    monkeypatch.delitem(lint.APP_DUOC_DUNG_APP, _CANH_THU)
+    xau = _import_cheo(_cap_cheo_duoc_phep())
+    assert _TEP_THU in xau and _CANH_THU[1] in xau[_TEP_THU], (
+        f"bot {_CANH_THU} khoi hop dong ma phep kiem khong thay: {sorted(xau)}")
+
+    # vế XANH — trả dòng về, không đổi gì khác
+    monkeypatch.undo()
+    assert _CANH_THU in lint.APP_DUOC_DUNG_APP, "monkeypatch chua tra lai sổ"
+    assert _TEP_THU not in _import_cheo(_cap_cheo_duoc_phep()), (
+        f"tra {_CANH_THU} ve hop dong ma phep kiem van ke ten {_TEP_THU}")
+
+
+def test_tap_dan_xuat_DOC_so_moi_luot_chu_khong_chup_luc_NAP_module(monkeypatch):
+    """Một dòng MỚI thêm vào sổ phải hiện ra ngay ở tập dẫn xuất.
+
+    ⛔ Nếu `_cap_cheo_duoc_phep()` chụp ảnh lúc import, phép này im lặng hỏng —
+       và đó đúng là cách một bản sao ra đời.
+    """
+    from tools import lint_app_contract as lint
+
+    gia = ("ltt_voice", "asv_gpu")          # chiều chưa ai khai, và không có trong mã
+    assert gia not in lint.APP_DUOC_DUNG_APP, "canh gia nay da co that — doi canh khac"
+    assert gia not in _cap_cheo_duoc_phep()
+    monkeypatch.setitem(lint.APP_DUOC_DUNG_APP, gia, set())
+    assert gia in _cap_cheo_duoc_phep(), "them vao hop dong ma tap dan xuat khong doi"
 
 
 def test_apps_do_not_import_private_server_helpers():
