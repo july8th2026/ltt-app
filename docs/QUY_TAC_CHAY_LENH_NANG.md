@@ -9,12 +9,25 @@
 
 ## 1. Phân loại
 
+🔑 **Phân loại theo KHẢ NĂNG ĐỐT CPU, ⛔ không theo số tệp test** (chủ dự án chốt
+24/09/2026). Số tệp chỉ là **một** trong ba cửa vào nhóm nặng.
+
 | Loại | Ví dụ | Được chạy |
 |---|---|---|
-| **Nhẹ** | `git`, `grep`, đọc tệp, `ast.parse`, `python -c` | tự do |
-| **Vừa** | một–hai tệp test, một `tools\check_*.py` | tự do, một lần một |
-| **Nặng** | `gate.py` (**mọi** chế độ, kể cả `--quick`) · `test_nhanh.py` · ≥ 3 tệp test · `build_system_profile.py` · đột biến (`cosmic-ray`) · nạp model thật | theo §2 |
+| **Nhẹ** | `git`, `grep`, đọc tệp, `ast.parse`, `python -c` · kiểm tĩnh/AST · **gọi máy B** | tự do |
+| **Vừa** | pytest **nối tiếp** 1–2 tệp **dưới 30 giây** · một `tools\check_*.py` | tự do, một lần một |
+| **Nặng** | pytest có **`-n`**, **hoặc** ≥ 3 tệp, **hoặc** > 30 giây · `gate.py` (**mọi** chế độ, kể cả `--quick`) · `test_nhanh.py` · ffmpeg / demucs / ASR / TTS / VMAF / suy luận trên card máy A · `build_system_profile.py` · đột biến (`cosmic-ray`) · nạp model thật | theo §2 |
 | **Build** | `cargo` · `npm run build` · `tauri build` · `release.ps1` | **§4b** — ngoài khoá, nhưng **bắt buộc chặn lõi** |
+
+⭐ **Không biết nó thuộc nhóm nào ⇒ ĐO một lần**: `tai_may.py` trước và sau. Quá
+**30 giây** hoặc quá **2 lõi** ⇒ từ lần sau nó là **nặng**, và **ghi con số đo được
+vào báo cáo** để lần sau không ai phải đo lại.
+
+⚠️ **Ba cửa, không phải một.** Một tệp test duy nhất chạy `-n 7` vẫn là lệnh nặng;
+một tệp test gọi ffmpeg 3 phút vẫn là lệnh nặng. Ngược lại, một phép kiểm `grep`
+trên 1.000 tệp tài liệu là **kiểm tĩnh** — chạy thẳng, ⛔ đừng bọc `chay_nang.py`
+(giữ khoá cho một việc không đốt CPU là làm cả máy đứng chờ vô cớ; xem `⭐ NHẢ
+KHOÁ NGAY KHI TÍNH XONG` ở `CLAUDE.md` toàn cục).
 
 ## 2. Trước lệnh nặng — MỘT bộ kiểm, hai lệnh
 
@@ -67,8 +80,11 @@ trong gate. Hằng số ở ngay trong tệp đó (`LOI_DE_DANH_VAT_LY`,
 - Đơn vị là **lõi vật lý** (xdist đọc lõi vật lý; `os.cpu_count()` trả lõi logic).
 - `chiem = max(KHAI BÁO, ĐO ĐƯỢC)` — `max` chứ không `+`, để một phiên vừa khai vừa
   dùng không bị trừ hai lần.
-- pytest **gõ tay** ≥ 3 tệp: `-n` tối đa **7** (hợp đồng §4.1; chủ dự án đổi 6 → 7
-  ngày 23/09 — `chay_nang.py` ép trần này, và `gate.py` in lệnh gợi ý theo nó).
+- pytest **gõ tay** ≥ 3 tệp: `-n` tối đa `gate.TRAN_N_GO_TAY` (**7** lúc viết dòng
+  này; chủ dự án đổi 6 → 7 ngày 23/09). ⛔ Đừng chép con số — đọc hằng số ấy trong
+  `tools/gate.py`. `chay_nang.py` ép trần này, `gate.py` in lệnh gợi ý theo nó, và
+  `tests/test_1280_nhip_mot_l3.py` chốt cả hai đọc cùng một chỗ (lần đổi 6 → 7 sửa
+  một bên, bỏ bên kia, và gate đỏ ở đúng phép kiểm đáng lẽ bảo vệ nó).
 
 ⚠️ **Tiến trình cháu không nằm trong `-n`.** Một worker gọi model thật (`demucs`,
 `whisper`, TTS) thành ~10 luồng torch. ⇒ Test nạp model thật nằm sau rào

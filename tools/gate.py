@@ -279,6 +279,17 @@ def loi_dang_ban(mau_s: float = 1.0) -> float:
 #:       Bo `loi_dang_ban()` di thi con so 2 nay moi thanh nguy hiem.
 LOI_DE_DANH_VAT_LY = 2
 
+#: Tran `-n` cho pytest GO TAY (khong phai bo test trong gate). Chu du an doi
+#: 6 -> 7 ngay 23/09/2026.
+#:
+#: 🔴 VI SAO NO LA MOT HANG SO CO TEN. Truoc 24/09 con so nay la chu `7` viet
+#:    thang trong `lenh_chay_lai()`, va `tests/test_1280_nhip_mot_l3.py` khai lai
+#:    chu `6` cua doi truoc. Lan doi 6 -> 7 sua mot ben, bo ben kia -> gate DO o
+#:    dung phep kiem dang le bao ve no. Hai cho khai mot dieu, va khong ai bat
+#:    khop. Nay co dung MOT cho: tep test doc hang so nay, tai lieu tro TEN no
+#:    (`docs/QUY_TAC_CHAY_LENH_NANG.md` §4, hop dong §4.1).
+TRAN_N_GO_TAY = 7
+
 #: ⛔ TRAN CUNG. Chu du an chon 03/09: **uu tien an toan, chap nhan cham hon**.
 #:
 #:    Do that hom do: `-n 11` mat 327s; `-n 6` mat hon 15 phut (~2,8x cham hon).
@@ -2259,8 +2270,7 @@ def lenh_chay_lai(steps: list[Step]) -> list[str]:
                     pass
             tep = _tep_test_do(dau_ra)
             if tep:
-                # Tran -n: chu du an doi 6 -> 7 ngay 23/09 (hop dong §4.8).
-                n = " -n 7" if len(tep) >= 3 else ""
+                n = f" -n {TRAN_N_GO_TAY}" if len(tep) >= 3 else ""
                 ra.append(f"python -m pytest{n} -q {' '.join(tep)}")
                 continue
         argv = ["python" if a == sys.executable else a for a in s.argv]

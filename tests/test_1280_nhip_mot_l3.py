@@ -57,12 +57,32 @@ def test_bo_test_do_cho_ra_pytest_DUNG_cac_tep_do(tmp_path, monkeypatch):
         "python -m pytest -q tests/test_12_a.py tests/test_34_b.py"]
 
 
-def test_ba_tep_tro_len_thi_mang_tran_n6():
+def test_ba_tep_tro_len_thi_mang_tran_n_go_tay():
+    """Từ 3 tệp trở lên thì lệnh gợi ý mang trần `-n` — và mang ĐÚNG trần hiện hành.
+
+    ⛔ Đừng gõ lại con số ở đây. Bản cũ của phép kiểm này khai chữ `6` trong khi
+       `gate.lenh_chay_lai()` khai chữ `7`; lần chủ dự án đổi 6 → 7 (23/09/2026)
+       sửa một bên, bỏ bên kia, nên gate ĐỎ ở đúng phép kiểm đáng lẽ bảo vệ nó.
+       Nay đọc `gate.TRAN_N_GO_TAY` — một nguồn, không có gì để lệch.
+    """
     tail = "\n".join(f"FAILED tests/test_{i}_x.py::t - E" for i in (1, 2, 3))
     s = _buoc("bo test (pham vi)", [sys.executable, "tools/test_nhanh.py"],
               ok=False, tail=tail)
     assert gate.lenh_chay_lai([s]) == [
-        "python -m pytest -n 6 -q tests/test_1_x.py tests/test_2_x.py tests/test_3_x.py"]
+        f"python -m pytest -n {gate.TRAN_N_GO_TAY} -q "
+        "tests/test_1_x.py tests/test_2_x.py tests/test_3_x.py"]
+
+
+def test_tran_n_go_tay_la_mot_so_hop_ly_tren_may_nay():
+    """Đối chứng cho phép trên: nó đọc hằng số, nên hằng số phải còn nghĩa.
+
+    Đọc hằng số mà không kiểm gì thì phép trên xanh với mọi giá trị, kể cả `-n 0`
+    hay `-n 40` — tức nó thành phép đo rỗng. Trần phải nằm dưới số lõi vật lý để
+    còn chỗ cho máy (`LOI_DE_DANH_VAT_LY`), và phải ≥ 2 mới đáng gọi là song song.
+    """
+    assert 2 <= gate.TRAN_N_GO_TAY <= 12, (
+        f"TRAN_N_GO_TAY = {gate.TRAN_N_GO_TAY} nằm ngoài khoảng còn nghĩa trên "
+        "máy A (20 lõi logic / 10 lõi vật lý)")
 
 
 def test_buoc_tinh_do_cho_ra_DUNG_lenh_cua_buoc_va_bo_qua_buoc_dat():
