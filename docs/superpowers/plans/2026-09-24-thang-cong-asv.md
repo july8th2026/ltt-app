@@ -90,6 +90,34 @@ gắn cờ 43/100 · lỗi thật 10 · bắt trúng 10
 **đúng**; chỗ sai là **số bị trừ** (23,3 % đo trên n=30 vùng khác; n=100 cho 43 %).
 ⇒ Bài học: **hai con số từ hai tập khác nhau thì ⛔ không được đặt cạnh nhau.**
 
+### 🔴 SO CAI MA LOI `N-xx` — ⛔ hỏi điều phối TRƯỚC khi đặt số mới
+
+⚠️ **`LOI_TONG.md` RẼ NHÁNH theo từng làn** — ba bản khác nhau, cùng chung `N-01…N-16`
+(tổ tiên chung) rồi mỗi bản thêm phần của mình. ⇒ ⛔ **Đếm "số kế tiếp" trên bản của
+mình là SAI** — đó đúng là **N-16**, và nó đã cắn thật (`N-12`, `N-13` từng bị hai làn
+lấy trùng).
+
+⭐ **Sổ cái nằm Ở ĐÂY, trên `main`.** Làn ghi nội dung vào bản `LOI_TONG.md` của nhánh
+mình, nhưng **SỐ** thì lấy từ bảng này, và **điều phối cấp**.
+
+| số | nội dung | nhánh giữ |
+|---|---|---|
+| N-17 | hai app cùng gọi MỘT hàm, một app **vứt bớt** trường — lỗi ở **chỗ nối** | `asvf-nghiem-thu-v2` |
+| N-18 | bench đo **chính khuôn** thay vì đo sản phẩm | `asvf-nghiem-thu-v2` |
+| N-19 | `except`/`continue` **im lặng** lọt `check_silent_except` — 3 ca, không ca nào là `except: pass` | `asvf-nghiem-thu-v2` |
+| N-20 | `check_i18n` ⛔ không leo qua một **phép gán** ⇒ có thể bọc `_()` nhầm vào **lời nhắc** | `asvf-nghiem-thu-v2` |
+| N-21 | `PHIEN_BAN_LOI_NHAC`: **một** hằng, **ba** vân tay ⇒ khách **bị tính tiền chạy lại** 7 giai đoạn | `asvf-nghiem-thu-v2` (đã sửa) |
+| N-22 | `gop_phan` ghép theo `tu`/`n` nên sai với **dải rời rạc** ⇒ mẫu số phồng | `asvf-xac-thuc` |
+| N-23 | đường sống ⛔ **không ghim `temperature`** ⇒ cổng áp 1.0 — **ba** triệu chứng một gốc | `asvf-nghiem-thu-v2` |
+| N-24 | phép kiểm chốt **VĂN BẢN/TÊN** thay vì **TÍNH CHẤT** — 3 ca, 3 làn, 1 ngày | `asv-final` |
+
+⛔ **`N-13` đang bị dùng HAI lần** trên `asv-final` (cổng VMAF **và** *"một hằng làm ba
+việc"*) — va **trước** khi có cấp số tập trung. Ca thứ hai sẽ được đánh lại số khi gộp.
+
+⭐ **Luật:** số kế tiếp trống là **N-25**. Làn ⛔ **không tự đặt** — hỏi điều phối, điều
+phối cập nhật bảng này. Đây là cùng một bài toán mà `check_so_test` đã giải cho **dải số
+test**: ⛔ không ai đếm trên bản của mình, ⭐ có **một** chỗ cấp phát.
+
 ### Còn chờ chủ dự án (⛔ không chặn việc đang chạy)
 
 1. **`光子` / thương hiệu** — luật tên riêng đang là **luật TẠM do điều phối thu hẹp**
