@@ -497,3 +497,57 @@ def test_3602_tran_cong_xanh_khi_luoi_min_hon_dung_sai():
     r = tran_cua_cong(cong, sinh, nguong=0.90, lan=400)
     assert r["voi_toi_duoc"] is True
     assert r["tran_trung_vi"] == pytest.approx(1.0)
+
+
+# ───────────────────────────────────────────────────────────────────────────
+# 🔴 RÀNG BUỘC ẨN: `fps` đọc OCR ↔ hiệu lực của cổng B1
+# ───────────────────────────────────────────────────────────────────────────
+
+
+def _hang_so_bang_ast(tep: pathlib.Path, ten: str) -> float:
+    """Đọc một hằng số bằng AST — ⛔ không import (module kéo ffmpeg/GPU).
+
+    Bài học `doc-thu-dai-dien-thay-vi-doc-thu-that`: đọc **đúng tệp nguồn**
+    đang chạy, ⛔ không đọc một bản chép trong tài liệu.
+    """
+    import ast
+
+    cay = ast.parse(tep.read_text(encoding="utf-8"))
+    for nut in cay.body:
+        if isinstance(nut, ast.Assign):
+            for dich in nut.targets:
+                if isinstance(dich, ast.Name) and dich.id == ten:
+                    return float(ast.literal_eval(nut.value))
+    raise AssertionError(f"khong tim thay hang so `{ten}` trong {tep.name}")
+
+
+def test_3602_fps_doc_ocr_khong_duoc_ha_duoi_muc_da_hieu_luc():
+    """🔴 Hạ `FPS_DOC` là vô hiệu hoá cổng B1 — ⛔ và nó hỏng IM LẶNG.
+
+    `fps` đọc OCR quyết định độ phân giải mốc của **hardsub**, mà hardsub là
+    **chân lý nền** của `chinh_xac_cho_ngat` (dung sai ±0,3 s, ngưỡng ≥ 0,90).
+
+        4 fps ⇒ lưới 0,25 s < 0,3 s ⇒ trần cổng = 1,0000  ✅
+        điểm gãy ≈ 12 % mốc trôi quá 0,3 s ⇒ trần tụt dưới 0,90
+
+    ⚠️ Đây đúng khuôn `hai-cho-khai-cung-mot-dieu-khong-ai-bat-khop`: giá trị
+    `fps` và tính hợp lệ của một cổng chất lượng khai ở **hai nơi**, và trước
+    hôm nay ⛔ **không chỗ nào trong mã nói chúng ràng buộc nhau**. Ai hạ fps
+    để tiết kiệm GPU sẽ tắt một cổng mà ⛔ không gì kêu lên.
+
+    ⇒ Phép kiểm này **là** chỗ kêu lên.
+    """
+    tep = (
+        pathlib.Path(__file__).resolve().parent.parent
+        / "apps" / "auto_scan_video" / "nguon_loi.py"
+    )
+    fps = _hang_so_bang_ast(tep, "FPS_DOC")
+    da_do = _hang_so_bang_ast(tep, "FPS_DOC_DA_DO_TRAN_CONG_B1")
+    assert fps >= da_do, (
+        f"FPS_DOC={fps} tut duoi muc da do tran cong B1 ({da_do}).\n"
+        "Cong B1 `chinh_xac_cho_ngat` co the da MAT HIEU LUC trong im lang.\n"
+        "=> Chay lai tools/do_luong.py::tran_cua_cong TRUOC, chi ha neu tran "
+        ">= 0,90, roi cap nhat FPS_DOC_DA_DO_TRAN_CONG_B1."
+    )
+    # ⛔ Lưới phải MỊN HƠN dung sai, nếu không lượng tử hoá tự nó ăn mất khớp.
+    assert 1.0 / fps < 0.3, f"luoi {1.0/fps:.3f}s KHONG min hon dung sai 0,3s"

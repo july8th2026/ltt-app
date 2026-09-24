@@ -326,3 +326,105 @@ Fixture của tôi **xanh SAI hai lần** trước khi đúng:
 ⭐ Thuốc: fixture phải mang **độ không đều của dữ liệu thật** (khoảng cách bốc
 ngẫu nhiên, hạt ghim), và luôn kiểm *"bản suy biến có thực sự THUA bản thật không"*
 — ⛔ không chỉ kiểm *"bản thật có đạt không"*.
+
+---
+
+# 11. 🔴 QUÉT `tran_cua_cong` QUA MỌI CỔNG ĐANG DÙNG
+
+Lệnh: `tools/do_luong.py::tran_cua_cong`. **Hai cổng có vấn đề về trần.**
+
+| cổng | chân lý nền | **trần** | ngưỡng | phán quyết |
+|---|---|---|---|---|
+| **B1 vế 1** chỗ ngắt ±0,3 s | OCR 4 fps (lưới 0,25 s) | **1,0000** | ≥ 0,90 | ✅ **ĐỨNG** |
+| **B1 vế 2** đoạn ≤ 7 s | ⛔ **KHÔNG CÓ** — là **ràng buộc**, ⛔ không phải so sánh | **1,00** | = 1,00 | ✅ **ĐỨNG** (luật ⛔ không áp) |
+| **B1 CER** | hardsub — **RÚT GỌN lời nói** | ⚠️ **CHƯA ĐO ĐƯỢC** | ≤ 0,12 | ⚠️ xem §11.2 |
+| **B2 báo động giả — cách CŨ** | *"FLORES luôn đúng"* | **10–23 %** | ≤ 15 % | 🔴 xem §11.3 |
+| **B2 báo động giả — cách MỚI** | người soi mù | **0 %** | ≤ 15 % | ✅ **ĐỨNG** |
+| onset ±0,3 s (thước mới) | đọc tay (lưới 0,5 s) | **0,606** | ≥ 0,80 | 🔴 **KHÔNG VỚI TỚI** |
+| onset ±0,5 s (thước mới) | như trên | **1,000** | ≥ 0,80 | ✅ ĐỨNG |
+
+## 11.1 ⭐ Vế 2 — luật §8 ⛔ KHÔNG ÁP, và đó là một phân biệt thật
+
+Vế 2 (*đoạn ≤ 7,0 s*) so đoạn của ta với một **con số cố định**, ⛔ không so với
+một **chân lý nền đo được**. ⇒ ⛔ Không có nhiễu chân lý nền để làm tụt trần.
+
+> 🔑 Luật *"chạy hệ hoàn hảo"* chỉ có nghĩa khi cổng **đối chiếu với một phép đo
+> khác**. Một **ràng buộc** (≤ 7 s) thì trần luôn là 1,00 theo định nghĩa.
+
+⚠️ Kiểm phụ: chân lý nền hardsub (33 dòng v2) **tự thoả mãn** ≤ 7 s — dài nhất
+**3,00 s**. ⇒ Ràng buộc ⛔ không mâu thuẫn với cách người làm phim thật sự cắt.
+
+## 11.2 ⚠️ CER — trần ⛔ CHƯA ĐO ĐƯỢC, và tôi khai thẳng
+
+`GIOI_HAN_CHAN_LY_NEN` đã khai: hardsub là **bản chữ người làm phim viết**, nó
+**rút gọn lời nói**. ⇒ Một ASR **hoàn hảo** (chép đúng thứ người ta nói) vẫn sẽ có
+CER **> 0** so với hardsub.
+
+⛔ **Đo trần ấy cần một bản ghi LờI NÓI làm tay — ta ⛔ KHÔNG CÓ.**
+`l_ocr_gt_v2.json` là hardsub đọc tay (chữ **trên màn hình**), ⛔ không phải lời nói.
+
+⭐ **Nhưng chiều lệch cứu ta:** nhiễu này đẩy CER **LÊN**, tức làm cổng **NGHIẮM
+KHẮC HƠN**, ⛔ không phải dễ hơn. ⇒ Nó gây **ĐỎ giả**, ⛔ không gây **XANH giả**.
+
+```
+CER xanh  ->  bằng chứng MẠNH   (vượt được cả phần nhiễu)
+CER đỏ    ->  bằng chứng YẾU   (phải soi tay trước khi quy cho engine)
+```
+
+⛔ Đây ⛔ không phải phát hiện mới — `GIOI_HAN_CHAN_LY_NEN` đã viết đúng câu ấy từ
+trước. Phép quét này **xác nhận** nó, ⛔ không lật nó. Đo được trần thật là việc
+cần **một bản ghi lời nói làm tay** — chưa làm, và **ghi ra đây là chưa làm**.
+
+## 11.3 🔴 CỔNG B2 CÁCH CŨ — bộ chấm HOÀN HẢO cũng có thể trượt
+
+Cách đo **cũ** giả định *"FLORES luôn đúng"* ⇒ **mọi** lần gắn cờ là một báo
+động giả. Nhưng FLORES **có lỗi thật**, và một bộ chấm hoàn hảo sẽ gắn cờ
+đúng những dòng ấy ⇒ bị đếm là báo động giả:
+
+| định nghĩa lỗi | sàn lỗi FLORES | KTC 95 % | so với ngưỡng 15 % |
+|---|---|---|---|
+| `chinh` | 10/100 = **10 %** | [5,5 ; 17,4] | KTC **cắt** ⇒ ⛔ không kết luận |
+| `rong` | 12/100 = **12 %** | [7,0 ; 19,8] | KTC **cắt** ⇒ ⛔ không kết luận |
+| `rong_nhat` | 23/100 = **23 %** | [15,8 ; 32,2] | 🔴 **trần > 15 %** ⇒ **bộ chấm HOÀN HẢO CŨNG TRƯỢT** |
+
+⭐ ⇒ **Việc chuyển sang đối chiếu người soi MÙ ⛔ không phải một cải tiến cho
+đẹp — nó là ĐIỀU KIỆN ĐỂ CỔNG CÓ NGHĨA.** Cách mới tính lỗi thật là gắn cờ
+**ĐÚNG**, nên trần của bộ chấm hoàn hảo về **0 %** và ngưỡng 15 % lại có nghĩa.
+
+⚠️ Hệ quả ngược phải nói rõ: mọi con số báo động giả đo bằng **cách cũ** đều
+mang sẵn một phần **sàn lỗi FLORES** bên trong. ⛔ Chúng ⛔ không so sánh được
+trực tiếp với con số đo bằng cách mới.
+
+---
+
+# 12. ⚠️ RÀNG BUỘC ẨN ĐÃ GHIM: `fps` đọc OCR ↔ hiệu lực cổng B1
+
+`fps` đọc OCR quyết định độ phân giải mốc của **hardsub**, mà hardsub là **chân
+lý nền** của cổng B1 vế 1. Trước 25/09 ⛔ **không chỗ nào trong mã nói hai thứ ấy
+ràng buộc nhau** — đúng khuôn `hai-cho-khai-cung-mot-dieu-khong-ai-bat-khop`
+cộng `hỏng im lặng`.
+
+✅ **Đã làm cả hai việc:**
+
+1. **Cảnh báo ngay cạnh chỗ đặt fps** — `apps/auto_scan_video/nguon_loi.py`,
+   khối chú thích ngay trên `FPS_DOC = 4.0` (⛔ ⛔ không phải trong tài liệu đo).
+2. **Phép kiểm đã có** — `tests/test_3602::test_3602_fps_doc_ocr_khong_duoc_ha_
+   duoi_muc_da_hieu_luc` đọc **chính tệp nguồn** bằng AST (⛔ không import, module
+   kéo ffmpeg/GPU) và đòi `FPS_DOC >= FPS_DOC_DA_DO_TRAN_CONG_B1`, đồng thời đòi
+   `1/fps < 0,3 s`. Đã kiểm bằng đột biến: hạ 4 → 2 fps ⇒ phép kiểm **ĐỎ**.
+
+⚠️ Ràng buộc này **không còn nằm trong lời** — nó nằm trong một phép kiểm.
+
+---
+
+# 13. ⚠️ v3 — 0,9730 đứng trên một nền ĐÃ KHAI LÀ NHIỄM
+
+`B1_CHEP_LOI.md` (dòng 173) khai: chân lý nền của **phim 3 bị NHIỄM** — hardsub
+chứa **13 dòng chữ UI game**, không phải lời thoại.
+
+> ⛔ Đây ⛔ **không** phải lý do bỏ con số 0,9730.
+> ⛔ Nhưng nó ⛔ **không được đứng trần**.
+
+Mỗi lần trích 0,9730, phải trích kèm câu này. Và v3 cũng là phim có **p95 lệch
+mốc OCR cao nhất** (tới 0,65 s ở 4 fps) ⇒ nó là phim **gần điểm gãy ≈ 12 % nhất**
+trong ba phim. Hai yếu tố đó cộng dồn trên **cùng một phim**.
