@@ -89,6 +89,21 @@ def _gia_node(node: dict, cc: dict[str, CongCu]) -> int:
                 f"{node.get('id')}: thieu `gia_con` da ghim -- do thi nay "
                 "chua di qua `xuat_ban_draft`, khong co chan tren")
         return gia
+    if str(node.get("type")) == LOAI_AGENT:
+        # §12.3: *"Trần báo giá node = `ngan_sach_credit`"*.
+        #
+        # ⚠️ KHÁC `gia_con` ở trên, và khác có lý do. `gia_con` đến từ CSDL vì
+        #    một trường trong body của người gọi sẽ là cách **né** trần của
+        #    chính họ. `ngan_sach_credit` thì ngược chiều: khai to nghĩa là bị
+        #    GIỮ nhiều hơn, nên nó tự hạn chế. Nó là lời khai *"tôi cho phép
+        #    lượt này tiêu tới đây"*, và `tac_tu._mo_buoc` không mở bước nào
+        #    vượt qua con số ấy.
+        gia = (node.get("params") or {}).get("ngan_sach_credit")
+        if not isinstance(gia, int) or isinstance(gia, bool) or gia < 1:
+            raise KhongBaoGiaDuoc(
+                f"{node.get('id')}: `ngan_sach_credit` phai la so nguyen >= 1 "
+                "-- khong co no thi luot agent khong co chan tren")
+        return gia
     if node.get("thi_hanh") != "job":
         return 0
     ten_cong_cu = str(node["type"])[4:]
@@ -134,6 +149,9 @@ HE_SO_LAP_TOI_DA = 1_000_000
 
 LOAI_FOREACH = "core.foreach"
 LOAI_GOI_WF = "core.call_workflow"
+#: `ai.agent` (spec §12.3). Hằng ở đây chứ không import `tac_tu` để tránh vòng
+#: import: `tac_tu` gọi `bao_gia`, không chiều ngược lại.
+LOAI_AGENT = "ai.agent"
 LOAI_FOREACH_END = "core.foreach_end"
 
 

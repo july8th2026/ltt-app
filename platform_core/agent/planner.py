@@ -303,6 +303,13 @@ def _goi_model(db: DbSession, prompt: str) -> str:
     return van
 
 
+#: Tên CÔNG KHAI của `_goi_model`. `ke_hoach_v3.soan_draft` gọi qua tên này:
+#: một lời gọi xuyên mô-đun tới một tên gạch dưới là một lời gọi không ai khai
+#: là hợp đồng. Bí danh chứ không phải hàm thứ hai — `test_389`/`test_1208` đã
+#: ghim tên cũ, và đổi tên chúng là đụng vào phép kiểm của người khác.
+goi_model = _goi_model
+
+
 def plan_once(db: DbSession, *, goal: str, budget_max_credit: int,
               input_types: Optional[dict] = None,
               llm_call: Optional[Callable[[str], object]] = None) -> dict:

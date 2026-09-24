@@ -53,7 +53,13 @@ TEP_PG = ("tests/test_214_multi_process_runtime.py",
           # sanh BO DOI (`tuple_(het_han_luc, id)` - cu phap row-value hai
           # dialect thuc thi khac nhau), va be rong String(120) cua
           # `waitpoint.idempotency_key` (SQLite nuot, PostgreSQL nem).
-          "tests/test_1798_wf_flow_be_pg.py")
+          "tests/test_1798_wf_flow_be_pg.py",
+          # FLOW A voi HTTP THAT - dieu kien ra cua P5 (plan wf-v2). Khac
+          # test_1787 (http-mock, khong ra mang): tep nay mo socket that va
+          # chung minh bi mat KHONG nam trong `workflow_version` lan
+          # `node_run_snapshot`. Bo qua vo hinh o day dat hon ca: no la phep
+          # DUY NHAT do duong bi mat di tu kho credential ra day.
+          "tests/test_2923_flow_a_http_that_pg.py")
 
 
 def _doc_neu_duoc(path: pathlib.Path) -> str:

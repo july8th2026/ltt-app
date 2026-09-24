@@ -268,7 +268,21 @@ def _tham_chieu_trong(gia_tri: Any) -> set[ThamChieu]:
 
 
 #: Tiền tố của node LÕI (`nut_loi/`, spec §4.5 nguồn 1).
-TIEN_TO_LOI = "core."
+#:
+#: 🔴 TỪNG CHỈ LÀ `"core."`, VÀ ĐÓ LÀ MỘT LỖI IM LẶNG. `nut_loi/__init__.py`
+#:    khai **bốn** không gian ngay ở dòng đầu docstring — `core.*`,
+#:    `trigger.*`, `ai.*`, `connector.*` — và cả bốn đều đăng ký vào cùng một
+#:    sổ `nut_loi.tat_ca()`. Bộ biên dịch chỉ nhận ra một trong bốn, nên một
+#:    node `ai.*` đầy đủ (đã khai, đã có `NodeDefinition`, đã có bộ thi hành)
+#:    rơi xuống nhánh cuối của `_node` và bị từ chối bằng
+#:    `loai_node_chua_ho_tro` — một thông điệp nói *"chưa hỗ trợ"* về một thứ
+#:    đã được hỗ trợ.
+#:
+#: ⛔ Không thay bằng "tra `nut_loi.tat_ca()` rồi suy": `_node` phải phân biệt
+#:    được **node lõi** với **node app** TRƯỚC khi tra sổ nào, vì hai bên có
+#:    hai nguồn khác nhau (spec §4.5). Một danh sách tiền tố là bản khai của
+#:    ranh giới ấy; `str.startswith` nhận tuple, nên ba chỗ dùng không đổi.
+TIEN_TO_LOI: tuple[str, ...] = ("core.", "trigger.", "ai.", "connector.")
 
 #: Kiểu tham số "đây là một BIỂU THỨC §6" trong `NodeDefinition.tham_so`.
 #:
@@ -351,6 +365,35 @@ def _kiem_tham_so_loi(nd, params: dict, nid: str) -> None:
             raise LoiBienDich(
                 "thieu_tham_so",
                 f"{nd.type} phai co it nhat mot trong {sorted(nhom)}", nid)
+    # ⭐ TRẦN SỐ HỌC của lược đồ: `maximum` / `minimum` / `maxItems`. Nguồn:
+    #    Activepieces `packages/core/shared/src/lib/ee/agent/agent.ts` khai
+    #    `maxSteps … .max(MAX_AGENT_STEP_BUDGET)` và `tools … .max(…)` ngay
+    #    TRONG lược đồ zod, nên một cấu hình vượt trần không bao giờ được LƯU.
+    #
+    # ⛔ Đây là một luật của LƯỢC ĐỒ, y như `mot_trong` ở trên — compiler vẫn
+    #    không biết tên node nào (`G42`). Node nào cần trần thì tự khai.
+    #    Trần cưỡng chế ở đây chứ không lúc chạy: lúc chạy là lúc node đã mở
+    #    được một lượt tiêu tiền rồi.
+    for khoa, mo_ta in thuoc.items():
+        if khoa not in params:
+            continue
+        gia_tri = params[khoa]
+        if isinstance(gia_tri, bool) or not isinstance(gia_tri, (int, float)):
+            so = len(gia_tri) if isinstance(gia_tri, (list, tuple)) else None
+            tran = mo_ta.get("maxItems")
+            if so is not None and isinstance(tran, int) and so > tran:
+                raise LoiBienDich(
+                    "tham_so_vuot_tran",
+                    f"{nd.type}.{khoa} co {so} phan tu, toi da {tran}", nid)
+            continue
+        for ten_tran, phep in (("maximum", lambda a, b: a > b),
+                               ("minimum", lambda a, b: a < b)):
+            muc = mo_ta.get(ten_tran)
+            if isinstance(muc, (int, float)) and not isinstance(muc, bool) \
+                    and phep(gia_tri, muc):
+                raise LoiBienDich(
+                    "tham_so_vuot_tran",
+                    f"{nd.type}.{khoa} = {gia_tri}, {ten_tran} la {muc}", nid)
     if lo.get("additionalProperties") is False:
         thua = sorted(set(params) - set(thuoc))
         if thua:
@@ -408,8 +451,20 @@ def _node_loi(n: dict, nid: str, loai: str) -> dict:
         raise LoiBienDich("loai_node_chua_ho_tro", loai, nid)
     params = dict(n.get("params") or {})
     _kiem_tham_so_loi(nd, params, nid)
+    # 🔴 Truoc 24/09/2026 dong nay ghi cung `""`. Mot o LUON RONG thi khong ai
+    #    gan duoc credential cho `core.http`, va he qua that la nguoi soan phai
+    #    go token vao `params` — tuc vao `workflow_version`, mot ban ghi duoc
+    #    NHAN BAN khi khach "Save as" va tra nguyen ven cho trinh soan thao.
+    ref = str(n.get("credential_ref") or "")
+    if ref and not nd.credential:
+        # ⛔ Node nay khong goi ra ngoai, nen mot ref o day la mot hieu nham
+        #    cua nguoi soan — va mot hieu nham im lang ve bao mat la thu te
+        #    nhat: ho tuong da gan khoa, thuc ra chua.
+        raise LoiBienDich(
+            "credential_khong_ho_tro",
+            f"node {loai!r} khong nhan credential nao", nid)
     return {"id": nid, "type": loai, "type_version": nd.type_version,
-            "params": params, "credential_ref": "",
+            "params": params, "credential_ref": ref,
             "settings": dict(n.get("settings") or {}),
             "thi_hanh": nd.thi_hanh}
 

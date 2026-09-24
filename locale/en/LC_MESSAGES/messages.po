@@ -21288,3 +21288,37 @@ msgstr "We are confirming this machine's IP address with the provider. Do not cr
 
 msgid "<strong>Chỉ cổng %(rdp)s (RDP) đi vào máy bạn được mở.</strong> Mọi cổng đến khác đều bị chặn ở gateway: một dịch vụ bạn dựng bên trong máy — web, WinRM, máy chủ game — sẽ chạy bình thường trong máy nhưng <strong>không truy cập được từ Internet</strong>. Máy vẫn ra Internet tự do (tải bản vá, gọi API). Cần mở thêm cổng thì liên hệ chúng tôi; đây là giới hạn kỹ thuật hiện tại, không phải lỗi của máy bạn."
 msgstr "<strong>Only port %(rdp)s (RDP) is open into your machine.</strong> Every other inbound port is blocked at the gateway: a service you run inside the machine — a web server, WinRM, a game server — will run fine inside it but <strong>cannot be reached from the Internet</strong>. The machine still reaches the Internet freely (patches, API calls). Contact us if you need another port opened; this is a current technical limit, not a fault of your machine."
+msgid "Thiếu mục tiêu."
+msgstr "The goal is missing."
+
+msgid "Ngân sách không hợp lệ."
+msgstr "The budget is not valid."
+
+msgid "AI: Agent có giới hạn"
+msgstr "AI: Bounded agent"
+
+msgid "Agent tự chọn công cụ trong danh sách trắng. Mỗi lần gọi là một run con; cả lượt nằm trong MỘT ngân sách."
+msgstr "The agent picks tools from an allow-list. Every call is a child run; the whole turn sits inside ONE budget."
+
+msgid "Danh sách TRẮNG: loại node agent được gọi. Không nêu tức là cấm."
+msgstr "ALLOW-list: the node types the agent may call. Not listed means forbidden."
+
+msgid "JSON Schema cho ket_qua. Không khớp -> FAILED dau_ra_sai_luoc_do."
+msgstr "JSON Schema for ket_qua. A mismatch -> FAILED dau_ra_sai_luoc_do."
+
+msgid "Số lần gọi công cụ tối đa."
+msgstr "Maximum number of tool calls."
+
+msgid "Trần credit của CẢ lượt agent. Đây cũng là trần báo giá của node."
+msgstr "Credit ceiling for the WHOLE agent turn. It is also the node's quote ceiling."
+
+msgid "Việc agent phải hoàn thành."
+msgstr "The work the agent must complete."
+msgid "Bí mật của khách để gọi API bên ngoài, mã hoá at-rest (Fernet). Thu hồi xoá bí mật nhưng giữ hàng: nó là bằng chứng run nào đã dùng khoá nào."
+msgstr "A customer secret used to call an outside API, encrypted at rest (Fernet). Revoking erases the secret but keeps the row: it is the evidence of which run used which key."
+
+msgid "Ai tạo/sửa/thu hồi/làm mới/dùng một credential, lúc nào, ở run và node nào. Không bao giờ chứa bí mật."
+msgstr "Who created, changed, revoked, refreshed or used a credential, when, and in which run and node. Never holds a secret."
+
+msgid "Một lượt kết nối OAuth đang dở: state đã băm, PKCE verifier đã mã hoá, nơi quay về. Dùng một lần, hạn 10 phút."
+msgstr "One OAuth connection in progress: the hashed state, the encrypted PKCE verifier, and where to return. Single use, expires in 10 minutes."
