@@ -79,6 +79,7 @@ import socket
 import subprocess
 import sys
 import time
+from collections.abc import Iterable
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -1207,7 +1208,7 @@ def _run(step: Step) -> None:
     #    dong ket luan, vi mot tep khong ai biet la mot tep khong ai doc.
     if not step.ok:
         try:
-            thu_muc = ROOT / "test-results" / "gates"
+            thu_muc = thu_muc_so()
             thu_muc.mkdir(parents=True, exist_ok=True)
             ten = "".join(c if c.isalnum() else "-" for c in step.name).strip("-")
             tep = thu_muc / f"loi-{os.getpid()}-{ten}.log"
@@ -1827,7 +1828,7 @@ def main() -> int:
     #    `--doi` tu nang len day du la MAY quyet dinh, khong phai thoi quen, nen
     #    kiem nay dung TRUOC `_thu_hep`.
     if ho_so == "day-du" and not args.l3_lai:
-        chan = l3_lai_bi_chan(ROOT / "test-results" / "gates",
+        chan = l3_lai_bi_chan(moi_cho_doc_so(),
                               _git_gon(["git", "rev-parse", "--abbrev-ref", "HEAD"]))
         if chan:
             print(chan)
@@ -2087,7 +2088,7 @@ def _ghi_ket_qua(ho_so: str, steps: list[Step], ket: str, tong_s: float,
                  ha_cap_tu: str = "", ly_do_ha_cap: str = "",
                  l3_lai: bool = False, sha: str = "",
                  thanh_phan: list[str] | None = None) -> None:
-    """Ghi danh tinh cua luot chay nay vao `test-results/gates/<id>.json`.
+    """Ghi danh tinh cua luot chay nay vao `.gate/<id>.json`.
 
     ## Vi sao can
 
@@ -2097,8 +2098,8 @@ def _ghi_ket_qua(ho_so: str, steps: list[Step], ket: str, tong_s: float,
     mot tep DA DOI TEN tu nhieu gio truoc, va khong ai truy nguoc duoc no do
     tren cay nao.
 
-    ⛔ KHONG commit tep nay: `test-results/` da nam trong `.gitignore` (dong
-       148). Day la du lieu cua mot lan chay, khong phai cua kho.
+    ⛔ KHONG commit tep nay: `.gate/` nam trong `.gitignore`. Day la du lieu
+       cua mot lan chay, khong phai cua kho.
 
     ⚠️ KHONG ghi bien moi truong, dau ra buoc, hay bat cu gi co the chua bi
        mat. Chi ghi danh tinh va ket qua.
@@ -2107,7 +2108,7 @@ def _ghi_ket_qua(ho_so: str, steps: list[Step], ket: str, tong_s: float,
         import json
         from datetime import datetime, timezone
 
-        thu_muc = ROOT / "test-results" / "gates"
+        thu_muc = thu_muc_so()
         thu_muc.mkdir(parents=True, exist_ok=True)
         luc = datetime.now(timezone.utc)
         # ⚠️ SHA LUC BAT DAU, khong phai luc ghi: lenh khep `--doi --tu <sha>`
@@ -2174,6 +2175,45 @@ def _ghi_ket_qua(ho_so: str, steps: list[Step], ket: str, tong_s: float,
 #       `CUA_SO_L3_LAI_GIO` thi mot L3 go tay bi TU CHOI — moi thay doi sau do
 #       khep bang `--doi --tu <sha L3>`.
 
+#: Thu muc cat SO PHAN QUYET (`<id>.json`) va log buoc do (`loi-<pid>-*.log`).
+#:
+#: 🔴 VI SAO KHONG CON LA `test-results/gates/`. Do 23-24/09/2026: so phan quyet
+#:    cua mot lo gate BIEN MAT khoi `test-results/` giua hai luot chay, va khong
+#:    ai tim ra thu pham (ba gia thuyet bi loai bang do: `git clean -fdX`, quet
+#:    toan may, Playwright MCP/CLI). Nhung dieu KHONG phu thuoc vao thu pham la
+#:    CHO DUNG: `.gitignore` dong 177-179 xep `/test-results/` ngay duoi tieu de
+#:    `# Playwright CLI temp` — do la thu muc RA cua mot cong cu khac, va bo
+#:    CHAY TEST cua Playwright *don sach outputDir o dau moi luot* theo dung
+#:    tai lieu cua no. Mot so phan quyet khong duoc nam trong nha nguoi khac.
+#:
+#: ⛔ Va mat so KHONG bao gio do: `l3_lai_bi_chan` co y CHO QUA khi khong doc
+#:    duoc ban ghi (mot cong tu choi vi chinh no hong la mot cong nguoi ta se
+#:    tat). Nen cai cua "MOT L3 moi nhanh" mo ra IM LANG.
+TEN_THU_MUC_SO = ".gate"
+
+#: Cho cat CU. Con doc de chuyen giao em, KHONG con ghi vao.
+#:
+#: ⭐ Duong doc nay TU HET HAN, khong can ai nho ngay: `_l3_trong_cua_so` chi
+#:    nhan ban ghi con trong `CUA_SO_L3_LAI_GIO`, nen sau cua so do thu muc cu
+#:    khong dong gop gi nua. Xoa luc nao cung duoc; de lai khong ton gi.
+TEN_THU_MUC_SO_CU = ("test-results", "gates")
+
+
+def thu_muc_so(goc: Path | None = None) -> Path:
+    """Cho GHI so phan quyet."""
+    return (goc if goc is not None else ROOT) / TEN_THU_MUC_SO
+
+
+def thu_muc_so_cu(goc: Path | None = None) -> Path:
+    """Cho cat CU — chi doc."""
+    return (goc if goc is not None else ROOT).joinpath(*TEN_THU_MUC_SO_CU)
+
+
+def moi_cho_doc_so(goc: Path | None = None) -> list[Path]:
+    """Moi cho co the chua ban ghi, moi truoc cu sau."""
+    return [thu_muc_so(goc), thu_muc_so_cu(goc)]
+
+
 #: Trong bao lau sau mot L3 thi mot L3 go tay tren cung nhanh bi tu choi.
 #:
 #: ⚠️ Khong phai do nham mot thoi luong phien. No chi can dai hon mot vong
@@ -2235,7 +2275,7 @@ def lenh_chay_lai(steps: list[Step]) -> list[str]:
     return ra
 
 
-def _l3_trong_cua_so(thu_muc: Path, nhanh: str,
+def _l3_trong_cua_so(thu_muc: Path | Iterable[Path], nhanh: str,
                      bay_gio: float | None = None) -> tuple[dict | None, float]:
     """Luot L3 (`day-du`, khong `CAY DA DOI`) moi nhat cua `nhanh` con trong `CUA_SO_L3_LAI_GIO`.
 
@@ -2244,10 +2284,15 @@ def _l3_trong_cua_so(thu_muc: Path, nhanh: str,
     import json
     from datetime import datetime
 
-    try:
-        tep_ghi = sorted(thu_muc.glob("*.json"))
-    except OSError:
-        return None, 0.0
+    # ⭐ Doc CA cho moi va cho cu (xem `TEN_THU_MUC_SO_CU`). Mot thu muc vang
+    #    mat khong phai loi — cay chua chay gate lan nao thi chua co so.
+    cho = [thu_muc] if isinstance(thu_muc, Path) else list(thu_muc)
+    tep_ghi: list[Path] = []
+    for d in cho:
+        try:
+            tep_ghi.extend(sorted(d.glob("*.json")))
+        except OSError:
+            continue
     moi_nhat: dict | None = None
     for tep in tep_ghi:
         try:
@@ -2337,7 +2382,7 @@ def canh_bao_khong_phu_bo_test(ho_so: str) -> str:
     ]).replace("⇒", "=>").replace("⛔", "[!]")
 
 
-def l3_lai_bi_chan(thu_muc: Path, nhanh: str,
+def l3_lai_bi_chan(thu_muc: Path | Iterable[Path], nhanh: str,
                    bay_gio: float | None = None) -> str:
     """Ly do tu choi mot L3 go tay, hoac `""` neu duoc chay.
 

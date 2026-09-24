@@ -169,7 +169,11 @@ def test_ban_ghi_mang_ha_cap_tu_va_lenh_chay_lai(tmp_path, monkeypatch):
     gate._ghi_ket_qua("day-du", [s], "FAIL (1/1)", 1.0, object(), False,
                       chay_lai=["python tools/check_mypy.py"], ha_cap_tu="doi",
                       ly_do_ha_cap="cham tep DUNG CHUNG", sha="abc123")
-    tep = next((tmp_path / "test-results" / "gates").glob("*.json"))
+    # ⚠️ Lay cho cat qua `gate.thu_muc_so`, ⛔ dung go tay duong dan: so
+    #    phan quyet doi tu `test-results/gates/` sang `.gate/` ngay 24/09
+    #    (xem `TEN_THU_MUC_SO`), va mot duong go tay o day da lam phep kiem
+    #    nay do voi `StopIteration` — mot thong diep khong noi gi ve nguyen nhan.
+    tep = next(gate.thu_muc_so(tmp_path).glob("*.json"))
     ban_ghi = json.loads(tep.read_text(encoding="utf-8"))
     assert ban_ghi["ha_cap_tu"] == "doi"
     assert ban_ghi["sha"] == "abc123", "sha phai la sha LUC BAT DAU cua luot"

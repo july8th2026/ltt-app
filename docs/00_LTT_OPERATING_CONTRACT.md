@@ -222,7 +222,7 @@ lên L3** khi bản sửa chạm tệp dùng chung — lúc đó là máy quyế
 ⛔ **MỘT L3 mỗi nhánh — máy thi hành.** Nhánh đã có một lượt L3 (xanh hay đỏ) trong
 12 giờ thì `gate.py` **từ chối** L3 gõ tay và in lệnh khép. Không tính: lượt mang
 nhãn `CAY DA DOI`, và lượt **bị ngắt giữa chừng** (phiên đóng, bị dừng) — lượt đó
-không ghi bản ghi `test-results/gates/*.json`, tức **chưa có phán quyết**, nên được
+không ghi bản ghi `.gate/*.json`, tức **chưa có phán quyết**, nên được
 chạy lại. Lượt trước bị nhiễu thật (máy `QUA TAI`) → `--l3-lai`, có ghi.
 
 ⚠️ Đỏ **không** tự động là lỗi của bạn: loại trừ máy quá tải và thay đổi có sẵn trên

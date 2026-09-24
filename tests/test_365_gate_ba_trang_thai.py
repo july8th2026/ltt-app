@@ -202,7 +202,9 @@ def test_buoc_DO_giu_TRON_dau_ra_ra_tep_chu_khong_chi_40_dong(tmp_path):
     gate = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(gate)
 
-    thu_muc = pathlib.Path(gate.ROOT) / "test-results" / "gates"
+    # ⚠️ Lay cho cat qua `gate.thu_muc_so`, ⛔ dung go tay: so phan quyet
+    #    doi sang `.gate/` ngay 24/09 (xem `TEN_THU_MUC_SO`).
+    thu_muc = gate.thu_muc_so(pathlib.Path(gate.ROOT))
     truoc = set(thu_muc.glob("loi-*.log")) if thu_muc.is_dir() else set()
 
     # ── Bước ĐỎ, đầu ra dài hơn 40 dòng ────────────────────────────────────
