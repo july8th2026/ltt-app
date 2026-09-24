@@ -335,3 +335,60 @@ def test_giu_tang_vat_HONG_thi_bao_cao_van_ve(monkeypatch, tmp_path):
     assert trong_try, (
         "`_giu_tang_vat` duoc goi NGOAI `try` — mot loi trong buoc giu bang "
         "chung se xoa chinh bao cao cua lan chay hong (do that 24/09)")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §4. Card duoc CAP khong du — tien trinh con phai chay bang venv CO card
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_tach_nguon_doc_BIEN_GHI_DE_trinh_thong_dich(monkeypatch):
+    """`python_tach()` mac dinh la `sys.executable` (production khong doi gi).
+
+    🔴 Do that 24/09, luot B tren phim khach that: nen tang cap card DUNG va tien
+       trinh con van nem `ThieuCard` — vi pytest chay bang trinh thong dich test
+       (`torch 2.11.0+cpu`, `cuda False`) con venv worker la `2.11.0+cu128`.
+    """
+    import sys
+
+    from apps.auto_scan_video import tach_tieng
+
+    monkeypatch.delenv(tach_tieng.BIEN_PYTHON_TACH, raising=False)
+    assert str(tach_tieng.python_tach()) == sys.executable
+
+    monkeypatch.setenv(tach_tieng.BIEN_PYTHON_TACH, r"C:\x\python.exe")
+    assert str(tach_tieng.python_tach()) == r"C:\x\python.exe"
+
+
+def test_tach_nguon_dung_python_tach_chu_khong_sys_executable():
+    """⛔ Chot bang AST: than `tach_nguon` khong duoc go thang `sys.executable`.
+
+    Neu no quay lai `sys.executable` thi bien ghi de thanh mot o CHET — dung ho
+    loi G-01 (`nguon_loi` duyet gia tri roi khong dat vao ho so).
+    """
+    import ast
+    import inspect
+
+    from apps.auto_scan_video import tach_tieng
+
+    than = ast.parse(inspect.getsource(tach_tieng.tach_nguon).lstrip())
+    goi = {n.func.id for n in ast.walk(than)
+           if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
+    assert "python_tach" in goi, sorted(goi)
+    thuoc_tinh = {(n.value.id, n.attr) for n in ast.walk(than)
+                  if isinstance(n, ast.Attribute) and isinstance(n.value, ast.Name)}
+    assert ("sys", "executable") not in thuoc_tinh, (
+        "`tach_nguon` go thang `sys.executable` — bien ghi de thanh o chet")
+
+
+def test_khai_python_NOI_RA_rang_duong_ASR_la_cau_hoi_KHAC(monkeypatch):
+    """⚠️ Mot bo do khong duoc de nguoi doc suy rong hon pham vi cua no.
+
+    `ghim_python_co_card` chi ghim duong DEMUCS. CTranslate2 mang CUDA rieng —
+    do 24/09: tren trinh thong dich test `torch.cuda` False ma
+    `ctranslate2.get_cuda_device_count()` tra 1. Nen loi khai phai noi thang rang
+    duong ASR khong di qua bien nay.
+    """
+    khai = fx.ghim_python_co_card(monkeypatch)
+    assert "CTranslate2" in khai["chua_tra_loi"]
+    assert "KHONG di qua bien nay" in khai["chua_tra_loi"]
+    assert set(khai) >= {"python_tach", "da_ghim", "vi_sao", "chua_tra_loi"}

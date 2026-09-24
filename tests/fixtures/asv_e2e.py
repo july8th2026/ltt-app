@@ -1255,3 +1255,48 @@ class KhoaTheoPha:
             except Exception:               # noqa: BLE001 - nha khoa khong duoc nuot
                 pass
         self._giu_dai.clear()
+
+
+#: Venv cua WORKER — noi `torch` co CUDA. ⛔ KHONG phai trinh thong dich chay test.
+VENV_WORKER = Path(r"C:\LTTPlatform\venv\Scripts\python.exe")
+
+
+def ghim_python_co_card(monkeypatch) -> dict:
+    """Ep tien trinh con demucs chay bang venv WORKER. Tra ve loi khai.
+
+    🔴 **Do that 24/09, luot B tren phim khach that.** Nen tang cap card DUNG
+       (`gpu_lease` giu that, `JobContext.gpu_uuid` khac rong) va tien trinh con
+       van nem `ThieuCard` — vi bo nghiem thu chay bang **trinh thong dich test**,
+       va o do `torch` la `2.11.0+cpu`, `cuda False`. Venv worker
+       (`C:/LTTPlatform/venv`) la `2.11.0+cu128`, `cuda True`.
+
+    ⛔ Va khong co cach nao dung MOT trinh thong dich cho ca hai:
+       `setup/nghiem_thu_asv.ps1` giai thich ro venv san pham **co y** khong cai
+       pytest. pytest can trinh thong dich nay, demucs can trinh thong dich kia.
+
+    ⚠️ **Bai hoc hai chieu, va chieu thu hai moi la cai bat ngo.** Brief cua lan
+       canh bao *"`torch.cuda.is_available()` True KHONG chung minh
+       faster-whisper dung duoc card"*. Do that o day la **anh guong cua no**:
+       tren trinh thong dich test `torch.cuda` la **False** trong khi
+       `ctranslate2.get_cuda_device_count()` tra **1**. Hai chong CUDA doc lap,
+       va mot bien bool khong noi thay ca hai duoc — theo ca hai huong.
+
+    ⇒ Nen ham nay chi ghim duong demucs, va **khai ra** rang duong ASR la mot cau
+      hoi KHAC, phai doc tu chinh lan chay.
+    """
+    from apps.auto_scan_video import tach_tieng
+
+    co = VENV_WORKER.is_file()
+    if co:
+        monkeypatch.setenv(tach_tieng.BIEN_PYTHON_TACH, str(VENV_WORKER))
+    return {
+        "python_tach": str(VENV_WORKER) if co else "(khong thay venv worker)",
+        "da_ghim": co,
+        "vi_sao": ("tien trinh con demucs phai chay bang venv co torch CUDA; "
+                   "trinh thong dich chay pytest la ban CPU-only"),
+        "chua_tra_loi": ("Duong ASR (faster-whisper/CTranslate2) KHONG di qua "
+                         "bien nay. CT2 mang CUDA rieng — do 24/09: tren trinh "
+                         "thong dich test `torch.cuda` False ma "
+                         "`ctranslate2.get_cuda_device_count()` = 1. Phai doc "
+                         "tu chinh lan chay, khong suy ra tu day."),
+    }

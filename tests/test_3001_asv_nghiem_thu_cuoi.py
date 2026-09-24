@@ -274,6 +274,15 @@ def test_NGHIEM_THU_CUOI_nam_luot_tren_phim_that(moi_truong, khoa_may, tmp_path,
     fx.dat_cua_model(monkeypatch, su_that=None)
     fx.dat_cua_giong(monkeypatch, tmp_path / "tieng")
 
+    # ⛔ Card duoc CAP khong du: tien trinh con demucs phai chay bang venv co
+    #    torch CUDA, khong phai trinh thong dich chay pytest (do that 24/09 —
+    #    `ThieuCard` tren mot card da duoc giu that).
+    khai_python = fx.ghim_python_co_card(monkeypatch)
+    assert khai_python["da_ghim"], (
+        "khong thay venv worker " + str(fx.VENV_WORKER) + " — tien trinh con "
+        "demucs se chay bang trinh thong dich test (torch CPU-only) va nem "
+        "`ThieuCard` du nen tang da cap card")
+
     goc_s = round(float(fx.soi(str(phim))["format"]["duration"]), 3)
     ra_dir = Path(os.environ.get("LTT_ASV_NT_RA") or (tmp_path / "nt_cuoi"))
     ra_dir.mkdir(parents=True, exist_ok=True)
@@ -300,6 +309,7 @@ def test_NGHIEM_THU_CUOI_nam_luot_tren_phim_that(moi_truong, khoa_may, tmp_path,
         # 🔑 Di theo BANG CHUNG, khong chi nam trong ma: nguoi doc bang chung la
         #    nguoi can phan biet "da thoa thuan" voi "lan nay tu quyet".
         kq["nguon_dinh_nghia_luot"] = l["nguon_dinh_nghia"]
+        kq["trinh_thong_dich_tien_trinh_con"] = khai_python
         kq["nguon_that"] = {"ten": phim.name, "byte": phim.stat().st_size,
                             "thoi_luong": goc_s}
         kq["giay_do_ngoai"] = round(time.time() - t0, 1)
