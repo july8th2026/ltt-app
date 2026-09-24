@@ -335,6 +335,13 @@ def _chuoi_ngan(x) -> list[str]:
 #: chac chan nhat **bien mot bao dong gia thanh mot hong that**.
 #: ⇒ Cau chu phai cho model mot **duong lui**: doc lai, va **giu nguyen** neu no
 #: thay ban cu da dung.
+#:
+#: 🔴 **Cau "KHONG duoc THEM chi tiet moi" den tu mot CHE DO HONG DA DO** (§7.12).
+#: O lan cham mu dau tien, mot ban CO `y_canh` bien `提炼枪` — mot token **da
+#: hong do ASR** — thanh *"sung MAY"*: no **BIA** mot chi tiet cau goc khong noi.
+#: ⇒ ⭐ Mot goi y *"cho nay co van de"* co the day model **them thong tin no
+#: khong co**, thay vi **kiem lai**. Rang buoc "nghi ngo, khong phai phan quyet"
+#: dung huong nhung **chua du manh** — phai cam **cu the hoa them** tuong minh.
 QUY_TAC_Y_CANH = {"role": "system", "content": (
     "- Mot so doan co truong `y_canh`: mot buoc kiem chat luong DA NGHI NGO "
     "doan do.\n"
@@ -343,7 +350,9 @@ QUY_TAC_Y_CANH = {"role": "system", "content": (
     "NGUYEN no.\n"
     "  Chi viet khac di khi ban TU THAY no that su sai, va khi do hay sua DUNG "
     "cho sai.\n"
-    "  KHONG duoc doi mot cau dang dung chi vi no bi nghi ngo.\n")}
+    "  KHONG duoc doi mot cau dang dung chi vi no bi nghi ngo.\n"
+    "  KHONG duoc THEM chi tiet moi. Neu ban khong chac, hay GIU nguyen muc cu "
+    "the cua ban cu — dung cu the hoa them mot thu ma cau goc khong noi.\n")}
 
 #: 🔑 **BAT BIEN O BIEN: ban ghi tieng Viet ⛔ khong duoc chua chu Han.**
 #:

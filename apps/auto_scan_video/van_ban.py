@@ -89,7 +89,11 @@ PHIEN_BAN_LOI_NHAC_DICH = 5
 #:    doi cu gay ra. ⛔ Sau day, doi loi nhac DICH khong con cham vao no nua.
 #: **3** (24/09): them `QUY_TAC_TU_KHAI` — truong `khong_chac`, ⭐ **chi THU**
 #:    (`B2_DICH.md` §7.7). ⛔ Khong hien cho khach, ⛔ khong lai vong sua.
-PHIEN_BAN_LOI_NHAC_LONG_TIENG = 3
+#: **4** (25/09): luat `y_canh` them mot cau CAM CU THE HOA THEM — che do hong
+#:    da do: mot ban CO `y_canh` bia *"sung MAY"* tren `提炼枪` (token hong do
+#:    ASR). Goi y "cho nay co van de" co the day model THEM thong tin no khong
+#:    co, thay vi kiem lai. (`B2_DICH.md` §7.12)
+PHIEN_BAN_LOI_NHAC_LONG_TIENG = 4
 
 #: ⛔ **TEN CU — da go.** Giu mot dong de nguoi doc ma cu tim thay ly do.
 #:    Dung `PHIEN_BAN_LOI_NHAC_DICH` hoac `PHIEN_BAN_LOI_NHAC_LONG_TIENG`.

@@ -71,6 +71,8 @@ SỐNG** — lời nhắc lồng tiếng đã qua nghiệm thu, có ngân sách 
 | **`光子` × lồng tiếng** | ✅ **XONG** — va chạm ⛔ **không tái hiện**: `光子` chưa bao giờ ra chữ Hán | §7.8d |
 | **bất biến chữ Hán ở BIÊN** | ✅ **XONG** — `chu_han_lot` → `outputs["han_lot"]`, ⭐ **đánh dấu, ⛔ không huỷ** | §7.8d |
 | **A/B vòng sửa (§4f)** | 🔴 **RỖNG — hai nhánh CÙNG MỘT MÃ.** N-02 ⇒ **đã giải thích** | §7.10 |
+| **nối `y_canh`** | ✅ **XONG** — vòng sửa thôi mù; phép kiểm đọc **CÂY người gọi** | §7.11 |
+| **A/B `y_canh` (điều phối chấm mù)** | ⚠️ **B 4/9 · A 2/9 · ngang 3/9** — hướng **dương**, ⛔ chưa đủ `n` | §7.12 |
 
 ### 🔴 Ba việc CHỜ điều phối / chủ dự án — ⛔ làn này cố ý không tự làm
 
@@ -91,6 +93,11 @@ SỐNG** — lời nhắc lồng tiếng đã qua nghiệm thu, có ngân sách 
   khi dựng bảng từ.
 * ⏭ **BẢNG TỪ `B → D` (+ `A` tuỳ chọn)** — điều phối chốt 24/09, ⛔ **chưa làm**,
   xếp **sau** việc nhiệt độ (§4d).
+  🔑 ⭐ **Và §7.12 vừa cho nó một lý do ĐO ĐƯỢC:** `y_canh` giúp **diễn đạt**,
+  ⛔ **không** cứu lớp **thuật ngữ/lóng** (`掐雷`, `纯白给`, `热胀冷缩` hỏng ở
+  **CẢ HAI** nhánh). ⇒ `y_canh` và bảng từ ⛔ **không thay nhau — chúng BÙ NHAU**.
+* ⏭ **Mở rộng A/B 9 → ~20 đoạn** — cần thêm phán quyết thật của bộ chấm; điều
+  phối xin làn bộ chấm, ⛔ làn này ⛔ không đụng `ltt-3.8`.
 * ✅ **N-02 (85 → 85) ĐÃ ĐƯỢC GIẢI THÍCH — bằng CƠ CHẾ, đọc từ mã** (§7.10):
   vòng sửa chỉ chạm đoạn **bị gắn cờ**, và dịch lại bằng lời nhắc **y hệt**
   (`y_canh` ⛔ không ai truyền) ⇒ một **phép rút thăm lại ⛔ không có chiều**
@@ -898,6 +905,121 @@ nên **mọi thứ đều đổi**. Câu thật: **trong số đoạn đổi, ba
 **điều phối chấm** ⇒ làn này chuẩn bị **cặp mù** (bỏ nhãn nhánh, xáo thứ tự).
 ⭐ Và nhánh **A** trả luôn ẩn số §7.10: *xác suất một lượt rút lại làm đoạn đúng
 tệ đi*. **Một phép đo, hai câu trả lời.**
+
+## 7.12 ⭐ A/B `y_canh` — **điều phối chấm MÙ**. Hướng DƯƠNG, ⛔ chưa có bằng chứng
+
+> ⛔ **Làn này ⛔ KHÔNG chấm.** Chủ dự án chốt **điều phối chấm**; phán quyết
+> được **commit TRƯỚC khi mở khoá** (`a96310b9`). ⚠️ Và người chấm **tự khai:
+> họ là một mô hình** — câu đó đi **cạnh** kết quả, ⛔ không ở cuối.
+
+### Kết quả
+
+```
+B (CO y_canh) thang :  4/9 doan  (12/27 muc)
+A (KHONG)     thang :  2/9 doan  ( 6/27 muc)
+ngang nhau          :  3/9 doan  ( 9/27 muc)
+```
+
+⭐ **27/27 nhất quán** — cả ba lượt của mỗi đoạn cho **cùng** phán quyết ⇒ việc
+xáo + ghép cặp **sạch**, và phán quyết ⛔ không dao động.
+
+> ⚠️ **4 thắng / 2 thua trên 6 ca quyết định ⛔ KHÔNG vượt được ngẫu nhiên.**
+> ⇒ Viết **"nghiêng về giúp, `n` quá nhỏ"** — ⛔ **đừng** viết *"`y_canh` giúp"*.
+
+### 🔴 Thứ ĐẮT HƠN con số: bốn quan sát lúc chấm, khi CHƯA biết nhánh
+
+```
+掐雷 = LUU DAN          -> CA HAI ban deu "dat min"
+纯白给 = long game       -> CA HAI ra "trang tay"
+热胀冷缩                -> CA HAI rut thanh "vi nhiet do"
+```
+
+⇒ ⭐ **Khác biệt giữa hai nhánh nằm ở DIỄN ĐẠT** (giữ/bỏ `肯定`, `这里`, `也`,
+`迅速`; `趁` dịch *"khi"* hay *"chờ"*), ⛔ **KHÔNG nằm ở việc sửa được thuật ngữ.**
+
+> 🔑 **Kết luận thật của phép đo:** `y_canh` giúp model **diễn đạt sát hơn**,
+> ⛔ nhưng nó ⛔ **không** cứu được lớp **thuật ngữ / tiếng lóng** — đúng lớp mà
+> **bảng từ `B→D`** sinh ra để giải.
+> ⇒ Hai đường ấy ⛔ **không thay thế nhau** — chúng **BÙ NHAU**.
+
+### 🔴 Một CHẾ ĐỘ HỎNG MỚI: gợi ý "có vấn đề" ⇒ model **BỊA** chi tiết
+
+```
+提炼枪  (mot token DA HONG do ASR)  ->  mot ban CO `y_canh` them "sung MAY"
+```
+
+⇒ ⭐ Một gợi ý *"chỗ này có vấn đề"* có thể đẩy model **thêm thông tin nó ⛔
+không có**, thay vì **kiểm lại**. ⚠️ Ràng buộc thứ ba (*"nghi ngờ, ⛔ không phải
+phán quyết"*) **đúng hướng nhưng CHƯA đủ mạnh**.
+
+⇒ **Bản vá (lời nhắc v4), sửa MỘT lần:**
+
+```
+"KHONG duoc THEM chi tiet moi. Neu ban khong chac, hay GIU nguyen muc cu the
+ cua ban cu — dung cu the hoa them mot thu ma cau goc khong noi."
+```
+
+⭐ Và đo lại **CẢ 9 ĐOẠN**, ⛔ không chỉ ca vừa sửa — ta đã mất một lượt vì đúng
+chuyện đó (§4c, ba lần *sửa-một-hỏng-một*). ⭐ `提炼枪` là **phép thử sẵn có**,
+⛔ ⛔ không bịa ca mới.
+
+### ⛔ PHẠM VI — ghi nguyên văn, ⛔ đừng rút gọn
+
+> Đây là **TRẦN TRÊN**. `y_canh` trong phép đo này là **lý do ĐÚNG**: **21/27**
+> mục đến từ **7 ca người xác minh**, chỉ **6/27** từ **2 phán quyết thật** của
+> bộ chấm. Vòng sửa **thật** có **43 %** báo động giả ⇒ `y_canh` thật sẽ **ồn
+> hơn hẳn**, và kết quả thật sẽ **kém hơn** con số ở đây.
+
+⚠️ Và `n = 9 đoạn`, ⛔ không phải 12 — ta chỉ có **2** phán quyết thật của bộ
+chấm, sinh thêm đòi `ltt-3.8` (đã nhường hẳn làn bộ chấm). Mở rộng lên ~20 đoạn
+cần điều phối xin thêm verdict.
+
+## 7.13 ⭐ Lời nhắc **v4** — cấm bịa chi tiết. `提炼枪` đã đóng, ⚠️ nhưng ĐỘ DÀI nay tố cáo nhánh
+
+**Bản vá:** thêm **một** câu vào luật `y_canh`
+(`PHIEN_BAN_LOI_NHAC_LONG_TIENG` **3 → 4**):
+
+```
+"KHONG duoc THEM chi tiet moi. Neu ban khong chac, hay GIU nguyen muc cu the
+ cua ban cu — dung cu the hoa them mot thu ma cau goc khong noi."
+```
+
+### ✅ Ca `提炼枪` — **đã đóng, 3/3 lượt**
+
+Đo lại **cả 9 đoạn** (⛔ không chỉ ca vừa sửa — §4c đã dạy):
+
+```
+v3 (truoc)  mot ban CO y_canh  ->  "... dung sung MAY ..."      <- BIA
+v4 (sau)    ca 3 luot          ->  "... dung sung bat anh ta hung dan."
+```
+
+⇒ ⭐ Chi tiết bịa **biến mất**, và **nhất quán 3/3**. Ràng buộc mới **giữ**.
+
+### 🔴 ⚠️ NHƯNG — ĐỘ DÀI nay TỐ CÁO NHÁNH. Tập mù v4 ⛔ **KHÔNG còn mù**
+
+| | v3 | **v4** |
+|---|---|---|
+| A trung vị | 8 từ | 8 từ |
+| B trung vị | 8 từ | **7 từ** |
+| tỉ lệ B/A | **1,00** ✅ | **0,875** 🔴 |
+
+```
+B NGAN hon A : 18/27      bang nhau : 3/27      B DAI hon : 6/27
+=> doan "ban NGAN hon la B" dung 18/27 = 67 %   (50 % = khong doan duoc gi)
+```
+
+> 🔴 **Đây là một hệ quả ⛔ KHÔNG lường trước của chính bản vá.** Câu *"giữ nguyên
+> mức cụ thể, ⛔ đừng thêm chi tiết"* đẩy nhánh B **ngắn lại một cách hệ thống**
+> ⇒ người chấm có thể đoán nhánh bằng **độ dài**, ⛔ không bằng chất lượng.
+>
+> ⇒ ⛔ **Phải báo TRƯỚC khi chấm** — đúng ràng buộc điều phối đặt ra, và lần này
+> nó **bắt được một cái thật**. ⛔ Đừng đọc phán quyết v4 như một phép mù sạch.
+
+⇒ Ba đường đi, ⛔ làn này ⛔ không tự chọn:
+1. **chấm v4 như cũ**, và **trừ** phần người chấm có thể đoán bằng độ dài;
+2. **cân độ dài**: chỉ giữ các cặp có `|len(A) − len(B)| ≤ 1` (⇒ `n` nhỏ hơn);
+3. **sửa lại câu cấm** cho nó ⛔ không kéo độ dài (⚠️ lại một vòng sửa lời nhắc —
+   và §4c cảnh báo mỗi vòng là một lượt đo lại **cả tập**).
 
 ## 7.9 🔴 Đo lại sau khi ghim — **một hoá đơn tự đóng, một thì không**
 
