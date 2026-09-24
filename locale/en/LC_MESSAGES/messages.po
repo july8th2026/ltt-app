@@ -21263,3 +21263,9 @@ msgstr "The infrastructure refused this step, so the machine is not finished. Th
 
 msgid "Chúng tôi đang xác nhận địa chỉ IP cho máy này với nhà cung cấp. Đừng tạo máy khác — đội vận hành sẽ hoàn tất hoặc hoàn lại credit cho bạn."
 msgstr "We are confirming this machine's IP address with the provider. Do not create another machine — the operations team will either finish it or return your credit."
+
+msgid "Thiếu mục tiêu."
+msgstr "The goal is missing."
+
+msgid "Ngân sách không hợp lệ."
+msgstr "The budget is not valid."
