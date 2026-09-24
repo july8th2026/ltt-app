@@ -183,6 +183,15 @@ MA_LOI = {
     "tac_vu_loi": N_("Thao tác không hoàn tất. Đội vận hành đã nhận được nhật ký."),
     "anh_khong_dung": N_("Ảnh chụp này không dùng được để khôi phục. Hãy chọn "
                          "một ảnh khác."),
+    "ha_tang_tu_choi": N_("Hạ tầng từ chối bước này nên máy chưa dựng xong. Đội "
+                          "vận hành đã nhận được nhật ký; thử lại sau ít phút."),
+    # ⚠️ Câu này đứng ở chỗ **có thể đã tiêu tiền thật**: một đơn mua địa chỉ IP
+    #    có thể đã trả tiền mà ta chưa đọc lại được kết quả. Nếu nó chỉ nói
+    #    "không hoàn tất" thì khách bấm tạo máy lần nữa — đơn thứ hai, địa chỉ
+    #    thứ hai, tiền thật lần thứ hai. Nên nó phải nói **đừng tạo máy khác**.
+    "cap_ip_can_ra_soat": N_("Chúng tôi đang xác nhận địa chỉ IP cho máy này với "
+                             "nhà cung cấp. Đừng tạo máy khác — đội vận hành sẽ "
+                             "hoàn tất hoặc hoàn lại credit cho bạn."),
 }
 
 #: Câu dùng khi mã lỗi lạ — xem `ma_loi()` để biết vì sao nó **không** trả về

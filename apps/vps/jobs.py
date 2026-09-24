@@ -529,7 +529,8 @@ def _tao_may(params: dict, ctx=None) -> dict:
         _profile_for_job(db, may)
         _bao(ctx, 80, "dang cap dia chi cong khai")
         ip_cong_khai = _cap_ip_cong_khai(
-            db, may, gateway, ip_noi_bo, profile, operation_id=operation_id)
+            db, may, gateway, ip_noi_bo, profile, operation_id=operation_id,
+            job_id=str(getattr(ctx, "job_id", "") or ""))
 
         # 5) Bật máy — và **chờ nó bật thật**.
         #
@@ -812,7 +813,8 @@ def _dia_goc(client, vmid: int) -> str:
 
 
 def _cap_ip_cong_khai(db, may: VpsInstance, gateway, ip_noi_bo: str,
-                      profile=None, *, operation_id: str | None = None) -> str:
+                      profile=None, *, operation_id: str | None = None,
+                      job_id: str = "") -> str:
     """Reserve one profile-owned public IP and map it 1:1 to the VM.
 
     **Thứ tự ở đây là thứ tự chống rò tiền, không phải thứ tự cho gọn.**
@@ -853,7 +855,8 @@ def _cap_ip_cong_khai(db, may: VpsInstance, gateway, ip_noi_bo: str,
             reservation_key=reservation_key,
             operation_id=operation_id or f"provision:{may.id}",
             provider_factory=lambda: backend_factory.ovh_ordering_client(profile),
-            gateway_factory=lambda: backend_factory.gateway_backend(profile))
+            gateway_factory=lambda: backend_factory.gateway_backend(profile),
+            job_id=job_id)
         try:
             # Vultr **cấp lại chính địa chỉ vừa trả** (nó giữ 24 giờ rồi đưa lại
             # cho cùng tài khoản) — đã thấy thật 24/08. Nên phải hỏi xem địa chỉ
@@ -1106,6 +1109,20 @@ def _ma_loi_cua(exc: Exception) -> str:
         return "anh_khong_dung"
     if isinstance(exc, ProxmoxError):
         return "proxmox_tu_choi"
+    # 🔴 Đo 24/09/2026: ba sự kiện `loi` của máy `c74d4fd8` mang `khong_ro` cho
+    #    một `BackendConflict`. Mã là thứ nhật ký được **tra bằng**, nên mất mã
+    #    là mất đường lần lại sự cố — trong khi lớp exception thì log đã có.
+    #
+    # `AcquisitionNeedsReview` đứng riêng vì nó không phải "hỏng": nó nghĩa là
+    # một đơn mua IP **có thể đã trả tiền** và cần người xác nhận. Gộp nó vào
+    # mã chung là mời khách bấm tạo lại, tức mua lần hai.
+    from apps.vps.services.backends.contracts import BackendConflict
+    from apps.vps.services.ovh_acquisition import AcquisitionNeedsReview
+
+    if isinstance(exc, AcquisitionNeedsReview):
+        return "cap_ip_can_ra_soat"
+    if isinstance(exc, BackendConflict):
+        return "ha_tang_tu_choi"
     return "khong_ro"
 
 
