@@ -317,3 +317,138 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# THƯỚC THAY THẾ cho `lech_doan` — ⛔ viết TRƯỚC khi đo, ngưỡng không chỉnh sau
+#
+# 🔴 **Vì sao `lech_doan` bị BỎ, không phải bị sửa.** Tiêm lỗi 24/09 (§8.3) cho:
+#
+#       v2 · cắt MÁY MÓC mỗi 2,0 s  ->  95 đoạn  ->  0,1121  ✅ XANH
+#       v2 · cắt theo CÂU           ->  74 đoạn  ->  0,3084  ⛔ ĐỎ
+#
+#    Cổng **thưởng** đúng hành vi ràng buộc **cấm** (cắt giữa câu) và **phạt**
+#    hành vi đúng. Luật đã ghi trong sổ máy này: *phép đo lệch về phía hành động
+#    thì phải BỎ, không phải sửa*.
+#
+# ⭐ **Gốc bệnh:** `lech_doan` so **SỐ LƯỢNG**. Một tỉ số đếm không phân biệt được
+#    *cắt đúng chỗ* với *cắt đủ nhiều* — nên **bất kỳ bộ băm ngu ngốc nào** ra
+#    ~95 mẩu đều qua.
+#
+# ⛔ **Và bỏ nó KHÔNG làm B1 đạt.** Bỏ một thước hỏng ⇒ B1 **không còn cổng phân
+#    đoạn nào** ⇒ **kém chắc chắn hơn**, không tốt hơn.
+#
+# ⛔ **KHÔNG gộp hai vế dưới đây thành một điểm F1.** Gộp lại là dựng lại đúng
+#    bệnh vừa giết `lech_doan`: một số tổng hợp cho phép một vế tồi được vế kia
+#    che. Báo **hai số**, cạnh nhau.
+# ═════════════════════════════════════════════════════════════════════════════
+
+#: Sai số khi đối chiếu một chỗ ngắt với ranh giới dòng phụ đề cứng.
+SAI_SO_CHO_NGAT_S = 0.3
+
+#: ⚠️ **NGƯỠNG DO TA ĐẶT** — ⛔ không có trong quy chuẩn nào, khai thẳng.
+#:
+#: Căn cứ: ràng buộc sản phẩm nói **cắt giữa câu TỆ HƠN gộp**. Một chỗ ngắt không
+#: rơi vào ranh giới thật nào **là** một nhát cắt giữa câu. ⇒ Quá 10 % chỗ ngắt
+#: sai là đã vi phạm ràng buộc một cách **hệ thống**, không phải nhiễu.
+#: ⛔ Con số này viết ra **trước** khi đo bản của ta, và ⛔ không chỉnh sau.
+NGUONG_CHINH_XAC_CHO_NGAT = 0.90
+
+#: Trần độ dài một khe — *Netflix TTSG General Requirements*, bài **215758617**
+#: (*"Maximum duration: 7 seconds per subtitle event"*). ⛔ Quy chuẩn **không cho
+#: ngoại lệ** nào, nên ngưỡng là **1,00**: mọi đoạn phải ≤ 7,0 s.
+KHE_TOI_DA_S = 7.0
+NGUONG_TI_LE_TRONG_TRAN = 1.00
+
+#: Sàn độ dài — cùng bài (*"Minimum duration: 5/6 of a second"*). ⭐ **CHỈ BÁO**,
+#: ⛔ không phán xử: đoạn **cuối phim** có thể ngắn tự nhiên vì phim hết.
+KHE_TOI_THIEU_S = 5.0 / 6.0
+
+#: *Chinese (Simplified)*, bài **215986007** (*"Up to 9 characters per second"*).
+#: ⭐ **CHỈ BÁO**: nó nói về **bản dịch tiếng Việt** sẽ đặt vào khe, mà bản đó
+#: **chưa tồn tại** ở bước này. ⛔ Không được dùng phán xử ở B1.
+KY_TU_MOI_GIAY = 9
+
+
+def _moc_ranh_gioi(doan: list[dict]) -> list[float]:
+    ra: set[float] = set()
+    for d in doan:
+        for khoa in ("bat", "ket"):
+            g = d.get(khoa)
+            if isinstance(g, (int, float)):
+                ra.add(round(float(g), 3))
+    return sorted(ra)
+
+
+def chinh_xac_cho_ngat(doan_asr: list[dict], doan_hardsub: list[dict]) -> dict:
+    """VẾ 1 — bao nhiêu phần chỗ ngắt CỦA TA rơi trúng một ranh giới thật.
+
+    Trả lời đúng một câu: *"ta có cắt giữa câu không"*. Bộ băm mỗi 2,0 giây
+    **chết** ở đây, vì chỗ ngắt của nó rơi vào giữa lời nói.
+
+    ⚠️ **GIỚI HẠN, ⛔ phải đọc cùng con số:** phép này đo thứ ta **CẤM**, ⛔ không
+       đo thứ ta **CẦN**. Nó **không phạt việc cắt QUÁ ÍT** — một bản ghi có đúng
+       **một** đoạn dài 25 giây, mà hai đầu trùng đầu/cuối phim, vẫn đạt **1,00**.
+       Chính `do_dai_theo_quy_chuan` (vế 2) gánh phần đó. ⇒ ⛔ Đừng đọc vế này một
+       mình, và ⛔ đừng gộp hai vế thành một điểm.
+    """
+    ta = _moc_ranh_gioi(doan_asr)
+    that = _moc_ranh_gioi(doan_hardsub)
+    if not ta or not that:
+        return {"ti_le": None, "dat": False,
+                "ly_do": "một bên không có ranh giới nào — ⛔ không kết luận"}
+    khop = sum(1 for m in ta
+               if any(abs(m - h) <= SAI_SO_CHO_NGAT_S for h in that))
+    ti_le = round(khop / len(ta), 4)
+    return {"ti_le": ti_le, "khop": khop, "tong_cho_ngat": len(ta),
+            "tong_ranh_gioi_that": len(that), "sai_so_s": SAI_SO_CHO_NGAT_S,
+            "nguong": NGUONG_CHINH_XAC_CHO_NGAT,
+            "nguong_do_ai_dat": "TA ĐẶT — ⛔ không có trong quy chuẩn nào",
+            "dat": ti_le >= NGUONG_CHINH_XAC_CHO_NGAT,
+            "gioi_han": "⛔ KHÔNG phạt việc cắt quá ít: một đoạn 25 s vẫn có thể "
+                        "đạt 1,00. Vế `do_dai_theo_quy_chuan` gánh phần đó."}
+
+
+def do_dai_theo_quy_chuan(doan_asr: list[dict]) -> dict:
+    """VẾ 2 — độ dài đoạn so với quy chuẩn. ⭐ **KHÔNG cần chân lý nền nào.**
+
+    Tự nó đứng được: quy chuẩn nói một khe phụ đề tối đa **7,0 giây**
+    (Netflix TTSG **215758617**), và điều đó đúng bất kể phim nào. Gộp-tất và
+    khối 30 giây **chết** ở đây.
+
+    ⛔ Ngưỡng là **1,00** vì quy chuẩn không cho ngoại lệ nào — ⛔ không phải một
+       con số ta chọn cho dễ qua.
+    """
+    do_dai = []
+    for d in doan_asr:
+        b, k = d.get("bat"), d.get("ket")
+        if isinstance(b, (int, float)) and isinstance(k, (int, float)):
+            do_dai.append(float(k) - float(b))
+    if not do_dai:
+        return {"ti_le_trong_tran": None, "dat": False,
+                "ly_do": "không đoạn nào có mốc — ⛔ không kết luận"}
+    trong_tran = sum(1 for g in do_dai if g <= KHE_TOI_DA_S)
+    ti_le = round(trong_tran / len(do_dai), 4)
+    return {"ti_le_trong_tran": ti_le, "so_doan": len(do_dai),
+            "so_qua_tran": len(do_dai) - trong_tran,
+            "dai_nhat_s": round(max(do_dai), 2),
+            "trung_binh_s": round(sum(do_dai) / len(do_dai), 2),
+            "khe_toi_da_s": KHE_TOI_DA_S, "nguong": NGUONG_TI_LE_TRONG_TRAN,
+            "nguon_nguong": "Netflix TTSG General Requirements, bài 215758617",
+            "dat": ti_le >= NGUONG_TI_LE_TRONG_TRAN,
+            # ⭐ CHỈ BÁO, ⛔ không phán xử — xem hằng số.
+            "chi_bao_duoi_san": sum(1 for g in do_dai if g < KHE_TOI_THIEU_S),
+            "khe_toi_thieu_s": round(KHE_TOI_THIEU_S, 4)}
+
+
+def cap_thuoc_phan_doan(doan_asr: list[dict], doan_hardsub: list[dict]) -> dict:
+    """HAI số cạnh nhau. ⛔ **Không có số thứ ba gộp chúng lại.**
+
+    ⛔ Cố ý **không** trả về một điểm tổng hợp (F1, trung bình, tích). Gộp lại là
+       dựng lại đúng bệnh đã giết `lech_doan`: một vế tồi được vế kia che.
+    """
+    ve1 = chinh_xac_cho_ngat(doan_asr, doan_hardsub)
+    ve2 = do_dai_theo_quy_chuan(doan_asr)
+    return {"chinh_xac_cho_ngat": ve1, "do_dai_theo_quy_chuan": ve2,
+            "dat": bool(ve1.get("dat")) and bool(ve2.get("dat")),
+            "⛔": "hai vế đọc RIÊNG. Không gộp thành một điểm."}
