@@ -87,7 +87,7 @@ from __future__ import annotations
 import functools
 import json
 import math
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from datetime import datetime, timedelta, timezone
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -111,7 +111,20 @@ _DON_VI_CONG = {"hour": 3600, "minute": 60}
 _DON_VI_LICH = "day"
 _DON_VI_HIEU = {"day": 86400, "hour": 3600, "minute": 60, "second": 1}
 
-_GIA_TRI_JSON = (bool, int, float, str, list, dict)
+#: ⭐ "object" cua ngon ngu §6 KHONG phai rieng `dict`.
+#:
+#: Namespace §6.2 (`chinh_sach.KhongGianNodes`, `_MatNode`, `_CongRa`,
+#: `bien_vars.KhongGianVars`) la `Mapping` **khong phai** `dict`: chung doc
+#: lazily va noi cau loi rieng khi doc hut. `isinstance(x, dict)` o day tu
+#: choi dung chung — do 24/09 khi cam bang ham vao bo tinh lan dau:
+#:
+#:     keys(vars)                  ⇒ "keys: can object, gap khong_ho_tro"
+#:     get(nodes.a.output, "text") ⇒ **lang le** tra mac dinh
+#:
+#: Cai thu hai te hon cai thu nhat. ⇒ Mot cho khai "object la gi", va moi cua
+#: doc object hoi cho nay.
+_OBJECT = Mapping
+_GIA_TRI_JSON = (bool, int, float, str, list, Mapping)
 
 
 class LoiHam(ValueError):
@@ -130,7 +143,7 @@ def _ten_kieu(gia_tri: Any) -> str:
     if gia_tri is None:
         return "null"
     for kieu, ten in ((bool, "boolean"), (int, "integer"), (float, "number"),
-                      (str, "text"), (list, "list"), (dict, "object")):
+                      (str, "text"), (list, "list"), (_OBJECT, "object")):
         if isinstance(gia_tri, kieu):
             return ten
     return "khong_ho_tro"
@@ -176,9 +189,15 @@ def _doi_ds(gia_tri: Any, ten: str) -> list:
 
 
 def _doi_obj(gia_tri: Any, ten: str) -> dict:
-    if not isinstance(gia_tri, dict):
+    """Mot object JSON duoi dang `dict` THAT.
+
+    ⚠️ `dict(...)` chu khong tra thang: mot namespace §6.2 doc lazily, va cac
+       ham duoi day duyet no nhieu lan. Doc mot lan o day thi cau loi cua
+       namespace (vi du *"node chua chay xong"*) nem ra o DUNG cho goi ham.
+    """
+    if not isinstance(gia_tri, _OBJECT):
         raise LoiHam(f"{ten}: can object, gap {_ten_kieu(gia_tri)}")
-    return gia_tri
+    return dict(gia_tri)
 
 
 def _doi_dinh_dang(gia_tri: Any, ten: str) -> str:
@@ -219,7 +238,7 @@ def _cung_hang(ds: list, ten: str) -> None:
 # ── Chuoi ─────────────────────────────────────────────────────────────────
 
 def _ham_len(gia_tri: Any) -> int:
-    if isinstance(gia_tri, (str, list, dict)):
+    if isinstance(gia_tri, (str, list, _OBJECT)):
         return len(gia_tri)
     raise LoiHam(f"len: can chuoi, danh sach hoac object, "
                  f"gap {_ten_kieu(gia_tri)}")
@@ -416,7 +435,7 @@ def _ham_to_string(gia_tri: Any) -> str:
         # `str(True)` la `"True"` — chu hoa kieu Python, khong phai kieu JSON
         # ma phan con lai cua nen tang doc.
         return "true" if gia_tri else "false"
-    if isinstance(gia_tri, (int, float, list, dict)):
+    if isinstance(gia_tri, (int, float, list, _OBJECT)):
         return _ham_json_string(gia_tri)
     raise LoiHam(f"to_string: khong chuyen duoc {_ten_kieu(gia_tri)}")
 
@@ -488,11 +507,25 @@ def _ham_json_parse(chuoi: Any) -> Any:
         raise LoiHam("json_parse: cau truc long qua sau") from loi
 
 
+def _json_object(gia_tri: Any) -> dict:
+    """`json.dumps` khong biet mot `Mapping` khong phai `dict` — noi cho no.
+
+    ⛔ Chi mo cho `Mapping`. Mot `default=` rong rai hon la mot duong dua vat
+       Python vao chuoi JSON gui di.
+    """
+    if isinstance(gia_tri, _OBJECT):
+        return dict(gia_tri)
+    # ⛔ KHONG `type(x).__name__`: banh coc `test_module_khong_co_cua_thi_hanh`
+    #    cam MOI thuoc tinh dunder trong tep nay (do 24/09 — no bat dung ngay).
+    raise TypeError(f"khong phai gia tri JSON: {_ten_kieu(gia_tri)}")
+
+
 def _ham_json_string(gia_tri: Any) -> str:
     try:
         # `allow_nan=False`: mac dinh cua Python xuat `NaN`/`Infinity`, khong
         # phai JSON, va ben doc se hong. `ensure_ascii=False`: giu tieng Viet.
-        return json.dumps(gia_tri, allow_nan=False, ensure_ascii=False)
+        return json.dumps(gia_tri, allow_nan=False, ensure_ascii=False,
+                          default=_json_object)
     except (TypeError, ValueError) as loi:
         raise LoiHam(f"json_string: khong chuyen duoc sang JSON ({loi})") from loi
     except RecursionError as loi:
@@ -535,7 +568,7 @@ def _ham_sort_by(ds: Any, khoa: Any) -> list:
         raise LoiHam(f"sort_by: khoa {khoa!r} bat dau bang '_' nen khong doc duoc")
     moc = []
     for vi_tri, phan in enumerate(ds):
-        if not isinstance(phan, dict):
+        if not isinstance(phan, _OBJECT):
             raise LoiHam(f"sort_by: phan tu {vi_tri} la {_ten_kieu(phan)}, "
                          f"khong phai object")
         if khoa not in phan:
@@ -568,7 +601,7 @@ def _dau_van(gia_tri: Any, sau: int = 0) -> tuple:
         return ("text", gia_tri)
     if isinstance(gia_tri, list):
         return ("list", tuple(_dau_van(x, sau + 1) for x in gia_tri))
-    if isinstance(gia_tri, dict):
+    if isinstance(gia_tri, _OBJECT):
         return ("object", tuple(sorted(
             (k, _dau_van(v, sau + 1)) for k, v in gia_tri.items()
             if _thay_duoc(k))))
@@ -594,7 +627,7 @@ def _ham_pluck(ds: Any, khoa: Any) -> list:
         raise LoiHam(f"pluck: khoa {khoa!r} bat dau bang '_' nen khong doc duoc")
     ra = []
     for vi_tri, phan in enumerate(ds):
-        if not isinstance(phan, dict):
+        if not isinstance(phan, _OBJECT):
             raise LoiHam(f"pluck: phan tu {vi_tri} la {_ten_kieu(phan)}, "
                          f"khong phai object")
         if khoa in phan:
@@ -659,7 +692,7 @@ def _ham_get(obj: Any, duong: Any, mac_dinh: Any = None) -> Any:
     for doan in duong.split("."):
         if not doan or doan.startswith("_"):
             return mac_dinh
-        if isinstance(hien_tai, dict):
+        if isinstance(hien_tai, _OBJECT):
             if doan not in hien_tai:
                 return mac_dinh
             hien_tai = hien_tai[doan]

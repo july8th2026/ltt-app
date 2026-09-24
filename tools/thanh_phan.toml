@@ -192,6 +192,11 @@ mo_ta = "Soan thao workflow: bien dich, dinh nghia node, luoc do, bieu thuc, bao
 duong = ["platform_core/workflow/bien_dich.py", "platform_core/workflow/dinh_nghia.py",
          "platform_core/workflow/nut.py", "platform_core/workflow/nut_loi/",
          "platform_core/workflow/luoc_do.py", "platform_core/workflow/bieu_thuc.py",
+         # Ngon ngu bieu thuc §6 (plan wf-v2 P2): may + chinh sach, noi suy,
+         # bang ham, cho lap, ngu nghia `vars`.
+         "platform_core/workflow/chinh_sach.py", "platform_core/workflow/noi_suy.py",
+         "platform_core/workflow/ham_bieu_thuc.py", "platform_core/workflow/ngon_ngu.py",
+         "platform_core/workflow/bien_vars.py",
          "platform_core/workflow/he_kieu.py", "platform_core/workflow/canh.py",
          "platform_core/workflow/cong_cu.py", "platform_core/workflow/bao_gia.py",
          "platform_core/workflow/di_tru_m1.py"]

@@ -128,6 +128,16 @@ NGHIEM = ChinhSach(
         "tu_khoa": "khong dung tham so co ten",
         "khong_co_gia_tri": "tham so {ten} khong co gia tri",
         "chia_0": "chia cho 0",
+        # ⭐ Ba cau duoi CHO `min`/`max`. `NGHIEM` co `ast.Call`, nen no di qua
+        #    cung doan goi ham voi ngon ngu §6 — va truoc do `min()` hay
+        #    `min(a)` voi `a` la so nem `TypeError` THO qua dau `tinh_bieu_thuc`
+        #    ra toi tang nap registry. Mot tran `max_runtime_s` khong duoc
+        #    phep ngo ra bang mot loi cua Python.
+        #    ⛔ `loi_nguoi_dung` cua `NGHIEM` de RONG: `min`/`max` la ham dung
+        #    san, khong co lop loi rieng noi cau cho nguoi khai doc.
+        "sai_tham_so": "goi {ten} sai so tham so ({msg})",
+        "ham_loi": "{msg}",
+        "ham_hong": "ham {ten} that bai khi tinh",
     },
 )
 

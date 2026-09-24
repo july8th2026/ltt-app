@@ -48,6 +48,8 @@ mot dong diff trong chinh bang — va mot phep kiem doc duoc bang do.
 from __future__ import annotations
 
 import ast
+import functools
+import inspect
 from collections.abc import Callable, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -127,6 +129,13 @@ class ChinhSach:
     tran_nut: int | None = None
     #: `lop_loi` nhan `vi_tri=` hay khong (§6.4 doi loi mang cot).
     loi_mang_vi_tri: bool = False
+    #: Lop ngoai le cua BANG HAM mang cau noi cho NGUOI KHAI doc (`LoiHam`).
+    #: Ngoai le kieu khac nem ra tu mot ham la loi LAP TRINH, va nguyen van
+    #: cua no khong duoc dan ra ngoai — xem `_goi_ham`.
+    #: ⚠️ Khai bang TUPLE chu khong bang `except LoiHam` trong may: may KHONG
+    #:    duoc import `ham_bieu_thuc.py`. Bang ham la du lieu di vao, lop loi
+    #:    cua no cung vay.
+    loi_nguoi_dung: tuple[type[BaseException], ...] = ()
 
     def loi(self, ma: str, *, nut: ast.AST | None = None, **tham) -> Exception:
         cau = self.van_ban[ma].format(**tham)
@@ -348,8 +357,10 @@ def tinh_cay(nut: ast.AST, cs: ChinhSach, moi_truong: Mapping[str, Any]) -> Any:
     if isinstance(nut, ast.Call):
         if not isinstance(nut.func, ast.Name) or nut.func.id not in cs.ham:
             raise cs.loi("goi_tinh", ds=sorted(cs.ham), nut=nut)
-        return cs.ham[nut.func.id](
-            *[tinh_cay(v, cs, moi_truong) for v in nut.args])
+        # ⚠️ Tinh doi so TRUOC, ngoai `_goi_ham`: mot loi cua doi so la loi cua
+        #    CHINH no (co cot rieng), khong phai "ham nay nga".
+        doi_so = [tinh_cay(v, cs, moi_truong) for v in nut.args]
+        return _goi_ham(cs, nut.func.id, doi_so, nut)
     if isinstance(nut, ast.Attribute):
         if cs.doc_thuoc_tinh is None:
             raise cs.loi("cu_phap", ten="Attribute", nut=nut)
@@ -381,6 +392,64 @@ def tinh_cay(nut: ast.AST, cs: ChinhSach, moi_truong: Mapping[str, Any]) -> Any:
             ra[ten_khoa] = tinh_cay(v, cs, moi_truong)
         return ra
     raise cs.loi("cu_phap", ten=type(nut).__name__, nut=nut)
+
+
+@functools.lru_cache(maxsize=256)
+def _chu_ky(ham: Callable[..., Any]) -> inspect.Signature | None:
+    """Chu ky cua mot ham trong bang, hoac `None` neu Python khong noi duoc.
+
+    ⚠️ `inspect.signature` nem `ValueError` cho mot so ham dung san khong co
+       `__text_signature__`. `None` ⇒ bo qua phep kiem TRUOC, va so tham so sai
+       roi xuong `TypeError` o `_goi_ham` — van khong ra ngoai duoi dang tho.
+    """
+    try:
+        return inspect.signature(ham)
+    except (TypeError, ValueError):
+        return None
+
+
+def _goi_ham(cs: ChinhSach, ten: str, doi_so: list[Any],
+             nut: ast.AST) -> Any:
+    """Goi mot ham cua bang. ⛔ Khong mot ngoai le la nao ra khoi day.
+
+    🔑 Ba duong ra, va chung phai PHAN BIET duoc:
+
+      1. **sai so tham so** — hoi TRUOC bang `Signature.bind`, vi mot
+         `TypeError` sinh ra TRONG than ham khong phan biet duoc voi mot
+         `TypeError` do goi sai neu chi bat o ngoai;
+      2. **loi cua nguoi khai** (`cs.loi_nguoi_dung`, tuc `LoiHam`) — dan
+         NGUYEN VAN, vi cau do viet cho ho doc;
+      3. **loi lap trinh** (bat cu ngoai le nao khac) — nuot noi dung, chi noi
+         ham nao nga. ⛔ Noi dung mot `KeyError`/`AttributeError` noi bo la mot
+         duong ro ri, va no cung khong giup nguoi khai sua gi.
+
+    ⚠️ Ca ba deu ra `cs.lop_loi` co COT. Truoc doan nay, mot `json_parse` hong
+       nem `LoiHam` thang qua dau nguoi goi: mot lop ngoai le cua tang khac,
+       khong `vi_tri`, khong `bieu_thuc`.
+    """
+    ham = cs.ham[ten]
+    chu_ky = _chu_ky(ham)
+    if chu_ky is not None:
+        try:
+            chu_ky.bind(*doi_so)
+        except TypeError as loi:
+            raise cs.loi("sai_tham_so", ten=ten, msg=str(loi),
+                         nut=nut) from None
+    try:
+        return ham(*doi_so)
+    except cs.loi_nguoi_dung as loi:
+        raise cs.loi("ham_loi", ten=ten, msg=str(loi), nut=nut) from None
+    except TypeError as loi:
+        # ⚠️ CHI khi Python khong noi duoc chu ky (`min`/`max` dung san cua
+        #    `NGHIEM`: `inspect.signature` nem `ValueError`). Do la truong hop
+        #    duy nhat mot `TypeError` con MO HO giua "goi sai" va "than ham
+        #    hong" — khi da bind duoc thi no chac chan la cai thu hai, va goi
+        #    no la "sai so tham so" se day nguoi khai di sua mot cho khong sai.
+        if chu_ky is not None:
+            raise cs.loi("ham_hong", ten=ten, nut=nut) from None
+        raise cs.loi("sai_tham_so", ten=ten, msg=str(loi), nut=nut) from None
+    except Exception:
+        raise cs.loi("ham_hong", ten=ten, nut=nut) from None
 
 
 def _goc_ten(nut: ast.AST) -> str | None:
@@ -662,6 +731,14 @@ class _CongRa(Mapping):
                 f"(node tra: {_khoa_hien(self._cong)})")
         return self._cong[khoa]
 
+    def __contains__(self, khoa: object) -> bool:
+        # ⛔ `Mapping.__contains__` mac dinh goi `self[khoa]` va chi bat
+        #    `KeyError` — voi lop nay no bat duoc `LoiNgonNgu`, nen `x in y`
+        #    NEM thay vi tra `False`. Do 24/09 khi cam bang ham vao bo tinh:
+        #    `get(nodes.a.output, "khong_co", 0)` nem, dung cho no phai lui ve
+        #    mac dinh (`_ham_get` hoi bang `in`).
+        return khoa in self._cong
+
     def __iter__(self):
         return iter(self._cong)
 
@@ -694,6 +771,9 @@ class _MatNode(Mapping):
             return _CongRa(self._nid, self._ban_ghi.get("output") or {})
         return self._ban_ghi.get(khoa)
 
+    def __contains__(self, khoa: object) -> bool:
+        return khoa in self.MAT
+
     def __iter__(self):
         return iter(self.MAT)
 
@@ -721,6 +801,9 @@ class KhongGianNodes(Mapping):
                 f"node {khoa!r} khong co trong run — tham chieu phai la node "
                 f"TO TIEN da chay")
         return _MatNode(khoa, ban_ghi)
+
+    def __contains__(self, khoa: object) -> bool:
+        return khoa in self._anh_chup
 
     def __iter__(self):
         return iter(self._anh_chup)
@@ -895,6 +978,9 @@ VAN_BAN_DAY_DU = {
     "goc_dong": "tham chieu `{ten}` co doan DONG — phai viet tinh "
                 '(vi du nodes["b-2"].output.text), vi cong publish kiem quan '
                 "he to tien luc publish chu khong luc chay",
+    "sai_tham_so": "goi ham {ten}() sai so tham so ({msg}) — xem bang §6.3",
+    "ham_loi": "{msg}",
+    "ham_hong": "ham {ten}() that bai khi tinh",
     "khoa_object": "khoa cua object phai la chuoi, gap {kieu}",
     "qua_sau": "bieu thuc long qua sau (tran {tran} muc, §6.4)",
     "qua_nhieu_nut": "bieu thuc qua lon (tran {tran} nut AST, §6.4)",
@@ -905,8 +991,10 @@ VAN_BAN_DAY_DU = {
 }
 
 
-def chinh_sach_day_du(*, ham: Mapping[str, Callable[..., Any]] | None = None,
-                      ten: str = "ngon_ngu_6") -> ChinhSach:
+def chinh_sach_day_du(
+        *, ham: Mapping[str, Callable[..., Any]] | None = None,
+        loi_nguoi_dung: tuple[type[BaseException], ...] = (),
+        ten: str = "ngon_ngu_6") -> ChinhSach:
     """Phuong ngu DAY DU cua §6. Bang ham di VAO qua tham so.
 
     ⭐ Vi sao bang ham khong nam trong mo-dun nay: `ham_bieu_thuc.py` (§6.3) la
@@ -945,6 +1033,7 @@ def chinh_sach_day_du(*, ham: Mapping[str, Callable[..., Any]] | None = None,
         },
         logic=frozenset({ast.And, ast.Or}),
         ham=dict(ham or {}),
+        loi_nguoi_dung=loi_nguoi_dung,
         cho_tham_so_ten=False,
         chia_bang_0=frozenset({ast.Div, ast.FloorDiv, ast.Mod}),
         van_ban=VAN_BAN_DAY_DU,
