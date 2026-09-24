@@ -95,28 +95,64 @@ def _bang_luot() -> list[dict]:
     from apps.auto_scan_video import hop_dong_v4 as hd
     from apps.auto_scan_video import ngon_ngu as nn
 
+    # ⚠️ **`nguon_dinh_nghia` la mot cot bat buoc, khong phai mot chu thich.**
+    #
+    #    Nguoi doc sau phai phan biet duoc cai DA THOA THUAN (chu du an chot,
+    #    hoac mot bang chung da co) voi cai LAN NAY TU QUYET. Khong phan biet
+    #    duoc thi mot lua chon cua mot lan se duoc doc nhu mot yeu cau cua chu du
+    #    an — va khong ai con ra soat lai no.
+    #
+    # 🔑 Nen cot nay co o CA NAM luot, khong chi o D. Neu chi D co, cot do doc
+    #    nhu mot loi bien bach cho mot o le; co du nam thi no la mot muc truy
+    #    nguyen, va nguoi doc thay ngay bon o kia dua vao dau.
     return [
         {"ma": "A", "preset": hd.PRESET_GIU_HINH,
          "che_do_giong": hd.CHE_DO_GIONG_TU_KHOP, "giong_id": "",
          "nguon": nn.ZH, "dich": nn.VI,
-         "hoi": "R-01: AUTO_MATCH con la duong chet?"},
+         "hoi": "R-01: AUTO_MATCH con la duong chet?",
+         "nguon_dinh_nghia": "bang_chung/NEN_V3.md luot A (23/09)"},
         {"ma": "B", "preset": hd.PRESET_GIU_HINH,
          "che_do_giong": hd.CHE_DO_GIONG_TU_CHON, "giong_id": "Minh Đức",
          "nguon": nn.ZH, "dich": nn.VI,
-         "hoi": "duong san pham chinh (NEN_V3 lam moc so sanh)"},
+         "hoi": "duong san pham chinh (NEN_V3 lam moc so sanh)",
+         "nguon_dinh_nghia": "bang_chung/NEN_V3.md luot B (23/09)"},
         {"ma": "C", "preset": hd.PRESET_CAT_THONG_MINH,
          "che_do_giong": hd.CHE_DO_GIONG_TU_CHON, "giong_id": "Minh Đức",
          "nguon": nn.ZH, "dich": nn.VI,
-         "hoi": "R-05: `smart_localize` CO cat canh nao khong?"},
+         "hoi": "R-05: `smart_localize` CO cat canh nao khong?",
+         "nguon_dinh_nghia": "bang_chung/NEN_V3.md luot C (23/09)"},
         {"ma": "D", "preset": hd.PRESET_CAT_THONG_MINH,
          "che_do_giong": hd.CHE_DO_GIONG_TU_KHOP, "giong_id": "",
          "nguon": nn.ZH, "dich": nn.VI,
-         "hoi": "giao cua R-01 va R-05 — hai co che vua sua co dinh nhau?"},
+         "hoi": "giao cua R-01 va R-05 — hai co che vua sua co dinh nhau?",
+         # ⛔ **Dinh nghia nay do LAN `nghiem-thu-v2` tu chot 24/09.** `PLAN.md`
+         #    chi ghi *"luot that cuoi A/B/C/D"*; A/B/C suy duoc tu `NEN_V3`, D
+         #    thi KHONG co o dau. Dieu phoi tan thanh cung ngay, kem dung dieu
+         #    kien: ban ghi bang chung phai noi ro day la lua chon cua lan.
+         "nguon_dinh_nghia": "LAN nghiem-thu-v2 TU CHOT 24/09 — KHONG co trong "
+                             "PLAN.md; dieu phoi tan thanh cung ngay"},
         {"ma": "E", "preset": hd.PRESET_GIU_HINH,
          "che_do_giong": hd.CHE_DO_GIONG_TU_CHON, "giong_id": "",
          "nguon": nn.VI, "dich": nn.EN,
-         "hoi": "CHIEU NGUOC — cap `-> en` co phai duong song?"},
+         "hoi": "CHIEU NGUOC — cap `-> en` co phai duong song?",
+         "nguon_dinh_nghia": "PLAN.md 22/09 (hop dong: dich thuoc {vi, en}) + "
+                             "brief lan (mot luot chieu nguoc)"},
     ]
+
+
+def test_MOI_luot_khai_NGUON_DINH_NGHIA_cua_no():
+    """⛔ Mot o trong bang ma khong noi no den tu dau la mot o khong truy duoc.
+
+    Va bai nay chot ca chieu NGUOC lai: luot nao do LAN tu quyet thi phai noi
+    thang chu do ra, khong duoc dien mot nguon nghe nhu da thoa thuan.
+    """
+    for l in _bang_luot():
+        nguon = l.get("nguon_dinh_nghia") or ""
+        assert nguon, f"luot {l['ma']} khong khai `nguon_dinh_nghia`"
+    d = next(l for l in _bang_luot() if l["ma"] == "D")
+    assert "TU CHOT" in d["nguon_dinh_nghia"], (
+        "luot D do lan nay tu dinh nghia (PLAN.md chi ghi 'A/B/C/D'), va ban "
+        "ghi phai NOI RO dieu do — xem dieu kien dieu phoi 24/09")
 
 
 def test_bang_luot_phu_HAI_CHIEU_va_CA_BON_o_cua_preset_x_che_do_giong():
@@ -261,6 +297,9 @@ def test_NGHIEM_THU_CUOI_nam_luot_tren_phim_that(moi_truong, khoa_may, tmp_path,
             ngon_ngu_nguon=l["nguon"], ngon_ngu_dich=l["dich"])
         kq["ma_luot"] = l["ma"]
         kq["cau_hoi_luot"] = l["hoi"]
+        # 🔑 Di theo BANG CHUNG, khong chi nam trong ma: nguoi doc bang chung la
+        #    nguoi can phan biet "da thoa thuan" voi "lan nay tu quyet".
+        kq["nguon_dinh_nghia_luot"] = l["nguon_dinh_nghia"]
         kq["nguon_that"] = {"ten": phim.name, "byte": phim.stat().st_size,
                             "thoi_luong": goc_s}
         kq["giay_do_ngoai"] = round(time.time() - t0, 1)

@@ -70,7 +70,7 @@ không phải một câu trong tài liệu.
 | A | giữ hình | AUTO_MATCH | zh→vi | R-01: AUTO_MATCH còn là đường chết? |
 | B | giữ hình | USER_SELECTED | zh→vi | đường sản phẩm chính (mốc so với `NEN_V3`) |
 | C | cắt thông minh | USER_SELECTED | zh→vi | R-05: `smart_localize` CÓ cắt không? |
-| D | cắt thông minh | AUTO_MATCH | zh→vi | giao của R-01 và R-05 |
+| D | cắt thông minh | AUTO_MATCH | zh→vi | giao của R-01 và R-05 — ⚠️ **định nghĩa do làn này tự chốt 24/09** |
 | E | giữ hình | USER_SELECTED | **vi→en** | chiều ngược — cặp `→ en` có phải đường sống? |
 
 Phim: `v3` (`深度解析…`, 106,833 s, hardsub Trung) — cùng phim `NEN_V3` đã chạy,
@@ -78,6 +78,22 @@ nên hai báo cáo so sánh được với nhau.
 
 `LTT_ASV_QC_AI` **BẬT** (R-07: tắt thì không đo lớp ngữ nghĩa/thị giác; bộ test
 tự `assert` lại điều đó).
+
+### Nguồn của từng định nghĩa — cột bắt buộc, không phải chú thích
+
+Mỗi lượt trong `test_3001._bang_luot()` mang một trường `nguon_dinh_nghia`, và
+nó **đi theo bản ghi bằng chứng** (`nguon_dinh_nghia_luot` trong JSON từng lượt):
+
+| lượt | đến từ đâu |
+|---|---|
+| A · B · C | `bang_chung/NEN_V3.md` (23/09) — đã chạy thật |
+| **D** | ⛔ **làn `nghiem-thu-v2` TỰ CHỐT 24/09.** `PLAN.md` chỉ ghi *"lượt thật cuối A/B/C/D"*, D không có ở đâu. Điều phối tán thành cùng ngày, kèm đúng điều kiện: bản ghi phải nói rõ đây là lựa chọn của làn |
+| E | `PLAN.md` 22/09 (hợp đồng: đích ∈ {vi, en}) + brief làn |
+
+🔑 Vì sao cột này có ở **cả năm** chứ không chỉ ở D: nếu chỉ D có, nó đọc như một
+lời biện bạch cho một ô lẻ. Có đủ năm thì nó là một mục truy nguyên, và người đọc
+thấy ngay bốn ô kia dựa vào đâu. `test_3001::test_MOI_luot_khai_NGUON_DINH_NGHIA`
+chốt cả hai chiều — thiếu nguồn là đỏ, và D mà không nói *"TỰ CHỐT"* cũng đỏ.
 
 ### Cổng tác
 
