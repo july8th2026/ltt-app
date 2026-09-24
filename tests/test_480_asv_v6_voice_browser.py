@@ -60,10 +60,39 @@ def test_nut_LAM_MOI_tro_toi_danh_muc_da_loc_theo_chu_so_huu(moi_truong):
 
 
 def test_KHONG_con_giong_nao_khop_thi_CHAN_gui():
-    """🔴 Loi co san truoc pha 18: 0 giong khop ma giong da AN van duoc gui di."""
+    """🔴 Loi co san truoc pha 18: 0 giong khop ma giong da AN van duoc gui di.
+
+    ⚠️ **Ban nay do TINH CHAT, ban cu do CACH GO — va ban cu da bao dong gia.**
+       No chot hai chuoi nguyen van: `"setCustomValidity(rong ?"` va
+       `"conLai === 0"`. `c5f331fa` (23/09) viet lai dung ba dong do de noi HAI
+       cau thay vi mot (`giong_khong_khop` khi het giong sau BO LOC,
+       `giong_het_lan` khi het giong trong LAN) — `var rong = conLai === 0`
+       thanh `var cau = conLai ? "" : (...)`. Cai chan gui **khong he mat**; chi
+       cai ten bien mat. Bai nay do tu 23/09 den 24/09 va to cao khong dung ai.
+
+    ⇒ Menh de duoc chot o day: trong `locGiong`, `oGiong.setCustomValidity` duoc
+      goi voi mot gia tri tinh TU `conLai` (so giong con khop), va gia tri do
+      RONG khi con giong. Doi ten bien, tach them cau, doi thong diep — tat ca
+      di qua. Bo mat cai chan gui, hoac chan theo mot con so khac, thi do.
+
+    ⛔ Phep kiem nay van chi doc van ban ma nguon (xem docstring dau tep): no
+       chung minh *"ma co noi dieu do"*, khong phai *"trinh duyet lam dieu do"*.
+    """
     than = JS[JS.index("function locGiong"):JS.index("function capNhatNghe")]
-    assert "setCustomValidity(rong ?" in than
-    assert "conLai === 0" in than
+
+    goi = re.search(r"oGiong\.setCustomValidity\(\s*([A-Za-z_$][\w$]*)\s*\)", than)
+    assert goi, "locGiong khong con dat `oGiong.setCustomValidity(<bien>)`"
+
+    bien = goi.group(1)
+    gan = re.search(r"\bvar\s+" + re.escape(bien) + r"\s*=\s*([^;]+);", than)
+    assert gan, f"khong tim thay cho gan `{bien}` trong `locGiong`"
+
+    biv = gan.group(1)
+    assert "conLai" in biv, (
+        f"`{bien}` khong tinh tu `conLai` — cai chan gui dang doc mot con so "
+        f"khac voi so giong con khop: {biv!r}")
+    assert re.search(r'(""|\'\')', biv), (
+        f"`{bien}` khong bao gio rong — o giong se KHONG BAO GIO gui duoc: {biv!r}")
 
 
 def _ma_khong_chu_thich(van: str) -> str:

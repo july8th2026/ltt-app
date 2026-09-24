@@ -52,17 +52,28 @@ def _wav(dest: Path, f0: float, *, giay: float = 2.5, tan_so: int = 44100,
 #  §1  Phep do
 # ══════════════════════════════════════════════════════════════════════════════
 
+def _chi_so(duong_wav, **kw) -> float:
+    """Con so, khong lay `ly_do`.
+
+    ⚠️ `cao_do.f0_trung_vi` (ban chi tra con so) da bi XOA 24/09: bo test nay
+       la nguoi goi duy nhat cua no, va `test_453` ket dung no la mo coi. Cai
+       goi o day KHONG dung lai no trong ma san pham — no song trong `tests/`,
+       noi viec vut `ly_do` di la co y va chi anh huong bo test.
+    """
+    return cao_do.f0_trung_vi_va_ly_do(duong_wav, **kw)[0]
+
+
 @pytest.mark.parametrize("f0", [105.0, 140.0, 200.0, 240.0])
 def test_do_dung_F0_trong_khoang_tieng_noi(tmp_path, f0):
-    do = cao_do.f0_trung_vi(_wav(tmp_path / "v.wav", f0))
+    do = _chi_so(_wav(tmp_path / "v.wav", f0))
     assert do == pytest.approx(f0, rel=0.03), f"do {do} cho nguon {f0}"
 
 
 def test_gop_kenh_truoc_khi_do(tmp_path):
     """Stem cua demucs la stereo. Mot ban do tung kenh roi gop hai day so lai
     la lam hai lan cong viec cho cung mot cau tra loi."""
-    a = cao_do.f0_trung_vi(_wav(tmp_path / "1.wav", 120.0, kenh=1))
-    b = cao_do.f0_trung_vi(_wav(tmp_path / "2.wav", 120.0, kenh=2))
+    a = _chi_so(_wav(tmp_path / "1.wav", 120.0, kenh=1))
+    b = _chi_so(_wav(tmp_path / "2.wav", 120.0, kenh=2))
     assert a == pytest.approx(b, rel=0.02)
 
 
@@ -74,22 +85,22 @@ def test_im_lang_tra_ve_KHONG_DO_DUOC_chu_khong_phai_mot_con_so(tmp_path):
     with wave.open(str(im), "wb") as w:
         w.setnchannels(1); w.setsampwidth(2); w.setframerate(44100)
         w.writeframes(b"\x00" * 44100 * 4)
-    assert cao_do.f0_trung_vi(im) == 0.0
+    assert _chi_so(im) == 0.0
 
 
 def test_tep_khong_co_hoac_hong_KHONG_lam_hong_audio_prepare(tmp_path):
     """⚠️ Fail-soft co chu dinh: `audio_prepare` la giai doan dat nhat cua chuoi
     (72 giay demucs o luot that). Mot phep do khong chay duoc — thieu
     `torchaudio`, tep hong — khong duoc phep giet no."""
-    assert cao_do.f0_trung_vi(tmp_path / "khong-co.wav") == 0.0
+    assert _chi_so(tmp_path / "khong-co.wav") == 0.0
     hong = tmp_path / "hong.wav"
     hong.write_bytes(b"khong phai WAV")
-    assert cao_do.f0_trung_vi(hong) == 0.0
+    assert _chi_so(hong) == 0.0
 
 
 def test_am_cao_hon_tieng_noi_nguoi_khong_ra_mot_con_so(tmp_path):
     """Tran tren la 400 Hz: mot am cao hon the khong phai giong nguoi lon."""
-    assert cao_do.f0_trung_vi(_wav(tmp_path / "rat-cao.wav", 500.0)) == 0.0
+    assert _chi_so(_wav(tmp_path / "rat-cao.wav", 500.0)) == 0.0
 
 
 def test_LOI_QUANG_TAM_duoc_khai_that_chu_khong_giau(tmp_path):
@@ -105,7 +116,7 @@ def test_LOI_QUANG_TAM_duoc_khai_that_chu_khong_giau(tmp_path):
        ra mot stem gan nhu im lang va cua nang luong tra `0.0`
        (`test_im_lang_tra_ve_KHONG_DO_DUOC...`).
     """
-    do = cao_do.f0_trung_vi(_wav(tmp_path / "cao.wav", 440.0))
+    do = _chi_so(_wav(tmp_path / "cao.wav", 440.0))
     assert do == pytest.approx(440.0 / 2, rel=0.05), (
         f"loi quang tam da doi hanh vi ({do} Hz) — doc lai ghi chu gioi han "
         "o `cao_do.py` truoc khi sua bai nay")
