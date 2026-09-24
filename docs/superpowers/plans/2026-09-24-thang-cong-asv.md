@@ -611,17 +611,17 @@ ghim. ⚠️ `temperature=0.0` **không** làm kết quả tái lập (xem bư�
 **Interfaces:**
 - Produces: `bench_b2_xac_thuc_bo_cham.ti_le_bao_dong_gia(n: int) -> dict`
 
-- [ ] **Bước 1: ngưỡng ĐẠT — viết TRƯỚC**
+- [x] **Bước 1: ngưỡng ĐẠT — viết TRƯỚC**
 ```
 Bộ chấm ĐÁNG TIN khi: tỉ lệ báo động giả ≤ 15% trên ≥ 100 cặp FLORES zh→vi.
 Vì sao: model CÙNG LOẠI ở lớp kiểm hình cho 9/9 báo động giả (M-10) ⇒ nghi ngờ có
 cơ sở. > 15% ⇒ con số 44/95 KHÔNG dùng được để kết luận về bản dịch.
 ```
-- [ ] **Bước 2:** tải FLORES-200 `zho_Hans` + `vie` (kiểm giấy phép: CC-BY-SA-4.0 — ghi vào `THIRD_PARTY_METRICS.md`).
-- [ ] **Bước 3:** đưa **cặp nguồn + bản dịch CHUẨN CỦA NGƯỜI** cho bộ chấm `qc_ai` ngữ nghĩa. Mọi phán quyết "dịch sai" = **báo động giả theo định nghĩa**.
-- [ ] **Bước 4:** ĐỐI CHỨNG âm: đưa 30 cặp **đã làm hỏng có chủ ý** (đảo nghĩa, sai thực thể) ⇒ bộ chấm phải bắt được. ⛔ Không có bước này thì tỉ lệ báo động giả 0% có thể chỉ là bộ chấm **không bao giờ báo gì**.
-- [ ] **Bước 5:** ghi kết quả + phán quyết vào `B2_XAC_THUC_BO_CHAM.md`.
-- [ ] **Bước 6: commit**
+- [x] **Bước 2:** tải FLORES-200 `zho_Hans` + `vie` (kiểm giấy phép: CC-BY-SA-4.0 — ghi vào `THIRD_PARTY_METRICS.md`).
+- [x] **Bước 3:** đưa **cặp nguồn + bản dịch CHUẨN CỦA NGƯỜI** cho bộ chấm `qc_ai` ngữ nghĩa. Mọi phán quyết "dịch sai" = **báo động giả theo định nghĩa**.
+- [x] **Bước 4:** ĐỐI CHỨNG âm: đưa 30 cặp **đã làm hỏng có chủ ý** (đảo nghĩa, sai thực thể) ⇒ bộ chấm phải bắt được. ⛔ Không có bước này thì tỉ lệ báo động giả 0% có thể chỉ là bộ chấm **không bao giờ báo gì**.
+- [x] **Bước 5:** ghi kết quả + phán quyết vào `B2_XAC_THUC_BO_CHAM.md`.
+- [x] **Bước 6: commit**
 
 ---
 
