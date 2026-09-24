@@ -181,18 +181,32 @@ def _maintenance_probe(db, monkeypatch):
     def reconcile(*args, **kwargs):
         calls.append("reconcile")
         return 7
+    def soi_dien(*args, **kwargs):
+        calls.append("soi_dien")
+        return 0
     monkeypatch.setattr(bao_tri, "_don_thao_tac_qua_han", cleanup)
     monkeypatch.setattr(bao_tri, "_doi_chieu_profiles", reconcile)
+    monkeypatch.setattr(bao_tri, "_doi_chieu_dinh_ky", soi_dien)
     return bao_tri.mot_luot(db), calls
 
 
 def test_vong_bao_tri_CO_goi_doi_chieu(monkeypatch):
     """`vps_doctor` đối chiếu được từ 25/08, nhưng **không ai chạy nó định kỳ**.
     Một phép soi không ai chạy là một phép soi không tồn tại — và thứ nó tìm ra
-    (Reserved IP mồ côi, $3/tháng) là loại hỏng không bao giờ tự kêu lên."""
+    (Reserved IP mồ côi, $3/tháng) là loại hỏng không bao giờ tự kêu lên.
+
+    ⚠️ HAI phép soi, không phải một — và trước 24/09/2026 phép đo ở đây chỉ nhìn
+       thấy MỘT. `_doi_chieu_profiles` (module `reconciliation`) khai rõ là
+       read-only và **không đọc điện**; chỗ duy nhất ghi `dien_quan_sat` và tìm
+       IP mồ côi là `doi_chieu.quet`, gọi qua `_doi_chieu_dinh_ky` — thứ mà
+       không mã sản phẩm nào gọi cho tới hôm nay, trong khi test này vẫn xanh.
+       Đo hậu quả trên production: máy 204 mang `dien_quan_sat = chay` từ 16/09
+       còn Proxmox trả `tat`.
+    """
     result, calls = _maintenance_probe(object(), monkeypatch)
     assert result["mo_coi"] == 7
     assert calls.count("reconcile") == 1
+    assert calls.count("soi_dien") == 1, "vong bao tri khong chay phep soi do dien"
 
 
 def test_doi_chieu_chay_HANG_NGAY_chu_khong_hang_gio():

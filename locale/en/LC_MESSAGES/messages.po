@@ -21257,3 +21257,9 @@ msgstr "Follow 3xx. Off by default: your headers would travel to a host the targ
 
 msgid "Mã coi là thành công. Trống -> mọi mã < 400."
 msgstr "Status codes counted as success. Empty -> every code < 400."
+
+msgid "Hạ tầng từ chối bước này nên máy chưa dựng xong. Đội vận hành đã nhận được nhật ký; thử lại sau ít phút."
+msgstr "The infrastructure refused this step, so the machine is not finished. The operations team has the logs; try again in a few minutes."
+
+msgid "Chúng tôi đang xác nhận địa chỉ IP cho máy này với nhà cung cấp. Đừng tạo máy khác — đội vận hành sẽ hoàn tất hoặc hoàn lại credit cho bạn."
+msgstr "We are confirming this machine's IP address with the provider. Do not create another machine — the operations team will either finish it or return your credit."
