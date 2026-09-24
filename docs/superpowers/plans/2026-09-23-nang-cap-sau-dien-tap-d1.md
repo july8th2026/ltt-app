@@ -140,7 +140,24 @@ và năm lần đều chưa tới tay người dùng.**
 | **0.2.9** | gọi script vá tường minh sau `npm ci` | Patch vào bản cài chưa? | ✅ vào rồi — nhưng **vẫn 0 dòng cảnh báo** |
 | **0.2.10** | `lttcodeDiagnoseStderr` + 2 phép **gọi thật** `tool.execute()` | Cảnh báo ra log chưa? | ✅ **CÓ dòng thật**. Nhưng lộ: **25/41 dòng là lặp**, và **thiếu `THIRD_PARTY_RUNTIME.txt`** |
 | **0.2.11** | tách `dist-notices/` · dedupe `path+mtime` | Hai lỗi trên hết chưa? | ✅ cả hai tệp giấy phép có, **nội dung giống hệt**; **1 dòng/tệp**, 6 tệp ⇒ 6 dòng |
-| **0.2.12** | 4 phép đo lệch chiều đã sửa | Đủ để phát cho khách chưa? | đang nghiệm thu |
+| **0.2.12** dev | 4 phép đo lệch chiều đã sửa | Đủ để phát cho khách chưa? | ✅ `verdict: PASS`, **0 phép đỏ**; git tool + chat chạy thật |
+| **0.2.12 `stable`** | *(dựng LẠI — xem ghi chú dưới)* | Khách 0.2.6 có thấy bản mới không? | ✅ **ĐÃ PHÁT** |
+
+⛔ **Bẫy suýt mắc ở bước cuối: KHÔNG được `-SkipBuild` bản dev rồi phát sang `stable`.**
+`release.ps1:79` đặt `$env:LTTCODE_UPDATE_CHANNEL = $Channel` **trong lúc build** ⇒ **kênh được
+biên dịch vào nhị phân**. Phát lại đúng tệp dev cho nhanh thì mọi khách cập nhật sẽ nhận một bản
+**vĩnh viễn hỏi kênh `dev`**, và từ đó mọi bản thử nghiệm đổ thẳng xuống máy họ — không có đường
+lùi ngoài việc phát thêm một bản nữa. **Phải dựng lại với `-Channel stable`.**
+
+**Năm phép nghiệm thu bản `stable` đã phát (24/09):**
+
+| # | Phép | Kết quả |
+|---|---|---|
+| 1 | Khách ở **0.2.6** hỏi kênh `stable` | **0.2.12** + ghi chú "có gì mới" |
+| 2 | Khách **đã ở 0.2.12** hỏi lại | **HTTP 204** — không mời cập nhật vòng lặp |
+| 3 | Kênh `dev` vẫn tách riêng | `dev → 0.2.12` (không lẫn) |
+| 4 | Tải bộ cài qua Cloudflare | **HTTP 206**, `cache-control: public, max-age=31536000, immutable` — Task 9 đang ăn ở production |
+| 5 | Trang chủ | nút tải trỏ `LTTCODE_0.2.12_stable_x64-setup.exe`, ghi *"Phiên bản 0.2.12 · Windows 10/11 x64 · 279,5 MB"* |
 
 **Ba lần "đã vá" đầu tiên đều có phép kiểm XANH.** Không phép nào nói dối — chúng trả lời đúng
 câu chúng hỏi. Chỉ là **không câu nào hỏi *"người dùng có thấy cảnh báo không"***.
