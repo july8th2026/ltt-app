@@ -341,6 +341,70 @@ def bao_gia_do_thi(graph: dict, *,
                   uoc_tinh=int(math.ceil(toi_da * _TY_LE_UOC_TINH)))
 
 
+@dataclass(frozen=True)
+class BangGiaSong:
+    """Bang gia cho mot ban nhap **dang go** — mot cua cho ca do thi.
+
+    `gia`         {node_id: tran credit cua MOT luot chay}
+    `loi`         {node_id: vi sao node ay chua bao gia duoc}
+    `loi_do_thi`  `{"ma","thong_diep","node_id"}` khi ca CAU TRUC chua dung
+                  (id trung, chu trinh, canh tro vao hu khong) — luc do `gia`
+                  rong va giao dien xoa bang gia.
+    """
+
+    gia: dict[str, int]
+    loi: dict[str, str]
+    loi_do_thi: dict[str, str] | None = None
+
+
+def bang_gia_song(document: dict, *,
+                  cong_cu: dict[str, CongCu] | None = None) -> BangGiaSong:
+    """Bao gia TUNG node cua mot ban nhap, trong MOT luot.
+
+    ⭐ VI SAO CO HAM NAY, VA VI SAO NO KHONG PHAI DUONG GIA THU HAI
+
+    Trinh soan can mot con so cho **moi** node trong khi nguoi ta go. Truoc
+    24/09 no lay bang cach goi `/agent/api/tools/{ten}/quote` **mot lan moi
+    node**: do thi 12 node = 12 request moi lan bung. Ham nay gop lai thanh
+    MOT luot, va — quan trong hon — no goi thang `_gia_node`, **dung ham ma
+    `bao_gia_do_thi` goi**. Khong co phep nhan nao rieng o day.
+
+    ⛔ Khac `bao_gia_do_thi` o dung HAI diem, ca hai deu vi "dang go":
+       1. **Khoan dung**: mot node chua du tham so chi mat gia CUA NO; ca bang
+          khong bien mat. `bao_gia_do_thi` phai nem cho ca do thi vi no dung o
+          cong publish, noi mot node khong co chan tren la mot run khong co
+          chan tren.
+       2. **Khong ghi gi vao `document`**: `bao_gia_do_thi` GHI `gia_tran`,
+          `bang_gia`, `he_so_lap` vao do thi no nhan. Ban nhap o day la tai
+          lieu cua nguoi dung dang go — de lai dau vet trong do la doi mot thu
+          se duoc autosave gui nguoc len may chu.
+
+    ⚠️ **Pham vi**: tra tran cua MOT luot chay tung node (dung thu Inspector
+       hien). `he_so_lap` cua `foreach` va tong cua ca run thuoc `/publish`.
+    """
+    from platform_core.workflow import bien_dich
+
+    cc = _nguon.tat_ca() if cong_cu is None else cong_cu
+    try:
+        # `nghiem=False`: mot bieu thuc go do khong duoc lam mat bang gia cua
+        # chinh nguoi dang go — cung ly do cua `goi_y.py`.
+        ct = bien_dich.cau_truc(document, cong_cu=cc, nghiem=False)
+    except bien_dich.LoiBienDich as loi:
+        return BangGiaSong(gia={}, loi={}, loi_do_thi={
+            "ma": loi.ma, "thong_diep": str(loi), "node_id": loi.node_id})
+
+    gia: dict[str, int] = {}
+    loi: dict[str, str] = {}
+    for node in ct.nodes:
+        nid = str(node["id"])
+        try:
+            gia[nid] = _gia_node(node, cc)
+        except KhongBaoGiaDuoc as vi_sao:
+            loi[nid] = str(vi_sao)
+    return BangGiaSong(gia=gia, loi=loi)
+
+
 __all__ = ["HE_SO_LAP_TOI_DA", "LOAI_FOREACH", "LOAI_FOREACH_END",
-           "MAX_ITEMS_TRAN", "KhongBaoGiaDuoc", "BaoGia", "bao_gia_do_thi",
+           "MAX_ITEMS_TRAN", "BangGiaSong", "KhongBaoGiaDuoc", "BaoGia",
+           "bang_gia_song", "bao_gia_do_thi",
            "co_the_tai_dung", "hau_due", "he_so_lap", "than_foreach"]

@@ -362,52 +362,6 @@ export const savePreferences = (preferences: Omit<AgentPreferences,'revision'>, 
     'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
     body: JSON.stringify(preferences) })
 
-export type AssistantResult = { analysis?: { nodes: number; valid: boolean; issues: string[];
-  roots: number; patterns_considered: number }; proposal?: { token: string; canvas: CanvasDocument;
-  diff: { before_nodes: number; after_nodes: number; estimated_max_credit: number } }; error?: string }
-
-export async function previewAssistant(workflow: Workflow, mode: 'analyze'|'improve', prompt: string,
-                                       csrfToken: string): Promise<AssistantResult> {
-  const response = await apiFetch(`/agent/api/workflows/${workflow.id}/assistant/preview`, { method: 'POST',
-    credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken,
-      'If-Match': `"${workflow.revision}"` }, body: JSON.stringify({ mode, prompt }) })
-  if (!response.ok || !response.body) return decode(response)
-  const result: AssistantResult = {}; const reader = response.body.getReader(); const decoder = new TextDecoder()
-  let buffer = ''
-  while (true) { const { value, done } = await reader.read(); buffer += decoder.decode(value, { stream: !done })
-    const packets = buffer.split('\n\n'); buffer = packets.pop() ?? ''
-    for (const packet of packets) { const event = packet.match(/^event: (.+)$/m)?.[1]
-      const data = packet.match(/^data: (.+)$/m)?.[1]; if (!event || !data) continue
-      const parsed = JSON.parse(data)
-      if (event === 'analysis') result.analysis = parsed
-      if (event === 'proposal') result.proposal = { ...parsed, canvas: normalizeCanvas(parsed.canvas) }
-      if (event === 'error') result.error = parsed.detail }
-    if (done) break }
-  return result
-}
-
-export async function applyAssistant(workflow: Workflow, token: string,
-                                     csrfToken: string): Promise<Workflow> {
-  return normalizeWorkflow(await request(`/agent/api/workflows/${workflow.id}/assistant/apply`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-    body: JSON.stringify({ token }) }))
-}
-
-export type WorkflowSnapshot = { revision: number; name: string; reason: string; created_at: string }
-export const loadSnapshots = async (workflow: Workflow): Promise<WorkflowSnapshot[]> =>
-  (await request(`/agent/api/workflows/${workflow.id}/snapshots`)).items
-export async function restoreSnapshot(workflow: Workflow, revision: number,
-                                      csrfToken: string): Promise<Workflow> {
-  return normalizeWorkflow(await request(`/agent/api/workflows/${workflow.id}/snapshots/${revision}/restore`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-    body: JSON.stringify({ revision: workflow.revision }) }))
-}
-export async function createShare(workflow: Workflow, permission: 'view'|'clone', csrfToken: string) {
-  return request(`/agent/api/workflows/${workflow.id}/shares`, { method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-    body: JSON.stringify({ permission, expires_hours: 24 }) })
-}
-
 export async function uploadAsset(file: File, csrfToken: string): Promise<{
   key: string; kind: string; name: string; size: number; content_type: string; url: string
 }> {
@@ -416,21 +370,38 @@ export async function uploadAsset(file: File, csrfToken: string): Promise<{
     headers: { 'X-CSRF-Token': csrfToken }, body }))
 }
 
-export async function quoteTool(tool: string, params: Record<string, unknown>, fanout: number,
-                                maxRetry: number, csrfToken: string): Promise<number> {
-  const result = await request(`/agent/api/tools/${encodeURIComponent(tool)}/quote`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-    body: JSON.stringify({ params, fanout, max_retry: maxRetry }),
-  })
-  if (!result.valid) throw new Error(result.detail || 'Node chưa đủ dữ liệu để báo giá')
-  return Number(result.maximum)
+export type BangGiaSong = {
+  /** `{node_id: trần credit của MỘT lượt chạy}` — chỉ node báo giá được. */
+  gia: Record<string, number>
+  /** `{node_id: vì sao chưa báo giá được}` — node đang gõ dở. */
+  loi: Record<string, string>
+  /** Cả cấu trúc còn sai (id trùng, chu trình) ⇒ `gia` rỗng. */
+  loi_do_thi: { ma: string; thong_diep: string; node_id: string } | null
 }
 
-export async function planWorkflow(goal: string, budgetMax: number,
-                                   csrfToken: string): Promise<Workflow> {
-  return normalizeWorkflow(await request('/agent/api/workflows/plan', { method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-    body: JSON.stringify({ goal, budget_max_credit: budgetMax }) }))
+/**
+ * MỘT cửa báo giá cho CẢ đồ thị (`apps/agent/routes/bao_gia_v3.py`).
+ *
+ * ⛔ **Đừng quay lại `quoteTool` một-request-một-node.** Bản cũ gọi
+ *    `/agent/api/tools/{tên}/quote` cho từng node trong một effect chạy lại
+ *    mỗi lần `page.nodes` đổi — tức mỗi lần người ta gõ một ký tự. Đo được:
+ *    đồ thị 12 node = **12 request** mỗi lần bung
+ *    (`tests/BaoGiaMotCua.test.tsx`). Debounce 450 ms đã có sẵn từ trước và
+ *    **không** chữa bệnh ấy: nó giảm TẦN SUẤT, không giảm ĐỘ LỚN một lần bung.
+ *
+ * 🔴 Cửa này còn sửa một chỗ **lệch giá**: đường cũ trả
+ *    `credit_for(...) × fanout × (1 + max_retry)`, mà hai thừa số ấy không tồn
+ *    tại ở bất kỳ chỗ nào trong runtime v2 — số nền tảng thật sự GIỮ tiền theo
+ *    là `bao_gia._gia_node`. Cửa mới gọi thẳng hàm ấy.
+ */
+export async function baoGiaDoThi(workflowId: string, canvas: CanvasDocument,
+                                  csrfToken: string): Promise<BangGiaSong> {
+  return request(
+    `/agent/api/v3/workflows/${encodeURIComponent(workflowId)}/bao-gia`,
+    { method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+      body: JSON.stringify({ document: toV3(canvas), csrf_token: csrfToken }) },
+  ) as Promise<BangGiaSong>
 }
 
 export async function loadOrCreateWorkflow(csrfToken: string): Promise<Workflow> {
@@ -512,20 +483,6 @@ export async function loadRunHistory():Promise<AgentRunSummary[]>{
 
 export async function loadRun(id:string):Promise<AgentRun>{
   return request(`/agent/api/runs/${id}`)
-}
-
-export async function cloneWorkflow(workflow:Workflow,csrfToken:string):Promise<Workflow>{
-  return normalizeWorkflow(await request(`/agent/api/workflows/${workflow.id}/clone`,{method:'POST',
-    headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken},body:'{}'}))
-}
-
-export async function exportWorkflow(workflow:Workflow){
-  return request(`/agent/api/workflows/${workflow.id}/export`)
-}
-
-export async function importWorkflow(payload:unknown,csrfToken:string):Promise<Workflow>{
-  return normalizeWorkflow(await request('/agent/api/workflows/import',{method:'POST',
-    headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken},body:JSON.stringify(payload)}))
 }
 
 export function createAutosave<T>(

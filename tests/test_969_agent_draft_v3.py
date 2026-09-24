@@ -552,8 +552,8 @@ def test_bao_ve_3_DOI_CHUNG_doi_ban_publish_thi_gia_DI_THEO(web):
         db.close()
 
 
-def test_MUOI_LAM_route_v3_deu_duoc_dang_ky():
-    """⚠️ Tên bài mang con số, nên con số phải đúng: cửa v3 nay có **mười lăm**
+def test_MUOI_SAU_route_v3_deu_duoc_dang_ky():
+    """⚠️ Tên bài mang con số, nên con số phải đúng: cửa v3 nay có **mười sáu**
     route.
 
     Lịch sử con số: năm → **tám** (ba route `runs` ra đời cùng kiến trúc V2)
@@ -561,7 +561,10 @@ def test_MUOI_LAM_route_v3_deu_duoc_dang_ky():
     → **mười một** (plan wf-v2 P2 Task 8 thêm `/bieu-thuc/goi-y`, spec §6.2)
     → **mười ba** (cùng ngày 24/09, HAI làn song song mỗi làn thêm một route:
        P9 `/runs/{run_id}/su-kien` (SSE §15) và P8 `/soan` (Agent Designer §12.2))
-    → **mười lăm** (P9b: `/so-sanh` và `/nodes/{id}/thu-lai`, §15).
+    → **mười lăm** (P9b: `/so-sanh` và `/nodes/{id}/thu-lai`, §15)
+    → **mười sáu** (làn `p10-don`, nợ §5: `/bao-gia` — MỘT cửa báo giá cho CẢ
+       đồ thị, thay cho `POST /agent/api/tools/{ten}/quote` gọi một lần **mỗi
+       node**; đo được: đồ thị 12 node = 12 request mỗi lần gõ → 1).
 
     ⭐ BA lần cập nhật trong MỘT ngày. Đó không phải phiền toái — đó là bài kiểm
        này đang làm đúng việc: mỗi route mới vào cửa công khai phải có **một
@@ -592,13 +595,14 @@ def test_MUOI_LAM_route_v3_deu_duoc_dang_ky():
         ("GET", "/api/v3/palette"),
         ("GET", "/api/v3/luat-noi-day"),
         ("POST", "/api/v3/workflows/{workflow_id}/bieu-thuc/goi-y"),
+        ("POST", "/api/v3/workflows/{workflow_id}/bao-gia"),
         ("GET", "/api/v3/runs/{run_id}/su-kien"),
         ("POST", "/api/v3/workflows/{workflow_id}/soan"),
         # P9b (phase goc 13): quan sat sau khi chay.
         ("GET", "/api/v3/runs/{run_id}/so-sanh"),
         ("POST", "/api/v3/runs/{run_id}/nodes/{node_id}/thu-lai"),
     }
-    assert len(co) == 15
+    assert len(co) == 16
 
 
 def test_tai_lieu_rong_dung_HINH_DANG_ma_M1_sinh_ra():
