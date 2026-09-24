@@ -65,9 +65,13 @@ _LOI_DE_DANH = 6
 
 #: Nguong tep de coi mot luot `pytest` go tay la LENH NANG.
 #:
-#: ⚠️ `CLAUDE.md` da ghi "tu 3 tep test tro len" la lenh nang. Dung dung con so
-#:    do: mot luot 3 tep chay vai giay, con cai ta can bat la luot chiem may
-#:    hang phut. Lay 20 — duoi do thi xin khoa dat hon phan no bao ve.
+#: ⚠️ Nguong NAY khac nguong tai lieu, co y. Tai lieu
+#:    (`docs/QUY_TAC_CHAY_LENH_NANG.md` §1) phan loai theo KHA NANG DOT CPU de
+#:    NGUOI doc de quyet. Moc nay la mot cai ne TU DONG, nen no phai bat dung
+#:    luot CHIEM MAY: mot luot 3 tep chay vai giay thi xin khoa dat hon phan no
+#:    bao ve. Lay 20.
+#: ⭐ Chu du an chot 24/09: luat khoa theo CPU chu khong theo so tep - tuc ly le
+#:    cua dong nay da thanh luat. Tai lieu la CHU; day chi la nguong ne.
 _NGUONG_TEP_NANG = 20
 _KHOA_PHIEN = None
 

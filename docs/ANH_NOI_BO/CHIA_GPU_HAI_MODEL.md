@@ -1,5 +1,14 @@
 # Chia một card cho hai model nhà — số đo, lời giải cộng đồng, và đề xuất
 
+> # ⚠️ BẢN GHI 08/2026 — MÁY B NAY CÓ **HAI** CARD
+>
+> Cả tệp này đứng trên tiền đề *"máy B chỉ có một RTX 3090"* (§"Không dùng" →
+> "Card thứ hai"). Tiền đề ấy **hết đúng từ 11/09/2026**: máy B có 3090 **và** một
+> RTX 5060 Ti, mỗi model thường trú một card (`swap:false`). Đúng như dòng cuối
+> của §ấy đã tự dự đoán — *"thêm một card vào máy B thì cả tài liệu này thành vô
+> nghĩa"*. Đừng sửa bản ghi này; đọc nó như lịch sử. Cấu hình hôm nay:
+> [`../HAI_MAY_A_VA_B.md`](../HAI_MAY_A_VA_B.md).
+
 **2026-08-24.** Chủ sản phẩm hỏi: *"sau khi vận hành job xong thì nhả model về RAM
 để giữ, model nào hoạt động sẽ đưa từ RAM sang VRAM — quy trình như vậy là tối ưu
 nhất đúng không?"*

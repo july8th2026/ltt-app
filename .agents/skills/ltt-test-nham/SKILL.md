@@ -1,6 +1,6 @@
 ---
 name: ltt-test-nham
-description: Dùng khi vừa sửa mã trong LTTSTUDIOSAPP và cần chạy test cho đúng cụm đó — tìm thành phần bằng thanh_phan.py, chọn tệp test, giới hạn pytest -n, kiểm tải máy trước khi chạy từ 3 tệp test. Trỏ về hợp đồng §4.1, §4.5, §4.8.
+description: Dùng khi vừa sửa mã trong LTTSTUDIOSAPP và cần chạy test cho đúng cụm đó — tìm thành phần bằng thanh_phan.py, chọn tệp test, giới hạn pytest -n, kiểm tải máy trước lệnh nặng. Trỏ về hợp đồng §4.1, §4.5, §4.8 và docs/QUY_TAC_CHAY_LENH_NANG.md §1.
 ---
 
 # Test nhắm — LTTSTUDIOSAPP
@@ -17,10 +17,11 @@ python tools\thanh_phan.py --do-thi <tp>      # người tiêu thụ, khi bán k
 python -m pytest tests\test_A.py tests\test_B.py -q
 ```
 
-- ≤ 2 tệp test: chạy thẳng.
-- ≥ 3 tệp test là **lệnh nặng**: trước đó chạy
-  `python tools\cua_so_yen.py trang-thai` và `python tools\tai_may.py`
-  (có người giữ khoá hoặc `QUÁ TẢI` → chờ). `-n` tối đa 6.
+- **Nặng hay nhẹ thì hỏi `docs/QUY_TAC_CHAY_LENH_NANG.md` §1** — chỉ nơi đó định
+  nghĩa, và nó phân loại theo **khả năng đốt CPU**, không theo số tệp test.
+- Là lệnh nặng ⇒ trước đó chạy `python tools\cua_so_yen.py trang-thai` và
+  `python tools\tai_may.py` (có người giữ khoá hoặc `QUÁ TẢI` → chờ). Trần `-n` là
+  `gate.TRAN_N_GO_TAY` — đọc hằng số, ⛔ đừng gõ lại số.
 - Bước kiểm tĩnh lẻ (ruff, mypy, i18n, xuống dòng…): chạy đúng công cụ
   `tools\check_<x>.py`; tên lấy ở `tools/gate.py::_steps`.
 - Test nạp model thật nằm sau rào `LTT_TEST_NANG` (`tests/rao_chan_nang.py`);

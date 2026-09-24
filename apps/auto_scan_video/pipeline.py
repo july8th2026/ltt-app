@@ -49,6 +49,10 @@ TIMING_ALIGN = "timing_align"
 COMPOSE = "compose"
 RENDER = "render"
 QC = "qc"
+#: 🔑 Do ban long tieng bang MODEL tren card (ASR+WER/CER, SQUIM, MetricX) —
+#:    lan `gpu`, giua QC tat dinh va QC bang LLM/VLM. Xem
+#:    `giai_doan_qc_do_luong.py`. Khong nem khi doan khong dat: vong sua doc.
+QC_DO_LUONG = "qc_do_luong"
 #: 🔑 **Sau `qc`, khong thay `qc`.** QC ky thuat la mot cong PHAT HANH tat
 #:    dinh — do duoc, chay lai cho cung ket qua. QC bang AI thi hoi mot ben
 #:    **chu quan** va **tra tien**. Gop hai thu do vao mot giai doan la lam
@@ -190,11 +194,17 @@ CHUOI: tuple[GiaiDoan, ...] = (
     GiaiDoan(COMPOSE, "asv_media", "asv_media.compose", sau=(TIMING_ALIGN,)),
     GiaiDoan(RENDER, "asv_media", "asv_media.render", sau=(COMPOSE,)),
     GiaiDoan(QC, "asv_media", "asv_media.qc", sau=(RENDER,)),
+    # 🔑 `asv_gpu`: nap model len card (whisper, SQUIM, MetricX), tung bo do mot
+    #    tien trinh con, lan luot — dinh VRAM = bo do nang nhat, va card duoc tra
+    #    khi tien trinh thoat. Dung CUNG suat `tach_nguon_cuc_bo` voi hai giai
+    #    doan GPU kia: ba viec nap model len mot card dung chung khong chay chong.
+    GiaiDoan(QC_DO_LUONG, "asv_gpu", "asv_gpu.qc_do_luong", sau=(QC,),
+             tai_nguyen="tach_nguon_cuc_bo", tai_nguyen_suat=1),
     # 🔑 `auto_scan_video` chu khong `asv_media`: duong nay goi model, tuc
     #    cung nang luc voi `edit_plan`/`content_process`. Nhet mot loi goi
     #    model vao giai doan cua app khac la pha phep dinh tuyen `test_402`
     #    chot — va phep dinh tuyen do la thu quyet dinh worker nao nhat viec.
-    GiaiDoan(QC_AI, "auto_scan_video", "auto_scan_video.qc_ai", sau=(QC,),
+    GiaiDoan(QC_AI, "auto_scan_video", "auto_scan_video.qc_ai", sau=(QC_DO_LUONG,),
              tai_nguyen="llm_remote", tai_nguyen_suat=1),
 )
 

@@ -3,9 +3,9 @@
 **§1 tat dinh** — cung tep + cung nguong => cung danh sach moc. Khong ngau nhien,
      khong thoi gian thuc, khong phu thuoc so nhan CPU.
 
-**§2 chan bo nho** — 🔴 mot video 40 phut la ~60.000 khung; giai ma tung khung
-     vao Python la 350 GB di qua RAM. `ffmpeg` doc chung va chi in ra MOC; ta
-     khong cham mot pixel nao.
+**§2 chan bo nho** — 🔴 mot video 40 phut la ~60.000 khung; GIU chung trong RAM
+     la 350 GB. Bo tach (PySceneDetect, ASV final — `test_2013`) doc TUNG khung
+     va thu nho truoc khi so; khong ai giu mot danh sach khung.
 
 **§3 chan so khung** — pha 11 gui chung cho VLM, va cua so thi giac chi 65.536
      token (mot nua ban van ban). Tran nam o cho SINH ra khung, khong o cho tieu
@@ -14,9 +14,8 @@
 **§4 phu HET nguon, dung THU TU** — mot chi muc lech thu tu se lam moi quyet dinh
      bien tap phia sau tro vao sai cho.
 
-⛔ Khong phep kiem nao o day can ffmpeg. Phan goi nhi phan duoc tach rieng khoi
-   phan tinh toan chinh vi ly do do: mot bo do phu thuoc mot nhi phan ben ngoai
-   la mot bo do khong chay tren may khong co no, va luc do no im lang thay vi do.
+⛔ Khong phep kiem nao o day giai ma video: `c.tim_moc` (adapter PySceneDetect)
+   duoc thay bang ham gia. Bo tach THAT duoc kiem o `test_2013`.
 """
 from __future__ import annotations
 
@@ -30,17 +29,6 @@ from apps.auto_scan_video import canh as c
 GOC = pathlib.Path(__file__).resolve().parents[1]
 APP = GOC / "apps" / "auto_scan_video"
 
-#: Dau ra `metadata=print` that cua ffmpeg, rut gon.
-FFMPEG_STDERR = """
-[Parsed_metadata_1 @ 000001] frame:0    pts:12288   pts_time:0.256
-lavfi.scene_score=0.612
-[Parsed_metadata_1 @ 000001] frame:1    pts:57344   pts_time:5.200
-lavfi.scene_score=0.884
-[Parsed_metadata_1 @ 000001] frame:2    pts:98304   pts_time:12.750
-lavfi.scene_score=0.451
-"""
-
-
 def _chi_muc(khoang, thoi_luong) -> c.ChiMucCanh:
     return c.ChiMucCanh(
         tuple(c.Canh(f"canh_{i:04d}", b, e, tuple(c.moc_khung_mau(b, e)))
@@ -51,19 +39,6 @@ def _chi_muc(khoang, thoi_luong) -> c.ChiMucCanh:
 # ══════════════════════════════════════════════════════════════════════════════
 #  §1  Tat dinh
 # ══════════════════════════════════════════════════════════════════════════════
-
-def test_cung_dau_vao_ra_cung_moc():
-    a = c.doc_moc_tu_ffmpeg(FFMPEG_STDERR)
-    b = c.doc_moc_tu_ffmpeg(FFMPEG_STDERR)
-    assert a == b == [0.256, 5.2, 12.75]
-
-
-def test_moc_TRUNG_bi_gop_va_ket_qua_da_sap():
-    """Ffmpeg co the in mot moc hai lan khi hai bo loc cung bao. Ket qua phai
-    on dinh bat ke thu tu xuat hien."""
-    xao = "pts_time:9.0\npts_time:1.0\npts_time:9.0\npts_time:4.0"
-    assert c.doc_moc_tu_ffmpeg(xao) == [1.0, 4.0, 9.0]
-
 
 def test_moc_khung_mau_KHONG_ngau_nhien():
     a = c.moc_khung_mau(0.0, 9.0)
@@ -95,37 +70,14 @@ def test_van_tay_doi_khi_NGUONG_doi():
 #  §2  Chan bo nho — khong doc pixel nao vao Python
 # ══════════════════════════════════════════════════════════════════════════════
 
-def test_KHONG_giai_ma_khung_hinh_trong_Python():
-    """🔴 Mot video 40 phut la ~60.000 khung; o dang tho do la ~350 GB.
-
-    Chot bang su VANG MAT cua moi thu vien doc pixel.
-    """
-    cay = ast.parse((APP / "canh.py").read_text(encoding="utf-8"))
-    cam = {"cv2", "PIL", "numpy", "imageio", "av", "decord", "skimage"}
-    thay = []
-    for n in ast.walk(cay):
-        if isinstance(n, ast.Import):
-            thay += [a.name.split(".")[0] for a in n.names]
-        elif isinstance(n, ast.ImportFrom):
-            thay.append((n.module or "").split(".")[0])
-    assert not (set(thay) & cam), f"doc pixel trong Python: {set(thay) & cam}"
-
-
-def test_ffmpeg_KHONG_ghi_tep_ra_khi_do_canh():
-    """`-f null -` : chay bo loc, vut dau ra. Ghi mot ban sao video ra dia chi
-    de dem moc la tra ca dung luong dia cho mot phep dem."""
-    van = (APP / "canh.py").read_text(encoding="utf-8")
-    assert '"-f", "null"' in van and '"-an"' in van
-
-
-def test_mot_lan_goi_ffmpeg_cho_CA_video():
-    """⛔ Goi mot lan moi canh se la N lan mo tep + N lan giai ma tu dau."""
+def test_mot_lan_tach_canh_cho_CA_video():
+    """⛔ Goi bo tach mot lan moi canh se la N lan mo tep + N lan giai ma tu dau."""
     cay = ast.parse((APP / "canh.py").read_text(encoding="utf-8"))
     ham = [n for n in ast.walk(cay)
            if isinstance(n, ast.FunctionDef) and n.name == "phan_tich"][0]
-    goi_run = [n for n in ast.walk(ham)
-               if isinstance(n, ast.Call) and getattr(n.func, "attr", "") == "run"]
-    assert len(goi_run) == 1, f"{len(goi_run)} lan goi subprocess trong `phan_tich`"
+    goi = [n for n in ast.walk(ham)
+           if isinstance(n, ast.Call) and getattr(n.func, "id", "") == "tim_moc"]
+    assert len(goi) == 1, f"{len(goi)} lan goi `tim_moc` trong `phan_tich`"
 
 
 def test_video_RAT_dai_van_ra_chi_muc_hop_le():
@@ -308,55 +260,42 @@ def test_dang_JSON_tat_dinh():
     assert len(d["canh"]) == 3
 
 
-def test_phan_tich_TON_TRONG_lenh_huy(monkeypatch):
-    """Bam huy roi thi khong duoc di tiep sang buoc rut khung."""
-    import subprocess as sp
-
+def _moc_gia(monkeypatch, moc=(0.256, 5.2, 12.75), loi=None):
     from platform_core import media
 
     monkeypatch.setattr(media, "duration_seconds", lambda p: 30.0)
-    monkeypatch.setattr(media, "ffmpeg_bin", lambda: "ffmpeg")
 
-    class _Kq:
-        stderr = FFMPEG_STDERR.encode()
-        returncode = 0
+    def gia(duong, *, hoi_huy=None, timeout=0):
+        if loi is not None:
+            raise loi
+        if hoi_huy is not None and hoi_huy():
+            raise c.CanhError("da huy")
+        return list(moc)
 
-    monkeypatch.setattr(sp, "run", lambda *a, **k: _Kq())
+    monkeypatch.setattr(c, "tim_moc", gia)
+
+
+def test_phan_tich_TON_TRONG_lenh_huy(monkeypatch):
+    """Bam huy roi thi khong duoc di tiep sang buoc rut khung."""
+    _moc_gia(monkeypatch)
     with pytest.raises(c.CanhError):
         c.phan_tich("a.mp4", hoi_huy=lambda: True)
 
 
-def test_phan_tich_chay_duoc_voi_ffmpeg_gia(monkeypatch):
-    """Duong day du, khong cham nhi phan that."""
-    import subprocess as sp
-
-    from platform_core import media
-
-    monkeypatch.setattr(media, "duration_seconds", lambda p: 30.0)
-    monkeypatch.setattr(media, "ffmpeg_bin", lambda: "ffmpeg")
-
-    class _Kq:
-        stderr = FFMPEG_STDERR.encode()
-        returncode = 0
-
-    monkeypatch.setattr(sp, "run", lambda *a, **k: _Kq())
+def test_phan_tich_chay_duoc_voi_bo_tach_gia(monkeypatch):
+    """Duong day du, khong giai ma video that."""
+    _moc_gia(monkeypatch)
     ci = c.phan_tich("a.mp4")
     c.kiem_chi_muc(ci)
     assert ci.thoi_luong == 30.0
     assert ci.tom_tat()["so_canh"] == len(ci.canh)
+    assert ci.tom_tat()["bo_tach"] == c.BO_TACH
 
 
-def test_ffmpeg_hong_thi_NEM_chu_khong_tra_chi_muc_rong(monkeypatch):
+def test_bo_tach_hong_thi_NEM_chu_khong_tra_chi_muc_rong(monkeypatch):
     """⛔ Mot chi muc rong di tiep se lam pha 11 doc mot video khong co canh nao
     va ket luan "khong co gi de xem"."""
-    import subprocess as sp
-
-    from platform_core import media
-
-    monkeypatch.setattr(media, "duration_seconds", lambda p: 30.0)
-    monkeypatch.setattr(media, "ffmpeg_bin", lambda: "ffmpeg")
-    monkeypatch.setattr(sp, "run", lambda *a, **k: (_ for _ in ()).throw(
-        OSError("khong tim thay ffmpeg")))
+    _moc_gia(monkeypatch, loi=c.CanhError("khong mo duoc video"))
     with pytest.raises(c.CanhError):
         c.phan_tich("a.mp4")
 

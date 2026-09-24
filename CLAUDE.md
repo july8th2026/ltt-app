@@ -19,6 +19,7 @@ docs/00_LTT_OPERATING_CONTRACT.md      ← đọc trước việc thực chất
 | Sản phẩm đã chốt gì | `docs/QUYET_DINH_NEN_TANG.md` → `docs/KE_HOACH_TRIEN_KHAI.md` |
 | Chuyện gì đã xảy ra (nhật ký sống) | `docs/NHAT_KY.md` — **ghi cuối mỗi phiên có thay đổi** |
 | Cái gì đang sống trên production | `python tools\api_prod_canary.py trang-thai` — không bảng chép tay |
+| **Máy A và máy B** làm gì, máy nào có card gì (⚠️ **cả hai đều có một 5060 Ti**) | `docs/HAI_MAY_A_VA_B.md` |
 | Cây này ở hồ sơ nào, lệch `main` không | `python tools\ho_so_cay.py trang-thai` |
 | Viết mã đúng kiểu (Windows, bố cục app, bí mật, cách viết test) | `AGENTS.md` |
 | Worktree · lệnh nặng · deploy | `docs/QUY_TRINH_WORKTREE.md` · `docs/QUY_TAC_CHAY_LENH_NANG.md` · `docs/16_CAP_NHAT_VA_DEPLOY.md` |
@@ -58,9 +59,11 @@ docs/00_LTT_OPERATING_CONTRACT.md      ← đọc trước việc thực chất
    tiếp (đo thật, E2E) thì L1/L2 xanh → gộp `main` → deploy → báo, rồi làm tiếp — không dừng.
    Chỉ dừng khi: gate đỏ · thao tác không đảo được · thay đổi không rõ của ai · rủi ro
    bảo mật (hợp đồng §10, §10b).
-3. **Kiểm CPU trước lệnh nặng** (gate mọi chế độ, `test_nhanh.py`, ≥ 3 tệp test):
-   `python tools\cua_so_yen.py trang-thai` (có người giữ khoá → chờ) +
-   `python tools\tai_may.py` (`QUÁ TẢI` → chờ). pytest gõ tay `-n` tối đa 6. Hợp đồng §4.8.
+3. **Kiểm CPU trước lệnh nặng**: `python tools\cua_so_yen.py trang-thai` (có người
+   giữ khoá → chờ) + `python tools\tai_may.py` (`QUÁ TẢI` → chờ).
+   ⛔ **Lệnh nào là "nặng" thì hỏi `docs/QUY_TAC_CHAY_LENH_NANG.md` §1** — chỉ nơi
+   đó định nghĩa (phân loại theo **khả năng đốt CPU**, không theo số tệp test).
+   Trần `-n` là `gate.TRAN_N_GO_TAY` — đọc hằng số, ⛔ đừng gõ lại số.
 4. **Dòng `??` lạ trong `git status` là một PHIÊN KHÁC**, không phải rác. Không
    `stash`, `reset`, `checkout --`. `git add` tường minh từng tệp.
 5. **Deploy xuất HEAD cây chính** (`git archive` — mọi commit trên `main` của mọi phiên)

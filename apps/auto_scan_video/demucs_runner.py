@@ -363,11 +363,24 @@ def chon_thiet_bi(torch, *, buoc_gpu: bool) -> str:
       * `buoc_gpu=True` — nen tang **da giu cho** mot card qua `gpu_lease` va da
         ghim no bang `CUDA_VISIBLE_DEVICES`. Torch khong thay CUDA o day nghia
         la viec cap card da hong. Do la mot **loi**, va no phai keu.
+
+    🔴 **Sua 23/09 (lan `toc-do-gpu`): `buoc_gpu=False` + co CUDA nay chay CPU,
+       truoc do chay "cuda".** Ban cu doc `is_available()` TRUOC khi hoi co
+       lease khong, nen mot lan goi KHONG co lease van lay card — tuc chiem
+       ~1,7 GiB VRAM ma `gpu_lease` khong he ghi so. May nay co MOT card, dung
+       chung voi `voice_sidecar` dang phuc vu khach that (CLAUDE.md), nen mot
+       nguoi dung card ngoai so sach la dung cai ma lease sinh ra de chan.
+
+       ⚠️ Cho nay truoc 23/09 khong lo ra vi trinh thong dich chay test la ban
+          `torch 2.11.0+cpu` (`cuda False`) — con worker that
+          (`C:\\LTTPlatform\\venv`) la `2.11.0+cu128`. Mot khac biet giua hai
+          venv da giau mot chinh sach sai suot hai muoi ngay. Xem
+          `docs/auto_scan_video_final/L_TOC_DO_GPU.md` §4.
     """
     co = bool(torch.cuda.is_available())
-    if co:
-        return "cuda"
     if buoc_gpu:
+        if co:
+            return "cuda"
         raise ThieuCard(
             "nen tang da cap card nhung torch khong thay CUDA — "
             "khong tu tut xuong CPU (xem chon_thiet_bi)")
@@ -593,8 +606,32 @@ def main(argv: list[str]) -> int:
     kq = tach_theo_khoi(model, torch, vao, thu_muc, thiet_bi=thiet_bi)
     kq.update(bang_chung_thiet_bi(torch, thiet_bi))
     kq["luong_torch"] = luong
+    kq["f0_trung_vi"] = _f0_cua_giong(kq)
     print(json.dumps(kq))
     return 0
+
+
+def _f0_cua_giong(kq: dict) -> float:
+    """Trung vi F0 cua stem `vocals`, do NGAY TAI DAY. `0.0` = khong do duoc.
+
+    🔑 **Do o tien trinh con, khong o worker** — va do khong phai mot toi uu.
+       Hai ly do, ca hai deu cung:
+
+         · `torch` + `torchaudio` da nam san trong bo nho cua tien trinh NAY.
+           Goi phep do tu worker se keo ca hai vao worker — dung thu ma kien
+           truc "demucs chay o tien trinh con" dung de tranh;
+         · `giai_doan_am_thanh` **xoa** `vocals` ngay khi ham nay tra ve (no la
+           giong goc cua khach, ta khong hua se giu). Sau do khong con gi de do.
+
+    ⇒ Thu di len la MOT con so, khong phai mot tep tieng. `ho_so_noi_dung` doc
+      no de `AUTO_MATCH` co mat `gioi` — xem `cao_do.py`.
+    """
+    duong = str((kq.get("duong") or {}).get("vocals") or "")
+    if not duong:
+        return 0.0
+    from . import cao_do
+
+    return cao_do.f0_trung_vi(duong)
 
 
 if __name__ == "__main__":

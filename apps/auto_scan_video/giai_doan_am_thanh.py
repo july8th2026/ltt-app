@@ -26,7 +26,7 @@ from pathlib import Path
 from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
 
-from . import assets, nhap_media, tach_tieng
+from . import assets, lat_cat, nhap_media, tach_tieng
 from .giai_doan_media import ThieuNguon, _duong_doc_duoc
 
 
@@ -63,9 +63,15 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         if ctx is not None and getattr(ctx, "progress", None):
             ctx.progress(30, _t('Đang tách giọng khỏi nhạc nền'))
 
-        ket_qua = tach_tieng.tach_nguon(day_du, str(thu_muc / "stem"),
-                                        gpu_env=gpu_env, buoc_gpu=bool(uuid_cap),
-                                        hoi_huy=hoi_huy)
+        # 🔑 Timeout demucs <= ngan sach con lai cua job (`lat_cat`): mac dinh
+        #    5.400 s cua `tach_nguon` LON HON tran job 3.600 s, nen truoc day job
+        #    bi giet truoc va demucs mo coi van giu GPU.
+        ket_qua = tach_tieng.tach_nguon(
+            day_du, str(thu_muc / "stem"), gpu_env=gpu_env,
+            buoc_gpu=bool(uuid_cap), hoi_huy=hoi_huy,
+            timeout=lat_cat.han_tien_trinh_con(
+                "audio_prepare",
+                tach_tieng.TIMEOUT_TACH_S))
 
         if ctx is not None and getattr(ctx, "progress", None):
             ctx.progress(75, _t('Đang trộn nhạc nền'))
@@ -115,6 +121,12 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                 "so_khoi": ket_qua.get("so_khoi", 0),
                 "khoi_giay": ket_qua.get("khoi_giay", 0),
                 "stem_giu": list(tach_tieng.STEM_GIU),
+                # ⭐ MOT con so thay cho mot tep tieng. `vocals` bi xoa cung thu
+                #    muc tam (dau tep), nhung `AUTO_MATCH` can biet nguoi noi
+                #    goc la nam hay nu — va do la thu duy nhat ta giu lai.
+                #    Do o tien trinh con demucs (`demucs_runner._f0_cua_giong`);
+                #    `0.0` nghia la khong do duoc, khong phai "khong co giong".
+                "f0_trung_vi": float(ket_qua.get("f0_trung_vi") or 0.0),
                 "lufs": am["lufs"],
                 "dinh_that": am["dinh_that"],
                 "thoi_luong": tt["thoi_luong"],

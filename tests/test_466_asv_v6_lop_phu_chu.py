@@ -644,7 +644,7 @@ def test_mot_nang_luc_KHONG_duoc_o_hai_bang():
     trong `HAU_MVP` — ma thi dang chay, tai lieu thi noi "chua lam"."""
     cu = hop_dong_v4.NANG_LUC_DOI_DIEM_ANH
     try:
-        hop_dong_v4.NANG_LUC_DOI_DIEM_ANH = cu + ("zoom",)   # co trong CAM
+        hop_dong_v4.NANG_LUC_DOI_DIEM_ANH = cu + ("broll",)  # co trong CAM
         with pytest.raises(ValueError, match="vua dang phuc vu"):
             hop_dong_v4._kiem_tra_hop_dong()
     finally:

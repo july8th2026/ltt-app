@@ -221,7 +221,11 @@ def test_run_chay_het_CA_CHUOI_va_ve_done(db, kho_tam, tmp_path, asr_gia, dich_g
     #    van `succeeded` — no chi khong goi model va khong ton gi. Bo qua han
     #    mot giai doan se lam `len(da_xong)` khong bao gio bang `len(CHUOI)`
     #    va lan chay khong ve `done`. Bai nay chinh la thu chot dieu do.
-    assert len(ds) == len(pipeline.CHUOI) == 11
+    #
+    # ⚠️ **11 -> 12 (22/09, asv-final).** `qc_do_luong` (lan `gpu`: ASR+WER,
+    #    SQUIM, MetricX) chen GIUA `qc` va `qc_ai`. Thieu venv do luong thi no
+    #    van `succeeded` voi moi bo do `khong_kha_dung` — dung canh o day.
+    assert len(ds) == len(pipeline.CHUOI) == 12
     assert sorted(xong) == sorted(pipeline.TEN_GIAI_DOAN), (
         f"chua xong het: thieu {set(pipeline.TEN_GIAI_DOAN) - set(xong)}")
     assert run.status == RUN_DONE

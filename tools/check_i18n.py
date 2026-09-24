@@ -174,6 +174,31 @@ def _la_tin_nhan_model(node: ast.AST, cha: dict) -> bool:
     return False
 
 
+#: Ma ngon ngu dung lam KHOA trong mot bang mau theo ngon ngu.
+#: (`ltt_voice.lan_ngon_ngu.LAN_HOP_LE` + nguon cua Auto Scan.)
+_MA_NGON_NGU = frozenset({"vi", "en", "zh", "ja", "ko", "fr", "es", "de"})
+
+
+def _la_ban_theo_ngon_ngu(node: ast.AST, cha: dict) -> bool:
+    """Chuoi nay co phai GIA TRI cua mot bang `{ "vi": ..., "en": ... }` khong?
+
+    🔑 Mot bang nhu the DA la ban dich roi: moi ngon ngu mot cau, chon theo ma.
+       Boc them `_()` quanh tung cau se dich mot ban dich — va `messages.po`
+       se mang mot msgid tieng Viet co ban dich tieng Anh la... chinh cau tieng
+       Anh nam ngay ben canh no trong bang.
+
+    ⚠️ Chat: PHAI co it nhat hai khoa va MOI khoa la mot ma ngon ngu. Mot bang
+       `{"vi": ...}` mot khoa, hay `{"ten": ..., "vi": ...}`, khong duoc bo qua.
+    """
+    p = cha.get(id(node))
+    if not isinstance(p, ast.Dict) or len(p.keys) < 2:
+        return False
+    if node not in p.values:
+        return False
+    return all(isinstance(k, ast.Constant) and isinstance(k.value, str)
+               and k.value.lower() in _MA_NGON_NGU for k in p.keys)
+
+
 def _da_boc(node: ast.AST, cha: dict) -> bool:
     """Chuỗi này có nằm trong lời gọi `_()` / `_n()` không?"""
     p = cha.get(id(node))
@@ -211,6 +236,8 @@ def dem_python(f: pathlib.Path) -> int:
             if n.value in ds or not VN.search(n.value):
                 continue
             if _khong_phai_cau(n.value, n, cha):
+                continue
+            if _la_ban_theo_ngon_ngu(n, cha):
                 continue
             if not _da_boc(n, cha):
                 n_thieu += 1

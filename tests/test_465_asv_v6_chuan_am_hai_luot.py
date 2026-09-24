@@ -215,11 +215,23 @@ def test_tron_cuoi_THUC_SU_chay_HAI_luot(monkeypatch, tmp_path):
         lan.append(list(cmd))
         return _R()
 
+    # ⭐ asv-final R-03: `tron_cuoi` co them luot GHIM (`ghim_tran_phoi`) — no
+    #    ma hoa thu va do lai, tuc no cham ffmpeg THAT. Chan o day de bai nay
+    #    van chi hoi ve hai luot `loudnorm`; luot ghim co `test_2015` cua rieng
+    #    no, va cho nay chi chot rang no CO duoc goi, dung tep, dung thu tu.
+    ghim = []
+    monkeypatch.setattr(am, "ghim_tran_phoi",
+                        lambda goc, dich, **kw: ghim.append((goc, dich)) or {})
     monkeypatch.setattr(am, "_chay", _gia)
     am.tron_cuoi(str(tmp_path / "nen.wav"), [str(tmp_path / "lo1.wav")],
                  str(tmp_path / "ra.wav"), tong_giay=8.0)
 
     assert len(lan) == 2, f"ky vong hai luot ffmpeg, thay {len(lan)}"
+    assert len(ghim) == 1, "ban phoi phai di qua vong ghim tran truoc khi giao"
+    goc_ghim, dich_ghim = ghim[0]
+    assert dich_ghim == str(tmp_path / "ra.wav"), "ghim phai ghi ra ban phoi that"
+    assert goc_ghim != dich_ghim and lan[1][-1] == goc_ghim, (
+        "luot AP phai ghi ra ban THO, va vong ghim doc DUNG ban tho do")
 
     do, ap = lan
     assert "-f" in do and do[do.index("-f") + 1] == "null", "luot 1 phai la luot DO"

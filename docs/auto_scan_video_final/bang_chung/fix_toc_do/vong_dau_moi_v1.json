@@ -1,0 +1,91 @@
+{
+ "vong_dau": [
+  {
+   "ma": "seg_0001",
+   "vong": 0,
+   "nhan": "ok",
+   "chu": "Nếu nhảy rải chậm thì đánh sao? Tên này đáp xong không vào nhà, chắc đã nhặt súng. Giờ nên nhanh vào nhà đoạt súng, hắn sẽ lao vào trong. Giữ khung cửa, tạt trái, cho hắn nhận đạn. Nhảy rải chậm mất cơ hội ép địch. Sắp tới địch dồn lên, phải giữ nhà. Tao lỡ tay, xin lỗi.",
+   "giay_viet_ca_lo": 80.61,
+   "giay_tuong": 19.11,
+   "giay_am": 19.3,
+   "am_tiet": 60,
+   "khe": 19.879,
+   "lech_khe": -0.0291,
+   "can_nan": false
+  },
+  {
+   "ma": "seg_0002",
+   "vong": 0,
+   "nhan": "ok",
+   "chu": "Cầu thang có bước chân. Máu mình giờ rất dở. Muốn phản công cực hạn, hãy học thao tác này. Địch chưa lên, mình nằm sấp, dùng hộp che. Đùa thôi, hộp không che được. Mình lùi sát góc hai bước rồi mới nằm, cắt tầm nhìn địch.",
+   "giay_viet_ca_lo": 80.61,
+   "giay_tuong": 15.28,
+   "giay_am": 14.64,
+   "am_tiet": 48,
+   "khe": 17.172,
+   "lech_khe": -0.1474,
+   "can_nan": false
+  },
+  {
+   "ma": "seg_0003",
+   "vong": 0,
+   "nhan": "ok",
+   "chu": "Nghe kỹ, dưới lầu lại có người. Dùng thuốc đừng đứng yên. Địch chưa tới, chọn vị trí tốt trước. Chiếm địa hình, địch đông cũng đỡ sợ. Chớ lao nhanh; nhanh quá mất thời gian phản ứng.",
+   "giay_viet_ca_lo": 80.61,
+   "giay_tuong": 10.56,
+   "giay_am": 12.08,
+   "am_tiet": 38,
+   "khe": 13.818,
+   "lech_khe": -0.1258,
+   "can_nan": false
+  },
+  {
+   "ma": "seg_0004",
+   "vong": 0,
+   "nhan": "ok",
+   "chu": "Thấy chưa, cho không hoàn toàn. Tiếng bước ngoài kia ngày càng nhiều, đều nhắm mình. Nhanh xử hắn. Chớ mất nhiều thời gian xử người, chưa xong thì quay lại, cẩn thận người sau lưng. Cao thủ không tấn công mù, ném giả lựu đạn xem hắn phản ứng.",
+   "giay_viet_ca_lo": 80.61,
+   "giay_tuong": 11.65,
+   "giay_am": 15.12,
+   "am_tiet": 50,
+   "khe": 14.553,
+   "lech_khe": 0.039,
+   "can_nan": false
+  },
+  {
+   "ma": "seg_0005",
+   "vong": 0,
+   "nhan": "ok",
+   "chu": "Tên này rất ổn, đúng là cao thủ. Nhưng anh ta đi cứu người, chớ học theo. Dưới lầu còn bước chân, họ chưa dám lên, mình ném lựu. Nghe kỹ, có người nhảy dù quay về. Mình ném lựu ở cửa tầng hai, chặn người trên mái. Hắn lao nhanh chắc muốn cứu đồng đội. Mình giả làm hắn, lừa đồng đội hắn lên. Sai lầm là lao nhanh mất cơ hội nổ súng.",
+   "giay_viet_ca_lo": 80.61,
+   "giay_tuong": 14.72,
+   "giay_am": 22.02,
+   "am_tiet": 75,
+   "khe": 25.542,
+   "lech_khe": -0.1379,
+   "can_nan": false
+  },
+  {
+   "ma": "seg_0006",
+   "vong": 0,
+   "nhan": "ok",
+   "chu": "Xử gọn. Hỏi: công nhà gặp kẻ kẹp cầu thang, xử sao?",
+   "giay_viet_ca_lo": 80.61,
+   "giay_tuong": 3.0,
+   "giay_am": 4.0,
+   "am_tiet": 12,
+   "khe": 4.553,
+   "lech_khe": -0.1215,
+   "can_nan": false
+  }
+ ],
+ "tom_tat": {
+  "so_doan": 6,
+  "so_can_nan": 0,
+  "ti_le_can_nan": 0.0,
+  "lech_khe_trung_binh": -0.0871,
+  "lech_khe_lon_nhat": 0.039,
+  "lech_khe_nho_nhat": -0.1474,
+  "giay_tts_tong": 74.3
+ }
+}

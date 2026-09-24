@@ -1,0 +1,91 @@
+{
+ "tts": [
+  {
+   "ma": "seg_0001",
+   "vong": 0,
+   "nhan": "ok",
+   "giay_tuong": 17.96,
+   "giay_am": 29.3,
+   "rtf": 0.613,
+   "am_tiet": 89,
+   "am_tiet_moi_giay": 3.038,
+   "khe": 19.879,
+   "lech_khe": 0.4739
+  },
+  {
+   "ma": "seg_0002",
+   "vong": 0,
+   "nhan": "ok",
+   "giay_tuong": 17.05,
+   "giay_am": 21.94,
+   "rtf": 0.777,
+   "am_tiet": 73,
+   "am_tiet_moi_giay": 3.327,
+   "khe": 17.172,
+   "lech_khe": 0.2777
+  },
+  {
+   "ma": "seg_0003",
+   "vong": 0,
+   "nhan": "ok",
+   "giay_tuong": 14.89,
+   "giay_am": 19.3,
+   "rtf": 0.771,
+   "am_tiet": 65,
+   "am_tiet_moi_giay": 3.368,
+   "khe": 13.818,
+   "lech_khe": 0.3967
+  },
+  {
+   "ma": "seg_0004",
+   "vong": 0,
+   "nhan": "ok",
+   "giay_tuong": 14.55,
+   "giay_am": 21.94,
+   "rtf": 0.663,
+   "am_tiet": 75,
+   "am_tiet_moi_giay": 3.418,
+   "khe": 14.553,
+   "lech_khe": 0.5076
+  },
+  {
+   "ma": "seg_0005",
+   "vong": 0,
+   "nhan": "ok",
+   "giay_tuong": 15.42,
+   "giay_am": 33.48,
+   "rtf": 0.461,
+   "am_tiet": 115,
+   "am_tiet_moi_giay": 3.435,
+   "khe": 25.542,
+   "lech_khe": 0.3108
+  },
+  {
+   "ma": "seg_0006",
+   "vong": 0,
+   "nhan": "ok",
+   "giay_tuong": 5.21,
+   "giay_am": 6.56,
+   "rtf": 0.794,
+   "am_tiet": 23,
+   "am_tiet_moi_giay": 3.506,
+   "khe": 4.553,
+   "lech_khe": 0.4408
+  }
+ ],
+ "llm": [],
+ "tom_tat": {
+  "tts": {
+   "so_luot": 6,
+   "giay_tuong_trung_binh": 14.18,
+   "giay_tuong_tong": 85.1,
+   "giay_am_tong": 132.5,
+   "rtf_trung_binh": 0.68,
+   "am_tiet_moi_giay_trung_binh": 3.349,
+   "am_tiet_moi_giay_nho_nhat": 3.038,
+   "am_tiet_moi_giay_lon_nhat": 3.506,
+   "am_tiet_moi_giay_do_lech_chuan": 0.164
+  },
+  "llm": {}
+ }
+}
