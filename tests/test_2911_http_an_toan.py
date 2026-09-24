@@ -47,9 +47,12 @@ class _Tay(http.server.BaseHTTPRequestHandler):
         self.wfile.write(than)
 
     def do_GET(self):  # noqa: N802
-        self.server.da_nhan.append({"duong": self.path,
-                                    "host": self.headers.get("Host", ""),
-                                    "than": b""})
+        self.server.da_nhan.append({
+            "duong": self.path, "host": self.headers.get("Host", ""),
+            "than": b"",
+            "cookie": self.headers.get("Cookie", ""),
+            "uy_quyen": self.headers.get("Authorization", ""),
+            "tat_ca": {k.lower() for k in self.headers.keys()}})
         if self.path == "/chuyen-huong-noi-bo":
             # 302 toi metadata dam may -> hop thu HAI phai bi tu choi,
             # KE CA duoi chinh sach tha `cho_phep_noi_bo=True`.
@@ -191,7 +194,18 @@ def test_redirect_toi_dia_chi_noi_bo_bi_chan_o_hop_HAI(may_chu):
 # -- 5. Khong dinh kem thu gi cua nen tang -----------------------------------
 
 def test_khong_gui_cookie_va_khong_gui_thong_tin_dang_nhap(may_chu):
+    """Do o PHIA MAY CHU, khong o phia client.
+
+    `assert c.cookies == {}` gan nhu luon dung va khong chung minh duoc gi -
+    no do trang thai cua client chu khong do BYTE da di tren day. May chu gia
+    ghi lai chinh header no nhan duoc.
+    """
     with http_an_toan.tao_client(chinh_sach=an_toan_mang.CHINH_SACH_NOI_BO,
                                  bo_phan_giai=_phan_giai_ve_may_chu) as c:
         c.get(_dia_chi(may_chu) + "/a")
-    assert c.cookies == {} or len(c.cookies) == 0
+    nhan = may_chu.da_nhan[-1]
+    assert nhan["cookie"] == "", nhan["cookie"]
+    assert nhan["uy_quyen"] == "", nhan["uy_quyen"]
+    # Doi chung: may chu THAT SU doc duoc header - neu khong, hai phep tren
+    # xanh vi `_Tay` khong ghi gi ca.
+    assert "host" in nhan["tat_ca"] and "user-agent" in nhan["tat_ca"]
