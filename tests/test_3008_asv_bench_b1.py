@@ -372,3 +372,86 @@ def test_KHONG_co_moc_tung_tu_thi_KHONG_cat():
 
     assert chan["so_doan_sau"] == 1
     assert chan["so_doan_khong_co_moc_tu"] == 1
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CỬA 3 — TIÊM LỖI vào chính cái cổng
+#
+# ⭐ Một phép đo phải trả lời được *"cái gì còn làm nó đỏ?"*. Ba cách cắt cố tình
+#    tồi dưới đây PHẢI đỏ. Số dòng hardsub và thời lượng là số ĐO THẬT 24/09.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: (tên, số dòng hardsub, thời lượng giây) — đo 24/09, ⛔ không phải số dựng.
+PHIM_THAT = (("v1 món ăn", 102, 265.0), ("v2 cắm trại", 107, 190.0),
+             ("v3 PUBG", 95, 106.83))
+
+
+def _cat_may_moc(thoi_luong: float, buoc: float) -> int:
+    import math
+
+    return math.ceil(thoi_luong / buoc)
+
+
+def test_TIEM_gop_tat_ca_thanh_MOT_doan_phai_DO():
+    """Cách cắt tồi nhất có thể. ⛔ Xanh ở đây thì cổng không đo gì cả."""
+    from tools import bench_b1_chep_loi as b
+
+    for ten, hardsub, _ in PHIM_THAT:
+        lech = b.lech_doan(1, hardsub)
+        assert lech > b.NGUONG_LECH_DOAN, f"{ten}: gộp tất mà XANH ({lech})"
+
+
+def test_TIEM_cat_moi_30_giay_phai_DO():
+    """Đúng trạng thái hỏng vừa rời khỏi (khối VAD ~30 s của WhisperX)."""
+    from tools import bench_b1_chep_loi as b
+
+    for ten, hardsub, giay in PHIM_THAT:
+        lech = b.lech_doan(_cat_may_moc(giay, 30.0), hardsub)
+        assert lech > b.NGUONG_LECH_DOAN, f"{ten}: cắt mỗi 30 s mà XANH ({lech})"
+
+
+def test_TIEM_cat_may_moc_moi_2_giay_LO_MOT_LO_tren_v2():
+    """🔴 **CỬA 3 KHÔNG QUA — và đây là phép kiểm ghim lỗ thủng đó.**
+
+    Cắt **máy móc mỗi 2,0 giây**, bất kể nội dung — đúng kiểu **cắt giữa câu** mà
+    ràng buộc của sản phẩm cấm — vẫn **XANH** trên phim 2:
+
+    ```
+    v1  133 đoạn vs 102 dòng -> 0,3039 ⛔ đỏ
+    v2   95 đoạn vs 107 dòng -> 0,1121 ✅ XANH      ⬅ lỗ thủng
+    v3   54 đoạn vs  95 dòng -> 0,4316 ⛔ đỏ
+    ```
+
+    ⛔ Trong khi **bản cắt theo CÂU** của ta trên chính phim đó cho **0,3084** —
+    tức cổng đang **thưởng** cho cách cắt tồi và **phạt** cách cắt đúng. Đó là
+    bằng chứng cơ học rằng `lech_doan` **đếm số đoạn** không phân biệt được *cắt
+    đúng chỗ* với *cắt đủ số*.
+
+    ⚠️ Đây là phép kiểm **ĐẶC TẢ HIỆN TRẠNG**: nó **sẽ đỏ** khi ai đó sửa cổng,
+       và lúc đó **xoá nó đi** là hành động đúng. ⛔ Đừng "sửa" nó bằng cách nới
+       số.
+    """
+    from tools import bench_b1_chep_loi as b
+
+    lo = [(ten, b.lech_doan(_cat_may_moc(giay, 2.0), hardsub))
+          for ten, hardsub, giay in PHIM_THAT
+          if b.lech_doan(_cat_may_moc(giay, 2.0), hardsub) <= b.NGUONG_LECH_DOAN]
+    assert lo == [("v2 cắm trại", 0.1121)], (
+        f"lỗ thủng đã đổi: {lo}. Nếu cổng vừa được sửa thì XOÁ bài này.")
+
+
+def test_cat_theo_CAU_va_cat_MAY_MOC_khong_phan_biet_duoc_bang_SO_DOAN():
+    """⭐ Cùng một `lech_doan` ⇔ hai cách cắt **khác hẳn nhau về chất**.
+
+    ⛔ Đó là lý do chỉ báo **ranh giới khớp** phải đi kèm mọi con số `lech_doan`,
+       và cũng là lý do nó ⛔ **không được** biến thành cổng thứ hai: nó tính từ
+       chỗ ngắt của chính ta, nên nó xác nhận ta **nhất quán**, không xác nhận ta
+       **đúng**.
+    """
+    from tools import bench_b1_chep_loi as b
+
+    # v2: cắt theo CÂU cho 74 đoạn; cắt máy móc 2,0 s cho 95 đoạn.
+    theo_cau = b.lech_doan(74, 107)
+    may_moc = b.lech_doan(95, 107)
+    assert may_moc < theo_cau, "giả định của bài này đã đổi"
+    assert may_moc <= b.NGUONG_LECH_DOAN < theo_cau

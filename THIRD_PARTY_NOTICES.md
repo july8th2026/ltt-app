@@ -73,3 +73,52 @@ components may obtain the source from the URLs above.
 - The **LTT Nexus Agent** and control plane are LTT's own proprietary software,
   are not derived from RustDesk, run in a separate process communicating only
   over a local IPC contract, and are not covered by this notice.
+
+---
+
+## WhisperX — sentence-splitting rule (Auto Scan Video)
+
+* **Component:** `apps/auto_scan_video/cat_doan.py` (`KET_CAU`, `DAU_DONG`,
+  `CHU_SO`, `_ket_cau()`)
+* **Upstream:** https://github.com/m-bain/whisperX — **PR #1466**
+  *"Split Chinese and Japanese into sentences during alignment"*, which adds
+  `CJKSentenceSplitter` to `whisperx/utils.py`. PR #1466 closes **issue #1310**.
+* **License:** **BSD-2-Clause** (`whisperx-3.8.6.dist-info/METADATA`,
+  `License: BSD-2-Clause`; author Max Bain)
+* **What LTT uses:** the *rule* — the CJK sentence-terminator set, the closing
+  bracket set, and the three qualifications in `_ends_sentence` (half-width `.`
+  only ends a sentence before whitespace; full-width `．` is not a terminator
+  between digits; `!`/`?` are not terminators after an ASCII alphanumeric).
+  Re-expressed in LTT's own code; **not** a vendored copy of the module.
+* **Why not the shipped module:** whisperx 3.8.6 already ships
+  `whisperx/SubtitlesProcessor.py`, but when a run of text exceeds
+  `max_line_length` it splits at the **midpoint**
+  (`midpoint = normal_round((last_split_point + i) / 2)`) — a mid-sentence cut,
+  which is forbidden for the dubbing product. See `docs/auto_scan_video_final/
+  B1_CHEP_LOI.md` §7.4.
+
+> ⚠️ PR #1466 was **open** upstream when this was written (24/09/2026). If it
+> merges, re-check whether `whisperx.utils.CJKSentenceSplitter` can be imported
+> directly instead — **reuse beats re-expressing**.
+
+### `initial_prompt` for Chinese/Japanese
+
+`apps/autosubvideo/whisperx_runner.py` and `apps/autosubvideo/transcription.py`
+set `initial_prompt` for `zh`/`ja`. Source: whisperX **issue #645**
+*"No punctuation for Chinese"*, comment by `leexinxu` (2024-08-17). This is a
+usage pattern, not copied code.
+
+### Subtitle timing constants
+
+The thresholds in `cat_doan.py` (`KHE_TOI_DA_S`, `KHE_TOI_THIEU_S`,
+`KY_TU_MOI_DONG`, `KY_TU_MOI_GIAY`) are quoted from the **Netflix Timed Text
+Style Guide**, a published specification, with the article number recorded next
+to each constant in the source:
+
+| constant | article |
+|---|---|
+| max 7 s / min 5⁄6 s per subtitle event | *General Requirements*, **215758617** |
+| 16 characters per line, max 2 lines, 9 characters/second | *Chinese (Simplified)*, **215986007** |
+
+⚠️ Article **215346638** is the *Russian* guide (42 chars/line, 17 cps) — verify
+the page title before quoting.

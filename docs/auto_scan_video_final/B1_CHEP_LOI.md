@@ -374,3 +374,121 @@ khách để "tự đoán". Lượt chạy tốn 25,3 giây trên card, `khoa_ch
 trước (nên **không** phải cache) — và bản chép ra **y hệt từng chữ**. Suýt nữa
 kết luận nhầm rằng #645 không ăn thua cho tiếng Hán. Sửa: nhận ngôn ngữ
 (`model.detect_language`) **trước**, rồi mới đặt prompt (`edbcbd57`).
+
+---
+
+# 8. Ba cửa cho việc định nghĩa lại chân lý nền — ⛔ **KHÔNG QUA**
+
+Điều phối đồng ý **về nguyên tắc** rằng dòng hiển thị là tạo tác của việc render,
+với điều kiện qua **cả ba** cửa. Kết quả: **cửa 1 và cửa 2 không qua**, và cửa 3
+lộ một lỗ thủng trong **chính cổng hiện hành**.
+
+⇒ ⛔ **Làn này KHÔNG định nghĩa lại `lech_doan`.** Phán quyết giữ nguyên trên
+cổng cũ, và con số duy nhất được báo là con số so với **dòng hiển thị**.
+
+## 8.1 Cửa 1 — luật gộp cơ học từ quy chuẩn công bố: ⛔ **KHÔNG DỰNG ĐƯỢC**
+
+Ba sự thật đo được, ⛔ không suy:
+
+**(a) Phụ đề cứng gần như KHÔNG có dấu câu.**
+
+```
+v1 món ăn    102 dòng · 1059 ký tự  ->  0 dấu câu
+v2 cắm trại  107 dòng · 1020 ký tự  ->  0 dấu câu
+v3 PUBG       95 dòng ·  831 ký tự  ->  1 dấu (？)
+ký tự/dòng: tb 10,4 / 9,5 / 8,7   max 16 / 17 / 28
+```
+
+⇒ *"Số câu trong phụ đề cứng"* **không có sẵn ở đó**. Và trần 16–17 ký tự/dòng
+khớp đúng *Chinese (Simplified)* **215986007** (*"16 characters per line"*) —
+tức các dòng này **đúng là** sản phẩm của việc render, như lập luận §7.6.
+
+**(b) Không có hằng số KHE THỜI GIAN nào để trích.** Netflix TTSG *General
+Requirements* (**215758617**) ghi trong chính nhật ký sửa đổi của nó:
+
+> `2020-07-24  Timing and frame gap sections removed`
+
+⇒ Bộ quy chuẩn ta đang dùng **đã bỏ** phần khe/frame gap. Một luật gộp dựa vào
+khe thời gian sẽ phải **tự đặt** hằng số ⇒ ⛔ đúng thứ cửa 1 cấm. (Và dữ liệu cũng
+không ủng hộ: v2 có **98/106** khe giữa dòng = **0,000 s**.)
+
+**(c) Luật dựng từ các hằng số CÒN LẠI thì lật phán quyết theo CẢ HAI CHIỀU.**
+Luật G1 — gộp dòng liên tiếp chừng nào khối còn hợp lệ như **một** subtitle event
+(≤ 16×2 = **32** ký tự, ≤ **7,0 s**; cả hai đều có nguồn):
+
+| phim | dòng hiển thị | khe G1 | đoạn của ta | `lech` vs **dòng** | `lech` vs **G1** |
+|---|---|---|---|---|---|
+| v1 | 102 | 44 | 83 | **0,1863** ✅ | **0,8864** ⛔ |
+| v2 | 107 | 39 | 74 | **0,3084** ⛔ | **0,8974** ⛔ |
+| v3 | 95 | 31 | 31 | **0,6737** ⛔ | **0,0000** ✅ |
+
+⛔ G1 **đổi v1 từ ĐẠT sang TRƯỢT** và **đổi v3 từ TRƯỢT sang ĐẠT hoàn hảo**. Một
+thước làm phán quyết nhảy theo cả hai chiều không phải một chân lý nền — nó là
+một thước **khác**, đo một thứ **khác** (G1 là phép **nhồi ký tự** tham lam, cho
+khe trung bình 5,81 / 4,81 / 3,27 s).
+
+⇒ **Cửa 1 KHÔNG QUA.** Không có luật cơ học nào dựng được từ quy chuẩn công bố mà
+khôi phục được *câu nói* từ phụ đề cứng này.
+
+## 8.2 Cửa 2 — đối chứng độc lập với engine: ⛔ **KHÔNG QUA**
+
+Chạy lại phim 3 trên nhánh **faster-whisper** (engine khác, đường mã khác, không
+căn chỉnh), áp **đúng** luật cắt của `cat_doan`:
+
+| nhánh | đoạn thô | **câu** (cùng một luật) | đoạn sau cắt | `lech` vs 95 dòng |
+|---|---|---|---|---|
+| whisperx `aligned` | 6 | **33** | **31** | 0,6737 |
+| faster-whisper (lui) | 16 | **17** | **40** | 0,5789 |
+
+⛔ **33 so với 17 — lệch gần gấp đôi.** Hai nhánh của chính sản phẩm ta không
+đồng ý được *"phim này có bao nhiêu câu"*.
+
+⭐ Lý do, và nó là một sự thật về bản chất chứ không phải một lỗi: **dấu câu là
+PHỎNG ĐOÁN CỦA BỘ GIẢI MÃ**, không phải thuộc tính của âm thanh. Ta vừa tự tạo ra
+nó bằng `initial_prompt` (§7.3). ⇒ Một chân lý nền dựng trên nó sẽ **thừa hưởng**
+sự dao động của nó, và số câu sẽ đổi theo model/prompt/phiên bản.
+
+⚠️ **Nhưng đối chứng này cũng nói một điều theo chiều ngược lại:** cả hai engine
+cho **31–40 đoạn**, ⛔ không engine nào tới gần **95**. Hai đường mã độc lập đều
+nói phim này có ~1/3 số đơn vị lời nói so với số dòng hiển thị. Điều đó **ủng hộ**
+lập luận §7.6 — nhưng ⛔ nó **không** cho ta một con số đủ ổn định để làm cổng.
+
+## 8.3 Cửa 3 — tiêm lỗi: ⛔ **cổng HIỆN HÀNH có một lỗ thủng**
+
+Không có cổng mới để tiêm, nên tiêm vào **cổng đang dùng** (`lech_doan` vs số
+dòng hiển thị, ngưỡng 0,20). Ba cách cắt cố tình tồi:
+
+| phim | dòng HS | **ta (theo câu)** | gộp tất = 1 | **máy móc mỗi 2,0 s** | mỗi 30 s |
+|---|---|---|---|---|---|
+| v1 | 102 | 83 · **0,1863** ✅ | 1 · 0,9902 ⛔ | 133 · 0,3039 ⛔ | 9 · 0,9118 ⛔ |
+| v2 | 107 | 74 · **0,3084** ⛔ | 1 · 0,9907 ⛔ | **95 · 0,1121 ✅** ⬅ | 7 · 0,9346 ⛔ |
+| v3 | 95 | 31 · **0,6737** ⛔ | 1 · 0,9895 ⛔ | 54 · 0,4316 ⛔ | 4 · 0,9579 ⛔ |
+
+# ⛔ Trên phim 2, **cắt máy móc mỗi 2 giây — bất kể nội dung — XANH**, trong khi **cắt theo câu TRƯỢT**
+
+⭐ Cổng đang **thưởng** cho đúng cái kiểu cắt giữa câu mà ràng buộc sản phẩm
+**cấm**, và **phạt** cách cắt đúng. Đó là bằng chứng **cơ học** cho điều §7.6 mới
+chỉ lập luận: `lech_doan` đếm **số đoạn** thì không phân biệt được *cắt đúng chỗ*
+với *cắt đủ số*.
+
+⚠️ Ghim bằng mã, ⛔ không chỉ bằng đoạn văn này:
+`tests/test_3008_asv_bench_b1.py::test_TIEM_cat_may_moc_moi_2_giay_LO_MOT_LO_tren_v2`
+là một phép kiểm **đặc tả hiện trạng** — nó **sẽ đỏ** khi cổng được sửa, và lúc
+đó **xoá nó** là hành động đúng.
+
+## 8.4 Phán quyết cuối của làn
+
+```
+CER        3/3 ĐẠT   (0,0434 · 0,0275 · 0,0526   — ngưỡng 0,12, KHÔNG đổi)
+lech_doan  1/3 ĐẠT   (0,1863 · 0,3084 · 0,6737   — ngưỡng 0,20, KHÔNG đổi)
+```
+
+# ⛔ **B1 KHÔNG ĐẠT** — và ⛔ **làn này không định nghĩa lại chân lý nền**
+
+Ba cửa đã hỏi đúng câu cần hỏi, và câu trả lời là **không**: chân lý nền mới
+không dựng được bằng máy (8.1) và không độc lập với engine (8.2). ⇒ ⛔ Không thay
+thước. **KHÔNG ĐẠT là một kết quả hợp lệ**, và nó ở lại.
+
+⚠️ Thứ **đã** thay đổi và ⛔ không được lẫn vào phán quyết trên: cổng hiện hành
+vừa bị chứng minh là có lỗ thủng (8.3). Đó là một khiếm khuyết của **dụng cụ đo**,
+để điều phối xử lý — ⛔ **không phải** một lý do để B1 được tính là đạt.
