@@ -77,6 +77,22 @@ NODE_CHUYEN: dict[str, frozenset[str]] = {
                           "ABANDONED", "CANCELLED"}),
     "WAITING": frozenset({"RUNNING", "SUCCEEDED", "FAILED", "CANCELLED"}),
     "RETRY_SCHEDULED": frozenset({"READY", "CANCELLED"}),
+    # ⭐ `FAILED` KHÔNG còn là ngõ cụt tuyệt đối — spec §12.4 cho Supervisor
+    #    *"thử lại node (trong `retry.max` còn lại)"* và *"bỏ qua nhánh node có
+    #    `settings.khong_quan_trong = true`"*. Cả hai chỉ có nghĩa khi node đã
+    #    FAILED, nên không có hai lối này thì hai hành động ấy không tồn tại.
+    #
+    # ⛔ HAI LỐI NÀY, KHÔNG HƠN. ⛔ Không có `FAILED → READY`: quay thẳng về
+    #    READY là bỏ qua `retry.max`, `backoff`, và `_khoa_idem` theo lượt —
+    #    tức mở một đường nộp job **không** đi qua chính sách side effect.
+    #    Đường duy nhất trở lại việc chạy là `RETRY_SCHEDULED → READY`, do
+    #    `thu_lai.den_han` cầm.
+    #
+    # ⚠️ `ABANDONED`/`CANCELLED` **vẫn** là ngõ cụt (không có khoá ở bảng này)
+    #    — provider có thể đã nhận, và `thu_lai.KHONG_THU_LAI` khai đúng tập
+    #    ấy. Supervisor kiểm nó TRƯỚC khi chạm bảng này (`supervisor.
+    #    thu_lai_node`), nên hai lớp cùng nói một điều và không lớp nào một mình.
+    "FAILED": frozenset({"RETRY_SCHEDULED", "SKIPPED"}),
 }
 
 #: Node chưa có ảnh chụp nào. CÔNG KHAI — `apps/agent/routes/runs_v3.py`
