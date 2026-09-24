@@ -893,10 +893,30 @@ def test_phien_ban_ENGINE_trong_bao_cao_van_dung_HOM_NAY(bc):
     Mot bao cao nghiem thu khong tu biet ma da doi duoi chan no. Chot phien ban
     engine cua tung giai doan lam dieu do: nang mot engine la lam do phep kiem
     nay, va cau tra loi dung la **chay lai nghiem thu**, khong phai sua con so.
+    🔴 **VA NO PHAI HOI "LUOT NAY CO THANH CONG KHONG" TRUOC (N-37).**
+
+    Ban truoc chi hoi *"to giay nay MOI chua"*, va mot to giay **trang nhung
+    moi** thi van moi. Do that 25/09: mot luot chay chet o `audio_prepare` giay
+    thu 2 (`ThieuCard`), khong sinh mot tep ra nao, van GHI DE bao cao — va vi
+    bao cao do vua duoc sinh tu ma hom nay nen moi chuoi engine khop ⇒ bai nay
+    **XANH**. Bai chuoi-giai-doan thi do, vi no co kiem `succeeded`.
+
+    ⇒ Hai phep canh cung mot to giay ma **khong doi xung**: mot cai hoi ket qua,
+      cai kia chi hoi nhan. ⭐ Cung ho `N-29` — mot cong thoa man duoc ma khong
+      lam viec no sinh ra de canh. Nen phep dau tien o day la: **bao cao khong
+      `succeeded` thi KHONG co quyen lam bang chung cho bat ky khang dinh nao.**
     """
     from apps.auto_scan_video import thi_hanh
 
     for l in bc["luot"]:
+        hong = [f"{g['ten']}={g['trang_thai']}" for g in l["giai_doan"]
+                if g.get("trang_thai") != "succeeded"]
+        assert not hong, (
+            f"{l['nhan']}: bao cao nay KHONG phai bang chung cua mot luot chay "
+            f"thanh cong, nen no khong chot duoc phien ban engine nao. "
+            f"Giai doan chua `succeeded`: {', '.join(hong)}. "
+            "⇒ Chay lai nghiem thu; ⛔ dung doc chuoi engine cua mot luot da chet.")
+
         for g in l["giai_doan"]:
             nay = thi_hanh.phien_ban_engine(g["ten"])
             assert g["phien_ban_engine"] == nay, (
