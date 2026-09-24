@@ -158,6 +158,31 @@ def test_khong_chac_CHI_THU_va_KHONG_duoc_lam_hong_mot_lo():
     assert "khong_chac" not in tl["muc"][0], "⛔ khong duoc di ra tai lieu khach"
 
 
+def test_chu_HAN_lot_ban_ghi_bi_DANH_DAU_va_KHONG_lam_hong_luot():
+    """⭐ Bat bien o BIEN: ban ghi tieng Viet ⛔ khong duoc chua chu Han.
+
+    Do that (`B2_DICH.md` §7.8d): **1/343** chuoi lot — `"…dùng súng提炼…"`, den
+    tu mot **loi CHEP LOI** (`提炼` <- `提炼枪`), ⛔ khong phai luat ten rieng.
+
+    ⛔ **DOI CHUNG la phan khong duoc bo.** Thieu ve "ban SACH thi IM" thi mot
+       `raise` vo dieu kien — hay mot ham luon tra `["gi do"]` — cung xanh.
+    """
+    # (a) ban BAN: phai bat, va phai tra ve DOAN TRICH chu khong phai True.
+    ban = long_tieng.chu_han_lot("Cau nay lao vao, dung sung提炼 de du no.")
+    assert ban, "⛔ chu Han lot ma khong bat duoc"
+    assert "提炼" in ban[0], "phai tra DOAN TRICH de nguoi soi biet o dau"
+    assert not isinstance(ban[0], bool)
+
+    # (b) ⛔ DOI CHUNG — ban SACH phai IM. Thieu ve nay thi bai dang do chinh no.
+    assert long_tieng.chu_han_lot("Cach tot nhat la vao trong nha ngay.") == []
+    assert long_tieng.chu_han_lot("") == []
+    # ⚠️ Dau tieng Viet ⛔ KHONG duoc tinh la chu Han.
+    assert long_tieng.chu_han_lot("Lý Tông Thịnh · Trương Vĩ · Quảng Châu") == []
+
+    # (c) Nhieu cum => nhieu doan trich, ⛔ khong gop thanh mot.
+    assert len(long_tieng.chu_han_lot("a 提炼 b 光子 c")) == 2
+
+
 def test_quy_tac_TEN_RIENG_chi_ra_khi_dich_VI():
     """🔑 *"Phien am HAN-VIET"* la luat cua **tieng Viet**, khong phai cua moi dich.
 
