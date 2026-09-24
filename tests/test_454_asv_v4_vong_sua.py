@@ -567,8 +567,8 @@ def test_moi_phan_quyet_DAT_thi_khong_sinh_viec_sua(db):
     run = _run_da_chay_het(db)
     _doan_tieng(db, run, "seg_0001", trang_thai_nan=VUA)
     _phan_quyet_qc_ai(db, run, [
-        {"ma": "seg_0001", "dat": True, "ly_do": "", "do_tin": 0.9},
-        {"ma": "seg_0002", "dat": True, "ly_do": "", "do_tin": 0.8},
+        {"ma": "seg_0001", "dat": True, "muc": "", "ly_do": "", "loi": []},
+        {"ma": "seg_0002", "dat": True, "muc": "", "ly_do": "", "loi": []},
     ])
 
     kq = _advance(db, run)
@@ -590,8 +590,8 @@ def test_doan_DICH_SAI_lam_CONTENT_PROCESS_va_ha_nguon_chay_lai(db):
     _doan_dich(db, run, "seg_0001")
     _doan_dich(db, run, "seg_0007")
     _phan_quyet_qc_ai(db, run, [
-        {"ma": "seg_0001", "dat": True, "ly_do": "", "do_tin": 0.9},
-        {"ma": "seg_0007", "dat": False, "do_tin": 0.8,
+        {"ma": "seg_0001", "dat": True, "muc": "", "ly_do": "", "loi": []},
+        {"ma": "seg_0007", "dat": False, "muc": "nang",
          "ly_do": "bo mat menh de dieu kien",
          "nguon": "If it rains, the match is off.",
          "dich": "Tran dau bi huy."},
@@ -636,7 +636,7 @@ def test_DICH_SAI_va_KHONG_VUA_cung_mot_doan_thi_sua_o_cho_SOM_HON(db):
     _doan_tieng(db, run, "seg_0007", trang_thai_nan=CAN_SUA)
     _doan_dich(db, run, "seg_0007")
     _phan_quyet_qc_ai(db, run, [
-        {"ma": "seg_0007", "dat": False, "do_tin": 0.8, "ly_do": "lech y",
+        {"ma": "seg_0007", "dat": False, "muc": "nang", "ly_do": "lech y",
          "nguon": "src", "dich": "dich"},
     ])
 
@@ -715,10 +715,14 @@ def test_GIAI_DOAN_ghi_phan_quyet_vao_dung_cho_VONG_SUA_doc(db, monkeypatch):
 
     def goi_gia(db_, run_, thao_tac, loi_nhac, **kw):
         # Phan hoi dung khuon loi nhac doi: mot bang `doan` theo ma.
+        # ⚠️ Khuon V2: model LIET KE LOI kem muc + doan trich, khong phan
+        #    true/false. `doan` phai co that trong cau nguon hoac cau dich —
+        #    `qc_ai._loc_loi` loai loi khong trich duoc doan.
         return {"noi_dung": json.dumps({"doan": {
-            "seg_0001": {"dat": True, "ly_do": "", "do_tin": 0.95},
-            "seg_0007": {"dat": False, "do_tin": 0.9,
-                         "ly_do": "bo mat menh de dieu kien"},
+            "seg_0001": {"loi": []},
+            "seg_0007": {"loi": [{"loai": "bo_sot", "muc": "nang",
+                                  "doan": "If it rains",
+                                  "ly_do": "bo mat menh de dieu kien"}]},
         }})}
 
     monkeypatch.setattr(ai, "goi_tinh_tien", goi_gia)
@@ -839,8 +843,9 @@ def test_mot_LO_hong_khong_lam_hong_ca_lan_chay(db, monkeypatch):
         i = int(str(ma).split("_")[-1])
         dau = i * 10
         return {"noi_dung": json.dumps({"doan": {
-            f"seg_{j:04d}": {"dat": j != 5, "do_tin": 0.9,
-                             "ly_do": "lech y" if j == 5 else ""}
+            f"seg_{j:04d}": {"loi": [] if j != 5 else [
+                {"loai": "lat_nghia", "muc": "nang", "doan": f"dich {j}",
+                 "ly_do": "lech y"}]}
             for j in range(dau, dau + 10)}})}
 
     monkeypatch.setattr(ai, "goi_tinh_tien", goi_gia)

@@ -473,10 +473,10 @@ def test_phan_hoi_TUAN_THU_LOI_NHAC_phai_duoc_chinh_ta_CHAP_NHAN():
 
     # Va chot bang HANH VI, khong chi bang so sanh hai khai bao.
     tuan_thu = json.dumps(
-        {khoa_ngoai: {"seg_0001": {"dat": True, "do_tin": 0.9, "ly_do": ""}}})
+        {khoa_ngoai: {"seg_0001": {"loi": []}}})
     ra = ai.doc_json(tuan_thu, ai.QC_NGU_NGHIA)
     assert khoa_ngoai in ra
 
     # Va no phai doc duoc bang chinh ham doc cua `qc_ai`.
-    phan = qc_ai.doc_ngu_nghia(ra, {"seg_0001"})
+    phan = qc_ai.doc_ngu_nghia(ra, {"seg_0001"}, {"seg_0001": ("a", "b")})
     assert phan and phan[0]["ma"] == "seg_0001" and phan[0]["dat"] is True

@@ -279,15 +279,19 @@ def cham_mot_luot(db, muc: list[dict]) -> dict:
     loi: list[dict] = []
     for lo in qc_ai.chia_lo(muc):
         ma_lo = {str(d["ma"]) for d in lo}
+        # ⚠️ `doc_ngu_nghia` can van ban de loc doan trich (⛔ loi khong trich
+        #    duoc doan thi bi loai). Truyen dung cap da gui di, khong dung lai.
+        van_ban = {str(d["ma"]): (str(d["goc"]), str(d["chu"])) for d in lo}
         t0 = time.monotonic()
         try:
             kq = ai.goi(db, ai.QC_NGU_NGHIA,
                         qc_ai.loi_nhac_ngu_nghia(lo, "vi"),
                         max_tokens=tran, timeout_s=cho)
             for pq in qc_ai.doc_ngu_nghia(ai.doc_ket_qua(kq, ai.QC_NGU_NGHIA),
-                                          ma_lo):
+                                          ma_lo, van_ban):
                 ra[pq["ma"]] = {"dat": bool(pq["dat"]),
-                                "do_tin": pq["do_tin"],
+                                "muc": pq["muc"],
+                                "loi": pq["loi"],
                                 "ly_do": pq["ly_do"]}
             xau = sum(1 for m in ma_lo if m in ra and not ra[m]["dat"])
             print(f"    lo {len(lo):>2} muc  {time.monotonic() - t0:>6.1f}s  "
