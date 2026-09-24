@@ -137,7 +137,9 @@ def tai_flores(thu_muc: pathlib.Path = FLORES_DIR) -> dict:
            "./flores200_dataset/dev/vie_Latn.dev"]
     with tarfile.open(tar, "r:gz") as f:
         for ten in can:
-            f.extract(f.getmember(ten), path=thu_muc.parent)
+            # `filter="data"` — mac dinh cua Python 3.14, khai som de khong
+            # phu thuoc vao mot mac dinh dang doi.
+            f.extract(f.getmember(ten), path=thu_muc.parent, filter="data")
     return {"tar": str(tar), "sha256": bam, "byte": len(b),
             "thu_muc": str(thu_muc),
             "tep": [str(thu_muc / "dev" / t)
@@ -348,21 +350,64 @@ def _ti_le(cac_luot: list[dict], ma: list[str], gop: dict) -> dict:
 # ══════════════════════════════════════════════════════════════════════════════
 
 def ti_le_bao_dong_gia(n: int, *, db=None, luot: int = LUOT_MOI_CAP,
+                       tu: int = 0,
                        thu_muc: pathlib.Path = FLORES_DIR) -> dict:
     """Ti le bao dong gia cua bo cham tren `n` cap FLORES zh->vi.
 
     🔑 Moi phan quyet *"dich sai"* o day la mot **bao dong gia theo dinh nghia**:
        ban dich la cua NGUOI, trong mot bo chuan dich chuyen nghiep.
+
+    ⭐ `tu` cho phep chay LAM DOI tren hai tien trinh (moi tien trinh mot nua
+       dai cau) roi `gop` lai — tran dong thoi cua CLAUDE.md la 2 request moi
+       model, va mot luot tuan tu mat ~1 gio. `ma` mang chi so dong FLORES nen
+       hai nua khong the trung ma.
     """
-    cap = doc_flores(thu_muc)[:n]
+    cap = doc_flores(thu_muc)[tu:tu + n]
     muc = [{"ma": f"flores_{i:04d}", "goc": zh, "chu": vi} for i, zh, vi in cap]
     ma = [m["ma"] for m in muc]
     cac_luot = []
     for k in range(luot):
-        print(f"  [FLORES] luot {k + 1}/{luot} — {len(muc)} cap NGUOI DICH")
+        print(f"  [FLORES] luot {k + 1}/{luot} — {len(muc)} cap NGUOI DICH"
+              f" (dong {tu}..{tu + len(muc) - 1})")
         cac_luot.append(cham_mot_luot(db, muc))
     gop = gop_trung_vi(cac_luot, ma)
-    return {"n": len(muc), "luot": luot, "gop": gop,
+    return {"n": len(muc), "luot": luot, "tu": tu, "gop": gop,
+            "cac_luot": cac_luot, **_ti_le(cac_luot, ma, gop)}
+
+
+def gop_phan(cac_phan: list[dict]) -> dict:
+    """Gop nhieu ban ghi `bao_dong_gia` tung phan thanh MOT, roi tinh lai ti le.
+
+    ⛔ Ghep theo TUNG LUOT (`cac_luot[k]`), khong doi mot phan thanh mot luot
+       rieng: moi cau van phai co dung `luot` phan quyet doc lap, neu khong
+       "trung vi tren 3 luot" se tro thanh "mot luot" cho mot nua so cau.
+
+    ⛔ Hai phan trung ma la mot loi, khong phai mot chuyen vat: no nghia la hai
+       tien trinh da hoi cung mot cau va ta dang dem no hai lan.
+    """
+    if not cac_phan:
+        raise SystemExit("khong co phan nao de gop")
+    luot = {p["luot"] for p in cac_phan}
+    if len(luot) != 1:
+        raise SystemExit(f"cac phan khac so luot: {sorted(luot)}")
+    ma: list[str] = []
+    for p in cac_phan:
+        trung = set(ma) & {m for l in p["cac_luot"] for m in l["phan_quyet"]}
+        if trung:
+            raise SystemExit(f"hai phan trung ma: {sorted(trung)[:5]}")
+        ma += [f"flores_{i:04d}"
+               for i in range(p["tu"], p["tu"] + p["n"])]
+    cac_luot = []
+    for k in range(next(iter(luot))):
+        pq: dict = {}
+        loi: list[dict] = []
+        for p in cac_phan:
+            pq.update(p["cac_luot"][k]["phan_quyet"])
+            loi += p["cac_luot"][k]["loi_lo"]
+        cac_luot.append({"phan_quyet": pq, "loi_lo": loi})
+    gop = gop_trung_vi(cac_luot, ma)
+    return {"n": len(ma), "luot": next(iter(luot)),
+            "tu_cac_phan": [p["tu"] for p in cac_phan], "gop": gop,
             "cac_luot": cac_luot, **_ti_le(cac_luot, ma, gop)}
 
 
@@ -449,11 +494,18 @@ def main(argv=None) -> int:
     s.add_parser("tai")
     d = s.add_parser("do")
     d.add_argument("--n", type=int, default=N_TOI_THIEU)
+    d.add_argument("--tu", type=int, default=0,
+                   help="dong FLORES bat dau (de chay lam doi roi `gop`)")
+    d.add_argument("--pha", choices=("ca", "fa", "tiem"), default="ca")
     d.add_argument("--tiem-moi-loai", type=int, default=15)
+    d.add_argument("--tiem-bo-qua", type=int, default=N_TOI_THIEU)
     d.add_argument("--luot", type=int, default=LUOT_MOI_CAP)
     d.add_argument("--ra", required=True)
-    d.add_argument("--bo-qua-tiem", action="store_true",
-                   help="⛔ chi de go loi — bo doi chung am lam phep do vo nghia")
+    g = s.add_parser("gop")
+    g.add_argument("--fa", nargs="+", required=True,
+                   help="cac ban ghi `fa` tung phan, ghep lai")
+    g.add_argument("--tiem", required=True)
+    g.add_argument("--ra", required=True)
     b = s.add_parser("bao-cao")
     b.add_argument("tep")
     a = p.parse_args(argv)
@@ -465,19 +517,35 @@ def main(argv=None) -> int:
         print(bao_cao(json.loads(
             pathlib.Path(a.tep).read_text(encoding="utf-8"))))
         return 0
+    if a.lenh == "gop":
+        _doc = (lambda t: json.loads(
+            pathlib.Path(t).read_text(encoding="utf-8")))
+        fa = gop_phan([_doc(t)["bao_dong_gia"] for t in a.fa])
+        if fa["n"] < N_TOI_THIEU:
+            raise SystemExit(
+                f"gop lai chi duoc {fa['n']} cap < {N_TOI_THIEU} — "
+                "khong du de ra mot phan quyet")
+        ra = {"phien_ban": 1, "hat_giong": HAT_GIONG,
+              "nguong_bao_dong_gia": NGUONG_BAO_DONG_GIA,
+              "nguong_bat_loi_tiem": NGUONG_BAT_LOI_TIEM,
+              "bao_dong_gia": fa,
+              "bat_loi_tiem": _doc(a.tiem)["bat_loi_tiem"]}
+        pathlib.Path(a.ra).write_text(
+            json.dumps(ra, ensure_ascii=False, indent=1), encoding="utf-8")
+        print(bao_cao(ra))
+        return 0
 
-    if a.n < N_TOI_THIEU:
-        raise SystemExit(f"--n phai >= {N_TOI_THIEU} (nguong viet truoc)")
     from tools import do_llm_cong_asv as mt
     mt._nap_app_env()
     db, so_khoa = mt._mo_db()
     print(f"[MOI TRUONG] {so_khoa} khoa pool")
     t0 = time.monotonic()
-    fa = ti_le_bao_dong_gia(a.n, db=db, luot=a.luot)
-    tiem = None
-    if not a.bo_qua_tiem:
+    fa = tiem = None
+    if a.pha in ("ca", "fa"):
+        fa = ti_le_bao_dong_gia(a.n, db=db, luot=a.luot, tu=a.tu)
+    if a.pha in ("ca", "tiem"):
         tiem = ti_le_bat_loi_tiem(db=db, moi_loai=a.tiem_moi_loai,
-                                  luot=a.luot, bo_qua=a.n)
+                                  luot=a.luot, bo_qua=a.tiem_bo_qua)
     ra = {
         "phien_ban": 1, "hat_giong": HAT_GIONG,
         "nguong_bao_dong_gia": NGUONG_BAO_DONG_GIA,
@@ -487,7 +555,12 @@ def main(argv=None) -> int:
     }
     pathlib.Path(a.ra).write_text(
         json.dumps(ra, ensure_ascii=False, indent=1), encoding="utf-8")
-    print("\n" + bao_cao(ra))
+    # ⛔ Mot PHAN khong duoc in ra mot phan quyet: co mau cua no nho hon
+    #    `N_TOI_THIEU`, va mot phan quyet in ra la mot phan quyet se bi trich.
+    if a.pha == "ca" and a.n >= N_TOI_THIEU:
+        print("\n" + bao_cao(ra))
+    else:
+        print(f"\n[PHAN] da ghi {a.ra} — chay `gop` roi moi co phan quyet")
     return 0
 
 

@@ -9,6 +9,7 @@
 """
 from __future__ import annotations
 
+import json
 import random
 
 import pytest
@@ -29,10 +30,23 @@ def test_nguong_da_viet_truoc_va_khong_duoc_noi():
     assert bc.LUOT_MOI_CAP >= 3
 
 
-def test_do_voi_n_duoi_nguong_bi_TU_CHOI():
-    """Co mau nho hon `N_TOI_THIEU` khong duoc phep cho ra mot phan quyet."""
+def test_gop_duoi_co_mau_toi_thieu_bi_TU_CHOI(tmp_path):
+    """Co mau nho hon `N_TOI_THIEU` khong duoc phep cho ra mot phan quyet.
+
+    ⚠️ Rao nam o `gop` chu khong o `do`, vi `do` duoc phep chay TUNG PHAN (mot
+    nua dai cau moi tien trinh). Chinh vi vay rao phai o cho hop nhat — neu
+    khong, hai phan 50 cau se lang le thanh mot phan quyet tren 50 cau.
+    """
+    phan = tmp_path / "phan.json"
+    phan.write_text(json.dumps({"bao_dong_gia": {
+        "n": 40, "luot": 3, "tu": 0,
+        "cac_luot": [{"phan_quyet": {}, "loi_lo": []} for _ in range(3)]}}),
+        encoding="utf-8")
+    tiem = tmp_path / "tiem.json"
+    tiem.write_text(json.dumps({"bat_loi_tiem": {}}), encoding="utf-8")
     with pytest.raises(SystemExit):
-        bc.main(["do", "--n", "40", "--ra", "khong_dung.json"])
+        bc.main(["gop", "--fa", str(phan), "--tiem", str(tiem),
+                 "--ra", str(tmp_path / "ra.json")])
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -126,6 +140,37 @@ def test_gop_trung_vi_BO_HAN_ma_khong_luot_nao_tra_loi():
     tl = bc._ti_le([_luot(a=True)], ["a", "vang_mat"], gop)
     assert tl["n_hoi"] == 2 and tl["n_co_phan_quyet"] == 1
     assert tl["ti_le_trung_vi"] == 0.0
+
+
+def test_gop_phan_giu_nguyen_SO_LUOT_cua_tung_cau():
+    """⛔ Ghep theo TUNG luot, khong bien moi phan thanh mot luot rieng.
+
+    Lam sai thi "trung vi tren 3 luot" tro thanh "mot luot" cho moi cau — tuc
+    dung cai ma chinh phep do nay khai la khong du de phan quyet.
+    """
+    def phan(tu, ma_dat):
+        return {"n": len(ma_dat), "luot": 3, "tu": tu,
+                "cac_luot": [_luot(**{m: v[k] for m, v in ma_dat.items()})
+                             for k in range(3)]}
+
+    a = phan(0, {"flores_0000": [False, False, True],
+                 "flores_0001": [True, True, True]})
+    b = phan(2, {"flores_0002": [False, True, False],
+                 "flores_0003": [True, True, True]})
+    g = bc.gop_phan([a, b])
+    assert g["n"] == 4 and g["luot"] == 3
+    assert all(v["so_luot"] == 3 for v in g["gop"].values())
+    # Hai cau bi da so cham sai => 2/4.
+    assert g["so_bi_cham_sai"] == 2 and g["ti_le_trung_vi"] == 0.5
+    assert g["ti_le_tung_luot"] == [0.5, 0.25, 0.25]
+
+
+def test_gop_phan_TU_CHOI_hai_phan_trung_ma():
+    """Trung ma nghia la hai tien trinh da hoi cung mot cau — dem hai lan."""
+    p = {"n": 1, "luot": 1, "tu": 0,
+         "cac_luot": [_luot(flores_0000=True)]}
+    with pytest.raises(SystemExit):
+        bc.gop_phan([p, dict(p)])
 
 
 def test_ti_le_bao_cao_DAI_cua_tung_luot():
