@@ -48,6 +48,76 @@ KHUNG_MOI_CHO_NOI = 2
 #: Cach cho noi bao nhieu giay thi lay khung.
 LECH_KHUNG_GIAY = 0.4
 
+#: Nhiet do GHIM cho lop ngu nghia. `None` = de mac dinh cua cong.
+#:
+#: 🔴 **Ghim vi mot phep do, khong vi mot so thich.** Do 24/09 tren dai giu
+#:    rieng, ti le **lo tra JSON hong** (`LuocDoSai`, mat tron 10 muc mot lan):
+#:
+#:        loi nhac NHI PHAN (V1)          1/30 lo = 3,3 %
+#:        loi nhac PHAN MUC MQM (V3)      2/9  lo =  22 %
+#:
+#:    Dau ra MQM dai hon han dau ra nhi phan (mot danh sach loi kem ly do, thay
+#:    cho mot co `true/false`), nen no lam **lo** dung diem yeu bam luoc do ma
+#:    `--temp 1.0` cua cong von che di.
+#:
+#: ⚠️ Mat theo **LO**, khong theo **MUC** ⇒ mat ca mot cum chu khong phai mot
+#:    mau ngau nhien. Mot phep do tren kenh do khong phai phep do kem — no
+#:    **khong ton tai**. Nen day la buoc phai lam TRUOC khi so hai loi nhac.
+#:
+#: ⭐ Cung don thuoc voi Task 11b (`docs/superpowers/plans/…-thang-cong-asv.md`):
+#:    *ghim nhiet do TRUOC, do lai ti le qua luoc do, ROI moi sua loi nhac* —
+#:    neu khong ta se di sua loi nhac cho mot van de do nhiet do gay ra.
+#:
+#: ⛔ Ghim nhiet do **khong** lam lan chay tat dinh: do 24/09 cho thay `seed`
+#:    khong co hieu luc tren cong nay va `temperature=0.0` van cho ket qua khac
+#:    nhau giua cac luot. No chi thu hep dai lay mau, tuc lam luoc do de dung
+#:    vung hon — ⛔ dung doc no thanh "gio moi luot giong nhau".
+NHIET_DO_NGU_NGHIA: float | None = 0.0
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Lop ngu nghia co duoc KHAI CHO KHACH khong — va cau tra loi la mot PHEP DO
+# ══════════════════════════════════════════════════════════════════════════════
+
+#: Ti le bao dong gia DA DO cua lop ngu nghia, tren ban dich CUA NGUOI.
+#:
+#: 🔴 Do 24/09 tren 100 cap FLORES-200 zh->vi (ban dich chuyen nghiep), 3 luot
+#:    moi cap: **45,0 %** (dai tung luot 40,0-44,4 %).
+#:    `docs/auto_scan_video_final/B2_XAC_THUC_BO_CHAM.md`.
+#:
+#: ⛔ Doi so nay bang cach DO LAI, khong bang cach go mot so de p hon:
+#:    `python tools\bench_b2_xac_thuc_bo_cham.py ...` (muc §6 cua tai lieu tren).
+TI_LE_BAO_DONG_GIA_DA_DO = 0.45
+
+#: Duoi muc nay thi con so ngu nghia moi duoc khai cho khach.
+NGUONG_KHAI_CHO_KHACH = 0.15
+
+
+def khai_cho_khach() -> bool:
+    """Con so "N/M cau dich chua sat" co duoc hien cho khach khong.
+
+    🔴 **Chu du an chot 24/09: KHONG, cho toi khi bao dong gia ve duoi 15 %.**
+       Luot that cham 44/95 (46 %) la dich chua sat; chinh bo cham do gan
+       **45 %** cho ban dich cua NGUOI DICH CHUYEN NGHIEP. Tuc no khong phan
+       biet duoc ban dich cua ta voi mot ban hoan hao — va khai mot con so ma
+       mot nua la bao dong gia la lam khach hieu sai ve san pham ho vua mua.
+
+    ⭐ **Cong nay la mot PHEP TINH tu con so da do, khong phai mot co bat tay.**
+       Ai ha duoc bao dong gia xuong thi sua `TI_LE_BAO_DONG_GIA_DA_DO` — va man
+       hinh tu bat lai. Khong ai bat duoc no ma khong khai mot phep do, va khong
+       ai phai nho di bat lai mot co.
+
+    ⚠️ Chi che o BE MAT CUA KHACH. Phan quyet van vao artifact, van vao
+       `stage.outputs`, van hien o bao cao van hanh — cung ranh gioi voi
+       `sua_chua.QC_HINH_LA_TU_VAN`. "Khong khoe" khac "khong ai duoc biet".
+
+    ⛔ Hai con so KIA cua `bang_chung_chat_luong` (`so_giong_khong_dat`,
+       `so_canh_bao_tieng`) **van giu** — chung den tu thuoc khac (ASR + WER/CER,
+       SQUIM), chua bi nghi ngo, va go chung di la lay mot loi khai qua tay doi
+       lay mot loi khai thieu.
+    """
+    return TI_LE_BAO_DONG_GIA_DA_DO <= NGUONG_KHAI_CHO_KHACH
+
 
 class QcAiError(ValueError):
     """Phan hoi QC bang AI khong dung hop dong."""
@@ -57,8 +127,62 @@ class QcAiError(ValueError):
 #  1. QC ngu nghia
 # ══════════════════════════════════════════════════════════════════════════════
 
+#: Ba muc nghiem trong cua MQM, nang dan. ⛔ Thu tu la mot phan hop dong:
+#: `_muc_nang_nhat` doc no de tra ve muc nang nhat trong mot danh sach loi.
+MUC = ("nhe", "nang", "nghiem_trong")
+
+#: Muc nao SINH VIEC SUA. Bang anh xa nay viet TRUOC khi do
+#: (`B2_XAC_THUC_BO_CHAM.md` §8.2), ⛔ khong chinh sau khi thay so.
+MUC_KHONG_DAT = frozenset(("nang", "nghiem_trong"))
+
+#: Gia tri tho model tra ve -> muc chuan hoa. Nhan ca tieng Anh cua MQM.
+_MUC_THO = {
+    "nhe": "nhe", "minor": "nhe", "nho": "nhe",
+    "nang": "nang", "major": "nang", "lon": "nang",
+    "nghiem_trong": "nghiem_trong", "critical": "nghiem_trong",
+    "nghiem trong": "nghiem_trong",
+}
+
+#: Phan loai MQM ta hoi. ⛔ Khong bia them loai: mot loai khong co trong bang
+#: nay se bi ghi thanh `khac`, va mot loai `khac` tran ngap la tin hieu rang
+#: loi nhac dang hoi mot cau model khong tra loi duoc.
+LOAI_LOI = ("lat_nghia", "sai_thuc_the", "bo_sot", "them", "khong_dich",
+            "dien_dat", "khac")
+
+
 def loi_nhac_ngu_nghia(lo: list[dict], ngon_ngu_dich: str = "vi") -> list[dict]:
-    """Hoi model: ban tieng Viet co giu dung y cua nguon khong.
+    """Hoi model LIET KE LOI kem MUC NGHIEM TRONG — ⛔ khong hoi dung/sai.
+
+    🔴 **Ban V1 hoi mot cau NHI PHAN (`dat: true/false`), va do la sai thiet ke.**
+
+       Do 24/09 tren 100 cap FLORES-200 zh->vi **do NGUOI dich**: bo cham gan
+       **45 %** la "dich sai" cho ban dich chuyen nghiep, trong khi luot that
+       cua ta bi gan 46 % — tuc no khong phan biet duoc ban dich cua ta voi mot
+       ban hoan hao (`B2_XAC_THUC_BO_CHAM.md`).
+
+       Doc `ly_do` cua 122 luot bao dong gia: gan het la loi **nhe** theo MQM —
+       mat sac thai, thieu mot bo ngu, them mot chu, thay ten rieng bang dai tu.
+       ⛔ Loi nhac V1 **khong co o de noi "nhe"**: no chi co `false`. Nen moi
+       nhan xet tinh te deu roi xuong cung mot o voi "lat nghia".
+
+    ⭐ **Giao thuc: GEMBA-MQM** (Kocmi & Federmann, WMT 2023, arXiv 2310.13988),
+       ho voi AutoMQM (arXiv 2308.07286) va xCOMET (arXiv 2310.10482). Ca ba deu
+       doi model **liet ke tung loi** kem **phan loai** + **muc nghiem trong** +
+       **doan trich**, roi tinh diem tu do (GEMBA: critical 25 / major 5 /
+       minor 1, chan 5 loi) — nen nam loi `minor` van cham 5/25, tuc **van tot**.
+
+    ⛔ **Lay DAC TA, khong lay loi van.** `MicrosoftTranslator/GEMBA` la
+       **CC BY-SA 4.0** — ShareAlike phu ca ma (`README.md` §License: *"GEMBA
+       code and data"*; khong co tep `LICENSE` tran, chi `LICENSE.md`). Thang
+       muc MQM thi la **chuan cong khai**, muon duoc. Nen ba dinh nghia muc duoi
+       day viet bang loi cua ta, neo vao **hau qua cho nguoi xem**.
+
+    ⛔ **Khong hoi `do_tin` nua.** arXiv 2603.25052 do duoc rang khi model **vua
+       lap luan vua tu khai do tin**, chinh viec lap luan **pha** tin hieu do tin
+       va lam lech hieu chinh **nang them** — ma V1 doi dung hai thu do trong
+       mot phan hoi. Cong 2605.12446 (*"high certainty even when incorrect"*) va
+       so cua chinh ta: **98,4 %** bao dong gia co `do_tin >= 0,70`. Truong do
+       khong chi vo dung ma **gay hai**. ⛔ Dung them lai "cho chac".
 
     ⛔ Hoi theo LO nhung tra ve theo MA — cung ly do nhu pha 14: mot lo 10 cau
        tra ve 9 ma ghep theo vi tri se lam moi cau sau do lech mot bac, va tai
@@ -67,16 +191,33 @@ def loi_nhac_ngu_nghia(lo: list[dict], ngon_ngu_dich: str = "vi") -> list[dict]:
     from . import ngon_ngu
     t = ngon_ngu.cum(ngon_ngu_dich)["tieng"]
     he_thong = (
-        f"Ban la nguoi soat ban long tieng {t}. Voi moi cap (cau goc, cau "
-        f"{t}), hay noi ban {t} co **giu dung y va thai do** cua cau "
-        "goc khong.\n"
+        f"Ban soat ban long tieng {t}. Voi moi cap (cau goc, cau {t}), hay "
+        "LIET KE cac loi dich, moi loi mot muc nghiem trong.\n"
+        "Ba muc, theo HAU QUA cho nguoi xem clip:\n"
+        "- `nghiem_trong`: nguoi xem hieu SAI su viec.\n"
+        "- `nang`: pha mach, nhung van hieu duoc dieu cau muon noi.\n"
+        "- `nhe`: la loi that, nhung KHONG can tro hieu (sac thai, mot bo ngu "
+        "phu, cach dien dat).\n"
+        # 🔴 **San muc cho SAI THUC THE — do 24/09, va no la mot phep do chu
+        #    khong phai mot linh cam.** Ban V2 (phan muc, chua co ba dong nay)
+        #    tut do nhay `sai_thuc_the` tu 100 % xuong **40 %** tren 15 cap da
+        #    lam hong co chu y. Soi ra: **9/9** ca bi bo sot deu la model **CO
+        #    THAY** loi va **CO** goi dung ten `sai_thuc_the` — roi cham `nhe`.
+        #    ⇒ Khong phai loi phat hien, la loi XEP MUC.
+        #
+        # ⭐ Neo vao hau qua, dung khuon ba muc o tren: mot con so hay mot cai
+        #    ten sai khong lam cau kho hieu — no lam nguoi xem **tin chac mot
+        #    su viec khong co that**, tuc nang hon han mot cho vung ve.
+        "Rieng SO, TEN RIENG, DON VI, NGAY THANG bi doi: nguoi xem se tin mot "
+        "su viec KHONG co that, nen it nhat la `nang` — ⛔ khong bao gio `nhe`.\n"
+        f"Loai loi: {', '.join(LOAI_LOI)}.\n"
         "Quy tac:\n"
-        "- `dat=false` CHI khi y nghia bi doi, mat, hoac them.\n"
-        "- Cach dien dat khac, dao trat tu, hay rut gon ma giu y => `dat=true`.\n"
-        "- `do_tin` la do chac chan cua CHINH BAN, tu 0 den 1.\n"
-        "- `ly_do` chi bat buoc khi `dat=false`, va phai noi ro y nao bi lech.\n"
-        'Tra ve DUY NHAT: {"doan": {"<ma>": {"dat": true, "do_tin": 0.9, '
-        '"ly_do": ""}}}')
+        "- `doan` BAT BUOC: trich NGUYEN VAN doan bi loi, lay tu cau goc hoac "
+        f"cau {t}. Loi khong trich duoc doan se bi bo.\n"
+        "- Cach dien dat khac, dao trat tu, rut gon ma giu y: KHONG phai loi.\n"
+        "- Khong tim thay loi nao thi tra danh sach rong.\n"
+        'Tra ve DUY NHAT: {"doan": {"<ma>": {"loi": [{"loai": "lat_nghia", '
+        '"muc": "nang", "doan": "...", "ly_do": "..."}]}}}')
     nguoi_dung = json.dumps({"doan": [
         {"ma": str(d.get("ma") or ""),
          "goc": str(d.get("goc") or "")[:600],
@@ -86,8 +227,83 @@ def loi_nhac_ngu_nghia(lo: list[dict], ngon_ngu_dich: str = "vi") -> list[dict]:
             {"role": "user", "content": nguoi_dung}]
 
 
-def doc_ngu_nghia(goi: dict, ma_da_gui: set[str]) -> list[dict]:
-    """`[{ma, dat, ly_do, do_tin}]` — chi cho nhung ma DA GUI.
+def _chuan(s) -> str:
+    """Gop khoang trang + thuong hoa, de so khop doan trich.
+
+    ⚠️ Nhan gia tri THO tu model (co the `None`, so, dict) — nen khong ghim kieu
+       `str`: mot phan hoi lech kieu phai ra chuoi rong roi bi loc, ⛔ khong duoc
+       nem giua mot vong lap dang doc phan quyet cua ca lo.
+    """
+    return " ".join(str(s if s is not None else "").split()).casefold()
+
+
+def _muc(x) -> str:
+    """Gia tri tho -> mot muc trong `MUC`. Khong nhan dien duoc -> `nhe`.
+
+    ⭐ Mac dinh `nhe`, ⛔ khong phai `nang`: mot muc khong doc duoc la mot dieu
+       ta KHONG biet, va mac dinh phai la cai **khong tieu tien**. Mac dinh
+       `nang` se bien moi lan model go sai mot chu thanh mot lan dich lai co
+       tra tien — dung hinh dang loi ma ban V1 mac phai.
+    """
+    return _MUC_THO.get(_chuan(x).replace(" ", "_"), "nhe")
+
+
+def _loc_loi(tho, goc: str, dich: str) -> list[dict]:
+    """Cac loi CO TRICH DOAN that. ⛔ Loi khong trich duoc doan bi LOAI.
+
+    🔴 **Loc bang MAY, khong nho loi nhac "hay chinh xac".** GEMBA-MQM va
+       GEMBA-ESA deu bat model chi ra doan loi; do la thu ghim loi bia.
+
+    ⚠️ **Nhan doan o CA HAI phia.** Loi *them/dich sai* trich doan o **ban
+       dich**, con loi *bo sot* trich doan o **cau nguon** — dung nhu vi du cua
+       GEMBA (`accuracy/omission - "the account holder"` la doan NGUON). Chi so
+       voi ban dich se loai sach loi bo sot, tuc doi mot thuoc qua tay lay mot
+       thuoc mu o dung loai MetricX von manh (`L_DICH.md` §3).
+    """
+    hai_phia = _chuan(goc) + "\n" + _chuan(dich)
+    ra = []
+    for e in (tho if isinstance(tho, list) else []):
+        if not isinstance(e, dict):
+            continue
+        doan = str(e.get("doan") or "")[:200]
+        if not doan.strip() or _chuan(doan) not in hai_phia:
+            continue
+        loai = _chuan(e.get("loai")).replace(" ", "_")
+        ra.append({
+            "loai": loai if loai in LOAI_LOI else "khac",
+            "muc": _muc(e.get("muc")),
+            "doan": doan,
+            "ly_do": str(e.get("ly_do") or "")[:300],
+        })
+    return ra
+
+
+def _muc_nang_nhat(loi: list[dict]) -> str:
+    """Muc nang nhat trong danh sach, hoac `""` khi khong co loi nao."""
+    co = [e["muc"] for e in loi if e.get("muc") in MUC]
+    return max(co, key=MUC.index) if co else ""
+
+
+def doc_ngu_nghia(goi: dict, ma_da_gui: set[str],
+                  van_ban: dict[str, tuple[str, str]]) -> list[dict]:
+    """`[{ma, dat, muc, loi, ly_do}]` — chi cho nhung ma DA GUI.
+
+    🔑 **`dat` duoc TINH RA tu muc, khong phai do model phan.** Bang anh xa
+       (`B2_XAC_THUC_BO_CHAM.md` §8.2, viet TRUOC khi do):
+
+           nghiem_trong -> dat=false     can tro hieu
+           nang         -> dat=false     pha mach, van hieu duoc
+           nhe          -> dat=TRUE      la loi that, nhung khong can tro hieu
+
+    ⭐ **Loi `nhe` van duoc GHI LAI trong `loi`, ⛔ khong vut di.** Vut chung la
+       dung lai dung bay *"hai trang thai gop thanh mot gia tri"*: *"khong co
+       loi nao"* va *"chi co loi nhe"* lai roi chung mot o, va ta mat dung kha
+       nang phan biet ma ban sua nay sinh ra de co. Doc `muc == ""` de biet
+       "sach", ⛔ dung doc `dat == True`.
+
+    ⚠️ `van_ban` la `{ma: (cau_goc, cau_dich)}` — BAT BUOC, vi khong co no thi
+       phep loc doan trich khong chay duoc, va mot phep loc khong chay am tham
+       se tra ve y NGUYEN so bao dong gia cu trong khi bao cao noi da loc.
 
     ⭐ Thieu mot ma thi doan do duoc coi la **DAT**, khong phai hong: mot cau hoi
        khong duoc tra loi la mot cau hoi khong duoc tra loi. Coi im lang la "co
@@ -101,11 +317,20 @@ def doc_ngu_nghia(goi: dict, ma_da_gui: set[str]) -> list[dict]:
         v = tho.get(ma)
         if not isinstance(v, dict):
             continue
+        goc, dich = (van_ban or {}).get(ma, ("", ""))
+        loi = _loc_loi(v.get("loi"), goc, dich)
+        muc = _muc_nang_nhat(loi)
+        nang = [e for e in loi if e["muc"] in MUC_KHONG_DAT]
         ra.append({
             "ma": ma,
-            "dat": bool(v.get("dat", True)),
-            "ly_do": str(v.get("ly_do") or "")[:300],
-            "do_tin": _do_tin(v.get("do_tin")),
+            "dat": not nang,
+            "muc": muc,
+            "loi": loi,
+            # `ly_do` giu lai cho bao cao van hanh va cho `sua_chua`: gop ly do
+            # cua CAC LOI da sinh ra phan quyet, khong gop ca loi `nhe`.
+            "ly_do": " · ".join(
+                f"[{e['loai']}] {e['doan']}: {e['ly_do']}".strip(": ")
+                for e in nang)[:300],
         })
     return ra
 

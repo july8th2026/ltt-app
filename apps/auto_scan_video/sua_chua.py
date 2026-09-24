@@ -97,10 +97,22 @@ NGUONG_DOC_SAI: dict[str, dict[str, float]] = {
     "en": {"wer": 0.15},
 }
 
-#: Do tin toi thieu de tin mot phan doan cua model.
+#: Do tin toi thieu de tin mot phan doan cua model — ⛔ CHI con cho lop HINH.
 #:
-#: ⭐ Duoi muc nay, ket luan duoc ghi lai nhung **khong** sinh viec sua: mot model
-#:    khong chac chan khong phai mot ly do de tra tien lam lai.
+#: 🔴 **Lop NGU NGHIA da BO cong nay 24/09, va do la mot phep do chu khong phai
+#:    mot so thich.** Tren 100 cap FLORES do NGUOI dich, **98,4 %** bao dong gia
+#:    mang `do_tin >= 0,70` (trung vi 0,85) ⇒ nguong nay **khong loc duoc gi**,
+#:    dung khuon M-10 o lop hinh (14/15 vuot nguong).
+#:
+#: ⛔ Va no khong sua duoc bang cach ha/nang nguong: arXiv **2603.25052** do duoc
+#:    rang khi model **vua lap luan vua tu khai do tin**, chinh viec lap luan
+#:    **pha** tin hieu do tin va lam lech hieu chinh **NANG THEM** — ma loi nhac
+#:    cu doi dung hai thu do trong mot phan hoi. arXiv **2605.12446** cung huong
+#:    (*"high certainty even when incorrect"*).
+#:
+#: ⇒ Lop ngu nghia nay dung **muc nghiem trong MQM** (`KhiemKhuyet.muc`) lam
+#:   cong, va `qc_ai.loi_nhac_ngu_nghia` **khong hoi `do_tin`** nua.
+#:   ⛔ Dung them lai "cho chac" — xem `B2_XAC_THUC_BO_CHAM.md` §8.4.
 DO_TIN_TOI_THIEU = 0.70
 
 
@@ -117,6 +129,9 @@ class KhiemKhuyet:
     ma: str = ""
     ly_do: str = ""
     do_tin: float = 1.0
+    #: Muc nghiem trong MQM (`qc_ai.MUC`) khi nguon la lop NGU NGHIA. Rong =
+    #: nguon khong khai muc (lop hinh), va khi do `dang_tin` roi ve `do_tin`.
+    muc: str = ""
     bang_chung: dict = field(default_factory=dict)
 
     def __post_init__(self):
@@ -130,6 +145,16 @@ class KhiemKhuyet:
 
     @property
     def dang_tin(self) -> bool:
+        """Khiem khuyet nay co duoc SINH VIEC SUA khong.
+
+        🔑 **Khai `muc` thi muc quyet dinh, ⛔ khong con dung `do_tin`.** Lop ngu
+           nghia chuyen sang thang MQM 24/09; chi lop HINH (van hoi `do_tin`) di
+           theo nhanh cu. Hai nhanh, mot ham — vi cau hoi la MOT: *"co dang bo
+           tien ra lam lai khong"*.
+        """
+        if self.muc:
+            from . import qc_ai
+            return self.muc in qc_ai.MUC_KHONG_DAT
         return float(self.do_tin) >= DO_TIN_TOI_THIEU
 
 
@@ -212,17 +237,29 @@ def lan_doc_lai(cac_ke_hoach: list[dict]) -> dict[str, int]:
 
 
 def tu_qc_ngu_nghia(phan_doan: list[dict]) -> list[KhiemKhuyet]:
-    """Khiem khuyet tu QC NGU NGHIA: `[{ma, dat, ly_do, do_tin}]`."""
+    """Khiem khuyet tu QC NGU NGHIA: `[{ma, dat, muc, loi, ly_do}]`.
+
+    🔑 **CHI dich lai khi co loi `nang`/`nghiem_trong`.** `dat` da duoc
+       `qc_ai.doc_ngu_nghia` tinh ra tu chinh bang anh xa do, nen o day doc `dat`
+       la du — nhung `muc` van duoc **chuyen tiep** vao `KhiemKhuyet` de
+       `dang_tin` phan bang muc chu khong bang `do_tin`.
+
+    ⭐ **Loi `nhe` di vao `bang_chung`, ⛔ khong bien mat.** Mot doan "sach" va
+       mot doan "chi co loi nhe" la hai trang thai khac nhau, va ca hai deu
+       **khong** sinh viec sua — nhung bao cao van hanh phai phan biet duoc.
+    """
     ra = []
     for d in phan_doan or []:
         if bool(d.get("dat", True)):
             continue
+        loi = list(d.get("loi") or [])
         ra.append(KhiemKhuyet(
             DICH_SAI, ma=str(d.get("ma") or ""),
             ly_do=str(d.get("ly_do") or ""),
-            do_tin=float(d.get("do_tin") or 0.0),
+            muc=str(d.get("muc") or ""),
             bang_chung={"nguon": str(d.get("nguon") or "")[:200],
-                        "dich": str(d.get("dich") or "")[:200]}))
+                        "dich": str(d.get("dich") or "")[:200],
+                        "loi": loi[:10]}))
     return ra
 
 

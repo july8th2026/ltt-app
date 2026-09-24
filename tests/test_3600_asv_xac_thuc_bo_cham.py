@@ -132,12 +132,19 @@ def test_gop_trung_vi_lay_DA_SO_chu_khong_lay_mot_luot():
     assert gop["b"] == {"dat": True, "so_luot": 3, "so_bao_sai": 1}
 
 
-def test_gop_trung_vi_BO_HAN_ma_khong_luot_nao_tra_loi():
-    """⛔ Khong phai `dat`, cung khong phai `khong dat` — la mot cau hoi CHUA
-    duoc tra loi, va mau so cua moi ti le phai la so cau DA tra loi."""
-    gop = bc.gop_trung_vi([_luot(a=True)], ["a", "vang_mat"])
+def test_gop_trung_vi_BO_HAN_ma_nam_trong_LO_HONG():
+    """⛔ Ma nam trong mot lo HONG: khong phai `dat`, cung khong phai
+    `khong dat` — la mot cau hoi CHUA duoc hoi xong.
+
+    🔴 Ban dau phep kiem nay doi dieu do cho MOI ma vang mat, va do la **sai**:
+       model chi liet ke muc no thay co loi, nen mot ma vang mat trong mot lo
+       CHAY DUOC nghia la **sach**. Xem `test_ma_vang_trong_lo_CHAY_DUOC_...`.
+    """
+    luot = {"phan_quyet": {"a": {"dat": True}},
+            "loi_lo": [{"ma_lo": ["vang_mat"], "loi": "LuocDoSai"}]}
+    gop = bc.gop_trung_vi([luot], ["a", "vang_mat"])
     assert "vang_mat" not in gop
-    tl = bc._ti_le([_luot(a=True)], ["a", "vang_mat"], gop)
+    tl = bc._ti_le([luot], ["a", "vang_mat"], gop)
     assert tl["n_hoi"] == 2 and tl["n_co_phan_quyet"] == 1
     assert tl["ti_le_trung_vi"] == 0.0
 
@@ -163,6 +170,26 @@ def test_gop_phan_giu_nguyen_SO_LUOT_cua_tung_cau():
     # Hai cau bi da so cham sai => 2/4.
     assert g["so_bi_cham_sai"] == 2 and g["ti_le_trung_vi"] == 0.5
     assert g["ti_le_tung_luot"] == [0.5, 0.25, 0.25]
+
+
+def test_gop_phan_ghep_dung_DONG_ROI_RAC_cua_phan_theo_so():
+    """⛔ Phan chay `--theo-so` cham mot danh sach dong ROI RAC.
+
+    🔴 Ghep bang cap `tu`/`n` se sinh ra ma cua nhung dong **khong he duoc hoi**
+       (`tu`..`tu+n`), roi dem chung nhu "thieu phan quyet" — mau so phong len va
+       ti le bao dong gia **dep xuong** ma khong mot phan quyet nao doi. Day dung
+       bay "hai trang thai gop thanh mot gia tri" o lop dem.
+    """
+    def phan(dong, ma_dat):
+        return {"n": len(ma_dat), "luot": 1, "tu": 0, "dong": dong,
+                "cac_luot": [_luot(**{m: v[0] for m, v in ma_dat.items()})]}
+
+    a = phan([503, 594], {"flores_0503": [False], "flores_0594": [True]})
+    b = phan([700], {"flores_0700": [False]})
+    g = bc.gop_phan([a, b])
+    assert g["n"] == 3 and g["dong"] == [503, 594, 700]
+    assert g["n_co_phan_quyet"] == 3
+    assert g["so_bi_cham_sai"] == 2 and g["ti_le_trung_vi"] == round(2 / 3, 4)
 
 
 def test_gop_phan_TU_CHOI_hai_phan_trung_ma():
@@ -198,7 +225,7 @@ def test_ti_le_bat_loi_tiem_dem_theo_CHIEU_DUNG(monkeypatch):
     monkeypatch.setattr(bc, "dung_cap_tiem", lambda *a, **k: muc)
     monkeypatch.setattr(bc, "doc_flores", lambda *a, **k: [])
     # `lat_nghia` bi BAT o ca 2 luot; `sai_thuc_the` khong bi bat lan nao.
-    monkeypatch.setattr(bc, "cham_mot_luot", lambda db, m: _luot(
+    monkeypatch.setattr(bc, "cham_mot_luot", lambda db, m, ban="v3": _luot(
         tiem_lat_nghia_0500=False, tiem_sai_thuc_the_0501=True))
 
     ra = bc.ti_le_bat_loi_tiem(db=None, moi_loai=1, bo_qua=0, luot=2)
@@ -309,3 +336,287 @@ def test_doc_flores_ghep_theo_CHI_SO_DONG(tmp_path):
     (d / "zho_Hans.dev").write_text("一\n二\n", encoding="utf-8")
     (d / "vie_Latn.dev").write_text("mot\nhai\n", encoding="utf-8")
     assert bc.doc_flores(tmp_path) == [(0, "一", "mot"), (1, "二", "hai")]
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  8. Cổng NỀN SẠCH — phải qua TRƯỚC khi so hai lời nhắc
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_nguong_nen_sach_viet_truoc():
+    """⛔ Trần lấy đúng mức V1 đã đo (1/30 lô): không được làm nền tệ hơn lúc
+    chưa đụng vào. Đổi hai hằng số này = đổi kết luận."""
+    assert bc.NGUONG_LO_HONG == 0.033
+    assert bc.NGUONG_DO_PHU == 28 / 30
+
+
+def test_thong_ke_luoc_do_dem_LO_chu_khong_dem_MUC():
+    """🔑 Mất theo LÔ nghĩa là mất cả một cụm, không phải mẫu ngẫu nhiên.
+
+    30 mục = 3 lô mỗi lượt. Một lô hỏng ở lượt 2 ⇒ 1/9 lô, và độ phủ lượt đó
+    tụt xuống 20/30 — hai con số nói hai điều khác nhau, cả hai đều cần.
+    """
+    def luot(mat):
+        return {"phan_quyet": {},
+                "loi_lo": ([{"ma_lo": [f"m{i}" for i in range(mat)],
+                             "loi": "LuocDoSai"}] if mat else [])}
+
+    tk = bc.thong_ke_luoc_do([luot(0), luot(10), luot(0)], 30)
+    assert tk["tong_lo"] == 9 and tk["so_lo_hong"] == 1
+    assert tk["ti_le_lo_hong"] == round(1 / 9, 4)
+    assert tk["do_phu_tung_luot"] == [1.0, round(20 / 30, 4), 1.0]
+    assert tk["nen_sach"] is False
+
+
+def test_nen_sach_do_theo_MA_MAT_chu_khong_theo_MA_MODEL_NHAC_TOI():
+    """🔴 Phép kiểm này từng khai *"0 lô hỏng mà mỗi lượt chỉ trả lời 15/30 vẫn
+    là kênh mất dữ liệu"* — **sai**, và nó suýt làm ta đi sửa một thứ không hỏng.
+
+    Model chỉ liệt kê mục nó thấy có lỗi, nên "chỉ nhắc 15/30" có thể là 15 mục
+    **sạch**. Cái đếm được là mã nằm trong một lô **hỏng**.
+    """
+    def luot(mat=0):
+        return {"phan_quyet": {},
+                "loi_lo": ([{"ma_lo": [f"m{i}" for i in range(mat)],
+                             "loi": "x"}] if mat else [])}
+
+    assert bc.thong_ke_luoc_do([luot()] * 3, 30)["nen_sach"] is True
+    assert bc.thong_ke_luoc_do([luot(15)] * 3, 30)["nen_sach"] is False
+    assert bc.thong_ke_luoc_do([luot(), luot(), luot(10)],
+                               30)["nen_sach"] is False
+
+
+def test_nhiet_do_ngu_nghia_DA_GHIM_va_bench_dung_CUNG_gia_tri():
+    """⛔ Đo ở một nhiệt độ khác đường sản phẩm là đo một hệ thống khác."""
+    import inspect
+
+    from apps.auto_scan_video import qc_ai
+
+    assert qc_ai.NHIET_DO_NGU_NGHIA == 0.0
+    assert "qc_ai.NHIET_DO_NGU_NGHIA" in inspect.getsource(bc.cham_mot_luot)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  9. HAI cách một mã vắng mặt — và chúng KHÔNG cùng nghĩa
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_ma_vang_trong_lo_CHAY_DUOC_la_DAT_chu_khong_phai_chua_tra_loi():
+    """🔴 Đo 24/09: model **chỉ liệt kê những mục nó thấy có lỗi**.
+
+    Lô 200–209 trả về **0/10** mã kèm `khong_dat=0`; lô 220–229 trả về 10/10.
+    Coi 10 mục SẠCH đó là "chưa trả lời" làm mẫu số tụt 30 → 16, và tỉ lệ báo
+    động giả **nhảy từ 23% lên 44%** mà không một phán quyết nào đổi.
+
+    ⭐ `qc_ai.doc_ngu_nghia` vốn ghi rõ mã thiếu là **ĐẠT** — phép đo phải đếm
+       theo cùng hợp đồng với sản phẩm, nếu không nó đo một hệ thống khác.
+    """
+    luot = {"phan_quyet": {"a": {"dat": False}}, "loi_lo": []}
+    gop = bc.gop_trung_vi([luot], ["a", "b", "c"])
+    assert set(gop) == {"a", "b", "c"}
+    assert gop["b"]["dat"] is True and gop["c"]["dat"] is True
+    assert bc._ti_le([luot], ["a", "b", "c"], gop)["ti_le_trung_vi"] == round(
+        1 / 3, 4)
+
+
+def test_ma_trong_lo_HONG_thi_KHONG_duoc_dem():
+    """⛔ Lô hỏng = chưa hỏi xong. Đếm nó là ĐẠT sẽ làm mỗi lần cổng lỗi biến
+    thành một điểm cộng cho bộ chấm."""
+    luot = {"phan_quyet": {"a": {"dat": False}},
+            "loi_lo": [{"ma_lo": ["b", "c"], "loi": "LuocDoSai"}]}
+    gop = bc.gop_trung_vi([luot], ["a", "b", "c"])
+    assert set(gop) == {"a"}
+    tk = bc.thong_ke_luoc_do([luot], 3)
+    assert tk["do_phu_tung_luot"] == [round(1 / 3, 4)]
+
+
+def test_do_phu_dem_ma_DA_HOI_XONG_khong_dem_ma_model_nhac_toi():
+    """Một lượt sạch hoàn toàn (model không nhắc mã nào) vẫn là độ phủ 100%."""
+    luot = {"phan_quyet": {}, "loi_lo": []}
+    assert bc.thong_ke_luoc_do([luot], 10)["do_phu_tung_luot"] == [1.0]
+    assert bc.thong_ke_luoc_do([luot], 10)["nen_sach"] is True
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  10. Bản lời nhắc ĐÓNG BĂNG — để so ba bản trên CÙNG một nền
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_ba_ban_loi_nhac_deu_goi_duoc_va_v3_la_ban_HIEN_HANH():
+    """⛔ `v1`/`v2` là bản **chép nguyên văn từ git**, `v3` là bản sản phẩm.
+
+    🔑 Giữ chúng ở `tools/` chứ không ở `apps/`: sản phẩm chỉ được có MỘT lời
+       nhắc. Nhưng không giữ thì ta đang so **một bản đo sạch với hai bản đo
+       bẩn** — V1 và V2 đều đo ở nhiệt độ mặc định, và ghim nhiệt độ đã chứng
+       minh là nó đổi kết quả (lô hỏng 22,2% → 0%).
+    """
+    from apps.auto_scan_video import qc_ai
+
+    lo = [{"ma": "seg_0001", "goc": "源", "chu": "dich"}]
+    assert set(bc.BAN_LOI_NHAC) == {"v1", "v2", "v3"}
+    for _ten, (dung, _doc) in bc.BAN_LOI_NHAC.items():
+        msgs = dung(lo, "vi")
+        assert msgs[0]["role"] == "system" and msgs[0]["content"]
+    # v3 phai la DUNG ham cua san pham, khong phai mot ban chep thu ba.
+    assert (bc.BAN_LOI_NHAC["v3"][0](lo, "vi")
+            == qc_ai.loi_nhac_ngu_nghia(lo, "vi"))
+
+
+def test_ban_v1_hoi_NHI_PHAN_con_v2_hoi_PHAN_MUC():
+    """Chốt rằng hai bản đóng băng thật sự khác nhau ở đúng chỗ ta nói."""
+    lo = [{"ma": "seg_0001", "goc": "源", "chu": "dich"}]
+    v1 = bc.BAN_LOI_NHAC["v1"][0](lo, "vi")[0]["content"]
+    v2 = bc.BAN_LOI_NHAC["v2"][0](lo, "vi")[0]["content"]
+    assert "dat=false" in v1 and "do_tin" in v1 and "nghiem_trong" not in v1
+    assert "nghiem_trong" in v2 and "do_tin" not in v2
+    # V2 CHUA co san muc cho sai thuc the — do la cai V3 them vao.
+    assert "TEN RIENG" not in v2
+
+
+def test_ban_doc_v1_KHONG_loc_doan_trich_va_doc_dat_tu_model():
+    """V1 tin thẳng `dat` của model — đó chính là bản ta đang so để thấy khác."""
+    ra = bc.BAN_LOI_NHAC["v1"][1](
+        {"doan": {"m": {"dat": False, "ly_do": "x"}}}, {"m"}, {})
+    assert ra[0]["dat"] is False and ra[0]["muc"] == "" and ra[0]["loi"] == []
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  11. ĐỐI CHIẾU THẲNG — ⛔ bỏ phép trừ
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _so_soi(pq: dict):
+    return {"muc": [{"dong_flores": i, "phan_quyet": v} for i, v in pq.items()]}
+
+
+def _cham(dat: dict):
+    return {"gop": {f"flores_{i:04d}": {"dat": v} for i, v in dat.items()}}
+
+
+def test_doi_chieu_tinh_THANG_khong_tru():
+    """🔴 `báo động giả − sàn lỗi` chỉ đúng nếu bộ chấm bắt được **MỌI** lỗi có
+    sẵn, tức ngầm giả định độ nhạy 100% trên lỗi TỰ NHIÊN — thứ ta chỉ đo trên
+    lỗi TA TIÊM, mà lỗi tiêm không cùng hình dạng với lỗi tự nhiên.
+
+    ⇒ Đối chiếu thẳng: bốn ô, không giả định nào.
+    """
+    so = _so_soi({1: "ro", 2: "ro", 3: "khong_loi", 4: "khong_loi",
+                  5: "khong_loi"})
+    # Bộ chấm: bắt trúng 1, bỏ sót 2, báo nhầm 3, đúng âm 4 và 5.
+    ch = _cham({1: False, 2: True, 3: False, 4: True, 5: True})
+    k = bc.doi_chieu(so, ch)["theo_dinh_nghia"]["chinh"]
+    assert (k["dung"], k["bao_dong_gia"], k["bo_sot"], k["dung_am"]) == (1, 1, 1, 2)
+    assert k["ti_le_bao_dong_gia_that"] == 0.5     # 1 nhầm / 2 gắn cờ
+    assert k["do_nhay_loi_tu_nhien"] == 0.5        # 1 trúng / 2 lỗi thật
+    assert k["dong_bao_dong_gia"] == [3] and k["dong_bo_sot"] == [2]
+
+
+def test_doi_chieu_BA_dinh_nghia_loi_viet_TRUOC():
+    """⛔ Ba định nghĩa khai trước, ⛔ không chọn cái nào cho ra số đẹp."""
+    assert bc.COI_LA_LOI["chinh"] == ("ro",)
+    assert bc.COI_LA_LOI["rong"] == ("ro", "zh_lech")
+    so = _so_soi({1: "zh_lech", 2: "bien", 3: "khong_loi"})
+    ch = _cham({1: False, 2: False, 3: True})
+    r = bc.doi_chieu(so, ch)["theo_dinh_nghia"]
+    # `chinh`: khong ca nao la loi => ca hai lan gan co deu la bao dong gia.
+    assert r["chinh"]["bao_dong_gia"] == 2
+    assert r["rong"]["bao_dong_gia"] == 1      # zh_lech duoc tinh la loi
+    assert r["rong_nhat"]["bao_dong_gia"] == 0
+
+
+def test_doi_chieu_BO_dong_bo_cham_khong_cham_duoc():
+    """Dòng bộ chấm không trả lời được ⇒ ⛔ không đếm vào ô nào cả."""
+    so = _so_soi({1: "ro", 2: "khong_loi"})
+    r = bc.doi_chieu(so, _cham({1: False}))
+    assert r["n"] == 1 and r["dong_khong_cham_duoc"] == [2]
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  6. QUET NGUONG offline — diem MQM co trong so
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_diem_mqm_KHOP_giao_thuc_goc_25_5_1_chan_5_tran_25():
+    """NGUON: `MicrosoftTranslator/GEMBA` `gemba/gemba_mqm_utils.py`
+    `parse_mqm_answer` — `25 if critical else 5 if major else 1`,
+    `if error_counter < 5`, `if final_score > 25: final_score = 25`.
+
+    ⭐ Phep nay chot dung cho ta tung BO MAT: giao thuc goc bien danh sach loi
+       thanh mot DIEM roi moi nguong; ta phan `dat=false` ngay khi co 1 loi
+       `nang`. ⇒ o goc, MOT loi xep qua tay khong lat duoc phan quyet.
+    """
+    assert bc.diem_mqm([]) == 0
+    assert bc.diem_mqm(["nhe"] * 5) == 5            # nam loi NHE van la 5/25
+    assert bc.diem_mqm(["nang"]) == 5
+    assert bc.diem_mqm(["nghiem_trong"]) == 25
+    # ⛔ Chan o 5 loi dau: loi thu sau khong duoc cong.
+    assert bc.diem_mqm(["nhe"] * 5 + ["nghiem_trong"]) == 5
+    # Tran 25.
+    assert bc.diem_mqm(["nghiem_trong", "nghiem_trong"]) == 25
+
+
+def test_quet_nguong_PHAN_BIET_duoc_luat_diem_voi_luat_mot_loi_nang():
+    """🔑 Mot dong CHI co mot loi `nang` bi luat hien hanh gan co, nhung o
+    nguong diem >= 6 thi KHONG — dung cho duong cong sinh ra de do."""
+    muc = {"1": [["nang"]] * 3, "2": [["nang", "nang"]] * 3}
+    pq = {1: "khong_loi", 2: "ro"}
+    d = {(r["ho"], r["nguong"]): r
+         for r in bc.quet_nguong(muc, pq, ("ro",))}
+    # `dem >= 1` = luat hien hanh: gan ca hai => 1 bao dong gia tren 2 dong.
+    assert d[("dem", 1)]["so_gan_co"] == 2
+    assert d[("dem", 1)]["bao_dong_gia"] == 0.5
+    assert d[("dem", 1)]["do_nhay_tu_nhien"] == 1.0
+    # `diem >= 6`: mot loi `nang` = 5 diem => KHONG gan; hai loi = 10 => gan.
+    assert d[("diem", 6)]["so_gan_co"] == 1
+    assert d[("diem", 6)]["bao_dong_gia"] == 0.0
+    assert d[("diem", 6)]["do_nhay_tu_nhien"] == 1.0
+
+
+def test_quet_nguong_MAU_SO_la_tong_so_dong_khong_phai_so_dong_gan_co():
+    """⛔ Cong 15 % noi ve "ti le bao dong gia tren >= 100 cap" — mau so la
+    TONG SO CAP. Doi sang "tren so dong gan co" la doi mot cai cong."""
+    muc = {str(i): [[]] * 3 for i in range(1, 5)}
+    muc["1"] = [["nghiem_trong"]] * 3
+    pq = {i: "khong_loi" for i in range(1, 5)}
+    d = [r for r in bc.quet_nguong(muc, pq, ("ro",))
+         if r["ho"] == "diem" and r["nguong"] == 25][0]
+    assert d["so_gan_co"] == 1 and d["bao_dong_gia"] == 0.25
+
+
+def test_chon_diem_TU_CHOI_khi_khong_diem_nao_dat_do_nhay():
+    """⛔ "Khong co diem nao" phai tra ve None — ⛔ khong duoc ha cong de co
+    mot diem dep."""
+    duong = [{"ho": "diem", "nguong": 9, "bao_dong_gia": 0.0,
+              "do_nhay_tu_nhien": 0.4}]
+    assert bc.chon_diem(duong) is None
+    duong.append({"ho": "diem", "nguong": 3, "bao_dong_gia": 0.2,
+                  "do_nhay_tu_nhien": 0.9})
+    assert bc.chon_diem(duong)["nguong"] == 3
+
+
+def test_muc_tung_luot_TACH_lo_hong_khoi_dong_sach():
+    """⛔ Lo HONG => `None` (chua hoi xong); ma khong duoc nhac toi trong lo
+    CHAY DUOC => `[]` (DAT). Tron hai thu lai la dung bay N-22 mot lan nua."""
+    cham = {"dong": [7, 8], "cac_luot": [
+        {"phan_quyet": {"flores_0007": {"dat": False,
+                                        "loi": [{"muc": "nang"}]}},
+         "loi_lo": [{"ma_lo": ["flores_0008"]}]}]}
+    m = bc.muc_tung_luot(cham)
+    assert m["7"] == [["nang"]]
+    assert m["8"] == [None]
+
+
+def test_chia_doi_XEN_KE_va_KHONG_trung_nhau():
+    a, b = bc.chia_doi([503, 520, 700, 850, 896])
+    assert a == [503, 700, 896] and b == [520, 850]
+    assert not set(a) & set(b)
+
+
+def test_ban_ghi_GHI_CUA_SO_UTC_de_kiem_lai_su_co(monkeypatch):
+    """🔴 Mot luot vat qua su co (deploy/restart) cho mau so THIEU ma ⛔ khong
+    bao loi — no chi ra mot ti le KHAC. Khong co moc gio thi ⛔ khong ai kiem
+    lai duoc luot nao con dung (24/09: production sap 23:37-23:44)."""
+    monkeypatch.setattr(bc, "doc_flores", lambda *a, **k: [(5, "x", "y")])
+    monkeypatch.setattr(bc, "cham_mot_luot",
+                        lambda db, m, ban="v3": _luot(flores_0005=True))
+    r = bc.ti_le_bao_dong_gia(1, db=None, luot=1)
+    cua = r["cua_so_utc"]
+    assert len(cua) == 2 and cua[0] <= cua[1]
+    assert cua[0].endswith("+00:00")          # ⛔ UTC, khong phai gio may
+    g = bc.gop_phan([{**r, "dong": [5]}])
+    assert g["cua_so_utc_cac_phan"] == [cua]
+

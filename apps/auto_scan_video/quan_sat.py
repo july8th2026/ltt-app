@@ -560,7 +560,7 @@ def bang_chung_chat_luong(db, run) -> dict | None:
     ⛔ Khong mo kho luu tru o day. Moi thu duoi day nam san trong `outputs` —
       mot man hinh hoi lai ba giay mot lan khong duoc keo mot artifact ve.
     """
-    from . import nguon_loi as nguon_loi_mod, qc as qc_mod
+    from . import nguon_loi as nguon_loi_mod, qc as qc_mod, qc_ai as qc_ai_mod
 
     ra: dict = {}
 
@@ -635,8 +635,23 @@ def bang_chung_chat_luong(db, run) -> dict | None:
     #
     # ⭐ Khong can do gi moi — du lieu co san, chi la chua ai noi. Nen day khong
     #    phai mot danh doi giua chi phi va chat luong; khong co gi de can.
+    # 🔴 **...va roi 24/09 phep do noi nguoc lai: con so do KHONG khai duoc.**
+    #
+    #    Xac thuc bo cham tren 100 cap FLORES zh->vi (ban dich CUA NGUOI): no
+    #    gan **45 %** la "dich chua sat" cho ban dich chuyen nghiep, trong khi
+    #    luot that cua ta bi gan 46 %. Hai con so trung nhau nghia la no khong
+    #    phan biet duoc ban dich cua ta voi mot ban hoan hao.
+    #
+    # ⛔ Nen khai no la mot khiem khuyet TRUNG THUC theo chieu NGUOC lai: mot
+    #    nua con so la bao dong gia, va khach doc "44/95 cau dich chua sat" se
+    #    hieu sai ve san pham ho vua mua. `qc_ai.khai_cho_khach()` la mot phep
+    #    tinh tu ti le DA DO — ha duoc ti le thi man hinh tu bat lai.
+    #
+    # ⚠️ Hai con so KIA o tren (`so_giong_khong_dat`, `so_canh_bao_tieng`) VAN
+    #    GIU: chung den tu thuoc khac (ASR + WER/CER, SQUIM), chua bi nghi ngo.
     na = _outputs(db, run, pipeline.QC_AI)
-    if na.get("qc_ai_bat") and int(na.get("so_co_phan_quyet") or 0):
+    if (qc_ai_mod.khai_cho_khach()
+            and na.get("qc_ai_bat") and int(na.get("so_co_phan_quyet") or 0)):
         ra["ngu_nghia"] = {
             "so_muc": int(na.get("so_muc") or 0),
             "so_co_phan_quyet": int(na.get("so_co_phan_quyet") or 0),

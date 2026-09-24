@@ -114,12 +114,19 @@ def test_khong_khiem_khuyet_nao_thi_KHONG_sua_gi():
 #  C. Do tin
 # ══════════════════════════════════════════════════════════════════════════════
 
-def test_do_tin_THAP_thi_GHI_LAI_nhung_KHONG_sinh_viec_sua():
-    """⭐ Mot model khong chac chan khong phai mot ly do de tra tien lam lai —
-    nhung cung khong phai mot ly do de giau di."""
+def test_loi_NHE_thi_GHI_LAI_nhung_KHONG_sinh_viec_sua():
+    """⭐ Mot loi NHE khong phai mot ly do de tra tien lam lai — nhung cung
+    khong phai mot ly do de giau di.
+
+    🔴 Ban cu hoi cau nay bang `do_tin=0.3`. `do_tin` da bi BO khoi lop ngu
+       nghia 24/09: 98,4 % bao dong gia mang `do_tin >= 0,70`, va arXiv
+       2603.25052 cho thay bat model vua lap luan vua tu khai do tin lam lech
+       hieu chinh NANG THEM. Cong thay the la **muc nghiem trong MQM**, nen cau
+       hoi giu nguyen con cach hoi thi doi.
+    """
     ke = sc.lap_ke_hoach(
-        qc_ngu_nghia=[{"ma": "seg_0001", "dat": False, "ly_do": "co the lech",
-                       "do_tin": 0.3}])
+        qc_ngu_nghia=[{"ma": "seg_0001", "dat": False, "muc": "nhe",
+                       "ly_do": "co the lech", "loi": []}])
     assert not ke.can_sua
     assert sc.gon_theo_don_vi(ke) == {}
     # ... nhung van co trong ho so.
@@ -174,11 +181,20 @@ def test_tran_vong_sua_CHAT_HON_vong_nan_cua_pha_15():
 #  E. Do khop, loi nhac, phan hoi
 # ══════════════════════════════════════════════════════════════════════════════
 
+#: Mot lo hai cau, dung cho cac phep kiem `doc_ngu_nghia` duoi day.
+_VAN_BAN = {"seg_0001": ("源 tang san luong", "San luong tang manh"),
+            "seg_0002": ("源 hai", "Cau hai")}
+
+
+def _loi(muc="nang", doan="tang", loai="lat_nghia"):
+    return {"loai": loai, "muc": muc, "doan": doan, "ly_do": "x"}
+
+
 def test_doc_ngu_nghia_THIEU_ma_thi_coi_la_DAT():
     """⭐ Mot cau hoi khong duoc tra loi la mot cau hoi khong duoc tra loi. Coi im
     lang la "co loi" se bien moi lan model tra thieu thanh mot lan sua tra tien."""
-    ra = qc_ai.doc_ngu_nghia({"doan": {"seg_0001": {"dat": False, "do_tin": 0.9}}},
-                             {"seg_0001", "seg_0002"})
+    ra = qc_ai.doc_ngu_nghia({"doan": {"seg_0001": {"loi": [_loi()]}}},
+                             {"seg_0001", "seg_0002"}, _VAN_BAN)
     assert [d["ma"] for d in ra] == ["seg_0001"]
     assert sc.lap_ke_hoach(qc_ngu_nghia=ra).giai_doan_sua() == {
         "content_process": ["seg_0001"]}
@@ -186,8 +202,8 @@ def test_doc_ngu_nghia_THIEU_ma_thi_coi_la_DAT():
 
 def test_doc_ngu_nghia_BO_ma_khong_duoc_gui():
     ra = qc_ai.doc_ngu_nghia(
-        {"doan": {"seg_0001": {"dat": False, "do_tin": 0.9},
-                  "seg_9999": {"dat": False, "do_tin": 0.9}}}, {"seg_0001"})
+        {"doan": {"seg_0001": {"loi": [_loi()]},
+                  "seg_9999": {"loi": [_loi()]}}}, {"seg_0001"}, _VAN_BAN)
     assert {d["ma"] for d in ra} == {"seg_0001"}
 
 

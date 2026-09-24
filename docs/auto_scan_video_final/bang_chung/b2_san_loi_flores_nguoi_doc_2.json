@@ -1,0 +1,188 @@
+{
+ "nguoi_doc": "dieu phoi (LLM) — NGUOI DOC 2",
+ "giao_thuc": "doc mu: chi thay ZH+VI, KHONG thay phan quyet cua nguoi doc 1",
+ "gioi_han": "nguoi doc 2 CUNG LA MOT LLM, cung ho voi thu dang bi nghi. Hai ban doc doc lap cho TI LE BAT DONG, KHONG cho chan ly nen.",
+ "thien_lech_co_y": "nghi ngo => ghi 'bien', KHONG ghi 'loi_ro'. San CAO lam bo cham cua ta trong TOT hon (FA that = FA do - san), nen sai ve phia san THAP la sai ve phia BAT LOI cho ta.",
+ "muc": [
+  {
+   "dong_flores": 514,
+   "phan_quyet": "loi_ro",
+   "doan_nguon": "更加重要",
+   "ly_do": "'quan trong hon' -> 'tap trung hon' — doi han tinh chat"
+  },
+  {
+   "dong_flores": 522,
+   "phan_quyet": "zh_lech",
+   "doan_nguon": "身体可能会出问题",
+   "ly_do": "VI bam sat ban Anh ngo nghech; ZH dien giai muot hon => ZH la phia lech"
+  },
+  {
+   "dong_flores": 530,
+   "phan_quyet": "bien",
+   "doan_nguon": "运动",
+   "ly_do": "'mon the thao' -> 'hoat dong giai tri'; ban Anh co the la 'game'"
+  },
+  {
+   "dong_flores": 537,
+   "phan_quyet": "dat",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 556,
+   "phan_quyet": "bien",
+   "doan_nguon": "之一",
+   "ly_do": "mat '_mot trong_ cac vien gach co ban'"
+  },
+  {
+   "dong_flores": 570,
+   "phan_quyet": "dat",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 571,
+   "phan_quyet": "loi_ro",
+   "doan_nguon": "它们就是多态的",
+   "ly_do": "'ca the' -> 'co nguoi'; va 'da hinh' bi bien thanh MOT TINH CACH"
+  },
+  {
+   "dong_flores": 583,
+   "phan_quyet": "dat",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 600,
+   "phan_quyet": "zh_lech",
+   "doan_nguon": "可以在发生化学变化的情况下",
+   "ly_do": "ban Anh: doi trang thai MA VAN cung mot chat; ZH noi NGUOC (co bien doi hoa hoc). VI dung"
+  },
+  {
+   "dong_flores": 610,
+   "phan_quyet": "dat",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 613,
+   "phan_quyet": "dat",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 614,
+   "phan_quyet": "loi_ro",
+   "doan_nguon": "大船",
+   "ly_do": "'Great Fleet' (doan thuyen) -> 'Quan doan vi dai' — doan thuyen thanh quan doi"
+  },
+  {
+   "dong_flores": 618,
+   "phan_quyet": "bien",
+   "doan_nguon": "认识到",
+   "ly_do": "'nhan ra' -> 'danh gia'; '甚至' (tham chi) -> 'cung nhu'"
+  },
+  {
+   "dong_flores": 620,
+   "phan_quyet": "bien",
+   "doan_nguon": "自己在组织历史中的位置",
+   "ly_do": "'vi tri CUA MINH' -> 'tinh hinh'"
+  },
+  {
+   "dong_flores": 628,
+   "phan_quyet": "dat",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 651,
+   "phan_quyet": "bien",
+   "doan_nguon": "对加拿大人来说",
+   "ly_do": "'doi voi NGUOI Canada' -> 'o Canada' (nguoi -> noi chon)"
+  },
+  {
+   "dong_flores": 661,
+   "phan_quyet": "dat",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 674,
+   "phan_quyet": "dat",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 686,
+   "phan_quyet": "dat",
+   "doan_nguon": "",
+   "ly_do": "VI khop ban Anh ('bang chung'); ZH moi la ben luoc"
+  },
+  {
+   "dong_flores": 707,
+   "phan_quyet": "dat",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 730,
+   "phan_quyet": "bien",
+   "doan_nguon": "定期",
+   "ly_do": "loi CHINH TA 'theo gioi' (= theo gio) — khiem khuyet cua ban tham chieu, khong phai loi dich"
+  },
+  {
+   "dong_flores": 757,
+   "phan_quyet": "bien",
+   "doan_nguon": "提供住宿",
+   "ly_do": "'cung cap CHO O' -> 'phuc vu cac cuoc vieng tham' — mat thong tin luu tru"
+  },
+  {
+   "dong_flores": 759,
+   "phan_quyet": "dat",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 767,
+   "phan_quyet": "dat",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 773,
+   "phan_quyet": "dat",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 800,
+   "phan_quyet": "bien",
+   "doan_nguon": "有些人",
+   "ly_do": "'mot so nguoi' -> menh de dieu kien 'khi cho rang'; nghia giu duoc"
+  },
+  {
+   "dong_flores": 806,
+   "phan_quyet": "loi_ro",
+   "doan_nguon": "山寨货",
+   "ly_do": "'hang nhai' -> 'bi ngung kinh doanh'; va mat '镜架' (gong kinh)"
+  },
+  {
+   "dong_flores": 809,
+   "phan_quyet": "loi_ro",
+   "doan_nguon": "溪降",
+   "ly_do": "canyoning (do khe) -> 'cheo thuyen vuot thac' — mon khac han"
+  },
+  {
+   "dong_flores": 814,
+   "phan_quyet": "dat",
+   "doan_nguon": "",
+   "ly_do": ""
+  },
+  {
+   "dong_flores": 824,
+   "phan_quyet": "bien",
+   "doan_nguon": "商店橱窗",
+   "ly_do": "'tu kinh cua hang' -> 'quang cao tai dai ly'"
+  }
+ ]
+}
