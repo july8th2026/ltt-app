@@ -57,6 +57,48 @@ SỐNG** — lời nhắc lồng tiếng đã qua nghiệm thu, có ngân sách 
 
 ---
 
+# ⏭ TRẠNG THÁI LÀN B2 — đọc dòng này trước khi cầm tiếp (24/09, cuối)
+
+| việc | trạng thái | ở đâu |
+|---|---|---|
+| **1 · lược đồ** | ✅ **XONG** — thủ phạm là `temperature` ⛔ chưa ai ghim, ⛔ không phải model/lược đồ | §7.5 |
+| **2 · quy tắc tên riêng vào đường SỐNG** | ✅ **XONG** — 21/33 → 38/39, kèm **1 hồi quy** (`光子`) | §7.6 |
+| **3 · đường B, phần THU** | ✅ **XONG** — `khong_chac` vào `outputs`, ⛔ chỉ thu | §7.7 |
+
+### 🔴 Ba việc CHỜ điều phối / chủ dự án — ⛔ làn này cố ý không tự làm
+
+1. ⭐ **Ghim `temperature` cho `chuyen_loi_thoai`** — `giai_doan_noi_dung.py:217`
+   là đường **chạm khách**, ngoài phạm vi đã giao. Số: **64,3 % → 9,5 %** lô
+   hỏng, giá là **một tham số**. ⚠️ **Cần một số hiệu `N-xx`** (sổ dùng chung).
+2. **`光子` / thương hiệu** — quy tắc đã có nhánh *"tổ chức ⇒ giữ nguyên"* nhưng
+   ⛔ không thắng mọi lượt (1/3 lượt ra *"Quang Tử"*). Là quyết định **sản
+   phẩm** (§4g), ⛔ không phải một bản vá lời nhắc nữa.
+3. **`ltt-3.5` vs `ltt-3.8`** — ⛔ **đừng hỏi câu này trước khi ghim nhiệt độ**.
+   Sau khi ghim, phần 20× thật sự mua chỉ còn **9,5 % lô hỏng còn lại**.
+
+### ⛔ Chưa làm
+
+* **Bước 3** (bản nền dịch đo lại trên đường sống) — chưa chạy.
+* **Độ nhạy/độ ồn của `khong_chac` trên ĐƯỜNG SỐNG** — ô còn trống (§7.7).
+* **`重庆`** còn sai 1/3 lượt dù nằm ngay trong ví dụ của luật.
+* Hai bài đỏ trong bộ `app:auto_scan_video` (`test_3300` metricx, `test_334`
+  ngân sách) — ⚠️ **đã đỏ TRƯỚC** làn này (kiểm trên SHA `b9370220`), ⛔ không
+  thuộc phạm vi B2.
+
+### Công cụ, chạy lại được bằng một lệnh
+
+```
+tools/bench_b2_luoc_do.py   --model ltt-3.5 --lo 12 --temp -1 --phim v2 --so-lo 7
+                            (--temp -1 = ⛔ KHONG gui truong temperature = cau hinh SAN PHAM)
+tools/bench_b2_ten_rieng.py --duong song --ghim ltt-3.5 --lan <n>
+```
+
+⚠️ Cả hai cần `LTT_DATABASE_URL` từ `C:\LTTPlatform\secrets\app.env` (ACL chặn;
+phiên agent chạy quyền admin nên đọc được). ⛔ Không giữ `cpu_nhieu` — gọi máy B
+là **chờ mạng**.
+
+---
+
 # 7. BƯỚC 1 — ĐO ĐƯỜNG SỐNG **TRƯỚC KHI SỬA**
 
 > ⛔ Không có số *"trước"* thì mọi số *"sau"* ⛔ không quy được cho bản sửa.
