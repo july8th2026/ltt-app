@@ -21285,3 +21285,6 @@ msgstr "The infrastructure refused this step, so the machine is not finished. Th
 
 msgid "Chúng tôi đang xác nhận địa chỉ IP cho máy này với nhà cung cấp. Đừng tạo máy khác — đội vận hành sẽ hoàn tất hoặc hoàn lại credit cho bạn."
 msgstr "We are confirming this machine's IP address with the provider. Do not create another machine — the operations team will either finish it or return your credit."
+
+msgid "<strong>Chỉ cổng %(rdp)s (RDP) đi vào máy bạn được mở.</strong> Mọi cổng đến khác đều bị chặn ở gateway: một dịch vụ bạn dựng bên trong máy — web, WinRM, máy chủ game — sẽ chạy bình thường trong máy nhưng <strong>không truy cập được từ Internet</strong>. Máy vẫn ra Internet tự do (tải bản vá, gọi API). Cần mở thêm cổng thì liên hệ chúng tôi; đây là giới hạn kỹ thuật hiện tại, không phải lỗi của máy bạn."
+msgstr "<strong>Only port %(rdp)s (RDP) is open into your machine.</strong> Every other inbound port is blocked at the gateway: a service you run inside the machine — a web server, WinRM, a game server — will run fine inside it but <strong>cannot be reached from the Internet</strong>. The machine still reaches the Internet freely (patches, API calls). Contact us if you need another port opened; this is a current technical limit, not a fault of your machine."

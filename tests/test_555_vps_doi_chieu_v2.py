@@ -213,7 +213,12 @@ def test_don_thao_tac_chay_TRUOC_doi_chieu(db, monkeypatch):
     """
     from tests.test_297_vps_khoa_theo_may import _maintenance_probe
     _, calls = _maintenance_probe(db, monkeypatch)
-    assert calls == ["cleanup", "reconcile"]
+    # ⚠️ Chốt THỨ TỰ, không chốt danh sách bằng nhau: vòng bảo trì có HAI phép
+    #    soi (`reconcile` đọc ba backend, `soi_dien` đo điện thật — nối lại
+    #    24/09/2026), và một phép kiểm đòi `calls == [...]` sẽ đỏ mỗi lần thêm
+    #    một phép soi đúng đắn. Điều test này nói là: dọn phải chạy TRƯỚC.
+    assert calls.index("cleanup") < calls.index("reconcile")
+    assert calls.index("cleanup") < calls.index("soi_dien")
 
 
 # ── 4. Sổ sách: đúng một lần, và không bao giờ lùi ──────────────────────────
