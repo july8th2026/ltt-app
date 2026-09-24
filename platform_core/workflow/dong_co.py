@@ -18,8 +18,8 @@ from sqlalchemy import select
 from platform_core import jobs
 from platform_core.models import Job, Wakeup, WorkflowRun, WorkflowVersion
 from platform_core.workflow import (cau_noi, danh_thuc, may_trang_thai as mtt,
-                                    moi_truong, nut_loi, su_kien, thi_hanh,
-                                    thu_lai)
+                                    moi_truong, nut_loi, run_con, su_kien,
+                                    thi_hanh, thu_lai)
 from platform_core.workflow.cong_cu import CongCu
 
 log = logging.getLogger(__name__)
@@ -253,7 +253,7 @@ def _pha_inline(db, run: WorkflowRun, g: dict) -> Optional[str]:
        thay vì chạy chậm.
     """
     inline = {str(n["id"]): n for n in g["nodes"]
-              if str(n.get("thi_hanh")) == "inline"}
+              if str(n.get("thi_hanh")) in nut_loi.THI_HANH_TRONG_DONG_CO}
     if not inline:
         return None
     for _ in range(TRAN_BUOC_INLINE):
@@ -283,6 +283,9 @@ def xu_ly_run(db, run_id: str, *,
     #    TRƯỚC vòng lan truyền, để nó được nộp lại ngay trong lượt này thay vì
     #    phải đợi thêm một lượt động cơ nữa.
     thu_lai.den_han(db, run.id, g["nodes"])
+    # ⭐ Run con đã kết thúc ⇒ chốt node `core.call_workflow` đang WAITING
+    #    TRƯỚC vòng lan truyền, để nhánh sau nó đi tiếp ngay lượt này.
+    run_con.ap_ket_qua_con(db, run, g)
     # ⭐ Node inline chạy LIÊN TIẾP trong cùng vòng (spec §5.1) — trước vòng nộp
     #    job, để một `if` vừa rẽ xong là nhánh của nó được nộp ngay lượt này.
     dung = _pha_inline(db, run, g)

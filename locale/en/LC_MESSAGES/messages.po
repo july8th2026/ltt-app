@@ -20717,3 +20717,9 @@ msgstr "Count, sum, take the smallest/largest… over an array."
 
 msgid "Khai một giá trị là kết quả của cả lượt chạy."
 msgstr "Declare a value as the result of the whole run."
+
+msgid "Gọi workflow"
+msgstr "Call workflow"
+
+msgid "Chạy một workflow khác và chờ kết quả."
+msgstr "Run another workflow and wait for its result."

@@ -75,6 +75,20 @@ def _ung_vien(khoa: str, schema: dict) -> list:
 
 
 def _gia_node(node: dict, cc: dict[str, CongCu]) -> int:
+    if str(node.get("type")) == LOAI_GOI_WF:
+        # §7.2: *"subworkflow: `estimated_max` của version con"*.
+        # ⛔ Con số này KHÔNG đến từ `params` của client: cổng publish từ
+        #    chối `gia_con` trong draft (`additionalProperties: false`) và
+        #    `dinh_nghia.xuat_ban_draft` GHI ĐÈ nó từ CSDL sau khi ghim
+        #    `version_id`. Cùng lý do đã ghi ở đầu tệp: một trường trong
+        #    body của người gọi không thể là nguồn của con số giữ tiền
+        #    của chính người gọi ấy.
+        gia = (node.get("params") or {}).get("gia_con")
+        if not isinstance(gia, int) or isinstance(gia, bool) or gia < 0:
+            raise KhongBaoGiaDuoc(
+                f"{node.get('id')}: thieu `gia_con` da ghim -- do thi nay "
+                "chua di qua `xuat_ban_draft`, khong co chan tren")
+        return gia
     if node.get("thi_hanh") != "job":
         return 0
     ten_cong_cu = str(node["type"])[4:]
@@ -119,6 +133,7 @@ MAX_ITEMS_TRAN = 1000
 HE_SO_LAP_TOI_DA = 1_000_000
 
 LOAI_FOREACH = "core.foreach"
+LOAI_GOI_WF = "core.call_workflow"
 LOAI_FOREACH_END = "core.foreach_end"
 
 

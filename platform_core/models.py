@@ -1269,11 +1269,33 @@ class WorkflowRun(Base):
     finished_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True)
 
+    # ── Run CON (`core.call_workflow`, spec §5.10) ───────────────────────────
+    #
+    # ⛔ Run con **KHÔNG giữ chỗ credit**: `hold_id` của nó rỗng, trần của nó đã
+    #    nằm trong `estimated_max` của cha (§7.2), và `actual_cost` của nó cộng
+    #    lên cha khi nó kết thúc. Một CÂY gọi = MỘT khoản giữ. Xem
+    #    `platform_core/workflow/run_con.py` và `tien.py` (*"nếu run cũng giữ
+    #    và node cũng giữ thì khách trả hai lần cho cùng một việc"*).
+    #
+    # Rỗng = run gốc. Không khoá ngoại (cùng quy ước với `hold_id`/`plan_id`).
+    parent_run_id: Mapped[str] = mapped_column(String(36), default="",
+                                               nullable=False)
+    parent_node_id: Mapped[str] = mapped_column(String(64), default="",
+                                                nullable=False)
+    #: 0 = run gốc. Trần `run_con.DO_SAU_TOI_DA` được cưỡng chế lúc **publish**
+    #: (độ sâu tính TĨNH được vì mọi `version_id` đã ghim và version bất biến).
+    do_sau: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
     __table_args__ = (
         Index("ux_workflow_run_idem", "owner_id", "idempotency_key",
               unique=True, postgresql_where=text("idempotency_key <> ''"),
               sqlite_where=text("idempotency_key <> ''")),
         Index("ix_workflow_run_owner_created", "owner_id", "created_at"),
+        # Bộ phận: đại đa số run là run GỐC, và chỉ số chỉ phục vụ câu hỏi
+        # "con của run này là ai" lúc một run con kết thúc.
+        Index("ix_workflow_run_parent", "parent_run_id",
+              postgresql_where=text("parent_run_id <> ''"),
+              sqlite_where=text("parent_run_id <> ''")),
     )
 
 

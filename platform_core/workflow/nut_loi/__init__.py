@@ -14,6 +14,11 @@ from platform_core.i18n import N_
 from platform_core.workflow import he_kieu
 from platform_core.workflow.nut import Gia, LoiNut, NodeDefinition
 
+#: Node mà ĐỘNG CƠ tự thi hành (không qua hàng đợi job). `run_con` nằm ở
+#: đây cùng `inline` vì nó cũng chạy trong vòng scheduler — nó chỉ khác ở
+#: chỗ kết quả tới muộn (một `workflow_run` khác), không ở chỗ ai chạy nó.
+THI_HANH_TRONG_DONG_CO = frozenset({"inline", "run_con"})
+
 _SO: dict[str, NodeDefinition] = {}
 #: `{type: hàm thi hành}` cho node `thi_hanh="inline"`. Động cơ tra Ở ĐÂY, không
 #: có bảng thứ hai: một node khai `inline` mà không có bộ thi hành là một node
@@ -24,7 +29,7 @@ _CHAY: dict[str, object] = {}
 def dang_ky(nd: NodeDefinition, chay=None) -> NodeDefinition:
     if nd.type in _SO:
         raise LoiNut(f"trung type trong nut_loi: {nd.type!r}")
-    if nd.thi_hanh == "inline" and chay is None and nd.kind != "trigger":
+    if nd.thi_hanh in THI_HANH_TRONG_DONG_CO and chay is None and nd.kind != "trigger":
         # ⛔ Ném lúc DỰNG, không đợi lúc chạy — `LoiNut` docstring: chỗ nó lộ ra
         #    lúc chạy là chỗ đang tiêu tiền của khách. Một node inline không có
         #    bộ thi hành thì động cơ sẽ để nó READY tới khi hết TTL 20 giờ.
@@ -61,11 +66,12 @@ dang_ky(NodeDefinition(
 # Import ĐẶT CUỐI, sau `dang_ky`/`_SO`: các tệp node gọi ngược vào gói này.
 from platform_core.workflow.nut_loi import dieu_huong as _dieu_huong  # noqa: E402
 from platform_core.workflow.nut_loi import du_lieu as _du_lieu  # noqa: E402
+from platform_core.workflow.nut_loi import goi_wf as _goi_wf  # noqa: E402
 from platform_core.workflow.nut_loi import vong_lap as _vong_lap  # noqa: E402
 
 for _nd, _chay in (_dieu_huong.DINH_NGHIA + _du_lieu.DINH_NGHIA
-                   + _vong_lap.DINH_NGHIA):
+                   + _vong_lap.DINH_NGHIA + _goi_wf.DINH_NGHIA):
     dang_ky(_nd, _chay)
 
 
-__all__ = ["bo_thi_hanh", "dang_ky", "tat_ca"]
+__all__ = ["THI_HANH_TRONG_DONG_CO", "bo_thi_hanh", "dang_ky", "tat_ca"]

@@ -348,11 +348,13 @@ def _kiem_tham_so_loi(nd, params: dict, nid: str) -> None:
         kieu = str(mo_ta.get("type", ""))
         if khoa in params and kieu == KIEU_BANG_BIEU_THUC:
             bang = params[khoa]
-            if not isinstance(bang, dict) or not bang:
+            # ⚠️ Bảng RỖNG hợp lệ: `core.call_workflow.inputs = {}` là một
+            #    lời gọi không truyền gì, và đó là ca thường.
+            if not isinstance(bang, dict):
                 raise LoiBienDich(
                     "tham_so_khong_hop_le",
-                    f"{nd.type}.{khoa} phai la mot bang ten->bieu thuc, "
-                    "khong rong", nid)
+                    f"{nd.type}.{khoa} phai la mot bang ten->bieu thuc",
+                    nid)
             for ten, bt in bang.items():
                 if not _thay_duoc_trong_vars(ten):
                     raise LoiBienDich(
