@@ -228,6 +228,49 @@ def lam_hong_lat_nghia(cau_vi: str) -> str | None:
     return None
 
 
+#: Dau ranh CUM trong mot cau tieng Viet — dung de bo MOT cum.
+_RANH_CUM = re.compile(r"\s*[,;:—–]\s*")
+
+#: So am tiet toi thieu cua cum bi bo, va cua phan con lai.
+_CUM_TOI_THIEU = 4
+_CON_LAI_TOI_THIEU = 5
+
+
+def lam_hong_bo_sot(cau_vi: str, rng: random.Random) -> str | None:
+    """Bo MOT cum — ho loi `bo_sot`. `None` khi cau khong co cum nao bo duoc.
+
+    ⭐ **Dac ta muon tu DEMETR** (`marzenakrp/demetr`, **MIT**, arXiv
+       2210.13746): ho `accuracy/omission` gom `major_id5_pp_removed`,
+       `critical_id21_adj_adv_removed`, `id22_verb_removed`, `id23_noun_removed`,
+       `id24_subj_removed`. ⛔ Ta **khong** dung DU LIEU cua ho: DEMETR chi dich
+       **sang tieng Anh**, ma ta la zh→vi — do tren do la do mot he KHAC.
+
+    ⚠️ **Khai dung cai gia:** ta ⛔ khong co bo gan nhan tu loai tieng Viet, nen
+       ⛔ khong bo duoc **dung** mot dong tu / chu ngu nhu ho. Ta bo mot **cum
+       ngan cach bang dau phay** — tuc mot phep **xap xi** cua ho `omission`.
+       ⇒ Phep tiem nay la cua ta, ⛔ **chua duoc ai cong bo kiem chung**; doi lai
+       no do **dung he cua minh**.
+
+    ⛔ Bo cum DAU cau se de thanh mot cau cut ro rang (bat bang hinh dang, khong
+       phai bang nghia), nen chi bo cum o GIUA hoac CUOI.
+    """
+    cum = [c for c in _RANH_CUM.split(cau_vi.strip()) if c.strip()]
+    if len(cum) < 2:
+        return None
+    ung = [k for k in range(1, len(cum))
+           if len(cum[k].split()) >= _CUM_TOI_THIEU]
+    if not ung:
+        return None
+    k = rng.choice(ung)
+    con = cum[:k] + cum[k + 1:]
+    if sum(len(c.split()) for c in con) < _CON_LAI_TOI_THIEU:
+        return None
+    ra = ", ".join(c.strip().rstrip(",;:—–") for c in con).strip()
+    if not ra.endswith((".", "!", "?")):
+        ra += "."
+    return ra if ra != cau_vi else None
+
+
 def lam_hong_sai_thuc_the(cau_vi: str, rng: random.Random) -> str | None:
     """Doi MOT con so hoac MOT ten rieng. `None` khi cau khong co gi de doi."""
     m = _SO.search(cau_vi)
@@ -246,8 +289,14 @@ def lam_hong_sai_thuc_the(cau_vi: str, rng: random.Random) -> str | None:
     return None
 
 
+#: Cac ho loi ta tiem duoc. ⚠️ Taxonomy da cong bo (DEMETR) co **35** ho —
+#: xem canh bao dau `B2_XAC_THUC_BO_CHAM.md` va §22.1.
+LOAI_TIEM = ("lat_nghia", "sai_thuc_the", "bo_sot")
+
+
 def dung_cap_tiem(cap: list[tuple[int, str, str]], *, moi_loai: int,
-                  rng: random.Random) -> list[dict]:
+                  rng: random.Random,
+                  loai_can: tuple[str, ...] = LOAI_TIEM) -> list[dict]:
     """`moi_loai` cap `lat_nghia` + `moi_loai` cap `sai_thuc_the`.
 
     ⛔ Hai loai TACH RIENG tu day cho toi bao cao. Gop lai thanh mot ti le "bat
@@ -256,10 +305,11 @@ def dung_cap_tiem(cap: list[tuple[int, str, str]], *, moi_loai: int,
        trong rat dep.
     """
     ra: list[dict] = []
-    cac_phep = (
+    cac_phep = [(l, h) for l, h in (
         ("lat_nghia", lambda c: lam_hong_lat_nghia(c)),
         ("sai_thuc_the", lambda c: lam_hong_sai_thuc_the(c, rng)),
-    )
+        ("bo_sot", lambda c: lam_hong_bo_sot(c, rng)),
+    ) if l in loai_can]
     for loai, ham in cac_phep:
         n = 0
         for i, zh, vi in cap:
@@ -640,6 +690,7 @@ def gop_phan(cac_phan: list[dict]) -> dict:
 
 def ti_le_bat_loi_tiem(*, db, moi_loai: int, bo_qua: int,
                        luot: int = LUOT_MOI_CAP, ban: str = "v3",
+                       loai_can: tuple[str, ...] = LOAI_TIEM,
                        thu_muc: pathlib.Path = FLORES_DIR) -> dict:
     """Doi chung AM: bo cham co bat duoc cac cap DA LAM HONG khong.
 
@@ -648,7 +699,8 @@ def ti_le_bat_loi_tiem(*, db, moi_loai: int, bo_qua: int,
        "model da thay cau nay" vao giua phep do, va ta khong tach no ra duoc.
     """
     rng = random.Random(HAT_GIONG)
-    muc = dung_cap_tiem(doc_flores(thu_muc)[bo_qua:], moi_loai=moi_loai, rng=rng)
+    muc = dung_cap_tiem(doc_flores(thu_muc)[bo_qua:], moi_loai=moi_loai,
+                        rng=rng, loai_can=loai_can)
     ma = [m["ma"] for m in muc]
     bat_dau = _bay_gio()
     cac_luot = []
@@ -659,7 +711,7 @@ def ti_le_bat_loi_tiem(*, db, moi_loai: int, bo_qua: int,
     gop = gop_trung_vi(cac_luot, ma)
     cua_so = [bat_dau, _bay_gio()]
     theo_loai: dict = {}
-    for loai in ("lat_nghia", "sai_thuc_the"):
+    for loai in sorted({m["loai"] for m in muc}):
         ml = [m["ma"] for m in muc if m["loai"] == loai]
         co = [m for m in ml if m in gop]
         bat = sum(1 for m in co if not gop[m]["dat"])
@@ -1115,6 +1167,8 @@ def main(argv=None) -> int:
     d.add_argument("--pha", choices=("ca", "fa", "tiem"), default="ca")
     d.add_argument("--tiem-moi-loai", type=int, default=15)
     d.add_argument("--tiem-bo-qua", type=int, default=N_TOI_THIEU)
+    d.add_argument("--tiem-loai", default=",".join(LOAI_TIEM),
+                   help="cac ho loi can tiem, ngan bang dau phay")
     d.add_argument("--luot", type=int, default=LUOT_MOI_CAP)
     d.add_argument("--ban", choices=tuple(BAN_LOI_NHAC), default="v3",
                    help="ban loi nhac: v1/v2 la ban DONG BANG tu git, "
@@ -1292,9 +1346,13 @@ def main(argv=None) -> int:
         khoi_fa = ti_le_bao_dong_gia(a.n, db=db, luot=a.luot, tu=a.tu,
                                     ban=a.ban, dong=dong)
     if a.pha in ("ca", "tiem"):
+        loai_can = tuple(x.strip() for x in a.tiem_loai.split(",") if x.strip())
+        la = [x for x in loai_can if x not in LOAI_TIEM]
+        if la:
+            raise SystemExit(f"ho loi la: {la} — chi co {LOAI_TIEM}")
         tiem = ti_le_bat_loi_tiem(db=db, moi_loai=a.tiem_moi_loai,
                                   luot=a.luot, bo_qua=a.tiem_bo_qua,
-                                  ban=a.ban)
+                                  ban=a.ban, loai_can=loai_can)
     ra = {
         "phien_ban": 1, "hat_giong": HAT_GIONG,
         "nguong_bao_dong_gia": NGUONG_BAO_DONG_GIA,
