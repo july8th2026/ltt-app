@@ -1,0 +1,90 @@
+{
+  "ip4": "172.66.147.243",
+  "ip6": "",
+  "rows": [
+    {
+      "launcher": "L0_doi_chung",
+      "piece": "truc_tiep",
+      "mode": "tcp_host",
+      "verdict": "REACHED",
+      "detail": "REACHED tcp_host status=200"
+    },
+    {
+      "launcher": "L0_doi_chung",
+      "piece": "truc_tiep",
+      "mode": "tcp_rawip",
+      "verdict": "REACHED",
+      "detail": "REACHED tcp_rawip status=200"
+    },
+    {
+      "launcher": "L0_doi_chung",
+      "piece": "truc_tiep",
+      "mode": "tcp_ipv6",
+      "verdict": "SKIP",
+      "detail": "SKIP tcp_ipv6 NO_IP6"
+    },
+    {
+      "launcher": "L0_doi_chung",
+      "piece": "truc_tiep",
+      "mode": "udp",
+      "verdict": "REACHED",
+      "detail": "REACHED udp bytes=61"
+    },
+    {
+      "launcher": "L0_doi_chung",
+      "piece": "spawn_node_con",
+      "mode": "tcp_host",
+      "verdict": "REACHED",
+      "detail": "CHILD_REACHED tcp_host status=200"
+    },
+    {
+      "launcher": "L0_doi_chung",
+      "piece": "spawn_node_con",
+      "mode": "tcp_rawip",
+      "verdict": "REACHED",
+      "detail": "CHILD_REACHED tcp_rawip status=200"
+    },
+    {
+      "launcher": "L0_doi_chung",
+      "piece": "spawn_node_con",
+      "mode": "tcp_ipv6",
+      "verdict": "SKIP",
+      "detail": "CHILD_SKIP tcp_ipv6 NO_IP6"
+    },
+    {
+      "launcher": "L0_doi_chung",
+      "piece": "spawn_node_con",
+      "mode": "udp",
+      "verdict": "REACHED",
+      "detail": "CHILD_REACHED udp bytes=61"
+    },
+    {
+      "launcher": "L0_doi_chung",
+      "piece": "spawn_curl_con",
+      "mode": "tcp_host",
+      "verdict": "REACHED",
+      "detail": "CHILD_REACHED curl_tcp_host status=200"
+    },
+    {
+      "launcher": "L0_doi_chung",
+      "piece": "spawn_curl_con",
+      "mode": "tcp_rawip",
+      "verdict": "REACHED",
+      "detail": "CHILD_REACHED curl_tcp_rawip status=200"
+    },
+    {
+      "launcher": "L0_doi_chung",
+      "piece": "spawn_curl_con",
+      "mode": "tcp_ipv6",
+      "verdict": "SKIP",
+      "detail": "CHILD_SKIP curl_khong_ho_tro_mode tcp_ipv6"
+    },
+    {
+      "launcher": "L0_doi_chung",
+      "piece": "spawn_curl_con",
+      "mode": "udp",
+      "verdict": "SKIP",
+      "detail": "CHILD_SKIP curl_khong_ho_tro_mode udp"
+    }
+  ]
+}
