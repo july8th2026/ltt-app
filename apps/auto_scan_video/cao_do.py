@@ -142,9 +142,21 @@ def f0_trung_vi_va_ly_do(duong_wav: str, *,
         return 0.0, f"{type(exc).__name__}: {exc}"[:300]
 
 
-def f0_trung_vi(duong_wav: str, *, toi_da_giay: float = TOI_DA_GIAY) -> float:
-    """Chi con so. Dung `f0_trung_vi_va_ly_do` khi ket qua di vao mot bao cao."""
-    return f0_trung_vi_va_ly_do(duong_wav, toi_da_giay=toi_da_giay)[0]
+# ⛔ **KHONG dung lai mot ban "chi tra con so".**
+#
+#    Tung co `f0_trung_vi(duong_wav) -> float` o day. No bi XOA 24/09 vi
+#    `test_453` ket dung: **khong mot ma san pham nao goi no** — ca duong that
+#    (`demucs_runner._f0_cua_giong`) goi `f0_trung_vi_va_ly_do`, va nguoi goi
+#    duy nhat con lai la chinh bo test. Mot ham ma bo test la nguoi goi duy
+#    nhat trong giong het mot tinh nang da xong, tu moi goc tru goc co nghia.
+#
+#    Va no khong vo hai: no bo `ly_do` di. Ca docstring tren da viet ro ba
+#    nguyen nhan cho ra `0.0` doi ba hanh dong khac nhau — thieu `torchaudio`,
+#    tep hong, tep im lang. Mot ban chi tra con so **gop ba trang thai do lam
+#    mot**, tuc no moi nguoi goi sau nay lam dung cai loi fail-SILENT ma
+#    docstring vua cam. Can con so thoi thi viet `...va_ly_do(...)[0]` o cho
+#    goi: no dai hon dung bay ky tu, va bay ky tu do noi rang ly do bi vut di
+#    la mot lua chon.
 
 
 def _do(duong_wav: str, *, toi_da_giay: float) -> float:

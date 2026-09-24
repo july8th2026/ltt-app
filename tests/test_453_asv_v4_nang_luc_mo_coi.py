@@ -123,7 +123,18 @@ MO_COI_DA_BIET = frozenset({
     #       (`so_khop_doc` — DA XOA 22/09, thay bang giai doan `qc_do_luong`). Hai loai do can them may moc that — rut khung quanh
     #       moi cho noi, va ASR tren chinh ban da ket xuat — chu khong chi can
     #       mot cong tat. Dieu kien de go: mot giai doan doc duoc chung.
-    "doc_hinh", "loi_nhac_hinh", "moc_cho_noi",
+    #
+    #    ✅ **`doc_hinh` va `loi_nhac_hinh` da RA khoi danh sach (24/09) bang
+    #       cach duoc NOI VAO MACH, khong bang cach duoc xoa.** Dung dieu kien
+    #       viet o tren — "mot giai doan doc duoc chung" — da xay ra o
+    #       `ecd3b8e0` (23/09): `giai_doan_qc_ai.py` rut khung quanh moc ra roi
+    #       goi `qc_ai.loi_nhac_hinh` + `qc_ai.doc_hinh`, va phan quyet di tiep
+    #       vao vong sua qua `sua_chua.lap_ke_hoach(qc_hinh=...)`.
+    #
+    #    ⚠️ `moc_cho_noi` O LAI, va khong duoc gom chung nua: giai doan `qc_hinh`
+    #       lay moc tu `cn["moc_ra"]` cua chinh ban da ket xuat chu khong hoi no.
+    #       Dieu kien de go: mot nguoi goi that trong ma san pham, hoac XOA ham.
+    "moc_cho_noi",
 
     # ── Giao thuc chay bo do trong `qc-venv` (`do_luong/venv.py`, e84b22a2).
     #    `la_tien_trinh_con` la mot phep TU KIEM cho runner: "toi co dang chay
@@ -150,6 +161,26 @@ MO_COI_DA_BIET = frozenset({
     #    `tests/test_408` va di doi hai lop ngoai le ma `loi.py` dang dung —
     #    lon hon thu blocker doi hoi.
     "dich_ban_ghi",
+
+    # ── `do_gioi` (`asv_gpu/do_luong/gioi.py`, 23/09) — CO Y khong noi vao
+    #    duong chay khach, va day la mot quyet dinh da ghi o cho khac roi.
+    #
+    #    `tables.VoiceProfile.gioi` viet thang: `""` = KHONG RO la mot gia tri
+    #    THAT, va **doan ho la sai** — chinh `toc_do.py` da ghi lai mot ca bo do
+    #    cao do nham quang tam tren mot clip giong nu. Nen giong KHACH khai gioi
+    #    qua form (`routes/_p_giong.py` ep ve tap dong nam/nu/rong), khong qua
+    #    mot phep do. Noi `do_gioi` vao duong ghi danh la dung mot bo do de ghi
+    #    de len loi khai cua khach — chinh thu ban khai do cam.
+    #
+    #    Nguoi goi that cua no la `tools/do_gioi_giong.py`: mot luot do NGOAI
+    #    TUYEN cham 17 giong `en` cua kho dung chung, tuc cong viec cua nguoi
+    #    van hanh chu khong phai mot giai doan. Kho chung lay `gioi` tu catalog
+    #    (`giong_mau.py`), va bo do nay de DOI CHIEU catalog do.
+    #
+    #    ⭐ DIEU KIEN GO RA: mot duong chay san pham that su can gioi tinh DO
+    #       DUOC (vi du kho chung nhan giong moi khong co catalog di kem). Khong
+    #       phai khi ai do thay danh sach dai.
+    "do_gioi",
 
     # ── Tien ich co nguoi goi trong TUONG LAI gan, hoac chi dung tu test/tool.
     # ✅ `vo_hieu_theo_day_chuyen` da ra khoi day cung luc voi `gon_theo_don_vi`:
