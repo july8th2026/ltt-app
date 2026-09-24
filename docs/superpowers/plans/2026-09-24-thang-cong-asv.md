@@ -110,11 +110,12 @@ mình, nhưng **SỐ** thì lấy từ bảng này, và **điều phối cấp**
 | N-22 | `gop_phan` ghép theo `tu`/`n` nên sai với **dải rời rạc** ⇒ mẫu số phồng | `asvf-xac-thuc` |
 | N-23 | đường sống ⛔ **không ghim `temperature`** ⇒ cổng áp 1.0 — **ba** triệu chứng một gốc | `asvf-nghiem-thu-v2` |
 | N-24 | phép kiểm chốt **VĂN BẢN/TÊN** thay vì **TÍNH CHẤT** — 3 ca, 3 làn, 1 ngày | `asv-final` |
+| N-25 | thước đọc **VĂN BẢN của mã** để suy ra **HÀNH VI TỆP** — sai **hai chiều**, và nó đang đo số KHÔNG | `phien/no-kien-truc` |
 
 ⛔ **`N-13` đang bị dùng HAI lần** trên `asv-final` (cổng VMAF **và** *"một hằng làm ba
 việc"*) — va **trước** khi có cấp số tập trung. Ca thứ hai sẽ được đánh lại số khi gộp.
 
-⭐ **Luật:** số kế tiếp trống là **N-25**. Làn ⛔ **không tự đặt** — hỏi điều phối, điều
+⭐ **Luật:** số kế tiếp trống là **N-26**. Làn ⛔ **không tự đặt** — hỏi điều phối, điều
 phối cập nhật bảng này. Đây là cùng một bài toán mà `check_so_test` đã giải cho **dải số
 test**: ⛔ không ai đếm trên bản của mình, ⭐ có **một** chỗ cấp phát.
 

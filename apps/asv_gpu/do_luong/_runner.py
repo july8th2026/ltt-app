@@ -12,8 +12,23 @@ import sys
 import time
 from pathlib import Path
 
-#: Goc kho ma (…/apps/asv_gpu/do_luong/_runner.py -> parents[3]).
-GOC = Path(__file__).resolve().parents[3]
+#: Goc kho ma, neo bang TEN thu muc `apps/` — ⛔ KHONG dem cap (`parents[N]`).
+#:
+#: ⚠️ Vi sao khong dung `platform_core.frontend_bundle` nhu cac app khac: bon
+#:    tep `*_runner.py` nay chay trong `qc-venv` (mot venv RIENG, khong co goc
+#:    kho trong `sys.path`), nen chung phai tu tim goc TRUOC khi nhap duoc bat
+#:    ky thu gi cua nen tang. Neo bang ten la cach duy nhat con lai — va no
+#:    khong gay khi tep doi cho trong cay.
+def _goc_kho() -> Path:
+    for cha in Path(__file__).resolve().parents:
+        if cha.name == "apps":
+            return cha.parent
+    raise RuntimeError(
+        f"khong thay thu muc `apps/` tren duong di cua {__file__} — "
+        "runner nay phai nam trong `apps/<app>/do_luong/`")
+
+
+GOC = _goc_kho()
 
 
 def mo() -> tuple[dict, Path]:
