@@ -3,6 +3,47 @@
 > Làn `asvf-nghiem-thu-v2`, 24/09/2026. Mắt xích **đầu tiên** của thang cổng —
 > mọi bước sau đứng trên văn bản nguồn nó tạo ra.
 
+## ⚠️ ĐỌC TRƯỚC KHI ĐỌC BẤT KỲ CON SỐ NÀO Ở ĐÂY
+
+**Bảng kết quả này BẤT ĐỐI XỨNG.** Chân lý nền là **hardsub**, và mọi sai lệch của
+nó đều đẩy số sai **LÊN** (§2). Vì vậy:
+
+| kết quả | kết luận được gì |
+|---|---|
+| **ĐẠT** | kết luận **ngay** — engine khớp cả một chân lý nền không hoàn hảo |
+| **TRƯỢT** | ⛔ **chưa kết luận được gì** cho tới khi **soi tay** |
+
+⛔ Một con số trượt **không** chứng minh engine sai. Người đọc trượt sẽ quy cho
+engine — đó là lý do dòng này đứng ở đây chứ không nằm trong mục phương pháp.
+
+## ⚠️ ĐƠN VỊ: `ti_le_don_vi_sai` KHÔNG phải WER
+
+Đo 24/09, trên một dòng phụ đề Hán thật:
+
+```
+"深度解析跳伞慢了该怎么打"      -> jiwer thấy 1 "từ",  thật ra 12 KÝ TỰ
+hai bản chép lệch ĐÚNG MỘT chữ -> tỉ lệ = 0,50   nhưng CER = 0,0417
+```
+
+`jiwer.wer` tách bằng **khoảng trắng**, và văn Hán **không có khoảng trắng** ⇒ mỗi
+**dòng** thành một "từ". ⇒ Con số đó là **tỉ lệ DÒNG sai**, không phải WER.
+
+⛔ Gọi nó là "WER" là **đặt tên rộng hơn thứ nó đo**, và người sau sẽ so nó với WER
+của bảng xếp hạng thế giới — **hai thứ không cùng đơn vị**. Nên bản ghi luôn mang
+`don_vi_ti_le` (`dong` | `tu`) cạnh con số, và đơn vị được xác định bằng **đếm chữ
+Hán**, ⛔ không suy gián tiếp từ tỉ lệ ký tự/đơn vị (phép suy đó xếp nhầm cả
+`"the quick brown fox jumps"` thành `dong`).
+
+## 1b. ⛔ CÂU HỎI NGƯỠNG — đang chờ điều phối, KHÔNG tự quyết
+
+`WER ≤ 0,25` ở §1 được viết cho một tỉ lệ **TỪ** sai. Trên văn Hán đơn vị là **DÒNG**
+⇒ áp 0,25 cho nó là dùng một ngưỡng **chưa từng được hiệu chỉnh** cho đơn vị ấy: hai
+dòng lệch một chữ đã cho 0,50.
+
+⇒ Hiện tại `dat` **chỉ xét CER**; tỉ lệ dòng sai được **báo cáo nhưng không phán
+xử**. ⛔ Đây **không phải** nới ngưỡng — ngưỡng CER giữ nguyên 0,12, và câu hỏi được
+nêu **trước** khi đo phim nào.
+
 ## 1. NGƯỠNG — viết TRƯỚC khi đo, ⛔ không nới
 
 ```
@@ -76,9 +117,11 @@ lặng** cho mọi engine đạt (*"số 0 cần đối chứng"*).
 
 *(điền sau Bước 4 — mỗi dòng kèm: engine thật, card có được cấp không)*
 
-| phim | WER | CER | số dòng nguồn | số dòng hardsub | engine | card |
-|---|---|---|---|---|---|---|
-| | | | | | | |
+⚠️ Đọc cùng lúc với §2 (giới hạn chân lý nền) và mục *ĐƠN VỊ* ở đầu tệp.
+
+| phim | CER | tỉ lệ đơn vị sai | đơn vị | số dòng nguồn | số dòng hardsub | engine | card |
+|---|---|---|---|---|---|---|---|
+| | | | | | | | |
 
 ## 5. Phán quyết
 

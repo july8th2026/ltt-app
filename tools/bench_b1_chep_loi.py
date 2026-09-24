@@ -36,6 +36,12 @@ if str(GOC) not in sys.path:
     sys.path.insert(0, str(GOC))
 
 #: Nguong DAT cua cong B1. ⛔ Khop `B1_CHEP_LOI.md` §1 — dung sua mot ben.
+#:
+#: ⚠️ `NGUONG_WER` duoc viet cho mot **ti le TU sai**. Do 24/09 cho thay tren van Han
+#:    `jiwer` dem theo **DONG** (xem `do_hai_ban`), nen ap 0,25 cho con so do la ap
+#:    mot nguong **chua tung duoc hieu chinh** cho don vi do — hai dong lech mot chu
+#:    da cho 0,50. ⛔ Khong noi nguong, cung khong am tham dung no cho mot don vi
+#:    khac: cau hoi dang o cho dieu phoi (`B1_CHEP_LOI.md` §1b).
 NGUONG_WER = 0.25
 NGUONG_CER = 0.12
 
@@ -76,21 +82,74 @@ def chuan_hoa(chu: str) -> str:
     return _NHIEU_TRANG.sub(" ", v).strip()
 
 
+#: Khoi chu Han (CJK Unified Ideographs + phan mo rong hay gap).
+_KHOI_HAN = ((0x4E00, 0x9FFF), (0x3400, 0x4DBF), (0xF900, 0xFAFF),
+             (0x20000, 0x2A6DF))
+
+#: Ti le chu Han de goi mot ban van la "van Han". 0,3 chu khong phai 0,5: mot ban
+#: chep Han thuong co lan so, ten rieng Latin va dau cau — nhung mot ban van Latin
+#: thuan thi ti le nay la 0.
+TI_LE_HAN = 0.3
+
+
+def la_van_han(chu: str) -> bool:
+    """Ban van nay co phai **chu Han** khong — hoi TINH CHAT, khong suy tu ti le.
+
+    🔴 **Ban dau ham nay khong ton tai, va cho goi no suy bang `so_ky_tu >= 2 *
+       so_don_vi`.** Do la mot phep suy GIAN TIEP, va no sai ngay o ca thu hai:
+       `"the quick brown fox jumps"` co 21 ky tu / 5 tu = 4,2 ⇒ bi xep thanh "dong".
+
+    ⇒ Thu ta thuc su muon biet la *"van nay co khoang trang giua cac tu khong"*, va
+      cach hoi thang la **dem chu Han**. Mot phep suy gian tiep se sai o dung nhung
+      ca nguoi ta khong nghi toi — o day la moi van ban Latin co tu dai.
+    """
+    v = [c for c in str(chu or "") if not c.isspace()]
+    if not v:
+        return False
+    han = sum(1 for c in v
+              if any(a <= ord(c) <= b for a, b in _KHOI_HAN))
+    return (han / len(v)) >= TI_LE_HAN
+
+
 def _ky_tu(chu: str) -> str:
     """Chuoi ky tu cho CER: bo ca khoang trang."""
     return chuan_hoa(chu).replace(" ", "")
 
 
 def do_hai_ban(tham_chieu: str, doc_ra: str) -> dict:
-    """WER + CER giua hai ban van. Dung `jiwer`, ⛔ khong tu go phep tinh Levenshtein."""
+    """CER + ti le DON VI sai giua hai ban van. Dung `jiwer`, khong tu go Levenshtein.
+
+    🔴 **`jiwer.wer` tach bang KHOANG TRANG, va van Han khong co khoang trang.**
+
+       Do that 24/09 tren mot dong phu de Han:
+
+           "深度解析跳伞慢了该怎么打"   ->  jiwer thay **1 'tu'**, that ra 12 KY TU
+           hai ban chep lech DUNG MOT chu  ->  "wer" = **0,50**, CER = 0,0417
+
+    ⇒ Cai ta goi la "WER" tren van Han thuc ra la **TI LE DONG SAI**. Goi no la WER
+      la **dat ten rong hon thu no do** — dung bay `pham-vi-phep-do-hep-hon-loi-
+      tuyen-bo`, va nguoi sau se so no voi WER cua bang xep hang the gioi, **hai thu
+      khong cung don vi**.
+
+    ⚠️ Va truong nay **doi nghia theo ngon ngu**: van Latin co khoang trang nen no
+       DUNG la ti le tu sai; van Han thi la ti le dong sai. ⇒ Ban ghi luon kem
+       `don_vi_ti_le` + `so_don_vi` de nguoi doc biet minh dang cam con so gi.
+    """
     import jiwer
 
     tc, dr = chuan_hoa(tham_chieu), chuan_hoa(doc_ra)
     if not tc:
-        return {"wer": float("nan"), "cer": float("nan"), "trong": True}
-    wer = float(jiwer.wer(tc, dr))
-    cer = float(jiwer.cer(_ky_tu(tham_chieu), _ky_tu(doc_ra)))
-    return {"wer": round(wer, 4), "cer": round(cer, 4), "trong": False}
+        return {"ti_le_don_vi_sai": float("nan"), "cer": float("nan"),
+                "trong": True, "don_vi_ti_le": "khong xac dinh", "so_don_vi": 0}
+    so_don_vi = len(tc.split())
+    so_ky_tu = len(_ky_tu(tham_chieu))
+    don_vi = "dong" if la_van_han(tc) else "tu"
+    return {
+        "ti_le_don_vi_sai": round(float(jiwer.wer(tc, dr)), 4),
+        "cer": round(float(jiwer.cer(_ky_tu(tham_chieu), _ky_tu(doc_ra))), 4),
+        "don_vi_ti_le": don_vi, "so_don_vi": so_don_vi, "so_ky_tu": so_ky_tu,
+        "trong": False,
+    }
 
 
 def lam_hong(chu: str, *, ti_le: float = 0.3, seed: int = 0) -> str:
@@ -110,14 +169,21 @@ def lam_hong(chu: str, *, ti_le: float = 0.3, seed: int = 0) -> str:
     return " ".join(tu)
 
 
-def gop_ket_qua(*, wer: float, cer: float, so_dong_nguon: int,
-                so_dong_hardsub: int, engine: str, co_card: bool,
-                phim: str = "", ghi_chu: str = "") -> dict:
-    """Ban ghi MOT phim. ⛔ Luon mang `gioi_han` va `chan_ly_nen`."""
+def gop_ket_qua(*, cer: float, so_dong_nguon: int, so_dong_hardsub: int,
+                engine: str, co_card: bool, ti_le_don_vi_sai: float = float("nan"),
+                don_vi_ti_le: str = "", phim: str = "", ghi_chu: str = "") -> dict:
+    """Ban ghi MOT phim. ⛔ Luon mang `gioi_han`, `chan_ly_nen` va `don_vi_ti_le`.
+
+    ⚠️ `dat` chi xet **CER**. Ti le don vi sai duoc BAO CAO nhung khong phan xu, vi
+       nguong 0,25 duoc viet cho ti le TU sai va tren van Han don vi la DONG.
+       ⛔ Do la mot cau hoi dang cho dieu phoi, khong phai mot nguong da noi.
+    """
     return {
         "phim": phim,
-        "wer": wer, "cer": cer,
-        "dat": bool(wer <= NGUONG_WER and cer <= NGUONG_CER),
+        "ti_le_don_vi_sai": ti_le_don_vi_sai, "don_vi_ti_le": don_vi_ti_le,
+        "cer": cer,
+        "dat": bool(cer <= NGUONG_CER),
+        "dat_xet_tren": "CER (xem `don_vi_ti_le` ve ti le kia)",
         "nguong": {"wer": NGUONG_WER, "cer": NGUONG_CER},
         "so_dong_nguon": so_dong_nguon, "so_dong_hardsub": so_dong_hardsub,
         "engine": engine, "co_card": bool(co_card),
@@ -156,10 +222,15 @@ def _tu_kiem() -> int:
     that = "今天 我们 来 做 烤 牛肠 非常 好吃 大家 一起 来 看 看 吧"
     tot = do_hai_ban(that, that)
     hong = do_hai_ban(that, lam_hong(that, ti_le=0.3, seed=7))
+    # Va MOT dong Han khong dau cach — de thay don vi doi nghia the nao.
+    han = do_hai_ban("深度解析跳伞慢了该怎么打\n教你用细节操作来化解危机",
+                     "深度解析跳伞慢了该怎么打\n教你用细节操作化解危机")
     print(json.dumps({"giong_het": tot, "lam_hong_30pt": hong,
-                      "nguong": {"wer": NGUONG_WER, "cer": NGUONG_CER}},
+                      "van_Han_lech_MOT_chu": han,
+                      "nguong": {"cer": NGUONG_CER,
+                                 "ti_le_don_vi_sai": "CHUA CO NGUONG"}},
                      ensure_ascii=False, indent=1))
-    ok = tot["wer"] == 0.0 and hong["wer"] > 0.15
+    ok = tot["ti_le_don_vi_sai"] == 0.0 and hong["ti_le_don_vi_sai"] > 0.15
     print("RESULT:", "PASS" if ok else "FAIL")
     return 0 if ok else 1
 
