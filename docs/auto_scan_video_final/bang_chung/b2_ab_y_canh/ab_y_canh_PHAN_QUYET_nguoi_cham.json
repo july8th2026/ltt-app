@@ -1,0 +1,170 @@
+{
+ "nguoi_cham": "dieu phoi — MOT MO HINH (ho khac voi ltt-3.5/3.8)",
+ "⛔ gioi_han": "Nguoi cham la MOT MO HINH. Day la y kien thu hai, ⛔ KHONG phai chan ly nen. Khai ngay canh moi con so, ⛔ khong de cuoi tai lieu.",
+ "giao_thuc": "MU: chi thay zh + ban_1/ban_2, ⛔ khong thay nhanh. Cham theo CAP cong khai. Ghi ra tep va COMMIT TRUOC khi mo ab_y_canh_KHOA.json.",
+ "quy_uoc": "nghi ngo => 'ngang', ⛔ khong ep chon mot ben.",
+ "muc": [
+  {
+   "ma": "44ccb6deca",
+   "phan_quyet": "ban_2",
+   "doan_nguon": "这人 / 直接",
+   "ly_do": "Giu duoc 人 ('theo nguoi nay') va 直接 ('truc tiep'); ban kia rut thanh 'kieu nay' + 'cu'. ⛔ NHUNG CA HAI DEU SAI thuat ngu quyet dinh: 掐雷 = LUU DAN (rut chot roi giu), ca hai dich 'dat min'. => hon nhau o dien dat, KHONG ai sua duoc loi that."
+  },
+  {
+   "ma": "e44f480e4e",
+   "phan_quyet": "ngang",
+   "doan_nguon": "",
+   "ly_do": "Hai ban GIONG HET nhau tung ky tu."
+  },
+  {
+   "ma": "20be9679fe",
+   "phan_quyet": "ban_2",
+   "doan_nguon": "这里",
+   "ly_do": "Giu 这里 ('cho nay'); ban kia bo. ⚠️ Ca hai deu bo 大量的 ('rat nhieu') va deu de 补人 thanh 'cuu nguoi' - trong game la HOI SINH/BANG BO dong doi. Chenh lech NHO."
+  },
+  {
+   "ma": "6635ef5b1f",
+   "phan_quyet": "ban_1",
+   "doan_nguon": "肯定 / 提炼枪",
+   "ly_do": "Giu 肯定 ('chac chan'); ban kia bo. ⭐ VA QUAN TRONG HON: 提炼枪 la mot TU HONG DO ASR; ban kia dich thanh 'sung MAY' - THEM mot chi tiet vu khi cu the ma nguon KHONG he chua. Bia chi tiet tren mot token da hong la loi NANG hon bo mot trang tu."
+  },
+  {
+   "ma": "d500490e84",
+   "phan_quyet": "ban_2",
+   "doan_nguon": "趁",
+   "ly_do": "趁 = 'NHAN LUC / TRONG KHI (dich chua len)'. 'Khi' dung; ban kia dich 'CHO dich chua len' - 'cho' dao nguoc y (thanh ra doi dich len). ⚠️ Ca hai deu bo tan ngu 我们 o ve cuoi."
+  },
+  {
+   "ma": "3362066af2",
+   "phan_quyet": "ban_2",
+   "doan_nguon": "师傅手中",
+   "ly_do": "Giu CHU NGU 师傅 va 手中 ('cam'); ban kia BO HAN chu ngu va de 'Keo dao' - vua mat nguoi thuc hien vua lam nhoe dung cu. ⚠️ NHUNG: ban kia dich dung 肠壁 = 'thanh ruot', ban nay chi 'doc ruot' (mat 壁). ⚠️ Va 'KE lam bep' mang sac thai MIET THI trong tieng Viet - 师傅 la kinh ngu. => Hon vi giu duoc chu ngu, nhung KEM tu chon."
+  },
+  {
+   "ma": "c1b717247a",
+   "phan_quyet": "ngang",
+   "doan_nguon": "看到没有 / 纯白给",
+   "ly_do": "Ngang. Mot ban them 'kieu choi' (gan nghia game hon), ban kia 'Thay chua' (tu nhien hon). ⛔ CA HAI deu truot 纯白给 = tieng long game: CHET VO ICH / nap mang cho dich, khong phai 'trang tay'."
+  },
+  {
+   "ma": "ee086c7544",
+   "phan_quyet": "ban_1",
+   "doan_nguon": "烧酒 / 紧随其后",
+   "ly_do": "⭐ Dich 烧酒 thanh 'soju' - dung boi canh phim Han; ban kia chi 'ruou' chung chung, MAT thong tin. Va 紧随其后 ('theo sau ngay') giu duoc bang 'cung theo sau'; ban kia 'di theo' yeu hon."
+  },
+  {
+   "ma": "57b5aaa245",
+   "phan_quyet": "ban_1",
+   "doan_nguon": "师傅手中",
+   "ly_do": "Giu CHU NGU 师傅 va 手中 ('cam'); ban kia BO HAN chu ngu va de 'Keo dao' - vua mat nguoi thuc hien vua lam nhoe dung cu. ⚠️ NHUNG: ban kia dich dung 肠壁 = 'thanh ruot', ban nay chi 'doc ruot' (mat 壁). ⚠️ Va 'KE lam bep' mang sac thai MIET THI trong tieng Viet - 师傅 la kinh ngu. => Hon vi giu duoc chu ngu, nhung KEM tu chon."
+  },
+  {
+   "ma": "802b4f66a5",
+   "phan_quyet": "ngang",
+   "doan_nguon": "迅速 / 也",
+   "ly_do": "Ngang. Mot ban giu 迅速 ('nhanh') va bo 也; ban kia giu 也 ('cung') va bo 迅速. ⛔ CA HAI deu rut 热胀冷缩 (no vi nong, co vi lanh) thanh 'vi nhiet do' - mat co che."
+  },
+  {
+   "ma": "a19eba8b89",
+   "phan_quyet": "ngang",
+   "doan_nguon": "",
+   "ly_do": "Hai ban GIONG HET nhau tung ky tu."
+  },
+  {
+   "ma": "45b1b6131b",
+   "phan_quyet": "ban_2",
+   "doan_nguon": "趁",
+   "ly_do": "趁 = 'NHAN LUC / TRONG KHI (dich chua len)'. 'Khi' dung; ban kia dich 'CHO dich chua len' - 'cho' dao nguoc y (thanh ra doi dich len). ⚠️ Ca hai deu bo tan ngu 我们 o ve cuoi."
+  },
+  {
+   "ma": "3381001f62",
+   "phan_quyet": "ban_1",
+   "doan_nguon": "这里",
+   "ly_do": "Giu 这里 ('cho nay'); ban kia bo. ⚠️ Ca hai deu bo 大量的 ('rat nhieu') va deu de 补人 thanh 'cuu nguoi' - trong game la HOI SINH/BANG BO dong doi. Chenh lech NHO."
+  },
+  {
+   "ma": "ca7631c0c4",
+   "phan_quyet": "ban_1",
+   "doan_nguon": "这里",
+   "ly_do": "Giu 这里 ('cho nay'); ban kia bo. ⚠️ Ca hai deu bo 大量的 ('rat nhieu') va deu de 补人 thanh 'cuu nguoi' - trong game la HOI SINH/BANG BO dong doi. Chenh lech NHO."
+  },
+  {
+   "ma": "d7c1681982",
+   "phan_quyet": "ban_1",
+   "doan_nguon": "烧酒 / 紧随其后",
+   "ly_do": "⭐ Dich 烧酒 thanh 'soju' - dung boi canh phim Han; ban kia chi 'ruou' chung chung, MAT thong tin. Va 紧随其后 ('theo sau ngay') giu duoc bang 'cung theo sau'; ban kia 'di theo' yeu hon."
+  },
+  {
+   "ma": "d8602c1db5",
+   "phan_quyet": "ngang",
+   "doan_nguon": "看到没有 / 纯白给",
+   "ly_do": "Ngang. Mot ban them 'kieu choi' (gan nghia game hon), ban kia 'Thay chua' (tu nhien hon). ⛔ CA HAI deu truot 纯白给 = tieng long game: CHET VO ICH / nap mang cho dich, khong phai 'trang tay'."
+  },
+  {
+   "ma": "af9e26289a",
+   "phan_quyet": "ngang",
+   "doan_nguon": "",
+   "ly_do": "Hai ban GIONG HET nhau tung ky tu."
+  },
+  {
+   "ma": "261c2391c8",
+   "phan_quyet": "ngang",
+   "doan_nguon": "看到没有 / 纯白给",
+   "ly_do": "Ngang. Mot ban them 'kieu choi' (gan nghia game hon), ban kia 'Thay chua' (tu nhien hon). ⛔ CA HAI deu truot 纯白给 = tieng long game: CHET VO ICH / nap mang cho dich, khong phai 'trang tay'."
+  },
+  {
+   "ma": "7b2d4af573",
+   "phan_quyet": "ban_1",
+   "doan_nguon": "肯定 / 提炼枪",
+   "ly_do": "Giu 肯定 ('chac chan'); ban kia bo. ⭐ VA QUAN TRONG HON: 提炼枪 la mot TU HONG DO ASR; ban kia dich thanh 'sung MAY' - THEM mot chi tiet vu khi cu the ma nguon KHONG he chua. Bia chi tiet tren mot token da hong la loi NANG hon bo mot trang tu."
+  },
+  {
+   "ma": "83d2215196",
+   "phan_quyet": "ban_2",
+   "doan_nguon": "烧酒 / 紧随其后",
+   "ly_do": "⭐ Dich 烧酒 thanh 'soju' - dung boi canh phim Han; ban kia chi 'ruou' chung chung, MAT thong tin. Va 紧随其后 ('theo sau ngay') giu duoc bang 'cung theo sau'; ban kia 'di theo' yeu hon."
+  },
+  {
+   "ma": "d3bae4a881",
+   "phan_quyet": "ban_2",
+   "doan_nguon": "肯定 / 提炼枪",
+   "ly_do": "Giu 肯定 ('chac chan'); ban kia bo. ⭐ VA QUAN TRONG HON: 提炼枪 la mot TU HONG DO ASR; ban kia dich thanh 'sung MAY' - THEM mot chi tiet vu khi cu the ma nguon KHONG he chua. Bia chi tiet tren mot token da hong la loi NANG hon bo mot trang tu."
+  },
+  {
+   "ma": "7036214f99",
+   "phan_quyet": "ban_1",
+   "doan_nguon": "这人 / 直接",
+   "ly_do": "Giu duoc 人 ('theo nguoi nay') va 直接 ('truc tiep'); ban kia rut thanh 'kieu nay' + 'cu'. ⛔ NHUNG CA HAI DEU SAI thuat ngu quyet dinh: 掐雷 = LUU DAN (rut chot roi giu), ca hai dich 'dat min'. => hon nhau o dien dat, KHONG ai sua duoc loi that."
+  },
+  {
+   "ma": "5b7e705eb6",
+   "phan_quyet": "ban_2",
+   "doan_nguon": "这人 / 直接",
+   "ly_do": "Giu duoc 人 ('theo nguoi nay') va 直接 ('truc tiep'); ban kia rut thanh 'kieu nay' + 'cu'. ⛔ NHUNG CA HAI DEU SAI thuat ngu quyet dinh: 掐雷 = LUU DAN (rut chot roi giu), ca hai dich 'dat min'. => hon nhau o dien dat, KHONG ai sua duoc loi that."
+  },
+  {
+   "ma": "2d6e1de648",
+   "phan_quyet": "ngang",
+   "doan_nguon": "迅速 / 也",
+   "ly_do": "Ngang. Mot ban giu 迅速 ('nhanh') va bo 也; ban kia giu 也 ('cung') va bo 迅速. ⛔ CA HAI deu rut 热胀冷缩 (no vi nong, co vi lanh) thanh 'vi nhiet do' - mat co che."
+  },
+  {
+   "ma": "bb67d55b72",
+   "phan_quyet": "ban_2",
+   "doan_nguon": "师傅手中",
+   "ly_do": "Giu CHU NGU 师傅 va 手中 ('cam'); ban kia BO HAN chu ngu va de 'Keo dao' - vua mat nguoi thuc hien vua lam nhoe dung cu. ⚠️ NHUNG: ban kia dich dung 肠壁 = 'thanh ruot', ban nay chi 'doc ruot' (mat 壁). ⚠️ Va 'KE lam bep' mang sac thai MIET THI trong tieng Viet - 师傅 la kinh ngu. => Hon vi giu duoc chu ngu, nhung KEM tu chon."
+  },
+  {
+   "ma": "2e865a050c",
+   "phan_quyet": "ban_1",
+   "doan_nguon": "趁",
+   "ly_do": "趁 = 'NHAN LUC / TRONG KHI (dich chua len)'. 'Khi' dung; ban kia dich 'CHO dich chua len' - 'cho' dao nguoc y (thanh ra doi dich len). ⚠️ Ca hai deu bo tan ngu 我们 o ve cuoi."
+  },
+  {
+   "ma": "ff0f7af8e5",
+   "phan_quyet": "ngang",
+   "doan_nguon": "迅速 / 也",
+   "ly_do": "Ngang. Mot ban giu 迅速 ('nhanh') va bo 也; ban kia giu 也 ('cung') va bo 迅速. ⛔ CA HAI deu rut 热胀冷缩 (no vi nong, co vi lanh) thanh 'vi nhiet do' - mat co che."
+  }
+ ]
+}
