@@ -317,6 +317,43 @@ export async function publishWorkflowV3(workflow: Workflow, csrfToken: string):
 
 export const loadPalette = () => request('/agent/api/palette')
 
+// ── Goi y cho trinh soan bieu thuc §6 (P2 Task 8) ──────────────────────────
+//
+// ⛔ KHONG mot danh sach ten ham hay ten cong nao o phia trinh duyet. May chu
+//    sinh chung tu `ham_bieu_thuc.NHOM_HAM` va tu do thi × registry
+//    (`platform_core/workflow/goi_y.py`); mot ban sao o day se lech ngay lan
+//    them ham dau tien — dung hang loi `test_967` dang dem hang chet.
+// ⭐ Gui KEM tai lieu dang go: autosave cham 800 ms, nen bang da luu chua co
+//    node nguoi dung vua tha xuong — dung luc ho can no nhat.
+export type MucGoiY = {
+  duong: string
+  loai: 'goc' | 'cong' | 'mat_node'
+  node?: string
+  cong?: string
+  node_type?: string
+  /** Cong publish (`bien_dich._doi`) co nhan bieu thuc nay khong. */
+  qua_publish: boolean
+}
+export type HamGoiY = { ten: string; nhom: string; chu_ky: string
+  qua_publish: boolean }
+export type GoiYBieuThuc = {
+  node_id: string
+  muc: MucGoiY[]
+  ham: HamGoiY[]
+  loi: { ma: string; thong_diep: string } | null
+}
+
+export async function goiYBieuThuc(workflowId: string, nodeId: string,
+                                   canvas: CanvasDocument, csrfToken: string):
+    Promise<GoiYBieuThuc> {
+  return request(
+    `/agent/api/v3/workflows/${encodeURIComponent(workflowId)}/bieu-thuc/goi-y`,
+    { method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+      body: JSON.stringify({ node_id: nodeId, document: toV3(canvas),
+                             csrf_token: csrfToken }) }) as Promise<GoiYBieuThuc>
+}
+
 export type AgentPreferences = { theme: 'light'|'dark'; catalog_mode: 'simple'|'advanced';
   presentation_version: 'creative-v1'; revision: number }
 export const loadPreferences = (): Promise<AgentPreferences> => request('/agent/api/preferences')

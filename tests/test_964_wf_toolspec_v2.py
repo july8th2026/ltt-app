@@ -202,15 +202,34 @@ def test_bo_tinh_KHONG_dung_eval():
     không dùng `eval`** — bộ dò văn bản trừng phạt việc giải thích. Đọc AST thì
     một lời gọi là một lời gọi, một chú thích là một chú thích.
     """
+    # 🔴 QUÉT CẢ GÓI, không riêng `bieu_thuc.py` (nới 24/09).
+    #
+    #    Bản cũ chỉ đọc AST của `bieu_thuc.__file__`. Ngày 24/09 ruột bộ tính
+    #    được tách sang `chinh_sach.py`, và bài kiểm **lặng lẽ rỗng đi**: vẫn
+    #    xanh, nhưng không còn nhìn vào chỗ có mã. Cùng hạng lỗi với `test_967`
+    #    quét không đệ quy và bánh cóc ASCII chỉ quét `print()` trực tiếp.
+    #
+    # ⭐ Quét cả gói thì nó TỰ PHỦ mô-đun mới — P2 đang đẻ thêm `noi_suy.py`,
+    #    `ham_bieu_thuc.py`. Một danh sách gõ tay sẽ mục đúng lúc có tệp mới.
     import ast
     import pathlib
 
     from platform_core.workflow import bieu_thuc
 
-    cay = ast.parse(pathlib.Path(bieu_thuc.__file__).read_text(encoding="utf-8"))
-    goi = {n.func.id for n in ast.walk(cay)
-           if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
-    assert not ({"eval", "exec", "compile"} & goi), f"co loi goi: {goi}"
+    goc = pathlib.Path(bieu_thuc.__file__).parent
+    tep = sorted(goc.rglob("*.py"))
+    xau = {}
+    for f in tep:
+        cay = ast.parse(f.read_text(encoding="utf-8"))
+        goi = {n.func.id for n in ast.walk(cay)
+               if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
+        co = {"eval", "exec", "compile"} & goi
+        if co:
+            xau[f.name] = co
+    assert not xau, f"loi goi nguy hiem: {xau}"
+    # 🔑 Đối chứng: đường dẫn sai thì mọi khẳng định trên xanh vì không đo gì.
+    assert len(tep) >= 20, f"chi quet duoc {len(tep)} tep - pham vi sai?"
+    assert (goc / "chinh_sach.py").exists(), "ruot bo tinh phai trong pham vi"
 
 
 def test_chia_cho_0_ra_LOI_NOI_RO_chu_khong_ZeroDivisionError():

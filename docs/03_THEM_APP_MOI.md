@@ -240,8 +240,9 @@ python tools\thanh_phan.py --test app:<slug>     # tệp test của app
 python -m pytest tests\test_60_app_registry.py <các tệp vừa in ra> -q
 ```
 
-Từ 3 tệp test trở lên: `python tools\cua_so_yen.py trang-thai` trước (hợp đồng
-§4.8). Cần gate giữa phiên thì chỉ L1/L2; L3 `python tools\gate.py` chạy **một lần**
+Là **lệnh nặng** (`docs/QUY_TAC_CHAY_LENH_NANG.md` §1 — chỉ nơi đó định nghĩa) thì
+`python tools\cua_so_yen.py trang-thai` trước (hợp đồng §4.8).
+Cần gate giữa phiên thì chỉ L1/L2; L3 `python tools\gate.py` chạy **một lần**
 ở tổng kết phiên; deploy giữa phiên cần L1/L2 xanh — nhịp đầy đủ ở
 `docs/00_LTT_OPERATING_CONTRACT.md` §4.
 

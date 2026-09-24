@@ -269,8 +269,9 @@ def vram_dung_mb_qua_smi() -> Optional[int]:
     `nvidia-smi` chứ không dùng thư viện. Nay có số đo giải thích vì sao.
 
     🔴 TỪ 11/09: VRAM CỦA **CARD 3090**, KHÔNG PHẢI `max()` CỦA CẢ MÁY. Bản cũ lấy
-       giá trị lớn nhất trên mọi card với lý lẽ *"máy A có hai card, trả lời theo
-       card bận nhất"*. Lý lẽ ấy chết ngày máy B có hai card: LTT-3.5 thường trú
+       giá trị lớn nhất trên mọi card với lý lẽ (08/2026) *"máy A có hai card, trả
+       lời theo card bận nhất"* — máy A nay còn MỘT card, xem
+       `docs/HAI_MAY_A_VA_B.md`. Lý lẽ ấy chết ngày máy B có hai card: LTT-3.5 thường trú
        trên 5060 Ti giữ ~10 GB, nên `max()` trả **số của 5060 Ti** cho mọi câu hỏi
        về 3090 — và lệnh residency `/v1/nha_comfy` đọc chính hàm này để **xác minh
        card đã sạch sau khi dừng ComfyUI**. Một phép đo gộp sẽ luôn nói "card vẫn

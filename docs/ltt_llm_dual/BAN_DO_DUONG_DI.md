@@ -23,6 +23,10 @@
 **7 suất tổng** (3.8: 3, 3.5: 4 từ L-28; hai khoá advisory độc lập). Người thứ tám **xếp
 hàng**, không bị từ chối — trừ khi phòng chờ chạm trần thì mới 429.
 
+⚠️ **Máy nào có card gì thì hỏi [`../HAI_MAY_A_VA_B.md`](../HAI_MAY_A_VA_B.md)**, đừng
+suy từ tên card: **cả máy A lẫn máy B đều có một RTX 5060 Ti**, nên chuỗi `5060 Ti`
+trong một log chưa nói được nó là máy nào.
+
 | model | tài nguyên | suất | pool KV (A đặt chỗ) |
 |---|---|---|---|
 | `ltt-3.8` | `ltt_38_3090` | 3 | 212.992 |

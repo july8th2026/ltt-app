@@ -1,8 +1,13 @@
 """
 Nhả model về RAM, không nhả hẳn về đĩa — chốt một tính chất đang ĐÚNG TÌNH CỜ.
 
-🔴 VÌ SAO TỆP NÀY TỒN TẠI. Máy B có **một** card, nên model phải nhả ra vào liên
-   tục giữa LLM và ảnh. Chi phí của mỗi lần nhả nằm ở lần **nạp lại**:
+🔴 VÌ SAO TỆP NÀY TỒN TẠI. LLM và ảnh tranh nhau **RTX 3090** của máy B (card duy
+   nhất đủ 19–24 GB), nên model phải nhả ra vào liên tục giữa hai bên. Chi phí
+   của mỗi lần nhả nằm ở lần **nạp lại**:
+
+   ⚠️ Bản cũ của đoạn này viết *"máy B có một card"* — đúng trước 11/09/2026. Máy
+   B nay có **hai** card; card 5060 Ti thường trú `ltt-3.5` và không tham gia
+   cuộc tranh này. Vai trò hai máy: `docs/HAI_MAY_A_VA_B.md`.
 
      nạp từ page cache (RAM)  ->  vài giây
      nạp từ đĩa lạnh          ->  lâu hơn nhiều

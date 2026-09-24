@@ -158,6 +158,31 @@ def _con_song(pid: int) -> bool:
         k32.CloseHandle(h)
 
 
+def _in(*phan: object) -> None:
+    """`print` chiu duoc console cp1252.
+
+    🔴 SU CO 24/09: mot luot xep hang CHET giua chung voi `UnicodeEncodeError`
+       ngay trong dong in "dang xep hang". Nguyen nhan: thong diep nay nhung
+       **mo ta lenh cua PHIEN KHAC**, va lenh do co the mang ky tu ngoai
+       cp1252 (duong dan tieng Viet, dau cau la). Console Windows mac dinh
+       cp1252 => `print` nem, `chay_nang.py` chet, LUOT NANG KHONG CHAY.
+
+    ⛔ Day la hang loi te nhat trong mot cong cu DUNG CHUNG: noi bao "toi dang
+       cho" lai la noi giet chinh luot dang cho, va no chi no khi HANG XOM co
+       ten la. Phien nao cung dinh, khong phien nao tai hien duoc mot minh.
+
+    ⭐ Sua o CHO IN chu khong o cho ghi nhan: ban ghi cu tren dia van con, va
+       cong cu khac cung ghi vao do — lam sach mot dau vao khong cuu duoc
+       nhung dau vao con lai.
+    """
+    tin = " ".join(str(x) for x in phan)
+    try:
+        print(tin)
+    except UnicodeEncodeError:
+        ma = getattr(sys.stdout, "encoding", None) or "ascii"
+        print(tin.encode(ma, "replace").decode(ma, "replace"))
+
+
 def _doc(tai_nguyen: str = MAC_DINH) -> dict | None:
     try:
         return json.loads(_tep(tai_nguyen).read_text(encoding="utf-8"))

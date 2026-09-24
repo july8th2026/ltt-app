@@ -4,7 +4,6 @@ from __future__ import annotations
 import hashlib
 import json
 import subprocess
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -20,23 +19,70 @@ MAX_SAMPLES = 8
 VMAF_MODEL = "vmaf_v0.6.1"
 
 
-@lru_cache(maxsize=1)
+#: Vân tay ĐẦY ĐỦ, nhớ lại được. ⛔ Chỉ nhớ khi KHÔNG thiếu mảnh nào.
+_VAN_TAY_DU: "dict[str, str] | None" = None
+
+
 def libvmaf_runtime_fingerprint() -> dict[str, str]:
-    """Pin implementation/model embedded bằng hash binary, không lộ local path."""
+    """Pin implementation/model embedded bằng hash binary, không lộ local path.
+
+    🔴 SỰ CỐ 24/09 — hai phép của `test_166` đỏ trong một lượt gate song song,
+       cả hai cùng `len('') == 0` cho hash, và **xanh khi chạy lại**. Bản cũ có
+       ba tật làm một trục trặc thoáng qua hoá thành bằng chứng biến mất:
+
+       1. **Một `except` gánh hai tình huống khác loại.** Đọc tệp hỏng và dò
+          `-version` hỏng cùng trả một kết quả rỗng — nên một lần dò phiên bản
+          quá hạn **xoá luôn cái hash đã tính xong**.
+       2. **`lru_cache` nhớ cả kết quả THIẾU.** Một trục trặc ⇒ mọi lời gọi sau
+          trong cùng tiến trình đều rỗng. Đó là lý do đơn giản nhất giải thích
+          vì sao HAI phép cùng đỏ ở cùng worker `gw4`, trong khi ngay trước dòng
+          đỏ thứ nhất ffmpeg vừa **chạy libvmaf thành công** (`vmaf > 95`).
+       3. **Im lặng.** Không ghi lại vì sao, nên lần sau lại phải đoán.
+
+    ⚠️ Nguyên nhân gốc của trục trặc (dò `-version` quá hạn? đọc tệp 211 MB bị
+       chặn?) **CHƯA xác định** — đo lúc máy rảnh cho 0,03 s so với ngưỡng 10 s,
+       còn 3 lượt `-n 4` đều xanh, nên tôi không tái hiện được. Cái được sửa ở
+       đây là **hậu quả**: từ nay một trục trặc không xoá được hash, không dính
+       vào cache, và tự khai tên mình ở `ghi_chu_loi`.
+    """
+    global _VAN_TAY_DU
+    if _VAN_TAY_DU is not None:
+        return dict(_VAN_TAY_DU)
+
+    # ⛔ `MediaError` vẫn NÉM: "máy không có ffmpeg" là chuyện khác hẳn
+    #    "có ffmpeg nhưng vừa đọc trượt", và gộp chúng là tật số 1 ở trên.
+    binary = Path(media.ffmpeg_bin())
+
+    sha, ghi_chu = "", []
     try:
-        binary = Path(media.ffmpeg_bin())
         digest = hashlib.sha256()
         with binary.open("rb") as stream:
             for chunk in iter(lambda: stream.read(1024 * 1024), b""):
                 digest.update(chunk)
+        sha = digest.hexdigest()
+    except OSError as loi:
+        ghi_chu.append(f"hash:{type(loi).__name__}")
+
+    version = "unavailable"
+    try:
+        # 60 s chứ không 10 s: đây là máy DÙNG CHUNG và là máy production —
+        # lúc khoẻ phép dò này mất 0,03 s, nên nới hạn không tốn gì, còn hạn
+        # chật thì biến tải nặng của phiên khác thành bằng chứng khuyết.
         result = subprocess.run([str(binary), "-version"], capture_output=True,
-                                text=True, timeout=10, check=False)
-        version = (result.stdout or "").splitlines()[0][:160]
-        return {"binary_sha256": digest.hexdigest(), "ffmpeg_version": version,
-                "model": VMAF_MODEL}
-    except (OSError, subprocess.SubprocessError):
-        return {"binary_sha256": "", "ffmpeg_version": "unavailable",
-                "model": VMAF_MODEL}
+                                text=True, timeout=60, check=False)
+        dong = (result.stdout or "").splitlines()
+        version = dong[0][:160] if dong else "unavailable"
+    except (OSError, subprocess.SubprocessError) as loi:
+        ghi_chu.append(f"version:{type(loi).__name__}")
+
+    van_tay = {"binary_sha256": sha, "ffmpeg_version": version,
+               "model": VMAF_MODEL}
+    if ghi_chu or not sha:
+        # ⛔ KHÔNG nhớ. Một lượt trượt không được quyết định cho cả tiến trình.
+        van_tay["ghi_chu_loi"] = ",".join(ghi_chu) or "hash:rong"
+        return van_tay
+    _VAN_TAY_DU = van_tay
+    return dict(van_tay)
 
 
 def _vmaf_metric(candidate_path: Path, reference_path: Path, work: Path) -> Metric:

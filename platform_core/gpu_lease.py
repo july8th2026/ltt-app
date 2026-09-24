@@ -1,10 +1,14 @@
 """
 gpu_lease.py — giành và trả chỗ trên GPU, nguyên tử (H23).
 
-Bài toán: máy có 2 GPU, worker có thể chạy nhiều tiến trình. Nếu mỗi tiến trình
-tự hỏi `nvidia-smi` rồi chọn card trống nhất thì hai tiến trình khởi động cùng
-lúc sẽ **cùng đọc thấy GPU 0 trống**, cùng chọn nó, cùng nạp model, cùng OOM.
-Lỗi hiện ra giữa job của khách hàng, không phải lúc xếp lịch.
+Bài toán: một máy có **N** GPU, worker có thể chạy nhiều tiến trình. Nếu mỗi tiến
+trình tự hỏi `nvidia-smi` rồi chọn card trống nhất thì hai tiến trình khởi động
+cùng lúc sẽ **cùng đọc thấy GPU 0 trống**, cùng chọn nó, cùng nạp model, cùng
+OOM. Lỗi hiện ra giữa job của khách hàng, không phải lúc xếp lịch.
+
+⚠️ Module này cấp card của **máy A** (nền tảng). N là bao nhiêu thì hỏi máy —
+`acquire()` dò bằng `nvidia-smi` lúc chạy, không có con số nào chép trong mã.
+Vai trò hai máy và máy nào có card gì: `docs/HAI_MAY_A_VA_B.md`.
 
 Cách giải: đúng khuôn mà hàng đợi job đã dùng và đã chạy ổn từ H2 —
 
@@ -36,8 +40,8 @@ log = logging.getLogger(__name__)
 
 # ── Mặt phẳng chung cấp máy — mã ở platform_core, dữ liệu ở ProgramData ──────
 #
-# Máy A còn HAI hệ khác dùng chung 2 card RTX 5060 Ti: `gpu_arbiter` (6 bot ở
-# D:\FULL AUTO VIDEO) và Cut_only ver2. Cả ta lẫn họ đều đã kiểm `free_mb` thật
+# Máy A còn HAI hệ khác dùng chung card RTX 5060 Ti của nó: `gpu_arbiter` (6 bot
+# ở D:\FULL AUTO VIDEO) và Cut_only ver2. Cả ta lẫn họ đều đã kiểm `free_mb` thật
 # nên không mù nhau hoàn toàn — nhưng còn đúng MỘT khoảng hở:
 #
 #   CỬA SỔ NẠP MODEL. Từ lúc giành được card tới lúc VRAM hiện ra trong
@@ -47,6 +51,11 @@ log = logging.getLogger(__name__)
 # Và một luật cứng hơn: CHÍNH SÁCH CARD cấp máy. `acquire()` bên dưới sắp xếp
 # theo `free_mb` giảm dần, nên khi bot chiếm GPU0 thì GPU1 thành card trống
 # nhất và job nặng của khách sẽ rơi vào đó — GPU1 LÀ CARD ĐANG XUẤT HÌNH.
+#
+# ⚠️ BẢN GHI CỦA THỜI MÁY A CÓ HAI CARD (08/2026). Máy A nay còn một card, nên
+#    không có "GPU1" nữa — nhưng luật thì còn: card đang xuất hình không được
+#    nhận job nặng, và `acquire()` vẫn phải xếp theo chính sách, không theo
+#    `free_mb` trần. Cấu hình hôm nay: `docs/HAI_MAY_A_VA_B.md`.
 # Máy đã sập thật 2026-08-26, bugcheck 0x116 VIDEO_TDR_FAILURE, vì một job
 # ~12.6 GB chạy 100% suốt 9 phút trên đúng card đó: trình điều khiển hiển thị
 # mất quyền điều khiển GPU quá hạn 2 giây và reset thất bại.

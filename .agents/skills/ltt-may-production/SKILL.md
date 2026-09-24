@@ -11,12 +11,14 @@ Nguồn: `CLAUDE.md` (luật chết người) · `AGENTS.md` §3 (bí mật), §
 
 ## Lệnh nặng
 
-Gate mọi chế độ · `test_nhanh.py` · ≥ 3 tệp test · `build_system_profile.py` · nạp model:
+⛔ **Lệnh nào là nặng thì hỏi `docs/QUY_TAC_CHAY_LENH_NANG.md` §1** — chỉ nơi đó
+định nghĩa (phân loại theo **khả năng đốt CPU**, không theo số tệp test). Bộ kiểm:
 ```powershell
 python tools\cua_so_yen.py trang-thai     # có người giữ khoá -> chờ
 python tools\tai_may.py                   # QUÁ TẢI -> chờ; BẬN -> thu hẹp
 ```
-pytest gõ tay `-n` ≤ 6. ⛔ `cua_so_yen.py nha --ep` không kèm `--tai-nguyen`. Máy vừa treo: hộp đen trước (§5).
+pytest gõ tay: trần `-n` là `gate.TRAN_N_GO_TAY` (đọc hằng số, ⛔ đừng gõ lại số).
+⛔ `cua_so_yen.py nha --ep` không kèm `--tai-nguyen`. Máy vừa treo: hộp đen trước (§5).
 
 ## Git nhiều phiên
 

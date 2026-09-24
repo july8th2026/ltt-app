@@ -72,6 +72,11 @@ beforeEach(() => {
     if (url.endsWith('/v3/luat-noi-day')) return new Response(JSON.stringify(paletteV3.luat_noi_day), { status: 200 })
     if (url.endsWith('/preferences')) return new Response(JSON.stringify({theme:'dark',catalog_mode:'simple',presentation_version:'creative-v1',revision:init?.method?1:0}), { status: 200 })
     if (url.includes('/quote')) return new Response(JSON.stringify({valid:true,maximum:3}), { status: 200 })
+    // Cua goi y §6 (P2 Task 8) — TRUOC nhanh `/api/v3/workflows` vi no cung
+    // la POST tren cung tien to; de sau thi no rot vao nhanh "tao workflow".
+    if (url.includes('/bieu-thuc/goi-y')) return new Response(JSON.stringify({
+      node_id: 'n1', muc: [{ duong: 'trigger', loai: 'goc', qua_publish: false }],
+      ham: [], loi: null }), { status: 200 })
     if (url.includes('/api/v3/workflows')) {
       if (init?.method === 'PUT')
         return new Response(JSON.stringify({...workflowV3, revision: workflowV3.revision + 1}), { status: 200 })

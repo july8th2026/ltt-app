@@ -183,7 +183,8 @@ duong = ["platform_core/workflow/dong_co.py", "platform_core/workflow/may_trang_
          "platform_core/workflow/foreach.py", "platform_core/workflow/dieu_khien.py",
          "platform_core/workflow/tao_run.py", "platform_core/workflow/thi_hanh.py",
          "platform_core/workflow/su_kien.py", "platform_core/workflow/artifact.py",
-         "platform_core/workflow/trigger.py", "platform_core/workflow/ket_so.py"]
+         "platform_core/workflow/trigger.py", "platform_core/workflow/ket_so.py",
+         "platform_core/workflow/tien.py"]
 he_trong = "thi_hanh"
 tai_nguyen = ["postgres_test"]
 
@@ -192,9 +193,15 @@ mo_ta = "Soan thao workflow: bien dich, dinh nghia node, luoc do, bieu thuc, bao
 duong = ["platform_core/workflow/bien_dich.py", "platform_core/workflow/dinh_nghia.py",
          "platform_core/workflow/nut.py", "platform_core/workflow/nut_loi/",
          "platform_core/workflow/luoc_do.py", "platform_core/workflow/bieu_thuc.py",
+         # Ngon ngu bieu thuc §6 (plan wf-v2 P2): may + chinh sach, noi suy,
+         # bang ham, cho lap, ngu nghia `vars`.
+         "platform_core/workflow/chinh_sach.py", "platform_core/workflow/noi_suy.py",
+         "platform_core/workflow/ham_bieu_thuc.py", "platform_core/workflow/ngon_ngu.py",
+         "platform_core/workflow/bien_vars.py",
          "platform_core/workflow/he_kieu.py", "platform_core/workflow/canh.py",
          "platform_core/workflow/cong_cu.py", "platform_core/workflow/bao_gia.py",
-         "platform_core/workflow/di_tru_m1.py"]
+         "platform_core/workflow/di_tru_m1.py",
+         "platform_core/workflow/goi_y.py"]
 he_trong = "thi_hanh"
 
 [thanh_phan."core:kho"]
@@ -239,6 +246,19 @@ duong = ["platform_core/models.py", "platform_core/db.py",
          "platform_core/prompt_fragments.py", "platform_core/agent/",
          "platform_core/nexus/"]
 he_trong = "nen"
+
+# 🔴 KHAI 24/09 (plan wf-v2 P7/T1): bo gac SSRF duoc RUT RA khoi
+#    `public_api/webhooks.py` de node `core.http` dung CHUNG mot ban. Khai
+#    RIENG mot thanh phan, khong nhet vao `core:nen`, vi hai ly do:
+#      - `he_trong = "an_ninh"` — cung muc voi `core:api_cong_khai`;
+#      - do thi phu thuoc (`thanh_phan.do_thi_phu_thuoc`) suy tu import THAT,
+#        nen mot thay doi o day tu keo theo CA `core:api_cong_khai` (webhooks)
+#        lan `core:wf_soan` (nut_loi/http.py) — dung cac nguoi tieu thu that,
+#        thay vi keo ca `core:nen`.
+[thanh_phan."core:an_toan_mang"]
+mo_ta = "Bo gac SSRF + client HTTP an toan. MOT nguon chan ly cho moi cuoc goi ra ma ben ngoai chon dich."
+duong = ["platform_core/an_toan_mang.py", "platform_core/http_an_toan.py"]
+he_trong = "an_ninh"
 
 # --- server -----------------------------------------------------------------
 

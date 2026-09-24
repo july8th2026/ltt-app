@@ -532,11 +532,47 @@ def test_kho_ket_qua_nam_ngoai_git_va_ngoai_deploy():
     trong `setup/2-cai-dat.ps1`. Deploy chep CA CAY ke ca tep untracked, nen
     `.gitignore` mot minh **khong** du.
     """
-    assert "/test-results/" in (GOC / ".gitignore").read_text(encoding="utf-8")
+    # 🔴 MO RONG 24/09: cung mot cai bay da dinh BA lan — `.codex` (lan 1),
+    #    `.superpowers` (lan 2, 23/09), va `.gate/` la ung vien thu ba. Moi lan
+    #    deu la: mot thu muc cong cu duoc them vao danh sach bo qua cua git,
+    #    nhung KHONG vao `/XD` cua duong lui `robocopy` — ma duong do chep CA CAY
+    #    song len production, ke ca tep chua theo doi.
+    #
+    # ⇒ Hoi HAI cau tach bach cho TUNG thu muc, trong CUNG mot luot:
+    #      "no co len kho khong"  va  "no co len production khong".
+    #
+    # ⭐ Day la NGUON DUY NHAT cua luat nay. Them thu muc cong cu moi thi them
+    #    vao `THU_MUC_CONG_CU` duoi day, ⛔ dung viet mot phep kiem thu hai o
+    #    tep khac — hai cho khai cung mot dieu thi khong ai bat khop chung.
+    THU_MUC_CONG_CU = ("test-results", ".gate", ".playwright-cli",
+                       ".playwright-mcp", ".claude", ".codex", ".superpowers")
+    gi = (GOC / ".gitignore").read_text(encoding="utf-8")
+    # ⚠️ Trong mot WORKTREE, `GOC/.git` la mot TEP, nen `GOC/.git/info/exclude`
+    #    khong ton tai. Hoi git cho thu muc chung thay vi doan duong dan —
+    #    neu khong, phep kiem nay do oan tren moi cay rieng.
+    try:
+        chung = subprocess.run(["git", "rev-parse", "--git-common-dir"],
+                               cwd=GOC, capture_output=True, text=True,
+                               timeout=20, check=True).stdout.strip()
+        loai_tru = (GOC / chung / "info" / "exclude").resolve()
+    except (OSError, subprocess.SubprocessError):
+        loai_tru = GOC / ".git" / "info" / "exclude"
+    gi_va_loai_tru = gi + (loai_tru.read_text(encoding="utf-8")
+                           if loai_tru.is_file() else "")
     cai_dat = (GOC / "setup" / "2-cai-dat.ps1").read_text(encoding="utf-8",
                                                           errors="replace")
-    assert "test-results" in cai_dat, (
-        "test-results khong con trong /XD - ket qua gate se len production")
+    dong_xd = [d for d in cai_dat.splitlines() if "/XD" in d or "test-results" in d]
+    van_xd = "\n".join(dong_xd)
+    thieu_git, thieu_deploy = [], []
+    for ten in THU_MUC_CONG_CU:
+        if ten not in gi_va_loai_tru:
+            thieu_git.append(ten)
+        if ten not in van_xd:
+            thieu_deploy.append(ten)
+    assert not thieu_git, f"khong bi git bo qua: {thieu_git}"
+    assert not thieu_deploy, (
+        f"khong co trong /XD - se LEN PRODUCTION qua duong lui robocopy: "
+        f"{thieu_deploy}")
 
 
 def test_kho_ket_qua_ghi_du_danh_tinh(tmp_path, monkeypatch):
@@ -557,7 +593,8 @@ def test_kho_ket_qua_ghi_du_danh_tinh(tmp_path, monkeypatch):
         da_giu = ["cpu_nhieu"]
 
     gate._ghi_ket_qua("day-du", [], "PASS", 12.3, _KhoaGia(), False)
-    ra = list((tmp_path / "test-results" / "gates").glob("*.json"))
+    # ⚠️ Qua `gate.thu_muc_so`, ⛔ dung go tay: so doi sang `.gate/` ngay 24/09.
+    ra = list(gate.thu_muc_so(tmp_path).glob("*.json"))
     assert ra, "khong ghi duoc ban ghi nao"
     d = json.loads(ra[0].read_text(encoding="utf-8"))
     for khoa in ("id", "luc", "ho_so", "ket_qua", "sha", "nhanh", "cay",
@@ -627,3 +664,61 @@ def test_tai_lieu_cay_rieng_khong_tro_toi_tep_khong_ton_tai():
     assert not thieu, (
         f"cay_rieng.py tro toi tools/{{{', '.join(sorted(thieu))}}} "
         "nhung tep do khong ton tai")
+
+
+def test_moi_tep_workflow_deu_CO_CHU_trong_thanh_phan_toml():
+    """🔴 Danh sach go tay thi MUC — va no da muc trong vai gio (24/09).
+
+    Sang 24/09 toi khai `platform_core/workflow/` thanh hai thanh phan bang
+    cach **liet ke tung tep**. Chieu cung ngay P2 de `goi_y.py`, va no thanh
+    *duong khong ai so huu* => `--doi`/`--pham-vi` lai FAIL OPEN va doi
+    "chay TAT CA" — dung benh ma viec khai nay sinh ra de chua.
+
+    ⛔ Phep do dau cua toi con te hon: no hoi chuoi `platform_core/workflow/`
+       co trong toml khong — chuoi do nam trong MOI dong khai, nen phep kiem
+       LUON dung va bao `[]`. Mot phep do rong.
+
+    ⭐ Dung `thanh_phan_cua` chu khong `bi_anh_huong`: `bi_anh_huong` tra None
+       cho NHIEU ly do khac loai ("khong ai so huu", "cham tep dung chung"),
+       nen no khong tra loi dung cau hoi o day. `thanh_phan_cua` hoi dung mot
+       menh de: tep nay ai so huu.
+    """
+    thu_muc = GOC / "platform_core" / "workflow"
+    tep = [p for p in sorted(thu_muc.rglob("*.py")) if p.name != "__init__.py"]
+    bang = tp.cac_thanh_phan(GOC)
+    mo_coi = [p.relative_to(GOC).as_posix() for p in tep
+              if tp.thanh_phan_cua(p.relative_to(GOC).as_posix(), bang) is None]
+    assert not mo_coi, (
+        f"tep workflow khong ai so huu: {mo_coi}. Them vao `core:wf_dong_co` "
+        f"hoac `core:wf_soan` trong tools/thanh_phan.toml — neu khong, MOI luot "
+        f"gate cham toi chung se bi day len chay TAT CA.")
+    # 🔑 Doi chung: duong dan sai thi `tep` rong va khang dinh tren xanh rong.
+    assert len(tep) >= 20, f"chi thay {len(tep)} tep workflow - pham vi sai?"
+
+
+def test_in_cua_cua_so_yen_chiu_duoc_console_cp1252(monkeypatch):
+    """🔴 Một lượt xếp hàng CHẾT ngay trong dòng in "đang xếp hàng" (24/09).
+
+    `_ai_giu()` nhúng **mô tả lệnh của phiên KHÁC**, mà lệnh đó có thể mang ký
+    tự ngoài cp1252. Console Windows mặc định cp1252 ⇒ `print` ném
+    `UnicodeEncodeError` ⇒ `chay_nang.py` chết ⇒ **lượt nặng không chạy**.
+
+    ⛔ Hạng lỗi tệ nhất trong công cụ dùng chung: nơi báo "tôi đang chờ" lại là
+       nơi giết chính lượt đang chờ, và nó chỉ nổ khi **hàng xóm** có tên lạ —
+       nên không phiên nào tái hiện được một mình.
+    """
+    import io as _io
+
+    chu = "giu khoa ⚠ đường-tiếng-Việt"
+    khung = _io.TextIOWrapper(_io.BytesIO(), encoding="cp1252", errors="strict")
+    monkeypatch.setattr(sys, "stdout", khung)
+
+    # 🔑 Đối chứng: `print` trần NÉM trên chính chuỗi này — không có dòng này
+    #    thì bài dưới xanh kể cả khi console không hề khó tính.
+    with pytest.raises(UnicodeEncodeError):
+        print(chu)
+
+    cua_so_yen._in(chu)          # không được ném
+    khung.flush()
+    ra = khung.buffer.getvalue().decode("cp1252")
+    assert "giu khoa" in ra, ra

@@ -26,13 +26,33 @@ DINH truoc khi chay. Nen no:
 
 ⇒ Hai lenh cam sau khong phai de chan ke xau. Chung la dieu kien de con so
   tran **ton tai** truoc khi ai do tieu tien.
+
+## ⭐ RUOT DUNG CHUNG, HOP DONG KHONG DUNG CHUNG
+
+Bo duyet AST da chuyen sang `chinh_sach.py` de ngon ngu bieu thuc §6 dung lai
+duoc **may**. Mo-dun nay giu nguyen **hop dong**: `NGHIEM` duoi day la ban khai
+day du cua ba dieu cam tren, va no la mot **bang doc duoc** — noi long mot o
+trong bang la mot dong diff, khong phai mot phuong thuc bi ghi de o dau do.
+
+⛔ Ngon ngu §6 doi nguoc ca ba dieu cam (doc `nodes.<id>.output`, co bang ham,
+  tinh luc chay). No phai mang **chinh sach cua rieng no**. Noi long `NGHIEM`
+  de phuc vu §6 la pha bao dam ve tien cua `timeout_expr`.
 """
 from __future__ import annotations
 
 import ast
+from collections.abc import Callable
 from typing import Any
 
-__all__ = ["LoiBieuThuc", "kiem_bieu_thuc", "tinh_bieu_thuc", "tham_so_dung"]
+from platform_core.workflow.chinh_sach import (
+    ChinhSach,
+    kiem_cay,
+    ten_duoc_doc,
+    tinh_cay,
+)
+
+__all__ = ["LoiBieuThuc", "NGHIEM", "kiem_bieu_thuc", "tinh_bieu_thuc",
+           "tham_so_dung"]
 
 
 class LoiBieuThuc(ValueError):
@@ -42,93 +62,98 @@ class LoiBieuThuc(ValueError):
 #: Toan tu SO HOC duoc phep. `Pow` co y KHONG nam day: `2 ** 10**9` treo tien
 #: trinh trong khi moi nut deu "hop le" — mot bieu thuc tat dinh van co the la
 #: mot bieu thuc khong bao gio tra loi.
-_NHI_PHAN = (ast.Add, ast.Sub, ast.Mult, ast.Div, ast.FloorDiv, ast.Mod)
-_MOT_NGOI = (ast.UAdd, ast.USub)
-_SO_SANH = (ast.Lt, ast.LtE, ast.Gt, ast.GtE, ast.Eq, ast.NotEq)
-_LOGIC = (ast.And, ast.Or)
+_NHI_PHAN: dict[type, Callable[[Any, Any], Any]] = {
+    ast.Add: lambda a, b: a + b,
+    ast.Sub: lambda a, b: a - b,
+    ast.Mult: lambda a, b: a * b,
+    ast.Div: lambda a, b: a / b,
+    ast.FloorDiv: lambda a, b: a // b,
+    ast.Mod: lambda a, b: a % b,
+}
+_MOT_NGOI: dict[type, Callable[[Any], Any]] = {
+    ast.UAdd: lambda a: +a,
+    ast.USub: lambda a: -a,
+}
+_SO_SANH: dict[type, Callable[[Any, Any], Any]] = {
+    ast.Lt: lambda a, b: a < b,
+    ast.LtE: lambda a, b: a <= b,
+    ast.Gt: lambda a, b: a > b,
+    ast.GtE: lambda a, b: a >= b,
+    ast.Eq: lambda a, b: a == b,
+    ast.NotEq: lambda a, b: a != b,
+}
 
 #: Ham duy nhat duoc phep, va chung la ham CHON chu khong phai ham TINH:
 #: chung khong the tra ve gia tri ngoai tap dau vao.
-_HAM = {"min": min, "max": max}
+_HAM: dict[str, Callable[..., Any]] = {"min": min, "max": max}
+
+#: ⭐ HOP DONG CUA `timeout_expr`, khai bang bang chu khong bang ma.
+#:
+#: Doc bang nay la doc du ba dieu cam o docstring dau tep:
+#:   `ham` chi co ham CHON        ⇒ khong ham nao tra gia tri ngoai tap dau vao
+#:   `nut_cho_phep` khong co `Attribute`/`Subscript`/`ListComp`/`Lambda`
+#:                               ⇒ khong duong nao ra khoi tap gia tri da khai
+#:   ten phai nam trong `params` ⇒ khong doc duoc ket qua buoc khac
+#:
+#: ⛔ Them mot o vao bang nay la doi hop dong ve tien. `test_1761` chup lai
+#:   toan bo hanh vi cua bang nay; sua bang ma khong sua chu dich la lam do.
+NGHIEM = ChinhSach(
+    ten="timeout_expr",
+    lop_loi=LoiBieuThuc,
+    nut_cho_phep=frozenset({
+        ast.Expression, ast.Constant, ast.Name, ast.BinOp, ast.UnaryOp,
+        ast.Compare, ast.BoolOp, ast.IfExp, ast.Call,
+    }),
+    kieu_hang_so=(bool, int, float),
+    nhi_phan=_NHI_PHAN,
+    mot_ngoi=_MOT_NGOI,
+    so_sanh=_SO_SANH,
+    logic=frozenset({ast.And, ast.Or}),
+    ham=_HAM,
+    cho_tham_so_ten=False,
+    chia_bang_0=frozenset({ast.Div, ast.FloorDiv, ast.Mod}),
+    van_ban={
+        "cu_phap": "cu phap {ten} khong duoc phep",
+        "hang_so": "hang so phai la so, gap {kieu}",
+        "ten": "ten {ten} khong phai tham so cua tool (co: {co})",
+        "khong_co_ten": "khong co tham so nao",
+        "nhi_phan": ("toan tu {ten} khong duoc phep "
+                     "(** bi cam: no tinh duoc ma khong bao gio tra loi)"),
+        "nhi_phan_tinh": "toan tu {ten} khong duoc phep",
+        "mot_ngoi": "toan tu {ten} khong duoc phep",
+        "so_sanh": "phep so sanh {ten} khong duoc phep",
+        "logic": "phep logic khong duoc phep",
+        "goi": "chi duoc goi {ds}, khong goi gi khac",
+        "goi_tinh": "chi duoc goi {ds}",
+        "tu_khoa": "khong dung tham so co ten",
+        "khong_co_gia_tri": "tham so {ten} khong co gia tri",
+        "chia_0": "chia cho 0",
+        # ⭐ Ba cau duoi CHO `min`/`max`. `NGHIEM` co `ast.Call`, nen no di qua
+        #    cung doan goi ham voi ngon ngu §6 — va truoc do `min()` hay
+        #    `min(a)` voi `a` la so nem `TypeError` THO qua dau `tinh_bieu_thuc`
+        #    ra toi tang nap registry. Mot tran `max_runtime_s` khong duoc
+        #    phep ngo ra bang mot loi cua Python.
+        #    ⛔ `loi_nguoi_dung` cua `NGHIEM` de RONG: `min`/`max` la ham dung
+        #    san, khong co lop loi rieng noi cau cho nguoi khai doc.
+        "sai_tham_so": "goi {ten} sai so tham so ({msg})",
+        "ham_loi": "{msg}",
+        "ham_hong": "ham {ten} that bai khi tinh",
+    },
+)
 
 
-def _kiem_nut(nut: ast.AST, cho_phep: set[str]) -> None:
-    if isinstance(nut, ast.Expression):
-        return _kiem_nut(nut.body, cho_phep)
-
-    if isinstance(nut, ast.Constant):
-        if isinstance(nut.value, bool) or isinstance(nut.value, (int, float)):
-            return
-        raise LoiBieuThuc(
-            f"hang so phai la so, gap {type(nut.value).__name__}")
-
-    if isinstance(nut, ast.Name):
-        if nut.id in _HAM:
-            return
-        if nut.id not in cho_phep:
-            raise LoiBieuThuc(
-                f"ten {nut.id!r} khong phai tham so cua tool "
-                f"(co: {sorted(cho_phep) or 'khong co tham so nao'})")
-        return
-
-    if isinstance(nut, ast.BinOp):
-        if not isinstance(nut.op, _NHI_PHAN):
-            raise LoiBieuThuc(
-                f"toan tu {type(nut.op).__name__} khong duoc phep "
-                "(** bi cam: no tinh duoc ma khong bao gio tra loi)")
-        _kiem_nut(nut.left, cho_phep)
-        return _kiem_nut(nut.right, cho_phep)
-
-    if isinstance(nut, ast.UnaryOp):
-        if not isinstance(nut.op, _MOT_NGOI):
-            raise LoiBieuThuc(f"toan tu {type(nut.op).__name__} khong duoc phep")
-        return _kiem_nut(nut.operand, cho_phep)
-
-    if isinstance(nut, ast.Compare):
-        for op in nut.ops:
-            if not isinstance(op, _SO_SANH):
-                raise LoiBieuThuc(
-                    f"phep so sanh {type(op).__name__} khong duoc phep")
-        _kiem_nut(nut.left, cho_phep)
-        for v in nut.comparators:
-            _kiem_nut(v, cho_phep)
-        return
-
-    if isinstance(nut, ast.BoolOp):
-        if not isinstance(nut.op, _LOGIC):
-            raise LoiBieuThuc("phep logic khong duoc phep")
-        for v in nut.values:
-            _kiem_nut(v, cho_phep)
-        return
-
-    if isinstance(nut, ast.IfExp):
-        _kiem_nut(nut.test, cho_phep)
-        _kiem_nut(nut.body, cho_phep)
-        return _kiem_nut(nut.orelse, cho_phep)
-
-    if isinstance(nut, ast.Call):
-        # ⚠️ Chi cho `min`/`max` va chi khi ten la mot `Name` TRAN. `a.b()` di
-        #    qua `ast.Attribute` — tu choi o duoi, va do la co y: mot chuoi
-        #    thuoc tinh la duong ra khoi tap gia tri da khai.
-        if not isinstance(nut.func, ast.Name) or nut.func.id not in _HAM:
-            raise LoiBieuThuc(
-                f"chi duoc goi {sorted(_HAM)}, khong goi gi khac")
-        if nut.keywords:
-            raise LoiBieuThuc("khong dung tham so co ten")
-        for v in nut.args:
-            _kiem_nut(v, cho_phep)
-        return
-
-    raise LoiBieuThuc(f"cu phap {type(nut).__name__} khong duoc phep")
+def _phan_tich(bieu_thuc: str) -> ast.Expression:
+    try:
+        return ast.parse(bieu_thuc, mode="eval")
+    except SyntaxError as loi:
+        raise LoiBieuThuc(f"khong phan tich duoc: {loi.msg}") from loi
 
 
 def tham_so_dung(bieu_thuc: str) -> set[str]:
     """Tap ten tham so ma bieu thuc doc toi. Rong neu bieu thuc rong."""
     if not (bieu_thuc or "").strip():
         return set()
-    cay = ast.parse(bieu_thuc, mode="eval")
-    return {n.id for n in ast.walk(cay)
-            if isinstance(n, ast.Name) and n.id not in _HAM}
+    return ten_duoc_doc(ast.parse(bieu_thuc, mode="eval"), NGHIEM)
 
 
 def kiem_bieu_thuc(bieu_thuc: str, params_schema: dict) -> None:
@@ -140,84 +165,7 @@ def kiem_bieu_thuc(bieu_thuc: str, params_schema: dict) -> None:
     """
     if not (bieu_thuc or "").strip():
         return
-    try:
-        cay = ast.parse(bieu_thuc, mode="eval")
-    except SyntaxError as loi:
-        raise LoiBieuThuc(f"khong phan tich duoc: {loi.msg}") from loi
-    _kiem_nut(cay, set(params_schema or {}))
-
-
-_NHI_PHAN_TINH = {
-    ast.Add: lambda a, b: a + b,
-    ast.Sub: lambda a, b: a - b,
-    ast.Mult: lambda a, b: a * b,
-    ast.Div: lambda a, b: a / b,
-    ast.FloorDiv: lambda a, b: a // b,
-    ast.Mod: lambda a, b: a % b,
-}
-_SO_SANH_TINH = {
-    ast.Lt: lambda a, b: a < b,
-    ast.LtE: lambda a, b: a <= b,
-    ast.Gt: lambda a, b: a > b,
-    ast.GtE: lambda a, b: a >= b,
-    ast.Eq: lambda a, b: a == b,
-    ast.NotEq: lambda a, b: a != b,
-}
-
-
-def _tinh(nut: ast.AST, moi_truong: dict) -> Any:
-    """Tinh mot nut. ⛔ KHONG dung `eval`/`exec`/`compile` — xem docstring module.
-
-    Bo tinh de quy nay dai hon mot lenh `eval`, va do la cai gia dung. Mot
-    `eval` "an toan vi da duyet AST truoc" van la mot cua thi hanh ma: no dua
-    vao viec bo duyet KHONG BO SOT mot dang nut nao. Bo tinh nay thi khong co
-    gi de bo sot — thu no khong biet tinh, no khong tinh.
-    """
-    if isinstance(nut, ast.Expression):
-        return _tinh(nut.body, moi_truong)
-    if isinstance(nut, ast.Constant):
-        return nut.value
-    if isinstance(nut, ast.Name):
-        if nut.id not in moi_truong:
-            raise LoiBieuThuc(f"tham so {nut.id!r} khong co gia tri")
-        return moi_truong[nut.id]
-    if isinstance(nut, ast.BinOp):
-        pt = _NHI_PHAN_TINH.get(type(nut.op))
-        if pt is None:
-            raise LoiBieuThuc(f"toan tu {type(nut.op).__name__} khong duoc phep")
-        phai = _tinh(nut.right, moi_truong)
-        if isinstance(nut.op, (ast.Div, ast.FloorDiv, ast.Mod)) and phai == 0:
-            raise LoiBieuThuc("chia cho 0")
-        return pt(_tinh(nut.left, moi_truong), phai)
-    if isinstance(nut, ast.UnaryOp):
-        gt = _tinh(nut.operand, moi_truong)
-        return +gt if isinstance(nut.op, ast.UAdd) else -gt
-    if isinstance(nut, ast.Compare):
-        trai = _tinh(nut.left, moi_truong)
-        # `strict=True` dung nghia o day chu khong chi de qua linter: trong mot
-        # `ast.Compare` hop le, `ops` va `comparators` LUON cung do dai. Neu mot
-        # ngay nao do chung lech thi im lang cat bot ve ngan hon la bo qua mot
-        # phep so sanh — tuc tinh ra mot con so tran KHAC voi thu da khai.
-        for op, ve in zip(nut.ops, nut.comparators, strict=True):
-            pt = _SO_SANH_TINH.get(type(op))
-            if pt is None:
-                raise LoiBieuThuc(f"phep so sanh {type(op).__name__} khong duoc phep")
-            phai = _tinh(ve, moi_truong)
-            if not pt(trai, phai):
-                return False
-            trai = phai
-        return True
-    if isinstance(nut, ast.BoolOp):
-        gia_tri = [_tinh(v, moi_truong) for v in nut.values]
-        return all(gia_tri) if isinstance(nut.op, ast.And) else any(gia_tri)
-    if isinstance(nut, ast.IfExp):
-        return (_tinh(nut.body, moi_truong) if _tinh(nut.test, moi_truong)
-                else _tinh(nut.orelse, moi_truong))
-    if isinstance(nut, ast.Call):
-        if not isinstance(nut.func, ast.Name) or nut.func.id not in _HAM:
-            raise LoiBieuThuc(f"chi duoc goi {sorted(_HAM)}")
-        return _HAM[nut.func.id](*[_tinh(v, moi_truong) for v in nut.args])
-    raise LoiBieuThuc(f"cu phap {type(nut).__name__} khong duoc phep")
+    kiem_cay(_phan_tich(bieu_thuc), NGHIEM, set(params_schema or {}))
 
 
 def tinh_bieu_thuc(bieu_thuc: str, params: dict) -> float:
@@ -229,13 +177,10 @@ def tinh_bieu_thuc(bieu_thuc: str, params: dict) -> float:
     """
     if not (bieu_thuc or "").strip():
         raise LoiBieuThuc("bieu thuc rong")
-    try:
-        cay = ast.parse(bieu_thuc, mode="eval")
-    except SyntaxError as loi:
-        raise LoiBieuThuc(f"khong phan tich duoc: {loi.msg}") from loi
-    _kiem_nut(cay, set(params or {}))
+    cay = _phan_tich(bieu_thuc)
+    kiem_cay(cay, NGHIEM, set(params or {}))
     moi_truong: dict[str, Any] = {}
     for k, v in (params or {}).items():
         if isinstance(v, bool) or isinstance(v, (int, float)):
             moi_truong[k] = v
-    return _tinh(cay, moi_truong)
+    return tinh_cay(cay, NGHIEM, moi_truong)

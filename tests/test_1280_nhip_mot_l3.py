@@ -57,12 +57,32 @@ def test_bo_test_do_cho_ra_pytest_DUNG_cac_tep_do(tmp_path, monkeypatch):
         "python -m pytest -q tests/test_12_a.py tests/test_34_b.py"]
 
 
-def test_ba_tep_tro_len_thi_mang_tran_n6():
+def test_ba_tep_tro_len_thi_mang_tran_n_go_tay():
+    """Từ 3 tệp trở lên thì lệnh gợi ý mang trần `-n` — và mang ĐÚNG trần hiện hành.
+
+    ⛔ Đừng gõ lại con số ở đây. Bản cũ của phép kiểm này khai chữ `6` trong khi
+       `gate.lenh_chay_lai()` khai chữ `7`; lần chủ dự án đổi 6 → 7 (23/09/2026)
+       sửa một bên, bỏ bên kia, nên gate ĐỎ ở đúng phép kiểm đáng lẽ bảo vệ nó.
+       Nay đọc `gate.TRAN_N_GO_TAY` — một nguồn, không có gì để lệch.
+    """
     tail = "\n".join(f"FAILED tests/test_{i}_x.py::t - E" for i in (1, 2, 3))
     s = _buoc("bo test (pham vi)", [sys.executable, "tools/test_nhanh.py"],
               ok=False, tail=tail)
     assert gate.lenh_chay_lai([s]) == [
-        "python -m pytest -n 6 -q tests/test_1_x.py tests/test_2_x.py tests/test_3_x.py"]
+        f"python -m pytest -n {gate.TRAN_N_GO_TAY} -q "
+        "tests/test_1_x.py tests/test_2_x.py tests/test_3_x.py"]
+
+
+def test_tran_n_go_tay_la_mot_so_hop_ly_tren_may_nay():
+    """Đối chứng cho phép trên: nó đọc hằng số, nên hằng số phải còn nghĩa.
+
+    Đọc hằng số mà không kiểm gì thì phép trên xanh với mọi giá trị, kể cả `-n 0`
+    hay `-n 40` — tức nó thành phép đo rỗng. Trần phải nằm dưới số lõi vật lý để
+    còn chỗ cho máy (`LOI_DE_DANH_VAT_LY`), và phải ≥ 2 mới đáng gọi là song song.
+    """
+    assert 2 <= gate.TRAN_N_GO_TAY <= 12, (
+        f"TRAN_N_GO_TAY = {gate.TRAN_N_GO_TAY} nằm ngoài khoảng còn nghĩa trên "
+        "máy A (20 lõi logic / 10 lõi vật lý)")
 
 
 def test_buoc_tinh_do_cho_ra_DUNG_lenh_cua_buoc_va_bo_qua_buoc_dat():
@@ -169,7 +189,11 @@ def test_ban_ghi_mang_ha_cap_tu_va_lenh_chay_lai(tmp_path, monkeypatch):
     gate._ghi_ket_qua("day-du", [s], "FAIL (1/1)", 1.0, object(), False,
                       chay_lai=["python tools/check_mypy.py"], ha_cap_tu="doi",
                       ly_do_ha_cap="cham tep DUNG CHUNG", sha="abc123")
-    tep = next((tmp_path / "test-results" / "gates").glob("*.json"))
+    # ⚠️ Lay cho cat qua `gate.thu_muc_so`, ⛔ dung go tay duong dan: so
+    #    phan quyet doi tu `test-results/gates/` sang `.gate/` ngay 24/09
+    #    (xem `TEN_THU_MUC_SO`), va mot duong go tay o day da lam phep kiem
+    #    nay do voi `StopIteration` — mot thong diep khong noi gi ve nguyen nhan.
+    tep = next(gate.thu_muc_so(tmp_path).glob("*.json"))
     ban_ghi = json.loads(tep.read_text(encoding="utf-8"))
     assert ban_ghi["ha_cap_tu"] == "doi"
     assert ban_ghi["sha"] == "abc123", "sha phai la sha LUC BAT DAU cua luot"
@@ -323,3 +347,109 @@ def test_ke_hoach_CERTIFYING_khong_chay_gate_truoc_L3():
     assert not any("gate.py --quick" in d for d in dong_in)
     assert sum("python tools/gate.py\")" in d for d in dong_in) == 1, (
         "ke hoach phai co DUNG MOT luot L3")
+
+
+# ── CHỐT NGUỒN: "lệnh nào là nặng" chỉ được định nghĩa ở MỘT chỗ ─────────────
+#
+# 🔴 VÌ SAO. Ngày 24/09/2026 chủ dự án đổi luật khoá sang phân loại theo **khả
+#    năng đốt CPU** (không theo số tệp test). Lúc đi sửa, đếm được **13 dòng ở 10
+#    tệp** đang tự khai ngưỡng cũ "≥ 3 tệp test" — mỗi dòng là một chỗ để lệch
+#    lần sau, và hai trong số đó còn đang khai trần `-n ≤ 6` của đời trước.
+#    Cập nhật 13 bản chép là tạo ra 13 chỗ để lệch lần nữa; nên chúng thành **con
+#    trỏ**, và chốt này canh cho chúng ở lại là con trỏ.
+#
+# ⛔ Chốt bắt **lời khai ngưỡng**, không bắt việc nhắc tới "lệnh nặng" — nhắc tới
+#    là đúng và cần thiết. Bài học của chính phiên này: một cổng báo bừa tệ hơn
+#    một cổng không có, vì nó dạy người ta bỏ qua.
+
+#: Chủ duy nhất của câu hỏi "lệnh nào là nặng".
+CHU_LUAT_NANG = "docs/QUY_TAC_CHAY_LENH_NANG.md"
+
+#: ⛔ Bản ghi CÓ NGÀY — plan của một phiên, lưu trữ, và báo cáo một lượt đo đã
+#: chạy. Sửa chúng là làm giả bằng chứng, nên chúng được khai ra ở đây.
+MIEN_TRU_NGUONG = {
+    "plan_trien_khai.md",                        # bảng vi phạm của một lượt rà
+    "docs/auto_scan_video_final/L_GUI.md",       # ghi lại một lượt đo đã chạy
+    "docs/migrations/video_crawler/PLAN_MVP.md",  # plan của một phiên (22/09)
+    "tests/test_1280_nhip_mot_l3.py",            # chính tệp này (mẫu dò)
+}
+#: ⚠️ `docs/superpowers/plans/` được loại qua `_BO_THU_MUC` (10 tệp); plan nằm
+#: ngoài thư mục ấy thì khai từng tệp ở trên. Plan là bản ghi của một phiên.
+
+_DUOI_NGUONG = {".md", ".py", ".toml"}
+_BO_THU_MUC = {".git", "node_modules", "venv", "__pycache__", "vendor",
+               "_luutru", "plans", "artifacts", ".codex", "worktrees"}
+
+#: "≥ 3 tệp test" / "từ 3 tệp test trở lên" / "3+ tệp test" — lời khai ngưỡng.
+_MAU_NGUONG = __import__("re").compile(
+    r"(?:≥|>=|từ|tu)?\s*3\s*(?:tệp|tep|file)\s*(?:test)", __import__("re").I)
+
+
+def _quet_nguong():
+    ra = []
+    for tep in GOC.rglob("*"):
+        if not tep.is_file() or tep.suffix.lower() not in _DUOI_NGUONG:
+            continue
+        rel_parts = tep.relative_to(GOC).parts
+        if _BO_THU_MUC & set(rel_parts):
+            continue
+        rel = tep.relative_to(GOC).as_posix()
+        if rel in MIEN_TRU_NGUONG or rel == CHU_LUAT_NANG:
+            continue
+        try:
+            van = tep.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, OSError):
+            continue
+        for i, dong in enumerate(van.splitlines(), 1):
+            if _MAU_NGUONG.search(dong) and _la_loi_khai_luat(dong):
+                ra.append((rel, i, dong.strip()[:150]))
+    return ra
+
+
+def _la_loi_khai_luat(dong: str) -> bool:
+    """Dòng này KHAI ngưỡng, hay chỉ nhắc con số?
+
+    Khai = nó gắn "3 tệp test" với **nặng / khoá / cua_so_yen / chay_nang**.
+    Một dòng như *"app này chỉ có 3 tệp test của riêng nó"* là số liệu, không
+    phải luật, nên không bị bắt.
+    """
+    thap = dong.lower()
+    return any(k in thap for k in ("nặng", "nang", "khoá", "khoa",
+                                   "cua_so_yen", "chay_nang", "cpu_nhieu"))
+
+
+def test_nguong_lenh_nang_chi_khai_o_mot_cho():
+    vi_pham = _quet_nguong()
+    if vi_pham:
+        bang = "\n".join(f"  {r}:{i}  {d}" for r, i, d in vi_pham)
+        pytest.fail(
+            f"Có tệp tự khai ngưỡng lệnh nặng thay vì trỏ về {CHU_LUAT_NANG}:\n"
+            + bang +
+            f"\n\nChủ dự án chốt 24/09: khoá theo KHẢ NĂNG ĐỐT CPU, không theo số "
+            f"tệp test. Sửa thành con trỏ tới {CHU_LUAT_NANG} §1. Nếu dòng trên là "
+            "BẢN GHI CÓ NGÀY (plan, lưu trữ, báo cáo một lượt đo) thì ⛔ đừng sửa "
+            "nó — thêm đường tệp vào MIEN_TRU_NGUONG.")
+
+
+def test_chu_luat_nang_that_su_khai_ba_cua_vao():
+    """Con trỏ chỉ có nghĩa nếu chỗ nó trỏ tới thật sự trả lời."""
+    van = (GOC / CHU_LUAT_NANG).read_text(encoding="utf-8")
+    assert "đốt CPU" in van, f"{CHU_LUAT_NANG} chưa nói phân loại theo đốt CPU"
+    for cua in ("-n", "3 tệp", "30 giây"):
+        assert cua in van, f"{CHU_LUAT_NANG} thiếu cửa vào nhóm nặng: {cua!r}"
+
+
+@pytest.mark.parametrize("dong,co_bat", [
+    ("Lệnh nặng (≥ 3 tệp test, build) qua chay_nang.py.", True),
+    ("Trước mọi lệnh nặng (gate, ≥3 tệp test): cua_so_yen trang-thai", True),
+    ("tu 3 tep test tro len la lenh nang", True),
+    # Số liệu, không phải luật ⇒ phải im.
+    ("`app:anhnoibo` chỉ có 3 tệp test của riêng nó.", False),
+    ("Cổng ra: 3 tệp test xanh.", False),
+    # Con trỏ ⇒ phải im (không có con số nào).
+    ("Lệnh nặng: xem docs/QUY_TAC_CHAY_LENH_NANG.md §1.", False),
+])
+def test_doi_chung_bo_do_nguong(dong, co_bat):
+    """⭐ Đối chứng: bộ dò phải ĐỎ với lời khai và IM với số liệu."""
+    thay = bool(_MAU_NGUONG.search(dong) and _la_loi_khai_luat(dong))
+    assert thay is co_bat, f"bộ dò xử sai dòng: {dong!r}"

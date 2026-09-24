@@ -19,6 +19,7 @@
 | Chuyện kể · sự cố · bài học đo lường | `docs/BAY_TRONG_CONG_CHAT_LUONG.md` |
 | Sản phẩm đã chốt gì | `docs/QUYET_DINH_NEN_TANG.md` |
 | Cái gì đang sống trên production | `python tools\api_prod_canary.py trang-thai` |
+| Vai trò hai máy A/B · máy nào có card gì | `docs/HAI_MAY_A_VA_B.md` |
 | Bước gate nào tồn tại, chứng minh gì | `tools/gate.py::_steps` · `tools/gate.py::HO_SO` |
 
 ⛔ **Không chép số.** Con số nằm trong mã (`tools/gate.py`, lint, `ngan_sach.py`);
@@ -147,9 +148,9 @@ python tools\thanh_phan.py --test <tp>        # tệp test của thành phần �
 python -m pytest tests\test_A.py tests\test_B.py -q
 ```
 
-- **≤ 2 tệp test**: chạy thẳng.
-- **≥ 3 tệp test**: là lệnh nặng — kiểm theo §4.8, `-n` tối đa 7 (chủ dự án 23/09;
-  trước đó là 6).
+- **Nặng hay nhẹ**: `docs/QUY_TAC_CHAY_LENH_NANG.md` §1 là **chủ** của câu hỏi ấy
+  (phân loại theo **khả năng đốt CPU**, không theo số tệp test). Là nặng ⇒ kiểm
+  theo §4.8. Trần `-n` là `gate.TRAN_N_GO_TAY` — ⛔ đừng gõ lại số.
 - Bước kiểm tĩnh lẻ (mypy, i18n, kiểu xuống dòng…): chạy **đúng công cụ đó**; tên
   lệnh ở `tools/gate.py::_steps`, và gate in sẵn khi đỏ.
 
@@ -222,7 +223,7 @@ lên L3** khi bản sửa chạm tệp dùng chung — lúc đó là máy quyế
 ⛔ **MỘT L3 mỗi nhánh — máy thi hành.** Nhánh đã có một lượt L3 (xanh hay đỏ) trong
 12 giờ thì `gate.py` **từ chối** L3 gõ tay và in lệnh khép. Không tính: lượt mang
 nhãn `CAY DA DOI`, và lượt **bị ngắt giữa chừng** (phiên đóng, bị dừng) — lượt đó
-không ghi bản ghi `test-results/gates/*.json`, tức **chưa có phán quyết**, nên được
+không ghi bản ghi `.gate/*.json`, tức **chưa có phán quyết**, nên được
 chạy lại. Lượt trước bị nhiễu thật (máy `QUA TAI`) → `--l3-lai`, có ghi.
 
 ⚠️ Đỏ **không** tự động là lỗi của bạn: loại trừ máy quá tải và thay đổi có sẵn trên
@@ -236,8 +237,8 @@ Test nạp model thật (`demucs`/`whisper`/TTS) nằm sau rào `LTT_TEST_NANG` 
 
 ## 4.8 Trước lệnh nặng — MỘT bộ kiểm
 
-Lệnh nặng = `gate.py` (mọi chế độ) · `test_nhanh.py` · ≥ 3 tệp test ·
-`build_system_profile.py`. Trước khi chạy:
+**Lệnh nào là nặng: `docs/QUY_TAC_CHAY_LENH_NANG.md` §1** — chỉ nơi đó định nghĩa,
+⛔ đừng kê lại danh sách ở đây. Là nặng thì trước khi chạy:
 
 ```powershell
 python tools\cua_so_yen.py trang-thai    # ai đang giữ khoá -> có thì CHỜ
@@ -279,7 +280,7 @@ RESEARCH → BUILDING → FEATURE_COMPLETE → CERTIFYING → READY_TO_MERGE
 | Trạng thái | Được làm gì |
 |---|---|
 | `RESEARCH` | đọc, đo, viết kế hoạch. Không sửa mã sản phẩm |
-| `BUILDING` | sửa mã. **Không** gate, **không** ≥ 3 tệp test, **không** model thật, **không** deploy. Được microcheck rẻ (cú pháp, import, `json.loads`, render template) |
+| `BUILDING` | sửa mã. **Không** gate, **không lệnh nặng** (`QUY_TAC_CHAY_LENH_NANG.md` §1), **không** model thật, **không** deploy. Được microcheck rẻ (cú pháp, import, `json.loads`, render template) |
 | `FEATURE_COMPLETE` | đóng băng tập tính năng |
 | `CERTIFYING` | chỉ chạy kiểm và sửa nguyên nhân gốc tối thiểu |
 | `READY_TO_MERGE` | gộp `main` theo §7 |

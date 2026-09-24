@@ -17,6 +17,12 @@ jinja2>=3.1.6,<4.0
 python-multipart>=0.0.31,<1.0   # 0.0.29 co 8 advisory AV:N/PR:N tren duong /api/v1/uploads: DoS thoi gian binh phuong, buon lau tham so, Content-Length am buffer ca than. 7 va o 0.0.30, cai cuoi o 0.0.31
 httpx>=0.28.1,<1.0
 sentry-sdk>=2.22,<3.0
+# workflow platform V2 (plan wf-v2 P7): node `ai.extract`/`ai.router` kiem
+# dau ra model bang JSON Schema that (Draft 2020-12), khong tu viet bo kiem
+# (platform_core/workflow/nut_loi/ai_loi.py::kiem_luoc_do). Da co san trong
+# moi truong lam phu thuoc bac cau cua `chromadb` (pip show: 4.26.0) -- khai
+# tuong minh vi nay la phu thuoc TRUC TIEP cua nen tang, khong con la an theo.
+jsonschema>=4.26,<5.0
 yt-dlp>=2026.3.17,<2027.0  # Agent Social Video: Python API only; no shell/netrc/exec options
 yt-dlp-ejs>=0.8.0,<0.9     # video_crawler: giai thu thach JS YouTube (khop solver yt-dlp 2026.03.17 - nang CUNG yt-dlp)
 xhshow>=0.2.0,<0.3         # video_crawler: ky x-s Xiaohongshu thuan Python (MIT; keo pycryptodome BSD)

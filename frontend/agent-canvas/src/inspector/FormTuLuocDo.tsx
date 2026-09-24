@@ -6,11 +6,16 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import type { LuocDo, TruongLuocDo } from '../nodeDefinition'
+import type { GoiYBieuThuc } from '../workflowApi'
+import { OBieuThuc } from './OBieuThuc'
 
 type Props = {
   luocDo: LuocDo
   giaTri: Record<string, unknown>
   readOnly?: boolean
+  /** Gợi ý §6 cho node đang chọn (máy chủ sinh). Vắng ⇒ ô vẫn gõ được,
+   *  chỉ là không có hộp gợi ý — ⛔ không bịa một danh sách cục bộ. */
+  goiY?: GoiYBieuThuc
   onChange: (ten: string, gia_tri: unknown) => void
 }
 
@@ -46,9 +51,9 @@ function OJson({ ten, gia, readOnly, onChange }: {
   </>
 }
 
-function MotO({ ten, luat, bat_buoc, gia, readOnly, onChange }: {
+function MotO({ ten, luat, bat_buoc, gia, readOnly, goiY, onChange }: {
   ten: string; luat: TruongLuocDo; bat_buoc: boolean; gia: unknown
-  readOnly?: boolean; onChange: (v: unknown) => void }) {
+  readOnly?: boolean; goiY?: GoiYBieuThuc; onChange: (v: unknown) => void }) {
   // ⭐ MAT XICH CUOI cua "palette la catalogue": `palette_v3._tham_so_co_dau`
   //    danh dau truong chua tai duoc lua chon dong, va luoc do con lai la ban
   //    TINH. Tinh ra, `voice_id` la mot `string` TU DO — mot o chu binh thuong
@@ -108,9 +113,23 @@ function MotO({ ten, luat, bat_buoc, gia, readOnly, onChange }: {
 
   const so = luat.type === 'integer' || luat.type === 'number'
   const bieuThuc = so && (moBieuThuc || laBieuThuc(gia))
+  // ⭐ O CHU va o SO DA MO cong tac deu la o BIEU THUC — cung mot o co
+  //    autocomplete. ⛔ O SO chua mo cong tac thi GIU `<input type="number">`:
+  //    doi no thanh o chu o day la go mat chinh cong tac ma phase 2 dung len.
+  if (!so || bieuThuc) {
+    return boc(<>
+      <OBieuThuc id={ten} disabled={khoa} soHoc={so} goiY={goiY}
+        maxLength={luat.maxLength}
+        gia={String(gia ?? luat.default ?? '')}
+        onChange={v => onChange(v)} />
+      {so && <button type="button" className="o-cong-tac-bieu-thuc"
+        aria-label={`Dùng biểu thức cho ${ten}`} disabled={khoa}
+        aria-pressed={true}
+        onClick={() => setMoBieuThuc(m => !m)}>{'{{ }}'}</button>}
+    </>)
+  }
   return boc(<>
-    <input id={ten} disabled={khoa}
-      type={so && !bieuThuc ? 'number' : 'text'}
+    <input id={ten} disabled={khoa} type="number"
       min={luat.minimum} max={luat.maximum} maxLength={luat.maxLength}
       value={String(gia ?? luat.default ?? '')}
       onChange={e => {
@@ -118,7 +137,7 @@ function MotO({ ten, luat, bat_buoc, gia, readOnly, onChange }: {
         // ⭐ Mot o SO van phai nhan duoc `{{ ... }}` (spec §4.6: moi gia tri
         //    co the la literal HOAC bieu thuc). Ep `Number()` o day bien mot
         //    tham chieu hop le thanh `NaN` — im lang.
-        if (!so || bieuThuc || laBieuThuc(v)) { onChange(v); return }
+        if (laBieuThuc(v)) { onChange(v); return }
         onChange(luat.type === 'integer' ? Number.parseInt(v, 10) : Number(v))
       }} />
     {so && <button type="button" className="o-cong-tac-bieu-thuc"
@@ -128,11 +147,11 @@ function MotO({ ten, luat, bat_buoc, gia, readOnly, onChange }: {
   </>)
 }
 
-export function FormTuLuocDo({ luocDo, giaTri, readOnly, onChange }: Props) {
+export function FormTuLuocDo({ luocDo, giaTri, readOnly, goiY, onChange }: Props) {
   const muc = Object.entries(luocDo.properties ?? {})
   if (!muc.length) return <p className="form-trong">Node này không có tham số.</p>
   return <div className="form-luoc-do">
-    {muc.map(([ten, luat]) => <MotO key={ten} ten={ten} luat={luat}
+    {muc.map(([ten, luat]) => <MotO key={ten} ten={ten} luat={luat} goiY={goiY}
       bat_buoc={(luocDo.required ?? []).includes(ten)} gia={giaTri[ten]}
       readOnly={readOnly} onChange={v => onChange(ten, v)} />)}
   </div>

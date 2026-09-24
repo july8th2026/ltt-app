@@ -127,3 +127,70 @@ def test_vmaf_evaluator_snapshot_pins_binary_and_model():
     assert snapshot["enabled"] is True
     assert len(snapshot["model_sha256"]) == 64
     assert "model=vmaf_v0.6.1" in snapshot["version"]
+
+
+def _van_tay_moi(monkeypatch):
+    """Module vân tay, đã xoá trí nhớ — mọi bài dưới đây phải bắt đầu từ trắng."""
+    if not shutil.which("ffmpeg"):
+        pytest.skip("ffmpeg unavailable")
+    from apps.qualitylab.services import upscale_video as uv
+    monkeypatch.setattr(uv, "_VAN_TAY_DU", None)
+    return uv
+
+
+def test_do_phien_ban_truot_KHONG_duoc_xoa_hash_da_tinh(monkeypatch):
+    """🔴 Tật 1 (gate 24/09): một `except` gánh hai tình huống khác loại.
+
+    Bản cũ bọc CẢ việc băm tệp lẫn việc dò `-version` trong một `try`, nên một
+    lần dò quá hạn **xoá luôn cái hash đã tính xong** — báo cáo chất lượng mất
+    bằng chứng vì một chuyện chẳng liên quan.
+    """
+    uv = _van_tay_moi(monkeypatch)
+
+    def _qua_han(*args, **kwargs):
+        raise subprocess.TimeoutExpired(cmd="ffmpeg -version", timeout=60)
+
+    monkeypatch.setattr(uv.subprocess, "run", _qua_han)
+    van_tay = uv.libvmaf_runtime_fingerprint()
+    assert len(van_tay["binary_sha256"]) == 64, "hash bi xoa boi mot loi khac"
+    assert van_tay["ffmpeg_version"] == "unavailable"
+    assert van_tay["ghi_chu_loi"] == "version:TimeoutExpired"
+
+
+def test_mot_luot_truot_KHONG_duoc_nho_vao_cache(monkeypatch, tmp_path):
+    """🔴 Tật 2: `lru_cache` nhớ cả kết quả THIẾU.
+
+    Đây là lời giải đơn giản nhất cho việc HAI phép cùng đỏ ở cùng worker trong
+    lượt gate 24/09: một trục trặc, một cache, mọi lời gọi sau đều rỗng.
+    """
+    uv = _van_tay_moi(monkeypatch)
+    that = uv.media.ffmpeg_bin
+
+    monkeypatch.setattr(uv.media, "ffmpeg_bin",
+                        lambda: str(tmp_path / "khong-ton-tai.exe"))
+    hong = uv.libvmaf_runtime_fingerprint()
+    assert hong["binary_sha256"] == ""
+    assert "hash:FileNotFoundError" in hong["ghi_chu_loi"]
+
+    monkeypatch.setattr(uv.media, "ffmpeg_bin", that)
+    lai = uv.libvmaf_runtime_fingerprint()
+    assert len(lai["binary_sha256"]) == 64, "ket qua THIEU da bi nho lai"
+
+
+def test_van_tay_DU_thi_duoc_nho(monkeypatch):
+    """🔑 Đối chứng cho bài trên: nếu KHÔNG bao giờ nhớ thì nó cũng xanh.
+
+    Băm một tệp 211 MB mỗi lần gọi là thật sự đắt, nên phải chốt rằng đường
+    thành công VẪN nhớ — nếu không, bài chống-nhớ-kết-quả-thiếu ở trên sẽ xanh
+    vì một lý do sai.
+    """
+    uv = _van_tay_moi(monkeypatch)
+    dau = uv.libvmaf_runtime_fingerprint()
+    assert len(dau["binary_sha256"]) == 64
+    assert "ghi_chu_loi" not in dau
+
+    def _no_neu_goi_lai(*args, **kwargs):
+        raise AssertionError("da bam lai du lan truoc thanh cong")
+
+    monkeypatch.setattr(uv.hashlib, "sha256", _no_neu_goi_lai)
+    assert uv.libvmaf_runtime_fingerprint() == dau

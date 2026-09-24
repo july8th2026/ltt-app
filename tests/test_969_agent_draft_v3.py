@@ -552,12 +552,13 @@ def test_bao_ve_3_DOI_CHUNG_doi_ban_publish_thi_gia_DI_THEO(web):
         db.close()
 
 
-def test_MUOI_route_v3_deu_duoc_dang_ky():
-    """⚠️ Tên bài mang con số, nên con số phải đúng: cửa v3 nay có **mười**
+def test_MUOI_MOT_route_v3_deu_duoc_dang_ky():
+    """⚠️ Tên bài mang con số, nên con số phải đúng: cửa v3 nay có **mười một**
     route.
 
     Lịch sử con số: năm → **tám** (ba route `runs` ra đời cùng kiến trúc V2)
-    → **mười** (plan 02 thêm `/palette` và `/luat-noi-day`, spec §13.1).
+    → **mười** (plan 02 thêm `/palette` và `/luat-noi-day`, spec §13.1)
+    → **mười một** (plan wf-v2 P2 Task 8 thêm `/bieu-thuc/goi-y`, spec §6.2).
 
     ⭐ Đây là bài đã bắt plan 02: Task 8 thêm hai route mà không ai sửa con số,
        và bộ test NHẮM của plan (12 tệp `test_175x`) **không phủ** tệp này —
@@ -578,8 +579,9 @@ def test_MUOI_route_v3_deu_duoc_dang_ky():
         ("POST", "/api/v3/runs/{run_id}/cancel"),
         ("GET", "/api/v3/palette"),
         ("GET", "/api/v3/luat-noi-day"),
+        ("POST", "/api/v3/workflows/{workflow_id}/bieu-thuc/goi-y"),
     }
-    assert len(co) == 10
+    assert len(co) == 11
 
 
 def test_tai_lieu_rong_dung_HINH_DANG_ma_M1_sinh_ra():
