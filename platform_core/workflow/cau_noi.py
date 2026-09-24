@@ -435,12 +435,29 @@ def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
                     # ⚠️ Ta VẪN tốn tài nguyên máy B cho lượt ấy. Đó là một
                     #    khoản lỗ có thật, bị chặn trên bởi `retry.max ≤ 5`,
                     #    và nó phải được theo dõi chứ không được quên.
+                    #
+                    # 🔴 SỬA 24/09 (plan wf-v2 P6): dùng `tt_hk` mà hậu kiểm
+                    #    TRẢ VỀ, ⛔ không cứng `"FAILED"`.
+                    #
+                    #    Bản cũ hỏi node *"kết quả này dùng được không"* rồi
+                    #    **vứt câu trả lời đi**, chỉ giữ phần "không". Với
+                    #    `ai_loi` thì vô hại — nó luôn trả `FAILED`. Với một
+                    #    node `side_effect = irreversible`
+                    #    (`connector.youtube.upload`) thì không: hậu kiểm của
+                    #    nó trả **ABANDONED** cho một `video_id` rỗng, nghĩa
+                    #    là *"có thể đã đăng rồi, ⛔ đừng đăng lại"*. Ép nó
+                    #    thành FAILED là mở lại đường thử lại — tức video thứ
+                    #    hai trên kênh khách.
+                    #
+                    #    Đây đúng hạng lỗi "hai chỗ khai một điều, không ai
+                    #    bắt khớp": node khai ba giá trị, cầu nối chỉ đọc một.
+                    sang_hk = str(tt_hk or "FAILED")
                     may_trang_thai.chuyen_node(
-                        db, run.id, node_id, sang="FAILED",
+                        db, run.id, node_id, sang=sang_hk,
                         mo_ta="hau kiem ket qua job",
                         error=f"{ma_hk}: {chi_tiet_hk}"[:2000],
                         attempt_number=lan, job_id=sig.ref_id, vong=vong)
-                    return "FAILED"
+                    return sang_hk
             bao = du_lieu.get("credit_cost")      # handler báo giá thật (vd theo token)
             chi_phi = int(bao) if bao is not None else gia_that
             do_dai = len(json.dumps(du_lieu, default=str))

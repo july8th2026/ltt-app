@@ -1285,6 +1285,26 @@ class WorkflowRun(Base):
     #: 0 = run gốc. Trần `run_con.DO_SAU_TOI_DA` được cưỡng chế lúc **publish**
     #: (độ sâu tính TĨNH được vì mọi `version_id` đã ghim và version bất biến).
     do_sau: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    #: Run này là một lượt **"chạy lại từ node"** của run nào (P9b). Rỗng = không.
+    #:
+    #: 🔴 CỘT RIÊNG, ⛔ KHÔNG mượn `parent_run_id`. Hai quan hệ trông giống
+    #:    nhau nhưng mang **nghĩa vụ trái ngược**:
+    #:
+    #:      `parent_run_id`      run CON của `core.call_workflow` — ⛔ **không
+    #:                           có `hold_id` riêng**, cha đã giữ tiền (xem
+    #:                           bình luận ngay trên: *"cha giữ và node cũng
+    #:                           giữ thì khách trả hai lần"*).
+    #:      `chay_lai_tu_run_id` một run **ĐỘC LẬP**, có khoản giữ **riêng** —
+    #:                           nó là một lần chạy mới, người dùng bấm, tiêu
+    #:                           tiền mới.
+    #:
+    #:    Gộp hai quan hệ vào một cột nghĩa là mọi câu hỏi *"run này có hold
+    #:    riêng không"* trả lời sai cho một nửa số hàng — im lặng. Cùng hạng
+    #:    lỗi với ba lần khoá theo `node_id` trần ở phase 4.
+    #:
+    #: ⛔ Không khoá ngoại — cùng quy ước với `parent_run_id`/`hold_id`.
+    chay_lai_tu_run_id: Mapped[str] = mapped_column(String(36), default="",
+                                                    nullable=False)
 
     __table_args__ = (
         Index("ux_workflow_run_idem", "owner_id", "idempotency_key",
@@ -1296,6 +1316,10 @@ class WorkflowRun(Base):
         Index("ix_workflow_run_parent", "parent_run_id",
               postgresql_where=text("parent_run_id <> ''"),
               sqlite_where=text("parent_run_id <> ''")),
+        # Cùng khuôn bộ phận: đại đa số run KHÔNG phải một lượt chạy lại.
+        Index("ix_wfrun_chay_lai_tu", "chay_lai_tu_run_id",
+              postgresql_where=text("chay_lai_tu_run_id <> ''"),
+              sqlite_where=text("chay_lai_tu_run_id <> ''")),
     )
 
 

@@ -227,6 +227,32 @@ duong = ["platform_core/workflow/bien_dich.py", "platform_core/workflow/dinh_ngh
          "platform_core/workflow/goi_y.py"]
 he_trong = "thi_hanh"
 
+# 🔴 KHAI 24/09 (plan wf-v2 P6): cum connector la mot RANH GIOI AN NINH, khong
+#    phai mot tep tien ich. Tach thanh mot thanh phan RIENG (khong nhet vao
+#    `core:wf_dong_co`) vi hai ly do do duoc:
+#      1. Mot thay doi o `vo_boc.py`/`proxy_egress.py` phai keo theo bo test
+#         ranh gioi — va bo do khong lien quan gi toi vong chay dong co.
+#      2. Nguoc lai, mot thay doi o dong co KHONG duoc bat ca cum nay chay:
+#         phep kiem ranh gioi dung AppContainer that, va no la loai phep cham.
+[thanh_phan."core:wf_connector"]
+mo_ta = "Connector: vo AppContainer, proxy loc mien, job object, giao thuc runner, store, YouTube upload."
+duong = ["platform_core/workflow/vo_boc.py",
+         "platform_core/workflow/proxy_egress.py",
+         "platform_core/workflow/job_object.py",
+         "platform_core/workflow/connector.py",
+         "platform_core/workflow/connector_store.py",
+         "platform_core/workflow/youtube_upload.py",
+         "platform_core/workflow/nut_loi/connector.py",
+         # Trigger poll cua piece: no goi runner, nen doi mot dong o `vo_boc`
+         # hay `runner.js` phai keo theo FLOW D.
+         "platform_core/workflow/poll_connector.py",
+         # Runner Node + piece gia: doi mot dong o `runner.js` cung phai chay
+         # lai bo test ranh gioi. `node_modules/` khong nam trong kho.
+         "connector_runner/src/", "connector_runner/allowlist.json",
+         "connector_runner/catalog.json", "connector_runner/test/",
+         "apps/connector_runner/"]
+he_trong = "thi_hanh"
+
 [thanh_phan."core:kho"]
 mo_ta = "Luu tru, upload session, tai san, R2/cuc bo."
 duong = ["platform_core/storage.py", "platform_core/upload_sessions.py",

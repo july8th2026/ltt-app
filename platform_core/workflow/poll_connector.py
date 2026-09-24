@@ -1,0 +1,183 @@
+"""Trigger **poll** của piece connector — `PIECE_POLL` (spec §11.4, FLOW D).
+
+Một trigger POLLING của Activepieces trả về *"những bản ghi mới kể từ lần
+trước"*. Nhiệm vụ của mô-đun này là biến danh sách ấy thành **một run cho mỗi
+bản ghi mới**, và ⛔ không bao giờ hai run cho một bản ghi.
+
+## Hai lớp khử trùng, và cần cả hai
+
+1. **Store của piece** (`connector_store`) — piece tự nhớ nó đã thấy gì. Đây là
+   lớp *"lần poll thứ hai không trả lại bản ghi cũ"*.
+2. **Khoá `poll:<trigger_id>:<ban_ghi_id>`** (`khoa_idem.khoa_poll`) — chốt ở
+   chỉ mục `ux_workflow_run_idem`.
+
+⭐ Vì sao không đủ một lớp: store **mất được**. Một lần khôi phục CSDL, một lần
+   sửa tay, một `xoa_pham_vi` nhầm — và lần poll kế tiếp coi **mọi** bản ghi là
+   mới, tức tạo lại run cho cả lịch sử, tức tiêu credit thật. Lớp 2 biến sự cố
+   ấy thành "không có gì xảy ra". Cùng lập luận `ban_su_kien` đã viết cho
+   `trigger.event`, và cùng lý do.
+
+## ⛔ Chu kỳ tối thiểu 300 giây
+
+Spec §11.4. Mỗi lượt poll là **một tiến trình Node** trong AppContainer trên
+máy production; một trigger đặt `chu_ky_s = 5` là 12 tiến trình mỗi phút cho
+một khách. Trần nằm ở `tao_cau_hinh`, tức **lúc tạo**, chứ không ở vòng bắn —
+từ chối lúc chạy thì khách đã lưu được một thứ không chạy.
+
+## Vì sao có `ban()` riêng thay vì dùng `ban_trigger.ban_mot`
+
+`ban_mot` tạo **một** run cho **một** mốc lịch. Poll thì một mốc ra **N** run
+(N = số bản ghi mới), và N chỉ biết được **sau khi** đã gọi ra ngoài. Đó là
+một hình dạng khác, không phải một tham số khác — nên `ban_trigger` hỏi mô-đun
+loại *"anh có tự bắn không"* thay vì mọc thêm một nhánh `if kind == ...`.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+from datetime import datetime, timedelta
+from typing import Optional
+
+from platform_core.models import Workflow, WorkflowTrigger
+from platform_core.workflow import connector as _connector
+from platform_core.workflow import connector_store as _store
+from platform_core.workflow import khoa_idem, tao_run, trigger as _trigger
+
+KIND = "PIECE_POLL"
+
+#: Spec §11.4 — `trigger.config.chu_ky_s >= 300`.
+CHU_KY_TOI_THIEU_S = 300
+
+#: Trần số bản ghi xử lý trong MỘT lượt poll. ⭐ Có trần vì lượt poll **đầu
+#: tiên** của một Sheet 50 000 dòng sẽ trả về 50 000 bản ghi, và mỗi bản ghi là
+#: một run có giữ credit. Chạm trần ⇒ xử phần đầu, phần còn lại rơi vào lượt
+#: sau (store của piece đã ghi nhận phần đã thấy).
+TRAN_BAN_GHI_MOI_LUOT = 100
+
+
+class LoiPoll(ValueError):
+    """Cấu hình poll sai. Ném **lúc tạo trigger**, không đợi lúc bắn."""
+
+
+def tao_cau_hinh(*, piece: str, piece_version: str, ten_trigger: str,
+                 props: Optional[dict] = None, credential_ref: str = "",
+                 chu_ky_s: int = CHU_KY_TOI_THIEU_S) -> dict:
+    """`config` hợp lệ cho một trigger `PIECE_POLL`. ⛔ Không dựng tay dict này
+    ở chỗ khác — trần chu kỳ phải đi qua đúng một cửa."""
+    if int(chu_ky_s) < CHU_KY_TOI_THIEU_S:
+        raise LoiPoll(
+            f"chu_ky_s = {chu_ky_s} < {CHU_KY_TOI_THIEU_S} (spec §11.4): moi "
+            "luot poll la mot tien trinh Node tren may production")
+    if not piece or not ten_trigger:
+        raise LoiPoll("thieu `piece` hoac `ten_trigger`")
+    return {"piece": str(piece), "piece_version": str(piece_version),
+            "ten_trigger": str(ten_trigger), "props": dict(props or {}),
+            "credential_ref": str(credential_ref),
+            "chu_ky_s": int(chu_ky_s)}
+
+
+def id_ban_ghi(ban_ghi) -> str:
+    """Id ổn định của một bản ghi piece trả về.
+
+    ⭐ Ưu tiên `id`/`_id`, nếu không có thì **băm nội dung**. ⛔ Không dùng chỉ
+       số trong danh sách: thứ tự của một API bên thứ ba không phải hợp đồng,
+       và một bản ghi chen vào giữa sẽ làm mọi chỉ số sau nó trỏ sang bản ghi
+       khác — tức tạo lại run cho những thứ đã chạy.
+    """
+    if isinstance(ban_ghi, dict):
+        for k in ("id", "_id", "rowId", "row_id"):
+            if ban_ghi.get(k) not in (None, ""):
+                return str(ban_ghi[k])[:80]
+    tho = json.dumps(ban_ghi, sort_keys=True, default=str)
+    return "h" + hashlib.sha256(tho.encode("utf-8")).hexdigest()[:32]
+
+
+class PiecePoll:
+    """Loại trigger. Hai câu hỏi của `LoaiTrigger`, cộng `moc_gan_nhat` và
+    `ban` (hợp đồng mở rộng — xem docstring mô-đun)."""
+
+    kind = KIND
+
+    def toi_han(self, cau_hinh: dict, bay_gio: datetime) -> bool:
+        return True
+
+    def moc_gan_nhat(self, cau_hinh: dict,
+                     bay_gio: datetime) -> Optional[datetime]:
+        return bay_gio
+
+    def lan_ke_tiep(self, cau_hinh: dict,
+                    bay_gio: datetime) -> Optional[datetime]:
+        chu_ky = int((cau_hinh or {}).get("chu_ky_s") or 0)
+        if chu_ky < CHU_KY_TOI_THIEU_S:
+            return None
+        return bay_gio + timedelta(seconds=chu_ky)
+
+    # ⭐ Hợp đồng mở rộng: `ban_trigger.ban_mot` gọi hàm này nếu có, và khi ấy
+    #    nó KHÔNG tự tạo run. Trả về số run MỚI đã tạo.
+    def ban(self, db, t: WorkflowTrigger, *, moc: datetime,
+            la_bu: bool) -> int:
+        return mot_luot_poll(db, t, moc=moc)
+
+
+def _goi_runner(db, t: WorkflowTrigger) -> list:
+    """Gọi `run_trigger` trong vỏ và áp `store_ops`. Trả danh sách bản ghi.
+
+    ⛔ Lỗi **nổi lên**: `ban_trigger.ban_den_han` đã bọc mỗi trigger trong một
+       savepoint riêng và đếm `loi_lien_tiep` (5 lần ⇒ tự tắt, spec §11.4).
+       Nuốt lỗi ở đây là vô hiệu hoá đúng cơ chế đó.
+    """
+    cau_hinh = dict(t.config or {})
+    pham_vi = _store.pham_vi_trigger(t.id)
+    auth = None
+    ref = str(cau_hinh.get("credential_ref") or "")
+    if ref:
+        from platform_core import credential as kho
+        auth = kho.lay_de_dung(db, ref, owner_id=t.owner_id)
+    kq = _connector.chay(
+        "run_trigger", piece=str(cau_hinh["piece"]),
+        version=str(cau_hinh.get("piece_version") or ""),
+        name=str(cau_hinh["ten_trigger"]),
+        props=dict(cau_hinh.get("props") or {}), auth=auth,
+        store=_store.doc(db, owner_id=t.owner_id, pham_vi=pham_vi))
+    if kq.store_ops:
+        _store.ap(db, owner_id=t.owner_id, pham_vi=pham_vi, ops=kq.store_ops)
+    if not kq.ok:
+        raise LoiPoll(f"{kq.ma_loi}: {kq.thong_diep}"[:500])
+    ra = kq.output
+    if ra is None:
+        return []
+    return list(ra) if isinstance(ra, list) else [ra]
+
+
+def mot_luot_poll(db, t: WorkflowTrigger, *, moc: datetime,
+                  goi=None) -> int:
+    """Một lượt poll ⇒ **một run cho mỗi bản ghi MỚI**. Trả số run mới.
+
+    `goi` cho phép phép kiểm thay lớp gọi runner mà **không** thay logic khử
+    trùng — thứ đang được đo.
+    """
+    wf = db.get(Workflow, t.workflow_id)
+    if wf is None:
+        raise LoiPoll(f"workflow {t.workflow_id!r} khong con")
+    ban_ghi = (goi or _goi_runner)(db, t)
+    if len(ban_ghi) > TRAN_BAN_GHI_MOI_LUOT:
+        ban_ghi = ban_ghi[:TRAN_BAN_GHI_MOI_LUOT]
+    so_moi = 0
+    for bg in ban_ghi:
+        rid = id_ban_ghi(bg)
+        _run, moi = tao_run.tao_run(
+            db, workflow=wf, owner_id=t.owner_id, trigger_kind="poll",
+            idempotency_key=khoa_idem.khoa_poll(t.id, rid),
+            inputs={"ban_ghi": bg, "ban_ghi_id": rid,
+                    "fired_at": moc.isoformat()})
+        if moi:
+            so_moi += 1
+    db.flush()
+    return so_moi
+
+
+_trigger.dang_ky(PiecePoll())
+
+__all__ = ["CHU_KY_TOI_THIEU_S", "KIND", "LoiPoll", "PiecePoll",
+           "TRAN_BAN_GHI_MOI_LUOT", "id_ban_ghi", "mot_luot_poll",
+           "tao_cau_hinh"]

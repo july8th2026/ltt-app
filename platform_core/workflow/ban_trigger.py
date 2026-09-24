@@ -32,6 +32,10 @@ from typing import Optional
 
 from platform_core.models import Workflow, WorkflowTrigger
 from platform_core.workflow import khoa_idem, tao_run, trigger as _trigger
+# ⭐ Import vi HIEU UNG PHU: `poll_connector` goi `trigger.dang_ky(PiecePoll())`
+#    luc import. Mot mo-dun dang ky ma khong ai import la mot mo-dun CHET — va
+#    `trigger.tao()` se tu choi kind `PIECE_POLL` voi cau "loai chua dang ky".
+from platform_core.workflow import poll_connector as _poll  # noqa: F401
 
 log = logging.getLogger(__name__)
 
@@ -86,6 +90,25 @@ def ban_mot(db, t: WorkflowTrigger, *, bay_gio: datetime) -> str:
         t.next_fire_at = ke
         db.flush()
         return "bo_qua" if moc is not None else "khong"
+
+    # ⭐ HỢP ĐỒNG MỞ RỘNG (plan wf-v2 P6): một loại trigger tự tạo run của nó.
+    #
+    #    Mặc định ở dưới là *"một mốc lịch ⇒ MỘT run"*, và đó là hình dạng của
+    #    CRON/SCHEDULE. Trigger **poll** của piece thì một mốc ra **N** run
+    #    (N = số bản ghi mới), và N chỉ biết được SAU khi đã gọi ra ngoài.
+    #
+    # ⛔ Đó là một hình dạng khác, không phải một tham số khác — nên lõi hỏi
+    #    mô-đun loại *"anh có tự bắn không"* thay vì mọc một nhánh
+    #    `if kind == "PIECE_POLL"`. Đúng `G42`: thêm loại thứ bảy vẫn không
+    #    sửa tệp này.
+    ban_rieng = getattr(mo_dun, "ban", None)
+    if callable(ban_rieng):
+        ban_rieng(db, t, moc=moc, la_bu=la_bu)
+        t.next_fire_at = ke
+        t.last_fired_at = bay_gio
+        t.loi_lien_tiep = 0
+        db.flush()
+        return "ban"
 
     wf = db.get(Workflow, t.workflow_id)
     if wf is None:
