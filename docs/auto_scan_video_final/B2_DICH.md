@@ -863,6 +863,25 @@ Tiêm lại ⇒ **ĐỎ đúng chỗ**.
 > 🔑 **Một tham số không ai truyền là một tham số không tồn tại** — và chỉ một
 > phép kiểm nhìn **người gọi** mới nói được điều đó.
 
+### 🔑 CÂU NGẮN NHẤT TÓM CẢ HỌ LỖI — ⛔ giữ nguyên văn
+
+> **Một tham số ⛔ không ai truyền là một tham số KHÔNG TỒN TẠI — và chỉ một
+> phép kiểm nhìn NGƯỜI GỌI mới nói được điều đó.**
+
+⭐ Nó khái quát cả **họ** lỗi gặp trong hai ngày, ⛔ không riêng `y_canh`:
+
+| ca | hình dạng |
+|---|---|
+| `y_canh` | tham số có · chỗ nhận có · ⛔ **không ai truyền** ⇒ vòng sửa mù |
+| `fallback_reason` | ghi ra · ⛔ không ai đọc |
+| `words` | mốc từng từ đã trả tiền để tính · ⛔ bị vứt ở chỗ nối |
+| `pipeline.ma_loi_la` | khai · ⛔ không nhánh nào gọi |
+| `nguon_loi` (G-01) | duyệt giá trị · ⛔ **không đặt vào hồ sơ trả về** |
+
+⚠️ **Điểm chung, và nó là điểm chết:** ⛔ **không** phép kiểm đơn vị nào bắt được,
+vì phép kiểm đơn vị **tự nó truyền** tham số. Chúng chỉ lộ ra khi có một phép
+kiểm đọc **CÂY của chính người gọi** — hoặc khi một khách trả tiền cho hậu quả.
+
 ### ⏭ Nay phép A/B **có nghĩa** — ⛔ chưa chạy
 
 ```

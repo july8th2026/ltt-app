@@ -1,0 +1,395 @@
+{
+ "⛔ KHOA — ⛔ dung mo truoc khi commit phan quyet": true,
+ "hat_xao": 20260925,
+ "so_luot_moi_nhanh": 3,
+ "model": "ltt-3.5",
+ "nhiet_do": 0.0,
+ "ep_luoc_do": true,
+ "⚠️ pham_vi": "`y_canh` o day la LY DO DUNG (7 ca NGUOI xac minh + 2 phan quyet THAT cua bo cham). => Phep do TRAN TREN cua duong `y_canh`, ⛔ KHONG phai 'vong sua that co giup khong' (bo cham that co bao dong gia 43 %).",
+ "do_dai": {
+  "A_trung_vi_tu": 8,
+  "B_trung_vi_tu": 8,
+  "ti_le_B_tren_A": 1.0,
+  "⚠️": "Neu ti le lech nhieu khoi 1,00 thi DO DAI to cao nhanh va tap MU khong con mu. Bao cho nguoi cham TRUOC."
+ },
+ "cap": [
+  {
+   "ma": "5b7e705eb6",
+   "doan": "seg_0025",
+   "phim": "v3",
+   "luot": 1,
+   "ban_1": "B",
+   "ban_2": "A",
+   "nguon_y_canh": "NGUOI xac minh (B2_DICH §4d)",
+   "y_canh": {
+    "nghi_ngo": "`雷` o day la LUU DAN, khong phai min; `掐雷` = nau luu dan (giu vai giay roi nem)",
+    "trich_nguon": "掐雷",
+    "trich_ban_cu": "nem min"
+   }
+  },
+  {
+   "ma": "44ccb6deca",
+   "doan": "seg_0025",
+   "phim": "v3",
+   "luot": 2,
+   "ban_1": "B",
+   "ban_2": "A",
+   "nguon_y_canh": "NGUOI xac minh (B2_DICH §4d)",
+   "y_canh": {
+    "nghi_ngo": "`雷` o day la LUU DAN, khong phai min; `掐雷` = nau luu dan (giu vai giay roi nem)",
+    "trich_nguon": "掐雷",
+    "trich_ban_cu": "nem min"
+   }
+  },
+  {
+   "ma": "7036214f99",
+   "doan": "seg_0025",
+   "phim": "v3",
+   "luot": 3,
+   "ban_1": "A",
+   "ban_2": "B",
+   "nguon_y_canh": "NGUOI xac minh (B2_DICH §4d)",
+   "y_canh": {
+    "nghi_ngo": "`雷` o day la LUU DAN, khong phai min; `掐雷` = nau luu dan (giu vai giay roi nem)",
+    "trich_nguon": "掐雷",
+    "trich_ban_cu": "nem min"
+   }
+  },
+  {
+   "ma": "c1b717247a",
+   "doan": "seg_0018",
+   "phim": "v3",
+   "luot": 1,
+   "ban_1": "B",
+   "ban_2": "A",
+   "nguon_y_canh": "NGUOI xac minh (B2_DICH §4d)",
+   "y_canh": {
+    "nghi_ngo": "tieng long game: chet vo ich / nap mang — khong phai nghia mat chu",
+    "trich_nguon": "纯白给",
+    "trich_ban_cu": "bi cho trang tay"
+   }
+  },
+  {
+   "ma": "261c2391c8",
+   "doan": "seg_0018",
+   "phim": "v3",
+   "luot": 2,
+   "ban_1": "A",
+   "ban_2": "B",
+   "nguon_y_canh": "NGUOI xac minh (B2_DICH §4d)",
+   "y_canh": {
+    "nghi_ngo": "tieng long game: chet vo ich / nap mang — khong phai nghia mat chu",
+    "trich_nguon": "纯白给",
+    "trich_ban_cu": "bi cho trang tay"
+   }
+  },
+  {
+   "ma": "d8602c1db5",
+   "doan": "seg_0018",
+   "phim": "v3",
+   "luot": 3,
+   "ban_1": "A",
+   "ban_2": "B",
+   "nguon_y_canh": "NGUOI xac minh (B2_DICH §4d)",
+   "y_canh": {
+    "nghi_ngo": "tieng long game: chet vo ich / nap mang — khong phai nghia mat chu",
+    "trich_nguon": "纯白给",
+    "trich_ban_cu": "bi cho trang tay"
+   }
+  },
+  {
+   "ma": "3381001f62",
+   "doan": "seg_0020",
+   "phim": "v3",
+   "luot": 1,
+   "ban_1": "A",
+   "ban_2": "B",
+   "nguon_y_canh": "NGUOI xac minh (B2_DICH §4d)",
+   "y_canh": {
+    "nghi_ngo": "thuat ngu game: ket lieu dich DA GUC; phai dung MOT cach goi nhat quan",
+    "trich_nguon": "补人",
+    "trich_ban_cu": "tieu diet / xu ly"
+   }
+  },
+  {
+   "ma": "ca7631c0c4",
+   "doan": "seg_0020",
+   "phim": "v3",
+   "luot": 2,
+   "ban_1": "A",
+   "ban_2": "B",
+   "nguon_y_canh": "NGUOI xac minh (B2_DICH §4d)",
+   "y_canh": {
+    "nghi_ngo": "thuat ngu game: ket lieu dich DA GUC; phai dung MOT cach goi nhat quan",
+    "trich_nguon": "补人",
+    "trich_ban_cu": "tieu diet / xu ly"
+   }
+  },
+  {
+   "ma": "20be9679fe",
+   "doan": "seg_0020",
+   "phim": "v3",
+   "luot": 3,
+   "ban_1": "B",
+   "ban_2": "A",
+   "nguon_y_canh": "NGUOI xac minh (B2_DICH §4d)",
+   "y_canh": {
+    "nghi_ngo": "thuat ngu game: ket lieu dich DA GUC; phai dung MOT cach goi nhat quan",
+    "trich_nguon": "补人",
+    "trich_ban_cu": "tieu diet / xu ly"
+   }
+  },
+  {
+   "ma": "83d2215196",
+   "doan": "seg_0017",
+   "phim": "v1",
+   "luot": 1,
+   "ban_1": "A",
+   "ban_2": "B",
+   "nguon_y_canh": "NGUOI xac minh (B2_DICH §4d)",
+   "y_canh": {
+    "nghi_ngo": "phim Han: day la SOJU, khong phai shochu (ten Nhat)",
+    "trich_nguon": "烧酒",
+    "trich_ban_cu": "ruou shochu"
+   }
+  },
+  {
+   "ma": "d7c1681982",
+   "doan": "seg_0017",
+   "phim": "v1",
+   "luot": 2,
+   "ban_1": "B",
+   "ban_2": "A",
+   "nguon_y_canh": "NGUOI xac minh (B2_DICH §4d)",
+   "y_canh": {
+    "nghi_ngo": "phim Han: day la SOJU, khong phai shochu (ten Nhat)",
+    "trich_nguon": "烧酒",
+    "trich_ban_cu": "ruou shochu"
+   }
+  },
+  {
+   "ma": "ee086c7544",
+   "doan": "seg_0017",
+   "phim": "v1",
+   "luot": 3,
+   "ban_1": "B",
+   "ban_2": "A",
+   "nguon_y_canh": "NGUOI xac minh (B2_DICH §4d)",
+   "y_canh": {
+    "nghi_ngo": "phim Han: day la SOJU, khong phai shochu (ten Nhat)",
+    "trich_nguon": "烧酒",
+    "trich_ban_cu": "ruou shochu"
+   }
+  },
+  {
+   "ma": "802b4f66a5",
+   "doan": "seg_0028",
+   "phim": "v1",
+   "luot": 1,
+   "ban_1": "A",
+   "ban_2": "B",
+   "nguon_y_canh": "NGUOI xac minh (B2_DICH §4d)",
+   "y_canh": {
+    "nghi_ngo": "khai niem GIAN NO VI NHIET, khong phai 'do nong lanh'",
+    "trich_nguon": "热胀冷缩",
+    "trich_ban_cu": "do nong lanh"
+   }
+  },
+  {
+   "ma": "ff0f7af8e5",
+   "doan": "seg_0028",
+   "phim": "v1",
+   "luot": 2,
+   "ban_1": "B",
+   "ban_2": "A",
+   "nguon_y_canh": "NGUOI xac minh (B2_DICH §4d)",
+   "y_canh": {
+    "nghi_ngo": "khai niem GIAN NO VI NHIET, khong phai 'do nong lanh'",
+    "trich_nguon": "热胀冷缩",
+    "trich_ban_cu": "do nong lanh"
+   }
+  },
+  {
+   "ma": "2d6e1de648",
+   "doan": "seg_0028",
+   "phim": "v1",
+   "luot": 3,
+   "ban_1": "A",
+   "ban_2": "B",
+   "nguon_y_canh": "NGUOI xac minh (B2_DICH §4d)",
+   "y_canh": {
+    "nghi_ngo": "khai niem GIAN NO VI NHIET, khong phai 'do nong lanh'",
+    "trich_nguon": "热胀冷缩",
+    "trich_ban_cu": "do nong lanh"
+   }
+  },
+  {
+   "ma": "bb67d55b72",
+   "doan": "seg_0035",
+   "phim": "v1",
+   "luot": 1,
+   "ban_1": "A",
+   "ban_2": "B",
+   "nguon_y_canh": "NGUOI xac minh (B2_DICH §4d)",
+   "y_canh": {
+    "nghi_ngo": "sai chinh ta 'thay' va KHONG nhat quan giua cac lan",
+    "trich_nguon": "师傅",
+    "trich_ban_cu": "thay bep / nguoi lam bep"
+   }
+  },
+  {
+   "ma": "57b5aaa245",
+   "doan": "seg_0035",
+   "phim": "v1",
+   "luot": 2,
+   "ban_1": "B",
+   "ban_2": "A",
+   "nguon_y_canh": "NGUOI xac minh (B2_DICH §4d)",
+   "y_canh": {
+    "nghi_ngo": "sai chinh ta 'thay' va KHONG nhat quan giua cac lan",
+    "trich_nguon": "师傅",
+    "trich_ban_cu": "thay bep / nguoi lam bep"
+   }
+  },
+  {
+   "ma": "3362066af2",
+   "doan": "seg_0035",
+   "phim": "v1",
+   "luot": 3,
+   "ban_1": "A",
+   "ban_2": "B",
+   "nguon_y_canh": "NGUOI xac minh (B2_DICH §4d)",
+   "y_canh": {
+    "nghi_ngo": "sai chinh ta 'thay' va KHONG nhat quan giua cac lan",
+    "trich_nguon": "师傅",
+    "trich_ban_cu": "thay bep / nguoi lam bep"
+   }
+  },
+  {
+   "ma": "e44f480e4e",
+   "doan": "seg_0001",
+   "phim": "v2",
+   "luot": 1,
+   "ban_1": "B",
+   "ban_2": "A",
+   "nguon_y_canh": "NGUOI xac minh (B2_DICH §4d)",
+   "y_canh": {
+    "nghi_ngo": "'这才是' = 'DAY moi la', khong phai 'Moi day' (= gan day)",
+    "trich_nguon": "这才是",
+    "trich_ban_cu": "Moi day moi la"
+   }
+  },
+  {
+   "ma": "af9e26289a",
+   "doan": "seg_0001",
+   "phim": "v2",
+   "luot": 2,
+   "ban_1": "A",
+   "ban_2": "B",
+   "nguon_y_canh": "NGUOI xac minh (B2_DICH §4d)",
+   "y_canh": {
+    "nghi_ngo": "'这才是' = 'DAY moi la', khong phai 'Moi day' (= gan day)",
+    "trich_nguon": "这才是",
+    "trich_ban_cu": "Moi day moi la"
+   }
+  },
+  {
+   "ma": "a19eba8b89",
+   "doan": "seg_0001",
+   "phim": "v2",
+   "luot": 3,
+   "ban_1": "A",
+   "ban_2": "B",
+   "nguon_y_canh": "NGUOI xac minh (B2_DICH §4d)",
+   "y_canh": {
+    "nghi_ngo": "'这才是' = 'DAY moi la', khong phai 'Moi day' (= gan day)",
+    "trich_nguon": "这才是",
+    "trich_ban_cu": "Moi day moi la"
+   }
+  },
+  {
+   "ma": "d3bae4a881",
+   "doan": "seg_0005",
+   "phim": "v3",
+   "luot": 1,
+   "ban_1": "A",
+   "ban_2": "B",
+   "nguon_y_canh": "BO CHAM that (v3_cham.json)",
+   "y_canh": {
+    "nghi_ngo": "Bản bỏ 'tinh luyện' trong '提炼枪' và dịch '架着门口' thành 'chặn cửa', làm lệch ý 'chĩa súng canh cửa'.",
+    "trich_nguon": "这人肯定会往里面冲,架着门口往左边走,用提炼枪让他来接子弹。",
+    "trich_ban_cu": "Người này chắc chắn sẽ lao vào trong, chặn cửa đi sang trái, dùng súng để bắt anh ta hứng đạn."
+   }
+  },
+  {
+   "ma": "6635ef5b1f",
+   "doan": "seg_0005",
+   "phim": "v3",
+   "luot": 2,
+   "ban_1": "B",
+   "ban_2": "A",
+   "nguon_y_canh": "BO CHAM that (v3_cham.json)",
+   "y_canh": {
+    "nghi_ngo": "Bản bỏ 'tinh luyện' trong '提炼枪' và dịch '架着门口' thành 'chặn cửa', làm lệch ý 'chĩa súng canh cửa'.",
+    "trich_nguon": "这人肯定会往里面冲,架着门口往左边走,用提炼枪让他来接子弹。",
+    "trich_ban_cu": "Người này chắc chắn sẽ lao vào trong, chặn cửa đi sang trái, dùng súng để bắt anh ta hứng đạn."
+   }
+  },
+  {
+   "ma": "7b2d4af573",
+   "doan": "seg_0005",
+   "phim": "v3",
+   "luot": 3,
+   "ban_1": "B",
+   "ban_2": "A",
+   "nguon_y_canh": "BO CHAM that (v3_cham.json)",
+   "y_canh": {
+    "nghi_ngo": "Bản bỏ 'tinh luyện' trong '提炼枪' và dịch '架着门口' thành 'chặn cửa', làm lệch ý 'chĩa súng canh cửa'.",
+    "trich_nguon": "这人肯定会往里面冲,架着门口往左边走,用提炼枪让他来接子弹。",
+    "trich_ban_cu": "Người này chắc chắn sẽ lao vào trong, chặn cửa đi sang trái, dùng súng để bắt anh ta hứng đạn."
+   }
+  },
+  {
+   "ma": "2e865a050c",
+   "doan": "seg_0010",
+   "phim": "v3",
+   "luot": 1,
+   "ban_1": "B",
+   "ban_2": "A",
+   "nguon_y_canh": "BO CHAM that (v3_cham.json)",
+   "y_canh": {
+    "nghi_ngo": "Dịch '趁' thành 'Khiến', làm sai từ 'nhân lúc/khi' thành 'khiến cho'.",
+    "trich_nguon": "趁敌人还没上来,咱们直接趴下,用盒子当掩体,他就发现不了我们。",
+    "trich_ban_cu": "Khiến kẻ địch chưa lên, chúng ta trực tiếp nằm xuống, dùng hộp làm che chắn, anh ta sẽ không phát hiện ra chúng ta."
+   }
+  },
+  {
+   "ma": "45b1b6131b",
+   "doan": "seg_0010",
+   "phim": "v3",
+   "luot": 2,
+   "ban_1": "A",
+   "ban_2": "B",
+   "nguon_y_canh": "BO CHAM that (v3_cham.json)",
+   "y_canh": {
+    "nghi_ngo": "Dịch '趁' thành 'Khiến', làm sai từ 'nhân lúc/khi' thành 'khiến cho'.",
+    "trich_nguon": "趁敌人还没上来,咱们直接趴下,用盒子当掩体,他就发现不了我们。",
+    "trich_ban_cu": "Khiến kẻ địch chưa lên, chúng ta trực tiếp nằm xuống, dùng hộp làm che chắn, anh ta sẽ không phát hiện ra chúng ta."
+   }
+  },
+  {
+   "ma": "d500490e84",
+   "doan": "seg_0010",
+   "phim": "v3",
+   "luot": 3,
+   "ban_1": "A",
+   "ban_2": "B",
+   "nguon_y_canh": "BO CHAM that (v3_cham.json)",
+   "y_canh": {
+    "nghi_ngo": "Dịch '趁' thành 'Khiến', làm sai từ 'nhân lúc/khi' thành 'khiến cho'.",
+    "trich_nguon": "趁敌人还没上来,咱们直接趴下,用盒子当掩体,他就发现不了我们。",
+    "trich_ban_cu": "Khiến kẻ địch chưa lên, chúng ta trực tiếp nằm xuống, dùng hộp làm che chắn, anh ta sẽ không phát hiện ra chúng ta."
+   }
+  }
+ ]
+}
