@@ -114,4 +114,9 @@ cronsim>=2.7,<3.0
 #    Venv phat trien da co pywin32 san (mot goi khac keo vao), nen KHONG mot
 #    phep kiem nao thay thieu -- chi venv SACH cua server moi thay. Bai hoc:
 #    goi chi co mat "nho phuc" trong venv dev la mot phu thuoc CHUA khai bao.
-pywin32>=306
+#
+# [!] Can tren `<400`: pywin32 KHONG danh so semver - no dem 306, 308,
+#    310, 312... nen khong co ranh gioi "major" de bam vao. Dai hien
+#    hanh la 3xx, va `<400` la thu gan nhat voi mot ranh gioi that.
+#    May chu dang chay 312 (cai 24/09 luc khoi phuc su co).
+pywin32>=306,<400
