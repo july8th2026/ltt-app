@@ -56,16 +56,26 @@ def main() -> int:
     device = "cuda" if torch.cuda.is_available() else "cpu"
     compute = "float16" if device == "cuda" else "int8"
     audio = whisperx.load_audio(args.input)
-    # ⛔ CHI cho ngon ngu khong co dau cach: do la noi Whisper tra ve van ban
-    #    KHONG dau cau, va la noi moi phep chia doan chet theo. Xem docstring.
-    tuy_chon = {}
-    if (args.language or "").lower()[:2] in ("zh", "ja"):
-        tuy_chon["initial_prompt"] = MAU_CO_DAU_CAU.get(
-            (args.language or "").lower()[:2], "")
     model = whisperx.load_model(args.model, device, compute_type=compute,
-                                language=args.language or None,
-                                asr_options=tuy_chon or None)
-    raw = model.transcribe(audio, batch_size=8, language=args.language or None)
+                                language=args.language or None)
+
+    # 🔴 **Nhan ngon ngu TRUOC, roi moi dat prompt.** ⛔ Doc `args.language` la
+    #    sai: ASV goi runner nay voi `--language` RONG khi khach de "tu doan", va
+    #    do la ca THUONG GAP. Do that 24/09: ban va doc `args.language` chay xong
+    #    mot luot 25,3 giay tren card ma prompt KHONG HE duoc ap — ban chep ra y
+    #    het luot truoc, tung chu, va `khoa_chung` khac nhau nen do khong phai
+    #    cache. ⭐ Mot thay doi "da ap dung" ma ket qua khong doi MOT KY TU la
+    #    dau hieu no chua bao gio chay, khong phai dau hieu no vo dung.
+    ngon = (args.language or model.detect_language(audio) or "").lower()
+    mau = MAU_CO_DAU_CAU.get(ngon[:2], "")
+    if mau:
+        # `TranscriptionOptions` la dataclass (faster-whisper), va whisperx giu
+        # no o `pipeline.options` (`asr.py:437`). ⛔ Khong sua goi da cai — chi
+        # doi tuy chon cua MOT the hien ta vua tao.
+        import dataclasses
+        model.options = dataclasses.replace(model.options, initial_prompt=mau)
+
+    raw = model.transcribe(audio, batch_size=8, language=ngon or None)
     language = str(raw.get("language") or args.language or "")
     align_model, metadata = whisperx.load_align_model(language_code=language, device=device)
     aligned = whisperx.align(raw["segments"], align_model, metadata, audio, device,
