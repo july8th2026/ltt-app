@@ -392,3 +392,33 @@ def test_khai_python_NOI_RA_rang_duong_ASR_la_cau_hoi_KHAC(monkeypatch):
     assert "CTranslate2" in khai["chua_tra_loi"]
     assert "KHONG di qua bien nay" in khai["chua_tra_loi"]
     assert set(khai) >= {"python_tach", "da_ghim", "vi_sao", "chua_tra_loi"}
+
+
+def test_ban_ghi_MOI_luot_khai_trinh_thong_dich_va_nguon_dinh_nghia():
+    """⛔ Hai truong nay phai co trong JSON tung luot, khong chi trong ma.
+
+    🔴 **Vi sao truong `trinh_thong_dich_tien_trinh_con` la BAT BUOC.** Tu 24/09
+       ton tai mot trang thai truoc day khong co: *card duoc cap, nhung duong
+       demucs chay bang mot trinh thong dich KHAC production* (`LTT_ASV_PYTHON_TACH`).
+       Nguoi doc sau phai phan biet duoc no voi *do tren dung venv production* —
+       hai thu cho cung mot con so giay nhung tra loi hai cau hoi khac nhau.
+
+    ⭐ Chot bang AST chu khong bang mot luot chay that: mot phep kiem doi mot luot
+       15 phut de phat hien mot dong bi xoa la mot phep kiem se khong ai chay.
+    """
+    import ast
+    import inspect
+
+    from tests import test_3001_asv_nghiem_thu_cuoi as t3001
+
+    than = ast.parse(inspect.getsource(
+        t3001.test_NGHIEM_THU_CUOI_nam_luot_tren_phim_that).lstrip())
+    khoa_da_gan = {
+        n.slice.value for n in ast.walk(than)
+        if isinstance(n, ast.Subscript) and isinstance(n.slice, ast.Constant)
+        and isinstance(n.slice.value, str)}
+    for khoa in ("nguon_dinh_nghia_luot", "trinh_thong_dich_tien_trinh_con",
+                 "ma_luot"):
+        assert khoa in khoa_da_gan, (
+            f"ban ghi tung luot khong con gan `{khoa}` — dieu kien dieu phoi "
+            f"24/09: bang chung phai khai ca hai, khong chi nam trong ma")

@@ -21,12 +21,16 @@ ra tệp dùng được.
 |---|---|---|---|
 | K-01 | Khuôn **không xin cấp card**: `JobContext(job.id)` không có `gpu_uuid`, còn worker thật lấy card từ `gpu_lease` (`job_runner.py:299`). Thiếu card ⇒ `ctx.has_gpu` False, `ctx.gpu_env()` không ghim `CUDA_VISIBLE_DEVICES` ⇒ demucs + ASR chạy **CPU** (đo 23/09: 72,0 s vs 42,2 s) | `test_448._chay_hang_doi` | **ĐÃ SỬA** `6e2045a1` |
 | K-02 | Khoá `cpu_nhieu` bọc **cả lượt chạy**, kể cả lúc CHỜ. `NEN_V3` đo `voice_synthesis` 937/1191 s và gần hết là gọi HTTP ⇒ giữ khoá ~20 phút cho việc **chờ mạng** (sự cố 23/09: 51 phút ở CPU 6–8 %, 6 lượt xếp hàng) | khuôn scratch của làn trước | **ĐÃ SỬA** `6e2045a1` |
+| K-05 | 🔧 **TỆP SẢN PHẨM** (`tach_tieng.py`): nền tảng cấp card đúng mà tiến trình con vẫn `ThieuCard` — `tach_nguon` dùng `sys.executable`, trong khuôn là trình thông dịch test (`torch cpu`, `cuda False`) | `tach_tieng.tach_nguon` | **ĐÃ SỬA** `9b8aa1b5` — `LTT_ASV_PYTHON_TACH`, mặc định `sys.executable` ⇒ 🔒 production không đổi gì |
+| K-06 | Bài học hai chiều: `torch.cuda` **False** mà `ctranslate2.get_cuda_device_count()` = **1**. Một bool không nói thay chồng CUDA kia theo **cả hai** hướng | `fx.ghim_python_co_card` | **ĐÃ GHI** |
 
 ### Cách sửa
 
 * `fx.card_cho_job(job_type, job_id)` — gọi **chính** `job_runner._vram_can` +
   `_giu_gpu` của worker thật, không gõ lại phép chọn. Nhả lease ở `finally`.
 * `fx.doi_hoi_card()` — máy không có card thì **dừng**, không âm thầm chạy CPU.
+* `fx.ghim_python_co_card(monkeypatch)` — ghim tiến trình con demucs vào
+  venv worker, và **khai** rằng đường ASR là câu hỏi khác (K-05, K-06).
 * `fx.khai_card(nhat_ky)` — báo cáo khai `pha_doi_card` / `pha_duoc_card` /
   `pha_doi_card_ma_KHONG_duoc`. ⛔ Nó **không** suy ra "ASR chạy trên GPU":
   CTranslate2 mang CUDA/cuDNN riêng, nên `torch.cuda.is_available()` True không
