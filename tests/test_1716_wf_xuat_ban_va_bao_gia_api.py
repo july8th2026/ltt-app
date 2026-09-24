@@ -5,10 +5,15 @@ from __future__ import annotations
 from tests.test_1711_wf_luoc_do_dong_co import db  # noqa: F401  (fixture)
 from platform_core.workflow.cong_cu import CongCu
 
+# `returns` phai khai: validator publish (spec 6.2, `bien_dich`) kiem
+# `nodes.<id>.output.<cong>` bang chinh tap nay, nen mot `CongCu` gia khong
+# khai `returns` la mot node KHONG co cong ra nao va `$a.text` duoi kia bi tu
+# choi -- dung hanh vi mong muon.
 CC = {"text.chat": CongCu(ten="text.chat", app_slug="ltt_llm",
                           job_type="ltt_llm.chat", type_version=1,
                           params_schema={}, side_effect="external",
-                          idempotency_fields=(), tinh_gia=lambda p: 3)}
+                          idempotency_fields=(), tinh_gia=lambda p: 3,
+                          returns={"text": "text"})}
 
 
 def _draft(db):
