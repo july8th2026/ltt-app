@@ -86,8 +86,6 @@ def _chay_youtube(db, params: dict, meta: dict) -> dict:
        gửi byte đầu tiên, nên một lần thử lại nối tiếp phiên cũ thay vì mở
        phiên mới. Đó là khác biệt giữa "thử lại an toàn" và "đăng hai video".
     """
-    import httpx
-
     from platform_core.workflow import youtube_upload as yt
 
     owner_id = str(params.get("owner_id") or "")
@@ -103,7 +101,12 @@ def _chay_youtube(db, params: dict, meta: dict) -> dict:
     du_lieu = _doc_artifact(db, owner_id, str(params.get("video") or ""))
     cu = _store.doc(db, owner_id=owner_id, pham_vi=pham_vi)
     phien_url = str(cu.get(khoa_phien) or "")
-    with httpx.Client(timeout=120.0) as client:
+    # ⛔ Transport dung o `youtube_upload.phien_http()`, KHONG o day:
+    #    `test_1006::test_khong_APP_nao_tu_dung_HTTP` cam tang app tu
+    #    dung HTTP, va no dung — hai ban quyet dinh duong ra mang se troi
+    #    khoi nhau. Client van phai song qua CA HAI lenh vi `phien_url`
+    #    duoc GHI vao CSDL o giua chung.
+    with yt.phien_http() as client:
         if not phien_url:
             phien_url = yt.mo_phien(
                 client, access_token=str(token), so_byte=len(du_lieu),

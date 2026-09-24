@@ -53,6 +53,28 @@ QUYEN_RIENG_TU = ("private", "unlisted", "public")
 MA_LOI = ("dau_vao_sai", "credential_loi", "provider_loi", "het_gio",
           "ket_qua_mo_ho")
 
+#: Hạn của một lượt HTTP tới YouTube. Một khối 8 MiB trên đường chậm vẫn phải
+#: kịp, nên rộng hơn hẳn hạn mặc định của `httpx`.
+HAN_HTTP_S = 120.0
+
+
+def phien_http() -> "httpx.Client":
+    """Transport cho một lượt upload — ⭐ dựng Ở ĐÂY, không ở tầng app.
+
+    🔴 `apps/connector_runner/jobs.py` từng tự `import httpx` và tự dựng
+       `httpx.Client(timeout=120.0)`. Nó đỏ `test_1006::
+       test_khong_APP_nao_tu_dung_HTTP`, và hàng rào ấy đúng: mọi quyết định
+       về đường ra mạng (hạn giờ, và ngày mai là proxy/retry/verify) phải nằm
+       MỘT chỗ, nếu không bản thứ hai sẽ trôi khỏi bản thứ nhất — đúng hình
+       dạng pha 05–06 vừa gỡ ở sáu app.
+
+    ⚠️ Vì sao là một *factory* chứ không phải `upload()` tự mở client: lớp gọi
+       phải GHI `phien_url` vào CSDL **giữa** `mo_phien` và `upload` (lưu trước
+       khi gửi byte đầu tiên — nếu không, một lần mất điện thành hai video).
+       Nên client phải sống qua cả hai lệnh, tức lớp gọi phải giữ nó.
+    """
+    return httpx.Client(timeout=HAN_HTTP_S)
+
 
 class LoiYouTube(Exception):
     def __init__(self, ma: str, thong_diep: str = "", *, status: int = 0):

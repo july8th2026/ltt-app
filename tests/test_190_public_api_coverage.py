@@ -113,6 +113,18 @@ DISPOSITION = {
     # `apps/agent_dong_co/manifest.py`. Same shape as `asv_gpu` below:
     # `catalog_parent="agent"` + `surface="runtime"`, no ToolSpec, no card.
     "agent_dong_co": (DEFER, ()),
+    # Not a sellable app either, and for the same reason one line up: it is the
+    # sole job_type owner of `workflow.piece` + `workflow.connector` (wf-v2
+    # §11.1), split out of `agent` so `agent` keeps declaring NO job_type. It
+    # executes connector nodes inside an AppContainer; it is infrastructure, not
+    # a product. `catalog_parent="agent"` + `surface="runtime"` + `public=False`,
+    # no ToolSpec, no card, `credit_cost` is 0 on purpose because the money is
+    # already held by `workflow_run` — see `apps/connector_runner/manifest.py`.
+    #
+    # ⚠️ DEFER here records the SHAPE, not a schedule: there is nothing to open
+    #    later. A caller who wants to run a piece runs a workflow; the runner is
+    #    not a capability a customer buys separately.
+    "connector_runner": (DEFER, ()),
     # Device management, not a priced tool: no ToolSpec and no Job. Publishing
     # it would publish a contract about *device identity*, which has to wait for
     # the relay decision and the AGPL legal review (Q93, docs/nexus/).
