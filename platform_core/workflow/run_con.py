@@ -136,9 +136,19 @@ def ap_ket_qua_con(db, cha: WorkflowRun, graph: dict) -> int:
         nid = str(n["id"])
         if str(n.get("type")) != LOAI_GOI:
             continue
-        if may_trang_thai.trang_thai_node(db, cha.id, nid) != "WAITING":
-            continue
+        # ⭐ MOT lan doc, khong hai. Ban truoc hoi `trang_thai_node` roi hoi
+        #    `anh_chup_hien_tai` — hai truy van cho CUNG mot hang, va phep thu
+        #    hep `None` di vong qua mot ham khac nen mypy khong theo duoc
+        #    (`union-attr`, gate L1 24/09 cua phien VPS bat duoc).
+        #
+        # ⛔ Khong `--accept` cai canh bao do: mot `union-attr` co the la mot
+        #    `None` THAT. O day no khong phai — `trang_thai_node` tra
+        #    `NODE_BAT_DAU` khi khong co anh chup, nen "WAITING" da ham y anh
+        #    chup ton tai. Nhung ham y do la thu phai DOC HAI HAM moi thay;
+        #    viet thang ra thi ca mypy lan nguoi doc deu thay, va bot mot truy van.
         anh = thi_hanh.anh_chup_hien_tai(db, cha.id, nid)
+        if anh is None or anh.execution_status != "WAITING":
+            continue
         rid = str((anh.output_ref or {}).get(KHOA_RUN_CON) or "")
         con = db.get(WorkflowRun, rid) if rid else None
         if con is None or con.status not in may_trang_thai.RUN_KET_THUC:

@@ -106,6 +106,24 @@ class WebhookError(Exception):
 _system_resolver = an_toan_mang._phan_giai_he_thong
 
 
+def chinh_sach_cho(require_https: bool) -> an_toan_mang.ChinhSach:
+    """Cờ `require_https` của webhook → một `ChinhSach` của bộ gác chung.
+
+    ⭐ Tách ra 24/09/2026 (P5b/T1) để `delivery.py` dựng **đúng** chính sách
+    này cho client ghim IP, thay vì chép lại tập sơ đồ — hai bản chép sẽ lệch
+    nhau, và bản lệch là bản có lỗ hổng.
+    """
+    return an_toan_mang.ChinhSach(
+        so_do_cho_phep=frozenset({"https"} if require_https
+                                 else {"https", "http"}))
+
+
+def loi_api(exc: an_toan_mang.LoiChanSSRF):
+    """`LoiChanSSRF` → **đúng câu** `/api/v1` vẫn trả. Không khớp chuỗi."""
+    return invalid_request(
+        _THONG_BAO.get(exc.ma, _THONG_BAO[an_toan_mang.MA_KHONG_CHO_PHEP]))
+
+
 def validate_target(url: str, *, require_https: bool = True,
                     resolver=None) -> str:
     """Check a customer-supplied URL, or raise.
@@ -119,9 +137,7 @@ def validate_target(url: str, *, require_https: bool = True,
     `an_toan_mang` không được biết: dịch cờ `require_https` của webhook
     thành một `ChinhSach`, và dịch mã lỗi thành đúng câu `/api/v1` trả.
     """
-    chinh_sach = an_toan_mang.ChinhSach(
-        so_do_cho_phep=frozenset({"https"} if require_https
-                                 else {"https", "http"}))
+    chinh_sach = chinh_sach_cho(require_https)
     try:
         # ⚠️ `resolver or _system_resolver` — KHÔNG để `an_toan_mang` tự chọn
         #    bộ phân giải mặc định. Bộ test của webhook thay DNS bằng
@@ -131,9 +147,7 @@ def validate_target(url: str, *, require_https: bool = True,
         return an_toan_mang.kiem_url(url, chinh_sach=chinh_sach,
                                      resolver=resolver or _system_resolver)
     except an_toan_mang.LoiChanSSRF as exc:
-        raise invalid_request(
-            _THONG_BAO.get(exc.ma, _THONG_BAO[an_toan_mang.MA_KHONG_CHO_PHEP])
-        ) from exc
+        raise loi_api(exc) from exc
 
 
 # ── Signing ───────────────────────────────────────────────────────────────────

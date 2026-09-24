@@ -95,7 +95,7 @@ def phat_hien_dai(khung: list[dict], *, rong: int, cao: int) -> dict | None:
             cx, cy, h = _tam(d["hop"])
             if abs(cx - rong / 2.0) > LECH_TAM_TOI_DA * rong:
                 continue
-            chu = _chuan(d.get("chu"))
+            chu = _chuan(str(d.get("chu") or ""))
             if chu:
                 ung_vien.append((cy, h, i, chu, d["hop"][1], d["hop"][3]))
     if not ung_vien:
@@ -152,7 +152,7 @@ def chu_trong_khung(dong: list[dict], *, cao_chu: float,
         if float(d.get("diem") or 0) < DIEM_TOI_THIEU:
             continue
         cx, cy, h = _tam(d["hop"])
-        chu = _chuan(d.get("chu"))
+        chu = _chuan(str(d.get("chu") or ""))
         if chu and h >= TI_LE_CAO_TOI_THIEU * cao_chu:
             ung.append((cx, cy, h, d["hop"], chu, float(d["diem"])))
     if not ung:

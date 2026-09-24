@@ -814,15 +814,66 @@ Phân trang: **không** trong phase 7 (dùng ForEach + subworkflow).
 `artifact` ⇒ `artifact_ref`, trần 100 MB), `duration_ms`, `request` (`method`,
 `url` đã che query nhạy cảm, `bytes_sent`).
 
-SSRF — tách `public_api/webhooks.validate_target` thành
-`platform_core/mang_an_toan.py` (một nguồn, webhook công khai gọi lại chính nó):
+SSRF — ĐÃ XÂY, và tên/luật khác bản viết trước 24/09. Nguồn chân lý là
+**`platform_core/an_toan_mang.py`** (⛔ không phải `mang_an_toan.py`), rút ra từ
+`public_api/webhooks.validate_target`; `webhooks.py` gọi lại chính nó, node
+`core.http` dùng chung.
 
-- chỉ `http`/`https`, cổng 80/443/8080/8443;
-- phân giải DNS **một lần**, từ chối mọi địa chỉ loopback, private (RFC1918, ULA),
-  link-local, CGNAT, multicast, `0.0.0.0/8`, metadata cloud; **ghim IP** cho kết nối
-  (`httpx` transport với địa chỉ đã phân giải + SNI theo host) — chặn DNS rebinding;
-- mỗi lần chuyển hướng kiểm lại từ đầu;
+**Vị từ chặn — ⛔ KHÔNG phải một danh sách lớp địa chỉ.** Bản viết trước liệt kê
+"loopback, private (RFC1918, ULA), link-local, CGNAT, multicast, `0.0.0.0/8`,
+metadata"; cách liệt kê ấy **sai trong thực tế** vì một danh sách gõ tay phải bảo
+trì và sẽ thủng. Đo trên CPython 3.13.12 (24/09/2026, máy A — chạy thật, không suy):
+
+```
+ipaddress.ip_address("100.64.0.1").is_private      -> False   # CGNAT, RFC 6598
+```
+
+⇒ dải CGNAT `100.64.0.0/10` **không** nằm trong `is_private`, nên mọi bộ lọc kiểu
+`is_private or is_reserved or is_loopback or ...` cho nó đi lọt — và hạ tầng VPS của
+dự án chạy NAT qua WireGuard, nên dải đó **có thật** trên máy này.
+
+`is_global` là một mệnh đề trả lời đúng câu cần hỏi ("địa chỉ này định tuyến được
+trên Internet công cộng không") và phủ ngược lại loopback, private, link-local,
+reserved, unspecified **cộng** CGNAT, `192.0.0.0/24`, các dải tài liệu và IPv6 ULA.
+`ip_address("100.64.0.1").is_global` đo được là `False`.
+
+🔴 **Nhưng `is_global` MỘT MÌNH cũng chưa đủ.** Cùng phép đo, cùng ngày:
+
+```
+ipaddress.ip_address("239.255.255.250").is_global  -> True    # SSDP/UPnP, LAN
+ipaddress.ip_address("224.0.0.1").is_global        -> True    # all-hosts
+ipaddress.ip_address("ff02::1").is_global          -> True    # all-nodes IPv6
+ipaddress.ip_address("64:ff9b::7f00:1").is_global  -> True    # NAT64 (RFC 6052)
+                                                              # bọc 127.0.0.1
+```
+
+Multicast đi lọt, và `239.255.255.250` đúng là địa chỉ dò dịch vụ trong LAN — bàn
+đạp SSRF cổ điển, không phải ca lý thuyết. NAT64 thì bọc thẳng `127.0.0.1`.
+
+⇒ Vị từ **đang chạy** trong `an_toan_mang.kiem_dia_chi` là hợp của **bốn** vế:
+
+```
+not is_global   HOẶC   is_multicast   HOẶC
+IPv4 lồng trong IPv6 (ipv4_mapped, 64:ff9b::/96, 64:ff9b:1::/48) mà không global
+                HOẶC   nằm trong METADATA_ADDRESSES
+```
+
+Ba việc còn lại:
+
+- phân giải DNS **một lần**, kiểm **mọi** địa chỉ tên đó trả về (không chỉ cái đầu),
+  rồi **ghim IP**: nối tới đúng địa chỉ đã kiểm, giữ `Host` và ép SNI về tên gốc —
+  `platform_core/http_an_toan.py` (port lối ghim từ
+  `langchain_core/_security/_transport.py`, commit `7622d3dc`). Đây là thứ chặn DNS
+  rebinding; "kiểm rồi gọi" thì **không** (TOCTOU — `public_api/delivery.py` mang
+  đúng lỗ đó tới 24/09/2026, vá ở P5b/T1, `tests/test_2913_delivery_ghim_ip.py`);
+- mỗi lần chuyển hướng kiểm lại từ đầu (`follow_redirects` ở client ⇒ httpx gọi lại
+  transport cho từng hop);
 - ngoại lệ nội bộ: **không có** (node HTTP không bao giờ gọi được dịch vụ trên máy A/B).
+
+⚠️ **Chưa có trong mã, đừng đọc thành đã có:** (a) giới hạn cổng 80/443/8080/8443 —
+`an_toan_mang` hôm nay **không** kiểm cổng; (b) "chỉ `http`/`https`" — mặc định
+`ChinhSach.so_do_cho_phep` là **`{"https"}`**, `http` chỉ mở khi nơi gọi truyền một
+chính sách lỏng hơn. Hai điều đó là việc của phase 7 nếu vẫn muốn.
 
 Retry mặc định: job `max_attempts=3` cho lỗi mạng/5xx với method `GET/HEAD/PUT/DELETE`;
 `POST/PATCH` chỉ thử lại khi người dùng đặt `Idempotency-Key` header. Node HTTP khai
@@ -876,9 +927,77 @@ action dùng chúng bị loại khỏi allowlist (phép kiểm tĩnh trong `xuat
   `--max-old-space-size=384`. Thời gian: `han_ms` + giết cứng sau 120 s.
 - CPU: job `workflow.connector` chạy trên lane riêng với `admission_resource =
   "connector"` trần 2 slot đồng thời trên máy A.
-- Mạng đi ra: runner cài `undici` global dispatcher kiểm đích bằng cùng luật
-  `mang_an_toan` (bản TS sinh từ cùng danh sách dải chặn, phép kiểm §18.4 so hai bản).
 - Chạy dưới tài khoản dịch vụ worker hiện có; `tmp_dir` xoá sau mỗi lệnh.
+
+#### Mạng đi ra — 🔴 bản viết trước SAI, và lỗ thật vẫn CHƯA GIẢI
+
+Bản viết trước ghi: *"runner cài `undici` global dispatcher kiểm đích bằng cùng luật
+`mang_an_toan`"*. Đo thật trên bàn thử `spike/egress/` (Node v24.17.0, máy A,
+24/09/2026 — mỗi dòng dưới đây là một lần chạy, không phải suy luận):
+
+```
+$ TARGET=https://example.com/ node -r ./preload-undici-dispatcher.js ./piece-https.js
+{"ok":true, "mode":"https-raw","status":200}          <- LỌT
+$ TARGET=https://example.com/ node -r ./preload-undici-dispatcher.js ./piece-axios.js
+{"ok":true, "mode":"axios","status":200}              <- LỌT
+$ TARGET=https://example.com/ node -r ./preload-undici-dispatcher.js ./piece-fetch.js
+{"ok":false,"mode":"fetch","error":"EGRESS_BLOCKED"}  <- chỉ cái này bị chặn
+```
+
+⇒ undici global dispatcher **chỉ** chặn `fetch()`. Nó **không** chặn
+`require('http'/'https')`, nên **axios lọt hoàn toàn** — và axios là thứ nằm bên
+trong `@slack/web-api` và phần lớn SDK piece. Phương án đó không dùng được.
+
+Lớp **bắt buộc** là `net.Socket.prototype.connect` — mọi đường (`http`, `https`,
+`tls`, `net`, undici nội bộ của Node) cuối cùng đều đi qua nó. Cùng bàn thử:
+
+```
+$ TARGET=https://example.com/ node -r ./preload-socket-only.js ./piece-https.js
+{"ok":false,"error":"EGRESS_BLOCKED"}
+$ TARGET=https://example.com/ node -r ./preload-socket-only.js ./piece-axios.js
+{"ok":false,"error":"EGRESS_BLOCKED"}
+$ TARGET=https://example.com/ node -r ./preload-socket-only.js ./piece-fetch.js
+{"ok":false,"error":"EGRESS_BLOCKED"}
+```
+
+Vá thêm `dns.lookup` là lớp phụ (thông điệp lỗi sớm hơn ở bước phân giải tên), ⛔
+không phải điều kiện đủ và cũng không ngang hàng: một piece gọi thẳng bằng IP trần
+không đi qua `dns.lookup` lần nào.
+
+⛔ **Nhưng vá trong tiến trình KHÔNG phải một ranh giới an ninh.** Cùng preload
+`net.Socket.prototype.connect` vừa chặn 100 % ở trên, một piece chỉ cần đẻ một tiến
+trình con — cờ `-r <preload>` là cờ của **tiến trình đó**, nó không đi theo `spawn`:
+
+```
+$ node -r ./preload-socket-only.js ./piece-https.js          # đối chứng, CHA
+{"ok":false,"error":"EGRESS_BLOCKED"}
+$ node -r ./preload-socket-only.js ./piece-child-process.js  # CON
+CHILD_REACHED 200
+```
+
+Cha bị chặn, con ra Internet HTTP 200 (`child_process.spawnSync(process.execPath,
+['-e', "…require('https')…"])`). Dẫn lại từ spike P6 (⛔ không phải phép đo của lượt
+này): đội Activepieces nói đúng điều đó trong `activepieces/activepieces#11547`, có
+trích CVE-2025-68668 của n8n — sandbox trong-tiến-trình không đủ cho mã không tin
+cậy có quyền mạng.
+
+⚠️ Và **Windows Job Object (gạch đầu dòng đầu mục này) KHÔNG lấp lỗ này** — nó giới
+hạn CPU, bộ nhớ và cây tiến trình, **không lọc socket**. Đưa nó vào chỗ này là nhầm
+vai.
+
+⇒ Vai đúng của lớp vá preload: **phòng thủ theo chiều sâu** — chặn piece *viết ẩu*
+gọi nhầm nội mạng. Nó không chặn piece *cố ý*.
+
+🔴 **Ranh giới thật phải ở mức hệ điều hành, và đó là việc CHƯA GIẢI.** Ba hướng cần
+**đo** trước khi mở khách (⛔ không chọn bằng suy luận): tài khoản Windows riêng cho
+runner + luật tường lửa outbound theo **SID** · AppContainer + network capability ·
+namespace mạng (container/WSL2). Mỗi hướng phải trả lời đúng phép thử
+`node -r ./preload-socket-only.js ./piece-child-process.js` ở trên, không phải trả
+lời trên giấy. Toàn văn spike: `docs/superpowers/reports/p6-egress/spike-chan-egress.md`.
+
+⚠️ Chưa đo, nên chưa được coi là đã chặn: UDP (`dgram`), QUIC/HTTP-3, và native
+addon mở socket bằng syscall trực tiếp — không đường nào trong số đó đi qua
+`net.Socket`.
 
 ### 11.3 Chuỗi cung ứng
 
@@ -911,7 +1030,14 @@ của allowlist ⇒ đỏ.
 
 ### 11.6 Allowlist vòng đầu
 
-| Piece | Auth dùng | Action/trigger đưa lên palette (phần còn lại ẩn) |
+⚠️ **Cột thứ ba là ĐÍCH CẦN TRA, ⛔ không phải tên action đã xác minh.** Các tên
+dưới đây được **đoán trước** khi viết spec; chính spec đã chốt rằng danh sách thật
+sẽ lấy bằng `xuat_catalog` ở **bước đầu phase 8**, chạy trên phiên bản Activepieces
+được ghim. Vì vậy ⛔ không mã nào được lấy tên ở bảng này làm chuỗi hằng trước khi
+bước ấy chạy. (Đối chiếu: đoạn YouTube ngay dưới bảng là một danh sách **đã tra
+thật** — ở tag 0.90.2 — nên nó nói được điều bảng này chưa nói được.)
+
+| Piece | Auth dùng | Action/trigger **định** đưa lên palette — tên chưa xác minh |
 |---|---|---|
 | `google-sheets` | service account (`piece_custom`) | find_rows, get_rows, insert_row, update_row, clear_row · trigger poll new_row |
 | `google-drive` | service account | upload_file, create_folder, list_files, share_file |
@@ -922,9 +1048,10 @@ của allowlist ⇒ đỏ.
 | `telegram-bot` | bot token | send_text_message, send_media |
 | `discord` | bot token / webhook url | send_message_webhook |
 
-Tên action chính xác chốt ở bước đầu phase 8 bằng `xuat_catalog` (danh sách trên là
-đích; action không tồn tại ở phiên bản ghim thì bỏ, không thay bằng action khác mà
-không review).
+Quy trình chốt tên (bước đầu phase 8): chạy `xuat_catalog` trên phiên bản ghim →
+đối chiếu với cột thứ ba → action nào **không tồn tại** thì **bỏ**, ⛔ không tự thay
+bằng một action khác mà không review → ghi danh sách đã xác minh đè lên bảng trên,
+kèm tag đã tra (như đoạn YouTube dưới đây làm).
 
 `connector.youtube.upload` (Python native, `httpx`, REST resumable upload): piece
 YouTube của Activepieces **không có** action upload (đã kiểm ở tag 0.90.2:
