@@ -82,8 +82,12 @@ def test_gioi_khai_doc_dung_xuat_xu():
     assert cc.gioi_khai("Huong_KT.wav", "Diễm Chi — nữ, kể chuyện ngôn tình") == "nu"
 
 
-@pytest.mark.skipif(not cc.KHO_GIONG_CHUNG.is_file()
-                    and not (cc.KHO_GIONG_CHUNG / "manifest.json").is_file(),
+#: ⛔ Dieu kien la MOT: co `manifest.json` trong kho clip goc hay khong.
+#:    Ban cu con ve thanh `not cc.KHO_GIONG_CHUNG.is_file() and ...`, nhung
+#:    `KHO_GIONG_CHUNG` la mot THU MUC, nen `.is_file()` cua no khong bao gio
+#:    dung — nua dau la mot nhan chet, va no lam nguoi doc tuong co hai duong
+#:    thoa man hang rao nay. Cung mot cach hoi voi `test_2144`.
+@pytest.mark.skipif(not (cc.KHO_GIONG_CHUNG / "manifest.json").is_file(),
                     reason="khong co kho clip goc tren may nay")
 def test_viec_sinh_phu_het_45_giong():
     """20 preset (tap hieu chinh CO NHAN) + 25 giong kho chung, khong sot."""
