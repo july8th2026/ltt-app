@@ -823,3 +823,174 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+# ───────────────────────────────────────────────────────────────────────────
+# THƯỚC PHÂN ĐOẠN B1 — BA SỐ CẠNH NHAU, ⛔ KHÔNG một điểm tổng hợp
+# ───────────────────────────────────────────────────────────────────────────
+
+#: ⭐ NGƯỠNG VIẾT TRƯỚC KHI ĐO (chốt 24/09/2026, commit này đi TRƯỚC lượt đo
+#: đầu tiên — tra `git log` nếu cần đối chứng).
+#:
+#: ⛔ BA số báo CẠNH NHAU, ⛔ không gộp thành một điểm. Gộp là cách một mặt
+#: yếu trốn sau một mặt mạnh — đúng ca V2 (báo động giả đẹp, mù 60 % thực thể).
+NGUONG_PHAN_DOAN = {
+    # (a) chỗ NGẮT — thước cũ, nay do `pyannote.metrics` tính.
+    "ranh_gioi_dung_sai_s": 0.3,
+    "ranh_gioi_f1_toi_thieu": 0.80,
+    # (b) độ DÀI đoạn — một RÀNG BUỘC của ta, ⛔ không thư viện nào định nghĩa
+    #     hộ. Luật "bộ đo phải tải về" áp cho PHÉP TÍNH, ⛔ không áp cho
+    #     NGƯỠNG của ta.
+    "do_dai_toi_da_s": 7.0,
+    "ti_le_vi_pham_toi_da": 0.05,
+    # (c) ONSET — mặt trước nay KHÔNG AI CHẤM, và là mốc chi phối KHỚP MÔI.
+    #     `pyannote` đếm ranh giới bằng `[segment.end ...][:-1]` ⇒ mọi onset
+    #     sau khoảng lặng bị bỏ im lặng.
+    "onset_dung_sai_s": 0.3,
+    "onset_do_nhay_toi_thieu": 0.80,
+}
+
+#: Lưới thời gian của chân lý nền OCR (`l_ocr_gt_v2.json`: *"Mốc = lưới 0,5 s"*).
+#: 🔴 Hệ quả phải nói to: chân lý nền chỉ phân giải tới **±0,25 s**. Đo dung sai
+#: **0,3 s** trên nó là đo dưới khả năng phân giải của chính thước đo — phần lớn
+#: "trượt" sẽ là LƯỢNG TỬ HOÁ của chân lý nền, ⛔ không phải lỗi của hệ thống.
+#: ⇒ luôn báo KÈM mức 0,5 s, và đó mới là con số phán quyết được.
+LUOI_CHAN_LY_NEN_S = 0.5
+
+
+def doc_doan_b1(tep: pathlib.Path) -> list[tuple[float, float]]:
+    """`[(bắt, kết)]` từ một tệp `b1_chep_loi_moi/*.json` (whisperx)."""
+    d = doc_json(tep)
+    return [(float(s["bat"]), float(s["ket"])) for s in d["doan"]]
+
+
+def doc_chan_ly_nen_ocr(tep: pathlib.Path) -> list[tuple[float, float]]:
+    """`[(bắt, kết)]` từ `l_ocr_gt_v2.json` — đọc tay, lưới 0,5 s."""
+    d = doc_json(tep)
+    return [(float(r[0]), float(r[1])) for r in d["dong"]]
+
+
+def khop_onset(
+    ref: Sequence[tuple[float, float]],
+    hyp: Sequence[tuple[float, float]],
+    dung_sai: float,
+) -> dict:
+    """Khớp ONSET theo đặc tả `sed_eval`, ghép TỐI ƯU bằng `scipy`.
+
+    ⭐ MƯỢN ĐẶC TẢ, ⛔ KHÔNG MƯỢN RUNTIME. `sed_eval` (MIT) định nghĩa một sự
+    kiện là khớp khi `|onset_ref - onset_est| <= t_collar`. Ta lấy **định
+    nghĩa** ấy và nối bằng `scipy.optimize.linear_sum_assignment` — ⛔ không cài
+    `sed_eval`, vì nó kéo `dcase_util`, `librosa`, `matplotlib`, `soundfile`.
+
+    ⛔ Ghép THAM LAM (lấy cặp gần nhất rồi xoá hàng/cột) ⛔ không tối ưu: nó
+    đổi kết quả theo thứ tự duyệt. `linear_sum_assignment` cho ghép cực tiểu
+    tổng sai lệch — một con số, ⛔ không phụ thuộc thứ tự.
+
+    ⚠️ Đây là ONSET của **đoạn**, ⛔ không phải mọi ranh giới. Một đoạn nối
+    liền đoạn trước vẫn có onset riêng — đó đúng là thứ `pyannote` bỏ mất.
+    """
+    from scipy.optimize import linear_sum_assignment
+
+    r = np.asarray([b for b, _ in ref], dtype=float)
+    h = np.asarray([b for b, _ in hyp], dtype=float)
+    if len(r) == 0 or len(h) == 0:
+        return {
+            "n_ref": int(len(r)), "n_hyp": int(len(h)), "khop": 0,
+            "do_chinh_xac": None, "do_nhay": None, "f1": None,
+            "dung_sai": dung_sai, "lech_tuyet_doi_trung_vi": None,
+        }
+    # Chi phí = |Δ|; cặp quá dung sai bị cấm bằng một chi phí lớn hữu hạn.
+    d = np.abs(r[:, None] - h[None, :])
+    cam = d > dung_sai
+    chi_phi = np.where(cam, 1e6, d)
+    hang, cot = linear_sum_assignment(chi_phi)
+    nhan = [(i, j) for i, j in zip(hang, cot, strict=True) if not cam[i, j]]
+    k = len(nhan)
+    lech = [float(d[i, j]) for i, j in nhan]
+    return {
+        "n_ref": int(len(r)),
+        "n_hyp": int(len(h)),
+        "khop": k,
+        "do_chinh_xac": ti_le_kem_ktc(k, len(h)),
+        "do_nhay": ti_le_kem_ktc(k, len(r)),
+        "f1": (2 * k / (len(r) + len(h))) if (len(r) + len(h)) else None,
+        "dung_sai": dung_sai,
+        "lech_tuyet_doi_trung_vi": float(np.median(lech)) if lech else None,
+    }
+
+
+def do_dai_doan(doan: Sequence[tuple[float, float]], toi_da: float) -> dict:
+    """(b) RÀNG BUỘC độ dài — ⛔ không phải bộ đo, nên ta tự viết, có chủ ý."""
+    dai = np.asarray([k - b for b, k in doan], dtype=float)
+    vi_pham = int((dai > toi_da).sum())
+    return {
+        "n": int(len(dai)),
+        "vi_pham": vi_pham,
+        "ti_le_vi_pham": ti_le_kem_ktc(vi_pham, len(dai)) if len(dai) else None,
+        "dai_nhat_s": float(dai.max()) if len(dai) else None,
+        "trung_vi_s": float(np.median(dai)) if len(dai) else None,
+        "toi_da_cho_phep_s": toi_da,
+    }
+
+
+def ranh_gioi_pyannote(
+    ref: Sequence[tuple[float, float]],
+    hyp: Sequence[tuple[float, float]],
+    dung_sai: float,
+) -> dict:
+    """(a) chỗ NGẮT — ⛔ ta KHÔNG tự tính, gọi `pyannote.metrics`.
+
+    ⚠️ Đã đo 24/09: hàm này đếm ranh giới bằng `[segment.end for segment in
+    reference][:-1]` — CHỈ mốc KẾT, và BỎ mốc cuối. Trên ba phim của ta nó hụt
+    11-19 % và lệch về phía BI QUAN, nên số dùng được; nhưng nó **im lặng bỏ**
+    mọi onset sau khoảng lặng. Đó là lý do `khop_onset` tồn tại cạnh nó.
+    """
+    from pyannote.core import Segment, Timeline
+    from pyannote.metrics.segmentation import SegmentationPrecision, SegmentationRecall
+
+    def _tl(x: Sequence[tuple[float, float]]) -> "Timeline":
+        return Timeline([Segment(b, k) for b, k in x])
+
+    t_ref, t_hyp = _tl(ref), _tl(hyp)
+    p = float(SegmentationPrecision(tolerance=dung_sai)(t_ref, t_hyp))
+    r = float(SegmentationRecall(tolerance=dung_sai)(t_ref, t_hyp))
+    return {
+        "do_chinh_xac": p,
+        "do_nhay": r,
+        "f1": (2 * p * r / (p + r)) if (p + r) else 0.0,
+        "dung_sai": dung_sai,
+        "n_ranh_gioi_pyannote_dem": max(len(hyp) - 1, 0),
+        "n_ranh_gioi_that": _dem_ranh_gioi_that(hyp),
+    }
+
+
+def _dem_ranh_gioi_that(doan: Sequence[tuple[float, float]]) -> int:
+    """Số mốc THẬT: mọi `bắt` và `kết` khác nhau. Có khoảng lặng ⇒ > `n-1`."""
+    moc = set()
+    for b, k in doan:
+        moc.add(round(b, 6))
+        moc.add(round(k, 6))
+    return len(moc)
+
+
+# ── BỐN ĐỐI CHỨNG — một thước không hạ được bản suy biến là một thước hỏng ──
+
+
+def doi_chung_gop_tat(doan: Sequence[tuple[float, float]]) -> list[tuple[float, float]]:
+    """Gộp TẤT thành một đoạn — phải làm độ nhạy sụp."""
+    return [(min(b for b, _ in doan), max(k for _, k in doan))] if doan else []
+
+
+def doi_chung_bam_deu(
+    doan: Sequence[tuple[float, float]], buoc: float
+) -> list[tuple[float, float]]:
+    """Băm đều theo `buoc` giây — `2.0` phải làm độ chính xác sụp (quá nhiều
+    onset), `30.0` phải làm độ nhạy sụp (quá ít onset)."""
+    if not doan:
+        return []
+    dau, cuoi = min(b for b, _ in doan), max(k for _, k in doan)
+    ra, t = [], dau
+    while t < cuoi:
+        ra.append((t, min(t + buoc, cuoi)))
+        t += buoc
+    return ra
