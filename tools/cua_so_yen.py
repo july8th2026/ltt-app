@@ -139,6 +139,31 @@ def _con_song(pid: int) -> bool:
         k32.CloseHandle(h)
 
 
+def _in(*phan: object) -> None:
+    """`print` chiu duoc console cp1252.
+
+    🔴 SU CO 24/09: mot luot xep hang CHET giua chung voi `UnicodeEncodeError`
+       ngay trong dong in "dang xep hang". Nguyen nhan: thong diep nay nhung
+       **mo ta lenh cua PHIEN KHAC**, va lenh do co the mang ky tu ngoai
+       cp1252 (duong dan tieng Viet, dau cau la). Console Windows mac dinh
+       cp1252 => `print` nem, `chay_nang.py` chet, LUOT NANG KHONG CHAY.
+
+    ⛔ Day la hang loi te nhat trong mot cong cu DUNG CHUNG: noi bao "toi dang
+       cho" lai la noi giet chinh luot dang cho, va no chi no khi HANG XOM co
+       ten la. Phien nao cung dinh, khong phien nao tai hien duoc mot minh.
+
+    ⭐ Sua o CHO IN chu khong o cho ghi nhan: ban ghi cu tren dia van con, va
+       cong cu khac cung ghi vao do — lam sach mot dau vao khong cuu duoc
+       nhung dau vao con lai.
+    """
+    tin = " ".join(str(x) for x in phan)
+    try:
+        print(tin)
+    except UnicodeEncodeError:
+        ma = getattr(sys.stdout, "encoding", None) or "ascii"
+        print(tin.encode(ma, "replace").decode(ma, "replace"))
+
+
 def _doc(tai_nguyen: str = MAC_DINH) -> dict | None:
     try:
         return json.loads(_tep(tai_nguyen).read_text(encoding="utf-8"))
@@ -238,7 +263,7 @@ def thu_giu(phien: str, lenh: str, tai_nguyen: str = MAC_DINH, *,
         ly_do = _treo(cu)
         if not ly_do:
             return False
-        print(f"  [cua so yen] doat khoa treo ({tai_nguyen}): "
+        _in(f"  [cua so yen] doat khoa treo ({tai_nguyen}): "
               f"{_mo_ta(cu)} - {ly_do}")
         tep.unlink(missing_ok=True)
         return thu_giu(phien, lenh, tai_nguyen)
@@ -401,7 +426,7 @@ class CuaSoYen:
                 self.bat_dau_giu = time.time()
                 self.da_cho_s = time.time() - bat_dau
                 if self.da_cho_s > 2:
-                    print(f"  [cua so yen] den luot - da doi "
+                    _in(f"  [cua so yen] den luot - da doi "
                           f"{self.da_cho_s / 60:.1f} phut\n")
                 return self
             doi = time.time() - bat_dau
@@ -411,24 +436,24 @@ class CuaSoYen:
                 #    exist` — mot ket qua SAI, khong chi cham. Khoa treo (tien trinh
                 #    chet / qua gia) van bi doat trong `thu_giu`, nen cho tiep khong ket.
                 if not da_bao_khong_chen:
-                    print(f"  [cua so yen] cho qua {self.cho_toi_da_s / 60:.0f} phut "
+                    _in(f"  [cua so yen] cho qua {self.cho_toi_da_s / 60:.0f} phut "
                           f"nhung KHONG chen {', '.join(khong_chen)} (ket qua se sai) "
                           f"- cho tiep: {self._ai_giu()}")
                     da_bao_khong_chen = True
             elif doi > self.cho_toi_da_s:
-                print(f"  [cua so yen] cho qua {self.cho_toi_da_s / 60:.0f} "
+                _in(f"  [cua so yen] cho qua {self.cho_toi_da_s / 60:.0f} "
                       f"phut ma khoa van bi giu: {self._ai_giu()}")
-                print("  [cua so yen] CHAY MA KHONG CO KHOA - ket qua co the "
+                _in("  [cua so yen] CHAY MA KHONG CO KHOA - ket qua co the "
                       "bi nhieu boi luot kia.\n")
                 self.da_cho_s = doi
                 return self
             if time.time() - in_lan_cuoi > NHIP_IN_S:
-                print(f"  [cua so yen] xep hang {doi / 60:.1f} phut - "
+                _in(f"  [cua so yen] xep hang {doi / 60:.1f} phut - "
                       f"{self._ai_giu()}")
                 for tn in self.tai_nguyen:
                     cu = _doc(tn)
                     if cu and (cb := _canh_bao_giu_lau(cu, tn)):
-                        print(f"  [cua so yen] [{tn}] {cb}")
+                        _in(f"  [cua so yen] [{tn}] {cb}")
                 in_lan_cuoi = time.time()
             time.sleep(1.0)
 
@@ -450,13 +475,13 @@ class CuaSoYen:
         if self.bat_dau_giu and self.da_giu_xong:
             giu = time.time() - self.bat_dau_giu
             ten = ", ".join(self.da_giu_xong)
-            print(f"  [cua so yen] da nha {ten} - giu khoa {giu / 60:.1f} phut")
+            _in(f"  [cua so yen] da nha {ten} - giu khoa {giu / 60:.1f} phut")
             # Nguong CHAT NHAT trong cac khoa vua giu: mot luot om ca
             # `cpu_nhieu` lan `postgres_test` van phai bi hoi theo ve CPU.
             nguong_min = min((GIU_LAU_DOC_QUYEN_S if t in TAI_NGUYEN_DOC_QUYEN
                               else GIU_LAU_S) for t in self.da_giu_xong)
             if giu > nguong_min:
-                print(f"  [cua so yen] CANH BAO: GIU LAU hon nguong "
+                _in(f"  [cua so yen] CANH BAO: GIU LAU hon nguong "
                       f"{nguong_min / 60:.0f} phut. Lenh nay co buoc KHONG phai "
                       f"tinh (cho, doc, sua, commit) khong? Tach ra, hoac chia "
                       f"nho lenh tinh.")
@@ -474,27 +499,27 @@ def main() -> int:
     if a.lenh == "trang-thai":
         ds = dang_giu()
         if not ds:
-            print("RANH - khong tai nguyen nao dang bi giu.")
+            _in("RANH - khong tai nguyen nao dang bi giu.")
             return 0
         for bg in ds:
             if bg.get("hong"):
-                print(f"[{bg['tai_nguyen']}] TEP KHOA HONG - luot sau se don.")
+                _in(f"[{bg['tai_nguyen']}] TEP KHOA HONG - luot sau se don.")
                 continue
-            print(f"[{bg['tai_nguyen']}] {_mo_ta(bg)}")
+            _in(f"[{bg['tai_nguyen']}] {_mo_ta(bg)}")
             if cb := _canh_bao_giu_lau(bg, bg.get("tai_nguyen", MAC_DINH)):
-                print(f"    CANH BAO: {cb}")
+                _in(f"    CANH BAO: {cb}")
             if bg.get("treo"):
-                print(f"    CANH BAO: TREO ({bg['treo']}) - luot sau tu doat.")
+                _in(f"    CANH BAO: TREO ({bg['treo']}) - luot sau tu doat.")
         return 0
 
     can_nha = ([a.tai_nguyen] if a.tai_nguyen
                else [bg.get("tai_nguyen", MAC_DINH) for bg in dang_giu()])
     if not can_nha:
-        print("Khong co khoa nao de nha.")
+        _in("Khong co khoa nao de nha.")
         return 0
     that_bai = [tn for tn in can_nha if not nha(ep=a.ep, tai_nguyen=tn)]
     if not that_bai:
-        print(f"Da nha: {', '.join(can_nha)}")
+        _in(f"Da nha: {', '.join(can_nha)}")
         return 0
     # 🔴 Cau goi y phai NEU TEN tai nguyen, va day la cho no NGUY HIEM nhat.
     #
@@ -510,7 +535,7 @@ def main() -> int:
     #    nguoi go tay theo.
     goi_y = " ".join(f"--tai-nguyen {tn}" for tn in that_bai[:1])
     them = "  (lam TUNG cai, dung go tran)" if len(that_bai) > 1 else ""
-    print(f"Phien khac dang giu: {', '.join(that_bai)}. "
+    _in(f"Phien khac dang giu: {', '.join(that_bai)}. "
           f"Neu chac chung treo: `nha --ep {goi_y}`{them}")
     return 1
 
