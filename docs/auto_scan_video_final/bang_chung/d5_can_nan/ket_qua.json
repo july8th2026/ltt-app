@@ -1,0 +1,124 @@
+{
+  "toc_do_tts": {
+    "n": 18,
+    "trung_vi": 3.2840811044003453,
+    "min": 3.0,
+    "max": 3.7109375,
+    "hieu_chinh_bo_dem": "18/18",
+    "khe_cua_phep_do_cu_trung_vi_s": 15.8625
+  },
+  "phim": {
+    "v1": {
+      "n": 83,
+      "am_tiet_tren_ky_tu_han": {
+        "trung_vi": 0.765,
+        "p05": 0.571,
+        "p95": 1.0
+      },
+      "ky_tu_tren_ky_tu_han": {
+        "trung_vi": 3.3,
+        "p05": 2.333,
+        "p95": 4.438
+      },
+      "khong_vua_tren_khe": {
+        "k": 50,
+        "n": 83,
+        "ti_le": 0.602
+      },
+      "khong_vua_tren_ngan_sach": {
+        "k": 46,
+        "n": 83,
+        "ti_le": 0.554
+      },
+      "he_so_can_nen_trong_so_khong_vua": {
+        "trung_vi": 1.13,
+        "p95": 1.45,
+        "max": 89.56
+      }
+    },
+    "v2": {
+      "n": 74,
+      "am_tiet_tren_ky_tu_han": {
+        "trung_vi": 0.721,
+        "p05": 0.571,
+        "p95": 1.0
+      },
+      "ky_tu_tren_ky_tu_han": {
+        "trung_vi": 3.09,
+        "p05": 2.25,
+        "p95": 4.444
+      },
+      "khong_vua_tren_khe": {
+        "k": 69,
+        "n": 74,
+        "ti_le": 0.932
+      },
+      "khong_vua_tren_ngan_sach": {
+        "k": 66,
+        "n": 74,
+        "ti_le": 0.892
+      },
+      "he_so_can_nen_trong_so_khong_vua": {
+        "trung_vi": 1.38,
+        "p95": 1.76,
+        "max": 2.01
+      }
+    },
+    "v3": {
+      "n": 31,
+      "am_tiet_tren_ky_tu_han": {
+        "trung_vi": 0.714,
+        "p05": 0.556,
+        "p95": 0.889
+      },
+      "ky_tu_tren_ky_tu_han": {
+        "trung_vi": 3.26,
+        "p05": 2.556,
+        "p95": 3.73
+      },
+      "khong_vua_tren_khe": {
+        "k": 29,
+        "n": 31,
+        "ti_le": 0.935
+      },
+      "khong_vua_tren_ngan_sach": {
+        "k": 27,
+        "n": 31,
+        "ti_le": 0.871
+      },
+      "he_so_can_nen_trong_so_khong_vua": {
+        "trung_vi": 1.66,
+        "p95": 2.04,
+        "max": 2.41
+      }
+    }
+  },
+  "tong": {
+    "n": 188,
+    "am_tiet_tren_ky_tu_han": {
+      "trung_vi": 0.737,
+      "p05": 0.562,
+      "p95": 1.0
+    },
+    "ky_tu_tren_ky_tu_han": {
+      "trung_vi": 3.22,
+      "p05": 2.364,
+      "p95": 4.4
+    },
+    "khong_vua_tren_khe": {
+      "k": 148,
+      "n": 188,
+      "ti_le": 0.787
+    },
+    "khong_vua_tren_ngan_sach": {
+      "k": 139,
+      "n": 188,
+      "ti_le": 0.739
+    },
+    "he_so_can_nen_trong_so_khong_vua": {
+      "trung_vi": 1.33,
+      "p95": 1.96,
+      "max": 89.56
+    }
+  }
+}

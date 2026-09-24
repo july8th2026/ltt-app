@@ -766,3 +766,88 @@ thấy ba số ở đó vẫn đúng như đã in; thứ đổi là **số nào 
 ⚠️ `SubER` (Apache-2.0) ⛔ **chưa dùng**: nó **vẫn cần chân lý nền**, và nó là thước cho
 **phụ đề**. Chỉ nhánh **CPS/CPL/LPB** là không cần nền — và đó là nhánh đã dựng ở đây.
 ⛔ Gói `suber` ⛔ chưa cài trên máy này (đã kiểm).
+
+---
+
+## 14. `D5` — ĐO TRƯỚC KHI XÂY. Câu trả lời: **CÓ, và nặng.**
+
+> Bằng chứng: `bang_chung/d5_can_nan/{do_can_nan.py,ket_qua.json}`.
+> ⛔ Chỉ ĐỌC bằng chứng đã có — ⛔ không TTS, ⛔ không LLM, ⛔ không GPU.
+
+### 14.1 🔴 ĐẾM ÂM TIẾT TRƯỚC — và con số `3,5–4,5×` là một **LỖI ĐƠN VỊ**
+
+`n = 188` đoạn, ba phim, bản dịch nền (`b2_dich_nen`) so với lời gốc (`b1_chep_loi_moi`):
+
+| đơn vị | trung vị | p05 | p95 |
+|---|---|---|---|
+| **KÝ TỰ** Việt / ký tự Hán | **3,22×** | 2,36 | 4,40 |
+| ⭐ **ÂM TIẾT** Việt / ký tự Hán | 🔴 **0,737×** | 0,562 | 1,000 |
+
+⇒ ⭐ Con số `3,5–4,5×` lưu truyền trong hạng mục **đúng** — nhưng nó là **ký tự**, và
+dải `[2,36 ; 4,40]` đo được khớp nó. Còn **mọi công thức nắn chạy trên ÂM TIẾT**, và ở
+đơn vị ấy tiếng Việt cần **0,737** âm tiết cho mỗi ký tự Hán — tức **ÍT HƠN**, ⛔ không
+nhiều hơn.
+
+> 🔴 **Lệch đơn vị: 3,22 / 0,737 ≈ 4,4 lần.** Thiết kế cần gạt bằng `3,5–4,5×` trong khi
+> engine tiêu thụ âm tiết là **rút gọn quá tay ~4,4 lần** — ⭐ đúng họ `N-34`, ca thứ ba.
+
+⚠️ Bộ đếm âm tiết **đã hiệu chỉnh** với trường `am_tiet` có sẵn trong bằng chứng TTS:
+**khớp 18/18**. ⛔ Không tự định nghĩa một đơn vị mới rồi đem so với số của người khác.
+
+### 14.2 Tốc độ NÓI — đo trên giọng TTS thật, ⛔ không mượn
+
+`fix_toc_do/vong_dau_moi_v*.json`, `am_tiet / giay_am`, `n = 18`:
+
+```
+3,284 âm tiết/giây   [3,00 ; 3,71]
+```
+
+⛔ Đây là tốc độ **NÓI** của chính giọng ta dùng — ⛔ không phải 9 ký tự/giây của Netflix
+(tốc độ **ĐỌC** của mắt người xem phụ đề). §12.
+
+### 14.3 🔴 Ba phim có cần nắn không? **CÓ — 73,9 %**
+
+| phim | n | ⛔ không vừa / khe | ⛔ không vừa / **ngân sách** |
+|---|---|---|---|
+| v1 | 83 | 60,2 % | 55,4 % |
+| v2 | 74 | 93,2 % | 89,2 % |
+| v3 | 31 | 93,5 % | 87,1 % |
+| **tổng** | **188** | **78,7 % [72,3 ; 84,0]** | 🔴 **73,9 % [67,2 ; 79,7]** |
+
+*(ngân sách = **tới lúc khe sau bắt đầu**, theo `thoi_gian.py:26-31` mượn Subdub — ⛔ không
+phải `ket − bat`, lấy `ket − bat` là vứt hết khoảng lặng.)*
+
+⇒ ⭐ **Không phải tỉ lệ nhỏ.** Lần này ta ⛔ **không** đuổi một khuyết tật không tồn tại:
+ba phần tư số khe ⛔ không chứa nổi lời dịch. **D5 đáng xây.**
+
+**Trong số khe không vừa**, hệ số cần nén: trung vị **1,33×**, p95 **1,96×**, max 89,56×.
+🔴 `TRAN_TANG_TOC = 1.15` (`thoi_gian.py:55`) ⇒ **cần gạt 3 (giãn/nén) một mình ⛔ KHÔNG
+đủ cho quá nửa** số khe không vừa. ⇒ ⭐ Thứ tự ba cần gạt điều phối đặt ra là **bắt buộc**,
+⛔ không phải sở thích.
+
+### 14.4 ⚠️ `N-34` **ca thứ ba** — và nó suýt trả lời sai chính câu này
+
+`fix_toc_do/vong_dau_moi_v2v3.json::tom_tat` ghi **`ti_le_can_nan: 0.417`** (5/12).
+⛔ **KHÔNG chuyển được sang hôm nay:**
+
+```
+khe của phép đo CŨ : trung vị 15,86 s   (n=18, TRƯỚC `cat_doan`)
+khe SAU `cat_doan` : trung vị  1,74 s   (n=74, p95 6,02 s)
+```
+
+⇒ Phép đo cũ chạy trên khe **dài gấp 9 lần**, nơi một khe nuốt được nhiều lời hơn hẳn.
+Cùng tên *"tỉ lệ cần nắn"*, hai **đối tượng** khác nhau: **41,7 % → 73,9 %**.
+⭐ Nếu lấy 41,7 % làm căn cứ, ta sẽ thiết kế D5 cho **một nửa** khối lượng thật.
+
+### 14.5 Còn thiếu gì trước khi viết dòng mã đầu tiên
+
+| thứ | trạng thái |
+|---|---|
+| tỉ lệ âm tiết (đơn vị đúng) | ✅ **0,737×** [0,562 ; 1,000], n=188 |
+| tốc độ nói của giọng thật | ✅ **3,284** âm tiết/s [3,00 ; 3,71], n=18 |
+| % khe cần nắn | ✅ **73,9 %** [67,2 ; 79,7] |
+| hệ số nén cần | ✅ trung vị **1,33×**, p95 **1,96×** |
+| ⭐ đặc tả 4 bậc + 7 hằng số **VideoLingo** | ⛔ **CHƯA đọc** — phải trích nguồn |
+| ⭐ hai điểm **open-dubbing** làm tốt hơn (kéo tới **biến cố thật** kế tiếp; **cắt lặng thừa TRƯỚC** khi tính hệ số) | ⛔ **CHƯA đọc** |
+| cần gạt 1 (LLM rút gọn) ⇒ **≥ 3 lượt**, báo trung vị + khoảng | ⛔ chưa chạy (⚠️ lượt **nặng**) |
+| ⚠️ `max 89,56×` — một khe cực ngắn | ⛔ chưa soi; nghi một đoạn < 0,1 s, phải xem trước khi nó bẻ cong thống kê |
