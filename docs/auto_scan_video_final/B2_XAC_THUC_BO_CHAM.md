@@ -344,3 +344,127 @@ Nó không hoàn hảo. ⇒ **16,7% của V2 là một CẬN TRÊN** của tỉ 
 thật, không phải giá trị đúng. Muốn biết sàn thật thì phải soi tay phần dư —
 và nếu sàn thật đã gần 15% thì **ngưỡng 15% cần chính chủ dự án chốt lại**, chứ
 không phải nới lén.
+
+---
+
+# 10. NỀN SẠCH — và một lỗi ĐẾM của chính phép đo
+
+## 10.1 🔴 Con số 58,3% báo ở §9 là SAI — lỗi của phép đo, không phải của bộ chấm
+
+`gop_trung_vi` gộp **hai** cách một mã vắng mặt vào một ô:
+
+```
+mã nằm trong một lô HỎNG        -> chưa hỏi xong        ⇒ KHÔNG đếm
+mã model không nhắc tới trong
+một lô CHẠY ĐƯỢC               -> không thấy lỗi nào    ⇒ ĐẠT
+```
+
+⭐ Đo 24/09 cho thấy model **chỉ liệt kê những mục nó thấy có lỗi**: lô 200–209
+trả về **0/10** mã kèm `khong_dat=0`, lô 220–229 trả về **10/10**. Coi 10 mục
+**sạch** đó là *"chưa trả lời"* làm mẫu số tụt 30 → 16 và tỉ lệ báo động giả
+**nhảy từ 23% lên 44%** mà **không một phán quyết nào đổi**.
+
+⛔ Và `qc_ai.doc_ngu_nghia` vốn ghi rõ mã thiếu là **ĐẠT** — phép đo phải đếm
+theo **cùng hợp đồng với sản phẩm**, nếu không nó đo một hệ thống khác. Đây đúng
+bẫy *"hai trạng thái gộp thành một giá trị"* của chính kho này, và tôi đi thẳng
+vào nó.
+
+Đếm lại mọi lượt đã lưu (miễn phí — dữ liệu có sẵn):
+
+| bản | FA đã báo | **FA đúng** | lô hỏng | nền |
+|---|---|---|---|---|
+| V1 dải giữ riêng | 43,3% | 43,3% | 0% | sạch |
+| V2 dải giữ riêng | 16,7% | 16,7% | 0% | sạch |
+| V3 nhiệt độ mặc định | ~~58,3%~~ | **40,0%** | 22,2% | ⛔ bẩn |
+| **V3 + `temp 0.0`** | ~~43,8%~~ | **23,3%** | **0%** | ✅ sạch |
+
+## 10.2 Ghim nhiệt độ dọn sạch kênh — một thay đổi, hai vấn đề biến mất
+
+| | lô hỏng JSON | độ phủ mỗi lượt |
+|---|---|---|
+| V3, `temp` mặc định (≈1.0) | **22,2%** (2/9) | 66,7% |
+| V3, `temp = 0.0` | **0%** (0/9) | **100%** |
+
+⇒ Cổng nền sạch (lô hỏng ≤ 3,3% **và** độ phủ ≥ 28/30): **ĐẠT**.
+
+⭐ Và `lat_nghia` tụt 53% ở §9 là **hiện vật của kênh bẩn**, không phải của lời
+nhắc — trên nền sạch nó về **100%**. ⛔ Đúng như điều phối dặn: đừng dựng giả
+thuyết cho một con số đo trên kênh hỏng.
+
+## 10.3 V3 trên nền sạch — hai vế
+
+| | báo động giả | `lat_nghia` | `sai_thuc_the` |
+|---|---|---|---|
+| V1 | 43,3% | 100% | 100% |
+| V2 | **16,7%** | 100% | ⛔ **40%** |
+| **V3 + `temp 0.0`** | **23,3%** | ✅ **100%** | ✅ **87%** |
+
+⇒ **Độ nhạy: ĐẠT cả hai loại, dư nhiều.** Chỉ còn cổng báo động giả:
+**23,3% > 15%**.
+
+# 11. SÀN LỖI CỦA FLORES — đo mù, và nó chưa kết luận được
+
+## 11.1 Tra nguồn trước (luật 10)
+
+- ⛔ **Không** có phân tích chất lượng FLORES-200 **cho tiếng Việt** đã công bố:
+  tra arXiv (`FLORES-200`+`quality`, `FLORES`+`annotation errors`,
+  `FLORES`+`Vietnamese`+`translation quality`) — không ra.
+- ⭐ **Nhưng khiếm khuyết của FLORES được thượng nguồn THỪA NHẬN**: kho kế nhiệm
+  `openlanguagedata/flores` (FLORES+) có issue **#9 *"Faulty translations of
+  Persian (prs) text"*** và **#8** (bộ test các biến thể Ả Rập quá giống nhau,
+  *"need flagging"*). ⇒ *"Bản dịch FLORES là chân lý"* là một **giả định**, và
+  thượng nguồn không tự nhận vậy.
+
+## 11.2 Đo mù, mẫu ngẫu nhiên, ⛔ KHÔNG soi tập bị gắn cờ
+
+25 cặp rút ngẫu nhiên (`Random(20260924)`) từ **dòng 400–499** — dải bộ chấm
+**chưa bao giờ chạy**, nên phán quyết của nó không thể ảnh hưởng.
+
+| | số ca | tỉ lệ |
+|---|---|---|
+| Lỗi **rõ** (người xem tin một sự việc sai) | **1**/25 | **4%** |
+| Cộng cả ca **biên** | 3/25 | 12% |
+
+- **Rõ — dòng 469:** `黑斯廷斯勋爵` = **Lord** Hastings → *"**Vua** Hastings"*
+  (King). Một lãnh chúa không phải một ông vua.
+- Biên — dòng 433: `部分地区` (*một số vùng*) → *"**Rất nhiều** khu vực"*.
+- Biên — dòng 456: `变焦镜头` (*ống kính zoom*) → *"ống kính **khuếch đại**"*,
+  trong khi chính dòng 454 kề bên dịch đúng là *"ống kính zoom"*.
+
+## 11.3 ⛔ Vì sao con số này CHƯA kết luận được
+
+1. **Mẫu 25 là quá nhỏ.** 1/25 có khoảng tin 95% chừng **0,1%–20%** — nó không
+   phân biệt được *"FLORES gần như sạch"* với *"FLORES lỗi 1/5"*.
+2. 🔴 **Người soi là tôi, tức CÙNG LOẠI với thứ đang bị nghi.** Một LLM chấm bản
+   dịch, đúng loại phán quyết mà cả tài liệu này dựng lên để nghi ngờ. ⇒ Đây là
+   **ý kiến thứ hai**, ⛔ không phải chân lý nền. Ít nhất ba ca nêu trên cần
+   **người** xác nhận.
+3. Dải 400–499 là văn Wikipedia; dải 200–229 (nơi đo báo động giả) cũng vậy —
+   nhưng đây vẫn là hai **tập câu khác nhau**, nên phép trừ chỉ là ước lượng.
+
+## 11.4 Phép trừ, và vì sao nó chưa đủ để bấm cổng
+
+```
+bao dong gia THAT ≈ 23,3 %  −  san loi FLORES (4 % … 12 %)  =  11 % … 19 %
+```
+
+⇒ ⛔ **Vắt ngang ngưỡng 15%.** Không nói được *"đã đạt"*, cũng không nói được
+*"chưa đạt"*. ⛔ Không nới ngưỡng, ⛔ và cũng không tuyên bố đạt.
+
+**Việc cần để chốt:** một mẫu lớn hơn (≥ 100 cặp) và **người** soi — đây là chỗ
+cần chủ dự án, vì nó quyết định cả ngưỡng lẫn kết luận về bản dịch.
+
+# 12. Điều kiện mở lại MQM-APE — ĐÃ KIỂM, KHÔNG KHỚP
+
+Điều kiện đã chốt: *phân mức một mình vẫn > 15% **và** phần dư chủ yếu là **lỗi
+bịa có trích đoạn***.
+
+- Vế một: **khớp** (23,3% > 15%).
+- Vế hai: ⛔ **không khớp.** Soi tay phần dư: phần lớn là **lỗi THẬT của bản dịch
+  FLORES** (`壁球` squash → *"quần vợt"*; `联合会式橄榄球` rugby union → *"liên
+  đoàn bóng bầu dục"*), không phải lỗi bịa — đoạn trích đều có thật và đúng chỗ.
+
+⇒ **MQM-APE giữ ĐÓNG.** Điều kiện không treo nữa: nó đã được kiểm và trả lời.
+⭐ Và chính vế hai lật ngược cách đọc: phần dư *không* là bằng chứng bộ chấm bịa,
+nó là bằng chứng **chân lý nền của ta có lỗi** — nên việc tiếp là đo sàn (§11),
+⛔ không phải thêm một tầng lọc lên bộ chấm.
