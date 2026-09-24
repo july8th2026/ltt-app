@@ -1,0 +1,40 @@
+{
+  "video": "C:\\Users\\Thang Tuong\\Desktop\\TEST VIDEO\\深度解析丨跳伞慢了该怎么打教你用细节操作来化解危机 #和平精英夏日航海 #和平精英夏日探险.mp4",
+  "t17_cpu": {
+    "lan": [
+      0.688,
+      0.666,
+      0.649
+    ],
+    "trung_vi": 0.666,
+    "min": 0.649,
+    "max": 0.688,
+    "dai": 0.039,
+    "tai_may_moi_lan": [
+      "CPU 9% tren 20 loi | RAM trong 33.6 GiB | RESULT: RANH - du bo nho cho mot luot day du",
+      "CPU 8% tren 20 loi | RAM trong 33.8 GiB | RESULT: RANH - du bo nho cho mot luot day du",
+      "CPU 12% tren 20 loi | RAM trong 33.8 GiB | RESULT: RANH - du bo nho cho mot luot day du"
+    ],
+    "black": [],
+    "freeze": []
+  },
+  "t17_nvdec": {
+    "lan": [
+      1.761,
+      1.758,
+      1.791
+    ],
+    "trung_vi": 1.761,
+    "min": 1.758,
+    "max": 1.791,
+    "dai": 0.033,
+    "tai_may_moi_lan": [
+      "CPU 9% tren 20 loi | RAM trong 33.9 GiB | RESULT: RANH - du bo nho cho mot luot day du",
+      "CPU 10% tren 20 loi | RAM trong 33.7 GiB | RESULT: RANH - du bo nho cho mot luot day du",
+      "CPU 13% tren 20 loi | RAM trong 33.6 GiB | RESULT: RANH - du bo nho cho mot luot day du"
+    ],
+    "black": [],
+    "freeze": []
+  },
+  "giay_ca_bench": 20.1
+}
