@@ -132,12 +132,19 @@ def test_gop_trung_vi_lay_DA_SO_chu_khong_lay_mot_luot():
     assert gop["b"] == {"dat": True, "so_luot": 3, "so_bao_sai": 1}
 
 
-def test_gop_trung_vi_BO_HAN_ma_khong_luot_nao_tra_loi():
-    """⛔ Khong phai `dat`, cung khong phai `khong dat` — la mot cau hoi CHUA
-    duoc tra loi, va mau so cua moi ti le phai la so cau DA tra loi."""
-    gop = bc.gop_trung_vi([_luot(a=True)], ["a", "vang_mat"])
+def test_gop_trung_vi_BO_HAN_ma_nam_trong_LO_HONG():
+    """⛔ Ma nam trong mot lo HONG: khong phai `dat`, cung khong phai
+    `khong dat` — la mot cau hoi CHUA duoc hoi xong.
+
+    🔴 Ban dau phep kiem nay doi dieu do cho MOI ma vang mat, va do la **sai**:
+       model chi liet ke muc no thay co loi, nen mot ma vang mat trong mot lo
+       CHAY DUOC nghia la **sach**. Xem `test_ma_vang_trong_lo_CHAY_DUOC_...`.
+    """
+    luot = {"phan_quyet": {"a": {"dat": True}},
+            "loi_lo": [{"ma_lo": ["vang_mat"], "loi": "LuocDoSai"}]}
+    gop = bc.gop_trung_vi([luot], ["a", "vang_mat"])
     assert "vang_mat" not in gop
-    tl = bc._ti_le([_luot(a=True)], ["a", "vang_mat"], gop)
+    tl = bc._ti_le([luot], ["a", "vang_mat"], gop)
     assert tl["n_hoi"] == 2 and tl["n_co_phan_quyet"] == 1
     assert tl["ti_le_trung_vi"] == 0.0
 
@@ -328,27 +335,33 @@ def test_thong_ke_luoc_do_dem_LO_chu_khong_dem_MUC():
     30 mục = 3 lô mỗi lượt. Một lô hỏng ở lượt 2 ⇒ 1/9 lô, và độ phủ lượt đó
     tụt xuống 20/30 — hai con số nói hai điều khác nhau, cả hai đều cần.
     """
-    def luot(n_ma, n_hong):
-        return {"phan_quyet": {f"m{i}": {"dat": True} for i in range(n_ma)},
-                "loi_lo": [{"ma_lo": [], "loi": "LuocDoSai"}] * n_hong}
+    def luot(mat):
+        return {"phan_quyet": {},
+                "loi_lo": ([{"ma_lo": [f"m{i}" for i in range(mat)],
+                             "loi": "LuocDoSai"}] if mat else [])}
 
-    tk = bc.thong_ke_luoc_do([luot(30, 0), luot(20, 1), luot(30, 0)], 30)
+    tk = bc.thong_ke_luoc_do([luot(0), luot(10), luot(0)], 30)
     assert tk["tong_lo"] == 9 and tk["so_lo_hong"] == 1
     assert tk["ti_le_lo_hong"] == round(1 / 9, 4)
     assert tk["do_phu_tung_luot"] == [1.0, round(20 / 30, 4), 1.0]
     assert tk["nen_sach"] is False
 
 
-def test_nen_sach_doi_CA_HAI_ve():
-    """⛔ Một vế thôi thì không đủ: 0 lô hỏng mà mỗi lượt chỉ trả lời 15/30 mục
-    vẫn là một kênh mất dữ liệu."""
-    def luot(n_ma, n_hong=0):
-        return {"phan_quyet": {f"m{i}": {} for i in range(n_ma)},
-                "loi_lo": [{"loi": "x"}] * n_hong}
+def test_nen_sach_do_theo_MA_MAT_chu_khong_theo_MA_MODEL_NHAC_TOI():
+    """🔴 Phép kiểm này từng khai *"0 lô hỏng mà mỗi lượt chỉ trả lời 15/30 vẫn
+    là kênh mất dữ liệu"* — **sai**, và nó suýt làm ta đi sửa một thứ không hỏng.
 
-    assert bc.thong_ke_luoc_do([luot(30)] * 3, 30)["nen_sach"] is True
+    Model chỉ liệt kê mục nó thấy có lỗi, nên "chỉ nhắc 15/30" có thể là 15 mục
+    **sạch**. Cái đếm được là mã nằm trong một lô **hỏng**.
+    """
+    def luot(mat=0):
+        return {"phan_quyet": {},
+                "loi_lo": ([{"ma_lo": [f"m{i}" for i in range(mat)],
+                             "loi": "x"}] if mat else [])}
+
+    assert bc.thong_ke_luoc_do([luot()] * 3, 30)["nen_sach"] is True
     assert bc.thong_ke_luoc_do([luot(15)] * 3, 30)["nen_sach"] is False
-    assert bc.thong_ke_luoc_do([luot(30), luot(30), luot(30, 1)],
+    assert bc.thong_ke_luoc_do([luot(), luot(), luot(10)],
                                30)["nen_sach"] is False
 
 
@@ -360,3 +373,43 @@ def test_nhiet_do_ngu_nghia_DA_GHIM_va_bench_dung_CUNG_gia_tri():
 
     assert qc_ai.NHIET_DO_NGU_NGHIA == 0.0
     assert "qc_ai.NHIET_DO_NGU_NGHIA" in inspect.getsource(bc.cham_mot_luot)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  9. HAI cách một mã vắng mặt — và chúng KHÔNG cùng nghĩa
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_ma_vang_trong_lo_CHAY_DUOC_la_DAT_chu_khong_phai_chua_tra_loi():
+    """🔴 Đo 24/09: model **chỉ liệt kê những mục nó thấy có lỗi**.
+
+    Lô 200–209 trả về **0/10** mã kèm `khong_dat=0`; lô 220–229 trả về 10/10.
+    Coi 10 mục SẠCH đó là "chưa trả lời" làm mẫu số tụt 30 → 16, và tỉ lệ báo
+    động giả **nhảy từ 23% lên 44%** mà không một phán quyết nào đổi.
+
+    ⭐ `qc_ai.doc_ngu_nghia` vốn ghi rõ mã thiếu là **ĐẠT** — phép đo phải đếm
+       theo cùng hợp đồng với sản phẩm, nếu không nó đo một hệ thống khác.
+    """
+    luot = {"phan_quyet": {"a": {"dat": False}}, "loi_lo": []}
+    gop = bc.gop_trung_vi([luot], ["a", "b", "c"])
+    assert set(gop) == {"a", "b", "c"}
+    assert gop["b"]["dat"] is True and gop["c"]["dat"] is True
+    assert bc._ti_le([luot], ["a", "b", "c"], gop)["ti_le_trung_vi"] == round(
+        1 / 3, 4)
+
+
+def test_ma_trong_lo_HONG_thi_KHONG_duoc_dem():
+    """⛔ Lô hỏng = chưa hỏi xong. Đếm nó là ĐẠT sẽ làm mỗi lần cổng lỗi biến
+    thành một điểm cộng cho bộ chấm."""
+    luot = {"phan_quyet": {"a": {"dat": False}},
+            "loi_lo": [{"ma_lo": ["b", "c"], "loi": "LuocDoSai"}]}
+    gop = bc.gop_trung_vi([luot], ["a", "b", "c"])
+    assert set(gop) == {"a"}
+    tk = bc.thong_ke_luoc_do([luot], 3)
+    assert tk["do_phu_tung_luot"] == [round(1 / 3, 4)]
+
+
+def test_do_phu_dem_ma_DA_HOI_XONG_khong_dem_ma_model_nhac_toi():
+    """Một lượt sạch hoàn toàn (model không nhắc mã nào) vẫn là độ phủ 100%."""
+    luot = {"phan_quyet": {}, "loi_lo": []}
+    assert bc.thong_ke_luoc_do([luot], 10)["do_phu_tung_luot"] == [1.0]
+    assert bc.thong_ke_luoc_do([luot], 10)["nen_sach"] is True

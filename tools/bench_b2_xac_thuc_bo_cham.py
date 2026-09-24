@@ -327,17 +327,40 @@ def cham_mot_luot(db, muc: list[dict]) -> dict:
 #  4. Gop nhieu luot — TRUNG VI, khong phai mot luot
 # ══════════════════════════════════════════════════════════════════════════════
 
+def _mat_lo(luot: dict) -> set[str]:
+    """Cac ma nam trong mot lo HONG cua luot nay — tuc **chua duoc hoi xong**."""
+    return {m for e in luot.get("loi_lo") or [] for m in e.get("ma_lo") or []}
+
+
 def gop_trung_vi(cac_luot: list[dict], ma: list[str]) -> dict:
     """`{ma: {dat, so_luot, so_bao_sai}}` — `dat` la DA SO tren cac luot tra loi.
 
-    ⛔ Ma khong luot nao tra loi thi **khong co** trong ket qua. No khong phai
-       `dat` va cung khong phai `khong dat`; no la mot cau hoi chua duoc tra loi,
-       va mau so cua moi ti le phia sau phai la so cau DA duoc tra loi.
+    🔴 **HAI cach mot ma vang mat, va chung KHONG cung nghia** (do 24/09):
+
+        lo HONG (`LuocDoSai`)   -> chua duoc hoi xong  => khong dem
+        lo CHAY DUOC, model     -> model khong tim thay loi nao => **DAT**
+        khong nhac toi ma do
+
+    ⛔ Ban dau ham nay gop ca hai thanh "khong co trong ket qua", va do la mot
+       loi that: do 24/09 cho thay model **chi liet ke nhung muc no thay co
+       loi** — lo 200-209 tra ve **0/10** ma kem `khong_dat=0`, lo 220-229 tra
+       ve 10/10. Coi 10 muc SACH do la "chua tra loi" lam mau so tut tu 30
+       xuong 16, va ti le bao dong gia **nhay tu 23 % len 44 %** ma khong mot
+       phan quyet nao doi.
+
+    ⭐ Va day dung la bay *"hai trang thai gop thanh mot gia tri"* cua chinh kho
+       nay — `doc_ngu_nghia` von ghi ro rang ma thieu la **DAT**. Phep do phai
+       dem theo cung hop dong voi san pham, neu khong no do mot he thong khac.
     """
     ra: dict = {}
     for m in ma:
-        v = [bool(l["phan_quyet"][m]["dat"]) for l in cac_luot
-             if m in l["phan_quyet"]]
+        v = []
+        for l in cac_luot:
+            if m in l["phan_quyet"]:
+                v.append(bool(l["phan_quyet"][m]["dat"]))
+            elif m not in _mat_lo(l):
+                # Lo chay duoc ma model khong nhac toi ma nay => khong thay loi.
+                v.append(True)
         if not v:
             continue
         sai = sum(1 for x in v if not x)
@@ -346,13 +369,20 @@ def gop_trung_vi(cac_luot: list[dict], ma: list[str]) -> dict:
 
 
 def _tung_luot(cac_luot: list[dict], ma: list[str]) -> list[float]:
-    """Ti le "bi cham la dich sai" cua TUNG luot — de bao cao DAI."""
+    """Ti le "bi cham la dich sai" cua TUNG luot — de bao cao DAI.
+
+    ⛔ Mau so la cac ma DA DUOC HOI XONG trong luot do (tuc khong nam trong mot
+       lo hong), ke ca ma model khong nhac toi — xem `gop_trung_vi`.
+    """
     ra = []
     for l in cac_luot:
-        co = [m for m in ma if m in l["phan_quyet"]]
+        mat = _mat_lo(l)
+        co = [m for m in ma if m not in mat]
         if co:
-            ra.append(round(sum(1 for m in co if not l["phan_quyet"][m]["dat"])
-                            / len(co), 4))
+            ra.append(round(
+                sum(1 for m in co
+                    if m in l["phan_quyet"] and not l["phan_quyet"][m]["dat"])
+                / len(co), 4))
     return ra
 
 
@@ -370,7 +400,10 @@ def thong_ke_luoc_do(cac_luot: list[dict], so_ma: int) -> dict:
     from apps.auto_scan_video import qc_ai
     lo_moi_luot = -(-so_ma // qc_ai.DOAN_MOI_LO)
     tong_lo = lo_moi_luot * len(cac_luot)
-    do_phu = [round(len(l["phan_quyet"]) / so_ma, 4) for l in cac_luot]
+    # ⛔ Do phu = ma DA DUOC HOI XONG, khong phai ma model co nhac toi. Model
+    #    chi liet ke muc no thay co loi (do 24/09), nen dem theo `phan_quyet` se
+    #    doc mot lo SACH thanh mot lo MAT.
+    do_phu = [round((so_ma - len(_mat_lo(l))) / so_ma, 4) for l in cac_luot]
     ti_le = round(so_lo / tong_lo, 4) if tong_lo else None
     return {
         "tong_lo": tong_lo, "so_lo_hong": so_lo, "ti_le_lo_hong": ti_le,
