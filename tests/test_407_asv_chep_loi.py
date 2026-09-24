@@ -463,3 +463,61 @@ class TestChoBangChungNgoai:
         assert not hasattr(asv_media, "mau_tieng_noi"), (
             "Da co mau tieng noi — hay them phep kiem do chinh xac ASV va xoa "
             "phep kiem nay.")
+
+
+# ── N-39 (25/09): bất biến cấp BẢN GHI ⛔ không bắt được lỗi cấp ĐOẠN ────────
+
+
+def test_407_tiem_N39_mot_doan_thieu_moc_tu_LOT_qua_bat_bien_tong():
+    """🔴 Tiêm đúng ca đã đo: `v1/seg_0083` — `tu=[]` giữa một bản ghi đủ từ.
+
+    Bất biến `aligned ⇒ phải có mốc từ` đếm `sum` trên **cả bản ghi**, nên một
+    đoạn rỗng **lọt**. ⭐ Cùng họ *"tổng che một số 0"*.
+
+    ⛔ Phép kiểm này ⛔ KHÔNG đòi `kiem()` ném lỗi — ném theo từng đoạn sẽ **giết
+    cả một bản ghi** vì một đoạn mà engine thật sự không căn được. Nó đòi con số
+    ấy **NHÌN THẤY ĐƯỢC**.
+    """
+    from apps.auto_scan_video import ban_ghi
+
+    ban = {
+        "schema": ban_ghi.SCHEMA_BAN_GHI, "ngon_ngu": "zh", "engine": "whisperx",
+        "canh_chinh": "aligned", "thoi_luong_nguon": 10.0, "nguon_loi": "asr",
+        "doan": [
+            {"ma": "seg_0001", "bat": 0.0, "ket": 2.0, "chu": "a",
+             "tu": [{"bat": 0.0, "ket": 2.0, "chu": "a"}]},
+            # ⬇ ảo giác credit phụ đề: khe cực ngắn, ⛔ không một mốc từ nào
+            {"ma": "seg_0002", "bat": 9.9, "ket": 9.934,
+             "chu": "中文字幕志愿者", "tu": []},
+        ],
+    }
+    ban_ghi.kiem(ban)                       # ⬅ LỌT, và đó CHÍNH LÀ khuyết tật
+    assert ban_ghi.dem_doan_thieu_moc_tu(ban) == 1
+    assert ban_ghi.tom_tat(ban)["so_doan_thieu_moc_tu"] == 1
+
+
+def test_407_sach_N39_ban_ghi_du_moc_tu_thi_dem_bang_khong():
+    """Đối chứng dương: ⛔ không báo động giả khi mọi đoạn đều có mốc."""
+    from apps.auto_scan_video import ban_ghi
+
+    ban = {
+        "schema": ban_ghi.SCHEMA_BAN_GHI, "ngon_ngu": "zh", "engine": "whisperx",
+        "canh_chinh": "aligned", "thoi_luong_nguon": 10.0, "nguon_loi": "asr",
+        "doan": [{"ma": "seg_0001", "bat": 0.0, "ket": 2.0, "chu": "a",
+                  "tu": [{"bat": 0.0, "ket": 2.0, "chu": "a"}]}],
+    }
+    assert ban_ghi.dem_doan_thieu_moc_tu(ban) == 0
+    assert ban_ghi.tom_tat(ban)["so_doan_thieu_moc_tu"] == 0
+
+
+def test_407_N39_nhanh_fallback_KHONG_bi_dem_oan():
+    """⛔ `0` trên `fallback_unaligned` là ĐÚNG kỳ vọng, ⛔ không phải khuyết tật.
+
+    ⭐ Hai trạng thái ⛔ không được dùng chung một ô: trả `0` cho nhánh chưa căn
+    chỉnh là đúng, vì con số ấy chỉ có nghĩa khi nhãn là `aligned`.
+    """
+    from apps.auto_scan_video import ban_ghi
+
+    ban = {"canh_chinh": "fallback_unaligned",
+           "doan": [{"ma": "seg_0001", "bat": 0.0, "ket": 2.0, "chu": "a", "tu": []}]}
+    assert ban_ghi.dem_doan_thieu_moc_tu(ban) == 0

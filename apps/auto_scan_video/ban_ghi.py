@@ -252,6 +252,32 @@ def kiem(ban: dict) -> None:
         if not sum(len(d.get("tu") or []) for d in doan):
             raise BanGhiError(_t(
                 'Bản ghi khai đã căn chỉnh nhưng không có mốc từng từ nào.'))
+    # 🔴 **N-39, 25/09: `sum` o tren la mot bat bien cap BAN GHI, ma khuyet tat
+    #    nam o cap DOAN.** Do duoc: `v1/seg_0083` co `tu=[]` trong khi ban ghi
+    #    mang 1.157 tu ⇒ **lot**. Chinh doan ay la mot **ao giac credit phu de**
+    #    (`中文字幕志愿者 …`, kieu hong da biet cua Whisper tieng Trung o CUOI
+    #    tep), khe `0,034 s` — va no DA duoc dich va se duoc doc thanh tieng.
+    #
+    # ⭐ Cung ho *"tong che mot so 0"*: mot tong khac 0 ⛔ khong noi duoc rang
+    #    **moi** doan khac 0.
+    #
+    # ⛔ Va vi sao o day ⛔ KHONG `raise` theo tung doan: mot doan thieu moc tu
+    #    co the la engine **that su** khong can duoc mot ky tu la — nem loi se
+    #    **giet ca mot ban ghi** vi mot doan. Quyet dinh LOC hay GIU doan ao giac
+    #    la quyet dinh **cham san pham**, va no thuoc ve chu du an.
+    # ⇒ Buoc dung o day la lam no **NHIN THAY DUOC**: dem va dua ra `tom_tat`
+    #   (di vao `stage.outputs`). ⛔ Mot con so 0 im lang la thu da giau no.
+
+
+def dem_doan_thieu_moc_tu(ban: dict) -> int:
+    """So doan ⛔ KHONG co mot moc tu nao, tren mot ban ghi khai `aligned`.
+
+    `0` tren nhanh `fallback_unaligned` la **dung ky vong**, nen chi dem khi
+    nhan la `aligned` — ⛔ khong tra mot con so co nghia khac duoi cung mot ten.
+    """
+    if str(ban.get("canh_chinh") or "") != "aligned":
+        return 0
+    return sum(1 for d in (ban.get("doan") or []) if not (d.get("tu") or []))
 
 
 def van_tay_ban_ghi(*, checksum_tieng: str, model: str, ngon_ngu: str,
@@ -286,6 +312,9 @@ def tom_tat(ban: dict) -> dict:
     return {
         "so_doan": len(doan),
         "so_tu": sum(len(d.get("tu") or []) for d in doan),
+        # 🔴 N-39: mot doan `aligned` ma ⛔ khong co moc tu nao. > 0 la dau hieu
+        #    ao giac ASR (credit phu de cuoi tep) hoac mot doan khong can duoc.
+        "so_doan_thieu_moc_tu": dem_doan_thieu_moc_tu(ban),
         "ngon_ngu": ban.get("ngon_ngu", ""),
         "engine": ban.get("engine", ""),
         "canh_chinh": ban.get("canh_chinh", ""),
