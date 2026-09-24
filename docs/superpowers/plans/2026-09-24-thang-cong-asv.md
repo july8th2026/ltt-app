@@ -30,7 +30,25 @@ MetricX-24-Hybrid QE · RapidOCR · faster-whisper/whisperx · FLORES-200.
   `python tools\thanh_phan.py --test <tp>` → `python -m pytest <tệp> -q`.
   Hết mọi task ⇒ `python tools\gate.py --doi --tu $(git merge-base main HEAD)` **một lần**.
   ⚠️ `--doi` **phải** kèm `--tu`: cây sạch thì diff rỗng và gate **từ chối** (đúng vậy).
-- Lệnh nặng (≥ 3 tệp test, build, demucs) ⇒ `python "C:\Users\Thang Tuong\.claude\ltt\chay_nang.py" --phien <làn> -- <lệnh>`, `-n` ≤ **7**. Trước đó kiểm `python tools\cua_so_yen.py trang-thai` + `python tools\tai_may.py`.
+- 🔴 **Khoá theo KHẢ NĂNG ĐỐT CPU, không theo số tệp** (chủ dự án chốt 24/09). Khoá để
+  tuần tự hoá việc **đốt lõi**; xếp hàng một lệnh 3 giây một lõi là phí máy của người khác.
+
+  **KHÔNG cần khoá** — chạy thẳng:
+  - pytest **nối tiếp** (⛔ không `-n`) trên 1–2 tệp, dự kiến **< 30 giây**
+  - phép kiểm tĩnh / đọc AST / đọc tài liệu / `grep` / `git`
+  - gọi **máy B** (chờ mạng, không đốt lõi máy A)
+
+  **PHẢI qua khoá** — `python "C:\Users\Thang Tuong\.claude\ltt\chay_nang.py" --phien <làn> -- <lệnh>`, `-n` ≤ **7**:
+  - pytest có `-n` (song song = nhiều lõi), **hoặc** ≥ 3 tệp test, **hoặc** dự kiến > 30 giây
+  - **bất kỳ** ffmpeg · demucs · whisper/ASR · TTS · VMAF · suy luận model trên card máy A
+  - build (cargo/npm/tauri) · `gate.py` mọi chế độ
+
+  ⚠️ **Không biết nó đốt bao nhiêu ⇒ ĐO một lần**: chạy thẳng lúc máy rảnh, `tai_may` trước
+  và sau. Quá 30 giây hoặc ngốn > 2 lõi ⇒ **từ lần sau nó thuộc nhóm phải qua khoá**, ghi
+  con số đó vào báo cáo. ⛔ Đừng đoán rồi giữ nguyên phán đoán.
+  ⛔ Và ngược lại cũng sai: một lệnh **thật sự nặng** chạy ngoài khoá vì "tôi nghĩ nó nhẹ" —
+  hết cảnh gate + agent cộng dồn 14/20 lõi rồi bị CPU quá tải ngắt (đo 23/09).
+- Trước lệnh **thuộc nhóm phải qua khoá**: `python tools\cua_so_yen.py trang-thai` (có người giữ → chờ) + `python tools\tai_may.py` (`QUÁ TẢI` → chờ).
 - ⛔ **Nhả khoá ngay khi phép tính xong.** ⛔ Không giữ khoá trong lúc chờ máy B / chờ người / chờ dịch vụ.
 - Gọi máy B: ⛔ **không** giữ `cpu_nhieu`. Trần đồng thời **≤ 2** request mỗi model.
 - Ghi tệp **không BOM**; `.ps1` thuần ASCII; **giữ nguyên kết dòng** (LF/CRLF) từng tệp.
