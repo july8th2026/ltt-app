@@ -285,6 +285,17 @@ TIEN_TO_LOI = "core."
 #:   (`dieu_kien`, `bieu_thuc`, `items`…) là một bảng thứ hai sẽ trôi.
 KIEU_BIEU_THUC = "bieu_thuc"
 
+#: `{tên: biểu thức}` — tham số của `core.set`. Cùng lý do với
+#: `KIEU_BIEU_THUC`: các biểu thức trong đó cũng phải đi qua cổng tổ tiên §6.2.
+KIEU_BANG_BIEU_THUC = "bang_bieu_thuc"
+
+
+def _thay_duoc_trong_vars(ten) -> bool:
+    """Tên biến `core.set` đọc được từ ngôn ngữ §6? Hỏi THẲNG `bien_vars`."""
+    from platform_core.workflow import bien_vars
+
+    return bien_vars._thay_duoc(ten)
+
 
 def _tham_chieu_node_loi(n: dict) -> set[ThamChieu]:
     """Tham chiếu `nodes.…` trong các tham số BIỂU THỨC của một node lõi."""
@@ -296,11 +307,15 @@ def _tham_chieu_node_loi(n: dict) -> set[ThamChieu]:
     thuoc = (nd.tham_so or {}).get("properties") or {}
     ra: set[ThamChieu] = set()
     for khoa, mo_ta in thuoc.items():
-        if str(mo_ta.get("type", "")) != KIEU_BIEU_THUC:
-            continue
+        kieu = str(mo_ta.get("type", ""))
         gia_tri = (n.get("params") or {}).get(khoa)
-        if isinstance(gia_tri, str) and gia_tri.strip():
+        if kieu == KIEU_BIEU_THUC and isinstance(gia_tri, str) \
+                and gia_tri.strip():
             ra.update(trich_tham_chieu(gia_tri))
+        elif kieu == KIEU_BANG_BIEU_THUC and isinstance(gia_tri, dict):
+            for bt in gia_tri.values():
+                if isinstance(bt, str) and bt.strip():
+                    ra.update(trich_tham_chieu(bt))
     return ra
 
 
@@ -330,7 +345,29 @@ def _kiem_tham_so_loi(nd, params: dict, nid: str) -> None:
                 "tham_so_la",
                 f"{nd.type} khong co tham so {thua} (co: {sorted(thuoc)})", nid)
     for khoa, mo_ta in thuoc.items():
-        if khoa in params and str(mo_ta.get("type", "")) == KIEU_BIEU_THUC                 and not isinstance(params[khoa], str):
+        kieu = str(mo_ta.get("type", ""))
+        if khoa in params and kieu == KIEU_BANG_BIEU_THUC:
+            bang = params[khoa]
+            if not isinstance(bang, dict) or not bang:
+                raise LoiBienDich(
+                    "tham_so_khong_hop_le",
+                    f"{nd.type}.{khoa} phai la mot bang ten->bieu thuc, "
+                    "khong rong", nid)
+            for ten, bt in bang.items():
+                if not _thay_duoc_trong_vars(ten):
+                    raise LoiBienDich(
+                        "ten_bien_khong_hop_le",
+                        f"{nd.type}.{khoa}: ten bien {ten!r} khong doc "
+                        "duoc tu ngon ngu Sec6 (khoa bat dau gach duoi la "
+                        "VO HINH) -- nhan no roi lang le khong thay no la "
+                        "cach te nhat", nid)
+                if not isinstance(bt, str):
+                    raise LoiBienDich(
+                        "tham_so_khong_hop_le",
+                        f"{nd.type}.{khoa}.{ten} phai la mot bieu thuc "
+                        "(chuoi)", nid)
+        if khoa in params and kieu == KIEU_BIEU_THUC \
+                and not isinstance(params[khoa], str):
             raise LoiBienDich(
                 "tham_so_khong_hop_le",
                 f"{nd.type}.{khoa} phai la mot bieu thuc (chuoi) -- nhan "
@@ -518,6 +555,39 @@ def _kiem_than_foreach(graph: dict) -> None:
                 "chua ho tro o ban nay.", f)
 
 
+def _kiem_ghi_bien(nodes: list[dict], to_tien: dict) -> None:
+    """§6.5: hai `core.set` ghi cùng khoá mà không ai là tổ tiên ⇒ TỪ CHỐI.
+
+    ⭐ `bien_vars.kiem_ghi_xung_dot` đã có từ P2 và đã được test — **nhưng
+       chưa ai gọi**. Một cổng không có người gọi là một cổng mở; đây là chỗ
+       nối dây.
+    """
+    from platform_core.workflow import bien_vars
+
+    khoa_ghi = {str(n["id"]): list((n.get("params") or {}).get("bien") or {})
+                for n in nodes if str(n.get("type")) == bien_vars.LOAI_GHI}
+    if khoa_ghi:
+        bien_vars.kiem_ghi_xung_dot(khoa_ghi, to_tien)
+
+
+def _kiem_ten_output(nodes: list[dict]) -> None:
+    """Hai `core.output` cùng tên ⇒ kết quả run phụ thuộc thứ tự chạy."""
+    from platform_core.workflow import ket_qua_run
+
+    thay: dict[str, str] = {}
+    for n in nodes:
+        if str(n.get("type")) != ket_qua_run.LOAI_OUTPUT:
+            continue
+        ten = str((n.get("params") or {}).get("ten") or "")
+        if ten in thay:
+            raise LoiBienDich(
+                "trung_ten_output",
+                f"node {thay[ten]!r} va {n['id']!r} cung khai dau ra "
+                f"{ten!r} -- ket qua cua run se phu thuoc thu tu chay",
+                str(n["id"]))
+        thay[ten] = str(n["id"])
+
+
 def bien_dich(document: dict, *,
               cong_cu: Optional[dict[str, CongCu]] = None) -> dict:
     ct = cau_truc(document, cong_cu=cong_cu)
@@ -564,6 +634,8 @@ def bien_dich(document: dict, *,
 
     do_thi_tam = {"nodes": nodes, "edges": ra_edges, "thu_tu": thu_tu}
     _kiem_than_foreach(do_thi_tam)
+    _kiem_ghi_bien(nodes, to_tien)
+    _kiem_ten_output(nodes)
 
     cai_dat = document.get("settings") or {}
     return {

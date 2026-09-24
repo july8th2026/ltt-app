@@ -189,7 +189,9 @@ duong = ["platform_core/workflow/dong_co.py", "platform_core/workflow/may_trang_
          # jobs.py, khong phai co che thu hai.
          "platform_core/workflow/thu_lai.py",
          # Cau noi CSDL -> moi truong bieu thuc Sec6.2 (plan wf-v2 P3 T4).
-         "platform_core/workflow/moi_truong.py"]
+         "platform_core/workflow/moi_truong.py",
+         # Ket qua run DAN XUAT tu cac node core.output (plan wf-v2 P3 T6).
+         "platform_core/workflow/ket_qua_run.py"]
 he_trong = "thi_hanh"
 tai_nguyen = ["postgres_test"]
 

@@ -93,16 +93,6 @@ def _mt_than(db, run, g: dict, *, phu: dict, loop: dict) -> dict:
         nodes=anh, loop=loop, run={"id": run.id, "status": run.status})
 
 
-def chay_transform(db, run, node: dict, *, moi_truong: dict, **_) -> KetQua:
-    """Dựng một giá trị bằng biểu thức §6 (spec §4.5 `core.transform`)."""
-    try:
-        gia_tri = _tinh((node.get("params") or {}).get("gia_tri", ""),
-                        moi_truong)
-    except LoiNgonNgu as loi:
-        return KetQua(sang="FAILED", error=f"bieu_thuc_loi: {loi}"[:2000])
-    return KetQua(output={"gia_tri": gia_tri})
-
-
 def chay_foreach(db, run, node: dict, *, moi_truong: dict, g: dict,
                  **_) -> KetQua:
     """Chạy CẢ vòng lặp, rồi chốt trạng thái thân + `foreach_end`."""
@@ -205,19 +195,6 @@ def chay_join(db, run, node: dict, **_) -> KetQua:
 
 DINH_NGHIA = (
     (NodeDefinition(
-        type="core.transform", type_version=1, kind="data", category="DATA",
-        title=N_("Biến đổi"),
-        description=N_("Dựng một giá trị mới bằng một biểu thức."),
-        icon="ƒ",
-        cong_vao=(("in", he_kieu.Cong(type="any", required=False, nhan="in")),),
-        cong_ra=(("gia_tri", he_kieu.Cong(type="any", required=True,
-                                          nhan="gia_tri")),),
-        tham_so={"type": "object",
-                 "properties": {"gia_tri": {"type": "bieu_thuc"}},
-                 "required": ["gia_tri"], "additionalProperties": False},
-        thi_hanh="inline", gia=Gia.mien_phi(), quyen=frozenset(),
-        cho=(), ma_loi=("bieu_thuc_loi",), publish_duoc=True), chay_transform),
-    (NodeDefinition(
         type="core.foreach", type_version=1, kind="control", category="FLOW",
         title=N_("Lặp"),
         description=N_("Chạy thân vòng lặp một lần cho mỗi phần tử."),
@@ -273,4 +250,4 @@ DINH_NGHIA = (
 )
 
 __all__ = ["DINH_NGHIA", "ON_ITEM_ERROR", "chay_foreach", "chay_foreach_end",
-           "chay_join", "chay_transform", "than_cua"]
+           "chay_join", "than_cua"]

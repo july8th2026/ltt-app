@@ -20699,3 +20699,21 @@ msgstr "Join"
 
 msgid "Chờ nhiều nhánh gặp nhau: ALL, ANY hoặc N trong M."
 msgstr "Wait for several branches to meet: ALL, ANY or N of M."
+
+msgid "Đặt biến"
+msgstr "Set variables"
+
+msgid "Ghi một hoặc nhiều biến dùng được ở các bước sau."
+msgstr "Write one or more variables usable by later steps."
+
+msgid "Giữ lại các phần tử thoả một điều kiện."
+msgstr "Keep the items that match a condition."
+
+msgid "Gộp"
+msgstr "Aggregate"
+
+msgid "Đếm, cộng, lấy nhỏ nhất/lớn nhất… trên một mảng."
+msgstr "Count, sum, take the smallest/largest… over an array."
+
+msgid "Khai một giá trị là kết quả của cả lượt chạy."
+msgstr "Declare a value as the result of the whole run."

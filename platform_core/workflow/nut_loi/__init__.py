@@ -60,9 +60,11 @@ dang_ky(NodeDefinition(
 # ── Node điều khiển (plan wf-v2 P3) ──────────────────────────────────────────
 # Import ĐẶT CUỐI, sau `dang_ky`/`_SO`: các tệp node gọi ngược vào gói này.
 from platform_core.workflow.nut_loi import dieu_huong as _dieu_huong  # noqa: E402
+from platform_core.workflow.nut_loi import du_lieu as _du_lieu  # noqa: E402
 from platform_core.workflow.nut_loi import vong_lap as _vong_lap  # noqa: E402
 
-for _nd, _chay in _dieu_huong.DINH_NGHIA + _vong_lap.DINH_NGHIA:
+for _nd, _chay in (_dieu_huong.DINH_NGHIA + _du_lieu.DINH_NGHIA
+                   + _vong_lap.DINH_NGHIA):
     dang_ky(_nd, _chay)
 
 
