@@ -242,7 +242,11 @@ def test_mot_endpoint_CON_SONG_thi_khong_bi_bao(duong_voi_toi_duoc,
 def test_bo_do_bat_duoc_mot_duong_CHET_duoc_tiem_vao(bang_dinh_tuyen):
     """🔑 Vế đối chứng 3: tiêm lỗi cũ. Đường v2 vừa gỡ phải bị bắt."""
     assert chuan_hoa("/agent/api/runs/${run.id}/tick") not in bang_dinh_tuyen
-    assert chuan_hoa("/agent/api/workflows/${id}/snapshots") in bang_dinh_tuyen
+    # ⏭️ 24/09: `/snapshots` KHÔNG còn trong bảng định tuyến (P8 Task 5 đóng cả
+    #    cụm v2 — `test_2924`). Thay bằng một cửa v2 **còn sống** mà giao diện
+    #    v3 không gọi: vế đối chứng này cần một đường CÓ THẬT trong bảng, và ý
+    #    nghĩa của nó không đổi.
+    assert chuan_hoa("/agent/api/workflows/${id}") in bang_dinh_tuyen
 
 
 def test_chuan_hoa_khop_hai_kieu_tham_so():
