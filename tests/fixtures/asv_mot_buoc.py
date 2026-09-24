@@ -66,6 +66,48 @@ MAC_DINH_BENCH = {
 }
 
 
+#: Cac giai doan co NHIEU NHANH engine. Voi chung, `nhanh_mong_doi` la BAT BUOC.
+#:
+#: 🔴 **Vi sao bat buoc, va vi sao KHONG co mac dinh.** Ba lan trong mot phien, khuon
+#:    do **chinh no** thay vi do san pham: (1) khong xin card — K-01; (2) khong ghim
+#:    trinh thong dich — K-05; (3) khong nap `app.env` nen `whisperx_available()` tra
+#:    False va bench do **nhanh LUI** trong khi tuong minh do nhanh mac dinh.
+#:
+#: ⛔ Mot mac dinh se lam nguoi viet bench sau **khong khai**, va ta quay lai dung
+#:    hom nay. Bat khai la thu khien lan sau **khong im lang duoc** — cung ly do
+#:    `nguon_loi.chuan_che_do(..., mac_dinh=)` bat khai duong DOC hay duong NHAN.
+NHANH_THEO_GIAI_DOAN = {
+    P.TRANSCRIBE: {
+        "khoa_outputs": "canh_chinh",
+        # gia tri `canh_chinh` -> ten nhanh nguoi doc hieu
+        "anh_xa": {"aligned": "whisperx", "fallback_unaligned": "faster-whisper"},
+    },
+}
+
+
+class _ChuaKhai:
+    """Sentinel: phan biet *"khong truyen"* voi *"truyen None"*.
+
+    ⛔ Dung `None` lam mac dinh se gop hai y do khac nhau lam mot — dung bay
+       "hai trang thai gop thanh mot gia tri" ma so may nay ghi.
+    """
+
+    def __repr__(self) -> str:
+        return "<chua khai>"
+
+
+CHUA_KHAI = _ChuaKhai()
+
+
+class NhanhSaiError(RuntimeError):
+    """Do xong roi moi biet san pham chay mot nhanh KHAC nhanh dinh do.
+
+    ⛔ Nem, ⛔ khong ghi so: mot con so cua nhanh khong dinh do **khong tra loi cau
+       hoi nao cua ta**, va de no trong bang ket qua la moi nguoi sau so no voi so
+       cua nhanh chinh.
+    """
+
+
 class ThieuDauVaoGieo(RuntimeError):
     """Goi mot buoc giua chuoi ma khong gieo dau vao cua no.
 
@@ -130,7 +172,8 @@ def can_gieo(ten: str) -> set:
 
 def chay_mot_buoc(moi_truong, *, ten_giai_doan: str, cai_dat: dict,
                   duong_video=None, gieo: dict | None = None,
-                  xin_card: bool = True, monkeypatch=None) -> dict:
+                  xin_card: bool = True, monkeypatch=None,
+                  nhanh_mong_doi=CHUA_KHAI) -> dict:
     """Chay DUNG MOT giai doan. Tra `outputs` cua no + loi khai card/trinh thong dich.
 
     `gieo` = `{ten_giai_doan_truoc: khoa_asset}`. Thieu mot muc ma `can_gieo` doi
@@ -147,6 +190,7 @@ def chay_mot_buoc(moi_truong, *, ten_giai_doan: str, cai_dat: dict,
             f"({{'<giai doan>': '<khoa_asset>'}}). ⚠️ Danh sach nay lay tu TAP DOC "
             f"THAT (quet AST), khong tu cot `sau` — ban khai `sau` hep hon thuc te.")
 
+    _kiem_nhanh_da_khai(ten_giai_doan, nhanh_mong_doi)
     _kiem_khoa_gieo(gieo or {})
     run_id, owner_id = _dung_lan_chay(moi_truong, cai_dat, duong_video)
     _gieo_cac_buoc_truoc(run_id, gieo or {})
@@ -181,6 +225,8 @@ def chay_mot_buoc(moi_truong, *, ten_giai_doan: str, cai_dat: dict,
     finally:
         db.close()
 
+    _kiem_nhanh_da_chay(ten_giai_doan, nhanh_mong_doi, out)
+
     return {
         "run_id": run_id, "giai_doan": ten_giai_doan,
         "trang_thai": trang_thai, "loi": loi, "outputs": out,
@@ -188,6 +234,44 @@ def chay_mot_buoc(moi_truong, *, ten_giai_doan: str, cai_dat: dict,
                  "can_card": bool(_vram(ten_giai_doan))},
         "trinh_thong_dich": khai_python,
     }
+
+
+def nhanh_da_chay(ten_giai_doan: str, outputs: dict) -> str:
+    """Nhanh engine THAT SU da chay, doc tu `outputs`. `""` neu buoc khong co nhanh."""
+    khai = NHANH_THEO_GIAI_DOAN.get(ten_giai_doan)
+    if not khai:
+        return ""
+    gt = str(outputs.get(khai["khoa_outputs"]) or "")
+    return khai["anh_xa"].get(gt, gt)
+
+
+def _kiem_nhanh_da_khai(ten_giai_doan: str, nhanh_mong_doi) -> None:
+    """⛔ Buoc co nhieu nhanh thi nguoi goi PHAI khai y dinh. Khong mac dinh."""
+    if ten_giai_doan not in NHANH_THEO_GIAI_DOAN:
+        return
+    if nhanh_mong_doi is CHUA_KHAI:
+        co = sorted(set(NHANH_THEO_GIAI_DOAN[ten_giai_doan]["anh_xa"].values()))
+        raise NhanhSaiError(
+            f"buoc {ten_giai_doan!r} co NHIEU nhanh engine ({', '.join(co)}) nen "
+            f"`nhanh_mong_doi=` la BAT BUOC. ⛔ Khong co mac dinh: mot mac dinh lam "
+            f"nguoi viet bench sau khong khai, va ta quay lai dung 24/09 — do nhanh "
+            f"LUI trong khi tuong minh do nhanh mac dinh.")
+
+
+def _kiem_nhanh_da_chay(ten_giai_doan: str, nhanh_mong_doi, outputs: dict) -> None:
+    """Do xong: nhanh THAT != mong doi ⇒ NEM, ⛔ khong ghi so."""
+    if ten_giai_doan not in NHANH_THEO_GIAI_DOAN or nhanh_mong_doi is CHUA_KHAI:
+        return
+    if nhanh_mong_doi is None:
+        return                      # khai TUONG MINH la "nhanh nao cung duoc"
+    that = nhanh_da_chay(ten_giai_doan, outputs)
+    if that != nhanh_mong_doi:
+        ly_do = str(outputs.get("ly_do_roi") or "(san pham khong ghi ly do)")
+        raise NhanhSaiError(
+            f"bench dinh do {nhanh_mong_doi!r} nhung san pham da chay {that!r} "
+            f"vi {ly_do!r}. ⛔ KHONG ghi so: mot con so cua nhanh khong dinh do "
+            f"khong tra loi cau hoi nao cua ta, va de no trong bang ket qua la moi "
+            f"nguoi sau so no voi so cua nhanh chinh.")
 
 
 def _kiem_khoa_gieo(gieo: dict) -> None:

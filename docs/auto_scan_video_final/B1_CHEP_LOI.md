@@ -34,6 +34,19 @@ của bảng xếp hạng thế giới — **hai thứ không cùng đơn vị**
 Hán**, ⛔ không suy gián tiếp từ tỉ lệ ký tự/đơn vị (phép suy đó xếp nhầm cả
 `"the quick brown fox jumps"` thành `dong`).
 
+## ⚠️ GIỚI HẠN THỨ HAI: CER không phủ được MỐC THỜI GIAN
+
+Sản phẩm là **lồng tiếng**. Một bản chép đúng **từng chữ** mà **sai mốc** cho CER đẹp
+và tiếng **lệch môi** — tức hỏng ở đúng thứ khách mua.
+
+`canh_chinh = "fallback_unaligned"` nghĩa là nhánh **căn chỉnh** không chạy; mốc thời
+gian **không căn** đi thẳng vào `timing_align`, nơi quyết định mỗi câu rơi vào khe
+nào. ⇒ **CER một mình không phủ được rủi ro này.** Bảng §4 phải đọc kèm cột `engine`
+và `canh_chinh`.
+
+⭐ Vì thế `fallback_unaligned` là **hạng A** (chủ dự án thu hẹp phạm vi 24/09), không
+phải một ghi chú bên lề.
+
 ## 1b. ⛔ CÂU HỎI NGƯỠNG — đang chờ điều phối, KHÔNG tự quyết
 
 `WER ≤ 0,25` ở §1 được viết cho một tỉ lệ **TỪ** sai. Trên văn Hán đơn vị là **DÒNG**

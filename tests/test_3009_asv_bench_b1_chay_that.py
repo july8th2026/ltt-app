@@ -91,12 +91,13 @@ def test_BENCH_B1_mot_phim(moi_truong, tmp_path, monkeypatch):  # noqa: F811
     fx.doi_hoi_card()
     ra: dict = {"phim": phim.name, "buoc": []}
 
-    def _chay(ten_gd: str, nguon_loi: str, gieo=None) -> dict:
+    def _chay(ten_gd: str, nguon_loi: str, gieo=None, nhanh=None) -> dict:
         t0 = time.time()
         kq = mb.chay_mot_buoc(
             moi_truong, ten_giai_doan=ten_gd,
             cai_dat={"nguon_loi": nguon_loi}, duong_video=str(phim),
-            gieo=gieo, xin_card=True, monkeypatch=monkeypatch)
+            gieo=gieo, xin_card=True, monkeypatch=monkeypatch,
+            nhanh_mong_doi=nhanh)
         kq["giay"] = round(time.time() - t0, 1)
         kq["nguon_loi_ep"] = nguon_loi
         ra["buoc"].append(kq)
@@ -121,8 +122,11 @@ def test_BENCH_B1_mot_phim(moi_truong, tmp_path, monkeypatch):  # noqa: F811
         pytest.fail(f"media_prepare khong ra ban WAV: {mp['trang_thai']} — "
                     f"{mp['loi'][:200]} | ban ghi: {d}")
 
-    asr = _chay(P.TRANSCRIBE, "asr", gieo={P.MEDIA_PREPARE: khoa_wav})
-    ocr = _chay(P.TRANSCRIBE, "ocr", gieo={P.MEDIA_PREPARE: khoa_wav})
+    # ⛔ KHAI Y DINH: bench nay do nhanh MAC DINH. Lech ⇒ nem, khong ghi so.
+    asr = _chay(P.TRANSCRIBE, "asr", gieo={P.MEDIA_PREPARE: khoa_wav},
+                nhanh=os.environ.get("LTT_ASV_B1_NHANH") or "whisperx")
+    # Duong OCR khong di qua whisperx — khai TUONG MINH la khong xet nhanh.
+    ocr = _chay(P.TRANSCRIBE, "ocr", gieo={P.MEDIA_PREPARE: khoa_wav}, nhanh=None)
 
     # ── VAN BAN: doc TRONG luot chay ────────────────────────────────────────
     #
