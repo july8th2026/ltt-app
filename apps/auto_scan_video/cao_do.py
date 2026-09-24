@@ -113,8 +113,10 @@ def gioi_tu_f0(f0: float) -> str:
     return ""
 
 
-def f0_trung_vi(duong_wav: str, *, toi_da_giay: float = TOI_DA_GIAY) -> float:
-    """Trung vi F0 cua cac khung CO TIENG trong mot WAV PCM 16-bit. `0.0` = khong do duoc.
+def f0_trung_vi_va_ly_do(duong_wav: str, *,
+                         toi_da_giay: float = TOI_DA_GIAY) -> tuple[float, str]:
+    """`(f0, ly_do)`. `ly_do` rong = do duoc; khac rong = KHONG do duoc, va noi
+    ra vi sao.
 
     🔑 Phep do la `torchaudio.functional.detect_pitch_frequency` — ban cai san
        cua thu vien (NCCF, Mauch & Dixon mo ta cung ho phuong phap). ⛔ Khong tu
@@ -122,16 +124,27 @@ def f0_trung_vi(duong_wav: str, *, toi_da_giay: float = TOI_DA_GIAY) -> float:
        nghi" ma bo do cua lan nay cam.
 
     ⚠️ **Fail-soft co chu dinh.** Thieu `torchaudio`, tep hong, tep im lang: tra
-       ve `0.0`. `AUTO_MATCH` con duong thu hai (`ho_so_noi_dung`), nen mot phep
-       do khong chay duoc khong duoc phep lam hong ca giai doan `audio_prepare`
-       — giai doan dat nhat cua chuoi.
+       `0.0`. `AUTO_MATCH` con duong thu hai (`ho_so_noi_dung`), nen mot phep do
+       khong chay duoc khong duoc phep lam hong ca giai doan `audio_prepare` —
+       giai doan dat nhat cua chuoi.
+
+    ⭐ **Nhung fail-soft khong duoc la fail-SILENT.** Ba nguyen nhan tren doi ba
+       hanh dong khac nhau: thieu `torchaudio` la viec cai dat, tep hong la viec
+       cua buoc tach, tep im lang la su that ve chinh video khach. Mot `0.0` tran
+       khong phan biet duoc ba cai do, nen `ly_do` di kem len tan `outputs` cua
+       giai doan (`giai_doan_am_thanh` ghi `f0_ly_do`).
     """
     try:
-        return _do(duong_wav, toi_da_giay=toi_da_giay)
-    except Exception:                                      # noqa: BLE001
+        return _do(duong_wav, toi_da_giay=toi_da_giay), ""
+    except Exception as exc:                               # noqa: BLE001
         # Xem ghi chu fail-soft o tren. Nguoi goi la `demucs_runner.main`, va
         # mot ngoai le o day se giet mot lan tach da chay xong.
-        return 0.0
+        return 0.0, f"{type(exc).__name__}: {exc}"[:300]
+
+
+def f0_trung_vi(duong_wav: str, *, toi_da_giay: float = TOI_DA_GIAY) -> float:
+    """Chi con so. Dung `f0_trung_vi_va_ly_do` khi ket qua di vao mot bao cao."""
+    return f0_trung_vi_va_ly_do(duong_wav, toi_da_giay=toi_da_giay)[0]
 
 
 def _do(duong_wav: str, *, toi_da_giay: float) -> float:

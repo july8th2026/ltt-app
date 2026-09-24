@@ -174,11 +174,17 @@ def verify_frontend_bundle(root: str) -> None:
 
 
 def _version() -> str:
-    try:
-        from version import APP_VERSION
-        return str(APP_VERSION)
-    except Exception:
-        return "0.0.0"
+    """Phien ban dan vao ban phat hanh.
+
+    ⛔ **Khong co duong lui `"0.0.0"`.** Mot ban phat hanh mang nhan `0.0.0` vi
+       mot `ImportError` la mot ban khong truy nguyen duoc: nguoi van hanh doc
+       `0.0.0` tren may khach, doi chieu voi `version.py` trong kho, va hai so
+       khong khop ma khong ai biet da mat o buoc nao. Khi `version.py` khong doc
+       duoc thi viec dung lai la dung — no dung TRUOC khi dong goi.
+    """
+    from version import APP_VERSION
+
+    return str(APP_VERSION)
 
 
 def _is_excluded_dir(name: str) -> bool:

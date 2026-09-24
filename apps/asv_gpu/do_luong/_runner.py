@@ -77,12 +77,23 @@ class DongHo:
         ra = {"giay_tuong": round(time.monotonic() - self.t0, 2),
               "giay_cpu": round(time.process_time() - self.c0, 2),
               "ram_dinh_mb": _rss_dinh_mb(), "moc": dict(self.moc)}
+        # ⭐ HAI cau tra loi khac nhau, khong duoc tron thanh mot khoa VANG:
+        #      · khong co `torch`/khong co CUDA  -> may nay khong do VRAM, binh
+        #        thuong tren cay `torch+cpu` (V4-R05). Khong khai gi.
+        #      · co CUDA ma phep do NO          -> mot LOI, va nguoi doc bao cao
+        #        phai thay no. `test_450::test_VRAM_dinh_KHONG_vuot_con_so_app_
+        #        dang_khai` doc dung khoa nay: mot khoa vang lam phep kiem do
+        #        chuyen sang "khong do duoc" thay vi "do duoc va sai".
         try:
             import torch
-            if torch.cuda.is_available():
-                ra["vram_torch_dinh_mb"] = round(
-                    torch.cuda.max_memory_reserved() / 2**20, 1)
-        except Exception:                       # noqa: BLE001
+        except ImportError:
             pass
+        else:
+            try:
+                if torch.cuda.is_available():
+                    ra["vram_torch_dinh_mb"] = round(
+                        torch.cuda.max_memory_reserved() / 2**20, 1)
+            except Exception as exc:            # noqa: BLE001
+                ra["vram_ly_do"] = f"{type(exc).__name__}: {exc}"[:200]
         ra.update(them)
         return ra
