@@ -1218,3 +1218,60 @@ gộp CÓ ràng buộc cảnh (§19.1)      : 44,4 % -> 46,1 %  ⛔ vô dụng
 rút gọn 30 % (§18.1)               : 44,4 % -> 86,6 %  nhưng len_ratio < 0,85
                                       ⇒ chrF++ 39,31 (so với 49,85 khi >= 0,95)
 ```
+
+---
+
+## 20. Độ TRÔI: ⭐ đã có phép đo sẵn — và nó **loại** mối lo cho phép gộp
+
+### 20.1 Trần trôi là **1.500 ký tự**, khe gộp của ta dài nhất **427**
+
+`apps/ltt_voice/tham_so_cong_khai.py:17-23` — `TRAN_MOI_LUOT_SINH = 1500`, và nó là
+**trần CHẤT LƯỢNG**, ⛔ không phải trần kỹ thuật: *"upstream #168 báo giọng bắt đầu trôi
+từ khoảng 3.000 ký tự"*, đo 30/08 cho thấy 3.000 ký tự **vẫn sinh ra được**.
+
+Đo trên chính khe đã gộp (`gộp ≤5`, ⛔ không ràng buộc cảnh):
+
+```
+83 khe · ký tự dài nhất 427 · p95 362 · số khe vượt trần 1.500: 0/83
+```
+
+⇒ ⭐ Khe gộp dài nhất còn **cách trần trôi 3,5 lần**. **Gộp ⛔ không thể gây trôi model.**
+
+### 20.2 Và bằng chứng nói mạnh hơn thế: bản **GHÉP tốt hơn** bản một lượt
+
+`tools/do_bai_dai.py`, 03/09 (chép từ `tham_so_cong_khai.py:51-63`):
+
+```
+chi so       1400(1 doan)  1500(2)  3000(3)  5000(4)  10000(7)
+CER              0,1121    0,0915   0,0897   0,0980    0,1077
+WER              0,2037    0,1969   0,1905   0,1906    0,2050
+ty le hong            0         0        0        0         0
+```
+
+⇒ *"Bản GHÉP **tốt hơn** bản một lượt trên mọi chỉ số ASR, ở mọi độ dài."*
+⭐ Tức nối nhiều câu vào một lượt đọc ⛔ **không** làm giọng xấu đi — ở dải của ta thì
+ngược lại.
+
+> 🔑 ⭐ Mối lo *"khe dài ⇒ trôi"* là **có thật**, nhưng nó sống ở **~1.500–3.000 ký tự**.
+> Khe gộp của ta ở **427**. ⇒ ⛔ Đừng đặt trần cho một hiện tượng cách xa 3,5 lần.
+
+### 20.3 🔴 Còn phép đo TRÀN KHE thì **BỊ CHẶN**
+
+Điều phối yêu cầu đúng phép đo còn thiếu: *đọc thật rồi đo `tràn = độ dài tiếng − độ dài
+khe`, so gộp với ⛔ không gộp*. ⛔ **Chưa chạy được**:
+
+```
+apps.auto_scan_video.giong_noi.san_sang()  ->  False
+apps.ltt_voice.sidecar_client.san_sang()   ->  False   (⛔ không ném lỗi)
+```
+
+⚠️ Và chính `giong_noi.py:105-112` cảnh báo rằng `False` ở đây **gộp hai trạng thái**:
+*"chưa cài"* và *"đã cài nhưng đang hỏng"* — ⛔ hai thứ đòi hai hành động khác hẳn.
+⇒ ⛔ Tôi ⛔ không đoán là cái nào.
+
+**Cần để gỡ:** đường gọi TTS dùng được từ cây làm việc (hoặc chạy ở nơi sidecar đã cấu
+hình). ⛔ Tôi ⛔ không tự dựng sidecar trên máy production.
+
+⭐ Lưu ý phạm vi: §20.1–20.2 trả lời *"gộp có làm giọng TRÔI không"* (⛔ không).
+Nó ⛔ **không** trả lời *"gộp làm TRÀN khe tăng hay giảm"* — đó vẫn là câu mở, và dấu
+của nó ⛔ **không đoán được**.
