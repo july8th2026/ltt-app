@@ -19,6 +19,85 @@ MetricX-24-Hybrid QE · RapidOCR · faster-whisper/whisperx · FLORES-200.
 
 **Spec:** `docs/superpowers/specs/2026-09-24-thang-cong-asv-design.md`
 
+---
+
+## 🔴 TRẠNG THÁI THẬT — đọc trước khi tin ô checkbox (cập nhật 24/09/2026 tối)
+
+⛔ **Ô `- [ ]` trong tệp này CHƯA BAO GIỜ được tick, và `0/87` là con số SAI.**
+Các làn ghi trạng thái vào `docs/auto_scan_video_final/` chứ không quay lại tick ô ở
+đây. ⇒ ⛔ Đừng đọc số checkbox như tiến độ. Nguồn chân lý theo từng bước:
+
+| hỏi gì | đọc ở đâu (trên nhánh làn, chưa gộp `main`) |
+|---|---|
+| chép lời (B1) | `docs/auto_scan_video_final/B1_CHEP_LOI.md` |
+| dịch (B2) | `docs/auto_scan_video_final/B2_DICH.md` — nhánh `phien/asvf-nghiem-thu-v2` |
+| bộ chấm ngữ nghĩa | `docs/auto_scan_video_final/B2_XAC_THUC_BO_CHAM.md` — nhánh `phien/asvf-xac-thuc` |
+| sổ lỗi hợp nhất | `docs/auto_scan_video_final/LOI_TONG.md` (đã dùng tới **N-23**) |
+
+### Tiến độ theo hạng mục
+
+| | Task | trạng thái |
+|---|---|---|
+| ✅ | 0 · bỏ khoá `postgres_test` | xong — mỗi làn một schema PostgreSQL |
+| ✅ | 1 · bốn trường hợp đồng trên `GiaiDoan` | xong + `thieu_khai` |
+| ✅ | 2 · sổ mã lỗi chung | xong — N-01…N-23 |
+| ✅ | 4 · khuôn chạy MỘT giai đoạn | xong |
+| ✅ | 5 · ép `che_do=asr` | xong — bắt được N-15 |
+| ✅ | 6 · bench B1 (CER) | xong — 3/3 |
+| ✅ | 8 · **cổng B1 — PHÁN QUYẾT: ĐẠT** | xong, kèm 3 khai báo giới hạn |
+| 🔵 | 7 · so hai nhánh engine | ~¾ |
+| 🔵 | 9 · chốt nhiệt độ | đang làm — **N-23**, xem bên dưới |
+| 🔵 | 10 · xác thực bộ chấm | ~¾ — **TRƯỢT cổng**, xem bên dưới |
+| 🔵 | 11 · tên riêng + bảng từ | ~½ — 21/33 → **38/39** trên đường sống |
+| 🔵 | 11b · rào của `ltt-3.5` là lược đồ | đang làm |
+| ⬜ | 3 · bao đóng `sau` | đang giao |
+| ⬜ | 12 · bench B2 · 13 · cổng B2 | chưa — chờ bộ chấm |
+
+### ⭐ Quyết định đã chốt — ⛔ không mở lại
+
+- **Chủ dự án chốt 24/09: `ltt-3.5` phục vụ đường dịch của app.** ⛔ Không bàn thêm,
+  ⛔ không so sánh 3.8 nữa. `qc_ngu_nghia` vẫn `ltt-3.8`, **ghim tường minh**.
+- **B1 ĐẠT** — CER 3/3 · chỗ ngắt 3/3 · độ dài 3/3 · bốn đối chứng đỏ đúng chỗ.
+  ⛔ Kèm ba khai báo không tách rời (xem `B1_CHEP_LOI.md`).
+
+### 🔴 Ba sự thật ngược chiều — ⛔ đừng để chúng bị mất khi đọc lướt
+
+1. ⛔ **`lech_doan` đã BỎ vì HỎNG, không phải vì ta trượt.** Cắt máy móc mỗi 2,0 giây
+   — đúng thứ ràng buộc **cấm** — cho `0,1121` **XANH**, còn cắt theo câu cho `0,3084`
+   đỏ. Một **tỉ số ĐẾM** không phân biệt được *cắt đúng chỗ* với *cắt đủ nhiều*.
+2. ⛔ **`dich_thuat` là ĐƯỜNG CHẾT** — không ai gọi. Đường sống là `CONTENT_PROCESS`
+   → `long_tieng.loi_nhac` + `CHUYEN_LOI_THOAI`. Mọi số dịch đo trước 24/09 tối là số
+   của đường chết: **đúng**, và ⛔ **không phải thứ khách nhận**.
+3. ⭐ **Đường sống KHÔNG ghim `temperature`** ⇒ cổng áp mặc định **1.0**. Ba triệu
+   chứng tưởng rời rạc cùng một gốc: mất đoạn theo lô (**64,3 % → 9,5 %** khi ghim,
+   p = 0,0011) · tên riêng hỏng **1/3 lượt** dù có ví dụ trong lời nhắc · vòng sửa làm
+   **trôi** đoạn đã đúng (29 đoạn → 28 đổi). Xem **N-23**.
+
+### 🔴 Bộ chấm ngữ nghĩa — TRƯỢT cổng, và biết chính xác trượt thế nào
+
+Đo thẳng trên 100 dòng FLORES **đã soi mù trước** (phán quyết ghi trước, commit trước):
+
+```
+gắn cờ 43/100 · lỗi thật 10 · bắt trúng 10
+⇒ độ nhạy trên lỗi TỰ NHIÊN = 100 %     ⭐ không mù
+⇒ báo động giả THẬT = 33 %              ⛔ cổng là ≤ 15 %
+```
+
+⇒ ⭐ **Thứ hỏng là bộ chấm NÓI QUÁ, ⛔ không phải bản dịch tệ.** Vì vậy màn hình
+*"44 mục dịch chưa sát"* **vẫn khoá** với khách. ⛔ Không nới ngưỡng 15 %/50 %.
+
+⚠️ Ước lượng `13,3 %` từng được báo là **SAI**: giả định *"bắt hết lỗi sẵn có"* hoá ra
+**đúng**; chỗ sai là **số bị trừ** (23,3 % đo trên n=30 vùng khác; n=100 cho 43 %).
+⇒ Bài học: **hai con số từ hai tập khác nhau thì ⛔ không được đặt cạnh nhau.**
+
+### Còn chờ chủ dự án (⛔ không chặn việc đang chạy)
+
+1. **`光子` / thương hiệu** — luật tên riêng đang là **luật TẠM do điều phối thu hẹp**
+   (hỏi *"có lối viết quen chưa"* TRƯỚC, loại thực thể tính sau). Cần xác nhận.
+2. **Thuật ngữ + tiếng lóng cho phim khách bất kỳ** — năm đường kèm giá ở
+   `B2_DICH.md` §4d. ⛔ Điều phối không chọn hộ.
+
+
 ## Global Constraints
 
 - ⛔ **Không deploy, không `public=True`, không bật cờ `LTT_AUTO_SCAN_VIDEO`** (§24 đề bài).
