@@ -44,9 +44,24 @@ def _mt5_stack(config: "MT5Config", embed_tokens: nn.Embedding):
        is `MT5Stack(config, embed_tokens=None)`. In 5.x it is `MT5Stack(config)`
        and the stack builds its own `nn.Embedding`, so the upstream two-argument
        call raises `TypeError: too many positional arguments` **before touching
-       any weight** — i.e. MetricX QE cannot start at all. Measured 24/09/2026
-       on transformers 5.6.2. `mypy` flagged it as `[call-arg]`; nothing else
-       did, because this file only ever runs inside `qc-venv`.
+       any weight**.
+
+    ⚠️ **DINH CHINH 24/09/2026 — ban ghi truoc noi qua.** No viet *"MetricX QE
+       cannot start at all, measured on transformers 5.6.2"*. Do lai tren **ca
+       hai** moi truong:
+
+           venv chinh   transformers 5.6.2   <- da do o DAY
+           qc-venv      transformers 4.57.6  <- MetricX THAT SU chay o DAY
+
+       Tep nay **chi chay trong `qc-venv`** (chinh docstring nay noi the), va o
+       do chu ky van la `MT5Stack(config, embed_tokens)` ⇒ loi goi hai tham so
+       **van dung**, va MetricX QE **van khoi dong duoc**. Hai lan khac da do
+       MetricX chay that trong ngay (diem trung vi 3,06; CPU-vs-GPU 10,31 s).
+
+    ⇒ Ly do giu ban mot-tham-so **khong** phai "dang hong", ma la **tuong thich
+       tien**: qc-venv se co luc len 5.x, va luc do loi goi hai tham so se chet.
+       Da do tren qc-venv 4.57.6: `_mt5_stack` tra `MT5Stack` va
+       `get_input_embeddings() is emb` ⇒ True (chia chung dung embedding).
 
     ⭐ ONE code path rather than a version branch: `set_input_embeddings` is a
        `PreTrainedModel` method present in both 4.x and 5.x, and in 4.x

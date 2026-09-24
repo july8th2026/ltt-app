@@ -1,0 +1,64 @@
+{
+  "video": "C:\\Users\\Thang Tuong\\Desktop\\TEST VIDEO\\深度解析丨跳伞慢了该怎么打教你用细节操作来化解危机 #和平精英夏日航海 #和平精英夏日探险.mp4",
+  "rong": 836,
+  "cao": 576,
+  "vmaf_toi_thieu": 75.0,
+  "n_subsample": 5,
+  "libx264": {
+    "lan": [
+      3.657,
+      3.908,
+      4.423
+    ],
+    "trung_vi": 3.908,
+    "min": 3.657,
+    "max": 4.423,
+    "dai": 0.766,
+    "tai_may_moi_lan": [
+      "CPU 5% tren 20 loi | RAM trong 39.3 GiB | RESULT: RANH - du bo nho cho mot luot day du",
+      "CPU 6% tren 20 loi | RAM trong 39.3 GiB | RESULT: RANH - du bo nho cho mot luot day du",
+      "CPU 10% tren 20 loi | RAM trong 39.3 GiB | RESULT: RANH - du bo nho cho mot luot day du"
+    ],
+    "vram_dinh_mb": 1339,
+    "co_byte": 21583809,
+    "vmaf": {
+      "mo_hinh": "vmaf_v0.6.1",
+      "trung_binh": 88.685,
+      "trung_binh_dieu_hoa": 88.484,
+      "nho_nhat": 80.525,
+      "p5": 82.994,
+      "so_khung": 641
+    },
+    "giay_cham_vmaf": 62.42,
+    "dat_nguong": true
+  },
+  "h264_nvenc": {
+    "lan": [
+      1.607,
+      1.589,
+      1.594
+    ],
+    "trung_vi": 1.594,
+    "min": 1.589,
+    "max": 1.607,
+    "dai": 0.018,
+    "tai_may_moi_lan": [
+      "CPU 10% tren 20 loi | RAM trong 39.5 GiB | RESULT: RANH - du bo nho cho mot luot day du",
+      "CPU 13% tren 20 loi | RAM trong 39.5 GiB | RESULT: RANH - du bo nho cho mot luot day du",
+      "CPU 9% tren 20 loi | RAM trong 39.5 GiB | RESULT: RANH - du bo nho cho mot luot day du"
+    ],
+    "vram_dinh_mb": 1460,
+    "co_byte": 21377886,
+    "vmaf": {
+      "mo_hinh": "vmaf_v0.6.1",
+      "trung_binh": 90.595,
+      "trung_binh_dieu_hoa": 90.354,
+      "nho_nhat": 77.598,
+      "p5": 83.631,
+      "so_khung": 641
+    },
+    "giay_cham_vmaf": 61.7,
+    "dat_nguong": true
+  },
+  "giay_ca_bench": 153.8
+}

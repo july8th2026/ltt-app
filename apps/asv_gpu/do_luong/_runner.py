@@ -12,8 +12,23 @@ import sys
 import time
 from pathlib import Path
 
-#: Goc kho ma (…/apps/asv_gpu/do_luong/_runner.py -> parents[3]).
-GOC = Path(__file__).resolve().parents[3]
+#: Goc kho ma, neo bang TEN thu muc `apps/` — ⛔ KHONG dem cap (`parents[N]`).
+#:
+#: ⚠️ Vi sao khong dung `platform_core.frontend_bundle` nhu cac app khac: bon
+#:    tep `*_runner.py` nay chay trong `qc-venv` (mot venv RIENG, khong co goc
+#:    kho trong `sys.path`), nen chung phai tu tim goc TRUOC khi nhap duoc bat
+#:    ky thu gi cua nen tang. Neo bang ten la cach duy nhat con lai — va no
+#:    khong gay khi tep doi cho trong cay.
+def _goc_kho() -> Path:
+    for cha in Path(__file__).resolve().parents:
+        if cha.name == "apps":
+            return cha.parent
+    raise RuntimeError(
+        f"khong thay thu muc `apps/` tren duong di cua {__file__} — "
+        "runner nay phai nam trong `apps/<app>/do_luong/`")
+
+
+GOC = _goc_kho()
 
 
 def mo() -> tuple[dict, Path]:
@@ -30,6 +45,48 @@ def ghi(ra: Path, obj: dict) -> None:
 def khong_kha_dung(ly_do: str) -> None:
     print(f"KHONG_KHA_DUNG: {ly_do}", flush=True)
     sys.exit(3)
+
+
+def chon_thiet_bi(vao: dict) -> tuple[str, str]:
+    """(`"cuda"`|`"cpu"`, ly do) theo **lease** chu khong theo `is_available()`.
+
+    🔑 Cung hop dong ma `apps/auto_scan_video/demucs_runner.chon_thiet_bi` da
+       chot, va o day vi dung mot ly do: ban cu viet
+       `"cuda" if torch.cuda.is_available() else "cpu"`, tuc **lay card khi
+       KHONG co lease**. May A co MOT card, dung chung voi `voice_sidecar` dang
+       phuc vu khach that, nen mot nguoi dung card ngoai so sach la dung cai ma
+       `gpu_lease` sinh ra de chan.
+
+    Hai truong hop, va phan biet chung la ca y nghia cua `buoc_gpu`:
+
+      * `buoc_gpu=False` — nen tang **khong** cap card. CPU la duong DA KHAI,
+        khong phai mot cho tut xuong. `venv.chay(chan_card=True)` con ghim
+        `CUDA_VISIBLE_DEVICES=-1` nen torch cung khong thay card.
+      * `buoc_gpu=True` — nen tang da giu cho mot card va da ghim no. Torch
+        khong thay CUDA o day nghia la viec cap card DA HONG ⇒ phai keu
+        (`KHONG_KHA_DUNG`), khong duoc im lang cham diem bang CPU: mot bo do
+        lui im lang giu nguyen suat `tach_nguon_cuc_bo` hang phut trong khi
+        bao cao doc y nhu mot luot chay tren card.
+    """
+    buoc_gpu = bool(vao.get("buoc_gpu"))
+    try:
+        import torch
+        co = bool(torch.cuda.is_available())
+    except Exception as exc:                    # noqa: BLE001 - torch hong
+        if buoc_gpu:
+            khong_kha_dung(f"nen tang cap card nhung torch khong nap duoc: {exc}")
+        return "cpu", f"torch khong nap duoc: {type(exc).__name__}"
+    if buoc_gpu:
+        if not co:
+            khong_kha_dung(
+                "nen tang cap card (buoc_gpu) nhung torch.cuda.is_available() "
+                "la False — viec cap/ghim card da hong")
+        return "cuda", "nen tang cap card"
+    if co:
+        # ⛔ Thay card ma KHONG co lease ⇒ khong cham. Ghi ly do ra hop dong ket
+        #    qua de mot lan chay CPU khong bao gio doc giong mot lan co card.
+        return "cpu", "khong co lease (thay card nhung khong duoc cap)"
+    return "cpu", "may khong co card"
 
 
 def _rss_dinh_mb() -> float:

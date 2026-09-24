@@ -1,0 +1,426 @@
+{
+ "phien_ban": 1,
+ "cau_hoi": "Trong nhung dong bo cham GAN CO, bao nhieu phan nguoi soi MU goi la loi? Va bo cham bo sot bao nhieu loi TU NHIEN?",
+ "vi_sao_khong_tru": "`bao dong gia - san loi FLORES` ngam gia dinh do nhay 100 % tren loi TU NHIEN — mot gia dinh CHUA do. Phep nay do THANG, khong tru.",
+ "sach": "Phan quyet nguoi soi ghi TRUOC, MU, va DA COMMIT (c9dfc01d va truoc do) — khong ai chinh duoc sau khi thay bo cham noi gi.",
+ "bo_cham": {
+  "ban": "v3",
+  "temp": 0.0,
+  "luot": 3,
+  "n": 100,
+  "ti_le_gan_co_tho": 0.43,
+  "ti_le_tung_luot": [
+   0.44,
+   0.36,
+   0.4
+  ],
+  "nen": [
+   {
+    "phan": 0,
+    "dong": [
+     503,
+     594
+    ],
+    "n": 20,
+    "ti_le_lo_hong": 0.0,
+    "do_phu_tung_luot": [
+     1.0,
+     1.0,
+     1.0
+    ],
+    "nen_sach": true,
+    "ti_le_gan_co": 0.4
+   },
+   {
+    "phan": 1,
+    "dong": [
+     600,
+     651
+    ],
+    "n": 20,
+    "ti_le_lo_hong": 0.0,
+    "do_phu_tung_luot": [
+     1.0,
+     1.0,
+     1.0
+    ],
+    "nen_sach": true,
+    "ti_le_gan_co": 0.4
+   },
+   {
+    "phan": 2,
+    "dong": [
+     653,
+     739
+    ],
+    "n": 20,
+    "ti_le_lo_hong": 0.0,
+    "do_phu_tung_luot": [
+     1.0,
+     1.0,
+     1.0
+    ],
+    "nen_sach": true,
+    "ti_le_gan_co": 0.3
+   },
+   {
+    "phan": 3,
+    "dong": [
+     747,
+     817
+    ],
+    "n": 20,
+    "ti_le_lo_hong": 0.0,
+    "do_phu_tung_luot": [
+     1.0,
+     1.0,
+     1.0
+    ],
+    "nen_sach": true,
+    "ti_le_gan_co": 0.6
+   },
+   {
+    "phan": 4,
+    "dong": [
+     824,
+     896
+    ],
+    "n": 20,
+    "ti_le_lo_hong": 0.0,
+    "do_phu_tung_luot": [
+     1.0,
+     1.0,
+     1.0
+    ],
+    "nen_sach": true,
+    "ti_le_gan_co": 0.45
+   }
+  ],
+  "nen_sach_moi_phan": true
+ },
+ "nguoi_doc_1_n100": {
+  "n": 100,
+  "theo_dinh_nghia": {
+   "chinh": {
+    "nhan": [
+     "ro"
+    ],
+    "so_gan_co": 43,
+    "so_loi_that": 10,
+    "dung": 10,
+    "bao_dong_gia": 33,
+    "bo_sot": 0,
+    "dung_am": 57,
+    "ti_le_bao_dong_gia_that": 0.7674,
+    "do_nhay_loi_tu_nhien": 1.0,
+    "dong_bao_dong_gia": [
+     514,
+     519,
+     522,
+     542,
+     568,
+     600,
+     614,
+     620,
+     638,
+     639,
+     640,
+     645,
+     651,
+     666,
+     669,
+     687,
+     719,
+     721,
+     747,
+     748,
+     757,
+     759,
+     773,
+     810,
+     817,
+     824,
+     827,
+     828,
+     830,
+     844,
+     869,
+     875,
+     889
+    ],
+    "dong_bo_sot": []
+   },
+   "rong": {
+    "nhan": [
+     "ro",
+     "zh_lech"
+    ],
+    "so_gan_co": 43,
+    "so_loi_that": 12,
+    "dung": 12,
+    "bao_dong_gia": 31,
+    "bo_sot": 0,
+    "dung_am": 57,
+    "ti_le_bao_dong_gia_that": 0.7209,
+    "do_nhay_loi_tu_nhien": 1.0,
+    "dong_bao_dong_gia": [
+     514,
+     519,
+     522,
+     542,
+     568,
+     614,
+     620,
+     638,
+     639,
+     640,
+     645,
+     651,
+     669,
+     687,
+     719,
+     721,
+     747,
+     748,
+     757,
+     759,
+     773,
+     810,
+     817,
+     824,
+     827,
+     828,
+     830,
+     844,
+     869,
+     875,
+     889
+    ],
+    "dong_bo_sot": []
+   },
+   "rong_nhat": {
+    "nhan": [
+     "ro",
+     "zh_lech",
+     "bien"
+    ],
+    "so_gan_co": 43,
+    "so_loi_that": 23,
+    "dung": 22,
+    "bao_dong_gia": 21,
+    "bo_sot": 1,
+    "dung_am": 56,
+    "ti_le_bao_dong_gia_that": 0.4884,
+    "do_nhay_loi_tu_nhien": 0.9565,
+    "dong_bao_dong_gia": [
+     519,
+     522,
+     542,
+     568,
+     620,
+     638,
+     639,
+     640,
+     651,
+     669,
+     719,
+     721,
+     747,
+     757,
+     759,
+     773,
+     817,
+     824,
+     827,
+     830,
+     875
+    ],
+    "dong_bo_sot": [
+     556
+    ]
+   }
+  },
+  "dong_khong_cham_duoc": []
+ },
+ "nguoi_doc_1_tap_con_30": {
+  "n": 30,
+  "theo_dinh_nghia": {
+   "chinh": {
+    "nhan": [
+     "ro"
+    ],
+    "so_gan_co": 13,
+    "so_loi_that": 3,
+    "dung": 3,
+    "bao_dong_gia": 10,
+    "bo_sot": 0,
+    "dung_am": 17,
+    "ti_le_bao_dong_gia_that": 0.7692,
+    "do_nhay_loi_tu_nhien": 1.0,
+    "dong_bao_dong_gia": [
+     514,
+     522,
+     600,
+     614,
+     620,
+     651,
+     757,
+     759,
+     773,
+     824
+    ],
+    "dong_bo_sot": []
+   },
+   "rong": {
+    "nhan": [
+     "ro",
+     "zh_lech"
+    ],
+    "so_gan_co": 13,
+    "so_loi_that": 4,
+    "dung": 4,
+    "bao_dong_gia": 9,
+    "bo_sot": 0,
+    "dung_am": 17,
+    "ti_le_bao_dong_gia_that": 0.6923,
+    "do_nhay_loi_tu_nhien": 1.0,
+    "dong_bao_dong_gia": [
+     514,
+     522,
+     614,
+     620,
+     651,
+     757,
+     759,
+     773,
+     824
+    ],
+    "dong_bo_sot": []
+   },
+   "rong_nhat": {
+    "nhan": [
+     "ro",
+     "zh_lech",
+     "bien"
+    ],
+    "so_gan_co": 13,
+    "so_loi_that": 7,
+    "dung": 6,
+    "bao_dong_gia": 7,
+    "bo_sot": 1,
+    "dung_am": 16,
+    "ti_le_bao_dong_gia_that": 0.5385,
+    "do_nhay_loi_tu_nhien": 0.8571,
+    "dong_bao_dong_gia": [
+     522,
+     620,
+     651,
+     757,
+     759,
+     773,
+     824
+    ],
+    "dong_bo_sot": [
+     556
+    ]
+   }
+  },
+  "dong_khong_cham_duoc": []
+ },
+ "nguoi_doc_2_tap_con_30": {
+  "n": 30,
+  "theo_dinh_nghia": {
+   "chinh": {
+    "nhan": [
+     "ro"
+    ],
+    "so_gan_co": 13,
+    "so_loi_that": 5,
+    "dung": 5,
+    "bao_dong_gia": 8,
+    "bo_sot": 0,
+    "dung_am": 17,
+    "ti_le_bao_dong_gia_that": 0.6154,
+    "do_nhay_loi_tu_nhien": 1.0,
+    "dong_bao_dong_gia": [
+     522,
+     600,
+     620,
+     651,
+     757,
+     759,
+     773,
+     824
+    ],
+    "dong_bo_sot": []
+   },
+   "rong": {
+    "nhan": [
+     "ro",
+     "zh_lech"
+    ],
+    "so_gan_co": 13,
+    "so_loi_that": 7,
+    "dung": 7,
+    "bao_dong_gia": 6,
+    "bo_sot": 0,
+    "dung_am": 17,
+    "ti_le_bao_dong_gia_that": 0.4615,
+    "do_nhay_loi_tu_nhien": 1.0,
+    "dong_bao_dong_gia": [
+     620,
+     651,
+     757,
+     759,
+     773,
+     824
+    ],
+    "dong_bo_sot": []
+   },
+   "rong_nhat": {
+    "nhan": [
+     "ro",
+     "zh_lech",
+     "bien"
+    ],
+    "so_gan_co": 13,
+    "so_loi_that": 16,
+    "dung": 11,
+    "bao_dong_gia": 2,
+    "bo_sot": 5,
+    "dung_am": 12,
+    "ti_le_bao_dong_gia_that": 0.1538,
+    "do_nhay_loi_tu_nhien": 0.6875,
+    "dong_bao_dong_gia": [
+     759,
+     773
+    ],
+    "dong_bo_sot": [
+     530,
+     556,
+     618,
+     730,
+     800
+    ]
+   }
+  },
+  "dong_khong_cham_duoc": []
+ },
+ "lop_cua_phan_du": {
+  "ghi_chu": "loai cua loi QUYET DINH (muc >= nang) trong 33 bao dong gia THAT (dinh nghia `chinh`)",
+  "lat_nghia": 14,
+  "sai_thuc_the": 11,
+  "bo_sot": 5,
+  "them": 2,
+  "khac": 1,
+  "muc": {
+   "nang": 25,
+   "nghiem_trong": 8
+  },
+  "trong_33": {
+   "nguoi_soi_goi_khong_loi_han": 21,
+   "nguoi_soi_goi_bien": 10,
+   "nguoi_soi_goi_zh_lech": 2
+  }
+ }
+}

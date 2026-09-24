@@ -1,0 +1,903 @@
+{
+ "khi": "2026-09-24 11:21:48",
+ "pha": [
+  "khai",
+  "cong",
+  "goi",
+  "temp"
+ ],
+ "khai": {
+  "manifest_model_llm_noi_bo": "ltt-3.8",
+  "MODEL_THI_GIAC_NOI_BO": "ltt-3.5",
+  "ALIAS_SANG_ID": {
+   "ltt-3.8": "qwen38-api",
+   "ltt-3.5": "qwen35-api"
+  },
+  "thao_tac": {
+   "dich_thuat": {
+    "can_thi_giac": false,
+    "model_asv_xin": "qwen38-api",
+    "muc_nghi_khai": "",
+    "cua_so": 221184,
+    "tran_token_ra": 32768,
+    "timeout_s": null,
+    "vision_registry": true
+   },
+   "doc_canh": {
+    "can_thi_giac": true,
+    "model_asv_xin": "qwen35-api",
+    "muc_nghi_khai": "",
+    "cua_so": 262144,
+    "tran_token_ra": 32768,
+    "timeout_s": null,
+    "vision_registry": true
+   },
+   "ho_so_noi_dung": {
+    "can_thi_giac": false,
+    "model_asv_xin": "qwen38-api",
+    "muc_nghi_khai": "",
+    "cua_so": 221184,
+    "tran_token_ra": 32768,
+    "timeout_s": null,
+    "vision_registry": true
+   },
+   "chuyen_loi_thoai": {
+    "can_thi_giac": false,
+    "model_asv_xin": "qwen38-api",
+    "muc_nghi_khai": "",
+    "cua_so": 221184,
+    "tran_token_ra": 16384,
+    "timeout_s": 300.0,
+    "vision_registry": true
+   },
+   "rut_ngan_cho_vua": {
+    "can_thi_giac": false,
+    "model_asv_xin": "qwen38-api",
+    "muc_nghi_khai": "low",
+    "cua_so": 221184,
+    "tran_token_ra": 32768,
+    "timeout_s": null,
+    "vision_registry": true
+   },
+   "qc_ngu_nghia": {
+    "can_thi_giac": false,
+    "model_asv_xin": "qwen38-api",
+    "muc_nghi_khai": "",
+    "cua_so": 221184,
+    "tran_token_ra": 16384,
+    "timeout_s": 300.0,
+    "vision_registry": true
+   },
+   "qc_hinh": {
+    "can_thi_giac": true,
+    "model_asv_xin": "qwen35-api",
+    "muc_nghi_khai": "",
+    "cua_so": 262144,
+    "tran_token_ra": 32768,
+    "timeout_s": null,
+    "vision_registry": true
+   }
+  }
+ },
+ "cong": {
+  "base_url": "http://192.168.2.66:8299",
+  "health": {
+   "models": null,
+   "models_la": [],
+   "thuong_nguon": {
+    "url": "http://127.0.0.1:8280",
+    "ma": 200,
+    "song": true,
+    "phien_ban": {
+     "swap": {
+      "version": "v250",
+      "commit": "60226b6",
+      "build_date": "2026-08-14T15:46:44Z"
+     },
+     "engine": {
+      "ho_so": "qwen35-api",
+      "build_info": "b10883-91f6a6cf3"
+     },
+     "ly_do": ""
+    }
+   },
+   "vat_ly": {
+    "nguon": "H:\\LTT_LLM\\gateway\\llama-swap.yaml",
+    "theo_model": {
+     "qwen35-api": {
+      "ctx": 262144,
+      "np": 4,
+      "kvu": true,
+      "reasoning_budget": 2048
+     },
+     "qwen38-api": {
+      "ctx": 221184,
+      "np": 3,
+      "kvu": true,
+      "reasoning_budget": 4096
+     }
+    }
+   },
+   "tran": {
+    "input_tokens": {
+     "qwen35-api": 227328,
+     "qwen38-api": 186368
+    },
+    "output_tokens": 32768,
+    "dem_uoc": 2048,
+    "images": 4
+   },
+   "gioi_han": {
+    "dang_chay": 0,
+    "max_dong_thoi": null,
+    "giu_lau_nhat_giay": 0.0,
+    "im_lang_lau_nhat_giay": 0.0,
+    "da_thu_hoi": 0,
+    "theo_model": {
+     "qwen38-api": {
+      "dang_chay": 0,
+      "max_dong_thoi": 3,
+      "token_dat": 0,
+      "token_pool": 221184,
+      "giu_lau_nhat_giay": 0.0,
+      "im_lang_lau_nhat_giay": 0.0,
+      "han_im_lang_s": 1200.0,
+      "da_thu_hoi": 0,
+      "san_vram_mb": 0
+     },
+     "qwen35-api": {
+      "dang_chay": 0,
+      "max_dong_thoi": 4,
+      "token_dat": 0,
+      "token_pool": 262144,
+      "giu_lau_nhat_giay": 0.0,
+      "im_lang_lau_nhat_giay": 0.0,
+      "han_im_lang_s": 1200.0,
+      "da_thu_hoi": 0,
+      "san_vram_mb": 0
+     }
+    }
+   },
+   "trong_tai": {
+    "bat": true,
+    "ban": false,
+    "ly_do": "",
+    "so_python_gpu": 0,
+    "ram_trong_gb": 81.5
+   },
+   "gpu": {
+    "tren_gpu": true,
+    "vram_dung_mb": 24120,
+    "co_model_nap": true,
+    "dang_lo": false,
+    "ly_do": "",
+    "theo_vai": {
+     "ltt38": {
+      "uuid": "GPU-26623278-4fa5-82db-4306-237651b03e78",
+      "tren_gpu": true,
+      "vram_dung_mb": 24120,
+      "vram_trong_mb": 206,
+      "util_pt": 0,
+      "co_model_nap": true,
+      "dang_lo": false,
+      "ly_do": ""
+     },
+     "ltt35": {
+      "uuid": "GPU-ebecd0a4-a8a7-14a5-dad1-21565f6dc1df",
+      "tren_gpu": true,
+      "vram_dung_mb": 15715,
+      "vram_trong_mb": 338,
+      "util_pt": 0,
+      "co_model_nap": true,
+      "dang_lo": false,
+      "ly_do": ""
+     }
+    }
+   }
+  },
+  "v1_models": [
+   {
+    "id": "qwen35-api",
+    "owned_by": "ltt"
+   },
+   {
+    "id": "qwen38-api",
+    "owned_by": "ltt"
+   }
+  ]
+ },
+ "goi": {
+  "vong": 10,
+  "lo_doan": 4,
+  "chi_tiet": {
+   "chuyen_loi_thoai": [
+    {
+     "thao_tac": "chuyen_loi_thoai",
+     "giay": 118.36,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "token_vao": 824,
+     "token_ra": 4375,
+     "token_cache": 0,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 11735,
+     "ky_tu_noi_dung": 636,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{\"doan\": {\"s1\": {\"chu\": \"Kim chi gần như món không thể thiếu mỗi ngày\", \"cam_xuc\": \"trung_tinh\", \"kieu_noi\": \"thuyet_minh\", \"nhan_manh\": [\"không thể thiếu\", \"mỗi ngày\"]}, \"s2\": {\"c"
+    },
+    {
+     "thao_tac": "chuyen_loi_thoai",
+     "giay": 120.93,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "token_vao": 824,
+     "token_ra": 4435,
+     "token_cache": 820,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 9783,
+     "ky_tu_noi_dung": 798,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{   \"doan\": {     \"s1\": {       \"chu\": \"Kim chi gần như ngày nào cũng không thể thiếu.\",       \"cam_xuc\": \"trung_tinh\",       \"kieu_noi\": \"ke_chuyen\",       \"nhan_manh\": [\"Kim chi\""
+    },
+    {
+     "thao_tac": "chuyen_loi_thoai",
+     "giay": 120.55,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "token_vao": 824,
+     "token_ra": 4427,
+     "token_cache": 820,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 10143,
+     "ky_tu_noi_dung": 765,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{   \"doan\": {     \"s1\": {       \"chu\": \"Kim chi gần như không thể thiếu mỗi ngày.\",       \"cam_xuc\": \"trung_tinh\",       \"kieu_noi\": \"thuyet_minh\",       \"nhan_manh\": [\"Kim chi\", \""
+    },
+    {
+     "thao_tac": "chuyen_loi_thoai",
+     "giay": 117.19,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "token_vao": 824,
+     "token_ra": 4428,
+     "token_cache": 820,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 11002,
+     "ky_tu_noi_dung": 762,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{   \"doan\": {     \"s1\": {       \"chu\": \"Kim chi gần như không thể thiếu trong mỗi ngày.\",       \"cam_xuc\": \"trung_tinh\",       \"kieu_noi\": \"ke_chuyen\",       \"nhan_manh\": [\"Kim chi"
+    },
+    {
+     "thao_tac": "chuyen_loi_thoai",
+     "giay": 114.49,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "token_vao": 824,
+     "token_ra": 4425,
+     "token_cache": 820,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 12725,
+     "ky_tu_noi_dung": 764,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{   \"doan\": {     \"s1\": {       \"chu\": \"Kim chi gần như ngày nào cũng không thể thiếu\",       \"cam_xuc\": \"trung_tinh\",       \"kieu_noi\": \"thuyet_minh\",       \"nhan_manh\": [\"Kim chi"
+    },
+    {
+     "thao_tac": "chuyen_loi_thoai",
+     "giay": 104.82,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "token_vao": 824,
+     "token_ra": 4315,
+     "token_cache": 820,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 10942,
+     "ky_tu_noi_dung": 548,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{\"doan\":{\"s1\":{\"chu\":\"Kim chi, gần như ngày nào cũng không thể thiếu.\",\"cam_xuc\":\"trung_tinh\",\"kieu_noi\":\"thuyet_minh\",\"nhan_manh\":[\"Kim chi\"]},\"s2\":{\"chu\":\"Đó chắc là đĩa lòng bò "
+    },
+    {
+     "thao_tac": "chuyen_loi_thoai",
+     "giay": 104.92,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "token_vao": 824,
+     "token_ra": 4430,
+     "token_cache": 820,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 10648,
+     "ky_tu_noi_dung": 777,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{   \"doan\": {     \"s1\": {       \"chu\": \"Món kim chi gần như không thể thiếu mỗi ngày\",       \"cam_xuc\": \"trung_tinh\",       \"kieu_noi\": \"ke_chuyen\",       \"nhan_manh\": [         \"k"
+    },
+    {
+     "thao_tac": "chuyen_loi_thoai",
+     "giay": 117.68,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "token_vao": 824,
+     "token_ra": 4421,
+     "token_cache": 820,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 11117,
+     "ky_tu_noi_dung": 761,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{   \"doan\": {     \"s1\": {       \"chu\": \"Kim chi gần như ngày nào cũng không thể thiếu.\",       \"cam_xuc\": \"trung_tinh\",       \"kieu_noi\": \"ke_chuyen\",       \"nhan_manh\": [\"ngày nào"
+    },
+    {
+     "thao_tac": "chuyen_loi_thoai",
+     "giay": 121.46,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "token_vao": 824,
+     "token_ra": 4427,
+     "token_cache": 820,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 12149,
+     "ky_tu_noi_dung": 766,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{   \"doan\": {     \"s1\": {       \"chu\": \"Hầu như mỗi ngày kim chi đều không thể thiếu.\",       \"cam_xuc\": \"trung_tinh\",       \"kieu_noi\": \"ke_chuyen\",       \"nhan_manh\": [\"kim chi\","
+    },
+    {
+     "thao_tac": "chuyen_loi_thoai",
+     "giay": 99.45,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "token_vao": 824,
+     "token_ra": 3489,
+     "token_cache": 820,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 8095,
+     "ky_tu_noi_dung": 760,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{   \"doan\": {     \"s1\": {       \"chu\": \"Kim chi ngày nào cũng là món không thể thiếu\",       \"cam_xuc\": \"trung_tinh\",       \"kieu_noi\": \"thuyet_minh\",       \"nhan_manh\": [\"Kim chi\""
+    }
+   ],
+   "qc_ngu_nghia": [
+    {
+     "thao_tac": "qc_ngu_nghia",
+     "giay": 30.28,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "token_vao": 422,
+     "token_ra": 996,
+     "token_cache": 0,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 2402,
+     "ky_tu_noi_dung": 330,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{   \"doan\": {     \"s1\": {       \"dat\": true,       \"do_tin\": 0.97,       \"ly_do\": \"\"     },     \"s2\": {       \"dat\": true,       \"do_tin\": 0.86,       \"ly_do\": \"\"     },     \"s3\": "
+    },
+    {
+     "thao_tac": "qc_ngu_nghia",
+     "giay": 60.8,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "token_vao": 422,
+     "token_ra": 1952,
+     "token_cache": 418,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 5521,
+     "ky_tu_noi_dung": 448,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{   \"doan\": {     \"s1\": {       \"dat\": true,       \"do_tin\": 0.98,       \"ly_do\": \"\"     },     \"s2\": {       \"dat\": false,       \"do_tin\": 0.86,       \"ly_do\": \"Bản Việt thêm 'xèo"
+    },
+    {
+     "thao_tac": "qc_ngu_nghia",
+     "giay": 60.45,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "token_vao": 422,
+     "token_ra": 2164,
+     "token_cache": 418,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 6178,
+     "ky_tu_noi_dung": 182,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{\"doan\":{\"s1\":{\"dat\":true,\"do_tin\":0.98,\"ly_do\":\"\"},\"s2\":{\"dat\":true,\"do_tin\":0.88,\"ly_do\":\"\"},\"s3\":{\"dat\":true,\"do_tin\":0.97,\"ly_do\":\"\"},\"s4\":{\"dat\":true,\"do_tin\":0.97,\"ly_do\":\"\"}"
+    },
+    {
+     "thao_tac": "qc_ngu_nghia",
+     "giay": 36.52,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "token_vao": 422,
+     "token_ra": 1318,
+     "token_cache": 418,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 3243,
+     "ky_tu_noi_dung": 0,
+     "rong_ma_thanh_cong": true,
+     "loi": "",
+     "luoc_do": "LuocDoSai: qc_ngu_nghia: model tra ve rong [finish_reason=stop; khoi suy nghi 3243 ky tu]",
+     "noi_dung_dau": ""
+    },
+    {
+     "thao_tac": "qc_ngu_nghia",
+     "giay": 27.97,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "token_vao": 422,
+     "token_ra": 979,
+     "token_cache": 418,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 2224,
+     "ky_tu_noi_dung": 330,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{   \"doan\": {     \"s1\": {       \"dat\": true,       \"do_tin\": 0.98,       \"ly_do\": \"\"     },     \"s2\": {       \"dat\": true,       \"do_tin\": 0.92,       \"ly_do\": \"\"     },     \"s3\": "
+    },
+    {
+     "thao_tac": "qc_ngu_nghia",
+     "giay": 68.17,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "token_vao": 422,
+     "token_ra": 2231,
+     "token_cache": 418,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 5723,
+     "ky_tu_noi_dung": 209,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{\"doan\": {\"s1\": {\"dat\": true, \"do_tin\": 0.97, \"ly_do\": \"\"}, \"s2\": {\"dat\": true, \"do_tin\": 0.8, \"ly_do\": \"\"}, \"s3\": {\"dat\": true, \"do_tin\": 0.97, \"ly_do\": \"\"}, \"s4\": {\"dat\": true, \""
+    },
+    {
+     "thao_tac": "qc_ngu_nghia",
+     "giay": 53.54,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "token_vao": 422,
+     "token_ra": 1902,
+     "token_cache": 418,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 5044,
+     "ky_tu_noi_dung": 391,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{   \"doan\": {     \"s1\": {       \"dat\": true,       \"do_tin\": 0.95,       \"ly_do\": \"\"     },     \"s2\": {       \"dat\": false,       \"do_tin\": 0.82,       \"ly_do\": \"Thêm 'xèo xèo' tạo"
+    },
+    {
+     "thao_tac": "qc_ngu_nghia",
+     "giay": 41.07,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "token_vao": 422,
+     "token_ra": 1378,
+     "token_cache": 418,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 3457,
+     "ky_tu_noi_dung": 315,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{\"doan\":{\"s1\":{\"dat\":true,\"do_tin\":0.95,\"ly_do\":\"\"},\"s2\":{\"dat\":false,\"do_tin\":0.75,\"ly_do\":\"Bản Việt thêm “xèo xèo” không có trong bản gốc, làm lệch nghĩa của “滋辣” (cay nồng/ấm ca"
+    },
+    {
+     "thao_tac": "qc_ngu_nghia",
+     "giay": 113.77,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "token_vao": 422,
+     "token_ra": 4253,
+     "token_cache": 418,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 14153,
+     "ky_tu_noi_dung": 284,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{\"doan\": {\"s1\": {\"dat\": true, \"do_tin\": 0.97, \"ly_do\": \"\"}, \"s2\": {\"dat\": false, \"do_tin\": 0.86, \"ly_do\": \"Thêm chi tiết 'xèo xèo' (tiếng xèo xèo khi nướng) không có trong bản gốc."
+    },
+    {
+     "thao_tac": "qc_ngu_nghia",
+     "giay": 21.57,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "token_vao": 422,
+     "token_ra": 801,
+     "token_cache": 418,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 2064,
+     "ky_tu_noi_dung": 182,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{\"doan\":{\"s1\":{\"dat\":true,\"do_tin\":0.98,\"ly_do\":\"\"},\"s2\":{\"dat\":true,\"do_tin\":0.86,\"ly_do\":\"\"},\"s3\":{\"dat\":true,\"do_tin\":0.98,\"ly_do\":\"\"},\"s4\":{\"dat\":true,\"do_tin\":0.97,\"ly_do\":\"\"}"
+    }
+   ],
+   "doc_canh": [
+    {
+     "thao_tac": "doc_canh",
+     "giay": 32.47,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.5-9B-Q6_K-unsloth.gguf",
+     "finish_reason": "stop",
+     "token_vao": 959,
+     "token_ra": 2206,
+     "token_cache": 955,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 6492,
+     "ky_tu_noi_dung": 351,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{\"loai\": \"nguyên liệu\", \"chu_the\": [\"thịt\", \"ruột bò\", \"nước lạnh\", \"bia\", \"nguyên liệu\"], \"hanh_dong\": \"ngâm\", \"cam_xuc\": \"chăm chút\", \"quan_trong\": 0.8, \"de_xuat\": \"giu\", \"do_tin"
+    },
+    {
+     "thao_tac": "doc_canh",
+     "giay": 29.76,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.5-9B-Q6_K-unsloth.gguf",
+     "finish_reason": "stop",
+     "token_vao": 959,
+     "token_ra": 2192,
+     "token_cache": 955,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 6502,
+     "ky_tu_noi_dung": 284,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{\"loai\": \"thuc_an\", \"chu_the\": [\"bo_suc\"], \"hanh_dong\": \"duoc_chan_mau\", \"cam_xuc\": \"hanh_xung\", \"quan_trong\": 0.9, \"de_xuat\": \"giu\", \"do_tin\": 0.9, \"ly_do\": \"Canh c1 chuyen doi bo"
+    },
+    {
+     "thao_tac": "doc_canh",
+     "giay": 29.49,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.5-9B-Q6_K-unsloth.gguf",
+     "finish_reason": "stop",
+     "token_vao": 959,
+     "token_ra": 2202,
+     "token_cache": 955,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 6642,
+     "ky_tu_noi_dung": 351,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{\"loai\": \"thực phẩm\", \"chu_the\": [\"ruột bò\", \"ướp\", \"lạnh\", \"giữ độ tươi\"], \"hanh_dong\": \"đang được xả vào nước lạnh và rượu\", \"cam_xuc\": \"hướng dẫn\", \"quan_trong\": 0.9, \"de_xuat\":"
+    },
+    {
+     "thao_tac": "doc_canh",
+     "giay": 29.14,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.5-9B-Q6_K-unsloth.gguf",
+     "finish_reason": "stop",
+     "token_vao": 959,
+     "token_ra": 2176,
+     "token_cache": 955,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 7511,
+     "ky_tu_noi_dung": 269,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{\"loai\": \"Nguyên liệu\", \"chu_the\": [\"Ruột bò\"], \"hanh_dong\": \"Đang được sơ chế và ướp rượu\", \"cam_xuc\": \"Sẵn sàng chế biến\", \"quan_trong\": 0.9, \"de_xuat\": \"giu\", \"do_tin\": 0.9, \"ly"
+    },
+    {
+     "thao_tac": "doc_canh",
+     "giay": 29.03,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.5-9B-Q6_K-unsloth.gguf",
+     "finish_reason": "stop",
+     "token_vao": 959,
+     "token_ra": 2179,
+     "token_cache": 955,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 5477,
+     "ky_tu_noi_dung": 246,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{\"loai\": \"nguyên_liệu\", \"chu_the\": [\"mãng_bò\", \"nguyên_liệu_chế_biến\"], \"hanh_dong\": \"bị_uớp\", \"cam_xuc\": \"tự_nhiên\", \"quan_trong\": 0.9, \"de_xuat\": \"giu\", \"do_tin\": 1.0, \"ly_do\": \""
+    },
+    {
+     "thao_tac": "doc_canh",
+     "giay": 30.77,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.5-9B-Q6_K-unsloth.gguf",
+     "finish_reason": "stop",
+     "token_vao": 959,
+     "token_ra": 2213,
+     "token_cache": 955,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 7507,
+     "ky_tu_noi_dung": 360,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "```json {\"loai\": \"nguyen_vat_lieu\", \"chu_the\": [\"Nước\", \"Bò\", \"Nướng\"], \"hanh_dong\": \"chu_bi_tu_nguyen\", \"cam_xuc\": \"kinh_dinh\", \"quan_trong\": 0.9, \"de_xuat\": \"giu\", \"do_tin\": 0.8,"
+    },
+    {
+     "thao_tac": "doc_canh",
+     "giay": 30.7,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.5-9B-Q6_K-unsloth.gguf",
+     "finish_reason": "stop",
+     "token_vao": 959,
+     "token_ra": 2260,
+     "token_cache": 955,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 6882,
+     "ky_tu_noi_dung": 458,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{     \"loai\": \"nguyeu_lieu\",     \"chu_the\": [         \"ruot_bo\",         \"chai\",         \"muon\"     ],     \"hanh_dong\": \"dao_muon\",     \"cam_xuc\": \"thuyet_phuc\",     \"quan_trong\": "
+    },
+    {
+     "thao_tac": "doc_canh",
+     "giay": 30.5,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.5-9B-Q6_K-unsloth.gguf",
+     "finish_reason": "stop",
+     "token_vao": 959,
+     "token_ra": 2200,
+     "token_cache": 955,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 7059,
+     "ky_tu_noi_dung": 287,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{     \"loai\": \"nguyen_lieu\",     \"chu_the\": [\"thanh_nhat\"],     \"hanh_dong\": \"duoc_du_r\",     \"cam_xuc\": \"chuyen_thanh\",     \"quan_trong\": 0.9,     \"de_xuat\": \"giu\",     \"do_tin\": "
+    },
+    {
+     "thao_tac": "doc_canh",
+     "giay": 30.11,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.5-9B-Q6_K-unsloth.gguf",
+     "finish_reason": "stop",
+     "token_vao": 959,
+     "token_ra": 2194,
+     "token_cache": 955,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 7139,
+     "ky_tu_noi_dung": 350,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{\"loai\": \"Thực phẩm\", \"chu_the\": [\"Nước rửa\"], \"hanh_dong\": \"Làm sạch\", \"cam_xuc\": \"Trung tính\", \"quan_trong\": 0.9, \"de_xuat\": \"giu\", \"do_tin\": 0.9, \"ly_do\": \"Món ăn được làm sạch "
+    },
+    {
+     "thao_tac": "doc_canh",
+     "giay": 31.15,
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.5-9B-Q6_K-unsloth.gguf",
+     "finish_reason": "stop",
+     "token_vao": 959,
+     "token_ra": 2185,
+     "token_cache": 955,
+     "do_dang_tin": true,
+     "ky_tu_suy_nghi": 6498,
+     "ky_tu_noi_dung": 289,
+     "rong_ma_thanh_cong": false,
+     "loi": "",
+     "luoc_do": "",
+     "noi_dung_dau": "{\"loai\": \"Bò nướng\", \"chu_the\": [\"Bò nướng\", \"Rượu\", \"Tinh dầu\"], \"hanh_dong\": \"chuẩn bị\", \"cam_xuc\": \"thực tế\", \"quan_trong\": 0.9, \"de_xuat\": \"giu\", \"do_tin\": 0.95, \"ly_do\": \"Là n"
+    }
+   ]
+  },
+  "tom_tat": {
+   "chuyen_loi_thoai": {
+    "n": 10,
+    "n_ok": 10,
+    "p50_s": 117.2,
+    "p95_s": 121.5,
+    "min_s": 99.5,
+    "max_s": 121.5,
+    "token_vao_trung_vi": 824,
+    "token_ra_trung_vi": 4426,
+    "model_cong_tra": [
+     "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf"
+    ],
+    "so_rong_ma_thanh_cong": 0,
+    "so_luoc_do_sai": 0,
+    "so_loi": 0
+   },
+   "qc_ngu_nghia": {
+    "n": 10,
+    "n_ok": 10,
+    "p50_s": 41.1,
+    "p95_s": 113.8,
+    "min_s": 21.6,
+    "max_s": 113.8,
+    "token_vao_trung_vi": 422,
+    "token_ra_trung_vi": 1640,
+    "model_cong_tra": [
+     "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf"
+    ],
+    "so_rong_ma_thanh_cong": 1,
+    "so_luoc_do_sai": 1,
+    "so_loi": 0
+   },
+   "doc_canh": {
+    "n": 10,
+    "n_ok": 10,
+    "p50_s": 30.1,
+    "p95_s": 32.5,
+    "min_s": 29.0,
+    "max_s": 32.5,
+    "token_vao_trung_vi": 959,
+    "token_ra_trung_vi": 2197,
+    "model_cong_tra": [
+     "H:/LTT_LLM/models/Qwen3.5-9B-Q6_K-unsloth.gguf"
+    ],
+    "so_rong_ma_thanh_cong": 0,
+    "so_luoc_do_sai": 0,
+    "so_loi": 0
+   }
+  }
+ },
+ "temp": {
+  "model": "qwen38-api",
+  "vong": 6,
+  "khong_khai": {
+   "dap_an": [
+    "Xoài",
+    "xoài",
+    "Xoài",
+    "xoài",
+    "xoài",
+    "xoài"
+   ],
+   "so_khac_nhau": 2,
+   "n_ok": 6,
+   "ban": [
+    {
+     "giay": 5.16,
+     "loi": "",
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "noi_dung": "Xoài",
+     "token_vao": 86,
+     "token_ra": 164,
+     "ky_tu_suy_nghi": 484
+    },
+    {
+     "giay": 3.78,
+     "loi": "",
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "noi_dung": "xoài",
+     "token_vao": 86,
+     "token_ra": 121,
+     "ky_tu_suy_nghi": 450
+    },
+    {
+     "giay": 5.7,
+     "loi": "",
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "noi_dung": "Xoài",
+     "token_vao": 86,
+     "token_ra": 189,
+     "ky_tu_suy_nghi": 566
+    },
+    {
+     "giay": 3.69,
+     "loi": "",
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "noi_dung": "xoài",
+     "token_vao": 86,
+     "token_ra": 112,
+     "ky_tu_suy_nghi": 432
+    },
+    {
+     "giay": 5.7,
+     "loi": "",
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "noi_dung": "xoài",
+     "token_vao": 86,
+     "token_ra": 184,
+     "ky_tu_suy_nghi": 626
+    },
+    {
+     "giay": 6.27,
+     "loi": "",
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "noi_dung": "xoài",
+     "token_vao": 86,
+     "token_ra": 160,
+     "ky_tu_suy_nghi": 521
+    }
+   ]
+  },
+  "temp_0": {
+   "dap_an": [
+    "xoài",
+    "xoài",
+    "xoài",
+    "xoài",
+    "xoài",
+    "xoài"
+   ],
+   "so_khac_nhau": 1,
+   "n_ok": 6,
+   "ban": [
+    {
+     "giay": 4.47,
+     "loi": "",
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "noi_dung": "xoài",
+     "token_vao": 86,
+     "token_ra": 144,
+     "ky_tu_suy_nghi": 535
+    },
+    {
+     "giay": 3.92,
+     "loi": "",
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "noi_dung": "xoài",
+     "token_vao": 86,
+     "token_ra": 130,
+     "ky_tu_suy_nghi": 474
+    },
+    {
+     "giay": 4.48,
+     "loi": "",
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "noi_dung": "xoài",
+     "token_vao": 86,
+     "token_ra": 144,
+     "ky_tu_suy_nghi": 535
+    },
+    {
+     "giay": 3.47,
+     "loi": "",
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "noi_dung": "xoài",
+     "token_vao": 86,
+     "token_ra": 116,
+     "ky_tu_suy_nghi": 426
+    },
+    {
+     "giay": 4.56,
+     "loi": "",
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "noi_dung": "xoài",
+     "token_vao": 86,
+     "token_ra": 144,
+     "ky_tu_suy_nghi": 535
+    },
+    {
+     "giay": 4.16,
+     "loi": "",
+     "model_cong_tra": "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf",
+     "finish_reason": "stop",
+     "noi_dung": "xoài",
+     "token_vao": 86,
+     "token_ra": 144,
+     "ky_tu_suy_nghi": 535
+    }
+   ]
+  }
+ }
+}

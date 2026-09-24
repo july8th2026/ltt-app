@@ -58,6 +58,40 @@ MAC_DINH = "cpu_nhieu"
 KHONG_DUOC_CHEN = frozenset({"postgres_test"})
 
 
+def _in(*phan: object) -> None:
+    """`print` chiu duoc console cp1252.
+
+    🔴 **Vi sao can.** Tep nay chua ⛔/⚠️/⭐ trong cac cau canh bao, va cac dong
+       xep hang con **nhung mo ta lenh cua PHIEN KHAC** (duong dan tieng Viet,
+       dau cau la). Console Windows mac dinh cp1252 **khong ma hoa duoc** chung,
+       nen mot `print` thuong nem `UnicodeEncodeError` — va cho nem la dong in
+       NGUOI GIU KHOA, tuc **luot xep hang CHET giua chung** va `chay_nang.py`
+       khong chay gi ca. Do 24/09, hai lan doc lap (`hop-dong` va lan xep hang).
+
+    ⛔ Day la hang loi te nhat trong mot cong cu DUNG CHUNG: noi bao "toi dang
+       cho" lai la noi giet chinh luot dang cho, va no chi no khi HANG XOM co
+       ten la. Phien nao cung dinh, khong phien nao tai hien duoc mot minh.
+
+    ⭐ Sua o CHO IN chu khong o cho ghi nhan: ban ghi cu tren dia van con, va
+       cong cu khac cung ghi vao do — lam sach mot dau vao khong cuu duoc
+       nhung dau vao con lai.
+
+    ⛔ KHONG thay `sys.stdout` bang mot `TextIOWrapper` moi: mot tool trong
+       `tools/` da tung lam the, wrapper bi GC thi dong buffer that va pytest vo
+       o `pytest_sessionfinish`. Cach nay chi doi **cau van**, khong dung vao luong.
+
+    ⛔ MOT dinh nghia, khong hai. Lan gop 24/09 mang ve hai `def _in` trong tep
+       nay — Python giu ban sau, nen ban truoc la ma chet mang mot nua loi giai
+       thich. `test_3300::test_cua_so_yen_chi_co_MOT_def_in` dem tren AST.
+    """
+    tin = " ".join(str(x) for x in phan)
+    try:
+        print(tin)
+    except UnicodeEncodeError:
+        ma = getattr(sys.stdout, "encoding", None) or "ascii"
+        print(tin.encode(ma, "replace").decode(ma, "replace"))
+
+
 def _tep(tai_nguyen: str) -> Path:
     """Moi tai nguyen MOT tep khoa rieng.
 
@@ -137,31 +171,6 @@ def _con_song(pid: int) -> bool:
         return True
     finally:
         k32.CloseHandle(h)
-
-
-def _in(*phan: object) -> None:
-    """`print` chiu duoc console cp1252.
-
-    🔴 SU CO 24/09: mot luot xep hang CHET giua chung voi `UnicodeEncodeError`
-       ngay trong dong in "dang xep hang". Nguyen nhan: thong diep nay nhung
-       **mo ta lenh cua PHIEN KHAC**, va lenh do co the mang ky tu ngoai
-       cp1252 (duong dan tieng Viet, dau cau la). Console Windows mac dinh
-       cp1252 => `print` nem, `chay_nang.py` chet, LUOT NANG KHONG CHAY.
-
-    ⛔ Day la hang loi te nhat trong mot cong cu DUNG CHUNG: noi bao "toi dang
-       cho" lai la noi giet chinh luot dang cho, va no chi no khi HANG XOM co
-       ten la. Phien nao cung dinh, khong phien nao tai hien duoc mot minh.
-
-    ⭐ Sua o CHO IN chu khong o cho ghi nhan: ban ghi cu tren dia van con, va
-       cong cu khac cung ghi vao do — lam sach mot dau vao khong cuu duoc
-       nhung dau vao con lai.
-    """
-    tin = " ".join(str(x) for x in phan)
-    try:
-        print(tin)
-    except UnicodeEncodeError:
-        ma = getattr(sys.stdout, "encoding", None) or "ascii"
-        print(tin.encode(ma, "replace").decode(ma, "replace"))
 
 
 def _doc(tai_nguyen: str = MAC_DINH) -> dict | None:

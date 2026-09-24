@@ -43,11 +43,17 @@ def san_sang() -> bool:
     return python_qc().is_file()
 
 
-def _moi_truong(gpu_uuid: str) -> dict:
+def _moi_truong(gpu_uuid: str, *, chan_card: bool = False) -> dict:
     env = dict(os.environ)
     if gpu_uuid:
         from platform_core.gpu import env_for
         env = env_for(gpu_uuid, env)
+    elif chan_card:
+        # ⛔ Gia tri nam o `platform_core.gpu`, KHONG go o day: I11 cam app tu
+        #    cham bien moi truong chon card (`test_401`, `test_406`), va cai bay
+        #    "chuoi rong bi Windows xoa han" chi dang duoc ghi MOT cho.
+        from platform_core.gpu import env_khong_card
+        env = env_khong_card(env)
     env["HF_HOME"] = hf_home()
     # torch.hub (torchaudio pipelines) tai vao TORCH_HOME — de chung mot goc.
     env.setdefault("TORCH_HOME", str(Path(hf_home()) / "torch"))
@@ -58,8 +64,13 @@ def _moi_truong(gpu_uuid: str) -> dict:
 
 
 def chay(tep_script: str | Path, dau_vao: dict, *, timeout_s: int = 1800,
-         gpu_uuid: str = "", is_cancelled=None) -> dict:
-    """Chay `tep_script` trong venv do luong. Tra ve JSON ra cua no."""
+         gpu_uuid: str = "", is_cancelled=None, chan_card: bool = False) -> dict:
+    """Chay `tep_script` trong venv do luong. Tra ve JSON ra cua no.
+
+    `chan_card=True`: khong co lease ⇒ **che card** khoi tien trinh con, nen bo
+    do khong the lay card ngoai so sach. Mac dinh False de khong doi hanh vi
+    (va do CHINH XAC cua) nhung bo do chua duoc do lai — xem `metricx.py`.
+    """
     py = python_qc()
     if not py.is_file():
         raise KhongKhaDung(f"chua co venv do luong: {py}")
@@ -70,7 +81,8 @@ def chay(tep_script: str | Path, dau_vao: dict, *, timeout_s: int = 1800,
         with open(log, "wb") as lg:
             proc = subprocess.Popen(
                 [str(py), str(tep_script), str(vao), str(ra)],
-                stdout=lg, stderr=subprocess.STDOUT, env=_moi_truong(gpu_uuid),
+                stdout=lg, stderr=subprocess.STDOUT,
+                env=_moi_truong(gpu_uuid, chan_card=chan_card),
                 creationflags=(subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0))
             han = time.monotonic() + max(30, int(timeout_s))
             while proc.poll() is None:

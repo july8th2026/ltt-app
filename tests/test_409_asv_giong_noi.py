@@ -707,23 +707,23 @@ class TestLanNgonNguCuaKichBan:
         """`quan_sat.LOI_CO_MA` bat loi THEO MA. Doi ma o `ltt_voice` thi do o
         day, khong phai im lang roi ve ban loi chung kem nut thu lai vo ich.
 
-        ⚠️ **Truoc 24/09 bai nay doi BANG NHAU va no DA DO** tu luc
-           `asv-final` them ba ma `auto_match_*` vao `LOI_CO_MA` ma khong ai
-           cap nhat con so o day.
+        ⚠️ **Truoc 24/09 bai nay doi BANG NHAU hai ma cua `ltt_voice`, va no da
+           DO** tu luc `asv-final` spread `rang_giong.CAU_CHUA_RANG` vao
+           `LOI_CO_MA` (ba ma `auto_match_*`) ma khong ai cap nhat con so o day.
+           Dung bay `hai-cho-khai-cung-mot-dieu-khong-ai-bat-khop`: bang nhau
+           khoa ca bo ma vao MOT chu so huu, trong khi `ltt_voice` chi so huu HAI
+           ma trong do.
 
-        ⛔ Bang nhau la bat bien SAI: no khoa CA bo ma cua ASV vao MOT chu
-           so huu, trong khi `ltt_voice` chi so huu HAI ma trong do. Ba ma
-           `auto_match_*` la ma RIENG cua ASV, khach doc duoc (vd luot A:
-           "Chua du can cu tu noi dung de tu khop giong" + hoan du credit),
-           va `ltt_voice` khong co ly do gi phai biet chung.
-
-        ⇒ Bat bien dung la **BAO HAM**: hai ma cua `ltt_voice` phai CO MAT
-           (doi ten o ben do thi day do), con ASV duoc co ma rieng cua no."""
-        from apps.auto_scan_video import quan_sat
+        ⇒ Bat bien dung la **bao ham**: hai ma cua `ltt_voice` phai co mat (doi
+          ten o ben do thi day do), con tong bo thuoc `ma_loi.SO_MA` —
+          `tests/test_3200` chot no bang `is`.
+        """
+        from apps.auto_scan_video import ma_loi, quan_sat
         from apps.ltt_voice import lan_ngon_ngu
 
         assert {lan_ngon_ngu.MA_LOI_LECH_LAN,
                 lan_ngon_ngu.MA_LOI_LAN_KHONG_RO} <= set(quan_sat.LOI_CO_MA)
+        assert quan_sat.LOI_CO_MA == ma_loi.SO_MA
 
     def test_man_tien_do_NOI_RO_lech_lan_va_KHONG_moi_thu_lai(self, tmp_path,
                                                               monkeypatch):

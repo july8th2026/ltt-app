@@ -831,9 +831,28 @@ def kiem(*, tt_ra: dict, tt_nguon: dict, am_luong: dict, ke_hoach: dict,
 
 
 def tom_tat(bao_cao: dict) -> dict:
-    """Con so cho tien do va giao dien. Khong duong dan, khong bi mat."""
+    """Con so cho tien do va giao dien. Khong duong dan, khong bi mat.
+
+    🔴 **`qc_ky_thuat_dat`, KHONG `qc_dat` — va cai ten la ca ban sua.**
+
+       Co T1..T18 o day chi do KY THUAT: thoi luong, luong hinh/tieng, MD5 luong
+       khi `copy`, dinh dBTP, khung den/dong bang, giai ma ca tep, VMAF. Chung
+       **khong** doc mot chu nao ve NGHIA cua ban dich hay ve chat luong giong —
+       nhung dat chung, `qc_ai` cham 44/95 muc la khong dat va `qc_do_luong` cham
+       14/95 giong la khong dat (do that luot B 24/09, phim khach).
+
+    ⛔ Va `jobs.py:264` vien dan chinh co nay lam ly le giao hang khi het vong
+       sua: *"de QC lam cong gac nhu no von la"*. Mot cai ten rong (`qc_dat`) lam
+       cau do doc nhu that, trong khi cong gac ay khong nhin vao thu no gac. Dung
+       ho loi gate va o `f4c4f064`: **mot chu PASS dung mot minh tren mot phep do
+       da khai la khong dat**.
+
+    ⭐ Chon DOI TEN chu khong chon "bo them so vao `tom_tat`": mot cai ten HEP thi
+       khong ai doc rong duoc; mot `tom_tat` day du van co the bi doc luot. Xem
+       `LOI_TONG.md` N-01/N-02.
+    """
     return {
-        "qc_dat": bool(bao_cao.get("dat")),
+        "qc_ky_thuat_dat": bool(bao_cao.get("dat")),
         "qc_so_muc_hong": int(bao_cao.get("so_muc_hong") or 0),
         "qc_muc_hong": list(bao_cao.get("muc_hong") or []),
         "qc_phien_ban": int(bao_cao.get("phien_ban") or 0),

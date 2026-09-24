@@ -116,27 +116,62 @@ class DichMoHo(RuntimeError):
 def _loi_nhac(lo: list[dict], ngon_ngu_goc: str) -> list[dict]:
     """Dung hoi thoai cho MOT lo. Tra ve dang `messages` cua OpenAI.
 
+    🔑 **Quy tac 5 (Han-Viet) them 24/09 vi CO BANG CHUNG, khong vi phong doan.**
+
+       Ban NEN do tay 30 cau (`B2_DICH.md` §4.1): `小美` -> *Tieu My* ✅ (nhat
+       quan ca 10 lan), `李宗盛` -> *Ly Tong Thanh* ✅, nhung `光子` -> ⛔
+       **"Photon"** — dich nghia den sang tieng Anh. Luc do loi nhac co **bon**
+       quy tac va **khong quy tac nao** noi ve ten rieng.
+       ⇒ 2/3 dung la **may**, ⛔ khong phai mot hanh vi duoc bao dam.
+
+    ⛔ Doi loi nhac PHAI keo theo `van_ban.PHIEN_BAN_LOI_NHAC_DICH` — no nam trong
+       van tay, va thieu no thi lan chay dung lai ket qua sinh boi loi nhac CU.
+
     ⭐ Yeu cau tra ve JSON **khoa theo ma doan**. Do la thu lam phep gop tat
        dinh: khong phai doi chieu theo thu tu, khong phai doan xem doan nao
        ung voi doan nao, va thieu mot ma la mot dieu **do duoc** chu khong phai
        mot thu phai suy ra.
     """
     bang = {d["ma"]: d["chu"] for d in lo}
-    he_thong = (
-        "Ban la mot dich gia phu de chuyen nghiep. Dich sang TIENG VIET tu nhien, "
-        "dung van noi, giu nguyen y va giu nguyen sac thai cua nguoi noi.\n"
-        "QUY TAC:\n"
-        "1. Tra ve DUY NHAT mot doi tuong JSON, khoa la ma doan, gia tri la cau "
-        "tieng Viet.\n"
-        "2. Phai co DU moi ma duoc dua vao. Khong bo qua ma nao.\n"
-        "3. Khong them giai thich, khong them ma moi.\n"
-        "4. Giu do dai gan voi cau goc — ban dich se duoc doc thanh tieng va "
-        "phai vua khung thoi gian cua no."
-    )
-    if ngon_ngu_goc:
-        he_thong += f"\nNgon ngu nguon: {ngon_ngu_goc}."
+    # ⚠️ **Lời nhắc ghép THẲNG trong `{"role": …, "content": …}`, ⛔ không gán ra
+    #    một biến trước.** `tools/check_i18n._la_tin_nhan_model` nhận một lời
+    #    nhắc **theo HÌNH DẠNG** — nó leo qua `BinOp`/`JoinedStr` lên tới `Dict`
+    #    có khoá `"role"`, nhưng ⛔ **không leo qua một phép gán**. Quy tắc 5 là
+    #    câu đầu tiên ở đây có dấu tiếng Việt (bốn quy tắc cũ thuần ASCII), nên
+    #    nó là câu đầu tiên chạm vào bánh cóc — và với `he_thong = (...)` thì bộ
+    #    đếm coi nó là **chuỗi giao diện chưa bọc `_()`**.
+    # ⛔ Và bọc `_()` ở đây sai theo hướng nguy hiểm: lời nhắc sẽ **đổi theo ngôn
+    #    ngữ giao diện của khách** — một thiết lập hiển thị lặng lẽ đổi HÀNH VI
+    #    dịch. Chính docstring của bộ đếm nói đúng điều đó.
+    # ⇒ Viết đúng hình dạng nó nhận. ⚠️ Khoảng trống của bộ đếm (không leo qua
+    #    phép gán) đã báo điều phối, ⛔ làn này không tự sửa công cụ dùng chung.
     return [
-        {"role": "system", "content": he_thong},
+        {"role": "system", "content": (
+            "Ban la mot dich gia phu de chuyen nghiep. Dich sang TIENG VIET tu "
+            "nhien, dung van noi, giu nguyen y va giu nguyen sac thai cua nguoi "
+            "noi.\n"
+            "QUY TAC:\n"
+            "1. Tra ve DUY NHAT mot doi tuong JSON, khoa la ma doan, gia tri la "
+            "cau tieng Viet.\n"
+            "2. Phai co DU moi ma duoc dua vao. Khong bo qua ma nao.\n"
+            "3. Khong them giai thich, khong them ma moi.\n"
+            "4. Giu do dai gan voi cau goc — ban dich se duoc doc thanh tieng va "
+            "phai vua khung thoi gian cua no.\n"
+            "5. TEN RIENG — hoi HAI cau, THEO THU TU:\n"
+            "5.1 Ten nay DA CO loi viet quen trong tieng Viet chua? Neu CO thi "
+            "dung DUNG loi quen do, bat ke no la nguoi, noi chon hay to chuc. "
+            "Vi du: 首尔 -> Seoul, 东京 -> Tokyo, 北京 -> Bắc Kinh, "
+            "上海 -> Thượng Hải, 李宗盛 -> Lý Tông Thịnh, 李小龙 -> Lý Tiểu Long, "
+            "腾讯 -> Tencent, 华为 -> Huawei.\n"
+            "5.2 Neu KHONG co loi quen, hoac ban khong chac, thi moi xet LOAI:\n"
+            "  - nguoi hoac dia danh: phien AM HAN-VIET, CO DAU tieng Viet day "
+            "du. Vi du: 张伟 -> Trương Vĩ, 小美 -> Tiểu Mỹ, 王芳 -> Vương Phương. "
+            "KHONG dich nghia den, KHONG doi sang tieng Anh, KHONG bo dau.\n"
+            "  - to chuc, thuong hieu, ten san pham: GIU NGUYEN DANG goc, "
+            "KHONG phien am Han-Viet va KHONG dich nghia den.\n"
+            "Mot ten xuat hien nhieu lan phai duoc xu ly GIONG NHAU o moi lan."
+            + (f"\nNgon ngu nguon: {ngon_ngu_goc}." if ngon_ngu_goc else "")
+        )},
         {"role": "user", "content": json.dumps(bang, ensure_ascii=False)},
     ]
 

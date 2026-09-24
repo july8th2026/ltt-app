@@ -1,0 +1,47 @@
+{
+ "muc": [
+  {
+   "ma": "v1",
+   "phim": "廉价的牛肠…#美食.mp4",
+   "tep": "v1.json",
+   "so_doan": 83,
+   "so_tu": 1157,
+   "bytes": 91062,
+   "sha256_12": "43e75be5ca74"
+  },
+  {
+   "ma": "v2",
+   "phim": "暴雨天野外露营….mp4",
+   "tep": "v2.json",
+   "so_doan": 74,
+   "so_tu": 1125,
+   "bytes": 87547,
+   "sha256_12": "4225a57bf6e9"
+  },
+  {
+   "ma": "v3",
+   "phim": "深度解析丨跳伞….mp4",
+   "tep": "v3.json",
+   "so_doan": 31,
+   "so_tu": 718,
+   "bytes": 53945,
+   "sha256_12": "8cc469bf86e3"
+  }
+ ],
+ "tham_so_tai_lap": {
+  "⚠️ nguon": "DỰNG LẠI từ mã + gói đã cài, ⛔ KHÔNG do lượt chạy tự khai (`tham_so_engine` chỉ có từ commit 2d2ad0f trở đi). Lượt sinh ra các tệp này chạy ở commit `edbcbd57`.",
+  "engine": "whisperx",
+  "phien_ban": "3.8.6 (D:\\LTTWhisperX)",
+  "model_asr": "large-v3",
+  "batch_size": 8,
+  "chunk_size": 30,
+  "chunk_size_nguon": "mặc định `whisperx/asr.py:204`, ta KHÔNG khai — ⭐ chính con số này sinh ra khối ~30 giây",
+  "ngon_ngu_yeu_cau": "",
+  "ngon_ngu_do_bang": "detect_language",
+  "ngon_ngu_dung": "zh",
+  "initial_prompt": "以下是中文普通话句子。",
+  "initial_prompt_nguon": "whisperX issue #645 (leexinxu, 17/08/2024)",
+  "model_can_chinh": "jonatasgrosman/wav2vec2-large-xlsr-53-chinese-zh-cn (`whisperx/alignment.py:42  DEFAULT_ALIGN_MODELS_HF['zh']`)",
+  "cat_lai": "apps/auto_scan_video/cat_doan.py — luật whisperX PR #1466, ngưỡng Netflix TTSG 215758617 + 215986007"
+ }
+}

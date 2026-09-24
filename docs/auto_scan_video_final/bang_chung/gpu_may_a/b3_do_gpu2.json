@@ -1,0 +1,232 @@
+{
+  "video": "C:\\Users\\Thang Tuong\\Desktop\\TEST VIDEO\\深度解析丨跳伞慢了该怎么打教你用细节操作来化解危机 #和平精英夏日航海 #和平精英夏日探险.mp4",
+  "so_doan": 6,
+  "vram_nen_mb": 1298,
+  "squim_gpu": {
+    "lan": [
+      3.871,
+      3.711,
+      3.883
+    ],
+    "trung_vi": 3.871,
+    "min": 3.711,
+    "max": 3.883,
+    "dai": 0.172,
+    "tai_may_moi_lan": [
+      "CPU 10% tren 20 loi | RAM trong 39.3 GiB | RESULT: RANH - du bo nho cho mot luot day du",
+      "CPU 11% tren 20 loi | RAM trong 39.3 GiB | RESULT: RANH - du bo nho cho mot luot day du",
+      "CPU 11% tren 20 loi | RAM trong 39.3 GiB | RESULT: RANH - du bo nho cho mot luot day du"
+    ],
+    "vram_dinh_mb": 2072,
+    "tai_nguyen": {
+      "giay_tuong": 3.33,
+      "giay_cpu": 9.64,
+      "ram_dinh_mb": 1171.8,
+      "moc": {
+        "nap_model": 2.16,
+        "cham": 3.33
+      },
+      "vram_torch_dinh_mb": 676.0,
+      "thiet_bi": "cuda",
+      "so_doan": 6
+    },
+    "ket_qua": {
+      "doan_01": {
+        "stoi": 0.9215,
+        "pesq": 1.204,
+        "si_sdr": 5.63,
+        "giay": 8.0,
+        "stoi_min_cua_so": 0.8893,
+        "pesq_min_cua_so": 1.167,
+        "si_sdr_min_cua_so": 0.88,
+        "so_cua_so": 7
+      },
+      "doan_02": {
+        "stoi": 0.9175,
+        "pesq": 1.344,
+        "si_sdr": 6.4,
+        "giay": 8.0,
+        "stoi_min_cua_so": 0.876,
+        "pesq_min_cua_so": 1.26,
+        "si_sdr_min_cua_so": 3.48,
+        "so_cua_so": 7
+      },
+      "doan_03": {
+        "stoi": 0.9124,
+        "pesq": 1.293,
+        "si_sdr": 4.02,
+        "giay": 8.0,
+        "stoi_min_cua_so": 0.8672,
+        "pesq_min_cua_so": 1.173,
+        "si_sdr_min_cua_so": -3.93,
+        "so_cua_so": 7
+      },
+      "doan_04": {
+        "stoi": 0.9026,
+        "pesq": 1.16,
+        "si_sdr": 2.45,
+        "giay": 8.0,
+        "stoi_min_cua_so": 0.8761,
+        "pesq_min_cua_so": 1.163,
+        "si_sdr_min_cua_so": -3.31,
+        "so_cua_so": 7
+      },
+      "doan_05": {
+        "stoi": 0.9147,
+        "pesq": 1.26,
+        "si_sdr": 4.64,
+        "giay": 8.0,
+        "stoi_min_cua_so": 0.298,
+        "pesq_min_cua_so": 1.159,
+        "si_sdr_min_cua_so": -14.99,
+        "so_cua_so": 7
+      },
+      "doan_06": {
+        "stoi": 0.8403,
+        "pesq": 1.119,
+        "si_sdr": -0.11,
+        "giay": 8.0,
+        "stoi_min_cua_so": 0.2868,
+        "pesq_min_cua_so": 1.12,
+        "si_sdr_min_cua_so": -14.44,
+        "so_cua_so": 7
+      }
+    }
+  },
+  "gioi_ecapa_gpu": {
+    "lan": [
+      5.334,
+      10.389,
+      4.164
+    ],
+    "trung_vi": 5.334,
+    "min": 4.164,
+    "max": 10.389,
+    "dai": 6.225,
+    "tai_may_moi_lan": [
+      "CPU 12% tren 20 loi | RAM trong 39.3 GiB | RESULT: RANH - du bo nho cho mot luot day du",
+      "CPU 16% tren 20 loi | RAM trong 39.4 GiB | RESULT: RANH - du bo nho cho mot luot day du",
+      "CPU 9% tren 20 loi | RAM trong 39.4 GiB | RESULT: RANH - du bo nho cho mot luot day du"
+    ],
+    "vram_dinh_mb": 1613,
+    "tai_nguyen": {
+      "giay_tuong": 3.57,
+      "giay_cpu": 11.06,
+      "ram_dinh_mb": 1284.2,
+      "moc": {
+        "nap_model": 2.32,
+        "cham": 3.57
+      },
+      "vram_torch_dinh_mb": 152.0,
+      "thiet_bi": "cuda",
+      "so_clip": 6
+    },
+    "ket_qua": {
+      "doan_01": {
+        "nhan": "nam",
+        "p_nam": 0.9657,
+        "p_nu": 0.0343,
+        "tb_p_nam_cua_so": 0.9315,
+        "ti_le_cua_so_nam": 1.0,
+        "do_tin": 0.9315,
+        "so_cua_so": 4,
+        "f0_trung_vi": 170.2,
+        "giay": 8.0
+      },
+      "doan_02": {
+        "nhan": "nam",
+        "p_nam": 0.9764,
+        "p_nu": 0.0236,
+        "tb_p_nam_cua_so": 0.9804,
+        "ti_le_cua_so_nam": 1.0,
+        "do_tin": 0.9804,
+        "so_cua_so": 4,
+        "f0_trung_vi": 153.8,
+        "giay": 8.0
+      },
+      "doan_03": {
+        "nhan": "nam",
+        "p_nam": 0.9962,
+        "p_nu": 0.0038,
+        "tb_p_nam_cua_so": 0.9912,
+        "ti_le_cua_so_nam": 1.0,
+        "do_tin": 0.9912,
+        "so_cua_so": 4,
+        "f0_trung_vi": 156.9,
+        "giay": 8.0
+      },
+      "doan_04": {
+        "nhan": "nam",
+        "p_nam": 0.993,
+        "p_nu": 0.007,
+        "tb_p_nam_cua_so": 0.9911,
+        "ti_le_cua_so_nam": 1.0,
+        "do_tin": 0.9911,
+        "so_cua_so": 4,
+        "f0_trung_vi": 112.7,
+        "giay": 8.0
+      },
+      "doan_05": {
+        "nhan": "nam",
+        "p_nam": 0.9965,
+        "p_nu": 0.0035,
+        "tb_p_nam_cua_so": 0.9673,
+        "ti_le_cua_so_nam": 1.0,
+        "do_tin": 0.9673,
+        "so_cua_so": 4,
+        "f0_trung_vi": 173.9,
+        "giay": 8.0
+      },
+      "doan_06": {
+        "nhan": "nam",
+        "p_nam": 0.9911,
+        "p_nu": 0.0089,
+        "tb_p_nam_cua_so": 0.9725,
+        "ti_le_cua_so_nam": 1.0,
+        "do_tin": 0.9725,
+        "so_cua_so": 4,
+        "f0_trung_vi": 148.1,
+        "giay": 8.0
+      }
+    }
+  },
+  "metricx_gpu": {
+    "lan": [
+      10.461,
+      10.485,
+      10.598
+    ],
+    "trung_vi": 10.485,
+    "min": 10.461,
+    "max": 10.598,
+    "dai": 0.137,
+    "tai_may_moi_lan": [
+      "CPU 17% tren 20 loi | RAM trong 39.3 GiB | RESULT: RANH - du bo nho cho mot luot day du",
+      "CPU 12% tren 20 loi | RAM trong 39.3 GiB | RESULT: RANH - du bo nho cho mot luot day du",
+      "CPU 7% tren 20 loi | RAM trong 39.3 GiB | RESULT: RANH - du bo nho cho mot luot day du"
+    ],
+    "vram_dinh_mb": 3900,
+    "tai_nguyen": {
+      "mo_hinh": "google/metricx-24-hybrid-large-v2p6-bfloat16",
+      "revision": "febb720e29a059df2e8af3ffd71dcdc9e0a24910",
+      "thiet_bi": "cuda",
+      "dtype": "bfloat16",
+      "so_cap": 6,
+      "lo": 16,
+      "giay_nap": 6.966,
+      "giay_cham": 0.966,
+      "ms_moi_cap": 160.92,
+      "vram_dinh_mb": 2406.5,
+      "gpu": "NVIDIA GeForce RTX 5060 Ti"
+    },
+    "ket_qua": {
+      "c3": 0.7656,
+      "c6": 0.4941,
+      "c5": 2.7031,
+      "c4": 2.4844,
+      "c1": 1.9609,
+      "c2": 1.75
+    }
+  },
+  "giay_ca_bench": 82.5
+}

@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import ast
 import pathlib
+import re
 
 import pytest
 
@@ -347,12 +348,34 @@ def test_KHONG_import_THANG_bang_hay_ban_khai_cua_app_khac(goi, ly_do):
         f"gia + job_type cua ho, khong phai thu ta duoc tu doc de quyet dinh")
 
 
+def _la_lan_runtime_cua(slug: str, cha: str) -> bool:
+    """`slug` co phai mot LAN WORKER cua `cha` khong (khong phai san pham khac)?
+
+    🔴 Do bang BAN KHAI, khong bang mot danh sach ten: `catalog_parent` la dung
+       cho dinh nghia dieu do (`platform_core/registry.py:1545`), va
+       `lint_app_contract.py:462` da doc no y het cach nay.
+    """
+    m = APP / slug / "manifest.py"
+    if not m.is_file():
+        return False
+    return bool(re.search(rf"catalog_parent\s*=\s*['\"]{re.escape(cha)}['\"]",
+                          m.read_text(encoding="utf-8")))
+
+
 def test_bang_VO_TUONG_THICH_khop_voi_CROSS_APP_ALLOWED():
-    """Hai sổ khai cùng một sự thật; lệch nhau là một trong hai đã cũ."""
+    """Hai sổ khai cùng một sự thật; lệch nhau là một trong hai đã cũ.
+
+    ⚠️ Chỉ so cạnh **xuyên sản phẩm**. Từ 24/09 `CROSS_APP_ALLOWED` dẫn xuất từ
+       hợp đồng app, nên nó cũng mang cạnh `auto_scan_video → asv_gpu` — mà
+       `asv_gpu` là **làn worker của chính Auto Scan** (`catalog_parent`), tức
+       loại A. Bảng này nói về **vỏ bọc engine của app KHÁC**, nên loại A không
+       thuộc về nó. ⛔ Không lọc thì phép kiểm đỏ vì một cạnh nó không nói về.
+    """
     from tests.test_147_layering import CROSS_APP_ALLOWED
 
     tu_147 = {f"apps.{b}" for a, b in CROSS_APP_ALLOWED
-              if a == "auto_scan_video"}
+              if a == "auto_scan_video"
+              and not _la_lan_runtime_cua(b, "auto_scan_video")}
     assert tu_147 == set(VO_TUONG_THICH), (
         f"lech: chi o test_147 {tu_147 - set(VO_TUONG_THICH)}, "
         f"chi o day {set(VO_TUONG_THICH) - tu_147}")
