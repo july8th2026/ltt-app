@@ -33,7 +33,7 @@
   nhúng mã. Làn `dich` nhúng lớp `MT5ForRegression` ⇒ phải kèm NOTICE.
 - **MIT (ECAPA gender, Distill-MOS)**: giữ nguyên văn giấy phép + dòng bản quyền
   khi phân phối lại. Làn `do-giong` nhúng mã ⇒ `do_luong/_ecapa_gioi/LICENSE` +
-  `NOTICE` (`tests/test_2140` chốt cả hai tệp còn đó và còn dẫn đúng commit).
+  `NOTICE` (`tests/test_2145` chốt cả hai tệp còn đó và còn dẫn đúng commit).
 
 ## §2. ĐÃ LOẠI — không được đưa vào runtime
 

@@ -36,7 +36,7 @@ setup\do_gioi_giong.ps1                 # NÂNG QUYỀN — dựng kho tiếng (
 python tools\do_gioi_giong.py do-gioi   # chấm giới: 62 tệp sinh + 25 clip gốc
 python tools\do_gioi_giong.py cham-en   # ASR+jiwer, SQUIM, Distill-MOS, DNSMOS, ebur128
 python tools\do_gioi_giong.py bao-cao   # in ba bảng markdown dưới đây
-python -m pytest tests/test_2140 -q     # hợp đồng (nhẹ)
+python -m pytest tests/test_2145 -q     # hợp đồng (nhẹ)
 set LTT_TEST_NANG=1 && python -m pytest tests/test_2141 tests/test_2142 -q
 ```
 
@@ -100,7 +100,7 @@ kịch bản mà hai giọng đọc ra hai độ dài khác nhau thì cột "t�
 
 ⚠️ **Không so trực tiếp được với bảng của `L_GIONG_EN` §3**: kịch bản của phiên
 đó nằm trong scratchpad và không có trong kho, nên nó không lặp lại được. Kịch
-bản ở đây nằm trong mã và có phép kiểm (`tests/test_2140`).
+bản ở đây nằm trong mã và có phép kiểm (`tests/test_2145`).
 
 ## 3. A — hiệu chỉnh trên 20 preset engine
 
