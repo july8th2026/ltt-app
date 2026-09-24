@@ -99,93 +99,84 @@ hoặc tiêm vào **bản sao trong `tmp_path`** thay vì vào tệp thật.
 
 ---
 
-## Task 0: Bỏ khoá `postgres_test` — mỗi làn một CSDL scratch riêng (N-10)
+## Task 0: Bỏ khoá `postgres_test` — mỗi làn một SCHEMA riêng (N-10)
 
 **Vì sao làm TRƯỚC mọi thứ:** khoá này vừa chặn một làn phiên khác **78 phút**, và nó
-tồn tại **không** vì tài nguyên độc quyền thật — mà vì **mọi làn dùng chung MỘT tên CSDL**.
-Cho mỗi làn một tên riêng thì hết xung đột và **không cần khoá nào**. ⭐ Nó đóng luôn
-**M-11** (một `AsvRun` mồ côi của làn khác tự nộp job vô hạn, `jobs` phình 1.274 dòng):
-mỗi làn không còn thấy rác của làn khác.
+tồn tại **không** vì tài nguyên độc quyền thật — mà vì **mọi làn dùng chung MỘT không
+gian tên**. Cho mỗi làn một không gian riêng thì hết xung đột và **không cần khoá nào**.
 
-⚠️ Đây **khác** `cpu_nhieu`: khoá CPU chia **sức tính** nên không bỏ được. `postgres_test`
-chỉ chia một **cái tên**.
+⚠️ Đây **khác** `cpu_nhieu`: khoá CPU chia **sức tính** nên không bỏ được.
+
+### 🔴 Dùng SCHEMA, ⛔ KHÔNG dùng CSDL riêng — đã đo 24/09
+
+Bản đầu của task này định cho mỗi làn một **CSDL** riêng. ⛔ Không đi được, và đường
+schema tốt hơn ở ba điểm:
+
+```
+ltt_app  rolcreatedb=False        -> KHONG tao duoc CSDL
+pg_hba   scram-sha-256 moi duong  -> chi chu du an co mat khau `postgres`
+ltt_app  CREATE SCHEMA / DROP SCHEMA CASCADE  -> OK (da do)
+```
+
+1. ⛔ **Không đổi thế an ninh production** — không phải cấp `CREATEDB` cho vai mà app
+   dùng thật (nó mở rộng thứ một khoá app bị lộ làm được, cho một lợi ích **chỉ bộ
+   test** cần).
+2. ⭐ **`DROP SCHEMA ... CASCADE` dọn sạch** ⇒ trả lời luôn **N-11**: kho đã có 18 CSDL
+   test theo cây của ba công cụ cũ, và thêm hậu tố thứ tư **không có đường dọn** thì Task
+   này đổi *một khoá chặn 78 phút* thành *N CSDL mồ côi tích tụ*.
+3. Không trần số làn (bể cố định thì có trần; `CREATEDB` thì tích tụ vô hạn).
+
+⚠️ **Rủi ro đã đo, không đoán:** có 13 tệp gõ `public.`; liệt kê thật chỉ ra
+`public.f_unaccent` (một **hàm cấp CSDL** — dùng chung được, đúng) cùng
+`public.name` / `public.execution_mode` / `public.deprecated`. ⛔ **Kiểm từng chỗ**:
+hàm cấp CSDL thì **giữ**, bảng/cột thì **bỏ tiền tố**. ⛔ Đừng tin con số 13.
 
 **Files:**
-- Modify: `tests/fixtures/pg_scratch.py` (hàm `scratch_url`)
-- Modify: `tests/conftest.py:109` (bỏ `"postgres_test"` khỏi `tai_nguyen=`)
-- Test: `tests/test_<N0>_pg_scratch_theo_lan.py` (lấy `<N0>` từ `check_so_test.py`)
+- Modify: `tests/fixtures/pg_scratch.py`
+- Modify: `tests/conftest.py:109` (bỏ `"postgres_test"` khỏi `tai_nguyen=`, ⛔ giữ `cpu_nhieu`)
+- Test: `tests/test_<N0>_pg_schema_theo_lan.py` (lấy `<N0>` từ `check_so_test.py`)
 
 **Interfaces:**
-- Produces: `pg_scratch.scratch_url(lan: str = "") -> str` — tên CSDL chứa cả `lan`;
-  rỗng ⇒ suy từ tên worktree.
+- Produces: `pg_scratch.schema_lan(lan: str = "") -> str` (rỗng ⇒ suy từ tên worktree);
+  `pg_scratch.don_schema(lan: str) -> None`
 
 - [ ] **Bước 1: Viết phép kiểm ĐỎ trước**
 
 ```python
-def test_hai_lan_khac_nhau_cho_hai_CSDL_khac_nhau():
-    """Khoa `postgres_test` chi bao ve MOT CAI TEN, khong bao ve tai nguyen doc quyen.
-
-    Do 24/09: mot lan giu khoa 78 phut, mot lan phien khac xep hang sau no — cho
-    mot thu le ra khong chan ai.
-    """
+def test_hai_lan_khac_nhau_cho_hai_SCHEMA_khac_nhau():
     from tests.fixtures import pg_scratch
-    a = pg_scratch.scratch_url("asvf-b1")
-    b = pg_scratch.scratch_url("asvf-dich")
-    assert a != b
-    assert "test" in a and "test" in b   # `scratch_url` doi ten chua "test"
+    assert pg_scratch.schema_lan("asvf-b1") != pg_scratch.schema_lan("asvf-dich")
 
 
-def test_ten_CSDL_hop_le_voi_postgres():
-    """Ten PostgreSQL: <= 63 ky tu, chu thuong, khong dau gach ngang."""
-    from tests.fixtures import pg_scratch
-    ten = pg_scratch.scratch_url("asvf-nghiem-thu-v2").rsplit("/", 1)[-1]
+def test_ten_schema_hop_le_voi_postgres():
+    """<= 63 ky tu, chu thuong, khong dau gach ngang, khong bat dau bang so."""
+    ten = pg_scratch.schema_lan("asvf-nghiem-thu-v2")
     assert len(ten) <= 63 and ten == ten.lower() and "-" not in ten
+    assert not ten[0].isdigit()
 ```
 
-- [ ] **Bước 2: Chạy để chắc nó ĐỎ**
-
-Run: `python -m pytest tests/test_<N0>_pg_scratch_theo_lan.py -q`
-Expected: FAIL — `scratch_url() takes 0 positional arguments`
-
-- [ ] **Bước 3: Sửa `scratch_url` nhận `lan`**
-
-```python
-def _chuan_ten(lan: str) -> str:
-    """`asvf-nghiem-thu-v2` -> `asvf_nghiem_thu_v2`, cat cho vua 63 ky tu."""
-    tho = re.sub(r"[^a-z0-9_]", "_", lan.lower())
-    return tho[:40].strip("_")
-
-
-def scratch_url(lan: str = "") -> str:
-    lan = lan or _lan_tu_worktree()
-    return f"{_goc_url()}/lttplatform_test_{_chuan_ten(lan)}"
-```
-
+- [ ] **Bước 2: Chạy để chắc nó ĐỎ** — `AttributeError: schema_lan`
+- [ ] **Bước 3: Viết `schema_lan` + đặt `search_path` theo làn ở chỗ mở kết nối;
+      `create_all`/`drop_all` bám đúng schema đó.**
 - [ ] **Bước 4: Chạy lại — XANH**
+- [ ] **Bước 5: Bỏ `postgres_test` khỏi `conftest.py`.** ⚠️ Giữ **opt-in**
+      (`LTT_PG_SCRATCH_THEO_LAN=1`) cho tới khi bước 7 xanh — mặc định là hiện trạng.
+      ⛔ Không lui im lặng, và ⛔ cũng không bật sớm.
+- [ ] **Bước 6: COMMIT** ⛔ trước khi tiêm bất cứ gì (xem mục "THỨ TỰ BẮT BUỘC" ở đầu plan).
+- [ ] **Bước 7: ĐỐI CHỨNG cô lập — bước KHÔNG ĐƯỢC BỎ**
 
-Run: `python -m pytest tests/test_<N0>_pg_scratch_theo_lan.py -q`
-Expected: PASS
+Hai tiến trình, hai schema; một bên `drop_all`, bên kia đang ghi. Bên kia **phải không
+bị ảnh hưởng**. ⛔ Không có bước này thì ta chỉ chứng minh **tên khác nhau**, chưa chứng
+minh **cô lập** — mà cô lập mới là thứ khoá đang bảo vệ. Xanh ⇒ bật mặc định.
 
-- [ ] **Bước 5: Bỏ `postgres_test` khỏi `tests/conftest.py:109`**, ⛔ giữ `cpu_nhieu`.
+- [ ] **Bước 8: Đường DỌN + một phép kiểm chốt rằng nó CHẠY**
 
-- [ ] **Bước 6: ĐỐI CHỨNG cô lập — bước KHÔNG ĐƯỢC BỎ**
+`don_schema` gọi `DROP SCHEMA <làn> CASCADE` ở cuối phiên. ⛔ Một phép kiểm chỉ đọc mã
+`don_schema` thì **xanh cả khi không ai gọi nó** — phải chốt **lời gọi** (AST) hoặc chứng
+minh schema **thật sự mất** sau một lượt.
 
-Mở **hai** tiến trình cùng dùng CSDL scratch với hai `lan` khác nhau; một bên gọi
-`drop_all`, bên kia đang ghi. Bên kia **phải không bị ảnh hưởng**.
-⛔ Không có bước này thì ta chỉ chứng minh **tên khác nhau**, chưa chứng minh **cô lập** —
-mà cô lập mới là thứ khoá đang bảo vệ.
-
-- [ ] **Bước 7: Dọn M-11**
-
-Sau khi mỗi làn có CSDL riêng, xoá `lttplatform_test` cũ (1.274 dòng rác + một `AsvRun`
-mồ côi). ⚠️ Kiểm **không phiên nào đang dùng nó** trước khi xoá (`pg_stat_activity`).
-
-- [ ] **Bước 8: Commit**
-
-```bash
-git add tests/fixtures/pg_scratch.py tests/conftest.py tests/test_<N0>_pg_scratch_theo_lan.py
-git commit -m "feat(test/pg): moi lan mot CSDL scratch rieng - bo khoa postgres_test, dong M-11"
-```
+- [ ] **Bước 9: Kiểm 4 chỗ `public.*`** ở trên; sửa chỗ nào là bảng/cột.
+- [ ] **Bước 10: Commit**
 
 ---
 
