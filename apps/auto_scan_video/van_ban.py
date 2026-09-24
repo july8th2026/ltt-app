@@ -55,7 +55,21 @@ SCHEMA_VAN_BAN = 1
 #: Chủ dự án ra luật bằng ví dụ `张伟 → Trương Vĩ` — một **tên người**; đem nó áp
 #: lên một **thương hiệu** là **ta** nới rộng. Thu về là **trả lại** lời họ nói.
 #: Bằng chứng: `光子` trong phim v3 là **xưởng game** (`B2_DICH.md` §4g).
-PHIEN_BAN_LOI_NHAC = 4
+#: 🔴 5 (24/09): **dựng lại trên đúng TRỤC**, ⛔ không vá thêm một chữ.
+#:
+#: v4 cắt theo **loại thực thể** (người · địa danh · tổ chức) ⇒ `首尔` rơi vào
+#: nhánh *"địa danh ⇒ phiên Hán-Việt"* và ra **"Sê-ôl"**, trong khi `李宗盛` được
+#: sửa. Đó là lần **thứ ba** trong một ngày *"sửa một, hỏng một"*.
+#:
+#: ⭐ Trục thật ⛔ không phải *loại thực thể* mà là **"đã có lối viết quen hay
+#:    chưa"** — *lối quen* là thuộc tính của **CÁI TÊN**, không của **người**.
+#:    `首尔` (nơi chốn) và `腾讯` (tổ chức) đều có lối quen; `张伟` thì không.
+#: ⇒ v5 hỏi **lối quen TRƯỚC**, loại thực thể **tụt xuống bước sau**.
+#:
+#: ⛔ Vẫn là luật TẠM do điều phối thu hẹp: nhánh 5.2 giữ **nguyên văn** câu chủ
+#:    dự án ra (`张伟 → Trương Vĩ`), nên đây là **thu hẹp**, ⛔ không phải quyết
+#:    thay họ. Đo trên tập 12 ca nguồn-tra-được: `tools/bench_b2_ten_rieng.py`.
+PHIEN_BAN_LOI_NHAC = 5
 
 
 class VanBanError(ValueError):

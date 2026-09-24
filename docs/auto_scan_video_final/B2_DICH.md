@@ -3,6 +3,60 @@
 > Làn `b1-cắt-lại` → `b2-dịch`, 24/09/2026. Đứng trên bản chép lời **mới** của
 > B1 (`bang_chung/b1_chep_loi_moi/`): có dấu câu, có mốc từng từ, CER 3/3 ĐẠT.
 
+# 🔴🔴 ĐÍNH CHÍNH LỚN (24/09, cuối ngày) — TÔI ĐÃ ĐO MỘT ĐƯỜNG CHẾT
+
+> ⛔ **Đọc mục này trước tất cả. Nó làm mất hiệu lực chữ "đường sản phẩm" ở
+> §4b, và làm quyết định `ltt-3.5` của chủ dự án CHƯA có hiệu lực.**
+
+## Sự thật đo được
+
+```
+apps/auto_scan_video/thi_hanh.py:121
+   "`dich_thuat.dich_ban_ghi` khong con nguoi goi nao tu do"
+
+grep `ai.DICH_THUAT` trên toàn bộ apps/ ⇒ chỉ xuất hiện TRONG CHÍNH `dich_thuat.py`
+```
+
+Giai đoạn **`CONTENT_PROCESS`** — nơi ASV thật sự chuyển lời sang tiếng Việt —
+gọi `long_tieng.loi_nhac(...)` + `ai.goi_tinh_tien(..., ai.CHUYEN_LOI_THOAI)`
+(`giai_doan_noi_dung.py:212, 217`). ⛔ Nó **không** gọi `dich_thuat`.
+
+| thao tác | model hôm nay | có ai gọi không |
+|---|---|---|
+| `dich_thuat` | **qwen35-api** (ltt-3.5) | ⛔ **KHÔNG** — đường chết |
+| **`chuyen_loi_thoai`** | ⛔ **qwen38-api** (ltt-3.8) | ✅ **đây là đường sống** |
+
+## ⇒ Ba hệ quả, ⛔ không được giấu
+
+1. ⛔ **Quyết định *"dịch đi `ltt-3.5`"* CHƯA có hiệu lực.** Tôi ghim đúng cơ chế
+   (`MODEL_THEO_THAO_TAC`) nhưng ghim **nhầm thao tác**. Đường sống vẫn chạy
+   `ltt-3.8` — tức vẫn trả **~20× token ra**.
+2. ⚠️ **Mọi con số dịch trong tệp này đo `dich_thuat`**, ⛔ không phải thứ khách
+   nhận. Chúng vẫn có giá trị — cùng model, cùng dữ liệu, cùng lớp bài toán —
+   nhưng ⛔ **không được đọc là "chất lượng sản phẩm"**.
+3. ⚠️ **Luật Hán-Việt (quy tắc 5, các bản v2→v5) nằm trong `dich_thuat._loi_nhac`
+   — lời nhắc mà sản phẩm KHÔNG dùng.** Tập kiểm 12 ca **13/13** là thật, nhưng
+   nó chứng minh *luật viết đúng*, ⛔ **không** chứng minh *khách sẽ nhận đúng*.
+
+⚠️ Và `van_ban.PHIEN_BAN_LOI_NHAC` **có** nằm trong vân tay của `CONTENT_PROCESS`
+(`thi_hanh.py:138`) ⇒ các lần tăng 1→5 hôm nay **đã vô hiệu cache của đường
+sống** cho một thay đổi ⛔ **không** chạm vào lời nhắc của nó. Vô hại về kết
+quả, ⛔ nhưng là một tín hiệu sai cho người đọc sau.
+
+## ⛔ Tôi DỪNG ở đây, không tự sửa
+
+Chuyển quy tắc 5 sang `long_tieng.loi_nhac` là **sửa lời nhắc của đường
+SỐNG** — lời nhắc lồng tiếng đã qua nghiệm thu, có ngân sách độ dài riêng
+(`ngon_ngu.ngan_sach_do_dai`), và ⛔ không phải phạm vi điều phối đã giao.
+⇒ **Báo, chờ xếp thứ tự.**
+
+⭐ Bài học, và nó là bài học của **cả ngày hôm nay** ở một tầng cao hơn:
+*"đọc thứ đại diện thay vì đọc thứ thật"* — tôi đã đo một hàm **tên đúng**
+(`dich_thuat`) thay vì hàm **được gọi thật**. Câu hỏi đáng lẽ phải hỏi ngay từ
+đầu: ⭐ **"ai GỌI hàm này?"**, ⛔ không phải *"hàm này tên là gì"*.
+
+---
+
 ## ⚠️ ĐỌC TRƯỚC MỌI CON SỐ
 
 ⛔ **Chưa có bộ chấm đáng tin.** Đường chấm ngữ nghĩa (`qc_ai`) đang **trong
