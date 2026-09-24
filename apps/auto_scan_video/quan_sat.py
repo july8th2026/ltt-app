@@ -53,6 +53,7 @@ NHAN_NANG_LUC = {
     "doc_canh": N_("Xem từng cảnh"),
     "ho_so_noi_dung": N_("Phân tích nội dung"),
     "qc_ngu_nghia": N_("Kiểm tra nghĩa bản dịch"),
+    "qc_hinh": N_("Kiểm tra hình ảnh"),
     "sua_chua": N_("Vòng sửa tự động"),
     "sua_chua_con_lai": N_("Ghi nhận lỗi còn lại"),
 }
