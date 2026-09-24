@@ -783,10 +783,20 @@ def test_khong_ai_ngoai_HAI_TEP_duoc_cam_url_postgres_scratch():
     """
     import ast
 
+    # ⛔ BỎ QUA CÂY LỒNG TRONG CÂY. `GOC.rglob` đi thẳng vào
+    #    `.claude/worktrees/<phiên khác>/` — một **checkout khác của chính kho
+    #    này**. Quét nó nghĩa là phán quyết mã của phiên khác bằng luật của
+    #    phiên mình, và bài kiểm sẽ đỏ/xanh tuỳ theo hôm nay có ai mở worktree
+    #    hay không. (Đã dính: bài này XANH ở cây `bimat`, ĐỎ ở cây chính, cùng
+    #    một commit — cùng hạng với `.codex/worktrees` chặn máy quét bí mật.)
+    bo_qua_thu_muc = {".git", ".claude", ".codex", ".superpowers",
+                      "node_modules", ".venv", "venv", "__pycache__"}
     pham = []
     for tep in sorted(GOC.rglob("*.py")):
         duong = tep.relative_to(GOC).as_posix()
-        if duong in CHU_URL_PG or ".git" in duong or "node_modules" in duong:
+        if bo_qua_thu_muc & set(tep.relative_to(GOC).parts[:-1]):
+            continue
+        if duong in CHU_URL_PG:
             continue
         try:
             than = tep.read_text(encoding="utf-8", errors="ignore")
@@ -810,6 +820,11 @@ def test_khong_ai_ngoai_HAI_TEP_duoc_cam_url_postgres_scratch():
 
     # 🔑 Đối chứng: nếu phép quét không thật sự đọc tệp nào thì nó xanh rỗng.
     assert (GOC / "tools" / "chay_test_pg.py").exists(), "cong cu chuan phai ton tai"
+    # 🔑 Đối chứng: phép quét phải THẬT SỰ đọc được một lượng tệp đáng kể —
+    #    nếu bộ lọc thư mục quét quá tay thì nó xanh vì không nhìn vào đâu cả.
+    dem = sum(1 for t in GOC.rglob("*.py")
+              if not (bo_qua_thu_muc & set(t.relative_to(GOC).parts[:-1])))
+    assert dem > 800, f"chi quet {dem} tep .py - bo loc thu muc qua tay?"
     # 🔑 Đối chứng thứ hai: tệp được miễn trừ vì "dùng mật khẩu giả" phải THẬT
     #    SỰ dùng mật khẩu giả. Miễn trừ mà không ai kiểm lý do thì chỉ là một
     #    cái tên trong danh sách.
