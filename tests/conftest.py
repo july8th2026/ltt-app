@@ -91,10 +91,15 @@ def pytest_sessionstart(session):
     try:
         from tests import pg_scratch
         u = pg_scratch.scratch_url()
-        if u:
-            pg_scratch.bao_dam_csdl(u)
+        if u and pg_scratch.theo_lan_bat():
+            ten = pg_scratch.bao_dam_schema(u)
+            # 🔑 `PGOPTIONS` la duong DUY NHAT khong phai sua ma san pham: libpq doc
+            #    no cho MOI ket noi, ke ca cua tien trinh con (moi truong di theo).
+            #    Nen `platform_core/db.get_engine()` khong phai biet gi ve schema.
+            os.environ["PGOPTIONS"] = f"-c search_path={pg_scratch.search_path()}"
+            print(f"  [pg scratch] schema rieng cua lan: {ten}")
     except Exception as e:  # noqa: BLE001
-        print(f"  [pg scratch] khong tao duoc CSDL rieng: {type(e).__name__}: {e}")
+        print(f"  [pg scratch] khong tao duoc schema rieng: {type(e).__name__}: {e}")
 
 
 def pytest_collection_modifyitems(session, config, items):
@@ -157,9 +162,31 @@ def pytest_collection_modifyitems(session, config, items):
         _KHOA_PHIEN = None
 
 
+def _don_schema_lan():
+    """`DROP SCHEMA <lan> CASCADE` — buoc DON tra loi N-11.
+
+    🔴 **Day la thu phan biet duong schema voi duong CSDL.** Ban dau cua Task 0 tao
+       mot CSDL moi lan va **khong co duong don**, nen no doi *mot khoa chan 78 phut*
+       thanh *N CSDL mo coi tich tu* — dung cai `tests/test_2300` canh. `DROP SCHEMA
+       ... CASCADE` don sach trong mot cau.
+
+    ⛔ Khong nem: mot lan chay da xong khong duoc bao DO vi buoc don hong. Nhung phai
+       NOI RA, vi mot buoc don im lang that bai la cach rac tich tu ma khong ai thay.
+    """
+    try:
+        from tests import pg_scratch
+        u = pg_scratch.scratch_url()
+        if u and pg_scratch.theo_lan_bat():
+            pg_scratch.xoa_schema(u)
+    except Exception as e:  # noqa: BLE001
+        print(f"  [pg scratch] KHONG don duoc schema: {type(e).__name__}: {e}")
+
+
 def pytest_sessionfinish(session, exitstatus):
-    """Nha khoa. `_treo()` cua `cua_so_yen` van do neu tien trinh chet dot ngot."""
+    """Nha khoa + DON schema cua lan. `_treo()` cua `cua_so_yen` van do neu tien
+    trinh chet dot ngot."""
     global _KHOA_PHIEN
+    _don_schema_lan()
     if _KHOA_PHIEN is not None:
         try:
             _KHOA_PHIEN.__exit__(None, None, None)

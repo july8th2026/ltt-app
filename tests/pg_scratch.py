@@ -27,72 +27,9 @@ import pytest
 
 ENV = "LTT_TEST_DATABASE_URL"
 
-#: Tien to CSDL scratch. Ten thuc = `<TIEN_TO><lan>`, nen no LUON chua "test".
-TIEN_TO = "lttplatform_test_"
 
 #: Tran ten CSDL cua PostgreSQL la 63 byte (`NAMEDATALEN - 1`).
 DAI_TOI_DA = 63
-
-
-def _chuan_ten(lan: str) -> str:
-    """`asvf-nghiem-thu-v2` -> `asvf_nghiem_thu_v2`, cat cho vua tran 63.
-
-    ⭐ **Van tay thi DUNG LAI `tools/pg_ten_cay.van_tay_cay`, khong tu bam.** Kho
-       nay DA co quy uoc CSDL test theo cay (`_multiproc_test`, `_wf_migration_test`,
-       `_m1_dientap_test` — 18 CSDL nhu vay dang ton tai tren may), va tu viet mot
-       phep bam thu hai la dung bay N-08 toi vua ghi: **hai cho khai cung mot dieu,
-       khong ai bat khop**.
-    """
-    tho = re.sub(r"[^a-z0-9_]+", "_", lan.lower()).strip("_") or "khong_ten"
-    try:
-        import sys
-        goc = str(pathlib.Path(__file__).resolve().parents[1])
-        if f"{goc}/tools" not in sys.path:
-            sys.path.insert(0, f"{goc}/tools")
-        from pg_ten_cay import van_tay_cay
-        tho = f"{tho[:28]}_{van_tay_cay(pathlib.Path(goc))}"
-    except Exception:                       # noqa: BLE001 - thieu tools/ thi dung ten tho
-        pass
-    return tho[:DAI_TOI_DA - len(TIEN_TO)].strip("_")
-
-
-def bao_dam_csdl(url: str) -> None:
-    """`CREATE DATABASE` neu chua co. Goi duoc nhieu lan.
-
-    🔴 **Buoc nay KHONG co trong Task 0, va thieu no thi Task 0 la mot HOI QUY.**
-       `Base.metadata.create_all()` tao **BANG**, khong tao **CSDL**. Do that 24/09:
-       sau khi `scratch_url` tra ten theo lan, `tests/test_2080_asv_cache_lease.py`
-       chet `psycopg.OperationalError` — CSDL `lttplatform_test_<lan>` khong ton tai.
-
-    ⛔ Chi `CREATE`, khong bao gio `DROP`: xoa la viec cua nguoi van hanh
-       (`tools/pg_ten_cay.cau_xoa` da co rao rieng cho no), va mot bo test tu xoa
-       CSDL cua chinh no giua mot lan chay song song la mot cach hay de mat du lieu
-       cua lan khac.
-    """
-    import sqlalchemy as sa
-
-    ten = _database_name(url)
-    try:
-        e = sa.create_engine(url, connect_args={"connect_timeout": 5})
-        with e.connect():
-            pass
-        e.dispose()
-        return
-    except Exception:                       # noqa: BLE001 - chua noi duoc: thu tao
-        pass
-    quan_tri = sa.create_engine(f"{url.rsplit('/', 1)[0]}/postgres",
-                                isolation_level="AUTOCOMMIT",
-                                connect_args={"connect_timeout": 5})
-    try:
-        with quan_tri.connect() as c:
-            c.execute(sa.text(f'CREATE DATABASE "{ten}"'))
-    except Exception as loi:                # noqa: BLE001
-        # Hai lan song song cung tao -> mot ben thang, ben kia thay "already
-        # exists". Do la duong chay BINH THUONG cua co che, khong phai su co.
-        if "already exists" not in str(loi).lower():
-            raise
-    finally:
-        quan_tri.dispose()
 
 
 def _lan_tu_worktree() -> str:
@@ -178,28 +115,13 @@ def scratch_url(lan: str = "") -> str:
             f"{ENV} names database {name!r}, which does not look disposable. "
             f"These tests drop every table, so the name must contain 'test'.")
     # Rao da qua -> nay moi tach rieng CSDL cua lan nay (N-10).
-    # ⛔ **CHUA BAT MAC DINH — chan o quyen CSDL, khong o ma.**
+    # ⛔ **KHONG doi ten CSDL.** Co lap nay theo **SCHEMA**, khong theo CSDL — xem
+    #    phan cuoi tep. Duong "mot CSDL moi lan" DA BO: vai `ltt_app` khong co
+    #    `CREATEDB`, va cap quyen do la doi the an ninh cua may production.
     #
-    # 🔴 Do 24/09: vai `ltt_app` co `rolcreatedb = False`; chi `postgres` (superuser)
-    #    tao duoc CSDL. Nen `lttplatform_test_<lan>` **khong the tu sinh ra**, va bat
-    #    mac dinh lam MOI bai PG chet `database "..." does not exist`.
-    #
-    # ⇒ Duong theo lan la OPT-IN (`LTT_PG_SCRATCH_THEO_LAN=1`) cho toi khi chu du an
-    #   quyet mot trong hai: cap `CREATEDB` cho `ltt_app` (doi the an ninh cua may
-    #   production — KHONG phai viec cua mot lan), hoac tao san CSDL moi lan bang vai
-    #   `postgres` trong mot buoc van hanh.
-    #
-    # ⛔ Va day la mot mac dinh GIU NGUYEN HIEN TRANG, khong phai mot ban lui im
-    #    lang: `LOI_TONG.md` N-10 ghi ro no dang cho quyet dinh gi.
-    if not (os.environ.get("LTT_PG_SCRATCH_THEO_LAN") or "").strip() and not lan:
-        return url
-
-    # ⛔ **KHONG goi `bao_dam_csdl` o day.** Ham nay duoc goi luc IMPORT o it nhat
-    #    bon tep (`PG_URL = scratch_url()`), va mot phep tinh TEN khong duoc mo ket
-    #    noi CSDL nhu tac dung le: no lam moi lan `import` cham di mot vong mang,
-    #    va lam cac bai kiem ve CACH DAT TEN phai co mot PostgreSQL that.
-    # ⇒ Viec tao CSDL nam o `conftest.pytest_sessionstart` — MOT lan moi phien.
-    return f"{url.rsplit('/', 1)[0]}/{TIEN_TO}{_chuan_ten(lan or _lan_tu_worktree())}"
+    # ⚠️ `lan` giu lai trong chu ky vi `schema_lan`/`search_path` dung cung mot khai
+    #    niem "lan"; nguoi goi khong phai hoc hai cach goi.
+    return url
 
 
 def skip_without_postgres():
@@ -212,3 +134,125 @@ def skip_without_postgres():
         not (os.environ.get(ENV) or "").strip(),
         reason=f"Set {ENV} to a scratch PostgreSQL database (name must "
                f"contain 'test').")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Co lap theo SCHEMA (Task 0 ban 2) — khong doi ten CSDL, khong can `CREATEDB`
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# 🔴 **Vi sao khong dung CSDL-moi-lan.** Vai `ltt_app` co `rolcreatedb = False`
+#    (do 24/09), nen `CREATE DATABASE` **khong the** chay tu bo test; va cap
+#    `CREATEDB` cho vai app la **doi the an ninh cua may production**, khong phai
+#    viec cua mot lan. Nhung `ltt_app` **tao va xoa duoc SCHEMA**.
+#
+# ⭐ Ba cai duoc so voi CSDL-moi-lan:
+#      1. khong doi quyen nao;
+#      2. `DROP SCHEMA ... CASCADE` don sach ⇒ het tich tu CSDL mo coi (N-11);
+#      3. khong tran so lan.
+#
+# ⭐ Be mat da KIEM (khong doan): toan kho **khong** bang/cot nao bi gan schema
+#    (`__table_args__ schema=` rong), nen moi bang di theo `search_path`. Cho duy
+#    nhat qualify tuong minh la `func.public.f_unaccent` — mot **ham cap CSDL**,
+#    dung nhu vay.
+
+#: Tien to schema cua lan. ⛔ Khong bao gio tra `public`.
+TIEN_TO_SCHEMA = "asv_"
+
+_TEN_HOP_LE = re.compile(r"[a-z][a-z0-9_]*")
+
+#: Co bat duong theo lan. MOT cho khai — `conftest` va `scratch_url` doc cung day.
+BIEN_THEO_LAN = "LTT_PG_SCRATCH_THEO_LAN"
+
+
+def theo_lan_bat() -> bool:
+    """Duong co lap theo lan da bat chua.
+
+    ⚠️ Con OPT-IN cho toi khi **doi chung co lap** xanh. Mac dinh la GIU NGUYEN
+       HIEN TRANG (mot CSDL dung chung + khoa `postgres_test`) — ⛔ khong lui im
+       lang, va cung khong bat som: bat truoc khi chung minh duoc co lap la bo mot
+       khoa dang that su chan `drop_all` cua lan khac.
+    """
+    return bool((os.environ.get(BIEN_THEO_LAN) or "").strip())
+
+#: Schema KHONG duoc xoa, du ai goi. `DROP SCHEMA public CASCADE` = xoa ca CSDL.
+SCHEMA_CAM_XOA = frozenset({"public", "pg_catalog", "pg_toast", "information_schema"})
+
+
+def _chuan_schema(lan: str) -> str:
+    """`asvf-b1` -> `asvf_b1`. ⛔ KHONG them van tay cay.
+
+    🔴 Ban dau ham nay dung `_chuan_ten` (co van tay cay cua `pg_ten_cay`), va do la
+       **sai cho duong schema**: van tay lay theo **noi goi**, nen
+       `schema_lan("asvf-b1")` cho hai ket qua khac nhau o hai cay ⇒ hai tien trinh
+       cua **doi chung co lap** khong thong nhat duoc mot cai ten, va bai doi chung
+       se do vi mot ly do khong lien quan gi den co lap.
+
+    ⭐ Van tay CAN cho ten CSDL (ten CSDL la toan cuc tren ca server, hai checkout
+       trung ten co the dam nhau) nhung KHONG can cho schema: schema nam trong MOT
+       CSDL tren MOT server, va ten cay lam viec von da duy nhat tren may do. Mot
+       `lan` truyen tuong minh thi chinh no la danh tinh.
+    """
+    tho = re.sub(r"[^a-z0-9_]+", "_", lan.lower()).strip("_") or "khong_ten"
+    if not tho[0].isalpha():
+        tho = f"l{tho}"
+    return tho
+
+
+def schema_lan(lan: str = "") -> str:
+    """Ten schema rieng cua lan nay. Tat dinh, <= 63 ky tu, khong bao gio `public`."""
+    return f"{TIEN_TO_SCHEMA}{_chuan_schema(lan or _lan_tu_worktree())}"[:DAI_TOI_DA]
+
+
+def search_path(lan: str = "") -> str:
+    """`<schema cua lan>,public`.
+
+    ⛔ `public` phai o SAU. Neu no dung truoc, `create_all` tao bang vao `public` va
+       hai lan lai dung nhau — tuc ban sua nay thanh vo hieu **ma van xanh**.
+    """
+    return f"{schema_lan(lan)},public"
+
+
+def cau_xoa_schema(ten: str) -> str:
+    """Cau `DROP SCHEMA ... CASCADE`, hoac `ValueError` neu khong chung minh duoc.
+
+    ⛔ Cung tinh than `pg_ten_cay.cau_xoa`: mot cau xoa phai TU CHOI thay vi tin
+       nguoi goi. `DROP SCHEMA public CASCADE` xoa ca CSDL.
+    """
+    thap = (ten or "").strip().lower()
+    if not _TEN_HOP_LE.fullmatch(thap):
+        raise ValueError(f"tu choi xoa schema {ten!r}: khong phai identifier thuan")
+    if thap in SCHEMA_CAM_XOA:
+        raise ValueError(f"tu choi xoa schema {ten!r}: schema he thong")
+    if not thap.startswith(TIEN_TO_SCHEMA):
+        raise ValueError(f"tu choi xoa schema {ten!r}: khong mang tien to "
+                         f"{TIEN_TO_SCHEMA!r}")
+    return f'DROP SCHEMA IF EXISTS "{thap}" CASCADE'
+
+
+def bao_dam_schema(url: str, lan: str = "") -> str:
+    """`CREATE SCHEMA IF NOT EXISTS` cho lan nay. Tra ten schema."""
+    import sqlalchemy as sa
+
+    ten = schema_lan(lan)
+    e = sa.create_engine(url, isolation_level="AUTOCOMMIT",
+                         connect_args={"connect_timeout": 5})
+    try:
+        with e.connect() as c:
+            c.execute(sa.text(f'CREATE SCHEMA IF NOT EXISTS "{ten}"'))
+    finally:
+        e.dispose()
+    return ten
+
+
+def xoa_schema(url: str, lan: str = "") -> None:
+    """`DROP SCHEMA ... CASCADE`. Goi o cuoi phien — day la buoc DON cua N-11."""
+    import sqlalchemy as sa
+
+    cau = cau_xoa_schema(schema_lan(lan))
+    e = sa.create_engine(url, isolation_level="AUTOCOMMIT",
+                         connect_args={"connect_timeout": 5})
+    try:
+        with e.connect() as c:
+            c.execute(sa.text(cau))
+    finally:
+        e.dispose()
