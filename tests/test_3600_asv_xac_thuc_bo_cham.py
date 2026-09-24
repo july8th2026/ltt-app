@@ -455,3 +455,53 @@ def test_ban_doc_v1_KHONG_loc_doan_trich_va_doc_dat_tu_model():
     ra = bc.BAN_LOI_NHAC["v1"][1](
         {"doan": {"m": {"dat": False, "ly_do": "x"}}}, {"m"}, {})
     assert ra[0]["dat"] is False and ra[0]["muc"] == "" and ra[0]["loi"] == []
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  11. ĐỐI CHIẾU THẲNG — ⛔ bỏ phép trừ
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _so_soi(pq: dict):
+    return {"muc": [{"dong_flores": i, "phan_quyet": v} for i, v in pq.items()]}
+
+
+def _cham(dat: dict):
+    return {"gop": {f"flores_{i:04d}": {"dat": v} for i, v in dat.items()}}
+
+
+def test_doi_chieu_tinh_THANG_khong_tru():
+    """🔴 `báo động giả − sàn lỗi` chỉ đúng nếu bộ chấm bắt được **MỌI** lỗi có
+    sẵn, tức ngầm giả định độ nhạy 100% trên lỗi TỰ NHIÊN — thứ ta chỉ đo trên
+    lỗi TA TIÊM, mà lỗi tiêm không cùng hình dạng với lỗi tự nhiên.
+
+    ⇒ Đối chiếu thẳng: bốn ô, không giả định nào.
+    """
+    so = _so_soi({1: "ro", 2: "ro", 3: "khong_loi", 4: "khong_loi",
+                  5: "khong_loi"})
+    # Bộ chấm: bắt trúng 1, bỏ sót 2, báo nhầm 3, đúng âm 4 và 5.
+    ch = _cham({1: False, 2: True, 3: False, 4: True, 5: True})
+    k = bc.doi_chieu(so, ch)["theo_dinh_nghia"]["chinh"]
+    assert (k["dung"], k["bao_dong_gia"], k["bo_sot"], k["dung_am"]) == (1, 1, 1, 2)
+    assert k["ti_le_bao_dong_gia_that"] == 0.5     # 1 nhầm / 2 gắn cờ
+    assert k["do_nhay_loi_tu_nhien"] == 0.5        # 1 trúng / 2 lỗi thật
+    assert k["dong_bao_dong_gia"] == [3] and k["dong_bo_sot"] == [2]
+
+
+def test_doi_chieu_BA_dinh_nghia_loi_viet_TRUOC():
+    """⛔ Ba định nghĩa khai trước, ⛔ không chọn cái nào cho ra số đẹp."""
+    assert bc.COI_LA_LOI["chinh"] == ("ro",)
+    assert bc.COI_LA_LOI["rong"] == ("ro", "zh_lech")
+    so = _so_soi({1: "zh_lech", 2: "bien", 3: "khong_loi"})
+    ch = _cham({1: False, 2: False, 3: True})
+    r = bc.doi_chieu(so, ch)["theo_dinh_nghia"]
+    # `chinh`: khong ca nao la loi => ca hai lan gan co deu la bao dong gia.
+    assert r["chinh"]["bao_dong_gia"] == 2
+    assert r["rong"]["bao_dong_gia"] == 1      # zh_lech duoc tinh la loi
+    assert r["rong_nhat"]["bao_dong_gia"] == 0
+
+
+def test_doi_chieu_BO_dong_bo_cham_khong_cham_duoc():
+    """Dòng bộ chấm không trả lời được ⇒ ⛔ không đếm vào ô nào cả."""
+    so = _so_soi({1: "ro", 2: "khong_loi"})
+    r = bc.doi_chieu(so, _cham({1: False}))
+    assert r["n"] == 1 and r["dong_khong_cham_duoc"] == [2]

@@ -540,6 +540,7 @@ def _ti_le(cac_luot: list[dict], ma: list[str], gop: dict) -> dict:
 
 def ti_le_bao_dong_gia(n: int, *, db=None, luot: int = LUOT_MOI_CAP,
                        tu: int = 0, ban: str = "v3",
+                       dong: list[int] | None = None,
                        thu_muc: pathlib.Path = FLORES_DIR) -> dict:
     """Ti le bao dong gia cua bo cham tren `n` cap FLORES zh->vi.
 
@@ -551,7 +552,18 @@ def ti_le_bao_dong_gia(n: int, *, db=None, luot: int = LUOT_MOI_CAP,
        model, va mot luot tuan tu mat ~1 gio. `ma` mang chi so dong FLORES nen
        hai nua khong the trung ma.
     """
-    cap = doc_flores(thu_muc)[tu:tu + n]
+    if dong is not None:
+        # ⭐ Cham DUNG nhung dong da duoc soi MU (va phan quyet cua nguoi soi da
+        #    COMMIT truoc do). Cho phep mot danh sach roi rac, vi mau ngau nhien
+        #    khong lien tuc — ⛔ khong duoc "lam tron" thanh mot dai lien tuc,
+        #    lam vay la doi tap do.
+        can = set(int(x) for x in dong)
+        cap = [c for c in doc_flores(thu_muc) if c[0] in can]
+        if len(cap) != len(can):
+            raise SystemExit(
+                f"chi tim duoc {len(cap)}/{len(can)} dong trong FLORES")
+    else:
+        cap = doc_flores(thu_muc)[tu:tu + n]
     muc = [{"ma": f"flores_{i:04d}", "goc": zh, "chu": vi} for i, zh, vi in cap]
     ma = [m["ma"] for m in muc]
     cac_luot = []
@@ -561,6 +573,7 @@ def ti_le_bao_dong_gia(n: int, *, db=None, luot: int = LUOT_MOI_CAP,
         cac_luot.append(cham_mot_luot(db, muc, ban))
     gop = gop_trung_vi(cac_luot, ma)
     return {"n": len(muc), "luot": luot, "tu": tu, "ban": ban, "gop": gop,
+            "dong": [i for i, _z, _v in cap],
             "luoc_do": thong_ke_luoc_do(cac_luot, len(muc)),
             "cac_luot": cac_luot, **_ti_le(cac_luot, ma, gop)}
 
@@ -677,6 +690,83 @@ def ban_ghi_sach(d: dict) -> dict:
     return sach
 
 
+#: Nguoi soi mu goi la LOI o muc nao thi tinh la loi THAT. ⛔ Viet TRUOC khi
+#: doi chieu.
+#:
+#: ⭐ `ro` la dinh nghia CHINH: "nguoi xem se tin mot su viec sai" — dung cau hoi
+#:    bo cham duoc giao. `zh_lech` va `bien` chi de phan tich do nhay cua ket
+#:    luan, ⛔ khong de chon cai nao cho ra so dep.
+COI_LA_LOI = {
+    "chinh": ("ro",),
+    "rong": ("ro", "zh_lech"),
+    "rong_nhat": ("ro", "zh_lech", "bien"),
+}
+
+
+def doi_chieu(so_soi: dict, cham: dict, *, nguong_luot: int = 2) -> dict:
+    """Doi chieu THANG bo cham voi so soi MU — ⛔ khong tru, khong gia dinh.
+
+    🔴 **Vi sao bo phep tru.** `bao dong gia - san loi FLORES` chi dung neu bo
+       cham bat duoc **MOI** loi co san cua FLORES, tuc ngam gia dinh do nhay
+       100 % tren loi **TU NHIEN**. Ta chi do do nhay tren loi **TA TIEM**, ma
+       loi tiem khong cung hinh dang voi `山寨货` -> *"bi ngung kinh doanh"*.
+       Bo cham bo sot mot phan loi tu nhien ⇒ ta **tru qua tay** ⇒ so qua dep.
+
+    ⭐ **Phep do nay sach dung o cho ta lo nhat:** phan quyet cua nguoi soi duoc
+       ghi **truoc**, **mu**, va **da commit** — ⛔ khong ai chinh duoc sau khi
+       thay bo cham noi gi. Do la dieu kien ma viec "soi tap bi gan co" khong co.
+
+    Tra ve bang 2x2 cho tung dinh nghia trong `COI_LA_LOI`:
+
+        gan co & nguoi goi la loi      -> `dung`       (bat trung)
+        gan co & nguoi goi khong loi   -> **BAO DONG GIA THAT**
+        khong gan co & nguoi goi loi   -> **BO SOT loi TU NHIEN**
+        khong gan co & khong loi       -> `dung_am`
+    """
+    pq = {}
+    for m in so_soi["muc"]:
+        pq[int(m["dong_flores"])] = str(m["phan_quyet"])
+    gop = cham["gop"]
+    ra: dict = {"n": 0, "theo_dinh_nghia": {}}
+    co_cham = []
+    for i in sorted(pq):
+        ma = f"flores_{i:04d}"
+        if ma in gop:
+            co_cham.append(i)
+    ra["n"] = len(co_cham)
+    ra["dong_khong_cham_duoc"] = [i for i in sorted(pq) if i not in co_cham]
+    for ten, nhan in COI_LA_LOI.items():
+        dung = bdg = bo_sot = dung_am = 0
+        ds_bdg, ds_bo_sot = [], []
+        for i in co_cham:
+            gan_co = not gop[f"flores_{i:04d}"]["dat"]
+            la_loi = pq[i] in nhan
+            if gan_co and la_loi:
+                dung += 1
+            elif gan_co:
+                bdg += 1
+                ds_bdg.append(i)
+            elif la_loi:
+                bo_sot += 1
+                ds_bo_sot.append(i)
+            else:
+                dung_am += 1
+        gan = dung + bdg
+        that = dung + bo_sot
+        ra["theo_dinh_nghia"][ten] = {
+            "nhan": list(nhan),
+            "so_gan_co": gan, "so_loi_that": that,
+            "dung": dung, "bao_dong_gia": bdg, "bo_sot": bo_sot,
+            "dung_am": dung_am,
+            # ⭐ Ti le BAO DONG GIA THAT — do THANG, khong tru.
+            "ti_le_bao_dong_gia_that": round(bdg / gan, 4) if gan else None,
+            # ⭐ Con so ta CHUA BAO GIO co: do nhay tren loi TU NHIEN.
+            "do_nhay_loi_tu_nhien": round(dung / that, 4) if that else None,
+            "dong_bao_dong_gia": ds_bdg, "dong_bo_sot": ds_bo_sot,
+        }
+    return ra
+
+
 def bao_cao(d: dict) -> str:
     fa = d.get("bao_dong_gia") or {}
     tiem = d.get("bat_loi_tiem") or {}
@@ -725,6 +815,9 @@ def main(argv=None) -> int:
     d.add_argument("--ban", choices=tuple(BAN_LOI_NHAC), default="v3",
                    help="ban loi nhac: v1/v2 la ban DONG BANG tu git, "
                         "v3 la ban HIEN HANH cua san pham")
+    d.add_argument("--theo-so", default="",
+                   help="tep so soi mu: cham DUNG cac `muc[].dong_flores` "
+                        "trong do, thay vi mot dai lien tuc")
     d.add_argument("--ra", required=True)
     g = s.add_parser("gop")
     g.add_argument("--fa", nargs="+", required=True,
@@ -733,6 +826,12 @@ def main(argv=None) -> int:
     g.add_argument("--ra", required=True)
     b = s.add_parser("bao-cao")
     b.add_argument("tep")
+    dc = s.add_parser("doi-chieu")
+    dc.add_argument("--so-soi", required=True,
+                    help="so soi MU (phan quyet nguoi doc, da commit TRUOC)")
+    dc.add_argument("--cham", required=True, help="ban ghi bo cham tren CUNG dai")
+    dc.add_argument("--con", default="", help="danh sach dong cua tap con (JSON)")
+    dc.add_argument("--ra", required=True)
     bg = s.add_parser("bang-chung")
     bg.add_argument("tep")
     bg.add_argument("--ra", required=True)
@@ -744,6 +843,25 @@ def main(argv=None) -> int:
     if a.lenh == "bao-cao":
         print(bao_cao(json.loads(
             pathlib.Path(a.tep).read_text(encoding="utf-8"))))
+        return 0
+    if a.lenh == "doi-chieu":
+        _d = (lambda x: json.loads(
+            pathlib.Path(x).read_text(encoding="utf-8")))
+        so_soi = _d(a.so_soi)
+        cham = _d(a.cham)["bao_dong_gia"]
+        ra = {"phien_ban": 1, "ban_loi_nhac": cham.get("ban"),
+              "toan_bo": doi_chieu(so_soi, cham)}
+        if a.con:
+            con = set(int(x) for x in _d(a.con))
+            ra["tap_con_doi_chung_kep"] = doi_chieu(
+                {"muc": [m for m in so_soi["muc"]
+                         if int(m["dong_flores"]) in con]}, cham)
+        pathlib.Path(a.ra).write_text(
+            json.dumps(ra, ensure_ascii=False, indent=1), encoding="utf-8")
+        for ten, k in ra["toan_bo"]["theo_dinh_nghia"].items():
+            print(f"[{ten}] gan co {k['so_gan_co']} | loi that {k['so_loi_that']}"
+                  f" | BAO DONG GIA THAT {k['ti_le_bao_dong_gia_that']}"
+                  f" | do nhay loi TU NHIEN {k['do_nhay_loi_tu_nhien']}")
         return 0
     if a.lenh == "bang-chung":
         sach = ban_ghi_sach(json.loads(
@@ -778,8 +896,12 @@ def main(argv=None) -> int:
     khoi_fa: dict | None = None
     tiem: dict | None = None
     if a.pha in ("ca", "fa"):
+        dong = None
+        if a.theo_so:
+            so = json.loads(pathlib.Path(a.theo_so).read_text(encoding="utf-8"))
+            dong = [int(m["dong_flores"]) for m in so["muc"]]
         khoi_fa = ti_le_bao_dong_gia(a.n, db=db, luot=a.luot, tu=a.tu,
-                                    ban=a.ban)
+                                    ban=a.ban, dong=dong)
     if a.pha in ("ca", "tiem"):
         tiem = ti_le_bat_loi_tiem(db=db, moi_loai=a.tiem_moi_loai,
                                   luot=a.luot, bo_qua=a.tiem_bo_qua,
