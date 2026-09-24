@@ -36,7 +36,7 @@ from platform_core.models import Job
 
 from platform_core.i18n import N_
 
-from . import features, pipeline, rang_giong
+from . import features, ma_loi, pipeline, rang_giong
 
 #: Chuoi hien cho khach khi mot giai doan hong ma ta khong co thong diep an toan.
 #: ⚠️ Khong bao gio boc `str(exc)` tho vao day.
@@ -365,33 +365,16 @@ def tom_tat_loi_cho_khach(db, run) -> str:
 #: Ma loi ON DINH (`thi_hanh` ghi vao `outputs.ma_loi` cua giai doan hong) ⇒ cau
 #: cho khach. Chi nhung ma ma "Thu lai buoc nay" **chac chan** hong y het.
 #:
-#: ⛔ Khoa la ma cong khai cua `ltt_voice.lan_ngon_ngu` — go lai o day vi bang
-#:    nay la MOT NGUOI BAT LOI THEO MA, dung vai ma hang so do sinh ra cho
-#:    (*"khach bat loi theo ma, khong theo cau chu"*). `test_409` §8 chot hai
-#:    ben bang nhau, nen doi ma o `ltt_voice` thi bang nay do ngay.
-LOI_CO_MA = {
-    # W4': kich ban long tieng va giong khac lan. Giong da DONG BANG vao ban
-    # long tieng, nen thu lai buoc doc van gap dung giong do.
-    "voice_language_mismatch": N_(
-        "Giọng đã chọn không cùng ngôn ngữ với lời lồng tiếng, nên chúng tôi "
-        "dừng lại trước khi đọc thay vì giao một bản đọc sai giọng. Hãy tạo "
-        "lần chạy mới với một giọng cùng ngôn ngữ với lời lồng tiếng."),
-    "voice_language_unknown": N_(
-        "Giọng đã chọn chưa xác định được ngôn ngữ nên chưa dùng để đọc được. "
-        "Hãy tạo lần chạy mới với một giọng đã ghi rõ Tiếng Việt hoặc Tiếng Anh."),
-    # ── AUTO_MATCH khong rang duoc giong (asv-final 23/09) ──────────────────
-    #
-    # 🔴 `rang_giong.vi_sao_chua_rang` viet mot cau NOI RO thieu gi tu 23/09, va
-    #    cau do dung lai o cot `error`: man nay doc `outputs.ma_loi`. Khach vi
-    #    the doc mot cau chung chung kem mot nut "Thu lai buoc nay" **chac chan
-    #    hong** — AUTO_MATCH tren cung ban chep loi cho ra dung ket qua do.
-    #
-    # ⛔ Va cau tra loi khong phai "thu lai": la TU CHON mot giong. `LOI_CO_MA`
-    #    an nut thu lai (xem `asv_tien_do.html`), nen ba ma nay vao dung cho.
-    #
-    # ⭐ Khong chep cau vao day: `rang_giong.CAU_CHUA_RANG` la ban duy nhat.
-    **rang_giong.CAU_CHUA_RANG,
-}
+#: ⭐ **DAN XUAT tu `ma_loi.SO_MA`, khong go lai.** Truoc 24/09 bang nay go lai
+#:    hai cau lech-lan cua `ltt_voice` VA spread `rang_giong.CAU_CHUA_RANG` —
+#:    tuc mot nua no la ban thu hai cua cung mot cau, mot nua la ban duy nhat.
+#:    `ma_loi.py` gio la so duy nhat va tep nay tro toi no; `test_3200` so bang
+#:    `is` nen mot ban sao khong lot qua duoc.
+#:
+#: ⚠️ Hom nay `LOI_CO_MA` == `SO_MA`: **moi** ma on dinh hien co deu la ma ma thu
+#:    lai chac chan hong. Neu mai co mot ma thu lai duoc thi tach o day (loc
+#:    `SO_MA`), ⛔ khong phai bang cach go lai cau.
+LOI_CO_MA = dict(ma_loi.SO_MA)
 
 
 def loi_co_ma_cho_khach(db, run) -> str:
