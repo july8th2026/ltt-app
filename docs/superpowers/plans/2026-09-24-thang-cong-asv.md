@@ -134,6 +134,20 @@ gắn cờ 43/100 · lỗi thật 10 · bắt trúng 10
 - ⛔ `ast.parse` **trước** `write_bytes`, không sau.
 - Số test mới: tra `python tools\check_so_test.py`, ⛔ đừng đoán số.
 - Mọi ngưỡng **viết ra trước khi đo**. Không đạt ⇒ sửa rồi đo lại, ⛔ **không nới ngưỡng**.
+- 🔴 **BO DO PHAI TAI VE, ⛔ KHONG TU VIET** (chủ dự án chốt 24/09). Lớp **TÍNH**
+  của mọi phép đo — đếm, tỉ lệ, khoảng tin cậy, đồng thuận, kiểm định — phải là
+  **thư viện chuẩn**; ta chỉ viết phần **NỐI** (đọc tệp, xếp nhãn).
+  Có sẵn trên máy: `jiwer` · `scikit-learn` · `scipy` · `numpy`.
+  ⛔ Tự `sum()` ra tỉ lệ, tự tính `±√`, tự đếm khớp/không-khớp ⇒ **không nhận**.
+  ⭐ **Vì sao, bằng số:** trong MỘT ngày, **ba** lỗi nằm trong chính bộ đo của ta,
+  mỗi lỗi đẻ một con số sai **đã báo đi** — và cả ba cùng hình dạng **đếm sai mẫu
+  số** (gộp hai loại vắng mặt · mẫu số phồng · bench lệch trần token so với sản
+  phẩm). Đó đúng là phần thư viện chuẩn làm hộ.
+  ⚠️ Kèm theo: **tỉ lệ khớp thô ⛔ không phải thước đồng thuận** — lớp hiếm làm nó
+  thổi phồng; dùng `sklearn.metrics.cohen_kappa_score`. Và **mọi tỉ lệ báo ra phải
+  kèm KHOẢNG TIN CẬY**, ⛔ không báo số trần.
+  Cài gói mới ⇒ kiểm **giấy phép** (⛔ NC/GPL là chặn), ghi `THIRD_PARTY_NOTICES.md`,
+  và ⭐ mượn **đặc tả** rẻ hơn mượn **runtime**.
 - 🔴 **TRA NGUON TRUOC KHI TU VIET — áp riêng cho BỘ ĐO và BẢN VÁ LỖI** (chủ dự án
   chốt 24/09; luật 10 `CLAUDE.md`, hợp đồng §1b). Trước khi một làn **viết** một bộ
   đo, một bộ chấm, một lời nhắc chấm, một bộ cắt/chuẩn hoá, hay **vá** một lỗi công
