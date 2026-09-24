@@ -224,3 +224,153 @@ suất gặp một **tiền đề chưa khai** là cao.
 chưa ai khai (AUTO_MATCH đòi nguồn **có tiếng nói**) bị đọc thành *"AUTO_MATCH là
 đường chết"*, và mất ba vòng mới tách ra được. Ghi đúng cái **thấy** — mã lỗi, giai
 đoạn, số — rồi mới đi tìm **vì sao**.
+
+---
+
+# 7. Làn `b1-cắt-lại` (24/09) — cắt lại bằng mốc từ
+
+## 7.1 ⛔ Tiền đề của §6 SAI: mốc từng từ **chưa bao giờ tới nơi**
+
+Việc được giao là *"cắt lại bằng mốc từng từ nhánh `aligned` **đã** cho"*. Mốc đó
+**không tồn tại** ở biên ASV:
+
+```
+whisperx/alignment.py:354   word_segment = {"word": word_text}        khoá "word"
+ban_ghi.py:89 (cũ)          chu = _lam_sach(t.get("text"))            đọc  "text"
+ban_ghi.py:91 (cũ)          if not chu: continue                      BỎ, im lặng
+```
+
+| nhánh | khoá engine dùng | `so_tu` |
+|---|---|---|
+| faster-whisper (lui) | `{"start","end","text"}` | **1031** |
+| whisperx (**mặc định**) | `{"word","start","end"}` | **0** |
+
+⭐ Ta trả tiền cho `load_align_model` + `align` — **bước đắt nhất** của nhánh —
+rồi ném kết quả đi. Nhánh `aligned` cho ra **đúng thứ `unaligned` cho, chỉ chậm
+hơn**. Ghi ở **N-17** (hệ quả thứ hai của cùng một gốc). Sửa: `de3a1d4c`.
+
+## 7.2 ⛔ Và nguyên nhân đoạn dài ở §5 cũng **không phải** `chunk_size=30`
+
+WhisperX **đã** chia khối VAD thành **câu** ngay trong `align()` — nó gọi NLTK
+Punkt. Thứ hỏng là Punkt **không có mô hình cho tiếng Hán**:
+
+```
+whisperx/utils.py:130-150   PUNKT_LANGUAGES  — không có 'zh', không có 'ja'
+whisperx/alignment.py:190   punkt_lang = PUNKT_LANGUAGES.get(model_lang, 'english')
+```
+
+Đo trên gói đã cài (whisperx 3.8.6, `D:\LTTWhisperX`):
+
+```
+văn Hán 44 ký tự, 3 câu ngăn bởi 。  ->  Punkt en cho  1  span
+văn Anh 3 câu                        ->  Punkt en cho  3  span
+```
+
+⇒ Cả khối ~30 s về làm **một** `aligned_subsegment`. Đó chính là con số ~24 s.
+⭐ Hạ `chunk_size` **không** sửa được bệnh này — Punkt vẫn không thấy ranh giới
+câu nào trong văn Hán — mà mất 3,6× tốc độ của đường batched. §5 nói đúng *"đừng
+hạ `chunk_size`"*, nhưng nói đúng **vì một lý do khác**.
+
+## 7.3 ⛔ Rồi cả hai chỗ ngắt hợp lệ đều **KHÔNG tồn tại** — đo, không suy
+
+Lượt thật đầu tiên sau khi sửa `ban_ghi` (phim 3, 646 mốc từ **thật**):
+
+```
+dấu câu trong 646 ký tự ASR trả về:   。0   ，0   ！0   ？0   、0   . 0
+khe im lặng giữa hai ký tự liên tiếp: 640/640 = 0,000 s   (max 0,000)
+```
+
+Whisper trả về văn Hán **không một dấu câu nào**, và WhisperX gán span ký tự
+**liên tiếp** nên im lặng bị nuốt vào **độ dài của chính ký tự** (một ký tự dài
+2,782 s). ⇒ Không dấu câu **và** không khoảng lặng = **không còn một chỗ ngắt hợp
+lệ nào**. Bộ cắt chạy đúng và báo đúng: `so_doan 6 -> 6`,
+`so_doan_khong_cho_ngat=5`.
+
+⭐ Đó là lý do bộ cắt **phải** trả về chẩn đoán. Một bộ cắt *"luôn đạt"* ở đây sẽ
+đã cắt giữa câu 5 lần và cho một `lech_doan` đẹp.
+
+## 7.4 Nguồn đã tra — ⛔ ta không là người đầu tiên
+
+| nguồn | là gì | dùng/không |
+|---|---|---|
+| whisperX **#1310** (MỞ) | *"Why WhisperX's sentence segmentation not working for Chinese?"* — trỏ đúng `alignment.py` dòng 195-200 | ⭐ xác nhận §7.2, **không** phải ta suy ra |
+| whisperX **PR #1466** (MỞ, đóng #1310) | *"Split Chinese and Japanese into sentences during alignment"* — thêm `CJKSentenceSplitter` | ⭐ **luật cắt chép theo PR này** (BSD-2-Clause) |
+| whisperX **#645** (`leexinxu`, 17/08/2024, 3 👍) | `asr_options={"initial_prompt": "以下是中文普通话句子。"}` | ⭐ **cách sửa §7.3** — Whisper bám **văn phong** của prompt |
+| whisperX **#519** (MỞ); **#829** đóng làm **trùng** #519 (collaborator 16/02/2026) | sổ cái về cắt phụ đề theo dấu câu | upstream **chưa chốt** ⇒ ta không chờ |
+| `whisperx/SubtitlesProcessor.py` (**có sẵn** trong gói đã cài) | cắt theo `，`/liên từ, zh `max_line_length=30` | ⛔ **KHÔNG**: vượt `max_line_length` thì nó cắt ở **ĐIỂM GIỮA** (`midpoint = normal_round((last_split_point + i) / 2)`) — **cắt giữa câu**. Kèm lỗi **#1089** (`save()` không ghi gì khi `advanced_splitting=False`) |
+| `jianfch/stable-ts` **MIT** | `WhisperResult('audio.json')` — **nhận kết quả có sẵn**, không bắt chạy lại whisper | ⛔ **KHÔNG**: gói **chưa cài**, để làm việc mà PR #1466 làm bằng ~60 dòng không phụ thuộc. Thêm một gói = thêm một biến, không đổi lấy gì |
+
+### Ngưỡng — tra từ quy chuẩn CÔNG BỐ, ⛔ không tự đặt
+
+Netflix Timed Text Style Guide (đọc 24/09):
+
+| số | nguồn |
+|---|---|
+| khe **tối đa 7,0 s** · **tối thiểu 5/6 s** | *General Requirements*, bài **215758617** |
+| **16 ký tự/dòng**, tối đa 2 dòng · **9 ký tự/giây** (người lớn) | *Chinese (Simplified)*, bài **215986007** |
+
+⚠️ Bài **215346638** là *Russian*, **không phải** tiếng Trung — kiểm tiêu đề trang
+trước khi trích. (Đã suýt trích nhầm 42 ký tự/dòng và 17 kt/s.)
+
+## 7.5 Kết quả — ba phim, cùng bộ dữ liệu cũ
+
+Nhánh `aligned` · card được cấp · `media_prepare` thật · `nguon_loi=asr` ép.
+
+| phim | CER trước | **CER sau** | đoạn trước → **sau** | hardsub | `lech_doan` trước | **sau** | ranh giới khớp ±0,3 s |
+|---|---|---|---|---|---|---|---|
+| 1 · món ăn | 0,0349 | **0,0434** ✅ | 11 → **83** | 102 | 0,8922 | **0,1863** ✅ | 0,9255 |
+| 2 · cắm trại | 0,0245 | **0,0275** ✅ | 8 → **74** | 107 | 0,9252 | **0,3084** ⛔ | **1,0000** |
+| 3 · PUBG | 0,0574 ¹ | **0,0526** ¹ ✅ | 6 → **31** | 95 (82 sạch) | 0,9368 | **0,6737** ⛔ | 0,9730 |
+
+¹ Chân lý nền phim 3 bị nhiễm (§4): **13 dòng** chữ UI game. Số **thô** sau khi
+cắt lại: CER **0,2515**. Bỏ đúng 13 dòng đó ⇒ **0,0526**. ⛔ Ghi **cả hai**, không
+thay số thô bằng số sạch.
+
+```
+so_tu        0 -> 646 · 1125 · 1157      tu_bi_bo  toàn 0 trên cả ba phim
+so_doan_qua_dai          0/0/0           (mọi đoạn <= 7,0 s — ngưỡng Netflix)
+so_doan_khong_cho_ngat   0/0/0           (không đoạn nào phải để nguyên)
+```
+
+## 7.6 Phán quyết
+
+```
+CER        3/3 ĐẠT   (0,0434 · 0,0275 · 0,0526   — ngưỡng 0,12)
+lech_doan  1/3 ĐẠT   (0,1863 ✅ · 0,3084 ⛔ · 0,6737 ⛔  — ngưỡng 0,20)
+```
+
+# ⛔ **B1 VẪN KHÔNG ĐẠT** — nhưng ⛔ **không phải vì bộ cắt sai**
+
+⭐ **Chỉ báo ranh giới nói thẳng điều đó:** 0,9255 · **1,0000** · 0,9730. Trên phim
+2, **82/82** ranh giới ASR trùng một ranh giới hardsub thật trong ±0,3 s. Ta
+**không cắt sai chỗ** — ta cắt **ít chỗ hơn**. Ranh giới của ta là một **tập con**
+của hardsub, không phải một tập **khác**.
+
+⚠️ **Và đó là chỗ `lech_doan <= 0,20` hỏi sai câu.** Hardsub dài **0,97 s/dòng**
+(phim 2: min 0,50 · max 1,75) — đó là **dòng HIỂN THỊ**, cắt theo **bề ngang màn
+hình** (quy chuẩn zh: **16 ký tự/dòng**), không phải theo **câu nói**. Đoạn của ta
+dài 3,15 s — một **câu**, đúng khe để đặt một câu tiếng Việt.
+
+⇒ Muốn 31 → 95 thì phải cắt **~3 nhát trong mỗi câu**, tức đúng cái **cắt giữa
+câu** mà ràng buộc cấm, và với sản phẩm **lồng tiếng** thì nó vô nghĩa: không ai
+đọc một câu thành ba khe rồi ghép lại.
+
+⛔ **KHÔNG nới ngưỡng 0,20** — và ⛔ cũng **không** dùng chỉ báo ranh giới để che
+con số 0,3084/0,6737. Câu hỏi để điều phối quyết, ⛔ làn này **không tự quyết**:
+
+> `lech_doan` đang so số đoạn ASR với số **dòng hiển thị** hardsub. Với sản phẩm
+> lồng tiếng, **khe là câu**, không phải dòng. Cổng này có nên so với **số câu**
+> của hardsub (gộp các dòng liên tiếp không kết câu) thay vì số **dòng** không?
+
+⚠️ Đó là một câu hỏi về **cổng đo sai đối tượng**, ⛔ **không phải** một đề nghị
+nới ngưỡng — con số 0,20 giữ nguyên trong cả hai trường hợp.
+
+## 7.7 Bài học đo lường của lượt này
+
+⭐ **Một thay đổi "đã áp dụng" mà kết quả không đổi MỘT KÝ TỰ là dấu hiệu nó
+chưa bao giờ chạy — ⛔ không phải dấu hiệu nó vô dụng.** Bản vá `initial_prompt`
+đầu tiên đọc `args.language`, mà ASV gọi runner với `--language` **rỗng** khi
+khách để "tự đoán". Lượt chạy tốn 25,3 giây trên card, `khoa_chung` **khác** lượt
+trước (nên **không** phải cache) — và bản chép ra **y hệt từng chữ**. Suýt nữa
+kết luận nhầm rằng #645 không ăn thua cho tiếng Hán. Sửa: nhận ngôn ngữ
+(`model.detect_language`) **trước**, rồi mới đặt prompt (`edbcbd57`).
