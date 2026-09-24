@@ -250,6 +250,18 @@ _KHOA_CAU_HINH_CONG_VAO = "cong_vao_bang_thong"
 #: `profiles.CANH_BAO_BAO_TRI`); `test_2600` chốt điều đó.
 THANH_PHAN_BANG_THONG_TONG = "bang_thong_tong"
 
+#: Thanh phan suc khoe cho phep kiem "cong quan tri co lo ra dia chi cua khach".
+#: ⚠️ Phai NAM NGOAI `REQUIRED_HEALTH_COMPONENTS` — xem `CANH_BAO_BAO_TRI`.
+THANH_PHAN_CONG_QUAN_TRI = "cong_quan_tri"
+
+#: Cong SSH cua cong vao. Mot hang so, khong go lai so o cho khac.
+CONG_QUAN_TRI = 22
+
+#: Nhip kiem cong: mot ngay. No mo ket noi TCP toi tung dia chi nen khong dang
+#: chay moi gio, va thu no bat (mot luat tuong lua bi go) khong doi theo gio.
+KIEM_CONG_MOI_GIAY = 24 * 3600
+_moc_kiem_cong = 0.0
+
 #: Khoá đếm số lượt LIÊN TIẾP không đọc được bộ đếm cổng vào.
 #:
 #: Một lần hỏng thoáng qua (mạng chớp, cổng vào vừa khởi động lại) khác hẳn một
@@ -472,6 +484,110 @@ def _ghi_tin_hieu_bang_thong_tong(db, profile, *, doc_duoc: bool,
         status=trang_thai, summary=tom_tat[:300],
         observed_at=bay_gio, generated_at=bay_gio))
     return lien_tiep
+
+
+def _kiem_cong_quan_tri(db, profile, *, mo_cong=None, now=None) -> int:
+    """Do cong SSH cua cong vao TREN TUNG dia chi, ghi mot ban ghi suc khoe.
+
+    🔴 24/09/2026: `/etc/nftables.conf` viet `tcp dport 22 accept` — mot dieu
+       kien **khong neu dia chi dich** — nen SSH quan tri tra loi tren ca 11 dia
+       chi IPv4 cua cong vao, gom ca dia chi vua ban cho khach. Da chan bang
+       `ip daddr != <IP quan tri> tcp dport 22 drop`.
+
+    ## Vi sao phep do nay phai TU CHAY
+
+    `tools/vps_doi_soat_cong.py` do duoc, nhung no chay bang tay. Mot phep kiem
+    an ninh chay bang tay gop **hai** trang thai vao cung mot su im lang:
+    *"chua ai chay"* va *"chay roi, dat"*. Ghi mot ban ghi suc khoe MOI luot
+    tach hai thu do ra: khong co ban ghi = STALE tren trang admin.
+
+    ## ⛔ Khong chan ban hang
+
+    Thanh phan nay thuoc `CANH_BAO_BAO_TRI`: cong quan tri lo la viec cua nguoi
+    van hanh, khach khong lam gi duoc voi tin hieu do. Dong cua hang vi no la
+    phat khach cho mot loi cua ta.
+
+    `mo_cong(ip, cong) -> (mo, ly_do)` tiem duoc de do bang test.
+    Tra so dia chi bi lo (0 = sach).
+    """
+    from datetime import datetime, timezone
+
+    from sqlalchemy import select
+
+    from apps.vps.tables import VpsGateway, VpsIp, VpsProfileHealth
+
+    if mo_cong is None:
+        from apps.vps.services.kiem_cong import cong_mo as mo_cong
+
+    bay_gio = now or datetime.now(timezone.utc)
+    gw = db.execute(select(VpsGateway).where(
+        VpsGateway.infrastructure_profile_id == profile.id)).scalars().first()
+    if gw is None or not gw.ip_cong_khai:
+        return 0
+    ip_quan_tri = str(gw.ip_cong_khai)
+    dia_chi = [r.dia_chi for r in db.execute(select(VpsIp).where(
+        VpsIp.infrastructure_profile_id == profile.id)).scalars()
+        if r.dia_chi and r.dia_chi != ip_quan_tri]
+
+    lo = [ip for ip in sorted(dia_chi) if mo_cong(ip, CONG_QUAN_TRI)[0]]
+    mo_qt, _ = mo_cong(ip_quan_tri, CONG_QUAN_TRI)
+
+    if lo:
+        trang_thai = "CRITICAL"
+        tom_tat = (f"cong {CONG_QUAN_TRI} MO tren {len(lo)} dia chi khong phai "
+                   f"cua no: {', '.join(lo[:6])}")
+    elif not mo_qt:
+        # Chan qua tay cung la hong, va no hong ve phia mat quyen quan tri.
+        trang_thai = "CRITICAL"
+        tom_tat = (f"cong {CONG_QUAN_TRI} DONG tren chinh IP quan tri "
+                   f"{ip_quan_tri} — khong con duong vao cong vao")
+    else:
+        trang_thai = "HEALTHY"
+        tom_tat = (f"cong {CONG_QUAN_TRI} chi mo tren IP quan tri "
+                   f"{ip_quan_tri} ({len(dia_chi)} dia chi khac deu dong)")
+
+    db.add(VpsProfileHealth(
+        infrastructure_profile_id=profile.id,
+        component=THANH_PHAN_CONG_QUAN_TRI,
+        status=trang_thai, summary=tom_tat[:300],
+        observed_at=bay_gio, generated_at=bay_gio))
+    if lo:
+        log.error("VPS: cong quan tri LO tren %s", ", ".join(lo))
+    return len(lo)
+
+
+def _kiem_cong_dinh_ky(db, *, now=None) -> int:
+    """Chay `_kiem_cong_quan_tri` cho profile mac dinh, moi ngay mot lan.
+
+    Moc RIENG: ba phep soi trong vong nay (`_doi_chieu_profiles`,
+    `_doi_chieu_dinh_ky`, va phep nay) tung dung chung mot moc, va phep chay
+    truoc khoa hai phep kia **24 gio trong im lang** — loi that, sua 24/09.
+    """
+    global _moc_kiem_cong
+
+    import time as _time
+
+    from sqlalchemy import select
+
+    from apps.vps.tables import VpsInfrastructureProfile
+
+    if _time.monotonic() < _moc_kiem_cong:
+        return 0
+    _moc_kiem_cong = _time.monotonic() + KIEM_CONG_MOI_GIAY
+    profile = db.execute(select(VpsInfrastructureProfile).where(
+        VpsInfrastructureProfile.status == "ACTIVE",
+        VpsInfrastructureProfile.is_default.is_(True))).scalars().first()
+    if profile is None:
+        return 0
+    try:
+        so_lo = _kiem_cong_quan_tri(db, profile, now=now)
+        db.commit()
+        return so_lo
+    except OSError as exc:
+        # Mang hong khong duoc lam hong vong bao tri; nhung cung ⛔ khong duoc im.
+        db.rollback()
+        log.warning("VPS: khong kiem duoc cong quan tri: %s", exc)
+        return 0
 
 
 def _can_ham_theo_tong(profile, dang_song, *, now=None, db=None) -> set[str]:
@@ -939,6 +1055,7 @@ def mot_luot(db, *, now=None) -> dict:
     #    chết. Docstring của `_doi_chieu_dinh_ky` viết đúng về chính nó:
     #    *"Một phép soi không ai chạy là một phép soi không tồn tại"*.
     ket_qua["dien_mo_coi"] = _doi_chieu_dinh_ky(db)
+    ket_qua["cong_quan_tri_lo"] = _kiem_cong_dinh_ky(db)
     ket_qua["ip_rong_huy_gia_han"] = _chinh_sach_ip_rong(db, now=now)
 
     da_nop_xoa = 0

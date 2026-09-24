@@ -25,33 +25,12 @@
 from __future__ import annotations
 
 import argparse
-import socket
 import sys
 
-CONG_QUAN_TRI = 22
-CONG_RDP = 3389
-CHO_GIAY = 6
-
-
-def _cong_mo(ip: str, cong: int, cho: float = CHO_GIAY) -> tuple[bool, str]:
-    """Ket noi TCP that. Tra `(mo, vi_sao)`.
-
-    ⛔ Khong nuot `OSError` lang le: o day "khong ket noi duoc" LA ket qua can
-       do, nhung **ly do** phan biet hai the gioi khac han — `TimeoutError`
-       nghia la goi tin bi DROP (co luat chan, dung y muon), con
-       `ConnectionRefusedError` nghia la goi tin toi noi va **khong ai nghe**
-       (khong co luat chan; dich vu chi tinh co khong chay). Vut ly do di la
-       bien mot phep kiem an ninh thanh mot phep kiem may rui.
-    """
-    s = socket.socket()
-    s.settimeout(cho)
-    try:
-        s.connect((ip, cong))
-        return True, "bat tay duoc"
-    except OSError as exc:
-        return False, type(exc).__name__
-    finally:
-        s.close()
+# ⭐ MOT nguon cho ca cong cu nay lan vong bao tri (`bao_tri._kiem_cong_quan_tri`).
+#    Hai ban do se lech, va chung se lech o cho quyet dinh "co bi lo khong".
+from apps.vps.services.kiem_cong import (CONG_QUAN_TRI, CONG_RDP,
+                                         cong_mo as _cong_mo, luat_khop)
 
 
 def _doc_so_sach():
@@ -97,23 +76,6 @@ def _luat_chan_tren_gateway(ip_quan_tri: str) -> tuple[bool, str]:
     else:
         return False, "khong mo duoc CSDL"
     return luat_khop(ra, ip_quan_tri)
-
-
-def luat_khop(chain_input: str, ip_quan_tri: str) -> tuple[bool, str]:
-    """THUAN. Chain `input` co luat chan 22 dung dia chi quan tri hien tai khong.
-
-    Tach khoi phan doc SSH de do duoc bang test: cai dang hong o day khong phai
-    viec mo ket noi, ma la viec **so mot con so trong luat voi mot con so trong
-    so sach** — dung cho ma mot lan doi IP se lam sai trong im lang.
-    """
-    for dong in chain_input.splitlines():
-        d = dong.strip()
-        if "dport 22 drop" in d and "daddr" in d:
-            # `ip daddr != 51.79.166.36 tcp dport 22 drop ...`
-            if f"!= {ip_quan_tri}" in d:
-                return True, d
-            return False, f"luat co, nhung neu dia chi KHAC voi gateway hien tai: {d}"
-    return False, "KHONG co luat chan cong 22 nao trong chain input"
 
 
 def main(argv=None) -> int:
