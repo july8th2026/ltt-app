@@ -150,7 +150,25 @@ def can_gat_1_rut_gon(
 # ── Can gat 2: PHAN PHOI LAI (⛔ khong dung tieng) ───────────────────────────
 
 def can_gat_2_phan_phoi(khes: Sequence[Khe], *, tran_tang_toc: float) -> list[Khe]:
-    """Khe thieu cho **muon** khoang lang cua khe lien sau.
+    """🔴 **CAN GAT NAY DA CHET (25/09) — ⛔ KHONG goi o duong san pham.**
+
+    Do that (`bang_chung/d5_khoang_lang/`, VAD tren ba phim):
+
+        muon duoc giua hai khe: **13,28 s** tren **14/185** ranh gioi,
+        trung vi **0,0 s** — o ban ROSNG RAI NHAT (`pad_s=0`).
+
+    Va phep do tat dinh (`R4 §15.3`) doc lap cho cung ket luan: no dong
+    them **2 khe (1,1 %)** va con LAM TANG so khe phai dung toi giong.
+
+    ⭐ Ly do: `cat_doan` cat tai dau cau theo moc tu ⇒ moi khoang im roi
+       **VAO TRONG** mot khe. Lang co that (17,7 / 44,7 / 74,4 s) nhung
+       ⛔ khong nam **giua** cac khe ⇒ can gat 2 ⛔ khong voi toi duoc.
+
+    ⛔ Giu ham lai **kem phan quyet nay** thay vi xoa: mot lan sau doi cach
+       cat doan (de lai ho that giua cac khe) thi no song lai — va luc ay
+       phai **DO LAI**, ⛔ khong phai tin dong chu nay.
+
+    Khe thieu cho **muon** khoang lang cua khe lien sau.
 
     ⭐ Muon cach suy cua VideoLingo (`tol_dur = duration + tolerance`) nhung
        ⛔ KHONG muon `tolerance = 1.5 s`: ta lay **dung phan dang trong**, vi

@@ -1,0 +1,121 @@
+{
+ "pad_s_0.15_MAC_DINH_SAN_PHAM": {
+  "v1": {
+   "so_khe": 83,
+   "so_ranh": 82,
+   "cua_so_s": 263.4,
+   "tong_lang_s": 17.7,
+   "ti_le_lang": 0.067,
+   "muon_duoc_giua_hai_khe": {
+    "so_ranh_co": 1,
+    "tong_s": 0.18,
+    "trung_vi_s": 0.0,
+    "lon_nhat_s": 0.118
+   },
+   "vung_lang_cham_ranh_gioi": {
+    "so_vung": 4,
+    "tong_s": 4.4,
+    "lon_nhat_s": 1.83
+   },
+   "ho_ban_ghi_tong_s": 3.4
+  },
+  "v2": {
+   "so_khe": 74,
+   "so_ranh": 73,
+   "cua_so_s": 190.0,
+   "tong_lang_s": 44.7,
+   "ti_le_lang": 0.235,
+   "muon_duoc_giua_hai_khe": {
+    "so_ranh_co": 4,
+    "tong_s": 7.75,
+    "trung_vi_s": 0.0,
+    "lon_nhat_s": 2.982
+   },
+   "vung_lang_cham_ranh_gioi": {
+    "so_vung": 6,
+    "tong_s": 11.5,
+    "lon_nhat_s": 3.66
+   },
+   "ho_ban_ghi_tong_s": 8.5
+  },
+  "v3": {
+   "so_khe": 31,
+   "so_ranh": 30,
+   "cua_so_s": 105.1,
+   "tong_lang_s": 74.4,
+   "ti_le_lang": 0.709,
+   "muon_duoc_giua_hai_khe": {
+    "so_ranh_co": 3,
+    "tong_s": 3.72,
+    "trung_vi_s": 0.0,
+    "lon_nhat_s": 2.217
+   },
+   "vung_lang_cham_ranh_gioi": {
+    "so_vung": 7,
+    "tong_s": 48.1,
+    "lon_nhat_s": 11.19
+   },
+   "ho_ban_ghi_tong_s": 7.5
+  }
+ },
+ "pad_s_0_KHONG_NO": {
+  "v1": {
+   "so_khe": 83,
+   "so_ranh": 82,
+   "cua_so_s": 263.4,
+   "tong_lang_s": 24.1,
+   "ti_le_lang": 0.092,
+   "muon_duoc_giua_hai_khe": {
+    "so_ranh_co": 4,
+    "tong_s": 0.62,
+    "trung_vi_s": 0.0,
+    "lon_nhat_s": 0.22
+   },
+   "vung_lang_cham_ranh_gioi": {
+    "so_vung": 10,
+    "tong_s": 11.7,
+    "lon_nhat_s": 2.13
+   },
+   "ho_ban_ghi_tong_s": 3.4
+  },
+  "v2": {
+   "so_khe": 74,
+   "so_ranh": 73,
+   "cua_so_s": 190.0,
+   "tong_lang_s": 59.7,
+   "ti_le_lang": 0.314,
+   "muon_duoc_giua_hai_khe": {
+    "so_ranh_co": 6,
+    "tong_s": 8.37,
+    "trung_vi_s": 0.0,
+    "lon_nhat_s": 3.09
+   },
+   "vung_lang_cham_ranh_gioi": {
+    "so_vung": 28,
+    "tong_s": 38.5,
+    "lon_nhat_s": 3.96
+   },
+   "ho_ban_ghi_tong_s": 8.5
+  },
+  "v3": {
+   "so_khe": 31,
+   "so_ranh": 30,
+   "cua_so_s": 105.1,
+   "tong_lang_s": 80.6,
+   "ti_le_lang": 0.767,
+   "muon_duoc_giua_hai_khe": {
+    "so_ranh_co": 4,
+    "tong_s": 4.29,
+    "trung_vi_s": 0.0,
+    "lon_nhat_s": 2.217
+   },
+   "vung_lang_cham_ranh_gioi": {
+    "so_vung": 15,
+    "tong_s": 69.6,
+    "lon_nhat_s": 11.49
+   },
+   "ho_ban_ghi_tong_s": 7.5
+  }
+ },
+ "ghi_chu": "tong lang MUON DUOC giua hai khe (can duoi) = 11.7 s -> NHO, chay them ban pad_s=0 de khong ket oan"
+}

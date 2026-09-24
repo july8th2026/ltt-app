@@ -978,3 +978,82 @@ biên **3,2×** — **cùng sức tách, rẻ hơn, sớm hơn**.
 ⚠️ Cùng cách đọc với `N-35` (*cổng hỏi **điều gì**, và điều đó có phải điều **sản
 phẩm** cần không*) và `N-34` (*số này đo **cái gì** so với **cái gì***): ⭐ ba câu
 hỏi đều nhắm vào **phép đo**, ⛔ không nhắm vào **hệ thống**.
+
+---
+
+## 17. 🔴 Đo khoảng lặng: **cần gạt 2 CHẾT**, và ⛔ không nối `vad.py`
+
+> Bằng chứng: `bang_chung/d5_khoang_lang/{do_khoang_lang.py,ket_qua.json}`.
+> Dùng **đúng** `vad_speech_segments` của app phiên âm, tham số sản phẩm.
+
+### 17.1 ⚠️ Trước hết: một lỗi **của tôi**, và cách nó tự lộ
+
+Bản đầu cộng **cả vùng lặng chứa ranh giới** cho **mỗi** ranh giới ⇒ **cộng trùng**.
+Nó tự lộ bằng một điều **bất khả**:
+
+```
+v3: "lang tai ranh gioi" = 99,8 s     nhưng   CẢ cửa sổ chỉ có 74,4 s lặng
+99,8 > 74,4  ⇒ ⛔ không thể, trừ khi cộng trùng
+p90 = lớn nhất = 11,19 s  ⇒ nhiều ranh giới rơi vào CÙNG một vùng
+```
+
+⭐ Nếu tôi đọc thẳng `115,7 s` thì đã báo *"có nhiều lặng ⇒ cần gạt 2 sống"* — **ngược
+hẳn sự thật**. ⇒ Đã sửa: dedupe theo vùng, và đo **đúng phần nằm GIỮA** `ket_i` và
+`bat_{i+1}`. Kèm **bất biến** trong chính bộ đo: ⛔ không phần nào được vượt tổng lặng
+của cửa sổ.
+
+> 🔑 ⭐ Một con số **lớn hơn cái chứa nó** là loại sai duy nhất **tự tố cáo**. ⛔ Đừng bỏ
+> phép kiểm phạm vi chỉ vì nó "hiển nhiên".
+
+### 17.2 Số quyết định — mượn được **bao nhiêu** giữa hai khe
+
+| bản | mượn được | ranh giới có lặng | trung vị |
+|---|---|---|---|
+| `pad_s = 0,15` (mặc định sản phẩm, **cận dưới**) | **11,65 s** | **8 / 185** | **0,0 s** |
+| `pad_s = 0` (⛔ không nở, **rộng rãi nhất**) | **13,28 s** | **14 / 185** | **0,0 s** |
+
+*(tổng cửa sổ ba phim: 558,5 s)*
+
+⇒ 🔴 Ngay ở bản **rộng rãi nhất**: **13,3 giây** rải trên **14/185 = 7,6 %** ranh giới,
+**trung vị 0,0 s**. Cần gạt 2 phải bù **1,33×** trên **138** khe — tức **hàng chục giây
+rải đều**. ⇒ ⭐ **CẦN GẠT 2 CHẾT.** ⛔ Không nối `vad.py`, ⛔ không mở bề mặt công khai
+của app phiên âm.
+
+⭐ Và nó **khớp** phép đo tất định ở §15.3 (cần gạt 2 đóng thêm **2 khe**) — hai đường
+độc lập, cùng một kết luận.
+
+### 17.3 ⚠️ Lặng **có thật**, nhưng nằm SAI CHỖ
+
+| phim | tổng lặng trong cửa sổ | mượn được giữa hai khe |
+|---|---|---|
+| v1 | 17,7 s (7 %) | **0,18 s** |
+| v2 | 44,7 s (24 %) | **7,75 s** |
+| v3 | 74,4 s (**71 %**) | **3,72 s** |
+
+⇒ Lặng nằm **BÊN TRONG** khe, ⛔ không nằm **giữa** các khe. `cat_doan` cắt tại dấu câu
+theo mốc từ, nên mọi khoảng im rơi **vào trong** một khe nào đó. ⇒ Cần gạt 2 ⛔ **không
+với tới được** — kể cả khi ta nối `vad.py`.
+
+### 17.4 🔴 Và một điều phải nói ra về **chính `vad.py`**
+
+`v3` cho **71 %** cửa sổ lời thoại là "lặng" (bản `pad_s=0`: **77 %**), trong khi
+WhisperX tìm được **31 đoạn có mốc từ** ở đúng vùng đó. ⇒ ⚠️ Hai bên ⛔ không thể cùng
+đúng. `vad.py` là **VAD năng lượng** với ngưỡng `phân vị 20 + 12 dB`; v3 là clip game có
+nhạc nền và tiếng súng liên tục ⇒ nền dB cao ⇒ ngưỡng cao ⇒ **lời thoại bị chấm là lặng**.
+
+⭐ Đây là một lý do **thứ hai, độc lập** để ⛔ không nối `vad.py`: ⛔ **không** phải
+*"ta không cần nó"*, mà *"trên đúng loại nội dung của ta, nó ⛔ chưa đáng tin"*.
+⛔ Con số `74,4 s` của v3 ⇒ ⛔ **không dùng làm gì khác** cho tới khi có phép đối chứng.
+
+### 17.5 Hai ngả đã chốt trước — rơi vào ngả thứ hai
+
+```
+lặng nhiều  ⇒ cần gạt 2 sống lại, nối `vad.py` có căn cứ  ⛔ KHÔNG XẢY RA
+lặng ~0     ⇒ cần gạt 2 chết, ⛔ không nối gì            ✅ ĐÚNG NGẢ NÀY
+```
+
+⭐ Và đây là kết quả **tốt**: ta **tiết kiệm cả một mắt xích** (`vad.py` + bề mặt công
+khai của một app đang phục vụ khách), và ⛔ không phải bảo trì một cần gạt đóng **1,1 %**.
+
+⇒ **D5 còn HAI cần gạt**: **1 (rút gọn, chính — phải đóng 54,5 %)** và **3 (giãn/nén, phụ)**.
+`can_gat_2_phan_phoi` giữ trong mã kèm phán quyết này, ⛔ **không gọi** ở đường sản phẩm.
