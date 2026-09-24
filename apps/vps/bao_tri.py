@@ -789,6 +789,10 @@ def _doi_chieu_dinh_ky(db, client=None) -> int:
     dung vong bao tri, no la ly do de co nguoi doc.
     """
     global _moc_doi_chieu
+    # Kiểm mốc TRƯỚC khi mở kết nối: phép soi chạy mỗi ngày, nên 23 giờ còn lại
+    # không được tốn một lượt đăng nhập Proxmox nào.
+    if time.monotonic() < _moc_doi_chieu:
+        return 0
     if client is None:
         # ⚠️ `mot_luot` đặt `client = None` một cách CỐ Ý (máy pinned không đi
         #    qua endpoint compute global), nên nhận client từ người gọi nghĩa là
@@ -797,8 +801,6 @@ def _doi_chieu_dinh_ky(db, client=None) -> int:
         #    đang chạy máy khách, và `quet` vốn hỏi một cụm.
         client = _compute_cua_profile_mac_dinh(db)
     if client is None:
-        return 0
-    if time.monotonic() < _moc_doi_chieu:
         return 0
     # Dat moc TRUOC khi chay: quet nem thi luot sau van cho du mot ngay,
     # khong quay lai ngay va nem lai moi gio.
