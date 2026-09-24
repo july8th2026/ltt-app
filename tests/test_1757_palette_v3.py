@@ -79,10 +79,27 @@ def test_moi_node_mang_du_thong_tin_the_palette(api):
 
 
 def test_node_loi_chua_publish_duoc_thi_bao_ra_chu_khong_giau(api):
+    """⭐ Nâng 24/09: nhóm TRIGGERS nay có thêm trigger POLLING của piece.
+
+    Phase gốc 8 đưa `trigger.piece.google_sheets.new_spreadsheet` lên palette,
+    và nó nằm ở **TRIGGERS** chứ không ở CONNECTORS — đúng chủ đích: một
+    trigger là **điểm bắt đầu** đồ thị, đặt nó vào CONNECTORS thì người soạn
+    tìm mọi trigger khác ở một chỗ và không thấy nó ở đó.
+
+    ⛔ Hai chỗ bản cũ mong manh, sửa cả hai:
+      - chốt **danh sách theo thứ tự** ⇒ vỡ khi thêm một mục;
+      - đọc `trig[0]` ⇒ khẳng định về `publish_duoc` **trượt sang mục khác**
+        khi thứ tự đổi, mà vẫn XANH. Nay chốt **theo tên**, không theo chỉ số.
+    """
     body = api.get("/agent/api/v3/palette").json()
     trig = next(n for n in body["nhom"] if n["category"] == "TRIGGERS")["nut"]
-    assert [x["type"] for x in trig] == ["trigger.manual"]
-    assert trig[0]["publish_duoc"] is False
+    theo_ten = {x["type"]: x for x in trig}
+    assert set(theo_ten) == {"trigger.manual",
+                             "trigger.piece.google_sheets.new_spreadsheet"}
+    # Điều bài này thật sự chốt: node CHƯA publish được thì palette **khai ra**,
+    # ⛔ không giấu đi. Hỏi từng cái theo TÊN.
+    for ten, x in theo_ten.items():
+        assert x["publish_duoc"] is False, ten
 
 
 def test_khong_lo_job_type_noi_bo_cua_provider(api):
