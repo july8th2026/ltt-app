@@ -146,11 +146,11 @@ CHUOI: tuple[GiaiDoan, ...] = (
     GiaiDoan(MEDIA_PREPARE, "asv_media", "asv_media.media_prepare",
              tien_quyet=(
                  "run.source_key tro toi mot tep con doc duoc trong kho "
-                 "(giai_doan_media.py:74)",
+                 "(giai_doan_media.py:66)",
                  "tep nguon qua nhap_media.kiem_chinh_sach — chay TRUOC khi ton "
-                 "mot giay ffmpeg nao (giai_doan_media.py:87)",
+                 "mot giay ffmpeg nao (giai_doan_media.py:83)",
                  "ffmpeg va ffprobe co tren may worker; phien ban cua chung vao "
-                 "van tay (giai_doan_media.py:90)"),
+                 "van tay (giai_doan_media.py:86)"),
              ma_loi=RONG_TUONG_MINH,
              do=("tep_ra_giai_ma_duoc", "thoi_luong_khop_nguon")),
     # 🔴 `tai_nguyen` o day KHONG phai mot chi tiet toi uu — no la mot chot tai.
@@ -174,17 +174,17 @@ CHUOI: tuple[GiaiDoan, ...] = (
              tien_quyet=(
                  "run.source_key con doc duoc — buoc nay rut mot ban 44,1 kHz "
                  "stereo tu TEP GOC, khong dung ban 16 kHz cua media_prepare "
-                 "(giai_doan_am_thanh.py:36,64)",
+                 "(giai_doan_am_thanh.py:35)",
                  # 🔴 TIEN DE IM LANG, va la mat con lai cua cai da lam chet luot A.
                  "nguon CO TIENG NOI thi `f0_trung_vi` moi khac 0; `0.0` nghia la "
                  "KHONG DO DUOC, **khong** phai 'khong co giong' — va "
                  "content_process chet o dung con so nay "
-                 "(giai_doan_am_thanh.py:126)",
+                 "(giai_doan_am_thanh.py:129)",
                  "card do NEN TANG cap qua ctx.gpu_uuid; khong co thi demucs TU "
-                 "CHOI chu khong tut xuong CPU im lang (giai_doan_am_thanh.py:52)",
+                 "CHOI chu khong tut xuong CPU im lang (giai_doan_am_thanh.py:51)",
                  "han demucs <= ngan sach con lai cua job (lat_cat); nguoc lai job "
                  "bi giet truoc va demucs mo coi giu GPU "
-                 "(giai_doan_am_thanh.py:73)"),
+                 "(giai_doan_am_thanh.py:74)"),
              ma_loi=RONG_TUONG_MINH,
              do=("f0_trung_vi_khac_0_tren_phim_co_tieng",
                  "demucs_chay_tren_card")),
@@ -217,7 +217,7 @@ CHUOI: tuple[GiaiDoan, ...] = (
              tai_nguyen="tach_nguon_cuc_bo", tai_nguyen_suat=1,
              tien_quyet=(
                  "media_prepare cua CUNG lan chay da dang mot .wav 16 kHz "
-                 "(giai_doan_chep_loi.py:86)",
+                 "(giai_doan_chep_loi.py:61,74)",
                  # 🔴 TIEN DE IM LANG — va no la N-08 tren duong CHAY LAI.
                  "`_khoa_tieng_asr` lay .wav DAU TIEN trong outputs cua "
                  "media_prepare: chay lai media_prepare ma khong vo hieu buoc nay "
@@ -228,10 +228,10 @@ CHUOI: tuple[GiaiDoan, ...] = (
                  "hardsub duong asr KHONG chay (nguon_loi.dinh_tuyen)",
                  "che do khac `asr` doi nguon loi that su co (phu de nhung / "
                  "hardsub); nguoc lai nl.KhongCoNguon "
-                 "(giai_doan_chep_loi.py:161)",
+                 "(giai_doan_chep_loi.py:136)",
                  "cap ngon ngu hop le: nguon thuoc (zh,en,vi) hoac `auto`, dich "
                  "thuoc (vi,en) — chot NGAY SAU asr, truoc moi buoc tra tien "
-                 "(ngon_ngu.py:37,38 · giai_doan_chep_loi.py:172)"),
+                 "(ngon_ngu.py:37,38 · giai_doan_chep_loi.py:155)"),
              ma_loi=RONG_TUONG_MINH,
              do=("wer_vs_hardsub", "cer_vs_hardsub")),
     # 🔑 CONTENT chay o lan `api`, nen no thuoc app KHACH — app duy nhat khai
@@ -259,21 +259,21 @@ CHUOI: tuple[GiaiDoan, ...] = (
              sau=(TRANSCRIBE,), tai_nguyen="llm_remote", tai_nguyen_suat=1,
              tien_quyet=(
                  "preset doc duoc tu cai_dat — hai nhanh (giu hinh / cat) re o "
-                 "day (giai_doan_ban_bien_tap.py:43,233)",
+                 "day (giai_doan_ban_bien_tap.py:233)",
                  "preset giu hinh doi thoi luong nguon duong "
-                 "(giai_doan_ban_bien_tap.py:53)",
+                 "(giai_doan_ban_bien_tap.py:55)",
                  "co nguon soi duoc hoac run.source_key: media_prepare KHONG dang "
-                 "luong hinh nao (giai_doan_ban_bien_tap.py:502)",
+                 "luong hinh nao (giai_doan_ban_bien_tap.py:523)",
                  # 🔴 TIEN DE IM LANG: khong nem, tra `{}` roi di tiep.
                  "ban chep loi phai co TRUOC khi doc canh: thieu thi phep doc thoai "
                  "tra `{}` LANG LE, va `co_thoai` di vao loi nhac cua model voi gia "
                  "tri sai — trong khi chinh `co_thoai` la thu lam bang chung hinh "
-                 "co nghia (giai_doan_ban_bien_tap.py:79,374,534)",
+                 "co nghia (giai_doan_ban_bien_tap.py:374)",
                  "smart_localize doi do phu bang chung canh = 1,0 "
-                 "(PHU_BANG_CHUNG_TOI_THIEU, giai_doan_ban_bien_tap.py:219)",
+                 "(PHU_BANG_CHUNG_TOI_THIEU, giai_doan_ban_bien_tap.py:219,236)",
                  "canh bi vong sua phai duoc hoi LAI that: thieu `muoi=` thi cache "
                  "tra ve dung phan quyet da bi tu choi "
-                 "(giai_doan_ban_bien_tap.py:301)"),
+                 "(giai_doan_ban_bien_tap.py:321)"),
              ma_loi=RONG_TUONG_MINH,
              do=("so_canh_vs_do_truc_tiep", "do_phu_bang_chung_canh")),
     GiaiDoan(CONTENT_PROCESS, "auto_scan_video",
@@ -281,24 +281,24 @@ CHUOI: tuple[GiaiDoan, ...] = (
              tai_nguyen="llm_remote", tai_nguyen_suat=1,
              tien_quyet=(
                  "ban ghi chinh tac cua transcribe da co va qua ban_ghi.kiem "
-                 "(giai_doan_noi_dung.py:87)",
+                 "(giai_doan_noi_dung.py:66,74)",
                  "ban bien tap cua edit_plan da co — chua co thi chua biet giu "
-                 "phan nao (giai_doan_noi_dung.py:99)",
+                 "phan nao (giai_doan_noi_dung.py:93)",
                  "ban bien tap con giu lai it nhat MOT doan thoai "
-                 "(giai_doan_noi_dung.py:186)",
+                 "(giai_doan_noi_dung.py:187)",
                  # 🔴🔴 DAY LA TIEN DE DA LAM CHET LUOT A 24/09 — truoc do
                  #      khong ai viet no ra o bat cu dau.
                  "che do tu khop giong (AUTO_MATCH) doi nguon CO TIENG NOI: "
                  "audio_prepare phai do duoc `f0_trung_vi` khac 0 de "
                  "cao_do.gioi_tu_f0 suy ra `gioi`; F0 = 0 hay ngoai dai "
                  "[F0_THAP,F0_CAO] ⇒ `gioi` rong ⇒ dac_diem.co_du_de_khop sai ⇒ "
-                 "auto_match_thieu_can_cu (giai_doan_noi_dung.py:117 · "
-                 "ho_so_noi_dung.py:180,202 · cao_do.py:96)",
+                 "auto_match_thieu_can_cu (giai_doan_noi_dung.py:128 · "
+                 "ho_so_noi_dung.py:180 · cao_do.py:96 · cao_do.py:96)",
                  "ngon ngu dich thuoc (vi,en) — da chot o transcribe, doc lai o "
                  "day qua cai_dat (ngon_ngu.py:38)",
                  "diem chot mang van tay: doi giong hay doi ban bien tap thi cac "
                  "doan cu KHONG con duoc tinh la da lam "
-                 "(giai_doan_noi_dung.py:171)"),
+                 "(giai_doan_noi_dung.py:179)"),
              ma_loi=(rang_giong.MA_KHONG_KHOP,
                      rang_giong.MA_KHO_CHUNG_THIEU_GIOI,
                      rang_giong.MA_THIEU_CAN_CU),
@@ -328,74 +328,74 @@ CHUOI: tuple[GiaiDoan, ...] = (
                  "may tao tieng (LTTStudioVoice, loopback :8120) san sang — "
                  "giong_noi.san_sang() (giai_doan_giong.py:71)",
                  "ban long tieng cua content_process da co va qua van_ban.kiem "
-                 "(giai_doan_giong.py:58,65)",
+                 "(giai_doan_giong.py:62,65)",
                  "ban long tieng DA GHI `ma_giong`; ⛔ khong rot ve "
-                 "settings.giong_id (giai_doan_giong.py:100)",
+                 "settings.giong_id (giai_doan_giong.py:104)",
                  "ngon ngu dich phai KHOP lan cua giong, neu khong "
-                 "voice_language_mismatch (giai_doan_giong.py:123)",
+                 "voice_language_mismatch (giai_doan_giong.py:127)",
                  # 🔴 TIEN DE IM LANG: hong bang KeyError, khong phai loi co cau.
                  "moi muc phai co `ma` va `chu`: thieu thi KeyError chu khong phai "
-                 "mot loi co cau khach doc duoc (giai_doan_giong.py:184,196,198)",
+                 "mot loi co cau khach doc duoc (giai_doan_giong.py:184,196)",
                  "moi muc phai co khe thoi gian (nan_cho_vua.khe_cua) de bac thang "
                  "nan chay duoc (giai_doan_giong.py:178)",
                  "doan bi vong sua phai DOI van tay, neu khong 'doc lai' tra ve "
-                 "dung tep da bi tu choi (giai_doan_giong.py:140,418)"),
+                 "dung tep da bi tu choi (giai_doan_giong.py:418)"),
              ma_loi=(ma_loi.MA_LOI_LECH_LAN, ma_loi.MA_LOI_LAN_KHONG_RO),
              do=("wer_luot_cuoi", "pesq")),
     GiaiDoan(TIMING_ALIGN, "asv_media", "asv_media.timing_align",
              sau=(VOICE_SYNTHESIS, AUDIO_PREPARE),
              tien_quyet=(
                  "co ban dich cua content_process va ban ke tieng cua "
-                 "voice_synthesis (giai_doan_thoi_gian.py:54,60)",
+                 "voice_synthesis (giai_doan_thoi_gian.py:56,62)",
                  "biet thoi luong video nguon (> 0) tu ho so soi cua media_prepare "
-                 "(giai_doan_thoi_gian.py:88)",
+                 "(giai_doan_thoi_gian.py:93)",
                  "preset CAT doi ban bien tap cua edit_plan de dung ban do thoi "
                  "gian; preset giu hinh thi ban do dong nhat "
-                 "(giai_doan_thoi_gian.py:145,156)",
+                 "(giai_doan_thoi_gian.py:160)",
                  "co ban nen .wav cua audio_prepare de tron ban phoi "
-                 "(giai_doan_thoi_gian.py:178)",
+                 "(giai_doan_thoi_gian.py:180)",
                  "moi doan trong ke hoach phai co tep tieng tuong ung trong ban ke "
-                 "(giai_doan_thoi_gian.py:216)"),
+                 "(giai_doan_thoi_gian.py:215)"),
              ma_loi=RONG_TUONG_MINH,
              do=("ti_le_cau_vua_khe", "troi_don_cuoi")),
     GiaiDoan(COMPOSE, "asv_media", "asv_media.compose", sau=(TIMING_ALIGN,),
              tien_quyet=(
                  "co ke hoach thoi gian, ban ke tieng, nhac nen .wav va "
-                 "run.source_key (giai_doan_ban_dung.py:170-180)",
+                 "run.source_key (giai_doan_ban_dung.py:172,175,178,180)",
                  "co ban phoi master.wav do timing_align dung "
                  "(giai_doan_ban_dung.py:60)",
                  # 🔴 TIEN DE IM LANG: tra (0,0) roi tinh logo/crop tren khung 0.
                  "ho so soi cua media_prepare phai co rong/cao/xoay: thieu hay doc "
                  "khong duoc thi `_co_khung` tra `(0, 0)` LANG LE, va logo/vung che "
-                 "duoc tinh tren mot khung 0x0 (giai_doan_ban_dung.py:84-98)",
+                 "duoc tinh tren mot khung 0x0 (giai_doan_ban_dung.py:76)",
                  "preset anh xa duoc ve che do render (che_do_render.che_do_cho) "
                  "(giai_doan_ban_dung.py:202)",
                  "khach xin phu de thi phai co ban dich "
-                 "(giai_doan_ban_dung.py:153)"),
+                 "(giai_doan_ban_dung.py:157)"),
              ma_loi=RONG_TUONG_MINH,
              do=("lufs_tich_hop", "dinh_that_dbtp")),
     GiaiDoan(RENDER, "asv_media", "asv_media.render", sau=(COMPOSE,),
              tien_quyet=(
                  "co ban dung .json cua compose va no qua ban_dung.kiem "
-                 "(giai_doan_ket_xuat.py:84,111)",
+                 "(giai_doan_ket_xuat.py:86,111)",
                  "moi khoa trong ban dung tro toi artifact CON SONG cua chu so huu "
-                 "(giai_doan_ket_xuat.py:117)",
+                 "(giai_doan_ket_xuat.py:119)",
                  "ban dung khai ban phoi master (`tieng.master.khoa`) "
-                 "(giai_doan_ket_xuat.py:143)",
+                 "(giai_doan_ket_xuat.py:145)",
                  # 🔴 TIEN DE IM LANG: khong loi nao bao.
                  "khung ra phai dung: sai khung thi phu de .ass bi dat sai cho ma "
-                 "KHONG loi nao bao (giai_doan_ket_xuat.py:177-188)",
+                 "KHONG loi nao bao (giai_doan_ket_xuat.py:187)",
                  "nvenc chi duoc KHAI chu khong duoc kiem — thieu card thi ha ve "
                  "CPU, nen nhanh nvenc CHUA duoc do bao gio "
-                 "(giai_doan_ket_xuat.py:105,191)"),
+                 "(giai_doan_ket_xuat.py:191)"),
              ma_loi=RONG_TUONG_MINH,
              do=("vmaf",)),
     GiaiDoan(QC, "asv_media", "asv_media.qc", sau=(RENDER,),
              tien_quyet=(
                  "co ban ket xuat mp4 cua render + du tai lieu thuong nguon (ke "
-                 "hoach, ban dung) (giai_doan_qc.py:72-79)",
+                 "hoach, ban dung) (giai_doan_qc.py:74,79)",
                  "ban ra VA ban nguon phai giai ma duoc — mot tep hong nem tho o "
-                 "day, khong suy giam (giai_doan_qc.py:95-99)",
+                 "day, khong suy giam (giai_doan_qc.py:98)",
                  # 🔴 TIEN DE IM LANG: khac han T3/T13/T18 von suy giam.
                  "do duoc am luong bang loudnorm: khong do duoc thi CA giai doan "
                  "hong (khac T3/T13/T18 von ha xuong khong_kha_dung) "
@@ -403,9 +403,9 @@ CHUOI: tuple[GiaiDoan, ...] = (
                  "ban dung khai cach render; thieu thi MAC DINH ve SAO_CHEP "
                  "(giai_doan_qc.py:113)",
                  "ffmpeg co bo loc libvmaf + mo hinh, neu khong T18 thanh "
-                 "khong_kha_dung (giai_doan_qc.py:167,245)",
+                 "khong_kha_dung (giai_doan_qc.py:245)",
                  "giai doan nay KHONG tu lam hong lan chay: nguoi goi doc "
-                 "`muc_hong` va nem QcChan sau khi promote (giai_doan_qc.py:212)"),
+                 "`muc_hong` va nem QcChan sau khi promote (giai_doan_qc.py:214)"),
              ma_loi=RONG_TUONG_MINH,
              do=("t1_den_t18",)),
     # 🔑 `asv_gpu`: nap model len card (whisper, SQUIM, MetricX), tung bo do mot
@@ -416,10 +416,10 @@ CHUOI: tuple[GiaiDoan, ...] = (
              tai_nguyen="tach_nguon_cuc_bo", tai_nguyen_suat=1,
              tien_quyet=(
                  "co ban ke doan tieng .json cua voice_synthesis "
-                 "(giai_doan_qc_do_luong.py:96)",
+                 "(giai_doan_qc_do_luong.py:92)",
                  "moi doan phai co tep TTS con doc duoc, va duoc dua qua DUNG "
                  "`he_so_co_gian` ma ban phoi da ap "
-                 "(giai_doan_qc_do_luong.py:9-13,100)",
+                 "(giai_doan_qc_do_luong.py:9)",
                  "bo do co venv + model; thieu thi `khong_kha_dung` trong bao cao "
                  "va giai doan VAN xong, ⛔ khong nem "
                  "(giai_doan_qc_do_luong.py:31)",
@@ -428,7 +428,7 @@ CHUOI: tuple[GiaiDoan, ...] = (
                  # ⚠️ Da do va KHONG dung — mot tien de bi tuong la da co.
                  "SQUIM KHONG thay khoang lang chen giua cau (SI-SDR 15,96 so voi "
                  "16,58 cua ban sach) ⇒ ⛔ dung doc bang chung nay thanh 'da co "
-                 "cong gac cho dut quang' (giai_doan_qc_do_luong.py:70)"),
+                 "cong gac cho dut quang' (giai_doan_qc_do_luong.py:71)"),
              ma_loi=RONG_TUONG_MINH,
              do=("wer_cer_giong", "pesq", "si_sdr")),
     # 🔑 `auto_scan_video` chu khong `asv_media`: duong nay goi model, tuc
@@ -441,17 +441,17 @@ CHUOI: tuple[GiaiDoan, ...] = (
                  "cong `LTT_ASV_QC_AI` phai bang '1'; tat thi giai doan tra ve som "
                  "nhung VAN `succeeded` — bo qua han mot giai doan se lam "
                  "`len(da_xong)` khong bao gio bang `len(CHUOI)` "
-                 "(giai_doan_qc_ai.py:72,82,136)",
-                 "co ban dich cua content_process (giai_doan_qc_ai.py:147)",
+                 "(giai_doan_qc_ai.py:12,72)",
+                 "co ban dich cua content_process (giai_doan_qc_ai.py:149)",
                  # 🔴 TIEN DE IM LANG: bi bo, khong bi bao.
                  "moi muc phai co DU `ma` + goc + `chu`: thieu mot trong ba thi muc "
                  "do bi BO LANG LE khoi phep soat (giai_doan_qc_ai.py:97)",
                  # 🔴 TIEN DE IM LANG: phan quyet co ma khong thanh viec.
                  "ban bien tap cua edit_plan phai co de phan quyet SINH duoc viec "
                  "sua; thieu thi phan quyet van duoc ghi nhung KHONG thanh viec "
-                 "(giai_doan_qc_ai.py:408-426)",
+                 "(giai_doan_qc_ai.py:414)",
                  "rut du hai khung moi cho noi, it hon thi `hong` chu khong phai "
-                 "mot phan quyet (giai_doan_qc_ai.py:467)",
+                 "mot phan quyet (giai_doan_qc_ai.py:200)",
                  "lop hinh chi TU VAN, khong sinh viec sua "
                  "(sua_chua.QC_HINH_LA_TU_VAN, giai_doan_qc_ai.py:305)"),
              ma_loi=RONG_TUONG_MINH,

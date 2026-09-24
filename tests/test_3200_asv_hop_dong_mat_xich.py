@@ -162,3 +162,34 @@ def test_CHI_HAI_mat_xich_co_ma_on_dinh__ghi_lai_HIEN_TRANG():
     """
     co_ma = sorted(g.ten for g in P.CHUOI if tuple(g.ma_loi) != RONG_TUONG_MINH)
     assert co_ma == sorted([P.CONTENT_PROCESS, P.VOICE_SYNTHESIS]), co_ma
+
+
+def test_moi_THAM_CHIEU_trong_tien_quyet_tro_toi_mot_DONG_CO_THAT():
+    """⛔ Mot `tep.py:123` tro sai la mot loi nho ma te: no **trong nhu** da duoc
+    doi chieu, va nguoi doc sau se tin no.
+
+    🔴 Da xay ra that trong chinh luot nay: ban khai dau tien lay so dong tu ban
+       Read (co offset docstring) chu khong tu `grep`, va **9 tham chieu tro lech
+       5-20 dong** — mot cai tro vao `thu_muc = Path(tam)` trong khi no dang noi
+       ve `if not run.source_key`.
+
+    ⚠️ Bai nay chi chot dong CO TON TAI, ⛔ khong chot no dung NGHIA. No cat duoc
+       loai lech re nhat (tep bi rut ngan, tham chieu vuot cuoi tep), khong hon.
+    """
+    import pathlib
+    import re
+
+    goc = pathlib.Path(P.__file__).parent
+    hong: list[str] = []
+    for g in P.CHUOI:
+        for cau in g.tien_quyet:
+            for tep, so in re.findall(r"([a-z0-9_]+\.py):([\d,]+)", cau):
+                duong = goc / tep
+                if not duong.is_file():
+                    hong.append(f"{g.ten}: khong co tep {tep}")
+                    continue
+                tong = len(duong.read_text(encoding="utf-8").splitlines())
+                for n in (int(x) for x in so.split(",") if x):
+                    if not 1 <= n <= tong:
+                        hong.append(f"{g.ten}: {tep}:{n} ngoai tep ({tong} dong)")
+    assert hong == [], hong
