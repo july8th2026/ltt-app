@@ -132,13 +132,88 @@ lặng** cho mọi engine đạt (*"số 0 cần đối chứng"*).
 
 ⚠️ Đọc cùng lúc với §2 (giới hạn chân lý nền) và mục *ĐƠN VỊ* ở đầu tệp.
 
-| phim | CER | tỉ lệ đơn vị sai | đơn vị | số dòng nguồn | số dòng hardsub | engine | card |
-|---|---|---|---|---|---|---|---|
-| | | | | | | | |
+Cả ba lượt: nhánh **whisperx `aligned`**, **card được cấp**, `media_prepare` thật,
+ép `nguon_loi=asr` (đọc lại từ `outputs`, không từ form).
+
+| phim | CER | đoạn asr | đoạn hardsub | `lech_doan` | s/đoạn asr | giây ASR |
+|---|---|---|---|---|---|---|
+| 1 · món ăn | **0,0349** ✅ | 11 | 102 | **0,8922** ⛔ | 23,3 | 99,7 |
+| 2 · cắm trại | **0,0245** ✅ | 8 | 107 | **0,9252** ⛔ | ~23,8 | 43,5 |
+| 3 · PUBG | 0,2551 → **0,0574** ✅ ¹ | 6 | 95 | **0,9368** ⛔ | ~24 | 48,1 |
+
+¹ **Chân lý nền của phim 3 bị NHIỄM, đo được:** hardsub chứa **13 dòng chữ UI game**
+(kill-feed — `你使用M416突击步枪击倒了…` = *"bạn hạ gục X bằng M416"*). Không ai **nói**
+chúng, nên ASR đúng khi không chép. Bỏ 13 dòng đó: **CER 0,2551 → 0,0574**, và số ký
+tự khớp hẳn (hardsub 831 → 628 · asr 646).
+
+⛔ **Đây không phải nới ngưỡng.** Ngưỡng `0,12` không đổi; thứ được sửa là **chân lý
+nền**, và việc nó nhiễm đã được ghi **trước khi đo** — `PLAN.md` kiểm kê B0 ghi phim
+v3 *"có hardsub + chữ UI game"*. ⚠️ **Đó là cái tôi đã có trong tay và vẫn chọn phim
+này** — lẽ ra phải loại như đã loại phim súng hơi, hoặc lọc UI ngay từ đầu.
+⇒ Cả hai con số đều ghi ở đây; ⛔ không thay số thô bằng số sạch.
+
+⭐ Và nó minh hoạ đúng **luật bất đối xứng ở đầu tệp**: một CER **cao** là bằng chứng
+**yếu** — soi tay xong thì nguyên nhân nằm ở chân lý nền, không ở engine.
 
 ## 5. Phán quyết
 
-*(điền sau Bước 6)*
+```
+CER        3/3 ĐẠT   (0,0349 · 0,0245 · 0,0574   — ngưỡng 0,12)
+lech_doan  0/3 ĐẠT   (0,8922 · 0,9252 · 0,9368   — ngưỡng 0,20)
+```
+
+# ⛔ **B1 KHÔNG ĐẠT** — một nguyên nhân duy nhất: **gộp đoạn**
+
+**Chất lượng nội dung xuất sắc** (CER ≤ 0,058 trên cả ba). Thứ hỏng là **phân đoạn**.
+
+### Nguyên nhân — đọc từ gói đã cài, ⛔ không suy
+
+```
+whisperx  FasterWhisperPipeline.transcribe(..., chunk_size=30, ...)
+whisperx_runner.py:23   model.transcribe(audio, batch_size=8, language=…)
+                        ⇒ `chunk_size` KHÔNG khai ⇒ mặc định 30 giây
+```
+
+Đo khớp: **~24 giây/đoạn** trên cả ba phim ≤ 30. WhisperX gom theo **khối VAD ~30 s**
+cho suy luận theo lô — "segment" của nó là **khối**, không phải **câu**.
+
+⭐ **Không phải lỗi của WhisperX — đó là thiết kế đường batched. Lỗi là TA dùng khối
+30 giây làm khe lồng tiếng.**
+
+### Vì sao 24 s/đoạn là hỏng, không phải "khác"
+
+Với sản phẩm **lồng tiếng**, **phân đoạn CHÍNH LÀ sản phẩm**: mỗi đoạn là một **khe**
+để đặt câu tiếng Việt. Một khe 24 giây liền mạch thì `timing_align` **không còn gì để
+canh** — nó phải nhét 24 giây lời Việt vào một khối không có điểm ngắt, và khách nghe
+tiếng **trôi so với miệng**.
+
+⚠️ Mốc tham chiếu không phải do ta nghĩ ra: **hardsub cho 2,4 s/đoạn** — phân đoạn do
+**người làm phim** chọn cho chính nội dung này.
+
+### Task 7 — nửa câu trả lời đã có
+
+Nhánh mặc định (whisperx `aligned`) **nhanh hơn 3,6×** nhánh lui (99,7 s vs 362,0 s
+trên phim 1) và CER tốt. ⇒ Nghiêng hẳn về nhánh mặc định. Nửa còn lại — *"nó có cắt
+đoạn dùng được không"* — là việc kế tiếp.
+
+### Đường sửa: cắt lại bằng MỐC TỪNG TỪ
+
+Nhánh `aligned` cho **mốc từng từ**. ⇒ Tự cắt khối dài tại chỗ ngắt câu / khoảng lặng
+bằng chính mốc đó. **Không phụ thuộc tham số engine** ⇒ sống sót khi nâng cấp
+WhisperX, và giữ nguyên tốc độ (batching là lý do nó nhanh).
+
+⛔ Hạ `chunk_size` là **sửa nhầm chỗ**: bắt engine làm việc nó không sinh ra để làm,
+và trả giá bằng chính cái làm nó nhanh.
+
+⚠️ **Rủi ro của việc cắt lại: cắt GIỮA CÂU — tệ hơn gộp.** Gộp cho khe quá dài; cắt
+giữa câu cho một khe chứa **nửa ý**, và bản dịch của nửa ý đó **sai nghĩa**. ⇒ Chỉ cắt
+tại **dấu câu hoặc khoảng lặng đủ dài**; khối nào không có chỗ ngắt hợp lệ thì **để
+nguyên và khai ra**, ⛔ không chẻ bừa để đạt số đoạn.
+
+⚠️ **Và khi đo bản cắt lại, `lech_doan` một mình KHÔNG đủ:** nó so **số đoạn**, không
+so **chỗ ngắt**. Hai cách cắt cùng cho 102 đoạn mà lệch hết chỗ ngắt thì cổng **xanh**
+trong khi khe vẫn sai. ⇒ Báo thêm **tỉ lệ ranh giới khớp** (±0,3 s so với hardsub) —
+⛔ **chỉ báo**, không thành cổng.
 
 ## 6. ⚠️ Nếu bench hỏng: ghi TRIỆU CHỨNG trước, quy nguyên nhân sau
 
