@@ -3,6 +3,94 @@
 > Ngày 25/09/2026 · làn `phien/timeline` · **điều tra + đối chiếu**, ⛔ không sửa mã.
 > Mọi khẳng định kèm tệp + số dòng hoặc SHA. Câu không nguồn ⛔ không vào tệp này.
 
+---
+
+# 🔴 ĐÍNH CHÍNH 25/09 (cùng ngày, sau khi soi ĐĨA chứ không chỉ soi `main`)
+
+> ⛔ **§3.1 dưới đây SAI.** Nó đúng cho `main`, và `main` ⛔ **không phải** cây đã
+> sinh ra con số 0,903/0,909. Đọc mục này trước, rồi mới đọc tiếp.
+
+**ASV CÓ một bộ phân đoạn tự viết** — `apps/auto_scan_video/cat_doan.py`, **323 dòng**,
+commit **`de3a1d4c`** (24/09): *"fix(ASV N-17 lan 2)+feat(B1): … va CAT LAI doan theo CAU"*.
+⛔ Nó **không có trên `main`**; nó sống trên `phien/asvf-nghiem-thu-v2` và `phien/gop-asv`
+(`git branch --contains de3a1d4c`). ⇒ ⭐ **Nghi vấn của chủ dự án ĐÚNG.** Tôi sai vì đọc
+`main` rồi tưởng đã đọc thứ được đo — đúng bẫy *"đọc thứ đại diện thay vì đọc thứ thật"*.
+
+Bằng chứng đo được, `bang_chung/b1_chep_loi_moi/v2.json` khoá `cat_lai`:
+
+```
+so_doan_truoc: 8   ->   so_doan_sau: 74      khe_toi_da_s 7,0 · khe_toi_thieu_s 0,8333
+so_doan_qua_dai: 0 · so_doan_khong_cho_ngat: 0 · so_doan_khong_co_moc_tu: 0
+nguon_luat: whisperX PR #1466 (CJKSentenceSplitter) · Netflix TTSG 215758617 + 215986007
+```
+
+### Vì sao nó tồn tại — ⭐ và đây là một lý do RẤT mạnh
+
+`cat_doan.py:9-27` + thân commit `de3a1d4c` §2, đo trên gói đã cài (whisperx 3.8.6,
+`D:\LTTWhisperX`): nhánh `aligned` trả **~24 giây một đoạn** trên cả ba phim Hán, trong
+khi hardsub của chính phim ấy cho **2,4 giây**.
+
+⛔ **Không phải `chunk_size=30`.** WhisperX **đã** chia khối VAD thành câu trong `align()`
+bằng **NLTK Punkt**, nhưng `whisperx/utils.py:130-150 PUNKT_LANGUAGES` ⛔ **không có `zh`**,
+và `alignment.py:190` rơi về `'english'`. Đo thật:
+
+```
+văn Hán 44 ký tự, 3 câu ngắt bởi 。   ->  Punkt en cho  1  span
+văn Anh 3 câu                         ->  Punkt en cho  3  span
+```
+
+⇒ ⭐ Hạ `chunk_size` ⛔ **không chữa được**, và mất 3,6× tốc độ đường batched.
+
+### 🔴 Hệ quả ĐỔI CHIỀU câu 6: app phiên âm (A) mắc **ĐÚNG cùng một bệnh**
+
+`apps/transcript/services/engine/segment/constants.py:14`:
+
+```python
+SENT_SPLIT_RE = re.compile(r"(?<=[\.\!\?…。！？])\s+")
+```
+
+⭐ Lớp ký tự **có** `。！？` — trông như đã lo cho tiếng Hán. Nhưng nó đòi **`\s+` ngay
+sau**, mà văn Hán ⛔ không có dấu cách. Chạy thật (⛔ không suy đoán):
+
+| văn | `SENT_SPLIT_RE.split()` |
+|---|---|
+| 3 câu Hán ngắt bởi `。` | 🔴 **1 span** |
+| 3 câu Anh | ✅ **3 span** |
+
+Và `CUT_HINT_RE` (`constants.py:15`, `[,\.\!\?\;\:…]+$`) ⛔ **không khớp** `生活。`
+— ⛔ không có `。` trong lớp. Chỉ `STRONG_PUNCT` (`:21`) có `。`, và nó ⛔ không phải nơi cắt.
+
+> 🔑 **Hai hằng số khai một điều, hằng số thứ ba phản lại — và cơ học thắng giao ước.**
+> Nhìn `STRONG_PUNCT` thì (A) *"có hỗ trợ CJK"*; chạy `SENT_SPLIT_RE` thì ⛔ không.
+
+⇒ ⭐ **Dùng lại lớp cắt câu của (A) sẽ TÁI TẠO đúng lỗi mà `cat_doan.py` sinh ra để chữa.**
+⛔ Đừng bỏ `cat_doan.py` để lấy (A). Bảng ở §7 và lựa chọn **II-2** ở §8 phải đọc lại
+theo đính chính này: phần còn dùng lại được của (A) thu về **`vad.py`** và **lớp gộp/đệm
+theo mốc từ**, ⛔ **không** gồm lớp cắt câu.
+
+### Ba đính chính nhỏ hơn, cùng nguồn
+
+1. §3.3 **dòng 7** (`initial_prompt`) ⛔ **sai** cho nhánh đã đo: có
+   `以下是中文普通话句子。`, nguồn whisperX issue #645 (`v2.json::tham_so_tai_lap`).
+2. §3.3 **dòng 8** (`chunk_size`) — đúng là *"không truyền ⇒ mặc định 30"*, nhưng
+   ⛔ **không** phải nguyên nhân đoạn dài. `cat_doan.py:29-30` bác bỏ thẳng.
+3. §3.3 **dòng 9-11** (*"không có hậu xử lý / không cưỡng chế trần"*) ⛔ **sai** cho nhánh
+   đã đo: `cat_doan.py` cưỡng chế **7,0 s** / **5/6 s**, và **khai ra** khi không cắt được.
+
+### ⭐ Câu 3 đọc lại: khác biệt này **CỐ Ý**, ⇒ **GIỮ**
+
+`de3a1d4c` §3 tra cộng đồng **trước** khi tự soạn, và ghi cả thứ **đã từ chối**:
+`whisperx/SubtitlesProcessor.py` (⛔ cắt ở **điểm giữa** khi không có dấu phẩy ⇒ cắt giữa
+câu — với lồng tiếng là khe chứa **nửa ý**) và `jianfch/stable-ts` (MIT, nhưng gói chưa
+cài, và PR #1466 làm cùng việc bằng ~60 dòng không phụ thuộc). Ngưỡng lấy từ **quy chuẩn
+công bố** (Netflix TTSG), ⛔ không tự đặt. ⇒ ⭐ Đây là *"dùng lại trước, tự viết sau"* làm
+**đúng**, ⛔ không phải một chỗ trôi.
+
+⚠️ Nhưng chính `de3a1d4c` tự khai: *"CHƯA được gọi là 'đã sửa': phép kiểm đơn vị dùng dữ
+liệu TỰ DỰNG sẽ xanh bất kể engine thật trả gì."*
+
+---
+
 ## 0. Ba app, ⛔ đừng lẫn hai cái đầu
 
 | | App | Vai |
@@ -128,7 +216,11 @@ Khoảng lặng ≥ 2,0 s được giữ thành đoạn `silence` (`YeuCau.nguon
 
 ## 3. CÂU 2 — ASV (C) cắt đoạn bằng gì, và ⭐ từng điểm khác
 
-### 3.1 🔴 Phát hiện thứ nhất: **ASV ⛔ KHÔNG hề có bộ phân đoạn.**
+### 3.1 ⛔ MỤC NÀY SAI — xem ĐÍNH CHÍNH ở đầu tệp. (Giữ nguyên để thấy tôi sai ở đâu.)
+
+> ⛔ Đúng cho `main`. ⛔ **Sai** cho nhánh đã sinh ra con số. `cat_doan.py` tồn tại.
+
+#### ~~Phát hiện thứ nhất: ASV ⛔ KHÔNG hề có bộ phân đoạn~~
 
 Nghi vấn của chủ dự án (*"ASV tự viết lại phần cắt đoạn"*) — ⛔ **BÁC BỎ**, nhưng bác bỏ
 theo hướng **xấu hơn**:
@@ -422,8 +514,84 @@ sách*; với phụ đề, một đoạn dài là *lỗi*. ⭐ Đây là lý do 
 
 ## 9. Một câu, nếu chỉ đọc một câu
 
-> ⭐ ASV ⛔ **không tự viết lại** phần cắt đoạn — nó **chưa bao giờ có** phần ấy, vì app
-> phiên âm ra đời **sau ASV tám ngày** (`e3cdbabe` 02/09 → `4940c833` 10/09) và lúc khảo
+> ⭐ ASV **CÓ** tự viết phần cắt đoạn (`cat_doan.py`, `de3a1d4c`, ⛔ chưa lên `main`), và
+> nó **cố ý, có nguồn** — vì cả WhisperX lẫn app phiên âm đều **mù tiếng Hán** ở lớp cắt
+> câu (Punkt không có `zh`; `SENT_SPLIT_RE` đòi `\s+`). App phiên âm ra đời **sau ASV tám ngày** (`e3cdbabe` 02/09 → `4940c833` 10/09) và lúc khảo
 > sát tái dụng thì bộ phân đoạn còn là mã legacy ngoài kho. Và trần **0,606** ⛔ không cần
 > một chân lý nền mới: một bản **10 fps của chính phim v2** đã từng được dựng và dùng làm
 > *"mốc gốc"* ở `L_OCR.md:102` — nó chỉ chưa bao giờ được đem sang làm chân lý nền.
+
+---
+
+## 10. Ba việc điều phối giao 25/09 — trạng thái sau khi soi đĩa
+
+### 10.1 🔴 `N-27` — tiền đề **KHÔNG ĐÚNG**, và sự thật đáng lo hơn
+
+Điều phối mô tả N-27 là *"thước gộp WhisperX với faster-whisper làm một"*. Soi cả ba tệp
+bằng chứng (`bang_chung/b1_chep_loi_moi/{v1,v2,v3}.json`, có ở
+`LTTSTUDIOSAPP-{asvf-nghiem-thu-v2,gop,repro-3300}`, ⛔ **không có** ở `main`):
+
+| tệp | `engine` | `canh_chinh` | số đoạn |
+|---|---|---|---|
+| `v1.json` | `whisperx` | `aligned` | 83 |
+| `v2.json` | `whisperx` | `aligned` | 74 |
+| `v3.json` | `whisperx` | `aligned` | 31 |
+
+⇒ ⛔ **Không có gì để phân tầng.** Thước ⛔ chưa bao giờ chạm faster-whisper.
+Khuyết tật thật là: **đo MỘT nhánh, khai như thể trung lập với engine**, và nhánh
+`fallback_unaligned` có **0 bằng chứng**. Tách thành hai bảng sẽ cho một bảng có số và một
+bảng **rỗng** — ⭐ và chính cái rỗng ấy mới là phát hiện.
+
+⭐ Thuốc đúng ⛔ không phải "phân tầng", mà là **bắt thước KHAI nhánh nó đang đo** và
+**từ chối** khi tập bằng chứng trộn hai `canh_chinh` — cùng họ với bất biến
+`canh_chinh == "aligned"` ⇒ bắt buộc có mốc từ, mà `de3a1d4c` §1.3 vừa dựng.
+
+### 10.2 🔴 Chặn `VIỆC 1`: thước ⛔ KHÔNG học được lưới từ dữ liệu
+
+```python
+# tools/do_luong.py:1009-1012
+def doi_chung_he_hoan_hao(ref, dung_sai, luoi: float = LUOI_CHAN_LY_NEN_S, ...)
+# tools/do_luong.py:1047-1049
+def kiem_nguong_voi_toi(ref, dung_sai, nguong):
+    tran = doi_chung_he_hoan_hao(ref, dung_sai)      # ⛔ KHÔNG truyền `luoi`
+```
+
+`LUOI_CHAN_LY_NEN_S = 0.5` là **hằng số mô-đun**, và `CHAN_LY_NEN_PHAN_DOAN` là một
+**đường dẫn cứng** (`:1071`). ⇒ 🔴 **Thay chân lý nền bằng bản 0,1 s mà không sửa thước thì
+trần vẫn tính theo lưới 0,5 s và vẫn in `0,606 — KHÔNG VỚI TỚI ĐƯỢC`.** Cổng sẽ nói dối
+theo đúng chiều cũ, trên một chân lý nền ⛔ không còn khuyết tật ấy.
+
+⇒ ⭐ **Lưới phải là thuộc tính CỦA TỆP chân lý nền, ⛔ không phải hằng số của thước.**
+`l_ocr_gt_v2.json` đã có trường `cach_lam` nói lưới bằng **chữ**; nó cần một trường **số**
+mà `doc_chan_ly_nen_ocr()` đọc lên và chuyền vào `kiem_nguong_voi_toi`.
+⚠️ Đây đúng họ *"bánh cóc đo CÁCH GÕ"*: thước ghim cứng một tính chất của **dữ liệu** mà
+nó đang đo.
+
+### 10.3 `VIỆC 1` — chạy được, nguyên liệu đủ, ⛔ chưa chạy
+
+| thứ cần | trạng thái |
+|---|---|
+| video v2 `暴雨天野外露营….mp4` (26 MB) | ✅ `C:\Users\…\Desktop\TEST VIDEO\` |
+| bộ OCR `asv_gpu/do_luong/ocr_khung.py` + venv | ✅ (`nguon_loi.py:211-212`) |
+| dòng thời gian 10 fps đã dựng 22/09 | 🔴 **⛔ KHÔNG CÒN** — quét `bang_chung/` cả ba cây: chỉ có `phu_de/dai_hardsub.json` (hình học dải, ⛔ không phải mốc). ⇒ **phải chạy lại** |
+| giá | ~**142 s** CPU (`L_OCR.md:162`: `40×0,41 + 10×190×0,066`) ⇒ **lượt nặng**, qua `chay_nang.py`, nhả khoá ngay khi lệnh tính xong |
+
+⛔ **Chưa chạy** vì §10.2 phải xong trước: chạy trước khi thước học được lưới là tiêu một
+suất CPU để in lại đúng con số sai.
+
+### 10.4 ⚠️ Hai thứ điều phối dặn, đã ghi sẵn để ⛔ không rơi
+
+1. Nền mới đo **mốc hiện phụ đề**, lệch **+0,34 s** (p95 0,46 s) so với **mốc nói**
+   (`L_OCR.md:133`) ⇒ khai độ lệch **cạnh mọi con số**.
+2. Chỉ **v2** có nền mới ⇒ ⛔ **không gộp ba phim thành một con số**.
+   ⚠️ Thêm một thứ ⛔ chưa ai nói: `v3.json::⚠️ gioi_han` tự khai *"Chan ly nen cua v3 bi
+   nhiem 13 dong chu UI game"* ⇒ v3 ⛔ **không dùng được** làm nền, kể cả ở lưới 0,5 s.
+
+### 10.5 `VIỆC 3` — đề xuất `vad.py`: ⭐ **giá trị TĂNG** sau đính chính
+
+`cat_doan.py` cắt bằng **dấu câu + mốc từ** của engine. ⇒ Nó ⛔ **không có** tín hiệu
+**âm học** nào. `engine/vad.py` (năng lượng, 30 ms, độc lập whisper hoàn toàn) cho đúng
+thứ đang thiếu: một kênh **thứ hai** để hỏi *"chỗ ngắt này có khoảng lặng thật không"* —
+và `so_doan_khong_cho_ngat` của `cat_doan` là chỗ nó trả lời được ngay.
+⛔ `apps/transcript/__init__.py` vẫn chưa khai `BE_MAT_CONG_KHAI` ⇒ **báo điều phối**,
+⛔ không tự sửa.
