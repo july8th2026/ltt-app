@@ -38,7 +38,9 @@ CHUNG = dict(
     ke_hoach={"doan": [{"ma": "s1", "dai_ms": 2000, "dat_tai_ms": 0,
                         "he_so_toc": 1.0}], "tong_ms": 10000},
     ban_ke_tieng={"doan": [{"ma": "s1", "khoa": "v/s1.wav"}]},
-    thoi_luong_mong_doi=10.0, do_sang=120.0)
+    thoi_luong_mong_doi=10.0,
+    hinh_ra={"den_s": 0.0, "dong_s": 0.0, "so_loi_giai_ma": 0, "ma_thoat": 0},
+    hinh_nguon={"den_s": 0.0, "dong_s": 0.0, "so_loi_giai_ma": 0, "ma_thoat": 0})
 
 
 def _bc(**kw):

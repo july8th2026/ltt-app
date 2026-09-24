@@ -56,6 +56,19 @@
   var nutNghe = document.getElementById("asv-nghe-nut");
   var ttNghe = document.getElementById("asv-nghe-tt");
   var amNghe = document.getElementById("asv-nghe-am");
+  /* ── Ô NGÔN NGỮ ĐÍCH: mặt lọc thứ tư, và là mặt duy nhất MÁY CHỦ cũng lọc.
+   *
+   * 🔴 `rang_giong._rang_khach_chon` từ chối ở CỬA một giọng lệch làn với
+   *    `ngon_ngu_dich`. Không lọc ở đây thì khách đổi đích sang tiếng Anh, vẫn
+   *    thấy nguyên 20 giọng tiếng Việt, bấm Gửi và ăn một câu từ chối — đúng
+   *    kiểu "hai bên nói hai luật khác nhau về cùng một ô" mà khối `che độ
+   *    giọng` ở trên tồn tại để gỡ.
+   *
+   * ⭐ Và đây là chỗ ô ngôn ngữ đích VỀ ĐÍCH ở giao diện: đổi nó là thấy danh
+   *    sách giọng đổi ngay, không phải đợi tới lúc gửi.
+   */
+  var oDich = document.getElementById("asv-nn-dich");
+  var ttNgonNgu = document.getElementById("asv-nn-tt");
   var nguon = "";
 
   /* Tim KHONG DAU: khach go "minh duc" phai thay "Minh Đức". `đ` khong tach
@@ -73,8 +86,16 @@
     var v = locVung ? locVung.value : "";
     var pc = locPhongCach ? locPhongCach.value : "";
     var tim = khongDau(oTim ? oTim.value : "");
+    var dich = oDich ? oDich.value : "";
     var conLai = 0, dangChon = oGiong.value, hopLe = false;
     var dem = { rieng: 0, mau: 0 };
+    /* Bao nhieu giong HOP LAN, bo qua moi mat loc khac.
+     *
+     * 🔴 Khong co so nay thi mot danh sach rong chi noi duoc MOT cau — *"hay bo
+     *    bot dieu kien"* — va cau do SAI khi khach chua dat dieu kien nao: ho
+     *    vua doi dich sang tieng Anh, va kho giong chua co giong tieng Anh nao
+     *    (F-03). Ta bao ho di go mot bo loc khong ton tai. */
+    var hopLan = 0;
 
     Array.prototype.forEach.call(oGiong.options, function (o) {
       var rieng = laRieng(o);
@@ -83,7 +104,13 @@
       //    khach chon mot nhan — an giong rieng cua ho di la dieu ho khong
       //    doi, va ho khong co cach nao doan la vi sao. Tab "Giong mau" thi
       //    an chung: do la dieu khach VUA yeu cau.
+      // ⭐ `data-lan` RONG (giong nhan ban cua khach) thi khong bi loc: lan cua
+      //    chung do `ltt_voice` chot luc goi, khong phai mot nhan doc san.
+      var lan = o.getAttribute("data-lan") || "";
+      var dungLan = !dich || !lan || lan === dich;
+      if (dungLan) hopLan++;
       var khop = (!nguon || (nguon === "rieng") === rieng)
+        && dungLan
         && (!tim || khongDau(o.getAttribute("data-ten") || o.text).indexOf(tim) >= 0)
         && (rieng
             || ((!g || o.getAttribute("data-gioi") === g)
@@ -112,10 +139,30 @@
     //    nhan mot video doc bang giong NAM ho da loc bo.
     // ⛔ Khong them mot `<option value="">` de chon: `test_447` cam o giong co
     //    muc rong — do la duong "Giong mac dinh" quay lai.
-    var rong = conLai === 0;
-    oGiong.setCustomValidity(rong ? t("giong_khong_khop") : "");
-    chu(ttGiong, rong ? t("giong_khong_khop") : "");
+    // ⭐ HAI cau cho mot danh sach rong, va cho khac nhau moi la cho dang noi:
+    //    het giong trong LAN  -> khach khong lam gi duoc o day, phai doi dich
+    //                            (hoac nhan ban mot giong o LTT VOICE);
+    //    het giong sau BO LOC -> bo bot dieu kien la xong.
+    //    Mot cau cho ca hai bao khach di sua nham thu.
+    var cau = conLai ? "" : (hopLan ? t("giong_khong_khop") : t("giong_het_lan"));
+    oGiong.setCustomValidity(cau);
+    chu(ttGiong, cau);
+    noiHeQuaCuaDich(conLai);
     capNhatNghe();
+  }
+
+  /* Câu nói HỆ QUẢ của ô ngôn ngữ đích lên danh sách giọng.
+   *
+   * ⚠️ Nhãn ngôn ngữ lấy từ chính `<option>` đang chọn, không gõ lại ở đây:
+   *    `ngon_ngu.NHAN` là một bảng đã dịch ở máy chủ, và một bản thứ hai trong
+   *    `.js` là một chuỗi không bao giờ dịch được. */
+  function noiHeQuaCuaDich(conLai) {
+    if (!ttNgonNgu || !oDich) return;
+    var o = oDich.options[oDich.selectedIndex];
+    var ten = o ? o.text : "";
+    chu(ttNgonNgu, conLai
+      ? t("nn_con_giong", { so: conLai, lan: ten })
+      : t("nn_het_giong", { lan: ten }));
   }
 
   function capNhatNghe() {
@@ -147,6 +194,7 @@
     o.setAttribute("data-gioi", g.gioi || "");
     o.setAttribute("data-vung", g.vung || "");
     o.setAttribute("data-phong-cach", g.phong_cach || "");
+    o.setAttribute("data-lan", g.ngon_ngu || "");
     if (g.duong_nghe) o.setAttribute("data-nghe", g.duong_nghe);
     o.textContent = g.duong_nghe ? g.ten : g.ten + " · " + t("giong_chua_mau");
     return o;
@@ -178,6 +226,7 @@
   if (locVung) locVung.addEventListener("change", locGiong);
   if (locPhongCach) locPhongCach.addEventListener("change", locGiong);
   if (oTim) oTim.addEventListener("input", locGiong);
+  if (oDich) oDich.addEventListener("change", locGiong);
   Array.prototype.forEach.call(nutNguon, function (n) {
     n.addEventListener("click", function () {
       nguon = n.getAttribute("data-nguon-giong") || "";

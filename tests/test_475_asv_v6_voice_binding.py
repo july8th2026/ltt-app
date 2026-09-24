@@ -83,7 +83,7 @@ def test_loi_HA_TANG_KHONG_bi_doi_thanh_loi_cua_khach(monkeypatch):
     """⭐ Chi bat dung lop loi cua khach. Mot loi CSDL doi thanh "giong khong hop
        le" la bao khach sua mot thu ho khong he lam sai — va giau mat su co.
     """
-    def _sap(db, *, owner_id, voice_id="", preset=""):
+    def _sap(db, *, owner_id, voice_id="", preset="", ngon_ngu=""):
         raise RuntimeError("CSDL mat ket noi")
 
     monkeypatch.setattr(giong_noi, "giai_giong", _sap)
@@ -179,7 +179,11 @@ def test_route_goi_kiem_o_cua():
        goi no thi moi bai o muc 1 van xanh.
     """
     goc = Path(__file__).resolve().parents[1]
-    cay = ast.parse((goc / "apps/auto_scan_video/routes.py").read_text(encoding="utf-8"))
+    # 22/09 (cong-noi-bo): cua duyet chung la `dich_vu_tao.dung_cai_dat`; route
+    # va cong noi bo cung goi no.
+    cay = ast.parse((goc / "apps/auto_scan_video/dich_vu_tao.py").read_text(encoding="utf-8"))
     goi = [n for n in ast.walk(cay) if isinstance(n, ast.Call)
            and isinstance(n.func, ast.Attribute) and n.func.attr == "kiem_o_cua"]
-    assert goi, "routes.py khong goi rang_giong.kiem_o_cua"
+    assert goi, "dich_vu_tao.py khong goi rang_giong.kiem_o_cua"
+    route = (goc / "apps/auto_scan_video/routes.py").read_text(encoding="utf-8")
+    assert "dich_vu_tao.dung_cai_dat(" in route, "routes.py khong goi cua duyet chung"

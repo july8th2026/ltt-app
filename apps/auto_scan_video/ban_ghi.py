@@ -43,29 +43,10 @@ from platform_core.i18n import _ as _t
 #: mot lan doi lam moi ban ghi cu vo hieu thay vi bi doc bang luat moi.
 SCHEMA_BAN_GHI = 1
 
-# ── Bang chung nguoi noi (pha 07) ───────────────────────────────────────────
-#
-# 🔑 Ba gia tri TUONG MINH, khong phai "co truong hay khong co truong". Mot ban
-#    ghi khong co `nguoi_noi` co the co nghia la ba dieu rat khac nhau:
-#    chua chay phan vai · da chay ma khong tim thay ai · khong chay duoc. Pha 09
-#    (AUTO_MATCH) phai phan biet duoc, vi hai trong ba truong hop do la "khong
-#    co bang chung" con mot la "co bang chung, va no rong".
-PHAN_VAI_KHONG_CHAY = "khong_chay"
-PHAN_VAI_DA_CHAY = "da_chay"
-PHAN_VAI_KHONG_KHA_DUNG = "khong_kha_dung"
-PHAN_VAI: tuple[str, ...] = (PHAN_VAI_KHONG_CHAY, PHAN_VAI_DA_CHAY,
-                             PHAN_VAI_KHONG_KHA_DUNG)
-
-#: ⛔ **KHONG nang `SCHEMA_BAN_GHI` len 2.** `kiem()` so bang **dang thuc**
-#:    (`!= SCHEMA_BAN_GHI` thi nem), nen mot lan nang se lam moi ban ghi da luu
-#:    truot kiem — tuc moi lan chay dang do mat cache va phai chep loi lai, va
-#:    khach tra tien cho mot lan chep loi thu hai vi mot thay doi ma ho khong
-#:    thay.
-#:
-#: ⭐ Truong nay THEM va TUY CHON, nen ban ghi cu van hop le. Va su vang mat cua
-#:    no khong mo ho: nhung ban ghi do duoc tao khi nang luc phan vai chua ton
-#:    tai, nen "khong chay" la mot SU THAT ve chung, khong phai mot phong doan.
-PHAN_VAI_MAC_DINH = PHAN_VAI_KHONG_CHAY
+# ⛔ Bang chung nguoi noi (pha 07: `phan_vai`/`nguoi_noi`) DA RUT 22/09
+#    (asv-final): san pham la MOT giong thuyet minh, khong bo phan nao doc
+#    nhan nguoi noi — phan vai chi ton GPU. Ban ghi cu con truong `phan_vai`
+#    van hop le: `kiem()` khong doc no.
 
 #: Sai so cho phep khi doi chieu moc thoi gian cua tu voi cua doan. Engine lam
 #: tron o cho khac nhau, nen mot phep so bang tuyet doi se do vi lam tron.
@@ -80,50 +61,10 @@ def _lam_sach(van_ban: str) -> str:
     return " ".join(str(van_ban or "").split())
 
 
-def gan_nguoi_noi(ban: dict, luot: list, *, gan) -> dict:
-    """Gan nguoi noi vao tung doan cua mot ban ghi DA chuan hoa.
-
-    ⭐ Day la mot **bo chuyen doi**, khong phai mot phep tinh. Thuat toan chong
-       lan thoi gian thuoc ve app CHU (`autosubvideo.assign_speakers`) va o lai
-       do; ham nay chi doi ten truong giua hai lu?c do:
-
-           ASV        `bat` / `ket`
-           autosub    `start` / `end`
-
-    ⛔ Chep lai thuat toan sang day se tao mot ban thu hai cua cung mot quy tac
-       — va hai ban cua mot quy tac la hai ban se lech nhau. `gan` duoc TIEM vao
-       de phep kiem khong can model that.
-    """
-    doan = list(ban.get("doan") or [])
-    cue = [{"start": float(d["bat"]), "end": float(d["ket"]), "_i": i}
-           for i, d in enumerate(doan)]
-    da_gan, ten = gan(cue, list(luot or []))
-
-    ra = []
-    for c, goc in zip(da_gan, doan):
-        moi = dict(goc)
-        ai = str(c.get("speaker") or "")
-        if ai:
-            moi["nguoi_noi"] = ai
-        ra.append(moi)
-
-    moi_ban = dict(ban)
-    moi_ban["doan"] = ra
-    moi_ban["phan_vai"] = PHAN_VAI_DA_CHAY
-    moi_ban["nguoi_noi_ten"] = dict(ten or {})
-    return moi_ban
 
 
-def danh_dau_phan_vai(ban: dict, trang_thai: str) -> dict:
-    """Ghi trang thai phan vai ma khong cham vao doan nao."""
-    if trang_thai not in PHAN_VAI:
-        raise BanGhiError(f"trang thai phan vai khong biet: {trang_thai!r}")
-    moi = dict(ban)
-    moi["phan_vai"] = trang_thai
-    return moi
-
-
-def chuan_hoa(thoi: dict, *, thoi_luong_nguon: float = 0.0) -> dict:
+def chuan_hoa(thoi: dict, *, thoi_luong_nguon: float = 0.0,
+              nguon_loi: str = "asr", dinh_tuyen: dict | None = None) -> dict:
     """Ket qua tho cua engine -> ban ghi chinh tac. Nem `BanGhiError` neu khong dat.
 
     Bo doan RONG thay vi giu: mot doan khong co chu la mot doan khong co gi de
@@ -157,7 +98,13 @@ def chuan_hoa(thoi: dict, *, thoi_luong_nguon: float = 0.0) -> dict:
                 continue
             tu.append({"bat": tb, "ket": tk, "chu": chu})
 
-        ra.append({"bat": bat, "ket": ket, "chu": van_ban, "tu": tu})
+        doan = {"bat": bat, "ket": ket, "chu": van_ban, "tu": tu}
+        # Provenance (22/09): do tin 0..1 cua NGUON (OCR: diem nhan dang trung
+        # binh cac khung). ASR (faster-whisper qua autosubvideo) khong tra do
+        # tin theo doan ⇒ vang mat, KHONG bia mot con so.
+        if tho.get("confidence") is not None:
+            doan["do_tin"] = round(float(tho["confidence"]), 4)
+        ra.append(doan)
 
     if not ra:
         raise BanGhiError(_t('Không nghe được lời nói nào trong tệp.'))
@@ -176,8 +123,13 @@ def chuan_hoa(thoi: dict, *, thoi_luong_nguon: float = 0.0) -> dict:
         #    thoi gian ma ta khong co.
         "canh_chinh": str((thoi or {}).get("alignment_status") or ""),
         "thoi_luong_nguon": float(thoi_luong_nguon or 0.0),
+        # 🔑 Nguon goc loi thoai: `embedded` | `ocr` | `asr` (`nguon_loi.py`).
+        #    Ban ghi truoc 22/09 khong co khoa nay = `asr`.
+        "nguon_loi": str(nguon_loi or "asr"),
         "doan": ra,
     }
+    if dinh_tuyen:
+        ban["dinh_tuyen"] = dinh_tuyen
     kiem(ban)
     return ban
 
@@ -226,7 +178,7 @@ def kiem(ban: dict) -> None:
 
 
 def van_tay_ban_ghi(*, checksum_tieng: str, model: str, ngon_ngu: str,
-                    phien_ban_ma: int) -> str:
+                    phien_ban_ma: int, nguon_loi: str = "") -> str:
     """Van tay cua ban ghi (Prompt 10 muc 7).
 
     Bon thanh phan, va ly do tung cai:
@@ -241,6 +193,8 @@ def van_tay_ban_ghi(*, checksum_tieng: str, model: str, ngon_ngu: str,
         "ngon_ngu": ngon_ngu,
         "schema": SCHEMA_BAN_GHI,
         "ma": int(phien_ban_ma),
+        # `che_do:nguon:engine` — cung tieng, khac nguon loi = ban ghi khac.
+        **({"nguon_loi": nguon_loi} if nguon_loi else {}),
     }, sort_keys=True)
     return hashlib.sha256(goi.encode("utf-8")).hexdigest()
 
@@ -258,6 +212,7 @@ def tom_tat(ban: dict) -> dict:
         "ngon_ngu": ban.get("ngon_ngu", ""),
         "engine": ban.get("engine", ""),
         "canh_chinh": ban.get("canh_chinh", ""),
+        "nguon_loi": ban.get("nguon_loi", "asr"),
         "phu_song": round(
             sum(float(d["ket"]) - float(d["bat"]) for d in doan), 2),
     }

@@ -249,9 +249,14 @@ def test_routes_ghi_ho_so_QUA_chuan_hoa_chu_khong_ghi_thang():
     van = (APP / "routes.py").read_bytes().decode("utf-8")
     assert "settings=dict(cai_dat)" not in van, (
         "routes van ghi thang dict tho xuong `settings=`")
-    assert van.count("cai_dat_mod.chuan_hoa(") >= 3, (
-        "khong du ba duong ghi (ben vung · multipart · gan logo) di qua "
-        "`chuan_hoa`")
+    # Duong gan logo doi sang `logo.gan_vao_run` (22/09: routes chi lo HTTP).
+    logo = (APP / "logo.py").read_bytes().decode("utf-8")
+    # 22/09 (cong-noi-bo): hai duong ghi cua route nhan `ho_so` tu
+    # `dich_vu_tao.dung_cai_dat`, ham ket thuc bang `cai_dat_mod.chuan_hoa(`.
+    dv = (APP / "dich_vu_tao.py").read_bytes().decode("utf-8")
+    assert van.count("settings=ho_so)") == 2, "route khong ghi ho so da chuan hoa"
+    assert "return cai_dat_mod.chuan_hoa(cai_dat)" in dv
+    assert logo.count("cai_dat_mod.chuan_hoa(") >= 1, "gan logo khong qua chuan_hoa"
 def test_template_KHONG_tu_doc_run_settings():
     """Man "Cai dat da dung" la NGUOI DOC THU BA cua ho so, va truoc pha 07 no
     doc **khong kem mac dinh**:

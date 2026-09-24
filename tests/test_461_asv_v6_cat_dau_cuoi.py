@@ -226,7 +226,13 @@ def test_route_tao_NHAN_truong_cat_va_goi_chuan_hoa():
                and n.name == "tao")
     ten_tham_so = {a.arg for a in tao.args.args + tao.args.kwonlyargs}
     assert "cat" in ten_tham_so, "route `tao` khong nhan truong `cat`"
-    assert "cat_dau_cuoi.chuan_hoa" in _goi_ten(tao)
+    # 22/09 (asv-final cong-noi-bo): phep duyet ha xuong `dich_vu_tao` — MOT
+    # duong cho route lan cong noi bo. Route phai goi no; no phai goi chuan_hoa.
+    assert "dich_vu_tao.dung_cai_dat" in _goi_ten(tao)
+    dv = ast.parse((DUONG_ROUTES.parent / "dich_vu_tao.py").read_bytes().decode("utf-8"))
+    dung = next(n for n in ast.walk(dv)
+                if isinstance(n, ast.FunctionDef) and n.name == "dung_cai_dat")
+    assert "cat_dau_cuoi.chuan_hoa" in _goi_ten(dung)
 
 
 def test_giao_dien_co_o_nhap_VA_neo_preset():

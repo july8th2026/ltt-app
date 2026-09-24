@@ -29,7 +29,13 @@ cach nao biet. Tu choi o cua thi ho biet ngay.
    mot vung trong** — dung cho chu da bien mat khoi khung. Tuc bug khong hien ra
    nhu "thieu mot o che", no hien ra nhu "co mot vet mo la o goc man hinh".
 
-⚠️ **L3 chua co ma o day, va do la co y.** `zoom` dang bi
+⭐ **asv-final 22/09 (`ADR_BIEN_TAP.md`): `zoom`/`crop`/`reframe` da mo, va L3
+   dung THEO CAU TRUC chu khong bang mot ham anh xa:** vung che ap TRUOC chang
+   khung trong chuoi loc (toa do nguon), nen vung nam ngoai cua so cat chi don
+   gian khong con trong khung — khong co gi de kep. Bang chung do tren tep ra:
+   `test_2062::test_L3_vung_che_NGOAI_cua_so_cat_khong_de_lai_vet`.
+
+⚠️ (Lich su) **L3 chua co ma o day, va do la co y.** `zoom` dang bi
    `hop_dong_v4.CAM_TRONG_MVP` cam, nen mot ham anh xa toa do se **khong co
    nguoi goi** — va `test_453` goi dung ten cho thu do: mot nang luc viet xong
    roi quen noi vao mach. Ban dau toi co viet no; gate chan lai, va gate dung.

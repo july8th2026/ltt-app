@@ -56,6 +56,10 @@ BE_MAT_CONG_KHAI = {
     #
     # ⭐ Xuất `loc` chứ không bắt bên gọi tự duyệt `DANH_SACH`: phép lọc là một
     #    quy tắc, và hai bản của một quy tắc là hai bản sẽ lệch nhau.
+    # 🔑 Tap LAN giong la tap ngon ngu DICH cua Auto Scan (chot 22/09):
+    #    `apps/auto_scan_video/ngon_ngu._kiem` doc no de mot dich khong co
+    #    lan giong la loi luc import, khong phai mot lan chay hong o GIONG.
+    ("apps.ltt_voice.lan_ngon_ngu", "LAN_HOP_LE"),
     ("apps.ltt_voice.giong_mau", "loc"),
     ("apps.ltt_voice.giong_mau", "tim"),
     ("apps.ltt_voice.giong_mau", "hop_le"),
@@ -63,6 +67,14 @@ BE_MAT_CONG_KHAI = {
     ("apps.ltt_voice.giong_mau", "NHAN_GIOI"),
     ("apps.ltt_voice.giong_mau", "NHAN_VUNG"),
     ("apps.ltt_voice.giong_mau", "NHAN_PHONG_CACH"),
+    # 🔑 Kho CHUNG cho làn mà giọng mẫu không phủ (asv-final F-03, 22/09):
+    #    20/20 preset là làn `vi`, nên đích `en` của `AUTO_MATCH` chỉ còn kho
+    #    chung để khớp vào. Hàm này ĐÃ đi qua cổng license U-05
+    #    (`_dieu_kien_kho_chung`), đã bỏ giọng không `active` và giọng chưa rõ
+    #    giới, và đã sắp tất định — ba việc app khác không được viết lại.
+    # ⚠️ CHỈ ĐỌC, và chỉ ĐỌC giọng ĐÃ ở kho chung (khách đã thấy). Không mở
+    #    thêm giọng nào cho ai; dùng giọng vẫn phải qua `giai_giong`.
+    ("apps.ltt_voice.tham_chieu", "ung_vien_kho_chung"),
 
     # ── Nghe thử TRƯỚC KHI chọn (Auto Scan Video V5) ────────────────────────
     #

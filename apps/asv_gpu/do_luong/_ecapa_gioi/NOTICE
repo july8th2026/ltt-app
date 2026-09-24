@@ -1,0 +1,43 @@
+ECAPA gender classifier for LTT Studios Auto Scan Video
+
+This directory contains code derived from JaesungHuh/voice-gender-classifier
+  https://github.com/JaesungHuh/voice-gender-classifier
+  commit 49bcbecfd929ba5a043bde645fdff1a375eb79c7 (HEAD, read 2026-09-23)
+  Copyright (c) 2024 jaesunghuh
+  Licensed under the MIT License (see LICENSE in this directory, byte-identical
+  to the upstream LICENSE, 1067 bytes).
+
+That code is itself based on TaoRuijie/ECAPA-TDNN
+  https://github.com/TaoRuijie/ECAPA-TDNN  (MIT License, Copyright (c) 2021 Tao Ruijie)
+and the upstream header says so; the MIT terms of both are satisfied by keeping
+this notice and LICENSE alongside the code.
+
+Files:
+  ecapa_gioi.py  derived from model.py (SEModule, Bottle2neck, ECAPA_gender).
+                 Modified by LTT Studios on 2026-09-23:
+                   - the mel filterbank is built ONCE in __init__ instead of
+                     being reconstructed on every forward pass (upstream builds
+                     a MelSpectrogram module inside logtorchfbank each call);
+                     same parameters, same output.
+                   - `predict` (which loads a file path and returns a string)
+                     replaced by `xac_suat`, which takes a batch of waveforms
+                     and returns softmax probabilities per row, because the
+                     caller needs a confidence, not a label, and scores many
+                     sliding windows of one clip.
+                   - `load_audio` removed; the runner does its own decoding and
+                     resampling so that every clip goes through one code path.
+                 Layer shapes, weight names and the class order
+                 (0 = male, 1 = female) are UNCHANGED, so the published
+                 checkpoint loads without remapping.
+  ban_ghim.py    written by LTT Studios (pinned revision + sha256).
+
+Model weights are NOT stored here. They are downloaded into HF_HOME from
+Hugging Face at a pinned revision and verified by sha256 before loading:
+  JaesungHuh/voice-gender-classifier @ db1222153bd60337e900be22add7af180452adc0
+  model.safetensors  61.907.512 bytes
+  sha256 2d8e0be1fdf159d60d5087416e6f6277c5e30ce9e33a61c767a9a409e6c503c5
+  Weights licence: MIT (model card YAML front-matter `license: mit`,
+  https://huggingface.co/JaesungHuh/voice-gender-classifier - read 2026-09-23).
+  Trained on the VoxCeleb2 dev set; VoxCeleb is CC BY 4.0. The weights, not the
+  dataset, are what is redistributed here - and they are not redistributed at
+  all, only downloaded from the upstream repository at run time.

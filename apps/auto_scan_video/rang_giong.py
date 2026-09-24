@@ -18,6 +18,13 @@ Cho nen o day, `AUTO_MATCH` ma chua co `HoSoNoiDung` thi ket qua la
 **`CHUA_RANG`** — mot trang thai hop le, khong phai mot that bai va cung khong
 phai mot giong. Tang tren phai hoi lai sau khi pha 11 dung xong ho so.
 
+⭐ **23/09/2026 — nguoi dung ho so do CUOI CUNG cung ton tai.**
+   `ho_so_noi_dung.py` sinh `HoSoNoiDung` tu bang chung lan chay DA tra tien
+   (F0 cua stem `vocals` + ban chep loi), o CA HAI preset, va ghi no vao
+   `run.settings["dac_diem_giong"]`. `CHUA_RANG` **khong** bi lam nhe di mot
+   chut nao: no van la ket qua khi khong do duoc va model khong tra loi duoc.
+   Thu doi la: tu cho "luon luon" no tro thanh "khi that su khong co can cu".
+
 ⛔ Va `ma_giong()` **nem** neu goi tren mot rang buoc chua chot. Mot ham tra ve
    `""` o day se cho ra mot lan tong hop bang giong mac dinh ma khong ai bam
    nut — tuc dung ket qua ma ca thiet ke nay dung de tranh.
@@ -33,9 +40,11 @@ tam thi khong.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
-from platform_core.i18n import _ as _t
+from platform_core.i18n import N_, _ as _t
+
+from . import ngon_ngu
 
 from .hop_dong_v4 import (CHE_DO_GIONG, CHE_DO_GIONG_MAC_DINH,
                           CHE_DO_GIONG_TU_CHON, CHE_DO_GIONG_TU_KHOP)
@@ -58,7 +67,16 @@ class ChuaRangError(RangGiongError):
     """Doc giong tu mot rang buoc chua chot.
 
     ⛔ La mot loi, khong phai mot chuoi rong. Xem docstring dau tep.
+
+    ⭐ `ma_loi` — ma ON DINH cua ly do (`CAU_CHUA_RANG`). `thi_hanh` do no vao
+       `stage.outputs`, va man mot lan chay doc no de noi dung cau cho khach.
+       Cung khuon `giong_noi.GiongKhongHopLe`, va cung ly do: *"khach bat loi
+       theo ma, khong theo cau chu"*.
     """
+
+    def __init__(self, thong_diep: str = "", *, ma_loi: str = ""):
+        super().__init__(thong_diep)
+        self.ma_loi = str(ma_loi or "")
 
 
 @dataclass(frozen=True)
@@ -97,6 +115,9 @@ class YeuCau:
     giong_id: str = ""
     #: Chi cho `AUTO_MATCH`. Rong o pha 09; pha 11 dien tu `HoSoNoiDung`.
     dac_diem: DacDiemMongMuon = field(default_factory=DacDiemMongMuon)
+    #: Ngon ngu ban long tieng se doc (22/09). Giong phai o CUNG lan: Q121 cua
+    #: LTT Voice tu choi van ban lech lan o GIONG — tuc sau khi da tra LLM.
+    ngon_ngu_dich: str = ngon_ngu.DICH_MAC_DINH
 
     def __post_init__(self) -> None:
         if self.che_do not in CHE_DO_GIONG:
@@ -153,7 +174,8 @@ def tu_thiet_lap(settings: dict) -> YeuCau:
         dac_diem=DacDiemMongMuon(
             gioi=str(dd.get("gioi") or ""),
             vung=str(dd.get("vung") or ""),
-            phong_cach=str(dd.get("phong_cach") or "")))
+            phong_cach=str(dd.get("phong_cach") or "")),
+        ngon_ngu_dich=ngon_ngu.chuan_dich(s.get("ngon_ngu_dich")))
 
 
 def rang(db, *, owner_id: str, yeu_cau: YeuCau) -> KetQua:
@@ -168,43 +190,68 @@ def rang(db, *, owner_id: str, yeu_cau: YeuCau) -> KetQua:
     ⛔ Nen o nhanh `USER_SELECTED`, ta goi thang ham cua ho va de no nem.
     """
     if yeu_cau.che_do == CHE_DO_GIONG_TU_CHON:
-        return _rang_khach_chon(db, owner_id=owner_id, giong_id=yeu_cau.giong_id)
-    return _rang_tu_khop(yeu_cau.dac_diem)
+        return _rang_khach_chon(db, owner_id=owner_id, giong_id=yeu_cau.giong_id,
+                                ngon_ngu_dich=yeu_cau.ngon_ngu_dich)
+    return _rang_tu_khop(yeu_cau.dac_diem, yeu_cau.ngon_ngu_dich, db=db)
 
 
-def _rang_khach_chon(db, *, owner_id: str, giong_id: str) -> KetQua:
-    from apps.ltt_voice.giong_mau import hop_le as la_giong_mau
+def _rang_khach_chon(db, *, owner_id: str, giong_id: str,
+                     ngon_ngu_dich: str = ngon_ngu.DICH_MAC_DINH) -> KetQua:
+    from apps.ltt_voice.giong_mau import hop_le as la_giong_mau, tim
 
     # Giong MAU thi ai cung dung duoc — khong co chu so huu de kiem.
     if la_giong_mau(giong_id):
+        lan = str(getattr(tim(giong_id), "ngon_ngu", "") or "")
+        if lan and lan != ngon_ngu_dich:
+            raise RangGiongError(_t('Giọng này đọc {lan}, không đọc được bản {dich}.').format(
+                lan=_t(ngon_ngu.NHAN.get(lan, lan)),
+                dich=_t(ngon_ngu.NHAN.get(ngon_ngu_dich, ngon_ngu_dich))))
         return KetQua(DA_RANG, giong_id, NGUON_KHACH_CHON,
                       {"loai": "giong_mau"})
 
     # Con lai la giong CUA KHACH: de app chu kiem quyen so huu.
     from . import giong_noi
 
-    ref, preset = giong_noi.giai_giong(db, owner_id=owner_id, voice_id=giong_id)
+    # ⭐ `ngon_ngu` = lan ban long tieng KHAI: `ltt_voice` la tham quyen duy nhat
+    #    chot lan (`lan_ngon_ngu.quyet_dinh`), ta chi dua dung loi khai.
+    ref, preset = giong_noi.giai_giong(db, owner_id=owner_id, voice_id=giong_id,
+                                       ngon_ngu=ngon_ngu_dich)
     return KetQua(DA_RANG, giong_id, NGUON_KHACH_CHON,
                   {"loai": "giong_cua_khach", "preset": preset,
                    "co_ref": bool(ref)})
 
 
-def _rang_tu_khop(dac_diem: DacDiemMongMuon) -> KetQua:
-    """`AUTO_MATCH`. Thieu dac diem => CHUA_RANG, khong phai giong mac dinh."""
+def _rang_tu_khop(dac_diem: DacDiemMongMuon,
+                  ngon_ngu_dich: str = ngon_ngu.DICH_MAC_DINH,
+                  *, db=None) -> KetQua:
+    """`AUTO_MATCH`. Thieu dac diem => CHUA_RANG, khong phai giong mac dinh.
+
+    Hai tang, theo thu tu:
+      1. giong MAU cua lan dich (`giong_mau.loc`) — y nguyen truoc 22/09;
+      2. **chi khi lan dich KHONG co mot giong mau nao** (hom nay: `en`) —
+         kho CHUNG cua LTT Voice (`_rang_kho_chung`). Xem docstring ham do.
+    """
     if not dac_diem.co_du_de_khop:
         # 🔴 Day la ca diem cua pha nay. Xem docstring dau tep.
         return KetQua(CHUA_RANG, can_cu={"ly_do": "chua co ho so noi dung"})
 
     from apps.ltt_voice.giong_mau import loc
 
+    # 🔑 Lan lay tu DICH cua lan chay, khong go cung `"vi"` (TRANG_THAI_V6 no).
     ung_vien = loc(gioi=dac_diem.gioi, vung=dac_diem.vung,
-                   phong_cach=dac_diem.phong_cach)
+                   phong_cach=dac_diem.phong_cach, ngon_ngu=ngon_ngu_dich)
+    if not ung_vien and not loc(ngon_ngu=ngon_ngu_dich):
+        # ⭐ Lan nay giong mau KHONG phu (khong phai "phu ma khong khop"). Chi
+        #    khi do moi xuong kho chung — nen duong `vi` giu nguyen tung ket
+        #    qua da nghiem thu (`ngon_ngu.CUM` cung mot luat).
+        return _rang_kho_chung(db, dac_diem, ngon_ngu_dich)
     if not ung_vien:
         # ⚠️ Khong ung vien nao thi cung la CHUA_RANG, khong phai "lay dai mot
         #    cai". Noi long dieu kien la viec cua tang tren — no biet mat nao
         #    dang gia nhat, con o day ta khong biet.
         return KetQua(CHUA_RANG, can_cu={
             "ly_do": "khong giong nao khop",
+            "ngon_ngu": ngon_ngu_dich,
             "dac_diem": {"gioi": dac_diem.gioi, "vung": dac_diem.vung,
                          "phong_cach": dac_diem.phong_cach}})
 
@@ -212,13 +259,215 @@ def _rang_tu_khop(dac_diem: DacDiemMongMuon) -> KetQua:
     #    ra cung mot giong, neu khong van tay nhay va cache truot vo co.
     chon = sorted(ung_vien, key=lambda g: g.ma)[0]
     return KetQua(DA_RANG, chon.ma, NGUON_TU_KHOP, {
-        "loai": "giong_mau",
+        "loai": LOAI_GIONG_MAU,
         "so_ung_vien": len(ung_vien),
         "dac_diem": {"gioi": dac_diem.gioi, "vung": dac_diem.vung,
                      "phong_cach": dac_diem.phong_cach}})
 
 
-def kiem_o_cua(db, *, owner_id: str, che_do: str, giong_id: str) -> None:
+#: Nguon ung vien trong `can_cu["loai"]` — hoa don / man ho tro doc no.
+LOAI_GIONG_MAU = "giong_mau"
+LOAI_KHO_CHUNG = "giong_kho_chung"
+
+#: 🔑 Thu tu UU TIEN trong kho chung, THEO SO DO — khong phai theo cam tinh.
+#:
+#:    Nguon: `docs/auto_scan_video_final/L_DO_GIONG.md` muc 5-6 (23/09/2026).
+#:    Ca 17 giong `en` doc HAI kich ban tren may sinh tieng THAT roi cham bang
+#:    bay phep do: WER (faster-whisper large-v3 + jiwer), SQUIM_OBJECTIVE
+#:    (PESQ / PESQ cua so te nhat / SI-SDR / STOI), Distill-MOS, DNSMOS P.835.
+#:
+#: 🔴 **BAN CU CHON DOUGLAS THEO MOT TIEU CHI HONG, va day la ly do doi.**
+#:
+#:    `L_GIONG_EN.md` §3 xep theo *"nhip gan ~156 tu/phut ma `ngon_ngu.CUM[en]`
+#:    hua voi LLM"*. Do 34 luot doc that: giong CHAM NHAT trong kho la 181,9
+#:    tu/phut, trung vi 217,7. **Khong giong nao toi gan 156**, nen "gan 156
+#:    nhat" khong xep theo do phu hop — no xep theo *ai doc cham nhat*.
+#:
+#:    Cham lai: Owen hang trung binh 2,9/17 va **hang te nhat chi la 5**;
+#:    Douglas hang trung binh 8,3 va dung **16/17** o SQUIM PESQ. O cot phan
+#:    dinh (PESQ tren cua so 2 giay TE NHAT — "khoanh khac te nhat trong mot
+#:    cau") Owen 3,535 so voi Douglas 2,490; doi chung cho thay mot cu nhieu
+#:    10 dB lam PESQ roi ~2 diem, nen 1,05 la MOT NUA cu nhieu do, khong phai
+#:    nhieu so lieu.
+#:
+#: ⭐ Clara GIU NGUYEN: trong 6 giong do ra `nu`, co co hang trung binh tot nhat
+#:    (8,4). Canh bao DNSMOS thap cua kiem ke 05/09 (`bella_nu` 3,184) duoc xac
+#:    nhan (3,16) — nhung Ivy, ung vien thay the duy nhat, cung 3,16, nen con so
+#:    ay khong tach duoc hai nguoi. Khong co bang chung de doi ⇒ khong doi.
+#:
+#: ⭐ `public_id` cua LTT Voice "khong bao gio doi" (`tables.VoiceProfile`),
+#:    nen ghim no la ghim mot danh tinh, khong phai mot vi tri trong bang.
+#: ⚠️ Giong nao KHONG con la ung vien (bi tat, bi rut khoi kho chung, license
+#:    doi) thi don gian khong co mat — thu tu roi ve `public_id`, van tat dinh.
+#: ⛔ Day KHONG phai "giong mac dinh": no chi SAP cac ung vien DA khop lan +
+#:    gioi. Khong khop gioi thi khong bao gio duoc chon.
+UU_TIEN_KHO_CHUNG: tuple[str, ...] = (
+    "vc_526cb3ffb0d14558aadf199db27c0507",  # Owen — nam, ke chuyen
+    "vc_a55b2ad1646349469d5c5a39d4d20dc0",  # Clara — nu, thuyet minh
+)
+
+
+def _rang_kho_chung(db, dac_diem: DacDiemMongMuon, ngon_ngu_dich: str) -> KetQua:
+    """Tang 2 cua `AUTO_MATCH`: kho CHUNG cua LTT Voice, cho lan giong mau
+    khong phu (asv-final F-03 — 20/20 preset la `vi`, dich `en` khong co ai).
+
+    🔑 Doc qua `tham_chieu.ung_vien_kho_chung` — be mat KHAI cua LTT Voice. Ham
+       do da qua cong license U-05, da bo giong khong `active` va giong chua ro
+       gioi. Chi giong DA o kho chung (khach da thay trong bo chon) moi toi day;
+       ASV khong mo them giong nao cho ai.
+
+    🔴 **GIOI la mat DUY NHAT kho chung khai** (`VoiceProfile.gioi`). `vung` la
+       giong vung mien tieng Viet; `phong_cach` khong phai mot cot cua giong
+       nhan ban. Nen:
+         · thieu `gioi` => CHUA_RANG. Khop "ca lan" roi lay cai dau la dung
+           giong mac dinh doi ten ma D-V4-04 cam;
+         · `vung`/`phong_cach` KHONG rang buoc duoc, va ta GHI ra la da bo qua
+           (`mat_khong_ap_dung`) thay vi im lang gia vo da khop.
+
+    ⛔ Khong phien CSDL (`db is None`) => CHUA_RANG, khong phai "bo qua tang 2
+       roi coi nhu da xet". Duong that luon co `db` (`giai_doan_noi_dung`).
+    """
+    dd = {"gioi": dac_diem.gioi, "vung": dac_diem.vung,
+          "phong_cach": dac_diem.phong_cach}
+    if not dac_diem.gioi:
+        return KetQua(CHUA_RANG, can_cu={
+            "ly_do": "kho chung chi khai gioi — can gioi de khop",
+            "ngon_ngu": ngon_ngu_dich, "dac_diem": dd})
+    if db is None:
+        return KetQua(CHUA_RANG, can_cu={
+            "ly_do": "khong co phien CSDL de doc kho chung",
+            "ngon_ngu": ngon_ngu_dich, "dac_diem": dd})
+
+    from apps.ltt_voice.tham_chieu import ung_vien_kho_chung
+
+    cac = [u for u in ung_vien_kho_chung(db)
+           if u.ngon_ngu == ngon_ngu_dich and u.gioi == dac_diem.gioi]
+    if not cac:
+        return KetQua(CHUA_RANG, can_cu={
+            "ly_do": "khong giong nao khop", "nguon": LOAI_KHO_CHUNG,
+            "ngon_ngu": ngon_ngu_dich, "dac_diem": dd})
+
+    hang = {ma: i for i, ma in enumerate(UU_TIEN_KHO_CHUNG)}
+    chon = sorted(cac, key=lambda u: (hang.get(u.ma, len(hang)), u.ma))[0]
+    return KetQua(DA_RANG, chon.ma, NGUON_TU_KHOP, {
+        "loai": LOAI_KHO_CHUNG,
+        "so_ung_vien": len(cac),
+        "dac_diem": dd,
+        "mat_khong_ap_dung": [m for m in ("vung", "phong_cach") if dd[m]]})
+
+
+#: 🔑 Thu tu NOI LONG cua `AUTO_MATCH` — mat nao duoc bo TRUOC khi bo cuoc.
+#:
+#:    `_rang_tu_khop` co y **khong** tu noi long: docstring cua no viet *"noi
+#:    long dieu kien la viec cua tang tren — no biet mat nao dang gia nhat"*.
+#:    Day la tang tren do, va thu tu duoi day la cau tra loi cho cau hoi ay:
+#:
+#:      1. `phong_cach` — `giong_mau` ghi ro no la **nhan mo ta giong, khong phai
+#:         nut van** (*"Style is deprecated on v3 Turbo"*). No la mat model doan
+#:         yeu nhat, va bo no khong lam khach nghe thay mot giong sai nguoi.
+#:      2. `vung`       — giong vung mien TIENG VIET. Mot phim tieng Trung khong
+#:         mang thong tin nao ve no, nen no gan nhu luon la mot rang buoc bia.
+#:
+#: ⛔ `gioi` KHONG BAO GIO bi bo. No la mat duy nhat **do duoc** (`cao_do.py`,
+#:    tren chinh giong dang noi) va la mat duy nhat kho chung khai. Bo not no
+#:    thi phep loc tra ve ca catalog, va "lay cai dau tien cua ca catalog" chinh
+#:    la giong mac dinh doi ten — dung dieu `ADR-V4-001` D-V4-04 cam.
+THU_TU_NOI_LONG: tuple[str, ...] = ("phong_cach", "vung")
+
+
+def rang_noi_long(db, *, owner_id: str, yeu_cau: YeuCau) -> KetQua:
+    """Nhu `rang`, nhung `AUTO_MATCH` duoc bo dan mat it cu nhat khi khong khop.
+
+    ⭐ Vi sao can: ho so cho ra ba mat, nhung catalog **khong co** du moi to hop
+       (20 giong mau phu 13 to hop). Mot ho so dung tuyet doi — "nu, mien Trung,
+       tin tuc" — van co the tra ve khong ung vien nao, va khi do bo cuoc la
+       vut di mot rang buoc CO GIA (`gioi`) chi vi mot rang buoc khong co gia.
+
+    ⛔ Va no van khong phai "lay dai mot cai": vong cuoi cung con dung `gioi`,
+       va `gioi` rong thi `co_du_de_khop` sai ⇒ `CHUA_RANG`, khong phai mot
+       giong. Xem `THU_TU_NOI_LONG`.
+    """
+    if yeu_cau.che_do != CHE_DO_GIONG_TU_KHOP:
+        return rang(db, owner_id=owner_id, yeu_cau=yeu_cau)
+
+    dac_diem = yeu_cau.dac_diem
+    da_bo: list[str] = []
+    kq = _rang_tu_khop(dac_diem, yeu_cau.ngon_ngu_dich, db=db)
+    for mat in THU_TU_NOI_LONG:
+        if kq.da_chot or not getattr(dac_diem, mat):
+            break
+        dac_diem = replace(dac_diem, **{mat: ""})
+        da_bo.append(mat)
+        if not dac_diem.co_du_de_khop:
+            # Bo them nua thi khong con rang buoc nao — dung lai voi ket qua
+            # CHUA_RANG da co, de `can_cu` van noi ro thieu gi.
+            break
+        kq = _rang_tu_khop(dac_diem, yeu_cau.ngon_ngu_dich, db=db)
+    if not da_bo:
+        return kq
+    return KetQua(kq.trang_thai, kq.giong_id, kq.nguon,
+                  {**dict(kq.can_cu or {}), "mat_da_noi_long": da_bo})
+
+
+#: Ma ON DINH cua tung ly do `CHUA_RANG`, + cau cho khach doc.
+#:
+#: 🔴 **Bang nay ton tai vi cau cua `vi_sao_chua_rang` chua bao gio toi duoc
+#:    khach.** `giai_doan_noi_dung` nem `ChuaRangError(vi_sao_chua_rang(kq))`,
+#:    nhung man mot lan chay doc `outputs.ma_loi` (`quan_sat.LOI_CO_MA`) chu
+#:    khong doc `error` — va `error` la cho DUY NHAT cau ay di toi. Nen tu
+#:    23/09 khach doc *"Mot buoc khong hoan tat nen chung toi dung lai"* kem
+#:    mot nut **Thu lai buoc nay** chac chan hong, trong khi he thong BIET
+#:    chinh xac thieu gi va phai lam gi.
+#:
+#: ⭐ MOT bang, hai nguoi doc: `vi_sao_chua_rang` (cau nem kem ngoai le, cho
+#:    log + cong noi bo) va `quan_sat.LOI_CO_MA` (man hinh cua khach). Chep cau
+#:    sang `quan_sat` se la ban thu hai cua cung mot cau, va no se lech.
+#:
+#: ⛔ `N_` chu khong `_t`: hang so cap MODULE. `_t` o day dong bang ngon ngu cua
+#:    request DAU TIEN vao mot bien toan cuc — xem `routes.NHAN_GIAI_DOAN`.
+MA_KHONG_KHOP = "auto_match_khong_giong_nao_khop"
+MA_KHO_CHUNG_THIEU_GIOI = "auto_match_kho_chung_thieu_gioi"
+MA_THIEU_CAN_CU = "auto_match_thieu_can_cu"
+
+CAU_CHUA_RANG = {
+    MA_KHONG_KHOP: N_(
+        'Không có giọng nào hợp với nội dung này. Hãy tự chọn một giọng.'),
+    MA_KHO_CHUNG_THIEU_GIOI: N_(
+        'Chưa nhận ra giọng người nói trong video nên không tự khớp được. '
+        'Hãy tự chọn một giọng.'),
+    MA_THIEU_CAN_CU: N_(
+        'Chưa đủ căn cứ từ nội dung để tự khớp giọng. Hãy tự chọn một giọng.'),
+}
+
+
+def ma_chua_rang(kq: KetQua) -> str:
+    """Ma ON DINH cua ly do mot `CHUA_RANG`. Xem `CAU_CHUA_RANG`.
+
+    ⚠️ Doc `can_cu["ly_do"]` — chuoi NOI BO cua tep nay, khong phai chu cua
+       khach. Do la co y: mot ma cong khai phai duoc quyet dinh o mot cho, va
+       cho do la day.
+    """
+    ly_do = str((kq.can_cu or {}).get("ly_do") or "")
+    if ly_do.startswith("khong giong nao khop"):
+        return MA_KHONG_KHOP
+    if ly_do.startswith("kho chung chi khai gioi"):
+        return MA_KHO_CHUNG_THIEU_GIOI
+    return MA_THIEU_CAN_CU
+
+
+def vi_sao_chua_rang(kq: KetQua) -> str:
+    """Cau loi CU THE cho mot `CHUA_RANG`. Cho khach doc, khong phai cho log.
+
+    🔴 `KetQua.ma_giong()` nem mot cau chung ("can ho so noi dung truoc khi tu
+       khop") vi no khong duoc phep biet ho so den tu dau. Nhung o cho goi thi
+       ta BIET, va mot khach doc "khong giong nao khop" se lam mot viec khac han
+       khi doc "chua co ho so noi dung".
+    """
+    return _t(CAU_CHUA_RANG[ma_chua_rang(kq)])
+
+
+def kiem_o_cua(db, *, owner_id: str, che_do: str, giong_id: str,
+               ngon_ngu_dich: str = ngon_ngu.DICH_MAC_DINH) -> None:
     """Tu choi mot yeu cau giong KHONG THE chot, O CUA — truoc khi giu credit.
 
     🔴 **Truoc pha 19 cua chi hoi mot cau: "USER_SELECTED co kem ma giong
@@ -247,7 +496,8 @@ def kiem_o_cua(db, *, owner_id: str, che_do: str, giong_id: str) -> None:
     from .giong_noi import GiongKhongHopLe
 
     try:
-        _rang_khach_chon(db, owner_id=owner_id, giong_id=str(giong_id).strip())
+        _rang_khach_chon(db, owner_id=owner_id, giong_id=str(giong_id).strip(),
+                         ngon_ngu_dich=ngon_ngu.chuan_dich(ngon_ngu_dich))
     except GiongKhongHopLe as exc:
         # (`giong_noi.giai_giong` boc `ltt_voice.LoiGiongNoi` thanh lop nay.)
         # ⭐ Chi bat dung lop loi CUA KHACH. Mot loi CSDL hay mang di thang len
@@ -257,11 +507,21 @@ def kiem_o_cua(db, *, owner_id: str, che_do: str, giong_id: str) -> None:
 
 
 def can_cho_ho_so(yeu_cau: YeuCau) -> bool:
-    """Lan chay nay co phai doi `HoSoNoiDung` truoc khi chot giong khong?
+    """Lan chay nay co phai dung `HoSoNoiDung` truoc khi chot giong khong?
 
-    Dung o dieu phoi vien: mot lan chay `AUTO_MATCH` khong duoc di toi buoc
-    chuyen loi thoai truoc khi giong da chot, vi do dai cau phu thuoc toc do doc
-    cua giong that.
+    🔑 **Cau hoi van y nguyen, nguoi tra loi thi doi.** Truoc 23/09/2026 ham nay
+       mo ta mot lan "hoan lai" ma khong ai thuc hien duoc: khong giai doan nao
+       sinh ho so, nen mot lan `AUTO_MATCH` chi hoan lai cho toi khi chet o
+       `content_process`.
+
+    ⭐ Nay `giai_doan_noi_dung._giong_da_chot` hoi cau nay NGAY TRUOC khi viet
+       loi thoai, va tra loi "co" nghia la: goi `ho_so_noi_dung.bao_dam` di,
+       roi hoi lai. Cho dung la day chu khong som hon — do dai cau phu thuoc
+       toc do doc cua giong, nen giong phai chot TRUOC ban long tieng va khong
+       can chot truoc bat cu thu gi khac.
+
+    ⚠️ Van la mot ham doc-thiet-lap thuan tuy: `dac_diem` da co (ho so da ghi o
+       mot luot truoc) thi tra `False`, va do la cai khien ca duong nay luy dang.
     """
     return (yeu_cau.che_do == CHE_DO_GIONG_TU_KHOP
             and not yeu_cau.dac_diem.co_du_de_khop)

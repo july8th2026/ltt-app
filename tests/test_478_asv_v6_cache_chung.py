@@ -217,32 +217,6 @@ def test_lan_THU_LAI_chu_dong_KHONG_dung_cache_chung(db, kho, tmp_path, asr_gia,
     assert dem_engine["audio_prepare"] == 2
 
 
-def _phan_vai_ra(monkeypatch, trang_thai):
-    from apps.auto_scan_video import ban_ghi, giai_doan_chep_loi
-
-    monkeypatch.setattr(giai_doan_chep_loi, "phan_vai", lambda duong, ban, **kw:
-                        ban_ghi.danh_dau_phan_vai(ban, trang_thai))
-
-
-@pytest.mark.parametrize("trang_thai,so_lan", [("da_chay", 1), ("khong_kha_dung", 2)])
-def test_ban_chep_loi_SUY_GIAM_phan_vai_KHONG_duoc_cho(db, kho, tmp_path, asr_gia, dem_engine,
-                                                    monkeypatch, trang_thai, so_lan):
-    """🔴 Mot su co tam thoi hom qua khong duoc thanh ket qua vinh vien hom nay.
-
-    ⭐ Hai ve cung duong: phan vai CHAY DUOC thi dung lai (1 lan engine); phan
-       vai KHONG KHA DUNG thi tinh lai (2 lan). Va khoa phai TRUNG o ca hai — de
-       ly do duy nhat cua lan tinh lai la chot suy giam, khong phai khoa lech.
-    """
-    _phan_vai_ra(monkeypatch, trang_thai)
-    r1, r2 = _hai_lan_chay(db, kho, tmp_path, chung={"che_do_giong": "AUTO_MATCH"})
-    assert dem_engine["transcribe"] == 1
-    for t in BA:
-        _chay(db, r2, t)
-    assert (_gd(db, r1, "transcribe").outputs["khoa_chung"]
-            == _gd(db, r2, "transcribe").outputs["khoa_chung"])
-    assert dem_engine["transcribe"] == so_lan
-
-
 # ══ 3. Khoa: dia chi noi dung ═══════════════════════════════════════════════
 
 def test_giai_doan_KHONG_chia_se_khong_co_khoa(db, kho, tmp_path, asr_gia):
@@ -287,7 +261,7 @@ def test_chep_loi_CHI_doc_nhung_thiet_lap_NAM_TRONG_khoa():
     """
     doc = _thuoc_tinh_cua_cai_dat(GOC / "apps/auto_scan_video/giai_doan_chep_loi.py")
     assert doc, "bo phan tich khong thay phep doc thiet lap nao — xanh rong"
-    assert doc <= {"ngon_ngu_nguon", "che_do_giong"}, doc
+    assert doc <= {"ngon_ngu_nguon", "ngon_ngu_dich", "nguon_loi"}, doc
 
 
 def test_tach_nguon_KHONG_doc_thiet_lap_nao():

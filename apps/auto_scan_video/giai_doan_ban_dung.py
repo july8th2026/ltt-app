@@ -86,7 +86,14 @@ def _co_khung(db, kho: Storage, run) -> tuple[int, int]:
         return (0, 0)
     try:
         ho_so = _doc(kho, khoa) or {}
-        return (int(ho_so.get("rong") or 0), int(ho_so.get("cao") or 0))
+        rong, cao = int(ho_so.get("rong") or 0), int(ho_so.get("cao") or 0)
+        # 🔴 asv-final: `rong`/`cao` cua ffprobe la khung MA HOA. Video dien
+        #    thoai `rotation=90` duoc ffmpeg tu xoay TRUOC chuoi loc, nen bo loc
+        #    thay khung da doi chieu — cat khung / logo tinh tren khung ma hoa la
+        #    cat sai truc.
+        if int(ho_so.get("xoay") or 0) % 180 == 90:
+            rong, cao = cao, rong
+        return (rong, cao)
     except (OSError, ValueError, TypeError):
         return (0, 0)
 
@@ -151,9 +158,11 @@ def _ho_so_phu_de(db, kho: Storage, run, ke_hoach: dict, cai, cach: str):
     tai_lieu = _doc(kho, khoa)
     van_ban.kiem(tai_lieu)          # doc lai thi kiem lai (I8)
 
-    ho_so["su_kien"] = _pd.su_kien_ra_goi(
-        _pd.su_kien_tu_ke_hoach(ke_hoach, tai_lieu))
-    return ho_so
+    # ⭐ Nguon chu (ban dich / loi goc), dai phu de goc cua `tu_dong` va phep
+    #    kiem glyph deu chot trong `phu_de.chot_o_compose` — mot cho.
+    return _pd.chot_o_compose(ho_so, ke_hoach=ke_hoach, van_ban=tai_lieu,
+                              vung=(cai.vung if cach == _cdr.CAT_MA_HOA_LAI
+                                    else ()))
 
 
 def chay(db, kho: Storage, *, run, ctx=None) -> dict:
@@ -263,12 +272,18 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         #    dung MOT truc (doi diem anh); phu de co HAI, va truc `.srt` chay
         #    duoc o CA HAI preset. Xem `_ho_so_phu_de`.
         phu_de=_ho_so_phu_de(db, kho, run, ke_hoach, cai, cach),
+        bien_tap=(cai.bien_tap if cach == cdr.CAT_MA_HOA_LAI else None),
         rong_khung=_rong_khung, cao_khung=_cao_khung)
 
     # 🔑 Muc 5: doi chieu MOI tham chieu TRUOC khi ton mot suat render.
     if ctx is not None and getattr(ctx, "progress", None):
         ctx.progress(60, _t('Đang đối chiếu tài nguyên'))
     hop_le = _khoa_con_dung(db, kho, run)
+    # 🔴 `kiem_toan_ven` GHI (`flush`) trang thai toan ven cua artifact da bi vo
+    #    hieu (vong sua). Giu ghi do chua commit roi goi `ctx.progress` (phien
+    #    THU HAI) la tu khoa minh tren SQLite: do that 22/09 o luot sua dau tien
+    #    chay lai `compose` — `database is locked`. Chot trang thai da kiem ngay.
+    db.commit()
     hop_le.add(run.source_key)        # tep nguon khong phai `AsvAsset`
     ban_dung.kiem(ban, khoa_hop_le=hop_le)
 

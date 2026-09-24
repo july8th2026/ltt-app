@@ -34,12 +34,13 @@ import io
 import json
 import logging
 import tempfile
+import time
 from pathlib import Path
 
 from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
 
-from . import (assets, giong_noi, long_tieng, nan_cho_vua, pipeline,
+from . import (assets, giong_noi, lat_cat, nan_cho_vua, pipeline,
                su_dung, van_ban)
 from .giai_doan_media import ThieuNguon
 
@@ -136,8 +137,33 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 
     phan: list[dict] = []
     ban_ke: list[dict] = []
+    # 🔑 Doan bi vong sua goi DOC LAI (doc sai / khong vua): lay mot LUOT DOC
+    #    MOI. Van tay cu = khoa cu = tep cu; khong muoi van tay thi "doc lai" tra
+    #    ve dung ban da bi bao sai. Xem `_lan_doc_lai`.
+    lan_lai = _lan_doc_lai(db, run)
     cac_nan: list[nan_cho_vua.KetQuaNan] = []
     da_sinh = 0
+    # 🔑 **Hai dong ho, va thieu chung thi khong ai sua duoc giai doan nay.**
+    #
+    #    Luot nghiem thu nen v3 (23/09) do duoc `voice_synthesis` = 943 giay cho
+    #    mot phim 107 giay va **khong tach duoc con so ay**: bao cao chi biet
+    #    tong. Phai do lai ngoai duong san pham (`tools/do_toc_do_giong.py`) moi
+    #    biet 751 giay la LLM viet lai chu khong phai may sinh tieng (241 giay).
+    #
+    # ⭐ Hai con so nay di vao `tom_tat`, tuc vao bang chung cua MOI luot chay
+    #    ve sau. "Cham" khong con la mot cam giac.
+    dong_ho = {"giay_tts": 0.0, "giay_llm_nan": 0.0}
+
+    # 🔑 LAT CAT (`lat_cat.py`): ~2.000 doan cua 120 phut video khong vua MOT
+    #    job. Don vi te nhat = (VONG_TOI_DA + 1) luot TTS + VONG_TOI_DA lan xin
+    #    viet lai, moi cai o tran timeout cua lop goi.
+    from . import ai as _ai
+    lc = lat_cat.mo(db, run, pipeline.VOICE_SYNTHESIS,
+                    du_phong_s=((nan_cho_vua.VONG_TOI_DA + 1) * _timeout_tts()
+                                + nan_cho_vua.VONG_TOI_DA
+                                * lat_cat.timeout_goi_ai(_ai.RUT_NGAN_CHO_VUA)
+                                + lat_cat.DU_PHONG_NGOAI_GOI_S))
+    da_lat = _doc_lat(db, run, lc) if lc.noi_tiep else {}
 
     with tempfile.TemporaryDirectory(prefix="asv-voice-") as tam:
         thu_muc = Path(tam)
@@ -150,9 +176,27 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                              _t('Đang đọc thành tiếng'))
 
             khe = nan_cho_vua.khe_cua(m)
+
+            # ⭐ Doan DA SINH o luot truoc cua CUNG lat cat: dung lai y nguyen
+            #    ban ke cua luot do (ke ca cau da nan + so vong). Di duong cache
+            #    thuong se tra `tu_cu=True` va — voi doan da nan — tim theo van
+            #    tay cau GOC nen khong thay, sinh lai: ban ra khac lan mot mach.
+            lat = da_lat.get(str(m["ma"])) if (i - 1) < lc.vi_tri else None
+            if lat is not None:
+                kq = nan_cho_vua.ket_luan(
+                    m["ma"], chu=str(lat["chu"]), giay=float(lat["giay"]),
+                    khe=khe, so_vong=int(lat["so_vong"]))
+                cac_nan.append(kq)
+                ban_ke.append(dict(lat["ban_ke"]))
+                if lat.get("phan"):
+                    phan.append(dict(lat["phan"]))
+                da_sinh += int(lat.get("so_luot_doc") or 0)
+                continue
+
             chu = str(m["chu"])
             so_vong = 0
-            vt = _van_tay(m["ma"], chu, ma_giong, preset, tu_dien=tu_dien)
+            vt = _van_tay(m["ma"], chu, ma_giong, preset, tu_dien=tu_dien,
+                          lan=lan_lai.get(m["ma"], 0))
 
             # ── Phuc hoi o muc DOAN ───────────────────────────────────────
             khoa_ben = assets.dat_khoa(owner_id=run.owner_id, run_id=run.id,
@@ -187,20 +231,25 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             if cu is not None:
                 kq = nan_cho_vua.ket_luan(m["ma"], chu=chu, giay=float(cu),
                                           khe=khe, so_vong=0)
-                ban_ke.append({"ma": m["ma"], "khoa": khoa_ben,
+                ban_ke.append({"ma": m["ma"], "khoa": khoa_ben, "chu": chu,
                                "giay": float(cu), "tu_cu": True,
                                **_ke_nan(kq)})
                 cac_nan.append(kq)
                 continue
+
+            lc.kiem(vi_tri=i - 1)
+            sinh_truoc = da_sinh
 
             # ── Bac thang nan cho vua (pha 15) ────────────────────────────
             #
             # ⛔ Vong nay co TRAN CUNG. Mot vong lap "sua cho toi khi vua" tren
             #    mot dich vu tra tien la mot hoa don khong co day.
             while True:
+                _t0 = time.monotonic()
                 wav, _headers = giong_noi.doc_mot_doan(
                     chu, ref_b64=ref_b64, preset=preset,
                     tu_dien_rieng=tu_dien or None)
+                dong_ho["giay_tts"] += time.monotonic() - _t0
                 # ⛔ Kiem TRUOC khi coi doan la xong (muc 8). Do tren TEP THAT,
                 #    khong tin header cua may sinh tieng — cung ly do
                 #    `apps/ltt_voice` doi chieu hai phia va ghi log khi lech.
@@ -217,18 +266,21 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                 # ⭐ Chi viet lai MOT doan. Sinh lai ca kich ban vi mot cau khong
                 #    vua la dieu `V4_RESOURCE_CPU_GPU_POLICY` cam dich danh — va
                 #    no cung lam hong hoa don cua ca tram cau con lai.
+                _t0 = time.monotonic()
                 try:
                     moi_chu = _viet_lai(db, run, m, chu=chu, giay=giay, khe=khe,
                                         so_vong=so_vong, ctx=ctx)
                 except _KhongNanDuoc:
+                    dong_ho["giay_llm_nan"] += time.monotonic() - _t0
                     break
+                dong_ho["giay_llm_nan"] += time.monotonic() - _t0
                 if moi_chu == chu:
                     # Model tra ve y nguyen: vong sau se cho ra dung ket qua nay.
                     break
                 chu = moi_chu
                 so_vong += 1
                 vt = _van_tay(m["ma"], chu, ma_giong, preset,
-                              tu_dien=tu_dien)
+                              tu_dien=tu_dien, lan=lan_lai.get(m["ma"], 0))
 
             kq = nan_cho_vua.ket_luan(m["ma"], chu=chu, giay=giay, khe=khe,
                                       so_vong=so_vong)
@@ -243,10 +295,15 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             with open(tep, "rb") as f:
                 kho.put(khoa_tam, f, content_type="audio/wav")
 
-            phan.append({"staging_key": khoa_tam, "kind": "audio", "duoi": "wav",
-                         "van_tay": vt})
-            ban_ke.append({"ma": m["ma"], "khoa": khoa_ben, "giay": giay,
-                           **_ke_nan(kq)})
+            phan_moi = {"staging_key": khoa_tam, "kind": "audio", "duoi": "wav",
+                        "van_tay": vt}
+            # ⭐ `chu` = cau CUOI CUNG may da doc (sau nan). `qc_do_luong` cham
+            #    WER so voi chinh cau nay, khong phai cau truoc khi nan.
+            ke_moi = {"ma": m["ma"], "khoa": khoa_ben, "chu": chu,
+                      "giay": giay,
+                      **_ke_nan(kq)}
+            phan.append(phan_moi)
+            ban_ke.append(ke_moi)
 
             # ⭐ Ghi so cai **mot lan cho moi doan da giao**, kem so giay THAT.
             #    `UNIQUE(run_id, ma_dispatch)` chan lan ghi thu hai neu giai doan
@@ -257,8 +314,19 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                                   item_key=m["ma"], fingerprint=vt,
                                   outputs={"khoa": khoa_ben, "giay": giay,
                                            "trang_thai": kq.trang_thai,
-                                           "so_vong": kq.so_vong})
+                                           "so_vong": kq.so_vong,
+                                           # Du de luot noi tiep dung lai
+                                           # y nguyen (xem `_doc_lat`).
+                                           "lat": {"phien": lc.phien,
+                                                   "chu": chu,
+                                                   "giay": giay,
+                                                   "so_vong": so_vong,
+                                                   "so_luot_doc":
+                                                       da_sinh - sinh_truoc,
+                                                   "phan": phan_moi,
+                                                   "ban_ke": ke_moi}})
             db.commit()
+            lc.xong_mot()
 
         # ── Ban ke: cai TIMING doc de biet doan nao o dau ─────────────────
         goi = json.dumps({"schema": 1, "doan": ban_ke}, sort_keys=True,
@@ -284,6 +352,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                 "so_luot_doc": da_sinh,
                 "so_doan_dung_lai": sum(1 for d in ban_ke if d.get("tu_cu")),
                 "tong_giay": round(sum(float(d["giay"]) for d in ban_ke), 2),
+                # ⭐ Xem `dong_ho` o dau ham: hai con so nay tra loi *"giai doan
+                #    nay cham vi cai gi"* ma khong phai do lai ngoai san pham.
+                "giay_tts": round(dong_ho["giay_tts"], 2),
+                "giay_llm_nan": round(dong_ho["giay_llm_nan"], 2),
                 "preset": str(preset or ""),
                 "ma_giong": ma_giong,
                 **nan_cho_vua.tom_tat(cac_nan),
@@ -291,21 +363,64 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         }
 
 
+def _timeout_tts() -> float:
+    """Tran timeout cua MOT luot TTS: mac dinh cua `sidecar_client.noi`, vi
+    `giong_noi.doc_mot_doan` -> `ltt_voice.features.goi_cong` khong truyen
+    `timeout` (xem docstring `goi_cong`)."""
+    from apps.ltt_voice import sidecar_client
+
+    return lat_cat.mac_dinh_tham_so(sidecar_client.noi, "timeout")
+
+
+def _doc_lat(db, run, lc) -> dict:
+    """`{ma_doan: ban ghi lat}` cua cac doan da sinh o luot truoc CUNG phien."""
+    from . import features
+
+    ra: dict = {}
+    for it in features.cac_don_vi(db, run.id, pipeline.VOICE_SYNTHESIS):
+        lat = (it.outputs or {}).get("lat")
+        if isinstance(lat, dict) and lat.get("phien") == lc.phien:
+            ra[str(it.item_key)] = lat
+    return ra
+
+
 class _KhongNanDuoc(RuntimeError):
     """Khong xin duoc cau viet lai — dung bac thang o day, khong lam hong ca run."""
 
 
+def _lan_doc_lai(db, run) -> dict[str, int]:
+    """`{ma: so vong sua da dat lai doan nay o voice_synthesis}` — tu SO CAI.
+
+    Doc cac dong vong sua (`jobs.NANG_LUC_VONG_SUA`) ma `_sua_chua_neu_can` ghi
+    TRUOC khi dat lai: mot con so ben qua worker chet, va la ham cua du lieu
+    da ghi chu khong phai cua mot bo dem trong bo nho.
+    """
+    from . import sua_chua
+    from .jobs import DON_VI_SUA, NANG_LUC_VONG_SUA
+
+    ke = [dict(getattr(d, "ghi_chu", None) or {})
+          for d in su_dung.cac_dong(db, run, stage=pipeline.QC, item_key=DON_VI_SUA)
+          if d.nang_luc == NANG_LUC_VONG_SUA]
+    return sua_chua.lan_doc_lai(ke)
+
+
 def _van_tay(ma: str, chu: str, ma_giong: str, preset: str, *,
-             tu_dien: dict) -> str:
+             tu_dien: dict, lan: int = 0) -> str:
     """Van tay cua MOT doan tieng.
 
     🔑 Gom **van ban da nan** chu khong phai van ban goc: sau mot vong nan, doan
        nay la ket qua cua mot cau KHAC, va dung lai tep cu la giao mot cau ma ta
        vua quyet dinh la khong vua.
     """
-    return giong_noi.van_tay_doan(ma_doan=ma, chu=chu, voice_id=ma_giong,
-                                  preset=str(preset or ""),
-                                  tu_dien=tu_dien or None)
+    vt = giong_noi.van_tay_doan(ma_doan=ma, chu=chu, voice_id=ma_giong,
+                                preset=str(preset or ""),
+                                tu_dien=tu_dien or None)
+    if not lan:
+        # ⛔ `lan=0` giu NGUYEN van tay cu: moi doan chua tung bi sua dung lai
+        #    cache y nhu truoc.
+        return vt
+    import hashlib
+    return hashlib.sha256(f"{vt}|doc_lai:{int(lan)}".encode()).hexdigest()[:len(vt)]
 
 
 def _ke_nan(kq) -> dict:
@@ -325,13 +440,14 @@ def _viet_lai(db, run, m: dict, *, chu: str, giay: float, khe: float,
        tai van doc duoc, chi la khong vua — va bac thang con mot nac nua (co
        gian) truoc khi phai bo cuoc. Nen loi o day dung o day.
     """
-    from . import ai
+    from . import ai, cai_dat as cd
 
     try:
         kq = ai.goi_tinh_tien(
             db, run, ai.RUT_NGAN_CHO_VUA,
             nan_cho_vua.loi_nhac_nan(m, chu_hien_tai=chu, giay_do_duoc=giay,
-                                     khe=khe),
+                                     khe=khe,
+                                     ngon_ngu_dich=cd.doc(run).ngon_ngu_dich),
             stage=pipeline.VOICE_SYNTHESIS,
             item_key=f"nan:{m['ma']}:{so_vong}", ctx=ctx)
         # 🔴 Cung mot loi voi `giai_doan_noi_dung`, tim ra o pha 22: `noi_dung`

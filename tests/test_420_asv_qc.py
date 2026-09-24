@@ -140,6 +140,10 @@ def test_bao_cao_liet_ke_DU_cac_dung_sai():
        chot tap hop thay vi chot so luong: doi so luong thi khong ai phai giai
        thich gi, doi tap hop thi phai noi ra them cai gi va vi sao.
 
+    ⚠️ **ASV final mo tiep thanh T1-T18** (lan ky-thuat): T17 giai ma ca tep
+       khong loi; T18 VMAF cua lan ma hoa lai (preset cat). Xem
+       `docs/auto_scan_video_final/L_KY_THUAT.md`.
+
     ⚠️ **Pha 27 mo tiep thanh T1-T16.** Ba dung sai duoc them, va moi cai bit
        mot cau hoi ma de bai pha 27 goi ten trong khi khong chot nao hoi:
 
@@ -162,8 +166,8 @@ def test_bao_cao_liet_ke_DU_cac_dung_sai():
        ton tai lam ra, va no se bao "dat".
     """
     bc = qc.kiem(**_dau_vao_dat())
-    assert {m["ma"] for m in bc["muc"]} == {f"T{i}" for i in range(1, 17)}
-    assert qc.PHIEN_BAN_QC >= 3, (
+    assert {m["ma"] for m in bc["muc"]} == {f"T{i}" for i in range(1, 19)}
+    assert qc.PHIEN_BAN_QC >= 4, (
         "mo tap hop ma khong nang PHIEN_BAN_QC: lan chay lai se phuc vu bao "
         "cao cu tu cache")
 
