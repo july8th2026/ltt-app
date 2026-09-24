@@ -121,6 +121,96 @@ def test_khoa_CON_HIEU_LUC_thi_KHONG_bi_doat():
     assert cy.thu_giu("ke-cuop", "gate") is False
 
 
+# ── 2c. THUA cuộc giành khoá treo — thua thì CHỜ, ⛔ không phải CHẾT (N-42) ──
+#
+# 🔴 Sự cố 25/09: ~10 phiên xếp hàng sau một khoá giữ 33 phút. Chủ khoá chết ⇒
+#    **nhiều phiên cùng lao vào** giành một khoá treo. Trên Windows `unlink`
+#    của phiên THUA nem `PermissionError` (WinError 5, "tiến trình khác đang mở
+#    tệp") — ngoại lệ thoát thẳng ra khỏi `thu_giu`, giết `chay_nang.py`, và
+#    lượt ấy ⛔ **không chạy một lệnh nào**.
+#
+# ⭐ Thua một cuộc đua là kết cục **bình thường**, ⛔ không phải lỗi. Đo CẢ HAI
+#    chiều: thua thì xếp lại hàng, mà khoá treo THẬT thì vẫn phải giành được —
+#    thiếu vế sau thì bản vá có thể làm **không ai** giành được khoá treo nữa.
+
+
+def _chan_unlink_tep_khoa(monkeypatch, loi: OSError) -> None:
+    """Tiêm lỗi ở ĐÚNG chỗ `unlink` của tệp khoá, không đụng tệp khác."""
+    goc = Path.unlink
+
+    def unlink(self, *a, **k):
+        if self.name == cy.TEP_KHOA.name:
+            raise loi
+        return goc(self, *a, **k)
+
+    monkeypatch.setattr(Path, "unlink", unlink)
+
+
+def test_THUA_cuoc_gianh_khoa_treo_thi_XEP_LAI_HANG_chu_khong_CHET(
+        capsys, monkeypatch):
+    con = subprocess.Popen([sys.executable, "-c", "pass"])
+    con.wait()
+    _ghi_khoa(con.pid)
+    _chan_unlink_tep_khoa(
+        monkeypatch, PermissionError(5, "Access is denied", str(cy.TEP_KHOA)))
+
+    # ⛔ Không `pytest.raises`: thứ được chốt ở đây là ngoại lệ KHÔNG thoát ra.
+    assert cy.thu_giu("thua-cuoc", "gate") is False, (
+        "thua cuộc giành khoá treo phải trả False (= xếp lại hàng), "
+        "không được để ngoại lệ giết cả lượt")
+    ra = capsys.readouterr().out
+    assert "thua cuoc gianh khoa treo" in ra, (
+        "⛔ không nuốt lặng lẽ (N-19): một cuộc đua không ai thấy thì không ai "
+        f"đo được nó xảy ra bao nhiêu lần. Đã in: {ra!r}")
+    assert "PermissionError" in ra
+    # Tệp của người kia còn nguyên: ta thua, ta không đụng được vào nó.
+    assert json.loads(cy.TEP_KHOA.read_text(encoding="utf-8"))["phien"] == "da-chet"
+
+
+def test_khoa_treo_THAT_thi_VAN_gianh_duoc_NHU_CU():
+    """⭐ Vế ngược — thiếu nó thì bản vá có thể khoá cứng cả máy theo cách khác.
+
+    Tệp mở được ⇒ ⛔ không có cuộc đua nào ⇒ đường giành khoá treo phải chạy
+    trọn như trước bản vá, và bản ghi mới phải là của ta.
+    """
+    con = subprocess.Popen([sys.executable, "-c", "pass"])
+    con.wait()
+    _ghi_khoa(con.pid)
+    assert cy.thu_giu("moi", "gate", so_loi=6) is True
+    moi = json.loads(cy.TEP_KHOA.read_text(encoding="utf-8"))
+    assert moi["phien"] == "moi"
+    assert moi["so_loi"] == 6, (
+        "bản đệ quy cũ gọi lại `thu_giu(phien, lenh, tai_nguyen)` và **đánh "
+        "rơi `so_loi`** ⇒ lượt giành được khoá treo khai 0 lỗi; ngân sách của "
+        "máy tính theo bản ghi đó là tính thiếu")
+
+
+def test_gianh_lai_CO_TRAN_chu_khong_lap_vo_han(capsys, monkeypatch):
+    """⛔ Không `retry` vô hạn: hết trần thì thoát, và NÓI RA vì sao.
+
+    Dựng cảnh xấu nhất: tệp khoá treo **luôn** hiện ra lại ngay sau khi ta xoá
+    (một phiên khác đang giữ nhịp). Bản đệ quy cũ sẽ quay vô hạn tới khi tràn
+    ngăn xếp; bản mới phải dừng đúng `TRAN_GIANH_LAI` lần rồi xếp lại hàng.
+    """
+    con = subprocess.Popen([sys.executable, "-c", "pass"])
+    con.wait()
+    dem = {"n": 0}
+    goc = cy.os.open
+
+    def open_luon_bi_chiem(tep, *a, **k):
+        if str(tep) == str(cy.TEP_KHOA):
+            dem["n"] += 1
+            _ghi_khoa(con.pid)          # người kia vừa chiếm lại
+            raise FileExistsError(17, "File exists", str(tep))
+        return goc(tep, *a, **k)
+
+    monkeypatch.setattr(cy.os, "open", open_luon_bi_chiem)
+    assert cy.thu_giu("kien-nhan", "gate") is False
+    assert dem["n"] == cy.TRAN_GIANH_LAI, (
+        f"phải dừng đúng {cy.TRAN_GIANH_LAI} lần, đã thử {dem['n']}")
+    assert "xep lai hang" in capsys.readouterr().out
+
+
 # ── 2b. Giữ khoá quá lâu phải LỘ RA ───────────────────────────────────────
 #
 # Luật 23/09 (CLAUDE.md, mục ⭐ Chạy agent): khoá bao ĐÚNG lệnh tính, nhả ngay
