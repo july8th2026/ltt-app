@@ -20660,3 +20660,33 @@ msgstr "Run manually"
 
 msgid "Người dùng bấm chạy. Không có lịch, không có webhook."
 msgstr "The user clicks Run. No schedule, no webhook."
+
+msgid "AI: Chọn nhánh"
+msgstr "AI: Choose branch"
+
+msgid "AI: Sinh văn bản"
+msgstr "AI: Generate text"
+
+msgid "AI: Trích xuất có kiểm"
+msgstr "AI: Extract with validation"
+
+msgid "Câu lệnh gửi model."
+msgstr "Prompt sent to the model."
+
+msgid "Danh sách nhánh hợp lệ."
+msgstr "List of valid branches."
+
+msgid "Gọi model nội bộ (bọc text.chat). Khai luoc_do (tuỳ chọn) để ép JSON có kiểm — spec §12.1."
+msgstr "Calls the internal model (wraps text.chat). Declare luoc_do (optional) to enforce validated JSON — spec §12.1."
+
+msgid "JSON Schema cho đầu ra. Không khớp -> FAILED dau_ra_sai_luoc_do."
+msgstr "JSON Schema for the output. Mismatch -> FAILED dau_ra_sai_luoc_do."
+
+msgid "Model chọn một nhánh trong danh sách ai_choice đã khai; không khớp -> nhánh mac_dinh. core.if không gọi LLM, chỉ node này (spec §12.1)."
+msgstr "The model picks one branch from the declared ai_choice list; no match -> the mac_dinh branch. core.if never calls the LLM, only this node does (spec §12.1)."
+
+msgid "Model nội bộ."
+msgstr "Internal model."
+
+msgid "text.chat + lược đồ BẮT BUỘC. Không khớp -> FAILED dau_ra_sai_luoc_do (spec §12.1)."
+msgstr "text.chat + a REQUIRED schema. Mismatch -> FAILED dau_ra_sai_luoc_do (spec §12.1)."
