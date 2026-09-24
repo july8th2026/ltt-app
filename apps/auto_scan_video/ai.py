@@ -80,6 +80,33 @@ SLUG = "auto_scan_video"
 #:    di tim model khac (hoac nem `AiError`), khong tra ve no.
 MODEL_THI_GIAC_NOI_BO = "ltt-3.5"
 
+#: 🔴 **KHAI ĐÈ MODEL THEO TỪNG THAO TÁC. ⛔ Mặc định KHÔNG đổi.**
+#:
+#: `manifest.model_llm_noi_bo` là **MỘT hằng phục vụ NĂM thao tác khác nhau** —
+#: dịch · chấm nghĩa · đọc cảnh · viết lời thoại · rút gọn. Đúng họ **N-15**:
+#: một hằng làm nhiều việc, và lật nó làm hồi quy chỗ khác **trong im lặng**.
+#:
+#: ⛔ Không có bảng này thì không cách nào trả lời *"để PHÉP ĐO chọn 3.5 hay 3.8
+#:    cho DỊCH"* mà không đồng thời đổi model của **bộ chấm**.
+#:
+#: ⭐ **Vắng mặt = giữ nguyên hành vi cũ.** Thao tác không có tên ở đây đi theo
+#:    `manifest.model_llm_noi_bo` đúng như trước, nên bảng này **không đổi gì**
+#:    cho tới khi ai đó thêm một dòng.
+#:
+#: 🔑 **`qc_ngu_nghia` được GHIM TƯỜNG MINH, ⛔ không "thừa hưởng mặc định"** —
+#:    dù giá trị hôm nay trùng mặc định. Lý do: ngày ai đó đổi
+#:    `model_llm_noi_bo`, bộ chấm **không được** bị kéo đi theo. Một giá trị
+#:    trùng nhau **vì tình cờ** và một giá trị trùng nhau **vì được khai** là hai
+#:    trạng thái khác nhau, và chỉ cái thứ hai sống sót qua một lần sửa chỗ khác.
+#:    ⇒ `test_DOI_MAC_DINH_thi_qc_ngu_nghia_KHONG_doi` là phép bắt cái bẫy đó.
+#:
+#: ⚠️ Thêm một dòng vào đây là **đổi chất lượng** của đúng một thao tác. Phải có
+#:    phép đo đi kèm, ⛔ không phải một phỏng đoán về model nào "khá hơn".
+MODEL_THEO_THAO_TAC: dict[str, str] = {
+    "qc_ngu_nghia": "ltt-3.8",
+}
+
+
 #: 🔑 **Phien ban PROMPT + LU?C DO, di vao van tay.**
 #:
 #: ⛔ Thieu no thi doi mot cau prompt xong, cache van khop, va lan chay dung lai
@@ -237,6 +264,13 @@ THEO_MA = {t.ma: t for t in THAO_TAC}
 #  Chon model — HOI nen tang, khong go id
 # ══════════════════════════════════════════════════════════════════════════════
 
+def ALIAS_SANG_ID_AN_TOAN(bi_danh: str) -> str:
+    """Bí danh công khai -> id model, rỗng nếu không biết. ⛔ Không ném."""
+    from platform_core.llm import canonical
+
+    return canonical.ALIAS_SANG_ID.get(str(bi_danh or ""), "")
+
+
 def model_cho(thao_tac: ThaoTac, *, provider: str = "") -> str:
     """Id model that cho mot thao tac. Hoi BAN KHAI, doi chieu REGISTRY.
 
@@ -291,6 +325,15 @@ def model_cho(thao_tac: ThaoTac, *, provider: str = "") -> str:
         return bool(kha_nang[mid].get("vision")) or not thao_tac.can_thi_giac
 
     khai = canonical.ALIAS_SANG_ID.get(canonical.model_noi_bo_cua(SLUG), "")
+
+    # ⭐ Khai đè THEO THAO TÁC đi trước mọi thứ khác — nhưng ⛔ **không** vượt
+    #    được ràng buộc thị giác: `phuc_vu_duoc` vẫn là cửa cuối. Một khai đè
+    #    trỏ vào model không đọc được ảnh cho một thao tác CẦN đọc ảnh thì bị
+    #    bỏ qua ở đây và rơi xuống các nhánh dưới, đúng như một bản khai hỏng.
+    de = ALIAS_SANG_ID_AN_TOAN(MODEL_THEO_THAO_TAC.get(thao_tac.ma, ""))
+    if de and phuc_vu_duoc(de):
+        return de
+
     if thao_tac.can_thi_giac:
         # Xem `MODEL_THI_GIAC_NOI_BO`: viec anh chi dinh tuong minh, khong
         # theo co `vision` cua model app khai.

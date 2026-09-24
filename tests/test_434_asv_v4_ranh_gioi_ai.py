@@ -801,3 +801,67 @@ def test_KHONG_truyen_thi_dieu_phoi_giu_mac_dinh_cua_no(monkeypatch):
     assert "timeout_s" not in gia.da_goi, (
         "ASV go lai mac dinh timeout cua `dieu_phoi` — mot con so thu hai cho "
         "cung mot thu, va CLAUDE.md ghi mot loi da xay ra that vi dung do")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# KHAI ĐÈ MODEL THEO THAO TÁC — họ N-15: một hằng làm nhiều việc
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_thao_tac_KHONG_khai_de_thi_di_theo_BAN_KHAI_nhu_cu():
+    """(a) Vắng mặt trong bảng = **giữ nguyên hành vi cũ**.
+
+    ⚠️ Bài này một mình chỉ **chép lại hiện trạng** — nó không bắt được cái bẫy.
+       Bài dưới mới bắt.
+    """
+    from platform_core.llm import canonical
+
+    khai = canonical.ALIAS_SANG_ID[canonical.model_noi_bo_cua(ai.SLUG)]
+    for t in ai.THAO_TAC:
+        if t.ma in ai.MODEL_THEO_THAO_TAC or t.can_thi_giac:
+            continue
+        assert ai.model_cho(t) == khai, f"{t.ma} lệch khỏi bản khai"
+
+
+def test_DOI_MAC_DINH_thi_qc_ngu_nghia_KHONG_doi(monkeypatch):
+    """🔴 **(b) Đây là vế bắt được cái bẫy.**
+
+    Ngày ai đó đổi `manifest.model_llm_noi_bo`, **bộ chấm ngữ nghĩa không được
+    bị kéo đi theo**. Một giá trị trùng mặc định **vì tình cờ** và một giá trị
+    trùng **vì được khai** là hai trạng thái khác nhau, và ⛔ chỉ cái thứ hai
+    sống sót qua một lần sửa chỗ khác.
+
+    ⇒ Tiêm đúng ngày đó: đổi mặc định sang model kia, rồi đòi `qc_ngu_nghia`
+      **không nhúc nhích**.
+    """
+    from platform_core.llm import canonical
+
+    cu = canonical.model_noi_bo_cua(ai.SLUG)
+    moi = next(a for a in canonical.ALIAS_SANG_ID if a != cu)
+    ghim = canonical.ALIAS_SANG_ID[ai.MODEL_THEO_THAO_TAC["qc_ngu_nghia"]]
+
+    _tiem_registry(monkeypatch, {mid: {"vision": True}
+                                 for mid in canonical.ALIAS_SANG_ID.values()})
+    truoc = ai.model_cho(ai.QC_NGU_NGHIA)
+    assert truoc == ghim
+
+    monkeypatch.setattr(canonical, "model_noi_bo_cua", lambda _s: moi)
+    # ⛔ Mặc định ĐÃ đổi — chứng minh bằng một thao tác KHÔNG ghim.
+    assert ai.model_cho(ai.HO_SO_NOI_DUNG) == canonical.ALIAS_SANG_ID[moi], (
+        "phép tiêm không có tác dụng — bài này đang đo chính nó")
+    # ⭐ ...và bộ chấm vẫn đứng yên.
+    assert ai.model_cho(ai.QC_NGU_NGHIA) == ghim, (
+        "⛔ đổi mặc định đã KÉO THEO bộ chấm — đúng cái bẫy N-15")
+
+
+def test_khai_de_KHONG_vuot_duoc_rang_buoc_THI_GIAC(monkeypatch):
+    """⛔ Một khai đè trỏ vào model không đọc được ảnh, cho thao tác CẦN ảnh,
+    phải bị **bỏ qua** như một bản khai hỏng — ⛔ không được trả về nó."""
+    from platform_core.llm import canonical
+
+    mu = next(iter(canonical.ALIAS_SANG_ID))
+    sang = next(a for a in canonical.ALIAS_SANG_ID if a != mu)
+    _tiem_registry(monkeypatch, {canonical.ALIAS_SANG_ID[mu]: {},
+                                 canonical.ALIAS_SANG_ID[sang]: {"vision": True}})
+    monkeypatch.setitem(ai.MODEL_THEO_THAO_TAC, ai.QC_HINH.ma, mu)
+    assert ai.model_cho(ai.QC_HINH) == canonical.ALIAS_SANG_ID[sang]
