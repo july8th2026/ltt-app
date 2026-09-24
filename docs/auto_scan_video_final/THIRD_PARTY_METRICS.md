@@ -29,8 +29,10 @@
   **chỉ mượn**, không phải một tài sản của kho:
   * ⛔ **Không commit câu nguồn/câu dịch FLORES vào kho**, và ⛔ không commit các
     cặp **đã làm hỏng có chủ ý** (chúng là *tác phẩm phái sinh* của FLORES).
-    Bằng chứng chỉ ghi **chỉ số dòng FLORES + điểm + phán quyết + `ly_do` do model
-    sinh ra** — tức đủ để tái lập mà không phân phối lại một chữ nào của FLORES.
+    Bằng chứng chỉ ghi **chỉ số dòng FLORES + phán quyết + tỉ lệ** — ⛔ **không
+    cả `ly_do` của model**, vì `ly_do` trích thẳng đoạn nguồn lẫn bản dịch vào
+    trong nó. `bench_b2_xac_thuc_bo_cham.ban_ghi_sach` cưỡng chế điều này bằng
+    cơ học (`test_3600`), không bằng một ý định tốt.
   * ⛔ **Không đưa vào đường sản phẩm.** Nó chỉ chạy trong công cụ đo
     (`tools/bench_b2_xac_thuc_bo_cham.py`), không nằm trong `apps/`.
   * Tải về `C:\LTTPlatform\hf-cache\flores200\` lúc đo, kiểm `sha256` trước khi

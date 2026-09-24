@@ -257,6 +257,38 @@ def test_bao_cao_KEU_LEN_khi_mu_o_mot_loai():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+#  6b. Ban ghi commit len kho KHONG duoc mang chu cua FLORES (ShareAlike)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_ban_ghi_sach_bo_HET_khoa_mang_chu():
+    """🔴 Rao CO HOC, khong phai mot y dinh tot.
+
+    FLORES la CC-BY-SA-4.0 (ShareAlike) va `ly_do` cua model trich thang doan
+    nguon lan ban dich vao trong no — mot tep bang chung "day du" se la mot ban
+    phan phoi lai FLORES nam trong mot kho khong theo giay phep do.
+    """
+    day_du = {
+        "bao_dong_gia": {
+            "n": 2, "ti_le_trung_vi": 0.5,
+            "gop": {"flores_0000": {"dat": False, "so_luot": 3,
+                                    "so_bao_sai": 2}},
+            "cac_luot": [{"phan_quyet": {"flores_0000": {
+                "dat": False, "do_tin": 0.9,
+                "ly_do": "Bản gốc nói X, bản dịch thành Y"}}, "loi_lo": []}]},
+        "bat_loi_tiem": {"gop": {}, "cac_luot": [],
+                         "dong_flores_da_dung": [100, 101]},
+    }
+    sach = bc.ban_ghi_sach(day_du)
+    van = json.dumps(sach, ensure_ascii=False)
+    assert "Bản gốc nói X" not in van
+    assert "cac_luot" not in sach["bao_dong_gia"]
+    # ...nhung thu tra loi duoc cau hoi cua Task 10 thi VAN CON.
+    assert sach["bao_dong_gia"]["ti_le_trung_vi"] == 0.5
+    assert sach["bao_dong_gia"]["gop"]["flores_0000"]["so_bao_sai"] == 2
+    assert sach["bat_loi_tiem"]["dong_flores_da_dung"] == [100, 101]
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 #  7. FLORES — hai tep lech dong thi DUNG
 # ══════════════════════════════════════════════════════════════════════════════
 

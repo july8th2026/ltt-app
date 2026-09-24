@@ -455,6 +455,37 @@ def ti_le_bat_loi_tiem(*, db, moi_loai: int, bo_qua: int,
 #  6. Bao cao
 # ══════════════════════════════════════════════════════════════════════════════
 
+#: Nhung khoa co the mang chu cua FLORES (hoac cua mot tac pham phai sinh).
+#: ⛔ Khong khoa nao trong so nay duoc vao tep bang chung commit len kho.
+KHOA_CO_CHU = ("cac_luot", "ly_do", "goc", "chu", "nguon", "dich")
+
+
+def ban_ghi_sach(d: dict) -> dict:
+    """Ban ghi DU DE TAI LAP ma khong mang mot chu nao cua FLORES.
+
+    🔴 **Day la mot rao co hoc, khong phai mot y dinh tot.** FLORES la
+       CC-BY-SA-4.0 (ShareAlike), va `ly_do` cua model **trich thang** doan nguon
+       lan ban dich vao trong no. Mot tep bang chung "day du" se la mot ban phan
+       phoi lai FLORES nam trong mot kho khong theo giay phep do.
+
+    ⭐ Cai con lai van tra loi duoc moi cau hoi cua Task 10: chi so dong FLORES
+       (tai lap bang `tai` + `HAT_GIONG`), phan quyet tung cau, va ti le.
+    """
+    def loc(o):
+        if isinstance(o, dict):
+            return {k: loc(v) for k, v in o.items() if k not in KHOA_CO_CHU}
+        if isinstance(o, list):
+            return [loc(v) for v in o]
+        return o
+
+    sach = loc(d)
+    con = [k for k in KHOA_CO_CHU
+           if f'"{k}"' in json.dumps(sach, ensure_ascii=False)]
+    if con:
+        raise SystemExit(f"ban ghi van con khoa mang chu: {con}")
+    return sach
+
+
 def bao_cao(d: dict) -> str:
     fa = d.get("bao_dong_gia") or {}
     tiem = d.get("bat_loi_tiem") or {}
@@ -508,6 +539,9 @@ def main(argv=None) -> int:
     g.add_argument("--ra", required=True)
     b = s.add_parser("bao-cao")
     b.add_argument("tep")
+    bg = s.add_parser("bang-chung")
+    bg.add_argument("tep")
+    bg.add_argument("--ra", required=True)
     a = p.parse_args(argv)
 
     if a.lenh == "tai":
@@ -516,6 +550,13 @@ def main(argv=None) -> int:
     if a.lenh == "bao-cao":
         print(bao_cao(json.loads(
             pathlib.Path(a.tep).read_text(encoding="utf-8"))))
+        return 0
+    if a.lenh == "bang-chung":
+        sach = ban_ghi_sach(json.loads(
+            pathlib.Path(a.tep).read_text(encoding="utf-8")))
+        pathlib.Path(a.ra).write_text(
+            json.dumps(sach, ensure_ascii=False, indent=1), encoding="utf-8")
+        print(f"da ghi ban ghi SACH (khong mang chu FLORES): {a.ra}")
         return 0
     if a.lenh == "gop":
         _doc = (lambda t: json.loads(
