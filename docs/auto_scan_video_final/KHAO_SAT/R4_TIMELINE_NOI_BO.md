@@ -595,3 +595,88 @@ thứ đang thiếu: một kênh **thứ hai** để hỏi *"chỗ ngắt này c
 và `so_doan_khong_cho_ngat` của `cat_doan` là chỗ nó trả lời được ngay.
 ⛔ `apps/transcript/__init__.py` vẫn chưa khai `BE_MAT_CONG_KHAI` ⇒ **báo điều phối**,
 ⛔ không tự sửa.
+
+---
+
+## 11. Kết quả 25/09 — trần biến mất, và B1 **trượt thật**
+
+### 11.1 Thước sửa trước, chạy sau
+
+`LUOI_CHAN_LY_NEN_S = 0.5` **đã bỏ**. Lưới nay là `luoi_s` **trong tệp chân lý nền**;
+thiếu ⇒ `ThieuBanKhai`, ⛔ không mặc định. Bánh cóc đọc **chữ ký hàm**
+(`test_3602_tran_KHONG_con_mac_dinh_luoi_05`), nên ⛔ không ai lặng lẽ thêm lại mặc định.
+
+⭐ Và `test_3602_luoi_MIN_HON_thi_nguong_080_VOI_TOI_DUOC` chứng minh **trước** khi tiêu
+một suất CPU: cùng chân lý nền, cùng dung sai 0,3 s, chỉ đổi lưới 0,5 → 0,1 s thì ngưỡng
+0,80 từ ⛔ không với tới thành ✅ với tới. ⇒ Vấn đề **đúng là lưới**.
+
+### 11.2 Chân lý nền mới — và một lần tái lập độc lập
+
+`l_ocr_gt_v2_10fps.json`: OCR 10 fps qua **chính đường sản phẩm**, **107 dòng**, lưới
+**0,1 s**, 131,6 s CPU (qua `chay_nang.py`, nhả khoá sau 2,2 phút).
+⭐ **107** khớp **đúng** con số `L_OCR.md:102` đo 22/09 ⇒ một phép tái lập độc lập, cách
+nhau ba ngày, ⛔ không phải chép lại.
+
+### 11.3 Ba số, cạnh nhau
+
+| nền | dung sai | trần thước | (a) ranh giới F1 | (b) vi phạm > 7 s | (c) onset độ nhạy |
+|---|---|---|---|---|---|
+| cũ, lưới 0,5 s (33 dòng, 0,5–61 s) | 0,3 s | **0,606** 🔴 | 0,645 | 0/31 | 0,636 — ⛔ **KHÔNG ĐO ĐƯỢC** |
+| cũ, lưới 0,5 s | 0,5 s | 1,000 | 0,903 | 0/31 | 0,909 ✅ |
+| **mới, lưới 0,1 s** (107 dòng, 0–190 s) | **0,3 s** | **1,000** ✅ | **0,804** | **0/74** | 🔴 **0,692 [0,60 ; 0,77]** |
+| mới, lưới 0,1 s | 0,1 s | 1,000 | 0,581 | 0/74 | 0,561 [0,47 ; 0,65] |
+
+⇒ 🔴 **B1 TRƯỢT cổng onset ở ±0,3 s: 0,692 < 0,80, và KTC trên (0,77) ⛔ không chạm ngưỡng.**
+Trước hôm nay đây là *"KHÔNG ĐO ĐƯỢC"*; nay nó là một **phán quyết**.
+⚠️ Hai nền ⛔ **không so trực tiếp được** (33 dòng/60 s vs 107 dòng/190 s).
+
+### 11.4 🔴 Độ lệch +0,34 s ⛔ KHÔNG áp dụng — **đo, ⛔ không đoán**
+
+Điều phối (và chính tôi) dặn phải trừ bias **+0,34 s** (`L_OCR.md:133`). Trừ thử:
+điểm **sụp 0,692 → 0,009**, thấp hơn cả đối chứng *"gộp tất"*. ⇒ ⭐ Giả thuyết **SAI**.
+
+Đo thẳng độ lệch (ghép tối ưu `linear_sum_assignment` trên onset):
+
+```
+74/74 onset của ta khớp một dòng nền trong 1,0 s
+trung vị  +0,069 s   ·   trung bình +0,069 s   ·   p95 |Δ| 0,127 s   ·   ÂM 0/74
+```
+
+⇒ ⭐ **ASV ⛔ không hề bắt đầu sớm hơn phụ đề** — nó muộn hơn **69 ms**, và ⛔ chưa một lần
+nào âm. Con số 0,34 s ở `L_OCR.md:133` đo **OCR so với faster-whisper có `vad_filter`**,
+⛔ **không** so với `whisperx + cat_doan`. ⚠️ Hai phép đo cùng tên *"lệch OCR vs ASR"* cho
+hai con số khác hẳn vì chúng so **hai bộ phân đoạn khác nhau** — ⛔ đừng chuyển số giữa chúng.
+
+### 11.5 ⭐ Nguyên nhân thật: **THIẾU ĐOẠN**, ⛔ không phải lệch mốc
+
+```
+0,692  =  74 / 107   ĐÚNG BẰNG
+```
+
+Mọi đoạn ASV sinh ra **đều khớp** (độ chính xác ~1,0). Thiếu là **33 ranh giới mà ASV
+⛔ không cắt**: hardsub chia 107 dòng, `cat_doan` cho 74. ⇒ **ASV DƯỚI-PHÂN-ĐOẠN so với
+người biên tập phụ đề** — ⛔ khác hẳn giả thuyết *"mốc lệch"* mà cả hạng mục đang đuổi theo.
+
+⚠️ Và `cat_doan` **tự khai đúng chỗ này**: `so_doan_khong_cho_ngat: 0` ⇒ nó ⛔ **không**
+gặp đoạn nào *"quá dài mà không có chỗ ngắt"*. Tức 33 ranh giới kia ⛔ không phải chỗ nó
+bó tay — chúng là chỗ nó **không coi là ranh giới**: người biên tập xuống dòng ở chỗ
+⛔ **không có dấu kết câu**, mà `cat_doan` **chỉ cắt sau dấu câu** (PR #1466).
+
+⇒ ⭐ Câu hỏi kế tiếp ⛔ không phải *"cắt chính xác hơn"* mà: **lồng tiếng có CẦN 107 khe
+như phụ đề không?** (§7: phụ đề cắt theo dòng hiển thị; lồng tiếng cần khe đủ dài.)
+🔴 Nếu ⛔ không cần, thì ngưỡng **0,80 onset so với hardsub** là một ngưỡng **sai mục
+đích**, và ta lại sắp đuổi một khuyết tật ⛔ không tồn tại — lần thứ hai, cùng hạng mục.
+
+### 11.6 `VIỆC 3` — đề xuất `vad.py`, ⛔ CHƯA chạm mã
+
+⛔ `apps/transcript/__init__.py` **giữ nguyên** (điều phối chốt: ⛔ chưa đáng mở bề mặt
+công khai của một app đang phục vụ khách).
+
+| bước | giá | được gì |
+|---|---|---|
+| khai `BE_MAT_CONG_KHAI = {("apps.transcript.services.engine.vad", "vad_speech_segments")}` | một tuple + một dòng lý do; ⚠️ chạm app **đang có khách** | mở đúng **một** hàm thuần, ⛔ không mở cả app |
+| gọi `vad_speech_segments` cạnh `cat_doan` (⛔ không đổi bản ghi) | một lượt `ffmpeg` + quét năng lượng 30 ms trên bản tiếng **đã có** | ⭐ kênh onset **thứ hai, độc lập whisper hoàn toàn** ⇒ trả lời được *"33 ranh giới thiếu kia có khoảng lặng thật không"* — câu §11.5 vừa đặt ra |
+| đưa vùng lặng vào `thoi_gian.lap_ke_hoach` | ⛔ chưa đo | `TY_LE_MUON_KHOANG_LANG` hiện mượn khoảng lặng **suy ra từ mốc đoạn**, ⛔ không từ tín hiệu âm |
+
+⛔ **Không** dùng `make_timeline_v2` nữa (đính chính đầu tệp): lớp cắt câu của (A) mù
+tiếng Hán ⇒ sẽ tái tạo đúng lỗi `cat_doan.py` sinh ra để chữa.
