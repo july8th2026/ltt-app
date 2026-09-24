@@ -202,7 +202,9 @@ duong = ["platform_core/workflow/dong_co.py", "platform_core/workflow/may_trang_
          "platform_core/workflow/khoa_idem.py",
          "platform_core/workflow/noi_lai.py",
          "platform_core/workflow/han_cho.py",
-         "platform_core/workflow/han_muc.py"]
+         "platform_core/workflow/han_muc.py",
+         # - ban_trigger: MOT vong ban trigger, di qua DUNG cua `tao_run`
+         "platform_core/workflow/ban_trigger.py"]
 he_trong = "thi_hanh"
 tai_nguyen = ["postgres_test"]
 

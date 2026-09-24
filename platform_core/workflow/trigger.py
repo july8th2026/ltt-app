@@ -99,6 +99,111 @@ class _TheoLich:
         return bay_gio + timedelta(seconds=moi) if moi > 0 else None
 
 
+class _TheoCron:
+    """`CRON` — lịch thật, bằng **`cronsim`**, ⛔ không tự viết bộ lịch.
+
+    ## Vì sao `cronsim` chứ không `croniter` (spec §8.2 viết `croniter`)
+
+    Đây là một **đổi ý so với spec**, tra được chứ không phải sở thích:
+
+    - `pallets-eco/croniter#258` (MỞ, 02/08/2026) — *"get_next skips a fire
+      time when the DST shift is not a whole hour; get_prev and match
+      disagree"*; `#259` — *"croniter_range stop test ignores the UTC offset:
+      silently drops results and returns out-of-interval values"*. Hai lỗi còn
+      mở, đúng vào **hai** phép ta cần: tiến (lần bắn kế) và lùi (mốc lỡ).
+    - `cuu508/cronsim` (BSD-3-Clause, dùng trong Healthchecks) khai thẳng
+      *"Correctness… match Debian's cron as closely as possible, including its
+      quirky behaviour during DST transitions"*, và có `reverse=True`.
+
+    ## Quy ước thời gian
+
+    Cột `next_fire_at` là **naive-UTC** (quy ước của cả kho, `_bay_gio()`).
+    Lịch thì nghĩ bằng **giờ địa phương** của người soạn. Nên mọi phép ở đây
+    đổi vào múi giờ, tính, rồi đổi về naive-UTC — ⛔ không bao giờ so một mốc
+    địa phương với một mốc UTC.
+    """
+
+    kind = "CRON"
+
+    #: Spec §8.2: *"Chu kỳ tối thiểu 5 phút"*. Một trigger mỗi giây nằm trong
+    #: CSDL là một cỗ máy tiêu credit, nên nó bị từ chối **lúc tạo**.
+    CHU_KY_TOI_THIEU_S = 300
+
+    @staticmethod
+    def _tz(cau_hinh: dict):
+        from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+        ten = str((cau_hinh or {}).get("tz") or "UTC")
+        try:
+            return ZoneInfo(ten)
+        except (ZoneInfoNotFoundError, ValueError, KeyError) as loi:
+            raise ValueError(f"mui gio khong hop le: {ten!r}") from loi
+
+    @classmethod
+    def _lich(cls, cau_hinh: dict, tu: datetime, *, lui: bool = False):
+        from cronsim import CronSim, CronSimError
+
+        bieu_thuc = str((cau_hinh or {}).get("cron") or "").strip()
+        if not bieu_thuc:
+            raise ValueError("thieu `cron` trong cau hinh trigger CRON")
+        tz = cls._tz(cau_hinh)
+        goc = tu.replace(tzinfo=timezone.utc).astimezone(tz)
+        try:
+            return CronSim(bieu_thuc, goc, reverse=lui)
+        except CronSimError as loi:
+            raise ValueError(f"bieu thuc cron khong hop le: {loi}") from loi
+
+    @staticmethod
+    def _ve_utc(luc: Optional[datetime]) -> Optional[datetime]:
+        if luc is None:
+            return None
+        return luc.astimezone(timezone.utc).replace(tzinfo=None)
+
+    def toi_han(self, cau_hinh: dict, bay_gio: datetime) -> bool:
+        return True
+
+    def kiem(self, cau_hinh: dict) -> None:
+        """Ném `ValueError` nếu cấu hình không dùng được. Gọi lúc `tao()`.
+
+        ⚠️ Đo chu kỳ bằng **hai mốc liên tiếp thật**, không bằng cách đọc chuỗi:
+           `*/5 * * * *` và `0,5,10,… * * * *` là cùng một lịch viết hai kiểu,
+           và một bộ đọc chuỗi sẽ bắt cái này, thả cái kia.
+        """
+        luc = datetime.now(timezone.utc).replace(tzinfo=None)
+        it = self._lich(cau_hinh, luc)
+        try:
+            moc = [next(it) for _ in range(3)]
+        except StopIteration as loi:
+            raise ValueError(
+                "bieu thuc cron khong co moc nao trong 50 nam toi") from loi
+        khoang = min((b - a).total_seconds() for a, b in zip(moc, moc[1:]))
+        if khoang < self.CHU_KY_TOI_THIEU_S:
+            raise ValueError(
+                f"chu ky toi thieu {self.CHU_KY_TOI_THIEU_S} giay (5 phut), "
+                f"cau hinh nay cach nhau {int(khoang)} giay")
+
+    def lan_ke_tiep(self, cau_hinh: dict,
+                    bay_gio: datetime) -> Optional[datetime]:
+        try:
+            return self._ve_utc(next(self._lich(cau_hinh, bay_gio)))
+        except StopIteration:
+            return None
+
+    def moc_gan_nhat(self, cau_hinh: dict,
+                     bay_gio: datetime) -> Optional[datetime]:
+        """Mốc lịch **gần nhất ≤ `bay_gio`** — *"mốc lỡ gần nhất"* của §8.2.
+
+        ⚠️ Lùi từ `bay_gio + 1 giây` vì `cronsim` lùi **nghiêm ngặt**: lùi từ
+           đúng một mốc sẽ trả về mốc TRƯỚC nó, và khi đó một trigger tới hạn
+           đúng giây này sẽ bắn cho mốc của hôm qua.
+        """
+        try:
+            return self._ve_utc(next(self._lich(
+                cau_hinh, bay_gio + timedelta(seconds=1), lui=True)))
+        except StopIteration:
+            return None
+
+
 SO_DANG_KY: dict[str, LoaiTrigger] = {}
 
 
@@ -113,6 +218,7 @@ def go_dang_ky(kind: str) -> None:
 for _k in ("MANUAL", "API", "WEBHOOK"):
     dang_ky(_KhongCoLich(_k))
 dang_ky(_TheoLich())
+dang_ky(_TheoCron())
 
 
 def tao(db, *, workflow_id: str, owner_id: str, kind: str,
@@ -130,6 +236,12 @@ def tao(db, *, workflow_id: str, owner_id: str, kind: str,
             f"{sorted(SO_DANG_KY)}")
     cau_hinh = dict(cau_hinh or {})
     mo_dun = SO_DANG_KY[kind]
+    # ⭐ Loại nào có `kiem()` thì nó tự kiểm cấu hình của nó. Lõi KHÔNG biết
+    #    tên loại nào (`G42`, bài học Windmill) — nó chỉ biết "một loại có thể
+    #    từ chối cấu hình của chính nó, và chỗ từ chối là LÚC TẠO".
+    kiem = getattr(mo_dun, "kiem", None)
+    if callable(kiem):
+        kiem(cau_hinh)
     t = WorkflowTrigger(
         workflow_id=workflow_id, owner_id=owner_id, kind=kind,
         config=cau_hinh, enabled=bool(enabled),
@@ -139,13 +251,21 @@ def tao(db, *, workflow_id: str, owner_id: str, kind: str,
     return t
 
 
-def den_han(db, gioi_han: int = 200) -> list[WorkflowTrigger]:
-    """Trigger **đang bật** và **đã tới hạn**. Một truy vấn, chỉ số bộ phận."""
+def den_han(db, gioi_han: int = 200,
+            bay_gio: Optional[datetime] = None) -> list[WorkflowTrigger]:
+    """Trigger **đang bật** và **đã tới hạn**. Một truy vấn, chỉ số bộ phận.
+
+    ⚠️ `bay_gio` KHÔNG phải tiện nghi cho test. Bên gọi (`ban_trigger`) đã
+       chốt một mốc `luc` cho cả lượt bắn; nếu hàm này tự hỏi đồng hồ lần nữa
+       thì hai câu trả lời trong cùng một lượt lệch nhau — và một trigger tới
+       hạn ở khe giữa hai lần hỏi sẽ được **chọn** theo mốc này nhưng **tính
+       mốc lịch** theo mốc kia.
+    """
     return list(db.execute(
         select(WorkflowTrigger)
         .where(WorkflowTrigger.enabled.is_(True),
                WorkflowTrigger.next_fire_at.is_not(None),
-               WorkflowTrigger.next_fire_at <= _bay_gio())
+               WorkflowTrigger.next_fire_at <= (bay_gio or _bay_gio()))
         .order_by(WorkflowTrigger.next_fire_at)
         .limit(max(1, int(gioi_han)))).scalars())
 

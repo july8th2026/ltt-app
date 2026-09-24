@@ -593,6 +593,28 @@ def _quet_het_han(db_factory: Callable) -> int:
         db.close()
 
 
+def _ban_trigger(db_factory: Callable) -> int:
+    """Bắn trigger tới hạn — transaction RIÊNG, lỗi không kéo cả lượt.
+
+    ⭐ Đặt ở đây chứ không ở một job riêng: vòng động cơ đã là cái duy nhất
+       chạy đều trên toàn hệ (`workflow.dong_co`, MỘT job chạy vòng). Thêm một
+       lịch thứ hai là thêm một thứ có thể chết riêng mà không ai thấy.
+    """
+    from platform_core.workflow import ban_trigger
+
+    db = db_factory()
+    try:
+        kq = ban_trigger.ban_den_han(db)
+        db.commit()
+        return int(kq.get("da_ban") or 0)
+    except Exception:                                    # noqa: BLE001
+        db.rollback()
+        log.exception("dong co: ban trigger loi, bo qua luot nay")
+        return 0
+    finally:
+        db.close()
+
+
 def mot_vong(db_factory: Callable, *, gioi_han: int = 50) -> dict:
     db = db_factory()
     try:
@@ -605,6 +627,7 @@ def mot_vong(db_factory: Callable, *, gioi_han: int = 50) -> dict:
         db.close()
     so = ttl(db_factory)
     het_han = _quet_het_han(db_factory)
+    da_ban = _ban_trigger(db_factory)
     da = 0
     loi = 0
     for rid in run_ids:
@@ -648,7 +671,8 @@ def mot_vong(db_factory: Callable, *, gioi_han: int = 50) -> dict:
     finally:
         db.close()
     return {"run_da_xu_ly": da, "timed_out": so, "loi": loi,
-            "het_han": het_han, "con_viec": ke is not None, "han_ke_tiep": ke}
+            "het_han": het_han, "trigger_da_ban": da_ban,
+            "con_viec": ke is not None, "han_ke_tiep": ke}
 
 
 __all__ = ["TRAN_BUOC_INLINE", "TRAN_RUN", "mot_vong", "xu_ly_run",
