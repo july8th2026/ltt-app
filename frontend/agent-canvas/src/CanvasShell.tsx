@@ -19,21 +19,26 @@ import { FormTuLuocDo } from './inspector/FormTuLuocDo'
 import { noiDuoc, slugCongCu, timNut, typeTuSlug } from './nodeDefinition'
 import type { LuatNoiDay, NhomPalette, NodeDefinition } from './nodeDefinition'
 import { taiPalette } from './paletteApi'
-// ⛔ KHONG import lai cum v2 (`applyAssistant`, `previewAssistant`,
-//    `loadSnapshots`, `restoreSnapshot`, `createShare`, `cloneWorkflow`,
-//    `exportWorkflow`, `importWorkflow`, `loadPalette`).
+// ⛔ CUM v2 DA BI XOA KHOI `workflowApi.ts` (24/09, lan `p10-don`) — dung
+//    viet lai. `previewAssistant`, `applyAssistant`, `loadSnapshots`,
+//    `restoreSnapshot`, `createShare`, `cloneWorkflow`, `exportWorkflow`,
+//    `importWorkflow`, `planWorkflow`.
 //
 //    Trinh soan nap workflow qua `loadOrCreateWorkflowV3` — id thuoc bang
 //    `workflow` (v3). Cum tren tra id ay trong `agent_workflows` (v2) va khong
-//    thay ⇒ **404 ngay lan bam dau**. Cua may chu van con nguyen; viec chuyen
-//    chung sang `/agent/api/v3/` la mot pha rieng. Cho toi luc ay, giao dien
-//    khong duoc moi nguoi dung lam mot viec se 404.
+//    thay ⇒ **404 ngay lan bam dau**. P8 task 5 da DONG luon cua may chu (15
+//    route, `tests/test_2934`), nen chung nay goi vao mot cho khong con ton
+//    tai — go han, khong phai sua header.
 //
-//    `tests/test_1728_canvas_khong_goi_duong_chet.py` chot dieu nay bang bang
-//    dinh tuyen THAT, nen mot lan import lai se do ngay.
-import { goiYBieuThuc, loadOrCreateWorkflowV3, loadPreferences,
+//    HAI banh coc, do HAI thu khac nhau:
+//    · `tests/test_1728` — duong giao dien VOI TOI DUOC phai co trong bang
+//      dinh tuyen that. No co y BO QUA ham chet.
+//    · `tests/test_3521` — moi duong `/agent/...` VIET trong `src/**`, ke ca
+//      trong mot ham khong ai goi: mot ham chet tro vao cua da dong la mot
+//      khau sung da nap dan, chi cach song lai dung mot dong `import`.
+import { baoGiaDoThi, goiYBieuThuc, loadOrCreateWorkflowV3, loadPreferences,
   savePreferences, saveWorkflowV3,
-  quoteTool, WorkflowConflictError, type CanvasDocument,
+  WorkflowConflictError, type CanvasDocument,
   type CanvasEdge, type CanvasNode, type GoiYBieuThuc,
   type Workflow } from './workflowApi'
 // Cua v3: trinh soan LUU -> PUBLISH -> TAO run -> NGHE. No khong con "lai"
@@ -389,15 +394,26 @@ function Editor() {
     return () => { if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current) }
   }, [state.document, csrf, offline, retryNonce]) // workflow intentionally excluded: revision update is not an edit
 
+  // ── Bao gia truc tiep: MOT request cho CA do thi (no §5, lan p10-don) ────
+  //
+  // ⛔ KHONG quay lai vong `page.nodes.map(quoteTool)`. Effect nay chay lai
+  //    moi lan `state.document` doi — tuc moi lan go mot ky tu — nen mot
+  //    request MOI NODE nghia la do thi 30 node ban 30 request cho mot phim.
+  //    `tests/BaoGiaMotCua.test.tsx` dem dung con so ay va do o ban cu (12).
+  // ⚠️ Debounce 450 ms duoi day da co tu truoc va KHONG phai ban va: no giam
+  //    tan suat bung, khong giam do lon mot lan bung.
   useEffect(()=>{
-    if (!page.nodes.length || offline) { setLiveQuotes({}); return }
-    const timer=window.setTimeout(()=>{void Promise.all(page.nodes.map(async node=>{
-      try { return [node.id,await quoteTool(String(node.data.tool),(node.data.params??{}) as Record<string,unknown>,
-        Number(node.data.fanout??1),Number(node.data.max_retry??0),csrf)] as const }
-      catch { return undefined }
-    })).then(rows=>setLiveQuotes(Object.fromEntries(rows.filter(Boolean) as readonly (readonly [string,number])[])))},450)
-    return()=>window.clearTimeout(timer)
-  },[page.nodes,csrf,offline])
+    if (!workflow || !page.nodes.length || offline) { setLiveQuotes({}); return }
+    let active = true
+    const timer=window.setTimeout(()=>{
+      void baoGiaDoThi(workflow.id, state.document, csrf)
+        .then(bang=>{ if (active) setLiveQuotes(bang.gia ?? {}) })
+        // ⛔ Hong thi XOA bang gia, khong giu so cu: mot con so cu ben canh
+        //    tham so vua doi la mot loi im lang ma nguoi dung khong the phat hien.
+        .catch(()=>{ if (active) setLiveQuotes({}) })
+    },450)
+    return()=>{ active = false; window.clearTimeout(timer) }
+  },[workflow?.id,state.document,csrf,offline])
 
   // ── Goi y bieu thuc §6 cho node dang chon (P2 Task 8) ────────────────────
   //

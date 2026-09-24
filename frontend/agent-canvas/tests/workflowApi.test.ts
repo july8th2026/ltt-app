@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { approveRun, cancelRunV3, cloneWorkflow, createAutosave, createRun,
-  createRunV3, exportWorkflow, goiYBieuThuc, importWorkflow,
+import { approveRun, cancelRunV3, createAutosave, createRun,
+  createRunV3, goiYBieuThuc,
   fromV3, loadRun, loadRunHistory, loadRunV3, loadWorkflowV3,
   publishWorkflowV3, restoreRunAsWorkflow,
   RUN_V3_KET_THUC,
@@ -61,27 +61,25 @@ describe('workflow API', () => {
     expect(fetchMock.mock.calls[2][1]?.body).toContain('2026-08-04T02:00:00.000Z')
   })
 
-  it('loads owner run history/detail and reuses workflow template contracts', async () => {
+  // ⏭️ 24/09 (lan `p10-don`): ba ve `cloneWorkflow` / `exportWorkflow` /
+  //    `importWorkflow` da RA khoi bai nay vi ba ham do bi XOA khoi
+  //    `workflowApi.ts` — cua may chu cua chung dong tu P8 task 5
+  //    (`tests/test_2934`), nen chung goi vao cho khong con ton tai.
+  //    Banh coc chan chung quay lai: `tests/test_3521`.
+  it('loads owner run history/detail', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async input => {
       const url = String(input)
       const body = url.endsWith('/runs') ? { items: [{ id: 'r1' }] }
-        : url.endsWith('/runs/r1') ? { id: 'r1' }
-        : url.endsWith('/export') ? { schema: 'ltt.agent.workflow' } : workflow
+        : url.endsWith('/runs/r1') ? { id: 'r1' } : workflow
       return new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } })
     })
     await expect(loadRunHistory()).resolves.toEqual([{ id: 'r1' }])
     await expect(loadRun('r1')).resolves.toMatchObject({ id: 'r1' })
-    await cloneWorkflow(workflow, 'csrf-test')
-    await exportWorkflow(workflow)
-    await importWorkflow({ schema: 'ltt.agent.workflow' }, 'csrf-test')
     await restoreRunAsWorkflow({id:'r1'} as AgentRun,'csrf-test')
     expect(fetchMock.mock.calls.map(call => String(call[0]))).toEqual([
-      '/agent/api/runs', '/agent/api/runs/r1', '/agent/api/workflows/w1/clone',
-      '/agent/api/workflows/w1/export', '/agent/api/workflows/import',
+      '/agent/api/runs', '/agent/api/runs/r1',
       '/agent/api/runs/r1/restore-workflow'])
     expect(new Headers(fetchMock.mock.calls[2][1]?.headers).get('X-CSRF-Token')).toBe('csrf-test')
-    expect(fetchMock.mock.calls[4][1]?.body).toBe(JSON.stringify({ schema: 'ltt.agent.workflow' }))
-    expect(new Headers(fetchMock.mock.calls[5][1]?.headers).get('X-CSRF-Token')).toBe('csrf-test')
   })
 
   it('debounces autosave and persists only latest value', async () => {
