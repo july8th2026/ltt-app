@@ -57,8 +57,23 @@ def _doc_van_ban(run_id: str, ten_gd: str) -> str:
             ban = json.loads(f.read().decode("utf-8"))
     finally:
         db.close()
-    return " ".join(str(d.get("chu") or d.get("text") or "")
-                    for d in (ban.get("doan") or ban.get("segments") or []))
+    doan = ban.get("doan") or ban.get("segments") or []
+    return {
+        "van_ban": " ".join(str(d.get("chu") or d.get("text") or "")
+                            for d in doan),
+        # ⭐ **MOC TUNG TU la duong sua nam trong tay ta.** Nhanh `aligned` cho moc
+        #    tung tu, nen mot doan 23 giay CAT LAI DUOC tai cho ngat cau / khoang
+        #    lang bang chinh moc do — va duong nay **khong phu thuoc tham so
+        #    engine**, nen no song sot khi ta nang cap WhisperX.
+        # ⛔ Phai giu O DAY: kho tam chet cung luot.
+        "doan": [{"bat": d.get("bat", d.get("start")),
+                  "ket": d.get("ket", d.get("end")),
+                  "so_tu": len(d.get("tu") or d.get("words") or []),
+                  "tu": [{"bat": w.get("bat", w.get("start")),
+                          "ket": w.get("ket", w.get("end"))}
+                         for w in (d.get("tu") or d.get("words") or [])]}
+                 for d in doan],
+    }
 
 
 def _phim() -> Path | None:
@@ -136,8 +151,11 @@ def test_BENCH_B1_mot_phim(moi_truong, tmp_path, monkeypatch):  # noqa: F811
     #    tinh toan khong cho ra duoc mot con so CER nao.
     # ⇒ Doc ngay, o day.
     for k in (asr, ocr):
-        k["van_ban"] = _doc_van_ban(k["run_id"], P.TRANSCRIBE)
+        chi_tiet = _doc_van_ban(k["run_id"], P.TRANSCRIBE)
+        k["van_ban"] = chi_tiet["van_ban"]
+        k["doan_chi_tiet"] = chi_tiet["doan"]
         k["so_ky_tu_van_ban"] = len(k["van_ban"])
+        k["tong_moc_tu"] = sum(d["so_tu"] for d in chi_tiet["doan"])
 
     # ── NHANH ENGINE: khai ra, va khong do nham nhanh trong im lang ─────────
     #

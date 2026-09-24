@@ -146,6 +146,7 @@ def test_DAT_chi_xet_CER_chu_khong_xet_ti_le_chua_hieu_chinh():
                        so_dong_nguon=10, so_dong_hardsub=10, engine="x",
                        co_card=True)
     assert kq["dat"] is True, "ti le DONG sai khong duoc phan xu"
+    assert kq["lech_doan_dat"] is True
     assert "CER" in kq["dat_xet_tren"]
 
 
@@ -170,17 +171,28 @@ def test_CER_mot_minh_de_HO_cau_truc_nen_ban_ghi_phai_co_lech_doan():
         "CER dep + so doan lech 90% ma ban ghi khong bat nhin")
 
 
-def test_lech_doan_KHONG_phan_xu_no_chi_bat_NHIN():
-    """⚠️ 0,20 là con số điều phối **chọn, chưa hiệu chỉnh** (khai thẳng 24/09).
+def test_lech_doan_NAY_LA_CONG_chu_khong_con_chi_bao():
+    """🔴 **Đổi VAI ngày 24/09, SAU khi thấy số — và khai thẳng.**
 
-    ⇒ Vượt nó thì `dat` **không đổi** — nó chỉ bật cờ đòi một lời giải thích.
-    ⛔ Giả vờ nó là ngưỡng là đúng cái bẫy ta vừa tránh ở `ti_le_don_vi_sai`.
+    ⛔ **NỚI** một ngưỡng sau khi thấy số = hợp lý hoá kết quả tồi. **Cấm.**
+    ⭐ **SIẾT** một phép từ *"chỉ báo"* thành *"chặn"* khi số liệu cho một **LÝ DO
+       ta chưa từng có**: được, **nếu khai rõ**.
+
+    Lý do mới: lúc đặt 0,20 ta **chưa biết cú gộp này tồn tại**. Phim 1 cho
+    `lech_doan = 0,8922` — WhisperX gộp **9 câu thành 1** (23,3 s/đoạn vs hardsub
+    2,4 s). Với sản phẩm lồng tiếng, **phân đoạn CHÍNH LÀ sản phẩm**: mỗi đoạn là
+    một khe đặt câu tiếng Việt, và một khe 23 giây liền mạch thì `timing_align`
+    **không còn gì để canh**.
+
+    ⛔ Và con số `0,20` **không đổi** — chỉ đổi vai của nó.
     """
     from tools import bench_b1_chep_loi as b
 
     kq = b.gop_ket_qua(cer=0.01, so_dong_nguon=3, so_dong_hardsub=30,
                        engine="x", co_card=True)
-    assert kq["dat"] is True, "lech_doan khong duoc phan xu"
+    # ⛔ ĐỔI 24/09: `lech_doan` nay LA CONG. Xem `NGUONG_LECH_DOAN` ve vi sao doi
+    #    VAI (khong doi con so) sau khi thay so phim 1.
+    assert kq["dat"] is False, "lech_doan nay la CONG, khong con chi bao"
     assert kq["can_giai_thich_lech_doan"] is True
 
 
@@ -196,3 +208,17 @@ def test_hardsub_RONG_cho_nan_chu_khong_cho_KHONG():
 
     assert math.isnan(b.lech_doan(10, 0))
     assert b.lech_doan(10, 10) == 0.0
+
+
+def test_hardsub_RONG_thi_KHONG_DAT_chu_khong_phai_dat():
+    """⛔ `nan <= x` là False, và ở đây đó là hành vi ĐÚNG.
+
+    Một phim không có hardsub ⇒ ta **không biết** cấu trúc có đúng không, và
+    *"không biết"* **không được tính là "đạt"**.
+    """
+    from tools import bench_b1_chep_loi as b
+
+    kq = b.gop_ket_qua(cer=0.01, so_dong_nguon=10, so_dong_hardsub=0,
+                       engine="x", co_card=True)
+    assert kq["dat"] is False
+    assert kq["lech_doan_dat"] is False

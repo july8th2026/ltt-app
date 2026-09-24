@@ -45,7 +45,21 @@ if str(GOC) not in sys.path:
 NGUONG_WER = 0.25
 NGUONG_CER = 0.12
 
-#: Muc LECH SO DOAN bat phai NHIN, ⛔ khong phai mot nguong phan xu.
+#: CONG: lech so doan toi da. ⛔ **Doi VAI ngay 24/09, SAU khi thay so — khai thang.**
+#:
+#: 🔴 **Phan biet hai viec, vi mot cai bi cam va mot cai khong:**
+#:      ⛔ NOI mot nguong sau khi thay so  = hop ly hoa mot ket qua toi. CAM.
+#:      ⭐ SIET mot phep tu "chi bao" thanh "chan", khi so lieu cho ta mot LY DO
+#:         ta chua tung co: duoc, **neu khai ro**.
+#:
+#:    Ly do moi: luc dat muc 0,20 ta **chua biet cu gop nay ton tai**. Phim 1 cho
+#:    `lech_doan = 0,8922` — whisperx gop 9 cau thanh 1 (11 doan / 255,9 s = **23,3
+#:    giay mot doan**) trong khi hardsub la 2,4 s. Nay ta biet no **giet buoc sau**:
+#:    voi san pham long tieng, **phan doan CHINH LA san pham** — moi doan la mot khe
+#:    de dat cau tieng Viet, va mot khe 23 giay lien mach thi `timing_align` khong
+#:    con gi de canh.
+#:
+#: ⛔ Va con so `0,20` **khong doi**. Chi doi VAI cua no.
 #:
 #: 🔴 **CER mot minh de HO cau truc.** CER tinh tren van ban NOI LIEN nen no khong
 #:    thay **so doan** — ma moi doan la **mot khe long tieng**. Mot ban chep gop hai
@@ -56,7 +70,9 @@ NGUONG_CER = 0.12
 #: ⚠️ **0,20 la con so dieu phoi CHON, CHUA HIEU CHINH** (khai thang 24/09). Nen no
 #:    khong phan xu: vuot muc nay thi `dat` KHONG doi, nhung ban ghi bat phai co mot
 #:    **loi giai thich bang van ban**. ⛔ "Da bao cao" khong phai "da giai thich".
-MUC_NHIN_LECH_DOAN = 0.20
+NGUONG_LECH_DOAN = 0.20
+#: Ten cu, giu de khong vo nguoi goi cu. ⛔ Dung dung cho ma moi.
+MUC_NHIN_LECH_DOAN = NGUONG_LECH_DOAN
 
 #: Gioi han cua chan ly nen, di kem MOI ban ghi. ⛔ Khong rut gon cau nay: nguoi
 #: trich so doc JSON, khong doc `.md`.
@@ -195,6 +211,19 @@ def lech_doan(so_doan_asr: int, so_doan_hardsub: int) -> float:
                  / float(so_doan_hardsub), 4)
 
 
+def _lech_dat(so_doan_asr: int, so_doan_hardsub: int) -> bool:
+    """`lech_doan` co trong cong khong. `nan` (khong do duoc) ⇒ **KHONG dat**.
+
+    ⛔ `nan <= x` la False trong Python, va o day do la hanh vi DUNG: mot phim
+       khong co hardsub thi ta **khong biet** cau truc co dung khong, va "khong
+       biet" khong duoc tinh la "dat".
+    """
+    import math
+
+    l = lech_doan(so_doan_asr, so_doan_hardsub)
+    return (not math.isnan(l)) and l <= NGUONG_LECH_DOAN
+
+
 def gop_ket_qua(*, cer: float, so_dong_nguon: int, so_dong_hardsub: int,
                 engine: str, co_card: bool, ti_le_don_vi_sai: float = float("nan"),
                 don_vi_ti_le: str = "", phim: str = "", ghi_chu: str = "",
@@ -209,17 +238,22 @@ def gop_ket_qua(*, cer: float, so_dong_nguon: int, so_dong_hardsub: int,
         "phim": phim,
         "ti_le_don_vi_sai": ti_le_don_vi_sai, "don_vi_ti_le": don_vi_ti_le,
         "cer": cer,
-        "dat": bool(cer <= NGUONG_CER),
-        "dat_xet_tren": "CER (xem `don_vi_ti_le` ve ti le kia)",
+        "dat": bool(cer <= NGUONG_CER
+                    and _lech_dat(so_dong_nguon, so_dong_hardsub)),
+        "dat_xet_tren": ("CER <= NGUONG_CER VA lech_doan <= NGUONG_LECH_DOAN "
+                         "(xem `don_vi_ti_le` ve ti le kia — no KHONG phan xu)"),
         "nguong": {"wer": NGUONG_WER, "cer": NGUONG_CER},
         "so_dong_nguon": so_dong_nguon, "so_dong_hardsub": so_dong_hardsub,
         # ── CAU TRUC: thu CER khong thay ────────────────────────────────────
         "so_doan_asr": so_dong_nguon,
         "so_doan_hardsub": so_dong_hardsub,
         "lech_doan": lech_doan(so_dong_nguon, so_dong_hardsub),
-        "muc_nhin_lech_doan": MUC_NHIN_LECH_DOAN,
-        "can_giai_thich_lech_doan": bool(
-            lech_doan(so_dong_nguon, so_dong_hardsub) > MUC_NHIN_LECH_DOAN),
+        "nguong_lech_doan": NGUONG_LECH_DOAN,
+        "lech_doan_dat": _lech_dat(so_dong_nguon, so_dong_hardsub),
+        "can_giai_thich_lech_doan": not _lech_dat(so_dong_nguon, so_dong_hardsub),
+        # ⭐ Moc tham chieu TOT NHAT cho "mot khe dai bao nhieu": chinh hardsub —
+        #    phan doan do NGUOI LAM PHIM chon cho chinh noi dung nay.
+        "giay_moi_doan_asr": None, "giay_moi_doan_hardsub": None,
         "giai_thich_lech_doan": giai_thich_lech_doan,
         "engine": engine, "co_card": bool(co_card),
         # 🔑 HAI truong nay di theo con so, khong nam o cuoi bao cao.
