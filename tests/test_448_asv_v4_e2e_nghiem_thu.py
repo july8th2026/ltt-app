@@ -453,39 +453,66 @@ def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
         ban_dich = _doc_artifact(db, kho, run, pipeline.CONTENT_PROCESS, "json")
         bao_qc = _doc_artifact(db, kho, run, pipeline.QC, "json")
 
+        # 🔴 **Mot loi trong MA DO khong duoc xoa ket qua cua mot lan chay da
+        #    `done`.** Do that 24/09: luot B chay 67 phut, `run.status == "done"`,
+        #    12/12 giai doan `succeeded` — roi khuon chet o dong tai tep ban giao
+        #    (`OSError [Errno 22]`), va bao cao cua ca luot bien mat cung no. Phai
+        #    di cuu so lieu bang tay tu `asv_stage`.
+        #
+        # ⛔ Day la cung mot lop loi voi `_giu_tang_vat` (bao cao phu thuoc vao
+        #    viec khuon song sot qua chinh phep do cua no), nhung o mot doan DAI
+        #    hon: moi thu tu day den `return` la DO, khong phai SAN PHAM.
+        #
+        # 🔑 Nen phan do tep ban giao duoc boc rieng, va loi cua no di VAO bao cao.
+        #    Mot bao cao thieu `ra` nhung co `giai_doan` + `trang_thai_run` van tra
+        #    loi duoc cau hoi quan trong nhat; mot ngoai le thi khong tra loi gi.
         ra = {}
+        loi_do_ban_ra = ""
         gd_ra = features.giai_doan_theo_ten(db, run_id, pipeline.RENDER)
         khoa_ra = next((k for k in ((gd_ra.outputs or {}).get("khoa_asset") or [])
                         if k.endswith(".mp4")), "")
-        tep_ra = tam / f"ra_{nhan}.mp4"
-        if khoa_ra:
-            with kho.open(khoa_ra) as f:
-                tep_ra.write_bytes(f.read())
-            soi = fx.soi(str(tep_ra))
-            luong = {s["codec_type"]: s for s in soi["streams"]}
-            ra = {
-                "byte": tep_ra.stat().st_size,
-                "thoi_luong": round(float(soi["format"]["duration"]), 3),
-                "codec_video": luong.get("video", {}).get("codec_name", ""),
-                "codec_tieng": luong.get("audio", {}).get("codec_name", ""),
-                "khung": [luong.get("video", {}).get("width"),
-                          luong.get("video", {}).get("height")],
-                "vung_co_tieng": [list(v) for v in fx.vung_co_tieng(str(tep_ra))],
-                "phu_song_loi": (
-                    fx.phu_song_loi(fx.vung_co_tieng(str(tep_ra)), su_that.loi)
-                    if su_that is not None else None),
-                "am_luong": _do_am(str(tep_ra)),
-                # 🔑 **So do CUA CHINH PHEP DO, khong phai cua san pham.**
-                #    `vung_co_tieng` lay NEN bang trung vi moi cua so, va
-                #    docstring cua no dat mot tien de: "mot ban long tieng noi
-                #    khoang mot phan ba thoi luong, nen trung vi roi vao nen".
-                #    Ngay preset cat that su cat mot canh IM LANG, ti le noi
-                #    tang len va tien de do co the vo — luc do bao cao se noi
-                #    "khong co tieng long" ve mot tep nghe ro tung cau.
-                # ⇒ Ghi lai nen/nguong/dinh de lan sau khong phai doan.
-                "do_cua_phep_do": _do_phan_bo(str(tep_ra)),
-            }
+        # ⛔ `_ten_an_toan`, KHONG `nhan` tho. Day la cho goi THU HAI cua cung
+        #    mot bay, va no do 67 phut SAU cho thu nhat: ban va 24/09 sua
+        #    `_giu_tang_vat` roi dung o do, trong khi dong nay cung dat mot nhan
+        #    tu do vao mot ten tep. `OSError [Errno 22]` tren
+        #    `ra_B::zh->vi::....mp4`.
+        #
+        # 🔴 **Dung ho M-08: mot ham giang bay, NAM nguoi goi, va ban va dau chi
+        #    cham mot.** Bai hoc do da nam trong `LOI_TONG.md` cua chinh phien nay
+        #    (M-09a) va toi vua lap lai no. Nay `test_3000` quet BANG AST moi cho
+        #    ghep `nhan` vao duong dan, thay vi chot tung cho toi tinh co nhin.
+        tep_ra = tam / f"ra_{_ten_an_toan(nhan)}.mp4"
+        try:
+          if khoa_ra:
+              with kho.open(khoa_ra) as f:
+                  tep_ra.write_bytes(f.read())
+              soi = fx.soi(str(tep_ra))
+              luong = {s["codec_type"]: s for s in soi["streams"]}
+              ra = {
+                  "byte": tep_ra.stat().st_size,
+                  "thoi_luong": round(float(soi["format"]["duration"]), 3),
+                  "codec_video": luong.get("video", {}).get("codec_name", ""),
+                  "codec_tieng": luong.get("audio", {}).get("codec_name", ""),
+                  "khung": [luong.get("video", {}).get("width"),
+                            luong.get("video", {}).get("height")],
+                  "vung_co_tieng": [list(v) for v in fx.vung_co_tieng(str(tep_ra))],
+                  "phu_song_loi": (
+                      fx.phu_song_loi(fx.vung_co_tieng(str(tep_ra)), su_that.loi)
+                      if su_that is not None else None),
+                  "am_luong": _do_am(str(tep_ra)),
+                  # 🔑 **So do CUA CHINH PHEP DO, khong phai cua san pham.**
+                  #    `vung_co_tieng` lay NEN bang trung vi moi cua so, va
+                  #    docstring cua no dat mot tien de: "mot ban long tieng noi
+                  #    khoang mot phan ba thoi luong, nen trung vi roi vao nen".
+                  #    Ngay preset cat that su cat mot canh IM LANG, ti le noi
+                  #    tang len va tien de do co the vo — luc do bao cao se noi
+                  #    "khong co tieng long" ve mot tep nghe ro tung cau.
+                  # ⇒ Ghi lai nen/nguong/dinh de lan sau khong phai doan.
+                  "do_cua_phep_do": _do_phan_bo(str(tep_ra)),
+              }
 
+        except Exception as exc:         # noqa: BLE001
+            loi_do_ban_ra = f"{type(exc).__name__}: {exc}"
         # ⛔ Doc TRUOC khi phien dong: `AsvUsage` la doi tuong ORM, va doc
         #    no sau khi phien dong se nem `DetachedInstanceError`.
         from sqlalchemy import select as _select
@@ -566,6 +593,9 @@ def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
         "vi_sao_hong": vi_sao,
         "credit_con_lai": con_lai,
         "ra": ra,
+        # ⚠️ `ra` rong co HAI nghia rat khac nhau: khong co tep ban giao, hay co
+        #    ma khuon do khong noi. Truong nay tach chung ra.
+        "loi_do_ban_ra": loi_do_ban_ra,
         "tai_ve": {"ma_chu": tai.status_code, "byte_chu": len(tai.content),
                    "ma_nguoi_khac": tai_khac.status_code},
     }
@@ -1287,7 +1317,13 @@ def test_G17_hai_preset_tren_PHIM_KHACH_THAT(moi_truong, tmp_path, monkeypatch):
         for nhan, preset in (("giu_hinh", hop_dong_v4.PRESET_GIU_HINH),
                              ("cat_thong_minh", hop_dong_v4.PRESET_CAT_THONG_MINH)):
             kq = _mot_luot(
-                a, csrf_a, b, tep, tmp_path / f"{tep.stem}_{nhan}",
+                # ⚠️ CHO THU BA cua cung mot bay, va o day no CHUA do — `nhan`
+                #    tai G17 la `giu_hinh`/`cat_thong_minh` (hop le) va `tep.stem`
+                #    la ten tep (hop le). Nhung G17 lai truyen
+                #    `nhan=f"{tep.name}::{nhan}"` xuong `_mot_luot`, tuc no VAN
+                #    chay qua dong `ra_{nhan}.mp4` — va do la cho da do that.
+                #    Sua ca hai, khong doi cho thu ba do lan thu ba.
+                a, csrf_a, b, tep, tmp_path / _ten_an_toan(f"{tep.stem}_{nhan}"),
                 nhan=f"{tep.name}::{nhan}", preset=preset,
                 che_do_giong=hop_dong_v4.CHE_DO_GIONG_TU_CHON,
                 giong_id="Minh Đức")

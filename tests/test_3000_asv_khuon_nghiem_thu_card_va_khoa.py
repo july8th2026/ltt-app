@@ -422,3 +422,38 @@ def test_ban_ghi_MOI_luot_khai_trinh_thong_dich_va_nguon_dinh_nghia():
         assert khoa in khoa_da_gan, (
             f"ban ghi tung luot khong con gan `{khoa}` — dieu kien dieu phoi "
             f"24/09: bang chung phai khai ca hai, khong chi nam trong ma")
+
+
+def test_MOI_cho_ghep_nhan_vao_duong_dan_deu_qua_ten_an_toan():
+    """⛔ Quet CA MODULE, khong chot tung cho toi tinh co nhin.
+
+    🔴 **Do that 24/09, hai lan, cach nhau 67 phut.** Ban va dau sua
+       `_giu_tang_vat` roi dung o do — trong khi `_mot_luot` cung dat `nhan` vao
+       mot ten tep (`ra_{nhan}.mp4`). Lan chay thu hai di HET chuoi, `run.status`
+       = `done`, roi chet o dong do voi `OSError [Errno 22]`.
+
+    🔑 Dung ho M-08 da ghi trong `LOI_TONG.md` cua chinh phien nay: *mot ham
+       giang bay, NAM nguoi goi, va ban va dau chi cham mot*. Nen phep kiem nay
+       hoi *"con cho nao khac khong"* thay vi *"cho toi vua sua co dung khong"* —
+       cau thu hai luon xanh sau khi sua, va do la ly do no vo dung.
+    """
+    import ast
+    import inspect
+
+    from tests import test_448_asv_v4_e2e_nghiem_thu as t448
+
+    nguon = inspect.getsource(t448)
+    cay = ast.parse(nguon)
+    xau: list[str] = []
+    for nut in ast.walk(cay):
+        # `<gi do> / <bieu thuc co chua ten `nhan`>`
+        if not (isinstance(nut, ast.BinOp) and isinstance(nut.op, ast.Div)):
+            continue
+        ten_phai = {n.id for n in ast.walk(nut.right) if isinstance(n, ast.Name)}
+        if "nhan" not in ten_phai:
+            continue
+        if "_ten_an_toan" not in ten_phai:
+            xau.append(f"dong {nut.lineno}: {ast.unparse(nut)}")
+    assert not xau, (
+        "ghep `nhan` vao duong dan ma khong qua `_ten_an_toan`:\n  "
+        + "\n  ".join(xau))
