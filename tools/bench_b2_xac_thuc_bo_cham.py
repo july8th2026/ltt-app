@@ -650,12 +650,14 @@ def ti_le_bat_loi_tiem(*, db, moi_loai: int, bo_qua: int,
     rng = random.Random(HAT_GIONG)
     muc = dung_cap_tiem(doc_flores(thu_muc)[bo_qua:], moi_loai=moi_loai, rng=rng)
     ma = [m["ma"] for m in muc]
+    bat_dau = _bay_gio()
     cac_luot = []
     for k in range(luot):
         print(f"  [TIEM] {ban} luot {k + 1}/{luot} — {len(muc)} cap DA LAM"
               " HONG")
         cac_luot.append(cham_mot_luot(db, muc, ban))
     gop = gop_trung_vi(cac_luot, ma)
+    cua_so = [bat_dau, _bay_gio()]
     theo_loai: dict = {}
     for loai in ("lat_nghia", "sai_thuc_the"):
         ml = [m["ma"] for m in muc if m["loai"] == loai]
@@ -676,6 +678,7 @@ def ti_le_bat_loi_tiem(*, db, moi_loai: int, bo_qua: int,
         }
     return {"n": len(muc), "luot": luot, "moi_loai": moi_loai, "ban": ban,
             "theo_loai": theo_loai, "gop": gop, "cac_luot": cac_luot,
+            "cua_so_utc": cua_so,
             "dong_flores_da_dung": [m["dong_flores"] for m in muc]}
 
 
@@ -817,6 +820,67 @@ def diem_mqm(muc: list[str]) -> int:
     return min(diem, TRAN_DIEM_MQM)
 
 
+def muc_theo_ma(cac_luot: list[dict], ma: list[str]) -> dict:
+    """`{ma: [[muc,...] | None moi luot]}` — ⛔ TACH hai kieu mot ma vang mat.
+
+    ⛔ Ma nam trong lo HONG => `None` (chua hoi xong), ⛔ khong phai danh sach
+       rong. Ma khong duoc nhac toi trong mot lo CHAY DUOC => `[]` = khong loi
+       nao = DAT, dung hop dong `doc_ngu_nghia`.
+    """
+    ra: dict = {}
+    for m in ma:
+        hang = []
+        for l in cac_luot:
+            if m in l["phan_quyet"]:
+                hang.append([str(x.get("muc") or "")
+                             for x in (l["phan_quyet"][m].get("loi") or [])])
+            elif m in _mat_lo(l):
+                hang.append(None)
+            else:
+                hang.append([])
+        ra[m] = hang
+    return ra
+
+
+def gia_theo_ho(hang: list[list[str]], ho: str) -> float:
+    """Gia tri gop cua mot ma theo ho luat — TRUNG VI tren cac luot tra loi."""
+    if ho == "diem":
+        return _trung_vi([diem_mqm(h) for h in hang])
+    return _trung_vi([sum(1 for m in h if m in ("nang", "nghiem_trong"))
+                      for h in hang])
+
+
+def quet_nguong_tiem(tiem: dict) -> dict:
+    """Do nhay tren loi TA TIEM, theo TUNG LOAI, o moi nguong — offline.
+
+    🔴 **Ve hai cua cong doi dung con so nay**, ⛔ khong phai do nhay tren loi
+       tu nhien. Va no la cho phai nghi nhat: luat `diem >= 6` doi **hai** loi
+       `nang` (5+5), nen MOT loi thuc the don le bi cham `nhe` (1 diem) se ⛔
+       **khong** kich cong — tuc co the dung lai dung cho mu da giet V2.
+    """
+    ra: dict = {}
+    for loai, k in (tiem.get("theo_loai") or {}).items():
+        ma = [m for m in tiem["gop"] if m.startswith(f"tiem_{loai}_")]
+        muc = muc_theo_ma(tiem["cac_luot"], ma)
+        hang_ra = []
+        for ho, nguong in (("diem", range(1, TRAN_DIEM_MQM + 1)),
+                           ("dem", range(1, 6))):
+            for t in nguong:
+                n = bat = 0
+                for m in ma:
+                    co_tra_loi = [h for h in muc[m] if h is not None]
+                    if not co_tra_loi:
+                        continue
+                    n += 1
+                    # ⛔ Tren mot cap DA LAM HONG, "gan co" chinh la BAT DUOC.
+                    bat += gia_theo_ho(co_tra_loi, ho) >= t
+                hang_ra.append({"ho": ho, "nguong": t, "n": n,
+                                "bat_duoc": bat,
+                                "ti_le": round(bat / n, 4) if n else None})
+        ra[loai] = {"n_hoi": k.get("n_hoi"), "duong_cong": hang_ra}
+    return ra
+
+
 def muc_tung_luot(cham: dict) -> dict:
     """`{dong: [[muc,...] moi luot]}` — ⛔ TACH hai kieu mot ma vang mat.
 
@@ -824,20 +888,9 @@ def muc_tung_luot(cham: dict) -> dict:
        rong. Ma khong duoc nhac toi trong mot lo CHAY DUOC => `[]` = khong loi
        nao = DAT, dung hop dong `doc_ngu_nghia`.
     """
-    ra: dict = {}
-    for i in cham["dong"]:
-        ma = f"flores_{i:04d}"
-        hang = []
-        for l in cham["cac_luot"]:
-            if ma in l["phan_quyet"]:
-                hang.append([str(x.get("muc") or "")
-                             for x in (l["phan_quyet"][ma].get("loi") or [])])
-            elif ma in _mat_lo(l):
-                hang.append(None)
-            else:
-                hang.append([])
-        ra[str(i)] = hang
-    return ra
+    ma = [f"flores_{i:04d}" for i in cham["dong"]]
+    theo_ma = muc_theo_ma(cham["cac_luot"], ma)
+    return {str(i): theo_ma[f"flores_{i:04d}"] for i in cham["dong"]}
 
 
 def _trung_vi(xs: list[float]) -> float:
@@ -872,13 +925,7 @@ def quet_nguong(muc: dict, pq: dict, nhan: tuple[str, ...],
                 hang = [h for h in muc[str(i)] if h is not None]
                 if not hang:
                     continue
-                if ho == "diem":
-                    gia = _trung_vi([diem_mqm(h) for h in hang])
-                else:
-                    gia = _trung_vi(
-                        [sum(1 for m in h if m in ("nang", "nghiem_trong"))
-                         for h in hang])
-                co = gia >= t
+                co = gia_theo_ho(hang, ho) >= t
                 that = pq.get(i) in nhan
                 gan += co
                 loi_that += that
@@ -990,6 +1037,9 @@ def main(argv=None) -> int:
                    help="ban ghi bo cham co `cac_luot` (dau ra THO)")
     q.add_argument("--so-soi", required=True)
     q.add_argument("--dinh-nghia", choices=tuple(COI_LA_LOI), default="chinh")
+    q.add_argument("--tiem", default="",
+                   help="ban ghi doi chung AM (co `cac_luot`): them duong cong "
+                        "DO NHAY TREN LOI TIEM theo TUNG loai — ve hai cua cong")
     q.add_argument("--ra", required=True)
     dc = s.add_parser("doi-chieu")
     dc.add_argument("--so-soi", required=True,
@@ -1027,6 +1077,10 @@ def main(argv=None) -> int:
               # ⛔ Duong cong tren CA 100 dong chi de xem HINH DANG — chon
               #    nguong roi bao so tren cung tap la chinh tren bai thi.
               "duong_cong_toan_bo": quet_nguong(muc, pq, nhan),
+              # ⛔ Do nhay tren loi TU NHIEN ⛔ KHONG phai ve hai cua cong —
+              #    cong doi >= 50 % MOI LOAI TIEM. Hai con so khac nhau.
+              "duong_cong_tiem": (quet_nguong_tiem(_d(a.tiem)["bat_loi_tiem"])
+                                  if a.tiem else None),
               "chia_doi": {"A": a_nua, "B": b_nua},
               "muc_tung_dong": muc}
         for ten, chon_tren, bao_tren in (("chon_A_bao_B", a_nua, b_nua),

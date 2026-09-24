@@ -620,3 +620,27 @@ def test_ban_ghi_GHI_CUA_SO_UTC_de_kiem_lai_su_co(monkeypatch):
     g = bc.gop_phan([{**r, "dong": [5]}])
     assert g["cua_so_utc_cac_phan"] == [cua]
 
+
+def test_quet_nguong_tiem_MOT_loi_NHE_khong_kich_duoc_diem_6():
+    """🔴 Dung cho phai nghi nhat: `diem >= 6` doi HAI loi `nang` (5+5). Mot
+    loi thuc the don le bi model cham `nhe` (1 diem) ⇒ ⛔ KHONG kich cong —
+    tuc luat nay co the dung lai dung cho mu da giet V2.
+
+    ⛔ Va khong dao chieu: tren mot cap DA LAM HONG, "gan co" = **BAT DUOC**.
+    """
+    tiem = {
+        "theo_loai": {"sai_thuc_the": {"n_hoi": 2}},
+        "gop": {"tiem_sai_thuc_the_0301": {}, "tiem_sai_thuc_the_0302": {}},
+        "cac_luot": [{"loi_lo": [], "phan_quyet": {
+            "tiem_sai_thuc_the_0301": {"dat": False, "loi": [{"muc": "nhe"}]},
+            "tiem_sai_thuc_the_0302": {"dat": False,
+                                       "loi": [{"muc": "nang"},
+                                               {"muc": "nang"}]}}}],
+    }
+    d = {(r["ho"], r["nguong"]): r
+         for r in bc.quet_nguong_tiem(tiem)["sai_thuc_the"]["duong_cong"]}
+    assert d[("diem", 1)]["bat_duoc"] == 2      # ca hai deu co it nhat 1 diem
+    assert d[("diem", 6)]["bat_duoc"] == 1      # ⛔ ca `nhe` bi BO SOT
+    assert d[("diem", 6)]["ti_le"] == 0.5
+    assert d[("dem", 1)]["bat_duoc"] == 1       # luat hien hanh cung bo sot no
+
