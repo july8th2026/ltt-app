@@ -237,11 +237,14 @@ def mo(db, run, ten: str, *, du_phong_s: float, van_tay: str = "") -> LatCat:
     from . import features
 
     tran = float(tran_giai_doan(ten))
+    # ⭐ MOT lan doc `_BAT_DAU`, khong hai. Hai lan `.get()` de tra loi mot cau
+    #    hoi la hai co hoi de chung lech nhau, va cai lech o day la mot `None`
+    #    di vao `bat_dau: float`. Do bang `mypy [arg-type]` 24/09.
+    bd = _BAT_DAU.get()
     lc = LatCat(ten=ten, van_tay=str(van_tay or _VAN_TAY.get() or ""), phien=uuid.uuid4().hex[:16],
                 luot=0, vi_tri=0, trang_thai={}, tran_s=tran,
                 du_phong_s=float(du_phong_s),
-                bat_dau=(_BAT_DAU.get() if _BAT_DAU.get() is not None
-                         else float(dong_ho())))
+                bat_dau=float(dong_ho()) if bd is None else bd)
     if lc.du_phong_s >= lc.ngan_sach_s():
         raise ValueError(
             f"lat_cat {ten}: du phong {lc.du_phong_s:.0f}s >= ngan sach "

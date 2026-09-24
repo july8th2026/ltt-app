@@ -1,16 +1,18 @@
 """waitpoint: han cho + che do het han; workflow_trigger: version/cursor/loi
 
 Revision ID: c4a17f9b6d20
-Revises: b06f7b03870a, b7d2e9c41a03
+Revises: 3b1a2e203c41
 Create Date: 2026-09-24
 
-⭐ HAI `down_revision`, va do la CHU Y, khong phai mot tai nan.
+⚠️ Ban dau revision nay TU hop hai head `b06f7b03870a` + `b7d2e9c41a03` (ca
+   hai cung ton tai tren `main` chieu 24/09, lam `alembic upgrade head` tu
+   choi chay ⇒ MOI deploy bi chan). Trong luc do mot phien khac da tao nut hop
+   rieng `3b1a2e203c41` va gop `main` truoc. Hai nut hop cho CUNG mot cap
+   nhanh lai tao ra HAI head moi — dung thu ca hai dinh sua.
 
-`main` dang co HAI head: `b06f7b03870a` (hop hai head upload_sessions) va
-`b7d2e9c41a03` (wf_run_con cua lan P3) — ca hai deu moc tu `8f1c6a4d2b90`.
-`tests/test_103_autosub_projects.py::test_platform_migrations_have_a_single_head`
-(va bon test cung luat khac) dang DO vi dieu do. Ban ghi nay noi hai nhanh lai,
-nen chuoi migration co MOT head tro lai.
+⇒ Revision nay nay NOI THANG vao head duy nhat sau khi hop (`3b1a2e203c41`),
+  ⛔ khong de them mot nut hop thu hai. Phep kiem re nhat cho loi dat nhat:
+  `python -m alembic heads` phai in DUNG MOT dong.
 
 ⛔ Khong `alembic stamp`, khong `create_all`: doi voi PostgreSQL that day la
    mot lenh `ALTER TABLE ... ADD COLUMN` co `server_default` — tren
@@ -30,8 +32,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "c4a17f9b6d20"
-down_revision: Union[str, Sequence[str], None] = ("b06f7b03870a",
-                                                  "b7d2e9c41a03")
+down_revision: Union[str, Sequence[str], None] = "3b1a2e203c41"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

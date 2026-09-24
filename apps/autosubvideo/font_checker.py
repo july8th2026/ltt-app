@@ -92,10 +92,14 @@ def _get_system_fonts() -> set[str]:
     for d in font_dirs:
         if os.path.isdir(d):
             for root, _, files in os.walk(d):
-                for f in files:
-                    if f.lower().endswith((".ttf", ".otf", ".ttc", ".woff", ".woff2")):
+                # `ten_tep`, khong `f`: Method 1 o tren da dung `f` cho mot
+                # `FontEntry` cua matplotlib, va hai nghia cho mot ten trong cung
+                # mot ham la mot cho doc sai cho san. Do bang `mypy`
+                # [assignment]/[call-overload] 24/09.
+                for ten_tep in files:
+                    if ten_tep.lower().endswith((".ttf", ".otf", ".ttc", ".woff", ".woff2")):
                         # Use filename (without extension) as rough font name
-                        name = os.path.splitext(f)[0].lower()
+                        name = os.path.splitext(ten_tep)[0].lower()
                         # Strip common suffixes like -Regular, -Bold
                         for suffix in ("-regular", "-bold", "-italic", "-bolditalic",
                                        " regular", " bold", " italic"):

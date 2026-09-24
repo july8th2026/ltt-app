@@ -11,7 +11,6 @@ directory for the upstream commit and the list of modifications.
 from __future__ import annotations
 
 import math
-from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -40,8 +39,15 @@ class SEModule(nn.Module):
 
 class Bottle2neck(nn.Module):
     def __init__(self, inplanes: int, planes: int,
-                 kernel_size: Optional[int] = None,
-                 dilation: Optional[int] = None, scale: int = 8) -> None:
+                 kernel_size: int, dilation: int, scale: int = 8) -> None:
+        # 🔴 `kernel_size`/`dilation` upstream co mac dinh `None`, va dong
+        #    `math.floor(kernel_size / 2) * dilation` ngay duoi nem `TypeError`
+        #    tren ca hai. Chung KHONG phai tham so tuy chon; hai mac dinh do chi
+        #    la mot loi doi nguoi goi. Bo chung KHONG doi kien truc: ca ba cho
+        #    goi (`layer1..3`) van truyen `kernel_size=` va `dilation=` tuong
+        #    minh, nen moi ten thuoc tinh va thu tu lop giu nguyen — checkpoint
+        #    da cong bo van nap y nguyen. Do bang `mypy [operator]/[arg-type]`
+        #    24/09; `test_3300::test_ecapa_bottle2neck_khong_khai_mac_dinh_None`.
         super().__init__()
         width = int(math.floor(planes / scale))
         self.conv1 = nn.Conv1d(inplanes, width * scale, kernel_size=1)

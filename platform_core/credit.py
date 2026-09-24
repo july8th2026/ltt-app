@@ -273,6 +273,23 @@ def so_da_giu(db: DbSession, job_id: str) -> int:
     return -int(tong)      # hold ghi delta âm → đổi dấu ra số đã giữ
 
 
+def dang_giu(db: DbSession, job_id: str) -> bool:
+    """Job này CÒN một khoản giữ chỗ chưa kết sổ. `False` nếu chưa giữ, hoặc đã
+    quyết toán/nhả.
+
+    Đây là vị ngữ *"khách đã cam kết trả cho việc này"* của một job đang chạy —
+    thứ mà `paid_until` nói cho một máy **đã** thu tiền. Hai cửa cùng hỏi một
+    câu ở hai thời điểm khác nhau của cùng một giao dịch.
+
+    ⛔ Đừng đếm lại `hold`/`settle`/`refund` ở tầng trên: hai bản đếm là hai bản
+       sẽ lệch, và chúng lệch ở chỗ quyết định có tiêu tiền với nhà cung cấp hay
+       không.
+    """
+    if not job_id:
+        return False
+    return so_da_giu(db, job_id) > 0 and not _da_ket_so(db, job_id)
+
+
 def giu_cho(db: DbSession, user_id: str, amount: int, job_id: str) -> None:
     """Giữ chỗ `amount` credit cho `job_id`. Raise `ThieuCreditError` nếu thiếu.
 

@@ -606,13 +606,13 @@ def main(argv: list[str]) -> int:
     kq = tach_theo_khoi(model, torch, vao, thu_muc, thiet_bi=thiet_bi)
     kq.update(bang_chung_thiet_bi(torch, thiet_bi))
     kq["luong_torch"] = luong
-    kq["f0_trung_vi"] = _f0_cua_giong(kq)
+    kq["f0_trung_vi"], kq["f0_ly_do"] = _f0_cua_giong(kq)
     print(json.dumps(kq))
     return 0
 
 
-def _f0_cua_giong(kq: dict) -> float:
-    """Trung vi F0 cua stem `vocals`, do NGAY TAI DAY. `0.0` = khong do duoc.
+def _f0_cua_giong(kq: dict) -> tuple[float, str]:
+    """`(f0, ly_do)` cua stem `vocals`, do NGAY TAI DAY. `ly_do` rong = do duoc.
 
     🔑 **Do o tien trinh con, khong o worker** — va do khong phai mot toi uu.
        Hai ly do, ca hai deu cung:
@@ -628,10 +628,10 @@ def _f0_cua_giong(kq: dict) -> float:
     """
     duong = str((kq.get("duong") or {}).get("vocals") or "")
     if not duong:
-        return 0.0
+        return 0.0, "khong co stem vocals trong ket qua tach"
     from . import cao_do
 
-    return cao_do.f0_trung_vi(duong)
+    return cao_do.f0_trung_vi_va_ly_do(duong)
 
 
 if __name__ == "__main__":

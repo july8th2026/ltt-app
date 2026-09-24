@@ -13,6 +13,13 @@ Files:
                      forward pass (training loss, head-mask and model-parallel
                      branches removed); decoder start token is created on the
                      encoder output's device instead of a hard-coded "cuda".
+                     Modified by LTT Studios on 2026-09-24: MT5Stack is built
+                     through _mt5_stack(), which constructs it from the config
+                     alone and then calls set_input_embeddings() to share the
+                     embedding. transformers 5.x dropped the embed_tokens
+                     argument, so the upstream two-argument call raises
+                     TypeError; the one-argument form is valid on both 4.x and
+                     5.x. num_decoder_layers falls back to num_layers when unset.
                      Weight layout, output token 250089 and [0, 25] clamp unchanged.
   chay.py            input format "source: <src> candidate: <mt>" with EOS removed
                      and max length 1536 follows metricx24/predict.py (QE mode).

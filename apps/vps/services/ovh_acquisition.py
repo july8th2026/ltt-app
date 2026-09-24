@@ -17,6 +17,7 @@ from apps.vps.services.backends.contracts import (
 from apps.vps.services.ovh import CheckoutNotSent
 from apps.vps.tables import (VpsEvent, VpsExternalMutation,
                              VpsInfrastructureProfile, VpsIp)
+from platform_core import credit
 from platform_core.jobs import DangBan
 
 log = logging.getLogger(__name__)
@@ -43,7 +44,7 @@ def _now():
 
 def reserve_for_provision(db, profile, *, pool, instance, gateway_row,
                           reservation_key, operation_id, provider_factory,
-                          gateway_factory):
+                          gateway_factory, job_id=""):
     """Prefer owned capacity; acquire at most once under the worker lease.
 
     Factories are lazy: disabled automatic capacity must not even access billing
@@ -58,7 +59,7 @@ def reserve_for_provision(db, profile, *, pool, instance, gateway_row,
             raise
     ensure_free_ip(db, profile, instance=instance, gateway_row=gateway_row,
                    provider=provider_factory(), gateway=gateway_factory(),
-                   operation_id=operation_id)
+                   operation_id=operation_id, job_id=job_id)
     # A second capacity race fails rather than buying another address.
     return pool.reserve(**arguments)
 
@@ -92,7 +93,7 @@ def acquisition_policy(profile):
 
 
 def ensure_free_ip(db, profile, *, instance, gateway_row, provider, gateway,
-                   operation_id, sleep=None, max_polls=1):
+                   operation_id, sleep=None, max_polls=1, job_id=""):
     """Acquire one address; an ambiguous predecessor forbids another checkout.
 
     The caller must own the provisioning lease. The conditional journal claim
@@ -115,7 +116,20 @@ def ensure_free_ip(db, profile, *, instance, gateway_row, provider, gateway,
             raise BackendConflict("acquisition blocked by profile or protected scope")
         # Use the existing Q98 subscription authority. Buying provider IPs must
         # not create a second credit ledger or debit the customer twice.
-        if not billing.con_han(instance):
+        #
+        # 🔴 Hồi quy production 24/09/2026: `cd3c7058` (23/09) chuyển đường TẠO
+        #    MỚI sang `credit.giu_cho`/`quyet_toan`, nên `paid_until` chỉ được
+        #    đặt ở `jobs._quyet_toan` — **sau** bước này. Cửa chỉ hỏi `con_han`
+        #    ⇒ mọi máy mới chết ở 80% với "requires a paid VPS subscription";
+        #    job `2159e8ef` 3/3 lần, không một hàng `OVH_IP_ACQUIRE` nào.
+        #
+        # Trên đường tạo mới, bằng chứng *"khách đã cam kết trả cho máy này"* là
+        # **khoản giữ chỗ còn sống của chính job đang chạy**. `con_han` vẫn là
+        # bằng chứng của đường gia hạn/dựng lại (không có job nào giữ chỗ).
+        # ⛔ Đừng nới thành "có bút toán hold": một job đã nhả tiền
+        #    (`credit.hoan`) không được mua IP nữa — R4 bên dưới chặn máy
+        #    `loi`/`da_xoa`, nhưng một job nhả sớm thì máy vẫn đang `dang_tao`.
+        if not (billing.con_han(instance) or credit.dang_giu(db, job_id)):
             raise BackendConflict("acquisition requires a paid VPS subscription")
         # A refund does not move `paid_until` back (bao_tri._hoan_may_tao_hong),
         # so the subscription check alone would still buy for a refunded or

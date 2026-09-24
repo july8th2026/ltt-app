@@ -37,7 +37,10 @@ import platform_core.http_an_toan as http_an_toan
 from platform_core.i18n import N_
 from platform_core.workflow import he_kieu
 from platform_core.workflow.nut import Gia, NodeDefinition
+from platform_core.workflow import ngon_ngu
+from platform_core.workflow.chinh_sach import LoiNgonNgu
 from platform_core.workflow.nut_loi import dang_ky
+from platform_core.workflow.nut_loi.chay import KetQua
 
 #: ⛔ Danh sách ĐÓNG. `TRACE`/`CONNECT` không bao giờ là thứ một workflow cần,
 #: và `TRACE` là một công cụ dò cấu hình proxy.
@@ -174,6 +177,37 @@ def thuc_thi(tham_so: dict, *, chinh_sach: an_toan_mang.ChinhSach | None = None,
     return {"trang_thai": trang_thai, "than": than, "headers": ra_headers}
 
 
+def chay_http(db, run, node: dict, *, moi_truong: dict, **_) -> KetQua:
+    """Bộ thi hành inline của `core.http` — nối `thuc_thi` vào động cơ.
+
+    🔴 THIẾU BỘ NÀY, `main` ĐỎ NGAY LÚC COLLECT (24/09). Node khai
+       `thi_hanh="inline"` nhưng `dang_ky` không nhận hàm chạy, và luật của
+       `nut_loi.dang_ky` **ném lúc dựng** — đúng như nó phải làm: một node
+       inline không có bộ thi hành sẽ đứng `READY` tới khi hết TTL 20 giờ.
+
+    ⛔ Đây là vết của việc **hai làn song song**: làn viết `core.http` và làn
+       thêm luật `dang_ky` đều XANH một mình, và chỉ vỡ khi gộp. Xanh-khi-tách
+       không chứng minh được gì về xanh-khi-gộp.
+
+    Tham số đi qua ngôn ngữ §6 trước khi gọi, cùng đường `du_lieu.chay_*`.
+    `LoiHttp` thành `FAILED` có **mã**, không thành ngoại lệ trần — động cơ bắt
+    ngoại lệ trần thành `loi_he_thong`, và một URL người dùng gõ sai không phải
+    lỗi hệ thống.
+    """
+    tham_so = dict(node.get("params") or {})
+    try:
+        for ten in ("url", "than", "headers", "cach"):
+            if isinstance(tham_so.get(ten), str):
+                tham_so[ten] = ngon_ngu.tinh(tham_so[ten], moi_truong)
+    except LoiNgonNgu as loi:
+        return KetQua(sang="FAILED", error=f"bieu_thuc_loi: {loi}"[:2000])
+    try:
+        ra = thuc_thi(tham_so)
+    except LoiHttp as loi:
+        return KetQua(sang="FAILED", error=f"{loi.ma}: {loi}"[:2000])
+    return KetQua(output=ra)
+
+
 CORE_HTTP = dang_ky(NodeDefinition(
     type="core.http", type_version=1, kind="data", category="NETWORK",
     title=N_("Gọi HTTP"),
@@ -219,8 +253,8 @@ CORE_HTTP = dang_ky(NodeDefinition(
     # tiêu là thời gian worker, và trần `thoi_cho_s` là thứ chặn điều đó.
     gia=Gia.mien_phi(), credential=(), quyen=frozenset({"network"}),
     cho=(), ma_loi=MA_LOI_HTTP,
-    publish_duoc=False))
+    publish_duoc=False), chay_http)
 
 
-__all__ = ["CACH_CHO_PHEP", "CORE_HTTP", "LoiHttp", "MA_LOI_HTTP",
+__all__ = ["CACH_CHO_PHEP", "CORE_HTTP", "chay_http", "LoiHttp", "MA_LOI_HTTP",
            "THOI_CHO_MAC_DINH_S", "TRAN_PHAN_HOI_BYTE", "thuc_thi"]

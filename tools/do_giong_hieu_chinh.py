@@ -197,6 +197,15 @@ class LayMauGpu(threading.Thread):
         super().__init__(daemon=True)
         self.dung = False
         self.mau: list = []
+        #: Ngoai le DAU TIEN cua vong lay mau + tong so lan no.
+        #:
+        #: 🔴 Khong co hai truong nay thi mot `nvidia-smi` khong goi duoc (doi
+        #:    ten, timeout, driver vua don) lam `mau` RONG, va bao cao in
+        #:    `vram_card_dinh_mb: 0`, `gpu_util_dinh: 0` — tuc "GPU nam khong".
+        #:    Do dung ket luan nguoc: mot phep do KHONG CHAY doc thanh mot phep
+        #:    do noi rang khong co tai. Bay "so 0 can doi chung" cua kho.
+        self.loi_dau: str = ""
+        self.so_loi = 0
 
     def run(self):
         while not self.dung:
@@ -211,8 +220,10 @@ class LayMauGpu(threading.Thread):
                     capture_output=True, text=True, timeout=5).stdout.strip()
                 m, u = (int(x) for x in tong.split(",")[:2])
                 self.mau.append((time.monotonic(), m, u, pid))
-            except Exception:                           # noqa: BLE001
-                pass
+            except Exception as exc:                    # noqa: BLE001
+                self.so_loi += 1
+                if not self.loi_dau:
+                    self.loi_dau = f"{type(exc).__name__}: {exc}"[:200]
             time.sleep(0.25)
 
 
@@ -263,6 +274,11 @@ def _chay_do(dv, nhan: str) -> tuple[dict, dict]:
           "vram_card_truoc_mb": int(nen or 0), "vram_card_dinh_mb": dinh,
           "vram_card_sau_mb": int(sau or 0),
           "gpu_util_dinh": max((u for _, _, u, _ in lm.mau), default=0),
+          # ⭐ BA con so tren doc duoc HAY KHONG phu thuoc vao day. `so_mau = 0`
+          #    nghia la hai dong `..._dinh` o tren KHONG PHAI phep do — chung la
+          #    `default=0`, va doc chung nhu "GPU nam khong" la ket luan nguoc.
+          "so_mau_gpu": len(lm.mau), "so_loi_lay_mau": lm.so_loi,
+          "loi_lay_mau_dau": lm.loi_dau,
           "theo_bo_do": {t: r.get("tai_nguyen") | {"giay": r.get("giay")}
                          for t, r in kq.items() if r.get("tai_nguyen")}}
     return kq, tn

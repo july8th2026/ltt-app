@@ -279,3 +279,56 @@ def test_banh_coc_cau_noi_khong_biet_ai_la_gi():
             if isinstance(n, (ast.Import, ast.ImportFrom))
             and "ai_" in ast.unparse(n)]
     assert not nhap, f"cau noi import mo-dun AI: {nhap}"
+
+
+#: Mo-dun node co `dang_ky` nhung CO Y chua noi vao `nut_loi/__init__.py`.
+#: Moi dong phai co ly do, va ly do phai het han duoc.
+CHUA_BAT = {
+    "http": "core.http con thieu KHO CREDENTIAL cho header Authorization "
+            "(phase goc 7 moi xong mot nua) - bat som la moi khach dan token "
+            "vao `WorkflowVersion`",
+}
+
+
+def test_moi_mo_dun_dang_ky_node_deu_duoc_IMPORT_hoac_khai_la_chua_bat():
+    """🔴 Mot mo-dun dang ky ma KHONG AI IMPORT la mo-dun CHET.
+
+    `dang_ky()` chay luc import. Khong ai import thi node khong ton tai luc
+    chay, va moi phep kiem cua no van XANH vi phep kiem thi co import.
+
+    ⛔ Ca 24/09: `nut_loi/http.py` khai `thi_hanh="inline"` ma khong co bo thi
+       hanh. Luat cua `dang_ky` bat dung ca do - nhung chi khi co ai IMPORT.
+       `__init__` khong import no, nen loi nam im cho toi khi mot phep kiem
+       cham vao, va luc ay `main` DA DO.
+
+    ⭐ Bai nay fail-CLOSED: mo-dun moi khong duoc import va khong khai trong
+       `CHUA_BAT` thi DO. Mot danh sach ro rang co ly do thi doc duoc va het
+       han duoc; su im lang thi khong.
+    """
+    import ast
+    import pathlib
+
+    from platform_core.workflow import nut_loi
+
+    thu_muc = pathlib.Path(nut_loi.__file__).parent
+    tep = [p for p in sorted(thu_muc.glob("*.py")) if p.name != "__init__.py"]
+    co_dang_ky = [p.stem for p in tep
+                  if "dang_ky(" in p.read_text(encoding="utf-8")]
+    assert len(co_dang_ky) >= 3, f"pham vi sai? chi thay {co_dang_ky}"
+
+    cay = ast.parse((thu_muc / "__init__.py").read_text(encoding="utf-8"))
+    da_nhap = {a.name.rsplit(".", 1)[-1]
+               for n in ast.walk(cay) if isinstance(n, ast.Import)
+               for a in n.names}
+    da_nhap |= {a.name for n in ast.walk(cay)
+                if isinstance(n, ast.ImportFrom) for a in n.names}
+
+    mo_coi = [m for m in co_dang_ky if m not in da_nhap and m not in CHUA_BAT]
+    assert not mo_coi, (
+        f"mo-dun node khong ai import va khong khai CHUA_BAT: {mo_coi}. "
+        f"Them import vao `nut_loi/__init__.py`, hoac khai ly do trong "
+        f"`CHUA_BAT` de su vang mat CO THE DOC DUOC.")
+
+    # 🔑 Doi chung: `CHUA_BAT` khong duoc phinh ra bang cach liet ke thu da bat.
+    thua = [m for m in CHUA_BAT if m in da_nhap]
+    assert not thua, f"CHUA_BAT liet ke mo-dun DA duoc import: {thua}"

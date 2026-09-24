@@ -56,15 +56,20 @@ def dich_kha_dung(db) -> bool:
 
     ⛔ Không còn đọc `GEMINI_API_KEY`. Một biến môi trường ở tầng app là đường
        vòng qua kho khoá — đúng thứ pha 05 gỡ.
+
+    ⛔ **Khong bat ngoai le o day.** Co nay chi co hai gia tri, nen no khong
+       dien dat duoc "chua biet". Bat `Exception` roi tra `False` nghia la mot
+       CSDL hong lam tinh nang dich BIEN MAT khoi giao dien — khach thay mot
+       tinh nang da tra tien tu nhien khong con, `routes.py` tra "chua bat
+       dich", va khong mot dong nao noi ly do that. Mot loi 500 o day thi ro:
+       no chi vao CSDL, tuc vao dung cho phai sua.
     """
-    try:
-        from platform_core.models import APIKEY_CAT_CHAT, ApiKey
-        rows = db.query(ApiKey).filter_by(
-            provider=_C.THU_TU_PROVIDER[0], enabled=True).all()
-        return any(not row.categories or APIKEY_CAT_CHAT in row.categories
-                   for row in rows)
-    except Exception:
-        return False
+    from platform_core.models import APIKEY_CAT_CHAT, ApiKey
+
+    rows = db.query(ApiKey).filter_by(
+        provider=_C.THU_TU_PROVIDER[0], enabled=True).all()
+    return any(not row.categories or APIKEY_CAT_CHAT in row.categories
+               for row in rows)
 
 
 def diarize_file(media_path: str, *, min_speakers: int = 0, max_speakers: int = 0,
