@@ -34,17 +34,37 @@ distillmos==0.9.1
 xls-r-sqa==0.1.0
 
 # ============================================================================
-#  ⚠️ MOT KHOANG HO DA DO, CHUA XU - `pip check` tren qc-venv dang chay:
+#  ⚠️ `pip check` KEU MOT CAU, VA CAU DO VO HAI - da tra, 25/09. ⛔ DUNG CAI.
 #
 #      xls-r-sqa 0.1.0 requires librosa, which is not installed.
 #
-#  Do 25/09: `import distillmos` va `import xls_r_sqa` deu NAP DUOC, nen duong
-#  cham MOS hom nay khong gay - `librosa` chi duoc dung o mot nhanh chua chay
-#  toi. ⛔ KHONG tu them `librosa` vao day: no keo them mot cay phu thuoc
-#  (numba/llvmlite) vao dung cai venv dang phuc vu phep do cua ba lan khac, va
-#  do la mot quyet dinh cua dieu phoi chu khong phai mot dong requirements.
-#  ⇒ Ghi ra day de no thoi la mot dieu chi may biet: hoac khai `librosa`, hoac
-#    khai rang nhanh dung no la nhanh CHET.
+#  ⭐ Cau hoi dung KHONG phai "co thieu khong" ma "`librosa` nam tren DUONG NAO".
+#     Da tra TINH (⛔ khong chay, ⛔ khong cai) o ca hai dau:
+#
+#   1. TRONG BAN DA CAI: `grep -r librosa` tren CA HAI goi
+#      (`site-packages/xls_r_sqa/`, 8 tep .py, va `site-packages/distillmos/`)
+#      => **0 ket qua**. ⛔ KHONG mot dong nhap nao. Bo trich dac trung that su
+#      la `torchaudio.transforms.MFCC` (`xls_r_sqa/config.py`, `e2e_model.py`).
+#
+#   2. TRONG NGUON GOC (github.com/lcn-kul/xls-r-analysis-sqa, MIT, Bastiaan
+#      Tamm / KU Leuven): `librosa` xuat hien dung BA cho, va ⛔ khong cho nao
+#      duoc dong goi vao ban cai:
+#        · `setup.py` -> `install_requires=["librosa>=0.9", ...]`  <- cho ro ri
+#          ra `Requires-Dist` cua metadata, tuc cai ma `pip check` doc;
+#        · `requirements.txt` -> `librosa==0.9.2` (ghim cho nguoi phat trien);
+#        · `test_e2e_sqa.py` -> `import librosa` + `librosa.to_mono(...)`
+#          <- **BO TEST cua thuong nguon**, khong nam trong goi da cai.
+#
+#  ⇒ KET LUAN: mot ban khai metadata LAC HAU o thuong nguon. Viec ma `librosa`
+#    lam trong bo test do (nap audio + gop mono + resample) la viec **ta da lam
+#    bang ffmpeg** truoc khi dua vao bo do. ⇒ Canh bao VO HAI, ⛔ khong phai
+#    qua min hen gio, va ⛔ khong can cua so yen de cai.
+#
+#  ⛔ VA DUNG "SUA" NO BANG CACH THEM `librosa` VAO DAY: no keo numba/llvmlite
+#     vao dung cai venv dang phuc vu phep do cua ba lan khac, de doi lay mot
+#     dong `pip check` sach - tuc tra mot rui ro THAT cho mot cau bao GIA.
+#     Neu ai do thay dong `pip check` nay lan nua: doc lai khoi nay, ⛔ dung
+#     chay di cai.
 # ============================================================================
 
 # ============================================================================
