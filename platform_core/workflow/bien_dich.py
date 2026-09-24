@@ -270,6 +270,39 @@ def _tham_chieu_trong(gia_tri: Any) -> set[ThamChieu]:
 #: Tiền tố của node LÕI (`nut_loi/`, spec §4.5 nguồn 1).
 TIEN_TO_LOI = "core."
 
+#: Kiểu tham số "đây là một BIỂU THỨC §6" trong `NodeDefinition.tham_so`.
+#:
+#: 🔴 VÌ SAO PHẢI CÓ NHÃN NÀY — một lỗ ĐO ĐƯỢC, không phải một tinh chỉnh.
+#:
+#:    Cổng tổ tiên §6.2 (`bien_dich`, "một cổng an ninh về tiền") chỉ soi các
+#:    đoạn `{{ … }}` trong `params`. Nhưng tham số của node lõi là biểu thức
+#:    **trần** (`core.if.dieu_kien = "nodes.a.output.text == 'co'"`, không có
+#:    ngoặc): `doan_bieu_thuc` không thấy gì, và một node đọc output của một
+#:    node KHÔNG phải tổ tiên đi lọt qua publish. Phát hiện khi trả lời cái
+#:    chuông `test_1714` ở Task 5.
+#:
+#: ⇒ Lược đồ tham số phải NÓI RA tham số nào là biểu thức. Đoán theo tên
+#:   (`dieu_kien`, `bieu_thuc`, `items`…) là một bảng thứ hai sẽ trôi.
+KIEU_BIEU_THUC = "bieu_thuc"
+
+
+def _tham_chieu_node_loi(n: dict) -> set[ThamChieu]:
+    """Tham chiếu `nodes.…` trong các tham số BIỂU THỨC của một node lõi."""
+    from platform_core.workflow import nut_loi
+
+    nd = nut_loi.tat_ca().get(str(n.get("type")))
+    if nd is None:
+        return set()
+    thuoc = (nd.tham_so or {}).get("properties") or {}
+    ra: set[ThamChieu] = set()
+    for khoa, mo_ta in thuoc.items():
+        if str(mo_ta.get("type", "")) != KIEU_BIEU_THUC:
+            continue
+        gia_tri = (n.get("params") or {}).get(khoa)
+        if isinstance(gia_tri, str) and gia_tri.strip():
+            ra.update(trich_tham_chieu(gia_tri))
+    return ra
+
 
 def _kiem_tham_so_loi(nd, params: dict, nid: str) -> None:
     """Kiểm `params` của một node lõi theo `NodeDefinition.tham_so`.
@@ -297,6 +330,11 @@ def _kiem_tham_so_loi(nd, params: dict, nid: str) -> None:
                 "tham_so_la",
                 f"{nd.type} khong co tham so {thua} (co: {sorted(thuoc)})", nid)
     for khoa, mo_ta in thuoc.items():
+        if khoa in params and str(mo_ta.get("type", "")) == KIEU_BIEU_THUC                 and not isinstance(params[khoa], str):
+            raise LoiBienDich(
+                "tham_so_khong_hop_le",
+                f"{nd.type}.{khoa} phai la mot bieu thuc (chuoi) -- nhan "
+                f"{type(params[khoa]).__name__}", nid)
         if khoa not in params or str(mo_ta.get("type", "")) != "enum":
             continue
         cho_phep = [str(x) for x in (mo_ta.get("values") or [])]
@@ -455,6 +493,31 @@ def cau_truc(document: dict, *,
     return CauTruc(nodes, ra_edges, thu_tu, to_tien, cong_ra_cua)
 
 
+def _kiem_than_foreach(graph: dict) -> None:
+    """Thân `foreach` chỉ được chứa node `inline` — chặn ở PUBLISH.
+
+    ⛔ Lý do đầy đủ ở `nut_loi/vong_lap.py`: `node_run` khoá theo
+       `(run_id, node_id)` nên một node thân chạy 30 lần **không có chỗ** để 30
+       trạng thái sống. Thân có node job phải đi qua run con (`body_workflow`,
+       §5.9) — Task 7.
+
+    ⚠️ Từ chối ở publish, không lúc chạy: một đồ thị chạy được nửa vòng rồi
+       treo đã tiêu tiền thật, và người khai không có cách nào biết trước.
+    """
+    from platform_core.workflow import bao_gia
+
+    theo_id = {str(n["id"]): n for n in graph.get("nodes") or []}
+    for f, (_dong, than) in bao_gia.than_foreach(graph).items():
+        job = sorted(k for k in than
+                     if str(theo_id[k].get("thi_hanh")) != "inline")
+        if job:
+            raise LoiBienDich(
+                "than_foreach_co_node_job",
+                f"than cua {f!r} co node khong chay inline: {job}. Than co "
+                "node job phai di qua run con (`body_workflow`, spec 5.9) - "
+                "chua ho tro o ban nay.", f)
+
+
 def bien_dich(document: dict, *,
               cong_cu: Optional[dict[str, CongCu]] = None) -> dict:
     ct = cau_truc(document, cong_cu=cong_cu)
@@ -465,8 +528,12 @@ def bien_dich(document: dict, *,
         # ⛔ Phán quyết về HÌNH DẠNG biểu thức nằm ở ĐÂY, không ở `cau_truc`:
         #    `cau_truc` còn phục vụ cửa gợi ý, nơi một biểu thức gõ dở là
         #    chuyện thường. Cổng publish thì không tha (test_1714).
-        _doi(n["params"], nid)
-        for tc in sorted(_tham_chieu_trong(n["params"])):
+        tham_chieu = _tham_chieu_trong(n["params"])
+        if str(n["type"]).startswith(TIEN_TO_LOI):
+            tham_chieu |= _tham_chieu_node_loi(n)
+        else:
+            _doi(n["params"], nid)
+        for tc in sorted(tham_chieu):
             doc = (f"nodes.{tc.node}.output.{tc.cong}" if tc.loai == "output"
                    else f"nodes.{tc.node}.{tc.loai}")
             if tc.node == nid:
@@ -494,6 +561,9 @@ def bien_dich(document: dict, *,
                     f"node {nid!r} doc {doc} nhung node {tc.node!r} khong co "
                     f"cong ra {tc.cong!r}; cong co that: "
                     f"{sorted(cong_ra_cua[tc.node])}", nid)
+
+    do_thi_tam = {"nodes": nodes, "edges": ra_edges, "thu_tu": thu_tu}
+    _kiem_than_foreach(do_thi_tam)
 
     cai_dat = document.get("settings") or {}
     return {

@@ -7,9 +7,10 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
-from platform_core.models import (NodeRunWaitpoint, Waitpoint, WaitpointSignal)
+from platform_core.models import (NodeRunWaitpoint, Waitpoint,
+                                  WaitpointSignal)
 
 # Tín hiệu nào KHÔNG còn phải chờ nữa. `NOT_DISPATCHED` nằm ở đây có chủ ý:
 # nhánh ấy sẽ không bao giờ gửi gì, nên coi nó là "đang chờ" là treo vĩnh viễn.
@@ -87,40 +88,61 @@ def niem_phong(db, waitpoint_id: str) -> None:
         db.flush()
 
 
+def dem_tin_hieu(db, waitpoint_id: str) -> dict[str, int]:
+    """`{status: số lượng}` bằng **MỘT** câu `GROUP BY`.
+
+    ⭐ 000015: *"Counts are taken once, from a single `GROUP BY status`, and
+       handed to a pure predicate… one `GROUP BY status` replaces up to three
+       round-trips and the policy matrix is unit-testable without a database."*
+
+    ⛔ Bản cũ nạp **mọi hàng** tín hiệu vào bộ nhớ để trả về một `bool`. Với
+       một barrier 10 000 nhánh (con số Activepieces khai là có thật) đó là
+       10 000 đối tượng ORM cho một câu hỏi có/không.
+    """
+    return {str(tt): int(n) for tt, n in db.execute(
+        select(WaitpointSignal.status, func.count())
+        .where(WaitpointSignal.waitpoint_id == waitpoint_id)
+        .group_by(WaitpointSignal.status)).all()}
+
+
 def da_mo(db, waitpoint_id: str) -> bool:
     """Waitpoint này đã hết chờ chưa?
 
-    Ba luật, theo đúng thứ tự — và thứ tự là một phần của ngữ nghĩa:
+    ⭐ Luật nằm ở `join.nen_mo_barrier` — hàm THUẦN, PORT từ
+       `shouldReleaseBarrier` của Activepieces. Hàm này chỉ làm một việc:
+       **quy trạng thái CSDL của ta về `dem[PENDING]` mà hàm kia cần**.
 
-      1. `release_on_first_failure` → hỏng một nhánh là thả ngay. Đứng trước vì
-         nó là quyết định "đừng bắt chờ nữa", không phụ thuộc đếm đủ hay chưa.
-      2. `required_successes > 0` → N-of-M: đếm `SUCCEEDED`, đủ N thì mở.
-      3. `required_successes == 0` (**ALL**) → nếu `so_nguon > 0` (Join, mẫu số
-         biết lúc dựng đồ thị) thì đếm số tín hiệu đã xong so với `so_nguon`.
-         Nếu không (barrier động — ForEach) thì chỉ kết luận được khi `sealed`.
+    Ta không tạo sẵn một hàng `PENDING` cho mỗi nhánh như họ, nên "còn bao
+    nhiêu chưa về" được trả lời bằng hai đường:
+
+      - `so_nguon > 0` (Join — mẫu số **biết lúc dựng đồ thị**):
+        `PENDING = so_nguon − số tín hiệu đã xong`.
+      - `so_nguon == 0` (barrier ĐỘNG — ForEach sinh nhánh lúc chạy): mẫu số
+        chỉ biết khi đã `sealed`. Chưa niêm phong ⇒ coi như còn một nhánh chưa
+        về, và `nen_mo_barrier` tự trả `False` ở luật sàn.
 
     ⛔ `so_nguon == 0` và chưa `sealed` KHÔNG có nghĩa "chưa đủ" — nó có nghĩa
-       **"chưa biết"**. Hai thứ ấy khác nhau, và gộp chúng lại chính là
-       khiếm khuyết mà `sealed`/`so_nguon` sinh ra để đóng: không có mẫu số
-       thì "đủ tất cả" là một câu hỏi không trả lời được.
+       **"chưa biết"**. Hai thứ ấy khác nhau, và gộp chúng lại chính là khiếm
+       khuyết mà `sealed`/`so_nguon` sinh ra để đóng.
     """
+    # ⚠️ Import CỤC BỘ: `join` import `cho_doi` (nó dựng waitpoint), nên một
+    #    import ở đầu tệp là một vòng — và vòng import là cách im lặng nhất để
+    #    một trong hai mô-đun nạp dở.
+    from platform_core.workflow import join
+
     wp = db.get(Waitpoint, waitpoint_id)
     if wp is None:
         return False
-    tin_hieu = list(db.execute(
-        select(WaitpointSignal)
-        .where(WaitpointSignal.waitpoint_id == waitpoint_id)).scalars())
-
-    if wp.release_on_first_failure and any(
-            s.status in _THAT_BAI for s in tin_hieu):
-        return True
-
-    if wp.required_successes > 0:
-        thanh_cong = sum(1 for s in tin_hieu if s.status == _THANH_CONG)
-        return thanh_cong >= wp.required_successes
-
-    xong = [s for s in tin_hieu if s.status in _DA_XONG]
+    dem = dem_tin_hieu(db, waitpoint_id)
+    xong = sum(n for tt, n in dem.items() if tt in _DA_XONG)
     if wp.so_nguon > 0:
-        return len(xong) >= wp.so_nguon
-    # Barrier động (ForEach): mẫu số chỉ biết khi đã niêm phong.
-    return bool(wp.sealed) and len(xong) == len(tin_hieu)
+        con_cho = max(0, int(wp.so_nguon) - xong)
+        sealed = True          # mẫu số đã biết ⇒ luật sàn kết luận được
+    else:
+        con_cho = 0 if wp.sealed else 1
+        sealed = bool(wp.sealed)
+    dem[join.TIN_HIEU_CHO] = con_cho
+    return join.nen_mo_barrier(
+        sealed=sealed, dem=dem,
+        can_thanh_cong=int(wp.required_successes or 0),
+        mo_khi_hong_dau_tien=bool(wp.release_on_first_failure))

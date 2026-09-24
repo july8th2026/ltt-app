@@ -209,36 +209,49 @@ def test_tu_tham_chieu_bi_tu_choi():
     assert "CHINH NO" in str(e.value)
 
 
-def test_node_core_da_bien_dich_duoc__nhung_foreach_thi_CHUA():
-    """Cái chuông của Task 4 đã reo, và đây là câu trả lời **một phần**.
+def test_to_tien_TRONG_THAN_foreach__cau_tra_loi_cua_Task_5():
+    """Cái chuông tác giả treo sẵn: *"ngày P3 mở `core.*`, nó đỏ, và người mở
+    phải quay lại đây quyết định tổ tiên trong thân vòng lặp nghĩa là gì."*
 
-    Trước 24/09 `bien_dich._node` chỉ nhận `tool`/`app.*`, nên mọi `core.*` bị
-    từ chối chung một mã `loai_node_chua_ho_tro`. Task 4 (plan wf-v2 P3) mở ba
-    node RẼ ĐƯỜNG — `core.if`/`switch`/`stop` — và chúng **không** mở ra ca
-    "node trong thân vòng lặp": chúng không có thân, `loop.*` không tồn tại
-    quanh chúng, và luật tổ tiên §6.2 áp y nguyên.
+    ## Câu trả lời
 
-    ⚠️ Chuông vẫn treo cho `core.foreach`: hôm nay nó chưa được khai trong
-       `nut_loi/` nên bị từ chối `node_khong_ton_tai`. **Task 5 là người phải
-       quay lại đây** quyết định tổ tiên trong thân vòng lặp nghĩa là gì.
+    **Luật tổ tiên §6.2 KHÔNG đổi.** Nó nói về đồ thị đã biên dịch, và thân vòng
+    lặp là một đoạn của chính đồ thị ấy: node thân đọc được node thân đứng
+    trước nó vì node ấy **là** tổ tiên theo `graph.thu_tu`. Không có luật thứ hai.
+
+    **Thứ Task 5 thêm là GIÁ TRỊ, không phải QUAN HỆ.** Trong thân, một tham
+    chiếu `nodes.<x>.output` trả giá trị của **vòng đang chạy**
+    (`nut_loi/vong_lap._mt_than` phủ ảnh chụp CSDL bằng output của vòng ấy), và
+    `loop.item/index/total` tồn tại. Ngoài thân, cùng tham chiếu ấy trả giá trị
+    của **vòng CUỐI** — vì `node_run` khoá theo `(run_id, node_id)` nên chỉ một
+    trạng thái sống sót. ⛔ Muốn cả tập thì đọc `foreach_end.output.results`.
+
+    **Ranh giới đã khai:** thân chỉ nhận node `inline`; thân có node job bị từ
+    chối lúc publish (`than_foreach_co_node_job`) — xem `test_1784`.
     """
     from platform_core.workflow import nut_loi
-    assert "core.foreach" not in nut_loi.tat_ca(), (
-        "core.foreach da duoc khai — Task 5 phai tra loi cau hoi to tien "
-        "trong than vong lap o day, khong duoc chi xoa phep kiem nay")
+    so = nut_loi.tat_ca()
+    assert "core.foreach" in so and "core.foreach_end" in so
+
     doc = _doc([{"id": "p1", "nodes": [
-        {"id": "v", "type": "core.foreach", "params": {}}], "edges": []}])
+        {"id": "f", "type": "core.foreach",
+         "params": {"items": "[1]", "max_items": 5}},
+        {"id": "x", "type": "core.transform", "params": {"gia_tri": "loop.item"}},
+        {"id": "y", "type": "core.transform",
+         "params": {"gia_tri": "nodes.x.output.gia_tri"}},
+        {"id": "fe", "type": "core.foreach_end", "params": {"foreach": "f"}}],
+        "edges": [
+            {"id": "e1", "source_node": "f", "target_node": "x"},
+            {"id": "e2", "source_node": "x", "target_node": "y"},
+            {"id": "e3", "source_node": "y", "target_node": "fe"}]}])
+    g = bien_dich.bien_dich(doc, cong_cu=CC)
+    assert [n["thi_hanh"] for n in g["nodes"]] == ["inline"] * 4
+
+    # ⛔ Và luật tổ tiên vẫn CẮN trong thân: `x` đọc `y` là đọc ngược.
+    doc["pages"][0]["nodes"][1]["params"]["gia_tri"] = "nodes.y.output.gia_tri"
     with pytest.raises(bien_dich.LoiBienDich) as e:
         bien_dich.bien_dich(doc, cong_cu=CC)
-    assert e.value.ma == "node_khong_ton_tai"
-
-    # Đối chứng: một node lõi ĐÃ khai thì biên dịch được, và mang `thi_hanh`
-    # của chính `NodeDefinition` — không phải `"job"` mặc định của node app.
-    doc2 = _doc([{"id": "p1", "nodes": [
-        {"id": "i", "type": "core.if", "params": {"dieu_kien": "true"}}],
-        "edges": []}])
-    g = bien_dich.bien_dich(doc2, cong_cu=CC)
-    assert g["nodes"][0]["thi_hanh"] == "inline"
+    assert e.value.ma == "tham_chieu_khong_phai_to_tien"
 
 
 # ── Bộ TRÍCH tham chiếu, đo riêng ────────────────────────────────────────────

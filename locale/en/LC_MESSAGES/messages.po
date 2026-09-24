@@ -20675,3 +20675,27 @@ msgstr "Pick a branch from the value of an expression."
 
 msgid "Kết thúc lượt chạy ngay tại đây."
 msgstr "End the run right here."
+
+msgid "Biến đổi"
+msgstr "Transform"
+
+msgid "Dựng một giá trị mới bằng một biểu thức."
+msgstr "Build a new value from an expression."
+
+msgid "Lặp"
+msgstr "Loop"
+
+msgid "Chạy thân vòng lặp một lần cho mỗi phần tử."
+msgstr "Run the loop body once for each item."
+
+msgid "Hết lặp"
+msgstr "End loop"
+
+msgid "Gom kết quả của vòng lặp theo thứ tự đầu vào."
+msgstr "Collect the loop results in input order."
+
+msgid "Gộp nhánh"
+msgstr "Join"
+
+msgid "Chờ nhiều nhánh gặp nhau: ALL, ANY hoặc N trong M."
+msgstr "Wait for several branches to meet: ALL, ANY or N of M."

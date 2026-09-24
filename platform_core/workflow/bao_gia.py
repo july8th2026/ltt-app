@@ -159,8 +159,8 @@ def _max_items(node: dict) -> int:
     return gia_tri
 
 
-def he_so_lap(graph: dict) -> dict[str, int]:
-    """Số lượt TỐI ĐA mỗi node chạy trong một lượt chạy của đồ thị.
+def than_foreach(graph: dict) -> dict[str, tuple[str, tuple[str, ...]]]:
+    """`{id foreach: (id foreach_end, thân theo `graph.thu_tu`)}`.
 
     🔴 VÌ SAO HÀM NÀY TỒN TẠI — một nợ đã ĐO, không phải một tinh chỉnh.
 
@@ -200,7 +200,8 @@ def he_so_lap(graph: dict) -> dict[str, int]:
                 f"({ket[cua]}, {nid}) -- than khong xac dinh")
         ket[cua] = nid
 
-    he_so: dict[str, int] = dict.fromkeys(nodes, 1)
+    thu_tu = [str(k) for k in (graph.get("thu_tu") or nodes)]
+    ra: dict[str, tuple[str, tuple[str, ...]]] = {}
     for nid, n in nodes.items():
         if str(n.get("type")) != LOAI_FOREACH:
             continue
@@ -209,8 +210,23 @@ def he_so_lap(graph: dict) -> dict[str, int]:
             raise KhongBaoGiaDuoc(
                 f"{nid}: {LOAI_FOREACH!r} khong co {LOAI_FOREACH_END!r} nao dong "
                 "lai -- khong biet than ket thuc o dau thi khong co chan tren")
-        lan = _max_items(n)
         than = (_lan(nid, xuoi) & _lan(dong, nguoc)) - {nid, dong}
+        ra[nid] = (dong, tuple(k for k in thu_tu if k in than))
+    return ra
+
+
+def he_so_lap(graph: dict) -> dict[str, int]:
+    """Số lượt TỐI ĐA mỗi node chạy trong một lượt chạy của đồ thị.
+
+    Thân vòng lặp đọc từ `than_foreach` — **một** nguồn cho câu hỏi *"node nào
+    nằm trong thân nào"*. Động cơ (`nut_loi/vong_lap.py`) hỏi đúng chỗ ấy: một
+    bản sao của luật thân là một bản sao sẽ trôi, và ngày nó trôi thì con số
+    tiền và thứ thật sự chạy nói hai chuyện khác nhau.
+    """
+    nodes = {str(n["id"]): n for n in graph.get("nodes") or []}
+    he_so: dict[str, int] = dict.fromkeys(nodes, 1)
+    for nid, (_dong, than) in than_foreach(graph).items():
+        lan = _max_items(nodes[nid])
         for k in than:
             he_so[k] *= lan
     qua = [k for k, v in he_so.items() if v > HE_SO_LAP_TOI_DA]
@@ -244,5 +260,6 @@ def bao_gia_do_thi(graph: dict, *,
                   uoc_tinh=int(math.ceil(toi_da * _TY_LE_UOC_TINH)))
 
 
-__all__ = ["HE_SO_LAP_TOI_DA", "MAX_ITEMS_TRAN", "KhongBaoGiaDuoc",
-           "BaoGia", "bao_gia_do_thi", "he_so_lap"]
+__all__ = ["HE_SO_LAP_TOI_DA", "LOAI_FOREACH", "LOAI_FOREACH_END",
+           "MAX_ITEMS_TRAN", "KhongBaoGiaDuoc", "BaoGia", "bao_gia_do_thi",
+           "he_so_lap", "than_foreach"]

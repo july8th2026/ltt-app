@@ -91,7 +91,7 @@ DINH_NGHIA = (
             (t, he_kieu.Cong(type="control", required=False, nhan=t))
             for t in NHANH_IF),
         tham_so={"type": "object",
-                 "properties": {"dieu_kien": {"type": "string"}},
+                 "properties": {"dieu_kien": {"type": "bieu_thuc"}},
                  "required": ["dieu_kien"], "additionalProperties": False},
         thi_hanh="inline", gia=Gia.mien_phi(), quyen=frozenset(),
         cho=(), ma_loi=("bieu_thuc_loi",), publish_duoc=True), chay_if),
@@ -104,7 +104,7 @@ DINH_NGHIA = (
         cong_ra=(("nhanh", he_kieu.Cong(type="control", required=False,
                                         nhan="nhanh")),),
         tham_so={"type": "object",
-                 "properties": {"bieu_thuc": {"type": "string"},
+                 "properties": {"bieu_thuc": {"type": "bieu_thuc"},
                                 "nhanh": {"type": "array"},
                                 "mac_dinh": {"type": "string"}},
                  "required": ["bieu_thuc", "nhanh"],

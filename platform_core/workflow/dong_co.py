@@ -63,6 +63,28 @@ def _nhanh_da_chon(db, run: WorkflowRun, nid: str) -> str:
     return str((anh.output_ref or {}).get(moi_truong.KHOA_NHANH, "")) if anh else ""
 
 
+def _nguong_join(g: dict, nid: str, so_canh: int) -> int:
+    """Bao nhiêu cạnh vào phải kích hoạt thì node này READY?
+
+    Mặc định của đồ thị là **mọi cạnh** — tức `ALL`, và đó đã là một Join. Chỉ
+    node `core.join` khai `ANY`/`N_OF_M` mới hạ ngưỡng.
+
+    ⚠️ Một node không có cạnh vào nào (điểm bắt đầu) có ngưỡng 0 ⇒ READY ngay,
+       y như trước. `all([])` cũ cũng cho đúng kết quả ấy; viết ra để lần đọc
+       sau không phải suy lại.
+    """
+    node = next((n for n in g["nodes"] if n["id"] == nid), None)
+    if node is None or str(node.get("type")) != "core.join":
+        return so_canh
+    p = node.get("params") or {}
+    che_do = str(p.get("che_do") or "ALL")
+    if che_do == "ANY":
+        return 1 if so_canh else 0
+    if che_do == "N_OF_M":
+        return max(1, min(so_canh, int(p.get("can") or 1)))
+    return so_canh
+
+
 def _lan_truyen(db, run: WorkflowRun, g: dict) -> tuple[dict[str, str], bool]:
     """Trả `(trang_thai_moi_node, co_doi)` — `co_doi` cho bên gọi biết pha này
     có tự chuyển node nào không (SKIPPED/READY), để quyết định có cần ghi một
@@ -99,15 +121,26 @@ def _lan_truyen(db, run: WorkflowRun, g: dict) -> tuple[dict[str, str], bool]:
             kich = [_kich_hoat(e, tt[e["source_node"]]) for e in canh]
             chet = [tt[e["source_node"]] in mtt.NODE_KET_THUC and not k
                     for e, k in zip(canh, kich, strict=True)]
-            if any(chet):
+            # ⭐ `core.join` đổi NGƯỠNG, không đổi luật. Mặc định của đồ thị là
+            #    `ALL` (mọi cạnh vào phải kích hoạt) — đó đã là một Join, nên
+            #    node `core.join` chế độ ALL không thêm gì. `ANY`/`N_OF_M` chỉ
+            #    hạ ngưỡng xuống, và ngưỡng ấy sống Ở ĐÂY chứ không trong bộ thi
+            #    hành của node: một node chỉ được chạy KHI ĐÃ READY, nên một
+            #    luật READY nằm trong bộ thi hành là một luật không bao giờ tới.
+            can = _nguong_join(g, nid, len(canh))
+            du = sum(1 for k in kich if k)
+            con_co_the = du + sum(1 for e, k in zip(canh, kich, strict=True)
+                                  if not k
+                                  and tt[e["source_node"]] not in mtt.NODE_KET_THUC)
+            if du >= can:
+                mtt.chuyen_node(db, run.id, nid, sang="READY", mo_ta="du dau vao")
+                tt[nid] = "READY"
+                doi = True
+                co_doi = True
+            elif con_co_the < can or (can == len(canh) and any(chet)):
                 mtt.chuyen_node(db, run.id, nid, sang="SKIPPED",
                                 mo_ta="nguon khong kich hoat")
                 tt[nid] = "SKIPPED"
-                doi = True
-                co_doi = True
-            elif all(kich):
-                mtt.chuyen_node(db, run.id, nid, sang="READY", mo_ta="du dau vao")
-                tt[nid] = "READY"
                 doi = True
                 co_doi = True
     return tt, co_doi
