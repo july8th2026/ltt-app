@@ -339,10 +339,68 @@ phải toàn bộ là chất lượng. ⛔ Chưa tách được hai phần ấy.
 **biết còn bao xa** — ~5 điểm chrF++, trong đó **một phần là độ dài**. Đó là một
 đích đo được, ⛔ không phải một cảm giác.
 
-### MetricX QE trên cùng tệp
+### MetricX QE trên cùng tệp — ⚠️ treo trên 🔴 (1) **vòng tròn LLM**
 
-*(⛔ vẫn xếp hàng — `nghiem-thu-asv` đang giữ `cpu_nhieu` 31 phút. ⛔ Không chen.
-Điền ngay khi xong, kèm câu **đồng thuận** chrF++ vs MetricX.)*
+| lượt | trung vị | trung bình | vượt ngưỡng 6,0 |
+|---|---|---|---|
+| 1 | 1,832 | 2,484 | 7/100 |
+| 2 | 1,797 | 2,563 | 10/100 |
+| 3 | 1,797 | 2,363 | 6/100 |
+| ⭐ **trung vị** | **1,797** · khoảng **[1,797 ; 1,832]** (biên độ **0,035**) | | |
+
+**Mốc neo MetricX trên CHÍNH 100 dòng ấy** (cùng một lượt chấm):
+
+| mốc | trung vị | vượt ngưỡng 6,0 |
+|---|---|---|
+| ⭐ **bản dịch của ta** | **1,797** | 6–10/100 |
+| **bản dịch NGƯỜI của FLORES** | **2,234** | 6/100 |
+| **sàn** — bản dịch dòng KHÁC | 16,06 | 94/100 |
+| để nguyên tiếng Trung | 12,56 | 99/100 |
+
+### 🔴 MetricX QE ⛔ KHÔNG phân biệt được bản dịch của ta với bản dịch NGƯỜI
+
+Hiệu **theo cặp** (cùng 100 dòng), KTC95 bootstrap:
+
+| lượt | hiệu (ta − người) | KTC95 | |
+|---|---|---|---|
+| 1 | −0,166 | [−0,563 ; +0,176] | ⛔ **KTC chứa 0** |
+| 2 | −0,087 | [−0,426 ; +0,265] | ⛔ **KTC chứa 0** |
+| 3 | −0,287 | [−0,688 ; +0,068] | ⛔ **KTC chứa 0** |
+
+⛔ **Đừng đọc thành *"ta dịch ngang/hơn người"*.** Đọc đúng là: **MetricX QE ⛔ không
+có đủ độ phân giải ở ĐẦU TRÊN của thang** — nó tách **thảm hoạ** (sàn 16,06 · tiếng
+Trung 12,56) khỏi **bản dịch tốt** (~2) cực giỏi, nhưng ⛔ **không xếp hạng được hai
+bản dịch đều tốt**.
+
+⭐ Điều này **ăn khớp** với hai kết quả trước, ⛔ không mâu thuẫn:
+- §1: ở ngưỡng 6,0 MetricX chỉ bắt **7/100** nhiễu **nhẹ** (mù với hỏng nhẹ);
+- §2: trên lỗi **tự nhiên, tinh vi** MetricX **ngang đoán mù** (AUC KTC chứa 0,5).
+
+⇒ ⭐ **Cùng một tính chất, đo được ba lần bằng ba cách khác nhau.**
+
+### ⭐ chrF++ và MetricX có ĐỒNG THUẬN không? — **đồng thuận YẾU**
+
+Spearman từng dòng (âm = đồng thuận, vì chrF++ cao là tốt còn MetricX thấp là tốt):
+
+```
+luot 1 −0,357 · luot 2 −0,293 · luot 3 −0,290   ⇒ trung vị −0,293
+```
+
+⭐ Đúng chiều, nhưng **|ρ| ≈ 0,29 là YẾU**. ⇒ Hai bộ đo **nhìn hai thứ khác nhau**:
+chrF++ đo **trùng khớp bề mặt** với một bản dịch người; MetricX đo **lỗi ngữ nghĩa
+dự đoán** ⛔ không cần tham chiếu. ⚠️ **Bất đồng ⛔ không phải lỗi** — nó là thông tin
+ta chưa có, và nó nói rằng ⛔ **không được thay bộ đo này bằng bộ đo kia**.
+
+### ⭐ Độ ổn định CỤM — MetricX nay **tự chứng minh**
+
+| bộ đo | biên độ qua 3 lượt | thang |
+|---|---|---|
+| chrF++ (cụm) | **0,63** | 0–100 |
+| MetricX QE (trung vị) | **0,035** | 0–25 |
+
+⇒ ⭐ Kết luận *"⛔ không tái lập ở mức ĐOẠN ⛔ không kéo theo số đo cụm không ổn định"*
+nay đúng cho **cả hai** bộ đo — và ⭐ **mỗi bộ đo tự chứng minh phần của nó**, ⛔ không
+khái quát từ bộ kia. ⚠️ Ta biết được ⇒ **vì** đã chạy 3 lượt: luật ≥ 3 lượt giữ nguyên.
 
 ---
 
