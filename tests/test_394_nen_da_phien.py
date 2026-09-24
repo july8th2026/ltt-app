@@ -753,3 +753,85 @@ def test_do_thi_import_theo_duoc_ca_dang_from_goi_import_modun(tmp_path):
     #    nay xanh ma khong co dong duoi thi no khong chung minh duoc gi ve
     #    viec bo doc con phan biet duoc cac dang import.
     assert not any(m.startswith("anh_em") for m in mod), mod
+
+
+#: Nơi được cầm URL PostgreSQL scratch (URL đó nhúng mật khẩu THẬT).
+#: Mỗi dòng một lý do — một miễn trừ không đọc được là một miễn trừ không hết hạn được.
+CHU_URL_PG = {
+    "tools/check_multiproc.py": "nơi sinh ra URL",
+    "tools/chay_test_pg.py": "đường chạy chuẩn; đặt URL vào env con, không trả ra",
+    "tests/test_365_gate_ba_trang_thai.py":
+        "kiểm CHÍNH `_tim_url` — và nó cắm mật khẩu GIẢ (`MK_SUPER`) qua "
+        "monkeypatch, nên không có bí mật thật nào đi qua đây",
+}
+
+
+def test_khong_ai_ngoai_HAI_TEP_duoc_cam_url_postgres_scratch():
+    """🔴 Mật khẩu superuser PostgreSQL đã rơi vào BỐN bản ghi hội thoại (24/09).
+
+    `check_multiproc._tim_url()` trả một URL **nhúng mật khẩu** đọc từ
+    `C:/LTTPlatform/secrets/postgres-superuser.txt` — thư mục có ACL chặn **cố
+    ý**. Ai cần chạy test PG cũng tự gọi nó, và chỉ cần một lần `print` để xem
+    URL đúng chưa là bí mật rơi vào bản ghi, nơi **không có ACL nào**.
+
+    ⛔ Quét ngày 24/09 thấy nó trong 4 tệp, **2 trong số đó từ các phiên TRƯỚC**
+       ⇒ đây là đường TÁI DIỄN, không phải một lần lỡ tay. Và một dòng luật
+       trong brief ("không in url") đã có sẵn mà vẫn bị vi phạm.
+
+    ⭐ Nên chặn bằng CƠ HỌC: không ai phải cầm URL trong tay. `chay_test_pg.py`
+       lấy URL, đặt vào `os.environ` của tiến trình con, và không trả nó ra.
+    """
+    import ast
+
+    # ⛔ BỎ QUA CÂY LỒNG TRONG CÂY. `GOC.rglob` đi thẳng vào
+    #    `.claude/worktrees/<phiên khác>/` — một **checkout khác của chính kho
+    #    này**. Quét nó nghĩa là phán quyết mã của phiên khác bằng luật của
+    #    phiên mình, và bài kiểm sẽ đỏ/xanh tuỳ theo hôm nay có ai mở worktree
+    #    hay không. (Đã dính: bài này XANH ở cây `bimat`, ĐỎ ở cây chính, cùng
+    #    một commit — cùng hạng với `.codex/worktrees` chặn máy quét bí mật.)
+    bo_qua_thu_muc = {".git", ".claude", ".codex", ".superpowers",
+                      "node_modules", ".venv", "venv", "__pycache__"}
+    pham = []
+    for tep in sorted(GOC.rglob("*.py")):
+        duong = tep.relative_to(GOC).as_posix()
+        if bo_qua_thu_muc & set(tep.relative_to(GOC).parts[:-1]):
+            continue
+        if duong in CHU_URL_PG:
+            continue
+        try:
+            than = tep.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        if "_tim_url" not in than:
+            continue
+        try:
+            cay = ast.parse(than)
+        except SyntaxError:
+            continue
+        for n in ast.walk(cay):
+            if isinstance(n, ast.Attribute) and n.attr == "_tim_url":
+                pham.append(f"{duong}:{n.lineno}")
+            elif isinstance(n, ast.Name) and n.id == "_tim_url":
+                pham.append(f"{duong}:{n.lineno}")
+    assert not pham, (
+        f"goi `_tim_url` ngoai {sorted(CHU_URL_PG)}: {pham}. "
+        f"Dung `python tools/chay_test_pg.py <tham so pytest>` — no dat URL vao "
+        f"env cua tien trinh con va KHONG tra URL ra cho ai cam.")
+
+    # 🔑 Đối chứng: nếu phép quét không thật sự đọc tệp nào thì nó xanh rỗng.
+    assert (GOC / "tools" / "chay_test_pg.py").exists(), "cong cu chuan phai ton tai"
+    # 🔑 Đối chứng: phép quét phải THẬT SỰ đọc được một lượng tệp đáng kể —
+    #    nếu bộ lọc thư mục quét quá tay thì nó xanh vì không nhìn vào đâu cả.
+    dem = sum(1 for t in GOC.rglob("*.py")
+              if not (bo_qua_thu_muc & set(t.relative_to(GOC).parts[:-1])))
+    assert dem > 800, f"chi quet {dem} tep .py - bo loc thu muc qua tay?"
+    # 🔑 Đối chứng thứ hai: tệp được miễn trừ vì "dùng mật khẩu giả" phải THẬT
+    #    SỰ dùng mật khẩu giả. Miễn trừ mà không ai kiểm lý do thì chỉ là một
+    #    cái tên trong danh sách.
+    t365 = GOC / "tests" / "test_365_gate_ba_trang_thai.py"
+    if t365.exists():
+        assert "MK_SUPER" in t365.read_text(encoding="utf-8"), (
+            "test_365 duoc mien tru vi dung mat khau GIA; no khong con dung nua "
+            "=> xem lai mien tru trong CHU_URL_PG")
+    assert "_tim_url" in (GOC / "tools" / "check_multiproc.py").read_text(
+        encoding="utf-8"), "ham nguon doi ten? cap nhat bai kiem nay"

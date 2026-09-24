@@ -338,6 +338,19 @@ def _kiem_tham_so_loi(nd, params: dict, nid: str) -> None:
         raise LoiBienDich("thieu_tham_so",
                           f"{nd.type} thieu tham so bat buoc: {sorted(thieu)}",
                           nid)
+    # ⭐ `mot_trong`: ÍT NHẤT MỘT trong nhóm phải có mặt. `required` không nói
+    #    được điều đó — `core.delay` nhận `duration_s` **hoặc** `until`, và
+    #    không có cái nào thì nó là một điểm chờ **không bao giờ tới hạn**: run
+    #    đứng tới TTL 20 giờ với tiền bị giữ, không lỗi, không cảnh báo.
+    #
+    # ⛔ Đây là một luật của LƯỢC ĐỒ, không phải một `if` cho `core.delay`:
+    #    compiler không được biết tên node nào (`G42`). Node nào cần thì khai
+    #    `mot_trong` trong `tham_so` của chính nó.
+    for nhom in (lo.get("mot_trong") or []):
+        if not any(k in params for k in nhom):
+            raise LoiBienDich(
+                "thieu_tham_so",
+                f"{nd.type} phai co it nhat mot trong {sorted(nhom)}", nid)
     if lo.get("additionalProperties") is False:
         thua = sorted(set(params) - set(thuoc))
         if thua:
