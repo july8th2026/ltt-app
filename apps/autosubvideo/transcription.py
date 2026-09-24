@@ -223,15 +223,36 @@ def _get_faster_model(model_name: str, *, gpu_uuid: str = "") -> tuple[object, d
                               "asr_cpu_reason": ly_do}
 
 
+#: Câu mẫu CÓ dấu câu, ép Whisper chấm câu cho ngôn ngữ viết không có dấu cách.
+#: ⛔ Nguồn: whisperX issue #645, trả lời của `leexinxu` (17/08/2024) — không phải
+#:    câu ta soạn. Giữ khớp `whisperx_runner.MAU_CO_DAU_CAU`.
+MAU_CO_DAU_CAU = {
+    "zh": "以下是中文普通话句子。",
+    "ja": "以下は日本語の文章です。",
+}
+
+
 def _transcribe_faster(media_path: str, *, language: str, model_name: str,
                        on_progress=None, is_cancelled=None,
                        gpu_uuid: str = "") -> dict:
     if on_progress:
         on_progress(8, "fallback faster-whisper")
     model, khai = _get_faster_model(model_name, gpu_uuid=gpu_uuid)
-    segments, info = model.transcribe(media_path, language=language or None,
+    # 🔴 **Cùng một sửa lỗi SẢN PHẨM như nhánh whisperx** (whisperX issue #645):
+    #    Whisper trả về văn Hán KHÔNG một dấu câu nào, và điều đó làm hỏng **cả
+    #    bước dịch** ở hạ nguồn, không riêng bước cắt đoạn. ⛔ Không phải mẹo để
+    #    qua một cổng — nhánh này còn không đi qua cổng đó.
+    #    Đo 24/09: 0 dấu câu / 646 ký tự trên nhánh mặc định trước khi vá.
+    ngon = (language or "").lower()
+    if not ngon:
+        try:
+            ngon = str(model.detect_language(media_path)[0] or "").lower()
+        except Exception:                       # noqa: BLE001
+            ngon = ""                           # ⛔ dò hỏng thì đi tiếp, không chết
+    mau = MAU_CO_DAU_CAU.get(ngon[:2], None)
+    segments, info = model.transcribe(media_path, language=ngon or None,
                                       word_timestamps=True, vad_filter=True,
-                                      beam_size=5)
+                                      beam_size=5, initial_prompt=mau)
     out = []
     for index, segment in enumerate(segments):
         if is_cancelled and is_cancelled():
