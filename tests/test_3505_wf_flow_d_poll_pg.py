@@ -91,22 +91,28 @@ _DEM = {"n": 0}
 
 
 def _publish_wf(db):
-    """Đồ thị FLOW D: `trigger.manual → set → app`.
+    """Đồ thị FLOW D: `core.transform` (chỗ "filter") → `core.output`.
 
-    ⚠️ Node trigger trong ĐỒ THỊ vẫn là `trigger.manual`: trigger poll sống
-       trong bảng `workflow_trigger`, ⛔ không trong đồ thị — `tao_run` nhận
-       `trigger_kind` làm tham số. Phần "filter" của FLOW D là một `core.set`
-       đọc `inputs.ban_ghi`, vì thứ đang được đo là **ai tạo run**, không phải
-       bộ lọc biểu thức (đã có phép riêng ở P2/P3).
+    ⚠️ ⛔ KHÔNG có node trigger trong ĐỒ THỊ, và đó là đúng: trigger poll sống
+       trong bảng `workflow_trigger`, không trong đồ thị — `tao_run` nhận
+       `trigger_kind` làm THAM SỐ. Thứ đang được đo ở tệp này là **ai tạo
+       run**, không phải bộ lọc biểu thức (đã có phép riêng ở P2/P3), nên đồ
+       thị giữ nhỏ nhất có thể.
     """
     from platform_core.workflow import dinh_nghia
     _DEM["n"] += 1
     w = dinh_nghia.tao_workflow(db, owner_id="u1", name=f"flowd{_DEM['n']}")
     dinh_nghia.luu_draft(db, w.id, revision=0, document={
         "version": 3, "pages": [{"id": "p1", "nodes": [
-            {"id": "t", "type": "core.trigger.manual",
-             "position": {"x": 0, "y": 0}, "params": {}},
-        ], "edges": []}]})
+            {"id": "t", "type": "core.transform",
+             "position": {"x": 0, "y": 0},
+             "params": {"gia_tri": '"loc"'}},
+            {"id": "o", "type": "core.output",
+             "position": {"x": 1, "y": 0},
+             "params": {"ten": "ra", "gia_tri": "nodes.t.output.gia_tri"}},
+        ], "edges": [{"id": "t-o", "source_node": "t", "target_node": "o",
+                            "source_port": "out", "target_port": "in",
+                            "kind": "DATA", "condition": ""}]}]})
     v = dinh_nghia.xuat_ban_draft(db, w.id, created_by="u1", cong_cu=CC)
     w.published_version_id = v.id
     db.commit()
@@ -247,9 +253,13 @@ def test_TRAN_ban_ghi_MOT_LUOT_cat_bot_khong_tao_100_run(db):
     luc = datetime.now(timezone.utc).replace(tzinfo=None)
     so = pc.mot_luot_poll(db, t, moc=luc, goi=lambda d, x: nhieu)
     db.commit()
-    assert so == pc.TRAN_BAN_GHI_MOI_LUOT
-    assert (db.query(WorkflowRun).filter_by(workflow_id=w.id).count()
-            == pc.TRAN_BAN_GHI_MOI_LUOT)
+    # 🔴 Han muc run dong thoi (`tao_run.MAX_RUN_DONG_THOI`) cat TRUOC tran cua
+    #    poll, va do la DUNG: no la mot diem DUNG, khong phai mot loi. Do 24/09:
+    #    truoc ban va, ca luot poll nem `QuaHanMuc` => `ban_den_han` dem la mot
+    #    lan loi cua trigger => 5 luot poll dong la trigger TU TAT.
+    from platform_core.workflow import tao_run as _tr
+    assert 0 < so <= min(pc.TRAN_BAN_GHI_MOI_LUOT, _tr.MAX_RUN_DONG_THOI)
+    assert db.query(WorkflowRun).filter_by(workflow_id=w.id).count() == so
 
 
 # ── Cấu hình + vòng bắn ────────────────────────────────────────────────────
@@ -294,4 +304,8 @@ def test_ban_den_han_DI_QUA_duong_poll_va_day_lich(db):
     assert ra["da_ban"] == 1
     assert db.query(WorkflowRun).filter_by(workflow_id=w.id).count() == 2
     db.refresh(t)
-    assert t.next_fire_at is not None and t.next_fire_at > luc
+    # ⚠️ Tren PostgreSQL cot `DateTime(timezone=True)` tra ve AWARE; `luc` la
+    #    naive. Do la CHINH cai bay `ban_trigger._tho` vua bit — phep so sanh
+    #    o day phai chuan hoa, y het duong san xuat.
+    from platform_core.workflow.ban_trigger import _tho
+    assert _tho(t.next_fire_at) is not None and _tho(t.next_fire_at) > luc

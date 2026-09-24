@@ -1028,30 +1028,50 @@ của allowlist ⇒ đỏ.
 `OAuth2` → `oauth2` **chỉ** khi provider là Google (Q3), ngược lại piece đó chỉ dùng
 đường CustomAuth/SecretText thay thế.
 
-### 11.6 Allowlist vòng đầu
+### 11.6 Allowlist vòng đầu — ✅ **ĐÃ XÁC MINH 24/09/2026**
 
-⚠️ **Cột thứ ba là ĐÍCH CẦN TRA, ⛔ không phải tên action đã xác minh.** Các tên
-dưới đây được **đoán trước** khi viết spec; chính spec đã chốt rằng danh sách thật
-sẽ lấy bằng `xuat_catalog` ở **bước đầu phase 8**, chạy trên phiên bản Activepieces
-được ghim. Vì vậy ⛔ không mã nào được lấy tên ở bảng này làm chuỗi hằng trước khi
-bước ấy chạy. (Đối chiếu: đoạn YouTube ngay dưới bảng là một danh sách **đã tra
-thật** — ở tag 0.90.2 — nên nó nói được điều bảng này chưa nói được.)
+⭐ Mục này trước đây là một bảng **đoán**, và chính nó đã ghi rằng danh sách
+thật sẽ lấy bằng `xuat_catalog` ở đầu phase 8. Bước ấy đã chạy
+(`node connector_runner/src/xuat_catalog.js --liet-ke`, trên đúng các bản ghim
+trong `connector_runner/allowlist.json`). Kết quả: **8 trong 13** tên đoán
+**không tồn tại**.
 
-| Piece | Auth dùng | Action/trigger **định** đưa lên palette — tên chưa xác minh |
+**Piece đã cài (vòng đầu, 4 piece — ⛔ không phải 730):**
+`piece-slack@0.20.0` · `piece-github@0.9.0` · `piece-telegram-bot@0.7.0` ·
+`piece-google-sheets@0.17.0`.
+
+| Piece | Auth thật | Action ĐÃ XÁC MINH trên palette |
 |---|---|---|
-| `google-sheets` | service account (`piece_custom`) | find_rows, get_rows, insert_row, update_row, clear_row · trigger poll new_row |
-| `google-drive` | service account | upload_file, create_folder, list_files, share_file |
-| `slack` | bot token | send_message_to_a_channel, send_direct_message, upload_file |
-| `notion` | integration token | create_database_item, update_database_item, find_database_item · trigger poll new_database_item |
-| `github` | token cá nhân | create_issue, create_comment_on_issue |
-| `airtable` | token | find_record, create_record, update_record |
-| `telegram-bot` | bot token | send_text_message, send_media |
-| `discord` | bot token / webhook url | send_message_webhook |
+| `google-sheets` | OAuth2 · CustomAuth(`serviceAccount`,`userEmail`) | `find_rows` |
+| `slack` | OAuth2 · CustomAuth(`botToken`,`userToken`) | `send_direct_message` · `send_channel_message` |
+| `github` | OAuth2 · CustomAuth(app) · SecretText | `github_create_issue` · `createCommentOnAIssue` |
+| `telegram-bot` | SecretText | `send_text_message` |
 
-Quy trình chốt tên (bước đầu phase 8): chạy `xuat_catalog` trên phiên bản ghim →
-đối chiếu với cột thứ ba → action nào **không tồn tại** thì **bỏ**, ⛔ không tự thay
-bằng một action khác mà không review → ghi danh sách đã xác minh đè lên bảng trên,
-kèm tag đã tra (như đoạn YouTube dưới đây làm).
+**Tên đoán sai, và tên thật (⛔ thay thế nào cũng là một quyết định CÓ REVIEW,
+đọc được trong `allowlist.json → doi_chieu_spec_11_6`):**
+
+- `slack.send_message_to_a_channel` → **không có**, thay bằng `send_channel_message`
+- `slack.upload_file` → **không có** (thật là `uploadFile`; prop `FILE`, chưa lên palette)
+- `github.create_issue` → **không có**, thay bằng `github_create_issue`
+- `github.create_comment_on_issue` → **không có**, thay bằng `createCommentOnAIssue`
+- `google-sheets.get_rows` / `clear_row` → **không có** (`get-many-rows`, `clear-rows`)
+- `google-sheets.insert_row` / `update_row` → **có**, nhưng **bị loại**: tham số
+  bắt buộc `values` kiểu `DYNAMIC` (form sinh lúc chạy) không ánh xạ được sang
+  từ vựng `luoc_do`. ⛔ Bỏ im lặng một tham số bắt buộc là dựng một form thiếu ô.
+
+🔴 **Trigger poll: bảng cũ SAI về bản chất, không chỉ về tên.**
+`google-sheets` **không có trigger POLLING nào về dòng mới** —
+`google-sheets-new-or-updated-row` là `WEBHOOK`, và trigger WEBHOOK của piece
+**ngoài phạm vi** (§11.4). Hai trigger POLLING duy nhất của nó là
+`new-spreadsheet` và `new-worksheet`. `slack` (14/14), `github` (14/14) và
+`telegram-bot` (1/1) **không có trigger POLLING nào**.
+⇒ Câu *"trigger poll Sheets"* của §18.5 (FLOW D) **không thực hiện được** với
+tập piece này; FLOW D được nghiệm thu bằng trigger POLLING của piece giả
+(`tests/test_3505_wf_flow_d_poll_pg.py`, và phạm vi ấy được khai ngay trong
+tệp đó).
+
+⚠️ `notion`, `airtable`, `discord`, `google-drive` của bảng cũ **không được
+cài** vòng này (cắt phạm vi P6).
 
 `connector.youtube.upload` (Python native, `httpx`, REST resumable upload): piece
 YouTube của Activepieces **không có** action upload (đã kiểm ở tag 0.90.2:

@@ -59,7 +59,15 @@ TEP_PG = ("tests/test_214_multi_process_runtime.py",
           # chung minh bi mat KHONG nam trong `workflow_version` lan
           # `node_run_snapshot`. Bo qua vo hinh o day dat hon ca: no la phep
           # DUY NHAT do duong bi mat di tu kho credential ra day.
-          "tests/test_2923_flow_a_http_that_pg.py")
+          "tests/test_2923_flow_a_http_that_pg.py",
+          # FLOW D (trigger poll connector) - dieu kien ra cua P6 (plan wf-v2).
+          # Cho nay bo qua vo hinh dat nhat trong ca danh sach: phep do la
+          # "poll lan hai KHONG tao run trung", va chot cuoi cung cua no la
+          # chi muc `ux_workflow_run_idem` - thu chi THAT SU ep tren
+          # PostgreSQL. Tren SQLite be rong String(120) cua
+          # `idempotency_key` bi NUOT im lang, nen mot khoa qua dai van
+          # "khu trung" trong test roi tao run trung tren production.
+          "tests/test_3505_wf_flow_d_poll_pg.py")
 
 
 def _doc_neu_duoc(path: pathlib.Path) -> str:

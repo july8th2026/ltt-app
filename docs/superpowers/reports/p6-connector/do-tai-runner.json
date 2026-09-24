@@ -1,0 +1,113 @@
+{
+ "tai": {
+  "so_lenh": 20,
+  "tuan_tu": {
+   "do_tre_ms_trung_vi": 119.0,
+   "do_tre_ms_p95": 140.4,
+   "do_tre_ms_min": 99.9,
+   "do_tre_ms_max": 140.8
+  },
+  "song_song": {
+   "muc": 2,
+   "do_tre_ms_trung_vi": 121.0,
+   "tong_ms": 1291.0,
+   "thong_luong_lenh_moi_giay": 15.49,
+   "hong": []
+  },
+  "ram_dinh_mb_trung_vi": 24.1,
+  "ram_dinh_mb_max": 24.5,
+  "cpu_ms_trung_vi": 93.8
+ },
+ "dien_tap": [
+  {
+   "ca": "provider_429",
+   "cau_hoi": "piece bi rate-limit thi mã lỗi có ĐỌC ĐƯỢC status?",
+   "ok": false,
+   "ma_loi": "provider_loi",
+   "status": 429,
+   "do_tre_ms": 119,
+   "dat": true,
+   "thong_diep": "Too Many Requests"
+  },
+  {
+   "ca": "dau_vao_sai",
+   "cau_hoi": "piece nem loi thuong thi co thanh `ok: true` khong?",
+   "ok": false,
+   "ma_loi": "provider_loi",
+   "status": 0,
+   "do_tre_ms": 108,
+   "dat": true,
+   "thong_diep": "dau vao sai: thieu truong `kenh`"
+  },
+  {
+   "ca": "het_gio",
+   "cau_hoi": "piece treo lau hon `han_ms` thi co bi GIET khong?",
+   "ok": false,
+   "ma_loi": "het_gio",
+   "status": 0,
+   "do_tre_ms": 8038,
+   "dat": true,
+   "thong_diep": "runner bi giet sau 3000 ms"
+  },
+  {
+   "ca": "ket_qua_mo_ho",
+   "cau_hoi": "job xong ma noi dung RONG thi co lo ra khong?",
+   "ok": true,
+   "ma_loi": "",
+   "status": 0,
+   "do_tre_ms": 95,
+   "dat": true,
+   "thong_diep": ""
+  },
+  {
+   "ca": "bi_mat_khong_ro",
+   "cau_hoi": "token trong output co bi CHE khong?",
+   "ok": true,
+   "ma_loi": "",
+   "status": 0,
+   "do_tre_ms": 93,
+   "dat": true,
+   "thong_diep": ""
+  },
+  {
+   "ca": "egress_chan",
+   "cau_hoi": "piece goi thang ra Internet thi bi chan the nao?",
+   "ok": true,
+   "ma_loi": "",
+   "status": 0,
+   "do_tre_ms": 103,
+   "dat": true,
+   "thong_diep": ""
+  },
+  {
+   "ca": "waitpoint_cam",
+   "cau_hoi": "action dung `run.pause` thi co treo im lang khong?",
+   "ok": false,
+   "ma_loi": "provider_loi",
+   "status": 0,
+   "do_tre_ms": 93,
+   "dat": true,
+   "thong_diep": "waitpoint_khong_ho_tro: runner LTT khong chay engine cua Activepieces"
+  },
+  {
+   "ca": "ngoai_allowlist",
+   "cau_hoi": "piece khong trong allowlist co nap duoc khong?",
+   "ok": false,
+   "ma_loi": "provider_loi",
+   "status": 0,
+   "do_tre_ms": 95,
+   "dat": true,
+   "thong_diep": "piece_ngoai_allowlist: @activepieces/piece-khong-co"
+  },
+  {
+   "ca": "lech_ban",
+   "cau_hoi": "yeu cau mot ban KHAC ban da ghim thi sao?",
+   "ok": false,
+   "ma_loi": "dau_vao_sai",
+   "status": 0,
+   "do_tre_ms": 197,
+   "dat": true,
+   "thong_diep": "phien_ban_lech: yeu cau 0.0.1-sai, cai 0.20.0"
+  }
+ ]
+}

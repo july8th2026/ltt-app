@@ -52,6 +52,26 @@ def _bay_gio() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
+def _tho(luc: Optional[datetime]) -> Optional[datetime]:
+    """Bỏ múi giờ trước khi SO SÁNH trong Python.
+
+    🔴 `workflow_trigger.next_fire_at` khai `DateTime(timezone=True)`. Trên
+       **PostgreSQL** SQLAlchemy trả về một `datetime` **aware**; mọi thứ ta
+       tính (`_bay_gio`, `moc_gan_nhat`) là **naive**. Một phép `moc >
+       t.next_fire_at` giữa hai loại đó ném
+       `TypeError: can't compare offset-naive and offset-aware datetimes`.
+
+    ⚠️ Nó **không** lộ ra trên SQLite, và không lộ ra trong cùng một phiên đã
+       ghi giá trị (bản đồ đồng nhất trả lại đúng object naive). Nó lộ ra khi
+       một tiến trình **khác** đọc hàng lên — tức đúng vòng bắn trigger trên
+       production. Cùng hạng lỗi `test_1720` đã ghi cho `WorkflowRun.started_at`
+       và `dong_co.ttl`.
+    """
+    if luc is not None and luc.tzinfo is not None:
+        return luc.astimezone(timezone.utc).replace(tzinfo=None)
+    return luc
+
+
 def _moc_ban(mo_dun, t: WorkflowTrigger,
              bay_gio: datetime) -> tuple[Optional[datetime], bool]:
     """`(mốc nên bắn, có phải BÙ không)`. `None` = loại này không tự bắn."""
@@ -65,7 +85,8 @@ def _moc_ban(mo_dun, t: WorkflowTrigger,
     if moc is None:
         return None, False
     # "BÙ" = mốc gần nhất đã đi QUA mốc mà lịch hẹn ⇒ có mốc bị lỡ ở giữa.
-    return moc, bool(t.next_fire_at is not None and moc > t.next_fire_at)
+    ke_hen = _tho(t.next_fire_at)
+    return moc, bool(ke_hen is not None and moc > ke_hen)
 
 
 def ban_mot(db, t: WorkflowTrigger, *, bay_gio: datetime) -> str:

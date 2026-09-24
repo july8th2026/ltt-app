@@ -230,8 +230,19 @@ def mo(mien) -> DangChay:
     cs = ChinhSach(mien=tuple(mien or ()))
     may = _May(("127.0.0.1", 0), _Handler)
     may.chinh_sach = cs
-    luong = threading.Thread(target=may.serve_forever, daemon=True,
-                             name="ltt-proxy-egress")
+    # 🔴 `poll_interval` 20 ms, ⛔ KHÔNG để mặc định 500 ms.
+    #
+    #    `shutdown()` **chờ** vòng `serve_forever` thoát, và vòng ấy chỉ kiểm
+    #    cờ dừng mỗi `poll_interval`. Với mặc định, mỗi lệnh connector trả
+    #    thêm tới **0,5 giây** — đo 24/09: lệnh đo từ NGOÀI mất 512 ms trong
+    #    khi phần việc thật (đo từ trong) chỉ 100 ms. 80 % độ trễ của một lệnh
+    #    là ngồi chờ một vòng `select` nhàn rỗi.
+    #
+    # ⚠️ Bài học chung: hai phép đo cùng tên "độ trễ" ở hai chỗ khác nhau
+    #    chênh 5 lần thì chỗ chênh CHÍNH LÀ thứ cần tìm — đừng chọn con số
+    #    đẹp hơn.
+    luong = threading.Thread(target=may.serve_forever, kwargs={"poll_interval": 0.02},
+                             daemon=True, name="ltt-proxy-egress")
     luong.start()
     return DangChay(cong=may.server_address[1], ve=cs.ve, chinh_sach=cs,
                     _may=may, _luong=luong)

@@ -169,12 +169,19 @@ def chay(op: str, *, piece: str, version: str, name: str,
     thu: mã piece ghi được vào thư mục đó, nên giữ nó trên đường production là
     để lại rác mà bên thứ ba kiểm soát nội dung.
     """
-    sid = chuan_bi_vo(ten_vo)
-    tmp = THU_MUC_LAM_VIEC / f"j-{uuid.uuid4().hex[:16]}"
-    tmp.mkdir(parents=True)
-    vo_boc.cap_acl(str(tmp), sid, "(OI)(CI)(M)")
-    pr = proxy_egress.mo(mien_cua_piece(piece))
     bat_dau = time.monotonic()
+    chuan_bi_vo(ten_vo)
+    tmp = THU_MUC_LAM_VIEC / f"j-{uuid.uuid4().hex[:16]}"
+    # ⛔ KHÔNG `cap_acl` cho từng thư mục lệnh. `THU_MUC_LAM_VIEC` đã được cấp
+    #    `(OI)(CI)(M)` — hai cờ ấy nghĩa là **kế thừa cho thư mục con và tệp
+    #    con**, nên một thư mục mới tạo bên trong đã có đúng quyền.
+    #
+    # 🔴 Đo 24/09, và nó là một con số đáng nhớ: một lượt `icacls` tốn **~430
+    #    ms**, tức **83 %** độ trễ của cả lệnh (518 ms → 88 ms sau khi bỏ). Một
+    #    dòng "cho chắc" đắt gấp năm lần toàn bộ việc thật — và nó không mua
+    #    thêm quyền nào.
+    tmp.mkdir(parents=True)
+    pr = proxy_egress.mo(mien_cua_piece(piece))
     try:
         yc = {
             "op": op, "piece": piece, "version": version, "name": name,

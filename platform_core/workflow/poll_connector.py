@@ -119,8 +119,15 @@ class PiecePoll:
         return mot_luot_poll(db, t, moc=moc)
 
 
-def _goi_runner(db, t: WorkflowTrigger) -> list:
-    """Gọi `run_trigger` trong vỏ và áp `store_ops`. Trả danh sách bản ghi.
+def _goi_runner(db, t: WorkflowTrigger):
+    """Gọi `run_trigger` trong vỏ. Trả `(ban_ghi, store_ops)`.
+
+    🔴 **⛔ KHÔNG áp `store_ops` ở đây.** Đó là thứ tự sai, và nó mất bản ghi
+       của khách: `store_ops` chính là chỗ piece ghi *"tôi đã thấy r1, r2"*.
+       Áp nó **trước** khi run được tạo nghĩa là một lần tạo run hỏng giữa
+       chừng (hết hạn mức run đồng thời, CSDL rớt) để lại một store nói "đã
+       thấy" cho những bản ghi **chưa bao giờ** có run — và chúng không bao giờ
+       quay lại. Người gọi áp `store_ops` **sau cùng**; xem `mot_luot_poll`.
 
     ⛔ Lỗi **nổi lên**: `ban_trigger.ban_den_han` đã bọc mỗi trigger trong một
        savepoint riêng và đếm `loi_lien_tiep` (5 lần ⇒ tự tắt, spec §11.4).
@@ -139,14 +146,11 @@ def _goi_runner(db, t: WorkflowTrigger) -> list:
         name=str(cau_hinh["ten_trigger"]),
         props=dict(cau_hinh.get("props") or {}), auth=auth,
         store=_store.doc(db, owner_id=t.owner_id, pham_vi=pham_vi))
-    if kq.store_ops:
-        _store.ap(db, owner_id=t.owner_id, pham_vi=pham_vi, ops=kq.store_ops)
     if not kq.ok:
         raise LoiPoll(f"{kq.ma_loi}: {kq.thong_diep}"[:500])
     ra = kq.output
-    if ra is None:
-        return []
-    return list(ra) if isinstance(ra, list) else [ra]
+    ban_ghi = [] if ra is None else (list(ra) if isinstance(ra, list) else [ra])
+    return ban_ghi, list(kq.store_ops or [])
 
 
 def mot_luot_poll(db, t: WorkflowTrigger, *, moc: datetime,
@@ -154,24 +158,45 @@ def mot_luot_poll(db, t: WorkflowTrigger, *, moc: datetime,
     """Một lượt poll ⇒ **một run cho mỗi bản ghi MỚI**. Trả số run mới.
 
     `goi` cho phép phép kiểm thay lớp gọi runner mà **không** thay logic khử
-    trùng — thứ đang được đo.
+    trùng — thứ đang được đo. Nó trả `(ban_ghi, store_ops)` hoặc, để gọn cho
+    phép kiểm, chỉ `ban_ghi`.
+
+    🔴 **Hạn mức run đồng thời (`tao_run.QuaHanMuc`) là một điểm DỪNG, ⛔ không
+       phải một lỗi.** Đo 24/09: một lượt poll 125 bản ghi ném `QuaHanMuc: toi
+       da 5 run dong thoi` và làm **cả lượt poll** hỏng — mà `ban_den_han` đếm
+       đó là một lần lỗi của trigger, nên **5 lượt poll đông là trigger tự
+       tắt**. Đúng hành vi là: tạo được bao nhiêu thì tạo, phần còn lại để lượt
+       sau — và vì `store_ops` chỉ áp khi chạy trọn vẹn, phần còn lại **quay
+       lại** ở lượt sau thay vì biến mất.
     """
     wf = db.get(Workflow, t.workflow_id)
     if wf is None:
         raise LoiPoll(f"workflow {t.workflow_id!r} khong con")
-    ban_ghi = (goi or _goi_runner)(db, t)
+    ket = (goi or _goi_runner)(db, t)
+    ban_ghi, store_ops = ket if isinstance(ket, tuple) else (ket, [])
     if len(ban_ghi) > TRAN_BAN_GHI_MOI_LUOT:
         ban_ghi = ban_ghi[:TRAN_BAN_GHI_MOI_LUOT]
     so_moi = 0
+    du_cho = True
     for bg in ban_ghi:
         rid = id_ban_ghi(bg)
-        _run, moi = tao_run.tao_run(
-            db, workflow=wf, owner_id=t.owner_id, trigger_kind="poll",
-            idempotency_key=khoa_idem.khoa_poll(t.id, rid),
-            inputs={"ban_ghi": bg, "ban_ghi_id": rid,
-                    "fired_at": moc.isoformat()})
+        try:
+            _run, moi = tao_run.tao_run(
+                db, workflow=wf, owner_id=t.owner_id, trigger_kind="poll",
+                idempotency_key=khoa_idem.khoa_poll(t.id, rid),
+                inputs={"ban_ghi": bg, "ban_ghi_id": rid,
+                        "fired_at": moc.isoformat()})
+        except tao_run.QuaHanMuc:
+            du_cho = False
+            break
         if moi:
             so_moi += 1
+    # ⭐ Áp `store_ops` **sau cùng**, và **chỉ khi** đã xử hết danh sách. Dừng
+    #    giữa chừng ⇒ không ghi "đã thấy" ⇒ lượt sau piece trả lại đúng những
+    #    bản ghi ấy, và khoá `poll:<trigger>:<ban_ghi>` lo phần không-trùng.
+    if store_ops and du_cho:
+        _store.ap(db, owner_id=t.owner_id,
+                  pham_vi=_store.pham_vi_trigger(t.id), ops=store_ops)
     db.flush()
     return so_moi
 
