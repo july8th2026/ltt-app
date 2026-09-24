@@ -61,8 +61,26 @@ def upgrade() -> None:
     op.add_column("workflow_trigger", sa.Column(
         "loi_lien_tiep", sa.Integer(), nullable=False, server_default="0"))
 
+    # `ix_foreach_muc_chua_xong`: `(vong_id)` -> `(vong_id, chi_so)`.
+    #
+    # Lan p3b do tren PostgreSQL that: bo lai vong lap doc N hang MOI TICK =>
+    # tong cong `N^2/P` (127 000 hang, 31,67 giay cho N=1000, P=8). Ban sua di
+    # bang KEYSET (`foreach.muc_chua_xong`), va mot dieu kien
+    # `chi_so > :sau ORDER BY chi_so` chi dung duoc chi so khi chi so MANG cot
+    # do. DROP roi CREATE vi doi CO cot, khong doi ten.
+    op.drop_index("ix_foreach_muc_chua_xong", table_name="foreach_muc")
+    op.create_index(
+        "ix_foreach_muc_chua_xong", "foreach_muc", ["vong_id", "chi_so"],
+        postgresql_where=sa.text("xong = false"),
+        sqlite_where=sa.text("xong = 0"))
+
 
 def downgrade() -> None:
+    op.drop_index("ix_foreach_muc_chua_xong", table_name="foreach_muc")
+    op.create_index(
+        "ix_foreach_muc_chua_xong", "foreach_muc", ["vong_id"],
+        postgresql_where=sa.text("xong = false"),
+        sqlite_where=sa.text("xong = 0"))
     op.drop_column("workflow_trigger", "loi_lien_tiep")
     op.drop_column("workflow_trigger", "last_fired_at")
     op.drop_column("workflow_trigger", "con_tro")

@@ -1563,7 +1563,14 @@ class ForeachMuc(Base):
     xong: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     __table_args__ = (
-        Index("ix_foreach_muc_chua_xong", "vong_id",
+        # ⭐ HAI cột, theo đúng thứ tự — không phải `vong_id` một mình.
+        #    Bộ lái vòng lặp đi bằng KEYSET (`foreach.muc_chua_xong`):
+        #    `WHERE vong_id = :v AND xong = false AND chi_so > :sau
+        #     ORDER BY chi_so LIMIT :n`. Thiếu `chi_so` trong chỉ số thì
+        #    PostgreSQL vẫn chạy được, nhưng phải sắp lại toàn bộ phần chưa
+        #    xong của vòng ở MỖI tick — tức đúng `O(N)` mỗi tick mà bản sửa
+        #    này (báo cáo p3b: 127 000 hàng cho N=1000) sinh ra để bỏ.
+        Index("ix_foreach_muc_chua_xong", "vong_id", "chi_so",
               postgresql_where=text("xong = false"),
               sqlite_where=text("xong = 0")),
     )
