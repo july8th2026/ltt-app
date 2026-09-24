@@ -1728,7 +1728,7 @@ số trong ngoặc — mới là thứ nói đúng.
 
 Gate ghi bảng bước ra JSON. Đọc nó, đừng đọc đuôi stdout:
 
-    ls -t test-results/gates/*.json | head -1     # luot gan nhat
+    ls -t .gate/*.json | head -1                  # luot gan nhat (doi cho 24/09)
     # moi hang: {'ten': ..., 'ket': 'PASS'|'FAIL', 'giay': ...}
 
 Bảng ấy trả lời **bước nào** đỏ. `short test summary` trả lời **phép kiểm nào**
@@ -2611,7 +2611,7 @@ chung**, không phải của ai trong hai phiên. Kết luận của họ đứn
 
 ### 🔴 Nhưng thứ đáng sợ hơn nằm trong **biên bản gate**, không nằm ở ba lỗi
 
-Đọc `test-results/gates/*.json` trên **cùng một cây**:
+Đọc `.gate/*.json` trên **cùng một cây** (trước 24/09: `test-results/gates/`):
 
 | Lượt | `mypy` | Giây |
 |---|---|---|
@@ -3473,7 +3473,7 @@ với **0 lần đè nhau**.
 > | chạy ít mà vẫn có nghĩa | không có | `gate.py --doi` (suy phạm vi từ cây) |
 > | tránh giành tài nguyên | một khoá cho mọi thứ | khoá theo **tên tài nguyên** |
 > | biết ai đang giữ gì | nhắn hỏi nhau | `python tools/cua_so_yen.py trang-thai` |
-> | "gate nào chạy trên mã nào" | cuộn lên đọc lại | `test-results/gates/<id>.json` |
+> | "gate nào chạy trên mã nào" | cuộn lên đọc lại | `.gate/<id>.json` |
 >
 > 🔴 Ba sự cố thật ngày 02/09 trong **đúng một giờ** là lý do: một phiên đổi
 > nhánh của phiên kia, một lượt `--vong-lap` treo quá 5 phút vì tranh CPU, và

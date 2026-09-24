@@ -173,6 +173,17 @@ data/translations/desktop.ini
 /live_nexus_*.png
 /vultr-*.jpg
 
+# Bao cao agent (superpowers). Truoc 24/09 no CHI nam trong
+# `.git/info/exclude` — mot tep CUC BO, khong commit — nen o moi cay rieng
+# va moi ban clone khac, `.superpowers/` lai hien ra nhu tep chua theo doi.
+.superpowers/
+
+# So phan quyet cua `tools/gate.py` (xem `TEN_THU_MUC_SO`).
+# ⛔ Dung dat no trong `/test-results/` o duoi: do la thu muc RA cua
+#    Playwright, va bo chay test cua Playwright don sach outputDir o dau
+#    moi luot theo dung tai lieu cua no.
+/.gate/
+
 # Playwright CLI temp
 .playwright-cli/
 /tmp/

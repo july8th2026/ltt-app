@@ -45,11 +45,25 @@ Khai trong `tools/thanh_phan.toml` mục `[[canh_dong]]`:
 tệp vào đó là đổi bề mặt công khai — không deploy, không commit, không dòng mã
 nào đổi. ⇒ **Trước khi xoá bất cứ tệp nào**, đối chiếu với cả ba lớp.
 
-## Bản ghi gate — `test-results/gates/<id>.json`
+## Bản ghi gate — `.gate/<id>.json`
 
 Mỗi lượt `gate.py` ghi một bản: SHA, nhánh, cây, hồ sơ, từng bước, thời gian,
 thời gian chờ khoá. Đó là câu trả lời cho **"gate nào đã chạy trên mã nào"** —
 không phải cuộn lại đầu ra đã mất khi đóng cửa sổ.
 
-`test-results/` nằm trong `.gitignore` **và** trong `/XD` của deploy: không lên
-git, không lên production.
+`.gate/` nằm trong `.gitignore` **và** trong `/XD` của deploy: không lên git,
+không lên production. Đường dẫn lấy qua `gate.thu_muc_so()`, ⛔ đừng gõ tay.
+
+🔴 **Đổi chỗ 24/09/2026 — trước đó sổ nằm trong `test-results/gates/`.** Đêm
+23–24/09 sổ phán quyết của một lô gate **biến mất** khỏi đó giữa hai lượt chạy, và
+thủ phạm tới giờ **chưa biết** (ba giả thuyết đã bị loại bằng đo: `git clean -fdX`,
+quét toàn máy, Playwright MCP/CLI). Điều **không** phụ thuộc vào thủ phạm là chỗ
+đứng: `.gitignore` xếp `/test-results/` ngay dưới tiêu đề `# Playwright CLI temp` —
+đó là thư mục **ra** của một công cụ khác, và bộ chạy test của Playwright *dọn sạch
+`outputDir` ở đầu mỗi lượt* theo đúng tài liệu của nó.
+
+⛔ Và mất sổ thì **không bao giờ đỏ**: `l3_lai_bi_chan` cố ý **cho qua** khi không
+đọc được bản ghi, nên cái cửa "một L3 mỗi nhánh" mở ra **im lặng**. Sổ cũ vẫn được
+**đọc** để chuyển giao êm, và đường đọc đó **tự hết hạn** — quá `CUA_SO_L3_LAI_GIO`
+thì bản ghi cũ hết hiệu lực phán quyết nên chỗ cũ không còn đóng góp gì.
+`tests/test_2170_*.py` chốt cả hai vế.
