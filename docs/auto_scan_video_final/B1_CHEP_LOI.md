@@ -492,3 +492,131 @@ thước. **KHÔNG ĐẠT là một kết quả hợp lệ**, và nó ở lại.
 ⚠️ Thứ **đã** thay đổi và ⛔ không được lẫn vào phán quyết trên: cổng hiện hành
 vừa bị chứng minh là có lỗ thủng (8.3). Đó là một khiếm khuyết của **dụng cụ đo**,
 để điều phối xử lý — ⛔ **không phải** một lý do để B1 được tính là đạt.
+
+---
+
+# 9. Thước thay thế cho `lech_doan` — đo xong, ⛔ **B1 vẫn KHÔNG ĐẠT**
+
+Điều phối chốt: `lech_doan` là **thước hỏng** ⇒ **bỏ**, không chỉnh.
+⛔ **Và bỏ nó KHÔNG làm B1 đạt** — B1 mất luôn cổng phân đoạn ⇒ **kém chắc chắn
+hơn**, không tốt hơn. ⛔ Không ai được viết *"B1 đạt sau khi bỏ `lech_doan`"*.
+
+## 9.1 Ngưỡng — viết ở commit `7628936e`, ⛔ **TRƯỚC** mọi phép đo
+
+| vế | đo gì | ngưỡng | nguồn |
+|---|---|---|---|
+| **1 · `chinh_xac_cho_ngat`** | bao nhiêu phần chỗ ngắt **của ta** trúng một ranh giới thật (±0,3 s) | **≥ 0,90** | ⚠️ **TA ĐẶT** — ⛔ không có trong quy chuẩn nào. Căn cứ: ràng buộc nói *cắt giữa câu tệ hơn gộp*; một chỗ ngắt không trúng ranh giới thật **là** một nhát cắt giữa câu ⇒ quá 10 % là vi phạm **hệ thống**, không phải nhiễu |
+| **2 · `do_dai_theo_quy_chuan`** | tỉ lệ đoạn ≤ **7,0 s** | **= 1,00** | Netflix TTSG *General Requirements* **215758617** — quy chuẩn **không cho ngoại lệ**, nên ngưỡng là 1,00, ⛔ không phải số ta chọn cho dễ qua |
+
+⛔ **Hai số, cạnh nhau. Không có số thứ ba.** `cap_thuoc_phan_doan` **cố ý**
+không trả về điểm tổng hợp (F1 / trung bình / tích): gộp lại là dựng lại đúng
+bệnh đã giết `lech_doan` — một vế tồi được vế kia che. Ghim bằng
+`test_CAP_khong_tra_ve_mot_diem_TONG_HOP`.
+
+## 9.2 Bốn đối chứng
+
+| phim | cách cắt | n | vế 1 | vế 2 (dài nhất) | cặp |
+|---|---|---|---|---|---|
+| v1 | **ta (theo câu)** | 83 | **0,9255** ✅ | **1,0000** ✅ (6,52 s) | **ĐẠT** |
+| v1 | gộp tất = 1 | 1 | 0,5000 ⛔ | 0,0000 ⛔ (265,0 s) | KHÔNG |
+| v1 | máy móc 2,0 s | 133 | **0,3582** ⛔ | 1,0000 ✅ (2,0 s) | KHÔNG |
+| v1 | khối 30 s | 9 | 0,4000 ⛔ | 0,0000 ⛔ (30,0 s) | KHÔNG |
+| v2 | **ta (theo câu)** | 74 | **1,0000** ✅ | **1,0000** ✅ (6,75 s) | **ĐẠT** |
+| v2 | gộp tất = 1 | 1 | **1,0000 ✅** ⬅ | 0,0000 ⛔ (190,0 s) | KHÔNG |
+| v2 | máy móc 2,0 s | 95 | **0,3750** ⛔ | 1,0000 ✅ (2,0 s) | KHÔNG |
+| v2 | khối 30 s | 7 | 0,3750 ⛔ | 0,0000 ⛔ (30,0 s) | KHÔNG |
+| v3 | **ta (theo câu)** | 31 | **0,9730** ✅ | **1,0000** ✅ (6,06 s) | **ĐẠT** |
+| v3 | gộp tất = 1 | 1 | 0,5000 ⛔ | 0,0000 ⛔ (106,8 s) | KHÔNG |
+| v3 | máy móc 2,0 s | 54 | **0,7273** ⛔ | 1,0000 ✅ (2,0 s) | KHÔNG |
+| v3 | khối 30 s | 4 | 0,6000 ⛔ | 0,0000 ⛔ (30,0 s) | KHÔNG |
+
+⭐ Cả ba cách cắt tồi **chết 3/3 phim** — kể cả **bộ băm 2,0 giây** đã **lọt** qua
+`lech_doan` trên phim 2 (0,1121 ✅). Và mỗi vế giết một loại khác nhau: vế 2
+**không** giết nổi bộ băm 2 s (mẩu nào cũng ≤ 7 s), vế 1 giết. ⇒ Đó là bằng
+chứng cơ học rằng ⛔ **không được gộp hai vế**.
+
+⚠️ **Phim 2, "gộp tất = 1 đoạn" cho vế 1 = 1,0000 ✅** — đúng cái giới hạn đã khai
+trong docstring, hiện ra **trong dữ liệu thật**: vế 1 **không phạt việc cắt quá
+ít**. Chỉ vế 2 giết được ca đó.
+
+## 9.3 ⚠️ Phép thứ NĂM — tự đánh vào thước mình vừa chọn
+
+Điều phối cảnh báo: *"thước mới làm ta đạt ngay ⇒ nghi ngờ nó trước đã"*. Nên
+dựng một đối thủ **cố tình khai thác** giới hạn đã biết: **gộp tham lam chính
+đoạn của ta cho tới sát trần 7,0 s**. Mọi ranh giới còn lại vẫn là ranh giới
+**thật** (tập con), và mọi đoạn vẫn ≤ 7 s.
+
+| phim | bản của ta | **gộp đến 7,0 s** | vế 1 | vế 2 | cặp |
+|---|---|---|---|---|---|
+| v1 | 83 đoạn (tb 3,13 s) | **50** đoạn (tb 5,24 s) | 0,9474 ✅ | 1,0000 ✅ | **ĐẠT** ⛔ |
+| v2 | 74 đoạn (tb 2,45 s) | **33** đoạn (tb 5,50 s) | **1,0000** ✅ | 1,0000 ✅ | **ĐẠT** ⛔ |
+| v3 | 31 đoạn (tb 3,15 s) | **18** đoạn (tb 5,48 s) | 0,9565 ✅ | 1,0000 ✅ | **ĐẠT** ⛔ |
+
+# ⛔ Một bản cắt **thô hơn 40–55 %** vẫn qua **cả hai vế**
+
+⇒ Cặp thước mới **KHÔNG mù theo kiểu `lech_doan`** (nó giết cả ba cách cắt tồi
+kinh điển), nhưng nó **không phạt việc cắt quá ít** ngoài trần 7,0 giây. Giới
+hạn này **đã khai trước** khi đo (docstring vế 1, commit `7628936e`) và nay có
+**số đo** đi kèm.
+
+⚠️ ⛔ **Vì vậy làn này KHÔNG tuyên bố cặp thước này là cổng B1.** Nó là một thước
+**tốt hơn hẳn** thước cũ, với một **lỗ đã biết và đã đo**. Việc chốt nó thành
+cổng — và chốt xem có cần một vế thứ ba chặn cắt-quá-ít hay không — là việc của
+điều phối.
+
+## 9.4 Phán quyết
+
+```
+CER                 3/3 ĐẠT   (0,0434 · 0,0275 · 0,0526   — ngưỡng 0,12)
+lech_doan           ⛔ BỎ — thước hỏng (§8.3), ⛔ không tính là đạt
+cặp thước mới       3/3 ĐẠT   (vế 1: 0,9255 · 1,0000 · 0,9730
+                               vế 2: 1,0000 · 1,0000 · 1,0000)
+                    ⚠️ có lỗ đã đo (§9.3) · CHƯA được điều phối chốt làm cổng
+```
+
+# ⛔ **B1 KHÔNG ĐẠT** — và ⛔ không có thước hợp lệ nào nói khác
+
+`lech_doan` bị bỏ vì hỏng, không vì ta trượt nó. Cặp thay thế chưa được chốt và
+còn một lỗ đã đo. ⇒ **B1 không có cổng phân đoạn** ⇒ ⛔ **KHÔNG ĐẠT giữ nguyên.**
+
+## 9.5 ⭐ Mở đường cho B2 — ⛔ đừng để B2 xếp hàng sau B1
+
+**CER 3/3 ĐẠT nghĩa là VĂN BẢN NGUỒN đã dùng được.** Khuyết tật phân đoạn chặn
+**căn thời gian**, ⛔ **không** chặn **dịch**. Bản chép lời **mới** — đã có dấu
+câu (`initial_prompt`), đã có mốc từng từ — xuất ở:
+
+```
+docs/auto_scan_video_final/bang_chung/b1_chep_loi_moi/
+    _MUC_LUC.json     ma · phim · số đoạn · số từ · sha256
+    v1.json    83 đoạn · 1157 từ      v2.json  74 đoạn · 1125 từ
+    v3.json    31 đoạn ·  646→718 từ
+```
+
+Mỗi tệp mang `⚠️ gioi_han` **trong chính bản ghi**: dùng **CHỮ**, ⛔ thận trọng
+với **MỐC** — phân đoạn chưa được nghiệm thu.
+
+⭐ Bản cũ có **0 dấu câu**; một câu tiếng Hán không chấm câu là đầu vào tồi cho
+LLM dịch (nó phải tự đoán ranh giới ý). ⇒ Đây **không** phải việc phụ.
+
+## 9.6 ⚠️ Hình dạng `except` im lặng đã lọt — **BA lần trong một ngày**
+
+Máy này **có** `check_silent_except`, và cả ba chỗ dưới đây **lọt**:
+
+| # | chỗ | hình dạng | vì sao bộ bắt hiện tại không thấy |
+|---|---|---|---|
+| 1 | `ban_ghi.py:91` | `if not chu: continue` | ⛔ **không phải `except`** — là một `continue` có điều kiện. Bộ bắt tìm `except`, đây là một câu `if` |
+| 2 | `ban_ghi.py` (cũ) | `except (TypeError, ValueError): continue` | `continue`, ⛔ không phải `pass` — và nó **có** bắt kiểu cụ thể, nên trông "cẩn thận" |
+| 3 | `transcription.py` (bản vá của tôi) | `except Exception: ngon = ""` | ⛔ **có thân hàm**, không `pass` — nó **gán một giá trị**, nên mọi phép bắt dựa trên `pass`/`...` đều trượt |
+
+⭐ **Hình dạng chung, đủ để người sau viết phép bắt:** *một nhánh xử lý lỗi mà
+thân của nó **bỏ qua hoặc thay thế** dữ liệu (`continue` · `break` · gán hằng ·
+`return` giá trị rỗng) **mà không đếm, không log, không đánh dấu**.* ⛔ Không phải
+`except: pass` — ba ca trên **không** có `pass` nào.
+
+⭐ **Và câu đáng nhớ nhất của cả lượt:** tôi bắt được ca thứ ba **không phải vì có
+lỗi** — không một ngoại lệ nào nổi lên, không một dòng log nào. Tôi bắt được vì
+**kết quả không đổi một ký tự** sau một thay đổi đáng lẽ phải đổi nó.
+
+> ⛔ **Im lặng chỉ lộ khi ta có một con số đáng lẽ phải đổi.** ⇒ Mỗi bản vá cần
+> một **con số dự đoán trước**, và *"chạy xong, không thấy lỗi"* ⛔ **không phải**
+> một bằng chứng.

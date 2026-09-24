@@ -455,3 +455,79 @@ def test_cat_theo_CAU_va_cat_MAY_MOC_khong_phan_biet_duoc_bang_SO_DOAN():
     may_moc = b.lech_doan(95, 107)
     assert may_moc < theo_cau, "giả định của bài này đã đổi"
     assert may_moc <= b.NGUONG_LECH_DOAN < theo_cau
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# THƯỚC THAY THẾ — BỐN đối chứng, ⛔ không phải ba
+#
+# Ba cách cắt tồi phải ĐỎ, **cộng** phép thứ tư: chạy thước trên đầu ra của
+# chính ta. ⚠️ Thước mới làm ta đạt ngay ⇒ **nghi ngờ nó trước đã** — ta vừa tự
+# chọn thước cho chính mình. Phép thứ **năm** ở dưới là cú tự đánh đó.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _bam_may_moc(thoi_luong: float, buoc: float) -> list[dict]:
+    import math
+
+    n = math.ceil(thoi_luong / buoc)
+    return [{"bat": i * buoc, "ket": min((i + 1) * buoc, thoi_luong)}
+            for i in range(n)]
+
+
+def _hardsub_gia(n: int, thoi_luong: float) -> list[dict]:
+    """Ranh giới ĐỀU — ⛔ chỉ để chạy đối chứng, không phải dữ liệu thật."""
+    b = thoi_luong / n
+    return [{"bat": i * b, "ket": (i + 1) * b} for i in range(n)]
+
+
+def test_DOI_CHUNG_gop_tat_va_khoi_30s_chet_o_VE_DO_DAI():
+    """⭐ Vế 2 **không cần chân lý nền nào** — quy chuẩn 7,0 s tự nó đứng được."""
+    from tools import bench_b1_chep_loi as b
+
+    for ds in ([{"bat": 0.0, "ket": 190.0}], _bam_may_moc(190.0, 30.0)):
+        kq = b.do_dai_theo_quy_chuan(ds)
+        assert not kq["dat"], f"cắt tồi mà XANH ở vế độ dài: {kq}"
+
+
+def test_DOI_CHUNG_bam_may_moc_2s_chet_o_VE_CHO_NGAT():
+    """🔴 Đúng cách cắt đã **lọt** qua `lech_doan` (0,1121 ✅) — ở đây phải ĐỎ.
+
+    ⛔ Vế 2 **không** giết được nó (mọi mẩu 2 s đều ≤ 7 s). Vế 1 giết. Đó là lý
+       do hai vế phải đọc **riêng**: mỗi vế bắt một loại hỏng, và ⛔ gộp chúng
+       thành một điểm sẽ cho vế này che vế kia.
+    """
+    from tools import bench_b1_chep_loi as b
+
+    hardsub = _hardsub_gia(107, 190.0)
+    bam = _bam_may_moc(190.0, 2.0)
+    assert b.do_dai_theo_quy_chuan(bam)["dat"], "giả định đã đổi"
+    assert not b.chinh_xac_cho_ngat(bam, hardsub)["dat"], "bộ băm 2 s vẫn XANH"
+
+
+def test_VE_CHO_NGAT_tu_khai_rang_no_KHONG_phat_viec_cat_QUA_IT():
+    """⚠️ Giới hạn phải nằm **trong bản ghi**, không chỉ trong tài liệu.
+
+    Một bản ghi có đúng **một** đoạn, hai đầu trùng đầu/cuối phim, đạt **1,00**
+    ở vế 1. Đo thật 24/09: phim 2, "gộp tất = 1 đoạn" cho vế 1 = **1,0000** ✅.
+    ⇒ Vế 1 một mình **không** là cổng. Chỉ vế 2 giết được ca đó.
+    """
+    from tools import bench_b1_chep_loi as b
+
+    hardsub = _hardsub_gia(107, 190.0)
+    mot_doan = [{"bat": 0.0, "ket": 190.0}]
+    kq = b.chinh_xac_cho_ngat(mot_doan, hardsub)
+    assert kq["ti_le"] == 1.0 and kq["dat"], "ca minh hoạ đã đổi"
+    assert "quá ít" in kq["gioi_han"], "⛔ giới hạn phải đi TRONG bản ghi"
+    assert not b.cap_thuoc_phan_doan(mot_doan, hardsub)["dat"], "cặp phải ĐỎ"
+
+
+def test_CAP_khong_tra_ve_mot_diem_TONG_HOP():
+    """⛔ Không F1, không trung bình, không tích — gộp lại là dựng lại đúng bệnh
+    đã giết `lech_doan`: một vế tồi được vế kia che."""
+    from tools import bench_b1_chep_loi as b
+
+    kq = b.cap_thuoc_phan_doan([{"bat": 0.0, "ket": 2.0}],
+                               _hardsub_gia(10, 20.0))
+    so = [k for k, v in kq.items() if isinstance(v, (int, float))
+          and not isinstance(v, bool)]
+    assert so == [], f"⛔ xuất hiện một điểm tổng hợp: {so}"
