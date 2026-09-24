@@ -172,6 +172,26 @@ def test_gop_phan_giu_nguyen_SO_LUOT_cua_tung_cau():
     assert g["ti_le_tung_luot"] == [0.5, 0.25, 0.25]
 
 
+def test_gop_phan_ghep_dung_DONG_ROI_RAC_cua_phan_theo_so():
+    """⛔ Phan chay `--theo-so` cham mot danh sach dong ROI RAC.
+
+    🔴 Ghep bang cap `tu`/`n` se sinh ra ma cua nhung dong **khong he duoc hoi**
+       (`tu`..`tu+n`), roi dem chung nhu "thieu phan quyet" — mau so phong len va
+       ti le bao dong gia **dep xuong** ma khong mot phan quyet nao doi. Day dung
+       bay "hai trang thai gop thanh mot gia tri" o lop dem.
+    """
+    def phan(dong, ma_dat):
+        return {"n": len(ma_dat), "luot": 1, "tu": 0, "dong": dong,
+                "cac_luot": [_luot(**{m: v[0] for m, v in ma_dat.items()})]}
+
+    a = phan([503, 594], {"flores_0503": [False], "flores_0594": [True]})
+    b = phan([700], {"flores_0700": [False]})
+    g = bc.gop_phan([a, b])
+    assert g["n"] == 3 and g["dong"] == [503, 594, 700]
+    assert g["n_co_phan_quyet"] == 3
+    assert g["so_bi_cham_sai"] == 2 and g["ti_le_trung_vi"] == round(2 / 3, 4)
+
+
 def test_gop_phan_TU_CHOI_hai_phan_trung_ma():
     """Trung ma nghia la hai tien trinh da hoi cung mot cau — dem hai lan."""
     p = {"n": 1, "luot": 1, "tu": 0,

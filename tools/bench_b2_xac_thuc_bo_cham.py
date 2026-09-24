@@ -598,8 +598,14 @@ def gop_phan(cac_phan: list[dict]) -> dict:
         trung = set(ma) & {m for l in p["cac_luot"] for m in l["phan_quyet"]}
         if trung:
             raise SystemExit(f"hai phan trung ma: {sorted(trung)[:5]}")
-        ma += [f"flores_{i:04d}"
-               for i in range(p["tu"], p["tu"] + p["n"])]
+        # ⛔ Phan chay voi `--theo-so` cham mot danh sach dong ROI RAC — cap
+        #    `tu`/`n` khong ta duoc no (no se sinh ra ma cua nhung dong KHONG
+        #    he duoc hoi, roi dem chung nhu "thieu"). Dung `dong` da luu trong
+        #    chinh ban ghi khi co.
+        ds = p.get("dong")
+        if ds is None:
+            ds = list(range(p["tu"], p["tu"] + p["n"]))
+        ma += [f"flores_{i:04d}" for i in ds]
     cac_luot = []
     for k in range(next(iter(luot))):
         pq: dict = {}
@@ -611,6 +617,7 @@ def gop_phan(cac_phan: list[dict]) -> dict:
     gop = gop_trung_vi(cac_luot, ma)
     return {"n": len(ma), "luot": next(iter(luot)),
             "tu_cac_phan": [p["tu"] for p in cac_phan], "gop": gop,
+            "dong": [int(m.split("_")[1]) for m in ma],
             "cac_luot": cac_luot, **_ti_le(cac_luot, ma, gop)}
 
 
@@ -822,7 +829,9 @@ def main(argv=None) -> int:
     g = s.add_parser("gop")
     g.add_argument("--fa", nargs="+", required=True,
                    help="cac ban ghi `fa` tung phan, ghep lai")
-    g.add_argument("--tiem", required=True)
+    g.add_argument("--tiem", default="",
+                   help="ban ghi doi chung AM. ⛔ Vang mat thi ban ghi gop "
+                        "KHONG mang mot phan quyet — chi de `doi-chieu`")
     g.add_argument("--ra", required=True)
     b = s.add_parser("bao-cao")
     b.add_argument("tep")
@@ -882,10 +891,15 @@ def main(argv=None) -> int:
               "nguong_bao_dong_gia": NGUONG_BAO_DONG_GIA,
               "nguong_bat_loi_tiem": NGUONG_BAT_LOI_TIEM,
               "bao_dong_gia": fa,
-              "bat_loi_tiem": _doc(a.tiem)["bat_loi_tiem"]}
+              "bat_loi_tiem": _doc(a.tiem)["bat_loi_tiem"] if a.tiem else None}
         pathlib.Path(a.ra).write_text(
             json.dumps(ra, ensure_ascii=False, indent=1), encoding="utf-8")
-        print(bao_cao(ra))
+        # ⛔ Thieu doi chung AM thi KHONG in phan quyet: hai cong phai cung luc,
+        #    va mot dong "PHAN QUYET" in ra la mot dong se bi trich.
+        if a.tiem:
+            print(bao_cao(ra))
+        else:
+            print(f"da ghi {a.ra} — ⛔ CHUA co doi chung am, khong phan quyet")
         return 0
 
     from tools import do_llm_cong_asv as mt

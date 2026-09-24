@@ -579,3 +579,95 @@ một giả thuyết. Điều phối dặn ⛔ đừng dựng giả thuyết; gh
 **100%** — nó **chưa bao giờ tồn tại**. Một giờ lý luận về nguyên nhân của một
 hiện vật đo đạc là một giờ mất trắng, và tệ hơn: nó có thể sinh ra một bản vá
 cho một vấn đề không có thật.
+
+---
+
+# 17. ⭐ ĐỐI CHIẾU THẲNG — bỏ phép trừ. Và cổng báo động giả **TRƯỢT RÕ**
+
+Chạy **V3 + `temp 0.0`, 3 lượt** trên **đúng 100 dòng đã soi mù** (`--theo-so`),
+rồi đối chiếu **thẳng** với phán quyết người soi — ⛔ không trừ, không giả định.
+
+⭐ Phép này hợp lệ đúng ở chỗ trước đây bị cấm: phán quyết người soi ghi **trước**,
+**mù**, và **đã commit** (`c9dfc01d` và trước đó) — ⛔ không ai chỉnh được sau khi
+thấy bộ chấm nói gì.
+
+**Nền: SẠCH.** 5/5 phần có **0 %** lô hỏng JSON, độ phủ **100 %** mọi lượt.
+Tỉ lệ gắn cờ thô từng phần: 40 · 40 · 30 · 60 · 45 % ⇒ **43/100**.
+
+## 17.1 Bảng 2×2 (n = 100, người đọc 1)
+
+| coi là lỗi | gắn cờ | lỗi thật | bắt trúng | **BÁO ĐỘNG GIẢ THẬT** | **bỏ sót** |
+|---|---|---|---|---|---|
+| `chinh` (chỉ lỗi **rõ**) | 43 | 10 | 10 | **33/100 = 33 %** | **0** |
+| `rong` (+ `zh_lech`) | 43 | 12 | 12 | 31/100 = 31 % | 0 |
+| `rong_nhat` (+ **biên**) | 43 | 23 | 22 | 21/100 = 21 % | 1 |
+
+```
+BAO DONG GIA THAT   = 33/100  (33 %)   ⛔ > 15 %  — TRUOT, ca ba dinh nghia
+DO NHAY TREN LOI TU NHIEN = 10/10 = 100 %  ✅  <- con so ta CHUA BAO GIO co
+```
+
+## 17.2 🔴 Phép trừ sai — nhưng **KHÔNG** sai ở chỗ ta ngờ
+
+Giả định ngầm của phép trừ (*bộ chấm bắt được mọi lỗi sẵn có của FLORES*) hoá ra
+**đúng**: độ nhạy trên lỗi **tự nhiên** đo được là **10/10 = 100 %**, không một
+lỗi rõ nào bị bỏ sót. Chỗ sai nằm ở **số bị trừ**: `23,3 %` đo trên **n = 30**
+dòng 200–229, còn trên **n = 100** tỉ lệ gắn cờ thô là **43 %**.
+
+```
+uoc cu :  23,3 % − 10 %  = 13,3 %   -> "gan dat"
+do thang:            33 %           -> TRUOT gap doi nguong
+```
+
+⇒ ⛔ **Bộ chấm V3 KHÔNG qua cổng.** Vế độ nhạy đạt dư (100 % tự nhiên, 100 %
+`lat_nghia` / 87 % `sai_thuc_the` trên lỗi tiêm), vế báo động giả trượt.
+
+## 17.3 Lát cắt có đối chứng kép (n = 30) — ⛔ không dùng làm tập chính
+
+| người đọc | gắn cờ | lỗi rõ | bắt trúng | báo động giả thật | bỏ sót |
+|---|---|---|---|---|---|
+| người 1 | 13 | 3 | 3 | 10/30 | 0 |
+| **người 2** (điều phối) | 13 | 5 | 5 | 8/30 | 0 |
+
+⭐ **Hai người đọc, cùng một kết luận về ĐỘ NHẠY: 100 %.** Bất đồng vẫn **một
+chiều** — người 2 gọi là lỗi những dòng người 1 gọi là biên (vd. 514 `更加重要`),
+nên sàn thật có thể cao hơn 10 %, và phần dư 33 % có thể thấp hơn. ⛔ Nhưng n=30
+quá nhỏ để chốt, và cả hai người đọc đều là LLM (§14.3 giới hạn 1).
+
+## 17.4 Phần dư thuộc lớp nào — ⛔ chẩn, chưa vá
+
+33 báo động giả thật, phân theo **loại của lỗi quyết định** (mức ≥ `nang`):
+
+| lớp | số ca | | phán quyết người soi cho chính dòng đó |
+|---|---|---|---|
+| `lat_nghia` | **14** | | "không lỗi" hẳn: **21** |
+| `sai_thuc_the` | **11** | | "biên": **10** |
+| `bo_sot` | 5 | | `zh_lech`: **2** |
+| `them` | 2 | | |
+| `khac` | 1 | | mức: `nang` 25 · `nghiem_trong` 8 |
+
+⇒ Phần dư **không** tụ vào một lớp. Nó là **sắc thái/phạm vi nghĩa** bị xếp
+`nang`: `推广` → *khuyến mãi*, `街区` → *các con phố*, `国家展馆` → *gian hàng*,
+`该设想` → *lời khuyên này*. Đúng hình dạng **`minor` của MQM** mà V2 từng xếp
+đúng — và V2 đổi lấy chỗ mù 67 % ở `sai_thuc_the`. ⛔ Không vá lời nhắc ở đây:
+sàn mức thực thể của V3 và chỗ mù của V2 là **một cặp đánh đổi**, cần điều phối
+chốt hướng.
+
+## 17.5 Tái lập
+
+```
+python tools\bench_b2_xac_thuc_bo_cham.py do --pha fa --luot 3 --ban v3 ^
+    --theo-so <phan 20 dong cua b2_san_loi_flores.json> --ra fa_k.json
+python tools\bench_b2_xac_thuc_bo_cham.py gop --fa fa_0..fa_4.json --ra cham100.json
+python tools\bench_b2_xac_thuc_bo_cham.py doi-chieu ^
+    --so-soi bang_chung\b2_san_loi_flores.json --cham cham100.json ^
+    --con <mau_con_cho_nguoi_doc_2> --ra bang_chung\b2_doi_chieu_v3_voi_soi_mu.json
+```
+
+Bằng chứng: `bang_chung/b2_doi_chieu_v3_voi_soi_mu.json` (bảng 2×2 cả ba định
+nghĩa, cả hai người đọc) · `bang_chung/b2_cham_v3_tren_100_dong_soi_mu.json`
+(bản ghi **sạch**, ⛔ không một chữ FLORES).
+
+⚠️ `gop_phan` trước đó ghép theo `tu`/`n` — sai với dải **rời rạc** của
+`--theo-so` (sinh ra mã của dòng chưa hề hỏi rồi đếm là "thiếu"). Đã vá + chốt
+bằng `test_gop_phan_ghep_dung_DONG_ROI_RAC_cua_phan_theo_so`.
