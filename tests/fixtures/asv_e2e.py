@@ -44,6 +44,7 @@ import shutil
 import subprocess
 import unicodedata
 import wave
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -1002,3 +1003,212 @@ def phu_song_loi(vung, loi, *, bien_s: float = 1.5) -> list[dict]:
         ra.append({"ma": l.ma, "bat": round(float(l.bat), 2),
                    "ket": round(float(l.bat) + float(l.giay), 2), "co_tieng": co})
     return ra
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  CARD GPU, va KHOA MAY — hai thu khuon nay TUNG do sai
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# 🔴 **Truoc 24/09 khuon nghiem thu do CHINH NO, khong do san pham.**
+#
+#    `test_448._chay_hang_doi` dong vai worker that, nhung no dung
+#    `JobContext(job.id)` — KHONG co `gpu_uuid`. Worker that lam khac
+#    (`platform_core/job_runner.py:299`):
+#
+#        ctx = JobContext(job_id, gpu_uuid=(lease.gpu_uuid if lease else ""))
+#
+#    Card den tu `gpu_lease`. Thieu no thi `ctx.has_gpu` la False va
+#    `ctx.gpu_env()` khong ghim `CUDA_VISIBLE_DEVICES`, nen demucs va ASR chay
+#    tren **CPU** — va moi con so giay trong bao cao la so cua KHUON, khong phai
+#    cua san pham. Do 23/09 (lan `toc-do-gpu`): demucs GPU 42,2 s vs CPU 72,0 s
+#    tren cung phim. Mot bao cao hieu nang dung de quyet dinh, nen sai 30 s moi
+#    pha khong phai mot sai so — no la mot cau tra loi khac.
+#
+# 🔴 **Va khoa `cpu_nhieu` boc CA luot chay, ke ca luc CHO.**
+#
+#    NEN_V3 do `voice_synthesis` 937 s tren 1191 s, va gan het so do la mot lan
+#    goi HTTP sang sidecar hoac may B. Giu `cpu_nhieu` suot 20 phut do lam ca may
+#    doi mot luot dang **cho mang**. Su co 23/09: mot lan giu 51 phut o CPU
+#    6-8 %, sau lung 6 luot.
+#
+#    ⇒ Luat chu du an chot 23/09: khoa boc **dung lenh TINH**, khong boc viec
+#      DOI. Nen o day `cpu_nhieu` boc **tung job nang** va nha ngay khi job xong.
+#
+# ⚠️ `may_tao_tieng` thi NGUOC LAI, va tron hai loai khoa lam mot la mot loi
+#    khac. `cpu_nhieu` chia **suc tinh** ⇒ giu luc cho la phi may.
+#    `may_tao_tieng` chia **mot tai nguyen doc quyen** (mot dich vu NSSM duy
+#    nhat o :8120) ⇒ mot phien chen vao giua lam **hong chinh phep do** (so
+#    LUFS/MOS mang tieng cua luot khac). Nen no phai duoc giu SUOT pha giong.
+
+#: Cac `job_type` thuc su dot suc tinh cua may nay. Khoa `cpu_nhieu` chi boc
+#: chung. Nguon: ban khai cua `apps/asv_gpu/manifest.py` va
+#: `apps/asv_media/manifest.py` — khong doan theo ten.
+#:
+#: ⛔ `*.voice_synthesis` KHONG o day: no la mot chuoi lan goi HTTP sang sidecar
+#:    :8120 va tien trinh worker chi ngoi doi. Xem `may_tao_tieng` duoi.
+PHA_NANG_CPU = frozenset({
+    "asv_gpu.audio_prepare",        # demucs htdemucs
+    "asv_gpu.transcribe",           # faster-whisper / WhisperX large-v3
+    "asv_gpu.qc_do_luong",          # ASR lan cuoi + SQUIM_OBJECTIVE
+    "asv_media.compose",            # ffmpeg tron
+    "asv_media.render",             # ffmpeg ma hoa lai
+    "asv_media.qc",                 # giai ma ca tep + VMAF
+})
+
+#: Cac `job_type` dung MAY SINH TIENG. Tai nguyen doc quyen ⇒ giu suot pha.
+PHA_MAY_TAO_TIENG = frozenset({
+    "asv_voice.voice_synthesis",
+    "asv_media.voice_synthesis",
+})
+
+#: Cac `job_type` la mot lan CHO (mang, may B, sidecar). ⛔ Khong khoa `cpu_nhieu`.
+#: Giu o day de mot phep kiem doi chieu duoc, chu khong de ma doc no.
+PHA_CHO = frozenset({
+    "auto_scan_video.advance",
+    "auto_scan_video.edit_plan",
+    "auto_scan_video.content_process",
+    "auto_scan_video.qc_ai",
+    "asv_media.content_process",
+    "asv_media.timing_align",
+    "asv_voice.voice_synthesis",
+    "asv_media.voice_synthesis",
+})
+
+
+class KhongCoCardError(RuntimeError):
+    """May khong co GPU nao — mot luot nghiem thu PHAI dung, khong chay CPU.
+
+    🔑 Vi sao dung chu khong chay tiep: mot luot chay CPU van ra tep dung duoc,
+       nen no **xanh**, va bao cao cua no mang nhung con so giay khong ai doi
+       chieu duoc voi san pham. Mot phep do sai ve phia "trong giong ket qua
+       that" te hon mot phep do khong chay.
+    """
+
+
+def doi_hoi_card() -> list:
+    """Danh sach GPU cua may. Nem `KhongCoCardError` neu khong co cai nao.
+
+    ⚠️ **`torch.cuda.is_available()` KHONG tra loi duoc cau hoi nay cho ASR.**
+       CTranslate2 (ruot cua faster-whisper) mang CUDA/cuDNN RIENG, khong dung
+       cai cua torch. Nen `cuda True` + card ranh van co the cho mot lan ASR tut
+       ve CPU trong im lang. Ham nay chi tra loi "may co card khong"; con
+       "ASR co DUNG card khong" phai doc tu chinh lan chay (xem `khai_card`).
+    """
+    from platform_core import gpu as gpu_mod
+    gpus = list(gpu_mod.list_gpus())
+    if not gpus:
+        raise KhongCoCardError(
+            "May khong co GPU nao. Mot luot nghiem thu tren CPU se ra tep dung "
+            "duoc nhung moi con so giay se la so cua khuon, khong phai cua san "
+            "pham (demucs CPU 72,0 s vs GPU 42,2 s, do 23/09). Dung o day.")
+    return gpus
+
+
+@contextmanager
+def card_cho_job(job_type: str, job_id: str, *, worker_id: str = "w-nghiem-thu"):
+    """Giu card cho MOT job dung nhu worker that. Yields `(gpu_uuid, het_gpu)`.
+
+    🔑 Goi **chinh** `job_runner._vram_can` va `job_runner._giu_gpu`, khong go
+       lai phep chon. Mot ban sao se lech o mot nhanh nao do, va nhanh lech se
+       la nhanh it duoc chay nhat (cung bai hoc `_provider_failure_kind` da ghi
+       trong `test_448._chay_hang_doi`).
+
+    `het_gpu=True` = loai job nay CAN card, may CO card, nhung dang bi giu het.
+    Worker that tra job ve hang doi trong truong hop do; nguoi goi phai lam y het.
+
+    ⭐ `_giu_gpu` tu nha lease o `finally`, ke ca khi handler nem — nen khong co
+       duong nao ra khoi khoi `with` nay ma con giu card.
+    """
+    from platform_core.job_runner import _giu_gpu, _vram_can
+
+    need_mb = _vram_can(job_type)
+    with _giu_gpu(worker_id, job_id, job_type, need_mb) as (lease, het_gpu):
+        yield ((lease.gpu_uuid if lease is not None else ""), bool(het_gpu))
+
+
+def khai_card(nhat_ky: list[dict]) -> dict:
+    """Card CO duoc cap khong, tren tung pha — de bao cao khong noi doi.
+
+    ⛔ Ham nay KHONG suy ra "ASR chay tren GPU". No chi khai: pha nay doi card
+       (`can_card`), va pha nay **duoc** card (`gpu_uuid` khac rong). Chenh lech
+       giua hai cot la cho nguoi doc phai nghi ngo con so giay.
+    """
+    can = [d for d in nhat_ky if d.get("can_card")]
+    return {
+        "pha_doi_card": sorted({str(d["job_type"]) for d in can}),
+        "pha_duoc_card": sorted({str(d["job_type"]) for d in can
+                                 if d.get("gpu_uuid")}),
+        "pha_doi_card_ma_KHONG_duoc": sorted({str(d["job_type"]) for d in can
+                                              if not d.get("gpu_uuid")}),
+    }
+
+
+class KhoaTheoPha:
+    """Khoa may boc **tung pha tinh**, khong boc ca luot chay.
+
+    Dung nhu mot `with` ngoai cung cua luot, roi goi `quanh_job` cho tung job::
+
+        with fx.KhoaTheoPha("asvf-nghiem-thu-v2") as khoa:
+            for job in ...:
+                with khoa.quanh_job(job.job_type):
+                    handler(...)
+
+    Ba hanh vi, ba ly do khac nhau:
+
+    ``cpu_nhieu``      giu quanh MOT job nang, nha ngay khi job xong.
+                       (chia suc tinh ⇒ giu luc cho la phi may)
+    ``may_tao_tieng``  giu tu job giong DAU TIEN den het luot.
+                       (tai nguyen doc quyen ⇒ ai chen vao lam hong phep do)
+    con lai            KHONG khoa gi. `advance`, `edit_plan`, `content_process`,
+                       `qc_ai` la nhung lan goi mang — chung chay NGOAI khoa.
+    """
+
+    def __init__(self, phien: str, *, bat: bool = True, so_loi: int = 0):
+        self.phien = phien
+        self.bat = bat
+        self.so_loi = so_loi
+        #: Ten tai nguyen -> `CuaSoYen` dang giu (chi cho khoa giu DAI).
+        self._giu_dai: dict = {}
+        #: Nhat ky de mot phep kiem doi chieu duoc: (job_type, tai_nguyen).
+        self.da_khoa: list = []
+
+    def _cua_so(self, tai_nguyen: str, lenh: str):
+        import sys as _sys
+        goc = str(Path(__file__).resolve().parents[2])
+        if goc not in _sys.path:
+            _sys.path.insert(0, goc)
+        from tools.cua_so_yen import CuaSoYen
+        return CuaSoYen(self.phien, lenh, bat=self.bat, so_loi=self.so_loi,
+                        tai_nguyen=(tai_nguyen,))
+
+    @contextmanager
+    def quanh_job(self, job_type: str):
+        """Giu dung nhung khoa job nay can, va chi trong thoi gian no chay."""
+        can = ()
+        if job_type in PHA_MAY_TAO_TIENG:
+            can += ("may_tao_tieng",)
+            # Giu DAI: mo mot lan, khong dong giua pha giong.
+            if "may_tao_tieng" not in self._giu_dai:
+                cs = self._cua_so("may_tao_tieng", "nghiem thu ASV - pha giong")
+                cs.__enter__()
+                self._giu_dai["may_tao_tieng"] = cs
+        if job_type in PHA_NANG_CPU:
+            can += ("cpu_nhieu",)
+        self.da_khoa.append((job_type, tuple(sorted(can))))
+        if "cpu_nhieu" in can:
+            # Giu NGAN: mo va dong quanh dung mot job tinh.
+            with self._cua_so("cpu_nhieu", f"nghiem thu ASV - {job_type}"):
+                yield tuple(sorted(can))
+        else:
+            yield tuple(sorted(can))
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_exc) -> None:
+        for cs in list(self._giu_dai.values()):
+            try:
+                cs.__exit__(None, None, None)
+            except Exception:               # noqa: BLE001 - nha khoa khong duoc nuot
+                pass
+        self._giu_dai.clear()

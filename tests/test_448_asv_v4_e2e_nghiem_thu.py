@@ -160,11 +160,25 @@ def _dang_ky_may() -> dict:
 NGAN_SACH_HOAN_S = 90.0
 
 
-def _chay_hang_doi(db, *, toi_da: int = 200) -> list[dict]:
+def _chay_hang_doi(db, *, toi_da: int = 200, khoa=None) -> list[dict]:
     """Dong vai worker THAT, va do gio tung job.
 
     Khong dung lai `test_402._chay_het_hang_doi`: cai do khong do gio, va gio
     tung giai doan la mot trong nhung thu pha 22 phai giao nop.
+
+    🔴 **Truoc 24/09 ham nay do CHINH NO, khong do san pham** — o mot cho thu hai
+       va cung ho voi bay `_provider_failure_kind` duoi day: no dung
+       `JobContext(job.id)` **khong co `gpu_uuid`**, trong khi worker that lay
+       card tu `gpu_lease` (`job_runner.py:299`). Thieu card thi `ctx.has_gpu` la
+       False, `ctx.gpu_env()` khong ghim `CUDA_VISIBLE_DEVICES`, va demucs + ASR
+       chay tren **CPU**. Moi con so giay cua bao cao NEN_V3 la so cua khuon.
+       Nay no di qua `fx.card_cho_job`, thu goi chinh `_vram_can` + `_giu_gpu`
+       cua worker that.
+
+    ⚠️ `khoa` (`fx.KhoaTheoPha`) boc **tung pha tinh**, khong boc ca luot: luot
+       nay phan lon thoi gian la cho may B/sidecar, va giu `cpu_nhieu` trong luc
+       cho lam ca may doi mot lan goi mang (luat chu du an 23/09). `None` = khong
+       khoa gi, dung cho cac bai chay tren dau vao nhe.
 
     🔴 **Ban dau ham nay KHONG dong vai worker that o dung cho quan trong nhat.**
 
@@ -187,6 +201,8 @@ def _chay_hang_doi(db, *, toi_da: int = 200) -> list[dict]:
        lai bang mot chuoi `isinstance`. Mot ban sao se lech o mot nhanh nao do,
        va nhanh lech se la nhanh it duoc chay nhat.
     """
+    from contextlib import nullcontext
+
     from platform_core import jobs
     from platform_core.job_runner import JobContext, _provider_failure_kind
 
@@ -198,51 +214,96 @@ def _chay_hang_doi(db, *, toi_da: int = 200) -> list[dict]:
             break
         db.commit()
         handler = jobs.resolve_handler(job.job_type)
-        ctx = JobContext(job.id)
-        ctx.job_type = job.job_type
         t0 = time.time()
         loi = ""
         hoan = 0.0
-        try:
-            ket_qua = handler(dict(job.params), ctx) or {}
-            jobs.complete(db, job, ket_qua)
-        except Exception as exc:            # noqa: BLE001 - worker that cung bat het
-            loai, cho = _provider_failure_kind(
-                exc, provider_state=str(getattr(job, "provider_state", "") or ""))
-            con_lai = NGAN_SACH_HOAN_S - da_hoan_s
-            if loai == "resource_wait" and con_lai > 0:
-                # ⚠️ Ngu THAT, khong chi doi `next_run_at`: `jobs.claim` loc theo
-                #    moc do, nen khong ngu thi vong lap quay khong va het `toi_da`
-                #    trong vai mili-giay — mot kieu "het gio" doc y het "khong con
-                #    viec".
-                hoan = min(float(cho or 20), con_lai)
-                jobs.defer_resource(
-                    db, job, retry_after=cho,
-                    resource=str(getattr(job, "admission_resource", "") or ""))
-                da_hoan_s += hoan
-                loi = f"HOAN {type(exc).__name__}: {exc}"
+        # ⭐ Khoa may TRUOC card, va card TRUOC handler — dung thu tu cua worker
+        #    that (`job_runner`: admission -> `_giu_gpu` -> handler). Doi thu tu
+        #    la giu card trong luc ngoi cho mot khoa khac.
+        bao_khoa = (khoa.quanh_job(job.job_type) if khoa is not None
+                    else nullcontext(()))
+        with bao_khoa as tai_nguyen_khoa, \
+                fx.card_cho_job(job.job_type, job.id) as (gpu_uuid, het_gpu):
+            if het_gpu:
+                # Loai job nay CAN card, may CO card, nhung dang bi giu het.
+                # Worker that tra job ve hang doi — lam y het, khong chay CPU.
+                jobs.defer_resource(db, job, retry_after=20, resource="gpu")
+                loi, hoan = "HOAN het GPU", 20.0
             else:
-                loi = f"{type(exc).__name__}: {exc}"
-                if loai == "resource_wait":
-                    # ⛔ Het ngan sach hoan. Van la that bai, nhung phai NOI RA
-                    #    rang no den tu tai nguyen ban chu khong tu san pham.
-                    loi = (f"HET NGAN SACH HOAN sau {da_hoan_s:.0f}s "
-                           f"(tai nguyen ban): {loi}")
-                # ⛔ Ghi `loi`, KHONG `str(exc)`.
-                #
-                # 🔴 Dong cu vut mat chinh cai tien to vua dung o tren: `Job.error`
-                #    trong CSDL nhan chuoi tho, trong khi `nhat_ky` nhan ban co
-                #    tien to. Hai nguoi doc cung mot su kien thay hai cau khac
-                #    nhau — va nguoi soi CSDL la nguoi thay ban NGHEO hon.
-                jobs.fail(db, job, loi, retry=False)
+                ctx = JobContext(job.id, gpu_uuid=gpu_uuid)
+                ctx.job_type = job.job_type
+                loi, hoan = _mot_job(db, jobs, _provider_failure_kind, handler,
+                                     job, ctx, da_hoan_s)
+        # ── NGOAI moi khoa tu day tro xuong ──────────────────────────────────
+        # ⛔ Giac ngu `hoan` PHAI o ngoai `with`: ngu trong khi giu `cpu_nhieu`
+        #    la dung viec "giu khoa luc CHO" ma luat 23/09 cam.
+        loai_job = job.job_type
+        da_hoan_s += hoan
         db.commit()
         if hoan:
             time.sleep(hoan)
-        nhat_ky.append({"job_type": job.job_type,
+        nhat_ky.append({"job_type": loai_job,
                         "giay": round(time.time() - t0, 2), "loi": loi,
+                        "can_card": bool(_can_card(loai_job)),
+                        "gpu_uuid": gpu_uuid[:20],
+                        "khoa": list(tai_nguyen_khoa),
                         **({"hoan_s": round(hoan, 1)} if hoan else {})})
     db.expire_all()
     return nhat_ky
+
+
+def _can_card(job_type: str) -> int:
+    """VRAM worker that se xin cho loai job nay. 0 = job nay khong dung card."""
+    from platform_core.job_runner import _vram_can
+    return _vram_can(job_type)
+
+
+def _mot_job(db, jobs, _provider_failure_kind, handler, job, ctx,
+             da_hoan_s: float) -> tuple[str, float]:
+    """Chay MOT job nhu worker that. Tra `(loi, hoan_s)`.
+
+    Tach ra khoi `_chay_hang_doi` de phan than cua no khong nam trong hai lop
+    `with` (khoa may + card) — mot khoi `try/except` dai trong hai `with` rat de
+    them mot `return` som roi giu khoa qua ca vong sau.
+    """
+    loi = ""
+    hoan = 0.0
+    try:
+        ket_qua = handler(dict(job.params), ctx) or {}
+        jobs.complete(db, job, ket_qua)
+    except Exception as exc:            # noqa: BLE001 - worker that cung bat het
+        loai, cho = _provider_failure_kind(
+            exc, provider_state=str(getattr(job, "provider_state", "") or ""))
+        con_lai = NGAN_SACH_HOAN_S - da_hoan_s
+        if loai == "resource_wait" and con_lai > 0:
+            # ⚠️ Ngu THAT, khong chi doi `next_run_at`: `jobs.claim` loc theo
+            #    moc do, nen khong ngu thi vong lap quay khong va het `toi_da`
+            #    trong vai mili-giay — mot kieu "het gio" doc y het "khong con
+            #    viec".
+            #
+            # ⭐ Va giac ngu do nam **NGOAI** khoi `with` khoa may cua nguoi goi
+            #    (`_chay_hang_doi` ngu sau khi thoat `quanh_job`): ngu trong khi
+            #    giu `cpu_nhieu` la dung cai luat 23/09 cam.
+            hoan = min(float(cho or 20), con_lai)
+            jobs.defer_resource(
+                db, job, retry_after=cho,
+                resource=str(getattr(job, "admission_resource", "") or ""))
+            loi = f"HOAN {type(exc).__name__}: {exc}"
+        else:
+            loi = f"{type(exc).__name__}: {exc}"
+            if loai == "resource_wait":
+                # ⛔ Het ngan sach hoan. Van la that bai, nhung phai NOI RA
+                #    rang no den tu tai nguyen ban chu khong tu san pham.
+                loi = (f"HET NGAN SACH HOAN sau {da_hoan_s:.0f}s "
+                       f"(tai nguyen ban): {loi}")
+            # ⛔ Ghi `loi`, KHONG `str(exc)`.
+            #
+            # 🔴 Dong cu vut mat chinh cai tien to vua dung o tren: `Job.error`
+            #    trong CSDL nhan chuoi tho, trong khi `nhat_ky` nhan ban co
+            #    tien to. Hai nguoi doc cung mot su kien thay hai cau khac
+            #    nhau — va nguoi soi CSDL la nguoi thay ban NGHEO hon.
+            jobs.fail(db, job, loi, retry=False)
+    return loi, hoan
 
 
 def _nop_qua_form(client, csrf: str, nguon: Path, *, preset: str,
@@ -331,7 +392,7 @@ def _tom_tat(giai_doan: list[dict], ten: str) -> dict:
 
 def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
               nhan: str, preset: str, che_do_giong: str, giong_id: str,
-              su_that=None) -> dict:
+              su_that=None, khoa=None) -> dict:
     """Mot lan chay day du, tu form den tep tai ve. Tra ve phan bao cao.
 
     ⚠️ `su_that=None` khi nguon la PHIM KHACH THAT: phim that khong di kem cau
@@ -355,7 +416,7 @@ def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
     try:
         from apps.auto_scan_video.tables import AsvRun
 
-        nhat_ky = _chay_hang_doi(db)
+        nhat_ky = _chay_hang_doi(db, khoa=khoa)
         run = db.get(AsvRun, run_id)
         db.refresh(run)
 
@@ -444,6 +505,9 @@ def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
         "giong_id": giong_id,
         "trang_thai_run": run.status, "giay_tong": round(time.time() - t0, 1),
         "giai_doan": giai_doan, "nhat_ky_job": nhat_ky,
+        # 🔑 CARD CO DUOC CAP KHONG. Khong co dong nay thi moi con so giay o tren
+        #    khong tra loi duoc cau hoi dau tien nguoi doc hoi ve hieu nang.
+        "card": fx.khai_card(nhat_ky),
         "asr": {"ngon_ngu": bg.get("ngon_ngu") or bg.get("language") or "",
                 "so_doan": len(bg.get("doan") or bg.get("segments") or []),
                 "van": [str(d.get("chu") or d.get("text") or "")
