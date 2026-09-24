@@ -564,7 +564,30 @@ def test_duong_dich_TRUYEN_nhiet_do_tuong_minh():
 NHIET_DO_DICH = 0.2
 ```
 
-- [ ] **Bước 4: `seed` — chỉ làm nếu cổng NHẬN.** ⚠️ Làn `llm-cong` đang đo cổng thật có nhận `seed` và có hiệu lực hay không. **Đọc kết quả đó trước.** Cổng không nhận ⇒ ⛔ đừng thêm tham số chết; ghi vào sổ là *"không tái lập được ở tầng cổng"* và dùng **trung vị của 3 lượt** làm số đo thay cho một lượt.
+- [ ] **Bước 4: ⛔ KHÔNG thêm `seed`. Đã ĐO, nó vô hiệu.**
+
+🔴 **Đo 24/09 trên cổng thật, n=5 mỗi cấu hình:**
+```
+seed=20260924          -> 4/5 ket qua KHAC nhau
+khong seed             -> 5/5 khac nhau
+temperature=0.0        -> 5/5 VAN khac nhau
+```
+Cổng **nhận** `seed` nhưng **không có hiệu lực** (`-np 3` + draft-mtp). ⇒ Bản dịch
+**không tái lập được bằng bất cứ núm nào**. ⛔ Đừng thêm một tham số chết — nó sẽ
+thành lời khai rằng ta có tái lập trong khi không có.
+
+⇒ **Đổi ĐƠN VỊ ĐO thay vì đổi mã:** mọi con số chất lượng dịch từ giờ là **trung vị
+của N ≥ 3 lượt**, và báo cáo **phải kèm dải**. Một lượt đơn lẻ ⛔ không được dùng làm
+phán quyết. Ghi rõ điều này vào `B2_DICH.md`.
+
+- [ ] **Bước 4b: Nhiệt độ thật ở cổng là `1.0`, KHÔNG phải 0.2 — hạ nó xuống**
+
+🔴 Đo 24/09: đường sống không truyền `temperature` ⇒ cổng áp **`--temp 1.0`** cho **cả
+hai** hồ sơ. Đó là mức cao cho việc dịch, và nó là nghi phạm chung cho **hai** triệu
+chứng đã đo: 44/95 mục bị chấm dịch sai, và chỉ **1/3** lượt của `ltt-3.5` qua được
+bộ đọc lược đồ. ⇒ Ghim `NHIET_DO_DICH = 0.2` và **đo lại cả hai triệu chứng** sau khi
+ghim. ⚠️ `temperature=0.0` **không** làm kết quả tái lập (xem bước 4) — hạ nhiệt độ là
+để **giảm tản**, ⛔ không phải để có tái lập.
 - [ ] **Bước 5: chạy lại — XANH**
 - [ ] **Bước 6: ĐỐI CHỨNG tái lập:** cùng một lô, chạy **5 lần**. Có seed hiệu lực ⇒ 5 kết quả giống nhau. Không ⇒ ghi độ tản đo được (bao nhiêu % đoạn khác nhau).
 - [ ] **Bước 7: commit**
@@ -630,7 +653,40 @@ def test_bat_duoc_chu_han_con_sot_trong_loi_viet():
 
 ---
 
-## Task 12: Bench B2 — `ltt-3.5` vs mốc `ltt-3.8` trên FLORES + đoạn thật
+## Task 11b: Rào của `ltt-3.5` là LƯỢC ĐỒ, không phải chất lượng
+
+🔴 **Đo 24/09 (n=12) đã trả lời trước câu mà Task 12 định hỏi:**
+
+| | `ltt-3.8` | `ltt-3.5` |
+|---|---|---|
+| MetricX trung vị | 3,06 | **3,06 — BẰNG NHAU** |
+| tốc độ | 1× | **3,2× nhanh hơn** |
+| chi phí | 1× | **27,6× rẻ hơn** |
+| qua bộ đọc `long_tieng.doc_chuyen` | — | ⛔ **1/3 lượt** |
+
+⇒ **3.5 không yếu về chất lượng.** Thứ chặn nó là **bám đúng định dạng đầu ra**. Đó là
+tin tốt: sửa định dạng rẻ hơn nhiều so với đổi model — và Q3 đã chốt dùng 3.5.
+
+⚠️ Và nhớ: **cổng đang chạy `--temp 1.0`** (Task 9 bước 4b). Nhiệt độ cao là nghi phạm
+số một cho việc lệch lược đồ. ⇒ **Ghim nhiệt độ TRƯỚC, đo lại tỉ lệ qua lược đồ, RỒI**
+mới sửa lời nhắc/bộ đọc — nếu không ta sẽ đi sửa bộ đọc cho một vấn đề do nhiệt độ.
+
+**Files:** Modify `apps/auto_scan_video/long_tieng.py` (lời nhắc + `doc_chuyen`);
+Test: `tests/test_<N+5b>_asv_luoc_do_3_5.py`
+
+- [ ] **Bước 1: đo lại tỉ lệ qua lược đồ SAU khi ghim nhiệt độ** (n ≥ 12). Ghi con số trước/sau.
+- [ ] **Bước 2: ngưỡng ĐẠT — viết TRƯỚC:** ≥ 90% lượt qua `doc_chuyen` ở n ≥ 12.
+- [ ] **Bước 3:** còn dưới ngưỡng ⇒ đọc **lượt hỏng thật** xem nó lệch định dạng **thế nào**
+  (thiếu khoá? thêm chữ ngoài JSON? xuống dòng?), ⛔ đừng đoán rồi viết lời nhắc dài hơn.
+- [ ] **Bước 4:** sửa **một** thứ mỗi lượt (lời nhắc **hoặc** bộ đọc), đo lại sau mỗi lần.
+  ⛔ Sửa cả hai cùng lúc thì không biết cái nào có tác dụng.
+- [ ] **Bước 5: ĐỐI CHỨNG** — bộ đọc sau khi nới **vẫn phải TỪ CHỐI** một đầu ra thật sự
+  sai. ⛔ Nếu không, "90% qua" chỉ nghĩa là bộ đọc đã hết kiểm gì.
+- [ ] **Bước 6: commit**
+
+---
+
+## Task 12: Bench B2 — `ltt-3.5` (mốc `ltt-3.8`) trên FLORES + đoạn thật
 
 **Files:** Create `tools/bench_b2_dich.py`; `docs/auto_scan_video_final/B2_DICH.md`
 
