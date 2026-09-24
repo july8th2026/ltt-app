@@ -783,6 +783,7 @@ def _giau(muc: list[dict], canh: str) -> list[dict]:
 
 def do_sentinel(*, db, canh: str, dong_sach: list[int], moi_loai: int,
                 bo_qua: int, luot: int = LUOT_MOI_CAP, ban: str = "v3",
+                loai_can: tuple[str, ...] = LOAI_TIEM,
                 thu_muc: pathlib.Path = FLORES_DIR) -> dict:
     """Chay mot canh sentinel tren CA cap sach LAN cap da lam hong.
 
@@ -806,7 +807,7 @@ def do_sentinel(*, db, canh: str, dong_sach: list[int], moi_loai: int,
     if len(sach) != len(can):
         raise SystemExit(f"chi tim duoc {len(sach)}/{len(can)} dong sach")
     hong = dung_cap_tiem(cap[bo_qua:], moi_loai=moi_loai,
-                         rng=random.Random(HAT_GIONG))
+                         rng=random.Random(HAT_GIONG), loai_can=loai_can)
     muc = _giau(sach + hong, canh)
     bat_dau = _bay_gio()
     cac_luot = []
@@ -1193,6 +1194,9 @@ def main(argv=None) -> int:
     sn.add_argument("--n-sach", type=int, default=30)
     sn.add_argument("--tiem-moi-loai", type=int, default=15)
     sn.add_argument("--tiem-bo-qua", type=int, default=300)
+    sn.add_argument("--tiem-loai", default=",".join(LOAI_TIEM),
+                    help="⛔ Ghi ra trong ban ghi: doi ho loi GIUA hai canh la "
+                         "doi TAP, hai cot se khong so duoc voi nhau")
     sn.add_argument("--luot", type=int, default=LUOT_MOI_CAP)
     sn.add_argument("--ban", choices=tuple(BAN_LOI_NHAC), default="v3")
     sn.add_argument("--ra", required=True)
@@ -1325,9 +1329,13 @@ def main(argv=None) -> int:
         so = json.loads(
             pathlib.Path(a.so_soi).read_text(encoding="utf-8"))
         dong = sorted(int(m["dong_flores"]) for m in so["muc"])[:a.n_sach]
+        lc = tuple(x.strip() for x in a.tiem_loai.split(",") if x.strip())
+        if [x for x in lc if x not in LOAI_TIEM]:
+            raise SystemExit(f"ho loi la — chi co {LOAI_TIEM}")
         r = do_sentinel(db=db, canh=a.canh, dong_sach=dong,
                         moi_loai=a.tiem_moi_loai, bo_qua=a.tiem_bo_qua,
-                        luot=a.luot, ban=a.ban)
+                        luot=a.luot, ban=a.ban, loai_can=lc)
+        r["loai_tiem"] = list(lc)
         pathlib.Path(a.ra).write_text(
             json.dumps({"phien_ban": 1, "sentinel": r},
                        ensure_ascii=False, indent=1), encoding="utf-8")

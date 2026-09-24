@@ -1215,3 +1215,47 @@ nguồn** đều bị **máy** cắt. Cạnh mù bị **trói tay** mà vẫn ph
 
 Bằng chứng: `bang_chung/b2_sentinel_v3.json` (⛔ không một chữ FLORES).
 Tái lập: `python tools\bench_b2_xac_thuc_bo_cham.py sentinel --canh {du,nguon_mu,dich_mu} --so-soi bang_chung\b2_san_loi_flores.json --n-sach 30 --luot 3 --ra <ra>`
+
+---
+
+# 25. ⭐ C3 — họ `bo_sot`, và nó LẬT cách đọc §24
+
+Họ `bo_sot` là họ bộ chấm **đang báo** (5/33 phần dư §17.4) mà ta ⛔ **chưa bao
+giờ tiêm**. Đặc tả mượn từ **DEMETR** (MIT, arXiv 2210.13746) họ
+`accuracy/omission` (`id5_pp_removed`, `id21…id24`); ⛔ **không** mượn dữ liệu
+(DEMETR chỉ dịch **sang tiếng Anh**). Phép tiêm: **bỏ một cụm ngăn bằng dấu
+phẩy**, chỉ cụm **giữa/cuối** — câu tiếng Việt còn lại **hoàn toàn xuôi**.
+
+⚠️ Khai đúng cái giá: ⛔ không có bộ gán nhãn từ loại tiếng Việt ⇒ đây là **xấp
+xỉ** họ omission, là phép tiêm **của ta**, ⛔ chưa ai công bố kiểm chứng.
+
+| | bắt được | |
+|---|---|---|
+| `bo_sot`, **đủ hai phía** (V3, `temp 0.0`, 3 lượt, nền sạch 0 %) | **15/15 = 100 %** [79,6 ; 100] | 3/3 lượt đều 100 % |
+| `bo_sot`, **nguồn-mù** | ⛔ **0/15 = 0 %** (gắn cờ trên sạch 4/30) | phân biệt **−0,133** |
+
+## 25.1 🔑 Và đây là chỗ nó lật §24
+
+§24 đo được **53 %** khả năng phân biệt sống sót khi giấu câu nguồn, và kết
+luận *"quá nửa tín hiệu là đơn ngữ"*. ⭐ Trên họ `bo_sot`, tín hiệu đơn ngữ là
+**ĐÚNG BẰNG 0**: giấu nguồn ⇒ bắt **0/15**, còn đưa nguồn vào ⇒ bắt **15/15**.
+
+⇒ ⭐ **53 % đơn ngữ là đặc tính của HAI HỌ TIÊM CŨ, ⛔ không phải của bộ chấm.**
+`lat_nghia` (đổi từ trái nghĩa) và `sai_thuc_the` (đổi tên riêng) **phá mạch
+ngay trong câu tiếng Việt**, nên chính **phép đo** mở một đường tắt đơn ngữ —
+⛔ không phải bộ chấm đi đường tắt.
+
+⇒ Trên đúng hình dạng lỗi ta **quan tâm** — câu tiếng Việt **trôi chảy nhưng sai
+so với nguồn**, hình dạng của lỗi FLORES thật (`壁球` → *"quần vợt"*) — bộ chấm
+đối chiếu **thật** với câu nguồn, và bắt **15/15**.
+
+## 25.2 ⛔ Điều này KHÔNG nói
+
+- ⛔ **Không** nói V3 qua cổng: §20 vẫn đứng (⛔ không ngưỡng nào thoả cả hai vế).
+- ⛔ **Không** nói độ nhạy chung là 100 %: nay ta đã đo **3/35** họ lỗi, còn
+  **32** họ chưa đo (thêm, code-mix, trôi chảy…).
+- ⚠️ n = 15 ⇒ KTC [79,6 ; 100]. ⭐ Nhưng vế **nguồn-mù = 0/15** thì sắc: nó ⛔
+  không thể là hiệu ứng may rủi theo cùng một chiều.
+
+Bằng chứng: `bang_chung/b2_tiem_bo_sot_v3.json` · `bang_chung/b2_sentinel_v3.json`
+(khoá `nguon_mu_HO_BO_SOT`, `ho_bo_sot`).

@@ -1,0 +1,130 @@
+{
+ "phien_ban": 1,
+ "hat_giong": 20260924,
+ "nguong_bao_dong_gia": 0.15,
+ "nguong_bat_loi_tiem": 0.5,
+ "giay": 447.3,
+ "bao_dong_gia": null,
+ "bat_loi_tiem": {
+  "n": 15,
+  "luot": 3,
+  "moi_loai": 15,
+  "ban": "v3",
+  "theo_loai": {
+   "bo_sot": {
+    "n_hoi": 15,
+    "n_co_phan_quyet": 15,
+    "so_bat_duoc": 15,
+    "ti_le_trung_vi": 1.0,
+    "ti_le_tung_luot": [
+     1.0,
+     1.0,
+     1.0
+    ],
+    "dai": [
+     1.0,
+     1.0
+    ],
+    "dat_nguong_mach": true
+   }
+  },
+  "gop": {
+   "tiem_bo_sot_0300": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_bo_sot_0302": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_bo_sot_0305": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_bo_sot_0308": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_bo_sot_0310": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_bo_sot_0312": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_bo_sot_0313": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_bo_sot_0314": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_bo_sot_0318": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_bo_sot_0321": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_bo_sot_0323": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_bo_sot_0326": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_bo_sot_0327": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_bo_sot_0329": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   },
+   "tiem_bo_sot_0338": {
+    "dat": false,
+    "so_luot": 3,
+    "so_bao_sai": 3
+   }
+  },
+  "cua_so_utc": [
+   "2026-09-24T18:46:18+00:00",
+   "2026-09-24T18:53:45+00:00"
+  ],
+  "dong_flores_da_dung": [
+   300,
+   302,
+   305,
+   308,
+   310,
+   312,
+   313,
+   314,
+   318,
+   321,
+   323,
+   326,
+   327,
+   329,
+   338
+  ]
+ }
+}

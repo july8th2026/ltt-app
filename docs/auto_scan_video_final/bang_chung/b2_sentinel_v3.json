@@ -857,6 +857,315 @@
     "ti_le": 0.9333
    },
    "kha_nang_phan_biet": 0.5667
+  },
+  "nguon_mu_HO_BO_SOT": {
+   "canh": "nguon_mu",
+   "ban": "v3",
+   "luot": 3,
+   "cua_so_utc": [
+    "2026-09-24T18:54:47+00:00",
+    "2026-09-24T19:09:18+00:00"
+   ],
+   "dong_sach": [
+    503,
+    509,
+    514,
+    519,
+    522,
+    530,
+    537,
+    542,
+    552,
+    556,
+    562,
+    565,
+    567,
+    568,
+    570,
+    571,
+    583,
+    585,
+    588,
+    594,
+    600,
+    605,
+    609,
+    610,
+    613,
+    614,
+    615,
+    617,
+    618,
+    620
+   ],
+   "n_hong": 15,
+   "gan_co_tren_cap_SACH": {
+    "n": 30,
+    "k": 4,
+    "ti_le": 0.1333
+   },
+   "bat_tren_cap_HONG": {
+    "n": 15,
+    "k": 0,
+    "ti_le": 0.0
+   },
+   "bat_theo_loai": {
+    "lat_nghia": {
+     "n": 0,
+     "k": 0,
+     "ti_le": null
+    },
+    "sai_thuc_the": {
+     "n": 0,
+     "k": 0,
+     "ti_le": null
+    }
+   },
+   "kha_nang_phan_biet": -0.1333,
+   "luoc_do": {
+    "tong_lo": 15,
+    "so_lo_hong": 0,
+    "ti_le_lo_hong": 0.0,
+    "do_phu_tung_luot": [
+     1.0,
+     1.0,
+     1.0
+    ],
+    "do_phu_thap_nhat": 1.0,
+    "nguong_lo_hong": 0.033,
+    "nguong_do_phu": 0.9333,
+    "nen_sach": true
+   },
+   "gop": {
+    "flores_0503": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0509": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0514": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0519": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0522": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0530": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0537": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0542": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0552": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0556": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0562": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0565": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0567": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0568": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0570": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0571": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0583": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0585": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0588": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0594": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0600": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0605": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0609": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0610": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0613": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0614": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0615": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0617": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0618": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0620": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_bo_sot_0300": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0302": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0305": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0308": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0310": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0312": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0313": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0314": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0318": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0321": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0323": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0326": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0327": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0329": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0338": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    }
+   },
+   "loai_tiem": [
+    "bo_sot"
+   ]
   }
  },
  "so_sanh_2_ho_chung": {
@@ -864,5 +1173,19 @@
   "du": 0.5667,
   "nguon_mu": 0.3,
   "dich_mu": -0.3333
+ },
+ "ho_bo_sot": {
+  "du_hai_phia": {
+   "n": 15,
+   "k": 15,
+   "ti_le": 1.0,
+   "nguon": "b2_tiem_bo_sot_v3.json"
+  },
+  "nguon_mu": {
+   "n": 15,
+   "k": 0,
+   "ti_le": 0.0
+  },
+  "ket_luan": "Tren ho `bo_sot` (cau tieng Viet con HOAN TOAN XUOI), tin hieu don ngu = 0. ⇒ 53 % don ngu do o §24 la dac tinh cua HAI HO TIEM CU, ⛔ khong phai cua bo cham."
  }
 }
