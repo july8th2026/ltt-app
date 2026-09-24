@@ -76,6 +76,79 @@
 | N-14 | thap | `CUDA_VISIBLE_DEVICES=""` bi **Windows xoa han** khi di qua tien trinh con ⇒ moi luot "CPU" am tham chay TREN CARD va bao `thiet_bi: cuda`. Neu khong bat duoc: ca bang so CPU-vs-GPU thanh **GPU so GPU**, moi tang toc ~1,0x, ket luan **nguoc han** su that — khong loi, khong canh bao, so lieu trong hop ly | `platform_core/gpu.py` | gpu-a | **DA SUA** — dung `-1`, hang `KHONG_CARD` mot cho |
 | M-11 | trung | CSDL test dùng chung `lttplatform_test` còn một `AsvRun` **`running` mồ côi** (`asvr_d29cef8a…`) mà job `advance` **tự nộp lại vô hạn** ⇒ `jobs` tích tụ 1.274 dòng và mọi lượt `_chay_het_hang_doi` đều nhặt job của nó. ⛔ Hệ quả đo lường: trần 200 job là trần **dùng chung**, nên trên CSDL này nó **không còn đo được** *„vòng sửa có quay không“* — một bài PG thường trực sẽ đỏ vì rác, không vì mã | CSDL `lttplatform_test` | ĐIỀU PHỐI | **MỞ** — dọn khi mở lại việc CPU: cần khoá `postgres_test`, đưa run về trạng thái kết thúc, và mọi bài PG phải đếm job **theo `run_id` của mình**. `L_SUA_KHOA.md` §5.3 |
 
+## Quét phụ thuộc ẩn của ASV (24/09) — ⭐ KẾT QUẢ: SẠCH, và đây là một BẢN KHAI
+
+⛔ **Không có ca loại 1 trong ASV.** `N-25` vì thế **vẫn trống**. Ghi lại vì
+*"đã quét, không thấy"* chỉ đáng tin khi nói rõ **quét bằng gì** và **đã chứng
+minh bộ đo bắt được ca thật hay chưa**.
+
+**Vì sao quét:** 23:37 hôm nay `platform_core/workflow/job_object.py` nhập
+`pywintypes` ở **mức module** trên đường import của `server.app` mà `pywin32`
+⛔ không được khai ⇒ production sập ~15 phút. ⚠️ **Venv phát triển có sẵn
+`pywin32`** (gói khác kéo vào), nên ⛔ không một phép kiểm nào thấy thiếu — chỉ
+venv sạch của máy chủ mới thấy. Họ *"đọc thứ đại diện thay vì đọc thứ thật"*.
+Quét bây giờ vì ASV **chưa bật cho khách**, tức đây là lúc rẻ nhất.
+
+**Bộ đo — dùng lại, ⛔ không tự viết** (luật chủ dự án 24/09):
+
+| công cụ | nguồn | giấy phép |
+|---|---|---|
+| `deptry` 0.25.1 (đã cài sẵn, ⛔ không phải cài thêm) | `github.com/osprey-oss/deptry` (Florian Maas) | **MIT** (đọc `LICENSE` trên repo) |
+| `importlib.metadata.packages_distributions()` · `.requires()` | thư viện chuẩn Python 3.13 | PSF |
+
+⛔ Không tự dựng bảng ánh xạ tên-import → tên-gói (`cv2`→`opencv-python`,
+`win32api`→`pywin32`); bảng đó lấy từ `packages_distributions()`.
+
+**⭐ Hiệu chuẩn — bộ đo đã được chứng minh trên CHÍNH sự cố thật**, không phải
+trên một ca tự nghĩ. Gỡ dòng `pywin32>=306` khỏi `requirements.txt` rồi đo lại:
+
+* `deptry` báo `pywintypes`/`win32job` — nhưng là **`DEP003` (bắc cầu)**, ⛔ **không
+  phải `DEP001` (thiếu)**. 🔴 **Chỉ nhìn "thiếu" là trượt đúng con bug đã sập
+  production** — vì gói CÓ trong venv phát triển, chỉ không được khai;
+* phép đo bao đóng import ĐỘNG: **đối chứng dương** (chưa khai ⇒ nêu `pywin32`)
+  và **đối chứng âm** (khai lại ⇒ rỗng). Khai lại xong, sạch.
+
+**Đo gì:** so **tập import** với **`requirements.txt` + `requirements-server.txt`**
+(máy chủ cài CẢ HAI — `setup/2-cai-dat.ps1:704,706`), ⛔ không so với *"cái gì
+đang cài được"*. Đường vào: `manifest` · `routes` · `jobs` · `thi_hanh` ·
+`pipeline` của `auto_scan_video`, và `manifest` của `asv_gpu`/`asv_media`/
+`asv_voice` ⇒ **90 module** được nạp thật.
+
+**Kết quả theo ba loại:**
+
+1. **Mức module + chưa khai (ca đã làm sập production): KHÔNG CÓ.** 11 gói chưa
+   khai thẳng đều là **phụ thuộc bắc cầu** của gói đã khai (`pip install -r` kéo
+   theo cả cây) ⇒ venv máy chủ vẫn có. Hai ngoại lệ `sniffio` và `orjson` ⛔
+   **không** nằm trong cây nào, nhưng cả hai đều **được bọc `try/except`** ở
+   thượng nguồn (`anyio._core._eventloop` · `fastapi.responses`) ⇒ thiếu thì
+   suy giảm êm, ⛔ không sập. ⚠️ `anyio` 4.13 **nhập `sniffio` mà không còn khai
+   nó** trong metadata — khiếm khuyết đóng gói **thượng nguồn**, ⛔ không phải của ta.
+2. **Nhập trong hàm, chưa khai:** `rapidocr` · `soundfile` · `jiwer` ·
+   `ctranslate2` · `numpy` · `cv2` · `huggingface_hub` · `safetensors`. ⭐ Tất cả
+   thuộc **`qc-venv`** (`C:\LTTPlatform\qc-venv`, `do_luong/venv.py:21`), ⛔ không
+   phải venv máy chủ ⇒ vắng khỏi `requirements*.txt` là **đúng**. Đã kiểm chỗ
+   nối nguy hiểm nhất: `thi_hanh.py:101` nhập `ocr_khung` **trong hàm**, và
+   `ocr_khung.py` chỉ nhập **thư viện chuẩn** ở mức module ⇒ venv máy chủ nạp nó
+   an toàn. Cùng lối với `torch`/`torchaudio`/`transformers` (mức module) — chúng
+   ở `_ecapa_gioi/ecapa_gioi.py` và `_metricx/mt5_regression.py`, chỉ được nạp
+   **bên trong** qc-venv; `gioi.py` phía máy chủ chỉ chạm `ban_ghim.py` (thư
+   viện chuẩn).
+3. **Chỉ dùng ở `tests/`/`tools/`/`bench/`:** 145 phát hiện — ⛔ không phải lỗi
+   sản phẩm, khai riêng ở đây và ⛔ không xử.
+
+⚠️ **MỞ — một khoảng trống THẬT tìm thấy nhân tiện, ⛔ chưa sửa:** `qc-venv`
+⛔ **không có bản khai phụ thuộc nào trong kho** (không `requirements-qc.txt`,
+không dòng cài trong `setup/`). Cùng **hình dạng** với sự cố `pywin32` — một
+môi trường chạy mà thành phần của nó chỉ tồn tại trong máy chứ không trong mã —
+chỉ khác là nó hỏng **êm** (`venv.co_san()` kiểm tra rồi bỏ qua bộ đo) thay vì
+làm sập cổng vào. ⇒ Điều phối quyết: ghim một `requirements-qc.txt`, hay khai
+rõ rằng qc-venv là hạ tầng dựng tay.
+
+⚠️ **Phạm vi của lời tuyên bố này, nói thẳng:** nó phủ **đường import lúc nạp**
+của các điểm vào ASV. Nó ⛔ **không** phủ nhập muộn trong nhánh hiếm chưa từng
+chạy, và ⛔ không phủ app khác.
+
+
 ## Độ phủ lượt thật
 
 | lượt | video | cặp | preset | model_that | giong_that | kết quả | ghi chú |
