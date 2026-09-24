@@ -1135,3 +1135,86 @@ chính cơ chế **chủ lực** của họ.
 
 ⇒ Chọn trần gộp **trước** thì mức rút gọn cần thiết **rơi xuống hẳn** — và đó mới là mức
 đáng đem đi đo chrF++, ⛔ không phải quét cả dải 10–40 % bằng LLM.
+
+---
+
+## 19. 🔴 Gộp theo CẢNH: ⛔ không mua được gì — và **tiền đề tự đổ**
+
+> Ranh giới cảnh lấy bằng **chính** adapter sản phẩm: `canh.tim_moc` +
+> `canh.gop_canh_ngan`, PySceneDetect `ContentDetector(35)`. ⛔ Không tự đặt ngưỡng.
+
+### 19.1 Kết quả: ngả thứ ba
+
+| cách gộp (⛔ không vắt qua cắt cảnh) | số khe | VỪA | % | dài nhất |
+|---|---|---|---|---|
+| ⛔ không gộp (hiện nay) | 187 | 83 | **44,4 %** | 6,75 s |
+| gộp ≤2 trong cảnh | 181 | 82 | 45,3 % | 8,48 s |
+| gộp ≤5 trong cảnh | 178 | 82 | 46,1 % | 13,34 s |
+| **gộp TỰ DO trong cảnh** | 178 | 82 | **46,1 %** | 13,34 s |
+
+⇒ ⭐ **+1,7 điểm.** Gộp-trong-cảnh ⛔ **không mua được gì** — đúng ngả thứ ba điều phối
+nêu sẵn.
+
+**Vì sao, và nó đo được:**
+
+```
+v1  125 cảnh / 265,0 s  =  một cắt mỗi 2,1 s   ·  73/82 cảnh-có-khe chỉ có MỘT khe
+v2  100 cảnh / 190,0 s  =  một cắt mỗi 1,9 s   ·  55/64 cảnh-có-khe chỉ có MỘT khe
+v3   18 cảnh / 106,8 s  =  một cắt mỗi 5,9 s   ·   9/16
+```
+
+⇒ Phim cắt **nhanh hơn** nhịp thoại. Gần như mọi cảnh chỉ chứa **một** khe ⇒ ⛔ **không
+có gì để gộp với gì**. Chỉ v3 (clip game, cắt thưa) mới gộp được — và nó chỉ đổi 6 khe.
+
+### 19.2 🔴 Và đây mới là phần quan trọng: **tiền đề tự đổ**
+
+Ràng buộc *"khe ⛔ không được vắt qua một cắt cảnh"* — đo trên **chính khe đang chạy hôm nay**:
+
+| phim | khe ĐÃ vắt qua ≥ 1 cắt cảnh | nhiều nhất trong MỘT khe |
+|---|---|---|
+| v1 | **73/83 = 88,0 %** | 4 cắt |
+| v2 | **63/74 = 85,1 %** | 4 cắt |
+| v3 | 16/31 = 51,6 % | 1 cắt |
+| **tổng** | 🔴 **152/188 = 80,9 %** | |
+
+> 🔑 ⭐ **Bốn trên năm khe của sản phẩm ĐANG CHẠY đã vắt qua cắt cảnh — có khe vắt qua
+> BỐN cắt.** ⇒ Dùng *"⛔ không vắt qua cắt cảnh"* làm ràng buộc cho phép **gộp** là
+> **tự mâu thuẫn**: ta sẽ cấm việc gộp làm đúng cái mà 81 % khe nền **đã làm**.
+
+⇒ Chỉ có hai cách đọc, và ⛔ chúng loại trừ nhau:
+
+| cách đọc | hệ quả |
+|---|---|
+| **(A)** vắt qua cắt cảnh là **bình thường** với nội dung này | ⇒ ⭐ cắt cảnh ⛔ **KHÔNG** phải ràng buộc, và §18.2 (gộp ≤5 ⇒ **73,5 %**) vẫn đứng |
+| **(B)** vắt qua cắt cảnh là **lỗi** | ⇒ 🔴 ta đang có **một lỗi sống trên 80,9 % số khe**, ⛔ chưa ai thấy — và đó là việc **khẩn** hơn D5 |
+
+⭐ Bằng chứng nghiêng hẳn về **(A)**: sản phẩm là **thuyết minh MỘT giọng** (`ban_ghi.py:46-49`
+đã rút phân vai vì *"MỘT giọng thuyết minh cho cả video"*). Giọng kể ⛔ **không** bám miệng
+ai trên hình ⇒ cắt cảnh là **đổi góc / B-roll**, ⛔ không phải chỗ ngắt lời.
+
+⚠️ ⇒ Mô hình *"giọng chạy xuyên chỗ chuyển cảnh là lỗi khán giả thấy ngay"* đúng cho
+**lồng tiếng nhân vật trên hình**, ⛔ **không** đúng cho **thuyết minh trên B-roll**.
+⭐ Cùng họ `N-34` một lần nữa: một ràng buộc **có thật**, nhưng của **thể loại khác**.
+
+### 19.3 Vậy cái gì **thật sự** chặn một khe dài?
+
+Ba ứng viên, và hai đã bị loại **bằng số**:
+
+| ứng viên | phán quyết |
+|---|---|
+| `≤ 7 s` (Netflix) | ⛔ **LOẠI** — trần **ĐỌC** phụ đề; khán giả lồng tiếng ⛔ không đọc gì (`N-34`) |
+| ⛔ không vắt qua cắt cảnh | ⛔ **LOẠI** — 80,9 % khe hiện nay **đã** vắt qua, sản phẩm vẫn chạy |
+| ⭐ **độ TRÔI trong khe** | ⛔ **CHƯA ĐO** — và nó là một **ngân sách**, ⛔ không phải trần cứng |
+
+⇒ ⭐ Con số duy nhất còn đứng để đặt trần là **độ trôi**, và ta ⛔ **chưa có phép đo nào**
+cho nó. ⛔ Đặt một trần giây bây giờ là **bịa** — đúng thứ ba mục trên vừa loại.
+
+### 19.4 Chỗ đứng hiện tại
+
+```
+gộp KHÔNG ràng buộc cảnh (§18.2)   : 44,4 % -> 73,5 %  (gộp ≤5), MIỄN PHÍ về chrF++
+   giá THẬT của nó = độ trôi, ⛔ CHƯA ĐO
+gộp CÓ ràng buộc cảnh (§19.1)      : 44,4 % -> 46,1 %  ⛔ vô dụng
+rút gọn 30 % (§18.1)               : 44,4 % -> 86,6 %  nhưng len_ratio < 0,85
+                                      ⇒ chrF++ 39,31 (so với 49,85 khi >= 0,95)
+```
