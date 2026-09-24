@@ -100,6 +100,29 @@ def visible_devices_value(uuid: str) -> str:
     return uuid
 
 
+#: Giá trị `CUDA_VISIBLE_DEVICES` mà CUDA hiểu là "không card nào".
+#:
+#: 🔴 **Không dùng chuỗi rỗng.** Đo 24/09 (làn `gpu-may-a`): `""` truyền qua
+#:    `subprocess` trên Windows bị **xoá hẳn** khỏi môi trường tiến trình con,
+#:    nên tiến trình con thấy ĐỦ MỌI card và `torch.cuda.is_available()` trả
+#:    True. Một nhánh "CPU" như thế **không có triệu chứng nào**: nó chạy trên
+#:    card và báo `thiet_bi: cuda`. Cả một bảng so CPU↔GPU dựng trên `""` sẽ là
+#:    GPU so với GPU, mọi tăng tốc ~1,0×, và kết luận sẽ là "card không giúp gì".
+KHONG_CARD = "-1"
+
+
+def env_khong_card(base: dict | None = None) -> dict:
+    """Bản sao môi trường đã **che mọi GPU** khỏi tiến trình con.
+
+    Dùng khi nền tảng **không** cấp card: che card đi thì một bộ đo không thể
+    lặng lẽ lấy card ngoài sổ sách, và `gpu_lease` giữ được nghĩa của nó. Đối
+    xứng với `env_for` — hai chiều của cùng một quyết định, nên nằm cùng một chỗ.
+    """
+    env = dict(os.environ if base is None else base)
+    env["CUDA_VISIBLE_DEVICES"] = KHONG_CARD
+    return env
+
+
 def env_for(uuid: str, base: dict | None = None) -> dict:
     """Bản sao môi trường đã ghim tiến trình con vào đúng một GPU.
 
