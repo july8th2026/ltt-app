@@ -179,3 +179,83 @@ def _json_an_toan(than: bytes):
             return than.decode("utf-8", "replace")[:10_000]
         except Exception:                                    # noqa: BLE001
             return ""
+
+
+# ── OAuth2 Google (spec Sec9.3, plan wf-v2 P5c/T3) ───────────────────────────
+#
+# ⭐ VI SAO HAI ROUTE NAY O DAY, khong o `/agent/api/v3/*`
+#
+#    Cua callback do GOOGLE goi — no tro ve bang mot dieu huong cua trinh
+#    duyet, khong mang cookie phien theo cach mot `fetch()` mang, va no phai
+#    mien CSRF. Do dung ba tinh chat cua router `/hooks/*` (docstring dau tep).
+#    Dat no canh `/agent/api/v3` la phai khoet mot lo mien CSRF trong mot bo
+#    mat von KHONG mien — va mot ngoai le nhu the se duoc ke sau tai su dung.
+#
+# ⛔ `bat-dau` VAN doi dang nhap: no la cua cua MOT nguoi, khong phai cua may
+#    goi may. Chi `callback` la cong khai, va thu bao ve no la `state` (bam,
+#    dung mot lan, han 10 phut) chu khong phai mot cookie.
+
+
+@router.get("/oauth/google/bat-dau")
+def oauth_google_bat_dau(request: Request):
+    """Mo mot luot ket noi Google cho NGUOI DANG DANG NHAP."""
+    from fastapi.responses import RedirectResponse
+
+    from platform_core import oauth_google
+    from server.auth.session import require_login
+    from server.deps import user_hien_tai
+
+    require_login(request)
+    user = user_hien_tai(request)
+    if user is None:
+        return JSONResponse({"ma": "can_tai_khoan"}, status_code=403)
+
+    gen, db = _mo_db()
+    try:
+        try:
+            url, _state = oauth_google.bat_dau(
+                db, owner_id=str(getattr(user, "id", "") or ""),
+                redirect_after=request.query_params.get("quay_ve", ""))
+        except oauth_google.LoiOAuth as loi:
+            # ⛔ NOI RA (luat 1 cua cua nay): chua cau hinh app OAuth la mot
+            #    viec THU CONG cua chu du an chua lam, khong phai mot loi cua
+            #    khach — va im lang o day bien no thanh mot nut bam khong lam gi.
+            _log.warning("hooks: oauth google chua cau hinh (%s)", loi.ma)
+            return JSONResponse({"ma": loi.ma}, status_code=503)
+        db.commit()
+        return RedirectResponse(url, status_code=302)
+    finally:
+        _dong_db(gen)
+
+
+@router.get("/oauth/google/callback")
+def oauth_google_callback(request: Request):
+    """Google tra ve day. ⛔ Khong bao gio ghi `code` hay `state` vao log."""
+    from fastapi.responses import RedirectResponse
+
+    from platform_core import oauth_google
+    from server.auth.session import safe_next
+
+    q = request.query_params
+    if q.get("error"):
+        # Khach bam "Huy" o man hinh cua Google. Do khong phai loi he thong.
+        return JSONResponse({"ma": "khach_tu_choi",
+                             "chi_tiet": str(q.get("error"))[:80]},
+                            status_code=400)
+    state, code = q.get("state", ""), q.get("code", "")
+    if not state or not code:
+        return JSONResponse({"ma": "thieu_tham_so"}, status_code=400)
+
+    gen, db = _mo_db()
+    try:
+        try:
+            quay_ve = oauth_google.noi_quay_ve(db, state=state)
+            oauth_google.hoan_tat(db, state=state, code=code)
+        except oauth_google.LoiOAuth as loi:
+            db.rollback()
+            _log.warning("hooks: oauth google callback tu choi (%s)", loi.ma)
+            return JSONResponse({"ma": loi.ma}, status_code=400)
+        db.commit()
+        return RedirectResponse(safe_next(quay_ve), status_code=302)
+    finally:
+        _dong_db(gen)
