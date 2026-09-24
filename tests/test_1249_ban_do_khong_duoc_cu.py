@@ -37,7 +37,18 @@ def test_moi_DUONG_DAN_trong_ban_do_deu_co_that():
             continue
         if d.startswith("starlette/"):   # thu vien ben ngoai, khong o kho nay
             continue
-        if not (GOC / d).exists():
+        # [!] Hai QUY UOC cung ton tai trong tai lieu kho nay, va goc giai
+        #    duong dan cua chung KHAC NHAU:
+        #      · `platform_core/workflow/nut.py`  -> tinh tu GOC KHO (van xuoi)
+        #      · `../HAI_MAY_A_VA_B.md`           -> tinh tu CHINH TAI LIEU
+        #                                            (lien ket Markdown)
+        #    Mot duong bat dau bang `../` hay `./` thi CHI CO THE la loai thu
+        #    hai — duong tinh tu goc kho khong bao gio bat dau nhu vay. Giai
+        #    ca hai tu GOC lam `../HAI_MAY_A_VA_B.md` thanh mot duong NGOAI
+        #    kho, va bai nay bao "tep khong ton tai" trong khi tep co that o
+        #    `docs/HAI_MAY_A_VA_B.md`.
+        goc = BAN_DO.parent if d.startswith(("../", "./")) else GOC
+        if not (goc / d).exists():
             thieu.append(d)
     assert not thieu, f"ban do tro toi tep KHONG TON TAI: {thieu}"
 
