@@ -87,7 +87,11 @@ def dien_giai(ket_qua: dict, *, luoc_do: Optional[dict] = None
     if luoc_do is None:
         return ("SUCCEEDED", "", "")
     try:
-        gia_tri = json.loads(content)
+        # `content or ""`: `noi_dung_rong(content)` o tren DA loai `None` va
+        # chuoi rong, nhung phep thu hep do di qua mot ham nen mypy khong theo
+        # duoc. Viet thang ra thay vi de `except TypeError` gánh ca "content la
+        # None" — mot ngoai le bat duoc khong phai mot phep kiem kieu.
+        gia_tri = json.loads(content or "")
     except (TypeError, ValueError) as loi:
         return ("FAILED", "dau_ra_sai_luoc_do", f"content khong phai JSON: {loi}")
     thong_diep = kiem_luoc_do(gia_tri, luoc_do)

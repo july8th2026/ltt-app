@@ -40,6 +40,7 @@ import secrets
 import selectors
 import socket
 import socketserver
+from typing import cast
 import threading
 from dataclasses import dataclass, field
 
@@ -106,7 +107,9 @@ class _Handler(socketserver.BaseRequestHandler):
                 if gia_tri.lower().startswith(b"basic "):
                     try:
                         raw = base64.b64decode(gia_tri[6:]).decode("latin-1")
-                    except Exception:  # noqa: BLE001
+                    except (ValueError, UnicodeDecodeError):
+                        # `binascii.Error` ⊂ `ValueError`. Header hong la
+                        # chuyen cua NGUOI GOI; moi loi khac la cua ta.
                         raw = ""
                     ve_ok = secrets.compare_digest(raw.split(":", 1)[-1], cs.ve)
         if not ve_ok:
@@ -173,7 +176,11 @@ class _Handler(socketserver.BaseRequestHandler):
                 if not su_kien:
                     return
                 for khoa, _ in su_kien:
-                    nguon = khoa.fileobj
+                    # `selectors` khai `fileobj` la `int | HasFileno` vi no
+                    # nhan ca so mo ta tep. O day ta CHI dang ky socket, nen
+                    # thu hep tuong minh — khong thi `.recv` nam tren mot kieu
+                    # khong co no.
+                    nguon = cast(socket.socket, khoa.fileobj)
                     dich = b if nguon is a else a
                     try:
                         du_lieu = nguon.recv(DEM)
@@ -199,6 +206,10 @@ class _Handler(socketserver.BaseRequestHandler):
 class _May(socketserver.ThreadingTCPServer):
     daemon_threads = True
     allow_reuse_address = True
+    #: Chinh sach mien duoc `mo()` gan sau khi dung may. Khai o DAY chu khong
+    #: gan tuy tien tu ben ngoai: mot thuoc tinh chi ton tai sau mot dong gan
+    #: o noi khac la thu `_Handler` doc ma nguoi doc khong biet tim o dau.
+    chinh_sach: "ChinhSach"
 
 
 @dataclass
@@ -206,8 +217,10 @@ class DangChay:
     cong: int
     ve: str
     chinh_sach: ChinhSach
-    _may: object = None
-    _luong: object = None
+    # ⛔ Khong de `object`: `dung()` goi `.shutdown()` / `.server_close()`, va
+    #    tren `object` thi chung khong ton tai — mypy bat dung (`attr-defined`).
+    _may: "_May | None" = None
+    _luong: "threading.Thread | None" = None
 
     @property
     def url(self) -> str:

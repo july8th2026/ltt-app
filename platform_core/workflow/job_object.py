@@ -30,6 +30,7 @@ trên thời gian TRÔI, và đó là hạn giờ duy nhất.
 """
 from __future__ import annotations
 
+import pywintypes
 import win32job
 
 #: 512 MB — spec §11.2. Node chạy kèm `--max-old-space-size=384` nên heap của V8
@@ -92,7 +93,9 @@ def giet(h_job, ma: int = 1) -> None:
     """Giết **cả cây** trong job. Dùng cho đường hết giờ."""
     try:
         win32job.TerminateJobObject(h_job, int(ma))
-    except Exception:  # noqa: BLE001 — đường dọn dẹp, đã hết giờ rồi
+    except pywintypes.error:
+        # ⚠️ `pywintypes.error` ke thua THANG `Exception`, KHONG phai `OSError`
+        #    — bat `OSError` o day se hut. Duong don dep: job co the da dong.
         pass
 
 

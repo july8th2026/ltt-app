@@ -136,11 +136,20 @@ def test_node_piece_vao_SO_NODE_qua_NGUON_PIECE():
 def test_node_trigger_piece_nam_o_nhom_TRIGGERS():
     """Một trigger nằm trong nhóm CONNECTORS thì người soạn không tìm thấy nó
     ở chỗ họ tìm mọi trigger khác — và kết luận là "khong co trigger Sheets"."""
-    from platform_core.workflow import nut
+    # 🔴 PHAI import `nut_loi` TRUOC. `nut.tat_ca()` doc bien toan cuc
+    #    `nut.NGUON_PIECE`, va bien do chi duoc gan khi `nut_loi/connector.py`
+    #    duoc import (`nut_loi/__init__.py:120`). Thieu dong nay thi `tat_ca()`
+    #    tra ve mot tap node THIEU — va bai kiem BO QUA voi mot ly do SAI
+    #    ("catalog khong co trigger POLLING"), trong khi catalog co.
+    #
+    # ⛔ Da xay ra that: gate 24/09 bao bo qua vi ly do do, nhung do lai thi
+    #    `trigger.piece.google_sheets.new_spreadsheet` CO tren palette. Mot
+    #    phep kiem khong chay ma ke mot ly do khong dung thi te hon mot phep do.
+    from platform_core.workflow import nut, nut_loi  # noqa: F401
     trig = [v for v in nut.tat_ca().values()
             if v.job_type == nut.JOB_TYPE_PIECE and v.kind == "trigger"]
     if not trig:
-        pytest.skip("catalog vong nay khong co trigger POLLING nao")
+        pytest.skip("catalog vong nay THAT SU khong co trigger POLLING nao")
     for nd in trig:
         assert nd.category == "TRIGGERS"
 

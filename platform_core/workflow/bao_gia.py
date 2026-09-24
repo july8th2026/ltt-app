@@ -389,9 +389,15 @@ def bang_gia_song(document: dict, *,
         # `nghiem=False`: mot bieu thuc go do khong duoc lam mat bang gia cua
         # chinh nguoi dang go — cung ly do cua `goi_y.py`.
         ct = bien_dich.cau_truc(document, cong_cu=cc, nghiem=False)
-    except bien_dich.LoiBienDich as loi:
+    except bien_dich.LoiBienDich as loi_bd:
+        # ⛔ Ten khac `loi` ben duoi CO Y: hai thu KHAC LOAI (mot ngoai le bien
+        #    dich, mot bang loi theo node) tung dung chung mot ten. Python XOA
+        #    ten da bind trong `except` khi ra khoi khoi, nen mypy bao
+        #    "Trying to read deleted variable" o hai dong duoi — dung ve co hoc,
+        #    va dung ca ve nguoi doc.
         return BangGiaSong(gia={}, loi={}, loi_do_thi={
-            "ma": loi.ma, "thong_diep": str(loi), "node_id": loi.node_id})
+            "ma": loi_bd.ma, "thong_diep": str(loi_bd),
+            "node_id": loi_bd.node_id})
 
     gia: dict[str, int] = {}
     loi: dict[str, str] = {}

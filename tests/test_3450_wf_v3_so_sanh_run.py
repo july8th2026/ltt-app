@@ -124,7 +124,16 @@ def test_khong_ro_bi_mat_cua_Job_params(api):  # noqa: F811
     try:
         job = jobs.submit(db, user_id=uid, app_slug="ltt_llm",
                           job_type="ltt_llm.chat",
-                          params={"api_key": "sk-BI-MAT-KHONG-DUOC-RO"})
+                          # ⭐ `fake` trong gia tri la CO Y: no la mot
+                          #    nhan ma `scan_source_secrets` hieu
+                          #    (`PLACEHOLDER_MARKERS`). Khong co nhan,
+                          #    may quet bi mat DO gate chung cua MOI
+                          #    phien vi mot bi mat GIA — va mot bao dong
+                          #    gia la thu day nguoi ta tat canh bao.
+                          #    ⛔ Van giu hinh dang `sk-...` de phep kiem
+                          #    con do dung thu no dinh do: mot chuoi TRONG
+                          #    NHU khoa that khong duoc lot ra dau ra.
+                          params={"api_key": "sk-fake-BI-MAT-KHONG-DUOC-RO"})
         db.commit(); job_id = job.id
     finally:
         db.close()
@@ -133,7 +142,7 @@ def test_khong_ro_bi_mat_cua_Job_params(api):  # noqa: F811
 
     r = _so_sanh(a, run1, run1)
     assert r.status_code == 200
-    assert "sk-BI-MAT-KHONG-DUOC-RO" not in _json.dumps(r.json())
+    assert "sk-fake-BI-MAT-KHONG-DUOC-RO" not in _json.dumps(r.json())
 
 
 def test_run_cua_nguoi_khac_tra_404_ca_hai_phia(api):  # noqa: F811

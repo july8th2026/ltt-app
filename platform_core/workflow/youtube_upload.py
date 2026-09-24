@@ -60,6 +60,12 @@ class LoiYouTube(Exception):
         self.ma = ma
         self.thong_diep = thong_diep
         self.status = int(status)
+        #: URL phien upload dang do, neu co — lop goi luu lai de NOI LAI lan sau.
+        #: ⭐ Khai o day chu khong gan tuy tien tu ben ngoai: mot thuoc tinh chi
+        #:    ton tai tren MOT SO the hien la thu nguoi doc khong the biet co hay
+        #:    khong, va `hasattr` roi rac khap noi goi. Mypy cung bat dung cho do
+        #:    (`attr-defined`, gate 24/09).
+        self.phien_url = ""
 
 
 @dataclass

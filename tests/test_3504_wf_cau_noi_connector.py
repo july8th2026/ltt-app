@@ -187,3 +187,40 @@ def test_khoa_khu_trung_theo_DUONG_THI_HANH_khong_theo_node_id(db, run):
     k1 = cau_noi._khoa_idem(run, node, 1, shim, {"video": "v", "title": "t"},
                             (("f", 1),))
     assert k0 != k1, "khoa khong phan biet duoc hai vong cua foreach"
+
+
+def test_CUA_VAO_handle_mo_duoc_phien_CSDL(monkeypatch):
+    """🔴 `handle()` la CUA VAO ma production goi cho MOI job connector — va no
+       tung nem `TypeError` ngay dong dau.
+
+    `with get_session() as db:` — `get_session()` la mot **generator** (kieu
+    dependency cua FastAPI), khong phai context manager:
+
+        >>> with get_session() as db: ...
+        TypeError: 'generator' object does not support the context manager protocol
+
+    ⛔ VI SAO BO TEST CU KHONG THAY: moi bai deu goi THANG `_chay_youtube` /
+       `_chay_piece`. Chung do dung phan ben trong, va bo qua dung cai cua ma
+       production di qua. "FLOW D 7/7 xanh" la that — nhung no khong noi gi ve
+       `handle()`.
+
+    ⭐ Bai nay co y goi `handle()` voi mot `_connector` KHONG hop le, de no hong
+       o buoc sau cua chinh no. Thu duy nhat bai chot la: **mo duoc phien**, tuc
+       khong con `TypeError` ve context manager.
+    """
+    from apps.connector_runner import jobs as cj
+
+    with pytest.raises(Exception) as e:
+        cj.handle({"_connector": {"node_type": "connector.khong_ton_tai"}})
+    assert not isinstance(e.value, TypeError), (
+        f"cua vao chet truoc khi lam gi: {e.value!r}")
+    assert "context manager" not in str(e.value)
+
+
+def test_handle_KHONG_CO__connector_thi_noi_ro_la_loi_he_thong():
+    """🔑 Doi chung cho bai tren: neu `handle` ngã ngay truoc khi mo phien thi
+       bai kia xanh ma khong chung minh duoc gi ve viec mo phien."""
+    from apps.connector_runner import jobs as cj
+
+    with pytest.raises(cj.LoiHandler, match="loi_he_thong"):
+        cj.handle({})

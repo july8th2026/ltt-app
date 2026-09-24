@@ -43,8 +43,14 @@ def _bi_mat(db, ref: str, owner_id: str, *, run_id: str, node_id: str):
     try:
         from platform_core import oauth_google
         lam_moi = oauth_google.bo_lam_moi()
-    except Exception:  # noqa: BLE001 — nhà cung cấp chưa cấu hình: không sao,
-        lam_moi = None      # credential không phải OAuth vẫn dùng được
+    except ImportError:
+        # 🔴 CHI `ImportError`. Chu thich cu ghi "nha cung cap chua cau hinh",
+        #    nhung `bo_lam_moi()` chi TRA VE mot closure — cau hinh doc BEN
+        #    TRONG no, luc goi. Nen "chua cau hinh" khong the nem o day, va
+        #    `except Exception` dang boc mot ca khong ton tai, trong khi nuot
+        #    that nhung loi THAT trong `oauth_google` (vd mot `NameError` do
+        #    go sai ten) thanh "credential nay khong phai OAuth".
+        lam_moi = None      # credential khong phai OAuth van dung duoc
     return kho.lay_de_dung(db, ref, owner_id=owner_id, run_id=run_id,
                            node_id=node_id, lam_moi=lam_moi)
 
@@ -131,7 +137,12 @@ def _doc_artifact(db, owner_id: str, ref: str) -> bytes:
         # ⛔ Kiểm chủ sở hữu, ⛔ không chỉ "có tồn tại": một `artifact_ref`
         #    đoán được của người khác là một đường đọc tệp của người khác.
         raise LoiHandler(f"dau_vao_sai: artifact {ref!r} khong thuoc ve ban")
-    return storage.get_storage().get(a.key)
+    # 🔴 `Storage` KHONG co `.get` — giao dien la `.open(key) -> BinaryIO`
+    #    (`platform_core/storage.py:68`). Ban cu nem `AttributeError` o
+    #    dung duong doc artifact dau vao cua job connector, va bo test
+    #    khong thay vi khong bai nao di qua day voi mot artifact that.
+    with storage.get_storage().open(a.key) as f:
+        return f.read()
 
 
 def handle(params: dict, ctx=None) -> dict:
@@ -139,10 +150,28 @@ def handle(params: dict, ctx=None) -> dict:
     if not meta:
         raise LoiHandler("loi_he_thong: job connector thieu `_connector`")
     loai = str(meta.get("node_type") or "")
-    with get_session() as db:
+    # 🔴 `get_session()` la mot GENERATOR (kieu dependency cua FastAPI), khong
+    #    phai context manager. `with get_session() as db:` nem
+    #    `TypeError: 'generator' object does not support the context manager
+    #    protocol` — tuc CUA VAO nay chet ngay dong dau, cho MOI job connector.
+    #
+    # ⛔ Bo test cu khong thay vi moi bai goi THANG `_chay_youtube`/`_chay_piece`.
+    #    Chung do phan ben trong va bo qua dung cai cua production di qua.
+    #    `test_3504::test_CUA_VAO_handle_mo_duoc_phien_CSDL` nay chot cho do.
+    #
+    # ⭐ Dung khuon san co cua kho (`runtime_noi_bo/luong.py::_phien_moi`):
+    #    lay generator, `next()` de co phien, va `finally` de dong.
+    gen = get_session()
+    db = next(gen)
+    try:
         if loai == "connector.youtube.upload":
             return _chay_youtube(db, params, meta)
         return _chay_piece(db, params, meta)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
 
 
 def _kich_thuoc(x) -> int:

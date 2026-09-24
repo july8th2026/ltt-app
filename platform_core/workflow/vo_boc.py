@@ -58,6 +58,8 @@ from __future__ import annotations
 
 import ctypes
 import os
+
+import pywintypes
 import subprocess
 from ctypes import wintypes
 from dataclasses import dataclass, field
@@ -371,7 +373,9 @@ def chay(argv, *, ra_log: str, ten_vo: str = TEN_VO_MAC_DINH,
         kernel32.GetExitCodeProcess(pi.hProcess, ctypes.byref(ma))
         try:
             so = job_object.so_lieu(h_job)
-        except Exception:  # noqa: BLE001 — số đo không được làm hỏng lượt chạy
+        except (pywintypes.error, OSError):
+            # So do khong duoc lam hong luot chay. `pywintypes.error` ke thua
+            # thang `Exception` nen phai ke ten no rieng.
             so = {}
         return KetQuaVo(ma_thoat=int(ma.value), het_gio=het_gio,
                         so_lieu=so, sid=sid)
