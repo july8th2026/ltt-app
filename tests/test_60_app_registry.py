@@ -417,7 +417,18 @@ def test_platform_never_imports_an_app():
 #:    mang phien ban), roi `server/app.py` suy tien to tu registry MOT lan luc
 #:    khoi dong. Lam duoc thi BO CA HAI khoi danh sach — banh coc co lai, dung
 #:    chieu. Ghi trong plan lon muc 5.
-MIEN_TRU_SLUG = frozenset({"agent", "nexus", "ltt_llm", "lttcode"})
+#: [!] `connector_runner` va `thumbnail` them 24/09, theo DUNG tieu chi viet
+#:    ngay duoi: nen tang so huu namespace, app duoc dat ten THEO no.
+#:
+#:    · `connector_runner` — thu muc Node `connector_runner/` o GOC kho LA ha
+#:      tang cua nen tang (`connector.py` tro toi no, `catalog.json` sinh ra
+#:      `piece.*`). `apps/connector_runner` la vo boc job goi no, dat ten theo
+#:      no. ⛔ Khong phai chieu nguoc lai.
+#:    · `thumbnail` — la TEN TRUONG cua YouTube Data API trong luoc do
+#:      `connector.youtube.upload`. Nen tang can dung chu do vi YouTube dung
+#:      chu do; `apps/thumbnail` chi trung mot tu thong dung.
+MIEN_TRU_SLUG = frozenset({"agent", "nexus", "ltt_llm", "lttcode",
+                           "connector_runner", "thumbnail"})
 
 #: Nền tảng = `platform_core/` **và** `server/`. Thêm `server/` ngày 23/09:
 #: tầng route là chỗ dễ đi vòng registry nhất, và nó đã đi vòng thật
@@ -462,6 +473,26 @@ def _TEN_CO_HOC() -> tuple:
     return tuple(sorted(ten, key=len, reverse=True))
 
 
+def _co_slug(text: str, slug: str) -> bool:
+    """`slug` co xuat hien nhu MOT TOKEN TRON VEN trong `text` khong.
+
+    [!] Vi sao khong dung `slug in text`: `auto_scan_video` la TIEN TO cua
+        `auto_scan_video_final`, va `docs/auto_scan_video_final/` la mot thu
+        muc TAI LIEU, khong phai mot tham chieu app. Phep `in` tho khong phan
+        biet duoc hai dinh danh KHAC NHAU chi vi mot cai la doan dau cua cai
+        kia.
+
+    [*] Sieu chat hon, khong long tay hon: mot tham chieu app THAT bao gio
+        cung viet dung slug thanh mot token — `app.slug == "anhnoibo"`,
+        `bang.get("lttvideo")`, `"ltt_llm:cong_im_lang"`. Ranh gioi token
+        van bat het nhung ca do; no chi bo cac ca slug nam LOT trong mot
+        dinh danh dai hon, va nhung ca do chua bao gio la tham chieu app.
+    """
+    import re as _re
+    return _re.search("(?<![A-Za-z0-9_])" + _re.escape(slug)
+                      + "(?![A-Za-z0-9_])", text) is not None
+
+
 def _slug_go_cung() -> dict:
     """`{slug: {tệp…}}` — slug app xuất hiện trong MÃ CHẠY ĐƯỢC của nền tảng.
 
@@ -475,7 +506,7 @@ def _slug_go_cung() -> dict:
                 continue
             text = _boc_ten_co_hoc(ma_thuc_thi(path.read_text(encoding="utf-8")))
             for slug in slugs:
-                if slug in text:
+                if _co_slug(text, slug):
                     ra.setdefault(slug, set()).add(
                         str(path.relative_to(ROOT)).replace("\\", "/"))
     return ra
@@ -559,6 +590,20 @@ def test_boc_ten_co_hoc_KHONG_lam_mu_chot():
     assert "lttvideo" in _boc_ten_co_hoc('bang.get("lttvideo")'), (
         "boc ten tep tinh da an ca mot tra cuu app that"
     )
+
+
+def test_ranh_gioi_token_KHONG_lam_mu_chot():
+    """Chot cho `_co_slug`. Neu no noi tay thi `test_no_app_slug...` thanh vo
+    dung ma van xanh — nen cho no do o ca hai chieu."""
+    # Chieu BO DUNG: slug nam LOT trong mot dinh danh dai hon.
+    assert not _co_slug('TEP = GOC / "docs" / "auto_scan_video_final"',
+                        "auto_scan_video")
+    assert not _co_slug("x = taovideo_helper()", "taovideo")
+    # Chieu VAN BAT: moi hinh dang cua mot tham chieu app THAT.
+    assert _co_slug('if app.slug == "auto_scan_video":', "auto_scan_video")
+    assert _co_slug('bang.get("lttvideo")', "lttvideo")
+    assert _co_slug('"ltt_llm:cong_im_lang"', "ltt_llm")
+    assert _co_slug("import apps.taovideo.jobs", "taovideo")
 
 
 def ma_thuc_thi(nguon: str) -> str:
