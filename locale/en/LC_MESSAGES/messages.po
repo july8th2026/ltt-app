@@ -21322,3 +21322,24 @@ msgstr "Who created, changed, revoked, refreshed or used a credential, when, and
 
 msgid "Một lượt kết nối OAuth đang dở: state đã băm, PKCE verifier đã mã hoá, nơi quay về. Dùng một lần, hạn 10 phút."
 msgstr "One OAuth connection in progress: the hashed state, the encrypted PKCE verifier, and where to return. Single use, expires in 10 minutes."
+
+msgid "Node không có trong bản đã publish."
+msgstr "That node is not in the published version."
+
+msgid "Lượt chạy đã kết sổ — khoản giữ đã được nhả."
+msgstr "This run is already settled - its credit hold has been released."
+
+msgid "Lượt chạy không còn khoản giữ nào."
+msgstr "This run no longer has a credit hold."
+
+msgid "Khoản giữ còn %(con)d credit, node này cần %(can)d."
+msgstr "The hold has %(con)d credit left; this node needs %(can)d."
+
+msgid "Node ở trạng thái %(tt)s không được thử lại."
+msgstr "A node in state %(tt)s must not be retried."
+
+msgid "Chỉ thử lại được node đã hỏng (đang %(tt)s)."
+msgstr "Only a failed node can be retried (this one is %(tt)s)."
+
+msgid "Node vừa đổi trạng thái — hãy tải lại."
+msgstr "The node just changed state - please reload."
