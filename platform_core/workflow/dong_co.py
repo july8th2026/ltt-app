@@ -605,8 +605,14 @@ def _ban_trigger(db_factory: Callable) -> int:
     db = db_factory()
     try:
         kq = ban_trigger.ban_den_han(db)
+        # ⭐ Trigger `event` KHÔNG có lịch (`next_fire_at` là `NULL`), nên
+        #    `den_han()` không bao giờ nhặt nó — nó đi bằng con trỏ trên
+        #    `workflow_event`. Thiếu dòng này thì nó chạy được khi gọi tay và
+        #    **không bao giờ** chạy thật: đúng kiểu hỏng im lặng mà
+        #    `trigger.tao` đã từ chối cho một loại chưa đăng ký.
+        ev = ban_trigger.ban_su_kien(db)
         db.commit()
-        return int(kq.get("da_ban") or 0)
+        return int(kq.get("da_ban") or 0) + int(ev.get("da_ban") or 0)
     except Exception:                                    # noqa: BLE001
         db.rollback()
         log.exception("dong co: ban trigger loi, bo qua luot nay")

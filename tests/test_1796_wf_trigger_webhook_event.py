@@ -297,3 +297,34 @@ def test_event_bo_loc_HONG_bi_tu_choi_LUC_TAO(db, wf):
     # …và một bộ lọc HỢP LỆ vẫn qua được.
     assert trigger.tao(db, workflow_id=w.id, owner_id="u1", kind="EVENT",
                        cau_hinh={"loc": "event.status == 'SUCCEEDED'"})
+
+
+def test_vong_dong_co_CO_goi_bo_quet_su_kien(db, wf, monkeypatch):
+    """⛔ Một bộ quét không ai gọi là một bộ quét chết.
+
+    `trigger.event` không có `next_fire_at`, nên `trigger.den_han()` **không
+    bao giờ** trả về nó. Nếu `mot_vong` chỉ gọi `ban_den_han` thì loại này
+    chạy được khi gọi tay và không bao giờ chạy thật — đúng kiểu hỏng im lặng
+    mà `trigger.tao` đã từ chối cho một loại chưa đăng ký.
+    """
+    from platform_core.models import WorkflowRun
+    from platform_core.workflow import cong_cu, dong_co, su_kien, tao_run
+
+    monkeypatch.setattr(cong_cu, "tat_ca", lambda: {})
+    dich = wf()
+    nguon = wf()
+    _trigger_event(db, dich)
+    r = tao_run.tao_run(db, workflow=nguon, owner_id="u1",
+                        trigger_kind="manual", idempotency_key="vd1")[0]
+    su_kien.ghi(db, r.id, "WorkflowCompleted", du_lieu={"status": "SUCCEEDED"})
+    r.status = "SUCCEEDED"
+    db.commit()
+
+    def _mo():
+        from platform_core.db import get_session
+        return next(get_session())
+
+    dong_co.mot_vong(_mo)
+    db.expire_all()
+    assert db.query(WorkflowRun).filter_by(
+        workflow_id=dich.id, trigger_kind="event").count() == 1
