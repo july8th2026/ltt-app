@@ -15,6 +15,8 @@ Ngưỡng của `G42`: **thêm loại thứ tư (thứ năm, thứ sáu) không 
 """
 from __future__ import annotations
 
+import hashlib
+import hmac
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Protocol
 
@@ -22,9 +24,38 @@ from sqlalchemy import select
 
 from platform_core.models import WorkflowTrigger
 
+#: Hạn mức webhook (spec §7.3 `WF_WEBHOOK_MOI_PHUT_MOI_TRIGGER`). Một hằng ở
+#: đây chứ không một bảng cấu hình: spec nói nó **đổi được không cần deploy mã**
+#: nhưng kho này chưa có kho settings chạy-được, và một bảng giả vờ đổi được
+#: tệ hơn một hằng nói thật.
+WEBHOOK_MOI_PHUT_MOI_TRIGGER = 60
+
 
 def _bay_gio() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def bam_token(token: str) -> str:
+    """`sha256` hex của một token webhook — thứ ĐƯỢC LƯU (spec §8.3).
+
+    ⛔ Token thô không bao giờ nằm trong `workflow_trigger.config`: `config` đi
+       ra API quản trị và ra Canvas, và một bí mật đọc lại được là một bí mật đã
+       rò. Ta lưu bản băm, so bằng `hmac.compare_digest`.
+    """
+    return hashlib.sha256(str(token or "").encode("utf-8")).hexdigest()
+
+
+def token_khop(cau_hinh: dict, token: str) -> bool:
+    """So HẰNG THỜI GIAN token gửi lên với `config.token_hash`.
+
+    ⛔ Trigger **chưa đặt** `token_hash` ⇒ `False`, không phải `True`. Một
+       webhook công khai không token là một cửa cho bất kỳ ai tiêu credit của
+       chủ workflow; fail-closed là mặc định duy nhất đúng ở đây.
+    """
+    can = str((cau_hinh or {}).get("token_hash") or "")
+    if not can:
+        return False
+    return hmac.compare_digest(can, bam_token(token))
 
 
 class LoaiTrigger(Protocol):
@@ -117,3 +148,19 @@ def den_han(db, gioi_han: int = 200) -> list[WorkflowTrigger]:
                WorkflowTrigger.next_fire_at <= _bay_gio())
         .order_by(WorkflowTrigger.next_fire_at)
         .limit(max(1, int(gioi_han)))).scalars())
+
+
+def theo_id(db, trigger_id: str) -> Optional[WorkflowTrigger]:
+    """Trigger ĐANG BẬT theo id, hoặc `None`.
+
+    ⭐ "Không có" và "đã tắt" trả về **cùng một thứ**, và đó là chủ ý: cửa
+       `/hooks/wf/{id}` là công khai, nên phân biệt hai ca đó cho người gọi là
+       tặng họ một máy dò id trigger có thật.
+    """
+    t = db.get(WorkflowTrigger, str(trigger_id))
+    return t if t is not None and t.enabled else None
+
+
+__all__ = ["SO_DANG_KY", "WEBHOOK_MOI_PHUT_MOI_TRIGGER", "LoaiTrigger",
+           "bam_token", "dang_ky", "den_han", "go_dang_ky", "tao", "theo_id",
+           "token_khop"]

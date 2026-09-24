@@ -1400,6 +1400,19 @@ class Waitpoint(Base):
                                                   nullable=False)
     idempotency_key: Mapped[str] = mapped_column(String(120), default="",
                                                  nullable=False)
+    #: ⭐ HẠN CHỜ (spec §5.7). `NULL` = không hạn — và "không hạn" là một câu
+    #:   trả lời hợp lệ cho `core.wait` mà người soạn cố ý để mở, KHÔNG phải
+    #:   một chỗ bỏ trống. Hạn CỘNG DỒN của cả run (neo `run.created_at`) được
+    #:   `platform_core/workflow/han_cho.py` áp vào chính cột này lúc mở điểm
+    #:   chờ, nên bộ quét hết hạn chỉ phải đọc MỘT cột.
+    het_han_luc: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    #: `fail | route | approve | reject` — làm gì khi hết hạn (spec §5.7).
+    #: ⛔ Danh sách ĐÓNG (`platform_core/workflow/han_cho.py::CHE_DO_HET_HAN`):
+    #: một chuỗi lạ ở đây là một điểm chờ hết hạn mà không ai biết phải xử lý
+    #: ra sao, và nó sẽ đứng tới `TRAN_RUN` 20 giờ **với tiền bị giữ**.
+    che_do_het_han: Mapped[str] = mapped_column(String(16), default="fail",
+                                                nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_bay_gio, nullable=False)
 
@@ -1414,6 +1427,17 @@ class Waitpoint(Base):
         Index("ix_waitpoint_due", "due_at",
               postgresql_where=text("status = 'PENDING' AND due_at IS NOT NULL"),
               sqlite_where=text("status = 'PENDING' AND due_at IS NOT NULL")),
+        # ⭐ Chỉ số của BỘ QUÉT HẾT HẠN, và nó là `(het_han_luc, id)` chứ không
+        #    phải `(het_han_luc)` một mình — vì bộ quét đi bằng **keyset
+        #    cursor** (`cho_doi.quet_het_han`): `WHERE (het_han_luc, id) > (…)`
+        #    chỉ dùng được chỉ số khi chỉ số mang đúng hai cột đó theo đúng thứ
+        #    tự. `OFFSET` thì không cần chỉ số nào — và đó chính là lý do
+        #    `OFFSET` chậm dần theo số hàng đã bỏ qua.
+        Index("ix_waitpoint_het_han", "het_han_luc", "id",
+              postgresql_where=text(
+                  "status = 'PENDING' AND het_han_luc IS NOT NULL"),
+              sqlite_where=text(
+                  "status = 'PENDING' AND het_han_luc IS NOT NULL")),
     )
 
 
@@ -1609,6 +1633,24 @@ class WorkflowTrigger(Base):
     enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     next_fire_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True)
+    #: `published | pinned` — trigger bắn bản đang publish, hay một bản GHIM.
+    version_mode: Mapped[str] = mapped_column(String(16), default="published",
+                                              nullable=False)
+    pinned_version_id: Mapped[str] = mapped_column(String(36), default="",
+                                                   nullable=False)
+    #: Con trỏ poll/quét sự kiện (spec §8.4 gọi nó là `cursor`).
+    #:
+    #: ⚠️ Cột tên `con_tro`, KHÔNG phải `cursor`: `CURSOR` là từ khoá dành
+    #:    riêng của PostgreSQL. SQLAlchemy có trích dẫn được, nhưng mọi câu SQL
+    #:    gõ tay (`psql`, script vận hành, một `ORDER BY` trong một lượt điều
+    #:    tra) thì không — và một cột phải nhớ trích dẫn là một cột sẽ có ngày
+    #:    ai đó quên.
+    con_tro: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    last_fired_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    #: Số lần bắn LỖI LIÊN TIẾP. 5 lần ⇒ tự tắt trigger (spec §11.4).
+    loi_lien_tiep: Mapped[int] = mapped_column(Integer, default=0,
+                                               nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_bay_gio, nullable=False)
 
