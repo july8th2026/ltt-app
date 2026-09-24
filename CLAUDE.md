@@ -37,7 +37,9 @@ docs/00_LTT_OPERATING_CONTRACT.md      ← đọc trước việc thực chất
                      được thì HẠ CẤP xuống `nhanh` — giữ mọi bước tĩnh, bỏ bộ test
                      đầy đủ, và KHAI RA rằng bộ test không được phủ
    GẶP LỖI        sửa TẠI CHỖ -> chạy lại ĐÚNG phép đã đỏ -> đi tiếp
-   GỘP main       giữa phiên: test nhắm xanh (+ L1/L2 khi lan nhiều thành phần) — ⛔ không L3 để gộp
+   GỘP main       giữa phiên: test nhắm xanh là ĐỦ — ⛔ không L3 để gộp
+   XONG MỘT PHASE test nhắm xanh -> gộp `main` -> phase kế. ⛔ KHÔNG gate để
+                  "đóng phase" (chủ dự án chốt 24/09: **L1 chỉ chạy ở CUỐI PLAN**)
    KẾT THÚC PHIÊN (hết PHIÊN LÀM VIỆC — ⛔ không phải hết một phase, task,
                   nhánh hay một lần gộp `main`)
                   commit hết -> build frontend nếu đổi -> kiểm máy (luật 3)
