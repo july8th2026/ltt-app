@@ -58,7 +58,23 @@ biết trước.
 
 trong khi bản khai là `GiaiDoan(COMPOSE, …, sau=(TIMING_ALIGN,))`.
 
-### Vì sao hôm nay nó KHÔNG hỏng, và vì sao nó vẫn là một khoản nợ
+### ⚠️ ĐÍNH CHÍNH (cùng ngày) — mục §2 ở trên phát biểu quá một bậc
+
+Bảng trên đúng về **khai trực tiếp vs đọc trực tiếp**. Nhưng **bao đóng bắc cầu**
+của `sau` **phủ hết** mọi lần đọc thật — kiểm tận dòng, cả 12 giai đoạn `OK`. Nên:
+
+* lịch chạy và vô hiệu hoá **đúng hôm nay**, và đúng **nhờ bao đóng**;
+* khoản nợ thật là: **bao đóng đó chịu lực mà không được khai**.
+
+⛔ Và một lỗi nữa trên đường chưa đo được: `features.py` (quanh dòng 263) ghi một
+sự cố **đã xảy ra thật** cùng họ — chạy lại `media_prepare` → job `audio_prepare`
+**cũ của lượt trước vẫn chạy** → `transcribe` chạy trên bản tiếng của **lượt
+trước**. Kèm câu đáng nhớ: *"một lỗi chỉ hỏng đôi khi thì trước đó nó vẫn hỏng, chỉ
+là chưa ai thấy"*. ⇒ Đường **chạy lại / vô hiệu hoá một phần** là chỗ quan hệ hẹp
+**đã cắn một lần**, nên N-08 **không** phải *"vô hại hôm nay"* mà là **"chưa đo
+trên đường chạy lại"**.
+
+### Vì sao hôm nay nó KHÔNG hỏng trên lượt chạy TỪ ĐẦU
 
 Chuỗi hiện tại là một **đường gần thẳng**, nên mọi giai đoạn chưa khai đều tình cờ
 đã `succeeded` trước. Chính `pipeline.ha_nguon_cua` nói thẳng điều đó:
