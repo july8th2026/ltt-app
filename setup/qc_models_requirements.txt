@@ -1,14 +1,25 @@
 # QC models venv (C:\LTTPlatform\qc-venv) - Auto Scan Video final QC.
 # Pinned to the same torch build as whisperx-venv (RTX 50xx needs cu128).
 # Install: setup\cai_qc_models.ps1   Licenses: docs\auto_scan_video_final\THIRD_PARTY_METRICS.md
+#
+# ============================================================================
+#  HAI LOAI, DUNG GOP. Duoi day la goi TRUC TIEP - thu TA CHON. Cay bac cau
+#  (pip tu giai) duoc ghi o CUOI tep nhu mot ANH CHUP, khong phai lenh cai.
+#
+#  VI SAO GHIM CHINH XAC (25/09): venv nay chay BO DO - MetricX, OCR, SQUIM,
+#  ECAPA. Mot goi troi phien ban thi so CU va so MOI khong con so duoc voi
+#  nhau, va khong gi keu len: bang van ra so, chi la hai cot do hai thu khac
+#  nhau. Vi the `safetensors` / `soundfile` (truoc khong ghim) va `numpy`
+#  (truoc chi chan tran `<2.6`) nay ghim dung ban DANG CHAY THAT.
+# ============================================================================
 --extra-index-url https://download.pytorch.org/whl/cu128
 torch==2.8.0+cu128
 torchaudio==2.8.0+cu128
 transformers==4.57.6
 sentencepiece==0.2.1
-safetensors
-numpy<2.6
-soundfile
+safetensors==0.8.0
+numpy==2.5.3
+soundfile==0.14.0
 jiwer==4.0.0
 # ASR luot cuoi (bo do giong, asv-final 22/09) - cung ban voi whisperx-venv.
 faster-whisper==1.2.1
@@ -21,3 +32,47 @@ onnxruntime==1.30.0
 # Weights di kem goi (distillmos/weights/distill_mos_v7.pt), khong tai them.
 distillmos==0.9.1
 xls-r-sqa==0.1.0
+
+# ============================================================================
+#  ⚠️ MOT KHOANG HO DA DO, CHUA XU - `pip check` tren qc-venv dang chay:
+#
+#      xls-r-sqa 0.1.0 requires librosa, which is not installed.
+#
+#  Do 25/09: `import distillmos` va `import xls_r_sqa` deu NAP DUOC, nen duong
+#  cham MOS hom nay khong gay - `librosa` chi duoc dung o mot nhanh chua chay
+#  toi. ⛔ KHONG tu them `librosa` vao day: no keo them mot cay phu thuoc
+#  (numba/llvmlite) vao dung cai venv dang phuc vu phep do cua ba lan khac, va
+#  do la mot quyet dinh cua dieu phoi chu khong phai mot dong requirements.
+#  ⇒ Ghi ra day de no thoi la mot dieu chi may biet: hoac khai `librosa`, hoac
+#    khai rang nhanh dung no la nhanh CHET.
+# ============================================================================
+
+# ============================================================================
+#  ANH CHUP CAY BAC CAU - pip freeze tren C:\LTTPlatform\qc-venv, 25/09/2026.
+#
+#  ⛔ DAY KHONG PHAI DANH SACH CAI. `pip install -r` chi doc phan TREN; dong
+#     duoi deu la chu thich. Chung o day de tra loi MOT cau hoi ma phan tren
+#     khong tra loi duoc: "ban dung de do so cu la ban nao". Khi mot phep do
+#     lech ma phan tren khong doi, thu phai so la bang nay.
+#
+#  ⭐ Va de phan biet duoc hai thu ma `deptry` da day ta hom 24/09: mot goi
+#     THIEU HAN khac han mot goi CO MA KHONG DUOC KHAI (DEP003). Goi trong
+#     bang nay thuoc loai thu hai - venv co chung vi pip keo theo, khong vi ta
+#     chon. Doi mot dong TREN co the doi im lang mot dong DUOI.
+#
+#  antlr4-python3-runtime==4.9.3   certifi==2026.7.22        cffi==2.1.1
+#  charset-normalizer==3.5.1       click==8.5.0              colorama==0.4.6
+#  colorlog==6.12.0                filelock==4.0.1           flatbuffers==25.12.19
+#  fsspec==2026.9.0                huggingface-hub==0.36.2   idna==3.20
+#  jinja2==3.1.6                   markupsafe==3.0.3         mpmath==1.3.0
+#  networkx==3.7                   omegaconf==2.3.1          opencv-python==5.0.0.93
+#  packaging==26.3                 pillow==12.3.0            protobuf==7.36.2
+#  pyclipper==1.4.0                pycparser==3.0            pyyaml==6.0.3
+#  rapidfuzz==3.14.6               regex==2026.9.10          requests==2.34.2
+#  setuptools==84.0.0              shapely==2.1.2            sympy==1.14.0
+#  six==1.17.0                     tokenizers==0.22.2        tqdm==4.70.1
+#  typing-extensions==4.16.0       urllib3==2.8.0
+#
+#  Doi chieu 25/09: 15 goi truc tiep + 35 bac cau = 50, khop dung `pip freeze`.
+#  Khong goi nao trong venv nam ngoai bao dong cua 15 dong tren (khong mo coi).
+# ============================================================================
