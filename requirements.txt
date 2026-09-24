@@ -101,3 +101,17 @@ rapidfuzz>=3.9,<4.0
 #    `reverse=True` -- thu ta CAN de tim moc lich BI LO gan nhat khi may vua bat
 #    lai (n8n#34628 "Missed schedule trigger can cause unexpectedly long delays").
 cronsim>=2.7,<3.0
+
+# Job object cua vo boc connector (`platform_core/workflow/job_object.py`).
+#
+# [!] `win32job` la BAT BUOC, khong phai tuy chon: no dat tran bo nho va
+#    KILL_ON_JOB_CLOSE cho tien trinh runner. Khong co no thi ma piece chay
+#    khong tran tren may production.
+#
+# [*] Vi sao dong nay den MUON, sau khi production da do mot lan (24/09):
+#    `job_object.py` import `pywintypes` o MUC MODULE, va no nam tren duong
+#    import cua `server.app` (nut_loi/__init__ -> connector -> job_object).
+#    Venv phat trien da co pywin32 san (mot goi khac keo vao), nen KHONG mot
+#    phep kiem nao thay thieu -- chi venv SACH cua server moi thay. Bai hoc:
+#    goi chi co mat "nho phuc" trong venv dev la mot phu thuoc CHUA khai bao.
+pywin32>=306
