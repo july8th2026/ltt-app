@@ -513,8 +513,19 @@ def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
     bg, bd, qc = _json(ban_ghi), _json(ban_dich), _json(bao_qc)
     # ⭐ Chi giu tang vat khi lan chay KHONG dat — mot luot xanh khong can bang
     #    chung, va chep hai tep media cho moi luot xanh la mot cai gia tra mai.
-    tang_vat = ({} if run.status == "done"
-                else _giu_tang_vat(db, kho, run, nhan, giai_doan))
+    # ⛔ **Mot loi TRONG buoc giu tang vat khong duoc xoa bao cao cua lan
+    #    chay.** Buoc nay chi chay khi lan chay da hong, tuc dung luc bao cao la
+    #    thu duy nhat con lai. Do that 24/09: mot nhan co dau hai cham lam
+    #    `mkdir` nem, va ca bao cao cua luot do bien mat cung no — nguoi doc thay
+    #    `FileNotFoundError: 'B:'` chu khong thay vi sao lan chay hong.
+    #
+    # 🔑 Nen loi o day duoc GHI VAO bao cao chu khong duoc nem ra.
+    tang_vat: dict = {}
+    if run.status != "done":
+        try:
+            tang_vat = _giu_tang_vat(db, kho, run, nhan, giai_doan)
+        except Exception as exc:         # noqa: BLE001
+            tang_vat = {"_loi_giu_tang_vat": f"{type(exc).__name__}: {exc}"}
 
     return {
         "nhan": nhan, "preset": preset, "che_do_giong": che_do_giong,
@@ -742,6 +753,17 @@ def _chan_tai_nguyen_ban(bc: dict) -> None:
     ]))
 
 
+def _ten_an_toan(nhan: str) -> str:
+    """`nhan` -> mot ten thu muc dung duoc tren Windows.
+
+    Giu chu, so, `-`, `_`, `.`; moi thu khac thanh `_`. Khong dung `re` cho mot
+    phep loc mot dong, va khong cat ngan: mot nhan bi cat mat duoi la hai luot
+    khac nhau ghi vao cung mot thu muc.
+    """
+    an_toan = "".join(c if (c.isalnum() or c in "-_.") else "_" for c in nhan)
+    return an_toan.strip("._") or "khong_ten"
+
+
 def _giu_tang_vat(db, kho, run, nhan: str, giai_doan: list[dict]) -> dict:
     """Chep ban phoi + ban giao ra mot cho SONG LAU khi lan chay khong dat QC.
 
@@ -761,7 +783,23 @@ def _giu_tang_vat(db, kho, run, nhan: str, giai_doan: list[dict]) -> dict:
     import shutil
     import tempfile
 
-    thu_muc = Path(tempfile.gettempdir()) / "asv_tang_vat" / nhan
+    # 🔴 **`nhan` la mot NHAN, khong phai mot doan duong dan.**
+    #
+    #    Do that 24/09: lan `nghiem-thu-v2` dat nhan `"B::zh->vi::localize_..."`
+    #    va dong duoi day no thanh `WindowsPath("B::zh->vi::...")`. Windows doc
+    #    `B:` la mot **o dia**, nen `mkdir` nem `[WinError 3] cannot find the
+    #    path specified: 'B:'` — mot thong bao khong nhac mot chu nao den nhan,
+    #    den tang vat, hay den lan chay.
+    #
+    # ⛔ Va no do o dung cho te nhat: `_giu_tang_vat` chi chay khi lan chay
+    #    **KHONG dat**, nen mot nhan xau khong bao gio lo o luot xanh — no cho
+    #    den luot do roi xoa luon bao cao cua luot do.
+    #
+    # ⭐ Nen ham nay phai tu lam sach, chu khong dat dieu kien len nguoi goi:
+    #    mot ham nhan chuoi tu do roi dung no lam duong dan la ham co nghia vu
+    #    lam sach. Mot luat "dung dat hai dau hai cham trong nhan" thi khong ai
+    #    doc, va khong gi kiem.
+    thu_muc = Path(tempfile.gettempdir()) / "asv_tang_vat" / _ten_an_toan(nhan)
     if thu_muc.exists():
         shutil.rmtree(thu_muc, ignore_errors=True)
     thu_muc.mkdir(parents=True, exist_ok=True)

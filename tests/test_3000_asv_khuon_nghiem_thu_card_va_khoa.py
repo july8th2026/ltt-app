@@ -257,3 +257,52 @@ def test_vong_lap_worker_cua_khuon_NGU_ngoai_khoi_khoa():
     assert not trong_with, (
         f"co `time.sleep` trong khoi giu khoa (dong {trong_with}) — do la "
         f"'giu khoa luc CHO', dung dieu luat 23/09 cam")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §3. Mot NHAN khong duoc dung lam duong dan, va buoc giu tang vat khong duoc
+#      xoa bao cao cua lan chay
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_nhan_co_dau_HAI_CHAM_khong_thanh_mot_O_DIA():
+    """Do that 24/09: nhan `B::zh->vi::...` -> `WindowsPath('B::...')`.
+
+    Windows doc `B:` la mot **o dia**, nen `mkdir` nem `[WinError 3] cannot find
+    the path specified: 'B:'` — mot thong bao khong nhac mot chu nao den nhan,
+    tang vat, hay lan chay.
+    """
+    from tests.test_448_asv_v4_e2e_nghiem_thu import _ten_an_toan
+
+    ten = _ten_an_toan("B::zh->vi::localize_preserve_picture")
+    assert ":" not in ten and ">" not in ten, ten
+    # ⛔ Va khong duoc cat ngan: hai luot khac nhau bi cat mat duoi se ghi vao
+    #    CUNG mot thu muc, tuc luot sau xoa tang vat cua luot truoc.
+    assert _ten_an_toan("A::zh->vi::x") != _ten_an_toan("A::zh->vi::y")
+    assert _ten_an_toan("") == "khong_ten"
+
+
+def test_giu_tang_vat_HONG_thi_bao_cao_van_ve(monkeypatch, tmp_path):
+    """⛔ Buoc giu tang vat chi chay khi lan chay ĐÃ hong.
+
+    Tuc no chay dung luc bao cao la thu duy nhat con lai — nen mot loi trong no
+    phai duoc GHI VAO bao cao, khong duoc nem ra va mang bao cao di theo.
+    """
+    import ast
+    import inspect
+
+    from tests import test_448_asv_v4_e2e_nghiem_thu as t448
+
+    than = ast.parse(inspect.getsource(t448._mot_luot).lstrip())
+    # Tim loi goi `_giu_tang_vat`, va no phai nam trong mot `try`.
+    trong_try = []
+    for nut in ast.walk(than):
+        if not isinstance(nut, ast.Try):
+            continue
+        for con in nut.body:
+            for n in ast.walk(con):
+                if (isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+                        and n.func.id == "_giu_tang_vat"):
+                    trong_try.append(n)
+    assert trong_try, (
+        "`_giu_tang_vat` duoc goi NGOAI `try` — mot loi trong buoc giu bang "
+        "chung se xoa chinh bao cao cua lan chay hong (do that 24/09)")
