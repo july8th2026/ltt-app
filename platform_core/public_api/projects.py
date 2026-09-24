@@ -45,12 +45,21 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def slugify(name: str) -> str:
+def chuan_hoa_slug(name: str) -> str:
     """"Trang bán hàng" → "trang-ban-hang", not "trang-b-n-h-ng".
 
     Folding the diacritics first matters on a Vietnamese platform: dropping them
     turns most project names into a row of dashes, which is unreadable in the
     one place a slug exists to be readable — a log line and a support ticket.
+
+    ⭐ This is the repository's ONLY slug normaliser, and it is deliberately
+    *pure*: no length cap, no fallback value. Those two are policies of whoever
+    is storing the slug, not properties of the transliteration — the `slug`
+    column wants 64 characters and a non-empty default, while the workflow
+    expression function `slugify()` (`platform_core/workflow/ham_bieu_thuc.py`)
+    wants neither, because inventing a value the author never typed is a bug
+    there. Splitting them the other way — two normalisers, one per caller — is
+    how one string starts producing two different slugs.
     """
     import unicodedata
 
@@ -63,8 +72,12 @@ def slugify(name: str) -> str:
     decomposed = unicodedata.normalize("NFKD", text)
     folded = "".join(char for char in decomposed
                      if not unicodedata.combining(char))
-    slug = _SLUG_RE.sub("-", folded).strip("-")
-    return slug[:64] or DEFAULT_PROJECT_SLUG
+    return _SLUG_RE.sub("-", folded).strip("-")
+
+
+def slugify(name: str) -> str:
+    """Slug for the `api_projects.slug` column: capped, never empty."""
+    return chuan_hoa_slug(name)[:64] or DEFAULT_PROJECT_SLUG
 
 
 def create(db, *, user_id: str, name: str, now: datetime | None = None) -> ApiProject:
