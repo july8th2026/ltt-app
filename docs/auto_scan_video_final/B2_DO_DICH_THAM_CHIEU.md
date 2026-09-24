@@ -228,26 +228,70 @@ Sổ đúng là `THIRD_PARTY_METRICS.md` — *"mỗi câu hỏi hỏi đúng M�
 
 ---
 
-## §6. ⭐ Đo bản dịch của ta — **đo thứ ĐÃ CÓ**, ⛔ không sinh bản mới
+## §6. ⭐ BẢN DỊCH CỦA TA trên **FLORES** — chrF++ (ngoài vòng tròn LLM) + MetricX QE
+
+Nguồn: `bang_chung/b2_flores/flores_dich_ltt-3.5_100dong_3luot.json` (làn B2 sinh).
+Cấu hình **ghi trong thân tệp**: `ltt-3.5` · **t = 0,0** · ✅ **ép lược đồ** · lời nhắc v3 ·
+**100 dòng** FLORES dev (0–99) · **3 lượt** · 0 ô rỗng/300.
+⭐ `tham_chieu_vi` ⛔ **không** đi vào lời nhắc — chỉ cột `zh` được gửi (⛔ không rò đáp án).
+Lệnh: `flores-3luot`.
+
+### ⚠️ Ba giới hạn — đọc **cùng** số, ⛔ không để cuối
+
+1. **FLORES có ~10 % dòng lỗi rõ** (KTC [5,5 ; 17,4]) ⇒ *"khớp FLORES"* ⛔ không bằng *"đúng"*.
+2. 🔴 **Tỉ lệ độ dài 0,897** (ta / tham chiếu, theo từ; từng lượt 0,906 · 0,891 · 0,897).
+   ⭐ Một điểm chrF++ ⛔ **không có tỉ lệ độ dài đi kèm là một điểm ⛔ không đọc được** —
+   nó lẫn **chất lượng** với **độ dài**. Lượt sinh **đầu** của tệp này đặt ngân sách
+   18 âm tiết ⇒ tỉ lệ **0,41** ⇒ chrF++ khi ấy đo **ĐỘ NÉN**. Làn B2 đã sửa (ngân sách
+   suy từ **NGUỒN**) ⇒ **0,90**. ⭐ Số dưới đây là của bản **đã sửa**.
+3. **MetricX** ⛔ vẫn treo trên cảnh báo 🔴 (1) **vòng tròn LLM**; ⭐ **`chrF++` thì KHÔNG**.
+
+### ⭐ chrF++ — **tín hiệu DUY NHẤT ⛔ không dính vòng tròn LLM**
+
+So thẳng với **bản dịch NGƯỜI** của FLORES, ⛔ không qua một LLM nào.
+
+| lượt | chrF++ (cụm) |
+|---|---|
+| 1 | 44,84 |
+| 2 | 45,47 |
+| 3 | 45,17 |
+| ⭐ **trung vị** | **45,17** · khoảng **[44,84 ; 45,47]** (biên độ **0,63**) |
+
+**Mốc neo trên CHÍNH 100 dòng ấy** — ⛔ một điểm chrF++ trần trụi không đọc được:
+
+| mốc | chrF++ |
+|---|---|
+| **trần** — tham chiếu so với chính nó | 100,00 |
+| ⭐ **bản dịch của ta** | **45,17** |
+| **sàn** — bản dịch của một dòng KHÁC | 14,21 |
+| để nguyên tiếng Trung (⛔ không dịch) | 3,34 |
+
+⇒ Trên dải dùng được `[14,21 ; 100]`, bản dịch của ta ở **≈ 36 %** quãng đường.
+
+⚠️ ⛔ **Đừng đọc 45,17 thành "đúng 45 %".** chrF++ **một tham chiếu** phạt nặng mọi
+**diễn đạt khác mà vẫn đúng** — và tiếng Việt có rất nhiều cách nói cùng một ý.
+Con số này đọc được theo **mốc neo** và theo **so sánh giữa các cấu hình**,
+⛔ không đọc được như một tỉ lệ đúng/sai.
+
+⭐ **Một phát hiện phụ đáng giữ:** đường dịch ⛔ **không tái lập** ở mức **đoạn**
+(3 lượt khác nhau ở mọi đoạn), ⭐ **nhưng** chrF++ **cụm** gần như đứng yên
+(biên độ **0,63** trên thang 100). ⇒ ⭐ *"Không tái lập"* ⛔ **không** kéo theo
+*"số đo không ổn định"* — cái lắc nằm ở **cách diễn đạt**, ⛔ không ở **chất lượng tổng thể**.
+⚠️ Điều này ⛔ **không** miễn cho ta luật ≥ 3 lượt: ta biết được nó **vì** đã chạy 3 lượt.
+
+### MetricX QE trên cùng tệp
+
+*(đang xếp hàng sau lượt `nghiem-thu-asv` đang giữ `cpu_nhieu` — điền ngay khi xong)*
+
+---
+
+## §6b. Đo bản dịch **đoạn phim** đã có — ⛔ không sinh bản mới
 
 ⭐ ⛔ Không đụng sổ khoá production. Đo thẳng bằng chứng **đã commit** của làn B2
 (nhánh `phien/asvf-nghiem-thu-v2`, **chỉ đọc**). Lệnh: `qe-co-san`.
 
-### 🔴 chrF++ ⛔ KHÔNG đo được — và đây là con số ta **mất**
-
-⭐ chrF++ là **tín hiệu DUY NHẤT hiện không dính vòng tròn LLM** (mục 🔴 (1)): nó so
-với **bản dịch người của FLORES**, ⛔ không qua một LLM nào. **Nhưng** mọi bản dịch
-làn B2 đã sinh đều là **đoạn PHIM của khách** — ⛔ **không có bản dịch tham chiếu**.
-chrF++ ⛔ **không có gì để so**.
-
-⇒ ⭐ **Cấu hình còn THIẾU, gọi đúng tên để điều phối nhờ làn B2 sinh:**
-
-> **`FLORES dev zh→vi, ≥ 100 dòng, ltt-3.5, t = 0,0, ÉP LƯỢC ĐỒ, ≥ 3 lượt`**
-> (⛔ không phải đoạn phim — phải là **chính dòng FLORES**, vì chỉ FLORES mới có
-> bản dịch người để chrF++ so.)
-
-Có tệp đó thì `bench --dich luot1 luot2 luot3` chạy **một lệnh** và trả cả chrF++
-lẫn MetricX QE. ⛔ Làn này ⛔ không tự sinh.
+⚠️ **Đoạn phim ⛔ KHÔNG có bản dịch tham chiếu** ⇒ ở §6b này chỉ đo được **MetricX QE**;
+chrF++ ⛔ không có gì để so. (Đó chính là lý do §6 phải chạy trên **FLORES**.)
 
 ### MetricX QE trên bản dịch đã có — **ba cấu hình, ⛔ KHÔNG gộp**
 

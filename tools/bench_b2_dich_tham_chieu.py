@@ -753,6 +753,124 @@ def lenh_qe_co_san(a: argparse.Namespace) -> int:
     return 0
 
 
+def lenh_flores_3luot(a: argparse.Namespace) -> int:
+    """Cham ban dich FLORES cua ta: chrF++ (co tham chieu) + MetricX QE, >= 3 luot.
+
+    Doc `b2_flores/flores_dich_*.json`: `muc[] = {dong_flores, nguon_zh,
+    tham_chieu_vi, cac_luot[]}` — moi phan tu `cac_luot` la MOT LUOT tren CUNG
+    mot dong ⇒ ⭐ khoang giua chung do **do khong tai lap**, dung nghia.
+
+    ⭐ Hai bo do bao RIENG, ⛔ khong gop thanh mot diem:
+      - `chrF++` so voi **ban dich NGUOI** cua FLORES ⇒ ⭐ tin hieu DUY NHAT
+        ⛔ KHONG dinh vong tron LLM.
+      - `MetricX QE` ⛔ van treo tren canh bao vong tron LLM.
+
+    ⚠️ **Ti le do dai di kem MOI diem chrF++.** Mot ban dich ngan hon han tham
+       chieu se bi chrF++ tru diem vi **DO DAI**, va nguoi doc se ket luan nham la
+       **CHAT LUONG**. Lan sinh dau tien cua tep nay dat ngan sach 18 am tiet =>
+       ti le 0,41; sua (ngan sach suy tu NGUON) => 0,90.
+    """
+    d = json.loads(pathlib.Path(a.tep).read_text(encoding="utf-8"))
+    muc = d["muc"]
+    nhan = d.get("⭐ nhan_cau_hinh", {})
+    so = {len(m["cac_luot"]) for m in muc}
+    if so != {a.so_luot}:
+        raise SystemExit(f"so luot khong deu: {so} (mong doi {a.so_luot})")
+    if a.so_luot < 3:
+        raise SystemExit("can >= 3 luot — duong dich khong tai lap duoc")
+    khoa = [m["dong_flores"] for m in muc]
+    ref = [m["tham_chieu_vi"] for m in muc]
+
+    try:
+        from sacrebleu.metrics import CHRF
+    except ImportError:
+        raise SystemExit("chua cai `sacrebleu` — ⛔ khong bo qua duoc: chrF++ la "
+                         "tin hieu duy nhat ngoai vong tron LLM") from None
+    do = CHRF(word_order=2)
+
+    luot = []
+    for k in range(a.so_luot):
+        hyp = [m["cac_luot"][k] for m in muc]
+        r: dict[str, object] = {"luot": k + 1, "n": len(hyp)}
+        r["chrf_cum"] = do.corpus_score(hyp, [ref]).score
+        r["chrf_dong"] = [do.sentence_score(h, [t]).score
+                          for h, t in zip(hyp, ref, strict=True)]
+        # ⚠️ Ti le DO DAI — phai di kem chrF++, xem docstring.
+        tl = [len(h.split()) / max(1, len(t.split()))
+              for h, t in zip(hyp, ref, strict=True)]
+        r["ti_le_do_dai_trung_vi"] = statistics.median(tl)
+        r["ti_le_do_dai_cum"] = (sum(len(h.split()) for h in hyp)
+                                 / max(1, sum(len(t.split()) for t in ref)))
+        luot.append(r)
+
+    if not a.bo_metricx:
+        from apps.asv_gpu.do_luong import metricx
+        cap = [{"ma": f"{k}|{m['dong_flores']}", "nguon": m["nguon_zh"],
+                "dich": m["cac_luot"][k]}
+               for k in range(a.so_luot) for m in muc]
+        diem = metricx.do_dich(cap, ngon_ngu_nguon="zh", ngon_ngu_dich="vi",
+                               thiet_bi=a.thiet_bi, lo=a.lo, timeout_s=7200)
+        for k, r in enumerate(luot):
+            v = [float(diem[f"{k}|{i}"]) for i in khoa]
+            r["metricx_dong"] = v
+            r["metricx_trung_vi"] = statistics.median(v)
+            r["metricx_trung_binh"] = statistics.fmean(v)
+            r["metricx_ktc"] = ktc_trung_binh(v)
+            r["metricx_qua_nguong"] = sum(
+                1 for x in v if x > metricx.NGUONG_DO[("zh", "vi")])
+
+    _in_flores(luot, nhan, a.so_luot)
+    if a.ra:
+        pathlib.Path(a.ra).write_text(json.dumps(
+            {"nhan_cau_hinh": nhan, "luot": luot}, ensure_ascii=False, indent=1),
+            encoding="utf-8")
+    return 0
+
+
+def _in_flores(luot: list[dict], nhan: dict, so_luot: int) -> None:
+    def tt(khoa: str) -> list[float]:
+        return [float(r[khoa]) for r in luot if khoa in r]
+
+    print(f"\n╔═ BAN DICH CUA TA tren FLORES zh->vi · {so_luot} LUOT LAP ═╗")
+    print(f"  cau hinh: {nhan.get('model')} · t={nhan.get('nhiet_do')} · "
+          f"ep_luoc_do={nhan.get('ep_luoc_do')} · loi nhac v{nhan.get('loi_nhac')} · "
+          f"n={nhan.get('so_dong')} dong")
+
+    tl = tt("ti_le_do_dai_trung_vi")
+    print("\n  ⚠️ TI LE DO DAI (ta / tham chieu, theo tu) — ⛔ PHAI doc cung chrF++:")
+    print(f"     tung luot: {' · '.join(f'{x:.3f}' for x in tl)}   "
+          f"⇒ trung vi {statistics.median(tl):.3f}  khoang [{min(tl):.3f} ; {max(tl):.3f}]")
+    print("     (ti le ~1 ⇒ chrF++ doc duoc la CHAT LUONG; ti le thap ⇒ chrF++ "
+          "dang do DO NEN)")
+
+    c = tt("chrf_cum")
+    print("\n  ⭐ chrF++ (cum, CAO la tot) — ⭐ TIN HIEU DUY NHAT ⛔ KHONG dinh vong tron LLM")
+    print("     (so voi ban dich NGUOI cua FLORES, ⛔ khong qua mot LLM nao)")
+    for k, x in enumerate(c, 1):
+        print(f"       luot {k}: {x:.3f}")
+    print(f"     ⭐ trung vi {statistics.median(c):.3f}  "
+          f"khoang [{min(c):.3f} ; {max(c):.3f}]  (bien do {max(c) - min(c):.3f})")
+
+    m = tt("metricx_trung_vi")
+    if m:
+        print("\n  MetricX QE (trung vi moi luot, THAP la tot) — ⚠️ treo tren canh bao VONG TRON LLM")
+        for k, r in enumerate(luot, 1):
+            print(f"       luot {k}: {r['metricx_trung_vi']:.3f}  "
+                  f"(trung binh {r['metricx_trung_binh']:.3f}, "
+                  f"qua nguong 6,0: {r['metricx_qua_nguong']}/{r['n']})")
+        print(f"     ⭐ trung vi {statistics.median(m):.3f}  "
+              f"khoang [{min(m):.3f} ; {max(m):.3f}]  (bien do {max(m) - min(m):.3f})")
+
+        # ⭐ Hai bo do co DONG THUAN khong? Bat dong ⛔ khong phai loi — no noi hai
+        #    bo do nhin hai thu khac nhau, va do la thong tin ta chua co.
+        from scipy.stats import spearmanr
+        rs = [spearmanr(r["chrf_dong"], r["metricx_dong"]).statistic for r in luot]
+        print("\n  ⭐ DONG THUAN chrF++ vs MetricX (Spearman tung dong, moi luot):")
+        print(f"     {' · '.join(f'{x:+.3f}' for x in rs)}  ⇒ trung vi {statistics.median(rs):+.3f}")
+        print("     (am = DONG THUAN, vi chrF++ cao la tot con MetricX thap la tot)")
+    print("\n  ⚠️ FLORES co ~10 % dong loi ro ⇒ 'khop FLORES' ⛔ khong bang 'dung'.")
+
+
 def lenh_ghep(a: argparse.Namespace) -> int:
     d = _doc_tho(a.tho)
     diem = d["metricx"][a.che_do]["dau"]
@@ -865,6 +983,15 @@ def main(argv: list[str] | None = None) -> int:
     x = con.add_parser("xac-thuc", help="bang bon muc + KTC (ngoai khoa)")
     x.add_argument("--tho", required=True)
     x.set_defaults(fn=lenh_xac_thuc)
+
+    f = con.add_parser("flores-3luot", help="chrF++ + MetricX QE tren ban dich FLORES cua ta")
+    f.add_argument("--tep", required=True, help="b2_flores/flores_dich_*.json")
+    f.add_argument("--so-luot", type=int, default=3)
+    f.add_argument("--thiet-bi", default="auto", choices=("auto", "cpu", "cuda"))
+    f.add_argument("--lo", type=int, default=16)
+    f.add_argument("--bo-metricx", action="store_true", help="chi chrF++ (NHE, khong can khoa)")
+    f.add_argument("--ra")
+    f.set_defaults(fn=lenh_flores_3luot)
 
     q = con.add_parser("qe-co-san", help="MetricX QE tren ban dich DA CO cua lan B2")
     q.add_argument("--tep", required=True, nargs="+", metavar="BANG_CHUNG.json")
