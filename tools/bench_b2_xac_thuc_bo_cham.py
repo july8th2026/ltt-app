@@ -540,9 +540,10 @@ def main(argv=None) -> int:
     db, so_khoa = mt._mo_db()
     print(f"[MOI TRUONG] {so_khoa} khoa pool")
     t0 = time.monotonic()
-    fa = tiem = None
+    khoi_fa: dict | None = None
+    tiem: dict | None = None
     if a.pha in ("ca", "fa"):
-        fa = ti_le_bao_dong_gia(a.n, db=db, luot=a.luot, tu=a.tu)
+        khoi_fa = ti_le_bao_dong_gia(a.n, db=db, luot=a.luot, tu=a.tu)
     if a.pha in ("ca", "tiem"):
         tiem = ti_le_bat_loi_tiem(db=db, moi_loai=a.tiem_moi_loai,
                                   luot=a.luot, bo_qua=a.tiem_bo_qua)
@@ -551,7 +552,7 @@ def main(argv=None) -> int:
         "nguong_bao_dong_gia": NGUONG_BAO_DONG_GIA,
         "nguong_bat_loi_tiem": NGUONG_BAT_LOI_TIEM,
         "giay": round(time.monotonic() - t0, 1),
-        "bao_dong_gia": fa, "bat_loi_tiem": tiem,
+        "bao_dong_gia": khoi_fa, "bat_loi_tiem": tiem,
     }
     pathlib.Path(a.ra).write_text(
         json.dumps(ra, ensure_ascii=False, indent=1), encoding="utf-8")
