@@ -11,7 +11,7 @@ Mỗi ngày 02:30, task `LTTStudioBackup` chạy `deploy/windows/backup.ps1` và
 
 | Zip | Nội dung |
 |---|---|
-| `ltt_data_<stamp>.zip` | `config.json`, `*.enc`, `*.db`, `audit_log.jsonl`, **`lttplatform.dump`** (pg_dump -Fc), `voice_goc/` + `files_voice/` (nguồn giọng nói — dữ liệu sinh trắc, W-KHO) |
+| `ltt_data_<stamp>.zip` | `config.json`, `*.enc`, `*.db`, `audit_log.jsonl`, `lttcode_releases.json`, `nexus_versions.json` (sổ đăng ký phát hành — thêm 23/09/2026, W-SOTAY), **`lttplatform.dump`** (pg_dump -Fc), `voice_goc/` + `files_voice/` (nguồn giọng nói — dữ liệu sinh trắc, W-KHO) |
 | `ltt_secrets_<stamp>.zip` | `app.env` (`LTT_TOKEN_ENCRYPTION_KEY`, `LTT_API_KEY_PEPPER`) |
 
 Vì sao tách: một zip chung bị lấy cắp = đọc được token + tấn công khoá API ngoài
@@ -22,6 +22,15 @@ Bản sao lưu **không có** (và cách tái tạo):
 - `api_dist/`, `lttcode_dist/`, `nexus_dist/`, `codex-home/` — sinh lại được.
 - `files/` ngoài `voice/` — nằm trên R2 (R2 là nguồn; `voice/` là local theo
   `LTT_STORAGE_LOCAL_PREFIXES` và đã được vào zip dưới `files_voice/`).
+- `data/translations/` (`en.json`, `vi.json`) — sinh lại được: `setup/2-cai-dat.ps1`
+  robocopy nó từ `$src\data\translations` vào `data\translations` ở **mỗi lần**
+  deploy/update (mục "Tai nguyen nguon di kem code"), nên không cần backup.
+
+Diễn tập 23/09/2026 (`docs/reports/dien-tap-khoi-phuc-2026-09-23.md`, câu 4) đo
+ra `lttcode_releases.json` và `nexus_versions.json` cũng nằm ngoài mẫu lúc đó —
+hai sổ đăng ký phát hành này **không dựng lại được** (chứa chữ ký minisign +
+SHA của từng bản đã phát) nên đã được thêm vào `$patterns` của `backup.ps1`
+cùng ngày và giờ nằm trong `ltt_data_<stamp>.zip` (xem bảng trên).
 
 ## 2. Kinh nghiệm quan trọng nhất (bắt buộc đọc trước)
 
@@ -228,3 +237,21 @@ Chỉ có bản dữ liệu off-site thì khôi phục được **cấu trúc, n
 ⇒ `app.env` phải được cất ở **một nơi thứ ba**, không phải máy production và không phải cùng tài
 khoản đám mây với bản dữ liệu. Ví dụ: trình quản lý mật khẩu, hoặc một USB cất rời. **Đây là
 việc thủ công của chủ dự án — không script hoá, và cố ý không script hoá.**
+
+### Quyết định của chủ dự án 23/09/2026: `app.env` cất ở `D:\LTTBackups-secrets`
+
+`D:\LTTBackups-secrets` nằm trên **ổ D — ổ vật lý khác với ổ C** (nơi
+`C:\LTTPlatform` và `D:\LTTBackups` chạy). Chọn có chủ ý: một ổ hỏng (lỗi đĩa,
+bad sector) không lấy mất cả hai — đây là lớp phòng thủ cho đúng MỘT loại sự
+cố (hỏng ổ đĩa vật lý), không phải "nơi thứ ba" đầy đủ như đoạn trên mô tả.
+
+⚠️ **Những gì `D:\LTTBackups-secrets` KHÔNG che được**, vì `C:` và `D:` vẫn là
+**cùng một máy**:
+
+- **Cháy máy / mất trộm cả máy** — mất cả hai ổ cùng lúc.
+- **Ransomware mã hoá cả hai ổ** — kẻ tấn công có quyền trên máy thấy cả `C:`
+  lẫn `D:` như nhau; tách ổ không tách được quyền truy cập của tiến trình độc hại.
+
+Hai rủi ro này vẫn cần "một nơi thứ ba" thật sự (ngoài máy production) như đoạn
+trên đã nêu — `D:\LTTBackups-secrets` là lớp phòng thủ **bổ sung**, không thay
+thế nó.

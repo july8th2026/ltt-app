@@ -124,7 +124,7 @@ APP_DUOC_DUNG_APP: dict = {
 
     # agent_dong_co chi khai job_type `workflow.dong_co`; handler that van o
     # apps/agent/jobs.py (xem docstring apps/agent_dong_co/manifest.py) — tach
-    # de apps/agent giu job_types == ("agent.advance",) (test_190).
+    # de apps/agent khong phai khai job_type nao (test_190).
     ("agent_dong_co", "agent"): {
         ("apps.agent.jobs", "handle"),
     },

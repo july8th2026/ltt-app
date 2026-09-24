@@ -12,8 +12,6 @@ test (test này DROP/CREATE mọi bảng). Không đặt → cả file tự bỏ
 """
 from __future__ import annotations
 
-from tests.conftest import bao_dam_user
-import os
 import threading
 from types import SimpleNamespace
 
@@ -279,19 +277,32 @@ def test_hai_worker_dong_thoi_deu_chon_internal_khi_con_du_ung_vien(Sess):
 
 
 def test_claim_bon_child_agent_khong_trung(Sess):
-    """Fan-out Agent dùng cùng queue Q26: hai worker phải chia đúng 4 child."""
+    """Fan-out dùng cùng queue Q26: hai worker phải chia đúng 4 child.
+
+    🗑️ 23/09 (plan 01b Task 9): bài này dựng 4 child qua `runs.submit_child()`
+       của `AgentRun`. Cỗ xe đó chết cùng bảng `agent_runs` — **tính chất thì
+       không**: "hai worker không nhặt trùng một child" vẫn là mệnh đề sống, và
+       nó là mệnh đề về `jobs.claim()` trên PostgreSQL, không về `AgentRun`.
+       Nên bài được CHUYỂN sang gọi thẳng `jobs.submit()` với đúng bộ trường
+       mà `submit_child()` từng đặt (`parent_id`/`plan_id`/`step_id`,
+       `origin="agent"`, `priority_class="internal"`).
+
+    ⚠️ Đây KHÔNG phải bản sao của `tests/test_1720_wf_dong_co_pg.py`: bài đó đo
+       động cơ v2 không nhặt trùng một waitpoint; bài này đo tầng dưới —
+       `jobs.claim()` không phát trùng một job con cho hai worker.
+    """
+    import uuid
+
     from platform_core import jobs
-    from platform_core.agent import runs
-    from platform_core.models import AGENT_AWAITING_APPROVAL, AGENT_RUNNING
 
     s = Sess()
-    run = runs.create_run(s, user_id="agent-user", goal="fanout")
-    runs.transition(s, run, AGENT_AWAITING_APPROVAL)
-    run.status = AGENT_RUNNING  # structural P3 fixture; P5 approval is tested below
+    plan_id = str(uuid.uuid4())
     for i in range(4):
-        runs.submit_child(s, run, step_id="s1", app_slug="appthu",
-                          job_type="appthu.dao_nguoc", params={"text": str(i)},
-                          dedupe_key=f"{run.id}:s1:{i}")
+        jobs.submit(s, user_id="agent-user", app_slug="appthu",
+                    job_type="appthu.dao_nguoc", params={"text": str(i)},
+                    dedupe_key=f"{plan_id}:s1:{i}", parent_id=plan_id,
+                    plan_id=plan_id, step_id="s1", origin="agent",
+                    priority_class="internal")
     s.commit(); s.close()
 
     claimed: list[str] = []
@@ -320,137 +331,62 @@ def test_claim_bon_child_agent_khong_trung(Sess):
     assert len(set(claimed)) == 4
 
 
-def test_agent_approve_dong_thoi_chi_mot_hold(Sess):
-    """Hai request approve cùng version chỉ tạo đúng một hold."""
-    from platform_core import credit
-    from platform_core.agent import budget, runs
-    from platform_core.agent.validator import ValidationResult
-
-    s = Sess()
-    bao_dam_user(s, "approval-user"); credit.cap_tay(s, "approval-user", 100, by="test")
-    run = runs.create_run(s, user_id="approval-user", goal="approve race")
-    plan = {"version": 1, "budget_max_credit": 30, "steps": [{"id": "s1"}]}
-    validation = ValidationResult(True, (), 16, ({"step_id": "s1", "maximum": 16},))
-    budget.set_quote(s, run, plan=plan, validation=validation)
-    run_id, version = run.id, run.version
-    s.commit(); s.close()
-
-    results: list[str] = []
-    start = threading.Barrier(2)
-
-    def worker() -> None:
-        ss = Sess()
-        try:
-            start.wait()
-            budget.approve(ss, run_id=run_id, user_id="approval-user",
-                           approved_by="approval-user", expected_version=version)
-            ss.commit()
-            results.append("ok")
-        except Exception as exc:  # noqa: BLE001 - preserve race diagnostics
-            ss.rollback()
-            results.append(f"err:{type(exc).__name__}:{exc}")
-        finally:
-            ss.close()
-
-    threads = [threading.Thread(target=worker) for _ in range(2)]
-    for thread in threads: thread.start()
-    for thread in threads: thread.join()
-
-    assert results.count("ok") == 2, results
-    check = Sess()
-    try:
-        assert credit.so_da_giu(check, run_id) == 20
-        assert credit.so_du(check, "approval-user") == 80
-    finally:
-        check.close()
+# ⏭️ `test_agent_approve_dong_thoi_chi_mot_hold` DA GO 23/09/2026 (plan 01b
+#    Task 9).
+#
+#    No do: hai request `budget.approve()` cung mot `AgentRun` va cung
+#    `version` chi tao DUNG MOT but toan `hold`. `budget.py` di cung model
+#    `AgentRun` (spec §17.3+§17.5) ⇒ khong con ham nao de dua.
+#
+# ⚠️ Menh de "mot luot chay = mot khoan giu cho" KHONG chet theo: no chuyen
+#    sang `platform_core/workflow/tien.py::giu_cho_run()`, va o do
+#    `tests/test_965` + `tests/test_1723_v3_tao_va_doc_run.py` (muc `giu_cho_run`)
+#    canh tinh luy dang theo `run.hold_id`.
+#
+# ✅ LO HONG DO PHU DO DA DONG (23/09, cung ngay) — `tests/test_1720_wf_dong_co_pg.py`
+#    dung lai du HAI LUONG THAT tren PostgreSQL, tach lam ba bai vi ba cau hoi:
+#
+#      test_giu_cho_run_dong_thoi_chi_mot_hold      `giu_cho_run` mot minh
+#      test_tao_run_dong_thoi_cung_khoa_chi_mot_hold duong VAO that
+#      test_tao_run_hai_chu_khac_nhau_khong_chan_nhau ve doi chung
+#
+# ⭐ Va cau tra loi KHAC voi thoi v1: cuoc dua o `giu_cho_run()` la THAT (do
+#    duoc 40 credit cho mot run tran 20) nhung CHUA CO DUONG TOI — bai dau vi
+#    the la `xfail(strict=True)`, khong phai mot ban va. Thu dang giu bat bien
+#    la `ux_workflow_run_idem` + cho goi duy nhat tao hang run trong cung
+#    transaction; tien de do duoc ghim boi `tests/test_965_wf_duong_tien.py::
+#    test_giu_cho_run_chi_co_MOT_cho_goi_va_cho_do_tu_tao_run`.
 
 
-def test_agent_executor_hai_scheduler_khong_submit_trung(Sess):
-    """Hai scheduler tick cùng run chỉ tạo một child cho step ready."""
-    from platform_core import credit
-    from platform_core.agent import budget, executor, runs
-    from platform_core.agent.validator import ValidationResult
-
-    s = Sess()
-    bao_dam_user(s, "executor-user"); credit.cap_tay(s, "executor-user", 100, by="test")
-    # ⭐ NGAN SACH SUY RA, khong go tay. `budget.quote` cong `PLANNING_COST`
-    #    vao chi phi thuc thi TRUOC khi so voi `budget_max_credit`, nen mot so
-    #    go tay bang dung phan thuc thi se **luon** thieu dung phan planning.
-    #
-    # 🔴 Da tra gia that cho dieu do: ban truoc de `budget_max_credit: 20` va
-    #    `estimated_max_credit=20`. 20 + 4 > 20 ⇒ `set_quote` nem `BudgetError`
-    #    **ngay o khau dung**, va cuoc dua nay chua bao gio bat dau. Trieu chung
-    #    luc do bi doc nham thanh "treo o executor" — no khong he treo.
-    #
-    # ⇒ Viet bang bieu thuc thi khong the lech lai: doi `PLANNING_COST` thi phep
-    #    kiem tu dung theo.
-    thuc_thi = 20
-    plan = {
-        "version": 1,
-        "budget_max_credit": thuc_thi + budget.PLANNING_COST,
-        "steps": [{"id": "s1", "tool": "text.prompt_package", "after": [],
-                   "fanout": 1, "max_retry": 0,
-                   "on_fail": "retry_same", "verify": None,
-                   "params": {"title": "PostgreSQL race",
-                              "story": "Mot cau chuyen thu."}}],
-    }
-    run = runs.create_run(s, user_id="executor-user", goal="scheduler race")
-    # ⚠️ Bao gia da duyet phai PHU duoc gia cua tool, khong phai mot so
-    #    tron. Ban cu de 3 — vua du cho `text.script` (da go), va khi doi
-    #    sang mot tool con song thi `ensure_can_spend` chan ngay, checkpoint
-    #    thanh `fault: policy` va KHONG child nao duoc nop. Trieu chung khi
-    #    do (`0 child`) khong he chi vao nguyen nhan (`bao gia qua thap`).
-    #
-    # ⭐ Lay bang `budget_max_credit` de phep kiem nay do dung thu no dinh
-    #    do — cuoc dua giua hai scheduler — chu khong do gia cua mot tool.
-    budget.set_quote(s, run, plan=plan,
-                     validation=ValidationResult(True, (), thuc_thi, ()))
-    budget.approve(s, run_id=run.id, user_id="executor-user",
-                   approved_by="executor-user", expected_version=run.version)
-    run_id = run.id
-    s.commit(); s.close()
-
-    results: list[str] = []
-    start = threading.Barrier(2)
-
-    def worker() -> None:
-        ss = Sess()
-        try:
-            start.wait()
-            executor.tick(ss, run_id=run_id, user_id="executor-user")
-            ss.commit()
-            results.append("ok")
-        except Exception as exc:  # noqa: BLE001 - preserve race diagnostics
-            ss.rollback()
-            results.append(f"err:{type(exc).__name__}:{exc}")
-        finally:
-            ss.close()
-
-    threads = [threading.Thread(target=worker) for _ in range(2)]
-    for thread in threads: thread.start()
-    for thread in threads: thread.join()
-    assert results.count("ok") == 2, results
-    check = Sess()
-    try:
-        assert len(runs.children(check, runs.get_owned(
-            check, run_id, "executor-user"))) == 1
-    finally:
-        check.close()
+# ⏭️ `test_agent_executor_hai_scheduler_khong_submit_trung` DA GO 23/09/2026.
+#
+#    No do: hai scheduler cung `executor.tick()` mot run chi tao MOT job con.
+#    Runtime v1 (`platform_core/agent/executor.py` + job `agent.advance`) da bi
+#    go cung spec §17.5 ⇒ khong con hai scheduler nao de dua.
+#
+# ⚠️ Menh de "hai worker khong nhac trung mot viec" KHONG chet theo: no chuyen
+#    sang dong co Workflow V2 (`workflow.dong_co`, mot vong duy nhat), va o do
+#    `tests/test_1720_wf_dong_co_pg.py` la cho canh no tren PostgreSQL.
 
 
 def test_agent_workflow_hai_save_cung_revision_chi_mot_thanh_cong(Sess):
     """Optimistic locking P10: hai editor không được ghi đè mất dữ liệu."""
     from platform_core.agent import workflows
 
-    plan = {"version": 1, "goal": "PostgreSQL workflow", "budget_max_credit": 20,
-            "steps": [{"id": "s1", "tool": "text.prompt_package", "after": [],
-                   "fanout": 1, "max_retry": 0,
-                   "on_fail": "retry_same", "verify": None,
-                       "params": {"title": "PostgreSQL race",
-                                 "story": "Mot cau chuyen thu."}}]}
+    # Canvas viet thang, khong di vong qua `plan_to_canvas`: tu §17.5 tai lieu
+    # Canvas la NGUON CHAN LY, Plan v1 chi con la tieng cua Tro ly AI.
+    canvas = {"version": 1, "goal": "PostgreSQL workflow", "budget_max_credit": 20,
+              "nodes": [{"id": "s1", "type": "tool",
+                         "position": {"x": 0, "y": 0},
+                         "data": {"tool": "text.prompt_package", "fanout": 1,
+                                  "max_retry": 0, "on_fail": "retry_same",
+                                  "verify": None,
+                                  "params": {"title": "PostgreSQL race",
+                                             "story": "Mot cau chuyen thu."}}}],
+              "edges": [], "viewport": {"x": 0, "y": 0, "zoom": 1}}
     s = Sess()
     row = workflows.create(s, user_id="workflow-user", name="Gốc",
-                           canvas=workflows.plan_to_canvas(plan))
+                           canvas=canvas)
     workflow_id = row.id
     s.commit(); s.close()
 

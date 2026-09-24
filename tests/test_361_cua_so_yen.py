@@ -121,6 +121,102 @@ def test_khoa_CON_HIEU_LUC_thi_KHONG_bi_doat():
     assert cy.thu_giu("ke-cuop", "gate") is False
 
 
+# ── 2b. Giữ khoá quá lâu phải LỘ RA ───────────────────────────────────────
+#
+# Luật 23/09 (CLAUDE.md, mục ⭐ Chạy agent): khoá bao ĐÚNG lệnh tính, nhả ngay
+# khi tính xong. Nhưng một luật chỉ là giao ước cho tới khi có thứ đếm nó — nên
+# một lượt giữ lâu bất thường phải tự nói ra, ở CẢ HAI phía:
+#   · phía người CHỜ, để họ biết nên đợi hay đi làm việc khác;
+#   · phía người GIỮ, để chính họ thấy mình vừa giữ bao lâu.
+# ⛔ `TUOI_TOI_DA_S` (2 giờ) KHÔNG thay được việc này: nó là ngưỡng "coi như
+#    treo, cho phép đoạt". Một lượt giữ 40 phút thì chưa treo — nó vẫn đúng
+#    luật cũ mà vẫn làm cả máy đứng.
+
+
+def test_nguong_giu_lau_NHO_HON_nguong_coi_nhu_treo():
+    """Hai ngưỡng trả lời hai câu khác nhau, và phải xếp đúng thứ tự.
+
+    Bằng nhau thì cảnh báo vô dụng: tới lúc in ra thì khoá đã bị đoạt rồi.
+    """
+    assert 0 < cy.GIU_LAU_S < cy.TUOI_TOI_DA_S
+
+
+def test_giu_lau_thi_trang_thai_CANH_BAO():
+    _ghi_khoa(os.getpid(), tuoi_s=cy.GIU_LAU_S + 60)
+    bg = cy._doc()
+    assert bg is not None
+    assert cy._canh_bao_giu_lau(bg), "giu qua nguong ma khong canh bao gi"
+
+
+def test_giu_NGAN_thi_KHONG_canh_bao():
+    """🔑 Vế đối chứng. Thiếu nó thì một hàm luôn trả chuỗi khác rỗng cũng xanh,
+    và mọi lượt đều bị gắn nhãn 'giữ lâu' — cảnh báo kêu suốt thì không ai đọc."""
+    _ghi_khoa(os.getpid(), tuoi_s=5)
+    bg = cy._doc()
+    assert bg is not None
+    assert cy._canh_bao_giu_lau(bg) == ""
+
+
+def test_khoa_TAI_NGUYEN_DOC_QUYEN_co_nguong_RONG_HON():
+    """Hai loại khoá trả lời hai câu khác nhau, nên không chung một ngưỡng.
+
+    `cpu_nhieu` tuần tự hoá **sức tính**: giữ nó trong lúc chờ là phí máy.
+    `postgres_test`/`may_tao_tieng` tuần tự hoá **tính đúng**: một phiên chen
+    vào giữa làm HỎNG chính phép đo (số WER/LUFS mang tiếng của lượt khác, CSDL
+    bị `drop_all` dưới chân). Với chúng, giữ suốt pha là ĐÚNG.
+
+    🔴 Báo động giả là cách nhanh nhất giết một cảnh báo: kêu sai vài lần thì
+       không ai đọc nữa, kể cả lúc nó kêu đúng.
+    """
+    assert 0 < cy.GIU_LAU_S < cy.GIU_LAU_DOC_QUYEN_S <= cy.TUOI_TOI_DA_S
+    for tn in ("postgres_test", "may_tao_tieng"):
+        assert tn in cy.TAI_NGUYEN_DOC_QUYEN, tn
+    assert "cpu_nhieu" not in cy.TAI_NGUYEN_DOC_QUYEN
+
+
+def test_khoa_doc_quyen_giu_40_phut_KHONG_bi_bao_dong_gia():
+    _ghi_khoa(os.getpid(), tuoi_s=cy.GIU_LAU_S + 600)
+    bg = cy._doc()
+    assert bg is not None
+    assert cy._canh_bao_giu_lau(bg, "postgres_test") == ""
+    assert cy._canh_bao_giu_lau(bg, "cpu_nhieu"), "khoa CPU van phai canh bao"
+
+
+def test_khoa_doc_quyen_giu_QUA_LAU_thi_van_canh_bao():
+    """🔑 Vế đối chứng: nới ngưỡng ≠ bỏ canh. Một pha đo 3 giờ vẫn phải lộ ra."""
+    _ghi_khoa(os.getpid(), tuoi_s=cy.GIU_LAU_DOC_QUYEN_S + 60)
+    bg = cy._doc()
+    assert bg is not None
+    assert cy._canh_bao_giu_lau(bg, "postgres_test")
+
+
+def test_hai_loai_khoa_noi_HAI_dieu_khac_nhau():
+    """Thông điệp phải khác: một bên là 'bạn đang giữ thừa', bên kia là 'kiểm
+    xem có bước CHỜ nào lọt vào khối không'. Cùng một câu cho cả hai là buộc
+    tội oan đúng lúc người ta đang làm đúng."""
+    _ghi_khoa(os.getpid(), tuoi_s=cy.GIU_LAU_DOC_QUYEN_S + 60)
+    bg = cy._doc()
+    assert cy._canh_bao_giu_lau(bg, "cpu_nhieu") !=         cy._canh_bao_giu_lau(bg, "postgres_test")
+
+
+def test_thoat_khoi_with_thi_IN_RA_da_giu_bao_lau(capsys, monkeypatch):
+    """Người GIỮ phải thấy con số của chính mình, không chỉ người chờ thấy."""
+    monkeypatch.setattr(cy, "GIU_LAU_S", 0.01)
+    with cy.CuaSoYen("toi", "lenh tinh", tai_nguyen=(cy.MAC_DINH,)):
+        time.sleep(0.05)
+    ra = capsys.readouterr().out
+    assert "giu khoa" in ra.lower(), ra
+    assert "cpu_nhieu" in ra, ra
+
+
+def test_khong_giu_khoa_thi_KHONG_in_gi_ve_thoi_gian(capsys):
+    """🔑 Vế đối chứng thứ hai: `bat=False` không chạm khoá nên không có gì để
+    khai. In ra ở đây là in một con số không có thật."""
+    with cy.CuaSoYen("toi", "lenh", bat=False):
+        pass
+    assert "giu khoa" not in capsys.readouterr().out.lower()
+
+
 # ── 3. `_con_song` không được giết thứ nó đang hỏi ─────────────────────────
 
 def test_do_tien_trinh_con_song_KHONG_giet_no():
@@ -241,14 +337,26 @@ def test_moi_chuoi_IN_RA_deu_thuan_ASCII():
 
     ⛔ Một emoji trong stdout của một công cụ đã từng làm cổng đỏ — ghi trong
        CLAUDE.md. Chú thích tiếng Việt thì thoải mái; thứ đi ra `stdout` thì không.
+
+    🔴 LỖ ĐÃ VÁ 23/09: bản cũ chỉ quét chuỗi nằm TRỰC TIẾP trong `print(...)`.
+       Một chuỗi được **trả về** rồi mới in ở chỗ khác (`_canh_bao_giu_lau`)
+       lọt qua — và đã lọt thật: dấu `—` hiện ra console thành `?`. Cùng lớp
+       lỗi với phạm vi quét hẹp của `test_967`: bánh cóc không phủ hết đường
+       mà thứ nó canh đi qua.
+
+    ⇒ Nay quét MỌI chuỗi chạy được của mô-đun (trừ docstring). Chú thích và
+      docstring tiếng Việt vẫn thoải mái — chúng không ra `stdout`.
     """
-    ma = (GOC / "tools" / "cua_so_yen.py").read_text(encoding="utf-8")
-    xau = [a.value for n in ast.walk(ast.parse(ma))
-           if isinstance(n, ast.Call) and getattr(n.func, "id", "") == "print"
-           for a in ast.walk(n)
+    cay = ast.parse((GOC / "tools" / "cua_so_yen.py").read_text(encoding="utf-8"))
+    docstring = set()
+    for n in ast.walk(cay):
+        than = getattr(n, "body", None)
+        if isinstance(than, list) and than and isinstance(than[0], ast.Expr)                 and isinstance(than[0].value, ast.Constant)                 and isinstance(than[0].value.value, str):
+            docstring.add(id(than[0].value))
+    xau = [a.value for a in ast.walk(cay)
            if isinstance(a, ast.Constant) and isinstance(a.value, str)
-           and not a.value.isascii()]
-    assert not xau, f"chuoi in ra khong thuan ASCII: {xau}"
+           and id(a) not in docstring and not a.value.isascii()]
+    assert not xau, f"chuoi CHAY DUOC khong thuan ASCII: {xau}"
 
 # ── 4. `test_nhanh.py` phải XIN khoá — và phải BIẾT khi nào đừng xin ────────
 #

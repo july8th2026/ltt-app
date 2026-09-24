@@ -81,6 +81,22 @@ def test_bieu_thuc_do_PHAN_BIET_duoc_hai_ten_long_tien_to():
     assert _goi("saveWorkflow(x)", "saveWorkflow") == 1
 
 
+def test_trinh_soan_KHONG_con_loi_goi_CHAY_v2_nao(shell):
+    """Ba lời gọi chạy v2 phải biến mất cùng lúc. Sót một cái là Canvas vừa
+    tạo `WorkflowRun` v3 vừa lái `AgentRun` v1 — hai sổ tiền song song."""
+    sot = {ten: _goi(shell, ten) for ten in
+           ("validateWorkflow", "createRun", "tickRun", "approveRun",
+            "runAgain", "restoreRunAsWorkflow", "loadRunHistory")
+           if _goi(shell, ten)}
+    assert not sot, f"CanvasShell van goi duong chay v2: {sot}"
+
+
+def test_trinh_soan_CO_dung_duong_chay_v3(shell):
+    """🔑 Vế đối chứng: một `CanvasShell.tsx` rỗng cũng làm bài trên xanh."""
+    for ten in ("createRunV3", "loadRunV3", "cancelRunV3", "publishWorkflowV3"):
+        assert _goi(shell, ten) >= 1, f"thieu loi goi {ten}"
+
+
 def test_lop_khach_v3_van_GIU_ham_v2_cho_duong_khac(shell):
     """⚠️ `workflowApi.ts` **vẫn** xuất `saveWorkflow` v2, và đó là cố ý.
 

@@ -1,4 +1,8 @@
-"""Small process-local counters complementing durable AgentRun/Job metrics."""
+"""Small process-local counters complementing durable WorkflowRun/Job metrics.
+
+⚠️ 23/09/2026: bộ đếm này đo `planner` (Trợ lý AI), KHÔNG đo runtime v1 — nó
+   không chết cùng `AgentRun` (plan 01b Task 9).
+"""
 from __future__ import annotations
 
 import threading

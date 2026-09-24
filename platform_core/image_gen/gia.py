@@ -133,6 +133,11 @@ def bang_gia() -> dict:
        tảng thôi phải biết `anhnoibo` có những chế độ nào.
     """
     return {
+        # ⭐ NHÓM HIỂN THỊ do app khai, để trang giá công khai KHÔNG phải tra
+        #    theo tên app. Trước 23/09 `server/routes/dashboard.py` viết
+        #    `bang_gia_app.get("anhnoibo")` — đọc registry đúng rồi vẫn tra
+        #    bằng slug gõ tay. Xem `AppManifest.bang_gia` để biết từ vựng.
+        "nhom": "anh",
         "don_vi": "credit / anh",
         "phien_ban_gia": PHIEN_BAN_GIA,
         "vi_du": [

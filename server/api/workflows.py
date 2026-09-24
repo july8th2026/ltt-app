@@ -46,8 +46,7 @@ from platform_core.public_api.errors import (THIEU_CREDIT_LOI, conflict,
                                              insufficient_credit,
                                              not_found,
                                              quote_invalid, rate_limited,
-                                             thieu_credit_chi_tiet,
-                                             workflow_runs_unavailable)
+                                             thieu_credit_chi_tiet)
 from platform_core.public_api.principal import Principal
 from platform_core.public_api.scopes import (SCOPE_WORKFLOWS_CANCEL,
                                              SCOPE_WORKFLOWS_READ,
@@ -69,27 +68,6 @@ OPERATION_START_RUN = "workflows.run"
 #: Tiền tố khoá báo giá. `quotes.issue` ký một `tool_name` bất kỳ, nên tiền tố
 #: này là thứ ngăn một báo giá tool bị nộp vào cửa workflow và ngược lại.
 _KHOA_BAO_GIA = "workflow:"
-
-_LOI_CHUA_MO = ("Workflow runs are not available yet. This endpoint is gated "
-                "until the Workflow V2 engine is wired up; nothing here "
-                "executes a run.")
-
-
-def _chay_workflow_da_mo() -> bool:
-    """Công tắc DUY NHẤT cho Defect B (`WF-802` cũ).
-
-    Tắt ⇒ `/quotes` và `/runs` trả 501 trước khi chạm bất cứ gì — không phát
-    quote token, không tạo `WorkflowRun`, không giữ credit. Route này đã sống
-    (`chargeable=True`, tạo run thật) mà chưa hề có engine chạy nó: quote luôn
-    báo 0 vì nó đọc `graph["nodes"]` của một graph dạng *pages*, và một run
-    được tạo xong thì nằm im vĩnh viễn — không có gì bao giờ thực thi nó. Bật
-    trước khi engine đó tồn tại là hứa một thứ hệ thống không làm.
-
-    Mở lại ở đây, khi Workflow V2 engine đã nối dây — xem đặc tả
-    `docs/superpowers/specs/2026-09-22-ltt-workflow-platform-v2-design.md`
-    trên nhánh `phien/wf-v2`.
-    """
-    return False
 
 
 def _iso(v: datetime | None) -> str | None:
@@ -171,8 +149,6 @@ def register_workflow_routes(api, config, tag: str) -> None:
         principal: Principal = Depends(require_scope(SCOPE_WORKFLOWS_RUN)),
         db: Session = Depends(get_db),
     ) -> JSONResponse:
-        if not _chay_workflow_da_mo():
-            raise workflow_runs_unavailable(_LOI_CHUA_MO)
         wf = _cua_toi(db, Workflow, workflow_id, principal)
         ver = _ban_publish(db, wf)
         # `estimated_max` da bi DONG BANG cung graph luc publish (Task 7) —
@@ -214,8 +190,6 @@ def register_workflow_routes(api, config, tag: str) -> None:
         principal: Principal = Depends(require_scope(SCOPE_WORKFLOWS_RUN)),
         db: Session = Depends(get_db),
     ) -> JSONResponse:
-        if not _chay_workflow_da_mo():
-            raise workflow_runs_unavailable(_LOI_CHUA_MO)
         key = idempotency.require_key(idempotency_key)
         wf = _cua_toi(db, Workflow, workflow_id, principal)
         ver = _ban_publish(db, wf)

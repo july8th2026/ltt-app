@@ -1,4 +1,14 @@
-"""Canonical Canvas persistence and lossless Plan v1 conversion."""
+"""Luu tru Canvas chuan cua trinh soan (`AgentWorkflow` + ban chup).
+
+Truoc 23/09/2026 mo-dun nay con dich Canvas <-> **Plan v1**
+(`canvas_to_plan`/`plan_to_canvas`). Spec §17.5 cat lop ay: mot tai lieu
+Canvas la NGUON CHAN LY, khong phai dan xuat cua mot Plan. Cai duong luu
+that su can tu Plan cu chi la hai truong (`goal`, `budget_max_credit`) va
+mot cua kiem — ca hai nam o `kiem_canvas()` ngay duoi.
+
+Cau chuyen doi dọn sang `platform_core/agent/plan_v1.py` vi Tro ly AI van
+noi tieng Plan v1 (`planner.py` + `validator.py`, spec §17.6 GIU ca hai).
+"""
 from __future__ import annotations
 
 import copy
@@ -9,7 +19,6 @@ from sqlalchemy import update
 from sqlalchemy.orm import Session
 
 from platform_core.agent.normalizer import MAX_JSON_DEPTH, _depth
-from platform_core.agent.validator import ValidationResult, validate_plan
 from platform_core.models import (WORKFLOW_APPROVED, WORKFLOW_ARCHIVED,
                                   WORKFLOW_DRAFT, WORKFLOW_VALIDATED,
                                   AgentWorkflow, AgentWorkflowSnapshot)
@@ -57,7 +66,7 @@ def _safe_json(value) -> None:
         raise WorkflowError("Canvas JSON lồng quá sâu.")
 
 
-def _page_graph(canvas: dict) -> tuple[list, list, dict]:
+def page_graph(canvas: dict) -> tuple[list, list, dict]:
     """Return the executable graph while preserving the full editor document."""
     version = canvas.get("version") if isinstance(canvas, dict) else None
     if version == 1:
@@ -93,39 +102,24 @@ def _page_graph(canvas: dict) -> tuple[list, list, dict]:
     return active.get("nodes"), active.get("edges"), active.get("viewport") or {}
 
 
-def plan_to_canvas(plan: dict) -> dict:
-    """Preserve every execution field; add layout only as editor metadata."""
-    steps = plan.get("steps") if isinstance(plan, dict) else None
-    if not isinstance(steps, list):
-        raise WorkflowError("Plan thiếu steps.")
-    nodes, edges = [], []
-    for index, step in enumerate(steps):
-        if not isinstance(step, dict):
-            raise WorkflowError("Step không hợp lệ.")
-        sid = str(step.get("id", ""))
-        execution = {key: copy.deepcopy(value) for key, value in step.items()
-                     if key not in {"id", "after", "after_error"}}
-        nodes.append({"id": sid, "type": "tool", "position": {"x": index * 280, "y": 0},
-                      "data": execution})
-        for source in step.get("after", []) or []:
-            edges.append({"id": f"{source}--{sid}", "source": source, "target": sid,
-                          "data": {"condition": "success"}})
-        for source in step.get("after_error", []) or []:
-            edges.append({"id": f"{source}--error--{sid}", "source": source, "target": sid,
-                          "data": {"condition": "error"}})
-    canvas = {"version": 1, "goal": str(plan.get("goal", "")),
-              "budget_max_credit": int(plan.get("budget_max_credit", 0)),
-              "nodes": nodes, "edges": edges,
-              "viewport": {"x": 0, "y": 0, "zoom": 1}}
-    _safe_json(canvas)
-    return canvas
+def kiem_canvas(canvas: dict) -> dict:
+    """Kiem Canvas client gui; tra hai truong dan xuat ma hang `AgentWorkflow` luu.
 
+    Tach ra tu `canvas_to_plan()` cu khi Plan v1 roi mo-dun nay (§17.5). Duong
+    LUU can dung hai thu: *canvas nay co hop le va co an toan khong*, va
+    *`goal`/`budget_max` nao di vao cot*. No **khong** can mot Plan.
 
-def canvas_to_plan(canvas: dict) -> dict:
+    ⛔ Moi menh de an toan cua ban cu o lai DAY, khong di theo Plan v1 sang
+       `plan_v1.py`: kich thuoc/do sau JSON, truong chi may chu duoc dat
+       (`_CLIENT_FORBIDDEN`), node id/type thieu-trung, edge tro ra ngoai do
+       thi, `condition` la. Bo sot mot trong so do la mo dung cai cua ma
+       `canvas_to_plan` tung dong — va khong bai kiem nao thay, vi bai kiem
+       cua `canvas_to_plan` da bi xoa cung Plan v1.
+    """
     _safe_json(canvas)
     if not isinstance(canvas, dict) or _has_forbidden(canvas):
         raise WorkflowError("Canvas chứa trường chỉ server được đặt.")
-    nodes, edges, _viewport = _page_graph(canvas)
+    nodes, edges, _viewport = page_graph(canvas)
     if not isinstance(nodes, list) or not isinstance(edges, list):
         raise WorkflowError("Canvas cần nodes và edges dạng danh sách.")
     ids: set[str] = set()
@@ -135,9 +129,10 @@ def canvas_to_plan(canvas: dict) -> dict:
         sid = str(node.get("id", ""))
         if not sid or sid in ids or node.get("type", "tool") != "tool":
             raise WorkflowError("Node id/type thiếu hoặc trùng.")
+        if {"id", "after", "after_error"}.intersection(
+                str(key).lower() for key in node["data"]):
+            raise WorkflowError("Node chứa trường chỉ server được đặt.")
         ids.add(sid)
-    deps: dict[str, list[str]] = {}
-    error_deps: dict[str, list[str]] = {}
     for edge in edges:
         if not isinstance(edge, dict):
             raise WorkflowError("Edge không hợp lệ.")
@@ -146,62 +141,17 @@ def canvas_to_plan(canvas: dict) -> dict:
             raise WorkflowError("Edge thiếu source/target.")
         if source not in ids or target not in ids:
             raise WorkflowError("Edge tham chiếu node không tồn tại.")
-        condition = str((edge.get("data") or {}).get("condition", "success"))
-        if condition not in {"success", "error"}:
+        if str((edge.get("data") or {}).get("condition", "success")) not in {
+                "success", "error"}:
             raise WorkflowError("Edge condition không hợp lệ.")
-        bucket = error_deps if condition == "error" else deps
-        if source not in bucket.setdefault(target, []):
-            bucket[target].append(source)
-    steps = []
-    for node in nodes:
-        sid = str(node.get("id", ""))
-        data = copy.deepcopy(node["data"])
-        if {"id", "after", "after_error"}.intersection(
-                str(key).lower() for key in data) or _has_forbidden(data):
-            raise WorkflowError("Node chứa trường chỉ server được đặt.")
-        step = {"id": sid, **data, "after": deps.get(sid, [])}
-        if error_deps.get(sid):
-            step["after_error"] = error_deps[sid]
-        steps.append(step)
-    return {"version": 1, "goal": str(canvas.get("goal", "")),
-            "budget_max_credit": int(canvas.get("budget_max_credit", 0)),
-            "steps": steps}
-
-
-def scope_plan(plan: dict, target_ids: list[str]) -> dict:
-    """Return targets plus their transitive success/error prerequisites."""
-    steps = list((plan or {}).get("steps") or [])
-    by_id = {str(step.get("id", "")): step for step in steps}
-    targets = {str(value) for value in target_ids if str(value)}
-    if not targets or not targets.issubset(by_id):
-        raise WorkflowError("Scope tham chiếu node không tồn tại.")
-    included: set[str] = set()
-    pending = list(targets)
-    while pending:
-        step_id = pending.pop()
-        if step_id in included:
-            continue
-        included.add(step_id)
-        step = by_id[step_id]
-        pending.extend(str(dep) for dep in (step.get("after") or []))
-        pending.extend(str(dep) for dep in (step.get("after_error") or []))
-    scoped = copy.deepcopy(plan)
-    scoped["steps"] = []
-    for step in steps:
-        if str(step.get("id")) not in included:
-            continue
-        clone = copy.deepcopy(step)
-        clone["after"] = [dep for dep in clone.get("after", []) if dep in included]
-        if "after_error" in clone:
-            clone["after_error"] = [dep for dep in clone.get("after_error", []) if dep in included]
-        scoped["steps"].append(clone)
-    return scoped
+    return {"goal": str(canvas.get("goal", "")),
+            "budget_max_credit": int(canvas.get("budget_max_credit", 0))}
 
 
 def scope_targets(canvas: dict, scope: dict) -> tuple[list[str], dict]:
     """Resolve a client scope against server-owned Canvas metadata."""
     mode = str((scope or {}).get("mode") or "full")
-    nodes, _edges, _viewport = _page_graph(canvas)
+    nodes, _edges, _viewport = page_graph(canvas)
     node_ids = [str(node.get("id")) for node in nodes or []]
     if mode == "full":
         return node_ids, {"mode": "full", "node_ids": node_ids}
@@ -235,13 +185,13 @@ def get_owned(db: Session, workflow_id: str, user_id: str) -> AgentWorkflow:
 
 def create(db: Session, *, user_id: str, name: str, canvas: dict,
            source_workflow_id: str = "") -> AgentWorkflow:
-    plan = canvas_to_plan(canvas)
-    nodes, edges, viewport = _page_graph(canvas)
+    meta = kiem_canvas(canvas)
+    nodes, edges, viewport = page_graph(canvas)
     row = AgentWorkflow(user_id=user_id, name=(name.strip() or "Workflow mới")[:160],
-                        goal=plan["goal"], plan_version=1,
+                        goal=meta["goal"], plan_version=1,
                         nodes=copy.deepcopy(nodes), edges=copy.deepcopy(edges),
                         viewport=copy.deepcopy(viewport), document=copy.deepcopy(canvas),
-                        budget_max=plan["budget_max_credit"], source_workflow_id=source_workflow_id)
+                        budget_max=meta["budget_max_credit"], source_workflow_id=source_workflow_id)
     db.add(row); db.flush(); _snapshot(db, row, "create")
     return row
 
@@ -288,27 +238,17 @@ def save(db: Session, *, workflow_id: str, user_id: str, revision: int,
     row = get_owned(db, workflow_id, user_id)
     if row.status == WORKFLOW_ARCHIVED:
         raise WorkflowError("Workflow đã lưu trữ.")
-    plan = canvas_to_plan(canvas)
-    nodes, edges, viewport = _page_graph(canvas)
+    meta = kiem_canvas(canvas)
+    nodes, edges, viewport = page_graph(canvas)
     now = datetime.now(timezone.utc)
     result = db.execute(update(AgentWorkflow).where(
         AgentWorkflow.id == workflow_id, AgentWorkflow.user_id == user_id,
         AgentWorkflow.revision == revision).values(
-            name=(name.strip() or "Workflow mới")[:160], goal=plan["goal"],
+            name=(name.strip() or "Workflow mới")[:160], goal=meta["goal"],
             nodes=copy.deepcopy(nodes), edges=copy.deepcopy(edges),
             viewport=copy.deepcopy(viewport), document=copy.deepcopy(canvas),
-            budget_max=plan["budget_max_credit"], estimated=0,
+            budget_max=meta["budget_max_credit"], estimated=0,
             status=WORKFLOW_DRAFT, revision=revision + 1, updated_at=now))
     if result.rowcount != 1:
         raise WorkflowConflict("Workflow đã được sửa ở phiên khác.")
     db.flush(); db.expire(row); _snapshot(db, row, reason); return row
-
-
-def validate(db: Session, row: AgentWorkflow, *, user) -> ValidationResult:
-    result = validate_plan(canvas_to_plan(as_canvas(row)), db=db, user=user)
-    row.estimated = result.estimated_max_credit
-    row.status = WORKFLOW_VALIDATED if result.valid else WORKFLOW_DRAFT
-    row.revision += 1
-    row.updated_at = datetime.now(timezone.utc)
-    db.flush()
-    return result

@@ -12,6 +12,163 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-24 — Bốn lớp của MỘT lỗi: cảnh báo agent chạy tới lớp thứ tư mới ra được log
+
+Phiên nâng cấp LTTCODE sau diễn tập D1 (plan `docs/superpowers/plans/2026-09-23-nang-cap-sau-dien-tap-d1.md`).
+Phần A 10/10, Phần B 2,5/10 → **7,5/10**. Dựng và phát bốn bản kênh `dev`: 0.2.7 → 0.2.10.
+Mục này ghi phần **đáng nhớ**, không ghi lại bảng task.
+
+### ⭐ Một lỗi, bốn lớp, mỗi lớp đều thật — và ba lớp đầu đều "đã vá" nhầm
+
+Lỗi gốc (V-25): tệp agent người dùng khai `tools: [...]` thì khoá đó **bị bỏ qua âm thầm** —
+người dùng tưởng đã khoá agent con thành chỉ-đọc, thực tế nó có **toàn bộ công cụ của host**.
+
+| Lớp | "Đã vá" | Vì sao vẫn im |
+|---|---|---|
+| 1 | Thêm `ctx.logger.warn()` (DIV-007) | Cordis đẩy vào **buffer 1 000 dòng trong RAM**; không exporter nào gắn ở runtime |
+| 2 | Mở kênh: mount `logger.exporter` → `stderr` (DIV-009) | **Patch chưa bao giờ vào bản cài**: `.npmrc: ignore-scripts=true` (đặt có chủ ý 19/09 để gói cộng đồng không chạy script) **tắt luôn `postinstall` của chính gói nội bộ** |
+| 3 | Gọi script vá tường minh sau `npm ci` | Patch vào được bản cài rồi, **vẫn 0 dòng**: bộ 8 phép kiểm gọi `parseAgentRole` với `diagnose` **tự tiêm**, **chưa bao giờ chạm chỗ gọi thật** (`mountAgentRoleTool` → `execute()`, chỉ có `ctx.logger?.warn()` trần) |
+| 4 | `lttcodeDiagnoseStderr()` ghi thẳng `process.stderr` + 2 phép **gọi thật** `tool.execute()` | đang kiểm trên 0.2.10 |
+
+**Ba lần đầu đều có phép kiểm XANH.** Không lần nào phép kiểm nói dối — chúng trả lời đúng câu
+chúng hỏi. Chỉ là **không câu nào hỏi "người dùng có thấy cảnh báo không"**.
+
+### ⭐ Hai phép kiểm đọc THỨ ĐẠI DIỆN, cùng một đêm
+
+1. Phép kiểm DIV-007 `import` thẳng tệp trong `node_modules` ⇒ **không phân biệt được** cây do
+   build sinh ra với cây **ai đó vá tay một lần**. Nó xanh 8/8 suốt trong khi patch chưa từng chạy.
+2. Cùng bộ phép ấy tiêm `diagnose` giả ⇒ **không phân biệt được** "hàm chạy đúng" với "hàm **được
+   gọi**".
+
+⇒ Chặn bằng `tools/check_upstream_divergence_patches.mjs`: chốt theo **TẬP HỢP** — mọi
+`patch-*.mjs` phải có tên trong `UPSTREAM_DIVERGENCE.md` và ngược lại, rồi chạy `--check` trên
+**cây đã dựng**. Không có hằng "có 9 bản vá" nào để mục ruỗng.
+
+### ⛔ Tôi đuổi theo một hồi quy không tồn tại, vì đọc ĐUÔI console
+
+Báo "0.2.9 có 3 phép đỏ mới" và dựng giả thuyết DIV-007 làm hỏng trang Plugins. Sự thật:
+`grep FAIL` trên **đuôi console** của lượt 0.2.7 chỉ thấy `P08`, trong khi **tệp JSON có 9 mục
+không PASS**. Bốn phép ấy đỏ **từ 0.2.7**. Nặng thêm vì lượt nghiệm thu 0.2.9 **không ghi ra tệp
+JSON nào**, nên làn sau đọc nhầm tệp cũ. ⇒ Đang sửa `verify_installed.ps1` để **luôn** ghi bản ghi.
+
+### ⭐ Chặn lõi build: rẻ hơn tôi tưởng rất nhiều
+
+Đo trọn hai lượt dựng (379 mẫu, bám theo tiến trình build chứ không theo đồng hồ):
+
+| | Không chặn | `CARGO_BUILD_JOBS=3` |
+|---|---|---|
+| Đỉnh | **18,67 lõi** | **2,01 lõi** |
+| Thời gian tường | 18,6 phút *(giữ khoá cả máy)* | 18,9 phút *(ngoài khoá)* |
+
+**Đổi 15 lõi rảnh lấy 18 giây.** Những đợt codegen 18 lõi **không mua được tốc độ nào**.
+Luật mới: `docs/QUY_TAC_CHAY_LENH_NANG.md` §4b — build chạy ngoài khoá **khi và chỉ khi** chặn lõi.
+
+### Ba thứ tưởng phải xây, hoá ra đã có sẵn
+
+`/health/ready` của máy B · `~/.agents/agents/*.md` (agent người dùng, ghim được model) ·
+và hạ tầng **idempotency theo `job_id`** cho sổ credit — `protocol.py:244-250` **đã viết sẵn luật**
+*"a resumable STREAM must require an Idempotency-Key"* từ trước, chỉ tắt ở cửa stream (Q107).
+
+### Quyết định của chủ dự án
+
+**Q137**: lượt đứt giữa chừng — kể cả do **502/503 của chính ta** — khách **vẫn trả phần token đã
+sinh**. Mã hiện tại đã đúng; ghi ra **chính vì** nó trông giống một lỗi.
+
+## 2026-09-24 — Plan 02 (Node SDK) đóng: 29 bài test xanh trong khi desktop không mở được inspector
+
+Đóng plan 02 của Workflow V2 (nhánh `phien/02`, 16/16 task). Bảng task + số đo đầy đủ:
+`docs/superpowers/plans/2026-09-22-wf-v2-LEDGER.md`. Mục này ghi phần **đáng nhớ**.
+
+### ⭐ Luật 7 vừa tự chứng minh: jsdom không đọc CSS
+
+Sau khi cắt Canvas sang `NodeRenderer`/`PaletteV2`/`FormTuLuocDo`, **cả 29 bài vitest đều xanh**
+— và màn hình **không dùng được**. Ba lỗi, cả ba chỉ trình duyệt thật nhìn thấy:
+
+1. ⛔ **Desktop không có đường nào mở inspector.** Nút "Chi tiết" chỉ sống trong
+   `.canvas-mobile-tabs`, mà bảng đó `display:none` (`frontend/agent-canvas/src/canvas.css:65`)
+   và chỉ được bật lại trong `@media (max-width:640px)` ⇒ **từ 641px trở lên không có nút nào**.
+   Trước đó tham số còn nằm ở `ContextComposer` cạnh node nên không ai thấy thiếu; sau khi dồn
+   **mọi** tham số về inspector thì trên desktop **không sửa được một node nào**.
+2. `.node-khung` lấy nền **trắng** mặc định ⇒ chữ trắng trên nền trắng ở chủ đề tối.
+3. Ô nhập inspector **tràn ra ngoài panel** (`width:100%` + padding, thiếu `box-sizing`).
+
+**Bài học đo lường:** bộ vitest không phủ **bố cục** và **breakpoint** — và nó im lặng đúng ở chỗ
+nó không nhìn tới. Thêm bài jsdom cũng không bắt được; cái bắt được là một lượt Playwright trên
+**bản build thật**. Đây là cùng một hình dạng với `test_967` quét không đệ quy và bánh cóc ASCII
+chỉ quét `print()` trực tiếp: *một thứ canh gác im lặng về chỗ nó không nhìn tới*.
+
+### `resource.class` nghĩa là "giữ lease card", không phải "có chạm card"
+
+Chiến dịch khai hợp đồng V2 cho 19 tool đã khai `autosubvideo.render` là `class="gpu"`, lập luận
+*"`burn.py` có gọi NVENC nên có chạm card"*. Lập luận ấy đọc trường theo **nghĩa tự suy**. Mã thật
+nói nghĩa khác: `AppManifest.vram_for()` (`platform_core/registry.py:881`) **hợp nhất**
+`gpu_vram_mb[job_type]` với `resource["vram_min_mb"]`, và `tests/test_1112` chốt bất biến
+`class="gpu"` ⇒ `vram_for() != 0`. Bất biến ấy ra đời từ **một sự cố thật** (Phase 13,
+`8fbf7aed`): ba App GPU chạy **không có lease nào** và đè lên `taoclipngan`/`upscalevideo` trên
+cùng một card. `autosubvideo.render` **cố ý** không giữ lease (khai thừa sẽ bắt job khắc phụ đề
+chờ một card trống nó không cần) ⇒ đúng từ vựng của kho, nó là `cpu`.
+
+Một bản khai thêm vào **chỉ để phục vụ palette** suýt dựng lại hình dạng của một sự cố cũ. Nợ còn
+lại đã ghi ở ledger: `RESOURCE_CLASS` không có mức *"ưu tiên GPU, lui về CPU, không giữ lease"*.
+
+### Lượt chạy lan toả mới thấy — test nhắm không thấy
+
+12 tệp test nhắm của plan: **94 passed / 0 failed**. Nhưng lượt chạy **576 tệp bị lan tới**:
+**10.174 passed / 5 failed**. Bốn đỏ là của plan 02 và **không bài nào** nằm trong 12 tệp nhắm:
+hai bánh cóc đọc `presentationAdapter.ts` (tệp vừa bị xoá), một bài chốt "cửa v3 có **tám** route"
+(vừa thêm 2), và `test_1112` ở trên. Đỏ thứ năm (`'lttcode' o server/app.py`) là **mã của phiên
+khác** đã ở `main` (`e17f1bc3`) bị bánh cóc mới của plan 02 bắt — không sửa hộ.
+
+### ⚠️ `thanh_phan.py --doi` trên cây SẠCH đo đúng số không
+
+`python tools	hanh_phan.py --doi` in **"Cay khong doi gi."** trên nhánh `phien/02` — vì
+`duong_da_doi()` với `goc_so` rỗng so với **HEAD + phần chưa commit**, mà mọi việc của plan đã
+commit. Nó **không** trả lời *"nhánh này chạm tới đâu"*. Phải truyền
+`--goc-so <merge-base với main>`; lúc đó ra **68 đường dẫn**.
+
+Và khi đó nó trả **"phải chạy TẤT CẢ"**, vì `platform_core/workflow/` **không được khai trong
+`tools/thanh_phan.toml`** — cả gói động cơ workflow là đường **không ai sở hữu**, nên
+`bi_anh_huong()` fail-open. Nghĩa là **mọi** thay đổi trong `platform_core/workflow/` đều không
+thu hẹp được. Đáng khai vào `thanh_phan.toml` như một thành phần riêng.
+
+## 2026-09-24 (00:08–00:30) — Workflow V2 chạy thật trên production: 2 credit, 7,3 giây
+
+Nghiệm thu plan 01b (Task 11) trên `https://app.lttstudios.com`, bản đang chạy
+`6161eb5a4e46` (build 23/09 23:57). Biên bản đầy đủ + bảng số:
+`.superpowers/sdd/2026-09-23-wf-v2-01b-canvas-v3/task-11-nghiem-thu.md` (thư mục bị
+gitignore — mục này là bản kết luận **được git theo dõi**).
+
+- **Rủi ro mở đóng lại.** Trước hôm nay production **chưa từng** có một job
+  `workflow.dong_co` nào (và `workflow_run` = 0 hàng). Lượt chạy thật sinh **5 job**,
+  **tất cả `done`**, `app_slug='agent_dong_co'`, worker nhặt sau **10–400 ms**. Không
+  job nào nằm lại `queued` ⇒ không lặp lại lỗi mà cổng 501 từng che.
+- **Sổ tiền khớp, lần đầu đo được `credit_charged > 0`.** Run `3508f917`
+  `QUEUED → RUNNING → SUCCEEDED` trong 7,3 giây; `credit_charged = 2 = Σ cost_credit
+  (1+1) = credit_max`. Bút toán: `hold −2` rồi `settle 0` ("giu 2, thu 2, variance 0");
+  số dư `khach2.thu` **5000 → 4998**. Run thứ hai bị **Hủy chạy** ⇒ `CANCELLED`,
+  `actual_cost=0`, job con `ltt_voice.synthesize` cũng `cancelled`, **không** bút toán.
+- **Hủy lần hai** không bấm được từ giao diện (nút biến mất khi run kết thúc); gọi
+  thẳng cửa v3 trả **409 `{"ma":"da_ket_thuc"}`** — đọc được bằng máy, trang không
+  trắng.
+- **Đường v2 rỗng**: 0 request tới `/agent/api/workflows/*/validate|runs` và
+  `/agent/api/runs/*` (đối chứng hai lần: log mạng + `performance.getEntriesByType`).
+  Console: chỉ 1 dòng, là 409 cố ý ở trên.
+- **Bản sửa 302 (`da7fce81`) sống sót qua Cloudflare.** Đo với `ltt_lang=en` (nếu ngôn
+  ngữ là gốc thì middleware không chuyển hướng — đo lúc đó là đo cửa không có xe):
+  `fetch` kể cả khi **chỉ** có `Accept: */*` vẫn `redirected:false`, trong khi điều
+  hướng HTML thật vẫn 302 sang `/en/agent`. ⇒ Cloudflare **không** lột
+  `Sec-Fetch-Mode`; loopback trước đó không phải phép đo giả.
+- **Task 9 / Task 10, số thật:** `agent_runs` có 4 hàng (2 cancelled, 2 done), one-off
+  17.3 chạy ở chế độ đếm ra `tim_thay=0 da_dong=0 hoan_credit=0` ⇒ không chạy `--that`.
+  Migration drop (`8f1c6a4d2b90`) **đã áp ngay trong lượt deploy 23/09 23:57**
+  (`deploy-20260923-235709.out.log`: `Running upgrade 56a971862a15 -> 8f1c6a4d2b90`),
+  **không** chờ soak 1 ngày như plan định — vì `setup\2-cai-dat.ps1` chạy
+  `alembic upgrade head` vô điều kiện. Hôm nay `to_regclass('public.agent_runs')` =
+  **NULL**. Ai còn viết plan kiểu "viết migration bây giờ, áp sau" phải biết: đường
+  deploy không có công tắc để hoãn.
+- **Hỏi catalog, đừng hỏi alembic** (bài học 23/09 khuya vẫn đúng): mọi kiểm tra lược đồ
+  ở lượt này dùng `to_regclass`, không tin `alembic_version`.
+
 ## 2026-09-23 (khuya) — `alembic_version` nói dối 20 ngày, và dòng OK giúp nó sống sót
 
 Tìm ra khi **nghiệm thu sau deploy** `fde0d3aa` — không phải khi đi tìm nó.
@@ -259,6 +416,31 @@ gỡ `ltt_turbo`, ép `vi` như bot gốc, mở app, giá khuyến nghị.
   tạo lệch giả (bot gốc chạy `auto`); chạy python legacy phải `-B` (cây chỉ đọc).
 - **Còn mở:** cùng lỗi email-làm-`user_id` ở `audio_pause`, `prompt_canh`, `video_assembly` (còn đóng với khách; đã tạo
   việc riêng); nhãn ô "Hệ phiên âm" dài bị cắt trên desktop (thẩm mỹ); L3 tổng kết phiên.
+
+## 2026-09-24 (rạng sáng) — `video_crawler`: trang kênh, kho tài khoản dùng được khi cào, ghim "Đang phát triển"
+
+Deploy `63623d77` (13:52) → `2a604682` (01:02). Nghiệm thu production sau mỗi lượt (băm 0 lệch/thiếu/thừa).
+
+- **Kho tài khoản hệ thống dùng được ở ĐƯỜNG CÀO** (trước đó chỉ đường tìm kênh mượn kho ⇒ dán cookie xong khách
+  vẫn bị từ chối, cả hạng mục không tới được ai). Kho rỗng ⇒ từ chối ở cửa vào, không nhận job rồi hoàn tiền.
+- **Trang kênh**: tìm kênh theo TÊN (YouTube + Bilibili ẩn danh), thẻ kênh có ảnh đại diện **qua proxy LTT**
+  (đo: 10/10 ảnh, 0 gọi thẳng CDN), lọc tab/ngày/thời lượng; nút "Mở trên nền tảng". Link rút gọn theo chuyển
+  hướng CÓ KIỂM (allowlist + chặn IP nội bộ, ≤ 3 bước).
+- **Nghiệm thu nền cần phiên bằng cookie THẬT của chủ dự án** (`nguon_phien: "kho"` xác nhận cookie được dùng):
+  Douyin trả **rỗng** trong 1,3 s; TikTok `No working app info is available`; Xiaohongshu chưa có tài khoản.
+  ⇒ Chủ dự án chốt: **ghim "Đang phát triển"** — cờ + lý do ở registry (một nguồn), chip khoá + nhãn + tooltip,
+  chặn ở cửa vào. Điều kiện GỠ ghim ghi ở `PLATFORM_MATRIX.md`. Đối chứng: YouTube không bị chặn oan
+  (production: xem trước ra 10 video).
+- **Fixture `vc_go_ghim`** (`tests/conftest.py`): ghim là quyết định sản phẩm, không được giết lưới test của
+  logic nền bị ghim — nếu không, lúc gỡ ghim sẽ không còn gì bắt hồi quy.
+- **Nền tảng**: `platform_core/jobs.py` thêm `mo_ta_loi` / `loi_cho_khach` / `voi_cau_khach` — 12 app không còn
+  lộ tên lớp Python cho khách; lỗi TẠM THỜI vẫn nói được câu của mình. Bánh cóc `tests/test_2140`.
+- **Vận hành nhiều phiên**: lượt gate CHUNG (Workflow V2 gom `main` + `phien/01b` + `phien/vcm-dpt`) — một lượt
+  thay vì ba, và nó bắt được một lỗi chặn MỌI phiên (`test_2300` báo oan vì bộ dò nhận TẠO ở hai từ vựng, XOÁ ở một).
+- **Ba bài học đo lường (chi tiết ở `SO_LOI.md` W5 + memory):** (1) `TaskStop` giết lớp bọc, tiến trình gate con
+  vẫn sống và giữ khoá — "đã gọi lệnh dừng" ≠ "đã nhả khoá"; (2) tôi báo "giao diện im lặng khi 0 kết quả" nhưng
+  template CÓ câu — script chỉ đếm phần tử, không đọc vùng khách đọc; (3) tôi báo `main` đỏ ở tệp phiên khác trong
+  khi họ đã sửa — đọc `git show main:<tệp>` thay vì tệp trong cây của mình.
 
 ## 2026-09-23 (sáng) — `video_crawler` lên production: sự cố ffmpeg, kho tài khoản hệ thống, lỗi job không lộ tên lớp
 

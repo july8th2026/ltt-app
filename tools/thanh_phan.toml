@@ -167,6 +167,36 @@ duong = ["platform_core/jobs.py", "platform_core/job_runner.py",
 he_trong = "thi_hanh"
 tai_nguyen = ["postgres_test"]
 
+# 🔴 KHAI 24/09: truoc do CA GOI `platform_core/workflow/` (24 tep) khong duoc
+#    khai o dau -- tuc no la "duong khong ai so huu", nen MOI luot `--doi`/
+#    `--pham-vi` cham toi no deu FAIL OPEN va doi chay TAT CA. Do la ly do that
+#    cua chuoi gate leo thang dem 23-24/09, khong phai vi thay doi qua rong.
+#
+# ⭐ Chia lam HAI thanh phan theo MOI QUAN TAM, khong theo tep -- cung khuon
+#    `core:tien`/`core:job`: dong co (chay run) va soan thao (bien dich, luoc do,
+#    dinh nghia node). Mot thay doi o tang soan thao khong keo ca dong co.
+[thanh_phan."core:wf_dong_co"]
+mo_ta = "Dong co workflow: vong chay, may trang thai, waitpoint, wakeup, cau noi job."
+duong = ["platform_core/workflow/dong_co.py", "platform_core/workflow/may_trang_thai.py",
+         "platform_core/workflow/cau_noi.py", "platform_core/workflow/cho_doi.py",
+         "platform_core/workflow/danh_thuc.py", "platform_core/workflow/join.py",
+         "platform_core/workflow/foreach.py", "platform_core/workflow/dieu_khien.py",
+         "platform_core/workflow/tao_run.py", "platform_core/workflow/thi_hanh.py",
+         "platform_core/workflow/su_kien.py", "platform_core/workflow/artifact.py",
+         "platform_core/workflow/trigger.py", "platform_core/workflow/ket_so.py"]
+he_trong = "thi_hanh"
+tai_nguyen = ["postgres_test"]
+
+[thanh_phan."core:wf_soan"]
+mo_ta = "Soan thao workflow: bien dich, dinh nghia node, luoc do, bieu thuc, bao gia, he kieu."
+duong = ["platform_core/workflow/bien_dich.py", "platform_core/workflow/dinh_nghia.py",
+         "platform_core/workflow/nut.py", "platform_core/workflow/nut_loi/",
+         "platform_core/workflow/luoc_do.py", "platform_core/workflow/bieu_thuc.py",
+         "platform_core/workflow/he_kieu.py", "platform_core/workflow/canh.py",
+         "platform_core/workflow/cong_cu.py", "platform_core/workflow/bao_gia.py",
+         "platform_core/workflow/di_tru_m1.py"]
+he_trong = "thi_hanh"
+
 [thanh_phan."core:kho"]
 mo_ta = "Luu tru, upload session, tai san, R2/cuc bo."
 duong = ["platform_core/storage.py", "platform_core/upload_sessions.py",

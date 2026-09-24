@@ -1,55 +1,27 @@
-"""App-owned orchestration jobs over the shared Agent executor.
+"""Job cua app Agent.
 
-`_dong_co` here handles `workflow.dong_co`, but that job_type is declared in
-`apps/agent_dong_co/manifest.py`, NOT in this app's manifest — `apps/agent`
-must keep `job_types == ("agent.advance",)` (see manifest.py docstring). The
-handler stays in this module because it shares the executor plumbing with
-`agent.advance`; `apps.agent_dong_co.jobs.handle` just calls this file's
-`handle()`.
+Sau cat chuyen §17 chi con MOT job: vong dong co Workflow V2. `agent.advance`
+(vong tick cua Plan v1) da chet cung `platform_core/agent/executor.py`.
+
+⚠️ `job_types` cua `workflow.dong_co` duoc khai o `apps/agent_dong_co/manifest.py`,
+   KHONG o day — xem docstring tep do (bat bien `test_190`
+   orchestrator-khong-phai-tool). Handler that van o day vi no dung chung than
+   thi hanh voi phan con lai cua app.
 """
 from __future__ import annotations
 
-from platform_core.i18n import _ as _t
 from datetime import datetime, timedelta, timezone
-
-from sqlalchemy.orm import Session
-
-from platform_core.agent import executor
-from platform_core.db import get_session
-from platform_core.models import AGENT_RUNNING
-
-
-def advance(db: Session, *, run_id: str, user_id: str):
-    """Advance one orchestration tick; called by the CSRF-protected progress POST."""
-    return executor.tick(db, run_id=run_id, user_id=user_id)
 
 
 def handle(params: dict, ctx=None) -> dict:
-    """Advance once, then durably enqueue the next tick while the run is active."""
-    if str(getattr(ctx, "job_type", "") or "") == "workflow.dong_co":
+    # ⚠️ Phan nhanh theo `ctx.job_type`, KHONG theo `params` — `params` la tham
+    #    so cua job (do ben nop dat), `ctx` la thu hang doi gan vao. Ban cu
+    #    cung doc `ctx.job_type`; doi sang `params` o day se lam moi job dong
+    #    co roi vao nhanh tu choi ma test don vi khong thay.
+    job_type = str(getattr(ctx, "job_type", "") or "")
+    if job_type == "workflow.dong_co":
         return _dong_co(ctx)
-    run_id, user_id = str(params.get("run_id", "")), str(params.get("user_id", ""))
-    if not run_id or not user_id:
-        raise ValueError(_t('Thiếu run_id/user_id cho agent.advance.'))
-    gen = get_session(); db = next(gen)
-    try:
-        from platform_core import jobs as job_queue
-        from platform_core.agent import runs
-        run = runs.get_owned(db, run_id, user_id, lock=True)
-        if run.status == AGENT_RUNNING:
-            run = advance(db, run_id=run.id, user_id=user_id)
-        if run.status == AGENT_RUNNING:
-            suffix = getattr(ctx, "job_id", "manual")
-            followup = job_queue.submit(
-                db, user_id=user_id, app_slug="agent", job_type="agent.advance",
-                params={"run_id": run_id, "user_id": user_id},
-                dedupe_key=f"agent:advance:{run_id}:after:{suffix}", max_attempts=3,
-            )
-            followup.next_run_at = datetime.now(timezone.utc) + timedelta(seconds=2)
-        db.commit()
-        return {"run_id": run.id, "status": run.status}
-    finally:
-        db.close()
+    raise ValueError(f"job_type khong thuoc app agent: {job_type!r}")
 
 
 def _dong_co(ctx=None) -> dict:

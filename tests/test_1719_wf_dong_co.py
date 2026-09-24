@@ -485,3 +485,84 @@ def test_doi_chung_bo_do_G23_bat_duoc_mau_xau(tmp_path):
             for n in ast.walk(cay) if isinstance(n, ast.Import)
             for a in n.names}
     assert "requests" in thay
+
+
+# ── Bắt HẸP: chỉ nuốt `ux_jobs_dedupe_active`, không nuốt lỗi khác ─────────
+
+def test_la_trung_khoa_dong_co_chi_nhan_dung_mot_rang_buoc():
+    """Phép nhận dạng phải TỪ CHỐI mọi vi phạm ràng buộc khác.
+
+    Đây là vế "đối chứng" của bản sửa cuộc đua: một `except IntegrityError`
+    trần sẽ làm mọi ca dưới đây trả `True` và nuốt mất lỗi thật. Dựng ngoại lệ
+    bằng tay (không cần CSDL) vì thứ đang đo là PHÉP SO, không phải driver.
+    """
+    from sqlalchemy.exc import IntegrityError
+
+    from platform_core.workflow import tao_run
+
+    class _Psycopg(Exception):
+        """Khuôn `psycopg.errors.IntegrityError`: có `.diag.constraint_name`."""
+
+        def __init__(self, ten_rang_buoc, thong_bao="loi"):
+            super().__init__(thong_bao)
+            self.diag = SimpleNamespace(constraint_name=ten_rang_buoc)
+
+    def _pg(ten_rang_buoc, thong_bao="loi"):
+        return IntegrityError("INSERT", {}, _Psycopg(ten_rang_buoc, thong_bao))
+
+    # PostgreSQL: so TÊN ràng buộc
+    assert tao_run._la_trung_khoa_dong_co(_pg(tao_run.UX_JOBS_DEDUPE))
+    assert not tao_run._la_trung_khoa_dong_co(_pg("jobs_user_id_fkey"))
+    assert not tao_run._la_trung_khoa_dong_co(_pg("ux_workflow_run_idem"))
+    assert not tao_run._la_trung_khoa_dong_co(_pg("ux_jobs_dedupe_active_v2"))
+
+    # ⚠️ Tên ràng buộc CÓ mặt ⇒ KHÔNG được rơi xuống dò chuỗi. Một lỗi khoá
+    #    ngoại mà thông báo tình cờ nhắc tên chỉ mục (vd trong câu SQL in kèm)
+    #    vẫn phải nổ.
+    assert not tao_run._la_trung_khoa_dong_co(
+        _pg("jobs_user_id_fkey", f"... {tao_run.UX_JOBS_DEDUPE} ..."))
+
+    # SQLite (không có `diag`) — chỉ khi đó mới dò chuỗi
+    class _Sqlite(Exception):
+        pass
+
+    assert tao_run._la_trung_khoa_dong_co(IntegrityError(
+        "INSERT", {},
+        _Sqlite(f"UNIQUE constraint failed: index '{tao_run.UX_JOBS_DEDUPE}'")))
+    # ⚠️ Dang SQLite THAT SU phat ra (do 23/09): no doc ra CAC COT chu
+    #    khong doc ra ten chi muc bo phan.
+    assert tao_run._la_trung_khoa_dong_co(IntegrityError(
+        "INSERT", {},
+        _Sqlite("UNIQUE constraint failed: jobs.user_id, jobs.dedupe_key")))
+    assert not tao_run._la_trung_khoa_dong_co(IntegrityError(
+        "INSERT", {}, _Sqlite("FOREIGN KEY constraint failed")))
+    assert not tao_run._la_trung_khoa_dong_co(IntegrityError(
+        "INSERT", {}, _Sqlite("UNIQUE constraint failed: jobs.id")))
+    assert not tao_run._la_trung_khoa_dong_co(IntegrityError(
+        "INSERT", {},
+        _Sqlite("UNIQUE constraint failed: jobs.user_id, jobs.job_type")))
+    assert not tao_run._la_trung_khoa_dong_co(IntegrityError(
+        "INSERT", {}, _Sqlite(
+            "UNIQUE constraint failed: workflow_runs.owner_id, "
+            "workflow_runs.idempotency_key")))
+
+
+def test_danh_thuc_dong_co_khong_nuot_integrityerror_khac(db, monkeypatch):
+    """Một `IntegrityError` KHÔNG phải `ux_jobs_dedupe_active` vẫn phải nổ.
+
+    Không đo vế này thì `except IntegrityError` trần cũng làm bài cuộc đua
+    xanh — và nuốt luôn mọi vi phạm khoá ngoại ở đường nộp job.
+    """
+    from sqlalchemy.exc import IntegrityError
+
+    from platform_core import jobs
+    from platform_core.workflow import tao_run
+
+    def _no(*a, **k):
+        raise IntegrityError(
+            "INSERT", {},
+            Exception("FOREIGN KEY constraint failed"))
+
+    monkeypatch.setattr(jobs, "submit", _no)
+    with pytest.raises(IntegrityError):
+        tao_run.danh_thuc_dong_co(db)

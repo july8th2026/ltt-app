@@ -33,9 +33,13 @@ docs/00_LTT_OPERATING_CONTRACT.md      ← đọc trước việc thực chất
    TRONG PHIÊN    test NHẮM cụm vừa sửa: thanh_phan.py --test <tp> -> python -m pytest <tệp> -q
                   cần gate -> CHỈ L1 (gate.py --doi) hoặc L2 (gate.py --pham-vi <tp>)
                   ⛔ KHÔNG L3 giữa các pha (không rải rác, không "chốt pha")
+                  ⛔ L1/L2 KHÔNG BAO GIỜ tự nâng lên L3 (chốt 24/09): không thu hẹp
+                     được thì HẠ CẤP xuống `nhanh` — giữ mọi bước tĩnh, bỏ bộ test
+                     đầy đủ, và KHAI RA rằng bộ test không được phủ
    GẶP LỖI        sửa TẠI CHỖ -> chạy lại ĐÚNG phép đã đỏ -> đi tiếp
    GỘP main       giữa phiên: test nhắm xanh (+ L1/L2 khi lan nhiều thành phần) — ⛔ không L3 để gộp
-   TỔNG KẾT PHIÊN (hết MỌI pha của cả phiên — không phải hết một nhánh/pha/hạng mục)
+   KẾT THÚC PHIÊN (hết PHIÊN LÀM VIỆC — ⛔ không phải hết một phase, task,
+                  nhánh hay một lần gộp `main`)
                   commit hết -> build frontend nếu đổi -> kiểm máy (luật 3)
                   -> python tools\gate.py (L3) MỘT lần, không ghi vào cây trong lúc chạy
    L3 ĐỎ          sửa tại chỗ -> chạy lại đúng phép đỏ (gate in sẵn) -> KHÉP gate.py --doi --tu <sha L3>

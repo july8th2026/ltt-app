@@ -22,6 +22,40 @@ SQLAlchemy (nền tảng, test `pytest`), PowerShell 7 (phát hành), Tauri/Rust
 - `D:\LTTCODEAPP\docs\LTTCODE\reports\CHAM_DIEM_VAN_HANH_THAT_23_09.md` — 60 hạng mục chấm điểm
 - `docs\VIEC_CAN_LAM_HOP_NHAT.md` — bảng quyết ưu tiên
 
+## ⛔ LUẬT SỐ MỘT KHI THI HÀNH PLAN NÀY: KHÔNG DỪNG GIỮA CÁC PHA
+
+Xong một pha thì **làm tiếp pha kế, không xin phép**. Hết **mọi** pha mới L3 → gộp `main` →
+deploy (nếu cần) → **báo**. Pha nào cần deploy để xây tiếp (đo thật, E2E) thì L1/L2 xanh → gộp
+`main` → deploy → báo, **rồi làm tiếp** — vẫn không dừng.
+
+**Chỉ được dừng khi đúng một trong bốn điều sau** (hợp đồng §10, §10b):
+
+| # | Được dừng khi | KHÔNG phải điểm dừng |
+|---|---|---|
+| 1 | **Gate đỏ** | Một phép kiểm lẻ đỏ — sửa tại chỗ rồi chạy lại đúng phép đó |
+| 2 | **Thao tác không đảo được** | Deploy (có gate xanh trên đúng SHA) · build · cài đè bản dev |
+| 3 | **Thay đổi chưa commit không rõ của ai** | Dòng `??` đã biết là của phiên khác — để yên, đi tiếp |
+| 4 | **Rủi ro bảo mật** | Hộp UAC (`tools
+ang_quyen.py` nâng quyền im lặng) |
+
+### Những câu KHÔNG được dùng để kết thúc một lượt
+
+Đây là các dạng câu đã thật sự làm dừng sai trong dự án này. Viết ra để nhận mặt:
+
+- *"Tôi đã xong pha N. Ông muốn tôi làm tiếp pha N+1 không?"* — có plan rồi thì làm tiếp.
+- *"Cần ông duyệt trước khi tôi chạy gate/deploy."* — quyền đã cấp, điều kiện đã ghi trong plan.
+- *"Ông muốn tôi đi hướng A hay B?"* khi **một hướng rõ ràng hợp lý hơn** — chọn, nói rõ vì sao
+  chọn, đi tiếp. Chỉ hỏi khi hai hướng **đổi hẳn việc phải làm** và không có căn cứ để chọn.
+- *"Đang chờ làn X báo về."* — chờ ở **tiền cảnh**; trong lúc chờ thì làm việc **không phụ thuộc**
+  kết quả đó. Kết thúc lượt để ngồi chờ là bỏ phí một lượt.
+
+### Ngược lại, có một thứ PHẢI dừng để hỏi
+
+Khi việc chạm vào **sổ sách tiền** hoặc **chính sách với khách** — ví dụ: lượt hỏng vì hạ tầng
+của ta thì khách có trả không (**Q137**), có hoàn tiền không, có đổi giá không. Đó **không phải**
+câu kỹ thuật, và không ai ngoài chủ dự án trả lời được. Ghi câu hỏi ra, làm tiếp mọi việc **không**
+phụ thuộc câu trả lời, rồi hỏi **một lần, gọn**.
+
 ## Global Constraints
 
 Áp cho **mọi** task, không nhắc lại trong từng task:
@@ -63,39 +97,72 @@ SQLAlchemy (nền tảng, test `pytest`), PowerShell 7 (phát hành), Tauri/Rust
 | 7 | `-Notes` bắt buộc | ✅ `8ed9ecb` · manifest dev đã vá |
 | 8 | Tài liệu `User-Agent` | ✅ `c23c7cce` · đã gộp `main` |
 | 9 | Cho Cloudflare cache bộ cài | ✅ `e17f1bc3` · **đã deploy + đo**: `no-store` → `immutable`, BYPASS → MISS → **HIT** (Age tăng 29→37) |
-| 10 | Bổ sung từ sổ lỗi D1 | ✅ `67f412f6` — số đo cuối đã ghi, V-19…V-24 đã lập, **`restore.ps1` đã vá** (7 phép, có đối chứng âm). Off-site đã dựng + cắm lịch. Còn mở: 3 tệp sổ đăng ký ngoài mẫu backup (chờ chủ dự án) |
+| 10 | Bổ sung từ sổ lỗi D1 | ✅ `67f412f6` — số đo cuối đã ghi, V-19…V-24 đã lập, **`restore.ps1` đã vá** (7 phép, có đối chứng âm). Off-site đã dựng + cắm lịch. Sổ đăng ký đã vào mẫu backup (`8a46784c`) — **hết việc mở** |
 
-### Phần B — nâng năng lực: **2,5 / 10 = 25 %** (không đổi)
+### Phần B — nâng năng lực: **7,5 / 10 = 75 %** (cập nhật 24/09 ~02:30, sau lượt 0.2.8)
+
+> Cộng: T11 0,5 · T12 **1** · T13 **1** · T14 0,5 · T15 **1** · T16 0,5 · T17 **1** · T18 0,5 · T19 **1** · T20 0,5.
+> **T17 được tính trọn 1** vì bước 2 của chính nó cho phép *"kết luận giới hạn phần cứng rồi đóng task"* —
+> và số đo đã chứng minh đúng điều đó. **T16 chỉ 0,5** vì thứ khách cần (thấy tiền) **không** giao được;
+> tra xong không phải là làm xong.
 
 | Task | Việc | Trạng thái |
 |---|---|---|
-| 11 | A1 nút "Chạy tiếp" | 🟡 **0,5** — hàm `coTheNoiLai` + test xong (`670770b`); **nút giao diện CHẶN**: slot không có hàm resend, cần thiết kế mới |
-| 12 | C2 nén bằng 3.5 | 🟡 **0,5** — mã xong (`3326d7f`), **chờ đo** tốc độ + chất lượng tóm tắt trên phiên dài |
-| 13 | MCP dùng thật (nay 0/166) | ⬜ chưa |
-| 14 | Gỡ trần 50 của kế hoạch/mục tiêu | ⬜ chưa |
-| 15 | Agent do người dùng định nghĩa | 🟡 **0,5** — tra xong: **đã có sẵn** (`~/.agents/*.md`, `resolveAgentOptions`); còn mở đường + tài liệu + bằng chứng chạy |
-| 16 | Credit mỗi lượt cạnh token | 🔴 **CHẶN** — tra hết chuỗi: `/api/v1/messages` chỉ mang token; quyết toán chạy trong `finally` SAU khi byte cuối đã gửi; `/api/v1/usage` join theo `Job.id` còn lượt chat mang mã `stream:<hex>`. **Không có nguồn nào cho credit theo lượt.** Chủ dự án chọn (b): suy từ hiệu số số dư, gắn nhãn `≈` |
-| 17 | Giảm độ trễ mỗi bước | ⬜ chưa |
+| 11 | A1 nút "Chạy tiếp" | 🟡 **0,5** — chặn ở **kiến trúc DSH** (`dsh-agent-loop` cố ý không expose `retry()`). Phần TIỀN đã sáng: quyết toán **theo token đã sinh thật** ⇒ chạy tiếp **không** trùng; trùng chỉ khi **cùng một request** bị gửi lại. Hạ tầng idempotency **đã có sẵn** (`credit_entries` khoá `job_id`=`request_id`), chỉ thiếu khoá ở cửa stream — mà `protocol.py:244-250` **đã viết sẵn luật đó**. Cần chủ dự án quyết: lỗi hạ tầng của TA thì khách có trả phần đã sinh không |
+| 12 | C2 nén bằng 3.5 | ✅ **1** — **đã đo trên app thật (0.2.8)**: chạm ngưỡng 98 153 token, `compaction/start→summary→end` chạy bằng **`ltt-official/ltt-3.5`** (không phải 3.8), mất **57,6 s** — nhanh hơn nền cũ 188–244 s trên 3.8 **3–4 lần**. Tóm tắt giữ đúng việc đang làm (đọc lại, không chỉ tin nhãn) |
+| 13 | MCP dùng thật (nay 0/166) | ✅ **1** — **0/166 → tự gọi ngay lượt đầu**. Catalog đã có mô tả + tiêu đề nhóm *khi nào dùng*; model tự `tool_search` → `tool_describe` → gọi `mcp__chrome-devtools__navigate`, **không ai nhắc**. ⚠️ Đạt kết quả nhưng **chưa cô lập nguyên nhân** (nâng trần + `groups` đi cùng một bản) |
+| 14 | Gỡ trần 50 của kế hoạch/mục tiêu | 🟡 **0,5** — **tiền đề SAI**: `exit_plan_mode` **không có trong tool-set** (chỉ mount khi `/plan on`); `create_goal` thì prompt hệ thống **dặn đừng dùng** cho việc một lượt. Model không làm sai — **thang đo phạt một hành vi đúng**. ✅ Đã chốt đi đường *giữ `/plan on` là lệnh người dùng* (Claude Code cũng vậy); còn: tài liệu + sửa câu hỏi của bảng chấm |
+| 15 | Agent do người dùng định nghĩa | ✅ **1** — chạy thật: phiên con `867b4329…` đúng vai, `agentModel:"ltt-3.5"` trong khi cha chạy `ltt-3.8`. ⚠️ **Đính chính**: vá V-25 **không ăn về vận hành** — cảnh báo vào buffer RAM, **không kênh nào đưa ra ngoài**. Lập lỗi riêng, không nhận V-25 đã đóng |
+| 16 | Credit mỗi lượt cạnh token | ⚫ **ĐÓNG — chặn ở tầng engine.** Tra ba vòng, mỗi vòng bác một phương án: (1) cổng không có trường credit, quyết toán chạy sau byte cuối; (2) `client.js` là **loopback remote page ⇒ không có Tauri IPC**; (3) từ sidecar thì `TokenUsage` là interface đóng và projection **khoá cứng đồng bộ, cấm I/O**. Cần hạ tầng engine mới ⇒ chuyển `HANG_MUC_BAN_SAU.md`. **Không chỗ nào hiện số tiền sai** |
+| 17 | Giảm độ trễ mỗi bước | ⚫ **ĐÓNG — giới hạn phần cứng, đã tách bằng số.** 226/226 lượt LLM: **sinh token 62,2 %** (4 878,9 s) · chờ suất/TTFT 23,3 % · chạy công cụ 14,5 % (82 % của phần đó là `pwsh` chạy thật). Phần mềm không chạm được vào 62,2 % ⇒ **không vờ tối ưu** |
 | 18 | Chạy tiếp khi đóng app | 🟡 **0,5** — tra xong: **phần lớn đã có** (khay giữ sidecar sống, autostart, `lttcode-cli.exe` chạy thật 60,7 s). H18 chấm lại 45 → 78. Còn: chủ dự án quyết có làm scheduler mức hệ điều hành không |
-| 19 | Git/PR thành công cụ gốc | 🟡 **0,5** — tra xong: **không phải tự viết**, cộng đồng có `lxj808624/dsh-tool-git`; còn: đánh giá repo theo `TIEU_CHI.md` rồi bundle |
-| 20 | Khởi động app (17→49→107 s) | ⬜ chưa |
+| 19 | Git/PR thành công cụ gốc | ✅ **1** — `18054a2` + `cb6e596`. Model **tự** gọi `git_trang_thai`/`git_khac_biet`/`git_log` khi được hỏi "kho có gì đang thay đổi", **không ai nhắc**. Manifest thật chỉ có 4 công cụ chỉ-đọc — **không** `git_commit`/`git_stage`/`git_stash` |
+| 20 | Khởi động app (17→49→107 s) | 🟡 **0,5** — vỏ Tauri **16 ms** · `stage_dsh_home` **7,8 s** · sidecar ready **11,4 s** ≈ 19 s, tổng **54,5 s**. ⛔ **Đính chính 2 lần**: 35 s hụt **KHÔNG** ở WebView2/SPA — `boot_wall_sec` dừng ở **cùng mốc** sidecar ready (`p05_smoke.ps1:64-67`), chặng SPA nằm **ngoài** phép đo. Hụt nằm **trước dòng log Rust đầu tiên** ⇒ nạp/quét `LTTCODE.exe` + DLL. Việc tới: lấy giờ tạo tiến trình từ OS |
 
 ### Ngoài plan — việc sinh ra từ lượt diễn tập D1
 
 | Việc | Trạng thái |
 |---|---|
 | Đồng bộ off-site ra Google Drive | ✅ `a70512f4` — chạy thật 7 bản/1,11 GB/0,9 phút/0 lỗi; đã cắm lịch `LTTStudioBackupOffSite` 03:00 hằng ngày, chạy thử dưới trình lập lịch **kết quả 0** |
+| Ba tệp sổ đăng ký ngoài mẫu backup | ✅ `8a46784c` (đã gộp `main`) — tra ra **chỉ hai** tệp cần sao lưu, không phải ba: `lttcode_releases.json` + `nexus_versions.json` (chứa chữ ký minisign + SHA từng bản đã phát ⇒ **không dựng lại được**). `translations/` **sinh lại được**: `setup\2-cai-dat.ps1:683-694` robocopy nó từ kho mã mỗi lần deploy ⇒ cố ý để ngoài. 7 phép, đỏ trước (kiểm trên `HEAD` cũ) xanh sau |
+| `app.env` cất ở ổ D | ✅ ghi thành **quyết định có chủ ý** của chủ dự án 23/09 trong `RUNBOOK_KHOI_PHUC.md` §8 (D là ổ vật lý khác C ⇒ chịu được hỏng một ổ), kèm phần nó **KHÔNG** che: cháy máy · mất trộm · ransomware mã hoá cả hai ổ |
 | Đường diễn tập khôi phục + đối chứng âm | ✅ `3f5b8a8d` (gộp `main`, 1 286 dòng) |
 
 ### Đọc con số này thế nào
 
-**65 % và 25 % không so sánh được với nhau.** Phần A là mười lỗi đã biết, mỗi cái vài chục dòng.
+**100 % và 75 % không so sánh được với nhau.** Phần A là mười lỗi đã biết, mỗi cái vài chục dòng.
 Phần B là mười năng lực, trong đó ba cái là dự án riêng. Cộng hai phần thành một con số là vô nghĩa.
 
-**Bốn task Phần B ở mức 0,5 đều dừng ở đúng chỗ đáng dừng**, không phải bỏ dở: Task 11 chặn vì
-slot giao diện không có sẵn đường nối; Task 12 chờ phép đo mà một lượt text không tạo ra được;
-Task 15/18/19 dừng sau khi tra ra **năng lực đã có sẵn** — và đó là kết quả có giá trị hơn việc
-viết thêm mã.
+**Các task ở mức 0,5 đều dừng ở đúng chỗ đáng dừng**, không phải bỏ dở: T11 chặn vì slot giao diện
+không có sẵn đường nối; T12 chờ phép đo mà một lượt text không tạo ra được; T18 dừng sau khi tra ra
+**năng lực đã có sẵn**.
+
+### Thu hoạch thật của vòng 23/09 khuya: **năm lần giả thuyết của điều phối bị số đo bác**
+
+Ghi lại vì đây là giá trị lớn hơn số dòng mã viết ra.
+
+| # | Điều phối tin | Số đo / mã nói |
+|---|---|---|
+| 1 | Ba tệp sổ đăng ký phải vào backup | **Hai.** `translations/` robocopy lại mỗi lần deploy (`2-cai-dat.ps1:683-694`) |
+| 2 | T16 lấy credit qua đường gọi của cửa sổ Tài khoản | **Không với tới.** DSH web UI là loopback remote page ⇒ **không có Tauri IPC**. Và đi lối sidecar cũng chặn: `TokenUsage` là interface đóng, projection **cấm I/O** |
+| 3 | T19 bundle rồi tắt nhóm công cụ ghi | **Cordis không có khái niệm "tool" ở lớp đó** — đơn vị nhỏ nhất là cả plugin |
+| 4 | T15 sửa `agent-role-router.js` trong kho | Tệp nằm trong **`node_modules` gitignored** — phải vá theo khuôn `postinstall` + `UPSTREAM_DIVERGENCE.md` |
+| 5 | T13 `listingMaxTokens: 2200` là thủ phạm | Đo thật **1 740 / 2 038 token — đều DƯỚI trần cũ**. Giả thuyết **chưa được chứng minh** |
+
+Bốn lần đầu các làn báo thẳng và điều phối đổi hướng. **Lần thứ năm chưa giải quyết xong** — nâng
+trần là thay đổi rẻ và an toàn, nhưng ⛔ **không được ghi là "đã sửa nguyên nhân"** cho tới khi lượt
+mở app nhìn thấy catalog có mô tả.
+
+✅ **Nợ kỹ thuật đã trả (23/09 khuya):** `cargo test --lib` cho `desktop/src-tauri` →
+**114 passed, 0 failed**, gồm cả ba phép mới của T13/T20. Rút lại lời dè dặt "mới chỉ rà tay"
+trong báo cáo trước đó.
+
+> Hai bẫy công cụ lộ ra trên đường trả nợ này, ghi để làn sau khỏi mất giờ:
+> 1. **`chay_nang.py` nuốt MỌI token `--`**, không riêng dấu ngăn của nó ⇒
+>    `cargo test … -- --nocapture` tới `cargo` thành `--nocapture` trần và bị từ chối
+>    **trước khi biên dịch gì cả**. Lượt đỏ đó trông hệt "test hỏng" nhưng **chưa test nào chạy**.
+> 2. `cargo test <a> <b>` chỉ nhận **một** chuỗi lọc — truyền hai đường module là lỗi ngay.
+>    Chạy cả `--lib`, hoặc lọc từng cái.
 
 
 ## Bản đồ làn — chạy song song thế nào cho nhanh mà không hỏng
@@ -987,6 +1054,81 @@ phải gõ lại lần nào** cho nhóm lỗi tạm thời.
 
 ---
 
+
+### 🔴 CHẶN THẬT nằm ở KIẾN TRÚC DSH, không ở slot giao diện (làn `r-t11`, 24/09)
+
+Làn trước báo *"slot giao diện không có hàm resend"*. **Đúng hệ quả, sai chỗ.** Đọc mã thượng nguồn:
+
+| Câu | Trả lời | Nguồn |
+|---|---|---|
+| Nội dung tin nhắn có còn giữ không | **CÓ** — không ở draft (draft bị xoá ngay khi gửi thành công) mà ở **lịch sử agent** (durable, `source.kind=="user"`). Bong bóng chat render từ event log, không phải từ draft | `dsh-client-ui-conversation/lib/client.js:2959`, ~13085, 14332 |
+| Có API gửi lại không | **KHÔNG.** `dsh-agent-loop` chỉ expose `send/followup/steer/inject/cancel` — **không có `retry()`** | `dsh-agent-loop/lib/index.js:781-795` |
+| Vì sao không có | **Cố ý.** Cơ chế "promptless retry turn" của DSH **chỉ chạy đồng bộ bên trong waterfall `agent/request-error`**; đóng lượt lỗi xong là **hết cửa**. `Agent`/`ReactLoopAgent` cố tình không expose `retry()` | note thượng nguồn `2026-07-27-request-error-retry-action.md` |
+| Lúc giao diện hiện lỗi thì sao | Cửa đó **đã đóng** — `coTheNoiLai` (`ui-lttcode/src/client.js:3599`) chạy **sau** khi lượt đã terminal | |
+
+Thứ duy nhất làm được trong tầm plugin: đọc nội dung lượt cũ rồi gọi `followup()` với **nội dung y
+hệt** — tức tạo **một lượt user MỚI** (trùng bong bóng), không phải "chạy tiếp" thật.
+
+### ⛔ Và câu chặn cứng là TIỀN — không giải được từ phía khách
+
+**`requestId` chỉ dedupe RPC *admit prompt*, KHÔNG liên quan quyết toán.** Billing tính ở `finally`
+phía cổng. Phía `client.js` **không có** `stream:<hex>` hay id nào để hỏi máy chủ *"lượt cũ đã tính
+tiền chưa"*.
+
+⇒ Bấm "Chạy tiếp" cho một lượt **đã quyết toán** là **trừ tiền hai lần**. Đúng câu tôi ghim vào
+brief, và câu đó **chưa ai trả lời được**.
+
+### ⇒ Task 11 chuyển câu hỏi sang phía NỀN TẢNG
+
+Việc còn lại **không nằm ở `LTTCODEAPP`**. Phải trả lời ở `llm_gateway` trước:
+
+- [ ] Cổng có nhận **khoá idempotency** cho một lượt không? Không có thì thêm được không?
+- [ ] Quyết toán credit có **idempotent** theo khoá đó không — gửi lại cùng khoá thì **không**
+      trừ lần hai?
+- [ ] Lượt **đứt giữa chừng** (khách mất mạng) đã bị tính tiền chưa? (Liên quan sự cố 19/09:
+      *khách ngắt bị tính là lỗi B*.)
+
+### ✅ BA CÂU ĐÃ CÓ ĐÁP ÁN (làn `r-tien`, 24/09) — và chặn NHỎ hơn tôi tưởng
+
+| Câu | Đáp án | Nguồn |
+|---|---|---|
+| Sổ credit khoá theo gì | Bảng `credit_entries` append-only, **khoá idempotent là `job_id`**, mà với `/api/v1/messages` thì **`job_id` CHÍNH LÀ `request_id`** | `platform_core/models.py:787-798`, `:520`; `credit.py:367-389` |
+| `request_id` từ đâu | **Server tự sinh** (`thanh_toan.ma_luot`), **không** do khách gửi | `luong.py:1438, 779` |
+| Cổng có Idempotency-Key không | **Không — CỐ Ý.** `requires_idempotency_key=False  # Q107`, lý do ghi rõ: *"không CLI nào gửi nó"* và nền tảng *"không tiếp nối luồng"*. Nhưng **khuôn đã có sẵn** ở `/chat/completions`, `/jobs`, `/workflows` | `server/api/streaming.py:1,21-23,191`; `public_api/idempotency.py` |
+| **Ngắt giữa chừng có bị tính trọn không** | **KHÔNG — tính theo token ĐÃ SINH THẬT.** `GeneratorExit` → `khach_ngat=True`, `finally` gọi `quyet_toan(..., dem, ...)` với bộ đếm tới lúc ngắt. Hợp đồng khai `settles_from_measured_usage=True`, và `protocol.py:235-243` **ép buộc** mọi STREAM tính phí phải khai — thiếu thì app **không khởi động được** | `luong.py:1932-1954`; `streaming.py:202` |
+| Có giữ-rồi-hoàn không | **Có**, và hold mang **đúng `request_id`** | `credit.giu_cho:276-322`, `credit.hoan:479-502` |
+
+### ⇒ Nỗi lo "trừ tiền hai lần" của tôi ĐÚNG MỘT NỬA — và nửa sai là nửa quan trọng
+
+Vì quyết toán **theo token đã sinh thật**, nên:
+
+- Lượt chết vì 502 **chưa sinh token** ⇒ tính ≈ **0**. Chạy tiếp **không** trừ hai lần.
+- Lượt chết **sau khi đã sinh một phần** ⇒ khách bị tính **đúng phần đã nhận**. Chạy tiếp là
+  **sinh mới thật**, tốn thật ⇒ tính tiền là **đúng**, không phải trùng.
+- **Trùng thật chỉ xảy ra khi cùng MỘT request bị gửi lại** (mạng chập, client tự retry mà không
+  thấy phản hồi). ⇒ Đây đúng là thứ `Idempotency-Key` sinh ra để chặn.
+
+⇒ Chặn của Task 11 **không phải** "tiền không giải được", mà hẹp hơn nhiều: **thiếu một khoá
+idempotency ở cửa stream**, trong khi cả hạ tầng cho nó **đã có sẵn**.
+
+> 🔑 **Và nền tảng đã tự viết sẵn đúng luật này rồi**, `protocol.py:244-250`:
+> *"a resumable STREAM must require an Idempotency-Key — resume without one bills the same work twice."*
+> Tức người thiết kế đã lường trước ngày có tính năng tiếp nối. Hôm nay là ngày đó.
+
+- [ ] **Bước 1 (nền tảng):** cho `/api/v1/messages` nhận `Idempotency-Key` **chỉ ở nhánh tiếp nối**
+      (Q107 vẫn đúng cho lượt thường — đừng bắt mọi khách gửi). `chuan_bi()` có key thì **tái dùng
+      `request_id`** thay vì sinh mới; `giu_cho`/`quyet_toan` vốn đã idempotent theo `job_id` sẽ tự chặn.
+      Đặt `requires_idempotency_key=True` cho nhánh đó — `protocol.py` sẽ **tự bắt lỗi** nếu quên.
+- [ ] **Bước 2:** xác nhận `operation` mới không đụng namespace của các op cũ trong `ApiIdempotencyRecord`.
+- [ ] **Bước 3 (khách):** chỉ sau khi bước 1 xanh mới bàn tới nút bấm.
+
+### ⚠️ Một câu CHÍNH SÁCH, không phải câu kỹ thuật — cần chủ dự án quyết
+
+Lượt chết vì **hạ tầng CỦA TA** (502 từ chính cổng của mình) mà đã sinh một phần token:
+**khách có phải trả phần đó không?**
+
+Mã hiện tại: **có** — tính theo token đã sinh, không phân biệt lỗi do ai. Đúng về kỹ thuật, nhưng
+là một lựa chọn kinh doanh chứ không phải một sự thật. ⛔ Không tự đổi sổ sách. Ghi ra để hỏi.
 ## Task 12 ⏳ MÃ XONG (`3326d7f`), CHỜ ĐO: Nén ngữ cảnh bằng model nhỏ (C2: 45 → 80)
 
 **Số đo hiện tại:** **188,6 s** và **243,7 s** cho hai lần nén trong cùng một phiên — hơn **7 phút**
@@ -1036,28 +1178,115 @@ thật để kiểm trang phát hành. Một tính năng không ai gọi thì b�
 
 **Files:**
 - Create: `D:\LTTCODEAPP\tests\live\mcp\kiem_tung_mcp.mjs`
-- Modify: `D:\LTTCODEAPP\plugins\profile-lttcode\cordis.patch.yml` (nếu phát hiện cấu hình chặn)
+- Modify: `D:\LTTCODEAPP\plugins\profile-lttcode\cordis.patch.yml` — **đã phát hiện cấu hình chặn,
+  không còn là "nếu"** (làn `b-mcp` 23/09, xem Step 1–2 dưới)
 
 **Interfaces:**
 - Produces: `kiemMcp(ten) -> { ten, noiDuoc: boolean, soCongCu: number, loi?: string }` cho từng
   MCP; và một báo cáo JSON gom bốn kết quả.
 
-- [ ] **Step 1: Đo hiện trạng bằng một phép kiểm thật, không đọc cấu hình**
+- [x] **Step 1 ✅ XONG (làn `b-mcp`, 23/09): bốn MCP đều NỐI ĐƯỢC THẬT.** Đo trực tiếp, không mở app:
 
-Với mỗi MCP: khởi động, liệt kê công cụ, gọi **một** công cụ vô hại, ghi kết quả.
-- `memory` → ghi rồi đọc lại một khoá
-- `context7` → tra một thư viện
-- `playwright` → mở `about:blank`, đọc tiêu đề
-- `chrome-devtools` → liệt kê công cụ (không mở trang)
+  | MCP | Nối được | Công cụ | Phép gọi thật |
+  |---|---|---|---|
+  | `memory` | ✅ | 9 | `create_entities` ghi rồi `open_nodes` đọc lại — **khớp** |
+  | `context7` | ✅ | 2 | `resolve-library-id` tra "React", có kết quả thật |
+  | `chrome-devtools` | ✅ | 3 | chỉ liệt kê, không mở trang |
+  | `playwright` | ✅ | 26 | mở `about:blank`, snapshot đọc được URL |
 
-- [ ] **Step 2: Phân loại từng cái** — chạy được / hỏng / không ai gọi vì model không biết nó có.
-  Cái thứ ba là lỗi **mô tả công cụ**, không phải lỗi MCP.
+  Cả bốn `default_enabled: true` (`desktop/src-tauri/src/mcp.rs:156-229`), `generate()` sinh row
+  mỗi lần khởi động. ⇒ **Không phải (a) hỏng, cũng không phải (b) không tới tay model.**
 
-- [ ] **Step 3: Sửa đúng nhóm vừa phân loại.** Với nhóm "model không biết": viết lại mô tả để nói
-  rõ **khi nào nên dùng**, không chỉ nói nó là gì.
+- [x] **Step 2 ✅ XONG — nguyên nhân là (c), và cụ thể hơn thế: DANH SÁCH BỊ CẮT MẤT MÔ TẢ.**
 
-- [ ] **Step 4: Đo lại trên phiên thật** — chạy một việc **bắt buộc phải dùng MCP** (ví dụ: kiểm
-  một trang web thật). **Đạt khi: MCP được gọi ≥ 1 lần mà không phải nhắc trong prompt.**
+  Đọc bản ghi phiên D1 thật (`session-dd80eaf3…`, giải nén zstd, 1 356 dòng):
+  - 43 công cụ trong `request/header` **không** chứa tên `mcp__*` — đúng như thiết kế, chúng là
+    công cụ **hoãn** (deferred);
+  - nhưng "Deferred tool catalog" (seq 11) **có đủ 44 tên** `mcp__memory__*`, `mcp__playwright__*`,
+    `mcp__chrome-devtools__*`, `mcp__context7__*` ⇒ **tên có tới model**;
+  - **catalog đó là `## ungrouped`, THUẦN TÊN, KHÔNG MÔ TẢ** (tier names-only), vì
+    `listingMaxTokens: 2200` ở `plugins/profile-lttcode/cordis.patch.yml:344`.
+
+  🔴 **Và chú thích ngay trên nó (dòng 332-334) tự khai rằng con số đó tính khi "chỉ memory +
+  context7 hoãn"** — trong khi mặc định hiện tại còn `playwright` (26) + `chrome-devtools` (3)
+  + `github` (8 khi có token). Ngân sách đặt cho một tập nhỏ hơn, tập phình ra, danh sách tụt
+  xuống tier tên-trần. **Model nhìn thấy 44 cái tên không kèm một chữ nào giải thích.**
+
+  Đối chứng hành vi: trong 166 lượt gọi công cụ có **đúng 1 lần `tool_search`** (query
+  `"read file"`, không liên quan MCP) và **0 lần `tool_describe`/`tool_call`**.
+  > ⚠️ Làn tự bắt được một **dương tính giả của chính mình**: đếm chuỗi thô ban đầu báo 8/8
+  > `tool_call`, hoá ra khớp phải chữ "tool_call" **nằm trong văn bản catalog**, không phải bản
+  > ghi gọi thật. Ghi lại vì đây đúng kiểu lỗi đo hay gặp.
+
+- [ ] **Step 3: Sửa hai lớp — đã soạn sẵn, CHƯA áp.**
+
+  **Lớp 1 — trả lại mô tả:** `cordis.patch.yml:344` `listingMaxTokens: 2200` → **4000** (bằng mặc
+  định thượng nguồn của `dsh-tool-search`), và **sửa luôn chú thích 332-334** cho khớp tập MCP
+  thật. ⚠️ Phải **đo lại token thật** sau khi đổi, kể cả trường hợp có token GitHub — nếu không
+  thì chỉ là dời cái trần chứ không biết nó đủ chưa.
+
+  **Lớp 2 — nói "khi nào dùng", không chỉ "nó là gì":** mô tả gốc của bên thứ ba vô dụng cho việc
+  chọn (`create_entities` = *"Create multiple new entities in the knowledge graph"*), và
+  `dsh-mcp-client` **không cho ghi đè mô tả** (`README.md:164-168` — lấy verbatim từ gói gốc).
+  Đường duy nhất là **`groups`** của tool-search, đọc từ `$DSH_HOME/dsh-tool-search.json`
+  (`configScope: user`, `cordis.patch.yml:343`; schema `dsh-tool-search/lib/config.js:60-80`).
+  🔴 **LTTCODE hiện chưa sinh tệp đó** ⇒ cần một hàm kiểu `prepare_overlay` (`mcp.rs:722-733`)
+  ghi nó mỗi lần khởi động. `group.name` là chuỗi tự do và là **thứ duy nhất hiển thị làm tiêu
+  đề** (`## ${group}`), nên nội dung "khi nào dùng" phải nhét vào chính tên nhóm — bốn nhóm đã
+  soạn sẵn trong báo cáo của làn `b-mcp`.
+
+- [x] **Step 3 phần mã ✅ (`36344e0`)** — nhưng **kèm một mâu thuẫn chưa giải được, không giấu:**
+
+  Trần đã nâng 2200 → 4000, và **đã đo thật** (spawn từng máy chủ MCP, lấy mô tả thật, dùng chính
+  `estimateTokens`/`buildGroupedManifest` của `dsh-tool-search`):
+
+  | Tập công cụ | Token đo được | So với trần cũ 2200 |
+  |---|---|---|
+  | 4 MCP mặc định (40 công cụ) | **1 740** | **dưới** |
+  | + GitHub 8 công cụ đọc | **2 038** | **vẫn dưới** |
+
+  🔴 **Cả hai đều dưới trần CŨ.** Nghĩa là `listingMaxTokens: 2200` **không giải thích được** hành
+  vi names-only quan sát ở D1. Giả thuyết ban đầu của tôi **chưa được chứng minh**.
+
+  Ba cách đọc, chưa cách nào bị loại:
+  1. **Tập hoãn ở D1 lớn hơn 40 + 8** — catalog hoãn chứa **mọi** công cụ hoãn, không riêng MCP;
+     phép đo này chỉ đếm phần MCP ⇒ có thể đang đo một tập con của thủ phạm;
+  2. **lệch phiên bản** giữa gói lúc D1 chạy và gói hiện cài;
+  3. tier tụt vì lý do khác hẳn (ngân sách động theo ngữ cảnh, chứ không theo hằng số này).
+
+  ⇒ **Nâng trần là thay đổi rẻ và an toàn, nhưng KHÔNG được ghi là "đã sửa nguyên nhân".**
+  Phán quyết duy nhất có giá trị là Step 4 — mở app, xem catalog **có mô tả chưa**. Nếu vẫn
+  names-only thì cách đọc (1) đúng, và phải đếm **toàn bộ** tập hoãn chứ không chỉ MCP.
+
+  Phần `groups` thì độc lập với chuyện này và chắc chắn có ích: `mcp.rs::write_tool_search_groups`
+  sinh `$DSH_HOME/dsh-tool-search.json` mỗi lần khởi động (best-effort), bốn nhóm mang sẵn *khi nào
+  dùng* trong chính tên nhóm. **Đối chứng âm có:** thiếu tệp · JSON hỏng · `groups` sai hình ⇒ rơi
+  về `{}` + cảnh báo, **không bao giờ throw, không chặn khởi động**.
+
+- [x] **Step 4 ✅ ĐẠT CẢ HAI (bản 0.2.7 đã cài, 23/09 khuya)**
+
+  **(a) Catalog đã có mô tả**, và có tiêu đề nhóm mang nghĩa *khi nào dùng*:
+  `## memory: nho lau dai GIUA CAC PHIEN…` · `## playwright: lai trinh duyet NHIEU BUOC…` ·
+  `## chrome-devtools: chi MOT url…` · `## context7: tai lieu MOI NHAT…` ·
+  `## git review (CHI DOC): xem lai thay doi TRUOC KHI de xuat commit…`
+  Tier hiện tại là **tier 1 "full"** (`dsh-tool-search/lib/disclosure.js::computeTier`).
+
+  **(b) Model TỰ gọi MCP, không ai nhắc.** Prompt: *"Mo trang https://app.lttstudios.com va cho
+  minh biet tieu de trang la gi."* — không một chữ nào nhắc MCP. Chuỗi thật trong bản ghi:
+  `tool_search` → `tool_describe(mcp__chrome-devtools__navigate)` → `tool_call(navigate)` →
+  `tool_call(evaluate)` → trả đúng *"LTT AI Studio"*. Đếm theo **row `tool/call`**, không grep chuỗi.
+
+  **Từ 0/166 → tự gọi ngay lượt đầu.**
+
+  ### ⚠️ Nhưng KHÔNG quy được công cho thay đổi nào
+
+  Làn đo kết luận **trần token không phải thủ phạm** — tier đang là "full" và tổng chỉ ~2 394
+  token, dưới cả trần cũ 2 200. Mà bản 0.2.7 chở **hai** thay đổi cùng lúc: nâng trần
+  2200→4000 **và** sinh `dsh-tool-search.json` với `groups`. Không có lượt đối chứng nào tách
+  hai cái đó.
+
+  ⇒ **Kết quả đạt, nguyên nhân chưa cô lập.** Ghi đúng như vậy. Muốn biết thật thì phải bỏ
+  `groups` đi rồi đo lại — chưa ai làm. ⛔ Đừng viết vào báo cáo rằng "nâng trần đã sửa được MCP".
 
 - [ ] **Step 5: Commit**
 
@@ -1072,13 +1301,49 @@ cụ** nhưng **không dùng lần nào** trong 155 bước. Theo thang chấm, 
 **Files:**
 - Create: `D:\LTTCODEAPP\tests\live\ke-hoach\kiem_plan_mode.mjs`
 
-- [ ] **Step 1: Chạy một việc thật đủ lớn để phải lập kế hoạch**, quan sát agent có vào chế độ
-  kế hoạch không. Ghi lại: có / không.
-- [ ] **Step 2:** Nếu không — tra vì sao: prompt hệ thống không nhắc, hay mô tả công cụ mờ, hay
-  điều kiện kích hoạt quá hẹp.
-- [ ] **Step 3:** Sửa đúng nguyên nhân tìm được.
-- [ ] **Step 4:** Chạy lại, thu bằng chứng: bản ghi có `exit_plan_mode`, và kế hoạch hiện trên giao diện.
-- [ ] **Step 5: Commit**
+### 🔴 TIỀN ĐỀ CỦA TASK NÀY SAI — đo ra 23/09 khuya, bản 0.2.7
+
+Task này mở ra vì bảng chấm ghi: *"`exit_plan_mode`, `get_goal`, `create_goal`, `update_goal`
+**có trong 43 công cụ** nhưng không dùng lần nào ⇒ theo thang chấm, không bằng chứng ⇒ trần 50"*.
+
+**Đo thật thì không phải vậy:**
+
+| Công cụ | Sự thật |
+|---|---|
+| `exit_plan_mode` | **KHÔNG hề có trong tool-set của phiên** — không ở tools hiện, không ở catalog hoãn. Nó **chỉ được mount khi bật `/plan on`** (thấy ở `tests/live/c0/s2model_do.mjs`) |
+| `get_goal` / `create_goal` / `update_goal` | **Có**, nhưng prompt hệ thống ghi rõ: *"do not create a goal for routine single-turn work"* |
+
+Phép đo: giao việc khảo sát `D:\LTTCODEAPP` + đề xuất tách `ui-lttcode` — chạy **9+ phút, 18 lần
+gọi công cụ** (`todo_write`, `read`, `pwsh`, `grep`). Không gọi `exit_plan_mode` (vì **không có**),
+không tạo mục tiêu (vì đó là **một lượt**, đúng điều prompt hệ thống dặn đừng làm).
+
+⇒ **Model không làm sai. Bảng chấm hỏi sai câu.** "Không dùng" ở đây không phải dấu hiệu năng lực
+yếu — một cái **không tồn tại trừ khi người dùng bật**, cái kia **cố ý không kích hoạt** cho việc
+một lượt. Chấm 50 vì "không bằng chứng" là **phạt một hành vi đúng**.
+
+### ✅ QUYẾT ĐỊNH (24/09): đi đường 1 — chế độ kế hoạch là thứ NGƯỜI DÙNG bật
+
+Hai đường đã cân:
+
+| Đường | Bác / chọn |
+|---|---|
+| Để model **tự bật** chế độ kế hoạch cho "việc lớn" | ❌ Phải định nghĩa "việc lớn" — mà chính phép đo vừa rồi cho thấy một việc **9 phút, 18 lần gọi công cụ** vẫn là **một lượt**. Ngưỡng nào cũng sẽ bật nhầm ở việc nhỏ, và bật nhầm thì phiền hơn không có |
+| ✅ **Giữ `/plan on` là lệnh của người dùng** | **Claude Code cũng thế** — chế độ kế hoạch ở đó cũng do người dùng vào, không tự nhảy. Ta đang chấm điểm so với Claude Code mà lại đòi LTTCODE làm thứ Claude Code không làm |
+
+⇒ Việc thật còn lại **không phải sửa hành vi model**, mà là **hai chỗ đang thiếu**:
+
+- [ ] **Step 1 — cho người dùng BIẾT là có.** Hiện `/plan on` không có ở đâu dễ thấy. Cần: một
+  dòng trong tài liệu LTTCODE, và cân nhắc gợi ý trong giao diện khi phiên dài ra.
+- [ ] **Step 2 — sửa cách hỏi của bảng chấm.** Mục E2+E3 (`docs/LTTCODE/reports/CHAM_DIEM_VAN_HANH_THAT_23_09.md`)
+  hiện phạt 50 điểm vì *"có công cụ mà không dùng"*. Câu đó **sai hai lần**: `exit_plan_mode`
+  **không có** trong tool-set (chỉ mount khi `/plan on`), còn `create_goal` thì prompt hệ thống
+  **dặn đừng dùng** cho việc một lượt. Câu đúng phải là: *"bật `/plan on` rồi thì kế hoạch có chạy
+  đúng không, và người dùng có tìm thấy nó không"*.
+
+  ⚠️ **Đây là lỗi của thang đo, không phải của sản phẩm.** Một thang đo phạt hành vi đúng sẽ đẩy
+  người ta đi sửa thứ không hỏng — đúng loại bẫy `docs/BAY_TRONG_CONG_CHAT_LUONG.md` ghi.
+- [ ] **Step 2:** Làm theo đường đã chọn.
+- [ ] **Step 3:** Sửa lại mục E2+E3 của bảng chấm cho đúng câu hỏi.
 
 ---
 
@@ -1091,14 +1356,76 @@ chỉ có bốn agent con **cố định trong preset**. Chênh **−52**, một
 (`runtime/agent-role-names.js`, `agent-role-router.js`, `subagent-catalog.js`). Rất có thể năng lực
 này **đã có sẵn** và chỉ cần mở đường cho người dùng, giống chuyện `/health/ready` ở Task 6.
 
-- [ ] **Step 1:** Đọc `lib/runtime/subagent-catalog.js` và `agent-role-router.js`, trả lời: persona
-  đến từ đâu, người dùng thêm được không, model gắn theo persona thế nào.
-- [ ] **Step 2:** Nếu có sẵn ⇒ task này chỉ còn là **mở đường + tài liệu + một ví dụ**.
-  Nếu không ⇒ ghi thành mục nghiên cứu, **đừng tự viết một hệ agent thứ hai**.
-- [ ] **Step 3:** Làm theo kết luận bước 2.
-- [ ] **Step 4:** Bằng chứng: định nghĩa một agent "rà bảo mật" chạy trên `ltt-3.5`, giao một việc
-  thật, nó chạy đúng vai và đúng model.
-- [ ] **Step 5: Commit**
+- [x] **Step 1 ✅ XONG (làn `b-agent`, 23/09) — năng lực CÓ SẴN, đã chạy thật:**
+
+  | Câu | Trả lời | Bằng chứng |
+  |---|---|---|
+  | Đọc ở đâu | `$DSH_AGENTS_HOME`, mặc định `homedir()/.agents`, rồi nối thêm `/agents` | `lib/catalog/paths.js:51-54` (`resolveAgentsRoot`) + `lib/runtime/user-store.js:19-21` |
+  | Đường thật trên máy này | `C:\Users\<user>\.agents\agents\*.md` — **hai tầng `agents`**, không phải `~/.agents/*.md` như plan viết | như trên |
+  | Gắn model riêng | **ĐƯỢC** — nhưng phải khai **CẢ `provider` LẪN `model`**; thiếu một khoá thì route bị bỏ qua | `lib/runtime/agent-role-router.js:28-60` (`parseAgentRole`), `resolveAgentOptions` ~78-106 |
+  | Khoá được nhận | `name`, `description`, `disabled`, `provider`, `model`, `reasoning_effort` | như trên |
+  | Giới hạn bộ công cụ | **KHÔNG** — xem mục 🔴 dưới | `parseAgentRole` không đọc khoá `tools` |
+  | Người dùng thấy được không | **CÓ**, hai đường: catalog tự chèn `<available_subagents>` khi có tool `subagent_run` (`lib/runtime/subagent-catalog.js`); và API CRUD HTTP cho panel `agents` (`lib/routes.js:337-370`) |
+
+  **Bằng chứng chạy** (gọi thẳng `node` vào `agent-role-router.js`, không mở app): frontmatter mẫu
+  → `agentRoleCatalog` sinh `{name, provider:"ltt-official", model:"ltt-3.5"}` không suy biến →
+  `resolveAgentOptions` trả đúng cặp đó, diagnostics rỗng.
+  Tệp mẫu đang sống: `C:\Users\Thang Tuong\.agents\agents\ra-bao-mat-thu.md` (thư mục trước đó
+  **rỗng** — không đụng tệp nào của người dùng). **Giữ lại** làm ví dụ chạy được cho tài liệu.
+
+  🔴 **Lỗi V-25 — khoá `tools:` bị bỏ qua ÂM THẦM.** Làn đã chạy đối chứng: frontmatter có
+  `tools: [Read, Grep]` ⇒ `'tools' in policy` → **`false`**, **không lỗi, không cảnh báo**.
+  Đây là dạng nguy hiểm nhất: người dùng tưởng đã khoá agent con thành chỉ-đọc, thực tế nó
+  **có toàn bộ công cụ của host**. Tệ hơn, `lib/runtime/user-panels.js:12-14` mô tả khuôn lưu
+  trữ là "Claude Code agents frontmatter" — tức **mời người ta viết `tools:`** rồi lặng lẽ vứt đi.
+  ⇒ Ít nhất phải **cảnh báo** khi thấy khoá không được hỗ trợ. Đã lập thành mục lỗi riêng.
+
+  **Muốn khoá công cụ thật** thì có đường khác, nhưng **không phải đường của người dùng**: khai
+  một tool subagent trong `presets/standard/agent.cordis.yml:374-420` qua
+  `@deepseek-ai/dsh-tool-subagent` với `toolFilter.allow` — ví dụ `tool-subagent-doc-nhanh` đang
+  chạy `ltt-3.5` với `allow:[read, glob, grep, skill]`. Đó là YAML của dev, không phải tệp `.md`.
+
+- [ ] **Step 2 — chỉ còn tài liệu + cảnh báo, KHÔNG viết hệ agent thứ hai.**
+  - [ ] Viết mục "Tự định nghĩa subagent" vào tài liệu LTTCODE: đường đặt tệp **hai tầng**,
+        khuôn frontmatter, ví dụ `ra-bao-mat-thu.md`, và **giới hạn thật** (`tools:` không ăn).
+  - [ ] Vá V-25: `parseAgentRole` gặp khoá lạ ⇒ đẩy một dòng cảnh báo, đừng im.
+- [x] **Step 3 ✅ ĐẠT phần vai/model (bản 0.2.7, 23/09 khuya)**
+  `subagent_run(agent="ra-bao-mat-thu")` → phiên con thật `867b4329…`, row `subagent/descriptor`:
+  `agentProvider:"ltt-official"`, `agentModel:"ltt-3.5"`; `request/header.config.model:"ltt-3.5"`
+  — **đúng vai, đúng model**, trong khi phiên cha chạy `ltt-3.8`. Con đã rà
+  `git-readonly-ltt/src/index.js` và báo cáo kèm path:line.
+
+### 🔴 ĐÍNH CHÍNH CỦA CHÍNH TÔI: vá V-25 KHÔNG ăn về mặt vận hành
+
+Ở lượt trước tôi ghi *"V-25 đã vá: khoá frontmatter không được hỗ trợ giờ **có cảnh báo**"*.
+**Câu đó sai.** Đo thật với một tệp agent mang `tools: [Read]`:
+
+- catalog **có** nạp tệp đó (`<available_subagents>` liệt kê đúng);
+- nhưng **không tìm thấy cảnh báo ở bất cứ đâu quan sát được** — `lttcode.log` không đổi (319
+  dòng, không có chuỗi nào về khoá frontmatter).
+
+Lý do tra ra được, và nó nằm ở tầng dưới chỗ tôi sửa: patch DIV-007 gọi `ctx.logger.warn()`
+(`agent-role-router.js:246`), mà `LoggerService` của Cordis **đẩy vào một buffer 1 000 dòng trong
+RAM**; `dsh-app-boot` chỉ gắn exporter in-ra-console **trong lúc BOOT** (context `diagnostics`
+riêng), còn `bin.js` không gắn exporter nào khác.
+
+⇒ **Cảnh báo được tính ra nhưng không có kênh nào đưa nó ra ngoài** — không tệp log, không route
+HTTP, không giao diện. Về mã thì không còn là no-op; **về vận hành thì vẫn im lặng y như trước**,
+tức người dùng vẫn tưởng đã khoá được agent con.
+
+> 🟢 **Đã mở kênh (`b7eccdd`, 24/09):** mount một `ctx.logger.exporter()` thường trực trong
+> `dsh-harness-ltt`, lọc `warn`/`error`, đẩy ra `process.stderr` — **kênh mà `sidecar.rs::pump()`
+> vốn đã bơm vào `lttcode.log`**, nên không dựng kênh thứ hai. Đo thật: boot sinh **0 dòng thêm**
+> (không ngập log). Có `redactSecrets()` làm lớp phòng thủ, độc lập với `redact()` phía Rust.
+> ⚠️ **Chứng minh trên chuỗi thật (cordis + patch + catalog đều là bản thật), CHƯA trên app đã
+> cài** — bản 0.2.7 không chứa mã này. Đóng hẳn V-25 phải chờ **bản build mới**.
+
+> Bài học đúng loại kho này đã ghi: **viết xong không phải là tới tay ai.** Task 19 vướng đúng thế
+> (plugin có mã, chưa mount). Lần này tinh vi hơn: cảnh báo có, kênh không có.
+> ⇒ Lập thành mục lỗi riêng, **không** tự nhận V-25 là đã đóng.
+- [ ] **Step 4: Commit**
+
+> **Việc ghi vào `D:\LTTCODEAPP` đang xếp sau làn `credit-uoc` (R1).**
 
 ---
 
@@ -1113,13 +1440,47 @@ hoàn 16–17, tiêu thật 1–2.
 **Files:**
 - Modify: `D:\LTTCODEAPP\plugins\ui-lttcode\src\client.js` (thanh chân phiên)
 
-- [ ] **Step 1:** Lấy credit mỗi lượt từ đâu — nếu `/api/v1/usage` không trả theo lượt, cần nền
-  tảng thêm trường vào thân trả lời của chính lượt đó. **Tra trước, đừng đoán.**
-- [ ] **Step 2:** Hiện `~N credit` cạnh token trên thanh chân phiên.
-- [ ] **Step 3:** Đối chứng âm: khi không lấy được số, hiện `—`, **không hiện 0**.
-- [ ] **Step 4:** Bằng chứng: chạy 5 lượt, đối chiếu số hiện trên giao diện với sổ credit trong
-  cơ sở dữ liệu. Lệch ⇒ đỏ.
-- [ ] **Step 5: Commit**
+### 🔴 CHẶN Ở TẦNG ENGINE — đóng task ở plan này, chuyển thành mục thiết kế riêng
+
+Đã tra **ba vòng**, mỗi vòng bác một phương án. Không vòng nào là đoán — đều có tệp:dòng.
+
+**Vòng 1 — không có nguồn chính xác.** `/api/v1/messages` (cửa LTTCODE dùng) chỉ mang `WireUsage`:
+token vào/ra/cache, **không có trường credit**. Quyết toán credit chạy trong `finally` **SAU khi
+byte cuối đã gửi** ⇒ không nhét được vào SSE đang chạy. `/api/v1/usage` join theo `Job.id`, còn
+lượt chat mang mã `stream:<hex>` ⇒ **không liệt kê lượt chat**.
+
+**Vòng 2 — phương án (b) "hiệu số số dư, gọi từ giao diện": BẤT KHẢ.**
+`client.js` chạy trong **DSH web UI, là một loopback remote page** ⇒ **không có Tauri IPC**, nên
+không gọi được `credits_balance` (đường gọi số dư duy nhất, do Task 5 dựng).
+> `desktop/src-tauri/src/lib.rs`, docstring `open_account_window`: *"…the DSH web UI, **which as a
+> loopback remote page gets no Tauri IPC**"* · `desktop/src-tauri/capabilities/default.json`:
+> *"**The DSH web UI is a loopback remote page and gets no capability.**"*
+
+Cửa sổ Tài khoản (`account.html`, `WebviewUrl::App`) là **cửa sổ khác hẳn** — nó có IPC, nhưng
+không phải nơi cần hiện credit.
+
+**Vòng 3 — gọi từ phía sidecar (đúng lớp): vẫn chặn, ở BA lớp liên tiếp.**
+
+| Lớp | Tình trạng | Bằng chứng |
+|---|---|---|
+| Gọi mạng | ✅ **dùng lại được** — `plugins/llm-ltt/src/adapter.ts` `stream()` đã có `resolveApiKey()` + `doFetch` + `attributionHeaders()` gọi `baseUrl` bằng Bearer `ltt_sk_` | — |
+| Chở số đi tiếp | ❌ `TokenUsage` là **interface đóng**, chỉ có `inputTokens, outputTokens, totalTokens?, cacheRead/Write?, reasoningTokens?` — **không có trường tự do** | `plugins/llm-ltt/src/translate.ts:47-59` (`mergeUsage`) · `dsh-llm/lib/types/types.d.ts:149-163` |
+| Nuôi thanh chân phiên | ❌ projection **khoá cứng đồng bộ**: *"All functions MUST be synchronous… an async unit would tear the carriers' consistency cut"* ⇒ **không `fetch` được trong projection**, và nó chỉ fold lại sự kiện **đã có** trong log, không tự đi lấy | `dsh-token-meter/lib/types/usage-projection.d.ts` · `dsh-session-projection/lib/types/index.d.ts:34-36` |
+
+**Vì sao đây là "không có kênh" chứ không phải "kênh khó dùng":** muốn số credit tới được thanh
+chân phiên thì phải có **cả ba**: (a) một actor mới ngoài projection, gọi `credits/balance` bất
+đồng bộ quanh ranh giới lượt; (b) **một loại sự kiện MỚI** ghi vào log phiên; (c) một unit
+projection MỚI fold trên sự kiện đó. Cả ba đều là **hạ tầng engine mới**.
+
+**Quyết định:** ⛔ **không dựng hạ tầng engine mới trong plan này.** Chuyển sang
+`HANG_MUC_BAN_SAU.md`. Hai đường đi tiếp, chủ dự án chọn sau:
+1. Bàn với người giữ `dsh-token-meter` / `dsh-session-projection` để mở một kênh sự kiện phụ;
+2. Chấp nhận **credit không đồng bộ theo đúng lượt** — hiện số dư ví cập nhật rời rạc (đã có ở
+   cửa sổ Tài khoản, Task 5), không gắn vào từng lượt.
+
+> **Điều đã giữ được:** không có chỗ nào trong app hiện một con số tiền **sai**. Ba vòng tra đều
+> dừng trước khi viết mã. Thà không nói còn hơn nói sai về tiền — đó là ràng buộc đặt ra từ đầu
+> và nó đã làm đúng việc của nó.
 
 ---
 
@@ -1132,13 +1493,34 @@ máy: khoảng bản ghi p50 1,5 s.
 từ phần mềm. Vì vậy task này **chỉ nhắm phần phần mềm thật sự kiểm soát được**, và nhắm khiêm tốn
 (60 → 75), không nhắm bằng Claude Code.
 
-- [ ] **Step 1: Tách độ trễ thành ba phần** trên một phiên thật: chờ suất · sinh token · chạy công
-  cụ. Chưa biết ba phần này bao nhiêu thì **mọi tối ưu đều là đoán**.
-- [ ] **Step 2:** Chỉ tối ưu phần lớn nhất mà phần mềm kiểm soát được. Nếu phần lớn nhất là sinh
-  token ⇒ kết luận thẳng: **đây là giới hạn phần cứng**, ghi vào báo cáo và **đóng task**, không
-  vờ tối ưu.
-- [ ] **Step 3:** Đo lại p50/p90 bằng đúng bộ đo cũ.
-- [ ] **Step 4: Commit**
+- [x] **Step 1 ✅ XONG (làn `b-do`, 23/09) — tách được thật, trên chính phiên D1.**
+
+  Nguồn: `session-dd80eaf3…` (cwd `D:\LTTSTUDIOSAPP-d1-khoi-phuc`, 231 bước — p50 bước 23,7 s,
+  **khớp** số đã công bố). Mốc lấy từ `assistant/message.data.stream` (đủ cho **226/226** lượt LLM)
+  và cặp `tool/call` ↔ `tool/result` (**245/248** cặp sạch; loại 3 cặp vắt qua khoảng dừng phiên
+  > 5 phút — máy khởi động lại giữa lượt 1 và 2).
+
+  | Phần | Tổng | Tỉ lệ | p50 | p90 |
+  |---|---|---|---|---|
+  | Chờ suất + đổi card + nạp model (TTFT) | 1 829,5 s | **23,3 %** | 4,0 s | 8,6 s (max 199 s) |
+  | **Sinh token** | **4 878,9 s** | **62,2 %** | 10,9 s | 54,4 s (~45–54 tok/s) |
+  | Chạy công cụ | 1 138,6 s | 14,5 % | 4,8 s | 8,7 s (`pwsh` chiếm 933,5 s) |
+
+- [x] **Step 2 ✅ — KẾT LUẬN: GIỚI HẠN PHẦN CỨNG. ĐÓNG TASK.**
+
+  Sinh token chiếm **62,2 %**, chạy trên 27B một card. Không có thay đổi phần mềm nào chạm tới nó.
+  Phần mềm kiểm soát được 14,5 % (chạy công cụ), mà 82 % của phần đó là `pwsh` — tức là **thời
+  gian lệnh thật sự chạy**, không phải phí tổn của khung.
+
+  ⇒ **Không "tối ưu" gì ở đây cả.** Plan đã cảnh báo đây là hạng mục dễ hứa hão nhất; số đo xác
+  nhận đúng cảnh báo đó. Muốn giảm thật thì phải đổi phần cứng hoặc đổi model, không phải sửa mã.
+
+  **Một đường còn bỏ ngỏ nếu sau này cần:** TTFT (23,3 %) hiện **gộp ba nguyên nhân** và bản ghi
+  phía khách không tách thêm được. Nhưng **máy chủ đã tách sẵn**: `llm_gateway/so_luot.py:88-198`
+  có `ttft_s`/`decode_tps`, và máy A có cột `llm_waiters.cho_residency_s`
+  (`platform_core/models.py:514`) tách riêng *"chờ vì hết năng lực"*, lộ qua `/ops/jobs-metrics`
+  (`server/routes/jobs.py:383`). Lượt này **không tra** — ngoài phạm vi làn. Ghi lại để khỏi
+  phải tìm lại.
 
 ---
 
@@ -1162,13 +1544,84 @@ làm bước nghiên cứu để biết nó lớn cỡ nào.
 **Vì sao:** chênh **−45**. Hiện LTTCODE chỉ có `pwsh` + skill; mọi thao tác git là gõ lệnh, không
 có bước xem lại thay đổi trước khi commit.
 
-- [ ] **Step 1:** Trước khi viết công cụ mới, tra gói cộng đồng DSH có sẵn chưa (luật "dùng lại
-  trước, tự viết sau"). Ghi kết quả tra vào task.
-- [ ] **Step 2:** Nếu chưa có: thêm ba công cụ mỏng — `git_trang_thai`, `git_khac_biet`,
-  `git_commit` — trong đó `git_commit` **bắt buộc** hiện diff để người xem trước khi đồng ý.
-- [ ] **Step 3:** Đối chứng âm: `git_commit` phải **từ chối** `git add -A`, và phải chặn khi thấy
-  tệp bí mật trong danh sách stage.
-- [ ] **Step 4:** Bằng chứng: tạo một nhánh, commit một thay đổi thật từ trong app.
+- [x] **Step 1 ✅ XONG (làn `b-git`, 23/09):** đã chấm `lxj808624/dsh-tool-git` theo `TIEU_CHI.md`.
+
+  **≈ 51/100.** MIT · TypeScript · v0.1.3 · `execFile` không qua shell · cài bằng
+  `dsh plugin add` — **kiến trúc khớp** (4,5/5): đây là plugin Cordis, mà LTTCODE **chạy trên
+  DSH/Cordis**, nên nó cắm thẳng vào được.
+
+  > ⚠️ Làn chấm mục 5 **1/5 vì "không cắm được vào runtime Claude Code"** — **chấm sai**. Tiêu chí
+  > đó hỏi *giá trị cho nền tảng của ta*, mà nền tảng của ta là DSH. Trừ điểm này đi thì điểm
+  > thật cao hơn 51. Ghi lại để lần sau đọc `TIEU_CHI.md` đúng chủ ngữ.
+
+  **Ba thứ làm nó KHÔNG dùng nguyên trạng được** (bằng chứng tệp:dòng do làn đọc mã):
+
+  | # | Vấn đề | Bằng chứng |
+  |---|---|---|
+  | a | **`git add -A` là tính năng chính thức, không bị chặn** | `src/tools/stage.ts`: `all: true` → `ctx.run(['add','-A'])`. Hàng rào `findDestructiveGit` (`src/safety.ts`) **chỉ kiểm `git_commit --amend`**, không hề kiểm `git_stage` |
+  | b | **Không quét bí mật, một dòng nào cũng không** | `search_code` "secret" → 0 kết quả; đọc `stage.ts`/`commit.ts`/`safety.ts` không có logic nào cho `.env`, `*.pem`, `secrets/**` |
+  | c | **`git_stash push --includeUntracked` KHÔNG nằm trong hàng rào** | `PATTERNS` chặn `reset --hard`, `clean -f`, `checkout -- .`, `push --force`… nhưng bỏ sót `stash`. Đây đúng là **luật chết người số 4** của kho này: dòng `??` là của phiên khác — một lượt `stash -u` sẽ **cuốn mất việc của phiên đang chạy** |
+
+  Thêm: upstream im > 5 tuần, issue #4 đã xác nhận lỗi mà chưa vá (trưởng thành 2/5).
+
+- [ ] **Step 2 — QUYẾT ĐỊNH: bundle NHƯNG CHỈ LẤY PHẦN ĐỌC.**
+
+  **Vì sao không bọc cả gói, cũng không tự viết từ đầu:** chênh −45 sinh ra từ *"không có bước
+  xem lại thay đổi trước khi commit"* — tức là thiếu **`git_status` / `git_diff` / `git_log` /
+  `git_show` có cấu trúc**. Bốn công cụ đó là **chỉ đọc, không rủi ro**, và gói này đã có sẵn,
+  làm tốt, trả JSON. Lấy chúng là **đóng đúng cái chênh** mà không nhận một rủi ro nào.
+
+  Ba thứ ở bảng trên **đều nằm ở nhóm công cụ GHI** (`git_stage`, `git_commit`, `git_stash`).
+  Nhóm đó ta **không cần**: ghi git vẫn đi qua `pwsh`, nơi luật của kho đã áp sẵn. Bỏ chúng thì
+  ba vấn đề a/b/c biến mất mà **không phải fork, không phải vá mã người khác, không phải nuôi
+  một bản rẽ nhánh**.
+
+### ❌ Quyết định trên BỊ BÁC — Cordis không tắt được công cụ lẻ (làn `lttcode-t15-t19`, 23/09)
+
+Tôi bảo "chưa xác minh, đừng coi là đã biết". Làn đi xác minh và câu trả lời là **KHÔNG**:
+
+- `cordis-plugin-loader/README.md` mục "Entry Options": `disabled` = *"Stops the entry"* —
+  đơn vị nhỏ nhất Cordis biết là **một row/entry = CẢ plugin**. Không có khái niệm "tool" ở lớp này.
+  Xác nhận ở `lib/index.js:359-378` (`disabled` getter trên cả fiber).
+- `ctx.tools.restrict()` (`dsh-tools/README.md:81`) **không phải** cơ chế cần: nó là mặt nạ theo
+  **scope agent con** — thứ `dsh-tool-subagent` tự dùng cho `toolFilter` khi spawn con — chứ không
+  phải cách host tắt từng công cụ của một plugin đã mount vào scope hiện tại.
+- Tiền lệ trong chính kho: **DIV-003** phải **fork nguyên plugin** mới kiểm soát được mức đó.
+
+⇒ "Bundle rồi tắt nhóm ghi" **không tồn tại như một lựa chọn**. Làn đã **dừng đúng**: không bundle,
+không sửa `cordis.patch.yml`, và cũng **không tự ý** viết công cụ thay thế.
+
+### Quyết định mới: TỰ VIẾT BỐN CÔNG CỤ CHỈ-ĐỌC
+
+Ba đường còn lại, và vì sao chọn đường thứ ba:
+
+| Đường | Bác vì |
+|---|---|
+| Bundle nguyên gói | Nhận cả ba rủi ro: `add -A` không chặn · không quét bí mật · **`stash -u` cuốn mất tệp `??` của phiên khác**. Rủi ro thứ ba là hỏng việc người khác, không phải hỏng việc mình |
+| Fork gói rồi cắt nhóm ghi | Phải **nuôi một bản rẽ nhánh** của mã 51/100, upstream im > 5 tuần, issue #4 chưa vá — để giữ lại đúng **phần tầm thường nhất** của nó |
+| ✅ **Tự viết bốn công cụ chỉ-đọc** | `git_trang_thai` / `git_khac_biet` / `git_log` / `git_show` là vỏ mỏng quanh `git`, trả JSON. **Không có đường ghi nào ⇒ không có rủi ro nào để bọc.** |
+
+Luật *"dùng lại trước, tự viết sau"* đã được thoả: đã tra, đã chấm, đã chứng minh gói cộng đồng
+**không nhận được ở dạng ta cần**, và phần ta cần là phần rẻ nhất tự làm.
+
+- [ ] **Step 2 — bốn công cụ, KHÔNG có công cụ ghi nào.** `execFile` không qua shell (học từ gói gốc,
+  đó là chỗ nó làm đúng). ⛔ Không `add`, không `commit`, không `stash`, không `checkout`, không `reset`.
+- [ ] **Step 3 — đối chứng âm:** phép kiểm chốt rằng **không công cụ nào trong bộ này chạy được lệnh ghi**
+  — kể cả khi tham số cố nhét (`-- --force`, `;`, `&&`). Thiếu phép này thì "chỉ đọc" chỉ là lời hứa.
+- [x] **Step 4 ✅ ĐẠT CẢ BA (bản 0.2.7, 23/09 khuya)**
+
+  Prompt: *"Xem trong kho D:\LTTCODEAPP co gi dang thay doi, tom tat cho minh."* — **không nhắc
+  git, không nhắc tên công cụ**. Model tự: `tool_search` → `tool_describe(git_trang_thai,
+  git_khac_biet)` → gọi `git_trang_thai`, `git_khac_biet`, `git_log`. Tóm tắt đúng thực trạng
+  (42 commit ahead, `package-lock.json` chưa commit, 7 tệp untracked).
+
+  **Đối chứng âm ngoài đời đạt:** manifest thật chỉ có đúng bốn công cụ nhóm *"git review (CHI
+  DOC)"* — **không** `git_commit`, **không** `git_stage`, **không** `git_stash`.
+
+  > Brief của tôi ghi tên công cụ là `git_status`/`git_diff`; tên thật là **tiếng Việt**
+  > (`git_trang_thai`, `git_khac_biet`, `git_log`, `git_show`). Làn đo bắt được — lần thứ bảy
+  > trong ngày một làn sửa lại tôi.
+
 - [ ] **Step 5: Commit**
 
 ---
@@ -1178,14 +1631,183 @@ có bước xem lại thay đổi trước khi commit.
 **Số đo hiện tại, đo 3 lần trong ngày 23/09:** **17 s** (máy ấm) · **49 s** (lạnh) ·
 **107,7 s** (sau khi khởi động lại máy). Xu hướng xấu dần và chưa ai truy.
 
-- [ ] **Step 1:** Đo lại 3 lần lạnh, lấy mốc ổn định.
-- [ ] **Step 2:** Tách thời gian khởi động thành: khởi tạo vỏ Tauri · dựng `DSH_HOME` · nạp
-  composition · mở WebView2. Bản ghi `==== sidecar ready in <N> ms` đã có sẵn số cho một chặng.
-- [ ] **Step 3:** Chỉ tối ưu chặng lớn nhất.
-- [ ] **Step 4:** Đo lại 3 lần lạnh. **Đạt khi p50 ≤ 30 s.**
+- [x] **Step 1 ✅ XONG (làn `b-do`) — và đây là phát hiện chính: BA TRÊN BỐN CHẶNG KHÔNG CÓ MỐC.**
+
+  | Chặng | Có mốc? | Số |
+  |---|---|---|
+  | Vỏ Tauri (exec → `setup`) | ⬛ **mù** | — |
+  | Dựng `DSH_HOME` | ⬛ **mù** — chạy **trước** dòng spawn nên không log gì | — |
+  | Nạp composition (spawn → ready) | ✅ có | `lttcode.log` 21–23/09: **5,0 – 55,3 s** |
+  | Mở WebView2 (đến khi SPA DSH tải xong) | ⬛ **mù** | — |
+
+  🔴 **Số học nói thẳng:** chặng duy nhất đo được, lấy **giá trị lớn nhất từng quan sát** (55,3 s),
+  vẫn **thấp hơn** 107,7 s đo tay. ⇒ **ít nhất 50 s nằm trong ba chặng mù.** Tối ưu chặng đo được
+  là tối ưu chỗ không phải thủ phạm.
+
+- [x] **Step 2 ✅ — giả thuyết cho 107,7 s: QUÉT ĐĨA / AV, không phải mã.**
+
+  Cây `sidecar/` có **45 536 tệp / 1,4 GB**. Và chính mã đã lường trước:
+  `desktop/src-tauri/src/sidecar.rs:48-50` đặt `BOOT_TIMEOUT` = 60 s với lý do ghi thẳng trong
+  chú thích là *"antivirus scanning node_modules tree"*.
+  Khởi động lại máy ⇒ mất cache đĩa + Defender quét lại toàn cây ⇒ khớp đúng bậc thang quan sát:
+  **ấm 17 s → lạnh cùng phiên 49 s → sau reboot 107,7 s**.
+
+  > Liên quan: cùng ngày 23/09 đã dọn 1,9 triệu tệp `%TEMP%` vì `ProfSvc` quét từng tệp lúc đăng
+  > nhập. Cùng một họ nguyên nhân — **số lượng tệp**, không phải mã.
+
+- [ ] **Step 3 — thêm ba mốc TRƯỚC, đo lại SAU.** Không có mốc thì bước 4 không phán quyết được gì:
+  - [ ] đầu `setup()` — `desktop/src-tauri/src/lib.rs:279`
+  - [ ] cuối `stage_dsh_home()` — `desktop/src-tauri/src/sidecar.rs:290-311` (**hàm đã có, chỉ
+        thiếu dòng log**)
+  - [ ] sự kiện DSH SPA báo "interactive" — **chưa có hook**, phải thêm
+- [x] **Step 3 phần mốc ✅ + SỐ ĐẦU TIÊN (23/09 23:41, bản 0.2.7 đã cài, 3 lượt khởi động)**
+
+  Hai mốc mới in ra thật, và chúng **bác giả thuyết quét-AV** ở trên:
+
+  | Chặng | Số đo | Trước đây |
+  |---|---|---|
+  | Vỏ Tauri → `setup()` | **12–16 ms** | mù |
+  | `stage_dsh_home()` xong | **7 046 – 7 796 ms** | mù |
+  | spawn → `sidecar ready` | **4 815 · 11 315 · 11 387 ms** | chặng duy nhất có số |
+  | **Cộng lại** | **≈ 12 – 19 s** | |
+  | **Tổng thật đo được** | **54,5 s** (`boot_wall_sec`) | |
+
+  🔴 **Còn ≈ 35 s không ai đo — chiếm khoảng 2/3 thời gian khởi động.**
+
+### ⛔ ĐÍNH CHÍNH LẦN HAI (24/09): 35 s đó **KHÔNG** nằm ở WebView2/SPA
+
+Ở lượt ghi trước tôi kết luận khoảng trống nằm ở *"mở WebView2 → SPA DSH tải xong"* và đề nghị
+nâng mốc 3 thành việc chính. **Sai.** Làn `r-t20` đi đọc **chỗ bấm giờ** thay vì tin bảng:
+
+> `tools/p05_smoke.ps1:64-67` — `$t0 = Get-Date` ngay sau `Start-Process`, rồi
+> `Wait-Until { Count-Ready }` đợi đúng dòng **`==== sidecar ready in`** xuất hiện.
+
+⇒ `boot_wall_sec` **dừng ở CÙNG cái mốc** "sidecar ready". Nó **kết thúc TRƯỚC khi**
+`win.eval()` trỏ webview sang DSH (`sidecar.rs:1338-1343`), và bước kiểm CDP "DSH UI hiện" là
+**bước 3 riêng, không cộng vào**. Chặng WebView2/SPA **không nằm trong 54,5 s** — nên nó không
+thể là chỗ mất 35 s.
+
+**Khoảng trống thật nằm ở đầu kia:** giữa lúc **OS tạo tiến trình** và dòng log Rust **đầu tiên**
+(`PROCESS_START` đặt ở đầu `run()`). Cộng lại từ log: `stage_dsh_home` 7,8 s + `sidecar ready`
+11,4 s ≈ **19 s**; tổng 54,5 s ⇒ **~35 s biến mất TRƯỚC khi Rust chạy dòng đầu**.
+
+**Và điều này phục hồi giả thuyết quét AV mà tôi đã vội bác** — chỉ khác đối tượng: không phải
+cây `sidecar/` (chặng đó đo được, 7,4 s), mà là **nạp + quét chính `LTTCODE.exe` và DLL**, lần
+đầu sau khi cài đè một bộ **293 MB**. Đúng kiểu: phép đo trước bác "AV quét cây sidecar", tôi đọc
+thành "AV không liên quan" — **hai mệnh đề khác nhau**.
+
+### ⛔ ĐÍNH CHÍNH LẦN BA (24/09, đo trên 0.2.8) — và lần này tôi sai vì TRỘN HAI LƯỢT
+
+Mốc mới đã chạy. Ba lượt khởi động, đơn vị ms:
+
+| Lượt | process created | `setup()` | `stage_dsh_home` | `sidecar ready` | **Tổng** |
+|---|---|---|---|---|---|
+| **Lạnh** (ngay sau cài đè) | **55** | 30 | **14 564** | **25 411** | **41 067** |
+| Ấm 1 | 6 | 32 | 7 879 | 10 451 | 18 371 |
+| Ấm 2 | 5 | 43 | 10 888 | 9 480 | 20 402 |
+
+🔴 **`process created` chỉ 5–55 ms.** Không có 35 giây nào nằm trước dòng Rust đầu tiên. Giả
+thuyết "nạp/quét `LTTCODE.exe` + DLL" — **sai**.
+
+**Và đây là lý do thật của "35 giây bí ẩn": tôi trộn hai lượt khác nhau.** Lượt nghiệm thu 0.2.7
+khởi động app **ba lần**; tôi lấy `boot_wall_sec` **54,5 s của lượt LẠNH** rồi trừ đi
+`stage_dsh_home` 7,8 s và `sidecar ready` 11,4 s — mà **hai số đó là của lượt ẤM**. Cộng số ấm
+rồi so với tổng lạnh thì dĩ nhiên hụt.
+
+> Bài học đã có tên trong kho: **hỏi phép đo này trả lời chính xác câu nào.** Ba con số nằm cạnh
+> nhau trong cùng một tệp log **không có nghĩa** chúng thuộc cùng một lượt. Tôi đã dựng cả một
+> hướng đi (mốc SPA, rồi mốc OS) trên một phép trừ giữa hai lượt khác nhau.
+
+**Sự thật sau khi đo tử tế:** không có chặng nào "mù" cả. Toàn bộ thời gian nằm trong hai mốc
+**vốn đã có**, và cả hai **chậm gấp đôi khi lạnh**:
+
+| Chặng | Lạnh | Ấm | Tỉ lệ |
+|---|---|---|---|
+| `stage_dsh_home` | 14,6 s | 7,9–10,9 s | ~1,5× |
+| `sidecar ready` | 25,4 s | 9,5–10,5 s | **~2,5×** |
+| **Tổng** | **41 s** | **18–20 s** | ~2,1× |
+
+⇒ **Giá của lần đầu ≈ 2,1× giá mỗi lần**, và phần chênh lớn nhất (+15 s) nằm ở **sidecar boot**,
+không phải ở OS.
+
+- [ ] **Step 3 mới — tối ưu ĐÚNG chỗ:** `sidecar ready` lượt lạnh (25,4 s). Đây mới là chặng lớn
+  nhất, và giờ nó **đã có mốc**, không cần thêm hook nào nữa.
+- [x] ~~lấy giờ tạo tiến trình từ OS~~ — **đã làm (`743f72b`), và kết quả là loại trừ**: 5–55 ms,
+  không phải thủ phạm. Giữ lại vì nó rẻ và từ nay chặn được đúng giả thuyết sai này.
+- [ ] **Step 4:** mục tiêu **p50 ≤ 30 s**. Ấm đã đạt (18–20 s); **lạnh 41 s thì chưa**.
+
+### ⛔ Bản cũ của Step 3 (giữ lại để biết tôi đã sai thế nào)
+
+- [ ] ~~**mốc rẻ nhất và đúng chỗ nhất: lấy giờ tạo tiến trình từ OS.**~~
+  Thay vì `Instant::now()` lúc `run()`, đọc **thời điểm OS tạo tiến trình** (`GetProcessTimes`
+  trên Windows) và in chênh lệch. Một dòng log là lộ ngay 35 s đó thuộc về ai.
+  ⛔ **Chưa cần** `initialization_script` hay `on_page_load` — chúng đo chặng **ngoài** khoảng
+  đang hụt. Giữ lại cho lần sau nếu muốn đo tới "SPA tương tác được".
+- [ ] **Step 4 — đo NGUỘI và ẤM tách bạch.** Lượt 54,5 s vừa rồi chạy **ngay sau khi cài đè**,
+  tức lần đầu OS chạm vào bộ nhị phân mới. Phải có một lượt **ấm** (chạy lại lần hai) để tách
+  "giá của lần đầu" khỏi "giá mỗi lần".
+
+  **Hai giả thuyết trước đều sai hướng:**
+  - *"Vỏ Tauri chậm"* — **16 ms**. Coi như bằng không.
+  - *"Quét AV cây `sidecar/` 45 536 tệp"* — nếu đúng thì `stage_dsh_home()` (chặng đụng cây đó)
+    phải là chỗ phình ra. Nó chỉ **7,4 s**. Quét AV **không giải thích được** 35–42 s kia.
+
+  ⇒ **Mốc 3 đổi từ "tuỳ chọn" thành VIỆC CHÍNH của Task 20.** Tối ưu bất cứ chặng nào trong ba
+  chặng đã đo là tối ưu 12–19 s trên tổng 54,5 s — cùng lắm cắt được một phần ba, trong khi hai
+  phần ba còn lại vẫn chưa ai nhìn thấy.
+
+  > Bài học lặp lại lần thứ hai trong ngày: **thêm mốc trước, tối ưu sau.** Nếu làm theo plan gốc
+  > (tối ưu "chặng lớn nhất" trong số đã đo) thì đã dồn công vào `sidecar ready` 11 s và bỏ qua
+  > chỗ ăn 40 s.
+
+- [ ] **Step 4:** Đo lại 3 lần lạnh + 1 lần sau reboot. **Đạt khi p50 ≤ 30 s.**
+  ⚠️ Nếu số mới xác nhận phần lớn là quét AV ⇒ việc phải làm là **loại trừ thư mục cài khỏi
+  Defender** (việc của chủ dự án, không phải sửa mã), chứ không phải tối ưu khởi động.
 - [ ] **Step 5: Commit**
 
 ---
+
+## ⛔ Chốt chặn cuối Phần B: BỐN BƯỚC CÒN LẠI ĐỀU CẦN MỘT BẢN BUILD MỚI
+
+Ghi ra vì suýt bỏ sót, và bỏ sót thì sẽ đo nhầm rồi tưởng là đã kiểm chứng.
+
+Bản **đang cài trên máy này là 0.2.6**, dựng trước các commit hôm nay. Nên mọi bước "bằng chứng
+trên phiên thật" còn lại đều **không kiểm được trên bản đang cài**:
+
+| Bước | Cần commit | Có trong bản cài? |
+|---|---|---|
+| T13 Step 4 — catalog đã có mô tả chưa · MCP có được gọi không | `36344e0` | ❌ |
+| T15 Step 3 — `ra-bao-mat-thu` chạy đúng vai + đúng `ltt-3.5`, và cảnh báo V-25 hiện ra | `fd00269` | ❌ |
+| T19 Step 4 — model tự gọi `git_khac_biet` trước khi đề nghị commit | (đang viết) | ❌ |
+| T11 / T12 — nút "Chạy tiếp" · nén bằng 3.5 | `670770b` / `3326d7f` | ❌ |
+
+**Đã xác định dứt điểm bằng giờ, không phải bằng ref** (23/09 khuya): bộ cài stable đang phục vụ
+là `LTTCODE_0.2.6_stable_x64-setup.exe`, **dựng lúc 14:12**. Cả năm commit đều **sau** nó —
+`3326d7f` 19:19 · `670770b` 19:21 · `0c6df5a` 20:11 · `fd00269` 21:45 · `36344e0` 22:07.
+Một bộ cài không thể chứa commit tạo ra năm tiếng sau nó. ⇒ **Không commit nào của hôm nay có
+trong bản đang cài**, kể cả Task 5 (`0c6df5a`) của Phần A.
+
+> ⚠️ **Đính chính một phép kiểm sai của chính điều phối:** đã thử `git merge-base --is-ancestor
+> <sha> v0.2.6` và đọc năm dòng "KHÔNG" như thể là kết quả. **Kho không có tag nào** — ref không
+> phân giải được thì lệnh đó luôn trả sai, **không phải** nó đang nói commit vắng mặt. Con số duy
+> nhất đáng tin ở bảng trên là hai dòng `fd00269`/`36344e0`, vì chúng được commit **sau** lượt
+> dựng 0.2.6 trong cùng phiên này. Hai dòng `❓` là **thật sự chưa biết**, không phải "chắc là có".
+>
+> Bài học cũ lặp lại: *một lệnh trả lời được câu hỏi nào* — `--is-ancestor` với ref không tồn tại
+> trả lời câu "ref có phân giải không", không phải câu "commit có trong bản phát hành không".
+
+**⇒ Thứ tự bắt buộc cho phần còn lại:**
+
+1. Xong mã: T19 (đang chạy) · trả nợ `cargo test` cho `36344e0`;
+2. **Một** lượt gate (L1/L2) cho hai kho;
+3. **Dựng một bản mới + cài đè** — và ghi lại **SHA đã dựng** vào ghi chú phát hành, để lần sau
+   không phải đoán như vừa rồi;
+4. **MỘT** lượt mở app **độc quyền** (R2), gom hết: T13 Step 4 · T14 trọn task · T15 Step 3 ·
+   T19 Step 4 · T12 đo nén. Mở app một lần, đo tất cả — không mở bốn lần.
+
+⚠️ T14 và T12 **có thể** đo được trên bản cài sẵn, nhưng chỉ khi xác định được chúng nằm trong
+0.2.6. Chưa xác định thì **đừng đo** — đo trên bản không chứa thay đổi rồi kết luận là đúng kiểu
+"phạm vi phép đo hẹp hơn lời tuyên bố".
 
 ## Thứ tự Phần B
 

@@ -181,6 +181,36 @@ def test_forbidden_targets_are_refused(api, url):
     assert _subscribe(api, token, url=url).status_code == 400
 
 
+@pytest.mark.parametrize("dia_chi", [
+    "100.64.0.1",       # CGNAT (RFC 6598) - `is_private` tra False
+    "100.127.255.254",  # cuoi dai CGNAT
+    "192.0.0.1",        # IETF protocol assignments (RFC 6890)
+    "198.18.0.1",       # benchmarking (RFC 2544)
+])
+def test_dai_KHONG_private_nhung_cung_KHONG_public_deu_bi_tu_choi(dia_chi):
+    """🔴 `is_private` KHONG phu het cac dai khong-dinh-tuyen-duoc.
+
+    `ipaddress.ip_address("100.64.0.1").is_private` tra **False**, nen mot bo
+    loc liet ke `loopback/private/link_local/multicast/reserved/unspecified`
+    cho CGNAT di qua. Ha tang VPS cua du an chay NAT qua WireGuard, nen dai nay
+    khong phai ly thuyet suong.
+
+    Hoi `is_global` tra loi dung cau can hoi: "dia chi nay co dinh tuyen duoc
+    tren Internet cong cong khong" - mot menh de, thay vi mot danh sach ma ai
+    cung phai nho bo sung.
+    """
+    with pytest.raises(ApiError):
+        webhooks.validate_target("https://sneaky.example.com/hook",
+                                 resolver=lambda host: [dia_chi])
+
+
+def test_dia_chi_cong_cong_VAN_qua():
+    """🔑 Ve doi chung: siet qua tay thi moi webhook that deu hong."""
+    assert webhooks.validate_target(
+        "https://ok.example.com/hook",
+        resolver=lambda host: ["93.184.216.34"])
+
+
 def test_every_resolved_address_must_be_public():
     """A host that answers with one public and one private address is refused."""
     with pytest.raises(ApiError):

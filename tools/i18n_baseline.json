@@ -1,14 +1,10 @@
 {
   "theo_file": {
     "apps/agent/manifest.py": 1,
-    "apps/agent/routes/_shared.py": 7,
+    "apps/agent/routes/_shared.py": 6,
     "apps/agent/routes/assistant.py": 3,
-    "apps/agent/routes/legacy_runs.py": 5,
-    "apps/agent/routes/library.py": 2,
-    "apps/agent/routes/runs.py": 2,
+    "apps/agent/routes/library.py": 1,
     "apps/agent/routes/workspace.py": 2,
-    "apps/agent/templates/_agent_progress.html": 2,
-    "apps/agent/templates/agent_run.html": 4,
     "apps/autosubvideo/ai_workflows.py": 12,
     "apps/autosubvideo/burn.py": 6,
     "apps/autosubvideo/font_checker.py": 4,
@@ -60,15 +56,12 @@
     "apps/upscalevideo/manifest.py": 1,
     "apps/upscalevideo/routes.py": 32,
     "apps/upscalevideo/service.py": 1,
-    "platform_core/agent/budget.py": 16,
-    "platform_core/agent/executor.py": 9,
     "platform_core/agent/normalizer.py": 9,
     "platform_core/agent/planner.py": 1,
-    "platform_core/agent/runs.py": 9,
     "platform_core/agent/tools.py": 14,
     "platform_core/agent/validator.py": 29,
     "platform_core/agent/verifier.py": 11,
-    "platform_core/agent/workflows.py": 31,
+    "platform_core/agent/workflows.py": 28,
     "platform_core/app_projects.py": 11,
     "platform_core/db.py": 1,
     "platform_core/gpu.py": 4,
@@ -80,7 +73,7 @@
     "platform_core/models.py": 2,
     "platform_core/nexus/versions.py": 1,
     "platform_core/prompt_fragments.py": 3,
-    "platform_core/registry.py": 48,
+    "platform_core/registry.py": 56,
     "platform_core/runtime_paths.py": 1,
     "platform_core/storage.py": 9,
     "platform_core/tokens.py": 1,
@@ -94,5 +87,5 @@
     "server/templating.py": 6,
     "server/usage_rate_limit.py": 1
   },
-  "tong": 656
+  "tong": 612
 }

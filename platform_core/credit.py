@@ -547,7 +547,7 @@ def hoan(db: DbSession, user_id: str, job_id: str) -> None:
 #:
 #: Phải dài hơn **mọi việc hợp lệ còn đang chạy**, nếu không vòng quét sẽ báo
 #: động về chính công việc đang diễn ra bình thường: luồng LLM đo được 119 giây,
-#: job qua worker có trần thời gian riêng, và một `AgentRun` đã duyệt có thể
+#: job qua worker có trần thời gian riêng, và một `WorkflowRun` đã duyệt có thể
 #: chạy lâu hơn cả hai. 6 giờ là mức mà "vẫn còn ai đó đang xử lý" không còn là
 #: lời giải thích hợp lý, mà vẫn phát hiện được trong ngày.
 TREO_SAU = timedelta(hours=6)
@@ -602,9 +602,12 @@ def giu_cho_treo(db: DbSession, *, treo_sau: timedelta = TREO_SAU,
        **không** treo — nó chỉ đang chờ, và `reclaim_orphans` mới là thứ canh
        đường đó. Nên job còn `queued`/`running` phải bị loại ra.
 
-    ⭐ Ngược lại, một `AgentRun` kẹt ở `running` thì **được** báo, và đó là chủ
-       ý: không có vòng quét nào thu hồi `AgentRun` treo (đã kiểm 2026-08-26),
-       nên nó đúng là tiền không có đường về.
+    ⭐ Ngược lại, một **lượt chạy** kẹt ở `running` thì **được** báo, và đó là
+       chủ ý: giữ chỗ của nó mang khoá là `run.id` chứ không phải `job.id`
+       (`platform_core/workflow/tien.py:61`), nên điều kiện 3 không bao giờ
+       thấy một `Job` đang sống che cho nó — và không có vòng quét nào thu hồi
+       một lượt chạy treo (đã kiểm 2026-08-26 trên `AgentRun`, model v1 đã gỡ
+       23/09/2026; `WorkflowRun` v3 giữ chỗ theo đúng hình dạng đó).
     """
     from platform_core.models import JOB_QUEUED, JOB_RUNNING, Job
 

@@ -122,24 +122,39 @@ def test_lifecycle_KHONG_phai_cong_an_hien_tren_nen_tang_nay() -> None:
 def test_palette_khach_loc_DUNG_MOT_dieu_kien() -> None:
     """Chốt sợi dây: bộ lọc palette là `customer_visible`, không phải `lifecycle`.
 
-    Nếu ai đó thêm một bộ lọc `lifecycle` ở frontend, bài này đỏ và họ đọc được
-    rằng bốn App trên đang dựa vào `customer_visible` chứ không vào `lifecycle`.
+    Nếu ai đó thêm một bộ lọc `lifecycle`, bài này đỏ và họ đọc được rằng bốn
+    App trên đang dựa vào `customer_visible` chứ không vào `lifecycle`.
 
-    ⛔ **Không `pytest.skip`.** Bản đầu bỏ qua khi không thấy tệp frontend, và
+    ⚠️ **BỘ LỌC ĐÃ DỜI CHỖ 23/09 (plan 02, Task 8).** Trước đó nó sống ở
+       `frontend/agent-canvas/src/presentationAdapter.ts`; nay palette sinh ở
+       **máy chủ** (`apps/agent/routes/palette_v3.py`) và tệp frontend ấy đã bị
+       xoá cùng bảng slug gõ cứng. Sợi dây không đổi — chỗ buộc thì đổi.
+
+    ⭐ Và đó chính là lý do bài này canh CẢ HAI phía: máy chủ **phải** lọc, còn
+       frontend **không được** mọc lại một bộ lọc `lifecycle` thứ hai.
+
+    ⛔ **Không `pytest.skip`.** Bản đầu bỏ qua khi không thấy tệp, và
        `check_bo_qua` bắt đúng: *"một test bị bỏ qua là một test không canh gì
        cả"*. Tệp ấy **được git theo dõi** (`git ls-files` xác nhận), nên vắng mặt
        không phải một điều kiện môi trường hợp lệ — đó là một cây hỏng, và bài
        này phải nói ra chứ không im lặng xanh.
     """
-    f = (pathlib.Path(__file__).resolve().parent.parent / "frontend"
-         / "agent-canvas" / "src" / "presentationAdapter.ts")
+    goc = pathlib.Path(__file__).resolve().parent.parent
+    f = goc / "apps" / "agent" / "routes" / "palette_v3.py"
     assert f.is_file(), (
-        "khong thay `presentationAdapter.ts` — tep nay duoc git theo doi, nen "
-        "vang mat nghia la cay hong chu khong phai mot moi truong khac")
+        "khong thay `apps/agent/routes/palette_v3.py` — tep nay duoc git theo "
+        "doi, nen vang mat nghia la cay hong chu khong phai mot moi truong khac")
     van = f.read_text(encoding="utf-8", errors="ignore")
-    assert "customer_visible" in van
-    assert "lifecycle" not in van, (
-        "frontend da them bo loc lifecycle — doc lai docstring tep nay")
+    assert "customer_visible" in van, (
+        "may chu thoi loc `customer_visible` — tool AN se hien trong palette")
+
+    # Chiều thứ hai: frontend không được dựng lại một bộ lọc `lifecycle`.
+    src = goc / "frontend" / "agent-canvas" / "src"
+    assert src.is_dir(), "khong thay frontend/agent-canvas/src — cay hong"
+    xau = [t.relative_to(goc).as_posix() for t in sorted(src.rglob("*.ts*"))
+           if "lifecycle" in t.read_text(encoding="utf-8", errors="ignore")]
+    assert xau == [], (
+        f"frontend da them bo loc lifecycle ({xau}) — doc lai docstring tep nay")
 
 
 # ── Bộ kiểm plan hiểu typed I/O của bốn tool ─────────────────────────────────

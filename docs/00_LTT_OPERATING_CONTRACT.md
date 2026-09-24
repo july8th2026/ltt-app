@@ -103,7 +103,8 @@ tệp kế hoạch.
 TRONG PHIÊN    : test NHẮM đúng cụm vừa sửa. Đỏ → sửa TẠI CHỖ → chạy lại ĐÚNG phép đỏ.
                  Cần gate (chạm nhiều thành phần, cần phán quyết hẹp) → CHỈ L1 hoặc L2.
                  ⛔ KHÔNG L3 giữa các pha — không rải rác, không "chốt pha".
-TỔNG KẾT PHIÊN : mọi pha xong → python tools\gate.py (L3) MỘT lần.
+KẾT THÚC PHIÊN : hết PHIÊN LÀM VIỆC → python tools\gate.py (L3) MỘT lần.
+                 ⛔ KHÔNG phải hết một phase, một task, một nhánh hay một lần gộp `main`.
 DEPLOY         : bất cứ lúc nào việc xây dựng cần, khi có gate XANH trên đúng SHA deploy —
                  giữa phiên L1/L2 · tổng kết phiên L3. ⛔ Không chạy L3 để deploy; test nhắm
                  một mình không đủ để deploy.
@@ -111,19 +112,28 @@ L3 ĐỎ          : sửa tại chỗ → chạy lại đúng phép đỏ → kh
                  ⛔ KHÔNG chạy L3 lần hai. Một L3 mỗi nhánh.
 ```
 
-**"Phiên" = cả phiên làm việc**, từ lúc mở tới lúc tổng kết — ⛔ **không** phải một
-nhánh con, một worktree phụ, một pha, một hạng mục hay một lần gộp `main`. Một phiên
-mở nhiều nhánh vẫn chỉ bấm L3 **một lần, ở tổng kết**, trên nhánh sẽ deploy. (Máy đếm
-L3 theo nhánh — §4.6 — đó là cơ chế chặn, không phải định nghĩa phiên.)
+**"Phiên" = cả phiên làm việc**, từ lúc mở tới lúc KẾT THÚC — ⛔ **không** phải một
+nhánh con, một worktree phụ, một **phase**, một **task**, một hạng mục hay một lần gộp
+`main`. Một phiên mở nhiều nhánh vẫn chỉ bấm L3 **một lần, khi kết thúc phiên**, trên
+nhánh sẽ deploy. (Máy đếm L3 theo nhánh — §4.6 — đó là cơ chế chặn, không phải định
+nghĩa phiên.)
+
+> 🔑 **Chốt 24/09 — L1/L2 KHÔNG BAO GIỜ tự nâng lên L3.** Bản trước cho phép nâng khi
+> nhánh đã có L3 trong cửa sổ, và **từ chối chạy** khi chưa có — nghĩa là một thay đổi
+> chạm `platform_core/`/`server/`/`tools/` thì **không gate nào chạy được**. Nay một
+> lượt hẹp không thu hẹp được sẽ **HẠ CẤP xuống `nhanh`**: giữ **mọi** bước tĩnh (ruff,
+> kết dòng, ranh giới import, i18n, migration, frontend), **bỏ** bộ test đầy đủ, và
+> **nói to** rằng bộ test không được phủ. ⛔ Im lặng về chỗ không nhìn tới thì tệ hơn
+> không đo — người đọc sẽ tưởng đã phủ.
 
 ## Các cấp — tên gọi cho hồ sơ `gate.py`
 
 | Cấp | Lệnh | Dùng khi | ⛔ KHÔNG chứng minh gì |
 |---|---|---|---|
 | **T** | `python -m pytest <tệp…> -q` · `python tools\check_<x>.py` | **mọi lúc trong phiên** (§4.1) | không nói gì ngoài cụm đó |
-| **L1** | `python tools\gate.py --doi [--tu <sha>]` | **giữa phiên khi cần** · **deploy giữa phiên** (§8) · **khép** bản sửa sau L3 đỏ (§4.6) · hoà `main` (§7) | phần còn lại. Giữa phiên **không** tự nâng lên L3 — máy từ chối; sau L3 tổng kết thì tự nâng khi không chắc |
+| **L1** | `python tools\gate.py --doi [--tu <sha>]` | **giữa phiên khi cần** · **deploy giữa phiên** (§8) · **khép** bản sửa sau L3 đỏ (§4.6) · hoà `main` (§7) | phần còn lại. ⛔ **Không bao giờ** tự nâng lên L3 (chốt 24/09) — không thu hẹp được thì **hạ cấp xuống `nhanh`** và khai rằng bộ test không được phủ |
 | **L2** | `python tools\gate.py --pham-vi <tp>[,<tp>…]` (nhiều thành phần = **một** lượt: hợp tệp test, bước tĩnh chạy một lần; lặp cờ cũng được) | **giữa phiên khi cần** · **deploy giữa phiên** (§8) · chứng nhận riêng một changeset lõi (§4.10) | ⚠️ tin người gọi |
-| **L3** | `python tools\gate.py` | **một lần, tổng kết phiên** (§4.2) — phán quyết cho deploy ở tổng kết | production (nghiệm thu thật §9) |
+| **L3** | `python tools\gate.py` | **một lần, KẾT THÚC PHIÊN** (§4.2) — ⛔ không phải hết phase/task/nhánh | production (nghiệm thu thật §9) |
 | — | `--quick` · `--vong-lap` | **không dùng** trong nhịp chuẩn | không phải bằng chứng |
 
 Hồ sơ chuyên dụng: `--noi-tiep` (nghi nhiễu do song song/tải máy) · `--ho-so

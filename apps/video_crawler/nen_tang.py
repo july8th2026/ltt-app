@@ -85,6 +85,11 @@ class NenTang:
     cookie_dang_nhap: tuple = ()
     #: Chế độ BẮT BUỘC có phiên (vd TikTok từ khoá — donor Y:1541-1544). Chưa có phiên ⇒ chặn ở cửa vào.
     che_do_can_dang_nhap: frozenset = frozenset()
+    #: Nền ĐÃ dựng đường đi nhưng đo thật chưa ra kết quả ⇒ ghim "Đang phát triển": vẫn hiện trên giao diện
+    #: (khách thấy lộ trình) nhưng CHẶN ở cửa vào, không nhận job rồi trả rỗng. Gỡ ghim khi đo lại xanh.
+    dang_phat_trien: bool = False
+    #: Vì sao còn ghim — hiện cho khách và nhắc chính ta khi nào được gỡ. Bắt buộc khi `dang_phat_trien`.
+    ly_do_dpt: str = ""
 
 
 @dataclass(frozen=True)
@@ -110,6 +115,7 @@ _NEN: tuple[NenTang, ...] = (
         so_luong_toi_da=20, adapter="douyin", gioi_han=(N_("Cần phiên Douyin cho mọi cách cào."),),
         cookie_dang_nhap=('sessionid', 'sessionid_ss', 'sid_tt'),
         che_do_can_dang_nhap=frozenset({'link', 'kenh', 'tu_khoa'}),
+        dang_phat_trien=True, ly_do_dpt=N_("Đo thật 23/09 bằng tài khoản hệ thống: Douyin trả về danh sách rỗng, chưa lấy được video nào."),
     ),
     NenTang(
         id="bilibili_tv", ten=N_("Bilibili quốc tế"), icon="bilibili_tv", bat=True,
@@ -135,6 +141,7 @@ _NEN: tuple[NenTang, ...] = (
         so_luong_toi_da=20, adapter="xiaohongshu", gioi_han=(N_("Tìm và kênh cần phiên Xiaohongshu."), N_("Link bài phải có xsec_token (copy từ trình duyệt)."), N_("Bài chỉ có ảnh không tải được.")),
         cookie_dang_nhap=('id_token',),
         che_do_can_dang_nhap=frozenset({'kenh', 'tu_khoa'}),
+        dang_phat_trien=True, ly_do_dpt=N_("Chưa có phiên đăng nhập Xiaohongshu nào trong hệ thống để lấy dữ liệu."),
     ),
     NenTang(
         id="rednote", ten="RedNote", icon="rednote", bat=False,
@@ -160,6 +167,7 @@ _NEN: tuple[NenTang, ...] = (
         so_luong_toi_da=20, adapter="tiktok", gioi_han=(N_('Tìm theo từ khoá cần phiên TikTok.'), N_('Bài ảnh (slideshow) không có video.')),
         cookie_dang_nhap=('sessionid', 'sessionid_ss', 'sid_tt'),
         che_do_can_dang_nhap=frozenset({'tu_khoa'}),
+        dang_phat_trien=True, ly_do_dpt=N_("Đo thật 23/09: TikTok trả lỗi \"No working app info\" — công cụ chưa lấy được dữ liệu."),
     ),
     NenTang(
         id="youtube", ten="YouTube", icon="youtube", bat=True,

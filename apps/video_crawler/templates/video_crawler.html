@@ -53,11 +53,18 @@
         <label class="chip-opt" data-nen="{{ n.id }}" data-che-do="{{ n.che_do | sort | join(',') }}"
                data-can-phien="{{ n.che_do_can_dang_nhap | sort | join(',') }}" data-co-phien="{{ '1' if n.id in phien_cua_toi else '' }}"
                data-ghi-chu="{{ n.gioi_han | join(' · ') }}" data-co-tim-kenh="{{ '1' if (co_tim_kenh and co_tim_kenh.get(n.id)) else '' }}"
-               data-goi-y='{{ (goi_y_nen.get(n.id) if goi_y_nen else {}) | tojson }}'>
-          <input type="radio" name="nen_tang" value="{{ n.id }}" {% if n.id == nen_mac_dinh %}checked{% endif %}><span>{{ _(n.ten) }}</span>
+               data-goi-y='{{ (goi_y_nen.get(n.id) if goi_y_nen else {}) | tojson }}'
+               data-dang-phat-trien="{{ '1' if n.dang_phat_trien else '' }}"
+               {% if n.dang_phat_trien %}title="{{ _(n.ly_do_dpt) }}"{% endif %}>
+          <input type="radio" name="nen_tang" value="{{ n.id }}" {% if n.id == nen_mac_dinh %}checked{% endif %}
+                 {% if n.dang_phat_trien %}disabled{% endif %}><span>{{ _(n.ten) }}</span>
+          {% if n.dang_phat_trien %}<small class="vc-dpt">{{ _("Đang phát triển") }}</small>{% endif %}
         </label>
         {% endfor %}
       </div>
+      {% if nen | selectattr('dang_phat_trien') | list %}
+      <p class="muted">{{ _("Nền ghi “Đang phát triển” đã dựng xong đường đi nhưng đo thật chưa ra dữ liệu — chúng tôi đang làm tiếp. Di chuột lên nhãn để xem lý do.") }}</p>
+      {% endif %}
 
       <h2>2 · {{ _("Cách cào") }}</h2>
       <div class="chips vc-che-do" role="radiogroup" aria-label="{{ _('Cách cào') }}">

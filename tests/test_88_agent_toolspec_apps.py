@@ -124,11 +124,15 @@ def test_cong_THU_NHAT_that_su_chan_chu_khong_chi_ton_tai():
         f"tap tool AN da doi: {an} — moi thay doi o day la mot quyet dinh "
         "ve thu khach nhin thay trong palette Agent")
 
+    # ⚠️ 23/09 (plan 02, Task 8): bo loc `customer_visible` da dOi tu frontend
+    #    (`presentationAdapter.ts`, nay da xoa) ve MAY CHU — palette sinh tu
+    #    registry o `apps/agent/routes/palette_v3.py`. Chot lai o nguon moi;
+    #    chieu "frontend khong duoc moc bo loc thu hai" o test_1113.
     goc = pathlib.Path(__file__).resolve().parents[1]
-    ma = (goc / "frontend" / "agent-canvas" / "src"
-          / "presentationAdapter.ts").read_text(encoding="utf-8")
-    assert "customer_visible!==false" in ma.replace(" ", ""), (
-        "giao dien thoi loc `customer_visible` — tool AN se hien trong palette")
+    ma = (goc / "apps" / "agent" / "routes"
+          / "palette_v3.py").read_text(encoding="utf-8")
+    assert "customer_visible" in ma, (
+        "may chu thoi loc `customer_visible` — tool AN se hien trong palette")
 
 
 def test_app_khong_phu_hop_khong_bi_ep_toolspec():

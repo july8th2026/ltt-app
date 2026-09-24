@@ -438,7 +438,7 @@ class ToolSpec:
 
     # ═══ HỢP ĐỒNG NODE V2 (`25_26 §2`) ═══════════════════════════════════════
     #
-    # Sáu trường, tất cả CÓ MẶC ĐỊNH ⇒ **không app nào phải sửa để lên V2**.
+    # Tám trường, tất cả CÓ MẶC ĐỊNH ⇒ **không app nào phải sửa để lên V2**.
     # Đó là ràng buộc thiết kế, không phải may mắn: `02 §3` chốt rằng V2 mở
     # rộng `ToolSpec` chứ không dựng một registry thứ hai, vì dự án này đã trả
     # giá nhiều lần cho mô hình hai nguồn chân lý.
@@ -509,6 +509,29 @@ class ToolSpec:
     #    `platform_core/workflow/bieu_thuc.py`, và bộ tính ở đó **không dùng
     #    `eval`** — nó duyệt AST rồi tự tính từng nút.
     timeout_expr: str = ""
+
+    #: `{"vao": {"<tham_so>": "<kieu>"}, "ra": {"<khoa_returns>": "<kieu>"}}`
+    #: — ánh xạ tên tham số / khoá kết quả sang **kiểu cổng** của `he_kieu`.
+    #:
+    # 🔴 VÌ SAO KHÔNG SUY HẾT BẰNG MÁY. Adapter (`workflow/luoc_do.py`) suy
+    #    được đa số: `{"type": "image"}` là cổng `image`. Nhưng `json` thì
+    #    không: `response_format` của `text.chat` là một **thiết lập**, còn
+    #    `transcript` của `video.subtitle` là **dữ liệu chảy từ node trước**.
+    #    Máy không phân biệt được hai thứ đó, và đoán sai ở đây là một cổng
+    #    không ai nối được (hoặc một ô nhập biến mất khỏi form).
+    #
+    # ⭐ Rỗng = adapter tự suy (đường mặc định, 19 tool hôm nay). Khai từng
+    #    khoá là **đè lên** phần suy, không phải thay cả bảng.
+    cong: dict = field(default_factory=dict)
+
+    #: `False` = ẩn tool khỏi palette **workflow** (không phải khỏi runtime).
+    #
+    # ⭐ Khác `customer_visible` có chủ ý: `customer_visible=False` là
+    #    soft-retire của palette Agent cũ; `workflow=False` nói *"tool này
+    #    không có nghĩa như một NODE"* (vd tool chỉ dùng trong hội thoại
+    #    ChatLTT, cần ngữ cảnh hội thoại mà đồ thị không có). Gộp hai cờ là
+    #    mất một trong hai câu.
+    workflow: bool = True
 
     def lane_for(self, params: dict) -> str:
         """`job_type` thật cho một lượt gọi, theo tham số app đã khai.
@@ -691,6 +714,21 @@ class AppManifest:
     #:
     #: ⚠️ Hàm này KHÔNG được ném — cùng luật với `bao_tri`. Một app hỏng bảng
     #:    giá không được làm sập trang giá của mọi app khác.
+    #:
+    #: ⭐ KHOÁ `"nhom"` — NHÓM HIỂN THỊ, app tự khai (23/09/2026). Từ vựng hiện
+    #:    có: `"anh"` · `"tieng"`. Trang `/gia-api` có bố cục THỦ CÔNG (mỗi
+    #:    nhóm một khối, khác hẳn nhau về đơn vị và về cột), nên nó phải biết
+    #:    bảng giá nào đi vào khối nào.
+    #:
+    #:    🔴 Trước 23/09 nó biết bằng cách gõ tên app:
+    #:       `bang_gia_app.get("anhnoibo")` / `.get("ltt_voice")`. Đọc registry
+    #:       đúng rồi VẪN tra bằng literal thì nền tảng vẫn biết tên hai app cụ
+    #:       thể — đi qua registry không xoá điều đó, chỉ chuyển chỗ nó nấp.
+    #:       Nay app nói nó thuộc khối nào; nền tảng chỉ **xếp**.
+    #:
+    #:    ⚠️ Không khai `"nhom"` ⇒ bảng giá vẫn trả về trong `bang_gia_cong_khai()`
+    #:       nhưng trang `/gia-api` không có khối nào để đặt nó — cùng luật với
+    #:       `suc_khoe`, từ vựng là chuỗi thường, không phải enum.
     bang_gia: Optional[Callable[[], dict]] = None
 
     #: Sức khoẻ **của năng lực** app cung cấp, cho catalog của sản phẩm khác
@@ -1047,7 +1085,7 @@ RESOURCE_KEYS = frozenset({"class", "vram_min_mb", "slots", "est_duration_s"})
 
 
 def _validate_hop_dong_v2(manifest: AppManifest, tool: ToolSpec) -> None:
-    """Sáu trường V2 (`25_26 §2`) — kiểm lúc NẠP, không đợi lúc chạy.
+    """Tám trường V2 (`25_26 §2`) — kiểm lúc NẠP, không đợi lúc chạy.
 
     ⭐ Vì sao kiểm ở đây chứ không ở chỗ dùng: ba trong sáu trường quyết định
        **tiền** hoặc **khôi phục sau sự cố** (`side_effect`, `idempotency`,
@@ -1102,6 +1140,41 @@ def _validate_hop_dong_v2(manifest: AppManifest, tool: ToolSpec) -> None:
             continue
         if isinstance(v, bool) or not isinstance(v, int) or v < 0:
             raise RegistryError(f"{ten} resource[{k!r}] phải là int >= 0, nhận {v!r}")
+
+    if not isinstance(tool.workflow, bool):
+        raise RegistryError(f"{ten} workflow phải là bool, nhận {tool.workflow!r}")
+
+    if not isinstance(tool.cong, dict):
+        raise RegistryError(f"{ten} cong phải là dict")
+    thua = set(tool.cong) - {"vao", "ra"}
+    if thua:
+        raise RegistryError(f"{ten} cong có khoá lạ: {sorted(thua)} "
+                            f"(chỉ ['ra', 'vao'])")
+    if tool.cong:
+        # Nạp trễ VÀ có điều kiện, cùng lý do với `bieu_thuc` ở dưới: `registry`
+        # là thứ được nạp sớm nhất trong tiến trình, và mặc định của 19 tool
+        # hôm nay là `cong={}` ⇒ không tool nào phải trả giá cho cạnh nhập
+        # registry → workflow mà nó không dùng.
+        from platform_core.workflow import he_kieu
+
+        for phia, nguon in (("vao", tool.params_schema or {}),
+                            ("ra", tool.returns or {})):
+            ban = tool.cong.get(phia)
+            if ban is None:
+                continue
+            if not isinstance(ban, dict):
+                raise RegistryError(
+                    f"{ten} cong[{phia!r}] phải là dict, nhận {ban!r}")
+            for khoa, kieu in ban.items():
+                if khoa not in nguon:
+                    raise RegistryError(
+                        f"{ten} cong[{phia!r}] trỏ tới {khoa!r} — không có trong "
+                        f"{'params_schema' if phia == 'vao' else 'returns'} "
+                        f"({sorted(nguon)})")
+                if not he_kieu.hop_le(str(kieu)):
+                    raise RegistryError(
+                        f"{ten} cong[{phia!r}][{khoa!r}] kiểu cổng không hợp lệ: "
+                        f"{kieu!r}")
 
     if tool.timeout_expr:
         # Nạp trễ: `bieu_thuc` không phụ thuộc gì trong `platform_core`, nhưng

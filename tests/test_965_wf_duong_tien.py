@@ -295,3 +295,75 @@ def test_TRAN_RUN_phai_NGAN_HON_nguong_tu_hoan():
     du = credit.TU_HOAN_SAU - dong_co.TRAN_RUN
     assert du >= timedelta(hours=2), (
         f"khoang cach {du} qua hep cho mot vong quet co chu ky")
+
+
+def test_giu_cho_run_chi_co_MOT_cho_goi_va_cho_do_tu_tao_run():
+    """🔴 BÁNH CÓC — thứ đang giữ bất biến "một run = một hold" KHÔNG phải một
+    khoá, mà là **hình dạng của chỗ gọi**. Bài này ghim đúng hình dạng đó.
+
+    `giu_cho_run()` đọc `run.hold_id` rồi ghi mà **không** khoá hàng. Đo được
+    trên PostgreSQL thật 23/09 (`tests/test_1720_wf_dong_co_pg.py::
+    test_giu_cho_run_dong_thoi_chi_mot_hold`): hai phiên cùng cầm MỘT run đã
+    commit ⇒ **40 credit bị giữ cho một run có trần 20**. Cuộc đua là thật.
+
+    Hôm nay nó **không chạm tới được**, vì đúng một lý do: chỗ gọi duy nhất là
+    `tao_run.tao_run()`, và ở đó hàng `workflow_run` vừa được `INSERT` **trong
+    cùng transaction** — không phiên nào khác nhìn thấy nó để mà đua. Hai
+    request cùng `Idempotency-Key` thì kẻ thua bị chặn ngay tại `INSERT` bởi
+    chỉ mục bộ phận `ux_workflow_run_idem`, **trước** khi tới đường tiền
+    (`test_tao_run_dong_thoi_cung_khoa_chi_mot_hold`, xanh trên PostgreSQL).
+
+    ⇒ Nên thay vì thêm một `with_for_update()` vào đường tiền để chống một
+      cuộc đua không có đường tới, ta ghim **tiền đề** đang làm nó an toàn.
+      Thêm một chỗ gọi thứ hai — trên một run **đã commit** (thử lại, bộ dọn
+      nền, một cửa API mới) — là biến cuộc đua đã đo được thành cuộc đua có
+      thật. Khi bài này đỏ, câu trả lời gần như chắc chắn là: khoá hàng
+      (`with_for_update()`) trong `giu_cho_run` trước khi đọc `hold_id`.
+    """
+    import ast
+    import pathlib
+
+    goc = pathlib.Path(__file__).resolve().parent.parent
+    cho_goi: dict[str, list[int]] = {}
+    for thu_muc in ("platform_core", "apps", "server"):
+        for tep in (goc / thu_muc).rglob("*.py"):
+            try:
+                cay = ast.parse(tep.read_text(encoding="utf-8"))
+            except (SyntaxError, UnicodeDecodeError):      # pragma: no cover
+                continue
+            for nut in ast.walk(cay):
+                if not isinstance(nut, ast.Call):
+                    continue
+                ham = nut.func
+                ten = (ham.attr if isinstance(ham, ast.Attribute)
+                       else ham.id if isinstance(ham, ast.Name) else "")
+                if ten == "giu_cho_run":
+                    cho_goi.setdefault(
+                        tep.relative_to(goc).as_posix(), []).append(nut.lineno)
+
+    assert set(cho_goi) == {"platform_core/workflow/tao_run.py"}, (
+        "`giu_cho_run()` doc `run.hold_id` roi ghi ma KHONG khoa hang. No an "
+        "toan CHI VI cho goi duy nhat tao hang run trong cung transaction. "
+        f"Cho goi hien tai: {cho_goi}. Neu ban vua them mot cho goi tren mot "
+        "run DA COMMIT, cuoc dua o tests/test_1720_wf_dong_co_pg.py::"
+        "test_giu_cho_run_dong_thoi_chi_mot_hold tro thanh that - hay khoa "
+        "hang (`with_for_update()`) truoc khi doc `hold_id`, roi bo `xfail` "
+        "cua bai do.")
+
+    # Chỗ gọi duy nhất phải nằm SAU `thi_hanh.tao_run` trong CÙNG một khối
+    # `with db.begin_nested()` — đó mới là thứ làm hàng run vô hình với phiên
+    # khác. Một chỗ gọi đúng tệp nhưng ngoài khối ấy không còn tiền đề nào.
+    nguon = (goc / "platform_core/workflow/tao_run.py").read_text(encoding="utf-8")
+    cay = ast.parse(nguon)
+    trong_khoi = False
+    for nut in ast.walk(cay):
+        if not isinstance(nut, ast.With):
+            continue
+        goi = [n for n in ast.walk(nut) if isinstance(n, ast.Call)]
+        ten = [n.func.attr for n in goi if isinstance(n.func, ast.Attribute)]
+        if "begin_nested" in ten and "tao_run" in ten and "giu_cho_run" in ten:
+            trong_khoi = True
+    assert trong_khoi, (
+        "`tien.giu_cho_run()` phai nam trong CUNG khoi `with db.begin_nested()` "
+        "voi `thi_hanh.tao_run()`: hang `workflow_run` chi vo hinh voi phien "
+        "khac khi no chua commit. Tach hai thu ra la mo lai cuoc dua da do.")

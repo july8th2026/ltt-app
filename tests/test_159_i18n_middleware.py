@@ -154,3 +154,142 @@ def test_co_vary_de_cdn_khong_phuc_vu_nham_ngon_ngu(client):
     vary = r.headers.get("vary", "")
     for h in ("Accept-Language", "CF-IPCountry", "Cookie"):
         assert h in vary, f"thieu {h} trong Vary: {vary!r}"
+
+
+# ── 6. Lời gọi dữ liệu trong trang KHÔNG phải điều hướng ─────────────────────
+#
+# Chuyển hướng 302 sinh ra để **thanh địa chỉ khớp nội dung** (xem docstring của
+# middleware). `fetch()` trong trang không có thanh địa chỉ: chuyển hướng nó chỉ
+# tốn thêm một chặng. Vòng poll của Canvas v3 gọi 1,5 giây một lần ⇒ 302 ở đây
+# là nhân đôi tải của cả tính năng.
+#
+# Tiêu chí phân biệt KHÔNG được là tiền tố đường dẫn: có 136 route `/api/` nằm
+# dưới `route_prefix` của các app (`/agent/api/…`, `/chatltt/api/…`, …) và app
+# sau sẽ lại dính. Dùng Fetch Metadata (`Sec-Fetch-Mode`) — chính trình duyệt
+# khai đây có phải điều hướng hay không — và lùi về `Accept` cho client cũ.
+
+# Trình duyệt mở cả trang: Fetch Metadata khai `navigate`, Accept xin HTML.
+DIEU_HUONG = {
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Dest": "document",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+}
+# CÙNG trình duyệt đó, nhưng là `fetch()` trong trang.
+GOI_DU_LIEU = {"Sec-Fetch-Mode": "cors", "Sec-Fetch-Dest": "empty", "Accept": "*/*"}
+
+
+@pytest.fixture()
+def client_hep():
+    """App tối giản chỉ gắn `I18nMiddleware`.
+
+    Đo đúng hành vi của middleware và KHÔNG phụ thuộc route của app nào — nhờ vậy
+    khẳng định được "200 thẳng, thân trả về đúng", thay vì chỉ "không phải 302"
+    (một route bị xoá cũng cho `!= 302`, nên phép đo ấy một mình là rỗng).
+    """
+    from fastapi import FastAPI
+    from fastapi.responses import HTMLResponse, JSONResponse
+    from fastapi.testclient import TestClient
+
+    from server.i18n_middleware import I18nMiddleware
+
+    app = FastAPI()
+
+    @app.get("/thu/api/v3/runs/{ma}")
+    def _api(ma: str):
+        return JSONResponse({"ma": ma})
+
+    @app.get("/thu/trang")
+    def _trang():
+        return HTMLResponse("<p>trang</p>")
+
+    app.add_middleware(I18nMiddleware)
+    return TestClient(app, base_url="https://testserver")
+
+
+def test_fetch_trong_trang_tra_200_thang_khong_qua_302(client_hep):
+    """Phép đo chính: MỘT chặng, có thân JSON đúng — không phải 302 rồi 200."""
+    r = client_hep.get("/thu/api/v3/runs/abc", headers={**US, **GOI_DU_LIEU},
+                       follow_redirects=False)
+    assert r.status_code == 200, f"302 = nhan doi tai vong poll: {r.headers.get('location')!r}"
+    assert "location" not in r.headers
+    assert r.json() == {"ma": "abc"}
+
+
+def test_client_chi_nhan_json_khong_bi_chuyen_huong(client_hep):
+    """Client máy-gọi-máy (SDK, worker) không gửi Fetch Metadata nhưng nói rõ nó
+    chỉ nhận JSON — cũng không có thanh địa chỉ để mà khớp."""
+    r = client_hep.get("/thu/api/v3/runs/abc",
+                       headers={**US, "Accept": "application/json"},
+                       follow_redirects=False)
+    assert r.status_code == 200, r.headers.get("location")
+
+
+# ── 6b. VẾ ĐỐI CHỨNG: hành vi CŨ phải còn nguyên ─────────────────────────────
+# Đây là middleware của CẢ trang web. Một bản vá quá tay tắt i18n cho mọi người
+# mà bộ test vẫn xanh, nếu không có những phép kiểm dưới đây.
+
+def test_doi_chung_dieu_huong_html_van_duoc_chuyen_huong(client_hep):
+    r = client_hep.get("/thu/trang", headers={**US, **DIEU_HUONG},
+                       follow_redirects=False)
+    assert r.status_code == 302
+    assert r.headers["location"] == "/en/thu/trang"
+
+
+def test_doi_chung_trinh_duyet_cu_khong_co_fetch_metadata_van_chuyen_huong(client_hep):
+    """Safari < 16.4 không gửi `Sec-Fetch-*`. Chỉ còn `Accept` để mà xét."""
+    r = client_hep.get("/thu/trang",
+                       headers={**US, "Accept": "text/html,*/*;q=0.8"},
+                       follow_redirects=False)
+    assert r.status_code == 302
+    assert r.headers["location"] == "/en/thu/trang"
+
+
+def test_doi_chung_client_khong_khai_gi_giu_nguyen_hanh_vi_cu(client_hep):
+    """`Accept: */*` và không có Fetch Metadata = KHÔNG có bằng chứng. Không có
+    bằng chứng thì giữ hành vi cũ — thu hẹp chuyển hướng chỉ ở nơi client đã nói
+    rõ, để bản vá này không lặng lẽ tắt i18n cho một loại client chưa nghĩ tới."""
+    r = client_hep.get("/thu/trang", headers={**US, "Accept": "*/*"},
+                       follow_redirects=False)
+    assert r.status_code == 302
+    assert r.headers["location"] == "/en/thu/trang"
+
+
+def test_doi_chung_tien_to_en_tren_duong_api_van_chay(client_hep):
+    """`/en/...` không được thành 404 — đó là cái giá của cách vá bằng `MIEN_TRU`."""
+    r = client_hep.get("/en/thu/api/v3/runs/abc", headers=GOI_DU_LIEU,
+                       follow_redirects=False)
+    assert r.status_code == 200
+    assert r.json() == {"ma": "abc"}
+
+
+def test_doi_chung_tien_to_en_tren_trang_van_chay(client_hep):
+    r = client_hep.get("/en/thu/trang", headers={**US, **DIEU_HUONG},
+                       follow_redirects=False)
+    assert r.status_code == 200
+
+
+# ── 6c. Trên ỨNG DỤNG THẬT ───────────────────────────────────────────────────
+def test_api_cua_app_tren_ung_dung_that_khong_bi_chuyen_huong(client):
+    """`/agent/api/…` là đường thật vòng poll Canvas v3 gọi.
+
+    Đo ĐÚNG chặng ngôn ngữ, không đo hộ lớp khác: request này chưa đăng nhập nên
+    router vẫn trả 303 về `/login` — đó là lớp xác thực, chuyện khác. Cái phải
+    biến mất là chặng 302 sang CHÍNH đường đó có thêm `/en`.
+    """
+    duong = "/agent/api/v3/runs/khong-ton-tai"
+    r = client.get(duong, headers={**US, **GOI_DU_LIEU}, follow_redirects=False)
+    assert r.headers.get("location", "") != "/en" + duong, "van con chang 302 ngon ngu"
+    assert r.status_code != 302, r.headers.get("location")
+
+
+def test_doi_chung_trang_that_van_duoc_chuyen_huong(client):
+    r = client.get("/login", headers={**US, **DIEU_HUONG}, follow_redirects=False)
+    assert r.status_code == 302
+    assert r.headers["location"] == "/en/login"
+
+
+def test_doi_chung_api_v1_van_khong_bi_dung_toi(client):
+    """`/api/v1/…` đã nằm trong `MIEN_TRU` từ trước — phải y như cũ."""
+    r = client.get("/api/v1/me", headers={**US, **GOI_DU_LIEU},
+                   follow_redirects=False)
+    assert not (300 <= r.status_code < 400), r.headers.get("location")

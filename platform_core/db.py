@@ -89,9 +89,21 @@ CONNECT_TIMEOUT_S = 5
 
 
 def _connect_args(url: str) -> dict:
-    """Tham số riêng của driver. Chỉ PostgreSQL hiểu `connect_timeout`."""
+    """Tham số riêng của driver. Chỉ PostgreSQL hiểu `connect_timeout`.
+
+    ⭐ `options="-c timezone=UTC"` là tham số **libpq**: nó đặt `SET timezone`
+       cho MỌI phiên ngay lúc bắt tay, trước câu lệnh đầu tiên. Không ghim thì
+       `now()` trong SQL nói theo `timezone` của cluster — một giá trị nằm
+       NGOÀI kho này — còn Python nói UTC (`_bay_gio()`), nên `due_at <= now()`
+       của `danh_thuc`/`dong_co` lệch đúng bằng offset của máy chủ. Lệch đó
+       không ném ngoại lệ: wakeup chỉ đơn giản không tới hạn.
+
+    ⛔ `options` là của libpq, KHÔNG phải của `pysqlite` — nhánh SQLite phải
+       giữ nguyên `{}`, nếu không `create_engine` ném `TypeError` cho cả kho.
+    """
     if url.startswith(("postgresql", "postgres")):
-        return {"connect_timeout": CONNECT_TIMEOUT_S}
+        return {"connect_timeout": CONNECT_TIMEOUT_S,
+                "options": "-c timezone=UTC"}
     return {}
 
 

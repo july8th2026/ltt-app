@@ -29,6 +29,30 @@ _LIFECYCLE_UI = {
 }
 
 
+#: Nhóm hiển thị của trang giá công khai `/gia-api`. Đây là TỪ VỰNG HỢP ĐỒNG
+#: (`AppManifest.bang_gia` → khoá `"nhom"`), không phải tên app: app khai mình
+#: thuộc khối nào, trang chỉ xếp. Xem chú thích trong `gia_api()`.
+NHOM_GIA_ANH = "anh"
+NHOM_GIA_TIENG = "tieng"
+
+
+def _bang_gia_theo_nhom(bang_gia_app: dict) -> dict[str, dict]:
+    """`{nhóm: bảng_giá}` từ `{slug: bảng_giá}` của registry.
+
+    ⚠️ Nhiều app cùng khai một nhóm ⇒ lấy app ĐẦU theo thứ tự slug, để bố cục
+       trang không đổi theo thứ tự nạp app. Hôm nay mỗi nhóm đúng một app, nên
+       quy tắc này chưa có hiệu lực quan sát được — nó ở đây để trang hỏng theo
+       cách đoán trước được chứ không theo cách ngẫu nhiên.
+    """
+    ra: dict[str, dict] = {}
+    for slug in sorted(bang_gia_app):
+        gia = bang_gia_app.get(slug) or {}
+        nhom = gia.get("nhom")
+        if nhom:
+            ra.setdefault(str(nhom), gia)
+    return ra
+
+
 def _prepare_home_items(items: list) -> list[str]:
     """Gắn metadata trình bày chỉ từ manifest và trả taxonomy duy nhất.
 
@@ -159,8 +183,23 @@ def gia_api(request: Request):
     #
     # ⚠️ Đo được cái giá của cạnh cũ: một thay đổi trong `apps/anhnoibo` (3 tệp
     #    test của riêng nó) kéo theo 134 tệp test, chỉ vì dòng `import` ở đây.
+    #
+    # ⭐ CHỌN THEO NHÓM APP TỰ KHAI, KHÔNG THEO TÊN APP (23/09/2026).
+    #
+    #    Hai dòng ở đây từng là `bang_gia_app.get("anhnoibo")` và
+    #    `.get("ltt_voice")`. Chúng ĐÃ đi qua registry — và vẫn tra bằng slug
+    #    **gõ tay trong mã chạy được**, tức nền tảng vẫn biết tên hai app cụ
+    #    thể. Sửa 02/09 bỏ được cạnh `import apps.<tên>`, không bỏ được chỗ
+    #    này; nó chỉ chuyển từ `import` sang khoá dict.
+    #
+    #    Nay `AppManifest.bang_gia` khai thêm khoá `"nhom"` (`"anh"`/`"tieng"`).
+    #    App nói nó thuộc khối nào; trang chỉ **xếp**. Bố cục thủ công của
+    #    trang (hai khối khác hẳn nhau) là CHỦ Ý và giữ nguyên — nó nằm ở
+    #    template `gia_api.html`, không nằm ở tên app trong mã.
     bang_gia_app = registry.bang_gia_cong_khai()
-    bang_anh = bang_gia_app.get("anhnoibo") or {}
+    bang_theo_nhom = _bang_gia_theo_nhom(bang_gia_app)
+
+    bang_anh = bang_theo_nhom.get(NHOM_GIA_ANH) or {}
     vi_du_anh = [dict(v, dong=int(v.get("credit", 0)) * 100)
                  for v in bang_anh.get("vi_du", [])]
 
@@ -169,7 +208,7 @@ def gia_api(request: Request):
     # ⛔ KHÔNG dựng thêm một danh sách ví dụ ở đây. `bang_gia()` đã tính sẵn ví
     #    dụ bằng chính `tinh()`, và thêm một danh sách thứ hai ở tầng route là
     #    tạo đúng cái "bảng giá thứ hai" mà cả hàm ấy lẫn đầu hàm này cảnh báo.
-    bang_tieng = bang_gia_app.get("ltt_voice") or {}
+    bang_tieng = bang_theo_nhom.get(NHOM_GIA_TIENG) or {}
 
     return templates.TemplateResponse(request, "gia_api.html", {
         "bang": bang, "cac_bang": cac_bang, "vi_du": vi_du,

@@ -1,3 +1,5 @@
+import { slugCongCu } from './nodeDefinition'
+import type { NodeDefinition } from './nodeDefinition'
 import type { CanvasDocument, CanvasEdge, CanvasNode, CanvasPage } from './workflowApi'
 
 export type EditorState = {
@@ -14,8 +16,6 @@ export type EditorAction =
   | { type: 'commit'; before: CanvasDocument }
   | { type: 'select'; id?: string }
   | { type: 'update'; id: string; data: Record<string, unknown> }
-  | { type: 'toolReplace'; id: string; tool: PaletteTool; tools: PaletteTool[];
-      data?: Record<string, unknown> }
   | { type: 'nodeLabel'; id: string; label: string }
   | { type: 'viewport'; viewport: CanvasPage['viewport'] }
   | { type: 'pageView'; grid?: boolean; connections?: boolean; minimap?: boolean }
@@ -91,8 +91,6 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     case 'update': return changed(state, updateActive(state.document, page => ({ ...page,
       nodes: page.nodes.map(node => node.id === action.id
         ? { ...node, data: { ...node.data, ...action.data } } : node) })))
-    case 'toolReplace': return changed(state, updateActive(state.document, page =>
-      replaceNodeTool(page, action.id, action.tool, action.tools, action.data)))
     case 'nodeLabel': return changed(state, updateActive(state.document, page => ({ ...page,
       nodes: page.nodes.map(node => node.id === action.id
         ? { ...node, label: action.label.trim().slice(0, 80) || undefined } : node) })))
@@ -193,114 +191,14 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
   }
 }
 
-export function replaceNodeTool(page: CanvasPage, nodeId: string, nextTool: PaletteTool,
-                                tools: PaletteTool[], data: Record<string, unknown> = {}): CanvasPage {
-  const current = page.nodes.find(node => node.id === nodeId)
-  if (!current) return page
-  const byName = new Map(tools.map(tool => [tool.name, tool]))
-  const defaults = Object.fromEntries(Object.entries(nextTool.params_schema)
-    .filter(([, rule]) => rule.default !== undefined)
-    .map(([name, rule]) => [name, structuredClone(rule.default)]))
-  const { asset_name: _name, asset_names: _names, asset_size: _size,
-    asset_sizes: _sizes, asset_url: _url, asset_urls: _urls, ...stable } = current.data
-  const nodes = new Map(page.nodes.map(node => [node.id, node]))
-  nodes.set(nodeId, { ...current, data: { ...stable, tool: nextTool.name,
-    params: defaults, ...data } })
-  const occupied = new Set(page.edges.filter(edge => edge.source !== nodeId && edge.target !== nodeId)
-    .map(edge => `${edge.target}|${edge.targetHandle}`))
-  const edges: CanvasEdge[] = []
-
-  const clearTargetParam = (edge: CanvasEdge) => {
-    if (!edge.targetHandle) return
-    const target = nodes.get(edge.target); if (!target) return
-    const params = { ...((target.data.params ?? {}) as Record<string, unknown>) }
-    const reference = `$${edge.source}.${edge.sourceHandle}`
-    if (params[edge.targetHandle] === reference) delete params[edge.targetHandle]
-    else if (Array.isArray(params[edge.targetHandle])) {
-      const remaining = (params[edge.targetHandle] as unknown[]).filter(value => value !== reference)
-      if (remaining.length) params[edge.targetHandle] = remaining
-      else delete params[edge.targetHandle]
-    }
-    nodes.set(target.id, { ...target, data: { ...target.data, params } })
-  }
-
-  for (const edge of page.edges) {
-    if (edge.target === nodeId) continue
-    if (edge.source !== nodeId) { edges.push(edge); continue }
-    const target = nodes.get(edge.target)
-    const targetTool = byName.get(String(target?.data.tool))
-    const candidates = Object.keys(nextTool.returns).flatMap(sourceHandle =>
-      Object.keys(targetTool?.params_schema ?? {}).filter(targetHandle => {
-        const rule = targetTool?.params_schema[targetHandle]
-        const variadic = Boolean(rule?.type.endsWith('[]') &&
-          nextTool.returns[sourceHandle] === rule.type.slice(0, -2))
-        return (!occupied.has(`${edge.target}|${targetHandle}`) || variadic) &&
-          connectionAllowed(nextTool, sourceHandle, targetTool, targetHandle)
-      })
-        .map(targetHandle => ({ sourceHandle, targetHandle })))
-    const exact = candidates.find(item => nextTool.returns[item.sourceHandle] ===
-      inputPort(targetTool!.params_schema[item.targetHandle].type))
-    const replacement = candidates.find(item => item.sourceHandle === edge.sourceHandle && item.targetHandle === edge.targetHandle &&
-      nextTool.returns[item.sourceHandle] === inputPort(targetTool!.params_schema[item.targetHandle].type))
-      ?? exact
-      ?? candidates.find(item => item.targetHandle === edge.targetHandle)
-      ?? candidates.find(item => item.sourceHandle === edge.sourceHandle)
-      ?? candidates[0]
-    clearTargetParam(edge)
-    if (!replacement || !target) continue
-    const rule = targetTool?.params_schema[replacement.targetHandle]
-    const reference = `$${nodeId}.${replacement.sourceHandle}`
-    const currentParams = (nodes.get(target.id)?.data.params ?? {}) as Record<string, unknown>
-    const variadic = Boolean(rule?.type.endsWith('[]') &&
-      nextTool.returns[replacement.sourceHandle] === rule.type.slice(0, -2))
-    const previous = currentParams[replacement.targetHandle]
-    const value = variadic
-      ? [...new Set([...(Array.isArray(previous) ? previous : []), reference])]
-      : reference
-    occupied.add(`${edge.target}|${replacement.targetHandle}`)
-    const params = { ...currentParams, [replacement.targetHandle]: value }
-    nodes.set(target.id, { ...nodes.get(target.id)!, data: { ...nodes.get(target.id)!.data, params } })
-    edges.push({ ...edge,
-      id: `${nodeId}-${replacement.sourceHandle}-${edge.target}-${replacement.targetHandle}`,
-      sourceHandle: replacement.sourceHandle, targetHandle: replacement.targetHandle })
-  }
-  return { ...page, nodes: page.nodes.map(node => nodes.get(node.id)!), edges }
-}
-
-export type PaletteTool = {
-  name: string
-  label?: string
-  category?: 'content'|'input'|'transform'|'specialized'|'advanced'
-  primary?: boolean
-  customer_visible?: boolean
-  description: string
-  app_slug: string
-  app_name: string
-  requires: string[]
-  params_schema: Record<string, { type: string; required?: boolean; default?: unknown;
-    values?: unknown[]; options?: { value: unknown; label: string }[]; min?: number; max?: number;
-    depends_on?: string }>
-  schema_variants?: Record<string, Record<string, PaletteTool['params_schema']>>
-  returns: Record<string, string>
-  verifiable: string[]
-}
-
-const inputPort = (type: string) => ['string', 'text'].includes(type) ? 'text'
-  : ['int', 'number', 'bool'].includes(type) ? 'json' : type
-
-export function connectionAllowed(source: PaletteTool | undefined, sourceHandle: string | null,
-                                  target: PaletteTool | undefined, targetHandle: string | null) {
-  if (!source || !target || !sourceHandle || !targetHandle) return false
-  if (target.name.startsWith('asset.')) return false
-  if (targetHandle === 'refs' || targetHandle.startsWith('_')) return false
-  const output = source.returns[sourceHandle]
-  const input = target.params_schema[targetHandle]
-  if (targetHandle === 'prompt' && output === 'text' && target.params_schema.source_text) return false
-  const expected = input && inputPort(input.type)
-  return Boolean(output && expected && (output === expected ||
-    (expected.endsWith('[]') && output === expected.slice(0, -2))))
-}
-
+// ⛔ `PaletteTool`, `connectionAllowed`, `inputPort`, `replaceNodeTool` DA XOA
+//    (plan 02 task 15). Ca bon phuc vu palette v2: mot `params_schema` phang
+//    `{ten: {type}}` voi luat noi day GO CUNG o client (`'string'|'text'` ->
+//    `text`, hau to `[]`, chan `asset.*`, chan `prompt` khi co `source_text`).
+//    Palette v3 tra CONG CO KIEU (`cong_vao`/`cong_ra`) va mot BANG CAP noi
+//    day tai tu `he_kieu.xuat_luat_noi_day()` — hai ban cai dat song song thi
+//    lech, va lech im lang. Luat noi day gio o `nodeDefinition.noiDuoc()`, noi
+//    no chi TRA bang chu khong suy ra bang.
 export function connectionCreatesCycle(edges:CanvasEdge[],sourceId:string,targetId:string){
   if(sourceId===targetId)return true
   const reachable=new Set([targetId]);let changed=true
@@ -349,12 +247,16 @@ export function cloneGraphSelection(nodes:CanvasNode[],edges:CanvasEdge[],suffix
   return {nodes:clonedNodes,edges:clonedEdges,nodeIds:clonedNodes.map(node=>node.id)}
 }
 
-export function nextNode(tool: PaletteTool, count: number): CanvasNode {
-  const params = Object.fromEntries(Object.entries(tool.params_schema)
+export function nextNode(nd: NodeDefinition, count: number): CanvasNode {
+  const params = Object.fromEntries(Object.entries(nd.tham_so.properties ?? {})
     .filter(([, rule]) => rule.default !== undefined)
-    .map(([name, rule]) => [name, structuredClone(rule.default)]))
+    .map(([ten, rule]) => [ten, structuredClone(rule.default)]))
+  // ⭐ `data.tool` giu SLUG (`image.generate`), khong giu `type`
+  //    (`app.image.generate`): `bien_dich._node` doc dung khoa nay, va moi ban
+  //    nhap dang song tren production luu theo hinh dang nay. Doi no o day la
+  //    mot cuoc di tru du lieu, khong phai mot thay doi trinh bay.
   return { id: `n${Date.now().toString(36)}-${count}`, type: 'tool',
     position: { x: 90 + (count % 3) * 430, y: 90 + Math.floor(count / 3) * 430 },
-    data: { tool: tool.name, params, fanout: 1, max_retry: 0,
+    data: { tool: slugCongCu(nd), params, fanout: 1, max_retry: 0,
       on_fail: 'retry_same', verify: null } }
 }

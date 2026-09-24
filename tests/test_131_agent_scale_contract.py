@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from time import perf_counter
 
-from platform_core.agent import workflows
+from platform_core.agent import plan_v1, workflows
 from platform_core.agent.validator import MAX_STEPS, validate_plan
 
 
@@ -33,13 +33,13 @@ def test_canvas_100_nodes_round_trips_within_bounded_document_limit():
     assert 64 * 1024 < workflows.MAX_CANVAS_BYTES == 512 * 1024
     assert len(encoded) < workflows.MAX_CANVAS_BYTES
     started = perf_counter()
-    plan = workflows.canvas_to_plan(canvas)
+    plan = plan_v1.canvas_to_plan(canvas)
     assert len(plan["steps"]) == MAX_STEPS == 100
     assert perf_counter() - started < 0.5
 
 
 def test_plan_step_limit_rejects_101_before_provider_or_credit_access():
-    plan = workflows.canvas_to_plan(_canvas(100))
+    plan = plan_v1.canvas_to_plan(_canvas(100))
     plan["steps"].append(dict(plan["steps"][-1], id="n100", after=["n99"]))
     result = validate_plan(plan)
     assert result.valid is False
@@ -53,7 +53,10 @@ def test_canvas_document_limit_stays_bounded():
                                       workflows.MAX_CANVAS_BYTES,
                                       "x": 0, "y": 0}]
     try:
-        workflows.canvas_to_plan(canvas)
+        # ⭐ Do o `kiem_canvas` — cua ma duong LUU that su di qua. Truoc 23/09
+        #    bai nay goi `canvas_to_plan`; tu khi Plan v1 roi mo-dun luu tru,
+        #    goi lai o do se do mot cua ma `PUT /api/workflows` khong di qua.
+        workflows.kiem_canvas(canvas)
     except workflows.WorkflowError as exc:
         assert "512 KiB" in str(exc)
     else:  # pragma: no cover - explicit release guard

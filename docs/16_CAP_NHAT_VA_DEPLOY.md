@@ -139,5 +139,20 @@ Ba đường thay thế, theo thứ tự đáng tin:
    **không cần ai trả lời**.
 3. Gửi tin — vẫn nên gửi, nhưng **không chờ**, và không tính là đã báo.
 
+**Cập nhật 23/09 khuya — mẫu lên 7/7.** Lượt deploy `458f7c64` gửi thêm hai tin (một tin nhắc
+phiên đang giữ khoá 47 phút, một tin báo trước deploy): **cả hai đều hết hạn mà không tới nơi**.
+Bảy trên bảy trong một ngày. Đây không còn là "có thể không tới" mà là **đường không dùng được**.
+
+⇒ **Điều kiện an toàn thật phải là CƠ HỌC, không phải giao ước.** Lượt deploy này dựa vào hai thứ
+không cần ai trả lời:
+
+```bash
+git status --porcelain      # RỖNG = không có việc dở của ai để cuốn nhầm
+python tools/nghiem_thu_deploy.py   # lệch 0 / thiếu 0 / thừa 0 = khớp tuyệt đối một commit
+```
+
+Cái thứ nhất chặn **trước** khi bấm, cái thứ hai chứng minh **sau** khi bấm. Hai phép này đã đủ
+làm việc mà giao ước "báo nhau" định làm — và chúng luôn trả lời, kể cả lúc 23 giờ không ai online.
+
 Lượt deploy 23/09 21:00 đi tiếp sau khi hai tin bị giữ: nghiệm thu băm 1 157 tệp lệch 0, nên
 không ai bị ảnh hưởng — nhưng đó là may, không phải quy trình.

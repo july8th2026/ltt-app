@@ -97,6 +97,12 @@ MANIFEST = AppManifest(
         #    khong phai kieu du lieu cua ket qua. Toi khai `int` va registry
         #    tu choi nap ca app — dung huong, fail-closed.
         returns={"ket_qua": "json"},
+        side_effect="external",
+        # `slots: 0` truy về một VẮNG MẶT có chủ ý: manifest này không khai
+        # `admission_*` hay `gpu_vram_mb` nào — việc nằm trọn ở provider ngoài,
+        # máy A không có tài nguyên nào để giành. Không phải "chưa đo".
+        resource={"class": "api", "slots": 0},
+        idempotency={"key_fields": ("tep_id", "viec", "so_byte")},
         customer_visible=False,
     ), ToolSpec(
         # ⚠️ B6 buoc 3. Vong nghien cuu tren TAI LIEU CUA CHINH KHACH — nen
@@ -123,6 +129,13 @@ MANIFEST = AppManifest(
                           "default": _NC.TRAN_VONG},
         },
         returns={"ket_qua": "json"},
+        side_effect="external",
+        # `slots: 0` truy về một VẮNG MẶT có chủ ý: manifest này không khai
+        # `admission_*` hay `gpu_vram_mb` nào — việc nằm trọn ở provider ngoài,
+        # máy A không có tài nguyên nào để giành. Không phải "chưa đo".
+        resource={"class": "api", "slots": 0},
+        idempotency={"key_fields": ("viec", "cau_hoi", "conversation_id",
+                                    "tran_vong")},
         customer_visible=False,
     ),),
     requires=(),

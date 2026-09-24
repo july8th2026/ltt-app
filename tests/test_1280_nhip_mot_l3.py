@@ -177,36 +177,110 @@ def test_ban_ghi_mang_ha_cap_tu_va_lenh_chay_lai(tmp_path, monkeypatch):
     assert ban_ghi["l3_lai"] is False
 
 
-# ── 3b. L1/L2 giữa phiên KHÔNG tự nâng lên L3 (chủ dự án chốt 17/09) ───────
+# ── 3b. L1/L2 KHÔNG BAO GIỜ tự nâng lên L3 (chủ dự án chốt 24/09) ─────────
+#
+# 🔴 ĐỔI LUẬT 24/09. Bản 17/09 cho phép nâng cấp khi nhánh đã có L3 trong cửa sổ,
+#    và TỪ CHỐI thẳng (return 2) khi chưa có. Cả hai đều sai theo luật mới:
+#    từ chối thì người dùng không có gate nào chạy được; nâng cấp thì đó là một
+#    L3 nằm giữa phiên. Nay: **hạ cấp xuống `nhanh`**, không bao giờ nâng.
+#
+# ⛔ Và L3 chỉ chạy ở KẾT THÚC PHIÊN — hết phiên làm việc, KHÔNG phải hết một
+#    phase, một task hay một nhánh.
 
-def test_giua_phien_chua_co_L3_thi_luot_hep_KHONG_duoc_tu_nang(tmp_path):
-    """L3 chỉ ở tổng kết phiên. Một `--doi` giữa phiên không thu hẹp được mà tự nâng
-    lên đầy đủ chính là một L3 rải rác trong pha — máy phải từ chối."""
-    ly_do = gate.nang_cap_giua_phien_bi_chan(tmp_path, "phien/x", "doi", bay_gio=MOT_GIO_SAU)
-    assert "TU CHOI" in ly_do and "TONG KET PHIEN" in ly_do
-    assert "--pham-vi" in ly_do and "thanh_phan.py --test" in ly_do
-    assert all(ord(c) < 128 for c in ly_do), "dong in ra phai ASCII (cp1252)"
-
-
-@pytest.mark.parametrize("ket_qua", ["PASS", "FAIL (1/33)"])
-def test_da_co_L3_tong_ket_thi_luot_KHEP_duoc_tu_nang(tmp_path, ket_qua):
-    _ghi(tmp_path, "a", ket_qua=ket_qua)
-    assert gate.nang_cap_giua_phien_bi_chan(tmp_path, "phien/x", "doi", bay_gio=MOT_GIO_SAU) == ""
-
-
-@pytest.mark.parametrize("thay_doi", [{"nhanh": "phien/khac"}, {"ho_so": "doi"},
-                                      {"cay_da_doi_giua_chung": True},
-                                      {"luc": "2026-09-15T08:00:00+00:00"}])
-def test_L3_khong_tinh_thi_van_la_giua_phien(tmp_path, thay_doi):
-    _ghi(tmp_path, "a", **thay_doi)
-    assert "TU CHOI" in gate.nang_cap_giua_phien_bi_chan(tmp_path, "phien/x", "pham-vi", bay_gio=MOT_GIO_SAU)
+def test_khong_thu_hep_duoc_thi_HA_CAP_chu_khong_nang_cap():
+    """Thông điệp phải nói rõ ba điều: đã hạ cấp, bộ test KHÔNG được phủ, và
+    không tự nâng lên L3."""
+    van = gate.canh_bao_khong_phu_bo_test("doi")
+    assert "HA CAP" in van
+    assert "KHONG tu nang len L3" in van
+    assert "Bo test KHONG duoc phu" in van, "im lang ve cho khong nhin toi la te hon khong do"
+    assert "thanh_phan.py --test" in van, "phai chi duong chay test nham"
+    assert all(ord(c) < 128 for c in van), "dong in ra phai ASCII (cp1252)"
 
 
-def test_chot_nang_cap_dung_TRUOC_khi_ha_cap_ve_day_du():
+def test_diff_RONG_thi_TU_CHOI_chu_khong_ha_cap(monkeypatch):
+    """🔴 HỒI QUY 24/09 (phiên ASV đo được): bản vá hạ cấp gộp BA ca `return None`
+    làm một, trong đó hai ca **không phải** vấn đề phạm vi:
+
+        `KhongBiet` — không đọc được cây (ví dụ `--tu <sha bịa>`)
+        `not duong` — diff RỖNG so với mốc
+
+    Cả hai nghĩa là **"ta chưa đo gì cả"**. Hạ cấp chúng xuống `nhanh` là biến một
+    câu *"tôi không biết"* thành một chữ *"ĐẠT"*.
+
+    ⛔ Và đó là đường MẶC ĐỊNH: hợp đồng viết "commit hết → gate", mà commit hết
+       thì cây SẠCH, mà `--doi` không `--tu` thì trần diff với HEAD ⇒ **luôn rỗng**.
+    """
+    import argparse
+    monkeypatch.setattr(gate, "loi_cho_bo_test", lambda **_: 4)
+    import thanh_phan as tp_mod
+    monkeypatch.setattr(tp_mod, "duong_da_doi", lambda *a, **k: [])
+    ra, ghi_chu = gate._thu_hep(gate._steps(False),
+                                argparse.Namespace(pham_vi=[], tu=""), "doi")
+    assert ra is None
+    assert gate.CHUA_DO_DUOC in ghi_chu, (
+        "diff rong phai duoc DANH DAU la 'chua do duoc', khong lan voi 'pham vi rong'")
+
+
+def test_khong_doc_duoc_cay_CUNG_la_chua_do_duoc(monkeypatch):
+    """`--tu <sha bịa>` — ca tôi vấp thật 24/09."""
+    import argparse
+    monkeypatch.setattr(gate, "loi_cho_bo_test", lambda **_: 4)
+    import thanh_phan as tp_mod
+
+    def _no(*a, **k):
+        raise tp_mod.KhongBiet("git tra 128")
+    monkeypatch.setattr(tp_mod, "duong_da_doi", _no)
+    ra, ghi_chu = gate._thu_hep(gate._steps(False),
+                                argparse.Namespace(pham_vi=[], tu="xxx"), "doi")
+    assert ra is None and gate.CHUA_DO_DUOC in ghi_chu
+
+
+def test_HAI_thong_diep_noi_HAI_dieu_khac_nhau():
+    """🔑 Vế đối chứng: nếu hai ca dùng chung một câu thì việc tách là vô nghĩa."""
+    tu_choi = gate.tu_choi_vi_chua_do_duoc("doi", "x")
+    ha_cap = gate.canh_bao_khong_phu_bo_test("doi")
+    assert "TU CHOI" in tu_choi and "MOC SO SANH sai" in tu_choi
+    assert "--tu" in tu_choi, "phai chi duong ra: truyen moc that"
+    assert "HA CAP" in ha_cap and "TU CHOI" not in ha_cap
+    for v in (tu_choi, ha_cap):
+        assert all(ord(c) < 128 for c in v), "dong in ra phai ASCII (cp1252)"
+
+
+def test_nhanh_CHUA_DO_DUOC_phai_dung_TRUOC_nhanh_ha_cap():
+    """Thứ tự quyết định kết quả: đặt sau thì ca 'chưa đo được' rơi vào hạ cấp."""
     ma = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
-    i_chot = ma.index("chan_nang = nang_cap_giua_phien_bi_chan(")
-    i_ha = ma.index('ho_so = "day-du"\n', i_chot - 2000)
-    assert i_chot < i_ha, "chot phai chay TRUOC dong ha cap `ho_so = \"day-du\"`"
+    i_tu_choi = ma.index("if steps is None and CHUA_DO_DUOC in ghi_chu_pham_vi:")
+    i_ha_cap = ma.index('ho_so = "nhanh"')
+    assert i_tu_choi < i_ha_cap
+
+
+def test_TU_CHOI_phai_nam_TRUOC_khoi_xep_hang_khoa():
+    """Một lượt gọi sai mốc phải trả về NGAY, không chiếm `cpu_nhieu`.
+
+    🔑 Nếu cú từ chối nằm SAU khối xếp hàng, mỗi lần ai đó gõ thiếu `--tu` sẽ
+       khoá cả máy vài phút chỉ để in ra một câu từ chối — đúng lúc luật 24/09
+       đang siết việc giữ khoá trong lúc chờ. Tính chất này đang ĐÚNG; ghim lại
+       để một lần refactor dời khối không lặng lẽ làm hỏng nó.
+    """
+    ma = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
+    i_tu_choi = ma.index("if steps is None and CHUA_DO_DUOC in ghi_chu_pham_vi:")
+    i_xep_hang = ma.index("XEP HANG, DUNG CHAY TRANH")
+    assert i_tu_choi < i_xep_hang, (
+        "cu tu choi phai chay TRUOC khi xin khoa may")
+
+
+def test_ma_KHONG_con_duong_nao_nang_len_day_du_tu_luot_hep():
+    """🔑 Bánh cóc: chặn đường quay lại. Một bản vá vô tình dựng lại nhánh nâng
+    cấp sẽ làm bài này đỏ."""
+    ma = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
+    i_hep = ma.index("steps, ghi_chu_pham_vi = _thu_hep(")
+    khoi = ma[i_hep:i_hep + 2000]
+    assert 'ho_so = "day-du"' not in khoi, (
+        "luot hep KHONG duoc nang len day du - do la L3 giua phien")
+    assert 'ho_so = "nhanh"' in khoi, "phai ha cap xuong `nhanh`"
+    assert "nang_cap_giua_phien_bi_chan" not in ma, (
+        "ham chan cu da bi thay bang `canh_bao_khong_phu_bo_test`")
 
 
 # ── 4. Một nguồn luật ──────────────────────────────────────────────────────

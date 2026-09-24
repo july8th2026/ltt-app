@@ -14,6 +14,7 @@
 | **Nhẹ** | `git`, `grep`, đọc tệp, `ast.parse`, `python -c` | tự do |
 | **Vừa** | một–hai tệp test, một `tools\check_*.py` | tự do, một lần một |
 | **Nặng** | `gate.py` (**mọi** chế độ, kể cả `--quick`) · `test_nhanh.py` · ≥ 3 tệp test · `build_system_profile.py` · đột biến (`cosmic-ray`) · nạp model thật | theo §2 |
+| **Build** | `cargo` · `npm run build` · `tauri build` · `release.ps1` | **§4b** — ngoài khoá, nhưng **bắt buộc chặn lõi** |
 
 ## 2. Trước lệnh nặng — MỘT bộ kiểm, hai lệnh
 
@@ -72,6 +73,71 @@ trong gate. Hằng số ở ngay trong tệp đó (`LOI_DE_DANH_VAT_LY`,
 ⚠️ **Tiến trình cháu không nằm trong `-n`.** Một worker gọi model thật (`demucs`,
 `whisper`, TTS) thành ~10 luồng torch. ⇒ Test nạp model thật nằm sau rào
 `LTT_TEST_NANG` (`tests/rao_chan_nang.py`, marker `nang`).
+
+## 4b. Build (`cargo` / `npm` / `tauri`) — chạy NGOÀI khoá, NHƯNG phải bị chặn lõi
+
+**Chủ dự án chốt 23/09:** một lượt build phần lớn thời gian chỉ ăn vài lõi mà **chặn cả hàng**
+15–20 phút, nên build **không đi qua khoá `cpu_nhieu`** nữa.
+
+⚠️ **Nhưng tiền đề "build chỉ 2 lõi" KHÔNG đúng với số đo.** Đo lượt dựng
+`LTTCODE 0.2.7` (23/09, cây tiến trình `cargo`/`rustc`/`link`/`node`/`makensis`, mẫu 5 giây):
+
+| | Lõi |
+|---|---|
+| Trung vị | **2,99** |
+| Trung bình | 3,95 |
+| **Đỉnh** | **18,67** ← gần cả máy 20 lõi |
+
+Build **không có một con số**: dài và mỏng (npm, link, đóng gói NSIS 293 MB) xen những đợt
+codegen ngắn ăn gần hết máy. Thả một build **không giới hạn** ra ngoài khoá là mời lại đúng
+sự cố 23/09 (gate + agent cộng dồn 14/20 lõi rồi CPU quá tải ngắt).
+
+⇒ **Luật: build chạy ngoài khoá KHI VÀ CHỈ KHI nó bị chặn lõi tường minh.**
+
+```bash
+# Windows / Git Bash
+CARGO_BUILD_JOBS=3 npm_config_jobs=3 pwsh -NoProfile -File tools/release.ps1 ...
+```
+
+- `CARGO_BUILD_JOBS` chặn pha codegen — **pha duy nhất** từng chạm 18 lõi.
+- Không đặt biến này ⇒ **phải đi qua khoá** như cũ. Không có đường thứ ba.
+- Vẫn kiểm `tai_may.py` trước: `QUÁ TẢI` ⇒ chờ, dù có chặn lõi.
+
+### ✅ ĐÃ KIỂM CHỨNG (24/09, dựng LTTCODE 0.2.8) — chặn lõi ăn thật, và KHÔNG tốn thêm thời gian
+
+Lượt dựng đầu tiên có `CARGO_BUILD_JOBS=3`, đo **trọn** (bộ đo bám theo tiến trình build chứ không
+theo đồng hồ — 379 mẫu, 18,9 phút, phủ ~100 %):
+
+| | Không chặn (0.2.7) | **Chặn `=3` (0.2.8)** |
+|---|---|---|
+| Đỉnh | **18,67 lõi** | **2,01 lõi** |
+| p50 | 2,99 | **1,00** |
+| Trung bình | 3,95 | **0,80** |
+| Số mẫu vượt 3 lõi | có | **0 / 379** |
+| **Thời gian tường** | **18,6 phút** (giữ khoá cả máy) | **18,9 phút** (ngoài khoá) |
+
+🔑 **Hai kết luận, cái thứ hai quan trọng hơn:**
+
+1. `CARGO_BUILD_JOBS` **khống chế được thật** — 0/379 mẫu vượt 3 lõi. Điều kiện của luật 4b đứng vững.
+2. **Chặn lõi gần như không tốn thời gian: 18,6 → 18,9 phút (+1,6 %).** Tức những đợt codegen
+   18,67 lõi ở bản không chặn **không mua được tốc độ nào** — chúng chỉ cướp máy của phiên khác.
+   Đổi 15 lõi rảnh lấy 18 giây là món hời hiếm thấy.
+
+⇒ Không còn lý do gì để build chạy không chặn lõi. Luật 4b **không phải sự thoả hiệp**, nó là
+lựa chọn tốt hơn ở cả hai chiều.
+
+**Độ phủ của phép đo CŨ (bản không chặn): chỉ 2,5 / 18,6 phút ≈ 13 %** (bộ đo phần lớn thời gian đang đếm một
+lượt build **xếp hàng** rồi chết vì cây bẩn). ⇒ Con số 18,67 là **sàn của đỉnh**, không phải
+đỉnh thật. Lượt build tới phải đo **trọn**, và đo **bản đã chặn lõi**, để xác nhận đỉnh thật sự
+nằm dưới số đã chặn. Chưa có phép đo đó thì đừng nâng `CARGO_BUILD_JOBS` lên quá 3.
+
+### Kiểm tiền đề TRƯỚC khi xếp hàng
+
+Cùng ngày: một lượt build chờ khoá **15,2 phút**, đến lượt rồi **chết sau 0,1 phút** vì
+`git status` bẩn — một phép kiểm **không tốn lõi nào** và biết được từ trước. Lệnh nặng phải
+kiểm hết tiền đề rẻ (cây sạch, tệp tồn tại, biến môi trường, khoá ký) **trước khi xin khoá**.
+Chiếm một chỗ trong hàng rồi trả lại mà không tính phép nào cũng là một dạng lãng phí khoá,
+ngang với giữ khoá lúc chờ.
 
 ## 5. Máy vừa treo — hộp đen
 

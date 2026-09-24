@@ -450,3 +450,21 @@ def gpu_khong_claim_toan_may(monkeypatch):
     from platform_core import gpu_lease
 
     monkeypatch.setattr(gpu_lease, "_claims", lambda: None)
+
+
+@pytest.fixture()
+def vc_go_ghim(monkeypatch):
+    """Tạm GỠ ghim "Đang phát triển" của `video_crawler` cho một phép kiểm.
+
+    Ghim là quyết định SẢN PHẨM (nền chưa ra dữ liệu thật — `nen_tang.dang_phat_trien`), không phải mã hỏng.
+    Không có fixture này thì mọi phép kiểm LOGIC của các nền bị ghim (URL, kho tài khoản, adapter) chết theo,
+    và khi gỡ ghim ta không còn lưới nào bắt hồi quy. Dùng: `def test_x(vc_go_ghim): ...`.
+    """
+    import dataclasses
+
+    from apps.video_crawler import nen_tang
+    goc_bat, goc_lay = nen_tang.lay_nen_bat, nen_tang.lay
+    monkeypatch.setattr(nen_tang, "lay_nen_bat",
+                        lambda i: dataclasses.replace(goc_bat(i), dang_phat_trien=False, ly_do_dpt=""))
+    monkeypatch.setattr(nen_tang, "lay",
+                        lambda i: dataclasses.replace(goc_lay(i), dang_phat_trien=False, ly_do_dpt=""))

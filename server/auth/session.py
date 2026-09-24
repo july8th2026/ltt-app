@@ -26,6 +26,9 @@ from urllib.parse import quote
 from fastapi import HTTPException
 from starlette.requests import Request
 
+from platform_core.i18n import _ as _t
+from server.loai_request import la_dieu_huong_html
+
 _SESSION_USER_KEY = "user"   # duong admin-env (cu)
 _SESSION_SID_KEY = "sid"     # duong nguoi dung CSDL (moi)
 
@@ -164,6 +167,21 @@ def require_login(request: Request) -> str:
     Trả về chuỗi định danh (username của admin-env, hoặc email của user CSDL).
     Chữ ký không đổi so với bản cũ, nên mọi route `Depends(require_login)` giữ
     nguyên. Thêm `?next=` để đăng nhập xong quay lại đúng trang đang mở (H6).
+
+    ## ⭐ Lời gọi dữ liệu trong trang nhận 401 + JSON, KHÔNG phải 303
+
+    303 tồn tại để **trình duyệt mở trang đăng nhập**. `fetch()` không mở
+    trang: nó ĐI THEO chuyển hướng, nhận HTML của `/login` với `status: 200`,
+    rồi `response.json()` nổ ở dòng sau với một thông điệp không dính dáng gì
+    tới nguyên nhân thật. Phiên hết hạn giữa lúc vòng poll Canvas đang chạy ⇒
+    người dùng thấy một lỗi cú pháp JSON thay vì "phiên đã hết hạn, đăng nhập
+    lại". Client không có cách nào phân biệt — 200 + HTML trông y hệt thành
+    công cho tới lúc parse.
+
+    Tiêu chí "điều hướng hay lời gọi dữ liệu" là của cả trang web và **đã có
+    một nguồn**: `server/loai_request.la_dieu_huong_html` (Fetch Metadata, lùi
+    về `Accept`, KHÔNG có bằng chứng ⇒ giữ hành vi cũ). Middleware ngôn ngữ hỏi
+    đúng hàm đó cho quyết định 302 của nó — hai nơi hỏi một chỗ, cố ý.
     """
     u = request.session.get(_SESSION_USER_KEY)
     if u:
@@ -174,6 +192,13 @@ def require_login(request: Request) -> str:
         email = _resolve_sid(sid)
         if email:
             return email
+
+    if not la_dieu_huong_html(request):
+        # `ma` đọc được bằng máy: client phân biệt "hết phiên" với mọi lỗi
+        # khác mà không phải đoán từ chuỗi thông điệp (đã dịch theo ngôn ngữ).
+        raise HTTPException(status_code=401, detail={
+            "ma": "chua_dang_nhap",
+            "thong_diep": _t('Phiên đã hết hạn. Vui lòng đăng nhập lại.')})
 
     nxt = quote(request.url.path or "/", safe="/")
     raise HTTPException(status_code=303, headers={"Location": f"/login?next={nxt}"})
