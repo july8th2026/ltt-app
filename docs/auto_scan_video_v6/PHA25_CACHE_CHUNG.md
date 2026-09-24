@@ -87,6 +87,8 @@ khẳng định **khoá trùng** trước khi đếm engine, và thêm vế dư�
 
 ## 5. Chưa làm — nói thẳng
 
+> ✅ Đã làm ở asv-final — `docs/auto_scan_video_final/L_CACHE_LEASE.md`. Đoạn dưới giữ làm lịch sử.
+
 **Một tính, các bên kia chờ.** Hai lần chạy cùng video nộp **cùng lúc** vẫn tính
 hai lần; lần sau chỉ hưởng cache khi lần trước đã xong. Làm đúng cần một lease
 theo `khoa_chung` (`platform_core/leases.py` có sẵn) **và** một đường chờ không

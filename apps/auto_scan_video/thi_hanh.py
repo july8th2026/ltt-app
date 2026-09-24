@@ -28,13 +28,14 @@ import logging
 
 from platform_core.db import get_session
 from platform_core.i18n import _ as _t
+from platform_core.jobs import DangBan
 from platform_core.storage import get_storage
 
 from . import (assets, cache_chung, features, giai_doan_am_thanh, giai_doan_ban_dung,
                giai_doan_ban_bien_tap,
                giai_doan_chep_loi, giai_doan_giong, giai_doan_ket_xuat,
                giai_doan_media, giai_doan_noi_dung, giai_doan_qc, giai_doan_qc_ai,
-               giai_doan_thoi_gian, loi, pipeline)
+               giai_doan_thoi_gian, lat_cat, loi, pipeline)
 from .tables import STAGE_QUEUED, STAGE_RUNNING, STAGE_SUCCEEDED
 
 log = logging.getLogger(__name__)
@@ -96,15 +97,20 @@ def phien_ban_engine(stage_ten: str) -> str:
         from . import tach_tieng
         return f"tach/{tach_tieng.PHIEN_BAN_TACH}"
     if stage_ten == pipeline.TRANSCRIBE:
-        from . import giai_doan_chep_loi
-        return f"chep_loi/{giai_doan_chep_loi.PHIEN_BAN_MA}"
+        from . import giai_doan_chep_loi, nguon_loi
+        from apps.asv_gpu.do_luong import ocr_khung
+        # 🔑 Ba thu doi doc lap: ma giai doan, logic dinh tuyen/hardsub, va
+        #    engine+model OCR ghim (22/09, lan ocr).
+        return (f"chep_loi/{giai_doan_chep_loi.PHIEN_BAN_MA}"
+                f"+dinh_tuyen/{nguon_loi.PHIEN_BAN_DINH_TUYEN}"
+                f"+ocr/{ocr_khung.ENGINE}")
     if stage_ten == pipeline.EDIT_PLAN:
         from . import ban_bien_tap, canh, giai_doan_ban_bien_tap
         # 🔑 Ba con so, ba thu doi doc lap: ma cua giai doan, chinh sach cat, va
-        #    nguong tach canh. Thieu bat ky cai nao thi doi no xong cache van
+        #    bo tach canh (PHIEN_BAN_CANH). Thieu bat ky cai nao thi doi no xong cache van
         #    khop, va lan chay dung lai mot ban bien tap sinh boi luat CU.
         return (f"ban_bien_tap/{giai_doan_ban_bien_tap.PHIEN_BAN_MA}"
-                f"/{ban_bien_tap.PHIEN_BAN_BAN}/{canh.NGUONG_DOI_CANH}")
+                f"/{ban_bien_tap.PHIEN_BAN_BAN}/{canh.PHIEN_BAN_CANH}")
     if stage_ten == pipeline.CONTENT_PROCESS:
         from . import ai, van_ban
         # 🔴 **Hai dong nay tung doc mot module DA CHET, va hang so chung doc
@@ -145,6 +151,13 @@ def phien_ban_engine(stage_ten: str) -> str:
     if stage_ten == pipeline.QC:
         from . import qc
         return f"qc/{qc.PHIEN_BAN_QC}"
+    if stage_ten == pipeline.QC_DO_LUONG:
+        # 🔑 Ma giai doan + phien ban TUNG bo do (model, weights, chuan hoa) +
+        #    model ASR san pham. Nang mot bo do = van tay doi = do lai.
+        from apps.asv_gpu.do_luong import bo_do
+        from . import giai_doan_chep_loi, giai_doan_qc_do_luong
+        return (f"do_luong/{giai_doan_qc_do_luong.PHIEN_BAN_DO_LUONG_GD}"
+                f"/{bo_do.phien_ban()}/asr/{giai_doan_chep_loi.MODEL_ASR}")
     # ⚠️ Giai doan chua co engine that van phai co MOT phien ban, khong duoc tra
     #    chuoi rong. Tra rong nghia la "khong co gi de lam moi cache", va do la
     #    dung mon no ma ham nay sinh ra de tra — chi doi cho.
@@ -164,10 +177,16 @@ def van_tay(stage_ten: str, run, dau_vao: dict) -> str:
     dung kieu hong ma O13 sinh ra de chan: "co mot tep ten dung" khong phai la
     mot cache hop le.
     """
+    from . import cai_dat
+
     goi = json.dumps({
         "stage": stage_ten,
         "contract": run.contract_version,
-        "settings": run.settings or {},
+        # 🔴 `cho_van_tay`, khong phai `run.settings` tho. Ho so noi dung do
+        #    CHINH `content_process` ghi vao `settings` giua chuoi, va bam ca
+        #    `settings` bien dong ghi do thanh mot lenh **dat lai demucs + ASR**
+        #    (`jobs._vo_hieu_giai_doan_da_lech`). Xem `cai_dat.KHOA_DAN_XUAT`.
+        "settings": cai_dat.cho_van_tay(run.settings),
         "dau_vao": dau_vao,
         "engine": phien_ban_engine(stage_ten),
     }, sort_keys=True, ensure_ascii=False, default=str)
@@ -233,6 +252,90 @@ def _khoa_cha(db, run_id: str, ten: str) -> list[str]:
     return ra
 
 
+#: Cac loi goi cua `ctx` mo mot phien CSDL thu hai de **GHI**.
+#: Danh sach nay bam theo `platform_core/job_runner.py:JobContext`.
+#:
+#: ⛔ `is_cancelled` CO Y khong nam trong danh sach, va khong phai vi quen:
+#:    (a) no chi DOC, ma mot lan doc o phien thu hai khong va vao khoa ghi cua
+#:        phien thu nhat (SQLite cho nhieu ban doc cung mot ban ghi dang do);
+#:    (b) `cache_chung.GiuCho` goi no tu LUONG NHIP — `commit` mot `Session`
+#:        tu mot luong khac la mot loi nang hon han cai dang duoc sua.
+_CTX_MO_PHIEN_RIENG = ("progress", "event", "stage",
+                       "provider_dispatched", "provider_rejected")
+
+
+class _CtxChotSo:
+    """Bao quanh `ctx` cua worker: CHOT SO truoc moi loi goi mo phien thu hai.
+
+    🔴 **Cai bay chung cua M-08 va M-09, dat o noi duy nhat thay duoc ca hai ve.**
+
+       `JobContext.progress` / `.event` / `.is_cancelled` mo mot phien CSDL
+       **rieng** — do la thiet ke, va no dung: tien do phai thay duoc ngay ca
+       khi giai doan con dang chay, nen no khong the nam trong transaction cua
+       giai doan. Nhung he qua thi khong ai viet ra: neu phien cua giai doan
+       dang giu mot transaction chua dong, hai phien gap nhau.
+
+         * SQLite — `database is locked`, va no **giet ca lan chay**:
+           `UPDATE jobs SET progress` nem `OperationalError` tu trong
+           `ctx.progress`, tuc tu giua than giai doan.
+         * PostgreSQL — khong nem, nhung giai doan giu khoa dong `asv_asset`
+           suot ca vong lap thay vi vai mili giay. Im lang hon, khong lanh hon.
+
+    ⛔ Cach sua "moi nguoi goi tu nho `commit` truoc khi bao tien do" da duoc
+       thu, va no hong theo dung kieu mot luat khong ai thi hanh duoc thi hong:
+       M-08 va o `giai_doan_ban_dung`, roi M-09 no ra o `giai_doan_giong` —
+       **cung mot ham** (`assets.kiem_toan_ven`) giang bay o mot giai doan khac.
+       Con ba nguoi goi nua cua ham do chua no.
+
+    ⇒ Bat bien duoc thi hanh o DAY, noi duy nhat nam giu ca phien cua giai doan
+      lan `ctx`: **truoc khi mo phien thu hai, phien thu nhat phai o diem chot.**
+
+    ⭐ `commit` chu khong `rollback`: moi thu giai doan da ghi toi diem nay la
+       diem chot theo dung thiet ke cua tep nay — *"diem chot da `commit` ...
+       do la ca ly do chung `commit` ngay tai cho thay vi `flush`"* (nhanh bat
+       loi ben duoi). Chot ca transaction chi-doc: tren SQLite mot khoa DOC
+       cung chan phien kia ghi.
+    """
+
+    __slots__ = ("_ctx", "_db", "_luong")
+
+    def __init__(self, ctx, db):
+        import threading
+
+        object.__setattr__(self, "_ctx", ctx)
+        object.__setattr__(self, "_db", db)
+        # Luong SO HUU phien. `Session` khong an toan da luong, nen chot so tu
+        # mot luong khac se doi mot loi lay mot loi te hon.
+        object.__setattr__(self, "_luong", threading.get_ident())
+
+    def __getattr__(self, ten):
+        gt = getattr(object.__getattribute__(self, "_ctx"), ten)
+        if ten not in _CTX_MO_PHIEN_RIENG or not callable(gt):
+            return gt
+
+        def goi(*a, **kw):
+            self._chot()
+            return gt(*a, **kw)
+
+        return goi
+
+    def __setattr__(self, ten, gt):
+        setattr(object.__getattribute__(self, "_ctx"), ten, gt)
+
+    def _chot(self) -> None:
+        import threading
+
+        if threading.get_ident() != object.__getattribute__(self, "_luong"):
+            return
+        db = object.__getattribute__(self, "_db")
+        # ⛔ Trong mot SAVEPOINT (`su_dung.ghi`) thi khong chot: `commit` o day
+        #    se dong ca transaction ngoai, tuc quyet dinh thay cho nguoi dang
+        #    giu savepoint. Khong khoi nao cua kho nay goi `ctx` trong savepoint.
+        if db.in_nested_transaction() or not db.in_transaction():
+            return
+        db.commit()
+
+
 def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
     """Chay MOT giai doan. Be mat cong khai cho hai executor an.
 
@@ -244,8 +347,16 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
     if not run_id or not owner_id:
         raise ValueError("thieu run_id/owner_id")
 
+    # 🔑 Dong ho cua lat cat bat tu DAU job (xem `lat_cat.py`): giai doan dai
+    #    nhuong truoc khi cham tran thay vi de `job_runner._het_gio` giet no.
+    lat_cat.bat_dau_luot()
+
     gen = get_session()
     db = next(gen)
+    # 🔑 Moi loi goi `ctx` cua giai doan di qua day — xem `_CtxChotSo`.
+    if ctx is not None:
+        ctx = _CtxChotSo(ctx, db)
+    giu = None      # lease "mot tinh, cac ben kia cho" (cache_chung.giu_cho)
     try:
         # 🔑 Doc CO PHAM VI CHU SO HUU, ke ca trong worker. `owner_id` den tu
         #    params do chinh dieu phoi ghi ra, khong phai tu client — nhung phep
@@ -264,6 +375,7 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
             return {"stage": ten, "ghi_chu": "da huy"}
 
         vt = van_tay(ten, run, _gom_dau_vao(db, run_id, ten))
+        lat_cat.dat_van_tay_giai_doan(vt)
         kho = get_storage()
 
         # ── Cache: van tay khop VA artifact con song (I10) ─────────────────
@@ -292,6 +404,17 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
         ra = (cache_chung.lay(db, kho, run=run, ten=ten, khoa_chung=kc)
               if int(stage.attempt or 0) <= 1 else None)
 
+        # ── Mot tinh, cac ben kia cho (asv-final L_CACHE_LEASE) ─────────────
+        # 🔑 Lease NEN TANG theo `kc`. Lan chay khac dang tinh dung khoa nay ⇒
+        #    `giu_cho` nem `DangBan` ⇒ worker hoan job ve hang doi (khong ngu
+        #    trong worker, khong tieu luot thu). Gianh duoc ⇒ HOI LAI cache: ben
+        #    kia co the vua cong bo va nha lease giua lan hoi tren va luc gianh.
+        if ra is None and kc and int(stage.attempt or 0) <= 1:
+            giu = cache_chung.giu_cho(kc, holder=_holder_lease(ctx, run_id),
+                                      con_song=_con_song(ctx))
+            if giu is not None:
+                ra = cache_chung.lay(db, kho, run=run, ten=ten, khoa_chung=kc)
+
         # ── Buoc 1: engine ────────────────────────────────────────────────
         if ra is not None:
             pass    # da co tu cache dung chung — di thang toi promote
@@ -315,6 +438,9 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
             ra = giai_doan_ket_xuat.chay(db, kho, run=run, ctx=ctx)
         elif ten == pipeline.QC:
             ra = giai_doan_qc.chay(db, kho, run=run, ctx=ctx)
+        elif ten == pipeline.QC_DO_LUONG:
+            from . import giai_doan_qc_do_luong
+            ra = giai_doan_qc_do_luong.chay(db, kho, run=run, ctx=ctx)
         elif ten == pipeline.QC_AI:
             ra = giai_doan_qc_ai.chay(db, kho, run=run, ctx=ctx)
         else:
@@ -381,6 +507,29 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
 
         return {"stage": ten, "fingerprint": vt, "credit_cost": CHI_PHI_GIA,
                 "khoa_asset": khoa_ra}
+    except lat_cat.TiepNoi as tn:
+        # ⭐ KHONG phai loi: giai doan da lam mot phan (diem chot da commit) va
+        #    nhuong phan con lai cho job ke tiep. Ghi con tro, dua ve `pending`;
+        #    job nay ket thuc `done` va `advance` nop luot noi tiep.
+        db.rollback()
+        stage_nt = features.giai_doan_theo_ten(db, run_id, ten)
+        ct: dict = {}
+        if stage_nt is not None and stage_nt.status in (STAGE_QUEUED,
+                                                        STAGE_RUNNING):
+            try:
+                ct = lat_cat.ghi_tiep_noi(db, stage_nt, tn)
+                db.commit()
+            except features.XungDot:
+                db.rollback()   # bi huy/dat lai giua chung — luot sau doc lai
+        log.info("asv %s run %s: nhuong sau %d don vi / %.0fs -> luot %s",
+                 ten, run_id[:8], tn.da_lam, tn.da_troi_s, ct.get("luot"))
+        return {"stage": ten, "tiep_noi": ct.get("luot", 0),
+                "da_lam": tn.da_lam}
+    except DangBan:
+        # ⛔ "Ban" KHONG phai hong: khong cham dong `asv_stage` (giu `running` +
+        #    `job_id`), khong dich loi. `job_runner` hoan job, khong tieu luot thu.
+        db.rollback()
+        raise
     except Exception as exc:
         # 🔑 BIEN. Day la cho duy nhat biet ca ngon ngu loi cua engine lan phan
         #    loai cua nen tang, nen phep dich thuoc ve day (xem `loi.py`).
@@ -429,7 +578,28 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
             raise moi from exc
         raise
     finally:
+        # Moc bat dau chi song trong job nay; de lai thi mot nguoi goi giai doan
+        # TRUC TIEP sau do (script, test) doc phai moc cu va nhuong oan.
+        lat_cat.ket_thuc_luot()
+        # Nha SAU commit ket qua: ben cho hoi lai la thay ngay.
+        if giu is not None:
+            giu.nha()
         db.close()
+
+
+def _holder_lease(ctx, run_id: str) -> str:
+    """Ai giu lease: may + pid + job (hoac run khi goi tay). Truy duoc khi chan doan."""
+    from platform_core import leases
+    job = str(getattr(ctx, "job_id", "") or "") if ctx is not None else ""
+    return f"{leases.holder_id()}:{job or 'run-' + run_id}"
+
+
+def _con_song(ctx):
+    """Nhip lease chi dap khi job chu CHUA bi huy (None = khong co ctx)."""
+    kiem = getattr(ctx, "is_cancelled", None) if ctx is not None else None
+    if not callable(kiem):
+        return None
+    return lambda: not kiem()
 
 
 def _engine_gia(kho, *, run_id: str, owner_id: str, ten: str, van_tay: str) -> dict:

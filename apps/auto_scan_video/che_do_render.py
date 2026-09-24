@@ -75,7 +75,9 @@ from platform_core.i18n import _ as _t
 #    chuoi loc, nen moi ban dung cu phai duoc coi la mot quyet dinh render KHAC.
 #    Thieu buoc tang nay thi mot lan chay co phu de va mot lan khong se dung
 #    chung van tay — hai ket qua khac nhau, mot chuoi bam.
-PHIEN_BAN_CHE_DO = 6
+# ⭐ 6 -> 7 (asv-final): chang KHUNG (cat/phong/ti le) + TOC DO vao chuoi loc, va
+#    ca logo + phu de KHONG co lop phu chu doi nhan (`[ra]ass..[ra]` -> `sau_logo`).
+PHIEN_BAN_CHE_DO = 7
 
 #: Sao chep luong hinh — preset giu hinh.
 SAO_CHEP = "sao_chep"
@@ -352,7 +354,8 @@ def _loc_logo(ds_logo, nhan_vao: str, nhan_ra: str, *,
 def loc_cat_noi(khoang: list[tuple[float, float]], vung=(), *,
                 lop_phu=(), duong_chu=(), cao_khung: int = 0,
                 ds_logo=(), rong_khung: int = 0,
-                chi_so_logo_dau: int = 2, duong_ass: str = "") -> str:
+                chi_so_logo_dau: int = 2, duong_ass: str = "",
+                bien_tap=None, rong_nguon: int = 0, cao_nguon: int = 0) -> str:
     """`filter_complex` cat cac khoang duoc giu roi noi lai — **khong co tieng**.
 
     ⛔ Tieng khong di qua day. Ban phoi am (pha 16) da duoc dung theo dung nhung
@@ -408,24 +411,48 @@ def loc_cat_noi(khoang: list[tuple[float, float]], vung=(), *,
     #    · phu de SAU CUNG, tren ca chu: no la thu khach doc de HIEU, con lop
     #      phu chu la thu khach dan de TRANG TRI. Mot phu de bi logo hay lop phu
     #      de len la mot phu de khong doc duoc, tuc mot tinh nang khong ton tai.
-    sau_che = "ra"
+    #
+    # ── Bien tap khung + toc do (asv-final 22/09) ───────────────────────────
+    #
+    # 🔑 Thu tu day du: noi -> che (toa do NGUON) -> KHUNG (cat/phong/ti le) ->
+    #    logo -> chu -> phu de (toa do BAN RA) -> TOC DO (cuoi cung).
+    #    · che TRUOC khung: vung che bam theo noi dung nguon; mot vung nam ngoai
+    #      cua so cat thi khong con trong khung — L3 cua `vung_che` (loai, khong
+    #      kep) dung ma khong can anh xa toa do;
+    #    · logo/chu/phu de SAU khung: chung bam theo man hinh ban ra;
+    #    · toc do SAU phu de: `.ass` va loi long cung dat tren truc BIEN TAP, va
+    #      `setpts` + `atempo` nen ca hai cung mot he so.
+    #
+    # ⭐ Khong bien tap thi chuoi giu NGUYEN tung ky tu nhu truoc.
+    from . import bien_tap as _bt
+
+    toc = _bt.toc_do(bien_tap)
+    buoc_khung = (_loc_khung(bien_tap, rong_nguon, cao_nguon)
+                  if bien_tap and set(bien_tap) - {"toc_do"} else None)
+    dich = "truoc_toc" if toc != 1.0 else "ra"
+    sau_che = dich
     if ds_logo or lop_phu or duong_ass:
         sau_che = "sau_che"
+    sau_noi = "truoc_khung" if buoc_khung else sau_che
     if vung:
         phan.append(f"{nhan}concat=n={len(khoang)}:v=1:a=0[noi]")
-        phan.extend(_loc_lam_mo(vung, "noi", sau_che, cua_so_ra(khoang, vung)))
+        phan.extend(_loc_lam_mo(vung, "noi", sau_noi, cua_so_ra(khoang, vung)))
     else:
-        phan.append(f"{nhan}concat=n={len(khoang)}:v=1:a=0[{sau_che}]")
+        phan.append(f"{nhan}concat=n={len(khoang)}:v=1:a=0[{sau_noi}]")
+    if buoc_khung:
+        phan.extend(buoc_khung("truoc_khung", sau_che))
 
     hien = sau_che
     if ds_logo:
-        ke = "sau_logo" if lop_phu else "ra"
+        # ⚠️ Truoc asv-final: `"sau_logo" if lop_phu else "ra"` — logo + phu de
+        #    ma KHONG co lop phu chu thi chuoi thanh `[ra]ass=...[ra]`.
+        ke = "sau_logo" if (lop_phu or duong_ass) else dich
         phan.extend(_loc_logo(ds_logo, hien, ke, rong_khung=rong_khung,
                               chi_so_dau=chi_so_logo_dau,
                               cua_so=cua_so_ra_logo(khoang, ds_logo)))
         hien = ke
     if lop_phu:
-        ke = "sau_chu" if duong_ass else "ra"
+        ke = "sau_chu" if duong_ass else dich
         phan.extend(_loc_chu(lop_phu, duong_chu, hien, ke,
                              cao_khung=cao_khung,
                              cua_so=cua_so_ra_lop_phu(khoang, lop_phu)))
@@ -444,8 +471,66 @@ def loc_cat_noi(khoang: list[tuple[float, float]], vung=(), *,
         #    KHAC. Mot lenh mot cwd thi khong the phuc vu bon duong dan.
         from . import lop_phu as _lp
 
-        phan.append(f"[{hien}]ass='{_lp.thoat_duong(duong_ass)}'[ra]")
+        phan.append(f"[{hien}]ass='{_lp.thoat_duong(duong_ass)}'[{dich}]")
+    if toc != 1.0:
+        phan.append(f"[truoc_toc]setpts=PTS/{toc:.4f}[ra]")
     return ";".join(phan)
+
+
+def loc_toc_do_tieng(bien_tap, nhan_vao: str = "1:a", nhan_ra: str = "a_ra") -> str:
+    """Ve TIENG cua toc do: `atempo` tren BAN PHOI. Rong khi khong doi toc do.
+
+    ⭐ `atempo` giu cao do, va dung MOT he so voi `setpts` cua hinh — nen T16
+       (hinh/tieng dai bang nhau) dung theo cau truc, khong theo may man.
+    """
+    from . import bien_tap as _bt
+
+    toc = _bt.toc_do(bien_tap)
+    if toc == 1.0:
+        return ""
+    return f"[{nhan_vao}]atempo={toc:.4f}[{nhan_ra}]"
+
+
+def _loc_khung(bien_tap, rong: int, cao: int):
+    """`hinh_hoc.khung_bien_tap` -> ham `(nhan_vao, nhan_ra) -> [ve filter]`.
+
+    ⛔ So pixel tinh o Python (so nguyen, chan), khong de ffmpeg tinh bang bieu
+       thuc: `ban_dung` ghi `khung_ra` tu CHINH ham hinh hoc do, va logo / vien
+       chu / `PlayRes` phu de dat theo con so ay. Hai noi tinh la hai con so.
+    """
+    from . import hinh_hoc as _hh
+
+    try:
+        hh = _hh.khung_bien_tap(rong, cao, bien_tap)
+    except ValueError as exc:
+        raise CheDoError(_t('Chưa biết kích thước khung hình nguồn nên không '
+                            'biên tập khung được.')) from exc
+
+    def dung(vao: str, ra: str) -> list[str]:
+        chuoi: list[str] = []
+        if hh["cat"]:
+            w, h, x, y = hh["cat"]
+            chuoi.append(f"crop={w}:{h}:{x}:{y}")
+        if hh["phong"]:
+            chuoi.append(f"scale={hh['phong'][0]}:{hh['phong'][1]}:flags=lanczos")
+        kh = hh["khung"]
+        if kh and kh["cach"] == "cat":
+            w, h, x, y = kh["cat"]
+            chuoi.append(f"crop={w}:{h}:{x}:{y}")
+        if not (kh and kh["cach"] == "nen_mo"):
+            chuoi.append("setsar=1")
+            return [f"[{vao}]{','.join(chuoi)}[{ra}]"]
+        # Nen mo: ban PHU day khung + lam mo lam nen, ban VUA khung dat giua.
+        (nw, nh), (fw, fh), (px, py) = kh["nen"], kh["hinh"], kh["vi_tri"]
+        dau = ",".join(chuoi + ["split"]) if chuoi else "split"
+        p = chr(92) + ","
+        return [f"[{vao}]{dau}[kn][kt]",
+                f"[kn]scale={nw}:{nh}:force_original_aspect_ratio=increase,"
+                f"crop={nw}:{nh},boxblur=luma_radius=min(w{p}h)/20:luma_power=2[kn2]",
+                f"[kt]scale={fw}:{fh}[kt2]",
+                f"[kn2][kt2]overlay={px}:{py},setsar=1[{ra}]"]
+
+    return dung
 
 
 def _anh_xa_cua_so(khoang: list[tuple[float, float]], muc

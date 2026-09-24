@@ -389,18 +389,33 @@ class TestChoBangChungNgoai:
 
     ⛔ Prompt 09 doi: "mocked external-model path otherwise must remain pending
        external evidence". Day la cho ghi dieu do.
+
+    ✅ **Da khep 23/09 (lan `toc-do-gpu`)**: VRAM that cua demucs da do tren
+       venv worker, `apps/asv_gpu/manifest.py:gpu_vram_mb` da cap nhat, bang do
+       o `docs/auto_scan_video_final/L_TOC_DO_GPU.md`.
     """
 
-    def test_torch_o_may_nay_la_ban_CPU(self):
-        """Nen khong do duoc VRAM that (RISK-05-01 van mo).
+    def test_phep_nhac_CU_da_hoi_NHAM_trinh_thong_dich(self):
+        """🔴 Bai hoc dat nhat cua lan nay, ghi lai thay vi xoa im lang.
 
-        `asv_gpu.gpu_vram_mb` van la **uoc luong**. Luat cua kho la "CHUA DO THI
-        KHONG CHAY", va phep do do can mot may co card + ban torch CUDA.
+        Phep kiem cu o day la `assert not torch.cuda.is_available()`, kem loi
+        nhan "may nay da co CUDA thi hay DO VRAM that". No **xanh suot hai muoi
+        ngay** trong khi may DA co CUDA — vi no hoi `torch` cua trinh thong dich
+        CHAY TEST (`…\\Programs\\Python\\Python313`, `2.11.0+cpu`), con demucs
+        that chay o venv cua worker (`C:\\LTTPlatform\\venv`, `2.11.0+cu128`,
+        `cuda True`).
+
+        ⭐ Mot phep nhac phai hoi **dung moi truong ma thu duoc nhac se chay o
+           do**. Hoi nham venv thi no khong sai — no chi tra loi mot cau hoi
+           khac, mai mai.
         """
-        import torch
-        assert not torch.cuda.is_available(), (
-            "May nay da co CUDA — hay DO VRAM that cua demucs va cap nhat "
-            "`apps/asv_gpu/manifest.py:gpu_vram_mb`, roi xoa phep kiem nay.")
+        import sys
+
+        assert "LTTPlatform" not in sys.executable, (
+            "bo test dang chay bang venv worker — phep kiem nay gia dinh nguoc lai")
+        from apps.asv_gpu.manifest import MANIFEST
+        assert MANIFEST.gpu_vram_mb["asv_gpu.audio_prepare"] > 0, (
+            "VRAM demucs phai la so DA DO — xem L_TOC_DO_GPU.md")
 
 
 # ══════════════════════════════════════════════════════════════════════════════

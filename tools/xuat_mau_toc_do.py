@@ -51,10 +51,13 @@ SPEEDS = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]
 
 def _ffprobe_dur(path: str) -> float:
     from platform_core.media import ffprobe_bin
+    # R-06: `text=True` khong khai `encoding` -> tren Windows Python doan
+    # bang locale (cp1252 may tieng Viet), va VO ngay khi ffprobe loi va ghi
+    # duong dan (vd `--ra-dir` co dau) ra stderr. ep UTF-8, dung nhu ffprobe ghi.
     out = subprocess.run(
         [ffprobe_bin(), "-v", "error", "-show_entries", "format=duration",
          "-of", "default=noprint_wrappers=1:nokey=1", path],
-        capture_output=True, text=True, timeout=30)
+        capture_output=True, text=True, encoding="utf-8", timeout=30)
     return float((out.stdout or "0").strip() or 0)
 
 

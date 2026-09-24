@@ -17,6 +17,12 @@ import pytest
 from apps.auto_scan_video import qc_ai, sua_chua as sc
 
 
+def _doc_sai(ma: str) -> dict:
+    """Ket qua do giong cua mot doan doc SAI HOAN TOAN (WER = CER = 1) — vuot
+    moi nguong hieu chinh < 1, khong phu thuoc con so cu the."""
+    return {"ma": ma, "ngon_ngu": "vi", "wer": 1.0, "cer": 1.0, "doc_ra": ""}
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 #  A. Anh xa loai khiem khuyet -> giai doan sua
 # ══════════════════════════════════════════════════════════════════════════════
@@ -66,7 +72,7 @@ def test_mot_doan_bi_HAI_loi_thi_sua_o_giai_doan_SOM_HON():
     tu den sau no.
     """
     ke = sc.lap_ke_hoach(
-        qc_giong=[{"ma": "seg_0001", "chu": "mot hai ba bon", "doc_ra": "mot"}],
+        qc_giong=[_doc_sai("seg_0001")],
         qc_ngu_nghia=[{"ma": "seg_0001", "dat": False, "ly_do": "lech",
                        "do_tin": 0.95}])
     assert sc.gon_theo_don_vi(ke) == {"seg_0001": "content_process"}
@@ -76,13 +82,20 @@ def test_doan_CHI_bi_doc_sai_thi_KHONG_bi_day_ve_content():
     """⛔ Chieu nguoc lai. Mot chinh sach chi dung mot chieu la mot chinh sach se
     lam lai viec dung."""
     ke = sc.lap_ke_hoach(
-        qc_giong=[{"ma": "seg_0002", "chu": "mot hai ba bon", "doc_ra": "mot"}])
+        qc_giong=[_doc_sai("seg_0002")])
     assert sc.gon_theo_don_vi(ke) == {"seg_0002": "voice_synthesis"}
 
 
-def test_moi_don_vi_chi_xuat_hien_MOT_lan_trong_ke_hoach_gon():
+def test_moi_don_vi_chi_xuat_hien_MOT_lan_trong_ke_hoach_gon(monkeypatch):
+    """⚠️ Tat `QC_HINH_LA_TU_VAN` **cho rieng phep kiem nay**, khong o san pham.
+
+    Menh de o day la ve DINH TUYEN (`cat_sai` -> `edit_plan`, mot don vi mot
+    cho), khong ve chinh sach tu van. Ha co o san pham de phep kiem xanh la
+    doi mot phep do lay mot dau tich; noi chot chinh sach la `test_2120`.
+    """
+    monkeypatch.setattr(sc, "QC_HINH_LA_TU_VAN", False)
     ke = sc.lap_ke_hoach(
-        qc_giong=[{"ma": "seg_0001", "chu": "a b c", "doc_ra": ""}],
+        qc_giong=[_doc_sai("seg_0001")],
         qc_ngu_nghia=[{"ma": "seg_0001", "dat": False, "do_tin": 0.9},
                       {"ma": "seg_0003", "dat": False, "do_tin": 0.9}],
         qc_hinh=[{"ma_canh": "canh_0002", "dat": False, "do_tin": 0.9}])
@@ -125,9 +138,9 @@ def test_thieu_do_tin_thi_coi_la_KHONG_dang_tin():
 
 
 def test_phep_DO_co_do_tin_TUYET_DOI_khac_han_phan_doan():
-    """QC giong noi la hai chuoi va mot ty le khop — ta khong doan gi ca."""
+    """QC giong noi la mot phep DO (ASR + WER) — ta khong doan gi ca."""
     ke = sc.lap_ke_hoach(
-        qc_giong=[{"ma": "seg_0001", "chu": "mot hai ba", "doc_ra": ""}])
+        qc_giong=[_doc_sai("seg_0001")])
     assert ke.khiem_khuyet[0].do_tin == 1.0
     assert ke.can_sua
 
@@ -160,27 +173,6 @@ def test_tran_vong_sua_CHAT_HON_vong_nan_cua_pha_15():
 # ══════════════════════════════════════════════════════════════════════════════
 #  E. Do khop, loi nhac, phan hoi
 # ══════════════════════════════════════════════════════════════════════════════
-
-def test_khop_van_ban_bo_qua_dau_cau_va_HOA_THUONG():
-    assert qc_ai and sc.khop_van_ban("Xin chao, cac ban!", "xin chao cac ban") == 1.0
-
-
-def test_khop_van_ban_KHONG_phat_nang_viec_dao_trat_tu():
-    """⛔ Mot cau dao hai menh de van la mot cau doc dung ve mat long tieng.
-    `SequenceMatcher` tren ca chuoi se cham diem no rat thap."""
-    assert sc.khop_van_ban("hom nay troi dep", "troi dep hom nay") == 1.0
-
-
-def test_khop_van_ban_bat_duoc_viec_NUOT_TU():
-    diem = sc.khop_van_ban("mot hai ba bon nam", "mot hai")
-    assert diem < sc.NGUONG_KHOP_DOC
-
-
-def test_hai_chuoi_RONG_thi_KHOP_hoan_toan():
-    """Mot doan khong co loi thoai va khong doc ra gi la khop, khong phai lech."""
-    assert sc.khop_van_ban("", "") == 1.0
-    assert sc.khop_van_ban("co chu", "") == 0.0
-
 
 def test_doc_ngu_nghia_THIEU_ma_thi_coi_la_DAT():
     """⭐ Mot cau hoi khong duoc tra loi la mot cau hoi khong duoc tra loi. Coi im

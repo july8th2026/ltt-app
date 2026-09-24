@@ -72,6 +72,21 @@ CUA_VAO = frozenset({
 #: Mot ten moi xuat hien nghia la ai do vua viet xong mot nang luc va quen noi
 #: no vao mach — dung luc do, khong phai mot kiem toan sau.
 MO_COI_DA_BIET = frozenset({
+    # ── asv-final (23/09) — CONG WORKFLOW NOI BO chua co nguoi goi.
+    #
+    #    `cong_noi_bo.py` la be mat de agent/workflow NOI BO chay Auto Scan
+    #    ma khong phai biet tung giai doan (de bai 22/09 §11). Hom nay khong
+    #    app nao goi no, nen no dung la hang **CAU** ma
+    #    `MA_TRAN_KHOANG_TRONG.md` mo ta: co duong, chua co xe.
+    #
+    #    ⛔ Va no KHONG duoc khai trong `BE_MAT_CONG_KHAI`: `test_308` do
+    #       khi mot canh lien-app duoc khai ma khong ai di. Nguoi goi DAU
+    #       TIEN phai them CA HAI ban khai trong CUNG mot commit.
+    #
+    #    ⭐ DIEU KIEN GO RA: ngay mot app/workflow noi bo goi `submit_run`,
+    #       bon ten nay ra khoi danh sach — khong phai khi ai do thay danh
+    #       sach dai.
+    "submit_run", "cancel_run", "retry_run", "get_result",   # `get_status` trung ten voi mot ham DA co nguoi goi
     # ── A27-01 (pha 27 phat hien) — QC ngu nghia/thi giac va SUA CHUA chua
     #    tung duoc goi. `loi.py` chi import LOP NGOAI LE cua chung, nen ca hai
     #    tep trong nhu dang duoc dung. Kiem toan pha 26 goi G14 la PARTIAL voi
@@ -105,16 +120,30 @@ MO_COI_DA_BIET = frozenset({
     #
     #    ⚠️ Bon ten con lai VAN mo coi, va ly do khac han: chung phuc vu QC
     #       **hinh** (`doc_hinh`, `loi_nhac_hinh`, `moc_cho_noi`) va QC **giong**
-    #       (`so_khop_doc`). Hai loai do can them may moc that — rut khung quanh
+    #       (`so_khop_doc` — DA XOA 22/09, thay bang giai doan `qc_do_luong`). Hai loai do can them may moc that — rut khung quanh
     #       moi cho noi, va ASR tren chinh ban da ket xuat — chu khong chi can
     #       mot cong tat. Dieu kien de go: mot giai doan doc duoc chung.
-    "doc_hinh", "loi_nhac_hinh", "moc_cho_noi", "so_khop_doc",
+    "doc_hinh", "loi_nhac_hinh", "moc_cho_noi",
 
-    # ── HO SO NOI DUNG — nang luc nay duoc KHAI CHO KHACH la chua san sang.
-    #    `gia.py` bay `CHE_DO_GIONG_TU_KHOP` kem cau "tinh nang nay dang duoc
-    #    hoan thien — hien tai hay tu chon giong". Tuc mon no nay da duoc noi
-    #    that voi nguoi tra tien, khac han bon truong hop kia.
-    "doc_ho_so", "loi_nhac_ho_so", "tom_tat_chi_muc", "can_cho_ho_so",
+    # ── Giao thuc chay bo do trong `qc-venv` (`do_luong/venv.py`, e84b22a2).
+    #    `la_tien_trinh_con` la mot phep TU KIEM cho runner: "toi co dang chay
+    #    trong venv do luong khong". Hai runner hien co (`giong_runner`,
+    #    `squim_runner`) khong can hoi — chung chi chay khi `venv.chay` goi.
+    #    Dieu kien de go: mot bo do nao do chay duoc o CA HAI phia (worker va
+    #    qc-venv) va phai re nhanh theo cau tra loi do; neu khong, XOA ham.
+    
+    # ── HO SO NOI DUNG — ✅ **DA RA KHOI day 23/09/2026 bang cach duoc NOI VAO
+    #    MACH, khong bang cach duoc xoa.** `doc_ho_so`, `loi_nhac_ho_so` va
+    #    `can_cho_ho_so` gio co nguoi goi that: `ho_so_noi_dung.py` dung ho so
+    #    tu F0 cua stem `vocals` + ban chep loi, va `giai_doan_noi_dung` hoi
+    #    `can_cho_ho_so` ngay truoc khi viet loi thoai. Cung luc do, cau "tinh
+    #    nang nay dang duoc hoan thien" o `gia.py` bi go.
+    #
+    #    `tom_tat_chi_muc` o lai: no la so lieu cho NGUOI DOC bao cao hieu vi
+    #    sao ho so lai the nay, va duong ho so moi khong di qua chi muc canh
+    #    (no phai chay duoc ca o preset khong doc canh nao). Dieu kien de go:
+    #    mot man bao cao / mot truong `tom_tat` that su in no ra.
+    "tom_tat_chi_muc",
 
     # ── A26-01 — duong dich thu hai, da chet tu pha 14. Van tay khong con doc
     #    no nua (pha 27), nhung ban than duong thi con. Xoa no keo theo xoa ca

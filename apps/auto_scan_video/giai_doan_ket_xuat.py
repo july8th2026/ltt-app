@@ -39,7 +39,7 @@ from pathlib import Path
 from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
 
-from . import assets, ban_dung, ket_xuat, nhap_media, pipeline
+from . import assets, ban_dung, ket_xuat, lat_cat, nhap_media, pipeline
 from .giai_doan_media import ThieuNguon, _duong_doc_duoc
 from .tables import ASSET_OK
 
@@ -182,8 +182,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         _goi_su_kien = (_ho_so_pd or {}).get("su_kien") or []
         duong_ass = _pd.viet_tep_ass(
             _ho_so_pd, _goi_su_kien, thu_muc,
-            rong=int((ban.get("hinh") or {}).get("rong_khung") or 0),
-            cao=int((ban.get("hinh") or {}).get("cao_khung") or 0))
+            # ⭐ `PlayRes` = khung BAN RA (asv-final): sau cat khung / doi ti le,
+            #    phu de dat theo man hinh khach xem, khong theo khung nguon.
+            rong=ban_dung.khung_ra(ban.get("hinh") or {})[0],
+            cao=ban_dung.khung_ra(ban.get("hinh") or {})[1])
 
         duong_ra = str(thu_muc / "ra.mp4")
         bo_thuc = ket_xuat.bo_ma_hoa_thuc_te(ban, co_gpu=co_gpu)
@@ -202,7 +204,11 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 
         try:
             duoi = ket_xuat._chay_co_tien_do(
-                cmd, tong_giay=tong_giay, timeout=TIMEOUT_RENDER,
+                # `TIMEOUT_RENDER` BANG tran job render (3.600) — job bi giet
+                # truoc va ffmpeg mo coi. Kep vao ngan sach con lai (`lat_cat`).
+                cmd, tong_giay=tong_giay,
+                timeout=lat_cat.han_tien_trinh_con(pipeline.RENDER,
+                                                   TIMEOUT_RENDER),
                 hoi_huy=hoi_huy,
                 # ⭐ Goi vo dieu kien: khong co card thi `gpu_env` tra ve moi
                 #    truong nguyen ven, nen duong `preserve` khong doi hanh vi.

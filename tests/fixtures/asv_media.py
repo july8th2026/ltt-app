@@ -120,7 +120,10 @@ def ban_ghi_gia(duration_s: float = DEFAULT_DURATION_S) -> dict:
             "words": [{"start": bat, "end": bat + 0.4, "text": "cau"},
                       {"start": bat + 0.4, "end": ket, "text": f"thu-{i + 1}"}],
         })
-    return {"segments": doan, "language": "vi", "engine": "gia",
+    # `en`, khong `vi`: dich mac dinh la `vi`, va hop dong ngon ngu (22/09) tu
+    # choi nguon trung dich. Loi "cau thu N" khong phai tieng Anh — khong sao,
+    # khong bo phan nao doc lai ngon ngu tu chu.
+    return {"segments": doan, "language": "en", "engine": "gia",
             "alignment_status": "gia"}
 
 
@@ -229,10 +232,56 @@ def phan_hoi_ngoai_dich(thao_tac, messages):
 
     from apps.auto_scan_video import ai
 
-    if getattr(thao_tac, "ma", "") != ai.DOC_CANH.ma:
-        return None
-    return {"noi_dung": json.dumps(_canh_gia(messages), ensure_ascii=False),
+    ma = getattr(thao_tac, "ma", "")
+    if ma == ai.DOC_CANH.ma:
+        return {"noi_dung": json.dumps(_canh_gia(messages), ensure_ascii=False),
+                "su_dung": None}
+    if ma == ai.HO_SO_NOI_DUNG.ma:
+        return {"noi_dung": json.dumps(_ho_so_gia(messages), ensure_ascii=False),
+                "su_dung": None}
+    if ma == ai.QC_HINH.ma:
+        # ⭐ Mac dinh DAT: mot ban gia mac dinh "hong" se lam moi phep kiem
+        #    dau-cuoi sinh ra mot vong sua ma chung khong noi gi ve no. Phep
+        #    kiem nao can chieu HONG thi tu dat ban gia cua rieng no
+        #    (`test_2120`), va no phai noi ro dieu do.
+        return {"noi_dung": json.dumps(
+            {"dat": True, "do_tin": 0.9, "ly_do": ""}, ensure_ascii=False),
             "su_dung": None}
+    return None
+
+
+def _ho_so_gia(messages) -> dict:
+    """Phan hoi `HO_SO_NOI_DUNG` — dung tu vung CATALOG, khong phai chu tu nghi.
+
+    🔴 **Ban gia nay co mot viec phai lam dung, va no la viec de lam sai nhat
+       o ca duong `AUTO_MATCH`.** Mot model that rat de tra ve `phong_cach:
+       "thuyet minh"` — mot chu dung tieng Viet ma catalog KHONG co, va khi do
+       `giong_mau.loc` tra ve rong. Neu ban gia o day tra ve mot gia tri "dep"
+       nam ngoai catalog thi phep kiem se xanh quanh mot ho so khong rang duoc
+       giong nao; neu no tra ve dung tu vung catalog thi phep kiem chi chung
+       minh duong ong, chu khong chung minh phep loc tu vung.
+
+    ⇒ Nen no tra ve mot gia tri CATALOG (duong ong), con phep loc tu vung duoc
+      do rieng o `test_2006` bang chinh chu ngoai catalog.
+
+    ⚠️ `gioi` de RONG co chu dinh: duong that lay `gioi` tu phep do F0
+      (`cao_do.py`), va mot ban gia tu dien `gioi` se che mat cau hoi "phep do
+      co thuc su duoc dung khong".
+    """
+    from apps.ltt_voice.giong_mau import UU_TIEN_PHONG_CACH
+
+    return {
+        "the_loai": "giai tri",
+        "giong_dieu": "vui",
+        "khan_gia": "nguoi xem tre",
+        "nhip": "nhanh",
+        "tom_tat": "mot doan video ngan",
+        "dac_diem_giong": {
+            "gioi": "",
+            "vung": "",
+            "phong_cach": min(UU_TIEN_PHONG_CACH, key=UU_TIEN_PHONG_CACH.get),
+        },
+    }
 
 
 def _canh_gia(messages) -> dict:

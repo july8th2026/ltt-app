@@ -67,7 +67,8 @@ trong gate. Hằng số ở ngay trong tệp đó (`LOI_DE_DANH_VAT_LY`,
 - Đơn vị là **lõi vật lý** (xdist đọc lõi vật lý; `os.cpu_count()` trả lõi logic).
 - `chiem = max(KHAI BÁO, ĐO ĐƯỢC)` — `max` chứ không `+`, để một phiên vừa khai vừa
   dùng không bị trừ hai lần.
-- pytest **gõ tay** ≥ 3 tệp: `-n` tối đa **6** (hợp đồng §4.1).
+- pytest **gõ tay** ≥ 3 tệp: `-n` tối đa **7** (hợp đồng §4.1; chủ dự án đổi 6 → 7
+  ngày 23/09 — `chay_nang.py` ép trần này, và `gate.py` in lệnh gợi ý theo nó).
 
 ⚠️ **Tiến trình cháu không nằm trong `-n`.** Một worker gọi model thật (`demucs`,
 `whisper`, TTS) thành ~10 luồng torch. ⇒ Test nạp model thật nằm sau rào

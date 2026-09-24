@@ -65,7 +65,8 @@ def dung(*, khoa_video: str, khoa_nen: str, ke_hoach: dict,
          tong_giay: float, khoa_master: str = "", che_do: str = "",
          bo_ma_hoa: str = "", khoang_giu=None, preset: str = "",
          vung=None, lop_phu=None, cao_khung: int = 0,
-         ds_logo=None, rong_khung: int = 0, phu_de=None) -> dict:
+         ds_logo=None, rong_khung: int = 0, phu_de=None,
+         bien_tap=None) -> dict:
     """Dung ban dung tu cac tai lieu chinh tac. Khong cham mot tep media nao.
 
     `ke_hoach`      ket qua cua `thoi_gian.lap_ke_hoach`
@@ -123,6 +124,24 @@ def dung(*, khoa_video: str, khoa_nen: str, ke_hoach: dict,
             #: `1.0` = khong doi toc. Trinh render chi ap `atempo` khi > 1.
             "he_so_toc": float(d["he_so_toc"]),
         })
+
+    # ⭐ `bien_tap` (asv-final) chi GHI khi co — ban dung cua moi lan chay khong
+    #    dung no giu nguyen tung byte, nen van tay tep ra cua chung khong doi.
+    #    `khung_ra` tinh MOT lan o day tu `hinh_hoc.khung_bien_tap`; `kiem` tinh
+    #    lai de doi chieu.
+    thoi_luong_ra = float(tong_giay)
+    them_hinh: dict = {}
+    if bien_tap:
+        from . import bien_tap as _bt, hinh_hoc as _hh
+        try:
+            hh = _hh.khung_bien_tap(int(rong_khung or 0), int(cao_khung or 0),
+                                    bien_tap)
+        except ValueError as exc:
+            raise BanDungError(_t(
+                'Chưa biết kích thước khung hình nguồn nên không biên tập '
+                'khung được.')) from exc
+        them_hinh = {"bien_tap": dict(bien_tap), "khung_ra": list(hh["ra"])}
+        thoi_luong_ra = _bt.moc_ban_ra(float(tong_giay), bien_tap)
 
     ban = {
         "schema": SCHEMA_BAN_DUNG,
@@ -191,6 +210,7 @@ def dung(*, khoa_video: str, khoa_nen: str, ke_hoach: dict,
             #: Chieu RONG khung nguon. Cung ly do voi `cao_khung`: be rong
             #: logo phai duoc tinh ra pixel truoc khi dung chuoi loc.
             "rong_khung": int(rong_khung or 0),
+            **them_hinh,
         },
         # ── Tieng: BAN PHOI da dung o pha 16 ────────────────────────────
         #
@@ -212,7 +232,7 @@ def dung(*, khoa_video: str, khoa_nen: str, ke_hoach: dict,
             "faststart": True,
             #: Thoi luong MONG DOI. Trinh render doi chieu ban that voi so nay;
             #: lech qua nguong la mot loi, khong phai mot ghi chu.
-            "thoi_luong_giay": round(float(tong_giay), 3),
+            "thoi_luong_giay": round(thoi_luong_ra, 3),
         },
         # ── Phien ban cong cu, DONG BANG (Prompt 14 muc 6) ──────────────
         #
@@ -316,6 +336,9 @@ def kiem(ban: dict, *, khoa_hop_le: set[str] | None = None) -> None:
         if not _l.get("khoa"):
             raise BanDungError(_t('Bản dựng có logo thiếu khoá lưu trữ.'))
 
+    if hinh.get("bien_tap"):
+        _kiem_bien_tap(hinh)
+
     tieng = ban.get("tieng") or {}
     if not (tieng.get("nen") or {}).get("khoa"):
         raise BanDungError(_t('Bản dựng thiếu nhạc nền.'))
@@ -371,6 +394,39 @@ def kiem(ban: dict, *, khoa_hop_le: set[str] | None = None) -> None:
         if cam in goi:
             raise BanDungError(
                 _t('Bản dựng chứa trường nhạy cảm: {ten}.').format(ten=cam))
+
+
+def _kiem_bien_tap(hinh: dict) -> None:
+    """Bien tap khung/toc do: chi o duong cat, va `khung_ra` phai TINH LAI ra dung.
+
+    🔑 Tinh lai thay vi tin: mot `khung_ra` lech voi hinh hoc la logo sai co, vien
+       chu sai do day va `PlayRes` phu de sai — khong cai nao lam ffmpeg hong.
+    """
+    from . import bien_tap as _bt, che_do_render as _cdr, hinh_hoc as _hh
+
+    if hinh.get("cach_render") != _cdr.CAT_MA_HOA_LAI:
+        raise BanDungError(_t(
+            'Cắt khung, phóng to, đổi tỉ lệ và đổi tốc độ chỉ dùng được với kiểu '
+            'xử lý có biên tập lại hình.'))
+    try:
+        ho_so = _bt.chuan_hoa(hinh["bien_tap"])
+        hh = _hh.khung_bien_tap(int(hinh.get("rong_khung") or 0),
+                                int(hinh.get("cao_khung") or 0), ho_so)
+    except (_bt.BienTapLoi, ValueError) as exc:
+        raise BanDungError(_t('Bản dựng có biên tập khung hình không hợp lệ.')) from exc
+    if ho_so != hinh["bien_tap"] or list(hh["ra"]) != list(hinh.get("khung_ra") or ()):
+        raise BanDungError(_t('Bản dựng có biên tập khung hình không hợp lệ.'))
+
+
+def khung_ra(hinh: dict) -> tuple[int, int]:
+    """`(rong, cao)` cua BAN RA — thu logo, vien chu va phu de dat theo.
+
+    ⭐ Khong co bien tap khung thi ban ra cung khung voi nguon.
+    """
+    kr = hinh.get("khung_ra")
+    if kr:
+        return int(kr[0]), int(kr[1])
+    return int(hinh.get("rong_khung") or 0), int(hinh.get("cao_khung") or 0)
 
 
 def van_tay_ban_dung(*, checksum_ke_hoach: str, khoa_video: str,
