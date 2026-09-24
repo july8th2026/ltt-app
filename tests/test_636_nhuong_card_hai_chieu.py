@@ -1,9 +1,15 @@
 """
 Nhường card giữa LLM và model ảnh — bốn nhánh, và mỗi nhánh một cách hỏng thật.
 
-🔴 Máy B có **một** card 24.576 MB. Qwen thường trú 19.237 MB, HiDream đỉnh
-   18.450 MB. Hai model không bao giờ cùng lúc được, nên swap không phải tối ưu
-   hoá — nó là **chế độ vận hành duy nhất**.
+🔴 Cuộc tranh này diễn ra trên **RTX 3090 24.576 MB** — card duy nhất của máy B
+   đủ chỗ cho cả hai. Qwen thường trú 19.237 MB, HiDream đỉnh 18.450 MB. Hai
+   model không bao giờ cùng lúc được, nên swap không phải tối ưu hoá — nó là
+   **chế độ vận hành duy nhất** trên card ấy.
+
+   ⚠️ Máy B có **hai** card (3090 + 5060 Ti) — bản cũ của đoạn này viết *"máy B
+   có một card"*, đúng trước 11/09/2026 và sai từ đó. Card thứ hai **không** cứu
+   được cảnh này: nó chỉ 16.311 MB, không chứa nổi HiDream, và đang thường trú
+   `ltt-3.5`. Vai trò hai máy: `docs/HAI_MAY_A_VA_B.md`.
 
 🔴 HAI NHÁNH ĐẦU ĐÃ ĐƯỢC GỠ (dual-model 5.4a, 12/09/2026).
 
