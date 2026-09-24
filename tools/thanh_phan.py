@@ -202,6 +202,30 @@ def _module_duoc_import(tep: Path) -> set[str]:
                 continue
             if nut.module:
                 ra.add(nut.module)
+                # 🔴 FAIL-OPEN 24/09: chi ghi `nut.module` thi
+                #    `from platform_core import an_toan_mang` chi noi len
+                #    `platform_core` — GOI, khong phai MO-DUN. Canh phu thuoc
+                #    toi dung mo-dun bi mat.
+                #
+                # ⚠️ So do la CUA TOI, tren cay nay, sau khi `an_toan_mang` da
+                #    duoc khai thanh phan rieng: `bi_anh_huong` cho no ra
+                #    **162 -> 180** tep test. Phien P5 bao "0 -> 127"; do la so
+                #    cua HO truoc khi khai thanh phan, toi KHONG do lai duoc
+                #    con so ay nen khong chep vao day.
+                #
+                # ⛔ Va no fail-open dung chieu nguy hiem: pham vi HEP DI, tuc
+                #    gate bo qua test that su lien quan roi in ra mot chu XANH.
+                #    Mot bo thu hep sai khong bao gio keu — no chi im lang bo
+                #    sot (xem test_394 dau tep).
+                #
+                # ⭐ Sua o DAY chu khong doi kieu import cua nguoi viet: phien
+                #    P5 da ne bang cach viet `import platform_core.an_toan_mang`
+                #    va no chay duoc, nhung nguoi tiep theo viet `from ... import`
+                #    se lai mat do phu TRONG IM LANG. Luat khong duoc phu thuoc
+                #    vao viec ai cung nho mot quy uoc.
+                for a in nut.names:
+                    if a.name != "*":
+                        ra.add(f"{nut.module}.{a.name}")
     return ra
 
 

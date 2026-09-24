@@ -176,6 +176,63 @@ RULES = (
     ),
 )
 
+#: Hai HINH DANG cua mot chuoi 32 hex **khong phai bi mat**, nhan dien bang
+#: NGU CANH ngay tren cung dong.
+#:
+#: 🔴 Vi sao thu hep theo HINH DANG chu khong mien tru ca THU MUC. `EXCLUDED_DIR_NAMES`
+#:    o tren da phinh ra vi moi lan gap bao dong gia lai them mot thu muc — va moi
+#:    thu muc them vao la mot vung **khong con duoc quet**. Neu mot khoa that lot
+#:    vao `.superpowers/` hay `docs/` thi khong cua nao keu. Thu hep theo hinh dang
+#:    giu nguyen do phu: moi tep van duoc quet, chi hai DANG cu the duoc tha.
+#:
+#: ⛔ Ca hai mau deu doi NGU CANH, khong chi doi hinh chuoi hex — mot chuoi hex
+#:    tran, khong tien to, khong ten khoa, **van bi bat**.
+KHONG_PHAI_BI_MAT = (
+    # `vc_<32 hex>` — ma dinh danh CONG KHAI cua clip giong (`UU_TIEN_KHO_CHUNG`
+    # trong `rang_giong.py` ghi kem ten nguoi: Owen, Clara). No duoc gui cho
+    # trinh duyet cua khach, nen no khong the la bi mat.
+    re.compile(r"(?i)vc_[0-9a-f]{32}"),
+    # Gia tri cua mot khoa ten `*md5*` / `*sha*` / `*checksum*` / `*hash*` /
+    # `*van_tay*`: **bang chung do duoc**, dung de chung minh hai tep giong nhau
+    # tung byte. Ghi lai chung chinh la muc dich cua tep bang chung.
+    re.compile(r'(?i)"[a-z0-9_]*(?:md5|sha\d*|checksum|hash|van_tay)[a-z0-9_]*"'
+               r'\s*[:=]\s*"[0-9a-f]{32}"'),
+    # Mot bam DA BI CAT de hien thi: `<hex>...<hex>`.
+    #
+    # ⭐ Bat theo HINH DANG, ⛔ KHONG theo ten khoa. Cho nay la `khoa_chung` —
+    #    `hashlib.sha256(...).hexdigest()` cua dau vao giai doan, tuc mot khoa
+    #    CACHE theo noi dung (`cache_chung.py:149`). Nhung chu "khoa" la dung thu
+    #    may quet NEN nghi, nen tha theo ten la mot tien le xau: lan sau mot bien
+    #    ten `khoa_*` that su chua bi mat se di qua.
+    # ⭐ Hinh dang `...` o giua thi an toan hon han: mot bi mat viet co `...` o
+    #    giua **khong dung duoc nua** — no da mat mot phan. Nen ca khi lo tha
+    #    nham, thu tha ra khong phai mot thong tin dung duoc.
+    re.compile(r"(?i)[0-9a-f]{4,}\.\.\.[0-9a-f]{4,}"),
+)
+
+
+#: Chu bao "day la mot BAM", va chu bao "day la mot THONG TIN DANG NHAP".
+#:
+#: ⭐ Dung cho van xuoi va bang markdown, noi khong co cu phap `"khoa": "gia tri"`.
+#:    Vi du that: `bam remux toi gian   acd497e...   3205 goi` (`L_FIX_QC_AM.md`).
+#: ⛔ Va no doi CA HAI ve: co chu bam **va khong** co chu dang nhap tren cung dong.
+#:    Mot dong nhu `api_key sha  <32 hex>` **van bi bat** — dung vay, vi luc do
+#:    chu "sha" khong con noi len duoc dieu gi.
+_CHU_BAM = re.compile(r"(?i)\b(?:bam|van[_ ]tay|md5|sha\d*|checksum|hash|digest)\b")
+_CHU_DANG_NHAP = re.compile(
+    r"(?i)\b(?:key|token|secret|password|passwd|pwd|credential|api[_-]?key)\b")
+
+
+def _duoc_tha(dong: str, vi_tri: int) -> bool:
+    """Chuoi hex o `vi_tri` co nam trong mot hinh dang KHONG-phai-bi-mat khong."""
+    for mau in KHONG_PHAI_BI_MAT:
+        for m in mau.finditer(dong):
+            if m.start() <= vi_tri < m.end():
+                return True
+    # Van xuoi / bang: co chu bao "bam" TRUOC chuoi hex, va khong chu dang nhap nao.
+    truoc = dong[:vi_tri]
+    return bool(_CHU_BAM.search(truoc)) and not _CHU_DANG_NHAP.search(dong)
+
 
 def _is_excluded_dir(name: str) -> bool:
     return name in EXCLUDED_DIR_NAMES or name.startswith(EXCLUDED_DIR_PREFIXES)
@@ -280,6 +337,8 @@ def _scan_line(path: Path, line_number: int, line: str) -> list[Finding]:
         if la_checksum and rule.name == "bare_32_char_hex":
             continue
         for match in rule.pattern.finditer(line):
+            if rule.name == "bare_32_char_hex" and _duoc_tha(line, match.start()):
+                continue
             if rule.captured_value_group is not None:
                 value = match.group(rule.captured_value_group)
                 if not _looks_like_generic_secret(value):

@@ -209,22 +209,49 @@ def test_tu_tham_chieu_bi_tu_choi():
     assert "CHINH NO" in str(e.value)
 
 
-def test_node_core_chua_bien_dich_duoc_nen_chua_co_ca_foreach():
-    """QUYẾT ĐỊNH ca "node trong foreach": hôm nay **không tồn tại**, nên không
-    viết luật cho nó.
+def test_to_tien_TRONG_THAN_foreach__cau_tra_loi_cua_Task_5():
+    """Cái chuông tác giả treo sẵn: *"ngày P3 mở `core.*`, nó đỏ, và người mở
+    phải quay lại đây quyết định tổ tiên trong thân vòng lặp nghĩa là gì."*
 
-    `bien_dich._node` chỉ nhận `tool` và `app.*`; `core.foreach` (thân vòng lặp
-    — nơi `loop.item` sống, `nut.NodeDefinition.publish_duoc=False`) bị từ chối
-    ngay. Viết một luật tổ tiên cho một thân vòng lặp chưa có hình dạng là đoán.
+    ## Câu trả lời
 
-    ⚠️ Phép kiểm này là **cái chuông**: ngày P3 mở `core.*`, nó đỏ, và người mở
-       phải quay lại đây quyết định tổ tiên trong thân vòng lặp nghĩa là gì.
+    **Luật tổ tiên §6.2 KHÔNG đổi.** Nó nói về đồ thị đã biên dịch, và thân vòng
+    lặp là một đoạn của chính đồ thị ấy: node thân đọc được node thân đứng
+    trước nó vì node ấy **là** tổ tiên theo `graph.thu_tu`. Không có luật thứ hai.
+
+    **Thứ Task 5 thêm là GIÁ TRỊ, không phải QUAN HỆ.** Trong thân, một tham
+    chiếu `nodes.<x>.output` trả giá trị của **vòng đang chạy**
+    (`nut_loi/vong_lap._mt_than` phủ ảnh chụp CSDL bằng output của vòng ấy), và
+    `loop.item/index/total` tồn tại. Ngoài thân, cùng tham chiếu ấy trả giá trị
+    của **vòng CUỐI** — vì `node_run` khoá theo `(run_id, node_id)` nên chỉ một
+    trạng thái sống sót. ⛔ Muốn cả tập thì đọc `foreach_end.output.results`.
+
+    **Ranh giới đã khai:** thân chỉ nhận node `inline`; thân có node job bị từ
+    chối lúc publish (`than_foreach_co_node_job`) — xem `test_1784`.
     """
+    from platform_core.workflow import nut_loi
+    so = nut_loi.tat_ca()
+    assert "core.foreach" in so and "core.foreach_end" in so
+
     doc = _doc([{"id": "p1", "nodes": [
-        {"id": "v", "type": "core.foreach", "params": {}}], "edges": []}])
+        {"id": "f", "type": "core.foreach",
+         "params": {"items": "[1]", "max_items": 5}},
+        {"id": "x", "type": "core.transform", "params": {"gia_tri": "loop.item"}},
+        {"id": "y", "type": "core.transform",
+         "params": {"gia_tri": "nodes.x.output.gia_tri"}},
+        {"id": "fe", "type": "core.foreach_end", "params": {"foreach": "f"}}],
+        "edges": [
+            {"id": "e1", "source_node": "f", "target_node": "x"},
+            {"id": "e2", "source_node": "x", "target_node": "y"},
+            {"id": "e3", "source_node": "y", "target_node": "fe"}]}])
+    g = bien_dich.bien_dich(doc, cong_cu=CC)
+    assert [n["thi_hanh"] for n in g["nodes"]] == ["inline"] * 4
+
+    # ⛔ Và luật tổ tiên vẫn CẮN trong thân: `x` đọc `y` là đọc ngược.
+    doc["pages"][0]["nodes"][1]["params"]["gia_tri"] = "nodes.y.output.gia_tri"
     with pytest.raises(bien_dich.LoiBienDich) as e:
         bien_dich.bien_dich(doc, cong_cu=CC)
-    assert e.value.ma == "loai_node_chua_ho_tro"
+    assert e.value.ma == "tham_chieu_khong_phai_to_tien"
 
 
 # ── Bộ TRÍCH tham chiếu, đo riêng ────────────────────────────────────────────

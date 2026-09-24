@@ -134,6 +134,11 @@ def test_BAY_chi_muc_bo_phan_deu_giu_menh_de_WHERE_tren_POSTGRES():
         "ux_workflow_run_idem", "ix_waitpoint_due", "ux_waitpoint_idem",
         "ix_wakeup_due", "ix_foreach_muc_chua_xong", "ix_artifact_expiry",
         "ix_trigger_due",
+        # P3 — con cua `core.call_workflow` (`20260924_1500_wf_run_con`).
+        "ix_workflow_run_parent",
+        # P4 — bo quet HET HAN di bang keyset cursor, nen chi muc phai mang
+        # `(het_han_luc, id)` theo dung thu tu (`cho_doi.quet_het_han`).
+        "ix_waitpoint_het_han",
     }
     assert set(thay) == mong, f"thieu/thua chi muc bo phan: {set(thay) ^ mong}"
 

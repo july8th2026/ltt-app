@@ -149,6 +149,53 @@ def _run_cua_toi(db: Session, run_id: str, user_id: str) -> WorkflowRun:
     return run
 
 
+def _gop_than_foreach(db: Session, run: WorkflowRun) -> dict:
+    """`{node_id trần: trạng thái GỘP}` cho các node thân `foreach`.
+
+    Một node thân chạy N lần, mỗi lần một hàng `node_run` mang đường thi hành
+    (`f:0/x`). Giao diện chỉ có MỘT ô cho node ấy trên Canvas, nên phải gộp:
+
+      - còn lượt chưa kết thúc ⇒ `RUNNING` (người dùng thấy nó đang chạy);
+      - có lượt hỏng ⇒ `FAILED` (⛔ không giấu: một vòng hỏng là một việc hỏng);
+      - còn lại ⇒ `SUCCEEDED`.
+
+    `cost_credit` CỘNG mọi lượt; `attempt` là **số lượt**, không phải số lần thử
+    của một lượt — nói ra ở đây vì hai con số ấy dễ bị đọc nhầm nhau.
+
+    ⚠️ KHÔNG phủ đường thi hành bị BĂM (`danh_thuc.duong_thi_hanh` băm khi vượt
+       64 ký tự, tức `foreach` lồng sâu với id dài). Những lượt đó không khớp
+       hậu tố `/<node_id>` nên node hiện `PENDING` trên giao diện dù đang chạy.
+       Đây là một khoảng trống ĐÃ BIẾT, chưa vá.
+    """
+    from platform_core.models import NodeRun
+
+    gom: dict[str, list] = {}
+    for hang in db.query(NodeRun).filter_by(run_id=run.id).all():
+        khoa = str(hang.node_id)
+        if "/" not in khoa:
+            continue
+        gom.setdefault(khoa.rsplit("/", 1)[1], []).append(khoa)
+
+    ra: dict[str, dict] = {}
+    for nid, khoas in gom.items():
+        anhs = [a for a in (thi_hanh.anh_chup_theo_khoa(db, run.id, k)
+                            for k in khoas) if a is not None]
+        if not anhs:
+            continue
+        tt = [a.execution_status for a in anhs]
+        if any(t not in may_trang_thai.NODE_KET_THUC for t in tt):
+            gop = "RUNNING"
+        elif any(t in ("FAILED", "ABANDONED", "CANCELLED") for t in tt):
+            gop = "FAILED"
+        else:
+            gop = "SUCCEEDED"
+        loi = next((a.error for a in anhs if a.error), "")
+        ra[nid] = {"status": gop, "attempt": len(anhs),
+                   "cost_credit": sum(int(a.cost_credit or 0) for a in anhs),
+                   "job_id": "", "error": loi}
+    return ra
+
+
 def _nodes_json(db: Session, run: WorkflowRun) -> list[dict]:
     """Trạng thái hiện tại của MỌI node trong đồ thị đã ghim.
 
@@ -159,10 +206,18 @@ def _nodes_json(db: Session, run: WorkflowRun) -> list[dict]:
     """
     ver = db.get(WorkflowVersion, run.version_id)
     do_thi = (ver.graph if ver is not None else {}) or {}
+    theo_than = _gop_than_foreach(db, run)
     ra: list[dict] = []
     for nut in do_thi.get("nodes") or []:
         nid = str(nut.get("id") or "")
         anh = thi_hanh.anh_chup_hien_tai(db, run.id, nid)
+        if anh is None and nid in theo_than:
+            # ⭐ Node THÂN `foreach`: trạng thái của nó không nằm ở khoá id
+            #    trần mà ở các ĐƯỜNG THI HÀNH `f:0/x`, `f:1/x`… Gộp chúng lại
+            #    dưới đúng `node_id` trần — giao diện (`CanvasShell.tsx` so
+            #    `item.node_id === node.id`) vì vậy KHÔNG phải sửa.
+            ra.append(theo_than[nid] | {"node_id": nid})
+            continue
         if anh is None:
             # Chưa có ảnh chụp nào ⇒ chưa từng thử: `attempt: 0`, không phải
             # `1` — `1` sẽ nói dối rằng node đã chạy một lượt.

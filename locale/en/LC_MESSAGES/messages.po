@@ -21142,6 +21142,86 @@ msgstr "Run manually"
 msgid "Người dùng bấm chạy. Không có lịch, không có webhook."
 msgstr "The user clicks Run. No schedule, no webhook."
 
+msgid "Chờ"
+msgstr "Wait"
+
+msgid "Chờ tín hiệu"
+msgstr "Wait for a signal"
+
+msgid "Chờ một cú gọi webhook hoặc một sự kiện khớp bộ lọc."
+msgstr "Wait for a webhook call or an event matching a filter."
+
+msgid "Chờ người duyệt"
+msgstr "Wait for approval"
+
+msgid "Dừng cho tới khi có người duyệt hoặc từ chối."
+msgstr "Pause until someone approves or rejects."
+
+msgid "Dừng một khoảng thời gian rồi chạy tiếp."
+msgstr "Pause for a period of time, then continue."
+
+msgid "Rẽ nhánh"
+msgstr "Branch"
+
+msgid "Chạy nhánh true hoặc false theo một điều kiện."
+msgstr "Run the true or false branch depending on a condition."
+
+msgid "Rẽ nhiều nhánh"
+msgstr "Switch"
+
+msgid "Chọn nhánh theo giá trị của một biểu thức."
+msgstr "Pick a branch from the value of an expression."
+
+msgid "Kết thúc lượt chạy ngay tại đây."
+msgstr "End the run right here."
+
+msgid "Biến đổi"
+msgstr "Transform"
+
+msgid "Dựng một giá trị mới bằng một biểu thức."
+msgstr "Build a new value from an expression."
+
+msgid "Lặp"
+msgstr "Loop"
+
+msgid "Chạy thân vòng lặp một lần cho mỗi phần tử."
+msgstr "Run the loop body once for each item."
+
+msgid "Hết lặp"
+msgstr "End loop"
+
+msgid "Gom kết quả của vòng lặp theo thứ tự đầu vào."
+msgstr "Collect the loop results in input order."
+
+msgid "Gộp nhánh"
+msgstr "Join"
+
+msgid "Chờ nhiều nhánh gặp nhau: ALL, ANY hoặc N trong M."
+msgstr "Wait for several branches to meet: ALL, ANY or N of M."
+
+msgid "Đặt biến"
+msgstr "Set variables"
+
+msgid "Ghi một hoặc nhiều biến dùng được ở các bước sau."
+msgstr "Write one or more variables usable by later steps."
+
+msgid "Giữ lại các phần tử thoả một điều kiện."
+msgstr "Keep the items that match a condition."
+
+msgid "Gộp"
+msgstr "Aggregate"
+
+msgid "Đếm, cộng, lấy nhỏ nhất/lớn nhất… trên một mảng."
+msgstr "Count, sum, take the smallest/largest… over an array."
+
+msgid "Khai một giá trị là kết quả của cả lượt chạy."
+msgstr "Declare a value as the result of the whole run."
+
+msgid "Gọi workflow"
+msgstr "Call workflow"
+
+msgid "Chạy một workflow khác và chờ kết quả."
+msgstr "Run another workflow and wait for its result."
 msgid "AI: Chọn nhánh"
 msgstr "AI: Choose branch"
 
@@ -21219,3 +21299,9 @@ msgstr "The system ran one automatic repair pass and then delivered this version
 
 msgid "%(n)s đoạn đọc còn chưa khớp lời ở lần đo cuối."
 msgstr "%(n)s segments still did not match the script at the final measurement."
+
+msgid "Hạ tầng từ chối bước này nên máy chưa dựng xong. Đội vận hành đã nhận được nhật ký; thử lại sau ít phút."
+msgstr "The infrastructure refused this step, so the machine is not finished. The operations team has the logs; try again in a few minutes."
+
+msgid "Chúng tôi đang xác nhận địa chỉ IP cho máy này với nhà cung cấp. Đừng tạo máy khác — đội vận hành sẽ hoàn tất hoặc hoàn lại credit cho bạn."
+msgstr "We are confirming this machine's IP address with the provider. Do not create another machine — the operations team will either finish it or return your credit."

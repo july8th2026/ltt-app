@@ -184,7 +184,27 @@ duong = ["platform_core/workflow/dong_co.py", "platform_core/workflow/may_trang_
          "platform_core/workflow/tao_run.py", "platform_core/workflow/thi_hanh.py",
          "platform_core/workflow/su_kien.py", "platform_core/workflow/artifact.py",
          "platform_core/workflow/trigger.py", "platform_core/workflow/ket_so.py",
-         "platform_core/workflow/tien.py"]
+         "platform_core/workflow/tien.py",
+         # Retry CAP NODE (plan wf-v2 P3, spec 5.6) - lop mong tren retry cua
+         # jobs.py, khong phai co che thu hai.
+         "platform_core/workflow/thu_lai.py",
+         # Cau noi CSDL -> moi truong bieu thuc Sec6.2 (plan wf-v2 P3 T4).
+         "platform_core/workflow/moi_truong.py",
+         # Ket qua run DAN XUAT tu cac node core.output (plan wf-v2 P3 T6).
+         "platform_core/workflow/ket_qua_run.py",
+         # Run con cua core.call_workflow (plan wf-v2 P3 T7).
+         "platform_core/workflow/run_con.py",
+         # Cho ben + trigger (plan wf-v2 P4, spec Sec5.7/Sec8):
+         # - khoa_idem: MOT noi sinh moi khoa khu trung (waitpoint + trigger)
+         # - noi_lai  : mot cua cho moi tin hieu tu NGOAI dong co
+         # - han_cho  : han cho cong don, neo `run.created_at`
+         # - han_muc  : han muc cua cua trigger (Sec7.3)
+         "platform_core/workflow/khoa_idem.py",
+         "platform_core/workflow/noi_lai.py",
+         "platform_core/workflow/han_cho.py",
+         "platform_core/workflow/han_muc.py",
+         # - ban_trigger: MOT vong ban trigger, di qua DUNG cua `tao_run`
+         "platform_core/workflow/ban_trigger.py"]
 he_trong = "thi_hanh"
 tai_nguyen = ["postgres_test"]
 

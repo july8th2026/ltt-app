@@ -194,22 +194,24 @@ def test_khong_co_except_TRAN_nao():
 # ── 5. Migration: một đầu, và mỗi cột thêm đều gỡ được ─────────────────────
 
 def test_chuoi_migration_chi_co_MOT_dau():
-    """Hai đầu thì `alembic upgrade head` chết trên máy chủ, không phải ở đây."""
-    import re
-    revs, downs = {}, set()
-    for p in (GOC / "alembic" / "versions").glob("*.py"):
-        src = p.read_text(encoding="utf-8", errors="replace")
-        r = re.search(r'^revision\s*=\s*["\']([^"\']+)', src, re.M)
-        # down_revision co the la mot chuoi HOAC mot tuple nhieu chuoi (revision
-        # MERGE noi hai head, vd `down_revision = ("a", "b")`).
-        d = re.search(r"^down_revision\s*=\s*(.+)$", src, re.M)
-        if r:
-            revs[r.group(1)] = p.name
-        if d:
-            for m in re.finditer(r'["\']([^"\']+)["\']', d.group(1)):
-                downs.add(m.group(1))
-    dau = [k for k in revs if k not in downs]
-    assert len(dau) == 1, f"co {len(dau)} dau: {[revs[k] for k in dau]}"
+    """Hai dau thi `alembic upgrade head` chet tren may chu, khong phai o day.
+
+    🔴 Ban truoc doc `down_revision` bang regex neo vao dau dong `down_revision =`,
+       nen no **khong thay** 25 tep ma alembic hien dai sinh ra voi chu thich kieu
+       (`down_revision: Union[str, None] = "..."`). Ngay 24/09/2026 no bao
+       *"co 3 dau"* trong khi `alembic heads` in dung MOT — mot banh coc bao dong
+       gia, va bao dong gia la thu day nguoi doc bo qua banh coc.
+
+    Nay hoi **alembic**, thu ma may chu cung hoi. Phep kiem van khong can CSDL:
+    `ScriptDirectory` chi doc thu muc `versions`.
+    """
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+
+    scripts = ScriptDirectory.from_config(Config(str(GOC / "alembic.ini")))
+    dau = list(scripts.get_heads())
+    ten_tep = [pathlib.Path(scripts.get_revision(r).path).name for r in dau]
+    assert len(dau) == 1, f"co {len(dau)} dau: {ten_tep}"
 
 
 @pytest.mark.parametrize("ten", [

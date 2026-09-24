@@ -722,3 +722,101 @@ def test_in_cua_cua_so_yen_chiu_duoc_console_cp1252(monkeypatch):
     khung.flush()
     ra = khung.buffer.getvalue().decode("cp1252")
     assert "giu khoa" in ra, ra
+
+
+def test_do_thi_import_theo_duoc_ca_dang_from_goi_import_modun(tmp_path):
+    """🔴 `from <goi> import <mo-dun>` tung bien mat khoi do thi phu thuoc.
+
+    Bo doc AST chi ghi `nut.module`, nen dong tren chi noi len TEN GOI. Canh
+    toi dung mo-dun bi mat ⇒ pham vi gate HEP DI ⇒ gate bo qua test that su
+    lien quan roi in mot chu XANH. Mot bo thu hep sai khong bao gio keu.
+
+    ⛔ Khong duoc "sua" bang cach doi kieu import cua nguoi viet: no chay duoc
+       hom nay va mat do phu TRONG IM LANG vao ngay nguoi tiep theo viet
+       `from ... import ...`. Luat khong duoc dua vao viec ai cung nho mot quy uoc.
+    """
+    tep = tmp_path / "vi_du.py"
+    tep.write_text(
+        "from platform_core import an_toan_mang\n"
+        "from platform_core.credit import giu_cho\n"
+        "import apps.taoanh.gia\n"
+        "from . import anh_em\n"
+        "from os import *\n", encoding="utf-8")
+    mod = tp._module_duoc_import(tep)
+
+    assert "platform_core.an_toan_mang" in mod, mod
+    assert "platform_core" in mod, "van phai giu ten goi cho `from goi import HAM`"
+    assert "platform_core.credit.giu_cho" in mod, mod
+    assert "apps.taoanh.gia" in mod, mod
+    assert not any(m.endswith(".*") for m in mod), f"`import *` khong duoc sinh `.*`: {mod}"
+    # 🔑 Doi chung: import tuong doi VAN bi bo qua (trong cung goi) — neu bai
+    #    nay xanh ma khong co dong duoi thi no khong chung minh duoc gi ve
+    #    viec bo doc con phan biet duoc cac dang import.
+    assert not any(m.startswith("anh_em") for m in mod), mod
+
+
+#: Nơi được cầm URL PostgreSQL scratch (URL đó nhúng mật khẩu THẬT).
+#: Mỗi dòng một lý do — một miễn trừ không đọc được là một miễn trừ không hết hạn được.
+CHU_URL_PG = {
+    "tools/check_multiproc.py": "nơi sinh ra URL",
+    "tools/chay_test_pg.py": "đường chạy chuẩn; đặt URL vào env con, không trả ra",
+    "tests/test_365_gate_ba_trang_thai.py":
+        "kiểm CHÍNH `_tim_url` — và nó cắm mật khẩu GIẢ (`MK_SUPER`) qua "
+        "monkeypatch, nên không có bí mật thật nào đi qua đây",
+}
+
+
+def test_khong_ai_ngoai_HAI_TEP_duoc_cam_url_postgres_scratch():
+    """🔴 Mật khẩu superuser PostgreSQL đã rơi vào BỐN bản ghi hội thoại (24/09).
+
+    `check_multiproc._tim_url()` trả một URL **nhúng mật khẩu** đọc từ
+    `C:/LTTPlatform/secrets/postgres-superuser.txt` — thư mục có ACL chặn **cố
+    ý**. Ai cần chạy test PG cũng tự gọi nó, và chỉ cần một lần `print` để xem
+    URL đúng chưa là bí mật rơi vào bản ghi, nơi **không có ACL nào**.
+
+    ⛔ Quét ngày 24/09 thấy nó trong 4 tệp, **2 trong số đó từ các phiên TRƯỚC**
+       ⇒ đây là đường TÁI DIỄN, không phải một lần lỡ tay. Và một dòng luật
+       trong brief ("không in url") đã có sẵn mà vẫn bị vi phạm.
+
+    ⭐ Nên chặn bằng CƠ HỌC: không ai phải cầm URL trong tay. `chay_test_pg.py`
+       lấy URL, đặt vào `os.environ` của tiến trình con, và không trả nó ra.
+    """
+    import ast
+
+    pham = []
+    for tep in sorted(GOC.rglob("*.py")):
+        duong = tep.relative_to(GOC).as_posix()
+        if duong in CHU_URL_PG or ".git" in duong or "node_modules" in duong:
+            continue
+        try:
+            than = tep.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        if "_tim_url" not in than:
+            continue
+        try:
+            cay = ast.parse(than)
+        except SyntaxError:
+            continue
+        for n in ast.walk(cay):
+            if isinstance(n, ast.Attribute) and n.attr == "_tim_url":
+                pham.append(f"{duong}:{n.lineno}")
+            elif isinstance(n, ast.Name) and n.id == "_tim_url":
+                pham.append(f"{duong}:{n.lineno}")
+    assert not pham, (
+        f"goi `_tim_url` ngoai {sorted(CHU_URL_PG)}: {pham}. "
+        f"Dung `python tools/chay_test_pg.py <tham so pytest>` — no dat URL vao "
+        f"env cua tien trinh con va KHONG tra URL ra cho ai cam.")
+
+    # 🔑 Đối chứng: nếu phép quét không thật sự đọc tệp nào thì nó xanh rỗng.
+    assert (GOC / "tools" / "chay_test_pg.py").exists(), "cong cu chuan phai ton tai"
+    # 🔑 Đối chứng thứ hai: tệp được miễn trừ vì "dùng mật khẩu giả" phải THẬT
+    #    SỰ dùng mật khẩu giả. Miễn trừ mà không ai kiểm lý do thì chỉ là một
+    #    cái tên trong danh sách.
+    t365 = GOC / "tests" / "test_365_gate_ba_trang_thai.py"
+    if t365.exists():
+        assert "MK_SUPER" in t365.read_text(encoding="utf-8"), (
+            "test_365 duoc mien tru vi dung mat khau GIA; no khong con dung nua "
+            "=> xem lai mien tru trong CHU_URL_PG")
+    assert "_tim_url" in (GOC / "tools" / "check_multiproc.py").read_text(
+        encoding="utf-8"), "ham nguon doi ten? cap nhat bai kiem nay"

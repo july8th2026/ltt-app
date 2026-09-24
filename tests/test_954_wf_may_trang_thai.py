@@ -136,19 +136,29 @@ def test_lan_chuyen_bi_tu_choi_VAN_ghi_mot_anh_chup(db, run):
 
 
 def test_lan_chuyen_bi_tu_choi_KHONG_doi_con_tro(db, run):
+    """Worker chậm chân quay lại tiến một node ĐÃ XONG — con trỏ đứng yên.
+
+    ⚠️ Ca cũ dùng `READY → SUCCEEDED` làm ví dụ "nhảy cóc". Nó hết là nhảy cóc
+       từ 24/09: node INLINE (`core.if`/`switch`/`stop`, spec §5.1) chạy trong
+       động cơ nên đi thẳng `READY → SUCCEEDED`, không qua `QUEUED`. Ca lấy
+       thay là ca mà `chuyen_node` docstring vốn nói tới — *"worker chậm chân
+       quay lại tiến một node đã xong"* — và nó vẫn bị từ chối vì `SUCCEEDED`
+       là trạng thái KẾT THÚC, không có lối ra nào.
+    """
     from platform_core.models import NodeRun
     from platform_core.workflow import may_trang_thai
 
     may_trang_thai.chuyen_node(db, run.id, "n0", sang="READY", mo_ta="ok")
+    may_trang_thai.chuyen_node(db, run.id, "n0", sang="SUCCEEDED", mo_ta="xong")
     db.commit()
-    may_trang_thai.chuyen_node(db, run.id, "n0", sang="SUCCEEDED",
-                               mo_ta="nhay coc")
+    assert may_trang_thai.chuyen_node(db, run.id, "n0", sang="READY",
+                                      mo_ta="quay lai") is False
     db.commit()
 
     from platform_core.models import NodeRunSnapshot
     con_tro = db.get(NodeRun, (run.id, "n0"))
     assert db.get(NodeRunSnapshot, con_tro.latest_snapshot_id
-                  ).execution_status == "READY"
+                  ).execution_status == "SUCCEEDED"
 
 
 def test_chuyen_HOP_LE_ghi_error_tuy_chinh(db, run):

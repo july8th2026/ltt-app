@@ -39,8 +39,25 @@ from platform_core.job_scheduler import ORIGIN_WORKFLOW
 ORPHAN_TIMEOUT = timedelta(minutes=5)
 
 # Giãn cách retry: lần thử thứ n chờ base * 2^(n-1) giây, chặn trên.
-_RETRY_BASE_S = 10
-_RETRY_MAX_S = 600
+#
+# ⭐ CÔNG KHAI từ 24/09: retry CẤP NODE của workflow (`workflow/thu_lai.py`,
+#    spec §5.6) là một lớp MỎNG trên cơ chế này, và một lớp mỏng phải **gọi**
+#    công thức chứ không **chép** nó. Hai công thức backoff cho cùng một ý
+#    nghĩa là hai con số sẽ trôi khỏi nhau, và không ai để ý vì cả hai đều hợp
+#    lý. `test_1782::test_banh_coc_thu_lai_khong_tu_tinh_backoff` ghim điều này.
+RETRY_BASE_S = 10
+RETRY_MAX_S = 600
+_RETRY_BASE_S = RETRY_BASE_S      # tên cũ, giữ cho mã trong tệp này
+_RETRY_MAX_S = RETRY_MAX_S
+
+
+def gian_cach_retry(lan: int, *, base: int = RETRY_BASE_S) -> int:
+    """Số giây chờ trước lượt thử thứ `lan + 1`. `lan` đếm từ 1.
+
+    Backoff mũ có chặn trên: một lỗi tạm thời (mạng chập chờn) được thử lại
+    thưa dần thay vì dồn dập, nhưng không bao giờ thưa quá `RETRY_MAX_S`.
+    """
+    return min(RETRY_MAX_S, max(1, int(base)) * (2 ** (max(1, int(lan)) - 1)))
 
 # Job/account đã chờ tới mốc này được đưa lên trước account mới để không đói.
 FAIR_AGING = timedelta(minutes=5)
@@ -614,7 +631,7 @@ def fail(db: DbSession, job: Job, error: str, *, retry: bool = True) -> None:
     safe_error = job_events.sanitize_text(error, limit=5000)
     job.error = safe_error
     if retry and job.attempts < job.max_attempts:
-        cho = min(_RETRY_MAX_S, _RETRY_BASE_S * (2 ** (job.attempts - 1)))
+        cho = gian_cach_retry(job.attempts)
         job.status = JOB_QUEUED
         job.next_run_at = _bay_gio() + timedelta(seconds=cho)
         job.worker_id = ""
