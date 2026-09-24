@@ -46,7 +46,14 @@ TEP_PG = ("tests/test_214_multi_process_runtime.py",
           # khong ai thay, va dung ca thu SQLite KHONG phan biet duoc (JSON
           # long, khoa ngoai credit_entries, be rong String(64) cua
           # Wakeup.node_run_id).
-          "tests/test_1787_wf_flow_acf_pg.py")
+          "tests/test_1787_wf_flow_acf_pg.py",
+          # FLOW B/E tren PostgreSQL that - dieu kien ra cua P4 (plan wf-v2).
+          # Pha nay them BON cot thoi gian di vao cung ho phep so ma
+          # `dong_co.ttl` tung nem `TypeError` o production (test_1720), MOT so
+          # sanh BO DOI (`tuple_(het_han_luc, id)` - cu phap row-value hai
+          # dialect thuc thi khac nhau), va be rong String(120) cua
+          # `waitpoint.idempotency_key` (SQLite nuot, PostgreSQL nem).
+          "tests/test_1798_wf_flow_be_pg.py")
 
 
 def _doc_neu_duoc(path: pathlib.Path) -> str:

@@ -269,7 +269,11 @@ def _chay_mot_inline(db, run: WorkflowRun, g: dict, node: dict,
     anh = thi_hanh.anh_chup_hien_tai(db, run.id, nid)
     lan = int(anh.attempt_number if anh else 1)
     try:
-        kq = ham(db, run, node, g=g, cong_cu=cong_cu,
+        # ⚠️ `vong=()` TƯỜNG MINH: node chạy ở CẤP RUN, ngoài mọi `foreach`.
+        #    Node chờ dùng nó để dựng khoá đường thi hành, và một mặc định ngầm
+        #    ở phía node là một chỗ để khoá của thân vòng lặp và khoá cấp run
+        #    trở nên giống nhau mà không ai thấy.
+        kq = ham(db, run, node, g=g, cong_cu=cong_cu, vong=(),
                  moi_truong=moi_truong.moi_truong_run(db, run, g, nid))
     except Exception as loi:                      # noqa: BLE001
         # Một node inline ngã KHÔNG được kéo theo cả lượt `mot_vong` (cùng hình
@@ -359,9 +363,19 @@ def xu_ly_run(db, run_id: str, *,
     #    đi tiếp. Không có bước này, một `foreach` có node job đứng WAITING
     #    tới hạn `TRAN_RUN` 20 giờ.
     vong_lap.tiep_vong(db, run, g, cong_cu=cong_cu)
+    # ⭐ RESUME node CHỜ (`core.delay`/`core.wait`/`core.human`, plan P4): một
+    #    node `WAITING` không bao giờ quay về `READY` (`NODE_CHUYEN` không có
+    #    lối ấy), nên không có bước này thì nó đứng tới `TRAN_RUN` 20 giờ —
+    #    đúng hình dạng lỗi mà `tiep_vong` đã phải sinh ra cho vòng lặp.
+    #
+    #    ⛔ Node chờ TRONG thân `foreach` bị loại ra (`bo_qua=than`): thân do
+    #       `core.foreach` lái, theo từng chỉ số vòng. Tiến nó ở đây nữa là
+    #       tiến khoá `d` (id trần) song song với `f:0/d`, `f:1/d` — cùng lớp
+    #       lỗi mà `_than_foreach` đã ghi lại cho node inline thường.
+    than = _than_foreach(g)
+    nut_loi.cho.tiep_cho(db, run, g, bo_qua=than)
     # ⭐ Node inline chạy LIÊN TIẾP trong cùng vòng (spec §5.1) — trước vòng nộp
     #    job, để một `if` vừa rẽ xong là nhánh của nó được nộp ngay lượt này.
-    than = _than_foreach(g)
     dung = _pha_inline(db, run, g, cong_cu)
     if dung:
         return dung
@@ -408,7 +422,37 @@ def xu_ly_run(db, run_id: str, *,
             .limit(1)).scalar()
         if con_wakeup is None:
             danh_thuc.hen(db, run_id=run.id, kind="tick", due_at=_bay_gio())
+    _dong_bo_trang_thai_cho(db, run)
     return run.status
+
+
+def _dong_bo_trang_thai_cho(db, run: WorkflowRun) -> None:
+    """`RUNNING ⇄ WAITING` — run có đang **ĐỖ** hay không (spec §5.3).
+
+    ⭐ Spec: `WAITING` = *"có ≥1 waitpoint mở"*. Nhưng ⛔ **không đếm waitpoint
+       `JOB`**: mọi node app đang chạy đều có một waitpoint `JOB` mở, nên đếm
+       cả chúng thì gần như mọi run đang chạy đều là `WAITING` và chữ ấy không
+       còn phân biệt được gì. Thứ người dùng (và vận hành) cần biết là run
+       **đang đỗ có chủ đích** — chờ đồng hồ, chờ người, chờ một cú POST — chứ
+       không phải "có việc đang chạy".
+
+    ⚠️ Chỉ chạy ở cuối `xu_ly_run`, sau khi mọi chuyển node của lượt này đã
+       xong: hỏi giữa chừng sẽ thấy một trạng thái nửa vời và lật run qua lại
+       hai lần trong một lượt — mỗi lần là một hàng lịch sử cho một việc không
+       xảy ra.
+    """
+    from platform_core.models import Waitpoint
+
+    if run.status not in ("RUNNING", "WAITING"):
+        return
+    dang_do = db.execute(
+        select(Waitpoint.id).where(
+            Waitpoint.run_id == run.id, Waitpoint.status == "PENDING",
+            Waitpoint.kind != "JOB").limit(1)).scalar() is not None
+    if dang_do and run.status == "RUNNING":
+        mtt.chuyen_run(db, run.id, sang="WAITING", ly_do="cho diem cho")
+    elif not dang_do and run.status == "WAITING":
+        mtt.chuyen_run(db, run.id, sang="RUNNING", ly_do="het cho")
 
 
 def huy_run(db, run_id: str, ly_do: str) -> bool:
@@ -521,6 +565,62 @@ def ttl(db_factory: Callable) -> int:
     return dem
 
 
+def _quet_het_han(db_factory: Callable) -> int:
+    """Lưới an toàn cho HẠN CHỜ — transaction RIÊNG, lỗi không kéo cả lượt.
+
+    ⭐ `mo_diem_cho` đã hẹn sẵn một wakeup ở `het_han_luc`, nên bộ quét này
+       gần như luôn tìm thấy **không gì cả**. Nó tồn tại cho đúng ca mà hàng
+       hẹn ấy **mất** (một lượt bị ngắt sau `claimed_at`, một lần dọn dẹp) —
+       khi đó điểm chờ nằm im với hạn ở quá khứ và run đứng tới `TRAN_RUN`
+       20 giờ **với tiền bị giữ**, không dòng nào nói vì sao.
+
+    ⛔ Cùng hình dạng cách ly lỗi với `ttl` (F3): một transaction riêng, cuộn
+       riêng, ghi log, đi tiếp. Bộ quét là lưới an toàn — một lưới an toàn làm
+       sập vòng động cơ thì tệ hơn là không có.
+    """
+    from platform_core.workflow import noi_lai
+
+    db = db_factory()
+    try:
+        dem = noi_lai.quet_het_han(db)
+        db.commit()
+        return dem
+    except Exception:                                    # noqa: BLE001
+        db.rollback()
+        log.exception("dong co: quet het han loi, bo qua luot nay")
+        return 0
+    finally:
+        db.close()
+
+
+def _ban_trigger(db_factory: Callable) -> int:
+    """Bắn trigger tới hạn — transaction RIÊNG, lỗi không kéo cả lượt.
+
+    ⭐ Đặt ở đây chứ không ở một job riêng: vòng động cơ đã là cái duy nhất
+       chạy đều trên toàn hệ (`workflow.dong_co`, MỘT job chạy vòng). Thêm một
+       lịch thứ hai là thêm một thứ có thể chết riêng mà không ai thấy.
+    """
+    from platform_core.workflow import ban_trigger
+
+    db = db_factory()
+    try:
+        kq = ban_trigger.ban_den_han(db)
+        # ⭐ Trigger `event` KHÔNG có lịch (`next_fire_at` là `NULL`), nên
+        #    `den_han()` không bao giờ nhặt nó — nó đi bằng con trỏ trên
+        #    `workflow_event`. Thiếu dòng này thì nó chạy được khi gọi tay và
+        #    **không bao giờ** chạy thật: đúng kiểu hỏng im lặng mà
+        #    `trigger.tao` đã từ chối cho một loại chưa đăng ký.
+        ev = ban_trigger.ban_su_kien(db)
+        db.commit()
+        return int(kq.get("da_ban") or 0) + int(ev.get("da_ban") or 0)
+    except Exception:                                    # noqa: BLE001
+        db.rollback()
+        log.exception("dong co: ban trigger loi, bo qua luot nay")
+        return 0
+    finally:
+        db.close()
+
+
 def mot_vong(db_factory: Callable, *, gioi_han: int = 50) -> dict:
     db = db_factory()
     try:
@@ -532,6 +632,8 @@ def mot_vong(db_factory: Callable, *, gioi_han: int = 50) -> dict:
     finally:
         db.close()
     so = ttl(db_factory)
+    het_han = _quet_het_han(db_factory)
+    da_ban = _ban_trigger(db_factory)
     da = 0
     loi = 0
     for rid in run_ids:
@@ -575,6 +677,7 @@ def mot_vong(db_factory: Callable, *, gioi_han: int = 50) -> dict:
     finally:
         db.close()
     return {"run_da_xu_ly": da, "timed_out": so, "loi": loi,
+            "het_han": het_han, "trigger_da_ban": da_ban,
             "con_viec": ke is not None, "han_ke_tiep": ke}
 
 

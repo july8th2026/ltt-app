@@ -21142,6 +21142,24 @@ msgstr "Run manually"
 msgid "Người dùng bấm chạy. Không có lịch, không có webhook."
 msgstr "The user clicks Run. No schedule, no webhook."
 
+msgid "Chờ"
+msgstr "Wait"
+
+msgid "Chờ tín hiệu"
+msgstr "Wait for a signal"
+
+msgid "Chờ một cú gọi webhook hoặc một sự kiện khớp bộ lọc."
+msgstr "Wait for a webhook call or an event matching a filter."
+
+msgid "Chờ người duyệt"
+msgstr "Wait for approval"
+
+msgid "Dừng cho tới khi có người duyệt hoặc từ chối."
+msgstr "Pause until someone approves or rejects."
+
+msgid "Dừng một khoảng thời gian rồi chạy tiếp."
+msgstr "Pause for a period of time, then continue."
+
 msgid "Rẽ nhánh"
 msgstr "Branch"
 

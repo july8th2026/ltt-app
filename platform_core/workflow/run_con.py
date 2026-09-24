@@ -114,9 +114,15 @@ def bao_cha(db, con: WorkflowRun) -> bool:
     cha = db.get(WorkflowRun, con.parent_run_id)
     if cha is None:
         return False
-    danh_thuc.hen(db, run_id=cha.id, kind="child_run", due_at=_bay_gio(),
-                  node_run_id=danh_thuc.duong_thi_hanh(
-                      str(con.parent_node_id or "goi")))
+    # 🔴 `parent_node_id` ĐÃ LÀ đường thi hành (`chay_call_workflow` ghi
+    #    `thi_hanh.khoa_node(id, vong)` vào đó), nên ⛔ KHÔNG mã hoá nó lần
+    #    thứ hai: `duong_thi_hanh("f:0/g")` **ném** (`:`/`/` không nằm trong
+    #    tập id hợp lệ), và trước khi ném thì nó cũng cho ra một khoá mà
+    #    không ai khác sinh được. Cùng bài học đã ghi ở
+    #    `noi_lai.danh_thuc_node_cua`.
+    danh_thuc.hen_luy_dang(
+        db, run_id=cha.id, kind="child_run", due_at=_bay_gio(),
+        node_run_id=str(con.parent_node_id or "goi"))
     db.flush()
     from platform_core.workflow import tao_run
     tao_run.danh_thuc_dong_co(db)
@@ -129,41 +135,65 @@ def ap_ket_qua_con(db, cha: WorkflowRun, graph: dict) -> int:
     Trả số node đã chốt. Đọc kết quả con bằng `ket_qua_run.doc` — **dẫn xuất**
     từ các node `core.output` của con, không phải một cột thứ hai.
     """
-    from platform_core.workflow import ket_qua_run
-
     dem = 0
     for n in graph.get("nodes") or []:
-        nid = str(n["id"])
         if str(n.get("type")) != LOAI_GOI:
             continue
-        # ⭐ MOT lan doc, khong hai. Ban truoc hoi `trang_thai_node` roi hoi
-        #    `anh_chup_hien_tai` — hai truy van cho CUNG mot hang, va phep thu
-        #    hep `None` di vong qua mot ham khac nen mypy khong theo duoc
-        #    (`union-attr`, gate L1 24/09 cua phien VPS bat duoc).
-        #
-        # ⛔ Khong `--accept` cai canh bao do: mot `union-attr` co the la mot
-        #    `None` THAT. O day no khong phai — `trang_thai_node` tra
-        #    `NODE_BAT_DAU` khi khong co anh chup, nen "WAITING" da ham y anh
-        #    chup ton tai. Nhung ham y do la thu phai DOC HAI HAM moi thay;
-        #    viet thang ra thi ca mypy lan nguoi doc deu thay, va bot mot truy van.
-        anh = thi_hanh.anh_chup_hien_tai(db, cha.id, nid)
-        if anh is None or anh.execution_status != "WAITING":
-            continue
-        rid = str((anh.output_ref or {}).get(KHOA_RUN_CON) or "")
-        con = db.get(WorkflowRun, rid) if rid else None
-        if con is None or con.status not in may_trang_thai.RUN_KET_THUC:
-            continue
-        xong = con.status == "SUCCEEDED"
-        may_trang_thai.chuyen_node(
-            db, cha.id, nid, sang="SUCCEEDED" if xong else "FAILED",
-            mo_ta="run con ket thuc",
-            error="" if xong else f"run_con_loi: {con.status}",
-            attempt_number=int(anh.attempt_number or 1),
-            output_ref={KHOA_RUN_CON: rid,
-                        "outputs": ket_qua_run.doc(db, rid) if xong else {},
-                        "status": con.status})
-        dem += 1
+        dem += 1 if ap_ket_qua_mot(db, cha, n) else 0
     return dem
+
+
+def ap_ket_qua_mot(db, cha: WorkflowRun, node: dict, *, vong=()) -> bool:
+    """Chốt MỘT node `core.call_workflow` — **của một lần chạy cụ thể**.
+
+    🔴 VÌ SAO HÀM NÀY NHẬN `vong`, VÀ VÌ SAO ĐÓ LÀ MỘT LỖ TIỀN
+
+    `ap_ket_qua_con` duyệt `graph["nodes"]` và tra trạng thái với `vong=()`.
+    Sau khi `node_run` đổi sang khoá **đường thi hành**, một
+    `core.call_workflow` nằm TRONG thân `foreach` có ảnh chụp ở `f:0/g`, nên
+    lần tra `vong=()` **không thấy gì** và node bị bỏ qua.
+
+    Đo được (24/09, đồ thị `foreach` 2 vòng, có đối chứng là cùng đồ thị
+    nhưng `call_workflow` nằm NGOÀI `foreach`):
+
+        trong foreach : run=RUNNING  node={f:0/g: WAITING, f:1/g: WAITING}
+                        so_con=2  ket_so=False      ⇐ run con ĐÃ XONG
+        ngoai (đối chứng): run=SUCCEEDED  node={g: SUCCEEDED}  ket_so=True
+
+    ⇒ Cả hai run con chạy xong, cha đứng `WAITING` tới `TRAN_RUN` 20 giờ, và
+      `ket_so_luc` là `NULL` nghĩa là **khoản giữ chỗ credit vẫn bị giam**.
+      Đúng hạng lỗi bốn lỗ tiền của phase gốc 4: im lặng, không ném.
+
+    ⚠️ Bên gọi trong thân `foreach` là `vong_lap._mot_phan_tu`, chỗ duy nhất
+       biết chỉ số vòng. Chốt node ở HAI nơi (ở đây với `vong=()` **và** ở đó
+       với `ngu`) là cách để một node được chuyển hai lần bằng hai khoá khác
+       nhau — nên `ap_ket_qua_con` chỉ đi khoá trần, và thân vòng lặp tự gọi
+       hàm này với chỉ số của nó.
+    """
+    from platform_core.workflow import ket_qua_run
+
+    nid = str(node["id"])
+    # ⭐ MOT lan doc, khong hai (ban truoc hoi `trang_thai_node` roi hoi
+    #    `anh_chup_hien_tai` — hai truy van cho CUNG mot hang, va phep thu hep
+    #    `None` di vong qua mot ham khac nen mypy khong theo duoc: `union-attr`,
+    #    gate L1 24/09 cua phien VPS bat duoc).
+    anh = thi_hanh.anh_chup_hien_tai(db, cha.id, nid, vong)
+    if anh is None or anh.execution_status != "WAITING":
+        return False
+    rid = str((anh.output_ref or {}).get(KHOA_RUN_CON) or "")
+    con = db.get(WorkflowRun, rid) if rid else None
+    if con is None or con.status not in may_trang_thai.RUN_KET_THUC:
+        return False
+    xong = con.status == "SUCCEEDED"
+    may_trang_thai.chuyen_node(
+        db, cha.id, nid, sang="SUCCEEDED" if xong else "FAILED",
+        mo_ta="run con ket thuc", vong=vong,
+        error="" if xong else f"run_con_loi: {con.status}",
+        attempt_number=int(anh.attempt_number or 1),
+        output_ref={KHOA_RUN_CON: rid,
+                    "outputs": ket_qua_run.doc(db, rid) if xong else {},
+                    "status": con.status})
+    return True
 
 
 def con_dang_chay(db, run_id: str) -> list[str]:
