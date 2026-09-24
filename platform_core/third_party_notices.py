@@ -108,6 +108,40 @@ def can_ghi_cong(dong: dict) -> bool:
            "CC BY" in dong.get("license_weights", "")
 
 
+def dinh_danh_muc(dong: dict) -> str:
+    """Chuỗi định danh của một dòng, ĐÃ bỏ markdown — dùng ở CẢ trang lẫn test.
+
+    🔴 **Vì sao là một hàm, không phải hai dòng chuẩn hoá.** Trước 24/09 template
+       làm `replace("`", "")` còn test làm `.strip("`")`. Hai cách đó cho **cùng
+       kết quả** khi backtick nằm ở hai đầu (`` `squim_objective_dns2020.pth` ``),
+       nên chúng trông như một luật — cho tới khi có một ô mang **hậu tố**:
+
+           `sig_bak_ovr.onnx` (1.157.965 B)
+             strip   -> sig_bak_ovr.onnx` (1.157.965 B)   <- còn backtick GIỮA
+             replace -> sig_bak_ovr.onnx (1.157.965 B)
+
+       Test đỏ, và **lời tố cáo của nó sai**: nó nói *"dòng 10 không xuất hiện
+       trên trang"* trong khi trang **có** in DNSMOS. Một nghĩa vụ pháp lý đã
+       thực hiện bị báo là chưa — đúng loại báo động làm người ta mất niềm tin
+       vào chính cái cổng đang bảo vệ mình.
+
+    ⭐ Cùng tinh thần `can_ghi_cong`: **một** phép thử, trang và test đều gọi
+       lại, ⛔ không ai đoán lại quy tắc ở nơi khác.
+    """
+    tho = dong.get("model_checkpoint", "")
+    if tho in ("", "—"):
+        tho = dong.get("repo_goi", "")
+    return str(tho).replace("`", "").strip()
+
+
 def muc_ghi_cong(duong_dan: pathlib.Path | None = None) -> list[dict]:
-    """Các dòng §1 cần ghi công — đây là danh sách trang public hiển thị."""
-    return [d for d in doc_bang_muc1(duong_dan) if can_ghi_cong(d)]
+    """Các dòng §1 cần ghi công — đây là danh sách trang public hiển thị.
+
+    Mỗi dòng mang thêm khoá `dinh_danh` (xem `dinh_danh_muc`) để trang và test
+    so **cùng một chuỗi**.
+    """
+    ra = []
+    for d in doc_bang_muc1(duong_dan):
+        if can_ghi_cong(d):
+            ra.append({**d, "dinh_danh": dinh_danh_muc(d)})
+    return ra
