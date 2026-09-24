@@ -4,10 +4,10 @@ Nguồn thiết kế: `docs/architecture/workflow_v2_audit/23_24 §4.3`.
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, tuple_
 
 from platform_core.models import (NodeRunWaitpoint, Waitpoint,
                                   WaitpointSignal)
@@ -73,6 +73,40 @@ def chan_node(db, *, run_id: str, node_id: str, waitpoint_id: str,
     db.add(NodeRunWaitpoint(run_id=run_id, node_id=node_id,
                             waitpoint_id=waitpoint_id))
     db.flush()
+
+
+def het_han_den_han(db, *, moc: Optional[datetime] = None,
+                    con_tro: Optional[tuple] = None,
+                    gioi_han: int = 200) -> list[Waitpoint]:
+    """Điểm chờ ĐÃ QUÁ HẠN, một TRANG, đi bằng **keyset cursor**.
+
+    🔴 VÌ SAO KEYSET CHỨ KHÔNG `OFFSET`
+
+    `OFFSET k` vẫn bắt CSDL đi qua k hàng đầu rồi vứt đi, nên một bộ quét chạy
+    mỗi 5 giây trên một bảng lớn dần sẽ chậm dần **theo số hàng nó đã bỏ qua** —
+    đúng hình dạng `O(N²)` mà làn p3b vừa đo được ở `foreach`
+    (`docs/superpowers/reports/p3b-do-tai/report.md`: 127 000 hàng đọc cho
+    N=1000). Keyset đọc đúng `gioi_han` hàng cho mỗi trang, mãi mãi.
+
+    ⚠️ Con trỏ là **một CẶP** `(het_han_luc, id)`, không phải `het_han_luc` một
+       mình: hai điểm chờ hết hạn cùng một micro-giây là chuyện thường (một run
+       mở nhiều điểm chờ trong cùng transaction), và một con trỏ chỉ có thời
+       gian sẽ **bỏ sót** hàng thứ hai hoặc **lặp** hàng thứ nhất mãi mãi.
+
+    ⭐ `ix_waitpoint_het_han` là `(het_han_luc, id)` theo đúng thứ tự này —
+       thiếu cột thứ hai thì điều kiện cặp vẫn chạy nhưng phải sắp lại.
+    """
+    luc = moc or datetime.now(timezone.utc).replace(tzinfo=None)
+    dk = [Waitpoint.status == "PENDING",
+          Waitpoint.het_han_luc.is_not(None),
+          Waitpoint.het_han_luc <= luc]
+    if con_tro is not None:
+        dk.append(tuple_(Waitpoint.het_han_luc, Waitpoint.id)
+                  > tuple_(con_tro[0], con_tro[1]))
+    return list(db.execute(
+        select(Waitpoint).where(*dk)
+        .order_by(Waitpoint.het_han_luc, Waitpoint.id)
+        .limit(max(1, int(gioi_han)))).scalars())
 
 
 def node_dang_bi_chan(db, waitpoint_id: str) -> list[str]:

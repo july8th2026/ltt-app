@@ -565,6 +565,34 @@ def ttl(db_factory: Callable) -> int:
     return dem
 
 
+def _quet_het_han(db_factory: Callable) -> int:
+    """Lưới an toàn cho HẠN CHỜ — transaction RIÊNG, lỗi không kéo cả lượt.
+
+    ⭐ `mo_diem_cho` đã hẹn sẵn một wakeup ở `het_han_luc`, nên bộ quét này
+       gần như luôn tìm thấy **không gì cả**. Nó tồn tại cho đúng ca mà hàng
+       hẹn ấy **mất** (một lượt bị ngắt sau `claimed_at`, một lần dọn dẹp) —
+       khi đó điểm chờ nằm im với hạn ở quá khứ và run đứng tới `TRAN_RUN`
+       20 giờ **với tiền bị giữ**, không dòng nào nói vì sao.
+
+    ⛔ Cùng hình dạng cách ly lỗi với `ttl` (F3): một transaction riêng, cuộn
+       riêng, ghi log, đi tiếp. Bộ quét là lưới an toàn — một lưới an toàn làm
+       sập vòng động cơ thì tệ hơn là không có.
+    """
+    from platform_core.workflow import noi_lai
+
+    db = db_factory()
+    try:
+        dem = noi_lai.quet_het_han(db)
+        db.commit()
+        return dem
+    except Exception:                                    # noqa: BLE001
+        db.rollback()
+        log.exception("dong co: quet het han loi, bo qua luot nay")
+        return 0
+    finally:
+        db.close()
+
+
 def mot_vong(db_factory: Callable, *, gioi_han: int = 50) -> dict:
     db = db_factory()
     try:
@@ -576,6 +604,7 @@ def mot_vong(db_factory: Callable, *, gioi_han: int = 50) -> dict:
     finally:
         db.close()
     so = ttl(db_factory)
+    het_han = _quet_het_han(db_factory)
     da = 0
     loi = 0
     for rid in run_ids:
@@ -619,7 +648,7 @@ def mot_vong(db_factory: Callable, *, gioi_han: int = 50) -> dict:
     finally:
         db.close()
     return {"run_da_xu_ly": da, "timed_out": so, "loi": loi,
-            "con_viec": ke is not None, "han_ke_tiep": ke}
+            "het_han": het_han, "con_viec": ke is not None, "han_ke_tiep": ke}
 
 
 __all__ = ["TRAN_BUOC_INLINE", "TRAN_RUN", "mot_vong", "xu_ly_run",

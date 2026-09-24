@@ -114,10 +114,18 @@ def mo_diem_cho(db, run, node: dict, *, kind: str, due_at: Optional[datetime],
     db.flush()
     cho_doi.chan_node(db, run_id=run.id, node_id=nid, waitpoint_id=wp.id,
                       vong=vong)
-    if due_at is not None:
-        danh_thuc.hen_luy_dang(
-            db, run_id=run.id, kind=KIND_WAKEUP, due_at=due_at,
-            node_run_id=danh_thuc.duong_thi_hanh(nid, vong=vong))
+    duong = danh_thuc.duong_thi_hanh(nid, vong=vong)
+    # ⭐ HAI mốc, không một: `due_at` (khi nào việc chờ XONG) và `het_han_luc`
+    #    (khi nào ta THÔI chờ). Một `core.wait` không có `due_at` — nó chờ một
+    #    cú POST — nên nếu chỉ hẹn theo `due_at` thì hạn chờ của nó không bao
+    #    giờ được ai đánh thức, và run đứng tới TTL 20 giờ với tiền bị giữ.
+    #
+    # ⚠️ Với `core.delay` hai mốc thường TRÙNG nhau (`han_cho` kẹp `due_at`),
+    #    và `hen_luy_dang` nuốt đúng lần trùng đó — không phải một ca đặc biệt.
+    for moc in (due_at, wp.het_han_luc):
+        if moc is not None:
+            danh_thuc.hen_luy_dang(db, run_id=run.id, kind=KIND_WAKEUP,
+                                   due_at=moc, node_run_id=duong)
     return wp
 
 

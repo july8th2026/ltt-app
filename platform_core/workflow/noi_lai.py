@@ -124,6 +124,48 @@ def mo(db, wp: Waitpoint, *, status: str = "SUCCEEDED", seq: int = 1,
     return DA_MO
 
 
+def quet_het_han(db, *, moc: Optional[datetime] = None,
+                 gioi_han: int = 200, so_trang: int = 20) -> int:
+    """Lưới an toàn của HẠN CHỜ: đánh thức mọi run có điểm chờ đã quá hạn.
+
+    Trả số điểm chờ đã đánh thức.
+
+    ## Vì sao CÓ bộ quét này khi `mo_diem_cho` đã hẹn sẵn một wakeup ở `het_han_luc`
+
+    Cùng lý do `wakeup` là một BẢNG chứ không phải `NOTIFY` (`danh_thuc.py`):
+    hàng hẹn có thể **mất** — một lượt động cơ bị ngắt sau khi `claimed_at`
+    được đánh mà trước khi node được chuyển, một `DELETE` dọn dẹp, một migration
+    lỡ tay. Khi đó điểm chờ nằm im với `het_han_luc` ở quá khứ, run đứng tới
+    `TRAN_RUN` 20 giờ **với tiền bị giữ**, và không dòng nào nói vì sao.
+
+    ⛔ Bộ quét KHÔNG tự quyết định `che_do_het_han`. Nó chỉ **đánh thức**; việc
+       diễn giải hết hạn thành `fail`/`route`/`approve`/`reject` sống ở
+       `nut_loi/cho.tiep_mot`, chỗ duy nhất cầm cả node lẫn ngữ cảnh vòng lặp.
+       Hai nơi cùng quyết định là hai nơi để chúng trả lời khác nhau.
+
+    ⚠️ `so_trang` là trần **cứng** của một lượt quét: bộ quét chạy trong vòng
+       bảo trì, và một lượt không được chạy mãi. Phần còn lại là việc của lượt
+       sau — con trỏ keyset không nhớ gì giữa hai lượt, nó bắt đầu lại từ hàng
+       quá hạn lâu nhất, và đó đúng là thứ tự phục vụ ta muốn.
+    """
+    luc = moc or _bay_gio()
+    con_tro = None
+    dem = 0
+    for _ in range(max(1, int(so_trang))):
+        trang = cho_doi.het_han_den_han(db, moc=luc, con_tro=con_tro,
+                                        gioi_han=gioi_han)
+        if not trang:
+            break
+        for wp in trang:
+            danh_thuc_node_cua(db, wp, kind="het_han", due_at=luc)
+            dem += 1
+        cuoi = trang[-1]
+        con_tro = (cuoi.het_han_luc, cuoi.id)
+        if len(trang) < gioi_han:
+            break
+    return dem
+
+
 def mo_bang_token(db, waitpoint_id: str, *, token: str,
                   du_lieu: Optional[dict] = None) -> KetNoiLai:
     """Cửa CÔNG KHAI: resume bằng URL một-lần (`waitpoint.token_hash`).
@@ -158,4 +200,4 @@ def mo_bang_token(db, waitpoint_id: str, *, token: str,
 
 __all__ = ["DANG_CHO", "DA_DONG", "DA_MO", "DU_LIEU_SAI", "KHOA_NHANH",
            "KHONG_CO", "QUYET_DINH", "TOKEN_SAI", "KetNoiLai", "bam_token",
-           "danh_thuc_node_cua", "mo", "mo_bang_token"]
+           "danh_thuc_node_cua", "mo", "mo_bang_token", "quet_het_han"]
