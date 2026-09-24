@@ -60,7 +60,9 @@ def test_client_CO_goi_duong_cap_ve():
     assert "data-url" in js, "client tu ghep duong thay vi doc tu template"
     html = DUONG_HTML.read_bytes().decode("utf-8")
     assert 'name="upload_id"' in html, "form thieu o upload_id"
-    assert "/ve" in html, "template khong cung cap duong cap ve"
+    # asv-final L_TAI_LEN: `/ve` (mot PUT ca tep) thay bang `/tai-len` (nhieu
+    # phan, tiep tuc duoc). Xem `tests/test_2091_*`.
+    assert "/tai-len" in html, "template khong cung cap duong tai len"
 
 
 def test_form_van_co_o_upload_id_RONG_luc_dung_trang(moi_truong):
@@ -98,10 +100,13 @@ def test_client_TAT_o_chon_tep_truoc_khi_nop():
 
 
 def test_client_LUI_ve_multipart_khi_khong_co_ve():
-    """`{"mode":"local"}` la cau tra loi THAT cua `LocalStorage`, khong phai loi.
-    Client phai lui ve duong multipart, khong duoc dung lai va bao loi."""
+    """Duong nhieu phan hong (kho khong ho tro, thieu thu vien MD5) thi client
+    lui qua `taiThatBai` — khong dung lai im lang.
+
+    asv-final L_TAI_LEN: khong con `{"mode":"local"}` — kho cuc bo nay CUNG
+    chay duong nhieu phan (phan di qua route cua app)."""
     js = _js()
-    assert '"direct"' in js, "client khong phan biet duoc mode"
+    assert "khong-ho-tro" in js, "client khong tu chan khi thieu nang luc"
     assert "catch" in js, "khong co duong lui khi xin ve that bai"
 
 
@@ -128,15 +133,20 @@ def test_client_bao_TIEN_DO_bang_XHR_chu_khong_fetch():
 #  C. Hop dong cua ve — o TANG DICH VU
 # ══════════════════════════════════════════════════════════════════════════════
 
-def test_ve_tra_ve_local_khi_kho_khong_cap_duoc_presigned(moi_truong):
-    """Doi chung: tren `LocalStorage`, `/ve` tra `{"mode":"local"}` — mot cau
-    tra loi THAT, va client lui ve multipart."""
+def test_ve_MOT_PUT_ca_tep_da_bi_go(moi_truong):
+    """asv-final L_TAI_LEN: `/ve` cap MOT presigned PUT cho ca tep — dut o 73%
+    la gui lai tu 0%. Da thay bang `/tai-len` (nhieu phan). Doi chung: route
+    cu khong con, route moi chay tren chinh `LocalStorage`."""
     _app, a, csrf, _b, _cb = moi_truong
     r = a.post("/auto-scan-video/ve",
                data={"csrf_token": csrf, "ten_tep": "a.mp4",
                      "kieu": "video/mp4", "co": 1024})
+    assert r.status_code in (404, 405)
+    r = a.post("/auto-scan-video/tai-len",
+               data={"csrf_token": csrf, "ten_tep": "a.mp4",
+                     "kieu": "video/mp4", "co": 1024})
     assert r.status_code == 200, r.text[:200]
-    assert r.json().get("mode") == "local"
+    assert r.json()["so_phan"] == 1
 
 
 def test_tran_ben_vung_LON_HON_tran_multipart():

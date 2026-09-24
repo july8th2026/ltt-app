@@ -246,7 +246,7 @@ def test_doi_NGUONG_TACH_CANH_thi_van_tay_giai_doan_DOI(monkeypatch):
     from apps.auto_scan_video import thi_hanh
 
     a = thi_hanh.phien_ban_engine(pipeline.EDIT_PLAN)
-    monkeypatch.setattr(cn, "NGUONG_DOI_CANH", cn.NGUONG_DOI_CANH + 0.1)
+    monkeypatch.setattr(cn, "PHIEN_BAN_CANH", cn.PHIEN_BAN_CANH + "x")
     assert thi_hanh.phien_ban_engine(pipeline.EDIT_PLAN) != a
 
 

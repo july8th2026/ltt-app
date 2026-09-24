@@ -97,8 +97,14 @@ def rut_ban_day_du(nguon: str, dich: str, *, hoi_huy=None,
     return dich
 
 
+#: Timeout mac dinh cua MOT lan demucs. ⚠️ LON HON tran job `asv_gpu.audio_prepare`
+#: (3.600 s): nguoi goi trong job PHAI kep bang `lat_cat.han_tien_trinh_con`.
+TIMEOUT_TACH_S = 5400
+
+
 def tach_nguon(vao_wav: str, thu_muc_ra: str, *, gpu_env: dict | None = None,
-               buoc_gpu: bool = False, hoi_huy=None, timeout: int = 5400) -> dict:
+               buoc_gpu: bool = False, hoi_huy=None,
+               timeout: int = TIMEOUT_TACH_S) -> dict:
     """Chay demucs trong TIEN TRINH CON. Tra ve bang duong dan cac stem.
 
     🔑 `gpu_env` phai la ket qua cua `JobContext.gpu_env()` — card do **nen tang**

@@ -16,21 +16,9 @@
 #:    o day va o `APP_DUOC_DUNG_APP` trong `tools/lint_app_contract.py`.
 BE_MAT_CONG_KHAI = {
     ("apps.autosubvideo.transcription", "transcribe_file"),
-    # ── Phan vai nguoi noi (pha 07 cua Auto Scan V4) ────────────────────────
-    #
-    # ⭐ THEM, khong sua: ca hai ham da ton tai va da chay: `autosubvideo` tu
-    #    dung chung o `jobs.py`. Viec duy nhat o day la KHAI chung ra — truoc
-    #    day chung la duong RIENG, nen mot app khac dung chung la voi qua rao.
-    #
-    # 🔑 Vi sao Auto Scan can: `hop_dong_v4.CHE_DO_GIONG_TU_KHOP` (AUTO_MATCH)
-    #    phai doc dac diem giong THAT tu video de chon giong khop. Khong co
-    #    bang chung nguoi noi thi "tu khop" chi con la "lay giong mac dinh" —
-    #    dung dieu `ADR-V4-001` D-V4-04 cam.
-    #
-    # ⛔ Va no la NANG LUC CO DIEU KIEN: `USER_SELECTED` khong can no, nen
-    #    khong duoc chay mac dinh. Xem `giai_doan_chep_loi.can_phan_vai`.
-    ("apps.autosubvideo.ai_workflows", "diarize_file"),
-    ("apps.autosubvideo.ai_workflows", "assign_speakers"),
+    # ⛔ `diarize_file`/`assign_speakers` DA RUT khoi be mat (22/09, asv-final):
+    #    Auto Scan la MOT giong thuyet minh, khong ai doc nhan nguoi noi. Hai
+    #    ham van song o `jobs.py` cua chinh app nay.
     # ── Tang TAC GIA phu de (pha 14 cua Auto Scan V6) ───────────────────────
     #
     # 🔑 **App nay so huu HAI viec, va chi mot trong hai duoc khai o day.**
@@ -67,4 +55,12 @@ BE_MAT_CONG_KHAI = {
     #    Scan la tao mot ban sao se lech, va lech im lang: hai ban deu "hop
     #    le" theo luat cua chinh minh.
     ("apps.autosubvideo.schemas", "SubtitleStyleConfig"),
+    # ── Phu de nguon tieng Trung (asv-final, lan phu-de, 22/09) ─────────────
+    #
+    # ⭐ MO RONG nang luc cua app nay thay vi chep sang Auto Scan: ngat dong
+    #    chu Han (`_wrap_text` chi ngat theo dau cach, nen mot cau tieng Trung
+    #    ra MOT dong dai vo han) va hoi mot font co VE duoc cac ky tu khong
+    #    (`is_font_available` chi tra loi "co font ten do khong").
+    ("apps.autosubvideo.segmenter", "wrap_lines"),
+    ("apps.autosubvideo.font_checker", "missing_glyphs"),
 }

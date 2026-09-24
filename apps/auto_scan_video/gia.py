@@ -129,10 +129,17 @@ def preset_mac_dinh() -> str:
 #  Hai cach chon giong
 # ══════════════════════════════════════════════════════════════════════════════
 #
-# ⚠️ `AUTO_MATCH` duoc bay ra nhung **noi that rang no chua san sang**: pha 19 ghi
-#    lai rang khong giai doan nao sinh `HoSoNoiDung`, nen tu khop se hoan lai chu
-#    khong chon bua mot giong. Bay mot lua chon khong chay duoc ma khong noi gi la
-#    dung thu `V4_MVP_PRODUCT_CONTRACT` goi la "false feature".
+# ⭐ **23/09/2026 — `AUTO_MATCH` chay that, nen cau mo ta doi theo.**
+#
+#    Cau cu la *"tinh nang nay dang duoc hoan thien — hien tai hay tu chon
+#    giong"*, va no dung luc viet: pha 19 ghi lai rang khong giai doan nao sinh
+#    `HoSoNoiDung`, nen tu khop chi biet hoan lai roi chet o `content_process`.
+#    `ho_so_noi_dung.py` dong lo hong do (F0 cua giong goc + ban chep loi), nen
+#    giu cau cu lai la noi doi theo chieu nguoc lai.
+#
+# ⚠️ Cau moi van **khong hua** la luon chon duoc: khong du can cu thi lan chay
+#    dung lai voi `rang_giong.vi_sao_chua_rang`, va khach phai tu chon. Mot cau
+#    hua chac chan o day se bien mot trang thai hop le thanh mot loi hua bi be.
 def _giong_bang():
     from .hop_dong_v4 import CHE_DO_GIONG_TU_CHON, CHE_DO_GIONG_TU_KHOP
 
@@ -140,8 +147,8 @@ def _giong_bang():
         (CHE_DO_GIONG_TU_CHON, N_('Tôi tự chọn giọng'),
          N_('Bạn chọn một giọng trong danh sách bên dưới.')),
         (CHE_DO_GIONG_TU_KHOP, N_('Để hệ thống gợi ý giọng'),
-         N_('Hệ thống chọn giọng hợp với nội dung. Tính năng này đang được hoàn '
-            'thiện — hiện tại hãy tự chọn giọng.')),
+         N_('Hệ thống nghe giọng người nói trong video và đọc lời thoại để chọn '
+            'giọng hợp nhất. Nếu không đủ căn cứ, hệ thống sẽ báo để bạn tự chọn.')),
     )
 
 
@@ -323,6 +330,18 @@ def giong_cho_giao_dien(db, owner_id: str) -> list[dict]:
                 "gioi": str(getattr(g, "gioi", "") or ""),
                 "vung": str(getattr(g, "vung", "") or ""),
                 "phong_cach": str(getattr(g, "phong_cach", "") or ""),
+                # 🔑 LAN cua giong mau. `rang_giong._rang_khach_chon` tu choi o
+                #    CUA mot giong lech lan voi `ngon_ngu_dich`, nen giao dien
+                #    phai loc truoc — nguoc lai khach doi dich sang `en`, thay
+                #    nguyen 20 giong `vi`, bam Gui va an mot cau tu choi.
+                #
+                # ⚠️ Giong NHAN BAN cua khach khong co truong nay, va do la co
+                #    y: lan cua chung do `ltt_voice` chot luc goi
+                #    (`giong_noi.giai_giong(..., ngon_ngu=)`), khong phai mot
+                #    nhan doc san. Chung tra ve `""` va giao dien KHONG an
+                #    chung — an mot giong rieng di la dieu khach khong doi va
+                #    khong co cach nao doan la vi sao.
+                "ngon_ngu": str(getattr(g, "ngon_ngu", "") or ""),
             }
     except Exception as exc:      # noqa: BLE001
         log.warning("khong nap duoc thuoc tinh giong mau (%s: %s)",
@@ -353,7 +372,8 @@ def giong_cho_giao_dien(db, owner_id: str) -> list[dict]:
         tt = thuoc_tinh.get(ma) or {}
         muc = {"ma": ma, "ten": muc_goc["ten"], "la_mau": ma in thuoc_tinh,
                "gioi": tt.get("gioi", ""), "vung": tt.get("vung", ""),
-               "phong_cach": tt.get("phong_cach", "")}
+               "phong_cach": tt.get("phong_cach", ""),
+               "ngon_ngu": tt.get("ngon_ngu", "")}
         if ma in duong:
             muc["duong_nghe"] = duong[ma]
         ra.append(muc)

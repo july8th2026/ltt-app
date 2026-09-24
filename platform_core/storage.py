@@ -160,6 +160,69 @@ class Storage:
             _log_storage_failure("Không tạo được vé upload trực tiếp", key, exc)
             return None
 
+    # ── Tải lên NHIỀU PHẦN (tiếp tục được sau khi đứt) ─────────────────────
+    #
+    # 🔴 Vì sao nền tảng cần thêm API này: `put_url` là MỘT lệnh PUT cho cả tệp.
+    #    Tệp 2 GB đứt ở 73% thì phải gửi lại từ 0%. Hợp đồng S3 multipart (R2 hỗ
+    #    trợ đủ Create/UploadPart/ListParts/Complete/Abort) cho phép gửi từng
+    #    phần và HỎI LẠI kho phần nào đã có — tức tiếp tục từ 73%.
+    #
+    # ⭐ Mọi hàm định danh bằng `key`, KHÔNG bằng một mã upload riêng: backend tự
+    #    giữ/tìm mã của nó (R2: ListMultipartUploads theo tiền tố). Vì thế bên
+    #    gọi không phải lưu thêm cột nào, và bộ dọn chỉ cần `key` để huỷ.
+    #
+    # ⭐ Toàn vẹn từng phần bằng MD5 (base64, đúng định dạng `Content-MD5`):
+    #    R2 tự kiểm khi header được ký vào presigned URL; LocalStorage tự tính.
+    #
+    # Mặc định: backend không hỗ trợ → `multipart_supported()` False.
+    def multipart_supported(self) -> bool:
+        return False
+
+    def multipart_create(self, key: str,
+                         content_type: str = "application/octet-stream") -> None:
+        """Mở (hoặc tái dùng, nếu đã mở) một lượt tải nhiều phần cho `key`."""
+        raise StorageError(_t('Kho không hỗ trợ tải lên nhiều phần.'))
+
+    def multipart_part_url(self, key: str, part_number: int, md5_b64: str,
+                           ttl_s: int = DEFAULT_TTL_S) -> Optional[UploadTarget]:
+        """Vé PUT TRỰC TIẾP một phần. None → bên gọi nhận phần qua route và
+        gọi `multipart_put_part` (backend cục bộ)."""
+        return None
+
+    def multipart_put_part(self, key: str, part_number: int, stream: BinaryIO,
+                           md5_b64: str, max_bytes: int) -> int:
+        """Ghi một phần qua máy chủ. Kiểm MD5; sai → StorageError. Trả số byte."""
+        raise StorageError(_t('Kho không hỗ trợ tải lên nhiều phần.'))
+
+    def multipart_list_parts(self, key: str) -> list:
+        """Các phần kho ĐÃ nhận: list[MultipartPart] theo số thứ tự tăng dần.
+        Lượt tải không tồn tại → StorageError."""
+        raise StorageError(_t('Kho không hỗ trợ tải lên nhiều phần.'))
+
+    def multipart_complete(self, key: str, part_count: int) -> "StoredFile":
+        """Ghép phần 1..part_count thành object `key`. Thiếu phần → StorageError."""
+        raise StorageError(_t('Kho không hỗ trợ tải lên nhiều phần.'))
+
+    def multipart_abort(self, key: str) -> bool:
+        """Huỷ lượt tải dở của `key` và bỏ mọi phần. Không có gì để huỷ → False."""
+        return False
+
+
+@dataclass(frozen=True)
+class MultipartPart:
+    part_number: int
+    size: int
+    etag: str = ""
+
+
+def _md5_b64_hop_le(md5_b64: str) -> bool:
+    import base64
+    import binascii
+    try:
+        return len(base64.b64decode(str(md5_b64 or ""), validate=True)) == 16
+    except (binascii.Error, ValueError):
+        return False
+
 
 def _log_storage_failure(message: str, key: str, exc: Exception) -> None:
     """Ghi lỗi storage có type/callsite nhưng không phát tán payload bí mật.
@@ -293,6 +356,108 @@ class LocalStorage(Storage):
         for t in [t for t, (_k, exp) in self._tokens.items() if exp < now]:
             self._tokens.pop(t, None)
 
+    # ── Nhiều phần: CÙNG ngữ nghĩa với R2 để dev/test đi đúng đường production ──
+    #
+    # Bố cục: `<root>/.multipart/<sha256(key)[:32]>/NNNNN.part` + `NNNNN.md5`.
+    # `.multipart` không bao giờ là một khoá hợp lệ trả ra ngoài (khoá chỉ đi
+    # qua `_safe_key`, và thư mục này được định danh bằng băm, không bằng khoá).
+    def _mp_dir(self, key: str) -> pathlib.Path:
+        import hashlib
+        h = hashlib.sha256(_safe_key(key).encode("utf-8")).hexdigest()[:32]
+        return self.root / ".multipart" / h
+
+    def multipart_supported(self) -> bool:
+        return True
+
+    def multipart_create(self, key: str,
+                         content_type: str = "application/octet-stream") -> None:
+        self._mp_dir(key).mkdir(parents=True, exist_ok=True)
+
+    def multipart_put_part(self, key: str, part_number: int, stream: BinaryIO,
+                           md5_b64: str, max_bytes: int) -> int:
+        import base64
+        import hashlib
+        d = self._mp_dir(key)
+        if not d.is_dir():
+            raise StorageError(_t('Lượt tải lên nhiều phần không tồn tại.'))
+        n = int(part_number)
+        if not 1 <= n <= 10000:
+            raise StorageError(_t('Số thứ tự phần không hợp lệ.'))
+        if not _md5_b64_hop_le(md5_b64):
+            raise StorageError(_t('Thiếu hoặc sai mã kiểm MD5 của phần.'))
+        tmp = d / f"{n:05d}.tmp{os.getpid()}"
+        h = hashlib.md5()  # noqa: S324 - kiểm toàn vẹn, không phải bảo mật
+        co = 0
+        try:
+            with open(tmp, "wb") as fh:
+                while True:
+                    buf = stream.read(1024 * 1024)
+                    if not buf:
+                        break
+                    co += len(buf)
+                    if co > int(max_bytes):
+                        raise StorageError(_t('Phần lớn hơn kích thước cho phép.'))
+                    h.update(buf)
+                    fh.write(buf)
+            if base64.b64encode(h.digest()).decode("ascii") != md5_b64:
+                raise StorageError(_t('Mã kiểm MD5 của phần không khớp nội dung.'))
+            (d / f"{n:05d}.md5").write_text(h.hexdigest(), encoding="ascii")
+            os.replace(tmp, d / f"{n:05d}.part")
+        finally:
+            if tmp.exists():
+                try:
+                    tmp.unlink()
+                except OSError:
+                    pass
+        return co
+
+    def multipart_list_parts(self, key: str) -> list:
+        d = self._mp_dir(key)
+        if not d.is_dir():
+            raise StorageError(_t('Lượt tải lên nhiều phần không tồn tại.'))
+        ra = []
+        for p in sorted(d.glob("*.part")):
+            try:
+                n = int(p.stem)
+            except ValueError:
+                continue
+            m = d / f"{n:05d}.md5"
+            ra.append(MultipartPart(
+                part_number=n, size=p.stat().st_size,
+                etag=m.read_text(encoding="ascii") if m.exists() else ""))
+        return ra
+
+    def multipart_complete(self, key: str, part_count: int) -> StoredFile:
+        d = self._mp_dir(key)
+        co_so = {p.part_number for p in self.multipart_list_parts(key)}
+        thieu = [n for n in range(1, int(part_count) + 1) if n not in co_so]
+        if thieu or int(part_count) < 1:
+            raise StorageError(_t('Còn thiếu phần, chưa ghép được tệp.'))
+        path = self._path(key)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_suffix(path.suffix + f".ghep{os.getpid()}")
+        try:
+            with open(tmp, "wb") as out:
+                for n in range(1, int(part_count) + 1):
+                    with open(d / f"{n:05d}.part", "rb") as src:
+                        shutil.copyfileobj(src, out, length=1024 * 1024)
+            os.replace(tmp, path)
+        finally:
+            if tmp.exists():
+                try:
+                    tmp.unlink()
+                except OSError:
+                    pass
+        shutil.rmtree(d, ignore_errors=True)
+        return StoredFile(key=_safe_key(key), size=path.stat().st_size)
+
+    def multipart_abort(self, key: str) -> bool:
+        d = self._mp_dir(key)
+        if not d.is_dir():
+            return False
+        shutil.rmtree(d, ignore_errors=True)
+        return True
+
 
 _storage: Optional[Storage] = None
 
@@ -384,6 +549,118 @@ class R2Storage(Storage):
     def resolve_token(self, token: str) -> Optional[str]:
         return None
 
+    # ── Nhiều phần (S3 multipart). R2: đủ 6 lệnh, phần ≥ 5 MiB trừ phần cuối,
+    #    mọi phần trừ phần cuối CÙNG cỡ, tối đa 10.000 phần; lượt dở tự huỷ sau
+    #    7 ngày theo mặc định của R2 (developers.cloudflare.com/r2/objects/
+    #    multipart-objects). ETag KHÔNG cần trình duyệt đọc: `complete` lấy từ
+    #    ListParts, nên CORS không phải `ExposeHeaders: ETag`.
+    def _mp_id(self, key: str) -> Optional[str]:
+        # KHONG cache: bo don (tien trinh worker) co the huy luot nay bat cu
+        # luc nao; mot UploadId cu trong RAM tien trinh web la mot 500 cho khach.
+        k = _safe_key(key)
+        r = self._c().list_multipart_uploads(Bucket=self.bucket, Prefix=k)
+        ds = [u for u in r.get("Uploads", []) if u.get("Key") == k]
+        if not ds:
+            return None
+        ds.sort(key=lambda u: str(u.get("Initiated") or ""))
+        return ds[-1]["UploadId"]
+
+    def _mp_id_bat_buoc(self, key: str) -> str:
+        uid = self._mp_id(key)
+        if not uid:
+            raise StorageError(_t('Lượt tải lên nhiều phần không tồn tại.'))
+        return uid
+
+    def multipart_supported(self) -> bool:
+        return True
+
+    def multipart_create(self, key: str,
+                         content_type: str = "application/octet-stream") -> None:
+        if self._mp_id(key):
+            return
+        k = _safe_key(key)
+        self._c().create_multipart_upload(Bucket=self.bucket, Key=k,
+                                          ContentType=content_type)
+
+    def multipart_part_url(self, key: str, part_number: int, md5_b64: str,
+                           ttl_s: int = DEFAULT_TTL_S) -> Optional[UploadTarget]:
+        # ContentMD5 trong Params -> `content-md5` nằm trong X-Amz-SignedHeaders:
+        # trình duyệt BẮT BUỘC gửi đúng header đó, và R2 từ chối (BadDigest)
+        # một thân không khớp. Đây là phép kiểm toàn vẹn phần ở production.
+        if not _md5_b64_hop_le(md5_b64):
+            raise StorageError(_t('Thiếu hoặc sai mã kiểm MD5 của phần.'))
+        k = _safe_key(key)
+        url = self._c().generate_presigned_url(
+            "upload_part",
+            Params={"Bucket": self.bucket, "Key": k,
+                    "UploadId": self._mp_id_bat_buoc(key),
+                    "PartNumber": int(part_number), "ContentMD5": md5_b64},
+            ExpiresIn=int(ttl_s))
+        return UploadTarget(url=url, key=k, method="PUT",
+                            headers={"Content-MD5": md5_b64})
+
+    def multipart_put_part(self, key: str, part_number: int, stream: BinaryIO,
+                           md5_b64: str, max_bytes: int) -> int:
+        if not _md5_b64_hop_le(md5_b64):
+            raise StorageError(_t('Thiếu hoặc sai mã kiểm MD5 của phần.'))
+        body = stream.read(int(max_bytes) + 1)
+        if len(body) > int(max_bytes):
+            raise StorageError(_t('Phần lớn hơn kích thước cho phép.'))
+        # Tự kiểm TRƯỚC khi gửi: không phụ thuộc kho có kiểm `Content-MD5`
+        # hay không (moto không kiểm; R2 ghi là có).
+        import base64
+        import hashlib
+        if base64.b64encode(hashlib.md5(body).digest()).decode("ascii") != md5_b64:  # noqa: S324
+            raise StorageError(_t('Mã kiểm MD5 của phần không khớp nội dung.'))
+        from botocore.exceptions import ClientError
+        try:
+            self._c().upload_part(Bucket=self.bucket, Key=_safe_key(key),
+                                  UploadId=self._mp_id_bat_buoc(key),
+                                  PartNumber=int(part_number), Body=body,
+                                  ContentMD5=md5_b64)
+        except ClientError as e:
+            raise StorageError(_t('Kho từ chối phần tải lên.')) from e
+        return len(body)
+
+    def multipart_list_parts(self, key: str) -> list:
+        k = _safe_key(key)
+        uid = self._mp_id_bat_buoc(key)
+        from botocore.exceptions import ClientError
+        ra = []
+        pag = self._c().get_paginator("list_parts")
+        try:
+            for trang in pag.paginate(Bucket=self.bucket, Key=k, UploadId=uid):
+                for p in trang.get("Parts", []):
+                    ra.append(MultipartPart(part_number=int(p["PartNumber"]),
+                                            size=int(p["Size"]),
+                                            etag=str(p.get("ETag") or "")))
+        except ClientError as e:            # NoSuchUpload: vua bi huy/het han
+            raise StorageError(_t('Lượt tải lên nhiều phần không tồn tại.')) from e
+        ra.sort(key=lambda p: p.part_number)
+        return ra
+
+    def multipart_complete(self, key: str, part_count: int) -> StoredFile:
+        k = _safe_key(key)
+        uid = self._mp_id_bat_buoc(key)
+        theo_so = {p.part_number: p for p in self.multipart_list_parts(key)}
+        if int(part_count) < 1 or any(n not in theo_so
+                                      for n in range(1, int(part_count) + 1)):
+            raise StorageError(_t('Còn thiếu phần, chưa ghép được tệp.'))
+        self._c().complete_multipart_upload(
+            Bucket=self.bucket, Key=k, UploadId=uid,
+            MultipartUpload={"Parts": [
+                {"PartNumber": n, "ETag": theo_so[n].etag}
+                for n in range(1, int(part_count) + 1)]})
+        return StoredFile(key=k, size=self.size(k))
+
+    def multipart_abort(self, key: str) -> bool:
+        uid = self._mp_id(key)
+        if not uid:
+            return False
+        k = _safe_key(key)
+        self._c().abort_multipart_upload(Bucket=self.bucket, Key=k, UploadId=uid)
+        return True
+
 
 class RoutedStorage(Storage):
     """Định tuyến theo TIỀN TỐ khoá: vài tiền tố ở đĩa máy chủ, còn lại ở backend chính.
@@ -456,6 +733,33 @@ class RoutedStorage(Storage):
 
     def local_path(self, key: str) -> Optional[str]:
         return self._chon(key).local_path(key)
+
+    # Nhieu phan: cung mot khoa luon ve cung mot backend, nen uy quyen thang.
+    def multipart_supported(self) -> bool:
+        return self.chinh.multipart_supported() and self.cuc_bo.multipart_supported()
+
+    def multipart_create(self, key: str,
+                         content_type: str = "application/octet-stream") -> None:
+        self._chon(key).multipart_create(key, content_type=content_type)
+
+    def multipart_part_url(self, key: str, part_number: int, md5_b64: str,
+                           ttl_s: int = DEFAULT_TTL_S) -> Optional[UploadTarget]:
+        return self._chon(key).multipart_part_url(key, part_number, md5_b64,
+                                                  ttl_s=ttl_s)
+
+    def multipart_put_part(self, key: str, part_number: int, stream: BinaryIO,
+                           md5_b64: str, max_bytes: int) -> int:
+        return self._chon(key).multipart_put_part(key, part_number, stream,
+                                                  md5_b64, max_bytes)
+
+    def multipart_list_parts(self, key: str) -> list:
+        return self._chon(key).multipart_list_parts(key)
+
+    def multipart_complete(self, key: str, part_count: int) -> StoredFile:
+        return self._chon(key).multipart_complete(key, part_count)
+
+    def multipart_abort(self, key: str) -> bool:
+        return self._chon(key).multipart_abort(key)
 
 
 def tien_to_cuc_bo_tu_env() -> tuple:

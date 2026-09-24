@@ -4468,6 +4468,30 @@ msgstr "Notes"
 msgid "Ghi chú nghiên cứu"
 msgstr "Research notes"
 
+#: server/routes/dashboard.py server/templates/_platform_footer.html server/templates/ghi_cong_ben_thu_ba.html
+msgid "Ghi công bên thứ ba"
+msgstr "Third-party attribution"
+
+#: server/templates/ghi_cong_ben_thu_ba.html
+msgid "Một số phần mềm/model mã nguồn mở nền tảng dùng để vận hành yêu cầu ghi công tác giả theo giấy phép của chúng. Bảng dưới đây liệt kê những phụ thuộc đó — sinh trực tiếp từ bản khai giấy phép nội bộ, không gõ tay, để không lệch với thực tế đang chạy."
+msgstr "Some open-source software/models the platform runs on require attribution under their licenses. The table below lists those dependencies — generated directly from the internal licensing record, not hand-copied, so it cannot drift from what is actually running."
+
+#: server/templates/ghi_cong_ben_thu_ba.html
+msgid "Dùng để"
+msgstr "Used for"
+
+#: server/templates/ghi_cong_ben_thu_ba.html
+msgid "Phần mềm / model"
+msgstr "Software / model"
+
+#: server/templates/ghi_cong_ben_thu_ba.html
+msgid "Giấy phép"
+msgstr "License"
+
+#: server/templates/ghi_cong_ben_thu_ba.html
+msgid "Không có mục nào cần ghi công vào lúc này."
+msgstr "There is nothing requiring attribution right now."
+
 msgid "Ghi danh giọng"
 msgstr "Voice enrolment"
 
@@ -5305,6 +5329,13 @@ msgid "Hạ tầng từ chối lệnh này. Đội vận hành đã nhận đư�
 msgstr ""
 "The infrastructure refused this command. Our operations team has the logs; try again in a few "
 "minutes."
+
+msgid "Hạn đỉnh bản phối quá hạn."
+msgstr "Limiting the audio master peak timed out."
+
+#, python-brace-format
+msgid "Hạn đỉnh bản phối thất bại: {loi}"
+msgstr "Limiting the audio master peak failed: {loi}"
 
 #: platform_core/public_api/policy.py:381
 #, python-brace-format
@@ -6530,6 +6561,10 @@ msgstr "Not enough credits."
 #, fuzzy
 msgid "Không đặt"
 msgstr "Not enough credits."
+
+#: apps/auto_scan_video/giai_doan_ban_bien_tap.py:190
+msgid "Không đọc được hình của {thieu}/{tong} cảnh nên chưa thể cắt thông minh. Hãy chạy lại, hoặc chọn chế độ giữ nguyên hình."
+msgstr "Could not read the frames for {thieu}/{tong} scenes, so smart cutting is not possible. Please retry, or choose the keep-original-picture mode."
 
 #: apps/upscalevideo/jobs.py:256
 msgid "Không đọc được luồng video."
@@ -7926,6 +7961,13 @@ msgstr "Secondary colour"
 #, fuzzy
 msgid "Màu thương hiệu"
 msgstr "Brand name"
+
+msgid "Mã hoá thử bản giao quá hạn."
+msgstr "The delivery test encode timed out."
+
+#, python-brace-format
+msgid "Mã hoá thử bản giao thất bại: {loi}"
+msgstr "The delivery test encode failed: {loi}"
 
 #: server/templates/nexus_trang_chinh.html:25
 msgid "Máy"
@@ -10802,6 +10844,18 @@ msgstr "The source video has not been uploaded, or does not belong to this user.
 #: apps/autosubvideo/jobs.py:191
 msgid "Source video không thuộc project owner."
 msgstr "The source video does not belong to the project owner."
+
+msgid "Chưa có bản kê đoạn tiếng để đo."
+msgstr "There is no voice segment list to measure yet."
+
+msgid "Đang đo chất lượng"
+msgstr "Measuring quality"
+
+msgid "Đang đo giọng đọc"
+msgstr "Measuring the dubbed voice"
+
+msgid "Nghe lại giọng đọc"
+msgstr "Checking the dubbed voice"
 
 msgid "Soát lại nghĩa bản dịch"
 msgstr "Reviewing the translation"
@@ -20263,6 +20317,283 @@ msgstr "If you get rejected for going over the context limit mid-conversation"
 msgid "Vượt trần thì bạn nhận mã 400 (context_window_exceeded) kèm đúng con số đã áp cho model bạn gọi — cửa Responses dạng stream báo bằng sự kiện response.failed thay vì đóng kết nối lặng lẽ. Chúng tôi KHÔNG bao giờ lặng lẽ cắt bớt lượt cũ: cắt đi thì thứ mất đầu tiên là chỉ dẫn hệ thống và kết quả tool, và bạn sẽ không biết là mình đã mất."
 msgstr "Go over the limit and you get a 400 (context_window_exceeded) carrying the number that actually applied to the model you called — a streaming Responses call instead reports it with a response.failed event instead of closing silently. We NEVER silently drop older turns: the first things to go would be your system instructions and your tool results, and you would have no way to know they were gone."
 
+msgid "Ngôn ngữ đích chỉ được là tiếng Việt hoặc tiếng Anh."
+msgstr "The target language can only be Vietnamese or English."
+
+msgid "Ngôn ngữ nguồn chỉ được là tiếng Trung, tiếng Anh hoặc tiếng Việt."
+msgstr "The source language can only be Chinese, English or Vietnamese."
+
+msgid "Ngôn ngữ nguồn và đích trùng nhau — không có gì để dịch."
+msgstr "The source and target languages are the same — there is nothing to translate."
+
+msgid "Video này nói {ma} — Auto Scan chỉ nhận tiếng Trung, tiếng Anh hoặc tiếng Việt."
+msgstr "This video is spoken in {ma} — Auto Scan only accepts Chinese, English or Vietnamese."
+
+msgid "Video đã nói đúng ngôn ngữ đích — hãy chọn ngôn ngữ đích khác."
+msgstr "The video is already in the target language — choose a different target language."
+
+msgid "Giọng này đọc {lan}, không đọc được bản {dich}."
+msgstr "This voice reads {lan}; it cannot read a {dich} script."
+
+msgid "Cài đặt có trường lạ: {ds}."
+msgstr "Settings contain unknown fields: {ds}."
+
+msgid "Từ điển tên riêng không đọc được."
+msgstr "The proper-name dictionary could not be read."
+
+msgid "Tệp nguồn của lần chạy cũ không còn."
+msgstr "The source file of the earlier run is no longer available."
+
+msgid "Auto Scan Video chưa mở."
+msgstr "Auto Scan Video is not open yet."
+
+msgid "Thiếu người dùng đang thực hiện."
+msgstr "Missing the acting user."
+
+msgid "Cần đúng một nguồn: upload_id hoặc nguon_run_id."
+msgstr "Exactly one source is required: upload_id or nguon_run_id."
+
+msgid "Tự động — bản dịch, tránh phụ đề gốc"
+msgstr "Auto — translation, avoids the original subtitles"
+
+msgid "Khắc bản dịch (đúng lời thuyết minh) và tự đặt đè lên dải phụ đề gốc bạn đã đánh dấu."
+msgstr "Burns the translation (the narrated words) and places it over the original-subtitle band you marked."
+
+msgid "Lời gốc"
+msgstr "Original words"
+
+msgid "Khắc lời gốc của video, kiểu chữ chuẩn."
+msgstr "Burns the video's original words in the standard style."
+
+msgid "Bản dịch"
+msgstr "Translation"
+
+msgid "Khắc bản dịch, kiểu chữ chuẩn."
+msgstr "Burns the translation in the standard style."
+
+msgid "Bạn chọn kiểu chữ, tinh chỉnh, và chọn lời gốc hay bản dịch."
+msgstr "You pick and fine-tune the style, and choose original words or translation."
+
+msgid "Chế độ này đã cố định nguồn chữ; chỉ “tự chọn kiểu” mới chọn được lời gốc hay bản dịch."
+msgstr "This mode fixes the text source; only “pick a style” can choose original words or translation."
+
+msgid "Nguồn chữ phụ đề không hợp lệ."
+msgstr "Invalid subtitle text source."
+
+msgid "Nguồn chữ"
+msgstr "Text source"
+
+msgid "Video nguồn thường đã có phụ đề cứng ở dải dưới. Hãy đánh dấu vùng phụ đề gốc ở mục vùng che: dải đó sẽ được làm mờ và phụ đề mới đặt đè lên, không chồng hai lớp chữ."
+msgstr "Source videos often already carry hard subtitles in the bottom band. Mark the original-subtitle region under masked regions: that band is blurred and the new subtitle is placed over it, so two layers of text never overlap."
+
+msgid "Xem trước phụ đề"
+msgstr "Subtitle preview"
+
+msgid "Xem trước phụ đề trên khung hình này"
+msgstr "Preview subtitles on this frame"
+
+msgid "Ảnh khung hình xem trước không đọc được."
+msgstr "The preview frame image could not be read."
+
+msgid "Ảnh khung hình xem trước rỗng hoặc quá lớn."
+msgstr "The preview frame image is empty or too large."
+
+msgid "Dựng khung xem trước quá hạn."
+msgstr "Building the preview frame timed out."
+
+msgid "Không dựng được khung xem trước."
+msgstr "Could not build the preview frame."
+
+# asv-final bien-tap 22/09
+msgid "Cắt bớt mép khung hình (%)"
+msgstr "Trim frame edges (%)"
+
+msgid "Cắt khung, phóng to, đổi tỉ lệ và đổi tốc độ chỉ dùng được với kiểu xử lý có biên tập lại hình."
+msgstr "Cropping, zooming, changing the aspect ratio and changing the speed only work with a mode that re-edits the picture."
+
+msgid "Cách đổi tỉ lệ khung hình không hợp lệ."
+msgstr "Invalid aspect-ratio method."
+
+msgid "Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên không thể cắt khung, phóng to, đổi tỉ lệ hay đổi tốc độ. Chọn “Rút gọn có biên tập” nếu bạn muốn biên tập khung hình."
+msgstr "“Keep the picture” copies every pixel unchanged, so it cannot crop, zoom, change the aspect ratio or change the speed. Choose “Shorten with editing” if you want to edit the frame."
+
+msgid "Chưa biết kích thước khung hình nguồn nên không biên tập khung được."
+msgstr "The source frame size is unknown, so the frame cannot be edited."
+
+msgid "Khung cắt quá nhỏ — mỗi cạnh ít nhất {p}% khung hình."
+msgstr "Crop window too small — each side must be at least {p}% of the frame."
+
+msgid "Tâm khung hình phải nằm trong khung (0–100%)."
+msgstr "The frame focus must be inside the frame (0–100%)."
+
+msgid "Biên tập khung hình không đọc được."
+msgstr "Frame edit settings could not be read."
+
+msgid "cắt mép"
+msgstr "edge trim"
+
+msgid "Tâm dọc (%)"
+msgstr "Vertical focus (%)"
+
+msgid "Để mặc định thì giữ nguyên khung hình và tốc độ."
+msgstr "Leave the defaults to keep the original frame and speed."
+
+msgid "Giữ nguyên"
+msgstr "Keep original"
+
+msgid "Cắt quanh tâm"
+msgstr "Crop around focus"
+
+msgid "Mức phóng to phải từ 1× đến {n}×."
+msgstr "Zoom must be between 1× and {n}×."
+
+msgid "Dưới"
+msgstr "Bottom"
+
+msgid "Giá trị biên tập không hợp lệ: {ten}."
+msgstr "Invalid edit value: {ten}."
+
+msgid "Khung hình và tốc độ"
+msgstr "Frame and speed"
+
+msgid "Tốc độ phải từ 1× đến {n}× — video ra không được dài hơn video vào."
+msgstr "Speed must be between 1× and {n}× — the output may not be longer than the input."
+
+msgid "Phóng to (×)"
+msgstr "Zoom (×)"
+
+msgid "Biên tập khung hình có trường lạ: {ds}."
+msgstr "Frame edit settings have unknown fields: {ds}."
+
+msgid "Tốc độ"
+msgstr "Speed"
+
+msgid "Tệp kết quả khung {a}, bản dựng khai {b}."
+msgstr "Output frame is {a}, the render manifest declares {b}."
+
+msgid "Phải"
+msgstr "Right"
+
+#, python-format
+msgid "Cắt mép quá nhiều — mỗi chiều phải còn ít nhất %(p)s%% khung hình."
+msgstr "Too much edge trim — each dimension must keep at least %(p)s%% of the frame."
+
+msgid "Trái"
+msgstr "Left"
+
+msgid "Bản dựng có biên tập khung hình không hợp lệ."
+msgstr "The render manifest has invalid frame edits."
+
+msgid "Tâm ngang (%)"
+msgstr "Horizontal focus (%)"
+
+#, python-format
+msgid "phóng to %(z)s×"
+msgstr "zoom %(z)s×"
+
+msgid "Khung cắt phải nằm trong hình, cạnh đầu trước cạnh cuối."
+msgstr "The crop window must be inside the picture, with the start edge before the end edge."
+
+msgid "Trên"
+msgstr "Top"
+
+#, python-format
+msgid "Sẽ áp dụng: %(ds)s."
+msgstr "Will apply: %(ds)s."
+
+msgid "Kiểu “Giữ nguyên hình ảnh” hứa video ra dài đúng bằng video vào, nên không đổi tốc độ được. Chọn “Rút gọn có biên tập” nếu bạn muốn tăng tốc."
+msgstr "“Keep the picture” promises the output runs exactly as long as the input, so the speed cannot change. Choose “Shorten with editing” if you want to speed up."
+
+msgid "Giữ trọn hình, nền mờ"
+msgstr "Fit whole picture, blurred background"
+
+msgid "Cách đổi tỉ lệ"
+msgstr "Aspect-ratio method"
+
+msgid "Tỉ lệ khung hình không có trong danh sách."
+msgstr "That aspect ratio is not in the list."
+
+msgid "Còn thiếu phần, chưa ghép được tệp."
+msgstr "Some parts are still missing; the file cannot be assembled yet."
+
+msgid "Còn thiếu {n} phần, chưa ghép được tệp."
+msgstr "{n} parts are still missing; the file cannot be assembled yet."
+
+msgid "Kho không hỗ trợ tải lên nhiều phần."
+msgstr "This storage backend does not support multipart uploads."
+
+msgid "Kho từ chối phần tải lên."
+msgstr "Storage rejected the uploaded part."
+
+msgid "Kích thước phần không khớp kế hoạch tải lên."
+msgstr "The part size does not match the upload plan."
+
+msgid "Lượt tải lên không còn trên kho. Hãy tải lại từ đầu."
+msgstr "This upload no longer exists in storage. Please start the upload again."
+
+msgid "Lượt tải lên nhiều phần không tồn tại."
+msgstr "That multipart upload does not exist."
+
+msgid "Lượt tải lên đã hết hạn hoặc đã kết thúc."
+msgstr "This upload has expired or has already finished."
+
+msgid "Mã kiểm MD5 của phần không khớp nội dung."
+msgstr "The part's MD5 checksum does not match its contents."
+
+msgid "Phần lớn hơn kích thước cho phép."
+msgstr "The part is larger than the allowed size."
+
+msgid "Số thứ tự phần không hợp lệ."
+msgstr "Invalid part number."
+
+msgid "Thiếu hoặc sai mã kiểm MD5 của phần."
+msgstr "The part's MD5 checksum is missing or malformed."
+
+msgid "Tiếp tục tải lên từ %(pct)s%%…"
+msgstr "Resuming upload from %(pct)s%%…"
+
+msgid "Không chạy được bộ đo hình."
+msgstr "Could not run the picture checker."
+
+msgid "libvmaf không trả về khung nào."
+msgstr "libvmaf returned no frames."
+
+msgid "Không chạy được VMAF."
+msgstr "Could not run VMAF."
+
+msgid "VMAF thất bại: {e}"
+msgstr "VMAF failed: {e}"
+
+msgid "Đang đo chất lượng hình (VMAF)"
+msgstr "Measuring picture quality (VMAF)"
+
+msgid "Chưa nhận ra giọng người nói trong video nên không tự khớp được. Hãy tự chọn một giọng."
+msgstr "We could not make out the speaker in this video, so we cannot match a voice automatically. Please pick a voice yourself."
+
+msgid "Chưa đủ căn cứ từ nội dung để tự khớp giọng. Hãy tự chọn một giọng."
+msgstr "There is not enough to go on in this video to match a voice automatically. Please pick a voice yourself."
+
+msgid "Hệ thống nghe giọng người nói trong video và đọc lời thoại để chọn giọng hợp nhất. Nếu không đủ căn cứ, hệ thống sẽ báo để bạn tự chọn."
+msgstr "We listen to the speaker in your video and read the dialogue to pick the closest voice. If there is not enough to go on, we will say so and let you pick."
+
+msgid "Không có giọng nào hợp với nội dung này. Hãy tự chọn một giọng."
+msgstr "No voice fits this content. Please pick a voice yourself."
+
+msgid "Bộ OCR chưa sẵn sàng trên máy chủ."
+msgstr "The OCR engine is not ready on this server."
+
+msgid "Không tìm thấy phụ đề cứng trong hình."
+msgstr "No burned-in subtitles were found in the picture."
+
+msgid "Nguồn lời thoại không hợp lệ."
+msgstr "Invalid dialogue source."
+
+msgid "Video không có phụ đề nhúng dạng chữ."
+msgstr "This video has no text-based embedded subtitle track."
+
+msgid "Tiếng Trung"
+msgstr "Chinese"
+
 msgid "Cần tài khoản người dùng để dùng credit."
 msgstr "A user account is needed to spend credits."
 
@@ -20628,6 +20959,156 @@ msgstr "Pick a plan on the side and press “Create machine”. We build it and 
 
 msgid "Chất lượng mạng đang suy giảm. Máy vẫn chạy, nhưng kết nối có thể chậm hoặc chập chờn. Chúng tôi đang xử lý."
 msgstr "Network quality is degraded. Your machines keep running, but the connection may be slow or unstable. We are working on it."
+
+msgid "%(n)s cảnh không đọc được"
+msgstr "%(n)s scenes could not be read"
+
+msgid "%(n)s mục chưa đạt"
+msgstr "%(n)s checks did not pass"
+
+msgid "%(n)s đoạn có tiếng đọc hơi kém sạch."
+msgstr "%(n)s segments have slightly unclean speech."
+
+msgid "%(n)s đoạn đã đo"
+msgstr "%(n)s segments measured"
+
+msgid "%(n)s đoạn đã được đọc lại vì chưa khớp lời."
+msgstr "%(n)s segments were re-read because the speech did not match the script."
+
+msgid "Bản dịch có sát nghĩa không"
+msgstr "Does the translation keep the meaning"
+
+msgid "Bằng chứng chất lượng"
+msgstr "Quality evidence"
+
+msgid "Bỏ qua mọi phụ đề, nghe tiếng trong video rồi chép lại."
+msgstr "Ignore all subtitles: listen to the video and transcribe it."
+
+msgid "Chưa có giọng nào đọc được bản %(lan)s."
+msgstr "No voice can read %(lan)s yet."
+
+msgid "Chưa có giọng nào đọc được ngôn ngữ này — hãy đổi ngôn ngữ đích, hoặc nhân bản một giọng ở LTT VOICE."
+msgstr "No voice can read this language yet — pick a different target language, or clone a voice in LTT VOICE."
+
+msgid "Chất lượng hình sau mã hoá lại (VMAF)"
+msgstr "Picture quality after re-encoding (VMAF)"
+
+msgid "Chỉ dùng phụ đề chữ nhúng trong tệp. Video không có thì dừng lại."
+msgstr "Use only the text subtitle track embedded in the file. Stop if the video has none."
+
+msgid "Chỉ đọc chữ in trên khung hình. Video không có chữ thì dừng lại."
+msgstr "Read only the text burned into the picture. Stop if the video has none."
+
+msgid "Chữ chạy trên hình"
+msgstr "Text burned into the picture"
+
+msgid "Cách xử lý hình đúng kiểu bạn chọn"
+msgstr "The picture was handled the way you chose"
+
+msgid "Còn %(so)s giọng đọc được bản %(lan)s."
+msgstr "%(so)s voices can read %(lan)s."
+
+msgid "Cảnh đã đọc được"
+msgstr "Scenes read"
+
+msgid "Hình và tiếng dài bằng nhau"
+msgstr "Picture and sound are the same length"
+
+msgid "Hình ảnh giữ nguyên từng điểm ảnh"
+msgstr "The picture is unchanged, pixel for pixel"
+
+msgid "Khoảng lặng chèn thêm"
+msgstr "Silence added"
+
+msgid "Không sinh thêm khung đen hay hình đứng"
+msgstr "No new black or frozen frames were introduced"
+
+msgid "Kiểm chất lượng tự động"
+msgstr "Automatic quality checks"
+
+msgid "Lồng tiếng sang"
+msgstr "Dubbed into"
+
+msgid "Lời thoại gốc lấy từ"
+msgstr "Source dialogue taken from"
+
+msgid "Lời thoại gốc lấy từ đâu"
+msgstr "Where the source dialogue comes from"
+
+msgid "Lời đọc không trôi dồn về cuối"
+msgstr "The speech does not drift towards the end"
+
+msgid "Mọi câu đều có tiếng đọc"
+msgstr "Every line has spoken audio"
+
+msgid "Mọi đoạn bị cắt đều được báo cáo"
+msgstr "Every cut segment is reported"
+
+msgid "Nghe lại và soát lại"
+msgstr "Listen back and review"
+
+msgid "Nghe tiếng rồi chép lại"
+msgstr "Listen and transcribe"
+
+msgid "Nguồn lời thoại"
+msgstr "Dialogue source"
+
+msgid "Phụ đề có sẵn trong tệp"
+msgstr "Subtitles already in the file"
+
+msgid "Phụ đề nằm trọn trong video ra"
+msgstr "Subtitles fit entirely inside the output video"
+
+msgid "Tiếng không bị vỡ ở chỗ to nhất"
+msgstr "The sound does not clip at its loudest"
+
+msgid "Tiếng đọc có sạch không"
+msgstr "Is the speech clean"
+
+msgid "Tệp ra có đủ hình và tiếng"
+msgstr "The output file has both picture and sound"
+
+msgid "Từng câu nằm đúng chỗ đã định"
+msgstr "Each line lands where it was planned"
+
+msgid "Tự chọn nguồn tốt nhất"
+msgstr "Pick the best source automatically"
+
+msgid "Tự nhận ra"
+msgstr "Detect automatically"
+
+msgid "Video nói tiếng gì"
+msgstr "What language the video speaks"
+
+msgid "Video ra giải mã hết, không lỗi"
+msgstr "The output video decodes fully, with no errors"
+
+msgid "chưa đo được trên máy chủ"
+msgstr "could not be measured on this server"
+
+msgid "Đang soát chỗ nối hình"
+msgstr "Reviewing the picture at each join"
+
+msgid "Đọc có đúng lời không"
+msgstr "Does the speech match the script"
+
+msgid "Độ dài video ra đúng như hứa"
+msgstr "The output length is what was promised"
+
+msgid "Độ to chung đạt chuẩn nền tảng"
+msgstr "Overall loudness meets the platform standard"
+
+msgid "đo không xong"
+msgstr "measurement did not finish"
+
+msgid "đã đo"
+msgstr "measured"
+
+msgid "đạt toàn bộ"
+msgstr "all passed"
+
+msgid "Ưu tiên phụ đề có sẵn, rồi tới chữ trên hình, cuối cùng mới nghe chép."
+msgstr "Prefer the embedded subtitles, then the text burned into the picture, and only then transcribe the audio."
 
 #: apps/video_crawler
 msgid "Chưa có phiên đăng nhập Xiaohongshu nào trong hệ thống để lấy dữ liệu."

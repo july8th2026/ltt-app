@@ -47,7 +47,7 @@ import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 
-from . import gia, hop_dong_v4, rang_giong
+from . import gia, hop_dong_v4, ngon_ngu, nguon_loi, rang_giong
 
 #: Ten schema. Doi ten nay khi hinh dang doi den muc mot ban doc cu doc sai —
 #: khong phai moi lan them mot truong.
@@ -66,7 +66,41 @@ PHIEN_BAN = 3
 KHOA_SCHEMA = "schema"
 
 #: Nhung khoa CHI ghi khi khach thuc su dung tinh nang. Xem bang o docstring.
-KHOA_THUA = ("cat", "vung", "lop_phu", "logo", "phu_de", "am_thanh")
+#: ⭐ `ho_so_noi_dung` la ho so ma `AUTO_MATCH` dung ra (bang chung + nguon cua
+#:    tung mat). No nam o day chu khong o `dich_vu_tao.KHOA_NHAN`: cua tao
+#:    **khong** nhan no tu khach — chi `giai_doan_noi_dung` ghi no, mot lan.
+KHOA_THUA = ("cat", "vung", "lop_phu", "logo", "phu_de", "am_thanh",
+             "bien_tap", "ho_so_noi_dung")
+
+#: 🔴 **Khoa do CHINH HE THONG ghi vao GIUA mot lan chay, khong phai khach nhap.**
+#:
+#:    `thi_hanh.van_tay` gom **ca** `run.settings` vao van tay giai doan, va
+#:    `jobs._vo_hieu_giai_doan_da_lech` dat lai moi giai doan co van tay lech.
+#:    Nen mot dong ghi vao `settings` o giua chuoi se **dat lai media_prepare,
+#:    audio_prepare, transcribe va edit_plan** — do duoc: log
+#:    *"dat lai 5 giai doan do lech van tay"* xuat hien ngay o ban nhap dau cua
+#:    duong `AUTO_MATCH`, tuc demucs + ASR chay lai tu dau. Dung 133 giay ma
+#:    `NEN_V3` luot A da dot, lan nay dot theo mot cach khac.
+#:
+#: ⭐ Nen hai khoa nay bi **loai khoi van tay giai doan**. Dieu do khong lam mat
+#:    mot phep vo hieu nao: giong da chot di vao van tay CUA BAN LONG TIENG
+#:    (`long_tieng.van_tay_long_tieng` co `ma_giong`), va moi giai doan phia sau
+#:    doc giong tu chinh ban long tieng do chu khong doc `settings`.
+#:
+#: ⛔ Chi them khoa vao day khi no do HE THONG sinh ra. Mot khoa KHACH nhap ma
+#:    nam o day se lam mot lan doi cai dat khong vo hieu cache — tuc khach doi
+#:    thong so roi nhan lai y nguyen ban cu.
+KHOA_DAN_XUAT: frozenset = frozenset({"dac_diem_giong", "ho_so_noi_dung"})
+
+
+def cho_van_tay(tho: Mapping | None) -> dict:
+    """Ho so DA BO cac khoa dan xuat — ban di vao van tay giai doan.
+
+    Xem `KHOA_DAN_XUAT` ve ly do. ⚠️ Khong chuan hoa o day: `thi_hanh.van_tay`
+    bam **dung** thu dang nam trong `run.settings`, va chuan hoa o duong doc lam
+    mot ho so cu bong nhien bam ra khac di.
+    """
+    return {k: v for k, v in dict(tho or {}).items() if k not in KHOA_DAN_XUAT}
 
 #: ⛔ `voice_id` la mot BI DANH cu cua `giong_id`, khong phai mot truong thu hai.
 #:    Xem `rang_giong.tu_thiet_lap`: hai khoa nay da song song mot thoi gian va
@@ -94,6 +128,12 @@ class CaiDat:
     giong_id: str
     ngon_ngu_nguon: str
     dac_diem: DacDiem
+    #: Ngon ngu DICH (22/09). Ho so cu khong co khoa nay la ho so `vi` — V4-V6
+    #: chi sinh tieng Viet, nen do la mot SU THAT ve chung, khong phai doan.
+    ngon_ngu_dich: str = ngon_ngu.DICH_MAC_DINH
+    #: Nguon loi thoai cho TRANSCRIBE (22/09, lan ocr): `auto` | `embedded` |
+    #: `ocr` | `asr`. Xem `nguon_loi.py`. Ho so cu khong co khoa = `auto`.
+    nguon_loi: str = nguon_loi.CHE_DO_MAC_DINH
     tu_dien: dict = field(default_factory=dict)
     cat: tuple[float, float] | None = None
     vung: tuple = ()
@@ -107,6 +147,8 @@ class CaiDat:
     phu_de: dict | None = None
     #: Ho so am thanh (V6 pha 23), hoac `None` = mac dinh. Xem `am_thanh.py`.
     am_thanh: dict | None = None
+    #: Ho so bien tap khung + toc do (asv-final), hoac `None`. Xem `bien_tap.py`.
+    bien_tap: dict | None = None
 
     @property
     def co_sua_diem_anh(self) -> bool:
@@ -120,7 +162,7 @@ class CaiDat:
         #    lan chay chi-xuat-SRT bi doi xu nhu mot lan ma hoa lai — tuc cam
         #    no o preset giu hinh, dung noi ma no la lua chon DUY NHAT con lai.
         from . import phu_de as _pd
-        return bool(self.vung or self.lop_phu or self.logo
+        return bool(self.vung or self.lop_phu or self.logo or self.bien_tap
                     or _pd.co_dot_vao_hinh(self.phu_de))
 
 
@@ -154,7 +196,13 @@ def chuan_hoa(tho: Mapping | None) -> dict:
     ra[KHOA_BI_DANH_GIONG] = giong
 
     ra["ngon_ngu_nguon"] = _chuoi(tho, "ngon_ngu_nguon")
+    ra["ngon_ngu_dich"] = ngon_ngu.chuan_dich(tho.get("ngon_ngu_dich"))
     ra["tu_dien"] = dict(tho.get("tu_dien") or {})
+    # THUA nhu `KHOA_THUA`: mac dinh `auto` KHONG ghi — ho so (va van tay) cua
+    # moi lan chay truoc 22/09 giu nguyen.
+    nl = nguon_loi.chuan_che_do(tho.get("nguon_loi"))
+    if nl != nguon_loi.CHE_DO_MAC_DINH:
+        ra["nguon_loi"] = nl
 
     dd = tho.get("dac_diem_giong") or {}
     if dd:
@@ -187,6 +235,8 @@ def tu_ho_so(tho: Mapping | None) -> CaiDat:
                             rang_giong.CHE_DO_GIONG_MAC_DINH),
         giong_id=_chuoi(tho, "giong_id") or _chuoi(tho, KHOA_BI_DANH_GIONG),
         ngon_ngu_nguon=_chuoi(tho, "ngon_ngu_nguon"),
+        ngon_ngu_dich=ngon_ngu.chuan_dich(tho.get("ngon_ngu_dich")),
+        nguon_loi=nguon_loi.chuan_che_do(tho.get("nguon_loi")),
         dac_diem=DacDiem(gioi=str(dd.get("gioi") or ""),
                          vung=str(dd.get("vung") or ""),
                          phong_cach=str(dd.get("phong_cach") or "")),
@@ -200,7 +250,8 @@ def tu_ho_so(tho: Mapping | None) -> CaiDat:
         #    khac di — tuc doi van tay cua nhung lan chay da xong. Cung luat ma
         #    `vung` dang theo: *"ban da luu moi la ban that"*.
         phu_de=(dict(tho.get("phu_de")) if tho.get("phu_de") else None),
-        am_thanh=(dict(am) if (am := tho.get("am_thanh")) else None))
+        am_thanh=(dict(am) if (am := tho.get("am_thanh")) else None),
+        bien_tap=(dict(bt) if (bt := tho.get("bien_tap")) else None))
 
 
 def doc(run) -> CaiDat:

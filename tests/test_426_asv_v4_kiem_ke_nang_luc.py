@@ -90,13 +90,11 @@ def test_moi_ten_ASV_dang_import_deu_nam_trong_be_mat_da_khai():
             ("apps.ltt_voice", "features"),                # giong_noi.py:149
             ("apps.ltt_voice.tham_so_cong_khai", "TRAN_MOI_LUOT_SINH"),
             ("apps.ltt_voice.doc_man_api", "ma_giong_cua_toi"),   # gia.py:81
+            ("apps.ltt_voice.lan_ngon_ngu", "LAN_HOP_LE"),  # ngon_ngu.py
         },
         "ltt_llm": {("apps.ltt_llm", "ngan_sach")},        # dich_thuat.py:64
         "autosubvideo": {
             ("apps.autosubvideo.transcription", "transcribe_file"),
-            # Pha 07: phan vai nguoi noi (`giai_doan_chep_loi.phan_vai`).
-            ("apps.autosubvideo.ai_workflows", "diarize_file"),
-            ("apps.autosubvideo.ai_workflows", "assign_speakers"),
         },
     }
     khai = {"ltt_voice": ltt_voice.BE_MAT_CONG_KHAI,
@@ -186,40 +184,6 @@ def test_catalog_giong_mau_co_du_thuoc_tinh_cho_AUTO_MATCH():
     assert giong_mau.NHAN_PHONG_CACH
     assert callable(giong_mau.loc)
     assert giong_mau.DANH_SACH, "catalog giong mau rong"
-
-
-def test_diarization_da_duoc_MO_o_chu_cua_no():
-    """✅ Pha 07 da mo rong be mat cua `autosubvideo`. Phan loai: SUFFICIENT.
-
-    ⭐ **Ban truoc cua phep kiem nay chot chieu NGUOC LAI** — no khang dinh hai
-       ten CHUA nam trong `BE_MAT_CONG_KHAI`, va thong bao that bai cua no ghi
-       san viec phai lam khi dieu do doi:
-
-           "diarization da duoc mo — cap nhat CAPABILITY_INVENTORY_V4.md tu
-            EXTEND_OWNER_CONTRACT sang SUFFICIENT"
-
-       Pha 07 lam dung the, va phep kiem do la thu bat toi lam. Mot phep kiem
-       chot mot trang thai TAM THOI thi phai noi ro phai sua gi khi trang thai
-       ay het tam thoi — neu khong, no chi la mot cai chan duong.
-
-    ⛔ Chot ca hai chieu: ten phai duoc khai, VA ban kiem ke phai noi dung dieu
-       do. Hai nguon lech nhau la cach mot ban kiem ke tro thanh mot to giay.
-    """
-    from apps.autosubvideo import ai_workflows
-
-    assert callable(ai_workflows.diarize_file)
-    assert callable(ai_workflows.assign_speakers)
-
-    from apps import autosubvideo
-    for ten in ("diarize_file", "assign_speakers"):
-        assert ("apps.autosubvideo.ai_workflows", ten) in \
-            autosubvideo.BE_MAT_CONG_KHAI, f"{ten} chua duoc khai"
-
-    van_ban = KIEM_KE.read_text(encoding="utf-8")
-    dong = [d for d in van_ban.splitlines() if "**Diarization**" in d]
-    assert dong, "mat dong Diarization trong ban kiem ke"
-    assert "SUFFICIENT" in dong[0], (
-        "be mat da mo nhung ban kiem ke van ghi EXTEND_OWNER_CONTRACT")
 
 
 # ══════════════════════════════════════════════════════════════════════════════

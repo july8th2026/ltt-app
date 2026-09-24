@@ -248,9 +248,20 @@ class TorchGia:
         return self._ten
 
 
-def test_co_card_thi_chay_tren_card():
+def test_co_card_VA_duoc_cap_thi_chay_tren_card():
     assert demucs_runner.chon_thiet_bi(TorchGia(True), buoc_gpu=True) == "cuda"
-    assert demucs_runner.chon_thiet_bi(TorchGia(True), buoc_gpu=False) == "cuda"
+
+
+def test_co_card_nhung_KHONG_duoc_cap_thi_van_CPU():
+    """🔴 Doi 23/09 (lan `toc-do-gpu`) — truoc do dong nay khai `"cuda"`.
+
+    Ban cu hoi `is_available()` TRUOC khi hoi "co lease khong", nen mot lan goi
+    khong co lease van lay card: ~1,7 GiB VRAM ma `platform_core.gpu_lease`
+    khong ghi so. May nay co MOT card, dung chung voi `voice_sidecar` dang phuc
+    vu khach that — mot nguoi dung card ngoai so sach la dung cai ma lease sinh
+    ra de chan. Bang do: `docs/auto_scan_video_final/L_TOC_DO_GPU.md` §4.
+    """
+    assert demucs_runner.chon_thiet_bi(TorchGia(True), buoc_gpu=False) == "cpu"
 
 
 def test_KHONG_card_va_KHONG_duoc_cap_thi_CPU_la_duong_da_khai():

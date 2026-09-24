@@ -1,0 +1,99 @@
+{
+ "tts": [],
+ "llm": [
+  {
+   "ma": "seg_0001",
+   "vong": 0,
+   "nhan": "ok",
+   "giay_tuong": 59.79,
+   "token_vao": 436,
+   "token_ra": 4212,
+   "suy_nghi_ky_tu": 11378,
+   "finish_reason": "stop",
+   "muc_nghi": "low",
+   "chu_moi": "Nhảy dù chậm thì đánh ra sao? Hắn đáp xuống không vào nhà, chắc đã nhặt súng. Nên lao vào lấy súng ngay, Photon. Hắn sẽ xông vào, ta canh cửa sẵn, vòng trái, nhắm sẵn bắt hắn nhận đạn. Nhảy chậm mất cơ hội tấn công, địch liên tục áp lên, phải giữ cho được tòa nhà. Lỡ tay rồi, xin lỗi mọi người nhé.",
+   "am_tiet_vao": 89,
+   "am_tiet_ra": 66
+  },
+  {
+   "ma": "seg_0002",
+   "vong": 0,
+   "nhan": "ok",
+   "giay_tuong": 46.4,
+   "token_vao": 419,
+   "token_ra": 3375,
+   "suy_nghi_ky_tu": 9198,
+   "finish_reason": "stop",
+   "muc_nghi": "low",
+   "chu_moi": "Cầu thang có tiếng chân. Máu mở đầu cực tệ. Muốn phản sát cực đại thì thao tác sau phải học. Địch chưa lên, nằm xuống, dùng thùng làm vật cản, hắn khó thấy. Trêu thôi, không cản được. Đi thêm vài bước sát góc mới nằm, né góc nhìn địch, hắn không thấy ngay.",
+   "am_tiet_vao": 73,
+   "am_tiet_ra": 55
+  },
+  {
+   "ma": "seg_0003",
+   "vong": 0,
+   "nhan": "ok",
+   "giay_tuong": 40.25,
+   "token_vao": 394,
+   "token_ra": 2840,
+   "suy_nghi_ky_tu": 7373,
+   "finish_reason": "stop",
+   "muc_nghi": "low",
+   "chu_moi": "Lúc này nghe kỹ, dưới lầu lại có người. Uống thuốc đừng đứng yên. Địch chưa tới, chọn trước vị trí tốt. Có lợi địa hình thì địch đông mấy cũng không sợ. Đừng lao nhanh, tốc độ cao thì ít thời gian phản ứng. Kéo ra là địch không kịp phản ứng.",
+   "am_tiet_vao": 65,
+   "am_tiet_ra": 53
+  },
+  {
+   "ma": "seg_0004",
+   "vong": 0,
+   "nhan": "ok",
+   "giay_tuong": 59.76,
+   "token_vao": 403,
+   "token_ra": 4205,
+   "suy_nghi_ky_tu": 10087,
+   "finish_reason": "stop",
+   "muc_nghi": "low",
+   "chu_moi": "Thấy chưa, tự chui đầu vào bẫy. Tiếng chân ngoài kia ngày càng nhiều, toàn nhắm vào mình. Nhanh xử người, đừng tốn quá nhiều thời gian hạ địch. Chưa hạ được thì quay lại ngay, đề phòng phía sau. Cao thủ thật không bao giờ tấn công mù quáng, thả lựu đạn giả trước xem địch phản ứng thế nào.",
+   "am_tiet_vao": 75,
+   "am_tiet_ra": 61
+  },
+  {
+   "ma": "seg_0005",
+   "vong": 0,
+   "nhan": "ok",
+   "giay_tuong": 48.35,
+   "token_vao": 486,
+   "token_ra": 3288,
+   "suy_nghi_ky_tu": 8361,
+   "finish_reason": "stop",
+   "muc_nghi": "low",
+   "chu_moi": "Người này vững quá, gặp cao thủ rồi. À không, tên này lại đi cứu người. Cách chơi của hắn, các bạn đừng học. Dưới lầu vẫn còn tiếng chân, địch không dám lên, mình thả lựu đạn trước. Nghe lại, có người nhảy dù trở lại. Chỗ này, mình ném lựu đạn ra cửa tầng hai, phòng người sân thượng nhảy xuống. Thật đúng là nói gì có nấy. Hắn lao nhanh thế, chắc muốn xuống dưới cứu đội bạn. Giả chính chủ để lừa đối thủ lên. Người này cũng sai y hệt, lao nhanh mất cơ hội nổ súng.",
+   "am_tiet_vao": 115,
+   "am_tiet_ra": 102
+  },
+  {
+   "ma": "seg_0006",
+   "vong": 0,
+   "nhan": "ok",
+   "giay_tuong": 31.68,
+   "token_vao": 304,
+   "token_ra": 2102,
+   "suy_nghi_ky_tu": 5512,
+   "finish_reason": "stop",
+   "muc_nghi": "low",
+   "chu_moi": "Xử luôn. Cuối cùng hỏi: tấn công tòa nhà gặp địch canh cầu thang thế này, làm gì?",
+   "am_tiet_vao": 23,
+   "am_tiet_ra": 18
+  }
+ ],
+ "tom_tat": {
+  "tts": {},
+  "llm": {
+   "so_luot": 6,
+   "giay_tuong_trung_binh": 47.7,
+   "giay_tuong_tong": 286.2,
+   "token_ra_trung_binh": 3337,
+   "suy_nghi_ky_tu_trung_binh": 8651.5
+  }
+ }
+}

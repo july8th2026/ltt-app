@@ -117,8 +117,8 @@ def test_dieu_phoi_biet_luc_nao_phai_DOI_ho_so():
 def test_giong_CUA_KHACH_di_qua_ham_kiem_quyen_cua_app_CHU(monkeypatch):
     goi = {}
 
-    def _giai(db, *, owner_id, voice_id="", preset=""):
-        goi.update(owner_id=owner_id, voice_id=voice_id)
+    def _giai(db, *, owner_id, voice_id="", preset="", ngon_ngu=""):
+        goi.update(owner_id=owner_id, voice_id=voice_id, ngon_ngu=ngon_ngu)
         return ("ref-b64", "preset-x")
 
     from apps.auto_scan_video import giong_noi
@@ -126,14 +126,15 @@ def test_giong_CUA_KHACH_di_qua_ham_kiem_quyen_cua_app_CHU(monkeypatch):
 
     kq = rg.rang(None, owner_id="u1",
                  yeu_cau=rg.YeuCau(che_do="USER_SELECTED", giong_id="voice-cua-u1"))
-    assert goi == {"owner_id": "u1", "voice_id": "voice-cua-u1"}
+    # ngon_ngu = lan ban long tieng KHAI (22/09) — ltt_voice chot lan, khong phai ASV.
+    assert goi == {"owner_id": "u1", "voice_id": "voice-cua-u1", "ngon_ngu": "vi"}
     assert kq.da_chot and kq.nguon == rg.NGUON_KHACH_CHON
 
 
 def test_giong_cua_NGUOI_KHAC_bi_tu_choi(monkeypatch):
     """🔴 Hau qua neu khong kiem: mot khach doc video bang **giong nhan ban cua
     nguoi khac**. Phep kiem quyen o app CHU, va ta de no nem len."""
-    def _giai(db, *, owner_id, voice_id="", preset=""):
+    def _giai(db, *, owner_id, voice_id="", preset="", ngon_ngu=""):
         raise PermissionError("giong nay khong phai cua ban")
 
     from apps.auto_scan_video import giong_noi

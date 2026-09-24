@@ -1,0 +1,29 @@
+{
+  "_ghi_chu": "Ban GHIM cua MetricX-24 QE. Doi ban = doi o day + chay lai tai.py + do lai (docs/auto_scan_video_final/L_DICH.md). sha256 cua tep LFS lay tu HF API (?blobs=true); tep nho (khong LFS) do tai.py tinh luc chot.",
+  "ma_nguon": {
+    "repo": "https://github.com/google-research/metricx",
+    "commit": "fc4978eb064670f7cc33e93ea4f52d38396b8ae6",
+    "tep_chep": "metricx24/models.py",
+    "license": "Apache-2.0"
+  },
+  "mo_hinh": {
+    "repo_id": "google/metricx-24-hybrid-large-v2p6-bfloat16",
+    "revision": "febb720e29a059df2e8af3ffd71dcdc9e0a24910",
+    "license": "Apache-2.0",
+    "tep": {
+      "config.json": "cdd5f7a2c8a9b3221ba0cb6a9c04ddcf335fcf8b110218e8c57b122dd79cb258",
+      "pytorch_model.bin": "b1f2c03ab5ec5318a55b90b42eefa22431daa7b1a8e28a97a6aef23d18a24278"
+    }
+  },
+  "tokenizer": {
+    "repo_id": "google/mt5-xl",
+    "revision": "63fc6450d80515b48e026b69ef2fbbd426433e84",
+    "license": "Apache-2.0",
+    "tep": {
+      "spiece.model": "ef78f86560d809067d12bac6c09f19a462cb3af3f54d2b8acbba26e1433125d6",
+      "tokenizer_config.json": "3be4bbd24c65845b1dc86186f3c7d1d61ac2e29154cb0d71133753562f8d1959",
+      "special_tokens_map.json": "09059cedc26bc46bc09a52f05b92d4922e11917e87f3b92059bb1a63a59ab2c4"
+    }
+  },
+  "max_input_length": 1536
+}
