@@ -105,7 +105,22 @@ def thu_lai_node(db, run: WorkflowRun, *, node_id: str, graph: dict,
     han = thu_lai.hen(db, run_id=run.id, node=n, lan=lan)
     if not mtt.chuyen_node(db, run.id, node_id, sang="RETRY_SCHEDULED",
                            mo_ta="supervisor hen thu lai",
-                           attempt_number=lan,
+                           # 🔴 `lan + 1`, KHONG phai `lan`. `thu_lai.den_han`
+                           #    GIU NGUYEN con so cua luot hen (docstring cua
+                           #    no noi ro), nen ghi `lan` o day nghia la sau khi
+                           #    thu lai that bai, `con_luot(n, lan)` van thay
+                           #    dung con so cu => `retry.max` KHONG BAO GIO can
+                           #    => thu lai VO HAN, va moi luot la mot JOB, tuc
+                           #    mot but toan.
+                           #
+                           # ⭐ Chinh ham nay da to giac: no TRA VE
+                           #    `f"lan {lan + 1}"` trong khi GHI `lan`. Cau noi
+                           #    cho nguoi va con so ghi vao so noi hai dieu
+                           #    khac nhau — nay chung khop.
+                           #
+                           #    `cau_noi.py:416` van luon ghi `lan + 1`; day la
+                           #    duong THU HAI cua cung mot so, va no lech.
+                           attempt_number=lan + 1,
                            output_ref={thu_lai.KHOA_HAN: han.isoformat()}):
         return KetQua(False, "trang_thai_node_sai", f"{node_id}: {hien}")
     return KetQua(True, chi_tiet=f"{node_id}: lan {lan + 1} luc {han}")
