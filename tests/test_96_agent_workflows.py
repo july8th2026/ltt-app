@@ -141,7 +141,7 @@ def test_clone_is_independent_and_keeps_source_audit(db):
 # 🗑️ `test_snapshot_moi_revision_va_restore_tao_revision_moi` ĐÃ GỠ 24/09/2026
 #    cùng cả cụm bản chụp (plan wf-v2 P8 Task 5, nợ §5): `restore` đo được
 #    **0 lượt mọi thời đại** trên production vì giao diện v3 cầm id của bảng
-#    khác. Sự vắng mặt được ghim bằng `test_2924`, không bằng im lặng.
+#    khác. Sự vắng mặt được ghim bằng `test_2934`, không bằng im lặng.
 
 
 def test_canvas_v2_preserves_pages_frames_annotations_and_executes_active_page(db):

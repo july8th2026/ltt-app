@@ -26,7 +26,7 @@ tồn tại, và §12.4 cấm đúng hành động mà hàm ấy làm.
 - **SQL thô**: một `UPDATE workflow_version …` viết tay không đi qua hàm nào
   trong `CAM`. Phép kiểm thứ ba cấm chuỗi `UPDATE`/`INSERT` thô trong tập ấy.
 - Nó không nói gì về việc các hành động ĐƯỢC PHÉP có đúng luật không —
-  `test_2922` đo phần đó.
+  `test_2932` đo phần đó.
 
 ## ⭐ Bánh cóc phải CẮN: có tiêm lỗi
 

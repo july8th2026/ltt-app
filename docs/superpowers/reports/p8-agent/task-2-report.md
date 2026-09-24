@@ -42,7 +42,7 @@ E   ImportError: cannot import name 'ai_agent' from 'platform_core.workflow.nut_
 ... rồi 15 failed  ->  10 failed, 5 passed  ->  3 failed, 12 passed
 ```
 ```
-tests/test_2921_wf_ai_agent.py ...............   15 passed in 4.50s
+tests/test_2931_wf_ai_agent.py ...............   15 passed in 4.50s
 core:wf_soan  (63 tệp)  1264 passed, 32 skipped in 75,04 s
 core:wf_dong_co (39 tệp) 454 passed, 32 skipped in 55,73 s
 ```

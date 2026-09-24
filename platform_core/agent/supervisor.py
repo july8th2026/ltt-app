@@ -12,7 +12,7 @@ hàm nào làm nó** — không phải "có hàm nhưng bị một `if` chặn".
    cho nó; `get_handoff_destinations()` đọc ngược tập đích **từ những công cụ
    có thật trong đồ thị**, không từ một bảng khai song song. Tức: tập quyền là
    một **sự kiện về mã**, đo được — đúng điều kiện ra của phase gốc 12
-   (*"các hành động cấm không có đường gọi"*), và `test_2923` đo nó bằng đồ thị
+   (*"các hành động cấm không có đường gọi"*), và `test_2933` đo nó bằng đồ thị
    gọi chứ không bằng lời hứa trong docstring này.
 
 ## 🔴 HAI CHỖ SPEC §12.4 PHẢI THU HẸP — đo được, không phải ý kiến
@@ -170,7 +170,7 @@ def bo_qua_node(db, run: WorkflowRun, *, node_id: str, graph: dict,
 
 
 #: 🔴 SỔ ĐÓNG. Thêm một khoá ở đây là thêm một quyền cho supervisor, và
-#:    `test_2923` sẽ đòi đường gọi của nó sạch. Thứ KHÔNG có ở đây thì
+#:    `test_2933` sẽ đòi đường gọi của nó sạch. Thứ KHÔNG có ở đây thì
 #:    supervisor không có hàm nào để làm.
 HANH_DONG: dict[str, Callable[..., KetQua]] = {
     "thu_lai_node": thu_lai_node,

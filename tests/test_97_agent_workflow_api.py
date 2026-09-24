@@ -88,7 +88,7 @@ def test_crud_etag_stale_conflict_and_csrf(api):
 #    `AgentWorkflow` id trong khi giao diện v3 cầm id bảng khác ⇒ 404 ngay
 #    lần bấm đầu; production đo `shares` 0 bản ghi mọi thời đại, clone 0,
 #    restore 0 (đối chứng `save` = 78). Sự vắng mặt được ghim bằng
-#    `test_2924_dong_cua_cum_v2.py`, không bằng im lặng.
+#    `test_2934_dong_cua_cum_v2.py`, không bằng im lặng.
 #    Bài đã gỡ: ownership_clone_archive_import_export (phần sở hữu chuyển
 #    xuống `test_so_huu_tren_cua_CON_LAI`) · import_pathological ·
 #    prompt_creates_editable_canvas · assistant_preview · snapshot_share.

@@ -194,6 +194,9 @@ duong = ["platform_core/workflow/dong_co.py", "platform_core/workflow/may_trang_
          "platform_core/workflow/ket_qua_run.py",
          # Run con cua core.call_workflow (plan wf-v2 P3 T7).
          "platform_core/workflow/run_con.py",
+         # `ai.agent` (plan wf-v2 P8, spec Sec12.3): vong lap NGHI/CONG_CU,
+         # MOI BUOC mot run con => thuoc dong co, khong thuoc soan thao.
+         "platform_core/workflow/tac_tu.py",
          # Cho ben + trigger (plan wf-v2 P4, spec Sec5.7/Sec8):
          # - khoa_idem: MOT noi sinh moi khoa khu trung (waitpoint + trigger)
          # - noi_lai  : mot cua cho moi tin hieu tu NGOAI dong co
