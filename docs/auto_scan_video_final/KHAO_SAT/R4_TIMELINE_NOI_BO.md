@@ -948,3 +948,33 @@ sau cần gạt 2 + 3 :  54,5 %  (102/187) VẪN không vừa
 ⛔ **Chưa chạy cần gạt 1** — nó qua LLM ⇒ ⛔ không tái lập ⇒ phải **≥ 3 lượt**, báo
 **trung vị + khoảng**, và là **lượt nặng**. ⭐ Mã đã sẵn: `can_gat_1_rut_gon` nhận
 hàm rút gọn từ **ngoài**, nên bộ kiểm chạy ⛔ không tốn một lượt LLM nào.
+
+---
+
+## 16. ⭐ `N-40` — ĐÚNG PHÉP ĐO, SAI CHỖ ĐẶT (⛔ đừng lẫn với `N-34`)
+
+```
+N-34  đúng SỐ, sai ĐƠN VỊ        -> số vẫn dùng được, chỉ phải đổi đơn vị
+                                    hậu quả: ta TÍNH SAI
+N-40  đúng PHÉP ĐO, sai CHỖ ĐẶT  -> phép đo vẫn đúng, chỉ đặt SAU chỗ đáng đặt
+                                    hậu quả: ta TIÊU TIỀN THẬT rồi mới biết
+```
+
+⭐ `N-40` **đắt hơn**: nó bắt ta trả tiền cho **cả một giai đoạn** trước khi phát
+hiện thứ lẽ ra **chặn được từ đầu**.
+
+| ca | phép đo | đặt ở đâu | chỗ SỚM HƠN có đủ dữ liệu |
+|---|---|---|---|
+| **1** (25/09, đã sửa) | tín hiệu lọc ảo giác | **hệ số nén** — cần **bản dịch** | **tốc độ nguồn** (ký tự Hán/giây), có ngay ở bước **bản ghi** ⇒ ⭐ trước khi khách **trả tiền dịch** |
+| **2** (đang mở, `N-39` ②) | bất biến *"`aligned` ⇒ phải có mốc từ"* | **cấp bản ghi** (`sum`) | **cấp đoạn** — đúng phép kiểm, **sai tầng**, nên một đoạn rỗng lọt |
+
+⭐ Và ca 1 cho thấy chỗ đặt sớm hơn ⛔ **không hề yếu hơn**: tách **31×** so với
+biên **3,2×** — **cùng sức tách, rẻ hơn, sớm hơn**.
+
+> 🔑 ⭐ **Câu chẩn đoán:** *"phép đo này đặt **ở đâu**, và có chỗ nào **SỚM HƠN**
+> có đủ dữ liệu để chạy nó không?"*
+> ⛔ **Không** phải *"phép đo này có đúng không"* — cả hai ca trên đều **đúng**.
+
+⚠️ Cùng cách đọc với `N-35` (*cổng hỏi **điều gì**, và điều đó có phải điều **sản
+phẩm** cần không*) và `N-34` (*số này đo **cái gì** so với **cái gì***): ⭐ ba câu
+hỏi đều nhắm vào **phép đo**, ⛔ không nhắm vào **hệ thống**.
