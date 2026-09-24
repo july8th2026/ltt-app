@@ -149,12 +149,23 @@ def pytest_collection_modifyitems(session, config, items):
             #
             # ⚠️ `cpu_nhieu` thi GIU: no chia **suc tinh**, va suc tinh khong nhan
             #    ban duoc. Dung gop hai loai khoa lam mot.
-            # ⚠️ `postgres_test` GIU LAI — Task 0 (N-10) chan o QUYEN, khong o ma:
-            #    vai `ltt_app` co `rolcreatedb = False`, nen CSDL rieng moi lan khong
-            #    tu sinh ra duoc (do 24/09). Bo khoa nay TRUOC khi co CSDL rieng la
-            #    mo duong cho hai lan `drop_all` de len nhau.
-            # ⇒ Go dong nay ngay khi `LTT_PG_SCRATCH_THEO_LAN` thanh mac dinh.
-            tai_nguyen=("cpu_nhieu", "postgres_test"))
+            # ⛔ **KHONG con `postgres_test`** (Task 0 / N-10, 24/09).
+            #
+            # 🔴 Khoa do khong bao ve mot tai nguyen doc quyen — no bao ve **mot cai
+            #    ten**: moi lan dung chung `lttplatform_test`, va `moi_truong` goi
+            #    `drop_all` tren no. Nay moi lan co **schema rieng**
+            #    (`pg_scratch.schema_lan`), nen khong con gi de tranh.
+            #
+            # ⛔ Do 24/09: mot lan giu khoa nay **78 phut** va mot lan phien khac xep
+            #    hang sau no — cho mot thu **le ra khong chan ai**.
+            #
+            # ⭐ Co lap DA DUOC CHUNG MINH, khong chi khai:
+            #    `test_3005::test_DOI_CHUNG_CO_LAP` (hai tien trinh, mot ben
+            #    `drop_all`) va no DO khi tiem hai lan ve cung mot schema.
+            #
+            # ⚠️ `cpu_nhieu` thi GIU: no chia **suc tinh**, va suc tinh khong nhan ban
+            #    duoc. Dung gop hai loai khoa lam mot.
+            tai_nguyen=("cpu_nhieu",))
         _KHOA_PHIEN.__enter__()
     except Exception as e:  # noqa: BLE001
         # Thieu psutil / khong doc duoc khoa -> chay tiep, nhung NOI RA.

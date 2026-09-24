@@ -165,14 +165,23 @@ BIEN_THEO_LAN = "LTT_PG_SCRATCH_THEO_LAN"
 
 
 def theo_lan_bat() -> bool:
-    """Duong co lap theo lan da bat chua.
+    """Duong co lap theo lan da bat chua. **MAC DINH: BAT** (24/09).
 
-    ⚠️ Con OPT-IN cho toi khi **doi chung co lap** xanh. Mac dinh la GIU NGUYEN
-       HIEN TRANG (mot CSDL dung chung + khoa `postgres_test`) — ⛔ khong lui im
-       lang, va cung khong bat som: bat truoc khi chung minh duoc co lap la bo mot
-       khoa dang that su chan `drop_all` cua lan khac.
+    ⭐ Bat sau khi **doi chung co lap** xanh VA chung minh duoc no do duoc: tiem
+       `schema_lan` tra mot hang (hai lan cung mot schema) ⇒ `test_DOI_CHUNG_CO_LAP`
+       DO. Truoc do no la opt-in, dung vi mot phep kiem chua tung do thi chua biet no
+       bat duoc gi.
+
+    ⚠️ Bien nay gio la **cong tat NGAT** (`=0`), khong phai cong tat bat: khi mot thu
+       gi hong ma chua ro nguyen nhan, nguoi van hanh can tro ve duong cu trong mot
+       lenh, khong phai trong mot ban va.
+
+    ⭐ **Giai doan chuyen tiep an toan CA HAI CHIEU**, da soi: lan DA gop co
+       `search_path=<lan>,public` nen `create_all`/`drop_all` cua no lam viec trong
+       `<lan>`; lan CHUA gop lam viec trong `public`. Khong ben nao voi sang ben nao.
     """
-    return bool((os.environ.get(BIEN_THEO_LAN) or "").strip())
+    thay = (os.environ.get(BIEN_THEO_LAN) or "").strip().lower()
+    return thay not in ("0", "khong", "false", "off")
 
 #: Schema KHONG duoc xoa, du ai goi. `DROP SCHEMA public CASCADE` = xoa ca CSDL.
 SCHEMA_CAM_XOA = frozenset({"public", "pg_catalog", "pg_toast", "information_schema"})

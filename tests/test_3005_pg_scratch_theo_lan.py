@@ -266,6 +266,19 @@ def test_DOI_CHUNG_CO_LAP_mot_ben_drop_all_ben_kia_khong_bi_anh_huong(tmp_path):
        tiến trình CON của làn B gọi `create_all` + `drop_all` trên schema của **nó**.
        Sau đó dòng của làn A **phải còn**.
 
+    ⭐ **ĐỐI CHỨNG đã chạy** (`schema_lan` trả một hằng ⇒ hai làn cùng một schema):
+       bài này **ĐỎ** đúng ở dòng dưới. Nên nó thật sự đo cô lập, không chỉ đo tên.
+
+    ⛔ **Một biến thể tôi đã THỬ rồi BỎ, ghi lại để không ai làm lại:** cho làn A ghi
+       thêm một bảng vào `public` để mô phỏng một làn *chưa opt-in*, rồi kiểm nó còn
+       sống. Khẳng định đó **rỗng nghĩa**: `drop_all` chỉ xoá bảng có trong
+       `Base.metadata`, nên một bảng tạo bằng `CREATE TABLE` tay không bao giờ bị nó
+       chạm — phép kiểm xanh bất kể `search_path` đúng hay sai.
+       Và mô phỏng cho ĐÚNG (lan A `create_all` vào `public`) thì phép tiêm sẽ **thật
+       sự xoá bảng `public` của các làn khác** trên CSDL dùng chung. ⇒ Rủi ro đó được
+       chặn bằng `test_search_path_LUON_co_public_o_sau` — một phép kiểm **thuần**,
+       không phá gì, và phép tiêm `public` đứng trước làm nó đỏ.
+
     ⚠️ `drop_all` chỉ xoá bảng nó thấy qua `search_path`. Nên nếu `search_path` bị
        đặt sai — ví dụ `public` đứng TRƯỚC schema của làn — thì làn B sẽ xoá bảng của
        làn A. Đó đúng là hỏng hóc bài này đi tìm, và cũng là lý do
