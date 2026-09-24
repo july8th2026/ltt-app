@@ -601,12 +601,26 @@ STORES: tuple = (
           N_("Một lượt kết nối OAuth đang dở: state đã băm, PKCE verifier đã "
              "mã hoá, nơi quay về. Dùng một lần, hạn 10 phút."),
           "oauth_google.don_state_het_han (worker)"),
-    # OPERATIONAL, khong han tu dong: day la CON TRO POLL cua piece. Xoa no
-    # khong phai "don rac" ma la bao lan poll ke tiep rang MOI ban ghi deu
-    # moi — tuc tao lai run cho ca lich su, tuc tieu credit that. Nen han doi
-    # theo VONG DOI cua trigger (trigger bi xoa => hang bi xoa), khong theo
-    # dong ho.
-    Store("connector_store", OPERATIONAL, None, N_("chủ tài khoản + vận hành"),
+    # 🔴 CONTENT, KHONG phai OPERATIONAL — va day la mot sua LOP, khong phai
+    #    mot sua han.
+    #
+    #    Day la CON TRO POLL cua piece. Xoa no khong phai "don rac" ma la bao
+    #    lan poll ke tiep rang MOI ban ghi deu moi — tuc tao lai run cho ca
+    #    lich su, tuc tieu credit that.
+    #
+    #    Dinh nghia OPERATIONAL o dau tep: *"huu ich luc moi, VO GIA TRI khi
+    #    cu... dinh ky gia di"*. Hang nay nguoc han: cang cu cang phai giu.
+    #    Nen `test_211::test_operational_stores_all_declare_who_removes_them`
+    #    doi mot `retention_days` la DUNG voi lop OPERATIONAL — thu sai la lop.
+    #    ⛔ Go do bang cach gan dai mot so ngay se BIEN mot con so vo nghia
+    #       thanh mot loi hua, va loi hua do se lam mat tien cua khach that.
+    #
+    #    CONTENT la lop dung: du lieu cua khach (ID ban ghi ben thu ba) ma
+    #    *"vong doi thuoc ve tang khac, khong thuoc mot con so o day"*. Vong
+    #    doi o day la vong doi TRIGGER (trigger bi xoa => hang bi xoa), khong
+    #    phai dong ho. ⛔ Khong phai DERIVED: DERIVED nghia la dung lai duoc tu
+    #    cho khac, ma dung lai chinh la thiet hai mo ta o tren.
+    Store("connector_store", CONTENT, None, N_("chủ tài khoản + vận hành"),
           N_("Bộ nhớ bền của một connector: con trỏ poll và trạng thái do "
              "piece tự ghi. Có thể chứa ID bản ghi bên thứ ba của khách; "
              "không bao giờ trả ra trình soạn thảo."),
