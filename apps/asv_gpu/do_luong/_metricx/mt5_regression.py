@@ -37,6 +37,59 @@ MT5Stack = transformers.models.mt5.modeling_mt5.MT5Stack
 TOKEN_DIEM = 250089
 
 
+def _mt5_stack(config: "MT5Config", embed_tokens: nn.Embedding):
+    """`MT5Stack` sharing `embed_tokens`, on both the 4.x and 5.x signature.
+
+    🔴 Upstream MetricX was written for `transformers` 4.x, where the signature
+       is `MT5Stack(config, embed_tokens=None)`. In 5.x it is `MT5Stack(config)`
+       and the stack builds its own `nn.Embedding`, so the upstream two-argument
+       call raises `TypeError: too many positional arguments` **before touching
+       any weight**.
+
+    ⚠️ **DINH CHINH 24/09/2026 — ban ghi truoc noi qua.** No viet *"MetricX QE
+       cannot start at all, measured on transformers 5.6.2"*. Do lai tren **ca
+       hai** moi truong:
+
+           venv chinh   transformers 5.6.2   <- da do o DAY
+           qc-venv      transformers 4.57.6  <- MetricX THAT SU chay o DAY
+
+       Tep nay **chi chay trong `qc-venv`** (chinh docstring nay noi the), va o
+       do chu ky van la `MT5Stack(config, embed_tokens)` ⇒ loi goi hai tham so
+       **van dung**, va MetricX QE **van khoi dong duoc**. Hai lan khac da do
+       MetricX chay that trong ngay (diem trung vi 3,06; CPU-vs-GPU 10,31 s).
+
+    ⇒ Ly do giu ban mot-tham-so **khong** phai "dang hong", ma la **tuong thich
+       tien**: qc-venv se co luc len 5.x, va luc do loi goi hai tham so se chet.
+       Da do tren qc-venv 4.57.6: `_mt5_stack` tra `MT5Stack` va
+       `get_input_embeddings() is emb` ⇒ True (chia chung dung embedding).
+
+    ⭐ ONE code path rather than a version branch: `set_input_embeddings` is a
+       `PreTrainedModel` method present in both 4.x and 5.x, and in 4.x
+       `MT5Stack(config)` alone is already legal (`embed_tokens` defaults to
+       `None`). A branch on the installed signature would leave one side
+       unexercised on every machine — and that is the side that breaks.
+
+    ⛔ The shared embedding is not cosmetic: the published checkpoint ties
+       encoder, decoder and `lm_head` to one weight matrix. A stack that quietly
+       builds its own `nn.Embedding` still loads the checkpoint and still
+       returns a number — a wrong one.
+    """
+    stack = MT5Stack(config)
+    stack.set_input_embeddings(embed_tokens)
+    return stack
+
+
+def _so_lop_decoder(config: "MT5Config") -> int:
+    """`config.num_decoder_layers`, falling back to `num_layers`.
+
+    `MT5Config` declares it `int | None`; `None` reaches `range(config.num_layers)`
+    inside `MT5Stack` as a decoder with **no layers at all** — a model that loads
+    and returns noise. mT5 configs default it to `num_layers`, so that is the
+    only defensible fallback.
+    """
+    return int(config.num_decoder_layers or config.num_layers)
+
+
 class MT5ForRegression(MT5PreTrainedModel):
   """MT5 model for regression (MetricX)."""
 
@@ -50,13 +103,13 @@ class MT5ForRegression(MT5PreTrainedModel):
     encoder_config.is_decoder = False
     encoder_config.use_cache = False
     encoder_config.is_encoder_decoder = False
-    self.encoder = MT5Stack(encoder_config, self.shared)
+    self.encoder = _mt5_stack(encoder_config, self.shared)
 
     decoder_config = copy.deepcopy(config)
     decoder_config.is_decoder = True
     decoder_config.is_encoder_decoder = False
-    decoder_config.num_layers = config.num_decoder_layers
-    self.decoder = MT5Stack(decoder_config, self.shared)
+    decoder_config.num_layers = _so_lop_decoder(config)
+    self.decoder = _mt5_stack(decoder_config, self.shared)
 
     self.lm_head = nn.Linear(config.d_model, config.vocab_size, bias=False)
 

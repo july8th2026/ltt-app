@@ -37,7 +37,11 @@ import platform_core.http_an_toan as http_an_toan
 from platform_core.i18n import N_
 from platform_core.workflow import he_kieu
 from platform_core.workflow.nut import Gia, NodeDefinition
+from platform_core.workflow import ngon_ngu, noi_suy
+from platform_core.workflow.chinh_sach import LoiNgonNgu
 from platform_core.workflow.nut_loi import dang_ky
+from platform_core.workflow.nut_loi.chay import KetQua
+from platform_core import credential as kho_credential
 
 #: ⛔ Danh sách ĐÓNG. `TRACE`/`CONNECT` không bao giờ là thứ một workflow cần,
 #: và `TRACE` là một công cụ dò cấu hình proxy.
@@ -48,6 +52,25 @@ CACH_CHO_PHEP = ("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD")
 TRAN_PHAN_HOI_BYTE = 2 * 1024 * 1024
 
 THOI_CHO_MAC_DINH_S = 30.0
+
+#: Chính sách bộ gác mà node dùng. `None` = mặc định của `an_toan_mang`
+#: (chỉ https, chỉ địa chỉ công cộng). ⭐ Là một hằng ở mức mô-đun để phép kiểm
+#: đổi **câu hỏi** đặt cho bộ gác (máy chủ giả sống ở 127.0.0.1) mà không phải
+#: **vô hiệu hoá** bộ gác — vô hiệu hoá thì phép kiểm không còn đo gì.
+CHINH_SACH_NODE = None
+
+#: Kiểu credential node này biết tiêm. ⛔ Không `oauth2`: một access token của
+#: Google đi vào một URL người soạn tự gõ là đúng hình dạng của một lần rò
+#: token sang bên thứ ba. `oauth2` là việc của connector, nơi ĐÍCH đã cố định.
+KIEU_CREDENTIAL = ("api_key", "bearer", "basic")
+
+#: Header không bao giờ được trả ra `output` (spec §9.4). Một đích thù địch
+#: **dội lại** header uỷ quyền trong phản hồi là một đường rò không cần ai
+#: tấn công tinh vi — nên che theo TÊN, cả hai chiều.
+HEADER_PHAI_CHE = ("authorization", "cookie", "set-cookie", "x-api-key",
+                   "proxy-authorization", "x-auth-token", "x-csrf-token")
+
+DA_CHE = "«da che»"
 
 #: Mã lỗi node công bố (spec §5.6 `NodeError.ma`). Khai riêng, không dùng lại
 #: `nut.MA_LOI_APP`: lỗi ở đây không phải lỗi của một job app.
@@ -116,14 +139,66 @@ def _dien_giai_than(raw: bytes) -> Any:
         return raw.decode("utf-8", errors="replace")
 
 
+def che_header(headers: dict, *, bi_mat: str = "") -> dict:
+    """Header đã che, an toàn để trả ra `output` và vào `node_run_snapshot`.
+
+    Hai lớp, và cả hai đều cần:
+
+    1. **Theo TÊN** (`HEADER_PHAI_CHE`) — bắt được cả thứ ta không gửi, ví dụ
+       một `Set-Cookie` phiên của đích.
+    2. **Theo GIÁ TRỊ** — bắt được bí mật xuất hiện ở một header mang tên khác,
+       vì một đích thù địch chọn được tên header nó dội lại.
+    """
+    ra = {}
+    for k, v in (headers or {}).items():
+        gt = str(v)
+        if str(k).lower() in HEADER_PHAI_CHE:
+            ra[k] = DA_CHE
+        elif bi_mat and bi_mat in gt:
+            ra[k] = gt.replace(bi_mat, DA_CHE)
+        else:
+            ra[k] = gt
+    return ra
+
+
+def header_credential(kieu: str, bi_mat, meta: dict | None = None) -> dict:
+    """`{tên header: giá trị}` cho một credential. ⛔ Không log giá trị trả về.
+
+    `meta` là ô **công khai**, nên nó chỉ mang được những thứ không bí mật —
+    tên header và tiền tố. Chính giá trị thì nằm trong `bi_mat`.
+    """
+    meta = dict(meta or {})
+    if kieu == "bearer":
+        return {"Authorization": f"Bearer {bi_mat}"}
+    if kieu == "basic":
+        import base64
+
+        if isinstance(bi_mat, dict):
+            tai_khoan = str(bi_mat.get("tai_khoan") or bi_mat.get("user") or "")
+            mat_khau = str(bi_mat.get("mat_khau") or bi_mat.get("password") or "")
+            tho = f"{tai_khoan}:{mat_khau}"
+        else:
+            # Đã là "user:pass" — `basic` với một chuỗi duy nhất chỉ có nghĩa đó.
+            tho = str(bi_mat)
+        goi = base64.b64encode(tho.encode("utf-8")).decode("ascii")
+        return {"Authorization": f"Basic {goi}"}
+    # `api_key`: đích quyết định tên header, nên người tạo credential khai nó.
+    ten = str(meta.get("ten_header") or "Authorization")
+    tien_to = str(meta.get("tien_to") or "")
+    gia_tri = f"{tien_to}{bi_mat}" if tien_to else str(bi_mat)
+    return {ten: gia_tri}
+
+
 def thuc_thi(tham_so: dict, *, chinh_sach: an_toan_mang.ChinhSach | None = None,
-             bo_phan_giai=None, tao_client=None) -> dict:
+             bo_phan_giai=None, tao_client=None, header_them=None,
+             che_gia_tri: str = "") -> dict:
     """Gọi một API. Trả `{trang_thai, than, headers}` hoặc ném `LoiHttp`.
 
     Hàm **thuần** theo nghĩa không đụng CSDL và không ghi trạng thái run: cầu
     nối của động cơ dịch `LoiHttp` thành FAILED. `tao_client` để test cắm một
     client giả vào mà không phải vá `httpx`.
     """
+    header_them = dict(header_them or {})
     cach = str(tham_so.get("cach") or "GET").upper()
     if cach not in CACH_CHO_PHEP:
         raise LoiHttp("dau_vao_sai",
@@ -134,6 +209,10 @@ def thuc_thi(tham_so: dict, *, chinh_sach: an_toan_mang.ChinhSach | None = None,
     than_byte, kieu = _than_va_kieu(tham_so.get("than"))
     for k, v in kieu.items():
         headers.setdefault(k, v)
+    # ⭐ Credential GHI ĐÈ header người soạn tự gõ, không `setdefault`: nếu hai
+    #    thứ cùng khai `Authorization` thì thứ đi ra phải là thứ nền tảng quản
+    #    lý được và thu hồi được — không phải một chuỗi nằm trong `params`.
+    headers.update(header_them)
 
     thoi_cho = float(tham_so.get("thoi_cho_s") or THOI_CHO_MAC_DINH_S)
     theo_chuyen_huong = bool(tham_so.get("theo_chuyen_huong") or False)
@@ -163,6 +242,7 @@ def thuc_thi(tham_so: dict, *, chinh_sach: an_toan_mang.ChinhSach | None = None,
     except httpx.HTTPError as exc:
         raise LoiHttp("khong_ket_noi_duoc", str(exc)) from exc
 
+    ra_headers = che_header(ra_headers, bi_mat=che_gia_tri)
     than = _dien_giai_than(raw)
     if ma_chap_nhan:
         ok = trang_thai in {int(m) for m in ma_chap_nhan}
@@ -172,6 +252,86 @@ def thuc_thi(tham_so: dict, *, chinh_sach: an_toan_mang.ChinhSach | None = None,
         raise LoiHttp("ma_trang_thai_loi", f"HTTP {trang_thai}.",
                       trang_thai=trang_thai, than=than)
     return {"trang_thai": trang_thai, "than": than, "headers": ra_headers}
+
+
+def chay_http(db, run, node: dict, *, moi_truong: dict, **_) -> KetQua:
+    """Bộ thi hành inline của `core.http` — nối `thuc_thi` vào động cơ.
+
+    🔴 THIẾU BỘ NÀY, `main` ĐỎ NGAY LÚC COLLECT (24/09). Node khai
+       `thi_hanh="inline"` nhưng `dang_ky` không nhận hàm chạy, và luật của
+       `nut_loi.dang_ky` **ném lúc dựng** — đúng như nó phải làm: một node
+       inline không có bộ thi hành sẽ đứng `READY` tới khi hết TTL 20 giờ.
+
+    ⛔ Đây là vết của việc **hai làn song song**: làn viết `core.http` và làn
+       thêm luật `dang_ky` đều XANH một mình, và chỉ vỡ khi gộp. Xanh-khi-tách
+       không chứng minh được gì về xanh-khi-gộp.
+
+    Tham số đi qua ngôn ngữ §6 trước khi gọi, cùng đường `du_lieu.chay_*`.
+    `LoiHttp` thành `FAILED` có **mã**, không thành ngoại lệ trần — động cơ bắt
+    ngoại lệ trần thành `loi_he_thong`, và một URL người dùng gõ sai không phải
+    lỗi hệ thống.
+    """
+    tham_so = dict(node.get("params") or {})
+    try:
+        # 🔴 `ngon_ngu.tinh` (bản trước) coi CẢ chuỗi là một biểu thức, nên một
+        #    URL viết thẳng — `"https://vi.du/api"` — ném `invalid syntax`.
+        #    Tức node chỉ chạy được khi mọi tham số là biểu thức, và đó là
+        #    ngược với §6: `{{ }}` là thứ **đánh dấu** phần biểu thức trong một
+        #    chuỗi thường. `noi_suy` là lớp đúng, và nó trả nguyên văn khi
+        #    không có `{{`.
+        for ten, gia_tri in list(tham_so.items()):
+            tham_so[ten] = noi_suy.noi_suy(
+                gia_tri, lambda bt: ngon_ngu.tinh(bt, moi_truong))
+    except (LoiNgonNgu, noi_suy.LoiNoiSuy) as loi:
+        return KetQua(sang="FAILED", error=f"bieu_thuc_loi: {loi}"[:2000])
+
+    try:
+        header_them, bi_mat_tho = _credential(db, run, node)
+    except kho_credential.LoiCredential as loi:
+        # ⭐ Mã của kho đi thẳng ra: `credential_bi_thu_hoi` là câu spec §9.1
+        #    yêu cầu, và nó nói đúng việc khách phải làm (nối lại/tạo khoá mới).
+        return KetQua(sang="FAILED", error=f"{loi.ma}: {loi}"[:2000])
+
+    try:
+        ra = thuc_thi(tham_so, chinh_sach=CHINH_SACH_NODE,
+                      header_them=header_them, che_gia_tri=bi_mat_tho)
+    except LoiHttp as loi:
+        # ⛔ `loi.than` mang **thân phản hồi của đích**, và một 401 hay dội lại
+        #    chính token vừa gửi. Che trước khi nó thành `error` của node —
+        #    `error` đi vào `node_run_snapshot`, một bảng CHỈ THÊM.
+        return KetQua(sang="FAILED",
+                      error=_che_chuoi(f"{loi.ma}: {loi}", bi_mat_tho)[:2000])
+    return KetQua(output=ra)
+
+
+def _che_chuoi(chuoi: str, bi_mat: str) -> str:
+    return chuoi.replace(bi_mat, DA_CHE) if bi_mat else chuoi
+
+
+def _credential(db, run, node: dict) -> tuple[dict, str]:
+    """`(header tiêm vào, bí mật thô để che)`. Rỗng khi node không gán ref.
+
+    ⭐ **Chỉ chỗ này giải mã**, và nó nằm trong tiến trình job (spec §9.4).
+       Động cơ gọi `chay_http` từ vòng scheduler của worker — cùng tiến trình,
+       không phải tiến trình web.
+    """
+    ref = str(node.get("credential_ref") or "")
+    if not ref or db is None:
+        return {}, ""
+    c = kho_credential.kiem_ref(db, ref,
+                                owner_id=str(getattr(run, "owner_id", "") or ""),
+                                kieu_cho_phep=KIEU_CREDENTIAL)
+    bi_mat = kho_credential.lay_de_dung(
+        db, ref, owner_id=str(getattr(run, "owner_id", "") or ""),
+        run_id=str(getattr(run, "id", "") or ""),
+        node_id=str(node.get("id") or ""))
+    header = header_credential(c.kieu, bi_mat, c.meta)
+    # Bí mật thô dùng để CHE, nên nó phải là chuỗi thật sự đi ra dây — với
+    # `basic` thì đó là chuỗi đã base64, không phải mật khẩu gốc.
+    tho = bi_mat if isinstance(bi_mat, str) else ""
+    if c.kieu == "basic":
+        tho = next(iter(header.values())).split(" ", 1)[-1]
+    return header, tho
 
 
 CORE_HTTP = dang_ky(NodeDefinition(
@@ -217,10 +377,18 @@ CORE_HTTP = dang_ky(NodeDefinition(
     resource={"class": "api"},
     # Không tính credit: node này không chạy model và không giữ GPU. Cái nó
     # tiêu là thời gian worker, và trần `thoi_cho_s` là thứ chặn điều đó.
-    gia=Gia.mien_phi(), credential=(), quyen=frozenset({"network"}),
-    cho=(), ma_loi=MA_LOI_HTTP,
-    publish_duoc=False))
+    gia=Gia.mien_phi(), credential=KIEU_CREDENTIAL,
+    quyen=frozenset({"network", "credential"}),
+    cho=(), ma_loi=MA_LOI_HTTP + ("credential_bi_thu_hoi", "khong_thay"),
+    # ⭐ MỞ KHOÁ 24/09/2026. Lý do khoá (`tests/test_1789`: *"thiếu KHO
+    #    CREDENTIAL cho header Authorization — bật sớm là mời khách dán token
+    #    vào `WorkflowVersion`"*) đã hết: kho có ở `platform_core/credential.py`,
+    #    ref được kiểm lúc publish (`dinh_nghia._kiem_credential`), và bí mật
+    #    bị che ở cả `output` lẫn `error`.
+    publish_duoc=True), chay_http)
 
 
-__all__ = ["CACH_CHO_PHEP", "CORE_HTTP", "LoiHttp", "MA_LOI_HTTP",
-           "THOI_CHO_MAC_DINH_S", "TRAN_PHAN_HOI_BYTE", "thuc_thi"]
+__all__ = ["CACH_CHO_PHEP", "CHINH_SACH_NODE", "CORE_HTTP", "DA_CHE",
+           "HEADER_PHAI_CHE", "KIEU_CREDENTIAL", "LoiHttp", "MA_LOI_HTTP",
+           "THOI_CHO_MAC_DINH_S", "TRAN_PHAN_HOI_BYTE", "chay_http",
+           "che_header", "header_credential", "thuc_thi"]

@@ -332,6 +332,19 @@ def create_app(*, env: dict | None = None) -> FastAPI:
     app.include_router(billing_routes.router)
     app.include_router(webhooks_routes.router)
 
+    # ── `/hooks/*` — cửa vào công khai của Workflow V2 (spec §8.3) ───────────
+    #
+    # Gắn KHÔNG điều kiện, cùng lý do với router Nexus ở trên: một cờ chỉ đọc
+    # lúc mount là một cờ **không đóng được URL**. Xác thực nằm TRONG route
+    # (token băm so hằng thời gian), nên một trigger chưa đặt token là một cửa
+    # đóng, không phải một cửa mở.
+    #
+    # ⛔ Ngoài `/api/v1` cố ý: 24 route của API công khai đang đóng băng
+    #    (`server/api/inventory.py`), và một cửa máy-gọi-máy không dùng khoá API
+    #    không thuộc bề mặt đó.
+    from server.routes import hooks as hooks_routes
+    app.include_router(hooks_routes.router)
+
     # File tĩnh (HTMX self-host — Q18). Self-host chứ không CDN: CSP chặn
     # script ngoài, và không phụ thuộc mạng để trang chạy.
     import os as _os

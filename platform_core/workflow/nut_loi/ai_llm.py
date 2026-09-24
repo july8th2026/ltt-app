@@ -41,6 +41,23 @@ from platform_core.workflow.nut_loi import ai_loi, dang_ky
 #: ở cả hai NodeDefinition thay vì gõ lại chuỗi.
 JOB_TYPE_TEXT_CHAT = "ltt_llm.chat"
 
+#: Tên ToolSpec mà cả ba node `ai.*` BỌC (`ToolSpec(name="text.chat", ...)`
+#: trong `apps/ltt_llm/manifest.py`). ⛔ Khác `JOB_TYPE_TEXT_CHAT`: cái kia
+#: là làn hàng đợi, cái này là khoá tra `cong_cu.tat_ca()`. Hai chuỗi khác
+#: nhau, và không phép cắt chuỗi nào nối được chúng.
+TEN_TOOLSPEC = "text.chat"
+
+
+def hau_kiem(ket_qua: dict, params: dict) -> tuple:
+    """`NodeDefinition.hau_kiem` cho node `ai.*` — bọc `ai_loi.dien_giai`.
+
+    Bộ chuyển đổi mỏng: cầu nối job đưa `(result, params)`, còn
+    `dien_giai` chỉ cần `result` + `luoc_do` đã khai trên node. Giữ
+    `ai_loi` THUẦN (không biết `params` là gì) là lý do có lớp này.
+    """
+    return ai_loi.dien_giai(ket_qua,
+                            luoc_do=(params or {}).get("luoc_do"))
+
 _MO_HINH = {"type": "string", "enum": ["ltt-3.8", "ltt-3.5"],
             "default": "ltt-3.8", "description": N_("Model nội bộ.")}
 
@@ -85,6 +102,7 @@ AI_LLM = dang_ky(NodeDefinition(
     ),
     tham_so=_tham_so(bat_buoc_luoc_do=False),
     thi_hanh="job", job_type=JOB_TYPE_TEXT_CHAT,
+    ten_toolspec=TEN_TOOLSPEC, hau_kiem=hau_kiem,
     side_effect="external", idempotency_key_fields=(),
     resource={"class": "api"}, gia=Gia.theo_registry(JOB_TYPE_TEXT_CHAT),
     credential=(), quyen=frozenset({"network"}),
@@ -107,6 +125,7 @@ AI_EXTRACT = dang_ky(NodeDefinition(
     ),
     tham_so=_tham_so(bat_buoc_luoc_do=True),
     thi_hanh="job", job_type=JOB_TYPE_TEXT_CHAT,
+    ten_toolspec=TEN_TOOLSPEC, hau_kiem=hau_kiem,
     side_effect="external", idempotency_key_fields=(),
     resource={"class": "api"}, gia=Gia.theo_registry(JOB_TYPE_TEXT_CHAT),
     credential=(), quyen=frozenset({"network"}),
@@ -114,4 +133,5 @@ AI_EXTRACT = dang_ky(NodeDefinition(
     publish_duoc=False))
 
 
-__all__ = ["AI_EXTRACT", "AI_LLM", "JOB_TYPE_TEXT_CHAT"]
+__all__ = ["AI_EXTRACT", "AI_LLM", "JOB_TYPE_TEXT_CHAT", "TEN_TOOLSPEC",
+           "hau_kiem"]

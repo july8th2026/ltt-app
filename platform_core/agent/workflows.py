@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 from platform_core.agent.normalizer import MAX_JSON_DEPTH, _depth
 from platform_core.models import (WORKFLOW_APPROVED, WORKFLOW_ARCHIVED,
                                   WORKFLOW_DRAFT, WORKFLOW_VALIDATED,
-                                  AgentWorkflow, AgentWorkflowSnapshot)
+                                  AgentWorkflow)
 
 STATUSES = {WORKFLOW_DRAFT, WORKFLOW_VALIDATED, WORKFLOW_APPROVED, WORKFLOW_ARCHIVED}
 MAX_PAGES = 20
@@ -192,37 +192,8 @@ def create(db: Session, *, user_id: str, name: str, canvas: dict,
                         nodes=copy.deepcopy(nodes), edges=copy.deepcopy(edges),
                         viewport=copy.deepcopy(viewport), document=copy.deepcopy(canvas),
                         budget_max=meta["budget_max_credit"], source_workflow_id=source_workflow_id)
-    db.add(row); db.flush(); _snapshot(db, row, "create")
+    db.add(row); db.flush()
     return row
-
-
-def _snapshot(db: Session, row: AgentWorkflow, reason: str) -> AgentWorkflowSnapshot:
-    existing = db.query(AgentWorkflowSnapshot).filter_by(
-        workflow_id=row.id, revision=row.revision).first()
-    if existing is not None:
-        return existing
-    item = AgentWorkflowSnapshot(workflow_id=row.id, user_id=row.user_id,
-                                 revision=row.revision, name=row.name,
-                                 document=as_canvas(row), reason=reason[:32])
-    db.add(item); db.flush(); return item
-
-
-def snapshots(db: Session, workflow_id: str, user_id: str) -> list[AgentWorkflowSnapshot]:
-    get_owned(db, workflow_id, user_id)
-    return db.query(AgentWorkflowSnapshot).filter_by(
-        workflow_id=workflow_id, user_id=user_id).order_by(
-        AgentWorkflowSnapshot.revision.desc()).limit(100).all()
-
-
-def restore_snapshot(db: Session, *, workflow_id: str, user_id: str,
-                     revision: int, expected_revision: int) -> AgentWorkflow:
-    row = get_owned(db, workflow_id, user_id)
-    item = db.query(AgentWorkflowSnapshot).filter_by(
-        workflow_id=workflow_id, user_id=user_id, revision=revision).first()
-    if item is None:
-        raise WorkflowNotFound("Không tìm thấy snapshot.")
-    return save(db, workflow_id=row.id, user_id=user_id, revision=expected_revision,
-                name=item.name, canvas=copy.deepcopy(item.document), reason="restore")
 
 
 def as_canvas(row: AgentWorkflow) -> dict:
@@ -234,7 +205,14 @@ def as_canvas(row: AgentWorkflow) -> dict:
 
 
 def save(db: Session, *, workflow_id: str, user_id: str, revision: int,
-         name: str, canvas: dict, reason: str = "save") -> AgentWorkflow:
+         name: str, canvas: dict) -> AgentWorkflow:
+    """Ghi một bản Canvas v2 với khoá lạc quan.
+
+    🗑️ `reason` ĐÃ GỠ cùng bản chụp (P8 Task 5): nó chỉ tồn tại để dán nhãn cho
+       hàng `agent_workflow_snapshots` mà `restore_snapshot` đọc, và cả hai đã
+       bị xoá — `restore` đo được **0 lượt mọi thời đại**. Một tham số không ai
+       đọc là một tham số sẽ bị truyền sai mà không ai biết.
+    """
     row = get_owned(db, workflow_id, user_id)
     if row.status == WORKFLOW_ARCHIVED:
         raise WorkflowError("Workflow đã lưu trữ.")
@@ -251,4 +229,4 @@ def save(db: Session, *, workflow_id: str, user_id: str, revision: int,
             status=WORKFLOW_DRAFT, revision=revision + 1, updated_at=now))
     if result.rowcount != 1:
         raise WorkflowConflict("Workflow đã được sửa ở phiên khác.")
-    db.flush(); db.expire(row); _snapshot(db, row, reason); return row
+    db.flush(); db.expire(row); return row

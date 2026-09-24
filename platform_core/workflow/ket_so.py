@@ -68,8 +68,14 @@ def ket_so(db, run_id: str, *, ly_do: str = "") -> bool:
     if run.ket_so_luc is not None:
         return False
 
+    # ⭐ Chi phí một run = ảnh chụp CỦA NÓ **cộng** chi phí các run CON. Run con
+    #    không có `hold_id` (một khoản giữ cho cả cây — `run_con.py`), nên nếu
+    #    không cộng ở đây thì tiền thật của nó **không bao giờ được thu** và mọi
+    #    phép kiểm về "không giữ hai lần" vẫn xanh.
+    from platform_core.workflow import run_con
     run.actual_cost = (0 if run.status in RUN_LOI_CUA_TA
-                       else tong_chi_phi_hop_le(db, run_id))
+                       else tong_chi_phi_hop_le(db, run_id)
+                       + run_con.tong_chi_phi_con(db, run_id))
 
     # ⛔ QUYẾT TOÁN TRƯỚC, XOÁ DẤU SAU. Thứ tự này là toàn bộ vấn đề: xoá
     #    `hold_id` rồi mới chạm sổ thì một lần crash ở giữa để lại một khoản giữ
@@ -80,6 +86,16 @@ def ket_so(db, run_id: str, *, ly_do: str = "") -> bool:
     # vẫn an toàn — và `ket_so_luc` ở dưới mới là thứ chặn lần gọi thứ hai.
     from platform_core.workflow import tien
     tien.ket_so_tien(db, run)
+
+    # ⭐ Run CON: chi phí thật của nó cộng lên cha, vì nó KHÔNG có
+    #    `hold_id` (một khoản giữ cho cả cây — `run_con.py`). Bỏ bước này
+    #    mà vẫn giữ luật "không giữ hai lần" là lặng lẽ **cho không** phần
+    #    việc chạy trong run con: mọi phép kiểm về hold vẫn xanh.
+    #
+    # ⚠️ Đặt ở ĐÂY, sau `tien.ket_so_tien` và trước `ket_so_luc`: hàm này
+    #    chỉ chạy đúng một lần cho mỗi run (dấu `ket_so_luc` chặn lần hai),
+    #    nên tiền cộng lên cha đúng một lần.
+    run_con.bao_cha(db, run)
 
     run.hold_id = ""
     run.ket_so_luc = _bay_gio()

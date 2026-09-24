@@ -126,11 +126,12 @@ def test_moi_dong_can_ghi_cong_xuat_hien_tren_trang(client):
     assert mc, "khong co du lieu that de kiem — THIRD_PARTY_METRICS.md thay doi?"
     html = client.get("/ghi-cong-ben-thu-ba").text
     for dong in mc:
-        dinh_danh = dong["model_checkpoint"] if dong["model_checkpoint"] not in ("", "—") \
-            else dong["repo_goi"]
-        # Bỏ dấu backtick/markdown khỏi chuỗi định danh trước khi so trong HTML.
-        dinh_danh_sach = dinh_danh.strip("`")
-        assert dinh_danh_sach in html, \
+        # ⛔ KHÔNG tự chuẩn hoá lại ở đây. Trước 24/09 bài này `.strip("`")` còn
+        #    template `replace("`", "")` — hai cách TRÙNG nhau khi backtick nằm ở
+        #    hai đầu, và LỆCH ngay khi một ô có hậu tố (`…onnx` (1.157.965 B)).
+        #    Bài đỏ, và lời tố cáo của nó SAI: trang CÓ in DNSMOS.
+        # ⭐ Nay cả hai đọc `dinh_danh` do `third_party_notices` tính MỘT lần.
+        assert dong["dinh_danh"] in html, \
             f"dong {dong['so']} ({dong['dung_de']}) khong xuat hien tren trang"
         assert "CC BY" in html
 

@@ -23,7 +23,7 @@
          markdown khi hiện, KHÔNG đổi nội dung (bộ đọc `third_party_notices`
          giữ nguyên bản gốc cho test và cho các nơi khác đọc lại). #}
       <tr>
-        <td><code>{{ m.repo_goi.replace('`', '') }}</code>{% if m.model_checkpoint and m.model_checkpoint not in ("", "—") %} — <code>{{ m.model_checkpoint.replace('`', '') }}</code>{% endif %}</td>
+        <td><code>{{ m.repo_goi.replace('`', '') }}</code>{% if m.model_checkpoint and m.model_checkpoint not in ("", "—") %} — <code>{{ m.dinh_danh }}</code>{% endif %}</td>
         {# Dinh danh giay phep, bo chu thich tieng Viet trong ngoac: trang nay
            phuc vu ca khach doc ban tieng Anh. #}
         <td>{{ dinh_danh(m.license_weights) }}</td>

@@ -127,6 +127,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                 #    Do o tien trinh con demucs (`demucs_runner._f0_cua_giong`);
                 #    `0.0` nghia la khong do duoc, khong phai "khong co giong".
                 "f0_trung_vi": float(ket_qua.get("f0_trung_vi") or 0.0),
+                # ⭐ VI SAO `0.0`. `f0_trung_vi = 0.0` vi tep hong va vi thieu
+                #    `torchaudio` doi hai viec khac nhau; mot `0.0` tran khong
+                #    phan biet duoc. Rong = do duoc that.
+                "f0_ly_do": str(ket_qua.get("f0_ly_do") or ""),
                 "lufs": am["lufs"],
                 "dinh_that": am["dinh_that"],
                 "thoi_luong": tt["thoi_luong"],

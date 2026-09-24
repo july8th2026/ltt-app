@@ -11,10 +11,13 @@ Chốt `Q4` (`docs/architecture/workflow_v2_audit/23_24 §3`).
 """
 from __future__ import annotations
 
+import hashlib
+import re
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, Sequence
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from platform_core.models import Wakeup
 
@@ -23,9 +26,76 @@ from platform_core.models import Wakeup
 #: ngắn được độ trễ thực tế.
 CHU_KY_QUET_S = 5.0
 
+#: Bề rộng THẬT của `Wakeup.node_run_id` (`models.py`). Không phải một con số
+#: tự chọn: PostgreSQL ném `StringDataRightTruncation` ở ký tự thứ 65, còn
+#: SQLite nuốt im lặng — nên một đường quá dài chỉ lộ trên production.
+TRAN_NODE_RUN_ID = 64
+
+#: Ký tự `#` KHÔNG nằm trong tập id hợp lệ (`bien_dich._ID`), nên một khoá băm
+#: không bao giờ đụng một khoá đường-thật.
+_TIEN_TO_BAM = "#"
+_ID_VONG = re.compile(r"^[A-Za-z0-9_\-]{1,64}$")
+
 
 def _bay_gio() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def duong_thi_hanh(node_id: str,
+                   *, vong: Sequence[tuple[str, int]] = ()) -> str:
+    """Khoá nhận dạng của MỘT lần node chạy — `foreach1:0/delay1`.
+
+    🔴 VÌ SAO KHÔNG PHẢI `node_id` TRẦN
+
+    `UNIQUE(run_id, node_run_id, kind, due_at)` (`models.py`) là chỗ khử trùng
+    wakeup. Với `node_id` trần, hai vòng lặp của một `foreach` có `delay` trong
+    thân sinh **cùng một khoá**: vòng 2 va vào timer vòng 1, và run đứng chờ
+    tới hạn cuối cùng thay vì hạn của nó.
+
+    ⭐ NGUỒN — không phải suy luận. Activepieces dính đúng lỗi này với khoá
+       `UNIQUE(flow_run_id, step_name)` và sửa bằng **đường thi hành đầy đủ**;
+       `brain/knowledge/decisions/000015-fan-in-is-an-event-driven-waitpoint-barrier.md`
+       (activepieces@`17e2ac0b`) viết: *"Identity is path-keyed… The engine
+       sends `loop_1:3/loop_2:0/approval` in the existing `stepName` field…
+       a delay or approval inside a loop used to reuse one waitpoint row across
+       every iteration"*. Ta lấy cùng hình dạng khoá.
+
+    ⛔ NƠI TA PHẢI ĐI XA HƠN HỌ. `stepName` của họ không có trần; cột của ta có
+       (`TRAN_NODE_RUN_ID`). Vượt trần thì **băm**, không **cắt cụt**: cắt cụt
+       là cách im lặng nhất để hai đường khác nhau thành một khoá — đúng lỗi
+       hàm này tồn tại để chặn, chỉ đổi nguyên nhân.
+
+    ⚠️ Khoá phải **lặp lại được**: cùng node + cùng vòng ⇒ cùng chuỗi. Đó là
+       điều kiện để `hen()` giữ được tính luỹ đẳng của nó (hai đường cùng hẹn
+       một lần đánh thức là trạng thái bình thường, không phải sự cố).
+    """
+    if not _ID_VONG.match(str(node_id or "")):
+        raise ValueError(f"node_id khong hop le: {str(node_id)[:70]!r}")
+    phan: list[str] = []
+    for ten, chi_so in vong:
+        if not _ID_VONG.match(str(ten or "")):
+            raise ValueError(f"ten vong lap khong hop le: {str(ten)[:70]!r}")
+        if isinstance(chi_so, bool) or not isinstance(chi_so, int) or chi_so < 0:
+            raise ValueError(f"chi so vong lap phai la int >= 0, nhan {chi_so!r}")
+        phan.append(f"{ten}:{chi_so}")
+    phan.append(str(node_id))
+    duong = "/".join(phan)
+    if len(duong) <= TRAN_NODE_RUN_ID:
+        return duong
+    return _TIEN_TO_BAM + hashlib.sha256(duong.encode("utf-8")).hexdigest()[:40]
+
+
+def hen_node(db, *, run_id: str, node_id: str, kind: str, due_at: datetime,
+             vong: Sequence[tuple[str, int]] = ()) -> Wakeup:
+    """`hen()` cho một node — khoá theo ĐƯỜNG THI HÀNH, không theo node_id.
+
+    ⭐ Mọi chỗ hẹn thay cho MỘT NODE phải đi qua đây. `hen()` trần vẫn còn cho
+       hai ca không thuộc về một node: `tick`/`start` của cả run
+       (`node_run_id=""`) và wakeup theo **job id** (`cau_noi.bao_ket_thuc`,
+       khoá đã duy nhất sẵn vì mỗi lượt thử là một job mới).
+    """
+    return hen(db, run_id=run_id, kind=kind, due_at=due_at,
+               node_run_id=duong_thi_hanh(node_id, vong=vong))
 
 
 def hen(db, *, run_id: str, kind: str, due_at: datetime,
@@ -44,6 +114,31 @@ def hen(db, *, run_id: str, kind: str, due_at: datetime,
     db.add(w)
     db.flush()
     return w
+
+
+def hen_luy_dang(db, *, run_id: str, kind: str, due_at: datetime,
+                 node_run_id: str = "") -> Optional[Wakeup]:
+    """`hen()` nhưng nuốt ĐÚNG một lỗi: trùng `uq_wakeup_khu_trung`.
+
+    ⭐ Vì sao cần bản này bên cạnh `hen()`: `hen()` để ràng buộc NỔI LÊN, và
+       điều đó đúng cho bên gọi đang ở trong một transaction mà một wakeup
+       trùng là bất thường. Nhưng bên gọi của `noi_lai` thì ngược lại — tín
+       hiệu tới hai lần (webhook gửi lại, hai worker cùng thấy) là ca BÌNH
+       THƯỜNG, và để nó ném sẽ cuộn mất cả lần đóng waitpoint.
+
+    ⚠️ `begin_nested()` chứ không `try` trần: sau khi một câu lệnh vỡ,
+       transaction PostgreSQL ở trạng thái abort và mọi câu sau đều hỏng cho
+       tới khi cuộn về một savepoint (cùng bài học `tao_run.danh_thuc_dong_co`).
+
+    ⛔ Bắt HẸP: chỉ `IntegrityError`. Mất kết nối, khoá ngoại thiếu, lỗi
+       serialization vẫn phải nổ.
+    """
+    try:
+        with db.begin_nested():
+            return hen(db, run_id=run_id, kind=kind, due_at=due_at,
+                       node_run_id=node_run_id)
+    except IntegrityError:
+        return None
 
 
 def den_han(db, gioi_han: int = 200) -> list[Wakeup]:

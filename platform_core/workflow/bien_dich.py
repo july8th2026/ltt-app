@@ -267,11 +267,215 @@ def _tham_chieu_trong(gia_tri: Any) -> set[ThamChieu]:
     return ra
 
 
+#: Tiền tố của node LÕI (`nut_loi/`, spec §4.5 nguồn 1).
+#:
+#: 🔴 TỪNG CHỈ LÀ `"core."`, VÀ ĐÓ LÀ MỘT LỖI IM LẶNG. `nut_loi/__init__.py`
+#:    khai **bốn** không gian ngay ở dòng đầu docstring — `core.*`,
+#:    `trigger.*`, `ai.*`, `connector.*` — và cả bốn đều đăng ký vào cùng một
+#:    sổ `nut_loi.tat_ca()`. Bộ biên dịch chỉ nhận ra một trong bốn, nên một
+#:    node `ai.*` đầy đủ (đã khai, đã có `NodeDefinition`, đã có bộ thi hành)
+#:    rơi xuống nhánh cuối của `_node` và bị từ chối bằng
+#:    `loai_node_chua_ho_tro` — một thông điệp nói *"chưa hỗ trợ"* về một thứ
+#:    đã được hỗ trợ.
+#:
+#: ⛔ Không thay bằng "tra `nut_loi.tat_ca()` rồi suy": `_node` phải phân biệt
+#:    được **node lõi** với **node app** TRƯỚC khi tra sổ nào, vì hai bên có
+#:    hai nguồn khác nhau (spec §4.5). Một danh sách tiền tố là bản khai của
+#:    ranh giới ấy; `str.startswith` nhận tuple, nên ba chỗ dùng không đổi.
+TIEN_TO_LOI: tuple[str, ...] = ("core.", "trigger.", "ai.", "connector.")
+
+#: Kiểu tham số "đây là một BIỂU THỨC §6" trong `NodeDefinition.tham_so`.
+#:
+#: 🔴 VÌ SAO PHẢI CÓ NHÃN NÀY — một lỗ ĐO ĐƯỢC, không phải một tinh chỉnh.
+#:
+#:    Cổng tổ tiên §6.2 (`bien_dich`, "một cổng an ninh về tiền") chỉ soi các
+#:    đoạn `{{ … }}` trong `params`. Nhưng tham số của node lõi là biểu thức
+#:    **trần** (`core.if.dieu_kien = "nodes.a.output.text == 'co'"`, không có
+#:    ngoặc): `doan_bieu_thuc` không thấy gì, và một node đọc output của một
+#:    node KHÔNG phải tổ tiên đi lọt qua publish. Phát hiện khi trả lời cái
+#:    chuông `test_1714` ở Task 5.
+#:
+#: ⇒ Lược đồ tham số phải NÓI RA tham số nào là biểu thức. Đoán theo tên
+#:   (`dieu_kien`, `bieu_thuc`, `items`…) là một bảng thứ hai sẽ trôi.
+KIEU_BIEU_THUC = "bieu_thuc"
+
+#: `{tên: biểu thức}` — tham số của `core.set`. Cùng lý do với
+#: `KIEU_BIEU_THUC`: các biểu thức trong đó cũng phải đi qua cổng tổ tiên §6.2.
+KIEU_BANG_BIEU_THUC = "bang_bieu_thuc"
+
+
+def _thay_duoc_trong_vars(ten) -> bool:
+    """Tên biến `core.set` đọc được từ ngôn ngữ §6? Hỏi THẲNG `bien_vars`."""
+    from platform_core.workflow import bien_vars
+
+    return bien_vars._thay_duoc(ten)
+
+
+def _tham_chieu_node_loi(n: dict) -> set[ThamChieu]:
+    """Tham chiếu `nodes.…` trong các tham số BIỂU THỨC của một node lõi."""
+    from platform_core.workflow import nut_loi
+
+    nd = nut_loi.tat_ca().get(str(n.get("type")))
+    if nd is None:
+        return set()
+    thuoc = (nd.tham_so or {}).get("properties") or {}
+    ra: set[ThamChieu] = set()
+    for khoa, mo_ta in thuoc.items():
+        kieu = str(mo_ta.get("type", ""))
+        gia_tri = (n.get("params") or {}).get(khoa)
+        if kieu == KIEU_BIEU_THUC and isinstance(gia_tri, str) \
+                and gia_tri.strip():
+            ra.update(trich_tham_chieu(gia_tri))
+        elif kieu == KIEU_BANG_BIEU_THUC and isinstance(gia_tri, dict):
+            for bt in gia_tri.values():
+                if isinstance(bt, str) and bt.strip():
+                    ra.update(trich_tham_chieu(bt))
+    return ra
+
+
+def _kiem_tham_so_loi(nd, params: dict, nid: str) -> None:
+    """Kiểm `params` của một node lõi theo `NodeDefinition.tham_so`.
+
+    ⛔ Chặn ở **publish**, không lúc chạy — cùng lý do với cổng tổ tiên §6.2:
+       lúc chạy là lúc đang tiêu tiền của khách, và một `trang_thai="HOI_HOI"`
+       phát hiện ở đó nghĩa là run đã chạy được nửa đường.
+
+    ⚠️ Cố ý KHÔNG dựng một bộ kiểm JSON Schema đầy đủ ở đây (`luoc_do.py` có
+       việc khác). Ba luật đủ cho `tham_so` của node lõi, và mỗi luật là một
+       lỗi đã thấy: thiếu khoá bắt buộc, khoá lạ (gõ sai tên im lặng không có
+       tác dụng), `enum` ngoài tập.
+    """
+    lo = nd.tham_so or {}
+    thuoc = lo.get("properties") or {}
+    thieu = [k for k in (lo.get("required") or []) if k not in params]
+    if thieu:
+        raise LoiBienDich("thieu_tham_so",
+                          f"{nd.type} thieu tham so bat buoc: {sorted(thieu)}",
+                          nid)
+    # ⭐ `mot_trong`: ÍT NHẤT MỘT trong nhóm phải có mặt. `required` không nói
+    #    được điều đó — `core.delay` nhận `duration_s` **hoặc** `until`, và
+    #    không có cái nào thì nó là một điểm chờ **không bao giờ tới hạn**: run
+    #    đứng tới TTL 20 giờ với tiền bị giữ, không lỗi, không cảnh báo.
+    #
+    # ⛔ Đây là một luật của LƯỢC ĐỒ, không phải một `if` cho `core.delay`:
+    #    compiler không được biết tên node nào (`G42`). Node nào cần thì khai
+    #    `mot_trong` trong `tham_so` của chính nó.
+    for nhom in (lo.get("mot_trong") or []):
+        if not any(k in params for k in nhom):
+            raise LoiBienDich(
+                "thieu_tham_so",
+                f"{nd.type} phai co it nhat mot trong {sorted(nhom)}", nid)
+    # ⭐ TRẦN SỐ HỌC của lược đồ: `maximum` / `minimum` / `maxItems`. Nguồn:
+    #    Activepieces `packages/core/shared/src/lib/ee/agent/agent.ts` khai
+    #    `maxSteps … .max(MAX_AGENT_STEP_BUDGET)` và `tools … .max(…)` ngay
+    #    TRONG lược đồ zod, nên một cấu hình vượt trần không bao giờ được LƯU.
+    #
+    # ⛔ Đây là một luật của LƯỢC ĐỒ, y như `mot_trong` ở trên — compiler vẫn
+    #    không biết tên node nào (`G42`). Node nào cần trần thì tự khai.
+    #    Trần cưỡng chế ở đây chứ không lúc chạy: lúc chạy là lúc node đã mở
+    #    được một lượt tiêu tiền rồi.
+    for khoa, mo_ta in thuoc.items():
+        if khoa not in params:
+            continue
+        gia_tri = params[khoa]
+        if isinstance(gia_tri, bool) or not isinstance(gia_tri, (int, float)):
+            so = len(gia_tri) if isinstance(gia_tri, (list, tuple)) else None
+            tran = mo_ta.get("maxItems")
+            if so is not None and isinstance(tran, int) and so > tran:
+                raise LoiBienDich(
+                    "tham_so_vuot_tran",
+                    f"{nd.type}.{khoa} co {so} phan tu, toi da {tran}", nid)
+            continue
+        for ten_tran, phep in (("maximum", lambda a, b: a > b),
+                               ("minimum", lambda a, b: a < b)):
+            muc = mo_ta.get(ten_tran)
+            if isinstance(muc, (int, float)) and not isinstance(muc, bool) \
+                    and phep(gia_tri, muc):
+                raise LoiBienDich(
+                    "tham_so_vuot_tran",
+                    f"{nd.type}.{khoa} = {gia_tri}, {ten_tran} la {muc}", nid)
+    if lo.get("additionalProperties") is False:
+        thua = sorted(set(params) - set(thuoc))
+        if thua:
+            raise LoiBienDich(
+                "tham_so_la",
+                f"{nd.type} khong co tham so {thua} (co: {sorted(thuoc)})", nid)
+    for khoa, mo_ta in thuoc.items():
+        kieu = str(mo_ta.get("type", ""))
+        if khoa in params and kieu == KIEU_BANG_BIEU_THUC:
+            bang = params[khoa]
+            # ⚠️ Bảng RỖNG hợp lệ: `core.call_workflow.inputs = {}` là một
+            #    lời gọi không truyền gì, và đó là ca thường.
+            if not isinstance(bang, dict):
+                raise LoiBienDich(
+                    "tham_so_khong_hop_le",
+                    f"{nd.type}.{khoa} phai la mot bang ten->bieu thuc",
+                    nid)
+            for ten, bt in bang.items():
+                if not _thay_duoc_trong_vars(ten):
+                    raise LoiBienDich(
+                        "ten_bien_khong_hop_le",
+                        f"{nd.type}.{khoa}: ten bien {ten!r} khong doc "
+                        "duoc tu ngon ngu Sec6 (khoa bat dau gach duoi la "
+                        "VO HINH) -- nhan no roi lang le khong thay no la "
+                        "cach te nhat", nid)
+                if not isinstance(bt, str):
+                    raise LoiBienDich(
+                        "tham_so_khong_hop_le",
+                        f"{nd.type}.{khoa}.{ten} phai la mot bieu thuc "
+                        "(chuoi)", nid)
+        if khoa in params and kieu == KIEU_BIEU_THUC \
+                and not isinstance(params[khoa], str):
+            raise LoiBienDich(
+                "tham_so_khong_hop_le",
+                f"{nd.type}.{khoa} phai la mot bieu thuc (chuoi) -- nhan "
+                f"{type(params[khoa]).__name__}", nid)
+        if khoa not in params or str(mo_ta.get("type", "")) != "enum":
+            continue
+        cho_phep = [str(x) for x in (mo_ta.get("values") or [])]
+        if str(params[khoa]) not in cho_phep:
+            raise LoiBienDich(
+                "tham_so_khong_hop_le",
+                f"{nd.type}.{khoa} phai la mot trong {cho_phep} -- nhan "
+                f"{params[khoa]!r}", nid)
+
+
+def _node_loi(n: dict, nid: str, loai: str) -> dict:
+    """Node `core.*` — nguồn là `nut_loi/`, KHÔNG phải registry công cụ."""
+    from platform_core.workflow import nut_loi
+
+    nd = nut_loi.tat_ca().get(loai)
+    if nd is None:
+        raise LoiBienDich("node_khong_ton_tai", loai, nid)
+    if not nd.publish_duoc:
+        raise LoiBienDich("loai_node_chua_ho_tro", loai, nid)
+    params = dict(n.get("params") or {})
+    _kiem_tham_so_loi(nd, params, nid)
+    # 🔴 Truoc 24/09/2026 dong nay ghi cung `""`. Mot o LUON RONG thi khong ai
+    #    gan duoc credential cho `core.http`, va he qua that la nguoi soan phai
+    #    go token vao `params` — tuc vao `workflow_version`, mot ban ghi duoc
+    #    NHAN BAN khi khach "Save as" va tra nguyen ven cho trinh soan thao.
+    ref = str(n.get("credential_ref") or "")
+    if ref and not nd.credential:
+        # ⛔ Node nay khong goi ra ngoai, nen mot ref o day la mot hieu nham
+        #    cua nguoi soan — va mot hieu nham im lang ve bao mat la thu te
+        #    nhat: ho tuong da gan khoa, thuc ra chua.
+        raise LoiBienDich(
+            "credential_khong_ho_tro",
+            f"node {loai!r} khong nhan credential nao", nid)
+    return {"id": nid, "type": loai, "type_version": nd.type_version,
+            "params": params, "credential_ref": ref,
+            "settings": dict(n.get("settings") or {}),
+            "thi_hanh": nd.thi_hanh}
+
+
 def _node(n: dict, cc: dict[str, CongCu], *, nghiem: bool = True) -> dict:
     nid = str(n.get("id", ""))
     if not _ID.match(nid):
         raise LoiBienDich("id_khong_hop_le", f"id node {nid[:70]!r}", nid[:64])
     loai = str(n.get("type", ""))
+    if loai.startswith(TIEN_TO_LOI):
+        return _node_loi(n, nid, loai)
     if loai == "tool":
         data = n.get("data") or {}
         ten, params = str(data.get("tool", "")), data.get("params") or {}
@@ -383,9 +587,50 @@ def cau_truc(document: dict, *,
     # bảng thứ hai: cùng một nguồn, đọc thẳng. Không đi qua `luoc_do` vì bộ ấy
     # ném `LoiLuocDo` khi gặp kiểu lạ, và một kiểu lạ ở một tool KHÔNG liên
     # quan không được phép làm sập đường publish của người khác.
-    cong_ra_cua = {n["id"]: frozenset(cc[n["type"][4:]].returns or {})
-                   for n in nodes}
+    # ⚠️ Node LÕI không có ToolSpec; cổng ra của nó do chính `NodeDefinition`
+    #    khai (`nut_loi/`, spec §4.5 nguồn 1). Vẫn là **một** nguồn cho mỗi
+    #    loại node, không phải một bảng thứ hai cho cùng một loại.
+    from platform_core.workflow import nut_loi as _loi
+    so_loi = _loi.tat_ca()
+    cong_ra_cua = {
+        n["id"]: (frozenset(ten for ten, _c in so_loi[n["type"]].cong_ra)
+                  if str(n["type"]).startswith(TIEN_TO_LOI)
+                  else frozenset(cc[n["type"][4:]].returns or {}))
+        for n in nodes}
     return CauTruc(nodes, ra_edges, thu_tu, to_tien, cong_ra_cua)
+
+
+def _kiem_ghi_bien(nodes: list[dict], to_tien: dict) -> None:
+    """§6.5: hai `core.set` ghi cùng khoá mà không ai là tổ tiên ⇒ TỪ CHỐI.
+
+    ⭐ `bien_vars.kiem_ghi_xung_dot` đã có từ P2 và đã được test — **nhưng
+       chưa ai gọi**. Một cổng không có người gọi là một cổng mở; đây là chỗ
+       nối dây.
+    """
+    from platform_core.workflow import bien_vars
+
+    khoa_ghi = {str(n["id"]): list((n.get("params") or {}).get("bien") or {})
+                for n in nodes if str(n.get("type")) == bien_vars.LOAI_GHI}
+    if khoa_ghi:
+        bien_vars.kiem_ghi_xung_dot(khoa_ghi, to_tien)
+
+
+def _kiem_ten_output(nodes: list[dict]) -> None:
+    """Hai `core.output` cùng tên ⇒ kết quả run phụ thuộc thứ tự chạy."""
+    from platform_core.workflow import ket_qua_run
+
+    thay: dict[str, str] = {}
+    for n in nodes:
+        if str(n.get("type")) != ket_qua_run.LOAI_OUTPUT:
+            continue
+        ten = str((n.get("params") or {}).get("ten") or "")
+        if ten in thay:
+            raise LoiBienDich(
+                "trung_ten_output",
+                f"node {thay[ten]!r} va {n['id']!r} cung khai dau ra "
+                f"{ten!r} -- ket qua cua run se phu thuoc thu tu chay",
+                str(n["id"]))
+        thay[ten] = str(n["id"])
 
 
 def bien_dich(document: dict, *,
@@ -398,8 +643,12 @@ def bien_dich(document: dict, *,
         # ⛔ Phán quyết về HÌNH DẠNG biểu thức nằm ở ĐÂY, không ở `cau_truc`:
         #    `cau_truc` còn phục vụ cửa gợi ý, nơi một biểu thức gõ dở là
         #    chuyện thường. Cổng publish thì không tha (test_1714).
-        _doi(n["params"], nid)
-        for tc in sorted(_tham_chieu_trong(n["params"])):
+        tham_chieu = _tham_chieu_trong(n["params"])
+        if str(n["type"]).startswith(TIEN_TO_LOI):
+            tham_chieu |= _tham_chieu_node_loi(n)
+        else:
+            _doi(n["params"], nid)
+        for tc in sorted(tham_chieu):
             doc = (f"nodes.{tc.node}.output.{tc.cong}" if tc.loai == "output"
                    else f"nodes.{tc.node}.{tc.loai}")
             if tc.node == nid:
@@ -427,6 +676,13 @@ def bien_dich(document: dict, *,
                     f"node {nid!r} doc {doc} nhung node {tc.node!r} khong co "
                     f"cong ra {tc.cong!r}; cong co that: "
                     f"{sorted(cong_ra_cua[tc.node])}", nid)
+
+    # ⚠️ `than_foreach` vẫn được gọi ở `bao_gia` (nhân trần chi phí) và ở
+    #    `nut_loi/vong_lap` (lái vòng). Ở đây không còn phép cấm nào:
+    #    thân `foreach` NAY nhận cả node sinh job, vì `node_run` đã khoá
+    #    theo ĐƯỜNG THI HÀNH (`thi_hanh.khoa_node`).
+    _kiem_ghi_bien(nodes, to_tien)
+    _kiem_ten_output(nodes)
 
     cai_dat = document.get("settings") or {}
     return {

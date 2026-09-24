@@ -69,6 +69,13 @@ class _DbGia:
             def scalars(self):
                 return self
 
+            def first(self):
+                # `mot_luot` nay tra profile mac dinh de do dien that
+                # (`_compute_cua_profile_mac_dinh`). Ket qua SQLAlchemy that co
+                # `first()`; thieu no thi test do mot AttributeError chu khong
+                # do dieu phoi.
+                return None
+
             def __iter__(self):
                 return iter(self._x)
 

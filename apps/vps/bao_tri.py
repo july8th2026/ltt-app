@@ -250,6 +250,18 @@ _KHOA_CAU_HINH_CONG_VAO = "cong_vao_bang_thong"
 #: `profiles.CANH_BAO_BAO_TRI`); `test_2600` chốt điều đó.
 THANH_PHAN_BANG_THONG_TONG = "bang_thong_tong"
 
+#: Thanh phan suc khoe cho phep kiem "cong quan tri co lo ra dia chi cua khach".
+#: ⚠️ Phai NAM NGOAI `REQUIRED_HEALTH_COMPONENTS` — xem `CANH_BAO_BAO_TRI`.
+THANH_PHAN_CONG_QUAN_TRI = "cong_quan_tri"
+
+#: Cong SSH cua cong vao. Mot hang so, khong go lai so o cho khac.
+CONG_QUAN_TRI = 22
+
+#: Nhip kiem cong: mot ngay. No mo ket noi TCP toi tung dia chi nen khong dang
+#: chay moi gio, va thu no bat (mot luat tuong lua bi go) khong doi theo gio.
+KIEM_CONG_MOI_GIAY = 24 * 3600
+_moc_kiem_cong = 0.0
+
 #: Khoá đếm số lượt LIÊN TIẾP không đọc được bộ đếm cổng vào.
 #:
 #: Một lần hỏng thoáng qua (mạng chớp, cổng vào vừa khởi động lại) khác hẳn một
@@ -474,6 +486,117 @@ def _ghi_tin_hieu_bang_thong_tong(db, profile, *, doc_duoc: bool,
     return lien_tiep
 
 
+def _kiem_cong_quan_tri(db, profile, *, mo_cong=None, now=None) -> int:
+    """Do cong SSH cua cong vao TREN TUNG dia chi, ghi mot ban ghi suc khoe.
+
+    🔴 24/09/2026: `/etc/nftables.conf` viet `tcp dport 22 accept` — mot dieu
+       kien **khong neu dia chi dich** — nen SSH quan tri tra loi tren ca 11 dia
+       chi IPv4 cua cong vao, gom ca dia chi vua ban cho khach. Da chan bang
+       `ip daddr != <IP quan tri> tcp dport 22 drop`.
+
+    ## Vi sao phep do nay phai TU CHAY
+
+    `tools/vps_doi_soat_cong.py` do duoc, nhung no chay bang tay. Mot phep kiem
+    an ninh chay bang tay gop **hai** trang thai vao cung mot su im lang:
+    *"chua ai chay"* va *"chay roi, dat"*. Ghi mot ban ghi suc khoe MOI luot
+    tach hai thu do ra: khong co ban ghi = STALE tren trang admin.
+
+    ## ⛔ Khong chan ban hang
+
+    Thanh phan nay thuoc `CANH_BAO_BAO_TRI`: cong quan tri lo la viec cua nguoi
+    van hanh, khach khong lam gi duoc voi tin hieu do. Dong cua hang vi no la
+    phat khach cho mot loi cua ta.
+
+    `mo_cong(ip, cong) -> (mo, ly_do)` tiem duoc de do bang test.
+    Tra so dia chi bi lo (0 = sach).
+    """
+    from datetime import datetime, timezone
+
+    from sqlalchemy import select
+
+    from apps.vps.tables import VpsGateway, VpsIp, VpsProfileHealth
+
+    if mo_cong is None:
+        from apps.vps.services.kiem_cong import cong_mo as mo_cong
+
+    bay_gio = now or datetime.now(timezone.utc)
+    gw = db.execute(select(VpsGateway).where(
+        VpsGateway.infrastructure_profile_id == profile.id)).scalars().first()
+    if gw is None or not gw.ip_cong_khai:
+        return 0
+    ip_quan_tri = str(gw.ip_cong_khai)
+    dia_chi = [r.dia_chi for r in db.execute(select(VpsIp).where(
+        VpsIp.infrastructure_profile_id == profile.id)).scalars()
+        if r.dia_chi and r.dia_chi != ip_quan_tri]
+
+    # SONG SONG. Do tuan tu 11 dia chi x 3 giay = 33 giay, va vong bao tri co
+    # viec khac phai lam — do that 24/09 voi cho 6 giay: 66 giay, mat lease.
+    from concurrent.futures import ThreadPoolExecutor
+
+    can_do = sorted(dia_chi) + [ip_quan_tri]
+    with ThreadPoolExecutor(max_workers=min(12, len(can_do))) as bom:
+        ket = dict(zip(can_do, bom.map(lambda ip: mo_cong(ip, CONG_QUAN_TRI), can_do)))
+    lo = [ip for ip in sorted(dia_chi) if ket[ip][0]]
+    mo_qt = ket[ip_quan_tri][0]
+
+    if lo:
+        trang_thai = "CRITICAL"
+        tom_tat = (f"cong {CONG_QUAN_TRI} MO tren {len(lo)} dia chi khong phai "
+                   f"cua no: {', '.join(lo[:6])}")
+    elif not mo_qt:
+        # Chan qua tay cung la hong, va no hong ve phia mat quyen quan tri.
+        trang_thai = "CRITICAL"
+        tom_tat = (f"cong {CONG_QUAN_TRI} DONG tren chinh IP quan tri "
+                   f"{ip_quan_tri} — khong con duong vao cong vao")
+    else:
+        trang_thai = "HEALTHY"
+        tom_tat = (f"cong {CONG_QUAN_TRI} chi mo tren IP quan tri "
+                   f"{ip_quan_tri} ({len(dia_chi)} dia chi khac deu dong)")
+
+    db.add(VpsProfileHealth(
+        infrastructure_profile_id=profile.id,
+        component=THANH_PHAN_CONG_QUAN_TRI,
+        status=trang_thai, summary=tom_tat[:300],
+        observed_at=bay_gio, generated_at=bay_gio))
+    if lo:
+        log.error("VPS: cong quan tri LO tren %s", ", ".join(lo))
+    return len(lo)
+
+
+def _kiem_cong_dinh_ky(db, *, now=None) -> int:
+    """Chay `_kiem_cong_quan_tri` cho profile mac dinh, moi ngay mot lan.
+
+    Moc RIENG: ba phep soi trong vong nay (`_doi_chieu_profiles`,
+    `_doi_chieu_dinh_ky`, va phep nay) tung dung chung mot moc, va phep chay
+    truoc khoa hai phep kia **24 gio trong im lang** — loi that, sua 24/09.
+    """
+    global _moc_kiem_cong
+
+    import time as _time
+
+    from sqlalchemy import select
+
+    from apps.vps.tables import VpsInfrastructureProfile
+
+    if _time.monotonic() < _moc_kiem_cong:
+        return 0
+    _moc_kiem_cong = _time.monotonic() + KIEM_CONG_MOI_GIAY
+    profile = db.execute(select(VpsInfrastructureProfile).where(
+        VpsInfrastructureProfile.status == "ACTIVE",
+        VpsInfrastructureProfile.is_default.is_(True))).scalars().first()
+    if profile is None:
+        return 0
+    try:
+        so_lo = _kiem_cong_quan_tri(db, profile, now=now)
+        db.commit()
+        return so_lo
+    except OSError as exc:
+        # Mang hong khong duoc lam hong vong bao tri; nhung cung ⛔ khong duoc im.
+        db.rollback()
+        log.warning("VPS: khong kiem duoc cong quan tri: %s", exc)
+        return 0
+
+
 def _can_ham_theo_tong(profile, dang_song, *, now=None, db=None) -> set[str]:
     """Tập `id` VpsInstance cần bị ép hãm bởi lớp TỔNG, cho một profile.
 
@@ -581,10 +704,13 @@ def dem_profile_mat_tin_hieu(db) -> int:
 
 def _doi_chieu_profiles(db):
     """Read each profile independently; no fallback to legacy provider drivers."""
-    global _moc_doi_chieu
-    if time.monotonic() < _moc_doi_chieu:
+    # ⚠️ MỐC RIÊNG. Trước 24/09/2026 hàm này và `_doi_chieu_dinh_ky` dùng CHUNG
+    #    `_moc_doi_chieu`, nên phép soi nào chạy trước sẽ khoá phép soi kia đúng
+    #    24 giờ — im lặng, và không test nào đo được sự vắng mặt ấy.
+    global _moc_doi_chieu_profile
+    if time.monotonic() < _moc_doi_chieu_profile:
         return 0
-    _moc_doi_chieu = time.monotonic() + DOI_CHIEU_MOI_GIAY
+    _moc_doi_chieu_profile = time.monotonic() + DOI_CHIEU_MOI_GIAY
     from sqlalchemy import select
     from apps.vps.services.reconciliation import reconcile_profile
     from apps.vps.tables import VpsInfrastructureProfile
@@ -689,32 +815,49 @@ def _hoan_may_tao_hong(db) -> int:
     from apps.vps.tables import VpsEvent, VpsInstance
 
     da_hoan = 0
+    can_commit = False
     for may in db.execute(select(VpsInstance).where(
             VpsInstance.trang_thai == "loi")).scalars():
         loai = {e.loai: e for e in db.execute(
             select(VpsEvent).where(VpsEvent.instance_id == may.id)).scalars()}
         if "tao_xong" in loai:
-            continue                      # đã từng chạy — không hoàn
+            continue                      # đã từng chạy — không hoàn, KHÔNG dọn
+
+        # 🔴 DỌN TRƯỚC, VÀ DỌN VÔ ĐIỀU KIỆN. Đo 24/09/2026: VM 207
+        #    `vps-c74d4fd8` nằm lại Proxmox ở `stopped` sau khi máy `Maytram01`
+        #    vào `loi`, vì lời gọi `_nop_job_xoa` **nằm sau** `if so <= 0:
+        #    continue`. Từ `cd3c7058` (23/09) đường tạo mới nhả tiền qua
+        #    `credit` chứ không phát `thu_phi`, nên `so` luôn 0 ⇒ mọi máy hỏng
+        #    mới đều thoát khỏi vòng dọn. Một VM mồ côi giữ vmid, 40 GB đĩa và
+        #    một địa chỉ trong mạng riêng — và không ai đi tìm nó.
+        #
+        # ⭐ Việc DỌN và việc HOÀN TIỀN là hai câu hỏi khác nhau; gộp chúng vào
+        #    một nhánh `if` là lý do lỗ này tồn tại. `_nop_job_xoa` dedupe theo
+        #    máy ở hàng đợi nên gọi lại mỗi lượt là vô hại.
+        try:
+            _nop_job_xoa(db, may)
+            can_commit = True
+        except Exception as exc:          # noqa: BLE001 - khong duoc chan viec hoan
+            log.warning("VPS: khong nop duoc job xoa cho may hong %s: %s",
+                        may.id, exc)
+
         if "hoan_tien" in loai:
             continue                      # đã hoàn rồi
         thu = loai.get("thu_phi")
         so = int((thu.chi_tiet or {}).get("credit") or 0) if thu else 0
         if so <= 0:
-            continue                      # chưa thu gì thì không có gì để hoàn
+            # Không có `thu_phi` = tiền chưa bao giờ rời tài khoản (đường giữ
+            # chỗ đã nhả ở `job_runner`). ⛔ Hoàn ở đây là tặng không một khoản
+            # chưa thu — nhưng máy thì vẫn vừa được dọn ở trên.
+            continue
 
         credit.hoan_phi(db, may.user_id, so, kind=billing.KIND,
                         note=f"Hoan chu ky VPS: may {may.id[:8]} tao khong xong")
         billing.ghi_su_kien(db, may.id, "hoan_tien", boi="he_thong",
                             credit=so, ly_do=may.ly_do or "")
-        # Máy hỏng vẫn có thể đang giữ một VM dở dang trên Proxmox, một địa chỉ
-        # trong mạng riêng, và một IP đang tính tiền. Đẩy job xoá để nhả hết.
-        try:
-            _nop_job_xoa(db, may)
-        except Exception as exc:          # noqa: BLE001 - hoan tien da xong roi
-            log.warning("VPS: hoan tien may %s xong nhung khong nop duoc job xoa: %s",
-                        may.id, exc)
         da_hoan += 1
-    if da_hoan:
+        can_commit = True
+    if can_commit:
         db.commit()
     return da_hoan
 
@@ -727,9 +870,35 @@ DOI_CHIEU_MOI_GIAY = 24 * 3600
 #: Moc lan doi chieu gan nhat, theo dong ho don dieu cua tien trinh.
 #: Worker khoi dong lai thi chay lai mot luot — vo hai, vi phep quet chi DOC.
 _moc_doi_chieu = 0.0
+#: Mốc RIÊNG cho `_doi_chieu_profiles` — xem lý do ở chính hàm đó.
+_moc_doi_chieu_profile = 0.0
 
 
-def _doi_chieu_dinh_ky(db, client) -> int:
+def _compute_cua_profile_mac_dinh(db):
+    """Compute client của profile mặc định, hoặc `None` nếu chưa đọc được.
+
+    ⛔ Không ném: một lượt bảo trì không được chết vì phép soi không mở được
+       kết nối. Nhưng cũng ⛔ không im: `quet` là chỗ duy nhất đo điện thật.
+    """
+    from sqlalchemy import select
+
+    from apps.vps.tables import VpsInfrastructureProfile
+
+    profile = db.execute(select(VpsInfrastructureProfile).where(
+        VpsInfrastructureProfile.status == "ACTIVE",
+        VpsInfrastructureProfile.is_default.is_(True))).scalars().first()
+    if profile is None:
+        log.warning("VPS doi chieu: khong co profile ACTIVE mac dinh de do dien")
+        return None
+    try:
+        return backend_factory.compute_backend(profile).client
+    except (ChuaCauHinh, ProxmoxError, *backend_factory.operation_error_types()) as exc:
+        log.warning("VPS doi chieu: khong mo duoc compute cua profile %s: %s",
+                    profile.id, exc)
+        return None
+
+
+def _doi_chieu_dinh_ky(db, client=None) -> int:
     """Quet mo coi moi ngay, ghi CANH BAO neu co. Tra so muc mo coi.
 
     ## Vi sao viec nay phai TU CHAY
@@ -743,9 +912,18 @@ def _doi_chieu_dinh_ky(db, client) -> int:
     dung vong bao tri, no la ly do de co nguoi doc.
     """
     global _moc_doi_chieu
-    if client is None:
-        return 0
+    # Kiểm mốc TRƯỚC khi mở kết nối: phép soi chạy mỗi ngày, nên 23 giờ còn lại
+    # không được tốn một lượt đăng nhập Proxmox nào.
     if time.monotonic() < _moc_doi_chieu:
+        return 0
+    if client is None:
+        # ⚠️ `mot_luot` đặt `client = None` một cách CỐ Ý (máy pinned không đi
+        #    qua endpoint compute global), nên nhận client từ người gọi nghĩa là
+        #    hàm này không bao giờ chạy trên production — dây nối đủ mà không có
+        #    điện. Tự lấy compute của profile **mặc định**: đó là cụm duy nhất
+        #    đang chạy máy khách, và `quet` vốn hỏi một cụm.
+        client = _compute_cua_profile_mac_dinh(db)
+    if client is None:
         return 0
     # Dat moc TRUOC khi chay: quet nem thi luot sau van cho du mot ngay,
     # khong quay lai ngay va nem lai moi gio.
@@ -873,6 +1051,18 @@ def mot_luot(db, *, now=None) -> dict:
     ket_qua["da_hoan"] = _hoan_may_tao_hong(db)
     ket_qua["thao_tac_qua_han"] = _don_thao_tac_qua_han(db, now=now)
     ket_qua["mo_coi"] = _doi_chieu_profiles(db)
+    # 🔴 Nối lại phép soi đo ĐIỆN THẬT. `_doi_chieu_profiles` đọc ba backend nhưng
+    #    module `reconciliation` khai rõ là read-only và **không đọc điện**; chỗ
+    #    duy nhất ghi `dien_quan_sat`/`quan_sat_luc` là `doi_chieu.quet`, gọi từ
+    #    `_doi_chieu_dinh_ky` — hàm mà **không mã sản phẩm nào gọi** cho tới hôm nay.
+    #
+    #    Đo 24/09/2026: máy 204 mang `dien_quan_sat = chay` từ 16/09 20:41 trong
+    #    khi Proxmox trả `tat` ⇒ trang khách khẳng định "Đang chạy" cho một máy
+    #    đã tắt tám ngày, và `qua_cu()` không phân biệt được máy khoẻ với máy
+    #    chết. Docstring của `_doi_chieu_dinh_ky` viết đúng về chính nó:
+    #    *"Một phép soi không ai chạy là một phép soi không tồn tại"*.
+    ket_qua["dien_mo_coi"] = _doi_chieu_dinh_ky(db)
+    ket_qua["cong_quan_tri_lo"] = _kiem_cong_dinh_ky(db)
     ket_qua["ip_rong_huy_gia_han"] = _chinh_sach_ip_rong(db, now=now)
 
     da_nop_xoa = 0
@@ -932,12 +1122,12 @@ def chay(*, dong_ho=None) -> None:
         if any(kq.values()):
             log.info("VPS bao tri: thu %s, treo %s, nop xoa %s, doi giam toc %s, "
                      "chup anh %s, don ve %s, hoan %s, thao tac qua han %s, "
-                     "mo coi %s, ip rong huy gia han %s, "
+                     "mo coi %s, dien mo coi %s, ip rong huy gia han %s, "
                      "mat tin hieu bang thong tong %s",
                      kq["da_thu"], kq["da_treo"], kq["da_nop_xoa"],
                      kq["da_doi_giam_toc"], kq["da_chup"], kq["da_don_ve"],
                      kq["da_hoan"], kq["thao_tac_qua_han"], kq["mo_coi"],
-                     kq.get("ip_rong_huy_gia_han", 0),
+                     kq.get("dien_mo_coi", 0), kq.get("ip_rong_huy_gia_han", 0),
                      kq.get("mat_tin_hieu_bang_thong_tong", 0))
     finally:
         gen.close()

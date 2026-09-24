@@ -209,12 +209,24 @@ def test_moi_migration_deu_co_duong_lui():
     Không phải vì hay dùng đường lùi, mà vì viết được nó buộc phải nghĩ xem
     thay đổi này có làm mất dữ liệu không.
     """
+    import re
+
     thu_muc = ROOT / "alembic" / "versions"
     files = [p for p in thu_muc.glob("*.py") if not p.name.startswith("__")]
     assert files, "chua co migration nao"
     for p in files:
         noi_dung = p.read_text(encoding="utf-8")
         assert "def downgrade()" in noi_dung, f"{p.name} thieu downgrade()"
+        # ⚠️ MERGE revision (`down_revision` la mot tuple) khong doi luoc do —
+        #    no chi noi hai nhanh lai. "Khong co gi de lui" o do la SU THAT,
+        #    khong phai mot bo qua. Bat buoc no viet mot than khac rong chi de
+        #    qua banh coc la day nguoi ta viet mot cau dung nghia.
+        #    (Do 24/09/2026: hai merge revision cung ngay, mot viet `pass` va
+        #    mot viet docstring — cung ngu nghia, khac ket qua. Mot banh coc ma
+        #    ket qua phu thuoc cach go la mot banh coc chua do dung thu.)
+        la_merge = re.search(r"^down_revision(?:\s*:[^=]+)?\s*=\s*\(", noi_dung, re.M)
+        if la_merge:
+            continue
         than = noi_dung.split("def downgrade()", 1)[1]
         # Chi co "pass" nghia la khong lui duoc that.
         assert than.strip().replace("-> None:", "").strip() not in ("pass", ""), (

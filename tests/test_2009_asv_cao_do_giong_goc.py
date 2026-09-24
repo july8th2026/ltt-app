@@ -152,14 +152,20 @@ def test_runner_do_stem_vocals_chu_khong_phai_ban_NEN(tmp_path, monkeypatch):
     _wav(tmp_path / "other.wav", 330.0)
     kq = {"duong": {"vocals": str(tmp_path / "vocals.wav"),
                     "other": str(tmp_path / "other.wav")}}
-    assert demucs_runner._f0_cua_giong(kq) == pytest.approx(115.0, rel=0.03)
+    f0, ly_do = demucs_runner._f0_cua_giong(kq)
+    assert f0 == pytest.approx(115.0, rel=0.03)
+    assert ly_do == "", ly_do
 
 
 def test_runner_khong_co_stem_vocals_thi_KHONG_do():
+    """⭐ `0.0` di kem LY DO: mot bao cao khong phan biet duoc "khong co giong"
+    voi "khong do duoc" thi khong tra loi duoc cau nao ca."""
     from apps.auto_scan_video import demucs_runner
 
-    assert demucs_runner._f0_cua_giong({"duong": {}}) == 0.0
-    assert demucs_runner._f0_cua_giong({}) == 0.0
+    for kq in ({"duong": {}}, {}):
+        f0, ly_do = demucs_runner._f0_cua_giong(kq)
+        assert f0 == 0.0
+        assert "vocals" in ly_do, ly_do
 
 
 def test_con_so_di_len_TOM_TAT_cua_giai_doan(monkeypatch, tmp_path):

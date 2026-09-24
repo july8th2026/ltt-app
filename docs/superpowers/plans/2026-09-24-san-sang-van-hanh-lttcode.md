@@ -61,6 +61,29 @@ lượt nào tốn bao nhiêu credit, chờ suất bao lâu, TTFT bao nhiêu —
 Đây là lỗ hổng đắt nhất trong ba mục Pha 0: nó không làm hỏng gì hôm nay, nhưng nó **cắt mất một
 nửa giá trị của toàn bộ đợt vận hành**. Và nó rẻ: một trường đi kèm sự kiện usage.
 
+### ✅ Pha 0 — kết quả đo (24/09, bản 0.2.13 đã cài)
+
+| Việc | Trạng thái | Số đo |
+|---|---|---|
+| 0.1 Điểm khôi phục | ✅ | **24 GB → 118,6 MB** một bản chụp (đo bằng cách gọi thẳng `CopySnapshotProvider` thật, không đọc cấu hình rồi suy). Đang bỏ nốt `node.exe` (89 MB = 75 % phần còn lại) |
+| — sweep | ✅ | In thật: `==== dsh-checkpoint-rewind sweep: .tmp mo coi N \| workspace da mat N \| vuot tran N \| tong con lai … (tran 10737418240 B)` |
+| — `excludeGlobs` tới được bản cài | ✅ | đọc `%LOCALAPPDATA%\LTTCODE\sidecar
+ode_modules\@ltt\dsh-profile-lttcode\cordis.patch.yml`, **không** đọc cây dev |
+| 0.2 Log không bị nuốt | ✅ | trần 50 MB, **5** thế hệ, xoay **giữa phiên** (trước chỉ xoay lúc khởi động ⇒ phiên dài không bao giờ xoay). 29/29 phép, có phép **đua nhiều luồng ghi đúng lúc xoay** |
+| — `collect_session_errors.ps1` | ✅ | tạo `lttcode.1.log` giả có dấu nhận biết → script **đọc tới**. Trước đây bộ lọc `lttcode.log*` **không khớp** `lttcode.1.log` |
+| 0.3 `requestId` lượt thành công | ✅ | có thật trong bản ghi phiên: `message.source.replayState.response.requestId` |
+| — không hồi quy đường lỗi | ✅ | phép kiểm **đã có sẵn** chốt `failure.requestId` còn nguyên và `replayState` **không** bị thêm vào đường lỗi. 50/50 |
+| Nghiệm thu chung 0.2.13 | ✅ | `verdict: PASS` · 97 phép · **0 đỏ** · 5 `None` (đều là bỏ qua có lý do) |
+
+**Ba bài học của Pha 0**, ghi vì chúng sẽ lặp lại:
+
+1. **Cấu hình đúng trong kho ≠ cấu hình tới được bản cài.** Mọi câu "thứ này có trong bản phát
+   hành không" phải đọc **bản đã cài**.
+2. **Danh sách loại trừ là THAY THẾ, không gộp.** Thêm một mục mà quên chép lại mặc định là tự
+   tay làm nặng hơn hiện trạng.
+3. **Đo bằng cách gọi thẳng mã thật**, đừng lái giao diện cho "giống thật" — cùng một đường mã,
+   nhanh hơn và chính xác như nhau.
+
 ---
 ## Pha 1 — công cụ phân loại (sau khi có dữ liệu thật)
 

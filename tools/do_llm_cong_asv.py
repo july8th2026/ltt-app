@@ -107,6 +107,40 @@ def _mo_db():
     return db, so
 
 
+def _cua_so_hoac_loi(ai, thao_tac) -> int | str:
+    """`cua_so_ngu_canh(t)`, hoac TEN LOAI ngoai le neu no no.
+
+    ⛔ Khong tra `0` khi khong doc duoc. `0` la mot gia tri HOP LE trong cot
+       "cua so" (mot thao tac khong ghim ngu canh), nen mot phep do khong chay
+       duoc tra `0` la mot bao cao SAI chu khong phai mot bao cao thieu — va bao
+       cao nay chinh la thu nguoi ta doc de chot ngan sach.
+
+    ⭐ Cung khuon voi dong ngay tren no trong `pha_khai` (`mid =
+       f"<{type(exc).__name__}>"`) — mot cot khong doc duoc trong nhu NHAU o ca
+       hai cho.
+    """
+    try:
+        return int(ai.cua_so_ngu_canh(thao_tac))
+    except Exception as exc:                                     # noqa: BLE001
+        return f"<{type(exc).__name__}>"
+
+
+def _base_url_ltt_llm(providers) -> str:
+    """`base_url` cua provider `ltt_llm` trong registry.
+
+    ⛔ `providers.get` tra `Provider | None`. Registry chua khai `ltt_llm` (may
+       moi, CSDL scratch, app.env thieu) => `prov.base_url` la `AttributeError`
+       tho giua mot cong cu do luong, va nguoi chay doc mot vet `NoneType` thay
+       vi biet minh thieu cau hinh. Do bang `mypy [union-attr]` 24/09.
+    """
+    prov = providers.get("ltt_llm")
+    if prov is None:
+        raise SystemExit(
+            "registry khong co provider `ltt_llm` — chay `python tools\\doctor.py` "
+            "hoac kiem `app.env`; cong cu nay khong tu doan base_url.")
+    return (prov.base_url or "").rstrip("/")
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 #  Pha KHAI — ASV yeu cau model nao (doc registry LUC CHAY)
 # ══════════════════════════════════════════════════════════════════════════════
@@ -132,10 +166,7 @@ def pha_khai() -> dict:
             mid = ai.model_cho(t)
         except Exception as exc:                                 # noqa: BLE001
             mid = f"<{type(exc).__name__}>"
-        try:
-            cs = ai.cua_so_ngu_canh(t)
-        except Exception:                                        # noqa: BLE001
-            cs = 0
+        cs = _cua_so_hoac_loi(ai, t)
         tran, cho = ai.ngan_sach_cho(t)
         kn = providers.model_capabilities(mid) or {}
         ra["thao_tac"][t.ma] = {
@@ -165,8 +196,7 @@ def _cong_vlm(db, ten_model: str, timeout_s: float = 60.0):
     from platform_core.llm.cong_vlm import CongVlm
     from platform_core.models import APIKEY_CAT_CHAT
 
-    prov = providers.get("ltt_llm")
-    base = (prov.base_url or "").rstrip("/")
+    base = _base_url_ltt_llm(providers)
     key = api_pool.chon_key(db, category=APIKEY_CAT_CHAT, model=ten_model or None,
                             thu_tu_provider=["ltt_llm"])
     cred = api_keys.lay_credential(db, key)

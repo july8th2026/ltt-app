@@ -40,7 +40,26 @@ SUPER = (pathlib.Path(r"C:\LTTPlatform\secrets\postgres-superuser.txt"),
 
 #: Moi tep test can PostgreSQL that. Them tep moi vao DAY (mot nguon).
 TEP_PG = ("tests/test_214_multi_process_runtime.py",
-          "tests/test_1720_wf_dong_co_pg.py")
+          "tests/test_1720_wf_dong_co_pg.py",
+          # FLOW A/C/F tren PostgreSQL that - dieu kien ra cua P3 (plan wf-v2).
+          # Cung ly do bo qua vo hinh: mot chu `s` giua ba nghin dau cham thi
+          # khong ai thay, va dung ca thu SQLite KHONG phan biet duoc (JSON
+          # long, khoa ngoai credit_entries, be rong String(64) cua
+          # Wakeup.node_run_id).
+          "tests/test_1787_wf_flow_acf_pg.py",
+          # FLOW B/E tren PostgreSQL that - dieu kien ra cua P4 (plan wf-v2).
+          # Pha nay them BON cot thoi gian di vao cung ho phep so ma
+          # `dong_co.ttl` tung nem `TypeError` o production (test_1720), MOT so
+          # sanh BO DOI (`tuple_(het_han_luc, id)` - cu phap row-value hai
+          # dialect thuc thi khac nhau), va be rong String(120) cua
+          # `waitpoint.idempotency_key` (SQLite nuot, PostgreSQL nem).
+          "tests/test_1798_wf_flow_be_pg.py",
+          # FLOW A voi HTTP THAT - dieu kien ra cua P5 (plan wf-v2). Khac
+          # test_1787 (http-mock, khong ra mang): tep nay mo socket that va
+          # chung minh bi mat KHONG nam trong `workflow_version` lan
+          # `node_run_snapshot`. Bo qua vo hinh o day dat hon ca: no la phep
+          # DUY NHAT do duong bi mat di tu kho credential ra day.
+          "tests/test_2923_flow_a_http_that_pg.py")
 
 
 def _doc_neu_duoc(path: pathlib.Path) -> str:

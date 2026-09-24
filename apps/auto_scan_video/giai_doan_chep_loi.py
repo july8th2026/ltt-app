@@ -121,7 +121,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 
         # 🔑 Dinh tuyen TRUOC ASR: phu de nhung / hardsub la ban loi da bien
         #    tap — khi co thi khong ton mot luot whisper tren GPU.
-        tho, dinh_tuyen = None, {"che_do": nl.ASR, "nguon_loi": nl.ASR, "ly_do": []}
+        dinh_tuyen: dict = {"che_do": nl.ASR, "nguon_loi": nl.ASR, "ly_do": []}
+        tho = None
         che_do = nl.chuan_che_do(cai.nguon_loi)
         if che_do != nl.ASR:
             if not run.source_key:

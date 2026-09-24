@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import itertools
 import math
+from collections import deque
 from dataclasses import dataclass
 
 from platform_core.workflow import cong_cu as _nguon
@@ -74,6 +75,35 @@ def _ung_vien(khoa: str, schema: dict) -> list:
 
 
 def _gia_node(node: dict, cc: dict[str, CongCu]) -> int:
+    if str(node.get("type")) == LOAI_GOI_WF:
+        # §7.2: *"subworkflow: `estimated_max` của version con"*.
+        # ⛔ Con số này KHÔNG đến từ `params` của client: cổng publish từ
+        #    chối `gia_con` trong draft (`additionalProperties: false`) và
+        #    `dinh_nghia.xuat_ban_draft` GHI ĐÈ nó từ CSDL sau khi ghim
+        #    `version_id`. Cùng lý do đã ghi ở đầu tệp: một trường trong
+        #    body của người gọi không thể là nguồn của con số giữ tiền
+        #    của chính người gọi ấy.
+        gia = (node.get("params") or {}).get("gia_con")
+        if not isinstance(gia, int) or isinstance(gia, bool) or gia < 0:
+            raise KhongBaoGiaDuoc(
+                f"{node.get('id')}: thieu `gia_con` da ghim -- do thi nay "
+                "chua di qua `xuat_ban_draft`, khong co chan tren")
+        return gia
+    if str(node.get("type")) == LOAI_AGENT:
+        # §12.3: *"Trần báo giá node = `ngan_sach_credit`"*.
+        #
+        # ⚠️ KHÁC `gia_con` ở trên, và khác có lý do. `gia_con` đến từ CSDL vì
+        #    một trường trong body của người gọi sẽ là cách **né** trần của
+        #    chính họ. `ngan_sach_credit` thì ngược chiều: khai to nghĩa là bị
+        #    GIỮ nhiều hơn, nên nó tự hạn chế. Nó là lời khai *"tôi cho phép
+        #    lượt này tiêu tới đây"*, và `tac_tu._mo_buoc` không mở bước nào
+        #    vượt qua con số ấy.
+        gia = (node.get("params") or {}).get("ngan_sach_credit")
+        if not isinstance(gia, int) or isinstance(gia, bool) or gia < 1:
+            raise KhongBaoGiaDuoc(
+                f"{node.get('id')}: `ngan_sach_credit` phai la so nguyen >= 1 "
+                "-- khong co no thi luot agent khong co chan tren")
+        return gia
     if node.get("thi_hanh") != "job":
         return 0
     ten_cong_cu = str(node["type"])[4:]
@@ -107,6 +137,188 @@ def _gia_node(node: dict, cc: dict[str, CongCu]) -> int:
     return cao
 
 
+#: §5.9: `max_items` **bắt buộc** và `≤ 1000`. Con số ấy là toàn bộ lý do trần
+#: của một `foreach` **tồn tại** — không có chặn trên thì phép nhân dưới đây
+#: không có số để nhân.
+MAX_ITEMS_TRAN = 1000
+
+#: Trần của tích các `max_items` lồng nhau. Hai tầng đầy (1000 × 1000) vừa khít;
+#: tầng thứ ba thì con số báo cho khách không còn là một trần mà là một lời từ
+#: chối viết bằng chữ số. Nói thẳng ra bằng `KhongBaoGiaDuoc` trung thực hơn.
+HE_SO_LAP_TOI_DA = 1_000_000
+
+LOAI_FOREACH = "core.foreach"
+LOAI_GOI_WF = "core.call_workflow"
+#: `ai.agent` (spec §12.3). Hằng ở đây chứ không import `tac_tu` để tránh vòng
+#: import: `tac_tu` gọi `bao_gia`, không chiều ngược lại.
+LOAI_AGENT = "ai.agent"
+LOAI_FOREACH_END = "core.foreach_end"
+
+
+def _ke(graph: dict) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
+    xuoi: dict[str, list[str]] = {str(n["id"]): [] for n in graph.get("nodes") or []}
+    nguoc: dict[str, list[str]] = {k: [] for k in xuoi}
+    for e in graph.get("edges") or []:
+        a, b = str(e["source_node"]), str(e["target_node"])
+        if a in xuoi and b in nguoc:
+            xuoi[a].append(b)
+            nguoc[b].append(a)
+    return xuoi, nguoc
+
+
+def _lan(goc: str, ke: dict[str, list[str]]) -> set[str]:
+    """Tập tới được từ `goc` (KHÔNG kể `goc`). Có `da` nên chu trình không treo."""
+    da: set[str] = set()
+    hang = deque(ke.get(goc, ()))
+    while hang:
+        k = hang.popleft()
+        if k in da:
+            continue
+        da.add(k)
+        hang.extend(ke.get(k, ()))
+    return da
+
+
+def _max_items(node: dict) -> int:
+    gia_tri = (node.get("params") or {}).get("max_items")
+    if isinstance(gia_tri, bool) or not isinstance(gia_tri, int):
+        raise KhongBaoGiaDuoc(
+            f"{node.get('id')}: `max_items` bat buoc va phai la so nguyen "
+            f"(§5.9) -- nhan {gia_tri!r}")
+    if not (0 < gia_tri <= MAX_ITEMS_TRAN):
+        raise KhongBaoGiaDuoc(
+            f"{node.get('id')}: `max_items` phai trong (0, {MAX_ITEMS_TRAN}] "
+            f"(§5.9) -- nhan {gia_tri}")
+    return gia_tri
+
+
+def than_foreach(graph: dict) -> dict[str, tuple[str, tuple[str, ...]]]:
+    """`{id foreach: (id foreach_end, thân theo `graph.thu_tu`)}`.
+
+    🔴 VÌ SAO HÀM NÀY TỒN TẠI — một nợ đã ĐO, không phải một tinh chỉnh.
+
+       `_gia_node` trả 0 cho mọi node không `thi_hanh == "job"`, và tổng của đồ
+       thị là một phép cộng phẳng. Nên một node app **trong thân** một `foreach`
+       `max_items=1000` được báo giá **một** lần và chạy **một nghìn** lần. Trần
+       khi đó không chặn gì; nó chỉ làm người đọc yên tâm — đúng thứ
+       `KhongBaoGiaDuoc` được viết ra để từ chối.
+
+    Luật: spec §7.2 — *"ForEach: `max_items × trần thân"*. Thân = chuỗi node
+    nằm giữa `core.foreach` và `core.foreach_end` (§5.9), đọc bằng cấu trúc đồ
+    thị: `tới-được-từ(foreach) ∩ tới-được-tới(foreach_end)`.
+
+    ⚠️ Cặp `foreach`/`foreach_end` khớp nhau bằng `params.foreach` của node
+       `foreach_end` — **khai tường minh**, không đoán theo vị trí. Một cặp
+       đoán ra là một thân đoán ra, và thân là thứ nhân lên con số tiền.
+
+    ⛔ Thiếu `foreach_end` ⇒ `KhongBaoGiaDuoc`. Không biết thân kết thúc ở đâu
+       nghĩa là không có chặn trên; đoán một con số ở đây là in ra một trần
+       không chặn gì.
+    """
+    nodes = {str(n["id"]): n for n in graph.get("nodes") or []}
+    xuoi, nguoc = _ke(graph)
+    ket: dict[str, str] = {}
+    for nid, n in nodes.items():
+        if str(n.get("type")) != LOAI_FOREACH_END:
+            continue
+        cua = str((n.get("params") or {}).get("foreach") or "")
+        chu = nodes.get(cua)
+        if chu is None or str(chu.get("type")) != LOAI_FOREACH:
+            raise KhongBaoGiaDuoc(
+                f"{nid}: `params.foreach` phai tro vao mot node {LOAI_FOREACH!r} "
+                f"co that -- nhan {cua!r}")
+        if cua in ket:
+            raise KhongBaoGiaDuoc(
+                f"{cua}: co hai node {LOAI_FOREACH_END!r} cung dong mot vong "
+                f"({ket[cua]}, {nid}) -- than khong xac dinh")
+        ket[cua] = nid
+
+    thu_tu = [str(k) for k in (graph.get("thu_tu") or nodes)]
+    ra: dict[str, tuple[str, tuple[str, ...]]] = {}
+    for nid, n in nodes.items():
+        if str(n.get("type")) != LOAI_FOREACH:
+            continue
+        dong = ket.get(nid)
+        if dong is None:
+            raise KhongBaoGiaDuoc(
+                f"{nid}: {LOAI_FOREACH!r} khong co {LOAI_FOREACH_END!r} nao dong "
+                "lai -- khong biet than ket thuc o dau thi khong co chan tren")
+        than = (_lan(nid, xuoi) & _lan(dong, nguoc)) - {nid, dong}
+        ra[nid] = (dong, tuple(k for k in thu_tu if k in than))
+    return ra
+
+
+def hau_due(graph: dict, node_id: str) -> frozenset[str]:
+    """`node_id` **và** mọi node tới được từ nó (spec §14, "chạy lại từ node").
+
+    ⭐ Dùng lại `_ke`/`_lan` — cùng một phép duyệt đồ thị mà `than_foreach`
+       đã dùng. Một BFS thứ hai cho cùng câu hỏi "tới được từ đâu" là một bản
+       sao sẽ trôi khỏi bản gốc, và ngày nó trôi thì "node nào phải chạy lại"
+       và "node nào nằm trong thân vòng" trả lời theo hai cấu trúc khác nhau.
+
+    ⚠️ Hàm này cũng đọc đồ thị **chưa** qua validator publish (đồ thị của một
+       run cũ, một bản nháp), nên nó phải chịu được chu trình. `_lan` có tập
+       `da` nên không treo — phép kiểm `test_3452::test_chu_trinh_khong_treo`
+       chốt điều đó, vì treo ở đây là treo cả một cửa HTTP.
+    """
+    nid = str(node_id or "")
+    if nid not in {str(n["id"]) for n in graph.get("nodes") or []}:
+        raise KhongBaoGiaDuoc(f"{nid!r} khong co trong do thi")
+    xuoi, _ = _ke(graph)
+    return frozenset(_lan(nid, xuoi) | {nid})
+
+
+def co_the_tai_dung(graph: dict, node_id: str) -> tuple[str, ...]:
+    """Node được phép **sao output** từ run cũ khi chạy lại từ `node_id`.
+
+    = mọi node **trừ** hậu duệ của `node_id` (spec §14: *"sao output các node
+    không phải hậu duệ của node chọn"*), theo đúng `graph.thu_tu`.
+
+    ⛔ **Thân `foreach` — và chính cặp `foreach`/`foreach_end` — không bao giờ
+       nằm trong tập này.** Ảnh chụp của một node thân khoá theo **đường thi
+       hành** (`f:0/x`, `f:1/x`… — `thi_hanh.khoa_node`), và đường ấy bị **băm**
+       khi vượt 64 ký tự (`danh_thuc.duong_thi_hanh`), lúc đó không suy ngược
+       được (P9 task 3). "Sao output của x" khi x chạy N lần dưới N khoá, có
+       khoá không đọc ngược được, là một phép sao **không xác định** — và tái
+       dùng sai một output nghĩa là trả cho khách kết quả của một lần chạy
+       khác. Giữa "chạy lại, tốn thêm tiền, đúng" và "đoán, rẻ hơn, có thể
+       sai", chỗ này chọn cái đầu.
+
+    ⚠️ Hàm này KHÔNG hỏi run cũ. Nó trả **ứng viên theo đồ thị**; bên gọi còn
+       phải loại node chưa từng `SUCCEEDED` ở run cũ — một node `FAILED`
+       không có output nào để sao.
+    """
+    bo = set(hau_due(graph, node_id))
+    for goc, (dong, than) in than_foreach(graph).items():
+        bo.update({goc, dong, *than})
+    nodes = {str(n["id"]) for n in graph.get("nodes") or []}
+    thu_tu = [str(k) for k in (graph.get("thu_tu") or sorted(nodes))]
+    return tuple(k for k in thu_tu if k in nodes and k not in bo)
+
+
+def he_so_lap(graph: dict) -> dict[str, int]:
+    """Số lượt TỐI ĐA mỗi node chạy trong một lượt chạy của đồ thị.
+
+    Thân vòng lặp đọc từ `than_foreach` — **một** nguồn cho câu hỏi *"node nào
+    nằm trong thân nào"*. Động cơ (`nut_loi/vong_lap.py`) hỏi đúng chỗ ấy: một
+    bản sao của luật thân là một bản sao sẽ trôi, và ngày nó trôi thì con số
+    tiền và thứ thật sự chạy nói hai chuyện khác nhau.
+    """
+    nodes = {str(n["id"]): n for n in graph.get("nodes") or []}
+    he_so: dict[str, int] = dict.fromkeys(nodes, 1)
+    for nid, (_dong, than) in than_foreach(graph).items():
+        lan = _max_items(nodes[nid])
+        for k in than:
+            he_so[k] *= lan
+    qua = [k for k, v in he_so.items() if v > HE_SO_LAP_TOI_DA]
+    if qua:
+        raise KhongBaoGiaDuoc(
+            f"he so lap cua {sorted(qua)} vuot {HE_SO_LAP_TOI_DA} -- tran tinh "
+            "ra khong con la mot tran, hay giam `max_items` hoac bot mot tang "
+            "vong lap")
+    return he_so
+
+
 def bao_gia_do_thi(graph: dict, *,
                    cong_cu: dict[str, CongCu] | None = None) -> BaoGia:
     """Trần tất định của cả đồ thị. GHI `gia_tran` từng node + `bang_gia`."""
@@ -114,12 +326,21 @@ def bao_gia_do_thi(graph: dict, *,
     bang: dict[str, int] = {}
     for node in graph.get("nodes") or []:
         gia = _gia_node(node, cc)
+        # ⛔ `gia_tran` của TỪNG node giữ nguyên trần của MỘT lượt chạy — hệ số
+        #    lặp KHÔNG được nhân vào đây. `cau_noi.nop_job` so `gia_that >
+        #    node["gia_tran"]` cho mỗi lượt nộp job; nhân nó lên `max_items` là
+        #    nới đúng cái cổng ấy ra `max_items` lần, và một node đắt gấp năm
+        #    lần dự kiến sẽ đi lọt trong MỌI lượt. Hệ số thuộc về TỔNG của run.
         node["gia_tran"] = gia
         bang[str(node["id"])] = gia
+    he_so = he_so_lap(graph)
     graph["bang_gia"] = bang
-    toi_da = sum(bang.values())
+    graph["he_so_lap"] = he_so
+    toi_da = sum(gia * he_so.get(nid, 1) for nid, gia in bang.items())
     return BaoGia(toi_da=toi_da,
                   uoc_tinh=int(math.ceil(toi_da * _TY_LE_UOC_TINH)))
 
 
-__all__ = ["KhongBaoGiaDuoc", "BaoGia", "bao_gia_do_thi"]
+__all__ = ["HE_SO_LAP_TOI_DA", "LOAI_FOREACH", "LOAI_FOREACH_END",
+           "MAX_ITEMS_TRAN", "KhongBaoGiaDuoc", "BaoGia", "bao_gia_do_thi",
+           "co_the_tai_dung", "hau_due", "he_so_lap", "than_foreach"]

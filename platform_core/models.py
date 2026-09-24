@@ -1269,11 +1269,33 @@ class WorkflowRun(Base):
     finished_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True)
 
+    # ── Run CON (`core.call_workflow`, spec §5.10) ───────────────────────────
+    #
+    # ⛔ Run con **KHÔNG giữ chỗ credit**: `hold_id` của nó rỗng, trần của nó đã
+    #    nằm trong `estimated_max` của cha (§7.2), và `actual_cost` của nó cộng
+    #    lên cha khi nó kết thúc. Một CÂY gọi = MỘT khoản giữ. Xem
+    #    `platform_core/workflow/run_con.py` và `tien.py` (*"nếu run cũng giữ
+    #    và node cũng giữ thì khách trả hai lần cho cùng một việc"*).
+    #
+    # Rỗng = run gốc. Không khoá ngoại (cùng quy ước với `hold_id`/`plan_id`).
+    parent_run_id: Mapped[str] = mapped_column(String(36), default="",
+                                               nullable=False)
+    parent_node_id: Mapped[str] = mapped_column(String(64), default="",
+                                                nullable=False)
+    #: 0 = run gốc. Trần `run_con.DO_SAU_TOI_DA` được cưỡng chế lúc **publish**
+    #: (độ sâu tính TĨNH được vì mọi `version_id` đã ghim và version bất biến).
+    do_sau: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
     __table_args__ = (
         Index("ux_workflow_run_idem", "owner_id", "idempotency_key",
               unique=True, postgresql_where=text("idempotency_key <> ''"),
               sqlite_where=text("idempotency_key <> ''")),
         Index("ix_workflow_run_owner_created", "owner_id", "created_at"),
+        # Bộ phận: đại đa số run là run GỐC, và chỉ số chỉ phục vụ câu hỏi
+        # "con của run này là ai" lúc một run con kết thúc.
+        Index("ix_workflow_run_parent", "parent_run_id",
+              postgresql_where=text("parent_run_id <> ''"),
+              sqlite_where=text("parent_run_id <> ''")),
     )
 
 
@@ -1378,6 +1400,19 @@ class Waitpoint(Base):
                                                   nullable=False)
     idempotency_key: Mapped[str] = mapped_column(String(120), default="",
                                                  nullable=False)
+    #: ⭐ HẠN CHỜ (spec §5.7). `NULL` = không hạn — và "không hạn" là một câu
+    #:   trả lời hợp lệ cho `core.wait` mà người soạn cố ý để mở, KHÔNG phải
+    #:   một chỗ bỏ trống. Hạn CỘNG DỒN của cả run (neo `run.created_at`) được
+    #:   `platform_core/workflow/han_cho.py` áp vào chính cột này lúc mở điểm
+    #:   chờ, nên bộ quét hết hạn chỉ phải đọc MỘT cột.
+    het_han_luc: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    #: `fail | route | approve | reject` — làm gì khi hết hạn (spec §5.7).
+    #: ⛔ Danh sách ĐÓNG (`platform_core/workflow/han_cho.py::CHE_DO_HET_HAN`):
+    #: một chuỗi lạ ở đây là một điểm chờ hết hạn mà không ai biết phải xử lý
+    #: ra sao, và nó sẽ đứng tới `TRAN_RUN` 20 giờ **với tiền bị giữ**.
+    che_do_het_han: Mapped[str] = mapped_column(String(16), default="fail",
+                                                nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_bay_gio, nullable=False)
 
@@ -1392,6 +1427,17 @@ class Waitpoint(Base):
         Index("ix_waitpoint_due", "due_at",
               postgresql_where=text("status = 'PENDING' AND due_at IS NOT NULL"),
               sqlite_where=text("status = 'PENDING' AND due_at IS NOT NULL")),
+        # ⭐ Chỉ số của BỘ QUÉT HẾT HẠN, và nó là `(het_han_luc, id)` chứ không
+        #    phải `(het_han_luc)` một mình — vì bộ quét đi bằng **keyset
+        #    cursor** (`cho_doi.quet_het_han`): `WHERE (het_han_luc, id) > (…)`
+        #    chỉ dùng được chỉ số khi chỉ số mang đúng hai cột đó theo đúng thứ
+        #    tự. `OFFSET` thì không cần chỉ số nào — và đó chính là lý do
+        #    `OFFSET` chậm dần theo số hàng đã bỏ qua.
+        Index("ix_waitpoint_het_han", "het_han_luc", "id",
+              postgresql_where=text(
+                  "status = 'PENDING' AND het_han_luc IS NOT NULL"),
+              sqlite_where=text(
+                  "status = 'PENDING' AND het_han_luc IS NOT NULL")),
     )
 
 
@@ -1517,7 +1563,14 @@ class ForeachMuc(Base):
     xong: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     __table_args__ = (
-        Index("ix_foreach_muc_chua_xong", "vong_id",
+        # ⭐ HAI cột, theo đúng thứ tự — không phải `vong_id` một mình.
+        #    Bộ lái vòng lặp đi bằng KEYSET (`foreach.muc_chua_xong`):
+        #    `WHERE vong_id = :v AND xong = false AND chi_so > :sau
+        #     ORDER BY chi_so LIMIT :n`. Thiếu `chi_so` trong chỉ số thì
+        #    PostgreSQL vẫn chạy được, nhưng phải sắp lại toàn bộ phần chưa
+        #    xong của vòng ở MỖI tick — tức đúng `O(N)` mỗi tick mà bản sửa
+        #    này (báo cáo p3b: 127 000 hàng cho N=1000) sinh ra để bỏ.
+        Index("ix_foreach_muc_chua_xong", "vong_id", "chi_so",
               postgresql_where=text("xong = false"),
               sqlite_where=text("xong = 0")),
     )
@@ -1587,6 +1640,24 @@ class WorkflowTrigger(Base):
     enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     next_fire_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True)
+    #: `published | pinned` — trigger bắn bản đang publish, hay một bản GHIM.
+    version_mode: Mapped[str] = mapped_column(String(16), default="published",
+                                              nullable=False)
+    pinned_version_id: Mapped[str] = mapped_column(String(36), default="",
+                                                   nullable=False)
+    #: Con trỏ poll/quét sự kiện (spec §8.4 gọi nó là `cursor`).
+    #:
+    #: ⚠️ Cột tên `con_tro`, KHÔNG phải `cursor`: `CURSOR` là từ khoá dành
+    #:    riêng của PostgreSQL. SQLAlchemy có trích dẫn được, nhưng mọi câu SQL
+    #:    gõ tay (`psql`, script vận hành, một `ORDER BY` trong một lượt điều
+    #:    tra) thì không — và một cột phải nhớ trích dẫn là một cột sẽ có ngày
+    #:    ai đó quên.
+    con_tro: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    last_fired_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    #: Số lần bắn LỖI LIÊN TIẾP. 5 lần ⇒ tự tắt trigger (spec §11.4).
+    loi_lien_tiep: Mapped[int] = mapped_column(Integer, default=0,
+                                               nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_bay_gio, nullable=False)
 
@@ -1613,6 +1684,107 @@ class WorkflowEvent(Base):
     du_lieu: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_bay_gio, nullable=False, index=True)
+
+
+# ── Credential + OAuth (spec §9, plan wf-v2 P5c) ─────────────────────────────
+
+
+class Credential(Base):
+    """Một bí mật của KHÁCH, dùng để gọi ra ngoài (spec §9.1).
+
+    🔴 VÌ SAO BẢNG NÀY TỒN TẠI. Trước 24/09/2026 chỗ duy nhất một workflow cất
+       được `Authorization` là `params` của node — tức **bên trong
+       `workflow_version`**. Bảng đó được sao chép khi nhân bản workflow, được
+       trả ra API soạn thảo, và nằm trong mọi bản xuất. Nói cách khác: bí mật
+       của khách nằm trong một bản ghi thiết kế để **đem đi chỗ khác**. Đó là
+       lý do `core.http` bị khoá cho tới khi có bảng này.
+
+    ⛔ `bi_mat_ma_hoa` là token Fernet (`platform_core/secretbox.py`, nay là
+       `MultiFernet` để xoay khoá được). ⛔ Không bao giờ trả cột này ra API.
+       Bề mặt an toàn là `preview` + `meta`.
+
+    ⚠️ `meta` là JSON **không bí mật** (email tài khoản, hạn token, cờ
+       `can_ket_noi_lai`). Một refresh token lọt vào đây là một bí mật nằm
+       ngoài lớp mã hoá — `platform_core/credential.py` giữ luật đó ở một chỗ.
+    """
+
+    __tablename__ = "credential"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    #: api_key | bearer | basic | oauth2 | google_service_account | piece_custom
+    kieu: Mapped[str] = mapped_column(String(32), nullable=False)
+    nha_cung_cap: Mapped[str] = mapped_column(String(40), default="",
+                                              nullable=False)
+    ten: Mapped[str] = mapped_column(String(120), default="", nullable=False)
+    bi_mat_ma_hoa: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    #: 4 ký tự cuối. Đủ để người ta nhận ra khoá nào, không đủ để dùng nó.
+    preview: Mapped[str] = mapped_column(String(16), default="", nullable=False)
+    pham_vi: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    meta: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    het_han_luc: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    #: Khác `NULL` ⇒ đã thu hồi. Hàng **ở lại** (nó là bằng chứng một run đã
+    #: dùng cái gì), nhưng `bi_mat_ma_hoa` bị ghi đè chuỗi rỗng.
+    thu_hoi_luc: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    dung_lan_cuoi: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+
+
+class CredentialNhatKy(Base):
+    """Ai đã làm gì với một credential (spec §9.1). ⛔ Không bao giờ ghi bí mật.
+
+    ⭐ Có `run_id`/`node_id` vì câu hỏi thật lúc sự cố là *"khoá này bị dùng ở
+       đâu trước khi nó rò"* — không phải *"nó được tạo lúc nào"*.
+    """
+
+    __tablename__ = "credential_nhat_ky"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    credential_id: Mapped[str] = mapped_column(String(36), nullable=False,
+                                               index=True)
+    #: tao | sua | thu_hoi | lam_moi | dung
+    hanh_dong: Mapped[str] = mapped_column(String(16), nullable=False)
+    run_id: Mapped[str] = mapped_column(String(36), default="", nullable=False)
+    node_id: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False, index=True)
+
+
+class OAuthState(Base):
+    """Một lượt OAuth đang dở (spec §9.3). Dùng MỘT LẦN, hết hạn 10 phút.
+
+    ⭐ Khoá chính là `state_hash`, không phải `state` — cùng lý do với token
+       waitpoint: giá trị thô sống trong URL của trình duyệt và trong log của
+       Google; thứ ta lưu chỉ cần đủ để **so khớp**, không cần đủ để **phát lại**.
+
+    ⛔ `pkce_verifier_ma_hoa` đi qua `secretbox`: verifier là thứ đổi được `code`
+       lấy token, nên nó là một bí mật thật, không phải một chuỗi ngẫu nhiên vô
+       hại.
+    """
+
+    __tablename__ = "oauth_state"
+
+    state_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    provider: Mapped[str] = mapped_column(String(40), nullable=False)
+    pkce_verifier_ma_hoa: Mapped[str] = mapped_column(Text, default="",
+                                                      nullable=False)
+    redirect_after: Mapped[str] = mapped_column(String(500), default="",
+                                                nullable=False)
+    pham_vi: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    het_han_luc: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True)
+    #: Khác `NULL` ⇒ đã đổi xong. Một `state` quay lại lần hai là **phát lại**.
+    dung_luc: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
 
 
 class SnapshotBatBien(RuntimeError):

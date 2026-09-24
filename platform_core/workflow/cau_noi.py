@@ -21,13 +21,77 @@ from platform_core.job_scheduler import ORIGIN_WORKFLOW
 from platform_core.models import (JOB_CANCELLED, JOB_DONE, Artifact, Job,
                                   Waitpoint, WaitpointSignal, WorkflowRun)
 from platform_core.workflow import (cho_doi, danh_thuc, may_trang_thai,
-                                    thi_hanh)
+                                    thi_hanh, thu_lai)
 from platform_core.workflow import artifact as _artifact
 from platform_core.workflow import cong_cu as _nguon
 from platform_core.workflow.bien_dich import la_tham_chieu
 from platform_core.workflow.cong_cu import CongCu
 
 GIOI_HAN_DAU_RA = 256 * 1024
+
+#: Tiền tố của node APP trong đồ thị đã biên dịch (`bien_dich._node`).
+#: Đây là KHÔNG GIAN TÊN DUY NHẤT mà cầu nối job suy được tên ToolSpec từ
+#: `type`, vì `app.<tool>` **theo định nghĩa** mang tên tool ở phần đuôi.
+TIEN_TO_APP = "app."
+
+
+class LoiTienTo(ValueError):
+    """`type` của node không thuộc không gian tên mà cầu nối job đọc được.
+
+    🔴 VÌ SAO LÀ MỘT NGOẠI LỆ, KHÔNG PHẢI MỘT LÁT CẮT
+
+       Bản cũ viết `str(node["type"])[4:]` — số 4 là độ dài `"app."`. Nó
+       đúng cho **một** không gian tên và sai cho mọi không gian khác, và
+       cái sai ấy **không ném**: `"ai.llm"` ra `"lm"`, `"core.if"` ra
+       `".if"`, rồi registry không thấy và node FAILED với
+       `cong_cu_khong_con: 'lm'`. Câu ấy **đổ lỗi cho registry** cho một
+       lỗi của chính cầu nối, và người đọc log đi tìm một tool chưa bao giờ
+       tồn tại. Làn p7 đã ghi lại cái bẫy này trong `nut_loi/ai_llm.py`
+       trước khi nó kịp cắn.
+
+    ⛔ Và **không** thay bằng một số cứng khác. Độ dài đọc từ chính chuỗi
+       tiền tố thì không lệch được; một hằng `4` viết tay thì lệch ngay lần
+       đầu ai đó đổi `"app."` thành thứ khác.
+    """
+
+
+def _dinh_nghia(loai: str):
+    """`NodeDefinition` của một node lõi, hoặc `None`.
+
+    ⚠️ Import CỤC BỘ: `nut_loi` kéo theo `vong_lap` → `bao_gia` →
+       `bien_dich`, và một import ở đầu tệp là một vòng chờ xảy ra.
+    """
+    from platform_core.workflow import nut_loi
+
+    return nut_loi.tat_ca().get(str(loai))
+
+
+def ten_cong_cu(loai: str) -> str:
+    """Tên ToolSpec của một node `app.<tool>`. Tiền tố khác ⇒ `LoiTienTo`.
+
+    ⚠️ ⛔ **Không tra ngược `job_type → tên tool`** cho `ai.*`, dù nó trông
+       thông minh hơn. Đo trên registry hôm nay (19 tool): **ba** `job_type`
+       bị hai tool dùng chung (`prompt_ai_ommi.generate`, `taoanh.generate`,
+       `upscalevideo.render`). Một tra ngược đúng hôm nay và sai vào đúng
+       ngày ai đó thêm tool thứ hai trên `ltt_llm.chat` — im lặng, và nó
+       chọn tool nào thì tuỳ thứ tự dict.
+
+    ⇒ Node `ai.*` phải **KHAI** ToolSpec nó bọc. Trường ấy chưa tồn tại trên
+      `NodeDefinition`, nên tới ngày có nó, hàm này là chỗ duy nhất phải sửa.
+    """
+    chuoi = str(loai or "")
+    if chuoi.startswith(TIEN_TO_APP):
+        ten = chuoi[len(TIEN_TO_APP):]
+        if not ten:
+            raise LoiTienTo(f"loai node {chuoi!r} khong co ten tool o duoi")
+        return ten
+    nd = _dinh_nghia(chuoi)
+    if nd is not None and nd.ten_toolspec:
+        return str(nd.ten_toolspec)
+    raise LoiTienTo(
+        f"loai node {chuoi!r} khong thuoc khong gian {TIEN_TO_APP!r} va "
+        "khong KHAI `ten_toolspec` — cau noi job khong co cach nao biet no "
+        "boc ToolSpec nao")
 
 
 class LoiThamSo(ValueError):
@@ -41,7 +105,7 @@ def _bay_gio():
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
-def giai_tham_so(db, run_id: str, params: dict) -> dict:
+def giai_tham_so(db, run_id: str, params: dict, vong=()) -> dict:
     def _giai(v: Any) -> Any:
         if isinstance(v, dict):
             return {k: _giai(x) for k, x in v.items()}
@@ -51,7 +115,7 @@ def giai_tham_so(db, run_id: str, params: dict) -> dict:
         if tc is None:
             return v
         nguon, cong = tc
-        anh = thi_hanh.anh_chup_hien_tai(db, run_id, nguon)
+        anh = thi_hanh.anh_chup_hien_tai(db, run_id, nguon, vong)
         if anh is None or anh.execution_status != "SUCCEEDED":
             raise LoiThamSo("dau_vao_sai", f"{nguon} chua SUCCEEDED")
         ra = anh.output_ref or {}
@@ -70,23 +134,54 @@ def giai_tham_so(db, run_id: str, params: dict) -> dict:
 
 
 def _khoa_idem(run: WorkflowRun, node: dict, lan: int, cc: CongCu,
-               params: dict) -> str:
+               params: dict, vong=()) -> str:
+    """Khoá khử trùng của MỘT lượt nộp job.
+
+    🔴 `duong` THAY CHO `node["id"]`, và đó là chỗ nguy hiểm nhất của cả
+       việc khoá `node_run` theo đường thi hành.
+
+       Với `node["id"]` trần, một node THÂN `foreach` có tham số không phụ
+       thuộc `loop.item` sinh **cùng một `dedupe_key`** ở mọi vòng. Và
+       `jobs.submit` khử trùng theo `dedupe_key`: nó **trả lại job của vòng
+       1**. Kết quả: `foreach` 5 phần tử chạy **một** job, bốn vòng còn lại
+       nhận lại kết quả cũ — không lỗi, không cảnh báo, không ai biết.
+
+       Cả HAI nhánh đều dính: nhánh `side_effect == "none"` vì `lan` giống
+       nhau ở mọi vòng, nhánh kia vì `idempotency_fields` đọc cùng `params`.
+
+    ⚠️ THAY, không phải THÊM: với `vong = ()` thì `duong == node["id"]`, nên
+       khoá của mọi node ngoài vòng lặp **không đổi một bit** — các job đang
+       chạy trên production giữ nguyên khoá của chúng.
+    """
+    duong = thi_hanh.khoa_node(str(node["id"]), vong)
     if cc.side_effect == "none" or not cc.idempotency_fields:
-        goc = [run.id, node["id"], lan]
+        goc = [run.id, duong, lan]
     else:
-        goc = [run.id, node["id"],
+        goc = [run.id, duong,
                {k: params.get(k) for k in cc.idempotency_fields}]
     return hashlib.sha256(json.dumps(goc, sort_keys=True, default=str)
                           .encode()).hexdigest()[:64]
 
 
 def nop_job(db, run: WorkflowRun, node: dict, *,
-            cong_cu: Optional[dict[str, CongCu]] = None) -> Optional[str]:
+            cong_cu: Optional[dict[str, CongCu]] = None,
+            vong=()) -> Optional[str]:
     cc_all = _nguon.tat_ca() if cong_cu is None else cong_cu
     nid = node["id"]
-    ten_cc = str(node["type"])[4:]
-    anh = thi_hanh.anh_chup_hien_tai(db, run.id, nid)
+    anh = thi_hanh.anh_chup_hien_tai(db, run.id, nid, vong)
     lan = int(anh.attempt_number if anh else 1)
+    try:
+        ten_cc = ten_cong_cu(node["type"])
+    except LoiTienTo as loi:
+        # ⛔ Lỗi CỦA TA, không phải của registry — nên mã là `loi_he_thong`
+        #    (§5.6) và câu lỗi mang TÊN LOẠI THẬT, không mang một cái đuôi
+        #    bị cắt bừa.
+        may_trang_thai.chuyen_node(
+            db, run.id, nid, sang="FAILED",
+            mo_ta="cau noi job khong doc duoc loai node",
+            error=f"loi_he_thong: {loi}"[:2000], attempt_number=lan,
+            vong=vong)
+        return None
     cc = cc_all.get(ten_cc)
     if cc is None:
         # ⭐ F5 (final-review.md): tra `cc_all[...]` bằng tay trước đây ném
@@ -99,17 +194,18 @@ def nop_job(db, run: WorkflowRun, node: dict, *,
         # run kết thúc ngay trong lượt này thay vì quay vòng đến khi hết hạn.
         may_trang_thai.chuyen_node(
             db, run.id, nid, sang="FAILED", mo_ta="cong cu bien mat khoi registry",
-            error=f"cong_cu_khong_con: {ten_cc!r}", attempt_number=lan)
+            error=f"cong_cu_khong_con: {ten_cc!r}", attempt_number=lan,
+            vong=vong)
         return None
     try:
-        params = giai_tham_so(db, run.id, node.get("params") or {})
+        params = giai_tham_so(db, run.id, node.get("params") or {}, vong)
     except LoiThamSo as loi:
         # `str(loi)` da la "<ma>: <chi tiet>" (LoiThamSo.__init__) - khong lap
         # lai `loi.ma` lan nua o day (review round 1: ma "dau_vao_sai" bi lap
         # ba lan khi ghep them prefix rieng).
         may_trang_thai.chuyen_node(
             db, run.id, nid, sang="FAILED", mo_ta="giai tham so",
-            error=str(loi), attempt_number=lan)
+            error=str(loi), attempt_number=lan, vong=vong)
         return None
     gia_that = int(cc.tinh_gia(params))
     tran = int(node.get("gia_tran", 0))
@@ -117,14 +213,15 @@ def nop_job(db, run: WorkflowRun, node: dict, *,
         may_trang_thai.chuyen_node(
             db, run.id, nid, sang="FAILED", mo_ta="vuot tran bao gia",
             error=f"vuot_tran_bao_gia: {gia_that} > {tran}",
-            attempt_number=lan)
+            attempt_number=lan, vong=vong)
         return None
     wp = cho_doi.tao_waitpoint(db, run_id=run.id, owner_id=run.owner_id,
                                kind="JOB", required_successes=1)
-    cho_doi.chan_node(db, run_id=run.id, node_id=nid, waitpoint_id=wp.id)
+    cho_doi.chan_node(db, run_id=run.id, node_id=nid, waitpoint_id=wp.id,
+                      vong=vong)
     tham_so = dict(params)
     tham_so["owner_id"] = run.owner_id           # như submit_child (v1)
-    khoa = _khoa_idem(run, node, lan, cc, params)
+    khoa = _khoa_idem(run, node, lan, cc, params, vong)
     tham_so["_idem"] = khoa
     # Làn + admission ĐÚNG con đường canonical (`public_api/invocation.py`
     # `submit()`, dòng ~500-560): làn do `ToolSpec.lane_for` chọn (không cứng
@@ -155,7 +252,7 @@ def nop_job(db, run: WorkflowRun, node: dict, *,
                       admission_resource=tai_nguyen, admission_slots=so_suat)
     may_trang_thai.chuyen_node(
         db, run.id, nid, sang="QUEUED", mo_ta="da nop job", job_id=job.id,
-        attempt_number=lan, output_ref={"_gia_that": gia_that})
+        attempt_number=lan, output_ref={"_gia_that": gia_that}, vong=vong)
     return job.id
 
 
@@ -187,11 +284,12 @@ def bao_ket_thuc(db, job: Job) -> None:
 
 
 def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
-               cong_cu: Optional[dict[str, CongCu]] = None) -> Optional[str]:
-    hien = may_trang_thai.trang_thai_node(db, run.id, node_id)
+               cong_cu: Optional[dict[str, CongCu]] = None,
+               vong=()) -> Optional[str]:
+    hien = may_trang_thai.trang_thai_node(db, run.id, node_id, vong)
     if hien not in ("QUEUED", "RUNNING"):
         return None
-    for wp_id in cho_doi.waitpoint_cua_node(db, run.id, node_id):
+    for wp_id in cho_doi.waitpoint_cua_node(db, run.id, node_id, vong):
         wp = db.get(Waitpoint, wp_id)
         if wp is None or wp.kind != "JOB" or wp.status != "PENDING":
             continue
@@ -200,11 +298,35 @@ def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
         if sig is None:
             continue
         wp.status = "COMPLETED"
-        anh = thi_hanh.anh_chup_hien_tai(db, run.id, node_id)
+        anh = thi_hanh.anh_chup_hien_tai(db, run.id, node_id, vong)
         lan = int(anh.attempt_number if anh else 1)
         gia_that = int((anh.output_ref or {}).get("_gia_that", 0)) if anh else 0
+        node = _node_cua(db, run, node_id)
         if sig.status == "SUCCEEDED":
             du_lieu = dict(sig.result_ref or {})
+            # ⭐ HẬU KIỂM (spec §12.1). `job.status == SUCCEEDED` **không**
+            #    đảm bảo kết quả dùng được: ca đã đo trên máy B là HTTP 200,
+            #    job SUCCEEDED, `content` RỖNG — "vô hình với quan trắc".
+            #    Node nào biết điều đó thì KHAI một `hau_kiem`; cầu nối chỉ
+            #    hỏi, ⛔ không tự biết loại node nào cần kiểm gì.
+            nd = _dinh_nghia(node["type"])
+            kiem = getattr(nd, "hau_kiem", None) if nd is not None else None
+            if kiem is not None:
+                tt_hk, ma_hk, chi_tiet_hk = kiem(du_lieu,
+                                                node.get("params") or {})
+                if tt_hk != "SUCCEEDED":
+                    # ⛔ KHÔNG ghi `cost_credit`: cùng luật với mọi node
+                    #    FAILED (`test_1718::test_job_loi_khong_tinh_tien`).
+                    #    Khách không trả tiền cho một câu trả lời rỗng.
+                    # ⚠️ Ta VẪN tốn tài nguyên máy B cho lượt ấy. Đó là một
+                    #    khoản lỗ có thật, bị chặn trên bởi `retry.max ≤ 5`,
+                    #    và nó phải được theo dõi chứ không được quên.
+                    may_trang_thai.chuyen_node(
+                        db, run.id, node_id, sang="FAILED",
+                        mo_ta="hau kiem ket qua job",
+                        error=f"{ma_hk}: {chi_tiet_hk}"[:2000],
+                        attempt_number=lan, job_id=sig.ref_id, vong=vong)
+                    return "FAILED"
             bao = du_lieu.get("credit_cost")      # handler báo giá thật (vd theo token)
             chi_phi = int(bao) if bao is not None else gia_that
             do_dai = len(json.dumps(du_lieu, default=str))
@@ -220,7 +342,6 @@ def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
                 du_lieu = {"_tran": _artifact.luu_json(
                     db, owner_id=run.owner_id, key=khoa, du_lieu=du_lieu)}
                 tran_ref = str(du_lieu["_tran"]["artifact_ref"])
-            node = _node_cua(db, run, node_id)
             # M2 (final-review.md): mặc định PHẢI khớp `nop_job` (fail-closed,
             # `0`) — bản cũ mặc định `chi_phi` (fail-OPEN, tức "không trần")
             # khi thiếu `gia_tran`. Không sờ được hôm nay (bộ biên dịch luôn
@@ -231,14 +352,14 @@ def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
             may_trang_thai.chuyen_node(
                 db, run.id, node_id, sang="SUCCEEDED", mo_ta="job xong",
                 output_ref=du_lieu, cost_credit=chi_phi, attempt_number=lan,
-                job_id=sig.ref_id)
+                job_id=sig.ref_id, vong=vong)
             if tran_ref:
                 # LINEAGE — `created_by_snapshot_id` phải trỏ vào ảnh chụp
                 # ĐANG GIỮ ref, để "tệp này từ đâu ra" trả lời được bằng MỘT
                 # cột. Ảnh chụp đó là hàng SUCCEEDED vừa ghi ở trên: mô hình C
                 # INSERT một hàng MỚI mỗi lần chuyển, nên lúc `luu_json` chạy
                 # nó CHƯA tồn tại (`anh` khi đó còn là hàng QUEUED/RUNNING).
-                moi = thi_hanh.anh_chup_hien_tai(db, run.id, node_id)
+                moi = thi_hanh.anh_chup_hien_tai(db, run.id, node_id, vong)
                 if moi is not None:
                     db.get(Artifact, tran_ref).created_by_snapshot_id = moi.id
             run.actual_cost = int(run.actual_cost or 0) + chi_phi
@@ -246,7 +367,18 @@ def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
             return "SUCCEEDED"
         mo_ho = (sig.result_ref or {}).get("provider_state") == jobs.PROVIDER_AMBIGUOUS
         cc_all = _nguon.tat_ca() if cong_cu is None else cong_cu
-        ten_cc = str(_node_cua(db, run, node_id)["type"])[4:]
+        try:
+            ten_cc = ten_cong_cu(node["type"])
+        except LoiTienTo as loi:
+            # Cùng lỗi, cùng mã, cửa thứ hai: job ĐÃ kết thúc nhưng cầu nối
+            # không đọc nổi loại node. Không chốt trạng thái ở đây là để
+            # node đứng QUEUED tới khi `TRAN_RUN` (20 giờ) hết hạn.
+            may_trang_thai.chuyen_node(
+                db, run.id, node_id, sang="FAILED",
+                mo_ta="cau noi job khong doc duoc loai node",
+                error=f"loi_he_thong: {loi}"[:2000], attempt_number=lan,
+                job_id=sig.ref_id, vong=vong)
+            return "FAILED"
         cc = cc_all.get(ten_cc)
         if cc is None:
             # F5 (final-review.md) — cùng lý do với `nop_job`: tool bị gỡ
@@ -259,7 +391,7 @@ def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
             may_trang_thai.chuyen_node(
                 db, run.id, node_id, sang="FAILED", mo_ta="job ket thuc",
                 error=f"cong_cu_khong_con: {ten_cc!r}", attempt_number=lan,
-                job_id=sig.ref_id)
+                job_id=sig.ref_id, vong=vong)
             return "FAILED"
         sang = "ABANDONED" if (mo_ho and cc.side_effect == "irreversible") else (
             "CANCELLED" if sig.status == "CANCELLED" else "FAILED")
@@ -268,10 +400,26 @@ def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
         ma = {"ABANDONED": "ket_qua_mo_ho", "CANCELLED": "bi_huy"}.get(
             sang, "provider_loi")
         chi_tiet = str((sig.result_ref or {}).get("error", ""))
+        # ⭐ Retry CẤP NODE (spec §5.6) — chỉ xảy ra ở ĐÂY, tức khi job đã kết
+        #    thúc ERROR và retry của chính job đã cạn. `thu_lai` không có bộ
+        #    đếm riêng: nó đọc `settings.retry`, hỏi `jobs.gian_cach_retry` về
+        #    giãn cách, và hẹn một wakeup. `KHONG_THU_LAI` (ABANDONED/CANCELLED)
+        #    thắng `settings.retry`, không phải ngược lại.
+        node = _node_cua(db, run, node_id)
+        if thu_lai.quyet_dinh(sang=sang, node=node, lan=lan) == "RETRY_SCHEDULED":
+            han = thu_lai.hen(db, run_id=run.id, node=node, lan=lan,
+                              vong=vong)
+            may_trang_thai.chuyen_node(
+                db, run.id, node_id, sang="RETRY_SCHEDULED",
+                mo_ta="job ket thuc, con luot thu lai",
+                error=f"{ma}: {chi_tiet}"[:2000],
+                attempt_number=lan + 1, job_id=sig.ref_id, vong=vong,
+                output_ref={thu_lai.KHOA_HAN: han.isoformat()})
+            return "RETRY_SCHEDULED"
         may_trang_thai.chuyen_node(
             db, run.id, node_id, sang=sang, mo_ta="job ket thuc",
             error=f"{ma}: {chi_tiet}"[:2000],
-            attempt_number=lan, job_id=sig.ref_id)
+            attempt_number=lan, job_id=sig.ref_id, vong=vong)
         return sang
     return None
 
@@ -282,5 +430,6 @@ def _node_cua(db, run: WorkflowRun, node_id: str) -> dict:
     return next(n for n in g["nodes"] if n["id"] == node_id)
 
 
-__all__ = ["GIOI_HAN_DAU_RA", "LoiThamSo", "giai_tham_so", "nop_job",
-           "bao_ket_thuc", "ap_ket_qua"]
+__all__ = ["GIOI_HAN_DAU_RA", "TIEN_TO_APP", "LoiThamSo", "LoiTienTo",
+           "ap_ket_qua", "bao_ket_thuc", "giai_tham_so", "nop_job",
+           "ten_cong_cu"]

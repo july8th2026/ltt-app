@@ -83,28 +83,27 @@ def test_crud_etag_stale_conflict_and_csrf(api):
     assert stale.status_code == 409
 
 
-def test_ownership_clone_archive_import_export(api):
+# 🗑️ ĐÓNG CỬA 24/09/2026 — plan wf-v2 P8 Task 5 (nợ §5) gỡ cả cụm v2
+#    assistant / snapshots / shares / clone / export-import: chúng tra
+#    `AgentWorkflow` id trong khi giao diện v3 cầm id bảng khác ⇒ 404 ngay
+#    lần bấm đầu; production đo `shares` 0 bản ghi mọi thời đại, clone 0,
+#    restore 0 (đối chứng `save` = 78). Sự vắng mặt được ghim bằng
+#    `test_2934_dong_cua_cum_v2.py`, không bằng im lặng.
+#    Bài đã gỡ: ownership_clone_archive_import_export (phần sở hữu chuyển
+#    xuống `test_so_huu_tren_cua_CON_LAI`) · import_pathological ·
+#    prompt_creates_editable_canvas · assistant_preview · snapshot_share.
+
+
+def test_so_huu_tren_cua_CON_LAI(api):
+    """Phần CÒN SỐNG của bài cũ: đọc/ghi workflow của người khác ⇒ 404,
+    và `DELETE` không có cửa."""
     a, token_a, b, token_b = api
     row = _create(a, token_a).json(); wid = row["id"]
     assert b.get(f"/agent/api/workflows/{wid}").status_code == 404
-    assert b.put(f"/agent/api/workflows/{wid}", headers={"X-CSRF-Token": token_b},
-                 json={"revision": 1, "name": "chiếm", "canvas": row["canvas"]}).status_code == 404
-    assert b.post(f"/agent/api/workflows/{wid}/clone",
-                  headers={"X-CSRF-Token": token_b}, json={}).status_code == 404
-    clone = a.post(f"/agent/api/workflows/{wid}/clone",
-                   headers={"X-CSRF-Token": token_a}, json={})
-    assert clone.status_code == 201 and clone.json()["source_workflow_id"] == wid
-    exported = a.get(f"/agent/api/workflows/{wid}/export")
-    assert exported.status_code == 200 and exported.json()["format"] == "ltt-agent-workflow"
-    imported = a.post("/agent/api/workflows/import", headers={"X-CSRF-Token": token_a},
-                      json=exported.json())
-    assert imported.status_code == 201
-    archived = a.post(f"/agent/api/workflows/{wid}/archive",
-                      headers={"X-CSRF-Token": token_a}, json={})
-    assert archived.json()["status"] == "archived"
-    assert a.put(f"/agent/api/workflows/{wid}", headers={"X-CSRF-Token": token_a},
-                 json={"revision": archived.json()["revision"], "name": "x",
-                       "canvas": row["canvas"]}).status_code == 422
+    assert b.put(f"/agent/api/workflows/{wid}",
+                 headers={"X-CSRF-Token": token_b},
+                 json={"revision": 1, "name": "chiem",
+                       "canvas": row["canvas"]}).status_code == 404
     assert a.delete(f"/agent/api/workflows/{wid}").status_code == 405
 
 
@@ -225,33 +224,6 @@ def test_canvas_uploaded_asset_has_owner_scoped_browser_preview(api):
     assert b.get(payload["url"]).status_code == 404
 
 
-def test_import_pathological_and_client_price_are_rejected(api):
-    a, token, *_ = api
-    body = {"format": "ltt-agent-workflow", "version": 1, "name": "độc",
-            "canvas": plan_to_canvas(_plan())}
-    body["canvas"]["nodes"][0]["data"]["price"] = 0
-    assert a.post("/agent/api/workflows/import", headers={"X-CSRF-Token": token},
-                  json=body).status_code == 422
-    deep = {"format": "ltt-agent-workflow", "version": 1, "name": "sâu",
-            "canvas": {"version": 1, "nodes": [], "edges": [], "viewport": {}}}
-    cursor = deep["canvas"]
-    for _ in range(22):
-        cursor["x"] = {}; cursor = cursor["x"]
-    assert a.post("/agent/api/workflows/import", headers={"X-CSRF-Token": token},
-                  json=deep).status_code == 422
-
-
-def test_prompt_creates_editable_canvas_without_approval(api, monkeypatch):
-    a, token, *_ = api
-    monkeypatch.setattr("apps.agent.routes.assistant.plan_once", lambda *_args, **_kwargs: _plan())
-    response = a.post("/agent/api/workflows/plan", headers={"X-CSRF-Token": token},
-                      json={"goal": "Tạo nội dung kiểm thử bằng tiếng Việt",
-                            "budget_max_credit": 50})
-    assert response.status_code == 201
-    assert response.json()["status"] == "draft"
-    assert response.json()["canvas"]["nodes"][0]["data"]["tool"] == "text.prompt_package"
-
-
 def test_api_round_trips_canvas_v2_without_losing_non_execution_content(api):
     a, token, *_ = api
     legacy = plan_to_canvas(_plan())
@@ -267,56 +239,12 @@ def test_api_round_trips_canvas_v2_without_losing_non_execution_content(api):
                      json={"name": "Workflow v2", "canvas": canvas})
     assert created.status_code == 201 and created.json()["canvas"] == canvas
     wid = created.json()["id"]
-    # ⛔ 23/09: buoc `/validate` o giua da bi go (§17.4). Menh de cua bai nay la
-    #    VONG TRON tao -> xuat khong lam mat noi dung phi thi hanh; `/validate`
-    #    chi tinh co nam giua, no khong ghi gi vao canvas.
-    exported = a.get(f"/agent/api/workflows/{wid}/export").json()
-    assert exported["canvas"] == canvas
-
-
-def test_assistant_preview_khong_mutate_va_apply_can_token_da_ky(api, monkeypatch):
-    a, token, *_ = api
-    workflow = _create(a, token).json(); wid = workflow["id"]
-    monkeypatch.setenv("LTT_SESSION_SECRET", "assistant-test-secret")
-    from apps.agent.routes import assistant as routes
-    proposal = _plan(); proposal["goal"] = "Workflow đã cải tiến"
-    monkeypatch.setattr(routes, "plan_once", lambda *_args, **_kwargs: proposal)
-    preview = a.post(f"/agent/api/workflows/{wid}/assistant/preview", headers={
-        "X-CSRF-Token": token, "If-Match": '"1"'},
-        json={"mode": "improve", "prompt": "Cải thiện workflow"})
-    assert preview.status_code == 200 and "event: analysis" in preview.text
-    packet = next(part for part in preview.text.split("\n\n") if part.startswith("event: proposal"))
-    payload = json.loads(next(line[6:] for line in packet.splitlines() if line.startswith("data: ")))
-    assert a.get(f"/agent/api/workflows/{wid}").json()["revision"] == 1
-    applied = a.post(f"/agent/api/workflows/{wid}/assistant/apply",
-                     headers={"X-CSRF-Token": token}, json={"token": payload["token"]})
-    assert applied.status_code == 200 and applied.json()["revision"] == 2
-    assert applied.json()["canvas"]["goal"] == "Workflow đã cải tiến"
-    tampered = payload["token"][:-1] + ("a" if payload["token"][-1] != "a" else "b")
-    assert a.post(f"/agent/api/workflows/{wid}/assistant/apply",
-                  headers={"X-CSRF-Token": token}, json={"token": tampered}).status_code == 409
-
-
-def test_snapshot_share_view_clone_revoke_va_activity(api):
-    a, token_a, b, token_b = api
-    workflow = _create(a, token_a).json(); wid = workflow["id"]
-    snapshots = a.get(f"/agent/api/workflows/{wid}/snapshots").json()["items"]
-    assert snapshots[0]["revision"] == 1
-    view = a.post(f"/agent/api/workflows/{wid}/shares", headers={"X-CSRF-Token": token_a},
-                  json={"permission": "view", "expires_hours": 1})
-    assert view.status_code == 201 and "token" not in view.json()
-    view_path = view.json()["path"]
-    assert b.get(view_path).json()["workflow"]["id"] == wid
-    assert b.post(view_path + "/clone", headers={"X-CSRF-Token": token_b}, json={}).status_code == 403
-    clone = a.post(f"/agent/api/workflows/{wid}/shares", headers={"X-CSRF-Token": token_a},
-                   json={"permission": "clone", "expires_hours": 1}).json()
-    copied = b.post(clone["path"] + "/clone", headers={"X-CSRF-Token": token_b}, json={})
-    assert copied.status_code == 201 and copied.json()["source_workflow_id"] == wid
-    revoked = a.post(f"/agent/api/workflows/{wid}/shares/{view.json()['id']}/revoke",
-                     headers={"X-CSRF-Token": token_a}, json={})
-    assert revoked.json()["revoked"] is True and b.get(view_path).status_code == 404
-    events = a.get(f"/agent/api/workflows/{wid}/activity").json()["items"]
-    assert {item["event"] for item in events} >= {"snapshot", "share_created", "share_revoked"}
+    # ⛔ 23/09: buoc `/validate` o giua da bi go (§17.4). ⛔ 24/09: buoc
+    #    `/export` cung bi go (P8 Task 5). Menh de cua bai KHONG doi — VONG
+    #    TRON tao -> doc lai khong lam mat noi dung phi thi hanh — chi la ve
+    #    "doc lai" nay di qua cua CON SONG.
+    doc_lai = a.get(f"/agent/api/workflows/{wid}").json()
+    assert doc_lai["canvas"] == canvas
 
 
 def test_cua_quan_tri_chi_admin_vao_duoc_va_khong_lo_noi_dung_nguoi_dung(api):
