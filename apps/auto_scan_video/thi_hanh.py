@@ -135,7 +135,11 @@ def phien_ban_engine(stage_ten: str) -> str:
         # Sap xep de hai lan goi cho ra cung mot chuoi; mot dict khong on dinh
         # thu tu se lam van tay nhay va cache truot vo co.
         model = ",".join(f"{p}:{m}" for p, m in sorted(ban_do.items()))
-        return f"noi_dung/{van_ban.PHIEN_BAN_LOI_NHAC}/{model}"
+        # 🔑 N-21: `CONTENT_PROCESS` chay `long_tieng.loi_nhac`, nen no phai
+        #    doc hang cua LOI NHAC DO — ⛔ khong phai hang cua `dich_thuat`
+        #    (duong chet). Truoc 24/09 hai thu la MOT, va sua loi nhac dich lam
+        #    giai doan nay chay lai + dat lai BAY giai doan ha nguon.
+        return f"noi_dung/{van_ban.PHIEN_BAN_LOI_NHAC_LONG_TIENG}/{model}"
     if stage_ten == pipeline.VOICE_SYNTHESIS:
         from . import giong_noi
         return f"giong/{giong_noi.PHIEN_BAN_GIONG}"

@@ -175,7 +175,7 @@ def _ket(ban, doan, cac_lo, gop, loi, t0, *, duong_goi: str) -> dict:
         "phim": ban.get("phim"), "ngon_ngu": ban.get("ngon_ngu"),
         "duong_goi": duong_goi,
         "model_bi_danh": MODEL_DICH, "model_that": model_that,
-        "phien_ban_loi_nhac": van_ban.PHIEN_BAN_LOI_NHAC,
+        "phien_ban_loi_nhac": van_ban.PHIEN_BAN_LOI_NHAC_DICH,
         "nhiet_do": NHIET_DO,
         "vong_sua": False, "vong_sua_ghi_chu": "⛔ TAT — day la ban NEN",
         "so_doan_nguon": len(doan), "so_lo": len(cac_lo),

@@ -124,7 +124,7 @@ def _loi_nhac(lo: list[dict], ngon_ngu_goc: str) -> list[dict]:
        quy tac va **khong quy tac nao** noi ve ten rieng.
        ⇒ 2/3 dung la **may**, ⛔ khong phai mot hanh vi duoc bao dam.
 
-    ⛔ Doi loi nhac PHAI keo theo `van_ban.PHIEN_BAN_LOI_NHAC` — no nam trong
+    ⛔ Doi loi nhac PHAI keo theo `van_ban.PHIEN_BAN_LOI_NHAC_DICH` — no nam trong
        van tay, va thieu no thi lan chay dung lai ket qua sinh boi loi nhac CU.
 
     ⭐ Yeu cau tra ve JSON **khoa theo ma doan**. Do la thu lam phep gop tat

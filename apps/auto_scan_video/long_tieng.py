@@ -291,7 +291,10 @@ def dung(ban_ghi_giu: dict, chuyen: dict, *, ma_giong: str, van_tay_ban: str,
         #    truong trong ham dung thay vi doc **dict no thuc su phat ra**, va
         #    ca chuoi hong o giai doan sau voi mot thong bao khong lien quan
         #    ("van ban da xu ly khong co muc nao").
-        "loi_nhac": van_ban.PHIEN_BAN_LOI_NHAC,
+        # 🔑 N-21: hang cua CHINH loi nhac nay, ⛔ khong phai hang cua
+        #    `dich_thuat`. Truoc 24/09 hai thu dung chung mot hang, nen sua loi
+        #    nhac dich lam van tay long tieng doi theo.
+        "loi_nhac": van_ban.PHIEN_BAN_LOI_NHAC_LONG_TIENG,
         "schema_long_tieng": SCHEMA_LONG_TIENG,
         "phien_ban_long_tieng": PHIEN_BAN_LONG_TIENG,
         "ngon_ngu_goc": str((ban_ghi_giu or {}).get("ngon_ngu") or ""),

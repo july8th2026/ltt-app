@@ -224,7 +224,7 @@ def chay(*, duong: str = "song", ghim_model: str = "ltt-3.5") -> dict:
         "⚠️ model": ("⛔ GHIM ltt-3.5 vi 3.8 dang NHUONG lan khac; to hop CHAY "
                     "THAT la loi nhac nay x ltt-3.8" if duong == "song"
                     else ""),
-        "phien_ban_loi_nhac": van_ban.PHIEN_BAN_LOI_NHAC,
+        "phien_ban_loi_nhac": van_ban.PHIEN_BAN_LOI_NHAC_DICH,
         "model_thao_tac_song": ai.model_cho(ai.CHUYEN_LOI_THOAI),
         "giay": round(time.time() - t0, 1),
         "duong": {"dat": dat, "tong": len(ket), "chi_tiet": ket},

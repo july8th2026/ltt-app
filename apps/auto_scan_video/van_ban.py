@@ -55,21 +55,39 @@ SCHEMA_VAN_BAN = 1
 #: Chủ dự án ra luật bằng ví dụ `张伟 → Trương Vĩ` — một **tên người**; đem nó áp
 #: lên một **thương hiệu** là **ta** nới rộng. Thu về là **trả lại** lời họ nói.
 #: Bằng chứng: `光子` trong phim v3 là **xưởng game** (`B2_DICH.md` §4g).
-#: 🔴 5 (24/09): **dựng lại trên đúng TRỤC**, ⛔ không vá thêm một chữ.
+#: 🔴 **N-21: MOT hang cho MOI loi nhac. ⛔ Khong dung chung.**
 #:
-#: v4 cắt theo **loại thực thể** (người · địa danh · tổ chức) ⇒ `首尔` rơi vào
-#: nhánh *"địa danh ⇒ phiên Hán-Việt"* và ra **"Sê-ôl"**, trong khi `李宗盛` được
-#: sửa. Đó là lần **thứ ba** trong một ngày *"sửa một, hỏng một"*.
+#: Truoc 24/09 chi co **mot** `PHIEN_BAN_LOI_NHAC`, va **BA** van tay doc no:
+#: `van_tay_van_ban` (duong CHET `dich_thuat`) · `long_tieng.van_tay_long_tieng`
+#: (SONG) · van tay giai doan `CONTENT_PROCESS` (`thi_hanh.py`, SONG).
+#: ⇒ Sua loi nhac cua duong **chet** roi tang hang — dung nhu docstring dan —
+#: **vo hieu hoa ket qua cua hai duong SONG**: `su_dung.da_xong(fingerprint=)`
+#: tra RONG ⇒ moi doan dich lai, **moi doan mot luot CO TINH TIEN**; roi
+#: `features.vo_hieu_ha_nguon` dat lai **BAY** giai doan (`voice_synthesis` ·
+#: `timing_align` · `compose` · `render` · `qc` · `qc_do_luong` · `qc_ai`).
+#: ⇒ Khach that se tra tien lai cho **LLM + TTS + render** vi mot thay doi
+#: **chua tung cham vao loi nhac ho dung**. Da xay ra 24/09: tang 1 -> 5 trong
+#: mot ngay cho quy tac Han-Viet cua `dich_thuat`.
 #:
-#: ⭐ Trục thật ⛔ không phải *loại thực thể* mà là **"đã có lối viết quen hay
-#:    chưa"** — *lối quen* là thuộc tính của **CÁI TÊN**, không của **người**.
-#:    `首尔` (nơi chốn) và `腾讯` (tổ chức) đều có lối quen; `张伟` thì không.
-#: ⇒ v5 hỏi **lối quen TRƯỚC**, loại thực thể **tụt xuống bước sau**.
+#: ⭐ Chua ai mat tien (`LTT_AUTO_SCAN_VIDEO` tat, chua co khach) ⇒ **day la luc
+#:    re nhat de sua, va no se khong bao gio re hon**.
 #:
-#: ⛔ Vẫn là luật TẠM do điều phối thu hẹp: nhánh 5.2 giữ **nguyên văn** câu chủ
-#:    dự án ra (`张伟 → Trương Vĩ`), nên đây là **thu hẹp**, ⛔ không phải quyết
-#:    thay họ. Đo trên tập 12 ca nguồn-tra-được: `tools/bench_b2_ten_rieng.py`.
-PHIEN_BAN_LOI_NHAC = 5
+#: 🔑 Luat moi, co phep bat co hoc gac (`test_408::test_MOI_hang_PHIEN_BAN_...`):
+#:    **moi hang duoi day chi phoi DUNG MOT loi nhac.**
+
+#: Phien ban loi nhac cua `dich_thuat._loi_nhac` (⛔ duong CHET — `thi_hanh.py`
+#: ghi ro khong ai goi). 5 = sau nam lan sua quy tac ten rieng ngay 24/09.
+PHIEN_BAN_LOI_NHAC_DICH = 5
+
+#: Phien ban loi nhac cua `long_tieng.loi_nhac` — ⭐ **duong SONG**
+#: (`CONTENT_PROCESS`). **1**: loi nhac nay **chua tung doi**.
+#: ⚠️ Dat lai ve 1 lam van tay `CONTENT_PROCESS` doi **mot lan cuoi** — do la
+#:    cai gia cua viec go su nham lan, va la lan vo hieu **CUOI CUNG** do cap
+#:    doi cu gay ra. ⛔ Sau day, doi loi nhac DICH khong con cham vao no nua.
+PHIEN_BAN_LOI_NHAC_LONG_TIENG = 1
+
+#: ⛔ **TEN CU — da go.** Giu mot dong de nguoi doc ma cu tim thay ly do.
+#:    Dung `PHIEN_BAN_LOI_NHAC_DICH` hoac `PHIEN_BAN_LOI_NHAC_LONG_TIENG`.
 
 
 class VanBanError(ValueError):
@@ -121,7 +139,7 @@ def dung(ban_ghi_goc: dict, ban_dich: dict, *, provider: str, model: str) -> dic
         "ngon_ngu_dich": "vi",
         "provider": str(provider or ""),
         "model": str(model or ""),
-        "loi_nhac": PHIEN_BAN_LOI_NHAC,
+        "loi_nhac": PHIEN_BAN_LOI_NHAC_DICH,
         "muc": muc,
     }
     kiem(tai_lieu, ban_ghi_goc)
@@ -174,14 +192,14 @@ def van_tay_van_ban(*, checksum_ban_ghi: str, provider: str, model: str,
 
     Nam thanh phan, va ly do tung cai:
       `checksum_ban_ghi` doi loi goc      -> phai dich lai
-      `PHIEN_BAN_LOI_NHAC` doi loi nhac   -> ban dich khac, du dau vao giu nguyen
+      `PHIEN_BAN_LOI_NHAC_DICH` doi        -> ban dich khac, du dau vao giu nguyen
       `provider` + `model`                -> **doi model la doi san pham**
       `ngon_ngu_dich`                     -> dich sang thu tieng khac
       `SCHEMA_VAN_BAN`                    -> hinh dang khac
     """
     goi = json.dumps({
         "ban_ghi": checksum_ban_ghi,
-        "loi_nhac": PHIEN_BAN_LOI_NHAC,
+        "loi_nhac": PHIEN_BAN_LOI_NHAC_DICH,
         "provider": provider,
         "model": model,
         "ngon_ngu": ngon_ngu_dich,

@@ -99,7 +99,7 @@ def moi_truong() -> dict:
     return {
         "model_dich": _an_toan(lambda: ai.model_cho(ai.DICH_THUAT)),
         "model_cham": _an_toan(lambda: ai.model_cho(ai.QC_NGU_NGHIA)),
-        "phien_ban_loi_nhac": van_ban.PHIEN_BAN_LOI_NHAC,
+        "phien_ban_loi_nhac": van_ban.PHIEN_BAN_LOI_NHAC_LONG_TIENG,
         "vong_sua_toi_da": sua_chua.VONG_SUA_TOI_DA,
         "sha_bo_cham": _sha(TEP_BO_CHAM),
         "sha_loi_nhac_dich": _sha("apps/auto_scan_video/dich_thuat.py"),
