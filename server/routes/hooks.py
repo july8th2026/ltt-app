@@ -174,8 +174,14 @@ def _json_an_toan(than: bytes):
 
     try:
         return json.loads(than.decode("utf-8"))
-    except Exception:                                        # noqa: BLE001
-        try:
-            return than.decode("utf-8", "replace")[:10_000]
-        except Exception:                                    # noqa: BLE001
-            return ""
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        # ⛔ CHI hai ngoai le NAY. Ban truoc bat `except Exception` tran hai
+        #    tang, va no nuot ca nhung loi la THAT cua ta — `MemoryError` voi
+        #    than khong lo, `AttributeError` khi ai do truyen `str` thay `bytes`.
+        #    Mot loi nhu the bien thanh "webhook gui JSON hong", tuc trieu chung
+        #    tro sang NGUOI GOI trong khi loi la cua ta.
+        #
+        # ⭐ Tang trong cu con vo nghia: `decode(..., "replace")` tren `bytes`
+        #    khong the nem. No bat mot ca khong ton tai, va `return ""` cua no
+        #    chua bao gio chay.
+        return than.decode("utf-8", "replace")[:10_000]
