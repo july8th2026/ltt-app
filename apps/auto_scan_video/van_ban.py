@@ -80,11 +80,14 @@ SCHEMA_VAN_BAN = 1
 PHIEN_BAN_LOI_NHAC_DICH = 5
 
 #: Phien ban loi nhac cua `long_tieng.loi_nhac` — ⭐ **duong SONG**
-#: (`CONTENT_PROCESS`). **1**: loi nhac nay **chua tung doi**.
+#: (`CONTENT_PROCESS`).
+#: **2** (24/09): them `QUY_TAC_TEN_RIENG_VI` — quy tac ten rieng, CHI cho dich
+#: `vi`. Truoc do duong song ⛔ **khong co quy tac nao ve ten rieng**, va do
+#: duoc **7/13 · 9/13 · 5/13** tren tap kiem ten (`B2_DICH.md` §7.6).
 #: ⚠️ Dat lai ve 1 lam van tay `CONTENT_PROCESS` doi **mot lan cuoi** — do la
 #:    cai gia cua viec go su nham lan, va la lan vo hieu **CUOI CUNG** do cap
 #:    doi cu gay ra. ⛔ Sau day, doi loi nhac DICH khong con cham vao no nua.
-PHIEN_BAN_LOI_NHAC_LONG_TIENG = 1
+PHIEN_BAN_LOI_NHAC_LONG_TIENG = 2
 
 #: ⛔ **TEN CU — da go.** Giu mot dong de nguoi doc ma cu tim thay ly do.
 #:    Dung `PHIEN_BAN_LOI_NHAC_DICH` hoac `PHIEN_BAN_LOI_NHAC_LONG_TIENG`.

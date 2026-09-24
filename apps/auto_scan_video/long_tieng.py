@@ -82,6 +82,44 @@ NGU_CANH_KE = 2
 #: khong lam no ca lo.
 GOC_TOI_DA = 600
 
+#: 🔑 **Quy tac TEN RIENG — chi cho dich VI, va cho do la MOT PHAN CUA LUAT.**
+#:
+#: ⚠️ `ngon_ngu_dich` ⛔ khong phai luon la `vi`: `DICH_HOP_LE` cho ca `en`
+#:    (`ngon_ngu.kiem_cap`). *"Phien am HAN-VIET"* la luat cua tieng Viet; ap no
+#:    khi dich sang tieng Anh la dung ho **F-05** (loi nhac ghi cung "tieng Viet"
+#:    cho moi nguon). ⇒ Chen co dieu kien, ⛔ khong chen vo dieu kien.
+#:
+#: ⭐ **Vi du VIET DUNG Y NHU DAU RA MONG MUON — co dau day du.** Ban v2 cua
+#:    `dich_thuat` viet vi du KHONG DAU (`Truong Vi`) va model **chep HINH DANG
+#:    cua vi du**: mot ten von dung (`李宗盛`) tut thanh khong dau. Lan v3 viet
+#:    co dau thi het. (`B2_DICH.md` §4c)
+#:
+#: ⚠️ **Vi sao no la mot `{"role", "content"}` chu khong phai mot chuoi tran.**
+#:    `check_i18n._la_tin_nhan_model` nhan mot loi nhac **theo HINH DANG**: chuoi
+#:    nam o khoa `"content"` cua mot dict co ca khoa `"role"` thi la tin nhan gui
+#:    model, ⛔ khong phai chu tren man hinh (`check_i18n.py:149`). No ⛔ **khong
+#:    leo qua mot phep gan**, nen viet `X = "…Bắc Kinh…"` lam banh coc i18n do
+#:    (da do that: `long_tieng.py 0 -> 1` — va banh coc nay tinh **theo tung tep**,
+#:    nen mot o cung du do).
+#: ⛔ Boc `_()` sai theo huong NGUY HIEM: loi nhac se doi theo ngon ngu giao dien
+#:    cua khach — mot thiet lap hien thi lang le doi HANH VI dich.
+#: ⇒ Khai dung thu no VON LA — mot **manh cua tin nhan he thong** — thi ca bo dem
+#:    lan nguoi doc deu thay dung. ⛔ Day khong phai viet de lach bo dem.
+QUY_TAC_TEN_RIENG_VI = {"role": "system", "content": (
+    "- TEN RIENG — hoi HAI cau, THEO THU TU:\n"
+    "  1. Ten nay DA CO loi viet quen trong tieng Viet chua? Neu CO thi dung "
+    "DUNG loi quen do, bat ke no la nguoi, noi chon hay to chuc. "
+    "Vi du: 首尔 -> Seoul, 东京 -> Tokyo, 北京 -> Bắc Kinh, 上海 -> Thượng Hải, "
+    "重庆 -> Trùng Khánh, 李宗盛 -> Lý Tông Thịnh, 李小龙 -> Lý Tiểu Long, "
+    "腾讯 -> Tencent, 华为 -> Huawei.\n"
+    "  2. Neu KHONG co loi quen, hoac ban khong chac, thi moi xet LOAI. "
+    "Nguoi hoac dia danh: phien AM HAN-VIET, CO DAU tieng Viet day du. "
+    "Vi du: 张伟 -> Trương Vĩ, 小美 -> Tiểu Mỹ, 王芳 -> Vương Phương. "
+    "KHONG dich nghia den, KHONG doi sang tieng Anh, KHONG dung binh am, "
+    "KHONG bo dau. To chuc, thuong hieu, ten san pham: GIU NGUYEN DANG goc, "
+    "KHONG phien am Han-Viet va KHONG dich nghia den.\n"
+    "  Mot ten xuat hien nhieu lan phai duoc xu ly GIONG NHAU o moi lan.\n")}
+
 
 class LongTiengError(ValueError):
     """Ban long tieng khong dung hop dong."""
@@ -165,6 +203,9 @@ def loi_nhac(lo: list[dict], *, tat_ca: list[dict], ngon_ngu_goc: str,
         muc.append(m)
 
     c = ngon_ngu.cum(ngon_ngu_dich)
+    # ⛔ Quy tac ten rieng CHI cho dich `vi` — xem `QUY_TAC_TEN_RIENG_VI`.
+    ten_rieng = (QUY_TAC_TEN_RIENG_VI["content"]
+                 if ngon_ngu.chuan_dich(ngon_ngu_dich) == ngon_ngu.VI else "")
     he_thong = (
         f"Ban la bien tap vien long tieng {c['tieng']}. Ban KHONG dich tung chu: "
         f"ban viet lai cau thoai sao cho {c['nguoi']} nghe thay tu nhien, dung y, "
@@ -178,6 +219,7 @@ def loi_nhac(lo: list[dict], *, tat_ca: list[dict], ngon_ngu_goc: str,
         "va sap nghe, sau khi da cat.\n"
         "- Xung ho va giong dieu hop voi `giong` da chon.\n"
         "- Khong them thong tin khong co trong cau goc.\n"
+        + ten_rieng +
         f"- `cam_xuc` phai la MOT trong: {', '.join(CAM_XUC)}.\n"
         f"- `kieu_noi` phai la MOT trong: {', '.join(KIEU_NOI)}.\n"
         "Tra ve DUY NHAT mot doi tuong JSON:\n"

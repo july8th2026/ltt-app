@@ -75,6 +75,14 @@ CA = [
 #: ⛔ Lo NHO hon co san pham — xem ghi chu o `_dich_duong_song`.
 LO_NHO = 4
 
+#: 🔑 **GHIM nhiet do, va phai noi ra vi sao.** Duong SONG ⛔ khong truyen
+#: `temperature` ⇒ cong may B ap `1.0`, va o cau hinh do `ltt-3.5` hong **64 %**
+#: so lo (`B2_DICH.md` §7.5). Do ten rieng duoi mot nguon nhieu nhu vay thi
+#: chenh lech truoc/sau cua LOI NHAC bi chon mat.
+#: ⇒ Ghim de lam loi nhac thanh **bien duy nhat**. ⚠️ Cai gia phai khai: day
+#: ⛔ **khong** phai cau hinh khach dang chay.
+NHIET_DO = 0.2
+
 #: 🔴 So doan bi model BO trong tung lo — mot KET QUA, ⛔ khong phai tro ngai.
 _BO_DOAN: list[dict] = []
 
@@ -141,10 +149,14 @@ def _mot_lo(db, lo: list[dict], tat_ca: list[dict], ban_do: dict) -> dict:
         #    `dieu_phoi` cat phan hoi giua chung, va `doc_chuyen` nem
         #    "Model khong tra ve bang doan" — mot trieu chung tro NHAM vao model
         #    trong khi loi la o ben GOI. Do that: 2 doan chay tot, 14 doan chet.
+        # ⛔ Tran/timeout lay tu `ngan_sach_cho` — duong song di qua
+        #    `goi_tinh_tien`, va ham do doc bang do (`ai.py:774`) = 16 384,
+        #    ⛔ khong phai 32 768 cua `tran_token_ra()`.
+        _tran, _cho = ai.ngan_sach_cho(ai.CHUYEN_LOI_THOAI)
         kq = dieu_phoi.goi(db, messages=msg,
                            thu_tu_provider=list(ai.THU_TU_PROVIDER),
-                           model_theo_provider=ban_do, temperature=0.2,
-                           max_tokens=ai.tran_token_ra(), timeout_s=300.0)
+                           model_theo_provider=ban_do, temperature=NHIET_DO,
+                           max_tokens=_tran, timeout_s=float(_cho or 300.0))
     noi = getattr(kq, "noi_dung", None) or getattr(kq, "content", "")
     goi = ai.doc_json(str(noi), ai.CHUYEN_LOI_THOAI)
     # 🔴 **GHI so doan BI BO, ⛔ dung nem.** `doc_chuyen` nem `ThieuDoan` — dung
@@ -229,7 +241,18 @@ def chay(*, duong: str = "song", ghim_model: str = "ltt-3.5") -> dict:
         "⚠️ model": ("⛔ GHIM ltt-3.5 vi 3.8 dang NHUONG lan khac; to hop CHAY "
                     "THAT la loi nhac nay x ltt-3.8" if duong == "song"
                     else ""),
-        "phien_ban_loi_nhac": van_ban.PHIEN_BAN_LOI_NHAC_DICH,
+        # 🔴 **Hang phai khop DUONG DANG DO.** Ban dau cho nay luon doc
+        #    `PHIEN_BAN_LOI_NHAC_DICH` — hang cua duong CHET — ke ca khi
+        #    `--duong song`. Ban ghi vi the dan nhan phien ban cua MOT loi nhac
+        #    KHAC voi loi nhac vua chay. Dung ho N-21 (mot hang chi phoi nham
+        #    loi nhac), lan nay o tang BAN GHI chu khong o tang cache.
+        "phien_ban_loi_nhac": (van_ban.PHIEN_BAN_LOI_NHAC_LONG_TIENG
+                               if duong == "song"
+                               else van_ban.PHIEN_BAN_LOI_NHAC_DICH),
+        "hang_phien_ban": ("van_ban.PHIEN_BAN_LOI_NHAC_LONG_TIENG"
+                           if duong == "song"
+                           else "van_ban.PHIEN_BAN_LOI_NHAC_DICH"),
+        "nhiet_do": NHIET_DO,
         "model_thao_tac_song": ai.model_cho(ai.CHUYEN_LOI_THOAI),
         "giay": round(time.time() - t0, 1),
         "duong": {"dat": dat, "tong": len(ket), "chi_tiet": ket},
@@ -245,12 +268,17 @@ def main(argv=None) -> int:
     ap.add_argument("--ra", default="")
     ap.add_argument("--duong", choices=("song", "chet"), default="song")
     ap.add_argument("--ghim", default="ltt-3.5")
+    # ⭐ `--lan` — do ten rieng la mot phep do NHIEU LUOT. §7.1 da do 8/13 roi
+    #    9/13 tren CUNG cau hinh; mot luot don ⛔ khong tach duoc "loi nhac tot
+    #    len" khoi "hom nay gap may". Ban ghi phai mang so lan de khong de len nhau.
+    ap.add_argument("--lan", type=int, default=1)
     a = ap.parse_args(argv)
     kq = chay(duong=a.duong, ghim_model=a.ghim)
     if a.ra:
         d = Path(a.ra)
         d.mkdir(parents=True, exist_ok=True)
-        (d / f"ten_rieng_{kq['duong_chay']}_v{kq['phien_ban_loi_nhac']}.json").write_text(
+        (d / f"ten_rieng_{kq['duong_chay']}_v{kq['phien_ban_loi_nhac']}"
+              f"_lan{a.lan}.json").write_text(
             json.dumps(kq, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"[{kq['duong_chay'].upper()}] {kq['⚠️ duong_la_gi']}")
     print(f"  loi nhac v{kq['phien_ban_loi_nhac']} · model ghim "

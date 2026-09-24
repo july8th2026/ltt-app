@@ -131,6 +131,29 @@ def test_doi_DOAN_MOI_LO_thi_kich_thuoc_lo_DOI_THAT():
         lt.DOAN_MOI_LO = cu
 
 
+def test_quy_tac_TEN_RIENG_chi_ra_khi_dich_VI():
+    """🔑 *"Phien am HAN-VIET"* la luat cua **tieng Viet**, khong phai cua moi dich.
+
+    ⚠️ `ngon_ngu.DICH_HOP_LE` co ca `en` (`kiem_cap`). Chen luat nay vo dieu kien
+       la dung lai **F-05** — loi nhac ghi cung "tieng Viet" cho moi nguon.
+
+    ⛔ Bai kiem CA HAI chieu. Thieu ve `en` thi mot ban vo hieu hoa dieu kien
+       (chen vo dieu kien) van xanh, va bai dang gac chinh no.
+    """
+    bg = _ban_ghi()
+    def _he(dich):
+        return long_tieng.loi_nhac(bg["doan"][:2], tat_ca=bg["doan"],
+                                   ngon_ngu_goc="zh", dac_diem_giong={},
+                                   ngon_ngu_dich=dich)[0]["content"]
+    moc = long_tieng.QUY_TAC_TEN_RIENG_VI["content"]
+    assert moc in _he("vi"), "dich `vi` phai mang quy tac ten rieng"
+    assert moc not in _he("en"), "dich `en` ⛔ KHONG duoc mang luat Han-Viet"
+    # ⭐ Vi du phai CO DAU: ban `dich_thuat` v2 viet vi du khong dau va model
+    #    chep HINH DANG cua vi du — mot ten von dung tut thanh khong dau
+    #    (`B2_DICH.md` §4c). Chot lai bang mot phep kiem, khong bang tri nho.
+    assert "Trương Vĩ" in moc and "Lý Tông Thịnh" in moc
+
+
 def test_loi_nhac_YEU_CAU_khoa_la_ma_doan():
     """Chot chinh loi nhac: doi tuong co khoa, khong phai mang."""
     bg = _ban_ghi()

@@ -141,10 +141,15 @@ cong_vlm.py:341             chi dat khoa khi khac None   ⇒ than request KHONG 
 **`--temp 1.0`** cho **cả hai** hồ sơ `qwen35-api`/`qwen38-api`
 (`L_LLM_CONG.md` §4a, `llama-swap.yaml` trên máy B).
 
-🔑 ⇒ Mọi số dịch của đường sống từ trước tới nay — **kể cả 9/13 và 8/13 ở §7.1** —
-là số của **`temperature ≈ 1,0`**, ⛔ không phải của `0,2` như §7.1 ghi. §7.1 ghim
-`0,2` ở **bench**, nhưng bench đi qua `dieu_phoi.goi` với `temperature` truyền
-tường minh, còn **sản phẩm thì không truyền**. Hai cấu hình khác nhau.
+🔑 ⇒ **Bench và sản phẩm chạy hai cấu hình khác nhau, và ⛔ không ai nói ra.**
+`bench_b2_ten_rieng` truyền `temperature=0,2` **tường minh** — nên 9/13 và 8/13
+ở §7.1 đúng là số của `0,2`, ⛔ không phải số sai. Nhưng **khách ⛔ không nhận
+cấu hình đó**: đường sống không truyền gì, nên khách nhận `≈ 1,0`.
+
+⇒ ⚠️ 9/13 là một **cận TRÊN** của thứ khách nhận, ⛔ không phải thứ khách nhận.
+Bảng dưới đo được rằng ở `≈ 1,0` thì chính `ltt-3.5` hỏng **64 %** số lô — tức
+khoảng cách giữa hai cấu hình ⛔ **không nhỏ**, và ⛔ chưa ai đo nó cho phần
+**tên riêng**.
 
 ### Phép đo — MỘT biến, và biến đó là `temperature`
 
@@ -165,6 +170,33 @@ lời `b1_chep_loi_moi/` · cùng `ltt-3.5`.
 ghim nhiet do   2/21 lo hong   =  9,5 %
 SAN PHAM        9/14 lo hong   = 64,3 %      Fisher mot phia p = 0,0011
 ```
+
+### 🔴 Và `ltt-3.8` ở **đúng cấu hình sản phẩm**: **0/7 lô hỏng, 83/83**
+
+| phim | model | `temperature` | lô hỏng | đoạn nhận |
+|---|---|---|---|---|
+| v1 | **`ltt-3.8`** | ⛔ không gửi (SẢN PHẨM) | **0/7** | **83/83** |
+| v1 | `ltt-3.5` | ⛔ không gửi (SẢN PHẨM) | 3/7 | 47/83 |
+| v1 | `ltt-3.5` | **ghim 0,0 / 0,2** | **0/7** | **83/83** |
+| v2 | **`ltt-3.8`** | ⛔ không gửi (SẢN PHẨM) | **0/7** | **74/74** |
+| v2 | `ltt-3.5` | ⛔ không gửi (SẢN PHẨM) | 6/7 | 25/74 |
+| v2 | `ltt-3.5` | ghim 0,0 | 2/7 | 51/74 |
+
+> ⭐ **Đọc hai dòng đầu một mình thì kết luận là *"20× là giá của việc chạy
+> được"*** — đúng kết cục thứ nhất §7.3 dựng ra. **Dòng thứ ba bác nó:** cùng
+> phim, cùng lược đồ, cùng `ltt-3.5`, chỉ thêm **một tham số** ⇒ cũng **83/83**.
+>
+> 🔑 ⇒ Cái 20× ấy sẽ được trả **phần lớn** để che một núm chưa ai ghim.
+>
+> ⚠️ **Nhưng ⛔ không phải TOÀN BỘ, và đây là chỗ phải nói cho đúng:** trên
+> **cả hai** phim ở **đúng cấu hình sản phẩm**, `ltt-3.8` được **14/14 lô,
+> 157/157 đoạn**. `ltt-3.5` **ghim nhiệt độ** vẫn còn **2/21 lô hỏng**. ⇒ `ltt-3.8`
+> **có** một biên năng lực thật về bám lược đồ; ghim `temperature` lấy lại
+> **phần lớn** khoảng cách (64,3 % → 9,5 %), ⛔ **không** lấy hết.
+>
+> ⇒ Câu cho chủ dự án ⛔ **không** phải *"3.5 hay 3.8"* mà là: **ghim
+> `temperature` TRƯỚC**, rồi mới hỏi 9,5 % lô hỏng còn lại đáng giá bao nhiêu —
+> vì đó mới là phần 20× thật sự mua.
 
 ⭐ *"Lô hỏng"* ở đây là **theo nghĩa sản phẩm**: vi phạm lược đồ **hoặc** thiếu
 đoạn — vì `long_tieng.doc_chuyen` ném `ThieuDoan` cho cả hai (`long_tieng.py:240`).
@@ -223,13 +255,106 @@ nhắc, ⛔ không đụng sổ sách.
 
 ⚠️ **Cần một số hiệu `N-xx`** (sổ dùng chung — ⛔ làn này không tự đặt).
 
-## 7.4 ⇒ Bước 2 và Bước 3: ⛔ CHƯA làm
+## 7.6 ⭐ BƯỚC 2 — quy tắc TÊN RIÊNG vào lời nhắc ĐƯỜNG SỐNG: **21/33 → 38/39**
 
-Bước 2 (sửa lời nhắc đường sống **một lần** theo trục v5, đo lại 13 ca **+ ngân
-sách độ dài** + token lời nhắc trước/sau) và Bước 3 (bản nền dịch đo lại trên
-đường sống) ⛔ **chưa chạy** — chúng sửa lời nhắc của **đường sống đã nghiệm
-thu**, và Bước 1 vừa cho thấy đường đó còn một **vấn đề lược đồ** chưa rõ thuộc
-về model hay lời nhắc. ⇒ ⛔ Không chồng hai thay đổi lên một chỗ đang lung lay.
+`long_tieng.QUY_TAC_TEN_RIENG_VI` · `PHIEN_BAN_LOI_NHAC_LONG_TIENG` **1 → 2**.
+Sửa **MỘT lần**, đo **3 lượt trước** và **3 lượt sau**, cùng cấu hình
+(`bench_b2_ten_rieng`, ghim `ltt-3.5`, ghim `temperature = 0,2`, lô 4).
+
+### 🔴 Vì sao phải 3 lượt: **một lượt ⛔ không nói được gì**
+
+```
+TRUOC, cung cau hinh, ba luot:   7/13 · 9/13 · 5/13
+```
+
+⛔ Biên độ **5 → 9 trên 13**. Một lượt *"trước"* so với một lượt *"sau"* ⛔ **không
+tách được** *"lời nhắc tốt lên"* khỏi *"hôm nay gặp may"*. Đúng chỗ ba lượt sửa
+hôm qua trượt (§4c, §4h): mỗi lượt *"sửa một chỗ, hỏng một chỗ"* — với `n = 1`
+thì một dao động bình thường **đọc ra như một hồi quy**.
+
+### ⚠️ Và phải TÁCH *"tên sai"* khỏi *"đoạn mất"*
+
+Nhiều ca *"hỏng"* ở lượt trước là **chuỗi RỖNG** — model ⛔ không trả đoạn đó về,
+tức đúng bệnh §7.5, ⛔ **không** phải dịch sai tên. Gộp hai thứ vào một điểm là
+đo `temperature` mà tưởng đang đo lời nhắc.
+
+```
+TRUOC   doan co tra ve 10 · 13 · 10  ⇒ ten DUNG 21/33 = 63,6 %
+SAU     doan co tra ve 13 · 13 · 13  ⇒ ten DUNG 38/39 = 97,4 %
+                                        Fisher mot phia p = 2,0e-4
+```
+
+### Bảng TỪNG CA — `OK` đúng · `XX` sai · `-` ⛔ model không trả đoạn về
+
+| tên | đáp án (wiki zh→vi) | TRƯỚC (v1) | SAU (v2) |
+|---|---|---|---|
+| 首尔 | Seoul | OK OK OK | OK OK OK |
+| 东京 | Tokyo | OK OK **-** | OK OK OK |
+| 北京 | Bắc Kinh | OK OK **-** | OK OK OK |
+| 上海 | Thượng Hải | OK OK **-** | OK OK OK |
+| 广州 | Quảng Châu | OK OK OK | OK OK OK |
+| **重庆** | Trùng Khánh | ⛔ XX XX XX | ⚠️ **OK XX OK** |
+| 纽约 | New York | OK OK OK | OK OK OK |
+| **李宗盛** | Lý Tông Thịnh | ⛔ XX XX XX | ✅ **OK OK OK** |
+| **李小龙** | Lý Tiểu Long | ⛔ XX OK XX | ✅ **OK OK OK** |
+| 腾讯 | Tencent | - OK OK | OK OK OK |
+| **华为** | Huawei | - OK XX | ✅ **OK OK OK** |
+| **张伟** | Trương Vĩ | - ⛔ XX XX | ✅ **OK OK OK** |
+| 小美 | Tiểu Mỹ | OK XX OK | ✅ **OK OK OK** |
+| **光子** (tiêu chí ÂM) | ⛔ không được ra *Quang Tử* | - OK OK | 🔴 **XX OK OK** |
+
+### ⭐ Ba ca hỏng bằng **bính âm / tiếng Anh** — thứ khách **NGHE THẤY** — đã đóng
+
+```
+张伟    "Zhang Wei"   ->  Trương Vĩ      3/3
+李小龙  "Bruce Lee"   ->  Lý Tiểu Long   3/3
+李宗盛  "Lý Tông Thành" -> Lý Tông Thịnh 3/3
+```
+
+⭐ `李宗盛` là ca mà Unihan **bác lại dấu ✅ của chính làn này** (§4c): *"Thành"*
+là âm của 成/城, `盛` là **thịnh**. Nay lời nhắc mang đáp án **tra được** làm ví
+dụ, và cả 3 lượt ra đúng.
+
+### 🔴 HOÁ ĐƠN — ⛔ không giấu: **một hồi quy, một ca chưa đóng**
+
+| | |
+|---|---|
+| 🔴 **hồi quy** | `光子` → *"Quang Tử"* ở **1/3 lượt**. Đó **đúng cái** §4g cảnh báo: một **thương hiệu** (xưởng game) bị phiên âm như tên người. Nhánh *"tổ chức/thương hiệu ⇒ giữ nguyên"* **có** trong luật, nhưng ⛔ **không thắng** được mọi lượt |
+| ⚠️ **chưa đóng** | `重庆` → *"Chongqing"* ở **1/3 lượt**, dù `重庆 -> Trùng Khánh` nằm **ngay trong ví dụ** của luật |
+
+⇒ ⛔ **Đừng đọc 38/39 thành *"đã xong"***. Nó là **97,4 % trên đoạn trả về**, và
+hai ca trên nói rằng luật ⛔ **chưa tất định** — cùng họ với `L_LLM_CONG.md` §4b
+(*⛔ không núm nào làm lượt tái lập được*).
+
+### Token lời nhắc — trước/sau, và **cái gì thật sự bị ăn**
+
+| | ký tự | token (ước, `uoc_token`) |
+|---|---|---|
+| hệ thống, đích `vi` — **TRƯỚC** | 1 026 | **338** |
+| hệ thống, đích `vi` — **SAU** | 1 804 | **590** (**+252**, +75 %) |
+| hệ thống, đích `en` — sau | 1 024 | **338** ⇒ ⛔ **không đổi** |
+
+⚠️ **Và *"ngân sách độ dài"* ⛔ KHÔNG phải thứ bị ăn.** `ngon_ngu.ngan_sach_do_dai`
+là trần **số âm tiết của MỘT câu ra**, tính từ `thoi_luong_giay` — nó ⛔ **không
+đọc** độ dài lời nhắc. Thứ thật sự trả thêm là **token VÀO**: +252 token mỗi lô,
+tức **+0,0126 credit/lô** ở `ltt-3.8` (50/1M) và **+0,0033** ở `ltt-3.5` (13/1M)
+— đọc từ `gia_token.BANG_GIA`. Cả lô hệ thống + người dùng là ~2 425 token, ⛔ xa
+mọi trần ngữ cảnh.
+
+### ⛔ Luật CHỈ áp cho đích `vi` — và đó là một phần của bản sửa
+
+`ngon_ngu.DICH_HOP_LE` có **cả `en`** (`kiem_cap`). *"Phiên âm Hán-Việt"* là luật
+của tiếng Việt; bơm nó vào một lượt dịch sang tiếng Anh là dựng lại **F-05** (lời
+nhắc ghi cứng *"tiếng Việt"* cho mọi nguồn). ⇒ `loi_nhac` chèn **có điều kiện**,
+và bảng token trên là **phép kiểm** cho điều đó: đích `en` giữ nguyên 338.
+
+## 7.4 ⇒ Bước 2 ĐÃ LÀM (§7.6) · Bước 3 ⛔ CHƯA
+
+**Bước 2** — quy tắc tên riêng vào lời nhắc đường sống — ⭐ **đã làm, xem §7.6**
+(21/33 → 38/39, kèm hoá đơn một hồi quy). Nó chạy **sau** §7.5, đúng thứ tự:
+⛔ không chồng một thay đổi lời nhắc lên một chỗ mà nguyên nhân bất ổn còn chưa rõ.
+
+**Bước 3** (bản nền dịch đo lại trên đường sống) ⛔ **chưa chạy**.
 
 ---
 
