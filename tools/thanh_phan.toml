@@ -187,7 +187,9 @@ duong = ["platform_core/workflow/dong_co.py", "platform_core/workflow/may_trang_
          "platform_core/workflow/tien.py",
          # Retry CAP NODE (plan wf-v2 P3, spec 5.6) - lop mong tren retry cua
          # jobs.py, khong phai co che thu hai.
-         "platform_core/workflow/thu_lai.py"]
+         "platform_core/workflow/thu_lai.py",
+         # Cau noi CSDL -> moi truong bieu thuc Sec6.2 (plan wf-v2 P3 T4).
+         "platform_core/workflow/moi_truong.py"]
 he_trong = "thi_hanh"
 tai_nguyen = ["postgres_test"]
 

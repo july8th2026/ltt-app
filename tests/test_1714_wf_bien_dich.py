@@ -209,22 +209,36 @@ def test_tu_tham_chieu_bi_tu_choi():
     assert "CHINH NO" in str(e.value)
 
 
-def test_node_core_chua_bien_dich_duoc_nen_chua_co_ca_foreach():
-    """QUYẾT ĐỊNH ca "node trong foreach": hôm nay **không tồn tại**, nên không
-    viết luật cho nó.
+def test_node_core_da_bien_dich_duoc__nhung_foreach_thi_CHUA():
+    """Cái chuông của Task 4 đã reo, và đây là câu trả lời **một phần**.
 
-    `bien_dich._node` chỉ nhận `tool` và `app.*`; `core.foreach` (thân vòng lặp
-    — nơi `loop.item` sống, `nut.NodeDefinition.publish_duoc=False`) bị từ chối
-    ngay. Viết một luật tổ tiên cho một thân vòng lặp chưa có hình dạng là đoán.
+    Trước 24/09 `bien_dich._node` chỉ nhận `tool`/`app.*`, nên mọi `core.*` bị
+    từ chối chung một mã `loai_node_chua_ho_tro`. Task 4 (plan wf-v2 P3) mở ba
+    node RẼ ĐƯỜNG — `core.if`/`switch`/`stop` — và chúng **không** mở ra ca
+    "node trong thân vòng lặp": chúng không có thân, `loop.*` không tồn tại
+    quanh chúng, và luật tổ tiên §6.2 áp y nguyên.
 
-    ⚠️ Phép kiểm này là **cái chuông**: ngày P3 mở `core.*`, nó đỏ, và người mở
-       phải quay lại đây quyết định tổ tiên trong thân vòng lặp nghĩa là gì.
+    ⚠️ Chuông vẫn treo cho `core.foreach`: hôm nay nó chưa được khai trong
+       `nut_loi/` nên bị từ chối `node_khong_ton_tai`. **Task 5 là người phải
+       quay lại đây** quyết định tổ tiên trong thân vòng lặp nghĩa là gì.
     """
+    from platform_core.workflow import nut_loi
+    assert "core.foreach" not in nut_loi.tat_ca(), (
+        "core.foreach da duoc khai — Task 5 phai tra loi cau hoi to tien "
+        "trong than vong lap o day, khong duoc chi xoa phep kiem nay")
     doc = _doc([{"id": "p1", "nodes": [
         {"id": "v", "type": "core.foreach", "params": {}}], "edges": []}])
     with pytest.raises(bien_dich.LoiBienDich) as e:
         bien_dich.bien_dich(doc, cong_cu=CC)
-    assert e.value.ma == "loai_node_chua_ho_tro"
+    assert e.value.ma == "node_khong_ton_tai"
+
+    # Đối chứng: một node lõi ĐÃ khai thì biên dịch được, và mang `thi_hanh`
+    # của chính `NodeDefinition` — không phải `"job"` mặc định của node app.
+    doc2 = _doc([{"id": "p1", "nodes": [
+        {"id": "i", "type": "core.if", "params": {"dieu_kien": "true"}}],
+        "edges": []}])
+    g = bien_dich.bien_dich(doc2, cong_cu=CC)
+    assert g["nodes"][0]["thi_hanh"] == "inline"
 
 
 # ── Bộ TRÍCH tham chiếu, đo riêng ────────────────────────────────────────────

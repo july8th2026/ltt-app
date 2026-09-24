@@ -267,11 +267,70 @@ def _tham_chieu_trong(gia_tri: Any) -> set[ThamChieu]:
     return ra
 
 
+#: Tiền tố của node LÕI (`nut_loi/`, spec §4.5 nguồn 1).
+TIEN_TO_LOI = "core."
+
+
+def _kiem_tham_so_loi(nd, params: dict, nid: str) -> None:
+    """Kiểm `params` của một node lõi theo `NodeDefinition.tham_so`.
+
+    ⛔ Chặn ở **publish**, không lúc chạy — cùng lý do với cổng tổ tiên §6.2:
+       lúc chạy là lúc đang tiêu tiền của khách, và một `trang_thai="HOI_HOI"`
+       phát hiện ở đó nghĩa là run đã chạy được nửa đường.
+
+    ⚠️ Cố ý KHÔNG dựng một bộ kiểm JSON Schema đầy đủ ở đây (`luoc_do.py` có
+       việc khác). Ba luật đủ cho `tham_so` của node lõi, và mỗi luật là một
+       lỗi đã thấy: thiếu khoá bắt buộc, khoá lạ (gõ sai tên im lặng không có
+       tác dụng), `enum` ngoài tập.
+    """
+    lo = nd.tham_so or {}
+    thuoc = lo.get("properties") or {}
+    thieu = [k for k in (lo.get("required") or []) if k not in params]
+    if thieu:
+        raise LoiBienDich("thieu_tham_so",
+                          f"{nd.type} thieu tham so bat buoc: {sorted(thieu)}",
+                          nid)
+    if lo.get("additionalProperties") is False:
+        thua = sorted(set(params) - set(thuoc))
+        if thua:
+            raise LoiBienDich(
+                "tham_so_la",
+                f"{nd.type} khong co tham so {thua} (co: {sorted(thuoc)})", nid)
+    for khoa, mo_ta in thuoc.items():
+        if khoa not in params or str(mo_ta.get("type", "")) != "enum":
+            continue
+        cho_phep = [str(x) for x in (mo_ta.get("values") or [])]
+        if str(params[khoa]) not in cho_phep:
+            raise LoiBienDich(
+                "tham_so_khong_hop_le",
+                f"{nd.type}.{khoa} phai la mot trong {cho_phep} -- nhan "
+                f"{params[khoa]!r}", nid)
+
+
+def _node_loi(n: dict, nid: str, loai: str) -> dict:
+    """Node `core.*` — nguồn là `nut_loi/`, KHÔNG phải registry công cụ."""
+    from platform_core.workflow import nut_loi
+
+    nd = nut_loi.tat_ca().get(loai)
+    if nd is None:
+        raise LoiBienDich("node_khong_ton_tai", loai, nid)
+    if not nd.publish_duoc:
+        raise LoiBienDich("loai_node_chua_ho_tro", loai, nid)
+    params = dict(n.get("params") or {})
+    _kiem_tham_so_loi(nd, params, nid)
+    return {"id": nid, "type": loai, "type_version": nd.type_version,
+            "params": params, "credential_ref": "",
+            "settings": dict(n.get("settings") or {}),
+            "thi_hanh": nd.thi_hanh}
+
+
 def _node(n: dict, cc: dict[str, CongCu], *, nghiem: bool = True) -> dict:
     nid = str(n.get("id", ""))
     if not _ID.match(nid):
         raise LoiBienDich("id_khong_hop_le", f"id node {nid[:70]!r}", nid[:64])
     loai = str(n.get("type", ""))
+    if loai.startswith(TIEN_TO_LOI):
+        return _node_loi(n, nid, loai)
     if loai == "tool":
         data = n.get("data") or {}
         ten, params = str(data.get("tool", "")), data.get("params") or {}
@@ -383,8 +442,16 @@ def cau_truc(document: dict, *,
     # bảng thứ hai: cùng một nguồn, đọc thẳng. Không đi qua `luoc_do` vì bộ ấy
     # ném `LoiLuocDo` khi gặp kiểu lạ, và một kiểu lạ ở một tool KHÔNG liên
     # quan không được phép làm sập đường publish của người khác.
-    cong_ra_cua = {n["id"]: frozenset(cc[n["type"][4:]].returns or {})
-                   for n in nodes}
+    # ⚠️ Node LÕI không có ToolSpec; cổng ra của nó do chính `NodeDefinition`
+    #    khai (`nut_loi/`, spec §4.5 nguồn 1). Vẫn là **một** nguồn cho mỗi
+    #    loại node, không phải một bảng thứ hai cho cùng một loại.
+    from platform_core.workflow import nut_loi as _loi
+    so_loi = _loi.tat_ca()
+    cong_ra_cua = {
+        n["id"]: (frozenset(ten for ten, _c in so_loi[n["type"]].cong_ra)
+                  if str(n["type"]).startswith(TIEN_TO_LOI)
+                  else frozenset(cc[n["type"][4:]].returns or {}))
+        for n in nodes}
     return CauTruc(nodes, ra_edges, thu_tu, to_tien, cong_ra_cua)
 
 

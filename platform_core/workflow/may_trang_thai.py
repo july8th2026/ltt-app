@@ -64,8 +64,13 @@ NODE_CHUYEN: dict[str, frozenset[str]] = {
     # ⭐ `READY → FAILED`: cầu nối job có thể từ chối một node TRƯỚC KHI nộp job
     #    (vượt trần báo giá, tham số không giải được) — node chưa từng vào
     #    `QUEUED` (spec §5.8, Task 9 `cau_noi.nop_job`).
+    # ⭐ `READY → SUCCEEDED`: node INLINE (`core.if`/`switch`/`stop`…, spec
+    #    §5.1) chạy TRONG động cơ — không hàng đợi, không job, nên nó không đi
+    #    qua `QUEUED`. Thiếu lối này thì `chuyen_node` từ chối im lặng, node
+    #    đứng READY, và vòng nộp job sau đó gửi một node lõi vào registry công
+    #    cụ (`cong_cu_khong_con: '.if'`) — đúng lỗi đã đo khi dựng Task 4.
     "READY": frozenset({"QUEUED", "RUNNING", "WAITING", "SKIPPED",
-                        "CANCELLED", "FAILED"}),
+                        "CANCELLED", "FAILED", "SUCCEEDED"}),
     "QUEUED": frozenset({"RUNNING", "SUCCEEDED", "FAILED", "ABANDONED",
                          "RETRY_SCHEDULED", "CANCELLED"}),
     "RUNNING": frozenset({"SUCCEEDED", "FAILED", "WAITING", "RETRY_SCHEDULED",
