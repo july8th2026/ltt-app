@@ -1356,3 +1356,109 @@ một **lượt TTS thật** — cùng chỗ đang bị chặn ở §20.3.
 ⭐ **B rẻ hơn C rất nhiều** — nó ⛔ không chạm bản dịch. ⇒ Thứ tự đáng thử:
 **gộp → đo trần giọng → (chỉ khi còn thiếu) rút gọn.**
 ⚠️ Cả B và C đều cần **một lượt nặng**; nhưng B cần **TTS** (đang chặn), C cần **LLM**.
+
+---
+
+## 22. 🔴 ĐÍNH CHÍNH LỚN: `nan_cho_vua.py` đã có sẵn — và **C ⛔ KHÔNG hề "chưa chạm"**
+
+> ⛔ Mục §15 và mọi câu *"C chưa chạm"* của tôi đều **SAI**. Đọc mục này trước.
+
+### 22.1 Lỗi của tôi: tệp ấy nằm trong thư mục **từ đầu**, tôi ⛔ chưa hề mở
+
+`apps/auto_scan_video/nan_cho_vua.py` — **288 dòng**, và nó **đang chạy trong sản phẩm**
+(`giai_doan_giong.py:43,144,178,186,232`). Bậc thang **bốn nấc** đã có, nguyên văn:
+
+```
+1. Doc ra, DO tren tep that            (⛔ khong tin header may sinh tieng)
+2. Ngoai dung sai -> nho model VIET LAI cho vua, doc lai RIENG doan do
+3. Het so vong -> cho phep CO GIAN nhe trong tran da khai
+4. Van khong duoc -> danh dau CAN SUA, khong giao bua
+```
+
+⇒ 🔴 **Nấc 2 CHÍNH LÀ "cần gạt 1 rút gọn bằng LLM"** — nó ⛔ không phải thứ ta sắp xây,
+nó **đang chạy**. Ta chỉ **chưa ĐO** nó.
+
+⚠️ Và thứ tự `A → B → C` là **ngược với chính sách đã viết trong mã**, chính sách ấy có
+lý lẽ tôi ⛔ không cân (`nan_cho_vua.py:22-26`):
+
+> *"⛔ Nac 3 KHONG duoc dat truoc nac 2 … Uu tien sua **noi dung** truoc khi sua **tin
+> hieu** — mot cau khac mot chut van la giong nguoi, mot cau bi ep 1,3 lan thi khong."*
+
+⭐ Và nó mạnh hơn thế: **giá của nấc 2 ta ĐO ĐƯỢC** (chrF++), **giá của nấc 3 ta ⛔ KHÔNG
+đo được**. ⇒ Đặt nấc 3 trước là chọn cái **không đo được** chỉ vì nó ⛔ không hiện lên bảng.
+
+### 22.2 ⇒ Pha B thu nhỏ lại, và đó là **tin tốt**
+
+**B ⛔ không thay C. B chỉ đặt trần cho nấc 3 — một nấc CÓ SẴN.** Bộ đo đường cong ở §21
+vẫn đúng và vẫn dùng được, chỉ là nó trả lời một câu **hẹp hơn** tôi tưởng.
+
+### 22.3 Phần còn lại **thật sự mới** của `nan_thoi_luong.py`
+
+| cần gạt của tôi | đối chiếu với sản phẩm |
+|---|---|
+| 1 — rút gọn (LLM) | 🔴 **TRÙNG** nấc 2, đã chạy |
+| 2 — phân phối lại | ⛔ **CHẾT** (§17) — ⛔ không còn khoảng lặng |
+| 3 — giãn/nén | 🔴 **TRÙNG** nấc 3, đã chạy |
+| **4 — `gop_khe`** | ✅ **MỚI THẬT** — ⛔ không có trong `nan_cho_vua` |
+
+⇒ ⭐ Đóng góp thật của làn này là **`gop_khe`**, và nó **đi TRƯỚC** cả bậc thang: gộp làm
+khe rộng ra **trước khi** nấc 1 đo tệp thật. ⛔ Phần còn lại phải **gập vào** `nan_cho_vua`
+chứ ⛔ không sống song song — hai chỗ khai một chính sách là đúng thứ kho này đã trả giá.
+
+### 22.4 🔴 RÀNG BUỘC CỨNG: hai hằng số **khoá lẫn nhau**, sai thì **app ⛔ KHÔNG NẠP**
+
+`nan_cho_vua.py:100-111` — bất biến ở **cấp module**, ⛔ không phải một test:
+
+```python
+if DUNG_SAI_DAI >= tran_co_gian() - 1.0:     # tran_co_gian() = thoi_gian.TRAN_TANG_TOC
+    raise AssertionError("nac CO_GIAN … khong bao gio voi toi duoc")
+```
+
+```
+hiện nay: DUNG_SAI_DAI 0,08  ·  trần 1,15  ⇒  biên 0,150  ⇒  khe CO_GIAN rộng 0,070
+```
+
+⇒ 🔴 **Hạ `TRAN_TANG_TOC` xuống quanh/dưới `1,08` làm production ⛔ không khởi động được.**
+⛔ Nếu đường cong chỉ ra một trần thấp thì ⛔ **không được sửa một hằng số** — phải sửa
+**CẢ CẶP** trong **cùng một commit**, và khai nấc `CO_GIAN` còn lại bao rộng.
+
+⚠️ **Và biên `1,08` là một lưỡi dao dấu phẩy động** — tôi đo:
+
+```python
+1.08 - 1.0  ==  0.08000000000000007      # ⛔ KHONG phai 0.08
+0.08 >= 0.08000000000000007  ->  False   # nap duoc, nhung nho MAY MAN
+```
+
+⇒ ⭐ Tại **đúng** `1,08`, phán quyết *"app có nạp được ⛔ không"* do **sai số dấu phẩy
+động** quyết định. ⛔ Đừng bao giờ đặt trần **ở** biên; và bất biến nên so bằng một biên
+an toàn, ⛔ không so `>=` trần trụi.
+
+### 22.5 ⚠️ `DUNG_SAI_DAI = 0,08` cũng **CHƯA ĐO** — mã tự khai
+
+`nan_cho_vua.py:76-78`: *"⚠️ Ban than con so 0,08 **CHUA DO** tren du lieu that — chon
+theo huong an toan. Pha 21 do lai."*
+
+⇒ **Hai** hằng số chưa đo nằm cạnh nhau và **khoá lẫn nhau** (`N-45`). ⛔ Đừng tách
+`DUNG_SAI_DAI` thành một mã riêng: **sửa một cái mà ⛔ không sửa cái kia là làm sập app.**
+
+### 22.6 ⭐ Và một bài học **đã có sẵn trong chính tệp ấy**
+
+`nan_cho_vua.py:48-60`: `DUNG_SAI_DAI` từng **bằng đúng** trần (0,15) ⇒ nấc 3
+**⛔ chưa bao giờ chạy** — *"va no khong hong ra loi nao: moi doan van co mot trang thai
+hop le, bao cao van day du, chi la mot nhanh chinh sach chua bao gio chay."*
+
+⇒ ⭐ Đúng họ **"mã phòng thủ cho ca ⛔ không thể xảy ra"**, và trần tôi sắp đề nghị **đặt
+lại đúng cái khe ấy**. ⇒ Mọi đề nghị trần phải kèm câu: **nấc `CO_GIAN` còn rộng bao nhiêu**.
+
+### 22.7 🔴 Và nền của `55,6 % → 26,5 %` bị **phồng**
+
+Làn nghiệm thu đo: mô hình `3,284` âm tiết/giây **ước dài hơn thực tế ~29 %** trên v3, và
+`he_so_can_nen` khớp `am_tiet / 3,284 / khe_s` **6/6** tới ba chữ số ⇒ nó **đúng là** tính
+từ mô hình, ⛔ không phải từ tiếng thật.
+
+⇒ ⭐ **Con số của tôi phồng về phía làm bài toán trông TO hơn thật.** ⛔ Đừng lặng lẽ thay
+số: khi có tiếng thật, tính lại bằng **chính `thoi_gian.lap_ke_hoach`** (⛔ không viết lại
+phép tính nào) và **báo CẢ HAI cạnh nhau** — *mô hình* vs *đo thật*. Hiệu số ấy **là** bài
+học, và cây này đã có họ *"hai chỗ khai một điều, ⛔ không ai bắt khớp"*.
+
+⛔ **Chưa đề nghị trần nào cho tới khi có nền thật.**
