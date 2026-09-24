@@ -69,11 +69,57 @@ def _doc_van_ban(run_id: str, ten_gd: str) -> str:
         "doan": [{"bat": d.get("bat", d.get("start")),
                   "ket": d.get("ket", d.get("end")),
                   "so_tu": len(d.get("tu") or d.get("words") or []),
+                  # 🔴 **Giu CA CHU cua tung tu, khong chi moc.** Ban ghi 24/09
+                  #    chi giu `bat`/`ket` — nen khi lan nay muon CAT LAI doan tai
+                  #    dau cau thi khong con mot dau cau nao de cat: chu da nam
+                  #    lai trong mot kho tam chet cung luot chay, va phai chay lai
+                  #    ASR chi de lay lai thu minh da co trong tay.
+                  # ⭐ Mot moc thoi gian khong kem chu tra loi duoc *"khi nao"*,
+                  #    ⛔ khong tra loi duoc *"co duoc phep ngat o day khong"*.
+                  "chu": str(d.get("chu") or d.get("text") or ""),
                   "tu": [{"bat": w.get("bat", w.get("start")),
-                          "ket": w.get("ket", w.get("end"))}
+                          "ket": w.get("ket", w.get("end")),
+                          "chu": str(w.get("chu") or w.get("word")
+                                     or w.get("text") or "")}
                          for w in (d.get("tu") or d.get("words") or [])]}
                  for d in doan],
     }
+
+
+#: Sai so khi doi chieu mot RANH GIOI doan voi hardsub.
+SAI_SO_RANH_GIOI_S = 0.3
+
+
+def _ti_le_ranh_gioi_khop(doan_asr: list[dict], doan_hs: list[dict]) -> dict:
+    """Ti le ranh gioi cua ASR trung voi hardsub trong +-0,3 s.
+
+    ⭐ **CHI BAO, ⛔ KHONG phai cong** (chu du an chot 24/09).
+
+    Vi sao no phai ton tai: `lech_doan` so **SO DOAN**, khong so **CHO NGAT**.
+    Hai cach cat cung cho 102 doan ma lech het cho ngat thi `lech_doan` van xanh
+    trong khi moi khe long tieng deu sai. Con so nay phan biet duoc hai ca do —
+    ⛔ nhung no khong duoc dung de CHE mot `lech_doan` xau, va khong duoc bien
+    thanh mot cong thu hai.
+    """
+    def _moc(ds):
+        ra = set()
+        for d in ds:
+            for k in ("bat", "ket"):
+                g = d.get(k)
+                if isinstance(g, (int, float)):
+                    ra.add(round(float(g), 3))
+        return sorted(ra)
+
+    moc_asr, moc_hs = _moc(doan_asr), _moc(doan_hs)
+    if not moc_asr or not moc_hs:
+        return {"ti_le": None, "ly_do": "mot ben khong co ranh gioi nao"}
+    khop = sum(1 for m in moc_asr
+               if any(abs(m - h) <= SAI_SO_RANH_GIOI_S for h in moc_hs))
+    return {"ti_le": round(khop / len(moc_asr), 4), "khop": khop,
+            "tong_ranh_gioi_asr": len(moc_asr),
+            "tong_ranh_gioi_hardsub": len(moc_hs),
+            "sai_so_s": SAI_SO_RANH_GIOI_S,
+            "vai": "CHI BAO — khong phan xu, khong che `lech_doan`"}
 
 
 def _phim() -> Path | None:
@@ -189,6 +235,15 @@ def test_BENCH_B1_mot_phim(moi_truong, tmp_path, monkeypatch):  # noqa: F811
         engine=str(asr["outputs"].get("engine") or ""),
         co_card=bool(asr["card"]["duoc_card"]))
 
+    # ⭐ CHI BAO di kem, ⛔ khong phan xu — xem `_ti_le_ranh_gioi_khop`.
+    ra["ranh_gioi"] = _ti_le_ranh_gioi_khop(asr["doan_chi_tiet"],
+                                            ocr["doan_chi_tiet"])
+    # 🔴 Hai chan doan ma con so `so_doan` mot minh KHONG noi duoc:
+    #      `tu_bi_bo`  — bao nhieu moc tu bi vut, va VI SAO (N-17 lan 2)
+    #      `cat_lai`   — bao nhieu doan ta KHONG cat duoc, va vi sao
+    ra["tu_bi_bo"] = asr["outputs"].get("tu_bi_bo")
+    ra["cat_lai"] = (asr["outputs"].get("dinh_tuyen") or {}).get("cat_lai")
+
     # 🔴 **GHI BANG CHUNG TRUOC, IN SAU. Da mat 8 ph 57 vi lam nguoc.**
     #
     #    Do that 24/09: lan chay dau tien lam xong CA ffmpeg lan hai luot ASR (537 s),
@@ -235,6 +290,10 @@ def test_BENCH_B1_mot_phim(moi_truong, tmp_path, monkeypatch):  # noqa: F811
     _in(f"  ti le {d['don_vi_ti_le']} sai: {d['ti_le_don_vi_sai']} (KHONG phan xu)")
     _in(f"  doan asr={d['so_doan_asr']} hardsub={d['so_doan_hardsub']} "
         f"lech={d['lech_doan']} can_giai_thich={d['can_giai_thich_lech_doan']}")
+    _in(f"  ranh gioi khop +-{SAI_SO_RANH_GIOI_S}s: {ra['ranh_gioi']}  "
+        "(CHI BAO, khong phan xu)")
+    _in(f"  tu bi bo: {ra['tu_bi_bo']}   so_tu={asr['outputs'].get('so_tu')}")
+    _in(f"  cat lai : {ra['cat_lai']}")
     _in(f"  nhanh engine: {ra['nhanh_engine']['khai']}")
     if ra["nhanh_engine"]["ly_do_roi"]:
         _in(f"     ly do roi: {ra['nhanh_engine']['ly_do_roi'][:120]}")
