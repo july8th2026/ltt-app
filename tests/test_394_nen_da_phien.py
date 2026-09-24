@@ -722,3 +722,34 @@ def test_in_cua_cua_so_yen_chiu_duoc_console_cp1252(monkeypatch):
     khung.flush()
     ra = khung.buffer.getvalue().decode("cp1252")
     assert "giu khoa" in ra, ra
+
+
+def test_do_thi_import_theo_duoc_ca_dang_from_goi_import_modun(tmp_path):
+    """🔴 `from <goi> import <mo-dun>` tung bien mat khoi do thi phu thuoc.
+
+    Bo doc AST chi ghi `nut.module`, nen dong tren chi noi len TEN GOI. Canh
+    toi dung mo-dun bi mat ⇒ pham vi gate HEP DI ⇒ gate bo qua test that su
+    lien quan roi in mot chu XANH. Mot bo thu hep sai khong bao gio keu.
+
+    ⛔ Khong duoc "sua" bang cach doi kieu import cua nguoi viet: no chay duoc
+       hom nay va mat do phu TRONG IM LANG vao ngay nguoi tiep theo viet
+       `from ... import ...`. Luat khong duoc dua vao viec ai cung nho mot quy uoc.
+    """
+    tep = tmp_path / "vi_du.py"
+    tep.write_text(
+        "from platform_core import an_toan_mang\n"
+        "from platform_core.credit import giu_cho\n"
+        "import apps.taoanh.gia\n"
+        "from . import anh_em\n"
+        "from os import *\n", encoding="utf-8")
+    mod = tp._module_duoc_import(tep)
+
+    assert "platform_core.an_toan_mang" in mod, mod
+    assert "platform_core" in mod, "van phai giu ten goi cho `from goi import HAM`"
+    assert "platform_core.credit.giu_cho" in mod, mod
+    assert "apps.taoanh.gia" in mod, mod
+    assert not any(m.endswith(".*") for m in mod), f"`import *` khong duoc sinh `.*`: {mod}"
+    # 🔑 Doi chung: import tuong doi VAN bi bo qua (trong cung goi) — neu bai
+    #    nay xanh ma khong co dong duoi thi no khong chung minh duoc gi ve
+    #    viec bo doc con phan biet duoc cac dang import.
+    assert not any(m.startswith("anh_em") for m in mod), mod
