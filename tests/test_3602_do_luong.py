@@ -271,3 +271,75 @@ def test_3602_khong_tu_cai_cong_thuc_thong_ke():
         assert ten in ma, f"thieu {ten} — co ai do dang tu viet lai phep tinh"
     # ⛔ Dấu hiệu tự tính khoảng tin cậy bằng xấp xỉ chuẩn.
     assert "1.96" not in ma and "1,96" not in ma.replace("`p ± 1,96", "")
+
+
+# ───────────────────────────────────────────────────────────────────────────
+# LỚP PHÁN QUYẾT — "không đủ đỡ" ⛔ KHÔNG được lẫn với "sai"
+# ───────────────────────────────────────────────────────────────────────────
+
+
+def test_3602_phan_quyet_nguong_ktc_cat_thi_khong_du_do():
+    """7/30 = 23,3 % vs cổng 15 %: KTC cắt ngưỡng ⇒ ⛔ chưa được tuyên TRƯỢT."""
+    from tools.do_luong import CONG_BAO_DONG_GIA, _phan_quyet_nguong
+
+    r = _phan_quyet_nguong("t", 7, 30, CONG_BAO_DONG_GIA, phai_duoi=True)
+    assert r["ktc_cat_nguong"] is True
+    assert r["phan_quyet"] == "KHÔNG ĐỦ ĐỠ"
+    assert r["dung"] is False
+
+
+def test_3602_phan_quyet_nguong_ktc_khong_cat_thi_dung():
+    """33/100 vs cổng 15 %: KTC nằm trọn trên ngưỡng ⇒ TRƯỢT cổng, kết luận ĐỨNG."""
+    from tools.do_luong import CONG_BAO_DONG_GIA, _phan_quyet_nguong
+
+    r = _phan_quyet_nguong("t", 33, 100, CONG_BAO_DONG_GIA, phai_duoi=True)
+    assert r["ktc_cat_nguong"] is False
+    assert r["phan_quyet"] == "TRƯỢT cổng"
+
+
+def test_3602_khang_dinh_tuong_duong_khong_bao_gio_duoc_tuyen_dung():
+    """🔴 p = 1,0 trên hai tỉ lệ y hệt ⛔ KHÔNG chứng minh 'giống nhau'.
+
+    Đây là bẫy `khong-doi-chung-thi-so-khong-khong-phai-phat-hien`: vắng bằng
+    chứng về khác biệt ⛔ không phải bằng chứng về vắng khác biệt.
+    """
+    from tools.do_luong import _phan_quyet_so_doi
+
+    r = _phan_quyet_so_doi("t", "fa_v1_dai_giu_rieng", "fa_v1_temp_mac_dinh",
+                           tuong_duong=True)
+    assert r["p"] == pytest.approx(1.0)
+    assert r["phan_quyet"] == "KHÔNG ĐỦ ĐỠ", "p=1,0 KHONG duoc thanh 'DUNG'"
+    assert r["be_rong_ktc_con_tron_duoc"] > 0.30, "phai khai mot khac biet lon van tron duoc"
+
+
+def test_3602_ktc_chong_nhau_khong_phai_phep_kiem():
+    """⭐ V1 vs V2: hai KTC CHỒNG nhau nhưng Fisher p < 0,05 ⇒ vẫn ĐỨNG.
+
+    Chứng minh vì sao phán quyết lấy theo Fisher: "hai KTC chồng nhau" là một
+    phép kiểm QUÁ DÈ DẶT, nó sẽ bắt ta vứt đi một khác biệt có thật.
+    """
+    from tools.do_luong import _phan_quyet_so_doi
+
+    r = _phan_quyet_so_doi("t", "fa_v1_dai_giu_rieng", "fa_v2_dai_giu_rieng")
+    assert r["ktc_chong_nhau"] is True
+    assert r["p"] < 0.05
+    assert r["phan_quyet"] == "ĐỨNG"
+
+
+def test_3602_moi_so_quyet_dinh_deu_co_mau_so():
+    """⛔ Bánh cóc: không con số quyết định nào được ghi dạng phần trăm trần."""
+    from tools.do_luong import SO_DA_QUYET_DINH
+
+    for ten, gia_tri in SO_DA_QUYET_DINH.items():
+        k, n = gia_tri
+        assert isinstance(k, int) and isinstance(n, int), f"{ten} phai la (k, n)"
+        assert 0 <= k <= n and n > 0, f"{ten} co mau so vo nghia"
+
+
+def test_3602_bang_quyet_dinh_chay_duoc_va_phu_ca_hai_ket_luan_chinh():
+    from tools.do_luong import lenh_quyet_dinh
+
+    rs = lenh_quyet_dinh()
+    ten = " | ".join(r["ten"] for r in rs)
+    assert "V3 TRƯỢT cổng 15 %" in ten and "V2 loại dứt khoát" in ten
+    assert all(r["phan_quyet"] in {"ĐỨNG", "KHÔNG ĐỦ ĐỠ", "TRƯỢT cổng", "ĐẠT cổng"} for r in rs)

@@ -463,6 +463,155 @@ def _ktc(d: dict | None) -> str:
 # ───────────────────────────────────────────────────────────────────────────
 
 
+# ───────────────────────────────────────────────────────────────────────────
+# VIỆC 3 — KTC cho MỌI so sánh đã dùng để RA QUYẾT ĐỊNH (điều phối yêu cầu)
+# ───────────────────────────────────────────────────────────────────────────
+
+#: Các con số đã dùng để ra quyết định, chép từ `docs/auto_scan_video_final/
+#: B2_XAC_THUC_BO_CHAM.md` (§9, §10.3, §12) và `bang_chung/b2_doi_chieu_*.json`.
+#:
+#: ⭐ Ghi dạng `(k, n)` chứ ⛔ KHÔNG ghi phần trăm: một tỉ lệ không có mẫu số
+#: thì không tính được khoảng tin cậy, và chính *"báo tỉ lệ, giấu mẫu số"* là
+#: cách ba lỗi ngày 24/09 đi lọt.
+SO_DA_QUYET_DINH = {
+    "fa_v1_dai_giu_rieng": (13, 30),
+    "fa_v2_dai_giu_rieng": (5, 30),
+    "fa_v3_temp0_dai_giu_rieng": (7, 30),
+    "fa_v1_temp_mac_dinh": (13, 30),
+    "fa_v3_tren_100_dong_soi_mu": (33, 100),
+    "thuc_the_v1": (15, 15),
+    "thuc_the_v2": (5, 15),
+    "thuc_the_v3": (13, 15),
+    "lat_nghia_v1": (15, 15),
+    "lat_nghia_v2": (15, 15),
+    "lat_nghia_v3": (15, 15),
+}
+
+#: Cổng đã chốt trước khi đo (luật viết trước).
+CONG_BAO_DONG_GIA = 0.15
+
+
+def _phan_quyet_nguong(ten: str, k: int, n: int, nguong: float, phai_duoi: bool) -> dict:
+    """Một kết luận dạng "vượt/không vượt ngưỡng" — KTC có CẮT ngưỡng không?
+
+    ⭐ "Đứng" = toàn bộ KTC nằm về một phía của ngưỡng. KTC **cắt** ngưỡng
+    nghĩa là dữ liệu ⛔ chưa đủ để nói bên nào — ⛔ KHÔNG nghĩa là kết luận sai.
+    """
+    d = ti_le_kem_ktc(k, n)
+    lo, hi = d["ktc"]
+    if phai_duoi:
+        dung = hi < nguong
+        cach_doc = "ĐẠT cổng" if dung else ("TRƯỢT cổng" if lo > nguong else "KHÔNG ĐỦ ĐỠ")
+    else:
+        dung = lo > nguong
+        cach_doc = "TRƯỢT cổng" if dung else ("ĐẠT cổng" if hi < nguong else "KHÔNG ĐỦ ĐỠ")
+    return {
+        "ten": ten,
+        "so": d,
+        "nguong": nguong,
+        "ktc_cat_nguong": lo <= nguong <= hi,
+        "phan_quyet": cach_doc,
+        "dung": cach_doc != "KHÔNG ĐỦ ĐỠ",
+    }
+
+
+def _phan_quyet_so_doi(ten: str, a: str, b: str, tuong_duong: bool = False) -> dict:
+    """Một kết luận dạng "A khác B" — Fisher + hai KTC.
+
+    ⛔ "Hai KTC chồng nhau" ⛔ KHÔNG phải phép kiểm đúng (nó quá dè dặt); phán
+    quyết lấy theo **Fisher**. Hai KTC in ra để người đọc thấy độ rộng.
+
+    🔴 `tuong_duong=True` cho một kết luận dạng *"A GIỐNG B"* (ví dụ *"V1 y hệt
+    ở cả hai nhiệt độ"*). Với những câu ấy, `p` lớn ⛔ **KHÔNG** chứng minh
+    giống nhau — *"không có bằng chứng về khác biệt"* ⛔ khác hẳn *"có bằng
+    chứng về không khác biệt"*. Đúng bẫy `khong-doi-chung-thi-so-khong-khong-
+    phai-phat-hien`. Phép kiểm nghịch thế (TOST) cần một biên tương đương ta
+    **chưa hề chốt**, nên ở đây phán quyết luôn là KHÔNG ĐỦ ĐỠ, kèm độ rộng
+    KTC để thấy một khác biệt lớn cỡ nào vẫn còn **trốn được**.
+    """
+    k1, n1 = SO_DA_QUYET_DINH[a]
+    k2, n2 = SO_DA_QUYET_DINH[b]
+    f = so_hai_ti_le(k1, n1, k2, n2)
+    d1, d2 = ti_le_kem_ktc(k1, n1), ti_le_kem_ktc(k2, n2)
+    chong = not (d1["ktc"][1] < d2["ktc"][0] or d2["ktc"][1] < d1["ktc"][0])
+    if tuong_duong:
+        phan_quyet = "KHÔNG ĐỦ ĐỠ"
+    else:
+        phan_quyet = "ĐỨNG" if f["p"] < 0.05 else "KHÔNG ĐỦ ĐỠ"
+    return {
+        "ten": ten,
+        "a": (a, d1),
+        "b": (b, d2),
+        "p": f["p"],
+        "ktc_chong_nhau": chong,
+        "la_khang_dinh_tuong_duong": tuong_duong,
+        "be_rong_ktc_con_tron_duoc": max(
+            d1["ktc"][1] - d1["ktc"][0], d2["ktc"][1] - d2["ktc"][0]
+        ),
+        "phan_quyet": phan_quyet,
+    }
+
+
+def lenh_quyet_dinh() -> list[dict]:
+    """Phán quyết cho TỪNG kết luận ta đã ra — ĐỨNG / KHÔNG ĐỦ ĐỠ."""
+    return [
+        _phan_quyet_nguong(
+            "V3 TRƯỢT cổng 15 % (BĐG thật 33/100, đo mù)",
+            *SO_DA_QUYET_DINH["fa_v3_tren_100_dong_soi_mu"],
+            CONG_BAO_DONG_GIA,
+            phai_duoi=True,
+        ),
+        _phan_quyet_nguong(
+            "V3 TRƯỢT cổng 15 % (dải giữ riêng, 7/30)",
+            *SO_DA_QUYET_DINH["fa_v3_temp0_dai_giu_rieng"],
+            CONG_BAO_DONG_GIA,
+            phai_duoi=True,
+        ),
+        _phan_quyet_so_doi(
+            "V2 loại dứt khoát: mù thực thể (V2 5/15 vs V3 13/15)",
+            "thuc_the_v2",
+            "thuc_the_v3",
+        ),
+        _phan_quyet_so_doi(
+            "V2 mù thực thể so với V1 (V2 5/15 vs V1 15/15)",
+            "thuc_the_v2",
+            "thuc_the_v1",
+        ),
+        _phan_quyet_so_doi("V1 vs V2 báo động giả (13/30 vs 5/30)", "fa_v1_dai_giu_rieng",
+                           "fa_v2_dai_giu_rieng"),
+        _phan_quyet_so_doi("V1 vs V3 báo động giả (13/30 vs 7/30)", "fa_v1_dai_giu_rieng",
+                           "fa_v3_temp0_dai_giu_rieng"),
+        _phan_quyet_so_doi("V2 vs V3 báo động giả (5/30 vs 7/30)", "fa_v2_dai_giu_rieng",
+                           "fa_v3_temp0_dai_giu_rieng"),
+        _phan_quyet_so_doi("V1 'y hệt ở hai nhiệt độ' (13/30 vs 13/30)", "fa_v1_dai_giu_rieng",
+                           "fa_v1_temp_mac_dinh", tuong_duong=True),
+    ]
+
+
+def _in_quyet_dinh(rs: list[dict]) -> None:
+    print("╔═ KTC cho MỌI so sánh đã dùng để RA QUYẾT ĐỊNH ═╗")
+    print("  ⚠️ 'KHÔNG ĐỦ ĐỠ' ⛔ KHÔNG nghĩa là SAI — nghĩa là TA CHƯA BIẾT.")
+    print("     Một cái bắt ĐO THÊM, một cái bắt ĐỔI HƯỚNG. ⛔ Đừng lẫn.\n")
+    for r in rs:
+        if "nguong" in r:
+            d = r["so"]
+            lo, hi = d["ktc"]
+            print(f"· {r['ten']}")
+            print(f"    {d['k']}/{d['n']} = {d['ti_le']:.1%}  KTC95 [{lo:.1%} ; {hi:.1%}]"
+                  f"  vs cổng {r['nguong']:.0%}")
+            print(f"    KTC {'CẮT' if r['ktc_cat_nguong'] else 'KHÔNG cắt'} ngưỡng"
+                  f"  ⇒ {r['phan_quyet']}\n")
+        else:
+            (na, da), (nb, db) = r["a"], r["b"]
+            print(f"· {r['ten']}")
+            print(f"    {na}: {da['k']}/{da['n']} = {da['ti_le']:.1%} "
+                  f"[{da['ktc'][0]:.1%} ; {da['ktc'][1]:.1%}]")
+            print(f"    {nb}: {db['k']}/{db['n']} = {db['ti_le']:.1%} "
+                  f"[{db['ktc'][0]:.1%} ; {db['ktc'][1]:.1%}]")
+            print(f"    Fisher p = {r['p']:.4f} · hai KTC "
+                  f"{'CHỒNG' if r['ktc_chong_nhau'] else 'TÁCH'} ⇒ {r['phan_quyet']}\n")
+
+
 def _tim_bang_chung(goc: pathlib.Path | None) -> pathlib.Path:
     ung_vien = []
     if goc:
@@ -643,10 +792,17 @@ def _in_doi_chung(r: dict) -> bool:
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Lop dem va thong ke — dung thu vien chuan")
-    p.add_argument("lenh", choices=["doi-chung", "kappa"])
+    p.add_argument("lenh", choices=["doi-chung", "kappa", "quyet-dinh"])
     p.add_argument("--bang-chung", type=pathlib.Path, default=None)
     p.add_argument("--json", action="store_true", help="in JSON tho")
     a = p.parse_args(argv)
+    if a.lenh == "quyet-dinh":
+        rs = lenh_quyet_dinh()
+        if a.json:
+            print(json.dumps(rs, ensure_ascii=False, indent=2, default=str))
+        else:
+            _in_quyet_dinh(rs)
+        return 0
     bc = _tim_bang_chung(a.bang_chung)
     print(f"# bang chung: {bc}\n", file=sys.stderr)
     if a.lenh == "kappa":
