@@ -76,6 +76,36 @@ _NGUONG_TEP_NANG = 20
 _KHOA_PHIEN = None
 
 
+def pytest_sessionstart(session):
+    """Tao CSDL scratch RIENG cua lan nay (Task 0 / N-10).
+
+    🔴 **`Base.metadata.create_all()` tao BANG, khong tao CSDL.** Thieu buoc nay thi
+       moi bai PG chet `psycopg.OperationalError: database "..." does not exist` (do
+       that 24/09 tren `tests/test_2080_asv_cache_lease.py`).
+
+    ⛔ **Phai la `pytest_sessionstart`, KHONG phai `pytest_collection_modifyitems`.**
+       Ban dau toi dat khoi nay trong `pytest_collection_modifyitems` — ham do
+       `return` som khi so tep thu duoc duoi `_NGUONG_TEP_NANG`, nen chay MOT tep
+       (dung cach do bai PG) bo qua no hoan toan, va CSDL khong bao gio duoc tao.
+       Trieu chung y het nhu chua sua gi.
+
+    ⛔ Boc `try` rong va im lang: may phat trien khong co PostgreSQL van phai chay
+       duoc bo test (cac bai PG tu `skip` qua `skip_without_postgres`).
+    """
+    try:
+        from tests import pg_scratch
+        u = pg_scratch.scratch_url()
+        if u and pg_scratch.theo_lan_bat():
+            ten = pg_scratch.bao_dam_schema(u)
+            # 🔑 `PGOPTIONS` la duong DUY NHAT khong phai sua ma san pham: libpq doc
+            #    no cho MOI ket noi, ke ca cua tien trinh con (moi truong di theo).
+            #    Nen `platform_core/db.get_engine()` khong phai biet gi ve schema.
+            os.environ["PGOPTIONS"] = f"-c search_path={pg_scratch.search_path()}"
+            print(f"  [pg scratch] schema rieng cua lan: {ten}")
+    except Exception as e:  # noqa: BLE001
+        print(f"  [pg scratch] khong tao duoc schema rieng: {type(e).__name__}: {e}")
+
+
 def pytest_collection_modifyitems(session, config, items):
     """🔴 Lo CUOI CUNG cua khoa: `pytest` go tay hoan toan VO HINH.
 
@@ -110,7 +140,36 @@ def pytest_collection_modifyitems(session, config, items):
         _KHOA_PHIEN = CuaSoYen(
             os.environ.get("LTT_PHIEN") or f"pytest:{os.getpid()}",
             "pytest go tay", cho_toi_da_s=900.0,
-            tai_nguyen=("cpu_nhieu", "postgres_test"))
+            # ⛔ KHONG con `postgres_test` (Task 0 / N-10, 24/09).
+            #
+            # 🔴 Khoa do khong bao ve mot tai nguyen doc quyen — no bao ve **mot
+            #    cai ten**: moi lan dung chung `lttplatform_test`, va
+            #    `test_423.moi_truong` goi `drop_all` tren no. Nay
+            #    `pg_scratch.scratch_url` cho moi lan mot ten rieng
+            #    (`lttplatform_test_<lan>`), nen khong con gi de tranh.
+            #
+            # ⛔ Do 24/09: mot lan giu khoa nay **78 phut** va mot lan phien khac
+            #    xep hang sau no — cho mot thu **le ra khong chan ai**.
+            #
+            # ⚠️ `cpu_nhieu` thi GIU: no chia **suc tinh**, va suc tinh khong nhan
+            #    ban duoc. Dung gop hai loai khoa lam mot.
+            # ⛔ **KHONG con `postgres_test`** (Task 0 / N-10, 24/09).
+            #
+            # 🔴 Khoa do khong bao ve mot tai nguyen doc quyen — no bao ve **mot cai
+            #    ten**: moi lan dung chung `lttplatform_test`, va `moi_truong` goi
+            #    `drop_all` tren no. Nay moi lan co **schema rieng**
+            #    (`pg_scratch.schema_lan`), nen khong con gi de tranh.
+            #
+            # ⛔ Do 24/09: mot lan giu khoa nay **78 phut** va mot lan phien khac xep
+            #    hang sau no — cho mot thu **le ra khong chan ai**.
+            #
+            # ⭐ Co lap DA DUOC CHUNG MINH, khong chi khai:
+            #    `test_3005::test_DOI_CHUNG_CO_LAP` (hai tien trinh, mot ben
+            #    `drop_all`) va no DO khi tiem hai lan ve cung mot schema.
+            #
+            # ⚠️ `cpu_nhieu` thi GIU: no chia **suc tinh**, va suc tinh khong nhan ban
+            #    duoc. Dung gop hai loai khoa lam mot.
+            tai_nguyen=("cpu_nhieu",))
         _KHOA_PHIEN.__enter__()
     except Exception as e:  # noqa: BLE001
         # Thieu psutil / khong doc duoc khoa -> chay tiep, nhung NOI RA.
@@ -118,9 +177,31 @@ def pytest_collection_modifyitems(session, config, items):
         _KHOA_PHIEN = None
 
 
+def _don_schema_lan():
+    """`DROP SCHEMA <lan> CASCADE` — buoc DON tra loi N-11.
+
+    🔴 **Day la thu phan biet duong schema voi duong CSDL.** Ban dau cua Task 0 tao
+       mot CSDL moi lan va **khong co duong don**, nen no doi *mot khoa chan 78 phut*
+       thanh *N CSDL mo coi tich tu* — dung cai `tests/test_2300` canh. `DROP SCHEMA
+       ... CASCADE` don sach trong mot cau.
+
+    ⛔ Khong nem: mot lan chay da xong khong duoc bao DO vi buoc don hong. Nhung phai
+       NOI RA, vi mot buoc don im lang that bai la cach rac tich tu ma khong ai thay.
+    """
+    try:
+        from tests import pg_scratch
+        u = pg_scratch.scratch_url()
+        if u and pg_scratch.theo_lan_bat():
+            pg_scratch.xoa_schema(u)
+    except Exception as e:  # noqa: BLE001
+        print(f"  [pg scratch] KHONG don duoc schema: {type(e).__name__}: {e}")
+
+
 def pytest_sessionfinish(session, exitstatus):
-    """Nha khoa. `_treo()` cua `cua_so_yen` van do neu tien trinh chet dot ngot."""
+    """Nha khoa + DON schema cua lan. `_treo()` cua `cua_so_yen` van do neu tien
+    trinh chet dot ngot."""
     global _KHOA_PHIEN
+    _don_schema_lan()
     if _KHOA_PHIEN is not None:
         try:
             _KHOA_PHIEN.__exit__(None, None, None)

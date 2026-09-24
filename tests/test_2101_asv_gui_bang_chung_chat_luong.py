@@ -36,7 +36,7 @@ GIEO = {
                   "so_cat": 0, "so_canh_da_doc": 4, "so_canh_hong": 2,
                   "canh_hong": ["c3", "c5"], "do_phu_bang_chung": 0.6667},
     # qc.tom_tat(bao_cao)
-    "qc": {"qc_dat": False, "qc_so_muc_hong": 2,
+    "qc": {"qc_ky_thuat_dat": False, "qc_so_muc_hong": 2,
            "qc_muc_hong": ["T13", "T18"], "qc_phien_ban": 4},
     # giai_doan_qc_do_luong.chay()["tom_tat"]
     "qc_do_luong": {"so_doan_do": 18,

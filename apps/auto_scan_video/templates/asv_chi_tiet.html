@@ -151,9 +151,13 @@
         </li>
       {% endif %}
 
+      {# N-02: cai ten phai HEP dung bang pham vi phep do. `qc` o day chi do KY
+         THUAT (thoi luong, luong, MD5, dinh dBTP, khung den, VMAF) — no khong
+         doc nghia ban dich. "dat toan bo" o mot khoi mang ten "Kiem chat luong"
+         lam khach hieu la ca ban dich da dat. #}
       {% if bang_chung.qc %}{% set q = bang_chung.qc %}
-        <li>{{ _("Kiểm chất lượng tự động") }}:
-          {% if q.dat %}<strong>{{ _("đạt toàn bộ") }}</strong>
+        <li>{{ _("Kiểm kỹ thuật tự động (hình, tiếng, thời lượng)") }}:
+          {% if q.ky_thuat_dat %}<strong>{{ _("đạt toàn bộ") }}</strong>
           {% else %}<strong>{{ _("%(n)s mục chưa đạt") % {"n": q.so_muc_hong} }}</strong>
           {% endif %}
           {% if q.muc_hong %}
@@ -166,6 +170,25 @@
         </li>
       {% endif %}
 
+      {# N-03: he thong DA cham 44/95 muc la dich chua sat va DA luu con so do.
+         Khong hien no la mot khiem khuyet TRUNG THUC, nang hon mot khiem khuyet
+         chat luong — khach khong the hoi ve mot con so khong ai cho ho thay. #}
+      {% if bang_chung.ngu_nghia %}{% set n = bang_chung.ngu_nghia %}
+        <li>{{ _("Soát nghĩa bản dịch") }}:
+          {% if n.so_khong_dat %}
+            <strong>{{ _("%(a)s/%(b)s câu bị chấm là dịch chưa sát") % {"a": n.so_khong_dat, "b": n.so_co_phan_quyet} }}</strong>
+          {% else %}<strong>{{ _("không câu nào bị chấm") }}</strong>
+          {% endif %}
+        </li>
+      {% endif %}
+
+      {% if bang_chung.con_lai and bang_chung.con_lai.so_muc %}
+        <li>{{ _("Còn chưa sửa") }}:
+          <strong>{{ _("%(n)s mục") % {"n": bang_chung.con_lai.so_muc} }}</strong>
+          <p class="asv-ghi-chu">{{ _("Hệ thống đã tự sửa một vòng rồi giao bản này; các mục trên vẫn còn.") }}</p>
+        </li>
+      {% endif %}
+
       {% if bang_chung.do_luong %}{% set d = bang_chung.do_luong %}
         <li>{{ _("Nghe lại và soát lại") }}:
           {{ _("%(n)s đoạn đã đo") % {"n": d.so_doan_do} }}
@@ -174,8 +197,12 @@
               <li>{{ _(b.nhan) }} — {{ _(b.nhan_trang_thai) }}</li>
             {% endfor %}
           </ul>
+          {# ⛔ Cau cu ghi "da duoc doc lai vi chua khop loi" — SAI, va sai ve
+             phia co loi cho ta. `so_giong_khong_dat` la so doan VAN CHUA KHOP
+             o lan do CUOI, tuc sau khi da doc lai. Do that luot B 24/09: 14
+             doan, va vong sua da chay roi. #}
           {% if d.so_giong_khong_dat %}
-            <p class="asv-ghi-chu">{{ _("%(n)s đoạn đã được đọc lại vì chưa khớp lời.") % {"n": d.so_giong_khong_dat} }}</p>
+            <p class="asv-ghi-chu">{{ _("%(n)s đoạn đọc còn chưa khớp lời ở lần đo cuối.") % {"n": d.so_giong_khong_dat} }}</p>
           {% endif %}
           {% if d.so_canh_bao_tieng %}
             <p class="asv-ghi-chu">{{ _("%(n)s đoạn có tiếng đọc hơi kém sạch.") % {"n": d.so_canh_bao_tieng} }}</p>
