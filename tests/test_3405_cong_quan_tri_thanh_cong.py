@@ -126,3 +126,32 @@ def test_khong_chan_ban_hang(db):
     from apps.vps import bao_tri, profiles
 
     assert bao_tri.THANH_PHAN_CONG_QUAN_TRI not in profiles.CHAN_BAN
+
+
+def test_do_SONG_SONG_chu_khong_tuan_tu(db):
+    """🔴 Đo thật 24/09: bản đầu đo tuần tự 11 địa chỉ × 6 giây = **66 giây**, và
+    vòng bảo trì **mất lease giữa chừng** (`mat lease bao tri — dung viec nen`).
+
+    ⭐ Điều đáng nhớ: trạng thái **ĐÚNG** của mọi địa chỉ khách là *timeout* —
+    nên phép kiểm này tốn nhiều thời gian nhất **khi mọi thứ đều ổn**. Một phép
+    đo mà chi phí tệ nhất rơi vào ca bình thường sẽ bị gỡ, không phải bị sửa.
+
+    ⛔ Đo bằng thời gian tường, không bằng việc đọc mã: một `ThreadPoolExecutor`
+       gọi tuần tự bên trong vẫn "trông như" song song.
+    """
+    import time
+
+    from apps.vps import bao_tri
+
+    p = _profile(db)
+
+    def cham(ip, cong):
+        time.sleep(0.4)
+        return (ip == "51.79.166.36", "gia lap cham")
+
+    t0 = time.monotonic()
+    bao_tri._kiem_cong_quan_tri(db, p, mo_cong=cham)
+    mat = time.monotonic() - t0
+
+    # 3 dia chi (2 IP + IP quan tri) x 0,4s = 1,2s neu tuan tu.
+    assert mat < 0.9, f"do tuan tu ({mat:.2f}s) — vong bao tri se mat lease"

@@ -529,8 +529,15 @@ def _kiem_cong_quan_tri(db, profile, *, mo_cong=None, now=None) -> int:
         VpsIp.infrastructure_profile_id == profile.id)).scalars()
         if r.dia_chi and r.dia_chi != ip_quan_tri]
 
-    lo = [ip for ip in sorted(dia_chi) if mo_cong(ip, CONG_QUAN_TRI)[0]]
-    mo_qt, _ = mo_cong(ip_quan_tri, CONG_QUAN_TRI)
+    # SONG SONG. Do tuan tu 11 dia chi x 3 giay = 33 giay, va vong bao tri co
+    # viec khac phai lam — do that 24/09 voi cho 6 giay: 66 giay, mat lease.
+    from concurrent.futures import ThreadPoolExecutor
+
+    can_do = sorted(dia_chi) + [ip_quan_tri]
+    with ThreadPoolExecutor(max_workers=min(12, len(can_do))) as bom:
+        ket = dict(zip(can_do, bom.map(lambda ip: mo_cong(ip, CONG_QUAN_TRI), can_do)))
+    lo = [ip for ip in sorted(dia_chi) if ket[ip][0]]
+    mo_qt = ket[ip_quan_tri][0]
 
     if lo:
         trang_thai = "CRITICAL"

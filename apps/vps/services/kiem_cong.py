@@ -16,7 +16,16 @@ import socket
 CONG_QUAN_TRI = 22
 #: Cong duy nhat gateway chuyen tiep vao may khach.
 CONG_RDP = 3389
-CHO_GIAY = 6.0
+#: ⚠️ 3 giay, khong phai 6. Trang thai DUNG cua moi dia chi khach la **timeout**
+#: (goi tin bi DROP), nen mot luot do TUAN TU voi cho 6 giay ton ~66 giay — do
+#: that 24/09, va vong bao tri **mat lease giua chung**. Mot phep kiem lam hong
+#: vong chua no la mot phep kiem se bi go.
+#:
+#: ⛔ Cho ngan mot minh thi lech ve phia NGUY HIEM: mang cham cung ra "dong", tuc
+#:    giau mot cong dang mo. Thu chan dieu do la **doi chung**: cung luot, cung
+#:    duong mang, IP quan tri phai mo. Doc duoc no nghia la duong toi gateway
+#:    khoe, nen timeout tren dia chi khac la **luat chan**, khong phai mang cham.
+CHO_GIAY = 3.0
 
 
 def cong_mo(ip: str, cong: int, cho: float = CHO_GIAY) -> tuple[bool, str]:
