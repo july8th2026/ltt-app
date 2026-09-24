@@ -21322,3 +21322,18 @@ msgstr "Who created, changed, revoked, refreshed or used a credential, when, and
 
 msgid "Một lượt kết nối OAuth đang dở: state đã băm, PKCE verifier đã mã hoá, nơi quay về. Dùng một lần, hạn 10 phút."
 msgstr "One OAuth connection in progress: the hashed state, the encrypted PKCE verifier, and where to return. Single use, expires in 10 minutes."
+
+msgid "Bộ nhớ bền của một connector: con trỏ poll và trạng thái do piece tự ghi. Có thể chứa ID bản ghi bên thứ ba của khách; không bao giờ trả ra trình soạn thảo."
+msgstr "Durable storage for a connector: poll cursors and state the piece writes itself. May contain third-party record IDs belonging to the customer; never returned to the editor."
+
+msgid "Executor nội bộ chạy node connector (piece Activepieces trong AppContainer, và connector native của LTT). Không phải sản phẩm riêng."
+msgstr "Internal executor that runs connector nodes (Activepieces pieces inside an AppContainer, plus LTT's own native connectors). Not a standalone product."
+
+msgid "LTT Workflow — connector runner"
+msgstr "LTT Workflow — connector runner"
+
+msgid "Tải một video lên YouTube. Mặc định ở chế độ riêng tư."
+msgstr "Upload a video to YouTube. Private by default."
+
+msgid "YouTube — Đăng video"
+msgstr "YouTube — Upload video"

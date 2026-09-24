@@ -601,6 +601,16 @@ STORES: tuple = (
           N_("Một lượt kết nối OAuth đang dở: state đã băm, PKCE verifier đã "
              "mã hoá, nơi quay về. Dùng một lần, hạn 10 phút."),
           "oauth_google.don_state_het_han (worker)"),
+    # OPERATIONAL, khong han tu dong: day la CON TRO POLL cua piece. Xoa no
+    # khong phai "don rac" ma la bao lan poll ke tiep rang MOI ban ghi deu
+    # moi — tuc tao lai run cho ca lich su, tuc tieu credit that. Nen han doi
+    # theo VONG DOI cua trigger (trigger bi xoa => hang bi xoa), khong theo
+    # dong ho.
+    Store("connector_store", OPERATIONAL, None, N_("chủ tài khoản + vận hành"),
+          N_("Bộ nhớ bền của một connector: con trỏ poll và trạng thái do "
+             "piece tự ghi. Có thể chứa ID bản ghi bên thứ ba của khách; "
+             "không bao giờ trả ra trình soạn thảo."),
+          "xoa theo vong doi trigger (connector_store.xoa_pham_vi)"),
 )
 
 

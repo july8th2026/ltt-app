@@ -106,14 +106,14 @@ def test_banh_coc_moi_node_job_khai_ten_CO_THAT_trong_registry():
     rỗng không cho ra "0 vi phạm" rồi xanh giả.
     """
     from platform_core.workflow import cong_cu, nut_loi
-    from platform_core.workflow.nut import JOB_TYPE_PIECE
+    from platform_core.workflow.nut import JOB_TYPE_KHONG_TOOLSPEC
     so = nut_loi.tat_ca()
     job = {ten: nd for ten, nd in so.items() if nd.thi_hanh == "job"}
     assert job, "khong co node job nao trong so - phep kiem dang do tap rong"
     co_that = set(cong_cu.tat_ca())
     xau = {ten: nd.ten_toolspec for ten, nd in job.items()
            if nd.ten_toolspec not in co_that
-           and nd.job_type != JOB_TYPE_PIECE}
+           and nd.job_type not in JOB_TYPE_KHONG_TOOLSPEC}
     assert not xau, f"khai ten khong co trong registry: {xau}"
 
 

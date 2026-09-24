@@ -1,0 +1,562 @@
+{
+ "sinh_luc": "2026-09-24T09:37:15.776Z",
+ "pieces": [
+  {
+   "ten": "@activepieces/piece-slack",
+   "version": "0.20.0",
+   "displayName": "Slack",
+   "logoUrl": "https://cdn.activepieces.com/pieces/slack.png",
+   "auth": [
+    {
+     "ap": "OAUTH2",
+     "kieu": "oauth2",
+     "props": []
+    },
+    {
+     "ap": "CUSTOM_AUTH",
+     "kieu": "piece_custom",
+     "props": [
+      "botToken",
+      "userToken"
+     ]
+    }
+   ],
+   "so_action": 73,
+   "so_trigger": 14
+  },
+  {
+   "ten": "@activepieces/piece-github",
+   "version": "0.9.0",
+   "displayName": "GitHub",
+   "logoUrl": "https://cdn.activepieces.com/pieces/github.png",
+   "auth": [
+    {
+     "ap": "OAUTH2",
+     "kieu": "oauth2",
+     "props": []
+    },
+    {
+     "ap": "CUSTOM_AUTH",
+     "kieu": "piece_custom",
+     "props": [
+      "appId",
+      "installationId",
+      "privateKey"
+     ]
+    },
+    {
+     "ap": "SECRET_TEXT",
+     "kieu": "api_key",
+     "props": []
+    }
+   ],
+   "so_action": 93,
+   "so_trigger": 14
+  },
+  {
+   "ten": "@activepieces/piece-telegram-bot",
+   "version": "0.7.0",
+   "displayName": "Telegram Bot",
+   "logoUrl": "https://cdn.activepieces.com/pieces/telegram_bot.png",
+   "auth": [
+    {
+     "ap": "SECRET_TEXT",
+     "kieu": "api_key",
+     "props": []
+    }
+   ],
+   "so_action": 41,
+   "so_trigger": 1
+  },
+  {
+   "ten": "@activepieces/piece-google-sheets",
+   "version": "0.17.0",
+   "displayName": "Google Sheets",
+   "logoUrl": "https://cdn.activepieces.com/pieces/google-sheets.png",
+   "auth": [
+    {
+     "ap": "OAUTH2",
+     "kieu": "oauth2",
+     "props": []
+    },
+    {
+     "ap": "CUSTOM_AUTH",
+     "kieu": "piece_custom",
+     "props": [
+      "serviceAccount",
+      "userEmail"
+     ]
+    }
+   ],
+   "so_action": 61,
+   "so_trigger": 4
+  }
+ ],
+ "nodes": [
+  {
+   "type": "piece.slack.send_direct_message",
+   "type_version": 1,
+   "piece": "@activepieces/piece-slack",
+   "piece_version": "0.20.0",
+   "op": "run_action",
+   "name": "send_direct_message",
+   "title": "Send Message To A User",
+   "description": "Send message to a user",
+   "icon": "https://cdn.activepieces.com/pieces/slack.png",
+   "params": {
+    "userId": {
+     "type": "string",
+     "required": true,
+     "description": "[tuy chon dong cua piece] Search by name or handle."
+    },
+    "text": {
+     "type": "text",
+     "required": false,
+     "description": "Slack mrkdwn is supported. Empty sends blocks only."
+    },
+    "username": {
+     "type": "string",
+     "required": false,
+     "description": "Overrides the bot's display name for this message."
+    },
+    "profilePicture": {
+     "type": "string",
+     "required": false,
+     "description": "Image URL used as the sender's avatar."
+    },
+    "iconEmoji": {
+     "type": "string",
+     "required": false,
+     "description": "Emoji used as the sender's avatar."
+    },
+    "mentionOriginFlow": {
+     "type": "bool",
+     "required": false,
+     "description": "Append a link to this flow at the end of the message.",
+     "default": false
+    },
+    "blocks": {
+     "type": "json",
+     "required": false,
+     "description": "JSON array of blocks from the Block Kit Builder.",
+     "default": []
+    },
+    "unfurlLinks": {
+     "type": "bool",
+     "required": false,
+     "description": "Show link previews in the message.",
+     "default": true
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "oauth2",
+    "piece_custom"
+   ],
+   "gia": 0,
+   "side_effect": "external",
+   "prop_bo_qua": []
+  },
+  {
+   "type": "piece.slack.send_channel_message",
+   "type_version": 1,
+   "piece": "@activepieces/piece-slack",
+   "piece_version": "0.20.0",
+   "op": "run_action",
+   "name": "send_channel_message",
+   "title": "Send Message To A Channel",
+   "description": "Send message to a channel",
+   "icon": "https://cdn.activepieces.com/pieces/slack.png",
+   "params": {
+    "channel": {
+     "type": "string",
+     "required": true,
+     "description": "[tuy chon dong cua piece] Private channels appear only after the bot is added to them."
+    },
+    "text": {
+     "type": "text",
+     "required": false,
+     "description": "Slack mrkdwn is supported. Empty sends blocks only."
+    },
+    "sendAsBot": {
+     "type": "bool",
+     "required": false,
+     "description": "Off posts as the connected user and needs a user token.",
+     "default": true
+    },
+    "threadTs": {
+     "type": "string",
+     "required": false,
+     "description": "Timestamp or link of the parent message to reply under."
+    },
+    "file": {
+     "type": "string",
+     "required": false,
+     "description": "[artifact_ref] Sent with the message as its comment. Other options are skipped."
+    },
+    "username": {
+     "type": "string",
+     "required": false,
+     "description": "Overrides the bot's display name for this message."
+    },
+    "profilePicture": {
+     "type": "string",
+     "required": false,
+     "description": "Image URL used as the sender's avatar."
+    },
+    "iconEmoji": {
+     "type": "string",
+     "required": false,
+     "description": "Emoji used as the sender's avatar."
+    },
+    "replyBroadcast": {
+     "type": "bool",
+     "required": false,
+     "description": "When replying in a thread, also show the reply in the channel.",
+     "default": false
+    },
+    "mentionOriginFlow": {
+     "type": "bool",
+     "required": false,
+     "description": "Append a link to this flow at the end of the message.",
+     "default": false
+    },
+    "unfurlLinks": {
+     "type": "bool",
+     "required": false,
+     "description": "Show link previews in the message.",
+     "default": true
+    },
+    "blocks": {
+     "type": "json",
+     "required": false,
+     "description": "JSON array of blocks from the Block Kit Builder.",
+     "default": []
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "oauth2",
+    "piece_custom"
+   ],
+   "gia": 0,
+   "side_effect": "external",
+   "prop_bo_qua": [
+    [
+     "info",
+     "chi_hien_thi"
+    ]
+   ]
+  },
+  {
+   "type": "piece.github.github_create_issue",
+   "type_version": 1,
+   "piece": "@activepieces/piece-github",
+   "piece_version": "0.9.0",
+   "op": "run_action",
+   "name": "github_create_issue",
+   "title": "Create Issue",
+   "description": "Create Issue in GitHub Repository",
+   "icon": "https://cdn.activepieces.com/pieces/github.png",
+   "params": {
+    "repository": {
+     "type": "string",
+     "required": true,
+     "description": "[tuy chon dong cua piece]"
+    },
+    "title": {
+     "type": "string",
+     "required": true,
+     "description": "The title of the issue"
+    },
+    "description": {
+     "type": "text",
+     "required": false,
+     "description": "The description of the issue"
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "oauth2",
+    "piece_custom",
+    "api_key"
+   ],
+   "gia": 0,
+   "side_effect": "external",
+   "prop_bo_qua": [
+    [
+     "labels",
+     "khong_anh_xa:MULTI_SELECT_DROPDOWN"
+    ],
+    [
+     "assignees",
+     "khong_anh_xa:MULTI_SELECT_DROPDOWN"
+    ]
+   ]
+  },
+  {
+   "type": "piece.github.createcommentonaissue",
+   "type_version": 1,
+   "piece": "@activepieces/piece-github",
+   "piece_version": "0.9.0",
+   "op": "run_action",
+   "name": "createCommentOnAIssue",
+   "title": "Create comment on a issue",
+   "description": "Adds a comment to the specified issue (also works with pull requests)",
+   "icon": "https://cdn.activepieces.com/pieces/github.png",
+   "params": {
+    "repository": {
+     "type": "string",
+     "required": true,
+     "description": "[tuy chon dong cua piece]"
+    },
+    "issue_number": {
+     "type": "number",
+     "required": true,
+     "description": "The number of the issue to comment on"
+    },
+    "comment": {
+     "type": "text",
+     "required": true,
+     "description": "The comment to add to the issue"
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "oauth2",
+    "piece_custom",
+    "api_key"
+   ],
+   "gia": 0,
+   "side_effect": "external",
+   "prop_bo_qua": []
+  },
+  {
+   "type": "piece.telegram_bot.send_text_message",
+   "type_version": 1,
+   "piece": "@activepieces/piece-telegram-bot",
+   "piece_version": "0.7.0",
+   "op": "run_action",
+   "name": "send_text_message",
+   "title": "Send Text Message",
+   "description": "Send a text message through a Telegram bot",
+   "icon": "https://cdn.activepieces.com/pieces/telegram_bot.png",
+   "params": {
+    "chat_id": {
+     "type": "string",
+     "required": true,
+     "description": "Unique identifier for the target chat or username of the target channel (e.g. @channelusername)."
+    },
+    "message_thread_id": {
+     "type": "string",
+     "required": false,
+     "description": "Unique identifier for the target message thread of the forum; supergroup forums only."
+    },
+    "format": {
+     "type": "enum",
+     "required": false,
+     "description": "How the message text should be parsed by Telegram.",
+     "default": "MarkdownV2",
+     "values": [
+      "MarkdownV2",
+      "HTML",
+      "None"
+     ],
+     "options": [
+      {
+       "value": "MarkdownV2",
+       "label": "Markdown (V2)"
+      },
+      {
+       "value": "HTML",
+       "label": "HTML"
+      },
+      {
+       "value": "None",
+       "label": "Plain Text"
+      }
+     ]
+    },
+    "web_page_preview": {
+     "type": "bool",
+     "required": false,
+     "description": "Disable link previews for links in this message.",
+     "default": false
+    },
+    "disable_notification": {
+     "type": "bool",
+     "required": false,
+     "description": "Send the message silently. Users will receive a notification with no sound.",
+     "default": false
+    },
+    "protect_content": {
+     "type": "bool",
+     "required": false,
+     "description": "Protects the contents of the sent message from forwarding and saving.",
+     "default": false
+    },
+    "reply_to_message_id": {
+     "type": "number",
+     "required": false,
+     "description": "If the message is a reply, ID of the original message."
+    },
+    "message": {
+     "type": "text",
+     "required": true,
+     "description": "The message to be sent"
+    },
+    "reply_markup": {
+     "type": "json",
+     "required": false,
+     "description": "Additional interface options. A JSON-serialized object for an inline keyboard, custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user."
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "api_key"
+   ],
+   "gia": 0,
+   "side_effect": "external",
+   "prop_bo_qua": [
+    [
+     "instructions",
+     "chi_hien_thi"
+    ],
+    [
+     "instructions_format",
+     "chi_hien_thi"
+    ]
+   ]
+  },
+  {
+   "type": "piece.google_sheets.find_rows",
+   "type_version": 1,
+   "piece": "@activepieces/piece-google-sheets",
+   "piece_version": "0.17.0",
+   "op": "run_action",
+   "name": "find_rows",
+   "title": "Find Rows",
+   "description": "Look up rows in a worksheet based on a column value.",
+   "icon": "https://cdn.activepieces.com/pieces/google-sheets.png",
+   "params": {
+    "spreadsheetId": {
+     "type": "string",
+     "required": true,
+     "description": "[tuy chon dong cua piece] The spreadsheet to work in."
+    },
+    "sheetId": {
+     "type": "string",
+     "required": true,
+     "description": "[tuy chon dong cua piece] The tab inside that spreadsheet."
+    },
+    "includeTeamDrives": {
+     "type": "bool",
+     "required": false,
+     "description": "Also include spreadsheets stored in shared drives.",
+     "default": false
+    },
+    "columnName": {
+     "type": "string",
+     "required": true,
+     "description": "[tuy chon dong cua piece] The name of the column to search in"
+    },
+    "searchValue": {
+     "type": "string",
+     "required": false,
+     "description": "The value to look for. Leave empty to return all rows."
+    },
+    "matchCase": {
+     "type": "bool",
+     "required": true,
+     "description": "Only return rows whose cell matches the value exactly.",
+     "default": false
+    },
+    "startingRow": {
+     "type": "number",
+     "required": false,
+     "description": "Start searching from this row number."
+    },
+    "numberOfRows": {
+     "type": "number",
+     "required": false,
+     "description": "How many matching rows to return.",
+     "default": 1
+    },
+    "headerRow": {
+     "type": "number",
+     "required": true,
+     "description": "The row that contains the column names.",
+     "default": 1
+    },
+    "useHeaderNames": {
+     "type": "bool",
+     "required": false,
+     "description": "Key each row by column name instead of A, B, C.",
+     "default": false
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "oauth2",
+    "piece_custom"
+   ],
+   "gia": 0,
+   "side_effect": "external",
+   "prop_bo_qua": []
+  },
+  {
+   "type": "trigger.piece.google_sheets.new_spreadsheet",
+   "type_version": 1,
+   "piece": "@activepieces/piece-google-sheets",
+   "piece_version": "0.17.0",
+   "op": "run_trigger",
+   "name": "new-spreadsheet",
+   "kind": "trigger",
+   "title": "New Spreadsheet",
+   "description": "Triggers when a new spreadsheet is created.",
+   "icon": "https://cdn.activepieces.com/pieces/google-sheets.png",
+   "params": {
+    "includeTeamDrives": {
+     "type": "bool",
+     "required": false,
+     "description": "Also include spreadsheets stored in shared drives.",
+     "default": false
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "oauth2",
+    "piece_custom"
+   ],
+   "gia": 0,
+   "side_effect": "none",
+   "prop_bo_qua": []
+  }
+ ],
+ "bo_qua": [
+  {
+   "piece": "@activepieces/piece-google-sheets",
+   "name": "insert_row",
+   "vi_sao": "tham_so_bat_buoc_khong_anh_xa:values:DYNAMIC"
+  },
+  {
+   "piece": "@activepieces/piece-google-sheets",
+   "name": "update_row",
+   "vi_sao": "tham_so_bat_buoc_khong_anh_xa:values:DYNAMIC"
+  }
+ ]
+}

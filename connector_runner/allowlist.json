@@ -1,0 +1,85 @@
+{
+  "_ghi_chu": [
+    "NGUON DUY NHAT cho tap piece duoc phep nap (spec Sec11.1).",
+    "Cat pham vi cua plan P6: 4 piece THUC DUNG, khong phai 730 cua catalog",
+    "Activepieces. Loader tinh theo piece NAP, nen catalog to khong doi cong.",
+    "Them/nang phien ban = sua tep nay + package-lock.json + catalog.json",
+    "trong MOT commit (spec Sec11.3)."
+  ],
+  "pieces": {
+    "@activepieces/piece-slack": "0.20.0",
+    "@activepieces/piece-github": "0.9.0",
+    "@activepieces/piece-telegram-bot": "0.7.0",
+    "@activepieces/piece-google-sheets": "0.17.0"
+  },
+  "_mien_ghi_chu": [
+    "Mien ma MOI piece duoc phep noi toi. Danh sach nay duoc ap o",
+    "`platform_core/workflow/proxy_egress.py`, tuc NGOAI tien trinh piece --",
+    "chinh hinh dang ma `activepieces/activepieces#11547` de xuat.",
+    "So khop theo NHAN: `slack.com.vi-du.vn` KHONG khop `slack.com`."
+  ],
+  "mien": {
+    "@activepieces/piece-slack": ["slack.com", "files.slack.com"],
+    "@activepieces/piece-github": ["api.github.com", "github.com",
+                                   "uploads.github.com"],
+    "@activepieces/piece-telegram-bot": ["api.telegram.org"],
+    "@activepieces/piece-google-sheets": ["sheets.googleapis.com",
+                                          "www.googleapis.com",
+                                          "oauth2.googleapis.com",
+                                          "drive.googleapis.com"]
+  },
+  "palette": {
+    "@activepieces/piece-slack": {
+      "actions": ["send_direct_message", "send_channel_message"],
+      "triggers": []
+    },
+    "@activepieces/piece-github": {
+      "actions": ["github_create_issue", "createCommentOnAIssue"],
+      "triggers": []
+    },
+    "@activepieces/piece-telegram-bot": {
+      "actions": ["send_text_message"],
+      "triggers": []
+    },
+    "@activepieces/piece-google-sheets": {
+      "actions": ["find_rows", "insert_row", "update_row"],
+      "triggers": ["new-spreadsheet"]
+    }
+  },
+  "doi_chieu_spec_11_6": {
+    "_ghi_chu": [
+      "Spec Sec11.6 tu khai cot action/trigger cua no la DICH CAN TRA.",
+      "Bang duoi la ket qua chay `node src/xuat_catalog.js --liet-ke` ngay",
+      "24/09/2026 tren dung cac ban da ghim o `pieces` phia tren.",
+      "`co` = ten spec doan DUNG. `khong` = KHONG TON TAI o ban nay.",
+      "`thay` = co mot action gan nghia; day la mot THAY THE co review, va",
+      "no phai doc duoc trong diff -- spec cam thay im lang."
+    ],
+    "google-sheets": {
+      "find_rows": "co", "insert_row": "co", "update_row": "co",
+      "get_rows": "khong (gan nhat: get-many-rows / get_next_rows -- CHUA dua len palette)",
+      "clear_row": "khong (gan nhat: clear-rows / clear_sheet -- CHUA dua len palette)",
+      "trigger new_row": "khong. Piece nay KHONG co trigger POLLING nao ve dong moi; `google-sheets-new-or-updated-row` la WEBHOOK, ma trigger WEBHOOK cua piece NGOAI pham vi (spec Sec11.4). POLLING duy nhat: new-spreadsheet, new-worksheet"
+    },
+    "slack": {
+      "send_direct_message": "co",
+      "send_message_to_a_channel": "khong -> thay: send_channel_message",
+      "upload_file": "khong (gan nhat: uploadFile -- prop FILE, CHUA dua len palette)",
+      "trigger poll": "khong co: 14/14 trigger cua slack la APP_WEBHOOK"
+    },
+    "github": {
+      "create_issue": "khong -> thay: github_create_issue",
+      "create_comment_on_issue": "khong -> thay: createCommentOnAIssue",
+      "trigger poll": "khong co: 14/14 trigger cua github la WEBHOOK"
+    },
+    "telegram-bot": {
+      "send_text_message": "co",
+      "send_media": "khong dua len palette vong 1 (prop FILE)",
+      "trigger poll": "khong co: trigger duy nhat la WEBHOOK"
+    },
+    "_khong_cai_vong_1": [
+      "notion, airtable, discord, google-drive cua bang spec Sec11.6 KHONG",
+      "duoc cai -- cat pham vi cua plan P6 la 3-4 piece thuc dung."
+    ]
+  }
+}

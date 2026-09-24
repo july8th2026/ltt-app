@@ -163,9 +163,123 @@ def _khoa_idem(run: WorkflowRun, node: dict, lan: int, cc: CongCu,
                           .encode()).hexdigest()[:64]
 
 
+class _NhuCongCu:
+    """Bọc một `NodeDefinition` thành đúng HAI thuộc tính mà `_khoa_idem` đọc.
+
+    ⭐ Một lớp bọc bốn dòng thay vì một tham số thứ bảy cho `_khoa_idem`: hàm
+       ấy giữ **luật khử trùng**, và luật đó không được rẽ nhánh theo nguồn
+       của node. Node piece và node app phải sinh khoá bằng **cùng một** câu.
+    """
+
+    __slots__ = ("side_effect", "idempotency_fields")
+
+    def __init__(self, nd):
+        self.side_effect = str(getattr(nd, "side_effect", "external"))
+        self.idempotency_fields = tuple(
+            getattr(nd, "idempotency_key_fields", ()) or ())
+
+
+def _chu_job(job_type: str) -> str:
+    """App nào khai `job_type` này. ⛔ Không hardcode slug trong
+    `platform_core/` (Global Constraint) — tra registry, như `tao_run`."""
+    slug = registry.job_type_owners().get(job_type)
+    if not slug:
+        raise LoiTienTo(
+            f"khong app nao khai job_type {job_type!r} trong job_types — "
+            "worker se khong bao gio nhan job nay")
+    return str(slug)
+
+
+#: Tài nguyên admission của lane connector (spec §11.2): trần **2 suất đồng
+#: thời** trên máy A. Máy này là production và mỗi lệnh connector là một tiến
+#: trình Node ~400 MB; để nó tự do là để mã của bên thứ ba quyết định tải máy.
+TAI_NGUYEN_CONNECTOR = "connector"
+#: ⚠️ `admission_slots` la SUC CHUA cua tai nguyen, ⛔ khong phai so suat MOT
+#:    job xin. `jobs.claim` so `dang_giu < Job.admission_slots`, nen ghi `1` o
+#:    day la khoa lane xuong MOT lenh dong thoi — khong phai "moi job xin 1".
+SUAT_CONNECTOR = 2
+
+
+def _nop_job_connector(db, run: WorkflowRun, node: dict, nd, *, vong=()):
+    """Đường nộp job cho node `piece.*` và `connector.*` (plan wf-v2 P6).
+
+    🔴 Vì sao một nhánh RIÊNG chứ không nhét vào `nop_job`: node ở đây
+       **không bọc ToolSpec nào**, nên ba thứ mà `nop_job` lấy từ `CongCu`
+       (giá, làn, admission) phải lấy từ chỗ khác — `NodeDefinition.gia`
+       (`co_dinh`), `nd.job_type`, và một tài nguyên admission cố định. Ép
+       chúng qua `nop_job` thì phải dựng một `CongCu` giả, và một `CongCu`
+       giả trong đường **giữ tiền** là đúng thứ không nên có.
+    """
+    nid = node["id"]
+    anh = thi_hanh.anh_chup_hien_tai(db, run.id, nid, vong)
+    lan = int(anh.attempt_number if anh else 1)
+    try:
+        params = giai_tham_so(db, run.id, node.get("params") or {}, vong)
+    except LoiThamSo as loi:
+        may_trang_thai.chuyen_node(
+            db, run.id, nid, sang="FAILED", mo_ta="giai tham so",
+            error=str(loi), attempt_number=lan, vong=vong)
+        return None
+    try:
+        app_slug = _chu_job(nd.job_type)
+    except LoiTienTo as loi:
+        may_trang_thai.chuyen_node(
+            db, run.id, nid, sang="FAILED", mo_ta="lane connector chua co chu",
+            error=f"loi_he_thong: {loi}"[:2000], attempt_number=lan, vong=vong)
+        return None
+    gia_that = int(nd.gia.so if nd.gia.kieu == "co_dinh" else 0)
+    tran = int(node.get("gia_tran", 0))
+    if gia_that > tran:
+        may_trang_thai.chuyen_node(
+            db, run.id, nid, sang="FAILED", mo_ta="vuot tran bao gia",
+            error=f"vuot_tran_bao_gia: {gia_that} > {tran}",
+            attempt_number=lan, vong=vong)
+        return None
+    wp = cho_doi.tao_waitpoint(db, run_id=run.id, owner_id=run.owner_id,
+                               kind="JOB", required_successes=1)
+    cho_doi.chan_node(db, run_id=run.id, node_id=nid, waitpoint_id=wp.id,
+                      vong=vong)
+    khoa = _khoa_idem(run, node, lan, _NhuCongCu(nd), params, vong)
+    tham_so = dict(params)
+    tham_so["owner_id"] = run.owner_id
+    tham_so["_idem"] = khoa
+    # ⭐ Thứ handler cần để gọi runner. Lấy từ ĐỒ THỊ ĐÃ BIÊN DỊCH (`node`),
+    #    ⛔ không tra lại catalog lúc chạy: một bản publish phải chạy được
+    #    với đúng phiên bản piece nó được biên dịch cùng, kể cả khi catalog
+    #    đã đổi sau đó.
+    tham_so["_connector"] = {
+        "node_type": str(node["type"]),
+        "piece": str(node.get("piece") or ""),
+        "piece_version": str(node.get("piece_version") or ""),
+        "op": str(node.get("op") or "run_action"),
+        "name": str(node.get("ten_action") or ""),
+        "run_id": run.id,
+        "node_id": nid,
+    }
+    job = jobs.submit(db, user_id=run.owner_id, app_slug=app_slug,
+                      job_type=nd.job_type, params=tham_so, dedupe_key=khoa,
+                      max_attempts=1, parent_id=wp.id, plan_id=run.id,
+                      origin=ORIGIN_WORKFLOW, priority_class="internal",
+                      admission_resource=TAI_NGUYEN_CONNECTOR,
+                      admission_slots=SUAT_CONNECTOR)
+    may_trang_thai.chuyen_node(
+        db, run.id, nid, sang="QUEUED", mo_ta="da nop job connector",
+        job_id=job.id, attempt_number=lan,
+        output_ref={"_gia_that": gia_that}, vong=vong)
+    return job.id
+
+
 def nop_job(db, run: WorkflowRun, node: dict, *,
             cong_cu: Optional[dict[str, CongCu]] = None,
             vong=()) -> Optional[str]:
+    from platform_core.workflow.nut import JOB_TYPE_KHONG_TOOLSPEC
+
+    # ⭐ Rẽ theo **BỘ THI HÀNH**, ⛔ không theo tiền tố tên. `piece.*` và
+    #    `connector.*` đều không bọc ToolSpec; cái chung của chúng là
+    #    `job_type`, không phải cái tên.
+    _nd = _dinh_nghia(node.get("type", ""))
+    if _nd is not None and _nd.job_type in JOB_TYPE_KHONG_TOOLSPEC:
+        return _nop_job_connector(db, run, node, _nd, vong=vong)
     cc_all = _nguon.tat_ca() if cong_cu is None else cong_cu
     nid = node["id"]
     anh = thi_hanh.anh_chup_hien_tai(db, run.id, nid, vong)
@@ -366,6 +480,19 @@ def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
             db.flush()
             return "SUCCEEDED"
         mo_ho = (sig.result_ref or {}).get("provider_state") == jobs.PROVIDER_AMBIGUOUS
+        from platform_core.workflow.nut import JOB_TYPE_KHONG_TOOLSPEC
+
+        nd_loi = _dinh_nghia(node.get("type", ""))
+        if nd_loi is not None and nd_loi.job_type in JOB_TYPE_KHONG_TOOLSPEC:
+            # ⭐ `side_effect` đọc từ `NodeDefinition`, ⛔ không từ một
+            #    `CongCu` không tồn tại. Với `connector.youtube.upload`
+            #    (`irreversible`) thì một lượt MƠ HỒ phải ra **ABANDONED**:
+            #    "mất kết nối giữa chừng" không chứng minh video chưa lên,
+            #    nó chỉ chứng minh ta không biết — và thử lại là đăng hai lần.
+            return _chot_that_bai(db, run, node_id, sig=sig, lan=lan,
+                                  vong=vong, node=node,
+                                  side_effect=str(nd_loi.side_effect),
+                                  mo_ho=mo_ho)
         cc_all = _nguon.tat_ca() if cong_cu is None else cong_cu
         try:
             ten_cc = ten_cong_cu(node["type"])
@@ -393,7 +520,23 @@ def ap_ket_qua(db, run: WorkflowRun, node_id: str, *,
                 error=f"cong_cu_khong_con: {ten_cc!r}", attempt_number=lan,
                 job_id=sig.ref_id, vong=vong)
             return "FAILED"
-        sang = "ABANDONED" if (mo_ho and cc.side_effect == "irreversible") else (
+        return _chot_that_bai(db, run, node_id, sig=sig, lan=lan, vong=vong,
+                              node=node, side_effect=str(cc.side_effect),
+                              mo_ho=mo_ho)
+    return None
+
+
+def _chot_that_bai(db, run: WorkflowRun, node_id: str, *, sig, lan: int,
+                   vong, node: dict, side_effect: str, mo_ho: bool):
+    """Nhánh KHÔNG-thành-công của `ap_ket_qua`, tách ra để **một** luật
+    ABANDONED/CANCELLED/FAILED + retry phục vụ cả node app lẫn node connector.
+
+    ⛔ Hai bản sao của luật này là đúng hình dạng "hai chỗ khai cùng một điều,
+       không ai bắt khớp" — và chỗ chúng lệch nhau sẽ là chỗ một node
+       `irreversible` bị thử lại.
+    """
+    if True:
+        sang = "ABANDONED" if (mo_ho and side_effect == "irreversible") else (
             "CANCELLED" if sig.status == "CANCELLED" else "FAILED")
         # Ba mã riêng (spec §5.6 `NodeError.ma`) — review round 1: CANCELLED
         # từng bị gắn nhầm mã `provider_loi` (mã của FAILED).
@@ -430,6 +573,6 @@ def _node_cua(db, run: WorkflowRun, node_id: str) -> dict:
     return next(n for n in g["nodes"] if n["id"] == node_id)
 
 
-__all__ = ["GIOI_HAN_DAU_RA", "TIEN_TO_APP", "LoiThamSo", "LoiTienTo",
-           "ap_ket_qua", "bao_ket_thuc", "giai_tham_so", "nop_job",
-           "ten_cong_cu"]
+__all__ = ["GIOI_HAN_DAU_RA", "SUAT_CONNECTOR", "TAI_NGUYEN_CONNECTOR",
+           "TIEN_TO_APP", "LoiThamSo", "LoiTienTo", "ap_ket_qua",
+           "bao_ket_thuc", "giai_tham_so", "nop_job", "ten_cong_cu"]

@@ -30,6 +30,23 @@ RESOURCE_CLASS = ("cpu", "gpu", "api")
 #: hành chứ không phải một cái tên cho đẹp.
 JOB_TYPE_PIECE = "workflow.piece"
 
+#: Job type của node connector **Python native** (`connector.youtube.upload`,
+#: spec §11.6). Nó cũng không bọc ToolSpec nào — nhưng vì lý do KHÁC hẳn
+#: `piece.*`: piece chạy trên runner Node, còn node này chạy trong worker của
+#: ta bằng `httpx`. Hai bộ thi hành khác nhau ⇒ hai hằng, ⛔ không gộp tên.
+#:
+#: ⚠️ Nó tồn tại vì piece YouTube của Activepieces **không có action upload**
+#:    (tra ở tag 0.90.2, kiểm lại 24/09): `download-caption, get-channel,
+#:    get-video, list-captions, list-comments, list-playlist-items,
+#:    list-playlists, search`. Đây là ca *"dùng lại trước, tự viết sau"* trả
+#:    lời **có được tự viết**.
+JOB_TYPE_CONNECTOR = "workflow.connector"
+
+#: Job type **được miễn** khai `ten_toolspec`. ⛔ Tập ĐÓNG, và miễn theo **bộ
+#: thi hành** chứ không theo tên node. Một bộ thi hành thứ ba xuất hiện mà
+#: không khai gì sẽ ném ở `__post_init__` — đúng như mong muốn.
+JOB_TYPE_KHONG_TOOLSPEC = frozenset({JOB_TYPE_PIECE, JOB_TYPE_CONNECTOR})
+
 #: Mã lỗi một node app công bố. Lấy TỪ `cau_noi.py` (`nop_job`, `ap_ket_qua`),
 #: không khai lại theo trí nhớ.
 MA_LOI_APP = ("dau_vao_sai", "vuot_tran_bao_gia", "provider_loi",
@@ -135,7 +152,7 @@ class NodeDefinition:
         if thua:
             raise LoiNut(f"quyen la: {sorted(thua)}")
         if self.thi_hanh == "job" and not self.ten_toolspec \
-                and self.job_type != JOB_TYPE_PIECE:
+                and self.job_type not in JOB_TYPE_KHONG_TOOLSPEC:
             # ⛔ Ném LÚC DỰNG (tức lúc `import`, chỗ người viết node nhìn
             #    thấy ngay), không đợi lúc chạy — "chỗ nó lộ ra lúc chạy là
             #    chỗ đang tiêu tiền của khách" (xem `LoiNut`).
@@ -150,7 +167,7 @@ class NodeDefinition:
             # ⛔ Một bộ thi hành THỨ BA xuất hiện mà không khai gì sẽ rơi
             #    vào nhánh này và chết ở `import` — đúng như mong muốn.
             #    `test_1789::test_banh_coc_moi_node_job_khai_ten_CO_THAT…`
-            #    ghim rằng tập ngoại lệ đúng bằng `{JOB_TYPE_PIECE}`.
+            #    ghim rằng tập ngoại lệ đúng bằng `JOB_TYPE_KHONG_TOOLSPEC`.
             raise LoiNut(
                 f"{self.type!r} khai thi_hanh='job' nhung thieu "
                 "`ten_toolspec` — cau noi job khong suy duoc ten ToolSpec "
@@ -210,9 +227,16 @@ def tu_piece(muc: dict) -> NodeDefinition:
     """Node `piece.*` từ một mục catalog (spec §4.5 nguồn 3)."""
     auth = tuple(str(a) for a in (muc.get("auth") or ()))
     quyen = {"network"} | ({"credential"} if auth else set())
+    # ⭐ `kind` DO CATALOG KHAI, ⛔ không cứng `"connector"`: một trigger
+    #    POLLING của piece là một điểm BẮT ĐẦU đồ thị, và Canvas vẽ nó ở nhóm
+    #    TRIGGERS. Một trigger nằm trong nhóm CONNECTORS thì người soạn không
+    #    tìm thấy nó ở chỗ họ tìm mọi trigger khác — và họ sẽ kết luận là
+    #    "không có trigger Sheets", đúng lúc nó vừa có.
+    kind = str(muc.get("kind") or "connector")
     return NodeDefinition(
         type=str(muc["type"]), type_version=int(muc.get("type_version", 1) or 1),
-        kind="connector", category="CONNECTORS",
+        kind=kind,
+        category="TRIGGERS" if kind == "trigger" else "CONNECTORS",
         title=str(muc.get("title") or muc["type"]),
         description=str(muc.get("description") or ""),
         icon=str(muc.get("icon") or ""),
@@ -340,6 +364,7 @@ def type_version_thieu(db, *, dinh_nghia: Optional[dict] = None) -> list:
             for v, n, t, tv in hang if ban_do.get(t) != tv]
 
 
-__all__ = ["CATEGORY", "Gia", "KIND", "LoiNut", "MA_LOI_APP", "NGUON_PIECE",
+__all__ = ["CATEGORY", "Gia", "JOB_TYPE_CONNECTOR", "JOB_TYPE_KHONG_TOOLSPEC",
+           "JOB_TYPE_PIECE", "KIND", "LoiNut", "MA_LOI_APP", "NGUON_PIECE",
            "NodeDefinition", "QUYEN", "RESOURCE_CLASS", "chua_du_hop_dong",
            "tat_ca", "tu_piece", "tu_toolspec", "type_version_thieu"]

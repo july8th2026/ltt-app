@@ -109,5 +109,15 @@ from platform_core.workflow.nut_loi import ai_agent as _ai_agent  # noqa: E402,F
 #    tien trinh job, va no bi che o ca `output` lan `error`.
 from platform_core.workflow.nut_loi import http as _http  # noqa: E402,F401
 
+# ── Node connector (plan wf-v2 P6) ───────────────────────────────────────────
+#
+# ⭐ Import nay lam HAI viec, va ca hai deu la hieu ung phu:
+#    1. `dang_ky(YOUTUBE_UPLOAD)` chay;
+#    2. `nut.NGUON_PIECE` duoc gan sang ham doc `connector_runner/catalog.json`
+#       — khe cam ma `nut._nguon_piece_rong` de san tu plan 02.
+#    Khong co dong nay thi palette khong co mot connector nao, va
+#    `bien_dich._node_loi` bao `node_khong_ton_tai` cho thu da co that.
+from platform_core.workflow.nut_loi import connector as _connector  # noqa: E402,F401
+
 
 __all__ = ["THI_HANH_TRONG_DONG_CO", "bo_thi_hanh", "dang_ky", "tat_ca"]

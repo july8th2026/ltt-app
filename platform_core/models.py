@@ -1686,6 +1686,45 @@ class WorkflowEvent(Base):
         DateTime(timezone=True), default=_bay_gio, nullable=False, index=True)
 
 
+class ConnectorStore(Base):
+    """Bộ nhớ bền của một piece connector (spec §11.4).
+
+    🔴 **Vì sao piece cần một bảng riêng, không dùng `con_tro` của trigger.**
+       Một trigger POLLING của Activepieces gọi `ctx.store.put(...)` với khoá
+       **do piece tự đặt**, nhiều khoá, hình dạng tuỳ piece. Nhét chúng vào
+       `workflow_trigger.con_tro` là trộn hai quyền sở hữu vào một cột JSON:
+       nền tảng ghi lịch, piece ghi con trỏ của nó. Lần đầu hai bên ghi đè nhau
+       sẽ là một trigger bắn lại toàn bộ lịch sử — tức tạo lại **mọi** run cũ,
+       tức tiêu credit thật.
+
+    ⭐ `pham_vi` là **đường** chứ không phải id trần: `"trigger:<id>"` hoặc
+       `"run:<id>"`. Đây đúng bài học ba lần lặp ở phase 4 (`wakeup`,
+       `node_run`, `dedupe_key` đều khoá theo `node_id` trần thay vì đường thi
+       hành): một khoá thiếu ngữ cảnh thì hai chủ thể khác nhau sẽ đụng nhau,
+       im lặng.
+
+    ⛔ `owner_id` nằm trong khoá duy nhất, ⛔ không phải chỉ để lọc: hai khách
+       dùng **cùng một piece** phải không bao giờ đọc được store của nhau, và
+       cách chắc chắn nhất là không tồn tại một hàng nào họ cùng trỏ tới.
+    """
+
+    __tablename__ = "connector_store"
+    __table_args__ = (
+        UniqueConstraint("owner_id", "pham_vi", "khoa",
+                         name="ux_connector_store_khoa"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    #: `trigger:<id>` | `run:<id>` — xem docstring.
+    pham_vi: Mapped[str] = mapped_column(String(64), nullable=False)
+    khoa: Mapped[str] = mapped_column(String(200), nullable=False)
+    gia_tri: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, onupdate=_bay_gio,
+        nullable=False)
+
+
 # ── Credential + OAuth (spec §9, plan wf-v2 P5c) ─────────────────────────────
 
 

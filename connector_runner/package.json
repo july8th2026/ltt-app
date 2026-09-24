@@ -1,0 +1,18 @@
+{
+  "name": "ltt-connector-runner",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Runner mot-lenh-mot-tien-trinh cho node piece.* (spec Sec11.1). Chay BEN TRONG AppContainer khong capability mang.",
+  "license": "UNLICENSED",
+  "main": "src/runner.js",
+  "scripts": {
+    "catalog": "node src/xuat_catalog.js"
+  },
+  "dependencies": {
+    "@activepieces/pieces-framework": "0.32.0",
+    "@activepieces/piece-slack": "0.20.0",
+    "@activepieces/piece-github": "0.9.0",
+    "@activepieces/piece-telegram-bot": "0.7.0",
+    "@activepieces/piece-google-sheets": "0.17.0"
+  }
+}
