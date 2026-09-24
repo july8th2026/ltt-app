@@ -84,6 +84,47 @@ máy sẽ thấy nó không ra được Internet, và điều khoản **không m
 trước (nó chỉ khai cổng **ra** bị chặn). Chủ dự án chốt: giữ nguyên, nhưng khai
 rõ. Đã viết vào `dieu_khoan.py` mục 1 + bản EN.
 
+### Cổng quản trị: từ một lệnh gõ tay thành một cổng tự chạy
+
+`tools/vps_doi_soat_cong.py` đo được, nhưng nó chạy bằng tay — và một phép kiểm
+an ninh chạy bằng tay gộp **hai** trạng thái vào cùng một sự im lặng:
+*"chưa ai chạy"* và *"chạy rồi, đạt"*. Nay `bao_tri._kiem_cong_quan_tri` đo mỗi
+ngày và ghi một bản ghi sức khoẻ **mỗi lượt**, nên thiếu bản ghi = STALE trên
+trang admin. Thành phần `cong_quan_tri` thuộc `CANH_BAO_BAO_TRI` — ⛔ **không**
+chặn bán: cổng quản trị lộ là lỗi của ta, đóng cửa hàng là phạt khách cho lỗi
+của mình.
+
+🔴 **Và bản đầu của nó tự làm hỏng vòng chứa nó.** Đo tuần tự 11 địa chỉ × 6 giây
+= **66 giây**; log worker: `mat lease bao tri — dung viec nen`, không một bản ghi
+nào được sinh ra. ⭐ Chỗ đáng nhớ: trạng thái **đúng** của mọi địa chỉ khách là
+*timeout*, nên phép đo này tốn nhiều thời gian nhất **khi mọi thứ đều ổn** — một
+phép đo có chi phí tệ nhất rơi vào ca bình thường sẽ bị **gỡ**, không phải bị sửa.
+Sửa: đo song song + chờ 3 giây ⇒ **3,0 giây**. Chờ ngắn một mình lệch về phía
+nguy hiểm (mạng chậm cũng ra "đóng", tức giấu một cổng đang mở), nên nó dựa vào
+**đối chứng trong cùng lượt**: IP quản trị phải mở được.
+Nghiệm thu trên production 16:17:32 — `HEALTHY: cong 22 chi mo tren IP quan tri
+51.79.166.36 (10 dia chi khac deu dong)`.
+
+### Một hạng lỗi có tên: hỏng ở SỔ ĐĂNG KÝ DÙNG CHUNG
+
+Bốn sự cố trong **một ngày**, trên **một kho**, không cái nào do một làn viết sai
+mã của mình:
+
+| Sổ đăng ký | Sự cố |
+|---|---|
+| tập hợp migration | hai head trên `main` ⇒ chặn **mọi** deploy |
+| dải số test | `2920`–`2923` trùng giữa hai làn |
+| `thanh_phan.toml` | `tac_tu.py` không ai sở hữu ⇒ gate leo lên "chạy TẤT CẢ" |
+| danh mục mã lỗi | `test_409`: ASV và `ltt_voice` cùng khai một danh mục |
+
+⭐ Mỗi làn **xanh một mình**; cái hỏng chỉ tồn tại ở **kết hợp**, và không bộ test
+nhắm nào đo được vì mỗi phép đo chỉ nhìn một phía. Thứ duy nhất bắt được chúng là
+phép kiểm **trên toàn kho sau khi gộp** (`check_so_test`, gate phạm vi rộng) —
+đáng giữ **kể cả khi nó làm chậm làn người khác**.
+
+⇒ Chỗ đặt bánh cóc trước tiên không phải "đường nối giữa hai làn" (ở đâu cũng có),
+mà là **nơi một làn khai một điều về cả hệ** — thứ đó **đếm được**.
+
 ### Hai bài học về bằng chứng
 
 - **Gate chạy ở cây chính không còn là bằng chứng.** Lượt L2 đầu bị chính gate
