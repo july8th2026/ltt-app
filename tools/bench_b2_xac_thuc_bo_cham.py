@@ -280,7 +280,113 @@ def dung_cap_tiem(cap: list[tuple[int, str, str]], *, moi_loai: int,
 #  3. Goi bo cham THAT
 # ══════════════════════════════════════════════════════════════════════════════
 
-def cham_mot_luot(db, muc: list[dict]) -> dict:
+# ══════════════════════════════════════════════════════════════════════════════
+#  3b. LOI NHAC DONG BANG — de so V1/V2/V3 tren CUNG mot nen
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# 🔴 **Vi sao ban cu song o `tools/` chu khong o `apps/`.** San pham chi duoc co
+#    MOT loi nhac; giu ba ban trong `qc_ai.py` la de hai ban chet nam giua duong
+#    chay that. Nhung khong giu thi ta dang so **mot ban do sach voi hai ban do
+#    ban** — V1 va V2 deu do o nhiet do mac dinh, va ghim nhiet do da chung minh
+#    la no doi ket qua (lo hong 22,2 % -> 0 %).
+#
+# ⛔ Day la **ban sao dong bang**, chep nguyen van tu lich su git
+#    (V1 = truoc `91d921f4`, V2 = `91d921f4`). ⛔ Dung "cap nhat" chung cho khop
+#    ban moi — sua mot ban dong bang la xoa chinh cai moc dung de so.
+
+def _loi_nhac_v1(lo: list[dict], ngon_ngu_dich: str = "vi") -> list[dict]:
+    """Loi nhac NHI PHAN — ban goc, truoc 24/09. Chep nguyen van tu git."""
+    import json as _json
+
+    from apps.auto_scan_video import ngon_ngu
+    t = ngon_ngu.cum(ngon_ngu_dich)["tieng"]
+    he_thong = (
+        f"Ban la nguoi soat ban long tieng {t}. Voi moi cap (cau goc, cau "
+        f"{t}), hay noi ban {t} co **giu dung y va thai do** cua cau "
+        "goc khong.\n"
+        "Quy tac:\n"
+        "- `dat=false` CHI khi y nghia bi doi, mat, hoac them.\n"
+        "- Cach dien dat khac, dao trat tu, hay rut gon ma giu y => `dat=true`.\n"
+        "- `do_tin` la do chac chan cua CHINH BAN, tu 0 den 1.\n"
+        "- `ly_do` chi bat buoc khi `dat=false`, va phai noi ro y nao bi lech.\n"
+        'Tra ve DUY NHAT: {"doan": {"<ma>": {"dat": true, "do_tin": 0.9, '
+        '"ly_do": ""}}}')
+    nguoi_dung = _json.dumps({"doan": [
+        {"ma": str(d.get("ma") or ""),
+         "goc": str(d.get("goc") or "")[:600],
+         "tieng_viet": str(d.get("chu") or "")[:600]}
+        for d in lo]}, ensure_ascii=False, sort_keys=True)
+    return [{"role": "system", "content": he_thong},
+            {"role": "user", "content": nguoi_dung}]
+
+
+def _doc_v1(goi: dict, ma_da_gui: set[str], van_ban) -> list[dict]:
+    """Ban doc cua V1: model tu phan `dat`, khong co muc, khong loc doan."""
+    from apps.auto_scan_video import qc_ai
+
+    tho = (goi or {}).get("doan")
+    if not isinstance(tho, dict):
+        raise qc_ai.QcAiError("Model khong tra ve bang phan doan.")
+    ra = []
+    for ma in sorted(ma_da_gui):
+        v = tho.get(ma)
+        if isinstance(v, dict):
+            ra.append({"ma": ma, "dat": bool(v.get("dat", True)),
+                       "muc": "", "loi": [],
+                       "ly_do": str(v.get("ly_do") or "")[:300]})
+    return ra
+
+
+def _loi_nhac_v2(lo: list[dict], ngon_ngu_dich: str = "vi") -> list[dict]:
+    """Phan muc MQM, CHUA co san muc cho sai thuc the. Chep tu `91d921f4`."""
+    import json as _json
+
+    from apps.auto_scan_video import ngon_ngu, qc_ai
+    t = ngon_ngu.cum(ngon_ngu_dich)["tieng"]
+    he_thong = (
+        f"Ban soat ban long tieng {t}. Voi moi cap (cau goc, cau {t}), hay "
+        "LIET KE cac loi dich, moi loi mot muc nghiem trong.\n"
+        "Ba muc, theo HAU QUA cho nguoi xem clip:\n"
+        "- `nghiem_trong`: nguoi xem hieu SAI su viec.\n"
+        "- `nang`: pha mach, nhung van hieu duoc dieu cau muon noi.\n"
+        "- `nhe`: la loi that, nhung KHONG can tro hieu (sac thai, mot bo ngu "
+        "phu, cach dien dat).\n"
+        f"Loai loi: {', '.join(qc_ai.LOAI_LOI)}.\n"
+        "Quy tac:\n"
+        "- `doan` BAT BUOC: trich NGUYEN VAN doan bi loi, lay tu cau goc hoac "
+        f"cau {t}. Loi khong trich duoc doan se bi bo.\n"
+        "- Cach dien dat khac, dao trat tu, rut gon ma giu y: KHONG phai loi.\n"
+        "- Khong tim thay loi nao thi tra danh sach rong.\n"
+        'Tra ve DUY NHAT: {"doan": {"<ma>": {"loi": [{"loai": "lat_nghia", '
+        '"muc": "nang", "doan": "...", "ly_do": "..."}]}}}')
+    nguoi_dung = _json.dumps({"doan": [
+        {"ma": str(d.get("ma") or ""),
+         "goc": str(d.get("goc") or "")[:600],
+         "tieng_viet": str(d.get("chu") or "")[:600]}
+        for d in lo]}, ensure_ascii=False, sort_keys=True)
+    return [{"role": "system", "content": he_thong},
+            {"role": "user", "content": nguoi_dung}]
+
+
+def _hien_hanh(lo, ngon_ngu_dich="vi"):
+    from apps.auto_scan_video import qc_ai
+    return qc_ai.loi_nhac_ngu_nghia(lo, ngon_ngu_dich)
+
+
+def _doc_hien_hanh(goi, ma_da_gui, van_ban):
+    from apps.auto_scan_video import qc_ai
+    return qc_ai.doc_ngu_nghia(goi, ma_da_gui, van_ban)
+
+
+#: `{ten: (dung_loi_nhac, doc_phan_hoi)}`. `v3` = ban HIEN HANH cua san pham.
+BAN_LOI_NHAC = {
+    "v1": (_loi_nhac_v1, _doc_v1),
+    "v2": (_loi_nhac_v2, _doc_hien_hanh),
+    "v3": (_hien_hanh, _doc_hien_hanh),
+}
+
+
+def cham_mot_luot(db, muc: list[dict], ban: str = "v3") -> dict:
     """Cham `muc` MOT luot qua duong san pham. `{ma: {dat, do_tin, ly_do}}`.
 
     ⚠️ Lo nao hong / mo ho thi cac ma trong lo do **vang mat** khoi ket qua, ⛔
@@ -290,6 +396,7 @@ def cham_mot_luot(db, muc: list[dict]) -> dict:
     """
     from apps.auto_scan_video import ai, qc_ai
 
+    dung_loi_nhac, doc_phan_hoi = BAN_LOI_NHAC[ban]
     tran, cho = ai.ngan_sach_cho(ai.QC_NGU_NGHIA)
     ra: dict = {}
     loi: list[dict] = []
@@ -300,14 +407,14 @@ def cham_mot_luot(db, muc: list[dict]) -> dict:
         van_ban = {str(d["ma"]): (str(d["goc"]), str(d["chu"])) for d in lo}
         t0 = time.monotonic()
         try:
-            kq = ai.goi(db, ai.QC_NGU_NGHIA,
-                        qc_ai.loi_nhac_ngu_nghia(lo, "vi"),
+            kq = ai.goi(db, ai.QC_NGU_NGHIA, dung_loi_nhac(lo, "vi"),
                         max_tokens=tran, timeout_s=cho,
-                        # ⛔ Cung nhiet do voi duong san pham. Do o mot nhiet do
-                        #    khac la do mot he thong khac.
+                        # ⛔ Cung nhiet do voi duong san pham, va cung nhiet do
+                        #    cho CA BA ban — do o hai nhiet do la so hai he
+                        #    thong, khong phai so hai loi nhac.
                         temperature=qc_ai.NHIET_DO_NGU_NGHIA)
-            for pq in qc_ai.doc_ngu_nghia(ai.doc_ket_qua(kq, ai.QC_NGU_NGHIA),
-                                          ma_lo, van_ban):
+            for pq in doc_phan_hoi(ai.doc_ket_qua(kq, ai.QC_NGU_NGHIA),
+                                   ma_lo, van_ban):
                 ra[pq["ma"]] = {"dat": bool(pq["dat"]),
                                 "muc": pq["muc"],
                                 "loi": pq["loi"],
@@ -432,7 +539,7 @@ def _ti_le(cac_luot: list[dict], ma: list[str], gop: dict) -> dict:
 # ══════════════════════════════════════════════════════════════════════════════
 
 def ti_le_bao_dong_gia(n: int, *, db=None, luot: int = LUOT_MOI_CAP,
-                       tu: int = 0,
+                       tu: int = 0, ban: str = "v3",
                        thu_muc: pathlib.Path = FLORES_DIR) -> dict:
     """Ti le bao dong gia cua bo cham tren `n` cap FLORES zh->vi.
 
@@ -449,11 +556,11 @@ def ti_le_bao_dong_gia(n: int, *, db=None, luot: int = LUOT_MOI_CAP,
     ma = [m["ma"] for m in muc]
     cac_luot = []
     for k in range(luot):
-        print(f"  [FLORES] luot {k + 1}/{luot} — {len(muc)} cap NGUOI DICH"
-              f" (dong {tu}..{tu + len(muc) - 1})")
-        cac_luot.append(cham_mot_luot(db, muc))
+        print(f"  [FLORES] {ban} luot {k + 1}/{luot} — {len(muc)} cap NGUOI"
+              f" DICH (dong {tu}..{tu + len(muc) - 1})")
+        cac_luot.append(cham_mot_luot(db, muc, ban))
     gop = gop_trung_vi(cac_luot, ma)
-    return {"n": len(muc), "luot": luot, "tu": tu, "gop": gop,
+    return {"n": len(muc), "luot": luot, "tu": tu, "ban": ban, "gop": gop,
             "luoc_do": thong_ke_luoc_do(cac_luot, len(muc)),
             "cac_luot": cac_luot, **_ti_le(cac_luot, ma, gop)}
 
@@ -495,7 +602,7 @@ def gop_phan(cac_phan: list[dict]) -> dict:
 
 
 def ti_le_bat_loi_tiem(*, db, moi_loai: int, bo_qua: int,
-                       luot: int = LUOT_MOI_CAP,
+                       luot: int = LUOT_MOI_CAP, ban: str = "v3",
                        thu_muc: pathlib.Path = FLORES_DIR) -> dict:
     """Doi chung AM: bo cham co bat duoc cac cap DA LAM HONG khong.
 
@@ -508,8 +615,9 @@ def ti_le_bat_loi_tiem(*, db, moi_loai: int, bo_qua: int,
     ma = [m["ma"] for m in muc]
     cac_luot = []
     for k in range(luot):
-        print(f"  [TIEM] luot {k + 1}/{luot} — {len(muc)} cap DA LAM HONG")
-        cac_luot.append(cham_mot_luot(db, muc))
+        print(f"  [TIEM] {ban} luot {k + 1}/{luot} — {len(muc)} cap DA LAM"
+              " HONG")
+        cac_luot.append(cham_mot_luot(db, muc, ban))
     gop = gop_trung_vi(cac_luot, ma)
     theo_loai: dict = {}
     for loai in ("lat_nghia", "sai_thuc_the"):
@@ -529,7 +637,7 @@ def ti_le_bat_loi_tiem(*, db, moi_loai: int, bo_qua: int,
             "dat_nguong_mach": (bat / len(co) >= NGUONG_BAT_LOI_TIEM)
                                if co else None,
         }
-    return {"n": len(muc), "luot": luot, "moi_loai": moi_loai,
+    return {"n": len(muc), "luot": luot, "moi_loai": moi_loai, "ban": ban,
             "theo_loai": theo_loai, "gop": gop, "cac_luot": cac_luot,
             "dong_flores_da_dung": [m["dong_flores"] for m in muc]}
 
@@ -614,6 +722,9 @@ def main(argv=None) -> int:
     d.add_argument("--tiem-moi-loai", type=int, default=15)
     d.add_argument("--tiem-bo-qua", type=int, default=N_TOI_THIEU)
     d.add_argument("--luot", type=int, default=LUOT_MOI_CAP)
+    d.add_argument("--ban", choices=tuple(BAN_LOI_NHAC), default="v3",
+                   help="ban loi nhac: v1/v2 la ban DONG BANG tu git, "
+                        "v3 la ban HIEN HANH cua san pham")
     d.add_argument("--ra", required=True)
     g = s.add_parser("gop")
     g.add_argument("--fa", nargs="+", required=True,
@@ -667,10 +778,12 @@ def main(argv=None) -> int:
     khoi_fa: dict | None = None
     tiem: dict | None = None
     if a.pha in ("ca", "fa"):
-        khoi_fa = ti_le_bao_dong_gia(a.n, db=db, luot=a.luot, tu=a.tu)
+        khoi_fa = ti_le_bao_dong_gia(a.n, db=db, luot=a.luot, tu=a.tu,
+                                    ban=a.ban)
     if a.pha in ("ca", "tiem"):
         tiem = ti_le_bat_loi_tiem(db=db, moi_loai=a.tiem_moi_loai,
-                                  luot=a.luot, bo_qua=a.tiem_bo_qua)
+                                  luot=a.luot, bo_qua=a.tiem_bo_qua,
+                                  ban=a.ban)
     ra = {
         "phien_ban": 1, "hat_giong": HAT_GIONG,
         "nguong_bao_dong_gia": NGUONG_BAO_DONG_GIA,

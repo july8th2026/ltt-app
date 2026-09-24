@@ -205,7 +205,7 @@ def test_ti_le_bat_loi_tiem_dem_theo_CHIEU_DUNG(monkeypatch):
     monkeypatch.setattr(bc, "dung_cap_tiem", lambda *a, **k: muc)
     monkeypatch.setattr(bc, "doc_flores", lambda *a, **k: [])
     # `lat_nghia` bi BAT o ca 2 luot; `sai_thuc_the` khong bi bat lan nao.
-    monkeypatch.setattr(bc, "cham_mot_luot", lambda db, m: _luot(
+    monkeypatch.setattr(bc, "cham_mot_luot", lambda db, m, ban="v3": _luot(
         tiem_lat_nghia_0500=False, tiem_sai_thuc_the_0501=True))
 
     ra = bc.ti_le_bat_loi_tiem(db=None, moi_loai=1, bo_qua=0, luot=2)
@@ -413,3 +413,45 @@ def test_do_phu_dem_ma_DA_HOI_XONG_khong_dem_ma_model_nhac_toi():
     luot = {"phan_quyet": {}, "loi_lo": []}
     assert bc.thong_ke_luoc_do([luot], 10)["do_phu_tung_luot"] == [1.0]
     assert bc.thong_ke_luoc_do([luot], 10)["nen_sach"] is True
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  10. Bản lời nhắc ĐÓNG BĂNG — để so ba bản trên CÙNG một nền
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_ba_ban_loi_nhac_deu_goi_duoc_va_v3_la_ban_HIEN_HANH():
+    """⛔ `v1`/`v2` là bản **chép nguyên văn từ git**, `v3` là bản sản phẩm.
+
+    🔑 Giữ chúng ở `tools/` chứ không ở `apps/`: sản phẩm chỉ được có MỘT lời
+       nhắc. Nhưng không giữ thì ta đang so **một bản đo sạch với hai bản đo
+       bẩn** — V1 và V2 đều đo ở nhiệt độ mặc định, và ghim nhiệt độ đã chứng
+       minh là nó đổi kết quả (lô hỏng 22,2% → 0%).
+    """
+    from apps.auto_scan_video import qc_ai
+
+    lo = [{"ma": "seg_0001", "goc": "源", "chu": "dich"}]
+    assert set(bc.BAN_LOI_NHAC) == {"v1", "v2", "v3"}
+    for _ten, (dung, _doc) in bc.BAN_LOI_NHAC.items():
+        msgs = dung(lo, "vi")
+        assert msgs[0]["role"] == "system" and msgs[0]["content"]
+    # v3 phai la DUNG ham cua san pham, khong phai mot ban chep thu ba.
+    assert (bc.BAN_LOI_NHAC["v3"][0](lo, "vi")
+            == qc_ai.loi_nhac_ngu_nghia(lo, "vi"))
+
+
+def test_ban_v1_hoi_NHI_PHAN_con_v2_hoi_PHAN_MUC():
+    """Chốt rằng hai bản đóng băng thật sự khác nhau ở đúng chỗ ta nói."""
+    lo = [{"ma": "seg_0001", "goc": "源", "chu": "dich"}]
+    v1 = bc.BAN_LOI_NHAC["v1"][0](lo, "vi")[0]["content"]
+    v2 = bc.BAN_LOI_NHAC["v2"][0](lo, "vi")[0]["content"]
+    assert "dat=false" in v1 and "do_tin" in v1 and "nghiem_trong" not in v1
+    assert "nghiem_trong" in v2 and "do_tin" not in v2
+    # V2 CHUA co san muc cho sai thuc the — do la cai V3 them vao.
+    assert "TEN RIENG" not in v2
+
+
+def test_ban_doc_v1_KHONG_loc_doan_trich_va_doc_dat_tu_model():
+    """V1 tin thẳng `dat` của model — đó chính là bản ta đang so để thấy khác."""
+    ra = bc.BAN_LOI_NHAC["v1"][1](
+        {"doan": {"m": {"dat": False, "ly_do": "x"}}}, {"m"}, {})
+    assert ra[0]["dat"] is False and ra[0]["muc"] == "" and ra[0]["loi"] == []
