@@ -207,6 +207,34 @@ nhau giữa hai LLM thì cột phải ⛔ không đọc được như năng lự
 
 ---
 
+## §4b. 🔴 KẾT LUẬN CẤP HẠNG MỤC — ⭐ đây là thứ phải sống sót khỏi tài liệu này
+
+> # ⭐ Ta ⛔ KHÔNG có cổng chất lượng TỰ ĐỘNG ở ĐẦU TRÊN.
+
+| bộ đo | làm được | ⛔ không làm được |
+|---|---|---|
+| **`chrF++`** | xếp hạng được; ⭐ **ngoài vòng tròn LLM** | ⛔ **cần bản tham chiếu** ⇒ ⛔ vô dụng với phim khách |
+| **MetricX QE** | bắt **thảm hoạ**; ⛔ không cần tham chiếu | ⛔ **mù ở đầu trên** (§1 · §2 · §6, ba phép độc lập) |
+| **bộ chấm V3** | **sàng** — độ nhạy 100 % (trên 2/35 họ lỗi) | ⛔ trượt cả hai cổng; **oan 33 %** |
+| **điều phối chấm tay** | phân biệt được thật | ⛔ **không tự động hoá được** |
+
+⇒ 🔴 **Với phim KHÁCH — nơi ⛔ KHÔNG có bản tham chiếu — ta chỉ phát hiện được
+THẢM HOẠ, ⛔ không phân biệt được *"tốt"* với *"rất tốt"*.**
+
+⭐ Đó là một **RÀNG BUỘC SẢN PHẨM**, ⛔ **không phải** một việc còn dang dở. Nó
+quyết định **màn hình chất lượng cho khách được phép nói gì**:
+
+- ✅ Được nói: *"⛔ không phát hiện lỗi nghiêm trọng"* (không dịch, sót chữ Hán,
+  lệch hoàn toàn) — ta đo được điều đó, và đo tốt (mức `sàn`: 99–100 %).
+- ⛔ **Không được nói:** *"bản dịch đạt chất lượng cao"* / một **điểm số** / một
+  **xếp hạng sao** — ⛔ ta ⛔ **không có** bộ đo tự động nào chống đỡ được câu ấy.
+
+⚠️ Và ⛔ đừng đọc §6 thành *"ta dịch ngang người"*: cả ba KTC chứa 0 vì **bộ đo mù**,
+⛔ **không phải** vì **ta giỏi**. Hai câu ấy cùng dữ liệu nhưng ngược chiều —
+⛔ để câu sai lọt là hỏng cả hạng mục.
+
+---
+
 ## §5. ✅ `sacrebleu` — đã cài + đã khai
 
 | gói | vai | giấy phép | khai ở đâu |
@@ -481,6 +509,67 @@ Bản trước nêu hai nút chặn; ⭐ **cả hai đã gỡ bằng cách RẺ 
 
 ⇒ Nút chặn **còn lại đúng một**, và nó ⛔ không phải quyền mà là **dữ liệu**:
 ⛔ chưa ai dịch **FLORES** dưới cấu hình đã ghim ⇒ ⛔ chưa có chrF++ (xem §6).
+
+---
+
+## §6c. ⭐ Bao nhiêu trong 5,1 điểm là **ĐỘ DÀI**, bao nhiêu là **CHẤT LƯỢNG**?
+
+Phép **rẻ**, ⛔ không sinh lại gì: trên **chính 300 bản dịch đã có** (100 dòng × 3 lượt),
+tính chrF++ **cụm theo nhóm `len_ratio`**.
+
+| nhóm `len_ratio` | n | **chrF++ cụm** | `len_ratio` trung vị | tham chiếu (số từ, tv) |
+|---|---|---|---|---|
+| **< 0,85** | 114 | **39,31** | 0,741 | 31,0 |
+| **0,85–0,95** | 71 | **48,42** | 0,900 | 29,0 |
+| **≥ 0,95** | 115 | **49,85** | 1,130 | 25,0 |
+
+⭐ **Nhóm gần độ dài tham chiếu đạt 49,85 — gần như ĐÚNG mức NLLB (50,25).**
+Nhóm ngắn hơn 15 % kéo tụt xuống **39,31**.
+
+### ⚠️ Khử bớt nhiễu lẫn — cùng một bảng, nhưng **khống chế độ dài câu**
+
+Câu **ngắn** có `len_ratio` **cao** hơn (Spearman `len_ratio` vs số từ tham chiếu
+= **−0,271**) ⇒ ⚠️ nhóm `≥ 0,95` có thể chỉ đang chứa **câu dễ**. Lọc chỉ giữ câu
+tham chiếu **22–32 từ** (trung vị ba nhóm bằng nhau, ~29 từ):
+
+| nhóm `len_ratio` | n | **chrF++ cụm** | tham chiếu (số từ, tv) |
+|---|---|---|---|
+| < 0,85 | 43 | **42,90** | 29,0 |
+| 0,85–0,95 | 18 | **45,59** | 28,5 |
+| ≥ 0,95 | 62 | **50,85** | 29,0 |
+
+⇒ ⭐ Khống chế độ dài câu rồi, **thứ bậc vẫn giữ và khoảng cách vẫn ~8 điểm**.
+
+### 🔴 Đây là **GỢI Ý**, ⛔ KHÔNG phải phép đo nhân quả
+
+⛔ **Không kết luận nhân quả từ tương quan.** Vẫn còn ít nhất hai lối thoát:
+1. ⚠️ Một bản dịch **ngắn** có thể ngắn **vì nó bỏ mất nội dung** — khi ấy điểm thấp
+   là **chất lượng thật**, ⛔ không phải hình phạt độ dài. Hai thứ ⛔ **không tách
+   được** bằng phép này.
+2. ⚠️ `n` của nhóm giữa chỉ **18** sau khi lọc — ⛔ mỏng.
+
+⭐ **Phép THẬT là: nới ngân sách độ dài rồi ĐO LẠI** — và đó là việc của **làn dịch**,
+⛔ không phải của làn này. Cái làn này làm được là **chỉ đúng chỗ đáng nới**.
+
+---
+
+## §6d. ⚠️ CĂNG THẲNG MỞ — ⛔ làn này ⛔ KHÔNG tự giải
+
+> 🔑 **Chất lượng DỊCH và độ vừa KHE LỒNG TIẾNG kéo NGƯỢC nhau, và ta ⛔ chưa từng
+> đo cái giá của việc đánh đổi.**
+
+Ngân sách độ dài ⛔ **không tuỳ tiện** — nó tồn tại vì **khe lồng tiếng**. §6c cho
+thấy **nới** nó thì chrF++ **tăng** (có thể tới ~+8 điểm ở nhóm dài). ⚠️ **Nhưng**
+**73,9 % khe vốn đã ⛔ KHÔNG vừa**, và câu dài hơn sẽ làm chúng **càng chật**.
+
+⇒ Câu hỏi **mở**, cần số từ **CẢ HAI** phía, ⛔ chưa ai có:
+
+- Nới ngân sách thêm **x %** ⇒ chrF++ **+ bao nhiêu**?
+- Cùng mức nới ấy ⇒ tỉ lệ khe ⛔ không vừa **+ bao nhiêu**?
+- ⭐ Có một mức nào mà **chrF++ tăng đáng kể** trong khi **khe xấu đi không đáng kể** không?
+
+⛔ Làn này ⛔ **không** trả lời — nó chỉ **đặt** câu hỏi và cung cấp **vế chrF++**.
+Vế **khe** thuộc làn đang đo **nắn thời lượng**; điều phối sẽ nối hai làn.
 
 ---
 

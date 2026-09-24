@@ -1,0 +1,29 @@
+{
+  "cau_hoi": "Bao nhieu trong 5,1 diem chrF++ cach biet voi NLLB la DO DAI, bao nhieu la CHAT LUONG?",
+  "du_lieu": "300 ban dich DA CO (100 dong FLORES 0-99 x 3 luot) - KHONG sinh lai gi",
+  "chu_ky_sacrebleu": "nrefs:1|case:mixed|eff:yes|nc:6|nw:2|space:no|version:2.6.0",
+  "moc_nllb_dense_3B": {"chrf_pp": 50.25, "len_ratio": 0.992},
+  "toan_bo": {"chrf_pp": 45.171, "len_ratio": 0.897},
+  "theo_nhom_len_ratio": [
+    {"nhom": "< 0,85",    "n": 114, "chrf_pp_cum": 39.31, "len_ratio_tv": 0.741, "ref_so_tu_tv": 31.0},
+    {"nhom": "0,85-0,95", "n": 71,  "chrf_pp_cum": 48.42, "len_ratio_tv": 0.900, "ref_so_tu_tv": 29.0},
+    {"nhom": ">= 0,95",   "n": 115, "chrf_pp_cum": 49.85, "len_ratio_tv": 1.130, "ref_so_tu_tv": 25.0}
+  ],
+  "⚠️ nhieu_lan": {
+    "van_de": "Cau NGAN co len_ratio CAO hon => nhom `>= 0,95` co the chi dang chua cau DE.",
+    "spearman_len_ratio_vs_so_tu_tham_chieu": -0.271,
+    "khu_bang_cach": "loc chi giu cau tham chieu 22-32 tu (trung vi ba nhom bang nhau ~29)",
+    "theo_nhom_sau_khi_khong_che": [
+      {"nhom": "< 0,85",    "n": 43, "chrf_pp_cum": 42.90, "ref_so_tu_tv": 29.0},
+      {"nhom": "0,85-0,95", "n": 18, "chrf_pp_cum": 45.59, "ref_so_tu_tv": 28.5},
+      {"nhom": ">= 0,95",   "n": 62, "chrf_pp_cum": 50.85, "ref_so_tu_tv": 29.0}
+    ],
+    "ket": "Khong che do dai cau roi, thu bac VAN GIU va khoang cach van ~8 diem."
+  },
+  "🔴 day_la_GOI_Y_khong_phai_NHAN_QUA": [
+    "Mot ban dich NGAN co the ngan VI NO BO MAT NOI DUNG => diem thap khi ay la CHAT LUONG THAT, khong phai hinh phat do dai. Phep nay KHONG tach duoc hai thu do.",
+    "n cua nhom giua chi con 18 sau khi loc => mong.",
+    "PHEP THAT la: noi ngan sach do dai roi DO LAI. Do la viec cua lan dich, khong phai lan nay."
+  ],
+  "⚠️ cang_thang_mo": "Noi ngan sach => chrF++ tang, NHUNG 73,9 % khe long tieng VON DA khong vua se cang chat. Chua ai do cai gia cua danh doi nay. Can so tu CA HAI phia."
+}
