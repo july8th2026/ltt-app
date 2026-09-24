@@ -11,7 +11,14 @@ import os
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+# Goc kho neo bang TEN thu muc `apps/` — ⛔ khong dem cap. Lap lai o day (chu
+# khong goi `_runner._goc_kho`) vi chinh dong nay moi lam `_runner` nhap duoc.
+for _cha in Path(__file__).resolve().parents:
+    if _cha.name == "apps":
+        sys.path.insert(0, str(_cha.parent))
+        break
+else:  # pragma: no cover - chi xay ra khi tep bi chep ra ngoai `apps/`
+    raise RuntimeError(f"khong thay `apps/` tren duong di cua {__file__}")
 
 from apps.asv_gpu.do_luong import _runner  # noqa: E402
 

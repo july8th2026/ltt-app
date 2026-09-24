@@ -794,7 +794,18 @@ def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
         # cam tuyet doi thi chan moi viec khac, nen chi cam TANG. Khong co buoc
         # nay thi cong dich muc dan — dung nhu "Marketplace"/"My Apps" tieng Anh
         # lot vao giua trang tieng Viet ma khong ai biet tu luc nao.
-        Step("chuoi chua dich", [sys.executable, "tools/check_i18n.py"], ROOT),
+        # 🔴 `sau_test`, khong phai `tinh` — do 24/09. `check_i18n.py` quet
+        #    `server/templates/**/*.html`, va dai do CHUA
+        #    `server/templates/vps_dieu_khoan.html` — mot muc cua
+        #    `TEP_KHONG_DUOC_DOC_SONG_SONG`. Doc mot tep bo test ghi, o nhom
+        #    chay SONG SONG voi bo test, la dung co che da lam mat gan tron
+        #    mot ngay hom 29/08.
+        # ⚠️ Cai bat duoc no la `test_332::test_buoc_nao_DOC_tep_bi_ghi_thi_phai_chay_SAU_bo_test`,
+        #    nhung thong diep cua phep kiem do goi sai ten tep: no quet
+        #    CHUOI tren toan bo nguon cong cu (ke ca chu thich), nen no thay
+        #    `messages.po` o mot docstring va KHONG thay duong glob that.
+        Step("chuoi chua dich", [sys.executable, "tools/check_i18n.py"], ROOT,
+             nhom="sau_test"),
         # 🔴 …va banh coc thu HAI, cho buoc SAU do. `check_i18n.py` canh chuoi
         #    chua duoc boc `_()`. Buoc nay canh chuoi DA vao `messages.po` roi
         #    ma `msgstr` van rong — tuc trang tieng Anh in ra tieng Viet.
