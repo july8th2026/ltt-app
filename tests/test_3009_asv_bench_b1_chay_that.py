@@ -29,6 +29,38 @@ CHI_KHI_BAT = pytest.mark.skipif(
     reason=f"bench B1 (ASR tren card). Bat bang {BIEN}=1")
 
 
+def _whisperx_co() -> str:
+    """Duong sidecar WhisperX, hoac `""`. ⛔ Khong in gia tri bi mat nao."""
+    from apps.autosubvideo import transcription
+
+    return transcription._sidecar_python()        # noqa: SLF001
+
+
+def _doc_van_ban(run_id: str, ten_gd: str) -> str:
+    """Van ban cua mot giai doan, doc NGAY trong luot chay.
+
+    ⛔ Doc sau luot la doc mot kho da bi xoa — xem ghi chu o cho goi.
+    """
+    import platform_core.db as dbmod
+    from platform_core.storage import get_storage
+
+    from apps.auto_scan_video import features
+
+    db = next(dbmod.get_session())
+    try:
+        gd = features.giai_doan_theo_ten(db, run_id, ten_gd)
+        khoa = next((k for k in ((gd.outputs or {}).get("khoa_asset") or [])
+                     if str(k).endswith(".json")), "")
+        if not khoa:
+            return ""
+        with get_storage().open(khoa) as f:
+            ban = json.loads(f.read().decode("utf-8"))
+    finally:
+        db.close()
+    return " ".join(str(d.get("chu") or d.get("text") or "")
+                    for d in (ban.get("doan") or ban.get("segments") or []))
+
+
 def _phim() -> Path | None:
     p = (os.environ.get("LTT_ASV_B1_PHIM") or "").strip()
     return Path(p) if p and Path(p).is_file() else None
@@ -92,6 +124,49 @@ def test_BENCH_B1_mot_phim(moi_truong, tmp_path, monkeypatch):  # noqa: F811
     asr = _chay(P.TRANSCRIBE, "asr", gieo={P.MEDIA_PREPARE: khoa_wav})
     ocr = _chay(P.TRANSCRIBE, "ocr", gieo={P.MEDIA_PREPARE: khoa_wav})
 
+    # ── VAN BAN: doc TRONG luot chay ────────────────────────────────────────
+    #
+    # 🔴 **Kho tam chet cung luot.** `moi_truong` tro kho vao `tmp_path`, va pytest
+    #    chi giu ba thu muc gan nhat. Luot do dau tien 24/09 ghi `outputs` roi di
+    #    tim van ban SAU khi luot ket thuc — luc do artifact da bien mat, va 8 ph 35
+    #    tinh toan khong cho ra duoc mot con so CER nao.
+    # ⇒ Doc ngay, o day.
+    for k in (asr, ocr):
+        k["van_ban"] = _doc_van_ban(k["run_id"], P.TRANSCRIBE)
+        k["so_ky_tu_van_ban"] = len(k["van_ban"])
+
+    # ── NHANH ENGINE: khai ra, va khong do nham nhanh trong im lang ─────────
+    #
+    # 🔴 **Do that 24/09, luot dau:** `engine="faster-whisper"`,
+    #    `canh_chinh="fallback_unaligned"` — tuc nhanh WhisperX KHONG chay. Nguyen
+    #    nhan la **moi truong cua bench**: `LTT_WHISPERX_PYTHON` khong duoc nap
+    #    (no nam trong `C:\LTTPlatform\secrets\app.env`), nen
+    #    `transcription.whisperx_available()` tra False.
+    #
+    # ⛔ Va do la dung lop loi K-01: khuon do **chinh no** chu khong do san pham.
+    #    Mot con so 362 s cua nhanh LUI khong noi duoc gi ve nhanh MAC DINH.
+    ra["nhanh_engine"] = {
+        "engine": asr["outputs"].get("engine", ""),
+        "canh_chinh": asr["outputs"].get("canh_chinh", ""),
+        "ly_do_roi": asr["outputs"].get("ly_do_roi", ""),
+        "whisperx_cau_hinh": bool(_whisperx_co()),
+        "khai": ("nhanh MAC DINH (whisperx, co can chinh)"
+                 if asr["outputs"].get("canh_chinh") == "aligned"
+                 else "nhanh LUI (faster-whisper, KHONG can chinh) — "
+                      "moc thoi gian khong can di thang vao `timing_align`"),
+    }
+
+    # ── DO: CER + ti le don vi sai + cau truc ──────────────────────────────
+    so_do = b.do_hai_ban(ocr["van_ban"], asr["van_ban"])
+    ra["do"] = b.gop_ket_qua(
+        phim=phim.name, cer=so_do["cer"],
+        ti_le_don_vi_sai=so_do["ti_le_don_vi_sai"],
+        don_vi_ti_le=so_do["don_vi_ti_le"],
+        so_dong_nguon=int(asr["outputs"].get("so_doan") or 0),
+        so_dong_hardsub=int(ocr["outputs"].get("so_doan") or 0),
+        engine=str(asr["outputs"].get("engine") or ""),
+        co_card=bool(asr["card"]["duoc_card"]))
+
     # 🔴 **GHI BANG CHUNG TRUOC, IN SAU. Da mat 8 ph 57 vi lam nguoc.**
     #
     #    Do that 24/09: lan chay dau tien lam xong CA ffmpeg lan hai luot ASR (537 s),
@@ -132,6 +207,15 @@ def test_BENCH_B1_mot_phim(moi_truong, tmp_path, monkeypatch):  # noqa: F811
         _in("           outputs: " + json.dumps(
             {x: y for x, y in k["outputs"].items()
              if not isinstance(y, (list, dict))}, ensure_ascii=False)[:300])
+    d = ra["do"]
+    _in(f"  CER {d['cer']}  (nguong {d['nguong']['cer']}) -> "
+        f"{'DAT' if d['dat'] else 'TRUOT'}")
+    _in(f"  ti le {d['don_vi_ti_le']} sai: {d['ti_le_don_vi_sai']} (KHONG phan xu)")
+    _in(f"  doan asr={d['so_doan_asr']} hardsub={d['so_doan_hardsub']} "
+        f"lech={d['lech_doan']} can_giai_thich={d['can_giai_thich_lech_doan']}")
+    _in(f"  nhanh engine: {ra['nhanh_engine']['khai']}")
+    if ra["nhanh_engine"]["ly_do_roi"]:
+        _in(f"     ly do roi: {ra['nhanh_engine']['ly_do_roi'][:120]}")
     _in(f"  ban ghi: {duong_ra}")
 
     # ⛔ Không `assert` gì về chất lượng ở đây: lượt đầu tiên là để THẤY, không để

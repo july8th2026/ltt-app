@@ -122,6 +122,19 @@ def chuan_hoa(thoi: dict, *, thoi_luong_nguon: float = 0.0,
         #    `fallback_unaligned`. Giau khac biet do la hua mot do chinh xac
         #    thoi gian ma ta khong co.
         "canh_chinh": str((thoi or {}).get("alignment_status") or ""),
+        # 🔴 **VI SAO roi, khong chi ROI HAY KHONG.**
+        #
+        #    `transcription.py` phan biet duoc hai ca rat khac nhau:
+        #      `whisperx_sidecar_unavailable`  -> **chua cau hinh** (moi truong)
+        #      `<chuoi ngoai le>`              -> sidecar CO nhung **hong**
+        #    ...roi ASV chi giu `canh_chinh` va **vut** `fallback_reason`.
+        #
+        # ⛔ Hai trang thai do ra **cung mot ban chep trong y het nhau**, nen nguoi
+        #    doc `outputs` khong the biet nen di BAT SIDECAR hay di SUA no. Do that
+        #    24/09: bench B1 thay `fallback_unaligned` va phai doc MA NGUON moi biet
+        #    ly do — trong khi `apps/autosubvideo/jobs.py:154` da mang ca hai truong
+        #    di tiep tu lau.
+        "ly_do_roi": str((thoi or {}).get("fallback_reason") or ""),
         "thoi_luong_nguon": float(thoi_luong_nguon or 0.0),
         # 🔑 Nguon goc loi thoai: `embedded` | `ocr` | `asr` (`nguon_loi.py`).
         #    Ban ghi truoc 22/09 khong co khoa nay = `asr`.
@@ -212,6 +225,9 @@ def tom_tat(ban: dict) -> dict:
         "ngon_ngu": ban.get("ngon_ngu", ""),
         "engine": ban.get("engine", ""),
         "canh_chinh": ban.get("canh_chinh", ""),
+        # ⛔ Di theo `canh_chinh` len `outputs`: mot co "da roi" ma khong kem ly do
+        #    bat nguoi doc di doc ma nguon.
+        "ly_do_roi": ban.get("ly_do_roi", ""),
         "nguon_loi": ban.get("nguon_loi", "asr"),
         "phu_song": round(
             sum(float(d["ket"]) - float(d["bat"]) for d in doan), 2),
