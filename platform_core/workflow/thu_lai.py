@@ -157,6 +157,45 @@ def den_han(db, run_id: str, nodes: Iterable[dict], *,
     return dem
 
 
+def thu_cong(db, *, run_id: str, node: dict, lan: int,
+             vong: Sequence[tuple[str, int]] = ()) -> bool:
+    """NGƯỜI bấm "Thử lại" cho một node đã hỏng (spec §14). Trả `False` nếu
+    máy trạng thái từ chối.
+
+    Khác `hen()` ở đúng hai điểm, và cả hai đều có lý do:
+
+    1. **Hạn là BÂY GIỜ, không backoff.** `jobs.gian_cach_retry` giãn cách
+       những lượt gõ cửa **tự động** để một provider đang quá tải được thở.
+       Người bấm nút đã tự làm phần chờ ấy — bắt anh ta chờ thêm 2^n giây là
+       tính giãn cách cho một thứ không hề dồn dập.
+    2. **⛔ KHÔNG hỏi `con_luot`.** `retry.max` (mặc định **0**) là trần của
+       retry TỰ ĐỘNG — §12.4 gắn nó cho supervisor vì supervisor cũng là máy.
+       §14 gắn cho cửa người bấm đúng một điều kiện, và điều kiện ấy là
+       **tiền** (`hold` còn đủ), không phải `retry.max`. Gác thêm ở đây làm
+       nút "Thử lại" chết theo mặc định.
+
+    ⛔ Cái KHÔNG nới: `KHONG_THU_LAI`. Bên gọi kiểm nó TRƯỚC (cùng khuôn
+       `agent/supervisor.thu_lai_node`) — ý muốn của người bấm không đảo được
+       một side effect đã có thể xảy ra ở provider.
+
+    ⭐ `attempt_number = lan + 1`, đúng con số `cau_noi.ap_ket_qua` ghi cho
+       lượt hẹn tự động. Giữ nguyên `lan` vừa làm màn hình nói dối (lượt 2
+       hiện là lượt 1) vừa làm `cau_noi._khoa_idem` băm lại **cùng một khoá**
+       ở nhánh `side_effect == "none"` (khoá băm theo `[run.id, đường, lan]`).
+    """
+    han = _bay_gio()
+    if not may_trang_thai.chuyen_node(
+            db, run_id, str(node["id"]), sang="RETRY_SCHEDULED",
+            mo_ta="nguoi dung bam thu lai", attempt_number=int(lan) + 1,
+            output_ref={KHOA_HAN: han.isoformat()}, vong=vong):
+        return False
+    # ⛔ Hẹn SAU khi chuyển được chấp nhận: một wakeup cho một lần chuyển bị
+    #    từ chối là một lần động cơ thức dậy không có việc gì để làm.
+    danh_thuc.hen_node(db, run_id=run_id, node_id=str(node["id"]),
+                       kind="retry", due_at=han, vong=vong)
+    return True
+
+
 __all__ = ["KHOA_HAN", "KHONG_THU_LAI", "TRAN_SO_LAN", "ChinhSach",
            "LoiChinhSach", "con_luot", "den_han", "doc_chinh_sach", "hen",
-           "quyet_dinh"]
+           "quyet_dinh", "thu_cong"]

@@ -10,6 +10,19 @@ export const NHAN_TRANG_THAI_NODE: Record<string, string> = {
   WAITING: 'Đang chờ tín hiệu', RETRY_SCHEDULED: 'Sẽ thử lại',
   SUCCEEDED: 'Xong', FAILED: 'Hỏng', SKIPPED: 'Bỏ qua',
   CANCELLED: 'Đã hủy', ABANDONED: 'Bỏ dở',
+  // P9 task 3 (🔴): KHÔNG dùng nhãn "Chờ" cho trạng thái này — nó KHÔNG phải
+  // PENDING, nó là "ta không biết", và hai câu đó phải đọc khác nhau trên
+  // Canvas (xem `runs_v3.py::TRANG_THAI_KHONG_XAC_DINH`).
+  KHONG_XAC_DINH: 'Không xác định (vòng lặp lồng sâu)',
+}
+
+// `waiting_kind` (khớp nguyên `Waitpoint.kind`, `runs_v3.py::_waiting_kind`)
+// -> nhãn tiếng Việt cho NGƯỜI xem. Thêm P9 task 3 mở rộng: một node WAITING
+// vì đang chờ NGƯỜI DUYỆT không được hiện giống một node WAITING vì webhook
+// chưa tới hay một run con chưa xong.
+export const NHAN_WAITING_KIND: Record<string, string> = {
+  HUMAN: 'chờ người duyệt', WEBHOOK: 'chờ webhook', DELAY: 'đang hẹn giờ',
+  JOB: 'chờ job', CHILD_RUN: 'chờ run con', BARRIER: 'chờ đủ nhánh',
 }
 
 export function RunV3Panel({ run, onCancel }: {
@@ -26,9 +39,14 @@ export function RunV3Panel({ run, onCancel }: {
       <table>
         <tbody>
           {run.nodes.map(n => (
-            <tr key={n.node_id} data-node-status={n.status}>
+            <tr key={n.node_id} data-node-status={n.status}
+               data-waiting-kind={n.waiting_kind || undefined}>
               <td>{n.node_id}</td>
-              <td>{NHAN_TRANG_THAI_NODE[n.status] ?? n.status}</td>
+              <td>
+                {NHAN_TRANG_THAI_NODE[n.status] ?? n.status}
+                {n.status === 'WAITING' && n.waiting_kind &&
+                  <> ({NHAN_WAITING_KIND[n.waiting_kind] ?? n.waiting_kind})</>}
+              </td>
               <td>{n.cost_credit}</td>
               <td>{n.error}</td>
             </tr>

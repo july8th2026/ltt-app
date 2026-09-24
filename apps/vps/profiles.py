@@ -49,7 +49,7 @@ CANH_BAO = ("network", "runtime")
 #: bỏ lượt — cố ý, để một lần hỏng thoáng qua không kéo theo lớp riêng. Nhưng
 #: bỏ lượt **trong im lặng** thì một tuần SSH chết trông y hệt một tuần bình
 #: thường, và thứ đầu tiên phát hiện ra sẽ là hoá đơn OVH.
-CANH_BAO_BAO_TRI = ("bang_thong_tong",)
+CANH_BAO_BAO_TRI = ("bang_thong_tong", "cong_quan_tri")
 
 # Stable IDs make migration/backfill and operator tooling agree without looking
 # profiles up by a mutable display name.

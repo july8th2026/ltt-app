@@ -19,7 +19,7 @@ from platform_core import jobs
 from platform_core.models import Job, Wakeup, WorkflowRun, WorkflowVersion
 from platform_core.workflow import (cau_noi, danh_thuc, may_trang_thai as mtt,
                                     moi_truong, nut_loi, run_con, su_kien,
-                                    thi_hanh, thu_lai)
+                                    tac_tu, thi_hanh, thu_lai)
 from platform_core.workflow.cong_cu import CongCu
 from platform_core.workflow.nut_loi import vong_lap
 
@@ -359,6 +359,11 @@ def xu_ly_run(db, run_id: str, *,
     # ⭐ Run con đã kết thúc ⇒ chốt node `core.call_workflow` đang WAITING
     #    TRƯỚC vòng lan truyền, để nhánh sau nó đi tiếp ngay lượt này.
     run_con.ap_ket_qua_con(db, run, g)
+    # ⭐ RESUME node `ai.agent` (plan P8, spec §12.3): một bước của agent là
+    #    một run con, và khi nó xong thì agent phải đi bước kế. Cùng lý do
+    #    tồn tại với ba dòng dưới — `WAITING` không tự quay về `READY`, nên
+    #    thiếu bước này node agent đứng tới `TRAN_RUN` 20 giờ VỚI TIỀN BỊ GIỮ.
+    tac_tu.tiep_buoc(db, run, g, cong_cu=cong_cu)
     # ⭐ RESUME vòng lặp: một job của THÂN `foreach` vừa xong ⇒ đẩy vòng đó
     #    đi tiếp. Không có bước này, một `foreach` có node job đứng WAITING
     #    tới hạn `TRAN_RUN` 20 giờ.

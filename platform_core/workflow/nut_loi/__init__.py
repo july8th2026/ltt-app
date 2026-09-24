@@ -92,6 +92,22 @@ for _nd, _chay in (_dieu_huong.DINH_NGHIA + _du_lieu.DINH_NGHIA
 #    (`dang_ky` chạy), không phải cái tên được dùng lại phía dưới.
 from platform_core.workflow.nut_loi import ai_llm as _ai_llm  # noqa: E402,F401
 from platform_core.workflow.nut_loi import ai_router as _ai_router  # noqa: E402,F401
+# `ai.agent` (P8): mo-dun da san sang tu truoc, chi thieu DONG NAY - va no
+# thieu vi `__init__.py` nam ngoai ranh gioi lan p8. Dieu phoi noi khi gop.
+from platform_core.workflow.nut_loi import ai_agent as _ai_agent  # noqa: E402,F401
+
+# ── Node HTTP (plan wf-v2 P5c) ───────────────────────────────────────────────
+#
+# 🔴 `core.http` bi GIU LAI tu 24/09 voi mot ly do CU THE, khong phai vi chua
+#    xong: cho duy nhat mot workflow cat duoc header `Authorization` la
+#    `params` cua node — tuc BEN TRONG `workflow_version`, mot ban ghi duoc
+#    nhan ban khi khach "Save as" va tra nguyen ven cho trinh soan thao. Bat
+#    node ma khong co kho credential la moi khach dan token vao do.
+#
+# ⭐ Ly do do het khi `platform_core/credential.py` ton tai (P5c/T1): ref duoc
+#    kiem luc PUBLISH (`dinh_nghia._kiem_credential`), bi mat chi giai ma trong
+#    tien trinh job, va no bi che o ca `output` lan `error`.
+from platform_core.workflow.nut_loi import http as _http  # noqa: E402,F401
 
 
 __all__ = ["THI_HANH_TRONG_DONG_CO", "bo_thi_hanh", "dang_ky", "tat_ca"]

@@ -2,6 +2,23 @@
 
 ## Active blockers
 
+### Cập nhật 2026-09-24 — dây chuyền bán đã thông; năm khuyết tật đã sửa
+
+Máy khách thật đầu tiên kể từ sự cố: `MayTram02`, vmid 208, IP 51.79.215.194,
+sổ sách giữ 1.490 → thu 1.490 (`variance 0`). Chi tiết: `docs/NHAT_KY.md` 24/09.
+
+**Còn mở sau lượt này:**
+
+- **Cổng vào chỉ mở 3389 cho khách.** Chủ dự án chốt 24/09: giữ nguyên, nhưng đã
+  **khai rõ trong điều khoản** (`dieu_khoan.py`, mục 1). Muốn cho khách tự mở
+  cổng thì đó là một plan riêng (giới hạn, nhật ký, giá).
+- **Luật chặn SSH mang một con số gõ tay.** `ip daddr != 51.79.166.36` nằm trong
+  `/etc/nftables.conf` của gateway — ngoài kho. `tools/vps_doi_soat_cong.py` so
+  nó với `vps_gateway.ip_cong_khai` nên IP đổi sẽ đỏ, **nhưng chỉ khi có người
+  chạy công cụ**. Nối vào vòng bảo trì là việc còn lại.
+- **Deploy lấy HEAD lúc chạy, không nhận SHA tường minh** — xem
+  `docs/VPS/DOI_SOAT_DAY_CHUYEN.md` mục F.
+
 ### Việc mở cho phiên sau (ghi 17/09 cuối ngày)
 
 - **R26 — đo băng thông VPS OVH chưa chạy**: bộ đếm/hãm tốc nằm trên router VM199,

@@ -1686,6 +1686,107 @@ class WorkflowEvent(Base):
         DateTime(timezone=True), default=_bay_gio, nullable=False, index=True)
 
 
+# ── Credential + OAuth (spec §9, plan wf-v2 P5c) ─────────────────────────────
+
+
+class Credential(Base):
+    """Một bí mật của KHÁCH, dùng để gọi ra ngoài (spec §9.1).
+
+    🔴 VÌ SAO BẢNG NÀY TỒN TẠI. Trước 24/09/2026 chỗ duy nhất một workflow cất
+       được `Authorization` là `params` của node — tức **bên trong
+       `workflow_version`**. Bảng đó được sao chép khi nhân bản workflow, được
+       trả ra API soạn thảo, và nằm trong mọi bản xuất. Nói cách khác: bí mật
+       của khách nằm trong một bản ghi thiết kế để **đem đi chỗ khác**. Đó là
+       lý do `core.http` bị khoá cho tới khi có bảng này.
+
+    ⛔ `bi_mat_ma_hoa` là token Fernet (`platform_core/secretbox.py`, nay là
+       `MultiFernet` để xoay khoá được). ⛔ Không bao giờ trả cột này ra API.
+       Bề mặt an toàn là `preview` + `meta`.
+
+    ⚠️ `meta` là JSON **không bí mật** (email tài khoản, hạn token, cờ
+       `can_ket_noi_lai`). Một refresh token lọt vào đây là một bí mật nằm
+       ngoài lớp mã hoá — `platform_core/credential.py` giữ luật đó ở một chỗ.
+    """
+
+    __tablename__ = "credential"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    #: api_key | bearer | basic | oauth2 | google_service_account | piece_custom
+    kieu: Mapped[str] = mapped_column(String(32), nullable=False)
+    nha_cung_cap: Mapped[str] = mapped_column(String(40), default="",
+                                              nullable=False)
+    ten: Mapped[str] = mapped_column(String(120), default="", nullable=False)
+    bi_mat_ma_hoa: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    #: 4 ký tự cuối. Đủ để người ta nhận ra khoá nào, không đủ để dùng nó.
+    preview: Mapped[str] = mapped_column(String(16), default="", nullable=False)
+    pham_vi: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    meta: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    het_han_luc: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    #: Khác `NULL` ⇒ đã thu hồi. Hàng **ở lại** (nó là bằng chứng một run đã
+    #: dùng cái gì), nhưng `bi_mat_ma_hoa` bị ghi đè chuỗi rỗng.
+    thu_hoi_luc: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    dung_lan_cuoi: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+
+
+class CredentialNhatKy(Base):
+    """Ai đã làm gì với một credential (spec §9.1). ⛔ Không bao giờ ghi bí mật.
+
+    ⭐ Có `run_id`/`node_id` vì câu hỏi thật lúc sự cố là *"khoá này bị dùng ở
+       đâu trước khi nó rò"* — không phải *"nó được tạo lúc nào"*.
+    """
+
+    __tablename__ = "credential_nhat_ky"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    credential_id: Mapped[str] = mapped_column(String(36), nullable=False,
+                                               index=True)
+    #: tao | sua | thu_hoi | lam_moi | dung
+    hanh_dong: Mapped[str] = mapped_column(String(16), nullable=False)
+    run_id: Mapped[str] = mapped_column(String(36), default="", nullable=False)
+    node_id: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False, index=True)
+
+
+class OAuthState(Base):
+    """Một lượt OAuth đang dở (spec §9.3). Dùng MỘT LẦN, hết hạn 10 phút.
+
+    ⭐ Khoá chính là `state_hash`, không phải `state` — cùng lý do với token
+       waitpoint: giá trị thô sống trong URL của trình duyệt và trong log của
+       Google; thứ ta lưu chỉ cần đủ để **so khớp**, không cần đủ để **phát lại**.
+
+    ⛔ `pkce_verifier_ma_hoa` đi qua `secretbox`: verifier là thứ đổi được `code`
+       lấy token, nên nó là một bí mật thật, không phải một chuỗi ngẫu nhiên vô
+       hại.
+    """
+
+    __tablename__ = "oauth_state"
+
+    state_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    provider: Mapped[str] = mapped_column(String(40), nullable=False)
+    pkce_verifier_ma_hoa: Mapped[str] = mapped_column(Text, default="",
+                                                      nullable=False)
+    redirect_after: Mapped[str] = mapped_column(String(500), default="",
+                                                nullable=False)
+    pham_vi: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    het_han_luc: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True)
+    #: Khác `NULL` ⇒ đã đổi xong. Một `state` quay lại lần hai là **phát lại**.
+    dung_luc: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+
+
 class SnapshotBatBien(RuntimeError):
     """Có mã định SỬA một `node_run_snapshot` — bảng chỉ-thêm (spec §5.3)."""
 

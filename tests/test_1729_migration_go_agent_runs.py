@@ -47,10 +47,26 @@ def nguon(rev) -> str:
 
 
 def test_la_mot_head_duy_nhat(rev):
-    # `get_heads()` tra ve `list`, khong phai `tuple` — so bang `list(...)`
-    # chu khong so thang voi mot tuple (bay cua ban nhap trong plan).
-    heads = list(_scripts().get_heads())
-    assert heads == [rev.revision], f"phai la head duy nhat, dang co {heads}"
+    """Chuoi migration co DUNG MOT dau, va migration nay nam TRONG chuoi do.
+
+    🔴 SUA 24/09: ban truoc khang dinh `heads == [rev.revision]` — tuc
+       *"`go_agent_runs` LA head"*. Menh de do **het dung ngay khi ai do them
+       migration tiep theo**, va no da het dung that (`9c1e4b77a205` la head).
+
+    ⛔ No lan hai thu khac han: **"chuoi co mot dau"** la bat bien THAT, con
+       **"toi la dau"** la mot su that NHAT THOI. Ghim cai thu hai lam bai kiem
+       do moi lan co migration moi — va mot banh coc keu sai la thu day nguoi
+       doc bo qua banh coc.
+
+    # `get_heads()` tra ve `list`, khong phai `tuple` — so bang `list(...)`.
+    """
+    scripts = _scripts()
+    heads = list(scripts.get_heads())
+    assert len(heads) == 1, f"phai co dung mot dau, dang co {heads}"
+    to_tien = {s.revision for s in scripts.iterate_revisions(heads[0], "base")}
+    assert rev.revision in to_tien, (
+        f"{rev.revision} khong nam trong chuoi dan toi head {heads[0]} — "
+        f"migration nay da bi tach khoi do thi")
 
 
 def test_upgrade_drop_bang(nguon):
@@ -71,7 +87,7 @@ def test_downgrade_dung_lai_bang_chu_khong_pass(nguon):
         assert chi_muc in than, f"downgrade thieu chi muc {chi_muc}"
 
 
-def test_LEN_XUONG_LEN_chay_that_tren_sqlite(tmp_path):
+def test_LEN_XUONG_LEN_chay_that_tren_sqlite(tmp_path, rev):
     """🔑 Vế đối chứng của ba bài đọc-văn-bản ở trên.
 
     Xoá một BẢNG là thao tác không đảo được. Đường lui chỉ tồn tại nếu nó
@@ -108,7 +124,11 @@ def test_LEN_XUONG_LEN_chay_that_tren_sqlite(tmp_path):
     alembic("upgrade", "head")
     assert not co_bang(), "sau upgrade bang agent_runs phai BIEN MAT"
 
-    alembic("downgrade", "-1")
+    # 🔴 `-1` CHI dung khi migration nay con la head. Nay lui ve dung cha cua
+    #    no, nen phep do van do DUNG migration nay du co bao nhieu migration
+    #    ra doi sau. (Ban cu: `-1` lui mot migration KHAC, `agent_runs` khong
+    #    quay lai, va bai do — do mot thu khong lien quan.)
+    alembic("downgrade", str(rev.down_revision))
     assert co_bang(), "downgrade phai DUNG LAI bang agent_runs"
 
     import sqlalchemy as sa

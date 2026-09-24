@@ -36,10 +36,11 @@ import { goiYBieuThuc, loadOrCreateWorkflowV3, loadPreferences,
   quoteTool, WorkflowConflictError, type CanvasDocument,
   type CanvasEdge, type CanvasNode, type GoiYBieuThuc,
   type Workflow } from './workflowApi'
-// Cua v3: trinh soan LUU -> PUBLISH -> TAO run -> DOC. No khong con "lai"
-// dong co bang `tickRun` nua; may chu tu tien, client chi poll.
-import { cancelRunV3, createRunV3, loadRunV3, publishWorkflowV3,
-  RUN_V3_KET_THUC, WorkflowCompileError, type RunV3 } from './workflowApi'
+// Cua v3: trinh soan LUU -> PUBLISH -> TAO run -> NGHE. No khong con "lai"
+// dong co bang `tickRun` nua; may chu tu tien, client chi NGHE (SSE).
+import { cancelRunV3, createRunV3, publishWorkflowV3,
+  RUN_V3_KET_THUC, theoDoiRunV3, WorkflowCompileError,
+  type RunV3 } from './workflowApi'
 import { NHAN_TRANG_THAI_NODE, RunV3Panel } from './RunV3Panel'
 
 // ⚠️ `NODE_TYPES` (`{ ltt: NodeRenderer }`) ve MOI node cua do thi — do la ca
@@ -155,12 +156,19 @@ function nhanNode(node:CanvasNode,nodes:CanvasNode[],bang:BangDinhNghia){
   return peers.length>1?`${base} ${peers.findIndex(item=>item.id===node.id)+1}`:base
 }
 
-/** Nhip poll co ban, va do LUI DAN khi cua doc hong.
+/** Giãn cách NỐI LẠI luồng SSE, và do LUI DAN khi cua doc hong.
  *  LUI chu khong DUNG: man hinh nay theo doi mot luot chay DANG TIEU TIEN, nen
  *  bo cuoc nghia la de nguoi dung nhin mot anh chup cu ma tuong la that. Va
  *  khong im lang — moi nhip hong deu hien ngay o dong loi cua ngan keo, va
  *  dong ay tu bien mat khi mot nhip thanh cong. "Thu lai vo han trong im lang"
- *  moi la noi doi; thu lai CO NOI thi khong. */
+ *  moi la noi doi; thu lai CO NOI thi khong.
+ *
+ *  ⭐ P9b task 3: cua doc doi tu POLL sang SSE, nhung ba con so nay O LAI y
+ *     nguyen. `EventSource` co san mot co che noi lai — co dinh ~3 s, khong
+ *     lui dan, khong noi gi voi nguoi dung — nen dung no la MAT chong-ngap
+ *     (mot may chu dang sap bi go cua deu dan mai mai, va man hinh im lang).
+ *     `workflowApi.theoDoiRunV3` vi vay DONG luong ngay o `onerror`, va viec
+ *     noi lai do khoi nay cam. */
 const NHIP_POLL_MS=1500
 const LUI_TOI_DA=3                       //: 1,5s -> 3s -> 6s -> 12s roi giu 12s
 const LOI_POLL='Không đọc được lượt chạy — đang thử lại…'
@@ -217,6 +225,11 @@ function Editor() {
   //  duy nhat lam effect poll chay lai sau mot cu nga — `run` khong doi khi
   //  request hong, nen khong co no thi khong con `setTimeout` nao ca.
   const [soHong, setSoHong] = useState(0)
+  //: bo dem "mo lai luong SAU KHI da nhan duoc goi" — moc 90 s cua may chu.
+  //  Tach khoi `soHong` vi no KHONG phai mot nhip hong: no khong duoc lui dan
+  //  va khong duoc hien dong loi. Day la thu duy nhat lam effect SSE chay lai
+  //  trong ca binh thuong ay.
+  const [lanNoiLai, setLanNoiLai] = useState(0)
   //: node_id -> ma loi bien dich (422 `{ma,node_id,thong_diep}` cua publish).
   const [loiNode,setLoiNode]=useState<Record<string,string>>({})
   // Trang thai cua Assistant / Phien ban / Share da go cung luc voi cac nut
@@ -306,35 +319,62 @@ function Editor() {
     return () => window.removeEventListener('keydown', shortcut)
   }, [])
 
+  // ⭐ Con tro su kien nam trong mot `ref`, KHONG trong deps cua effect duoi.
+  //    Neu effect phu thuoc `run` thi moi goi SSE (mot giay mot goi) se thao
+  //    va mo lai ca luong — dat hon han vong poll no thay the.
+  const conTro = useRef<{ id: string; seq: number }>({ id: '', seq: 0 })
+  const runRef = useRef<RunV3 | null>(null)
+  useEffect(() => { runRef.current = run }, [run])
+
+  const runId = run?.id ?? ''
+  const runDangSong = !!run && !RUN_V3_KET_THUC.has(run.status)
   useEffect(() => {
-    if (!run || RUN_V3_KET_THUC.has(run.status)) return
+    if (!runId || !runDangSong) return
     // `active` = phan hoi nay con dung voi man hinh nao khong. Khong co no,
-    // mot GET ve MUON de nguoc CANCELLED -> RUNNING (nut "Huy chay" hien lai
+    // mot goi ve MUON de nguoc CANCELLED -> RUNNING (nut "Huy chay" hien lai
     // cho mot luot da chet), hoac lam song lai mot run vua `setRun(null)`.
     let active = true
+    if (conTro.current.id !== runId)
+      conTro.current = { id: runId, seq: runRef.current?.seq_cuoi ?? 0 }
+    // ⭐ Theo TUNG ket noi, khong theo ca man hinh: mot luong DA gui duoc goi
+    //    roi dong la moc 90 s cua may chu (`_SSE_DONG_SAU_S`, duoi tran 100 s
+    //    cua Cloudflare) — NOI LAI NGAY, khong phai loi, khong hien gi. Mot
+    //    luong dong ma CHUA gui gi la hong that ⇒ lui dan + noi ra.
+    let daNhan = false
+    let dong: (() => void) | null = null
+    // ⛔ CHO TRUOC khi mo, khong mo roi moi cho. Day la cho chong-ngap song:
+    //    `soHong > 0` nghia la lan mo TRUOC da hong ma chua nhan duoc gi, nen
+    //    lan nay phai lui `nhipCho(soHong - 1)` (1,5s -> 3s -> 6s -> 12s).
+    //    `soHong === 0` (lan dau, hoac vua noi lai sau moc 90 s) thi mo NGAY:
+    //    mot man hinh dang tieu tien khong duoc doi 1,5 giay de biet no chay.
     const timer = window.setTimeout(() => {
-      void loadRunV3(run.id, run.seq_cuoi)
-        // Su kien ve theo lo tang dan (`?sau=<seq>`) — NOI, khong thay. Thay
-        // la mat lich su moi nhip, va dong thoi gian chi con mot dong.
-        .then(next => {
-          if (!active) return
-          setSoHong(0)
-          // Chi xoa thong diep cua CHINH vong poll: mot loi huy/chay dang hien
-          // khong phai viec cua no.
-          setRunError(cu => cu === LOI_POLL ? '' : cu)
-          setRun(truoc => truoc && truoc.id === next.id ? nhapRun(truoc, next) : truoc)
-        })
-        .catch(() => {
-          if (!active) return
-          // `soHong` doi => effect chay lai => CO nhip ke tiep. Day moi la
-          // duong song: nhanh nay khong dung toi `run`, nen neu chi
-          // `setRunError` thi vong poll dung han sau mot blip mang.
-          setSoHong(soHong + 1)
-          setRunError(LOI_POLL)
-        })
-    }, nhipCho(soHong))
-    return () => { active = false; window.clearTimeout(timer) }
-  }, [run, soHong])
+      if (!active) return
+      dong = theoDoiRunV3(runId, conTro.current.seq, {
+      onGoi: next => {
+        if (!active) return
+        daNhan = true
+        conTro.current = { id: next.id, seq: next.seq_cuoi }
+        setSoHong(0)
+        // Chi xoa thong diep cua CHINH cua doc: mot loi huy/chay dang hien
+        // khong phai viec cua no.
+        setRunError(cu => cu === LOI_POLL ? '' : cu)
+        // Su kien ve theo lo tang dan — NOI, khong thay. Thay la mat lich su
+        // moi goi, va dong thoi gian chi con mot dong.
+        setRun(truoc => truoc && truoc.id === next.id ? nhapRun(truoc, next) : truoc)
+      },
+      onLoi: () => {
+        if (!active) return
+        // `soHong`/`lanNoiLai` doi => effect chay lai => CO lan noi lai ke
+        // tiep. Day moi la duong song: nhanh nay khong dung toi `run`, nen
+        // neu chi `setRunError` thi man hinh dung han sau mot blip mang.
+        if (daNhan) { setSoHong(0); setLanNoiLai(n => n + 1); return }
+        setSoHong(soHong + 1)
+        setRunError(LOI_POLL)
+      },
+      })
+    }, soHong > 0 ? nhipCho(soHong - 1) : 0)
+    return () => { active = false; window.clearTimeout(timer); dong?.() }
+  }, [runId, runDangSong, soHong, lanNoiLai])
 
   useEffect(() => {
     if (!workflow || phase === 'loading' || offline) return

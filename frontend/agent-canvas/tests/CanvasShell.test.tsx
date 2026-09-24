@@ -341,6 +341,14 @@ const runV3Goc = { id: 'r1', workflow_id: 'w1', version_id: 'v1', status: 'QUEUE
     created_at: '2026-09-24T00:00:00+00:00' }],
   seq_cuoi: 1 }
 
+/** Than `text/event-stream` THAT cho cua `/su-kien` — dung khung SSE, de bo
+ *  doi `EventSource` trong `tests/setup.ts` tach y nhu trinh duyet tach. */
+function khungRun(...goi: unknown[]): string {
+  const nl = String.fromCharCode(10)
+  return goi.map((g, i) => `id: ${i + 1}${nl}event: run${nl}data: `
+    + JSON.stringify(g) + nl + nl).join('')
+}
+
 /** Giu nguyen mock goc cua `beforeEach`, chi chen them cac cua v3 cua run. */
 function mockRunV3(xen?: (url: string, init?: RequestInit) =>
     Response | Promise<Response> | undefined) {
@@ -359,6 +367,18 @@ function mockRunV3(xen?: (url: string, init?: RequestInit) =>
         su_kien: [...runV3Goc.su_kien,
           { seq: 2, loai: 'WorkflowCancelled', node_id: '', du_lieu: {},
             created_at: '2026-09-24T00:00:05+00:00' }], seq_cuoi: 2 }), { status: 200 })
+    // ⭐ Cua DOC bay gio la SSE (`/su-kien`, P9b task 3): MOT ket noi gui
+    //    nhieu khung. Khung dau la trang thai HIEN TAI (QUEUED) — dung nhu
+    //    may chu that (`v3_su_kien_sse` gui goi dau ngay o vong lap dau) —
+    //    roi moi toi khung ket thuc. Do het trong mot khung se lam moi bai
+    //    ve trang thai GIUA CHUNG do mot man hinh da nhay toi cuoi.
+    if (url.includes('/api/v3/runs/') && url.includes('/su-kien'))
+      return new Response(khungRun(
+        { ...runV3Goc, su_kien: [], seq_cuoi: 1 },
+        { ...runV3Goc, status: 'SUCCEEDED', credit_charged: 4, settled: true,
+          su_kien: [{ seq: 2, loai: 'run.succeeded', node_id: '', du_lieu: {},
+            created_at: '2026-09-24T00:00:10+00:00' }], seq_cuoi: 2 }),
+        { status: 200, headers: { 'Content-Type': 'text/event-stream' } })
     if (url.includes('/api/v3/runs/'))
       return new Response(JSON.stringify({ ...runV3Goc, status: 'SUCCEEDED',
         credit_charged: 4, settled: true,
@@ -601,6 +621,56 @@ describe('Chạy workflow trên v3', () => {
     expect(drawer.textContent).toContain('run.created')
     expect(drawer.textContent).toContain('run.succeeded')
     expect(within(drawer).queryByRole('button', { name: 'Hủy chạy' })).not.toBeInTheDocument()
+  })
+
+  // -- P9b task 3: cua doc doi tu POLL sang SSE ---------------------------
+
+  it('doc run bang SSE, KHONG con vong poll GET /runs/{id}', async () => {
+    // 🔴 Ve do chinh cua task: mot cua duy nhat. Neu SSE duoc THEM ma vong
+    //    poll con song thi may chu bi doc HAI lan moi giay cho cung mot run,
+    //    va hai nguon co the noi khac nhau o cung mot thoi diem.
+    mockRunV3()
+    const { drawer } = await bamChay()
+    await within(drawer).findByText('SUCCEEDED', {}, { timeout: 10_000 })
+    const doc = duongDaGoi().filter(u => u.includes('/api/v3/runs/')
+      && !u.endsWith('/cancel'))
+    expect(doc.length).toBeGreaterThan(0)
+    // Moi loi goi doc run phai la SSE, va phai mang con tro `sau=`.
+    expect(doc.every(u => u.includes('/su-kien?sau='))).toBe(true)
+    expect(doc.some(u => u.includes('sau=1'))).toBe(true)
+  })
+
+  it('luong dong sau khi DA nhan goi thi noi lai NGAY, khong hien loi', async () => {
+    // May chu chu dong dong o moc 90 s (duoi tran 100 s cua Cloudflare). Do
+    // la hanh vi BINH THUONG, khong phai mot nhip hong: no khong duoc lui dan
+    // va tuyet doi khong duoc nhap dong loi len mot man hinh dang chay dung.
+    mockRunV3()
+    const { drawer } = await bamChay()
+    await within(drawer).findByText('QUEUED')
+    // Luong gia gui het khung roi BAO onerror — dung hinh dang mot lan dong
+    // sach cua may chu. Man hinh phai di tiep toi SUCCEEDED...
+    await within(drawer).findByText('SUCCEEDED', {}, { timeout: 10_000 })
+    // ... va KHONG mot lan nao hien dong loi.
+    expect(within(drawer).queryByText(/đang thử lại/i)).toBeNull()
+  })
+
+  it('hong lien tiep thi LUI DAN — chong-ngap khong duoc mat khi doi sang SSE', async () => {
+    // ⭐ Day la phep kiem ma brief doi: doi transport KHONG duoc lam mat
+    //    chong-ngap. Doi chung cua no la CHINH CON SO: neu khoang cach giua
+    //    hai lan mo khong TANG, mot may chu dang sap se bi go cua deu dan.
+    const luc: number[] = []
+    mockRunV3(url => {
+      if (url.includes('/su-kien')) { luc.push(Date.now()); throw new TypeError('Failed to fetch') }
+      return undefined
+    })
+    const { drawer } = await bamChay()
+    await within(drawer).findByText(/đang thử lại/i, {}, { timeout: 10_000 })
+    await waitFor(() => expect(luc.length).toBeGreaterThanOrEqual(3),
+      { timeout: 15_000 })
+    const cach = luc.slice(1).map((t, i) => t - luc[i])
+    // 1,5s -> 3s (bien do rong: dong ho THAT, may dung chung).
+    expect(cach[0]).toBeGreaterThan(900)
+    expect(cach[1]).toBeGreaterThan(cach[0] * 1.4)
   })
 
   // -- Vong sua 1 (review C1 / I2) ----------------------------------------

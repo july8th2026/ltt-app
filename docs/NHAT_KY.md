@@ -12,6 +12,131 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-24 (chiều) — VPS bán thật CHẠY được: sáu khuyết tật, và một cổng quản trị mở trên IP của khách
+
+Chủ dự án thử tạo VPS lúc 12:57 và hỏng lần thứ ba liên tiếp. Phiên này truy tới
+gốc, sửa, deploy, rồi **tạo một máy thật dùng được**: `MayTram02`, vmid 208,
+IP công khai 51.79.215.194. Plan: `docs/superpowers/plans/2026-09-24-vps-thong-day.md`.
+Bảng đối soát dựng được thành lệnh: `docs/VPS/DOI_SOAT_DAY_CHUYEN.md`.
+
+### Sáu khuyết tật, bốn cái do chính bản sửa hôm trước sinh ra
+
+1. **Cửa mua IP hỏi `paid_until`, trong khi tiền nằm ở `credit.giu_cho`.**
+   `cd3c7058` (23/09) chuyển đường tạo mới sang giữ chỗ — `paid_until` chỉ được
+   đặt ở `jobs._quyet_toan`, **sau** bước cấp IP. Cửa `ensure_free_ip` vẫn hỏi
+   `billing.con_han` ⇒ **mọi** máy mới chết ở 80% với *"acquisition requires a
+   paid VPS subscription"*. Job `2159e8ef` 3/3 lần, và **không một hàng
+   `OVH_IP_ACQUIRE` nào** — cửa chặn trước khi chạm OVH.
+   ⭐ Vì sao im: fixture `test_1030` đặt `paid_until = 2099-01-01` cho **mọi** ca,
+   nên luồng "chưa trả tiền vì đang giữ chỗ" chưa từng được đo.
+2. **`BackendConflict` rơi vào mã `khong_ro`.** Khách đọc *"Thao tác không hoàn
+   tất"* cho một đơn mua IP **có thể đã trả tiền** rồi bấm tạo lại — tức đơn thứ
+   hai, tiền thật lần thứ hai. Hai mã mới, trong đó `cap_ip_can_ra_soat` nói
+   thẳng *"đừng tạo máy khác"*.
+3. **Máy `loi` không còn được dọn.** `_hoan_may_tao_hong` gọi `_nop_job_xoa`
+   **sau** `if so <= 0: continue`, và từ 23/09 máy hỏng không phát `thu_phi`
+   nữa ⇒ VM mồ côi ở lại Proxmox mãi. VM 207 là vật chứng. Tách việc **dọn**
+   khỏi việc **hoàn tiền**.
+4. **Phép soi đo điện thật chưa từng chạy.** `doi_chieu.quet` là chỗ duy nhất
+   ghi `dien_quan_sat`, gọi từ `_doi_chieu_dinh_ky` — hàm **không mã sản phẩm
+   nào gọi**. Máy 204 mang `dien_quan_sat=chay` từ 16/09 trong khi Proxmox trả
+   `tat`: **trang khách nói dối tám ngày**. Bẫy kép: hai phép soi dùng chung
+   `_moc_doi_chieu`, nên nối dây xong vẫn bị khoá 24 giờ; và `mot_luot` đặt
+   `client = None` **cố ý**, nên truyền client vào là nối dây không có điện.
+5. **Hai head alembic trên `main`** ⇒ `alembic upgrade head` từ chối chạy, tức
+   mọi deploy bị chặn. Hợp về một.
+6. **Bánh cóc "một đầu" báo động giả.** `test_560` đọc `down_revision` bằng
+   regex neo đầu dòng, không thấy 25 tệp alembic sinh với chú thích kiểu; nó
+   báo *"3 đầu"* trong khi `alembic heads` in **1**. Nay hỏi `ScriptDirectory`.
+   (Phiên wf-v2 tìm thấy **bản regex thứ hai** ở `test_223` sai về phía ngược
+   lại — im lặng — và đã sửa cùng ngày.)
+
+### Và một thứ không ai đi tìm: cổng quản trị mở trên IP của khách
+
+Sau khi máy lên, phép kiểm cổng cho ra: `51.79.215.194:22` trả **banner SSH
+Debian 12** — trong khi máy khách là Windows Server 2016. Đo tiếp: cả **11**
+địa chỉ IPv4 của cổng vào đều trả cùng banner đó.
+
+Gốc: `/etc/nftables.conf` viết `tcp dport 22 accept` — **một điều kiện không nêu
+phạm vi**, và phạm vi mặc định của nó là *mọi địa chỉ máy này sở hữu*.
+
+⭐ Cùng khuôn với `KHO_GIONG_CHUNG.is_file()` mà phiên ASV gỡ cùng ngày, nhưng
+**lệch ngược chiều**: vế thiếu phạm vi của ASV làm luật **chặt hơn** ý định (mã
+chết); vế này làm luật **lỏng hơn** ý định (cửa mở). Chỉ một hướng làm hại
+người dùng. ⇒ Câu soát nên hỏi thêm **chiều**: *"thiếu phạm vi làm nó rộng ra
+hay hẹp lại?"*
+
+Đã chặn: `ip daddr != 51.79.166.36 tcp dport 22 drop`, áp runtime + ghi
+`/etc/nftables.conf` (có sao lưu, `nft -c` trước khi áp, **không** áp lại cả tệp
+vì đầu tệp có `flush ruleset` — áp lại sẽ xoá NAT của khách). Đo từ ngoài sau
+khi áp: 22 **đóng** trên cả 10 IP không phải quản trị, **mở** đúng trên IP quản
+trị, RDP 3389 không suy suyển.
+
+⚠️ Bản vá ấy mang một **con số** trong một tệp trên một máy khác. Nên
+`tools/vps_doi_soat_cong.py` so nó với `vps_gateway.ip_cong_khai`: ngày OVH đổi
+IP chính, luật vẫn "có" nhưng công cụ sẽ đỏ. Nối nó vào vòng bảo trì là việc còn
+lại (`09_BLOCKERS.md`).
+
+### Chỉ RDP đi vào — nay có khai
+
+`table ip gwnat` chỉ DNAT 3389; chain `forward` policy drop. Khách dựng web trên
+máy sẽ thấy nó không ra được Internet, và điều khoản **không một chữ nào** nói
+trước (nó chỉ khai cổng **ra** bị chặn). Chủ dự án chốt: giữ nguyên, nhưng khai
+rõ. Đã viết vào `dieu_khoan.py` mục 1 + bản EN.
+
+### Cổng quản trị: từ một lệnh gõ tay thành một cổng tự chạy
+
+`tools/vps_doi_soat_cong.py` đo được, nhưng nó chạy bằng tay — và một phép kiểm
+an ninh chạy bằng tay gộp **hai** trạng thái vào cùng một sự im lặng:
+*"chưa ai chạy"* và *"chạy rồi, đạt"*. Nay `bao_tri._kiem_cong_quan_tri` đo mỗi
+ngày và ghi một bản ghi sức khoẻ **mỗi lượt**, nên thiếu bản ghi = STALE trên
+trang admin. Thành phần `cong_quan_tri` thuộc `CANH_BAO_BAO_TRI` — ⛔ **không**
+chặn bán: cổng quản trị lộ là lỗi của ta, đóng cửa hàng là phạt khách cho lỗi
+của mình.
+
+🔴 **Và bản đầu của nó tự làm hỏng vòng chứa nó.** Đo tuần tự 11 địa chỉ × 6 giây
+= **66 giây**; log worker: `mat lease bao tri — dung viec nen`, không một bản ghi
+nào được sinh ra. ⭐ Chỗ đáng nhớ: trạng thái **đúng** của mọi địa chỉ khách là
+*timeout*, nên phép đo này tốn nhiều thời gian nhất **khi mọi thứ đều ổn** — một
+phép đo có chi phí tệ nhất rơi vào ca bình thường sẽ bị **gỡ**, không phải bị sửa.
+Sửa: đo song song + chờ 3 giây ⇒ **3,0 giây**. Chờ ngắn một mình lệch về phía
+nguy hiểm (mạng chậm cũng ra "đóng", tức giấu một cổng đang mở), nên nó dựa vào
+**đối chứng trong cùng lượt**: IP quản trị phải mở được.
+Nghiệm thu trên production 16:17:32 — `HEALTHY: cong 22 chi mo tren IP quan tri
+51.79.166.36 (10 dia chi khac deu dong)`.
+
+### Một hạng lỗi có tên: hỏng ở SỔ ĐĂNG KÝ DÙNG CHUNG
+
+Bốn sự cố trong **một ngày**, trên **một kho**, không cái nào do một làn viết sai
+mã của mình:
+
+| Sổ đăng ký | Sự cố |
+|---|---|
+| tập hợp migration | hai head trên `main` ⇒ chặn **mọi** deploy |
+| dải số test | `2920`–`2923` trùng giữa hai làn |
+| `thanh_phan.toml` | `tac_tu.py` không ai sở hữu ⇒ gate leo lên "chạy TẤT CẢ" |
+| danh mục mã lỗi | `test_409`: ASV và `ltt_voice` cùng khai một danh mục |
+
+⭐ Mỗi làn **xanh một mình**; cái hỏng chỉ tồn tại ở **kết hợp**, và không bộ test
+nhắm nào đo được vì mỗi phép đo chỉ nhìn một phía. Thứ duy nhất bắt được chúng là
+phép kiểm **trên toàn kho sau khi gộp** (`check_so_test`, gate phạm vi rộng) —
+đáng giữ **kể cả khi nó làm chậm làn người khác**.
+
+⇒ Chỗ đặt bánh cóc trước tiên không phải "đường nối giữa hai làn" (ở đâu cũng có),
+mà là **nơi một làn khai một điều về cả hệ** — thứ đó **đếm được**.
+
+### Hai bài học về bằng chứng
+
+- **Gate chạy ở cây chính không còn là bằng chứng.** Lượt L2 đầu bị chính gate
+  huỷ: *"CÂY ĐÃ ĐỔI TRONG LÚC CHẠY"* — hai phiên khác ghi `autosubvideo/routes.py`
+  và `workflow/run_con.py` giữa chừng. Chuyển sang gate trong **cây riêng đứng
+  yên**. ⭐ Một công cụ chịu nói *"tôi không còn đo được nữa"* đáng hơn một công
+  cụ luôn có câu trả lời.
+- **Cửa sổ đứng yên là giao ước xã hội; SHA là cơ học.** Xin hai phiên đóng băng
+  `main`, và một phiên **thứ ba** vẫn commit — đúng **33 giây** sau khi lượt
+  deploy khởi động, nên bản xuất lấy commit mới. Lần này thoát vì delta chỉ là
+  79 dòng nhật ký. Đường deploy nên nhận `--sha` tường minh.
+
 ## 2026-09-24 (chiều) — 102 GB điểm khôi phục, và `stable` 0.2.14 tới tay khách
 
 Tiếp phiên sáng. Chủ dự án chuẩn bị dùng LTTCODE vận hành việc thật; dọn dữ liệu phiên cũ thì

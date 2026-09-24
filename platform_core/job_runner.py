@@ -1421,6 +1421,7 @@ def _don_du_lieu_het_han() -> None:
     from platform_core.public_api import (costing, idempotency, metrics,
                                           notifications, outbox, request_log,
                                           security_log)
+    from platform_core import oauth_google
     from platform_core.llm import admission, phong_cho
     from platform_core.workflow import su_kien as workflow_su_kien
 
@@ -1441,6 +1442,10 @@ def _don_du_lieu_het_han() -> None:
         ("noi dung job het han", _don_noi_dung_job),
         # workflow_event cua run DA KET SO qua 90 ngay (spec Sec5.11).
         ("su kien workflow", workflow_su_kien.purge_expired),
+        # Luot OAuth do dang (spec Sec9.3): song 10 phut. Hang qua han mang
+        # mot PKCE verifier da ma hoa khong ai con can — giu lai la giu mot bi
+        # mat qua han su dung cua chinh no.
+        ("luot OAuth do dang", oauth_google.don_state_het_han),
     )
     for label, purge in rules:
         try:

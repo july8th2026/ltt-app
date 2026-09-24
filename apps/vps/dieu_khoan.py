@@ -50,6 +50,10 @@ from apps.vps.cost import (CHU_KY_NGAY, DIA_THEM_MOI_LO_GB,
                            GIA_MOI_LO_DIA_VND, PLANS, credit_thang)
 from apps.vps.services.billing import AN_HAN_TRUOC_KHI_XOA_NGAY
 from apps.vps.services.console import HAN_VE_GIAY
+
+#: Cổng duy nhất gateway chuyển tiếp vào máy khách. ⛔ Đổi ở đây thì phải
+#: đổi cả `table ip gwnat` trên gateway — hai chỗ khai một sự thật.
+CONG_RDP = 3389
 from apps.vps.services.sao_luu import GIU, MOI_NGAY
 from platform_core.billing_math import VND_PER_CREDIT
 from platform_core.i18n import _ as _t
@@ -141,6 +145,18 @@ def NOI_DUNG() -> list[dict]:
                 _t("Bạn tự chịu trách nhiệm về mọi thứ chạy bên trong máy: bản "
                    "vá, tường lửa, phần mềm, và ai được vào."),
             ]),
+            # 🔴 Đo trên production 24/09/2026: gateway chỉ chuyển tiếp cổng 3389
+            #    (TCP+UDP) vào máy khách; chain `forward` là `policy drop`. Điều
+            #    khoản khai cổng RA bị chặn nhưng chưa từng khai cổng VÀO — nên
+            #    một khách dựng web trên máy sẽ thấy nó không ra được Internet mà
+            #    không có chỗ nào nói trước. Bán một thứ khác với thứ giao.
+            _p(_t("<strong>Chỉ cổng %(rdp)s (RDP) đi vào máy bạn được mở.</strong> "
+                  "Mọi cổng đến khác đều bị chặn ở gateway: một dịch vụ bạn dựng "
+                  "bên trong máy — web, WinRM, máy chủ game — sẽ chạy bình thường "
+                  "trong máy nhưng <strong>không truy cập được từ Internet</strong>. "
+                  "Máy vẫn ra Internet tự do (tải bản vá, gọi API). Cần mở thêm "
+                  "cổng thì liên hệ chúng tôi; đây là giới hạn kỹ thuật hiện tại, "
+                  "không phải lỗi của máy bạn.") % {"rdp": CONG_RDP}),
         ]},
         {"so": "2", "tieu_de": _t("Giấy phép Windows — đọc kỹ mục này"), "khoi": [
             _p(_t("<strong>Giá dịch vụ KHÔNG bao gồm giấy phép Windows.</strong> "

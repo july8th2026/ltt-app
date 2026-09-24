@@ -65,33 +65,3 @@ async def workflow_save(request: Request, workflow_id: str,
     except (KeyError, TypeError, ValueError, workflows.WorkflowError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from None
     return _workflow_response(row)
-
-
-@router.get("/api/workflows/{workflow_id}/snapshots")
-def workflow_snapshots(request: Request, workflow_id: str,
-                       _identity: str = Depends(require_login),
-                       db: Session = Depends(get_db)):
-    user = _user(request)
-    try:
-        items = workflows.snapshots(db, workflow_id, user.id)
-    except workflows.WorkflowNotFound:
-        raise HTTPException(status_code=404, detail=_t('Không tìm thấy workflow.')) from None
-    return {"items": [{"revision": item.revision, "name": item.name,
-                        "reason": item.reason, "created_at": item.created_at.isoformat()}
-                       for item in items]}
-
-
-@router.post("/api/workflows/{workflow_id}/snapshots/{revision}/restore")
-async def workflow_snapshot_restore(request: Request, workflow_id: str, revision: int,
-                                    _identity: str = Depends(require_login),
-                                    db: Session = Depends(get_db)):
-    body = await request.json(); _verify_json_csrf(request, body); user = _user(request)
-    try:
-        row = workflows.restore_snapshot(db, workflow_id=workflow_id, user_id=user.id,
-                                         revision=revision,
-                                         expected_revision=int(body.get("revision", 0)))
-    except workflows.WorkflowConflict as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from None
-    except workflows.WorkflowNotFound:
-        raise HTTPException(status_code=404, detail=_t('Không tìm thấy snapshot.')) from None
-    return _workflow_response(row)

@@ -89,6 +89,21 @@ def _gia_node(node: dict, cc: dict[str, CongCu]) -> int:
                 f"{node.get('id')}: thieu `gia_con` da ghim -- do thi nay "
                 "chua di qua `xuat_ban_draft`, khong co chan tren")
         return gia
+    if str(node.get("type")) == LOAI_AGENT:
+        # §12.3: *"Trần báo giá node = `ngan_sach_credit`"*.
+        #
+        # ⚠️ KHÁC `gia_con` ở trên, và khác có lý do. `gia_con` đến từ CSDL vì
+        #    một trường trong body của người gọi sẽ là cách **né** trần của
+        #    chính họ. `ngan_sach_credit` thì ngược chiều: khai to nghĩa là bị
+        #    GIỮ nhiều hơn, nên nó tự hạn chế. Nó là lời khai *"tôi cho phép
+        #    lượt này tiêu tới đây"*, và `tac_tu._mo_buoc` không mở bước nào
+        #    vượt qua con số ấy.
+        gia = (node.get("params") or {}).get("ngan_sach_credit")
+        if not isinstance(gia, int) or isinstance(gia, bool) or gia < 1:
+            raise KhongBaoGiaDuoc(
+                f"{node.get('id')}: `ngan_sach_credit` phai la so nguyen >= 1 "
+                "-- khong co no thi luot agent khong co chan tren")
+        return gia
     if node.get("thi_hanh") != "job":
         return 0
     ten_cong_cu = str(node["type"])[4:]
@@ -134,6 +149,9 @@ HE_SO_LAP_TOI_DA = 1_000_000
 
 LOAI_FOREACH = "core.foreach"
 LOAI_GOI_WF = "core.call_workflow"
+#: `ai.agent` (spec §12.3). Hằng ở đây chứ không import `tac_tu` để tránh vòng
+#: import: `tac_tu` gọi `bao_gia`, không chiều ngược lại.
+LOAI_AGENT = "ai.agent"
 LOAI_FOREACH_END = "core.foreach_end"
 
 
@@ -230,6 +248,54 @@ def than_foreach(graph: dict) -> dict[str, tuple[str, tuple[str, ...]]]:
     return ra
 
 
+def hau_due(graph: dict, node_id: str) -> frozenset[str]:
+    """`node_id` **và** mọi node tới được từ nó (spec §14, "chạy lại từ node").
+
+    ⭐ Dùng lại `_ke`/`_lan` — cùng một phép duyệt đồ thị mà `than_foreach`
+       đã dùng. Một BFS thứ hai cho cùng câu hỏi "tới được từ đâu" là một bản
+       sao sẽ trôi khỏi bản gốc, và ngày nó trôi thì "node nào phải chạy lại"
+       và "node nào nằm trong thân vòng" trả lời theo hai cấu trúc khác nhau.
+
+    ⚠️ Hàm này cũng đọc đồ thị **chưa** qua validator publish (đồ thị của một
+       run cũ, một bản nháp), nên nó phải chịu được chu trình. `_lan` có tập
+       `da` nên không treo — phép kiểm `test_3452::test_chu_trinh_khong_treo`
+       chốt điều đó, vì treo ở đây là treo cả một cửa HTTP.
+    """
+    nid = str(node_id or "")
+    if nid not in {str(n["id"]) for n in graph.get("nodes") or []}:
+        raise KhongBaoGiaDuoc(f"{nid!r} khong co trong do thi")
+    xuoi, _ = _ke(graph)
+    return frozenset(_lan(nid, xuoi) | {nid})
+
+
+def co_the_tai_dung(graph: dict, node_id: str) -> tuple[str, ...]:
+    """Node được phép **sao output** từ run cũ khi chạy lại từ `node_id`.
+
+    = mọi node **trừ** hậu duệ của `node_id` (spec §14: *"sao output các node
+    không phải hậu duệ của node chọn"*), theo đúng `graph.thu_tu`.
+
+    ⛔ **Thân `foreach` — và chính cặp `foreach`/`foreach_end` — không bao giờ
+       nằm trong tập này.** Ảnh chụp của một node thân khoá theo **đường thi
+       hành** (`f:0/x`, `f:1/x`… — `thi_hanh.khoa_node`), và đường ấy bị **băm**
+       khi vượt 64 ký tự (`danh_thuc.duong_thi_hanh`), lúc đó không suy ngược
+       được (P9 task 3). "Sao output của x" khi x chạy N lần dưới N khoá, có
+       khoá không đọc ngược được, là một phép sao **không xác định** — và tái
+       dùng sai một output nghĩa là trả cho khách kết quả của một lần chạy
+       khác. Giữa "chạy lại, tốn thêm tiền, đúng" và "đoán, rẻ hơn, có thể
+       sai", chỗ này chọn cái đầu.
+
+    ⚠️ Hàm này KHÔNG hỏi run cũ. Nó trả **ứng viên theo đồ thị**; bên gọi còn
+       phải loại node chưa từng `SUCCEEDED` ở run cũ — một node `FAILED`
+       không có output nào để sao.
+    """
+    bo = set(hau_due(graph, node_id))
+    for goc, (dong, than) in than_foreach(graph).items():
+        bo.update({goc, dong, *than})
+    nodes = {str(n["id"]) for n in graph.get("nodes") or []}
+    thu_tu = [str(k) for k in (graph.get("thu_tu") or sorted(nodes))]
+    return tuple(k for k in thu_tu if k in nodes and k not in bo)
+
+
 def he_so_lap(graph: dict) -> dict[str, int]:
     """Số lượt TỐI ĐA mỗi node chạy trong một lượt chạy của đồ thị.
 
@@ -277,4 +343,4 @@ def bao_gia_do_thi(graph: dict, *,
 
 __all__ = ["HE_SO_LAP_TOI_DA", "LOAI_FOREACH", "LOAI_FOREACH_END",
            "MAX_ITEMS_TRAN", "KhongBaoGiaDuoc", "BaoGia", "bao_gia_do_thi",
-           "he_so_lap", "than_foreach"]
+           "co_the_tai_dung", "hau_due", "he_so_lap", "than_foreach"]

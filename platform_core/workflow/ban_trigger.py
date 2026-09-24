@@ -191,7 +191,7 @@ def ban_su_kien(db, *, gioi_han: int = 200) -> dict:
        - khoá `evt:<trigger_id>:<event_id>` — để một con trỏ **mất** (khôi phục
          CSDL, sửa tay) không thành một loạt run trùng.
     """
-    from sqlalchemy import select, tuple_
+    from sqlalchemy import ColumnElement, select, tuple_
 
     from platform_core.models import WorkflowEvent
 
@@ -201,7 +201,12 @@ def ban_su_kien(db, *, gioi_han: int = 200) -> dict:
             WorkflowTrigger.enabled.is_(True),
             WorkflowTrigger.kind == "EVENT")).scalars())
     for t in triggers:
-        dk = [WorkflowEvent.loai.in_(LOAI_KET_THUC)]
+        # Khai kieu TONG QUAT: mypy suy `list[BinaryExpression]` tu phan tu
+        # dau, nhung danh sach nay con nhan mot so sanh `tuple_(...)` —
+        # do la `ColumnElement[bool]`. Chu thich hep hon thuc te thi loi
+        # bao o CHO THEM VAO, khong phai cho khai sai.  (gate 24/09)
+        dk: list[ColumnElement[bool]] = [
+            WorkflowEvent.loai.in_(LOAI_KET_THUC)]
         ct = _con_tro_cua(t)
         if ct is not None:
             dk.append(tuple_(WorkflowEvent.created_at, WorkflowEvent.id)

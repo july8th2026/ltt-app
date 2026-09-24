@@ -580,6 +580,27 @@ STORES: tuple = (
              "SupervisorDecision, ... Cùng bảng làm outbox cho trigger `event` "
              "(spec Sec8.4)."),
           "su_kien.purge_expired (worker)"),
+
+    # ── Credential cua khach (spec Sec9, plan wf-v2 P5c) ─────────────────────
+    #
+    # EVIDENCE, khong phai CONTENT: hang O LAI sau khi thu hoi. Thu hoi xoa
+    # `bi_mat_ma_hoa` (ghi de chuoi rong) nhung giu hang, vi hang ay la thu tra
+    # loi "run nao da dung khoa nao" khi mot khoa ro ra ngoai. Cung bai hoc voi
+    # `developer_api_keys` ngay tren.
+    Store("credential", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
+          N_("Bí mật của khách để gọi API bên ngoài, mã hoá at-rest (Fernet). "
+             "Thu hồi xoá bí mật nhưng giữ hàng: nó là bằng chứng run nào đã "
+             "dùng khoá nào.")),
+    Store("credential_nhat_ky", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
+          N_("Ai tạo/sửa/thu hồi/làm mới/dùng một credential, lúc nào, ở run "
+             "và node nào. Không bao giờ chứa bí mật.")),
+    # OPERATIONAL 1 ngay: mot luot OAuth do dang song 10 phut (spec Sec9.3).
+    # Giu lau hon la giu mot PKCE verifier khong ai can nua — tuc giu mot bi
+    # mat qua han su dung cua no.
+    Store("oauth_state", OPERATIONAL, 1, N_("vận hành"),
+          N_("Một lượt kết nối OAuth đang dở: state đã băm, PKCE verifier đã "
+             "mã hoá, nơi quay về. Dùng một lần, hạn 10 phút."),
+          "oauth_google.don_state_het_han (worker)"),
 )
 
 

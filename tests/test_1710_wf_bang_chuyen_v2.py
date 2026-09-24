@@ -30,7 +30,29 @@ def test_chuyen_moi_hop_le(tu, sang):
     assert sang in mtt.NODE_CHUYEN[tu]
 
 
+#: Trạng thái KẾT THÚC được phép có lối ra, và lối ra của nó là gì.
+#:
+#: 🔴 SIẾT 24/09/2026 (plan wf-v2 P8 Task 3). Trước đó bài này nói *"KHÔNG
+#:    trạng thái kết thúc nào có lối ra"* — một mệnh đề mạnh và đúng cho tới
+#:    khi spec §12.4 đòi Supervisor *"thử lại node (trong `retry.max` còn
+#:    lại)"* và *"bỏ qua nhánh node có `settings.khong_quan_trong = true"*.
+#:    Cả hai chỉ có nghĩa khi node đã `FAILED`.
+#:
+#: ⛔ Nên bài không bị NỚI thành "kết thúc có thể có lối ra"; nó đổi thành một
+#:    **bản khai chính xác**: đúng một trạng thái, đúng hai lối. `ABANDONED`
+#:    (provider CÓ THỂ đã nhận), `CANCELLED`, `SUCCEEDED`, `SKIPPED` vẫn là ngõ
+#:    cụt tuyệt đối — và `FAILED` **không** có lối `READY` (quay thẳng về READY
+#:    là bỏ qua `retry.max`, backoff và `_khoa_idem` theo lượt).
+NGOAI_LE_KET_THUC = {"FAILED": frozenset({"RETRY_SCHEDULED", "SKIPPED"})}
+
+
 def test_trang_thai_ket_thuc_khong_co_loi_ra():
     for kt in mtt.NODE_KET_THUC:
-        assert kt not in mtt.NODE_CHUYEN
+        if kt in NGOAI_LE_KET_THUC:
+            assert mtt.NODE_CHUYEN[kt] == NGOAI_LE_KET_THUC[kt], kt
+            continue
+        assert kt not in mtt.NODE_CHUYEN, kt
+    # 🔑 Đối chứng: danh sách ngoại lệ không được phình ra bằng cách liệt kê
+    #    một trạng thái vốn KHÔNG phải trạng thái kết thúc.
+    assert set(NGOAI_LE_KET_THUC) <= mtt.NODE_KET_THUC
     assert mtt.NODE_DANG_CHAY == frozenset({"QUEUED", "RUNNING", "WAITING"})
