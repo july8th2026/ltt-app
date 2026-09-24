@@ -481,8 +481,11 @@ so hai *lời nhắc*.
 | bản (`temp 0.0`) | báo động giả | `lat_nghia` | `sai_thuc_the` | lô hỏng |
 |---|---|---|---|---|
 | **V1** nhị phân | 43,3% | 100% | 100% | 0% |
-| **V2** phân mức | **16,7%** | 100% | ⛔ **40%** | 0% |
+| **V2** phân mức | **16,7%** | 100% | ⛔ **33%** | 0% |
 | **V3** + sàn thực thể | 23,3% | ✅ 100% | ✅ **87%** | 0% |
+
+⚠️ V2 trên nền sạch còn **tệ hơn** con số đo trên nền bẩn (33% so với 40%) ⇒ chỗ
+mù thực thể của nó là **thật**, không phải nhiễu kênh. ⛔ V2 loại dứt khoát.
 
 ⭐ **V1 không hề bị nhiễu kênh:** 43,3% ở nhiệt độ mặc định và 43,3% khi ghim —
 y hệt, độ nhạy 100/100 cả hai. ⇒ Nền bẩn **chỉ** đánh vào đầu ra MQM dài, và
