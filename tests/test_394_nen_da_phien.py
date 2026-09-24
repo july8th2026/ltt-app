@@ -694,3 +694,31 @@ def test_moi_tep_workflow_deu_CO_CHU_trong_thanh_phan_toml():
         f"gate cham toi chung se bi day len chay TAT CA.")
     # 🔑 Doi chung: duong dan sai thi `tep` rong va khang dinh tren xanh rong.
     assert len(tep) >= 20, f"chi thay {len(tep)} tep workflow - pham vi sai?"
+
+
+def test_in_cua_cua_so_yen_chiu_duoc_console_cp1252(monkeypatch):
+    """🔴 Một lượt xếp hàng CHẾT ngay trong dòng in "đang xếp hàng" (24/09).
+
+    `_ai_giu()` nhúng **mô tả lệnh của phiên KHÁC**, mà lệnh đó có thể mang ký
+    tự ngoài cp1252. Console Windows mặc định cp1252 ⇒ `print` ném
+    `UnicodeEncodeError` ⇒ `chay_nang.py` chết ⇒ **lượt nặng không chạy**.
+
+    ⛔ Hạng lỗi tệ nhất trong công cụ dùng chung: nơi báo "tôi đang chờ" lại là
+       nơi giết chính lượt đang chờ, và nó chỉ nổ khi **hàng xóm** có tên lạ —
+       nên không phiên nào tái hiện được một mình.
+    """
+    import io as _io
+
+    chu = "giu khoa ⚠ đường-tiếng-Việt"
+    khung = _io.TextIOWrapper(_io.BytesIO(), encoding="cp1252", errors="strict")
+    monkeypatch.setattr(sys, "stdout", khung)
+
+    # 🔑 Đối chứng: `print` trần NÉM trên chính chuỗi này — không có dòng này
+    #    thì bài dưới xanh kể cả khi console không hề khó tính.
+    with pytest.raises(UnicodeEncodeError):
+        print(chu)
+
+    cua_so_yen._in(chu)          # không được ném
+    khung.flush()
+    ra = khung.buffer.getvalue().decode("cp1252")
+    assert "giu khoa" in ra, ra

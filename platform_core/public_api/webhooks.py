@@ -27,14 +27,12 @@ from __future__ import annotations
 
 import hashlib
 import hmac
-import ipaddress
 import json
-import socket
 import time
 import uuid
 from datetime import datetime, timedelta, timezone
-from urllib.parse import urlparse
 
+import platform_core.an_toan_mang as an_toan_mang
 from platform_core.public_api.errors import invalid_request
 
 EVENT_JOB_SUCCEEDED = "job.succeeded"
@@ -69,10 +67,27 @@ MAX_RESPONSE_BYTES = 8 * 1024
 MAX_REDIRECTS = 3
 SECRET_BYTES = 32
 
-# Anything that is not a public unicast address. `is_private` already covers RFC
-# 1918 and unique-local; the rest are called out because they are the ones that
-# actually get abused: the cloud metadata service, loopback, link-local.
-METADATA_ADDRESSES = frozenset({"169.254.169.254", "fd00:ec2::254"})
+# ⭐ RUT RA 24/09/2026 (plan wf-v2 P7/T1): phep kiem SSRF gio song o
+#    `platform_core/an_toan_mang.py` va node `core.http` dung CHUNG no. Ten nay
+#    giu lai de nguoi doc `webhooks.py` khong phai doan tap dia chi nam o dau.
+METADATA_ADDRESSES = an_toan_mang.METADATA_ADDRESSES
+
+#: Mã lỗi của bộ gác chung → **đúng câu** `/api/v1` vẫn trả trước khi rút ra.
+#: Một bảng tra, không phải khớp chuỗi: mô-đun chung không biết gì về webhook,
+#: và không được biết.
+_THONG_BAO = {
+    an_toan_mang.MA_RONG: "A webhook URL is required.",
+    an_toan_mang.MA_QUA_DAI: "This webhook URL is too long.",
+    an_toan_mang.MA_SO_DO: "Webhook URLs must use https.",
+    an_toan_mang.MA_THONG_TIN_DANG_NHAP:
+        "Webhook URLs must not contain credentials.",
+    an_toan_mang.MA_KHONG_CO_HOST: "This webhook URL has no host.",
+    an_toan_mang.MA_KHONG_PHAN_GIAI_DUOC:
+        "This webhook host could not be resolved.",
+    # Một câu cho **mọi** lớp bị chặn: người gọi không được dùng văn bản lỗi
+    # để vẽ bản đồ mạng nội bộ của nền tảng.
+    an_toan_mang.MA_KHONG_CHO_PHEP: "This webhook URL is not allowed.",
+}
 
 
 def _now() -> datetime:
@@ -85,6 +100,12 @@ class WebhookError(Exception):
 
 # ── Target validation (SSRF) ──────────────────────────────────────────────────
 
+#: Bộ phân giải DNS mặc định **của webhook**. Giữ tên ở đây sau khi phép kiểm
+#: được rút ra `an_toan_mang`, vì `tests/test_202_webhook_console.py:42` thay
+#: chính tên này để cả cụm test không đi ra DNS thật.
+_system_resolver = an_toan_mang._phan_giai_he_thong
+
+
 def validate_target(url: str, *, require_https: bool = True,
                     resolver=None) -> str:
     """Check a customer-supplied URL, or raise.
@@ -93,75 +114,26 @@ def validate_target(url: str, *, require_https: bool = True,
     including after each redirect: DNS can change between those moments, and a
     name that resolved to a public address yesterday can point at 127.0.0.1
     today (DNS rebinding).
+
+    ⛔ Không còn giữ phép kiểm ở đây. Hàm này chỉ còn làm **hai** việc
+    `an_toan_mang` không được biết: dịch cờ `require_https` của webhook
+    thành một `ChinhSach`, và dịch mã lỗi thành đúng câu `/api/v1` trả.
     """
-    raw = str(url or "").strip()
-    if not raw:
-        raise invalid_request("A webhook URL is required.")
-    if len(raw) > 2000:
-        raise invalid_request("This webhook URL is too long.")
-    parsed = urlparse(raw)
-    scheme = (parsed.scheme or "").lower()
-    allowed = {"https"} if require_https else {"https", "http"}
-    if scheme not in allowed:
-        raise invalid_request("Webhook URLs must use https.")
-    if parsed.username or parsed.password:
-        # Credentials in the URL would be echoed into logs and are never needed.
-        raise invalid_request("Webhook URLs must not contain credentials.")
-    host = parsed.hostname or ""
-    if not host:
-        raise invalid_request("This webhook URL has no host.")
-
-    for address in _resolve(host, resolver):
-        _reject_internal(address)
-    return raw
-
-
-def _resolve(host: str, resolver=None) -> list:
-    """Every address the host resolves to — all of them must be public.
-
-    Checking only the first answer is a hole: a name can return one public and
-    one private address, and which one a client connects to is not something
-    this code controls.
-    """
+    chinh_sach = an_toan_mang.ChinhSach(
+        so_do_cho_phep=frozenset({"https"} if require_https
+                                 else {"https", "http"}))
     try:
-        literal = ipaddress.ip_address(host)
-        return [literal]
-    except ValueError:
-        pass
-    lookup = resolver or _system_resolver
-    try:
-        addresses = lookup(host)
-    except OSError as exc:
-        raise invalid_request("This webhook host could not be resolved.") from exc
-    if not addresses:
-        raise invalid_request("This webhook host could not be resolved.")
-    return [ipaddress.ip_address(address) for address in addresses]
-
-
-def _system_resolver(host: str) -> list:
-    return sorted({info[4][0] for info in socket.getaddrinfo(host, None)})
-
-
-def _reject_internal(address) -> None:
-    # 🔴 `is_global`, KHONG phai danh sach `is_private`/`is_reserved`/...
-    #
-    #    Do 24/09/2026: `ipaddress.ip_address("100.64.0.1").is_private` tra
-    #    **False**. Dai CGNAT (RFC 6598, 100.64.0.0/10) di qua bo loc liet ke,
-    #    va ha tang VPS cua du an chay NAT qua WireGuard nen dai do co that.
-    #
-    # ⭐ Mot danh sach lop dia chi la thu ai cung phai nho bo sung; `is_global`
-    #    la MOT menh de tra loi dung cau can hoi -- "dia chi nay co dinh tuyen
-    #    duoc tren Internet cong cong khong". No phu nguoc lai ca sau lop cu
-    #    (loopback/private/link_local/multicast/reserved/unspecified deu khong
-    #    global) cong CGNAT, 192.0.0.0/24, cac dai tai lieu, va IPv6 unique-local.
-    #
-    #    Giu them `METADATA_ADDRESSES`: mot so nha cung cap dat metadata tren
-    #    dia chi VAN global (Alibaba), nen `is_global` mot minh khong du.
-    if (not address.is_global
-            or str(address) in METADATA_ADDRESSES):
-        # One message for every rejected class: a caller must not be able to use
-        # the error text to map the platform's internal network.
-        raise invalid_request("This webhook URL is not allowed.")
+        # ⚠️ `resolver or _system_resolver` — KHÔNG để `an_toan_mang` tự chọn
+        #    bộ phân giải mặc định. Bộ test của webhook thay DNS bằng
+        #    `monkeypatch.setattr(webhooks, "_system_resolver", ...)`; nếu
+        #    hàm này truyền `None` xuống thì lần thay đó thành **vô hiệu
+        #    trong im lặng** và cả cụm test sẽ đi ra mạng thật.
+        return an_toan_mang.kiem_url(url, chinh_sach=chinh_sach,
+                                     resolver=resolver or _system_resolver)
+    except an_toan_mang.LoiChanSSRF as exc:
+        raise invalid_request(
+            _THONG_BAO.get(exc.ma, _THONG_BAO[an_toan_mang.MA_KHONG_CHO_PHEP])
+        ) from exc
 
 
 # ── Signing ───────────────────────────────────────────────────────────────────

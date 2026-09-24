@@ -1,0 +1,1007 @@
+[
+  {
+    "preload": "a_undici_dispatcher",
+    "piece": "piece-https.js",
+    "target": "local_ip_v4",
+    "url": "http://127.0.0.1:18199/probe",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "https-raw",
+      "target": "http://127.0.0.1:18199/probe",
+      "status": 200,
+      "body": "caught:v4\n"
+    }
+  },
+  {
+    "preload": "a_undici_dispatcher",
+    "piece": "piece-https.js",
+    "target": "local_hostname",
+    "url": "http://localhost:18199/probe",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "https-raw",
+      "target": "http://localhost:18199/probe",
+      "status": 200,
+      "body": "caught:v4\n"
+    }
+  },
+  {
+    "preload": "a_undici_dispatcher",
+    "piece": "piece-https.js",
+    "target": "local_ipv6",
+    "url": "http://[::1]:18299/probe",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "https-raw",
+      "target": "http://[::1]:18299/probe",
+      "status": 200,
+      "body": "caught:v6\n"
+    }
+  },
+  {
+    "preload": "a_undici_dispatcher",
+    "piece": "piece-https.js",
+    "target": "external_hostname",
+    "url": "http://example.com/",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "https-raw",
+      "target": "http://example.com/",
+      "status": 200,
+      "body": "<!doctype html><html lang=\"en\"><head><title>Example Domain</title><link rel=\"ico"
+    }
+  },
+  {
+    "preload": "a_undici_dispatcher",
+    "piece": "piece-https.js",
+    "target": "external_ip",
+    "url": "http://172.66.147.243/",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "https-raw",
+      "target": "http://172.66.147.243/",
+      "status": 403,
+      "body": "error code: 1003\n"
+    }
+  },
+  {
+    "preload": "a_undici_dispatcher",
+    "piece": "piece-axios.js",
+    "target": "local_ip_v4",
+    "url": "http://127.0.0.1:18199/probe",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "axios",
+      "target": "http://127.0.0.1:18199/probe",
+      "status": 200,
+      "body": "caught:v4\n"
+    }
+  },
+  {
+    "preload": "a_undici_dispatcher",
+    "piece": "piece-axios.js",
+    "target": "local_hostname",
+    "url": "http://localhost:18199/probe",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "axios",
+      "target": "http://localhost:18199/probe",
+      "status": 200,
+      "body": "caught:v4\n"
+    }
+  },
+  {
+    "preload": "a_undici_dispatcher",
+    "piece": "piece-axios.js",
+    "target": "local_ipv6",
+    "url": "http://[::1]:18299/probe",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "axios",
+      "target": "http://[::1]:18299/probe",
+      "status": 200,
+      "body": "caught:v6\n"
+    }
+  },
+  {
+    "preload": "a_undici_dispatcher",
+    "piece": "piece-axios.js",
+    "target": "external_hostname",
+    "url": "http://example.com/",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "axios",
+      "target": "http://example.com/",
+      "status": 200,
+      "body": "<!doctype html><html lang=\"en\"><head><title>Example Domain</title><link rel=\"ico"
+    }
+  },
+  {
+    "preload": "a_undici_dispatcher",
+    "piece": "piece-axios.js",
+    "target": "external_ip",
+    "url": "http://172.66.147.243/",
+    "verdict": "LOI KHAC (ERR_BAD_REQUEST)",
+    "detail": {
+      "ok": false,
+      "mode": "axios",
+      "target": "http://172.66.147.243/",
+      "error": "ERR_BAD_REQUEST"
+    }
+  },
+  {
+    "preload": "a_undici_dispatcher",
+    "piece": "piece-fetch.js",
+    "target": "local_ip_v4",
+    "url": "http://127.0.0.1:18199/probe",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "fetch",
+      "target": "http://127.0.0.1:18199/probe",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "a_undici_dispatcher",
+    "piece": "piece-fetch.js",
+    "target": "local_hostname",
+    "url": "http://localhost:18199/probe",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "fetch",
+      "target": "http://localhost:18199/probe",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "a_undici_dispatcher",
+    "piece": "piece-fetch.js",
+    "target": "local_ipv6",
+    "url": "http://[::1]:18299/probe",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "fetch",
+      "target": "http://[::1]:18299/probe",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "a_undici_dispatcher",
+    "piece": "piece-fetch.js",
+    "target": "external_hostname",
+    "url": "http://example.com/",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "fetch",
+      "target": "http://example.com/",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "a_undici_dispatcher",
+    "piece": "piece-fetch.js",
+    "target": "external_ip",
+    "url": "http://172.66.147.243/",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "fetch",
+      "target": "http://172.66.147.243/",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b1_dns_only",
+    "piece": "piece-https.js",
+    "target": "local_ip_v4",
+    "url": "http://127.0.0.1:18199/probe",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "https-raw",
+      "target": "http://127.0.0.1:18199/probe",
+      "status": 200,
+      "body": "caught:v4\n"
+    }
+  },
+  {
+    "preload": "b1_dns_only",
+    "piece": "piece-https.js",
+    "target": "local_hostname",
+    "url": "http://localhost:18199/probe",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "https-raw",
+      "target": "http://localhost:18199/probe",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b1_dns_only",
+    "piece": "piece-https.js",
+    "target": "local_ipv6",
+    "url": "http://[::1]:18299/probe",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "https-raw",
+      "target": "http://[::1]:18299/probe",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b1_dns_only",
+    "piece": "piece-https.js",
+    "target": "external_hostname",
+    "url": "http://example.com/",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "https-raw",
+      "target": "http://example.com/",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b1_dns_only",
+    "piece": "piece-https.js",
+    "target": "external_ip",
+    "url": "http://172.66.147.243/",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "https-raw",
+      "target": "http://172.66.147.243/",
+      "status": 403,
+      "body": "error code: 1003\n"
+    }
+  },
+  {
+    "preload": "b1_dns_only",
+    "piece": "piece-axios.js",
+    "target": "local_ip_v4",
+    "url": "http://127.0.0.1:18199/probe",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "axios",
+      "target": "http://127.0.0.1:18199/probe",
+      "status": 200,
+      "body": "caught:v4\n"
+    }
+  },
+  {
+    "preload": "b1_dns_only",
+    "piece": "piece-axios.js",
+    "target": "local_hostname",
+    "url": "http://localhost:18199/probe",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "axios",
+      "target": "http://localhost:18199/probe",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b1_dns_only",
+    "piece": "piece-axios.js",
+    "target": "local_ipv6",
+    "url": "http://[::1]:18299/probe",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "axios",
+      "target": "http://[::1]:18299/probe",
+      "status": 200,
+      "body": "caught:v6\n"
+    }
+  },
+  {
+    "preload": "b1_dns_only",
+    "piece": "piece-axios.js",
+    "target": "external_hostname",
+    "url": "http://example.com/",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "axios",
+      "target": "http://example.com/",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b1_dns_only",
+    "piece": "piece-axios.js",
+    "target": "external_ip",
+    "url": "http://172.66.147.243/",
+    "verdict": "LOI KHAC (ERR_BAD_REQUEST)",
+    "detail": {
+      "ok": false,
+      "mode": "axios",
+      "target": "http://172.66.147.243/",
+      "error": "ERR_BAD_REQUEST"
+    }
+  },
+  {
+    "preload": "b1_dns_only",
+    "piece": "piece-fetch.js",
+    "target": "local_ip_v4",
+    "url": "http://127.0.0.1:18199/probe",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "fetch",
+      "target": "http://127.0.0.1:18199/probe",
+      "status": 200,
+      "body": "caught:v4\n"
+    }
+  },
+  {
+    "preload": "b1_dns_only",
+    "piece": "piece-fetch.js",
+    "target": "local_hostname",
+    "url": "http://localhost:18199/probe",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "fetch",
+      "target": "http://localhost:18199/probe",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b1_dns_only",
+    "piece": "piece-fetch.js",
+    "target": "local_ipv6",
+    "url": "http://[::1]:18299/probe",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "fetch",
+      "target": "http://[::1]:18299/probe",
+      "status": 200,
+      "body": "caught:v6\n"
+    }
+  },
+  {
+    "preload": "b1_dns_only",
+    "piece": "piece-fetch.js",
+    "target": "external_hostname",
+    "url": "http://example.com/",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "fetch",
+      "target": "http://example.com/",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b1_dns_only",
+    "piece": "piece-fetch.js",
+    "target": "external_ip",
+    "url": "http://172.66.147.243/",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "fetch",
+      "target": "http://172.66.147.243/",
+      "status": 403,
+      "body": "error code: 1003\n"
+    }
+  },
+  {
+    "preload": "b2_socket_only",
+    "piece": "piece-https.js",
+    "target": "local_ip_v4",
+    "url": "http://127.0.0.1:18199/probe",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "https-raw",
+      "target": "http://127.0.0.1:18199/probe",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b2_socket_only",
+    "piece": "piece-https.js",
+    "target": "local_hostname",
+    "url": "http://localhost:18199/probe",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "https-raw",
+      "target": "http://localhost:18199/probe",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b2_socket_only",
+    "piece": "piece-https.js",
+    "target": "local_ipv6",
+    "url": "http://[::1]:18299/probe",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "https-raw",
+      "target": "http://[::1]:18299/probe",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b2_socket_only",
+    "piece": "piece-https.js",
+    "target": "external_hostname",
+    "url": "http://example.com/",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "https-raw",
+      "target": "http://example.com/",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b2_socket_only",
+    "piece": "piece-https.js",
+    "target": "external_ip",
+    "url": "http://172.66.147.243/",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "https-raw",
+      "target": "http://172.66.147.243/",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b2_socket_only",
+    "piece": "piece-axios.js",
+    "target": "local_ip_v4",
+    "url": "http://127.0.0.1:18199/probe",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "axios",
+      "target": "http://127.0.0.1:18199/probe",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b2_socket_only",
+    "piece": "piece-axios.js",
+    "target": "local_hostname",
+    "url": "http://localhost:18199/probe",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "axios",
+      "target": "http://localhost:18199/probe",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b2_socket_only",
+    "piece": "piece-axios.js",
+    "target": "local_ipv6",
+    "url": "http://[::1]:18299/probe",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "axios",
+      "target": "http://[::1]:18299/probe",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b2_socket_only",
+    "piece": "piece-axios.js",
+    "target": "external_hostname",
+    "url": "http://example.com/",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "axios",
+      "target": "http://example.com/",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b2_socket_only",
+    "piece": "piece-axios.js",
+    "target": "external_ip",
+    "url": "http://172.66.147.243/",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "axios",
+      "target": "http://172.66.147.243/",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b2_socket_only",
+    "piece": "piece-fetch.js",
+    "target": "local_ip_v4",
+    "url": "http://127.0.0.1:18199/probe",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "fetch",
+      "target": "http://127.0.0.1:18199/probe",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b2_socket_only",
+    "piece": "piece-fetch.js",
+    "target": "local_hostname",
+    "url": "http://localhost:18199/probe",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "fetch",
+      "target": "http://localhost:18199/probe",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b2_socket_only",
+    "piece": "piece-fetch.js",
+    "target": "local_ipv6",
+    "url": "http://[::1]:18299/probe",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "fetch",
+      "target": "http://[::1]:18299/probe",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b2_socket_only",
+    "piece": "piece-fetch.js",
+    "target": "external_hostname",
+    "url": "http://example.com/",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "fetch",
+      "target": "http://example.com/",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b2_socket_only",
+    "piece": "piece-fetch.js",
+    "target": "external_ip",
+    "url": "http://172.66.147.243/",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "fetch",
+      "target": "http://172.66.147.243/",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b3_dns_and_socket",
+    "piece": "piece-https.js",
+    "target": "local_ip_v4",
+    "url": "http://127.0.0.1:18199/probe",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "https-raw",
+      "target": "http://127.0.0.1:18199/probe",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b3_dns_and_socket",
+    "piece": "piece-https.js",
+    "target": "local_hostname",
+    "url": "http://localhost:18199/probe",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "https-raw",
+      "target": "http://localhost:18199/probe",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b3_dns_and_socket",
+    "piece": "piece-https.js",
+    "target": "local_ipv6",
+    "url": "http://[::1]:18299/probe",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "https-raw",
+      "target": "http://[::1]:18299/probe",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b3_dns_and_socket",
+    "piece": "piece-https.js",
+    "target": "external_hostname",
+    "url": "http://example.com/",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "https-raw",
+      "target": "http://example.com/",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b3_dns_and_socket",
+    "piece": "piece-https.js",
+    "target": "external_ip",
+    "url": "http://172.66.147.243/",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "https-raw",
+      "target": "http://172.66.147.243/",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b3_dns_and_socket",
+    "piece": "piece-axios.js",
+    "target": "local_ip_v4",
+    "url": "http://127.0.0.1:18199/probe",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "axios",
+      "target": "http://127.0.0.1:18199/probe",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b3_dns_and_socket",
+    "piece": "piece-axios.js",
+    "target": "local_hostname",
+    "url": "http://localhost:18199/probe",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "axios",
+      "target": "http://localhost:18199/probe",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b3_dns_and_socket",
+    "piece": "piece-axios.js",
+    "target": "local_ipv6",
+    "url": "http://[::1]:18299/probe",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "axios",
+      "target": "http://[::1]:18299/probe",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b3_dns_and_socket",
+    "piece": "piece-axios.js",
+    "target": "external_hostname",
+    "url": "http://example.com/",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "axios",
+      "target": "http://example.com/",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b3_dns_and_socket",
+    "piece": "piece-axios.js",
+    "target": "external_ip",
+    "url": "http://172.66.147.243/",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "axios",
+      "target": "http://172.66.147.243/",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b3_dns_and_socket",
+    "piece": "piece-fetch.js",
+    "target": "local_ip_v4",
+    "url": "http://127.0.0.1:18199/probe",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "fetch",
+      "target": "http://127.0.0.1:18199/probe",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b3_dns_and_socket",
+    "piece": "piece-fetch.js",
+    "target": "local_hostname",
+    "url": "http://localhost:18199/probe",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "fetch",
+      "target": "http://localhost:18199/probe",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b3_dns_and_socket",
+    "piece": "piece-fetch.js",
+    "target": "local_ipv6",
+    "url": "http://[::1]:18299/probe",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "fetch",
+      "target": "http://[::1]:18299/probe",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b3_dns_and_socket",
+    "piece": "piece-fetch.js",
+    "target": "external_hostname",
+    "url": "http://example.com/",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "fetch",
+      "target": "http://example.com/",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "b3_dns_and_socket",
+    "piece": "piece-fetch.js",
+    "target": "external_ip",
+    "url": "http://172.66.147.243/",
+    "verdict": "CHAN",
+    "detail": {
+      "ok": false,
+      "mode": "fetch",
+      "target": "http://172.66.147.243/",
+      "error": "EGRESS_BLOCKED"
+    }
+  },
+  {
+    "preload": "z_none_doi_chung",
+    "piece": "piece-https.js",
+    "target": "local_ip_v4",
+    "url": "http://127.0.0.1:18199/probe",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "https-raw",
+      "target": "http://127.0.0.1:18199/probe",
+      "status": 200,
+      "body": "caught:v4\n"
+    }
+  },
+  {
+    "preload": "z_none_doi_chung",
+    "piece": "piece-https.js",
+    "target": "local_hostname",
+    "url": "http://localhost:18199/probe",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "https-raw",
+      "target": "http://localhost:18199/probe",
+      "status": 200,
+      "body": "caught:v4\n"
+    }
+  },
+  {
+    "preload": "z_none_doi_chung",
+    "piece": "piece-https.js",
+    "target": "local_ipv6",
+    "url": "http://[::1]:18299/probe",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "https-raw",
+      "target": "http://[::1]:18299/probe",
+      "status": 200,
+      "body": "caught:v6\n"
+    }
+  },
+  {
+    "preload": "z_none_doi_chung",
+    "piece": "piece-https.js",
+    "target": "external_hostname",
+    "url": "http://example.com/",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "https-raw",
+      "target": "http://example.com/",
+      "status": 200,
+      "body": "<!doctype html><html lang=\"en\"><head><title>Example Domain</title><link rel=\"ico"
+    }
+  },
+  {
+    "preload": "z_none_doi_chung",
+    "piece": "piece-https.js",
+    "target": "external_ip",
+    "url": "http://172.66.147.243/",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "https-raw",
+      "target": "http://172.66.147.243/",
+      "status": 403,
+      "body": "error code: 1003\n"
+    }
+  },
+  {
+    "preload": "z_none_doi_chung",
+    "piece": "piece-axios.js",
+    "target": "local_ip_v4",
+    "url": "http://127.0.0.1:18199/probe",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "axios",
+      "target": "http://127.0.0.1:18199/probe",
+      "status": 200,
+      "body": "caught:v4\n"
+    }
+  },
+  {
+    "preload": "z_none_doi_chung",
+    "piece": "piece-axios.js",
+    "target": "local_hostname",
+    "url": "http://localhost:18199/probe",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "axios",
+      "target": "http://localhost:18199/probe",
+      "status": 200,
+      "body": "caught:v4\n"
+    }
+  },
+  {
+    "preload": "z_none_doi_chung",
+    "piece": "piece-axios.js",
+    "target": "local_ipv6",
+    "url": "http://[::1]:18299/probe",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "axios",
+      "target": "http://[::1]:18299/probe",
+      "status": 200,
+      "body": "caught:v6\n"
+    }
+  },
+  {
+    "preload": "z_none_doi_chung",
+    "piece": "piece-axios.js",
+    "target": "external_hostname",
+    "url": "http://example.com/",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "axios",
+      "target": "http://example.com/",
+      "status": 200,
+      "body": "<!doctype html><html lang=\"en\"><head><title>Example Domain</title><link rel=\"ico"
+    }
+  },
+  {
+    "preload": "z_none_doi_chung",
+    "piece": "piece-axios.js",
+    "target": "external_ip",
+    "url": "http://172.66.147.243/",
+    "verdict": "LOI KHAC (ERR_BAD_REQUEST)",
+    "detail": {
+      "ok": false,
+      "mode": "axios",
+      "target": "http://172.66.147.243/",
+      "error": "ERR_BAD_REQUEST"
+    }
+  },
+  {
+    "preload": "z_none_doi_chung",
+    "piece": "piece-fetch.js",
+    "target": "local_ip_v4",
+    "url": "http://127.0.0.1:18199/probe",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "fetch",
+      "target": "http://127.0.0.1:18199/probe",
+      "status": 200,
+      "body": "caught:v4\n"
+    }
+  },
+  {
+    "preload": "z_none_doi_chung",
+    "piece": "piece-fetch.js",
+    "target": "local_hostname",
+    "url": "http://localhost:18199/probe",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "fetch",
+      "target": "http://localhost:18199/probe",
+      "status": 200,
+      "body": "caught:v4\n"
+    }
+  },
+  {
+    "preload": "z_none_doi_chung",
+    "piece": "piece-fetch.js",
+    "target": "local_ipv6",
+    "url": "http://[::1]:18299/probe",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "fetch",
+      "target": "http://[::1]:18299/probe",
+      "status": 200,
+      "body": "caught:v6\n"
+    }
+  },
+  {
+    "preload": "z_none_doi_chung",
+    "piece": "piece-fetch.js",
+    "target": "external_hostname",
+    "url": "http://example.com/",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "fetch",
+      "target": "http://example.com/",
+      "status": 200,
+      "body": "<!doctype html><html lang=\"en\"><head><title>Example Domain</title><link rel=\"ico"
+    }
+  },
+  {
+    "preload": "z_none_doi_chung",
+    "piece": "piece-fetch.js",
+    "target": "external_ip",
+    "url": "http://172.66.147.243/",
+    "verdict": "REACHED (khong chan)",
+    "detail": {
+      "ok": true,
+      "mode": "fetch",
+      "target": "http://172.66.147.243/",
+      "status": 403,
+      "body": "error code: 1003\n"
+    }
+  }
+]
