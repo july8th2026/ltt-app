@@ -108,7 +108,7 @@ from platform_core.public_api.idempotency import (MAX_KEY_LENGTH,
                                                   MIN_KEY_LENGTH)
 from platform_core.registry import RegistryError
 from platform_core.workflow import (bao_gia, dong_co, may_trang_thai, su_kien,
-                                    tao_run, thi_hanh)
+                                    tao_run, thi_hanh, thu_lai)
 from server.auth.session import require_login
 from server.deps import get_db
 
@@ -556,6 +556,217 @@ async def v3_huy_run(request: Request, run_id: str,
         raise HTTPException(status_code=409, detail={
             "ma": "da_ket_thuc",
             "thong_diep": _t('Lượt chạy đã kết thúc.')})
+    db.commit()
+    db.refresh(run)
+    return JSONResponse(_run_json_v3(db, run), headers=_NO_STORE)
+
+
+# ── So sánh hai lượt chạy (spec §14, P9b task 2) ─────────────────────────────
+#
+# ⛔ DẪN XUẤT, KHÔNG THÊM CỘT. Mọi trường dưới đây đọc từ thứ đã có:
+#    `workflow_version.graph` (tham số KHAI), `node_run_snapshot` (trạng thái,
+#    attempt, `cost_credit`, `output_ref`, `error`), `workflow_event`
+#    (`WorkflowStarted.du_lieu["inputs"]`). Ranh giới làn: `models.py` và mọi
+#    migration thuộc làn `p6` — một bảng "diff" lưu sẵn sẽ là cột mới, và là
+#    một bản sao có thể trôi khỏi thứ nó chép.
+
+#: Trường quyết định "hai node này KHÁC nhau". ⛔ Không có `waiting_kind` và
+#: `job_id`: `job_id` khác nhau ở MỌI cặp run (mỗi run nộp job riêng) nên đưa
+#: nó vào đây biến `khac` thành "mọi node đã chạy" — đúng thứ vô dụng mà phép
+#: đối chứng "so một run với chính nó" tồn tại để bắt.
+_TRUONG_SO_SANH = ("status", "attempt", "cost_credit", "error", "params",
+                   "output_ref")
+
+
+def _inputs_cua(db: Session, run: WorkflowRun) -> dict:
+    """`inputs` người dùng đã gõ, đọc từ `WorkflowStarted` — không cột mới.
+
+    `su_kien.ghi` đã cho payload đi qua `job_events.redact_details`, nên thứ
+    nằm trong bảng đã được che theo đúng luật che của nền tảng; cửa này không
+    đặt luật che thứ hai (hai chỗ che khác nhau là hai chỗ trôi khỏi nhau).
+    """
+    from platform_core.models import WorkflowEvent
+    ev = db.execute(
+        select(WorkflowEvent)
+        .where(WorkflowEvent.run_id == run.id,
+               WorkflowEvent.loai == "WorkflowStarted")
+        .order_by(WorkflowEvent.seq).limit(1)).scalars().first()
+    thu = (ev.du_lieu or {}).get("inputs") if ev is not None else None
+    return dict(thu) if isinstance(thu, dict) else {}
+
+
+def _nodes_so_sanh(db: Session, run: WorkflowRun) -> list[dict]:
+    """`_nodes_json` + hai trường spec §14 đòi riêng cho diff.
+
+    ⚠️ `params` là tham số **KHAI trong đồ thị**, ⛔ KHÔNG phải `Job.params`.
+       `cau_noi.nop_job` tiêm `owner_id`, `_idem` và **giá trị credential đã
+       giải** vào `Job.params` (§9.4); trả nó cho trình duyệt mở một đường rò
+       bí mật mới cho đúng một màn hình diff. Giá trị đã giải của một lượt
+       chạy vẫn đọc được — qua `output_ref` và dòng thời gian — mà không phải
+       mở cả túi tham số.
+
+    ⚠️ Hai trường này KHÔNG vào `_nodes_json`: `_nodes_json` chạy MỖI GIÂY
+       trong luồng SSE, và `params` của một đồ thị lớn là phần nặng nhất của
+       gói. Diff là một lần bấm, không phải một nhịp.
+    """
+    ver = db.get(WorkflowVersion, run.version_id)
+    do_thi = (ver.graph if ver is not None else {}) or {}
+    khai = {str(n.get("id") or ""): dict(n.get("params") or {})
+            for n in (do_thi.get("nodes") or [])}
+    ra: list[dict] = []
+    for muc in _nodes_json(db, run):
+        nid = muc["node_id"]
+        anh = thi_hanh.anh_chup_hien_tai(db, run.id, nid)
+        ra.append(muc | {
+            "params": khai.get(nid, {}),
+            "output_ref": dict(anh.output_ref or {}) if anh is not None else {},
+        })
+    return ra
+
+
+def _tom_tat_so_sanh(db: Session, run: WorkflowRun) -> dict:
+    return {
+        "id": run.id,
+        "workflow_id": run.workflow_id,
+        "version_id": run.version_id,
+        "status": run.status,
+        "credit_max": int(run.estimated_max or 0),
+        "credit_charged": int(run.actual_cost or 0),
+        "settled": run.ket_so_luc is not None,
+        "created_at": _iso(run.created_at),
+        "inputs": _inputs_cua(db, run),
+        "nodes": _nodes_so_sanh(db, run),
+    }
+
+
+@router.get("/api/v3/runs/{run_id}/so-sanh")
+def v3_so_sanh_run(request: Request, run_id: str,
+                   voi: str = Query(..., min_length=1),
+                   _identity: str = Depends(require_login),
+                   db: Session = Depends(get_db)):
+    """Hai danh sách node của hai lượt chạy + tập node LỆCH (spec §14).
+
+    ⭐ Lọc chủ sở hữu ở **cả hai** phía. Id run thứ hai đến từ query, nên một
+       cài đặt chỉ lọc phía `path` biến cửa này thành máy dò run của người
+       khác: `voi=<id đoán>` trả 200 cho id có thật và 404 cho id không có.
+       `_run_cua_toi` trả 404 cho cả "không có" lẫn "của người khác", nên đi
+       qua nó hai lần là đóng đúng lỗ ấy.
+
+    `khac` = node có ít nhất một trường trong `_TRUONG_SO_SANH` lệch, **cộng**
+    node chỉ có ở một bên (hai run khác version). Máy trả tập lệch; ⛔ máy
+    không tô màu và không xếp hạng — UI diff là việc của Canvas.
+    """
+    user = _user(request)
+    a = _run_cua_toi(db, run_id, user.id)
+    b = _run_cua_toi(db, str(voi or ""), user.id)
+    ta, tb = _tom_tat_so_sanh(db, a), _tom_tat_so_sanh(db, b)
+    ma = {n["node_id"]: n for n in ta["nodes"]}
+    mb = {n["node_id"]: n for n in tb["nodes"]}
+    khac = sorted(
+        nid for nid in (ma.keys() | mb.keys())
+        if nid not in ma or nid not in mb
+        or any(ma[nid].get(k) != mb[nid].get(k) for k in _TRUONG_SO_SANH))
+    return JSONResponse({"a": ta, "b": tb, "khac": khac,
+                         "khac_version": a.version_id != b.version_id},
+                        headers=_NO_STORE)
+
+
+# ── Thử lại MỘT node (spec §14, P9b task 1) ──────────────────────────────────
+#
+# 🔴 CỬA NÀY CHẠM SỔ CREDIT. Ba điều kiện về tiền, theo thứ tự, và không điều
+#    kiện nào ở đây là "phòng xa":
+#
+#      run chưa KẾT SỔ      `ket_so.ket_so()` đã nhả khoản giữ và chốt sổ của
+#                           khách khi run vào trạng thái kết thúc. Chạy tiếp
+#                           một node sau đó là nền tảng làm KHÔNG CÔNG.
+#      `hold_id` còn sống   trần > 0 mà không có khoản giữ ⇒ không có gì bảo
+#                           chứng cho lượt job sắp nộp.
+#      hold còn ĐỦ          `estimated_max` − chi phí thật đã ghi ≥ `gia_tran`
+#                           của chính node ấy (chữ "cần hold còn đủ" của §14).
+#
+# ⛔ Cửa này KHÔNG gọi `tien.giu_cho_run`. Một lượt thử lại chạy DƯỚI khoản
+#    giữ đã có — "một khoản giữ mỗi run" (`tien.py`, `test_965`) là ràng buộc,
+#    không phải gợi ý, và một khoản thứ hai cho cùng một run là khách trả hai
+#    lần cho một việc.
+
+
+def _node_trong_do_thi(db: Session, run: WorkflowRun, node_id: str) -> dict:
+    ver = db.get(WorkflowVersion, run.version_id)
+    for n in ((ver.graph if ver is not None else {}) or {}).get("nodes") or []:
+        if str(n.get("id")) == str(node_id):
+            return dict(n)
+    raise HTTPException(status_code=404, detail={
+        "ma": "node_khong_ton_tai",
+        "thong_diep": _t('Node không có trong bản đã publish.')})
+
+
+def _kiem_hold_con_du(db: Session, run: WorkflowRun, node: dict) -> None:
+    """402 khi khoản giữ không còn bảo chứng nổi một lượt nữa của node này."""
+    if run.status in may_trang_thai.RUN_KET_THUC or run.ket_so_luc is not None:
+        # Dùng lại NGUYÊN mã của `agent/supervisor.lam` — cùng một luật, và
+        # một mã thứ hai cho cùng một luật là hai chỗ Canvas phải học.
+        raise HTTPException(status_code=402, detail={
+            "ma": "run_da_ket_so",
+            "thong_diep": _t('Lượt chạy đã kết sổ — khoản giữ đã được nhả.')})
+    tran_run = int(run.estimated_max or 0)
+    if tran_run > 0 and not run.hold_id:
+        raise HTTPException(status_code=402, detail={
+            "ma": "khong_con_hold",
+            "thong_diep": _t('Lượt chạy không còn khoản giữ nào.')})
+    con = tran_run - may_trang_thai.tong_chi_phi_hop_le(db, run.id)
+    can = int(node.get("gia_tran", 0) or 0)
+    if con < can:
+        raise HTTPException(status_code=402, detail={
+            "ma": "hold_khong_du",
+            "thong_diep": _t('Khoản giữ còn %(con)d credit, node này cần '
+                             '%(can)d.') % {"con": max(0, con), "can": can}})
+
+
+@router.post("/api/v3/runs/{run_id}/nodes/{node_id}/thu-lai")
+async def v3_thu_lai_node(request: Request, run_id: str, node_id: str,
+                          _identity: str = Depends(require_login),
+                          db: Session = Depends(get_db)):
+    """Hẹn NGAY một lượt chạy nữa cho một node đã hỏng (spec §14).
+
+    ⭐ Cửa này KHÔNG nộp job. Nó đưa node về `RETRY_SCHEDULED` với hạn *bây
+       giờ* rồi hẹn một wakeup — `thu_lai.den_han` (chạy trong `dong_co.
+       xu_ly_run`) đưa nó về `READY`, và `cau_noi.nop_job` nộp. Nộp thẳng từ
+       một route HTTP là mở **đường nộp job thứ hai**, đi vòng qua chính sách
+       side effect, trần báo giá và `_khoa_idem` mà động cơ cưỡng chế.
+    """
+    body = await request.json() if await request.body() else {}
+    _verify_json_csrf(request, body if isinstance(body, dict) else {})
+    user = _user(request)
+    run = _run_cua_toi(db, run_id, user.id)
+    node = _node_trong_do_thi(db, run, node_id)
+    _kiem_hold_con_du(db, run, node)
+
+    anh = thi_hanh.anh_chup_hien_tai(db, run.id, node_id)
+    hien = anh.execution_status if anh is not None else may_trang_thai.NODE_BAT_DAU
+    if hien in thu_lai.KHONG_THU_LAI:
+        # ⛔ `ABANDONED` KHÔNG phải "chưa chạy": provider **có thể đã nhận**.
+        #    `KHONG_THU_LAI` là bản khai có sẵn — ⛔ không chép lại tập ấy.
+        raise HTTPException(status_code=409, detail={
+            "ma": "khong_thu_lai_duoc",
+            "thong_diep": _t('Node ở trạng thái %(tt)s không được thử lại.')
+            % {"tt": hien}})
+    if hien != "FAILED":
+        raise HTTPException(status_code=409, detail={
+            "ma": "trang_thai_node_sai",
+            "thong_diep": _t('Chỉ thử lại được node đã hỏng (đang %(tt)s).')
+            % {"tt": hien}})
+
+    lan = int(anh.attempt_number or 1) if anh is not None else 1
+    if not thu_lai.thu_cong(db, run_id=run.id, node=node, lan=lan):
+        db.rollback()
+        raise HTTPException(status_code=409, detail={
+            "ma": "trang_thai_node_sai",
+            "thong_diep": _t('Node vừa đổi trạng thái — hãy tải lại.')})
+    # Dùng lại `NodeResumed` của tập `su_kien.LOAI` (tập ĐÓNG): "node được cho
+    # chạy lại" đúng nghĩa của nó, và thêm một loại thứ hai cho cùng ý nghĩa
+    # là thêm một chữ mà mọi bên đọc nhật ký phải học.
+    su_kien.ghi(db, run.id, "NodeResumed", node_id=str(node_id),
+                du_lieu={"boi": "nguoi_dung", "lan": lan + 1})
     db.commit()
     db.refresh(run)
     return JSONResponse(_run_json_v3(db, run), headers=_NO_STORE)

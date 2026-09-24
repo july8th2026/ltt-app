@@ -603,6 +603,47 @@ export async function loadRunV3(runId: string, sau = 0): Promise<RunV3> {
   return request(`/agent/api/v3/runs/${runId}?sau=${sau}`) as Promise<RunV3>
 }
 
+/**
+ * Theo dõi MỘT run **trực tiếp** qua SSE (spec §14, `runs_v3.py::v3_su_kien_sse`).
+ *
+ * ⭐ `EventSource` chứ không `apiFetch()`, và đó là cả lý do cửa máy chủ là
+ *    `GET` thuần. `apiFetch()` gắn `Accept: application/json` cho MỌI lời gọi
+ *    — sai giao thức cho một luồng `text/event-stream`, đúng con nợ mà
+ *    `previewAssistant` đã mắc. `EventSource` để trình duyệt tự gắn
+ *    `Accept: text/event-stream`, nên lớp lỗi ấy không có đường vào.
+ *
+ * ⛔ Hàm này **không** tự nối lại, và đó là chủ ý. `EventSource` có sẵn một
+ *    cơ chế nối lại (cố định ~3 s, không lùi dần, im lặng) — dùng nó là **mất
+ *    chống-ngập**: một máy chủ đang sập sẽ bị gõ cửa đều đặn mãi mãi, và
+ *    người dùng không thấy gì. Việc nối lại thuộc về `CanvasShell`, nơi đã có
+ *    `nhipCho()` lùi dần 1,5s → 3s → 6s → 12s **và** một dòng lỗi nhìn thấy
+ *    được. Bên gọi phân biệt "đóng sau khi ĐÃ nhận gói" (mốc 90 s của máy
+ *    chủ — nối lại NGAY, không phải lỗi) với "đóng mà chưa nhận gì nào"
+ *    (hỏng thật — lùi dần).
+ *
+ * `sau` = con trỏ sự kiện đang cầm (`seq_cuoi`); máy chủ chỉ gửi phần mới hơn.
+ * Trả về hàm ĐÓNG luồng.
+ */
+export function theoDoiRunV3(runId: string, sau: number,
+                             tay: { onGoi: (run: RunV3) => void
+                                    onLoi: () => void }): () => void {
+  const es = new EventSource(`/agent/api/v3/runs/${runId}/su-kien?sau=${sau}`)
+  es.addEventListener('run', (su: MessageEvent<string>) => {
+    try { tay.onGoi(JSON.parse(su.data) as RunV3) }
+    // Một gói méo không được giết cả luồng: coi như một nhịp hỏng, và
+    // `CanvasShell` quyết định lùi bao lâu.
+    catch { tay.onLoi() }
+  })
+  // Máy chủ nói "xong" khi run đã kết thúc. Không phải lỗi — nhưng cũng không
+  // còn gì để nghe, nên đóng để trình duyệt khỏi tự mở lại.
+  es.addEventListener('dong', () => { es.close() })
+  // ⛔ ĐÓNG ngay trong handler, trước khi báo lên: `EventSource` bắt đầu tự
+  //    nối lại NGAY sau `onerror`, nên chỉ chờ bên gọi đóng là để lọt một lần
+  //    gõ cửa không ai điều khiển — đúng thứ chống-ngập ở trên tồn tại để chặn.
+  es.onerror = () => { es.close(); tay.onLoi() }
+  return () => es.close()
+}
+
 export async function cancelRunV3(runId: string,
                                   csrfToken: string): Promise<RunV3> {
   return request(`/agent/api/v3/runs/${runId}/cancel`, {

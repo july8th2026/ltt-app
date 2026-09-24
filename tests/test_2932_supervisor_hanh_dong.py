@@ -155,6 +155,56 @@ def test_het_luot_thi_TU_CHOI_va_KHONG_doi_trang_thai(db, xuong):
     assert _tt(db, run, "a") == "FAILED"
 
 
+def test_thu_lai_qua_supervisor_phai_TANG_attempt_number(db, xuong):
+    """🔴 Khong tang thi `retry.max` KHONG BAO GIO can — thu lai VO HAN.
+
+    `cau_noi.nop_job` hen lai bang `attempt_number=lan + 1` (`cau_noi.py:416`),
+    con supervisor ghi `attempt_number=lan` (`supervisor.py:108`). Va
+    `thu_lai.den_han` **giu nguyen** con so cua luot hen (docstring cua no noi
+    ro the). Nen tren duong supervisor, `con_luot(n, lan)` mai thay CUNG mot
+    `lan` => moi luot deu "con luot".
+
+    ⛔ Moi luot thu lai la mot JOB, va moi job la mot but toan. Mot vong lap
+       khong can la mot vong lap TIEU TIEN khong can.
+
+    ⭐ Chinh ham do da to giac no: no TRA VE `f"lan {lan + 1}"` trong khi GHI
+       `lan`. Cau bao cho nguoi va con so ghi vao so noi hai dieu khac nhau.
+    """
+    from platform_core.workflow import thi_hanh
+
+    run = xuong.chay([_nut("a", settings={"retry": {"max": 2}})])
+    _ep_node(db, run, "a", "FAILED", lan=1)
+    assert supervisor.lam(db, run, hanh_dong="thu_lai_node", node_id="a").lam
+
+    anh = thi_hanh.anh_chup_hien_tai(db, run.id, "a")
+    assert int(anh.attempt_number) == 2, (
+        "hen thu lai phai ghi lan KE TIEP; giu nguyen `lan` thi `den_han` tra ve "
+        "READY voi so cu va `con_luot` khong bao gio can")
+
+
+def test_thu_lai_qua_supervisor_khong_bao_gio_can_neu_KHONG_tang(db, xuong):
+    """🔑 Doi chung HANH VI cho bai tren: do HAU QUA, khong do con so.
+
+    Neu chi chot `attempt_number == 2` thi mot ban va ghi bua con so ay van
+    xanh. Bai nay chay HAI luot that voi `retry.max = 1`: luot hai phai bi TU
+    CHOI. Bai tren noi "con so sai", bai nay noi "va day la cai gia".
+    """
+    from platform_core.workflow import thi_hanh
+
+    run = xuong.chay([_nut("a", settings={"retry": {"max": 1}})])
+    _ep_node(db, run, "a", "FAILED", lan=1)
+    assert supervisor.lam(db, run, hanh_dong="thu_lai_node", node_id="a").lam
+
+    # ⛔ KHONG ep `lan=2` o day. Ep no la tu dat san ket qua: bai se xanh ca
+    #    tren ma HONG, vi chinh toi da tang con so thay cho ma. Doc con so MA
+    #    LUOT HEN VUA GHI, roi dung dung no — do la thu `den_han` se tra ve.
+    lan_hen = int(thi_hanh.anh_chup_hien_tai(db, run.id, "a").attempt_number)
+    _ep_node(db, run, "a", "FAILED", lan=lan_hen)
+    kq = supervisor.lam(db, run, hanh_dong="thu_lai_node", node_id="a")
+    assert kq.lam is False and kq.ma == "het_luot_thu_lai", (
+        "retry.max=1 ma luot thu hai van duoc hen => vong lap thu lai VO HAN")
+
+
 def test_retry_max_MAC_DINH_0_thi_khong_thu_lai_duoc(db, xuong):
     """🔑 Đối chứng: không khai `retry` ⇒ `{max: 0}` ⇒ hành động vô hiệu."""
     run = xuong.chay([_nut("a")])
