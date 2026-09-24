@@ -153,6 +153,24 @@ def chon_mau(so_doan: int, *, moi_phim: int = MAU_MOI_PHIM) -> list[int]:
                    for i in range(moi_phim)})
 
 
+def _in(dong: str) -> None:
+    """In ma ⛔ KHONG BAO GIO nem.
+
+    🔴 `sys.stdout` duoi lop boc co the la cp1252; mot ky tu Han hay mot dau
+       `⛔` lam `print` nem `UnicodeEncodeError` va **giet ca lan chay sau khi
+       tien da tieu**. Da xay ra that o bench B1 (8 ph 57), va vua xay ra lai o
+       dung tep nay. ⇒ Luat: **moi thu sau khi cong viec xong la BAO CAO, va bao
+       cao khong duoc giet ket qua.**
+    """
+    import sys as _s
+
+    try:
+        print(dong)
+    except Exception:                           # noqa: BLE001
+        bo = getattr(_s.stdout, "encoding", None) or "ascii"
+        print(dong.encode(bo, "replace").decode(bo, "replace"))
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--ra", default="", help="thu muc ghi ket qua")
@@ -173,13 +191,14 @@ def main(argv=None) -> int:
         kq = dich_mot_phim(duong)
         kq["mau_doc_tay"] = chon_mau(kq["so_doan_nguon"])
         goi = json.dumps(kq, ensure_ascii=False, indent=1)
+        # 🔴 GHI BANG CHUNG TRUOC, IN SAU — xem `_in`.
         if ra_dir:
             (ra_dir / f"{t}_nen.json").write_text(goi, encoding="utf-8")
-        print(f"{t}: {kq['so_doan_dich_duoc']}/{kq['so_doan_nguon']} doan "
-              f"({kq['so_lo']} lo, {kq['giay']} s) "
-              f"thieu={kq['so_doan_THIEU']} lo_hong={len(kq['lo_hong'])}")
+        _in(f"{t}: {kq['so_doan_dich_duoc']}/{kq['so_doan_nguon']} doan "
+            f"({kq['so_lo']} lo, {kq['giay']} s) "
+            f"thieu={kq['so_doan_THIEU']} lo_hong={len(kq['lo_hong'])}")
         for l in kq["lo_hong"]:
-            print(f"   ⛔ lo {l['lo']}: {l['kieu']} {l['loi'][:120]}")
+            _in(f"   [LO HONG] lo {l['lo']}: {l['kieu']} {l['loi'][:200]}")
     return 0
 
 
