@@ -147,3 +147,52 @@ def test_DAT_chi_xet_CER_chu_khong_xet_ti_le_chua_hieu_chinh():
                        co_card=True)
     assert kq["dat"] is True, "ti le DONG sai khong duoc phan xu"
     assert "CER" in kq["dat_xet_tren"]
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  CẤU TRÚC — thứ CER một mình không thấy
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_CER_mot_minh_de_HO_cau_truc_nen_ban_ghi_phai_co_lech_doan():
+    """🔴 CER tính trên văn bản **nối liền** ⇒ nó không thấy **số đoạn**.
+
+    Mà mỗi đoạn là **một khe lồng tiếng**. Một bản chép gộp hai câu làm một có thể
+    cho CER rất đẹp mà **canh thời gian hỏng** — và bước canh thời gian sẽ lãnh hậu
+    quả, không phải bước chép lời. Lượt nền có triệu chứng đúng họ: **6 đoạn / 107 s**.
+    """
+    from tools import bench_b1_chep_loi as b
+
+    kq = b.gop_ket_qua(cer=0.01, so_dong_nguon=3, so_dong_hardsub=30,
+                       engine="x", co_card=True)
+    assert kq["cer"] == 0.01
+    assert kq["lech_doan"] == pytest.approx(0.9, abs=1e-9)
+    assert kq["can_giai_thich_lech_doan"] is True, (
+        "CER dep + so doan lech 90% ma ban ghi khong bat nhin")
+
+
+def test_lech_doan_KHONG_phan_xu_no_chi_bat_NHIN():
+    """⚠️ 0,20 là con số điều phối **chọn, chưa hiệu chỉnh** (khai thẳng 24/09).
+
+    ⇒ Vượt nó thì `dat` **không đổi** — nó chỉ bật cờ đòi một lời giải thích.
+    ⛔ Giả vờ nó là ngưỡng là đúng cái bẫy ta vừa tránh ở `ti_le_don_vi_sai`.
+    """
+    from tools import bench_b1_chep_loi as b
+
+    kq = b.gop_ket_qua(cer=0.01, so_dong_nguon=3, so_dong_hardsub=30,
+                       engine="x", co_card=True)
+    assert kq["dat"] is True, "lech_doan khong duoc phan xu"
+    assert kq["can_giai_thich_lech_doan"] is True
+
+
+def test_hardsub_RONG_cho_nan_chu_khong_cho_KHONG():
+    """⛔ *"không lệch"* và *"không đo được"* là hai điều khác nhau.
+
+    Gộp chúng thành một số 0 làm một phim **không có hardsub** trông như một phim
+    **khớp hoàn hảo** — đúng bài *"hai trạng thái gộp thành một giá trị"*.
+    """
+    import math
+
+    from tools import bench_b1_chep_loi as b
+
+    assert math.isnan(b.lech_doan(10, 0))
+    assert b.lech_doan(10, 10) == 0.0

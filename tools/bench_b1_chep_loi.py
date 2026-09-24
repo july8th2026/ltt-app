@@ -45,6 +45,19 @@ if str(GOC) not in sys.path:
 NGUONG_WER = 0.25
 NGUONG_CER = 0.12
 
+#: Muc LECH SO DOAN bat phai NHIN, ⛔ khong phai mot nguong phan xu.
+#:
+#: 🔴 **CER mot minh de HO cau truc.** CER tinh tren van ban NOI LIEN nen no khong
+#:    thay **so doan** — ma moi doan la **mot khe long tieng**. Mot ban chep gop hai
+#:    cau lam mot, hoac tach mot cau lam ba, co the cho CER rat dep ma **canh thoi
+#:    gian hong** — va buoc canh thoi gian se lanh hau qua, khong phai buoc chep loi.
+#:    Luot nen da co trieu chung dung ho: **6 doan cho 107 giay**.
+#:
+#: ⚠️ **0,20 la con so dieu phoi CHON, CHUA HIEU CHINH** (khai thang 24/09). Nen no
+#:    khong phan xu: vuot muc nay thi `dat` KHONG doi, nhung ban ghi bat phai co mot
+#:    **loi giai thich bang van ban**. ⛔ "Da bao cao" khong phai "da giai thich".
+MUC_NHIN_LECH_DOAN = 0.20
+
 #: Gioi han cua chan ly nen, di kem MOI ban ghi. ⛔ Khong rut gon cau nay: nguoi
 #: trich so doc JSON, khong doc `.md`.
 GIOI_HAN_CHAN_LY_NEN = (
@@ -169,9 +182,23 @@ def lam_hong(chu: str, *, ti_le: float = 0.3, seed: int = 0) -> str:
     return " ".join(tu)
 
 
+def lech_doan(so_doan_asr: int, so_doan_hardsub: int) -> float:
+    """|asr - hardsub| / hardsub. `nan` khi hardsub rong (khong chia cho 0).
+
+    ⛔ Tra `nan`, KHONG tra 0: "khong lech" va "khong do duoc" la hai dieu khac
+       nhau, va gop chung thanh mot so 0 lam mot phim khong co hardsub trong nhu
+       mot phim khop hoan hao ("hai trang thai gop thanh mot gia tri").
+    """
+    if not so_doan_hardsub:
+        return float("nan")
+    return round(abs(int(so_doan_asr) - int(so_doan_hardsub))
+                 / float(so_doan_hardsub), 4)
+
+
 def gop_ket_qua(*, cer: float, so_dong_nguon: int, so_dong_hardsub: int,
                 engine: str, co_card: bool, ti_le_don_vi_sai: float = float("nan"),
-                don_vi_ti_le: str = "", phim: str = "", ghi_chu: str = "") -> dict:
+                don_vi_ti_le: str = "", phim: str = "", ghi_chu: str = "",
+                giai_thich_lech_doan: str = "") -> dict:
     """Ban ghi MOT phim. ⛔ Luon mang `gioi_han`, `chan_ly_nen` va `don_vi_ti_le`.
 
     ⚠️ `dat` chi xet **CER**. Ti le don vi sai duoc BAO CAO nhung khong phan xu, vi
@@ -186,6 +213,14 @@ def gop_ket_qua(*, cer: float, so_dong_nguon: int, so_dong_hardsub: int,
         "dat_xet_tren": "CER (xem `don_vi_ti_le` ve ti le kia)",
         "nguong": {"wer": NGUONG_WER, "cer": NGUONG_CER},
         "so_dong_nguon": so_dong_nguon, "so_dong_hardsub": so_dong_hardsub,
+        # ── CAU TRUC: thu CER khong thay ────────────────────────────────────
+        "so_doan_asr": so_dong_nguon,
+        "so_doan_hardsub": so_dong_hardsub,
+        "lech_doan": lech_doan(so_dong_nguon, so_dong_hardsub),
+        "muc_nhin_lech_doan": MUC_NHIN_LECH_DOAN,
+        "can_giai_thich_lech_doan": bool(
+            lech_doan(so_dong_nguon, so_dong_hardsub) > MUC_NHIN_LECH_DOAN),
+        "giai_thich_lech_doan": giai_thich_lech_doan,
         "engine": engine, "co_card": bool(co_card),
         # 🔑 HAI truong nay di theo con so, khong nam o cuoi bao cao.
         "chan_ly_nen": "hardsub",

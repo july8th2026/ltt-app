@@ -57,7 +57,7 @@ def test_chay_mot_buoc_KHONG_chay_cac_buoc_truoc(moi_truong, tmp_path, monkeypat
     asv_mot_buoc.chay_mot_buoc(
         moi_truong, ten_giai_doan=pipeline.TRANSCRIBE,
         duong_video=None, cai_dat={"nguon_loi": "asr"},
-        gieo={pipeline.MEDIA_PREPARE: "asset:tieng.wav"}, xin_card=False)
+        gieo={pipeline.MEDIA_PREPARE: "bench/tieng.wav"}, xin_card=False)
 
     assert goi == [pipeline.TRANSCRIBE], f"da chay ca cac buoc khac: {goi}"
 
@@ -107,3 +107,24 @@ def test_buoc_DAU_khong_doi_gieo_gi():
     from tests.fixtures import asv_mot_buoc
 
     assert asv_mot_buoc.can_gieo(pipeline.MEDIA_PREPARE) == set()
+
+
+def test_khoa_GIEO_bia_ra_bi_tu_choi_O_CUA_chu_khong_o_KHO(moi_truong):  # noqa: F811
+    """⛔ Khoá gieo phải là khoá kho **hợp lệ** — nói SỚM, không để kho nói hộ.
+
+    🔴 Đo thật 24/09: bench B1 gieo `"bench:<tên phim>.wav"` và chết ở
+       `platform_core.storage.StorageError: key không hợp lệ` — vì `:` bị rào chặn
+       path traversal từ chối. Thông điệp đó chỉ vào **kho**, trong khi nguyên nhân
+       là **khoá gieo bịa ra**, cách đó bảy bước.
+
+    ⇒ Cùng lý do `ThieuDauVaoGieo` tồn tại: một thông điệp chỉ đúng chỗ **sẽ** bị
+      đọc thành *"sản phẩm hỏng"*.
+    """
+    from apps.auto_scan_video import pipeline
+    from tests.fixtures import asv_mot_buoc
+
+    with pytest.raises(asv_mot_buoc.ThieuDauVaoGieo) as e:
+        asv_mot_buoc.chay_mot_buoc(
+            moi_truong, ten_giai_doan=pipeline.TRANSCRIBE, cai_dat={},
+            gieo={pipeline.MEDIA_PREPARE: "bench:tieng.wav"}, xin_card=False)
+    assert "khoa kho hop le" in str(e.value)

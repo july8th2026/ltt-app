@@ -147,6 +147,7 @@ def chay_mot_buoc(moi_truong, *, ten_giai_doan: str, cai_dat: dict,
             f"({{'<giai doan>': '<khoa_asset>'}}). ⚠️ Danh sach nay lay tu TAP DOC "
             f"THAT (quet AST), khong tu cot `sau` — ban khai `sau` hep hon thuc te.")
 
+    _kiem_khoa_gieo(gieo or {})
     run_id, owner_id = _dung_lan_chay(moi_truong, cai_dat, duong_video)
     _gieo_cac_buoc_truoc(run_id, gieo or {})
 
@@ -189,12 +190,37 @@ def chay_mot_buoc(moi_truong, *, ten_giai_doan: str, cai_dat: dict,
     }
 
 
+def _kiem_khoa_gieo(gieo: dict) -> None:
+    """Khoa gieo phai la khoa KHO hop le — noi SOM, ⛔ khong de kho noi ho.
+
+    🔴 **Do that 24/09.** Bench B1 gieo `"bench:<ten phim>.wav"` va chet o
+       `platform_core.storage.StorageError: key khong hop le` — vi `:` bi rao chan
+       path traversal tu choi. Thong diep do chi vao **kho**, trong khi nguyen nhan
+       la **khoa gieo bia ra**, cach do bay buoc.
+
+    ⇒ Cung ly do `ThieuDauVaoGieo` ton tai: mot thong diep chi dung cho SE bi doc
+      thanh "san pham hong". Kiem o cua thi nguoi do biet ngay minh dua sai gi.
+    """
+    from platform_core import storage as kho_mod
+
+    for ten, khoa in gieo.items():
+        for k in ([khoa] if isinstance(khoa, str) else list(khoa)):
+            try:
+                kho_mod._safe_key(k)                    # noqa: SLF001
+            except Exception as loi:                    # noqa: BLE001
+                raise ThieuDauVaoGieo(
+                    f"khoa gieo cho {ten!r} khong phai mot khoa kho hop le: "
+                    f"{k!r} ({loi}). ⚠️ Khoa gieo phai la khoa THAT do mot giai "
+                    f"doan truoc sinh ra — vi du chay `media_prepare` roi lay "
+                    f"`outputs['khoa_asset']` cua no.") from loi
+
+
 def _vram(ten: str) -> int:
     from platform_core.job_runner import _vram_can
     return _vram_can(P.THEO_TEN[ten].job_type)
 
 
-def _dung_lan_chay(moi_truong, cai_dat: dict, duong_video):
+def _dung_lan_chay(moi_truong, cai_dat: dict, duong_video=None):
     """Dung mot `AsvRun` QUA `dich_vu_tao` — khong tu ghi ORM.
 
     🔑 **G-01 la ly do.** `dung_cai_dat` tung DUYET `nguon_loi` roi **khong dat vao
@@ -220,11 +246,25 @@ def _dung_lan_chay(moi_truong, cai_dat: dict, duong_video):
         tho = dict(MAC_DINH_BENCH)
         tho.update(cai_dat or {})
         ho_so = dich_vu_tao.dung_cai_dat(db, owner_id=chu, tho=tho)
-        # ⭐ `features.tao_run` — loi vao THAT. No tu tao 12 dong `asv_stage`
-        #    `pending`, giu credit, va giu bat bien I2 (khong bao gio co run khong
-        #    tra tien). ⛔ Tu dung `AsvRun` bang ORM se bo qua ca ba.
-        run = features.tao_run(db, owner_id=chu, source_key="bench:nguon.mp4",
-                               settings=dict(ho_so), uoc_luong_credit=0)
+        # ⭐ Hai loi vao THAT, tuy co phim hay khong:
+        #
+        #    co `duong_video`  -> `tao_run_tu_tai_len`: tep di vao KHO that, co
+        #                         `source_key` that ⇒ `media_prepare` chay duoc.
+        #    khong             -> `tao_run` voi mot `source_key` gia, du cho cac
+        #                         bai NHE thay het 12 giai doan bang monkeypatch.
+        #
+        # 🔴 **Do that 24/09:** ban dau khuon LUON dung `source_key="bench:..."`, va
+        #    bench B1 chet o `StorageError: key khong hop le` — vi `:` va khoang
+        #    trang bi `storage._chuan_key` tu choi (chan path traversal). Trieu chung
+        #    chi vao KHO, trong khi nguyen nhan la **khuon chua bao gio tai phim len**.
+        if duong_video:
+            run = features.tao_run_tu_tai_len(
+                db, owner_id=chu, duong_tep=str(duong_video),
+                ten_tep=pathlib.Path(duong_video).name, settings=dict(ho_so))
+        else:
+            run = features.tao_run(db, owner_id=chu,
+                                   source_key="bench/nguon.mp4",
+                                   settings=dict(ho_so), uoc_luong_credit=0)
         db.commit()
         db.refresh(run)
         return run.id, run.owner_id
