@@ -179,3 +179,98 @@ nửa báo động giả. ⛔ Vẫn **23% > 15%**, nên nó **không đủ một
 bằng chứng trực tiếp rằng *self-consistency* phân biệt được còn `do_tin` thì không.
 ⚠️ Cái giá: đường sản phẩm hiện gọi **một** lượt mỗi lô; đòi 3/3 là **gấp ba** chi
 phí lớp này. Đó là một quyết định về GIÁ, phải hỏi chủ dự án.
+
+---
+
+# 8. BẢN SỬA V2 — phân mức MQM. Bảng ánh xạ viết TRƯỚC khi đo
+
+⛔ Mục này viết **trước** khi chạy phép đo V2. Không chỉnh bảng sau khi thấy số.
+
+## 8.1 Giấy phép GEMBA — đã kiểm lại, đọc thẳng nguồn
+
+Ba nguồn khớp nhau (24/09): GitHub API `spdx_id` = **`CC-BY-SA-4.0`**; **không có**
+tệp `LICENSE` trần ở gốc (HTTP **404**), chỉ `LICENSE.md` (200) chứa nguyên văn
+CC BY-SA 4.0; và `README.md` §License nói thẳng — *"GEMBA code **and data** are
+released under the CC BY-SA 4.0 license"*. ⇒ ShareAlike phủ **cả mã**, không chỉ
+dữ liệu/bài báo.
+
+⇒ ⛔ **Không chép lời văn lời nhắc của GEMBA.** ⭐ Nhưng **thang mức MQM là một
+đặc tả công khai** (chuẩn MQM), không phải tài sản của GEMBA — ta hiện thực đặc tả
+bằng lời của mình, ghi công GEMBA-MQM là **nguồn giao thức**. Không chép mã ⇒
+không phát sinh mục `THIRD_PARTY_NOTICES.md`.
+
+## 8.2 Bảng ánh xạ: mức nào ⇒ `dat=false`
+
+| Mức (MQM) | `dat=false`? | Vì sao |
+|---|---|---|
+| `nghiem_trong` (critical) | ✅ **CÓ** | cản hiểu — người xem hiểu **sai** sự việc |
+| `nang` (major) | ✅ **CÓ** | phá mạch, nhưng vẫn hiểu được điều câu muốn nói |
+| `nhe` (minor) | ⛔ **KHÔNG** | là lỗi thật, nhưng **không cản hiểu** |
+| không lỗi nào | ⛔ KHÔNG | — |
+
+⭐ **`nhe` được GHI LẠI, ⛔ không vứt.** Phán quyết trả về **cả danh sách lỗi kèm
+mức** (`loi`) chứ không chỉ một cờ. Vứt `nhe` là dựng lại đúng bẫy *"hai trạng
+thái gộp thành một giá trị"*: *"không có lỗi nào"* và *"chỉ có lỗi nhẹ"* lại rơi
+chung một ô, và ta mất đúng khả năng phân biệt mà bản sửa này sinh ra để có.
+
+## 8.3 ⭐ Lọc CƠ HỌC: lỗi không trích được đoạn ⇒ LOẠI
+
+GEMBA-MQM và GEMBA-ESA đều bắt model **chỉ ra đoạn lỗi** (`- "involvement"`). Ta
+cưỡng chế bằng máy, ⛔ không nhờ lời nhắc *"hãy chính xác"*:
+
+```
+Loại một lỗi khi: `doan` rỗng, HOẶC `doan` không xuất hiện trong câu nguồn
+                  lẫn câu dịch (so khớp chuỗi, sau chuẩn hoá khoảng trắng).
+```
+
+⚠️ Phải nhận **cả hai phía**: lỗi *thêm/dịch sai* trích đoạn ở **bản dịch**, còn
+lỗi *bỏ sót* trích đoạn ở **câu nguồn** — đúng như ví dụ của GEMBA
+(`accuracy/omission - "the account holder"` là đoạn **nguồn**). Chỉ so với bản
+dịch sẽ loại sạch lỗi bỏ sót, tức đổi thước quá tay lấy thước mù ở đúng loại
+MetricX vốn mạnh.
+
+## 8.4 ⛔ `do_tin` bị BỎ khỏi lời nhắc ngữ nghĩa, không phải chỉ bỏ ngưỡng
+
+Giữ trường ấy không chỉ vô dụng mà **gây hại**: arXiv **2603.25052** đo được rằng
+khi model **vừa lập luận vừa tự khai độ tin**, chính quá trình lập luận **phá**
+hướng biểu diễn độ tin và làm lệch hiệu chỉnh **nặng thêm** — mà lời nhắc cũ đòi
+đúng hai thứ đó trong một phản hồi (`ly_do` + `do_tin`). Cộng thêm arXiv
+**2605.12446** (*"high certainty even when incorrect"*) và số của chính ta (98,4%
+báo động giả có `do_tin ≥ 0,70`, trung vị 0,85).
+
+⛔ **Đừng thêm lại "cho chắc".** Cổng thay thế là **mức nghiêm trọng**, đo được.
+
+## 8.5 Hai cổng ĐẠT — giữ nguyên, cùng lúc
+
+```
+bao dong gia <= 15%  tren >= 100 cap FLORES
+VA do nhay  >= 50%  MOI loai tiem (lat_nghia / sai_thuc_the)
+```
+⛔ Phân mức mà làm rơi độ nhạy ⇒ đổi thước quá tay lấy thước mù, **không nhận**.
+
+## 8.6 Nền V1 trên dải GIỮ RIÊNG (để so V2 công bằng)
+
+Đo trên dòng FLORES **200–229** (báo động giả) và **300+** (tiêm) — rời hẳn dải
+phán quyết 0–99/100+, nên V2 không bị đo trên chính dải đã dùng để chỉnh.
+
+| | báo động giả | `lat_nghia` | `sai_thuc_the` |
+|---|---|---|---|
+| **V1, dải giữ riêng** | **43,3%** (dải 43,3–56,7%) | **100%** (15/15) | **100%** (15/15) |
+| V1, dải phán quyết | 45,0% (dải 40,0–44,4%) | 100% | 100% |
+
+⇒ Hai dải cho cùng một câu trả lời ⇒ dải giữ riêng **đại diện được**, và mọi thay
+đổi đo trên nó nói về bộ chấm chứ không về việc chọn câu.
+
+## 8.7 Hoãn có điều kiện — ⛔ viết ra trước để sau khỏi cãi
+
+- **MQM-APE** (hậu kiểm từng lỗi): **hoãn**, vì luật một-thay-đổi-một-lượt — làm
+  cùng lúc với phân mức thì hạ được báo động giả cũng không biết nhờ cái nào.
+  **Điều kiện mở lại:** phân mức một mình vẫn **> 15%** *và* phần dư **chủ yếu là
+  lỗi bịa có trích đoạn**. Khi đó MetricX-24 (Apache-2.0, đã có) vào vai verifier
+  thay CometKiwi (⛔ NC, ta không dùng được) — nhưng nó đang chạy **trên CPU**,
+  nên mở lại là một quyết định **có giá**.
+- **Đồng thuận 3/3**: **ghi số, chưa áp dụng.** 45% → 23% mà **không mất chút độ
+  nhạy nào** ⇒ ⭐ khoảng **một nửa** báo động giả là model **tự mâu thuẫn giữa các
+  lượt**, tức **nhiễu**, không phải lệch hệ thống. Phân mức chữa nửa **hệ thống**;
+  đo xong mới biết còn phải mua gì bằng **3× chi phí** (đường sản phẩm gọi **một**
+  lượt/lô).
