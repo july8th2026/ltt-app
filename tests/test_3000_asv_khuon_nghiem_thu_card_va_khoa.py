@@ -112,6 +112,35 @@ def test_khai_card_NOI_RA_pha_nao_doi_card_ma_khong_duoc():
     assert kq["pha_doi_card"] == ["asv_gpu.audio_prepare", "asv_gpu.transcribe"]
     assert kq["pha_duoc_card"] == ["asv_gpu.transcribe"]
     assert kq["pha_doi_card_ma_KHONG_duoc"] == ["asv_gpu.audio_prepare"]
+    # 🔑 MOT PHAN QUYET, khong de nguoi doc tu tru hai danh sach: do la dung cach
+    #    bao cao `NEN_V3` mang so CPU ma khong ai nhan ra (K-01).
+    assert kq["do_khuon_khong_do_san_pham"] is True
+    assert "asv_gpu.audio_prepare" in kq["cau_khai"]
+    assert "KHUON" in kq["cau_khai"]
+    # ⚠️ Va thu ham nay KHONG biet thi phai noi ra chu khong im.
+    assert "CTranslate2" in kq["chua_tra_loi"]
+
+
+def test_khai_card_moi_pha_DUOC_card_thi_khai_do_SAN_PHAM():
+    kq = fx.khai_card([
+        {"job_type": "asv_gpu.transcribe", "can_card": True, "gpu_uuid": "GPU-x"},
+        {"job_type": "auto_scan_video.advance", "can_card": False, "gpu_uuid": ""},
+    ])
+    assert kq["do_khuon_khong_do_san_pham"] is False
+    assert "SAN PHAM" in kq["cau_khai"]
+
+
+def test_khai_card_KHONG_pha_nao_doi_card_thi_khong_duoc_khai_la_do_san_pham():
+    """⛔ "Khong pha nao doi card" KHAC "moi pha deu duoc card".
+
+    Mot luot khong co pha GPU nao khong noi duoc gi ve hieu nang GPU — va khai no
+    la "do san pham" la mot cau dung ve chu, sai ve dieu nguoi doc se hieu.
+    """
+    kq = fx.khai_card([
+        {"job_type": "auto_scan_video.advance", "can_card": False, "gpu_uuid": ""},
+    ])
+    assert kq["do_khuon_khong_do_san_pham"] is False
+    assert "khong noi gi" in kq["cau_khai"]
 
 
 def test_may_khong_co_card_thi_khuon_DUNG_chu_khong_am_tham_chay_CPU(monkeypatch):

@@ -1134,12 +1134,38 @@ def khai_card(nhat_ky: list[dict]) -> dict:
        giua hai cot la cho nguoi doc phai nghi ngo con so giay.
     """
     can = [d for d in nhat_ky if d.get("can_card")]
+    doi = sorted({str(d["job_type"]) for d in can})
+    duoc = sorted({str(d["job_type"]) for d in can if d.get("gpu_uuid")})
+    thieu = sorted({str(d["job_type"]) for d in can if not d.get("gpu_uuid")})
     return {
-        "pha_doi_card": sorted({str(d["job_type"]) for d in can}),
-        "pha_duoc_card": sorted({str(d["job_type"]) for d in can
-                                 if d.get("gpu_uuid")}),
-        "pha_doi_card_ma_KHONG_duoc": sorted({str(d["job_type"]) for d in can
-                                              if not d.get("gpu_uuid")}),
+        "pha_doi_card": doi,
+        "pha_duoc_card": duoc,
+        "pha_doi_card_ma_KHONG_duoc": thieu,
+        # 🔑 **MOT PHAN QUYET, khong de nguoi doc tu tru hai danh sach.**
+        #
+        #    Bai hoc cua chinh lan nay (K-01): bao cao `NEN_V3` co day du con so
+        #    giay, va khong ai nhan ra chung la so CPU — vi khong dong nao noi
+        #    ra. Mot bao cao bat nguoi doc tu so hai cot roi tu ket luan la mot
+        #    bao cao se duoc doc sai, va se duoc doc sai theo huong co loi.
+        #
+        # ⚠️ `thieu` khac rong = co pha doi card ma khong duoc ⇒ pha do chay CPU
+        #    ⇒ con so giay cua NO do KHUON. Khong phai ca luot: cac pha khac van
+        #    do that, nen cau khai phai chi dung pha nao.
+        "do_khuon_khong_do_san_pham": bool(thieu),
+        "cau_khai": (
+            "Moi pha doi card deu duoc card — so giay do SAN PHAM."
+            if doi and not thieu else
+            "KHONG pha nao doi card — luot nay khong noi gi ve hieu nang GPU."
+            if not doi else
+            "⛔ " + ", ".join(thieu) + " DOI card ma KHONG duoc ⇒ chung chay "
+            "CPU, va con so giay cua chung la so cua KHUON, khong phai cua san "
+            "pham (demucs CPU 72,0 s vs GPU 42,2 s, do 23/09)."),
+        # ⚠️ Va mot dieu ham nay KHONG biet, nen no phai noi ra chu khong im:
+        "chua_tra_loi": (
+            "Card duoc CAP khong tuong duong ASR DUNG card: CTranslate2 (ruot "
+            "cua faster-whisper) mang CUDA/cuDNN rieng, khong dung cua torch. "
+            "Mot lan ASR tut ve CPU tren mot card da duoc cap van khop moi con "
+            "so o day."),
     }
 
 
