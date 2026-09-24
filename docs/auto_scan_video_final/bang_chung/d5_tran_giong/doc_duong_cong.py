@@ -41,6 +41,7 @@ Cung **mot cau** duoc sinh o moi toc do ⇒ so `CER(X) - CER(1,00)` **tung cau**
 from __future__ import annotations
 
 import json
+import math
 import pathlib
 import statistics as st
 import sys
@@ -53,6 +54,16 @@ def _iqr(v: list[float]) -> float:
         return 0.0
     s = sorted(v)
     return s[int(0.75 * len(s))] - s[int(0.25 * len(s))]
+
+
+def p_phep_dau(k: int, n: int) -> float:
+    """`p` mot phia cua phep dau: xac suat thay >= `k`/`n` cung chieu khi VO HIEU.
+
+    🔴 Con so nay phai duoc IN RA, vi dieu kien (2) mot minh **YEU**: `8/12` cho
+       `p ~ 0,19` — ⛔ khong ai duoc doc no nhu mot phep kiem. No chi chat vi di
+       **KEM** dieu kien (1).
+    """
+    return sum(math.comb(n, i) for i in range(k, n + 1)) / 2 ** n
 
 
 def doc(ket_qua: dict) -> dict:
@@ -69,10 +80,23 @@ def doc(ket_qua: dict) -> dict:
     tan_cer = _iqr([goc[c]["cer"] for c in cau_chung])
     tan_mos = _iqr([goc[c]["dnsmos"] for c in cau_chung])
 
+    # 🔴 SAN PHAT HIEN — ⭐ do tan cua doi chung ⛔ KHONG chi la mot nguong, no
+    #    CUNG LA gioi han do nhay cua ca thiet ke. Cung vai voi "nen nhieu 0,63
+    #    diem" ben do dich: hieu ung nho hon san nay la hieu ung ta ⛔ KHONG DO
+    #    DUOC — ⛔ khong phai hieu ung khong ton tai.
     ra: dict = {
         "n_cau": len(cau_chung),
-        "do_tan_doi_chung": {"cer_iqr": round(tan_cer, 4),
-                             "dnsmos_iqr": round(tan_mos, 4)},
+        "san_phat_hien": {
+            "cer_iqr": round(tan_cer, 4),
+            "dnsmos_iqr": round(tan_mos, 4),
+            "nghia": ("do tan cua chinh muc 1,00. Thiet ke nay bat duoc buoc nhay "
+                      "LON HON san nay; nho hon thi ta MU. ⛔ 'Khong tim thay gay' "
+                      "⛔ KHONG bang 'khong co gay'."),
+            "p_phep_dau_toi_thieu": round(
+                p_phep_dau(math.ceil(2 * len(cau_chung) / 3), len(cau_chung)), 4),
+            "p_ghi_chu": ("`p` mot phia cua dieu kien (2) o nguong 2/3. ⛔ Mot minh "
+                          "no YEU; no chi chat vi di KEM dieu kien (1)."),
+        },
         "muc": {}, "gay_tai": None,
     }
     for toc in sorted(muc):
@@ -102,6 +126,12 @@ def doc(ket_qua: dict) -> dict:
         ra["ket_luan_ve_tran_hien_tai"] = (
             "1,15 ⛔ KHONG gay so voi 1,00 ⇒ tran hien tai (muon cua Subdub, N-45) "
             "CHAT VO CO tren giong cua ta")
+    # ⭐ Cau GUONG, phai di kem MOI lan khong tim thay gi:
+    if ra["gay_tai"] is None:
+        ra["ket_luan_do_nhay"] = (
+            f"⛔ KHONG tim thay gay ⇒ CHI nghia la ⛔ khong co buoc nhay lon hon "
+            f"san phat hien (CER {tan_cer:.4f} / DNSMOS {tan_mos:.4f}). "
+            f"⛔ Duoi san ay ta MU — ⛔ dung doc thanh 'da do roi, khong sao'.")
     return ra
 
 

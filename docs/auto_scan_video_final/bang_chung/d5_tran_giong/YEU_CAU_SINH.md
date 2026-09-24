@@ -51,6 +51,23 @@ Bánh cóc: `tests/test_2063_asv_tran_giong.py` — 6 phép, gồm **tiêm** m�
 thật (phải bắt, và bắt **đúng mức**) và **đối chứng ngược** (một câu ngoại lệ
 ⛔ **không** đủ để gọi là gãy).
 
+## 🔴 SÀN PHÁT HIỆN — câu GƯƠNG của *"gãy ở đâu"*
+
+⭐ Độ tản (IQR) của mức `1,00` ⛔ **không chỉ** là một ngưỡng — nó **LÀ giới hạn độ
+nhạy** của cả thiết kế. `doc_duong_cong.py` in nó ra kèm câu:
+
+```
+⛔ KHÔNG tìm thấy gãy  ⇒  CHỈ nghĩa là ⛔ không có bước nhảy LỚN HƠN sàn ấy.
+   Dưới sàn, ta MÙ. ⛔ Đừng đọc thành "đã đo rồi, không sao".
+```
+
+⭐ Cùng vai với **nền nhiễu `0,63` điểm** bên đo dịch: hiệu ứng nhỏ hơn nền nhiễu là
+hiệu ứng ⛔ **không đo được**, ⛔ không phải hiệu ứng **không tồn tại**.
+
+⚠️ **Và điều kiện (2) một mình thì YẾU:** phép dấu `8/12` cho `p = 0,1938` (in trong
+`san_phat_hien.p_phep_dau_toi_thieu`). ⛔ Đừng đọc nó như một phép kiểm — nó **chỉ chặt
+vì đi KÈM** điều kiện (1).
+
 ## ⚠️ Giới hạn phải khai cùng mọi kết quả
 
 > ASR đo **DỄ NGHE HIỂU**, ⛔ **không** đo **DỄ CHỊU**. Một giọng nhanh có thể
