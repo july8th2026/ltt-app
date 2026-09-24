@@ -194,6 +194,74 @@ def can_gat_2_phan_phoi(khes: Sequence[Khe], *, tran_tang_toc: float) -> list[Kh
     return ra
 
 
+# ── Can gat 4: GOP KHE — re nhat trong tat ca, ⛔ KHONG cham ban dich ────────
+
+#: Tran ky tu cua MOT luot doc. Phai khop `ltt_voice.tham_so_cong_khai.
+#: TRAN_MOI_LUOT_SINH` — do la tran CHAT LUONG (giong bat dau troi), ⛔ khong
+#: phai tran ky thuat. ⭐ Chinh no bat duoc ban suy bien "gop tu do" (xem duoi).
+TRAN_KY_TU_MOT_LUOT = 1500
+
+#: Toi da bao nhieu khe duoc gop lam mot. ⭐ Muon CACH SUY cua VideoLingo
+#: (`MAX_MERGE_COUNT = 5`, `core/_8_2_dub_chunks.py:12`) — ⛔ va o day con so
+#: cung bang 5 vi **do tren du lieu cua ta** cho thay no la diem dung hop ly:
+#:
+#:      gop <=3  -> 33,3 % khe con phai nen > 1,15 · khe dai nhat 15,7 s
+#:      gop <=5  -> 26,5 %                          · khe dai nhat 20,8 s
+#:      TU DO    ->  5,1 % 🔴 NHUNG khe dai nhat 189,96 s, van ban 3.535 ky tu
+#:                   => VUOT `TRAN_KY_TU_MOT_LUOT` => may doc TU CHOI
+TRAN_GOP_KHE = 5
+
+
+def gop_khe(khes: Sequence[Khe], *, tran_tang_toc: float,
+            tran_gop: int = TRAN_GOP_KHE,
+            tran_ky_tu: int = TRAN_KY_TU_MOT_LUOT) -> list[Khe]:
+    """Gop khe lien ke cho toi khi khe VUA, toi da `tran_gop` khe.
+
+    ⭐ **Re nhat trong ca bon can gat**: no ⛔ khong cham mot chu nao cua ban
+       dich (⇒ **0 diem chrF++**), ⛔ khong goi LLM, va ⛔ khong gay troi giong
+       (`R4 §20`: khe gop dai nhat 427 ky tu, cach tran troi 1.500 **3,5 lan**;
+       va `do_bai_dai.py` cho thay ban GHEP **tot hon** ban mot luot).
+
+    Do tren ba phim: ti le khe phai nen > 1,15 tu **55,6 % xuong 26,5 %** —
+    hon MOT NUA bai toan, mien phi.
+
+    🔴 **HAI CHOT, va chot thu hai da CUU mot lan roi:**
+
+      1. `tran_gop` — ⛔ khong gop vo han.
+      2. `tran_ky_tu` — ⛔ khong bao gio de mot khe vuot tran cua may doc.
+
+    ⚠️ Bo `tran_gop` (gop "tu do") cho mot bang so **dep hon** (p95 1,171 so voi
+       1,559) nhung no nhoi **74 khe vao MOT**, khe dai **189,96 s**, van ban
+       **3.535 ky tu** — `giong_noi.doc_mot_doan` se **TU CHOI**. ⇒ Mot ban
+       suy bien deo mat mot ket qua tot. Chinh `tran_ky_tu` o day bat duoc no.
+
+    ⛔ **KHONG gop qua ranh gioi CANH?** — da do va **BAC BO**: `R4 §19`,
+       **80,9 %** khe dang chay DA vat qua cat canh (co khe vat qua 4 cat), va
+       san pham la **thuyet minh MOT giong** nen cat canh ⛔ khong phai cho ngat
+       loi. Rang buoc ay dung cho long tieng NHAN VAT tren hinh (`N-34`).
+    """
+    ra: list[Khe] = []
+    i = 0
+    n = len(khes)
+    while i < n:
+        goc = khes[i]
+        am_tiet, chu, moc_sau, d = goc.am_tiet, goc.chu, goc.moc_sau, 1
+        while (d < tran_gop and i + d < n
+               and xep_bac(replace(goc, am_tiet=am_tiet, moc_sau=moc_sau),
+                           tran_tang_toc=tran_tang_toc) > BacNan.BINH_THUONG):
+            ke = khes[i + d]
+            chu_moi = f"{chu} {ke.chu}".strip()
+            if len(chu_moi) > tran_ky_tu:
+                break          # ⛔ CHOT: vuot tran may doc thi DUNG, khai ra
+            am_tiet += ke.am_tiet
+            chu, moc_sau = chu_moi, ke.moc_sau
+            d += 1
+        ra.append(replace(goc, am_tiet=am_tiet, chu=chu, moc_sau=moc_sau,
+                          ket=khes[i + d - 1].ket))
+        i += d
+    return ra
+
+
 # ── Can gat 3: GIAN / NEN (dat nhat) ────────────────────────────────────────
 
 def can_gat_3_he_so(khe: Khe, *, tran_tang_toc: float) -> float:
