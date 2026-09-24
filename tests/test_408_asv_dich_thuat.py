@@ -400,7 +400,12 @@ def test_van_tay_doi_khi_LOI_NHAC_doi(monkeypatch):
     goc = dict(checksum_ban_ghi="aaa", provider="p", model="m",
                ngon_ngu_dich="vi")
     truoc = van_ban.van_tay_van_ban(**goc)
-    monkeypatch.setattr(van_ban, "PHIEN_BAN_LOI_NHAC", 2)
+    # 🔴 **Ghim `2` ở đây là một quả bom hẹn giờ, và nó vừa nổ (24/09).** Khi
+    #    `PHIEN_BAN_LOI_NHAC` thật sự lên `2`, phép tiêm thành **no-op**: vân tay
+    #    không đổi, bài đỏ — mà mã thì đúng. ⛔ Một đối chứng phải tiêm một giá
+    #    trị **khác giá trị hiện hành**, không phải một hằng gõ tay.
+    monkeypatch.setattr(van_ban, "PHIEN_BAN_LOI_NHAC",
+                        van_ban.PHIEN_BAN_LOI_NHAC + 1)
     assert van_ban.van_tay_van_ban(**goc) != truoc
 
 

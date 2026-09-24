@@ -114,6 +114,100 @@ nguồn có lỗi nghe (`跳散` ← `跳伞`, `天然霉` ← `天然酶`, `避
 — tức một phần "lỗi dịch" người sau đọc thấy sẽ là **lỗi ASR**, ⛔ không phải
 lỗi dịch. Phải tách trước khi quy trách nhiệm.
 
+## 4b. ⭐ TÁCH MODEL THEO THAO TÁC — chặn ở §2 đã gỡ
+
+`ai.MODEL_THEO_THAO_TAC` (commit `1a225aa8`): **vắng mặt = giữ nguyên hành vi
+cũ**. Hôm nay bảng có đúng hai dòng:
+
+```
+qc_ngu_nghia -> ltt-3.8    🔑 GHIM TƯỜNG MINH, ⛔ không "thừa hưởng mặc định"
+dich_thuat   -> ltt-3.5    ⭐ chủ dự án chốt
+```
+
+⭐ `qc_ngu_nghia` được ghim **dù giá trị hôm nay trùng mặc định**: một giá trị
+trùng **vì tình cờ** và một giá trị trùng **vì được khai** là hai trạng thái
+khác nhau, và ⛔ chỉ cái thứ hai sống sót qua một lần ai đó sửa chỗ khác.
+Phép bắt cái bẫy: `test_DOI_MAC_DINH_thi_qc_ngu_nghia_KHONG_doi`.
+
+⇒ Bản nền nay chạy **qua đường sản phẩm** (`dich_thuat.dich_ban_ghi`, ⛔ không
+ghim gì tại chỗ gọi). Bản ghi mang `model_that` do `ai.model_cho` **thực sự**
+chọn — ⛔ không phải hằng của bench; hai thứ đó lệch nhau được, và khi lệch thì
+con số phải nói ra.
+
+| phim | đoạn | dịch được | model thật | lời nhắc | giây |
+|---|---|---|---|---|---|
+| v1 | 83 | **83** | `qwen35-api` | v3 | 154,0 |
+| v2 | 74 | **74** | `qwen35-api` | v3 | 125,2 |
+| v3 | 31 | **31** | `qwen35-api` | v3 | 64,5 |
+
+## 4c. Hán-Việt — thêm luật, đo lại trên ĐÚNG 30 câu cũ
+
+### 🔴 Lần đầu hỏng, và nó hỏng theo cách đáng ghi
+
+Lời nhắc **v2** thêm quy tắc 5 với bốn ví dụ — nhưng tôi viết chúng **không
+dấu** (`Truong Vi`, `Tieu My`, `Ly Tong Thanh`, `Quang Tu`). Đo lại:
+
+| tên | v1 (chưa có luật) | **v2 (ví dụ KHÔNG DẤU)** | **v3 (ví dụ CÓ DẤU)** |
+|---|---|---|---|
+| `光子` | ⛔ *Photon* | ✅ *Quang **Tu*** ⚠️ mất dấu | ✅ **Quang Tử** |
+| `小美` | ✅ *Tiểu Mỹ* | ✅ *Tiểu Mỹ* | ✅ **Tiểu Mỹ** |
+| `李宗盛` | ✅ *Lý Tông Thành* | ⛔ *Lý Tông **Thanh*** ⬅ **TỤT** | ✅ **Lý Tông Thành** |
+| chữ Hán sót | 0 | **1** ⬅ | **0** |
+
+⛔ v2 sửa được `光子` **nhưng làm hỏng** `李宗盛` — đúng cái điều kiện *"sửa được
+mà không làm hỏng hai cái kia"* đặt ra. Model **bắt chước HÌNH THỨC của ví dụ**,
+không chỉ nội dung của luật: ví dụ không dấu ⇒ tên riêng ra không dấu.
+
+> ⭐ **Một ví dụ trong lời nhắc là một MỆNH LỆNH ngầm.** Cùng họ với ghi chú đã
+> có ở `dich_thuat.MODEL_CHINH`: *một ví dụ trong docstring là mã mà người ta
+> chép*. Lần này nạn nhân là **model**, không phải người.
+
+⇒ v3 viết ví dụ **có dấu đầy đủ** và cấm bỏ dấu tường minh: **3/3 đúng, 0 hồi
+quy, 0 chữ Hán sót**. `PHIEN_BAN_LOI_NHAC` 1 → 2 → 3 (nó nằm trong vân tay, nên
+mọi bản dịch cũ tự vô hiệu).
+
+⚠️ Và đây là **n = 3 tên riêng trên 3 phim** — ⛔ đủ để nói *"đã sửa ca đã biết"*,
+⛔ **không** đủ để nói *"phiên Hán-Việt đã đúng"*.
+
+## 4d. ⭐ Hỏng tụ ở THUẬT NGỮ ⇒ trỏ tới BẢNG TỪ, ⛔ không phải đổi model
+
+Phát hiện đáng giá nhất của lượt này, và nó phải đứng **trước** khi ai kịp đề
+xuất đổi model:
+
+> **Văn tường thuật ra trôi chảy và đúng. Hỏng tụ ở thuật ngữ chuyên ngành và
+> tiếng lóng** — `掐雷` (lựu đạn, không phải mìn) · `纯白给` (lóng game) ·
+> `烧酒` (soju Hàn, không phải shochu Nhật) · `补人`.
+
+⛔ **Một model to hơn cũng không biết `纯白给` là tiếng lóng game.** Đó là tri
+thức **miền**, không phải năng lực ngôn ngữ. ⇒ Đường sửa là **bảng từ theo
+miền** (game · ẩm thực vùng · dã ngoại) bơm vào lời nhắc, ⛔ **không** phải
+`ltt-3.5 → ltt-3.8`.
+
+⚠️ Và đổi model còn **đắt hơn**: `ltt-3.8` là ~4× token vào và ~20× token ra
+(`platform_core/llm/gia_token.BANG_GIA`) — trả gấp bội cho một thứ nó **cũng
+không biết**.
+
+## 4e. ⚠️ Tách lỗi ASR khỏi lỗi dịch — và một giới hạn của CER
+
+Ba lỗi nghe trong bản chép lời nguồn, cả ba **rơi trúng từ khoá**:
+
+| nguồn ASR | đúng ra là | model dịch xử lý |
+|---|---|---|
+| `跳散` | `跳伞` (nhảy dù) | ✅ ra *"nhảy dù"* — **tự phục hồi** |
+| `天然霉` | `天然酶` (enzyme) | ✅ ra *"men tự nhiên"* — **tự phục hồi** |
+| `避不住` | `庇护所` (nơi trú ẩn) | ✅ ra *"nơi trú ẩn"* — **tự phục hồi** |
+
+⇒ Một phần *"lỗi dịch"* người sau đọc thấy sẽ là **lỗi chép lời**, ⛔ không phải
+lỗi dịch. Phải tách **trước** khi quy trách nhiệm.
+
+⭐ Và nó phơi ra một **giới hạn của CER** — đã ghi vào `B1_CHEP_LOI.md` §1c:
+mỗi lỗi trên chỉ 1–3 ký tự trên hơn 700, tức đóng góp vào CER **gần bằng
+không**, nhưng chúng là **danh từ mang nghĩa của câu**. ⛔ *"CER 0,04"* ⛔ không
+đọc thành *"chép lời gần như hoàn hảo"*.
+
+⚠️ Việc model **tự phục hồi cả ba** là **may**, ⛔ không phải bảo đảm — và nó làm
+việc quy trách nhiệm **khó hơn**, không dễ hơn.
+
 ## 5. ⛔ Bản BẬT vòng sửa — CHƯA chạy, và lý do là một chặn thật
 
 Để so được, bản BẬT phải khác bản NỀN **đúng một biến**: vòng sửa. Nhưng vòng

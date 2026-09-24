@@ -169,7 +169,11 @@ def test_DOI_CHUNG_thi_giac_khong_nhan_model_KHONG_doc_duoc_anh(monkeypatch):
 
     _tiem_registry(monkeypatch, {khai: {}, khac: {"vision": True}})
     assert ai.model_cho(ai.DOC_CANH) == khac
-    assert ai.model_cho(ai.DICH_THUAT) == khai      # van ban van theo ban khai
+    # ⚠️ Dùng một thao tác **không có khai đè** (`HO_SO_NOI_DUNG`), ⛔ không dùng
+    #    `DICH_THUAT` nữa: từ 24/09 nó được ghim `ltt-3.5` theo thao tác, nên nó
+    #    **không còn** là ví dụ của *"văn bản đi theo bản khai"*. Bất biến được
+    #    gác ở đây không đổi — chỉ ví dụ minh hoạ nó phải đổi.
+    assert ai.model_cho(ai.HO_SO_NOI_DUNG) == khai  # van ban van theo ban khai
 
     _tiem_registry(monkeypatch, {khai: {}, khac: {}})
     with _pt.raises(ai.AiError):
@@ -319,9 +323,13 @@ def test_DOI_CHUNG_hai_thao_tac_di_hai_model_thi_ra_HAI_cua_so(monkeypatch):
         khac: {"vision": True, "context_window": 222_222},
     })
 
-    assert ai.model_cho(ai.DICH_THUAT) == khai
+    # ⚠️ `HO_SO_NOI_DUNG` thay cho `DICH_THUAT` từ 24/09 — xem ghi chú ở bài
+    #    `test_DOI_CHUNG_thi_giac_khong_nhan_model_KHONG_doc_duoc_anh`. Điều bài
+    #    này gác là *"cửa sổ đi THEO model của thao tác"*, ⛔ không phải *"thao
+    #    tác nào cụ thể"*.
+    assert ai.model_cho(ai.HO_SO_NOI_DUNG) == khai
     assert ai.model_cho(ai.DOC_CANH) == khac
-    assert ai.cua_so_ngu_canh(ai.DICH_THUAT) == 111_111
+    assert ai.cua_so_ngu_canh(ai.HO_SO_NOI_DUNG) == 111_111
     assert ai.cua_so_ngu_canh(ai.DOC_CANH) == 222_222
 
 

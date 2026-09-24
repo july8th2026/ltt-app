@@ -47,6 +47,35 @@ và `canh_chinh`.
 ⭐ Vì thế `fallback_unaligned` là **hạng A** (chủ dự án thu hẹp phạm vi 24/09), không
 phải một ghi chú bên lề.
 
+## 1c. ⚠️ GIỚI HẠN THỨ BA: CER đếm mọi ký tự NGANG NHAU, nghĩa thì không
+
+⭐ Phơi ra ở bước **dịch** (B2, 24/09), ⛔ không phải bằng suy luận. Bản chép lời
+có ba lỗi nghe, và cả ba **rơi trúng từ khoá**:
+
+```
+跳散  <- 跳伞     (nhảy dù)        天然霉 <- 天然酶   (enzyme)
+避不住 <- 庇护所  (nơi trú ẩn)
+```
+
+Mỗi lỗi **1–3 ký tự** trên hơn 700 — đóng góp vào CER gần như **bằng không**.
+Nhưng chúng là **danh từ mang nghĩa của câu**, nên ở hạ nguồn chúng đổi hẳn ý.
+Ngược lại, một lỗi 10 ký tự rơi vào hư từ (`的`, `了`, `就`) đẩy CER lên gấp ba
+mà gần như **không đổi nghĩa** gì.
+
+> ⛔ **Vì vậy đừng đọc "CER 0,04" thành "chép lời gần như hoàn hảo".** Con số đó
+> nói *"4 % ký tự khác nhau"*, ⛔ **không** nói *"4 % nghĩa khác nhau"* — và hai
+> thứ đó có thể lệch nhau nhiều lần theo **cả hai** chiều.
+
+⛔ **Không sửa ngưỡng, không thêm thước** — mục này chỉ **khai** giới hạn, đúng
+như mục *ĐƠN VỊ* và §2 đã làm cho hai giới hạn trước. Ba giới hạn đã khai của
+CER, đọc cùng nhau: đơn vị (dòng ≠ từ) · chân lý nền (hardsub ≠ lời nói) · và
+**trọng số** (ký tự ≠ nghĩa).
+
+⚠️ Có một an ủi đo được, ⛔ nhưng đừng dựa vào nó: model dịch **tự phục hồi** hai
+trong ba lỗi trên (`天然霉` → *"men tự nhiên"*, `避不住` → *"nơi trú ẩn"*). Đó là
+**may**, không phải một bảo đảm — và nó làm việc quy trách nhiệm **khó hơn**,
+không dễ hơn.
+
 ## 1b. ⛔ CÂU HỎI NGƯỠNG — đang chờ điều phối, KHÔNG tự quyết
 
 `WER ≤ 0,25` ở §1 được viết cho một tỉ lệ **TỪ** sai. Trên văn Hán đơn vị là **DÒNG**

@@ -104,6 +104,11 @@ MODEL_THI_GIAC_NOI_BO = "ltt-3.5"
 #:    phép đo đi kèm, ⛔ không phải một phỏng đoán về model nào "khá hơn".
 MODEL_THEO_THAO_TAC: dict[str, str] = {
     "qc_ngu_nghia": "ltt-3.8",
+    # ⭐ Chủ dự án chốt 24/09: **dịch đi `ltt-3.5`**. Bản nền đo trên đúng model
+    #    này (`B2_DICH.md` §3): 188/188 đoạn, 0 thiếu, 0 lô hỏng, 252 s.
+    # ⛔ Dòng này ⇒ `van_ban.van_tay_van_ban` đổi (model nằm TRONG vân tay), nên
+    #    mọi bản dịch cũ tự vô hiệu — ⛔ không ai phải nhớ xoá cache.
+    "dich_thuat": "ltt-3.5",
 }
 
 

@@ -34,7 +34,20 @@ SCHEMA_VAN_BAN = 1
 
 #: Phien ban cua LOI NHAC (prompt). Doi loi nhac = doi ban dich, ke ca khi moi
 #: thu khac giu nguyen — nen no phai vao van tay (Prompt 11 muc 7).
-PHIEN_BAN_LOI_NHAC = 1
+#:
+#: 2 (24/09): them quy tac 5 — TEN RIENG phien am HAN-VIET. Ly do co BANG CHUNG,
+#: ⛔ khong phai phong doan: ban nen doc tay 30 cau thay `光子` ra "Photon"
+#: trong khi loi nhac khong he co quy tac nao ve ten rieng (`B2_DICH.md` §4.1).
+#:
+#: 🔴 3 (24/09, cung ngay): **vi du trong loi nhac viet KHONG DAU, va model chep
+#: dung cai do.** Ban v2 sua duoc `光子` -> "Quang Tu" nhung lam `李宗盛` TUT tu
+#: "Lý Tông Thành" xuong "Lý Tông Thanh" — mat dau, khop y het bon vi du ASCII
+#: ta dua vao. ⇒ v3 viet vi du CO DAU day du va cam bo dau tuong minh.
+#: ⭐ Bai hoc: **mot vi du trong loi nhac la mot MENH LENH ngam** — model bat
+#:    chuoc hinh thuc cua vi du, khong chi noi dung cua luat. (Cung ho voi ghi
+#:    chu o `dich_thuat.MODEL_CHINH`: *mot vi du trong docstring la ma ma nguoi
+#:    ta chep*.)
+PHIEN_BAN_LOI_NHAC = 3
 
 
 class VanBanError(ValueError):

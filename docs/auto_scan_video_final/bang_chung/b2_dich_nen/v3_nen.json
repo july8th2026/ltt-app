@@ -4,7 +4,10 @@
   "ten": "深度解析丨跳伞….mp4"
  },
  "ngon_ngu": "zh",
- "model": "ltt-3.5",
+ "duong_goi": "san_pham",
+ "model_bi_danh": "ltt-3.5",
+ "model_that": "qwen35-api",
+ "phien_ban_loi_nhac": 3,
  "nhiet_do": 0.2,
  "vong_sua": false,
  "vong_sua_ghi_chu": "⛔ TAT — day la ban NEN",
@@ -13,7 +16,7 @@
  "so_doan_dich_duoc": 31,
  "so_doan_THIEU": 0,
  "lo_hong": [],
- "giay": 53.8,
+ "giay": 64.5,
  "doan": [
   {
    "ma": "seg_0001",
@@ -27,35 +30,35 @@
    "bat": 1.512,
    "ket": 3.774,
    "chu_goc": "这人落地房子都不进,那他肯定是捡到枪了。",
-   "chu_dich": "Người này xuống đất mà không vào nhà, chắc là nhặt được súng rồi."
+   "chu_dich": "Người này xuống đất mà không vào nhà, chắc chắn là nhặt được súng rồi."
   },
   {
    "ma": "seg_0003",
    "bat": 3.774,
    "ket": 5.476,
    "chu_goc": "现在最好的办法就是赶紧进楼。",
-   "chu_dich": "Cách tốt nhất giờ là nhanh vào trong."
+   "chu_dich": "Cách tốt nhất bây giờ là nhanh chóng vào tòa nhà."
   },
   {
    "ma": "seg_0004",
    "bat": 5.476,
    "ket": 7.398,
    "chu_goc": "来把枪啊光子!",
-   "chu_dich": "Lấy súng đi Photon!"
+   "chu_dich": "Lấy súng đi Quang Tử!"
   },
   {
    "ma": "seg_0005",
    "bat": 7.398,
    "ket": 13.463,
    "chu_goc": "这人肯定会往里面冲,架着门口往左边走,用提炼枪让他来接子弹。",
-   "chu_dich": "Người này chắc chắn sẽ lao vào trong, chặn cửa đi sang trái, dùng súng ngắn để dụ hắn nhận đạn."
+   "chu_dich": "Người này chắc chắn sẽ lao vào trong, chặn cửa đi sang trái, dùng súng để bắt anh ta hứng đạn."
   },
   {
    "ma": "seg_0006",
    "bat": 13.463,
    "ket": 19.189,
    "chu_goc": "跳伞慢会让我们错失进攻的机会,接下来别人会源源不断的进攻,我们一定要想办法把楼给守住。",
-   "chu_dich": "Nhảy dù chậm sẽ làm ta mất cơ hội tấn công, tiếp theo kẻ khác sẽ liên tục tấn công, nhất định phải tìm cách giữ tòa nhà này."
+   "chu_dich": "Nhảy dù chậm sẽ làm ta mất cơ hội tấn công, tiếp theo kẻ khác sẽ tấn công không ngừng, chúng ta nhất định phải tìm cách giữ tòa nhà."
   },
   {
    "ma": "seg_0007",
@@ -69,7 +72,7 @@
    "bat": 20.78,
    "ket": 23.562,
    "chu_goc": "楼梯来脚步了,我们现在这个血量可以说天崩开局。",
-   "chu_dich": "Có tiếng bước chân trên cầu thang, lượng máu hiện tại của chúng ta có thể nói là khởi đầu bi thảm."
+   "chu_dich": "Có tiếng bước chân lên cầu thang, lượng máu hiện tại của chúng ta có thể nói là bắt đầu thảm họa."
   },
   {
    "ma": "seg_0009",
@@ -83,42 +86,42 @@
    "bat": 26.804,
    "ket": 31.247,
    "chu_goc": "趁敌人还没上来,咱们直接趴下,用盒子当掩体,他就发现不了我们。",
-   "chu_dich": "Khi địch chưa lên, chúng ta trực tiếp nằm xuống, dùng hộp làm che chắn, hắn sẽ không phát hiện được chúng ta."
+   "chu_dich": "Khiến kẻ địch chưa lên, chúng ta trực tiếp nằm xuống, dùng hộp làm che chắn, anh ta sẽ không phát hiện ra chúng ta."
   },
   {
    "ma": "seg_0011",
    "bat": 31.247,
    "ket": 33.289,
    "chu_goc": "开个玩笑啊,盒子是不能当掩体的。",
-   "chu_dich": "Nói đùa thôi, hộp không thể làm che chắn được."
+   "chu_dich": "Nói đùa đấy, hộp không thể làm che chắn được."
   },
   {
    "ma": "seg_0012",
    "bat": 33.289,
    "ket": 38.132,
    "chu_goc": "这里我们特意往墙角多走那两步才趴下,为的就是卡敌人视野差,让他第一时间看不到我们位置。",
-   "chu_dich": "Ở đây chúng ta đặc biệt đi thêm hai bước vào góc tường mới nằm xuống, để khóa chênh lệch tầm nhìn của địch, khiến hắn không thể thấy vị trí của chúng ta ngay lập tức."
+   "chu_dich": "Ở đây chúng ta cố tình đi thêm hai bước vào góc tường mới nằm xuống, mục đích là chặn tầm nhìn của kẻ địch, để anh ta ngay lập tức không thấy vị trí của chúng ta."
   },
   {
    "ma": "seg_0013",
    "bat": 39.39,
    "ket": 41.513,
    "chu_goc": "这个时候你们仔细听,楼下又来人了。",
-   "chu_dich": "Lúc này các bạn nghe kỹ, dưới lầu lại có người đến rồi."
+   "chu_dich": "Lúc này các bạn nghe kỹ, dưới lầu lại có người rồi."
   },
   {
    "ma": "seg_0014",
    "bat": 41.513,
    "ket": 45.117,
    "chu_goc": "打药的时候不要待在原地,镇敌人还没到,我们可以先把有利的位置选下来。",
-   "chu_dich": "Khi uống thuốc đừng đứng yên, khi địch chưa đến, chúng ta có thể chiếm vị trí thuận lợi trước."
+   "chu_dich": "Khi uống thuốc đừng đứng yên, khi kẻ địch chưa đến, chúng ta có thể chiếm vị trí thuận lợi trước."
   },
   {
    "ma": "seg_0015",
    "bat": 45.117,
    "ket": 47.801,
    "chu_goc": "只要我们占据了地形优势,来再多的人也不用怕。",
-   "chu_dich": "Chỉ cần chúng ta chiếm được lợi thế địa hình, dù có bao nhiêu người đến cũng không sợ."
+   "chu_dich": "Chỉ cần chúng ta chiếm ưu thế địa hình, dù có bao nhiêu người đến cũng không sợ."
   },
   {
    "ma": "seg_0016",
@@ -139,98 +142,98 @@
    "bat": 54.537,
    "ket": 56.519,
    "chu_goc": "看到没有,这就是纯白给。",
-   "chu_dich": "Nhìn thấy chưa, đây chính là bị cho trắng tay."
+   "chu_dich": "Thấy chưa, đây là tặng trắng."
   },
   {
    "ma": "seg_0019",
    "bat": 56.519,
    "ket": 60.683,
    "chu_goc": "这个时候外面的脚步越来越多,全都是冲着我们来的,趁现在赶紧把人补了。",
-   "chu_dich": "Lúc này tiếng bước chân ngoài càng lúc càng nhiều, đều là lao về phía chúng ta, tận dụng lúc này nhanh chóng tiêu diệt kẻ địch."
+   "chu_dich": "Lúc này ngoài kia tiếng bước chân ngày càng nhiều, đều là lao về phía chúng ta, tận dụng lúc này nhanh chóng tiêu diệt."
   },
   {
    "ma": "seg_0020",
    "bat": 60.683,
    "ket": 63.405,
    "chu_goc": "这里要注意,不要把大量的时间用在补人身上。",
-   "chu_dich": "Ở đây cần chú ý, đừng dùng quá nhiều thời gian để tiêu diệt kẻ địch."
+   "chu_dich": "Ở đây chú ý, đừng dùng quá nhiều thời gian để tiêu diệt người."
   },
   {
    "ma": "seg_0021",
    "bat": 63.405,
    "ket": 65.887,
    "chu_goc": "没补掉就赶紧回头,小心身后的人。",
-   "chu_dich": "Chưa xử lý xong thì quay lại nhanh, cẩn thận người sau lưng."
+   "chu_dich": "Chưa kịp xử lý thì quay lại ngay, cẩn thận người ở sau."
   },
   {
    "ma": "seg_0022",
    "bat": 65.887,
    "ket": 69.671,
    "chu_goc": "真正的高手从来都不会盲目进攻,先掐个假雷看他会如何应对。",
-   "chu_dich": "Cao thủ thật sự bao giờ cũng không tấn công mù quáng, trước hết đặt mìn giả xem hắn phản ứng thế nào."
+   "chu_dich": "Những cao thủ thật sự bao giờ cũng không tấn công mù quáng, trước hết quăng một quả lựu đạn giả xem hắn sẽ phản ứng ra sao."
   },
   {
    "ma": "seg_0023",
    "bat": 71.888,
    "ket": 73.509,
    "chu_goc": "这人很稳啊,看来是遇到高手了。",
-   "chu_dich": "Người này rất vững tay, có vẻ gặp cao thủ rồi."
+   "chu_dich": "Người này rất ổn đấy, có vẻ như gặp được cao thủ rồi."
   },
   {
    "ma": "seg_0024",
    "bat": 73.509,
    "ket": 76.312,
    "chu_goc": "哎不是,这哥们居然是来救人的。",
-   "chu_dich": "À không, anh này hóa ra là đến cứu người."
+   "chu_dich": "Ồ không, anh này sao lại đến cứu người thế."
   },
   {
    "ma": "seg_0025",
    "bat": 76.312,
    "ket": 81.056,
    "chu_goc": "这人的操作你们可千万别学啊,楼下还有脚步,他们不敢上来,那我们就直接掐雷。",
-   "chu_dich": "Cách chơi của người này các bạn đừng học nhé, dưới lầu còn tiếng bước chân, họ không dám lên, thì mình cứ đặt mìn luôn."
+   "chu_dich": "Cách chơi của người này các bạn tuyệt đối đừng học nhé, dưới lầu vẫn còn tiếng bước chân, họ không dám lên, thì chúng ta trực tiếp quăng lựu đạn."
   },
   {
    "ma": "seg_0026",
    "bat": 81.056,
    "ket": 82.457,
    "chu_goc": "此一听,有人又跳伞回来了。",
-   "chu_dich": "Vừa nghe thấy, lại có người nhảy dù trở về."
+   "chu_dich": "Nghe thấy thế, có người lại nhảy dù trở về rồi."
   },
   {
    "ma": "seg_0027",
    "bat": 82.457,
    "ket": 86.881,
    "chu_goc": "至于这里的细节,咱们直接把雷丢在二楼门口,防止楼顶的人跳下来。",
-   "chu_dich": "Còn chi tiết ở đây, mình cứ ném mìn vào cửa tầng 2, phòng người từ trên nhảy xuống."
+   "chu_dich": "Còn về chi tiết ở đây, chúng ta trực tiếp quăng lựu đạn ở cửa tầng hai, ngăn người trên nóc nhà nhảy xuống."
   },
   {
    "ma": "seg_0028",
    "bat": 86.881,
    "ket": 90.744,
    "chu_goc": "真是说什么来什么。",
-   "chu_dich": "Nói gì đến đó."
+   "chu_dich": "Thật là nói gì đến đó."
   },
   {
    "ma": "seg_0029",
    "bat": 90.744,
    "ket": 94.667,
    "chu_goc": "他冲这么快,肯定是想下楼帮队友,假装本人把他队友骗上来。",
-   "chu_dich": "Hắn chạy nhanh thế, chắc là muốn xuống giúp đồng đội, giả vờ là hắn để lừa đồng đội lên."
+   "chu_dich": "Hắn chạy nhanh thế, chắc chắn là muốn xuống lầu giúp đồng đội, giả vờ là bản thân lừa đồng đội lên."
   },
   {
    "ma": "seg_0030",
    "bat": 94.667,
    "ket": 97.67,
    "chu_goc": "这人也是犯了同样的错误,冲太快就会失去开枪的机会。",
-   "chu_dich": "Người này cũng phạm sai lầm tương tự, chạy nhanh quá sẽ mất cơ hội nổ súng."
+   "chu_dich": "Người này cũng phạm phải lỗi tương tự, chạy quá nhanh sẽ mất cơ hội bắn."
   },
   {
    "ma": "seg_0031",
    "bat": 100.288,
    "ket": 105.162,
    "chu_goc": "直接拿下。最后问你们个问题,如果攻楼的时候遇到这种卡着楼梯的,你们会怎么办?",
-   "chu_dich": "Xử luôn. Cuối cùng hỏi các bạn một câu, nếu khi tấn công gặp người này bị kẹt cầu thang, các bạn sẽ làm sao?"
+   "chu_dich": "Xử luôn. Cuối cùng hỏi các bạn một câu, nếu khi tấn công tòa nhà gặp loại này bị kẹt cầu thang, các bạn sẽ làm sao?"
   }
  ],
  "mau_doc_tay": [
@@ -246,9 +249,10 @@
   30
  ],
  "⚠️ gioi_han": [
-  "BAN NEN: vong sua TAT, model ltt-3.5 GHIM TAI CHO GOI (bench), nhiet do 0.2.",
-  "⛔ Loi nhac la NGUYEN VAN cua `dich_thuat._loi_nhac` — no KHONG he nhac phien Han-Viet.",
-  "⛔ CHUA cham bang may: bo cham ngu nghia (`qc_ai`) dang trong xuong o mot lan khac.",
+  "BAN NEN qua DUONG SAN PHAM: vong sua TAT, model do `ai.model_cho(DICH_THUAT)`",
+  "chon (= ltt-3.5 / qwen35-api), loi nhac PHIEN_BAN_LOI_NHAC=3, nhiet do 0.2.",
+  "⛔ CHUA cham bang may: bo cham ngu nghia (`qc_ai`) dang trong xuong o lan khac.",
+  "⚠️ Mot phan 'loi dich' la LOI ASR doi lot: nguon co 跳散<-跳伞, 天然霉<-天然酶.",
   "⇒ Day la DAU VAO de doi chieu, ⛔ khong phai mot ban da nghiem thu."
  ]
 }

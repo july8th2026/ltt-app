@@ -77,8 +77,38 @@ def _model_theo_provider() -> tuple[list, dict]:
     return list(THU_TU_PROVIDER), {pid: mid for pid in THU_TU_PROVIDER}
 
 
+#: ⭐ **Tu 24/09: mac dinh chay QUA DUONG SAN PHAM.**
+#:
+#: Truoc do bench nay phai GHIM model tai cho goi, vi ASV chi co MOT cho khai
+#: (`manifest.model_llm_noi_bo`) phuc vu ca nam thao tac — doi no la doi model
+#: cua BO CHAM trong im lang. ⇒ Ban nen luc ay ⛔ **chua phai thu san pham tao
+#: ra**, va ⛔ khong ship duoc.
+#:
+#: Nay `ai.MODEL_THEO_THAO_TAC["dich_thuat"] = "ltt-3.5"` ⇒ chinh duong san pham
+#: da di `ltt-3.5`, nen bench goi THANG `dich_thuat.dich_ban_ghi`.
+#: ⛔ `--ghim` chi de doi chieu voi ban nen cu, khong phai duong chinh.
+QUA_SAN_PHAM = True
+
+
+def dich_qua_san_pham(ban: dict) -> dict:
+    """Goi THANG `dich_thuat.dich_ban_ghi` — ⛔ khong ghim gi tai cho goi.
+
+    ⭐ Day moi la thu san pham tao ra: model do `ai.model_cho(DICH_THUAT)` chon,
+       loi nhac do `_loi_nhac` dung, lo do `chia_lo` chia.
+    """
+    import platform_core.db as dbmod
+
+    from apps.auto_scan_video import dich_thuat as D
+
+    db = next(dbmod.get_session())
+    try:
+        return D.dich_ban_ghi(db, ban)
+    finally:
+        db.close()
+
+
 def dich_mot_lo(lo: list[dict], *, ngon_ngu_goc: str) -> dict:
-    """MOT lo qua duong ASV, model ghim `ltt-3.5`. Tra `{ma: cau_dich}`."""
+    """MOT lo, model GHIM `ltt-3.5` tai cho goi. ⛔ Duong CU, giu de doi chieu."""
     import platform_core.db as dbmod
     from platform_core.llm import dieu_phoi
 
@@ -110,6 +140,13 @@ def dich_mot_phim(duong: Path) -> dict:
     t0 = time.time()
     gop: dict = {}
     loi: list[dict] = []
+    if QUA_SAN_PHAM:
+        try:
+            gop = dich_qua_san_pham(ban)
+        except Exception as exc:                # noqa: BLE001
+            loi.append({"lo": 0, "kieu": type(exc).__name__,
+                        "loi": str(exc)[:300]})
+        return _ket(ban, doan, cac_lo, gop, loi, t0, duong_goi="san_pham")
     with ThreadPoolExecutor(max_workers=SONG_SONG) as bom:
         viec = {bom.submit(dich_mot_lo, lo, ngon_ngu_goc=ngon_ngu): i
                 for i, lo in enumerate(cac_lo, start=1)}
@@ -121,9 +158,25 @@ def dich_mot_phim(duong: Path) -> dict:
                 #    va so lo hong phai di CUNG bang so (bai hoc N-19).
                 loi.append({"lo": i, "kieu": type(exc).__name__,
                             "loi": str(exc)[:300]})
+    return _ket(ban, doan, cac_lo, gop, loi, t0, duong_goi="ghim_tai_cho_goi")
+
+
+def _ket(ban, doan, cac_lo, gop, loi, t0, *, duong_goi: str) -> dict:
+    """Ban ghi ket qua. ⭐ Mang theo MODEL THAT do duong san pham chon, ⛔ khong
+    phai hang `MODEL_DICH` cua tep nay — hai thu do co the lech nhau, va khi
+    lech thi con so nay phai noi ra."""
+    from apps.auto_scan_video import ai, van_ban
+
+    try:
+        model_that = ai.model_cho(ai.DICH_THUAT)
+    except Exception:                           # noqa: BLE001
+        model_that = ""
     return {
-        "phim": ban.get("phim"), "ngon_ngu": ngon_ngu,
-        "model": MODEL_DICH, "nhiet_do": NHIET_DO,
+        "phim": ban.get("phim"), "ngon_ngu": ban.get("ngon_ngu"),
+        "duong_goi": duong_goi,
+        "model_bi_danh": MODEL_DICH, "model_that": model_that,
+        "phien_ban_loi_nhac": van_ban.PHIEN_BAN_LOI_NHAC,
+        "nhiet_do": NHIET_DO,
         "vong_sua": False, "vong_sua_ghi_chu": "⛔ TAT — day la ban NEN",
         "so_doan_nguon": len(doan), "so_lo": len(cac_lo),
         "so_doan_dich_duoc": len(gop),
