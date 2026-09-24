@@ -1,0 +1,12 @@
+{
+  "name": "spike-egress",
+  "private": true,
+  "description": "Spike P6: do 3 phuong an chan egress cho piece Node.js tuy y. Xem docs/superpowers/reports/p6-egress/spike-chan-egress.md",
+  "scripts": {
+    "spike": "node run-all.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "undici": "^6.0.0"
+  }
+}
