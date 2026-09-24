@@ -55,6 +55,21 @@ MetricX-24-Hybrid QE · RapidOCR · faster-whisper/whisperx · FLORES-200.
 - ⛔ `ast.parse` **trước** `write_bytes`, không sau.
 - Số test mới: tra `python tools\check_so_test.py`, ⛔ đừng đoán số.
 - Mọi ngưỡng **viết ra trước khi đo**. Không đạt ⇒ sửa rồi đo lại, ⛔ **không nới ngưỡng**.
+- 🔴 **TRA NGUON TRUOC KHI TU VIET — áp riêng cho BỘ ĐO và BẢN VÁ LỖI** (chủ dự án
+  chốt 24/09; luật 10 `CLAUDE.md`, hợp đồng §1b). Trước khi một làn **viết** một bộ
+  đo, một bộ chấm, một lời nhắc chấm, một bộ cắt/chuẩn hoá, hay **vá** một lỗi công
+  cụ, làn đó phải tra **GitHub issues · mã upstream · model card · tài liệu chính
+  thức** và **trích nguồn** (repo + đường dẫn tệp, hoặc số issue/PR) trong báo cáo.
+  ⭐ **Ngưỡng cũng là thứ phải tra**, không phải thứ tự đặt — quy chuẩn công bố hơn
+  hẳn số ta bịa.
+  ⛔ Tra không ra ⇒ **khai đã tra ở đâu, tìm gì, vì sao không dùng được** — rồi mới
+  được tự viết. ⛔ Không có câu khai đó thì báo cáo **chưa đạt**.
+  ⚠️ Dấu hiệu nhận ra mình đang tự suy: việc được mô tả bằng động từ *"sửa/viết/đặt"*
+  cho một thứ mà **hàng nghìn người khác cũng cần** ⇒ gần như chắc chắn đã có sẵn.
+  ⚠️ `WebFetch` hỏng trên máy này — dùng **GitHub MCP** (`search_code`, `search_issues`,
+  `get_file_contents`) và `curl -sL -A "Mozilla/5.0"`.
+  ⛔ Mượn **đặc tả** rẻ hơn mượn **runtime**; chép mã ⇒ đọc `LICENSE` và ghi
+  `THIRD_PARTY_NOTICES.md`. Mượn ngưỡng ⇒ **mượn cả điều kiện** sinh ra nó.
 - Mỗi phép kiểm mới phải có **đối chứng** (tiêm lỗi, chứng minh nó ĐỎ). ⛔ Một phép kiểm chưa từng đỏ thì chưa biết nó bắt được gì.
 
 ---
