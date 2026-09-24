@@ -12,6 +12,58 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-24 (tối) — Deploy wf-v2: cửa OAuth mở, và **production ngừng 7 phút** vì một gói không ai khai
+
+Plan `2026-09-24-wf-v2-MASTER.md` đạt **13/14 phase** — toàn bộ làn P2→P11 đã gộp `main`,
+deploy `2adecdb8`. Phase 8 còn **nợ nghiệm thu upload thật** (hoãn: chủ dự án không đăng nhập
+được YouTube).
+
+### Cửa OAuth Google đã MỞ
+
+`https://app.lttstudios.com/hooks/oauth/google/bắt-đầu` chuyển đúng sang `accounts.google.com`:
+dự án `632783443352` (⛔ không phải YT-NEW đã cấu hình nhầm và đã hoàn nguyên), scope
+`youtube.upload` + `youtube.readonly`, PKCE S256, `access_type=offline`. Đến màn chọn tài khoản
+thì **dừng** — bấm “Cho phép” là cấp quyền trên tài khoản Google của chủ dự án, ⛔ không phải
+việc Claude làm thay. Đăng nhập đi bằng **vé SSO một lần** (`ve_dang_nhap_thu.ps1`), ⛔ không gõ
+mật khẩu.
+
+### 🔴 Sự cố: `ModuleNotFoundError: No module named 'pywintypes'`
+
+`platform_core/workflow/job_object.py` import `pywintypes`/`win32job` ở **mức module**, trên
+đúng đường import của `server.app`. `pywin32` **chưa bao giờ** có trong `requirements.txt`.
+
+⭐ **Không một phép kiểm nào có thể bắt được**, và đó mới là bài học: venv **phát triển**
+đã có sẵn `pywin32` (một gói khác kéo vào), nên mọi bài import bình thường, mọi lượt gate xanh.
+Phép kiểm **viết đúng**, **chạy đúng**, và vẫn mù — vì nó chạy trong môi trường **đã có sẵn
+chính thứ nó cần đo**. Chỗ duy nhất phân biệt được là venv **sạch** của máy chủ, tức đúng lúc deploy.
+
+Sửa: khai `pywin32>=306,<400` (`59340b0f` + `ea168e53` — bản đầu thiếu cận trên và
+`test_62::test_moi_thu_vien_deu_co_can_tren` bắt ngay). Máy chủ nay chạy pywin32 312.
+
+### Hai khiếm khuyết đường deploy (ghi vào mục nợ của plan, chưa sửa)
+
+1. **Phép kiểm đặt SAU điểm không quay lại.** Trình cài *có* bắt được ca này — ở bước
+   **Khởi động**, sau khi `app` đã bị thay và dịch vụ đã dừng. Một phép kiểm đúng đặt sau điểm
+   không quay lại thì nó ⛔ không phải **cổng**, nó là **cáo phó**.
+2. **`pip install` chạy trong lúc dịch vụ đã dừng** ⇒ mọi giây tải gói là một giây downtime
+   (lượt này kéo cả `torch cu128`).
+
+### Bẫy công cụ: gọi `nang_quyen.py` từ PowerShell **7**
+
+PS7 truyền `PSModulePath` xuống Windows PowerShell 5.1; thư mục module PS7 đứng trước nên 5.1
+bắt phải bản .NET Core của `Microsoft.PowerShell.Security` ⇒ `Get-Acl` *“module could not be
+loaded”*, deploy chết **giữa chừng** (đó là lần làm dịch vụ nằm im). Đặt lại `PSModulePath` về
+đúng ba thư mục của 5.1 trước khi gọi.
+
+⚠️ Chạy lại trình cài đẩy `app` hiện tại sang `app.previous` **vô điều kiện** ⇒ lần chạy thứ
+hai **ghi đè mất đường lui thật**. Bản `21c1bf9b` đã được giữ riêng ở
+`C:\LTTPlatform\app.rollback.21c1bf9b` trước khi chạy lại.
+
+### Còn nợ, thuộc chủ dự án
+
+- Xoay **client secret** Google (đã lọt vào bản ghi hội thoại) và **mật khẩu superuser PostgreSQL**.
+- Nghiệm thu upload YouTube thật (private) để đóng phase 8.
+
 ## 2026-09-24 (chiều) — VPS bán thật CHẠY được: sáu khuyết tật, và một cổng quản trị mở trên IP của khách
 
 Chủ dự án thử tạo VPS lúc 12:57 và hỏng lần thứ ba liên tiếp. Phiên này truy tới
