@@ -42,9 +42,35 @@ thì phép đo này **không tách được**.
 **thấp** là bằng chứng mạnh (ASR khớp cả một chân lý nền không hoàn hảo); một WER
 **cao** là bằng chứng **yếu**, và phải soi tay trước khi quy cho engine.
 
-## 3. Cách chuẩn hoá trước khi so
+## 3. Cách chuẩn hoá trước khi so — ghi ra, ⛔ không để trong mã
 
-*(điền sau Bước 3 — ⛔ ghi ra, đừng để trong mã)*
+`tools/bench_b1_chep_loi.chuan_hoa` — **bỏ HÌNH THỨC, giữ NỘI DUNG**:
+
+| bỏ | giữ |
+|---|---|
+| dấu câu (`[^\w\s]`) | mọi chữ |
+| khoảng trắng thừa | khoảng trắng **có nghĩa** (Latin) |
+| khác biệt NFC/NFKC | |
+| hoa/thường | |
+
+⛔ **Không tự chế phép tách từ tiếng Trung.** Văn bản Hán không có khoảng trắng, nên
+**WER theo "từ" trên tiếng Trung ít nghĩa hơn CER**. Cả hai đều được báo cáo, và
+**CER mới là số đáng tin** ở đây. Một bộ tách từ tự chế sẽ tạo ra một đơn vị đo
+không ai kiểm được — cùng họ với công thức Dice tự chế mà M-01 đã phải xoá.
+
+⛔ **Không dùng OpenCC** (giản↔phồn): máy này **chưa cài** (`ModuleNotFoundError`),
+và cài thêm một phép biến đổi **chưa đo** vào giữa chân lý nền là thêm một biến.
+Nếu số cuối lệch vì giản/phồn thì việc đó phải hiện ra ở **soi tay**, rồi mới thêm.
+
+### Đối chứng của chính bộ đo — ĐÃ CHẠY
+
+```
+giống hệt          WER 0,0000   CER 0,0000
+làm hỏng 30 % từ   WER 0,2857   CER 0,2857     RESULT: PASS
+```
+
+⭐ Không có bước này thì một WER thấp có thể chỉ là **bộ đo hỏng**, và nó sẽ **im
+lặng** cho mọi engine đạt (*"số 0 cần đối chứng"*).
 
 ## 4. Kết quả
 
