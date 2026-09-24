@@ -585,11 +585,12 @@ def pha_dich(db, lo: int, lap: int) -> dict:
             #    cong cu do: mot ban doc rong rai hon se bao "dung duoc" ve mot
             #    phan hoi ma san pham se tu choi.
             try:
-                bang = long_tieng.doc_chuyen(goi, {d["ma"] for d in doan})
+                doc = long_tieng.doc_chuyen(goi, {d["ma"] for d in doan})
                 r["ban_doc_san_pham"] = "dat"
+                r["so_doan_doc_duoc"] = len(doc)
             except Exception as exc:                             # noqa: BLE001
-                bang = {}
                 r["ban_doc_san_pham"] = f"{type(exc).__name__}: {str(exc)[:160]}"
+                r["so_doan_doc_duoc"] = 0
             if i == 0:
                 # ⚠️ De CHAM DIEM thi doc KHOAN DUNG (nhan ca mang), vi cau hoi
                 #    "ban dich hay den dau" khac cau hoi "san pham doc duoc
