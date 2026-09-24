@@ -274,3 +274,73 @@ phán quyết 0–99/100+, nên V2 không bị đo trên chính dải đã dùng
   lượt**, tức **nhiễu**, không phải lệch hệ thống. Phân mức chữa nửa **hệ thống**;
   đo xong mới biết còn phải mua gì bằng **3× chi phí** (đường sản phẩm gọi **một**
   lượt/lô).
+
+---
+
+# 9. KẾT QUẢ V2 và V3 — ⛔ CẢ HAI ĐỀU KHÔNG ĐẠT
+
+Đo trên **dải giữ riêng** (báo động giả: dòng 200–229 · tiêm: dòng 300+), 3 lượt,
+một lượt gọi/lô như đường sản phẩm.
+
+| | báo động giả | `lat_nghia` | `sai_thuc_the` | lô hỏng JSON |
+|---|---|---|---|---|
+| **V1** nhị phân | 43,3% | 100% | 100% | 1/30 (3,3%) |
+| **V2** phân mức MQM | **16,7%** ✅ | 100% ✅ | **40%** ⛔ | 0/9 |
+| **V3** + sàn mức thực thể | **58,3%** ⛔ | **53%** ⛔ | **100%** ✅ | **2/9 (22%)** ⛔ |
+
+⛔ **Không bản nào qua được CẢ HAI cổng.** Theo luật viết trước: **không nhận**.
+
+## 9.1 V2 — hạ báo động giả 2,6 lần, rồi mù 60% lỗi thực thể
+
+⭐ **Và đối chứng âm là thứ duy nhất bắt được điều đó.** Nếu chỉ đo báo động giả,
+V2 trông như một thắng lợi sạch (43,3% → 16,7%) và ta đã phát hành một bộ chấm
+**mù 60% lỗi sai thực thể** — đúng cái "đổi thước quá tay lấy thước mù".
+
+🔑 **Soi ra nguyên nhân, và nó rất cụ thể: 9/9 ca bỏ sót là model CÓ THẤY lỗi và
+CÓ gọi đúng tên `sai_thuc_the`, rồi chấm `nhe`.** Không một ca nào là không phát
+hiện được. ⇒ Lỗi **xếp mức**, không phải lỗi **phát hiện** — hai thứ cần hai bản
+sửa khác hẳn nhau, và gộp chúng lại sẽ dẫn tới sửa sai chỗ.
+
+## 9.2 V3 — chữa đúng chỗ đã chẩn, nhưng vỡ hai chỗ khác
+
+Sàn mức (*"số/tên riêng/đơn vị/ngày tháng bị đổi ⇒ ít nhất `nang`"*) **chữa đúng
+thứ đã chẩn**: `sai_thuc_the` 40% → **100%**. Nhưng:
+
+1. **Báo động giả bật lên 58,3%** — cao hơn cả V1. Lý do đọc được từ chính dữ
+   liệu V1: người dịch chuyên nghiệp **thường xuyên** chỉnh thực thể một cách
+   chính đáng (*"Đài Loan" → "nước này"*, *"400 người giàu nhất nước Mỹ"* →
+   *"400 người Mỹ giàu nhất thế giới"*). Một sàn cứng ép **mọi** chỉnh sửa ấy
+   thành `nang`. ⇒ Sàn theo **loại lỗi** là công cụ quá cùn cho việc này.
+2. **`lat_nghia` tụt còn 53%** — ngoài dự đoán, và chưa giải thích được.
+
+## 9.3 🔴 MỘT CONFOUND phải sửa TRƯỚC khi so tiếp
+
+Tỉ lệ **lô trả JSON hỏng** (`LuocDoSai`) theo bản: V1 **3,3%** → V3 **22%**
+(2/9 lô). Mỗi lô hỏng mất trọn **10 mục**. Độ phủ từng lượt của V3 chỉ còn
+**19/30, 13/30, 13/30**.
+
+⛔ **Nên con số 58,3% của V3 không phải một phép đo sạch** — nó tính trên một tập
+con bị cắt không ngẫu nhiên (mất theo **lô**, không theo **mục**). Nó đủ để nói
+*"V3 không tốt hơn"*, ⛔ **không** đủ để nói *"V3 tệ đúng bằng 58,3%"*.
+
+⚠️ **Và đây đúng bài học Task 11b, áp sang lớp này:** *"cổng đang chạy
+`--temp 1.0` … ghim nhiệt độ TRƯỚC, đo lại tỉ lệ qua lược đồ, RỒI mới sửa lời
+nhắc"*. Đầu ra MQM dài hơn hẳn đầu ra nhị phân, nên nó làm lộ đúng điểm yếu bám
+lược đồ đã biết. ⇒ **Việc tiếp theo không phải một lần chỉnh lời nhắc nữa**, mà
+là làm lược đồ đứng vững (ghim nhiệt độ · lô nhỏ hơn `DOAN_MOI_LO` · hoặc nới
+`NGAN_SACH_RA`), rồi **đo lại V2 và V3 trên nền sạch**.
+
+## 9.4 Điều kiện mở lại MQM-APE — vẫn CHƯA khớp
+
+Điều kiện đã chốt: *phân mức một mình vẫn > 15% **và** phần dư chủ yếu là **lỗi
+bịa có trích đoạn***. Vế hai **không khớp**: phần dư của V2 soi tay ra phần lớn
+là **lỗi THẬT của bản dịch FLORES** — ví dụ dòng 216 dịch `壁球` (squash) thành
+*"quần vợt"* (tennis), dòng 215 `联合会式橄榄球` (rugby union) thành *"liên đoàn
+bóng bầu dục"*. ⇒ ⛔ Chưa mở MQM-APE.
+
+⭐ **Và điều đó lật một giả định của chính phép đo này:** *"mọi phán quyết trên
+FLORES = báo động giả theo định nghĩa"* ngầm coi bản dịch FLORES là **hoàn hảo**.
+Nó không hoàn hảo. ⇒ **16,7% của V2 là một CẬN TRÊN** của tỉ lệ báo động giả
+thật, không phải giá trị đúng. Muốn biết sàn thật thì phải soi tay phần dư —
+và nếu sàn thật đã gần 15% thì **ngưỡng 15% cần chính chủ dự án chốt lại**, chứ
+không phải nới lén.
