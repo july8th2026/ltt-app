@@ -468,3 +468,111 @@ bịa có trích đoạn***.
 ⭐ Và chính vế hai lật ngược cách đọc: phần dư *không* là bằng chứng bộ chấm bịa,
 nó là bằng chứng **chân lý nền của ta có lỗi** — nên việc tiếp là đo sàn (§11),
 ⛔ không phải thêm một tầng lọc lên bộ chấm.
+
+---
+
+# 13. VIỆC A — cả ba bản trên CÙNG một nền sạch
+
+Lời nhắc V1/V2 được **đóng băng** trong `tools/` (chép nguyên văn từ git: V1 =
+trước `91d921f4`, V2 = `91d921f4`), gọi qua `--ban {v1,v2,v3}`. ⛔ Ba bản chạy
+**cùng một nhiệt độ ghim** — đo ở hai nhiệt độ là so hai *hệ thống*, không phải
+so hai *lời nhắc*.
+
+| bản (`temp 0.0`) | báo động giả | `lat_nghia` | `sai_thuc_the` | lô hỏng |
+|---|---|---|---|---|
+| **V1** nhị phân | 43,3% | 100% | 100% | 0% |
+| **V2** phân mức | **16,7%** | 100% | ⛔ **40%** | 0% |
+| **V3** + sàn thực thể | 23,3% | ✅ 100% | ✅ **87%** | 0% |
+
+⭐ **V1 không hề bị nhiễu kênh:** 43,3% ở nhiệt độ mặc định và 43,3% khi ghim —
+y hệt, độ nhạy 100/100 cả hai. ⇒ Nền bẩn **chỉ** đánh vào đầu ra MQM dài, và
+mốc V1 ta so suốt từ đầu là mốc **sạch**. (⛔ Không có phép đo này thì ta không
+biết điều đó — đúng lý do điều phối đòi đo lại cả V1.)
+
+⇒ **V3 + `temp 0.0` là ứng viên dẫn đầu**: đổi **+6,6 điểm** báo động giả lấy
+**+47 điểm** độ nhạy thực thể.
+
+# 14. VIỆC B — SÀN LỖI FLORES, n = 100, đọc mù
+
+Sổ đầy đủ: `bang_chung/b2_san_loi_flores.json` (chỉ số dòng · phán quyết ·
+**đoạn trích nguồn** · lý do).
+
+## 14.1 Giao thức
+
+- **Mù**: bộ chấm **chưa bao giờ chạy** trên dải 500–899. Người đọc không thấy
+  phán quyết nào.
+- **Mẫu**: 50 dòng (500–699, seed 20260924) + 50 dòng (700–899, seed 20260925).
+- ⛔ **Ca không trích được đoạn nguồn ⇒ KHÔNG tính là lỗi.**
+- **Người đọc 2**: mẫu con 30 dòng đã rút sẵn trong sổ
+  (`mau_con_cho_nguoi_doc_2`), ⛔ **không kèm phán quyết** — để điều phối đọc
+  độc lập rồi lấy **tỉ lệ bất đồng**.
+
+## 14.2 Kết quả
+
+| | số ca | tỉ lệ |
+|---|---|---|
+| Lỗi **rõ** (người xem tin một sự việc sai) | **10**/100 | **10%** |
+| Cộng cặp **bản ZH mới là phía lệch** | 12/100 | 12% |
+| Cộng cả ca **biên** | 23/100 | 23% |
+| Không lỗi | 77/100 | 77% |
+
+Ví dụ lỗi rõ: `营养补品` (*thực phẩm bổ sung*) → *"tập luyện bổ sung"* · `珍稀动物`
+(*thú quý hiếm*) → *"thú ngoại nhập"* · `山寨货` (*hàng nhái*) → *"bị ngừng kinh
+doanh"* · `溪降` (*canyoning*) → *"chèo thuyền vượt thác"* · `离出发日期应至少有
+6 个月` (hiệu lực 6 tháng **từ** ngày đi) → *"6 tháng **trước** chuyến đi"*.
+
+## 14.3 🔴 Giới hạn — ngay cạnh con số, ⛔ không giấu ở cuối
+
+1. 🔴 **Người đọc 1 là một LLM — cùng họ với thứ đang bị nghi.** Đây là **ý kiến
+   thứ hai**, ⛔ không phải chân lý nền. Đó chính là lý do phải có người đọc 2.
+2. **n = 100, KTC 95% của 10/100 ≈ 5,5% – 17,4%** — vẫn rộng.
+3. Dải đo sàn (500–899) **khác** dải đo báo động giả (200–229) ⇒ phép trừ là
+   **ước lượng**, không phải phép tính trên cùng tập.
+
+## 14.4 Phép trừ — và nó ĐỔI CHIỀU so với ước lượng cũ
+
+```
+V3:  bao dong gia do duoc  23,3 %
+     san loi FLORES         10 %  (KTC 5,5 – 17,4 %)
+  => bao dong gia THAT   ~ 13,3 %   (thay vi 11–19 % uoc tu mau n=25)
+```
+
+⭐ Mẫu 25 ban đầu cho sàn **4%**; mẫu 100 cho **10%**. ⇒ ⛔ **Ước lượng cũ quá
+thấp**, và nó kéo kết luận sai hướng. Đây đúng lý do điều phối bắt nâng cỡ mẫu
+**trước** khi mang câu hỏi đi.
+
+⚠️ **Nhưng vẫn CHƯA tuyên bố đạt.** 13,3% nằm dưới 15%, nhưng cả hai số đều có
+khoảng tin rộng (báo động giả đo trên n=30; sàn trên n=100), và người đọc 2 chưa
+đọc. ⛔ Không bấm cổng bằng một hiệu số của hai ước lượng rộng.
+
+**Cần để chốt:** (a) điều phối đọc mẫu con 30 dòng ⇒ **tỉ lệ bất đồng**;
+(b) đo lại báo động giả V3 trên **≥ 100 cặp** thay vì 30.
+
+# 15. MQM-APE — vì sao vế hai LẬT, và nó dạy điều gì
+
+Điều kiện mở lại: *phần dư chủ yếu là **lỗi bịa có trích đoạn***. Kiểm: ⛔ **không
+khớp**.
+
+🔑 **Và phần đáng giữ không phải "không khớp" mà là CÁCH nó lật.** Cùng một tập
+"phần dư", hai cách đọc ngược nhau:
+
+```
+doc A: "bo cham bia loi"        -> sua BO CHAM   (them mot tang loc: MQM-APE)
+doc B: "chan ly nen co loi"     -> sua PHEP DO   (do san FLORES)
+```
+
+Soi tay cho đọc **B**: đoạn trích đều **có thật và đúng chỗ**, và thứ sai là bản
+dịch FLORES. ⇒ Lần sau gặp chữ *"phần dư"*, câu hỏi đầu tiên là **"phần dư của
+ai?"** — của bộ chấm, hay của chân lý nền.
+
+⇒ **MQM-APE: ĐÓNG.** Điều kiện đã được kiểm và trả lời, ⛔ không treo.
+
+# 16. ⭐ Một nước đi đáng ghi lại
+
+**Trước khi giải thích một con số lạ, hỏi kênh đo có sạch không.**
+
+`lat_nghia` tụt 53% ở V3 trông như một khiếm khuyết của lời nhắc và mời gọi cả
+một giả thuyết. Điều phối dặn ⛔ đừng dựng giả thuyết; ghim nhiệt độ xong nó về
+**100%** — nó **chưa bao giờ tồn tại**. Một giờ lý luận về nguyên nhân của một
+hiện vật đo đạc là một giờ mất trắng, và tệ hơn: nó có thể sinh ra một bản vá
+cho một vấn đề không có thật.
