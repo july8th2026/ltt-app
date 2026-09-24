@@ -532,11 +532,47 @@ def test_kho_ket_qua_nam_ngoai_git_va_ngoai_deploy():
     trong `setup/2-cai-dat.ps1`. Deploy chep CA CAY ke ca tep untracked, nen
     `.gitignore` mot minh **khong** du.
     """
-    assert "/test-results/" in (GOC / ".gitignore").read_text(encoding="utf-8")
+    # 🔴 MO RONG 24/09: cung mot cai bay da dinh BA lan — `.codex` (lan 1),
+    #    `.superpowers` (lan 2, 23/09), va `.gate/` la ung vien thu ba. Moi lan
+    #    deu la: mot thu muc cong cu duoc them vao danh sach bo qua cua git,
+    #    nhung KHONG vao `/XD` cua duong lui `robocopy` — ma duong do chep CA CAY
+    #    song len production, ke ca tep chua theo doi.
+    #
+    # ⇒ Hoi HAI cau tach bach cho TUNG thu muc, trong CUNG mot luot:
+    #      "no co len kho khong"  va  "no co len production khong".
+    #
+    # ⭐ Day la NGUON DUY NHAT cua luat nay. Them thu muc cong cu moi thi them
+    #    vao `THU_MUC_CONG_CU` duoi day, ⛔ dung viet mot phep kiem thu hai o
+    #    tep khac — hai cho khai cung mot dieu thi khong ai bat khop chung.
+    THU_MUC_CONG_CU = ("test-results", ".gate", ".playwright-cli",
+                       ".playwright-mcp", ".claude", ".codex", ".superpowers")
+    gi = (GOC / ".gitignore").read_text(encoding="utf-8")
+    # ⚠️ Trong mot WORKTREE, `GOC/.git` la mot TEP, nen `GOC/.git/info/exclude`
+    #    khong ton tai. Hoi git cho thu muc chung thay vi doan duong dan —
+    #    neu khong, phep kiem nay do oan tren moi cay rieng.
+    try:
+        chung = subprocess.run(["git", "rev-parse", "--git-common-dir"],
+                               cwd=GOC, capture_output=True, text=True,
+                               timeout=20, check=True).stdout.strip()
+        loai_tru = (GOC / chung / "info" / "exclude").resolve()
+    except (OSError, subprocess.SubprocessError):
+        loai_tru = GOC / ".git" / "info" / "exclude"
+    gi_va_loai_tru = gi + (loai_tru.read_text(encoding="utf-8")
+                           if loai_tru.is_file() else "")
     cai_dat = (GOC / "setup" / "2-cai-dat.ps1").read_text(encoding="utf-8",
                                                           errors="replace")
-    assert "test-results" in cai_dat, (
-        "test-results khong con trong /XD - ket qua gate se len production")
+    dong_xd = [d for d in cai_dat.splitlines() if "/XD" in d or "test-results" in d]
+    van_xd = "\n".join(dong_xd)
+    thieu_git, thieu_deploy = [], []
+    for ten in THU_MUC_CONG_CU:
+        if ten not in gi_va_loai_tru:
+            thieu_git.append(ten)
+        if ten not in van_xd:
+            thieu_deploy.append(ten)
+    assert not thieu_git, f"khong bi git bo qua: {thieu_git}"
+    assert not thieu_deploy, (
+        f"khong co trong /XD - se LEN PRODUCTION qua duong lui robocopy: "
+        f"{thieu_deploy}")
 
 
 def test_kho_ket_qua_ghi_du_danh_tinh(tmp_path, monkeypatch):
@@ -557,7 +593,8 @@ def test_kho_ket_qua_ghi_du_danh_tinh(tmp_path, monkeypatch):
         da_giu = ["cpu_nhieu"]
 
     gate._ghi_ket_qua("day-du", [], "PASS", 12.3, _KhoaGia(), False)
-    ra = list((tmp_path / "test-results" / "gates").glob("*.json"))
+    # ⚠️ Qua `gate.thu_muc_so`, ⛔ dung go tay: so doi sang `.gate/` ngay 24/09.
+    ra = list(gate.thu_muc_so(tmp_path).glob("*.json"))
     assert ra, "khong ghi duoc ban ghi nao"
     d = json.loads(ra[0].read_text(encoding="utf-8"))
     for khoa in ("id", "luc", "ho_so", "ket_qua", "sha", "nhanh", "cay",

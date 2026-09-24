@@ -318,6 +318,8 @@ def test_ban_ghi_gate_liet_ke_MOI_thanh_phan(tmp_path, monkeypatch):
     monkeypatch.setattr(gate, "ROOT", tmp_path)
     gate._ghi_ket_qua("pham-vi", [], "PASS", 1.0, None, False, sha="abc",
                       thanh_phan=["gateway:llm", "app:ltt_llm"])
-    [tep] = (tmp_path / "test-results" / "gates").glob("*.json")
+    # ⚠️ Lay cho cat qua `gate.thu_muc_so`, ⛔ dung go tay: so phan quyet
+    #    doi sang `.gate/` ngay 24/09 (xem `TEN_THU_MUC_SO`).
+    [tep] = gate.thu_muc_so(tmp_path).glob("*.json")
     ban_ghi = json.loads(tep.read_text(encoding="utf-8"))
     assert ban_ghi["thanh_phan"] == ["gateway:llm", "app:ltt_llm"]
