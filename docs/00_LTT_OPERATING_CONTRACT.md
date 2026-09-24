@@ -19,6 +19,7 @@
 | Chuyện kể · sự cố · bài học đo lường | `docs/BAY_TRONG_CONG_CHAT_LUONG.md` |
 | Sản phẩm đã chốt gì | `docs/QUYET_DINH_NEN_TANG.md` |
 | Cái gì đang sống trên production | `python tools\api_prod_canary.py trang-thai` |
+| Vai trò hai máy A/B · máy nào có card gì | `docs/HAI_MAY_A_VA_B.md` |
 | Bước gate nào tồn tại, chứng minh gì | `tools/gate.py::_steps` · `tools/gate.py::HO_SO` |
 
 ⛔ **Không chép số.** Con số nằm trong mã (`tools/gate.py`, lint, `ngan_sach.py`);

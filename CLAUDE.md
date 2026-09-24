@@ -19,6 +19,7 @@ docs/00_LTT_OPERATING_CONTRACT.md      ← đọc trước việc thực chất
 | Sản phẩm đã chốt gì | `docs/QUYET_DINH_NEN_TANG.md` → `docs/KE_HOACH_TRIEN_KHAI.md` |
 | Chuyện gì đã xảy ra (nhật ký sống) | `docs/NHAT_KY.md` — **ghi cuối mỗi phiên có thay đổi** |
 | Cái gì đang sống trên production | `python tools\api_prod_canary.py trang-thai` — không bảng chép tay |
+| **Máy A và máy B** làm gì, máy nào có card gì (⚠️ **cả hai đều có một 5060 Ti**) | `docs/HAI_MAY_A_VA_B.md` |
 | Cây này ở hồ sơ nào, lệch `main` không | `python tools\ho_so_cay.py trang-thai` |
 | Viết mã đúng kiểu (Windows, bố cục app, bí mật, cách viết test) | `AGENTS.md` |
 | Worktree · lệnh nặng · deploy | `docs/QUY_TRINH_WORKTREE.md` · `docs/QUY_TAC_CHAY_LENH_NANG.md` · `docs/16_CAP_NHAT_VA_DEPLOY.md` |
