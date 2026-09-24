@@ -225,7 +225,7 @@ const runV3: RunV3 = { id: 'r1', workflow_id: 'w1', version_id: 'v1',
   status: 'QUEUED', credit_max: 3, credit_charged: 0, settled: false,
   created_at: '2026-09-24T00:00:00+00:00',
   nodes: [{ node_id: 'a', status: 'PENDING', attempt: 1, cost_credit: 0,
-            job_id: '', error: '' }],
+            job_id: '', error: '', waiting_kind: '' }],
   su_kien: [{ seq: 1, loai: 'WorkflowStarted', node_id: '', du_lieu: {},
               created_at: '2026-09-24T00:00:00+00:00' }],
   seq_cuoi: 1 }

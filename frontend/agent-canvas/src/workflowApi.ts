@@ -559,7 +559,12 @@ export function createAutosave<T>(
 
 // ── Cua v3: mot luot chay (Dot 5.2, apps/agent/routes/runs_v3.py) ─────────
 export type RunV3Node = { node_id: string; status: string; attempt: number
-  cost_credit: number; job_id: string; error: string }
+  cost_credit: number; job_id: string; error: string
+  // `WAITING` vi ly do GI (`DELAY|JOB|WEBHOOK|HUMAN|CHILD_RUN|BARRIER`,
+  // khop nguyen `Waitpoint.kind`) -- rong khi node khong `WAITING`. Them P9
+  // task 3 (coordinator, mo lai `main`/phase 5+6): mot node cho NGUOI DUYET
+  // phai hien KHAC mot node cho webhook/loi, khong duoc gop chung nhan.
+  waiting_kind: string }
 export type RunV3Event = { seq: number; loai: string; node_id: string
   du_lieu: Record<string, unknown>; created_at: string }
 export type RunV3 = { id: string; workflow_id: string; version_id: string

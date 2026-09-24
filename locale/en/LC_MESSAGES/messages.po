@@ -20888,6 +20888,10 @@ msgid "Idempotency-Key phai dai %(min)d den %(max)d ky tu."
 msgstr "Idempotency-Key must be between %(min)d and %(max)d characters."
 
 #: apps/agent/routes/runs_v3.py
+msgid "Không gộp được trạng thái: một đường thi hành trong vòng lặp lồng sâu đã bị băm (quá 64 ký tự), không thể biết chắc đây có phải node này."
+msgstr "Could not merge status: an execution path inside a deeply nested loop was hashed (over 64 characters), so we cannot be sure this is that node."
+
+#: apps/agent/routes/runs_v3.py
 msgid "Không tìm thấy lượt chạy."
 msgstr "Run not found."
 
