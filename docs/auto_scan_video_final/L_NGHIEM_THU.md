@@ -144,6 +144,19 @@ máy, và vòng sửa "đọc lại" này đo trên một máy đang mang trạn
 | `cpu_nhieu` | chỉ **chậm hơn** |
 | `may_tao_tieng` · `postgres_test` | có thể **sai kết quả** |
 
+## 2c. Luật 7 (kiểm giao diện) — đóng tới đâu, còn hở đâu
+
+| lớp | phủ bởi | trạng thái |
+|---|---|---|
+| dữ liệu tới được màn hình | `test_3002` (`TestClient`, render thật qua HTTP) | ✅ |
+| **đọc được trên màn hình** (CSS, khối mở sẵn, không lỗi console, không asset 404) | `test_3003` (**Chromium thật** + uvicorn cục bộ, đăng nhập bằng cookie) | ✅ |
+| chốt trên `https://app.lttstudios.com` qua Cloudflare | — | ⛔ **CÒN HỞ** |
+
+⚠️ Lớp cuối **không** chờ P-01: năm bảng `asv_*` đã có trên production; ASV 404 là
+do **cờ tính năng** `LTT_AUTO_SCAN_VIDEO`, và bật cờ đó **là mở cho khách** —
+§24 của đề bài cấm. ⇒ Việc còn mở đúng là *"chốt trên tên miền thật — **chờ chủ
+dự án cho mở khách**"*, không phải *"chờ bảng"*.
+
 ## 3. Kết quả lượt thật
 
 Bằng chứng từng lượt: `bang_chung/NT_CUOI_<lượt>.md`.
