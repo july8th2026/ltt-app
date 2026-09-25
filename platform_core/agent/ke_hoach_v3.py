@@ -66,6 +66,30 @@ def _vi_tri(chi_so: int) -> dict:
             "y": (chi_so // _MOT_HANG) * BUOC_Y}
 
 
+#: Tiền tố node app/tool trong tài liệu draft (spec §4.1) — khớp
+#: `TIEN_TO_APP` của `frontend/agent-canvas/src/nodeDefinition.ts`.
+_TIEN_TO_APP = "app."
+
+
+def _data_canvas(loai: str, params: dict) -> dict:
+    """`data.tool`/`data.params` — hình dạng CanvasNode cần để RENDER.
+
+    ⛔ Đây KHÔNG phải hình dạng cổng biên dịch đọc (`_node`/`_node_loi` đọc
+       top-level `type`/`params`) — nó là một bản MIRROR thêm vào riêng cho
+       canvas, y hệt cách `frontend/agent-canvas/src/nodeDefinition.ts
+       ::slugCongCu` đặt tên: bỏ tiền tố `app.` cho node app/tool
+       (`app.video.generate` → `video.generate`), GIỮ NGUYÊN cho node lõi
+       (`core.if` → `core.if`, không có tiền tố đó để bỏ).
+
+    Thiếu khoá `data` này (bản trước `chuan_hoa()` không viết) làm
+    `CanvasShell.tsx::displayNodes` đọc `node.data.tool` trên một
+    `node.data` `undefined` ⇒ `TypeError` giữa `useMemo` render — trình
+    soạn "sập" đúng lúc nạp tài liệu `/soan` vừa trả về (`test_4250`).
+    """
+    slug = loai[len(_TIEN_TO_APP):] if loai.startswith(_TIEN_TO_APP) else loai
+    return {"tool": slug, "params": params}
+
+
 def danh_muc(*, cong_cu: Optional[dict] = None,
              dinh_nghia: Optional[dict] = None) -> list[dict]:
     """Danh mục node **rút gọn** làm đầu vào prompt (spec §12.2).
@@ -188,12 +212,22 @@ def chuan_hoa(raw) -> dict:
         if not isinstance(params, dict):
             raise LoiSoan("hinh_dang_sai",
                           f"params cua {nid!r} phai la object", nid)
+        loai = str(n.get("type", ""))
         ra_nodes.append({
-            "id": nid, "type": str(n.get("type", "")),
+            "id": nid, "type": loai,
             "type_version": int(n.get("type_version") or 1),
             # ⛔ Toạ độ model gửi bị BỎ — xem docstring mô-đun.
             "position": _vi_tri(i), "label": str(n.get("label") or "")[:160],
             "params": params,
+            # ⭐ Khoá THÊM cho canvas — xem `_data_canvas.__doc__`. Đây là
+            #    hình dạng `frontend/agent-canvas/src/editorState.ts
+            #    ::nextNode()` tự dựng cho MỌI node (lõi lẫn app); thiếu nó
+            #    `CanvasShell.tsx::displayNodes` đọc `node.data.tool` trên
+            #    một `node.data` KHÔNG TỒN TẠI ⇒ `TypeError` giữa render.
+            #    ⛔ KHÔNG thay `type`/`params` top-level bằng khoá này — cổng
+            #    biên dịch (`bien_dich._node`/`_node_loi`) đọc đúng hai khoá
+            #    top-level đó, không đụng `data` (test_4250 ghim cả hai).
+            "data": _data_canvas(loai, params),
             "credential_ref": str(n.get("credential_ref") or ""),
             "settings": dict(n.get("settings") or {}),
         })
