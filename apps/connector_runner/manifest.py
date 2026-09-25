@@ -1,4 +1,5 @@
-"""Chủ sở hữu job_type `workflow.piece` + `workflow.connector` (plan wf-v2 P6).
+"""Chủ sở hữu job_type `workflow.piece` + `workflow.connector` +
+`workflow.code` (plan wf-v2 P6, P-D mục 3).
 
 ⭐ VÌ SAO LÀ MỘT APP RIÊNG, KHÔNG PHẢI THÊM VÀO `apps/agent`
 
@@ -14,10 +15,14 @@
    khuôn: `catalog_parent` + `surface="runtime"`, không thẻ catalog, không mục
    nav, không ToolSpec riêng.
 
-⚠️ HAI job_type, MỘT app, và đó là có chủ ý: chúng dùng **cùng một lane** và
+⚠️ BA job_type, MỘT app, và đó là có chủ ý: cả ba dùng **cùng một lane** và
    **cùng một tài nguyên admission** (`connector`, trần 2 suất — spec §11.2).
-   Tách làm hai app sẽ cho hai lane và làm trần đó thành hai trần, tức gấp đôi
-   số tiến trình Node 400 MB chạy đồng thời trên một máy production.
+   Tách làm nhiều app sẽ cho nhiều lane và làm trần đó thành nhiều trần, tức
+   nhân số tiến trình Node ~400 MB chạy đồng thời trên một máy production.
+   `workflow.code` (P-D mục 3) KHÔNG chạy qua `connector.chay()`/vỏ
+   `ltt-connector-runner` như `workflow.piece` — nó dùng
+   `code_sandbox.chay()`, vỏ RIÊNG `ltt-code-runner`, không mở
+   `proxy_egress`. Chung app vì chung admission, ⛔ không vì chung cách chạy.
 
 ⛔ `public=False`: đây là executor nội bộ, không phải sản phẩm bán cho khách.
 """
@@ -49,7 +54,7 @@ MANIFEST = AppManifest(
     enabled=True,
     lifecycle="internal",
 
-    job_types=("workflow.piece", "workflow.connector"),
+    job_types=("workflow.piece", "workflow.connector", "workflow.code"),
     requires=("api",),
     credit_cost=_gia,
     notes=("Ranh gioi an ninh o platform_core/workflow/vo_boc.py "

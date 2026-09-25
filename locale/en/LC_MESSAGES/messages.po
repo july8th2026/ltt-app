@@ -21463,3 +21463,15 @@ msgstr "How it is charged"
 
 msgid "Ảnh logo không hợp lệ."
 msgstr "That logo image is not valid."
+
+msgid "Chay mot doan JavaScript tuy y trong vo cach ly hai lop (AppContainer + isolated-vm). Khong mang, khong tep, khong tien trinh con."
+msgstr "Runs an arbitrary JavaScript snippet in a two-layer isolation sandbox (AppContainer + isolated-vm). No network, no files, no child processes."
+
+msgid "Code"
+msgstr "Code"
+
+msgid "Module CJS: `module.exports.code = function(inputs) {...}`. Chay trong isolated-vm — khong `require`, khong mang, khong doc/ghi tep, khong sinh tien trinh con."
+msgstr "CJS module: `module.exports.code = function(inputs) {...}`. Runs inside isolated-vm — no `require`, no network, no file read/write, no spawning child processes."
+
+msgid "Object truyen vao tham so `inputs` cua ham `code`. Gia tri thuong la tham chieu {{ }} toi dau ra cua node khac."
+msgstr "Object passed as the `inputs` argument of the `code` function. Values are usually {{ }} references to another node's output."
