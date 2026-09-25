@@ -70,7 +70,7 @@ def main(argv=None) -> int:
     from platform_core.db import get_session
     from apps.vps import jobs
     from apps.vps.tables import VpsInfrastructureProfile
-    from apps.vps.services import backend_factory, dns_cloudflare, rdns
+    from apps.vps.services import backend_factory, dns_cloudflare, proxmox, rdns
 
     for db in get_session():
         profile = db.execute(select(VpsInfrastructureProfile).where(
@@ -93,9 +93,13 @@ def main(argv=None) -> int:
             d = cfg.get("data", cfg) if isinstance(cfg, dict) else cfg
             cpu = str(d.get("cpu") or "kvm64(mac dinh)")
             onboot = str(d.get("onboot") or "0")
-            fw = cli.doc_firewall(int(m.vmid))
-            fw_ok = all(str(fw.get(k, "")).lower() in ("1", "true")
-                        for k in ("enable", "ipfilter", "macfilter"))
+            # 🔴 25/09/2026: ban cu doc `doc_firewall` roi in `dat` khi ba khoa
+            #    cua TANG VM bang 1. Do that tren hai may dang chay: dung la bang
+            #    1, nhung `cluster/firewall/options` KHONG co `enable` va NIC la
+            #    `firewall=0` ⇒ Proxmox khong ap gi ca. Cong cu doc MOT CO roi
+            #    ket luan ve MOT TINH CHAT, va toi da bao chu du an la "da ap".
+            # ⇒ Hoi dung cau nguoi doc hoi: may nay co that su chan spoof khong.
+            fw_ok, fw_ho = proxmox.tuong_lua_hieu_luc(cli, int(m.vmid))
             ip = ip_theo_may.get(m.id, "")
             # ⛔ Ba trang thai, khong phai `bool`: "OVH da luu" va "the gioi thay
             #    duoc" la hai su that khac nhau — do that 25/09, OVH luu xong ma
@@ -111,8 +115,10 @@ def main(argv=None) -> int:
                        rdns.CHUA_DAT: "CHUA dat",
                        rdns.KHONG_DO_DUOC: "? khong do duoc"}[tt]
             print(f"{m.vmid:>6}  {str(m.ten)[:16]:<16} {cpu:<10} "
-                  f"{'dat' if fw_ok else 'CHUA':<10} "
+                  f"{'hieu luc' if fw_ok else 'KHONG':<10} "
                   f"{'co' if onboot == '1' else 'CHUA':<7} {ip or '-':<16} {ptr}")
+            if fw_ho:
+                print(f"{'':>6}    tuong lua chua hieu luc: {fw_ho}")
 
             if not a.ap:
                 continue
