@@ -12,6 +12,18 @@ Vì vậy `.mo` được commit vào git như một hiện vật dựng sẵn. �
 chuyện `.po` và `.mo` lệch nhau: lệnh `thieu` (nằm trong gate) kiểm cả điều đó,
 vì `.mo` cũ hơn `.po` nghĩa là bản dịch mới không tới người dùng mà **không có
 lỗi nào báo**.
+
+⭐ Vì `.mo` là nhị phân, git không 3-way merge được — hai làn thêm chuỗi dịch
+khác nhau là `.mo` xung đột (dù `.po` gộp sạch), phải giải tay bằng
+`bien-dich` mỗi lần (đo 25/09: bốn lần một buổi). `tools/i18n_merge_driver.py`
+là một git merge driver sinh lại `.mo` từ `.po` đã gộp thay vì chọn
+ours/theirs — cài MỘT LẦN cho cả repo bằng:
+
+    python tools\i18n_merge_driver.py cai-dat
+
+Đọc docstring của tệp đó để biết vì sao một lần là đủ (không cần cài lại ở
+từng worktree) và đường lùi khi chưa cài (rơi về xung đột nhị phân như cũ,
+không tệ hơn).
 """
 from __future__ import annotations
 
