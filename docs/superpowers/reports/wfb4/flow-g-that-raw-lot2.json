@@ -1,0 +1,175 @@
+{
+  "goal": "Đọc Sheet mỗi sáng, lấy READY, tạo video, chờ tôi duyệt",
+  "hop_le": false,
+  "loi": [
+    {
+      "ma": "bieu_thuc_chua_ho_tro",
+      "thong_diep": "bieu_thuc_chua_ho_tro: chi ho tro {{ nodes.<id>.output.<cong> }}",
+      "node_id": "create_video"
+    }
+  ],
+  "document": {
+    "version": 3,
+    "pages": [
+      {
+        "id": "p1",
+        "name": "Trang 1",
+        "nodes": [
+          {
+            "id": "fetch_sheet",
+            "type": "core.http",
+            "type_version": 1,
+            "position": {
+              "x": 0,
+              "y": 0
+            },
+            "label": "",
+            "params": {
+              "url": "https://sheets.example.com/morning_task",
+              "cach": "GET"
+            },
+            "credential_ref": "",
+            "settings": {}
+          },
+          {
+            "id": "check_ready",
+            "type": "core.if",
+            "type_version": 1,
+            "position": {
+              "x": 280,
+              "y": 0
+            },
+            "label": "",
+            "params": {
+              "dieu_kien": "{{ nodes.fetch_sheet.output.json.status === 'READY' }}"
+            },
+            "credential_ref": "",
+            "settings": {}
+          },
+          {
+            "id": "create_video",
+            "type": "app.video.generate",
+            "type_version": 1,
+            "position": {
+              "x": 560,
+              "y": 0
+            },
+            "label": "",
+            "params": {
+              "prompt": "{{ nodes.fetch_sheet.output.json.prompt }}",
+              "model": "seedance-pro",
+              "duration": 10,
+              "generate_audio": true
+            },
+            "credential_ref": "",
+            "settings": {}
+          },
+          {
+            "id": "wait_human",
+            "type": "core.human",
+            "type_version": 1,
+            "position": {
+              "x": 840,
+              "y": 0
+            },
+            "label": "",
+            "params": {
+              "cau_hoi": "Bạn đã duyệt video này chưa? (Duyệt để tiếp tục)"
+            },
+            "credential_ref": "",
+            "settings": {}
+          },
+          {
+            "id": "finalize",
+            "type": "core.output",
+            "type_version": 1,
+            "position": {
+              "x": 1120,
+              "y": 0
+            },
+            "label": "",
+            "params": {
+              "ten": "video_result",
+              "gia_tri": "{{ nodes.create_video.output.video_key }}"
+            },
+            "credential_ref": "",
+            "settings": {}
+          },
+          {
+            "id": "finish",
+            "type": "core.stop",
+            "type_version": 1,
+            "position": {
+              "x": 1400,
+              "y": 0
+            },
+            "label": "",
+            "params": {
+              "trang_thai": "SUCCEEDED"
+            },
+            "credential_ref": "",
+            "settings": {}
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source_node": "fetch_sheet",
+            "target_node": "check_ready",
+            "source_port": "json",
+            "target_port": "in",
+            "kind": "DATA",
+            "condition": ""
+          },
+          {
+            "id": "e2",
+            "source_node": "check_ready",
+            "target_node": "create_video",
+            "source_port": "true",
+            "target_port": "in",
+            "kind": "CONTROL",
+            "condition": ""
+          },
+          {
+            "id": "e3",
+            "source_node": "create_video",
+            "target_node": "wait_human",
+            "source_port": "video_key",
+            "target_port": "in",
+            "kind": "DATA",
+            "condition": ""
+          },
+          {
+            "id": "e4",
+            "source_node": "wait_human",
+            "target_node": "finalize",
+            "source_port": "du_lieu",
+            "target_port": "in",
+            "kind": "DATA",
+            "condition": ""
+          },
+          {
+            "id": "e5",
+            "source_node": "finalize",
+            "target_node": "finish",
+            "source_port": "gia_tri",
+            "target_port": "in",
+            "kind": "DATA",
+            "condition": ""
+          }
+        ],
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        }
+      }
+    ]
+  },
+  "model": "H:/LTT_LLM/models/Qwen3.5-9B-Q6_K-unsloth.gguf",
+  "su_dung": {
+    "token_vao": 6919,
+    "token_ra": 2746
+  },
+  "thoi_gian_s": 40.00252723693848
+}
