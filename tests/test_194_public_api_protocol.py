@@ -392,18 +392,65 @@ def test_the_retry_matrix_covers_the_dangerous_case():
 # ── Headers ──────────────────────────────────────────────────────────────────
 
 def test_every_response_carries_the_correlation_id_and_version(api):
+    from platform_core.public_api.config import DEFAULT_MAX_BODY_BYTES
+
     _user_id, token = _account()
     ok = api.get(f"{API_V1_PREFIX}/tools", headers=_auth(token))
     assert ok.status_code == 200
     assert ok.headers[protocol.HEADER_CORRELATION_ID]
     assert ok.headers[protocol.HEADER_API_VERSION] == protocol.API_VERSION
+    # A client learns the body-size cap from every response, not only from
+    # hitting a 413 — see guard.py::_stamp. If the cap changes (it has, same
+    # day this was written: 1 MiB -> 4 MiB), a client reading this header on
+    # its next call is never running on a stale, cached number.
+    assert ok.headers[protocol.HEADER_MAX_BODY_BYTES] == str(DEFAULT_MAX_BODY_BYTES)
 
     # Anonymous, and a failure: both still traceable.
     anon = api.get(f"{API_V1_PREFIX}/health")
     assert anon.headers[protocol.HEADER_CORRELATION_ID]
+    assert anon.headers[protocol.HEADER_MAX_BODY_BYTES] == str(DEFAULT_MAX_BODY_BYTES)
     denied = api.get(f"{API_V1_PREFIX}/tools")
     assert denied.status_code == 401
     assert denied.headers[protocol.HEADER_CORRELATION_ID]
+    assert denied.headers[protocol.HEADER_MAX_BODY_BYTES] == str(DEFAULT_MAX_BODY_BYTES)
+
+
+def test_the_max_body_bytes_header_tracks_the_configured_cap(tmp_path, monkeypatch):
+    """The dynamic counter-proof: change the cap, the header changes with it.
+
+    Asserting the header equals a fixed number would only prove the middleware
+    can format a string; it would still pass if that number were a second,
+    independently-typed constant that drifted from the real cap (exactly the
+    "one value declared in two places" shape this codebase keeps re-learning
+    from). Building two apps with two different configured caps and reading
+    each one's own header proves the value is read from the live
+    ``config.max_body_bytes``, not copied.
+    """
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'bodycap.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine
+
+    Base.metadata.create_all(get_engine())
+    from server.app import create_app
+
+    for cap in (65536, 2 * 1024 * 1024):
+        app = create_app(env={
+            "LTT_ENV": "local-server-test",
+            "LTT_SESSION_SECRET": "bodycap-secret-value",
+            "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
+            "LTT_PUBLIC_API": "1",
+            "LTT_PUBLIC_API_MAX_BODY_BYTES": str(cap),
+        })
+        try:
+            with TestClient(app) as client:
+                response = client.get(f"{API_V1_PREFIX}/health")
+            assert response.headers[protocol.HEADER_MAX_BODY_BYTES] == str(cap)
+        finally:
+            dbmod.reset_engine()
 
 
 def test_the_header_id_is_the_same_id_the_problem_body_carries(api):

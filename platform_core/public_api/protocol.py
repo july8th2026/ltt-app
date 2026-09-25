@@ -321,6 +321,7 @@ HEADER_IDEMPOTENCY_KEY = "Idempotency-Key"
 HEADER_RETRY_AFTER = "Retry-After"
 HEADER_DEPRECATION = "Deprecation"
 HEADER_SUNSET = "Sunset"
+HEADER_MAX_BODY_BYTES = "X-LTT-Max-Body-Bytes"
 
 CONVENTIONS = {
     "content_type_request": "application/json (except upload content bodies)",
