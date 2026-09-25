@@ -1,5 +1,67 @@
 """DO VUNG — tu do LOGO TINH (V4a) va DAI CHU goc (V4b) bang OpenCV thuan.
 
+# ══════════════════════════════════════════════════════════════════════════════
+#  🔴 ĐOC KHOI NAY TRUOC KHI NOI TEP NAY VAO BAT CU DAU — chot 25/09/2026
+# ══════════════════════════════════════════════════════════════════════════════
+
+## 1. Tep nay thuoc **GIAI ĐOAN 2**, ⛔ khong phai giai doan hien tai
+
+Chu du an chot tach duong chay lam hai giai doan:
+
+    GIAI ĐOAN 1  tieng : demucs -> ASR -> dich -> TTS -> nan -> tron -> render
+                 RA   : MP4 tieng Viet khop hinh, TOAN BO do dai goc
+                        (⛔ khong cat gi)
+    GIAI ĐOAN 2  hinh : THAO TAC TREN MP4 ĐA XONG —
+                        cat canh · logo · watermark · phu de · lat guong ·
+                        dich mau · zoom
+
+🔑 **Do vung va dien nen (`vung_che.LOAI_DIEN_NEN`) thuoc GIAI ĐOAN 2.**
+⛔ Nen tep nay chay tren **MP4 da hoan thien tieng**, ⛔ khong phai tren tep
+NGUON cua khach. ⛔ Đung noi no vao `media_prepare` hay bat cu chang nao cua giai
+doan 1 — do la lap vao mot khung sap duoc xep lai.
+
+## 2. 🔴 Noi dang **GOI Y**, ⛔ KHONG tu dong che
+
+⛔ Ket qua o day ⛔ **khong bao gio** duoc ghi thang thanh vung che.
+
+⭐ Ly do la **so do cua chinh tep nay**, nghiem thu 25/09 tren hai phim that:
+
+| | do duoc |
+|---|---|
+| `phim1` (dai phu de tren nen canh) | dung khit |
+| `phim2` (game co HUD) | dai **rong du ~8 % chieu cao khung** — no trum ca hang bang ten HUD |
+| tang khung 18 -> 24 -> 36 -> 48 | ⛔ **KHONG** siet lai (15,4–17,7 %) |
+
+⇒ V4b ⛔ **khong phan biet duoc** dai phu de voi bang ten HUD: **ca hai** deu la
+*chu trang vien den, doi theo thoi gian* — dung tin hieu V4b di tim. Va vi tang
+khung ⛔ khong giup, day la **gioi han cua PHUONG PHAP**, ⛔ khong phai mot nguong
+can tinh chinh.
+
+🔴 ⇒ Tu dong che se **boi mo HUD tren video cua khach**, sau khi ta **da thu
+tien**. ⭐ **Do SAI nguy hon ⛔ KHONG do:** ⛔ khong do ⇒ khach tu khoanh, mat
+cong; do sai ⇒ khach nhan ve mot video **bi hong**.
+
+⚠️ Va chinh meo dau trang cua he tham chieu noi dung dieu do: *"nen khoanh vung
+   phu de bang tay — tool khoi mat cong do, render nhanh hon, dai che can khit
+   hon"*. Ho **co** bo do, va ho **van** khuyen khoanh tay.
+
+## 3. Luong ĐUNG
+
+    do_vung.de_xuat(mp4_da_xong_tieng)  ->  ĐE XUAT (3 trang thai)
+      -> giao dien hien KHUNG ĐO
+        -> khach BAM NHAN hoac KEO SUA
+          -> luc do moi thanh mot `vung_che` THAT
+
+⛔ ⛔ Khong buoc nao trong chuoi tren duoc bo qua.
+
+## 4. ⛔ ĐO ≠ KIEM
+
+`do_vung` la lop **ĐO**; `vung_che` la lop **KIEM**. ⛔ Đung de mot phep do tu
+thang cap thanh mot quyet dinh. Đo cung la ly do tep nay ⛔ **khong bao gio** tu
+dat `loai` cho mot hop (xem muc duoi).
+
+# ══════════════════════════════════════════════════════════════════════════════
+
 ## 🔴 Mot module RIENG, va do la mot ranh gioi co y
 
 `vung_che.py` la lop **KIEM**: mot hop toa do khach ve, kiem xong thi tu choi
@@ -480,3 +542,91 @@ def _om_sat_vien(cv2, np, duong: str, y0f: float, y1f: float
     if n1 - n0 < CAO_PX_MIN:
         return y0f, y1f
     return n0 / cao, n1 / cao
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  ĐE XUAT — be mat DUY NHAT ma GIAI ĐOAN 2 duoc goi
+# ══════════════════════════════════════════════════════════════════════════════
+
+#: Ba trang thai cua mot de xuat. ⛔ KHONG duoc gop lai thanh hai.
+#:
+#: 🔴 `khong_do_duoc` ≠ `khong_co`. Gop chung lai thi mot may hong codec se bao
+#:    cao *"video nay sach"* — va ⛔ khong ai biet. Xem BAT BIEN 1 o dau tep.
+TRANG_THAI_CO = "co"
+TRANG_THAI_KHONG_CO = "khong_co"
+TRANG_THAI_KHONG_DO_DUOC = "khong_do_duoc"
+
+#: Chang nao de xuat ra hop nay. Khach phai biet: mot logo goc va mot dai chu
+#: duoc xu ly KHAC nhau (che kin vs dien nen), va ⛔ khong ai doan giup ho.
+NGUON_LOGO = "logo_tinh"
+NGUON_DAI = "dai_chu"
+
+
+def de_xuat(duong: str, *, tranh=()) -> dict:
+    """Mot **ĐE XUAT** cho khach xac nhan. ⛔ KHONG bao gio nem.
+
+    ## 🔴 Vi sao la ĐE XUAT chu ⛔ khong phai tu dong che — chu du an chot 25/09
+
+    Nghiem thu 25/09 tren hai phim that: V4b ⛔ **khong phan biet duoc** dai phu
+    de voi bang ten HUD cua game — ca hai deu la *chu trang vien den, doi theo
+    thoi gian*, va tren `phim2` dai do ra **rong hon ~8 % chieu cao khung** vi
+    trum ca hang HUD. Tang khung 18 -> 24 -> 36 -> 48 ⛔ **khong** siet lai, tuc
+    do la **gioi han cua phuong phap**, ⛔ khong phai chuyen tinh chinh nguong.
+
+    ⭐ **Do SAI nguy hon ⛔ KHONG do.** ⛔ Khong do ⇒ khach tu khoanh, mat cong.
+       Do sai ⇒ khach nhan ve mot video **bi hong** ma ta **da thu tien**.
+
+    ⚠️ Va chinh meo dau trang cua he tham chieu noi dung dieu do: *"nen khoanh
+       vung phu de bang tay — tool khoi mat cong do, render nhanh hon, dai che
+       can khit hon"*. Ho **co** bo do, va ho **van** khuyen khoanh tay.
+
+    ⇒ Ham nay tra ve mot de xuat. Giao dien hien khung do; khach **bam nhan hoac
+      keo sua** thi no moi thanh mot `vung_che` THAT. ⛔ Ket qua o day ⛔ khong
+      bao gio duoc ghi thang vao `vung`.
+
+    ⚠️ `duong` la **MP4 ĐA HOAN THIEN TIENG** (dau ra cua Giai doan 1), ⛔ khong
+       phai tep nguon cua khach — xem khoi dau tep.
+
+    ## Hinh dang tra ve
+
+        {"trang_thai": "co" | "khong_co" | "khong_do_duoc",
+         "vung": [{"x0","y0","x1","y1", "nguon": "logo_tinh"|"dai_chu",
+                   "goc"?}, ...],
+         "so_khung": {"logo_tinh": N, "dai_chu": N},
+         "ly_do": "<cau tieng Viet, CHI khi khong_do_duoc>"}
+
+    ⭐ `so_khung` la **bang chung** rang chang do da chay: mot `vung` rong kem
+       `so_khung > 0` la *"da quet that, ⛔ khong thay gi"*, khac han mot loi.
+
+    ## ⛔ Vi sao bat `DoVungLoi` o day ⛔ KHONG phai nuot loi lang le
+
+    Ngoai le duoc bien thanh mot **gia tri nhin thay duoc**
+    (`trang_thai="khong_do_duoc"` + `ly_do`), va gia tri do di ra toi giao dien.
+    Đo la **xu ly** loi, ⛔ khong phai giau no — dung phan biet ma
+    `tools/check_silent_except.py` dat ra o dieu kien thu ba cua no.
+
+    ⚠️ Mot de xuat hong ⛔ **khong duoc** giet lan chay: khach van con duong tu
+       khoanh vung, va do la duong chinh chu ⛔ khong phai duong lui.
+
+    `tranh` = cac cap `(y0, y1)` vung khach ĐA VE. Xem BAT BIEN 2.
+    """
+    so_khung: dict[str, int] = {}
+    try:
+        # ⛔ Hai loi goi viet THANG, ⛔ khong gom vao mot vong lap: hai ham nay co
+        #    hai chu ky khac nhau (`tranh` chi co nghia voi dai chu — mot logo
+        #    goc ⛔ khong nam tren truc Y ma `tranh` noi toi), va mot vong lap se
+        #    che dieu do sau mot `if ten == ...`.
+        logo = do_logo_tinh(duong)
+        so_khung[NGUON_LOGO] = logo.so_khung
+        dai = do_dai_chu(duong, tranh=tranh)
+        so_khung[NGUON_DAI] = dai.so_khung
+    except DoVungLoi as loi:
+        # ⛔ Mot chang hong = CA de xuat khong do duoc. ⛔ Khong tra ve nua ket
+        #    qua kem mot trang thai noi rang moi thu on: mot de xuat THIEU trong
+        #    y het mot de xuat DAY DU tren man hinh khach.
+        return {"trang_thai": TRANG_THAI_KHONG_DO_DUOC, "vung": [],
+                "so_khung": so_khung, "ly_do": str(loi)}
+    ra = ([{**h, "nguon": NGUON_LOGO} for h in logo.vung]
+          + [{**h, "nguon": NGUON_DAI} for h in dai.vung])
+    return {"trang_thai": TRANG_THAI_CO if ra else TRANG_THAI_KHONG_CO,
+            "vung": ra, "so_khung": so_khung, "ly_do": ""}

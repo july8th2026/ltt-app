@@ -362,6 +362,7 @@ là một quyết định sản phẩm, và nó cần một ADR."*
 |---|---|---|
 | 🔴 `N-56` | **Bánh cóc gác ở `commit` ⛔ không gác được `merge`** — xem §9 | điều phối |
 | `N-57` | V1 lật gương + vân tay + `PHIEN_BAN_CHE_DO` | `asv-hinh` |
+| 🔴 `N-58` | **Cổng QC chấm một chuỗi lọc KHÁC chuỗi giao cho khách** — hạng **A**, xem §10 | `asv-vung` (đã sửa) |
 | `N-58` | V2 dịch màu (chỉ `saturation`) | `asv-hinh` |
 | `N-59` | V3 nhạc nền vào `bieu_thuc_tron` + `PHIEN_BAN_MASTER` | `asv-nhac` |
 | `N-60` | Đ1 đo dò vùng (**CPU + RAM**, ⛔ không phải VRAM) + phán quyết giấy phép `big-lama` | `asv-do-vung` |
@@ -485,3 +486,75 @@ vì đọc MÃ**. §1 mất 6 hạng mục *tưởng còn thiếu*; §9.2 mất 
 mục tưởng bị chặn*. ⇒ Đó là lý do §1 đặt luật: **mỗi hạng mục mang một ô bằng
 chứng `file:dòng` trên `main`.** Luật này áp cho **cả cột "chặn bởi"**, ⛔ không
 chỉ cột "đã có".
+
+
+---
+
+## 10. 🔴 `N-58` — hạng **A**: cổng QC chấm một chuỗi lọc KHÁC chuỗi giao cho khách
+
+> Tìm ra khi làn `asv-vung` nối `dien_nen` (V5) — nó là thứ **làm cái lỗi này
+> hết im**. Sửa trong `89a24f83`.
+
+⚠️ **Số `N-58` đang ĐỤNG.** Bảng §7 của chính tệp này đã cấp `N-58` cho *"V2 dịch
+màu (chỉ `saturation`)"* — làn `asv-hinh`. Điều phối cấp lại `N-58` cho mục này
+sau báo cáo 25/09. ⇒ **Một trong hai phải đổi số**, và điều phối là người quyết.
+Làn `asv-vung` ⛔ không tự chọn hộ — đây đúng chỗ `sổ-đăng-ký-dùng-chung` nói các
+làn va nhau.
+
+### Sự thật
+
+```
+ket_xuat.dung_lenh   -> loc_cat_noi(..., rong_nguon=W, cao_nguon=H)   <- ban GIAO khach
+qc.loc_tham_chieu    -> loc_cat_noi(...)                              <- ban CHAM diem
+                                      ^^^ thieu HAI tham so
+```
+
+Và docstring của `qc.loc_tham_chieu` khai thẳng là *"dùng **ĐÚNG** tham số
+`ket_xuat.dung_lenh` đưa cho `che_do_render.loc_cat_noi`"*, còn `test_2012` mang
+tên *"chốt hai bên bằng nhau"*. **Cả ba đều sai cùng một hướng**, và không cái
+nào phát hiện ra cái kia.
+
+### ⭐ Vì sao nó IM suốt — và đây mới là phần đáng ghi
+
+Hai đường tiêu thụ hai tham số ấy đều **ngủ**:
+
+| bên đọc | đọc `rong_nguon`/`cao_nguon` khi nào |
+|---|---|
+| chặng **KHUNG** (`_loc_khung`) | chỉ khi hồ sơ `bien_tap` có trường hình học |
+| chặng **VÙNG** | **chưa bao giờ** — trước V5 vùng che tính bằng biểu thức `iw`/`ih` |
+
+⇒ Với mọi cấu hình đã chạy từ trước tới nay, hai chuỗi lọc **bằng nhau thật**.
+`test_2012` xanh, và nó xanh **đúng**. Lỗi chỉ trở thành lỗi vào ngày có một
+chặng thật sự đọc hai tham số đó — tức hôm nay.
+
+### 🔴 Hậu quả, nói cho đúng phạm vi
+
+- ⛔ **Không** sai *cách tính* VMAF. Sai **đối tượng**: bản tham chiếu được dựng
+  bằng một chuỗi lọc khác bản giao khách.
+- ⇒ **Điểm VMAF sinh trước `89a24f83` ⛔ không so sánh được với điểm sau.** Một
+  mốc chất lượng đọc chéo hai bên vạch đó là một phép so ⛔ không có nghĩa.
+- Trên cấu hình **đã từng chạy** (không `bien_tap` hình học, không `dien_nen`)
+  hai chuỗi trùng nhau ⇒ số cũ ⛔ không sai. Nhưng ⛔ **không có gì trong bản ghi
+  QC nói cấu hình nào** ⇒ ⛔ không tách được số nào còn đọc được.
+
+### Họ lỗi
+
+Cùng họ với thứ bắt được cả ngày 24–25/09: **một phép đo trả lời một câu khác
+với câu ta đang hỏi** (`pham-vi-phep-do-hep-hon-loi-tuyen-bo`,
+`doc-thu-dai-dien-thay-vi-doc-thu-that`). Và cùng họ *cửa ngủ* với
+`cua-hoi-bang-chung-cu-sau-khi-doi-duong-tien`: một cửa đọc sai **không kêu** cho
+tới ngày có xe đi qua.
+
+### Đã sửa
+
+`qc.loc_tham_chieu` nay truyền `rong_nguon`/`cao_nguon` từ `hinh`.
+`tests/test_4300_asv_v5_dien_nen.py::test_ban_tham_chieu_VMAF_dung_DUNG_chuoi_loc_cua_render`
+chốt hai bên bằng nhau **trên một cấu hình `dien_nen`** — tức trên một cấu hình
+mà hai bên **có thể** lệch. ⛔ Một phép chốt trên cấu hình hai bên vốn trùng nhau
+là đúng cái đã để lọt lỗi này.
+
+### ⛔ Việc CÒN LẠI, ⛔ không thuộc làn này
+
+Bản ghi QC ⛔ không khai cấu hình render, nên ⛔ không truy được số cũ nào còn
+đọc được. ⇒ Đề xuất một việc riêng: **ghi vân tay chế độ (`van_tay_che_do`) vào
+bản ghi QC**, để một điểm VMAF luôn nói được nó chấm cái gì.

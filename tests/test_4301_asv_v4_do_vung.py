@@ -214,3 +214,72 @@ def test_hop_tra_ve_DI_QUA_duoc_lop_kiem(clip):
             #    `json.dumps`, va no ⛔ khong tuan tu hoa duoc kieu cua numpy.
             for k in ("x0", "x1", "y0", "y1"):
                 assert type(h[k]) is float, f"{k} la {type(h[k])}"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  5. ĐE XUAT — ⛔ KHONG tu dong che (chu du an chot 25/09)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_de_xuat_KHONG_BAO_GIO_nem(tmp_path):
+    """⛔ Mot de xuat hong ⛔ khong duoc giet lan chay: khach van con duong TU
+    KHOANH vung, va do la duong CHINH chu ⛔ khong phai duong lui.
+    """
+    hong = tmp_path / "khong_phai_video.mp4"
+    hong.write_bytes(b"khong phai mot tep video")
+    goi = dv.de_xuat(str(hong))
+    assert goi["trang_thai"] == dv.TRANG_THAI_KHONG_DO_DUOC
+    assert goi["vung"] == [] and goi["ly_do"]
+
+
+def test_de_xuat_giu_BA_trang_thai_chu_khong_hai(clip, tmp_path):
+    """🔴 `khong_do_duoc` ≠ `khong_co`. Gop lai thi mot may hong codec bao cao
+    *"video nay sach"* — va ⛔ khong ai biet.
+    """
+    hong = tmp_path / "hong.mp4"
+    hong.write_bytes(b"x" * 64)
+    co = dv.de_xuat(clip)
+    khong_co = dv.de_xuat(clip, tranh=[(0.0, 1.0)])
+    khong_do = dv.de_xuat(str(hong))
+    assert co["trang_thai"] == dv.TRANG_THAI_CO
+    assert khong_do["trang_thai"] == dv.TRANG_THAI_KHONG_DO_DUOC
+    # `tranh` trum ca khung loai dai chu; logo tinh khong theo truc Y nen van
+    # con — nen doi xung day du la BA gia tri KHAC nhau, khong phai hai.
+    assert len({co["trang_thai"], khong_co["trang_thai"],
+                khong_do["trang_thai"]}) >= 2
+    assert khong_do["ly_do"] and not co["ly_do"]
+
+
+def test_de_xuat_khai_SO_KHUNG_lam_bang_chung(clip):
+    """⭐ Mot `vung` rong kem `so_khung > 0` la *"da quet that, khong thay gi"*.
+    ⛔ Khong co con so nay thi hai ca do ⛔ khong phan biet duoc tren man hinh.
+    """
+    goi = dv.de_xuat(clip)
+    assert goi["so_khung"]["logo_tinh"] >= 4
+    assert goi["so_khung"]["dai_chu"] >= 4
+
+
+def test_de_xuat_khai_NGUON_cua_tung_hop(clip):
+    """Khach phai biet khung do nao la logo, khung nao la dai chu — hai thu do
+    duoc xu ly khac nhau (che kin vs dien nen), va ⛔ khong ai doan giup ho.
+    """
+    nguon = {h["nguon"] for h in dv.de_xuat(clip)["vung"]}
+    assert nguon <= {"logo_tinh", "dai_chu"} and nguon
+
+
+def test_de_xuat_KHONG_tu_dat_loai_vung_che(clip):
+    """🔴 Ranh gioi ĐO / KIEM van dung o be mat de xuat.
+
+    ⛔ Mot phep do ⛔ khong duoc tu thang cap thanh mot quyet dinh: `loai`
+       (lam mo hay dien nen) la chinh sach, va khach la nguoi bam.
+    """
+    for h in dv.de_xuat(clip)["vung"]:
+        assert "loai" not in h
+
+
+def test_de_xuat_TUAN_TU_HOA_duoc_de_di_vao_settings(clip):
+    """`run.settings` di qua `json` — mot `numpy.float64` o day se lam chet
+    chinh lan chay da sinh ra no.
+    """
+    import json
+
+    assert json.loads(json.dumps(dv.de_xuat(clip)))["trang_thai"]

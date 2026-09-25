@@ -393,6 +393,16 @@ def test_moi_lop_ngoai_le_cua_app_deu_duoc_phan_loai():
         # 🔑 Chi song trong `giai_doan_giong._viet_lai`, bi bat ngay tai cho de
         #    dung bac thang nan — khong bao gio len toi bien cua nen tang.
         "_KhongNanDuoc",
+        # 🔑 `DoVungLoi` (25/09): be mat DUY NHAT cua `do_vung` la `de_xuat`, va
+        #    ham do BIEN ngoai le thanh mot gia tri nhin thay duoc
+        #    (`trang_thai="khong_do_duoc"` + `ly_do`) cho khach doc. Mot bo do
+        #    vung hong KHONG duoc giet lan chay: khach van con duong tu khoanh
+        #    vung, va do la duong CHINH chu khong phai duong lui.
+        #    ⛔ Cau tren chi dung CHUNG NAO `de_xuat` con khong nem —
+        #    `test_4301::test_de_xuat_KHONG_BAO_GIO_nem` la thu giu no dung.
+        #    ⚠️ Va `do_vung` thuoc GIAI ĐOAN 2 (chot 25/09), chua noi vao chuoi
+        #    nao — nen hom nay no cung chua co duong len bien.
+        "DoVungLoi",
         # 🔑 Cong NOI BO + dich vu nop (22/09): nem TRUOC khi co job, o tang
         #    goi (route/port), khong bao gio len toi bien cua nen tang.
         "LoiCaiDat", "LoiCongNoiBo", "LoiDauVao", "LoiKhongTimThay",
