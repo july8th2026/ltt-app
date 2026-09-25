@@ -57,6 +57,11 @@ data/nexus_versions.json
 # LTTCODEAPP) ghi vao thu muc du lieu van hanh. Khong commit.
 data/lttcode_dist/
 data/lttcode_releases.json
+# platform_core/workflow/connector.py THU_MUC_LAM_VIEC: ban chep node.exe +
+# thu muc tam cua tung lenh runner connector/code (vo_boc/job_object don sau
+# moi lenh, nhung mot lan chay bi ngat co the de lai rac). Sinh ra luc chay,
+# khong sua tay.
+data/conn/
 
 # ─── H37 bench: so do thi COMMIT, anh va trong so thi KHONG ───────────────────
 # Ly do o bench/README.md. So do la bang chung phai giu; anh sinh ra va file model

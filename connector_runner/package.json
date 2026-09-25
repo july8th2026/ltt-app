@@ -16,6 +16,7 @@
     "@activepieces/piece-google-sheets": "0.17.0",
     "@activepieces/piece-google-drive": "0.9.2",
     "@activepieces/piece-gmail": "0.17.0",
-    "@activepieces/piece-notion": "0.7.1"
+    "@activepieces/piece-notion": "0.7.1",
+    "isolated-vm": "7.0.1"
   }
 }
