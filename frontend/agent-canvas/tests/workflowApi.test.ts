@@ -1,11 +1,11 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cancelRunV3, createAutosave,
+import { cancelRunV3, chayLaiTuNodeV3, createAutosave,
   createRunV3, goiYBieuThuc,
   fromV3, loadRunV3, loadWorkflowV3,
   publishWorkflowV3, RUN_V3_KET_THUC,
-  saveWorkflowV3, toV3,
+  saveWorkflowV3, soanWorkflowV3, soSanhRunV3, toV3,
   WorkflowCompileError, WorkflowConflictError,
   type RunV3 } from '../src/workflowApi'
 
@@ -372,5 +372,107 @@ describe('Accept: application/json tren moi loi goi API', () => {
     await loadRunV3('r1', 0)
     expect(new Headers(fetchMock.mock.calls[0][1]?.headers).get('Accept'))
       .toBe('application/json')
+  })
+})
+
+// ── P-A task A1: chạy lại TỪ MỘT NODE (`runs_v3.py::v3_chay_lai_tu_node`) ──
+describe('chayLaiTuNodeV3', () => {
+  it('goi dung duong, kem CSRF va Idempotency-Key do nguoi goi dua vao', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(json(runV3, 201))
+    await chayLaiTuNodeV3('r1', 'n_2', 'tok', 'khoa-chay-lai-1')
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe('/agent/api/v3/runs/r1/chay-lai-tu/n_2')
+    const headers = new Headers((init as RequestInit).headers)
+    expect((init as RequestInit).method).toBe('POST')
+    expect(headers.get('X-CSRF-Token')).toBe('tok')
+    expect(headers.get('Idempotency-Key')).toBe('khoa-chay-lai-1')
+  })
+
+  it('tra ve run MOI (hinh dang RunV3 nguyen)', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ ...runV3, id: 'r2' }, 201))
+    const moi = await chayLaiTuNodeV3('r1', 'n_2', 'tok', 'khoa')
+    expect(moi.id).toBe('r2')
+  })
+
+  it('409 khong_thu_lai_duoc doc duoc thong diep, khong nuot', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ detail: {
+      ma: 'chua_publish', thong_diep: 'Workflow chưa publish.' } }, 422))
+    const loi = await chayLaiTuNodeV3('r1', 'n_2', 'tok', 'khoa').catch(e => e)
+    expect(loi.message).toBe('Workflow chưa publish.')
+  })
+})
+
+// ── P-A task A2: so sánh HAI lượt chạy (`runs_v3.py::v3_so_sanh_run`) ──────
+describe('soSanhRunV3', () => {
+  const tomTat = (id: string) => ({ id, workflow_id: 'w1', version_id: 'v1',
+    status: 'SUCCEEDED', credit_max: 10, credit_charged: 4, settled: true,
+    created_at: '2026-09-24T00:00:00+00:00', inputs: {},
+    nodes: [{ node_id: 'a', status: 'SUCCEEDED', attempt: 1, cost_credit: 4,
+      job_id: 'j1', error: '', waiting_kind: '', het_han: false,
+      params: {}, output_ref: {} }] })
+
+  it('goi GET voi query voi=, KHONG CSRF (cua GET thuan)', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({
+      a: tomTat('r1'), b: tomTat('r2'), khac: [], khac_version: false }))
+    await soSanhRunV3('r1', 'r2')
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe('/agent/api/v3/runs/r1/so-sanh?voi=r2')
+    expect((init as RequestInit | undefined)?.method ?? 'GET').toBe('GET')
+  })
+
+  it('tra dung hinh dang {a,b,khac,khac_version}', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({
+      a: tomTat('r1'), b: tomTat('r2'), khac: ['a'], khac_version: true }))
+    const kq = await soSanhRunV3('r1', 'r2')
+    expect(kq.a.id).toBe('r1'); expect(kq.b.id).toBe('r2')
+    expect(kq.khac).toEqual(['a']); expect(kq.khac_version).toBe(true)
+  })
+
+  it('404 (run cua nguoi khac / khong ton tai) doc duoc thong diep', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ detail: 'Không tìm thấy.' }, 404))
+    await expect(soSanhRunV3('r1', 'r9')).rejects.toThrow('Không tìm thấy.')
+  })
+})
+
+// ── P-A task A3: Agent Designer /soan (`agent_v3.py::v3_soan`) ─────────────
+describe('soanWorkflowV3', () => {
+  const ketQua = { workflow_id: 'w1', revision: 2,
+    document: { version: 3 as const, goal: 'g', budget_max_credit: 0,
+      active_page_id: 'p1', pages: [{ id: 'p1', name: 'P', nodes: [], edges: [],
+        viewport: { x: 0, y: 0, zoom: 1 }, frames: [], notes: [], comments: [] }] },
+    hop_le: true, loi: [] as { ma: string; node_id: string; thong_diep: string }[],
+    bao_gia: { credit_max: 20, credit_estimate: 12 } }
+
+  it('POST dung duong, gui goal + ngan_sach_credit + CSRF (header va body)', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(json(ketQua))
+    await soanWorkflowV3('w1', 'tạo video quảng cáo', 80, 'tok')
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe('/agent/api/v3/workflows/w1/soan')
+    expect((init as RequestInit).method).toBe('POST')
+    expect(new Headers((init as RequestInit).headers).get('X-CSRF-Token')).toBe('tok')
+    const body = JSON.parse(String((init as RequestInit).body))
+    expect(body).toEqual({ goal: 'tạo video quảng cáo', ngan_sach_credit: 80,
+      csrf_token: 'tok' })
+  })
+
+  it('tra ve document v3 + bao_gia de nap thang vao trinh soan', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(json(ketQua))
+    const kq = await soanWorkflowV3('w1', 'g', undefined, 'tok')
+    expect(kq.document.version).toBe(3)
+    expect(kq.bao_gia).toEqual({ credit_max: 20, credit_estimate: 12 })
+    expect(kq.hop_le).toBe(true)
+  })
+
+  it('422 thieu muc tieu doc duoc thong diep (khong nuot loi)', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ detail: 'Thiếu mục tiêu.' }, 422))
+    await expect(soanWorkflowV3('w1', '', undefined, 'tok')).rejects.toThrow('Thiếu mục tiêu.')
+  })
+
+  it('503 (model nha ban) doc duoc thong diep, khong phai loi bien dich', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      json({ detail: 'Động cơ soạn đang bận.' }, 503))
+    const loi = await soanWorkflowV3('w1', 'g', undefined, 'tok').catch(e => e)
+    expect(loi).not.toBeInstanceOf(WorkflowCompileError)
+    expect(loi.message).toBe('Động cơ soạn đang bận.')
   })
 })

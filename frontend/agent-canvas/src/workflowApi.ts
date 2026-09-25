@@ -512,3 +512,72 @@ export async function cancelRunV3(runId: string,
       'X-CSRF-Token': csrfToken }, body: '{}' }) as Promise<RunV3>
 }
 
+// ── Chạy lại TỪ MỘT NODE (spec §14, `runs_v3.py::v3_chay_lai_tu_node`) ─────
+//
+// Tạo một run MỚI cùng version, tái dùng output các node không phải hậu duệ
+// của `nodeId` — xem chú thích ở máy chủ. Cửa này TIÊU TIỀN (một khoản giữ
+// mới), nên cũng đòi `Idempotency-Key` — CÙNG một khoá cho MỘT lần bấm, y hệt
+// `createRunV3`. Bên gọi (`CanvasShell::chayLaiTuNode`) tự sinh khoá.
+export async function chayLaiTuNodeV3(runId: string, nodeId: string,
+                                      csrfToken: string,
+                                      idempotencyKey: string): Promise<RunV3> {
+  return request(
+    `/agent/api/v3/runs/${encodeURIComponent(runId)}/chay-lai-tu/${encodeURIComponent(nodeId)}`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken, 'Idempotency-Key': idempotencyKey },
+      body: '{}' }) as Promise<RunV3>
+}
+
+/** Một node trong bảng so sánh: `RunV3Node` + hai trường chỉ so-sánh mới cần
+ *  (`runs_v3.py::_nodes_so_sanh`) — `params` KHAI trong đồ thị (không phải
+ *  `Job.params`, không lộ credential đã giải) và `output_ref` (con trỏ tới
+ *  artifact, không phải nội dung). */
+export type RunV3NodeSoSanh = RunV3Node & {
+  params: Record<string, unknown>
+  output_ref: Record<string, unknown>
+}
+export type RunV3TomTat = {
+  id: string; workflow_id: string; version_id: string; status: string
+  credit_max: number; credit_charged: number; settled: boolean
+  created_at: string; inputs: Record<string, unknown>
+  nodes: RunV3NodeSoSanh[]
+}
+export type SoSanhRunV3 = {
+  a: RunV3TomTat; b: RunV3TomTat
+  /** node_id lệch giữa hai lượt (spec §14) — máy trả tập lệch, KHÔNG tô màu
+   *  hay xếp hạng; diff chi tiết là việc của `RunDiff` (jsondiffpatch). */
+  khac: string[]
+  khac_version: boolean
+}
+
+/** So sánh `runId` với `voiId` (`GET /runs/{id}/so-sanh?voi=`). GET thuần —
+ *  không CSRF, giống `loadRunV3`. */
+export async function soSanhRunV3(runId: string, voiId: string): Promise<SoSanhRunV3> {
+  return request(`/agent/api/v3/runs/${encodeURIComponent(runId)}/so-sanh`
+    + `?voi=${encodeURIComponent(voiId)}`) as Promise<SoSanhRunV3>
+}
+
+// ── Agent Designer (spec §12.2, `agent_v3.py::v3_soan`) ────────────────────
+//
+// ⛔ Cửa này KHÔNG publish — nó ghi `workflow_draft` rồi trả báo giá. Nút
+//    publish vẫn là `publishWorkflowV3`, một hành động riêng của NGƯỜI.
+export type KetQuaSoan = {
+  workflow_id: string
+  revision: number
+  document: CanvasDocumentV3
+  hop_le: boolean
+  loi: { ma: string; node_id: string; thong_diep: string }[]
+  bao_gia: { credit_max: number; credit_estimate: number } | null
+}
+
+export async function soanWorkflowV3(workflowId: string, goal: string,
+                                     nganSachCredit: number | undefined,
+                                     csrfToken: string): Promise<KetQuaSoan> {
+  return request(`/agent/api/v3/workflows/${encodeURIComponent(workflowId)}/soan`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+    body: JSON.stringify({ goal, ngan_sach_credit: nganSachCredit,
+                           csrf_token: csrfToken }),
+  }) as Promise<KetQuaSoan>
+}
+
