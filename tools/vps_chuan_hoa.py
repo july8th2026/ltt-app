@@ -55,7 +55,8 @@ def main(argv=None) -> int:
         cli = backend_factory.compute_backend(profile).client
         may, ip_theo_may = _may_va_ip(db)
 
-        print(f"{'vmid':>6}  {'ten':<16} {'cpu':<10} {'firewall':<10} {'rdns'}")
+        print(f"{'vmid':>6}  {'ten':<16} {'cpu':<10} {'firewall':<10} "
+              f"{'ip':<16} {'ptr'}")
         cho_tat_bat, da_sua = [], 0
         for m in sorted(may, key=lambda x: x.vmid or 0):
             if not m.vmid:
@@ -68,8 +69,18 @@ def main(argv=None) -> int:
             fw_ok = all(str(fw.get(k, "")).lower() in ("1", "true")
                         for k in ("enable", "ipfilter", "macfilter"))
             ip = ip_theo_may.get(m.id, "")
+            # ⛔ Ba trang thai, khong phai `bool`: "OVH da luu" va "the gioi thay
+            #    duoc" la hai su that khac nhau — do that 25/09, OVH luu xong ma
+            #    `nslookup` van khong tra gi sau mot gio.
+            ptr = "-"
+            if ip:
+                tt, _ = rdns.trang_thai_ptr(
+                    backend_factory.ovh_inventory_client(profile), ip)
+                ptr = {rdns.DA_THAY: "da thay",
+                       rdns.DANG_LAN: "dang lan truyen",
+                       rdns.CHUA_DAT: "CHUA dat"}[tt]
             print(f"{m.vmid:>6}  {str(m.ten)[:16]:<16} {cpu:<10} "
-                  f"{'dat' if fw_ok else 'CHUA':<10} {ip or '-'}")
+                  f"{'dat' if fw_ok else 'CHUA':<10} {ip or '-':<16} {ptr}")
 
             if not a.ap:
                 continue

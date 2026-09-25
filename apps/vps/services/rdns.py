@@ -71,3 +71,66 @@ def dat_rdns(dns, ovh, ip: str) -> bool:
         return False
     log.info("VPS rdns: %s -> %s", ip, ten)
     return True
+
+
+#: Ba trang thai cua mot PTR — ⛔ khong duoc gop lam hai.
+DA_THAY = "da_thay"        # OVH luu VA DNS cong khai da tra
+DANG_LAN = "dang_lan"      # OVH luu, DNS chua tra (binh thuong trong vai gio)
+CHUA_DAT = "chua_dat"      # OVH khong co ban ghi nao
+
+
+def trang_thai_ptr(ovh, ip: str, *, tra_cuu=None) -> tuple[str, str]:
+    """Tra `(trang_thai, chi_tiet)`. Hoi CA HAI nguon, vi chung noi hai dieu khac nhau.
+
+    🔴 Do 25/09/2026: sau khi `dat_reverse` tra 200, `GET .../reverse/<ip>` cua OVH
+       da co ban ghi — nhung `nslookup <ip>` **van khong tra gi** sau mot gio. Voi
+       the gioi ben ngoai, dia chi do **chua co rDNS**.
+
+    ⇒ "OVH da luu" va "the gioi thay duoc" la HAI su that khac nhau. Gop chung lam
+      mot chu "dat" la tu noi doi voi chinh minh o dung cho minh vua sua: mot gia
+      tri mang hai nghia. Nen ham nay tra ba trang thai, khong phai `bool`.
+    """
+    from urllib.parse import quote
+
+    try:
+        khoi = quote(str(ip) + "/32", safe="")
+        ban = ovh.get(f"/ip/{khoi}/reverse/{quote(str(ip), safe='')}")
+        o_ovh = str((ban or {}).get("reverse", "")).rstrip(".")
+    except Exception:                         # noqa: BLE001 - khong doc duoc = chua dat
+        o_ovh = ""
+    if not o_ovh:
+        return CHUA_DAT, "OVH khong co ban ghi reverse"
+
+    tra = tra_cuu or _tra_cuu_cong_khai
+    try:
+        ten = tra(str(ip))
+    except Exception:                         # noqa: BLE001
+        ten = ""
+    if ten and ten.rstrip(".") == o_ovh:
+        return DA_THAY, ten
+    return DANG_LAN, f"OVH luu {o_ovh}, DNS cong khai chua tra"
+
+
+#: Resolver cong khai de hoi "the gioi co thay khong". ⛔ KHONG dung resolver he
+#: thong: do 25/09/2026, `socket.gethostbyaddr` tra dung ten trong khi CA BA
+#: resolver cong khai (8.8.8.8 / 1.1.1.1 / 9.9.9.9) **khong tra gi** — resolver
+#: he thong da co ket qua tu dau do (cache/ISP) va no **khong dai dien** cho
+#: nguoi ngoai. Hoi no roi ket luan "da thay" la tu lua o dung cho dang do.
+RESOLVER_CONG_KHAI = ("1.1.1.1", "8.8.8.8")
+
+
+def _tra_cuu_cong_khai(ip: str) -> str:
+    """PTR theo mot resolver CONG KHAI. Chuoi rong = the gioi chua thay."""
+    import re
+    import subprocess
+
+    for dns in RESOLVER_CONG_KHAI:
+        try:
+            ra = subprocess.run(["nslookup", str(ip), dns], capture_output=True,
+                                text=True, timeout=15)
+        except (OSError, subprocess.SubprocessError):
+            continue
+        ten = re.findall(r"[Nn]ame\s*=\s*(\S+)", ra.stdout)
+        if ten:
+            return ten[0].rstrip(".")
+    return ""

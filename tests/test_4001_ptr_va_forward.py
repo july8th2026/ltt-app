@@ -83,3 +83,71 @@ def test_PTR_hong_KHONG_NEM_ra_ngoai():
             raise RuntimeError("OVH 400")
 
     assert rdns.dat_rdns(_Dns(), _Ovh(), "51.79.215.194") is False
+
+
+# ── Ba trạng thái của PTR ─────────────────────────────────────────────────────
+
+class _OvhCo:
+    def get(self, duong):
+        return {"reverse": "ip-51-79-215-194.vps.lttstudios.com."}
+
+
+class _OvhKhong:
+    def get(self, duong):
+        raise RuntimeError("404")
+
+
+def test_OVH_luu_va_DNS_da_tra_thi_DA_THAY():
+    from apps.vps.services import rdns
+
+    tt, _ = rdns.trang_thai_ptr(_OvhCo(), "51.79.215.194",
+                                tra_cuu=lambda ip: "ip-51-79-215-194.vps.lttstudios.com")
+    assert tt == rdns.DA_THAY
+
+
+def test_OVH_luu_nhung_DNS_CHUA_tra_thi_DANG_LAN():
+    """🔴 Ca thật 25/09: `dat_reverse` trả 200, OVH `GET` có bản ghi, nhưng
+    `nslookup` vẫn không trả gì sau một giờ. Với thế giới bên ngoài, địa chỉ đó
+    **chưa có rDNS** — nên đây ⛔ không được tính là "đạt"."""
+    from apps.vps.services import rdns
+
+    def khong_tra(ip):
+        raise OSError("NXDOMAIN")
+
+    tt, chi_tiet = rdns.trang_thai_ptr(_OvhCo(), "51.79.215.194", tra_cuu=khong_tra)
+    assert tt == rdns.DANG_LAN
+    assert "chua tra" in chi_tiet
+
+
+def test_OVH_khong_co_ban_ghi_thi_CHUA_DAT():
+    from apps.vps.services import rdns
+
+    tt, _ = rdns.trang_thai_ptr(_OvhKhong(), "51.79.215.194", tra_cuu=lambda ip: "")
+    assert tt == rdns.CHUA_DAT
+
+
+def test_BA_trang_thai_khac_nhau_doi_mot():
+    """⛔ Bánh cóc: đừng gộp ba trạng thái này thành `bool` trong một lần 'dọn'."""
+    from apps.vps.services import rdns
+
+    assert len({rdns.DA_THAY, rdns.DANG_LAN, rdns.CHUA_DAT}) == 3
+
+
+def test_KHONG_dung_resolver_he_thong():
+    """🔴 Đo 25/09: `socket.gethostbyaddr` trả đúng tên trong khi **cả ba**
+    resolver công khai (8.8.8.8 / 1.1.1.1 / 9.9.9.9) không trả gì — resolver hệ
+    thống đã có kết quả từ cache/ISP và nó **không đại diện** cho người ngoài.
+
+    Câu hỏi ở đây là *"thế giới có thấy không"*, nên phải hỏi thế giới.
+    ⛔ Bánh cóc bằng AST: một lần "dọn code" đổi lại `gethostbyaddr` sẽ làm phép
+       đo lạc quan trở lại, và nó sẽ **im lặng** vì kết quả trông vẫn hợp lý.
+    """
+    import ast
+    import pathlib
+
+    nguon = pathlib.Path("apps/vps/services/rdns.py").read_text(encoding="utf-8")
+    cay = ast.parse(nguon)
+    ten_goi = {n.func.attr for n in ast.walk(cay)
+               if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)}
+    assert "gethostbyaddr" not in ten_goi
+    assert "RESOLVER_CONG_KHAI" in nguon
