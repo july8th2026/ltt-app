@@ -1109,19 +1109,37 @@ def phu_song_loi(vung, loi, *, bien_s: float = 1.5) -> list[dict]:
 #    nhat o :8120) ⇒ mot phien chen vao giua lam **hong chinh phep do** (so
 #    LUFS/MOS mang tieng cua luot khac). Nen no phai duoc giu SUOT pha giong.
 
-#: Cac `job_type` thuc su dot suc tinh cua may nay. Khoa `cpu_nhieu` chi boc
-#: chung. Nguon: ban khai cua `apps/asv_gpu/manifest.py` va
-#: `apps/asv_media/manifest.py` — khong doan theo ten.
+#: Cac `job_type` thuc su dot suc tinh cua may nay. Khoa `cpu_nhieu` chi boc chung.
+#:
+#: 🔴 **Ban cu ghi "Nguon: ban khai cua `apps/asv_gpu/manifest.py` va
+#:    `apps/asv_media/manifest.py`" — cau do SAI, sua 25/09/2026.** Hai manifest ay
+#:    khai `job_types` va `timeout`; chung ⛔ KHONG co truong nao noi mot pha dot
+#:    bao nhieu CPU. Tuc ban phan loai nay von la mot PHAN DOAN, va no nhan xuat xu
+#:    cua mot ban khai khong he chua thong tin ay.
+#:
+#: ⇒ Xuat xu dung la **PHEP DO**, nen moi hang duoi dan so. Phan loai sai o day
+#:   ⛔ khong lam bai nao do — no lam ca may DOI (xep mot pha 1 loi vao `PHA_CHO`)
+#:   hoac lam phien khac doi VO ICH (xep mot pha chi ngoi cho vao day).
 #:
 #: ⛔ `*.voice_synthesis` KHONG o day: no la mot chuoi lan goi HTTP sang sidecar
-#:    :8120 va tien trinh worker chi ngoi doi. Xem `may_tao_tieng` duoi.
+#:    :8120, tien trinh worker chi ngoi doi (do: **0,029 loi**). Xem `may_tao_tieng`.
 PHA_NANG_CPU = frozenset({
-    "asv_gpu.audio_prepare",        # demucs htdemucs
-    "asv_gpu.transcribe",           # faster-whisper / WhisperX large-v3
-    "asv_gpu.qc_do_luong",          # ASR lan cuoi + SQUIM_OBJECTIVE
-    "asv_media.compose",            # ffmpeg tron
-    "asv_media.render",             # ffmpeg ma hoa lai
-    "asv_media.qc",                 # giai ma ca tep + VMAF
+    "asv_gpu.audio_prepare",        # demucs htdemucs        — do 1,51 loi
+    "asv_gpu.transcribe",           # faster-whisper/WhisperX — do 1,29 loi
+    "asv_gpu.qc_do_luong",          # ASR lan cuoi + SQUIM    — do 1,04 loi
+    "asv_media.compose",            # ffmpeg tron             — do 0,78 loi
+    "asv_media.render",             # ffmpeg ma hoa lai       — do 0,87 loi
+    "asv_media.qc",                 # giai ma + VMAF          — do 2,54 va 3,71 loi
+    # 🔴 **Chuyen tu `PHA_CHO` sang day 25/09/2026 — mot SUA LOI, khong phai mot
+    #    tinh chinh.** No tung bi xep la "mot lan CHO", gan nhu chac vi cai TEN
+    #    nghe nhu mot phep can moc — tuc dung dieu docstring tren cam.
+    #
+    #    HAI phep do DOC LAP tren HAI phim khac do dai deu cho gan MOT loi lien tuc:
+    #        video 1 (190 s):  82,3 s tuong / 79,0 s CPU  =  0,96 loi
+    #        video 2 (275 s):  51,4 s tuong / 51,4 s CPU  =  0,99 loi
+    #    Hai mau so khac nhau, cung mot con so ⇒ ⛔ khong phai nhieu. No can moc +
+    #    keo gian tung doan bang ffmpeg TRONG tien trinh, ⛔ khong goi mang.
+    "asv_media.timing_align",       # can moc + keo gian      — do 0,96 va 0,99 loi
 })
 
 #: Cac `job_type` dung MAY SINH TIENG. Tai nguyen doc quyen ⇒ giu suot pha.
@@ -1133,12 +1151,32 @@ PHA_MAY_TAO_TIENG = frozenset({
 #: Cac `job_type` la mot lan CHO (mang, may B, sidecar). ⛔ Khong khoa `cpu_nhieu`.
 #: Giu o day de mot phep kiem doi chieu duoc, chu khong de ma doc no.
 PHA_CHO = frozenset({
+    # ⚠️ Hai hang duoi day KHONG phai "lan cho mang" — chung chi **khong dang ke**,
+    #    va ca hai vao day 25/09/2026 sau khi mot phep kiem do phu phat hien chung
+    #    ⛔ CHUA he duoc phan loai (⇒ `quanh_job` roi vao nhanh "khong khoa gi" mot
+    #    cach IM LANG). Do that tren hai phim:
+    #        media_prepare : 0,45 s tuong / 0,08 s CPU  (ffprobe, tien trinh con)
+    #        image_finish  : 2,31 s va 0,9 s tuong      (preset giu hinh ⇒ gan nhu no-op)
+    #    Thoi gian TUONG chan tren chung, nen du `cpu_s` la can duoi thi chung cung
+    #    ⛔ khong the dot dang ke.
+    #
+    # 🔴 **`image_finish` PHAI duoc do lai khi cac phep doi DIEM ANH (logo, phu de,
+    #    lat guong, dich mau, zoom) chuyen tu `render` xuong no** — luc do no thanh
+    #    mot lan **ma hoa lai** va thuoc `PHA_NANG_CPU`. Hom nay no re vi no chua lam
+    #    gi, ⛔ khong phai vi ban chat no re.
+    "asv_media.media_prepare",
+    "asv_media.image_finish",
     "auto_scan_video.advance",
     "auto_scan_video.edit_plan",
     "auto_scan_video.content_process",
     "auto_scan_video.qc_ai",
     "asv_media.content_process",
-    "asv_media.timing_align",
+    # ⛔ `asv_media.timing_align` DA RA KHOI day 25/09/2026 — do duoc 0,96 va 0,99
+    #    loi tren hai phim. Ly do day du o `PHA_NANG_CPU`.
+    #
+    # ⚠️ Va luu y ve chinh TEN cua tap nay: hai hang `voice_synthesis` duoi day VAN
+    #    giu `may_tao_tieng` — `PHA_CHO` nghia la "khong giu `cpu_nhieu`", ⛔ KHONG
+    #    phai "khong giu khoa nao". Mot bai kiem doc no thanh nghia thu hai se sai.
     "asv_voice.voice_synthesis",
     "asv_media.voice_synthesis",
 })

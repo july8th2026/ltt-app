@@ -185,14 +185,41 @@ def test_pha_CHO_khong_giu_mot_khoa_nao(monkeypatch):
        va 6 luot xep hang sau no.
     """
     khoa, so_tay = _khoa_gia(monkeypatch)
-    cho = ["auto_scan_video.advance", "auto_scan_video.edit_plan",
-           "auto_scan_video.content_process", "auto_scan_video.qc_ai",
-           "asv_media.timing_align"]
+    # 🔴 **Lay tu `fx.PHA_CHO`, ⛔ KHONG go lai mot danh sach vi du (sua 25/09).**
+    #
+    #    Ban cu go tay nam ten, trong do co `asv_media.timing_align`. Khi phep do
+    #    that cho thay pha do dot **0,96 va 0,99 loi** tren hai phim va no duoc
+    #    chuyen sang `PHA_NANG_CPU`, bai nay **do** — ⛔ khong vi ma sai, ma vi
+    #    danh sach vi du cua no da **troi khoi ban khai**.
+    #
+    # ⭐ Suy tu ban khai thi khoang troi ay ⛔ khong con ton tai duoc. Va bai nay
+    #   van kiem MOT dieu that: `quanh_job` co THUC SU khong giu khoa nao cho moi
+    #   thanh vien cua `PHA_CHO` — ban khai la dac ta, bai nay kiem phan THI HANH.
+    cho = sorted(fx.PHA_CHO)
+    assert cho, "`PHA_CHO` rong — bai nay se xanh vi TRONG, khong vi dung"
+    # 🔑 **Khang dinh dung la "khong giu `cpu_nhieu`", ⛔ KHONG phai "khong giu gi".**
+    #
+    #    Ban cu viet `assert tn == ()`, va no chi dung duoc vi danh sach vi du da
+    #    duoc **chon** cho no dung: `PHA_CHO` con chua `asv_voice.voice_synthesis`
+    #    va `asv_media.voice_synthesis`, ma hai pha do **duoc phep** giu
+    #    `may_tao_tieng` — do la khoa TAI NGUYEN DOC QUYEN, giu suot pha giong la
+    #    DUNG (mot phien chen vao giua lam **sai ket qua** do, ⛔ khong chi lam cham).
+    #
+    # ⭐ Suy tu ban khai da lam lo ra dieu do ngay lap tuc. Mot bai kiem ma tinh
+    #   dung cua no phu thuoc vao viec dau vao duoc **chon tay** thi no dang do
+    #   mot thu khac voi thu no tuyen bo.
     with khoa:
         for jt in cho:
             with khoa.quanh_job(jt) as tn:
-                assert tn == (), f"{jt} khong duoc giu khoa nao, dang giu {tn}"
-    assert so_tay == [], f"pha cho da mo khoa: {so_tay}"
+                assert "cpu_nhieu" not in tn, (
+                    f"{jt} nam trong PHA_CHO ma van giu `cpu_nhieu` ({tn}) — "
+                    f"do la 'giu khoa suc tinh luc dang CHO', dung dieu su co "
+                    f"23/09 vi pham")
+    # ⚠️ Y HET ly do o tren, va no lap lai o day vi `so_tay` ghi MOI khoa da mo —
+    #    ke ca `may_tao_tieng` cua hai pha giong, la thu DUOC PHEP. Nen dieu kien
+    #    la "khong mot `cpu_nhieu` nao", ⛔ khong phai "so tay rong".
+    cpu_da_mo = [d for d in so_tay if "cpu_nhieu" in (d[1] or ())]
+    assert not cpu_da_mo, f"pha CHO da mo `cpu_nhieu`: {cpu_da_mo}"
 
 
 def test_pha_TINH_giu_cpu_nhieu_va_NHA_NGAY_khi_pha_xong(monkeypatch):
@@ -218,6 +245,46 @@ def test_moi_job_TINH_mo_roi_dong_mot_lan_khong_gop_qua_pha_cho(monkeypatch):
                 pass
     assert so_tay == [("mo", ("cpu_nhieu",)), ("dong", ("cpu_nhieu",)),
                       ("mo", ("cpu_nhieu",)), ("dong", ("cpu_nhieu",))]
+
+
+def test_MOI_job_type_cua_ASV_phai_duoc_PHAN_LOAI__khong_co_mac_dinh_im_lang():
+    """🔴 **Them mot giai doan moi ma quen phan loai = mot lo FAIL-OPEN.**
+
+    `KhoaTheoPha.quanh_job` co nhanh cuoi *"con lai: KHONG khoa gi"*. Nghia la mot
+    giai doan moi dot 2 loi, neu ⛔ khong ai them no vao `PHA_NANG_CPU`, se **im lang**
+    chay ngoai khoa — dung cai da lam ca may doi hom 23/09. ⛔ Khong mot phep kiem
+    nao dang gac cho nay: hai bai canh (`..._khong_nam_trong_...`,
+    `..._chi_chua_job_type_CO_THAT_...`) kiem tinh RỜI NHAU va tinh CO THAT, ⛔ khong
+    kiem tinh **DAY DU**.
+
+    ⭐ Bai nay bien "quen" thanh "do" — nguoi them giai doan buoc phai QUYET, va
+       quyet dinh ay phai dan duoc mot phep do (xem docstring `PHA_NANG_CPU`).
+
+    ⛔ Va no ⛔ khong doan ho: no chi doi mot NHAN, ⛔ khong doi nhan nao.
+    """
+    from apps.asv_gpu import manifest as m_gpu
+    from apps.asv_media import manifest as m_media
+
+    da_phan_loai = fx.PHA_NANG_CPU | fx.PHA_MAY_TAO_TIENG | fx.PHA_CHO
+    khai: set[str] = set()
+    for m in (m_gpu, m_media):
+        for ten in ("MANIFEST", "manifest", "APP"):
+            doi_tuong = getattr(m, ten, None)
+            if doi_tuong is None:
+                continue
+            khai |= set(getattr(doi_tuong, "job_types", ()) or ())
+            break
+    assert khai, (
+        "⛔ khong doc duoc `job_types` tu manifest nao — bai nay se xanh vi TRONG. "
+        "Doi ten thuoc tinh thi phai sua o day, ⛔ dung de no im lang bo qua")
+
+    thieu = sorted(khai - da_phan_loai)
+    assert not thieu, (
+        f"{len(thieu)} `job_type` chua duoc phan loai: {thieu}. Moi job_type phai "
+        f"nam trong DUNG MOT trong ba tap `PHA_NANG_CPU` / `PHA_MAY_TAO_TIENG` / "
+        f"`PHA_CHO`. Chua phan loai ⇒ `quanh_job` roi vao nhanh 'khong khoa gi' va "
+        f"mot pha nang se chay NGOAI khoa ma ⛔ khong ai biet. Quyet bang mot phep "
+        f"DO (giay CPU / giay tuong), ⛔ dung doan theo ten.")
 
 
 def test_may_tao_tieng_GIU_SUOT_pha_giong_chu_khong_nha_giua(monkeypatch):
