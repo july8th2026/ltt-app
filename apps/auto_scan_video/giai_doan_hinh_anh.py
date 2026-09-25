@@ -1,10 +1,14 @@
 """Giai doan IMAGE_FINISH — **GIAI DOAN 2**: thao tac tren MP4 DA XONG.
 
-Hai artifact ra:
+Artifact ra:
 
     <van_tay>.mp4    ban giao cuoi cung          (kind=video)
-    <van_tay>.json   ke cat + bao cao            (kind=json)
     <van_tay>.srt    phu de DA DOI MOC, khi co   (kind=subtitle)
+
+⭐ Ke cat + bao cao di vao `tom_tat` (`asv_stage.outputs`), ⛔ KHONG thanh artifact
+   thu ba — xem chu thich o cuoi `chay()`. `la_ban_giao` la luat cua ca GIAI DOAN,
+   nen mot artifact JSON o day se mang `han=None` nhu video: mot bao cao van hanh
+   nam trong kho cua khach MAI MAI (`test_451` bat dung chuyen do).
 
 ## Vi sao giai doan nay ton tai — chu du an chot 25/09
 
@@ -20,7 +24,7 @@ Hai artifact ra:
     cat."*
 
    O thu tu cu, phep cat chay TRUOC khi co tieng, nen moi moc cua ke hoach tieng
-   phai di qua mot lop doi mocc. O day phep cat chay tren MOT tep trong do hinh
+   phai di qua mot lop doi moc. O day phep cat chay tren MOT tep trong do hinh
    va tieng la hai dong cua cung mot dong ho: `loc_cat_hai_dong` `trim` ca hai
    trong CUNG mot `concat`, nen ⛔ khong the co mot doan tieng bi cut.
 
