@@ -87,6 +87,21 @@ def cpu_cay(pid: int) -> tuple[float, int]:
        — do la ca muc dich. Mot giai doan ASV tieu phan lon suc tinh o tien
        trinh con, va mot con so chi dem tien trinh cha se noi rang `render`
        gan nhu mien phi.
+
+    🔴 **GIOI HAN DA DO, 25/09: con so nay la CAN DUOI, khong phai so that.**
+       Tren Windows `psutil` KHONG cong CPU cua tien trinh con da thoat vao cha
+       (`children_user`/`children_system` dung yen o 0,0 — do bang mot tien
+       trinh con dot 8 trieu phep nhan). Nen mot `ffmpeg` sinh ra va thoat
+       **giua hai lan lay mau** bien mat khoi so do.
+
+       ⇒ Dung duoc cho giai doan DAI (demucs, whisper, TTS, render: tien trinh
+         con song hang phut, chac chan bi bat). ⛔ Khong dung duoc cho giai
+         doan NGAN: `media_prepare` do ra **1,3 giay CPU / 51 giay tuong**, va
+         phan lon phan thieu la mot chuoi `ffprobe`/`ffmpeg` chop nhoang.
+
+       ⭐ Cach do dung la Job Object cua Windows (ke ca tien trinh con da thoat),
+         nhung no doi quyen tren tien trinh khong phai cua minh. Ghi ra day thay
+         vi de mot con so thieu trong nhu mot con so du.
     """
     import psutil
 
