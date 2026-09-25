@@ -252,17 +252,21 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         cach = cdr.che_do_cho(cd.doc(run).preset)
         ke = kc.chon([], thoi_luong=thoi_luong)      # mac dinh: ⛔ khong cat gi
         khoang = [(0.0, thoi_luong)]
+        cua = None
         if cach == cdr.CAT_MA_HOA_LAI:
             ke = _ke_cat(db, kho, run, thoi_luong=thoi_luong)
+            # ⭐ MOT lan doc cua so, dung cho CA phep giao LAN bao cao: hai lan
+            #    doc cung mot cai dat la hai cho co the lech (`cai_dat.doc` co the
+            #    doc mot `run.settings` da bi ghi lai giua chuoi — xem
+            #    `thi_hanh.van_tay` ve `cai_dat.KHOA_DAN_XUAT`).
+            cua = _cua_so_khach(db, run)
             # ⭐ Giao **sau** ke cat, cung thu tu voi ban truoc o `compose`: quyet
             #    dinh cua chinh sach co tham quyen (`V4-R07`), cua so khach la mot
             #    lop THU HEP dat len tren no. Lam nguoc lai la de khach vut mat
             #    mot canh ma chinh sach da quyet giu, roi ⛔ khong ai ghi lai.
-            khoang = cat_dau_cuoi.giao(list(ke.giu), _cua_so_khach(db, run),
-                                       thoi_luong)
+            khoang = cat_dau_cuoi.giao(list(ke.giu), cua, thoi_luong)
 
         ban_do = _ban_do_tu_khoang(khoang, thoi_luong)
-        cua = _cua_so_khach(db, run) if cach == cdr.CAT_MA_HOA_LAI else None
         tom = {**kc.tom_tat(ke),
                "cua_so_khach": list(cua or ()),
                "cach": cach,
