@@ -136,6 +136,57 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 #: mot lan hoi lai. Xem ghi chu trong `_doc_cac_canh`.
 SO_LAN_DOC_CANH = 2
 
+#: Bao nhieu canh duoc HOI MODEL CUNG LUC trong mot lo.
+#:
+#: 🔴 **`2` la TRAN CUA MAY B, khong phai mot lua chon hieu nang.** Tran van hanh
+#:    chung cho moi tac tu la **≤ 2 request dong thoi moi model** (CLAUDE.md muc
+#:    ⭐). Vuot tran da tung lam sap pool: 19/09/2026 khoa duy nhat `ltt_llm`
+#:    chet va keo ca duong LLM xuong.
+#:
+#: ⛔ **Khong duoc noi so nay ra, va khong duoc de mot tham so/bien moi truong
+#:    noi no ra.** `qwen38-api` khai 3 suat engine (`ltt_llm.ngan_sach`), nhung
+#:    tran VAN HANH la 2 — hai ban khai khac nhau, va ban chat hon thang.
+#:
+#: ⭐ Vi sao 2 la du: do 23/09 (`L_TOC_DO_GPU.md` §5.2) — `edit_plan` 163,78 s
+#:    cho **4** loi goi `DOC_CANH` chay lan luot. Hai luong bien 4 luot thanh 2
+#:    lo; suat thu ba khong mua duoc them lo nao cho mot phim 4-6 canh.
+LO_DOC_CANH = 2
+
+
+class _CtxLo:
+    """`ctx` cho mot loi goi chay TRONG LO. Chi khac ctx that o MOT cho.
+
+    🔴 **`provider_rejected` bi BO, va day la ca quyet dinh kho nhat cua lo.**
+
+       `provider_state` cua job la **MOT o**, con mot lo co **HAI** loi goi dang
+       bay cung luc. `mark_provider_rejected` nghia la *"provider da tra loi dut
+       khoat, khong con mo ho"* — dung cho loi goi CUA NO, sai cho loi goi kia.
+       Neu canh B bi 429 trong khi canh A dang bay, mot lan xoa o day se khai
+       rang job **chua** goi ra ngoai, trong khi no dang goi.
+
+    ⭐ Nen lo giu nguyen mo ho thay vi xoa nham: lech ve phia "co the da goi" chi
+       lam nen tang than trong hon, lech ve phia "chua goi" lam no thu lai mot
+       viec da chay. Cung luat voi `phep-do-lech-chieu-phai-bo` cua kho.
+
+    ⛔ `is_cancelled` va `provider_dispatched` **giu nguyen**: cai dau chi doc,
+       cai sau chi THEM mo ho (an toan khi goi nhieu lan).
+    """
+
+    def __init__(self, that) -> None:
+        self._that = that
+
+    def __getattr__(self, ten: str):
+        return getattr(self._that, ten)
+
+    def provider_rejected(self, provider: str = "") -> None:  # noqa: ARG002
+        return None
+
+    # ⛔ Khong bao tien do tu trong lo: hai luong cung ghi mot hang `jobs` chi de
+    #    noi hai phan tram khac nhau ve cung mot giai doan. Tien do duoc bao o
+    #    PHA 1, tuan tu, truoc khi lo bay.
+    def progress(self, percent: int, message: str = "") -> None:  # noqa: ARG002
+        return None
+
 
 def _ma_don_vi_goi(ma_canh: str, *, vong_sua: int, lan_lai: int) -> str:
     """`item_key` cua MOT luot goi `doc_canh` — duy nhat theo (canh, vong, lan).
@@ -305,6 +356,160 @@ def _doc_cac_canh(db, kho, run, ci, ban_ghi: dict, ctx) -> tuple:
                                 + lat_cat.DU_PHONG_NGOAI_GOI_S))
     trang_thai = {"chi_muc": _chi_muc_dict(ci)}
 
+    # ══════════════════════════════════════════════════════════════════════════
+    #  MOT LO = `LO_DOC_CANH` canh HOI MODEL CUNG LUC — ba pha, hai pha tuan tu
+    # ══════════════════════════════════════════════════════════════════════════
+    #
+    #   PHA 1  TUAN TU, phien CHINH : `lc.kiem` · doc diem chot · `mo_don_vi` +
+    #                                 `commit` · bao tien do · `_rut_khung` ·
+    #                                 dung `messages`      -> day mot goi vao lo
+    #   PHA 2  SONG SONG, ≤ 2 luong : CHI loi goi mang. Moi luong mot PHIEN CSDL
+    #                                 RIENG va doc lai `run` trong phien do
+    #   PHA 3  TUAN TU, phien CHINH : thu hoach theo DUNG THU TU canh ·
+    #                                 `danh_dau_xong` + `commit` · `lc.xong_mot`
+    #
+    # 🔴 Ba vat can ma `L_TOC_DO_GPU.md` §5.2 ghi lai, va cho nao giai chung:
+    #
+    #   1. *"`lat_cat.kiem(vi_tri=i)` gia dinh tien do theo thu tu; hai luong lam
+    #      `vi_tri` khong con don dieu"* -> `kiem` va `xong_mot` chi chay o PHA
+    #      1/PHA 3, va **lo duoc thu hoach HET truoc khi `kiem` cua canh ke tiep
+    #      chay**. Nen `vi_tri` van tang tung mot, dung thu tu canh.
+    #
+    #   2. *"`mo_don_vi`/`danh_dau_xong` ghi so cai tren CUNG mot `Session`, va
+    #      doi tuong nay khong an toan da luong"* -> ⛔ khong luong nao cham vao
+    #      `db`. Chung chi chay o PHA 1/PHA 3, tren MOT luong.
+    #
+    #   3. *"`ai.goi_tinh_tien` giu cua ngan sach + so cai; chay chong can mot
+    #      phep do rang hai luong khong lam doi but toan"* -> `ma_dispatch` la
+    #      `(thao_tac, stage, item_key)` va `item_key` mang **ma canh**, nen hai
+    #      canh khong bao gio trung; `UNIQUE(run_id, ma_dispatch)` van la chot
+    #      cuoi. Phep do o `tests/test_3912_edit_plan_song_song.py`.
+    #
+    # ⛔ Va mot cai thu tu, khong co trong danh sach do: `provider_state` cua job
+    #    la MOT o cho HAI loi goi dang bay — xem `_CtxLo`.
+    ket: dict[int, object] = {}       # vi tri canh -> HieuCanh (GIU thu tu canh)
+    lo: list[dict] = []               # cac goi da san sang, chua gui
+    # ⭐ Doc HAI truong nay MOT LAN, o luong chinh. Doc `run.id` tu trong luong
+    #    con la cham identity map cua phien chinh tu hai luong — chinh vat can (2).
+    run_id = str(run.id)
+    run_owner = str(run.owner_id)
+    ctx_lo = _CtxLo(ctx) if ctx is not None else None
+
+    def _gui_mot_canh(goi: dict) -> dict:
+        """PHA 2 — phan MANG cua MOT canh. Chay trong luong rieng, phien rieng.
+
+        Tra ve `{"vi_tri", "h", "loi_cuoi"}`. ⛔ Khong ghi gi vao `db` cua ham
+        ngoai, va khong doc mot doi tuong ORM nao cua phien do.
+        """
+        from platform_core.db import get_session
+
+        c_ = goi["canh"]
+        h_ = None
+        loi_cuoi_ = None
+        gen = get_session()
+        db2 = next(gen)
+        try:
+            # ⭐ Doc lai `run` TRONG phien cua luong nay. Dung lai doi tuong
+            #    `run` cua phien chinh se cham identity map cua phien do tu hai
+            #    luong — dung cai ma vat can (2) noi tren.
+            run2 = features.lay_run(db2, run_id, run_owner)
+            for lan_hd in range(SO_LAN_DOC_CANH):
+                try:
+                    kq = ai.goi_tinh_tien(
+                        db2, run2, ai.DOC_CANH, goi["messages"],
+                        stage=pipeline.EDIT_PLAN,
+                        # ⭐ `item_key` phai KHAC nhau giua hai lan: `ma_dispatch`
+                        #    la `(thao_tac, stage, item_key)` va `UNIQUE(run_id,
+                        #    ma_dispatch)` se nuot but toan cua lan thu hai — tuc
+                        #    mot luot DA tra tien bien mat khoi so cai.
+                        # ⚠️ `lan` cua VONG SUA cung phai vao day, khong chi `lan`
+                        #    hoi lai vi sai hinh dang: hai luot goi that o hai
+                        #    vong khac nhau ma trung `ma_dispatch` thi but toan
+                        #    cua luot sau bi `UNIQUE` nuot.
+                        item_key=_ma_don_vi_goi(c_.ma, vong_sua=goi["lan"],
+                                                lan_lai=lan_hd),
+                        ctx=goi["ctx_lo"])
+                    h_ = hc.doc_hieu_canh(kq, c_.ma)
+                    break
+                except ai.AiMoHo:
+                    # ⛔ Mo ho KHONG duoc nuot: khong biet model da chay chua, nen
+                    #    khong duoc thu lai va khong duoc danh dau xong. So cai da
+                    #    ghi `mo_ho`; canh nay di tiep khong co bang chung.
+                    loi_cuoi_ = ("AiMoHo", "mat ket noi sau khi gui")
+                    break
+                except (ai.LuocDoSai, hc.HieuCanhError) as exc:
+                    # 🔑 **CHI hai lop nay duoc hoi lai, va ranh gioi khong tuy
+                    #    y.** `LuocDoSai`/`HieuCanhError` = model **da tra loi**,
+                    #    chi la sai hinh dang — thu re-roll duoc. Con `AiError`
+                    #    tran (may ban, provider tu choi, mat khoa) la mot cau
+                    #    tra loi ve TINH TRANG; hoi lai ngay chi ton tien.
+                    #
+                    # 🔑 Ghi **THONG DIEP**, khong chi ten lop: nhat ky nen v3
+                    #    chi co `(LuocDoSai)` nen khong ai tra loi duoc *vi sao*.
+                    loi_cuoi_ = (type(exc).__name__, str(exc)[:200])
+                    log.warning("doc canh %s sai hinh dang lan %d/%d (%s: %s)",
+                                c_.ma, lan_hd + 1, SO_LAN_DOC_CANH, *loi_cuoi_)
+                except ai.AiError as exc:
+                    loi_cuoi_ = (type(exc).__name__, str(exc)[:200])
+                    log.warning("doc canh %s hong (%s: %s) — KHONG hoi lai",
+                                c_.ma, *loi_cuoi_)
+                    break
+        finally:
+            try:
+                next(gen)
+            except StopIteration:
+                pass
+        return {"vi_tri": goi["vi_tri"], "h": h_, "loi_cuoi": loi_cuoi_}
+
+    def _thu_hoach_lo() -> None:
+        """PHA 2 + PHA 3 cho lo hien tai. Lam RONG `lo` khi tra ve."""
+        if not lo:
+            return
+        if len(lo) == 1:
+            # ⛔ Mot goi thi ⛔ khong mo pool: mot `ThreadPoolExecutor` cho mot
+            #    viec la mot luong, mot hang doi va mot cho de sai them.
+            ket_qua = [_gui_mot_canh(lo[0])]
+        else:
+            from concurrent.futures import ThreadPoolExecutor
+
+            # 🔴 `max_workers=LO_DOC_CANH` VA `len(lo) <= LO_DOC_CANH` (PHA 1
+            #    thu hoach ngay khi lo day) — hai rao doc lap cho cung mot tran.
+            with ThreadPoolExecutor(max_workers=LO_DOC_CANH,
+                                    thread_name_prefix="doc-canh") as bom:
+                ket_qua = list(bom.map(_gui_mot_canh, list(lo)))
+        # ⭐ Thu hoach theo DUNG THU TU canh, khong theo thu tu ve dich.
+        for kq_ in sorted(ket_qua, key=lambda r: r["vi_tri"]):
+            _chot_mot_canh(kq_)
+        lo.clear()
+
+    def _chot_mot_canh(kq_: dict) -> None:
+        """PHA 3 — TUAN TU, phien CHINH. Nguyen van nhanh chot cua ban cu."""
+        vt = int(kq_["vi_tri"])
+        c_ = canh[vt]
+        h_ = kq_["h"]
+        loi_cuoi_ = kq_["loi_cuoi"]
+        if h_ is None:
+            log.warning("doc canh %s khong co bang chung — GIU canh nay (%s)",
+                        c_.ma, (loi_cuoi_ or ("?", ""))[0])
+            hong.append({"ma_canh": c_.ma, "loai": (loi_cuoi_ or ("?", ""))[0],
+                         "ly_do": (loi_cuoi_ or ("", ""))[1]})
+            db.commit()
+            lc.xong_mot()
+            return
+        sd.danh_dau_xong(db, run, stage=pipeline.EDIT_PLAN, item_key=c_.ma,
+                         fingerprint=van_tay_theo_vi_tri[vt],
+                         outputs=h_.sang_dict())
+        # 🔑 `commit` sau MOI canh, khong doi den cuoi — cung ly do da ghi dai o
+        #    `giai_doan_noi_dung`: mot `flush` khong song qua mot lan worker chet.
+        db.commit()
+        lc.xong_mot()
+        ket[vt] = h_
+
+    #: Van tay cua tung canh, ghi o PHA 1 va doc lai o PHA 3. Mot tu dien chu
+    #: khong mot bien: PHA 3 chot MOT LO chu khong mot canh, nen "van tay cua
+    #: vong lap hien tai" khong con la mot khai niem co nghia.
+    van_tay_theo_vi_tri: dict[int, str] = {}
+
     for i, c in enumerate(canh):
         if huy is not None and huy():
             raise ThieuChiMuc(_t('Lần chạy đã bị hủy.'))
@@ -325,7 +530,7 @@ def _doc_cac_canh(db, kho, run, ci, ban_ghi: dict, ctx) -> tuple:
         cu = features.don_vi_theo_khoa(db, run.id, pipeline.EDIT_PLAN, c.ma)
         if (cu is not None and str(cu.fingerprint or "") == van_tay
                 and (cu.outputs or {}).get("de_xuat")):
-            ra.append(hc.tu_dict(cu.outputs))
+            ket[i] = hc.tu_dict(cu.outputs)
             continue
         # ⭐ Canh nam TRUOC con tro ma khong co diem chot = canh luot truoc da
         #    hoi va bo (mo ho / hong / sai luoc do). Lan chay mot mach cung chi
@@ -334,6 +539,7 @@ def _doc_cac_canh(db, kho, run, ci, ban_ghi: dict, ctx) -> tuple:
         if lc.noi_tiep and i < lc.vi_tri:
             continue
 
+        van_tay_theo_vi_tri[i] = van_tay
         sd.mo_don_vi(db, run, stage=pipeline.EDIT_PLAN, item_key=c.ma,
                      fingerprint=van_tay)
         # 🔴 **`commit` NGAY o day, truoc ffmpeg va truoc mang.**
@@ -380,84 +586,31 @@ def _doc_cac_canh(db, kho, run, ci, ban_ghi: dict, ctx) -> tuple:
             #    M-07 cua duong GIONG da do dieu do.
             phan_hoi_qc=ly_do_qc)
 
-        h = None
-        loi_cuoi = None
-        # 🔴 **THU LAI mot lan khi phan hoi SAI HINH DANG, va chi khi do.**
+        # ── PHA 1 xong: day goi vao lo, chua goi mang ─────────────────────
+        #
+        # 🔴 **THU LAI mot lan khi phan hoi SAI HINH DANG, va chi khi do** — vong
+        #    thu lai nam trong `_gui_mot_canh`, cung voi ly do day du.
         #
         #    Do 23/09 tren 18 canh cua phim nghiem thu: 8 luot hong, va **moi
         #    luot deu la mot phan hoi HTTP thanh cong co hinh dang sai** — 5 lan
         #    `"giữ"` co dau, 2 lan tra ve mot MANG, 1 lan `content` rong sau
         #    120 giay. Khong luot nao la "model tu choi".
-        #
-        # ⭐ Mot phan hoi rac la mot phan hoi RIENG LE: hoi lai cung mot khung
-        #    hinh thuong ra dung ngay. Va gia cua mot lan hoi lai (mot luot
-        #    `doc_canh`) re hon nhieu so voi hau qua — mot canh khong bang chung
-        #    la mot canh **luon duoc giu**, tuc `smart_localize` am tham tro
-        #    thanh `localize_preserve_picture`.
-        #
-        # ⛔ `AiMoHo` KHONG nam trong nhanh nay: khong biet model da chay chua,
-        #    nen thu lai la co the tra tien hai lan cho mot viec.
-        for lan_hd in range(SO_LAN_DOC_CANH):
-            try:
-                kq = ai.goi_tinh_tien(
-                    db, run, ai.DOC_CANH, messages,
-                    stage=pipeline.EDIT_PLAN,
-                    # ⭐ `item_key` phai KHAC nhau giua hai lan: `ma_dispatch`
-                    #    la `(thao_tac, stage, item_key)` va `UNIQUE(run_id,
-                    #    ma_dispatch)` se nuot but toan cua lan thu hai — tuc
-                    #    mot luot DA tra tien bien mat khoi so cai.
-                    # ⚠️ `lan` cua VONG SUA cung phai vao day, khong chi `lan`
-                    #    hoi lai vi sai hinh dang: hai luot goi that o hai vong
-                    #    khac nhau ma trung `ma_dispatch` thi but toan cua luot
-                    #    sau bi `UNIQUE(run_id, ma_dispatch)` nuot — mot luot DA
-                    #    tra tien bien mat khoi so cai.
-                    item_key=_ma_don_vi_goi(c.ma, vong_sua=lan, lan_lai=lan_hd),
-                    ctx=ctx)
-                h = hc.doc_hieu_canh(kq, c.ma)
-                break
-            except ai.AiMoHo:
-                # ⛔ Mo ho KHONG duoc nuot: khong biet model da chay chua, nen
-                #    khong duoc thu lai va khong duoc danh dau xong. So cai da
-                #    ghi `mo_ho`; canh nay di tiep khong co bang chung.
-                loi_cuoi = ("AiMoHo", "mat ket noi sau khi gui")
-                break
-            except (ai.LuocDoSai, hc.HieuCanhError) as exc:
-                # 🔑 **CHI hai lop nay duoc hoi lai, va ranh gioi khong tuy y.**
-                #
-                #    `LuocDoSai` / `HieuCanhError` = model **da tra loi**, chi
-                #    la sai hinh dang. Do la thu re-roll duoc. Con `AiError`
-                #    tran (may ban, provider tu choi, mat khoa) la mot cau tra
-                #    loi ve TINH TRANG, khong phai mot phan hoi rac — hoi lai
-                #    ngay lap tuc chi ton tien va lam cham ca giai doan.
-                #
-                # 🔑 Ghi **THONG DIEP**, khong chi ten lop. Nhat ky cua luot
-                #    nghiem thu nen v3 chi co `(LuocDoSai)` / `(HieuCanhError)`,
-                #    nen khong ai tra loi duoc *vi sao* — phai goi lai 18 luot
-                #    that moi biet. Mot dong log day du thi khong.
-                loi_cuoi = (type(exc).__name__, str(exc)[:200])
-                log.warning("doc canh %s sai hinh dang lan %d/%d (%s: %s)",
-                            c.ma, lan_hd + 1, SO_LAN_DOC_CANH, *loi_cuoi)
-            except ai.AiError as exc:
-                loi_cuoi = (type(exc).__name__, str(exc)[:200])
-                log.warning("doc canh %s hong (%s: %s) — KHONG hoi lai",
-                            c.ma, *loi_cuoi)
-                break
-        if h is None:
-            log.warning("doc canh %s khong co bang chung — GIU canh nay (%s)",
-                        c.ma, (loi_cuoi or ("?", ""))[0])
-            hong.append({"ma_canh": c.ma, "loai": (loi_cuoi or ("?", ""))[0],
-                         "ly_do": (loi_cuoi or ("", ""))[1]})
-            db.commit()
-            lc.xong_mot()
-            continue
+        lo.append({"vi_tri": i, "canh": c, "messages": messages,
+                   "lan": lan, "ctx_lo": ctx_lo})
+        # ⭐ Thu hoach NGAY khi lo day, ⛔ khong doi het vong lap. Hai ly do, va
+        #    ca hai la bat bien chu khong phai so thich:
+        #      1. `lc.kiem` cua canh ke tiep phai chay tren mot lo RONG — neu no
+        #         cat lat cat tai do thi khong con goi nao da `mo_don_vi` ma chua
+        #         bao gio duoc gui;
+        #      2. `len(lo) <= LO_DOC_CANH` la rao thu hai cho tran 2 request/model.
+        if len(lo) >= LO_DOC_CANH:
+            _thu_hoach_lo()
 
-        sd.danh_dau_xong(db, run, stage=pipeline.EDIT_PLAN, item_key=c.ma,
-                         fingerprint=van_tay, outputs=h.sang_dict())
-        # 🔑 `commit` sau MOI canh, khong doi den cuoi — cung ly do da ghi dai o
-        #    `giai_doan_noi_dung`: mot `flush` khong song qua mot lan worker chet.
-        db.commit()
-        lc.xong_mot()
-        ra.append(h)
+    # Lo cuoi con le (so canh can hoi khong chia het cho `LO_DOC_CANH`).
+    _thu_hoach_lo()
+
+    # ⭐ `ra` dung theo THU TU CANH, khong theo thu tu ve dich cua cac luong.
+    ra = [ket[k] for k in sorted(ket)]
 
     # 🔴 **Canh bi bo o mot LUOT LAT CAT TRUOC cung la canh khong bang chung.**
     #

@@ -790,5 +790,117 @@ describe('Chạy workflow trên v3', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Mở mẫu và thiết lập' }))
     expect(screen.queryByLabelText(/Ngân sách tối đa/)).toBeNull()
   })
+
+  // Run r1 VỚI một node (mặc định `runV3Goc.nodes` rỗng — không đủ để "Chạy
+  // lại từ đây" có gì để bấm, vì nút nằm trên TỪNG hàng node).
+  const runVoiNode1Node = (trangThai: string) => ({ ...runV3Goc, status: trangThai,
+    nodes: [{ node_id: 'n1', status: trangThai === 'SUCCEEDED' ? 'SUCCEEDED' : 'QUEUED',
+      attempt: 1, cost_credit: 4, job_id: 'j1', error: '', waiting_kind: '',
+      het_han: false }] })
+  function mockRunV3VoiNode(xen?: (url: string, init?: RequestInit) =>
+      Response | Promise<Response> | undefined) {
+    mockRunV3(url => {
+      const rieng = xen?.(url)
+      if (rieng) return rieng
+      if (url.includes('/api/v3/runs/') && url.includes('/su-kien'))
+        return new Response(khungRun(
+          { ...runVoiNode1Node('QUEUED'), su_kien: [], seq_cuoi: 1 },
+          { ...runVoiNode1Node('SUCCEEDED'), credit_charged: 4, settled: true,
+            su_kien: [{ seq: 2, loai: 'run.succeeded', node_id: '', du_lieu: {},
+              created_at: '2026-09-24T00:00:10+00:00' }], seq_cuoi: 2 }),
+          { status: 200, headers: { 'Content-Type': 'text/event-stream' } })
+      return undefined
+    })
+  }
+
+  // -- P-A task A1: "Chạy lại từ đây" ---------------------------------------
+  it('A1: "Chạy lại từ đây" gọi chay-lai-tu kèm Idempotency-Key, hiện run MỚI', async () => {
+    mockRunV3VoiNode(url => url.includes('/chay-lai-tu/')
+      ? new Response(JSON.stringify({ ...runV3Goc, id: 'r2', status: 'QUEUED',
+          credit_charged: 0 }), { status: 201 })
+      : undefined)
+    const { drawer } = await bamChay()
+    const nodeId = 'n1'
+    expect(await within(drawer).findByText('SUCCEEDED', {}, { timeout: 15_000 }))
+      .toBeInTheDocument()
+    const nut = within(drawer).getByRole('button', { name: 'Chạy lại từ đây' })
+    fireEvent.click(nut)
+    await waitFor(() => expect(trangThaiRun(drawer)).toBe('QUEUED'))
+    const goi = vi.mocked(globalThis.fetch).mock.calls
+      .find(([url]) => String(url).includes('/chay-lai-tu/'))!
+    expect(String(goi[0])).toBe(`/agent/api/v3/runs/r1/chay-lai-tu/${nodeId}`)
+    expect((goi[1] as RequestInit).method).toBe('POST')
+    const khoa = new Headers((goi[1] as RequestInit).headers).get('Idempotency-Key')
+    expect(khoa).toBeTruthy()
+    expect(khoa!.length).toBeGreaterThanOrEqual(8)
+  })
+
+  it('A1: run CHƯA xong thì KHÔNG hiện nút "Chạy lại từ đây"', async () => {
+    mockRunV3()
+    const { drawer } = await bamChay()
+    await within(drawer).findByText('QUEUED')
+    expect(within(drawer).queryByRole('button', { name: 'Chạy lại từ đây' })).toBeNull()
+  })
+
+  // -- P-A task A2: so sánh với lượt gốc ------------------------------------
+  it('A2: "So sánh với lượt gốc" gọi GET so-sanh?voi= và vẽ RunDiff', async () => {
+    const tomTat = (id: string, trang_thai: string) => ({ id, workflow_id: 'w1',
+      version_id: 'v1', status: trang_thai, credit_max: 20, credit_charged: 4,
+      settled: true, created_at: '2026-09-24T00:00:00+00:00', inputs: {},
+      nodes: [{ node_id: 'n1', status: trang_thai, attempt: 1, cost_credit: 4,
+        job_id: 'j1', error: '', waiting_kind: '', het_han: false,
+        params: {}, output_ref: {} }] })
+    mockRunV3VoiNode(url => {
+      if (url.includes('/chay-lai-tu/'))
+        return new Response(JSON.stringify({ ...runV3Goc, id: 'r2',
+          status: 'SUCCEEDED', credit_charged: 4 }), { status: 201 })
+      if (url.includes('/so-sanh'))
+        return new Response(JSON.stringify({ a: tomTat('r1', 'SUCCEEDED'),
+          b: tomTat('r2', 'FAILED'), khac: ['n1'], khac_version: false }),
+          { status: 200 })
+      return undefined
+    })
+    const { drawer } = await bamChay()
+    await within(drawer).findByText('SUCCEEDED', {}, { timeout: 15_000 })
+    fireEvent.click(within(drawer).getByRole('button', { name: 'Chạy lại từ đây' }))
+    const nutSoSanh = await within(drawer).findByRole('button',
+      { name: 'So sánh với lượt gốc' })
+    fireEvent.click(nutSoSanh)
+    const vung = await within(drawer).findByRole('region', { name: 'So sánh lượt chạy' })
+    expect(within(vung).getByText(/Node lệch/)).toHaveTextContent('n1')
+    expect(vung.querySelector('header strong')).toHaveTextContent('r1 → r2')
+  })
+
+  // -- P-A task A3: Agent Designer "Soạn bằng AI" ---------------------------
+  it('A3: "Soạn bằng AI" gọi /soan và NẠP THẲNG document trả về vào Canvas', async () => {
+    mockRunV3(url => url.endsWith('/soan')
+      ? new Response(JSON.stringify({ workflow_id: 'w1', revision: 5,
+          document: { version: 3, goal: 'tạo video', budget_max_credit: 0,
+            active_page_id: 'page-1',
+            pages: [{ id: 'page-1', name: 'Page 1',
+              nodes: [{ id: 'n_soan', type: 'tool', position: { x: 0, y: 0 },
+                data: { tool: 'app.text.chat' } }], edges: [],
+              viewport: { x: 0, y: 0, zoom: 1 }, frames: [], notes: [], comments: [] }] },
+          hop_le: true, loi: [], bao_gia: { credit_max: 10, credit_estimate: 5 } }),
+        { status: 200 })
+      : undefined)
+    render(<CanvasShell />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Mở mẫu và thiết lập' }))
+    fireEvent.change(screen.getByLabelText('Mục tiêu workflow'),
+      { target: { value: 'tạo video' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Soạn bằng AI' }))
+    await waitFor(() => expect(soNode()).toBe(1))
+    expect((screen.getByLabelText('Mục tiêu workflow') as HTMLTextAreaElement).value)
+      .toBe('tạo video')
+  })
+
+  it('A3: thiếu mục tiêu thì KHÔNG gọi /soan, hiện lỗi tại chỗ', async () => {
+    const fetchMock = vi.mocked(globalThis.fetch)
+    render(<CanvasShell />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Mở mẫu và thiết lập' }))
+    const soLanGoiTruoc = fetchMock.mock.calls.length
+    expect(screen.getByRole('button', { name: 'Soạn bằng AI' })).toBeDisabled()
+    expect(fetchMock.mock.calls.length).toBe(soLanGoiTruoc)
+  })
 })
 
