@@ -635,11 +635,30 @@ def dat_cua_model(monkeypatch, *, su_that: SuThat | None = None):
 
 
 def _doc_goi(van: str) -> dict:
-    dau, cuoi = van.find("{"), van.rfind("}")
-    if dau < 0 or cuoi <= dau:
+    """Doc doi tuong JSON DAU TIEN trong `van` — KHONG phai tu `{` dau den `}`
+    cuoi.
+
+    🔴 **Ban cu (`find`/`rfind`) vo khi prompt co HAI khoi giong-JSON.**
+       `hieu_canh.loi_nhac_canh` nhet tin hieu `{bat, ket, dai_giay, so_khung,
+       co_thoai}` o DAU cau, roi mot VI DU khung phan hoi mong doi
+       `{"loai": "...", ...}` o CUOI — hai khoi tach nhau boi van xuoi. Tu `{`
+       dau den `}` cuoi gop CA HAI thanh mot chuoi khong con la JSON hop le
+       (`json.loads` nem `Extra data`) ⇒ `_doc_goi` tra `{}` ⇒
+       `_doan_thao_tac` khong con `co_thoai`/`dai_giay` de nhan ra day la
+       DOC_CANH ⇒ roi xuong nhanh mac dinh (DICH_THUAT) ⇒ phan hoi thieu
+       `de_xuat`/`do_tin`. Loi nay tung khong lo ra vi (theo docstring cu cua
+       `_doan_thao_tac`) *"khong nguoi goi nao ton tai de chay no"* — luot E2E
+       that (test_448 phan A) la nguoi goi DAU TIEN.
+
+    ⭐ `json.JSONDecoder().raw_decode` dung doi tuong JSON HOP LE DAU TIEN roi
+       DUNG LAI — van ban theo sau (vi du khung, ghi chu) khong con lam hong
+       phep doc.
+    """
+    dau = van.find("{")
+    if dau < 0:
         return {}
     try:
-        ra = json.loads(van[dau:cuoi + 1])
+        ra, _het = json.JSONDecoder().raw_decode(van, dau)
     except ValueError:
         return {}
     return ra if isinstance(ra, dict) else {}

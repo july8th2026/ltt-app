@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import io
 import json
+import logging
 from pathlib import Path
 
 from platform_core.i18n import _ as _t
@@ -34,6 +35,8 @@ from platform_core.storage import Storage
 from . import (am_master, assets, ban_do_thoi_gian, hop_dong_v4,
                nhap_media, pipeline, thoi_gian, van_ban)
 from .giai_doan_media import ThieuNguon
+
+log = logging.getLogger(__name__)
 
 
 class ThieuDauVao(ThieuNguon):
@@ -119,7 +122,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     if ctx is not None and getattr(ctx, "progress", None):
         ctx.progress(50, _t('Đang trộn bản phối'))
 
-    khoa_master, do_duoc, vt_master = _dung_ban_phoi(
+    khoa_master, do_duoc, vt_master, he_so_da_kep = _dung_ban_phoi(
         db, kho, run, ke_hoach=ke_hoach, ban_ke=ban_ke, ban_do=ban_do,
         van_tay_ke_hoach=vt, ctx=ctx)
     phan.append({"staging_key": khoa_master, "kind": "audio", "duoi": "wav",
@@ -128,13 +131,15 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     if ctx is not None and getattr(ctx, "progress", None):
         ctx.progress(95, _t('Đang lưu kết quả'))
 
-    return {
-        "phan": phan,
-        "tom_tat": {**thoi_gian.tom_tat(ke_hoach),
-                    "ban_do": ban_do.sang_dict(),
-                    "so_cho_noi": ban_do.so_cho_noi,
-                    "master": do_duoc},
-    }
+    tom_tat = {**thoi_gian.tom_tat(ke_hoach),
+              "ban_do": ban_do.sang_dict(),
+              "so_cho_noi": ban_do.so_cho_noi,
+              "master": do_duoc}
+    # ⛔ Chi ghi khoa nay khi CO kep (N-55) — mot danh sach rong luon co mat se
+    #    lam moi bao cao cu (chua tung kep) khac bao cao moi mot cach vo nghia.
+    if he_so_da_kep:
+        tom_tat["he_so_co_gian_da_kep"] = he_so_da_kep
+    return {"phan": phan, "tom_tat": tom_tat}
 
 
 def _ban_do(db, kho: Storage, run, *, tong_giay: float):
@@ -167,7 +172,10 @@ def _ban_do(db, kho: Storage, run, *, tong_giay: float):
 
 def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
                    ban_do, van_tay_ke_hoach: str, ctx=None):
-    """Tron nen + cac doan tieng theo ke hoach. Tra `(khoa, do_duoc, van_tay)`."""
+    """Tron nen + cac doan tieng theo ke hoach.
+
+    Tra `(khoa, do_duoc, van_tay, da_kep)` — `da_kep` (N-55) liet ke moi doan
+    ma `he_so_co_gian` bi kep xuong tran thiet ke truoc khi vao `atempo`."""
     import tempfile
 
     from . import features
@@ -181,8 +189,40 @@ def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
 
     khoa_theo_ma = {str(d["ma"]): str(d.get("khoa") or "")
                     for d in (ban_ke.get("doan") or [])}
-    he_so_theo_ma = {str(d["ma"]): float(d.get("he_so_co_gian") or 1.0)
-                     for d in (ban_ke.get("doan") or [])}
+    # 🔴 **N-55 (25/09): `he_so_co_gian` cua mot doan `CAN_SUA` co the vuot xa
+    #    tran thiet ke.** `nan_cho_vua.ket_luan()` GHI he so THAT SU CAN cho
+    #    doan `CAN_SUA` — dung y, do la con so vong sua (`sua_chua`, chay khi
+    #    `LTT_ASV_QC_AI=1`) doc de biet can rut gon bao nhieu. ⛔ Nhung
+    #    `LTT_ASV_QC_AI` TAT theo mac dinh (quyet dinh gia,
+    #    `giai_doan_qc_ai.py`), nen KHONG lan chay nao chac chan di qua vong
+    #    sua truoc khi toi day. Mot he so vuot ca tran cung `atempo`
+    #    (`am_master.py`: `[0,5; 100]` MOT lan goi, KHONG chain) lam
+    #    `timing_align` chet cung ca lan chay — vi mot doan CHUA duoc sua.
+    #
+    # ⭐ Kep o TRAN THIET KE (`thoi_gian.TRAN_TANG_TOC`, khong phai tran cung
+    #    ky thuat cua `atempo`): vuot tran thiet ke la am thanh da bat dau
+    #    mat chat luong nghe duoc theo dung tai lieu tham khao (`thoi_gian.py`
+    #    §doc). ⛔ **KHONG im lang**: ghi log CANH BAO + kep vao
+    #    `tom_tat.he_so_co_gian_da_kep` (giai doan nay tra ve trong outputs)
+    #    de ai doc bao cao van hanh thay duoc — mot doan bi kep se ra tieng
+    #    LECH thoi luong ke hoach thay vi lam CHET ca lan chay, va dau vet o
+    #    lai trong so cai.
+    he_so_theo_ma: dict[str, float] = {}
+    da_kep: list[dict] = []
+    for d in (ban_ke.get("doan") or []):
+        ma = str(d["ma"])
+        h = float(d.get("he_so_co_gian") or 1.0)
+        h_kep = max(1.0 / thoi_gian.TRAN_TANG_TOC,
+                   min(thoi_gian.TRAN_TANG_TOC, h))
+        if abs(h_kep - h) > 1e-6:
+            log.warning(
+                "asv timing_align: doan %s co he_so_co_gian=%.4f vuot tran "
+                "thiet ke %.2f (CAN_SUA chua duoc vong sua xu ly - QC_AI co "
+                "the dang tat) - kep xuong %.4f de lan chay khong chet",
+                ma, h, thoi_gian.TRAN_TANG_TOC, h_kep)
+            da_kep.append({"ma": ma, "he_so_can": round(h, 4),
+                           "he_so_da_kep": round(h_kep, 4)})
+        he_so_theo_ma[ma] = h_kep
 
     dat = [d for d in (ke_hoach.get("doan") or []) if int(d.get("dai_ms") or 0) > 0]
     if not dat:
@@ -243,4 +283,4 @@ def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
         with open(dich, "rb") as f:
             kho.put(khoa, f, content_type="audio/wav")
 
-    return khoa, do_duoc, vt
+    return khoa, do_duoc, vt, da_kep
