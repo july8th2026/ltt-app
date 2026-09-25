@@ -1,6 +1,16 @@
 # Chuẩn hoá danh tính VPS — máy mới tự đúng, máy cũ được kéo về chuẩn
 
-Ngày 2026-09-25. Làn `phien/vps-chuan-hoa`, dải test **3500–3599**.
+Ngày 2026-09-25. Làn `phien/vps-chuan-hoa`, dải test **4000–4003** (đã dùng hết).
+
+> ⚠️ **Dải này là một BẢN KHAI, không phải một suy diễn.** `cay_rieng.py` cấp
+> cho làn này **3500–3599** dựa trên ảnh chụp lúc tạo (cao nhất khi đó: 3400).
+> Sau đó làn wf gộp `main` mang theo `test_3500_wf_connector_ranh_gioi` …
+> `test_3505_wf_flow_d_poll_pg`, và bốn tệp ở đây trùng ngay 3500–3503. Không ai
+> làm sai — công cụ **suy dải từ ảnh chụp và không giữ chỗ**, nên hai làn tạo
+> gần nhau là trùng. Đây là lần **thứ hai trong hai ngày** (lần trước: 2920–2923
+> giữa hai làn wf).
+>
+> Dải đang được các làn khác khai: **4100–4199** (wf-v2, `2026-09-25-wf-v2-VAN-HANH.md` §1.4).
 
 ## Vì sao
 
