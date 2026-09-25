@@ -1069,6 +1069,12 @@ def _cau_hinh_may_trong(may: VpsInstance, plan, img, iso: str) -> dict:
         #    cham hon CPU that. `host` cho khach dung dung con CPU dang co.
         #    Cum chi co MOT node nen khong vuong live migration.
         "cpu": "host",
+        # 🔴 Do 25/09/2026: host Proxmox khoi dong lai luc ~22:04, `startall` bat
+        #    lai VM 100-107 + 199 (deu co `onboot=1`) nhung KHONG bat may khach —
+        #    chung khong co co nay. Hai may khach nam tat **17,4 gio** trong khi
+        #    khach van bi tinh tien, va khong mot tin hieu nao noi ra.
+        # ⇒ VPS luon mo (chu du an chot 25/09): may khach phai tu len cung host.
+        "onboot": 1,
     }
     return cau_hinh
 

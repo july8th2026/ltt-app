@@ -119,7 +119,11 @@
        Trước: Console đỏ kẹp giữa các nút viền, trông như một nút ngẫu nhiên. #}
     <div class="vps-hd">
       {% if may.trang_thai == "da_tat" %}
-        {# Máy đã tắt: "Bật" là việc duy nhất đáng làm, nên nó là nút CHÍNH. #}
+        {# Máy đã tắt: "Bật" là việc duy nhất đáng làm, nên nó là nút CHÍNH.
+           ⚠️ Từ 25/09 khách KHÔNG tự đưa máy vào trạng thái này được nữa; nhánh
+           này còn lại cho máy tắt vì lý do ngoài ý muốn (host reboot, VM crash)
+           trong lúc vòng bảo trì chưa kịp bật lại. Giữ nút để khách không phải
+           chờ một vòng. #}
         <form method="post" action="{{ app.route_prefix }}/{{ may.id }}/bat">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <button class="btn btn-may" type="submit">{{ _("Bật") }}</button>
@@ -138,20 +142,22 @@
            nút vô hiệu hoá webhook ở khu API, nơi bản dịch đúng là "Disable" —
            sai hẳn nghĩa với một cái máy. Cùng lớp lỗi với `"Cấu hình"` bị dịch
            thành "Settings". #}
-        {% for hanh_dong, nhan_nut in [("khoi-dong-lai", _("Khởi động lại")),
-                                       ("tat", _("Tắt máy"))] %}
-        <form method="post" action="{{ app.route_prefix }}/{{ may.id }}/{{ hanh_dong }}">
+        {# 🔴 25/09/2026: KHÔNG còn nút "Tắt máy". VPS luôn mở (chủ dự án chốt) —
+           máy chạy liên tục trong chu kỳ đã trả, và không có trạng thái "đã tắt"
+           để khách rơi vào. Trước đó, một lần host Proxmox khởi động lại đã để
+           hai máy khách nằm tắt 17,4 giờ trong khi vẫn tính tiền. #}
+        <form method="post" action="{{ app.route_prefix }}/{{ may.id }}/khoi-dong-lai">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <button class="btn btn-ghost" type="submit">{{ nhan_nut }}</button>
+          <button class="btn btn-ghost" type="submit">{{ _("Khởi động lại") }}</button>
         </form>
-        {% endfor %}
         {% if goi_y_tat_cung %}
-        {# Chỉ hiện sau khi tắt mềm vừa thất bại (R21): rút điện là quyết định có
-           thể mất dữ liệu, nên khách tự bấm và xác nhận, không tự động. #}
-        <form method="post" action="{{ app.route_prefix }}/{{ may.id }}/tat-cung"
-              onsubmit="return confirm('{{ _("Tắt cứng giống rút điện: dữ liệu chưa ghi xuống đĩa có thể mất. Tiếp tục?") }}');">
+        {# Chỉ hiện sau khi khởi động lại mềm vừa thất bại (R21): rút điện có thể
+           mất dữ liệu chưa ghi, nên khách tự bấm và xác nhận. Khác bản cũ ở KẾT
+           QUẢ: máy bật lại ngay, không nằm tắt. #}
+        <form method="post" action="{{ app.route_prefix }}/{{ may.id }}/khoi-dong-lai-cung"
+              onsubmit="return confirm('{{ _("Khởi động lại cứng giống rút điện rồi cắm lại: dữ liệu chưa ghi xuống đĩa có thể mất. Tiếp tục?") }}');">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <button class="btn btn-ghost vps-nut-nguy" type="submit">{{ _("Tắt cứng") }}</button>
+          <button class="btn btn-ghost vps-nut-nguy" type="submit">{{ _("Khởi động lại cứng") }}</button>
         </form>
         {% endif %}
         </div>

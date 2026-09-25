@@ -262,6 +262,14 @@ CONG_QUAN_TRI = 22
 #: chuan la viec cua nguoi van hanh, khong phai ly do dong cua hang.
 THANH_PHAN_CHUAN_HOA = "chuan_hoa_may"
 
+#: Tran so lan he thong tu bat lai MOT may trong 24 gio.
+#:
+#: ⚠️ Mot may **khong boot duoc** se bi bat lai moi luot, mai mai, va no **im
+#:    lang thanh cong** o phia lenh (`qmstart` tra OK, may tat lai ngay sau do).
+#:    Khong co tran thi day khong phai mot ban va tu chua — no la mot vong lap
+#:    vo tan khong ai nhin thay. Cham tran ⇒ dung tay, va con so do la tin hieu.
+TRAN_TU_BAT_MOI_NGAY = 3
+
 #: Nhip kiem chuan hoa: mot ngay. MOC RIENG — ba phep soi truoc tung dung chung
 #: mot moc va phep chay truoc khoa hai phep kia 24 gio trong im lang (24/09).
 KIEM_CHUAN_HOA_MOI_GIAY = 24 * 3600
@@ -573,7 +581,107 @@ def _kiem_cong_quan_tri(db, profile, *, mo_cong=None, now=None) -> int:
     return len(lo)
 
 
-def _kiem_chuan_hoa(db, profile, *, doc_cpu=None, doc_fw=None, now=None) -> int:
+def _bat_lai_may_muon_chay(db, profile, *, doc_dien=None, bat=None,
+                           now=None) -> int:
+    """Bat lai may **muon chay** ma dang tat. Tra so may da bat.
+
+    🔴 Do 25/09/2026: host Proxmox khoi dong lai, `startall` bat lai VM cua chu
+       nha (co `onboot=1`) nhung KHONG bat may khach — chung nam tat **17,4 gio**
+       trong khi khach van bi tinh tien. `onboot` sua dung goc do, nhung no khong
+       phu cac duong khac: VM crash, OOM, mot `qmstart` hong, tat tay tren host.
+
+    ## Bon cua, va moi cua chan mot cach hong khac nhau
+
+    1. `dien_mong_muon == chay` — tu 25/09 khach khong con nut tat, nen dieu nay
+       gan nhu luon dung; giu phep kiem vi **he thong** van tat may (treo het han,
+       cach ly, xoa).
+    2. Do duoc dien la `tat`. ⛔ `khong_ro` la mot lan hoi THAT BAI, khong phai
+       bang chung may dang tat — bat mot may co the dang chay la cach bien mot
+       lan mat mang thanh mot su co.
+    3. May khong dang co thao tac chay do (`dang_ban`) — ⛔ khong chen vao giua
+       mot lenh cua khach.
+    4. Vong doi la `hoat_dong`. May `loi`/`da_xoa`/`bi_treo` (het tien) ma bat
+       lai la di nguoc nghiep vu.
+
+    `doc_dien(vmid)` / `bat(vmid)` tiem duoc de do bang test.
+    """
+    from datetime import datetime, timedelta, timezone
+
+    from sqlalchemy import func, select
+
+    from apps.vps import trang_thai_may as tt
+    from apps.vps.services import provisioning
+    from apps.vps.tables import VpsEvent, VpsInstance
+
+    bay_gio = now or datetime.now(timezone.utc)
+    if doc_dien is None or bat is None:
+        from apps.vps.services import tac_vu
+
+        cli = backend_factory.compute_backend(profile).client
+        doc_dien = doc_dien or (lambda vmid, _c=cli: tac_vu.doc_dien(_c, vmid))
+        bat = bat or (lambda vmid, _c=cli: _c.bat(int(vmid)))
+
+    da_bat = 0
+    for m in db.execute(select(VpsInstance).where(
+            VpsInstance.infrastructure_profile_id == profile.id,
+            VpsInstance.vong_doi == tt.HOAT_DONG,
+            VpsInstance.trang_thai.not_in(("loi", "da_xoa", "bi_treo")),
+            VpsInstance.vmid.is_not(None))).scalars():
+        if str(m.dien_mong_muon or "") != tt.CHAY or tt.dang_ban(m):
+            continue
+        if doc_dien(m.vmid) != tt.TAT:
+            continue
+        so_lan = db.execute(select(func.count()).select_from(VpsEvent).where(
+            VpsEvent.instance_id == m.id, VpsEvent.loai == "tu_bat_lai",
+            VpsEvent.created_at > bay_gio - timedelta(days=1))).scalar_one()
+        if so_lan >= TRAN_TU_BAT_MOI_NGAY:
+            log.error("VPS: may %s cham tran tu bat (%s lan/24h) — KHONG bat nua, "
+                      "can nguoi xem vi sao no khong o lai trang thai chay",
+                      m.id, so_lan)
+            continue
+        try:
+            bat(m.vmid)
+        except (ChuaCauHinh, ProxmoxError) as exc:
+            log.warning("VPS: khong bat lai duoc may %s: %s", m.id, exc)
+            continue
+        provisioning.ghi_su_kien(db, m.id, "tu_bat_lai", boi="he_thong",
+                                 lan_thu=so_lan + 1)
+        da_bat += 1
+        log.info("VPS: da tu bat lai may %s (vmid %s), lan %s/24h",
+                 m.id, m.vmid, so_lan + 1)
+    return da_bat
+
+
+def _tu_bat_lai_dinh_ky(db, *, now=None) -> int:
+    """Chay `_bat_lai_may_muon_chay` cho profile mac dinh, MOI luot nang.
+
+    ⚠️ ⛔ Khong dat moc ngay nhu cac phep soi khac: mot may khach nam tat la mat
+       dich vu **dang tinh tien**, nen cho 24 gio moi nhin lai la sai hang. Nhip
+       cua `mot_luot` (mot gio) la dung tam cho no. Tran
+       `TRAN_TU_BAT_MOI_NGAY` la thu chan vong lap, khong phai cai moc.
+    """
+    from sqlalchemy import select
+
+    from apps.vps.tables import VpsInfrastructureProfile
+
+    profile = db.execute(select(VpsInfrastructureProfile).where(
+        VpsInfrastructureProfile.status == "ACTIVE",
+        VpsInfrastructureProfile.is_default.is_(True))).scalars().first()
+    if profile is None:
+        return 0
+    try:
+        so = _bat_lai_may_muon_chay(db, profile, now=now)
+        if so:
+            db.commit()
+        return so
+    except (ChuaCauHinh, ProxmoxError) as exc:
+        db.rollback()
+        log.warning("VPS: khong chay duoc vong tu bat lai: %s", exc)
+        return 0
+
+
+def _kiem_chuan_hoa(db, profile, *, doc_cpu=None, doc_fw=None,
+                    doc_onboot=None, now=None) -> int:
     """Dem may LECH chuan danh tinh, va ghi mot ban ghi suc khoe MOI luot.
 
     Ba hang muc, chot 25/09/2026 khi so voi Vultr: `cpu host` (khong con `kvm64`
@@ -595,17 +703,17 @@ def _kiem_chuan_hoa(db, profile, *, doc_cpu=None, doc_fw=None, now=None) -> int:
     from apps.vps.tables import VpsInstance, VpsProfileHealth
 
     bay_gio = now or datetime.now(timezone.utc)
-    if doc_cpu is None or doc_fw is None:
+    if doc_cpu is None or doc_fw is None or doc_onboot is None:
         cli = backend_factory.compute_backend(profile).client
         node = cli.config.node
 
-        def doc_cpu(vmid, _cli=cli, _node=node):
+        def _cfg(vmid, _cli=cli, _node=node):
             ra = _cli._goi("GET", f"/nodes/{_node}/qemu/{int(vmid)}/config")
-            d = ra.get("data", ra) if isinstance(ra, dict) else ra
-            return str((d or {}).get("cpu") or "kvm64")
+            return ra.get("data", ra) if isinstance(ra, dict) else ra
 
-        def doc_fw(vmid, _cli=cli):
-            return _cli.doc_firewall(int(vmid))
+        doc_cpu = doc_cpu or (lambda vmid: str((_cfg(vmid) or {}).get("cpu") or "kvm64"))
+        doc_onboot = doc_onboot or (lambda vmid: str((_cfg(vmid) or {}).get("onboot") or "0"))
+        doc_fw = doc_fw or (lambda vmid, _cli=cli: _cli.doc_firewall(int(vmid)))
 
     lech: list[str] = []
     for m in db.execute(select(VpsInstance).where(
@@ -614,8 +722,13 @@ def _kiem_chuan_hoa(db, profile, *, doc_cpu=None, doc_fw=None, now=None) -> int:
         if not m.vmid:
             continue
         thieu = []
-        if not str(doc_cpu(m.vmid)).startswith("host"):
+        cfg_cpu, cfg_onboot = doc_cpu(m.vmid), doc_onboot(m.vmid)
+        if not str(cfg_cpu).startswith("host"):
             thieu.append("cpu")
+        if str(cfg_onboot) not in ("1", "True"):
+            # 🔴 Thieu co nay = host reboot thi may khach khong tu len. Do that
+            #    25/09: hai may nam tat 17,4 gio sau mot lan host khoi dong lai.
+            thieu.append("onboot")
         fw = doc_fw(m.vmid) or {}
         if not all(str(fw.get(k, "")).lower() in ("1", "true")
                    for k in ("enable", "ipfilter", "macfilter")):
@@ -628,7 +741,7 @@ def _kiem_chuan_hoa(db, profile, *, doc_cpu=None, doc_fw=None, now=None) -> int:
         tom_tat = f"{len(lech)} may lech chuan danh tinh: {', '.join(lech[:8])}"
     else:
         trang_thai = "HEALTHY"
-        tom_tat = "moi may dung chuan danh tinh (cpu host + chong gia mao)"
+        tom_tat = "moi may dung chuan danh tinh (cpu host + chong gia mao + onboot)"
     db.add(VpsProfileHealth(
         infrastructure_profile_id=profile.id, component=THANH_PHAN_CHUAN_HOA,
         status=trang_thai, summary=tom_tat[:300],
@@ -1167,6 +1280,7 @@ def mot_luot(db, *, now=None) -> dict:
     ket_qua["dien_mo_coi"] = _doi_chieu_dinh_ky(db)
     ket_qua["cong_quan_tri_lo"] = _kiem_cong_dinh_ky(db)
     ket_qua["may_lech_chuan"] = _kiem_chuan_hoa_dinh_ky(db)
+    ket_qua["da_tu_bat_lai"] = _tu_bat_lai_dinh_ky(db, now=now)
     ket_qua["ip_rong_huy_gia_han"] = _chinh_sach_ip_rong(db, now=now)
 
     da_nop_xoa = 0

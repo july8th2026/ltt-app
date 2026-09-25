@@ -122,6 +122,11 @@ SU_KIEN = {
     "xin_khoi_dong_lai": N_("Yêu cầu khởi động lại"),
     "xin_khoi_phuc": N_("Yêu cầu khôi phục ảnh chụp"),
     "tao_xong": N_("Máy đã sẵn sàng"),
+    # 25/09: hệ thống tự bật lại máy "muốn chạy" mà đang tắt (host khởi
+    # động lại, VM crash). Khách phải ĐỌC được điều này trong nhật ký —
+    # một máy tự khởi động lại mà không có dòng nào giải thích là một
+    # bí ẩn khách sẽ mở phiếu hỗ trợ để hỏi.
+    "tu_bat_lai": N_("Hệ thống đã bật lại máy"),
     "thu_phi": N_("Đã thu phí một chu kỳ"),
     "hoan_tien": N_("Đã hoàn credit"),
     "bat": N_("Máy được bật"),

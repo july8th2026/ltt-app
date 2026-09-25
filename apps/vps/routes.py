@@ -578,24 +578,29 @@ def bat_may(instance_id: str, request: Request, csrf_token: str = Form(...),
     return _xin_lenh(request, csrf_token, instance_id, db, "bat")
 
 
-@router.post("/{instance_id}/tat")
-def tat_may(instance_id: str, request: Request, csrf_token: str = Form(...),
-            _g: None = Depends(_cong_co), _u: str = Depends(require_login),
-            db=Depends(get_db)):
-    return _xin_lenh(request, csrf_token, instance_id, db, "tat")
+# 🔴 25/09/2026: khach KHONG con nut tat. "VPS luon mo" (chu du an chot) — may
+#    chay lien tuc trong chu ky da tra, va khong co trang thai "da tat" de khach
+#    roi vao. Duong cuu ho khi may treo la **khoi dong lai**, khong phai tat.
+#
+# ⛔ Bo nut cua KHACH khong phai bo kha nang cua HE THONG: `dieu_khien.LENH` van
+#    giu `tat`/`tat_cung` cho treo-het-han, cach ly va xoa may.
+#
+# ⭐ Va quyet dinh nay xoa luon mot xung dot thiet ke: vong bao tri tu bat lai may
+#    "muon chay ma dang tat" khong bao gio con chong lai y khach, vi khach khong
+#    con y muon tat nao de chong.
 
 
-@router.post("/{instance_id}/tat-cung")
-def tat_cung_may(instance_id: str, request: Request, csrf_token: str = Form(...),
-                 _g: None = Depends(_cong_co), _u: str = Depends(require_login),
-                 db=Depends(get_db)):
-    """Rút điện — khách tự quyết sau khi tắt mềm thất bại (`dieu_khien` docstring).
+@router.post("/{instance_id}/khoi-dong-lai-cung")
+def khoi_dong_lai_cung(instance_id: str, request: Request,
+                       csrf_token: str = Form(...),
+                       _g: None = Depends(_cong_co),
+                       _u: str = Depends(require_login), db=Depends(get_db)):
+    """Rut dien roi bat lai — duong cuu ho khi khoi dong lai mem that bai.
 
-    Nút này đã được hứa trong thiết kế nhưng chưa từng có route; đo 16/09 trên
-    production, tắt mềm VM chưa cài Windows quá hạn và khách không còn đường nào
-    để tắt máy (R21).
+    Thay cho nut "Tat cung" cu (25/09): khach van can mot duong khi may treo,
+    nhung ket qua phai la may **dang chay**, khong phai may da tat.
     """
-    return _xin_lenh(request, csrf_token, instance_id, db, "tat_cung")
+    return _xin_lenh(request, csrf_token, instance_id, db, "khoi_dong_lai_cung")
 
 
 @router.post("/{instance_id}/khoi-dong-lai")
@@ -919,6 +924,36 @@ def trang_chi_tiet(instance_id: str, request: Request,
 
 # ── console trong trình duyệt ────────────────────────────────────────────────
 
+def _dien_hien_tai(db, may) -> str:
+    """Điện ĐO ĐƯỢC của một máy, hoặc `khong_ro` khi không hỏi được."""
+    from apps.vps import trang_thai_may as tt
+    from apps.vps.services import tac_vu
+
+    try:
+        return tac_vu.doc_dien(_instance_client(db, may), int(may.vmid))
+    except Exception:                          # noqa: BLE001 - chan doan, khong chan
+        return tt.KHONG_RO
+
+
+def _cau_console_hong(*, dien: str) -> str:
+    """Câu cho khách khi console không mở được — **phân biệt theo nguyên nhân**.
+
+    🔴 Đo 25/09/2026: chủ dự án bấm "Kết nối lại", Proxmox ghi `vncproxy Failed
+       to run`, và trang trả *"Không mở được console lúc này. Thử lại sau ít
+       phút."* Máy đã tắt từ 17 giờ trước, nên câu ấy **đúng về sự việc, sai về
+       nguyên nhân** — và "thử lại sau ít phút" sẽ không bao giờ đúng.
+
+    ⛔ `khong_ro` là một lần hỏi THẤT BẠI, không phải bằng chứng máy đang tắt:
+       nói "máy đang tắt" lúc đó là bịa một nguyên nhân.
+    """
+    from apps.vps import trang_thai_may as tt
+
+    if dien == tt.TAT:
+        return _t("Máy đang tắt nên console không có gì để hiện. Bấm "
+                  "<strong>Bật</strong> ở trang máy rồi mở lại console.")
+    return _t("Không mở được console lúc này. Thử lại sau ít phút.")
+
+
 @router.get("/{instance_id}/console", response_class=HTMLResponse)
 def trang_console(instance_id: str, request: Request,
                   _g: None = Depends(_cong_co),
@@ -943,7 +978,9 @@ def trang_console(instance_id: str, request: Request,
         ve_pve = _instance_client(db, may).ve_console(int(may.vmid))
     except (ProxmoxError, ChuaCauHinh, profiles.ProfileNotReady) as exc:
         log.warning("VPS console: khong mo duoc phien VNC cho %s: %s", may.id, exc)
-        return _ve_trang(_t("Không mở được console lúc này. Thử lại sau ít phút."))
+        # Hỏi ĐIỆN chỉ ở đây, trong nhánh hỏng: đường bình thường không tốn thêm
+        # một lời gọi Proxmox cho một câu chỉ dùng lúc lỗi.
+        return _ve_trang(_cau_console_hong(dien=_dien_hien_tai(db, may)))
 
     ip = db.execute(
         select(VpsIp).where(VpsIp.instance_id == may.id)).scalars().first()

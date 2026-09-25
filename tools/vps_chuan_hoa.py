@@ -56,7 +56,7 @@ def main(argv=None) -> int:
         may, ip_theo_may = _may_va_ip(db)
 
         print(f"{'vmid':>6}  {'ten':<16} {'cpu':<10} {'firewall':<10} "
-              f"{'ip':<16} {'ptr'}")
+              f"{'onboot':<7} {'ip':<16} {'ptr'}")
         cho_tat_bat, da_sua = [], 0
         for m in sorted(may, key=lambda x: x.vmid or 0):
             if not m.vmid:
@@ -65,6 +65,7 @@ def main(argv=None) -> int:
             cfg = cli._goi("GET", f"/nodes/{node}/qemu/{int(m.vmid)}/config")
             d = cfg.get("data", cfg) if isinstance(cfg, dict) else cfg
             cpu = str(d.get("cpu") or "kvm64(mac dinh)")
+            onboot = str(d.get("onboot") or "0")
             fw = cli.doc_firewall(int(m.vmid))
             fw_ok = all(str(fw.get(k, "")).lower() in ("1", "true")
                         for k in ("enable", "ipfilter", "macfilter"))
@@ -80,13 +81,19 @@ def main(argv=None) -> int:
                        rdns.DANG_LAN: "dang lan truyen",
                        rdns.CHUA_DAT: "CHUA dat"}[tt]
             print(f"{m.vmid:>6}  {str(m.ten)[:16]:<16} {cpu:<10} "
-                  f"{'dat' if fw_ok else 'CHUA':<10} {ip or '-':<16} {ptr}")
+                  f"{'dat' if fw_ok else 'CHUA':<10} "
+                  f"{'co' if onboot == '1' else 'CHUA':<7} {ip or '-':<16} {ptr}")
 
             if not a.ap:
                 continue
             if cpu.startswith("kvm64"):
                 cli.dat_cau_hinh(int(m.vmid), cpu="host")
                 cho_tat_bat.append(m.vmid)
+                da_sua += 1
+            if onboot != "1":
+                # 🔴 Thieu co nay = host reboot thi may khach nam tat cho toi khi
+                #    co nguoi bat tay. Do that 25/09: 17,4 gio.
+                cli.dat_cau_hinh(int(m.vmid), onboot=1)
                 da_sua += 1
             if not fw_ok:
                 jobs._dat_firewall_may_khach(cli, int(m.vmid))

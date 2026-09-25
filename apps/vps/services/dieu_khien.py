@@ -70,6 +70,9 @@ LENH = {
     "tat": (tt.DANG_TAT, tt.TAT),
     "tat_cung": (tt.DANG_TAT, tt.TAT),
     "khoi_dong_lai": (tt.DANG_KD_LAI, tt.CHAY),
+    # 25/09: duong cuu ho khi khoi dong lai mem that bai. Ket qua mong muon la
+    # may **dang chay** — khac han `tat_cung`, thu ma khach khong con goi duoc.
+    "khoi_dong_lai_cung": (tt.DANG_KD_LAI, tt.CHAY),
 }
 
 #: Bước con của một thao tác. **Mã**, không phải câu tiếng Việt: `nhan.BUOC` dịch

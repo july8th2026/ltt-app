@@ -65,7 +65,8 @@ def test_may_dung_chuan_thi_HEALTHY(db):
     bao_tri._kiem_chuan_hoa(db, p,
                             doc_cpu=lambda vmid: "host",
                             doc_fw=lambda vmid: {"enable": 1, "ipfilter": 1,
-                                                 "macfilter": 1})
+                                                 "macfilter": 1},
+                            doc_onboot=lambda vmid: "1")
     db.commit()
     ban = _ban_ghi(db)
     assert len(ban) == 1 and ban[0].status == "HEALTHY"
@@ -78,7 +79,8 @@ def test_may_con_kvm64_thi_keu_va_NEU_TEN(db):
     bao_tri._kiem_chuan_hoa(db, p,
                             doc_cpu=lambda vmid: "kvm64",
                             doc_fw=lambda vmid: {"enable": 1, "ipfilter": 1,
-                                                 "macfilter": 1})
+                                                 "macfilter": 1},
+                            doc_onboot=lambda vmid: "1")
     db.commit()
     ban = _ban_ghi(db)
     assert ban[0].status == "DEGRADED"
@@ -90,7 +92,7 @@ def test_may_tat_chong_gia_mao_thi_keu(db):
 
     p = _coi(db)
     bao_tri._kiem_chuan_hoa(db, p, doc_cpu=lambda vmid: "host",
-                            doc_fw=lambda vmid: {})
+                            doc_fw=lambda vmid: {}, doc_onboot=lambda vmid: "1")
     db.commit()
     assert _ban_ghi(db)[0].status == "DEGRADED"
     assert "208" in _ban_ghi(db)[0].summary
@@ -104,7 +106,8 @@ def test_MOI_luot_deu_ghi_mot_ban_ghi(db):
     for _ in range(3):
         bao_tri._kiem_chuan_hoa(db, p, doc_cpu=lambda vmid: "host",
                                 doc_fw=lambda vmid: {"enable": 1, "ipfilter": 1,
-                                                     "macfilter": 1})
+                                                     "macfilter": 1},
+                                doc_onboot=lambda vmid: "1")
     db.commit()
     assert len(_ban_ghi(db)) == 3
 
@@ -127,3 +130,19 @@ def test_moc_RIENG_khong_dung_chung_voi_phep_soi_khac():
                if isinstance(n, ast.FunctionDef) and n.name == "_kiem_chuan_hoa_dinh_ky")
     ten_global = {t for n in ast.walk(ham) if isinstance(n, ast.Global) for t in n.names}
     assert ten_global == {"_moc_chuan_hoa"}, ten_global
+
+
+def test_thieu_onboot_thi_keu(db):
+    """🔴 Hạng mục thứ ba (25/09): thiếu `onboot` ⇒ host reboot là khách mất máy.
+    Hai máy đã nằm tắt **17,4 giờ** vì đúng cờ này."""
+    from apps.vps import bao_tri
+
+    p = _coi(db)
+    bao_tri._kiem_chuan_hoa(db, p, doc_cpu=lambda vmid: "host",
+                            doc_fw=lambda vmid: {"enable": 1, "ipfilter": 1,
+                                                 "macfilter": 1},
+                            doc_onboot=lambda vmid: "0")
+    db.commit()
+    ban = _ban_ghi(db)
+    assert ban[0].status == "DEGRADED"
+    assert "onboot" in ban[0].summary

@@ -150,6 +150,16 @@ def NOI_DUNG() -> list[dict]:
             #    khoản khai cổng RA bị chặn nhưng chưa từng khai cổng VÀO — nên
             #    một khách dựng web trên máy sẽ thấy nó không ra được Internet mà
             #    không có chỗ nào nói trước. Bán một thứ khác với thứ giao.
+            # 🔴 25/09/2026: host Proxmox khoi dong lai va hai may khach nam tat
+            #    17,4 gio vi thieu `onboot` — khach van bi tinh tien suot thoi gian
+            #    do. Nay may khach luon mo; dieu khoan phai noi ra ca hai ve: may
+            #    chay lien tuc, VA khong co cach tam dung tinh phi bang cach tat.
+            _p(_t("<strong>Máy chạy liên tục trong suốt chu kỳ bạn đã trả.</strong> "
+                  "Bạn khởi động lại được bất cứ lúc nào, nhưng <strong>không có "
+                  "chế độ tắt máy để tạm dừng tính phí</strong>: tài nguyên (CPU, "
+                  "RAM, đĩa, địa chỉ IP) vẫn được giữ riêng cho bạn kể cả khi bạn "
+                  "không dùng tới. Muốn dừng trả tiền thì xoá máy — và xoá là "
+                  "không khôi phục được.")),
             _p(_t("<strong>Chỉ cổng %(rdp)s (RDP) đi vào máy bạn được mở.</strong> "
                   "Mọi cổng đến khác đều bị chặn ở gateway: một dịch vụ bạn dựng "
                   "bên trong máy — web, WinRM, máy chủ game — sẽ chạy bình thường "

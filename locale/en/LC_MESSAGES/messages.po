@@ -21404,3 +21404,18 @@ msgstr "This run has no subtitle file."
 
 msgid "Đã tắt nhạc nền — không còn gì để chỉnh mức."
 msgstr "Background music is off - there is no level left to adjust."
+
+msgid "Hệ thống đã bật lại máy"
+msgstr "The system powered the machine back on"
+
+msgid "Khởi động lại cứng"
+msgstr "Hard restart"
+
+msgid "Khởi động lại cứng giống rút điện rồi cắm lại: dữ liệu chưa ghi xuống đĩa có thể mất. Tiếp tục?"
+msgstr "A hard restart is like pulling the plug and plugging it back in: data not yet written to disk may be lost. Continue?"
+
+msgid "<strong>Máy chạy liên tục trong suốt chu kỳ bạn đã trả.</strong> Bạn khởi động lại được bất cứ lúc nào, nhưng <strong>không có chế độ tắt máy để tạm dừng tính phí</strong>: tài nguyên (CPU, RAM, đĩa, địa chỉ IP) vẫn được giữ riêng cho bạn kể cả khi bạn không dùng tới. Muốn dừng trả tiền thì xoá máy — và xoá là không khôi phục được."
+msgstr "<strong>Your machine runs continuously for the whole cycle you paid for.</strong> You can restart it at any time, but <strong>there is no power-off mode to pause billing</strong>: the resources (CPU, RAM, disk, IP address) stay reserved for you even when you are not using them. To stop paying, delete the machine — and deletion cannot be undone."
+
+msgid "Máy đang tắt nên console không có gì để hiện. Bấm <strong>Bật</strong> ở trang máy rồi mở lại console."
+msgstr "The machine is powered off, so there is nothing for the console to show. Press <strong>Start</strong> on the machine page, then open the console again."
