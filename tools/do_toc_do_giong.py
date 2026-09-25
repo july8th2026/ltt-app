@@ -379,6 +379,13 @@ def _do_vong_dau(doan: tuple[dict, ...], *, giong: str, vong: int,
                         "khe": m["khe"],
                         "lech_khe": round(le, 4),
                         "can_nan": bool(nan_cho_vua.can_nan(giay_am, m["khe"]))
+                        if giay_am else True,
+                        # ⭐ 25/09: "khong vua" va "dang tra tien de viet lai" la
+                        #    HAI cau hoi (chieu NGAN khong con goi model). Bo do
+                        #    phai tach duoc chung, khong thi khong ai tinh duoc
+                        #    so luot goi may B tiet kiem duoc.
+                        "nen_viet_lai":
+                        bool(nan_cho_vua.nen_viet_lai(giay_am, m["khe"]))
                         if giay_am else True}
                 # ⭐ Giu tep 16 kHz de bo do WER/CER (`--che-do wer`) cham tren
                 #    DUNG tieng vua sinh — khong phai mot ban do lai sau do.
@@ -456,6 +463,10 @@ def _tom_tat_vong_dau(vd: list[dict]) -> dict:
         "so_doan": len(ok),
         "so_can_nan": sum(1 for d in ok if d["can_nan"]),
         "ti_le_can_nan": round(sum(1 for d in ok if d["can_nan"]) / len(ok), 3),
+        # ⭐ So LUOT GOI may B thuc su — chieu NGAN khong goi (chot 25/09).
+        "so_nen_viet_lai": sum(1 for d in ok if d.get("nen_viet_lai")),
+        "ti_le_nen_viet_lai": round(
+            sum(1 for d in ok if d.get("nen_viet_lai")) / len(ok), 3),
         "lech_khe_trung_binh": round(statistics.mean(
             d["lech_khe"] for d in ok), 4),
         "lech_khe_lon_nhat": round(max(d["lech_khe"] for d in ok), 4),

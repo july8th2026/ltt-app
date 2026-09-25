@@ -273,6 +273,13 @@ Mỗi đề nghị kèm **một con số hoặc một nguồn**. Xếp theo tỉ
 
 ### Đ1 — Cho `DUNG_SAI_DAI` một **SÀN TUYỆT ĐỐI bằng một âm tiết**
 
+> ✅ **ĐÃ LẮP 25/09** — `nan_cho_vua.SAN_DUNG_SAI_GIAY = 0,256` + `dung_sai_giay()`.
+> ⚠️ Sàn chốt là **0,256 s**, ⛔ **không** phải `1/NHIP` = 299 ms như đề nghị này viết:
+> `NHIP` là nhịp **trung bình** nên nó gồm cả đoạn chặn 0,188 s của câu, còn câu hỏi ở
+> đây là **chi phí BIÊN** của một âm tiết — hồi quy `giay = 0,188 + n × 0,256`
+> (R² = 0,927, n = 47). Bằng chứng đo được: `tom_tat()["tung_luot_doc"]`
+> (`tests/test_4600_asv_san_dung_sai.py`).
+
 **Số:** `0,08 × 1,71 s = 137 ms`, còn `1 / NHIP[vi] 3,35 = 299 ms`. Dung sai hiện tại là
 **0,46 âm tiết** ⇒ 100/106 đoạn (94 %) bị phán quyết ở độ chính xác hệ không có.
 
@@ -363,6 +370,11 @@ trông nó hạ được 55,7 %**, và ⛔ đừng tiêu một lượt A/B nào 
 nhắc trước khi Đ1 + Đ2 đã chạy.
 
 ### Đ5 — Bỏ vế VIẾT LẠI CHO DÀI RA (`DUNG_SAI_NGAN`)
+
+> ✅ **ĐÃ LẮP 25/09** — `nan_cho_vua.nen_viet_lai()` chặn đường gọi LLM cho chiều ngắn,
+> và `loi_nhac_nan()` **ném** nếu bị gọi cho một đoạn không dài hơn khe (bất biến ở
+> BIÊN, không chỉ ở vòng lặp). ⛔ `DUNG_SAI_NGAN = 0,35` **giữ nguyên** — nó còn dùng để
+> phân loại/báo cáo: một đoạn quá ngắn vẫn đọc ra là "không vừa" trong `tom_tat`.
 
 **Số:** 15/59 đoạn vào nấc 2 vì **quá NGẮN** (brief). `can_nan()` trả `True` khi
 `lech < −0,35`, và `loi_nhac_nan()` khi đó yêu cầu *"VIET DAY DAN HON"*

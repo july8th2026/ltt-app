@@ -142,6 +142,11 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     #    ve dung ban da bi bao sai. Xem `_lan_doc_lai`.
     lan_lai = _lan_doc_lai(db, run)
     cac_nan: list[nan_cho_vua.KetQuaNan] = []
+    # ⭐ Buoc 0.5 (25/09): MOI LUOT DOC mot dong — giay DO DUOC luc ay, khong phai
+    #    giay cuoi cung. `cac_nan`/`tung_doan` chi giu giay sau khi da nan xong,
+    #    nen truoc buoc nay khong ai tinh duoc mot ban sua nguong tiet kiem bao
+    #    nhieu luot goi may B. Xem `nan_cho_vua.ban_ghi_luot_doc`.
+    luot_doc: list[dict] = []
     da_sinh = 0
     # 🔑 **Hai dong ho, va thieu chung thi khong ai sua duoc giai doan nay.**
     #
@@ -191,6 +196,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                 if lat.get("phan"):
                     phan.append(dict(lat["phan"]))
                 da_sinh += int(lat.get("so_luot_doc") or 0)
+                # ⭐ Lat cat truoc DA DOC that, chi khong phai trong luot nay:
+                #    khong mang ban ghi sang thi bao cao cua mot video 120 phut
+                #    (nhieu lat) chi noi ve lat cuoi.
+                luot_doc.extend(dict(d) for d in (lat.get("luot_doc") or []))
                 continue
 
             chu = str(m["chu"])
@@ -239,6 +248,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 
             lc.kiem(vi_tri=i - 1)
             sinh_truoc = da_sinh
+            # Ban ghi rieng cua doan nay, de luot NOI TIEP dung lai duoc.
+            luot_cua_doan: list[dict] = []
 
             # ── Bac thang nan cho vua (pha 15) ────────────────────────────
             #
@@ -257,8 +268,19 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                 tep.write_bytes(wav)
                 giay = giong_noi.kiem_tep_tieng(str(tep))
                 da_sinh += 1
+                # ⭐ Buoc 0.5: ghi NGAY sau khi do, TRUOC moi quyet dinh — mot
+                #    dong so lieu them ⛔ khong duoc doi mot quyet dinh nao, nen
+                #    no dung o day chu khong nam trong nhanh `if` nao.
+                _bg = nan_cho_vua.ban_ghi_luot_doc(m["ma"], vong=so_vong,
+                                                   giay=giay, khe=khe)
+                luot_doc.append(_bg)
+                luot_cua_doan.append(_bg)
 
-                if not nan_cho_vua.can_nan(giay, khe):
+                # 🔴 `nen_viet_lai`, KHONG `can_nan` (chot 25/09): mot doan qua
+                #    NGAN van "khong vua" (no vao `tom_tat` nhu the), nhung
+                #    ⛔ khong duoc goi model keo dai — `thoi_gian.lap_ke_hoach`
+                #    da biet nuot khoang lang, va 0/5 he khao sat co ve nay.
+                if not nan_cho_vua.nen_viet_lai(giay, khe):
                     break
                 if so_vong >= nan_cho_vua.VONG_TOI_DA:
                     break
@@ -323,6 +345,9 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                                                    "so_vong": so_vong,
                                                    "so_luot_doc":
                                                        da_sinh - sinh_truoc,
+                                                   # Buoc 0.5: ban ghi tung luot
+                                                   # doc cua doan nay.
+                                                   "luot_doc": luot_cua_doan,
                                                    "phan": phan_moi,
                                                    "ban_ke": ke_moi}})
             db.commit()
@@ -361,7 +386,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                 # ⭐ `gop_khe` (D5, `nan_thoi_luong.py`) tren DU LIEU THAT cua
                 #    chinh lan chay nay — bao cao, xem `_so_khe_neu_gop`.
                 "so_khe_neu_gop": _so_khe_neu_gop(muc),
-                **nan_cho_vua.tom_tat(cac_nan),
+                **nan_cho_vua.tom_tat(cac_nan, tung_luot_doc=luot_doc),
             },
         }
 
