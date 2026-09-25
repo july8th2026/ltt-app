@@ -74,6 +74,29 @@ def _ung_vien(khoa: str, schema: dict) -> list:
     return []            # không biên ⇒ tính theo mặc định (bỏ khoá)
 
 
+def _dinh_nghia_gia_co_dinh(loai: str):
+    """`NodeDefinition` của một node piece/connector (không bọc ToolSpec),
+    hoặc `None` — dùng riêng để BÁO GIÁ, không dùng cho biên dịch/nộp job.
+
+    ⭐ Import cục bộ + tra CẢ HAI nguồn (`nut_loi` cho `connector.*`,
+       `nut.dinh_nghia_piece` cho `piece.*`/`trigger.piece.*`) — cùng cách
+       `cau_noi._dinh_nghia` tra, để một node piece báo giá và nộp job đọc
+       CÙNG một `NodeDefinition`, không phải hai bản dò khác nhau.
+
+    ⛔ Chỉ trả về khi `job_type` nằm trong `JOB_TYPE_KHONG_TOOLSPEC`: một
+       node lõi khác có `thi_hanh="job"` (`ai.llm`…) vẫn phải đi đường
+       `cc.get(...)` cũ — hàm này không đụng tới giá của chúng.
+    """
+    from platform_core.workflow import nut, nut_loi
+
+    nd = nut_loi.tat_ca().get(loai)
+    if nd is None:
+        nd = nut.dinh_nghia_piece(loai)
+    if nd is not None and nd.job_type in nut.JOB_TYPE_KHONG_TOOLSPEC:
+        return nd
+    return None
+
+
 def _gia_node(node: dict, cc: dict[str, CongCu]) -> int:
     if str(node.get("type")) == LOAI_GOI_WF:
         # §7.2: *"subworkflow: `estimated_max` của version con"*.
@@ -106,6 +129,15 @@ def _gia_node(node: dict, cc: dict[str, CongCu]) -> int:
         return gia
     if node.get("thi_hanh") != "job":
         return 0
+    nd_co_dinh = _dinh_nghia_gia_co_dinh(str(node["type"]))
+    if nd_co_dinh is not None:
+        # Node `piece.*`/`connector.*` (nguồn 1 + 3, spec §4.5): KHÔNG bọc
+        # ToolSpec — `cc.get(...)` bên dưới sẽ luôn `None` cho chúng (và
+        # `str(type)[4:]` giả định tiền tố `"app."` sai hình dạng với
+        # `"piece."`/`"connector."`). Giá lấy TỪ `NodeDefinition.gia`, CÙNG
+        # con số mà `cau_noi._nop_job_connector` dùng để tính `gia_that` —
+        # hai chỗ đọc một nguồn, không phải hai bản sao.
+        return int(nd_co_dinh.gia.so) if nd_co_dinh.gia.kieu == "co_dinh" else 0
     ten_cong_cu = str(node["type"])[4:]
     tool = cc.get(ten_cong_cu)
     if tool is None:

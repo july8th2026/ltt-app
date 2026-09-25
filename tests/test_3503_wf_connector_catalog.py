@@ -154,13 +154,16 @@ def test_node_trigger_piece_nam_o_nhom_TRIGGERS():
         assert nd.category == "TRIGGERS"
 
 
-def test_node_piece_CHUA_publish_duoc():
-    """⛔ `bien_dich._node` chưa biết biên dịch `piece.*`. Bật cờ trước khi nó
-    xong là mời khách kéo một node mà `publish` sẽ từ chối."""
+def test_node_piece_publish_duoc_tu_25_09_lan_wfp():
+    """🔴 SỬA 25/09 (lan wfp, plan 08): `bien_dich._node` nay biên dịch được
+    `piece.*`/`trigger.piece.*` (qua `nut.dinh_nghia_piece`) và `cau_noi`
+    nộp job được qua `_nop_job_connector` (đã có từ P6, chỉ thiếu chỗ gọi
+    tới) — ba cửa từng khoá cờ này đã nối, xem
+    `docs/superpowers/plans/2026-09-25-wf-v2-VAN-HANH.md` lan wfp."""
     from platform_core.workflow import nut
     for nd in nut.tat_ca().values():
         if nd.job_type == nut.JOB_TYPE_PIECE:
-            assert nd.publish_duoc is False
+            assert nd.publish_duoc is True
 
 
 def test_job_type_connector_CO_CHU_trong_registry():

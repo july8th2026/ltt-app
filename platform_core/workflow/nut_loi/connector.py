@@ -9,12 +9,15 @@ một hạn mức:
 2. `connector.youtube.upload` — mã Python của ta (`youtube_upload.py`), vì
    piece YouTube của Activepieces **không có** action upload.
 
-## ⛔ `publish_duoc` còn `False` cho `piece.*`
+## `publish_duoc` của `piece.*` — BẬT 25/09 (lan wfp, plan 08)
 
-`bien_dich._node` chưa biết biên dịch `piece.*`, và `cau_noi` mới mở đường nộp
-job. Bật cờ trước khi hai chỗ đó xong là mời khách kéo một node mà `publish` sẽ
-từ chối. `connector.youtube.upload` thì bật: nó đi đúng đường job của
-`cau_noi._nop_job_connector`.
+Trước 25/09 cờ này khoá `False`: `bien_dich._node` chưa biết biên dịch
+`piece.*`, và `cau_noi` mới mở đường nộp job (`_nop_job_connector`, P6) chứ
+chưa có ai TRA ĐƯỢC một `NodeDefinition` piece để rẽ vào đó
+(`cau_noi._dinh_nghia` chỉ tra `nut_loi.tat_ca()` — một sổ không chứa node
+piece). Cả hai đã nối bằng `nut.dinh_nghia_piece` (xem `nut.py`), nên cờ này
+bật cùng `tu_piece`. `connector.youtube.upload` đã bật từ trước: nó đi đúng
+đường job của `cau_noi._nop_job_connector`.
 """
 from __future__ import annotations
 

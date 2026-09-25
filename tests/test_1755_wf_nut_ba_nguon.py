@@ -69,7 +69,10 @@ def test_nguon_piece_MAC_DINH_rong_va_allowlist_CO_TRAN(monkeypatch):
     assert nd.kind == "connector" and nd.category == "CONNECTORS"
     assert nd.thi_hanh == "job" and nd.credential == ("oauth2",)
     assert {"network", "credential"} <= nd.quyen
-    assert nd.publish_duoc is False
+    # 🔴 SUA 25/09 (lan wfp, plan 08): `bien_dich`/`cau_noi`/`bao_gia` da noi
+    #    duong cho `piece.*` (xem `tests/test_3503_wf_connector_catalog.py
+    #    ::test_node_piece_publish_duoc_tu_25_09_lan_wfp`).
+    assert nd.publish_duoc is True
 
 
 def test_trung_type_giua_hai_nguon_thi_NEM_khong_am_tham_de_len():

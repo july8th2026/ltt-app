@@ -90,6 +90,13 @@ def test_node_loi_chua_publish_duoc_thi_bao_ra_chu_khong_giau(api):
       - chốt **danh sách theo thứ tự** ⇒ vỡ khi thêm một mục;
       - đọc `trig[0]` ⇒ khẳng định về `publish_duoc` **trượt sang mục khác**
         khi thứ tự đổi, mà vẫn XANH. Nay chốt **theo tên**, không theo chỉ số.
+
+    🔴 SỬA 25/09 (lan wfp, plan 08): `trigger.piece.*` đã publish_duoc được
+       (xem `test_3503_wf_connector_catalog.py::
+       test_node_piece_publish_duoc_tu_25_09_lan_wfp`) — chỉ `trigger.manual`
+       (node LÕI thật, chưa có phần thi hành `inline`, khác hẳn piece) còn
+       khoá. Bài này giờ chốt CẢ HAI trạng thái, mỗi cái đúng tên của nó,
+       ⛔ không còn gộp chung một khẳng định `False` cho mọi phần tử.
     """
     body = api.get("/agent/api/v3/palette").json()
     trig = next(n for n in body["nhom"] if n["category"] == "TRIGGERS")["nut"]
@@ -108,7 +115,8 @@ def test_node_loi_chua_publish_duoc_thi_bao_ra_chu_khong_giau(api):
     # Điều bài này thật sự chốt: node CHƯA publish được thì palette **khai ra**,
     # ⛔ không giấu đi. Hỏi từng cái theo TÊN.
     for ten, x in theo_ten.items():
-        assert x["publish_duoc"] is False, ten
+        ky_vong = False if ten == "trigger.manual" else True
+        assert x["publish_duoc"] is ky_vong, ten
 
 
 def test_khong_lo_job_type_noi_bo_cua_provider(api):

@@ -248,14 +248,42 @@ def tu_piece(muc: dict) -> NodeDefinition:
         # ⛔ KHÔNG khai `ten_toolspec`, và đó là ĐÚNG: node piece bọc một
         #    *piece*, không bọc ToolSpec nào. `__post_init__` miễn cho nó
         #    theo `JOB_TYPE_PIECE` — tức theo BỘ THI HÀNH, không theo tên.
-        #    Hôm nay `cau_noi.nop_job` vẫn từ chối `piece.*` bằng
-        #    `LoiTienTo`; plan 08 phải mở đường riêng cho runner Node.
         thi_hanh="job", job_type=JOB_TYPE_PIECE,
         side_effect=str(muc.get("side_effect") or "external"),
         gia=Gia.co_dinh(int(muc.get("gia", 0) or 0)),
         credential=auth, quyen=frozenset(quyen),
         cho=("JOB",), ma_loi=MA_LOI_APP,
-        publish_duoc=False)
+        # 🔴 BẬT 25/09 (lan wfp, plan 08): `bien_dich._node` nay bien dich
+        #    duoc `piece.*`/`trigger.piece.*` (qua `dinh_nghia_piece` duoi
+        #    day) va `cau_noi.nop_job` nop duoc job that qua
+        #    `_nop_job_connector` (da co tu P6, chi thieu cho gap). Ba cho
+        #    tung khoa node nay o trang thai vo hieu (`nut_loi/connector.py`,
+        #    `bien_dich.py`, `cau_noi.py`) nay da noi day — xem
+        #    `docs/superpowers/plans/2026-09-25-wf-v2-VAN-HANH.md` lan wfp.
+        publish_duoc=True)
+
+
+def dinh_nghia_piece(loai: str) -> Optional[NodeDefinition]:
+    """`NodeDefinition` của một node piece theo ĐÚNG `type`, hoặc `None`.
+
+    ⭐ Nguồn DUY NHẤT mà `bien_dich`, `cau_noi`, `bao_gia` dùng để nhận ra một
+       `type` thuộc nguồn thứ ba (piece) — ba mô-đun đó không tự duyệt
+       `NGUON_PIECE()` bằng ba vòng lặp riêng (đúng bài học "hai chỗ khai
+       một điều không ai bắt khớp").
+
+    ⛔ KHÔNG duyệt bằng `loai.startswith("piece.")`: một trigger piece mang
+       tiền tố `trigger.piece.*` (catalog thật, xem `connector_runner/
+       catalog.json`), nên phép so KHỚP TYPE tuyệt đối là đúng, một tiền tố
+       đoán là sai cho đúng nửa catalog.
+
+    Không cache: catalog runner có thể đổi giữa hai lần khởi động (thêm/bớt
+    piece qua `connector_runner/allowlist.json`), và một mục KHÔNG có trong
+    `NGUON_PIECE()` phải trả `None` — đó chính là "ngoài allowlist".
+    """
+    for muc in NGUON_PIECE():
+        if str(muc.get("type")) == loai:
+            return tu_piece(muc)
+    return None
 
 
 def chua_du_hop_dong(cong_cu: dict) -> dict:
@@ -367,4 +395,5 @@ def type_version_thieu(db, *, dinh_nghia: Optional[dict] = None) -> list:
 __all__ = ["CATEGORY", "Gia", "JOB_TYPE_CONNECTOR", "JOB_TYPE_KHONG_TOOLSPEC",
            "JOB_TYPE_PIECE", "KIND", "LoiNut", "MA_LOI_APP", "NGUON_PIECE",
            "NodeDefinition", "QUYEN", "RESOURCE_CLASS", "chua_du_hop_dong",
-           "tat_ca", "tu_piece", "tu_toolspec", "type_version_thieu"]
+           "dinh_nghia_piece", "tat_ca", "tu_piece", "tu_toolspec",
+           "type_version_thieu"]
