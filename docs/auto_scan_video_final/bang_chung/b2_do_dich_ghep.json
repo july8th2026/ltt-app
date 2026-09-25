@@ -1,0 +1,176 @@
+{
+ "nguong_metricx": 6.0,
+ "dinh_nghia": "chinh",
+ "n": 100,
+ "metricx_mot_minh": {
+  "n": 100,
+  "tp": 1,
+  "fp": 0,
+  "fn": 9,
+  "tn": 90,
+  "so_gan_co": 1,
+  "so_loi_that": 10,
+  "bao_dong_gia": {
+   "k": 0,
+   "n": 100,
+   "ti_le": 0.0,
+   "ktc": [
+    0.0,
+    0.03699349820698568
+   ],
+   "muc": 0.95,
+   "cach": "wilson"
+  },
+  "bao_dong_gia_tren_gan_co": {
+   "k": 0,
+   "n": 1,
+   "ti_le": 0.0,
+   "ktc": [
+    0.0,
+    0.7934506856227626
+   ],
+   "muc": 0.95,
+   "cach": "wilson"
+  },
+  "do_nhay": {
+   "k": 1,
+   "n": 10,
+   "ti_le": 0.1,
+   "ktc": [
+    0.017876213095072896,
+    0.4041500267952385
+   ],
+   "muc": 0.95,
+   "cach": "wilson"
+  }
+ },
+ "v3_mot_minh": {
+  "n": 100,
+  "tp": 10,
+  "fp": 33,
+  "fn": 0,
+  "tn": 57,
+  "so_gan_co": 43,
+  "so_loi_that": 10,
+  "bao_dong_gia": {
+   "k": 33,
+   "n": 100,
+   "ti_le": 0.33,
+   "ktc": [
+    0.2456312273412804,
+    0.42694656204909476
+   ],
+   "muc": 0.95,
+   "cach": "wilson"
+  },
+  "bao_dong_gia_tren_gan_co": {
+   "k": 33,
+   "n": 43,
+   "ti_le": 0.7674418604651163,
+   "ktc": [
+    0.62255479702191,
+    0.8684632152061552
+   ],
+   "muc": 0.95,
+   "cach": "wilson"
+  },
+  "do_nhay": {
+   "k": 10,
+   "n": 10,
+   "ti_le": 1.0,
+   "ktc": [
+    0.7224672001371109,
+    1.0
+   ],
+   "muc": 0.95,
+   "cach": "wilson"
+  }
+ },
+ "ghep_hop": {
+  "n": 100,
+  "tp": 10,
+  "fp": 33,
+  "fn": 0,
+  "tn": 57,
+  "so_gan_co": 43,
+  "so_loi_that": 10,
+  "bao_dong_gia": {
+   "k": 33,
+   "n": 100,
+   "ti_le": 0.33,
+   "ktc": [
+    0.2456312273412804,
+    0.42694656204909476
+   ],
+   "muc": 0.95,
+   "cach": "wilson"
+  },
+  "bao_dong_gia_tren_gan_co": {
+   "k": 33,
+   "n": 43,
+   "ti_le": 0.7674418604651163,
+   "ktc": [
+    0.62255479702191,
+    0.8684632152061552
+   ],
+   "muc": 0.95,
+   "cach": "wilson"
+  },
+  "do_nhay": {
+   "k": 10,
+   "n": 10,
+   "ti_le": 1.0,
+   "ktc": [
+    0.7224672001371109,
+    1.0
+   ],
+   "muc": 0.95,
+   "cach": "wilson"
+  }
+ },
+ "ghep_giao": {
+  "n": 100,
+  "tp": 1,
+  "fp": 0,
+  "fn": 9,
+  "tn": 90,
+  "so_gan_co": 1,
+  "so_loi_that": 10,
+  "bao_dong_gia": {
+   "k": 0,
+   "n": 100,
+   "ti_le": 0.0,
+   "ktc": [
+    0.0,
+    0.03699349820698568
+   ],
+   "muc": 0.95,
+   "cach": "wilson"
+  },
+  "bao_dong_gia_tren_gan_co": {
+   "k": 0,
+   "n": 1,
+   "ti_le": 0.0,
+   "ktc": [
+    0.0,
+    0.7934506856227626
+   ],
+   "muc": 0.95,
+   "cach": "wilson"
+  },
+  "do_nhay": {
+   "k": 1,
+   "n": 10,
+   "ti_le": 0.1,
+   "ktc": [
+    0.017876213095072896,
+    0.4041500267952385
+   ],
+   "muc": 0.95,
+   "cach": "wilson"
+  }
+ },
+ "dong_metricx_da_chot": 1,
+ "ti_le_loi_goi_v3_tiet_kiem": 0.01,
+ "so_dong_muc_san_tren_san_nay": 0
+}

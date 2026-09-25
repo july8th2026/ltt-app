@@ -1,0 +1,42 @@
+{
+ "ten_cau_hinh": "A_promptv4_t0.2_KHONG_ep",
+ "so_phan": 3,
+ "la_luot_lap_lai": false,
+ "don_vi_phan": "DAU VAO KHAC NHAU",
+ "nguong_san_pham": 6.0,
+ "luot": [
+  {
+   "luot": 1,
+   "n": 83,
+   "trung_vi": 1.7266,
+   "trung_binh": 2.1528373493975903,
+   "ktc": [
+    1.8612793367362999,
+    2.531865493612055
+   ],
+   "qua_nguong_san_pham": 3
+  },
+  {
+   "luot": 2,
+   "n": 74,
+   "trung_vi": 1.6991999999999998,
+   "trung_binh": 2.0722864864864863,
+   "ktc": [
+    1.746234450076657,
+    2.547179109419454
+   ],
+   "qua_nguong_san_pham": 4
+  },
+  {
+   "luot": 3,
+   "n": 31,
+   "trung_vi": 2.3281,
+   "trung_binh": 2.854216129032258,
+   "ktc": [
+    2.31149663360989,
+    3.542909824409985
+   ],
+   "qua_nguong_san_pham": 1
+  }
+ ]
+}
