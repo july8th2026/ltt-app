@@ -399,7 +399,11 @@ def test_vong_sua_CAT_SAI_dat_lai_edit_plan_va_chay_lai_CA_CHUOI(
     monkeypatch.setattr(gdqa.ai, "goi_tinh_tien", moi_cho_noi_deu_hong,
                         raising=False)
 
-    run = _run_cat(db, kho_tam, tmp_path)
+    # 🔴 Nguon 24 giay: mot cho noi chi ton tai duoc khi ngan sach cat 5 % lon
+    #    hon `ke_cat.TOI_THIEU_GIAY` — xem `test_2121.NGUON_CO_CHO_NOI_S`.
+    from tests.test_2121_asv_qc_hinh_cho_noi import NGUON_CO_CHO_NOI_S
+
+    run = _run_cat(db, kho_tam, tmp_path, duration_s=NGUON_CO_CHO_NOI_S)
     so_job = _chay_het_hang_doi(db)
     db.expire_all()
 

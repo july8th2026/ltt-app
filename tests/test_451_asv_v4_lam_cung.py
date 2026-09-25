@@ -277,8 +277,13 @@ def test_MOI_vat_lieu_TRUNG_GIAN_deu_duoc_dat_han_luu(db, kho_tam, tmp_path,
                       .where(AsvAsset.run_id == run.id)).scalars().all()
     assert hang, "lan chay khong tao artifact nao"
 
-    trung_gian = [a for a in hang if a.created_by_stage != pipeline.RENDER]
-    giao = [a for a in hang if a.created_by_stage == pipeline.RENDER]
+    # 🔴 **BAN GIAO la `IMAGE_FINISH`, ⛔ khong con la `RENDER` (b4, 25/09).**
+    #    `render` nay giao mot ban TRUNG GIAN: no chua qua phep cat cua giai doan
+    #    2. Giu dong nay tro vao `RENDER` la do sai ca hai chieu — no se doi
+    #    `render` khong co han (⇒ mot vat lieu trung gian nam trong kho mai mai)
+    #    va doi ban giao co han (⇒ video cua khach tu bien mat sau 30 ngay).
+    trung_gian = [a for a in hang if a.created_by_stage != pipeline.IMAGE_FINISH]
+    giao = [a for a in hang if a.created_by_stage == pipeline.IMAGE_FINISH]
     assert trung_gian and giao, "mau thu khong du hai loai de doi chieu"
 
     thieu = [a.storage_key for a in trung_gian if a.expires_at is None]
@@ -308,14 +313,14 @@ def test_ban_giao_cho_khach_song_LAU_HON_vat_lieu_trung_gian(db, kho_tam,
     _chay_het_hang_doi(db, nang_luc=NANG_LUC)
     hang = db.execute(select(AsvAsset)
                       .where(AsvAsset.run_id == run.id)).scalars().all()
-    giao = [a for a in hang if a.created_by_stage == pipeline.RENDER]
+    giao = [a for a in hang if a.created_by_stage == pipeline.IMAGE_FINISH]
     trung_gian = [a for a in hang if a.created_by_stage == pipeline.MEDIA_PREPARE]
     assert giao and trung_gian
 
     # 🔴 **So CUA SO LUU, khong so moc het han.**
     #
     #    Ban dau phep kiem nay so `expires_at` cua hai artifact — va no XPASS,
-    #    tuc "dat", vi RENDER duoc promote sau MEDIA_PREPARE khoang 70 giay nen
+    #    tuc "dat", vi IMAGE_FINISH duoc promote sau MEDIA_PREPARE khoang 70 giay nen
     #    moc het han cua no muon hon dung 70 giay. Do la cai DONG HO, khong phai
     #    mot lop luu tru rieng.
     #

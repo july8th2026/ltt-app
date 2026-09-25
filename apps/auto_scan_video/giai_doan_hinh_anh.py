@@ -51,7 +51,6 @@ cho giai doan 2. Hom nay chung **van chay o `render` cua giai doan 1**.
 """
 from __future__ import annotations
 
-import io
 import json
 import logging
 import subprocess
@@ -269,7 +268,14 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                "cach": cach,
                "thoi_luong_vao": round(thoi_luong, 3),
                "thoi_luong_ra": round(float(ban_do.thoi_luong_ra), 3),
-               "so_cho_noi": ban_do.so_cho_noi}
+               "so_cho_noi": ban_do.so_cho_noi,
+               # 🔴 **Khoang THAT SU duoc giu — ke cat GIAO cua so khach.**
+               #    `ke_cat` mot minh ⛔ khong tra loi duoc: cua so `cat_dau_cuoi`
+               #    la mot lop thu hep dat len tren no. Va QC **can** chinh danh
+               #    sach nay: tham chieu VMAF la nguon chay qua CUNG chuoi loc,
+               #    nen mot ban khai thu hai o do se lech va T18 hong vo co.
+               "khoang_giu": [[round(float(b), 4), round(float(k), 4)]
+                              for b, k in khoang]}
 
         if bao:
             bao(20, _t('Đang cắt và ghép lại'))
@@ -284,6 +290,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         bo_ma_hoa = "" if khong_cat else cdr.chon_bo_ma_hoa(cho_phep_gpu=co_gpu)
         cmd = dung_lenh(duong_vao, duong_ra, khoang=khoang,
                         bo_ma_hoa=bo_ma_hoa,
+                        thoi_luong_ra=float(ban_do.thoi_luong_ra),
                         ffmpeg_bin=nhap_media.media.ffmpeg_bin())
         try:
             ket_xuat._chay_co_tien_do(
@@ -320,16 +327,18 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                          "duoi": "srt", "van_tay": vt,
                          "parent_keys": [khoa_gd1]})
 
-        goi_ke = json.dumps({"ke_cat": ke.sang_dict(), "tom_tat": tom},
-                            sort_keys=True, ensure_ascii=False).encode("utf-8")
-        khoa_ke = assets.khoa_staging(owner_id=run.owner_id, run_id=run.id,
-                                      stage=pipeline.IMAGE_FINISH, van_tay=vt,
-                                      duoi="json")
-        kho.put(khoa_ke, io.BytesIO(goi_ke), content_type="application/json")
-        phan.append({"staging_key": khoa_ke, "kind": "json", "duoi": "json",
-                     "van_tay": vt, "parent_keys": [khoa_gd1]})
-
+    # 🔴 **Ke cat di vao `tom_tat` (tuc `asv_stage.outputs`), ⛔ KHONG thanh mot
+    #    artifact thu ba.** `thi_hanh.la_ban_giao` dung cho ca GIAI DOAN, nen moi
+    #    artifact cua giai doan nay se mang `han=None` — ke ca mot bao cao van
+    #    hanh. Mot bao cao "khong bao gio het han" la mot bao cao **nam trong kho
+    #    cua khach mai mai** va `test_451` bat dung chuyen do.
+    #
+    # ⭐ Va `outputs` la dung cho cua no: `giai_doan_qc` + `giai_doan_qc_ai` doc
+    #    ke cat qua `features.giai_doan_theo_ten(...).outputs`, y het cach chung
+    #    doc moi con so tom tat khac. Mot artifact JSON chi de hai giai doan ke
+    #    tiep doc la mot tep ton han luu de thay cho mot truong.
     return {"phan": phan, "tom_tat": {**tom,
+                                      "ke_cat": ke.sang_dict(),
                                       "bo_ma_hoa": bo_ma_hoa,
                                       "co_byte": int(tt_ra["co_byte"]),
                                       "codec_video": tt_ra["codec_video"]}}
@@ -376,7 +385,8 @@ def _sinh_srt(db, kho: Storage, run, *, ban_do, thu_muc: Path,
 
 
 def dung_lenh(duong_vao: str, duong_ra: str, *, khoang, bo_ma_hoa: str,
-              ffmpeg_bin: str, tien_do: bool = True) -> list[str]:
+              ffmpeg_bin: str, thoi_luong_ra: float = 0.0,
+              tien_do: bool = True) -> list[str]:
     """argv cua mot luot cat-noi. ⛔ Khong cham mot tep nao.
 
     ⭐ Tach khoi `chay()` de kiem duoc chuoi lenh ma ⛔ khong phai chay ffmpeg —
@@ -386,6 +396,30 @@ def dung_lenh(duong_vao: str, duong_ra: str, *, khoang, bo_ma_hoa: str,
        `-c copy` chi cat duoc tai keyframe, va GOP cua chinh chuoi nay do duoc la
        8,333 giay (xem `apps/asv_media/manifest.py`) ⇒ mot cho cat lech toi 8
        giay. Mot luot ma hoa lai la gia PHAI tra de cat dung cho.
+
+    ## 🔴 `-t` GHIM do dai ra, va no ⛔ khong phai mot phep lam dep
+
+    `concat` noi N manh, va moi manh bi **luong tu hoa theo khung**: mot manh
+    0,3 s o 12 fps la 3,6 khung, nen ffmpeg giao 4 khung (0,333 s). Voi 3 cho noi
+    tep ra dai hon TONG SO HOC toi ~0,25 s.
+
+    ⛔ Va do la mot van de THAT: `qc` do T2 voi `DAI_HON_CHO_PHEP_S = 0,01` —
+       *"ban ra ⛔ khong bao gio dai hon mong doi"*. Mot ban giao dai hon ban khai
+       vi luong tu hoa khung se lam T2 **hong** tren mot tep ⛔ khong sai gi.
+
+    ⇒ Ban khai la HOP DONG, va bo ma hoa phai ton trong no. `-t` ghim do dai ra
+      o `thoi_luong_ra` ma ke cat da khai.
+
+    🔴 **Va no ghim tOI MOT KHUNG, ⛔ khong tuyet doi** — do la ca ly do phai ghi
+       con so nay ra: ffmpeg giao KHUNG TRON VEN, nen tep ra van dai hon ban khai
+       toi `1/fps` (do that: 12 fps, ban khai 23,100 s, tep 23,167 s). Cai `-t`
+       dap tat la su **tich luy**: ⛔ khong con mot khung du cho MOI cho noi, chi
+       con mot khung cho CA tep.
+       ⇒ `qc` T2 cong dung mot khung vao phan *"⛔ khong bao gio dai hon"*, va no
+         **do fps tu chinh tep** thay vi go tay (xem `qc.py` khoi T2).
+
+    ⚠️ `0.0` = ⛔ khong ghim. Duong remux (`-c copy`, ⛔ khong cat gi) ⛔ khong can:
+       ⛔ khong manh nao duoc noi nen ⛔ khong co luong tu hoa nao.
     """
     if not khoang:
         raise ket_xuat.KetXuatError(
@@ -405,6 +439,8 @@ def dung_lenh(duong_vao: str, duong_ra: str, *, khoang, bo_ma_hoa: str,
                 "-map", f"[{cdr.NHAN_TIENG_RA}]"]
         cmd += list(cdr.tham_so(bo_ma_hoa))
         cmd += ["-c:a", "aac", "-b:a", "192k"]
+        if float(thoi_luong_ra) > 0:
+            cmd += ["-t", f"{float(thoi_luong_ra):.6f}"]
     cmd += ["-movflags", "+faststart", duong_ra]
     return cmd
 

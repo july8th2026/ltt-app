@@ -27,6 +27,26 @@ from tests.test_402_asv_mach_doc_gia import (_chay_het_hang_doi, _tao_run,  # no
 from tests.test_440_asv_v4_long_tieng import _cat_canh_le, _nhieu_canh, _run_cat
 
 
+#: 🔴 **Do dai NGUON toi thieu de mot CHO NOI co the ton tai** (b4, 25/09).
+#:
+#:    Tu khi phep cat chuyen xuong giai doan 2, `ke_cat` ap hai luat cung:
+#:
+#:        TRAN_CAT_TI_LE  = 0,05   cat khong qua 5 % tong do dai
+#:        TOI_THIEU_GIAY  = 0,20   ngan hon the thi khong dang mot cho noi
+#:
+#:    ⇒ Mau 3 giay mac dinh cho ngan sach cat 0,15 s — DUOI muc toi thieu, nen
+#:      tren no ⛔ khong mot cho noi nao co the ton tai. Voi canh 1 giay
+#:      (`_nhieu_canh`), nguon phai dai >= 20 giay de mot canh cat duoc.
+#:
+#: ⭐ 24 giay: ngan sach 1,2 s ⇒ nhan DUNG mot canh 1 giay, va khai ra phan con
+#:    lai. `ban_ghi_gia()` chi sinh thoai trong [0; 2,8) nen moi canh tu giay 3
+#:    tro di ⛔ khong co loi thoai — dung luat *"CHI cat vung khong co thoai"*.
+#:
+#: ⛔ ⛔ KHONG noi tran de mau 3 giay vua: vuot tran la tin hieu tieu chi sai,
+#:    ⛔ khong phai rang tran chat (chu du an chot 25/09).
+NGUON_CO_CHO_NOI_S = 24.0
+
+
 @pytest.fixture()
 def bat_qc_ai(monkeypatch):
     monkeypatch.setenv(gdqa.BIEN_BAT, "1")
@@ -50,7 +70,7 @@ def test_preset_CAT_hoi_VLM_ve_TUNG_cho_noi_cua_ban_ra(
     chi khac la nay no co ten."""
     _nhieu_canh(monkeypatch)
     _cat_canh_le(monkeypatch)
-    run = _run_cat(db, kho_tam, tmp_path)
+    run = _run_cat(db, kho_tam, tmp_path, duration_s=NGUON_CO_CHO_NOI_S)
     _chay_het_hang_doi(db)
     db.expire_all()
 
@@ -96,7 +116,7 @@ def test_phan_quyet_hinh_di_toi_stage_outputs_cho_vong_sua(
     moi luot cua moi lan chay. Khoa phai co mat ke ca khi rong."""
     _nhieu_canh(monkeypatch)
     _cat_canh_le(monkeypatch)
-    run = _run_cat(db, kho_tam, tmp_path)
+    run = _run_cat(db, kho_tam, tmp_path, duration_s=NGUON_CO_CHO_NOI_S)
     _chay_het_hang_doi(db)
     db.expire_all()
 
@@ -132,7 +152,7 @@ def test_cho_noi_HONG_van_ve_run_DONE_chu_khong_giet_lan_chay(
     monkeypatch.setattr(ai, "goi_tinh_tien", hong)
     monkeypatch.setattr(gdqa.ai, "goi_tinh_tien", hong, raising=False)
 
-    run = _run_cat(db, kho_tam, tmp_path)
+    run = _run_cat(db, kho_tam, tmp_path, duration_s=NGUON_CO_CHO_NOI_S)
     _chay_het_hang_doi(db)
     db.expire_all()
 
@@ -165,7 +185,7 @@ def test_thieu_mot_khung_thi_KHONG_HOI_chu_khong_hoi_bang_mot_anh(
     monkeypatch.setattr(canh_mod, "rut_khung",
                         lambda duong, moc, **kw: goc(duong, list(moc)[:1], **kw))
 
-    run = _run_cat(db, kho_tam, tmp_path)
+    run = _run_cat(db, kho_tam, tmp_path, duration_s=NGUON_CO_CHO_NOI_S)
     _chay_het_hang_doi(db)
     db.expire_all()
 
@@ -223,7 +243,7 @@ def test_cho_noi_HONG_sinh_vong_sua_NHAM_DUNG_CHO_va_CO_TRAN(
     monkeypatch.setattr(gdqa.ai, "goi_tinh_tien", moi_cho_noi_deu_hong,
                         raising=False)
 
-    run = _run_cat(db, kho_tam, tmp_path)
+    run = _run_cat(db, kho_tam, tmp_path, duration_s=NGUON_CO_CHO_NOI_S)
     so_job = _chay_het_hang_doi(db)
     db.expire_all()
 
@@ -284,15 +304,40 @@ def test_lat_cat_vong_HINH_nhuong_roi_NOI_TIEP_khong_hoi_lai(
     """
     from apps.auto_scan_video import ai, canh as canh_mod, features, lat_cat
 
-    # ⭐ BAY canh (khong dung `_nhieu_canh`, no cho ba): `_cat_canh_le` bo canh
-    #    chi so LE nen bay canh => bon canh duoc giu, khong lien nhau => BA cho
-    #    noi. Hai cho noi tro len moi chung minh duoc "nhuong roi noi tiep".
+    # 🔴 **BAY canh KHONG DEU NHAU — va su khong deu ay la do TRAN 5 %.**
+    #
+    #    Ban truoc dung bay canh DEU: `_cat_canh_le` bo canh chi so LE nen bon
+    #    canh duoc giu, khong lien nhau => BA cho noi. Tu b4 (25/09) phep cat
+    #    phai lot qua `ke_cat.TRAN_CAT_TI_LE` = 5 %, va bay canh DEU ⛔ khong the:
+    #
+    #        n canh deu, moi canh T/n; nhan k canh  =>  k·T/n <= 0,05·T
+    #        <=>  k <= 0,05·n         (⛔ do dai nguon TRIET TIEU — n moi quyet)
+    #
+    #    ⇒ Ba cho noi doi n >= 60 canh, va 60 canh lam khuon nay tran 200 job
+    #      (moi canh mot loi goi `DOC_CANH`, cong vong nhuong cua dong ho gia).
+    #
+    # ⭐ Loi giai la canh KHONG DEU — va do cung la hinh dang THAT: canh bi de
+    #    nghi bo thuong la canh **ngan** (chuyen canh, hieu ung, khung den). Ba
+    #    canh CAT dai 0,3 s (>= `TOI_THIEU_GIAY`), tong 0,9 s <= ngan sach 1,2 s.
+    #    Bon canh GIU chia phan con lai.
+    #
+    # ⛔ ⛔ KHONG noi tran de bay canh deu vua: vuot tran la tin hieu tieu chi sai
+    #    (chu du an chot 25/09), va mot bai kiem noi tran de xanh la mot bai kiem
+    #    do mot san pham KHAC voi san pham dang chay.
+    CAT_S = 0.3
+
     def bay_canh(duong, *, thoi_luong, hoi_huy=None, **kw):
-        n, t = 7, float(thoi_luong)
-        return canh_mod.ChiMucCanh(
-            tuple(canh_mod.Canh("canh_%04d" % (i + 1), t * i / n,
-                                t * (i + 1) / n, (t * (i + 0.5) / n,))
-                  for i in range(n)), t)
+        t = float(thoi_luong)
+        # 7 canh: chi so LE bi `_cat_canh_le` cat => ba canh ngan.
+        giu_s = (t - 3 * CAT_S) / 4.0
+        moc, ds = 0.0, []
+        for i in range(7):
+            dai = CAT_S if i % 2 else giu_s
+            ket = min(t, moc + dai)
+            ds.append(canh_mod.Canh("canh_%04d" % (i + 1), moc, ket,
+                                    ((moc + ket) / 2.0,)))
+            moc = ket
+        return canh_mod.ChiMucCanh(tuple(ds), t)
 
     monkeypatch.setattr(canh_mod, "phan_tich", bay_canh)
     from apps.auto_scan_video import giai_doan_ban_bien_tap as _gdbbt
@@ -319,7 +364,7 @@ def test_lat_cat_vong_HINH_nhuong_roi_NOI_TIEP_khong_hoi_lai(
     monkeypatch.setattr(ai, "goi_tinh_tien", dem)
     monkeypatch.setattr(gdqa.ai, "goi_tinh_tien", dem, raising=False)
 
-    run = _run_cat(db, kho_tam, tmp_path)
+    run = _run_cat(db, kho_tam, tmp_path, duration_s=NGUON_CO_CHO_NOI_S)
     _chay_het_hang_doi(db)
     db.expire_all()
 

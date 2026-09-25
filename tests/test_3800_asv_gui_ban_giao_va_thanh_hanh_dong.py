@@ -69,9 +69,10 @@ def _gieo_ket_xuat(run_id: str, *, co_srt: bool) -> None:
     try:
         s = (db.query(T.AsvStage)
              .filter(T.AsvStage.run_id == run_id,
-                     T.AsvStage.stage == pipeline.RENDER).one())
+                     # 🔴 Ban giao la `IMAGE_FINISH` (b4 25/09).
+                     T.AsvStage.stage == pipeline.IMAGE_FINISH).one())
         s.status = "succeeded"
-        s.outputs = {"stage": pipeline.RENDER, "khoa_asset": khoa}
+        s.outputs = {"stage": pipeline.IMAGE_FINISH, "khoa_asset": khoa}
         # ⚠️ RENDER xong KHONG lam `run.status` thanh `done` — khoi ban giao cua
         #    `asv_tien_do.html` treo o trang thai cua RUN. Mot ban gieo chi dat
         #    giai doan se do voi mot thong bao khong nhac gi toi `run.status`.

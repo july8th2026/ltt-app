@@ -371,16 +371,15 @@ def _ban_do_cua_tep_soat(db, kho: Storage, run, ke_hoach: dict):
        ro *"ban do chi co mot khoang giu"*. Do la mot SU THAT cua lan chay, ⛔
        khong phai mot truong hop chua xu ly.
     """
-    from . import ban_do_thoi_gian as _bdtg, ke_cat as _kc
+    from . import ban_do_thoi_gian as _bdtg, features as _ft, ke_cat as _kc
 
     tong = float(ke_hoach.get("tong_ms") or 0) / 1000.0
-    khoa_kc = _khoa_theo_duoi(db, run, pipeline.IMAGE_FINISH, ".json")
-    if khoa_kc:
-        goi = (_doc_json(kho, khoa_kc) or {}).get("ke_cat") or {}
-        if goi:
-            ke = _kc.KeCat.tu_dict(goi)
-            _kc.kiem(ke)              # doc lai thi kiem lai (I8)
-            return ke.ban_do()
+    s_if = _ft.giai_doan_theo_ten(db, run.id, pipeline.IMAGE_FINISH)
+    goi = ((s_if.outputs or {}) if s_if else {}).get("ke_cat") or {}
+    if goi:
+        ke = _kc.KeCat.tu_dict(goi)
+        _kc.kiem(ke)                  # doc lai thi kiem lai (I8)
+        return ke.ban_do()
     return _bdtg.BanDoThoiGian.giu_nguyen(tong)
 
 

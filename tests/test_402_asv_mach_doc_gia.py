@@ -108,8 +108,17 @@ def giong_gia(monkeypatch, tmp_path):
     return True
 
 
-def _tao_run(db, owner="uA", giu=10, *, kho=None, tmp_path=None):
+def _tao_run(db, owner="uA", giu=10, *, kho=None, tmp_path=None,
+             duration_s: float | None = None):
     """Tao mot run kem TEP NGUON THAT.
+
+    🔑 **`duration_s` (b4 hai giai doan, 25/09): mot phep cat hop le co DO DAI
+       TOI THIEU, nen no co mot DO DAI NGUON toi thieu.**
+
+       `ke_cat.TRAN_CAT_TI_LE` = 5 % va `ke_cat.TOI_THIEU_GIAY` = 0,2 s ⇒ tren
+       mau 3 giay mac dinh, ngan sach cat la 0,15 s — DUOI muc toi thieu, nen
+       ⛔ khong mot cho noi nao co the ton tai. Mot bai kiem ve CHO NOI vi the
+       phai xin mot nguon dai hon; ⛔ khong duoc noi tran de mau ngan vua.
 
     ⚠️ Tu pha 08, `MEDIA_PREPARE` la engine that: no soi tep, thi hanh chinh
        sach dau vao va tach tieng. Mot `source_key` gia se lam giai doan dau
@@ -128,7 +137,8 @@ def _tao_run(db, owner="uA", giu=10, *, kho=None, tmp_path=None):
     # Tu tao thu muc tam thay vi doi `tmp_path` tu moi phep kiem: nguon la chi
     # tiet cua ban dung, khong phai thu phep kiem nao dang noi ve.
     thu_muc = Path(tmp_path) if tmp_path else Path(tempfile.mkdtemp(prefix="asv-t-"))
-    khoa = nap_nguon_vao_kho(kho or get_storage(), thu_muc, owner_id=owner)
+    kw = {"duration_s": float(duration_s)} if duration_s else {}
+    khoa = nap_nguon_vao_kho(kho or get_storage(), thu_muc, owner_id=owner, **kw)
     run = features.tao_run(db, owner_id=owner, source_key=khoa,
                            settings={"giong_id": "Minh Đức", "timing_mode": "fit_original"},
                            uoc_luong_credit=giu)

@@ -342,12 +342,28 @@ CHI_SO_BAN_RA = 1
 CHI_SO_LOGO_DAU = 2
 
 
-def loc_tham_chieu(hinh: dict, *, duong_chu: list[str], duong_ass: str) -> str:
+def loc_tham_chieu(hinh: dict, *, duong_chu: list[str], duong_ass: str,
+                   khoang_giu=None) -> str:
     """Chuoi loc hinh cua preset cat, dung DUNG tham so `ket_xuat.dung_lenh` dua
-    cho `che_do_render.loc_cat_noi`. `test_2012` chot hai ben bang nhau."""
+    cho `che_do_render.loc_cat_noi`. `test_2012` chot hai ben bang nhau.
+
+    🔴 **`khoang_giu` (b4 hai giai doan, 25/09): khoang cua GIAI DOAN 2.**
+
+       Tep duoc do la ban giao cua `image_finish` — da bi CAT. Tham chieu phai
+       chay qua **cung** phep cat, neu khong thi hai ben lech tung khung va VMAF
+       do mot thu khong ai hoi: no bao T18 `hong` du bo ma hoa khong lam gi sai.
+
+    ⭐ Ghep duoc vi mot ly do co that: giai doan 1 giu **moi** khung (khoang giu
+       cua no la ca video), nen "GD1 roi GD2" = "chi GD2" tren truc nguon.
+
+    ⚠️ Nguoi goi truyen danh sach ma `image_finish` DA KHAI (`tom_tat.khoang_giu`),
+       ⛔ khong tu tinh lai tu ke cat: cua so `cat_dau_cuoi` cua khach cung thu hep
+       no, va hai ban khai ve cung mot dieu se lech.
+    """
     from . import che_do_render as cdr
 
-    khoang = [(float(b), float(k)) for b, k in (hinh.get("khoang_giu") or ())]
+    tho = khoang_giu if khoang_giu else (hinh.get("khoang_giu") or ())
+    khoang = [(float(b), float(k)) for b, k in tho]
     return cdr.loc_cat_noi(
         khoang, vung=(hinh.get("vung") or ()),
         lop_phu=list(hinh.get("lop_phu") or ()), duong_chu=list(duong_chu),
@@ -489,9 +505,30 @@ def kiem(*, tt_ra: dict, tt_nguon: dict, am_luong: dict, ke_hoach: dict,
     d_nguon = float(tt_nguon.get("thoi_luong") or 0)
     mong_doi = float(thoi_luong_mong_doi or 0.0) or d_nguon
     lech = d_ra - mong_doi
+    # ── Luong tu hoa theo KHUNG (b4 hai giai doan, 25/09) ───────────────────
+    #
+    # 🔴 **Mot tep video ⛔ khong the dai dung mot con so thap phan bat ky.** No
+    #    dai mot SO NGUYEN khung, nen do dai cua no la boi so cua `1/fps`. Ke cat
+    #    cua giai doan 2 khai `thoi_luong_ra` bang mot phep TONG SO HOC
+    #    (23,1 s), con `concat` giao khung thu 278 tron ven (23,1667 s o 12 fps).
+    #
+    # ⇒ Mot phan MOT KHUNG la do phan giai cua chinh phep do, ⛔ khong phai mot
+    #   sai so cua san pham. `DAI_HON_CHO_PHEP_S` (0,01) duoc tinh cho sai so LAM
+    #   TRON cua ban do (1e-4) va no ⛔ khong bao gio bao duoc mot khung.
+    #
+    # ⛔ Va day ⛔ KHONG phai mot lan noi nguong: `LECH_THOI_LUONG_S` (0,5 s) —
+    #    loi hua san pham — **⛔ khong doi**. Chi phan *"⛔ khong bao gio dai hon"*
+    #    duoc cong them do phan giai cua phep do, va so do duoc **do tu chinh tep**
+    #    chu ⛔ khong go tay.
+    #
+    # ⚠️ `fps` co the bang 0 (luong ⛔ khong khai `r_frame_rate`). Khi do ⛔ khong
+    #    cong gi — mot mac dinh doan se lam nguong noi ra vi mot phep do THIEU.
+    fps = float(tt_ra.get("fps") or 0.0)
+    mot_khung = (1.0 / fps) if fps > 0 else 0.0
+    dai_hon_cho_phep = DAI_HON_CHO_PHEP_S + mot_khung
     # "khong bao gio dai hon MONG DOI" la mot chot RIENG, khong phai he qua cua
     # `abs(lech) <= 0.5`: mot ban ra dai hon 0,3 giay van vi pham loi hua §3.
-    t2 = abs(lech) <= LECH_THOI_LUONG_S and lech <= DAI_HON_CHO_PHEP_S
+    t2 = abs(lech) <= LECH_THOI_LUONG_S and lech <= dai_hon_cho_phep
     muc.append(_muc("T2", DAT if t2 else HONG,
                     "thoi luong ban ra so voi MONG DOI cua che do",
                     thoi_luong_ra=round(d_ra, 3), thoi_luong_nguon=round(d_nguon, 3),
@@ -499,7 +536,12 @@ def kiem(*, tt_ra: dict, tt_nguon: dict, am_luong: dict, ke_hoach: dict,
                     # ⚠️ 6 chu so, khong 3: o 3 chu so `lech` cua loi 23/09 in ra
                     # `0.0` trong khi phan quyet la HONG — bao cao tu mau thuan.
                     lech=round(lech, 6), nguong=LECH_THOI_LUONG_S,
-                    dai_hon_cho_phep=DAI_HON_CHO_PHEP_S))
+                    # ⭐ Bao cao CA BA so, ⛔ khong chi tong: nguoi doc phai thay
+                    #    phan nao la loi hua (0,01) va phan nao la do phan giai
+                    #    cua phep do (mot khung).
+                    dai_hon_cho_phep=round(dai_hon_cho_phep, 6),
+                    dai_hon_ban_do=DAI_HON_CHO_PHEP_S,
+                    mot_khung=round(mot_khung, 6), fps=round(fps, 3)))
 
     # ── T3 — luong hinh giong het nguon tung bit ────────────────────────────
     #

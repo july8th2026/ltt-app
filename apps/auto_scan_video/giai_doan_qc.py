@@ -57,7 +57,7 @@ def _doc_json(kho: Storage, khoa: str) -> dict:
         return json.loads(f.read().decode("utf-8"))
 
 
-def _thoi_luong_mong_doi(kho: Storage, ke_hoach: dict, khoa_ke_cat: str) -> float:
+def _thoi_luong_mong_doi(ke_hoach: dict, goi_ke_cat: dict) -> float:
     """Do dai (giay) ma TEP DUOC DO phai co, truoc phep chia `toc_do`.
 
     ⭐ MOT noi tra loi cau hoi nay, va no tra loi tu mot BAN KHAI:
@@ -73,12 +73,10 @@ def _thoi_luong_mong_doi(kho: Storage, ke_hoach: dict, khoa_ke_cat: str) -> floa
     """
     from . import ke_cat as _kc
 
-    if khoa_ke_cat:
-        goi = (_doc_json(kho, khoa_ke_cat) or {}).get("ke_cat") or {}
-        if goi:
-            ke = _kc.KeCat.tu_dict(goi)
-            _kc.kiem(ke)
-            return float(ke.ban_do().thoi_luong_ra)
+    if goi_ke_cat:
+        ke = _kc.KeCat.tu_dict(goi_ke_cat)
+        _kc.kiem(ke)
+        return float(ke.ban_do().thoi_luong_ra)
     return float(ke_hoach.get("tong_ms") or 0) / 1000.0
 
 
@@ -101,7 +99,14 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     khoa_ra = _khoa_theo_duoi(db, run, pipeline.IMAGE_FINISH, ".mp4")
     if not khoa_ra:
         raise ThieuBanRa(_t('Chưa có bản kết xuất để kiểm.'))
-    khoa_kc = _khoa_theo_duoi(db, run, pipeline.IMAGE_FINISH, ".json")
+    # ⭐ Ke cat nam trong `outputs` cua `image_finish`, ⛔ khong thanh artifact:
+    #    moi artifact cua giai doan do la BAN GIAO (`han=None`), va mot bao cao
+    #    van hanh ⛔ khong duoc nam trong kho cua khach mai mai.
+    from . import features as _ft
+    _s_if = _ft.giai_doan_theo_ten(db, run.id, pipeline.IMAGE_FINISH)
+    _out_if = (_s_if.outputs or {}) if _s_if else {}
+    goi_kc = _out_if.get("ke_cat") or {}
+    khoang_gd2 = _out_if.get("khoang_giu") or ()
     khoa_kh = _khoa_theo_duoi(db, run, pipeline.TIMING_ALIGN, ".json")
     khoa_ke = _khoa_theo_duoi(db, run, pipeline.VOICE_SYNTHESIS, ".json")
     khoa_ban = _khoa_theo_duoi(db, run, pipeline.COMPOSE, ".json")
@@ -153,7 +158,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         # ⭐ asv-final: truc bien tap -> ban ra la mot phep chia cho `toc_do`.
         from .bien_tap import moc_ban_ra
         mong_doi = moc_ban_ra(
-            _thoi_luong_mong_doi(kho, ke_hoach, khoa_kc),
+            _thoi_luong_mong_doi(ke_hoach, goi_kc),
             (ban_dung.get("hinh") or {}).get("bien_tap"))
 
         bam_ra = bam_nguon = ""
@@ -205,7 +210,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                 bao(85, _t('Đang đo chất lượng hình (VMAF)'))
             vmaf = _do_vmaf(kho, ban_dung.get("hinh") or {}, thu_muc,
                             duong_nguon=duong_nguon, duong_ra=duong_ra,
-                            tt_ra=tt_ra)
+                            tt_ra=tt_ra, khoang_gd2=khoang_gd2)
 
         bao_cao = qc.kiem(
             tt_ra=tt_ra, tt_nguon=tt_nguon, am_luong=am_luong,
@@ -252,7 +257,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 
 
 def _do_vmaf(kho: Storage, hinh: dict, thu_muc: Path, *, duong_nguon: str,
-             duong_ra: str, tt_ra: dict) -> dict:
+             duong_ra: str, tt_ra: dict, khoang_gd2=()) -> dict:
     """Dung lai DUNG tep phu cua RENDER (chu, logo, `.ass`) roi do VMAF.
 
     ⭐ Ba tep phu di cung ba ham `giai_doan_ket_xuat` dung — cung dau vao, cung
@@ -277,7 +282,11 @@ def _do_vmaf(kho: Storage, hinh: dict, thu_muc: Path, *, duong_nguon: str,
             ho_so_pd, (ho_so_pd or {}).get("su_kien") or [], tm,
             rong=int(hinh.get("rong_khung") or 0),
             cao=int(hinh.get("cao_khung") or 0))
-        loc = qc.loc_tham_chieu(hinh, duong_chu=duong_chu, duong_ass=duong_ass)
+        # ⭐ Tham chieu chay qua CUNG phep cat cua giai doan 2 — xem
+        #    `qc.loc_tham_chieu`. Thieu no thi hai ben lech tung khung va T18
+        #    bao `hong` du bo ma hoa khong lam gi sai.
+        loc = qc.loc_tham_chieu(hinh, duong_chu=duong_chu, duong_ass=duong_ass,
+                                khoang_giu=khoang_gd2)
         return qc.do_vmaf(duong_nguon=duong_nguon, duong_ra=duong_ra,
                           loc_hinh=loc, duong_logo=duong_logo,
                           rong=int(tt_ra.get("rong") or 0),

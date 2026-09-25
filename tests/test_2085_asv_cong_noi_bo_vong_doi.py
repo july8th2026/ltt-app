@@ -91,7 +91,8 @@ def giai_doan_gia(monkeypatch):
                 s.commit()
                 raise RuntimeError("hong gia")
             khoa = []
-            if ten == pipeline.RENDER:
+            # 🔴 Ban giao la `IMAGE_FINISH` (b4 25/09): `khoa_ket_qua` doc no.
+            if ten == pipeline.IMAGE_FINISH:
                 k = f"asv/{run.owner_id[:16]}/ra/{run.id}.mp4"
                 get_storage().put(k, io.BytesIO(b"\x00" * 64), content_type="video/mp4")
                 khoa = [k]

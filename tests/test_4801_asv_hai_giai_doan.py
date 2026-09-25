@@ -278,10 +278,23 @@ CON_DUNG = {
     "loi.py": "phan loai `BanDoError`",
 }
 
-#: ⛔ Module DA THOI doc no o b4. Chot su VANG MAT, vi mot phu thuoc quay lai la
-#: mot lop loi quay lai.
+#: ⛔ Module DA THOI doc no o b4 — do TRUC TIEP tren cay o diem re (`df71c094`):
+#:
+#:        thoi_gian.py            lap ke hoach tren truc BAN RA   -> thoi
+#:        giai_doan_thoi_gian.py  `_ban_do` doc EDIT_PLAN          -> thoi (da xoa)
+#:        giai_doan_ban_dung.py   `ke_hoach["ban_do"]` + cua so cat -> thoi
+#:        giai_doan_qc.py         do dai mong doi tu ban do        -> thoi (qua `ke_cat`)
+#:
+#: 🔴 **`am_master.py` CO Y ⛔ KHONG o day, va no tung o day mot cach SAI.**
+#:    Ban dau bang nay ke ca no, vi b4 da bo tham so `van_tay_ban_do` cua
+#:    `van_tay_master`. Nhung tham so ay nhan mot CHUOI, ⛔ khong nhan module —
+#:    `grep ban_do_thoi_gian apps/auto_scan_video/am_master.py` tra **0** ngay o
+#:    diem re. ⇒ Dong do chot mot **su vang mat von da vang**, va gia tri duy
+#:    nhat cua mot bang khai la no CHINH XAC. Da bo.
+#:
+#: ⭐ Chot su VANG MAT, vi mot phu thuoc quay lai la mot lop loi quay lai.
 DA_THOI = ("thoi_gian.py", "giai_doan_thoi_gian.py", "giai_doan_ban_dung.py",
-           "am_master.py")
+           "giai_doan_qc.py")
 
 
 def test_ai_con_dung_ban_do_thoi_gian__va_ai_DA_THOI():
@@ -349,3 +362,172 @@ def test_thieu_ban_bien_tap_thi_KHONG_CAT_GI__mac_dinh_la_GIU():
     assert gdha.ung_vien_tu_ban_bien_tap(None, None) == []
     ke = kc.chon([], thoi_luong=100.0)
     assert ke.cat == () and ke.ban_do().thoi_luong_ra == 100.0
+
+
+def test_phim_MUON_cat_30_phan_tram_QUA_DUONG_THAT__dung_o_5_va_khai_ra():
+    """🔴 Nghiem thu 3, qua CHO NOI hai module chu khong tren du lieu bay san.
+
+    ⭐ `test_4800` chot `ke_cat.chon` tren `UngVien` dung tay. Bai nay di qua
+       `ung_vien_tu_ban_bien_tap` — CHO NOI giua `ban_bien_tap` va `ke_cat` — vi
+       do la cho mot truong bi doc sai TEN se bi vut im lang (bai hoc "cho noi
+       hai module vut truong im lang"): `do_tin` -> `diem_kem`, `bat`/`ket` cua
+       canh, va thao tac `cut`.
+
+    Phim 1.000 giay, 30 canh x 10 giay bi de xuat BO (30 %). Tran cho 50 giay.
+    """
+    from apps.auto_scan_video.ban_bien_tap import BanBienTap, QuyetDinh
+    from apps.auto_scan_video.canh import Canh, ChiMucCanh
+
+    canh = tuple(Canh(ma=f"c{i:03d}", bat=i * 30.0, ket=i * 30.0 + 10.0)
+                 for i in range(30))
+    chi_muc = ChiMucCanh(canh=canh, thoi_luong=1000.0)
+    ban = BanBienTap(
+        preset=hop_dong_v4.PRESET_CAT_THONG_MINH,
+        quyet_dinh=tuple(QuyetDinh(c.ma, hop_dong_v4.THAO_TAC_CAT,
+                                   "VLM de xuat bo", 0.9, (c.ma,))
+                         for c in canh),
+        thoi_luong_nguon=1000.0)
+
+    uv = gdha.ung_vien_tu_ban_bien_tap(ban, chi_muc)
+    assert len(uv) == 30, "cho noi vut mat ung vien"
+    assert sum(u.dai for u in uv) == pytest.approx(300.0)   # tieu chi MUON 30 %
+
+    ke = kc.chon(uv, thoai=(), thoi_luong=1000.0)
+
+    # ── Dung o 5 % ──────────────────────────────────────────────────────────
+    assert ke.ti_le_cat == pytest.approx(0.05)
+    assert ke.giay_cat == pytest.approx(50.0)
+    # ── Va KHAI RA ──────────────────────────────────────────────────────────
+    tt = kc.tom_tat(ke)
+    assert tt["dung_o_tran"] is True
+    assert tt["ti_le_muon"] == pytest.approx(0.30)
+    assert tt["so_bo_qua"][kc.LY_DO_VUOT_TRAN] == 25
+    # Ban do cua ban giao: 950 giay. 5 khoang bi cat, nhung chi 4 CHO NOI —
+    # khoang dau bat o giay 0, nen no la mot lat DAU chu khong phai mot cho noi.
+    # ⭐ Phan biet nay khong phai chi tiet: `qc_ai` hoi VLM mot lan cho TUNG cho
+    #    noi, nen dem sai la tra tien cho mot cau hoi ve mot cho khong ton tai.
+    bd = ke.ban_do()
+    assert bd.thoi_luong_ra == pytest.approx(950.0)
+    assert bd.so_cho_noi == 4
+
+
+def test_ung_vien_MAT_canh_khong_lam_lan_chay_HONG__nhung_phai_co_LOG():
+    """⛔ Mot `ma_canh` khong co trong chi muc = hai artifact lech phien ban.
+
+    ⭐ Bo qua no la dung (mac dinh la GIU), nhung IM LANG bo qua thi khong.
+    """
+    import logging
+
+    from apps.auto_scan_video.ban_bien_tap import BanBienTap, QuyetDinh
+    from apps.auto_scan_video.canh import Canh, ChiMucCanh
+
+    chi_muc = ChiMucCanh(canh=(Canh(ma="c1", bat=0.0, ket=5.0),),
+                         thoi_luong=100.0)
+    ban = BanBienTap(
+        preset=hop_dong_v4.PRESET_CAT_THONG_MINH,
+        quyet_dinh=(QuyetDinh("khong_co_that", hop_dong_v4.THAO_TAC_CAT,
+                              "bo", 0.9, ()),),
+        thoi_luong_nguon=100.0)
+
+    ghi: list[str] = []
+    goc = gdha.log.warning
+    gdha.log.warning = lambda m, *a: ghi.append(str(m) % a if a else str(m))
+    try:
+        assert gdha.ung_vien_tu_ban_bien_tap(ban, chi_muc) == []
+    finally:
+        gdha.log.warning = goc
+    assert ghi and "khong_co_that" in ghi[0], ghi
+    assert logging  # noqa: B015 - giu import de doc duoc y dinh
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  F. Hau qua CO HOC cua viec cat SAU render — ba thu do duoc, khong doan ra
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_T2_cong_DUNG_MOT_KHUNG_vao_phan_khong_duoc_dai_hon():
+    """🔴 Mot tep video ⛔ khong the dai dung mot so thap phan bat ky.
+
+    Ke cat khai `thoi_luong_ra` bang mot TONG SO HOC (23,1 s); `concat` giao khung
+    tron ven (23,1667 s o 12 fps). `DAI_HON_CHO_PHEP_S` (0,01) duoc tinh cho sai
+    so LAM TRON cua ban do (1e-4) nen no ⛔ khong bao gio bao duoc mot khung.
+
+    ⛔ Va day ⛔ KHONG phai mot lan noi nguong: `LECH_THOI_LUONG_S` (0,5 s) — loi
+       hua san pham — phai DUNG YEN, va so cong them phai duoc **do tu tep**.
+    """
+    from apps.auto_scan_video import qc
+
+    def _t2(d_ra, fps):
+        bc = qc.kiem(
+            tt_ra={"thoi_luong": d_ra, "co_video": True, "co_tieng": True,
+                   "fps": fps, "thoi_luong_video": d_ra,
+                   "thoi_luong_tieng": d_ra},
+            tt_nguon={"thoi_luong": 24.0, "co_video": True, "co_tieng": True},
+            am_luong={}, ke_hoach={"doan": [], "tong_ms": 24000},
+            ban_ke_tieng={}, thoi_luong_mong_doi=23.1)
+        return next(m for m in bc["muc"] if m["ma"] == "T2")
+
+    m = _t2(23.166667, 12.0)
+    assert m["trang_thai"] == qc.DAT, m
+    assert m["mot_khung"] == pytest.approx(1 / 12, abs=1e-6)
+    # ⭐ Bao cao ⛔ khong duoc gop ba con so lam mot: nguoi doc phai thay phan nao
+    #    la loi hua va phan nao la do phan giai cua phep do.
+    assert m["dai_hon_ban_do"] == qc.DAI_HON_CHO_PHEP_S
+    assert m["nguong"] == qc.LECH_THOI_LUONG_S == 0.5
+
+    # ⛔ HAI khung thi HONG — cho phep la MOT, ⛔ khong phai "thoai mai mot chut".
+    assert _t2(23.1 + 2.1 / 12, 12.0)["trang_thai"] == qc.HONG
+
+    # ⚠️ `fps` ⛔ khong do duoc ⇒ ⛔ KHONG cong gi. Mot mac dinh doan se lam nguong
+    #    noi ra vi mot phep do THIEU.
+    m0 = _t2(23.166667, 0.0)
+    assert m0["trang_thai"] == qc.HONG and m0["mot_khung"] == 0.0
+
+
+def test_dung_lenh_GHIM_do_dai_ra_bang_ban_khai_cua_ke_cat():
+    """⭐ `-t` dap tat su TICH LUY: mot khung cho CA tep, ⛔ khong phai mot khung
+    cho MOI cho noi."""
+    cmd = gdha.dung_lenh("vao.mp4", "ra.mp4",
+                         khoang=[(0.0, 5.0), (6.0, 11.0), (12.0, 17.0)],
+                         bo_ma_hoa="libx264", thoi_luong_ra=15.0,
+                         ffmpeg_bin="ffmpeg")
+    assert "-t" in cmd and cmd[cmd.index("-t") + 1] == "15.000000"
+    # ⛔ Duong remux ⛔ khong ghim: ⛔ khong manh nao duoc noi.
+    remux = gdha.dung_lenh("vao.mp4", "ra.mp4", khoang=[(0.0, 24.0)],
+                           bo_ma_hoa="", thoi_luong_ra=24.0,
+                           ffmpeg_bin="ffmpeg")
+    assert "-t" not in remux
+
+
+def test_tham_chieu_VMAF_chay_qua_DUNG_phep_cat_cua_giai_doan_2():
+    """🔴 Tep duoc do la ban giao DA BI CAT. Tham chieu ⛔ khong qua cung phep cat
+    thi hai ben lech tung khung, va T18 bao `hong` du bo ma hoa ⛔ khong sai gi.
+
+    ⭐ Ghep duoc vi giai doan 1 giu **moi** khung: "GD1 roi GD2" = "chi GD2".
+    """
+    from apps.auto_scan_video import qc
+
+    hinh = {"khoang_giu": [[0.0, 24.0]], "vung": [], "lop_phu": [], "logo": []}
+    gd2 = [[0.0, 5.0], [6.0, 24.0]]
+
+    khong_truyen = qc.loc_tham_chieu(hinh, duong_chu=[], duong_ass="")
+    co_truyen = qc.loc_tham_chieu(hinh, duong_chu=[], duong_ass="",
+                                  khoang_giu=gd2)
+    assert "concat=n=1" in khong_truyen
+    assert "concat=n=2" in co_truyen
+    assert "trim=start=6.000000" in co_truyen
+
+
+def test_khoang_giu_THAT_duoc_KHAI_trong_outputs_cua_image_finish():
+    """⛔ `ke_cat` mot minh ⛔ khong tra loi duoc *"khoang nao duoc giu"*: cua so
+    `cat_dau_cuoi` cua khach la mot lop thu hep dat len tren no.
+
+    ⭐ Nen `image_finish` khai danh sach THAT, va QC doc **ban khai do** chu ⛔
+       khong tinh lai — hai ban khai ve cung mot dieu se lech.
+    """
+    van = (GOC / "giai_doan_hinh_anh.py").read_text(encoding="utf-8")
+    assert '"khoang_giu": [[round(float(b), 4), round(float(k), 4)]' in van
+
+    cay = ast.parse((GOC / "giai_doan_qc.py").read_text(encoding="utf-8"))
+    goi = ast.unparse(cay)
+    assert "khoang_giu" in goi
+    assert "khoang_giu=khoang_gd2" in goi
