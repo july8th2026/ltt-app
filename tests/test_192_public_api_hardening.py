@@ -20,7 +20,7 @@ import sqlalchemy as sa
 from fastapi.testclient import TestClient
 
 from platform_core.models import CREDIT_HOLD, CreditEntry, Job
-from platform_core.public_api import keys as devkeys, limits, metrics
+from platform_core.public_api import keys as devkeys, limits, metrics, protocol
 from platform_core.public_api.config import load_public_api_config
 from platform_core.public_api.scopes import (SCOPE_ARTIFACTS_READ,
                                              SCOPE_CREDITS_READ,
@@ -369,6 +369,83 @@ def test_a_configured_origin_is_echoed_and_others_are_not(tmp_path, monkeypatch)
         # Never with credentials: this API does not authenticate by cookie.
         assert "access-control-allow-credentials" not in {
             k.lower() for k in allowed.headers}
+    finally:
+        dbmod.reset_engine()
+
+
+#: What a browser exposes to page JS without `Access-Control-Expose-Headers`
+#: naming it: the small Fetch-spec "CORS-safelisted response header" set, plus
+#: the CORS negotiation headers themselves (consumed by the browser's CORS
+#: algorithm, never handed to page JS) and the standard browser-security
+#: enforcement headers (CSP, frame options, ...), which the browser *acts on*
+#: directly and a page never needs to read. None of these are the public API's
+#: own data and none need `expose_headers` — anything else that shows up on
+#: every response IS this surface's own data and must be listed there, or a
+#: browser caller silently cannot read it (EXT-02's own gap: `X-Correlation-ID`
+#: was "on every response" since EXT-02 and unreadable by a browser caller the
+#: whole time — nobody exposed it either).
+_NOT_APPLICATION_DATA = {
+    "cache-control", "content-language", "content-length", "content-type",
+    "expires", "last-modified", "pragma",  # Fetch-spec safelisted already
+    "access-control-allow-origin", "access-control-expose-headers", "vary",
+    "content-security-policy", "x-content-type-options", "x-frame-options",
+    "referrer-policy", "strict-transport-security",
+}
+
+
+def test_every_header_this_surface_always_sends_is_exposed_to_browser_js(
+        tmp_path, monkeypatch):
+    """The set check: an unlisted 4th always-on header must fail this test.
+
+    `expose_headers` puts nothing new on the wire (the guard middleware already
+    stamps these on every response, success or not); it only lets a browser's
+    `fetch`/`XMLHttpRequest` read what already left the server. Comparing a
+    fixed list of names to itself would prove nothing — it would still pass if
+    someone added a new always-stamped header and forgot the CORS side. So this
+    derives the "always sent" set from two genuinely different real responses
+    (a 200 and a 401 to a different route) and diffs it against what
+    `expose_headers` actually names, not against a copy of the same list.
+    """
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'cors_expose.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine
+
+    Base.metadata.create_all(get_engine())
+    from server.app import create_app
+
+    app = create_app(env={
+        "LTT_ENV": "local-server-test",
+        "LTT_SESSION_SECRET": "cors-expose-secret-value",
+        "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
+        "LTT_PUBLIC_API": "1",
+        "LTT_PUBLIC_API_CORS_ORIGINS": "https://partner.example.com",
+    })
+    try:
+        with TestClient(app) as client:
+            origin = {"Origin": "https://partner.example.com"}
+            ok = client.get(f"{API_V1_PREFIX}/health", headers=origin)
+            denied = client.get(f"{API_V1_PREFIX}/tools", headers=origin)
+        assert ok.status_code == 200
+        assert denied.status_code == 401
+
+        exposed = {h.strip().lower() for h in
+                   ok.headers["access-control-expose-headers"].split(",")}
+        # Every three of guard.py::_stamp's unconditional headers, spelled from
+        # the same constants the middleware uses -- not typed a second time.
+        assert exposed == {protocol.HEADER_MAX_BODY_BYTES.lower(),
+                           protocol.HEADER_CORRELATION_ID.lower(),
+                           protocol.HEADER_API_VERSION.lower()}
+
+        always_sent = ({k.lower() for k in ok.headers}
+                       & {k.lower() for k in denied.headers}) - _NOT_APPLICATION_DATA
+        assert always_sent == exposed, (
+            f"headers sent on every response but not in expose_headers: "
+            f"{always_sent - exposed or '(none)'}; exposed but never actually "
+            f"sent: {exposed - always_sent or '(none)'}")
     finally:
         dbmod.reset_engine()
 
