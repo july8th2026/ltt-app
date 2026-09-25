@@ -93,6 +93,24 @@ TI_LE_BAO_DONG_GIA_DA_DO = 0.45
 NGUONG_KHAI_CHO_KHACH = 0.15
 
 
+#: 🔴 **CHU DU AN CHOT 26/09/2026 — MOT CO BAT/TAT QC KHONG DUOC TON TAI CHO KHACH.**
+#:
+#:    Nguyen van: *"Bat/tat QC khong can ton tai tren ban cuoi. No chi dung khi audit
+#:    thoi."*
+#:
+#: ⇒ Nghia la:
+#:    - QC **LUON chay** cho moi luot cua khach. ⛔ Khong co duong nao de khach (hay
+#:      mot cau hinh khach doc duoc) tat no.
+#:    - Duong duy nhat hop le de tat la **AUDIT noi bo** — nguoi van hanh, tay, co chu
+#:      dich, va ⛔ khong nam trong be mat san pham.
+#:
+#: ⛔ **Nen dung "them mot co" khi thay QC lam luot chay lau.** Toi da di kiem ca
+#:    `apps/auto_scan_video/` va `platform_core/` (26/09): ⛔ KHONG co co nao ton tai,
+#:    va do la dung. Mot co nhu vay se de mot lop loi di THANG toi khach — va cai gia
+#:    ay ⛔ khong the ghi len mot nut.
+#:
+#: ⚠️ Ghi o day chu khong chi trong tai lieu, vi day la noi nguoi ta se ngoi khi ho
+#:    nghi den viec them co ay.
 def khai_cho_khach() -> bool:
     """Con so "N/M cau dich chua sat" co duoc hien cho khach khong.
 
