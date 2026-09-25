@@ -21,13 +21,16 @@ worker) quyết định ranh giới transaction.
 from __future__ import annotations
 
 import importlib
+import logging
 import re
 from typing import TypeVar
 from datetime import datetime, timedelta, timezone
 from typing import Callable, Optional
 
-from sqlalchemy import exists, func, literal, or_, select
+from sqlalchemy import exists, func, literal, or_, select, text
 from sqlalchemy.orm import Session as DbSession
+
+log = logging.getLogger(__name__)
 
 from platform_core.models import (ExecutionLease, JOB_CANCELLED, JOB_DONE, JOB_ERROR,
                                   JOB_QUEUED, JOB_RUNNING, Job)
@@ -61,6 +64,21 @@ def gian_cach_retry(lan: int, *, base: int = RETRY_BASE_S) -> int:
 
 # Job/account đã chờ tới mốc này được đưa lên trước account mới để không đói.
 FAIR_AGING = timedelta(minutes=5)
+
+#: Kênh `LISTEN/NOTIFY` của PostgreSQL dùng để ĐÁNH THỨC worker đang ngủ.
+#:
+#: 🔴 **Nó KHÔNG phải hàng đợi thứ hai.** Nguồn chân lý vẫn là bảng `jobs`, và
+#:    `claim()` vẫn là bộ phán quyết duy nhất. Tin nhắn không mang nội dung, và
+#:    **mất một tin nhắn không mất một job**: worker vẫn hỏi lại theo nhịp
+#:    `job_runner.POLL_INTERVAL_S` như trước, nên hỏng đường đánh thức chỉ làm
+#:    lượt đó chậm đúng bằng hành vi cũ.
+#:
+#: ⭐ Vì sao cần (đo 25/09/2026 trên đội hình worker THẬT của máy A —
+#:    `api:6, gpu+ffmpeg:1, voice:1`): một lượt ASV đi qua 21 job xen kẽ giữa
+#:    làn `api` (job `advance`) và làn `gpu+ffmpeg` (các giai đoạn), nên mỗi lần
+#:    đổi làn, tiến trình đích đang ở giữa một giấc ngủ `POLL_INTERVAL_S` và job
+#:    phải chờ hết phần còn lại của giấc ngủ đó.
+KENH_JOB_MOI = "ltt_job_moi"
 PROVIDER_DISPATCHED = "dispatched"
 PROVIDER_REJECTED = "rejected"
 PROVIDER_AMBIGUOUS = "ambiguous"
@@ -265,7 +283,39 @@ def submit(db: DbSession, *, user_id: str, app_slug: str, job_type: str,
         db, job, "submitted", public_message=N_("Đã tiếp nhận yêu cầu."),
         details={"status": JOB_QUEUED}, event_key="submitted",
     )
+    danh_thuc_worker(db)
     return job
+
+
+def danh_thuc_worker(db: DbSession) -> None:
+    """Gọi worker đang ngủ dậy — `NOTIFY` trên `KENH_JOB_MOI`. Không commit.
+
+    ⭐ **Vì sao nó nằm TRONG transaction của người gọi, không sau `commit()`.**
+       PostgreSQL giữ tin nhắn `NOTIFY` lại tới lúc **commit** mới gửi đi. Nên
+       một câu `NOTIFY` viết ở đây có đúng ngữ nghĩa ta cần mà không cần thêm
+       một dòng mã nào: job rollback (hết credit, request hỏng) thì tin nhắn
+       cũng rollback, và không worker nào bị gọi dậy để đi tìm một job không
+       tồn tại. Gửi **sau** `commit()` thì phải mở một kết nối thứ hai, và có
+       một khe cửa để tiến trình chết giữa hai bước.
+
+    ⛔ **Lỗi ở đây không được làm hỏng việc nộp job.** Đánh thức là tối ưu độ
+       trễ, không phải một phần của hợp đồng hàng đợi — hỏng thì worker quay về
+       nhịp `job_runner.POLL_INTERVAL_S`, đúng hành vi trước 25/09/2026.
+
+    Chỉ PostgreSQL có `NOTIFY`; SQLite (bộ test) bỏ qua im lặng.
+    """
+    try:
+        bind = db.get_bind()
+        if bind is None or bind.dialect.name != "postgresql":
+            return
+        # Tên kênh là hằng số của kho, không phải dữ liệu người dùng — nhưng
+        # `NOTIFY` không nhận tham số bind, nên vẫn chốt lại bằng một phép kiểm
+        # để không ai biến nó thành đường ghép chuỗi.
+        if not KENH_JOB_MOI.isidentifier():        # pragma: no cover - hằng số
+            return
+        db.execute(text(f"NOTIFY {KENH_JOB_MOI}"))
+    except Exception:                             # noqa: BLE001
+        log.debug("khong NOTIFY duoc %s", KENH_JOB_MOI, exc_info=True)
 
 
 # ── Worker nhặt job ───────────────────────────────────────────────────────────

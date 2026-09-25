@@ -25,15 +25,47 @@ export const NHAN_WAITING_KIND: Record<string, string> = {
   JOB: 'chờ job', CHILD_RUN: 'chờ run con', BARRIER: 'chờ đủ nhánh',
 }
 
-export function RunV3Panel({ run, onCancel }: {
-  run: RunV3 | null; onCancel: () => void }) {
+/** `"2026-09-24T00:00:10+00:00"` -> `"00:00:10"`. Cắt trực tiếp từ ISO, ⛔
+ *  không qua `toLocaleTimeString`: múi giờ/locale của máy chạy test và máy
+ *  người dùng khác nhau sẽ làm con số trôi — cắt chuỗi thì không. */
+const gio = (iso: string) => iso.slice(11, 19)
+
+/** `kết thúc - bắt đầu`, làm tròn giây. `NaN` (ISO hỏng) -> chuỗi rỗng, ⛔
+ *  không phải "NaNs" hiện lên màn hình người dùng. */
+function thoiLuong(batDauIso: string, ketThucIso: string): string {
+  const ms = new Date(ketThucIso).getTime() - new Date(batDauIso).getTime()
+  if (!Number.isFinite(ms) || ms < 0) return ''
+  const s = Math.round(ms / 1000)
+  return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60}s`
+}
+
+export function RunV3Panel({ run, onCancel, onChayLaiTu }: {
+  run: RunV3 | null; onCancel: () => void
+  /** Task A1 (spec §14, `runs_v3.py::v3_chay_lai_tu_node`). Tuỳ chọn: panel
+   *  vẫn dùng được (ví dụ trong test) mà không cần dây nối chạy-lại. */
+  onChayLaiTu?: (nodeId: string) => void }) {
   if (!run) return null
   const xong = RUN_V3_KET_THUC.has(run.status)
+  // ⭐ "Kết thúc" ĐÃ CÓ trong dữ liệu (workflowApi.ts:518 `RunV3Event.
+  //    created_at`) — chỉ chưa hiện. Lấy theo `seq` lớn nhất, ⛔ không lấy
+  //    phần tử cuối mảng: `nhapRun` nối lô mới vào sau lô cũ, nhưng một
+  //    phản hồi huỷ (`/cancel`) trả CẢ lịch sử nên thứ tự không phải lúc nào
+  //    cũng đã là seq tăng dần khi mảng còn rỗng ở hai đầu.
+  const suKienCuoi = xong
+    ? run.su_kien.reduce<typeof run.su_kien[number] | null>(
+        (max, e) => (!max || e.seq > max.seq) ? e : max, null)
+    : null
   return (
     <section className="run-v3" aria-label="Lượt chạy">
       <header>
         <strong data-run-status={run.status}>{run.status}</strong>
         <span>{run.credit_charged}/{run.credit_max} credit</span>
+        <span className="run-v3-thoi-gian">
+          Bắt đầu {gio(run.created_at)}
+          {suKienCuoi && <> · Kết thúc {gio(suKienCuoi.created_at)}</>}
+          {suKienCuoi && !!thoiLuong(run.created_at, suKienCuoi.created_at) &&
+            <> · {thoiLuong(run.created_at, suKienCuoi.created_at)}</>}
+        </span>
         {!xong && <button onClick={onCancel}>Hủy chạy</button>}
       </header>
       <table>
@@ -48,7 +80,16 @@ export function RunV3Panel({ run, onCancel }: {
                   <> ({NHAN_WAITING_KIND[n.waiting_kind] ?? n.waiting_kind})</>}
               </td>
               <td>{n.cost_credit}</td>
+              {/* `attempt` đã có trong `RunV3Node` (workflowApi.ts:518) từ
+                  P9b — chỉ bảng này chưa vẽ cột. */}
+              <td className="run-v3-attempt">Lần {n.attempt}</td>
               <td>{n.error}</td>
+              <td>
+                {xong && onChayLaiTu &&
+                  <button onClick={() => onChayLaiTu(n.node_id)}>
+                    Chạy lại từ đây
+                  </button>}
+              </td>
             </tr>
           ))}
         </tbody>

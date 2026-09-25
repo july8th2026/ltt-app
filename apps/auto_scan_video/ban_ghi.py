@@ -57,7 +57,10 @@ class BanGhiError(ValueError):
     """Ban ghi khong dat hop dong."""
 
 
-def _lam_sach(van_ban: str) -> str:
+def _lam_sach(van_ban: object) -> str:
+    """⛔ Nhan `object`, ⛔ khong phai `str`: than ham VON da nhan `None` va moi
+    thu khac (`str(van_ban or "")`), va nguoi goi truyen `tu.get(khoa)` — mot
+    gia tri JSON co the vang mat. Chu ky hep hon than ham la mot loi khai bao."""
     return " ".join(str(van_ban or "").split())
 
 

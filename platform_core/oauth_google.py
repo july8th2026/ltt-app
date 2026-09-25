@@ -89,10 +89,14 @@ def _bay_gio() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _aware(t: datetime | None) -> datetime | None:
-    if t is not None and t.tzinfo is None:
-        return t.replace(tzinfo=timezone.utc)
-    return t
+def _aware(t: datetime) -> datetime:
+    """Coi naive la UTC (SQLite khong giu tzinfo) — cung khuon `users.py:163`.
+
+    ⛔ Nhan `datetime`, ⛔ khong phai `datetime | None`: nguoi goi duy nhat la
+       `OAuthState.het_han_luc`, mot cot `nullable=False`. Mot nhanh `None` o
+       day se la ma khong bao gio chay.
+    """
+    return t.replace(tzinfo=timezone.utc) if t.tzinfo is None else t
 
 
 def _bam(state: str) -> str:
@@ -195,10 +199,12 @@ def _doi_token(goi_token, **tham) -> dict:
 
 
 def _het_han_tu(goi: dict) -> datetime | None:
-    giay = goi.get("expires_in")
+    tho = goi.get("expires_in")
+    if tho is None:                 # Google khong tra `expires_in`
+        return None
     try:
-        giay = int(giay)
-    except (TypeError, ValueError):
+        giay = int(tho)
+    except (TypeError, ValueError):  # tra ve mot thu khong doc ra so duoc
         return None
     return _bay_gio() + timedelta(seconds=giay)
 

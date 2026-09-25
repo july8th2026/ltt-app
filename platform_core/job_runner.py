@@ -36,7 +36,19 @@ log = logging.getLogger(__name__)
 
 # Hàng đợi trống thì ngủ bao lâu trước khi hỏi lại. Đủ ngắn để job mới chạy
 # gần như tức thì, đủ dài để không quay CPU khi rảnh.
+#
+# ⭐ Từ 25/09/2026 đây là **lưới an toàn**, không còn là độ trễ thường trực: một
+#    job mới được xếp sẽ gọi worker dậy ngay qua `jobs.KENH_JOB_MOI`
+#    (`_vong_nghe_job_moi`). ⛔ Đừng hạ con số này để "cho nhanh" — trên đội
+#    hình thật của máy A là 8 tiến trình worker, hạ 2,0 → 0,5 nhân **bốn** số
+#    lượt `reclaim_orphans` + `claim` chạy 24/7 lên cùng một PostgreSQL, để đổi
+#    lấy đúng thứ mà đường đánh thức đã cho không.
 POLL_INTERVAL_S = 2.0
+
+#: Vòng `LISTEN` chờ bao lâu mỗi lượt trước khi hỏi lại `stop()`. ⛔ KHÔNG phải
+#: độ trễ đánh thức (tin nhắn tới thì `notifies` trả về ngay) — chỉ là độ mịn
+#: của việc dừng êm khi dịch vụ tắt.
+NGHE_TIMEOUT_S = 5.0
 
 # Nhịp báo "lease GPU còn sống". Phải NGẮN hơn nhiều so với
 # `gpu_lease.ORPHAN_TIMEOUT` (10 phút), nếu không một job nặng sẽ bị coi là chết
@@ -1537,6 +1549,36 @@ def _ghi_metrics() -> None:
 #: chờ hết hạn rồi mới bắt đầu hỏi.
 LEASE_RETRY_S = 20.0
 
+#: Biên dao động quanh `LEASE_RETRY_S`, theo TỈ LỆ (0,25 = ±25 %).
+#:
+#: 🔴 **N-46 — vì sao một hằng số trần là một cơn bão.** 8 tiến trình worker của
+#:    máy A (`api:6, gpu+ffmpeg:1, voice:1`) khởi động **cùng một lúc** từ một
+#:    dịch vụ Windows. Cả 8 gọi `leases.acquire(MAINTENANCE)`; đúng một tiến
+#:    trình thắng, 7 tiến trình thua, rồi cả 7 ngủ **đúng 20,000 s** và thức
+#:    **cùng một giây**. Mỗi lượt thua không hề miễn phí: `reclaim_expired` +
+#:    một `INSERT` vào `singleton_leases` va `UNIQUE(name)` ⇒ `IntegrityError`
+#:    ⇒ `rollback`. Nên PostgreSQL nhận **7 `INSERT` hỏng trong cùng một giây,
+#:    cứ 20 giây một lần, suốt đời tiến trình** — và vì hằng số không có nhiễu,
+#:    các đồng hồ **không bao giờ tự lệch ra**: chúng đồng pha vĩnh viễn.
+#:
+#: ⭐ Thuốc là nhiễu, không phải một con số lớn hơn: nới `LEASE_RETRY_S` chỉ làm
+#:    cơn bão thưa hơn mà vẫn đồng pha, và làm việc nhận lease sau khi chủ chết
+#:    chậm đi. ±25 % rải 7 lượt kia trên một cửa sổ 10 giây ngay từ vòng đầu.
+LEASE_RETRY_JITTER = 0.25
+
+
+def _cho_lease_bao_tri() -> float:
+    """Số giây chờ trước lượt giành lease bảo trì kế tiếp — CÓ nhiễu (N-46).
+
+    Hàm riêng vì đây là chỗ duy nhất trong tệp có nhiều tiến trình *đồng pha từ
+    lúc khởi động*, và một phép kiểm phải nói được "hai lượt gọi không bằng
+    nhau" mà không cần dựng 8 tiến trình.
+    """
+    import random
+
+    bien = LEASE_RETRY_S * LEASE_RETRY_JITTER
+    return max(0.1, LEASE_RETRY_S + random.uniform(-bien, bien))
+
 
 def _bao_tri_cac_app(moc: dict) -> None:
     """Gọi `manifest.bao_tri` của từng app khi tới hạn.
@@ -1770,7 +1812,7 @@ def _vong_bao_tri(stop) -> None:
                 for db in _one_session():
                     lease = leases.acquire(db, name=leases.MAINTENANCE)
                 if lease is None:
-                    time.sleep(LEASE_RETRY_S)
+                    time.sleep(_cho_lease_bao_tri())
                     continue
                 log.info("tien trinh nay chay vong bao tri")
 
@@ -1790,6 +1832,113 @@ def _vong_bao_tri(stop) -> None:
                 leases.release(db, lease)
         except Exception:                       # noqa: BLE001
             log.exception("khong nha duoc lease bao tri")
+
+
+def _cho_viec(bao_thuc: threading.Event, giay: float) -> None:
+    """Ngủ tối đa `giay`, nhưng thức NGAY khi có job mới được xếp vào.
+
+    Thay cho `time.sleep(POLL_INTERVAL_S)` ở lượt rảnh. Hai tính chất cần giữ:
+
+    * **Không mất lượt.** Cờ được `set()` từ luồng nghe và chỉ `clear()` **sau**
+      khi đã thức. Một tin nhắn tới trong lúc ta đang `claim` vẫn còn nguyên khi
+      ta quay lại đây, nên lượt đó không chờ thêm một nhịp nào.
+    * **Xấu nhất bằng hành vi cũ.** Không tin nhắn nào tới thì hàm này chính là
+      `time.sleep(giay)`.
+    """
+    if bao_thuc.wait(giay):
+        bao_thuc.clear()
+
+
+def _vong_nghe_job_moi(bao_thuc: threading.Event, stop, url: str) -> None:
+    """`LISTEN` kênh `jobs.KENH_JOB_MOI`; mỗi tin nhắn gọi vòng worker dậy.
+
+    🔴 **Đây là ĐÁNH THỨC, không phải hàng đợi.** Luồng này không đọc nội dung
+       tin nhắn, không chọn job, không ghi gì. Nó chỉ `set()` một cờ. Mọi phán
+       quyết "job nào chạy ở đâu" vẫn nằm nguyên ở `jobs.claim` với
+       `FOR UPDATE SKIP LOCKED`. Mất kết nối, mất tin nhắn, hay không có luồng
+       này (SQLite) đều chỉ đưa worker về nhịp `POLL_INTERVAL_S` — tức đúng hành
+       vi trước 25/09/2026, không có job nào bị bỏ.
+
+    ⭐ **Kết nối RIÊNG, không lấy từ pool của `db.get_engine()`.** Một kết nối
+       `LISTEN` bị giữ **suốt đời tiến trình**; lấy nó ra khỏi pool dùng chung là
+       vĩnh viễn bớt một kết nối của việc thật. `NullPool` + `AUTOCOMMIT` vì
+       `LISTEN` phải nằm ngoài transaction mới nhận được tin nhắn.
+
+    Mất kết nối thì mở lại: PostgreSQL khởi động lại, hay tường lửa cắt một kết
+    nối nằm không, không được làm worker mất đường đánh thức vĩnh viễn.
+    """
+    import sqlalchemy as sa
+    from sqlalchemy.pool import NullPool
+
+    from platform_core.db import _connect_args
+
+    while stop is None or not stop():
+        eng = None
+        try:
+            eng = sa.create_engine(url, future=True, poolclass=NullPool,
+                                   isolation_level="AUTOCOMMIT",
+                                   connect_args=_connect_args(url))
+            with eng.connect() as conn:
+                conn.exec_driver_sql(f"LISTEN {jobq.KENH_JOB_MOI}")
+                raw = conn.connection.driver_connection
+                if raw is None:                    # pragma: no cover
+                    raise RuntimeError(
+                        "khong lay duoc ket noi driver de LISTEN")
+                # Một job có thể đã được xếp GIỮA lượt `claim` vừa rồi và câu
+                # `LISTEN` này — khe cửa đó chỉ có ở lần mở đầu và sau mỗi lần
+                # nối lại. Đánh thức một lượt để nó không bị bỏ qua.
+                bao_thuc.set()
+                log.info("nghe %s de danh thuc worker", jobq.KENH_JOB_MOI)
+                while stop is None or not stop():
+                    for _tin in raw.notifies(timeout=NGHE_TIMEOUT_S,
+                                             stop_after=1):
+                        bao_thuc.set()
+        except Exception:                          # noqa: BLE001
+            # ⛔ Không `exception()`: một PostgreSQL đang khởi động lại sẽ ghi
+            #    một stack trace mỗi 5 giây vào log của 8 tiến trình.
+            log.warning("mat duong danh thuc (%s) — quay ve nhip poll, se noi lai",
+                        jobq.KENH_JOB_MOI)
+            time.sleep(NGHE_TIMEOUT_S)
+        finally:
+            if eng is not None:
+                try:
+                    eng.dispose()
+                except Exception:                  # noqa: BLE001
+                    # ⛔ Không nuốt lặng: một `dispose` hỏng nghĩa là kết nối
+                    #    `LISTEN` có thể còn treo ở PostgreSQL, và 8 tiến trình
+                    #    rò mỗi lần nối lại thì tới lượt `max_connections`.
+                    log.warning("khong dong duoc engine nghe job moi",
+                                exc_info=True)
+
+
+def _bat_dau_nghe(bao_thuc: threading.Event, stop,
+                  worker_id: str) -> Optional[threading.Thread]:
+    """Mở luồng nghe nếu CSDL là PostgreSQL. `None` nghĩa là chỉ còn nhịp poll.
+
+    ⛔ Không ném: một worker phải chạy được trên SQLite (bộ test) và trên một
+       máy chưa cấu hình CSDL xong, và trong cả hai trường hợp hành vi đúng là
+       *y như trước khi có đường đánh thức*.
+    """
+    try:
+        from platform_core.db import database_url
+        url = database_url()
+    except Exception as exc:                       # noqa: BLE001
+        # CSDL chưa cấu hình là trạng thái MONG ĐỢI ở máy phát triển, nên đây là
+        # `debug` chứ không `warning` — nhưng ⛔ không im: `run_forever` sẽ chạy
+        # tiếp bằng nhịp poll, và người đọc log phải biết vì sao.
+        log.debug("khong mo duoc duong danh thuc: %s", type(exc).__name__)
+        return None
+    if not url.startswith(("postgresql", "postgres")):
+        return None
+    try:
+        luong = threading.Thread(
+            target=_vong_nghe_job_moi, args=(bao_thuc, stop, url),
+            name=f"nghe-job-{worker_id}", daemon=True)
+        luong.start()
+        return luong
+    except Exception:                              # noqa: BLE001
+        log.warning("khong mo duoc luong nghe job moi — chi con nhip poll")
+        return None
 
 
 def run_forever(worker_id: str, *, stop=None, maintenance: bool = True,
@@ -1815,6 +1964,15 @@ def run_forever(worker_id: str, *, stop=None, maintenance: bool = True,
                                  name=f"bao-tri-{worker_id}", daemon=True)
         luong.start()
 
+    # ⭐ Cờ đánh thức là của RIÊNG lượt `run_forever` này, không phải biến module.
+    #    Trên production mỗi làn là một tiến trình riêng nên hai cách giống nhau,
+    #    nhưng bộ test (và `job_worker` đường một tiến trình) gọi `run_forever`
+    #    trong LUỒNG: một cờ dùng chung thì `clear()` của luồng này ăn mất lượt
+    #    thức của luồng kia, và hậu quả là "đôi khi chậm 2 giây" — thứ không ai
+    #    truy ra được.
+    bao_thuc = threading.Event()
+    nghe = _bat_dau_nghe(bao_thuc, stop, worker_id)
+
     next_metrics_flush = time.monotonic() + METRICS_FLUSH_INTERVAL_S
     while stop is None or not stop():
         try:
@@ -1828,12 +1986,16 @@ def run_forever(worker_id: str, *, stop=None, maintenance: bool = True,
                     log.warning("nhat lai %d job mo coi", n)
             co_viec = _chay_mot_job(worker_id, capabilities=capabilities)
             if not co_viec:
-                time.sleep(POLL_INTERVAL_S)
+                _cho_viec(bao_thuc, POLL_INTERVAL_S)
         except Exception:
             # Một lượt hỏng không được giết cả worker — ngủ rồi thử lại.
+            # ⛔ Ở đây ngủ THẬT, không `_cho_viec`: một job mới không sửa được
+            #    cái vừa ném ra, và thức sớm chỉ để ném lại là một vòng nóng.
             log.exception("loi trong vong worker, tiep tuc")
             time.sleep(POLL_INTERVAL_S)
 
+    if nghe is not None:
+        nghe.join(timeout=NGHE_TIMEOUT_S + 1.0)
     if luong is not None:
         luong.join(timeout=30)
     try:

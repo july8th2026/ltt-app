@@ -61,11 +61,10 @@ if str(GOC) not in sys.path:
 #    chi cuu nhung dong DI QUA ham do: `json.dumps` in thang van chet, va do
 #    dung la cho vua chet.
 # ⇒ Sua mot lan o DAU RA, khong o tung cho goi.
-try:
+if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
-except Exception:                               # noqa: BLE001
-    pass                                        # ⛔ khong chet vi chuyen in an
 
 NGUON = GOC / "docs/auto_scan_video_final/bang_chung/b1_chep_loi_moi"
 PHIM = ("v1", "v2", "v3")
@@ -82,7 +81,7 @@ def _sha(tep: str) -> str:
         return subprocess.run(["git", "log", "-1", "--format=%H", "--", tep],
                               cwd=GOC, capture_output=True, text=True,
                               timeout=30).stdout.strip()
-    except Exception:                           # noqa: BLE001
+    except (OSError, subprocess.SubprocessError):   # khong co `git`, hoac het gio
         return ""
 
 
@@ -93,7 +92,9 @@ def moi_truong() -> dict:
     def _an_toan(f):
         try:
             return f()
-        except Exception:                       # noqa: BLE001
+        except Exception as e:                  # noqa: BLE001
+            print(f"[canh bao] mot truong moi_truong khong doc duoc: "
+                  f"{type(e).__name__}")
             return ""
 
     return {
@@ -151,7 +152,8 @@ def _mot_phim(ten: str, *, ep: bool) -> dict:
             kq = ai.goi(db, ai.QC_NGU_NGHIA,
                         qc_ai.loi_nhac_ngu_nghia(lo, "vi"), temperature=0.0)
             phan.extend(qc_ai.doc_ngu_nghia(
-                ai.doc_json(kq["noi_dung"], ai.QC_NGU_NGHIA), ma_gui))
+                ai.doc_json(kq["noi_dung"], ai.QC_NGU_NGHIA), ma_gui,
+                {str(d["ma"]): (d["goc"], d["chu"]) for d in lo}))
         co = [p["ma"] for p in phan if not p["dat"]]
 
         B = dict(A)

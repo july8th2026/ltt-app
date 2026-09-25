@@ -982,7 +982,8 @@ def muc_theo_ma(cac_luot: list[dict], ma: list[str]) -> dict:
     """
     ra: dict = {}
     for m in ma:
-        hang = []
+        # `None` = lo bi MAT (⛔ khong phai "khong co loi" = `[]`)
+        hang: list[list[str] | None] = []
         for l in cac_luot:
             if m in l["phan_quyet"]:
                 hang.append([str(x.get("muc") or "")
@@ -1347,12 +1348,12 @@ def main(argv=None) -> int:
     khoi_fa: dict | None = None
     tiem: dict | None = None
     if a.pha in ("ca", "fa"):
-        dong = None
+        dong_fa: list[int] | None = None
         if a.theo_so:
             so = json.loads(pathlib.Path(a.theo_so).read_text(encoding="utf-8"))
-            dong = [int(m["dong_flores"]) for m in so["muc"]]
+            dong_fa = [int(m["dong_flores"]) for m in so["muc"]]
         khoi_fa = ti_le_bao_dong_gia(a.n, db=db, luot=a.luot, tu=a.tu,
-                                    ban=a.ban, dong=dong)
+                                    ban=a.ban, dong=dong_fa)
     if a.pha in ("ca", "tiem"):
         loai_can = tuple(x.strip() for x in a.tiem_loai.split(",") if x.strip())
         la = [x for x in loai_can if x not in LOAI_TIEM]

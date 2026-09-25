@@ -110,6 +110,29 @@ Mở `http://127.0.0.1:8100` — chưa đăng nhập sẽ thấy **catalog công
 app `public=True`). Đăng nhập rồi mở một app bất kỳ và nộp một job. Ra kết quả
 kèm số credit nghĩa là hợp đồng app đang hoạt động đúng.
 
+### Node `piece.*` (connector) — một bước nữa
+
+```powershell
+cd d:\LTTSTUDIOSAPP\connector_runner
+npm ci
+```
+
+`connector_runner/node_modules` **không được git theo dõi**, nên một cây mới
+clone sẽ không có piece nào. Thiếu nó thì runner ném
+`Cannot find module '@activepieces/piece-…'`, và ba phép kiểm chạy runner thật
+trong `tests/test_3505_wf_flow_d_poll_pg.py` (`test_THAT_*`) sẽ **đỏ**.
+
+⛔ **Đừng cho ba phép kiểm đó `skip`.** Node/npm là phụ thuộc phát triển bình
+thường, luôn cài được — khác hẳn các điều kiện `check_bo_qua.py` chấp nhận bỏ
+qua (không có PostgreSQL, không phải Windows). *Một test bị bỏ qua là một test
+không canh gì cả.*
+
+⭐ `npm ci` chứ không `npm install`: `package-lock.json` đã commit, và lệch
+phiên bản piece làm `connector.py` ném `phien_ban_lech`. Trên máy chủ bước này
+do `setup/2-cai-dat.ps1` chạy, cài vào `$Root/connector_runner` — ⛔ không phải
+trong `app/`, vì robocopy của trình cài loại `node_modules` theo **tên** ở mọi
+cấp và sẽ xoá mất.
+
 > **Cổng 8100 chứ không phải 8000.** Máy này còn chạy một hệ thống nội bộ khác
 > đã chiếm 8000 từ trước (`D:\BOT GEMINI`). Dùng 8000 sẽ giành cổng với dịch vụ
 > đang phục vụ người dùng thật.

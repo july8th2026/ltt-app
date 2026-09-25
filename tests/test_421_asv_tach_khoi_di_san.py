@@ -197,13 +197,23 @@ def test_KHONG_vong_lap_worker_rieng_trong_app():
     Mot `ThreadPoolExecutor`/`ProcessPoolExecutor` trong app nghia la cong viec
     chay **ngoai** so job: khong tinh tien, khong huy duoc, khong thu hoi duoc
     khi worker chet.
+
+    🔴 **Danh sach cam va danh sach ngoai le doc tu `test_427`, khong go lai.**
+       Truoc 25/09/2026 tep nay go lai nguyen ban danh sach `cam` — hai cho khai
+       cung mot luat, va khong ai bat khop. Hau qua do duoc ngay hom do: mot
+       ngoai le duoc ghi o `test_427` kem toan bo lap luan, va tep nay van do
+       bang mot thong diep **khong nhac mot chu** rang ngoai le ton tai. Nguoi
+       doc se di xoa ma san pham, hoac di xoa phep kiem.
     """
     from tests.test_401_asv_ranh_gioi_va_artifact import _vi_pham
+    from tests.test_427_asv_v4_kien_truc import (CAM_HANG_DOI,
+                                                 NGOAI_LE_HANG_DOI)
 
-    cam = ("ThreadPoolExecutor", "ProcessPoolExecutor", "multiprocessing",
-           "APScheduler", "BackgroundScheduler")
     for tep in sorted((APP / "auto_scan_video").glob("*.py")):
-        vp = _vi_pham(tep.read_text(encoding="utf-8"), cam)
+        duoc = NGOAI_LE_HANG_DOI.get(tep.relative_to(GOC).as_posix(),
+                                     frozenset())
+        vp = [x for x in _vi_pham(tep.read_text(encoding="utf-8"), CAM_HANG_DOI)
+              if x not in duoc]
         assert vp == [], f"{tep.name} dung hang doi/lich rieng: {vp}"
 
 
