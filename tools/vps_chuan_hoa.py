@@ -19,6 +19,28 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+
+def _nap_env(duong: str) -> None:
+    """Nap `secrets\app.env` vao os.environ neu env chua co san.
+
+    Cong cu van hanh duoc goi bang tay tren may chu, noi bi mat CHI nam trong
+    app.env (dich vu duoc nssm nuong env luc cai). Khong nap thi nguoi chay
+    nhan mot traceback `DatabaseNotConfigured` thay vi mot cau bao ro rang.
+    """
+    import os
+
+    tep = Path(duong)
+    if os.environ.get("LTT_DATABASE_URL") or not tep.exists():
+        return
+    for dong in tep.read_text(encoding="utf-8-sig").splitlines():
+        dong = dong.strip()
+        if dong and not dong.startswith("#") and "=" in dong:
+            ten, gia = dong.split("=", 1)
+            os.environ.setdefault(ten.strip(), gia.strip())
 
 
 def _may_va_ip(db):
@@ -36,7 +58,12 @@ def _may_va_ip(db):
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Chuan hoa danh tinh VPS da co.")
     ap.add_argument("--ap", action="store_true", help="ap that (mac dinh chi bao cao)")
+    ap.add_argument("--env", default=r"C:\LTTPlatform\secrets\app.env",
+
+                      help="tep bi mat de nap khi env chua co san")
     a = ap.parse_args(argv)
+
+    _nap_env(a.env)
 
     from sqlalchemy import select
 
@@ -77,9 +104,12 @@ def main(argv=None) -> int:
             if ip:
                 tt, _ = rdns.trang_thai_ptr(
                     backend_factory.ovh_inventory_client(profile), ip)
+                # ⛔ `khong do duoc` phai hien RIENG: no la mot dut mach do
+                #    luong (khoa OVH chet), khong phai mot su that ve rDNS.
                 ptr = {rdns.DA_THAY: "da thay",
                        rdns.DANG_LAN: "dang lan truyen",
-                       rdns.CHUA_DAT: "CHUA dat"}[tt]
+                       rdns.CHUA_DAT: "CHUA dat",
+                       rdns.KHONG_DO_DUOC: "? khong do duoc"}[tt]
             print(f"{m.vmid:>6}  {str(m.ten)[:16]:<16} {cpu:<10} "
                   f"{'dat' if fw_ok else 'CHUA':<10} "
                   f"{'co' if onboot == '1' else 'CHUA':<7} {ip or '-':<16} {ptr}")
