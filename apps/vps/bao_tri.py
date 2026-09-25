@@ -257,6 +257,16 @@ THANH_PHAN_CONG_QUAN_TRI = "cong_quan_tri"
 #: Cong SSH cua cong vao. Mot hang so, khong go lai so o cho khac.
 CONG_QUAN_TRI = 22
 
+#: Thanh phan suc khoe cho phep kiem "may co dung chuan danh tinh khong".
+#: ⚠️ NGOAI `REQUIRED_HEALTH_COMPONENTS`, va ⛔ NGOAI `CHAN_BAN`: mot may lech
+#: chuan la viec cua nguoi van hanh, khong phai ly do dong cua hang.
+THANH_PHAN_CHUAN_HOA = "chuan_hoa_may"
+
+#: Nhip kiem chuan hoa: mot ngay. MOC RIENG — ba phep soi truoc tung dung chung
+#: mot moc va phep chay truoc khoa hai phep kia 24 gio trong im lang (24/09).
+KIEM_CHUAN_HOA_MOI_GIAY = 24 * 3600
+_moc_chuan_hoa = 0.0
+
 #: Nhip kiem cong: mot ngay. No mo ket noi TCP toi tung dia chi nen khong dang
 #: chay moi gio, va thu no bat (mot luat tuong lua bi go) khong doi theo gio.
 KIEM_CONG_MOI_GIAY = 24 * 3600
@@ -561,6 +571,99 @@ def _kiem_cong_quan_tri(db, profile, *, mo_cong=None, now=None) -> int:
     if lo:
         log.error("VPS: cong quan tri LO tren %s", ", ".join(lo))
     return len(lo)
+
+
+def _kiem_chuan_hoa(db, profile, *, doc_cpu=None, doc_fw=None, now=None) -> int:
+    """Dem may LECH chuan danh tinh, va ghi mot ban ghi suc khoe MOI luot.
+
+    Ba hang muc, chot 25/09/2026 khi so voi Vultr: `cpu host` (khong con `kvm64`
+    generic), `ipfilter`/`macfilter` (chong mot khach ARP/IP spoof khach khac
+    tren cung `vmbr1`), va rDNS cho dia chi cong khai.
+
+    ## Vi sao phai TU CHAY
+
+    `tools/vps_chuan_hoa.py` keo may ve chuan duoc, nhung no chay bang tay — va
+    mot phep kiem chay bang tay gop *"chua ai chay"* voi *"chay roi, dat"* vao
+    cung mot su im lang. Ghi mot ban ghi MOI luot tach hai thu do ra.
+
+    `doc_cpu(vmid)` / `doc_fw(vmid)` tiem duoc de do bang test.
+    """
+    from datetime import datetime, timezone
+
+    from sqlalchemy import select
+
+    from apps.vps.tables import VpsInstance, VpsProfileHealth
+
+    bay_gio = now or datetime.now(timezone.utc)
+    if doc_cpu is None or doc_fw is None:
+        cli = backend_factory.compute_backend(profile).client
+        node = cli.config.node
+
+        def doc_cpu(vmid, _cli=cli, _node=node):
+            ra = _cli._goi("GET", f"/nodes/{_node}/qemu/{int(vmid)}/config")
+            d = ra.get("data", ra) if isinstance(ra, dict) else ra
+            return str((d or {}).get("cpu") or "kvm64")
+
+        def doc_fw(vmid, _cli=cli):
+            return _cli.doc_firewall(int(vmid))
+
+    lech: list[str] = []
+    for m in db.execute(select(VpsInstance).where(
+            VpsInstance.infrastructure_profile_id == profile.id,
+            VpsInstance.trang_thai != "da_xoa")).scalars():
+        if not m.vmid:
+            continue
+        thieu = []
+        if not str(doc_cpu(m.vmid)).startswith("host"):
+            thieu.append("cpu")
+        fw = doc_fw(m.vmid) or {}
+        if not all(str(fw.get(k, "")).lower() in ("1", "true")
+                   for k in ("enable", "ipfilter", "macfilter")):
+            thieu.append("chong-gia-mao")
+        if thieu:
+            lech.append(f"{m.vmid}({'+'.join(thieu)})")
+
+    if lech:
+        trang_thai = "DEGRADED"
+        tom_tat = f"{len(lech)} may lech chuan danh tinh: {', '.join(lech[:8])}"
+    else:
+        trang_thai = "HEALTHY"
+        tom_tat = "moi may dung chuan danh tinh (cpu host + chong gia mao)"
+    db.add(VpsProfileHealth(
+        infrastructure_profile_id=profile.id, component=THANH_PHAN_CHUAN_HOA,
+        status=trang_thai, summary=tom_tat[:300],
+        observed_at=bay_gio, generated_at=bay_gio))
+    if lech:
+        log.warning("VPS: %s", tom_tat)
+    return len(lech)
+
+
+def _kiem_chuan_hoa_dinh_ky(db, *, now=None) -> int:
+    """Chay `_kiem_chuan_hoa` cho profile mac dinh, moi ngay mot lan."""
+    global _moc_chuan_hoa
+
+    import time as _time
+
+    from sqlalchemy import select
+
+    from apps.vps.tables import VpsInfrastructureProfile
+
+    if _time.monotonic() < _moc_chuan_hoa:
+        return 0
+    _moc_chuan_hoa = _time.monotonic() + KIEM_CHUAN_HOA_MOI_GIAY
+    profile = db.execute(select(VpsInfrastructureProfile).where(
+        VpsInfrastructureProfile.status == "ACTIVE",
+        VpsInfrastructureProfile.is_default.is_(True))).scalars().first()
+    if profile is None:
+        return 0
+    try:
+        so_lech = _kiem_chuan_hoa(db, profile, now=now)
+        db.commit()
+        return so_lech
+    except (ChuaCauHinh, ProxmoxError) as exc:
+        db.rollback()
+        log.warning("VPS: khong kiem duoc chuan hoa may: %s", exc)
+        return 0
 
 
 def _kiem_cong_dinh_ky(db, *, now=None) -> int:
@@ -1063,6 +1166,7 @@ def mot_luot(db, *, now=None) -> dict:
     #    *"Một phép soi không ai chạy là một phép soi không tồn tại"*.
     ket_qua["dien_mo_coi"] = _doi_chieu_dinh_ky(db)
     ket_qua["cong_quan_tri_lo"] = _kiem_cong_dinh_ky(db)
+    ket_qua["may_lech_chuan"] = _kiem_chuan_hoa_dinh_ky(db)
     ket_qua["ip_rong_huy_gia_han"] = _chinh_sach_ip_rong(db, now=now)
 
     da_nop_xoa = 0
