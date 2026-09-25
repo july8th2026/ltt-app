@@ -119,5 +119,14 @@ from platform_core.workflow.nut_loi import http as _http  # noqa: E402,F401
 #    `bien_dich._node_loi` bao `node_khong_ton_tai` cho thu da co that.
 from platform_core.workflow.nut_loi import connector as _connector  # noqa: E402,F401
 
+# ── Node `core.code` (plan wf-v2 P-D mục 3) ─────────────────────────────────
+#
+# ⭐ Điều kiện tiên quyết ĐÃ ĐẠT (lan wfd, 25/09): lớp cách ly thứ hai
+#    (isolated-vm trong AppContainer) đã port + bảy đường thoát D1–D7 đã có
+#    phép "PHẢI THẤT BẠI" + phép TIÊM LỖI, xanh trên `main`. Trước đó
+#    `code_sandbox.py` tồn tại nhưng KHÔNG node nào trỏ tới nó (docstring
+#    module đó: *"CHƯA đăng ký"*) — dòng import dưới đây là chỗ nối duy nhất.
+from platform_core.workflow.nut_loi import code as _code  # noqa: E402,F401
+
 
 __all__ = ["THI_HANH_TRONG_DONG_CO", "bo_thi_hanh", "dang_ky", "tat_ca"]
