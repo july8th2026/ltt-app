@@ -76,6 +76,23 @@ PHIEN_BAN_KE_CAT = 1
 
 #: 🔴 TRAN CUNG. Chu du an chot 25/09. ⛔ Khong noi. Vuot tran la tin hieu rang
 #:    tieu chi "chat luong kem" sai, ⛔ khong phai rang con so nay chat.
+#:
+#: ⭐ **CHOT LAI 25/09 toi, sau khi da do va da bao cai gia — chu du an noi "GIU".**
+#:
+#:    Toi da dat cho chu du an dung con so: tran tinh tren DO DAI, nen ngan sach cat
+#:    that la
+#:        video 190 s  ->  9,5 giay
+#:        video 275 s  -> 13,8 giay
+#:        phim 30 phut -> 90  giay
+#:    ⇒ No cat thoai mai cac doan chet NGAN, va ⛔ gan nhu khong bao gio bo duoc mot
+#:      canh yeu DAI. Tren mot ca that, tieu chi doi cat **50 %** va tran chan con
+#:      **4,17 %**, loai 11 doan voi ly do `vuot_tran`.
+#:
+#: ⇒ Chu du an biet dieu do va chon GIU. Nghia la con so nay la mot **LAN CAN** ("he
+#:   khong duoc pha phim khach"), ⛔ KHONG phai mot **ngan sach de bo canh yeu**.
+#: ⛔ Nen dung "sua" no khi thay `dung_o_tran: true` xuat hien nhieu — do la no dang
+#:   LAM DUNG VIEC. Muon bo canh yeu dai thi do la mot YEU CAU SAN PHAM khac, phai
+#:   hoi chu du an, ⛔ khong phai mot con so de noi len cho tien.
 TRAN_CAT_TI_LE = 0.05
 
 #: Duoi muc nay coi la khong dang cat: mot khoang vai phan tram giay khong bo
