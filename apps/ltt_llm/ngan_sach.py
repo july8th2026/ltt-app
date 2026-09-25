@@ -381,66 +381,6 @@ NGAN_SACH_HEP_NHAT = min(h.token_budget for h in HO_SO.values())
 #:    `tran_vao_cua(model_id)` — cùng công thức, khác cửa sổ.
 TOKEN_VAO_TRAN = CUA_SO_MODEL - TOKEN_RA_TRAN - DEM_UOC      # 186_368
 
-#: Số byte JSON cho mỗi token khi hội thoại đi trên dây. Đo 30/08 trên thân
-#: request thật của Codex (kể cả dấu ngoặc, escape và định nghĩa tool): 4,5.
-#:
-#: 🔴 NÂNG 4,5 → 6,0 ngày 25/09/2026 — LỖI THỨ HAI CỦA CÙNG MỘT LỚP.
-#:
-#:    Sự cố production: `POST /api/v1/messages` thân **1.150.067 B** ăn 413 ở
-#:    trần khi đó **1.048.576 B** (1 MiB, `DEFAULT_MAX_BODY_BYTES` không bị ghi
-#:    đè) — khách nén hội thoại **4 lần liên tiếp vẫn 413**, không có đường ra.
-#:
-#:    Soi ngược: thân đó tương ứng gần đúng trọn ngân sách ƯỚC của model cửa sổ
-#:    rộng nhất — `227.328` token (`max(CUA_SO_THEO_MODEL) − TOKEN_RA_TRAN −
-#:    DEM_UOC`). `1.150.067 / 227.328 = 5,059` byte/token — **VƯỢT** giả định
-#:    4,5 cũ. Với 4,5, `BODY_BYTES_TOI_THIEU` tính ra ~999 KB — chỉ nhỏ hơn trần
-#:    mặc định 1 MiB đúng **2,4%**, tức phép kiểm `test_334` XANH nhờ MỘT biên
-#:    sai số mỏng hơn cả cách làm tròn, không nhờ con số đúng.
-#:
-#:    ⭐ ĐO LẠI, KHÔNG BỐC SỐ (script đo lưu ở nhật ký sự cố 25/09): dùng chính
-#:    bộ ước `platform_core/llm/uoc_token.py` (`uoc_than`/`gom_than`, KHÔNG tự
-#:    viết bộ đếm) trên các mẫu dựng từ tài liệu tiếng Việt + mã nguồn thật của
-#:    kho này, theo hai hình dạng:
-#:      * hội thoại vài khối văn bản LỚN (tài liệu/tệp mã nguyên khối) — ước
-#:        median ≈ 2,65 · p90 ≈ 3,05 byte/token;
-#:      * phiên agent nhiều lượt NHỎ xen kẽ tool_use/tool_result (hình dạng
-#:        THẬT của LTTCODE — nhiều JSON khung: id, role, cache_control, tên
-#:        công cụ — ăn byte mà không sinh thêm token) — tới **4,35** byte/token
-#:        ở 500 lượt.
-#:    Tỉ lệ đo được TĂNG THEO số lượt càng nhỏ mỗi lượt (khung JSON chiếm tỉ
-#:    trọng lớn hơn nội dung), và ca sản xuất thật (5,059) còn vượt cả kịch bản
-#:    "khung dày" đo được — tức mẫu ở trên vẫn CHƯA nắm hết hình dạng thật (có
-#:    thể tên tệp/đường dẫn dài hơn, escape sâu hơn, khối suy nghĩ dài hơn giả
-#:    lập). Không có bằng chứng trần trên; 5,059 là SÀN đã đo được trên chính
-#:    production.
-#:
-#:    ✅ CHỌN 6,0 = 5,059 (SÀN đo thật) × ~1,19 biên — vượt rõ mọi kịch bản tự
-#:    dựng (4,35) LẪN sự cố thật (5,059), không phải một biên tượng trưng.
-#:    `test_4200_tran_body_du_byte_token.py` ghim cả số ĐO (5,059) lẫn số CHỐT
-#:    (6,0) để không ai hạ lại xuống dưới sự cố đã xảy ra mà không biết.
-#:
-#: ⛔ VẪN CHƯA TÍNH ẢNH. Ảnh gửi kèm là base64 (~1,37× byte gốc) và
-#:    `ANH_BYTE_TOI_DA` = 12 MiB/ảnh, `SO_ANH_TOI_DA` = 4 ảnh — MỘT ảnh đơn đã
-#:    vượt xa mọi trần thân tính từ hằng số này. Hằng số này chỉ chừa đủ cho
-#:    HỘI THOẠI CHỮ; trần thân thật ở `platform_core/public_api/config.py`
-#:    cộng thêm biên riêng cho việc đó (xem chú thích ở đó).
-BYTE_MOI_TOKEN_JSON = 6.0
-
-#: Trần thân request **tối thiểu** phải cho phép, để `TOKEN_VAO_TRAN` không bị
-#: chặn bởi kích thước byte trước khi ai kịp đếm token.
-#:
-#: ⛔ ĐÂY LÀ MỘT LỖI ĐÃ XẢY RA: trần body 256 KB của nền tảng chặn hội thoại dài
-#:    ở khoảng 64.000 token — gần bằng 65.000 nên suốt buổi ta tưởng đang chạm
-#:    trần của máy B. Hai trần không liên quan gì nhau mà cái nhỏ hơn thắng.
-#:
-#: ⭐ TÍNH THEO MODEL **RỘNG NHẤT**, không theo model mặc định: trần body là một
-#:    con số của cả cửa `/api/v1`, và một request `ltt-3.5` hợp lệ ở trần token
-#:    của NÓ phải lọt qua. Lấy theo model mặc định (hẹp hơn) là dựng lại đúng
-#:    lỗi "hai trần không biết nhau" cho model kia.
-BODY_BYTES_TOI_THIEU = int(
-    (max(CUA_SO_THEO_MODEL.values()) - TOKEN_RA_TRAN - DEM_UOC)
-    * BYTE_MOI_TOKEN_JSON)                                        # ~999 KB
-
 #: 🔑 HỆ SỐ ƯỚC TRÊN THẬT — trần tiền kiểm ở A (`tran_vao_cua`, `TOKEN_VAO_TRAN`)
 #: tính trên TOKEN ƯỚC (`platform_core/llm/uoc_token.py`, cận trên có chứng
 #: minh); nhưng con số ta công bố cho client phải đúng ở TOKEN THẬT — client
@@ -505,6 +445,93 @@ def cong_bo_cua(model_id: str) -> int:
     """Con số ngữ cảnh **công bố cho client** của một model — quy đổi trần
     tiền kiểm (token ƯỚC ở A) sang token THẬT bằng `HE_SO_UOC_TREN_THAT`."""
     return int(tran_vao_cua(model_id) / HE_SO_UOC_TREN_THAT)
+
+
+#: Số byte JSON cho mỗi token THẬT (token do provider báo, đơn vị GIỐNG
+#: `cong_bo_cua` — KHÔNG phải token ƯỚC của `tran_vao_cua`) khi hội thoại đi
+#: trên dây. Đo 30/08 trên thân request thật của Codex: 4,5 (đơn vị token ước
+#: khi đó — xem lịch sử git; đã lỗi thời).
+#:
+#: 🔴 25/09/2026 — HAI LẦN SỬA SỐ TRONG CÙNG MỘT NGÀY, VÀ CẢ HAI LẦN ĐẦU ĐỀU LÀ
+#:    "ĐỌC THỨ ĐẠI DIỆN THAY VÌ ĐO THỨ THẬT". Ghi lại đủ cả hai lần sai để
+#:    không ai lặp cùng lớp lỗi:
+#:
+#:    (1) Lần đầu soi ngược thân **1.150.067 B** ăn 413 ở trần 1.048.576 B,
+#:        tưởng là ca sản xuất — đó là **phép dò tổng hợp của người báo lỗi**
+#:        (`'x' * 1_150_000`, không phải hội thoại thật), và "227.328 token ⇒
+#:        5,059 B/token" suy từ đó **bịa mẫu số** (một triệu ký tự `x` không
+#:        nguyên âm ước ra ~1 token/ký tự theo chính `uoc_token._chu`, không
+#:        phải 227.328). Chọn 6,0 từ số này đã bị RÚT LẠI.
+#:
+#:    (2) Lần hai đọc ảnh chụp thanh đo (model đoán nhầm `ltt-3.5`, tỉ lệ suy
+#:        ra ≈10,64) — nhưng ảnh chụp là READ-OUT tại một khoảnh khắc bất kỳ,
+#:        không phải bản ghi. Có bản ghi phiên thật (`session-0019f199`, giải
+#:        nén cẩn thận: tệp là NHIỀU KHUNG zstd nối nhau, phải đọc bằng
+#:        `stream_reader(..., read_across_frames=True)` chứ không chỉ khung
+#:        đầu) mới xác nhận: **165 bước**, `usage` cuối trước 413 —
+#:        `totalTokens = 80.823` (cacheRead 80.395, input 350), model
+#:        **ltt-3.8** (không phải 3.5 — khách đã đổi model trước khi chụp ảnh;
+#:        `80.823 / 0,65 ≈ 124.343 ≈ 124.245 = cong_bo_cua("qwen38-api")` xác
+#:        nhận đúng model VÀ xác nhận mẫu số thanh `%` = cửa sổ công bố).
+#:
+#: ⭐ SỐ DÙNG ĐỂ CHỐT: thân request **vượt** 1.048.576 B (bất đẳng thức — trần
+#:    cũ là 1 MiB, "vượt" chỉ nói lớn hơn, KHÔNG phải giá trị chính xác) trên
+#:    **80.823** token thật (từ `usage`, không phải ước lượng) ⇒ tỉ lệ **SÀN**
+#:    (canh dưới kép: cả tử số lẫn mẫu số đều là cận dưới của giá trị thật):
+#:
+#:        1.048.576 / 80.823 ≈ 12,97 byte/token
+#:
+#:    Phiên này có **190 sự kiện `tool/result`** và khối SUY NGHĨ luôn bật
+#:    (`ltt-3.8` mặc định `medium`, xem `NGHI_MAC_DINH_THEO_MODEL`) — hai thứ
+#:    mẫu tự dựng của lần sửa này (tài liệu tiếng Việt + mã nguồn, xây bằng
+#:    `platform_core/llm/uoc_token.py`) không tái hiện được:
+#:      * hội thoại vài khối văn bản LỚN — ước median ≈ 2,65 · p90 ≈ 3,05 B/token;
+#:      * phiên nhiều lượt NHỎ xen tool_use/tool_result — tới 4,35 B/token.
+#:    Ca thật (12,97+) cao gấp ~3–4 lần mọi mẫu tự dựng — KHÔNG được giải thích
+#:    hết bằng dữ liệu đang có (nghi khối suy nghĩ + 190 tool_result mang byte
+#:    không tương ứng token theo cùng tỉ lệ với văn xuôi thường; CHƯA XÁC NHẬN
+#:    cơ chế chính xác). Nói thẳng khoảng trống này thay vì lấp bằng cảm tính.
+#:
+#: ✅ CHỌN 16,0 = 12,97 (SÀN đo trên `session-0019f199`) × ~1,23 biên.
+#:    `test_4200_tran_body_du_byte_token.py` ghim tỉ lệ SÀN (12,97) và số CHỐT
+#:    (16,0) để không ai hạ lại xuống dưới sự cố đã xảy ra mà không biết.
+#:
+#: ⛔ VẪN CHƯA TÍNH ẢNH. Ảnh gửi kèm là base64 (~1,37× byte gốc) và
+#:    `ANH_BYTE_TOI_DA` = 12 MiB/ảnh, `SO_ANH_TOI_DA` = 4 ảnh — MỘT ảnh đơn đã
+#:    vượt xa mọi trần thân tính từ hằng số này. Hằng số này chỉ chừa đủ cho
+#:    HỘI THOẠI CHỮ; trần thân thật ở `platform_core/public_api/config.py`
+#:    cộng thêm biên riêng cho việc đó (xem chú thích ở đó).
+BYTE_MOI_TOKEN_JSON = 16.0
+
+#: Trần thân request **tối thiểu** phải cho phép, để một client hoạt động
+#: ĐÚNG TRONG cửa sổ **công bố** của nó (`cong_bo_cua`, đơn vị token THẬT —
+#: đúng đơn vị của `BYTE_MOI_TOKEN_JSON` và của chính sự cố 25/09) không bị
+#: chặn bởi kích thước byte trước khi ai kịp đếm token.
+#:
+#: ⛔ ĐÂY LÀ MỘT LỚP LỖI ĐÃ XẢY RA HAI LẦN. Lần 1 (30/08): trần body 256 KB của
+#:    nền tảng chặn hội thoại dài ở khoảng 64.000 token — gần bằng 65.000 nên
+#:    suốt buổi ta tưởng đang chạm trần của máy B. Lần 2 (25/09): trần 1 MiB
+#:    (rồi 2 MiB) vẫn mỏng hơn một phiên `ltt-3.8`/`ltt-3.5` thật đang suy
+#:    nghĩ + gọi nhiều `tool_result`. Cả hai lần, hai trần không liên quan gì
+#:    nhau mà cái nhỏ hơn thắng.
+#:
+#: ⭐ DÙNG `cong_bo_cua`, KHÔNG DÙNG `CUA_SO_THEO_MODEL`/`tran_vao_cua`. Hai
+#:    cái sau là ngân sách ƯỚC dùng cho tiền kiểm NỘI BỘ ở A; câu hỏi ở đây là
+#:    "một client tuân thủ đúng lời hứa TA CÔNG BỐ có gửi lọt không" — và lời
+#:    hứa đó, cùng mọi số đo thật ta có (`usage.totalTokens`, thanh đo %), đều
+#:    ở đơn vị token THẬT. Nhân `BYTE_MOI_TOKEN_JSON` (đo ở đơn vị thật) với
+#:    một ngân sách ƯỚC (lớn hơn thật ~1,3–1,5 lần) sẽ cho một con số "an
+#:    toàn hơn cần" nhưng SAI ĐƠN VỊ — và khi tài liệu (chú thích, báo cáo)
+#:    dẫn một phép tính ở đơn vị thật mà hằng số lại nhân nhầm đơn vị ước, đó
+#:    chính là "hai chỗ khai một điều không ai bắt khớp" — lớp lỗi này đang cố
+#:    dẹp, không phải lớp lỗi nên tạo thêm.
+#:
+#: ⭐ TÍNH THEO MODEL **RỘNG NHẤT**, không theo model mặc định: trần body là một
+#:    con số của cả cửa `/api/v1`, và một request `ltt-3.5` hợp lệ ở trần công
+#:    bố của NÓ phải lọt qua. Lấy theo model mặc định (hẹp hơn) là dựng lại
+#:    đúng lỗi "hai trần không biết nhau" cho model kia.
+BODY_BYTES_TOI_THIEU = int(
+    max(cong_bo_cua(m) for m in CUA_SO_THEO_MODEL) * BYTE_MOI_TOKEN_JSON)
 
 
 #: Ngưỡng client **phải nén** hội thoại, tính từ cửa sổ công bố.
