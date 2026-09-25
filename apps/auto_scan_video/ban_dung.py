@@ -308,6 +308,33 @@ def kiem(ban: dict, *, khoa_hop_le: set[str] | None = None) -> None:
         raise BanDungError(_t(
             'Bản dựng có lớp phủ chữ nhưng không khai chiều cao khung hình.'))
 
+    # ── Dien nen (V5): hinh hoc phai dung duoc, va kiem NGAY BAY GIO ────────
+    #
+    # 🔴 ⛔ **KHONG CO DUONG LUI IM LANG.** He tham chieu lui ve LAM MO khi ffmpeg
+    #    chet vi hinh hoc (`localize.py:6588 _da_che_keo`), va chinh ho ghi lai
+    #    cai gia: *"khach chon Keo mep nhan ve Lam mo, ton 2 luot ffmpeg vo ich,
+    #    va KHONG co gi bao cho khach"*.
+    #
+    # ⇒ O ta: hinh hoc khong dung duoc thi **nem**, va nem o day — truoc khi ban
+    #   dung ton tai, chu khong phai o phut thu muoi sau khi da chiem mot suat
+    #   ffmpeg. Cung ly do va cung hinh dang voi chot `cao_khung` cua lop phu
+    #   ngay tren.
+    #
+    # ⚠️ `hinh_hoc_dien_nen` la MOT noi duy nhat tra loi cau hoi nay — chinh ham
+    #    ma `che_do_render._ve_dien_nen` goi de dung chuoi loc. ⛔ Mot ban kiem
+    #    thu hai o day se lech, va no se lech dung vao ngay ai do doi hang so.
+    from .vung_che import LOAI_DIEN_NEN
+    ds_dien_nen = [v for v in (hinh.get("vung") or ())
+                   if str(v.get("loai") or "") == LOAI_DIEN_NEN]
+    if ds_dien_nen:
+        rong_n = int(hinh.get("rong_khung") or 0)
+        cao_n = int(hinh.get("cao_khung") or 0)
+        for v in ds_dien_nen:
+            try:
+                _cdr.hinh_hoc_dien_nen(v, rong_n, cao_n)
+            except _cdr.CheDoError as exc:
+                raise BanDungError(str(exc)) from exc
+
     # ── Phu de (V6 pha 14): cung rang buoc VAT LY, va cau rieng ─────────────
     #
     # ⛔ Khong gop vao dieu kien `or` cua lop phu. Ba tinh nang khac nhau thi ba

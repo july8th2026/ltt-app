@@ -80,6 +80,10 @@ from platform_core.i18n import _ as _t
 # ⭐ 7 -> 8 (asv-gui 25/09): them mot buoc DIEM ANH (`hflip` + `eq=saturation`)
 #    vao chuoi loc, va doi cach noi nhan giua cac buoc (`truoc_khung` thanh mot
 #    chuoi buoc thay vi mot buoc).
+# ⭐ 8 -> 9 (asv-vung 25/09, V5): chang VUNG khong con mot cach lam mo duy nhat —
+#    `vung_che.LOAI_DIEN_NEN` sinh mot nhanh filter KHAC HAN (`crop`+`vflip`+
+#    `scale`+`alphamerge`). Toan bo chang di qua mot bo dieu phoi moi
+#    (`_loc_vung`) thay vi `_loc_lam_mo` goi thang.
 #
 # 🔴 **Bump nay KHONG phai thu tuc.** `_van_tay` cua giai doan RENDER bam
 #    (ban_dung, PHIEN_BAN_KET_XUAT, PHIEN_BAN_CHE_DO, ffmpeg). Hai co moi nam
@@ -87,7 +91,7 @@ from platform_core.i18n import _ as _t
 #    chay KHONG bat co nao van di qua ma sinh lenh **moi**. Neu ma sinh lenh doi
 #    ma so nay khong doi, mot lan chay lai se lay lai tep cu cua ma **cu**, va
 #    no khong bao gio no: no hien ra nhu mot lan chay "nhanh bat thuong".
-PHIEN_BAN_CHE_DO = 8
+PHIEN_BAN_CHE_DO = 9
 
 #: Sao chep luong hinh — preset giu hinh.
 SAO_CHEP = "sao_chep"
@@ -195,11 +199,296 @@ def _bat_khi(cua_so) -> str:
     return f":enable={ve}"
 
 
-def _loc_lam_mo(vung, nhan_vao: str, nhan_ra: str, cua_so=None) -> list[str]:
-    """Cac ve `filter_complex` lam mo tung vung tren mot luong hinh.
+#: ⛔ Đo DAY TOI DA (px) cua dai NGUON khi dien nen. `localize.py:6106` cua he
+#: tham chieu, ha 8 -> 4 ngay 24/08 sau khi do that.
+#:
+#: 🔴 Day hon nguong nay thi dai nguon **mang theo dong chu ke ben** roi gian
+#:    xuong => "chu hien HAI LAN". Do that cua ho: 25 px va 50 px deu loi, 1–8 px
+#:    sach.
+CHE_KEO_HS_MAX = 4
 
-    `cua_so[i]` la cac khoang **CUA BAN RA** ma vung `i` duoc bat; `None` hoac
-    rong = ap ca video. Doi tuong goi phai anh xa truoc — xem `loc_cat_noi`.
+#: Ti le chieu cao dai duoc NOI ra moi dau de lay cho cho vung TAN BIEN (alpha
+#: hinh thang). Chu du an cua he tham chieu xem ba muc 15/30/45 % roi chot 30 %.
+#:
+#: ⚠️ ⛔ Dung noi bua: bien trong suot nghia la hinh GOC lo ra o do. Khung nao
+#:    chu nho cao hon thuong le se roi vao vung tan va **hien chu mo**.
+CHE_KEO_FEATHER = 0.30
+
+#: Cung the nhung theo truc X, va NHO hon han (4 % vs 30 %) vi dai rong gap ~5
+#: lan chieu cao — lay cung 30 % se tan mat gan het dai.
+CHE_KEO_FEATHER_X = 0.04
+
+#: Chieu dai/rong nho nhat (px) cua mot vung dien nen. Duoi muc nay thi `crop`
+#: + `scale` khong con y nghia, va cac guard chia-cho-0 ben duoi bat dau mong.
+CHE_KEO_CANH_MIN = 8
+
+
+def _chan2(n: int) -> int:
+    """Kep ve SO CHAN, san 0. Dung cho MOI do day cua nhanh dien nen.
+
+    🔴 VI SAO BAT BUOC (`localize.py:6110`, bug 12/08/2026 tai hien 100 %): chuoi
+       nay chay sau `format=yuv420p`, ma yuv420p lay mau chroma **2:1 theo chieu
+       DOC** => dai nguon cao **1 px** cho ra **0 hang** chroma:
+
+           [Parsed_crop] Invalid too big or non positive size ... height '0'
+
+       ffmpeg chet `-22` o **ca** `h264_nvenc` **lan** `libx264`. Do that ma tran
+       5 to hop: `hs=1` LOI · `hs=2` OK · `hs=8` OK.
+
+    ⭐ San la 0 chu **khong phai 1**: `0` = *"het cho o ben nay"*, mot tin hieu
+       ma cho goi doc duoc. San 1 bien "het cho" thanh "con 1 px" => dung crop
+       1 px => chet.
+    """
+    return max(0, int(n) // 2 * 2)
+
+
+def _noi_cho_tan(v0: int, dai: int, f: int, san: int, tran: int
+                 ) -> tuple[int, int, int, int]:
+    """NOI `[v0, v0+dai)` ra hai phia toi da `f` px lay cho cho vung TAN BIEN,
+    kep trong `[san, tran]`. Tra `(v0_moi, dai_moi, tan_dau, tan_cuoi)`.
+
+    Chep `localize.py:6142`. Hai tinh chat SONG CON, ca hai deu la bug da bat:
+
+    ① **Do dai LUON CHAN.** Ban dau cua ho viet `min(<da lam chan>, tran - v0)` —
+       ve thu hai co the LE va `min` chon dung no (do that: dai sat day ra cao
+       **71**). Xem `_chan2`. Le thi keo dai THEM VE PHIA DAU (van phu tron), het
+       cho moi cat.
+
+    ② **Tan bien suy NGUOC tu hinh hoc cuoi**, khong phai tu `f` mong muon: lam
+       tron / kep co the doi mep, ma **loi duc phai trum khit doan goc** — hut
+       1 px la ho chu.
+    """
+    v1 = v0 + dai
+    a = max(san, v0 - max(0, int(f)))
+    b = min(tran, v1 + max(0, int(f)))
+    n = b - a
+    if n % 2:
+        if a - 1 >= san:
+            a -= 1
+            n += 1
+        else:
+            n -= 1
+    return a, n, max(0, min(v0 - a, v1 - a - 1)), max(0, (a + n) - v1)
+
+
+def _min_long(xs: list[str]) -> str:
+    """Long `min()` HAI tham so cho N bieu thuc.
+
+    ⛔ ffmpeg **khong co** `min` ba tham so: viet `min(a,b,c)` thi filter chet ma
+       thong bao chi noi *"Error initializing filters"*, ⛔ khong neu bieu thuc
+       nao. (`xu_ly_video.py:1349`.)
+    """
+    e = xs[0]
+    for x in xs[1:]:
+        # `\,` chu khong `,`: trong cu phap filter, `,` ngan hai BO LOC — cung
+        # cai bay ma ban kinh `min(w\,h)` cua `_ve_lam_mo` da ghi.
+        e = "min(%s%s,%s)" % (e, chr(92), x)
+    return e
+
+
+def _alpha_hinh_thang(rong: int, cao: int, trai: int, phai: int,
+                      tren: int, duoi: int) -> str:
+    """Chuoi loc sinh anh ALPHA hinh thang: trong suot sat mep, duc han sau `f`
+    px moi canh. `""` khi ⛔ khong canh nao can tan (cho goi khoi `alphamerge`).
+
+    🔴 CANH KHONG NOI DUOC (`f = 0`) PHAI DE DUC HAN, ⛔ KHONG duoc ramp. Ban dau
+       cua he tham chieu viet `max(1, f)` "cho chac khoi chia 0" => canh `f=0`
+       hoa ra ramp tren DUNG 1 pixel => hang/cot ngoai cung alpha = 0 => **HO
+       1 px hinh goc ngay tai mep**. Luoi cua ho bat 4/15 ca, toan o SAT MEP
+       KHUNG. (`xu_ly_video.py:1358`.)
+    """
+    xs: list[str] = []
+    if tren > 0:
+        xs.append(f"Y/{tren}")
+    if duoi > 0:
+        xs.append(f"({cao - 1}-Y)/{duoi}")
+    if trai > 0:
+        xs.append(f"X/{trai}")
+    if phai > 0:
+        xs.append(f"({rong - 1}-X)/{phai}")
+    if not xs:
+        return ""
+    return (f"color=c=black:s={rong}x{cao}:d=1,format=gray,"
+            f"geq=lum='255*min(1{chr(92)},{_min_long(xs)})',format=gray")
+
+
+def _mo_ngang(rong: int, cao: int) -> str:
+    """Lam mo NGANG dai vua keo — lam diu vet doc do dai mong bi gian cao.
+
+    ⚠️ Mo CHI THEO CHIEU NGANG. Vet sinh ra do gian DOC nen bien thien nam theo
+       COT => mo ngang la du tri. Mo theo chieu DOC thi tron hang => hang tren
+       cung cua ban-thay lech khoi hang goc ngay tren => **LO VACH** o ranh gioi
+       (do that hoi con boxblur hai chieu: ban kinh 13 -> vach 12,05, te hon ca
+       blur thuong 10,21).
+
+    ⭐ THU NHO ROI PHONG LAI thay cho `gblur` (`xu_ly_video.py:1393`, do that
+       12/08/2026 tren 6 video x 3 do phan giai): `gblur` chiem **44–63 %** toan
+       bo chuoi loc keo mep, con thu-nho-roi-phong bang **dung gia cua viec BO
+       blur han** — `swscale` chay SIMD, `gblur` thi khong. PSNR trong dai so voi
+       `gblur`: 39,0–52,1 dB (bo han chi 26,0–42,5 dB).
+
+    ⚠️ `flags=area` khi thu nho THUA `bilinear` o **ca 6/6** video — ⛔ dung doi.
+    """
+    manh = max(2, cao // 24)
+    hep = max(2, (rong // (manh + 1)) // 2 * 2)
+    if hep >= rong:
+        # Dai hep hon ca he so thu nho — khong thu duoc, thi thoi. ⛔ Khong lui
+        # sang `gblur`: no la duong dat ma ta vua bo, va o day dai nho toi muc
+        # vet doc khong con dang ke.
+        return ""
+    return (f",scale={hep}:{cao}:flags=bilinear"
+            f",scale={rong}:{cao}:flags=bilinear")
+
+
+def hinh_hoc_dien_nen(v, rong_nguon: int, cao_nguon: int) -> dict:
+    """Hinh hoc PIXEL cua mot vung `dien_nen`, hay `CheDoError` neu ⛔ khong dung
+    duoc. Mot NOI duy nhat tra loi cau *"vung nay dien nen duoc khong"*.
+
+    🔴 ⛔ **KHONG CO DUONG LUI IM LANG.** He tham chieu lui ve LAM MO khi ffmpeg
+       chet (`localize.py:6588`) — *"khach chon Keo mep nhan ve Lam mo, ton 2
+       luot ffmpeg vo ich, va KHONG co gi bao cho khach"*. O ta: hinh hoc khong
+       dung duoc thi **nem**, va nem **truoc khi** goi ffmpeg (`ban_dung.kiem`
+       goi ham nay, nen no nem ngay luc dung ban dung).
+
+    ⚠️ Ham nay lam viec tren khung **NGUON**: chang `vung` dat TRUOC chang KHUNG
+       trong `loc_cat_noi`, nen toa do cua vung la toa do nguon.
+    """
+    if rong_nguon <= 0 or cao_nguon <= 0:
+        raise CheDoError(_t(
+            'Vùng điền nền cần biết kích thước khung hình nguồn, nhưng bản '
+            'dựng không khai nó.'))
+    x0f, y0f = float(v["x0"]), float(v["y0"])
+    x0 = max(0, int(round(x0f * rong_nguon)))
+    y0 = max(0, int(round(y0f * cao_nguon)))
+    rong = max(2, min(int(round((float(v["x1"]) - x0f) * rong_nguon)),
+                      rong_nguon - x0))
+    cao = max(2, min(int(round((float(v["y1"]) - y0f) * cao_nguon)),
+                     cao_nguon - y0))
+    if rong < CHE_KEO_CANH_MIN or cao < CHE_KEO_CANH_MIN:
+        raise CheDoError(_t(
+            'Vùng điền nền quá nhỏ trên khung hình này. Hãy vẽ vùng lớn hơn, '
+            'hoặc chọn kiểu làm mờ.'))
+    # Dai nguon lay NGAY BEN NGOAI vung. `>= 2` chu khong `>= 1` — xem `_chan2`.
+    tren = _chan2(min(CHE_KEO_HS_MAX, y0))
+    duoi = _chan2(min(CHE_KEO_HS_MAX, cao_nguon - (y0 + cao)))
+    if tren < 2 and duoi < 2:
+        # ⛔ Vung trum gan het chieu cao khung: ⛔ khong con hinh nao de lay lam
+        #    nen. Noi that ra, ⛔ dung lang le doi sang lam mo.
+        raise CheDoError(_t(
+            'Vùng điền nền chạm cả mép trên lẫn mép dưới khung hình nên không '
+            'còn dải hình nào để lấy làm nền. Hãy thu nhỏ vùng, hoặc chọn kiểu '
+            'làm mờ.'))
+
+    # ── NOI cho vung tan bien ───────────────────────────────────────────────
+    #
+    # ⚠️ CHI chua cho dai nguon o BEN THAT SU LAY NGUON. Chua ca hai ben vo dieu
+    #    kien la sai: dai sat day ⛔ khong co nguon duoi (`duoi = 0`) ma van bi tru
+    #    4 px => dai noi NGAN hon ca dai goc => **loi duc HUT 3 px o day — dung
+    #    cho chu nam**. (`localize.py:7852`.)
+    x1g, y1g = x0 + rong, y0 + cao
+    y0n, caon, ft, fd = _noi_cho_tan(
+        y0, cao, round(cao * CHE_KEO_FEATHER),
+        CHE_KEO_HS_MAX if tren >= 2 else 0,
+        cao_nguon - (CHE_KEO_HS_MAX if duoi >= 2 else 0))
+    x0n, rongn, fl, fr = _noi_cho_tan(
+        x0, rong, round(rong * CHE_KEO_FEATHER_X), 0, rong_nguon)
+    # ⛔ Đieu kien dung la PHU TRON dai goc, ⛔ KHONG phai "cao hon dai goc": mot
+    #    dai bi day LEN roi cat cut o day van "cao hon" ma day lai ho.
+    if ((y0n + caon) >= y1g and (x0n + rongn) >= x1g
+            and caon >= CHE_KEO_CANH_MIN and rongn >= CHE_KEO_CANH_MIN):
+        x0, y0, rong, cao = x0n, y0n, rongn, caon
+    else:
+        fl = fr = ft = fd = 0    # ⛔ Khong du cho -> mep cung, dung hanh vi cu.
+
+    # Ben lay nguon: uu tien TREN (Đ1 §4.4 — mot ben re hon hai ben ~20 % giay
+    # CPU va ~43 % dong ho tuong, ma chat luong do tren render THAT gan nhu bang
+    # nhau: giat-hang 0,84 vs 0,73 · vach duoi 6,96 vs 6,99).
+    day = tren if tren >= 2 else duoi
+    return {"x": x0, "y": y0, "rong": rong, "cao": cao, "day_nguon": day,
+            "nguon_y": (y0 - day) if tren >= 2 else (y0 + cao),
+            "tan": (fl, fr, ft, fd)}
+
+
+def _ve_dien_nen(i: int, hien: str, ke: str, v, cs,
+                 rong_nguon: int, cao_nguon: int) -> list[str]:
+    """Cac ve `filter_complex` DIEN NEN cho mot vung. Chep `localize.py:7830`.
+
+    Lay mot dai MONG ngay ben ngoai vung, **lat doc**, gian phu tron vung, lam
+    diu vet doc, roi dan de len qua mot alpha hinh thang.
+
+    🐛 `vflip` la **BAT BUOC**, ⛔ dung go. Dai nguon TREN gom cac hang
+       `[y0-day .. y0-1]`; `scale` giu nguyen thu tu nen hang XA bien nhat roi
+       vao DINH dai — dung cho phai noi lien voi hang goc `y0-1` => lech `day`
+       hang => **LO VACH** o ranh gioi NGOAI. Lat doc thi hang SAT bien nam o
+       bien (= mirror padding). Do thang bang anh "hang y co do sang = y": truoc
+       khi lat, dinh lay nham hang 91 thay vi 99, buoc nhay tai bien 7,0 (lien
+       mach = 1,0).
+
+    🐛 `alphamerge` lay **LUMA** cua anh mat na lam alpha, ⛔ KHONG lay kenh
+       alpha. Dung mat na bang anh trang + ramp o kenh alpha la mat na **VO
+       HIEU** (luma = 255 khap noi) => mat han phan hoa dan ma ⛔ khong he bao
+       loi. Nen `_alpha_hinh_thang` dung LUMA (den -> trang).
+    """
+    hh = hinh_hoc_dien_nen(v, rong_nguon, cao_nguon)
+    x, y = hh["x"], hh["y"]
+    rong, cao = hh["rong"], hh["cao"]
+    ve = [f"[{hien}]split[dg{i}][dk{i}]",
+          f"[dk{i}]crop={rong}:{hh['day_nguon']}:{x}:{hh['nguon_y']},vflip,"
+          f"scale={rong}:{cao},setsar=1{_mo_ngang(rong, cao)}[dm{i}]"]
+    nhan = f"dm{i}"
+    tan = _alpha_hinh_thang(rong, cao, *hh["tan"])
+    if tan:
+        ve.append(f"{tan}[dt{i}]")
+        ve.append(f"[dm{i}][dt{i}]alphamerge[da{i}]")
+        nhan = f"da{i}"
+    ve.append(f"[dg{i}][{nhan}]overlay={x}:{y}{_bat_khi(cs)}[{ke}]")
+    return ve
+
+
+def _loc_vung(vung, nhan_vao: str, nhan_ra: str, cua_so=None, *,
+              rong_nguon: int = 0, cao_nguon: int = 0) -> list[str]:
+    """Chang VUNG cua chuoi loc — dieu phoi theo `loai` cua TUNG vung.
+
+    🔑 Hai loai, hai nhanh filter khac han, va chung dung chung mot chuoi nhan:
+    vung `i` doc nhan cua vung `i-1`, nen thu tu khach ve duoc giu nguyen.
+
+    ⚠️ `vung_che.LOAI_DANH_DAU_PHU_DE` mang nghia AM (*dung ve phu de dich o
+       day*) nhung van di qua nhanh LAM MO — do la hanh vi co tu V5 va
+       `phu_de.py:280` ghi ro. ⛔ Dung "sua" no o day.
+    """
+    from .vung_che import LOAI_DIEN_NEN
+
+    # ⛔ Khong mac dinh im lang: mot lan goi quen `cua_so` phai cho ra "ap ca
+    #    video" mot cach TUONG MINH, khong phai vi mot `.get()` tra `None`.
+    ds_cua_so = list(cua_so) if cua_so is not None else [None] * len(vung)
+    if len(ds_cua_so) != len(vung):
+        raise CheDoError(_t('Không dựng được vùng che cho lần chạy này.'))
+
+    ve: list[str] = []
+    hien = nhan_vao
+    for i, v in enumerate(vung):
+        tiep = f"o{i}" if i + 1 < len(vung) else nhan_ra
+        if str(v.get("loai") or "") == LOAI_DIEN_NEN:
+            ve.extend(_ve_dien_nen(i, hien, tiep, v, ds_cua_so[i],
+                                   rong_nguon, cao_nguon))
+        else:
+            ve.extend(_ve_lam_mo(i, hien, tiep, v, ds_cua_so[i]))
+        hien = tiep
+    return ve
+
+
+def _loc_lam_mo(vung, nhan_vao: str, nhan_ra: str, cua_so=None) -> list[str]:
+    """Chang VUNG khi ⛔ khong vung nao dien nen. Giu lai vi ba tep test va hai
+    tai lieu goi ten no; `_loc_vung` moi la duong that.
+    """
+    return _loc_vung(vung, nhan_vao, nhan_ra, cua_so)
+
+
+def _ve_lam_mo(i: int, hien: str, ke: str, v, cs) -> list[str]:
+    """Cac ve `filter_complex` lam mo MOT vung tren mot luong hinh.
+
+    `cs` la cac khoang **CUA BAN RA** ma vung nay duoc bat; `None` hoac rong =
+    ap ca video. Doi tuong goi phai anh xa truoc — xem `loc_cat_noi`.
 
     Cach lam: **cat ra -> lam mo -> dan de len**. Khong dung `boxblur` thang
     tren ca khung roi ghep, vi lam the la giai ma va lam mo TOAN BO khung chi de
@@ -212,48 +501,36 @@ def _loc_lam_mo(vung, nhan_vao: str, nhan_ra: str, cua_so=None) -> list[str]:
 
     ⚠️ Va `x`/`y` cung phai chan, cung ly do lay mau.
     """
-    # ⛔ Khong mac dinh im lang: mot lan goi quen `cua_so` phai cho ra "ap ca
-    #    video" mot cach TUONG MINH, khong phai vi mot `.get()` tra `None`.
-    ds_cua_so = list(cua_so) if cua_so is not None else [None] * len(vung)
-    if len(ds_cua_so) != len(vung):
-        raise CheDoError(_t('Không dựng được vùng che cho lần chạy này.'))
-
-    ve: list[str] = []
-    hien = nhan_vao
-    for i, v in enumerate(vung):
-        x0, y0 = float(v["x0"]), float(v["y0"])
-        rong, cao = float(v["x1"]) - x0, float(v["y1"]) - y0
-        # 🔴 **`crop` dung `iw`/`ih`; `overlay` KHONG CO hai bien do** — no dung
-        #    `W`/`H` cho khung CHINH va `w`/`h` cho lop dan len.
-        #
-        #    Do that tren may nay: mot `overlay=trunc(iw*0.1/2)*2` lam ffmpeg nem
-        #    *"Error when evaluating the expression ... for x"*, trong khi dung
-        #    y het bieu thuc do trong `crop` thi chay. Hai bo loc, hai bo bien —
-        #    va tai lieu khong dat chung canh nhau de ai do nhin ra.
-        w = f"trunc(iw*{rong:.6f}/2)*2"
-        h = f"trunc(ih*{cao:.6f}/2)*2"
-        x_crop = f"trunc(iw*{x0:.6f}/2)*2"
-        y_crop = f"trunc(ih*{y0:.6f}/2)*2"
-        x = f"trunc(W*{x0:.6f}/2)*2"
-        y = f"trunc(H*{y0:.6f}/2)*2"
-        # 🔴 Ban kinh tinh tren kich thuoc cua CHINH luong da cat (`w`/`h`), khong
-        #    tren khung goc.
-        #
-        #    Ban dau toi viet `min(iw,ih)*0.025` va **ffmpeg tu choi ca chuoi**:
-        #    trong cu phap filter, `,` ngan hai BO LOC va `:` ngan hai THAM SO,
-        #    nen dau phay trong `min(iw,ih)` bi doc la het bo loc. Thong bao khi
-        #    do — *"No option name near '2'"* — khong nhac gi toi dau phay.
-        #
-        # ⇒ Thoat dau phay bang `\,`. Va dung `w`/`h` thi ban kinh ti le voi
-        #   chinh o duoc che, tuc mot o nho khong bi lam mo qua tay.
-        r = f"min(w{chr(92)},h)/{_MAU_BAN_KINH}"
-        ve.append(f"[{hien}]split[c{i}][g{i}]")
-        ve.append(f"[c{i}]crop={w}:{h}:{x_crop}:{y_crop},"
-                  f"boxblur=luma_radius={r}:luma_power=2[m{i}]")
-        ke = f"o{i}" if i + 1 < len(vung) else nhan_ra
-        ve.append(f"[g{i}][m{i}]overlay={x}:{y}{_bat_khi(ds_cua_so[i])}[{ke}]")
-        hien = ke
-    return ve
+    x0, y0 = float(v["x0"]), float(v["y0"])
+    rong, cao = float(v["x1"]) - x0, float(v["y1"]) - y0
+    # 🔴 **`crop` dung `iw`/`ih`; `overlay` KHONG CO hai bien do** — no dung
+    #    `W`/`H` cho khung CHINH va `w`/`h` cho lop dan len.
+    #
+    #    Do that tren may nay: mot `overlay=trunc(iw*0.1/2)*2` lam ffmpeg nem
+    #    *"Error when evaluating the expression ... for x"*, trong khi dung
+    #    y het bieu thuc do trong `crop` thi chay. Hai bo loc, hai bo bien —
+    #    va tai lieu khong dat chung canh nhau de ai do nhin ra.
+    w = f"trunc(iw*{rong:.6f}/2)*2"
+    h = f"trunc(ih*{cao:.6f}/2)*2"
+    x_crop = f"trunc(iw*{x0:.6f}/2)*2"
+    y_crop = f"trunc(ih*{y0:.6f}/2)*2"
+    x = f"trunc(W*{x0:.6f}/2)*2"
+    y = f"trunc(H*{y0:.6f}/2)*2"
+    # 🔴 Ban kinh tinh tren kich thuoc cua CHINH luong da cat (`w`/`h`), khong
+    #    tren khung goc.
+    #
+    #    Ban dau toi viet `min(iw,ih)*0.025` va **ffmpeg tu choi ca chuoi**:
+    #    trong cu phap filter, `,` ngan hai BO LOC va `:` ngan hai THAM SO,
+    #    nen dau phay trong `min(iw,ih)` bi doc la het bo loc. Thong bao khi
+    #    do — *"No option name near '2'"* — khong nhac gi toi dau phay.
+    #
+    # ⇒ Thoat dau phay bang `\,`. Va dung `w`/`h` thi ban kinh ti le voi
+    #   chinh o duoc che, tuc mot o nho khong bi lam mo qua tay.
+    r = f"min(w{chr(92)},h)/{_MAU_BAN_KINH}"
+    return [f"[{hien}]split[c{i}][g{i}]",
+            f"[c{i}]crop={w}:{h}:{x_crop}:{y_crop},"
+            f"boxblur=luma_radius={r}:luma_power=2[m{i}]",
+            f"[g{i}][m{i}]overlay={x}:{y}{_bat_khi(cs)}[{ke}]"]
 
 
 def _loc_chu(lop_phu, duong_chu, nhan_vao: str, nhan_ra: str, *,
@@ -474,7 +751,8 @@ def loc_cat_noi(khoang: list[tuple[float, float]], vung=(), *,
     sau_noi = f"truoc_{giua[0][0]}" if giua else sau_che
     if vung:
         phan.append(f"{nhan}concat=n={len(khoang)}:v=1:a=0[noi]")
-        phan.extend(_loc_lam_mo(vung, "noi", sau_noi, cua_so_ra(khoang, vung)))
+        phan.extend(_loc_vung(vung, "noi", sau_noi, cua_so_ra(khoang, vung),
+                              rong_nguon=rong_nguon, cao_nguon=cao_nguon))
     else:
         phan.append(f"{nhan}concat=n={len(khoang)}:v=1:a=0[{sau_noi}]")
     for i, (ten, dung) in enumerate(giua):

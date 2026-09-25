@@ -52,8 +52,20 @@ export function activePage(document: CanvasDocument): CanvasPage {
 }
 
 function updateActive(document: CanvasDocument, update: (page: CanvasPage) => CanvasPage): CanvasDocument {
+  // ⭐ Cung loi lui nhu `activePage()`: mot tai lieu MOI may chu tao
+  //    (`drafts_v3.py::_tai_lieu_rong` chi co id/name/nodes/edges — xem chu
+  //    thich o `fromV3`, workflowApi.ts) hoac mot ban ghi cu co the thieu
+  //    hay lech `active_page_id`. Truoc ban sua nay, khop TUYET DOI
+  //    `page.id === document.active_page_id` lam MOI thao tac them/sua node
+  //    (`themNode`, keo-tha, xoa, ...) IM LANG khong lam gi ca tren mot
+  //    workflow nhu vay — khong loi console, khong request hong, chi
+  //    "Hoan tac" bat sang vi reducer van day lich su du ban cap nhat la
+  //    no-op. Phat hien khi kiem GUI that (P-A, `tests/browser/
+  //    wf_v2_pa_4180_canvas_bam_that.js`): bam "Them node" tren mot workflow
+  //    vua duoc reset khong them duoc gi ca.
+  const targetId = activePage(document).id
   return { ...document, pages: document.pages.map(page =>
-    page.id === document.active_page_id ? update(page) : page) }
+    page.id === targetId ? update(page) : page) }
 }
 
 function changed(state: EditorState, document: CanvasDocument): EditorState {
