@@ -38,6 +38,70 @@ def _stop_process_tree(proc: subprocess.Popen) -> None:
         proc.kill(); proc.wait()
 
 
+#: Trần độ dài thông báo lỗi sidecar. Hai lát: ĐẦU (nơi lỗi xảy ra) + ĐUÔI.
+_LAT_DAU_CHU = 1000
+_LAT_DUOI_CHU = 1000
+#: Trần của **dòng ngoại lệ** khi nó phải được nhắc lại lên đầu.
+_LAT_NGOAI_LE_CHU = 300
+#: Bao nhiêu ký tự của thông báo đi vào `log.warning` và `fallback_reason`.
+#: ⚠️ Đây là một lát **ĐẦU** (`[:N]`) ở phía người gọi, nên `_doc_loi_sidecar`
+#:    phải đặt dòng ngoại lệ **lên trước** — xem docstring của nó.
+LAT_LY_DO_CHU = 600
+
+
+def _doc_loi_sidecar(duong_log: str) -> str:
+    """Thông báo lỗi của sidecar — giữ được **dòng ngoại lệ**.
+
+    🔴 **Bản trước là một bộ đo tự xoá thứ nó đo.** Nó giữ
+    `read_text(...)[-1000:]`: một lát **đuôi mù**. Với một traceback Python,
+    1000 ký tự cuối rơi vào **giữa một frame** `subprocess.py` (`_execute_child`
+    có một lời gọi dài hơn 1000 ký tự tính cả dấu `^^^`), nên dòng
+    `SomeError: message` — dòng **duy nhất** nói ra nguyên nhân — bị cắt.
+
+    ⛔ Đúng điều đó đã xảy ra. Log production 25/09 (job `7c85a6c4`) chỉ còn:
+
+        WARNING apps.autosubvideo.transcription: "WhisperX sidecar hong -> lui
+          ve faster-whisper: WhisperX loi: , preexec_fn, close_fds, ... gid,
+          gids, uid, umask, ..."
+
+    **Dấu mũ** và **tên tham số POSIX** — rác từ giữa một frame. Còn
+    `FileNotFoundError: [WinError 2]` thì ⛔ không có, nên nguyên nhân thật
+    (sidecar không thấy `ffmpeg`) nằm ẩn suốt nhiều ngày trong khi mọi lượt chạy
+    đều báo thành công.
+
+    ⭐ Nên luật ở đây là: **dòng cuối ⛔ không rỗng LUÔN phải có mặt** (với một
+    traceback Python đó chính là ngoại lệ), **cộng** một lát **ĐẦU** (dòng
+    `File ...` ngoài cùng nói lỗi xảy ra ở đâu).
+
+    🔑 Và nó nằm **ĐẦU** chuỗi, ⛔ không phải cuối: người gọi ghi
+    `str(exc)[:LAT_LY_DO_CHU]` — một lát **đầu** — vào log và vào
+    `fallback_reason`. Đặt ngoại lệ ở cuối thì lát đầu của người gọi lại cắt mất
+    nó, đúng cùng một cách thua, chỉ đổi đầu.
+
+    ⛔ **Đừng "dọn cho gọn" thành `[-1000:]` lần nữa.** Một lát đuôi đơn thuần
+    trông ngắn hơn và mất đúng thứ người đọc cần. `tests/test_4500_*` chốt điều
+    này bằng chính traceback của ca 25/09.
+    """
+    try:
+        tho = Path(duong_log).read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ""
+    tho = tho.strip()
+    if not tho:
+        return ""
+    if len(tho) <= _LAT_DAU_CHU + _LAT_DUOI_CHU:
+        return tho
+    # Dòng cuối KHÔNG rỗng = ngoại lệ. Lấy nó ra TRƯỚC, rồi mới cắt.
+    dong_cuoi = ""
+    for dong in reversed(tho.splitlines()):
+        if dong.strip():
+            dong_cuoi = dong.strip()[:_LAT_NGOAI_LE_CHU]
+            break
+    manh = [f"[ngoai le] {dong_cuoi}"] if dong_cuoi else []
+    manh += [tho[:_LAT_DAU_CHU], "[...cat giua...]", tho[-_LAT_DUOI_CHU:]]
+    return "\n".join(manh)
+
+
 def _sidecar_python() -> str:
     configured = os.environ.get("LTT_WHISPERX_PYTHON", "").strip()
     return configured if configured and os.path.isfile(configured) else ""
@@ -91,11 +155,7 @@ def _transcribe_whisperx(media_path: str, *, language: str, model_name: str,
             except subprocess.TimeoutExpired:
                 continue
         if proc.returncode != 0:
-            try:
-                message = Path(error_log.name).read_text(
-                    encoding="utf-8", errors="replace")[-1000:]
-            except OSError:
-                message = ""
+            message = _doc_loi_sidecar(error_log.name)
             raise TranscriptionError(f"WhisperX lỗi: {message or 'không rõ nguyên nhân'}")
         with open(output.name, encoding="utf-8") as handle:
             result = json.load(handle)
@@ -232,6 +292,69 @@ MAU_CO_DAU_CAU = {
 }
 
 
+#: Mã của sự suy giảm khi lượt chạy đi đường faster-whisper.
+#:
+#: 🔑 **Viết ĐÚNG, ⛔ đừng nói quá.** Một báo cáo trước ghi *"no word-level
+#:    alignment"* và một chú thích cũ ghi *"faster-whisper thì ⛔ không căn từng
+#:    từ"* — **cả hai đều sai**. `_transcribe_faster` gọi `word_timestamps=True`
+#:    và đọc `word.start`/`word.end` ⇒ mốc từng từ **CÓ**.
+#:
+#:    Sự thật chính xác: mốc **có**, ⛔ nhưng chúng là mốc Whisper tự suy từ
+#:    attention, ⛔ **không** đi qua bước **căn cưỡng bức** (forced alignment,
+#:    `whisperx.align` + model wav2vec2) ⇒ **kém chính xác hơn**.
+#:
+#: ⭐ Nói quá làm người sau ⛔ không tin phần còn lại của báo cáo. Một câu sai về
+#:    phía "tệ hơn thực tế" vẫn là một câu sai, và nó tốn đúng một lần tra lại.
+SUY_GIAM_KHONG_CAN_CUONG_BUC = "moc_tu_khong_can_cuong_buc"
+
+
+def _phien_ban_goi(ten: str) -> str:
+    """Phiên bản gói THẬT đang chạy. ⛔ Đừng gõ lại một con số vào mã.
+
+    Cùng khuôn `whisperx_runner._phien_ban_whisperx`: ⛔ chỉ ca "gói không cài"
+    được nuốt, vì một `Exception` trần ở đây từng làm một lỗi nhập khác khai
+    thành "phiên bản rỗng" — và bản ghi tái lập sẽ nói dối mà không ai thấy.
+    """
+    try:
+        from importlib.metadata import PackageNotFoundError, version
+
+        return str(version(ten))
+    except PackageNotFoundError:
+        return ""
+
+
+def _khai_suy_giam_can_chinh() -> dict:
+    """Bản khai SUY GIẢM đi **cùng bản ghi**, ⛔ không phải một dòng log.
+
+    ⭐ **Dùng lại khuôn đã có trong kho, ⛔ không tạo khuôn thứ hai.**
+       `whisperx_runner` ghi `tham_so` vào chính payload — *"GHIM THAM SỐ — ⛔
+       không phải log, là một phần của BẢN GHI"* — và
+       `auto_scan_video/ban_ghi.py` mang nó lên `tham_so_engine`, cạnh
+       `canh_chinh` (`alignment_status`) và `ly_do_roi` (`fallback_reason`). Đó
+       là khuôn *"suy giảm CÓ GHI SỔ"* của dây này; ta chỉ **điền vào nhánh còn
+       trống**: trước bản này nhánh lui ⛔ không ghi `tham_so` gì cả — tức đường
+       **duy nhất** từng chạy trên worker thật lại là đường ⛔ không khai gì.
+
+    🔴 **Vì sao suy giảm này ⛔ KHÔNG được im lặng.** `timing_align` **dựa vào**
+       mốc từ. Mốc kém chính xác hơn mà ⛔ không ai biết ⇒ mọi phép đo trôi của
+       ta **nói về một chất lượng mốc khác** với cái khách thật sự nhận. Bản
+       chép vẫn giao được hàng, nên nó ⛔ **không phải `error`** — nó là một
+       **suy giảm**, và `muc` khai đúng thế.
+    """
+    return {
+        "muc": "suy_giam",
+        "suy_giam": SUY_GIAM_KHONG_CAN_CUONG_BUC,
+        # ⛔ Hai trường RIÊNG, không gộp: "có mốc" và "mốc đã được căn" là hai
+        #    sự thật khác nhau, và gộp lại thành một cờ là đúng cái bẫy
+        #    *"hai trạng thái gộp thành một giá trị"* đã ghi sổ.
+        "moc_tung_tu": True,
+        "can_cuong_buc": False,
+        "anh_huong": ("moc tung tu CO (word_timestamps=True) nhung khong qua "
+                      "forced alignment (whisperx.align + wav2vec2) ⇒ kem chinh "
+                      "xac hon; timing_align bam vao moc nay"),
+    }
+
+
 def _transcribe_faster(media_path: str, *, language: str, model_name: str,
                        on_progress=None, is_cancelled=None,
                        gpu_uuid: str = "") -> dict:
@@ -270,17 +393,90 @@ def _transcribe_faster(media_path: str, *, language: str, model_name: str,
                     "text": str(segment.text).strip(), "words": words})
         if on_progress:
             on_progress(min(86, 12 + index), "đang chép lời")
-    return {"segments": out, "language": str(getattr(info, "language", language or "")),
+    ngon_ra = str(getattr(info, "language", language or ""))
+    # 🔴 **THAM SỐ đi cùng BẢN GHI — cùng khuôn `whisperx_runner`.**
+    #    Trước bản này nhánh lui ⛔ không ghi `tham_so`, nên `tham_so_engine`
+    #    (`ban_ghi.py`) rỗng đúng ở nhánh **duy nhất** từng chạy thật trên
+    #    worker. Một bản chép ⛔ không tái lập được thì mọi con số đo trên nó —
+    #    CER, phân đoạn, điểm dịch — cũng ⛔ không tái lập được.
+    tham_so = {
+        "engine": "faster-whisper", "phien_ban": _phien_ban_goi("faster-whisper"),
+        "model_asr": model_name, "beam_size": 5, "vad_filter": True,
+        "word_timestamps": True,
+        "ngon_ngu_yeu_cau": language or "", "ngon_ngu_dung": ngon or "",
+        "ngon_ngu_do_bang": "tham_so" if language else "detect_language",
+        "initial_prompt": mau or "",
+        "initial_prompt_nguon": ("whisperx_issue_645" if mau
+                                 else "khong_ap_ngon_ngu_co_dau_cach"),
+        "model_can_chinh": "",          # ⛔ nhánh này KHÔNG nạp model căn chỉnh
+        # ⭐ Suy giảm CÓ GHI SỔ — xem `_khai_suy_giam_can_chinh`.
+        "suy_giam_can_chinh": _khai_suy_giam_can_chinh(),
+    }
+    log.warning("ban chep di duong faster-whisper: %s (moc tung tu CO, "
+                "khong can cuong buc ⇒ kem chinh xac hon)",
+                SUY_GIAM_KHONG_CAN_CUONG_BUC)
+    return {"segments": out, "language": ngon_ra,
             "engine": "faster-whisper", "alignment_status": "fallback_unaligned",
-            "fallback_reason": "whisperx_sidecar_unavailable", **khai}
+            "fallback_reason": "whisperx_sidecar_unavailable",
+            "tham_so": tham_so, **khai}
+
+
+def _them_ffmpeg_vao_path(env: dict) -> dict:
+    """Chèn thư mục `ffmpeg`/`ffprobe` của nền tảng vào `PATH` của tiến trình con.
+
+    🔴 **Vì sao cần, dù nền tảng đã có `LTT_FFMPEG`.** Đo trên worker
+       production 25/09:
+
+           MACHINE Path có thư mục chứa ffmpeg.exe : False
+           USER    Path có thư mục chứa ffmpeg.exe : True
+
+       `ffmpeg` được cài **theo người dùng** (WinGet) ⇒ chỉ nằm trên USER Path.
+       `LTTStudioWorker` chạy dưới **LocalSystem** ⇒ nhận MACHINE Path ⇒ ⛔ không
+       bao giờ thấy thư mục đó. Lời gọi ffmpeg **của nền tảng** miễn nhiễm vì
+       `platform_core.media._locate` đọc `LTT_FFMPEG` (đường dẫn tuyệt đối).
+
+    ⛔ **Nhưng sidecar là một venv RIÊNG** (`LTT_WHISPERX_PYTHON`), và gói
+       `whisperx` trong đó gọi **`ffmpeg` trần** — `whisperx/audio.py::load_audio`
+       đặt `"ffmpeg"` làm phần tử đầu của `cmd`. Nó ⛔ **không đọc** `LTT_FFMPEG`
+       ⇒ `FileNotFoundError: [WinError 2]` ⇒ `_transcribe_whisperx` ném ⇒
+       `transcribe_file` lui về faster-whisper, và giai đoạn vẫn báo THÀNH CÔNG.
+       Kết quả: **đường sản phẩm WhisperX chưa bao giờ chạy trên worker thật.**
+
+    🔴 ⛔ **Không vá `site-packages`** (`D:\\LTTWhisperX\\Lib\\...`): ta không sở
+       hữu gói đó và một lần `pip install` xoá bản vá, im lặng, trả lại đúng
+       hướng hỏng này. Sửa ở **mã của ta**, ở đúng chỗ dựng môi trường con.
+
+    ⭐ Khuôn này **đã có trong kho** — `apps/taoclipngan/jobs.py:63-69` làm y hệt
+       cho engine `cutclipshort` (cũng tự dò ffmpeg qua PATH). ⛔ Đừng đẻ cách
+       thứ hai; khác biệt duy nhất ở đây là ta sửa env của **tiến trình con**
+       chứ không sửa `os.environ` của worker.
+    """
+    from platform_core import media
+
+    truoc: list[str] = []
+    dang_co = (env.get("PATH") or "").split(os.pathsep)
+    for lay in (media.ffmpeg_bin, media.ffprobe_bin):   # ffprobe có thể ở dir khác
+        try:
+            thu_muc = os.path.dirname(lay())
+        except (media.MediaError, OSError):
+            # ⛔ Không ném: thiếu ffmpeg thì nhánh lui (cũng cần ffmpeg) sẽ hỏng
+            #    ở chỗ ĐỌC TỆP, nơi thông báo nói đúng chuyện — không phải ở đây.
+            continue
+        if thu_muc and thu_muc not in dang_co and thu_muc not in truoc:
+            truoc.append(thu_muc)
+    if truoc:
+        # ⚠️ Idempotent: `PATH` trên Windows có trần độ dài, và hàm này được gọi
+        #    một lần mỗi lượt chạy — chèn trùng thì sau N lượt là một PATH rác.
+        env["PATH"] = os.pathsep.join([*truoc, *(d for d in dang_co if d)])
+    return env
 
 
 def _env_ghim_gpu(gpu_uuid: str) -> dict:
     """Môi trường cho tiến trình con, đã ghim vào một card. Rỗng = giữ nguyên."""
     if not gpu_uuid:
-        return dict(os.environ)
+        return _them_ffmpeg_vao_path(dict(os.environ))
     from platform_core import gpu as gpu_mod
-    return gpu_mod.env_for(gpu_uuid)
+    return _them_ffmpeg_vao_path(gpu_mod.env_for(gpu_uuid))
 
 
 def transcribe_file(media_path: str, *, language: str = "", model_name: str = "large-v3",
@@ -292,12 +488,14 @@ def transcribe_file(media_path: str, *, language: str = "", model_name: str = "l
                                         model_name=model_name, on_progress=on_progress,
                                         is_cancelled=is_cancelled, gpu_uuid=gpu_uuid)
         except TranscriptionError as exc:
-            log.warning("WhisperX sidecar hong -> lui ve faster-whisper: %s",
-                        str(exc)[:300])
+            # ⚠️ Lát ĐẦU. `_doc_loi_sidecar` đặt dòng ngoại lệ lên trước chính vì
+            #    chỗ này — xem docstring của nó (ca 25/09).
+            ly_do = str(exc)[:LAT_LY_DO_CHU]
+            log.warning("WhisperX sidecar hong -> lui ve faster-whisper: %s", ly_do)
             fallback = _transcribe_faster(media_path, language=language,
                                           model_name=model_name, on_progress=on_progress,
                                           is_cancelled=is_cancelled, gpu_uuid=gpu_uuid)
-            fallback["fallback_reason"] = str(exc)[:300]
+            fallback["fallback_reason"] = ly_do
             return fallback
     return _transcribe_faster(media_path, language=language, model_name=model_name,
                               on_progress=on_progress, is_cancelled=is_cancelled,
