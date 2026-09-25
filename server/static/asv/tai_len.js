@@ -245,11 +245,16 @@
     chu(ttTai, t("tai_hong_lon", {mb: tran}));
     if (khoiTai) khoiTai.hidden = false;
     if (nutTaiLai) nutTaiLai.hidden = false;
-    /* Mo khoa nut Bat dau: khach phai bam duoc "Thu tai len lai". */
-    if (nutBatDau) {
-      nutBatDau.disabled = false;
-      nutBatDau.classList.remove("asv-dang-gui");
-    }
+    /* Mo khoa nut Bat dau: khach phai bam duoc "Thu tai len lai".
+     *
+     * 🔴 **Bo chan qua `ASV.datChan`, khong ghi `disabled` truc tiep.**
+     *
+     *    Mot `disabled = false` o day mo lai nut ke ca khi mot ly do KHAC con
+     *    hieu luc (tep vuot tran, hay chua chon tep lai) — tuc no mo mot nut
+     *    chac chan that bai. Truoc lan `asv-gui` day la mot xung dot THAT giua
+     *    tep nay va `xem_truoc.js`. Xem so ly do o `asv/nen.js`. */
+    ASV.datChan("dang_gui", "");
+    if (nutBatDau) nutBatDau.classList.remove("asv-dang-gui");
   }
 
   var dangTai = false;
@@ -272,7 +277,11 @@
     //    tru tien cho mot y dinh: nut khong disable, va trang dung im.
     function khoaNut() {
       if (!nutBatDau) return;
-      nutBatDau.disabled = true;
+      /* ⚠️ `datChan` chu khong `disabled = true`: mot thuoc tinh, mot nguoi ghi
+       *    (`asv/thanh.js`). Nhan + lop thi van doi o day — chung la trang thai
+       *    ĐANG GUI cua chinh tep nay, khong phai mot phan quyet ve viec nut co
+       *    bam duoc hay khong. */
+      ASV.datChan("dang_gui", "dang_gui");
       nutBatDau.classList.add("asv-dang-gui");
       chu(nutBatDau, t("dang_gui"));
     }

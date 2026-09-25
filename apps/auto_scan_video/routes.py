@@ -245,7 +245,12 @@ def _ngu_canh_studio(db, u, loi: str = "", nap_lai: dict | None = None) -> dict:
         #:    khach chon mot tep `.mkv` se nhan mot loi cap ve kho hieu.
         "tran_ben_vung_mb": features.TRAN_BEN_VUNG // (1024 * 1024),
         "kieu_ben_vung": list(features.KIEU_VIDEO_HOP_LE),
-        "lich_su": features.lich_su(db, u.id) if u else [],
+        #: ⭐ `the_lich_su` chu khong `lich_su`: the can ba su that de PHAN BIET
+        #:    duoc voi the ke — xem docstring cua ham. Bang nhan di kem, vi
+        #:    `features` tra ve MA (khong hai ban cua mot nhan).
+        "lich_su": features.the_lich_su(db, u.id) if u else [],
+        "ngon_ngu_nhan": ngon_ngu_mod.NHAN,
+        "ngon_ngu_nhan_tu_doan": ngon_ngu_mod.NHAN_TU_DOAN,
         "loi": loi,
     }
 
@@ -454,6 +459,12 @@ def chi_tiet(request: Request, run_id: str,
         "loi_khach": quan_sat.tom_tat_loi_cho_khach(db, run),
         "chi_phi": quan_sat.tom_tat_cho_khach(db, run),  # V6 pha 30: bang chi phi cho khach
         "co_ket_qua": bool(features.khoa_ket_qua(db, run)),
+        # ⭐ `.srt` la mot BAN GIAO rieng, khong phai mot phan cua video, nen no
+        #    can mot cau tra loi rieng. Hoi o day chu khong doan trong template
+        #    tu `cai.phu_de.xuat_srt`: mot yeu cau xuat SRT khong chung minh
+        #    duoc rang tep DA duoc giao (RENDER co the chua xong, hoac lan chay
+        #    lai dung mot ban cache cu hon che do nay).
+        "co_phu_de": bool(features.khoa_phu_de(db, run)),
         # ⭐ Bang ke canh (V6 pha 09). `None` khi `edit_plan` chua xong — khoi
         #    giao dien khi do khong hien, chu khong hien mot khoi rong.
         #
@@ -506,6 +517,10 @@ def tien_do(request: Request, run_id: str,
         "dong": quan_sat.dong_thoi_gian(db, run),
         "loi_khach": quan_sat.tom_tat_loi_cho_khach(db, run),
         "co_ket_qua": bool(features.khoa_ket_qua(db, run)),
+        # ⚠️ Manh nay la CHINH cai htmx thay the sau khi lan chay xong, nen nut
+        #    "Tai phu de" phai co mat o CA HAI cho. Chi dat o `chi_tiet` thi nut
+        #    hien dung mot lan — lan dung trang — roi bien mat o cu swap ke tiep.
+        "co_phu_de": bool(features.khoa_phu_de(db, run)),
     })
 
 
@@ -566,6 +581,38 @@ def tai_ket_qua(request: Request, run_id: str,
         f, media_type="video/mp4",
         headers={"Content-Disposition":
                  f'attachment; filename="long-tieng-{run_id[:8]}.mp4"'})
+
+
+@router.get("/run/{run_id}/tai-phu-de", response_class=StreamingResponse)
+def tai_phu_de(request: Request, run_id: str,
+               _g: None = Depends(_cong_co),
+               user: str = Depends(require_login),
+               db: Session = Depends(get_db)):
+    """Phuc vu tep `.srt` da giao. Cung ky luat quyen voi `tai_ket_qua`.
+
+    ⛔ Khong nhan `key` tu client — cung ly do IDOR da ghi o `tai_ket_qua`.
+
+    ⚠️ `attachment` chu khong `inline`: mot `.srt` mo trong tab la mot buc tuong
+       chu, con viec khach muon lam voi no la **nap vao trinh dung phim**.
+
+    ⚠️ Va khong di qua `_phuc_vu_inline`: ham ay chuyen huong sang presigned URL
+       cua R2, va mot URL nhu the **khong mang `Content-Disposition` cua ta** —
+       tep se mo trong tab thay vi tai ve. Mot `.srt` chi vai chuc KB nen di qua
+       tien trinh nay khong cham tran nao cua Cloudflare.
+    """
+    from platform_core.storage import get_storage
+
+    u = user_hien_tai(request)
+    run = _run_cua_toi(db, run_id, u)
+    khoa = features.khoa_phu_de(db, run)
+    if not khoa:
+        raise HTTPException(status_code=404,
+                            detail=_t('Lần chạy này không có tệp phụ đề.'))
+    f = get_storage().open(khoa)
+    return StreamingResponse(
+        f, media_type="application/x-subrip",
+        headers={"Content-Disposition":
+                 f'attachment; filename="long-tieng-{run_id[:8]}.srt"'})
 
 
 # ══════════════════════════════════════════════════════════════════════════════

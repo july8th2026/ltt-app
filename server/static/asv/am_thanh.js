@@ -25,6 +25,7 @@
   var oVao = document.getElementById("asv-am-fade-vao");
   var oRa = document.getElementById("asv-am-fade-ra");
   var oAm = document.getElementById("asv-am-thanh");
+  var oViSao = document.getElementById("asv-am-vi-sao");
   if (!nhom || !oNen || !oAm) return;
 
   /* Mac dinh den tu MAY CHU (`am_thanh.cho_giao_dien`), khong go o day. */
@@ -38,11 +39,19 @@
   function dongBo() {
     var tat = !!(oTat && oTat.checked);
     /* ⛔ Tat nen thi "ha nen theo loi" khong con gi de ha — may chu TU CHOI to
-     *    hop do. Bo chon + khoa o day de khach khong gui mot lua chon vo nghia. */
+     *    hop do. Bo chon + khoa o day de khach khong gui mot lua chon vo nghia.
+     *
+     * ⭐ Va NOI RA vi sao. Hai o xam di khong loi giai thich doc nhu mot loi cua
+     *    trang; mot cau thi doc nhu mot su that — cung khuon voi `asv-vung-chan`
+     *    o ba khoi sua hinh. */
     oNen.disabled = tat;
     if (oHa) {
       if (tat) oHa.checked = false;
       oHa.disabled = tat;
+    }
+    if (oViSao) {
+      ASV.chu(oViSao, tat ? ASV.t("am_nen_da_tat") : "");
+      oViSao.hidden = !tat;
     }
     var nen = so(oNen);
     if (soNen) soNen.textContent = tat ? "—" : nen + " dB";

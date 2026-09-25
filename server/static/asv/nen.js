@@ -100,11 +100,49 @@ window.ASV = (function () {
     });
   }
 
+  /* ── Vi sao nut chinh chua bam duoc ──────────────────────────────────────
+   *
+   * 🔴 **MOT nguoi ghi `#asv-batdau.disabled`, va do la `asv/thanh.js`.**
+   *
+   *    Truoc lan `asv-gui`, `xem_truoc.js` ghi thuoc tinh ay truc tiep — va no
+   *    la nguoi duy nhat, nen dung. Nhung ly do thu hai (chua chon video) thuoc
+   *    ve mot module khac, va hai module cung ghi mot `disabled` thi nguoi chay
+   *    sau **mo lai** cai nguoi kia vua dong. Do dung la hinh dang loi ma
+   *    `L_GUI.md` §6 da tu choi mot lan ("hai nguoi cung ghi `option.hidden`
+   *    cua mot `<select>`").
+   *
+   * ⭐ Nen o day chi co mot SO GHI ly do, va mot nguoi doc no. Module bao ly do
+   *    cua MINH; `thanh.js` gop lai va ghi DOM. Them ly do thu ba khong phai
+   *    sua lai ai ca.
+   *
+   * ⛔ Gia tri la KHOA chuoi (`#asv-chu`), khong phai cau — khong mot cau tieng
+   *    Viet nao duoc nam trong `.js`. Chuoi rong = module nay khong chan. */
+  var soChan = {};
+  var dsDoiChan = [];
+
   var api = {
     /* `false` khi trang hien tai khong phai man Studio. Moi module hoi dong nay
        truoc, va thoat im lang — dung nhu `asv.js` cu lam voi `if (!form)`. */
     co: !!form,
     form: form,
+
+    /* `ma` — ai chan (mot module co the co nhieu ly do doc lap).
+       `khoaChu` — khoa o `#asv-chu`, hoac chuoi rong de bo chan.
+       `thay` — tham so cua chuoi, vi du `{mb: 90}`. */
+    datChan: function (ma, khoaChu, thay) {
+      if (khoaChu) soChan[ma] = {khoa: khoaChu, thay: thay || null};
+      else delete soChan[ma];
+      goiHet(dsDoiChan);
+    },
+
+    /* Ly do DAU TIEN con hieu luc, hoac `null`. Thu tu la thu tu dat vao, va
+     * do la thu tu dung: "chua chon video" den truoc "tep qua lon". */
+    lyDoChan: function () {
+      var cac = Object.keys(soChan);
+      return cac.length ? soChan[cac[0]] : null;
+    },
+
+    khiDoiChan: function (fn) { dsDoiChan.push(fn); },
 
     t: t,
     chu: chu,

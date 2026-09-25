@@ -780,6 +780,38 @@ def lich_su(db: Session, owner_id: str, *, toi_da: int = 20) -> list:
     ).scalars().all())
 
 
+def the_lich_su(db: Session, owner_id: str, *, toi_da: int = 20) -> list[dict]:
+    """`lich_su` kem ba su that PHAN BIET duoc mot lan chay voi lan ke.
+
+    🔴 **Vi sao no can ton tai.** The lich su cu mang dung hai thu: trang thai va
+       gio. Mot khach lam nam ban cua cung mot video — ep nguon loi khac nhau,
+       doi ngon ngu dich, doi preset — nhan **nam the giong het nhau**, va cach
+       duy nhat de biet the nao la the nao la bam vao tung the. Tuc lich su tra
+       loi duoc *"toi da chay bao nhieu lan"* nhung khong tra loi duoc
+       *"lan nao la lan toi muon"*.
+
+    ⭐ Doc qua `cai_dat.doc` chu khong `run.settings.get(...)` o template — day la
+       dung bai hoc cua V6 pha 07: mot ho so thieu khoa lam mot dong **bien mat**
+       khoi man hinh thay vi hien mac dinh, va khong ai thay gi ca.
+
+    ⛔ Tra ve MA, khong tra ve nhan. Nhan song o `gia.PRESET_BANG` va
+       `ngon_ngu.NHAN`; dich chung o day la tao ban thu hai cua mot bang nhan, va
+       hai ban cua mot nhan la hai ban se lech.
+    """
+    from . import cai_dat as _cd
+
+    ra = []
+    for r in lich_su(db, owner_id, toi_da=toi_da):
+        cai = _cd.doc(r)
+        ra.append({
+            "run": r,
+            "preset": cai.preset,
+            "ngon_ngu_nguon": cai.ngon_ngu_nguon,
+            "ngon_ngu_dich": cai.ngon_ngu_dich,
+        })
+    return ra
+
+
 def khoa_ket_qua(db: Session, run: AsvRun) -> str:
     """Khoa luu tru cua ban long tieng, hoac chuoi rong.
 
@@ -792,3 +824,26 @@ def khoa_ket_qua(db: Session, run: AsvRun) -> str:
         return ""
     return next((k for k in ((s.outputs or {}).get("khoa_asset") or [])
                  if k.endswith(".mp4")), "")
+
+
+def khoa_phu_de(db: Session, run: AsvRun) -> str:
+    """Khoa luu tru cua tep `.srt` da giao, hoac chuoi rong.
+
+    🔴 **Vi sao ham nay ra doi muon hon tep no tra ve.**
+
+       `giai_doan_ket_xuat` sinh `.srt` va goi no bang ten *"MOT BAN GIAO"*, roi
+       co tinh cho no **khong co han** (`la_ban_giao` => `han=None`) de nua ban
+       giao khong tu bien mat sau 30 ngay. Nhung tu do tro di khong con ai doc
+       khoa ay: `khoa_ket_qua` loc `.mp4`, va do la **duong duy nhat** man hinh
+       cua khach co. Nen tep phu de duoc tinh, duoc luu **vinh vien**, va khong
+       ai tai ve duoc — dung hinh dang mot **o chet** (`L_GUI.md` §1).
+
+    ⚠️ Cung khuon voi `khoa_ket_qua`: doc `outputs` cua RENDER chu khong quet kho
+       theo tien to. Mot phep quet se tim thay ca `.srt` cua mot lan chay lai da
+       bi thay the, va giao ban phu de KHONG khop voi video dang phuc vu.
+    """
+    s = giai_doan_theo_ten(db, run.id, pipeline.RENDER)
+    if s is None or s.status != STAGE_SUCCEEDED:
+        return ""
+    return next((k for k in ((s.outputs or {}).get("khoa_asset") or [])
+                 if k.endswith(".srt")), "")
