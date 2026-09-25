@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session as DbSession
 
 from platform_core import job_events
+from platform_core.llm import admission
 from platform_core.models import (JOB_CANCELLED, JOB_DONE, JOB_ERROR, JOB_QUEUED,
                                   JOB_RUNNING, CreditEntry, ExecutionLease,
                                   GpuResidency, Job, JobEvent, LlmWaiter)
@@ -253,7 +254,11 @@ def _nap_lai_hom_nay(db: DbSession, *, res: list, moc: datetime,
 
 def snapshot(db: DbSession, *, now: datetime | None = None,
              days: int = 7, stale_minutes: int = 10,
-             lease_stale_minutes: int = 20,
+             # ⛔ KHÔNG còn một ngưỡng phẳng `20`: `None` nghĩa là "hỏi
+             #    `admission.han_mo_coi`", tức hạn RIÊNG của từng
+             #    `ExecutionLease.mode`. Người gọi truyền số ở đây vẫn được, và ý
+             #    họ chỉ THU HẸP được (`min` trong `han_mo_coi`).
+             lease_stale_minutes: int | None = None,
              app_slug: str = "",
              tai_nguyen_theo_lo: tuple[str, ...] | list[str] | None = None) -> dict:
     current = now or datetime.now(timezone.utc)
@@ -345,14 +350,25 @@ def snapshot(db: DbSession, *, now: datetime | None = None,
                 Job.app_slug == app_slug[:64])
     lease_rows = list(db.execute(lease_stmt).scalars().all())
     active_leases_by_resource: dict[str, int] = {}
-    lease_stale_cutoff = current - timedelta(
-        minutes=max(1, int(lease_stale_minutes)))
+    # 🔑 CÙNG MỘT NGUỒN với `admission.reclaim_expired` và
+    #    `jobs._con_cho_tai_nguyen` (25/09/2026). Trước đó chỗ này đo bằng một
+    #    ngưỡng PHẲNG riêng (20 phút cho mọi mode) ⇒ ba chỗ trả **ba câu trả lời
+    #    khác nhau** cho cùng câu hỏi *"lease này còn sống không"*, và người đang
+    #    gỡ lỗi ⛔ không biết tin cái nào.
+    #
+    #    `expired_execution_lease_candidates` nghĩa đúng là *"lease mà
+    #    `reclaim_expired` sẽ xoá"* — nên nó phải hỏi CHÍNH hàm ấy hỏi, chứ không
+    #    hỏi một câu gần giống. `lease_stale_minutes` vẫn giữ để người gọi thu HẸP
+    #    (`han_mo_coi` kẹp bằng `min`), nhưng **mặc định** là helper.
+    han = (timedelta(minutes=max(1, int(lease_stale_minutes)))
+           if lease_stale_minutes is not None else admission.ORPHAN_TIMEOUT)
     expired_lease_candidates = 0
     for lease in lease_rows:
         heartbeat = lease.heartbeat_at
         if heartbeat.tzinfo is None:
             heartbeat = heartbeat.replace(tzinfo=timezone.utc)
-        if heartbeat < lease_stale_cutoff:
+        if heartbeat < admission.moc_lease_con_song(
+                lease.mode, now=current, timeout=han):
             expired_lease_candidates += 1
             continue
         active_leases_by_resource[lease.resource] = (
