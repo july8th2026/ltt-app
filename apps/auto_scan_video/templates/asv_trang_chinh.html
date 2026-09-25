@@ -769,6 +769,64 @@
         <input type="hidden" name="am_thanh" id="asv-am-thanh" value="">
       </div>
 
+      {# ── Ba lop cua ban nen (B2 tach + B5 GUI, 25/09) ──────────────────────
+
+         Ba lop demucs gom lai: "nhac" = drums+bass (mot gain chung), "vfx" =
+         other (tieng dong/hieu ung), "giong" = vocals — CHINH la giong GOC
+         ma san pham von bo hoan toan. Mien gia tri tu
+         `tach_tieng.cho_giao_dien_lop()`, khong go so vao day.
+
+         ⛔ "giong" mac dinh TAT va PHAI noi ro cai gia khi khach bat: day la
+            LOI THOAI GOC (thuong tieng nuoc ngoai), khong phai tieng dong don
+            thuan — bat no la de tieng tho/tieng cuoi lot qua, nhung loi noi
+            goc se CHONG len giong long tieng tieng Viet. San pham hua MOT
+            giong tieng Viet duy nhat; o nay phai noi that, khong de khach bat
+            roi tuong he thong loi. #}
+      <div class="asv-nhom" id="asv-nhom-lop"
+           data-gain-min="{{ lop.gain_min }}" data-gain-max="{{ lop.gain_max }}">
+        <h3>{{ _("Trộn lớp nền") }}</h3>
+        <p class="asv-ghi-chu">
+          {{ _("Bản nền được tách làm ba lớp riêng: nhạc, tiếng động, và giọng nói gốc. Chỉnh từng lớp nếu bản mặc định chưa vừa ý.") }}
+        </p>
+        <label class="asv-o">
+          <span>{{ _("Nhạc nền") }}
+            <output id="asv-lop-nhac-so" for="asv-lop-nhac-gain">{{ (lop.nhac_gain * 100) | round | int }}%</output></span>
+          <input type="range" id="asv-lop-nhac-gain" step="5"
+                 min="{{ (lop.gain_min * 100) | int }}" max="{{ (lop.gain_max * 100) | int }}"
+                 value="{{ (lop.nhac_gain * 100) | round | int }}">
+        </label>
+        <label class="asv-chon">
+          <input type="checkbox" id="asv-lop-nhac-bat" {% if lop.nhac_bat %}checked{% endif %}>
+          <span><strong>{{ _("Giữ nhạc nền") }}</strong>
+            <small>{{ _("Trống, giai điệu của video gốc.") }}</small></span>
+        </label>
+        <label class="asv-o">
+          <span>{{ _("Tiếng động") }}
+            <output id="asv-lop-vfx-so" for="asv-lop-vfx-gain">{{ (lop.vfx_gain * 100) | round | int }}%</output></span>
+          <input type="range" id="asv-lop-vfx-gain" step="5"
+                 min="{{ (lop.gain_min * 100) | int }}" max="{{ (lop.gain_max * 100) | int }}"
+                 value="{{ (lop.vfx_gain * 100) | round | int }}">
+        </label>
+        <label class="asv-chon">
+          <input type="checkbox" id="asv-lop-vfx-bat" {% if lop.vfx_bat %}checked{% endif %}>
+          <span><strong>{{ _("Giữ tiếng động") }}</strong>
+            <small>{{ _("Tiếng bước chân, va chạm, môi trường xung quanh.") }}</small></span>
+        </label>
+        <label class="asv-chon">
+          <input type="checkbox" id="asv-lop-giong-bat" {% if lop.giong_bat %}checked{% endif %}>
+          <span><strong>{{ _("Giữ giọng nói gốc") }}</strong>
+            <small>{{ _("⚠️ Đây là lời thoại gốc (thường là tiếng nước ngoài), không chỉ tiếng thở hay tiếng cười — nó sẽ chồng lên giọng lồng tiếng Việt. Mặc định tắt vì sản phẩm hứa một giọng tiếng Việt duy nhất.") }}</small></span>
+        </label>
+        <label class="asv-o">
+          <span>{{ _("Âm lượng giọng nói gốc") }}
+            <output id="asv-lop-giong-so" for="asv-lop-giong-gain">{{ (lop.giong_gain * 100) | round | int }}%</output></span>
+          <input type="range" id="asv-lop-giong-gain" step="5"
+                 min="{{ (lop.gain_min * 100) | int }}" max="{{ (lop.gain_max * 100) | int }}"
+                 value="{{ (lop.giong_gain * 100) | round | int }}">
+        </label>
+        <input type="hidden" name="lop" id="asv-lop" value="">
+      </div>
+
       <div class="asv-nhom">
         <h3>{{ _("Giọng") }}</h3>
         <fieldset class="asv-o">

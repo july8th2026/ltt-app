@@ -70,7 +70,7 @@ KHOA_SCHEMA = "schema"
 #:    tung mat). No nam o day chu khong o `dich_vu_tao.KHOA_NHAN`: cua tao
 #:    **khong** nhan no tu khach — chi `giai_doan_noi_dung` ghi no, mot lan.
 KHOA_THUA = ("cat", "vung", "lop_phu", "logo", "phu_de", "am_thanh",
-             "bien_tap", "ho_so_noi_dung")
+             "bien_tap", "lop", "ho_so_noi_dung")
 
 #: 🔴 **Khoa do CHINH HE THONG ghi vao GIUA mot lan chay, khong phai khach nhap.**
 #:
@@ -151,6 +151,10 @@ class CaiDat:
     am_thanh: dict | None = None
     #: Ho so bien tap khung + toc do (asv-final), hoac `None`. Xem `bien_tap.py`.
     bien_tap: dict | None = None
+    #: Ho so BA LOP nen (B2/B5, `giong_bat/gain`, `nhac_bat/gain`, `vfx_bat/gain`),
+    #: hoac `None` = mac dinh (giong TAT, nhac+vfx BAT o gain 1,0). Xem
+    #: `tach_tieng.LOP_STEM`/`chuan_hoa_lop`.
+    lop: dict | None = None
 
     @property
     def co_sua_diem_anh(self) -> bool:
@@ -262,7 +266,8 @@ def tu_ho_so(tho: Mapping | None) -> CaiDat:
         #    `vung` dang theo: *"ban da luu moi la ban that"*.
         phu_de=(dict(tho.get("phu_de")) if tho.get("phu_de") else None),
         am_thanh=(dict(am) if (am := tho.get("am_thanh")) else None),
-        bien_tap=(dict(bt) if (bt := tho.get("bien_tap")) else None))
+        bien_tap=(dict(bt) if (bt := tho.get("bien_tap")) else None),
+        lop=(dict(lp) if (lp := tho.get("lop")) else None))
 
 
 def doc(run) -> CaiDat:
