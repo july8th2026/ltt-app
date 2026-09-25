@@ -152,15 +152,38 @@ def _chay_het_hang_doi(db, *, nang_luc=None, toi_da=200) -> int:
     Dong vai worker THAT: dung `jobs.claim` + `resolve_handler`, nen phep dinh
     tuyen theo `manifest.requires` la phep dinh tuyen that chu khong phai mot
     ban gia lap.
+
+    ⚠️ **Keo job HEN ve NGAY thay vi dung som (25/09, vong-quay-advance).** Ham
+       nay chay TUAN TU, khong that su doi — mot job `next_run_at` o tuong lai
+       (vd. backoff `auto_scan_video.advance` khi khong con gi de nop, xem
+       `apps/auto_scan_video/jobs.py`) se khong bao gio den han trong mot luot
+       chay khong ton thoi gian THAT. Nhanh nay chi kich hoat khi `claim` tra
+       `None` MA van co job QUEUED dang hen — vo hai voi moi bai kiem khac
+       dang dung ham nay (khong ai trong so do tung tao job hen truoc gio nay),
+       cung khuon voi cach `test_449_asv_v4_hong_va_phuc_hoi.py` tu keo tay
+       mot job hen rieng le.
     """
+    from datetime import datetime, timezone
+
+    from sqlalchemy import select
+
     from platform_core import jobs
     from platform_core.job_runner import JobContext
+    from platform_core.models import JOB_QUEUED, Job
 
     dem = 0
     for _ in range(toi_da):
         job = jobs.claim(db, worker_id="w-thu", capabilities=nang_luc)
         if job is None:
-            break
+            hen = db.execute(
+                select(Job).where(Job.status == JOB_QUEUED)
+                .order_by(Job.next_run_at).limit(1)
+            ).scalars().first()
+            if hen is None:
+                break
+            hen.next_run_at = datetime.now(timezone.utc)
+            db.commit()
+            continue
         db.commit()
         handler = jobs.resolve_handler(job.job_type)
         ctx = JobContext(job.id)
