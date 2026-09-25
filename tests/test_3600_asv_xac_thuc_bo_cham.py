@@ -97,7 +97,8 @@ def test_dung_cap_tiem_tach_HAI_LOAI_va_du_so_moi_loai():
     """
     cap = [(i, f"源{i}", f"Sản lượng tăng {i} phần trăm trong năm.")
            for i in range(40)]
-    ra = bc.dung_cap_tiem(cap, moi_loai=5, rng=random.Random(bc.HAT_GIONG))
+    ra = bc.dung_cap_tiem(cap, moi_loai=5, rng=random.Random(bc.HAT_GIONG),
+                          loai_can=("lat_nghia", "sai_thuc_the"))
     assert len(ra) == 10
     assert sum(1 for m in ra if m["loai"] == "lat_nghia") == 5
     assert sum(1 for m in ra if m["loai"] == "sai_thuc_the") == 5
@@ -643,4 +644,39 @@ def test_quet_nguong_tiem_MOT_loi_NHE_khong_kich_duoc_diem_6():
     assert d[("diem", 6)]["bat_duoc"] == 1      # ⛔ ca `nhe` bi BO SOT
     assert d[("diem", 6)]["ti_le"] == 0.5
     assert d[("dem", 1)]["bat_duoc"] == 1       # luat hien hanh cung bo sot no
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  7. Ho loi `bo_sot` — ho bo cham DANG BAO ma ta chua he tiem
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_lam_hong_bo_sot_BO_mot_cum_GIUA_hoac_CUOI_chu_khong_bo_cum_DAU():
+    """⛔ Bo cum DAU cho ra mot cau cut ro rang ⇒ bat duoc bang HINH DANG chu
+    khong phai bang NGHIA, tuc do mot nang luc khac."""
+    cau = ("Sản lượng tăng 5 phần trăm trong năm, theo báo cáo của bộ nông "
+           "nghiệp, và giá đã giảm.")
+    for hat in range(10):
+        ra = bc.lam_hong_bo_sot(cau, random.Random(hat))
+        assert ra is not None and ra != cau
+        assert ra.startswith("Sản lượng tăng 5 phần trăm trong năm")
+
+
+def test_lam_hong_bo_sot_tra_NONE_thay_vi_tra_cau_nguyen_ven():
+    """⭐ Cung ly do voi `lam_hong_lat_nghia`: mot cap "da lam hong" ma khong
+    doi gi se di vao cot *bo cham khong bat duoc* va ket toi bo cham mot loi
+    cua chinh bo do."""
+    assert bc.lam_hong_bo_sot("Khong co dau phay nao trong cau nay", random.Random(0)) is None
+    # Con lai qua ngan => ⛔ khong nhan.
+    assert bc.lam_hong_bo_sot("Ông nói, rằng trời mưa rất to ở miền Trung.",
+                              random.Random(0)) is None
+
+
+def test_dung_cap_tiem_LOC_duoc_theo_ho_loi():
+    """⛔ Chay lai hai ho da do la dot luot goi vo ich — phai loc duoc."""
+    cap = [(i, f"源{i}", f"Sản lượng tăng {i} phần trăm trong năm, theo báo "
+                        "cáo của bộ, và giá đã giảm.") for i in range(40)]
+    ra = bc.dung_cap_tiem(cap, moi_loai=5, rng=random.Random(bc.HAT_GIONG),
+                          loai_can=("bo_sot",))
+    assert len(ra) == 5 and {m["loai"] for m in ra} == {"bo_sot"}
+    assert all(m["ma"].startswith("tiem_bo_sot_") for m in ra)
 

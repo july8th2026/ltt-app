@@ -1,0 +1,1191 @@
+{
+ "phien_ban": 1,
+ "cau_hoi": "Bo cham dang cham NOI DUNG hay cham bang THIEN LECH BE MAT?",
+ "cach_do": "KHA NANG PHAN BIET = (ti le bat tren cap DA LAM HONG) - (ti le gan co tren cap SACH). ⛔ Khong doc mot ve mot minh.",
+ "cong_viet_truoc": {
+  "canh_du_toi_thieu": 0.3,
+  "canh_mu_toi_da": 0.15
+ },
+ "canh": {
+  "nguon_mu": {
+   "canh": "nguon_mu",
+   "ban": "v3",
+   "luot": 3,
+   "cua_so_utc": [
+    "2026-09-24T17:51:22+00:00",
+    "2026-09-24T18:15:16+00:00"
+   ],
+   "dong_sach": [
+    503,
+    509,
+    514,
+    519,
+    522,
+    530,
+    537,
+    542,
+    552,
+    556,
+    562,
+    565,
+    567,
+    568,
+    570,
+    571,
+    583,
+    585,
+    588,
+    594,
+    600,
+    605,
+    609,
+    610,
+    613,
+    614,
+    615,
+    617,
+    618,
+    620
+   ],
+   "n_hong": 30,
+   "gan_co_tren_cap_SACH": {
+    "n": 30,
+    "k": 3,
+    "ti_le": 0.1
+   },
+   "bat_tren_cap_HONG": {
+    "n": 30,
+    "k": 12,
+    "ti_le": 0.4
+   },
+   "bat_theo_loai": {
+    "lat_nghia": {
+     "n": 15,
+     "k": 7,
+     "ti_le": 0.4667
+    },
+    "sai_thuc_the": {
+     "n": 15,
+     "k": 5,
+     "ti_le": 0.3333
+    }
+   },
+   "kha_nang_phan_biet": 0.3,
+   "luoc_do": {
+    "tong_lo": 18,
+    "so_lo_hong": 0,
+    "ti_le_lo_hong": 0.0,
+    "do_phu_tung_luot": [
+     1.0,
+     1.0,
+     1.0
+    ],
+    "do_phu_thap_nhat": 1.0,
+    "nguong_lo_hong": 0.033,
+    "nguong_do_phu": 0.9333,
+    "nen_sach": true
+   },
+   "gop": {
+    "flores_0503": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0509": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0514": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0519": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0522": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0530": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0537": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0542": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0552": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0556": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0562": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0565": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0567": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0568": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0570": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0571": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 2
+    },
+    "flores_0583": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0585": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0588": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0594": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0600": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0605": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0609": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0610": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0613": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0614": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0615": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0617": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0618": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0620": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_lat_nghia_0300": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_lat_nghia_0301": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 2
+    },
+    "tiem_lat_nghia_0306": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_lat_nghia_0308": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 2
+    },
+    "tiem_lat_nghia_0312": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_lat_nghia_0313": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 2
+    },
+    "tiem_lat_nghia_0314": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 2
+    },
+    "tiem_lat_nghia_0315": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 1
+    },
+    "tiem_lat_nghia_0318": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 1
+    },
+    "tiem_lat_nghia_0320": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 2
+    },
+    "tiem_lat_nghia_0321": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_lat_nghia_0322": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_lat_nghia_0324": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_lat_nghia_0325": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_lat_nghia_0327": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_sai_thuc_the_0300": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_sai_thuc_the_0301": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_sai_thuc_the_0302": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_sai_thuc_the_0303": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_sai_thuc_the_0304": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 1
+    },
+    "tiem_sai_thuc_the_0305": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_sai_thuc_the_0307": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_sai_thuc_the_0308": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_sai_thuc_the_0309": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_sai_thuc_the_0311": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_sai_thuc_the_0312": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_sai_thuc_the_0313": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_sai_thuc_the_0315": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_sai_thuc_the_0318": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_sai_thuc_the_0319": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    }
+   }
+  },
+  "dich_mu": {
+   "canh": "dich_mu",
+   "ban": "v3",
+   "luot": 3,
+   "cua_so_utc": [
+    "2026-09-24T18:15:20+00:00",
+    "2026-09-24T18:43:39+00:00"
+   ],
+   "dong_sach": [
+    503,
+    509,
+    514,
+    519,
+    522,
+    530,
+    537,
+    542,
+    552,
+    556,
+    562,
+    565,
+    567,
+    568,
+    570,
+    571,
+    583,
+    585,
+    588,
+    594,
+    600,
+    605,
+    609,
+    610,
+    613,
+    614,
+    615,
+    617,
+    618,
+    620
+   ],
+   "n_hong": 45,
+   "gan_co_tren_cap_SACH": {
+    "n": 30,
+    "k": 30,
+    "ti_le": 1.0
+   },
+   "bat_tren_cap_HONG": {
+    "n": 45,
+    "k": 35,
+    "ti_le": 0.7778
+   },
+   "bat_theo_loai": {
+    "lat_nghia": {
+     "n": 15,
+     "k": 5,
+     "ti_le": 0.3333
+    },
+    "sai_thuc_the": {
+     "n": 15,
+     "k": 15,
+     "ti_le": 1.0
+    }
+   },
+   "kha_nang_phan_biet": -0.2222,
+   "luoc_do": {
+    "tong_lo": 24,
+    "so_lo_hong": 0,
+    "ti_le_lo_hong": 0.0,
+    "do_phu_tung_luot": [
+     1.0,
+     1.0,
+     1.0
+    ],
+    "do_phu_thap_nhat": 1.0,
+    "nguong_lo_hong": 0.033,
+    "nguong_do_phu": 0.9333,
+    "nen_sach": true
+   },
+   "gop": {
+    "flores_0503": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0509": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0514": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0519": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0522": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0530": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0537": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0542": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0552": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0556": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0562": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0565": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0567": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0568": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0570": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0571": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0583": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0585": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0588": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0594": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0600": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0605": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0609": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0610": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0613": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0614": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0615": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0617": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0618": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0620": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_lat_nghia_0300": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_lat_nghia_0301": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_lat_nghia_0306": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_lat_nghia_0308": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_lat_nghia_0312": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_lat_nghia_0313": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_lat_nghia_0314": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_lat_nghia_0315": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_lat_nghia_0318": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_lat_nghia_0320": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_lat_nghia_0321": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_lat_nghia_0322": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_lat_nghia_0324": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_lat_nghia_0325": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_lat_nghia_0327": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_sai_thuc_the_0300": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_sai_thuc_the_0301": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_sai_thuc_the_0302": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_sai_thuc_the_0303": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_sai_thuc_the_0304": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_sai_thuc_the_0305": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_sai_thuc_the_0307": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_sai_thuc_the_0308": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_sai_thuc_the_0309": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_sai_thuc_the_0311": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_sai_thuc_the_0312": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_sai_thuc_the_0313": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_sai_thuc_the_0315": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_sai_thuc_the_0318": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_sai_thuc_the_0319": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_bo_sot_0300": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_bo_sot_0302": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_bo_sot_0305": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_bo_sot_0308": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_bo_sot_0310": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_bo_sot_0312": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_bo_sot_0313": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_bo_sot_0314": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_bo_sot_0318": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_bo_sot_0321": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_bo_sot_0323": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_bo_sot_0326": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_bo_sot_0327": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_bo_sot_0329": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_bo_sot_0338": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    }
+   }
+  },
+  "du": {
+   "ghi_chu": "DUNG LAI luot da do cung ngay, cung thiet lap (b2_cham_v3_tren_100_dong_soi_mu.json 30 dong dau + b2_tiem_v3_nen_sach.json) — ⛔ khong goi lai model.",
+   "gan_co_tren_cap_SACH": {
+    "n": 30,
+    "k": 11,
+    "ti_le": 0.3667
+   },
+   "bat_tren_cap_HONG": {
+    "n": 30,
+    "k": 28,
+    "ti_le": 0.9333
+   },
+   "kha_nang_phan_biet": 0.5667
+  },
+  "nguon_mu_HO_BO_SOT": {
+   "canh": "nguon_mu",
+   "ban": "v3",
+   "luot": 3,
+   "cua_so_utc": [
+    "2026-09-24T18:54:47+00:00",
+    "2026-09-24T19:09:18+00:00"
+   ],
+   "dong_sach": [
+    503,
+    509,
+    514,
+    519,
+    522,
+    530,
+    537,
+    542,
+    552,
+    556,
+    562,
+    565,
+    567,
+    568,
+    570,
+    571,
+    583,
+    585,
+    588,
+    594,
+    600,
+    605,
+    609,
+    610,
+    613,
+    614,
+    615,
+    617,
+    618,
+    620
+   ],
+   "n_hong": 15,
+   "gan_co_tren_cap_SACH": {
+    "n": 30,
+    "k": 4,
+    "ti_le": 0.1333
+   },
+   "bat_tren_cap_HONG": {
+    "n": 15,
+    "k": 0,
+    "ti_le": 0.0
+   },
+   "bat_theo_loai": {
+    "lat_nghia": {
+     "n": 0,
+     "k": 0,
+     "ti_le": null
+    },
+    "sai_thuc_the": {
+     "n": 0,
+     "k": 0,
+     "ti_le": null
+    }
+   },
+   "kha_nang_phan_biet": -0.1333,
+   "luoc_do": {
+    "tong_lo": 15,
+    "so_lo_hong": 0,
+    "ti_le_lo_hong": 0.0,
+    "do_phu_tung_luot": [
+     1.0,
+     1.0,
+     1.0
+    ],
+    "do_phu_thap_nhat": 1.0,
+    "nguong_lo_hong": 0.033,
+    "nguong_do_phu": 0.9333,
+    "nen_sach": true
+   },
+   "gop": {
+    "flores_0503": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0509": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0514": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0519": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0522": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0530": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0537": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0542": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0552": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0556": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0562": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0565": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0567": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0568": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0570": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0571": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0583": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0585": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0588": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0594": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0600": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0605": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0609": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0610": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0613": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0614": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "flores_0615": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0617": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0618": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "flores_0620": {
+     "dat": false,
+     "so_luot": 3,
+     "so_bao_sai": 3
+    },
+    "tiem_bo_sot_0300": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0302": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0305": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0308": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0310": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0312": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0313": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0314": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0318": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0321": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0323": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0326": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0327": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0329": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    },
+    "tiem_bo_sot_0338": {
+     "dat": true,
+     "so_luot": 3,
+     "so_bao_sai": 0
+    }
+   },
+   "loai_tiem": [
+    "bo_sot"
+   ]
+  }
+ },
+ "so_sanh_2_ho_chung": {
+  "vi_sao": "🔴 Toi them ho `bo_sot` vao `LOAI_TIEM` GIUA hai canh ⇒ canh `dich_mu` nhan 45 cap hong con `nguon_mu` 30. De so duoc, gioi han ca hai ve HAI ho chung.",
+  "du": 0.5667,
+  "nguon_mu": 0.3,
+  "dich_mu": -0.3333
+ },
+ "ho_bo_sot": {
+  "du_hai_phia": {
+   "n": 15,
+   "k": 15,
+   "ti_le": 1.0,
+   "nguon": "b2_tiem_bo_sot_v3.json"
+  },
+  "nguon_mu": {
+   "n": 15,
+   "k": 0,
+   "ti_le": 0.0
+  },
+  "ket_luan": "Tren ho `bo_sot` (cau tieng Viet con HOAN TOAN XUOI), tin hieu don ngu = 0. ⇒ 53 % don ngu do o §24 la dac tinh cua HAI HO TIEM CU, ⛔ khong phai cua bo cham."
+ }
+}

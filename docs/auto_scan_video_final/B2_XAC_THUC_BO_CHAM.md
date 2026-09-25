@@ -1,5 +1,16 @@
 # B2 — XÁC THỰC BỘ CHẤM ngữ nghĩa (làn `xac-thuc-cham`, 24/09/2026)
 
+> 🔴 **ĐỌC TRƯỚC MỌI CON SỐ "ĐỘ NHẠY" TRONG TÀI LIỆU NÀY.**
+>
+> Phép tiêm tự viết của ta có **HAI** họ lỗi (`lat_nghia`, `sai_thuc_the`).
+> Taxonomy đã công bố (DEMETR, MIT, arXiv 2210.13746) có **35**. ⇒ ⭐ Mọi câu
+> *"độ nhạy 100 %"* ở đây thật ra là **"100 % trên 2 trong 35 họ lỗi"**.
+>
+> ⛔ Chỗ mù lớn nhất: **`bo_sot`** — bộ chấm **BÁO** lỗi bỏ sót (5/33 phần dư
+> ở §17.4 là loại này) mà ta ⛔ **chưa bao giờ tiêm** một lỗi bỏ sót nào.
+> Cùng cảnh: **thêm**, **code-mix**, mọi lỗi trôi chảy. Chi tiết: §22.1.
+
+
 > 🔴 **HAI THƯỚC ĐO BÁO ĐỘNG GIẢ TRONG TỆP NÀY — ⛔ ĐỪNG ĐẶT SỐ CỦA CHÚNG CẠNH NHAU.**
 >
 > | | cách **CŨ** | cách **MỚI** |
@@ -56,6 +67,9 @@ Công cụ: `tools/bench_b2_xac_thuc_bo_cham.py` · bằng chứng:
 | **Báo động giả** (FLORES, NGƯỜI dịch) | 100/100 | **45,0%** | 40,0 – 44,4% | 3 |
 | Bắt lỗi tiêm — `lat_nghia` | 15/15 | **100%** | 100 – 100% | 3 |
 | Bắt lỗi tiêm — `sai_thuc_the` | 15/15 | **100%** | 100 – 100% | 3 |
+
+⚠️ **Phạm vi:** "bắt lỗi tiêm" ở đây là **2/35 họ lỗi** (⛔ chưa hề đo `bo_sot`, `them`, trôi chảy) — xem cảnh báo đầu tệp.
+
 
 - 90/100 cặp có đủ 3 lượt; **10 cặp chỉ có 2** — một lô trả JSON hỏng
   (`LuocDoSai`, 1/30 lô = 3,3%). Giả định thuận lợi nhất (mọi cặp 2-lượt hoà đều
@@ -429,6 +443,9 @@ thuyết cho một con số đo trên kênh hỏng.
 | V2 | **16,7%** | 100% | ⛔ **40%** |
 | **V3 + `temp 0.0`** | **23,3%** | ✅ **100%** | ✅ **87%** |
 
+⚠️ **Phạm vi:** "bắt lỗi tiêm" ở đây là **2/35 họ lỗi** (⛔ chưa hề đo `bo_sot`, `them`, trôi chảy) — xem cảnh báo đầu tệp.
+
+
 ⇒ **Độ nhạy: ĐẠT cả hai loại, dư nhiều.** Chỉ còn cổng báo động giả:
 **23,3% > 15%**.
 
@@ -513,6 +530,9 @@ so hai *lời nhắc*.
 | **V1** nhị phân | 43,3% | 100% | 100% | 0% |
 | **V2** phân mức | **16,7%** | 100% | ⛔ **33%** | 0% |
 | **V3** + sàn thực thể | 23,3% | ✅ 100% | ✅ **87%** | 0% |
+
+⚠️ **Phạm vi:** "bắt lỗi tiêm" ở đây là **2/35 họ lỗi** (⛔ chưa hề đo `bo_sot`, `them`, trôi chảy) — xem cảnh báo đầu tệp.
+
 
 ⚠️ V2 trên nền sạch còn **tệ hơn** con số đo trên nền bẩn (33% so với 40%) ⇒ chỗ
 mù thực thể của nó là **thật**, không phải nhiễu kênh. ⛔ V2 loại dứt khoát.
@@ -896,6 +916,8 @@ Chạy lại đối chứng âm: V3 · `temp 0.0` · 3 lượt · 15 cặp mỗi
 | `diem ≥ 11…15` | 7,0 % ✅ | 100 % ✅ | ⛔ 26,7 % | ⛔ vế 2 |
 | `diem ≥ 16…25` | 7,0 % ✅ | 100 % ✅ | ⛔ 20,0 % | ⛔ vế 2 |
 | `dem ≥ 2` nang | 5,0 % ✅ | ⛔ 20,0 % | ⛔ 26,7 % | ⛔ vế 2 |
+⚠️ **Phạm vi:** mọi "độ nhạy" trên tiêm là **2/35 họ lỗi** — ⛔ chưa hề đo `bo_sot`, `them`, trôi chảy (§22.1).
+
 
 ## 20.1 ⭐ Câu trả lời: **KHÔNG** — và nó là một kết quả QUYẾT ĐỊNH
 
@@ -924,3 +946,316 @@ ngưỡng hạ được BĐG xuống dưới 15 % đều kéo `sai_thuc_the` xu�
 lỗi tiêm **theo từng loại** ở mọi ngưỡng; `bang_chung/b2_tiem_v3_nen_sach.json`
 là bản ghi sạch của lượt tiêm. ⇒ Cuộc đấu MetricX phải so **cả hai vế**:
 ⛔ một đường cong BĐG–độ-nhạy-tự-nhiên **không đủ** để tuyên bố ai thắng.
+
+---
+
+# 21. ĐỔI VAI: V3 thôi làm CỔNG, làm BỘ SÀNG — hai cổng MỚI, viết trước
+
+⛔ **Cổng 15 % báo động giả KHÔNG áp cho vai sàng** — nó sinh ra cho một **cổng
+tự động** chặn khách. Vai sàng có hai cổng khác:
+
+```
+1. DO NHAY  >= 95 %  — bo sot la MAT THAT, ⛔ khong cuu duoc o buoc sau
+2. THU GON  <= 50 %  so muc bi gan co — sang phai cat duoc it nhat MOT NUA
+                      viec doc; gan co 90/100 thi no vo dung
+```
+
+⚠️ **Khai thẳng, ⛔ không giả vờ đây là cổng mù:** con số 43/100 **đã biết** khi
+viết cổng 2. Nên cổng 2 ⛔ **không** phải một tiên đoán — nó là một **ngưỡng chi
+phí**: người đọc tiếp theo là người thật, sàng chỉ đáng giá khi cắt quá nửa việc
+đọc. Cổng 1 thì **chưa** biết trước (đo tiêm chạy sau).
+
+## 21.1 V3 ở luật đang chạy (`dem ≥ 1` nang), đo theo hai cổng mới
+
+| | đo được | cổng sàng |
+|---|---|---|
+| **Thu gọn** | **43/100** [33,7 ; 52,8] | ✅ ≤ 50 % (⚠️ cận trên KTC **52,8 %** — sát mép) |
+| Độ nhạy — lỗi **tự nhiên** | **10/10 = 100 %** [72,2 ; 100] | ✅ điểm ước lượng |
+| Độ nhạy — tiêm `lat_nghia` | **15/15 = 100 %** [79,6 ; 100] | ✅ điểm ước lượng |
+| Độ nhạy — tiêm **`sai_thuc_the`** | ⛔ **13/15 = 86,7 %** [62,1 ; 96,3] | ⛔ **< 95 %** |
+⚠️ **Phạm vi:** mọi "độ nhạy" trên tiêm là **2/35 họ lỗi** — ⛔ chưa hề đo `bo_sot`, `them`, trôi chảy (§22.1).
+
+
+🔴 **V3 ⛔ CHƯA đạt cổng sàng** — nó **bỏ sót 2/15 lỗi sai thực thể đã tiêm**, và
+ở vai sàng thì mỗi lần bỏ sót là **mất thật**. ⛔ Đừng đọc *"độ nhạy 100 %"* của
+§17 thành *"không bỏ sót"*: 100 % đó là trên **10 lỗi tự nhiên**, KTC xuống tận
+**72,2 %**.
+
+⚠️ **Và ⛔ không một cỡ mẫu nào hiện có chứng minh nổi mức 95 %:** n = 10 và
+n = 15 cho KTC rộng hơn khoảng cách tới ngưỡng. ⇒ Cổng *"≥ 95 %"* chỉ có nghĩa
+sau khi có tập lớn (**C3**). Đó chính là lý do C3 đi trước.
+
+## 21.2 ⛔ Cái giá của đường này — ghi để ⛔ không ai tưởng bài toán đã xong
+
+Đường sàng + người chấm ⛔ **không tự động hoá được**: mỗi lượt cần **một người
+chấm** 43 mục. ⇒ Nó là lời giải cho **PHÉP ĐO của ta**, ⛔ **không** phải lời
+giải cho sản phẩm chạy tự động với khách. Bài toán **cổng tự động vẫn MỞ** — và
+§20 vừa chứng minh lời nhắc tự nặn ⛔ không giải được nó.
+
+---
+
+# 22. PHA C — khảo sát nguồn cộng đồng. ⛔ CHƯA cài gì
+
+⛔ Không tệp nào được tải về, không gói nào được cài. Dưới đây là **giấy phép,
+phụ thuộc và cái bẫy** của từng thứ, để điều phối quyết.
+
+## 22.1 🔴 C3 — DEMETR: giấy phép TỐT, nhưng **ĐÍCH SAI**
+
+`marzenakrp/demetr` · **MIT** ✅ · 35 tệp JSON, ~850 KB mỗi tệp (**~30 MB**) ·
+⛔ không kéo phụ thuộc nào (chỉ là dữ liệu).
+
+🔴 **Bẫy lớn nhất, README nói thẳng:** *"DEMETR contains only translations **into
+English**"*. Tiếng Trung là **ngôn ngữ NGUỒN** ⇒ cặp là **zh→en**, còn bộ chấm
+của ta là **zh→vi**. ⇒ Đo trên DEMETR là đo **một hệ thống khác** (lời nhắc đòi
+phán quyết về bản **tiếng Việt**), đúng cái §6 cấm.
+
+⚠️ **Và cỡ mẫu nhỏ hơn ta tưởng:** 1.000 mục mỗi loại **chia cho 10 ngôn ngữ
+nguồn** ⇒ **≈ 100 mục zh** mỗi loại, ⛔ không phải 1.000. (Vẫn hơn 15 của ta
+**~6,7×** ⇒ KTC hẹp hơn nhiều.)
+
+⚠️ Script tạo nhiễu ⛔ **không công khai** (*"contact us for scripts"*) ⇒ muốn
+áp công thức của họ lên cặp zh→vi của ta thì phải **tự hiện thực lại** — nhưng
+**đặc tả** (tên loại + mức + mô tả) thì có sẵn trong chính tên tệp và trường
+`pert_desc`, và MIT cho phép dùng.
+
+### Ánh xạ 35 loại → 2 loại của ta — ⭐ và chỗ mù nó soi ra
+
+| loại của ta | DEMETR |
+|---|---|
+| `lat_nghia` | `critical_id7_antonym` · `critical_id8_negation` · `major_id3_hypernym` · `major_id17_tense` · `major_id18_aspect` · `major_id19_question` |
+| `sai_thuc_the` | `critical_id9_ne_replaced` · `critical_id10_numbers_replaced` · `critical_id11_gender` · `critical_id25_ne_removed` |
+
+🔴 **23/35 loại ⛔ KHÔNG ánh xạ được — và đó là chỗ mù ta chưa biết mình có:**
+- **Bỏ sót**: `id5_pp_removed` · `id21_adj_adv_removed` · `id22_verb_removed` ·
+  `id23_noun_removed` · `id24_subj_removed`
+- **Thêm**: `critical_id6_addition`
+- **Trôi chảy/bề mặt**: `id1/id2_repeat` · `id12…id16` · `id26…id32`
+- **Khác**: `critical_id4_codemix` · `critical_id20_shuffled` · ba tệp `base_*`
+
+⭐ **Đáng nói nhất: `bo_sot`.** Bộ chấm của ta **báo** lỗi `bo_sot` (5/33 phần dư
+ở §17.4 là loại này) nhưng ta ⛔ **chưa bao giờ tiêm** một lỗi bỏ sót nào ⇒ ta
+⛔ **không biết** độ nhạy của mình ở đúng loại mà MetricX vốn mạnh. Phép tiêm
+tự viết của ta chỉ phủ **2/35** họ lỗi.
+
+## 22.2 C2 — ESA: giao thức chấm cho điều phối
+
+Nguồn: **arXiv 2406.11580** (Kocmi et al.) — *"combines the continuous rating of
+DA with the high-level error severity span marking of MQM … faster and cheaper
+than MQM at the same quality level, **without the requirement of expensive MQM
+experts**"*. Hiện thực tham chiếu: `MicrosoftTranslator/GEMBA`
+`gemba/gemba_esa.py` (⚠️ **CC BY-SA 4.0** — dùng **giao thức**, ⛔ không chép lời
+văn); công cụ chấm của WMT là `AppraiseDev/Appraise` (**BSD-3**).
+
+**Mẫu chấm hai chặng** (viết lại bằng lời của ta, ⛔ không chép):
+
+```
+CHANG 1 — danh dau DOAN loi tren ban dich
+   moi doan: [muc] = major | minor
+   major = pha mach, lam nguoi doc kho hoac khong hieu duoc
+   minor = la loi that nhung KHONG can tro viec hieu
+   ⛔ Phai TRICH doan, khong duoc nhan xet chung chung.
+   Loi BO SOT trich doan o CAU NGUON (loi khong nam trong ban dich).
+
+CHANG 2 — cham mot diem 0..100 DUA TREN cac doan da danh dau
+   moc:  0 = khong giu duoc nghia nao
+        33 = giu duoc mot phan nghia
+        66 = giu duoc phan lon nghia, vai loi ngu phap
+       100 = nghia va ngu phap hoan hao
+```
+
+⇒ Điều phối chấm **theo đúng mẫu này** thì số của ta **so sánh được với số của
+thiên hạ**, và ⛔ không ai phải bịa một thang riêng.
+
+## 22.3 C1 — `mt-metrics-eval`: Apache-2.0, nhưng phụ thuộc NẶNG
+
+`google-research/mt-metrics-eval` · **Apache-2.0** ✅ · `setup.py` kéo:
+`apache_beam` · `dacite` · `numpy` · `scipy` · `absl-py`.
+
+⚠️ **`apache_beam` là một khung xử lý dữ liệu phân tán** — nặng, và ⛔ không cần
+cho việc đếm của ta. ⇒ Đề xuất: ⛔ **chưa cài**; `tools/do_luong.py` (đã có,
+`sklearn` + `scipy`) đang phủ đúng phần ta cần. Chỉ kéo `mt-metrics-eval` khi
+cần **đúng phép tương quan hệ thống-cấp của WMT** (Kendall/Pearson theo cặp
+hệ thống) — thứ ta **chưa** dùng tới.
+
+## 22.4 🔴 C4 — sentinel metrics: **KHÔNG dùng được, giấy phép NC**
+
+`SapienzaNLP/guardians-mt-eval` (ACL 2024) · 🔴 **CC BY-NC-SA 4.0** —
+**NonCommercial**. Ta **bán credit** ⇒ ⛔ **không dùng được**, cùng rổ với
+xCOMET ở §2 DO NOT SHIP. Phụ thuộc cũng nặng (`torch`, `unbabel-comet`,
+`pytorch-lightning`, `wandb`).
+
+⭐ **Nhưng ý tưởng thì đọc được, và ta đã tự nghĩ ra một nửa:** phép *"chạy bản
+dịch NGƯỜI qua cổng"* của §2 chính là một **sentinel** — một đầu vào mà ta biết
+trước câu trả lời phải là gì. ⚠️ Phần ta **thiếu** so với họ: sentinel **chỉ
+nhìn NGUỒN** (bỏ bản dịch đi) và sentinel **chỉ nhìn BẢN DỊCH** (bỏ nguồn đi).
+Nếu bộ chấm vẫn phán được khi đã bỏ một phía, thì nó đang chấm bằng **thiên
+lệch bề mặt**, ⛔ không phải bằng đối chiếu nghĩa. ⇒ Đó là một đối chứng ta
+⛔ chưa hề có, và nó **miễn phí** để dựng (⛔ không cần mã của họ).
+
+## 22.5 Đề xuất thứ tự — chờ điều phối chốt, ⛔ chưa làm
+
+1. **C2 (ESA)** trước: ⛔ không tốn một byte tải về, và nó mở khoá vai "điều
+   phối chấm" ở §21.
+2. **C4 sentinel nguồn-mù/dịch-mù**: dựng bằng chính bộ đo đang có, ⛔ không
+   cài gì, và nó kiểm đúng nghi ngờ gốc của cả tài liệu này.
+3. **C3 (DEMETR)**: ⚠️ quyết định **đích sai** (zh→en) phải được chốt trước —
+   hoặc chấp nhận đo *"khả năng phát hiện lỗi"* trên một đích khác và khai rõ,
+   hoặc chỉ mượn **đặc tả 35 loại** rồi tự tiêm lên cặp zh→vi của ta.
+4. **C1**: ⛔ chưa cần.
+
+---
+
+# 23. C2 — MẪU CHẤM ESA và **tập mù đã sẵn** cho điều phối (L4)
+
+Giao thức: **ESA** (Kocmi et al., arXiv **2406.11580**) — *"combines the
+continuous rating of DA with the high-level error severity span marking of MQM
+… without the requirement of expensive MQM experts"*. Hiện thực tham chiếu:
+`MicrosoftTranslator/GEMBA` `gemba/gemba_esa.py` (⚠️ **CC BY-SA 4.0** ⇒ dùng
+**giao thức**, ⛔ không chép lời văn). Công cụ chấm của WMT: `AppraiseDev/Appraise`
+(**BSD-3**).
+
+## 23.1 Mẫu chấm — hai chặng
+
+```
+CHANG 1 — danh dau DOAN loi
+  moi loi: { doan (TRICH NGUYEN VAN), muc: major | minor, loai, ly_do }
+  major = pha mach, nguoi doc kho hoac khong hieu duoc dieu cau muon noi
+  minor = la loi that nhung KHONG can tro viec hieu
+  ⛔ Khong trich duoc doan ⇒ ⛔ KHONG tinh la loi (L4 §3).
+  ⭐ Loi BO SOT trich doan o CAU NGUON — cho bi bo sot thi trong ban dich
+     ⛔ khong co gi de trich.
+  ⚠️ Nghi ngo ⇒ ghi `bien`, ⛔ khong ghi loi (L4 §4).
+
+CHANG 2 — cham MOT diem 0..100 DUA TREN cac doan da danh dau
+   0 = khong giu duoc nghia nao        66 = giu phan lon nghia, vai loi ngu phap
+  33 = giu duoc mot phan nghia        100 = nghia va ngu phap hoan hao
+```
+
+## 23.2 Tập mù — ⭐ đã dựng sẵn, đúng L4
+
+| | |
+|---|---|
+| Cỡ | **60 mục**: **43** dòng bộ chấm **gắn cờ** + **17** dòng **không** gắn cờ |
+| Mù | mã `esa_0001…esa_0060`, ⛔ **không** lộ dòng FLORES, ⛔ **không** lộ bộ chấm nói gì |
+| Xáo | `Random(20260925)` |
+| Tệp chấm | ⛔ **NGOÀI kho** (FLORES là CC-BY-SA): `…/scratchpad/dc/esa_bo_mu_CO_CHU_FLORES.json` |
+| Khoá | `bang_chung/b2_esa_khoa_niem_phong.json` — **đã commit TRƯỚC**, ⛔ đừng mở trước khi chấm xong |
+
+⭐ **17 mục không-gắn-cờ là đối chứng giấu:** thiếu chúng, người chấm biết *mọi*
+mục đều bị bộ chấm nghi, và phán quyết sẽ bị neo. ⛔ Đừng bỏ chúng đi cho nhanh.
+
+⚠️ **Khai ngay cạnh mọi con số sinh ra từ vòng này (L4 §5): người chấm là một
+mô hình.** Đây là giới hạn ghi ra được, ⛔ không phải lỗ hổng bị giấu.
+
+---
+
+# 24. ⭐ C4 SENTINEL — bộ chấm chấm NỘI DUNG hay chấm bằng THIÊN LỆCH BỀ MẶT?
+
+Câu này có **trước** mọi câu khác: nếu bộ chấm vẫn phán được khi ta **giấu một
+phía**, thì ⛔ mọi số độ nhạy và báo động giả đều rỗng.
+
+Ý tưởng từ `SapienzaNLP/guardians-mt-eval` (ACL 2024) — ⚠️ kho đó là
+**CC BY-NC-SA 4.0** ⇒ ⛔ **không dùng mã của họ**; ý tưởng thì không có giấy
+phép. Ta giấu một phía ngay trong **chính lời nhắc sản phẩm**.
+
+## 24.1 Đo bằng KHẢ NĂNG PHÂN BIỆT, ⛔ không đọc một vế một mình
+
+```
+KHA NANG PHAN BIET = (ti le BAT tren cap DA LAM HONG) − (ti le GAN CO tren cap SACH)
+```
+⛔ Vì một bộ chấm **gắn cờ tất cả** cũng "bắt" 100 % cặp hỏng, và một bộ chấm
+**luôn im** cũng "không báo động giả" — chỉ hiệu số mới tách được chúng ra.
+Cổng viết **trước**: cạnh `đủ` ≥ **0,30** · cạnh mù ≤ **0,15**.
+
+## 24.2 Kết quả (30 cặp sạch + 30 cặp đã làm hỏng, V3, `temp 0.0`, 3 lượt, nền sạch 0 % lô hỏng)
+
+| cạnh | gắn cờ trên **sạch** | bắt trên **hỏng** | **phân biệt** | |
+|---|---|---|---|---|
+| **đủ hai phía** ¹ | 11/30 = 36,7 % | 28/30 = 93,3 % | **+0,567** | ✅ ≥ 0,30 |
+| **nguồn-mù** (giấu câu zh) | 3/30 = 10,0 % | 12/30 = 40,0 % | ⛔ **+0,300** | ⛔ > 0,15 |
+| **dịch-mù** (giấu bản vi) ² | **30/30 = 100 %** | 20/30 = 66,7 % | **−0,333** | thoái hoá |
+
+¹ ⛔ Không gọi lại model: dùng lại lượt **cùng ngày, cùng thiết lập**
+(`b2_cham_v3_tren_100_dong_soi_mu.json` 30 dòng đầu + `b2_tiem_v3_nen_sach.json`).
+² 🔴 **Sự cố của chính tôi:** tôi thêm họ `bo_sot` vào `LOAI_TIEM` **giữa hai
+cạnh** ⇒ cạnh `dich_mu` nhận **45** cặp hỏng còn `nguon_mu` **30**. Đã giới hạn
+cả hai về **hai họ chung** để so. ⚠️ Đúng bẫy *"cây đổi trong lúc chạy"* — ghi ra
+để ⛔ không ai đọc hai cột như thể chúng cùng một tập.
+
+## 24.3 🔴 Câu trả lời: **một phần** — và nó ⛔ không rỗng, nhưng ⛔ cũng không sạch
+
+1. ✅ **Bộ chấm CÓ dùng câu nguồn.** Giấu bản dịch ⇒ nó **thoái hoá thành gắn cờ
+   TẤT CẢ** (30/30 cặp sạch của người dịch), tức mất sạch khả năng phán — đúng
+   thứ một sentinel phải thấy. ⛔ Kịch bản xấu nhất (*"bộ chấm bịa hoàn toàn"*)
+   **không** xảy ra.
+2. 🔴 **Nhưng hơn MỘT NỬA khả năng phân biệt sống sót khi giấu câu nguồn:**
+   `0,300 / 0,567 = 53 %`. ⇒ **quá nửa** tín hiệu của ta đến từ chỗ **bản tiếng
+   Việt tự nó nghe sai**, ⛔ không phải từ việc đối chiếu với câu gốc.
+
+⚠️ **Và đây là giới hạn của PHÉP TIÊM chứ không chỉ của bộ chấm:** phép tiêm tự
+viết đổi từ trái nghĩa / đổi tên riêng — những thứ **phá mạch ngay trong câu
+tiếng Việt**. ⇒ Một phần *"độ nhạy 100 %"* của §3/§13 là **đơn ngữ**, và ⛔ nó
+⛔ không hứa gì về lỗi dịch thật sự (câu tiếng Việt trôi chảy nhưng **sai so với
+nguồn**) — đúng hình dạng lỗi FLORES thật (`壁球` → *"quần vợt"* đọc rất xuôi).
+
+⭐ **Con số 0,300 còn là một CẬN DƯỚI:** `doc_ngu_nghia` loại mọi lỗi không trích
+được `doan` trong văn bản đã gửi, nên ở cạnh nguồn-mù, lỗi nào trích từ **câu
+nguồn** đều bị **máy** cắt. Cạnh mù bị **trói tay** mà vẫn phân biệt được 0,300.
+
+## 24.4 Việc rút ra — ⛔ chưa làm, chờ điều phối
+
+- ⭐ **C3 càng cần hơn**, và cần đúng loại: phép tiêm phải sinh lỗi **trôi chảy
+  trong tiếng Việt nhưng sai so với nguồn** (họ `bo_sot` vừa thêm là bước đầu —
+  bỏ một cụm để lại một câu **hoàn toàn xuôi**).
+- ⛔ **Đừng đọc lại §3/§13/§17 như cũ:** mọi "độ nhạy" ở đó có **≥ 53 %** phần
+  đến từ tín hiệu đơn ngữ (đo trên chính tập tiêm ấy).
+- ⚠️ Cạnh `dich_mu` "qua" cổng ≤ 0,15 vì **thoái hoá**, ⛔ không phải vì tinh
+  tường. Cổng như viết ⛔ không tách được hai chuyện đó ⇒ đọc kèm cột "gắn cờ
+  trên sạch".
+
+Bằng chứng: `bang_chung/b2_sentinel_v3.json` (⛔ không một chữ FLORES).
+Tái lập: `python tools\bench_b2_xac_thuc_bo_cham.py sentinel --canh {du,nguon_mu,dich_mu} --so-soi bang_chung\b2_san_loi_flores.json --n-sach 30 --luot 3 --ra <ra>`
+
+---
+
+# 25. ⭐ C3 — họ `bo_sot`, và nó LẬT cách đọc §24
+
+Họ `bo_sot` là họ bộ chấm **đang báo** (5/33 phần dư §17.4) mà ta ⛔ **chưa bao
+giờ tiêm**. Đặc tả mượn từ **DEMETR** (MIT, arXiv 2210.13746) họ
+`accuracy/omission` (`id5_pp_removed`, `id21…id24`); ⛔ **không** mượn dữ liệu
+(DEMETR chỉ dịch **sang tiếng Anh**). Phép tiêm: **bỏ một cụm ngăn bằng dấu
+phẩy**, chỉ cụm **giữa/cuối** — câu tiếng Việt còn lại **hoàn toàn xuôi**.
+
+⚠️ Khai đúng cái giá: ⛔ không có bộ gán nhãn từ loại tiếng Việt ⇒ đây là **xấp
+xỉ** họ omission, là phép tiêm **của ta**, ⛔ chưa ai công bố kiểm chứng.
+
+| | bắt được | |
+|---|---|---|
+| `bo_sot`, **đủ hai phía** (V3, `temp 0.0`, 3 lượt, nền sạch 0 %) | **15/15 = 100 %** [79,6 ; 100] | 3/3 lượt đều 100 % |
+| `bo_sot`, **nguồn-mù** | ⛔ **0/15 = 0 %** (gắn cờ trên sạch 4/30) | phân biệt **−0,133** |
+
+## 25.1 🔑 Và đây là chỗ nó lật §24
+
+§24 đo được **53 %** khả năng phân biệt sống sót khi giấu câu nguồn, và kết
+luận *"quá nửa tín hiệu là đơn ngữ"*. ⭐ Trên họ `bo_sot`, tín hiệu đơn ngữ là
+**ĐÚNG BẰNG 0**: giấu nguồn ⇒ bắt **0/15**, còn đưa nguồn vào ⇒ bắt **15/15**.
+
+⇒ ⭐ **53 % đơn ngữ là đặc tính của HAI HỌ TIÊM CŨ, ⛔ không phải của bộ chấm.**
+`lat_nghia` (đổi từ trái nghĩa) và `sai_thuc_the` (đổi tên riêng) **phá mạch
+ngay trong câu tiếng Việt**, nên chính **phép đo** mở một đường tắt đơn ngữ —
+⛔ không phải bộ chấm đi đường tắt.
+
+⇒ Trên đúng hình dạng lỗi ta **quan tâm** — câu tiếng Việt **trôi chảy nhưng sai
+so với nguồn**, hình dạng của lỗi FLORES thật (`壁球` → *"quần vợt"*) — bộ chấm
+đối chiếu **thật** với câu nguồn, và bắt **15/15**.
+
+## 25.2 ⛔ Điều này KHÔNG nói
+
+- ⛔ **Không** nói V3 qua cổng: §20 vẫn đứng (⛔ không ngưỡng nào thoả cả hai vế).
+- ⛔ **Không** nói độ nhạy chung là 100 %: nay ta đã đo **3/35** họ lỗi, còn
+  **32** họ chưa đo (thêm, code-mix, trôi chảy…).
+- ⚠️ n = 15 ⇒ KTC [79,6 ; 100]. ⭐ Nhưng vế **nguồn-mù = 0/15** thì sắc: nó ⛔
+  không thể là hiệu ứng may rủi theo cùng một chiều.
+
+Bằng chứng: `bang_chung/b2_tiem_bo_sot_v3.json` · `bang_chung/b2_sentinel_v3.json`
+(khoá `nguon_mu_HO_BO_SOT`, `ho_bo_sot`).
