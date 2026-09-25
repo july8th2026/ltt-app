@@ -11,6 +11,50 @@
 >
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
+## 2026-09-25 (trưa) — **Mật khẩu CSDL `ltt_app` lộ vào transcript** · rủi ro ĐÃ CHẶN ở `pg_hba`
+
+### Chuyện gì xảy ra
+
+Một làn agent chạy lệnh chẩn đoán PostgreSQL bằng script tự viết, **dựng chuỗi kết nối bằng
+tay**. Cú pháp sai (`postgresql+psycopg://` — dạng của SQLAlchemy, `psycopg.connect()` ⛔ không
+nhận), và **`psycopg` in NGUYÊN VĂN conninfo trong thông báo lỗi**, gồm mật khẩu plaintext của
+vai `ltt_app`. Giá trị đó giờ nằm trong output công cụ ⇒ trong transcript phiên
+(`~\.claude\projects\...jsonl`, và transcript đồng bộ theo tài khoản).
+
+⭐ Làn đó **dừng ngay, báo lên, ⛔ không tự chạm `secrets/`** — xử lý đúng.
+
+### Phạm vi — đo được, ⛔ không suy luận
+
+```
+pg_hba.conf : host all all 127.0.0.1/32 · ::1/128      <- CHI loopback
+tuong lua   : 0 luat ALLOW cho 5432; DefaultInboundAction = NotConfigured (mac dinh Block)
+postmaster  : listen_addresses nghe 0.0.0.0 va :: (nhung pg_hba chan truoc)
+```
+
+🔑 ⇒ **Mật khẩu ⛔ KHÔNG dùng được từ máy khác.** PostgreSQL từ chối mọi kết nối ngoài loopback
+ở **tầng xác thực**, ⛔ bất kể tường lửa. Ai khai thác được nó thì đã phải có quyền chạy mã trên
+máy này — mà người đó đọc thẳng `secrets\app.env` được rồi.
+
+⇒ **Xoay khoá là việc CẨN TẮC, ⛔ không phải chữa cháy.** Việc của chủ dự án
+(`secrets/` nằm trong danh sách Claude ⛔ không được chạm).
+
+### 🔴 N-54 — khuôn chẩn đoán làm lộ bí mật (⛔ KHÔNG phải lỗi sản phẩm)
+
+`psycopg` in conninfo trong mọi thông báo lỗi kết nối. Đó là **hành vi đã biết của thư viện**,
+⛔ không phải tai nạn. ⇒ Luật từ nay:
+
+- ⛔ **Không** ghép `postgresql://...` bằng tay; ⛔ không truyền conninfo dạng **chuỗi**.
+- Cần CSDL ⇒ dùng **session factory của chính app** (`platform_core`) — nó nạp cấu hình mà
+  ⛔ không vật chất hoá URL.
+- Quanh CSDL: in **`type(e).__name__`**, ⛔ **không** in `str(e)`.
+
+### ⭐ Bài học rẻ nhất, và nó ⛔ không phải bài học về bí mật
+
+Phép chẩn đoán ấy **⛔ KHÔNG CẦN CHẠY**. Nguyên nhân `drop_all` treo (`N-53`) đã chẩn ra xong
+và đã có thuốc; soi `pg_stat_activity`/`pg_locks` ⛔ không thêm một quyết định nào — chỉ xác
+nhận thứ đã biết. ⇒ Sự cố này ⛔ không đến từ một phép đo **cần thiết** bị hỏng, nó đến từ
+**một phép đo ⛔ không cần chạy**. Mỗi phép đo thêm là một **bề mặt rủi ro thêm**.
+
 
 ## 2026-09-25 (rạng sáng) — **PostgreSQL bị giết lúc 02:00:14**, và bão lease đã xoá mất bằng chứng
 
