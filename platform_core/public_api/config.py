@@ -23,10 +23,14 @@ Environment variables (all optional; the defaults are production-safe):
     Empty (default) means no tool is callable. Prompt 05 layers the catalog
     policy on top; this flag is the outer switch an operator can flip fast.
 ``LTT_PUBLIC_API_MAX_BODY_BYTES``
-    Cap for control-plane JSON bodies. Default 256 KiB, clamped to
-    [1 KiB, 100 MiB]. Uploads do not go through here: they use presigned PUT /
-    staging sessions, because Cloudflare rejects bodies over 100 MB before they
-    reach this process at all.
+    Cap for control-plane JSON bodies. Default 4 MiB (raised from 1 MiB on
+    25/09/2026 after a real 413 on ``/api/v1/messages``, sized from a real
+    session recording's ``usage.totalTokens`` rather than the two
+    misattributed synthetic readings an earlier pass of this fix used — see
+    ``DEFAULT_MAX_BODY_BYTES`` below), clamped to [1 KiB, 100 MiB]. Uploads do
+    not go through here: they use presigned PUT / staging sessions, because
+    Cloudflare rejects bodies over 100 MB before they reach this process at
+    all.
 ``LTT_PUBLIC_API_RPM`` / ``LTT_PUBLIC_API_CREATE_RPM``
     Requests and chargeable job creations allowed per minute for one key
     (default 120 and 20). ``0`` disables that layer.
@@ -81,8 +85,53 @@ from dataclasses import dataclass, field
 #:    phiên cấp trùng số hiệu. Viện dẫn phép kiểm bằng **tên tệp**, không bằng
 #:    số hiệu; `tests/test_980_vien_dan_phep_kiem.py` cưỡng chế.
 #:
+#: 🔴 NÂNG LẦN HAI 1 MiB → 4 MiB ngày 25/09/2026 — QUA HAI LẦN TÍNH SAI TRƯỚC
+#:    KHI CÓ SỐ ĐÁNG TIN, GHI LẠI CẢ HAI ĐỂ KHÔNG AI LẶP.
+#:
+#:    Lần tính đầu (→ 2 MiB) đọc "thân 1.150.067 B > trần 1.048.576 B" là một
+#:    ca sản xuất thật — đó là **phép dò tổng hợp của người báo lỗi**
+#:    (`'x' * 1_150_000`), và "5,059 byte/token" suy từ đó bịa mẫu số. Lần tính
+#:    thứ hai (→ vẫn 2 MiB) đọc MỘT ảnh chụp thanh đo tại một khoảnh khắc, suy
+#:    ra ≈10,64 byte/token — đúng hướng nhưng chưa phải bản ghi đầy đủ, và đoán
+#:    sai cả model (ảnh chụp cho `ltt-3.5`, thật ra khách đã đổi sang `ltt-3.8`
+#:    trước khi chụp). Cả hai lần đã bị RÚT LẠI — xem lịch sử git và chú thích
+#:    đầy đủ ở `apps/ltt_llm/ngan_sach.py::BYTE_MOI_TOKEN_JSON`.
+#:
+#:    SỐ DÙNG ĐỂ CHỐT — từ bản ghi phiên thật `session-0019f199` (165 bước):
+#:    `usage` cuối trước 413 có `totalTokens = 80.823` (token THẬT do máy B
+#:    báo, không phải ước lượng), thân request **vượt** 1.048.576 B ⇒ tỉ lệ
+#:    **SÀN** (canh dưới kép) `1.048.576 / 80.823 ≈ 12,97` byte/token — cao hơn
+#:    HẲN mọi mẫu tiếng Việt/mã nguồn tự dựng được (tệ nhất đo được 4,35
+#:    byte/token ước). Phiên đó có 190 sự kiện `tool/result` và khối suy nghĩ
+#:    luôn bật (`ltt-3.8`); phần chênh còn lại CHƯA giải thích hết bằng dữ liệu
+#:    đang có — nói thẳng ra thay vì đoán, và chừa biên rộng cho phần chưa hiểu.
+#:
+#:    `BYTE_MOI_TOKEN_JSON` nay = 16,0 (biên ~23% trên sàn 12,97 đã đo) ⇒
+#:    `BODY_BYTES_TOI_THIEU` = `max(cong_bo_cua(m) cho mọi model) × 16,0` ≈
+#:    2.424.832 B (~2,31 MiB, model cửa sổ rộng nhất `ltt-3.5`). 4 MiB chừa
+#:    thêm ~73% trên số đó — biên **thứ hai** sau biên đã có trong hằng số
+#:    byte/token, để một model thứ ba hay một hình dạng hội thoại chưa đo tới
+#:    không lập tức đâm lại đúng bức tường này.
+#:
+#: ⚠️ MẶT TRÁI CỦA MỘT TRẦN LỚN HƠN: thân request lớn hơn được NHẬN vào tiến
+#:    trình trước khi bất kỳ điều gì khác (auth, rate limit) được kiểm — tốn
+#:    RAM/CPU parse JSON cho mỗi yêu cầu bị từ chối sau đó, và mở rộng cửa sổ
+#:    cho một request lớn cố ý làm chậm tiến trình (từng phần giảm nhẹ bởi
+#:    `LTT_PUBLIC_API_RPM`/`_AUTH_FAILURES`, không phải bởi trần thân). 4 MiB
+#:    vẫn tốn dưới ~40 ms để parse JSON — nhưng đây là sự đánh đổi thật, không
+#:    phải "cứ nâng cho chắc": bốn lần trần ban đầu (1 MiB) qua ba lần tính của
+#:    cùng một sự cố là một xu hướng nên dừng lại ở lần đo có bản ghi thật này,
+#:    không đẩy tiếp bằng trực giác.
+#:
+#: ⛔ VẪN KHÔNG ĐỦ CHO ẢNH. `apps/ltt_llm/ngan_sach.py` công bố `ANH_BYTE_TOI_DA`
+#:    = 12 MiB/ảnh (base64 ~16,4 MiB), `SO_ANH_TOI_DA` = 4 ảnh/yêu cầu — MỘT
+#:    ảnh đơn đã vượt xa 4 MiB. Trần này chỉ chừa đủ cho HỘI THOẠI CHỮ ở cửa sổ
+#:    ngữ cảnh rộng nhất; nếu `/api/v1/messages` thật sự nhận ảnh base64 INLINE
+#:    (không qua staging) thì đó là một khoảng trống hợp đồng riêng — chưa sửa
+#:    ở đây — cần đo xem ảnh có thật sự đi đường này trước khi chọn số.
+#:
 #: ⭐ Vẫn cách trần 100 MB của Cloudflare rất xa, nên đây không phải lời hứa suông.
-DEFAULT_MAX_BODY_BYTES = 1024 * 1024
+DEFAULT_MAX_BODY_BYTES = 4 * 1024 * 1024
 MIN_MAX_BODY_BYTES = 1024
 # Cloudflare Free/Pro rejects a larger body before the origin sees it, so a
 # higher value here would only be a lie told to the caller.
