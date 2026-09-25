@@ -21392,3 +21392,15 @@ msgstr "Upload a video to YouTube. Private by default."
 
 msgid "YouTube — Đăng video"
 msgstr "YouTube — Upload video"
+
+msgid "Chưa chọn"
+msgstr "Not selected"
+
+msgid "Tải phụ đề (.srt)"
+msgstr "Download subtitles (.srt)"
+
+msgid "Lần chạy này không có tệp phụ đề."
+msgstr "This run has no subtitle file."
+
+msgid "Đã tắt nhạc nền — không còn gì để chỉnh mức."
+msgstr "Background music is off - there is no level left to adjust."

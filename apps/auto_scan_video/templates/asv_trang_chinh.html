@@ -690,6 +690,18 @@
                  min="{{ am_thanh.nen_min | int }}" max="{{ am_thanh.nen_max | int }}"
                  value="{{ am_thanh.nen_db | int }}">
         </label>
+        {# 🔴 **Tat kem LY DO — va day la cho no CON THIEU.**
+
+             `asv/am_thanh.js` khoa thanh truot nay va o "Ha nhac nen khi co loi"
+             khi khach bat "Tat nhac nen", vi may chu TU CHOI to hop do. Phep
+             khoa dung; cai thieu la khach khong duoc noi VI SAO. Hai o vua xam
+             di, va mot dieu khien xam di khong ly do doc nhu mot loi cua trang.
+
+           ⭐ Ba khoi sua hinh o tren da lam dung viec nay tu V5 (`asv-vung-chan`,
+              `asv-lop-phu-chan`, `asv-logo-chan`). Day la o cuoi cung con im
+              lang. #}
+        <p class="asv-ghi-chu asv-vi-sao" id="asv-am-vi-sao" aria-live="polite"
+           hidden></p>
         <label class="asv-chon">
           <input type="checkbox" id="asv-am-tat-nen">
           <span><strong>{{ _("Tắt nhạc nền") }}</strong>
@@ -734,20 +746,61 @@
       </div>
     </details>
 
-    {# ── Thanh hanh dong — DINH day tren mobile ────────────────────────── #}
+    {# ── Thanh hanh dong — DINH day o MOI be ngang ─────────────────────────
+
+       🔴 **Truoc lan `asv-gui` thanh nay dinh CHI o <= 640px**, va cau chu thich
+          o day ghi *"DINH day tren mobile"* nhu the do la ca y dinh. Tren man
+          hinh rong thi man Studio dai hon mot khung nhin: khach mo `Tuy chon
+          nang cao`, cuon xuong sua phu de va am thanh, roi **chi phi va nut Bat
+          dau nam ngoai tam mat**. Tuc dung luc ho quyet dinh thi con so ho can
+          de quyet khong con tren man hinh.
+
+       ⭐ Ba BO DEM SONG, khong phai mot: video nao · long tieng sang dau · het
+          bao nhieu. Do la ba cau hoi khach tu hoi truoc khi bam, va ca ba deu
+          doi duoc o mot noi khac trong trang (o chon tep, o ngon ngu dich, do
+          dai video) — nen ca ba phai co mat o CHO BAM. #}
     <div class="asv-thanh">
-      <div class="asv-uoc" aria-live="polite">
-        {# ⛔ Truoc khi co video thi KHONG hien mot con so nao. Mot con so hien
-           truoc khi biet do dai la mot con so bia. #}
-        <span id="asv-uoc-tien" class="asv-uoc-tien"></span>
-        <span id="asv-uoc-gio" class="asv-ghi-chu"></span>
+      <dl class="asv-dem" aria-live="polite">
+        <div>
+          <dt>{{ _("Video") }}</dt>
+          {# ⛔ KHONG de trong khi chua chon: mot o trong doc nhu mot cho chua
+             nap xong, con mot cau noi ra thi doc nhu mot su that. #}
+          <dd id="asv-dem-video">{{ _("Chưa chọn") }}</dd>
+        </div>
+        <div>
+          <dt>{{ _("Lồng tiếng sang") }}</dt>
+          <dd id="asv-dem-lan">—</dd>
+        </div>
+        <div class="asv-uoc">
+          <dt>{{ _("Chi phí") }}</dt>
+          {# ⛔ Truoc khi co video thi KHONG hien mot con so nao. Mot con so hien
+             truoc khi biet do dai la mot con so bia. #}
+          <dd><span id="asv-uoc-tien" class="asv-uoc-tien">—</span>
+              <span id="asv-uoc-gio" class="asv-ghi-chu"></span></dd>
+        </div>
+      </dl>
+      <div class="asv-thanh-nut">
+        {# 🔴 `disabled` NGAY TU MAY CHU, khong cho JS tat sau khi nap.
+
+             Mot nut bat san roi bi JS tat la mot nut khach BAM DUOC trong khoang
+             giua — va o preset nay mot cu bam la mot lan chay da tra tien. Tat
+             o may chu roi de JS **mo** ra la huong an toan cua cung co che.
+
+           ⚠️ Va vi the `asv/thanh.js` phai la nguoi DUY NHAT ghi thuoc tinh nay
+              (`ASV.datChan`). Hai nguoi cung ghi mot `disabled` la dung hinh
+              dang loi ma `L_GUI.md` §6 da tu choi mot lan. #}
+        <button class="btn primary" type="submit" id="asv-batdau" disabled>
+          {{ _("Bắt đầu lồng tiếng") }}
+        </button>
+        {# ⭐ Nut khong bam duoc thi NOI RA vi sao. Mot nut xam cam bat khach doan
+           — va ho se doan sai, vi ly do that (chua chon video) nam o dau trang. #}
+        <p class="asv-ghi-chu asv-vi-sao" id="asv-batdau-vi-sao" aria-live="polite">
+          {{ _("Chọn video để bắt đầu") }}
+        </p>
         <p class="asv-ghi-chu">
           {{ _("Chi phí được giữ chỗ khi bắt đầu. Phần không dùng đến sẽ được hoàn lại.") }}
         </p>
       </div>
-      <button class="btn primary" type="submit" id="asv-batdau">
-        {{ _("Bắt đầu lồng tiếng") }}
-      </button>
     </div>
   </form>
 
@@ -759,12 +812,28 @@
     {% else %}
       {# ⭐ The, khong phai bang. Bang ba cot tran ngang o 375px, va cot
          `Trạng thái` cua ban cu in `r.status` THO — khach thay `queued`. #}
+      {# ⭐ Ba su that PHAN BIET tren moi the (lan `asv-gui`): cap ngon ngu va
+           kieu xu ly. Truoc day the mang dung trang thai + gio, nen nam ban
+           cua cung mot video trong het nhu nhau va khach phai bam tung the de
+           biet lan nao la lan minh muon. Xem `features.the_lich_su`.
+
+         ⛔ Nhan doc tu bang (`preset`, `ngon_ngu_nhan`), khong go `zh`/`vi` hay
+            ten preset vao Jinja — cung luat voi `preset_can_cho_vung`. #}
       <ul class="asv-the-ds">
-        {% for r in lich_su %}
+        {% for m in lich_su %}
+          {% set r = m.run %}
           <li class="asv-the">
             <a href="{{ app.route_prefix }}/run/{{ r.id }}">
               <span class="asv-trang-thai asv-tt-{{ r.status }}">
                 {{ _(nhan_trang_thai.get(r.status, r.status)) }}
+              </span>
+              <span class="asv-the-lan">
+                {%- if m.ngon_ngu_nguon %}{{ _(ngon_ngu_nhan.get(m.ngon_ngu_nguon, m.ngon_ngu_nguon)) }}
+                {%- else %}{{ _(ngon_ngu_nhan_tu_doan) }}{% endif %}
+                → {{ _(ngon_ngu_nhan.get(m.ngon_ngu_dich, m.ngon_ngu_dich)) }}
+              </span>
+              <span class="asv-the-preset">
+                {%- for ma, ten, _mo_ta in preset %}{% if ma == m.preset %}{{ _(ten) }}{% endif %}{% endfor %}
               </span>
               <span class="asv-the-gio">
                 {{ r.created_at.strftime("%d/%m/%Y %H:%M") if r.created_at else "—" }}
@@ -861,7 +930,9 @@
   "bt_tom_tat": {{ _("Sẽ áp dụng: %(ds)s.")|tojson }},
   "bt_cat_mep": {{ _("cắt mép")|tojson }},
   "bt_phong": {{ _("phóng to %(z)s×")|tojson }},
-  "bt_cat_qua_nhieu": {{ _("Cắt mép quá nhiều — mỗi chiều phải còn ít nhất %(p)s%% khung hình.")|tojson }}
+  "bt_cat_qua_nhieu": {{ _("Cắt mép quá nhiều — mỗi chiều phải còn ít nhất %(p)s%% khung hình.")|tojson }},
+  "chua_chon_video": {{ _("Chọn video để bắt đầu")|tojson }},
+  "am_nen_da_tat": {{ _("Đã tắt nhạc nền — không còn gì để chỉnh mức.")|tojson }}
 }
 </script>
 {#- Pha 06: man Studio la TAM module, khong con mot tep phinh.

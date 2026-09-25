@@ -316,6 +316,28 @@ sản phẩm. Cùng họ *"đọc thứ đại diện thay vì đọc thứ th�
 **đúng** (chúng đo đúng đường `lap_ke_hoach` thật sẽ đi qua, dù đầu vào đã qua
 nấc 2 hay chưa) — câu hỏi mở ở trên thì **không**, nó cần đầu vào đã qua nấc 2.
 
+**Cập nhật 25/09 (làn `asv-day-truyen`) — câu hỏi VẪN CÒN MỞ, chưa trả lời
+được, và lý do là địa chỉ cụ thể:** dây truyền E2E thật (`test_448::
+test_NGHIEM_THU_ca_hai_preset_ra_video_dung_duoc`) lần đầu chạy `done` trọn
+12/12 giai đoạn cả hai preset (N-52, `_doc_goi`, N-55, cache SAPI — xem
+`LOI_TONG.md`), nhưng nguồn của lượt đó (`tests/fixtures/asv_e2e.py::
+KICH_BAN`) chỉ có **4 dòng thoại** — quá nhỏ để tái hiện 42 đoạn `CAN_SUA`/14
+đoạn trôi riêng của phép đo B7 (188 đoạn, 3 phim thật). Bằng chứng: cả 6/6
+đoạn của lượt E2E đều bị **N-55 kẹp** về trần 1,15 (hệ số cần thật 1,48–3,85×)
+— tức fixture 4 câu tạo lệch cực đoan hơn cả phim thật đo được (N-45: tối đa
+~1,3× trên dữ liệu thật), không đại diện được cho câu hỏi 14-đoạn.
+
+⇒ **Câu hỏi cần một lượt E2E trên PHIM THẬT** (không phải fixture SAPI) rồi
+đọc `troi_sau_ms` trong kế hoạch nó sinh ra (staged asset của giai đoạn
+`timing_align`, không nằm trong `tom_tat` tóm tắt của báo cáo nghiệm thu — xem
+`thoi_gian.py::lap_ke_hoach` trường `doan[].troi_sau_ms`). ⛔ **Đây là tinh
+chỉnh chất lượng, không phải chặn dây truyền** — chủ dự án đã chốt "nâng cấp,
+sửa chỗ yếu sau" (25/09). `test_448::test_G17_hai_preset_tren_PHIM_KHACH_THAT`
+(dùng phim khách thật, không phải fixture) là ứng viên tự nhiên cho lượt đó,
+nhưng **chưa chạy được tới kết luận trong phiên này** — xem `N-53`/`N-54`
+(`LOI_TONG.md`): lượt chạy cả tệp `test_448` từng treo đúng ở fixture setup
+của bài này trước khi phiên dừng lại theo đúng lệnh điều phối.
+
 ---
 
 ## Task 0: Bỏ khoá `postgres_test` — mỗi làn một SCHEMA riêng (N-10)
