@@ -34,6 +34,7 @@ from pathlib import Path
 import psutil
 import pytest
 
+from tests import rao_chan_nang
 from tests.fixtures import asv_e2e as fx
 from tests.test_423_asv_giao_dien import moi_truong  # noqa: F401
 from tests import test_448_asv_v4_e2e_nghiem_thu as t448
@@ -124,6 +125,20 @@ def _giay_cpu_moi_giai_doan(nhat_ky_job: list[dict]) -> dict:
     return theo_gd
 
 
+# 🔴 **RAO NANG, dat 25/09/2026 sau khi gate bat duoc.**
+#
+#    Bai nay la mot KHUON DO MOT LAN cua lan B3, khong phai mot bai kiem hoi quy.
+#    Truoc do no chi bo qua khi `fx.phim_khach_that()` RONG — nhung tu hom nay
+#    `tests/fixtures/asv_e2e_that/` DA CO phim that, nen dieu kien bo qua khong
+#    con dung va bai nay se chay mot luot pipeline THAT (~20 phut, giu khoa
+#    `cpu_nhieu` + `may_tao_tieng`) ben trong MOI luot gate.
+#
+# ⭐ Va do la mot cho bo qua "im lang" theo dung nghia `check_bo_qua` canh: dieu
+#    kien bo qua cua no la mot su TINH CO ve moi truong, khong phai mot loi khai.
+#    Dat sau rao da khai (`nang` trong `pytest.ini`) bien no thanh mot cho bo qua
+#    CO CHU DICH, doc duoc, va bat lai duoc khi can do lai.
+@rao_chan_nang.NANG
+@rao_chan_nang.CHI_KHI_BAT
 def test_b3_giai_doan1_mot_video(moi_truong, tmp_path, monkeypatch):
     from apps.auto_scan_video import hop_dong_v4
 

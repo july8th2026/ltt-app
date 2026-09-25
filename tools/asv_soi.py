@@ -47,6 +47,17 @@ def _ago(gt_iso: str | None) -> str:
         gt = _utc(datetime.fromisoformat(gt_iso))
     except ValueError:
         return f"khong doc duoc moc thoi gian ({gt_iso!r})"
+    # ⚠️ `_utc` khai tra `datetime | None` (no CO Y cho `None` di qua cho nhung
+    #    nguoi goi khac doc truong CSDL co the rong). O day `fromisoformat` khong
+    #    bao gio tra `None` — no tra datetime hoac nem — nen duong chay THAT an
+    #    toan. Nhung mypy dung ve KIEU, va cai gia that la o NGUOI GOI SAU: ai
+    #    truyen mot moc `None` that vao day se khong duoc canh bao gi.
+    #
+    # ⛔ Nen chan o day chu khong that chat `_utc`: ham nay la mot ham HIEN THI,
+    #    "khong ro" la mot cau tra loi hop le cua no; con `_utc` la ham CHUAN HOA
+    #    va viec cho `None` di qua la dung hop dong cua no.
+    if gt is None:
+        return "khong ro"
     giay = max(0.0, (datetime.now(timezone.utc) - gt).total_seconds())
     if giay < 90:
         return f"{giay:.0f} giay truoc"
