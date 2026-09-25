@@ -23,6 +23,11 @@ const { docAllowlist, napPiece, GOC } = require('./piece_nap');
 const KIEU = {
   SHORT_TEXT: 'string',
   LONG_TEXT: 'text',
+  // `RICH_TEXT` (framework `property-type.ts`, gap khi cai them Gmail 0.17.0):
+  // `TPropertyValue(z.string(), PropertyType.RICH_TEXT)` -- ve gia tri no LA
+  // string y het LONG_TEXT (`props-processor.ts` kiem ca hai bang cung mot
+  // nhanh `typeof value === 'string'`), chi khac o UI biet co dinh dang.
+  RICH_TEXT: 'text',
   SECRET_TEXT: 'string',
   NUMBER: 'number',
   CHECKBOX: 'bool',

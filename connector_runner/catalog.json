@@ -1,5 +1,5 @@
 {
- "sinh_luc": "2026-09-25T08:17:39.966Z",
+ "sinh_luc": "2026-09-25T08:20:47.027Z",
  "pieces": [
   {
    "ten": "@activepieces/piece-slack",
@@ -113,6 +113,51 @@
    ],
    "so_action": 53,
    "so_trigger": 3
+  },
+  {
+   "ten": "@activepieces/piece-gmail",
+   "version": "0.17.0",
+   "displayName": "Gmail",
+   "logoUrl": "https://cdn.activepieces.com/pieces/gmail.png",
+   "auth": [
+    {
+     "ap": "OAUTH2",
+     "kieu": "oauth2",
+     "props": []
+    },
+    {
+     "ap": "CUSTOM_AUTH",
+     "kieu": "piece_custom",
+     "props": [
+      "serviceAccount",
+      "userEmail"
+     ]
+    }
+   ],
+   "so_action": 37,
+   "so_trigger": 4
+  },
+  {
+   "ten": "@activepieces/piece-notion",
+   "version": "0.7.1",
+   "displayName": "Notion",
+   "logoUrl": "https://cdn.activepieces.com/pieces/notion.png",
+   "auth": [
+    {
+     "ap": "OAUTH2",
+     "kieu": "oauth2",
+     "props": []
+    },
+    {
+     "ap": "CUSTOM_AUTH",
+     "kieu": "piece_custom",
+     "props": [
+      "accessToken"
+     ]
+    }
+   ],
+   "so_action": 37,
+   "so_trigger": 4
   }
  ],
  "nodes": [
@@ -983,6 +1028,665 @@
      "khong_anh_xa:STATIC_MULTI_SELECT_DROPDOWN"
     ]
    ]
+  },
+  {
+   "type": "piece.gmail.gmail_search_email",
+   "type_version": 1,
+   "piece": "@activepieces/piece-gmail",
+   "piece_version": "0.17.0",
+   "op": "run_action",
+   "name": "gmail_search_email",
+   "title": "Search Email",
+   "description": "Search emails using advanced criteria. If no filters are provided, the latest emails are returned.",
+   "icon": "https://cdn.activepieces.com/pieces/gmail.png",
+   "params": {
+    "from": {
+     "type": "string",
+     "required": false,
+     "description": "Only emails sent from this address.",
+     "default": ""
+    },
+    "to": {
+     "type": "string",
+     "required": false,
+     "description": "Only emails sent to this address.",
+     "default": ""
+    },
+    "subject": {
+     "type": "string",
+     "required": false,
+     "description": "Only emails whose subject contains this text.",
+     "default": ""
+    },
+    "content": {
+     "type": "string",
+     "required": false,
+     "description": "Only emails with this text in the body."
+    },
+    "has_attachment": {
+     "type": "bool",
+     "required": false,
+     "description": "Only emails with at least one attachment.",
+     "default": false
+    },
+    "attachment_name": {
+     "type": "string",
+     "required": false,
+     "description": "Only emails with an attachment of this file name."
+    },
+    "label": {
+     "type": "string",
+     "required": false,
+     "description": "[tuy chon dong cua piece] Only emails carrying this label.",
+     "default": ""
+    },
+    "category": {
+     "type": "enum",
+     "required": false,
+     "description": "Only emails in this inbox tab, such as Primary or Promotions.",
+     "values": [
+      "primary",
+      "social",
+      "promotions",
+      "updates",
+      "forums",
+      "reservations",
+      "purchases"
+     ],
+     "options": [
+      {
+       "value": "primary",
+       "label": "Primary"
+      },
+      {
+       "value": "social",
+       "label": "Social"
+      },
+      {
+       "value": "promotions",
+       "label": "Promotions"
+      },
+      {
+       "value": "updates",
+       "label": "Updates"
+      },
+      {
+       "value": "forums",
+       "label": "Forums"
+      },
+      {
+       "value": "reservations",
+       "label": "Reservations"
+      },
+      {
+       "value": "purchases",
+       "label": "Purchases"
+      }
+     ]
+    },
+    "after_date": {
+     "type": "string",
+     "required": false,
+     "description": "Only emails received after this date."
+    },
+    "before_date": {
+     "type": "string",
+     "required": false,
+     "description": "Only emails received before this date."
+    },
+    "include_spam_trash": {
+     "type": "bool",
+     "required": false,
+     "description": "Also search the Spam and Trash folders.",
+     "default": false
+    },
+    "max_results": {
+     "type": "number",
+     "required": false,
+     "description": "Newest first, up to 500.",
+     "default": 10
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "oauth2",
+    "piece_custom"
+   ],
+   "gia": 0,
+   "side_effect": "external",
+   "prop_bo_qua": []
+  },
+  {
+   "type": "piece.gmail.gmail_get_message",
+   "type_version": 1,
+   "piece": "@activepieces/piece-gmail",
+   "piece_version": "0.17.0",
+   "op": "run_action",
+   "name": "gmail_get_message",
+   "title": "Get Message",
+   "description": "Get a single email message by its ID.",
+   "icon": "https://cdn.activepieces.com/pieces/gmail.png",
+   "params": {
+    "message_id": {
+     "type": "string",
+     "required": true,
+     "description": "Message ID from a Find Email step or a Gmail trigger."
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "oauth2",
+    "piece_custom"
+   ],
+   "gia": 0,
+   "side_effect": "external",
+   "prop_bo_qua": []
+  },
+  {
+   "type": "piece.gmail.gmail_create_draft",
+   "type_version": 1,
+   "piece": "@activepieces/piece-gmail",
+   "piece_version": "0.17.0",
+   "op": "run_action",
+   "name": "gmail_create_draft",
+   "title": "Create Draft",
+   "description": "Create a new draft email (optionally inside an existing thread).",
+   "icon": "https://cdn.activepieces.com/pieces/gmail.png",
+   "params": {
+    "subject": {
+     "type": "string",
+     "required": true
+    },
+    "body_type": {
+     "type": "enum",
+     "required": true,
+     "default": "plain_text",
+     "values": [
+      "plain_text",
+      "html"
+     ],
+     "options": [
+      {
+       "value": "plain_text",
+       "label": "plain text"
+      },
+      {
+       "value": "html",
+       "label": "html"
+      }
+     ]
+    },
+    "body": {
+     "type": "text",
+     "required": true,
+     "description": "Body for the draft email."
+    },
+    "sender_name": {
+     "type": "string",
+     "required": false
+    },
+    "from": {
+     "type": "string",
+     "required": false,
+     "description": "The address must be listed in your Gmail account's settings."
+    },
+    "thread_id": {
+     "type": "string",
+     "required": false,
+     "description": "Optional thread ID to attach this draft to an existing conversation (obtain from Search Email or Get Thread)."
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "oauth2",
+    "piece_custom"
+   ],
+   "gia": 0,
+   "side_effect": "external",
+   "prop_bo_qua": [
+    [
+     "receiver",
+     "khong_anh_xa:ARRAY"
+    ],
+    [
+     "cc",
+     "khong_anh_xa:ARRAY"
+    ],
+    [
+     "bcc",
+     "khong_anh_xa:ARRAY"
+    ],
+    [
+     "attachments",
+     "khong_anh_xa:ARRAY"
+    ]
+   ]
+  },
+  {
+   "type": "piece.gmail.gmail_reply_to_thread",
+   "type_version": 1,
+   "piece": "@activepieces/piece-gmail",
+   "piece_version": "0.17.0",
+   "op": "run_action",
+   "name": "gmail_reply_to_thread",
+   "title": "Reply to Thread",
+   "description": "Reply to an existing email thread.",
+   "icon": "https://cdn.activepieces.com/pieces/gmail.png",
+   "params": {
+    "message_id": {
+     "type": "string",
+     "required": true,
+     "description": "[tuy chon dong cua piece] Pick a recent message, or map its ID from a trigger or Find Email."
+    },
+    "reply_type": {
+     "type": "enum",
+     "required": true,
+     "description": "Reply to the sender only, or to everyone on the thread.",
+     "default": "reply",
+     "values": [
+      "reply",
+      "reply_all"
+     ],
+     "options": [
+      {
+       "value": "reply",
+       "label": "Reply"
+      },
+      {
+       "value": "reply_all",
+       "label": "Reply All"
+      }
+     ]
+    },
+    "body_type": {
+     "type": "enum",
+     "required": true,
+     "description": "How the text in Body is interpreted.",
+     "default": "plain_text",
+     "values": [
+      "plain_text",
+      "html"
+     ],
+     "options": [
+      {
+       "value": "plain_text",
+       "label": "Plain Text"
+      },
+      {
+       "value": "html",
+       "label": "HTML"
+      }
+     ]
+    },
+    "body": {
+     "type": "text",
+     "required": true
+    },
+    "sender_name": {
+     "type": "string",
+     "required": false,
+     "description": "Name shown in the inbox instead of your address."
+    },
+    "attachment": {
+     "type": "string",
+     "required": false,
+     "description": "[artifact_ref] File to attach."
+    },
+    "attachment_name": {
+     "type": "string",
+     "required": false,
+     "description": "Overrides the uploaded file name."
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "oauth2",
+    "piece_custom"
+   ],
+   "gia": 0,
+   "side_effect": "external",
+   "prop_bo_qua": []
+  },
+  {
+   "type": "trigger.piece.gmail.gmail_new_email_received",
+   "type_version": 1,
+   "piece": "@activepieces/piece-gmail",
+   "piece_version": "0.17.0",
+   "op": "run_trigger",
+   "name": "gmail_new_email_received",
+   "kind": "trigger",
+   "title": "New Email",
+   "description": "Triggers when a new email matching the filters arrives.",
+   "icon": "https://cdn.activepieces.com/pieces/gmail.png",
+   "params": {
+    "subject": {
+     "type": "string",
+     "required": false,
+     "description": "Only emails whose subject contains this text.",
+     "default": ""
+    },
+    "from": {
+     "type": "string",
+     "required": false,
+     "description": "Only emails sent from this address.",
+     "default": ""
+    },
+    "to": {
+     "type": "string",
+     "required": false,
+     "description": "Only emails sent to this address.",
+     "default": ""
+    },
+    "label": {
+     "type": "string",
+     "required": false,
+     "description": "[tuy chon dong cua piece] Only emails carrying this label.",
+     "default": ""
+    },
+    "category": {
+     "type": "enum",
+     "required": false,
+     "description": "Only emails in this inbox tab, such as Primary or Promotions.",
+     "values": [
+      "primary",
+      "social",
+      "promotions",
+      "updates",
+      "forums",
+      "reservations",
+      "purchases"
+     ],
+     "options": [
+      {
+       "value": "primary",
+       "label": "Primary"
+      },
+      {
+       "value": "social",
+       "label": "Social"
+      },
+      {
+       "value": "promotions",
+       "label": "Promotions"
+      },
+      {
+       "value": "updates",
+       "label": "Updates"
+      },
+      {
+       "value": "forums",
+       "label": "Forums"
+      },
+      {
+       "value": "reservations",
+       "label": "Reservations"
+      },
+      {
+       "value": "purchases",
+       "label": "Purchases"
+      }
+     ]
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "oauth2",
+    "piece_custom"
+   ],
+   "gia": 0,
+   "side_effect": "none",
+   "prop_bo_qua": []
+  },
+  {
+   "type": "piece.notion.notion_create_page",
+   "type_version": 1,
+   "piece": "@activepieces/piece-notion",
+   "piece_version": "0.7.1",
+   "op": "run_action",
+   "name": "notion_create_page",
+   "title": "Create Page",
+   "description": "Creates a new sub-page under an existing Notion page, with a title and optional markdown body.",
+   "icon": "https://cdn.activepieces.com/pieces/notion.png",
+   "params": {
+    "parent_page_id": {
+     "type": "string",
+     "required": true,
+     "description": "The id of the existing page to create the new page under. Resolve via notion_search."
+    },
+    "title": {
+     "type": "string",
+     "required": false,
+     "description": "The title of the new page."
+    },
+    "content": {
+     "type": "text",
+     "required": false,
+     "description": "Optional body content for the page. Markdown is supported and converted to Notion blocks."
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "oauth2",
+    "piece_custom"
+   ],
+   "gia": 0,
+   "side_effect": "external",
+   "prop_bo_qua": []
+  },
+  {
+   "type": "piece.notion.notion_search",
+   "type_version": 1,
+   "piece": "@activepieces/piece-notion",
+   "piece_version": "0.7.1",
+   "op": "run_action",
+   "name": "notion_search",
+   "title": "Search Pages and Databases",
+   "description": "Searches the workspace by title for pages and/or databases shared with the integration, with exact or partial matching.",
+   "icon": "https://cdn.activepieces.com/pieces/notion.png",
+   "params": {
+    "query": {
+     "type": "string",
+     "required": true,
+     "description": "The title text (or part of it) to search for."
+    },
+    "filter_type": {
+     "type": "enum",
+     "required": false,
+     "description": "Restrict results to pages, databases, or both. Defaults to both (all).",
+     "default": "all",
+     "values": [
+      "page",
+      "database",
+      "all"
+     ],
+     "options": [
+      {
+       "value": "page",
+       "label": "Pages only"
+      },
+      {
+       "value": "database",
+       "label": "Databases only"
+      },
+      {
+       "value": "all",
+       "label": "All (pages and databases)"
+      }
+     ]
+    },
+    "exact_match": {
+     "type": "bool",
+     "required": false,
+     "description": "When enabled, only return items whose title exactly equals the query. Disable for partial matching.",
+     "default": false
+    },
+    "limit": {
+     "type": "number",
+     "required": false,
+     "description": "How many items to return at most (between 1 and 100).",
+     "default": 10
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "oauth2",
+    "piece_custom"
+   ],
+   "gia": 0,
+   "side_effect": "external",
+   "prop_bo_qua": []
+  },
+  {
+   "type": "piece.notion.notion_query_database",
+   "type_version": 1,
+   "piece": "@activepieces/piece-notion",
+   "piece_version": "0.7.1",
+   "op": "run_action",
+   "name": "notion_query_database",
+   "title": "Query Database",
+   "description": "Queries a Notion database with the API's native filter and sort JSON objects (compound AND/OR, ranges, dates, contains, etc.).",
+   "icon": "https://cdn.activepieces.com/pieces/notion.png",
+   "params": {
+    "database_id": {
+     "type": "string",
+     "required": true,
+     "description": "The id of the database to query. Resolve a database title into its id with notion_search (filter_type=database)."
+    },
+    "filter": {
+     "type": "json",
+     "required": false,
+     "description": "Optional. A Notion query filter object. A single condition is { \"property\": \"Status\", \"status\": { \"equals\": \"Done\" } }; compound is { \"and\": [ ...conditions ] } or { \"or\": [ ...conditions ] }. The condition key MUST match the property's type (e.g. status:{equals}, select:{equals}, number:{greater_than}, date:{on_or_after}, rich_text:{contains}, checkbox:{equals}). Run notion_get_database first to "
+    },
+    "sorts": {
+     "type": "json",
+     "required": false,
+     "description": "Optional. An array of Notion sort objects. Sort by a property: [{ \"property\": \"Name\", \"direction\": \"ascending\" }]; sort by a timestamp: [{ \"timestamp\": \"last_edited_time\", \"direction\": \"descending\" }]. direction is \"ascending\" or \"descending\"."
+    },
+    "page_size": {
+     "type": "number",
+     "required": false,
+     "description": "Maximum number of rows to return (1–100). Defaults to 100."
+    },
+    "start_cursor": {
+     "type": "string",
+     "required": false,
+     "description": "Optional pagination cursor. Pass the next_cursor returned by a previous call to fetch the next page of results."
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "oauth2",
+    "piece_custom"
+   ],
+   "gia": 0,
+   "side_effect": "external",
+   "prop_bo_qua": []
+  },
+  {
+   "type": "piece.notion.notion_get_page",
+   "type_version": 1,
+   "piece": "@activepieces/piece-notion",
+   "piece_version": "0.7.1",
+   "op": "run_action",
+   "name": "notion_get_page",
+   "title": "Get Page",
+   "description": "Fetches a single page's metadata and property values by id (a database row is a page).",
+   "icon": "https://cdn.activepieces.com/pieces/notion.png",
+   "params": {
+    "page_id": {
+     "type": "string",
+     "required": true,
+     "description": "The id of the page (or database row) to retrieve. Resolve via notion_search."
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "oauth2",
+    "piece_custom"
+   ],
+   "gia": 0,
+   "side_effect": "external",
+   "prop_bo_qua": []
+  },
+  {
+   "type": "piece.notion.notion_list_users",
+   "type_version": 1,
+   "piece": "@activepieces/piece-notion",
+   "piece_version": "0.7.1",
+   "op": "run_action",
+   "name": "notion_list_users",
+   "title": "List Users",
+   "description": "Lists the people and bots in the workspace, returning each user's id, name, and type.",
+   "icon": "https://cdn.activepieces.com/pieces/notion.png",
+   "params": {
+    "page_size": {
+     "type": "number",
+     "required": false,
+     "description": "How many users to return per page (1–100). Defaults to 100."
+    },
+    "start_cursor": {
+     "type": "string",
+     "required": false,
+     "description": "Pagination cursor from a previous call's next_cursor to fetch the next page."
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "oauth2",
+    "piece_custom"
+   ],
+   "gia": 0,
+   "side_effect": "external",
+   "prop_bo_qua": []
+  },
+  {
+   "type": "trigger.piece.notion.new_database_item",
+   "type_version": 1,
+   "piece": "@activepieces/piece-notion",
+   "piece_version": "0.7.1",
+   "op": "run_trigger",
+   "name": "new_database_item",
+   "kind": "trigger",
+   "title": "New Database Item",
+   "description": "Triggers when an item is added to a database.",
+   "icon": "https://cdn.activepieces.com/pieces/notion.png",
+   "params": {
+    "database_id": {
+     "type": "string",
+     "required": true,
+     "description": "[tuy chon dong cua piece] Choose the Notion database you want to work with from your workspace"
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "oauth2",
+    "piece_custom"
+   ],
+   "gia": 0,
+   "side_effect": "none",
+   "prop_bo_qua": []
   }
  ],
  "bo_qua": []

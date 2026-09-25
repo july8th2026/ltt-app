@@ -11,7 +11,9 @@
     "@activepieces/piece-github": "0.9.0",
     "@activepieces/piece-telegram-bot": "0.7.0",
     "@activepieces/piece-google-sheets": "0.17.0",
-    "@activepieces/piece-google-drive": "0.9.2"
+    "@activepieces/piece-google-drive": "0.9.2",
+    "@activepieces/piece-gmail": "0.17.0",
+    "@activepieces/piece-notion": "0.7.1"
   },
   "_mien_ghi_chu": [
     "Mien ma MOI piece duoc phep noi toi. Danh sach nay duoc ap o",
@@ -20,40 +22,105 @@
     "So khop theo NHAN: `slack.com.vi-du.vn` KHONG khop `slack.com`."
   ],
   "mien": {
-    "@activepieces/piece-slack": ["slack.com", "files.slack.com"],
-    "@activepieces/piece-github": ["api.github.com", "github.com",
-                                   "uploads.github.com"],
-    "@activepieces/piece-telegram-bot": ["api.telegram.org"],
-    "@activepieces/piece-google-sheets": ["sheets.googleapis.com",
-                                          "www.googleapis.com",
-                                          "oauth2.googleapis.com",
-                                          "drive.googleapis.com"],
-    "@activepieces/piece-google-drive": ["www.googleapis.com",
-                                         "oauth2.googleapis.com",
-                                         "drive.googleapis.com"]
+    "@activepieces/piece-slack": [
+      "slack.com",
+      "files.slack.com"
+    ],
+    "@activepieces/piece-github": [
+      "api.github.com",
+      "github.com",
+      "uploads.github.com"
+    ],
+    "@activepieces/piece-telegram-bot": [
+      "api.telegram.org"
+    ],
+    "@activepieces/piece-google-sheets": [
+      "sheets.googleapis.com",
+      "www.googleapis.com",
+      "oauth2.googleapis.com",
+      "drive.googleapis.com"
+    ],
+    "@activepieces/piece-google-drive": [
+      "www.googleapis.com",
+      "oauth2.googleapis.com",
+      "drive.googleapis.com"
+    ],
+    "@activepieces/piece-gmail": [
+      "www.googleapis.com",
+      "oauth2.googleapis.com",
+      "gmail.googleapis.com"
+    ],
+    "@activepieces/piece-notion": [
+      "api.notion.com"
+    ]
   },
   "palette": {
     "@activepieces/piece-slack": {
-      "actions": ["send_direct_message", "send_channel_message"],
+      "actions": [
+        "send_direct_message",
+        "send_channel_message"
+      ],
       "triggers": []
     },
     "@activepieces/piece-github": {
-      "actions": ["github_create_issue", "createCommentOnAIssue"],
+      "actions": [
+        "github_create_issue",
+        "createCommentOnAIssue"
+      ],
       "triggers": []
     },
     "@activepieces/piece-telegram-bot": {
-      "actions": ["send_text_message"],
+      "actions": [
+        "send_text_message"
+      ],
       "triggers": []
     },
     "@activepieces/piece-google-sheets": {
-      "actions": ["find_rows", "insert_row", "update_row"],
-      "triggers": ["new-spreadsheet"]
+      "actions": [
+        "find_rows",
+        "insert_row",
+        "update_row"
+      ],
+      "triggers": [
+        "new-spreadsheet"
+      ]
     },
     "@activepieces/piece-google-drive": {
-      "actions": ["drive_upload_file", "drive_create_folder",
-                  "drive_list_files", "drive_download_file",
-                  "drive_get_file"],
-      "triggers": ["new_file", "new_folder", "new_or_updated_file"]
+      "actions": [
+        "drive_upload_file",
+        "drive_create_folder",
+        "drive_list_files",
+        "drive_download_file",
+        "drive_get_file"
+      ],
+      "triggers": [
+        "new_file",
+        "new_folder",
+        "new_or_updated_file"
+      ]
+    },
+    "@activepieces/piece-gmail": {
+      "actions": [
+        "gmail_search_email",
+        "gmail_get_message",
+        "gmail_create_draft",
+        "gmail_reply_to_thread"
+      ],
+      "triggers": [
+        "gmail_new_email_received"
+      ]
+    },
+    "@activepieces/piece-notion": {
+      "actions": [
+        "notion_create_page",
+        "notion_search",
+        "notion_query_database",
+        "notion_get_page",
+        "notion_list_users"
+      ],
+      "triggers": [
+        "new_database_item"
+      ]
     }
   },
   "doi_chieu_spec_11_6": {
@@ -66,7 +133,9 @@
       "no phai doc duoc trong diff -- spec cam thay im lang."
     ],
     "google-sheets": {
-      "find_rows": "co", "insert_row": "co", "update_row": "co",
+      "find_rows": "co",
+      "insert_row": "co",
+      "update_row": "co",
       "_25_09_dynamic": "insert_row/update_row tung BO_QUA vi `values` la PropertyType.DYNAMIC (khong co trong `xuat_catalog.KIEU`). Vong P-C (25/09) them anh xa `DYNAMIC -> 'json'` (nguon: framework `dynamic-prop.ts`, `DynamicPropsValue = Type.Record(Type.String(), DynamicProp)` -- ve day no LA mot JSON object phang). Nguoi soan tu dien object, vd `{\"A\": \"gia tri\"}`; khong dung form dong nhu UI Activepieces vi runner cua ta khong chay engine cua ho (spec Sec11.1).",
       "get_rows": "khong (gan nhat: get-many-rows / get_next_rows -- CHUA dua len palette)",
       "clear_row": "khong (gan nhat: clear-rows / clear_sheet -- CHUA dua len palette)",
@@ -93,10 +162,21 @@
       "actions": "53 action o ban 0.9.2; palette chon 5 cai dat-lai duoc voi credential OAuth2/service-account da co: drive_upload_file, drive_create_folder, drive_list_files, drive_download_file, drive_get_file.",
       "trigger poll": "co. Ca 3 trigger cua piece nay la POLLING (khong nhu slack/github/telegram-bot o tren, ca 3 deu la WEBHOOK/APP_WEBHOOK): new_file, new_folder, new_or_updated_file -- ca 3 da dua len palette."
     },
+    "gmail": {
+      "_ghi_chu": "Ngoai pham vi bang spec Sec11.6. Mo o vong P-C (25/09). Ca 4 trigger la POLLING that (khong WEBHOOK) -- khac slack/github/telegram-bot.",
+      "actions": "37 action o ban 0.17.0. Palette chon 4: gmail_search_email, gmail_get_message, gmail_create_draft, gmail_reply_to_thread.",
+      "gmail_send_email_KHONG_mo": "BO khoi palette: tham so bat buoc `receiver` la PropertyType.ARRAY (`Type.Array(Type.Unknown())`, framework array-property.ts). Tu vung LTT (`luoc_do._KHUNG`) chua co kieu 'mang chuoi phang' -- 'json' khai `type:object` (sai voi mot mang), 'json[]' khai `items:object` (sai voi phan tu string). Anh xa ep se sai SCHEMA, khong chi thieu UI dong nhu DYNAMIC/RICH_TEXT o tren. ⛔ Khong tu doan 'json[]' -- can sua `platform_core/workflow/luoc_do.py` (them mot dong tu vung that su), ngoai pham vi mot lan sua `xuat_catalog.js`. Ghi lai o day de lan sau khoi do lai.",
+      "trigger poll": "co: gmail_new_email_received da dua len palette."
+    },
+    "notion": {
+      "_ghi_chu": "Ngoai pham vi bang spec Sec11.6. Mo o vong P-C (25/09). Ca 4 trigger la POLLING that.",
+      "actions": "37 action o ban 0.7.1. Palette chon 5: notion_create_page, notion_search, notion_query_database, notion_get_page, notion_list_users -- ca 5 khong dung DYNAMIC/ARRAY nen khong can anh xa moi.",
+      "trigger poll": "co: new_database_item da dua len palette (con updated_database_item, new_comment, updated_page CHUA dua len)."
+    },
     "_khong_cai_vong_1": [
-      "notion, airtable, discord cua bang spec Sec11.6 KHONG duoc cai --",
-      "chua co suc trong vong P-C (25/09). google-drive DA mo (xem muc",
-      "`google-drive` o tren)."
+      "airtable, discord cua bang spec Sec11.6 KHONG duoc cai -- chua co suc",
+      "trong vong P-C (25/09). google-drive, gmail, notion DA mo (xem cac muc",
+      "tuong ung o tren)."
     ]
   }
 }
