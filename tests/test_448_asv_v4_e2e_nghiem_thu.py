@@ -481,6 +481,20 @@ def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
         #    cham mot.** Bai hoc do da nam trong `LOI_TONG.md` cua chinh phien nay
         #    (M-09a) va toi vua lap lai no. Nay `test_3000` quet BANG AST moi cho
         #    ghep `nhan` vao duong dan, thay vi chot tung cho toi tinh co nhin.
+        #
+        # 🔴 **`tam` khong tu co san.** Ca hai noi goi CHINH THUC deu thoat duoc
+        #    bay nay tinh co: `test_NGHIEM_THU_ca_hai_preset...` truyen thang
+        #    `tmp_path` (pytest tu tao), con `test_G17_hai_preset_tren_PHIM_
+        #    KHACH_THAT` truyen mot thu muc CON chua ai tao — nhung no chi lo ra
+        #    khi `asv_e2e_that/` co tep that, va thu muc do RONG tu 05/09 toi
+        #    25/09 nen `test_G17` chua bao gio chay toi dong nay. Lan do dac B3
+        #    (25/09) la lan DAU chay tren phim that va an dung bay: `_mot_luot`
+        #    chay het 13/13 giai doan that (~23 phut, model that + giong that)
+        #    roi `FileNotFoundError` ngay o buoc CHEP TEP CUOI CUNG, vi thu muc cha
+        #    khong ton tai. Mot ham nhan `tam` tu nguoi goi ma khong tu bao dam
+        #    no ton tai la mot hop dong ngam — sua o DAY, mot lan, thay vi bat
+        #    tung noi goi tu nho `mkdir`.
+        tam.mkdir(parents=True, exist_ok=True)
         tep_ra = tam / f"ra_{_ten_an_toan(nhan)}.mp4"
         try:
           if khoa_ra:
