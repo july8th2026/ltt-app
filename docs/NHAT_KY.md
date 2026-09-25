@@ -106,6 +106,63 @@ phiên. ⛔ Giá trị không được chép đi đâu và ⛔ không vào kho; 
 ⛔ Chỉ sau khi **pipeline hai giai đoạn** lắp xong. Lượt đó đi qua
 `tools/asv_chay_worker_that.py`, và mười một mục trên là **danh sách kiểm**.
 
+## 2026-09-25 — `phien/asv-gap-nan`: đóng `test_453` cho `nan_thoi_luong.py` (5 năng lực mồ côi)
+
+Nhánh `phien/asv-gap-nan` (worktree `D:\LTTSTUDIOSAPP-asv-gap-nan`, base `92292642`).
+Việc: `test_453::test_KHONG_co_nang_luc_mo_coi_MOI` đỏ — 5 năng lực khai trong
+`apps/auto_scan_video/nan_thoi_luong.py` không có người gọi trong mã sản phẩm.
+
+**Câu hỏi bắt buộc trả lời trước:** `gop_khe` chạy TRƯỚC hay SAU `nan_cho_vua.py`
+(bậc thang bốn nấc ĐANG CHẠY trong `giai_doan_giong.py`)? → **TRƯỚC** —
+`nan_cho_vua.khe_cua(m)` đọc `bat`/`ket` CỐ ĐỊNH của từng đoạn (sửa một câu cho
+vừa khe CỦA NÓ, không bao giờ đổi ranh giới khe); `gop_khe` đổi CHÍNH các khe
+(gộp nhiều khe hẹp thành một khe rộng hơn) TRƯỚC KHI bậc thang đo trên tệp thật
+bắt đầu. Bằng chứng khớp với khảo sát cùng ngày của làn khác:
+`docs/auto_scan_video_final/KHAO_SAT/R4_TIMELINE_NOI_BO.md` §22.3.
+
+**Đối chiếu 5 năng lực:**
+- `can_gat_1_rut_gon` — TRÙNG nấc 2 của `nan_cho_vua` (LLM viết lại cho vừa,
+  đang chạy thật). **Xoá.**
+- `can_gat_2_phan_phoi` — CHẾT theo thiết kế (tự khai trong docstring cũ: không
+  còn khoảng lặng THẬT giữa hai khe để mượn). **Xoá.**
+- `can_gat_3_he_so` — TRÙNG nấc 3 của `nan_cho_vua` (co giãn kẹp trần). **Xoá**
+  — phủ test không mất: `test_441...::test_co_gian_bi_chan_boi_TRAN_da_khai`
+  kiểm đúng hành vi này trên `nan_cho_vua.co_gian_du_khong`.
+- `con_khong_vua` — hàm báo cáo đi kèm ba cái trên, cũng trùng. **Xoá.**
+- `gop_khe` — ✅ **MỚI THẬT, tính năng chưa bao giờ chạy.** Đã nối MỘT PHẦN vào
+  `giai_doan_giong.chay()`: tính `so_khe_neu_gop` trong `tom_tat` trên dữ liệu
+  thật của từng lần chạy. **CHƯA nối vào đường sinh tiếng thật** — bằng chứng
+  cụ thể: `giai_doan_thoi_gian.py:88-89` đòi MỖI `ma` trong `content.json`
+  (ghi ở `CONTENT_PROCESS`, ĐỘC LẬP với `voice_synthesis`) có MỘT dòng `giay`
+  trong `ban_ke.json`, và ném `ThoiGianError` nếu thiếu — gộp nhiều đoạn làm
+  MỘT tệp tiếng trong `voice_synthesis` mà không đổi cả `giai_doan_noi_dung.py`
+  (để `content.json` sinh ra đã gộp sẵn) lẫn `thoi_gian.lap_ke_hoach`/
+  `_dung_ban_phoi` (để biết một nhóm đã gộp dùng CHUNG một tệp âm thanh) sẽ làm
+  **vỡ** ADR-003 (pha 16/17) trên MỌI lần chạy thật có gộp — không phải rủi ro,
+  là lỗi chắc chắn. Đây đúng là việc `R4_TIMELINE_NOI_BO.md` §21.5 đã ghi là
+  đang **bị chặn** (cần một lượt TTS thật để đối chiếu). Chi tiết + điều kiện
+  nối thật: docstring đầu `nan_thoi_luong.py`.
+
+**Kết quả:** `test_453` xanh bằng mã thật (không `--accept`, không thêm
+`MO_COI_DA_BIET`). Canh chỗ trống cho 4 tên đã xoá:
+`test_2062...::test_2062_BA_can_gat_TRUNG_da_XOA_khong_song_lai`. Test nhắm:
+`test_2062` (10), `test_441/445/451/454/476` (86), `test_2018/2023/3004/409/
+414/415/418/440/460/475` (232), `test_2050/2051/3200` (18) — tất cả xanh.
+
+⚠️ **Phát hiện phụ, ngoài phạm vi lần này:** `nan_thoi_luong.AM_TIET_MOI_GIAY =
+3,284` (đo cũ) và `ngon_ngu.NHIP[VI] = 3,35` (đo lại 23/09 trên chính giọng sản
+phẩm) khai CÙNG đại lượng bằng HAI con số khác nhau, chưa đối chiếu lại — ghi
+chú tại chỗ trong mã, không sửa (ngoài phạm vi).
+
+**Va chạm làn khác lúc merge `main`:** `main` đã tiến 7 commit từ base (không
+đụng ba tệp mình sửa) — hoà sạch, không xung đột. Sau khi hoà, `test_453` vẫn
+đỏ vì **hai** tên mồ côi MỚI từ `apps/auto_scan_video/do_vung.py`
+(`do_dai_chu`, `do_logo_tinh`) — xác nhận đây là red **đã có sẵn trên `main`
+trước khi merge của mình** (làn `asv-vung`, commit `9c513189`, tệp nằm trong
+danh sách cấm sửa của phiên này). Không đụng.
+
+SHA đã gộp `main`: `01cbeae8457084d2f7c055f77ba07a13c617066c`.
+
 ## 2026-09-25 (trưa) — **Mật khẩu CSDL `ltt_app` lộ vào transcript** · rủi ro ĐÃ CHẶN ở `pg_hba`
 
 ### Chuyện gì xảy ra
@@ -289,6 +346,74 @@ hai **ghi đè mất đường lui thật**. Bản `21c1bf9b` đã được gi�
 
 - Xoay **client secret** Google (đã lọt vào bản ghi hội thoại) và **mật khẩu superuser PostgreSQL**.
 - Nghiệm thu upload YouTube thật (private) để đóng phase 8.
+
+## 2026-09-25 — Vòng chết 413: van an toàn đo TOKEN, bức tường đo BYTE
+
+Khách báo phiên LTTCODE kẹt cứng: mọi lượt `request_body_too_large`, và **4 lần nén đều hỏng**.
+Ba lỗi, **một bệnh** — cùng một giá trị khai ở hai nơi, không ai bắt khớp.
+
+### Chẩn đoán — đo trước, suy sau
+
+Phép dò production (413 chặn **trước** xác thực nên không cần khoá), **có đối chứng âm**:
+
+| Thân | Kết quả |
+|---|---|
+| 1 150 067 B | **413** `payload_too_large` · `limit_value: 1048576` · `observed: 1150067` |
+| nhỏ | **401** ⇒ 413 đúng là **do kích thước** |
+
+Rồi lấy **bản ghi phiên thật** (`session-0019f199`, 165 bước — khớp ảnh chụp) và bóc ra:
+- 4 dòng `compaction/end` **đều mang** `error: "…request_body_too_large…"` ⇒ bốn lỗi nén **là cùng
+  một 413**, không phải lỗi model-trả-rỗng như tôi đã nghi. *(Giao diện hiện "could not produce a
+  useful summary" — người dùng không bao giờ biết nén chết vì cùng lý do. Lỗi thông báo thứ hai.)*
+- `usage.totalTokens = 80 823` ngay trước 413, thân vượt 1 048 576 B ⇒ **> 12,97 byte/token**.
+
+⚠️ **Tệp bản ghi là NHIỀU KHUNG zstd nối nhau.** `decompress()` chỉ đọc khung đầu, trả về **2 dòng**
+— trông y như tệp rỗng. Phải `stream_reader(..., read_across_frames=True)` mới ra 1 063 dòng.
+
+### Ba lần cùng một bệnh
+
+| # | Hai nơi khai cùng một điều | Hậu quả |
+|---|---|---|
+| 1 | Trần byte **1 MiB** ↔ cửa sổ công bố **151 552 token** | Ngân sách **6,9 B/token** — cửa sổ ta hứa **lớn hơn** thứ ta chở nổi |
+| 2 | Nền tảng **tính** ngưỡng nén ↔ client gõ cứng **`0.79`** | Client chừa **26 092** token cho câu trả lời, trong khi model được phép trả **32 768** |
+| 3 | Ngưỡng nén còn một **bản sao** trong `examples.py` | Ba bản của một số |
+
+⭐ **Lỗi #2 ĐÃ ĐƯỢC CHẨN ĐOÁN VÀ SỬA RỒI — sửa nhầm phía.** `ngan_sach.py:469-487` ghi: *"Trước
+03/09 cả hai bộ cài đều gõ `× 0,8`… ĐÂY LÀ LỖI ĐÃ XẢY RA TRÊN PRODUCTION: một lượt ăn `413` với
+101 938 token vào trên trần 96 256… con số cũ không sai vì bịa, nó sai vì **được chọn ở một cửa sổ
+rộng rồi mang sang một cửa sổ hẹp** mà không ai tính lại."* Nền tảng bỏ tỉ lệ phẳng. **Client giữ.**
+Sáu tháng sau nó cắn lại. Hoá ra client tính chỗ trống theo `LTTCODE_MAX_TOKENS` (24 000 — số nó
+**định xin**) thay vì 32 768 (số máy chủ **cho phép**).
+
+### ⛔ Hai lần TÔI chốt bằng số sai nguồn
+
+1. Làn nền tảng lấy `1 150 067 / 227 328 = 5,06 B/token` và gọi là *"ca sản xuất thật"* — đó là
+   **phép dò tổng hợp `'x' × 1 150 000`** của chính tôi. ASCII 1 byte, không nói gì về tiếng Việt.
+2. Tôi tự suy **10,64 B/token** từ **một ảnh chụp** thanh đo — và **đoán sai cả model** (ảnh chụp
+   `ltt-3.5`, thật ra lúc hỏng là `ltt-3.8`).
+
+Chỉ bản ghi phiên mới cho số đúng: **12,97** (và đó là **cận dưới**). Cả hai số sai đã bị chặn
+bằng **bánh cóc ngược** `_SO_DA_RUT_LAI = (5.059, 10.64)` trong `test_4200`.
+
+### Đã sửa
+
+- **Nền tảng** (`df017d06`, đã deploy): trần **1 MiB → 4 MiB**; `BYTE_MOI_TOKEN_JSON` → **16,0**;
+  `test_4200` chốt theo **TẬP HỢP** (duyệt `CUA_SO_THEO_MODEL`, có ca giả lập "model thứ ba" để
+  **tự chứng minh phép kiểm thật sự đỏ khi thiếu**). Nghiệm thu hai chiều: 1,1 MiB nay **401**,
+  4,5 MiB **vẫn 413** — nâng trần chứ không gỡ trần.
+- **LTTCODE `stable` 0.2.15**: client **đo byte** song song với token · nén **tự thu nhỏ đầu vào,
+  không gọi model** · ngưỡng nén theo từng model `(cửa sổ − max_output_tokens)/cửa sổ`, phép kiểm
+  chốt **bất đẳng thức** chứ không chốt chữ số · thông báo mang số thật.
+
+⭐ **Đường "học trần từ 413" có bằng chứng SỐNG**, không phải suy từ mã: lượt 1 gửi 4,48 MiB → 413
+thật (round-trip **10,9 s**); lượt 2 cùng cỡ → **chặn cục bộ trong 345 ms**, không có vòng mạng.
+
+### Còn mở
+
+- `/api/v1/models` **không công bố** `max_body_bytes` ⇒ client phải **ăn một 413 mỗi lần mở app**
+  mới học lại được trần. Công bố nó là chữa tận gốc cả ba lỗi trên: **máy chủ nói ra, client đọc**,
+  một nguồn chân lý thay vì hai bản sao.
+- Nhánh nén-tự-thu-nhỏ chỉ có phép kiểm đơn vị, **chưa ép chạy thật**.
 
 ## 2026-09-24 (chiều) — VPS bán thật CHẠY được: sáu khuyết tật, và một cổng quản trị mở trên IP của khách
 
