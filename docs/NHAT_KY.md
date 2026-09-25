@@ -11,6 +11,101 @@
 >
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
+## 2026-09-25 (chiều) — **Lần ĐẦU TIÊN Auto Scan Video chạy trên worker PRODUCTION** · hai lỗi nền tảng
+
+Làn `asv-worker-that`. Trước hôm nay: **0 / 19.979** lượt job trong log worker production là
+`auto_scan_video`/`asv_*` — tức mọi nghiệm thu của sản phẩm này (12/12 giai đoạn, QC đạt, hai
+preset) chạy trong **khuôn test**. Hôm nay chạy thật: tài khoản `khach1.thu`, phim khách thật
+275,029 s tiếng Trung, preset `localize_preserve_picture`, giá phẳng **50 credit**.
+
+⛔ **Không lượt nào ra được tệp `.mp4`** — cả hai dừng trước `render`. Chủ dự án chốt **dừng
+chạy ASV trên worker thật** cho tới khi pipeline hai giai đoạn (voice xong hẳn → rồi xử lý hình)
+lắp xong: chuỗi sắp bị xếp lại nên khung lỗi của chuỗi cũ không đổi được quyết định nào.
+
+| Lượt | Run | Dừng ở | Nguyên nhân |
+|---|---|---|---|
+| 1 | `asvr_39a2bc9f…` | `audio_prepare` | một làn khác **deploy lúc 14:15:12–14:16:45**, `LTTStudioWorker` khởi động lại ⇒ job mồ côi. Job giai đoạn có `max_attempts=1` ⇒ `failed_terminal` ngay, cả lần chạy chết |
+| 2 | `asvr_9fc9cc89…` | `timing_align` | `FileNotFoundError: C:\Windows\TEMP\asv-master-…\t0_seg_0001\nguon.bin` (2 lần, hai thư mục tạm khác nhau) |
+
+Credit: cả hai `credit_actual = 0`, số dư `khach1.thu` **không đổi** (19.743) ⇒
+`CHI_THU_KHI_GIAO_DUOC` hoạt động đúng.
+
+### ⭐ Những thứ CHỈ worker thật mới lộ — danh sách kiểm cho lượt chạy sau khi lắp lại kiến trúc
+
+1. 🔴 **`N-59` — `ffmpeg` chỉ có trên USER Path.** WinGet cài nó dưới
+   `C:\Users\…\AppData\Local\…`; **MACHINE Path không có ffmpeg nào**. Worker chạy
+   `LocalSystem` ⇒ chỉ thấy MACHINE Path. Nền tảng miễn nhiễm vì `LTT_FFMPEG` là đường tuyệt
+   đối — nhưng **sidecar WhisperX là venv RIÊNG** (`D:\LTTWhisperX`) và `whisperx/audio.py:61`
+   gọi `ffmpeg` **trần** ⇒ `FileNotFoundError [WinError 2]`, chết sau 4 giây.
+   `apps/autosubvideo/transcription.py` bắt, ghi **WARNING**, rồi lui về faster-whisper với
+   `alignment_status="fallback_unaligned"` — và **giai đoạn VẪN `succeeded`**.
+   ⇒ Đường sản phẩm *"WhisperX GPU fp16 64,64 s"* trong `L_TOC_DO_GPU` **chưa bao giờ chạy**
+   trên worker thật. Tái hiện byte-for-byte bằng cách chạy sidecar với PATH của MÁY.
+   ⚠️ Thêm: `transcription.py:96` giữ `stderr[-1000:]`, và lát đó rơi giữa một khung traceback
+   nên **mất đúng dòng `FileNotFoundError`** — log production chỉ còn dấu mũ và tên tham số
+   POSIX. Giữ dòng cuối KHÁC RỖNG, đừng cắt đuôi mù.
+2. 🔴 **`N-58` — khoá chết giữa bộ lọc `claim` và `reclaim`.** `platform_core/jobs.py:351` nhập
+   `admission.ORPHAN_TIMEOUT` (**20 phút**) để hỏi *"suất còn ai giữ không"*, còn
+   `reclaim_expired` thu hồi theo `ORPHAN_TIMEOUT_JOB` (**300 giây**). Trong cửa sổ 5→20 phút,
+   job bị **ẩn khỏi `claim`**, nên `admission.acquire` — thứ DUY NHẤT thu hồi lease trên đường
+   nóng — **không bao giờ tới được**. Đo được: lease chết nhịp cuối `07:15:59,0Z`; job
+   `asv_gpu.audio_prepare` của lượt 2 nằm `queued` **không worker nào nhặt**, rồi được nhặt lúc
+   `07:35:59,0Z` — đúng 20 phút, lệch **0,04 giây**.
+3. **Ba lease KHÔNG được nhả khi job thành mồ côi**: `execution_leases`
+   (`tach_nguon_cuc_bo` slot 0), `gpu_leases` (2.200 MiB, GPU-0), `singleton_leases`
+   (`asvcc:…`). Chỉ người giành TIẾP THEO dọn chúng, không phải lúc job thành terminal.
+4. **`voice_synthesis` gọi máy B 49 lần / 22,5 phút** (~1 lần mỗi 28 giây) và **cố ý KHÔNG khai
+   `llm_remote`**. Bản khai ở `pipeline.py` dựa trên tiền đề *"một lời gọi THỈNH THOẢNG mới xảy
+   ra"* — tiền đề đó **sai** trên lượt thật ⇒ 49 lời gọi đi NGOÀI admission của máy B.
+5. **`_advance` là vòng quay NÓNG, không phải 12 lượt.** Đo: **37.010** job
+   `auto_scan_video.advance` trong 52,5 phút (~11,7/giây) — khuôn test sinh **11**.
+   `features._nop_dieu_phoi` nộp lượt kế **không có độ trễ**, và khoá dedupe mang `ctx.job_id`
+   nên mỗi lượt sinh một khoá MỚI ⇒ dedupe không bao giờ chặn.
+   ⭐ **Khuôn test không thể thấy điều này**: `test_448._chay_hang_doi` chạy TUẦN TỰ một luồng,
+   nên khi một lượt `advance` chạy thì giai đoạn trước đã xong — không có gì để quay vòng. Trên
+   worker thật 8 tiến trình, `advance` chạy SONG SONG với giai đoạn đang chạy, thấy "chưa có gì
+   để nộp", rồi nộp tiếp ngay.
+6. **Thời gian chết giữa các giai đoạn ≈ 0,0 s**, ⛔ không phải 16–20 s như `L_TOC_DO_GPU` §3.1
+   **suy ra**. Đo được `audio_prepare→transcribe`, `transcribe→edit_plan`,
+   `edit_plan→content_process` đều **0,0 s** — và giá của nó chính là vòng quay nóng ở mục 5.
+7. **Giây CPU trên Windows là CẬN DƯỚI.** `psutil` ⛔ không cộng CPU của tiến trình con **đã
+   thoát** (`children_*` đứng yên ở 0,0 — đo bằng một tiến trình con đốt 8 triệu phép nhân).
+   Nên `media_prepare` = `1,3 s CPU / 51 s tường`: phần thiếu là chuỗi `ffprobe`/`ffmpeg` chớp
+   nhoáng. Dùng được cho giai đoạn DÀI chạy torch TRONG tiến trình: `transcribe`
+   **127,7 s CPU / 66,4 s tường = 1,92 lõi**, GPU 48–50 %, 5.575 MiB. ⛔ Không dùng được khi
+   việc nặng nằm ở tiến trình con hoặc **dịch vụ ngoài**: `voice_synthesis`
+   `24,9 s CPU / 1.610,6 s tường` vì TTS chạy trong `LTTStudioVoice`.
+8. **Tường dài + CPU thấp = đang CHỜ, không đang tính.** `content_process`
+   `313,7 s tường / 3,2 s CPU` (0,01 lõi) — toàn bộ là chờ máy B.
+9. **`edit_plan` = 2,6 s** vì preset giữ hình ⛔ không có thao tác biên tập nào
+   (`THAO_TAC_CHO_PHEP[PRESET_GIU_HINH] = ()`). ⛔ Đừng đọc con số đó thành "đọc cảnh nhanh".
+10. **`voice_synthesis` chạy theo LÁT** (`lat_cat`, job nối tiếp ⛔ không tăng `attempt`) — công
+    cụ đo khoá theo `step_id` nên **gộp các lát thành một dòng**. Lượt sau phải khoá theo
+    `(step_id, job_id)`.
+11. ⚠️ **Giả thuyết ĐÃ BỊ BÁC — ghi lại để không ai đi lại:** *"tiến trình con của worker chạy
+    interpreter GỐC nên torch là bản `+cpu`"* là **sai**. Dòng lệnh hiện `python.exe` gốc
+    (`sys._base_executable`), nhưng `multiprocessing` khôi phục `sys.executable` về venv: đo
+    trong tiến trình con thật ⇒ `sys.executable = C:\LTTPlatform\venv\Scripts\python.exe`,
+    `torch 2.11.0+cu128`, `cuda True`. (Base Python313 *thật sự* là `2.11.0+cpu` / `cuda False`,
+    nhưng nó ⛔ không nằm trên đường chạy.)
+
+### Chạm gì trên máy production
+
+⛔ Không chạm `C:\LTTPlatform\app\`, ⛔ không đổi cấu hình `nssm`/ENV, ⛔ không khởi động lại
+dịch vụ nào, ⛔ không bật `LTT_AUTO_SCAN_VIDEO` trong `app.env` (chỉ đặt trong tiến trình của
+làn), ⛔ không `icacls`, ⛔ không deploy. Đã **ĐỌC** `secrets\app.env` để nạp env — đường chuẩn
+của `api_prod_canary.py`/`audit_van_hanh.py` — ⛔ không ghi. Hai run và ~37.011 dòng `jobs` là dữ
+liệu thật **còn lại trong CSDL**, ⛔ chưa xoá. Đã xoá **một** thư mục tạm rò của lượt bị deploy
+giết: `C:\Windows\TEMP\asv-audio-xz4w41uv` (7 tệp, 344,9 MB).
+
+⚠️ Một lệnh lọc `app.env` quá rộng đã in **giá trị** `LTT_VOICE_SIDECAR_TOKEN` vào transcript
+phiên. ⛔ Giá trị không được chép đi đâu và ⛔ không vào kho; cân nhắc xoay vòng token đó.
+
+### Điều kiện chạy lại
+
+⛔ Chỉ sau khi **pipeline hai giai đoạn** lắp xong. Lượt đó đi qua
+`tools/asv_chay_worker_that.py`, và mười một mục trên là **danh sách kiểm**.
+
 ## 2026-09-25 (trưa) — **Mật khẩu CSDL `ltt_app` lộ vào transcript** · rủi ro ĐÃ CHẶN ở `pg_hba`
 
 ### Chuyện gì xảy ra
