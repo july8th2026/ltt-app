@@ -56,8 +56,9 @@ class MauVram:
                      "--format=csv,noheader,nounits"],
                     capture_output=True, text=True, timeout=5)
                 self.mau.append(int(r.stdout.strip().splitlines()[0]))
-            except Exception:                                  # noqa: BLE001
-                pass
+            except (OSError, subprocess.SubprocessError,
+                    ValueError, IndexError):
+                pass          # mot mau hut khong duoc giet luot do
 
     def __enter__(self):
         self._t = threading.Thread(target=self._vong, daemon=True)

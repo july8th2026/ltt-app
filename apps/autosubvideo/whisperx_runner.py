@@ -47,10 +47,13 @@ MAU_CO_DAU_CAU = {
 def _phien_ban_whisperx() -> str:
     """Phiên bản gói THẬT đang chạy. ⛔ Đừng gõ lại một con số vào mã."""
     try:
-        from importlib.metadata import version
+        from importlib.metadata import PackageNotFoundError, version
 
         return str(version("whisperx"))
-    except Exception:                           # noqa: BLE001
+    except PackageNotFoundError:
+        # ⛔ Chi ca "goi khong cai" duoc nuot. Mot `Exception` tran o day tung
+        #    lam mot loi nhap khac khai bao thanh "phien ban rong" — va ban ghi
+        #    tai lap se noi doi ma khong ai thay.
         return ""
 
 
@@ -108,7 +111,8 @@ def main() -> int:
     try:
         _ck = inspect.signature(
             _asr.FasterWhisperPipeline.transcribe).parameters["chunk_size"].default
-    except Exception:                           # noqa: BLE001
+    except (AttributeError, KeyError, TypeError, ValueError):
+        # goi doi ten/bo `chunk_size`, hoac khong lay duoc chu ky
         _ck = None                              # ⛔ không đoán: thiếu thì khai thiếu
     # ⭐ Giá trị ở đây là **MÃ**, ⛔ không phải câu văn: chúng đi vào một bản ghi
     #    JSON để máy `grep` và để đối chiếu giữa các lượt, không hiện ra cho

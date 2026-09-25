@@ -27,6 +27,7 @@ tren dia, ten may, ten model, hay mot manh payload cua provider.
 """
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 
 from sqlalchemy import select
@@ -37,6 +38,8 @@ from platform_core.models import Job
 from platform_core.i18n import N_
 
 from . import features, ma_loi, pipeline, rang_giong
+
+log = logging.getLogger(__name__)
 
 #: Chuoi hien cho khach khi mot giai doan hong ma ta khong co thong diep an toan.
 #: ⚠️ Khong bao gio boc `str(exc)` tho vao day.
@@ -281,10 +284,15 @@ def duong_render_cua(run) -> dict:
     try:
         preset = cd.doc(run).preset
         return {"preset": preset, "duong": cdr.che_do_cho(preset)}
-    except Exception:                       # noqa: BLE001 - preset la, ban ghi cu
+    except Exception as e:                   # noqa: BLE001 - preset la, ban ghi cu
         # ⛔ `""` chu khong `cdr.SAO_CHEP`: mot preset khong doc duoc la "chua
         #    biet", va dem no vao o duong RE lam thong ke nghieng ve phia de chiu
         #    — dung chieu lech khien khong ai di kiem lai.
+        # ⛔ VAN NUOT (ban ghi cu / preset la khong duoc lam sap man hinh),
+        #    nhung phai de lai vet: neu MOI luot roi vao day thi ca cot thong ke
+        #    la rong, va mot cot rong khong tu noi vi sao no rong.
+        log.warning("quan_sat: khong doc duoc preset render (run=%s): %s",
+                    getattr(run, "id", "?"), type(e).__name__)
         return {"preset": "", "duong": ""}
 
 
@@ -730,7 +738,11 @@ def bang_chung_chat_luong(db, run) -> dict | None:
         if con:
             ra["con_lai"] = {"so_muc": int(sum(float(d.so_luong or 0)
                                               for d in con))}
-    except Exception:                       # noqa: BLE001 - so cai hong khong
-        pass                                # duoc giet man hinh cua khach
+    except Exception as e:                   # noqa: BLE001 - so cai hong khong
+        # ⛔ VAN NUOT: mot o so tren man hinh khach khong duoc lam sap ca
+        #    trang. Nhung no phai de lai vet trong nhat ky worker, neu khong
+        #    thi "o `con_lai` bi thieu" la mot bao loi khong the tra ra duoc.
+        log.warning("quan_sat: khong dem duoc sua_chua_con_lai (run=%s): %s",
+                    getattr(run, "id", "?"), type(e).__name__)
 
     return ra or None
