@@ -284,10 +284,15 @@ def duong_render_cua(run) -> dict:
     try:
         preset = cd.doc(run).preset
         return {"preset": preset, "duong": cdr.che_do_cho(preset)}
-    except Exception:                       # noqa: BLE001 - preset la, ban ghi cu
+    except Exception as e:                   # noqa: BLE001 - preset la, ban ghi cu
         # ⛔ `""` chu khong `cdr.SAO_CHEP`: mot preset khong doc duoc la "chua
         #    biet", va dem no vao o duong RE lam thong ke nghieng ve phia de chiu
         #    — dung chieu lech khien khong ai di kiem lai.
+        # ⛔ VAN NUOT (ban ghi cu / preset la khong duoc lam sap man hinh),
+        #    nhung phai de lai vet: neu MOI luot roi vao day thi ca cot thong ke
+        #    la rong, va mot cot rong khong tu noi vi sao no rong.
+        log.warning("quan_sat: khong doc duoc preset render (run=%s): %s",
+                    getattr(run, "id", "?"), type(e).__name__)
         return {"preset": "", "duong": ""}
 
 
