@@ -190,7 +190,15 @@ def test_goc_namespace_lay_tu_chinh_sach_NAMESPACE():
 
 
 def test_moi_muc_khai_THAT_ve_viec_no_qua_duoc_cong_publish_hay_khong():
-    """⚠️ Cong `bien_dich._doi` hom nay CHI nhan `{{ nodes.<id>.output.<cong> }}`.
+    """⭐ 25/09 (làn wfb5): `bien_dich._doi` không còn chỉ nhận đúng
+    `{{ nodes.<id>.output.<cổng> }}` — nó uỷ quyền câu hỏi HÌNH DẠNG cho
+    ngôn ngữ §6 đầy đủ (`ngon_ngu.kiem`), nên `qua_publish` giờ ĐÚNG theo
+    ngôn ngữ §6: mọi namespace (`nodes.a.status`, `trigger` trần…) và mọi lời
+    gọi hàm trong `BANG_HAM` đều là biểu thức HÌNH DẠNG hợp lệ ở cổng publish
+    (không có nghĩa `bien_dich()` sẽ CHẤP NHẬN một đồ thị dùng chúng — cổng
+    tổ tiên/cổng ra §6.2 vẫn xét riêng, và lúc CHẠY THẬT `cau_noi.giai_tham_so`
+    lẫn `bao_gia` vẫn chỉ đọc được đúng MỘT đoạn sau `.output.` — xem
+    `bien_dich._doi.__doc__`).
 
     Goi y khong duoc giau dieu do: `qua_publish` phai do bang chinh cong ay,
     va phep kiem nay do lai bang cong THAT chu khong tin loi khai.
@@ -198,9 +206,9 @@ def test_moi_muc_khai_THAT_ve_viec_no_qua_duoc_cong_publish_hay_khong():
     ket = goi_y.goi_y(DOC, "c", cong_cu=CC)
     theo_duong = {m["duong"]: m for m in ket["muc"]}
     assert theo_duong["nodes.a.output.text"]["qua_publish"] is True
-    assert theo_duong["nodes.a.status"]["qua_publish"] is False
-    assert theo_duong["trigger"]["qua_publish"] is False
-    assert all(m["qua_publish"] is False for m in ket["ham"])
+    assert theo_duong["nodes.a.status"]["qua_publish"] is True
+    assert theo_duong["trigger"]["qua_publish"] is True
+    assert all(m["qua_publish"] is True for m in ket["ham"])
 
     for duong, muc in theo_duong.items():
         try:

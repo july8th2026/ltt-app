@@ -49,6 +49,20 @@ Lượt 2 mới thật sự thử cú pháp `{{ nodes... }}` mà `[DAU_RA]` yêu
 ra giới hạn CHƯA TỪNG ĐO của cổng biên dịch: nó không hỗ trợ truy cập lồng
 sau `output.<cong>`.
 
+## ⭐ 25/09 (làn wfb5) — nối khoảng cách trên, và một lỗi THỨ HAI lộ ra theo
+
+`bien_dich._doi` nay uỷ quyền phán quyết HÌNH DẠNG `{{ }}` cho ngôn ngữ §6
+đầy đủ (`ngon_ngu.kiem`) thay vì regex `_THAM_CHIEU` một-đoạn — xem
+`test_lot2_create_video_KHONG_con_bi_tu_choi_sau_ban_va_wfb5`.
+`create_video` biên dịch được. NHƯNG lượt 2 TOÀN VĂN vẫn đỏ:
+`check_ready` (`core.if`) có
+`dieu_kien = "{{ nodes.fetch_sheet.output.json.status === 'READY' }}"` — hai
+lỗi khác (JS `===` thay vì `==`; bọc `{{ }}` dù tham số node lõi phải TRẦN)
+mà `create_video`'s lỗi cũ vô tình CHE trước đây (`cau_truc()` gọi `_doi`
+ngay khi dựng node app/tool, trước khi tới lượt kiểm tham chiếu của node
+lõi). Xem `test_lot2_toan_van_van_KHONG_bien_dich_duoc_NHUNG_vi_check_ready_khong_phai_create_video`.
+Sửa `check_ready`/`build_prompt()` KHÔNG thuộc phạm vi làn wfb5.
+
 ## ⚠️ Lượt 2 KHÔNG còn `core.filter`/`core.foreach` — CHƯA rõ có phải do bản vá
 
 Lượt 2 chỉ có 6 node (`core.http`, `core.if`, `app.video.generate`,
@@ -269,26 +283,69 @@ def test_lot2_khong_con_hau_to_type_khong_con_kind_la(cc):
     assert kinds["check_ready"] == "CONTROL"
 
 
-def test_lot2_van_KHONG_bien_dich_duoc_NHUNG_ly_do_khac_va_khong_lien_quan_ban_va(cc):
-    """Lượt 2 vẫn đỏ — vì một giới hạn cổng biên dịch CÓ TRƯỚC bản vá, không
-    do bản vá gây ra (bản vá không chạm quy tắc biểu thức `{{ }}`)."""
+def test_lot2_create_video_KHONG_con_bi_tu_choi_sau_ban_va_wfb5(cc):
+    """⭐ 25/09 (làn wfb5, `docs/superpowers/plans/2026-09-25-wf-v2-VAN-HANH.md`
+    §P-B): đóng ĐÚNG khoảng cách mà tệp này đóng băng bằng chứng cứ —
+    `{{ nodes.fetch_sheet.output.json.prompt }}` (đường dẫn LỒNG sau
+    `.output.<cổng>`) giờ là một biểu thức §6 hợp lệ ở cổng publish
+    (`bien_dich._doi`, uỷ quyền cho `ngon_ngu.kiem` — ngôn ngữ §6 đầy đủ —
+    thay vì tự nới regex `_THAM_CHIEU`).
+
+    ⚠️ Đây là phép kiểm HẸP, cô lập ĐÚNG node `create_video` khỏi phần còn
+       lại của lượt 2 — xem test kế tiếp để biết vì sao TOÀN VĂN lượt 2 vẫn
+       chưa biên dịch được (một node KHÁC, `check_ready`, lộ ra một lỗi
+       riêng, có trước và không liên quan tới bản vá này).
+    """
+    create_video = next(n for n in _LOT2_25_09["pages"][0]["nodes"]
+                        if n["id"] == "create_video")
+    bieu_thuc_model_viet = create_video["params"]["prompt"]
+    assert bieu_thuc_model_viet == "{{ nodes.fetch_sheet.output.json.prompt }}"
+
+    # Không còn ném — trước bản vá dòng dưới ném `LoiBienDich
+    # bieu_thuc_chua_ho_tro` (xem lịch sử git của test này).
+    bien_dich._doi(dict(create_video["params"]), "create_video")
+    assert bien_dich.cong_params_nhan(
+        "nodes.fetch_sheet.output.json.prompt") is True
+
+    # `la_tham_chieu`/`_THAM_CHIEU` (dùng ở `cau_noi.giai_tham_so` VÀ
+    # `bao_gia.bao_gia_node` để đọc/tính giá LÚC CHẠY, không phải lúc
+    # publish) KHÔNG đổi — vẫn chỉ nhận đúng MỘT đoạn sau `.output.`. Cổng
+    # publish rộng hơn cổng chạy là một khoảng cách MỚI, ghi lại ở
+    # `_doi.__doc__` và báo cáo phiên wfb5, KHÔNG đóng trong tệp này.
+    assert bien_dich.la_tham_chieu(bieu_thuc_model_viet) is None
+    assert bien_dich.la_tham_chieu(
+        "{{ nodes.fetch_sheet.output.json }}") == ("fetch_sheet", "json")
+
+
+def test_lot2_toan_van_van_KHONG_bien_dich_duoc_NHUNG_vi_check_ready_khong_phai_create_video(cc):
+    """Lượt 2 (toàn văn) vẫn đỏ sau bản vá wfb5 — NHƯNG vì một lỗi KHÁC, ở
+    một node KHÁC, đã có sẵn trong `document` gốc, bị bản vá này LÀM LỘ RA
+    (không phải GÂY RA): `check_ready` (`core.if`) có
+    `dieu_kien = "{{ nodes.fetch_sheet.output.json.status === 'READY' }}"`
+    — hai lỗi cùng lúc, không liên quan tới khoảng cách hai tầng biểu thức:
+
+      1. `===` (JS) thay vì `==` (§6 chỉ có `==`/`!=`, không có `===`);
+      2. bọc trong `{{ }}` dù tham số biểu thức của node LÕI phải TRẦN
+         (`bien_dich.KIEU_BIEU_THUC`, không ngoặc — khác app/tool node).
+
+    ⚠️ TRƯỚC bản vá wfb5, `create_video` (đứng SAU `check_ready` trong thứ
+       tự node của trang, nhưng `cau_truc()` gọi `_doi` NGAY khi dựng từng
+       node app/tool — trước khi `bien_dich()` kịp duyệt tới `dieu_kien` của
+       node lõi ở vòng kiểm tham chiếu riêng) ném lỗi TRƯỚC, nên lỗi của
+       `check_ready` chưa từng lộ ra — `test_4190` cũ đóng băng đúng lỗi
+       `create_video`, không sai, nhưng không thấy được lỗi thứ hai ở phía
+       sau. Bản vá wfb5 gỡ lỗi thứ nhất; lỗi thứ hai hiện ra đúng như nó đã
+       luôn ở đó.
+
+    ⛔ Sửa `check_ready`/`build_prompt()` KHÔNG thuộc phạm vi làn wfb5 (chỉ
+       nối hai tầng biểu thức ở cổng publish) — xem báo cáo phiên để biết
+       việc này được để lại cho một phiên khác.
+    """
     with pytest.raises(bien_dich.LoiBienDich) as exc:
         bien_dich.bien_dich(copy.deepcopy(_LOT2_25_09), cong_cu=cc)
     assert exc.value.ma == "bieu_thuc_chua_ho_tro"
-    assert exc.value.node_id == "create_video"
-
-    # ⭐ Chỉ ra ĐÚNG giới hạn, bằng chính hàm compiler dùng để phán quyết
-    # (`la_tham_chieu`, regex `_THAM_CHIEU`) — không suy diễn qua vá cả tài
-    # liệu. `_THAM_CHIEU` chỉ nhận ĐÚNG MỘT đoạn sau `.output.`:
-    bieu_thuc_model_viet = "{{ nodes.fetch_sheet.output.json.prompt }}"
-    bieu_thuc_don_doan = "{{ nodes.fetch_sheet.output.json }}"
-    assert bien_dich.la_tham_chieu(bieu_thuc_model_viet) is None, (
-        "duong dan long sau .output. khong duoc _THAM_CHIEU chap nhan")
-    assert bien_dich.la_tham_chieu(bieu_thuc_don_doan) == ("fetch_sheet", "json")
-    # Giới hạn này CÓ TRƯỚC bản vá — `_THAM_CHIEU`/`la_tham_chieu` không nằm
-    # trong đoạn `build_prompt()` vừa sửa. Lượt 1 không lộ ra giới hạn này vì
-    # tham số lượt 1 là chuỗi trần (`"item.title"`), không bọc `{{ }}`, nên
-    # `_doi()` chưa từng xét nhánh kiểm tra tham chiếu ở lượt đó.
+    assert exc.value.node_id != "create_video"          # khoảng cách ĐÃ đóng
+    assert "===" in str(exc.value)                      # đúng lỗi check_ready
 
 
 def test_lot2_khong_dung_filter_foreach_thuc_te_khong_suy_dien(cc):

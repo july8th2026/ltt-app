@@ -205,8 +205,53 @@ def trich_tham_chieu(bieu_thuc: str) -> tuple[ThamChieu, ...]:
     return tuple(ra)
 
 
+#: Một `{{ ... }}` DUY NHẤT bọc TRỌN chuỗi (đã `strip()`) — không có chữ
+#: trước/sau (interpolation), y hệt ràng buộc cũ của `_THAM_CHIEU`. `.*` tham
+#: (kèm `re.DOTALL`) là ĐÚNG ở đây, không phải một lỗi: nó bóc lớp ngoặc
+#: NGOÀI CÙNG, nên `{{ {"a": {"b": 1}} }}` (dict lồng — §6 cho `ast.Dict`)
+#: vẫn bóc đúng, khác `doan_bieu_thuc()` (dò `}}` ĐẦU TIÊN, sẽ cắt hụt ở dict
+#: lồng) — `doan_bieu_thuc` phục vụ một câu hỏi khác (nhiều đoạn nội suy
+#: trong một chuỗi, chưa có `noi_suy.py`), không phải câu hỏi ở đây (đúng
+#: MỘT đoạn, trọn chuỗi).
+_BOC_BIEU_THUC = re.compile(r"^\{\{(.*)\}\}$", re.DOTALL)
+
+
+def _bieu_thuc_s6_hop_le(bieu_thuc: str) -> bool:
+    """Nội dung bên trong `{{ }}` có phải một biểu thức HÌNH DẠNG hợp lệ của
+    ngôn ngữ §6 không?
+
+    ⭐ GỌI THẲNG bộ duyệt §6 đã có (`ngon_ngu.kiem`, tức
+       `chinh_sach.kiem_ngon_ngu` lắp với `chinh_sach.DAY_DU` + bảng 49 hàm
+       thật của `ham_bieu_thuc.BANG_HAM`) — ⛔ KHÔNG tự dựng một bộ duyệt
+       thứ hai ở tầng publish. Đây CHÍNH là ngôn ngữ mà node LÕI đã dùng
+       (`trich_tham_chieu`, qua `_tham_chieu_node_loi`): `ngon_ngu.kiem` còn
+       NGHIÊM hơn — nó có danh sách TRẮNG các dạng nút AST, trần số nút/độ
+       sâu, và chỉ 49 hàm thuần đã khai — trong khi `trich_tham_chieu` (node
+       lõi) chấp nhận MỌI cây `ast.parse` được. Rộng ra cho node app/tool
+       theo cửa hẹp hơn đó không mở thêm bề mặt so với cái node lõi đã có.
+    ⭐ Cùng lý do `goc_phai_tinh="nodes"` của `chinh_sach.DAY_DU`: một tham
+       chiếu `nodes[...]` có đoạn ĐỘNG bị `ngon_ngu.kiem` từ chối tại đây,
+       CÙNG luật với `trich_tham_chieu` (`tham_chieu_dong`) — hai cửa không
+       thể rơi vào cảnh một cửa mở, cửa kia đóng cho cùng một hình dạng.
+
+    ⚠️ Đây là câu hỏi về HÌNH DẠNG (cú pháp + tên namespace + bảng hàm) —
+       KHÔNG cần môi trường, không biết `params` có tổ tiên nào. Ai là tổ
+       tiên và cổng ra có tồn tại là câu hỏi KHÁC, `cau_truc()`/`bien_dich()`
+       trả lời bằng `_tham_chieu_trong`/`trich_tham_chieu` (không đổi).
+    """
+    from platform_core.workflow import ngon_ngu
+    from platform_core.workflow.chinh_sach import LoiNgonNgu
+
+    try:
+        ngon_ngu.kiem(bieu_thuc)
+    except LoiNgonNgu:
+        return False
+    return True
+
+
 def _doi(gia_tri: Any, node_id: str, *, nghiem: bool = True) -> Any:
-    """`$a.b` (Canvas cũ) → `{{ nodes.a.output.b }}`; chặn `{{ }}` khác.
+    """`$a.b` (Canvas cũ) → `{{ nodes.a.output.b }}`; phán quyết `{{ }}` khác
+    bằng ngôn ngữ §6 (`_bieu_thuc_s6_hop_le`), không còn bằng regex riêng.
 
     🔑 `nghiem=False` ⇒ **chỉ đổi, không phán quyết**. Đo trên trình duyệt
        24/09: người dùng gõ `"Vẽ: {{ nodes"` (một biểu thức đang gõ DỞ) thì
@@ -215,6 +260,22 @@ def _doi(gia_tri: Any, node_id: str, *, nghiem: bool = True) -> Any:
        **không phụ thuộc** vào việc một chuỗi tham số đã gõ xong hay chưa.
     ⛔ Cổng publish vẫn NGHIÊM: `bien_dich()` gọi lại hàm này với `nghiem=True`
        trên đúng tham số ấy, nên không có gì lọt thêm.
+
+    ⭐ 25/09 (wfb5) — ĐÃ NỐI khoảng cách hai tầng biểu thức. Trước đây nhánh
+       này chỉ nhận đúng `{{ nodes.<id>.output.<cổng> }}` (MỘT đoạn sau
+       `.output.`) — hẹp hơn hẳn ngôn ngữ §6 mà node lõi đã dùng, và đó là
+       lý do `{{ nodes.fetch_sheet.output.json.prompt }}` (model thật sinh
+       ra ở FLOW G lượt 2, `test_4190`) bị từ chối dù là một biểu thức §6
+       hợp lệ. Nay: MỌI chuỗi bọc `{{ }}` trọn vẹn (`_BOC_BIEU_THUC`) mà nội
+       dung là một biểu thức §6 hợp lệ đều được nhận — `nodes.a.output.b`
+       (dạng cũ) là một tập con của tập đó nên hành vi cũ không đổi.
+    ⚠️ VẪN CHƯA đóng hết khoảng cách: đây chỉ là cổng HÌNH DẠNG lúc publish.
+       Cầu nối job (`cau_noi.giai_tham_so`) và báo giá tham chiếu đơn
+       (`la_tham_chieu`) chưa đọc được biểu thức §6 đầy đủ lúc CHẠY — một
+       `params` app/tool giờ publish được với `{{ nodes.a.output.b.c }}`
+       nhưng khi chạy thật, `giai_tham_so` (khớp bằng `la_tham_chieu`, một
+       regex một-đoạn) sẽ KHÔNG khớp và trả nguyên văn chuỗi `{{ ... }}`
+       cho job — một lỗ khác, CHƯA đóng ở đây (xem báo cáo phiên wfb5).
     """
     if isinstance(gia_tri, dict):
         return {k: _doi(v, node_id, nghiem=nghiem) for k, v in gia_tri.items()}
@@ -224,10 +285,15 @@ def _doi(gia_tri: Any, node_id: str, *, nghiem: bool = True) -> Any:
         m = _CU.match(gia_tri.strip())
         if m:
             return "{{ nodes.%s.output.%s }}" % (m.group(1), m.group(2))
-        if nghiem and "{{" in gia_tri and la_tham_chieu(gia_tri) is None:
-            raise LoiBienDich("bieu_thuc_chua_ho_tro",
-                              "chi ho tro {{ nodes.<id>.output.<cong> }}",
-                              node_id)
+        if nghiem and "{{" in gia_tri:
+            boc = _BOC_BIEU_THUC.match(gia_tri.strip())
+            if boc is None or not _bieu_thuc_s6_hop_le(boc.group(1).strip()):
+                raise LoiBienDich(
+                    "bieu_thuc_chua_ho_tro",
+                    "chi ho tro dung MOT bieu thuc ngon ngu Sec6 boc trong "
+                    "{{ }} (vi du {{ nodes.<id>.output.<cong> }}, ke ca "
+                    "duong dan long ben trong cong)",
+                    node_id)
     return gia_tri
 
 
@@ -235,15 +301,16 @@ def cong_params_nhan(bieu_thuc: str) -> bool:
     """Cổng `params` của publish có nhận `{{ <biểu thức> }}` này không?
 
     ⭐ Hỏi bằng cách **gọi chính cái cổng** (`_doi`), không bằng một bản mô tả
-       của nó. Hôm nay `_doi` chỉ nhận đúng `{{ nodes.<id>.output.<cổng> }}`
-       (plan 01a) trong khi ngôn ngữ §6 đã có hàm, `trigger`, `vars`… — một
-       khoảng cách THẬT giữa hai tầng. Cửa gợi ý phải nói ra khoảng cách đó
-       thay vì mời người dùng viết một biểu thức sẽ bị từ chối lúc publish; và
-       ngày ai đó nới `_doi`, câu trả lời ở đây **tự đổi theo**, không có bảng
-       nào phải sửa.
+       của nó. 25/09 (wfb5): `_doi` nay uỷ quyền câu hỏi HÌNH DẠNG cho
+       `_bieu_thuc_s6_hop_le` (tức ngôn ngữ §6 đầy đủ), nên câu trả lời ở
+       đây theo sát ngôn ngữ §6 — không còn dừng ở đúng một dạng
+       `nodes.<id>.output.<cổng>` đơn. Ngày ai đó nới/thu hẹp `_doi` thêm
+       nữa, câu trả lời ở đây **tự đổi theo**, không có bảng nào phải sửa.
 
     ⚠️ Chỉ trả lời về HÌNH DẠNG biểu thức. Tổ tiên và cổng tồn tại là câu hỏi
-       khác, do `CauTruc` trả lời.
+       khác, do `CauTruc` trả lời. Và hình dạng ở đây là hình dạng lúc
+       PUBLISH — không hứa hẹn `giai_tham_so` đọc được nó lúc CHẠY (xem ghi
+       chú trong `_doi`).
     """
     try:
         _doi({"_": "{{ %s }}" % bieu_thuc}, "")
