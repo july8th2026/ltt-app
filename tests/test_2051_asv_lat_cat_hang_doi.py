@@ -196,7 +196,20 @@ def test_chuoi_lat_cat_qua_hang_doi_ve_done_va_GIONG_mot_mach(
         if ten in TRAN_EP:
             assert giay <= lat_cat.HE_SO_TRAN * TRAN_EP[ten], (ten, giay)
     so_luot = {t: sum(1 for x, _ in luot if x == t) for t in TRAN_EP}
-    assert so_luot == {"content_process": SO_DOAN, "edit_plan": 3,
+    # ⭐ `edit_plan` nhuong sau mot LO, khong mot canh (25/09, lan `asv-toc-do`).
+    #    `LO_DOC_CANH` canh duoc hoi CUNG LUC, nen mot luot lat cat mang tron mot
+    #    lo: 3 canh / lo 2 = 2 luot. ⛔ Con so 2 o day KHONG duoc go tay — no
+    #    phai doc tu chinh hang so, neu khong no se troi khoi san pham.
+    #
+    # ⚠️ Va dung doc dong nay thanh "lat cat da noi ngan sach": tran thoi gian
+    #    cua mot luot KHONG doi (phep kiem (a) ngay tren van chot no). Mot lo hai
+    #    loi goi SONG SONG het xap xi thoi gian cua MOT loi goi, nen phan du
+    #    phong mot-don-vi cua `lat_cat` van du.
+    import math
+
+    from apps.auto_scan_video.giai_doan_ban_bien_tap import LO_DOC_CANH
+    assert so_luot == {"content_process": SO_DOAN,
+                       "edit_plan": math.ceil(3 / LO_DOC_CANH),
                        "voice_synthesis": SO_DOAN}, so_luot
 
     # Co che: moi luot mot job RIENG (dedupe `:nK`), `attempt` KHONG tang.

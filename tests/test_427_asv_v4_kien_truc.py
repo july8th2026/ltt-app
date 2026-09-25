@@ -59,12 +59,48 @@ CAM_HANG_DOI = ("ThreadPoolExecutor", "ProcessPoolExecutor", "multiprocessing",
 CAM_KHOA_GPU = ("gpu_lock", "GPULock", "khoa_gpu", "gpu_arbiter", "current_gpu")
 
 
+#: NGOAI LE DUY NHAT cua `CAM_HANG_DOI`: {tep: {ky_hieu, ...}}.
+#:
+#: 🔴 **Vi sao I1 duoc nhuong dung MOT o, va vi sao no khong phai mot lo hong.**
+#:
+#:    I1 cam "hang doi thu hai": khong app nao duoc TICH TRU viec, XEP LICH viec,
+#:    hay giu viec song qua doi mot job. `giai_doan_ban_bien_tap._doc_cac_canh`
+#:    khong lam mot trong ba dieu do — no gui **hai loi goi HTTP dong thoi ra may
+#:    B roi cho ca hai ve**, trong CUNG mot job, va moi lan ghi CSDL van tuan tu
+#:    tren phien chinh. Khong gi duoc xep hang, khong gi song qua job.
+#:
+#: ⭐ Va tran ≤ 2 request/model cua may B duoc chung minh boi HAI rao DOC LAP,
+#:    khong boi mot loi hua:
+#:      1. `pipeline.CHUOI`: `EDIT_PLAN` khai `tai_nguyen="llm_remote",
+#:         tai_nguyen_suat=1` ⇒ toan nen tang chi MOT job `llm_remote` chay mot
+#:         luc (`jobs._con_cho_tai_nguyen` + `UNIQUE(resource, slot)` cua
+#:         `ExecutionLease`);
+#:      2. trong job do, `max_workers=LO_DOC_CANH=2`.
+#:    1 job x 2 luong = **2 request**, khong bao gio hon. `test_3912` ghim ca hai.
+#:
+#: ⛔ Them mot o vao day la khai mot dieu ve CA HE: ⛔ dung lam the de "cho nhanh".
+#:    Mot app muon nhieu hon hai luong, hay muon giu viec lai, thi phai di qua
+#:    `platform_core.jobs` — do moi la cho cua hang doi.
+NGOAI_LE_HANG_DOI = {
+    "apps/auto_scan_video/giai_doan_ban_bien_tap.py": {"ThreadPoolExecutor"},
+}
+
+
 @pytest.mark.parametrize("slug", APP_ASV)
 def test_KHONG_hang_doi_thu_hai_o_BAT_KY_tep_nao_cua_BON_app(slug):
     """`test_421` kiem dieu nay cho MOT app, khong de quy. Day la ca bon, de quy."""
     for tep in _moi_tep_py(slug):
-        vp = _vi_pham(tep.read_text(encoding="utf-8"), CAM_HANG_DOI)
+        duoc = NGOAI_LE_HANG_DOI.get(
+            tep.relative_to(GOC).as_posix(), frozenset())
+        vp = [x for x in _vi_pham(tep.read_text(encoding="utf-8"), CAM_HANG_DOI)
+              if x not in duoc]
         assert vp == [], f"{tep.relative_to(GOC)} dung hang doi/lich rieng: {vp}"
+
+
+def test_ngoai_le_hang_doi_khong_tro_toi_mot_tep_da_bien_mat():
+    """⛔ Mot ngoai le tro toi tep khong con la mot cai cua mo ma khong ai thay."""
+    for duong in NGOAI_LE_HANG_DOI:
+        assert (GOC / duong).is_file(), f"ngoai le tro toi tep khong co: {duong}"
 
 
 @pytest.mark.parametrize("slug", APP_ASV)

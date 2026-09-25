@@ -52,10 +52,8 @@ GOC = Path(__file__).resolve().parent.parent
 if str(GOC) not in sys.path:
     sys.path.insert(0, str(GOC))
 
-try:
+if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-except Exception:                               # noqa: BLE001
-    pass
 
 NGUON = GOC / "docs/auto_scan_video_final/bang_chung/b1_chep_loi_moi"
 
@@ -138,7 +136,8 @@ def _model() -> str:
 
     try:
         return ai.model_cho(ai.DICH_THUAT)
-    except Exception:                           # noqa: BLE001
+    except Exception as e:                      # noqa: BLE001
+        print(f"[canh bao] khong doc duoc model dich: {type(e).__name__}")
         return ""
 
 
