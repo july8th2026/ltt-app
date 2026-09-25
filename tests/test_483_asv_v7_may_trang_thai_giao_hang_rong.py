@@ -89,7 +89,11 @@ def _run_da_chay_het(db, *, owner="u1", khoa_asset=None) -> AsvRun:
     db.flush()
     for g in pipeline.CHUOI:
         outputs = None
-        if g.ten == pipeline.RENDER:
+        # 🔴 Hien vat giao duoc nam o `IMAGE_FINISH` (b4 hai giai doan, 25/09):
+        #    `render` giao mot ban TRUNG GIAN — chua qua phep cat cua giai doan 2 —
+        #    nen `features.khoa_ket_qua` doc `IMAGE_FINISH`. Gieo o `render` lam
+        #    bai di duong "khong co hien vat" vi mot ly do KHAC han.
+        if g.ten == pipeline.IMAGE_FINISH:
             outputs = ({"khoa_asset": list(khoa_asset)} if khoa_asset is not None
                       else {"dat": True})
         db.add(AsvStage(run_id=run.id, owner_id=owner, stage=g.ten,

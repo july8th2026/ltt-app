@@ -86,7 +86,8 @@ def _run_da_chay_het(db, *, owner="u1") -> AsvRun:
     db.flush()
     for g in pipeline.CHUOI:
         outputs = None
-        if g.ten == pipeline.RENDER:
+        # 🔴 Hien vat giao duoc nam o `IMAGE_FINISH` (b4, 25/09) — xem N-57.
+        if g.ten == pipeline.IMAGE_FINISH:
             outputs = {"khoa_asset": [f"asv/{owner}/{run.id}/long-tieng.mp4"]}
         db.add(AsvStage(run_id=run.id, owner_id=owner, stage=g.ten,
                         status=STAGE_SUCCEEDED, fingerprint="", outputs=outputs))
@@ -155,7 +156,7 @@ def test_doan_CAN_SUA_lam_GIONG_va_HA_NGUON_chay_lai(db):
     # ⛔ Ha nguon phai di theo: mot ban tieng moi ma van dung ban dung cu la
     #    giao mot ban tron lan hai lan chay.
     for ten in (pipeline.TIMING_ALIGN, pipeline.COMPOSE, pipeline.RENDER,
-                pipeline.QC):
+                pipeline.IMAGE_FINISH, pipeline.QC):
         assert ten in dat_lai, f"{ten} phai bi vo hieu theo `voice_synthesis`"
 
     theo_ten = {s.stage: s for s in features.cac_giai_doan(db, run)}
@@ -263,7 +264,7 @@ def test_HET_VONG_thi_KHONG_lap_mai_va_KHONG_giet_lan_chay(db):
     # ly do bai nay dang kiem — xem ghi chu o `_run_da_chay_het`).
     for s in features.cac_giai_doan(db, run):
         s.status = STAGE_SUCCEEDED
-        if s.stage == pipeline.RENDER:
+        if s.stage == pipeline.IMAGE_FINISH:
             s.outputs = {"khoa_asset": [f"asv/{run.owner_id}/{run.id}/long-tieng.mp4"]}
     db.flush()
 
@@ -622,7 +623,8 @@ def test_doan_DICH_SAI_lam_CONTENT_PROCESS_va_ha_nguon_chay_lai(db):
     assert pipeline.CONTENT_PROCESS in dat_lai, (
         "`dich_sai` phai sua o `content_process`")
     for ten in (pipeline.VOICE_SYNTHESIS, pipeline.TIMING_ALIGN,
-                pipeline.COMPOSE, pipeline.RENDER, pipeline.QC):
+                pipeline.COMPOSE, pipeline.RENDER, pipeline.IMAGE_FINISH,
+                pipeline.QC):
         assert ten in dat_lai, f"{ten} phai bi vo hieu theo `content_process`"
 
     # 🔑 Va CHI doan bi bao sai moi bi mo lai — day moi la "pham vi nho nhat
