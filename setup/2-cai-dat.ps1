@@ -555,6 +555,92 @@ try {
     Write-Host "  [BO QUA] Khong cai duoc vieneu-venv: $($_.Exception.Message)" -ForegroundColor Yellow
 }
 
+Head 'Connector runner (Node.js): npm ci cho node piece.*'
+# ---------------------------------------------------------------------------
+# connector_runner\ chay cac node piece.* (Slack/GitHub/Telegram/Google Sheets,
+# platform_core/workflow/connector.py) qua MOT TIEN TRINH NODE rieng. No can
+# `node_modules` de `require('@activepieces/piece-*')` - thieu thi runner nem
+# "Cannot find module '@activepieces/piece-google-sheets/package.json'" va MOI
+# node connector CHET IM LANG tren production (do duoc 25/09/2026: repo khai 5
+# phu thuoc npm nhung khong buoc cai nao trong TOAN BO `setup/2-cai-dat.ps1`
+# cai chung, va `git ls-files connector_runner/node_modules` rong - Git khong
+# theo doi thu muc do).
+#
+# !! O NGOAI app\ (tai $Root\connector_runner), GIONG het venv\, whisperx-venv,
+#    vieneu-venv - KHONG cai truc tiep vao app\connector_runner:
+#
+#    1. `app\` BI THAY TOAN BO moi lan deploy (Move-Item + robocopy o duoi).
+#       Cai vao do la cai LAI TU DAU moi lan, dung trong cua so dich vu da dung.
+#    2. Robocopy o `Head 'Copy ma nguon'` loai `node_modules` BANG TEN o MOI
+#       cap (`/XD ... node_modules ...`) de khong chep node_modules cua
+#       frontend/* (~700 MB rac build-time). Robocopy khop THEO TEN thu muc,
+#       khong theo duong dan, nen KHONG CO CACH mien tru rieng cho
+#       `connector_runner\node_modules` trong CUNG mot lenh robocopy do ma
+#       khong mo lai duong cho frontend. Mot thu muc TACH KHOI app\ tranh xung
+#       dot nay hoan toan, khong can va cham /XD.
+#    3. `connector.py:THU_MUC_RUNNER` da doc `LTT_CONNECTOR_RUNNER` tu moi
+#       truong san (khong can co che moi) - script chi can tro no toi day.
+#
+# !! CHAY TRUOC `Head 'Copy ma nguon'` (TRUOC Stop-Service dau tien o duoi),
+#    CUNG MOT LY DO voi WhisperX/Voice o tren
+#    (`test_viec_dai_khong_nam_trong_cua_so_ngung_dich_vu` +
+#    Plan `2026-09-25-wf-v2-VAN-HANH.md` muc 6, no 6: "phep kiem dat SAU diem
+#    khong quay lai thi no khong phai cong, no la cao pho"). `npm ci` goi
+#    mang (npm registry) va CO THE that bai; that bai o day chi la CANH BAO
+#    (dich vu chay tiep, thieu node piece.* nhu hien nay) nhung PHAI xay ra
+#    TRUOC khi dich vu bi dung - mot loi mang khong duoc phep bien thanh mot
+#    lan downtime khong can thiet.
+#
+# !! Node co san tren may khong? DO bang Get-Command, KHONG gia dinh va KHONG
+#    tu cai Node - ngoai pham vi script nay (khac PostgreSQL/NSSM: nhung cai
+#    do co nguon tai chinh thuc + im lang tren toan bo may; tu tai Node co the
+#    dam vao ban Node khac ai do dang dung cho viec khac tren cung may).
+$connSrc  = Join-Path $srcChep 'connector_runner'
+$connRoot = Join-Path $Root 'connector_runner'
+$connReady = $false
+if (-not (Test-Path (Join-Path $connSrc 'package.json'))) {
+    Note 'Ban giao khong co connector_runner/package.json - BO QUA (khong phai loi)'
+} else {
+    $nodeCmd = Get-Command node -ErrorAction SilentlyContinue
+    $npmCmd  = Get-Command npm -ErrorAction SilentlyContinue
+    if (-not $nodeCmd -or -not $npmCmd) {
+        Note 'KHONG THAY Node.js/npm tren may nay - BO QUA cai connector_runner.'
+        Note 'Node piece.* (Slack/GitHub/Telegram/Google Sheets) se KHONG chay duoc.'
+        Note 'Cai Node.js LTS thu cong (script nay KHONG tu cai) roi chay lai script.'
+    } else {
+        try {
+            # Chep MA NGUON (khong node_modules - /XD loai no o day, npm ci
+            # sinh lai ben duoi) vao thu muc song ngoai app\.
+            $rcConn = robocopy $connSrc $connRoot /E /NFL /NDL /NJH /NJS /NP /R:2 /W:2 /XD node_modules
+            if ($LASTEXITCODE -ge 8) { throw "robocopy connector_runner loi (ma $LASTEXITCODE)" }
+            $global:LASTEXITCODE = 0
+            if (-not (Test-Path (Join-Path $connRoot 'package-lock.json'))) {
+                Note 'connector_runner thieu package-lock.json - BO QUA npm ci (can commit khoa phu thuoc truoc)'
+            } else {
+                # `npm ci`, KHONG `npm install`: package-lock.json da commit nen
+                # `ci` tai lap DUNG phien ban da khoa allowlist.json doi hoi
+                # (connector.py: lech phien ban -> loi `phien_ban_lech`). `install`
+                # co the keo ban va minor/patch khac ban da thu o dev - dung dang
+                # sai lech ta dang tim cach ngan.
+                Push-Location $connRoot
+                Invoke-Ngoai { & npm ci --omit=dev --no-audit --no-fund }
+                $maNpm = $LASTEXITCODE
+                Pop-Location
+                $global:LASTEXITCODE = 0
+                if ($maNpm -ne 0) {
+                    Note 'npm ci connector_runner THAT BAI - node piece.* se khong chay duoc lan nay.'
+                    Note 'Kiem mang/npm registry roi chay lai script (an toan, chay lai duoc nhieu lan).'
+                } else {
+                    $connReady = $true
+                    Ok 'connector_runner: npm ci xong'
+                }
+            }
+        } catch {
+            Write-Host "  [BO QUA] Cai connector_runner loi: $($_.Exception.Message)" -ForegroundColor Yellow
+        }
+    }
+}
+
 Head 'Copy ma nguon'
 # Dung dich vu truoc khi dong vao app\. Khi chay LAI tren may dang phuc vu that,
 # python.exe cua service khoa file trong app\ -> Move-Item/robocopy that bai
@@ -815,6 +901,20 @@ $envTxt = [IO.File]::ReadAllText($envFile)
 if ($envTxt -notmatch '(?m)^LTT_HF_TOKEN=') {
     [IO.File]::AppendAllText($envFile, "`r`nLTT_HF_TOKEN=`r`n", (New-Object Text.UTF8Encoding($false)))
     Ok 'Da them placeholder LTT_HF_TOKEN (Pyannote chi bat khi operator dien token)'
+}
+
+# `$connReady` va `$connRoot` sinh o khoi 'Connector runner (Node.js)' TRUOC
+# Stop-Service - phai ghi vao app.env O DAY vi $envFile chi ton tai tu doan
+# 'Sinh bi mat' o tren. $connRoot KHONG DOI giua cac lan chay (luon la
+# `$Root\connector_runner`) nen chi can them MOT LAN, giong LTT_WHISPERX_PYTHON.
+$envTxt = [IO.File]::ReadAllText($envFile)
+if ($connReady -and ($envTxt -notmatch '(?m)^LTT_CONNECTOR_RUNNER=')) {
+    [IO.File]::AppendAllText($envFile, "`r`nLTT_CONNECTOR_RUNNER=$connRoot`r`n", (New-Object Text.UTF8Encoding($false)))
+    Ok "Da them LTT_CONNECTOR_RUNNER=$connRoot vao app.env"
+} elseif ($envTxt -match '(?m)^LTT_CONNECTOR_RUNNER=') {
+    Ok 'LTT_CONNECTOR_RUNNER da co - GIU NGUYEN'
+} else {
+    Note 'connector_runner chua san sang (xem canh bao o tren) - LTT_CONNECTOR_RUNNER chua duoc dat'
 }
 
 Head 'PostgreSQL'
