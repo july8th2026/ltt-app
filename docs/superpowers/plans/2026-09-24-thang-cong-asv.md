@@ -259,7 +259,7 @@ Mắt xích hạng B chỉ cần **không chặn** lượt đó.
 | 6 | `voice_synthesis` | B4 | WER lượt cuối + PESQ | WER p50 ≤ 0,12 · PESQ ≥ 2,0 | chưa viết chi tiết |
 | 1 | `media_prepare` | B5 | tệp ra giải mã được, thời lượng khớp | 4/4 phim | chưa viết chi tiết |
 | 4 | `edit_plan` | B6 | số cảnh khớp đo trực tiếp (N-07) | lệch ≤ 10% | chưa viết chi tiết |
-| 7 | `timing_align` | B7 | tỉ lệ câu vừa khe; trôi dồn cuối | ≥ 90% vừa khe | chưa viết chi tiết |
+| 7 | `timing_align` | B7 | tỉ lệ câu vừa khe; trôi dồn cuối | ≥ 90% vừa khe | đo NỀN xong (N-48..N-50), câu hỏi mở chờ E2E — xem §D5 nền dưới |
 | 8 | `compose` | B8 | LUFS · đỉnh dBTP | −14 ± 1 LUFS · ≤ −1,0 dBTP | chưa viết chi tiết |
 | 9 | `render` | B9 | VMAF (nhánh nvenc — **chưa đo bao giờ**) | VMAF ≥ 75 | chưa viết chi tiết |
 | 10 | `qc` | B10 | T1–T18 | 0 mục hỏng | chưa viết chi tiết |
@@ -267,6 +267,54 @@ Mắt xích hạng B chỉ cần **không chặn** lượt đó.
 | 12 | `qc_ai` | B12 | tỉ lệ báo động giả (đo ở B2) | ≤ 15% | phụ thuộc B2 |
 
 ⚠️ Chi tiết thi hành của B3–B12 **viết khi tới**, vì kết quả B1/B2 sẽ đổi cách làm chúng.
+
+---
+
+## §D5 nền — đo `timing_align` (B7) bằng thời lượng ĐO THẬT (25/09, làn `d5-nen`)
+
+> Đo qua đúng `apps/auto_scan_video/thoi_gian.py::lap_ke_hoach` (không viết lại
+> phép tính nào), 188 đoạn của 3 phim (v1 83 · v2 74 · v3 31,
+> `docs/auto_scan_video_final/bang_chung/b2_dich_nen/{v1,v2,v3}_nen.json`), thời
+> lượng tiếng **đo thật** (WAV đã sinh) thay cho mô hình `3,284 âm tiết/giây`.
+> Không sinh tiếng lại cho v3 (tái dùng WAV lượt trước, cùng giọng/preset).
+> Script + JSON kết quả nằm ở scratchpad phiên (không vào cây) — ba kết quả dưới
+> đây **đã chốt**, không cần đo lại.
+
+**N-48 — `cat_bot_ms = 0` ở MỌI phim, MỌI mức `TY_LE_MUON_KHOANG_LANG` đã quét
+(0,70→1,00): trên dữ liệu đo thật, sản phẩm KHÔNG BAO GIỜ mất lời thoại.** Trần
+cứng nợ trôi (`TRAN_TROI_SO_DOAN=3`) chưa từng bị chạm. ⇒ Khối mã cắt-bớt-đoạn
+trong `lap_ke_hoach` là nhánh **chưa bao giờ chạy** trên dữ liệu thật — cùng họ
+*"mã phòng thủ cho ca không thể xảy ra"*, không phải lý do xoá.
+
+**N-49 — mô hình `3,284 âm tiết/giây` phóng đại nặng; production không dùng nó
+để quyết định gì.** v1 % cần nén: mô hình `75,6%` vs đo thật `21,9%`. Mô hình còn
+gây **cắt ảo**: 20,4s (v2, 8 đoạn) + 21,4s (v3, 7 đoạn) — không tồn tại trên dữ
+liệu thật (xem N-48).
+
+**N-50 — đòn bẩy `TY_LE_MUON_KHOANG_LANG` (0,7→1,0, mượn từ SoniTranslate cho
+trường hợp khác-người-nói — sản phẩm này MỘT giọng, lý do mượn không còn đúng)
+KHÔNG đủ để giải quyết trôi tích luỹ ở v2/v3.** Quét hết mức (giá = toàn bộ
+nhịp nghỉ, 0% giữ chắc): trôi đỉnh chỉ giảm v2 **−1,7%** / v3 **−17%**; số đoạn
+`troi_sau_ms>1s` không giảm hết (v2 dao động phi đơn điệu 30→30→36→33; v3 đứng
+yên 26/26 ở mọi mức). ⛔ Đừng nới thêm hằng số này để đuổi theo phần còn lại.
+
+**CÂU HỎI CÒN MỞ (⛔ chưa đo lại bằng cách quét thêm hằng số nào — chỉ lượt E2E
+thật, đang chạy ở làn khác, trả lời được):** 42/56 đoạn `troi_sau_ms>1s` đã là
+`CAN_SUA` theo đúng `nan_cho_vua.ket_luan` (bậc thang sẽ viết lại NGẮN HƠN
+**trước khi** tới `lap_ke_hoach` trong pipeline thật) — tức phần lớn "trôi 8s"
+đo được là trạng thái TRƯỚC KHI SỬA, không phải thứ khách nhận. Còn lại **14
+đoạn** ("vừa khe riêng của chính nó, vẫn trôi > 1s" — 10 ở v2, 4 ở v3) thừa
+hưởng nợ từ các đoạn phía trước, phần lớn nằm trong 42 đoạn `CAN_SUA` đó.
+**14 đoạn này có tự hết khi 42 đoạn kia được nấc 2 viết lại không?** Không đo
+được trên dữ liệu CHƯA sửa.
+
+**⚠️ Bẫy phương pháp (đắt hơn cả ba kết quả N-48..N-50):** phép đo B7 ở trên nạp
+thời lượng tiếng tổng hợp **thẳng** vào `lap_ke_hoach`, bỏ qua bậc thang sửa
+chữa `nan_cho_vua.py` (chạy TRƯỚC `lap_ke_hoach` trong pipeline thật) — tức đo
+một dây chuyền **không có** bậc thang sửa chữa rồi đọc kết quả như thể đó là
+sản phẩm. Cùng họ *"đọc thứ đại diện thay vì đọc thứ thật"*. N-48/N-49/N-50 vẫn
+**đúng** (chúng đo đúng đường `lap_ke_hoach` thật sẽ đi qua, dù đầu vào đã qua
+nấc 2 hay chưa) — câu hỏi mở ở trên thì **không**, nó cần đầu vào đã qua nấc 2.
 
 ---
 
