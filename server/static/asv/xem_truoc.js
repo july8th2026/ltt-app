@@ -24,7 +24,6 @@
   var tenTep = document.getElementById("asv-tep-ten");
   var uocTien = document.getElementById("asv-uoc-tien");
   var uocGio = document.getElementById("asv-uoc-gio");
-  var nutBatDau = document.getElementById("asv-batdau");
   var oVe = document.getElementById("asv-ve");
 
   function moTep() {
@@ -65,14 +64,17 @@
     var tran = parseInt(
       (duocBenVung ? (oVe && oVe.getAttribute("data-tran-ben-vung"))
                    : form.getAttribute("data-tran-mb")) || "0", 10);
+    /* ⚠️ KHONG ghi `#asv-batdau.disabled` o day nua. Xem so ly do o
+     *    `asv/nen.js`: mot thuoc tinh, mot nguoi ghi (`asv/thanh.js`). */
     if (tran > 0 && f.size > tran * 1024 * 1024) {
       /* Kieu khong di duoc duong ben vung thi noi RO ly do: doi sang MP4 la
          dung duoc ngay, con "cat ngan video" thi khong giai quyet gi. */
       chu(tenTep, f.name + " · "
           + t(duocBenVung ? "vuot_tran" : "vuot_tran_kieu", {mb: tran}));
-      if (nutBatDau) nutBatDau.disabled = true;
-    } else if (nutBatDau) {
-      nutBatDau.disabled = false;
+      ASV.datChan("tep_lon", duocBenVung ? "vuot_tran" : "vuot_tran_kieu",
+                  {mb: tran});
+    } else {
+      ASV.datChan("tep_lon", "");
     }
   }
 

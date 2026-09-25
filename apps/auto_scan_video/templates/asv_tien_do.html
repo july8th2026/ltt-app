@@ -46,6 +46,14 @@
       <div class="asv-hanh-dong">
         <a class="btn primary" href="{{ app.route_prefix }}/run/{{ run.id }}/tai">
           {{ _("Tải video") }}</a>
+        {# ⭐ `.srt` da duoc sinh ra, luu **khong co han** va goi ten la MOT BAN
+             GIAO tu `giai_doan_ket_xuat` — va cho tan hom nay khong co mot nut
+             nao dan toi no. Khach xin xuat SRT, tra tien cho no, roi khong bao
+             gio nhan duoc no. Xem `features.khoa_phu_de`. #}
+        {% if co_phu_de %}
+          <a class="btn ghost" href="{{ app.route_prefix }}/run/{{ run.id }}/tai-phu-de"
+             download>{{ _("Tải phụ đề (.srt)") }}</a>
+        {% endif %}
         {# ⭐ Nap lai cai dat cua CHINH lan chay nay. Quyen so huu duoc giai o
            may chu (`trang_chinh` goi `_run_cua_toi`), khong o day — mot `run_id`
            trong URL la mot chuoi khach sua duoc. #}
