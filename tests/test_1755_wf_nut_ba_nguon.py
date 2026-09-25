@@ -52,7 +52,12 @@ def test_nguon_piece_MAC_DINH_rong_va_allowlist_CO_TRAN(monkeypatch):
     # 🔑 Vế bền: loader tính theo piece **NẠP**, ⛔ không theo catalog (730
     #    piece). Một allowlist không trần thì "allowlist" chỉ là một cái tên.
     ds = nut.NGUON_PIECE()
-    assert isinstance(ds, list) and len(ds) <= 20, (
+    # ⭐ 25/09 (vong P-C): tu 4 len 7 piece (them google-drive, gmail, notion)
+    #    va 17 -> 32 node/trigger — mot mo rong CO REVIEW (xem allowlist.json
+    #    `palette`), khong phai catalog 730 piece tran vao. Tran nang tu 20
+    #    len 60: van bat duoc ca tran-thuc (730) neu no lot vao, nhung khong
+    #    no lai moi lan them mot piece thuc dung.
+    assert isinstance(ds, list) and len(ds) <= 60, (
         f"allowlist phai CO TRAN, dang co {len(ds)} piece — neu catalog da tran "
         f"vao day thi chi phi nap khong con theo so piece dung that")
     nd = nut.tu_piece({
