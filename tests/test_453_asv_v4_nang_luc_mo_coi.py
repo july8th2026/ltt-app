@@ -202,8 +202,14 @@ MO_COI_DA_BIET = frozenset({
     #
     #    🔴 Cửa lỗi cho khách (G-04) **chưa ai nối**. Plan Task 2 khai sản phẩm là
     #       `pipeline.ma_loi_la(ma)` — hàm đó ⛔ **chưa hề tồn tại**. Và chính
-    #       `ma_loi.py` tự viết: *"`HOAN_CREDIT` CHƯA CÓ NGƯỜI ĐỌC"*. ⇒ Khách gặp
-    #       lỗi sẽ ⛔ không nhận được câu nào — sổ mã có, mà không ai đọc nó ra.
+    #       ⇒ Khách gặp lỗi sẽ ⛔ không nhận được câu nào — sổ mã có, mà không ai
+    #       đọc nó ra.
+    #
+    #    ⭐ 25/09: nửa **tiền** của lỗ hổng này đã đóng theo một đường khác. Giá
+    #       phẳng thu tiền **chỉ khi** lần chạy về `done` VÀ có hiện vật giao được,
+    #       nên mọi lỗi đều hoàn 100 % — bảng `ma_loi.HOAN_CREDIT` (chưa ai đọc) đã
+    #       bị xoá cùng lúc. Còn lại đúng nửa **câu chữ**: khách vẫn chưa đọc được
+    #       lý do. ⛔ Đừng đọc việc xoá đó thành "N-32 đã đóng".
     #
     #    ⛔ HOÃN CÓ CHỦ Ý (điều phối chốt 25/09), hai lý do: (a) đây là **tính năng
     #       chạm khách**, ⛔ không phải việc dọn bánh cóc; (b) chủ dự án vừa thu hẹp

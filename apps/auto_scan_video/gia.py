@@ -121,7 +121,7 @@ PHUT_TOI_THIEU = 1
 #:    nhat de mat long tin."*
 #:
 #: ⛔ `N_` chu khong `_t`: hang so cap MODULE. `_t` o day dong bang ngon ngu cua
-#:    request DAU TIEN vao mot bien toan cuc — xem `quan_sat.NHAN_NANG_LUC`.
+#:    request DAU TIEN vao mot bien toan cuc — xem `routes.NHAN_GIAI_DOAN`.
 #:
 #: ⭐ `{don_gia}` duoc dien tu `GIA_CREDIT_MOI_PHUT` luc chay (`luat_lam_tron()`),
 #:    ⛔ khong go so trong cau: mot con so go trong mot cau la mot ban khai thu hai.

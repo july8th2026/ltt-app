@@ -340,14 +340,34 @@ def test_CHI_THU_KHI_GIAO_DUOC_la_MOT_luat_khong_phan_loai_loi_cua_ai():
     ⇒ Tap nay phai chi co `done`. Mot ngay nao do them `error` vao day thi bai nay
       do, va nguoi them phai doc lai `N-21`.
     """
+    import ast
+    import textwrap
+
+    from apps.auto_scan_video import ma_loi
+
     assert features.CHI_THU_KHI_GIAO_DUOC == frozenset({RUN_DONE})
 
-    nguon = inspect.getsource(features.quyet_toan)
-    assert "CHI_THU_KHI_GIAO_DUOC" in nguon
+    # ⛔ Doc MA, ⛔ khong doc van xuoi: docstring cua `quyet_toan` **noi ve** nhung
+    #    cai ten bi cam de giai thich vi sao chung bi cam.
+    cay = ast.parse(textwrap.dedent(inspect.getsource(features.quyet_toan)))
+    ham = cay.body[0]
+    if (ham.body and isinstance(ham.body[0], ast.Expr)
+            and isinstance(ham.body[0].value, ast.Constant)):
+        ham.body = ham.body[1:]
+    ten = {n.attr for n in ast.walk(ham) if isinstance(n, ast.Attribute)}
+    ten |= {n.id for n in ast.walk(ham) if isinstance(n, ast.Name)}
+
+    assert "CHI_THU_KHI_GIAO_DUOC" in ten
+    assert "co_hien_vat_giao_duoc" in ten
     for cam in ("phan_loai", "HOAN_CREDIT", "NGUOI_DUNG"):
-        assert cam not in nguon, (
+        assert cam not in ten, (
             f"`quyet_toan` phan loai loi bang {cam} — xem docstring cua "
             f"`CHI_THU_KHI_GIAO_DUOC`")
+
+    # ⭐ Va bang phan biet "ma nao duoc hoan" da bi XOA (25/09): duoi gia phang moi
+    #    ket cuc khong-giao-duoc deu hoan 100 %, nen mot bang nhu vay phan biet
+    #    giua hai thu giong het nhau. ⛔ Dung dung lai no.
+    assert not hasattr(ma_loi, "HOAN_CREDIT")
 
 
 def _dat_lan_chay_da_giao(db, run, giay: float) -> None:
@@ -427,15 +447,12 @@ def _cac_module_asv():
 #: Moi hang so hinh-dang-gia trong `apps/auto_scan_video`, kem LY DO no duoc phep
 #: ton tai. ⛔ Mot ten moi lot vao day phai duoc giai thich, ⛔ khong duoc lam mo di
 #: bang mot regex hep hon.
+#:
+#: ⭐ 25/09: `manifest.GIA_THU_MOI_RUN = 1` da bi **xoa** — hang "gia tam" tu pha 05,
+#:    `grep` ca kho chi ra dung dong khai no va ⛔ khong mot nguoi doc nao.
 GIA_DUOC_PHEP = {
-    # ⭐ Ban khai DUY NHAT cua gia.
+    # ⭐ Ban khai DUY NHAT cua gia, trong toan bo app.
     "gia.py:GIA_CREDIT_MOI_PHUT",
-    # ⚠️ Hang "gia tam" tu pha 05 (*"mot gia khac 0 de duong tien duoc chay
-    #    that"*). ⛔ KHONG AI DOC no — `grep` ca kho chi ra dung dong khai. No nam
-    #    trong danh sach "co the thua" giao chu du an quyet, nen no duoc khai o day
-    #    kem ly do thay vi bi mot regex che di. ⛔ Neu mot ngay no co nguoi doc thi
-    #    do la mot bang gia THU HAI, va luc ay phep kiem duoi chan lai.
-    "manifest.py:GIA_THU_MOI_RUN",
 }
 
 
@@ -456,19 +473,16 @@ def test_DON_GIA_duoc_khai_dung_MOT_lan_trong_ca_app():
                     khai.add(f"{p.name}:{dich.id}")
     assert khai == GIA_DUOC_PHEP, khai
 
-    # ⛔ Va `GIA_THU_MOI_RUN` phai VAN khong co nguoi doc: mot hang gia khong ai
-    #    doc la ma chet; mot hang gia CO nguoi doc la mot bang gia thu hai.
+    # ⛔ Va hang "gia tam" cu ⛔ khong duoc song lai o bat cu dau.
     toi = Path(__file__).resolve()
-    doc = []
+    con = []
     for goc_con in ("apps", "platform_core", "server", "tools", "tests"):
         for p in (GOC / goc_con).rglob("*.py"):
             if "__pycache__" in p.parts or p.resolve() == toi:
                 continue
-            if p.name == "manifest.py" and p.parent.name == "auto_scan_video":
-                continue                     # cho KHAI, khong phai cho doc
             if "GIA_THU_MOI_RUN" in p.read_text(encoding="utf-8"):
-                doc.append(str(p.relative_to(GOC)))
-    assert doc == [], f"`GIA_THU_MOI_RUN` da co nguoi doc: {doc}"
+                con.append(str(p.relative_to(GOC)))
+    assert con == [], f"`GIA_THU_MOI_RUN` da song lai o: {con}"
 
 
 def test_MOI_loi_giu_cho_deu_di_qua_gia_tinh_credit():

@@ -437,6 +437,11 @@ def _kiem_khong_tinh_hai_lan(db: Session, run: AsvRun) -> None:
 def tong_da_dung(db: Session, run: AsvRun) -> int:
     """Tong chi phi **DO DUOC**. Khong tinh lai tu bang gia (ADR-001 D4).
 
+    🔑 **Tu 25/09/2026 con so nay ⛔ KHONG con quyet dinh so tien khach tra** — gia
+       phang lam viec do (`gia.tinh_credit`). No la **chi phi cua TA**, va con hai
+       nguoi doc: `kiem_tran_chi` (tran chi cua mot lan chay) va ban van hanh
+       (*"cho nao dang dot tien"*). ⛔ Dung doc no thanh "so se thu".
+
     Hai muc, theo D-V4-12:
 
         giai doan CO don vi viec  -> tong `credit_actual` cua cac don vi
@@ -496,8 +501,9 @@ def kiem_tran_chi(db: Session, run: AsvRun, them: int) -> None:
 #:    `NGUOI_DUNG` cho ca **that bai cuoi cung cua may** — chinh docstring cua no
 #:    ghi: *"`NGUOI_DUNG` o day khong noi 'loi cua khach'"*. Dung mot nhan da tu
 #:    khai la mo ho lam can cu THU TIEN la thu tien theo mot thu khong co nghia
-#:    do. `ma_loi.HOAN_CREDIT` cung chua co nguoi doc va chi phu 3 trong 12 mat
-#:    xich, nen no khong du lam cong.
+#:    do. `ma_loi` tung mang mot bang `HOAN_CREDIT` khai *"ma nao duoc hoan"*, chua
+#:    ai doc va chi phu 3 trong 12 mat xich; no da bi **xoa** 25/09 vi luat duoi
+#:    day bao trum han no — moi ket cuc khong-giao-duoc deu hoan 100 %.
 #:
 #: ⇒ MOT luat, khong ngoai le: **giao duoc thi thu, khong giao duoc thi khong.**
 #:   `cancelled` cung khong thu — khach khong nhan gi.
