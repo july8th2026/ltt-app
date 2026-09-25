@@ -13,6 +13,9 @@
     "@activepieces/piece-slack": "0.20.0",
     "@activepieces/piece-github": "0.9.0",
     "@activepieces/piece-telegram-bot": "0.7.0",
-    "@activepieces/piece-google-sheets": "0.17.0"
+    "@activepieces/piece-google-sheets": "0.17.0",
+    "@activepieces/piece-google-drive": "0.9.2",
+    "@activepieces/piece-gmail": "0.17.0",
+    "@activepieces/piece-notion": "0.7.1"
   }
 }

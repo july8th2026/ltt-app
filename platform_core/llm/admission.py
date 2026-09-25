@@ -131,6 +131,73 @@ def _aware(value: datetime) -> datetime:
     return value
 
 
+#: Hạn mồ côi RIÊNG của từng `ExecutionLease.mode`. Mode ngoài bảng rơi vào
+#: `ORPHAN_TIMEOUT` — `apps/video_crawler/kho_tai_khoan.py` cố ý khai một mode
+#: ngoài bảng để KHÔNG bị hạn 300 s của `job` áp lên một lượt tải dài.
+HAN_THEO_MODE: dict[str, timedelta] = {
+    "stream": ORPHAN_TIMEOUT_STREAM,
+    "job": ORPHAN_TIMEOUT_JOB,
+    "sync": ORPHAN_TIMEOUT_SYNC,
+}
+
+
+def han_mo_coi(mode: Optional[str],
+               *, timeout: timedelta = ORPHAN_TIMEOUT) -> timedelta:
+    """🔑 NGUỒN CHÂN LÝ DUY NHẤT cho "lease `mode` này sống được bao lâu không nhịp".
+
+    🔴 VÌ SAO NÓ TỒN TẠI — KHOÁ CHẾT tái hiện trên worker production 25/09/2026.
+
+       Trước đó hai bên tự tính, và hai bên đọc hai con số khác nhau cho **cùng
+       một câu hỏi**:
+
+           reclaim_expired                : ORPHAN_TIMEOUT_JOB  = 300 s
+           jobs._con_cho_tai_nguyen       : ORPHAN_TIMEOUT      = 1200 s
+
+       Với một lease `mode='job'` mà chủ đã chết, khe 5 → 20 phút có tính chất
+       này: bộ lọc nạp cơ hội của `jobs.claim` **vẫn tính lease là còn sống** ⇒
+       mọi job trên tài nguyên ấy bị **giấu** khỏi `claim` ⇒ không worker nào
+       nhặt ⇒ `acquire`/`_giu_slot_trong` — **thứ duy nhất** gọi
+       `reclaim_expired` trên đường nóng — **không bao giờ tới** ⇒ lease không
+       được thu hồi.
+
+       ⭐ Vòng tròn: thứ duy nhất dọn được lease treo lại bị gác **sau chính cái
+          lease ấy**. Hàng đợi chết đứng 15 phút (`tests/test_4400`).
+
+    ⇒ ⛔ ĐỪNG tự tính lại `now - <một hằng nào đó>` ở bất cứ đâu. Gọi hàm này
+      (hoặc `bieu_thuc_lease_con_song` khi cần một biểu thức SQL). Hai chỗ khai
+      cùng một điều là hai con số sẽ trôi khỏi nhau, và không ai bắt khớp.
+
+    `min` chứ không thay thẳng: người gọi truyền `timeout` NGẮN hơn (dọn tay)
+    thì ý họ vẫn phải thắng — tính chất đã khai từ L-11.
+    """
+    rieng = HAN_THEO_MODE.get(str(mode or ""))
+    return timeout if rieng is None else min(timeout, rieng)
+
+
+def moc_lease_con_song(mode: Optional[str], *, now: Optional[datetime] = None,
+                       timeout: timedelta = ORPHAN_TIMEOUT) -> datetime:
+    """Mốc `heartbeat_at` mà một lease `mode` ấy phải vượt để còn được coi là SỐNG."""
+    return (now or _now()) - han_mo_coi(mode, timeout=timeout)
+
+
+def bieu_thuc_lease_con_song(cot_mode, cot_heartbeat, *,
+                             now: Optional[datetime] = None,
+                             timeout: timedelta = ORPHAN_TIMEOUT):
+    """Biểu thức SQL: lease này còn sống — nhịp tim chưa quá hạn **CỦA MODE NÓ**.
+
+    Cùng `han_mo_coi` là một nguồn; bên nào cần lọc trong SQL (bộ lọc suất của
+    `jobs.claim`) gọi cái này thay vì dựng một ngưỡng riêng.
+    """
+    from sqlalchemy import case, literal
+
+    luc = now or _now()
+    nhanh = {m: literal(moc_lease_con_song(m, now=luc, timeout=timeout))
+             for m in HAN_THEO_MODE}
+    moc = case(nhanh, value=cot_mode,
+               else_=literal(moc_lease_con_song(None, now=luc, timeout=timeout)))
+    return cot_heartbeat >= moc
+
+
 def reclaim_expired(
     db: Session,
     *,
@@ -138,22 +205,17 @@ def reclaim_expired(
     timeout: timedelta = ORPHAN_TIMEOUT,
 ) -> int:
     """Xoá lease mồ côi trong transaction hiện tại và trả số dòng đã xoá."""
-    cutoff = _now() - timeout
-    # 🔴 L-11: lease `stream` có thời hạn RIÊNG, ngắn hơn nhiều. Xem
-    #    `ORPHAN_TIMEOUT_STREAM`. Dùng `min` chứ không thay thẳng: người gọi
-    #    truyền `timeout` ngắn hơn (ví dụ dọn tay) thì ý họ vẫn phải thắng.
-    cutoff_stream = _now() - min(timeout, ORPHAN_TIMEOUT_STREAM)
-    cutoff_job = _now() - min(timeout, ORPHAN_TIMEOUT_JOB)
-    cutoff_sync = _now() - min(timeout, ORPHAN_TIMEOUT_SYNC)
+    luc = _now()
     query = db.query(ExecutionLease)
     if resource:
         query = query.filter(ExecutionLease.resource == resource)
     leases = query.all()
-    #: `min(...)` ở cả hai vế trên, chứ không thay thẳng: người gọi truyền
-    #: `timeout` NGẮN hơn (dọn tay) thì ý họ vẫn phải thắng.
-    _han = {"stream": cutoff_stream, "job": cutoff_job, "sync": cutoff_sync}
+    # 🔑 MỘT nguồn cho "còn sống": `han_mo_coi`. `jobs._con_cho_tai_nguyen` đọc
+    #    cùng hàm đó (qua `bieu_thuc_lease_con_song`), nên hai đường ⛔ không thể
+    #    lệch nhau nữa — xem docstring của `han_mo_coi`, khoá chết 25/09.
     expired = [lease for lease in leases
-               if _aware(lease.heartbeat_at) < _han.get(lease.mode, cutoff)]
+               if _aware(lease.heartbeat_at)
+               < moc_lease_con_song(lease.mode, now=luc, timeout=timeout)]
     for lease in expired:
         db.delete(lease)
     if expired:

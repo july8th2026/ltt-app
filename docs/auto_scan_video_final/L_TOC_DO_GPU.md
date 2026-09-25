@@ -93,7 +93,38 @@ trinh rieng** cua `C:\LTTPlatform\venv` (venv cua WORKER), card ghim bang
 | demucs htdemucs | CPU, 4 luong | 71,99 | — | — | +3 MiB | 1.909 MB |
 | faster-whisper large-v3 | **GPU fp16** | **47,25** | 5,78 | **37,66** | **+5.221 MiB** | 3.737 MB |
 | faster-whisper large-v3 | CPU int8 | 250,64 | 7,58 | 240,96 | +27 MiB | 3.656 MB |
-| **WhisperX** (duong san pham) | **GPU fp16** | **64,64** | (2 model) | — | **+6.334 MiB** | 3.777 MB |
+| **WhisperX** (~~duong san pham~~ → xem 🔴 ngay duoi) | **GPU fp16** | **64,64** 🔴(\*) | (2 model) | — | **+6.334 MiB** | 3.777 MB |
+
+> 🔴 **(\*) DINH CHINH 25/09/2026 — con so 64,64 s DUNG, nhung nhan "duong san
+> pham" thi SAI: duong WhisperX CHUA BAO GIO chay tren worker that.**
+>
+> Phep do o bang nay chay trong mot **tien trinh rieng** do bo do khoi dong
+> (`CUDA_VISIBLE_DEVICES=<UUID>`, venv worker) — tuc no thua **USER Path**, noi
+> co `ffmpeg`. Worker thi khong.
+>
+> Ca that, tai hien end-to-end tren worker production (job `7c85a6c4`, run
+> `asvr_9fc9cc89bb104c06bb190fa3ac47bd3`, `2026-09-25T07:38:34Z`):
+>
+>     MACHINE Path co thu muc chua ffmpeg.exe : False   <- LTTStudioWorker (LocalSystem)
+>     USER    Path co thu muc chua ffmpeg.exe : True    <- WinGet cai theo nguoi dung
+>
+> `ffmpeg` duoc cai **theo nguoi dung**; `LTTStudioWorker` chay duoi
+> **LocalSystem** nen chi thay MACHINE Path. Loi goi ffmpeg **cua nen tang**
+> mien nhiem (`LTT_FFMPEG` la duong dan tuyet doi), ⛔ **nhung sidecar la mot
+> venv RIENG** va goi `whisperx` trong do goi **`ffmpeg` tran**
+> (`whisperx/audio.py::load_audio`) ⇒ `FileNotFoundError: [WinError 2]` ⇒
+> `transcribe_file` lui ve faster-whisper, chi mot dong WARNING, va giai doan
+> `asv_gpu.transcribe` **van bao THANH CONG**.
+>
+> ⇒ Moi luot chay that cho tới 25/09 di dong **47,25 s** (faster-whisper GPU
+> fp16, dong tren), ⛔ khong phai 64,64 s — va voi **moc tung tu CHUA duoc can
+> cuong buc**. ⚠️ Moc tung tu **CO** (`word_timestamps=True`), chi la **kem
+> chinh xac hon**; ⛔ dung doc thanh *"khong co moc tung tu"*.
+>
+> Da sua (`N-59`, lan `asv-sidecar`): `transcription._them_ffmpeg_vao_path` chen
+> `dirname(LTT_FFMPEG)` vao `PATH` cua tien trinh con; nhanh lui nay khai
+> `tham_so.suy_giam_can_chinh` vao chinh ban ghi. ⚠️ **Con so 64,64 s o day vi
+> the CHUA tung duoc do tren worker that** — do lai sau khi ban sua duoc deploy.
 
 Tham so ASR chep dung ban san pham (`transcription._transcribe_faster`):
 `language="zh"`, `beam_size=5`, `vad_filter=True`, `word_timestamps=True`.
@@ -294,10 +325,18 @@ Hai hau qua, ca hai da sua:
    Nay: moi lan lui deu `log.warning` VA tra `asr_device` / `asr_compute` /
    `asr_cpu_reason` ra hop dong ket qua.
 
-⚠️ Duong nay la **duong LUI**: production co `LTT_WHISPERX_PYTHON` nen
-`transcribe_file` di qua sidecar WhisperX (da tren GPU). 203 giay la so tiet kiem
-**khi sidecar hong** — tuc no bien mot su co "cham 5 lan" thanh mot su co "cham
-1,4 lan", va bien mot su co im lang thanh mot su co noi ra.
+🔴 **DINH CHINH 25/09/2026 — cau duoi day SAI, giu lai de doi chieu:** *"Duong
+nay la **duong LUI**: production co `LTT_WHISPERX_PYTHON` nen `transcribe_file`
+di qua sidecar WhisperX (da tren GPU)."*
+
+`LTT_WHISPERX_PYTHON` **co that**, va do la ly do cau tren nghe dung. Nhung
+sidecar **nem ngay** vi no khong thay `ffmpeg` duoi LocalSystem (chi tiet o
+🔴(\*) canh bang §2) ⇒ **duong LUI la duong DUY NHAT tung chay tren worker
+that**, va 203 giay tiet kiem la con so cua **moi** luot chay, ⛔ khong phai cua
+mot su co thinh thoang. `N-59`.
+
+⚠️ Dung o muc do do: no bien mot su co "cham 5 lan" thanh mot su co "cham 1,4
+lan", va bien mot su co im lang thanh mot su co noi ra.
 
 ### 4.2 `audio_prepare` (demucs) — 29,8 s, va tran 4 luong GIU NGUYEN
 

@@ -1,0 +1,25 @@
+# so-cho-goi-ffmpeg-tran theo tep
+apps/asv_gpu/do_luong/ocr_khung.py 2
+apps/audio_pause/services/chen_lang.py 1
+apps/audio_pause/services/engine/audio_splicer.py 6
+apps/auto_scan_video/nguon_loi.py 2
+apps/qualitylab/services/media.py 2
+apps/video_assembly/services/engine/assemble.py 6
+apps/video_assembly/services/engine/audio/demucs_post.py 2
+apps/video_assembly/services/engine/audio/mix.py 2
+apps/video_assembly/services/engine/clip_sampling.py 1
+apps/video_assembly/services/engine/music/mood.py 5
+apps/video_assembly/services/engine/subtitle/burner.py 9
+apps/video_assembly/services/engine/video_sanitize.py 4
+apps/video_assembly/services/tuong_thich/ffmpeg.py 1
+cutclipshort/evaluation/metrics/audio_evaluator.py 2
+cutclipshort/evaluation/metrics/pacing_evaluator.py 1
+cutclipshort/evaluation/metrics/visual_evaluator.py 1
+docs/auto_scan_video_final/bang_chung/phu_de/do_dai_hardsub.py 2
+docs/auto_scan_video_final/bang_chung/phu_de/do_xem_truoc_vs_render.py 1
+tools/bench_gpu_may_a.py 8
+tools/benchmark_upscale_ai_detail.py 1
+tools/do_giong_hieu_chinh.py 1
+tools/do_toc_do_giong.py 1
+tools/upscale_gpu_smoke.py 1
+voice_sidecar/do_ben_dau_chim.py 1
