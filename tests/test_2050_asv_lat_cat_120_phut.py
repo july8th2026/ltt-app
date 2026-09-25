@@ -269,8 +269,13 @@ def qc_gia(monkeypatch):
             raise ai.AiError("gia lap hong")
         lo = json.loads(messages[-1]["content"])
         mas = [str(d["ma"]) for d in (lo.get("doan") or [])]
-        than = {"doan": {m: {"dat": int(m[-1]) % 2 == 0, "ly_do": "gia",
-                             "do_tin": 0.9} for m in mas}}
+        # ⚠️ N-51 (25/09): ban gia nay con dung hinh dang V1 (`dat`/`do_tin`),
+        #    truoc khi lop nghia doi sang MQM (`doan.<ma>.loi`, PHIEN_BAN_QC_AI
+        #    = 2). Truoc sua N-51, thieu `loi` bi `_loc_loi` nuot lang le va
+        #    cham `dat=True` — dung minh hoa cua chinh N-51, chi la o BAN GIA.
+        #    Bai nay do LAT CAT (checkpoint/resume theo THOI GIAN), khong do
+        #    noi dung phan quyet, nen `loi: []` (sach) cho moi ma la du.
+        than = {"doan": {m: {"loi": []} for m in mas}}
         return {"noi_dung": json.dumps(than), "su_dung": None}
 
     monkeypatch.setattr(ai, "goi_tinh_tien", gia)
