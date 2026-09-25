@@ -1819,6 +1819,91 @@ class CredentialNhatKy(Base):
         DateTime(timezone=True), default=_bay_gio, nullable=False, index=True)
 
 
+# ── Marketplace piece + cổng duyệt (plan wfm, 25/09/2026) ────────────────────
+#
+# 🔴 Bề mặt tấn công lớn nhất của cả vòng: mã BÊN THỨ BA tải về và chạy trên
+#    máy PRODUCTION. Cổng duyệt là FAIL-CLOSED — một piece không có hàng
+#    `trang_thai == MARKETPLACE_DA_DUYET` thì không được nạp, không được cài,
+#    không được publish, ở BẤT KỲ cửa nào. Xem `platform_core/workflow/
+#    marketplace.py` cho toàn bộ luồng.
+
+#: Yêu cầu vừa tạo, chưa ai xem.
+MARKETPLACE_CHO_DUYET = "cho_duyet"
+#: Admin đã duyệt — ĐIỀU KIỆN CẦN để cài, chưa phải đã cài.
+MARKETPLACE_DA_DUYET = "da_duyet"
+#: Admin từ chối, hoặc một piece đã duyệt/đã cài bị THU HỒI sau đó.
+MARKETPLACE_TU_CHOI = "tu_choi"
+#: Đã cài xong, đã qua toàn vẹn, đang nạp được.
+MARKETPLACE_DA_CAI = "da_cai"
+MARKETPLACE_TRANG_THAI = {MARKETPLACE_CHO_DUYET, MARKETPLACE_DA_DUYET,
+                          MARKETPLACE_TU_CHOI, MARKETPLACE_DA_CAI}
+
+
+class MarketplacePiece(Base):
+    """Một yêu cầu cài piece từ marketplace + trạng thái cổng duyệt của nó.
+
+    ⛔ `phien_ban` PHẢI là một bản ghim TUYỆT ĐỐI (`1.2.3`, không `latest`,
+       không dải `^`/`~`/`*`) — `marketplace.py::_kiem_phien_ban_ghim` từ chối
+       mọi giá trị khác ngay ở `yeu_cau()`, trước khi có gì được duyệt.
+
+    ⭐ Một hàng = một cặp (ten, phien_ban). Muốn nâng phiên bản là một YÊU CẦU
+       MỚI, đi qua đúng cổng duyệt lần nữa — không có đường "sửa tại chỗ" một
+       hàng đã duyệt để đổi sang phiên bản khác.
+    """
+
+    __tablename__ = "marketplace_piece"
+    __table_args__ = (
+        UniqueConstraint("ten", "phien_ban", name="ux_marketplace_piece_ten_ban"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    #: Tên gói npm, vd `@foo/piece-bar`.
+    ten: Mapped[str] = mapped_column(String(200), nullable=False)
+    #: Bản ghim TUYỆT ĐỐI — xem docstring lớp.
+    phien_ban: Mapped[str] = mapped_column(String(60), nullable=False)
+    nguoi_yeu_cau_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    trang_thai: Mapped[str] = mapped_column(
+        String(16), default=MARKETPLACE_CHO_DUYET, nullable=False, index=True)
+    nguoi_duyet_id: Mapped[str] = mapped_column(String(36), default="",
+                                                nullable=False)
+    ly_do_tu_choi: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    #: Miền proxy_egress được mở CHO RIÊNG piece này lúc chạy (spec vo_boc.py).
+    #: ⛔ Rỗng ⇒ không được nối đi đâu (fail closed, cùng luật `connector.py`).
+    mien: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    #: `dist.integrity` npm trả về lúc GHI NHẬN yêu cầu — đối chứng toàn vẹn
+    #: lúc cài (spec `marketplace.py::cai_dat`, bước xác minh lockfile).
+    integrity: Mapped[str] = mapped_column(String(200), default="",
+                                           nullable=False)
+    tao_luc: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    quyet_dinh_luc: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    cai_luc: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+
+
+class MarketplacePieceNhatKy(Base):
+    """Nhật ký kiểm toán marketplace — cùng hình dạng với `CredentialNhatKy`.
+
+    ⭐ Ghi CẢ đường thất bại (`*_tu_choi`, `cai_that_bai`) — câu hỏi thật lúc
+       sự cố là *"ai đã cố cài cái gì mà không qua được cổng"*, không chỉ
+       *"cái gì đã cài thành công"*.
+    """
+
+    __tablename__ = "marketplace_piece_nhat_ky"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    yeu_cau_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    #: yeu_cau | duyet | tu_choi | cai | cai_that_bai | thu_hoi
+    hanh_dong: Mapped[str] = mapped_column(String(24), nullable=False)
+    nguoi_id: Mapped[str] = mapped_column(String(36), default="", nullable=False)
+    #: Chi tiết KHÔNG bí mật (lý do từ chối, integrity đo được, argv đã chạy
+    #: trừ token/bí mật). ⛔ Không bao giờ ghi biến môi trường hay proxy ticket.
+    chi_tiet: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False, index=True)
+
+
 class OAuthState(Base):
     """Một lượt OAuth đang dở (spec §9.3). Dùng MỘT LẦN, hết hạn 10 phút.
 

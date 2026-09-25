@@ -17,7 +17,7 @@
 //    buoc la dung mot form thieu o ma khach khong biet.
 const fs = require('fs');
 const path = require('path');
-const { docAllowlist, napPiece, GOC } = require('./piece_nap');
+const { docAllowlist, docAllowlistMarketplace, napPiece, GOC } = require('./piece_nap');
 
 //: AP prop type -> tu vung tham so LTT (`luoc_do._KHUNG`).
 const KIEU = {
@@ -148,12 +148,21 @@ function slug(s) {
 
 function main() {
   const lietKe = process.argv.indexOf('--liet-ke') >= 0;
+  // `--chi-marketplace`: chi liet cac piece marketplace DA DUYET (spec plan
+  // wfm) -- goi sau moi lan `cai_dat()` thanh cong, khong doi hoi node_modules
+  // cua bay piece tinh phai co san (mot may dev chua `npm install` van sinh
+  // duoc catalog cho RIENG piece vua cai). `napPiece()` van goi `docAllowlist()`
+  // GOP ben trong no, nen mot piece marketplace van duoc nap dung nhanh.
+  const chiMarketplace = process.argv.indexOf('--chi-marketplace') >= 0;
   const al = docAllowlist();
+  const tapTen = chiMarketplace
+    ? Object.keys(docAllowlistMarketplace().pieces || {})
+    : Object.keys(al.pieces);
   const ra = {
     sinh_luc: new Date().toISOString(), pieces: [], nodes: [], bo_qua: [],
   };
 
-  for (const ten of Object.keys(al.pieces)) {
+  for (const ten of tapTen) {
     const nap = napPiece(ten);
     const piece = nap.piece;
     const meta = piece.metadata();
@@ -264,7 +273,13 @@ function main() {
     }
   }
   if (lietKe) return 0;
-  fs.writeFileSync(path.join(GOC, 'catalog.json'), JSON.stringify(ra, null, 1) + '\n');
+  // `LTT_CATALOG_OUT`: ghi ra ngoai `GOC` khi sinh catalog MARKETPLACE --
+  // `connector_runner/` bi thay TOAN BO moi lan deploy, nen mot catalog
+  // marketplace ghi trong do se mat sau ban cap nhat ke tiep ma khong ai
+  // biet. Mac dinh (khong dat bien) van ghi `catalog.json` canh tep nay --
+  // dung hanh vi build-time cu, khong doi cho duong build hien co.
+  const duongRa = process.env.LTT_CATALOG_OUT || path.join(GOC, 'catalog.json');
+  fs.writeFileSync(duongRa, JSON.stringify(ra, null, 1) + '\n');
   console.log('catalog.json: ' + ra.nodes.length + ' node, ' + ra.bo_qua.length + ' bo qua');
   for (const b of ra.bo_qua) console.log('  BO ' + b.piece + ' ' + b.name + ': ' + b.vi_sao);
   return 0;
