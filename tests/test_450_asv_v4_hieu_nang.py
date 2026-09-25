@@ -217,8 +217,9 @@ def test_DO_TAI_hai_preset(moi_truong, tmp_path, monkeypatch):
     from apps.auto_scan_video import hop_dong_v4, pipeline
     from apps.auto_scan_video.tables import AsvRun
 
-    if not fx.co_sapi():
-        pytest.skip("khong co SAPI de dung ban nguon co tieng noi that")
+    if not fx.co_nguon_am_e2e():
+        pytest.skip("khong co SAPI va kho cache kich_ban_am chua du de dung "
+                    "ban nguon co tieng noi that")
 
     su_that = fx.nguon_hoi_thoai(tmp_path / "nguon")
     fx.dat_cua_model(monkeypatch, su_that=su_that)
@@ -506,8 +507,9 @@ def test_DO_SUAT_demucs_va_asr(tmp_path, monkeypatch):
     monkeypatch.setenv("LTT_AUTOSUB_WHISPER_DEVICE", "cpu")
     monkeypatch.setenv("LTT_AUTOSUB_WHISPER_COMPUTE", "int8")
 
-    if not fx.co_sapi():
-        pytest.skip("khong co SAPI de dung ban nguon co tieng noi that")
+    if not fx.co_nguon_am_e2e():
+        pytest.skip("khong co SAPI va kho cache kich_ban_am chua du de dung "
+                    "ban nguon co tieng noi that")
     su_that = fx.nguon_hoi_thoai(tmp_path / "nguon")
     from apps.auto_scan_video import tach_tieng
 
@@ -683,8 +685,9 @@ def test_DO_ASR_tren_CUDA(tmp_path, monkeypatch):
     """
     from apps.auto_scan_video import giai_doan_chep_loi
 
-    if not fx.co_sapi():
-        pytest.skip("khong co SAPI de dung ban nguon co tieng noi that")
+    if not fx.co_nguon_am_e2e():
+        pytest.skip("khong co SAPI va kho cache kich_ban_am chua du de dung "
+                    "ban nguon co tieng noi that")
     su_that = fx.nguon_hoi_thoai(tmp_path / "nguon")
     wav = _rut_tieng(su_that.duong, tmp_path / "asr16k.wav",
                      tan_so=16000, so_kenh=1)

@@ -621,8 +621,9 @@ def test_NGHIEM_THU_ca_hai_preset_ra_video_dung_duoc(moi_truong, tmp_path,
 
     from apps.auto_scan_video import hop_dong_v4
 
-    if not fx.co_sapi():
-        pytest.skip("khong co SAPI de dung ban nguon co tieng noi that")
+    if not fx.co_nguon_am_e2e():
+        pytest.skip("khong co SAPI va kho cache kich_ban_am chua du de dung ban "
+                    "nguon co tieng noi that")
 
     su_that = fx.nguon_hoi_thoai(tmp_path / "nguon")
 

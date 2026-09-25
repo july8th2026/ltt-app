@@ -124,6 +124,19 @@ def _giong_sapi():
     return may, may.GetVoices()
 
 
+def co_nguon_am_e2e() -> bool:
+    """Dung duoc `nguon_hoi_thoai` khong — co SAPI HOAC kho cache da du 4 cau.
+
+    ⭐ Goi o CUA thay vi `co_sapi()` truc tiep: mot may da co cache (chep lai tu
+       lan chay truoc, hoac tu kho cua kho) chay duoc `nguon_hoi_thoai` ma
+       KHONG can COM/SAPI mot chut nao — bo `co_sapi()` tran se SKIP oan mot
+       may nhu the.
+    """
+    if all((_KHO_AM_KICH_BAN / f"{ma}.wav").exists() for ma, _, _ in KICH_BAN):
+        return True
+    return co_sapi()
+
+
 def noi(chu: str, dest: Path, *, giong: str = GIONG_NAM, toc_do: int = 0) -> Path:
     """Doc `chu` thanh mot tep WAV THAT. `toc_do` la thang SAPI (-10..10)."""
     import win32com.client as w
@@ -202,6 +215,29 @@ def _chay(cmd: list[str]) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, check=True, capture_output=True)
 
 
+#: Kho cache 4 cau cua `KICH_BAN` — ghi San o day khi co, chi goi SAPI khi
+#: CHUA co. SAPI la COM, ken SESSION (worker that chay LocalSystem, dung moi
+#: truong dung lam thieu ffmpeg — N-36); mot phu thuoc COM trong khuon do
+#: nghia la khuon do khong bao gio chay duoc DUNG MOI TRUONG voi worker. Cache
+#: nay xoa phu thuoc do khoi duong chay LAI: lan dau (hoac may chua co cache)
+#: van goi SAPI mot lan roi ghi lai; moi lan sau doc thang tu day — nhanh hon,
+#: khong COM, tai lap duoc.
+_KHO_AM_KICH_BAN = Path(__file__).resolve().parent / "du_lieu_e2e" / "kich_ban_am"
+
+
+def _wav_kich_ban(ma: str, chu: str, giong: str, dest: Path) -> Path:
+    """`dest` <- cache neu co, khong thi SAPI (`noi`) roi ghi lai vao cache."""
+    cache = _KHO_AM_KICH_BAN / f"{ma}.wav"
+    if cache.exists():
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(cache, dest)
+        return dest
+    noi(chu, dest, giong=giong)
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(dest, cache)
+    return dest
+
+
 def nguon_hoi_thoai(thu_muc: Path, *, giu_wav: bool = False) -> SuThat:
     """Dung mot MP4 nhieu canh co HOI THOAI THAT. Tra ve su that di kem.
 
@@ -217,8 +253,12 @@ def nguon_hoi_thoai(thu_muc: Path, *, giu_wav: bool = False) -> SuThat:
     binary = ffmpeg_bin()
     if not binary:
         raise RuntimeError("khong co ffmpeg")
-    if not co_sapi():
-        raise RuntimeError("khong co SAPI")
+    # ⭐ SAPI chi BAT BUOC khi kho cache CHUA CO du 4 cau — xem `_wav_kich_ban`.
+    #    Mot may da co cache (vd nhan lai tu mot lan chay truoc) chay duoc dau
+    #    vao nay ma khong can COM/SAPI mot chut nao.
+    if not co_sapi() and any(
+            not (_KHO_AM_KICH_BAN / f"{ma}.wav").exists() for ma, _, _ in KICH_BAN):
+        raise RuntimeError("khong co SAPI, va kho cache kich_ban_am chua du")
 
     thu_muc.mkdir(parents=True, exist_ok=True)
     tam = thu_muc / "_e2e"
@@ -228,7 +268,7 @@ def nguon_hoi_thoai(thu_muc: Path, *, giu_wav: bool = False) -> SuThat:
     loi: list[Loi] = []
     moc = LANG_BIEN
     for ma, giong, chu in KICH_BAN:
-        wav = noi(chu, tam / f"{ma}.wav", giong=giong)
+        wav = _wav_kich_ban(ma, chu, giong, tam / f"{ma}.wav")
         d = giay_wav(wav)
         loi.append(Loi(ma=ma, chu=chu, giong=giong, bat=moc, giay=d))
         moc += d + LANG_GIUA
