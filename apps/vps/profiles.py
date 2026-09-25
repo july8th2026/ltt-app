@@ -76,6 +76,25 @@ RUNTIME_SYNC_SECONDS = 600
 RUNTIME_MAX_AGE_SECONDS = 2 * RUNTIME_COLLECTOR_SECONDS + RUNTIME_SYNC_SECONDS
 ACTIVATION_MAX_AGE_SECONDS = 300
 
+#: Tuổi tối đa của **bản sinh từ máy B** khi người vận hành bật bán lại.
+#:
+#: 🔴 Đo 25/09/2026: `activate_profile` truyền `ACTIVATION_MAX_AGE_SECONDS` (300 s)
+#:    cho CẢ HAI cửa sổ — tuổi quan sát của ta VÀ tuổi bản sinh của máy B. Nhưng
+#:    máy B sinh mỗi `RUNTIME_COLLECTOR_SECONDS` = 1800 s, nên bản mới nhất trung
+#:    bình đã **900 s** tuổi. ⇒ Điều kiện **không thể thoả**, trừ khi bấm đúng
+#:    trong 300 s sau một lần sinh.
+#:
+#:    Và `admin_profiles._configured_preflight` hạ hồ sơ khi **bất kỳ** ngoại lệ
+#:    nào xảy ra — kể cả một khoá API hết hạn, thứ đã xảy ra thật sáng 25/09. Đường
+#:    về duy nhất là `activate_profile`. ⇒ Một khoá hết hạn **đóng cửa hàng vĩnh
+#:    viễn**, và người vận hành bấm "bật lại" chỉ nhận `stale health component:
+#:    runtime` mãi mãi.
+#:
+#: ⭐ Hai cửa sổ cho hai thứ khác nhau. Cửa sổ chặt nói *"bằng chứng phải vừa được
+#:    đo xong"* — điều đó nói về **phép đo của ta**, thứ chạy được ngay trước khi
+#:    bấm. Nó ⛔ không có quyền đòi máy B chạy nhanh hơn thiết kế của nó.
+ACTIVATION_GENERATED_MAX_AGE_SECONDS = RUNTIME_MAX_AGE_SECONDS
+
 
 class ProfileNotReady(RuntimeError):
     """Profile cannot safely accept a new external mutation."""
@@ -158,6 +177,7 @@ def activate_profile(
     *,
     make_default: bool = False,
     max_age_seconds: int = ACTIVATION_MAX_AGE_SECONDS,
+    generated_max_age_seconds: int = ACTIVATION_GENERATED_MAX_AGE_SECONDS,
 ) -> VpsInfrastructureProfile:
     """Activate only after fresh health; serialize default changes in the DB."""
     profile = db.execute(
@@ -171,9 +191,13 @@ def activate_profile(
     # Bật bán là một quyết định CÓ NGƯỜI: nó đòi **cả sáu** thành phần xanh và
     # một cửa sổ tươi chặt hơn. Giữ cửa hàng mở (`select_profile`) mới là chỗ
     # chỉ đòi tầng `CHAN_BAN`.
+    # ⛔ HAI cửa sổ, ⛔ không phải một số dùng cho cả hai. Xem
+    #    `ACTIVATION_GENERATED_MAX_AGE_SECONDS`: bản cũ đòi bản sinh của máy B
+    #    tươi hơn 300 s trong khi máy B sinh mỗi 1800 s ⇒ đường bật lại là bất
+    #    khả thi, và một khoá API hết hạn đóng cửa hàng vĩnh viễn.
     ready, reason, observed = health_prerequisites(
         db, profile.id, max_age_seconds=max_age_seconds,
-        generated_max_age_seconds=max_age_seconds,
+        generated_max_age_seconds=generated_max_age_seconds,
         thanh_phan=REQUIRED_HEALTH_COMPONENTS)
     if not ready:
         raise ProfileNotReady(reason)
