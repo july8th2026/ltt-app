@@ -230,17 +230,37 @@ def van_tay(stage_ten: str, run, dau_vao: dict) -> str:
 def _gom_dau_vao(db, run_id: str, ten: str) -> dict:
     """Tham chieu output cua cac giai doan truoc — phan LINEAGE cua van tay.
 
-    Vi sao dua ca VAN TAY cua giai doan truoc vao chu khong chi ten tep: neu mot
+    Vi sao dua VAN TAY cua giai doan truoc vao chu khong chi ten tep: neu mot
     giai doan thuong nguon chay lai va cho ket qua khac, van tay cua no doi, nen
     van tay cua giai doan nay cung doi va cache cu bi vo hieu **theo day chuyen**
     (I10). Chi so ten tep thi khong bat duoc dieu do.
+
+    🔴 **CHI `fingerprint`, KHONG `outputs` tho (vong lap B6, 26/09).** Ban
+       truoc nhet CA `s.outputs` vao day — va `outputs["tom_tat"]` cua nhieu
+       giai doan (vd `giai_doan_am_thanh.chay`: `thiet_bi`, `gpu_cap`,
+       `ten_card`, `so_khoi`, `khoi_giay`, `f0_trung_vi`...) la CHAN DOAN do
+       tren lan chay CU THE — no doi giua hai LAN THU cua CUNG mot giai doan
+       (may/card/toc do khac nhau) du noi dung san sinh (`bed.wav`) khong doi
+       mot bit. Vi ham nay duoc bam thang vao `van_tay()`, moi lan mot giai
+       doan thuong nguon thu lai (vi bat ky ly do, ke ca mot loi tam thoi
+       khong lien quan noi dung) deu lam van tay ha nguon troi — quan sat
+       duoc tren worker that: `audio_prepare` thu lai 56 lan, `transcribe`
+       thu lai 40 lan trong MOT lan chay (B6, tests/test_vong_lap_audio_
+       prepare_transcribe_tom_tat_khong_on_dinh.py tai hien tang ham).
+
+    ⭐ `s.fingerprint` MOT MINH da du cho day chuyen I10: no da gom `settings`
+       + `contract` + `engine` + (de quy) `dau_vao` cua CHINH giai doan thuong
+       nguon — dung mo hinh ma `features.py:327` va `assets.py:645` da mo ta
+       ("van tay cua mot giai doan gom VAN TAY cua cac giai doan truoc"), tom
+       tat KHONG nam trong mo hinh do. Mot lan nang ENGINE that (vd
+       `tach_tieng.PHIEN_BAN_TACH`) van doi `fingerprint` va van lan sang ha
+       nguon — xem phep kiem thu hai trong tep test noi tren.
     """
     g = pipeline.THEO_TEN[ten]
     ra: dict = {}
     for truoc in g.sau:
         s = features.giai_doan_theo_ten(db, run_id, truoc)
-        ra[truoc] = {"fingerprint": s.fingerprint if s else "",
-                     "outputs": (s.outputs if s else {}) or {}}
+        ra[truoc] = {"fingerprint": s.fingerprint if s else ""}
     return ra
 
 
