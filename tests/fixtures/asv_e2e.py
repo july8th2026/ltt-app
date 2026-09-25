@@ -1140,6 +1140,32 @@ PHA_NANG_CPU = frozenset({
     #    Hai mau so khac nhau, cung mot con so ⇒ ⛔ khong phai nhieu. No can moc +
     #    keo gian tung doan bang ffmpeg TRONG tien trinh, ⛔ khong goi mang.
     "asv_media.timing_align",       # can moc + keo gian      — do 0,96 va 0,99 loi
+    # 🔴 **`image_finish` CHUYEN vao day 25/09/2026 (lan `gd2-diem-anh`), dung
+    #    NHU dieu kien da ghi san o ban cu tung noi.** `logo · watermark(lop_phu)
+    #    · phu de · lat guong · dich mau · khung(crop/zoom/doi ti le)` chuyen tu
+    #    `render` (GD1) xuong `image_finish` (GD2) — no thoi la mot lan gan-nhu-
+    #    remux (`ban cu re vi no CHUA lam gi`) va thanh MOT lan **ma hoa lai**
+    #    that su, cung mot lop voi `render`/`compose`.
+    #
+    #    ⛔ **⛔ KHONG chay worker that de do (lan nay lam GD2, lan B6 lam worker) —
+    #    nen phep do o day la MOT LUOT `giai_doan_hinh_anh.dung_lenh` THAT (libx264,
+    #    cung ham san pham GD2 dung), khong phai suy tu chuoi loc.** Do bang
+    #    `psutil.Process.cpu_times()` thay `time.process_time()`: tren Windows
+    #    CPU cua TIEN TRINH CON (ffmpeg) khong cong don vao tien trinh cha.
+    #
+    #    HAI phep do DOC LAP, HAI cau hinh khac nhau, cung mot ket luan — CO cat
+    #    canh (2 khoang) VA co logo + khung/lat-guong/dich-mau + lop_phu + phu de
+    #    dot vao hinh, CUNG mot luot ma hoa (khuon "mot lan ma hoa", xem
+    #    `test_474::test_mot_luot_ffmpeg_THAT_...`):
+    #        1280x720, 15 s nguon, khung GIU nguyen (lat guong+dich mau):
+    #            0,908 s tuong / 5,641 s CPU  =  6,21 loi
+    #        1920x1080, 40 s nguon, doi ti le 9:16 (khung THAY DOI):
+    #            2,316 s tuong / 13,766 s CPU =  5,95 loi
+    #    Hai cau hinh khac nhau (co/khong doi khung, 720p/1080p), cung bac do —
+    #    dung ffmpeg `libx264` (duong lui khi khong co GPU, gia XAU NHAT cho
+    #    `cpu_nhieu`; nvenc se re hon nhung filter/decode van chiem CPU, cung
+    #    lop voi `render`).
+    "asv_media.image_finish",
 })
 
 #: Cac `job_type` dung MAY SINH TIENG. Tai nguyen doc quyen ⇒ giu suot pha.
@@ -1151,21 +1177,17 @@ PHA_MAY_TAO_TIENG = frozenset({
 #: Cac `job_type` la mot lan CHO (mang, may B, sidecar). ⛔ Khong khoa `cpu_nhieu`.
 #: Giu o day de mot phep kiem doi chieu duoc, chu khong de ma doc no.
 PHA_CHO = frozenset({
-    # ⚠️ Hai hang duoi day KHONG phai "lan cho mang" — chung chi **khong dang ke**,
-    #    va ca hai vao day 25/09/2026 sau khi mot phep kiem do phu phat hien chung
-    #    ⛔ CHUA he duoc phan loai (⇒ `quanh_job` roi vao nhanh "khong khoa gi" mot
-    #    cach IM LANG). Do that tren hai phim:
-    #        media_prepare : 0,45 s tuong / 0,08 s CPU  (ffprobe, tien trinh con)
-    #        image_finish  : 2,31 s va 0,9 s tuong      (preset giu hinh ⇒ gan nhu no-op)
-    #    Thoi gian TUONG chan tren chung, nen du `cpu_s` la can duoi thi chung cung
-    #    ⛔ khong the dot dang ke.
+    # ⚠️ Hang duoi day KHONG phai "lan cho mang" — no chi **khong dang ke**, va
+    #    vao day 25/09/2026 sau khi mot phep kiem do phu phat hien no ⛔ CHUA he
+    #    duoc phan loai (⇒ `quanh_job` roi vao nhanh "khong khoa gi" mot cach IM
+    #    LANG). Do that: media_prepare 0,45 s tuong / 0,08 s CPU (ffprobe, tien
+    #    trinh con) — can duoi cua `cpu_s` con thap hon `media_prepare`.
     #
-    # 🔴 **`image_finish` PHAI duoc do lai khi cac phep doi DIEM ANH (logo, phu de,
-    #    lat guong, dich mau, zoom) chuyen tu `render` xuong no** — luc do no thanh
-    #    mot lan **ma hoa lai** va thuoc `PHA_NANG_CPU`. Hom nay no re vi no chua lam
-    #    gi, ⛔ khong phai vi ban chat no re.
+    # 🔴 **`image_finish` DA ROI khoi day 25/09/2026 (lan `gd2-diem-anh`) —
+    #    xem `PHA_NANG_CPU`.** No tung o day vi "chua lam gi" (preset giu hinh
+    #    ⇒ gan nhu no-op); logo/watermark/phu-de/lat-guong/dich-mau/khung
+    #    chuyen tu `render` xuong no lam no thanh mot lan ma hoa lai THAT.
     "asv_media.media_prepare",
-    "asv_media.image_finish",
     "auto_scan_video.advance",
     "auto_scan_video.edit_plan",
     "auto_scan_video.content_process",

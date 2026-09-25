@@ -234,6 +234,16 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 
     # ⭐ MOT lan doc, hai truong. Xem docstring cua `_co_khung`.
     _rong_khung, _cao_khung = _co_khung(db, kho, run)
+    # 🔴 **`bien_tap` GD1 CHI con `toc_do` (gd2-diem-anh, 25/09).**
+    #
+    #    `cai.bien_tap` co the mang CA `toc_do` LAN `cat_khung`/`zoom`/`khung`/
+    #    `lat_guong`/`dich_mau` — nhung bon truong sau gio thuc thi o GD2
+    #    (`giai_doan_hinh_anh.py`, doc thang `cai_dat.doc(run)`, KHONG qua ban
+    #    dung nay). Loc CHI `toc_do` o day, ⛔ khong truyen ca dict: `ban_dung.
+    #    _kiem_bien_tap` NEM neu mot truong la lot vao — mot ban dung GD1 vua co
+    #    `khung` trong ho so vua khong ai ve no len hinh la mot hop dong noi doi.
+    _bt_gd1 = ({"toc_do": cai.bien_tap["toc_do"]}
+               if (cai.bien_tap or {}).get("toc_do") is not None else None)
     ban = ban_dung.dung(
         khoa_video=run.source_key,
         khoa_nen=khoa_nen,
@@ -253,18 +263,18 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         #    Giao dien khong cho ve vung khi preset la giu hinh, nhung mot yeu
         #    cau dung tay van co the toi, nen cho nay khong duoc tin giao dien.
         vung=(cai.vung if cach == cdr.CAT_MA_HOA_LAI else ()),
-        # ⭐ Lop phu chu (V6 pha 11) di cung khuon ba tang voi `vung`, va vi
-        #    CUNG mot ly do vat ly: `drawtext` la mot bo loc, bo loc doi hoi
-        #    giai ma, `-c:v copy` khong giai ma khung nao.
-        lop_phu=(cai.lop_phu if cach == cdr.CAT_MA_HOA_LAI else ()),
-        # ⭐ Logo di cung khuon ba tang, va vi CUNG mot ly do vat ly.
-        ds_logo=(cai.logo if cach == cdr.CAT_MA_HOA_LAI else ()),
-        # ⭐ Phu de KHONG di theo khuon `... if cach == CAT_MA_HOA_LAI else ()`
-        #    cua ba dong tren, va do la khac biet CO CHU DICH. Ba thu kia co
-        #    dung MOT truc (doi diem anh); phu de co HAI, va truc `.srt` chay
-        #    duoc o CA HAI preset. Xem `_ho_so_phu_de`.
+        # 🔴 **`lop_phu`/`ds_logo` ⛔ KHONG con truyen o day.** GD2
+        #    (`giai_doan_hinh_anh.py`) doc thang `cai_dat.doc(run).lop_phu`/
+        #    `.logo` — hai truong nay tu than khong can artifact thuong nguon
+        #    nao (khac `phu_de`, can `ke_hoach`+van ban de chot `su_kien`), nen
+        #    khong co ly do bat GD1 mang ho di ngang qua chi de GD2 doc lai.
+        #
+        # ⭐ Phu de KHONG doi theo khuon `... if cach == CAT_MA_HOA_LAI else ()`
+        #    o tren, va do la khac biet CO CHU DICH. Vung co dung MOT truc (doi
+        #    diem anh); phu de co HAI, va truc `.srt` chay duoc o CA HAI preset.
+        #    Xem `_ho_so_phu_de`.
         phu_de=_ho_so_phu_de(db, kho, run, ke_hoach, cai, cach),
-        bien_tap=(cai.bien_tap if cach == cdr.CAT_MA_HOA_LAI else None),
+        bien_tap=(_bt_gd1 if cach == cdr.CAT_MA_HOA_LAI else None),
         rong_khung=_rong_khung, cao_khung=_cao_khung)
 
     # 🔑 Muc 5: doi chieu MOI tham chieu TRUOC khi ton mot suat render.

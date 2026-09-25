@@ -274,6 +274,9 @@ CON_DUNG = {
     "giai_doan_qc_ai.py": "cac cho noi cua TEP BAN GIAO",
     # 🔑 Chuoi loc cat-noi: `_anh_xa_cua_so` doi cua so logo/vung/lop phu.
     "che_do_render.py": "anh xa cua so cua logo/vung/lop phu sang truc ban ra",
+    # 🔑 gd2-diem-anh (25/09): tham chieu VMAF (T18) phai dot phu de qua CUNG
+    #    phep doi moc voi GD2 that, neu khong hai ben lech tung khung.
+    "giai_doan_qc.py": "_do_vmaf doi moc su kien phu de sang truc GD2 (T18)",
     # 🔑 Phan loai ngoai le. ⛔ Khong phai mot nguoi dung phep doi moc.
     "loi.py": "phan loai `BanDoError`",
 }
@@ -283,7 +286,6 @@ CON_DUNG = {
 #:        thoi_gian.py            lap ke hoach tren truc BAN RA   -> thoi
 #:        giai_doan_thoi_gian.py  `_ban_do` doc EDIT_PLAN          -> thoi (da xoa)
 #:        giai_doan_ban_dung.py   `ke_hoach["ban_do"]` + cua so cat -> thoi
-#:        giai_doan_qc.py         do dai mong doi tu ban do        -> thoi (qua `ke_cat`)
 #:
 #: 🔴 **`am_master.py` CO Y ⛔ KHONG o day, va no tung o day mot cach SAI.**
 #:    Ban dau bang nay ke ca no, vi b4 da bo tham so `van_tay_ban_do` cua
@@ -293,8 +295,15 @@ CON_DUNG = {
 #:    nhat cua mot bang khai la no CHINH XAC. Da bo.
 #:
 #: ⭐ Chot su VANG MAT, vi mot phu thuoc quay lai la mot lop loi quay lai.
-DA_THOI = ("thoi_gian.py", "giai_doan_thoi_gian.py", "giai_doan_ban_dung.py",
-           "giai_doan_qc.py")
+#:
+#: 🔴 **`giai_doan_qc.py` da THOI o b4, nay QUAY LAI o gd2-diem-anh (25/09) —
+#:    va do la mot phu thuoc MOI, ⛔ khong phai su song sot cua cai cu.** B4 bo
+#:    no vi ly do CU (do dai mong doi chuyen qua `ke_cat`) da het; no quay lai
+#:    vi ly do KHAC HAN: tham chieu VMAF (T18, `_do_vmaf`) gio phai dot phu de
+#:    de so sanh voi ban GD2 that, va phai DOI MOC su kien qua CUNG `ban_do` voi
+#:    GD2 — neu khong hai ben lech tung khung va T18 bao hong vo co. Xem
+#:    `CON_DUNG["giai_doan_qc.py"]` o tren.
+DA_THOI = ("thoi_gian.py", "giai_doan_thoi_gian.py", "giai_doan_ban_dung.py")
 
 
 def test_ai_con_dung_ban_do_thoi_gian__va_ai_DA_THOI():

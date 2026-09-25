@@ -84,6 +84,23 @@ from platform_core.i18n import _ as _t
 #    `vung_che.LOAI_DIEN_NEN` sinh mot nhanh filter KHAC HAN (`crop`+`vflip`+
 #    `scale`+`alphamerge`). Toan bo chang di qua mot bo dieu phoi moi
 #    (`_loc_vung`) thay vi `_loc_lam_mo` goi thang.
+# ⭐ 9 -> 10 (gd2-diem-anh, chuyen chang DIEM ANH xuong GD2): `logo · lop_phu
+#    (watermark) · phu de · khung (crop/zoom/doi ti le) · diem_anh (lat guong,
+#    dich mau)` ROI khoi `loc_cat_noi` (GD1) va sang `loc_cat_hai_dong` (GD2,
+#    `giai_doan_hinh_anh.py`) — hai ham dung CUNG cac ham thap (`_loc_khung`,
+#    `_loc_diem_anh`, `_loc_logo`, `_loc_chu`) nen mot khung hinh burn ra GIONG
+#    HET du di qua duong nao (xem preview `phu_de.lenh_xem_truoc`, van goi
+#    `loc_cat_noi` khong doi). `loc_cat_noi` GIU NGUYEN chu ky va hanh vi —
+#    GD1 chi con goi no voi `vung`/`bien_tap={"toc_do":...}`, moi tham so con
+#    lai rong.
+#
+#    🔴 **Vi sao bump nay bat buoc du `loc_cat_noi` khong doi mot dong.** Chuoi
+#       lenh THAT SU cham vao (o day la GD1) DA DOI: `ket_xuat.dung_lenh` (GD1)
+#       thoi truyen `lop_phu`/`ds_logo`/`duong_ass`/khung-hinh-hoc — mot ban
+#       dung CU (con logo/lop_phu trong `hinh`) qua `ket_xuat` MOI se render
+#       THIEU chung, IM LANG. Va `loc_cat_hai_dong` (GD2) tu mot ham chi cat
+#       thanh mot ham cat-VA-dan-diem-anh — tep GD2 cu (khong logo) va tep GD2
+#       moi (co logo) phai la HAI van tay khac nhau.
 #
 # 🔴 **Bump nay KHONG phai thu tuc.** `_van_tay` cua giai doan RENDER bam
 #    (ban_dung, PHIEN_BAN_KET_XUAT, PHIEN_BAN_CHE_DO, ffmpeg). Hai co moi nam
@@ -91,7 +108,15 @@ from platform_core.i18n import _ as _t
 #    chay KHONG bat co nao van di qua ma sinh lenh **moi**. Neu ma sinh lenh doi
 #    ma so nay khong doi, mot lan chay lai se lay lai tep cu cua ma **cu**, va
 #    no khong bao gio no: no hien ra nhu mot lan chay "nhanh bat thuong".
-PHIEN_BAN_CHE_DO = 9
+#
+# ⚠️ **Tang duoi CUNG phai bump — bai hoc `a038d0a1` (PHIEN_BAN_MASTER/
+#    PHIEN_BAN_TACH).** `thi_hanh.phien_ban_engine(RENDER)` KHONG doc hang so
+#    nay (chi doc `ket_xuat.PHIEN_BAN_KET_XUAT`) — nen lan bump nay PHAI di
+#    cung mot lan bump `ket_xuat.PHIEN_BAN_KET_XUAT`, neu khong gate cache o
+#    CAP GIAI DOAN cua RENDER se khong tu lam moi du noi dung tep da khac.
+#    `phien_ban_engine(IMAGE_FINISH)` thi da doc hang nay truc tiep — tang do
+#    tu dong theo.
+PHIEN_BAN_CHE_DO = 10
 
 #: Sao chep luong hinh — preset giu hinh.
 SAO_CHEP = "sao_chep"
@@ -800,15 +825,21 @@ NHAN_HINH_RA = "vr"
 NHAN_TIENG_RA = "ar"
 
 
-def loc_cat_hai_dong(khoang: list[tuple[float, float]]) -> str:
-    """`filter_complex` cat cac khoang duoc giu roi noi lai — **CA HINH VA TIENG**.
+def loc_cat_hai_dong(khoang: list[tuple[float, float]], *,
+                     bien_tap=None, rong_nguon: int = 0, cao_nguon: int = 0,
+                     ds_logo=(), rong_khung: int = 0, chi_so_logo_dau: int = 1,
+                     lop_phu=(), duong_chu=(), cao_khung: int = 0,
+                     duong_ass: str = "") -> str:
+    """`filter_complex` cat cac khoang duoc giu roi noi lai — **CA HINH VA TIENG**
+    — RA sau do di qua chang DIEM ANH (khung, diem_anh, logo, lop_phu, phu de).
 
     🔴 **Day la cho khac han `loc_cat_noi`, va khac biet ay LA ca giai doan 2.**
 
         `loc_cat_noi`      chi HINH. Tieng ⛔ khong di qua: ban phoi cua pha 16 da
                            duoc dung theo dung nhung khoang do va chuan am mot
                            lan roi, nen cho no qua `concat` lan nua la tron hai
-                           quyet dinh am thanh o hai cho.
+                           quyet dinh am thanh o hai cho. GD1 (`ket_xuat.py`) chi
+                           con goi no voi `vung`/`bien_tap={"toc_do": ...}`.
         `loc_cat_hai_dong` CA HAI, trong MOT `concat`. Dau vao la MP4 **da xong**
                            cua giai doan 1: hinh va tieng cua no la hai dong cua
                            MOT tep, tren MOT truc thoi gian.
@@ -822,6 +853,37 @@ def loc_cat_hai_dong(khoang: list[tuple[float, float]]) -> str:
        `atrim`, moc cua manh thu hai van la moc GOC, va `concat` noi khong ke ho
        ⇒ manh do se nam sai cho. Thieu mot trong hai dong thi HINH va TIENG lech
        nhau dung bang do dai phan bi cat — hong theo kieu nghe thay duoc.
+
+    ## Chang DIEM ANH — logo/watermark/phu de/lat guong/dich mau/zoom (25/09)
+
+    🔑 **Chuyen tu `loc_cat_noi` (GD1) xuong day (GD2), va day la CA LY DO cua
+       lan tai cau truc nay: mot lan chay co phep doi diem anh nay ⛔ khong con
+       ma hoa lai HAI lan (render cua GD1, roi cat o GD2) — no ma hoa lai MOT
+       lan, o day, cung mot luot voi phep cat.**
+
+    ⚠️ **Thu tu SAU concat GIONG HET duoi cua `loc_cat_noi`** — dung CUNG cac
+       ham thap `_loc_khung`/`_loc_diem_anh`/`_loc_logo`/`_loc_chu`, nen mot
+       khung hinh burn ra Y HET du di qua ham nao (preview `phu_de.lenh_xem_truoc`
+       van goi `loc_cat_noi`, khong doi):
+
+           concat(hinh+tieng) -> khung (cat/phong/doi ti le) -> diem_anh
+           (lat guong/dich mau) -> logo -> lop_phu (chu) -> phu de (`.ass`)
+
+       · khung TRUOC diem_anh: lat truoc thi moi toa do `crop` phai anh xa
+         guong — mot phep anh xa khong ai yeu cau;
+       · diem_anh TRUOC logo/chu: lat SAU se lat ca logo va chu cua khach;
+       · phu de SAU CUNG: no la thu khach doc de HIEU, logo/chu la de trang tri.
+
+    ⛔ **`vung` (lam mo/dien nen) KHONG nhan o day, va do la co y.** `vung` van
+       o GD1: no dat truoc `concat` tren toa do NGUON, tren TUNG khoang truoc
+       khi noi — trong khi `khoang` o day la khoang CAT cua GD2, tren MP4 GD1
+       da xong (GD1 da ap vung xong roi). ⛔ `toc_do` cung KHONG nhan o day —
+       no doi MOC THOI GIAN cua ca hinh lan tieng (`setpts`/`atempo` chung he
+       so), va no van la viec cua GD1 (`ket_xuat.py`).
+
+    `chi_so_logo_dau` mac dinh `1` (khac `2` cua `loc_cat_noi`): dau vao `0` o
+    day la MOT tep MP4 da co san CA hinh lan tieng (khong co dau vao "ban phoi
+    am" rieng nhu GD1), nen logo dau tien la dau vao `1`.
     """
     if not khoang:
         raise CheDoError(_t('Không có khoảng nào để cắt nối.'))
@@ -835,8 +897,51 @@ def loc_cat_hai_dong(khoang: list[tuple[float, float]]) -> str:
         phan.append(f"[0:a]atrim=start={b:.6f}:end={k:.6f},"
                     f"asetpts=PTS-STARTPTS[a{i}]")
     nhan = "".join(f"[v{i}][a{i}]" for i in range(len(khoang)))
+
+    # ── Chang DIEM ANH, y het `giua`/logo/chu/ass cua `loc_cat_noi` ─────────
+    from . import bien_tap as _bt
+
+    buoc_khung = (_loc_khung(bien_tap, rong_nguon, cao_nguon)
+                  if bien_tap and set(bien_tap) & set(_bt.TRUONG_HINH_HOC)
+                  else None)
+    loc_dp = _loc_diem_anh(bien_tap)
+
+    giua: list[tuple[str, object]] = []
+    if buoc_khung:
+        giua.append(("khung", buoc_khung))
+    if loc_dp:
+        giua.append(("diem_anh",
+                     lambda vao, ra, _f=loc_dp: [f"[{vao}]{_f}[{ra}]"]))
+
+    # ⭐ Khong buoc diem anh nao thi chuoi giu NGUYEN nhu truoc lan tai cau
+    #    truc nay: concat ra thang `[vr][ar]`.
+    sau_gh = "sau_gh" if (ds_logo or lop_phu or duong_ass) else NHAN_HINH_RA
+    video_dau = f"truoc_{giua[0][0]}" if giua else sau_gh
     phan.append(f"{nhan}concat=n={len(khoang)}:v=1:a=1"
-                f"[{NHAN_HINH_RA}][{NHAN_TIENG_RA}]")
+                f"[{video_dau}][{NHAN_TIENG_RA}]")
+
+    for i, (ten, dung) in enumerate(giua):
+        ke = f"truoc_{giua[i + 1][0]}" if i + 1 < len(giua) else sau_gh
+        phan.extend(dung(f"truoc_{ten}", ke))
+
+    hien = sau_gh
+    if ds_logo:
+        ke = "sau_logo" if (lop_phu or duong_ass) else NHAN_HINH_RA
+        phan.extend(_loc_logo(ds_logo, hien, ke, rong_khung=rong_khung,
+                              chi_so_dau=chi_so_logo_dau,
+                              cua_so=cua_so_ra_logo(khoang, ds_logo)))
+        hien = ke
+    if lop_phu:
+        ke = "sau_chu" if duong_ass else NHAN_HINH_RA
+        phan.extend(_loc_chu(lop_phu, duong_chu, hien, ke,
+                             cao_khung=cao_khung,
+                             cua_so=cua_so_ra_lop_phu(khoang, lop_phu)))
+        hien = ke
+    if duong_ass:
+        from . import lop_phu as _lp
+
+        phan.append(f"[{hien}]ass='{_lp.thoat_duong(duong_ass)}'"
+                    f"[{NHAN_HINH_RA}]")
     return ";".join(phan)
 
 

@@ -79,7 +79,12 @@ from .tach_tieng import LUFS_DICH as LUFS_DICH_RA
 #:    (lai du khung hinh cuoi), nen mot ban render cu **khong** con tra loi
 #:    duoc cau hoi nay — thieu buoc tang nay thi lan chay lai serve lai dung ban
 #:    thieu khung ma T3 vua bat duoc.
-PHIEN_BAN_KET_XUAT = 3
+#: ⭐ 3 → 4 (gd2-diem-anh, 25/09): `dung_lenh` THOI nhan `duong_chu`/`duong_logo`/
+#:    `duong_ass` — GD1 khong con ve logo, dong chu hay dot phu de len hinh nua
+#:    (chuyen xuong GD2). Mot ban dung CU (con `hinh.logo`/`hinh.lop_phu`) qua
+#:    ma MOI se render THIEU chung ma khong ai bao — bump nay buoc lan chay lai
+#:    tinh lai tu ma sinh lenh hien tai thay vi tra lai tep cu tu cache.
+PHIEN_BAN_KET_XUAT = 4
 
 #: Bien do lech cho phep giua thoi luong MONG DOI (ban dung) va thoi luong DO
 #: DUOC o tep ra. Khong phai mot con so tuy y: `-c:v copy` giu nguyen khung hinh
@@ -148,9 +153,6 @@ def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str,
               duong_master: str,
               duong_lop: list[str], duong_ra: str,
               bo_ma_hoa: str = "",
-              duong_chu: list[str] | None = None,
-              duong_logo: list[str] | None = None,
-              duong_ass: str = "",
               tien_do: bool = True) -> list[str]:
     """Ban dung + duong dan cuc bo -> argv. Khong cham mot tep nao.
 
@@ -159,10 +161,11 @@ def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str,
        nam o cho cua mot cau khac — va no **khong hong**, no chi sai. Nen ham
        tu kiem thay vi tin nguoi goi.
 
-    ⭐ `duong_chu` di theo dung khuon do, va vi dung mot ly do: `drawtext` doc
-       chu tu mot TEP UTF-8 (`textfile=`) chu khong tu chuoi dong lenh — xem
-       `lop_phu` doan "`textfile=` chu khong `text=`". Ham nay **khong ghi** tep
-       nao; nguoi goi ghi truoc roi dua duong dan vao, y het `duong_lop`.
+    🔴 **`duong_chu`/`duong_logo`/`duong_ass` BO khoi day (gd2-diem-anh, 25/09).**
+       GD1 khong con ve logo, dong chu hay dot phu de len hinh — `hinh.logo` va
+       `hinh.lop_phu` khong con trong ban dung (`ban_dung.SCHEMA_BAN_DUNG=3`),
+       va `hinh.phu_de` o day CHI la ho so de GD2 doc lai, GD1 khong dot no.
+       Xem `giai_doan_hinh_anh.dung_lenh` (GD2) — noi ba tham so nay chuyen tuc.
     """
     from . import che_do_render as cdr
 
@@ -201,39 +204,37 @@ def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str,
 
     ra = ban["ra"]
     nhan_tieng = "1:a:0"
-    # 🔴 **Thu tu dau vao la mot phan cua hop dong, va no khong duoc doan.**
-    #
-    #    `0` = hinh, `1` = ban phoi am, `2..` = logo. `che_do_render._loc_logo`
-    #    nhan chi so dau tu day chu KHONG tu suy ra — neu no tu doan `2`, thi
-    #    ngay ai do them mot dau vao thu ba, moi logo se lay diem anh cua **ban
-    #    phoi am**, va ffmpeg khong bao gi ca: no chi dan mot thu khac len.
-    CHI_SO_LOGO_DAU = 2
-    ds_logo_ban = list((ban.get("hinh") or {}).get("logo") or ())
-    dlogo = list(duong_logo or ())
-    if len(dlogo) != len(ds_logo_ban):
-        raise KetXuatError(
-            _t('Số tệp logo ({co}) không khớp số logo trong bản dựng ({can}).')
-            .format(co=len(dlogo), can=len(ds_logo_ban)))
-
+    # 🔴 **`0` = hinh, `1` = ban phoi am.** GD1 khong con dau vao logo nao —
+    #    xem chu thich cua `dung_lenh` o tren.
     cmd = [ffmpeg_bin, "-y", "-hide_banner", "-loglevel", "error",
            "-i", duong_video, "-i", duong_master]
-    for _d in dlogo:
-        cmd += ["-i", str(_d)]
 
-    if cach == cdr.SAO_CHEP and ds_logo_ban:
-        # ⛔ Da bi `ban_dung.kiem` chan, nhung chot lai o day: mot dau vao logo
-        #    da duoc them vao `cmd` o tren, va `-c:v copy` se lang le bo qua no.
-        raise KetXuatError(
-            _t('Bản dựng khai preset giữ hình nhưng có logo.'))
+    # 🔴 **`co_viec` (gd2-diem-anh, 25/09) — cai MOI lam GD1 khong con
+    #    ma hoa lai VO ICH.** `cach == CAT_MA_HOA_LAI` la mot chinh sach THEO
+    #    PRESET (`che_do_cho`, xem invariant o duoi) — no khong con dong nghia
+    #    voi "GD1 co viec that su phai lam" tu khi logo/lop_phu/khung/lat
+    #    guong/dich mau/phu-de-DOT chuyen xuong GD2. Sau lan chuyen do, GD1
+    #    (`smart_localize`) CHI con hai ly do de ma hoa lai: `vung` (lam mo/
+    #    dien nen) va `bien_tap["toc_do"]` (doi moc thoi gian). Khong co ca hai
+    #    thi `loc_cat_noi` chi sinh mot `trim+concat=n=1` KHONG BO LOC — decode
+    #    roi encode lai cho MOT ket qua giong het byte-cho-byte nguon la phi
+    #    pham vo ich (va no chinh la nua con lai cua "hai lan ma hoa" ma
+    #    `giai_doan_hinh_anh.py` da khai: GD1 encode "khong lam gi", GD2 encode
+    #    "cat + dan diem anh" — vay con MOT lan ma hoa THAT, khong phai hai).
+    from . import bien_tap as _bt
 
-    if cach == cdr.SAO_CHEP:
-        # ── Preset giu hinh: luong hinh di THANG tu nguon sang ban ra ─────
+    vung_thuc = hinh.get("vung") or ()
+    bien_tap = hinh.get("bien_tap") or None
+    co_viec = bool(vung_thuc) or _bt.toc_do(bien_tap) != 1.0
+
+    if cach == cdr.SAO_CHEP or not co_viec:
+        # ── Preset giu hinh, HOAC preset cat ma GD1 khong con viec gi ──────
         #
         # ⛔ Khong giai ma, khong ma hoa, khong mat mat the he, khong ton mot
         #    suat GPU nao. Do la duong da chung minh cua V2 (D-ASV-03).
         cmd += ["-map", "0:v:0", "-c:v", str(hinh["che_do"])]
     else:
-        # ── Preset cat: CAT-NOI roi ma hoa lai ───────────────────────────
+        # ── Preset cat, GD1 CO viec (vung/toc_do): CAT-NOI roi ma hoa lai ──
         #
         # 🔴 Ma hoa lai o day khong phai mot lua chon toi uu hoa. Cat bang stream
         #    copy chi cat duoc tai KEYFRAME, va do that tren tep cua chinh chuoi
@@ -251,32 +252,12 @@ def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str,
         # ⭐ `vung` di CUNG mot duong voi `khoang_giu`, va no chi ton tai o day.
         #    `ban_dung.kiem` da chan mot ban dung vua `sao_chep` vua co vung, nen
         #    toi cho nay khong con truong hop nao phai xu ly rieng.
-        # ⭐ `lop_phu` di CUNG duong voi `vung` — cung mot rang buoc vat ly, va
-        #    `ban_dung.kiem` da chan mot ban dung vua `sao_chep` vua co lop phu.
-        lp = list(hinh.get("lop_phu") or ())
-        dchu = list(duong_chu or ())
-        if len(dchu) != len(lp):
-            # ⛔ Cung hinh dang loi voi `duong_lop` o tren: lech thu tu hay lech
-            #    so luong deu KHONG lam ffmpeg hong, chung chi lam ban ra sai —
-            #    dong chu thu nhat mang noi dung cua dong thu hai.
-            raise KetXuatError(
-                _t('Số tệp chữ ({co}) không khớp số lớp phủ trong bản dựng ({can}).')
-                .format(co=len(dchu), can=len(lp)))
-        # ⭐ Logo, vien chu va phu de dat theo khung BAN RA — khac khung nguon
-        #    khi co cat khung / phong / doi ti le (`ban_dung.khung_ra`).
-        rong_ra, cao_ra = ban_dung.khung_ra(hinh)
-        bien_tap = hinh.get("bien_tap") or None
-        loc = cdr.loc_cat_noi(khoang, vung=(hinh.get("vung") or ()),
-                              lop_phu=lp, duong_chu=dchu,
-                              cao_khung=cao_ra,
-                              ds_logo=ds_logo_ban,
-                              rong_khung=rong_ra,
-                              chi_so_logo_dau=CHI_SO_LOGO_DAU,
-                              # ⭐ `.ass` KHONG la mot `-i`: `ass=` la bo loc
-                              #    doc tep truc tiep, nen no khong an mot chi
-                              #    so dau vao. Do la ly do `CHI_SO_LOGO_DAU`
-                              #    khong phai doi khi pha 14 them phu de.
-                              duong_ass=duong_ass,
+        #
+        # 🔴 **`bien_tap` o day CHI con `toc_do`** (`ban_dung._kiem_bien_tap` da
+        #    chan moi truong khac) — `khung`/`cat_khung`/`zoom`/`lat_guong`/
+        #    `dich_mau`, `logo`, `lop_phu` va DOT phu de deu khong con truyen
+        #    vao `loc_cat_noi` o day nua: chung thuc thi o GD2.
+        loc = cdr.loc_cat_noi(khoang, vung=vung_thuc,
                               bien_tap=bien_tap,
                               rong_nguon=int(hinh.get("rong_khung") or 0),
                               cao_nguon=int(hinh.get("cao_khung") or 0))
@@ -334,11 +315,16 @@ def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str,
     #    thi T16 (lech hinh/tieng <= 0,5 s) bat duoc. Doi lai, `-shortest` o day
     #    KHONG bao gio bat duoc gi: no lang le cat hinh.
     #
-    # ⛔ O preset CAT thi giu nguyen: luong hinh la ban do chinh chuoi loc sinh
-    #    ra (co `trim`/`concat`/`setpts`), tieng tran qua cuoi se keo tep ra dai
-    #    them bang mot khung dong bang — dung khuon `replace_audio`, va T3 khong
-    #    ap dung o do nen khong co loi hua nao bi `-shortest` pha.
-    if cach != cdr.SAO_CHEP:
+    # ⛔ O preset CAT VA GD1 CO VIEC thi giu nguyen: luong hinh la ban do chinh
+    #    chuoi loc sinh ra (co `trim`/`concat`/`setpts`), tieng tran qua cuoi se
+    #    keo tep ra dai them bang mot khung dong bang — dung khuon
+    #    `replace_audio`, va T3 khong ap dung o do nen khong co loi hua nao bi
+    #    `-shortest` pha.
+    #
+    # 🔴 **`cach == SAO_CHEP or not co_viec` — dung DIEU KIEN voi nhanh chon
+    #    `-c:v copy` o tren.** Preset cat ma GD1 khong con viec gi cung di
+    #    duong remux, nen no phai chiu CUNG luat T3 da ghi cho giu hinh.
+    if not (cach == cdr.SAO_CHEP or not co_viec):
         cmd.append("-shortest")
     if tien_do:
         cmd += ["-progress", "pipe:1", "-nostats"]
@@ -543,12 +529,8 @@ def kiem_tep_ra(duong: str, ban: dict, *, soi) -> dict:
         raise KetXuatError(
             _t('Tệp kết quả dài {that:.1f}s, bản dựng mong đợi {mong:.1f}s.')
             .format(that=that, mong=mong))
-    # ⭐ Khung ban ra da khai (bien tap khung) thi tep ra phai DUNG kich thuoc do:
-    #    logo, vien chu va phu de da dat theo no.
-    kr = (ban.get("hinh") or {}).get("khung_ra")
-    if kr and (int(tt.get("rong") or 0), int(tt.get("cao") or 0)) != (
-            int(kr[0]), int(kr[1])):
-        raise KetXuatError(
-            _t('Tệp kết quả khung {a}, bản dựng khai {b}.').format(
-                a=f"{tt.get('rong')}x{tt.get('cao')}", b=f"{kr[0]}x{kr[1]}"))
+    # 🔴 **⛔ Khong con phep kiem `khung_ra` o day (gd2-diem-anh).** GD1 khong
+    #    con doi kich thuoc khung (crop/zoom/doi ti le da chuyen xuong GD2) —
+    #    tep ra cua GD1 LUON cung khung voi nguon. Phep kiem kich thuoc khung
+    #    BAN GIAO nay chuyen sang GD2 (`giai_doan_hinh_anh._kiem_khung_ra`).
     return tt

@@ -974,6 +974,15 @@ msgstr "A logo in the manifest has no storage key."
 msgid "Bản dựng có lớp phủ chữ nhưng không khai chiều cao khung hình."
 msgstr "The manifest has text overlays but does not declare the frame height."
 
+#: apps/auto_scan_video/ban_dung.py
+msgid "Bản dựng có biên tập tốc độ không hợp lệ."
+msgstr "The manifest has an invalid speed edit."
+
+#: apps/auto_scan_video/ban_dung.py
+#, python-brace-format
+msgid "Bản dựng giai đoạn 1 mang trường biên tập không thuộc về nó: {ds}."
+msgstr "The stage-1 manifest carries an edit field that does not belong to it: {ds}."
+
 #: apps/auto_scan_video
 msgid "Bản dựng có mốc thời gian âm."
 msgstr "The render manifest has a negative timestamp."
@@ -11054,6 +11063,16 @@ msgstr "The number of text files ({co}) does not match the overlays in the manif
 msgid "Số tệp logo ({co}) không khớp số logo trong bản dựng ({can})."
 msgstr "The number of logo files ({co}) does not match the logos in the manifest ({can})."
 
+#: apps/auto_scan_video/giai_doan_hinh_anh.py
+#, python-brace-format
+msgid "Số tệp chữ ({co}) không khớp số lớp phủ trong yêu cầu ({can})."
+msgstr "The number of text files ({co}) does not match the overlays in the request ({can})."
+
+#: apps/auto_scan_video/giai_doan_hinh_anh.py
+#, python-brace-format
+msgid "Số tệp logo ({co}) không khớp số logo trong yêu cầu ({can})."
+msgstr "The number of logo files ({co}) does not match the logos in the request ({can})."
+
 #: apps/auto_scan_video
 #, python-brace-format
 msgid "Số tệp tiếng ({co}) không khớp số lớp trong bản dựng ({can})."
@@ -20444,6 +20463,10 @@ msgstr "Trim frame edges (%)"
 msgid "Cắt khung, phóng to, đổi tỉ lệ và đổi tốc độ chỉ dùng được với kiểu xử lý có biên tập lại hình."
 msgstr "Cropping, zooming, changing the aspect ratio and changing the speed only work with a mode that re-edits the picture."
 
+#: apps/auto_scan_video/ban_dung.py
+msgid "Đổi tốc độ chỉ dùng được với kiểu xử lý có biên tập lại hình."
+msgstr "Changing the speed only works with a mode that re-edits the picture."
+
 msgid "Cách đổi tỉ lệ khung hình không hợp lệ."
 msgstr "Invalid aspect-ratio method."
 
@@ -20503,6 +20526,11 @@ msgstr "Speed"
 
 msgid "Tệp kết quả khung {a}, bản dựng khai {b}."
 msgstr "Output frame is {a}, the render manifest declares {b}."
+
+#: apps/auto_scan_video/giai_doan_hinh_anh.py
+#, python-brace-format
+msgid "Tệp kết quả khung {a}, kế cắt khai {b}."
+msgstr "Output frame is {a}, the cut plan declares {b}."
 
 msgid "Phải"
 msgstr "Right"

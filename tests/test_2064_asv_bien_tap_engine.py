@@ -186,20 +186,20 @@ def test_toc_do_1_25_hinh_tieng_phu_de_cung_roi_vao_3_2s_va_QC_dat(tmp_path):
                 "line_count": 1, "scene_id": "s1", "index": 0}]
     pd = dict(phu_de.chuan_hoa({"che_do": "tu_dong", "kieu": "default"}),
               su_kien=su_kien)
+    # 🔴 **`phu_de` van luu trong ban dung GD1 (gd2-diem-anh), nhung GD1 KHONG
+    #    con DOT no vao hinh** — `ket_xuat.dung_lenh` khong con nhan `duong_ass`.
+    #    `ho_so.su_kien` van can cho phep kiem T15/`bt.moc_ban_ra` o duoi (chung
+    #    doc `ban["hinh"]["phu_de"]`, khong quan tam ai dot no).
     ban = ban_dung.dung(
         khoa_video="v", khoa_nen="n", khoa_master="m", ke_hoach=ke_hoach,
         ban_ke_tieng={"doan": [{"ma": "s1", "khoa": "s1"}]}, phien_ban_ffmpeg="8",
         tong_giay=8.0, che_do=cdr.CAT_MA_HOA_LAI, bo_ma_hoa="libx264",
         khoang_giu=[(0.0, 8.0)], preset="smart_localize", rong_khung=640,
         cao_khung=360, phu_de=pd, bien_tap={"toc_do": 1.25})
-    ass = phu_de.viet_tep_ass(pd, su_kien, tmp_path,
-                              rong=ban_dung.khung_ra(ban["hinh"])[0],
-                              cao=ban_dung.khung_ra(ban["hinh"])[1])
     ra = tmp_path / "ra.mp4"
     cmd = ket_xuat.dung_lenh(ban, ffmpeg_bin="ffmpeg", duong_video=str(video),
                              duong_master=str(master), duong_lop=[str(master)],
-                             duong_ra=str(ra), bo_ma_hoa="libx264",
-                             duong_ass=ass, tien_do=False)
+                             duong_ra=str(ra), bo_ma_hoa="libx264", tien_do=False)
     _chay(cmd)
 
     tt = ket_xuat.kiem_tep_ra(str(ra), ban, soi=nhap_media.soi)
