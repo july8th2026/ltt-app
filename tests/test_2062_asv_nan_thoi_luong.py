@@ -1,14 +1,20 @@
-"""test_2062 — `apps/auto_scan_video/nan_thoi_luong.py`: bốn cần gạt của D5.
+"""test_2062 — `apps/auto_scan_video/nan_thoi_luong.py`: `gop_khe` (D5).
 
-⭐ Bộ kiểm này chạy ⛔ KHÔNG cần một lượt LLM, TTS hay GPU nào: cần gạt 1 nhận
-hàm rút gọn từ ngoài, ba cần gạt còn lại là hàm thuần.
+⭐ Bộ kiểm này chạy ⛔ KHÔNG cần một lượt LLM, TTS hay GPU nào: `gop_khe` và
+`xep_bac` đều là hàm thuần.
+
+🔴 25/09: ba "cần gạt" khác từng ở đây (`can_gat_1_rut_gon`, `can_gat_2_phan_phoi`,
+`can_gat_3_he_so`) + `con_khong_vua` đã **XOÁ** — trùng hoặc chết so với bậc
+thang bốn nấc ĐANG CHẠY của `nan_cho_vua.py` (xem docstring đầu
+`nan_thoi_luong.py`). Test cho `can_gat_3_he_so` (kẹp hệ số vào trần) không
+mất phủ: `tests/test_441_asv_v4_nan_cho_vua.py::test_co_gian_bi_chan_boi_TRAN_da_khai`
+kiểm đúng hành vi đó trên `nan_cho_vua.co_gian_du_khong`.
 """
 from __future__ import annotations
 
-import pytest
-
+from apps.auto_scan_video import nan_thoi_luong
 from apps.auto_scan_video.nan_thoi_luong import (AM_TIET_MOI_GIAY, BacNan, Khe,
-                                                 TRAN_KY_TU_MOT_LUOT, can_gat_3_he_so,
+                                                 TRAN_KY_TU_MOT_LUOT,
                                                  gop_khe, xep_bac)
 
 TRAN = 1.15
@@ -68,12 +74,17 @@ def test_2062_gop_khe_ton_trong_TRAN_GOP():
     assert len(ra) >= len(khes) // 3
 
 
-def test_2062_he_so_nen_luon_bi_KEP_vao_tran():
-    """Cần gạt 3 ⛔ không bao giờ trả một hệ số vượt trần — kể cả khe rỗng chỗ."""
-    kin = _khe("a", 0.0, 0.5, 100)
-    assert can_gat_3_he_so(kin, tran_tang_toc=TRAN) == pytest.approx(TRAN)
-    rong = _khe("b", 0.0, 100.0, 5)
-    assert can_gat_3_he_so(rong, tran_tang_toc=TRAN) == 1.0
+def test_2062_BA_can_gat_TRUNG_da_XOA_khong_song_lai():
+    """25/09: `can_gat_1_rut_gon`/`can_gat_2_phan_phoi`/`can_gat_3_he_so` +
+    `con_khong_vua` đã xoá (trùng/chết so với `nan_cho_vua.py`).
+
+    ⭐ Canh chỗ trống: một tên nào trong bốn tên này sống lại mà ⛔ không đối
+       chiếu lại với `nan_cho_vua.py` là đúng cái bẫy "hai chỗ khai cùng một
+       điều" kho này đã trả giá — xem docstring đầu `nan_thoi_luong.py`.
+    """
+    for ten in ("can_gat_1_rut_gon", "can_gat_2_phan_phoi", "can_gat_3_he_so",
+                "con_khong_vua"):
+        assert not hasattr(nan_thoi_luong, ten), f"{ten} đã xoá nhưng sống lại"
 
 
 def test_2062_toc_do_noi_la_so_DO_DUOC_khong_phai_so_muon():
