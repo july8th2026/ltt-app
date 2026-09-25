@@ -4620,6 +4620,11 @@ msgstr "The floor price cannot be higher than the cap."
 msgid "Giá trị"
 msgstr "Value"
 
+#: apps/auto_scan_video/tach_tieng.py
+#, python-brace-format
+msgid "Giá trị âm lượng lớp không hợp lệ: {ten}."
+msgstr "Invalid layer volume: {ten}."
+
 #, python-brace-format
 msgid "Giá trị âm thanh không hợp lệ: {ten}."
 msgstr "Invalid audio setting: {ten}."
@@ -5424,6 +5429,15 @@ msgstr "The audio settings contain unknown fields: {ds}."
 
 msgid "Hồ sơ âm thanh không đọc được."
 msgstr "The audio settings could not be read."
+
+#: apps/auto_scan_video/tach_tieng.py
+#, python-brace-format
+msgid "Hồ sơ lớp nền có trường lạ: {ds}."
+msgstr "The background-layer profile contains unknown fields: {ds}."
+
+#: apps/auto_scan_video/tach_tieng.py
+msgid "Hồ sơ lớp nền không đọc được."
+msgstr "The background-layer profile could not be read."
 
 #: server/templates/_platform_footer.html:5
 msgid "Hỗ trợ"
@@ -15946,6 +15960,11 @@ msgstr "Apply"
 msgid "Âm lượng"
 msgstr "Volume"
 
+#: apps/auto_scan_video/tach_tieng.py
+#, python-brace-format
+msgid "Âm lượng lớp {ten} phải từ {a} đến {b}."
+msgstr "Layer volume {ten} must be between {a} and {b}."
+
 #: apps/ltt_voice
 msgid "Âm lượng rất nhỏ. Hãy thu lại gần micro hơn."
 msgstr "The level is very low. Record closer to the microphone."
@@ -16846,6 +16865,10 @@ msgstr "Stopped"
 
 msgid "Đã tắt nhạc nền thì không còn gì để hạ theo lời thoại."
 msgstr "With the music turned off there is nothing to lower under the dialogue."
+
+#: apps/auto_scan_video/tach_tieng.py
+msgid "Đã tắt hoặc hạ về 0 cả ba lớp — không còn gì để làm nhạc nền."
+msgstr "All three layers are off or at 0 — there is nothing left to make the background."
 
 msgid "Đã xong"
 msgstr "Done"

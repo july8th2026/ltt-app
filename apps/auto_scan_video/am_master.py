@@ -52,7 +52,13 @@ log = logging.getLogger(__name__)
 #: ⬆️ 2 -> 3 (asv-final, R-03): ban phoi ket thuc bang mot bo HAN DINH THAT o
 #:    tran DO DUOC (`ghim_tran_phoi`) thay vi tin mot bien du doan truoc. Ban
 #:    phoi doi byte ⇒ bat buoc bump.
-PHIEN_BAN_MASTER = 4
+#: ⬆️ 4 -> 5 (B2, 25/09): `van_tay_master` nhan them `lop_nen` — ho so BA LOP
+#:    demucs (`tach_tieng.LOP_MAC_DINH`: giong/nhac/vfx, bat/tat + gain). Ghi
+#:    THANG ho so nay vao goi hash — cung khuon voi `am_thanh` ben duoi — thay
+#:    vi tin no da "di theo" qua `van_tay_nen`: mot tham so chi mot NOI GOI
+#:    dung con nhung noi khac quen truyen se lam hai lan chay khac gain lop
+#:    tra ve CUNG mot van tay ma khong ai phat hien (O13).
+PHIEN_BAN_MASTER = 5
 
 #: So doan tieng moi lo. Xem ghi chu dau tep ve vi sao khong lam mot lan.
 #:
@@ -698,13 +704,21 @@ def _am_day_du(am: dict | None) -> dict:
     return am_thanh.tu_cai_dat(am)
 
 
+def _lop_nen_day_du(lop_nen: dict | None) -> dict:
+    from . import tach_tieng
+
+    return tach_tieng.tu_cai_dat_lop(lop_nen)
+
+
 def van_tay_master(*, van_tay_nen: str, van_tay_ke_hoach: str,
                    phien_ban_ffmpeg_: str,
-                   am_thanh: dict | None = None) -> str:
+                   am_thanh: dict | None = None,
+                   lop_nen: dict | None = None) -> str:
     """Van tay cua ban phoi.
 
-    Bon thanh phan, thieu bat cu cai nao deu lam cache noi doi: ban nen · ke
-    hoach dat doan · phien ban cong cu · phien ban ma (+ ho so am thanh).
+    Nam thanh phan, thieu bat cu cai nao deu lam cache noi doi: ban nen · ke
+    hoach dat doan · phien ban cong cu · phien ban ma (+ ho so am thanh + ho so
+    ba lop nen).
 
     🔴 **`van_tay_ban_do` DA ROI KHOI day (b4 hai giai doan, 25/09).** Ban phoi
        cua giai doan 1 phu am cho **toan bo** do dai goc, nen khong con mot ban
@@ -727,6 +741,10 @@ def van_tay_master(*, van_tay_nen: str, van_tay_ke_hoach: str,
         # V6 pha 23: ho so am thanh DAY DU (ca mac dinh). Thieu no thi mot ban
         # phoi tron o -6 dB duoc dung lai cho mot lan chay chon -18 dB.
         "am_thanh": _am_day_du(am_thanh),
+        # B2 (25/09): ho so BA LOP demucs DAY DU (ca mac dinh) — xem chu thich
+        # bump PHIEN_BAN_MASTER 4 -> 5 o tren ve vi sao ghi THANG chu khong
+        # tin no "di theo" qua `van_tay_nen`.
+        "lop_nen": _lop_nen_day_du(lop_nen),
     }, sort_keys=True)
     return hashlib.sha256(goi.encode("utf-8")).hexdigest()
 
