@@ -50,15 +50,34 @@ Dưới thứ tự mới ta **đã tổng hợp giọng xong** rồi mới vứt
 | lãng phí máy | dưới giá phẳng là chi phí của **ta**, ⛔ không phải của khách |
 | 🔴 **cụt tiếng** | cắt giữa một câu đang nói. Thứ tự cũ ⛔ không gặp vì cắt **trước** khi có tiếng |
 
+### ✅ CHỦ DỰ ÁN CHỐT (25/09) — luật cắt
+
 ```
-A  CAM cat canh co thoai        don gian nhat · mat mot phan kha nang cat
-B  chi cat o RANH GIOI CAU      giu duoc kha nang cat · CAN moc cau (ta DA CO)
-C  chap nhan lang phi            re nhat de lam · dat nhat khi chay · VAN cut tieng
+CHI cat vung KHONG co loi thoai
+     + doan CHAT LUONG KEM, theo tieu chi "nen cat hay khong"
+🔴 TRAN CUNG: cat di KHONG QUA 5% tong do dai video
 ```
 
-⭐ **Điều phối nghiêng về B**: ta **đã có mốc câu** từ bước nắn thời lượng, nên cái
-giá là *dùng lại dữ liệu đã có*, ⛔ không phải *dựng cơ chế mới*. ⛔ **Chưa chốt** —
-chờ số đo phương án A mất bao nhiêu % khả năng cắt.
+⭐ Đây là phương án **A cộng một trần**, và cái trần mới là phần quan trọng:
+
+- **⛔ Không cắt cảnh có thoại** ⇒ vấn đề *cụt tiếng* **⛔ không thể xảy ra**, và
+  ⛔ không TTS nào bị vứt. Cả hai hệ quả của §3 **biến mất**, ⛔ không phải được quản lý.
+- 🔑 **Trần 5 % chặn thiệt hại BẤT KỂ tiêu chí cư xử thế nào.** Tiêu chí "chất lượng
+  kém" là một phép **phán đoán**; một phép phán đoán ⛔ không có trần thì một ngày
+  nó sẽ cắt 40 % phim của khách và ⛔ không gì ngăn lại.
+
+**⇒ Nghiệm thu bắt buộc, ⛔ đừng bỏ:**
+1. Trần `5 %` là **bất biến ở BIÊN** — hàm dựng danh sách cắt **ném** khi vượt,
+   ⛔ không phải một `if` ở chỗ gọi. (Khuôn `hinh_hoc_dien_nen` 25/09: hàm **ném**
+   ⇒ một bản dựng hỏng ⛔ không bao giờ tồn tại.)
+2. Phép kiểm dựng một phim mà tiêu chí **muốn** cắt 30 % ⇒ khẳng định hệ **dừng ở 5 %**
+   và **khai ra** phần ⛔ không cắt được, ⛔ không im lặng cắt ít đi.
+3. ⛔ **Không** tự nới trần. Vượt 5 % là **tín hiệu** rằng tiêu chí sai, ⛔ không phải
+   rằng trần chật.
+
+⚠️ **Thứ tự ưu tiên khi đụng trần** (cần chốt lúc làm): bỏ đoạn *kém nhất* trước,
+hay bỏ đoạn *dài nhất* trước? Hai cách cho hai bản ra khác nhau ⇒ phải **khai ra**,
+⛔ đừng để nó là hệ quả tình cờ của thứ tự duyệt.
 
 ## 4. Demucs ba lớp — cơ chế LẤY ĐƯỢC, mặc định thì KHÔNG
 
