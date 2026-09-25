@@ -36,7 +36,8 @@ def test_rong_va_bang_MAC_DINH_deu_la_None():
 
 def test_ho_so_mot_phan_duoc_dien_day_du_va_LUY_DANG():
     ra = am_thanh.tu_form('{"nen_db": -12, "fade_ra": 1.5}')
-    assert ra == {"nen_db": -12.0, "giam_theo_loi": False, "fade_vao": 0.0, "fade_ra": 1.5}
+    assert ra == {"nen_db": -12.0, "giam_theo_loi": False, "fade_vao": 0.0,
+                  "fade_ra": 1.5, "nhac_nen": None}
     assert am_thanh.chuan_hoa(ra) == ra
 
 

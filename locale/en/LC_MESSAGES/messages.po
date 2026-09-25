@@ -4625,6 +4625,10 @@ msgstr "Value"
 msgid "Giá trị âm lượng lớp không hợp lệ: {ten}."
 msgstr "Invalid layer volume: {ten}."
 
+#: apps/auto_scan_video/am_thanh.py
+msgid "Giá trị lặp nhạc nền không hợp lệ."
+msgstr "Invalid background-music loop value."
+
 #, python-brace-format
 msgid "Giá trị âm thanh không hợp lệ: {ten}."
 msgstr "Invalid audio setting: {ten}."
@@ -5438,6 +5442,19 @@ msgstr "The background-layer profile contains unknown fields: {ds}."
 #: apps/auto_scan_video/tach_tieng.py
 msgid "Hồ sơ lớp nền không đọc được."
 msgstr "The background-layer profile could not be read."
+
+#: apps/auto_scan_video/am_thanh.py
+#, python-brace-format
+msgid "Hồ sơ nhạc nền có trường lạ: {ds}."
+msgstr "The background-music profile contains unknown fields: {ds}."
+
+#: apps/auto_scan_video/am_thanh.py
+msgid "Hồ sơ nhạc nền không đọc được."
+msgstr "The background-music profile could not be read."
+
+#: apps/auto_scan_video/am_master.py
+msgid "Hồ sơ nhạc nền và tệp nhạc nền phải cùng có hoặc cùng vắng mặt."
+msgstr "The background-music profile and the background-music file must be both present or both absent."
 
 #: server/templates/_platform_footer.html:5
 msgid "Hỗ trợ"
@@ -9367,6 +9384,10 @@ msgstr "The background track has the wrong channel count."
 #: apps/auto_scan_video
 msgid "Nhạc nền sai tần số lấy mẫu."
 msgstr "The background track has the wrong sample rate."
+
+#: apps/auto_scan_video/am_thanh.py
+msgid "Nhạc nền trỏ tới một tệp không hợp lệ."
+msgstr "Background music points to an invalid file."
 
 msgid "Nhạc nền so với lời thoại"
 msgstr "Background music relative to dialogue"
@@ -15967,6 +15988,15 @@ msgstr "Volume"
 #, python-brace-format
 msgid "Âm lượng lớp {ten} phải từ {a} đến {b}."
 msgstr "Layer volume {ten} must be between {a} and {b}."
+
+#: apps/auto_scan_video/am_thanh.py
+msgid "Âm lượng nhạc nền không hợp lệ."
+msgstr "Invalid background-music volume."
+
+#: apps/auto_scan_video/am_thanh.py
+#, python-brace-format
+msgid "Âm lượng nhạc nền phải từ {a} đến {b}."
+msgstr "Background-music volume must be between {a} and {b}."
 
 #: apps/ltt_voice
 msgid "Âm lượng rất nhỏ. Hãy thu lại gần micro hơn."

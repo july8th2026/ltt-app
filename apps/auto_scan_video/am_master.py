@@ -58,7 +58,17 @@ log = logging.getLogger(__name__)
 #:    vi tin no da "di theo" qua `van_tay_nen`: mot tham so chi mot NOI GOI
 #:    dung con nhung noi khac quen truyen se lam hai lan chay khac gain lop
 #:    tra ve CUNG mot van tay ma khong ai phat hien (O13).
-PHIEN_BAN_MASTER = 5
+#: ⬆️ 5 -> 6 (asv-nhac V3, 25/09): `bieu_thuc_tron`/`tron_cuoi` nhan them mot
+#:    NGUON am thanh THU HAI — nhac nen KHACH TU TAI LEN (`am_thanh.nhac_nen`:
+#:    khoa + am_luong_nen + lap). ⛔ Day KHONG phai lop "nhac" cua `tach_tieng`
+#:    (do la mot phan cua CHINH `nen`, dau vao 0, da tron xong tu truoc) — xem
+#:    canh bao o dau `am_thanh.py`. Ho so `am_thanh` day du (da nhan them khoa
+#:    `nhac_nen`, `am_thanh.MAC_DINH`) da tu di vao goi hash qua `_am_day_du`
+#:    ben duoi, nen ban chi cung KHONG mot dong code moi o `van_tay_master` —
+#:    nhung PHAI bump o day: mot json THEM MOT KHOA (`nhac_nen: None`) ngay ca
+#:    o ho so mac dinh la mot HINH DANG hash khac, va bump la tai lieu tuong
+#:    minh cho dieu do (cung quy uoc voi lan bump 4->5 vua roi).
+PHIEN_BAN_MASTER = 6
 
 #: So doan tieng moi lo. Xem ghi chu dau tep ve vi sao khong lam mot lan.
 #:
@@ -500,7 +510,8 @@ def fade_ap_dung(am: dict | None, tong_giay: float) -> tuple[float, float]:
     return round(min(a["fade_vao"], tran), 3), round(min(a["fade_ra"], tran), 3)
 
 
-def bieu_thuc_tron(n: int, *, am: dict | None = None, tong_giay: float = 0.0) -> str:
+def bieu_thuc_tron(n: int, *, am: dict | None = None, tong_giay: float = 0.0,
+                   nhac_nen_idx: int | None = None) -> str:
     """Chuoi loc: nen (dau vao 0) + `n-1` ban lo tieng -> nhan `[tron]`.
 
     Tach rieng de KIEM duoc ma khong chay ffmpeg (`test_479`).
@@ -508,10 +519,24 @@ def bieu_thuc_tron(n: int, *, am: dict | None = None, tong_giay: float = 0.0) ->
     ⭐ Ho so MAC DINH ra **dung tung ky tu** chuoi truoc pha 23: cung `volume`,
        cung mot `amix` gom het. Doi chuoi cua duong mac dinh la doi ban ra cua
        moi lan chay khong chinh gi — viec do phai di kem `PHIEN_BAN_MASTER`.
+
+    `nhac_nen_idx` — V3 (25/09), chi so dau vao ffmpeg (`-i`) cua nhac nen
+    KHACH TU TAI LEN, hoac `None` khi khong co. ⛔ Ham nay KHONG tu suy chi so
+    tu `am["nhac_nen"]`: day la BO DUNG CHUOI thuan tuy (xem docstring "Tach
+    rieng" o tren), no khong biet `nen` va cac lo da chiem bao nhieu dau vao
+    `-i` — chi `tron_cuoi` (noi xay CA lenh) biet, va phai TRUYEN THANG chi so
+    xuong day. Ho so va chi so nay phai cung co hoac cung vang; `tron_cuoi` da
+    doi chieu truoc khi goi.
     """
     from . import am_thanh
 
     a = am_thanh.tu_cai_dat(am)
+    nhac_nen = a.get("nhac_nen")
+    co_nhac = nhac_nen_idx is not None
+    if co_nhac != bool(nhac_nen):
+        raise MasterError(_t(
+            'Hồ sơ nhạc nền và tệp nhạc nền phải cùng có hoặc cùng vắng mặt.'))
+
     muc = "volume=0" if a["nen_db"] is None else f"volume={a['nen_db']}dB"
     phan = [f"[0:a]{muc},"
             f"aformat=sample_fmts=fltp:sample_rates={TAN_SO}:"
@@ -519,6 +544,30 @@ def bieu_thuc_tron(n: int, *, am: dict | None = None, tong_giay: float = 0.0) ->
     for i in range(1, n):
         phan.append(f"[{i}:a]aformat=sample_fmts=fltp:sample_rates={TAN_SO}:"
                     f"channel_layouts=stereo[t{i}];")
+
+    # V3 (25/09): nhac nen KHACH TAI LEN la MOT nguon am thanh rieng — ⛔
+    # KHONG phai lop "nhac" cua `tach_tieng` (do da nam TRONG `nen`, dau vao
+    # 0, tu truoc). Gap no lam MOT voi `nen` NGAY O DAY, truoc ca ducking: hai
+    # thu cung la mot "nen bed" nen tu nhien duoc ha THEO LOI cung nhau khi
+    # `giam_theo_loi` bat, khong can them mot nhanh rieng cho no.
+    #
+    # 🔴 `apad` BAT BUOC tren chinh dau vao nay (bai hoc Viral
+    #    `xu_ly_video.py:1197-1212`, dan lai o dau `am_thanh.py`): nhac ngan
+    #    hon video ma khach TAT lap (`tron_cuoi` khong gan `-stream_loop`) se
+    #    lam dau vao nay tu ket thuc SOM. `amix` o day khong khai `duration=`
+    #    (mac dinh `longest`) nen ban than no da an toan vi `nen` luon du
+    #    `tong_giay` — nhung `apad` la mot lop bao hiem re, dut khoat, khong
+    #    phu thuoc mot gia dinh ve `nen` co the sai trong tuong lai.
+    nen_nhan = "[nen]"
+    if co_nhac:
+        vol = nhac_nen["am_luong_nen"]
+        phan.append(f"[{nhac_nen_idx}:a]volume={vol},apad,"
+                    f"aformat=sample_fmts=fltp:sample_rates={TAN_SO}:"
+                    f"channel_layouts=stereo[nhacnen];")
+        phan.append("[nen][nhacnen]amix=inputs=2:normalize=0:"
+                    "dropout_transition=0[nenx];")
+        nen_nhan = "[nenx]"
+
     fade_vao, fade_ra = fade_ap_dung(a, tong_giay)
     dich = "[tron0]" if (fade_vao or fade_ra) else "[tron]"
     lo = "".join(f"[t{i}]" for i in range(1, n))
@@ -530,10 +579,10 @@ def bieu_thuc_tron(n: int, *, am: dict | None = None, tong_giay: float = 0.0) ->
                if n > 2 else f"{lo}anull[giong];")
         phan.append(gop + "[giong]asplit=2[gk][gm];"
                     "[gk]volume=40dB,alimiter=limit=0.5:level=0[khoa];"
-                    f"[nen][khoa]sidechaincompress={am_thanh.THAM_SO_HA_THEO_LOI}[nend];"
+                    f"{nen_nhan}[khoa]sidechaincompress={am_thanh.THAM_SO_HA_THEO_LOI}[nend];"
                     f"[nend][gm]amix=inputs=2:normalize=0:dropout_transition=0{dich};")
     else:
-        phan.append(f"[nen]{lo}amix=inputs={n}:normalize=0:dropout_transition=0{dich};")
+        phan.append(f"{nen_nhan}{lo}amix=inputs={n}:normalize=0:dropout_transition=0{dich};")
     if dich != "[tron]":
         # Fade TRUOC `loudnorm`: chuan am luong do ca doan fade, nen ban ra van
         # dung -14 LUFS. Fade sau no se lam ban ra nho hon muc tieu.
@@ -548,7 +597,7 @@ def bieu_thuc_tron(n: int, *, am: dict | None = None, tong_giay: float = 0.0) ->
 
 def tron_cuoi(nen: str, cac_lo: list[str], dich: str, *, tong_giay: float,
               hoi_huy=None, timeout: int = 1800, am: dict | None = None,
-              ghim: dict | None = None) -> str:
+              ghim: dict | None = None, nhac_nen_duong: str | None = None) -> str:
     """Tron ban nen (da ha muc) voi cac ban lo tieng, roi chuan am luong.
 
     ⭐ Chuan am luong **mot lan o cuoi**, khong phai o tung lo: `loudnorm` doi
@@ -559,15 +608,49 @@ def tron_cuoi(nen: str, cac_lo: list[str], dich: str, *, tong_giay: float,
     do). Dua no cho `kiem_ban_ra` de khoi ma hoa thu lan hai: hai lan chay cung
     mot lenh tren cung mot tep khong the cho hai cau tra loi, no chi ton them
     mot luot `loudnorm` 192 kHz tren ca ban phoi.
+
+    `nhac_nen_duong` — V3 (25/09), DUONG DIA PHUONG da giai quyet san cua nhac
+    nen KHACH TU TAI LEN (khuon `nen`/`cac_lo`: ham nay khong biet Storage hay
+    quyen so huu, no chi nhan mot tep tren dia — nguoi goi phai tu `assets.py`
+    xac minh chu so huu roi tai tep ve TRUOC khi goi ham nay, dung cach
+    `giai_doan_thoi_gian._duong_doc_duoc` da lam cho `nen`/`cac_lo`). `None` =
+    khong co nhac nen; PHAI khop voi `am["nhac_nen"]` (ca hai cung co hoac
+    cung vang), neu khong ham nay nem `MasterError` — mot ben noi "co nhac",
+    ben kia khong biet phai tron gi la mot loi cau hinh, khong phai mot ca
+    hop le de lang le bo qua.
+
+    ⛔ **KHONG them mot `-i` thu ba o `ket_xuat.dung_lenh`** (xem plan §3.2):
+       `ket_xuat` chi ghep video + BAN PHOI (2 dau vao). Nhac nen phai vao TRUOC
+       `loudnorm`, tuc o DAY — sau `loudnorm` thi mot thanh am luong nhac nen se
+       la "mot thanh keo khong lam gi" (`loudnorm` da dua ca ban ve -14 LUFS).
     """
+    from . import am_thanh
+
+    a = am_thanh.tu_cai_dat(am)
+    nhac_nen = a.get("nhac_nen")
+    if bool(nhac_nen) != (nhac_nen_duong is not None):
+        raise MasterError(_t(
+            'Hồ sơ nhạc nền và tệp nhạc nền phải cùng có hoặc cùng vắng mặt.'))
+
     Path(dich).parent.mkdir(parents=True, exist_ok=True)
     cmd = [media.ffmpeg_bin(), "-y", "-hide_banner", "-loglevel", "error",
            "-i", nen]
     for d in cac_lo:
         cmd += ["-i", d]
 
+    nhac_nen_idx = None
+    if nhac_nen_duong is not None:
+        nhac_nen_idx = 1 + len(cac_lo)
+        # 🔴 `-stream_loop -1` PHAI dat TRUOC `-i` cua CHINH no (khop Viral
+        #    `xu_ly_video.py:1091-1093`) — dat sau se ap cho dau vao KE TIEP,
+        #    khong phai dau vao nay, va ffmpeg khong bao loi ve dieu do.
+        if nhac_nen.get("lap", True):
+            cmd += ["-stream_loop", "-1"]
+        cmd += ["-i", nhac_nen_duong]
+
     # V6 pha 23: chuoi tron nam o `bieu_thuc_tron`, nhan ho so am thanh `am`.
-    phan = [bieu_thuc_tron(1 + len(cac_lo), am=am, tong_giay=tong_giay)]
+    phan = [bieu_thuc_tron(1 + len(cac_lo), am=am, tong_giay=tong_giay,
+                           nhac_nen_idx=nhac_nen_idx)]
     # ⚠️ `dual_mono=true` — mot bai hoc DA TRA GIA o pha 18 cua ban truoc, mang
     #    sang day nguyen ven: mot doan tieng MONO da qua `aformat` thanh stereo
     #    se bi `loudnorm` **do to hon thuc te 3 dB** neu thieu co nay. May sinh
@@ -683,6 +766,24 @@ def _do_am_luong(cmd_goc: list[str], loc_tron: str, *, tong_giay: float,
     #    chuoi — tuc mot ban phoi im lang se lam hong ca lan chay.
     if any(str(goi[k]).lstrip("-").lower().startswith("inf") for k in KHOA_DO):
         log.warning("do am luong tra vo cuc (ban tron im lang?) — lui ve mot luot")
+        return None
+    # 🔴 V3 (25/09) — do DUOC that, tu mot ca nhac nen o gain cao + nguon gan
+    #    full-scale (`test_4855::test_GAIN_CAO_khong_vuot_DINH_THAT`): `amix
+    #    normalize=0` CONG nhieu nguon gan 0 dBFS co the day `measured_I` VUOT
+    #    mien hop le cua chinh `loudnorm` (`[-99, 0]` — thong bao ffmpeg khi vi
+    #    pham: "Value X for parameter 'measured_I' out of range [-99 - 0]").
+    #    Luot DO (`-f null -`) van THANH CONG o day: no chi DO, khong AP dung.
+    #    Luot AP moi NEM khi nhan gia tri do lam tham so `measured_I=` — tuc
+    #    mot ho so hop le (am_luong_nen trong dung mien) van co the lam CA LAN
+    #    CHAY CHET neu khong bat truoc o day. Cung mot duong lui voi `-inf`
+    #    ngay tren: canh bao, tra `None`, `tron_cuoi` tu lui ve mot luot.
+    try:
+        if not (-99.0 <= float(goi["input_i"]) <= 0.0):
+            log.warning("do am luong: input_i=%s ngoai mien hop le cua loudnorm "
+                        "([-99, 0]) — lui ve mot luot", goi["input_i"])
+            return None
+    except (TypeError, ValueError):
+        log.warning("do am luong: input_i khong doc duoc thanh so — lui ve mot luot")
         return None
     return {k: goi[k] for k in KHOA_DO}
 

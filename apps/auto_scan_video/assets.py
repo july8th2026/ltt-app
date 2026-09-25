@@ -49,7 +49,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from platform_core.i18n import _ as _t
-from platform_core.storage import Storage, StorageError
+from platform_core.storage import CLOUDFLARE_BODY_LIMIT, Storage, StorageError
 
 from .tables import (ASSET_CORRUPT, ASSET_EXPIRED, ASSET_MISSING, ASSET_OK,
                      KINDS, KIND_ANH, KIND_PHU_DE, AsvAsset)
@@ -288,6 +288,24 @@ def do_va_bam(kho: Storage, khoa: str) -> tuple[int, str]:
     finally:
         f.close()
     return co, h.hexdigest()
+
+
+def tran_nhac_nen_byte() -> int:
+    """Tran mot tep nhac nen (V3, `asv-nhac`) khach tu tai len.
+
+    ⭐ Khuon `features.tran_logo_byte()`: LAY TU chinh sach nen tang, khong go
+       tay mot so thu hai — `platform_core.storage.CLOUDFLARE_BODY_LIMIT` la
+       tran than HTTP THAT cua Cloudflare Tunnel (100 MB), da dung cho video
+       o nhieu app khac (`autosubvideo`/`taoclipngan`/`upscalevideo`/
+       `qualitylab`). Mot ban sao rieng o day la mot con so se troi khi
+       chinh sach do doi, va troi im lang.
+
+    ⛔ Ham nay KHONG tu no chan duoc tep qua tran — do la viec cua duong upload
+       (chua noi day, xem `logo.gan_vao_run`/`doc_tu_bieu_mau` — dung lai DUONG
+       do, dung viet mot duong thu hai). No chi la MOT nguon cho cai tran, de
+       duong do khoi tu bia mot con so khac.
+    """
+    return int(CLOUDFLARE_BODY_LIMIT)
 
 
 def kiem_hop_le(kho: Storage, khoa: str, *, kind: str) -> tuple[int, str]:
