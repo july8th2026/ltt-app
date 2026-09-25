@@ -65,7 +65,11 @@
     "@activepieces/piece-github": {
       "actions": [
         "github_create_issue",
-        "createCommentOnAIssue"
+        "createCommentOnAIssue",
+        "create_pull_request",
+        "get_repository",
+        "list_pull_requests",
+        "search_code"
       ],
       "triggers": []
     },
@@ -150,7 +154,8 @@
     "github": {
       "create_issue": "khong -> thay: github_create_issue",
       "create_comment_on_issue": "khong -> thay: createCommentOnAIssue",
-      "trigger poll": "khong co: 14/14 trigger cua github la WEBHOOK"
+      "_25_09_them_action": "vong P-C them 4 action doc/ghi sach, khong dung DYNAMIC/ARRAY: create_pull_request, get_repository, list_pull_requests, search_code.",
+      "trigger poll": "khong co: 14/14 trigger cua github la WEBHOOK (doi chieu lai 25/09 tren ban 0.9.0 da ghim -- van dung, KHONG doi so voi 24/09). Mo trigger GitHub can ha tang DANG KY + NHAN webhook (piece goi `context.webhookUrl`/`onEnable`/`onDisable`) MA KHO NAY CHUA CO -- day la mot he thong con moi (endpoint cong khai, xac minh chu ky rieng tung provider, dinh tuyen payload vao `trigger.run(ctx)`), khong phai 'mo mot node'. No cung dung ngay documented boundary `xuat_catalog.js` (Sec11.4: 'trigger WEBHOOK/APP_WEBHOOK cua piece NGOAI pham vi'). ⛔ KHONG tu xay trong vong nay -- BAO chu du an, xem bao cao phien wfc."
     },
     "telegram-bot": {
       "send_text_message": "co",
