@@ -106,7 +106,24 @@ def _gia_node(node: dict, cc: dict[str, CongCu]) -> int:
         return gia
     if node.get("thi_hanh") != "job":
         return 0
-    ten_cong_cu = str(node["type"])[4:]
+    # ⚠️ Import CỤC BỘ, cùng lý do đã ghi ở `cau_noi._dinh_nghia`: `cau_noi`
+    #    kéo theo `nut_loi` → `vong_lap` → chính tệp này.
+    from platform_core.workflow.cau_noi import LoiTienTo
+    from platform_core.workflow.cau_noi import ten_cong_cu as _giai_ten
+    # 🔴 TRƯỚC 25/09 chỗ này là `str(node["type"])[4:]` — một phép cắt chỉ
+    #    đúng cho tiền tố `app.`. Node lõi `ai.llm`/`ai.extract`/`ai.router`
+    #    cũng có `thi_hanh="job"` và **KHAI** ToolSpec chúng bọc qua
+    #    `NodeDefinition.ten_toolspec`, nhưng `"ai.llm"[4:] == "lm"` ⇒ mọi đồ
+    #    thị chứa node AI đều chết ở cổng báo giá lúc publish.
+    #
+    # ⭐ `cau_noi.ten_cong_cu()` đã giải đúng bài này từ trước (`app.` thì cắt
+    #    tiền tố, còn lại đọc `ten_toolspec`). Gọi lại nó, ⛔ không viết cách
+    #    giải thứ hai — hai cửa cùng hỏi *"node này bọc tool nào"* mà trả lời
+    #    khác nhau chính là lỗi vừa rồi.
+    try:
+        ten_cong_cu = _giai_ten(str(node["type"]))
+    except LoiTienTo as loi:
+        raise KhongBaoGiaDuoc(f"{node.get('id')}: {loi}") from None
     tool = cc.get(ten_cong_cu)
     if tool is None:
         raise KhongBaoGiaDuoc(
