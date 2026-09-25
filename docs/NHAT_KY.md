@@ -11,6 +11,64 @@
 >
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
+
+## 2026-09-25 — `phien/asv-gap-nan`: đóng `test_453` cho `nan_thoi_luong.py` (5 năng lực mồ côi)
+
+Nhánh `phien/asv-gap-nan` (worktree `D:\LTTSTUDIOSAPP-asv-gap-nan`, base `92292642`).
+Việc: `test_453::test_KHONG_co_nang_luc_mo_coi_MOI` đỏ — 5 năng lực khai trong
+`apps/auto_scan_video/nan_thoi_luong.py` không có người gọi trong mã sản phẩm.
+
+**Câu hỏi bắt buộc trả lời trước:** `gop_khe` chạy TRƯỚC hay SAU `nan_cho_vua.py`
+(bậc thang bốn nấc ĐANG CHẠY trong `giai_doan_giong.py`)? → **TRƯỚC** —
+`nan_cho_vua.khe_cua(m)` đọc `bat`/`ket` CỐ ĐỊNH của từng đoạn (sửa một câu cho
+vừa khe CỦA NÓ, không bao giờ đổi ranh giới khe); `gop_khe` đổi CHÍNH các khe
+(gộp nhiều khe hẹp thành một khe rộng hơn) TRƯỚC KHI bậc thang đo trên tệp thật
+bắt đầu. Bằng chứng khớp với khảo sát cùng ngày của làn khác:
+`docs/auto_scan_video_final/KHAO_SAT/R4_TIMELINE_NOI_BO.md` §22.3.
+
+**Đối chiếu 5 năng lực:**
+- `can_gat_1_rut_gon` — TRÙNG nấc 2 của `nan_cho_vua` (LLM viết lại cho vừa,
+  đang chạy thật). **Xoá.**
+- `can_gat_2_phan_phoi` — CHẾT theo thiết kế (tự khai trong docstring cũ: không
+  còn khoảng lặng THẬT giữa hai khe để mượn). **Xoá.**
+- `can_gat_3_he_so` — TRÙNG nấc 3 của `nan_cho_vua` (co giãn kẹp trần). **Xoá**
+  — phủ test không mất: `test_441...::test_co_gian_bi_chan_boi_TRAN_da_khai`
+  kiểm đúng hành vi này trên `nan_cho_vua.co_gian_du_khong`.
+- `con_khong_vua` — hàm báo cáo đi kèm ba cái trên, cũng trùng. **Xoá.**
+- `gop_khe` — ✅ **MỚI THẬT, tính năng chưa bao giờ chạy.** Đã nối MỘT PHẦN vào
+  `giai_doan_giong.chay()`: tính `so_khe_neu_gop` trong `tom_tat` trên dữ liệu
+  thật của từng lần chạy. **CHƯA nối vào đường sinh tiếng thật** — bằng chứng
+  cụ thể: `giai_doan_thoi_gian.py:88-89` đòi MỖI `ma` trong `content.json`
+  (ghi ở `CONTENT_PROCESS`, ĐỘC LẬP với `voice_synthesis`) có MỘT dòng `giay`
+  trong `ban_ke.json`, và ném `ThoiGianError` nếu thiếu — gộp nhiều đoạn làm
+  MỘT tệp tiếng trong `voice_synthesis` mà không đổi cả `giai_doan_noi_dung.py`
+  (để `content.json` sinh ra đã gộp sẵn) lẫn `thoi_gian.lap_ke_hoach`/
+  `_dung_ban_phoi` (để biết một nhóm đã gộp dùng CHUNG một tệp âm thanh) sẽ làm
+  **vỡ** ADR-003 (pha 16/17) trên MỌI lần chạy thật có gộp — không phải rủi ro,
+  là lỗi chắc chắn. Đây đúng là việc `R4_TIMELINE_NOI_BO.md` §21.5 đã ghi là
+  đang **bị chặn** (cần một lượt TTS thật để đối chiếu). Chi tiết + điều kiện
+  nối thật: docstring đầu `nan_thoi_luong.py`.
+
+**Kết quả:** `test_453` xanh bằng mã thật (không `--accept`, không thêm
+`MO_COI_DA_BIET`). Canh chỗ trống cho 4 tên đã xoá:
+`test_2062...::test_2062_BA_can_gat_TRUNG_da_XOA_khong_song_lai`. Test nhắm:
+`test_2062` (10), `test_441/445/451/454/476` (86), `test_2018/2023/3004/409/
+414/415/418/440/460/475` (232), `test_2050/2051/3200` (18) — tất cả xanh.
+
+⚠️ **Phát hiện phụ, ngoài phạm vi lần này:** `nan_thoi_luong.AM_TIET_MOI_GIAY =
+3,284` (đo cũ) và `ngon_ngu.NHIP[VI] = 3,35` (đo lại 23/09 trên chính giọng sản
+phẩm) khai CÙNG đại lượng bằng HAI con số khác nhau, chưa đối chiếu lại — ghi
+chú tại chỗ trong mã, không sửa (ngoài phạm vi).
+
+**Va chạm làn khác lúc merge `main`:** `main` đã tiến 7 commit từ base (không
+đụng ba tệp mình sửa) — hoà sạch, không xung đột. Sau khi hoà, `test_453` vẫn
+đỏ vì **hai** tên mồ côi MỚI từ `apps/auto_scan_video/do_vung.py`
+(`do_dai_chu`, `do_logo_tinh`) — xác nhận đây là red **đã có sẵn trên `main`
+trước khi merge của mình** (làn `asv-vung`, commit `9c513189`, tệp nằm trong
+danh sách cấm sửa của phiên này). Không đụng.
+
+SHA đã gộp `main`: `01cbeae8457084d2f7c055f77ba07a13c617066c`.
+
 ## 2026-09-25 (trưa) — **Mật khẩu CSDL `ltt_app` lộ vào transcript** · rủi ro ĐÃ CHẶN ở `pg_hba`
 
 ### Chuyện gì xảy ra

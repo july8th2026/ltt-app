@@ -40,8 +40,8 @@ from pathlib import Path
 from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
 
-from . import (assets, giong_noi, lat_cat, nan_cho_vua, pipeline,
-               su_dung, van_ban)
+from . import (assets, giong_noi, lat_cat, nan_cho_vua, nan_thoi_luong,
+               pipeline, su_dung, van_ban)
 from .giai_doan_media import ThieuNguon
 
 log = logging.getLogger(__name__)
@@ -358,9 +358,58 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                 "giay_llm_nan": round(dong_ho["giay_llm_nan"], 2),
                 "preset": str(preset or ""),
                 "ma_giong": ma_giong,
+                # ⭐ `gop_khe` (D5, `nan_thoi_luong.py`) tren DU LIEU THAT cua
+                #    chinh lan chay nay — bao cao, xem `_so_khe_neu_gop`.
+                "so_khe_neu_gop": _so_khe_neu_gop(muc),
                 **nan_cho_vua.tom_tat(cac_nan),
             },
         }
+
+
+def _khe_bao_cao_tu_muc(muc: list[dict]) -> list[nan_thoi_luong.Khe]:
+    """`muc` (danh sach doan cua `content.json`) -> `Khe` cho `gop_khe` BAO CAO.
+
+    ⭐ `moc_sau` = `bat` cua doan KE TIEP trong `muc`: moi doan trong `muc` da
+       la `for_dubbing=True` (`ban_bien_tap.doan_giu_lai` loc doan bi cat truoc
+       do, o CONTENT_PROCESS) — dung dinh nghia "bien co that ke tiep" cua
+       open-dubbing ma `nan_thoi_luong.Khe` doi hoi, khong phai mot hang so.
+       Doan CUOI khong co doan sau de muon: lay chinh `ket` cua no (ngan_sach_s
+       = khe_s, khong muon).
+
+    `am_tiet` dem theo dung dinh nghia da co san cua kho nay
+    (`ngon_ngu.py:47-49`: tieng Viet — dem TU cach nhau boi khoang trang la
+    dem AM TIET, "cung mot phep"), khong phai mot cach dem moi bia ra.
+    """
+    n = len(muc)
+    ra: list[nan_thoi_luong.Khe] = []
+    for i, m in enumerate(muc):
+        bat = float(m.get("bat") or 0.0)
+        ket = max(bat, float(m.get("ket") or 0.0))
+        moc_sau = float(muc[i + 1].get("bat") or ket) if i + 1 < n else ket
+        chu = str(m.get("chu") or "")
+        ra.append(nan_thoi_luong.Khe(
+            ma=str(m.get("ma") or ""), bat=bat, ket=ket,
+            moc_sau=max(moc_sau, ket), am_tiet=len(chu.split()), chu=chu))
+    return ra
+
+
+def _so_khe_neu_gop(muc: list[dict]) -> int:
+    """So khe SE CON neu `gop_khe` duoc ap dung TRUOC bac thang nan cho vua.
+
+    🔴 **Chi BAO CAO — chua doi duong sinh tieng that.** Noi thang vao duong
+       sinh se lam vo `giai_doan_thoi_gian.lap_ke_hoach` (ADR-003): no doi MOI
+       `ma` cua `content.json` co MOT dong `giay` rieng trong `ban_ke.json`, va
+       gop nhieu doan lam mot tep se xoa mat cac `ma` con lai khoi `ban_ke` —
+       xem docstring dau `nan_thoi_luong.py` cho day du ly do + dieu kien noi
+       THAT (can sua dong bo `giai_doan_noi_dung.py` + `giai_doan_thoi_gian.py`
+       + `thoi_gian.py`, kem mot luot TTS that de doi chieu).
+
+    ⭐ Van la mot loi goi THAT tren du lieu THAT cua tung lan chay — khong phai
+       mot con so bia san — nen no la cau tra loi trung thuc cho *"gop duoc bao
+       nhieu"* tren chinh video khach vua xu ly, du chua duoc dung de sinh.
+    """
+    return len(nan_thoi_luong.gop_khe(
+        _khe_bao_cao_tu_muc(muc), tran_tang_toc=nan_cho_vua.tran_co_gian()))
 
 
 def _timeout_tts() -> float:
