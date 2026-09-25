@@ -16,14 +16,26 @@
   `"{{ nodes.fetch_sheet.output.json.prompt }}"` (đường dẫn LỒNG sau
   `.output.json`) và bị từ chối `bieu_thuc_chua_ho_tro`.
 
-## Bản vá (wfb5)
+## Bản vá — HAI round
 
-`_doi` (xem `platform_core/workflow/bien_dich.py`) nay hỏi bộ duyệt HÌNH
-DẠNG của chính ngôn ngữ §6 (`ngon_ngu.kiem`, tức
-`chinh_sach.kiem_ngon_ngu(cs=chinh_sach.chinh_sach_day_du(ham=BANG_HAM))`)
-thay vì tự nới một regex thứ hai — MỘT nguồn luật cho câu hỏi "biểu thức nào
-hợp lệ", node lõi và node app/tool cùng hỏi một chỗ (khác chỗ đã hỏi trước
-đây).
+**Round 1**: `_doi` hỏi bộ duyệt HÌNH DẠNG của chính ngôn ngữ §6
+(`ngon_ngu.kiem`, không giới hạn namespace) thay vì tự nới một regex thứ
+hai. ⛔ **Chủ dự án TỪ CHỐI GỘP round 1**: publish nhận cả bảy namespace §6.2
+(`nodes/trigger/vars/run/loop/params/workflow`), nhưng cầu nối job lúc CHẠY
+(`cau_noi.giai_tham_so`) chỉ dựng được namespace `nodes` — publish CHẤP
+NHẬN, runtime ÂM THẦM trả nguyên văn chuỗi `{{ ... }}` cho job (fail-OPEN
+trên đường tiền, NGUY HIỂM HƠN từ chối ở publish).
+
+**Round 2 (bản hiện tại)**: hai việc, không thiếu việc nào:
+
+1. `_doi`/`_bieu_thuc_s6_hop_le` hẹp lại `ten_cho_phep` xuống ĐÚNG
+   `bien_dich._NAMESPACE_APP_TOOL = {"nodes"}` — thu CỔNG cho khớp RUNTIME,
+   không phải ngược lại. Namespace khác (`trigger`…) bị từ chối Ở PUBLISH
+   (rẻ), không còn lọt xuống runtime rồi mới im lặng sai (đắt).
+2. `cau_noi.giai_tham_so` (xem `tests/test_4202_...py`) nay GIẢI ĐƯỢC đúng
+   tập `nodes.*` mà `_doi` nhận — dùng LẠI `bien_dich.trich_tham_chieu` +
+   `chinh_sach.moi_truong_wf` + `ngon_ngu.tinh` (không viết bộ giải thứ
+   hai). Publish qua ⇒ runtime giải được, hai tầng khớp nhau, đo trực tiếp.
 
 ⛔ **KHÔNG đổi** cổng an ninh tổ tiên (`_tham_chieu_trong`/`trich_tham_chieu`,
 `bien_dich()`'s vòng kiểm `to_tien`/`cong_ra_cua`) — nó vẫn là NGUỒN DUY NHẤT
@@ -31,16 +43,6 @@ trả lời "node nào là tổ tiên node nào" / "cổng ra có tồn tại", 
 `_doi` từ trước, không sửa gì ở đây. Các phép kiểm dưới đây CHỦ Ý gọi
 `bien_dich.bien_dich()` (cổng THẬT, đủ cả hai tầng), không chỉ gọi `_doi`
 riêng — để chứng minh khoảng cách đã nối mà không hạ thấp cổng an ninh kia.
-
-## ⚠️ CHƯA đóng — biên rõ, đọc `bien_dich._doi.__doc__`
-
-Cổng publish rộng ra không kéo theo cầu nối job LÚC CHẠY
-(`cau_noi.giai_tham_so`) hay báo giá tham chiếu đơn — cả hai vẫn dùng
-`la_tham_chieu` (một regex một-đoạn, không đổi ở làn này) để đọc GIÁ TRỊ
-thật. Một `params` publish được với `{{ nodes.a.output.b.c }}` sẽ KHÔNG được
-`giai_tham_so` thay giá trị lúc job chạy thật (nó trả nguyên văn chuỗi
-`{{ }}` vì `la_tham_chieu` không khớp) — đây là một khoảng cách MỚI, được
-flag riêng (xem báo cáo phiên wfb5), KHÔNG đóng trong tệp này.
 """
 from __future__ import annotations
 
@@ -123,17 +125,22 @@ def test_da_tang_long_van_publish_duoc():
     assert g["thu_tu"] == ["a", "b"]
 
 
-# ── 2. Quyết định "biểu thức §6 có hàm" (bullet #1 của brief) ───────────────
+# ── 2. Quyết định "biểu thức §6 có hàm" / namespace nào (bullet #1) ─────────
 #
-# ⭐ QUYẾT ĐỊNH: `_doi` uỷ quyền TOÀN BỘ câu hỏi hình dạng cho `ngon_ngu.kiem`
-#   (ngôn ngữ §6 đầy đủ, bảng hàm THẬT `ham_bieu_thuc.BANG_HAM`) — không tự
-#   dựng một tập con "chỉ nodes.*, không hàm". Lý do (xem `_doi.__doc__` và
-#   `_bieu_thuc_s6_hop_le.__doc__`): (a) node LÕI đã lỏng hơn `ngon_ngu.kiem`
-#   từ trước (nhận MỌI `ast.parse` được, không danh sách trắng nút); (b) một
-#   tập con tự chọn là một BẢNG THỨ HAI sẽ trôi khỏi §6 đúng như bài học
-#   "hai chỗ khai một điều"; (c) khoảng cách CHẠY THẬT (`giai_tham_so`) đã hở
-#   kể từ ca lồng-đơn-giản ở trên, cho phép thêm hàm không mở thêm rủi ro mới
-#   trên đường tiền — `_doi` vẫn chỉ là cổng HÌNH DẠNG, không phải cổng chạy.
+# ⭐ QUYẾT ĐỊNH round 2 (SAU khi round 1 — uỷ quyền TOÀN BỘ 7 namespace — bị
+#   chủ dự án từ chối gộp vì lộ khoảng trống runtime): `_doi` uỷ quyền câu
+#   hỏi hình dạng cho `ngon_ngu.kiem`, bảng hàm THẬT `ham_bieu_thuc.BANG_HAM`
+#   ĐẦY ĐỦ (không tự dựng tập con hàm — hàm không đọc sớm `nodes.<id>.output`,
+#   không có gì để hẹp), NHƯNG `ten_cho_phep` hẹp còn ĐÚNG MỘT namespace:
+#   `nodes` (`bien_dich._NAMESPACE_APP_TOOL`). Lý do hẹp namespace (không hẹp
+#   hàm): `cau_noi.giai_tham_so` (cầu nối job lúc CHẠY) chỉ dựng được
+#   namespace `nodes` từ ảnh chụp node tổ tiên — nó không có `trigger`/`vars`/
+#   `run`/`loop`/`params`/`workflow` ở điểm nộp job. Cổng publish RỘNG hơn
+#   cái RUNTIME giải được là đúng hạng lỗi "cổng nhận thứ bên gọi quên
+#   truyền" (xem docstring đầu `bien_dich.py`) — chỉ khác chỗ lộ ra: publish
+#   (rẻ) hay runtime sau khi tiền đã giữ (đắt). Hàm §6.3 không bị hẹp vì
+#   chúng KHÔNG mở thêm namespace nào — `upper(nodes.a.output.x)` vẫn chỉ đọc
+#   `nodes`, `giai_tham_so` vẫn giải được (xem test_4202).
 
 def test_bieu_thuc_co_ham_duoc_publish_theo_quyet_dinh_uy_quyen_s6():
     doc = _doc(
@@ -152,6 +159,31 @@ def test_cong_params_nhan_dong_bo_voi_bien_dich_that_cho_ca_bieu_thuc_co_ham():
     assert bien_dich.cong_params_nhan(
         "upper(nodes.a.output.json.prompt)") is True
     assert bien_dich.cong_params_nhan("round(1.5, 0)") is True
+
+
+def test_namespace_khac_nodes_van_bi_tu_choi_o_publish():
+    """⭐ Khoá lại đúng quyết định round 2: `trigger`/`vars`/`run`/`loop`/
+    `params`/`workflow` — dù đều là namespace §6.2 hợp lệ, node LÕI dùng
+    được — bị TỪ CHỐI ở cổng publish node app/tool, vì `giai_tham_so` không
+    giải được chúng lúc chạy. KHÔNG phải "rác" (`ngon_ngu.kiem` không giới
+    hạn namespace sẽ NHẬN các biểu thức này) — bị chặn RIÊNG bởi
+    `_NAMESPACE_APP_TOOL`."""
+    for bieu_thuc in ("trigger.body", "vars.x", "run.id", "loop.item",
+                      "params.gia", "workflow.input.y"):
+        assert bien_dich.cong_params_nhan(bieu_thuc) is False, bieu_thuc
+        # Đối chứng: NGÔN NGỮ §6 (không hẹp namespace) vẫn nhận — chứng minh
+        # đây là quyết định CHỦ Ý của `_NAMESPACE_APP_TOOL`, không phải một
+        # biểu thức sai cú pháp.
+        from platform_core.workflow import ngon_ngu
+        ngon_ngu.kiem(bieu_thuc)          # khong nem
+
+    doc = _doc(
+        [_node("a", "http.fetch"),
+         _node("b", "video.generate", {"prompt": "{{ trigger.body }}"})],
+        [_canh("e1", "a", "b", "json", "prompt")])
+    with pytest.raises(bien_dich.LoiBienDich) as e:
+        bien_dich.bien_dich(doc, cong_cu=CC)
+    assert e.value.ma == "bieu_thuc_chua_ho_tro"
 
 
 # ── 3. Vẫn từ chối: chuỗi RÁC (tên không thuộc namespace §6.2) ──────────────
