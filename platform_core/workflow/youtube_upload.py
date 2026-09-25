@@ -195,8 +195,23 @@ def day_byte(client: httpx.Client, phien_url: str, du_lieu: bytes, *,
                              "phien resumable khong con (404/410) — khong biet "
                              "video da len hay chua", status=r.status_code)
         if r.status_code >= 500:
-            raise LoiYouTube("ket_qua_mo_ho", r.text[:300],
-                             status=r.status_code)
+            # 🔴 CHỐT LẠI 25/09 (task B1a) — KHÁC 404/410, ⛔ không phải
+            #    `ket_qua_mo_ho`. Tài liệu CHÍNH THỨC của Google nói ngược lại
+            #    với chốt cũ: GCS *Perform resumable uploads* — "If ... you
+            #    receive a 5xx response, you should ... resume the interrupted
+            #    upload from where it left off" (dùng "exponential backoff
+            #    strategy when resuming"); Data API *Resumable Media Uploads*
+            #    — "If you receive an HTTP 503 response ... you can query the
+            #    current status of the upload by issuing an empty PUT request
+            #    on the unique upload URI". Phiên **CÒN SỐNG** sau 5xx — mơ hồ
+            #    GIẢI ĐƯỢC bằng cách hỏi lại (`_vi_tri_da_nhan`), ⛔ không phải
+            #    mơ hồ vĩnh viễn như 404/410 (phiên CHẾT, mở lại là phiên
+            #    MỚI — tức có thể đăng hai lần). Nên `provider_loi` (THỬ LẠI
+            #    ĐƯỢC, spec §5.6) đúng hơn `ket_qua_mo_ho`: khớp với
+            #    `_vi_tri_da_nhan` ngay dưới, vốn đã coi 5xx là `provider_loi`
+            #    từ trước — hai cửa trong cùng tệp từng lệch nhau ở đúng chỗ
+            #    này.
+            raise LoiYouTube("provider_loi", r.text[:300], status=r.status_code)
         raise LoiYouTube("provider_loi", r.text[:300], status=r.status_code)
     raise LoiYouTube("ket_qua_mo_ho", "het byte ma Google chua chot video")
 
