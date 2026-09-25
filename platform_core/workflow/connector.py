@@ -107,8 +107,12 @@ def mien_cua_piece(piece: str) -> tuple:
     return tuple((_doc_allowlist().get("mien") or {}).get(piece) or ())
 
 
-def _node_exe() -> pathlib.Path:
-    """Bản chép `node.exe` trong thư mục làm việc (vỏ cần ACL đọc trên nó)."""
+def node_exe() -> pathlib.Path:
+    """Bản chép `node.exe` trong thư mục làm việc (vỏ cần ACL đọc trên nó).
+
+    ⭐ Công khai (không tiền tố `_`): `code_sandbox.py` dùng chung đúng bản
+       chép này — cùng `THU_MUC_LAM_VIEC`, cùng lý do (vỏ cần ACL đọc trên nó).
+    """
     nguon = os.environ.get("LTT_NODE_EXE") or shutil.which("node")
     if not nguon:
         raise LoiConnector("khong tim thay node.exe (dat LTT_NODE_EXE)")
@@ -136,7 +140,7 @@ def chuan_bi_vo(ten_vo: str = vo_boc.TEN_VO_MAC_DINH) -> str:
     if sid in _DA_CAP_ACL:
         return sid
     THU_MUC_LAM_VIEC.mkdir(parents=True, exist_ok=True)
-    _node_exe()
+    node_exe()
     vo_boc.cap_acl(str(THU_MUC_RUNNER), sid, "(OI)(CI)(RX)")
     vo_boc.cap_acl(str(THU_MUC_LAM_VIEC), sid, "(OI)(CI)(M)")
     if not vo_boc.ap_dung_loopback(sid):
@@ -247,6 +251,18 @@ def chay(op: str, *, piece: str, version: str, name: str,
             shutil.rmtree(tmp, ignore_errors=True)
 
 
+#: Tên tham số JOB mang **ref** credential của khách (spec §9.4). ⛔ Không
+#: phải bí mật: ref là một id, chỗ duy nhất giải mã nó là tiến trình job
+#: (`apps/connector_runner/jobs.py::_bi_mat`).
+#:
+#: ⭐ Hằng đặt Ở ĐÂY, không phải trong `apps/connector_runner/jobs.py`: cả
+#:    hai phía của hợp đồng đọc nó — `cau_noi._nop_job_connector` (GHI, nộp
+#:    job) và `jobs.handle` (ĐỌC, giải mã). `apps/` được phép import
+#:    `platform_core/`, chiều ngược lại thì không — nên hằng phải sống ở
+#:    `platform_core/` và `jobs.py` import nó, không phải khai tay hai lần
+#:    một chuỗi `"credential"` ở hai đầu một job param.
+THAM_SO_CREDENTIAL = "credential"
+
 __all__ = ["HAN_CUNG_MS", "HAN_MAC_DINH_MS", "KetQua", "LoiConnector",
-           "THU_MUC_LAM_VIEC", "THU_MUC_RUNNER", "chay", "chuan_bi_vo",
-           "doc_catalog", "go_vo", "mien_cua_piece"]
+           "THAM_SO_CREDENTIAL", "THU_MUC_LAM_VIEC", "THU_MUC_RUNNER", "chay",
+           "chuan_bi_vo", "doc_catalog", "go_vo", "mien_cua_piece", "node_exe"]

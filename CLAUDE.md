@@ -53,6 +53,19 @@ docs/00_LTT_OPERATING_CONTRACT.md      ← đọc trước việc thực chất
    tiếp (đo thật, E2E) thì L1/L2 xanh → gộp `main` → deploy → báo, rồi làm tiếp — không dừng.
    Chỉ dừng khi: gate đỏ · thao tác không đảo được · thay đổi không rõ của ai · rủi ro
    bảo mật (hợp đồng §10, §10b).
+
+   🔴 **DẠNG VI PHẠM HAY GẶP NHẤT (chốt 25/09, điều phối mắc ~8 lần trong một phiên):
+   xin duyệt một THIẾT KẾ mà bằng chứng đã quyết.** Có số hoặc có nguồn ⇒ **QUYẾT và
+   ĐI TIẾP**, ghi quyết định + cái giá nếu sai. ⛔ Không hỏi *"anh duyệt hướng này
+   chứ?"*, ⛔ không hỏi *"tôi chạy chứ?"*, ⛔ không tóm tắt tiến độ rồi chờ.
+
+   ⭐ **Chỉ HỎI khi câu trả lời KHÔNG nằm trong mã, trong số đo, hay trong nguồn:**
+   - đánh đổi **sản phẩm** (khách nhận gì, tính gì tiền, bật/tắt tính năng cho khách);
+   - hai đường **đều đúng** và dữ liệu ⛔ không chọn hộ;
+   - việc **chỉ chủ dự án làm được** (bí mật, quyền, thao tác trên dashboard ngoài).
+
+   ⇒ *Một quyết định sai làm lại được và chủ dự án thấy được. Một phiên đứng chờ thì
+   ⛔ không ai lấy lại được thời gian.*
 3. **Kiểm CPU trước lệnh nặng**: `python tools\cua_so_yen.py trang-thai` (có người
    giữ khoá → chờ) + `python tools\tai_may.py` (`QUÁ TẢI` → chờ).
    ⛔ **Lệnh nào là "nặng" thì hỏi `docs/QUY_TAC_CHAY_LENH_NANG.md` §1** — chỉ nơi

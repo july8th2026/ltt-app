@@ -154,12 +154,21 @@ def test_loi_nhac_mang_theo_do_dai_DA_DO_DUOC():
         "cua may sinh tieng lam no tran ra lai")
 
 
-def test_loi_nhac_doi_viec_theo_HUONG_lech():
+def test_loi_nhac_chi_con_MOT_viec_la_RUT_NGAN():
+    """⚠️ **Ky vong nay doi CO Y 25/09** — truoc do bai nay chot rang mot doan
+    NGAN nhan loi nhac *"VIET DAY DAN HON"*.
+
+    Ve "viet lai cho DAI ra" da bo (0/5 he khao sat co no; lap luan da nam san
+    trong `nan_cho_vua` tu truoc). `loi_nhac_nan` nay NEM neu bi goi cho mot doan
+    khong dai hon khe — bat bien o BIEN, khong chi o vong lap. Chi tiet:
+    `tests/test_4600_asv_san_dung_sai.py`.
+    """
     m = {"ma": "s", "goc": "g", "bat": 0.0, "ket": 3.0}
     dai = nan.loi_nhac_nan(m, chu_hien_tai="x", giay_do_duoc=5.0, khe=3.0)[0]["content"]
-    ngan = nan.loi_nhac_nan(m, chu_hien_tai="x", giay_do_duoc=1.0, khe=3.0)[0]["content"]
     assert "RUT NGAN" in dai
-    assert "DAY DAN HON" in ngan
+    assert "DAY DAN HON" not in dai
+    with pytest.raises(nan.NanError):
+        nan.loi_nhac_nan(m, chu_hien_tai="x", giay_do_duoc=1.0, khe=3.0)
 
 
 def test_model_tra_ve_rong_thi_NEM():

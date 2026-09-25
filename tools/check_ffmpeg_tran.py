@@ -60,6 +60,15 @@ import pathlib
 import sys
 import warnings
 
+# 🔴 Cong cu nay IN `⛔`/`⭐`. Console Windows mac dinh cp1252 => `UnicodeEncodeError`
+#    va no chet TRUOC khi in ket qua — trong y het mot loi cong cu, khong phai mot
+#    phan quyet. Mot phien khac mat mot luot vi dung cho nay (25/09).
+#    ⭐ Mot CONG GATE phai in duoc thong bao cua chinh no, o moi console.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 GOC = pathlib.Path(__file__).resolve().parent.parent
 TEP_MOC = pathlib.Path(__file__).with_name("check_ffmpeg_tran.moc")
 DAU_HIEU = "# so-cho-goi-ffmpeg-tran theo tep"

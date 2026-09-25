@@ -23,10 +23,13 @@ import json
 from platform_core.db import get_session
 from platform_core.workflow import connector as _connector
 from platform_core.workflow import connector_store as _store
+from platform_core.workflow.connector import THAM_SO_CREDENTIAL
 
-#: Tên tham số mang **ref** credential của khách. ⛔ Không phải bí mật: ref là
-#: một id, và chỗ duy nhất giải mã nó là tiến trình này.
-THAM_SO_CREDENTIAL = "credential"
+#: `THAM_SO_CREDENTIAL` ĐỊNH NGHĨA ở `platform_core.workflow.connector` —
+#: hai phía của hợp đồng (`cau_noi._nop_job_connector` ghi, `handle` dưới
+#: đây đọc) không được khai tay chuỗi `"credential"` ở hai nơi. Tên giữ
+#: nguyên ở đây (import, không đổi tên) vì `__all__` của module này đã xuất
+#: nó, và mã gọi ngoài (nếu có) tra `jobs.THAM_SO_CREDENTIAL`.
 
 
 class LoiHandler(RuntimeError):

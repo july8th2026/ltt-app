@@ -539,13 +539,16 @@ def _kiem_tham_so_loi(nd, params: dict, nid: str) -> None:
                 f"{params[khoa]!r}", nid)
 
 
-def _node_loi(n: dict, nid: str, loai: str) -> dict:
-    """Node `core.*` — nguồn là `nut_loi/`, KHÔNG phải registry công cụ."""
-    from platform_core.workflow import nut_loi
+def _node_tu_dinh_nghia(n: dict, nid: str, loai: str, nd) -> dict:
+    """Biên dịch một node đã có sẵn `NodeDefinition` — dùng chung cho node
+    LÕI (`nut_loi/`) và node PIECE (`nut.dinh_nghia_piece`, nguồn 3).
 
-    nd = nut_loi.tat_ca().get(loai)
-    if nd is None:
-        raise LoiBienDich("node_khong_ton_tai", loai, nid)
+    ⭐ Tách khỏi `_node_loi`/`_node` 25/09 (lan wfp): hai nguồn khác hẳn nhau
+       ở CHỖ TRA (`nut_loi.tat_ca()` so với catalog runner), nhưng cùng một
+       câu hỏi khi đã có `nd` trong tay — publish được chưa, tham số đúng
+       hình dạng chưa, credential có khớp không. Viết hai lần là một bản
+       sao sẽ trôi (bài học "hai chỗ khai một điều").
+    """
     if not nd.publish_duoc:
         raise LoiBienDich("loai_node_chua_ho_tro", loai, nid)
     params = dict(n.get("params") or {})
@@ -568,6 +571,29 @@ def _node_loi(n: dict, nid: str, loai: str) -> dict:
             "thi_hanh": nd.thi_hanh}
 
 
+def _node_loi(n: dict, nid: str, loai: str) -> dict:
+    """Node `core.*`/`trigger.*`/`ai.*`/`connector.*` — nguồn là `nut_loi/`,
+    KHÔNG phải registry công cụ.
+
+    ⭐ Rơi về `nut.dinh_nghia_piece` khi `nut_loi` không thấy: một TRIGGER
+       piece mang tiền tố `trigger.piece.*` (catalog thật — xem
+       `connector_runner/catalog.json`), tức nó khớp `TIEN_TO_LOI` bằng
+       `"trigger."` dù nguồn thật là catalog runner, không phải `nut_loi/`.
+       Đây KHÔNG phải "suy theo tên": nhánh này chỉ chạy sau khi `_node` đã
+       phân biệt node lõi/piece với node app bằng tiền tố (xem `TIEN_TO_LOI`),
+       và bên trong nó vẫn tra sổ thật (`nut_loi.tat_ca()` trước,
+       `dinh_nghia_piece` sau), không đoán.
+    """
+    from platform_core.workflow import nut, nut_loi
+
+    nd = nut_loi.tat_ca().get(loai)
+    if nd is None:
+        nd = nut.dinh_nghia_piece(loai)
+    if nd is None:
+        raise LoiBienDich("node_khong_ton_tai", loai, nid)
+    return _node_tu_dinh_nghia(n, nid, loai, nd)
+
+
 def _node(n: dict, cc: dict[str, CongCu], *, nghiem: bool = True) -> dict:
     nid = str(n.get("id", ""))
     if not _ID.match(nid):
@@ -583,7 +609,17 @@ def _node(n: dict, cc: dict[str, CongCu], *, nghiem: bool = True) -> dict:
         ten, params = loai[4:], n.get("params") or {}
         settings = n.get("settings") or {}
     else:
-        raise LoiBienDich("loai_node_chua_ho_tro", loai, nid)
+        # ⭐ KHÔNG PHẢI `loai.startswith("piece.")`: `_node_tu_dinh_nghia`
+        #    quyết định publish được hay không TỪ `nd.publish_duoc`, và
+        #    `dinh_nghia_piece` trả `None` cho một `type` ngoài catalog
+        #    (§ "allowlist" — piece nào không có trong
+        #    `connector_runner/catalog.json` không tồn tại, hết).
+        from platform_core.workflow import nut
+
+        nd = nut.dinh_nghia_piece(loai)
+        if nd is None:
+            raise LoiBienDich("loai_node_chua_ho_tro", loai, nid)
+        return _node_tu_dinh_nghia(n, nid, loai, nd)
     tool = cc.get(ten)
     if tool is None:
         raise LoiBienDich("node_khong_ton_tai", ten, nid)
@@ -591,6 +627,40 @@ def _node(n: dict, cc: dict[str, CongCu], *, nghiem: bool = True) -> dict:
             "params": _doi(dict(params), nid, nghiem=nghiem),
             "credential_ref": str(n.get("credential_ref") or ""),
             "settings": dict(settings), "thi_hanh": "job"}
+
+
+def _cong_ra_that_node(loai: str, cc: dict[str, CongCu]) -> frozenset:
+    """Tập cổng ra THẬT của MỘT node đã biên dịch — theo ĐÚNG nguồn mà
+    `_node()` đã dùng để chấp nhận nó (node lõi/piece → `NodeDefinition`,
+    node app → `CongCu.returns`).
+
+    ⭐ Tách khỏi `cau_truc()` 25/09 (lan wfp): bản cũ viết thẳng
+       `cc[loai[4:]].returns` cho MỌI node không thuộc `TIEN_TO_LOI` — đúng
+       cho `app.*` (tiền tố `"app."` dài 4 ký tự), sai hình dạng cho
+       `piece.*` (`"piece.demo.say_hi"[4:]` ra `"e.demo.say_hi"`, một khoá
+       không bao giờ tồn tại trong `cc`) và ném `KeyError` THẲNG, không qua
+       `LoiBienDich` — một node piece publish được (`_node()` đã nhận) mà
+       `cau_truc()` sập ở bước KẾ TIẾP vì cùng một số cứng `[4:]` đã hại
+       `cau_noi.ten_cong_cu`/`bao_gia._gia_node` (xem lịch sử hai chỗ đó).
+
+    ⛔ KHÔNG hợp nhất với `_node_tu_dinh_nghia`: hàm đó nhận `nd` đã tra sẵn
+       (một lần mỗi node, lúc `_node()` chạy); hàm này tra LẠI vì `cau_truc()`
+       không giữ `NodeDefinition` của từng node qua khỏi `_node()` — tra lại
+       một sổ trong bộ nhớ rẻ hơn truyền thêm một trường xuyên suốt.
+    """
+    if loai.startswith(TIEN_TO_LOI):
+        from platform_core.workflow import nut, nut_loi as _loi
+
+        nd = _loi.tat_ca().get(loai)
+        if nd is None:
+            nd = nut.dinh_nghia_piece(loai)
+        return frozenset(ten for ten, _c in nd.cong_ra)
+    from platform_core.workflow import nut
+
+    nd_piece = nut.dinh_nghia_piece(loai)
+    if nd_piece is not None:
+        return frozenset(ten for ten, _c in nd_piece.cong_ra)
+    return frozenset(cc[loai[4:]].returns or {})
 
 
 class CauTruc(NamedTuple):
@@ -686,16 +756,12 @@ def cau_truc(document: dict, *,
     # bảng thứ hai: cùng một nguồn, đọc thẳng. Không đi qua `luoc_do` vì bộ ấy
     # ném `LoiLuocDo` khi gặp kiểu lạ, và một kiểu lạ ở một tool KHÔNG liên
     # quan không được phép làm sập đường publish của người khác.
-    # ⚠️ Node LÕI không có ToolSpec; cổng ra của nó do chính `NodeDefinition`
-    #    khai (`nut_loi/`, spec §4.5 nguồn 1). Vẫn là **một** nguồn cho mỗi
-    #    loại node, không phải một bảng thứ hai cho cùng một loại.
-    from platform_core.workflow import nut_loi as _loi
-    so_loi = _loi.tat_ca()
-    cong_ra_cua = {
-        n["id"]: (frozenset(ten for ten, _c in so_loi[n["type"]].cong_ra)
-                  if str(n["type"]).startswith(TIEN_TO_LOI)
-                  else frozenset(cc[n["type"][4:]].returns or {}))
-        for n in nodes}
+    # ⚠️ Node LÕI/PIECE không có ToolSpec; cổng ra của chúng do chính
+    #    `NodeDefinition` khai (`nut_loi/` hoặc catalog piece, spec §4.5
+    #    nguồn 1 + 3). Vẫn là **một** nguồn cho mỗi loại node — xem
+    #    `_cong_ra_that_node`, không phải một bảng thứ hai cho cùng một loại.
+    cong_ra_cua = {n["id"]: _cong_ra_that_node(str(n["type"]), cc)
+                   for n in nodes}
     return CauTruc(nodes, ra_edges, thu_tu, to_tien, cong_ra_cua)
 
 

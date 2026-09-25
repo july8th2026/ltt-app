@@ -74,6 +74,29 @@ def _ung_vien(khoa: str, schema: dict) -> list:
     return []            # không biên ⇒ tính theo mặc định (bỏ khoá)
 
 
+def _dinh_nghia_gia_co_dinh(loai: str):
+    """`NodeDefinition` của một node piece/connector (không bọc ToolSpec),
+    hoặc `None` — dùng riêng để BÁO GIÁ, không dùng cho biên dịch/nộp job.
+
+    ⭐ Import cục bộ + tra CẢ HAI nguồn (`nut_loi` cho `connector.*`,
+       `nut.dinh_nghia_piece` cho `piece.*`/`trigger.piece.*`) — cùng cách
+       `cau_noi._dinh_nghia` tra, để một node piece báo giá và nộp job đọc
+       CÙNG một `NodeDefinition`, không phải hai bản dò khác nhau.
+
+    ⛔ Chỉ trả về khi `job_type` nằm trong `JOB_TYPE_KHONG_TOOLSPEC`: một
+       node lõi khác có `thi_hanh="job"` (`ai.llm`…) vẫn phải đi đường
+       `cc.get(...)` cũ — hàm này không đụng tới giá của chúng.
+    """
+    from platform_core.workflow import nut, nut_loi
+
+    nd = nut_loi.tat_ca().get(loai)
+    if nd is None:
+        nd = nut.dinh_nghia_piece(loai)
+    if nd is not None and nd.job_type in nut.JOB_TYPE_KHONG_TOOLSPEC:
+        return nd
+    return None
+
+
 def _gia_node(node: dict, cc: dict[str, CongCu]) -> int:
     if str(node.get("type")) == LOAI_GOI_WF:
         # §7.2: *"subworkflow: `estimated_max` của version con"*.
@@ -106,7 +129,37 @@ def _gia_node(node: dict, cc: dict[str, CongCu]) -> int:
         return gia
     if node.get("thi_hanh") != "job":
         return 0
-    ten_cong_cu = str(node["type"])[4:]
+    # ⭐ THỨ TỰ HAI NHÁNH NÀY CÓ NGHĨA, ⛔ đừng đảo (gộp `wfp` + `wfg` 25/09).
+    #
+    #    Node `piece.*`/`connector.*` **KHÔNG bọc ToolSpec** ⇒ phải trả lời
+    #    TRƯỚC, bằng giá cố định của chính nó. Mọi node còn lại thì **CÓ** bọc
+    #    ToolSpec, và câu hỏi *"bọc tool nào"* trả lời bằng **khai báo**.
+    nd_co_dinh = _dinh_nghia_gia_co_dinh(str(node["type"]))
+    if nd_co_dinh is not None:
+        # Node `piece.*`/`connector.*` (nguồn 1 + 3, spec §4.5): KHÔNG bọc
+        # ToolSpec — `cc.get(...)` bên dưới sẽ luôn `None` cho chúng. Giá lấy
+        # TỪ `NodeDefinition.gia`, CÙNG con số mà `cau_noi._nop_job_connector`
+        # dùng để tính `gia_that` — hai chỗ đọc một nguồn, không phải hai bản
+        # sao.
+        return int(nd_co_dinh.gia.so) if nd_co_dinh.gia.kieu == "co_dinh" else 0
+    # ⚠️ Import CỤC BỘ, cùng lý do đã ghi ở `cau_noi._dinh_nghia`: `cau_noi`
+    #    kéo theo `nut_loi` → `vong_lap` → chính tệp này.
+    from platform_core.workflow.cau_noi import LoiTienTo
+    from platform_core.workflow.cau_noi import ten_cong_cu as _giai_ten
+    # 🔴 TRƯỚC 25/09 chỗ này là `str(node["type"])[4:]` — một phép cắt chỉ
+    #    đúng cho tiền tố `app.`. Node lõi `ai.llm`/`ai.extract`/`ai.router`
+    #    cũng có `thi_hanh="job"` và **KHAI** ToolSpec chúng bọc qua
+    #    `NodeDefinition.ten_toolspec`, nhưng `"ai.llm"[4:] == "lm"` ⇒ mọi đồ
+    #    thị chứa node AI đều chết ở cổng báo giá lúc publish.
+    #
+    # ⭐ `cau_noi.ten_cong_cu()` đã giải đúng bài này từ trước (`app.` thì cắt
+    #    tiền tố, còn lại đọc `ten_toolspec`). Gọi lại nó, ⛔ không viết cách
+    #    giải thứ hai — hai cửa cùng hỏi *"node này bọc tool nào"* mà trả lời
+    #    khác nhau chính là lỗi vừa rồi.
+    try:
+        ten_cong_cu = _giai_ten(str(node["type"]))
+    except LoiTienTo as loi:
+        raise KhongBaoGiaDuoc(f"{node.get('id')}: {loi}") from None
     tool = cc.get(ten_cong_cu)
     if tool is None:
         raise KhongBaoGiaDuoc(

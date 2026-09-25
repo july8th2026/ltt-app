@@ -58,14 +58,26 @@ class LoiTienTo(ValueError):
 
 
 def _dinh_nghia(loai: str):
-    """`NodeDefinition` của một node lõi, hoặc `None`.
+    """`NodeDefinition` của một node lõi HOẶC một node piece, hoặc `None`.
 
     ⚠️ Import CỤC BỘ: `nut_loi` kéo theo `vong_lap` → `bao_gia` →
        `bien_dich`, và một import ở đầu tệp là một vòng chờ xảy ra.
-    """
-    from platform_core.workflow import nut_loi
 
-    return nut_loi.tat_ca().get(str(loai))
+    🔴 SỬA 25/09 (lan wfp): trước đây hàm này CHỈ tra `nut_loi.tat_ca()` —
+       một sổ không bao giờ chứa node `piece.*` (nguồn thứ ba, catalog
+       runner, spec §4.5). Hệ quả: mọi chỗ gọi `_dinh_nghia` cho một node
+       piece (dưới đây, `nop_job`, hai chỗ trong `bao_ket_thuc`) đều nhận
+       `None`, `nop_job` rơi xuống nhánh `ten_cong_cu()` cũ và ném
+       `LoiTienTo` — dù `_nop_job_connector` (P6) đã sẵn sàng nhận nó.
+       `nut.dinh_nghia_piece` là chỗ TRA DUY NHẤT cho nguồn ấy (cùng hàm mà
+       `bien_dich`/`bao_gia` dùng — không ba vòng lặp catalog riêng).
+    """
+    from platform_core.workflow import nut, nut_loi
+
+    nd = nut_loi.tat_ca().get(str(loai))
+    if nd is not None:
+        return nd
+    return nut.dinh_nghia_piece(str(loai))
 
 
 def ten_cong_cu(loai: str) -> str:
@@ -351,6 +363,19 @@ def _nop_job_connector(db, run: WorkflowRun, node: dict, nd, *, vong=()):
     tham_so = dict(params)
     tham_so["owner_id"] = run.owner_id
     tham_so["_idem"] = khoa
+    # 🔴 SỬA 25/09 (lan wfp): TRƯỚC đây `tham_so` không mang `credential_ref`
+    #    của node — `_bi_mat` (`apps/connector_runner/jobs.py`) luôn nhận
+    #    ref RỖNG, tức MỌI job piece/connector chạy KHÔNG credential, kể cả
+    #    khi node đã gắn một credential thật. Với `connector.youtube.upload`
+    #    nó lộ ra ở `LoiHandler("credential_loi: thieu access_token")`
+    #    (`_chay_youtube` không có access_token) — job FAILED nhưng vì lý do
+    #    SAI (nhìn như "chưa gắn key" dù người soạn ĐÃ gắn).
+    #    `connector.THAM_SO_CREDENTIAL` là hợp đồng CHUNG với `jobs.handle`
+    #    (`_bi_mat(db, params.get(THAM_SO_CREDENTIAL), ...)`) — cùng một
+    #    hằng ở cả hai đầu, không phải chuỗi `"credential"` gõ tay hai nơi.
+    from platform_core.workflow.connector import THAM_SO_CREDENTIAL
+
+    tham_so[THAM_SO_CREDENTIAL] = str(node.get("credential_ref") or "")
     # ⭐ Thứ handler cần để gọi runner. Lấy từ ĐỒ THỊ ĐÃ BIÊN DỊCH (`node`),
     #    ⛔ không tra lại catalog lúc chạy: một bản publish phải chạy được
     #    với đúng phiên bản piece nó được biên dịch cùng, kể cả khi catalog

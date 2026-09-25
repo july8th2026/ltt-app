@@ -41,7 +41,14 @@ from platform_core.i18n import _ as _t
 #:
 #: 2 (23/09/2026): loi nhac nan mang `do_dai_toi_da` (tran DEM DUOC, cung nguon
 #: voi pha viet dau) va `muc_tieu_giay` lay `ngon_ngu.HE_SO_MUC_TIEU`.
-PHIEN_BAN_NAN = 2
+#:
+#: 3 (25/09/2026): `SAN_DUNG_SAI_GIAY` (mot am tiet) duoi dung sai chieu DAI, va
+#: chieu NGAN khong con goi model viet lai (`nen_viet_lai`).
+#:
+#: ⚠️ Chu thich "vao van tay cua doan" o tren KHONG dung hom nay: `_van_tay` cua
+#:    `giai_doan_giong` bam `ma + chu + giong + preset + tu_dien`, khong bam con
+#:    so nay (do duoc 25/09 bang `grep`). Ghi lai, khong sua o day — ngoai pham vi.
+PHIEN_BAN_NAN = 3
 
 #: Vuot bao nhieu phan khe thi phai nan. Xem ghi chu dau tep ve tinh khong doi xung.
 #:
@@ -64,11 +71,44 @@ PHIEN_BAN_NAN = 2
 #:    Pha 21 do lai. Nhung QUAN HE giua no va tran co gian thi da duoc chot.
 DUNG_SAI_DAI = 0.08
 
+#: SAN TUYET DOI cua dung sai chieu DAI, tinh bang GIAY.
+#:
+#: 0,256 s = mot am tiet, do tren giong san pham (hoi quy `giay = 0,188 + n x
+#: 0,256`, R2 = 0,927, n = 47 doan cua luot `asvr_9fc9cc89`).
+#:
+#: 🔑 **Day la mot loi tinh KHONG NHAT QUAN duoc chua, khong phai mot ti le xau
+#:    duoc noi ra.** `DUNG_SAI_DAI x khe` tren khe trung vi 1,71 s cho 137 ms,
+#:    trong khi don vi thay doi NHO NHAT ma mot lan viet lai co the tao ra la
+#:    mot am tiet = 256 ms. Doi `±137 ms` la dat mot cau hoi khong tra loi duoc
+#:    — bat ke no cham bao nhieu doan (do duoc: 100/106, tuc 94 %).
+#:
+#: ⭐ Nguon ngoai, ca hai dat SAN TUYET DOI thay vi ti le: VideoLingo
+#:    `tolerance: 1,5 s` (`config.yaml`); bot Viral `DUB_TRAN_MAX = 0,2 s`, bat
+#:    mac dinh 24/08, ghi ro *"doi rang buoc tu 'gioi han toc do' sang 'gioi han
+#:    tran'"* (`localize.py:9041`). Khao sat:
+#:    `docs/auto_scan_video_final/NC_CAPCUT_VA_CONG_DONG.md` §D1.
+#:
+#: ⛔ **Dung ha xuong duoi mot am tiet**: duoi luong tu thi phan quyet la tung
+#:    dong xu — ta tra tien cho mot lan viet lai khong the nham trung dich.
+#:
+#: ⚠️ KHONG phai `1 / ngon_ngu.NHIP[dich]` (= 299 ms voi `vi`), va khac biet la
+#:    co y: `NHIP` la nhip TRUNG BINH, tuc no gom ca doan chan 0,188 s cua cau.
+#:    San nay hoi CHI PHI BIEN cua mot am tiet — "them/bo mot am tiet doi do dai
+#:    bao nhieu" — va do la 0,256 s. Lay `1/NHIP` se noi san rong hon su that.
+SAN_DUNG_SAI_GIAY = 0.256
+
 #: Ngan hon bao nhieu phan khe thi moi dang nan.
 #:
 #: ⭐ Rong hon gap doi phia kia, co y: `thoi_gian.lap_ke_hoach` da biet cach nuot
 #:    khoang lang, nen mot cau ngan la mot van de no giai duoc. Goi model de keo
 #:    dai mot cau chi vi no ngan 20% la tra tien cho mot thu khong ai nghe ra.
+#:
+#: 🔴 **Tu 25/09 con so nay chi con de PHAN LOAI / BAO CAO.** Lap luan ngay tren
+#:    la dung, va tu 25/09 `nen_viet_lai` thi hanh no: mot doan qua NGAN khong
+#:    goi model nua. Nguon: 0/5 he da khao sat (VideoLingo, SoniTranslate,
+#:    open-dubbing, CapCut, bot Viral) co ve "viet lai cho DAI ra" —
+#:    `NC_CAPCUT_VA_CONG_DONG.md` §D5. SoniTranslate kep 0,8-1,15 ve 1,0 (cau
+#:    ngan toi 20 % thi KHONG lam gi); Viral `_nen_cau_tran` chi chon cue TRAN.
 DUNG_SAI_NGAN = 0.35
 
 #: So lan VIET LAI toi da cho mot doan (khong ke lan doc dau tien).
@@ -104,6 +144,11 @@ def _kiem_chinh_sach() -> None:
     ⛔ Dat o cap module, co chu y: mot chinh sach tu mau thuan phai chan viec nap
        app chu khong doi mot phep kiem chay den. Cung khuon voi
        `hop_dong_v4._kiem_tra_hop_dong`.
+
+    ⛔ **`SAN_DUNG_SAI_GIAY` KHONG duoc dua vao khang dinh nay.** `DUNG_SAI_DAI`
+       va `tran_co_gian() - 1` la hai TI LE khong don vi; san la GIAY tuyet doi.
+       So chung voi nhau la dung mot cai bay moi: bat dang thuc se doc duoc va
+       luon "dung" o mot khe nao do, va luon "sai" o mot khe khac.
     """
     if DUNG_SAI_DAI >= tran_co_gian() - 1.0:
         raise AssertionError(
@@ -154,12 +199,45 @@ def lech(giay: float, khe: float) -> float:
     return (float(giay) - float(khe)) / float(khe)
 
 
+def dung_sai_giay(khe: float) -> float:
+    """Dung sai chieu DAI cua mot khe, tinh bang GIAY — ti le, nhung co SAN.
+
+    🔑 `max(ti le, san)`: ti le giu dung y ban dau (khe dai thi duoc phep tran
+       nhieu hon theo do dai), san chan viec doi mot do chinh xac nho hon mot am
+       tiet — xem `SAN_DUNG_SAI_GIAY`.
+    """
+    if khe <= 0:
+        return 0.0
+    return max(DUNG_SAI_DAI * float(khe), SAN_DUNG_SAI_GIAY)
+
+
 def can_nan(giay: float, khe: float) -> bool:
-    """Doan nay co ngoai dung sai khong."""
+    """Doan nay co ngoai dung sai khong.
+
+    ⚠️ Chieu DAI do bang GIAY (`dung_sai_giay`), chieu NGAN van do bang TI LE
+       (`DUNG_SAI_NGAN`) — chieu ngan chi con dung de PHAN LOAI (`ket_luan`,
+       `tom_tat`), khong con mo duong goi model: xem `nen_viet_lai`.
+    """
     if khe <= 0:
         return False
-    d = lech(giay, khe)
-    return d > DUNG_SAI_DAI or d < -DUNG_SAI_NGAN
+    if float(giay) - float(khe) > dung_sai_giay(khe):
+        return True
+    return lech(giay, khe) < -DUNG_SAI_NGAN
+
+
+def nen_viet_lai(giay: float, khe: float) -> bool:
+    """Co duoc phep TRA TIEN cho mot lan model viet lai doan nay khong?
+
+    🔴 **Chi chieu DAI.** Mot doan qua NGAN khong bao gio vao day (chot 25/09):
+       `thoi_gian.lap_ke_hoach` da biet nuot khoang lang, nen cau ngan la van de
+       no giai duoc — va 0/5 he da khao sat co ve "viet lai cho dai ra".
+
+    ⭐ Tach khoi `can_nan` chu khong sua `can_nan`: `can_nan` tra loi *"doan nay
+       co vua khong"* (phan loai, bao cao), ham nay tra loi *"co dang goi model
+       khong"* (tien). Gop hai cau hoi vao mot ham la cach chac chan de mot ngay
+       nao do mot ben keo ben kia di theo.
+    """
+    return can_nan(giay, khe) and float(giay) > float(khe)
 
 
 def co_gian_du_khong(giay: float, khe: float) -> tuple[bool, float]:
@@ -190,9 +268,19 @@ def loi_nhac_nan(m: dict, *, chu_hien_tai: str, giay_do_duoc: float,
        giua "hay viet ngan hon" va "cau nay doc ra 4,8 giay, khe co 3,2 giay, hay
        viet lai cho khoang 3,0 giay": cai sau cho model mot muc tieu kiem duoc,
        va no la ly do vong thu hai thuong khong can den.
+
+    🔴 **BAT BIEN O BIEN (25/09): chi RUT NGAN.** Ve "viet lai cho DAI ra" da bo
+       (`nen_viet_lai`), va cho nay NEM chu khong am tham soan mot loi nhac keo
+       dai: mot cai chan o vong lap ma khong co chan o bien la mot cai chan mot
+       nguoi goi moi se di vong qua ma khong ai thay. Nem o day thi hoa don noi
+       ra ngay — con nuot thi no chi hien len o bang gia cuoi thang.
     """
-    dai_hon = float(giay_do_duoc) > float(khe)
-    viec = "RUT NGAN" if dai_hon else "VIET DAY DAN HON"
+    if float(giay_do_duoc) <= float(khe):
+        raise NanError(
+            "loi_nhac_nan chi RUT NGAN: doc ra %.3fs <= khe %.3fs. Ve viet lai "
+            "cho dai ra da bo 25/09 — xem `nen_viet_lai`"
+            % (float(giay_do_duoc), float(khe)))
+    viec = "RUT NGAN"
     from . import ngon_ngu
     c = ngon_ngu.cum(ngon_ngu_dich)
     he_thong = (
@@ -256,7 +344,42 @@ def ket_luan(ma: str, *, chu: str, giay: float, khe: float,
                               "tran": tran_co_gian()})
 
 
-def tom_tat(cac: list[KetQuaNan]) -> dict:
+def ban_ghi_luot_doc(ma: str, *, vong: int, giay: float, khe: float) -> dict:
+    """MOT ban ghi cho MOT LUOT DOC — ⛔ khong phai cho mot doan.
+
+    🔴 **Vi sao phai co (do duoc 25/09).** Luot `asvr_9fc9cc89` (275 s, 106 doan)
+       cho 59 doan vao nac 2 va 65 luot goi may B, LLM chiem ~52 % giai doan. Nhung
+       `tung_doan` chi cat giay CUOI CUNG (sau nan), va giay LAN DOC DAU cua 59
+       doan ay bi ghi de trong thu muc tam moi vong — khong log, khong persist.
+       ⇒ ⛔ **khong ai tinh duoc mot ban sua nguong tiet kiem bao nhieu luot goi.**
+
+    ⭐ Ghi vao `outputs` de TRUY VAN duoc, giong `cat_doan.chan` — mot dong log
+       dang chu thi luot sau khong ai doc.
+
+    ⛔ KHONG mang `chu`: cung ly do voi `tung_doan` — loi thoai la noi dung cua
+       khach, con day la sieu du lieu cua giai doan.
+
+    `vong` = so vong NAN da chay TRUOC luot doc nay. `0` = lan doc dau tien.
+    """
+    return {"ma": str(ma), "vong": int(vong),
+            "giay": round(float(giay), 3), "khe": round(float(khe), 3),
+            "lech": round(lech(giay, khe), 4),
+            # ⭐ Phan quyet CUA CHINH LUOT DOC AY, dong hang voi giay cua no. Mot
+            #    luot sau doi `SAN_DUNG_SAI_GIAY` roi doc lai so cu se tinh ra
+            #    mot phan quyet KHAC — va khong biet minh dang doi nguong.
+            "can_nan": bool(can_nan(giay, khe)),
+            "nen_viet_lai": bool(nen_viet_lai(giay, khe))}
+
+
+def tom_tat(cac: list[KetQuaNan], *,
+            tung_luot_doc: list[dict] | None = None) -> dict:
+    """Bao cao cua giai doan. `tung_luot_doc` = ban ghi TUNG LUOT DOC (buoc 0.5).
+
+    ⚠️ `tung_doan` (mot dong moi DOAN, giay CUOI CUNG) va `tung_luot_doc` (mot
+       dong moi LUOT DOC, giay DO DUOC luc ay) tra loi hai cau khac nhau. Doan
+       khong phai nan co dung mot dong o ca hai; doan nan hai vong co mot dong o
+       `tung_doan` va ba dong o `tung_luot_doc`.
+    """
     dem = {t: 0 for t in TRANG_THAI}
     for k in cac:
         dem[k.trang_thai] = dem.get(k.trang_thai, 0) + 1
@@ -282,6 +405,15 @@ def tom_tat(cac: list[KetQuaNan]) -> dict:
                        "lech": round(lech(k.giay, k.khe), 4),
                        "so_vong": k.so_vong,
                        "he_so_co_gian": k.he_so_co_gian} for k in cac],
+        # ⭐ Buoc 0.5 (25/09). Xem `ban_ghi_luot_doc` ve vi sao.
+        #
+        # ⚠️ `so_luot_do` KHAC `so_luot_doc` cua `giai_doan_giong.tom_tat`: cai
+        #    sau dem moi lan goi may sinh tieng trong LAN CHAY NAY, cai nay dem
+        #    ban ghi thu ve duoc — mot doan dung lai tep cu (`tu_cu`) khong co
+        #    luot doc nao nen khong co ban ghi nao. ⛔ Dung lay hai so nay tru
+        #    nhau ma khong doc hai chu thich.
+        "tung_luot_doc": list(tung_luot_doc or []),
+        "so_luot_do": len(tung_luot_doc or []),
     }
 
 

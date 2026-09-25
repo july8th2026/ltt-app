@@ -532,6 +532,12 @@ def _tim_ffmpeg() -> str:
 # ══════════════════════════════════════════════════════════════════════════════
 
 def main() -> int:
+    # 🔴 MOI `PATH` truoc moi viec (N-59). `ffmpeg` cai theo NGUOI DUNG (WinGet)
+    #    nen chi nam tren USER Path; cong cu nay chay duoi quyen nang cao / SYSTEM
+    #    thi nhan MACHINE Path va `ffprobe` tran o duoi se nem WinError 2.
+    #    ⭐ Goi ham moi cung lam phep do `_tim_ffmpeg()` tra ve dung thu WORKER thay.
+    from platform_core import media as _media
+    _media.bao_dam_ffmpeg_tren_path()
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = ap.add_subparsers(dest="lenh", required=True)
 

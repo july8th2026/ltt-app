@@ -189,20 +189,38 @@ def _kiem_credential(db, workflow_id: str, graph: dict) -> None:
     from platform_core.models import Workflow
     from platform_core.workflow import bien_dich, nut
 
-    refs = [(str(n.get("id", "")), str(n.get("type", "")),
+    hang = [(str(n.get("id", "")), str(n.get("type", "")),
              str(n.get("credential_ref") or ""))
             for n in (graph.get("nodes") or [])]
-    refs = [r for r in refs if r[2]]
-    if not refs:
+    if not hang:
         return
     wf = db.get(Workflow, workflow_id)
     owner = str(getattr(wf, "owner_id", "") or "")
     so = nut.tat_ca()
-    for nid, loai, ref in refs:
+    for nid, loai, ref in hang:
         nd = so.get(loai)
+        yeu_cau = tuple(getattr(nd, "credential", ()) or ())
+        if not ref:
+            # 🔴 THÊM 25/09 (lan wfp): TRƯỚC đây một `ref` rỗng bị LỌC BỎ
+            #    trước cả vòng lặp (`refs = [r for r in refs if r[2]]`) —
+            #    tức một node piece/connector khai `credential=("oauth2",)`
+            #    nhưng KHÔNG gắn `credential_ref` nào đi lọt qua publish
+            #    sạch sẽ, và chỉ lộ ra lúc CHẠY (job FAILED giữa chừng, sau
+            #    khi run đã giữ tiền) — đúng thứ mục §9.1 phía trên nói phải
+            #    chặn Ở PUBLISH. `job_type in JOB_TYPE_KHONG_TOOLSPEC` giữ
+            #    phạm vi ĐÚNG bằng phạm vi node piece/connector (không đụng
+            #    `app.*`/`ai.*`: khoá của chúng nằm ở `api_pool`, không phải
+            #    credential của khách — xem `nut.tu_toolspec`).
+            if nd is not None and yeu_cau \
+                    and nd.job_type in nut.JOB_TYPE_KHONG_TOOLSPEC:
+                raise bien_dich.LoiBienDich(
+                    "credential_khong_hop_le",
+                    f"node {nid!r}: node nay can credential "
+                    f"({'/'.join(yeu_cau)}) nhung chua gan `credential_ref`",
+                    nid)
+            continue
         try:
-            kho.kiem_ref(db, ref, owner_id=owner,
-                         kieu_cho_phep=tuple(getattr(nd, "credential", ()) or ()))
+            kho.kiem_ref(db, ref, owner_id=owner, kieu_cho_phep=yeu_cau)
         except kho.LoiCredential as loi:
             # ⛔ MOT ma cho ca ba ca (khong thay / da thu hoi / sai kieu): phan
             #    biet chung o bề mat publish la mot may dem cho nguoi ngoai biet

@@ -13,6 +13,7 @@
 //    kiem cua ta phu thuoc vao mot ban cap nhat cua ben thu ba.
 
 const { spawnSync } = require('child_process');
+const fs = require('fs');
 
 function action(name, run, props) {
   return { name, displayName: name, description: '', props: props || {}, run };
@@ -106,6 +107,66 @@ const actions = {
     const r = spawnSync(process.execPath, ['-e', ma],
       { stdio: 'inherit', timeout: 20000, env: moi });
     return { spawn_status: r.status, spawn_err: r.error ? (r.error.code || r.error.message) : 'none' };
+  }),
+
+  // --- phep nghiem thu RANH GIOI cho `core.code` (P-D muc 4) -------------
+  //
+  // 🔴 Nam action duoi day chay nhu Node THUAN (khong qua isolated-vm) BEN
+  //    TRONG cung mot vo AppContainer ma `code_sandbox.py` dung cho code
+  //    (`ltt-code-runner`). Chung mo phong dung tinh huong "lop isolated-vm
+  //    bi vuot qua" (V8/isolated-vm co lich su CVE — `code_sandbox.js` da
+  //    ghi ro no la LOP SIET THEM, khong phai ranh gioi) — va cau hoi chung
+  //    tra loi la: **AppContainer mot minh co con chan duoc khong?**
+
+  doc_tep_ngoai_vo: action('doc_tep_ngoai_vo', async (ctx) => {
+    const duong = String((ctx.propsValue || {}).duong || '');
+    try {
+      const noi_dung = fs.readFileSync(duong, 'utf8');
+      return { doc_duoc: true, noi_dung };
+    } catch (e) {
+      return { doc_duoc: false, loi: e.code || e.message };
+    }
+  }),
+
+  ghi_tep_ngoai_vo: action('ghi_tep_ngoai_vo', async (ctx) => {
+    const duong = String((ctx.propsValue || {}).duong || '');
+    const noi_dung = String((ctx.propsValue || {}).noi_dung || 'ghi-tu-trong-vo');
+    try {
+      fs.writeFileSync(duong, noi_dung, 'utf8');
+      return { ghi_duoc: true };
+    } catch (e) {
+      return { ghi_duoc: false, loi: e.code || e.message };
+    }
+  }),
+
+  doc_env_bi_mat: action('doc_env_bi_mat', async () => {
+    // ⛔ KHONG loc gi o day — muc dich la XEM tien trinh trong vo thay gi
+    //    trong `process.env` cua CHINH NO. `moi_truong_toi_thieu()` phia
+    //    Python la noi thuc su chan bi mat (khong bao gio dua chung vao),
+    //    nen action nay phai tra ve TRUNG THUC de phep kiem xac nhan dieu do.
+    return Object.assign({}, process.env);
+  }),
+
+  an_het_bo_nho: action('an_het_bo_nho', async () => {
+    // O TANG TIEN TRINH NGOAI (khong qua isolate) — phep nay do
+    // `job_object.py` (ProcessMemoryLimit) chu KHONG phai isolated-vm.
+    const dong = [];
+    let bytes = 0;
+    const gioi_han = 2 * 1024 * 1024 * 1024; // 2 GiB — vuot xa tran job (512 MB)
+    while (bytes < gioi_han) {
+      dong.push(Buffer.alloc(8 * 1024 * 1024, 1));
+      bytes += 8 * 1024 * 1024;
+    }
+    return { da_cap_phat_byte: bytes };
+  }),
+
+  vong_lap_cpu_vo_han: action('vong_lap_cpu_vo_han', async () => {
+    // O TANG TIEN TRINH NGOAI: khong `await`, khong nhuong CPU — mot vong lap
+    // dong bo nhu the nay KHONG bi `ProcessMemoryLimit` bat (no khong cap
+    // phat gi) va KHONG bi `JOB_OBJECT_LIMIT_JOB_TIME` (ta co y khong dung —
+    // xem docstring `job_object.py`). Thu duy nhat giet duoc no la han gio
+    // TROI cua `vo_boc.chay` (`WaitForSingleObject` + `TerminateJobObject`).
+    for (;;) { /* dot CPU vo han */ }
   }),
 };
 
