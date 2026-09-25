@@ -356,3 +356,91 @@ def test_jobs_khong_con_HAI_NGHIA_cho_mot_cai_ten():
         "`jobs.ORPHAN_TIMEOUT` la cai ten da mang HAI nghia trong cung mot tep "
         "(5 phut o dau tep, 20 phut o import cuc bo trong `_con_cho_tai_nguyen`) "
         "— dung giu lai mot bi danh cho no")
+
+
+# ---------------------------------------------------------------------------
+# 4. NGUOI DOC THU BA — `job_metrics` cung phai doc mot nguon
+#
+# ⚠️ No KHONG phai trong tai, nhung chinh vi the no nguy theo kieu khac: mot
+#    nguoi dang go loi se thay BA cau tra loi khac nhau cho cung cau hoi "lease
+#    nay con song khong" va khong biet tin cai nao.
+# ---------------------------------------------------------------------------
+
+def test_job_metrics_dem_lease_chet_theo_dung_han_cua_mode(db):
+    """`expired_execution_lease_candidates` nghia la "lease ma `reclaim_expired`
+    SE XOA" — nen no phai hoi chinh ham ay hoi.
+
+    Truoc 25/09 cho nay do bang mot nguong PHANG 20 phut: mot lease `mode='job'`
+    im 6 phut da la mo coi voi `reclaim_expired`, nhung dashboard van dem no la
+    `active`. Hai so, mot su that.
+    """
+    from platform_core import job_metrics
+
+    _lease_cu(db, resource="tach_nguon_cuc_bo", mode="job",
+              tuoi=timedelta(minutes=6))
+    db.commit()
+
+    snap = job_metrics.snapshot(db)
+    assert snap["expired_execution_lease_candidates"] == 1, (
+        "lease mode='job' im 6 phut da qua `ORPHAN_TIMEOUT_JOB` — "
+        "`reclaim_expired` se xoa no, nen bao cao phai dem no la da chet")
+    assert snap["active_execution_leases"] == 0
+
+
+def test_job_metrics_van_de_nguoi_goi_THU_HEP_duoc(db):
+    """`lease_stale_minutes` cua nguoi goi chi duoc lam han NGAN hon (`min`)."""
+    from platform_core import job_metrics
+
+    _lease_cu(db, resource="r_hep", mode="sync", tuoi=timedelta(seconds=90))
+    db.commit()
+
+    # Mac dinh: 90 s < ORPHAN_TIMEOUT_SYNC (120 s) => con song.
+    assert job_metrics.snapshot(db)["active_execution_leases"] == 1
+    # Nguoi goi thu hep xuong 1 phut => 90 s da chet.
+    hep = job_metrics.snapshot(db, lease_stale_minutes=1)
+    assert hep["expired_execution_lease_candidates"] == 1
+    assert hep["active_execution_leases"] == 0
+
+
+def test_ba_nguoi_doc_deu_lan_toi_han_mo_coi():
+    """Banh coc AST: ⛔ khong con mot nguoi doc nao tu dung nguong phang.
+
+    Ba cho tra loi cau hoi "lease con song khong" phai cung lan ve `han_mo_coi`.
+    """
+    for ten_tep, ten_ham in (("platform_core/jobs.py", "_con_cho_tai_nguyen"),
+                             ("platform_core/llm/admission.py", "reclaim_expired"),
+                             ("platform_core/job_metrics.py", "snapshot")):
+        goi = _ten_duoc_goi(_ham(GOC / ten_tep, ten_ham))
+        assert goi & set(HO_HELPER), (
+            f"{ten_tep}::{ten_ham} khong goi helper mot-nguon {HO_HELPER} — "
+            "no dang tu dung mot nguong rieng cho 'lease con song'")
+
+
+# ---------------------------------------------------------------------------
+# 5. LUOI DO — nhip cua watchdog, ⛔ khong phai nhip cua viec don log
+# ---------------------------------------------------------------------------
+
+def test_luoi_do_lease_co_ticker_RIENG_theo_nhip_dap():
+    """⭐ Loi PHAN LOAI, khong phai loi chinh so.
+
+    `6 gio` KHONG sai cho viec don log request / thong bao / mau metrics; no sai
+    vi mot watchdog tinh song-chet KHONG thuoc nhom luu tru. Do la 72x
+    `ORPHAN_TIMEOUT_JOB`, va cua so 17 phut quan sat duoc chi la 4,7 % chu ky —
+    "khong kich hoat" la ca THUONG.
+    """
+    from platform_core import job_runner
+    from platform_core.llm import admission
+
+    assert job_runner.LEASE_RECLAIM_INTERVAL_S == admission.HEARTBEAT_SECONDS, (
+        "watchdog phai chay theo nhip cua chinh thu no canh — va phai DOC hang "
+        "`HEARTBEAT_SECONDS`, khong go lai 60")
+
+    sweep = _ham(GOC / "platform_core" / "job_runner.py", "_don_du_lieu_het_han")
+    assert "reclaim_expired" not in _ten_duoc_goi(sweep), (
+        "`reclaim_expired` lai bi xep vao danh sach luu tru => no quay ve nhip "
+        "6 gio. No co ticker rieng (`_quet_lease_mo_coi`)")
+
+    luot = _ham(GOC / "platform_core" / "job_runner.py", "_mot_luot_bao_tri")
+    assert "_quet_lease_mo_coi" in _ten_duoc_goi(luot), (
+        "khong con ai goi luoi do => lease mo coi cua tai nguyen khong co ai xin "
+        "suat se nam mai")

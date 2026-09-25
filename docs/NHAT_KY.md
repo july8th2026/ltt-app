@@ -253,6 +253,74 @@ hai **ghi đè mất đường lui thật**. Bản `21c1bf9b` đã được gi�
 - Xoay **client secret** Google (đã lọt vào bản ghi hội thoại) và **mật khẩu superuser PostgreSQL**.
 - Nghiệm thu upload YouTube thật (private) để đóng phase 8.
 
+## 2026-09-25 — Vòng chết 413: van an toàn đo TOKEN, bức tường đo BYTE
+
+Khách báo phiên LTTCODE kẹt cứng: mọi lượt `request_body_too_large`, và **4 lần nén đều hỏng**.
+Ba lỗi, **một bệnh** — cùng một giá trị khai ở hai nơi, không ai bắt khớp.
+
+### Chẩn đoán — đo trước, suy sau
+
+Phép dò production (413 chặn **trước** xác thực nên không cần khoá), **có đối chứng âm**:
+
+| Thân | Kết quả |
+|---|---|
+| 1 150 067 B | **413** `payload_too_large` · `limit_value: 1048576` · `observed: 1150067` |
+| nhỏ | **401** ⇒ 413 đúng là **do kích thước** |
+
+Rồi lấy **bản ghi phiên thật** (`session-0019f199`, 165 bước — khớp ảnh chụp) và bóc ra:
+- 4 dòng `compaction/end` **đều mang** `error: "…request_body_too_large…"` ⇒ bốn lỗi nén **là cùng
+  một 413**, không phải lỗi model-trả-rỗng như tôi đã nghi. *(Giao diện hiện "could not produce a
+  useful summary" — người dùng không bao giờ biết nén chết vì cùng lý do. Lỗi thông báo thứ hai.)*
+- `usage.totalTokens = 80 823` ngay trước 413, thân vượt 1 048 576 B ⇒ **> 12,97 byte/token**.
+
+⚠️ **Tệp bản ghi là NHIỀU KHUNG zstd nối nhau.** `decompress()` chỉ đọc khung đầu, trả về **2 dòng**
+— trông y như tệp rỗng. Phải `stream_reader(..., read_across_frames=True)` mới ra 1 063 dòng.
+
+### Ba lần cùng một bệnh
+
+| # | Hai nơi khai cùng một điều | Hậu quả |
+|---|---|---|
+| 1 | Trần byte **1 MiB** ↔ cửa sổ công bố **151 552 token** | Ngân sách **6,9 B/token** — cửa sổ ta hứa **lớn hơn** thứ ta chở nổi |
+| 2 | Nền tảng **tính** ngưỡng nén ↔ client gõ cứng **`0.79`** | Client chừa **26 092** token cho câu trả lời, trong khi model được phép trả **32 768** |
+| 3 | Ngưỡng nén còn một **bản sao** trong `examples.py` | Ba bản của một số |
+
+⭐ **Lỗi #2 ĐÃ ĐƯỢC CHẨN ĐOÁN VÀ SỬA RỒI — sửa nhầm phía.** `ngan_sach.py:469-487` ghi: *"Trước
+03/09 cả hai bộ cài đều gõ `× 0,8`… ĐÂY LÀ LỖI ĐÃ XẢY RA TRÊN PRODUCTION: một lượt ăn `413` với
+101 938 token vào trên trần 96 256… con số cũ không sai vì bịa, nó sai vì **được chọn ở một cửa sổ
+rộng rồi mang sang một cửa sổ hẹp** mà không ai tính lại."* Nền tảng bỏ tỉ lệ phẳng. **Client giữ.**
+Sáu tháng sau nó cắn lại. Hoá ra client tính chỗ trống theo `LTTCODE_MAX_TOKENS` (24 000 — số nó
+**định xin**) thay vì 32 768 (số máy chủ **cho phép**).
+
+### ⛔ Hai lần TÔI chốt bằng số sai nguồn
+
+1. Làn nền tảng lấy `1 150 067 / 227 328 = 5,06 B/token` và gọi là *"ca sản xuất thật"* — đó là
+   **phép dò tổng hợp `'x' × 1 150 000`** của chính tôi. ASCII 1 byte, không nói gì về tiếng Việt.
+2. Tôi tự suy **10,64 B/token** từ **một ảnh chụp** thanh đo — và **đoán sai cả model** (ảnh chụp
+   `ltt-3.5`, thật ra lúc hỏng là `ltt-3.8`).
+
+Chỉ bản ghi phiên mới cho số đúng: **12,97** (và đó là **cận dưới**). Cả hai số sai đã bị chặn
+bằng **bánh cóc ngược** `_SO_DA_RUT_LAI = (5.059, 10.64)` trong `test_4200`.
+
+### Đã sửa
+
+- **Nền tảng** (`df017d06`, đã deploy): trần **1 MiB → 4 MiB**; `BYTE_MOI_TOKEN_JSON` → **16,0**;
+  `test_4200` chốt theo **TẬP HỢP** (duyệt `CUA_SO_THEO_MODEL`, có ca giả lập "model thứ ba" để
+  **tự chứng minh phép kiểm thật sự đỏ khi thiếu**). Nghiệm thu hai chiều: 1,1 MiB nay **401**,
+  4,5 MiB **vẫn 413** — nâng trần chứ không gỡ trần.
+- **LTTCODE `stable` 0.2.15**: client **đo byte** song song với token · nén **tự thu nhỏ đầu vào,
+  không gọi model** · ngưỡng nén theo từng model `(cửa sổ − max_output_tokens)/cửa sổ`, phép kiểm
+  chốt **bất đẳng thức** chứ không chốt chữ số · thông báo mang số thật.
+
+⭐ **Đường "học trần từ 413" có bằng chứng SỐNG**, không phải suy từ mã: lượt 1 gửi 4,48 MiB → 413
+thật (round-trip **10,9 s**); lượt 2 cùng cỡ → **chặn cục bộ trong 345 ms**, không có vòng mạng.
+
+### Còn mở
+
+- `/api/v1/models` **không công bố** `max_body_bytes` ⇒ client phải **ăn một 413 mỗi lần mở app**
+  mới học lại được trần. Công bố nó là chữa tận gốc cả ba lỗi trên: **máy chủ nói ra, client đọc**,
+  một nguồn chân lý thay vì hai bản sao.
+- Nhánh nén-tự-thu-nhỏ chỉ có phép kiểm đơn vị, **chưa ép chạy thật**.
+
 ## 2026-09-24 (chiều) — VPS bán thật CHẠY được: sáu khuyết tật, và một cổng quản trị mở trên IP của khách
 
 Chủ dự án thử tạo VPS lúc 12:57 và hỏng lần thứ ba liên tiếp. Phiên này truy tới

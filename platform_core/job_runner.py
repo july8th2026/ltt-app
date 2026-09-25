@@ -27,6 +27,10 @@ from sqlalchemy import select
 from platform_core import jobs as jobq
 from platform_core import job_events
 from platform_core.db import get_session
+# Nhập ở đầu tệp (⛔ không lười) vì `LEASE_RECLAIM_INTERVAL_S` dưới đây ĐỌC
+# `HEARTBEAT_SECONDS` của nó thay vì gõ lại 60. `admission` chỉ phụ thuộc
+# `db`/`models`, nên ⛔ không có vòng nhập.
+from platform_core.llm import admission as _admission
 from platform_core.i18n import N_
 from platform_core.i18n import _ as _t
 from platform_core.models import (JOB_CANCELLED, JOB_ERROR, JOB_RUNNING,
@@ -59,6 +63,38 @@ GPU_HEARTBEAT_S = 60.0
 # vòng đốt CPU, đủ ngắn để người dùng không thấy job đứng im.
 GPU_RETRY_DELAY_S = 20
 EVENT_PURGE_INTERVAL_S = 6 * 60 * 60
+
+#: Bao lâu quét `ExecutionLease` mồ côi một lần. **Bằng** `HEARTBEAT_SECONDS`
+#: (60 s) — ⛔ không phải trùng ngẫu nhiên, nên hằng ấy được **đọc thẳng** chứ
+#: không gõ lại: một watchdog chạy theo nhịp của **chính thứ nó canh**, và một
+#: nhịp thiếu là bằng chứng duy nhất nó đi tìm.
+#:
+#: 🔴 VÌ SAO NÓ PHẢI CÓ TICKER RIÊNG (25/09/2026) — lỗi PHÂN LOẠI, ⛔ không phải
+#:    lỗi chỉnh số. Trước đó `admission.reclaim_expired` nằm trong
+#:    `_don_du_lieu_het_han()`, tức chạy theo `EVENT_PURGE_INTERVAL_S` = **6 giờ**:
+#:
+#:        6 h / ORPHAN_TIMEOUT_JOB (300 s)   =  72x
+#:        6 h / ORPHAN_TIMEOUT_SYNC (120 s)  = 180x
+#:
+#:    Ca quan sát 25/09: lưới đỡ ⛔ không kích hoạt trong 17 phút — mà 17 phút chỉ
+#:    là **4,7 %** chu kỳ, nên đó là ca **thường**, ⛔ không phải xui. Chờ xấu nhất
+#:    ≈ 5 h 55′, trung bình ≈ 3 h; và 8 worker cùng bị một deploy restart thì pha
+#:    trùng nhau, ⛔ không có lợi ích lệch pha.
+#:
+#: ⛔ ĐỪNG "sửa" bằng cách hạ `EVENT_PURGE_INTERVAL_S`: `6 giờ` ⛔ không sai cho
+#:    việc dọn log request / thông báo / mẫu metrics — nó sai vì một **watchdog
+#:    tính sống-chết** ⛔ không thuộc nhóm **lưu trữ dữ liệu**. Hạ nhóm ấy xuống
+#:    60 s là bắt việc dọn log chạy **360 lần** nhiều hơn cần.
+#:
+#: ⚠️ VAI CỦA NÓ: **lưới đỡ**, ⛔ không phải cơ chế chính. Người dọn chính là
+#:    đường nóng — `admission.acquire`/`_giu_slot_trong` gọi `reclaim_expired`
+#:    trước khi giành slot, và từ 25/09 đường nóng **tới được** (bộ lọc suất của
+#:    `jobs.claim` đọc cùng `admission.han_mo_coi`, nên lease chết ⛔ không còn
+#:    giấu được job của chính tài nguyên nó). Cái này chỉ bắt phần đường nóng
+#:    ⛔ không tới: tài nguyên ⛔ không có job nào xếp hàng sau nó. ⛔ Đừng nới nó
+#:    lên vì "đường nóng đã dọn rồi" — cũng ⛔ đừng tưởng nó là cơ chế chính rồi
+#:    hạ xuống nữa.
+LEASE_RECLAIM_INTERVAL_S = _admission.HEARTBEAT_SECONDS
 UPLOAD_SWEEP_INTERVAL_S = 60 * 60
 # Webhooks are delivered by the worker, never by the request that
 # finished the job: a customer's endpoint being slow or down must not
@@ -1434,7 +1470,7 @@ def _don_du_lieu_het_han() -> None:
                                           notifications, outbox, request_log,
                                           security_log)
     from platform_core import oauth_google
-    from platform_core.llm import admission, phong_cho
+    from platform_core.llm import phong_cho
     from platform_core.workflow import su_kien as workflow_su_kien
 
     rules = (
@@ -1445,7 +1481,11 @@ def _don_du_lieu_het_han() -> None:
         ("ban ghi webhook da gui", outbox.purge_expired),
         ("ban ghi idempotency", idempotency.purge_expired),
         ("mau metrics", metrics.purge_expired),
-        ("execution lease mo coi", admission.reclaim_expired),
+        # ⛔ `admission.reclaim_expired` KHÔNG còn ở đây — nó là một watchdog tính
+        #    sống-chết, ⛔ không phải một luật LƯU TRỮ, nên nó có ticker riêng
+        #    (`LEASE_RECLAIM_INTERVAL_S`, `_quet_lease_mo_coi`). Xếp nó vào danh
+        #    sách này là đã bắt nó chạy theo nhịp 6 giờ của việc dọn log — 72×
+        #    hạn mà nó phải đỡ. Xem chú thích của hằng ấy.
         # Phòng chờ + sổ lượt LLM (multijob): chốt dòng chờ mồ côi, xoá sau 30 ngày.
         ("phong cho LLM", phong_cho.don_het_han),
         # Nội dung của job: file sinh ra + prompt + payload kết quả. Hàng `jobs`
@@ -1468,6 +1508,28 @@ def _don_du_lieu_het_han() -> None:
                     log.info("don %d dong %s", gone, label)
         except Exception:  # noqa: BLE001 - housekeeping must not kill the worker
             log.exception("khong don duoc %s", label)
+
+
+def _quet_lease_mo_coi() -> int:
+    """LƯỚI ĐỠ cho `ExecutionLease` của tiến trình đã chết. Trả số lease thu hồi.
+
+    ⚠️ Người dọn CHÍNH là đường nóng (`admission.acquire`/`_giu_slot_trong` gọi
+       `reclaim_expired` trước khi giành slot). Hàm này chỉ bắt phần đường nóng
+       ⛔ không tới — tài nguyên mà lúc ấy ⛔ không có ai xin suất.
+
+    ⛔ Lỗi ở đây ⛔ không được giết worker: đây là bảo trì, và một worker chết vì
+       lượt dọn thất bại thì ⛔ không dọn được lần sau nữa.
+    """
+    thu = 0
+    try:
+        for db in _one_session():
+            thu = _admission.reclaim_expired(db)
+            db.commit()
+        if thu:
+            log.info("luoi do: thu hoi %d execution lease mo coi", thu)
+    except Exception:  # noqa: BLE001 - bao tri khong duoc giet worker
+        log.exception("khong quet duoc execution lease mo coi")
+    return thu
 
 
 def _ghi_chi_phi(db, job) -> None:
@@ -1718,6 +1780,13 @@ def _mot_luot_bao_tri(moc: dict) -> None:
         _don_du_lieu_het_han()
         moc["event_purge"] = time.monotonic() + EVENT_PURGE_INTERVAL_S
 
+    # ⭐ Ticker RIÊNG, ⛔ không nằm trong `_don_du_lieu_het_han` ở trên: đây là một
+    #    watchdog (nhịp của thứ nó canh), ⛔ không phải một luật lưu trữ (nhịp của
+    #    việc dọn log). Xem `LEASE_RECLAIM_INTERVAL_S`.
+    if time.monotonic() >= moc["lease_reclaim"]:
+        _quet_lease_mo_coi()
+        moc["lease_reclaim"] = time.monotonic() + LEASE_RECLAIM_INTERVAL_S
+
     if time.monotonic() >= moc["upload_sweep"]:
         from platform_core import upload_sessions
         from platform_core.storage import get_storage
@@ -1803,8 +1872,8 @@ def _vong_bao_tri(stop) -> None:
     """
     from platform_core import leases
 
-    moc = {"event_purge": 0.0, "upload_sweep": 0.0, "webhook": 0.0,
-           "metrics": 0.0, "alert": 0.0}
+    moc = {"event_purge": 0.0, "lease_reclaim": 0.0, "upload_sweep": 0.0,
+           "webhook": 0.0, "metrics": 0.0, "alert": 0.0}
     lease = None
     while stop is None or not stop():
         try:
