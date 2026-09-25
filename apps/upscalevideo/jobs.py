@@ -397,22 +397,27 @@ def handle(params: dict, ctx=None) -> dict:
             "out_key": out_key,
         })
         
+        # ⚠️ Khoi tao TUONG MINH: bien nay duoc gan CO DIEU KIEN (chi khi mot cong
+        #    hong) nhung duoc DOC khi dung `res` ben duoi.
+        canh_bao_chat_luong = None
         # Quality gate check
-        from apps.upscalevideo.quality_gate import run_quality_gates, GATE_THRESHOLDS
+        from apps.upscalevideo.quality_gate import run_quality_gates
         preset = Preset(preset.value)
-        thresholds = GATE_THRESHOLDS[preset]
+        # ⛔ Bo `thresholds = GATE_THRESHOLDS[preset]`: gan ma khong dung (ruff F841).
+        #    Khong mat cua kiem ngam nao: `quality_gate.py:77` tu tra bang do, nen
+        #    `KeyError` cho mot preset la van xay ra o trong `run_quality_gates`.
         if ctx is not None:
             ctx.progress(98, "chất lượng...")
         quality_result = run_quality_gates(out_key, preset)
         quality_log = quality_result.get("error") or _t("Quality gates passed: PSNR{0}dB").format(quality_result['gates']['quality']['metrics'].get('psnr_db', 'N/A'))
-        logger.info("[quality] %s", quality_log)
+        log.info("[quality] %s", quality_log)
         
         if not quality_result["all_passed"]:
-            logger.warning("[quality] gate failed: %s", quality_result["error"])
+            log.warning("[quality] gate failed: %s", quality_result["error"])
             # Log warning but don't fail job — keep backward compatibility
             # If needed, uncomment below to fail fast:
             # raise RuntimeError(quality_result["error"])
-            res["quality_warning"] = quality_result["error"]
+            canh_bao_chat_luong = quality_result["error"]
         
         if ctx is not None:
             ctx.progress(100, "xong")
@@ -429,6 +434,12 @@ def handle(params: dict, ctx=None) -> dict:
                "quality_log": quality_log}
         if warning:
             res["warning"] = warning
+        # ⚠️ Cung thanh ngu voi `warning` ngay tren. Ban cu ghi
+        #    `res["quality_warning"]` NGAY TRONG khoi cong chat luong, nhung `res`
+        #    chi duoc tao ~4 dong BEN DUOI => `NameError` moi khi mot cong hong,
+        #    tuc dung o duong LOI.
+        if canh_bao_chat_luong:
+            res["quality_warning"] = canh_bao_chat_luong
         return res
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
