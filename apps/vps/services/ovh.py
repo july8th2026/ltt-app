@@ -138,6 +138,58 @@ class OvhClient:
         }
         return self._transport("POST", url, headers, body)
 
+    def dat_reverse(self, address: str, ten: str) -> None:
+        """Dat PTR cho MOT dia chi. OVH **doi forward-confirm** — xem `rdns.py`.
+
+        Rao `post()` chi mo cho `/order/cart`; day la duong thu hai va **duy nhat**
+        duoc mo them, voi mot path co dinh theo dia chi da kiem.
+        """
+        import ipaddress
+
+        dia_chi = str(ipaddress.IPv4Address(str(address or "").strip()))
+        ten = str(ten or "").strip().rstrip(".")
+        if not ten or " " in ten or "/" in ten:
+            raise OvhError("ten reverse khong hop le")
+        khoi = quote(dia_chi + "/32", safe="")
+        # ⭐ Idempotent, va no KHONG phai toi uu: OVH tra **409 "already setted"**
+        #    khi PTR da dung, va `_request` gop moi HTTPError thanh mot `OvhError`
+        #    khong mang ma so — nen "da dat roi" va "that bai" ra cung mot ket qua.
+        #    Hoi truoc thi hai trang thai do tach ra duoc. (Cung khuon "hai trang
+        #    thai gop thanh mot gia tri" da can sau lan trong ngay 24/09.)
+        try:
+            hien = self.get(f"/ip/{khoi}/reverse/{quote(dia_chi, safe='')}")
+            if str((hien or {}).get("reverse", "")).rstrip(".") == ten:
+                return
+        except OvhError:
+            pass          # chua co ban ghi nao — di tiep va dat
+        # ⚠️ KHONG dau cham cuoi. Do that 25/09/2026: gui `...com.` thi OVH tra
+        #    400 "Cannot check if ...com. resolves to <ip>" — mot thong diep
+        #    **chi sai cho**: no day nguoi doc di tim loi o DNS (A record da
+        #    resolve dung, kiem bang nslookup) trong khi loi nam o dinh dang ten.
+        #    Cung mot ten khong dau cham: 200 OK ngay lap tuc.
+        self._post_duong_khac(f"/ip/{khoi}/reverse",
+                              {"ipReverse": dia_chi, "reverse": ten})
+
+    def _post_duong_khac(self, path: str, payload: dict):
+        """POST toi mot duong KHONG phai gio hang. Danh sach cho phep o day."""
+        import re as _re
+
+        if not _re.fullmatch(r"/ip/[0-9.%A-Fa-f]+/reverse", path):
+            raise OvhError("unsupported OVH mutation path")
+        url = self.config.api_base + path
+        body = json.dumps(payload, separators=(",", ":"),
+                          ensure_ascii=True).encode("ascii")
+        timestamp = str(self._server_time())
+        raw = "+".join((self.config.application_secret, self.config.consumer_key,
+                        "POST", url, body.decode("ascii"), timestamp))
+        return self._transport("POST", url, {
+            "Content-Type": "application/json",
+            "X-Ovh-Application": self.config.application_key,
+            "X-Ovh-Consumer": self.config.consumer_key,
+            "X-Ovh-Timestamp": timestamp,
+            "X-Ovh-Signature": "$1$" + hashlib.sha1(raw.encode("utf-8")).hexdigest(),
+        }, body)
+
     @staticmethod
     def ip_service_name(address: str) -> str:
         """OVH service identity of one Additional IPv4 (`ip-<address>` for /32).

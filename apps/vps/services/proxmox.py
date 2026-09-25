@@ -414,6 +414,28 @@ class ProxmoxClient:
                          f"/nodes/{self.config.node}/qemu/{int(vmid)}/config",
                          data={k: v for k, v in cau_hinh.items() if v is not None})
 
+    def dat_firewall(self, vmid: int, **tuy_chon) -> Any:
+        """Dat `firewall/options` cua MOT VM (chong gia mao IP/MAC).
+
+        ⚠️ Proxmox mac dinh `policy_in = DROP` khi bat firewall. Nguoi goi phai
+           truyen policy TUONG MINH — xem `jobs._firewall_may_khach()`. Mot ban
+           va an ninh de mac dinh o day la mot lan cat mang cua moi khach.
+        """
+        return self._goi("PUT",
+                         f"/nodes/{self.config.node}/qemu/{int(vmid)}/firewall/options",
+                         data={k: v for k, v in tuy_chon.items() if v is not None})
+
+    def doc_firewall(self, vmid: int) -> dict:
+        """Doc `firewall/options` cua mot VM. `{}` khi Proxmox chua co ban ghi."""
+        ra = self._goi("GET",
+                       f"/nodes/{self.config.node}/qemu/{int(vmid)}/firewall/options")
+        # ⚠️ `_goi` DA boc khoa `data`. Boc lan hai thi moi lan doc deu tra `{}`,
+        #    va ta se ket luan "chua dat" cho mot may da dat dung — mot phep do
+        #    sai bao cao thanh mot su that ve the gioi.
+        if isinstance(ra, dict) and "data" in ra and isinstance(ra["data"], dict):
+            ra = ra["data"]
+        return ra if isinstance(ra, dict) else {}
+
     def nong_dia(self, vmid: int, dia: str, them: str) -> Any:
         """Nới một đĩa của VM. `them` dạng `+20G`. Proxmox không cho thu nhỏ."""
         return self._goi("PUT",

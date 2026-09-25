@@ -163,7 +163,14 @@ def cau_hinh_qemu(mang: MangKhach, *, co_cloud_init: bool = True,
     net = f"{MO_HINH_CARD}"
     if str(mac or "").strip():
         net += f"={str(mac).strip().upper()}"
-    net += f",bridge={mang.bridge},firewall=0"
+    # 🔴 `firewall=1` tu 25/09/2026. `ipfilter`/`macfilter` cua Proxmox CHI ap
+    #    khi chinh NIC bat co nay — do that tren hai may khach: `firewall=0`, tuc
+    #    moi luat chong gia mao deu khong toi noi, va mot khach ARP/IP spoof duoc
+    #    khach khac tren cung `vmbr1`.
+    # ⛔ Bat co o day KHONG loc goi: `_firewall_may_khach()` dat ca hai policy
+    #    ACCEPT tuong minh. De Proxmox dung mac dinh (policy_in=DROP) la cat mang
+    #    cua moi khach bang mot ban va an ninh.
+    net += f",bridge={mang.bridge},firewall=1"
     if mang.mtu:
         net += f",mtu={mang.mtu}"
     cau_hinh = {"net0": net}

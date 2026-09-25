@@ -510,6 +510,7 @@ def _tao_may(params: dict, ctx=None) -> dict:
         _profile_for_job(db, may)
         _cau_hinh_vm_co_journal(
             db, may, client, cau_hinh, operation_id=operation_id)
+        _dat_firewall_may_khach(client, may.vmid)
 
         # 4b) Đặt chỗ DHCP trên VM router — TRƯỚC khi bật máy.
         #
@@ -538,6 +539,8 @@ def _tao_may(params: dict, ctx=None) -> dict:
         # khởi động được (kho đầy, cấu hình sai, node hết RAM) vẫn được giao cho
         # khách kèm chữ "Đang chạy", và họ mở console ra thấy một màn hình đen.
         # Đó là V-02 ở đúng chỗ đắt nhất: ngay sau khi đã thu tiền.
+        _dat_rdns_khong_chan(db, may, profile, ip_cong_khai)
+
         _bao(ctx, 85, "dang khoi dong")
         _profile_for_job(db, may)
         dien = _bat_vm_co_journal(
@@ -1061,8 +1064,66 @@ def _cau_hinh_may_trong(may: VpsInstance, plan, img, iso: str) -> dict:
         # đã gỡ thay vì để nằm lại mục dần.
         "bios": "seabios",
         "machine": "pc-q35-11.0",
+        # 🔴 Do 25/09/2026 khi so voi Vultr: khong khai `cpu` thi QEMU dung
+        #    `kvm64` — mot CPU gia lap generic, GIONG HET nhau tren moi may va
+        #    cham hon CPU that. `host` cho khach dung dung con CPU dang co.
+        #    Cum chi co MOT node nen khong vuong live migration.
+        "cpu": "host",
     }
     return cau_hinh
+
+
+#: Firewall per-VM cua may khach. ⛔ Muc tieu la CHONG GIA MAO, khong phai loc goi.
+#:
+#: 🔴 Do 25/09: `net0 … firewall=0` tren ca hai may khach that ⇒ `ipfilter` va
+#:    `macfilter` cua Proxmox khong chay, nen mot khach ARP/IP spoof duoc khach
+#:    khac tren cung `vmbr1`.
+#:
+#: ⚠️ Proxmox mac dinh `policy_in = DROP` khi bat firewall. De nguyen mac dinh la
+#:    **cat mang cua moi khach** bang mot ban va an ninh. Nen hai policy phai
+#:    ACCEPT TUONG MINH, va `test_3500` chot dung dieu do.
+def _firewall_may_khach() -> dict:
+    return {"enable": 1, "policy_in": "ACCEPT", "policy_out": "ACCEPT",
+            "ipfilter": 1, "macfilter": 1}
+
+
+def _dat_rdns_khong_chan(db, may, profile, ip_cong_khai: str) -> bool:
+    """Dat PTR cho dia chi vua cap. ⛔ KHONG duoc chan viec giao may.
+
+    Mot may khong co rDNS la mot diem tru nho voi cac he thong chong lam dung;
+    mot may **khong giao duoc** vi DNS la mot su co. Nen moi loi o day chi ghi
+    canh bao — `bao_tri` kiem lai va ghi ban ghi suc khoe, nen IP thieu PTR
+    **hien ra** chu khong bien mat.
+    """
+    if not ip_cong_khai:
+        return False
+    try:
+        from apps.vps.services import dns_cloudflare, rdns
+
+        return rdns.dat_rdns(dns_cloudflare.client_tu_moi_truong(),
+                             backend_factory.ovh_inventory_client(profile),
+                             str(ip_cong_khai))
+    except Exception as exc:                  # noqa: BLE001 - xem docstring
+        log.warning("VPS: khong dat duoc rDNS cho %s: %s", ip_cong_khai, exc)
+        return False
+
+
+def _dat_firewall_may_khach(client, vmid: int | None) -> bool:
+    """Bat chong gia mao cho MOT may. Tra `True` neu da dat duoc.
+
+    ⛔ Khong nem: mot may khong dat duoc firewall van la mot may giao duoc. Nhung
+       cung ⛔ khong im — `bao_tri` kiem lai va ghi ban ghi suc khoe, nen mot may
+       lech chuan hien ra chu khong bien mat.
+    """
+    if not vmid:
+        return False
+    try:
+        client.dat_firewall(int(vmid), **_firewall_may_khach())
+        return True
+    except ProxmoxError as exc:
+        log.warning("VPS: khong dat duoc firewall chong gia mao cho vmid %s: %s",
+                    vmid, exc)
+        return False
 
 
 def _go_card_thua(client, vmid: int) -> dict:
