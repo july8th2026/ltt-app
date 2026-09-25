@@ -21504,3 +21504,18 @@ msgstr "Who allowed a third-party npm package to run on this machine, which vers
 
 msgid "Sổ kiểm toán của marketplace: ai yêu cầu, ai duyệt, ai từ chối, ai thu hồi, lúc nào — kể cả những lượt thất bại. Cùng lý do với `nhat_ky_admin`: một nhật ký kiểm toán xoá được thì không phải nhật ký kiểm toán."
 msgstr "The marketplace audit log: who requested, who approved, who rejected, who revoked, and when - including failed attempts. Same reason as `nhat_ky_admin`: an audit log you can delete is not an audit log."
+
+msgid "Kế cắt không biết thời lượng video."
+msgstr "The cut plan does not know the video duration."
+
+msgid "Kế cắt có khoảng rỗng hoặc ngược."
+msgstr "The cut plan has an empty or reversed interval."
+
+msgid "Kế cắt có hai khoảng chồng lấn."
+msgstr "The cut plan has two overlapping intervals."
+
+msgid "Kế cắt vượt ra ngoài thời lượng video."
+msgstr "The cut plan runs past the end of the video."
+
+msgid "Kế cắt bỏ {da:.1f}% video, vượt trần {tran:.0f}%. Tiêu chí cắt đang chọn quá nhiều — hãy siết tiêu chí, đừng nới trần."
+msgstr "The cut plan drops {da:.1f}% of the video, over the {tran:.0f}% cap. The cut criterion is selecting too much - tighten the criterion, do not raise the cap."
