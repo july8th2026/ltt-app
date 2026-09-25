@@ -94,6 +94,18 @@ STORES: tuple = (
           "được thì không phải nhật ký kiểm toán.")),
     Store("api_pricing_versions", EVIDENCE, None, N_("vận hành + công khai"),
           N_("Chế độ giá nào đang có hiệu lực lúc một khoản tiền được tính.")),
+    # ⭐ Hai bảng marketplace: cả hai mang `nguoi_yeu_cau_id`/`nguoi_duyet_id`
+    #    nên chúng KHÔNG thuộc `NOT_CUSTOMER_DATA` — ở đây có dữ liệu về người.
+    Store("marketplace_piece", EVIDENCE, None, N_("vận hành"),
+          N_("Ai đã cho phép một gói npm của bên thứ ba chạy trên máy này, "
+          "bản nào, và với vân tay toàn vẹn nào. Đây là bản ghi THẨM QUYỀN: "
+          "xoá một dòng ở đây là âm thầm thu hồi một lần duyệt, và gói đã cài "
+          "thành mồ côi. Vì vậy không có hạn tuổi.")),
+    Store("marketplace_piece_nhat_ky", EVIDENCE, None, N_("vận hành"),
+          N_("Sổ kiểm toán của marketplace: ai yêu cầu, ai duyệt, ai từ chối, "
+          "ai thu hồi, lúc nào — kể cả những lượt thất bại. Cùng lý do với "
+          "`nhat_ky_admin`: một nhật ký kiểm toán xoá được thì không phải "
+          "nhật ký kiểm toán.")),
     Store("developer_api_keys", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
           N_("Khoá đã thu hồi vẫn giữ lại: nó là bằng chứng ai đã tiêu cái gì. "
           "Chỉ giữ dấu vân tay một chiều, không giữ bí mật.")),
