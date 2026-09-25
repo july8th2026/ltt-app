@@ -1,60 +1,75 @@
-"""FLOW G — lượt gọi model THẬT đầu tiên qua máy B (plan wf-v2 P-B, làn wfb4).
+"""FLOW G — HAI lượt gọi model THẬT qua máy B (plan wf-v2 P-B, làn wfb4).
 
 `tests/test_2935_flow_g.py` chỉ tiêm **dữ liệu vàng** (`_do_thi_vang`) — chưa
-bao giờ chạm `ltt-3.5` thật. Tệp này đóng đúng khoảng trống đó bằng **một**
-lượt gọi thật, đã chạy 25/09/2026 qua `platform_core.agent.ke_hoach_v3.soan_draft`
-KHÔNG `llm_call` (tức đi đúng đường `planner.goi_model` → `admission` →
-`dieu_phoi.goi` → máy B), câu `CAU` dưới đây, model `ltt-3.5`
+bao giờ chạm `ltt-3.5` thật. Tệp này đóng khoảng trống đó bằng **hai** lượt
+gọi thật (25/09/2026), cả hai qua `platform_core.agent.ke_hoach_v3.soan_draft`
+KHÔNG `llm_call` (đúng đường `planner.goi_model` → `admission` →
+`dieu_phoi.goi` → máy B), CÙNG câu `CAU`, CÙNG model `ltt-3.5`
 (`Qwen3.5-9B-Q6_K`, 5060 Ti — rẻ nhất trong hai model nội bộ, đúng
-`canonical.MODEL_NOI_BO_MAC_DINH`). 53,25 s, 6 632 token vào / 2 990 token ra.
+`canonical.MODEL_NOI_BO_MAC_DINH`).
 
-## Lượt gọi thật đó KHÔNG biên dịch được — và đây là ĐÚNG hai lý do, đo được
+## LƯỢT 1 (trước khi sửa prompt) — 53,25 s, 6 632 vào / 2 990 ra
 
-`_TAI_LIEU_THAT_25_09` dưới đây là **nguyên văn** `document` model trả về
-(qua `chuan_hoa`, JSON đông cứng — không phải dữ liệu vàng tôi soạn). Cho nó
-đi qua ĐÚNG `bien_dich.bien_dich()`: nó bị từ chối ngay ở node đầu tiên bằng
-`node_khong_ton_tai` cho `"type": "core.http@1"`.
+`_LOT1_25_09` là nguyên văn `document` model trả về. Bị `bien_dich.bien_dich()`
+từ chối ngay node đầu (`node_khong_ton_tai` cho `"type": "core.http@1"`).
+Không phải model kém — `core.http` (bỏ hậu tố) nằm đúng trong danh mục
+publish_duoc. Hai lỗ THẬT trong `build_prompt()` cũ:
 
-Lý do KHÔNG phải model kém: `core.http` (bỏ hậu tố) nằm đúng trong danh mục
-publish_duoc mà prompt đưa cho nó. Lý do là **prompt cũ có hai lỗ**, cả hai
-đều lộ ra ở lượt gọi thật này, KHÔNG lộ ra ở test dữ liệu vàng (dữ liệu vàng
-do người viết, không mắc lỗi mà chỉ model mới mắc):
+1. Danh mục cũ viết dính `type@type_version` (`- core.http@1 (job): ...`) —
+   model chép NGUYÊN chuỗi hiển thị vào trường `type` của **cả 8 node**. Bài
+   học "ví dụ trong lời nhắc là mệnh lệnh ngầm": model học HÌNH THỨC hiển
+   thị, không học lược đồ JSON.
+2. Mẫu JSON cũ liệt `"kind"` như một khoá rỗng, KHÔNG nói giá trị hợp lệ
+   (`bien_dich._KIND = {"DATA","CONTROL","ERROR"}`). Model đoán `"json"` cho
+   cả 7 cạnh.
 
-1. Dòng danh mục cũ viết dính `type@type_version` (`- core.http@1 (job): ...`)
-   — model chép NGUYÊN chuỗi hiển thị đó vào trường `type` của **cả 8 node**,
-   thay vì tách `type`/`type_version`. Bài học "ví dụ trong lời nhắc là mệnh
-   lệnh ngầm" (memory `vi-du-trong-loi-nhac-la-menh-lenh-ngam.md`): model học
-   HÌNH THỨC hiển thị, không học lược đồ JSON.
-2. Mẫu JSON cũ liệt `"kind"` như một khoá rỗng, KHÔNG bao giờ nói giá trị hợp
-   lệ (`bien_dich._KIND = {"DATA","CONTROL","ERROR"}`). Model đoán `"json"`
-   cho cả 7 cạnh — hợp lý về ngữ nghĩa (nó đang tả ĐỊNH DẠNG dữ liệu) nhưng
-   sai Ô cần điền.
+Sửa `build_prompt()` (danh mục tách `type=`/`type_version=`/`kind=`; thêm
+`[QUY_UOC_KIND]`; `[DAU_RA]` cấm nối `@version` vào `type`).
 
-`platform_core/agent/ke_hoach_v3.py::build_prompt` đã sửa CẢ HAI (danh mục
-viết `type=... type_version=... kind=...` tách rời; thêm khối
-`[QUY_UOC_KIND]` liệt đúng 3 giá trị; `[DAU_RA]` nói thẳng "không được nối
-`@version` vào `type`"). Tệp này khoá lại bằng máy, không bằng lời hứa.
+## LƯỢT 2 (SAU khi sửa, cùng câu, cùng model) — 40,00 s, 6 919 vào / 2 746 ra
 
-## Sau khi sửa ĐÚNG HAI CHỖ ĐÓ — không sửa gì khác — draft THẬT biên dịch được
+⭐ Gọi lại đúng như điều phối viên yêu cầu — KHÔNG kiểm bản vá trên draft lượt
+1 đã đông băng (đó là một **bản đại diện**, không phải model thật). `_LOT2_25_09`
+là nguyên văn document của lượt này.
 
-`test_sua_dung_hai_loi_prompt_thi_draft_THAT_bien_dich_duoc` áp CHÍNH XÁC hai
-phép sửa mà prompt mới đòi hỏi (bỏ hậu tố `@\\d+` khỏi `type`, đổi `kind` từ
-`"json"` sang `"DATA"`) lên `_TAI_LIEU_THAT_25_09` — KHÔNG sửa node nào khác,
-KHÔNG thêm/bớt cạnh, KHÔNG gọi lại model. Chứng minh: cổng biên dịch và
-registry node phía nền tảng vốn đã nhận được hình dạng model thật sinh ra
-(fetch → transform → filter → foreach → video → foreach_end → human →
-output) — chỉ prompt (đã sửa) từng cản nó.
+**Hai lỗi cũ ĐÃ HẾT, đo trực tiếp trên máy, không suy diễn**: không node nào
+có hậu tố `@version` trong `type`; `kind` chỉ dùng `DATA`/`CONTROL` (model
+còn tự phân biệt đúng: cạnh nhánh `true` của `core.if` được gắn `CONTROL`,
+các cạnh còn lại `DATA` — đúng ngữ nghĩa `_KIND`, không phải khớp ngẫu nhiên).
 
-## ⛔ Vẫn CHƯA có node Sheets/cron thật — không phải chỗ tệp này chốt
+**NHƯNG draft lượt 2 VẪN không biên dịch được — vì một lý do KHÁC, không liên
+quan tới bản vá**: `create_video` dùng `"{{ nodes.fetch_sheet.output.json.prompt }}"`
+— `_THAM_CHIEU` (regex `^\\{\\{\\s*nodes\\.ID\\.output\\.CONG\\s*\\}\\}$`,
+xem `platform_core/workflow/bien_dich.py`) CHỈ nhận đúng MỘT đoạn sau
+`.output.`; đường dẫn lồng `.output.json.prompt` không khớp ⇒ `_doi()` ném
+`bieu_thuc_chua_ho_tro`. Đoạn regex này KHÔNG nằm trong lượt sửa vừa rồi —
+nó có từ trước, và lượt 1 không chạm tới nó vì các tham số lượt 1 dùng chuỗi
+trần (`"item.title"`, không bọc `{{ }}`) nên `_doi()` không xét nhánh này.
+Lượt 2 mới thật sự thử cú pháp `{{ nodes... }}` mà `[DAU_RA]` yêu cầu — và lộ
+ra giới hạn CHƯA TỪNG ĐO của cổng biên dịch: nó không hỗ trợ truy cập lồng
+sau `output.<cong>`.
 
-Model thật KHÔNG dùng `piece.google_sheets.find_rows` — nó không nằm trong
-danh mục gửi cho model, vì `platform_core/workflow/nut.py::tu_piece()` khoá
-CỨNG `publish_duoc=False` cho MỌI node `piece.*` (bình luận tại chỗ: cổng
-publish `cau_noi.nop_job` còn từ chối `piece.*` bằng `LoiTienTo`, chờ "plan
-08" mở đường runner Node riêng). Model tự bù bằng `core.http` — một cách giải
-hợp lý cho hôm nay, không phải bằng chứng Sheets đã dùng được. FLOW G day đủ
-6/6 theo đúng tinh thần §18.5 (bấm nút, Sheets thật, không phải HTTP tay) vẫn
-CHƯA đạt — việc đó thuộc P-C (kết nối `pollingHelper`), không phải P-B.
+## ⚠️ Lượt 2 KHÔNG còn `core.filter`/`core.foreach` — CHƯA rõ có phải do bản vá
+
+Lượt 2 chỉ có 6 node (`core.http`, `core.if`, `app.video.generate`,
+`core.human`, `core.output`, `core.stop`) — xử một hàng đơn bằng nhánh điều
+kiện, KHÔNG lọc-rồi-lặp nhiều hàng như lượt 1. `build_prompt()` không đổi gì
+về hướng dẫn lọc/lặp (chỉ đổi cách hiển thị danh mục + thêm khối kind), và
+`core.filter`/`core.foreach` vẫn nằm nguyên trong danh mục gửi cho model
+(`test_danh_muc_van_co_filter_va_foreach`). ⛔ KHÔNG đủ căn cứ để nói bản vá
+"làm tụt" kiến trúc filter+foreach — cũng KHÔNG đủ căn cứ để nói nó KHÔNG
+liên quan. **N=1 mỗi phía, không so sánh được.** Đây là đúng thứ so tay cảnh
+báo (`vi-du-trong-loi-nhac-la-menh-lenh-ngam.md`: sửa lời nhắc phải đo lại CẢ
+TẬP) — và đúng lý do KHÔNG gọi lượt 3 ở đây: cần nhiều mẫu mỗi phía để tách
+tín hiệu khỏi nhiễu lấy mẫu của chính model, không phải vá thêm một câu nữa
+rồi đoán tiếp. Việc đó cần chủ trì, không phải một lượt vá đơn lẻ.
+
+## ⛔ Sheets/cron thật — vẫn KHÔNG phải chỗ tệp này chốt
+
+`piece.google_sheets.find_rows` có trong registry nhưng `publish_duoc=False`
+cứng (`nut.py::tu_piece()`, chờ "plan 08"/P-C mở runner Node cho `piece.*`).
+Cả hai lượt đều không dùng — không nằm trong danh mục gửi cho model. FLOW G
+đủ 6/6 với Sheets THẬT vẫn CHƯA đạt.
 """
 from __future__ import annotations
 
@@ -74,9 +89,9 @@ def cc():
     return cong_cu.tat_ca()
 
 
-#: Nguyên văn `document` (`ke_hoach_v3.chuan_hoa`) của lượt gọi THẬT 25/09/2026
-#: qua `ltt-3.5`. KHÔNG được sửa tay — đây là bằng chứng, không phải fixture.
-_TAI_LIEU_THAT_25_09 = {
+#: Nguyên văn `document` (`ke_hoach_v3.chuan_hoa`) LƯỢT 1 — TRƯỚC khi sửa
+#: `build_prompt()`. KHÔNG sửa tay — bằng chứng, không phải fixture.
+_LOT1_25_09 = {
     "version": 3,
     "pages": [{
         "id": "p1", "name": "Trang 1",
@@ -145,18 +160,80 @@ _TAI_LIEU_THAT_25_09 = {
     }],
 }
 
+#: Nguyên văn `document` LƯỢT 2 — SAU khi sửa `build_prompt()`, gọi lại thật,
+#: cùng câu `CAU`, cùng model. KHÔNG sửa tay.
+_LOT2_25_09 = {
+    "version": 3,
+    "pages": [{
+        "id": "p1", "name": "Trang 1",
+        "viewport": {"x": 0, "y": 0, "zoom": 1},
+        "nodes": [
+            {"id": "fetch_sheet", "type": "core.http", "type_version": 1,
+             "position": {"x": 0, "y": 0}, "label": "",
+             "params": {"url": "https://sheets.example.com/morning_task",
+                        "cach": "GET"},
+             "credential_ref": "", "settings": {}},
+            {"id": "check_ready", "type": "core.if", "type_version": 1,
+             "position": {"x": 280, "y": 0}, "label": "",
+             "params": {"dieu_kien":
+                        "{{ nodes.fetch_sheet.output.json.status === 'READY' }}"},
+             "credential_ref": "", "settings": {}},
+            {"id": "create_video", "type": "app.video.generate",
+             "type_version": 1, "position": {"x": 560, "y": 0}, "label": "",
+             "params": {"prompt": "{{ nodes.fetch_sheet.output.json.prompt }}",
+                        "model": "seedance-pro", "duration": 10,
+                        "generate_audio": True},
+             "credential_ref": "", "settings": {}},
+            {"id": "wait_human", "type": "core.human", "type_version": 1,
+             "position": {"x": 840, "y": 0}, "label": "",
+             "params": {"cau_hoi": "Bạn đã duyệt video này chưa? (Duyệt để tiếp tục)"},
+             "credential_ref": "", "settings": {}},
+            {"id": "finalize", "type": "core.output", "type_version": 1,
+             "position": {"x": 1120, "y": 0}, "label": "",
+             "params": {"ten": "video_result",
+                        "gia_tri": "{{ nodes.create_video.output.video_key }}"},
+             "credential_ref": "", "settings": {}},
+            {"id": "finish", "type": "core.stop", "type_version": 1,
+             "position": {"x": 1400, "y": 0}, "label": "",
+             "params": {"trang_thai": "SUCCEEDED"},
+             "credential_ref": "", "settings": {}},
+        ],
+        "edges": [
+            {"id": "e1", "source_node": "fetch_sheet", "target_node": "check_ready",
+             "source_port": "json", "target_port": "in", "kind": "DATA",
+             "condition": ""},
+            {"id": "e2", "source_node": "check_ready", "target_node": "create_video",
+             "source_port": "true", "target_port": "in", "kind": "CONTROL",
+             "condition": ""},
+            {"id": "e3", "source_node": "create_video", "target_node": "wait_human",
+             "source_port": "video_key", "target_port": "in", "kind": "DATA",
+             "condition": ""},
+            {"id": "e4", "source_node": "wait_human", "target_node": "finalize",
+             "source_port": "du_lieu", "target_port": "in", "kind": "DATA",
+             "condition": ""},
+            {"id": "e5", "source_node": "finalize", "target_node": "finish",
+             "source_port": "gia_tri", "target_port": "in", "kind": "DATA",
+             "condition": ""},
+        ],
+    }],
+}
 
-def test_lot_goi_that_NGUYEN_VAN_bi_tu_choi_dung_ma_da_do(cc):
-    """Đóng băng lý do thật, bằng máy — không phải lời kể lại."""
+
+# ── LƯỢT 1 ────────────────────────────────────────────────────────────────
+
+def test_lot1_NGUYEN_VAN_bi_tu_choi_dung_ma_da_do(cc):
+    """Đóng băng lý do thật của lượt 1 — không phải lời kể lại."""
     with pytest.raises(bien_dich.LoiBienDich) as exc:
-        bien_dich.bien_dich(copy.deepcopy(_TAI_LIEU_THAT_25_09), cong_cu=cc)
+        bien_dich.bien_dich(copy.deepcopy(_LOT1_25_09), cong_cu=cc)
     assert exc.value.ma == "node_khong_ton_tai"
     assert exc.value.node_id == "fetch_sheet"
 
 
-def test_sua_dung_hai_loi_prompt_thi_draft_THAT_bien_dich_duoc(cc):
-    """Sửa ĐÚNG hai điểm prompt mới đòi hỏi — không sửa gì khác — thì qua cổng."""
-    doc = copy.deepcopy(_TAI_LIEU_THAT_25_09)
+def test_lot1_sua_dung_hai_loi_thi_bien_dich_duoc(cc):
+    """Sửa ĐÚNG hai điểm prompt mới đòi hỏi lên draft lượt 1 (không gọi lại
+    model) — chứng minh cổng biên dịch vốn nhận được hình dạng model sinh
+    ra; chỉ prompt (khi đó) cản nó."""
+    doc = copy.deepcopy(_LOT1_25_09)
     for n in doc["pages"][0]["nodes"]:
         n["type"] = re.sub(r"@\d+$", "", n["type"])
     for e in doc["pages"][0]["edges"]:
@@ -167,15 +244,67 @@ def test_sua_dung_hai_loi_prompt_thi_draft_THAT_bien_dich_duoc(cc):
     assert graph["thu_tu"][0] == "fetch_sheet"
     assert graph["thu_tu"][-1] == "output_result"
     loai = {n["type"] for n in graph["nodes"]}
-    # Tính chất FLOW G đo được HÔM NAY: filter + foreach + video + human có
-    # thật trong đồ thị thật model sinh ra — ⛔ không chốt bằng "dùng node tên
-    # X", chốt bằng VIỆC (có bước lọc, có vòng lặp, có sinh video, có cửa
-    # người duyệt).
     assert {"core.filter", "core.foreach", "core.foreach_end",
             "app.video.generate", "core.human"} <= loai
 
     bg = bao_gia.bao_gia_do_thi(graph, cong_cu=cc)
     assert bg.toi_da > 0 and bg.uoc_tinh > 0
+
+
+# ── LƯỢT 2 (gọi lại thật SAU khi sửa prompt) ────────────────────────────────
+
+def test_lot2_khong_con_hau_to_type_khong_con_kind_la(cc):
+    """Đo trực tiếp trên lượt gọi thật thứ hai — không suy diễn từ lượt 1.
+
+    ⭐ Đây là câu trả lời cho "bản vá có đúng không": ĐÚNG, hai lỗi cũ hết
+    thật trên một lượt gọi model SỐNG, không phải trên draft đã đông băng.
+    """
+    for n in _LOT2_25_09["pages"][0]["nodes"]:
+        assert not re.search(r"@\d+$", n["type"]), n
+    for e in _LOT2_25_09["pages"][0]["edges"]:
+        assert e["kind"] in {"DATA", "CONTROL", "ERROR"}, e
+    # Model tự phân biệt CONTROL (nhánh `if`) với DATA (mọi cạnh còn lại) —
+    # không phải khớp ngẫu nhiên với 1 trong 3 giá trị.
+    kinds = {e["source_node"]: e["kind"] for e in _LOT2_25_09["pages"][0]["edges"]}
+    assert kinds["check_ready"] == "CONTROL"
+
+
+def test_lot2_van_KHONG_bien_dich_duoc_NHUNG_ly_do_khac_va_khong_lien_quan_ban_va(cc):
+    """Lượt 2 vẫn đỏ — vì một giới hạn cổng biên dịch CÓ TRƯỚC bản vá, không
+    do bản vá gây ra (bản vá không chạm quy tắc biểu thức `{{ }}`)."""
+    with pytest.raises(bien_dich.LoiBienDich) as exc:
+        bien_dich.bien_dich(copy.deepcopy(_LOT2_25_09), cong_cu=cc)
+    assert exc.value.ma == "bieu_thuc_chua_ho_tro"
+    assert exc.value.node_id == "create_video"
+
+    # ⭐ Chỉ ra ĐÚNG giới hạn, bằng chính hàm compiler dùng để phán quyết
+    # (`la_tham_chieu`, regex `_THAM_CHIEU`) — không suy diễn qua vá cả tài
+    # liệu. `_THAM_CHIEU` chỉ nhận ĐÚNG MỘT đoạn sau `.output.`:
+    bieu_thuc_model_viet = "{{ nodes.fetch_sheet.output.json.prompt }}"
+    bieu_thuc_don_doan = "{{ nodes.fetch_sheet.output.json }}"
+    assert bien_dich.la_tham_chieu(bieu_thuc_model_viet) is None, (
+        "duong dan long sau .output. khong duoc _THAM_CHIEU chap nhan")
+    assert bien_dich.la_tham_chieu(bieu_thuc_don_doan) == ("fetch_sheet", "json")
+    # Giới hạn này CÓ TRƯỚC bản vá — `_THAM_CHIEU`/`la_tham_chieu` không nằm
+    # trong đoạn `build_prompt()` vừa sửa. Lượt 1 không lộ ra giới hạn này vì
+    # tham số lượt 1 là chuỗi trần (`"item.title"`), không bọc `{{ }}`, nên
+    # `_doi()` chưa từng xét nhánh kiểm tra tham chiếu ở lượt đó.
+
+
+def test_lot2_khong_dung_filter_foreach_thuc_te_khong_suy_dien(cc):
+    """Sự kiện tĩnh, đo trực tiếp trên `document` lượt 2 — không cần biên
+    dịch để biết model không chọn kiến trúc lọc+lặp lần này."""
+    loai = {n["type"] for n in _LOT2_25_09["pages"][0]["nodes"]}
+    assert not ({"core.filter", "core.foreach"} & loai)
+    assert {"app.video.generate", "core.human"} <= loai
+
+
+def test_danh_muc_van_co_filter_va_foreach(cc):
+    """Bản vá KHÔNG rút filter/foreach khỏi danh mục gửi cho model — nếu lượt
+    2 không dùng chúng thì đó là lựa chọn của model, không phải một cửa đã bị
+    khoá bởi bản vá."""
+    muc_types = {m["type"] for m in ke_hoach_v3.danh_muc(cong_cu=cc)}
+    assert {"core.filter", "core.foreach"} <= muc_types
 
 
 def test_prompt_moi_khong_con_dinh_type_va_co_liet_ke_kind(cc):
@@ -191,7 +320,7 @@ def test_prompt_moi_khong_con_dinh_type_va_co_liet_ke_kind(cc):
 
 
 def test_sheets_van_KHONG_publish_duoc_ly_do_that(cc):
-    """Vì sao model thật không (và không thể) dùng node Sheets hôm nay."""
+    """Vì sao cả hai lượt gọi thật đều không (và không thể) dùng node Sheets."""
     dinh_nghia = nut.tat_ca(cong_cu=cc)
     assert "piece.google_sheets.find_rows" in dinh_nghia
     assert dinh_nghia["piece.google_sheets.find_rows"].publish_duoc is False

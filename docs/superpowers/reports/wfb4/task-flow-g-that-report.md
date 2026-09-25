@@ -77,19 +77,87 @@ ra khi model thật gõ, không lộ ra ở dữ liệu vàng do người viết
 - khoá lại lý do Sheets vẫn không publish_duoc (không lặp lại nhầm "có tên =
   dùng được").
 
-⛔ **Chưa gọi lại model để xác nhận prompt mới THẬT SỰ khiến nó viết đúng.**
-Đây là hệ quả trực tiếp của luật "MỘT lượt gọi" trong brief — tôi chọn giữ nó
-nghiêm, không phá luật để tự xác nhận việc mình vừa sửa. Bằng chứng ở mục 3
-là **suy luận từ đúng hai khác biệt đã đo**, không phải một lượt gọi thứ hai.
+⛔ **Ở LƯỢT ĐẦU: chưa gọi lại model để xác nhận prompt mới THẬT SỰ khiến nó
+viết đúng** — mục 3 (bản đầu của báo cáo này) chỉ suy luận từ việc vá tay
+draft đã đông băng. Điều phối viên chỉ ra đúng lỗ hổng đó: kiểm bản vá trên
+một draft đã đông băng là kiểm trên **bản đại diện**, không phải model thật
+— và cấp thêm MỘT lượt gọi để đo cho đúng. Mục 5 dưới đây là lượt đó.
 
-## 4. Chưa làm được — nói thẳng
+## 4. Chưa làm được (tính tới lượt gọi đầu) — nói thẳng
 
 1. **FLOW G đủ 6/6 theo đúng tinh thần §18.5 (Sheets THẬT, không phải
    `core.http` tay) vẫn CHƯA đạt.** `piece.*` còn bị khoá `publish_duoc=False`
    cứng trong mã, và cổng chạy (`cau_noi.nop_job`) còn từ chối `piece.*` bằng
    `LoiTienTo` — việc đó thuộc P-C (port `pollingHelper`), không phải P-B.
-2. **Chưa xác nhận lại bằng máy** rằng bản vá prompt khiến `ltt-3.5` thật sự
-   ngừng mắc hai lỗi trên — xem mục 3, lý do là luật MỘT lượt gọi.
-3. Test `test_2935_flow_g.py` (dữ liệu vàng) và `test_4190` (dữ liệu thật)
-   giờ SONG SONG tồn tại — không hợp nhất, vì chúng đo hai thứ khác nhau
+2. Test `test_2935_flow_g.py` (dữ liệu vàng) và `test_4190` (dữ liệu thật)
+   SONG SONG tồn tại — không hợp nhất, vì chúng đo hai thứ khác nhau
    (dữ liệu vàng đo cổng biên dịch + báo giá; dữ liệu thật đo model + prompt).
+
+## 5. LƯỢT GỌI THẬT THỨ HAI (25/09/2026, sau khi sửa `build_prompt()`)
+
+Cùng câu `CAU`, cùng model `ltt-3.5`, cùng đường thật (`soan_draft` không
+`llm_call`). **40,00 s, 6 919 token vào / 2 746 token ra.**
+
+### 5.1 Câu hỏi của điều phối viên: bản vá có đúng không?
+
+**Đúng — đo trực tiếp trên lượt gọi sống, không suy diễn.** Không node nào
+trong 6 node lượt 2 có hậu tố `@version` trong `type`. Mọi cạnh dùng đúng
+`kind ∈ {DATA, CONTROL}` — model còn tự phân biệt đúng ngữ nghĩa: cạnh nhánh
+`true` của `core.if` được gắn `CONTROL`, các cạnh còn lại `DATA`. Hai lỗ đã
+sửa **ở lượt trước** không còn xuất hiện ở lượt này.
+
+### 5.2 Nhưng draft lượt 2 VẪN không biên dịch được — lý do KHÁC, không phải bản vá
+
+`create_video` dùng `"{{ nodes.fetch_sheet.output.json.prompt }}"` —
+`bien_dich.bien_dich()` từ chối bằng `LoiBienDich(ma="bieu_thuc_chua_ho_tro",
+node_id="create_video")`.
+
+Gốc rễ: `_THAM_CHIEU` (`platform_core/workflow/bien_dich.py`, regex
+`^\{\{\s*nodes\.ID\.output\.CONG\s*\}\}$`) chỉ nhận **đúng một đoạn** sau
+`.output.`. `nodes.fetch_sheet.output.json.prompt` có đoạn lồng (`json` rồi
+`prompt`) ⇒ không khớp. Xác nhận trực tiếp bằng hàm compiler:
+`la_tham_chieu("{{ nodes.fetch_sheet.output.json.prompt }}")` → `None`;
+`la_tham_chieu("{{ nodes.fetch_sheet.output.json }}")` → `("fetch_sheet",
+"json")`.
+
+**Đoạn regex này KHÔNG nằm trong bản vá vừa rồi** — `build_prompt()` chỉ đổi
+cách hiển thị danh mục và thêm khối `[QUY_UOC_KIND]`, không đụng
+`_THAM_CHIEU`/`la_tham_chieu`. Lượt 1 không lộ ra giới hạn này vì tham số
+lượt 1 dùng chuỗi trần (`"item.title"`, không bọc `{{ }}`), nên `_doi()`
+chưa từng xét nhánh kiểm tra tham chiếu. Lượt 2 mới thật sự thử cú pháp
+`{{ nodes... }}` mà `[DAU_RA]` yêu cầu từ đầu — và lộ ra một giới hạn CHƯA
+TỪNG ĐO của cổng biên dịch (không hỗ trợ truy cập lồng sau `output.<cổng>`),
+độc lập với bản vá.
+
+### 5.3 Regression thật sự cần hỏi: draft lượt 2 mất `core.filter`/`core.foreach`
+
+Lượt 2 chỉ có 6 node: `core.http`, `core.if`, `app.video.generate`,
+`core.human`, `core.output`, `core.stop` — xử MỘT bản ghi bằng nhánh điều
+kiện, không lọc-rồi-lặp nhiều dòng như lượt 1 (8 node, có
+`core.filter`+`core.foreach`+`core.foreach_end`).
+
+`build_prompt()` không đổi gì về hướng dẫn lọc/lặp, và `core.filter`/
+`core.foreach` vẫn nằm nguyên trong danh mục gửi cho model (khoá lại bằng
+`test_danh_muc_van_co_filter_va_foreach`). **Không đủ căn cứ để nói bản vá
+"làm tụt" kiến trúc filter+foreach, và cũng không đủ căn cứ để loại trừ.**
+N=1 mỗi phía (một lượt trước vá, một lượt sau vá) — không so sánh được;
+draft lượt 2 còn không biên dịch được vì lý do KHÁC (5.2) nên không tính
+được báo giá để so bất kỳ con số nào giữa hai lượt.
+
+Đây đúng là bài học sổ tay: *"ví dụ trong lời nhắc là mệnh lệnh ngầm — sửa
+lời nhắc phải đo lại CẢ TẬP"*. Một cặp before/after không phải một tập.
+⛔ **Không tự ý gọi lượt 3** để "thử sửa cho ra filter+foreach" — đúng điều
+điều phối viên đã cấm (vá lần hai rồi gọi lần ba là điều chỉnh theo nhiễu,
+không phải đo). Muốn tách tín hiệu khỏi nhiễu lấy mẫu của chính model cần
+nhiều mẫu mỗi phía (before/after) hoặc đổi cách khai danh mục thay vì vá văn
+bản — cả hai đều cần chủ trì quyết định, ghi lại ở đây để hỏi.
+
+## 6. Chưa làm được (tính tới lượt gọi thứ hai) — nói thẳng
+
+1. Mục 4.1 vẫn đúng nguyên — Sheets thật vẫn thuộc P-C.
+2. **Draft lượt 2 vẫn không biên dịch được**, vì một giới hạn compiler khác
+   (5.2), độc lập với bản vá — bản vá xác nhận đúng, nhưng KHÔNG đủ để làm
+   FLOW G biên dịch trên một lượt gọi sống mới.
+3. **Chưa xác định được** việc mất `core.filter`/`core.foreach` ở lượt 2 có
+   phải hệ quả của bản vá hay không (5.3) — cần đo nhiều mẫu, không phải một
+   lượt gọi thứ ba đơn lẻ.
