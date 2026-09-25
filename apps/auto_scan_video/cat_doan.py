@@ -244,8 +244,11 @@ def _cat_mot_doan(doan: dict, *, lien: bool) -> tuple[list[dict], dict]:
     """Mot doan tho -> danh sach doan tho + chan doan. ⛔ Chi cat o dau cau."""
     tu_list = [t for t in (doan.get("words") or []) if _chu(t).strip()]
     chan = {"khong_cho_ngat": 0, "qua_dai": 0, "khong_co_moc_tu": 0}
+    bat_tho, ket_tho = doan.get("start"), doan.get("end")
+    if bat_tho is None or ket_tho is None:
+        return [doan], chan
     try:
-        d_bat, d_ket = float(doan.get("start")), float(doan.get("end"))
+        d_bat, d_ket = float(bat_tho), float(ket_tho)
     except (TypeError, ValueError):
         return [doan], chan
     if (d_ket - d_bat) <= KHE_TOI_DA_S:

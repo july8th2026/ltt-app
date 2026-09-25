@@ -503,12 +503,15 @@ def la_dong_theo_sau(dong) -> bool:
     return bool((dong or {}).get(KHOA_GOP_VAO))
 
 
-def am_tiet_cua(chu: str) -> int:
+def am_tiet_cua(chu: str | None) -> int:
     """Dem am tiet tieng Viet = token cach nhau boi khoang trang.
 
     ⭐ Dung dinh nghia da co san cua kho (`ngon_ngu.py:47-49`: voi tieng Viet
        "dem TU la dem AM TIET, cung mot phep"), ⛔ khong bia ra mot don vi moi
        roi so voi so cua nguoi khac (`N-34`).
+
+    `chu=None` -> 0 am tiet: goi tu `no_ban_ke` tren `m.get("chu")` cua mot
+    `dict` chua chac co khoa do — chu ky that cua ham nay la nhan CA thieu.
     """
     return len(str(chu or "").split())
 

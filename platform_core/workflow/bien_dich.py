@@ -654,6 +654,14 @@ def _cong_ra_that_node(loai: str, cc: dict[str, CongCu]) -> frozenset:
         nd = _loi.tat_ca().get(loai)
         if nd is None:
             nd = nut.dinh_nghia_piece(loai)
+        if nd is None:
+            # `_node()` da chap nhan `loai` nay tu MOT trong hai nguon tren —
+            # toi day ca hai deu mieng nghia mot bat bien vo o day, khong
+            # phai mot AttributeError am tham o `nd.cong_ra`.
+            raise LoiBienDich(
+                "node_khong_ro_dinh_nghia",
+                f"khong tim thay NodeDefinition cho `{loai}` o ca so loi lan "
+                f"so piece -- _node() da nhan node nay truoc do")
         return frozenset(ten for ten, _c in nd.cong_ra)
     from platform_core.workflow import nut
 

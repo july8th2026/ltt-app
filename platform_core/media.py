@@ -128,7 +128,11 @@ def bao_dam_ffmpeg_tren_path(env: Optional[dict] = None) -> dict:
             them.append(thu_muc)
     if them:
         moi_truong["PATH"] = os.pathsep.join([*them, *dang_co])
-    return dict(os.environ) if tai_cho else moi_truong
+    # `moi_truong` la `os.environ` (da mutate) khi `tai_cho`, hoac chinh ban
+    # sao `dict` da mutate khi khong — `dict(moi_truong)` dung trong CA HAI,
+    # va tranh kieu hop `dict[Any, Any] | _Environ[str]` ma mypy khong the
+    # thu hep qua mot bien gan bang toan tu ba ngoi.
+    return dict(moi_truong)
 
 
 # ── P5: đọc metadata video (đo duration để GIỮ CHỖ credit) ────────────────────

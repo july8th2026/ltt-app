@@ -10,6 +10,10 @@ import tempfile
 import threading
 import time
 from pathlib import Path
+from typing import TYPE_CHECKING, cast
+
+if TYPE_CHECKING:
+    from faster_whisper import WhisperModel
 
 log = logging.getLogger(__name__)
 
@@ -360,7 +364,12 @@ def _transcribe_faster(media_path: str, *, language: str, model_name: str,
                        gpu_uuid: str = "") -> dict:
     if on_progress:
         on_progress(8, "fallback faster-whisper")
-    model, khai = _get_faster_model(model_name, gpu_uuid=gpu_uuid)
+    model_bat_ky, khai = _get_faster_model(model_name, gpu_uuid=gpu_uuid)
+    # `_get_faster_model` khai `object` de khong bat module goi no phai import
+    # `faster_whisper` (thu vien ML nang) o dinh tep chi de danh kieu. Cast
+    # tai day — khong doi hanh vi luc chay — vi dong nay THAT SU la mot
+    # `WhisperModel` (`WhisperModel(...)` o `_get_faster_model` ngay ben tren).
+    model = cast("WhisperModel", model_bat_ky)
     # 🔴 **Cùng một sửa lỗi SẢN PHẨM như nhánh whisperx** (whisperX issue #645):
     #    Whisper trả về văn Hán KHÔNG một dấu câu nào, và điều đó làm hỏng **cả
     #    bước dịch** ở hạ nguồn, không riêng bước cắt đoạn. ⛔ Không phải mẹo để
