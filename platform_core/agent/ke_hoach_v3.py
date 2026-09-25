@@ -213,11 +213,26 @@ def _nut_tho(obj: dict) -> tuple:
     return obj.get("nodes"), obj.get("edges") or []
 
 
-def chuan_hoa(raw) -> dict:
+def chuan_hoa(raw, *, goal: str = "", budget_max_credit: int = 0) -> dict:
     """Đầu ra model (KHÔNG tin được) → tài liệu draft v3 đúng hình dạng §4.1.
 
     ⛔ Chỉ kiểm **hình dạng**. Phán quyết về ngữ nghĩa (loại node có thật, tổ
        tiên, cổng, chu trình) thuộc về `bien_dich` — xem `kiem()`.
+
+    ⭐ `goal`/`budget_max_credit` — hai tham số THÊM (25/09, làn `wfk`, vá lần
+       hai trong một lần cho CÙNG Lỗi 1). Bản trước chỉ trả `{version, pages}`
+       — thiếu đúng ba khoá `CanvasDocument`/`CanvasDocumentV3`
+       (`frontend/agent-canvas/src/workflowApi.ts`) cần ở **CẤP TÀI LIỆU**:
+       `goal`, `budget_max_credit`, `active_page_id`. `CanvasShell.tsx
+       ::soanBangAI` ghi thẳng `dispatch({type:'replace', document:
+       fromV3(kq.document)})` — `fromV3()` chỉ spread nguyên tài liệu rồi đổi
+       `version`/`pages`, nên khoá nào tài liệu gốc không có thì tài liệu sau
+       cũng không có, `undefined`; dòng KẾ NGAY `state.document.goal.trim()`
+       (JSX render, không chỉ trong lúc bấm) ném `TypeError` — Playwright
+       THẬT (`tests/browser/wf_v2_pa_4180_canvas_bam_that.js`) đỏ đúng ở đây.
+       `test_4252` chốt hợp đồng CẤP TÀI LIỆU bằng cách đọc thật khai báo kiểu
+       TS (như `test_968` đã làm ở CẤP TRANG cho `_trang_v3`), không phải một
+       danh sách ba tên chép tay.
     """
     try:
         obj = extract_json(raw)
@@ -276,6 +291,9 @@ def chuan_hoa(raw) -> dict:
         ra_edges.append(e)
 
     return {"version": SCHEMA_DRAFT,
+            "goal": str(goal or ""),
+            "budget_max_credit": max(0, int(budget_max_credit or 0)),
+            "active_page_id": TRANG_MAC_DINH,
             "pages": [{"id": TRANG_MAC_DINH, "name": "Trang 1",
                        "nodes": ra_nodes, "edges": ra_edges,
                        "viewport": {"x": 0, "y": 0, "zoom": 1}}]}
@@ -307,11 +325,13 @@ def soan_draft(db, *, goal: str, ngan_sach_credit: int,
                           input_types=input_types)
     raw = (llm_call(prompt) if llm_call is not None
            else planner.goi_model(db, prompt))
-    document = chuan_hoa(raw)
+    goal_sach = (goal or "").strip()
+    ngan_sach_sach = max(0, int(ngan_sach_credit))
+    document = chuan_hoa(raw, goal=goal_sach, budget_max_credit=ngan_sach_sach)
     graph, loi = _bien_dich(document, cong_cu)
     return {"document": document, "graph": graph, "hop_le": graph is not None,
-            "loi": loi, "goal": (goal or "").strip(),
-            "ngan_sach_credit": max(0, int(ngan_sach_credit))}
+            "loi": loi, "goal": goal_sach,
+            "ngan_sach_credit": ngan_sach_sach}
 
 
 __all__ = ["BUOC_X", "BUOC_Y", "LoiSoan", "MAX_NUT", "SCHEMA_DRAFT",
