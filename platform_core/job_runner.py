@@ -137,6 +137,11 @@ class JobContext:
         self.attempt = 0
         self.app_slug = ""
         self.job_type = ""
+        # Trạng thái trần số dòng của `progress_counter` — sống theo ĐÚNG một
+        # lượt chạy handler (một `JobContext` = một job/attempt), nên khỏi
+        # phải khoá theo `(run_id, stage, attempt)` ở tầng gọi.
+        self._progress_counter_last_ts = 0.0
+        self._progress_counter_last_n = -1
 
     @property
     def has_gpu(self) -> bool:
@@ -163,6 +168,47 @@ class JobContext:
                     raise JobCancelled()
                 jobq.set_progress(db, job, percent, message)
                 db.commit()
+
+    def progress_counter(self, da_xong: int, tong: int, *, don_vi: str = "",
+                         nhip_giay: float = 30.0, nhip_don_vi: int = 5,
+                         event_code: str = "progress_counter") -> bool:
+        """Nhịp tiến độ TRONG một giai đoạn — mang BỘ ĐẾM, không chỉ dấu thời gian.
+
+        Khác `progress()`: `percent` là bậc thang tuỳ ý cho khách; `da_xong/tong`
+        là con số thật của công việc, và `job_events.append_progress_counter`
+        NÉM nếu thiếu — một nhịp tim lease chứng minh TIẾN TRÌNH còn sống,
+        ⛔ không chứng minh VIỆC đang tiến (`advance` 37.010 lượt/52 phút là ví
+        dụ: còn sống và quay tại chỗ).
+
+        Trần số dòng: chỉ ghi khi CẢ HAI `nhip_giay` giây VÀ `nhip_don_vi` đơn vị
+        đã trôi qua kể từ lần ghi trước (`is_first`/`is_last` luôn ghi) — lấy
+        hợp của hai ngưỡng nghĩa là lấy đường THƯA hơn, không phải dày hơn.
+        Trả `False` khi bị nén (không ghi), không phải lỗi.
+        """
+        da_xong = int(da_xong)
+        tong = int(tong)
+        now = time.monotonic()
+        la_dau = self._progress_counter_last_n < 0
+        la_cuoi = tong > 0 and da_xong >= tong
+        du_giay = (now - self._progress_counter_last_ts) >= nhip_giay
+        du_don_vi = (da_xong - max(self._progress_counter_last_n, 0)) >= nhip_don_vi
+        if not (la_dau or la_cuoi or (du_giay and du_don_vi)):
+            return False
+        for db in _one_session():
+            job = db.get(Job, self.job_id)
+            if job is not None:
+                if job.status == JOB_CANCELLED:
+                    raise JobCancelled()
+                job_events.append_progress_counter(
+                    db, job, da_xong=da_xong, tong=tong, don_vi=don_vi,
+                    event_code=event_code)
+                from datetime import datetime, timezone
+                job.heartbeat_at = datetime.now(timezone.utc)
+                db.commit()
+                self._progress_counter_last_ts = now
+                self._progress_counter_last_n = da_xong
+                return True
+        return False
 
     def provider_dispatched(self, provider: str = "") -> None:
         """Ghi bền ngay trước outbound HTTP để crash không retry side effect mù."""
@@ -667,6 +713,11 @@ def _chay_handler(worker_id: str, job_id: str, job_type: str, params: dict,
     app_slug = ""
     attempt = 0
     correlation_id = ""
+    # ⭐ `run_id` (25/09): mot lan chay ASV nop hang chuc nghin job `advance`;
+    #    tuong quan theo `job_id` cho tung manh roi, khong cho mot cau chuyen.
+    #    Doc tu `params` — mot khoa quy uoc, khong rieng cua app nao — nen nen
+    #    tang khong can biet truoc app nao dung no (rong voi app khong khai).
+    run_id = str(params.get("run_id") or "") if isinstance(params, dict) else ""
     for db in _one_session():
         job = db.get(Job, job_id)
         if job is not None:
@@ -679,7 +730,8 @@ def _chay_handler(worker_id: str, job_id: str, job_type: str, params: dict,
     ctx.job_type = job_type
     from platform_core.observability import job_logging_context
     with job_logging_context(job_id=job_id, app_slug=app_slug, job_type=job_type,
-                             worker_id=worker_id, correlation_id=correlation_id),             _canh_gio(job_id, app_slug, job_type):
+                             worker_id=worker_id, correlation_id=correlation_id,
+                             run_id=run_id),             _canh_gio(job_id, app_slug, job_type):
         _runtime_event(
             job_id, "execution_started", details={"worker_id": worker_id,
             "attempt": attempt}, event_key=f"execution-started:{attempt}")

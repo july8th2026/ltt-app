@@ -55,7 +55,12 @@ class _JsonFormatter(logging.Formatter):
             "pid": os.getpid(),
             "thread": record.threadName,
         }
-        for key in ("job_id", "app_slug", "job_type", "worker_id", "correlation_id"):
+        # ⭐ `run_id` (25/09): khoa tuong quan xuyen HANG NGHIN job `advance` cua
+        #    mot lan chay ASV. Rong voi moi app khac — `if value:` ben duoi bo
+        #    qua no y het cac khoa con lai, nen them khoa nay vo hai voi phan
+        #    con lai cua nen tang.
+        for key in ("job_id", "app_slug", "job_type", "worker_id",
+                    "correlation_id", "run_id"):
             value = getattr(record, key, "") or _context.get({}).get(key, "")
             if value:
                 payload[key] = _redact(value)[:128]
@@ -135,3 +140,21 @@ def job_logging_context(**values: str) -> Iterator[None]:
         yield
     finally:
         _context.reset(token)
+
+
+def push_logging_context(**values: str) -> object:
+    """Bien ban thu cong cua `job_logging_context` cho noi KHONG dung duoc
+    `with` (mot khoi `try`/`finally` da qua lon de long them mot cap thut —
+    xem `apps/auto_scan_video/thi_hanh.py:chay_giai_doan`, noi mot loi goi
+    TRUC TIEP ngoai hang doi, vd script/test, khong co `ctx` van can `run_id`
+    di vao process log).
+
+    ⚠️ Nguoi goi PHAI goi `pop_logging_context(token)` trong `finally` cua
+       chinh minh — ham nay khong tu don, khac `job_logging_context`.
+    """
+    clean = {key: str(value)[:128] for key, value in values.items() if value}
+    return _context.set({**_context.get({}), **clean})
+
+
+def pop_logging_context(token: object) -> None:
+    _context.reset(token)

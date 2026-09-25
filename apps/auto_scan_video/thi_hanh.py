@@ -25,6 +25,7 @@ import hashlib
 import io
 import json
 import logging
+import time
 
 from platform_core.db import get_session
 from platform_core.i18n import _ as _t
@@ -37,7 +38,8 @@ from . import (assets, cache_chung, features, giai_doan_am_thanh, giai_doan_ban_
                giai_doan_ket_xuat,
                giai_doan_media, giai_doan_noi_dung, giai_doan_qc, giai_doan_qc_ai,
                giai_doan_thoi_gian, lat_cat, loi, pipeline)
-from .tables import STAGE_QUEUED, STAGE_RUNNING, STAGE_SUCCEEDED
+from .tables import (STAGE_FAILED_TERMINAL, STAGE_QUEUED, STAGE_RUNNING,
+                     STAGE_SUCCEEDED)
 
 log = logging.getLogger(__name__)
 
@@ -292,7 +294,7 @@ def _khoa_cha(db, run_id: str, ten: str) -> list[str]:
 #:        phien thu nhat (SQLite cho nhieu ban doc cung mot ban ghi dang do);
 #:    (b) `cache_chung.GiuCho` goi no tu LUONG NHIP — `commit` mot `Session`
 #:        tu mot luong khac la mot loi nang hon han cai dang duoc sua.
-_CTX_MO_PHIEN_RIENG = ("progress", "event", "stage",
+_CTX_MO_PHIEN_RIENG = ("progress", "progress_counter", "event", "stage",
                        "provider_dispatched", "provider_rejected")
 
 
@@ -379,6 +381,22 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
     if not run_id or not owner_id:
         raise ValueError("thieu run_id/owner_id")
 
+    # ⭐ Log van hanh (25/09): tuong quan theo `run_id` NGAY CA khi khong co
+    #    `ctx` — mot loi goi TRUC TIEP ngoai hang doi (script, test) van can
+    #    doc duoc process log JSONL theo run. Re: chi cham process log qua
+    #    contextvar, KHONG CSDL, nen khong can `ctx`/`Job` nao ca.
+    #
+    #    ⛔ job_events (stage_enter/stage_exit, progress_counter) thi KHONG
+    #       va duoc o day: chung can mot transaction NGAN TACH RIENG khoi `db`
+    #       cua ham nay — dung ly do `ctx.event()`/`ctx.progress_counter()`
+    #       ton tai (xem `_CtxChotSo`, M-08/M-09). Dung lai co che do o day
+    #       la nhan doi mot duong co the sai. Duong KHONG `ctx` (goi thang,
+    #       ngoai hang doi) VAN MU o lop job_events — chi process log la vua.
+    from platform_core.observability import (pop_logging_context,
+                                              push_logging_context)
+    _log_token = push_logging_context(
+        run_id=run_id, app_slug=features.SLUG, job_type=ten)
+
     # 🔑 Dong ho cua lat cat bat tu DAU job (xem `lat_cat.py`): giai doan dai
     #    nhuong truoc khi cham tran thay vi de `job_runner._het_gio` giet no.
     lat_cat.bat_dau_luot()
@@ -406,6 +424,42 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
         if ctx is not None and getattr(ctx, "is_cancelled", None) and ctx.is_cancelled():
             return {"stage": ten, "ghi_chu": "da huy"}
 
+        # ── Su kien BIEN giai doan (log van hanh, 25/09) ────────────────────
+        #
+        # 🔑 "Vao" tinh tu DAY — diem DUY NHAT chac chan giai doan se thi hanh
+        #    that (hai `return` phia tren la nhat lai job da xong / da huy,
+        #    khong phai mot lan chay). `quan_sat.dong_thoi_gian(cho_van_hanh=
+        #    True)` doc lai cap "vao/ra" nay qua `job_events.timeline`.
+        _gio_bat = time.monotonic()
+        _cpu_bat = time.process_time()
+
+        def _bien_ra(trang_thai: str, **them) -> None:
+            """Ghi 'stage_exit'. Best-effort: `ctx.event` tu nuot loi va dem
+            vao `job_events.event_write_failures()` (xem
+            `job_runner.JobContext.event`) — KHONG dem rieng, KHONG lam hong
+            lan chay vi mot dong log ghi hong."""
+            if ctx is None or not getattr(ctx, "event", None):
+                return
+            ctx.event(
+                "stage_exit", trang_thai,
+                details={
+                    "stage": ten, "attempt": int(stage.attempt or 0),
+                    "trang_thai": trang_thai,
+                    "wall_s": round(time.monotonic() - _gio_bat, 3),
+                    # ⚠️ CAN DUOI tren Windows — `time.process_time()` ⛔
+                    #    khong cong CPU cua tien trinh con DA THOAT (ffmpeg,
+                    #    TTS ngoai qua LTTStudioVoice...). Ten truong noi ro
+                    #    dieu do de nguoi doc khong hieu `1,3s` la "nhe"
+                    #    (docs/NHAT_KY.md muc 7: `media_prepare` that su ton
+                    #    ~51s tuong, chi 1,3s la CPU cua CHINH worker).
+                    "cpu_s_can_duoi": round(time.process_time() - _cpu_bat, 3),
+                    **them,
+                })
+
+        if ctx is not None and getattr(ctx, "event", None):
+            ctx.event("stage_enter", ten,
+                     details={"stage": ten, "attempt": int(stage.attempt or 0)})
+
         vt = van_tay(ten, run, _gom_dau_vao(db, run_id, ten))
         lat_cat.dat_van_tay_giai_doan(vt)
         kho = get_storage()
@@ -419,6 +473,7 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
                 outputs={"stage": ten, "khoa_asset": [a.storage_key for a in cu],
                          "tu_cache": True})
             db.commit()
+            _bien_ra("succeeded", tu_cache=True)
             return {"stage": ten, "fingerprint": vt, "credit_cost": 0,
                     "tu_cache": True}
 
@@ -543,6 +598,7 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
             outputs=ket_qua)
         # ── Buoc 5 ────────────────────────────────────────────────────────
         db.commit()
+        _bien_ra("succeeded")
 
         return {"stage": ten, "fingerprint": vt, "credit_cost": CHI_PHI_GIA,
                 "khoa_asset": khoa_ra}
@@ -562,6 +618,7 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
                 db.rollback()   # bi huy/dat lai giua chung — luot sau doc lai
         log.info("asv %s run %s: nhuong sau %d don vi / %.0fs -> luot %s",
                  ten, run_id[:8], tn.da_lam, tn.da_troi_s, ct.get("luot"))
+        _bien_ra("tiep_noi", da_lam=int(tn.da_lam), da_troi_s=round(float(tn.da_troi_s), 1))
         return {"stage": ten, "tiep_noi": ct.get("luot", 0),
                 "da_lam": tn.da_lam}
     except DangBan:
@@ -606,6 +663,9 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
                     stage_hong.outputs = {**(stage_hong.outputs or {}),
                                           "ma_loi": ma_loi}
                 db.commit()
+                _bien_ra("failed", tam_thoi=bool(tam_thoi),
+                        cuoi_cung=stage_hong.status == STAGE_FAILED_TERMINAL,
+                        loai_loi=type(exc).__name__)
         except Exception:                   # noqa: BLE001
             # ⚠️ Ghi trang thai la viec PHU. No hong thi loi goc van phai noi
             #    len — nuot loi goc de bao mot loi ghi so la doi mot cau tra loi
@@ -624,6 +684,7 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
         if giu is not None:
             giu.nha()
         db.close()
+        pop_logging_context(_log_token)
 
 
 def _holder_lease(ctx, run_id: str) -> str:

@@ -199,6 +199,14 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             if ctx is not None and getattr(ctx, "progress", None):
                 ctx.progress(int(5 + 85 * i / max(1, len(muc))),
                              _t('Đang đọc thành tiếng'))
+            # ⭐ Nhip tien do MANG BO DEM (log van hanh, 25/09) — khac `progress`
+            #    o tren (bac thang % cho khach): day la con so THAT cho van
+            #    hanh, tu nem qua `JobContext.progress_counter` neu thieu bo
+            #    dem. Mac dinh 30s/5 don vi la du thua: do thuc te giai doan
+            #    nay ~1.610s / ~67 doan (docs/NHAT_KY.md muc 7) — ~24s/doan —
+            #    nen 5 don vi da vuot 30s, ra ~13 dong cho ca 27 phut.
+            if ctx is not None and getattr(ctx, "progress_counter", None):
+                ctx.progress_counter(i, len(muc), don_vi="doan")
 
             khe = nan_cho_vua.khe_cua(m)
 
