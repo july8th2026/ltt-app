@@ -141,7 +141,16 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     with tempfile.TemporaryDirectory(prefix="asv-do-") as tam:
         thu_muc = Path(tam)
         doan: list[dict] = []
+        from . import nan_thoi_luong
+
         for i, d in enumerate(ban_ke.get("doan") or []):
+            # 🔴 Dong DI THEO tro vao CUNG tep voi dong dau, nhung `chu` cua no
+            #    chi la MOT PHAN cua cai tep ay doc ⇒ do WER tren cap do se cho
+            #    mot con so SAI (thieu chu), va do lai cung tep 2-4 lan la tra
+            #    tien GPU cho mot cau tra loi da co. Dong dau mang `chu` GOP —
+            #    do la cai dung de doi chieu voi tep.
+            if nan_thoi_luong.la_dong_theo_sau(d):
+                continue
             ma = str(d.get("ma") or "")
             khoa = str(d.get("khoa") or "")
             # 🔑 `chu` cua ban ke = cau CUOI CUNG may da doc (sau bac thang nan).

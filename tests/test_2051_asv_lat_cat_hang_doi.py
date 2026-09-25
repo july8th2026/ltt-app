@@ -208,9 +208,24 @@ def test_chuoi_lat_cat_qua_hang_doi_ve_done_va_GIONG_mot_mach(
     import math
 
     from apps.auto_scan_video.giai_doan_ban_bien_tap import LO_DOC_CANH
+
+    # 🔴 **`voice_synthesis` nhuong sau mot KHE DOC, ⛔ khong sau mot DOAN** (25/09,
+    #    lan `b2-gop-khe`). `nan_thoi_luong.gop_khe` da dieu khien that: 2-4 doan
+    #    lien ke chua vua duoc doc trong MOT luot, nen so lat cat = so KHE DOC,
+    #    nho hon hoac bang `SO_DOAN`.
+    #
+    # ⛔ Con so nay KHONG duoc go tay: doc tu chinh bao cao cua giai doan
+    #    (`tom_tat.so_khe_doc`), neu khong no troi khoi luat gop ngay lan ai do
+    #    doi `TRAN_GOP_KHE`. Va `ban_ke` van co mot dong cho MOI `ma` goc — phan
+    #    ay do o `tests/test_4700_asv_gop_khe_that.py`.
+    gd_giong = features.giai_doan_theo_ten(db, run.id, pipeline.VOICE_SYNTHESIS)
+    so_khe_doc = int((gd_giong.outputs or {}).get("so_doan") or 0)
+    assert 0 < so_khe_doc <= SO_DOAN, (so_khe_doc, SO_DOAN)
+    assert int((gd_giong.outputs or {}).get("so_ma_noi_dung") or 0) == SO_DOAN, (
+        "`so_ma_noi_dung` phai la so `ma` cua content.json")
     assert so_luot == {"content_process": SO_DOAN,
                        "edit_plan": math.ceil(3 / LO_DOC_CANH),
-                       "voice_synthesis": SO_DOAN}, so_luot
+                       "voice_synthesis": so_khe_doc}, so_luot
 
     # Co che: moi luot mot job RIENG (dedupe `:nK`), `attempt` KHONG tang.
     for ten in TRAN_EP:

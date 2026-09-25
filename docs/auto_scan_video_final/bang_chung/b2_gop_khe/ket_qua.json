@@ -1,0 +1,284 @@
+{
+  "tran": {
+    "netflix_ky_tu_moi_giay": 20.0,
+    "o_phu_de_ky_tu": 84,
+    "am_tiet_moi_giay": 3.35,
+    "luat_gop": {
+      "tran_gop": 4,
+      "tran_khe_giua_s": 0.6,
+      "tran_ky_tu": 220
+    }
+  },
+  "phim": {
+    "v1": {
+      "so_khe": 83,
+      "so_nhom": 56,
+      "so_nhom_da_gop": 16,
+      "khong_vua_truoc": {
+        "k": 42,
+        "n": 83,
+        "ti_le": 0.506
+      },
+      "khong_vua_sau": {
+        "k": 24,
+        "n": 56,
+        "ti_le": 0.429
+      },
+      "duoi_mot_am_tiet_truoc": {
+        "k": 46,
+        "n": 83
+      },
+      "duoi_mot_am_tiet_sau": {
+        "k": 19,
+        "n": 56
+      },
+      "khe_trung_vi_truoc_s": 3.062,
+      "khe_trung_vi_sau_s": 3.893,
+      "ky_tu_moi_giay": {
+        "1_truoc": {
+          "n": 83,
+          "p50": 14.52,
+          "p95": 16.75,
+          "max": 18.19,
+          "so_vuot_20": 0,
+          "ti_le_vuot_20": 0.0
+        },
+        "2_sau_o_van_tach": {
+          "n": 83,
+          "p50": 14.52,
+          "p95": 16.75,
+          "max": 18.19,
+          "so_vuot_20": 0,
+          "ti_le_vuot_20": 0.0
+        },
+        "3_phan_thuc_gop_ca_o": {
+          "n": 56,
+          "p50": 14.87,
+          "p95": 16.75,
+          "max": 17.87,
+          "so_vuot_20": 0,
+          "ti_le_vuot_20": 0.0
+        }
+      },
+      "bo_cuc_o": {
+        "1_truoc": {
+          "n": 83,
+          "ky_tu_p50": 45,
+          "ky_tu_max": 99,
+          "so_vuot_tran_o": 6,
+          "ti_le_vuot_tran_o": 0.072
+        },
+        "3_phan_thuc_gop_ca_o": {
+          "n": 56,
+          "ky_tu_p50": 63.0,
+          "ky_tu_max": 211,
+          "so_vuot_tran_o": 19,
+          "ti_le_vuot_tran_o": 0.339
+        }
+      }
+    },
+    "v2": {
+      "so_khe": 74,
+      "so_nhom": 39,
+      "so_nhom_da_gop": 13,
+      "khong_vua_truoc": {
+        "k": 66,
+        "n": 74,
+        "ti_le": 0.892
+      },
+      "khong_vua_sau": {
+        "k": 34,
+        "n": 39,
+        "ti_le": 0.872
+      },
+      "duoi_mot_am_tiet_truoc": {
+        "k": 56,
+        "n": 74
+      },
+      "duoi_mot_am_tiet_sau": {
+        "k": 8,
+        "n": 39
+      },
+      "khe_trung_vi_truoc_s": 1.741,
+      "khe_trung_vi_sau_s": 4.523,
+      "ky_tu_moi_giay": {
+        "1_truoc": {
+          "n": 74,
+          "p50": 14.55,
+          "p95": 16.75,
+          "max": 18.66,
+          "so_vuot_20": 0,
+          "ti_le_vuot_20": 0.0
+        },
+        "2_sau_o_van_tach": {
+          "n": 74,
+          "p50": 14.55,
+          "p95": 16.75,
+          "max": 18.66,
+          "so_vuot_20": 0,
+          "ti_le_vuot_20": 0.0
+        },
+        "3_phan_thuc_gop_ca_o": {
+          "n": 39,
+          "p50": 14.74,
+          "p95": 16.3,
+          "max": 16.45,
+          "so_vuot_20": 0,
+          "ti_le_vuot_20": 0.0
+        }
+      },
+      "bo_cuc_o": {
+        "1_truoc": {
+          "n": 74,
+          "ky_tu_p50": 38.5,
+          "ky_tu_max": 147,
+          "so_vuot_tran_o": 10,
+          "ti_le_vuot_tran_o": 0.135
+        },
+        "3_phan_thuc_gop_ca_o": {
+          "n": 39,
+          "ky_tu_p50": 91,
+          "ky_tu_max": 155,
+          "so_vuot_tran_o": 22,
+          "ti_le_vuot_tran_o": 0.564
+        }
+      }
+    },
+    "v3": {
+      "so_khe": 31,
+      "so_nhom": 31,
+      "so_nhom_da_gop": 0,
+      "khong_vua_truoc": {
+        "k": 27,
+        "n": 31,
+        "ti_le": 0.871
+      },
+      "khong_vua_sau": {
+        "k": 27,
+        "n": 31,
+        "ti_le": 0.871
+      },
+      "duoi_mot_am_tiet_truoc": {
+        "k": 17,
+        "n": 31
+      },
+      "duoi_mot_am_tiet_sau": {
+        "k": 17,
+        "n": 31
+      },
+      "khe_trung_vi_truoc_s": 2.803,
+      "khe_trung_vi_sau_s": 2.803,
+      "ky_tu_moi_giay": {
+        "1_truoc": {
+          "n": 31,
+          "p50": 14.92,
+          "p95": 15.69,
+          "max": 15.73,
+          "so_vuot_20": 0,
+          "ti_le_vuot_20": 0.0
+        },
+        "2_sau_o_van_tach": {
+          "n": 31,
+          "p50": 14.92,
+          "p95": 15.69,
+          "max": 15.73,
+          "so_vuot_20": 0,
+          "ti_le_vuot_20": 0.0
+        },
+        "3_phan_thuc_gop_ca_o": {
+          "n": 31,
+          "p50": 14.92,
+          "p95": 15.69,
+          "max": 15.73,
+          "so_vuot_20": 0,
+          "ti_le_vuot_20": 0.0
+        }
+      },
+      "bo_cuc_o": {
+        "1_truoc": {
+          "n": 31,
+          "ky_tu_p50": 76,
+          "ky_tu_max": 140,
+          "so_vuot_tran_o": 13,
+          "ti_le_vuot_tran_o": 0.419
+        },
+        "3_phan_thuc_gop_ca_o": {
+          "n": 31,
+          "ky_tu_p50": 76,
+          "ky_tu_max": 140,
+          "so_vuot_tran_o": 13,
+          "ti_le_vuot_tran_o": 0.419
+        }
+      }
+    }
+  },
+  "tong": {
+    "so_khe": 188,
+    "so_nhom": 126,
+    "so_nhom_da_gop": 29,
+    "khe_duoi_mot_am_tiet_s": 3.2,
+    "khong_vua_truoc": {
+      "k": 135,
+      "n": 188,
+      "ti_le": 0.718
+    },
+    "khong_vua_sau": {
+      "k": 85,
+      "n": 126,
+      "ti_le": 0.675
+    },
+    "duoi_mot_am_tiet_truoc": {
+      "k": 119,
+      "n": 188,
+      "ti_le": 0.633
+    },
+    "duoi_mot_am_tiet_sau": {
+      "k": 44,
+      "n": 126,
+      "ti_le": 0.349
+    },
+    "ti_le_khe_bi_gop": 0.33,
+    "ky_tu_moi_giay": {
+      "1_truoc": {
+        "n": 188,
+        "p50": 14.66,
+        "p95": 16.45,
+        "max": 18.66,
+        "so_vuot_20": 0,
+        "ti_le_vuot_20": 0.0
+      },
+      "2_sau_o_van_tach": {
+        "n": 188,
+        "p50": 14.66,
+        "p95": 16.45,
+        "max": 18.66,
+        "so_vuot_20": 0,
+        "ti_le_vuot_20": 0.0
+      },
+      "3_phan_thuc_gop_ca_o": {
+        "n": 126,
+        "p50": 14.83,
+        "p95": 16.33,
+        "max": 17.87,
+        "so_vuot_20": 0,
+        "ti_le_vuot_20": 0.0
+      }
+    },
+    "bo_cuc_o": {
+      "1_truoc": {
+        "n": 188,
+        "ky_tu_p50": 45.0,
+        "ky_tu_max": 147,
+        "so_vuot_tran_o": 29,
+        "ti_le_vuot_tran_o": 0.154
+      },
+      "3_phan_thuc_gop_ca_o": {
+        "n": 126,
+        "ky_tu_p50": 74.5,
+        "ky_tu_max": 211,
+        "so_vuot_tran_o": 54,
+        "ti_le_vuot_tran_o": 0.429
+      }
+    }
+  }
+}

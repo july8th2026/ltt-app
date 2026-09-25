@@ -66,6 +66,15 @@ TRAN_TROI_SO_DOAN = 3
 TRAN_CHONG_LAN_MS = 200
 
 #: Đổi khi đổi bất kỳ hằng số nào ở trên. Vào vân tay (O13).
+#:
+#: ⛔ **25/09: `lap_ke_hoach` nhận thêm `nhom_gop` và con số này CỐ Ý ĐỨNG YÊN.**
+#:    Điều kiện của chính nó là *"đổi bất kỳ hằng số nào ở trên"* — không hằng nào
+#:    đổi. Và cache vẫn không thể nói dối: với một lượt chạy **không gộp** kế hoạch
+#:    ra **y hệt từng mili-giây** (`test_4700` chốt), còn với một lượt **có gộp**
+#:    thì `ban_ke.json` khác ⇒ `checksum` của nó khác ⇒ `van_tay_ke_hoach` đã khác.
+#:    ⇒ Nâng số này chỉ để "cho chắc" là ném đi mọi cache đúng **và** làm đỏ
+#:    `test_448` (nghiệm thu E2E chốt phiên bản engine của mỗi giai đoạn) — tức
+#:    đòi một lượt ASV thật cho một thay đổi không đổi một byte đầu ra nào.
 PHIEN_BAN_THOI_GIAN = 1
 
 SCHEMA_KE_HOACH = 1
@@ -110,13 +119,36 @@ def _tang_toc_can(dai_ms: int, ngan_sach_ms: int) -> float:
 
 def lap_ke_hoach(muc: list[dict], thoi_luong_tieng: dict, *,
                  tong_giay: float, che_do: str = "fit_original",
-                 ban_do=None) -> dict:
+                 ban_do=None, nhom_gop: dict | None = None) -> dict:
     """Dựng kế hoạch đặt từng đoạn. Không chạm tệp nào.
 
     `muc`             các mục của `content.json` (có `ma`, `bat`, `ket`)
     `thoi_luong_tieng` `{ma: giây}` — độ dài THẬT của tệp tiếng đã sinh
     `tong_giay`       thời lượng video nguồn
     `ban_do`          `BanDoThoiGian` — đổi mốc NGUỒN sang mốc BẢN RA
+    `nhom_gop`        `{ma đi theo: ma đứng đầu}` của các **khe đã gộp**
+                      (`nan_thoi_luong`). Rỗng/None = lượt chạy không gộp gì,
+                      và khi đó hàm này chạy y hệt bản trước một mili-giây.
+
+    ## 🔴 `nhom_gop` đổi ĐÚNG hai điều, và cả hai đều bắt buộc
+
+    Một khe đã gộp là MỘT tệp tiếng đọc liền mạch cho 2–4 `ma`. `ban_ke.json`
+    vẫn có một dòng cho **mọi** `ma` (bất biến ở `giai_doan_thoi_gian.py:88-89`
+    không bị phá), với `giay` là **phần** của nó trong tệp
+    (`nan_thoi_luong.chia_giay`). Vậy:
+
+      1. **Đặt LIỀN NHAU.** `ma` đi theo đặt đúng ở mốc kết thúc của thành viên
+         trước (`con_tro`), ⛔ không phải ở mốc gốc `bat` của chính nó. Lý do:
+         tiếng của nó **đã phát rồi** — nó nằm ngay sau phần trước trong cùng
+         một tệp. Đặt ở mốc gốc là chèn lại đúng khoảng lặng mà phép gộp vừa
+         mượn, và phụ đề sẽ hiện **trễ** so với tiếng tới `TRAN_KHE_GIUA_S` mỗi
+         thành viên.
+      2. **MỘT hệ số cho cả nhóm.** Tệp được `atempo` **một lần**, nên hai `ma`
+         cùng tệp mang hai `he_so_toc` khác nhau là hai mốc không thể cùng đúng.
+
+    ⭐ Và phép bỏ đoạn (trần nợ) chỉ quyết ở thành viên ĐỨNG ĐẦU: không cắt được
+       một phần của một tệp (đó chính là phép **cắt trả về** đã làm bot Viral
+       phải tắt phép gộp — `nan_thoi_luong.gop_khe`). Bỏ đầu ⇒ bỏ cả nhóm.
 
     🔴 **`ban_do` là thứ pha 16 thêm vào, và thiếu nó thì preset cắt sai âm
        thầm.** Trước đó hàm này lập kế hoạch trên trục thời gian của **nguồn**:
@@ -175,6 +207,9 @@ def lap_ke_hoach(muc: list[dict], thoi_luong_tieng: dict, *,
     troi = 0                    # 🔑 nợ trôi, mang theo suốt bài
     so_cat = 0
     con_tro = 0                 # mốc kết thúc của đoạn trước, sau khi đặt
+    theo_cua = {str(k): str(v) for k, v in (nhom_gop or {}).items() if v}
+    he_so_nhom: dict[str, float] = {}   # ma đứng đầu -> hệ số của CẢ tệp
+    nhom_bi_cat: set[str] = set()       # ma đứng đầu đã bị bỏ ⇒ bỏ cả nhóm
 
     for i, m in enumerate(muc):
         ma = m["ma"]
@@ -182,6 +217,7 @@ def lap_ke_hoach(muc: list[dict], thoi_luong_tieng: dict, *,
         if dai <= 0:
             raise ThoiGianError(
                 _t('Đoạn {ma} chưa có tiếng.').format(ma=ma))
+        dung_dau = theo_cua.get(str(ma), "")   # "" = đoạn này tự sở hữu tệp
 
         bat_goc = bat_ra[i]
         ngan_sach = ngan_sach_doan(bat_ra, i, tong_ms)
@@ -193,20 +229,39 @@ def lap_ke_hoach(muc: list[dict], thoi_luong_tieng: dict, *,
         dung_duoc = noi_thoai + int(khoang_lang * TY_LE_MUON_KHOANG_LANG)
 
         # ── Tăng tốc CHỈ để trả nợ (ADR-003 D4) ───────────────────────────
-        he_so = 1.0
-        if troi > 0 and dai > 0:
-            can = _tang_toc_can(dai + troi, dai)
-            he_so = min(max(1.0, can), TRAN_TANG_TOC)
+        #
+        # ⭐ Đoạn đi theo mượn hệ số của thành viên đứng đầu: MỘT tệp, `atempo`
+        #    MỘT lần (xem docstring, điểm 2).
+        if dung_dau:
+            he_so = he_so_nhom.get(dung_dau, 1.0)
+        else:
+            he_so = 1.0
+            if troi > 0 and dai > 0:
+                can = _tang_toc_can(dai + troi, dai)
+                he_so = min(max(1.0, can), TRAN_TANG_TOC)
+            he_so_nhom[str(ma)] = he_so
         dai_sau = int(dai / he_so) if he_so > 1.0 else dai
 
         # ── Đặt: sau mốc trước, không sớm hơn vị trí gốc quá nhiều ────────
-        dat_tai = max(bat_goc + troi, con_tro - TRAN_CHONG_LAN_MS)
+        #
+        # ⭐ Đoạn đi theo đặt ĐÚNG ở `con_tro`: tiếng của nó nằm ngay sau phần
+        #    trước TRONG CÙNG một tệp, nên mốc gốc của nó không còn nghĩa.
+        dat_tai = con_tro if dung_dau else max(bat_goc + troi,
+                                               con_tro - TRAN_CHONG_LAN_MS)
 
         # ── Trần cứng cho nợ (ADR-003 D5) ─────────────────────────────────
         tran = sum(ngan_sach_doan(bat_ra, j, tong_ms)
                    for j in range(i, min(len(muc), i + TRAN_TROI_SO_DOAN)))
         cat = 0
-        if troi > tran:
+        if dung_dau and dung_dau in nhom_bi_cat:
+            # ⭐ Thành viên đứng đầu đã bị bỏ ⇒ cả tệp bị bỏ. ⛔ Không cắt được
+            #    một phần của một tệp — xem docstring.
+            cat = dai_sau
+            dai_sau = 0
+            so_cat += 1
+            dat_tai = max(bat_goc, con_tro)
+            ket_thuc = dat_tai
+        elif not dung_dau and troi > tran:
             # Nợ đã vượt ngân sách của ba đoạn kế tiếp. Dừng tích luỹ: **bỏ hẳn
             # tiếng của đoạn này** — mất một câu, mua lại ngân sách của nó.
             #
@@ -230,6 +285,9 @@ def lap_ke_hoach(muc: list[dict], thoi_luong_tieng: dict, *,
             dat_tai = max(bat_goc, con_tro)
             troi = max(0, troi - ngan_sach)
             ket_thuc = dat_tai
+            # ⭐ Đoạn này có thể là thành viên ĐỨNG ĐẦU của một khe đã gộp: bỏ
+            #    nó là bỏ CẢ tệp, nên các `ma` đi theo phải bị bỏ cùng.
+            nhom_bi_cat.add(str(ma))
         else:
             ket_thuc = dat_tai + dai_sau
 

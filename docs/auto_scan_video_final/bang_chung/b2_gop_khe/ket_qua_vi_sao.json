@@ -1,0 +1,32 @@
+{
+  "phim": {
+    "v1": {
+      "so_cap": 82,
+      "0_GOP_DUOC": 26,
+      "1_khe_da_VUA": 41,
+      "2_cau_DA_KET_THUC": 15
+    },
+    "v2": {
+      "so_cap": 73,
+      "0_GOP_DUOC": 42,
+      "1_khe_da_VUA": 8,
+      "2_cau_DA_KET_THUC": 23
+    },
+    "v3": {
+      "so_cap": 30,
+      "1_khe_da_VUA": 4,
+      "2_cau_DA_KET_THUC": 26
+    }
+  },
+  "tong": {
+    "so_cap": 185,
+    "0_GOP_DUOC": 68,
+    "1_khe_da_VUA": 53,
+    "2_cau_DA_KET_THUC": 64
+  },
+  "dau_ket_cau_gap_phai": {
+    ".": 86,
+    "?": 2,
+    "!": 1
+  }
+}

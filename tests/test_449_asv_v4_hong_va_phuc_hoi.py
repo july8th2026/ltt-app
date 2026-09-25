@@ -418,7 +418,7 @@ def test_render_thu_lai_KHONG_sinh_lai_mot_doan_tieng_nao(
     phai dung yen giua hai lan render. Neu no nhich len, moi lan sua mot loi
     render la mot hoa don TTS moi.
     """
-    from apps.auto_scan_video import giong_noi, ket_xuat, pipeline
+    from apps.auto_scan_video import features, giong_noi, ket_xuat, pipeline
 
     dem = {"tts": 0, "render": 0}
     tts_that, render_that = giong_noi.doc_mot_doan, ket_xuat.dung_lenh
@@ -441,9 +441,16 @@ def test_render_thu_lai_KHONG_sinh_lai_mot_doan_tieng_nao(
 
     assert dem["render"] >= 2, "worker khong he chay lai render"
     assert _trang_thai(db, run)[pipeline.RENDER] == "succeeded"
-    # `asr_gia` sinh 3 doan -> 3 luot TTS, va van la 3 du render chay hai lan.
-    assert dem["tts"] == 3, (
-        f"render chay lai da keo theo {dem['tts']} luot sinh tieng (mong doi 3)")
+    # ⭐ Mot luot TTS cho MOT KHE DOC, va `nan_thoi_luong.gop_khe` (25/09) co the
+    #    gop 2-4 doan lien ke thanh mot khe doc. ⇒ Doc so khe tu chinh bao cao cua
+    #    giai doan, ⛔ dung go `3`: menh de o day la *"bo dem DUNG YEN giua hai lan
+    #    render"*, ⛔ khong phai *"co dung ba doan"*.
+    gd = features.giai_doan_theo_ten(db, run.id, pipeline.VOICE_SYNTHESIS)
+    so_khe = int((gd.outputs or {}).get("so_doan") or 0)
+    assert 0 < so_khe <= 3, so_khe
+    assert dem["tts"] == so_khe, (
+        f"render chay lai da keo theo {dem['tts']} luot sinh tieng "
+        f"(mong doi {so_khe} = so khe doc)")
 
 
 def test_thu_lai_THUONG_NGUON_khi_run_CON_SONG_thi_ha_nguon_chay_lai(
@@ -490,8 +497,19 @@ def test_mot_doan_tieng_hong_KHONG_lam_sinh_lai_cac_doan_DA_XONG(
     Doan thu ba truot o luot dau. Worker chay lai ca giai doan — nhung hai doan
     dau da co diem chot ben vung, nen chung **khong duoc sinh lai**. Bo dem phai
     dung `3 + 1` chu khong phai `3 + 3`.
+
+    🔴 **TAT phep gop khe o day, co y (25/09).** `nan_thoi_luong.gop_khe` gop ba
+       doan cua `asr_gia` thanh MOT luot doc, va khi do loi duoc tiem o luot thu
+       ba **khong bao gio xay ra** ⇒ phep kiem van XANH ma ⛔ khong do gi ca — dung
+       kieu "cong thoa man duoc ma khong lam viec no sinh ra de canh" (`N-29`).
+       Menh de can chot la DIEM CHOT o muc DON VI, nen phep kiem phai co **nhieu
+       hon mot** don vi; gop khe co phep kiem rieng (`test_4700`).
     """
-    from apps.auto_scan_video import giong_noi, pipeline, su_dung
+    from apps.auto_scan_video import (giong_noi, nan_thoi_luong, pipeline,
+                                      su_dung)
+
+    monkeypatch.setattr(nan_thoi_luong, "nhom_chi_so",
+                        lambda khes, **kw: [[i] for i in range(len(khes))])
 
     that = giong_noi.doc_mot_doan
     dem = {"n": 0}

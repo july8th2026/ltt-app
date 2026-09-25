@@ -33,7 +33,7 @@ from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
 
 from . import (am_master, assets, ban_do_thoi_gian, hop_dong_v4,
-               nhap_media, pipeline, thoi_gian, van_ban)
+               nan_thoi_luong, nhap_media, pipeline, thoi_gian, van_ban)
 from .giai_doan_media import ThieuNguon
 
 log = logging.getLogger(__name__)
@@ -100,9 +100,13 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     from . import cai_dat as cd
     che_do = cd.doc(run).timing_mode
     ban_do = _ban_do(db, kho, run, tong_giay=tong_giay)
+    # ⭐ Khe da GOP (`nan_thoi_luong.gop_khe`): MOT tep tieng, NHIEU `ma`. Cac
+    #    `ma` di theo phai duoc dat LIEN NHAU thay vi o moc goc cua chung —
+    #    `thoi_gian.lap_ke_hoach` doi hoi `nhom_gop` de biet dieu do. Rong khi
+    #    lan chay khong gop gi, va khi do ke hoach khong doi mot mili-giay.
     ke_hoach = thoi_gian.lap_ke_hoach(
         tl_vb.get("muc") or [], do_dai, tong_giay=tong_giay, che_do=che_do,
-        ban_do=ban_do)
+        ban_do=ban_do, nhom_gop=nan_thoi_luong.nhom_theo_ma(ban_ke))
 
     goi = json.dumps(ke_hoach, sort_keys=True, ensure_ascii=False).encode("utf-8")
     vt = thoi_gian.van_tay_ke_hoach(checksum_van_ban=cs_vb, ban_ke_tieng=cs_ke,
@@ -187,8 +191,11 @@ def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
     if not khoa_nen:
         raise ThieuDauVao(_t('Chưa có bản nền để trộn bản phối.'))
 
-    khoa_theo_ma = {str(d["ma"]): str(d.get("khoa") or "")
-                    for d in (ban_ke.get("doan") or [])}
+    # 🔴 **`tep_theo_ma`, ⛔ KHONG mot dict comprehension o day.** Voi khe da gop
+    #    thi 2-4 `ma` tro vao CUNG mot tep tieng; dat theo tung `ma` se tron tep
+    #    ay 2-4 lan — nghe thanh tieng vang, ⛔ khong nem, ⛔ khong log. Ham ay chi
+    #    tra ve nhung dong SO HUU mot tep (`nan_thoi_luong.la_dong_theo_sau`).
+    khoa_theo_ma = nan_thoi_luong.tep_theo_ma(ban_ke)
     # 🔴 **N-55 (25/09): `he_so_co_gian` cua mot doan `CAN_SUA` co the vuot xa
     #    tran thiet ke.** `nan_cho_vua.ket_luan()` GHI he so THAT SU CAN cho
     #    doan `CAN_SUA` — dung y, do la con so vong sua (`sua_chua`, chay khi
@@ -210,6 +217,10 @@ def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
     he_so_theo_ma: dict[str, float] = {}
     da_kep: list[dict] = []
     for d in (ban_ke.get("doan") or []):
+        # ⛔ Dong DI THEO mang cung `he_so_co_gian` voi dong dau (mot tep, mot
+        #    lan `atempo`) — kep no lan thu hai chi in canh bao trung lap.
+        if nan_thoi_luong.la_dong_theo_sau(d):
+            continue
         ma = str(d["ma"])
         h = float(d.get("he_so_co_gian") or 1.0)
         h_kep = max(1.0 / thoi_gian.TRAN_TANG_TOC,
@@ -224,7 +235,16 @@ def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
                            "he_so_da_kep": round(h_kep, 4)})
         he_so_theo_ma[ma] = h_kep
 
-    dat = [d for d in (ke_hoach.get("doan") or []) if int(d.get("dai_ms") or 0) > 0]
+    # ⛔ Loai cac `ma` DI THEO bang mot truong TUONG MINH (`nhom_theo_ma`), ⛔ KHONG
+    #    bang "vang mat khoi `khoa_theo_ma`": hai chuyen khac han nhau va chi mot
+    #    trong hai duoc phep im lang.
+    #      di theo    -> tep cua nhom da co mot lop, bo qua  (binh thuong)
+    #      thieu khoa -> NEM `Doan {ma} chua co tep tieng`   (khiem khuyet)
+    #    Loc bang `in khoa_theo_ma` se bien ca hai thanh mot, va ca thu hai bien
+    #    thanh mot doan tieng bi vut AM THAM.
+    di_theo = nan_thoi_luong.nhom_theo_ma(ban_ke)
+    dat = [d for d in (ke_hoach.get("doan") or [])
+           if int(d.get("dai_ms") or 0) > 0 and str(d["ma"]) not in di_theo]
     if not dat:
         raise ThieuDauVao(_t('Kế hoạch thời gian không còn đoạn nào có tiếng.'))
 

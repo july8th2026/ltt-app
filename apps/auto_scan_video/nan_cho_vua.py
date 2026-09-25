@@ -134,8 +134,27 @@ def tran_co_gian() -> float:
 #: Trang thai cua mot doan sau khi nan.
 VUA = "vua"                 #: doc ra vua khe (hoac trong dung sai)
 CO_GIAN = "co_gian"         #: khong vua nhung co gian nhe la du — nac 3
+
+#: Doan NGAN hon khe qua `DUNG_SAI_NGAN` — ⛔ va ⛔ KHONG co gi duoc co gian ca.
+#:
+#: 🔴 **Truoc 25/09 chieu NGAN bi xep vao `CO_GIAN` voi `he_so = 1.0` va ghi chu
+#:    *"khong vua nhung co gian nhe la du"*. Nhan ay SAI NGHIA**: `co_gian_du_khong`
+#:    tra `(True, 1.0)` cho moi cau NGAN hon khe — duong tat o dau ham, dung y
+#:    (*"mot cau NGAN hon khe khong can co gian gi ca"*) — nen "co gian nhe la du"
+#:    thuc ra ke ve mot phep co gian ⛔ CHUA TUNG chay. Nguoi doc bao cao thay
+#:    `so_co_gian` va tuong ta da xu ly bang xu ly tin hieu.
+#:
+#: ⭐ Su that la: `thoi_gian.lap_ke_hoach` **nuot khoang lang** — cau ngan chi
+#:    de lai mot khoang im ⛔ khong ai de y (`nan_cho_vua.py` §DUNG_SAI_NGAN,
+#:    SoniTranslate kep 0,8-1,15 ve 1,0). ⇒ Dung trang thai NAY, ⛔ dung `CO_GIAN`.
+#:
+#: ⚠️ Loi co san, ⛔ nhung bo ve viet-lai-cho-DAI (25/09, `nen_viet_lai`) lam no
+#:    PHO BIEN han: truoc do mot phan cac doan ngan con di qua vong viet lai va
+#:    doi trang thai; nay chung ⛔ khong con duong nao khac.
+NGAN = "ngan"
+
 CAN_SUA = "can_sua"         #: het bac thang ma van khong vua — nac 4
-TRANG_THAI = (VUA, CO_GIAN, CAN_SUA)
+TRANG_THAI = (VUA, CO_GIAN, NGAN, CAN_SUA)
 
 
 def _kiem_chinh_sach() -> None:
@@ -175,7 +194,7 @@ class KetQuaNan:
 
     @property
     def dat(self) -> bool:
-        return self.trang_thai in (VUA, CO_GIAN)
+        return self.trang_thai in (VUA, CO_GIAN, NGAN)
 
 
 def khe_cua(m: dict) -> float:
@@ -333,6 +352,15 @@ def ket_luan(ma: str, *, chu: str, giay: float, khe: float,
     """Xep mot doan vao mot trong ba trang thai, sau khi da het bac thang."""
     if not can_nan(giay, khe):
         return KetQuaNan(ma, VUA, chu, float(giay), float(khe), so_vong)
+    # 🔴 Chieu NGAN truoc chieu DAI, va do la ca ban sua: `co_gian_du_khong` tra
+    #    `(True, 1.0)` cho moi cau ngan hon khe, nen de no roi vao `CO_GIAN` la
+    #    khai mot phep co gian ⛔ CHUA TUNG chay. Xem `NGAN`.
+    if float(giay) <= float(khe):
+        return KetQuaNan(ma, NGAN, chu, float(giay), float(khe), so_vong,
+                         he_so_co_gian=1.0,
+                         ghi_chu={"ly_do": "ngan hon khe — khoang lang duoc "
+                                           "nuot, khong co gian gi",
+                                  "dung_sai_ngan": DUNG_SAI_NGAN})
     duoc, he_so = co_gian_du_khong(giay, khe)
     if duoc:
         return KetQuaNan(ma, CO_GIAN, chu, float(giay), float(khe), so_vong,
@@ -384,6 +412,12 @@ def tom_tat(cac: list[KetQuaNan], *,
     for k in cac:
         dem[k.trang_thai] = dem.get(k.trang_thai, 0) + 1
     return {
+        # 🔴 **Tu 25/09 con so nay la so KHE DOC, ⛔ khong con la so `ma` cua
+        #    `content.json`** — `nan_thoi_luong.gop_khe` dieu khien that, nen MOT
+        #    luot doc (mot `KetQuaNan`) phu 2-4 `ma`. Hai con so nay tach doi tai
+        #    day, va bao cao khai CA HAI: `so_doan` (day) va `so_ma_noi_dung`
+        #    (`giai_doan_giong`). ⛔ Ten giu nguyen co y: `test_476`/`test_4600`
+        #    chot rang khoa gop cu ⛔ khong bao gio bien mat khoi bao cao.
         "so_doan": len(cac),
         **{f"so_{t}": dem.get(t, 0) for t in TRANG_THAI},
         "so_vong_tong": sum(k.so_vong for k in cac),

@@ -129,7 +129,27 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     # ⭐ Ca kich ban, khong tung doan: ban long tieng la MOT ngon ngu (no khai
     #    vay), va mot doan le chen mot cau trich tieng Anh khong duoc lam hong ca
     #    lan chay. Chot tung doan con doi N luot doc kho giong cho mot cau tra loi.
-    muc = list(tai_lieu.get("muc") or [])
+    muc_goc = list(tai_lieu.get("muc") or [])
+    # ── GOP KHE (D5) — tang RIENG, TRUOC bac thang nan cho vua ─────────────
+    #
+    # 🔴 **Day la cho `gop_khe` DIEU KHIEN THAT, ⛔ khong con la mot con so bao
+    #    cao.** Truoc 25/09 cho nay chi tinh `so_khe_neu_gop` roi vut.
+    #
+    # ⭐ Vi sao gop TRUOC: `nan_cho_vua` sua MOT CAU cho vua khe cua chinh no va
+    #    ⛔ khong bao gio doi ranh gioi khe. `gop_khe` doi chinh cac KHE. Gop truoc
+    #    ⇒ bac thang phan quyet tren mot khe RONG HON, nen no it phai goi model.
+    #    Do tren luot that `asvr_9fc9cc89`: 106 -> 59 khe, khe trung vi 1,71 ->
+    #    2,24 s, so doan bi phan quyet duoi mot am tiet 100/106 -> 39/59.
+    #
+    # ⛔ Mot khe gop van sinh **MOT** tep tieng, va `ban_ke` van co **MOT dong cho
+    #    MOI `ma` goc** (`nan_thoi_luong.no_ban_ke`) — bat bien cua
+    #    `giai_doan_thoi_gian.py:88-89` ⛔ khong bi pha. Va phu de van la mot o
+    #    cho MOI `ma` goc: o phu de chi chua 84 ky tu, con tran gop la 220
+    #    (`nan_thoi_luong.TRAN_KY_TU_GOP`).
+    nhom = nan_thoi_luong.nhom_chi_so(
+        _khe_bao_cao_tu_muc(muc_goc), tran_tang_toc=nan_cho_vua.tran_co_gian())
+    muc = [_gop_mot_nhom([muc_goc[k] for k in g]) for g in nhom]
+
     ref_b64, preset = giong_noi.giai_giong(
         db, owner_id=run.owner_id, voice_id=ma_giong,
         van_ban="\n".join(str(m.get("chu") or "") for m in muc),
@@ -192,7 +212,12 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                     m["ma"], chu=str(lat["chu"]), giay=float(lat["giay"]),
                     khe=khe, so_vong=int(lat["so_vong"]))
                 cac_nan.append(kq)
-                ban_ke.append(dict(lat["ban_ke"]))
+                # ⚠️ `lat["ban_ke"]` la mot DANH SACH tu 25/09 (mot khe gop tra
+                #    ve nhieu dong). Ban ghi cu la mot dict — nhan ca hai, vi mot
+                #    luot noi tiep co the doc diem chot cua luot truoc ban nang.
+                _cu = lat["ban_ke"]
+                ban_ke.extend(dict(x) for x in
+                              (_cu if isinstance(_cu, list) else [_cu]))
                 if lat.get("phan"):
                     phan.append(dict(lat["phan"]))
                 da_sinh += int(lat.get("so_luot_doc") or 0)
@@ -240,9 +265,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             if cu is not None:
                 kq = nan_cho_vua.ket_luan(m["ma"], chu=chu, giay=float(cu),
                                           khe=khe, so_vong=0)
-                ban_ke.append({"ma": m["ma"], "khoa": khoa_ben, "chu": chu,
-                               "giay": float(cu), "tu_cu": True,
-                               **_ke_nan(kq)})
+                ban_ke.extend(nan_thoi_luong.no_ban_ke(
+                    {"ma": m["ma"], "khoa": khoa_ben, "chu": chu,
+                     "giay": float(cu), "tu_cu": True, **_ke_nan(kq)},
+                    m["_thanh_vien"]))
                 cac_nan.append(kq)
                 continue
 
@@ -321,11 +347,15 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                         "van_tay": vt}
             # ⭐ `chu` = cau CUOI CUNG may da doc (sau nan). `qc_do_luong` cham
             #    WER so voi chinh cau nay, khong phai cau truoc khi nan.
-            ke_moi = {"ma": m["ma"], "khoa": khoa_ben, "chu": chu,
-                      "giay": giay,
-                      **_ke_nan(kq)}
+            # ⭐ MOT tep tieng, NHIEU dong `ban_ke` — mot dong cho MOI `ma` goc
+            #    cua nhom, `giay` chia theo am tiet. Bat bien cua
+            #    `giai_doan_thoi_gian.py:88-89` ⛔ khong bi pha.
+            ke_moi = nan_thoi_luong.no_ban_ke(
+                {"ma": m["ma"], "khoa": khoa_ben, "chu": chu, "giay": giay,
+                 **_ke_nan(kq)},
+                m["_thanh_vien"])
             phan.append(phan_moi)
-            ban_ke.append(ke_moi)
+            ban_ke.extend(ke_moi)
 
             # ⭐ Ghi so cai **mot lan cho moi doan da giao**, kem so giay THAT.
             #    `UNIQUE(run_id, ma_dispatch)` chan lan ghi thu hai neu giai doan
@@ -349,6 +379,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                                                    # doc cua doan nay.
                                                    "luot_doc": luot_cua_doan,
                                                    "phan": phan_moi,
+                                                   # ⚠️ DANH SACH tu 25/09: mot
+                                                   # khe gop tra ve nhieu dong.
                                                    "ban_ke": ke_moi}})
             db.commit()
             lc.xong_mot()
@@ -364,35 +396,50 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         phan.append({"staging_key": khoa_ke, "kind": "json", "duoi": "json",
                      "van_tay": vt_ke})
 
+        # ⭐ Dem tren dong DAU cua moi nhom: mot tep = mot luot sinh. Dong di theo
+        #    ⛔ khong phai mot doan "moi sinh" hay "dung lai" nao ca.
+        ke_dau = [d for d in ban_ke if not nan_thoi_luong.la_dong_theo_sau(d)]
         return {
             "phan": phan,
             "tom_tat": {
-                "so_doan": len(muc),
+                # 🔴 **HAI con so, ⛔ khong mot.** `nan_cho_vua.tom_tat` khai
+                #    `so_doan` = so KHE DOC (= so tep tieng sinh ra); khoa duoi
+                #    day khai so `ma` cua `content.json`. Tu khi `gop_khe` dieu
+                #    khien that chung ⛔ khong con bang nhau, va gop chung lam mot
+                #    la lam bao cao noi doi ve chi phi TTS.
+                # ⛔ Va ⛔ KHONG ghi de `so_doan` o day: mot khoa hai chu so huu la
+                #    dung cai bay kho nay da tra gia (`test_4700` chot).
+                "so_ma_noi_dung": len(muc_goc),
+                "so_khe_da_gop": sum(1 for g in nhom if len(g) > 1),
                 # ⚠️ **Hai con so, khong phai mot.** `so_doan_moi_sinh` dem DOAN;
                 #    `so_luot_doc` dem LUOT GOI may sinh tieng — mot doan phai
                 #    nan hai vong la ba luot. Gop chung lam mot se lam bao cao
                 #    chi phi noi doi ngay o cho no quan trong nhat, va lam mat
                 #    mot menh de ma `test_409` da chot dung.
-                "so_doan_moi_sinh": len(muc) - sum(1 for d in ban_ke if d.get("tu_cu")),
+                "so_doan_moi_sinh": len(muc) - sum(1 for d in ke_dau
+                                                   if d.get("tu_cu")),
                 "so_luot_doc": da_sinh,
-                "so_doan_dung_lai": sum(1 for d in ban_ke if d.get("tu_cu")),
-                "tong_giay": round(sum(float(d["giay"]) for d in ban_ke), 2),
+                "so_doan_dung_lai": sum(1 for d in ke_dau if d.get("tu_cu")),
+                # ⭐ `giay_tep` cua dong dau = do dai THAT ca tep; `giay` cua no
+                #    chi la PHAN cua rieng no. Cong `giay` cua moi dong cung ra
+                #    dung tong ay (`chia_giay` bao toan tong), nhung cong
+                #    `giay_tep` la cong mot con so mot lan cho moi nhom — ro rang
+                #    hon, va ⛔ khong phu thuoc vao phep chia.
+                "tong_giay": round(sum(float(d.get("giay_tep") or d["giay"])
+                                       for d in ke_dau), 2),
                 # ⭐ Xem `dong_ho` o dau ham: hai con so nay tra loi *"giai doan
                 #    nay cham vi cai gi"* ma khong phai do lai ngoai san pham.
                 "giay_tts": round(dong_ho["giay_tts"], 2),
                 "giay_llm_nan": round(dong_ho["giay_llm_nan"], 2),
                 "preset": str(preset or ""),
                 "ma_giong": ma_giong,
-                # ⭐ `gop_khe` (D5, `nan_thoi_luong.py`) tren DU LIEU THAT cua
-                #    chinh lan chay nay — bao cao, xem `_so_khe_neu_gop`.
-                "so_khe_neu_gop": _so_khe_neu_gop(muc),
                 **nan_cho_vua.tom_tat(cac_nan, tung_luot_doc=luot_doc),
             },
         }
 
 
 def _khe_bao_cao_tu_muc(muc: list[dict]) -> list[nan_thoi_luong.Khe]:
-    """`muc` (danh sach doan cua `content.json`) -> `Khe` cho `gop_khe` BAO CAO.
+    """`muc` (danh sach doan cua `content.json`) -> `Khe` cho `gop_khe`.
 
     ⭐ `moc_sau` = `bat` cua doan KE TIEP trong `muc`: moi doan trong `muc` da
        la `for_dubbing=True` (`ban_bien_tap.doan_giu_lai` loc doan bi cat truoc
@@ -418,23 +465,28 @@ def _khe_bao_cao_tu_muc(muc: list[dict]) -> list[nan_thoi_luong.Khe]:
     return ra
 
 
-def _so_khe_neu_gop(muc: list[dict]) -> int:
-    """So khe SE CON neu `gop_khe` duoc ap dung TRUOC bac thang nan cho vua.
+def _gop_mot_nhom(thanh_vien: list[dict]) -> dict:
+    """Mot NHOM muc lien ke -> mot muc "khe da gop" de DOC mot luot.
 
-    🔴 **Chi BAO CAO — chua doi duong sinh tieng that.** Noi thang vao duong
-       sinh se lam vo `giai_doan_thoi_gian.lap_ke_hoach` (ADR-003): no doi MOI
-       `ma` cua `content.json` co MOT dong `giay` rieng trong `ban_ke.json`, va
-       gop nhieu doan lam mot tep se xoa mat cac `ma` con lai khoi `ban_ke` —
-       xem docstring dau `nan_thoi_luong.py` cho day du ly do + dieu kien noi
-       THAT (can sua dong bo `giai_doan_noi_dung.py` + `giai_doan_thoi_gian.py`
-       + `thoi_gian.py`, kem mot luot TTS that de doi chieu).
+    ⭐ `ma` cua thanh vien DUNG DAU duoc dung lam `ma` cua ca nhom — ⛔ khong bia
+       ra mot `ma` moi. So cai (`UNIQUE(run_id, ma_dispatch)`), diem chot
+       (`su_dung.danh_dau_xong`) va van tay tep deu bam vao `ma`, nen mot `ma`
+       tong hop se la mot khoa ⛔ khong doi chieu duoc voi `content.json`.
 
-    ⭐ Van la mot loi goi THAT tren du lieu THAT cua tung lan chay — khong phai
-       mot con so bia san — nen no la cau tra loi trung thuc cho *"gop duoc bao
-       nhieu"* tren chinh video khach vua xu ly, du chua duoc dung de sinh.
+    ⭐ `_thanh_vien` mang theo CAC MUC GOC — `no_ban_ke` can `chu` va `bat`/`ket`
+       cua tung `ma` de tra lai mot dong `ban_ke` cho moi cai.
+
+    ⛔ Nhom mot thanh vien tra ve mot ban SAO co `_thanh_vien` do dai 1, ⛔ khong
+       phai chinh `muc` goc: mot hinh dang duy nhat cho ca hai ca thi nguoi doc
+       xuoi dong ⛔ khong phai hoi "cai nay co `_thanh_vien` khong".
     """
-    return len(nan_thoi_luong.gop_khe(
-        _khe_bao_cao_tu_muc(muc), tran_tang_toc=nan_cho_vua.tran_co_gian()))
+    dau = thanh_vien[0]
+    return {**dau,
+            "chu": " ".join(str(m.get("chu") or "") for m in thanh_vien).strip(),
+            "goc": " ".join(str(m.get("goc") or "") for m in thanh_vien).strip(),
+            "bat": float(dau.get("bat") or 0.0),
+            "ket": float(thanh_vien[-1].get("ket") or 0.0),
+            "_thanh_vien": [dict(m) for m in thanh_vien]}
 
 
 def _timeout_tts() -> float:

@@ -102,8 +102,14 @@ def dung(*, khoa_video: str, khoa_nen: str, ke_hoach: dict,
         raise BanDungError(
             _t('Bản dựng cắt nối nhưng không khai khoảng nào được giữ.'))
 
-    khoa_theo_ma = {str(d["ma"]): str(d.get("khoa") or "")
-                    for d in (ban_ke_tieng.get("doan") or [])}
+    # 🔴 **`tep_theo_ma`, ⛔ KHONG mot dict comprehension.** Mot khe da GOP
+    #    (`nan_thoi_luong.gop_khe`) la MOT tep tieng cho 2-4 `ma`: dung theo
+    #    tung `ma` thi RENDER chen cung mot tep 2-4 lan (`ket_xuat.py` dat mot
+    #    lop moi phan tu cua `lop`) — nghe thanh tieng vang, ⛔ khong nem.
+    from . import nan_thoi_luong
+
+    khoa_theo_ma = nan_thoi_luong.tep_theo_ma(ban_ke_tieng)
+    di_theo = nan_thoi_luong.nhom_theo_ma(ban_ke_tieng)
 
     lop: list[dict] = []
     for d in (ke_hoach.get("doan") or []):
@@ -111,6 +117,11 @@ def dung(*, khoa_video: str, khoa_nen: str, ke_hoach: dict,
         if int(d.get("dai_ms") or 0) <= 0:
             # Doan da bi cat o TIMING (vuot tran troi). Bo qua, nhung QC dem no
             # qua `so_doan_bi_cat` cua ke hoach (T12) — khong lam mat dau vet.
+            continue
+        if ma in di_theo:
+            # ⭐ `ma` nay DI THEO tep cua `di_theo[ma]`, va tep ay da co mot lop.
+            #    ⛔ Khong phai "thieu tep tieng" — phan biet hai chuyen nay bang
+            #    mot truong TUONG MINH, ⛔ khong bang su vang mat cua `khoa`.
             continue
         khoa = khoa_theo_ma.get(ma, "")
         if not khoa:

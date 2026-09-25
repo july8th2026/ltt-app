@@ -299,6 +299,31 @@ tiết, đếm `so_can_nan`. **Dữ liệu đã có, không cần chạy ASV** (
 
 ### Đ2 — `gop_khe` ĐÁNG LÀM, và ta tránh được đúng cái làm Viral phải tắt nó
 
+> ✅ **ĐÃ LẮP 25/09** (làn `b2-gop-khe`) — `gop_khe` điều khiển **đường sinh tiếng
+> thật**: `giai_doan_giong` đọc **một lượt cho cả nhóm**, `nan_thoi_luong.no_ban_ke`
+> trả lại **một dòng `ban_ke` cho MỌI `ma` gốc** nên bất biến
+> `giai_doan_thoi_gian.py:88-89` ⛔ không bị phá và `content.json` ⛔ không bị chạm.
+> Luật gộp mượn nguyên của Viral: `≤ 4` đoạn · khe `≤ 0,6 s` · `≤ 220` ký tự ·
+> `con_tiep`.
+>
+> **Đo lại trên 3 phim (188 khe), với luật Viral — chặt hơn phép đo dưới đây:**
+> khe `188 → 126` · khe bị phán quyết dưới một âm tiết `119 (63,3 %) → 44 (34,9 %)`
+> · **số** lượt gọi model `135 → 85 (−37 %)`. ⚠️ **Tỉ lệ** khe không vừa thì gần như
+> không đổi (`71,8 % → 67,5 %`) — cái mua được là **ít khe hơn để phán quyết**, ⛔
+> không phải một tỉ lệ đẹp hơn.
+>
+> 🔴 **Cái giá KHÔNG nằm ở ký tự/giây** (p95 `16,45`, `0/188` vượt trần 20 — và
+> **không đổi** trước/sau, vì ô phụ đề dài đúng bằng thời gian máy đọc chính văn
+> bản của ô đó). Nó nằm ở **bố cục ô**: trần của ta là `2 × 42 = 84` ký tự, còn
+> trần gộp 220 của Viral là trần của một **lượt đọc**. Gộp cả ô đẩy tỉ lệ ô vượt
+> trần từ `15,4 %` lên `42,9 %` ⇒ ⛔ **không gộp ở phụ đề**, chỉ gộp cái **đọc**.
+> ⚠️ Và `15,4 %` **trước** gộp là khiếm khuyết **có sẵn** — ghi lại, chưa sửa.
+>
+> ⚠️ **Hai trong bốn hằng số mượn về chặn `0/185` cặp** trên dữ liệu ta
+> (`TRAN_KHE_GIUA_S`, `TRAN_KY_TU_GOP`): `cat_doan` cho `ket[i] == bat[i+1]` nên
+> khe giữa luôn `0,000 s`, khác hẳn cue của CapCut. Điều kiện có hiệu lực nhất là
+> `con_tiep` (`64/185`). Bằng chứng: `bang_chung/b2_gop_khe/`.
+
 **Số của ta:** 106 → 59 khe · khe trung vị 1,71 → 2,24 s · đoạn bị phán quyết ở độ chính
 xác không có: **100/106 (94 %) → 39/59 (66 %)**.
 
