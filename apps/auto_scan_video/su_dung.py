@@ -613,6 +613,12 @@ def giai_quyet_mo_ho(db: Session, dong: AsvUsage, *, da_chay: bool,
 def cua_chan_truoc_khi_tieu(db, run, *, uoc_them: int) -> None:
     """⛔ Goi TRUOC moi luot co the ton tien. Nem neu se vuot muc da giu.
 
+    🔑 **Tu 25/09/2026 (gia phang) cong nay canh CHI PHI CUA TA, ⛔ khong con canh
+       hoa don cua khach.** Khach tra `10 credit x so phut nguon`, va so do ⛔ khong
+       phu thuoc vao `tong_da_dung` nua — nen mot lan chay vuot o day ⛔ khong bao
+       gio thanh mot con so bat ngo tren hoa don. No chi noi: *lan chay nay dang dot
+       nhieu hon gia ban*. Xem `features.kiem_tran_chi`.
+
     Mong hon `features.kiem_tran_chi` mot lop: no nhan **uoc** cua lan goi sap
     toi, con `kiem_tran_chi` chi biet nhung gi da tieu.
 
@@ -630,6 +636,9 @@ def cua_chan_truoc_khi_tieu(db, run, *, uoc_them: int) -> None:
 
 def cua_chan_cho_lo(db, run, *, uoc_moi_don_vi: int, so_don_vi: int) -> None:
     """Cua chan cho mot LO — vd sinh tieng 200 doan, doc anh 40 canh.
+
+    ⚠️ Cung nghia moi voi `cua_chan_truoc_khi_tieu`: duoi gia phang no canh **chi
+       phi cua ta**, ⛔ khong canh hoa don cua khach.
 
     ⭐ Kiem CA LO truoc khi chay don vi dau tien, khong phai kiem tung cai mot.
 

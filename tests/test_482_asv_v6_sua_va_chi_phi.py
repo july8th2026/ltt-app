@@ -28,8 +28,11 @@ moi_truong = _mt.moi_truong
 #: Nguon CHUA noi vao vong sua, va vi sao. Rong dan theo pha 28 — khong phinh.
 #: ⭐ RONG tu 24/09: `qc_hinh` da duoc noi that o `ecd3b8e0` (23/09). Bai nay
 #:    do DUNG 24 gio — thu duoc noi la ma, thu chua doi la HAI BAN KHAI
-#:    (tap nay va `quan_sat.NHAN_NANG_LUC`). Giu dict RONG, dung xoa: no la
-#:    cho dat nguon ke tiep, va la cho bat buoc khai LY DO khi chua noi.
+#:    (tap nay va bang nhan nang luc). Giu dict RONG, dung xoa: no la cho dat
+#:    nguon ke tiep, va la cho bat buoc khai LY DO khi chua noi.
+#:    ⚠️ 25/09: bang nhan ay (`quan_sat.NHAN_NANG_LUC`) da bi **xoa** cung hoa don
+#:       theo nang luc — xem `test_KHONG_con_banh_coc_NHAN_NANG_LUC_gac_mot_man_hinh_da_mat`.
+#:       Nen nay chi con MOT ban khai phai bat khop khi noi mot nguon moi: tap nay.
 CHUA_NOI: dict[str, str] = {}
 
 
@@ -61,19 +64,32 @@ def test_bang_chi_phi_CO_nguoi_goi_trong_route():
     assert goi, "tom_tat_cho_khach lai mo coi"
 
 
-def test_moi_nang_luc_TINH_TIEN_trong_ma_deu_co_NHAN():
-    """Nang luc ghi so cai ma khong co nhan se hien "Viec khac" — dung, nhung la
-       mot cau tra loi te hon mot nhan that."""
-    ma = set()
-    for p in (GOC / "apps/auto_scan_video").glob("*.py"):
-        ma |= set(re.findall(r'nang_luc="([a-z_]+)"', p.read_text(encoding="utf-8")))
-    ma |= {"dich_thuat", "chuyen_loi_thoai", "rut_ngan_cho_vua", "doc_canh",
-           "ho_so_noi_dung", "qc_ngu_nghia"}   # `ai.ThaoTac(...)` — ma o doi so dau
-    from apps.auto_scan_video import ai, jobs
-    ma |= {t.ma for t in vars(ai).values() if isinstance(t, ai.ThaoTac)}
-    ma |= {jobs.NANG_LUC_VONG_SUA, jobs.NANG_LUC_CON_LAI}
-    thieu = ma - set(quan_sat.NHAN_NANG_LUC)
-    assert not thieu, thieu
+def test_KHONG_con_banh_coc_NHAN_NANG_LUC_gac_mot_man_hinh_da_mat():
+    """⭐ **`test_moi_nang_luc_TINH_TIEN_trong_ma_deu_co_NHAN` da bi XOA — 25/09.**
+
+    No chot rang moi `nang_luc` ghi so cai deu co mot nhan tieng Viet trong
+    `quan_sat.NHAN_NANG_LUC`, de hoa don theo nang luc cua khach ⛔ khong hien
+    *"Viec khac"*. Gia phang thay hoa don do bang **mot dong**, nen ⛔ khong con man
+    hinh nao in nhan — va ba bang nhan da bi xoa cung luc.
+
+    🔑 **Giu lai phep kiem se la giu mot banh coc gac mot NGHIA VU MA.** No van
+       xanh, van bat moi nang luc moi phai dich mot cau, cho mot man hinh ⛔ khong
+       con ton tai. Mot bao dong gia lam nguoi ta **TAT** cong — do la ho loi
+       `banh-coc-do-CACH-GO-thay-vi-do-tinh-chat`, va cach tranh no la xoa dung luc.
+
+    ⇒ Bai nay thay cho no, va no do **hai chieu**: ba bang phai that su di, va
+      ⛔ khong ai duoc lang le dung lai chung o cho khac.
+    """
+    for ten in ("NHAN_NANG_LUC", "NHAN_NANG_LUC_KHAC", "NHAN_DON_VI"):
+        assert not hasattr(quan_sat, ten), (
+            f"`quan_sat.{ten}` song lai — neu that su co mot man VAN HANH can ten "
+            f"nang luc bang tieng Viet thi dung bang O DO, cho nguoi doc that")
+
+    # ⛔ Va hoa don cua khach van la MOT dong, ⛔ khong len lai thanh mot bang.
+    from apps.auto_scan_video import gia
+
+    hd = gia.hoa_don(190.0)
+    assert set(hd) == {"giay_nguon", "so_phut", "don_gia", "credit"}, hd
 
 
 def _tao_va_quyet_toan(a, csrf, tmp_path):

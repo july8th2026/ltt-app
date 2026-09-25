@@ -437,6 +437,11 @@ def _kiem_khong_tinh_hai_lan(db: Session, run: AsvRun) -> None:
 def tong_da_dung(db: Session, run: AsvRun) -> int:
     """Tong chi phi **DO DUOC**. Khong tinh lai tu bang gia (ADR-001 D4).
 
+    🔑 **Tu 25/09/2026 con so nay ⛔ KHONG con quyet dinh so tien khach tra** — gia
+       phang lam viec do (`gia.tinh_credit`). No la **chi phi cua TA**, va con hai
+       nguoi doc: `kiem_tran_chi` (tran chi cua mot lan chay) va ban van hanh
+       (*"cho nao dang dot tien"*). ⛔ Dung doc no thanh "so se thu".
+
     Hai muc, theo D-V4-12:
 
         giai doan CO don vi viec  -> tong `credit_actual` cua cac don vi
@@ -496,8 +501,9 @@ def kiem_tran_chi(db: Session, run: AsvRun, them: int) -> None:
 #:    `NGUOI_DUNG` cho ca **that bai cuoi cung cua may** — chinh docstring cua no
 #:    ghi: *"`NGUOI_DUNG` o day khong noi 'loi cua khach'"*. Dung mot nhan da tu
 #:    khai la mo ho lam can cu THU TIEN la thu tien theo mot thu khong co nghia
-#:    do. `ma_loi.HOAN_CREDIT` cung chua co nguoi doc va chi phu 3 trong 12 mat
-#:    xich, nen no khong du lam cong.
+#:    do. `ma_loi` tung mang mot bang `HOAN_CREDIT` khai *"ma nao duoc hoan"*, chua
+#:    ai doc va chi phu 3 trong 12 mat xich; no da bi **xoa** 25/09 vi luat duoi
+#:    day bao trum han no — moi ket cuc khong-giao-duoc deu hoan 100 %.
 #:
 #: ⇒ MOT luat, khong ngoai le: **giao duoc thi thu, khong giao duoc thi khong.**
 #:   `cancelled` cung khong thu — khach khong nhan gi.
@@ -505,7 +511,45 @@ def kiem_tran_chi(db: Session, run: AsvRun, them: int) -> None:
 #: ⚠️ He qua da biet, khai ra thay vi de no am tham: mot lan chay hong o giai
 #:    doan 9 **vi du lieu cua khach** cung khong thu, du ta da dot GPU. Do la cai
 #:    gia cua mot luat khong the bi dung sai — va la lua chon cua chu du an.
+#:
+#: 🔴 **`done` MOT MINH KHONG DU — siet 25/09/2026 sau mot ca THAT (`N-57`).**
+#:
+#:    Lan `asv-g17` chay mot luot E2E that 49 phut tren phim khach:
+#:    `run.status == "done"`, bao QC `dat == True`, va `render.outputs.khoa_asset`
+#:    **RONG** — khong mot tep nao duoc giao. Duong di: vong sua reset `render` +
+#:    5 giai doan, het vong sua, *"con 1 khiem khuyet — giao hang va de QC lam
+#:    cong gac"*, roi `done`.
+#:
+#: ⭐ Luat cu se thu tron tien cho mot lan **giao hang rong**. No khong sai ve Y —
+#:    no sai ve **CHO DAT CAU HOI**: `done` tra loi *"may trang thai da chay
+#:    het"*, ⛔ khong tra loi *"khach da nhan duoc hang"*. Cung ho loi voi moi ca
+#:    khac cua ngay 25/09: **mot phep do tra loi mot cau khac cau ta dang hoi.**
+#:
+#: ⇒ Tap nay van la dieu kien **CAN**; dieu kien **DU** them mot ve: phai co
+#:   **hien vat** (`co_hien_vat_giao_duoc`). Chi tiet ca that: so loi `N-57`, do
+#:   lan `asv-g17` ghi — ⛔ dung ghi lan hai o day.
 CHI_THU_KHI_GIAO_DUOC = frozenset({RUN_DONE})
+
+
+def co_hien_vat_giao_duoc(db: Session, run: AsvRun) -> bool:
+    """Khach co THUC SU nhan duoc mot tep khong. ⛔ Hoi HIEN VAT, khong hoi trang thai.
+
+    🔑 **Hoi dung cau ma nut "Tai ve" cua khach hoi.** Ham nay uy quyen cho
+       `khoa_ket_qua` — chinh ham ma `routes.tai_ket_qua` va `cong_noi_bo` dung de
+       phuc vu tep. Nen no ⛔ khong the tra loi "co hang" trong khi nut tai ve
+       404: hai cau tra loi la **mot** vi chung la **mot phep tinh**.
+
+    ⛔ Vi sao khong tu doc `render.outputs["khoa_asset"]` o day: mot danh sach
+       khong rong van co the chi chua `.srt` va khong co `.mp4` — luc do
+       `khoa_asset` noi "da giao" trong khi man hinh cua khach khong co gi bam
+       duoc. Va mot ban doc thu hai ve *"the nao la mot ban giao"* la mot ban khai
+       thu hai se troi khoi ban dau.
+
+    ⚠️ Ham nay ⛔ KHONG doi trang thai run. Job **da** chay het va QC **da** gac;
+       doi `done` thanh `error` la viec cua may trang thai (lan `asv-g17` dang dieu
+       tra `jobs.py`). Cho nay chi tra loi mot cau ve **TIEN**.
+    """
+    return bool(khoa_ket_qua(db, run))
 
 #: `thoi_luong_nguon_giay` tra ve `(giay, nguon_do)`; day la cac gia tri cua
 #: `nguon_do`. ⛔ `0.0` mot minh khong phan biet duoc *"video dai 0 giay"* voi
@@ -591,6 +635,12 @@ def quyet_toan(db: Session, run: AsvRun, *, trang_thai_cuoi: str) -> AsvRun:
 
     if trang_thai_cuoi not in CHI_THU_KHI_GIAO_DUOC:
         # 🔴 `N-21`: khong giao duoc thi khong thu. Nha toan bo hold.
+        thuc_te = 0
+    elif not co_hien_vat_giao_duoc(db, run):
+        # 🔴 `N-57` (ca that 25/09): `done` + QC `dat` ma KHONG mot tep nao duoc
+        #    giao. Cung duong voi `error`/`cancelled` — nha toan bo hold.
+        log.error("run %s ve %s ma khong co hien vat giao duoc — thu 0, nha hold "
+                  "(%s)", run.id, trang_thai_cuoi, run.credit_held)
         thuc_te = 0
     else:
         giay, nguon_do = thoi_luong_nguon_giay(db, run)
@@ -788,16 +838,45 @@ def gan_logo(db: Session, kho, *, run: AsvRun,
         # Kiem SOM de cau tu choi noi ve ANH chu khong ve "artifact"; `assets`
         # se kiem lai tren ban staging, va hai lan kiem la co y — cai o day cho
         # khach doc, cai o kia la hang rao.
-        kieu_that, _co = image_input.validate_reference(du_lieu, kieu)
+        #
+        # 🔴 **`ValueError` phai thanh `AsvError`, neu khong khach nhan MOT TRANG
+        #    500.** Do tren trinh duyet that (asv-gui 25/09): mot logo 40x20 —
+        #    duoi san 64x64 cua nen tang — lam `validate_reference` nem
+        #    `ValueError`, va ca hai duong tao lan chay chi bat `features.AsvError`
+        #    (`routes.py:371`, `routes.py:429`). Ket qua: tep hop le ve moi mat
+        #    khac, mot cai favicon lam khach nhan *"May chu gap su co"*.
+        #
+        # ⛔ Va do la mot cau tra loi SAI ve ai co loi: loi nam o tep khach chon,
+        #    va ho sua duoc trong ba giay — neu ta noi ra. Chu thich ngay tren
+        #    hua dieu do tu dau ("cau tu choi noi ve ANH"); no chi chua duoc noi.
+        #
+        # ⭐ Chuyen tiep NGUYEN cau cua nen tang, ⛔ khong go lai san `64x64`:
+        #    luat song o `platform_core.image_input`, va mot ban thu hai o day se
+        #    troi ngay lan dau ai do doi con so ay.
+        try:
+            kieu_that, _co = image_input.validate_reference(du_lieu, kieu)
+        except ValueError as exc:
+            raise AsvError(str(exc)) from exc
         duoi = {"image/png": "png", "image/jpeg": "jpg",
                 "image/webp": "webp"}.get(kieu_that, "png")
         vt = assets.bam(du_lieu)[:32]
         khoa_tam = assets.khoa_staging(owner_id=run.owner_id, run_id=run.id,
                                        stage="logo", van_tay=vt, duoi=duoi)
         kho.put(khoa_tam, io.BytesIO(du_lieu), content_type=kieu_that)
-        tai_san = assets.promote_va_ghi(
-            db, kho, owner_id=run.owner_id, run_id=run.id, stage="logo",
-            van_tay=vt, kind=KIND_ANH, duoi=duoi, staging_key=khoa_tam)
+        # ⚠️ `AssetError` cung phai thanh `AsvError` — cung ly do voi phep kiem
+        #    som o tren: route chi bat `AsvError`, nen mot `AssetError` lot ra la
+        #    mot trang 500.
+        #
+        # ⛔ Nhung KHONG chuyen tiep thong diep cua no: `AssetError` mang khoa
+        #    luu tru trong cau chu (`artifact anh khong hop le: asv-staging/...`).
+        #    Do la duong dan noi bo, va man hinh cua khach CO Y khong doc chu tu
+        #    do cua tang duoi — cung luat `quan_sat.tom_tat_loi_cho_khach` dung.
+        try:
+            tai_san = assets.promote_va_ghi(
+                db, kho, owner_id=run.owner_id, run_id=run.id, stage="logo",
+                van_tay=vt, kind=KIND_ANH, duoi=duoi, staging_key=khoa_tam)
+        except assets.AssetError as exc:
+            raise AsvError(_t('Ảnh logo không hợp lệ.')) from exc
         ra.append(tai_san.storage_key)
     return ra
 

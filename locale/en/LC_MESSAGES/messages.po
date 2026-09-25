@@ -21452,3 +21452,14 @@ msgstr "The fill-background region is too small on this frame. Draw a larger reg
 
 msgid "Vùng điền nền chạm cả mép trên lẫn mép dưới khung hình nên không còn dải hình nào để lấy làm nền. Hãy thu nhỏ vùng, hoặc chọn kiểu làm mờ."
 msgstr "The fill-background region touches both the top and the bottom edge of the frame, so there is no strip of picture left to use as background. Shrink the region, or choose the blur style."
+msgid "%(p)s phút × %(g)s credit = %(c)s credit"
+msgstr "%(p)s min × %(g)s credit = %(c)s credit"
+
+msgid "Chưa đo được độ dài video nên chưa tính được hoá đơn. Số giữ chỗ ở trên là mức tối đa."
+msgstr "The video length has not been measured yet, so the invoice cannot be worked out. The amount held above is the maximum."
+
+msgid "Cách tính"
+msgstr "How it is charged"
+
+msgid "Ảnh logo không hợp lệ."
+msgstr "That logo image is not valid."
