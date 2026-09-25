@@ -179,11 +179,21 @@ def test_moi_loai_trigger_la_MOT_mo_dun(db):
     `SCHEDULE` (theo giây) còn ở đây vì hàng cũ trong CSDL vẫn mang loại ấy;
     spec §8.2 nói nó **bị thay** bởi `cron`, và việc di trú các hàng ấy chưa
     làm — xem báo cáo P4 task 7.
+
+    ⭐ `PIECE_POLL` (25/09, làn wft): sống ngoài `trigger.py` (`poll_connector.py`,
+    spec §11.4 FLOW D) — cùng khuôn `G42` (lõi không biết tên loại). Trước
+    25/09 nó chỉ có mặt trong `SO_DANG_KY` khi có TEST KHÁC chạy trước đã
+    import `poll_connector`/`ban_trigger` (đỏ khi chạy chung cả cụm, xanh khi
+    chạy một mình — xem `test_4290_wf_trigger_dang_ky_tat_dinh.py`). Vá:
+    `platform_core/workflow/__init__.py` giờ tự import `poll_connector` lúc
+    gói được chạm tới (cùng khuôn `nut_loi/__init__.py` dùng cho `_SO`), nên
+    `SO_DANG_KY` giờ LUÔN có `PIECE_POLL` — tất định, không phụ thuộc thứ tự
+    import của phiên test.
     """
     from platform_core.workflow import trigger
 
     assert set(trigger.SO_DANG_KY) == {"MANUAL", "API", "SCHEDULE", "WEBHOOK",
-                                       "CRON", "EVENT"}
+                                       "CRON", "EVENT", "PIECE_POLL"}
 
 
 def test_them_loai_THU_NAM_khong_sua_platform_core(db):

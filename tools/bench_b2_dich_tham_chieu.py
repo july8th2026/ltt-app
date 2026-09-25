@@ -61,6 +61,8 @@ import re
 import statistics
 import sys
 import time
+from collections.abc import Sequence
+from typing import Any
 
 GOC = pathlib.Path(__file__).resolve().parent.parent
 if str(GOC) not in sys.path:
@@ -234,7 +236,7 @@ def _cham_mot_che_do(cap: list[dict], che_do: str, *, thiet_bi: str, lo: int,
     return {k: float(v) for k, v in diem.items()}
 
 
-def cham_tho(mau: list[dict], dau: list[tuple[int, str, str]] = (), *,
+def cham_tho(mau: list[dict], dau: Sequence[tuple[int, str, str]] = (), *,
              che_do: tuple[str, ...] = CHE_DO, thiet_bi: str = "auto",
              lo: int = 16, timeout_s: int = 7200,
              ) -> dict[str, dict[str, dict[int, float]]]:
@@ -716,7 +718,7 @@ def lenh_qe_co_san(a: argparse.Namespace) -> int:
     diem = metricx.do_dich(cap, ngon_ngu_nguon="zh", ngon_ngu_dich="vi",
                            thiet_bi=a.thiet_bi, lo=a.lo, timeout_s=7200)
     tv: list[float] = []
-    chi_tiet = []
+    chi_tiet: list[dict[str, Any]] = []
     nguong = metricx.NGUONG_DO[("zh", "vi")]
     for k, r in enumerate(luot):
         v = [float(diem[f"{k}|{ma}"]) for ma in r]

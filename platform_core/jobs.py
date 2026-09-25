@@ -21,13 +21,16 @@ worker) quyết định ranh giới transaction.
 from __future__ import annotations
 
 import importlib
+import logging
 import re
 from typing import TypeVar
 from datetime import datetime, timedelta, timezone
 from typing import Callable, Optional
 
-from sqlalchemy import exists, func, literal, or_, select
+from sqlalchemy import exists, func, literal, or_, select, text
 from sqlalchemy.orm import Session as DbSession
+
+log = logging.getLogger(__name__)
 
 from platform_core.models import (ExecutionLease, JOB_CANCELLED, JOB_DONE, JOB_ERROR,
                                   JOB_QUEUED, JOB_RUNNING, Job)
@@ -35,8 +38,23 @@ from platform_core import job_events
 from platform_core.i18n import N_
 from platform_core.job_scheduler import ORIGIN_WORKFLOW
 
-# Job running quá lâu không đập nhịp bị coi là mồ côi (worker chết).
-ORPHAN_TIMEOUT = timedelta(minutes=5)
+# DÒNG `jobs` ở `running` quá lâu không đập nhịp bị coi là mồ côi (worker chết).
+#
+# 🔴 VÌ SAO TÊN DÀI HƠN (25/09/2026). Hằng này từng mang tên `ORPHAN_TIMEOUT`, và
+#    `_con_cho_tai_nguyen` lại `from platform_core.llm.admission import
+#    ORPHAN_TIMEOUT` **trong thân hàm** — một import cục bộ **che** hằng của
+#    chính tệp này. ⇒ MỘT cái tên, HAI giá trị (5 và 20 phút), trong CÙNG một
+#    tệp. Người đọc dòng này rồi đọc bộ lọc suất hoàn toàn hợp lý khi tưởng cả
+#    hai là một con số, và docstring của bộ lọc ("đừng nới `ORPHAN_TIMEOUT`")
+#    còn đẩy mạnh thêm cách hiểu đó.
+#
+# ⚠️ Hai hạn này đo HAI thứ khác nhau và ⛔ không được trộn: cái này là hạn của
+#    một **dòng `jobs`** (`reclaim_orphans`), còn hạn của một
+#    **`ExecutionLease`** sống trong `platform_core/llm/admission.py` và chỉ
+#    được đọc qua `admission.han_mo_coi(mode)`. (Còn một `ORPHAN_TIMEOUT` thứ ba
+#    — `gpu_lease.py`, 10 phút — cho bảng `GpuLease`; nó chưa bao giờ bị che
+#    nên vẫn giữ tên trong mô-đun của nó.)
+JOB_ORPHAN_TIMEOUT = timedelta(minutes=5)
 
 # Giãn cách retry: lần thử thứ n chờ base * 2^(n-1) giây, chặn trên.
 #
@@ -61,6 +79,21 @@ def gian_cach_retry(lan: int, *, base: int = RETRY_BASE_S) -> int:
 
 # Job/account đã chờ tới mốc này được đưa lên trước account mới để không đói.
 FAIR_AGING = timedelta(minutes=5)
+
+#: Kênh `LISTEN/NOTIFY` của PostgreSQL dùng để ĐÁNH THỨC worker đang ngủ.
+#:
+#: 🔴 **Nó KHÔNG phải hàng đợi thứ hai.** Nguồn chân lý vẫn là bảng `jobs`, và
+#:    `claim()` vẫn là bộ phán quyết duy nhất. Tin nhắn không mang nội dung, và
+#:    **mất một tin nhắn không mất một job**: worker vẫn hỏi lại theo nhịp
+#:    `job_runner.POLL_INTERVAL_S` như trước, nên hỏng đường đánh thức chỉ làm
+#:    lượt đó chậm đúng bằng hành vi cũ.
+#:
+#: ⭐ Vì sao cần (đo 25/09/2026 trên đội hình worker THẬT của máy A —
+#:    `api:6, gpu+ffmpeg:1, voice:1`): một lượt ASV đi qua 21 job xen kẽ giữa
+#:    làn `api` (job `advance`) và làn `gpu+ffmpeg` (các giai đoạn), nên mỗi lần
+#:    đổi làn, tiến trình đích đang ở giữa một giấc ngủ `POLL_INTERVAL_S` và job
+#:    phải chờ hết phần còn lại của giấc ngủ đó.
+KENH_JOB_MOI = "ltt_job_moi"
 PROVIDER_DISPATCHED = "dispatched"
 PROVIDER_REJECTED = "rejected"
 PROVIDER_AMBIGUOUS = "ambiguous"
@@ -265,7 +298,39 @@ def submit(db: DbSession, *, user_id: str, app_slug: str, job_type: str,
         db, job, "submitted", public_message=N_("Đã tiếp nhận yêu cầu."),
         details={"status": JOB_QUEUED}, event_key="submitted",
     )
+    danh_thuc_worker(db)
     return job
+
+
+def danh_thuc_worker(db: DbSession) -> None:
+    """Gọi worker đang ngủ dậy — `NOTIFY` trên `KENH_JOB_MOI`. Không commit.
+
+    ⭐ **Vì sao nó nằm TRONG transaction của người gọi, không sau `commit()`.**
+       PostgreSQL giữ tin nhắn `NOTIFY` lại tới lúc **commit** mới gửi đi. Nên
+       một câu `NOTIFY` viết ở đây có đúng ngữ nghĩa ta cần mà không cần thêm
+       một dòng mã nào: job rollback (hết credit, request hỏng) thì tin nhắn
+       cũng rollback, và không worker nào bị gọi dậy để đi tìm một job không
+       tồn tại. Gửi **sau** `commit()` thì phải mở một kết nối thứ hai, và có
+       một khe cửa để tiến trình chết giữa hai bước.
+
+    ⛔ **Lỗi ở đây không được làm hỏng việc nộp job.** Đánh thức là tối ưu độ
+       trễ, không phải một phần của hợp đồng hàng đợi — hỏng thì worker quay về
+       nhịp `job_runner.POLL_INTERVAL_S`, đúng hành vi trước 25/09/2026.
+
+    Chỉ PostgreSQL có `NOTIFY`; SQLite (bộ test) bỏ qua im lặng.
+    """
+    try:
+        bind = db.get_bind()
+        if bind is None or bind.dialect.name != "postgresql":
+            return
+        # Tên kênh là hằng số của kho, không phải dữ liệu người dùng — nhưng
+        # `NOTIFY` không nhận tham số bind, nên vẫn chốt lại bằng một phép kiểm
+        # để không ai biến nó thành đường ghép chuỗi.
+        if not KENH_JOB_MOI.isidentifier():        # pragma: no cover - hằng số
+            return
+        db.execute(text(f"NOTIFY {KENH_JOB_MOI}"))
+    except Exception:                             # noqa: BLE001
+        log.debug("khong NOTIFY duoc %s", KENH_JOB_MOI, exc_info=True)
 
 
 # ── Worker nhặt job ───────────────────────────────────────────────────────────
@@ -289,24 +354,39 @@ def _con_cho_tai_nguyen(now: datetime):
     loại job của những tài nguyên đã đầy ra khỏi câu truy vấn — bộ nhặt không bao
     giờ nhìn thấy chúng.
 
-    ⛔ Đừng "sửa" bằng cách nới `ORPHAN_TIMEOUT` hay giảm giãn cách thử lại: cả
-       hai làm vòng quay **dày hơn**, không làm nó ngắn đi.
+    ⛔ Đừng "sửa" bằng cách nới hạn mồ côi hay giảm giãn cách thử lại: cả hai
+       làm vòng quay **dày hơn**, không làm nó ngắn đi.
 
     ⚠️ Đây là **bộ lọc cơ hội, không phải khoá**. Hai worker vẫn có thể cùng thấy
        một suất trống rồi cùng nhặt hai job khác nhau của cùng tài nguyên. Lớp
        giành thật vẫn là `ExecutionLease` với `UNIQUE(resource, slot)`, và
        `job_runner` vẫn `defer_resource` khi hụt. Bộ lọc này chỉ làm chuyện đó
        thành **hiếm** thay vì **thường trực**.
+
+    🔴 KHOÁ CHẾT 25/09/2026 — vì sao ngưỡng "còn sống" **không** được tính ở đây.
+
+       Bản trước đọc một hằng CHUNG (`admission.ORPHAN_TIMEOUT`, 20 phút) trong
+       khi `admission.reclaim_expired` thu hồi theo **TỪNG MODE** (`job` = 300 s).
+       Với một lease `mode='job'` mà chủ đã chết, khe 5 → 20 phút giấu mọi job
+       của tài nguyên ấy khỏi `claim` ⇒ không ai nhặt ⇒ `acquire` (thứ **duy
+       nhất** gọi `reclaim_expired` trên đường nóng) không bao giờ tới ⇒ lease
+       không được thu hồi. **Thứ duy nhất dọn được lease treo lại bị gác sau
+       chính cái lease ấy** — hàng đợi chết đứng 15 phút.
+
+       ⇒ Ngưỡng bây giờ đến từ MỘT nguồn: `admission.bieu_thuc_lease_con_song`,
+         cùng hàm mà `reclaim_expired` dùng. ⛔ Đừng thay nó bằng một hằng.
+         `tests/test_4400` đọc AST và chặn điều đó.
     """
-    from platform_core.llm.admission import ORPHAN_TIMEOUT
+    from platform_core.llm.admission import bieu_thuc_lease_con_song
 
     # Lease quá hạn đập nhịp là lease của worker đã chết — `admission.acquire`
-    # thu hồi chúng, nên ở đây cũng không được tính là đang chiếm suất.
-    con_song = now - ORPHAN_TIMEOUT
+    # thu hồi chúng, nên ở đây cũng không được tính là đang chiếm suất. Hạn ấy
+    # là hạn CỦA MODE lease, không phải một con số chung.
     dang_giu = (
         select(func.count(ExecutionLease.id))
         .where(ExecutionLease.resource == Job.admission_resource,
-               ExecutionLease.heartbeat_at >= con_song)
+               bieu_thuc_lease_con_song(ExecutionLease.mode,
+                                        ExecutionLease.heartbeat_at, now=now))
         .correlate(Job)
         .scalar_subquery()
     )
@@ -660,7 +740,7 @@ def fail(db: DbSession, job: Job, error: str, *, retry: bool = True) -> None:
     db.flush()
 
 
-def reclaim_orphans(db: DbSession, *, timeout: timedelta = ORPHAN_TIMEOUT,
+def reclaim_orphans(db: DbSession, *, timeout: timedelta = JOB_ORPHAN_TIMEOUT,
                     on_terminal=None) -> int:
     """Trả về hàng đợi các job `running` mà worker đã chết (lâu không đập nhịp).
 

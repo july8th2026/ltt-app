@@ -1412,6 +1412,32 @@ việc quy trách nhiệm **khó hơn**, không dễ hơn.
 > ⚠️ **Mọi con số mục này chỉ nói về vòng sửa với bộ chấm V1**
 > (`qc_ai.py` `604b82a7`, 2026-09-23) — ⛔ **không nói gì** về bộ chấm V3.
 
+> ### ✅ Xuất xứ con số — đã TRUY, 2026-09-25 (làn `asv-banh-coc`)
+>
+> `mypy` phát hiện `tools/bench_b2_vong_sua.py:131` — bộ đo sinh ra mọi con số
+> mục này — gọi `qc_ai.doc_ngu_nghia` **thiếu tham số bắt buộc** `van_ban` ⇒ một
+> `TypeError` ngay dòng đầu. Câu phải trả lời: *con số dưới đây đến từ đâu?*
+>
+> ⭐ **Con số là THẬT.** Tại `800234d8` (lượt ghi bằng chứng, 24/09 21:07) cây ấy
+> **chưa** chứa `91d921f4` (cùng ngày, 19:21, làn khác) — và ở cây ấy
+> `doc_ngu_nghia` **vẫn nhận HAI tham số**. Lời gọi hai tham số **đúng lúc nó
+> chạy**. ⛔ Không có số nào bị dán nhãn sai, ⛔ không có số nào bị bịa.
+>
+> 🔴 **Nó vỡ SAU đó, ở chỗ gộp:** `91d921f4` (*chấm ngữ nghĩa NHỊ PHÂN → phân
+> mức MQM, V2*) làm `van_ban` **bắt buộc** và chỉ sửa **2 trong 4** người gọi
+> (`giai_doan_qc_ai.py`, `bench_b2_xac_thuc_bo_cham.py`). Hai bench còn lại vỡ
+> im lặng. ⚠️ Và ⛔ **không phép kiểm nào bắt được** — chỉ `mypy` bắt.
+>
+> ⚠️ **Tệ hơn: chính vòng thử lại của bench sẽ CHE nó.** Lời gọi nằm trong
+> `except Exception as exc` (bắt `concurrency_limited`) ⇒ một `TypeError` sẽ
+> hiện ra như *"model từ chối, thử lại 5 lần rồi thua"*, ⛔ không như *"mã hỏng"*.
+>
+> ⇒ **Lời gọi đã sửa** (truyền `{ma: (goc, chu)}` đúng khuôn
+> `giai_doan_qc_ai.py:224`), ⛔ **nhưng bench CHƯA chạy lại** (một lượt tốn tiền
+> thật). ⚠️ Và nếu chạy lại, nó đo **bộ chấm V2/V3**, ⛔ **không so sánh được**
+> với bằng chứng V1 ở dưới — `doc_ngu_nghia` nay trả `{ma, dat, muc, loi, ly_do}`
+> và `dat` được **tính từ `muc`**, khác hẳn V1.
+
 ### Bước 1 — chấm bản nền (phim 3)
 
 ```
@@ -1694,6 +1720,16 @@ cần một lần chạy thật qua hàng đợi job (lượt NT-CUOI B trước
 **khoảnh khắc V3 về thì đo được ngay**, ⛔ không phải ngồi chờ rồi mới dựng khung.
 
 ## 6.1 Khung A/B vòng sửa — `tools/bench_b2_ab_vong_sua.py`
+
+> 🔴 **BỘ ĐO NÀY ⛔ CHƯA TỪNG CHẠY** (kiểm 2026-09-25): ⛔ không có thư mục bằng
+> chứng nào của nó, và §6.2 cũng khai *"⛔ CHƯA chạy"*. ⇒ *"dựng sẵn, chạy được
+> bằng một lệnh"* ⛔ **không** phải *"đã chứng minh chạy được"*.
+>
+> Bằng chứng: `mypy` tìm ra `:153` gọi `qc_ai.doc_ngu_nghia` **thiếu** tham số
+> bắt buộc `van_ban` ⇒ `--chay` sẽ chết ở lô đầu. Đã sửa 25/09, nhưng ⛔ vẫn
+> chưa có lượt nào. (`--kiem` và cổng tài nguyên của `--chay` dừng **trước** chỗ
+> đó, nên câu *"đã thử: nó dừng thật"* dưới đây vẫn đúng — nó chỉ ⛔ không nói gì
+> về phần đo.)
 
 ```
 python tools/bench_b2_ab_vong_sua.py --kiem            # ⛔ KHÔNG gọi model

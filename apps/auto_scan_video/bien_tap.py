@@ -47,7 +47,30 @@ CACH_CAT = "cat"
 CACH_NEN_MO = "nen_mo"
 CACH_KHUNG: tuple[str, ...] = (CACH_CAT, CACH_NEN_MO)
 
-_TRUONG = ("toc_do", "cat_khung", "zoom", "khung")
+#: He so bao hoa cua `Dich mau`. MOT gia tri, khong phai mot thanh truot.
+#:
+#: 🔑 `1.12` lay tu he tham chieu (`D:\Viral\...\xu_ly_config.json:13`), va con
+#:    so do la thu DUY NHAT duoc chep tu ba tham so cua ho.
+#:
+#: ⛔ **`contrast=1.06` va `brightness=0.03` di kem o nguon BI BO CO Y.** Chung
+#:    doi **do phoi sang**: canh toi bet den, canh sang chay trang, va ca hai
+#:    deu khong dao nguoc — thong tin bi kep mat o hai dau dai histogram. Mot
+#:    khach bat nham roi tat di **khong** lay lai duoc ban goc. `saturation`
+#:    thi chi doi do dam mau, khong dung toi do sang.
+#:
+#: ⭐ Va vi the day la mot CONG TAC chu khong phai mot con so khach go: mot o
+#:    nhap moi nguoi do tim "muc dep nhat" cho tung video, trong khi thu ho
+#:    thuc su muon la *"dam hon mot chut"*. Mot cong tac tra loi dung cau do.
+DICH_MAU_BAO_HOA = 1.12
+
+#: ⚠️ `lat_guong` va `dich_mau` la CO (bool), khong phai so — xem `DICH_MAU_BAO_HOA`.
+_TRUONG = ("toc_do", "cat_khung", "zoom", "khung", "lat_guong", "dich_mau")
+
+#: Truong doi HINH HOC cua khung (kich thuoc ban ra doi theo). `lat_guong` va
+#: `dich_mau` CO Y khong nam o day: ca hai giu nguyen tung chieu cua khung, nen
+#: chung khong duoc keo `hinh_hoc.khung_bien_tap` — mot ham DOI HOI biet kich
+#: thuoc nguon — vao mot lan chay khong can toi no.
+TRUONG_HINH_HOC: tuple[str, ...] = ("cat_khung", "zoom", "khung")
 
 
 class BienTapLoi(ValueError):
@@ -136,6 +159,23 @@ def chuan_hoa(tho) -> dict:
         ra["khung"] = {"ti_le": kh["ti_le"], "cach": cach}
         if cach == CACH_CAT:
             _tam(kh, ra["khung"])
+
+    # ── Hai co: lat guong + dich mau (asv-gui 25/09) ────────────────────────
+    #
+    # ⛔ `is True` chu khong `bool(...)`: mot chuoi `"false"` hay so `0` gui len
+    #    deu "that" hay "gia" theo mot luat cua NGON NGU, khong theo y khach.
+    #    Cung luat TU CHOI chu khong kep ve bien ma ca tep nay dung.
+    #
+    # ⭐ Va chi ghi khi BAT. Mot `"lat_guong": false` trong ho so la mot khoa
+    #    thua: no doi van tay cua nhung lan chay khong he lat guong, tuc pha
+    #    cache cua chung ma khong ai co y do (`cai_dat.KHOA_THUA`).
+    for co in ("lat_guong", "dich_mau"):
+        gt = tho.get(co)
+        if gt is None or gt is False:
+            continue
+        if gt is not True:
+            raise BienTapLoi(_t('Giá trị biên tập không hợp lệ: {ten}.').format(ten=co))
+        ra[co] = True
     return ra
 
 
@@ -165,9 +205,33 @@ def tu_form(chuoi: str, *, preset: str) -> dict | None:
                 'muốn tăng tốc.'))
         raise BienTapLoi(_t(
             'Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên '
-            'không thể cắt khung, phóng to, đổi tỉ lệ hay đổi tốc độ. Chọn “Rút '
-            'gọn có biên tập” nếu bạn muốn biên tập khung hình.'))
+            'không thể cắt khung, phóng to, đổi tỉ lệ, lật gương, dịch màu hay '
+            'đổi tốc độ. Chọn “Rút gọn có biên tập” nếu bạn muốn biên tập '
+            'khung hình.'))
     return ra
+
+
+# 🔴 **`doi_diem_anh` da bi XOA (asv-gui, 25/09) — va no la mot mon no CUA
+#    CHINH LAN NAY, khong phai cua ai khac.**
+#
+#    Ban dau tep nay co mot ham `doi_diem_anh(ho_so) -> bool`, kem docstring noi
+#    *"mot cho tra loi, vi hai noi hoi"*. `test_453` do, va phep do dung: **khong
+#    noi nao hoi ca.**
+#
+#    · `che_do_render` KHONG hoi no. No hoi mot cau HEP hon — *"ho so nay co
+#      truong HINH HOC nao khong"* (`TRUONG_HINH_HOC`) — de biet co phai goi
+#      `hinh_hoc.khung_bien_tap` hay khong. Hai cau hoi khac nhau, va tra loi
+#      cau rong cho mot nguoi hoi cau hep se keo `khung_bien_tap` (ham NEM khi
+#      chua biet kich thuoc nguon) vao mot lan chay chi lat guong.
+#    · Giao dien khong hoi no: `bien_tap.js` doc thang cac o.
+#    · Va tang gia thi khong con hoi nua — gia PHANG (25/09) tinh theo do dai
+#      video nguon, ⛔ khong theo tap nang luc. Nguoi hoi cuoi cung bien mat
+#      cung luc voi bang gia cu.
+#
+# ⛔ Nen no khong duoc them vao `MO_COI_DA_BIET`, va cung khong duoc "noi vao
+#    mach" bang mot loi goi dat cho co: ca hai deu la mua su yen tam bang tin
+#    dung gia. Mot ham khong ai goi la ma chet — xoa la viec dung.
+
 
 
 def toc_do(ho_so: dict | None) -> float:
@@ -188,4 +252,8 @@ def cho_giao_dien() -> dict:
     """Mien gia tri cho giao dien — MOT nguon voi phep duyet o tren."""
     return {"toc_do_max": TOC_DO_TOI_DA, "zoom_max": ZOOM_TOI_DA,
             "canh_min_pct": int(CANH_TOI_THIEU * 100),
-            "ti_le": list(TI_LE), "cach": list(CACH_KHUNG)}
+            "ti_le": list(TI_LE), "cach": list(CACH_KHUNG),
+            # ⛔ Phan tram lay TU hang so, khong go `12` vao Jinja: mot con so
+            #    go tay o giao dien la ban thu hai cua mot chinh sach, va no se
+            #    troi ngay lan dau ai do sua `DICH_MAU_BAO_HOA`.
+            "dich_mau_pct": int(round((DICH_MAU_BAO_HOA - 1.0) * 100))}

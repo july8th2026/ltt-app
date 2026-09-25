@@ -21419,3 +21419,62 @@ msgstr "<strong>Your machine runs continuously for the whole cycle you paid for.
 
 msgid "Máy đang tắt nên console không có gì để hiện. Bấm <strong>Bật</strong> ở trang máy rồi mở lại console."
 msgstr "The machine is powered off, so there is nothing for the console to show. Press <strong>Start</strong> on the machine page, then open the console again."
+
+msgid "Lật gương"
+msgstr "Mirror"
+
+msgid "Lật khung hình theo chiều ngang, như soi gương."
+msgstr "Flip the frame horizontally, like a mirror."
+
+msgid "Dịch màu (+%(p)s%% bão hoà)"
+msgstr "Colour shift (+%(p)s%% saturation)"
+
+msgid "Màu đậm hơn một chút. Không đổi độ sáng, nên vùng tối và vùng sáng giữ nguyên chi tiết."
+msgstr "Slightly richer colour. Brightness is untouched, so shadows and highlights keep their detail."
+
+msgid "lật gương"
+msgstr "mirror"
+
+msgid "dịch màu"
+msgstr "colour shift"
+
+msgid "Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên không thể cắt khung, phóng to, đổi tỉ lệ, lật gương, dịch màu hay đổi tốc độ. Chọn “Rút gọn có biên tập” nếu bạn muốn biên tập khung hình."
+msgstr "“Keep the picture” copies every pixel untouched, so it cannot crop, zoom, change aspect ratio, mirror, shift colour or change speed. Choose “Trim and edit” if you want to edit the frame."
+
+msgid "Tính theo độ dài video gốc: {don_gia} credit mỗi phút, làm tròn lên phút bắt đầu, tối thiểu 1 phút. Ví dụ video 3 phút 10 giây tính là 4 phút."
+msgstr "Charged by the length of the source video: {don_gia} credit per minute, rounded up to the next whole minute, minimum 1 minute. For example a 3 min 10 s video counts as 4 minutes."
+
+msgid "Máy chưa có OpenCV nên không dò được vùng cần che."
+msgstr "This machine does not have OpenCV, so regions to cover cannot be detected."
+
+msgid "Không mở được tệp video để dò vùng cần che."
+msgstr "Could not open the video file to detect regions to cover."
+
+msgid "Tệp video không khai kích thước hoặc số khung nên không dò được vùng cần che."
+msgstr "The video file does not declare its size or frame count, so regions to cover cannot be detected."
+
+msgid "Chỉ đọc được {co} trên {can} khung nên chưa đủ để dò vùng cần che."
+msgstr "Only {co} of {can} frames could be read, which is not enough to detect regions to cover."
+
+msgid "Tệp video không khai độ dài nên không dò được dải chữ gốc."
+msgstr "The video file does not declare its duration, so the original subtitle band cannot be detected."
+
+msgid "Vùng điền nền cần biết kích thước khung hình nguồn, nhưng bản dựng không khai nó."
+msgstr "A fill-background region needs the source frame size, but the build does not declare it."
+
+msgid "Vùng điền nền quá nhỏ trên khung hình này. Hãy vẽ vùng lớn hơn, hoặc chọn kiểu làm mờ."
+msgstr "The fill-background region is too small on this frame. Draw a larger region, or choose the blur style."
+
+msgid "Vùng điền nền chạm cả mép trên lẫn mép dưới khung hình nên không còn dải hình nào để lấy làm nền. Hãy thu nhỏ vùng, hoặc chọn kiểu làm mờ."
+msgstr "The fill-background region touches both the top and the bottom edge of the frame, so there is no strip of picture left to use as background. Shrink the region, or choose the blur style."
+msgid "%(p)s phút × %(g)s credit = %(c)s credit"
+msgstr "%(p)s min × %(g)s credit = %(c)s credit"
+
+msgid "Chưa đo được độ dài video nên chưa tính được hoá đơn. Số giữ chỗ ở trên là mức tối đa."
+msgstr "The video length has not been measured yet, so the invoice cannot be worked out. The amount held above is the maximum."
+
+msgid "Cách tính"
+msgstr "How it is charged"
+
+msgid "Ảnh logo không hợp lệ."
+msgstr "That logo image is not valid."

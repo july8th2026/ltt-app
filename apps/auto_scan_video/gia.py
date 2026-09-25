@@ -1,52 +1,183 @@
-"""Uoc gia mot lan chay, va lua chon san pham cho giao dien.
+"""Gia mot lan chay, va lua chon san pham cho giao dien.
 
-## Vi sao uoc theo THOI LUONG chu khong theo so ky tu
+## 🔑 GIA PHANG — mot cong thuc, khong cong don
 
-Luc khach bam "Bat dau", ta chua co ban chep loi. Chua co ban chep loi thi chua
-biet so ky tu TTS lan so token LLM — hai thu chiem gan het chi phi. Nen uoc luon
-phai dua tren thu **duy nhat** da biet: do dai video.
+Chu du an chot 25/09/2026, nguyen van:
 
-⚠️ Uoc thua la binh thuong va co chu dinh. `features.quyet_toan` tra lai phan du,
-   nen mot uoc rong rai chi lam khach thay so giu cho lon hon so thu — no khong
-   lam ho mat tien. Uoc THIEU thi nguoc lai: `features.kiem_tran_chi` se **danh
-   hong mot lan chay dang giua chung**, va do la trai nghiem te nhat trong ca
-   san pham (RISK-12-03).
+  > *"ta tam thoi bo qua xay dung. ta cu dat tinh chi phi theo phut video xu ly.
+  >  dat tam la **10 credit / 1 phut video**. cho gon thay vi combenh cac buoc
+  >  phuc tap. ta an dinh nhu the. de tap trung chinh vao he thong pipeline van
+  >  hanh da."*
 
-⇒ Khi phan van, uoc cao hon.
+⇒ `credit = 10 x so phut video NGUON`. Khong con cong don theo tung nang luc.
 
-## Ba con so nay CHUA DUOC DO
+Bon dieu da chot cung con so, va ca bon nam **trong ma** — khong o mot bang nao
+nguoi doc phai tin:
 
-⛔ Chung duoc chon de an toan, khong de dung. Chung se duoc thay bang so do that
-   o pha 21 (nghiem thu dau-cuoi). Ghi ro o day de khong ai doc chung nhu mot
-   bang gia da chot.
+1. **Lam tron LEN theo phut bat dau, toi thieu 1 phut.** 3 ph 10 s -> 4 phut ->
+   40 credit (`so_phut_tinh_tien`). Va luat lam tron duoc **noi ra TRUOC khi
+   khach bam** (`LUAT_LAM_TRON`, tra ve trong `xem_truoc_chi_phi`): mot con so
+   nhay ra sau khi da tru tien la cach nhanh nhat de mat long tin.
+2. **Do dai NGUON, khong do dai BAN RA.** Preset "Rut gon co bien tap" lam ban
+   ra ngan hon; khach khong duoc thuong cung khong bi phat vi may cat bao nhieu,
+   va ho **biet truoc** do dai nguon vi do la tep ho vua chon.
+3. **Giu cho khi tao run, thu that khi `done`.** Ca hai dua tren do dai do bang
+   `ffprobe` TU TEP (`nhap_media.soi` luc nop; `media_prepare.tom_tat.thoi_luong`
+   trong mach) — khong phai mot con so doan. Xem `features.quyet_toan`.
+4. **Khong giao duoc hang thi KHONG thu mot credit nao.** Xem
+   `features.CHI_THU_KHI_GIAO_DUOC` + `features.co_hien_vat_giao_duoc` — so loi
+   `N-21` la dung ca nay.
+
+   🔴 **`done` KHONG DU, va cho nay ⛔ dung don cho gon.** 25/09/2026, mot luot
+      E2E **that** 49 phut: `run.status == "done"`, bao QC `dat == True`, va
+      `render.outputs.khoa_asset` **RONG** — khong mot tep nao ve tay khach. Luat
+      chi hoi `done` se thu tron tien cho mot lan **giao hang rong**.
+
+   ⇒ Nen dieu kien thu tien co HAI ve: trang thai `done` **VA** co hien vat that.
+     Ve thu hai trong nhu thua (*"da `done` roi con gi"*) — no khong thua, va dong
+     nay la thu duy nhat ngan mot lan "don dep" xoa no. Ca that: so loi `N-57`.
+
+## ⛔ Mot cho khai, mot cho tinh
+
+`GIA_CREDIT_MOI_PHUT` xuat hien **dung mot lan** trong ca kho, va moi con so
+credit cua ASV di qua `tinh_credit`. Kho nay co ca mot ho loi *"hai cho khai mot
+dieu, khong ai bat khop"* — mot cong thuc thu hai o route, o mot template hay
+trong trinh duyet la mot **bang gia thu hai**, va no se troi khoi bang gia that
+ngay lan dau ai do sua mot con so.
+
+## 🔴 GIA THIET cua gia phang, va BIEN nao dieu khien no
+
+Gia phang dung khi **phan lon luot chay di duong re**. Hai duong:
+
+    che_do_render.SAO_CHEP        luong hinh duoc **chep** (`-c:v copy`) — mot
+                                 lan chay 30 phut gan nhu khong ton mot giay
+                                 ma hoa nao
+    che_do_render.CAT_MA_HOA_LAI  **toan bo** video duoc ma hoa lai
+
+⭐ **Bien dieu khien la PRESET, khong phai tap tinh nang.** `che_do_render.che_do_cho`
+   nhan **dung mot** tham so — `preset` — va co phep kiem chot chu ky do. Nen duoi
+   gia phang, cau hoi chi phi dung la:
+
+       ✅ *"bao nhieu % luot di duong dat, va PRESET nao?"*
+
+⛔ **KHONG phai** *"co bao nhieu % luot bi mot CO TINH NANG day sang duong dat?"*
+   — cau do sai ve co che. Cac co bien tap (`vung_che`, `lop_phu`, `logo`,
+   `phu_de_cung`, `bien_tap`, va `lat_guong`/`dich_mau` cua lan `asv-hinh`) bi
+   `ban_dung.kiem` **tu choi** tren duong `SAO_CHEP`; chung chi ton tai o
+   `PRESET_CAT_THONG_MINH`, **noi da ma hoa lai san**. Mot co nhu vay chi them
+   mot bo loc mot-vao-mot-ra tren mot duong **von da** dat ⇒ no khong doi duong.
+
+🔴 **Ghi lai vi sao doan nay duoc viet lai:** ban dau no khai nguoc — *"moi co
+   day luot sang `cat_ma_hoa_lai`, nen gia thiet yeu dan"*. Do la mot suy luan tu
+   **ly le**, va nguoi doc MA bac bo no trong nam phut. Cung ho voi hai ca khac
+   trong ngay 25/09 (`3,284 am tiet/giay` — hang so chua ai do; *"chua do VRAM"*
+   — ma khong he dung VRAM). ⇒ Mot ghi chu SAI trong ma song lau hon nguoi viet
+   no, va nguoi sau se tin no.
+
+⚠️ **CAU HOI MO — chua ai kiem, va ⛔ dung gia dinh theo chieu nao.** Hai co sap
+   them chua duoc chung minh la co cung tinh chat *"chi song o preset da ma hoa
+   lai"*:
+
+       nhac_nen   (V3, lan `asv-nhac`)    tron nhac doi LUONG TIENG; luong hinh
+                                          co con `-c:v copy` duoc khong?
+       dien_nen   (V5, lan `asv-vung2`)   che vung la mot phep tren KHUNG HINH;
+                                          no co bi chan o `SAO_CHEP` nhu
+                                          `vung_che` khong?
+
+   ⇒ Lan nao mo hai co ay: tra loi cau tren **bang ma**, roi ghi ket qua vao day.
+     ⛔ Dung ghi mot phan doan vao cho nay.
+
+⇒ Va gia **khong** doi trong ca hai chieu — chu du an chot *"an dinh nhu the"*, va
+  ho chot de **go su combenh**, khong phai de toi uu bien loi nhuan. ⛔ Dung them
+  mot nhanh gia theo tinh nang: do dung la su combenh vua duoc xoa.
+
+⭐ Thay vao do, `quan_sat.dong_thoi_gian(cho_van_hanh=True)["duong_render"]` ghi
+  **preset + duong di** cho tung lan chay, o **nhat ky ky thuat** — ⛔ khong o hoa
+  don cua khach (khach tra mot gia phang; duong render la viec cua ta).
 """
 from __future__ import annotations
 
 import logging
+import math
 
 from platform_core.i18n import N_
 
 log = logging.getLogger(__name__)
 
-#: Credit moi PHUT video, cho phan **may** (tach nguon, chep loi, render).
-#: ⚠️ CHUA DO. Chon theo thoi gian may chay chu khong theo gia von.
-GIA_MOI_PHUT_MAY = 2
+#: 🔑 Credit moi PHUT video NGUON. Chu du an an dinh 25/09/2026.
+#:
+#: ⛔ Con so nay xuat hien **dung mot lan** trong ca kho. Moi noi khac goi
+#:    `tinh_credit` hoac doc chinh hang nay — ⛔ dung go lai `10`.
+GIA_CREDIT_MOI_PHUT = 10
 
-#: Credit moi PHUT video, cho phan **model** (dich + sinh tieng).
-#: ⚠️ CHUA DO. Day la phan lon chi phi that, va no ti le voi **luong noi** chu
-#:    khong voi do dai video — mot video 10 phut im lang gan nhu khong ton gi.
-#:    Uoc theo do dai la mot xap xi rong rai co chu y.
-GIA_MOI_PHUT_MODEL = 6
+#: San toi thieu, tinh bang PHUT. Mot video 3 giay van la mot lan chay day du:
+#: van khoi dong model, van tach nguon, van ket xuat.
+PHUT_TOI_THIEU = 1
 
-#: San toi thieu. Mot video 20 giay van ton mot lan khoi dong model.
-GIA_TOI_THIEU = 5
+#: Cau noi LUAT LAM TRON cho khach, hien **TRUOC** khi ho bam.
+#:
+#: 🔴 Chu du an chot cung luc voi con so: *"phai hien cho khach thay luat lam
+#:    tron truoc khi ho bam — mot con so nhay ra sau khi tru tien la cach nhanh
+#:    nhat de mat long tin."*
+#:
+#: ⛔ `N_` chu khong `_t`: hang so cap MODULE. `_t` o day dong bang ngon ngu cua
+#:    request DAU TIEN vao mot bien toan cuc — xem `routes.NHAN_GIAI_DOAN`.
+#:
+#: ⭐ `{don_gia}` duoc dien tu `GIA_CREDIT_MOI_PHUT` luc chay (`luat_lam_tron()`),
+#:    ⛔ khong go so trong cau: mot con so go trong mot cau la mot ban khai thu hai.
+LUAT_LAM_TRON = N_('Tính theo độ dài video gốc: {don_gia} credit mỗi phút, làm '
+                   'tròn lên phút bắt đầu, tối thiểu 1 phút. Ví dụ video 3 phút '
+                   '10 giây tính là 4 phút.')
 
 
-def uoc_credit(thoi_luong_giay: float) -> int:
-    """Uoc chi phi mot lan chay tu do dai video. Luon >= `GIA_TOI_THIEU`."""
-    phut = max(0.0, float(thoi_luong_giay or 0)) / 60.0
-    return max(GIA_TOI_THIEU,
-               int(round(phut * (GIA_MOI_PHUT_MAY + GIA_MOI_PHUT_MODEL))))
+def so_phut_tinh_tien(giay_video: float) -> int:
+    """So phut tinh tien: lam tron **LEN**, toi thieu `PHUT_TOI_THIEU`.
+
+    ⭐ Lam tron LEN chu khong lam tron GAN, va do la mot quyet dinh ve long tin
+       chu khong ve doanh thu: khach tu nhan lai duoc con so tu do dai video ho
+       dang nhin. Lam tron gan cho ra mot con so ho **phai tin** thay vi kiem.
+
+        59 s -> 1 phut      60 s -> 1 phut      61 s -> 2 phut
+        3 ph 10 s -> 4 phut
+    """
+    giay = max(0.0, float(giay_video or 0))
+    return max(PHUT_TOI_THIEU, math.ceil(giay / 60.0))
+
+
+def tinh_credit(giay_video: float) -> int:
+    """Credit cua mot lan chay, tu do dai video **NGUON**.
+
+    ⛔ Cong thuc DUY NHAT. Moi con so credit cua ASV — giu cho, quyet toan, xem
+       truoc, hoa don — di qua ham nay.
+    """
+    return so_phut_tinh_tien(giay_video) * GIA_CREDIT_MOI_PHUT
+
+
+def luat_lam_tron() -> str:
+    """`LUAT_LAM_TRON` da dich va da dien don gia. Goi trong mot request."""
+    from platform_core.i18n import _ as _t
+
+    return _t(LUAT_LAM_TRON).format(don_gia=GIA_CREDIT_MOI_PHUT)
+
+
+def hoa_don(giay_video: float) -> dict:
+    """MOT dong hoa don cua khach: `<n> phut x 10 = <credit>`.
+
+    ⭐ Thay cho bang nam dong theo nang luc (`quan_sat.chi_phi_theo_nang_luc`
+       truoc 25/09): voi mot gia phang, **mot dong la toan bo su that**, va mot
+       bang nam dong cho mot con so phang la mot bang noi doi ve **cach tinh**.
+
+    ⚠️ Phan do luong theo nang luc **van con** — no chi khong o hoa don cua khach
+       nua. `su_dung.so_ke` va `quan_sat.dong_thoi_gian(cho_van_hanh=True)` giu
+       nguyen no, vi no tra loi cau *"cho nao dang dot tien"* cua nguoi van hanh.
+    """
+    return {
+        "giay_nguon": round(max(0.0, float(giay_video or 0)), 3),
+        "so_phut": so_phut_tinh_tien(giay_video),
+        "don_gia": GIA_CREDIT_MOI_PHUT,
+        # ⛔ `so_phut * don_gia` go lai o day la cong thuc thu hai. Goi `tinh_credit`.
+        "credit": tinh_credit(giay_video),
+    }
 
 
 #: Che do thoi gian, dong bang o `MVP_CONTRACT.md` §6 va sua boi ADR-003.
@@ -233,32 +364,19 @@ def giong_chon_duoc(db, owner_id: str) -> list[dict]:
 #  V5 — thu giao dien can, va chi giao dien can
 # ══════════════════════════════════════════════════════════════════════════════
 #
-# ⚠️ Ba ham duoi day **khong** tham gia mach tinh tien. Chung dung `uoc_credit`
+# ⚠️ Cac ham duoi day **khong** tham gia mach tinh tien. Chung dung `tinh_credit`
 #    o tren lam nguon duy nhat, va viec cua chung la BAY con so do ra cho khach
 #    nhin thay truoc khi bam. Mot cong thuc thu hai o day se la mot bang gia thu
 #    hai, va no se troi khoi bang gia that.
-
-#: Bien do cua khoang hien cho khach, quanh `uoc_credit`.
-#:
-#: 🔴 Vi sao la mot KHOANG chu khong phai mot so.
-#:
-#:    `uoc_credit` uoc theo **do dai video**, vi luc bam ta chua co ban chep loi.
-#:    Chi phi that ti le voi **luong noi**: mot video 10 phut im lang gan nhu
-#:    khong ton gi, mot video 10 phut noi lien mach ton nhieu hon han. Mot con so
-#:    don cho hai truong hop do la mot con so noi doi o it nhat mot trong hai.
-#:
-#: ⭐ Va no phai la mot khoang CO CAN TREN, khong phai "khoang 120". Khach can
-#:    biet **toi da** mat bao nhieu de quyet dinh, va `features.tao_run` giu cho
-#:    theo `uoc_credit` roi hoan phan du — nen can tren la thu ho thuc su doi mat.
-BIEN_DO_UOC = 0.20
-
-
-def uoc_khoang(thoi_luong_giay: float) -> tuple[int, int]:
-    """`(thap, cao)` credit de hien cho khach. `cao` la thu ho doi mat."""
-    giua = uoc_credit(thoi_luong_giay)
-    thap = max(GIA_TOI_THIEU, int(giua * (1.0 - BIEN_DO_UOC)))
-    cao = max(thap, int(round(giua * (1.0 + BIEN_DO_UOC))))
-    return thap, cao
+#
+# 🔴 **Truoc 25/09 cho nay la mot KHOANG (`uoc_khoang`, `BIEN_DO_UOC = 0.20`)**, va
+#    ly do cua khoang ay dung luc no duoc viet: gia cu cong don theo tung nang luc,
+#    nen chi phi that ti le voi **luong noi** trong khi ta chi biet **do dai** — mot
+#    con so don noi doi o it nhat mot trong hai truong hop.
+#
+# ⭐ Gia phang xoa han ly do do: gia **la** mot ham cua do dai, va do dai thi da do
+#    duoc bang `ffprobe` truoc khi khach bam. ⇒ Mot con so CHINH XAC, khong phai
+#    mot khoang. Mot "khoang" quanh mot con so chinh xac la mot khoang bia ra.
 
 
 #: Boi so thoi gian xu ly so voi do dai video — cho DONG CHU "khoang bao lau".
@@ -277,6 +395,32 @@ THOI_GIAN_TOI_THIEU_S = 60
 def uoc_thoi_gian_giay(thoi_luong_giay: float) -> int:
     return max(THOI_GIAN_TOI_THIEU_S,
                int(round(max(0.0, float(thoi_luong_giay or 0)) * BOI_SO_THOI_GIAN)))
+
+
+def xem_truoc_chi_phi(giay_video: float) -> dict:
+    """⭐ **HAM CHO LOP GUI** — moi thu mot man "truoc khi bam" can, mot lan goi.
+
+    `hoa_don` + cau luat lam tron da dich + uoc thoi gian cho:
+
+        {"giay_nguon", "so_phut", "don_gia", "credit",
+         "luat_lam_tron", "thoi_gian_giay"}
+
+    🔑 **`credit` la mot con so CHINH XAC, khong phai mot uoc.** Khach se bi giu
+       dung so nay (`features.tao_run`) va bi thu dung so nay khi lan chay ve
+       `done` (`features.quyet_toan`) — khong hon. Nen giao dien noi *"se tru N
+       credit"*, ⛔ khong phai *"khoang N"*.
+
+    ⛔ Giao dien **khong** duoc tu tinh lai bat cu so nao trong day, ke ca
+       `so_phut x don_gia`. Do la ly do ham nay ton tai thay vi de route xuat ba
+       hang so ra cho JavaScript ghep.
+
+    ⭐ Va `luat_lam_tron` di **kem** con so, khong o mot trang tro giup khac: luat
+       lam tron chi lam duoc viec cua no neu no o ngay canh con so no giai thich.
+    """
+    ra = hoa_don(giay_video)
+    ra["luat_lam_tron"] = luat_lam_tron()
+    ra["thoi_gian_giay"] = uoc_thoi_gian_giay(giay_video)
+    return ra
 
 
 def _nhan_loc() -> dict:

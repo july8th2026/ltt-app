@@ -63,15 +63,24 @@ class PublicApiGuardMiddleware(BaseHTTPMiddleware):
         return response
 
     def _stamp(self, response, request, correlation_id: str) -> None:
-        """Correlation id and API version on **every** response.
+        """Correlation id, API version and the body-size cap on **every** response.
 
         Until EXT-02 the correlation id was only stamped on responses this
         middleware refused itself. A caller whose successful-then-mysterious
         request needed support had nothing to quote, and the audit found it: the
         id existed in the server's log and nowhere the customer could see.
+
+        The body-size cap is stamped for the same reason and on the same
+        responses (including 2xx), not only on a 413: the cap changes over
+        time (raised 1 MiB -> 4 MiB same day this was written) and a client
+        that only learns it by hitting the wall is always running on a number
+        that may already be stale. This costs ~40 bytes on every API response;
+        worth it so the cap is never a client's cached guess.
         """
         response.headers[protocol.HEADER_CORRELATION_ID] = correlation_id
         response.headers[protocol.HEADER_API_VERSION] = protocol.API_VERSION
+        response.headers[protocol.HEADER_MAX_BODY_BYTES] = str(
+            self._config.max_body_bytes)
         route = _declared_route(request)
         # RFC 8594. Nothing is deprecated today; the hook exists so that
         # retiring an endpoint is a data change in the inventory rather than a

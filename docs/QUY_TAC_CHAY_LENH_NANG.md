@@ -62,13 +62,55 @@ khoá đã báo `TREO`.
 Không cần: báo trước và chờ xác nhận, bọc lệnh qua `nhat_ky_chay.py`, luật "ai bấm
 sau thì lùi". (`nhat_ky_chay.py` vẫn dùng được khi bạn **muốn** để lại vết.)
 
-## 3. Ba điều không làm
+## 2b. HAI cửa vào khoá — chỉ cần MỘT cửa mở là phải xin
+
+🔴 **`§2b` CỘNG THÊM một lý do xin khoá. Nó KHÔNG gỡ lý do của `§1`.**
+
+```
+Cua 1 — CO DOT CPU KHONG?      (§1: >= 2 loi hoac > 30 giay)   -> KHOA
+Cua 2 — CON SO CO HONG KHI BI TRANH KHONG?  (do DO TRE)        -> KHOA
+ca hai deu DONG                                                 -> chay tu do
+```
+
+⚠️ **Bẫy đã mắc thật (25/09):** một lượt E2E đo **độ trôi** (tất định ⇒ cửa 2 đóng) nhưng
+**đốt ~3 lõi suốt một giờ** (cửa 1 **mở**). Đọc `§2b` một mình rồi thả khoá là sai — cửa 1
+vẫn mở. ⇒ Lượt kiểu đó đi đường **`§4b`**: **ngoài khoá, nhưng chặn lõi**, chứ không phải
+khoá độc quyền và cũng không phải thả tự do.
+
+| Bạn đang đo | Tranh chấp làm gì | Cửa 2 |
+|---|---|---|
+| **độ trễ** — giây mỗi giai đoạn, tốc độ sản xuất | **sai số** | mở ⇒ khoá |
+| **đại lượng tất định** — số đoạn, độ trôi, chrF++, CER, độ phủ | chỉ **chậm** | đóng |
+
+⭐ **Nâng cấp: đo bằng `giây CPU` thay cho `đồng hồ tường`, rồi câu hỏi trên biến mất.**
+Máy bận thì lượt chạy kéo dài, nhưng nó **không tiêu thêm chu kỳ** — nên `giây CPU` trả
+lời đúng câu ta cần (*thuật toán này tốn bao nhiêu sức tính*) và miễn nhiễm với hàng xóm.
+
+```powershell
+# cong ca CAY tien trinh con (ffmpeg, worker OpenCV), don vi 100 ns
+Get-CimInstance Win32_Process -Filter "ProcessId=$pid" |
+  Select-Object KernelModeTime, UserModeTime
+```
+
+Báo **cả hai cột**, mỗi cột một việc:
+
+- **`giây CPU`** ⇒ phán quyết *đáng làm không*.
+- **`đồng hồ tường` + CPU nền lúc đo** ⇒ điều kiện đo, và nó bắt được ca **tường dài mà
+  CPU thấp = đang CHỜ, không phải đang tính**. Một lượt gate đã lộ nguyên hình theo cách
+  này: `11,7 phút tường / 7 giây CPU` — nó nghẽn ở một dịch vụ, không ở phép tính.
+
+⛔ Đừng trung bình hai cột. Chúng trả lời hai câu khác nhau.
+
+## 3. Bốn điều không làm
 
 1. **Không chạy lại lệnh nặng để "xem đã sửa chưa".** Sửa xong kiểm bằng công cụ
    hẹp — hợp đồng §4.6.
 2. **Không chạy nặng khi phiên khác đang chạy nặng** (§2).
 3. **Không để phép đo thành nghi can.** Lấy mẫu thưa, đọc tổng máy; quét
    `process_iter` qua trăm tiến trình mỗi giây là tự đo chính mình.
+4. **Viết tệp `.py` rồi chạy tệp, thay cho `python -c "..."`.** Hộp đen chỉ ghi được
+   `nhan='-c inline'` ⇒ đo được mức CPU nhưng **không lần ra chủ**. Ngày 25/09 bảy tiến
+   trình `-c inline` chạy cùng lúc và không ai truy được chúng của phiên nào.
 
 ## 4. Ngân sách lõi — một hàm, không chép số
 
@@ -85,6 +127,13 @@ trong gate. Hằng số ở ngay trong tệp đó (`LOI_DE_DANH_VAT_LY`,
   `tools/gate.py`. `chay_nang.py` ép trần này, `gate.py` in lệnh gợi ý theo nó, và
   `tests/test_1280_nhip_mot_l3.py` chốt cả hai đọc cùng một chỗ (lần đổi 6 → 7 sửa
   một bên, bỏ bên kia, và gate đỏ ở đúng phép kiểm đáng lẽ bảo vệ nó).
+
+🔴 **Windows Defender ăn tới 5,45 lõi, và nó nằm ngoài mọi khoá của ta.** Nó phản ứng
+với chính cơn bão tệp tạm do bộ test sinh ra. Đo được 25/09 lúc máy chạm 100 % CPU:
+`MsMpEng.exe 545 %` cạnh bảy worker python. ⇒ Trần `-n` phải **chừa biên cho nó**; một
+`-n` nằm đúng trong luật vẫn làm máy đứng khi Defender đang quét. Ngoại lệ Defender cho
+thư mục tệp tạm là **cấu hình bảo mật** — chỉ chủ dự án đặt (`Add-MpPreference
+-ExclusionPath`), Claude không tự đặt.
 
 ⚠️ **Tiến trình cháu không nằm trong `-n`.** Một worker gọi model thật (`demucs`,
 `whisper`, TTS) thành ~10 luồng torch. ⇒ Test nạp model thật nằm sau rào
@@ -168,7 +217,21 @@ Hộp đen ghi liên tục CPU/RAM/swap/đĩa + GPU/VRAM/nhiệt/điện + tiế
 trình ở các mẫu ngay trước đó và so với nền của chính máy. ⛔ Nó **không kết luận
 nguyên nhân** — phần đó của người đọc.
 
-⚠️ Hộp đen ghi giờ **UTC**; máy ở **UTC+7**.
+⚠️ Hộp đen ghi giờ **UTC**; máy ở **UTC+7**. ⇒ 02:00 giờ máy nằm ở tệp **hôm sau**.
+
+⭐ **Đọc `so_tien_trinh` cạnh `cpu`.** CPU một mình không giải thích được mọi sự cố: ngày
+25/09 PostgreSQL chết lúc CPU chỉ **19,6 %** — máy rảnh. Tín hiệu thật là `so_tien_trinh`
+**sụt 347 → 308 trong 15 giây**: ~45 tiến trình biến mất cùng lúc, tức một cú giết cây
+tiến trình, không phải quá tải.
+
+🔴 **Giết tiến trình — bốn luật, luật cuối là hàng rào.** Một cú giết cây làm
+**PostgreSQL production sập 4 phút** (25/09):
+
+1. In `CommandLine` của **từng** pid trước khi giết, để người đọc thấy mình sắp giết gì.
+2. `taskkill /T /PID <một pid ĐÃ XÁC MINH>`.
+3. Một pid làm gốc duyệt — **`Where-Object` trả về mảng** thì mỗi phần tử phải kiểm riêng.
+4. ⭐ **Từ chối mọi pid có cha là `services.exe`.** Ba luật đầu dựa vào ta cẩn thận; luật
+   này làm cả lớp sự cố **không thể xảy ra** dù ta cẩu thả.
 
 Đối chiếu thêm: nhật ký sự kiện Windows (`Kernel-Power 41` + `BugCheckCode = 0` =
 mất nguồn/reset cứng, không phải quá tải phần mềm) · `ListAgents` (phiên khác).

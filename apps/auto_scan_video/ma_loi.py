@@ -70,26 +70,21 @@ SO_MA: dict[str, str] = {
     **rang_giong.CAU_CHUA_RANG,
 }
 
-#: Ma nao HOAN credit. ⭐ Tieu chi: **khach khong lam gi ca** — cung duong ranh
-#: ma `loi.THIEU_THUONG_NGUON` da ve ra ("*tach rieng khoi `NGUOI_DUNG` du hanh
-#: vi giong het, vi goi day la 'loi cua nguoi dung' la noi sai*").
-#:
-#: 🔴 Ba ma `auto_match_*` roi vao day vi **tien DA bi tieu truoc khi chung nem**:
-#:    `ho_so_noi_dung._hoi_model` di qua `ai.goi_tinh_tien` (mot lan goi model
-#:    tinh tien that), roi `_giong_da_chot` moi nem `ChuaRangError`. Khach tra cho
-#:    mot lan chay dung lai vi he thong tu nhan no khong tu khop duoc giong.
-#:
-#: ⛔ Hai ma `voice_language_*` KHONG hoan: khach tu chon mot giong khac lan voi
-#:    lan dich cua chinh ho (`loi.NGUOI_DUNG`).
-#:
-#: ⚠️ CHUA CO NGUOI DOC. Day la mot ban KHAI chinh sach, khong phai mot duong
-#:    hoan tien dang chay: hom nay khong doan ma nao trong app doc `HOAN_CREDIT`.
-#:    ⛔ Dung doc no thanh "ASV da hoan credit cho cac ma nay".
-HOAN_CREDIT: frozenset[str] = frozenset({
-    rang_giong.MA_KHONG_KHOP,
-    rang_giong.MA_KHO_CHUNG_THIEU_GIOI,
-    rang_giong.MA_THIEU_CAN_CU,
-})
+# ⭐ **`HOAN_CREDIT` da bi XOA — 25/09/2026, gia phang.**
+#
+#    No la mot ban khai chinh sach hoan tien **theo tung ma loi**: ba ma
+#    `auto_match_*` duoc hoan (tien da tieu truoc khi chung nem), hai ma
+#    `voice_language_*` thi khong (khach tu chon giong lech lan). Chinh docstring
+#    cua no tu khai *"CHUA CO NGUOI DOC"* tu ngay duoc viet.
+#
+# 🔑 Gia phang lam ca cau hoi ay bien mat, ⛔ khong chi lam no thua: tien duoc thu
+#    **chi khi** lan chay ve `done` VA co hien vat giao duoc
+#    (`features.CHI_THU_KHI_GIAO_DUOC` + `co_hien_vat_giao_duoc`). Moi ket cuc
+#    khac — moi ma loi, khong tru ma nao — hoan **100 %**. Nen mot bang phan biet
+#    "ma nao duoc hoan" la mot bang phan biet giua hai thu nay **giong het nhau**.
+#
+# ⛔ Dung dung lai no. Neu mot ngay gia thoi phang, cau hoi phai duoc dat lai tu
+#    dau o `features.quyet_toan` — ⛔ khong phai khoi phuc mot bang chua ai doc.
 
 
 def la_ma(ma: str) -> bool:

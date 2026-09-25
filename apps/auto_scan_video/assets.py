@@ -365,10 +365,36 @@ def kiem_hop_le(kho: Storage, khoa: str, *, kind: str) -> tuple[int, str]:
         # ⛔ Them mot `kind` moi ma khong them nhanh nay la mo mot loai artifact
         #    **khong ai soi noi dung** — tuc bat bien I8 (*"DONE nghia la co mot
         #    ket qua HOP LE"*) mat hieu luc cho dung loai do, va mat im lang.
+        # 🔴 **`validate_reference(du_lieu, "")` TU CHOI MOI ANH — do duoc.**
+        #
+        #    Ham ay bat dau bang `if mime not in ALLOWED_REFERENCE_MIME: raise`,
+        #    va `""` khong bao gio nam trong tap do. Nen nhanh nay khong phai
+        #    "mot hang rao chat": no la mot hang rao **dong kin**, va moi logo
+        #    khach dan deu chet o day.
+        #
+        # ⛔ Va no chet KHONG KEU o dung cho te nhat: `AssetError` khong phai
+        #    `features.AsvError`, nen ca hai duong tao lan chay khong bat no va
+        #    khach nhan mot trang **500**. Tinh nang logo chua tung chay het
+        #    duong mot lan nao — "nang luc co, khong ai di tren duong" o dang
+        #    nang nhat: duong bi chinh hang rao cua ta chan.
+        #
+        # ⭐ Sua bang cach SOI kieu tu NOI DUNG roi dua cho nen tang, ⛔ khong
+        #    bang cach doc `content_type` da luu hay duoi tep: ca hai deu do
+        #    khach dat, va do dung la dieu chu thich tren cam.
+        #
+        # ⚠️ Moi HAN MUC van thuoc nen tang (tap kieu cho phep, san 64x64, tran
+        #    8 MiB / 24 Mpx, va chinh phep `verify()`). O day khong co mot con so
+        #    nao — chi mot phep soi kieu.
+        import io as _io
+
         from platform_core import image_input
 
         try:
-            image_input.validate_reference(du_lieu, "")
+            from PIL import Image as _Image
+
+            with _Image.open(_io.BytesIO(du_lieu)) as _anh:
+                _kieu = _Image.MIME.get(_anh.format or "", "")
+            image_input.validate_reference(du_lieu, _kieu)
         except Exception as exc:            # noqa: BLE001 — dich sang loi cua ta
             raise AssetError(f"artifact anh khong hop le: {khoa}") from exc
 

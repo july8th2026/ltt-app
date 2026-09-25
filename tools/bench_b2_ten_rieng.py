@@ -35,10 +35,8 @@ GOC = Path(__file__).resolve().parent.parent
 if str(GOC) not in sys.path:
     sys.path.insert(0, str(GOC))
 
-try:
+if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-except Exception:                               # noqa: BLE001
-    pass
 
 #: ⭐ **Dap an tra tu nguon**, ⛔ khong ai trong du an nay dat ra.
 #:

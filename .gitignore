@@ -219,3 +219,8 @@ tools/vendor_a11y/axe.min.js
 # Khoa API cua bo do VAN HANH THAT — song o C:\LTTPlatform\secrets\, khong bao gio trong kho
 tools/nghiem_thu_van_hanh/doi_khoa/
 tools/nghiem_thu_van_hanh/ket_*.json
+
+# Hien vat ban giao cua cac luot chay that (mp4/srt/wav). Chu du an mo bang tay.
+# ⛔ Khong bao gio vao kho: mot ban ra 1080p vuot tran tep cua GitHub, va no la
+#    tu lieu cua khach — cung ly do `tests/fixtures/asv_e2e_that/.gitignore`.
+_ket_qua/

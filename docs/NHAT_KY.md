@@ -11,6 +11,158 @@
 >
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
+## 2026-09-25 (chiều) — **Lần ĐẦU TIÊN Auto Scan Video chạy trên worker PRODUCTION** · hai lỗi nền tảng
+
+Làn `asv-worker-that`. Trước hôm nay: **0 / 19.979** lượt job trong log worker production là
+`auto_scan_video`/`asv_*` — tức mọi nghiệm thu của sản phẩm này (12/12 giai đoạn, QC đạt, hai
+preset) chạy trong **khuôn test**. Hôm nay chạy thật: tài khoản `khach1.thu`, phim khách thật
+275,029 s tiếng Trung, preset `localize_preserve_picture`, giá phẳng **50 credit**.
+
+⛔ **Không lượt nào ra được tệp `.mp4`** — cả hai dừng trước `render`. Chủ dự án chốt **dừng
+chạy ASV trên worker thật** cho tới khi pipeline hai giai đoạn (voice xong hẳn → rồi xử lý hình)
+lắp xong: chuỗi sắp bị xếp lại nên khung lỗi của chuỗi cũ không đổi được quyết định nào.
+
+| Lượt | Run | Dừng ở | Nguyên nhân |
+|---|---|---|---|
+| 1 | `asvr_39a2bc9f…` | `audio_prepare` | một làn khác **deploy lúc 14:15:12–14:16:45**, `LTTStudioWorker` khởi động lại ⇒ job mồ côi. Job giai đoạn có `max_attempts=1` ⇒ `failed_terminal` ngay, cả lần chạy chết |
+| 2 | `asvr_9fc9cc89…` | `timing_align` | `FileNotFoundError: C:\Windows\TEMP\asv-master-…\t0_seg_0001\nguon.bin` (2 lần, hai thư mục tạm khác nhau) |
+
+Credit: cả hai `credit_actual = 0`, số dư `khach1.thu` **không đổi** (19.743) ⇒
+`CHI_THU_KHI_GIAO_DUOC` hoạt động đúng.
+
+### ⭐ Những thứ CHỈ worker thật mới lộ — danh sách kiểm cho lượt chạy sau khi lắp lại kiến trúc
+
+1. 🔴 **`N-59` — `ffmpeg` chỉ có trên USER Path.** WinGet cài nó dưới
+   `C:\Users\…\AppData\Local\…`; **MACHINE Path không có ffmpeg nào**. Worker chạy
+   `LocalSystem` ⇒ chỉ thấy MACHINE Path. Nền tảng miễn nhiễm vì `LTT_FFMPEG` là đường tuyệt
+   đối — nhưng **sidecar WhisperX là venv RIÊNG** (`D:\LTTWhisperX`) và `whisperx/audio.py:61`
+   gọi `ffmpeg` **trần** ⇒ `FileNotFoundError [WinError 2]`, chết sau 4 giây.
+   `apps/autosubvideo/transcription.py` bắt, ghi **WARNING**, rồi lui về faster-whisper với
+   `alignment_status="fallback_unaligned"` — và **giai đoạn VẪN `succeeded`**.
+   ⇒ Đường sản phẩm *"WhisperX GPU fp16 64,64 s"* trong `L_TOC_DO_GPU` **chưa bao giờ chạy**
+   trên worker thật. Tái hiện byte-for-byte bằng cách chạy sidecar với PATH của MÁY.
+   ⚠️ Thêm: `transcription.py:96` giữ `stderr[-1000:]`, và lát đó rơi giữa một khung traceback
+   nên **mất đúng dòng `FileNotFoundError`** — log production chỉ còn dấu mũ và tên tham số
+   POSIX. Giữ dòng cuối KHÁC RỖNG, đừng cắt đuôi mù.
+2. 🔴 **`N-58` — khoá chết giữa bộ lọc `claim` và `reclaim`.** `platform_core/jobs.py:351` nhập
+   `admission.ORPHAN_TIMEOUT` (**20 phút**) để hỏi *"suất còn ai giữ không"*, còn
+   `reclaim_expired` thu hồi theo `ORPHAN_TIMEOUT_JOB` (**300 giây**). Trong cửa sổ 5→20 phút,
+   job bị **ẩn khỏi `claim`**, nên `admission.acquire` — thứ DUY NHẤT thu hồi lease trên đường
+   nóng — **không bao giờ tới được**. Đo được: lease chết nhịp cuối `07:15:59,0Z`; job
+   `asv_gpu.audio_prepare` của lượt 2 nằm `queued` **không worker nào nhặt**, rồi được nhặt lúc
+   `07:35:59,0Z` — đúng 20 phút, lệch **0,04 giây**.
+3. **Ba lease KHÔNG được nhả khi job thành mồ côi**: `execution_leases`
+   (`tach_nguon_cuc_bo` slot 0), `gpu_leases` (2.200 MiB, GPU-0), `singleton_leases`
+   (`asvcc:…`). Chỉ người giành TIẾP THEO dọn chúng, không phải lúc job thành terminal.
+4. **`voice_synthesis` gọi máy B 49 lần / 22,5 phút** (~1 lần mỗi 28 giây) và **cố ý KHÔNG khai
+   `llm_remote`**. Bản khai ở `pipeline.py` dựa trên tiền đề *"một lời gọi THỈNH THOẢNG mới xảy
+   ra"* — tiền đề đó **sai** trên lượt thật ⇒ 49 lời gọi đi NGOÀI admission của máy B.
+5. **`_advance` là vòng quay NÓNG, không phải 12 lượt.** Đo: **37.010** job
+   `auto_scan_video.advance` trong 52,5 phút (~11,7/giây) — khuôn test sinh **11**.
+   `features._nop_dieu_phoi` nộp lượt kế **không có độ trễ**, và khoá dedupe mang `ctx.job_id`
+   nên mỗi lượt sinh một khoá MỚI ⇒ dedupe không bao giờ chặn.
+   ⭐ **Khuôn test không thể thấy điều này**: `test_448._chay_hang_doi` chạy TUẦN TỰ một luồng,
+   nên khi một lượt `advance` chạy thì giai đoạn trước đã xong — không có gì để quay vòng. Trên
+   worker thật 8 tiến trình, `advance` chạy SONG SONG với giai đoạn đang chạy, thấy "chưa có gì
+   để nộp", rồi nộp tiếp ngay.
+6. **Thời gian chết giữa các giai đoạn ≈ 0,0 s**, ⛔ không phải 16–20 s như `L_TOC_DO_GPU` §3.1
+   **suy ra**. Đo được `audio_prepare→transcribe`, `transcribe→edit_plan`,
+   `edit_plan→content_process` đều **0,0 s** — và giá của nó chính là vòng quay nóng ở mục 5.
+7. **Giây CPU trên Windows là CẬN DƯỚI.** `psutil` ⛔ không cộng CPU của tiến trình con **đã
+   thoát** (`children_*` đứng yên ở 0,0 — đo bằng một tiến trình con đốt 8 triệu phép nhân).
+   Nên `media_prepare` = `1,3 s CPU / 51 s tường`: phần thiếu là chuỗi `ffprobe`/`ffmpeg` chớp
+   nhoáng. Dùng được cho giai đoạn DÀI chạy torch TRONG tiến trình: `transcribe`
+   **127,7 s CPU / 66,4 s tường = 1,92 lõi**, GPU 48–50 %, 5.575 MiB. ⛔ Không dùng được khi
+   việc nặng nằm ở tiến trình con hoặc **dịch vụ ngoài**: `voice_synthesis`
+   `24,9 s CPU / 1.610,6 s tường` vì TTS chạy trong `LTTStudioVoice`.
+8. **Tường dài + CPU thấp = đang CHỜ, không đang tính.** `content_process`
+   `313,7 s tường / 3,2 s CPU` (0,01 lõi) — toàn bộ là chờ máy B.
+9. **`edit_plan` = 2,6 s** vì preset giữ hình ⛔ không có thao tác biên tập nào
+   (`THAO_TAC_CHO_PHEP[PRESET_GIU_HINH] = ()`). ⛔ Đừng đọc con số đó thành "đọc cảnh nhanh".
+10. **`voice_synthesis` chạy theo LÁT** (`lat_cat`, job nối tiếp ⛔ không tăng `attempt`) — công
+    cụ đo khoá theo `step_id` nên **gộp các lát thành một dòng**. Lượt sau phải khoá theo
+    `(step_id, job_id)`.
+11. ⚠️ **Giả thuyết ĐÃ BỊ BÁC — ghi lại để không ai đi lại:** *"tiến trình con của worker chạy
+    interpreter GỐC nên torch là bản `+cpu`"* là **sai**. Dòng lệnh hiện `python.exe` gốc
+    (`sys._base_executable`), nhưng `multiprocessing` khôi phục `sys.executable` về venv: đo
+    trong tiến trình con thật ⇒ `sys.executable = C:\LTTPlatform\venv\Scripts\python.exe`,
+    `torch 2.11.0+cu128`, `cuda True`. (Base Python313 *thật sự* là `2.11.0+cpu` / `cuda False`,
+    nhưng nó ⛔ không nằm trên đường chạy.)
+
+### Chạm gì trên máy production
+
+⛔ Không chạm `C:\LTTPlatform\app\`, ⛔ không đổi cấu hình `nssm`/ENV, ⛔ không khởi động lại
+dịch vụ nào, ⛔ không bật `LTT_AUTO_SCAN_VIDEO` trong `app.env` (chỉ đặt trong tiến trình của
+làn), ⛔ không `icacls`, ⛔ không deploy. Đã **ĐỌC** `secrets\app.env` để nạp env — đường chuẩn
+của `api_prod_canary.py`/`audit_van_hanh.py` — ⛔ không ghi. Hai run và ~37.011 dòng `jobs` là dữ
+liệu thật **còn lại trong CSDL**, ⛔ chưa xoá. Đã xoá **một** thư mục tạm rò của lượt bị deploy
+giết: `C:\Windows\TEMP\asv-audio-xz4w41uv` (7 tệp, 344,9 MB).
+
+⚠️ Một lệnh lọc `app.env` quá rộng đã in **giá trị** `LTT_VOICE_SIDECAR_TOKEN` vào transcript
+phiên. ⛔ Giá trị không được chép đi đâu và ⛔ không vào kho; cân nhắc xoay vòng token đó.
+
+### Điều kiện chạy lại
+
+⛔ Chỉ sau khi **pipeline hai giai đoạn** lắp xong. Lượt đó đi qua
+`tools/asv_chay_worker_that.py`, và mười một mục trên là **danh sách kiểm**.
+
+## 2026-09-25 — `phien/asv-gap-nan`: đóng `test_453` cho `nan_thoi_luong.py` (5 năng lực mồ côi)
+
+Nhánh `phien/asv-gap-nan` (worktree `D:\LTTSTUDIOSAPP-asv-gap-nan`, base `92292642`).
+Việc: `test_453::test_KHONG_co_nang_luc_mo_coi_MOI` đỏ — 5 năng lực khai trong
+`apps/auto_scan_video/nan_thoi_luong.py` không có người gọi trong mã sản phẩm.
+
+**Câu hỏi bắt buộc trả lời trước:** `gop_khe` chạy TRƯỚC hay SAU `nan_cho_vua.py`
+(bậc thang bốn nấc ĐANG CHẠY trong `giai_doan_giong.py`)? → **TRƯỚC** —
+`nan_cho_vua.khe_cua(m)` đọc `bat`/`ket` CỐ ĐỊNH của từng đoạn (sửa một câu cho
+vừa khe CỦA NÓ, không bao giờ đổi ranh giới khe); `gop_khe` đổi CHÍNH các khe
+(gộp nhiều khe hẹp thành một khe rộng hơn) TRƯỚC KHI bậc thang đo trên tệp thật
+bắt đầu. Bằng chứng khớp với khảo sát cùng ngày của làn khác:
+`docs/auto_scan_video_final/KHAO_SAT/R4_TIMELINE_NOI_BO.md` §22.3.
+
+**Đối chiếu 5 năng lực:**
+- `can_gat_1_rut_gon` — TRÙNG nấc 2 của `nan_cho_vua` (LLM viết lại cho vừa,
+  đang chạy thật). **Xoá.**
+- `can_gat_2_phan_phoi` — CHẾT theo thiết kế (tự khai trong docstring cũ: không
+  còn khoảng lặng THẬT giữa hai khe để mượn). **Xoá.**
+- `can_gat_3_he_so` — TRÙNG nấc 3 của `nan_cho_vua` (co giãn kẹp trần). **Xoá**
+  — phủ test không mất: `test_441...::test_co_gian_bi_chan_boi_TRAN_da_khai`
+  kiểm đúng hành vi này trên `nan_cho_vua.co_gian_du_khong`.
+- `con_khong_vua` — hàm báo cáo đi kèm ba cái trên, cũng trùng. **Xoá.**
+- `gop_khe` — ✅ **MỚI THẬT, tính năng chưa bao giờ chạy.** Đã nối MỘT PHẦN vào
+  `giai_doan_giong.chay()`: tính `so_khe_neu_gop` trong `tom_tat` trên dữ liệu
+  thật của từng lần chạy. **CHƯA nối vào đường sinh tiếng thật** — bằng chứng
+  cụ thể: `giai_doan_thoi_gian.py:88-89` đòi MỖI `ma` trong `content.json`
+  (ghi ở `CONTENT_PROCESS`, ĐỘC LẬP với `voice_synthesis`) có MỘT dòng `giay`
+  trong `ban_ke.json`, và ném `ThoiGianError` nếu thiếu — gộp nhiều đoạn làm
+  MỘT tệp tiếng trong `voice_synthesis` mà không đổi cả `giai_doan_noi_dung.py`
+  (để `content.json` sinh ra đã gộp sẵn) lẫn `thoi_gian.lap_ke_hoach`/
+  `_dung_ban_phoi` (để biết một nhóm đã gộp dùng CHUNG một tệp âm thanh) sẽ làm
+  **vỡ** ADR-003 (pha 16/17) trên MỌI lần chạy thật có gộp — không phải rủi ro,
+  là lỗi chắc chắn. Đây đúng là việc `R4_TIMELINE_NOI_BO.md` §21.5 đã ghi là
+  đang **bị chặn** (cần một lượt TTS thật để đối chiếu). Chi tiết + điều kiện
+  nối thật: docstring đầu `nan_thoi_luong.py`.
+
+**Kết quả:** `test_453` xanh bằng mã thật (không `--accept`, không thêm
+`MO_COI_DA_BIET`). Canh chỗ trống cho 4 tên đã xoá:
+`test_2062...::test_2062_BA_can_gat_TRUNG_da_XOA_khong_song_lai`. Test nhắm:
+`test_2062` (10), `test_441/445/451/454/476` (86), `test_2018/2023/3004/409/
+414/415/418/440/460/475` (232), `test_2050/2051/3200` (18) — tất cả xanh.
+
+⚠️ **Phát hiện phụ, ngoài phạm vi lần này:** `nan_thoi_luong.AM_TIET_MOI_GIAY =
+3,284` (đo cũ) và `ngon_ngu.NHIP[VI] = 3,35` (đo lại 23/09 trên chính giọng sản
+phẩm) khai CÙNG đại lượng bằng HAI con số khác nhau, chưa đối chiếu lại — ghi
+chú tại chỗ trong mã, không sửa (ngoài phạm vi).
+
+**Va chạm làn khác lúc merge `main`:** `main` đã tiến 7 commit từ base (không
+đụng ba tệp mình sửa) — hoà sạch, không xung đột. Sau khi hoà, `test_453` vẫn
+đỏ vì **hai** tên mồ côi MỚI từ `apps/auto_scan_video/do_vung.py`
+(`do_dai_chu`, `do_logo_tinh`) — xác nhận đây là red **đã có sẵn trên `main`
+trước khi merge của mình** (làn `asv-vung`, commit `9c513189`, tệp nằm trong
+danh sách cấm sửa của phiên này). Không đụng.
+
+SHA đã gộp `main`: `01cbeae8457084d2f7c055f77ba07a13c617066c`.
+
 ## 2026-09-25 (trưa) — **Mật khẩu CSDL `ltt_app` lộ vào transcript** · rủi ro ĐÃ CHẶN ở `pg_hba`
 
 ### Chuyện gì xảy ra
@@ -284,6 +436,74 @@ hai **ghi đè mất đường lui thật**. Bản `21c1bf9b` đã được gi�
 
 - Xoay **client secret** Google (đã lọt vào bản ghi hội thoại) và **mật khẩu superuser PostgreSQL**.
 - Nghiệm thu upload YouTube thật (private) để đóng phase 8.
+
+## 2026-09-25 — Vòng chết 413: van an toàn đo TOKEN, bức tường đo BYTE
+
+Khách báo phiên LTTCODE kẹt cứng: mọi lượt `request_body_too_large`, và **4 lần nén đều hỏng**.
+Ba lỗi, **một bệnh** — cùng một giá trị khai ở hai nơi, không ai bắt khớp.
+
+### Chẩn đoán — đo trước, suy sau
+
+Phép dò production (413 chặn **trước** xác thực nên không cần khoá), **có đối chứng âm**:
+
+| Thân | Kết quả |
+|---|---|
+| 1 150 067 B | **413** `payload_too_large` · `limit_value: 1048576` · `observed: 1150067` |
+| nhỏ | **401** ⇒ 413 đúng là **do kích thước** |
+
+Rồi lấy **bản ghi phiên thật** (`session-0019f199`, 165 bước — khớp ảnh chụp) và bóc ra:
+- 4 dòng `compaction/end` **đều mang** `error: "…request_body_too_large…"` ⇒ bốn lỗi nén **là cùng
+  một 413**, không phải lỗi model-trả-rỗng như tôi đã nghi. *(Giao diện hiện "could not produce a
+  useful summary" — người dùng không bao giờ biết nén chết vì cùng lý do. Lỗi thông báo thứ hai.)*
+- `usage.totalTokens = 80 823` ngay trước 413, thân vượt 1 048 576 B ⇒ **> 12,97 byte/token**.
+
+⚠️ **Tệp bản ghi là NHIỀU KHUNG zstd nối nhau.** `decompress()` chỉ đọc khung đầu, trả về **2 dòng**
+— trông y như tệp rỗng. Phải `stream_reader(..., read_across_frames=True)` mới ra 1 063 dòng.
+
+### Ba lần cùng một bệnh
+
+| # | Hai nơi khai cùng một điều | Hậu quả |
+|---|---|---|
+| 1 | Trần byte **1 MiB** ↔ cửa sổ công bố **151 552 token** | Ngân sách **6,9 B/token** — cửa sổ ta hứa **lớn hơn** thứ ta chở nổi |
+| 2 | Nền tảng **tính** ngưỡng nén ↔ client gõ cứng **`0.79`** | Client chừa **26 092** token cho câu trả lời, trong khi model được phép trả **32 768** |
+| 3 | Ngưỡng nén còn một **bản sao** trong `examples.py` | Ba bản của một số |
+
+⭐ **Lỗi #2 ĐÃ ĐƯỢC CHẨN ĐOÁN VÀ SỬA RỒI — sửa nhầm phía.** `ngan_sach.py:469-487` ghi: *"Trước
+03/09 cả hai bộ cài đều gõ `× 0,8`… ĐÂY LÀ LỖI ĐÃ XẢY RA TRÊN PRODUCTION: một lượt ăn `413` với
+101 938 token vào trên trần 96 256… con số cũ không sai vì bịa, nó sai vì **được chọn ở một cửa sổ
+rộng rồi mang sang một cửa sổ hẹp** mà không ai tính lại."* Nền tảng bỏ tỉ lệ phẳng. **Client giữ.**
+Sáu tháng sau nó cắn lại. Hoá ra client tính chỗ trống theo `LTTCODE_MAX_TOKENS` (24 000 — số nó
+**định xin**) thay vì 32 768 (số máy chủ **cho phép**).
+
+### ⛔ Hai lần TÔI chốt bằng số sai nguồn
+
+1. Làn nền tảng lấy `1 150 067 / 227 328 = 5,06 B/token` và gọi là *"ca sản xuất thật"* — đó là
+   **phép dò tổng hợp `'x' × 1 150 000`** của chính tôi. ASCII 1 byte, không nói gì về tiếng Việt.
+2. Tôi tự suy **10,64 B/token** từ **một ảnh chụp** thanh đo — và **đoán sai cả model** (ảnh chụp
+   `ltt-3.5`, thật ra lúc hỏng là `ltt-3.8`).
+
+Chỉ bản ghi phiên mới cho số đúng: **12,97** (và đó là **cận dưới**). Cả hai số sai đã bị chặn
+bằng **bánh cóc ngược** `_SO_DA_RUT_LAI = (5.059, 10.64)` trong `test_4200`.
+
+### Đã sửa
+
+- **Nền tảng** (`df017d06`, đã deploy): trần **1 MiB → 4 MiB**; `BYTE_MOI_TOKEN_JSON` → **16,0**;
+  `test_4200` chốt theo **TẬP HỢP** (duyệt `CUA_SO_THEO_MODEL`, có ca giả lập "model thứ ba" để
+  **tự chứng minh phép kiểm thật sự đỏ khi thiếu**). Nghiệm thu hai chiều: 1,1 MiB nay **401**,
+  4,5 MiB **vẫn 413** — nâng trần chứ không gỡ trần.
+- **LTTCODE `stable` 0.2.15**: client **đo byte** song song với token · nén **tự thu nhỏ đầu vào,
+  không gọi model** · ngưỡng nén theo từng model `(cửa sổ − max_output_tokens)/cửa sổ`, phép kiểm
+  chốt **bất đẳng thức** chứ không chốt chữ số · thông báo mang số thật.
+
+⭐ **Đường "học trần từ 413" có bằng chứng SỐNG**, không phải suy từ mã: lượt 1 gửi 4,48 MiB → 413
+thật (round-trip **10,9 s**); lượt 2 cùng cỡ → **chặn cục bộ trong 345 ms**, không có vòng mạng.
+
+### Còn mở
+
+- `/api/v1/models` **không công bố** `max_body_bytes` ⇒ client phải **ăn một 413 mỗi lần mở app**
+  mới học lại được trần. Công bố nó là chữa tận gốc cả ba lỗi trên: **máy chủ nói ra, client đọc**,
+  một nguồn chân lý thay vì hai bản sao.
+- Nhánh nén-tự-thu-nhỏ chỉ có phép kiểm đơn vị, **chưa ép chạy thật**.
 
 ## 2026-09-24 (chiều) — VPS bán thật CHẠY được: sáu khuyết tật, và một cổng quản trị mở trên IP của khách
 

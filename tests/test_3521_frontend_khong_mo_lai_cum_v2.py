@@ -93,27 +93,24 @@ def test_KHONG_ham_nao_trong_src_con_tro_vao_cum_v2_da_dong(
 
 #: 🔴 MỐC — đường `/agent/...` viết trong `src/**` mà máy chủ **không còn có**.
 #:
-#: Đo ngày 24/09/2026, sau khi lằn `p10-don` gỡ cụm v2. Chín đường còn lại
-#: thuộc **cụm run v2** (`agent_runs`): hàm gọi chúng nằm trong `workflowApi.ts`
-#: và **không ai gọi** — `tests/test_1728` bỏ qua đúng vì thế.
+#: Đo ngày 24/09/2026, sau khi lằn `p10-don` gỡ cụm v2: chín đường thuộc
+#: **cụm run v2** (`agent_runs`) còn nằm chết trong `workflowApi.ts` (không
+#: ai gọi — `tests/test_1728` bỏ qua đúng vì thế).
+#:
+#: ⭐ HẠ MỐC 25/09 (lằn `wfa`, plan `2026-09-25-wf-v2-VAN-HANH.md` task A6):
+#:    cả chín hàm (`createRun`/`approveRun`/`tickRun`/`cancelRun`/`runAgain`/
+#:    `restoreRunAsWorkflow`/`loadRunHistory`/`loadRun`/`validateWorkflow`) đã
+#:    bị XOÁ khỏi `workflowApi.ts` — không còn một dòng `/agent/api/runs...`
+#:    hay `/agent/api/workflows/{}/validate` nào trong `src/**` để đo. Mốc vì
+#:    vậy hạ xuống RỖNG; `tests/workflowApi.test.ts` đã viết lại theo (cụm v3
+#:    `saveWorkflowV3`/`publishWorkflowV3`/`createRunV3` thay cho các bài kiểm
+#:    CSRF/If-Match/409/422 từng đi qua cụm v2). Bánh cóc TẬP HỢP hàm còn sống
+#:    trong `workflowApi.ts`: `tests/test_4105_wf_v2_pa_don_ma_chet.py`.
 #:
 #: ⛔ **Tập này chỉ được phép CO LẠI.** Cùng khuôn `tools/check_so_test.py`:
 #:    không dọn quá khứ, chặn tương lai. Ai gỡ được một đường thì xoá nó khỏi
 #:    đây, và lần xoá ấy hiện ra trong diff.
-#: ⚠️ Vì sao lằn này không gỡ luôn: việc của lằn là nợ §5 (`liveQuotes` +
-#:    `previewAssistant`). Gỡ chín hàm nữa kéo theo viết lại một mảng
-#:    `tests/workflowApi.test.ts` — một diff rộng hơn phần việc được giao.
-MOC_DUONG_CHET = {
-    "/agent/api/runs",
-    "/agent/api/runs/{}",
-    "/agent/api/runs/{}/again",
-    "/agent/api/runs/{}/approve",
-    "/agent/api/runs/{}/cancel",
-    "/agent/api/runs/{}/restore-workflow",
-    "/agent/api/runs/{}/tick",
-    "/agent/api/workflows/{}/runs",
-    "/agent/api/workflows/{}/validate",
-}
+MOC_DUONG_CHET: set[str] = set()
 
 
 def test_KHONG_them_duong_chet_nao_ngoai_MOC(duong_viet_trong_src,

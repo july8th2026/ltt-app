@@ -275,23 +275,39 @@ def test_KHONG_job_giai_doan_nao_giu_credit(db, kho_tam, asr_gia, dich_gia, gion
 
 
 def test_quyet_toan_MOT_LAN_va_hoan_phan_khong_dung(db, kho_tam, asr_gia, dich_gia, giong_gia):
-    """I2/I3 — giu 10, cac giai doan gia ton 0, nen phai hoan het 10."""
-    from platform_core import credit
-    from apps.auto_scan_video import features
-    from apps.auto_scan_video.tables import RUN_DONE
+    """I2/I3 — giu THUA roi hoan phan du, trong MOT lan quyet toan.
 
-    run = _tao_run(db, giu=10)
+    ## ⭐ 25/09/2026 — gia PHANG doi con so ky vong, khong doi bat bien
+
+    Truoc do bai nay ky vong `credit_actual == 0`: cac giai doan gia ton 0, va so
+    thu la tong chi phi **noi bo** do duoc. Tu 25/09 so thu la
+    `gia.tinh_credit(do dai nguon)` — mot gia phang khach biet truoc — nen mot lan
+    chay ve `done` **luon** thu dung so do, du mach ben trong ton 0.
+
+    🔑 Bat bien duoc chot o day khong doi: **giu bao nhieu, thu bao nhieu, hoan
+       phan du — dung mot lan.** Nen bai nay giu THUA co chu dinh va do ca hai dau.
+    """
+    from platform_core import credit
+    from apps.auto_scan_video import features, gia
+    from apps.auto_scan_video.tables import RUN_DONE
+    from tests.fixtures.asv_media import DEFAULT_DURATION_S
+
+    # ⛔ Giu THUA co chu dinh: phan du phai quay ve vi mot lan quyet toan, khong vi
+    #    so thu tinh co bang so giu.
+    giu = gia.tinh_credit(DEFAULT_DURATION_S) + 7
+    run = _tao_run(db, giu=giu)
     # Do sau khi nop: `_tao_run` vua nap credit **va** giu cho, nen so du luc nay
-    # da tru phan giu. Cong lai 10 se ra so truoc khi giu.
+    # da tru phan giu. Cong lai `giu` se ra so truoc khi giu.
     sau_khi_giu = credit.so_du(db, "uA")
-    truoc_khi_giu = sau_khi_giu + 10
+    truoc_khi_giu = sau_khi_giu + giu
 
     _chay_het_hang_doi(db, nang_luc={"api", "ffmpeg", "gpu", "voice"})
     run = features.lay_run(db, run.id, "uA")
 
     assert run.status == RUN_DONE
-    assert run.credit_actual == 0, "giai doan gia khong ton gi"
-    assert credit.so_du(db, "uA") == truoc_khi_giu, (
+    phai_thu = gia.tinh_credit(DEFAULT_DURATION_S)
+    assert run.credit_actual == phai_thu, "gia phang cua do dai nguon"
+    assert credit.so_du(db, "uA") == truoc_khi_giu - phai_thu, (
         "phan khong dung phai duoc hoan lai het")
 
 

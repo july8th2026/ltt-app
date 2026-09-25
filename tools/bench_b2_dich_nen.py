@@ -169,7 +169,8 @@ def _ket(ban, doan, cac_lo, gop, loi, t0, *, duong_goi: str) -> dict:
 
     try:
         model_that = ai.model_cho(ai.DICH_THUAT)
-    except Exception:                           # noqa: BLE001
+    except Exception as e:                      # noqa: BLE001
+        _in(f"[canh bao] khong doc duoc model dich THAT: {type(e).__name__}")
         model_that = ""
     return {
         "phim": ban.get("phim"), "ngon_ngu": ban.get("ngon_ngu"),
@@ -219,7 +220,7 @@ def _in(dong: str) -> None:
 
     try:
         print(dong)
-    except Exception:                           # noqa: BLE001
+    except UnicodeEncodeError:                  # cp1252 gap ky tu ngoai bang ma
         bo = getattr(_s.stdout, "encoding", None) or "ascii"
         print(dong.encode(bo, "replace").decode(bo, "replace"))
 

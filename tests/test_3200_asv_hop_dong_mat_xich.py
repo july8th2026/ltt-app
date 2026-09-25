@@ -114,11 +114,17 @@ def test_moi_ma_loi_khai_o_giai_doan_deu_co_trong_SO_MA():
     assert thieu == [], f"ma khong co cau khach doc duoc: {thieu}"
 
 
-def test_moi_ma_trong_SO_MA_deu_khai_chinh_sach_credit():
-    """Mot ma loi ma khong noi credit co hoan hay khong la mot lo o so tien."""
-    assert set(ML.HOAN_CREDIT) <= set(ML.SO_MA), sorted(
-        set(ML.HOAN_CREDIT) - set(ML.SO_MA))
-    assert ML.HOAN_CREDIT, "chua ma nao khai hoan credit - kho tin"
+# ⭐ **`test_moi_ma_trong_SO_MA_deu_khai_chinh_sach_credit` da bi XOA cung
+#    `ma_loi.HOAN_CREDIT` — 25/09/2026, gia phang.**
+#
+#    No chot rang moi ma loi phai khai *"credit co hoan hay khong"*. Duoi gia
+#    phang cau hoi ay khong con: tien chi duoc thu khi lan chay ve `done` VA co
+#    hien vat giao duoc, nen **moi** ket cuc khac hoan 100 % — khong ma nao
+#    khai gi, va khong co gi de lech.
+#
+# ⛔ Giu lai phep kiem se la giu mot banh coc gac mot **nghia vu ma**: no van
+#    xanh, van ton mot luot chay, va van lam nguoi doc tuong co mot duong hoan
+#    tien theo ma dang song. `tests/test_3900_asv_gia_phang.py` chot luat that.
 
 
 def test_SO_MA_KHONG_la_ban_thu_hai_cua_LOI_CO_MA():

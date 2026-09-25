@@ -56,10 +56,8 @@ GOC = pathlib.Path(__file__).resolve().parent.parent
 if str(GOC) not in sys.path:
     sys.path.insert(0, str(GOC))
 
-try:
+if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-except Exception:                               # noqa: BLE001
-    pass
 
 NGUON = GOC / "docs/auto_scan_video_final/bang_chung/b1_chep_loi_moi"
 CHAM = GOC / "docs/auto_scan_video_final/bang_chung/b2_vong_sua/v3_cham.json"
@@ -146,7 +144,9 @@ def _dich(db, doan: list[dict], *, mid: str, co_y_canh: bool) -> dict:
     noi = getattr(kq, "noi_dung", None) or getattr(kq, "content", "")
     try:
         tho = (ai.doc_json(str(noi), ai.CHUYEN_LOI_THOAI) or {}).get("doan")
-    except Exception:                           # noqa: BLE001
+    except Exception as e:                      # noqa: BLE001
+        print(f"[canh bao] VUT ca mot lo ({len(lo)} doan) - doc_json nem "
+              f"{type(e).__name__}")
         return {}
     if not isinstance(tho, dict):
         return {}

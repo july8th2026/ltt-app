@@ -639,18 +639,44 @@ def uoc_tinh(request: Request, giay: float = 0.0,
        no o trinh duyet la xuat ban no — va la tao mot ban thu hai se troi khoi
        ban that o `gia.py` ngay lan dau ai do sua mot con so.
 
-    ⛔ Va o day khong co phep tinh nao: handler goi `gia.uoc_khoang` roi tra ve.
-       Moi so deu do tang dich vu quyet dinh, dung nhu `test_423` chot.
+    ⛔ Va o day khong co phep tinh nao: handler goi `gia.xem_truoc_chi_phi` roi
+       tra ve. Moi so deu do tang dich vu quyet dinh, dung nhu `test_423` chot.
 
-    ⭐ Tra ve mot KHOANG, va giao dien hien can tren. `gia.BIEN_DO_UOC` ghi ly
-       do: chi phi that ti le voi **luong noi**, con o day ta moi biet **do
-       dai** — mot con so don se noi doi o it nhat mot trong hai truong hop.
+    ⭐ **Tu 25/09 day la mot con so CHINH XAC, khong con mot khoang.** Gia phang
+       la mot ham cua do dai video nguon (`gia.tinh_credit`), va do dai do da do
+       duoc truoc khi khach bam — nen khach duoc noi *"se tru N credit"*, khong
+       phai *"khoang N"*. `gia.py` giai thich vi sao khoang cu bien mat.
+
+    🔴 **`luat_lam_tron` di KEM con so, va do la mot yeu cau cua chu du an**, khong
+       phai mot tien ich: khach phai doc luat lam tron TRUOC khi bam, vi mot con so
+       nhay ra sau khi da tru tien la cach nhanh nhat de mat long tin.
     """
-    thap, cao = gia.uoc_khoang(giay)
+    xem = gia.xem_truoc_chi_phi(giay)
     return JSONResponse({
-        "credit_thap": thap, "credit_cao": cao,
-        "thoi_gian_giay": gia.uoc_thoi_gian_giay(giay),
-        # ⛔ KHONG tra ve cong thuc, he so hay ten bien nao. Khach nhan CON SO.
+        # ⛔ KHONG tra ve cong thuc, he so hay ten bien nao. Khach nhan CON SO
+        #    va mot cau tieng Viet giai thich cach lam tron.
+        "credit": xem["credit"],
+        "so_phut": xem["so_phut"],
+        "don_gia": xem["don_gia"],
+        "luat_lam_tron": xem["luat_lam_tron"],
+        "thoi_gian_giay": xem["thoi_gian_giay"],
+        # ⚠️ Hai khoa CU, giu cho giao dien hien tai (`asv/*.js` thuoc lan
+        #    `asv-gui`, va mot duong may chu doi khoa truoc khi giao dien kip doi
+        #    la mot trang hien `undefined`). Khoang da sup thanh mot DIEM, nen ca
+        #    hai bang dung con so that — ⛔ khong phai mot khoang bia ra quanh no.
+        #
+        # ⭐ **25/09 chieu: `asv-gui` DA chuyen** (`server/static/asv/xem_truoc.js`
+        #    doc `d.credit` + `d.luat_lam_tron`; `test_3802` chot rang no ⛔ khong
+        #    doc hai khoa nay nua). `grep` ca kho: ⛔ khong con nguoi doc.
+        #
+        # ⇒ Hai dong nay **da xoa duoc**, va nen xoa: mot khoa ten `thap`/`cao`
+        #   cho mot con so DON la mot khoa noi doi ve hinh dang cua gia.
+        #
+        # ⛔ Chua xoa trong lan nay, co chu dinh: mot trinh duyet con giu ban JS cu
+        #    trong cache se in `~undefined–undefined` **tren mot man hinh tien**.
+        #    Cai gia cua viec doi mot nhip la hai dong; cai gia cua viec doi sai la
+        #    mot con so tien sai truoc mat khach. Xoa o lan don dep ke tiep.
+        "credit_thap": xem["credit"], "credit_cao": xem["credit"],
     })
 
 

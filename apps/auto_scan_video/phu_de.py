@@ -973,7 +973,8 @@ DINH_DANG_VAO = "yuv420p"
 
 
 def lenh_xem_truoc(*, ffmpeg: str, anh: str, duong_ass: str, vung,
-                   duong_tam: str, duong_ra: str) -> list[list[str]]:
+                   duong_tam: str, duong_ra: str,
+                   rong: int = 0, cao: int = 0) -> list[list[str]]:
     """HAI lenh ffmpeg dung MOT khung xem truoc — qua `loc_cat_noi` cua render.
 
     🔴 **Buoc 1 (khung anh -> video `yuv420p` khong mat) khong phai trang tri.**
@@ -994,7 +995,16 @@ def lenh_xem_truoc(*, ffmpeg: str, anh: str, duong_ass: str, vung,
     chuan = [ffmpeg, "-v", "error", "-nostdin", "-y",
              "-loop", "1", "-framerate", "25", "-t", f"{dai:.2f}", "-i", anh,
              "-pix_fmt", DINH_DANG_VAO, "-c:v", "ffv1", duong_tam]
-    loc = cdr.loc_cat_noi([(0.0, dai)], vung=vung, duong_ass=duong_ass)
+    # ⭐ `rong`/`cao` la kich thuoc cua CHINH khung anh nay. Chang VUNG can
+    #    chung tu V5: `dien_nen` tinh hinh hoc bang PIXEL (dai nguon <= 4 px), va
+    #    mot phan so khong noi duoc "4 px" la bao nhieu.
+    #
+    # ⚠️ Xem truoc phai di qua DUNG chuoi loc cua render — do la ca ly do tep nay
+    #    goi `loc_cat_noi` thay vi tu dung mot chuoi rieng. Bo trong hai tham so
+    #    nay thi xem truoc se NEM o dung cai vung ma render dung duoc, tuc khach
+    #    ve mot vung hop le ma o xem truoc bao loi.
+    loc = cdr.loc_cat_noi([(0.0, dai)], vung=vung, duong_ass=duong_ass,
+                          rong_nguon=int(rong or 0), cao_nguon=int(cao or 0))
     dung = [ffmpeg, "-v", "error", "-nostdin", "-y", "-i", duong_tam,
             "-filter_complex", loc, "-map", "[ra]",
             "-ss", f"{XEM_TRUOC_GIAY:.2f}", "-frames:v", "1",
@@ -1051,6 +1061,7 @@ def xem_truoc(ho_so: dict | None, anh: bytes, *, vung=(), nguon: str = "",
         for cmd in lenh_xem_truoc(ffmpeg=nhap_media.media.ffmpeg_bin(),
                                   anh=duong_anh, duong_ass=duong_ass,
                                   vung=vung_xt, duong_ra=duong_ra,
+                                  rong=rong, cao=cao,
                                   duong_tam=str(Path(tam) / "khung.mkv")):
             try:
                 kq = subprocess.run(cmd, capture_output=True, timeout=30,

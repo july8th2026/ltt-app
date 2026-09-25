@@ -66,6 +66,30 @@ def _vi_tri(chi_so: int) -> dict:
             "y": (chi_so // _MOT_HANG) * BUOC_Y}
 
 
+#: Tiền tố node app/tool trong tài liệu draft (spec §4.1) — khớp
+#: `TIEN_TO_APP` của `frontend/agent-canvas/src/nodeDefinition.ts`.
+_TIEN_TO_APP = "app."
+
+
+def _data_canvas(loai: str, params: dict) -> dict:
+    """`data.tool`/`data.params` — hình dạng CanvasNode cần để RENDER.
+
+    ⛔ Đây KHÔNG phải hình dạng cổng biên dịch đọc (`_node`/`_node_loi` đọc
+       top-level `type`/`params`) — nó là một bản MIRROR thêm vào riêng cho
+       canvas, y hệt cách `frontend/agent-canvas/src/nodeDefinition.ts
+       ::slugCongCu` đặt tên: bỏ tiền tố `app.` cho node app/tool
+       (`app.video.generate` → `video.generate`), GIỮ NGUYÊN cho node lõi
+       (`core.if` → `core.if`, không có tiền tố đó để bỏ).
+
+    Thiếu khoá `data` này (bản trước `chuan_hoa()` không viết) làm
+    `CanvasShell.tsx::displayNodes` đọc `node.data.tool` trên một
+    `node.data` `undefined` ⇒ `TypeError` giữa `useMemo` render — trình
+    soạn "sập" đúng lúc nạp tài liệu `/soan` vừa trả về (`test_4250`).
+    """
+    slug = loai[len(_TIEN_TO_APP):] if loai.startswith(_TIEN_TO_APP) else loai
+    return {"tool": slug, "params": params}
+
+
 def danh_muc(*, cong_cu: Optional[dict] = None,
              dinh_nghia: Optional[dict] = None) -> list[dict]:
     """Danh mục node **rút gọn** làm đầu vào prompt (spec §12.2).
@@ -90,12 +114,55 @@ def danh_muc(*, cong_cu: Optional[dict] = None,
 
 def build_prompt(goal: str, *, muc: list[dict], ngan_sach_credit: int,
                  input_types: Optional[dict] = None) -> str:
+    """Prompt cho một lượt soạn (spec §12.2).
+
+    ⭐ Dòng danh mục KHÔNG còn viết `type@version` dính liền (24/09 sửa lại
+       sau lượt gọi model THẬT đầu tiên qua máy B, plan wf-v2 P-B task FLOW
+       G). Bản trước ghi mỗi node là `- core.http@1 (job): ...`, và model
+       (`ltt-3.5`) **chép nguyên chuỗi ấy vào trường `type`** của mọi node nó
+       sinh ra (`"type": "core.http@1"` thay vì `"type": "core.http"`) —
+       đúng bài học "ví dụ trong lời nhắc là mệnh lệnh ngầm": model học
+       HÌNH THỨC hiển thị, không phải lược đồ JSON. Hậu quả: **100% node**
+       trong lượt gọi thật đó bị `bien_dich` từ chối bằng `node_khong_ton_tai`
+       dù `type` gốc (bỏ hậu tố) nằm đúng trong danh mục.
+
+    ⭐ `[QUY_UOC_KIND]` là dòng MỚI. Bản trước liệt `"kind"` như một khoá rỗng
+       trong mẫu JSON mà KHÔNG bao giờ nói giá trị hợp lệ là gì
+       (`bien_dich._KIND = {"DATA","CONTROL","ERROR"}`, xem
+       `platform_core/workflow/bien_dich.py`). Cùng lượt gọi thật đó, model
+       đoán `"kind": "json"` cho mọi cạnh — một cái đoán hợp lý (nó đang nói
+       về ĐỊNH DẠNG dữ liệu chảy qua cạnh) nhưng sai Ô cần điền, và bị từ
+       chối bằng `canh_khong_hop_le`. Không phải model kém; đây là một chỗ
+       lược đồ chưa từng được nói ra.
+
+    ⭐ `[QUY_UOC_BIEU_THUC]` là dòng MỚI (25/09, làn `wfk`, lượt gọi thật thứ
+       hai qua máy B — `tests/test_4190_flow_g_goi_model_that.py::_LOT2_25_09`).
+       `check_ready` (`core.if`) sinh
+       `dieu_kien = "{{ nodes.fetch_sheet.output.json.status === 'READY' }}"`
+       — HAI lỗi cùng lúc mà bản trước không hề cảnh báo:
+       1. bọc trong `{{ }}` dù tham số kiểu `bieu_thuc`/`bang_bieu_thuc` của
+          NODE LÕI (`bien_dich.KIEU_BIEU_THUC`) phải TRẦN — bản trước chỉ có
+          MỘT câu `[DAU_RA]` chung cho mọi tham số ("Tham chiếu … bằng
+          `{{ nodes.<id>.output.<cong> }}`"), không phân biệt tham số CHUỖI
+          của node app/tool (đúng là cần `{{ }}` để nội suy) với tham số
+          BIỂU THỨC của node lõi (không ngoặc, đọc thẳng bằng
+          `ngon_ngu.tinh`/`ast.parse`);
+       2. `===` của JavaScript — ngôn ngữ §6 chỉ có `==`/`!=`
+          (`chinh_sach.py`: `ast.Eq`/`ast.NotEq`), và vì được phân tích bằng
+          `ast.parse` (cú pháp Python), `===` không bị từ chối bằng một
+          thông điệp rõ ràng — nó là lỗi cú pháp thẳng.
+       Bài học lặp lại của `vi-du-trong-loi-nhac-la-menh-lenh-ngam.md`: một
+       lược đồ chưa từng được GIẢI NGHĨA (chỉ dump JSON thô
+       `"dieu_kien":{"type":"bieu_thuc"}`) là một lược đồ model phải ĐOÁN —
+       và đoán theo mẫu quen (`{{ }}` của app/tool, `===` của JS) chứ không
+       theo Sec6.
+    """
     dong = ["[DANH_MUC_NODE]"]
     for m in muc:
         luoc_do = json.dumps(m["tham_so"], ensure_ascii=False,
                              separators=(",", ":"))
-        dong.append(f"- {m['type']}@{m['type_version']} ({m['kind']}): "
-                    f"{m['title']} - {m['description']}\n"
+        dong.append(f"- type={m['type']} type_version={m['type_version']}"
+                    f" kind={m['kind']}: {m['title']} - {m['description']}\n"
                     f"  cong_vao={m['cong_vao']} cong_ra={m['cong_ra']}\n"
                     f"  tham_so={luoc_do}")
     mau = ('{"nodes": [{"id","type","type_version","params"}], '
@@ -105,10 +172,27 @@ def build_prompt(goal: str, *, muc: list[dict], ngan_sach_credit: int,
         "[CONG_VAO_WORKFLOW] " + json.dumps(input_types or {},
                                             ensure_ascii=False),
         f"[NGAN_SACH] {max(0, int(ngan_sach_credit))} credit",
+        "[QUY_UOC_KIND] Canh (`edges[].kind`) chi nhan DUNG mot trong ba gia"
+        " tri: DATA (du lieu thuong), CONTROL (chi dieu khien, khong mang"
+        " du lieu), ERROR (nhanh xu ly loi). Khong dung ten dinh dang du"
+        " lieu (vd 'json') lam kind.",
+        "[QUY_UOC_BIEU_THUC] Trong `tham_so` cua danh muc tren, mot tham so"
+        " co luoc do `\"type\":\"bieu_thuc\"` (vi du `dieu_kien` cua"
+        " core.if, `bieu_thuc` cua core.switch) hoac `\"bang_bieu_thuc\"`"
+        " la mot BIEU THUC ngon ngu Sec6 TRAN — KHONG duoc boc trong"
+        " `{{ }}`. Viet thang, vi du:"
+        " dieu_kien = nodes.fetch_sheet.output.json.status == 'READY'"
+        " (KHONG phai \"{{ nodes.fetch_sheet.output.json.status === 'READY'"
+        " }}\"). Ngon ngu Sec6 CHI co hai toan tu so sanh bang la `==` va"
+        " `!=` — KHONG co `===`/`!==` cua JavaScript, dung se bi tu choi.",
         "[MUC_TIEU] " + (goal or "").strip()[:8000],
         "[DAU_RA] Tra ve DUNG mot object JSON: " + mau
-        + " . `type` phai nam trong [DANH_MUC_NODE]. Tham chieu ket qua buoc"
-        " truoc bang {{ nodes.<id>.output.<cong> }}."
+        + " . `type` phai DUNG Y HET mot chuoi trong [DANH_MUC_NODE] (phan"
+        " sau `type=`), KHONG duoc noi them `@version` hay bat ky hau to"
+        " nao vao `type` — phien ban ghi rieng o truong `type_version`."
+        " Voi tham so CHUOI thuong (KHONG phai bieu thuc TRAN da noi o"
+        " [QUY_UOC_BIEU_THUC]), tham chieu ket qua buoc truoc bang"
+        " {{ nodes.<id>.output.<cong> }}."
         " Khong markdown, khong giai thich.",
     ]
     return "\n".join(dong)
@@ -129,11 +213,26 @@ def _nut_tho(obj: dict) -> tuple:
     return obj.get("nodes"), obj.get("edges") or []
 
 
-def chuan_hoa(raw) -> dict:
+def chuan_hoa(raw, *, goal: str = "", budget_max_credit: int = 0) -> dict:
     """Đầu ra model (KHÔNG tin được) → tài liệu draft v3 đúng hình dạng §4.1.
 
     ⛔ Chỉ kiểm **hình dạng**. Phán quyết về ngữ nghĩa (loại node có thật, tổ
        tiên, cổng, chu trình) thuộc về `bien_dich` — xem `kiem()`.
+
+    ⭐ `goal`/`budget_max_credit` — hai tham số THÊM (25/09, làn `wfk`, vá lần
+       hai trong một lần cho CÙNG Lỗi 1). Bản trước chỉ trả `{version, pages}`
+       — thiếu đúng ba khoá `CanvasDocument`/`CanvasDocumentV3`
+       (`frontend/agent-canvas/src/workflowApi.ts`) cần ở **CẤP TÀI LIỆU**:
+       `goal`, `budget_max_credit`, `active_page_id`. `CanvasShell.tsx
+       ::soanBangAI` ghi thẳng `dispatch({type:'replace', document:
+       fromV3(kq.document)})` — `fromV3()` chỉ spread nguyên tài liệu rồi đổi
+       `version`/`pages`, nên khoá nào tài liệu gốc không có thì tài liệu sau
+       cũng không có, `undefined`; dòng KẾ NGAY `state.document.goal.trim()`
+       (JSX render, không chỉ trong lúc bấm) ném `TypeError` — Playwright
+       THẬT (`tests/browser/wf_v2_pa_4180_canvas_bam_that.js`) đỏ đúng ở đây.
+       `test_4252` chốt hợp đồng CẤP TÀI LIỆU bằng cách đọc thật khai báo kiểu
+       TS (như `test_968` đã làm ở CẤP TRANG cho `_trang_v3`), không phải một
+       danh sách ba tên chép tay.
     """
     try:
         obj = extract_json(raw)
@@ -161,12 +260,22 @@ def chuan_hoa(raw) -> dict:
         if not isinstance(params, dict):
             raise LoiSoan("hinh_dang_sai",
                           f"params cua {nid!r} phai la object", nid)
+        loai = str(n.get("type", ""))
         ra_nodes.append({
-            "id": nid, "type": str(n.get("type", "")),
+            "id": nid, "type": loai,
             "type_version": int(n.get("type_version") or 1),
             # ⛔ Toạ độ model gửi bị BỎ — xem docstring mô-đun.
             "position": _vi_tri(i), "label": str(n.get("label") or "")[:160],
             "params": params,
+            # ⭐ Khoá THÊM cho canvas — xem `_data_canvas.__doc__`. Đây là
+            #    hình dạng `frontend/agent-canvas/src/editorState.ts
+            #    ::nextNode()` tự dựng cho MỌI node (lõi lẫn app); thiếu nó
+            #    `CanvasShell.tsx::displayNodes` đọc `node.data.tool` trên
+            #    một `node.data` KHÔNG TỒN TẠI ⇒ `TypeError` giữa render.
+            #    ⛔ KHÔNG thay `type`/`params` top-level bằng khoá này — cổng
+            #    biên dịch (`bien_dich._node`/`_node_loi`) đọc đúng hai khoá
+            #    top-level đó, không đụng `data` (test_4250 ghim cả hai).
+            "data": _data_canvas(loai, params),
             "credential_ref": str(n.get("credential_ref") or ""),
             "settings": dict(n.get("settings") or {}),
         })
@@ -182,6 +291,9 @@ def chuan_hoa(raw) -> dict:
         ra_edges.append(e)
 
     return {"version": SCHEMA_DRAFT,
+            "goal": str(goal or ""),
+            "budget_max_credit": max(0, int(budget_max_credit or 0)),
+            "active_page_id": TRANG_MAC_DINH,
             "pages": [{"id": TRANG_MAC_DINH, "name": "Trang 1",
                        "nodes": ra_nodes, "edges": ra_edges,
                        "viewport": {"x": 0, "y": 0, "zoom": 1}}]}
@@ -213,11 +325,13 @@ def soan_draft(db, *, goal: str, ngan_sach_credit: int,
                           input_types=input_types)
     raw = (llm_call(prompt) if llm_call is not None
            else planner.goi_model(db, prompt))
-    document = chuan_hoa(raw)
+    goal_sach = (goal or "").strip()
+    ngan_sach_sach = max(0, int(ngan_sach_credit))
+    document = chuan_hoa(raw, goal=goal_sach, budget_max_credit=ngan_sach_sach)
     graph, loi = _bien_dich(document, cong_cu)
     return {"document": document, "graph": graph, "hop_le": graph is not None,
-            "loi": loi, "goal": (goal or "").strip(),
-            "ngan_sach_credit": max(0, int(ngan_sach_credit))}
+            "loi": loi, "goal": goal_sach,
+            "ngan_sach_credit": ngan_sach_sach}
 
 
 __all__ = ["BUOC_X", "BUOC_Y", "LoiSoan", "MAX_NUT", "SCHEMA_DRAFT",

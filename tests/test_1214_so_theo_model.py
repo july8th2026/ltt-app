@@ -123,11 +123,22 @@ class TestTranCongBoLaDANXUAT:
 
         ⛔ Lấy theo model mặc định (hẹp hơn) là dựng lại đúng lỗi 30/08 "hai
            trần không biết nhau mà cái nhỏ hơn thắng", chỉ đổi model.
+
+        🔴 25/09/2026: nhân với `cong_bo_cua` (cửa sổ CÔNG BỐ, đơn vị token
+           THẬT), KHÔNG PHẢI `tran_vao_cua` (ngân sách ƯỚC nội bộ ở A, đơn vị
+           khác và luôn LỚN hơn ~1,3–1,5 lần cùng nội dung). Sau sự cố 25/09,
+           `BYTE_MOI_TOKEN_JSON` được hiệu chỉnh lại ở đơn vị token THẬT (từ
+           `usage.totalTokens` của một bản ghi phiên thật — xem
+           `apps/ltt_llm/ngan_sach.py::BYTE_MOI_TOKEN_JSON`), nên nhân nó với
+           một ngân sách ƯỚC sẽ đòi hỏi nhiều byte hơn mức
+           `BODY_BYTES_TOI_THIEU` THẬT SỰ cần chừa cho lời hứa ta công bố —
+           đây chính là loại lệch đơn vị mà sự cố 25/09 sinh ra để dẹp, không
+           phải để dựng lại ở phép kiểm này.
         """
         rong_nhat = max(ngan_sach.CUA_SO_THEO_MODEL,
                         key=ngan_sach.CUA_SO_THEO_MODEL.get)
         assert ngan_sach.BODY_BYTES_TOI_THIEU >= int(
-            ngan_sach.tran_vao_cua(rong_nhat) * ngan_sach.BYTE_MOI_TOKEN_JSON)
+            ngan_sach.cong_bo_cua(rong_nhat) * ngan_sach.BYTE_MOI_TOKEN_JSON)
 
     # ── ĐỐI CHỨNG: dịch cửa sổ MỘT model, đòi ĐÚNG model đó dịch theo ────────
     #

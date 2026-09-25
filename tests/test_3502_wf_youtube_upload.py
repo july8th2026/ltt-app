@@ -146,13 +146,30 @@ def test_phien_chet_404_ra_KET_QUA_MO_HO_khong_tu_mo_phien_moi():
     assert e.value.ma == "ket_qua_mo_ho"
 
 
-def test_5xx_cung_ra_KET_QUA_MO_HO():
-    """500 sau khi đã gửi byte: request có thể đã tới nơi. Cùng lý do."""
+def test_5xx_ra_provider_loi_THU_LAI_DUOC_khong_phai_mo_ho():
+    """🔴 CHỐT LẠI 25/09 (task B1a) — bài này (tên cũ
+    `test_5xx_cung_ra_KET_QUA_MO_HO`) đang CHỐT SAI hành vi.
+
+    Bài cũ coi 5xx giống hệt 404/410: `ket_qua_mo_ho` trên node
+    `irreversible` ⇒ `ABANDONED`, không tự thử lại. Nhưng tài liệu CHÍNH THỨC
+    của Google nói ngược lại — GCS *Perform resumable uploads*: một 5xx thì
+    "resume the interrupted upload from where it left off"; Data API
+    *Resumable Media Uploads*: hỏi lại bằng PUT rỗng +
+    `Content-Range: bytes */TOTAL`. Phiên **còn sống** sau 5xx — mơ hồ GIẢI
+    ĐƯỢC bằng cách hỏi lại, ⛔ khác mơ hồ VĨNH VIỄN của 404/410 (phiên CHẾT,
+    mở lại là phiên MỚI — có thể đăng hai lần). Nên đúng mã phải là
+    `provider_loi` (THỬ LẠI ĐƯỢC), không phải `ket_qua_mo_ho`.
+
+    Bằng chứng nội tại: `_vi_tri_da_nhan` (dưới cùng tệp nguồn) đã coi 5xx là
+    `provider_loi` từ trước — hai cửa trong CÙNG một tệp từng lệch nhau đúng
+    ở điểm này. `test_5xx_giua_chung_ROI_thu_lai_NOI_LAI_khong_mo_phien_moi`
+    (tests/test_4120_wf_youtube_upload_5xx_thu_lai.py) chứng minh chuỗi đầy đủ:
+    sau 5xx, lượt thử lại nối tiếp đúng phiên cũ, không mở phiên mới."""
     from platform_core.workflow import youtube_upload as yt
     with _client(lambda r: httpx.Response(503, text="busy")) as c:
         with pytest.raises(yt.LoiYouTube) as e:
             yt.day_byte(c, PHIEN, b"xxxx")
-    assert e.value.ma == "ket_qua_mo_ho"
+    assert e.value.ma == "provider_loi"
 
 
 # ── Nối lại ────────────────────────────────────────────────────────────────

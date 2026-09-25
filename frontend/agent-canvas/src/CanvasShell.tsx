@@ -36,17 +36,19 @@ import { taiPalette } from './paletteApi'
 //    · `tests/test_3521` — moi duong `/agent/...` VIET trong `src/**`, ke ca
 //      trong mot ham khong ai goi: mot ham chet tro vao cua da dong la mot
 //      khau sung da nap dan, chi cach song lai dung mot dong `import`.
-import { baoGiaDoThi, goiYBieuThuc, loadOrCreateWorkflowV3, loadPreferences,
+import { baoGiaDoThi, fromV3, goiYBieuThuc, loadOrCreateWorkflowV3, loadPreferences,
   savePreferences, saveWorkflowV3,
   WorkflowConflictError, type CanvasDocument,
   type CanvasEdge, type CanvasNode, type GoiYBieuThuc,
   type Workflow } from './workflowApi'
 // Cua v3: trinh soan LUU -> PUBLISH -> TAO run -> NGHE. No khong con "lai"
 // dong co bang `tickRun` nua; may chu tu tien, client chi NGHE (SSE).
-import { cancelRunV3, createRunV3, publishWorkflowV3,
-  RUN_V3_KET_THUC, theoDoiRunV3, WorkflowCompileError,
-  type RunV3 } from './workflowApi'
+import { cancelRunV3, chayLaiTuNodeV3, createRunV3, publishWorkflowV3,
+  RUN_V3_KET_THUC, soanWorkflowV3, soSanhRunV3, theoDoiRunV3,
+  WorkflowCompileError, type RunV3, type SoSanhRunV3 } from './workflowApi'
 import { NHAN_TRANG_THAI_NODE, RunV3Panel } from './RunV3Panel'
+import { RunDiff } from './RunDiff'
+import { RunInspector } from './RunInspector'
 
 // ⚠️ `NODE_TYPES` (`{ ltt: NodeRenderer }`) ve MOI node cua do thi — do la ca
 //    y do cua spec §13.2. `frame`/`annotation` khong phai node do thi: chung
@@ -226,6 +228,19 @@ function Editor() {
   const [retryNonce, setRetryNonce] = useState(0)
   const [run, setRun] = useState<RunV3|null>(null)
   const [runError, setRunError] = useState('')
+  //: Run mà `run` hiện tại được "Chạy lại từ đây" (task A1). Chỉ tồn tại khi
+  //  người dùng đã chạy lại ít nhất một lần — đây cũng là NGUỒN duy nhất cho
+  //  "so sánh" (task A2): máy chủ không có cửa liệt kê run theo workflow
+  //  (`v3_so_sanh_run` đòi cả hai id), nên cặp (run cũ, run mới) sinh ra từ
+  //  chính thao tác chạy lại là chỗ duy nhất trong phạm vi P-A có SẴN hai id
+  //  liên quan để so — không bịa thêm một ô nhập id thủ công.
+  const [runGoc, setRunGoc] = useState<RunV3|null>(null)
+  const [soSanh, setSoSanh] = useState<SoSanhRunV3|null>(null)
+  const [soSanhLoi, setSoSanhLoi] = useState('')
+  //: Task A3 — Agent Designer (`agent_v3.py::v3_soan`). Cửa KHÔNG publish, chỉ
+  //  ghi draft + trả báo giá; publish vẫn là hành động riêng của người dùng.
+  const [dangSoan, setDangSoan] = useState(false)
+  const [soanLoi, setSoanLoi] = useState('')
   //: so nhip poll HONG LIEN TIEP. Vua lam thoi gian cho lui dan, vua la thu
   //  duy nhat lam effect poll chay lai sau mot cu nga — `run` khong doi khi
   //  request hong, nen khong co no thi khong con `setTimeout` nao ca.
@@ -497,6 +512,7 @@ function Editor() {
     //    nguoi dung chay duoc lan thu hai that.
     if(!khoaChay.current)khoaChay.current=taoKhoaChay()
     setRun(null);setSoHong(0);setDesktopPanel('run');setPhase('saving');setRunError('');setLoiNode({})
+    setRunGoc(null);setSoSanh(null);setSoSanhLoi('')
     try{
       const saved=await saveWorkflowV3({...workflow,canvas:state.document},csrf)
       setWorkflow(saved);setPhase('saved')
@@ -530,6 +546,46 @@ function Editor() {
       .then(next=>setRun(truoc=>truoc&&truoc.id===next.id?nhapRun(truoc,next):truoc))
       .catch(error=>setRunError(error instanceof Error?error.message:'Không hủy được.'))
   },[run,csrf])
+
+  /** Task A1 — chạy lại TỪ MỘT NODE. Tạo run MỚI (khoản giữ mới, tiêu tiền
+   *  mới) cùng version, tái dùng output các node không phải hậu duệ của
+   *  `nodeId`. `run` cũ trở thành `runGoc` — nguồn cho "So sánh" (task A2). */
+  const chayLaiTuNode=useCallback((nodeId:string)=>{
+    if(!run||!RUN_V3_KET_THUC.has(run.status))return
+    const cu=run
+    setRunError('');setSoSanh(null);setSoSanhLoi('')
+    void chayLaiTuNodeV3(run.id,nodeId,csrf,taoKhoaChay())
+      .then(moi=>{setRunGoc(cu);setRun(moi);setSoHong(0)})
+      .catch(error=>setRunError(error instanceof Error?error.message:'Không chạy lại được.'))
+  },[run,csrf])
+
+  /** Task A2 — so sánh `run` hiện tại với run nó vừa được chạy lại từ. */
+  const soSanhVoiGoc=useCallback(()=>{
+    if(!run||!runGoc)return
+    setSoSanhLoi('');setSoSanh(null)
+    void soSanhRunV3(run.id,runGoc.id)
+      .then(setSoSanh)
+      .catch(error=>setSoSanhLoi(error instanceof Error?error.message:'Không so sánh được.'))
+  },[run,runGoc])
+
+  /** Task A3 — Agent Designer (`/soan`). Ghi draft từ `goal` hiện có trên
+   *  Canvas rồi NẠP THẲNG tài liệu trả về vào trình soạn — cửa này KHÔNG
+   *  publish, người dùng vẫn phải tự bấm "Chạy" để publish + chạy. */
+  const soanBangAI=useCallback(()=>{
+    if(!workflow||readOnly||dangSoan)return
+    const goal=state.document.goal.trim()
+    if(!goal){setSoanLoi('Thiếu mục tiêu.');return}
+    setDangSoan(true);setSoanLoi('')
+    void soanWorkflowV3(workflow.id,goal,undefined,csrf)
+      .then(kq=>{
+        dispatch({type:'replace',document:fromV3(kq.document)})
+        setWorkflow(truoc=>truoc?{...truoc,revision:kq.revision}:truoc)
+        if(!kq.hop_le&&kq.loi.length)
+          setSoanLoi(kq.loi.map(l=>l.thong_diep).join(' · '))
+      })
+      .catch(error=>setSoanLoi(error instanceof Error?error.message:'Không soạn được.'))
+      .finally(()=>setDangSoan(false))
+  },[workflow,readOnly,dangSoan,state.document.goal,csrf])
 
   const duplicateNode=useCallback((nodeId:string)=>{
     if(readOnly)return;const source=page.nodes.find(node=>node.id===nodeId);if(!source)return
@@ -701,9 +757,17 @@ function Editor() {
         {!run&&<button className="run-confirm" aria-busy={dangGui||undefined}
           disabled={readOnly||!workflow||!page.nodes.length||phase==='saving'||dangGui}
           onClick={()=>void chayWorkflow()}>{dangGui?'Đang gửi…':'Chạy ngay'}</button>}
-        {runDaXong&&<button onClick={()=>{setRun(null);setRunError('');setSoHong(0)}}>Tạo bản chạy mới</button>}
-        <RunV3Panel run={run} onCancel={huyRun}/>
-        {runError && <span className="run-error" role="alert">{runError}</span>}</nav></header>
+        {runDaXong&&<button onClick={()=>{setRun(null);setRunError('');setSoHong(0)
+          setRunGoc(null);setSoSanh(null);setSoSanhLoi('')}}>Tạo bản chạy mới</button>}
+        <RunV3Panel run={run} onCancel={huyRun} onChayLaiTu={chayLaiTuNode}/>
+        {runError && <span className="run-error" role="alert">{runError}</span>}
+        {/* Task A2 — nguồn của cặp so sánh la (run cũ, run "chạy lại từ" nó);
+            xem chú thích ở khai báo `runGoc`. */}
+        {run&&runGoc&&runDaXong&&<button onClick={soSanhVoiGoc}>So sánh với lượt gốc</button>}
+        {soSanhLoi && <span className="run-error" role="alert">{soSanhLoi}</span>}
+        {soSanh && <RunDiff soSanh={soSanh}/>}
+        {/* Task A5 — inspector thô (node + log sự kiện) cho lượt đang xem. */}
+        <RunInspector run={run}/></nav></header>
     <nav className="canvas-mobile-tabs" aria-label="Khu vực Canvas">{(['canvas','palette','inspector'] as const).map(item=><button key={item} className={mobilePanel===item?'active':''} aria-pressed={mobilePanel===item} onClick={()=>setMobilePanel(item)}>{item==='canvas'?'Canvas':item==='palette'?'Công cụ':'Chi tiết'}</button>)}</nav>
     <div className={`canvas-body panel-${mobilePanel}`}>
       <nav className="canvas-rail" aria-label="Công cụ Canvas">
@@ -756,7 +820,14 @@ function Editor() {
               hanh: noi doi ve TIEN. Tran that hien o bang luot chay
               (`credit_charged/credit_max`, RunV3Panel). Khoa `budget_max_credit`
               van con trong `document` vi `di_tru_m1.py` mang no sang tu ban
-              nhap cu — go o nhap khong duoc lam mat du lieu ay. */}</div>
+              nhap cu — go o nhap khong duoc lam mat du lieu ay. */}
+          {/* Task A3 — Agent Designer: soạn draft TỪ mục tiêu ở trên bằng
+              `/soan`, rồi nạp thẳng document trả về vào trình soạn. Cửa này
+              KHÔNG publish — người dùng vẫn tự bấm "Chạy" sau đó. */}
+          <button disabled={readOnly||!workflow||!state.document.goal.trim()||dangSoan}
+            aria-busy={dangSoan||undefined} onClick={soanBangAI}>
+            {dangSoan?'Đang soạn…':'Soạn bằng AI'}</button>
+          {soanLoi && <span className="run-error" role="alert">{soanLoi}</span>}</div>
         <PaletteV2 nhom={nhomPalette} truyVan={paletteQuery} onTruyVan={setPaletteQuery}
           onChon={nd=>themNode(nd)} ganDay={ganDay} /></aside>
       <section className="canvas-stage" data-testid="canvas-stage" data-edge-count={page.edges.length} data-display-edge-count={displayEdges.length} onDragOver={event => event.preventDefault()}

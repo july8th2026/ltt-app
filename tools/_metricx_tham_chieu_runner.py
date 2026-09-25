@@ -53,8 +53,10 @@ import ban_ghim  # noqa: E402  (nam trong _METRICX)
 
 def _nap(thiet_bi: str):
     import torch
-    import transformers
     from mt5_regression import MT5ForRegression
+    # `transformers` la `_LazyModule`: bieu tuong co luc chay, khong co trong
+    # be mat kieu tinh. ⛔ Khong doi sang `AutoTokenizer` — no doi `config.json`.
+    from transformers import T5TokenizerFast  # type: ignore[attr-defined]
 
     mo_hinh = ban_ghim.kiem_muc("mo_hinh")
     tok = ban_ghim.kiem_muc("tokenizer")
@@ -62,7 +64,7 @@ def _nap(thiet_bi: str):
         thiet_bi = "cuda" if torch.cuda.is_available() else "cpu"
     # bf16 tren GPU (checkpoint la bf16); CPU dung fp32 (bf16 CPU cham va lech so).
     dtype = torch.bfloat16 if thiet_bi == "cuda" else torch.float32
-    tokenizer = transformers.T5TokenizerFast.from_pretrained(
+    tokenizer = T5TokenizerFast.from_pretrained(
         str(tok["spiece.model"].parent))
     model = MT5ForRegression.from_pretrained(
         str(mo_hinh["pytorch_model.bin"].parent), torch_dtype=dtype)

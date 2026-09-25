@@ -20,11 +20,13 @@ from platform_core import jobs, registry
 from platform_core.job_scheduler import ORIGIN_WORKFLOW
 from platform_core.models import (JOB_CANCELLED, JOB_DONE, Artifact, Job,
                                   Waitpoint, WaitpointSignal, WorkflowRun)
-from platform_core.workflow import (cho_doi, danh_thuc, may_trang_thai,
+from platform_core.workflow import (bien_dich, chinh_sach, cho_doi,
+                                    danh_thuc, may_trang_thai, ngon_ngu,
                                     thi_hanh, thu_lai)
 from platform_core.workflow import artifact as _artifact
 from platform_core.workflow import cong_cu as _nguon
 from platform_core.workflow.bien_dich import la_tham_chieu
+from platform_core.workflow.chinh_sach import LoiNgonNgu
 from platform_core.workflow.cong_cu import CongCu
 
 GIOI_HAN_DAU_RA = 256 * 1024
@@ -105,31 +107,137 @@ def _bay_gio():
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
+def _giai_bieu_thuc_s6(db, run_id: str, bieu_thuc: str, vong=()) -> Any:
+    """Tính GIÁ TRỊ THẬT của một chuỗi `{{ ... }}` lúc job chạy — namespace
+    `nodes` dựng từ ảnh chụp CSDL của đúng các node đã tham chiếu.
+
+    ⭐ DÙNG LẠI máy đã có, KHÔNG một bộ đọc đường dẫn thứ hai — cùng ba khối
+       mà `bien_dich._doi`/`_bieu_thuc_s6_hop_le` (cổng PUBLISH, kiểm HÌNH
+       DẠNG) dùng, chỉ khác là hàm này TÍNH GIÁ TRỊ (cần môi trường thật):
+
+         `bien_dich.BOC_BIEU_THUC`    bóc đúng MỘT khối `{{ }}` trọn chuỗi
+         `bien_dich.trich_tham_chieu` trích MỌI tham chiếu `nodes.…` (AST)
+         `chinh_sach.moi_truong_wf` + `ngon_ngu.tinh` tính bằng ngôn ngữ §6
+
+       Publish (`_doi`) và runtime (hàm này) phải LUÔN khớp nhau vì cùng gọi
+       chung `bien_dich.trich_tham_chieu`/ngôn ngữ §6 — không có hai bảng để
+       trôi (bài học "hai chỗ khai một điều"). `bien_dich._NAMESPACE_APP_TOOL`
+       hẹp cổng publish xuống ĐÚNG namespace `nodes` mà hàm này giải được —
+       không rộng hơn, không hẹp hơn (test_4201/test_4202 đo cả hai chiều).
+
+    🔴 CHÚ Ý TÊN KHOÁ khi dựng `{id: {...}}` cho `chinh_sach.moi_truong_wf`:
+       BA khoá `status`/`output`/`error` — KHÔNG phải tên cột
+       `execution_status`/`output_ref` của `NodeRunSnapshot`. Đọc sai tên
+       khoá ở đây là một "chỗ nối hai module vứt trường im lặng" (bài học đã
+       lặp lại nhiều lần trong lịch sử kho này) — `chinh_sach._MatNode` đọc
+       đúng ba tên này bằng `.get()`, nên gõ sai tên KHÔNG ném lỗi, nó chỉ
+       ÂM THẦM làm `output`/`error` biến mất (`_MatNode.get(khoa)` trả
+       `None`). `test_4202::test_ten_khoa_status_dung`/`_output_dung`/
+       `_error_dung` khoá lại đúng ba tên này bằng ba đường riêng.
+
+    ⚠️ Kiểm `_tran` (output tràn artifact, §5.8) CHỈ khi biểu thức thật sự
+       đọc `.output` của node đó — một tham chiếu `nodes.a.status` không bị
+       chặn oan vì output (không liên quan) của `a` tràn artifact.
+    """
+    boc = bien_dich.BOC_BIEU_THUC.match(bieu_thuc.strip())
+    if boc is None:
+        # Không thể xảy ra với một đồ thị đã qua `_doi` (cổng publish đòi
+        # đúng hình dạng này) — nhưng hàm này không được TIN publish đã chạy
+        # (Phần B, chủ dự án round 2): một chuỗi `{{ }}` lạ dạng phải NÉM,
+        # không được lặng lẽ trả nguyên văn.
+        raise LoiThamSo(
+            "bieu_thuc_khong_giai_duoc",
+            f"gia tri co '{{{{' nhung khong dung dang MOT bieu thuc boc "
+            f"tron trong {{{{ }}}}: {bieu_thuc[:200]!r}")
+    bt = boc.group(1).strip()
+    try:
+        refs = bien_dich.trich_tham_chieu(bt)
+    except bien_dich.LoiBienDich as loi:
+        raise LoiThamSo("bieu_thuc_khong_giai_duoc", str(loi)) from None
+
+    doc_output = {tc.node for tc in refs if tc.loai == "output"}
+    anh_map: dict[str, dict] = {}
+    for tc in refs:
+        if tc.node in anh_map:
+            continue
+        anh = thi_hanh.anh_chup_hien_tai(db, run_id, tc.node, vong)
+        if anh is None:
+            continue          # KhongGianNodes tu noi "khong co trong run"
+        ra = dict(anh.output_ref or {})
+        if (tc.node in doc_output and anh.execution_status == "SUCCEEDED"
+                and "_tran" in ra):
+            # Output đã tràn ra artifact (§5.8) — CÙNG lý do/mã lỗi với
+            # đường tham chiếu đơn cũ bên dưới.
+            raise LoiThamSo(
+                "dau_ra_tran_artifact",
+                f"{tc.node} tran ra artifact {ra['_tran']['artifact_ref']}; "
+                "khong doc long duoc")
+        anh_map[tc.node] = {
+            "status": anh.execution_status,
+            "output": {k: x for k, x in ra.items()
+                      if not str(k).startswith("_")},
+            "error": str(anh.error or ""),
+        }
+    moi_truong = chinh_sach.moi_truong_wf(nodes=anh_map)
+    try:
+        return ngon_ngu.tinh(bt, moi_truong)
+    except LoiNgonNgu as loi:
+        raise LoiThamSo("dau_vao_sai", str(loi)) from None
+
+
 def giai_tham_so(db, run_id: str, params: dict, vong=()) -> dict:
     def _giai(v: Any) -> Any:
         if isinstance(v, dict):
             return {k: _giai(x) for k, x in v.items()}
         if isinstance(v, list):
             return [_giai(x) for x in v]
-        tc = la_tham_chieu(v)
-        if tc is None:
+        if not isinstance(v, str):
             return v
-        nguon, cong = tc
-        anh = thi_hanh.anh_chup_hien_tai(db, run_id, nguon, vong)
-        if anh is None or anh.execution_status != "SUCCEEDED":
-            raise LoiThamSo("dau_vao_sai", f"{nguon} chua SUCCEEDED")
-        ra = anh.output_ref or {}
-        if "_tran" in ra:
-            # Output đã tràn ra artifact (§5.8). Node sau phải nhận cả tệp qua
-            # một cổng `artifact_ref`, không phải một khoá con — plan 04 thêm
-            # node đọc artifact. Nói thẳng ra thay vì báo "khong co cong".
+        tc = la_tham_chieu(v)
+        if tc is not None:
+            # ⭐ LỐI TẮT — hành vi KHÔNG đổi cho ca đơn (spec cũ, workflow
+            #   đang chạy trên production). Không đi qua `_giai_bieu_thuc_s6`.
+            nguon, cong = tc
+            anh = thi_hanh.anh_chup_hien_tai(db, run_id, nguon, vong)
+            if anh is None or anh.execution_status != "SUCCEEDED":
+                raise LoiThamSo("dau_vao_sai", f"{nguon} chua SUCCEEDED")
+            ra = anh.output_ref or {}
+            if "_tran" in ra:
+                # Output đã tràn ra artifact (§5.8). Node sau phải nhận cả tệp
+                # qua một cổng `artifact_ref`, không phải một khoá con — plan
+                # 04 thêm node đọc artifact. Nói thẳng thay vì báo "khong co
+                # cong".
+                raise LoiThamSo(
+                    "dau_ra_tran_artifact",
+                    f"{nguon} tran ra artifact {ra['_tran']['artifact_ref']}; "
+                    f"khong tra cung duoc cong {cong!r}")
+            if cong not in ra:
+                raise LoiThamSo("dau_vao_sai", f"{nguon} khong co cong {cong!r}")
+            return ra[cong]
+        if "{{" not in v:
+            return v
+        # ⭐ 25/09 (wfb5, round 2): NHÁNH MỚI — `v` không khớp tham chiếu đơn
+        #   nhưng có `{{`, ví dụ `{{ nodes.a.output.json.prompt }}` (đường
+        #   dẫn LỒNG, publish được từ round 1 của bản vá này).
+        ra = _giai_bieu_thuc_s6(db, run_id, v, vong)
+        # ⛔ Phần B (chủ dự án round 2) — LƯỚI AN TOÀN CHIỀU SÂU: một giá trị
+        #   TRẢ VỀ mà vẫn còn nguyên `{{` nghĩa là chuỗi gốc đã KHÔNG thật sự
+        #   được thay — trước bản vá này, nhánh `tc is None: return v` cũ ở
+        #   TRÊN đã âm thầm làm đúng việc "trả nguyên văn" cho MỌI `{{ }}`
+        #   không khớp `la_tham_chieu` (fail-OPEN trên đường tiền, có TỪ
+        #   TRƯỚC wfb5 — không phải lỗi bản vá này sinh ra). Với
+        #   `_giai_bieu_thuc_s6` đã viết đúng, nhánh này gần như không bao
+        #   giờ kích hoạt (nó luôn NÉM `LoiThamSo` thay vì trả nguyên văn) —
+        #   nhưng nếu một đường nào đó sau này khiến nó trả nguyên văn (bug,
+        #   hay một `ngon_ngu.tinh` trả về đúng một CHUỖI VĂN BẢN chứa `{{`
+        #   như dữ liệu — hiếm, nhưng không thể loại trừ), TỪ CHỐI thay vì
+        #   đưa một giá trị mang hình dạng template cho job THẬT tiêu tiền.
+        #   `test_4202::test_luoi_an_toan_nem_khi_go` đo bằng tiêm lỗi.
+        if isinstance(ra, str) and "{{" in ra:
             raise LoiThamSo(
-                "dau_ra_tran_artifact",
-                f"{nguon} tran ra artifact {ra['_tran']['artifact_ref']}; "
-                f"khong tra cung duoc cong {cong!r}")
-        if cong not in ra:
-            raise LoiThamSo("dau_vao_sai", f"{nguon} khong co cong {cong!r}")
-        return ra[cong]
+                "bieu_thuc_khong_giai_duoc",
+                f"gia tri sau khi giai bieu thuc van con '{{{{': {ra[:200]!r}")
+        return ra
     return _giai(dict(params))
 
 

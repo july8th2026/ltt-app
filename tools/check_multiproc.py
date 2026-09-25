@@ -67,7 +67,14 @@ TEP_PG = ("tests/test_214_multi_process_runtime.py",
           # PostgreSQL. Tren SQLite be rong String(120) cua
           # `idempotency_key` bi NUOT im lang, nen mot khoa qua dai van
           # "khu trung" trong test roi tao run trung tren production.
-          "tests/test_3505_wf_flow_d_poll_pg.py")
+          "tests/test_3505_wf_flow_d_poll_pg.py",
+          # Duong DANH THUC worker (`jobs.KENH_JOB_MOI`, 25/09) - do tre mot
+          # luot chuyen lan, do bang PostgreSQL that. Bo qua vo hinh o day dat
+          # dung mot kieu: `LISTEN/NOTIFY` **khong ton tai** tren SQLite, nen
+          # tren SQLite ca tep chi la mot chu `s` va khong ai biet duong danh
+          # thuc da thoi chay. No cung la doi chung duy nhat cho con so
+          # "1,235 s moi luot chuyen lan" trong bao cao.
+          "tests/test_3911_danh_thuc_worker_pg.py")
 
 
 def _doc_neu_duoc(path: pathlib.Path) -> str:

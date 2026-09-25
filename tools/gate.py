@@ -763,6 +763,14 @@ def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
         # KHONG don qua khu (doi ten tep test cua phien khac la dung vao viec dang
         # do cua ho) — no chan tuong lai.
         Step("trung so test", [sys.executable, "tools/check_so_test.py"], ROOT),
+        # 🔴 Banh coc `N-59`: khong cho THEM cho goi `ffmpeg`/`ffprobe` TRAN.
+        #    `ffmpeg` cai theo NGUOI DUNG (WinGet) => chi tren USER Path; worker
+        #    chay LocalSystem => MACHINE Path => ten tran nem WinError 2, thuong
+        #    bi nuot im lang va luot chay VAN bao thanh cong (sidecar WhisperX
+        #    chua bao gio chay tren production, 25/09; buoc VAD 22/09). Thuoc la
+        #    MOT cho — `media.bao_dam_ffmpeg_tren_path()` — vi tien trinh con thua
+        #    ke PATH; buoc nay KHONG don ~63 cho cu, no chan cho thu 64.
+        Step("ffmpeg tran", [sys.executable, "tools/check_ffmpeg_tran.py"], ROOT),
         # 🔴 Banh coc: khong cho THEM cho bo qua ma khong khai bao.
         #
         #    `pytest -q` in mot chu `s` cho moi test bi bo qua, va gate chi giu

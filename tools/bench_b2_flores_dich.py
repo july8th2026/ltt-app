@@ -43,15 +43,14 @@ import os
 import pathlib
 import sys
 import time
+from typing import cast
 
 GOC = pathlib.Path(__file__).resolve().parent.parent
 if str(GOC) not in sys.path:
     sys.path.insert(0, str(GOC))
 
-try:
+if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-except Exception:                               # noqa: BLE001
-    pass
 
 #: ⛔ **Dung CHUNG mot cho cat voi `bench_b2_xac_thuc_bo_cham`** — hai duong doc
 #: se lech nhau o mot ban tai lai nao do.
@@ -105,7 +104,9 @@ def _mot_lo(db, lo: list[dict], mid: str, y_canh: dict | None = None) -> dict:
     ma_lo = {d["ma"] for d in lo}
     try:
         tho = (ai.doc_json(str(noi), ai.CHUYEN_LOI_THOAI) or {}).get("doan")
-    except Exception:                           # noqa: BLE001
+    except Exception as e:                      # noqa: BLE001
+        print(f"[canh bao] VUT ca mot lo ({len(lo)} doan) - doc_json nem "
+              f"{type(e).__name__}")
         return {}
     if not isinstance(tho, dict):
         return {}
@@ -184,7 +185,8 @@ def chay(*, model: str, so_dong: int, lan: int, moi_lo: int,
             "cac_luot": [l.get(ma, "") for l in cac_luot],
             "cac_luot_CO_y_canh": [l.get(ma, "") for l in cac_luot_b],
         })
-    thieu = sum(1 for m in muc for x in m["cac_luot"] if not x)
+    thieu = sum(1 for m in muc
+                for x in cast("list[str]", m["cac_luot"]) if not x)
     return {
         "⭐ nhan_cau_hinh": {
             "model": model, "model_id": mid,

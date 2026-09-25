@@ -27,6 +27,10 @@ from sqlalchemy import select
 from platform_core import jobs as jobq
 from platform_core import job_events
 from platform_core.db import get_session
+# Nhập ở đầu tệp (⛔ không lười) vì `LEASE_RECLAIM_INTERVAL_S` dưới đây ĐỌC
+# `HEARTBEAT_SECONDS` của nó thay vì gõ lại 60. `admission` chỉ phụ thuộc
+# `db`/`models`, nên ⛔ không có vòng nhập.
+from platform_core.llm import admission as _admission
 from platform_core.i18n import N_
 from platform_core.i18n import _ as _t
 from platform_core.models import (JOB_CANCELLED, JOB_ERROR, JOB_RUNNING,
@@ -36,7 +40,19 @@ log = logging.getLogger(__name__)
 
 # Hàng đợi trống thì ngủ bao lâu trước khi hỏi lại. Đủ ngắn để job mới chạy
 # gần như tức thì, đủ dài để không quay CPU khi rảnh.
+#
+# ⭐ Từ 25/09/2026 đây là **lưới an toàn**, không còn là độ trễ thường trực: một
+#    job mới được xếp sẽ gọi worker dậy ngay qua `jobs.KENH_JOB_MOI`
+#    (`_vong_nghe_job_moi`). ⛔ Đừng hạ con số này để "cho nhanh" — trên đội
+#    hình thật của máy A là 8 tiến trình worker, hạ 2,0 → 0,5 nhân **bốn** số
+#    lượt `reclaim_orphans` + `claim` chạy 24/7 lên cùng một PostgreSQL, để đổi
+#    lấy đúng thứ mà đường đánh thức đã cho không.
 POLL_INTERVAL_S = 2.0
+
+#: Vòng `LISTEN` chờ bao lâu mỗi lượt trước khi hỏi lại `stop()`. ⛔ KHÔNG phải
+#: độ trễ đánh thức (tin nhắn tới thì `notifies` trả về ngay) — chỉ là độ mịn
+#: của việc dừng êm khi dịch vụ tắt.
+NGHE_TIMEOUT_S = 5.0
 
 # Nhịp báo "lease GPU còn sống". Phải NGẮN hơn nhiều so với
 # `gpu_lease.ORPHAN_TIMEOUT` (10 phút), nếu không một job nặng sẽ bị coi là chết
@@ -47,6 +63,38 @@ GPU_HEARTBEAT_S = 60.0
 # vòng đốt CPU, đủ ngắn để người dùng không thấy job đứng im.
 GPU_RETRY_DELAY_S = 20
 EVENT_PURGE_INTERVAL_S = 6 * 60 * 60
+
+#: Bao lâu quét `ExecutionLease` mồ côi một lần. **Bằng** `HEARTBEAT_SECONDS`
+#: (60 s) — ⛔ không phải trùng ngẫu nhiên, nên hằng ấy được **đọc thẳng** chứ
+#: không gõ lại: một watchdog chạy theo nhịp của **chính thứ nó canh**, và một
+#: nhịp thiếu là bằng chứng duy nhất nó đi tìm.
+#:
+#: 🔴 VÌ SAO NÓ PHẢI CÓ TICKER RIÊNG (25/09/2026) — lỗi PHÂN LOẠI, ⛔ không phải
+#:    lỗi chỉnh số. Trước đó `admission.reclaim_expired` nằm trong
+#:    `_don_du_lieu_het_han()`, tức chạy theo `EVENT_PURGE_INTERVAL_S` = **6 giờ**:
+#:
+#:        6 h / ORPHAN_TIMEOUT_JOB (300 s)   =  72x
+#:        6 h / ORPHAN_TIMEOUT_SYNC (120 s)  = 180x
+#:
+#:    Ca quan sát 25/09: lưới đỡ ⛔ không kích hoạt trong 17 phút — mà 17 phút chỉ
+#:    là **4,7 %** chu kỳ, nên đó là ca **thường**, ⛔ không phải xui. Chờ xấu nhất
+#:    ≈ 5 h 55′, trung bình ≈ 3 h; và 8 worker cùng bị một deploy restart thì pha
+#:    trùng nhau, ⛔ không có lợi ích lệch pha.
+#:
+#: ⛔ ĐỪNG "sửa" bằng cách hạ `EVENT_PURGE_INTERVAL_S`: `6 giờ` ⛔ không sai cho
+#:    việc dọn log request / thông báo / mẫu metrics — nó sai vì một **watchdog
+#:    tính sống-chết** ⛔ không thuộc nhóm **lưu trữ dữ liệu**. Hạ nhóm ấy xuống
+#:    60 s là bắt việc dọn log chạy **360 lần** nhiều hơn cần.
+#:
+#: ⚠️ VAI CỦA NÓ: **lưới đỡ**, ⛔ không phải cơ chế chính. Người dọn chính là
+#:    đường nóng — `admission.acquire`/`_giu_slot_trong` gọi `reclaim_expired`
+#:    trước khi giành slot, và từ 25/09 đường nóng **tới được** (bộ lọc suất của
+#:    `jobs.claim` đọc cùng `admission.han_mo_coi`, nên lease chết ⛔ không còn
+#:    giấu được job của chính tài nguyên nó). Cái này chỉ bắt phần đường nóng
+#:    ⛔ không tới: tài nguyên ⛔ không có job nào xếp hàng sau nó. ⛔ Đừng nới nó
+#:    lên vì "đường nóng đã dọn rồi" — cũng ⛔ đừng tưởng nó là cơ chế chính rồi
+#:    hạ xuống nữa.
+LEASE_RECLAIM_INTERVAL_S = _admission.HEARTBEAT_SECONDS
 UPLOAD_SWEEP_INTERVAL_S = 60 * 60
 # Webhooks are delivered by the worker, never by the request that
 # finished the job: a customer's endpoint being slow or down must not
@@ -1422,7 +1470,7 @@ def _don_du_lieu_het_han() -> None:
                                           notifications, outbox, request_log,
                                           security_log)
     from platform_core import oauth_google
-    from platform_core.llm import admission, phong_cho
+    from platform_core.llm import phong_cho
     from platform_core.workflow import su_kien as workflow_su_kien
 
     rules = (
@@ -1433,7 +1481,11 @@ def _don_du_lieu_het_han() -> None:
         ("ban ghi webhook da gui", outbox.purge_expired),
         ("ban ghi idempotency", idempotency.purge_expired),
         ("mau metrics", metrics.purge_expired),
-        ("execution lease mo coi", admission.reclaim_expired),
+        # ⛔ `admission.reclaim_expired` KHÔNG còn ở đây — nó là một watchdog tính
+        #    sống-chết, ⛔ không phải một luật LƯU TRỮ, nên nó có ticker riêng
+        #    (`LEASE_RECLAIM_INTERVAL_S`, `_quet_lease_mo_coi`). Xếp nó vào danh
+        #    sách này là đã bắt nó chạy theo nhịp 6 giờ của việc dọn log — 72×
+        #    hạn mà nó phải đỡ. Xem chú thích của hằng ấy.
         # Phòng chờ + sổ lượt LLM (multijob): chốt dòng chờ mồ côi, xoá sau 30 ngày.
         ("phong cho LLM", phong_cho.don_het_han),
         # Nội dung của job: file sinh ra + prompt + payload kết quả. Hàng `jobs`
@@ -1456,6 +1508,28 @@ def _don_du_lieu_het_han() -> None:
                     log.info("don %d dong %s", gone, label)
         except Exception:  # noqa: BLE001 - housekeeping must not kill the worker
             log.exception("khong don duoc %s", label)
+
+
+def _quet_lease_mo_coi() -> int:
+    """LƯỚI ĐỠ cho `ExecutionLease` của tiến trình đã chết. Trả số lease thu hồi.
+
+    ⚠️ Người dọn CHÍNH là đường nóng (`admission.acquire`/`_giu_slot_trong` gọi
+       `reclaim_expired` trước khi giành slot). Hàm này chỉ bắt phần đường nóng
+       ⛔ không tới — tài nguyên mà lúc ấy ⛔ không có ai xin suất.
+
+    ⛔ Lỗi ở đây ⛔ không được giết worker: đây là bảo trì, và một worker chết vì
+       lượt dọn thất bại thì ⛔ không dọn được lần sau nữa.
+    """
+    thu = 0
+    try:
+        for db in _one_session():
+            thu = _admission.reclaim_expired(db)
+            db.commit()
+        if thu:
+            log.info("luoi do: thu hoi %d execution lease mo coi", thu)
+    except Exception:  # noqa: BLE001 - bao tri khong duoc giet worker
+        log.exception("khong quet duoc execution lease mo coi")
+    return thu
 
 
 def _ghi_chi_phi(db, job) -> None:
@@ -1536,6 +1610,36 @@ def _ghi_metrics() -> None:
 #: TTL của lease, để chủ chết thì có người nhận trong một chu kỳ chứ không phải
 #: chờ hết hạn rồi mới bắt đầu hỏi.
 LEASE_RETRY_S = 20.0
+
+#: Biên dao động quanh `LEASE_RETRY_S`, theo TỈ LỆ (0,25 = ±25 %).
+#:
+#: 🔴 **N-46 — vì sao một hằng số trần là một cơn bão.** 8 tiến trình worker của
+#:    máy A (`api:6, gpu+ffmpeg:1, voice:1`) khởi động **cùng một lúc** từ một
+#:    dịch vụ Windows. Cả 8 gọi `leases.acquire(MAINTENANCE)`; đúng một tiến
+#:    trình thắng, 7 tiến trình thua, rồi cả 7 ngủ **đúng 20,000 s** và thức
+#:    **cùng một giây**. Mỗi lượt thua không hề miễn phí: `reclaim_expired` +
+#:    một `INSERT` vào `singleton_leases` va `UNIQUE(name)` ⇒ `IntegrityError`
+#:    ⇒ `rollback`. Nên PostgreSQL nhận **7 `INSERT` hỏng trong cùng một giây,
+#:    cứ 20 giây một lần, suốt đời tiến trình** — và vì hằng số không có nhiễu,
+#:    các đồng hồ **không bao giờ tự lệch ra**: chúng đồng pha vĩnh viễn.
+#:
+#: ⭐ Thuốc là nhiễu, không phải một con số lớn hơn: nới `LEASE_RETRY_S` chỉ làm
+#:    cơn bão thưa hơn mà vẫn đồng pha, và làm việc nhận lease sau khi chủ chết
+#:    chậm đi. ±25 % rải 7 lượt kia trên một cửa sổ 10 giây ngay từ vòng đầu.
+LEASE_RETRY_JITTER = 0.25
+
+
+def _cho_lease_bao_tri() -> float:
+    """Số giây chờ trước lượt giành lease bảo trì kế tiếp — CÓ nhiễu (N-46).
+
+    Hàm riêng vì đây là chỗ duy nhất trong tệp có nhiều tiến trình *đồng pha từ
+    lúc khởi động*, và một phép kiểm phải nói được "hai lượt gọi không bằng
+    nhau" mà không cần dựng 8 tiến trình.
+    """
+    import random
+
+    bien = LEASE_RETRY_S * LEASE_RETRY_JITTER
+    return max(0.1, LEASE_RETRY_S + random.uniform(-bien, bien))
 
 
 def _bao_tri_cac_app(moc: dict) -> None:
@@ -1676,6 +1780,13 @@ def _mot_luot_bao_tri(moc: dict) -> None:
         _don_du_lieu_het_han()
         moc["event_purge"] = time.monotonic() + EVENT_PURGE_INTERVAL_S
 
+    # ⭐ Ticker RIÊNG, ⛔ không nằm trong `_don_du_lieu_het_han` ở trên: đây là một
+    #    watchdog (nhịp của thứ nó canh), ⛔ không phải một luật lưu trữ (nhịp của
+    #    việc dọn log). Xem `LEASE_RECLAIM_INTERVAL_S`.
+    if time.monotonic() >= moc["lease_reclaim"]:
+        _quet_lease_mo_coi()
+        moc["lease_reclaim"] = time.monotonic() + LEASE_RECLAIM_INTERVAL_S
+
     if time.monotonic() >= moc["upload_sweep"]:
         from platform_core import upload_sessions
         from platform_core.storage import get_storage
@@ -1761,8 +1872,8 @@ def _vong_bao_tri(stop) -> None:
     """
     from platform_core import leases
 
-    moc = {"event_purge": 0.0, "upload_sweep": 0.0, "webhook": 0.0,
-           "metrics": 0.0, "alert": 0.0}
+    moc = {"event_purge": 0.0, "lease_reclaim": 0.0, "upload_sweep": 0.0,
+           "webhook": 0.0, "metrics": 0.0, "alert": 0.0}
     lease = None
     while stop is None or not stop():
         try:
@@ -1770,7 +1881,7 @@ def _vong_bao_tri(stop) -> None:
                 for db in _one_session():
                     lease = leases.acquire(db, name=leases.MAINTENANCE)
                 if lease is None:
-                    time.sleep(LEASE_RETRY_S)
+                    time.sleep(_cho_lease_bao_tri())
                     continue
                 log.info("tien trinh nay chay vong bao tri")
 
@@ -1792,6 +1903,113 @@ def _vong_bao_tri(stop) -> None:
             log.exception("khong nha duoc lease bao tri")
 
 
+def _cho_viec(bao_thuc: threading.Event, giay: float) -> None:
+    """Ngủ tối đa `giay`, nhưng thức NGAY khi có job mới được xếp vào.
+
+    Thay cho `time.sleep(POLL_INTERVAL_S)` ở lượt rảnh. Hai tính chất cần giữ:
+
+    * **Không mất lượt.** Cờ được `set()` từ luồng nghe và chỉ `clear()` **sau**
+      khi đã thức. Một tin nhắn tới trong lúc ta đang `claim` vẫn còn nguyên khi
+      ta quay lại đây, nên lượt đó không chờ thêm một nhịp nào.
+    * **Xấu nhất bằng hành vi cũ.** Không tin nhắn nào tới thì hàm này chính là
+      `time.sleep(giay)`.
+    """
+    if bao_thuc.wait(giay):
+        bao_thuc.clear()
+
+
+def _vong_nghe_job_moi(bao_thuc: threading.Event, stop, url: str) -> None:
+    """`LISTEN` kênh `jobs.KENH_JOB_MOI`; mỗi tin nhắn gọi vòng worker dậy.
+
+    🔴 **Đây là ĐÁNH THỨC, không phải hàng đợi.** Luồng này không đọc nội dung
+       tin nhắn, không chọn job, không ghi gì. Nó chỉ `set()` một cờ. Mọi phán
+       quyết "job nào chạy ở đâu" vẫn nằm nguyên ở `jobs.claim` với
+       `FOR UPDATE SKIP LOCKED`. Mất kết nối, mất tin nhắn, hay không có luồng
+       này (SQLite) đều chỉ đưa worker về nhịp `POLL_INTERVAL_S` — tức đúng hành
+       vi trước 25/09/2026, không có job nào bị bỏ.
+
+    ⭐ **Kết nối RIÊNG, không lấy từ pool của `db.get_engine()`.** Một kết nối
+       `LISTEN` bị giữ **suốt đời tiến trình**; lấy nó ra khỏi pool dùng chung là
+       vĩnh viễn bớt một kết nối của việc thật. `NullPool` + `AUTOCOMMIT` vì
+       `LISTEN` phải nằm ngoài transaction mới nhận được tin nhắn.
+
+    Mất kết nối thì mở lại: PostgreSQL khởi động lại, hay tường lửa cắt một kết
+    nối nằm không, không được làm worker mất đường đánh thức vĩnh viễn.
+    """
+    import sqlalchemy as sa
+    from sqlalchemy.pool import NullPool
+
+    from platform_core.db import _connect_args
+
+    while stop is None or not stop():
+        eng = None
+        try:
+            eng = sa.create_engine(url, future=True, poolclass=NullPool,
+                                   isolation_level="AUTOCOMMIT",
+                                   connect_args=_connect_args(url))
+            with eng.connect() as conn:
+                conn.exec_driver_sql(f"LISTEN {jobq.KENH_JOB_MOI}")
+                raw = conn.connection.driver_connection
+                if raw is None:                    # pragma: no cover
+                    raise RuntimeError(
+                        "khong lay duoc ket noi driver de LISTEN")
+                # Một job có thể đã được xếp GIỮA lượt `claim` vừa rồi và câu
+                # `LISTEN` này — khe cửa đó chỉ có ở lần mở đầu và sau mỗi lần
+                # nối lại. Đánh thức một lượt để nó không bị bỏ qua.
+                bao_thuc.set()
+                log.info("nghe %s de danh thuc worker", jobq.KENH_JOB_MOI)
+                while stop is None or not stop():
+                    for _tin in raw.notifies(timeout=NGHE_TIMEOUT_S,
+                                             stop_after=1):
+                        bao_thuc.set()
+        except Exception:                          # noqa: BLE001
+            # ⛔ Không `exception()`: một PostgreSQL đang khởi động lại sẽ ghi
+            #    một stack trace mỗi 5 giây vào log của 8 tiến trình.
+            log.warning("mat duong danh thuc (%s) — quay ve nhip poll, se noi lai",
+                        jobq.KENH_JOB_MOI)
+            time.sleep(NGHE_TIMEOUT_S)
+        finally:
+            if eng is not None:
+                try:
+                    eng.dispose()
+                except Exception:                  # noqa: BLE001
+                    # ⛔ Không nuốt lặng: một `dispose` hỏng nghĩa là kết nối
+                    #    `LISTEN` có thể còn treo ở PostgreSQL, và 8 tiến trình
+                    #    rò mỗi lần nối lại thì tới lượt `max_connections`.
+                    log.warning("khong dong duoc engine nghe job moi",
+                                exc_info=True)
+
+
+def _bat_dau_nghe(bao_thuc: threading.Event, stop,
+                  worker_id: str) -> Optional[threading.Thread]:
+    """Mở luồng nghe nếu CSDL là PostgreSQL. `None` nghĩa là chỉ còn nhịp poll.
+
+    ⛔ Không ném: một worker phải chạy được trên SQLite (bộ test) và trên một
+       máy chưa cấu hình CSDL xong, và trong cả hai trường hợp hành vi đúng là
+       *y như trước khi có đường đánh thức*.
+    """
+    try:
+        from platform_core.db import database_url
+        url = database_url()
+    except Exception as exc:                       # noqa: BLE001
+        # CSDL chưa cấu hình là trạng thái MONG ĐỢI ở máy phát triển, nên đây là
+        # `debug` chứ không `warning` — nhưng ⛔ không im: `run_forever` sẽ chạy
+        # tiếp bằng nhịp poll, và người đọc log phải biết vì sao.
+        log.debug("khong mo duoc duong danh thuc: %s", type(exc).__name__)
+        return None
+    if not url.startswith(("postgresql", "postgres")):
+        return None
+    try:
+        luong = threading.Thread(
+            target=_vong_nghe_job_moi, args=(bao_thuc, stop, url),
+            name=f"nghe-job-{worker_id}", daemon=True)
+        luong.start()
+        return luong
+    except Exception:                              # noqa: BLE001
+        log.warning("khong mo duoc luong nghe job moi — chi con nhip poll")
+        return None
+
+
 def run_forever(worker_id: str, *, stop=None, maintenance: bool = True,
                 capabilities=None) -> None:
     """Vòng lặp chính của worker. `stop` là callable trả True để dừng êm.
@@ -1809,11 +2027,34 @@ def run_forever(worker_id: str, *, stop=None, maintenance: bool = True,
     log.info("worker %s bat dau%s", worker_id,
              f" (nang luc: {sorted(capabilities)})" if capabilities else "")
 
+    # 🔴 MOI `PATH` MOT LAN, ngay day, TRUOC moi job (N-59).
+    #
+    #    `ffmpeg` tren may nay cai theo NGUOI DUNG (WinGet) nen chi nam tren
+    #    USER Path. Worker chay duoi `LocalSystem` => nhan MACHINE Path => moi
+    #    tien trinh con goi `ffmpeg` TRAN deu nem `WinError 2`, va hong IM LANG
+    #    o moi noi nguoi goi bat `Exception`.
+    #
+    #    ⭐ MOT lan o day du cho ca 63 cho (24 tep, `video_assembly` chiem 31):
+    #    tien trinh con THUA KE `PATH`. ⛔ Dung di sua 63 cho — do la 63 lan lam
+    #    viec ma mot lan da xong, va van bo sot cho thu 64.
+    #    Banh coc `tools/check_ffmpeg_tran.py` chan cho thu 64.
+    from platform_core import media as _media
+    _media.bao_dam_ffmpeg_tren_path()
+
     luong = None
     if maintenance:
         luong = threading.Thread(target=_vong_bao_tri, args=(stop,),
                                  name=f"bao-tri-{worker_id}", daemon=True)
         luong.start()
+
+    # ⭐ Cờ đánh thức là của RIÊNG lượt `run_forever` này, không phải biến module.
+    #    Trên production mỗi làn là một tiến trình riêng nên hai cách giống nhau,
+    #    nhưng bộ test (và `job_worker` đường một tiến trình) gọi `run_forever`
+    #    trong LUỒNG: một cờ dùng chung thì `clear()` của luồng này ăn mất lượt
+    #    thức của luồng kia, và hậu quả là "đôi khi chậm 2 giây" — thứ không ai
+    #    truy ra được.
+    bao_thuc = threading.Event()
+    nghe = _bat_dau_nghe(bao_thuc, stop, worker_id)
 
     next_metrics_flush = time.monotonic() + METRICS_FLUSH_INTERVAL_S
     while stop is None or not stop():
@@ -1828,12 +2069,16 @@ def run_forever(worker_id: str, *, stop=None, maintenance: bool = True,
                     log.warning("nhat lai %d job mo coi", n)
             co_viec = _chay_mot_job(worker_id, capabilities=capabilities)
             if not co_viec:
-                time.sleep(POLL_INTERVAL_S)
+                _cho_viec(bao_thuc, POLL_INTERVAL_S)
         except Exception:
             # Một lượt hỏng không được giết cả worker — ngủ rồi thử lại.
+            # ⛔ Ở đây ngủ THẬT, không `_cho_viec`: một job mới không sửa được
+            #    cái vừa ném ra, và thức sớm chỉ để ném lại là một vòng nóng.
             log.exception("loi trong vong worker, tiep tuc")
             time.sleep(POLL_INTERVAL_S)
 
+    if nghe is not None:
+        nghe.join(timeout=NGHE_TIMEOUT_S + 1.0)
     if luong is not None:
         luong.join(timeout=30)
     try:
