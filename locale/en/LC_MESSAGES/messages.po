@@ -21404,3 +21404,24 @@ msgstr "This run has no subtitle file."
 
 msgid "Đã tắt nhạc nền — không còn gì để chỉnh mức."
 msgstr "Background music is off - there is no level left to adjust."
+
+msgid "Lật gương"
+msgstr "Mirror"
+
+msgid "Lật khung hình theo chiều ngang, như soi gương."
+msgstr "Flip the frame horizontally, like a mirror."
+
+msgid "Dịch màu (+%(p)s%% bão hoà)"
+msgstr "Colour shift (+%(p)s%% saturation)"
+
+msgid "Màu đậm hơn một chút. Không đổi độ sáng, nên vùng tối và vùng sáng giữ nguyên chi tiết."
+msgstr "Slightly richer colour. Brightness is untouched, so shadows and highlights keep their detail."
+
+msgid "lật gương"
+msgstr "mirror"
+
+msgid "dịch màu"
+msgstr "colour shift"
+
+msgid "Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên không thể cắt khung, phóng to, đổi tỉ lệ, lật gương, dịch màu hay đổi tốc độ. Chọn “Rút gọn có biên tập” nếu bạn muốn biên tập khung hình."
+msgstr "“Keep the picture” copies every pixel untouched, so it cannot crop, zoom, change aspect ratio, mirror, shift colour or change speed. Choose “Trim and edit” if you want to edit the frame."

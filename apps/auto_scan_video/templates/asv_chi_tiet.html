@@ -102,6 +102,12 @@
         {% if bt.khung %}· {{ bt.khung.ti_le }}{% endif %}
         {% if bt.zoom %}· {{ _("phóng to %(z)s×") % {"z": bt.zoom.he_so} }}{% endif %}
         {% if bt.cat_khung %}· {{ _("cắt mép") }}{% endif %}
+        {#- ⭐ Hai co asv-gui phai CO MAT o day. Mot dieu khien khach bat, tra
+            tien, roi khong doc lai duoc trong "Cai dat da dung" la mot dieu
+            khien khach khong the doi soat — dung cau hoi `L_GUI.md` §1 dat ra
+            ("cai khach bam co nam trong ho so khong"), chi o chieu doc. -#}
+        {% if bt.lat_guong %}· {{ _("lật gương") }}{% endif %}
+        {% if bt.dich_mau %}· {{ _("dịch màu") }}{% endif %}
       </li>
       {% endif %}
       {#- ⭐ Hai dong cho NGUOI VAN HANH, khong phai cho khach doc thuong: hai
