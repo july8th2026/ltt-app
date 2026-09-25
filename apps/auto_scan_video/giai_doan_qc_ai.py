@@ -246,11 +246,30 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             db.commit()
             lc.xong_mot()
             continue
+        except qc_ai.QcAiError:
+            # 🔴 N-51 — FAIL-CLOSED, va day la quyet dinh SAN PHAM chu khong
+            #    phai ma: mot phan quyet KHONG DOC DUOC (model CO tra loi,
+            #    nhung hong dang — vd thieu/sai truong `loi`) ⛔ KHONG duoc
+            #    di chung duong voi nhanh `Exception` ben duoi ("lo hong binh
+            #    thuong, bo qua lang le, coi nhu sach"). Do la khiem khuyet
+            #    cua TA, ⛔ khong phai loi du lieu khach — nen no phai NEM
+            #    tiep ra ngoai, lam HONG giai doan nay, di CUNG DUONG voi
+            #    nhanh `hong` cua `jobs.py` ("QC hong"), ⛔ khong phai cung
+            #    duong voi "QC dat". Giai doan hong -> job runner tu retry ->
+            #    het luot thi STAGE_FAILED_TERMINAL -> `run.error` ghi ro
+            #    (tien to trong thong diep `QcAiError`) -> `features.quyet_toan`
+            #    (co san, KHONG doc lai o day) tu lo khong tinh tien mot ban
+            #    giao khong co phan quyet dang tin.
+            log.error("qc ngu nghia lo %s: phan quyet KHONG DOC DUOC (N-51) "
+                      "— lam hong giai doan, khong coi la dat", ma_lo)
+            raise
         except Exception as exc:            # noqa: BLE001
             # ⚠️ Mot lo hong khong duoc lam hong ca lan chay — cung nguyen tac
             #    voi `_doc_cac_canh`. Khong co phan quyet nghia la KHONG co
             #    khiem khuyet, tuc khong sinh viec sua: im lang khong duoc doc
             #    thanh "co loi".
+            #    ⚠️ `qc_ai.QcAiError` KHONG roi vao day — xem nhanh rieng o
+            #    tren (N-51): no phai lam hong giai doan, khong duoc bo qua.
             log.warning("qc ngu nghia lo %s hong (%s) — bo lo nay",
                         ma_lo, type(exc).__name__)
             db.commit()

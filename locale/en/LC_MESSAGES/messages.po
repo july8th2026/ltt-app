@@ -7848,6 +7848,9 @@ msgstr "The model did not return readable JSON."
 msgid "Model không trả về bảng phán đoán."
 msgstr "The model did not return a verdict table."
 
+msgid "Model trả về phán đoán thiếu hoặc sai dạng trường \"loi\" (nhận %(kieu)s) — không chấm được, không được coi là đạt."
+msgstr "The model's verdict is missing or has a wrongly-shaped \"loi\" field (got %(kieu)s) — it cannot be graded, and must not be treated as passing."
+
 msgid "Model không trả về bảng đoạn."
 msgstr "The model did not return a segment table."
 
