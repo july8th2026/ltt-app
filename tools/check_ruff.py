@@ -65,10 +65,73 @@ _GOC_THU = os.environ.get("LTT_RUFF_GOC")
 GOC_QUET = pathlib.Path(_GOC_THU) if _GOC_THU else GOC
 
 
+#: Sau bao nhieu bac thi thoi tim cay long nhau. Moi ca da gap deu o bac 1-2
+#: (`LTTGateBaseline68cde0/`, `LTTSTUDIOSAPP-n57/`, `.codex/worktrees/<task>/`).
+SAU_TIM_CAY = 3
+
+
+def cay_long_nhau(goc: pathlib.Path) -> list[str]:
+    """Cac thu muc BEN TRONG `goc` ma tu chung la mot cay lam viec cua git.
+
+    ## Vi sao ham nay ton tai — mot lop loi da quay lai BON lan
+
+    `ruff.toml:46-50` da ghi no tu ~06/09, kem dung chu ky: *"`ruff check .` tu
+    goc se lun vao no va dem LAI moi .py -> moi so dem TANG DUNG GAP 2
+    (F401 411->821)"*. Thuoc hoi do la loai tru MOT CAI TEN: `.codex`.
+
+    Roi 25/09 no quay lai hai lan trong MOT ngay, voi hai cai ten khac
+    (`LTTGateBaseline68cde0/` cua mot phien dung moc gate, `LTTSTUDIOSAPP-n57/`
+    cua mot lan khac). Ca hai lan deu **chan commit cua MOI phien**, va ca hai
+    lan deu mat thoi gian cua mot nguoi di tim *"minh them 405 loi F401 o dau"*.
+
+    ⇒ Tai vi luat cu ta **vi du** chu khong ta **tinh chat**. Tinh chat la:
+      *thu muc do tu no la mot cay lam viec cua git* — ben trong co `.git`.
+      Tep cua no `git ls-files` o day khong thay, `git status` o day khong bao;
+      nen mot phep dem noi ve "kho nay" ma dem no la dang dem HAI kho.
+      Dung cho worktree, cho ban `robocopy`, cho mot `clone` de so sanh.
+
+    ⛔ Khong bao gio loai chinh `goc` (no cung co `.git`): loai no thi banh coc
+       khong dem gi ca va XANH VINH VIEN — dung kieu hong ma docstring dau tep
+       da canh bao.
+    """
+    ra: list[str] = []
+    goc = pathlib.Path(goc).resolve()
+
+    def di(thu_muc: pathlib.Path, bac: int) -> None:
+        if bac > SAU_TIM_CAY:
+            return
+        try:
+            muc = list(thu_muc.iterdir())
+        except OSError:
+            return
+        for con in muc:
+            if not con.is_dir() or con.is_symlink():
+                continue
+            if con.name == ".git":
+                continue
+            if (con / ".git").exists():
+                ra.append(con.relative_to(goc).as_posix())
+                continue          # ⛔ dung di sau vao mot cay khac
+            di(con, bac + 1)
+
+    di(goc, 1)
+    return sorted(ra)
+
+
 def quet() -> dict[str, int]:
     """{ma_luat: so_luong} theo cau hinh trong `ruff.toml`."""
+    lenh = [sys.executable, "-m", "ruff", "check", "--output-format", "json"]
+    for cay in cay_long_nhau(GOC_QUET):
+        # ⛔ `--extend-exclude`, KHONG PHAI `--exclude`. Do 25/09/2026: `--exclude`
+        #    tren dong lenh **GHI DE** `exclude` trong `ruff.toml` chu khong cong
+        #    them — nen mot lan truyen no la xoa sach `core/` (15.668 dong dong
+        #    bang), `alembic/versions`, `node_modules`, `.codex`... va banh coc do
+        #    voi +90 `F401`, +5 `F821`. Dung cai bay no dang di chua: mot phep do
+        #    to ra "phat hien loi moi" trong khi no chi vua **mo rong pham vi**.
+        lenh += ["--extend-exclude", cay]
+    lenh.append(".")
     r = subprocess.run(
-        [sys.executable, "-m", "ruff", "check", "--output-format", "json", "."],
+        lenh,
         cwd=GOC_QUET, capture_output=True, text=True, encoding="utf-8", errors="replace")
     # ruff tra 1 khi CO phat hien — do la binh thuong, khong phai loi chay.
     if r.returncode not in (0, 1):
