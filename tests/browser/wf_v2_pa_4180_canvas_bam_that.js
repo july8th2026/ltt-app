@@ -14,13 +14,11 @@
 // `tests/browser/wf_v2_pa_4180_run.ps1`). Script nay gia dinh trang da co
 // phien dang nhap (cookie) va bat dau tu `page.goto(base + '/agent/canvas')`.
 //
-// ⚠️ Buoc "Soan bang AI" o cuoi CO Y khong kiem console/render sau khi bam:
-// mot lo hong da biet (Agent Designer ghi node core.* thieu `data.tool`,
-// lam Canvas trang trong — xem task da tach rieng, KHONG thuoc pham vi lan
-// nay vi no o `platform_core/workflow/agent_v3.py`) se lam buoc do do that,
-// nhung day KHONG phai thu script nay dung do. Buoc do chi doi hoi cuoc goi
-// mang toi /soan tra ve OK, roi luon RESET workflow ngay sau do de lan chay
-// SAU van la mot cay sach (idempotent).
+// ⭐ 25/09 (lan wfk): lo hong "Agent Designer ghi node core.* thieu
+// `data.tool`, lam Canvas trang trong" DA VA (`platform_core/agent/
+// ke_hoach_v3.py::chuan_hoa`/`_data_canvas`, `tests/test_4250_wf_v3_soan_
+// data_tool_shape.py`) — buoc "Soan bang AI" o cuoi nay KHONG con loc rieng
+// thong diep loi do nua, xem canh bao cuoi tep truoc day (da go).
 async page => {
   const base = 'http://127.0.0.1:8199';
   const pageErrors = [], consoleErrors = [], failedRequests = [], serverErrors = [];
@@ -168,14 +166,11 @@ async page => {
   check([200, 422].includes(soanRes.status()), `POST .../soan: HTTP bat thuong ${soanRes.status()}`);
   await resetWorkflow(); // don sach cho lan chay ke tiep, bat ke /soan sinh ra gi
 
-  // Loc dung MOT loi da biet, da tach rieng (xem canh bao dau tep): Agent
-  // Designer ghi node core.* thieu `data.tool` lam render node-list crash
-  // ngay sau /soan. KHONG loc chung chung theo "reading 'tool'" — chi loc
-  // dung thong diep nay, de moi TypeError khac (regression that) van do.
-  const loiDaBietSauSoan = "Cannot read properties of undefined (reading 'tool')";
-  const pageErrorsThat = pageErrors.filter(m => !m.includes(loiDaBietSauSoan));
-
-  check(pageErrorsThat.length === 0, 'loi JavaScript ngoai y muon: ' + pageErrorsThat.join('; '));
+  // ⭐ 25/09 (lan wfk): KHONG con loc rieng "Cannot read properties of
+  // undefined (reading 'tool')" — lo hong `data.tool` thieu sau /soan da va
+  // (xem canh bao dau tep). Moi loi JavaScript sau buoc "Soan bang AI" gio
+  // la mot regression THAT.
+  check(pageErrors.length === 0, 'loi JavaScript ngoai y muon: ' + pageErrors.join('; '));
   // `/su-kien` (theo doi run qua SSE, workflowApi.ts::theoDoiRunV3) la mot
   // ket noi song lau; ERR_ABORTED khi test chu dong doi trang (reload de
   // reset, hoac chuyen sang run khac) la HE QUA MONG DOI cua dieu huong,
