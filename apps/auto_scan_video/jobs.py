@@ -103,6 +103,27 @@ def _advance(db, *, run_id: str, owner_id: str, ctx=None) -> dict:
             features._nop_dieu_phoi(db, run, ly_do=f"sua:{hau_to}")
             return {"run_id": run.id, "status": run.status,
                     "sua_chua": sorted(set(dat_lai))}
+
+        # 🔑 N-57 (25/09): "chay het" van chua la "dat". Ca that `asv-g17` --
+        #    ca 12 giai doan SUCCEEDED, QC bao dat, ma `render.outputs.khoa_asset`
+        #    RONG -- khong mot tep nao duoc giao, ma may nay tung tra ve `done`.
+        #    Dung lai `features.co_hien_vat_giao_duoc` (uy quyen cho
+        #    `khoa_ket_qua` -- cung phep tinh ma `routes.tai_ket_qua` dung) thay
+        #    vi tu doc `khoa_asset` o day: hai cau tra loi phai la MOT phep tinh.
+        if not features.co_hien_vat_giao_duoc(db, run):
+            # ⚠️ Phan biet voi nhanh `hong` o tren: nhanh do la MOT giai doan bao
+            #    FAILED_TERMINAL. Nhanh nay la ca chuoi bao SUCCEEDED nhung
+            #    khong con hien vat de giao -- khiem khuyet cua TA, khong phai
+            #    loi du lieu khach. Tien to `giao_hang_rong` de nguoi doc so
+            #    (va tools/thanh_phan.py) phan biet duoc hai loai `error` nay,
+            #    khong gop chung mot gia tri (ho loi da ghi so 24/09).
+            run.error = (
+                f"giao_hang_rong: {len(da_xong)}/{len(pipeline.CHUOI)} giai doan "
+                "SUCCEEDED, QC da gac, nhung render.outputs.khoa_asset khong co "
+                ".mp4 -- khong hien vat de giao cho khach (N-57)")[:2000]
+            features.quyet_toan(db, run, trang_thai_cuoi=RUN_ERROR)
+            return {"run_id": run.id, "status": run.status}
+
         features.quyet_toan(db, run, trang_thai_cuoi=RUN_DONE)
         return {"run_id": run.id, "status": run.status}
 
