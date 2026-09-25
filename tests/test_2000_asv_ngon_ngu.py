@@ -205,8 +205,10 @@ def test_loi_nhac_vi_GIU_cum_da_nghiem_thu():
     assert "Van phai la tieng Viet noi tu nhien" in nan
     assert nn.CUM["vi"]["nhip_moi_giay"] in nan
     qc = qc_ai.loi_nhac_ngu_nghia([{"ma": "a", "goc": "x", "chu": "y"}])[0]["content"]
-    assert qc.startswith("Ban la nguoi soat ban long tieng tieng Viet. Voi moi cap "
-                         "(cau goc, cau tieng Viet), hay noi ban tieng Viet co")
+    # ⭐ GEMBA-MQM (91d921f4): loi nhac hoi LIET KE LOI + MUC NGHIEM TRONG,
+    #    khong con hoi cau NHI PHAN dat/khong dat.
+    assert qc.startswith("Ban soat ban long tieng tieng Viet. Voi moi cap "
+                         "(cau goc, cau tieng Viet), hay LIET KE cac loi dich")
 
 
 def test_loi_nhac_en_KHONG_con_mot_chu_tieng_Viet_nao_ve_dich():

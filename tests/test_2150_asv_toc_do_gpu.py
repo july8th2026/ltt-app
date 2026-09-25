@@ -163,6 +163,11 @@ def test_ban_ghi_tra_ve_KHAI_thiet_bi_da_chay(monkeypatch):
                             "asr_device": "cpu", "asr_compute": "int8",
                             "asr_device_index": 0,
                             "asr_cpu_reason": "nen tang khong cap card"}))
+    # ⭐ `_transcribe_faster` nay tu giai ma truoc khi goi `model.transcribe`
+    #    (fix dau cau tieng Han, `apps/autosubvideo/transcription.py:253`) — gia
+    #    lap buoc do de test khong doi mot tep .wav that.
+    monkeypatch.setattr("faster_whisper.audio.decode_audio",
+                        lambda *_a, **_k: [0.0])
 
     ra = tr._transcribe_faster("khong-doc-tep.wav", language="vi",
                                model_name="tiny")
@@ -184,6 +189,8 @@ def test_gpu_uuid_duoc_chuyen_xuong_duong_faster_whisper(monkeypatch):
 
     monkeypatch.setattr(tr, "_get_faster_model", _gia)
     monkeypatch.setattr(tr, "whisperx_available", lambda: False)
+    monkeypatch.setattr("faster_whisper.audio.decode_audio",
+                        lambda *_a, **_k: [0.0])
 
     tr.transcribe_file("khong-doc-tep.wav", language="vi", model_name="tiny",
                        gpu_uuid="GPU-cafe")

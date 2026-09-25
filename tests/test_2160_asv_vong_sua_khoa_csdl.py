@@ -202,11 +202,20 @@ def test_vong_sua_DICH_SAI_dat_lai_content_process_va_chay_lai_giong(
         if thao_tac.ma == ai.QC_NGU_NGHIA.ma:
             lan["n"] += 1
             goi = json.loads(messages[-1]["content"])
-            mas = sorted(str(d["ma"]) for d in (goi.get("doan") or goi))
-            doan = {m: {"dat": True, "do_tin": 0.95, "ly_do": ""} for m in mas}
-            if lan["n"] == 1 and mas:
-                doan[mas[0]] = {"dat": False, "do_tin": 0.95,
-                                "ly_do": "nghia lech so voi nguon"}
+            cac_doan = goi.get("doan") or []
+            mas = sorted(str(d["ma"]) for d in cac_doan)
+            # ⭐ GEMBA-MQM (91d921f4, da tren main): `qc_ai.doc_ngu_nghia` tinh
+            #    `dat` TU `loi` (danh sach loi kem `muc`+`doan` trich nguyen
+            #    van), ⛔ khong con doc truong `dat` model tu goi thang. Ban gia
+            #    phai theo dung dang do, va `doan` phai la MOT DOAN TRICH THAT
+            #    tu cau goc da gui (`qc_ai._loc_loi` loai loi khong trich duoc).
+            doan = {m: {"loi": []} for m in mas}
+            if lan["n"] == 1 and cac_doan:
+                dau = cac_doan[0]
+                trich = str(dau.get("goc") or "")[:50] or str(dau["ma"])
+                doan[str(dau["ma"])] = {"loi": [
+                    {"loai": "lat_nghia", "muc": "nghiem_trong",
+                     "doan": trich, "ly_do": "nghia lech so voi nguon"}]}
             return {"noi_dung": json.dumps({"doan": doan}, ensure_ascii=False),
                     "provider": "gia", "model": "gia", "su_dung": None,
                     "finish_reason": "stop", "suy_nghi": ""}

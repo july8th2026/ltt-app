@@ -95,6 +95,8 @@ two; translation moved after planning), not the parts that were wrong.
 | `giai_doan_qc.py` | 153 | QC gate | **EXTEND** | AI QC lanes + RepairPlan emission. The "gate must block" fix **kept** | 19 |
 | `giai_doan_qc_ai.py` | 178 | AI QC stage (semantic) | **NEW** | Phase 19 second half. **Off by default** (`LTT_ASV_QC_AI`) - turning it on is a pricing decision, so the switch is an operator env var, never a customer `settings` field. Semantic only; speech QC needs ASR and visual QC needs frame extraction, both deferred | 19 |
 | `hop_dong_v4.py` | 213 | V4 product contract | **KEEP** | written in Phase 01 | |
+| `cat_doan.py` | 323 | re-cut long ASR segments into dubbing slots using the engine's own word timestamps | **ADD** | `test_427` again — appended after this census (24/09), landed via `phien/timeline`. Fixes WhisperX/Punkt having no Han/Jp sentence model, so `zh`/`ja` collapse to ~24 s segments while the hardsub cuts every 2.4 s; for a dubbing product **segmentation is the product** | — |
+| `nan_thoi_luong.py` | 284 | three ordered duration-fit levers (shrink translation → redistribute real silence → stretch/compress voice) | **ADD** | `test_427` again — appended after this census (24/09), landed via `phien/timeline`. Pure function, no I/O; ordering is evidence-driven (measured on three films), not a preference | 21 |
 
 ### Executor apps
 
