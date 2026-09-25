@@ -86,6 +86,28 @@ MCP là **client-initiated/pull**; `resources/subscribe` chỉ chạy khi client
 - **`while` / `break` / `continue`** — cả ba nền tảng đều không có; đều dùng ngữ nghĩa for-each, thứ ta **đã có**.
 - **4 trạng thái Draft/Validated/Published/Archived** — thượng nguồn chỉ có `{DRAFT, LOCKED}` + `publishedVersionId`; mô hình ta **đã cùng hình dạng**. ⇒ ⛔ Không phải lỗ hổng, không làm.
 
+## 3b. ✅ KẾT QUẢ — 4/4 plan đóng (25/09 tối)
+
+| Plan | Làn | Kết quả |
+|---|---|---|
+| **P-A** | `wfa` `wfb3` | Nối `chay-lai-tu`/`so-sanh`/`soan` lên UI; **Playwright bấm thật** trên cổng 8199, `pageErrors == 0` |
+| **P-B** | `wfb1` `wfb2` `wfb4` `wfb5` | `5xx` YouTube theo tài liệu Google · FLOW D trigger POLLING thật · FLOW G **gọi model thật** · cổng biểu thức §6 |
+| **P-C** | `wfc` | Catalog **4→7 piece, 17→32 node**, hết `bo_qua` |
+| **P-D** | `wfd` `wfd2` `wfm` | Sandbox hai lớp + **7 diễn tập thoát vỏ** · node `core.code` · marketplace + cổng duyệt fail-closed |
+| *(phát sinh)* | `wfn` `wfk` `wft` `wfp` `wfg` | Bước cài `connector_runner` · `/soan` sập trình soạn · sổ trigger tất định · publish `piece.*` · báo giá `ai.*` |
+
+**17 làn đã gộp `main`. 30+ phép kiểm mới** (dải 4100–4299). Alembic một head.
+
+⚠️ **Ba mục LOẠI, đã ghi ở §3** — không phải quên: Pipedream (giấy phép) · Inngest (SSPL) ·
+Windmill (AGPLv3) · Evaluator n8n (`.ee.`) · Slack APP_WEBHOOK.
+
+⚠️ **Còn nợ, ⛔ không thuộc plan này:** nghiệm thu upload YouTube thật (chặn vì không
+đăng nhập được) · xoay client secret Google + mật khẩu superuser PostgreSQL · hai
+khiếm khuyết deploy còn lại · khoá cây chính · sổ dải số test · **phát hiện
+`node_modules`/lược đồ cũ hơn khai báo** (không có gì báo, đã cắn 6 lần).
+
+---
+
 ## 4. Bốn plan — thứ tự và điều kiện ra
 
 | Plan | Nội dung | Điều kiện ra |

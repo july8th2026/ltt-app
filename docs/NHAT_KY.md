@@ -11,6 +11,86 @@
 >
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
+
+## 2026-09-25 (tối) — **Workflow V2 vòng hoàn thiện: 4/4 plan đóng, 17 làn** · và một khuôn lặp SÁU lần
+
+Plan `docs/superpowers/plans/2026-09-25-wf-v2-VAN-HANH.md`. Chủ dự án chốt năm
+điều: mở lại toàn bộ phạm vi prompt gốc · điều kiện XONG là 8 luồng A–H chạy
+thật trên PostgreSQL · node DATA theo YAGNI · ⭐ **⛔ không tính năng nào được
+tự xây** (không có nguồn cộng đồng ⇒ loại khỏi plan) · dùng cá nhân/nội bộ.
+
+### Tra nguồn trước, viết sau — và hai kết luận PHỦ ĐỊNH đắt giá nhất
+
+Sáu lượt tra (Activepieces, n8n, Flowise, Langflow, Temporal, Kestra, Inngest,
+Trigger.dev, Prefect, Dagster, Airflow, Windmill, Node-RED, Pipedream,
+StackStorm, NiFi, MCP):
+
+1. 🔴 **MCP ⛔ không thay được lớp trigger.** Nó là client-initiated/pull;
+   `resources/subscribe` chỉ chạy khi client giữ phiên sống. Làm **đầu RA**,
+   ⛔ không làm **đầu VÀO**. ⇒ Suýt xây nhầm cả một lớp connector.
+2. 🔴 **Pipedream ⛔ không mở** dù là kho connector lớn nhất: *"Source Available
+   License"* cấm dùng thương mại / làm SaaS.
+
+Loại khỏi plan vì không có nguồn dùng được: Pipedream · Inngest (SSPL) ·
+Windmill (AGPLv3) · Evaluator của n8n (`.ee.` đòi Enterprise trả tiền) ·
+Slack trigger thời gian thực (APP_WEBHOOK, thượng nguồn ghi *"not supported"*).
+
+### Sáu lỗi THẬT — ⛔ không cái nào tìm ra bằng đọc mã suông
+
+| Lỗi | Lộ ra nhờ |
+|---|---|
+| `pywin32` chưa khai báo | **production sập ~7 phút** |
+| `/soan` sinh node thiếu `data.tool` ⇒ **sập trình soạn** | Playwright bấm thật |
+| `updateActive()` không lối lui ⇒ **mọi lần sửa node âm thầm không làm gì** | Playwright bấm thật |
+| `poll_connector` chưa từng gọi `trigger_on_enable` | chạy piece THẬT thay piece giả |
+| `_kiem_credential` lọc ref rỗng **trước** vòng lặp ⇒ **fail-open ở cổng publish** | nối `piece.*` |
+| `_nop_job_connector` chưa từng chuyển `credential_ref` | nối `piece.*` |
+
+Cộng: `bao_gia._gia_node` cắt `[4:]` mù ⇒ `'ai.llm'[4:] == 'lm'` ⇒ **publish bất
+kỳ đồ thị nào chứa node AI đều chết**. Sống lâu vì `test_1789` phủ node `ai.*`
+ở `ten_cong_cu()` và `nop_job`, ⛔ nhưng không bài nào đưa nó qua **báo giá**.
+
+### ⭐ Một khuôn lặp SÁU lần — và nó là bài học lớn nhất của phiên
+
+```
+pywin32 → connector node_modules → isolated-vm → lược đồ CSDL →
+jsondiffpatch → phân loại lưu trữ + bản dịch
+```
+
+Mỗi lần cùng một câu: **thứ này chạy được ở đây vì ở đây nó dựng từ một NGUỒN
+KHÁC với production.** Lần đầu mất production 7 phút; lần cuối chỉ mất một lượt
+gate — đường cong đúng hướng, nhờ bước `npm ci` thêm vào trình cài và các bánh
+cóc bắt được.
+
+⇒ Câu phải tự hỏi mỗi lần thêm thứ mới: **"production lấy thứ này từ đâu?"**
+
+### Sandbox: cộng đồng đã trả lời, ⛔ đừng tự viết
+
+`vm2` có chuỗi CVE tới **CVSS 10.0** và **chính tác giả khuyên bỏ**; n8n đã
+chuyển sang AST + `isolated-vm` và **vẫn dính `CVE-2026-25049`**. ⇒ Sandbox JS
+trong tiến trình ⛔ không được làm ranh giới duy nhất. Ranh giới thật là
+**AppContainer mức token OS**. Port `isolated-vm` làm **lớp trong**.
+
+Bảy đường thoát D1–D7 đều bị chặn, **mỗi đường một phép tiêm lỗi**. Và làn đó
+tìm ra một lỗi của **chính thượng nguồn**: `isolate.dispose()` vô điều kiện
+trong `finally` ném lỗi không bắt được khi V8 đã tự huỷ vì chạm trần bộ nhớ.
+
+⚠️ IPv6 **chưa đo được** — máy không có IPv6. Ghi ra thay vì giả vờ đã phủ.
+
+### Nghĩa vụ NGẦM: ba tầng trong một bản vá
+
+Bảng mới ⇒ nghĩa vụ khai phân loại lưu trữ (`test_211` bắt) ⇒ bản vá khai báo
+lại kéo nghĩa vụ **dịch chuỗi `N_()`** (pre-commit bắt). Làn `wfm` đã làm đủ
+bốn ràng buộc an toàn, viết migration, đo upgrade/downgrade trên PostgreSQL
+thật — và **vẫn sót**, vì nghĩa vụ ấy ⛔ không nằm trong mã của chính tính năng.
+
+### Gate
+
+L1 lượt đầu **hạ cấp**, và nhãn `[HA CAP ... BO TEST KHONG CHAY]` (vá sáng nay)
+**cứu một phán quyết**: `FAIL (5/31)` trông như "chỉ hỏng 5 bước" trong khi bộ
+test ⛔ không hề chạy. L2 theo phạm vi chạy đủ 21,8 phút; năm bước đỏ đã phân
+định — một của ta (đã sửa), bốn của phiên khác.
+
 ## 2026-09-25 (chiều) — **Lần ĐẦU TIÊN Auto Scan Video chạy trên worker PRODUCTION** · hai lỗi nền tảng
 
 Làn `asv-worker-that`. Trước hôm nay: **0 / 19.979** lượt job trong log worker production là
