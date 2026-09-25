@@ -73,6 +73,20 @@ def build_public_api_app(config: PublicApiConfig) -> FastAPI:
             CORSMiddleware, allow_origins=list(config.cors_origins),
             allow_credentials=False, allow_methods=["GET", "POST", "DELETE"],
             allow_headers=["Authorization", "Content-Type", "Idempotency-Key"],
+            # `expose_headers` does not put anything new on the wire — the
+            # guard middleware already stamps these three on every response
+            # (guard.py::_stamp). Without this list a browser's `fetch`/`XHR`
+            # cannot read them at all: only a small CORS-safelisted set
+            # (Cache-Control, Content-Type, ...) is visible to JS by default,
+            # and none of these three are in it. That gap meant EXT-02's own
+            # promise — "a caller has the correlation id to quote" — silently
+            # did not hold for browser-based callers; they got the header on
+            # the wire and no way to read it. Listed explicitly, one by one:
+            # `["*"]` would also expose any header a future route adds without
+            # anyone deciding that header is fit for a browser to see.
+            expose_headers=[protocol.HEADER_MAX_BODY_BYTES,
+                            protocol.HEADER_CORRELATION_ID,
+                            protocol.HEADER_API_VERSION],
             max_age=600)
     install_api_error_handlers(api)
     # Credential verification is a platform capability, installed once. Tests
