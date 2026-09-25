@@ -170,6 +170,23 @@ NANG_LUC_DOI_DIEM_ANH: tuple[str, ...] = (
     "crop",             # cat khung hinh (phan so 0..1)
     "zoom",             # phong tinh quanh mot tam — KHONG phai motion path
     "reframe",          # doi ti le khung: cat quanh tam, hoac nen mo
+    # ⭐ asv-gui 25/09, `bien_tap.py` + `che_do_render._loc_diem_anh`: hai phep
+    #    bien tap TIEU CHUAN, co trong moi phan mem dung phim.
+    #
+    # 🔴 **Va ten cua chung noi VIEC NO LAM, ⛔ khong noi muc dich.** He tham
+    #    chieu goi phep thu hai la *"tao ban khac nhau (ne trung)"*. Mot cai ten
+    #    mo ta muc dich khoa cung MOT cach hieu: no khong tai dung duoc cho
+    #    khach muon mau dam hon, va no bat moi nguoi doc sau phai chap nhan mot
+    #    gia dinh ve y dinh cua khach. `mirror` / `color_shift` thi khong.
+    "mirror",           # `hflip` — lat guong ngang
+    "color_shift",      # `eq=saturation` — CHI do dam mau
+    # ⛔ **`contrast` va `brightness` CO Y vang mat** (chu du an chot 25/09).
+    #    He tham chieu dat ca ba mot luot (`xu_ly_config.json:13`:
+    #    `contrast=1.06 : brightness=0.03 : saturation=1.12`). Hai cai dau doi
+    #    **do phoi sang**: canh toi bet den, canh sang chay trang — va ca hai
+    #    deu KHONG dao nguoc duoc, vi thong tin da bi kep mat o hai dau dai.
+    #    `saturation` chi doi do dam mau, khong dung toi do sang.
+    #    ⇒ Mot can gat, mot tinh chat.
     # ⚠️ `speed` khong doi DIEM ANH ma doi MOC THOI GIAN cua tung khung. Nam o
     #    bang nay vi cung mot rang buoc: `-c:v copy` khong co bo loc nao de dat
     #    `setpts` vao, va preset giu hinh hua do dai ra bang do dai vao.

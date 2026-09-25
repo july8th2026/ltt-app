@@ -367,7 +367,7 @@
            data-canh-min="{{ bien_tap.canh_min_pct }}">
         <h3>{{ _("Khung hình và tốc độ") }}</h3>
         <p class="asv-ghi-chu asv-vung-chan" id="asv-bt-chan" hidden>
-          {{ _("Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên không thể cắt khung, phóng to, đổi tỉ lệ hay đổi tốc độ. Chọn “Rút gọn có biên tập” nếu bạn muốn biên tập khung hình.") }}
+          {{ _("Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên không thể cắt khung, phóng to, đổi tỉ lệ, lật gương, dịch màu hay đổi tốc độ. Chọn “Rút gọn có biên tập” nếu bạn muốn biên tập khung hình.") }}
         </p>
         <div class="asv-bt-o">
           <div class="asv-luoi-tinh-chinh">
@@ -406,6 +406,31 @@
             <label class="asv-o">
               <span>{{ _("Tâm dọc (%)") }}</span>
               <input type="number" id="asv-bt-tam-y" min="0" max="100" step="1" value="50">
+            </label>
+          </div>
+          {# ⭐ Hai phep bien tap TIEU CHUAN (asv-gui 25/09), co trong moi phan
+               mem dung phim. Dat o day chu khong o mot khoi rieng: ca hai la
+               *"lam gi voi khung hinh"*, cung cau hoi voi bon o ben tren, va
+               cung bi chan boi cung mot preset.
+
+             🔴 **Nhan noi VIEC NO LAM, ⛔ khong noi muc dich.** He tham chieu
+                goi cai thu hai la *"tao ban khac nhau (ne trung)"* — mot cai
+                ten khoa cung MOT cach hieu, va no khong con dung cho khach chi
+                muon mau dam hon. `Dich mau (+12% bao hoa)` thi dung cho ca hai.
+
+             ⛔ Va phan tram lay TU `bien_tap.DICH_MAU_BAO_HOA`, khong go `12`
+                vao day: mot con so go tay o Jinja la ban thu hai cua mot chinh
+                sach, va no se troi lang le. #}
+          <div class="asv-bt-co">
+            <label class="asv-chon">
+              <input type="checkbox" id="asv-bt-lat-guong">
+              <span><strong>{{ _("Lật gương") }}</strong>
+                <small>{{ _("Lật khung hình theo chiều ngang, như soi gương.") }}</small></span>
+            </label>
+            <label class="asv-chon">
+              <input type="checkbox" id="asv-bt-dich-mau">
+              <span><strong>{{ _("Dịch màu (+%(p)s%% bão hoà)")|format(p=bien_tap.dich_mau_pct) }}</strong>
+                <small>{{ _("Màu đậm hơn một chút. Không đổi độ sáng, nên vùng tối và vùng sáng giữ nguyên chi tiết.") }}</small></span>
             </label>
           </div>
           <p class="asv-nhan">{{ _("Cắt bớt mép khung hình (%)") }}</p>
@@ -931,6 +956,8 @@
   "bt_cat_mep": {{ _("cắt mép")|tojson }},
   "bt_phong": {{ _("phóng to %(z)s×")|tojson }},
   "bt_cat_qua_nhieu": {{ _("Cắt mép quá nhiều — mỗi chiều phải còn ít nhất %(p)s%% khung hình.")|tojson }},
+  "bt_lat_guong": {{ _("lật gương")|tojson }},
+  "bt_dich_mau": {{ _("dịch màu")|tojson }},
   "chua_chon_video": {{ _("Chọn video để bắt đầu")|tojson }},
   "am_nen_da_tat": {{ _("Đã tắt nhạc nền — không còn gì để chỉnh mức.")|tojson }}
 }

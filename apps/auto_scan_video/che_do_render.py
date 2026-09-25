@@ -77,7 +77,17 @@ from platform_core.i18n import _ as _t
 #    chung van tay — hai ket qua khac nhau, mot chuoi bam.
 # ⭐ 6 -> 7 (asv-final): chang KHUNG (cat/phong/ti le) + TOC DO vao chuoi loc, va
 #    ca logo + phu de KHONG co lop phu chu doi nhan (`[ra]ass..[ra]` -> `sau_logo`).
-PHIEN_BAN_CHE_DO = 7
+# ⭐ 7 -> 8 (asv-gui 25/09): them mot buoc DIEM ANH (`hflip` + `eq=saturation`)
+#    vao chuoi loc, va doi cach noi nhan giua cac buoc (`truoc_khung` thanh mot
+#    chuoi buoc thay vi mot buoc).
+#
+# 🔴 **Bump nay KHONG phai thu tuc.** `_van_tay` cua giai doan RENDER bam
+#    (ban_dung, PHIEN_BAN_KET_XUAT, PHIEN_BAN_CHE_DO, ffmpeg). Hai co moi nam
+#    TRONG ban dung nen mot lan chay co bat co da doi van tay — nhung mot lan
+#    chay KHONG bat co nao van di qua ma sinh lenh **moi**. Neu ma sinh lenh doi
+#    ma so nay khong doi, mot lan chay lai se lay lai tep cu cua ma **cu**, va
+#    no khong bao gio no: no hien ra nhu mot lan chay "nhanh bat thuong".
+PHIEN_BAN_CHE_DO = 8
 
 #: Sao chep luong hinh — preset giu hinh.
 SAO_CHEP = "sao_chep"
@@ -427,20 +437,49 @@ def loc_cat_noi(khoang: list[tuple[float, float]], vung=(), *,
     from . import bien_tap as _bt
 
     toc = _bt.toc_do(bien_tap)
+    # ⚠️ CHI hinh hoc moi keo `_loc_khung` vao: no goi `hinh_hoc.khung_bien_tap`,
+    #    mot ham NEM khi chua biet kich thuoc nguon. Mot lan chay chi bat lat
+    #    guong khong can biet kich thuoc nao ca, nen `set(bien_tap) - {"toc_do"}`
+    #    cua ban cu se bat no phai biet — va bat no hong khi khong biet.
     buoc_khung = (_loc_khung(bien_tap, rong_nguon, cao_nguon)
-                  if bien_tap and set(bien_tap) - {"toc_do"} else None)
+                  if bien_tap and set(bien_tap) & set(_bt.TRUONG_HINH_HOC)
+                  else None)
     dich = "truoc_toc" if toc != 1.0 else "ra"
     sau_che = dich
     if ds_logo or lop_phu or duong_ass:
         sau_che = "sau_che"
-    sau_noi = "truoc_khung" if buoc_khung else sau_che
+
+    # ── Cac buoc HINH giua `noi` va `sau_che`, theo thu tu ──────────────────
+    #
+    # 🔑 **Thu tu la mot quyet dinh, khong phai mot chi tiet.**
+    #
+    #    · `vung` (lam mo) di TRUOC moi thu: toa do cua no thuoc khung NGUON;
+    #    · hinh hoc (cat/phong/ti le) tiep theo;
+    #    · DIEM ANH (`hflip`, `eq`) **sau** hinh hoc va **truoc** logo/chu/phu
+    #      de. Ca hai ranh gioi deu co ly do:
+    #        - sau hinh hoc, vi lat truoc thi moi toa do `crop` phai duoc anh xa
+    #          guong — mot phep anh xa khong ai yeu cau va chac chan se lech;
+    #        - truoc lop phu, vi lat SAU se lat CA logo va chu cua khach. Mot
+    #          dong chu bi lat guong la mot dong chu khong doc duoc, va no se
+    #          di thang ra tep giao cho khach.
+    giua: list[tuple[str, object]] = []
+    if buoc_khung:
+        giua.append(("khung", buoc_khung))
+    loc_dp = _loc_diem_anh(bien_tap)
+    if loc_dp:
+        giua.append(("diem_anh",
+                     lambda vao, ra, _f=loc_dp: [f"[{vao}]{_f}[{ra}]"]))
+
+    # ⭐ Khong buoc nao thi chuoi giu NGUYEN tung ky tu nhu truoc asv-gui.
+    sau_noi = f"truoc_{giua[0][0]}" if giua else sau_che
     if vung:
         phan.append(f"{nhan}concat=n={len(khoang)}:v=1:a=0[noi]")
         phan.extend(_loc_lam_mo(vung, "noi", sau_noi, cua_so_ra(khoang, vung)))
     else:
         phan.append(f"{nhan}concat=n={len(khoang)}:v=1:a=0[{sau_noi}]")
-    if buoc_khung:
-        phan.extend(buoc_khung("truoc_khung", sau_che))
+    for i, (ten, dung) in enumerate(giua):
+        ke = f"truoc_{giua[i + 1][0]}" if i + 1 < len(giua) else sau_che
+        phan.extend(dung(f"truoc_{ten}", ke))
 
     hien = sau_che
     if ds_logo:
@@ -489,6 +528,34 @@ def loc_toc_do_tieng(bien_tap, nhan_vao: str = "1:a", nhan_ra: str = "a_ra") -> 
     if toc == 1.0:
         return ""
     return f"[{nhan_vao}]atempo={toc:.4f}[{nhan_ra}]"
+
+
+def _loc_diem_anh(bien_tap) -> str:
+    """Chuoi loc cua hai phep DIEM ANH, hoac rong.
+
+    ⭐ Tra ve mot chuoi loc chu khong mot ham dung nhan nhu `_loc_khung`: ca hai
+       phep deu la mot bo loc mot-vao-mot-ra, khong tach luong, khong can nhan
+       trung gian nao.
+
+    ⛔ `hflip` TRUOC `eq`, va thu tu nay co y nghia o mot cho duy nhat — no phai
+       **on dinh**. Hai bo loc nay giao hoan (lat roi doi bao hoa = doi bao hoa
+       roi lat), nen ket qua khong doi; nhung chuoi loc thi doi, va chuoi loc di
+       vao van tay qua `PHIEN_BAN_CHE_DO`. Mot thu tu "tuy luc" se lam hai lan
+       chay y het nhau cho hai van tay.
+
+    ⚠️ `:.4f` chu khong `str(float)`: `repr` cua float doi theo phien ban Python
+       o mot so gia tri, va mot chuoi lenh doi theo phien ban thong dich la mot
+       chuoi lenh khong tai lap duoc.
+    """
+    from . import bien_tap as _bt
+
+    ho = bien_tap or {}
+    ve = []
+    if ho.get("lat_guong"):
+        ve.append("hflip")
+    if ho.get("dich_mau"):
+        ve.append(f"eq=saturation={_bt.DICH_MAU_BAO_HOA:.4f}")
+    return ",".join(ve)
 
 
 def _loc_khung(bien_tap, rong: int, cao: int):

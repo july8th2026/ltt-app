@@ -30,8 +30,9 @@
   var oTamX = o("tam-x"), oTamY = o("tam-y");
   var oCat = { trai: o("cat-trai"), phai: o("cat-phai"),
                tren: o("cat-tren"), duoi: o("cat-duoi") };
+  var oLat = o("lat-guong"), oMau = o("dich-mau");
   var tatCa = [oToc, oTiLe, oCach, oZoom, oTamX, oTamY,
-               oCat.trai, oCat.phai, oCat.tren, oCat.duoi];
+               oCat.trai, oCat.phai, oCat.tren, oCat.duoi, oLat, oMau];
 
   function so(el, macDinh) {
     var v = parseFloat(el && el.value);
@@ -74,6 +75,12 @@
       ds.push(tl);
     }
 
+    /* ⭐ Hai co: `true` chu khong `"on"`. May chu tu choi moi gia tri khac
+     *    `true`/`false` (`bien_tap.chuan_hoa`), va do la co chu dich — mot
+     *    chuoi `"false"` la mot gia tri "that" trong JavaScript. */
+    if (oLat && oLat.checked) { ho.lat_guong = true; ds.push(t("bt_lat_guong")); }
+    if (oMau && oMau.checked) { ho.dich_mau = true; ds.push(t("bt_dich_mau")); }
+
     /* ⛔ Khong o chet: tam chi co nghia khi co phong to hoac cat theo ti le. */
     var canTam = z !== 1 || !!(ho.khung && ho.khung.cach === "cat");
     if (oTamX) oTamX.disabled = !canTam;
@@ -97,6 +104,8 @@
     if (oTamX) oTamX.value = "50";
     if (oTamY) oTamY.value = "50";
     Object.keys(oCat).forEach(function (k) { if (oCat[k]) oCat[k].value = "0"; });
+    if (oLat) oLat.checked = false;
+    if (oMau) oMau.checked = false;
   }
 
   /* ⛔ Doi sang preset giu hinh ma chi AN khoi la giu lai gia tri trong form —
