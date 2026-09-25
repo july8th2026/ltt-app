@@ -209,7 +209,7 @@ def lenh_theo_doi(args) -> int:
     #: stage -> ho so do
     do: dict[str, dict] = {}
     #: so luot job `auto_scan_video.advance` da thay
-    advance: dict[str, dict] = {}
+    advance: dict = {}
     truoc_stage: dict[str, str] = {}
     truoc_run = ""
     nhat_ky: list[dict] = []
@@ -244,66 +244,82 @@ def lenh_theo_doi(args) -> int:
                     loi=(run.error or "")[:200])
                 truoc_run = run.status
 
-            stages = s.execute(text(
-                "SELECT stage, status, job_id, attempt, started_at, finished_at, "
-                "       error, credit_actual "
-                "FROM asv_stage WHERE run_id = :r"), {"r": run_id}).all()
-            for st in stages:
-                cu = truoc_stage.get(st.stage)
-                if cu == st.status:
+            # 🔑 Bam theo bang `jobs` chu khong bang `asv_stage`.
+            #
+            #    `asv_stage.status` di `pending -> queued -> succeeded`; trang
+            #    thai `running` cua NO do handler dat va co the khong bao gio
+            #    lot vao mot nhip 3 giay — luot dau 25/09 mat sach so do cua
+            #    `media_prepare` (12 s) dung vi vay. `jobs` thi luon co
+            #    `started_at`/`finished_at`/`worker_id` va nen tang ghi chung
+            #    nguyen tu.
+            #
+            # ⭐ `plan_id = run.id` va `step_id = <ten giai doan>` do chinh
+            #    `_nop_giai_doan_san_sang` dat — day la quan he cha-con san co
+            #    cua nen tang, khong phai mot phep noi tu bia.
+            for j in s.execute(text(
+                    "SELECT id, job_type, step_id, status, worker_id, attempts, "
+                    "       max_attempts, error, created_at, started_at, "
+                    "       finished_at FROM jobs "
+                    "WHERE plan_id = :r AND step_id <> '' "
+                    "ORDER BY created_at"), {"r": run_id}).all():
+                khoa = f"{j.step_id}#{j.id}"
+                if truoc_stage.get(khoa) == j.status:
                     continue
-                truoc_stage[st.stage] = st.status
-                job = None
-                if st.job_id:
-                    job = s.execute(text(
-                        "SELECT id, job_type, status, worker_id, attempts, error, "
-                        "       created_at, started_at, finished_at "
-                        "FROM jobs WHERE id = :j"), {"j": st.job_id}).first()
-                wid = getattr(job, "worker_id", "") or ""
-                ho = do.setdefault(st.stage, {"stage": st.stage})
-                if st.status == "running":
+                truoc_stage[khoa] = j.status
+                wid = j.worker_id or ""
+                ho = do.setdefault(j.step_id, {"stage": j.step_id})
+                if j.status == "running" and "cpu_dau" not in ho:
                     pid = _pid_cua(wid)
                     cpu, n = cpu_cay(pid) if pid else (0.0, 0)
                     ho.update(worker_id=wid, pid=pid, cpu_dau=cpu,
                               tuong_dau=time.time(), so_tien_trinh_dau=n)
-                if st.status in ("succeeded", "failed_terminal",
-                                 "failed_retryable", "cancelled",
-                                 "invalidated"):
+                if j.status in ("done", "error", "cancelled"):
                     pid = int(ho.get("pid") or _pid_cua(wid))
                     cpu, n = cpu_cay(pid) if pid else (0.0, 0)
                     ho["cpu_cuoi"] = cpu
-                    ho["tuong_cuoi"] = time.time()
                     if "cpu_dau" in ho:
                         ho["cpu_giay"] = round(cpu - float(ho["cpu_dau"]), 1)
-                    if "tuong_dau" in ho:
+                    # ⭐ Dong ho tuong lay tu CSDL, khong tu `time.time()` cua
+                    #    tien trinh do: nhip 3 giay lam tron len toi 3 giay moi
+                    #    dau, va mot giai doan 12 giay thi do la 25 % sai so.
+                    if j.started_at and j.finished_at:
                         ho["tuong_giay"] = round(
-                            ho["tuong_cuoi"] - float(ho["tuong_dau"]), 1)
-                    ho["trang_thai"] = st.status
-                    ho["loi"] = st.error or ""
-                    ho["loi_job"] = getattr(job, "error", "") or ""
-                ghi("stage", ten=st.stage, trang_thai=st.status,
-                    lan=st.attempt, worker=wid,
-                    job=getattr(job, "status", ""),
-                    cpu=ho.get("cpu_giay", ""), tuong=ho.get("tuong_giay", ""),
-                    loi=(st.error or "")[:300])
+                            (j.finished_at - j.started_at).total_seconds(), 1)
+                    ho["bat_dau"] = str(j.started_at)
+                    ho["ket_thuc"] = str(j.finished_at)
+                    ho["job_id"] = j.id
+                    ho["worker_id"] = wid
+                    ho["trang_thai"] = j.status
+                    ho["lan_thu"] = f"{j.attempts}/{j.max_attempts}"
+                    ho["loi_job"] = j.error or ""
+                ghi("stage", ten=j.step_id, job=j.status, lan=j.attempts,
+                    worker=wid, cpu=ho.get("cpu_giay", ""),
+                    tuong=ho.get("tuong_giay", ""), loi=(j.error or "")[:300])
 
             # ⭐ Dem luot `advance`: cau hoi 3 cua brief (`jobs._advance` co tu
             #    noi vo han khong). So mong doi la 12 + 1 luot mo dau.
-            for j in s.execute(text(
-                    "SELECT id, status, worker_id, created_at, started_at, "
-                    "       finished_at, attempts, error FROM jobs "
-                    "WHERE job_type = 'auto_scan_video.advance' "
-                    "  AND params::text LIKE :p ORDER BY created_at"),
-                    {"p": f"%{run_id}%"}).all():
-                truoc = advance.get(j.id)
-                if truoc and truoc.get("status") == j.status:
-                    continue
-                advance[j.id] = {"status": j.status, "worker": j.worker_id,
-                                 "tao": str(j.created_at),
-                                 "xong": str(j.finished_at),
-                                 "loi": (j.error or "")[:300]}
-                ghi("advance", job=j.id[:8], trang_thai=j.status,
-                    worker=j.worker_id, tong=len(advance))
+            # ⛔ DEM, khong liet ke. Luot 25/09 in tung dong va luot do sinh
+            #    1.043 job trong 78 giay — ban ghi tro nen khong doc noi, va
+            #    chinh phep do tro thanh mot nghi can.
+            d = s.execute(text(
+                "SELECT count(*) n, count(*) FILTER "
+                "       (WHERE status IN ('queued','running')) song, "
+                "       min(created_at) a, max(created_at) b, "
+                "       max(error) FILTER (WHERE error <> '') loi "
+                # ⚠️ `plan_id` RONG o job dieu phoi: `features._nop_dieu_phoi`
+                #    khong dat `plan_id`/`step_id` (khac `_nop_giai_doan_san_sang`).
+                #    Nen phai loc qua `params`, va do la mot khoang trong quan
+                #    sat that: khong co quan he cha-con nao noi luot `advance`
+                #    voi lan chay cua no.
+                "FROM jobs WHERE job_type = 'auto_scan_video.advance' "
+                "  AND params->>'run_id' = :r"), {"r": run_id}).first()
+            advance.update(
+                tong=int(d.n or 0), dang_song=int(d.song or 0),
+                dau=str(d.a), cuoi=str(d.b), loi=(d.loi or "")[:400])
+            if int(d.n or 0) // 250 != int(advance.get("_moc") or -1):
+                advance["_moc"] = int(d.n or 0) // 250
+                ghi("advance", tong=d.n, dang_song=d.song,
+                    loi=(d.loi or "")[:200])
 
             xong = run.status in ("done", "error", "cancelled")
             if xong:
@@ -318,33 +334,45 @@ def lenh_theo_doi(args) -> int:
     # ── bang ket qua ──────────────────────────────────────────────────────────
     ten = _ten_giai_doan()
     print("\n== GIAI DOAN ==")
-    print(f"{'giai doan':16} {'trang thai':18} {'CPU s':>9} {'tuong s':>9} {'pid':>7} lan")
+    print(f"{'giai doan':16} {'job':10} {'CPU s':>9} {'tuong s':>9} "
+          f"{'lan thu':>8}  worker")
     for g in ten:
         h = do.get(g, {})
-        print(f"{g:16} {str(h.get('trang_thai','(chua chay)')):18} "
+        print(f"{g:16} {str(h.get('trang_thai','(chua chay)')):10} "
               f"{h.get('cpu_giay','-')!s:>9} {h.get('tuong_giay','-')!s:>9} "
-              f"{h.get('pid','-')!s:>7}")
+              f"{h.get('lan_thu','-')!s:>8}  {h.get('worker_id','')}")
+        if h.get("loi_job"):
+            print(f"    LOI: {h['loi_job'][:500]}")
 
-    print("\n== THOI GIAN CHET giua cac giai doan (tuong) ==")
-    moc = sorted(((float(h["tuong_dau"]), float(h.get("tuong_cuoi") or 0), g)
-                  for g, h in do.items() if "tuong_dau" in h))
+    # 🔑 Thoi gian chet = khe giua `finished_at` cua job giai doan truoc va
+    #    `started_at` cua job giai doan sau — CA HAI lay tu CSDL. Con so
+    #    `16-20 s` o `L_TOC_DO_GPU` §3.1 la SUY RA tu kien truc, chua ai do.
+    print("\n== THOI GIAN CHET giua cac giai doan (giay, tu CSDL) ==")
+    from datetime import datetime as _dt
+    def _gio(v):
+        try:
+            return _dt.fromisoformat(str(v))
+        except Exception:                                # noqa: BLE001
+            return None
+    moc = sorted(
+        ((a, b, g) for g, h in do.items()
+         if (a := _gio(h.get("bat_dau"))) and (b := _gio(h.get("ket_thuc")))),
+        key=lambda x: x[0])
     chet = []
     for i in range(1, len(moc)):
-        truoc_ket = moc[i - 1][1]
-        sau_bat = moc[i][0]
-        if truoc_ket and sau_bat > truoc_ket:
-            d = round(sau_bat - truoc_ket, 1)
-            chet.append((moc[i - 1][2], moc[i][2], d))
-            print(f"  {moc[i-1][2]:16} -> {moc[i][2]:16} {d:8.1f} s")
+        d = round((moc[i][0] - moc[i - 1][1]).total_seconds(), 1)
+        chet.append((moc[i - 1][2], moc[i][2], d))
+        print(f"  {moc[i-1][2]:16} -> {moc[i][2]:16} {d:8.1f} s")
     if chet:
         ds = [d for _a, _b, d in chet]
         print(f"  TONG {round(sum(ds),1)} s | trung binh {round(sum(ds)/len(ds),1)} s "
               f"| min {min(ds)} | max {max(ds)}")
 
-    print(f"\n== LUOT `advance` ==  THAT: {len(advance)}  | CHUOI CO {len(ten)} giai doan")
-    for jid, h in advance.items():
-        print(f"  {jid[:8]} {h['status']:10} {h['worker']:24} {h['tao']} -> {h['xong']}"
-              + (f" LOI: {h['loi']}" if h["loi"] else ""))
+    print("\n== LUOT `advance` ==")
+    print(f"  THAT   : {advance.get('tong')}   (chuoi co {len(ten)} giai doan)")
+    print(f"  dau    : {advance.get('dau')}")
+    print(f"  cuoi   : {advance.get('cuoi')}")
+    print(f"  loi    : {advance.get('loi') or '(khong)'}")
 
     ra = {"run_id": run_id, "giai_doan": do, "advance": advance,
           "thoi_gian_chet": chet, "nhat_ky": nhat_ky}
@@ -359,6 +387,80 @@ def lenh_theo_doi(args) -> int:
 # ══════════════════════════════════════════════════════════════════════════════
 #  worker rieng
 # ══════════════════════════════════════════════════════════════════════════════
+
+def lenh_lay_ket_qua(args) -> int:
+    """Chep hien vat ban giao (.mp4 + .srt) ra mot cho ON DINH, va `ffprobe` no.
+
+    🔴 **Chep NGAY khi `render` xong, ⛔ khong doi het luot.** Lan `asv-g17`
+       chay 49 phut that roi mat sach: bao cao ghi SAU mot cum `assert`, assert
+       no truoc, va thu muc tam bi don khi tien trinh thoat. ⭐ Cat hien vat
+       TRUOC khi phan quyet.
+
+    ⛔ Mot tep TON TAI khong chung minh no xem duoc — nen ham nay in ca co tep,
+       thoi luong, co luong tieng khong, va bitrate. Da co ca `done` + QC `dat`
+       + KHONG tep nao (`N-57`).
+    """
+    import shutil
+    import subprocess
+
+    nap_env()
+    os.chdir(GOC)
+
+    from sqlalchemy import text
+
+    from apps.auto_scan_video import features
+    from platform_core import db as dbmod
+    from platform_core.storage import get_storage
+
+    dich = pathlib.Path(args.dich_thu_muc)
+    dich.mkdir(parents=True, exist_ok=True)
+    kho = get_storage()
+    ra = []
+    for s in dbmod.get_session():
+        run = s.execute(text(
+            "SELECT * FROM asv_run WHERE id = :r"), {"r": args.run_id}).first()
+        if run is None:
+            print("KHONG CO RUN", args.run_id)
+            return 2
+        doi_tuong = features.lay_run(s, args.run_id, run.owner_id)
+        for nhan, khoa in (("mp4", features.khoa_ket_qua(s, doi_tuong)),
+                           ("srt", features.khoa_phu_de(s, doi_tuong))):
+            if not khoa:
+                print(f"{nhan.upper():4}: (KHONG CO — `render` chua succeeded "
+                      f"hoac khong khai khoa)")
+                continue
+            duoi = pathlib.PurePosixPath(khoa).suffix or f".{nhan}"
+            ten = f"{args.nhan}_{args.moc}{duoi}"
+            d = dich / ten
+            with kho.open(khoa) as f, d.open("wb") as g:
+                shutil.copyfileobj(f, g)
+            co = d.stat().st_size
+            print(f"{nhan.upper():4}: {d}  |  {co} byte")
+            ra.append((nhan, d, co))
+        break
+
+    for nhan, d, _co in ra:
+        if nhan != "mp4":
+            continue
+        r = subprocess.run(
+            ["ffprobe", "-v", "error", "-print_format", "json",
+             "-show_format", "-show_streams", str(d)],
+            capture_output=True, text=True)
+        if r.returncode != 0:
+            print("FFPROBE HONG:", r.stderr.strip()[:500])
+            continue
+        tt = json.loads(r.stdout)
+        fmt = tt.get("format", {})
+        luong = tt.get("streams", [])
+        print("  thoi_luong :", fmt.get("duration"))
+        print("  bitrate    :", fmt.get("bit_rate"))
+        print("  co_tieng   :", any(x.get("codec_type") == "audio" for x in luong))
+        for x in luong:
+            print(f"    {x.get('codec_type')} {x.get('codec_name')} "
+                  f"{x.get('width','')}x{x.get('height','')} "
+                  f"bitrate={x.get('bit_rate')}")
+    return 0 if ra else 1
+
 
 def lenh_worker(args) -> int:
     """MOT tien trinh worker RIENG. ⛔ Khong cham dich vu dang chay.
@@ -427,6 +529,15 @@ def main() -> int:
     c.add_argument("--nhip", type=float, default=3.0)
     c.add_argument("--json", default="")
     c.set_defaults(fn=lenh_chay)
+
+    k = sub.add_parser("lay-ket-qua",
+                       help="chep .mp4/.srt ra cho on dinh + ffprobe")
+    k.add_argument("run_id")
+    k.add_argument("--dich-thu-muc", dest="dich_thu_muc",
+                   default=r"D:\LTTSTUDIOSAPP\_ket_qua")
+    k.add_argument("--nhan", default="worker-that_v3_giu-hinh")
+    k.add_argument("--moc", default=time.strftime("%Y%m%d-%H%M"))
+    k.set_defaults(fn=lenh_lay_ket_qua)
 
     w = sub.add_parser("worker")
     w.add_argument("--giay", type=float, default=3600.0)
