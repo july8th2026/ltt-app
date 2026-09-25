@@ -48,6 +48,20 @@ function maTuLoi(loi) {
     //    thu nay lam mot la tu bit duong chan doan.
     return { ma: MA.heThong, status: 0 };
   }
+  const msg = String((loi && loi.message) || '');
+  if (msg.indexOf('Script execution timed out') >= 0) {
+    // isolated-vm: qua han THUC THI TRONG isolate (tham so `timeout` cua
+    // `script.run`) — cung mot loai "ta giet no" nhu het_gio o tang vo.
+    return { ma: MA.hetGio, status: 0 };
+  }
+  if (msg.indexOf('memory limit') >= 0 || msg.indexOf('Isolate is disposed') >= 0) {
+    // Code cua khach cham tran bo nho CUA CHINH isolate (`bo_nho_mb`) — mot
+    // gioi han ta dat, khong phai provider hong; xep chung nhom voi het_gio.
+    return { ma: MA.hetGio, status: 0 };
+  }
+  if (code === 'ERR_INVALID_RETURN_VALUE' || msg.indexOf('SyntaxError') >= 0) {
+    return { ma: MA.dauVao, status: 0 };
+  }
   return { ma: MA.provider, status: 0 };
 }
 
@@ -142,6 +156,19 @@ async function main() {
   const storeOps = [];
   const tep = [];
   try {
+    // `run_code` khong co piece: mot module CJS tuy y, chay trong isolated-vm
+    // (`code_sandbox.js` — lop THU HAI, P-D muc 2). ⛔ Re nhanh nay TRUOC
+    // `napPiece`: khong co `yc.piece` de nap, va khong nen nap.
+    if (yc.op === 'run_code') {
+      const { chayCode } = require('./code_sandbox');
+      const ra = await chayCode({
+        nguon: yc.code, inputs: yc.props || {},
+        han_ms: yc.code_han_ms, bo_nho_mb: yc.code_bo_nho_mb,
+      });
+      ghi({ ok: true, output: cheBiMat(ra === undefined ? null : ra),
+        store_ops: [], files: [], logs: [] });
+      return 0;
+    }
     const nap = napPiece(yc.piece);
     if (String(nap.version) !== String(yc.version)) {
       throw Object.assign(new Error(
