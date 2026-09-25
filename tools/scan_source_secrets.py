@@ -262,6 +262,19 @@ def _is_excluded_file(root: Path, path: Path) -> bool:
     if any(_is_excluded_dir(part) for part in relative.parts[:-1]):
         return True
     if relative.parts and relative.parts[0].lower() == "data":
+        # `data/conn/`: bộ công cụ Node (node.exe + npm CLI, ~104 MB) mà lượt
+        # cài marketplace vendor về để chạy `npm ci` BÊN TRONG vỏ AppContainer
+        # (`platform_core/workflow/marketplace.py`). ⛔ Không phải nguồn:
+        #   · `.gitignore:64` ⇒ ⛔ không bao giờ lên kho;
+        #   · `robocopy /XD data` của trình cài ⇒ ⛔ không bao giờ lên production.
+        # Tài liệu của chính npm CLI có ví dụ cấu hình chứa `private_key_block`
+        # ⇒ máy quét báo hai findings cho một tệp tài liệu của bên thứ ba.
+        #
+        # ⚠️ Loại theo ĐƯỜNG DẪN `data/conn/`, ⛔ không thêm `"conn"` vào
+        #    `EXCLUDED_DIRS`: cái sau sẽ làm mù máy quét với **mọi** thư mục tên
+        #    `conn` ở bất kỳ đâu, kể cả một thư mục nguồn thật mai này.
+        if len(relative.parts) > 1 and relative.parts[1].lower() == "conn":
+            return True
         return any(pattern.fullmatch(path.name) for pattern in EXCLUDED_DATA_PATTERNS)
     return False
 
