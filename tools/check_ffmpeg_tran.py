@@ -59,6 +59,7 @@ import ast
 import pathlib
 import sys
 import warnings
+from typing import TypeGuard
 
 # 🔴 Cong cu nay IN `⛔`/`⭐`. Console Windows mac dinh cp1252 => `UnicodeEncodeError`
 #    va no chet TRUOC khi in ket qua — trong y het mot loi cong cu, khong phai mot
@@ -103,7 +104,10 @@ BO_QUA_TEP = frozenset({"tools/check_ffmpeg_tran.py"})
 THU_MUC_GOC_BO_QUA = frozenset({"tests"})
 
 
-def _la_ten_tran(nut: ast.AST) -> bool:
+def _la_ten_tran(nut: ast.AST) -> TypeGuard[ast.Constant]:
+    """`TypeGuard`, khong chi `bool`: hai cho goi ham nay doc lai `.value` ngay
+    sau do — mypy chi thu hep `nut` tu `ast.expr`/`ast.AST` xuong `ast.Constant`
+    (co `.value`) khi ham tra dung TypeGuard cua dung nhanh dieu kien."""
     return isinstance(nut, ast.Constant) and nut.value in TEN_TRAN
 
 
@@ -163,14 +167,15 @@ def cho_goi_tran(nguon: str) -> list[tuple[int, str]]:
         if isinstance(nut, (ast.List, ast.Tuple)) and nut.elts:
             dau = nut.elts[0]
             if _la_ten_tran(dau) and (id(nut) in la_argv or _co_co(nut)):
-                ra.append((dau.lineno, str(dau.value)))       # type: ignore[union-attr]
+                ra.append((dau.lineno, str(dau.value)))
             continue
         # Luật 2 — `shutil.which("ffmpeg")`: dò trên PATH, hỏng y hệt.
         if isinstance(nut, ast.Call) and nut.args and _la_ten_tran(nut.args[0]):
+            hang = nut.args[0]                 # TypeGuard chi thu hep BIEN, khong thu hep chi so
             ten_ham = (nut.func.attr if isinstance(nut.func, ast.Attribute)
                        else nut.func.id if isinstance(nut.func, ast.Name) else "")
             if ten_ham == "which":
-                ra.append((nut.args[0].lineno, str(nut.args[0].value)))  # type: ignore[union-attr]
+                ra.append((hang.lineno, str(hang.value)))
     return sorted(ra)
 
 

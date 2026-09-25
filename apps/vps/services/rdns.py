@@ -73,42 +73,88 @@ def dat_rdns(dns, ovh, ip: str) -> bool:
     return True
 
 
-#: Ba trang thai cua mot PTR — ⛔ khong duoc gop lam hai.
-DA_THAY = "da_thay"        # OVH luu VA DNS cong khai da tra
-DANG_LAN = "dang_lan"      # OVH luu, DNS chua tra (binh thuong trong vai gio)
-CHUA_DAT = "chua_dat"      # OVH khong co ban ghi nao
+#: Bon trang thai cua mot PTR — ⛔ khong duoc gop lam it hon.
+DA_THAY = "da_thay"              # DNS cong khai da tra dung ten
+DANG_LAN = "dang_lan"            # OVH luu, DNS chua tra (binh thuong trong vai gio)
+CHUA_DAT = "chua_dat"            # OVH tra loi RO RANG la khong co ban ghi (404)
+KHONG_DO_DUOC = "khong_do_duoc"  # khong hoi duoc OVH — chua biet gi ca
+
+
+#: HTTP 404 tu OVH = "khong co ban ghi reverse". Moi ma khac (403 khoa chet, 5xx,
+#: het thoi gian) la su VANG MAT cua cau tra loi, khong phai cau tra loi "khong".
+MA_KHONG_CO_BAN_GHI = 404
 
 
 def trang_thai_ptr(ovh, ip: str, *, tra_cuu=None) -> tuple[str, str]:
-    """Tra `(trang_thai, chi_tiet)`. Hoi CA HAI nguon, vi chung noi hai dieu khac nhau.
+    """Tra `(trang_thai, chi_tiet)`. Hoi DNS CONG KHAI truoc, OVH sau.
 
-    🔴 Do 25/09/2026: sau khi `dat_reverse` tra 200, `GET .../reverse/<ip>` cua OVH
-       da co ban ghi — nhung `nslookup <ip>` **van khong tra gi** sau mot gio. Voi
-       the gioi ben ngoai, dia chi do **chua co rDNS**.
+    ## Thu tu nay la mot bat bien, khong phai so thich
 
-    ⇒ "OVH da luu" va "the gioi thay duoc" la HAI su that khac nhau. Gop chung lam
-      mot chu "dat" la tu noi doi voi chinh minh o dung cho minh vua sua: mot gia
-      tri mang hai nghia. Nen ham nay tra ba trang thai, khong phai `bool`.
+    🔴 Do 25/09/2026 (chieu): consumer key OVH bi thu hoi — `403 "This credential
+       is not valid"`. Ban cu hoi OVH TRUOC va `except` nuot 403 thanh `CHUA_DAT`
+       (chu thich cu con viet han: *"khong doc duoc = chua dat"*). Ket qua: cong
+       cu khai **moi IP** la chua co PTR, trong khi `nslookup` tren CA HAI resolver
+       cong khai tra dung ten — PTR da dat va da forward-confirm tu truoc.
+       Tin cong cu thi ta di dat lai PTR da co, bang chinh cai khoa dang chet.
+
+    ⇒ Thu tu dung: **DNS cong khai la su that**. Khach cua khach nhin thay no, va
+      no do duoc ma khong can bat cu khoa API nao. OVH chi con mot viec: phan biet
+      *dang lan* voi *chua dat*, khi va chi khi DNS con im.
+
+    ## "Khong do duoc" la trang thai THU TU
+
+    `403` va `404` deu la `HTTPError`, nhung mot cai noi *"ban khong duoc hoi"* va
+    cai kia noi *"khong co gi ca"*. Gop chung lai la bien mot dut mach do luong
+    thanh mot phat hien ve ha tang. (Cung khuon da can nhieu lan 24-25/09.)
     """
-    from urllib.parse import quote
-
     try:
-        khoi = quote(str(ip) + "/32", safe="")
-        ban = ovh.get(f"/ip/{khoi}/reverse/{quote(str(ip), safe='')}")
-        o_ovh = str((ban or {}).get("reverse", "")).rstrip(".")
-    except Exception:                         # noqa: BLE001 - khong doc duoc = chua dat
-        o_ovh = ""
-    if not o_ovh:
-        return CHUA_DAT, "OVH khong co ban ghi reverse"
+        mong_doi = ten_forward(ip)
+    except ValueError:
+        return CHUA_DAT, "dia chi khong hop le"
 
     tra = tra_cuu or _tra_cuu_cong_khai
+    do_duoc_dns = True
     try:
-        ten = tra(str(ip))
-    except Exception:                         # noqa: BLE001
-        ten = ""
-    if ten and ten.rstrip(".") == o_ovh:
-        return DA_THAY, ten
+        thay = str(tra(str(ip)) or "").rstrip(".")
+    except Exception as exc:                  # noqa: BLE001 - xem docstring module
+        # ⛔ "Resolver noi khong co" (chuoi rong) va "toi khong doc duoc dau ra"
+        #    (nem) la HAI viec. Gop lai thi mot dut mach do luong bao cao thanh
+        #    mot su that ve rDNS — dung cai da xay ra chieu 25/09.
+        #
+        # ⚠️ Chi ghi TEN LOP, khong `str(exc)`: ham tra cuu la mot tham so, nen
+        #    than loi o day khong phai thu ta kiem soat duoc.
+        log.warning("VPS rdns: khong do duoc DNS cong khai cho %s (%s)",
+                    ip, type(exc).__name__)
+        thay, do_duoc_dns = "", False
+    if do_duoc_dns and thay == mong_doi:
+        return DA_THAY, thay
+
+    o_ovh, do_duoc, vi_sao = _reverse_o_ovh(ovh, ip)
+    if not do_duoc:
+        return KHONG_DO_DUOC, f"khong hoi duoc OVH ({vi_sao})"
+    if not o_ovh:
+        return CHUA_DAT, "OVH khong co ban ghi reverse"
+    if not do_duoc_dns:
+        return DANG_LAN, f"OVH luu {o_ovh}, chua do duoc DNS cong khai"
+    if thay:
+        return DANG_LAN, f"OVH luu {o_ovh}, DNS cong khai tra {thay}"
     return DANG_LAN, f"OVH luu {o_ovh}, DNS cong khai chua tra"
+
+
+def _reverse_o_ovh(ovh, ip: str) -> tuple[str, bool, str]:
+    """`(ten_o_ovh, do_duoc, vi_sao)`. `do_duoc=False` ⇒ ⛔ dung ket luan gi ca."""
+    from urllib.parse import quote
+
+    khoi = quote(str(ip) + "/32", safe="")
+    try:
+        ban = ovh.get(f"/ip/{khoi}/reverse/{quote(str(ip), safe='')}")
+    except Exception as exc:                  # noqa: BLE001 - xem docstring module
+        ma = getattr(exc, "status", None)
+        if ma == MA_KHONG_CO_BAN_GHI:
+            return "", True, ""
+        ma_loi = getattr(exc, "ma_loi", "") or type(exc).__name__
+        return "", False, f"{ma or '?'} {ma_loi}".strip()
+    return str((ban or {}).get("reverse", "")).rstrip("."), True, ""
 
 
 #: Resolver cong khai de hoi "the gioi co thay khong". ⛔ KHONG dung resolver he
@@ -119,18 +165,66 @@ def trang_thai_ptr(ovh, ip: str, *, tra_cuu=None) -> tuple[str, str]:
 RESOLVER_CONG_KHAI = ("1.1.1.1", "8.8.8.8")
 
 
-def _tra_cuu_cong_khai(ip: str) -> str:
-    """PTR theo mot resolver CONG KHAI. Chuoi rong = the gioi chua thay."""
+class KhongDoDuocDns(OSError):
+    """Khong doc duoc cau tra loi cua resolver — ⛔ KHONG co nghia la khong co PTR.
+
+    🔴 Vi sao la mot ngoai le rieng: ban dau `_tra_cuu_cong_khai` tra chuoi rong
+       cho ca hai truong hop "resolver noi khong co" va "toi khong hieu dau ra".
+       Dau ra `nslookup` tren Windows la `Name:    x` (hai cham), regex lai cho
+       `name = x` (dang cua `-type=PTR`) — nen no **chua tung khop**, va nua DNS
+       cua phep kiem im lang tra rong suot. Mot dut mach do luong mac ao mot su
+       that ve ha tang thi khong ai di sua, vi trong mat nguoi doc no *la* su that.
+    """
+
+
+#: `Name:  x` (nslookup Windows) HOAC `... name = x` (nslookup Unix / -type=PTR).
+#: ⚠️ `Server:` va `Address:` cung o dau ra do — mau phai neo vao dung chu "name".
+def _ten_trong_dau_ra(dau_ra: str) -> str:
+    """Ten PTR trong dau ra `nslookup`, hoac rong neu khong co dong nao la ten."""
     import re
+
+    for mau in (r"(?im)^\s*name\s*:\s*(\S+)\s*$", r"(?im)\bname\s*=\s*(\S+)"):
+        khop = re.search(mau, dau_ra or "")
+        if khop:
+            return khop.group(1).rstrip(".")
+    return ""
+
+
+#: Cach resolver noi "dia chi nay khong co PTR". Do that 25/09 voi `192.0.2.1`:
+#: ma thoat **0**, stdout rong, stderr `*** ... can't find 192.0.2.1:
+#: Non-existent domain`. Nen ma thoat khong dung duoc lam dau hieu.
+_NOI_KHONG_CO = ("non-existent domain", "nxdomain", "can't find",
+                 "server failed", "no answer")
+
+
+def _noi_khong_co_ban_ghi(van_ban: str) -> bool:
+    thap = (van_ban or "").lower()
+    return any(cau in thap for cau in _NOI_KHONG_CO)
+
+
+def _tra_cuu_cong_khai(ip: str, *, chay=None) -> str:
+    """PTR theo resolver CONG KHAI. Ba ket cuc, ⛔ khong phai hai:
+
+    * mot ten            -> the gioi thay
+    * chuoi rong         -> resolver tra loi RO RANG la khong co ban ghi
+    * `KhongDoDuocDns`   -> khong doc duoc dau ra / khong goi duoc nslookup
+    """
     import subprocess
 
+    chay = chay or (lambda lenh, **kw: subprocess.run(
+        lenh, capture_output=True, text=True, timeout=15, **kw))
+    noi_khong_co = False
     for dns in RESOLVER_CONG_KHAI:
         try:
-            ra = subprocess.run(["nslookup", str(ip), dns], capture_output=True,
-                                text=True, timeout=15)
+            ra = chay(["nslookup", str(ip), dns])
         except (OSError, subprocess.SubprocessError):
             continue
-        ten = re.findall(r"[Nn]ame\s*=\s*(\S+)", ra.stdout)
+        ten = _ten_trong_dau_ra(getattr(ra, "stdout", "") or "")
         if ten:
-            return ten[0].rstrip(".")
-    return ""
+            return ten
+        if _noi_khong_co_ban_ghi((getattr(ra, "stdout", "") or "")
+                                 + (getattr(ra, "stderr", "") or "")):
+            noi_khong_co = True
+    if noi_khong_co:
+        return ""
+    raise KhongDoDuocDns("khong resolver cong khai nao tra loi doc duoc")

@@ -931,7 +931,14 @@ def _dien_hien_tai(db, may) -> str:
 
     try:
         return tac_vu.doc_dien(_instance_client(db, may), int(may.vmid))
-    except Exception:                          # noqa: BLE001 - chan doan, khong chan
+    except Exception as exc:                   # noqa: BLE001 - chan doan, khong chan
+        # 🔴 Cho nay TON TAI de chan doan (phan biet "may dang tat" voi "console
+        #    hong"), nen no la cho **te nhat** de nuot lang le: khi khong hoi duoc
+        #    Proxmox, khach nhan mot cau chung va trong log KHONG co gi ca.
+        # ⚠️ Chi TEN LOP — thong diep loi quanh vung cau hinh co the vong lai
+        #    chinh no (conninfo, URL, token). Xem N-54.
+        log.warning("VPS: khong hoi duoc dien cua may %s vmid=%s (%s)",
+                    may.id, may.vmid, type(exc).__name__)
         return tt.KHONG_RO
 
 

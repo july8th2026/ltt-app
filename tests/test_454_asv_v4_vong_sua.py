@@ -72,14 +72,24 @@ def _run_da_chay_het(db, *, owner="u1") -> AsvRun:
     ⚠️ `fingerprint=""` cung co chu dich: `giai_doan_lech_van_tay` bo qua giai
        doan khong co van tay, nen lan advance khong tu dat lai gi ca. Neu no tu
        dat lai, bai nay se xanh vi mot ly do khac han ly do no tuyen bo.
+
+    ⚠️ **`render` mang san mot `.mp4` trong `outputs.khoa_asset` (N-57, 25/09).**
+       Bai nay do vong SUA — RUN_DONE o day phai noi "vong sua da xu ly xong",
+       khong phai "co hien vat de giao". Thieu dong nay, moi bai `RUN_DONE`
+       trong tep se roi vao cong `co_hien_vat_giao_duoc` moi them o `jobs.py`
+       va bao `error` vi mot ly do KHAC han ly do bai dang kiem. Cong do co
+       phep kiem rieng o `test_483_asv_v7_may_trang_thai_giao_hang_rong.py`.
     """
     run = AsvRun(owner_id=owner, source_key="asv/u1/nguon/x.mp4",
                  settings={}, credit_held=0, status=RUN_RUNNING)
     db.add(run)
     db.flush()
     for g in pipeline.CHUOI:
+        outputs = None
+        if g.ten == pipeline.RENDER:
+            outputs = {"khoa_asset": [f"asv/{owner}/{run.id}/long-tieng.mp4"]}
         db.add(AsvStage(run_id=run.id, owner_id=owner, stage=g.ten,
-                        status=STAGE_SUCCEEDED, fingerprint=""))
+                        status=STAGE_SUCCEEDED, fingerprint="", outputs=outputs))
     db.flush()
     return run
 
@@ -248,9 +258,13 @@ def test_HET_VONG_thi_KHONG_lap_mai_va_KHONG_giet_lan_chay(db):
     assert kq1.get("sua_chua"), "vong dau phai sua"
 
     # Dua lan chay tro lai "da chay het" — y nhu worker da lam lai xong ma doan
-    # van khong vua.
+    # van khong vua. Worker THAT se render lai va sinh mp4 moi (N-57: thieu
+    # dong nay se giat vao cong `co_hien_vat_giao_duoc` vi mot ly do KHAC han
+    # ly do bai nay dang kiem — xem ghi chu o `_run_da_chay_het`).
     for s in features.cac_giai_doan(db, run):
         s.status = STAGE_SUCCEEDED
+        if s.stage == pipeline.RENDER:
+            s.outputs = {"khoa_asset": [f"asv/{run.owner_id}/{run.id}/long-tieng.mp4"]}
     db.flush()
 
     kq2 = _advance(db, run)

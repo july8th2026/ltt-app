@@ -100,21 +100,89 @@ def thu_mot_chu_ky(db: DbSession, may: VpsInstance, *,
     if gia <= 0:
         # Giá 0 = miễn phí (máy nội bộ, hoặc bảng giá chưa đặt). Vẫn đẩy hạn để
         # vòng quét không hỏi lại máy này mỗi phút.
-        return mo_chu_ky(db, may, gia=0, now=thoi_diem)
+        return mo_chu_ky(db, may, gia=0, bang_chung="", now=thoi_diem)
 
     so_du = credit.so_du(db, may.user_id)
     if so_du < gia:
         raise ThieuCreditError(
             f"{_TIEN_TO_THIEU_CREDIT}{gia} credit cho chu ky toi, so du con {so_du}")
 
-    credit.tru(db, may.user_id, gia, kind=KIND,
-               note=f"VPS {may.plan_id} — {CHU_KY_NGAY} ngay")
-    return mo_chu_ky(db, may, gia=gia, now=thoi_diem)
+    # 🔴 Bản cũ gọi `credit.tru(...)` và **vứt giá trị trả về**. `tru` trả `False`
+    #    khi số dư không đủ — chuyện xảy ra thật khi một `giu_cho` song song vừa ăn
+    #    hết số dư giữa `so_du()` ở trên và lời gọi này. Vứt nó đi ⇒ chu kỳ vẫn
+    #    được mở **miễn phí**, kèm một sự kiện `thu_phi` cho khoản không hề bị trừ.
+    #    (`tru` tự chặn số dư âm, nên thiệt hại không phải số dư âm — nó là một
+    #    chu kỳ miễn phí và một dòng sổ nói dối.)
+    but_toan = credit.tru_co_but_toan(db, may.user_id, gia, kind=KIND,
+                                      note=f"VPS {may.plan_id} — {CHU_KY_NGAY} ngay")
+    if but_toan is None:
+        raise ThieuCreditError(
+            f"{_TIEN_TO_THIEU_CREDIT}{gia} credit cho chu ky toi, tru khong thanh cong")
+    return mo_chu_ky(db, may, gia=gia, bang_chung=f"but_toan:{but_toan.id}",
+                     now=thoi_diem)
 
 
-def mo_chu_ky(db: DbSession, may: VpsInstance, *, gia: int,
+class ChuaThanhToanError(Exception):
+    """Xin mở một chu kỳ CÓ PHÍ mà không tra ra bút toán nào đã trừ tiền.
+
+    ⛔ Đây ⛔ không phải "khách thiếu tiền" (`ThieuCreditError`) — đó là chuyện
+    bình thường và có đường xử lý (treo máy). Đây là **lỗi của mã gọi**: một
+    đường nào đó đang cấp thời gian đã-trả-phí mà không thu tiền.
+    """
+
+
+#: Hai dạng bằng chứng `mo_chu_ky` chấp nhận, và ⛔ không có dạng thứ ba.
+BANG_CHUNG_JOB = "job"            # đã quyết toán một giữ chỗ (đường tạo máy)
+BANG_CHUNG_BUT_TOAN = "but_toan"  # một dòng trừ tiền cụ thể (đường gia hạn)
+
+
+def _kiem_bang_chung(db: DbSession, may: VpsInstance, *, gia: int,
+                     bang_chung: str) -> None:
+    """Tra SỔ xem tiền đã rời tài khoản chưa. ⛔ Không nhận lời người gọi.
+
+    🔴 Vì sao hàm này tồn tại — rà soát 25/09/2026, ba lỗ tiền và cả ba là MỘT lỗ:
+       `mo_chu_ky` nhận `gia` rồi cấp thêm một chu kỳ, **tin rằng** người gọi đã
+       thu. Hai trong ba người gọi không thu:
+
+       * nút **"Cài lại"**: route không đặt giữ chỗ nào, nên `_quyet_toan` bỏ qua
+         bước trừ tiền nhưng vẫn mở chu kỳ ⇒ +30 ngày miễn phí, `xoa_sau=None`,
+         và một `thu_phi` ghi `credit=1490` cho khoản chưa bị trừ. Bấm lại là sống
+         mãi với số dư 0;
+       * **gia hạn**: giá trị trả về của `credit.tru` bị vứt.
+
+       Vá từng người gọi là hai lần sửa, và người gọi thứ tư lại sai y như vậy.
+       Nên bất biến đặt ở **BIÊN**: ai muốn mở chu kỳ có phí thì phải đưa ra một
+       bút toán, và bút toán đó bị **tra lại**.
+
+    ⭐ Khuôn nên lặp lại: khi một hàm cấp thứ gì đáng tiền, nó ⛔ không được hỏi
+       người gọi "đã thu chưa" — nó phải tự đi xem.
+    """
+    if gia <= 0:
+        return          # chu kỳ miễn phí: không có gì để chứng minh
+    from platform_core import credit
+
+    loai, _, khoa = str(bang_chung or "").partition(":")
+    if loai == BANG_CHUNG_JOB and khoa:
+        da_thu = credit.da_thu_cho_job(db, khoa)
+    elif loai == BANG_CHUNG_BUT_TOAN and khoa:
+        da_thu = credit.so_da_tru_cua_but_toan(db, khoa, may.user_id)
+    else:
+        raise ChuaThanhToanError(
+            f"mo chu ky {gia} credit cho may {may.id} ma khong co bang chung "
+            f"(nhan {bang_chung!r}; phai la 'job:<id>' hoac 'but_toan:<id>')")
+    if da_thu < gia:
+        raise ChuaThanhToanError(
+            f"mo chu ky {gia} credit cho may {may.id} nhung so chi ghi {da_thu} "
+            f"credit da tru theo {bang_chung!r}")
+
+
+def mo_chu_ky(db: DbSession, may: VpsInstance, *, gia: int, bang_chung: str,
               now: datetime | None = None) -> int:
     """Mở một chu kỳ **đã được trả tiền ở nơi khác**. Trả số credit của chu kỳ.
+
+    `bang_chung` là `job:<job_id>` (đã quyết toán) hoặc `but_toan:<id>` (một dòng
+    trừ tiền), và nó được **tra lại trong sổ** — xem `_kiem_bang_chung`. Chu kỳ
+    miễn phí (`gia == 0`) truyền `""`.
 
     ## Vì sao tách khỏi `thu_mot_chu_ky`
 
@@ -135,6 +203,9 @@ def mo_chu_ky(db: DbSession, may: VpsInstance, *, gia: int,
        là dựng lại đúng vòng thu-rồi-hoàn dưới một cái tên khác.
     """
     thoi_diem = now or _now()
+    # ⭐ Kiểm TRƯỚC khi đụng vào `may`: một lượt bị từ chối ⛔ không được để lại
+    #    nửa thay đổi nào (hạn đã nới mà tiền chưa thu là đúng cái ta đang chặn).
+    _kiem_bang_chung(db, may, gia=gia, bang_chung=bang_chung)
     may.paid_until = _moc_ke_tiep(may, thoi_diem)
     may.xoa_sau = None
 

@@ -188,6 +188,29 @@ def run_configured_profile_preflight(
     )
 
 
+def nguyen_nhan_ngan(exc: BaseException) -> str:
+    """Mot cau ngan, KHONG bi mat, du de biet phai lam gi.
+
+    🔴 Do 25/09/2026: khoa OVH bi thu hoi, va bang suc khoe ho so in
+       `periodic preflight unavailable (OvhError)` cho CA BON thanh phan chan ban.
+       Dong do khong dan tới bat cu hanh dong nao: no khong noi la khoa, khong noi
+       ma so, va khai ca `compute` (Proxmox, hoan toan khoe) la CRITICAL. Chu du an
+       chi thay "He thong dang bao tri" o cua hang; tim ra goc mat 6 phep do.
+
+    ⛔ Khong ghep `message` cua nha cung cap vao day: no co khi vong lai chinh yeu
+       cau. Chi lay ma HTTP + ma loi dinh danh (`INVALID_CREDENTIAL`, ...).
+    """
+    ten = type(exc).__name__
+    ma = getattr(exc, "status", None)
+    ma_loi = str(getattr(exc, "ma_loi", "") or "")
+    phan = [ten]
+    if isinstance(ma, int):
+        phan.append(str(ma))
+    if ma_loi:
+        phan.append(ma_loi)
+    return " ".join(phan)[:100]
+
+
 def refresh_active_profiles(db, *, run=None) -> dict[str, bool]:
     """Periodic health refresh for every ACTIVE profile; never demotes.
 
@@ -212,8 +235,20 @@ def refresh_active_profiles(db, *, run=None) -> dict[str, bool]:
             for component in profiles.REQUIRED_HEALTH_COMPONENTS:
                 db.add(VpsProfileHealth(
                     infrastructure_profile_id=row.id, component=component,
-                    status="CRITICAL", observed_at=now, generated_at=now,
-                    summary=f"periodic preflight unavailable ({type(exc).__name__})"))
+                    # ⭐ `UNKNOWN`, khong phai `CRITICAL`. Hai dieu khac nhau:
+                    #    `CRITICAL` = da do va no hong; `UNKNOWN` = chua do duoc.
+                    #    Khong mot thanh phan nao trong vong nay duoc do — preflight
+                    #    no TRUOC do (khoa OVH chet 25/09 lam `provider.health()`
+                    #    nem), nen khai `compute` (Proxmox hoan toan khoe) la
+                    #    CRITICAL la noi mot dieu ta chua he biet.
+                    #
+                    # ⛔ Va no KHONG noi cua ban them mot milimet:
+                    #    `profiles._danh_gia` doi `row.status != "HEALTHY"` la chan
+                    #    (profiles.py:150) — no khong doi `CRITICAL`. Nen day la
+                    #    mot thay doi ve SU THAT, khong phai ve CHINH SACH.
+                    status="UNKNOWN", observed_at=now, generated_at=now,
+                    summary=("khong do duoc thanh phan nay; preflight dung som: "
+                             + nguyen_nhan_ngan(exc))))
             row.last_health_at = now
             db.commit()
             ket_qua[profile_id] = False

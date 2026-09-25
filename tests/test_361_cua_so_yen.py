@@ -808,8 +808,21 @@ def test_pytest_GO_TAY_luot_lon_thi_XIN_khoa(tmp_path, monkeypatch):
     cpu, pg = cy._tep("cpu_nhieu"), cy._tep("postgres_test")
 
     cf.pytest_collection_modifyitems(None, None, lon)
-    assert cpu.exists() and pg.exists(), (
-        "luot `pytest` go tay LON van vo hinh voi khoa")
+    assert cpu.exists(), "luot `pytest` go tay LON van vo hinh voi khoa"
+    # 🔴 **`postgres_test` phai KHONG duoc giu — va do la mot khang dinh, ⛔ khong
+    #    phai mot cho trong (25/09/2026).**
+    #
+    #    Bai nay tung doi `pg.exists()`. `conftest.py:143` **co y bo** khoa do tu
+    #    24/09 (Task 0 / N-10): `pg_scratch.scratch_url` cap cho moi lan mot ten
+    #    CSDL rieng, nen khong con mot cai ten dung chung nao de tranh. Cau `and
+    #    pg.exists()` o lai lam bai nay **do tren `main`** — mot phep kiem doi
+    #    bang chung cu sau khi duong da doi.
+    #
+    # ⭐ Viet thanh `not pg.exists()` chu ⛔ khong xoa ve: neu ai them lai khoa do
+    #    ma khong noi ly do, bai nay do — va ho phai doc `conftest.py:143` truoc.
+    assert not pg.exists(), (
+        "`postgres_test` da bo tu 24/09 (schema rieng moi lan) — ai giu lai no "
+        "phai giai trinh o `conftest.py:143`, ⛔ khong giu am tham")
     ban_ghi = json.loads(cpu.read_text(encoding="utf-8"))
     assert ban_ghi["lenh"] == "pytest go tay", (
         "phien khac phai DOC RA duoc day la mot luot go tay")
@@ -1083,3 +1096,92 @@ def test_may_ban_PHAN_BIET_khong_do_duoc_voi_khong_ai_ban(monkeypatch):
     #    doi kieu tra ve o day bien mot ban sua NGHIA thanh mot ban pha hop
     #    dong o cho khong lien quan.
     assert may_ban.quet() == {}, "`quet()` phai luon tra dict, ke ca khi vang"
+
+
+# ── INDEX cua cay chinh la mot khoa TAI NGUYEN DOC QUYEN (ca that 25/09/2026) ──
+#
+# Mot phien `git add` roi de day khoa duong `git merge` cua MOI phien khac, va
+# `cua_so_yen trang-thai` truoc day bao "RANH" ngay trong luc do. Bon bai duoi
+# chot ca cau tra loi (co ai giu khong) VA cai gia phai tra de hoi (khong duoc tu
+# giu khoa index khi di hoi).
+
+
+def _kho_git(goc: Path) -> Path:
+    """Mot kho git that, roi rac, de khong phai stage vao cay `main` dung chung."""
+    goc.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["git", "init", "-q", "."], cwd=goc, check=True,
+                   capture_output=True)
+    return goc
+
+
+def test_index_BAN_thi_khai_ra_dung_nhung_tep_dang_giu(tmp_path, monkeypatch):
+    kho = _kho_git(tmp_path)
+    (kho / "a.txt").write_text("x", encoding="utf-8")
+    (kho / "b.txt").write_text("y", encoding="utf-8")
+    subprocess.run(["git", "add", "a.txt", "b.txt"], cwd=kho, check=True,
+                   capture_output=True)
+    monkeypatch.chdir(kho)
+
+    ix = cy.index_dung_chung()
+
+    assert ix is not None, "index co tep staged ma ham bao khong ai giu"
+    assert sorted(ix["tep"]) == ["a.txt", "b.txt"]
+    assert Path(ix["cay"]).resolve() == kho.resolve()
+
+
+def test_index_SACH_thi_tra_None(tmp_path, monkeypatch):
+    """Doi chung. ⛔ Thieu bai nay thi mot ham LUON tra dict cung xanh o bai tren."""
+    monkeypatch.chdir(_kho_git(tmp_path))
+    assert cy.index_dung_chung() is None
+
+
+def test_doc_tu_WORKTREE_van_lan_ra_cay_CHINH(tmp_path, monkeypatch):
+    """Ca that: phien lam viec o worktree rieng, ma index bi giu o cay `main`.
+
+    ⚠️ Neu `_cay_main()` tra ve cay DANG DUNG thi ham se bao "khong ai giu" dung
+       luc duong gop bi chan — tuc im lang o dung ca no sinh ra de bat.
+    """
+    chinh = _kho_git(tmp_path / "chinh")
+    (chinh / "a.txt").write_text("x", encoding="utf-8")
+    subprocess.run(["git", "add", "a.txt"], cwd=chinh, check=True,
+                   capture_output=True)
+    subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t",
+                    "commit", "-qm", "nen"], cwd=chinh, check=True,
+                   capture_output=True)
+    wt = tmp_path / "wt"
+    subprocess.run(["git", "worktree", "add", "-q", str(wt), "-b", "nhanh"],
+                   cwd=chinh, check=True, capture_output=True)
+    monkeypatch.chdir(wt)
+
+    assert Path(cy._cay_main()).resolve() == chinh.resolve()
+
+
+def test_di_HOI_ai_giu_index_thi_KHONG_duoc_tu_giu_khoa_index(tmp_path,
+                                                             monkeypatch):
+    """🔴 `--no-optional-locks` la BAT BUOC, ⛔ khong phai mot toi uu.
+
+    `git diff` binh thuong duoc phep ghi lai index (stat cache) ⇒ chinh cong cu
+    di hoi *"ai dang giu khoa index"* lai giu khoa index. Bo co nay la **tu tao ra
+    dung cai benh minh di do**.
+
+    ⭐ Bai nay doc ARGV THUC SU truyen cho git, ⛔ khong grep ma nguon — doi cach
+       go (them khoang trang, doi thu tu co) ⛔ khong duoc lam no do oan.
+    """
+    kho = _kho_git(tmp_path)
+    monkeypatch.chdir(kho)
+    da_goi: list[list[str]] = []
+    that = subprocess.run
+
+    def ghi_lai(cmd, *a, **kw):
+        if isinstance(cmd, list):
+            da_goi.append(list(cmd))
+        return that(cmd, *a, **kw)
+
+    monkeypatch.setattr(cy.subprocess, "run", ghi_lai)
+    cy.index_dung_chung()
+
+    doc_index = [c for c in da_goi if "diff" in c and "--cached" in c]
+    assert doc_index, "khong thay loi goi nao doc index"
+    for c in doc_index:
+        assert "--no-optional-locks" in c, (
+            f"loi goi doc index thieu --no-optional-locks: {c}")

@@ -7,9 +7,15 @@ testing hard:
      Without it "has segment 47 been synthesized" has more than one answer.
 
 **§2 billing** — a stage that owns items must **not** also write its own
-     `credit_actual`. 🔴 This is the only surface in V4 where a customer can be charged
-     twice for one piece of work, and it fails **silently**: the run still finishes, the
-     video is still correct, the ledger still balances. Only the number is wrong.
+     `credit_actual`. 🔴 It fails **silently**: the run still finishes, the video is
+     still correct, the internal cost ledger (`tong_da_dung`) still balances. Only
+     the number is wrong. ⚠️ **Updated 2026-09-25**: since flat pricing
+     (`gia.tinh_credit`, `test_3900_asv_gia_phang.py`) this is no longer a surface
+     where the *customer* can be charged twice — `quyet_toan` prices from measured
+     source duration, not from `credit_actual`. It is still the only surface for
+     double-counting our own **internal cost** tracking (`kiem_tran_chi` and the
+     ops view read `tong_da_dung`, which still enforces this — see
+     `test_quyet_toan_di_qua_cung_mot_cua` for what changed on the customer side).
 
 **§3 not a queue** — the positive half of D-V4-11. `test_427` proves the forbidden
      columns are absent; here we prove nothing *reads* this table to pick work.
@@ -160,11 +166,30 @@ def test_giai_doan_vua_co_don_vi_vua_tu_ghi_chi_phi_thi_NEM(db):
 
 
 def test_quyet_toan_di_qua_cung_mot_cua(db):
-    """`quyet_toan` doc `tong_da_dung`, nen no thua ke chot chong tinh hai lan.
+    """`quyet_toan` tinh tien khach theo GIA PHANG (do dai nguon do duoc), ⛔
+    KHONG con doc `tong_da_dung`/`credit_actual` cap don vi hay giai doan nua.
 
-    ⭐ Chot bang cach GOI, khong bang cach doc ma nguon: mot ngay nao do ai do
-       viet lai `quyet_toan` de tu cong lay, va phep kiem doc ma nguon se van
-       xanh neu ho giu nguyen ten bien.
+    ⭐ **Cap nhat 25/09/2026 (gia phang, xem `features.quyet_toan` va
+       `tests/test_3900_asv_gia_phang.py`).** Ban truoc phep kiem nay chot
+       `quyet_toan` phai NEM `TinhHaiLan` khi mot giai doan vua co don vi viec
+       vua tu ghi `credit_actual` cua chinh no (§2 cua tep nay) — dung luc
+       `quyet_toan` con doc `tong_da_dung` de ra so tien khach tra, nen no
+       "thua ke" chot chong-tinh-hai-lan cua ham do.
+
+       Tu gia phang: so tien khach tra den tu `gia.tinh_credit(giay)` (do dai
+       NGUON, khong lien quan `credit_actual`), nen mot loi ghi so cai cap
+       don vi/giai doan ⛔ KHONG con lam sai so khach tra qua `quyet_toan`
+       nua — no khong con la "cung mot cua" voi `tong_da_dung`. `TinhHaiLan`
+       van song va van chot: gio la mot bat bien CHI PHI NOI BO cua rieng
+       `tong_da_dung` (doc no truc tiep — xem
+       `test_giai_doan_vua_co_don_vi_vua_tu_ghi_chi_phi_thi_NEM`), khong con
+       nam tren duong quyet toan khach.
+
+    Phep kiem nay gio chot dieu NGUOC lai: du co loi ghi hai lan o cap giai
+    doan, `quyet_toan` van chay xong KHONG nem, va so tien khach (`run.
+    credit_actual` sau khi quyet toan) KHONG lien quan gi toi con so bi ghi
+    hai lan do (10 + 10 = 20) — fixture nay khong co hien vat giao duoc, nen
+    luat `N-21` (khong giao duoc thi khong thu) nha toan bo hold, tra ve 0.
     """
     run = _run(db)
     _item(db, run, pipeline.VOICE_SYNTHESIS, "seg-0", credit=10)
@@ -173,8 +198,11 @@ def test_quyet_toan_di_qua_cung_mot_cua(db):
     db.flush()
 
     from apps.auto_scan_video.tables import RUN_DONE
-    with pytest.raises(features.TinhHaiLan):
-        features.quyet_toan(db, run, trang_thai_cuoi=RUN_DONE)
+    ra = features.quyet_toan(db, run, trang_thai_cuoi=RUN_DONE)  # khong nem
+
+    assert ra.credit_actual == 0, (
+        "khong hien vat giao duoc phai nha toan bo hold (N-21), khong phai "
+        "tong da bi ghi hai lan (20)")
 
 
 def test_dung_lai_mot_don_vi_hop_le_ton_0_credit(db):

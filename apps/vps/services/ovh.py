@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import hashlib
 import json
 from ipaddress import IPv4Address, IPv4Interface
+import logging
 import re
 import time
 from typing import Any, Callable
@@ -12,9 +13,31 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
+log = logging.getLogger(__name__)
+
 
 class OvhError(RuntimeError):
-    """OVH could not be read; response bodies are deliberately not exposed."""
+    """OVH could not be read; response bodies are deliberately not exposed.
+
+    `status` + `ma_loi` la **bo phan loai**, khong phai noi dung: mot ma HTTP va
+    ma loi ngan cua OVH (`errorCode`/`class`). Than phan hoi van khong bao gio ra
+    ngoai — no co the vong lai chinh yeu cau.
+
+    🔴 Vi sao can: `_request` tung gop MOI HTTPError thanh mot cau duy nhat
+       `OVH request failed (HTTPError)`. Trong MOT ngay 25/09/2026 dieu do gay ba
+       trieu chung khac nhau:
+         1. `409 already setted` (PTR da dung) khong phan biet duoc voi that bai;
+         2. `403 credential is not valid` (khoa chet) bi doc thanh "khong co ban
+            ghi reverse" — cong cu khai sai MOI IP;
+         3. suc khoe ho so in `periodic preflight unavailable (OvhError)`, mot
+            dong khong dan tới bat cu hanh dong nao — mat 6 phep do moi ra goc.
+       Mot ma so ba ky tu tach ba trieu chung do ra.
+    """
+
+    def __init__(self, *args, status: int | None = None, ma_loi: str = ""):
+        super().__init__(*args)
+        self.status = status
+        self.ma_loi = ma_loi
 
 
 class CheckoutNotSent(OvhError):
@@ -74,6 +97,35 @@ class OvhCatalogIpQuote:
 Transport = Callable[..., Any]
 
 
+def _ma_loi_ovh(exc) -> str:
+    """Chi doc `errorCode`/`class` tu than loi — ⛔ khong bao gio `message`.
+
+    OVH dat cau tra loi tu do vao `message`, va cau do co khi vong lai chinh yeu
+    cau (co the mang duong dan, tham so). `errorCode` va `class` la tu vung dong
+    cua OVH (`INVALID_CREDENTIAL`, `Client::Forbidden`) nen an toan de ghi log.
+    """
+    try:
+        than = exc.read(4096)
+    except Exception as doc_loi:              # noqa: BLE001 - loi khong co than
+        # `URLError`/`TimeoutError` khong co `.read()`; do la binh thuong, khong
+        # phai su co. Nhung van khai ra: mot ham "doc ma loi" im lang tra rong la
+        # dung cai lam ma loi bien mat, va ta dang o day vi chuyen do.
+        # ⚠️ Chi TEN LOP — than loi cua nha cung cap khong duoc vao log.
+        log.debug("OVH: khong doc duoc than loi (%s)", type(doc_loi).__name__)
+        return ""
+    try:
+        doc = json.loads(than.decode("utf-8", "replace"))
+    except (json.JSONDecodeError, AttributeError):
+        return ""
+    if not isinstance(doc, dict):
+        return ""
+    for khoa in ("errorCode", "class"):
+        gia = doc.get(khoa)
+        if isinstance(gia, str) and re.fullmatch(r"[A-Za-z_:]{1,60}", gia):
+            return gia
+    return ""
+
+
 class OvhClient:
     def __init__(self, config: OvhConfig, *, transport: Transport | None = None):
         self.config = config.verify()
@@ -87,7 +139,10 @@ class OvhClient:
                                  headers=headers), timeout=30) as response:
                 body = response.read(2_000_001)
         except (HTTPError, URLError, TimeoutError) as exc:
-            raise OvhError(f"OVH request failed ({type(exc).__name__})") from None
+            status = getattr(exc, "code", None)
+            raise OvhError(f"OVH request failed ({type(exc).__name__})",
+                           status=status if isinstance(status, int) else None,
+                           ma_loi=_ma_loi_ovh(exc)) from None
         if len(body) > 2_000_000:
             raise OvhError("OVH response exceeded safe size")
         try:

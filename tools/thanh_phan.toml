@@ -250,7 +250,18 @@ duong = ["platform_core/workflow/vo_boc.py",
          # lai bo test ranh gioi. `node_modules/` khong nam trong kho.
          "connector_runner/src/", "connector_runner/allowlist.json",
          "connector_runner/catalog.json", "connector_runner/test/",
-         "apps/connector_runner/"]
+         "apps/connector_runner/",
+         # code_sandbox: lop isolated-vm THU HAI ben trong CUNG vo AppContainer
+         # (docstring rieng: "moi lenh goi o day di qua vo_boc.chay y het mot
+         # piece") — cung ranh gioi an ninh voi vo_boc/proxy_egress, khong
+         # phai mot lop rieng. `test_394` bat no MO COI 25/09 (P-D buoc 1).
+         "platform_core/workflow/code_sandbox.py",
+         # marketplace: cong duyet FAIL-CLOSED de cai piece BEN THU BA luc
+         # chay, di qua CUNG vo voi piece tinh (docstring rieng: "cai chay
+         # trong CUNG vo voi piece tinh, khong phai vo rieng") — be mat tan
+         # cong lon nhat cua ca cum connector. `test_394` bat no MO COI 25/09
+         # (plan wfm buoc 3).
+         "platform_core/workflow/marketplace.py"]
 he_trong = "thi_hanh"
 
 [thanh_phan."core:kho"]

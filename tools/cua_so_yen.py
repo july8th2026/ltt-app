@@ -39,6 +39,7 @@ import argparse
 import json
 import os
 import socket
+import subprocess
 import sys
 import tempfile
 import time
@@ -369,6 +370,101 @@ def loi_phien_khac_dang_giu(phien_minh: str = "",
                if not (phien_minh and r.get("phien") == phien_minh))
 
 
+#: 🔴 **INDEX cua cay `main` la mot khoa TAI NGUYEN DOC QUYEN ma khong ai khai
+#:    (ca that 25/09/2026).**
+#:
+#:    Mot phien `git add` roi de day (dang go mot banh coc do) thi `git merge`
+#:    cua MOI phien khac tra `error: Your local changes ... would be overwritten
+#:    by merge` va **bo ca luot merge** — ke ca khi hai ben khong dung mot tep
+#:    nao. Git tu choi vi **index ban**, khong vi xung dot noi dung.
+#:
+#: ⭐ No thuoc loai `TAI_NGUYEN_DOC_QUYEN` (nhu `postgres_test`), khong phai loai
+#:    `cpu_nhieu`: mot phien chen vao giua **lam hong chinh viec cua nguoi kia**.
+#:    Nen luat da viet cho loai do ap vao day NGUYEN VAN: khong giu trong luc CHO.
+#:
+#: ⛔ Va vi sao no vo hinh: ta co cau hoi "ai dang giu CPU" ma khong co cau hoi
+#:    "ai dang giu index". Ham nay la cau hoi con thieu.
+#:
+#: ⚠️ `--no-optional-locks` la BAT BUOC, khong phai toi uu: `git diff` binh thuong
+#:    duoc phep ghi lai index (stat cache) — tuc chinh cong cu di HOI "ai dang giu
+#:    khoa index" lai giu khoa index. Bo co nay la tu tao ra benh minh di do.
+BAT_BIEN_INDEX = "git diff --cached --quiet (trong cay `main` dung chung)"
+
+
+def _cay_main() -> Path | None:
+    """Cay LAM VIEC CHINH cua kho, du ta dang dung o worktree nao.
+
+    `--git-common-dir` tro toi `<cay chinh>/.git` cho moi worktree, nen cha cua no
+    la cay chinh. Doc tu worktree rieng van tra ve dung cay `main`.
+    """
+    try:
+        ra = subprocess.run(["git", "rev-parse", "--path-format=absolute",
+                             "--git-common-dir"],
+                            capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if ra.returncode != 0 or not ra.stdout.strip():
+        return None
+    goc = Path(ra.stdout.strip())
+    return goc.parent if goc.name == ".git" else None
+
+
+def index_dung_chung() -> dict | None:
+    """Ai dang giu index cua cay chinh. `None` = khong ai, tuc duong gop THONG.
+
+    ⛔ Ham nay KHONG doan duoc **phien nao** dang giu: git khong ghi dieu do o dau.
+       No tra ve **danh sach tep** va **giu tu bao gio** — chu cua no suy ra tu ten
+       tep. Khai gioi han nay ra thay vi in mot cai ten doan bua.
+    """
+    cay = _cay_main()
+    if cay is None or not cay.is_dir():
+        return None
+    try:
+        ra = subprocess.run(["git", "--no-optional-locks", "-C", str(cay),
+                             "diff", "--cached", "--name-only"],
+                            capture_output=True, text=True, timeout=20)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if ra.returncode != 0:
+        return None
+    tep = [d for d in ra.stdout.splitlines() if d.strip()]
+    if not tep:
+        return None
+    phut = 0.0
+    try:
+        moc = (cay / ".git" / "index").stat().st_mtime
+        phut = max(0.0, (time.time() - moc) / 60.0)
+    except OSError:
+        pass
+    return {"cay": str(cay), "tep": tep, "phut": phut}
+
+
+def _in_index() -> None:
+    """In dong "ai dang giu index" — GOI CA KHI khong khoa nao bi giu.
+
+    ⭐ Day la diem cua ham: mot duong gop bi chan trong luc `cua_so_yen` bao RANH
+       la dung ca that 25/09. Chi in khi RANH thi nguoi ta se khong bao gio thay.
+    """
+    ix = index_dung_chung()
+    if ix is None:
+        return
+    n = len(ix["tep"])
+    _in(f"[index] {n} tep dang STAGED trong cay chinh ({ix['cay']}) "
+        f"- duong `git merge` vao `main` dang BI CHAN cho moi phien.")
+    for d in ix["tep"][:10]:
+        _in(f"    {d}")
+    if n > 10:
+        _in(f"    ... va {n - 10} tep nua")
+    _in(f"    Giu khoang {ix['phut']:.0f} phut (mtime cua .git/index).")
+    # ⚠️ Nguong o day co y NHO: staging chi duoc ton tai ben trong MOT buoc
+    #    `add`->`commit` lien mach, tuc vai GIAY. Thay no song qua 2 phut la da
+    #    ra ngoai hinh dang duoc phep — khong phai "hoi lau", ma la "sai hinh".
+    if ix["phut"] >= 2:
+        _in("    CANH BAO: staging KHONG phai cho dau viec. Commit phan cua minh "
+            "roi sua tiep, hoac dua viec ve worktree rieng.")
+    _in(f"    Bat bien: {BAT_BIEN_INDEX}")
+
+
 def dang_giu() -> list[dict]:
     """Moi khoa dang ton tai tren may, kem ly do treo neu co.
 
@@ -556,6 +652,7 @@ def main() -> int:
         ds = dang_giu()
         if not ds:
             _in("RANH - khong tai nguyen nao dang bi giu.")
+            _in_index()
             return 0
         for bg in ds:
             if bg.get("hong"):
@@ -566,6 +663,7 @@ def main() -> int:
                 _in(f"    CANH BAO: {cb}")
             if bg.get("treo"):
                 _in(f"    CANH BAO: TREO ({bg['treo']}) - luot sau tu doat.")
+        _in_index()
         return 0
 
     can_nha = ([a.tai_nguyen] if a.tai_nguyen

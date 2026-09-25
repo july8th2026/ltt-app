@@ -110,14 +110,18 @@ def cpu_cay(pid: int) -> tuple[float, int]:
     try:
         goc = psutil.Process(int(pid))
         cac = [goc] + goc.children(recursive=True)
-    except Exception:                                    # noqa: BLE001
+    except Exception as exc:                              # noqa: BLE001
+        print(f"[cpu_cay] khong doc duoc tien trinh {pid}: {type(exc).__name__}",
+              file=sys.stderr)
         return (0.0, 0)
     for p in cac:
         try:
             t = p.cpu_times()
             tong += float(t.user) + float(t.system)
             so += 1
-        except Exception:                                # noqa: BLE001
+        except Exception as exc:                          # noqa: BLE001
+            print(f"[cpu_cay] bo qua mot tien trinh con (da thoat?): "
+                  f"{type(exc).__name__}", file=sys.stderr)
             continue
     return (round(tong, 2), so)
 
@@ -242,6 +246,9 @@ def lenh_theo_doi(args) -> int:
     #    "phep do tro thanh nghi can" ma QUY_TAC_CHAY_LENH_NANG §3.3 canh bao.
     #    `rollback()` dau moi nhip mo mot giao dich moi ⇒ van doc duoc du lieu moi.
     dbmod.get_engine()
+    # `get_engine()` vua goi o tren dat `_session_factory` — cung mot khang
+    # dinh voi `platform_core/db.py::get_session()` cho dung bien nay.
+    assert dbmod._session_factory is not None      # noqa: SLF001
     phien = dbmod._session_factory()     # noqa: SLF001 - khong co cua cong khai
     xong = False
     # ⭐ DIEU KIEN DO, lay mau moi nhip. `QUY_TAC_CHAY_LENH_NANG.md` §2b: cot
@@ -367,12 +374,16 @@ def lenh_theo_doi(args) -> int:
           f"{'loi tb':>7} {'CPU nen %':>10} {'lan thu':>8}  worker")
     for g in ten:
         h = do.get(g, {})
-        cpu = h.get("cpu_giay")
+        # `cpu_bc` (bao cao) — ⛔ khong dat lai ten `cpu`: bien do o vong lap
+        # lay mau phia tren la `float` (tu `cpu_cay()`), con day la mot gia
+        # tri doc tho tu `dict` (`Any | None`) — cung ten trong CUNG mot ham
+        # se ep mypy suy mot kieu chung sai cho ca hai.
+        cpu_bc = h.get("cpu_giay")
         tuong = h.get("tuong_giay")
-        loi_tb = (round(cpu / tuong, 2) if isinstance(cpu, (int, float))
+        loi_tb = (round(cpu_bc / tuong, 2) if isinstance(cpu_bc, (int, float))
                   and isinstance(tuong, (int, float)) and tuong else "-")
         print(f"{g:16} {str(h.get('trang_thai','(chua chay)')):10} "
-              f"{cpu if cpu is not None else '-'!s:>9} "
+              f"{cpu_bc if cpu_bc is not None else '-'!s:>9} "
               f"{tuong if tuong is not None else '-'!s:>9} "
               f"{loi_tb!s:>7} {h.get('cpu_nen_tb','-')!s:>10} "
               f"{h.get('lan_thu','-')!s:>8}  {h.get('worker_id','')}")
@@ -387,7 +398,9 @@ def lenh_theo_doi(args) -> int:
     def _gio(v):
         try:
             return _dt.fromisoformat(str(v))
-        except Exception:                                # noqa: BLE001
+        except Exception as exc:                          # noqa: BLE001
+            print(f"[thoi gian chet] moc thoi gian khong doc duoc {v!r}: "
+                  f"{type(exc).__name__}", file=sys.stderr)
             return None
     moc = sorted(
         ((a, b, g) for g, h in do.items()

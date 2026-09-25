@@ -33,7 +33,8 @@ def _configured_preflight(db, row) -> bool:
             db.add(VpsProfileHealth(
                 infrastructure_profile_id=row.id, component=component,
                 status="CRITICAL", observed_at=now, generated_at=now,
-                summary=f"configured preflight unavailable ({type(exc).__name__})"))
+                summary=("khong do duoc thanh phan nay; preflight dung som: "
+                         + preflight.nguyen_nhan_ngan(exc))))
         row.last_health_at = now
         return False
 

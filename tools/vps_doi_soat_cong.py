@@ -26,6 +26,28 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+
+def _nap_env(duong: str) -> None:
+    """Nap `secrets\app.env` vao os.environ neu env chua co san.
+
+    Cong cu van hanh duoc goi bang tay tren may chu, noi bi mat CHI nam trong
+    app.env (dich vu duoc nssm nuong env luc cai). Khong nap thi nguoi chay
+    nhan mot traceback `DatabaseNotConfigured` thay vi mot cau bao ro rang.
+    """
+    import os
+
+    tep = Path(duong)
+    if os.environ.get("LTT_DATABASE_URL") or not tep.exists():
+        return
+    for dong in tep.read_text(encoding="utf-8-sig").splitlines():
+        dong = dong.strip()
+        if dong and not dong.startswith("#") and "=" in dong:
+            ten, gia = dong.split("=", 1)
+            os.environ.setdefault(ten.strip(), gia.strip())
 
 # ⭐ MOT nguon cho ca cong cu nay lan vong bao tri (`bao_tri._kiem_cong_quan_tri`).
 #    Hai ban do se lech, va chung se lech o cho quyet dinh "co bi lo khong".
@@ -82,7 +104,12 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Doi soat cong cua cong vao VPS.")
     ap.add_argument("--khong-hoi-gateway", action="store_true",
                     help="bo qua phep doc luat qua SSH (chi do tu ben ngoai)")
+    ap.add_argument("--env", default=r"C:\LTTPlatform\secrets\app.env",
+
+                      help="tep bi mat de nap khi env chua co san")
     a = ap.parse_args(argv)
+
+    _nap_env(a.env)
 
     ip_quan_tri, da_ban, duoc_giu = _doc_so_sach()
     loi: list[str] = []
