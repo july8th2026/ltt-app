@@ -94,8 +94,17 @@ def test_node_loi_chua_publish_duoc_thi_bao_ra_chu_khong_giau(api):
     body = api.get("/agent/api/v3/palette").json()
     trig = next(n for n in body["nhom"] if n["category"] == "TRIGGERS")["nut"]
     theo_ten = {x["type"]: x for x in trig}
-    assert set(theo_ten) == {"trigger.manual",
-                             "trigger.piece.google_sheets.new_spreadsheet"}
+    # ⭐ 25/09 (vong P-C): them 3 piece POLLING that (google-drive, gmail,
+    #    notion) canh google-sheets — xem allowlist.json `palette`.
+    assert set(theo_ten) == {
+        "trigger.manual",
+        "trigger.piece.google_sheets.new_spreadsheet",
+        "trigger.piece.google_drive.new_file",
+        "trigger.piece.google_drive.new_folder",
+        "trigger.piece.google_drive.new_or_updated_file",
+        "trigger.piece.gmail.gmail_new_email_received",
+        "trigger.piece.notion.new_database_item",
+    }
     # Điều bài này thật sự chốt: node CHƯA publish được thì palette **khai ra**,
     # ⛔ không giấu đi. Hỏi từng cái theo TÊN.
     for ten, x in theo_ten.items():
