@@ -134,6 +134,28 @@ def build_prompt(goal: str, *, muc: list[dict], ngan_sach_credit: int,
        về ĐỊNH DẠNG dữ liệu chảy qua cạnh) nhưng sai Ô cần điền, và bị từ
        chối bằng `canh_khong_hop_le`. Không phải model kém; đây là một chỗ
        lược đồ chưa từng được nói ra.
+
+    ⭐ `[QUY_UOC_BIEU_THUC]` là dòng MỚI (25/09, làn `wfk`, lượt gọi thật thứ
+       hai qua máy B — `tests/test_4190_flow_g_goi_model_that.py::_LOT2_25_09`).
+       `check_ready` (`core.if`) sinh
+       `dieu_kien = "{{ nodes.fetch_sheet.output.json.status === 'READY' }}"`
+       — HAI lỗi cùng lúc mà bản trước không hề cảnh báo:
+       1. bọc trong `{{ }}` dù tham số kiểu `bieu_thuc`/`bang_bieu_thuc` của
+          NODE LÕI (`bien_dich.KIEU_BIEU_THUC`) phải TRẦN — bản trước chỉ có
+          MỘT câu `[DAU_RA]` chung cho mọi tham số ("Tham chiếu … bằng
+          `{{ nodes.<id>.output.<cong> }}`"), không phân biệt tham số CHUỖI
+          của node app/tool (đúng là cần `{{ }}` để nội suy) với tham số
+          BIỂU THỨC của node lõi (không ngoặc, đọc thẳng bằng
+          `ngon_ngu.tinh`/`ast.parse`);
+       2. `===` của JavaScript — ngôn ngữ §6 chỉ có `==`/`!=`
+          (`chinh_sach.py`: `ast.Eq`/`ast.NotEq`), và vì được phân tích bằng
+          `ast.parse` (cú pháp Python), `===` không bị từ chối bằng một
+          thông điệp rõ ràng — nó là lỗi cú pháp thẳng.
+       Bài học lặp lại của `vi-du-trong-loi-nhac-la-menh-lenh-ngam.md`: một
+       lược đồ chưa từng được GIẢI NGHĨA (chỉ dump JSON thô
+       `"dieu_kien":{"type":"bieu_thuc"}`) là một lược đồ model phải ĐOÁN —
+       và đoán theo mẫu quen (`{{ }}` của app/tool, `===` của JS) chứ không
+       theo Sec6.
     """
     dong = ["[DANH_MUC_NODE]"]
     for m in muc:
@@ -154,12 +176,23 @@ def build_prompt(goal: str, *, muc: list[dict], ngan_sach_credit: int,
         " tri: DATA (du lieu thuong), CONTROL (chi dieu khien, khong mang"
         " du lieu), ERROR (nhanh xu ly loi). Khong dung ten dinh dang du"
         " lieu (vd 'json') lam kind.",
+        "[QUY_UOC_BIEU_THUC] Trong `tham_so` cua danh muc tren, mot tham so"
+        " co luoc do `\"type\":\"bieu_thuc\"` (vi du `dieu_kien` cua"
+        " core.if, `bieu_thuc` cua core.switch) hoac `\"bang_bieu_thuc\"`"
+        " la mot BIEU THUC ngon ngu Sec6 TRAN — KHONG duoc boc trong"
+        " `{{ }}`. Viet thang, vi du:"
+        " dieu_kien = nodes.fetch_sheet.output.json.status == 'READY'"
+        " (KHONG phai \"{{ nodes.fetch_sheet.output.json.status === 'READY'"
+        " }}\"). Ngon ngu Sec6 CHI co hai toan tu so sanh bang la `==` va"
+        " `!=` — KHONG co `===`/`!==` cua JavaScript, dung se bi tu choi.",
         "[MUC_TIEU] " + (goal or "").strip()[:8000],
         "[DAU_RA] Tra ve DUNG mot object JSON: " + mau
         + " . `type` phai DUNG Y HET mot chuoi trong [DANH_MUC_NODE] (phan"
         " sau `type=`), KHONG duoc noi them `@version` hay bat ky hau to"
         " nao vao `type` — phien ban ghi rieng o truong `type_version`."
-        " Tham chieu ket qua buoc truoc bang {{ nodes.<id>.output.<cong> }}."
+        " Voi tham so CHUOI thuong (KHONG phai bieu thuc TRAN da noi o"
+        " [QUY_UOC_BIEU_THUC]), tham chieu ket qua buoc truoc bang"
+        " {{ nodes.<id>.output.<cong> }}."
         " Khong markdown, khong giai thich.",
     ]
     return "\n".join(dong)
