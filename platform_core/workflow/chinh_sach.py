@@ -51,6 +51,7 @@ import ast
 import functools
 import inspect
 from collections.abc import Callable, Mapping
+from collections.abc import Set as AbstractSet
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any
@@ -1081,7 +1082,8 @@ def phan_tich(bieu_thuc: str, cs: ChinhSach = DAY_DU) -> ast.Expression:
 
 
 def kiem_ngon_ngu(bieu_thuc: str, *, cs: ChinhSach = DAY_DU,
-                  ten_cho_phep: set[str] | None = None) -> ast.Expression:
+                  ten_cho_phep: AbstractSet[str] | None = None
+                  ) -> ast.Expression:
     """Kiem mot bieu thuc §6. Sai thi nem `LoiNgonNgu` mang `vi_tri`.
 
     ⚠️ Kiem KHONG can moi truong: no tra loi *"bieu thuc nay hop le chua"*,
