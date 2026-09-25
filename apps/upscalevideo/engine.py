@@ -27,6 +27,9 @@ logger = logging.getLogger(__name__)
 # Model cache: model_name -> (param_path, bin_path)
 _model_cache = {}
 
+# Model warmup cache: model_name -> timestamp of last warmup
+_model_warmup_cache = {}
+
 _STALL_TIMEOUT_S = 300.0
 
 _ENGINE_DIR = Path(__file__).resolve().parent / "vendor" / "engine"
@@ -46,6 +49,34 @@ def model_available(model: str) -> bool:
     return (m / f"{model}.param").is_file() and (m / f"{model}.bin").is_file()
 
 
+def _warmup_model(model: str) -> None:
+    """Warm up model by loading it in a separate process."""
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Create dummy input/output dirs
+        in_dir = os.path.join(tmpdir, "in")
+        out_dir = os.path.join(tmpdir, "out")
+        os.makedirs(in_dir, exist_ok=True)
+        os.makedirs(out_dir, exist_ok=True)
+        
+        # Create dummy frame
+        import numpy as np
+        frame = np.zeros((512, 512, 3), dtype=np.uint8)
+        frame[:, :, 0] = 128
+        frame[:, :, 1] = 128
+        frame[:, :, 2] = 128
+        import cv2
+        cv2.imwrite(os.path.join(in_dir, "frame00001.png"), frame)
+        
+        # Run engine with dummy data to warm up model
+        args = [str(_EXE), "-i", in_dir, "-o", out_dir, "-n", model, "-s", "4",
+                "-m", "models", "-f", "png", "-t", "384", "-j", "1"]
+        logger.debug("[engine] warming up model: %s", model)
+        subprocess.run(args, cwd=str(_ENGINE_DIR), 
+                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=60)
+        logger.debug("[engine] model warmed up: %s", model)
+
+
 def _count_png(d: str) -> int:
     try:
         return sum(1 for f in os.scandir(d) if f.name.endswith(".png"))
@@ -61,6 +92,18 @@ def run_upscale(in_dir: str, out_dir: str, tune: TuneResult, n_frames: int,
                 _allow_fallback: bool = True) -> str:
     """Upscale mọi PNG trong in_dir → out_dir. Trả "done"|"cancelled"|"timeout"|"error"."""
     os.makedirs(out_dir, exist_ok=True)
+    
+    # Model warmup check
+    model_name = tune.model
+    warmup_cache_key = f"{model_name}_tile{tune.tile}_j{tune.threads}"
+    
+    if warmup_cache_key not in _model_warmup_cache:
+        if model_available(model_name):
+            _warmup_model(model_name)
+            _model_warmup_cache[warmup_cache_key] = time.time()
+        else:
+            logger.warning("[engine] model %s not available, skipping warmup", model_name)
+    
     args = [str(_EXE), "-i", in_dir, "-o", out_dir, "-n", tune.model, "-s", "4",
             "-m", "models", "-f", "png", "-t", str(tune.tile), "-j", tune.threads]
     if gpu_index is not None:

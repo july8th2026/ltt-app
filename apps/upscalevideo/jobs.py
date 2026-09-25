@@ -383,6 +383,23 @@ def handle(params: dict, ctx=None) -> dict:
             "out_key": out_key,
         })
         
+        # Quality gate check
+        from apps.upscalevideo.quality_gate import run_quality_gates, GATE_THRESHOLDS
+        preset = Preset(preset.value)
+        thresholds = GATE_THRESHOLDS[preset]
+        if ctx is not None:
+            ctx.progress(98, "chất lượng...")
+        quality_result = run_quality_gates(out_key, preset)
+        quality_log = quality_result.get("error") or _t("Quality gates passed: PSNR{0}dB").format(quality_result['gates']['quality']['metrics'].get('psnr_db', 'N/A'))
+        logger.info("[quality] %s", quality_log)
+        
+        if not quality_result["all_passed"]:
+            logger.warning("[quality] gate failed: %s", quality_result["error"])
+            # Log warning but don't fail job — keep backward compatibility
+            # If needed, uncomment below to fail fast:
+            # raise RuntimeError(quality_result["error"])
+            res["quality_warning"] = quality_result["error"]
+        
         if ctx is not None:
             ctx.progress(100, "xong")
         res = {"video_key": out_key, "credit_cost": true_cost,
@@ -394,7 +411,8 @@ def handle(params: dict, ctx=None) -> dict:
                "has_audio": bool(info["has_audio"] and preserve_audio),
                "preserve_fps": preserve_fps, "preserve_audio": preserve_audio,
                "stabilize": stabilize, "smooth_motion": smooth_motion,
-               "frames": n, "processing_seconds": round(time.monotonic() - started_clock, 2)}
+               "frames": n, "processing_seconds": round(time.monotonic() - started_clock, 2),
+               "quality_log": quality_log}
         if warning:
             res["warning"] = warning
         return res
