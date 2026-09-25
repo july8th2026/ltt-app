@@ -5,12 +5,15 @@ from dataclasses import dataclass
 import hashlib
 import json
 from ipaddress import IPv4Address, IPv4Interface
+import logging
 import re
 import time
 from typing import Any, Callable
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
+
+log = logging.getLogger(__name__)
 
 
 class OvhError(RuntimeError):
@@ -103,7 +106,12 @@ def _ma_loi_ovh(exc) -> str:
     """
     try:
         than = exc.read(4096)
-    except Exception:                         # noqa: BLE001 - loi khong co than
+    except Exception as doc_loi:              # noqa: BLE001 - loi khong co than
+        # `URLError`/`TimeoutError` khong co `.read()`; do la binh thuong, khong
+        # phai su co. Nhung van khai ra: mot ham "doc ma loi" im lang tra rong la
+        # dung cai lam ma loi bien mat, va ta dang o day vi chuyen do.
+        # ⚠️ Chi TEN LOP — than loi cua nha cung cap khong duoc vao log.
+        log.debug("OVH: khong doc duoc than loi (%s)", type(doc_loi).__name__)
         return ""
     try:
         doc = json.loads(than.decode("utf-8", "replace"))

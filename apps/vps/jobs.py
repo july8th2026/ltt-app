@@ -606,6 +606,24 @@ def _quyet_toan(db, may: VpsInstance, ctx) -> None:
 
     Không có `job_id` (máy cũ tạo trước 23/09, hoặc gọi ngoài hàng đợi) thì
     không có gì để chốt — vẫn mở chu kỳ, vì máy thì đã dựng xong thật.
+
+    ## Ba tình huống khác loại, và bản cũ gộp chúng thành một
+
+    🔴 Rà soát 25/09/2026: bản cũ là `if job_id and so_da_giu > 0: thu` rồi
+       `mo_chu_ky(gia=gia)` **vô điều kiện**. Nên cả ba trường hợp dưới đây đều
+       ra cùng một kết quả *"+30 ngày, `xoa_sau=None`, phát `thu_phi` 1.490"*, kể
+       cả hai trường hợp không thu đồng nào:
+
+       1. **có giữ chỗ** → quyết toán, mở chu kỳ với số **thực thu**. Đúng.
+       2. **không có `job_id`** (máy cũ / gọi ngoài hàng đợi) → cố ý mở chu kỳ
+          không thu. Nhưng phải mở với `gia=0`, vì `thu_phi` là **khoá** của vòng
+          `bao_tri._hoan_tien_may_hong`: phát khống là mở đường hoàn một khoản
+          chưa bao giờ thu.
+       3. **có `job_id` nhưng KHÔNG có giữ chỗ** → đường `vps.rebuild`. Cài lại
+          là **dựng lại máy**, ⛔ không phải một chu kỳ mới: khách đã trả cho kỳ
+          đang chạy. Bản cũ tặng đúng một tháng ở đây, và bấm lại thì tặng mãi —
+          một máy sắp bị xoá vì hết tiền sống vĩnh viễn bằng nút "Cài lại".
+          ⇒ Không đụng gì tới sổ sách.
     """
     from platform_core import credit
 
@@ -613,9 +631,18 @@ def _quyet_toan(db, may: VpsInstance, ctx) -> None:
 
     gia = billing.credit_thang(may.plan_id, may.dia_them_gb)
     job_id = str(getattr(ctx, "job_id", "") or "")
-    if job_id and credit.so_da_giu(db, job_id) > 0:
-        gia = credit.quyet_toan(db, may.user_id, job_id, gia).charged_credit
-    billing.mo_chu_ky(db, may, gia=gia)
+    if not job_id:
+        billing.mo_chu_ky(db, may, gia=0, bang_chung="")
+        return
+    if credit.so_da_giu(db, job_id) <= 0:
+        # Không phải lỗi: `vps.rebuild` đi qua đây theo thiết kế (một đường code
+        # cho cả tạo mới lẫn cài lại). Ghi lại vì nếu một đường TẠO MỚI rơi vào
+        # đây thì đó là một máy đã dựng mà chưa từng được thu tiền.
+        log.info("VPS quyet toan: job %s khong co giu cho — khong mo chu ky moi "
+                 "cho may %s (duong cai lai)", job_id[:8], may.id)
+        return
+    da_thu = credit.quyet_toan(db, may.user_id, job_id, gia).charged_credit
+    billing.mo_chu_ky(db, may, gia=da_thu, bang_chung=f"job:{job_id}")
 
 
 def _vm_da_ton_tai(client, vmid: int | None) -> bool:

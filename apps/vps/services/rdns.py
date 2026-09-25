@@ -116,10 +116,15 @@ def trang_thai_ptr(ovh, ip: str, *, tra_cuu=None) -> tuple[str, str]:
     do_duoc_dns = True
     try:
         thay = str(tra(str(ip)) or "").rstrip(".")
-    except Exception:                         # noqa: BLE001 - xem docstring module
+    except Exception as exc:                  # noqa: BLE001 - xem docstring module
         # ⛔ "Resolver noi khong co" (chuoi rong) va "toi khong doc duoc dau ra"
         #    (nem) la HAI viec. Gop lai thi mot dut mach do luong bao cao thanh
         #    mot su that ve rDNS — dung cai da xay ra chieu 25/09.
+        #
+        # ⚠️ Chi ghi TEN LOP, khong `str(exc)`: ham tra cuu la mot tham so, nen
+        #    than loi o day khong phai thu ta kiem soat duoc.
+        log.warning("VPS rdns: khong do duoc DNS cong khai cho %s (%s)",
+                    ip, type(exc).__name__)
         thay, do_duoc_dns = "", False
     if do_duoc_dns and thay == mong_doi:
         return DA_THAY, thay
