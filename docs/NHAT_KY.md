@@ -437,6 +437,69 @@ hai **ghi đè mất đường lui thật**. Bản `21c1bf9b` đã được gi�
 - Xoay **client secret** Google (đã lọt vào bản ghi hội thoại) và **mật khẩu superuser PostgreSQL**.
 - Nghiệm thu upload YouTube thật (private) để đóng phase 8.
 
+## 2026-09-25 (chiều) — Công bố trần bằng header, và ba phép kiểm xanh vì hỏi sai câu
+
+Nối tiếp vòng chết 413 buổi sáng. Client trước đây phải **đâm vào tường mới biết tường ở đâu**.
+
+### Lời giải, có nguồn
+
+Tra IETF + GitHub + harness (`r-limits`):
+- **Không có chuẩn** cho việc công bố trần kích thước thân. Tiền lệ gần nhất là draft
+  `ietf-wg-httpapi/ratelimit-headers`: công bố hạn mức **trên MỌI phản hồi** đúng vì con số
+  phải luôn mới.
+- **Harness giải bằng BẤT BIẾN, không bằng API**: `deepseek-harness` không lộ
+  `maxRequestBodyBytes`, nó chốt bằng **phép kiểm lúc khởi động** (`assertImageBodyCapacity`) —
+  đúng hình dạng `test_4200` ta dựng sáng nay.
+- **MCP không giải được**: capability negotiation ở đó là cờ **bật/tắt tính năng**, không phải
+  kênh công bố **con số**.
+
+⇒ Chọn **header `X-LTT-Max-Body-Bytes` trên mọi phản hồi `/api/v1/*`**. Ràng buộc khó nhất không
+phải *"client không biết"* mà là ***"client biết một trần ĐÃ CŨ"*** — một trường đọc-một-lần chỉ
+dời thời điểm sai. Đã deploy; xác minh qua Cloudflare: `GET /api/v1/health` → 200 kèm header.
+
+⭐ Kho **đã học đúng bài học này một lần rồi** ở `guard.py::_stamp` (correlation-id từng chỉ đóng
+lên phản hồi lỗi) — cùng hook, cùng hình dạng.
+
+### ⛔ BA phép kiểm xanh vì hỏi sai câu — trong một buổi chiều
+
+1. **Phép Đ1 tôi thiết kế xanh trên CẢ hai bản.** Tôi viết phép theo *điều tôi tin bản vá làm*
+   (*"biết trần lúc khởi động"*) thay vì *điều mã làm* (chỉ đọc header từ `/api/v1/messages`).
+   Trên tiến trình mới, lượt đầu vượt trần **cả bản cũ lẫn mới đều phải ra mạng**. Làn nghiệm thu
+   bắt được và thay bằng **phép hai lượt kèm nền đo trên bản cũ**. Dấu hiệu phân biệt là
+   **`requestId`** — chỉ máy chủ sinh, nên có nó nghĩa là **đã ra mạng**: 0.2.15 có (595 ms),
+   0.2.16 **không** (246 ms).
+2. **CORS `expose_headers`**: tôi kết luận *"khách trình duyệt không đọc được header"*. Đo ra
+   `cors_origins = ()` và production **không đặt** biến đó ⇒ **CORS chưa từng bật**. Bản vá đúng
+   nhưng **nằm im**; tôi đã trình bày một sửa-cho-tương-lai như một chữa-lỗi-đang-chảy-máu.
+3. **`rules.yml` "sống sót"** (việc dọn dẹp cùng ngày) đo một tệp **không tồn tại**.
+
+> Cùng một hình dạng: **phép kiểm viết theo niềm tin về mã sẽ xác nhận niềm tin đó, không xác
+> nhận mã.** Nền so sánh trên bản cũ là thứ duy nhất tách được hai điều ấy.
+
+### Lỗi gate nuốt cả bộ nghiệm thu
+
+`verify_installed.ps1:129` cắt JSON khỏi `& pwsh … 2>&1 | Out-String` bằng `IndexOf("{")`.
+Nguyên nhân **đo được từ byte thật**: khi tiến trình con chết vì ngoại lệ **trước khi in gì**,
+**bộ dựng lỗi của PowerShell echo lại dòng mã nguồn** — đầy `{`/`}`. `jsonStart`=81 trỏ vào dấu
+`{` của dòng mã bị echo. Điều kiện tái hiện: **app đang chạy** ⇒ tiền đề `p05_smoke.ps1:49` ném.
+
+Sửa (`c180f2e`): `p05_smoke.ps1` **vốn đã** ghi JSON ra tệp riêng — đọc tệp đó, **bỏ hẳn** việc
+cắt chuỗi. Không tìm thấy tệp ⇒ `smoke=$null`, **chạy tiếp** thay vì giết ~450 dòng gate; văn bản
+thô giữ trong `smoke_raw_output`. Phép kiểm chạy **chính dòng lệnh cũ** trên byte thật → đỏ đúng,
+tái hiện nguyên thông điệp position 8.
+
+### Phát hành
+
+`stable` **0.2.16**. Ghi chú đã **sửa cho đúng**: *"từ lượt trao đổi đầu tiên"*, không phải
+*"từ phản hồi đầu tiên"*, kèm dòng LƯU Ý rằng lượt đầu ngay sau khi mở app **vẫn báo lỗi một lần**.
+
+### Việc kế (nhỏ, xoá được dòng LƯU Ý đó)
+
+Client **có** gọi `/api/v1/models` lúc khởi động — đo được bằng kết nối ra thật tới IP Cloudflare
+ở mốc ~11,7 s, tách khỏi hai kết nối MCP khác. Nhưng `loadCatalog()` **không** đọc header.
+Thêm một dòng ở đó là xoá luôn chú thích **"PHỎNG ĐOÁN THẬN TRỌNG"** mà V-24 đã ghi sẵn trong
+`adapter.ts` — thay một ước lượng bằng con số máy chủ nói ra.
+
 ## 2026-09-25 — Vòng chết 413: van an toàn đo TOKEN, bức tường đo BYTE
 
 Khách báo phiên LTTCODE kẹt cứng: mọi lượt `request_body_too_large`, và **4 lần nén đều hỏng**.
