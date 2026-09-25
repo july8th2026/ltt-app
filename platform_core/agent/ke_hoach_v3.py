@@ -90,12 +90,33 @@ def danh_muc(*, cong_cu: Optional[dict] = None,
 
 def build_prompt(goal: str, *, muc: list[dict], ngan_sach_credit: int,
                  input_types: Optional[dict] = None) -> str:
+    """Prompt cho một lượt soạn (spec §12.2).
+
+    ⭐ Dòng danh mục KHÔNG còn viết `type@version` dính liền (24/09 sửa lại
+       sau lượt gọi model THẬT đầu tiên qua máy B, plan wf-v2 P-B task FLOW
+       G). Bản trước ghi mỗi node là `- core.http@1 (job): ...`, và model
+       (`ltt-3.5`) **chép nguyên chuỗi ấy vào trường `type`** của mọi node nó
+       sinh ra (`"type": "core.http@1"` thay vì `"type": "core.http"`) —
+       đúng bài học "ví dụ trong lời nhắc là mệnh lệnh ngầm": model học
+       HÌNH THỨC hiển thị, không phải lược đồ JSON. Hậu quả: **100% node**
+       trong lượt gọi thật đó bị `bien_dich` từ chối bằng `node_khong_ton_tai`
+       dù `type` gốc (bỏ hậu tố) nằm đúng trong danh mục.
+
+    ⭐ `[QUY_UOC_KIND]` là dòng MỚI. Bản trước liệt `"kind"` như một khoá rỗng
+       trong mẫu JSON mà KHÔNG bao giờ nói giá trị hợp lệ là gì
+       (`bien_dich._KIND = {"DATA","CONTROL","ERROR"}`, xem
+       `platform_core/workflow/bien_dich.py`). Cùng lượt gọi thật đó, model
+       đoán `"kind": "json"` cho mọi cạnh — một cái đoán hợp lý (nó đang nói
+       về ĐỊNH DẠNG dữ liệu chảy qua cạnh) nhưng sai Ô cần điền, và bị từ
+       chối bằng `canh_khong_hop_le`. Không phải model kém; đây là một chỗ
+       lược đồ chưa từng được nói ra.
+    """
     dong = ["[DANH_MUC_NODE]"]
     for m in muc:
         luoc_do = json.dumps(m["tham_so"], ensure_ascii=False,
                              separators=(",", ":"))
-        dong.append(f"- {m['type']}@{m['type_version']} ({m['kind']}): "
-                    f"{m['title']} - {m['description']}\n"
+        dong.append(f"- type={m['type']} type_version={m['type_version']}"
+                    f" kind={m['kind']}: {m['title']} - {m['description']}\n"
                     f"  cong_vao={m['cong_vao']} cong_ra={m['cong_ra']}\n"
                     f"  tham_so={luoc_do}")
     mau = ('{"nodes": [{"id","type","type_version","params"}], '
@@ -105,10 +126,16 @@ def build_prompt(goal: str, *, muc: list[dict], ngan_sach_credit: int,
         "[CONG_VAO_WORKFLOW] " + json.dumps(input_types or {},
                                             ensure_ascii=False),
         f"[NGAN_SACH] {max(0, int(ngan_sach_credit))} credit",
+        "[QUY_UOC_KIND] Canh (`edges[].kind`) chi nhan DUNG mot trong ba gia"
+        " tri: DATA (du lieu thuong), CONTROL (chi dieu khien, khong mang"
+        " du lieu), ERROR (nhanh xu ly loi). Khong dung ten dinh dang du"
+        " lieu (vd 'json') lam kind.",
         "[MUC_TIEU] " + (goal or "").strip()[:8000],
         "[DAU_RA] Tra ve DUNG mot object JSON: " + mau
-        + " . `type` phai nam trong [DANH_MUC_NODE]. Tham chieu ket qua buoc"
-        " truoc bang {{ nodes.<id>.output.<cong> }}."
+        + " . `type` phai DUNG Y HET mot chuoi trong [DANH_MUC_NODE] (phan"
+        " sau `type=`), KHONG duoc noi them `@version` hay bat ky hau to"
+        " nao vao `type` — phien ban ghi rieng o truong `type_version`."
+        " Tham chieu ket qua buoc truoc bang {{ nodes.<id>.output.<cong> }}."
         " Khong markdown, khong giai thich.",
     ]
     return "\n".join(dong)
