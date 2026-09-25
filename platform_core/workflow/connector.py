@@ -47,6 +47,15 @@ GOC = pathlib.Path(__file__).resolve().parents[2]
 THU_MUC_RUNNER = pathlib.Path(
     os.environ.get("LTT_CONNECTOR_RUNNER", str(GOC / "connector_runner")))
 
+#: Thư mục marketplace — NGOÀI `THU_MUC_RUNNER` cố ý (spec plan wfm 25/09).
+#: Đây là nơi DUY NHẤT `platform_core/workflow/marketplace.py::cai_dat()`
+#: được phép ghi allowlist/catalog/piece đã cài; nó nằm dưới `data/`, thư
+#: mục sống sót qua deploy (⛔ khác `THU_MUC_RUNNER`, bị thay TOÀN BỘ mỗi lần
+#: cập nhật — ghi allowlist marketplace ở đó thì piece vừa duyệt biến mất
+#: sau bản cập nhật kế tiếp mà không ai báo).
+THU_MUC_MARKETPLACE = pathlib.Path(
+    os.environ.get("LTT_MARKETPLACE_DIR", str(GOC / "data" / "marketplace")))
+
 #: Nơi đặt bản chép `node.exe` + thư mục tạm của từng lệnh. ⭐ Phải nằm ngoài
 #: `C:\Program Files`: vỏ cần ACL đọc trên tệp `node.exe`, và ⛔ cấp ACL trong
 #: `Program Files` là sửa quyền của một thư mục hệ thống (CLAUDE.md).
@@ -78,24 +87,65 @@ class KetQua:
     do: dict = field(default_factory=dict)
 
 
-def _doc_allowlist() -> dict:
+def _doc_allowlist_tinh() -> dict:
     with open(THU_MUC_RUNNER / "allowlist.json", encoding="utf-8") as f:
         return json.load(f)
 
 
-def doc_catalog() -> list:
-    """Mục catalog cho `nut.NGUON_PIECE`. Thiếu tệp ⇒ danh sách rỗng.
+def _doc_allowlist_marketplace() -> dict:
+    """Allowlist marketplace — spec `platform_core/workflow/marketplace.py`.
 
-    ⭐ Rỗng chứ không ném: `catalog.json` sinh lúc build, và một máy dev chưa
-       chạy `npm install` vẫn phải khởi động được. Nhưng ⛔ **không** nuốt lỗi
-       cú pháp — một catalog hỏng phải nổ lúc khởi động, không im lặng thành
-       "palette không có connector nào".
+    ⭐ Thiếu tệp ⇒ rỗng, không ném: chưa có piece marketplace nào được duyệt
+       là trạng thái BÌNH THƯỜNG (fail closed đến từ chỗ tệp CHỈ được ghi bởi
+       `marketplace.cai_dat()` SAU khi qua hết cổng duyệt, không phải từ chỗ
+       thiếu tệp gây lỗi khởi động).
     """
-    tep = THU_MUC_RUNNER / "catalog.json"
+    tep = THU_MUC_MARKETPLACE / "allowlist.json"
+    if not tep.exists():
+        return {"pieces": {}, "mien": {}, "palette": {}}
+    with open(tep, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _doc_allowlist() -> dict:
+    """Allowlist GỘP: tĩnh (đã review, `THU_MUC_RUNNER`) ⊕ marketplace (đã
+    qua cổng duyệt runtime, `THU_MUC_MARKETPLACE`). Cùng luật với
+    `connector_runner/src/piece_nap.js::docAllowlist()` — ⛔ một tên piece có
+    mặt ở CẢ HAI nguồn là lỗi cấu hình, ném ngay, không để một bên âm thầm
+    thắng.
+    """
+    tinh = _doc_allowlist_tinh()
+    mkt = _doc_allowlist_marketplace()
+    trung = set(mkt.get("pieces") or {}) & set(tinh.get("pieces") or {})
+    if trung:
+        raise LoiConnector(
+            f"piece trung ten tinh va marketplace: {sorted(trung)}")
+    return {
+        "pieces": {**tinh.get("pieces", {}), **(mkt.get("pieces") or {})},
+        "mien": {**tinh.get("mien", {}), **(mkt.get("mien") or {})},
+        "palette": {**tinh.get("palette", {}), **(mkt.get("palette") or {})},
+    }
+
+
+def _doc_catalog_tep(tep: pathlib.Path) -> list:
     if not tep.exists():
         return []
     with open(tep, encoding="utf-8") as f:
         return list(json.load(f).get("nodes") or [])
+
+
+def doc_catalog() -> list:
+    """Mục catalog cho `nut.NGUON_PIECE`: tĩnh ⊕ marketplace. Thiếu tệp ⇒
+    danh sách rỗng cho phần đó.
+
+    ⭐ Rỗng chứ không ném: `catalog.json` sinh lúc build, và một máy dev chưa
+       chạy `npm install` vẫn phải khởi động được — cùng lý do, catalog
+       marketplace chỉ tồn tại sau lượt duyệt đầu tiên. Nhưng ⛔ **không** nuốt
+       lỗi cú pháp — một catalog hỏng phải nổ lúc khởi động, không im lặng
+       thành "palette không có connector nào".
+    """
+    return (_doc_catalog_tep(THU_MUC_RUNNER / "catalog.json")
+            + _doc_catalog_tep(THU_MUC_MARKETPLACE / "catalog.json"))
 
 
 def mien_cua_piece(piece: str) -> tuple:
@@ -264,5 +314,6 @@ def chay(op: str, *, piece: str, version: str, name: str,
 THAM_SO_CREDENTIAL = "credential"
 
 __all__ = ["HAN_CUNG_MS", "HAN_MAC_DINH_MS", "KetQua", "LoiConnector",
-           "THAM_SO_CREDENTIAL", "THU_MUC_LAM_VIEC", "THU_MUC_RUNNER", "chay",
-           "chuan_bi_vo", "doc_catalog", "go_vo", "mien_cua_piece", "node_exe"]
+           "THAM_SO_CREDENTIAL", "THU_MUC_LAM_VIEC", "THU_MUC_MARKETPLACE",
+           "THU_MUC_RUNNER", "chay", "chuan_bi_vo", "doc_catalog", "go_vo",
+           "mien_cua_piece", "node_exe"]

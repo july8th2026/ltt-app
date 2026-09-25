@@ -42,10 +42,21 @@ JOB_TYPE_PIECE = "workflow.piece"
 #:    lời **có được tự viết**.
 JOB_TYPE_CONNECTOR = "workflow.connector"
 
+#: Job type của `core.code` (P-D mục 3, plan wf-v2 25/09) — BỘ THI HÀNH THỨ
+#: BA mà comment ở `JOB_TYPE_KHONG_TOOLSPEC` dưới đây đã lường trước. Không
+#: bọc ToolSpec (mã người soạn tự viết không phải một tool của registry) và
+#: KHÁC cả hai hằng trên: nó chạy trên runner Node như `piece.*`, nhưng qua
+#: `code_sandbox.chay()` — vỏ AppContainer RIÊNG (`ltt-code-runner`), không
+#: mở `proxy_egress`, không gọi `connector.chay()`. Gộp chung với
+#: `JOB_TYPE_PIECE` sẽ làm `apps/connector_runner/jobs.py::_chay_piece` đọc
+#: nhầm `params.piece`/`op`/`ten_action` (không hề tồn tại cho node này).
+JOB_TYPE_CODE = "workflow.code"
+
 #: Job type **được miễn** khai `ten_toolspec`. ⛔ Tập ĐÓNG, và miễn theo **bộ
 #: thi hành** chứ không theo tên node. Một bộ thi hành thứ ba xuất hiện mà
 #: không khai gì sẽ ném ở `__post_init__` — đúng như mong muốn.
-JOB_TYPE_KHONG_TOOLSPEC = frozenset({JOB_TYPE_PIECE, JOB_TYPE_CONNECTOR})
+JOB_TYPE_KHONG_TOOLSPEC = frozenset(
+    {JOB_TYPE_PIECE, JOB_TYPE_CONNECTOR, JOB_TYPE_CODE})
 
 #: Mã lỗi một node app công bố. Lấy TỪ `cau_noi.py` (`nop_job`, `ap_ket_qua`),
 #: không khai lại theo trí nhớ.
@@ -392,8 +403,8 @@ def type_version_thieu(db, *, dinh_nghia: Optional[dict] = None) -> list:
             for v, n, t, tv in hang if ban_do.get(t) != tv]
 
 
-__all__ = ["CATEGORY", "Gia", "JOB_TYPE_CONNECTOR", "JOB_TYPE_KHONG_TOOLSPEC",
-           "JOB_TYPE_PIECE", "KIND", "LoiNut", "MA_LOI_APP", "NGUON_PIECE",
-           "NodeDefinition", "QUYEN", "RESOURCE_CLASS", "chua_du_hop_dong",
-           "dinh_nghia_piece", "tat_ca", "tu_piece", "tu_toolspec",
-           "type_version_thieu"]
+__all__ = ["CATEGORY", "Gia", "JOB_TYPE_CODE", "JOB_TYPE_CONNECTOR",
+           "JOB_TYPE_KHONG_TOOLSPEC", "JOB_TYPE_PIECE", "KIND", "LoiNut",
+           "MA_LOI_APP", "NGUON_PIECE", "NodeDefinition", "QUYEN",
+           "RESOURCE_CLASS", "chua_du_hop_dong", "dinh_nghia_piece",
+           "tat_ca", "tu_piece", "tu_toolspec", "type_version_thieu"]

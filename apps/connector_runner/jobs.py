@@ -1,4 +1,5 @@
-"""Handler của `workflow.piece` và `workflow.connector` (plan wf-v2 P6).
+"""Handler của `workflow.piece`, `workflow.connector` và `workflow.code`
+(plan wf-v2 P6, P-D mục 3).
 
 Nó làm đúng bốn việc, theo thứ tự đó:
 
@@ -80,6 +81,35 @@ def _chay_piece(db, params: dict, meta: dict) -> dict:
     if not kq.ok:
         raise LoiHandler(f"{kq.ma_loi}: {kq.thong_diep}"[:2000])
     return {"output": kq.output, "files": kq.files, "_do": kq.do}
+
+
+def _chay_code(db, params: dict, meta: dict) -> dict:
+    """`core.code` (P-D mục 3) — vỏ RIÊNG, ⛔ KHÔNG qua `_connector.chay`.
+
+    Khác `_chay_piece` ở ba điểm, cả ba đều vì `core.code` không bọc một
+    *piece* nào: (1) gọi thẳng `code_sandbox.chay()`, không
+    `_connector.chay(piece=..., name=...)` — `meta` ở đây không mang
+    `piece`/`ten_action` (node không khai chúng); (2) không giải mã
+    credential nào (`core.code` không có `credential_ref` — `nut_loi/code.py`
+    khai `credential=()`); (3) không `connector_store` — mã người soạn không
+    có kênh nào để đọc/ghi store của workflow (đúng ranh giới D1/D2: không
+    kênh nào ngoài `inputs`/giá trị trả về).
+    """
+    from platform_core.workflow import code_sandbox
+
+    nguon = str(params.get("code") or "")
+    inputs = params.get("inputs")
+    if not isinstance(inputs, dict):
+        # ⭐ Cổng `inputs` là kiểu `any` (spec §4.7 — node dữ liệu truyền qua
+        #    KHÔNG diễn giải), nên giá trị nối vào có thể không phải object.
+        #    `code_sandbox.chay()` bơm `inputs` làm MỘT global JS duy nhất
+        #    (`_khoiContext`), không phải `**kwargs`, nên bọc lại đúng hợp
+        #    đồng "một tham số `inputs`" thay vì ép kiểu / từ chối.
+        inputs = {} if inputs is None else {"_": inputs}
+    kq = code_sandbox.chay(nguon, inputs)
+    if not kq.ok:
+        raise LoiHandler(f"{kq.ma_loi}: {kq.thong_diep}"[:2000])
+    return {"output": kq.output, "files": [], "_do": kq.do}
 
 
 def _chay_youtube(db, params: dict, meta: dict) -> dict:
@@ -172,6 +202,8 @@ def handle(params: dict, ctx=None) -> dict:
     try:
         if loai == "connector.youtube.upload":
             return _chay_youtube(db, params, meta)
+        if loai == "core.code":
+            return _chay_code(db, params, meta)
         return _chay_piece(db, params, meta)
     finally:
         try:

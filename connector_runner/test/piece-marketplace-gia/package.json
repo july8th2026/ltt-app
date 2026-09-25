@@ -1,0 +1,10 @@
+{
+  "name": "@ltt/piece-marketplace-gia",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Piece GIA cho test cai dat marketplace (spec plan wfm 25/09). Co mot script postinstall CO Y ghi mot tep danh dau -- test_4239 dung no de chung minh --ignore-scripts THAT SU chan duoc no, khong chi kiem argv.",
+  "main": "index.js",
+  "scripts": {
+    "postinstall": "node postinstall.js"
+  }
+}
