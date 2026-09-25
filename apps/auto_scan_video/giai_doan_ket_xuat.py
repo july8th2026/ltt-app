@@ -147,45 +147,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         duong_lop = [_tai_ve(kho, l["khoa"], thu_muc / f"s{i}.wav")
                      for i, l in enumerate(lop)]
 
-        # ⭐ Chu cua lop phu di ra TEP, khong di ra dong lenh. Do duoc: mot chuoi
-        #    tieng Viet co dau, mot dau `:` hay mot dau `\` trong `text=` deu lam
-        #    ffmpeg tu choi ca chuoi loc — xem bang do o dau `lop_phu.py`.
-        #
-        # ⚠️ Ghi vao `thu_muc` cua chinh lan chay nay: no bi xoa **du that bai
-        #    hay khong** (`TemporaryDirectory`), nen mot cau chu cua khach khong
-        #    o lai tren dia sau khi job xong.
-        from . import lop_phu as _lp
-        duong_chu = _lp.viet_tep_chu(
-            list((ban.get("hinh") or {}).get("lop_phu") or ()), thu_muc)
-
-        # ⭐ Logo la ARTIFACT trong kho, nen no di duong `_tai_ve` y het lop
-        #    tieng — khong phai duong tep tam nhu chu cua lop phu.
-        #
-        # ⚠️ Duoi tep giu nguyen tu KHOA: ffmpeg chon bo giai ma theo noi dung
-        #    chu khong theo duoi, nhung mot `.png` doc ra `.bin` lam moi lan doc
-        #    log ve sau kho hon ma khong duoc gi.
-        ds_logo_ban = list((ban.get("hinh") or {}).get("logo") or ())
-        duong_logo = [
-            _tai_ve(kho, str(l["khoa"]),
-                    thu_muc / f"logo{i}{Path(str(l['khoa'])).suffix or '.png'}")
-            for i, l in enumerate(ds_logo_ban)]
-
-        # ⭐ `.ass` di duong y het chu cua lop phu: sinh o thu muc TAM cua lan
-        #    chay nay, xoa cung no. Su kien da duoc CHOT o COMPOSE va nam trong
-        #    ban dung — o day khong tinh lai mot moc nao.
-        #
-        # ⚠️ Kich thuoc khung la BAT BUOC ve noi dung: `build_ass` tinh co chu
-        #    va le theo no. Mac dinh 1920x1080 ap len mot video doc cho ra phu
-        #    de nho bang mot phan ba, dat sai le, **khong bao mot loi nao**.
-        from . import phu_de as _pd
-        _ho_so_pd = (ban.get("hinh") or {}).get("phu_de") or None
-        _goi_su_kien = (_ho_so_pd or {}).get("su_kien") or []
-        duong_ass = _pd.viet_tep_ass(
-            _ho_so_pd, _goi_su_kien, thu_muc,
-            # ⭐ `PlayRes` = khung BAN RA (asv-final): sau cat khung / doi ti le,
-            #    phu de dat theo man hinh khach xem, khong theo khung nguon.
-            rong=ban_dung.khung_ra(ban.get("hinh") or {})[0],
-            cao=ban_dung.khung_ra(ban.get("hinh") or {})[1])
+        # 🔴 **⛔ GD1 khong con tai logo, ghi chu lop phu hay sinh `.ass`
+        #    (gd2-diem-anh, 25/09).** Logo/watermark/phu de-DOT/khung/lat guong/
+        #    dich mau da chuyen xuong `giai_doan_hinh_anh.py` (GD2) — chung doc
+        #    thang `cai_dat.doc(run)` o do, khong con di qua ban dung nay.
 
         duong_ra = str(thu_muc / "ra.mp4")
         bo_thuc = ket_xuat.bo_ma_hoa_thuc_te(ban, co_gpu=co_gpu)
@@ -195,9 +160,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         cmd = ket_xuat.dung_lenh(
             ban, ffmpeg_bin=nhap_media.media.ffmpeg_bin(),
             duong_video=duong_video, duong_master=duong_master,
-            duong_lop=duong_lop, duong_ra=duong_ra, bo_ma_hoa=bo_thuc,
-            duong_chu=duong_chu, duong_logo=duong_logo,
-            duong_ass=duong_ass)
+            duong_lop=duong_lop, duong_ra=duong_ra, bo_ma_hoa=bo_thuc)
 
         if bao:
             bao(15, _t('Đang kết xuất video'))
@@ -240,25 +203,16 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         with open(duong_ra, "rb") as f:
             kho.put(khoa, f, content_type="video/mp4")
 
-        # ── `.srt` la MOT BAN GIAO, khong phai mot tep trung gian ───────────
-        #
-        # 🔑 **Vi sao no sinh o RENDER chu khong o COMPOSE**, du du lieu da san
-        #    sang tu COMPOSE: `thi_hanh` dat `la_ban_giao = ten == RENDER`, va
-        #    ban giao la thu **khong co han**. Sinh o COMPOSE thi tep phu de cua
-        #    khach mang `HAN_TRUNG_GIAN = 30 ngay` trong khi video thi khong —
-        #    tuc mot nua ban giao tu bien mat sau mot thang, im lang.
+        # 🔴 **⛔ Khong con sinh `.srt` o day (gd2-diem-anh, 25/09).** Ly do cu
+        #    ("RENDER la ban giao") da HET: `la_ban_giao` tro toi IMAGE_FINISH tu
+        #    b4 (`thi_hanh.py`, `test_BAN_GIAO_la_image_finish...`), va moc cua
+        #    `.srt` sinh o day nam tren truc GD1 — SAU khi GD2 cat, moc do TRE.
+        #    GD2 (`giai_doan_hinh_anh._sinh_srt`) doc lai CHINH `hinh.phu_de` cua
+        #    ban dung nay va tu sinh `.srt` DA DOI MOC sang truc ban giao that.
+        #    Mot ban `.srt` thu hai o day la mot artifact trung gian ton luu tru
+        #    va CO THE bi doc nham thanh ban giao.
         phan = [{"staging_key": khoa, "kind": "video", "duoi": "mp4",
                  "van_tay": vt, "parent_keys": [khoa_ban]}]
-        duong_srt = _pd.viet_tep_srt(_ho_so_pd, _goi_su_kien, thu_muc)
-        if duong_srt:
-            khoa_srt = assets.khoa_staging(
-                owner_id=run.owner_id, run_id=run.id, stage=pipeline.RENDER,
-                van_tay=vt, duoi="srt")
-            with open(duong_srt, "rb") as f:
-                kho.put(khoa_srt, f, content_type="application/x-subrip")
-            phan.append({"staging_key": khoa_srt, "kind": "subtitle",
-                         "duoi": "srt", "van_tay": vt,
-                         "parent_keys": [khoa_ban]})
 
     return {
         "phan": phan,

@@ -74,7 +74,13 @@ def _ban(cach: str) -> dict:
     if cach == cdr.CAT_MA_HOA_LAI:
         ban["hinh"].update({"bo_ma_hoa": "libx264", "rong_khung": 320,
                             "cao_khung": 240,
-                            "khoang_giu": [[0.0, DAI_HINH_S]]})
+                            "khoang_giu": [[0.0, DAI_HINH_S]],
+                            # 🔴 gd2-diem-anh: preset CAT ma GD1 KHONG co vung
+                            # /toc_do thi REMUX (khong con `-shortest`, xem
+                            # `ket_xuat.dung_lenh`). `-shortest` chi con y
+                            # nghia khi GD1 THAT SU ma hoa lai — gia lap dieu
+                            # do bang mot `toc_do` khac 1.
+                            "bien_tap": {"toc_do": 1.1}})
     return ban
 
 

@@ -396,11 +396,19 @@ def test_ban_dung_khong_phu_de_van_hop_le():
 
 
 def test_ket_xuat_truyen_duong_ass_vao_lenh():
-    ban = _ban(PRESET_CAT, _ho_so(che_do="tu_dong", kieu="default"))
-    cmd = ket_xuat.dung_lenh(
-        ban, ffmpeg_bin="ffmpeg", duong_video="C:/t/g.mp4",
-        duong_master="C:/t/m.wav", duong_lop=["C:/t/0.wav"],
-        duong_ra="C:/t/r.mp4", bo_ma_hoa="libx264",
+    """🔴 gd2-diem-anh (25/09): DOT phu de KHONG con di qua `ket_xuat.dung_lenh`
+    (GD1) — no chuyen sang `giai_doan_hinh_anh.dung_lenh` (GD2). `ban_dung`
+    van luu `hinh.phu_de` (ho so de GD2 doc lai), nhung GD1 khong con nhan
+    `duong_ass` de dot no vao hinh."""
+    import inspect
+
+    from apps.auto_scan_video import giai_doan_hinh_anh as gdha
+
+    assert "duong_ass" not in inspect.signature(ket_xuat.dung_lenh).parameters
+
+    cmd = gdha.dung_lenh(
+        "gd1.mp4", "C:/t/r.mp4", khoang=[(0.0, 2.0)], bo_ma_hoa="libx264",
+        ffmpeg_bin="ffmpeg", rong_nguon=1920, cao_nguon=1080,
         duong_ass="C:/t/phu_de.ass")
     fc = cmd[cmd.index("-filter_complex") + 1]
     assert "ass='C\\:/t/phu_de.ass'" in fc, fc
