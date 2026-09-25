@@ -219,21 +219,50 @@ def test_dong_ha_nguon_van_theo_PHU_THUOC_chu_khong_theo_thu_tu(monkeypatch):
 
 
 def test_quyet_toan_van_do_chu_khong_tinh_lai():
-    """ADR-001 D4, giu nguyen boi D-V4-12. Chot vao NGUON, khong vao mot lan chay.
+    """ADR-001 D4 — **do duoc, khong tinh lai**. Chot vao NGUON, khong vao mot lan chay.
 
-    `features.quyet_toan` phai lay so tu `tong_da_dung` (tong `credit_actual` do
-    duoc) va khong duoc goi mot ham bao gia nao. Hai ham bao gia da gay hai loi
-    tien that trong du an nay (ADR-001 D4).
+    ## ⭐ Gia PHANG (25/09/2026) doi DAI LUONG duoc do, khong bo luat
+
+    Truoc 25/09 so thu la `tong_da_dung` (tong `credit_actual` cua tung don vi
+    viec). Tu 25/09 gia la `10 credit x so phut video NGUON`, nen dai luong duoc
+    do la **do dai nguon** — `ffprobe` do no tu chinh tep, o `media_prepare`.
+
+    🔴 Dieu ADR-001 D4 thuc su cam van bi cam y nguyen: tinh tien theo thu khach
+       **XIN** thay vi thu may **GIAO**. Do la
+       `executor.actual_cost = credit_for(job_type, params) x attempts`, va no da
+       gay hai loi tien that (H38 23/08 · H37/D-051 24/08 — xin 4 anh, may tra
+       2, van thu 4). *So lan thu* ⛔ khong duoc xuat hien trong mot phep tinh tien.
+
+    ⇒ Bai nay chot: `quyet_toan` lay so tu mot phep **DO**
+      (`thoi_luong_nguon_giay`) va ⛔ khong bao gio tu mot bang gia nhan voi so lan
+      goi hay so lan thu.
+
+    ⛔ Chot bang AST tren THAN ham (da bo docstring), khong bang `in` tren ca tep:
+       docstring o tren **noi ve** nhung cai ten bi cam de giai thich vi sao chung
+       bi cam, va mot phep `in` se bat chinh loi giai thich do roi goi no la loi.
     """
+    import ast
     import inspect
+    import textwrap
 
     from apps.auto_scan_video import features
 
-    nguon = inspect.getsource(features.quyet_toan)
-    assert "tong_da_dung" in nguon
-    for cam in ("actual_cost", "uoc_credit", "credit_cost"):
-        assert cam not in nguon, (
-            f"`quyet_toan` goi {cam} — do la tinh LAI gia, khong phai doc so DA DO")
+    cay = ast.parse(textwrap.dedent(inspect.getsource(features.quyet_toan)))
+    ham = cay.body[0]
+    assert isinstance(ham, ast.FunctionDef)
+    if (ham.body and isinstance(ham.body[0], ast.Expr)
+            and isinstance(ham.body[0].value, ast.Constant)):
+        ham.body = ham.body[1:]              # bo docstring
+    ten = {n.attr for n in ast.walk(ham) if isinstance(n, ast.Attribute)}
+    ten |= {n.id for n in ast.walk(ham) if isinstance(n, ast.Name)}
+
+    # ⭐ So thu den tu mot phep DO tren tep, ⛔ khong tu `params` cua mot job.
+    assert "thoi_luong_nguon_giay" in ten
+    assert "tinh_credit" in ten
+    for cam in ("actual_cost", "credit_cost", "credit_for", "attempts", "attempt"):
+        assert cam not in ten, (
+            f"`quyet_toan` doc {cam} — do la tinh LAI gia tu thu khach XIN, "
+            f"khong phai doc mot so DA DO")
 
 
 def test_ban_do_rebase_ton_tai_va_phu_HET_module_hien_co():

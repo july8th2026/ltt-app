@@ -398,9 +398,21 @@ def test_routes_chi_lo_HTTP():
 
 
 def test_uoc_gia_o_TANG_DICH_VU_khong_o_route():
+    """⭐ Tu 25/09/2026 ham tinh gia ten la `gia.tinh_credit` (gia PHANG, khong con
+       mot "uoc"): con so la chinh xac, nen goi no la mot uoc la noi sai ve no.
+       Chi tiet o `tests/test_3900_asv_gia_phang.py` va `apps/.../gia.py`.
+
+    ⛔ Chot bang AST chu khong bang `in`: `routes.py` duoc phep **noi ve**
+       `gia.tinh_credit` trong van xuoi (va co noi, de nguoi doc biet gia o dau).
+       Dieu bi cam la **GOI** no o tang HTTP.
+    """
+    import ast
     import inspect
 
     from apps.auto_scan_video import features, routes
 
-    assert "uoc_credit" not in inspect.getsource(routes)
-    assert "uoc_credit" in inspect.getsource(features.tao_run_tu_tai_len)
+    goi = {n.func.attr for n in ast.walk(ast.parse(inspect.getsource(routes)))
+           if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)}
+    assert "tinh_credit" not in goi, "route tu tinh gia thay vi hoi tang dich vu"
+    assert "so_phut_tinh_tien" not in goi
+    assert "tinh_credit" in inspect.getsource(features.tao_run_tu_tai_len)

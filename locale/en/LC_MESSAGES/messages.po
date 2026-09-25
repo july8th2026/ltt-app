@@ -21404,3 +21404,6 @@ msgstr "This run has no subtitle file."
 
 msgid "Đã tắt nhạc nền — không còn gì để chỉnh mức."
 msgstr "Background music is off - there is no level left to adjust."
+
+msgid "Tính theo độ dài video gốc: {don_gia} credit mỗi phút, làm tròn lên phút bắt đầu, tối thiểu 1 phút. Ví dụ video 3 phút 10 giây tính là 4 phút."
+msgstr "Charged by the length of the source video: {don_gia} credit per minute, rounded up to the next whole minute, minimum 1 minute. For example a 3 min 10 s video counts as 4 minutes."

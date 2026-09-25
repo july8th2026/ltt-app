@@ -112,10 +112,14 @@ def tao_run(db: Session, *, owner_id: str, source_key: str, settings: dict,
     khong: khong bao gio co run khong tra tien, hay tien giu ma khong co run
     (I2). Cung khuon voi `platform_core/job_submit.py`.
 
-    `uoc_luong_credit` uoc theo **thoi luong** vi luc nay chua co transcript, nen
-    chua biet so ky tu TTS hay token LLM. Uoc thua la binh thuong — quyet toan
-    tra lai phan du (chot boi
-    `test_400...::test_quyet_toan_it_hon_giu_cho_thi_hoan_phan_du`).
+    ⭐ **Tu 25/09/2026 `uoc_luong_credit` khong con la mot UOC.** Gia phang
+       (`gia.tinh_credit`) la mot ham cua do dai video nguon, va do dai do da duoc
+       `ffprobe` do tu chinh tep truoc khi ham nay duoc goi. Nen so giu cho **bang**
+       so se thu khi lan chay ve `done`, va phan hoan lai chi khac 0 khi lan chay
+       **khong** ve `done` (luc do hoan **toan bo** — `CHI_THU_KHI_GIAO_DUOC`).
+
+    ⚠️ Ten tham so giu nguyen de khong lam mot loat cho goi phai doi cung luc voi
+       mot thay doi ve tien. `gia.py` la noi khai cong thuc; day chi nhan con so.
     """
     if not owner_id:
         raise AsvError(_t('Thiếu chủ sở hữu.'))
@@ -452,16 +456,94 @@ def tong_da_dung(db: Session, run: AsvRun) -> int:
 
 
 def kiem_tran_chi(db: Session, run: AsvRun, them: int) -> None:
-    """Chot BAT BUOC truoc moi lan goi ton tien. Nem `AsvError` neu vuot hold.
+    """Chot truoc moi lan goi ton tien. Nem `AsvError` neu vuot hold.
 
-    Vi sao can: `credit_held` uoc theo thoi luong truoc khi biet transcript
-    (RISK-03-02). Mot uoc luong te phai thanh mot **that bai chinh sach sach se**
-    chu khong phai mot lan tieu vuot ngoai phan da giu.
+    Vi sao no ra doi: `credit_held` tung uoc theo thoi luong truoc khi biet
+    transcript (RISK-03-02). Mot uoc luong te phai thanh mot **that bai chinh
+    sach sach se** chu khong phai mot lan tieu vuot ngoai phan da giu.
+
+    ## ⚠️ Gia PHANG lam cai cong nay gan nhu khong con viec (25/09/2026)
+
+    `credit_held` nay **bang chinh** so se thu, va so se thu khong phu thuoc vao
+    `tong_da_dung` nua. Nen cong nay khong con bao ve KHACH khoi mot hoa don bat
+    ngo — dieu do gia phang lam bang cau truc.
+
+    ⭐ No van do **mot** viec that: canh gioi han **chi phi cua TA** tren mot lan
+       chay. `tong_da_dung` vuot `credit_held` nghia la lan chay dang dot nhieu hon
+       gia ban — mot dau hieu van hanh dang gia, chu khong phai mot loi cua khach.
+
+    ⛔ Va no **noi long** so voi truoc chu khong that lai: gia cu la
+       `max(5, round(8 x phut))`, gia moi la `10 x ceil(phut)` — lon hon hoac bang
+       voi **moi** do dai. Nen khong lan chay nao truoc day di duoc gio bi chan.
+
+    🔴 CHUA XOA — cong nay va `su_dung.cua_chan_truoc_khi_tieu` / `cua_chan_cho_lo`
+       nam trong danh sach "co the thua" giao chu du an quyet. Xoa mot cong tien
+       ⛔ khong phai viec lam nhan the.
     """
     du_kien = tong_da_dung(db, run) + max(0, int(them))
     if du_kien > int(run.credit_held):
         raise AsvError(
             _t('Chi phí thực tế sẽ vượt mức đã giữ cho phiên chạy này.'))
+
+
+#: 🔴 **Trang thai ket thuc nao DUOC thu tien.** Chu du an chot 25/09/2026:
+#:
+#:    *"Loi cua TA thi KHONG thu. Job `error` do phia ta ⇒ nha hold, khong tru.
+#:    So da co `N-21` dung ca nay (khach bi tinh tien cho luot chay lai). Dung
+#:    tai tao no."*
+#:
+#: ⭐ Va o day ta **khong phan loai "loi cua ai"**, co y. `loi.phan_loai` tra ve
+#:    `NGUOI_DUNG` cho ca **that bai cuoi cung cua may** — chinh docstring cua no
+#:    ghi: *"`NGUOI_DUNG` o day khong noi 'loi cua khach'"*. Dung mot nhan da tu
+#:    khai la mo ho lam can cu THU TIEN la thu tien theo mot thu khong co nghia
+#:    do. `ma_loi.HOAN_CREDIT` cung chua co nguoi doc va chi phu 3 trong 12 mat
+#:    xich, nen no khong du lam cong.
+#:
+#: ⇒ MOT luat, khong ngoai le: **giao duoc thi thu, khong giao duoc thi khong.**
+#:   `cancelled` cung khong thu — khach khong nhan gi.
+#:
+#: ⚠️ He qua da biet, khai ra thay vi de no am tham: mot lan chay hong o giai
+#:    doan 9 **vi du lieu cua khach** cung khong thu, du ta da dot GPU. Do la cai
+#:    gia cua mot luat khong the bi dung sai — va la lua chon cua chu du an.
+CHI_THU_KHI_GIAO_DUOC = frozenset({RUN_DONE})
+
+#: `thoi_luong_nguon_giay` tra ve `(giay, nguon_do)`; day la cac gia tri cua
+#: `nguon_do`. ⛔ `0.0` mot minh khong phan biet duoc *"video dai 0 giay"* voi
+#: *"chua do duoc"* — kho nay co ca mot ho loi ve viec gop hai trang thai vao mot
+#: gia tri, va tien la cho tuyet doi khong duoc phep gop.
+DO_TU_MACH = "media_prepare"
+CHUA_DO = "chua_do"
+
+
+def thoi_luong_nguon_giay(db: Session, run: AsvRun) -> tuple[float, str]:
+    """`(giay, nguon_do)` — do dai video **NGUON**, va NOI con so do den tu.
+
+    🔑 Do dai duoc `ffprobe` **DO TU TEP**, hai lan tren cung nhung byte:
+
+        luc nop    `nhap_media.soi(...)` trong `tao_run_tu_*`  -> `credit_held`
+        trong mach `media_prepare.outputs.tom_tat.thoi_luong`  -> so THU THAT
+
+    ⭐ Ham nay tra ve ban **trong mach**: do la phep do cua chinh lan chay, tren
+       tep da nam trong kho, sau khi chinh sach dau vao da chay. Hai phep do
+       phai bang nhau; neu lech, `quyet_toan` chan tren o `credit_held` nen khach
+       **khong bao gio** tra hon so ho da doc truoc khi bam.
+
+    ⛔ KHONG doc do dai ban RA. Preset "Rut gon co bien tap" lam ban ra ngan hon,
+       va khach khong duoc thuong cung khong bi phat vi may cat bao nhieu.
+    """
+    gd = giai_doan_theo_ten(db, run.id, pipeline.MEDIA_PREPARE)
+    if gd is not None:
+        # ⚠️ `tom_tat` cua engine duoc **giai phang** vao `outputs` o
+        #    `thi_hanh.py:496` (`{**(ra.get("tom_tat") or {})}`), nen khoa nam o
+        #    tang mot — ⛔ khong phai `outputs["tom_tat"]["thoi_luong"]`.
+        ra_gd = gd.outputs or {}
+        try:
+            giay = float(ra_gd.get("thoi_luong") or 0)
+        except (TypeError, ValueError):
+            giay = 0.0
+        if giay > 0:
+            return giay, DO_TU_MACH
+    return 0.0, CHUA_DO
 
 
 def quyet_toan(db: Session, run: AsvRun, *, trang_thai_cuoi: str) -> AsvRun:
@@ -470,11 +552,28 @@ def quyet_toan(db: Session, run: AsvRun, *, trang_thai_cuoi: str) -> AsvRun:
     Idempotent: run da o trang thai ket thuc thi khong cham so lan nua. Can
     tinh chat do vi `advance` duoc phep chay lai sau khi worker chet
     (chot boi `test_400...::test_quyet_toan_hai_lan_khong_tinh_tien_hai_lan`).
+
+    ## 🔑 Gia PHANG (25/09/2026) — so thu la mot ham cua DO DAI NGUON
+
+    Truoc do so thu la `tong_da_dung` — tong `credit_actual` **do duoc** cua tung
+    don vi viec (ADR-001 D4: *do duoc, khong tinh lai*). Ly do cua luat ay la mot
+    loi tien that: `executor.actual_cost` tinh lai theo thu khach **XIN** thay vi
+    thu may **GIAO** (H38 23/08, H37/D-051 24/08 — xin 4 anh, may tra 2, van thu 4).
+
+    ⭐ **Gia phang khong vi pham luat ay, no doi DAI LUONG duoc do.** So thu van
+       den tu mot phep do tren mot tep that (`ffprobe` tren video nguon), khong
+       tu mot bang gia nhan voi mot so lan thu. Thu duoc do nay la **do dai
+       nguon** — mot dai luong khach **biet truoc** va tu kiem lai duoc.
+
+    ⚠️ `tong_da_dung` **van song**: no la can cu cua `kiem_tran_chi` va cua ban
+       van hanh. No chi khong con quyet dinh so tien nua.
     """
     if trang_thai_cuoi not in RUN_TERMINAL:
         raise AsvError(f"trang thai ket thuc khong hop le: {trang_thai_cuoi}")
     if run.status in RUN_TERMINAL:
         return run
+
+    from . import gia
 
     # ⛔ Bang chung phai giai thich duoc con so TRUOC khi con so duoc thu.
     #
@@ -484,9 +583,30 @@ def quyet_toan(db: Session, run: AsvRun, *, trang_thai_cuoi: str) -> AsvRun:
     #    Do la thu chi lo ra khi doi chieu hai nguon, va cho de lo ra la day:
     #    sau khi quyet toan thi tien da thu, va mot phep kiem sau do chi con la
     #    mot bao cao.
+    #
+    # ⚠️ VAN CHAY du so cai khong con quyet dinh so tien: no canh giu tinh toan
+    #    ven cua so cai su dung, va mot so cai lech la mot dau hieu sai o cho
+    #    khac. Bo no di la mat mot phep kiem ma khong duoc gi.
     su_dung.doi_soat(db, run)
 
-    thuc_te = min(tong_da_dung(db, run), int(run.credit_held))
+    if trang_thai_cuoi not in CHI_THU_KHI_GIAO_DUOC:
+        # 🔴 `N-21`: khong giao duoc thi khong thu. Nha toan bo hold.
+        thuc_te = 0
+    else:
+        giay, nguon_do = thoi_luong_nguon_giay(db, run)
+        if nguon_do == CHUA_DO:
+            # ⚠️ `done` nghia la `media_prepare` DA xong, nen day la mot khiem
+            #    khuyet trong TA, khong phai mot ca hop le. Ta thu dung so khach
+            #    da doc truoc khi bam (`credit_held`) — khong bao gio hon — thay
+            #    vi nem: nem o day de tien treo mai mai tren mot run khong bao
+            #    gio ket thuc, va do la mot ket cuc te hon.
+            log.error("run %s ve done ma khong doc duoc thoi luong nguon — thu "
+                      "theo credit_held (%s)", run.id, run.credit_held)
+            thuc_te = int(run.credit_held)
+        else:
+            # ⛔ Chan tren o `credit_held`: khach khong bao gio tra hon so da hien
+            #    cho ho truoc khi bam, ke ca khi hai phep ffprobe lech nhau.
+            thuc_te = min(gia.tinh_credit(giay), int(run.credit_held))
     if int(run.credit_held) > 0:
         credit.quyet_toan(db, run.owner_id, run.id, thuc_te)
     run.credit_actual = thuc_te
@@ -598,7 +718,10 @@ def tao_run_tu_ve(db: Session, kho, *, owner_id: str, upload_id: str,
         nhap_media.kiem_chinh_sach(tt)
     except nhap_media.MediaError as exc:
         raise AsvError(str(exc)) from exc
-    uoc = gia.uoc_credit(float(tt.get("thoi_luong") or 0))
+    # ⭐ Gia PHANG: con so nay KHONG phai mot uoc — no la so se bi thu (gia phang
+    #    25/09). Do dai do bang `ffprobe` tren chinh tep vua nop, nen no da do duoc
+    #    truoc khi run ton tai.
+    gia_credit = gia.tinh_credit(float(tt.get("thoi_luong") or 0))
 
     duoi = (Path(phien.filename or "").suffix or ".mp4").lstrip(".").lower()
     if not duoi.isalnum() or len(duoi) > 5:
@@ -607,7 +730,7 @@ def tao_run_tu_ve(db: Session, kho, *, owner_id: str, upload_id: str,
     kho.promote(phien.staging_key, khoa, content_type=phien.content_type)
 
     return tao_run(db, owner_id=owner_id, source_key=khoa,
-                   settings=settings, uoc_luong_credit=uoc)
+                   settings=settings, uoc_luong_credit=gia_credit)
 
 
 def tran_logo_byte() -> int:
@@ -760,7 +883,10 @@ def tao_run_tu_tai_len(db: Session, *, owner_id: str, duong_tep: str,
         nhap_media.kiem_chinh_sach(tt)
     except nhap_media.MediaError as exc:
         raise AsvError(str(exc)) from exc
-    uoc = gia.uoc_credit(float(tt.get("thoi_luong") or 0))
+    # ⭐ Gia PHANG: con so nay KHONG phai mot uoc — no la so se bi thu (gia phang
+    #    25/09). Do dai do bang `ffprobe` tren chinh tep vua nop, nen no da do duoc
+    #    truoc khi run ton tai.
+    gia_credit = gia.tinh_credit(float(tt.get("thoi_luong") or 0))
 
     khoa = f"asv/{owner_id[:16]}/nguon/{uuid.uuid4().hex}.{duoi}"
     # ⭐ Mot doi tuong tep, khong phai `io.BytesIO(du_lieu)`: backend doc theo
@@ -769,7 +895,7 @@ def tao_run_tu_tai_len(db: Session, *, owner_id: str, duong_tep: str,
         get_storage().put(khoa, f, content_type="video/mp4")
 
     return tao_run(db, owner_id=owner_id, source_key=khoa,
-                   settings=settings, uoc_luong_credit=uoc)
+                   settings=settings, uoc_luong_credit=gia_credit)
 
 
 def lich_su(db: Session, owner_id: str, *, toi_da: int = 20) -> list:

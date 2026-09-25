@@ -242,7 +242,50 @@ def dong_thoi_gian(db, run, *, cho_van_hanh: bool = False,
 
         ra["so_ke"] = sd.so_ke(db, run)
         ra["doi_soat"] = doi_soat_nhanh(db, run)
+        # ⭐ Preset khach chon + duong render no keo theo — xem `duong_render_cua`.
+        ra["duong_render"] = duong_render_cua(run)
     return ra
+
+
+def duong_render_cua(run) -> dict:
+    """`{"preset", "duong"}` — khach chon preset nao, va no di duong RE hay DAT.
+
+    🔴 **Vi sao truong nay ton tai.**
+
+       Gia phang (`gia.py`, 25/09/2026) tinh `10 credit x so phut video nguon` —
+       mot ham cua **do dai**, khong cua tap thao tac. Gia thiet ngam duoi no la
+       *phan lon luot chay di duong `SAO_CHEP`*, o do luong hinh duoc **chep**
+       (`-c:v copy`) va gan nhu khong ton mot giay ma hoa nao.
+
+    ⭐ **Bien dieu khien la PRESET.** `che_do_render.che_do_cho` nhan **dung mot**
+       tham so — `preset` — va co phep kiem chot chu ky do. Cac co bien tap
+       (`vung_che`, `lop_phu`, `logo`, `phu_de_cung`, `bien_tap`) bi `ban_dung.kiem`
+       tu choi tren duong `SAO_CHEP`, tuc chung chi song o `smart_localize`, **noi
+       da ma hoa lai san** ⇒ chung ⛔ khong day luot nao sang duong dat.
+
+    ⇒ Nen cau hoi dung la *"bao nhieu % luot di duong dat, va PRESET nao?"* — va
+      truong nay ghi **ca hai**, cho tung lan chay. Sau mot thang no tra loi bang
+      **so lieu**: *khach chon "Rut gon co bien tap" bao nhieu %?*
+
+    ⛔ Va no **khong** duoc vao hoa don cua khach: khach tra mot gia phang, duong
+       render la viec cua ta. Lo no ra la mo cua cho cau *"sao toi phai tra them vi
+       may cua anh cham hon"* cho mot khoan khach khong he tra them.
+
+    ⭐ Ca hai gia tri suy tu **PRESET da khai**, khong tu du lieu cua lan chay (mot
+       ban bien tap giu **tat ca** canh van la preset cat, va no van ma hoa lai).
+       Nen truong nay doc duoc **tu luc tao run**, truoc khi mot giai doan nao chay.
+    """
+    from . import cai_dat as cd
+    from . import che_do_render as cdr
+
+    try:
+        preset = cd.doc(run).preset
+        return {"preset": preset, "duong": cdr.che_do_cho(preset)}
+    except Exception:                       # noqa: BLE001 - preset la, ban ghi cu
+        # ⛔ `""` chu khong `cdr.SAO_CHEP`: mot preset khong doc duoc la "chua
+        #    biet", va dem no vao o duong RE lam thong ke nghieng ve phia de chiu
+        #    — dung chieu lech khien khong ai di kiem lai.
+        return {"preset": "", "duong": ""}
 
 
 def dem_don_vi(db, run, stage: str) -> dict:
@@ -313,15 +356,28 @@ def tom_tat_cho_khach(db, run) -> dict:
        thong tin cong khai.
 
     ⭐ Chi phi thi hien ra: khach tra tien, nen khach duoc biet minh tra cho cai
-       gi — nhung theo **nang luc** (long tieng, tach tieng) chu khong theo ten
-       ky thuat cua nha cung cap.
+       gi.
+
+    ## 🔑 Gia PHANG (25/09/2026) — hoa don la MOT dong, khong phai nam
+
+    Truoc do cho nay tra ve `chi_phi_theo_nang_luc`: mot bang theo nang luc (doc
+    loi long tieng · dich · viet loi thoai · xem tung canh · ...), vi gia cu **cong
+    don** theo tung nang luc. Gia phang xoa can cu cua bang do: khach tra
+    `10 x so phut video nguon`, va mot bang nam dong cho mot con so phang la mot
+    bang **noi doi ve cach tinh** — no goi y rang bo mot nang luc di se tra it hon.
+
+    ⚠️ Phan **do luong** theo nang luc ⛔ KHONG bi xoa: `su_dung.so_ke` va ban van
+       hanh (`dong_thoi_gian(cho_van_hanh=True)`) giu nguyen no, vi no tra loi cau
+       *"cho nao dang dot tien"* — cau cua nguoi van hanh, khong phai cua khach.
     """
-    from . import su_dung as sd
+    from . import gia
     from .tables import RUN_TERMINAL
 
     ds = features.cac_giai_doan(db, run)
     xong = sum(1 for s in ds if s.status == "succeeded")
-    sk = sd.so_ke(db, run)
+    giay_nguon, nguon_do = features.thoi_luong_nguon_giay(db, run)
+    da_do_do_dai = nguon_do != features.CHUA_DO
+    hd = gia.hoa_don(giay_nguon) if da_do_do_dai else {}
     return {
         "trang_thai": run.status,
         "so_buoc_xong": xong,
@@ -329,15 +385,23 @@ def tom_tat_cho_khach(db, run) -> dict:
         "phan_tram": int(round(100.0 * xong / max(1, len(pipeline.CHUOI)))),
         "credit_da_giu": int(run.credit_held or 0),
         "credit_da_tinh": int(run.credit_actual or 0),
-        # ⚠️ CHI ten nang luc va so luong. Khong `app_chu` — do la ten noi bo cua
-        #    nha cung cap, va no khong phai viec cua khach.
-        "chi_phi_theo_nang_luc": [
-            {"nang_luc": m["nang_luc"], "don_vi": m["don_vi"],
-             "so_luong": round(float(m["so_luong"]), 2), "credit": int(m["credit"]),
-             # V6 pha 30: nhan cho man khach — xem `NHAN_NANG_LUC`.
-             "nhan": NHAN_NANG_LUC.get(m["nang_luc"], NHAN_NANG_LUC_KHAC),
-             "nhan_don_vi": NHAN_DON_VI.get(m["don_vi"], m["don_vi"])}
-            for m in sk.get("theo_nang_luc") or []],
+        # ⭐ MOT dong hoa don: `<so_phut> phut x <don_gia> = <credit>`.
+        #
+        # ⛔ `None` chu khong `0` khi chua do duoc do dai: *"chua do duoc"* khac
+        #    *"video dai 0 giay"*, va gop hai trang thai vao mot gia tri la mot ho
+        #    loi da co ten trong kho nay. Man hinh doc `da_do_do_dai` de biet no
+        #    dang o ca nao, va truoc do khach doc `credit_da_giu` ngay tren.
+        #
+        # ⛔ KHONG dua `nguon_do` vao day: gia tri cua no la ten mot giai doan noi
+        #    bo (`media_prepare`), va `test_446` chan dung viec do.
+        "hoa_don": {
+            "so_phut": hd.get("so_phut"),
+            "credit": hd.get("credit"),
+            "giay_nguon": hd.get("giay_nguon"),
+            "don_gia": gia.GIA_CREDIT_MOI_PHUT,
+            "luat_lam_tron": gia.luat_lam_tron(),
+            "da_do_do_dai": da_do_do_dai,
+        },
         # ⭐ Hoan lai CHI noi khi da quyet toan: truoc do con so "da tinh" con
         #    dang tang, va mot con so hoan lai tinh giua chung la mot loi hua sai.
         #    Cung cong thuc voi `features.quyet_toan`: thu min(thuc te, giu).

@@ -210,11 +210,31 @@ def test_khach_KHONG_thay_ten_giai_doan_noi_bo(
 def test_khach_KHONG_thay_ten_app_chu(tmp_path, db, kho_tam, asr_gia, dich_gia,
                                       giong_gia):
     """⚠️ `app_chu` la ten noi bo cua nha cung cap nang luc — khong phai viec cua
-    khach, va la mot manh cua ban do he thong."""
+    khach, va la mot manh cua ban do he thong.
+
+    ## ⭐ 25/09/2026 — gia PHANG bo bang theo nang luc khoi HOA DON khach
+
+    Bang `chi_phi_theo_nang_luc` (nam dong: long tieng · dich · viet loi thoai ·
+    xem tung canh · ...) co ly do khi gia **cong don** theo tung nang luc. Gia
+    phang tinh `10 credit x so phut video nguon`, nen mot bang nam dong cho mot con
+    so phang la mot bang **noi doi ve cach tinh** — no goi y rang bo mot nang luc
+    di se tra it hon.
+
+    ⇒ Bai nay doi tu *"bang khong mang `app_chu`"* sang *"khach khong doc thay
+      `app_chu` o BAT KY dau"* — cung menh de, ⛔ khong con phu thuoc vao mot bang
+      da bien mat. Phan **do luong** theo nang luc VAN song o ban van hanh
+      (`dong_thoi_gian(cho_van_hanh=True)["so_ke"]`) — xem `test_3900`.
+    """
     run = _chay(db, kho_tam, tmp_path)
     t = quan_sat.tom_tat_cho_khach(db, run)
-    for m in t["chi_phi_theo_nang_luc"]:
-        assert "app_chu" not in m
+    assert "chi_phi_theo_nang_luc" not in t, "bang theo nang luc con o hoa don khach"
+
+    van = json.dumps(t, ensure_ascii=False)
+    assert "app_chu" not in van
+    # ⛔ Va khong chi TEN khoa: ca cac GIA TRI `app_chu` that trong so cai.
+    for d in sd.cac_dong(db, run):
+        if d.app_chu:
+            assert d.app_chu not in van, f"lo app_chu `{d.app_chu}` cho khach"
 
 
 # ══════════════════════════════════════════════════════════════════════════════
