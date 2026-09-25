@@ -63,6 +63,13 @@ data/lttcode_releases.json
 # khong sua tay.
 data/conn/
 
+# platform_core/workflow/connector.py THU_MUC_MARKETPLACE: allowlist +
+# node_modules + npm-cache + scratch install cua piece marketplace DA DUYET
+# (spec platform_core/workflow/marketplace.py). Trang thai chay, sinh boi
+# cong duyet — khong sua tay, khong commit (piece cai duoc phu thuoc CSDL
+# `marketplace_piece`, khong phu thuoc noi dung thu muc nay tren dia).
+data/marketplace/
+
 # ─── H37 bench: so do thi COMMIT, anh va trong so thi KHONG ───────────────────
 # Ly do o bench/README.md. So do la bang chung phai giu; anh sinh ra va file model
 # la DU LIEU, nam tren may B va R2.
