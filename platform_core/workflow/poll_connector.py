@@ -203,6 +203,86 @@ def mot_luot_poll(db, t: WorkflowTrigger, *, moc: datetime,
 
 _trigger.dang_ky(PiecePoll())
 
+
+def _goi_on_enable(db, t: WorkflowTrigger) -> list:
+    """Gọi OP `trigger_on_enable` thật qua runner — trả `store_ops`.
+
+    ⭐ Vì sao là một hàm RIÊNG, không gộp vào `_goi_runner`: `run_trigger` và
+       `trigger_on_enable` là hai OP khác nhau của
+       `connector_runner/src/runner.js`. Nhiều trigger POLLING thật dùng
+       `DedupeStrategy.TIMEBASED` của Activepieces (vd.
+       `google-sheets/new-spreadsheet`, `google-sheets/new-worksheet`) — bản
+       thân `pollingHelper.poll()` của họ **ném** nếu `store.get("lastPoll")`
+       rỗng; `onEnable` là nơi DUY NHẤT seed mốc đó. `@ltt/piece-gia` (piece
+       giả cũ của FLOW D) không có ràng buộc này nên khoảng trống chưa từng
+       lộ — xem đầu tệp `tests/test_3505_wf_flow_d_poll_pg.py`.
+
+    ⛔ **Không cần mạng cho bước này.** Spike 25/09 (piece thật
+       `@activepieces/piece-google-sheets@0.17.0`, `auth=None`): cả
+       `onEnable` (strategy TIMEBASED) lẫn phép `run()` từ chối khi thiếu
+       `lastPoll` đều chạy XONG **trước** khi piece gọi `items()` — tức trước
+       khi chạm API thật. Chỉ `run()` SAU KHI đã bật mới cần `auth` thật.
+    """
+    cau_hinh = dict(t.config or {})
+    pham_vi = _store.pham_vi_trigger(t.id)
+    auth = None
+    ref = str(cau_hinh.get("credential_ref") or "")
+    if ref:
+        from platform_core import credential as kho
+        auth = kho.lay_de_dung(db, ref, owner_id=t.owner_id)
+    kq = _connector.chay(
+        "trigger_on_enable", piece=str(cau_hinh["piece"]),
+        version=str(cau_hinh.get("piece_version") or ""),
+        name=str(cau_hinh["ten_trigger"]),
+        props=dict(cau_hinh.get("props") or {}), auth=auth,
+        store=_store.doc(db, owner_id=t.owner_id, pham_vi=pham_vi))
+    if not kq.ok:
+        raise LoiPoll(f"{kq.ma_loi}: {kq.thong_diep}"[:500])
+    return list(kq.store_ops or [])
+
+
+def bat(db, t: WorkflowTrigger, *, goi=None) -> int:
+    """Bật một trigger `PIECE_POLL` — tương đương `onEnable` của Activepieces.
+
+    🔴 **Gọi ĐÚNG MỘT LẦN, lúc trigger được tạo/bật, TRƯỚC lượt
+       `mot_luot_poll` đầu tiên.** Bỏ qua bước này với một piece TIMEBASED
+       thật làm **mọi** lượt poll sau đó ném `LoiPoll` ("lastPoll doesn't
+       exist in the store.") — `run()` của piece từ chối chạy khi chưa có mốc.
+
+    `goi` cho phép phép kiểm thay lớp gọi runner (cùng quy ước `mot_luot_poll`),
+    ⛔ không thay logic áp `store_ops` — thứ đang được đo. Trả số `store_ops`
+    đã áp (0 là hợp lệ: một số piece — vd. `LAST_ITEM` không dữ liệu — không
+    ghi gì lúc bật).
+    """
+    ops = (goi or _goi_on_enable)(db, t)
+    if ops:
+        _store.ap(db, owner_id=t.owner_id,
+                  pham_vi=_store.pham_vi_trigger(t.id), ops=ops)
+    db.flush()
+    return len(ops)
+
+
+def tao_trigger(db, *, workflow_id: str, owner_id: str, piece: str,
+                piece_version: str, ten_trigger: str, props: Optional[dict] = None,
+                credential_ref: str = "", chu_ky_s: int = CHU_KY_TOI_THIEU_S,
+                goi_bat=None) -> WorkflowTrigger:
+    """Tạo MỘT trigger `PIECE_POLL` **và bật nó** (`bat`) trong một bước.
+
+    ⭐ Đường NÊN DÙNG để tạo trigger poll thật, thay vì gọi thẳng
+       `trigger.tao(kind=poll_connector.KIND, ...)`. `platform_core.workflow.
+       trigger` (lõi) cố tình không biết piece nào cần `onEnable` — đúng
+       nguyên tắc `G42` ở đầu tệp đó ("lõi không biết tên loại"); hàm này khép
+       kín hiểu biết ấy ở ĐÚNG một chỗ thuộc về nó: mô-đun `PIECE_POLL`.
+    """
+    cau_hinh = tao_cau_hinh(piece=piece, piece_version=piece_version,
+                            ten_trigger=ten_trigger, props=props,
+                            credential_ref=credential_ref, chu_ky_s=chu_ky_s)
+    t = _trigger.tao(db, workflow_id=workflow_id, owner_id=owner_id,
+                     kind=KIND, cau_hinh=cau_hinh)
+    bat(db, t, goi=goi_bat)
+    return t
+
+
 __all__ = ["CHU_KY_TOI_THIEU_S", "KIND", "LoiPoll", "PiecePoll",
-           "TRAN_BAN_GHI_MOI_LUOT", "id_ban_ghi", "mot_luot_poll",
-           "tao_cau_hinh"]
+           "TRAN_BAN_GHI_MOI_LUOT", "bat", "id_ban_ghi", "mot_luot_poll",
+           "tao_cau_hinh", "tao_trigger"]
