@@ -34,6 +34,7 @@ from . import (am_thanh as am_thanh_mod, bien_tap as bien_tap_mod,
                cai_dat as cai_dat_mod, cat_dau_cuoi,
                features, gia, hop_dong_v4, lop_phu as lop_phu_mod,
                ngon_ngu as ngon_ngu_mod, phu_de as phu_de_mod, rang_giong,
+               tach_tieng as tach_tieng_mod,
                tu_dien as tu_dien_mod, vung_che)
 
 
@@ -58,7 +59,7 @@ class LoiCaiDat(features.AsvError):
 KHOA_NHAN = frozenset({
     "timing_mode", "preset", "che_do_giong", "giong_id", "ngon_ngu_nguon",
     "ngon_ngu_dich", "vung", "cat", "lop_phu", "tu_dien", "phu_de", "am_thanh",
-    "bien_tap", "nguon_loi",
+    "bien_tap", "nguon_loi", "lop",
     cai_dat_mod.KHOA_SCHEMA, cai_dat_mod.KHOA_BI_DANH_GIONG,
 })
 
@@ -242,8 +243,10 @@ def dung_cai_dat(db, *, owner_id: str, tho: Mapping) -> dict:
         # Cat khung / zoom / ti le / toc do (asv-final, ADR_BIEN_TAP).
         ho_so_bt = bien_tap_mod.tu_form(_chuoi_json(tho.get("bien_tap")),
                                         preset=preset)
+        # Ho so BA LOP nen: giong/nhac/vfx, moi lop bat/gain rieng (B2 + B5).
+        ho_so_lop = tach_tieng_mod.tu_form_lop(_chuoi_json(tho.get("lop")))
     except (phu_de_mod.PhuDeLoi, am_thanh_mod.AmThanhLoi,
-            bien_tap_mod.BienTapLoi) as exc:
+            bien_tap_mod.BienTapLoi, tach_tieng_mod.LopNenLoi) as exc:
         raise LoiCaiDat(str(exc)) from None
     if ho_so_phu_de:
         cai_dat["phu_de"] = ho_so_phu_de
@@ -251,6 +254,8 @@ def dung_cai_dat(db, *, owner_id: str, tho: Mapping) -> dict:
         cai_dat["am_thanh"] = ho_so_am
     if ho_so_bt:
         cai_dat["bien_tap"] = ho_so_bt
+    if ho_so_lop:
+        cai_dat["lop"] = ho_so_lop
 
     return cai_dat_mod.chuan_hoa(cai_dat)
 

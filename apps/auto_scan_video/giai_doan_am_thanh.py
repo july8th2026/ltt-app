@@ -26,7 +26,7 @@ from pathlib import Path
 from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
 
-from . import assets, lat_cat, nhap_media, tach_tieng
+from . import assets, cai_dat, lat_cat, nhap_media, tach_tieng
 from .giai_doan_media import ThieuNguon, _duong_doc_duoc
 
 
@@ -49,6 +49,11 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     # 🔑 Card DA duoc giu cho hay chua — cha biet, con khong. Truyen xuong de con
     #    tu choi thay vi tut xuong CPU im lang (`demucs_runner.chon_thiet_bi`).
     uuid_cap = str(getattr(ctx, "gpu_uuid", "") or "") if ctx is not None else ""
+
+    # Ho so BA LOP (B2 tach + B5 GUI) khach chon cho ban nen nay, hoac
+    # `None` = mac dinh (giong TAT, nhac+vfx BAT o gain 1,0) — xem
+    # `tach_tieng.LOP_STEM`/`chuan_hoa_lop`.
+    lop = cai_dat.doc(run).lop
 
     with tempfile.TemporaryDirectory(prefix="asv-audio-") as tam:
         thu_muc = Path(tam)
@@ -77,7 +82,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             ctx.progress(75, _t('Đang trộn nhạc nền'))
 
         nen = tach_tieng.tron_nen(ket_qua["duong"], str(thu_muc / "bed.wav"),
-                                  hoi_huy=hoi_huy)
+                                  hoi_huy=hoi_huy, lop=lop)
 
         # ── Kiem ban ra (Prompt 09 muc 7) ────────────────────────────────
         tt = nhap_media.soi(nen)
@@ -97,7 +102,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         checksum_nguon = assets.bam_tep(nguon)
         vt = tach_tieng.van_tay_tach(
             checksum_nguon=checksum_nguon,
-            phien_ban_ffmpeg_=nhap_media.phien_ban_ffmpeg())
+            phien_ban_ffmpeg_=nhap_media.phien_ban_ffmpeg(), lop=lop)
 
         khoa_nen = assets.khoa_staging(owner_id=run.owner_id, run_id=run.id,
                                        stage="audio_prepare", van_tay=vt,
@@ -121,6 +126,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                 "so_khoi": ket_qua.get("so_khoi", 0),
                 "khoi_giay": ket_qua.get("khoi_giay", 0),
                 "stem_giu": list(tach_tieng.STEM_GIU),
+                # Ho so BA LOP DAY DU da dung (khong phai ban THUA khach gui) —
+                # de ho tro doc duoc "lan nay giong goc co bi ro khong" tu bao
+                # cao, khong phai doan tu `run.settings`.
+                "lop": tach_tieng.tu_cai_dat_lop(lop),
                 # ⭐ MOT con so thay cho mot tep tieng. `vocals` bi xoa cung thu
                 #    muc tam (dau tep), nhung `AUTO_MATCH` can biet nguoi noi
                 #    goc la nam hay nu — va do la thu duy nhat ta giu lai.

@@ -21569,3 +21569,33 @@ msgstr "Building the cut plan"
 
 msgid "Đang cắt và ghép lại"
 msgstr "Cutting and rejoining"
+
+msgid "Trộn lớp nền"
+msgstr "Mix background layers"
+
+msgid "Bản nền được tách làm ba lớp riêng: nhạc, tiếng động, và giọng nói gốc. Chỉnh từng lớp nếu bản mặc định chưa vừa ý."
+msgstr "The background track is split into three separate layers: music, sound effects, and the original voice. Adjust each layer if the default mix isn't quite right."
+
+msgid "Giữ nhạc nền"
+msgstr "Keep background music"
+
+msgid "Trống, giai điệu của video gốc."
+msgstr "Drums and melody from the original video."
+
+msgid "Tiếng động"
+msgstr "Sound effects"
+
+msgid "Giữ tiếng động"
+msgstr "Keep sound effects"
+
+msgid "Tiếng bước chân, va chạm, môi trường xung quanh."
+msgstr "Footsteps, impacts, ambient sound."
+
+msgid "Giữ giọng nói gốc"
+msgstr "Keep the original voice"
+
+msgid "⚠️ Đây là lời thoại gốc (thường là tiếng nước ngoài), không chỉ tiếng thở hay tiếng cười — nó sẽ chồng lên giọng lồng tiếng Việt. Mặc định tắt vì sản phẩm hứa một giọng tiếng Việt duy nhất."
+msgstr "⚠️ This is the original dialogue (usually a foreign language), not just breathing or laughter — it will overlap the Vietnamese dub. Off by default: the product promises a single Vietnamese voice."
+
+msgid "Âm lượng giọng nói gốc"
+msgstr "Original voice volume"

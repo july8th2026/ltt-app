@@ -87,7 +87,8 @@ _STATIC_DIR = pathlib.Path(__file__).resolve().parent / "static"
 ASV_STUDIO_JS = ("asv/nen.js", "asv/xem_truoc.js", "asv/giong.js",
                  "asv/vung.js", "asv/cat.js", "asv/lop_phu.js",
                  "asv/logo.js", "asv/phu_de.js", "asv/am_thanh.js",
-                 "asv/bien_tap.js", "asv/tai_len.js", "asv/thanh.js")
+                 "asv/bien_tap.js", "asv/lop_nen.js", "asv/tai_len.js",
+                 "asv/thanh.js")
 
 TAI_SAN_CO_VERSION = ("ltt.css", "sao_chep.js", "cam_chon.js", "chon_tep.js",
                       "voice.js", "dev_playground.js", "nhip_job.js",
