@@ -80,10 +80,17 @@ rồi đoán tiếp. Việc đó cần chủ trì, không phải một lượt v
 
 ## ⛔ Sheets/cron thật — vẫn KHÔNG phải chỗ tệp này chốt
 
-`piece.google_sheets.find_rows` có trong registry nhưng `publish_duoc=False`
-cứng (`nut.py::tu_piece()`, chờ "plan 08"/P-C mở runner Node cho `piece.*`).
-Cả hai lượt đều không dùng — không nằm trong danh mục gửi cho model. FLOW G
-đủ 6/6 với Sheets THẬT vẫn CHƯA đạt.
+Lúc hai lượt gọi thật ở trên chạy (25/09, trước lan wfp), `piece.google_
+sheets.find_rows` có trong registry nhưng `publish_duoc=False` cứng
+(`nut.py::tu_piece()`, chờ "plan 08"/P-C mở runner Node cho `piece.*`). Cả
+hai lượt đều không dùng — không nằm trong danh mục gửi cho model.
+
+🔴 CẬP NHẬT 25/09 (lan wfp): plan 08 đã mở — `publish_duoc=True` từ đây, và
+   `test_sheets_van_KHONG_publish_duoc_ly_do_that` dưới đây đo đúng trạng
+   thái MỚI (Sheets vào được danh mục). Hai lượt gọi thật ĐÃ GHI ở trên vẫn
+   là ảnh chụp lịch sử — không gọi lại model chỉ để đổi tên biến này. FLOW G
+   đủ 6/6 với Sheets THẬT (một trigger POLLING chạy end-to-end) vẫn là việc
+   của một lượt gọi thật KHÁC, chưa phải tệp này.
 """
 from __future__ import annotations
 
@@ -377,9 +384,20 @@ def test_prompt_moi_khong_con_dinh_type_va_co_liet_ke_kind(cc):
 
 
 def test_sheets_van_KHONG_publish_duoc_ly_do_that(cc):
-    """Vì sao cả hai lượt gọi thật đều không (và không thể) dùng node Sheets."""
+    """Vì sao cả hai lượt gọi thật (25/09, trước lan wfp) đều không dùng
+    node Sheets — và vì sao câu trả lời đổi 25/09 (lan wfp, plan 08).
+
+    🔴 SỬA 25/09 (lan wfp): `nut.tu_piece()` bật `publish_duoc=True` —
+       `bien_dich._node`/`cau_noi._dinh_nghia`/`bao_gia._gia_node` nay biên
+       dịch, nộp job và báo giá được `piece.*` (xem
+       `docs/superpowers/plans/2026-09-25-wf-v2-VAN-HANH.md` lan wfp). Đúng
+       như `ke_hoach_v3.danh_muc()` nói (*"Chỉ node `publish_duoc`"*) — cờ
+       BẬT thì Sheets THẬT vào thẳng danh mục gửi cho model, không cần sửa gì
+       ở `ke_hoach_v3`. Hai lượt gọi thật ĐÃ GHI (`_LOT1_25_09`/`_LOT2_25_09`)
+       là ảnh chụp TRƯỚC cờ này — giữ nguyên, không gọi lại.
+    """
     dinh_nghia = nut.tat_ca(cong_cu=cc)
     assert "piece.google_sheets.find_rows" in dinh_nghia
-    assert dinh_nghia["piece.google_sheets.find_rows"].publish_duoc is False
+    assert dinh_nghia["piece.google_sheets.find_rows"].publish_duoc is True
     muc_types = {m["type"] for m in ke_hoach_v3.danh_muc(cong_cu=cc)}
-    assert "piece.google_sheets.find_rows" not in muc_types
+    assert "piece.google_sheets.find_rows" in muc_types

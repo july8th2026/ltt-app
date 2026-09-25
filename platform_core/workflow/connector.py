@@ -247,6 +247,18 @@ def chay(op: str, *, piece: str, version: str, name: str,
             shutil.rmtree(tmp, ignore_errors=True)
 
 
+#: Tên tham số JOB mang **ref** credential của khách (spec §9.4). ⛔ Không
+#: phải bí mật: ref là một id, chỗ duy nhất giải mã nó là tiến trình job
+#: (`apps/connector_runner/jobs.py::_bi_mat`).
+#:
+#: ⭐ Hằng đặt Ở ĐÂY, không phải trong `apps/connector_runner/jobs.py`: cả
+#:    hai phía của hợp đồng đọc nó — `cau_noi._nop_job_connector` (GHI, nộp
+#:    job) và `jobs.handle` (ĐỌC, giải mã). `apps/` được phép import
+#:    `platform_core/`, chiều ngược lại thì không — nên hằng phải sống ở
+#:    `platform_core/` và `jobs.py` import nó, không phải khai tay hai lần
+#:    một chuỗi `"credential"` ở hai đầu một job param.
+THAM_SO_CREDENTIAL = "credential"
+
 __all__ = ["HAN_CUNG_MS", "HAN_MAC_DINH_MS", "KetQua", "LoiConnector",
-           "THU_MUC_LAM_VIEC", "THU_MUC_RUNNER", "chay", "chuan_bi_vo",
-           "doc_catalog", "go_vo", "mien_cua_piece"]
+           "THAM_SO_CREDENTIAL", "THU_MUC_LAM_VIEC", "THU_MUC_RUNNER", "chay",
+           "chuan_bi_vo", "doc_catalog", "go_vo", "mien_cua_piece"]
