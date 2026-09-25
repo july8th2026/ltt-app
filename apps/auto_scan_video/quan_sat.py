@@ -27,6 +27,7 @@ tren dia, ten may, ten model, hay mot manh payload cua provider.
 """
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 
 from sqlalchemy import select
@@ -37,6 +38,8 @@ from platform_core.models import Job
 from platform_core.i18n import N_
 
 from . import features, ma_loi, pipeline, rang_giong
+
+log = logging.getLogger(__name__)
 
 #: Chuoi hien cho khach khi mot giai doan hong ma ta khong co thong diep an toan.
 #: ⚠️ Khong bao gio boc `str(exc)` tho vao day.
@@ -666,7 +669,11 @@ def bang_chung_chat_luong(db, run) -> dict | None:
         if con:
             ra["con_lai"] = {"so_muc": int(sum(float(d.so_luong or 0)
                                               for d in con))}
-    except Exception:                       # noqa: BLE001 - so cai hong khong
-        pass                                # duoc giet man hinh cua khach
+    except Exception as e:                   # noqa: BLE001 - so cai hong khong
+        # ⛔ VAN NUOT: mot o so tren man hinh khach khong duoc lam sap ca
+        #    trang. Nhung no phai de lai vet trong nhat ky worker, neu khong
+        #    thi "o `con_lai` bi thieu" la mot bao loi khong the tra ra duoc.
+        log.warning("quan_sat: khong dem duoc sua_chua_con_lai (run=%s): %s",
+                    getattr(run, "id", "?"), type(e).__name__)
 
     return ra or None

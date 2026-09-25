@@ -84,7 +84,7 @@ def sha_bo_cham() -> str:
         return subprocess.run(
             ["git", "log", "-1", "--format=%H", "--", TEP_BO_CHAM],
             cwd=GOC, capture_output=True, text=True, timeout=30).stdout.strip()
-    except Exception:                           # noqa: BLE001
+    except (OSError, subprocess.SubprocessError):   # khong co `git`, hoac het gio
         return ""
 
 
@@ -92,7 +92,7 @@ def _in(dong: str) -> None:
     """⛔ In khong bao gio duoc nem — stdout co the la cp1252."""
     try:
         print(dong)
-    except Exception:                           # noqa: BLE001
+    except UnicodeEncodeError:                  # cp1252 gap ky tu ngoai bang ma
         bo = getattr(sys.stdout, "encoding", None) or "ascii"
         print(dong.encode(bo, "replace").decode(bo, "replace"))
 
@@ -129,7 +129,8 @@ def cham_mot_phim(duong: Path) -> dict:
                                 qc_ai.loi_nhac_ngu_nghia(lo, "vi"),
                                 temperature=0.0)
                     phan.extend(qc_ai.doc_ngu_nghia(
-                        ai.doc_json(kq["noi_dung"], ai.QC_NGU_NGHIA), ma_gui))
+                        ai.doc_json(kq["noi_dung"], ai.QC_NGU_NGHIA), ma_gui,
+                        {str(d["ma"]): (d["goc"], d["chu"]) for d in lo}))
                     break
                 except Exception as exc:        # noqa: BLE001
                     # 🔴 **Bat theo KIEU, ⛔ khong theo CHUOI.** Ban dau tep nay
@@ -168,7 +169,8 @@ def _model_cham() -> str:
 
     try:
         return ai.model_cho(ai.QC_NGU_NGHIA)
-    except Exception:                           # noqa: BLE001
+    except Exception as e:                      # noqa: BLE001
+        _in(f"[canh bao] khong doc duoc model cham: {type(e).__name__}")
         return ""
 
 
