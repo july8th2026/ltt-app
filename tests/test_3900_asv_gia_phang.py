@@ -33,7 +33,7 @@ from pathlib import Path
 
 import pytest
 
-from apps.auto_scan_video import features, gia, quan_sat
+from apps.auto_scan_video import features, gia, pipeline, quan_sat
 from apps.auto_scan_video.tables import (RUN_CANCELLED, RUN_DONE, RUN_ERROR,
                                          AsvRun)
 
@@ -144,8 +144,6 @@ def test_do_dai_lay_tu_MEDIA_PREPARE_chu_khong_tu_ban_RA(db, kho_tam, tmp_path,
     """🔑 `media_prepare` soi **tep nguon**; `render` sinh ban ra. Preset "Rut gon
        co bien tap" lam ban ra ngan hon, va khach ⛔ khong duoc thuong cung ⛔ khong
        bi phat vi may cat bao nhieu."""
-    from apps.auto_scan_video import pipeline
-
     run = _tao_run(db, giu=gia.tinh_credit(DEFAULT_DURATION_S),
                    kho=None, tmp_path=tmp_path)
     _chay_het_hang_doi(db, nang_luc={"api", "ffmpeg", "gpu", "voice"})
@@ -251,6 +249,88 @@ def test_KHONG_ve_done_thi_KHONG_thu_mot_credit_nao(db, kho_tam, trang_thai):
     assert credit.so_du(db, "uA") == truoc_khi_giu, "hold phai duoc nha HET"
 
 
+def test_DONE_va_QC_DAT_ma_KHONG_co_tep_nao_giao_thi_thu_0(db, kho_tam):
+    """🔴 **Ca THAT, 25/09/2026 (`N-57`), do lan `asv-g17` do tren phim khach.**
+
+        run.status == "done"                ✅
+        bao QC `dat` == True                ✅
+        render.outputs.khoa_asset == {}     🔴 KHONG MOT TEP NAO VE TAY KHACH
+
+    Duong di: vong sua reset `render` + 5 giai doan → het vong sua → *"con 1 khiem
+    khuyet CON LAI — giao hang va de QC lam cong gac"* → `done`.
+
+    ⭐ **Vi sao ca nay lot qua bai `error`/`cancelled` o ngay tren.** Bai do hoi
+       *trang thai*, va o day trang thai **dung**: `done` that, QC `dat` that. Cai
+       sai la ta doc `done` thanh *"khach da nhan duoc hang"*, trong khi no chi noi
+       *"may trang thai da chay het"*. ⇒ Mot phep do tra loi mot cau **khac** cau
+       ta dang hoi — cung ho voi moi ca khac cua ngay 25/09.
+
+    ⇒ Nen bai nay dung HIEN VAT: `render` xong, QC `dat`, ma `khoa_asset` rong.
+    """
+    from platform_core import credit
+    from apps.auto_scan_video import su_dung as sd
+    from apps.auto_scan_video.tables import STAGE_SUCCEEDED
+
+    giu = 50
+    run = _tao_run(db, giu=giu)
+    truoc_khi_giu = credit.so_du(db, "uA") + giu
+
+    # Chi phi noi bo DA tieu — neu luat con doc so cai thi no se thu 5.
+    sd.ghi(db, run, stage="voice_synthesis", item_key="seg_0",
+           su_dung=sd.SuDung(nang_luc="tong_hop_tieng", app_chu="ltt_voice",
+                             trang_thai=sd.DA_GIAO, don_vi=sd.KY_TU,
+                             so_luong=420.0, credit=5, ma_dispatch="t3900:n57"))
+
+    # ⭐ `render` XONG va QC `dat` — dung hinh dang cua ca that. Chi `khoa_asset`
+    #    la rong.
+    gd = features.giai_doan_theo_ten(db, run.id, pipeline.RENDER)
+    features.cap_nhat_giai_doan(
+        db, gd, status=STAGE_SUCCEEDED,
+        outputs={"stage": pipeline.RENDER, "khoa_asset": [], "dat": True})
+    db.commit()
+
+    assert features.tong_da_dung(db, run) == 5, "ca thu nay khong con y nghia"
+    assert not features.co_hien_vat_giao_duoc(db, run)
+
+    features.quyet_toan(db, run, trang_thai_cuoi=RUN_DONE)
+    db.commit()
+
+    assert int(run.credit_actual) == 0, (
+        f"thu {run.credit_actual} credit cho mot lan GIAO HANG RONG — xem N-57")
+    assert credit.so_du(db, "uA") == truoc_khi_giu, "hold phai duoc nha HET"
+    # ⛔ Va ta ⛔ KHONG doi trang thai: doi `done` thanh `error` la viec cua may
+    #    trang thai (lan `asv-g17`), khong phai cua luat thu tien.
+    assert run.status == RUN_DONE
+
+
+def test_khoa_asset_chi_co_SRT_cung_KHONG_phai_da_giao_hang(db, kho_tam):
+    """⛔ `khoa_asset` khac rong ⛔ KHONG dong nghia da giao hang.
+
+    ⭐ `khoa_ket_qua` loc `.mp4` va la **duong duy nhat** nut "Tai ve" cua khach
+       co (`routes.tai_ket_qua`). Mot `render` chi dang `.srt` thi danh sach khac
+       rong **nhung man hinh cua khach khong co gi bam duoc** — va mot phep kiem
+       `khoa_asset != []` se goi do la "da giao".
+
+    ⇒ Day la ly do `co_hien_vat_giao_duoc` uy quyen cho `khoa_ket_qua` thay vi tu
+      doc `khoa_asset`: hai cau tra loi la MOT vi chung la mot phep tinh.
+    """
+    from apps.auto_scan_video.tables import STAGE_SUCCEEDED
+
+    run = _tao_run(db, giu=50)
+    gd = features.giai_doan_theo_ten(db, run.id, pipeline.RENDER)
+    features.cap_nhat_giai_doan(
+        db, gd, status=STAGE_SUCCEEDED,
+        outputs={"stage": pipeline.RENDER, "dat": True,
+                 "khoa_asset": ["asv/uA/x/long-tieng.srt"]})
+    db.commit()
+
+    assert not features.co_hien_vat_giao_duoc(db, run)
+
+    features.quyet_toan(db, run, trang_thai_cuoi=RUN_DONE)
+    db.commit()
+    assert int(run.credit_actual) == 0
+
+
 def test_CHI_THU_KHI_GIAO_DUOC_la_MOT_luat_khong_phan_loai_loi_cua_ai():
     """⭐ `loi.phan_loai` tra ve `NGUOI_DUNG` cho ca **that bai cuoi cung cua
        may** — chinh docstring cua no ghi *"`NGUOI_DUNG` o day khong noi 'loi cua
@@ -270,13 +350,38 @@ def test_CHI_THU_KHI_GIAO_DUOC_la_MOT_luat_khong_phan_loai_loi_cua_ai():
             f"`CHI_THU_KHI_GIAO_DUOC`")
 
 
+def _dat_lan_chay_da_giao(db, run, giay: float) -> None:
+    """Dung hai su that ma luat thu tien doi: **do dai nguon** + **hien vat**.
+
+    ⚠️ Thieu mot trong hai thi `quyet_toan` roi ve mot duong KHAC (duong lui theo
+       `credit_held`, hoac duong "khong co hien vat ⇒ thu 0"). Ca hai duong deu
+       hop le, nhung chung ⛔ khong phai duong dang duoc kiem — va mot bai xanh nho
+       mot duong khac la mot bai xanh gia.
+    """
+    from apps.auto_scan_video.tables import STAGE_SUCCEEDED
+
+    gd = features.giai_doan_theo_ten(db, run.id, pipeline.MEDIA_PREPARE)
+    features.cap_nhat_giai_doan(db, gd, outputs={"stage": pipeline.MEDIA_PREPARE,
+                                                 "thoi_luong": float(giay)})
+    rd = features.giai_doan_theo_ten(db, run.id, pipeline.RENDER)
+    features.cap_nhat_giai_doan(
+        db, rd, status=STAGE_SUCCEEDED,
+        outputs={"stage": pipeline.RENDER, "dat": True,
+                 "khoa_asset": [f"asv/{run.owner_id}/{run.id}/long-tieng.mp4"]})
+    db.flush()
+
+
 def test_quyet_toan_HAI_LAN_khong_doi_gia_cua_mot_run_da_ket_thuc(db, kho_tam):
     """⛔ Job CU khong bao gio bi tinh lai. `advance` duoc chay lai sau khi worker
        chet, va mot lan quyet toan thu hai phai la mot lan khong lam gi."""
     run = _tao_run(db, giu=30)
+    _dat_lan_chay_da_giao(db, run, 120.0)
+    phai_thu = gia.tinh_credit(120.0)
+
     features.quyet_toan(db, run, trang_thai_cuoi=RUN_DONE)
     db.commit()
     lan_dau = int(run.credit_actual)
+    assert lan_dau == phai_thu > 0, "lan dau phai thu THAT, ⛔ khong phai 0"
 
     run.credit_held = 999                # keo hold len — mot lan tinh lai se doi so
     db.flush()

@@ -24,8 +24,18 @@ nguoi doc phai tin:
 3. **Giu cho khi tao run, thu that khi `done`.** Ca hai dua tren do dai do bang
    `ffprobe` TU TEP (`nhap_media.soi` luc nop; `media_prepare.tom_tat.thoi_luong`
    trong mach) — khong phai mot con so doan. Xem `features.quyet_toan`.
-4. **Lan chay khong ve `done` thi KHONG thu mot credit nao.** Xem
-   `features.CHI_THU_KHI_GIAO_DUOC` — so loi `N-21` la dung ca nay.
+4. **Khong giao duoc hang thi KHONG thu mot credit nao.** Xem
+   `features.CHI_THU_KHI_GIAO_DUOC` + `features.co_hien_vat_giao_duoc` — so loi
+   `N-21` la dung ca nay.
+
+   🔴 **`done` KHONG DU, va cho nay ⛔ dung don cho gon.** 25/09/2026, mot luot
+      E2E **that** 49 phut: `run.status == "done"`, bao QC `dat == True`, va
+      `render.outputs.khoa_asset` **RONG** — khong mot tep nao ve tay khach. Luat
+      chi hoi `done` se thu tron tien cho mot lan **giao hang rong**.
+
+   ⇒ Nen dieu kien thu tien co HAI ve: trang thai `done` **VA** co hien vat that.
+     Ve thu hai trong nhu thua (*"da `done` roi con gi"*) — no khong thua, va dong
+     nay la thu duy nhat ngan mot lan "don dep" xoa no. Ca that: so loi `N-57`.
 
 ## ⛔ Mot cho khai, mot cho tinh
 

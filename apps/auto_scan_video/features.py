@@ -505,7 +505,45 @@ def kiem_tran_chi(db: Session, run: AsvRun, them: int) -> None:
 #: ⚠️ He qua da biet, khai ra thay vi de no am tham: mot lan chay hong o giai
 #:    doan 9 **vi du lieu cua khach** cung khong thu, du ta da dot GPU. Do la cai
 #:    gia cua mot luat khong the bi dung sai — va la lua chon cua chu du an.
+#:
+#: 🔴 **`done` MOT MINH KHONG DU — siet 25/09/2026 sau mot ca THAT (`N-57`).**
+#:
+#:    Lan `asv-g17` chay mot luot E2E that 49 phut tren phim khach:
+#:    `run.status == "done"`, bao QC `dat == True`, va `render.outputs.khoa_asset`
+#:    **RONG** — khong mot tep nao duoc giao. Duong di: vong sua reset `render` +
+#:    5 giai doan, het vong sua, *"con 1 khiem khuyet — giao hang va de QC lam
+#:    cong gac"*, roi `done`.
+#:
+#: ⭐ Luat cu se thu tron tien cho mot lan **giao hang rong**. No khong sai ve Y —
+#:    no sai ve **CHO DAT CAU HOI**: `done` tra loi *"may trang thai da chay
+#:    het"*, ⛔ khong tra loi *"khach da nhan duoc hang"*. Cung ho loi voi moi ca
+#:    khac cua ngay 25/09: **mot phep do tra loi mot cau khac cau ta dang hoi.**
+#:
+#: ⇒ Tap nay van la dieu kien **CAN**; dieu kien **DU** them mot ve: phai co
+#:   **hien vat** (`co_hien_vat_giao_duoc`). Chi tiet ca that: so loi `N-57`, do
+#:   lan `asv-g17` ghi — ⛔ dung ghi lan hai o day.
 CHI_THU_KHI_GIAO_DUOC = frozenset({RUN_DONE})
+
+
+def co_hien_vat_giao_duoc(db: Session, run: AsvRun) -> bool:
+    """Khach co THUC SU nhan duoc mot tep khong. ⛔ Hoi HIEN VAT, khong hoi trang thai.
+
+    🔑 **Hoi dung cau ma nut "Tai ve" cua khach hoi.** Ham nay uy quyen cho
+       `khoa_ket_qua` — chinh ham ma `routes.tai_ket_qua` va `cong_noi_bo` dung de
+       phuc vu tep. Nen no ⛔ khong the tra loi "co hang" trong khi nut tai ve
+       404: hai cau tra loi la **mot** vi chung la **mot phep tinh**.
+
+    ⛔ Vi sao khong tu doc `render.outputs["khoa_asset"]` o day: mot danh sach
+       khong rong van co the chi chua `.srt` va khong co `.mp4` — luc do
+       `khoa_asset` noi "da giao" trong khi man hinh cua khach khong co gi bam
+       duoc. Va mot ban doc thu hai ve *"the nao la mot ban giao"* la mot ban khai
+       thu hai se troi khoi ban dau.
+
+    ⚠️ Ham nay ⛔ KHONG doi trang thai run. Job **da** chay het va QC **da** gac;
+       doi `done` thanh `error` la viec cua may trang thai (lan `asv-g17` dang dieu
+       tra `jobs.py`). Cho nay chi tra loi mot cau ve **TIEN**.
+    """
+    return bool(khoa_ket_qua(db, run))
 
 #: `thoi_luong_nguon_giay` tra ve `(giay, nguon_do)`; day la cac gia tri cua
 #: `nguon_do`. ⛔ `0.0` mot minh khong phan biet duoc *"video dai 0 giay"* voi
@@ -591,6 +629,12 @@ def quyet_toan(db: Session, run: AsvRun, *, trang_thai_cuoi: str) -> AsvRun:
 
     if trang_thai_cuoi not in CHI_THU_KHI_GIAO_DUOC:
         # 🔴 `N-21`: khong giao duoc thi khong thu. Nha toan bo hold.
+        thuc_te = 0
+    elif not co_hien_vat_giao_duoc(db, run):
+        # 🔴 `N-57` (ca that 25/09): `done` + QC `dat` ma KHONG mot tep nao duoc
+        #    giao. Cung duong voi `error`/`cancelled` — nha toan bo hold.
+        log.error("run %s ve %s ma khong co hien vat giao duoc — thu 0, nha hold "
+                  "(%s)", run.id, trang_thai_cuoi, run.credit_held)
         thuc_te = 0
     else:
         giay, nguon_do = thoi_luong_nguon_giay(db, run)
