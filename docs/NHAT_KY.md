@@ -106,6 +106,8 @@ duyệt · và ⛔ **từ chối** mọi pid có cha là `services.exe`.
 
 ### 🔴 N-47 — `toc_do.hop_le()` kẹp IM LẶNG về `TOC_DO_MAX = 2.0`
 
+> ⭐ **Cùng họ, lần hai (25/09, làn `asv-day-truyen`):** `N-55` (`docs/auto_scan_video_final/LOI_TONG.md`) — `he_so_co_gian` vượt trần thiết kế trước khi vào `atempo`. Lần này KẸP nhưng **LOUD** (`log.warning` + ghi vào `tom_tat.he_so_co_gian_da_kep`), đúng bài học từ ca này: kẹp là được, kẹp **im lặng** thì không.
+
 Phép mồi của pha B cố ý giãn tới `2,20` để thử xem bộ đo có mù. `toc_do.TOC_DO_MAX = 2.0` và
 `hop_le()` **kẹp im lặng** ⇒ tệp sinh ra ở **2,00**, ⛔ không báo gì. Bị bắt vì chốt chặn đối chiếu
 thời lượng (`gốc / tốc_độ`) loại **12/12** điểm với lệch **đúng 10,0 %** = `2,20 / 2,00`.
