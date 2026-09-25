@@ -234,7 +234,7 @@ không vẽ"*.
 
 | Làn | Nhánh | Hạng mục | 🔑 Tệp làn này SỞ HỮU (⛔ không ai khác ghi) | Song song được ngay? |
 |---|---|---|---|---|
-| **`asv-hinh`** | `phien/asv-hinh` | **V1 + V2** (lật gương · dịch màu) | `apps/auto_scan_video/bien_tap.py` · `hinh_hoc.py` · `che_do_render.py` · `ban_dung.py` · ⭐ **`tests/test_2062_asv_bien_tap_engine.py`** (đã có — **mở rộng**, ⛔ đừng tạo tệp thứ hai cho cùng cụm) | ✅ **ĐỘC LẬP** — bắt đầu ngay |
+| **`asv-hinh`** | `phien/asv-hinh` | **V1 + V2** (lật gương · dịch màu) | `apps/auto_scan_video/bien_tap.py` · `hinh_hoc.py` · `che_do_render.py` · `ban_dung.py` · ⭐ **`tests/test_2064_asv_bien_tap_engine.py`** (đã có — **mở rộng**, ⛔ đừng tạo tệp thứ hai cho cùng cụm) | ✅ **ĐỘC LẬP** — bắt đầu ngay |
 | **`asv-nhac`** | `phien/asv-nhac` | **V3** (nhạc nền) | `apps/auto_scan_video/am_master.py` · `am_thanh.py` · `assets.py` · `ket_xuat.py` · tệp test mới trong **dải của cây** (`cay_rieng.py tao` in ra dải; ⛔ đừng gõ số tay) | ✅ **ĐỘC LẬP** — bắt đầu ngay (⛔ không giao nhau tệp nào với `asv-hinh`) |
 | **`asv-do-vung`** | `phien/asv-do-vung` | **Đ1** (hạng mục ĐO) | `tools/bench_do_vung.py` (mới) · `docs/auto_scan_video_final/L_DO_VUNG.md` (mới) | ✅ **ĐỘC LẬP** — bắt đầu ngay; ⛔ **không sửa `apps/`** |
 | **`asv-vung2`** | `phien/asv-vung2` | **V4a + V4b + V5** (tự dò tĩnh · dò dải chữ · điền nền) | `apps/auto_scan_video/do_vung.py` (mới) · `vung_che.py` · và **`che_do_render.py` — SAU khi `asv-hinh` gộp `main`** | ⛔ **KHÔNG** — xem dưới |
