@@ -66,6 +66,31 @@ Trả lời ba câu: cổng 22 có đóng trên **mọi** IP đã bán (đo từ
 cấu hình) · luật chặn có nêu **đúng** IP quản trị hiện tại (đọc từ `vps_gateway`,
 nên IP đổi là đỏ) · RDP có còn thông. Đo 24/09: **PASS**.
 
+## H. Danh tính máy — chuẩn hoá 25/09
+
+| # | Hạng mục | Hỏi bằng gì | Đạt là gì |
+|---|---|---|---|
+| H1 | CPU không còn `kvm64` generic | `qm config <vmid>` | `cpu: host` |
+| H2 | Chống giả mạo IP/MAC | `doc_firewall(vmid)` | `enable/ipfilter/macfilter = 1` |
+| H3 | Hai policy không cắt mạng khách | như trên | `policy_in`/`policy_out` = **ACCEPT** |
+| H4 | `net0` bật cờ firewall | `qm config` | `firewall=1` (nếu `0` thì H2 **không tới nơi**) |
+| H5 | rDNS cho IP đã bán | `GET /ip/<ip>%2F32/reverse/<ip>` ở OVH | có `reverse` |
+| H6 | Máy mới tự đúng | `test_3502` đọc AST `_tao_may` | gọi cả hai bước mới |
+
+```bash
+python tools/vps_chuan_hoa.py        # báo cáo
+python tools/vps_chuan_hoa.py --ap   # áp thật
+```
+
+Vòng bảo trì tự kiểm mỗi ngày và ghi `chuan_hoa_may` (tầng cảnh báo, **không**
+chặn bán) — nên "chưa ai chạy" hiện ra là STALE, khác hẳn "đạt".
+
+⚠️ Ba bẫy đã đo, đừng đo lại:
+- OVH **bắt buộc forward-confirm**: A record trước, PTR sau.
+- OVH **từ chối tên có dấu chấm cuối**, và báo *"Cannot check if … resolves to …"*
+  — một thông điệp **chỉ sai chỗ**, nó đẩy người đọc đi tìm lỗi ở DNS.
+- `409 already setted` bị gộp thành lỗi chung ⇒ `dat_reverse` hỏi trước khi ghi.
+
 ## F. Còn mở sau hôm nay (đưa vào `09_BLOCKERS.md`)
 
 - **R26** — băng thông theo khách = 0 cho VPS OVH; điểm đo chưa chọn.
