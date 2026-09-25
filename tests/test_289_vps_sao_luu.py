@@ -209,7 +209,19 @@ def test_vong_bao_tri_CO_chup(monkeypatch):
 
 def test_chua_cau_hinh_proxmox_thi_KHONG_danh_dau_da_chup():
     """Đánh dấu mà chưa chụp là ghi vào sổ một bản không tồn tại — và khách chỉ
-    phát hiện lúc cần khôi phục, tức lúc tệ nhất."""
+    phát hiện lúc cần khôi phục, tức lúc tệ nhất.
+
+    ⚠️ 25/09/2026: ca này từng chốt ý định đó bằng `(None, None)` — tức bằng
+    **client dùng chung là `None`**, mà đó lại là hình dạng mà đường chạy thật
+    LUÔN đi qua (`mot_luot` cố ý truyền `None`: mỗi máy ghim một hồ sơ riêng).
+    Nên nó đang giữ cả vòng chụp ảnh ở trạng thái **mã chết**, và nó xanh mãi vì
+    nó chứng minh đúng cái nó gây ra.
+
+    ⇒ Ý định giữ nguyên, hình dạng đổi: không có CSDL thì không làm gì. Còn ca
+      "có CSDL, không có client nào phân giải được" nằm ở
+      `test_4011_vong_chup_anh_phai_thuc_su_chay.py`, nơi nó đo được cả chiều
+      ngược lại (có hồ sơ ghim thì PHẢI chụp).
+    """
     from apps.vps import bao_tri
 
     assert bao_tri._chup_anh_den_han(None, None, now=NOW) == 0

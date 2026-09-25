@@ -52,6 +52,20 @@ VOICE_SYNTHESIS = "voice_synthesis"
 TIMING_ALIGN = "timing_align"
 COMPOSE = "compose"
 RENDER = "render"
+#: 🔑 **GIAI DOAN 2** — chu du an chot 25/09. Thao tac hinh anh tren MP4 DA XONG.
+#:
+#: ⭐ Chen SAU `render` va TRUOC `qc`, va ca hai ranh gioi deu co ly do:
+#:    · sau `render`: giai doan 1 phai giao xong mot MP4 tieng Viet **toan bo do
+#:      dai goc** truoc khi ai duoc cat mot khung nao;
+#:    · truoc `qc`: cong chat luong phai do **tep khach nhan**. Dat `qc` o giua
+#:      la chung nhan mot tep khong ai duoc giao — mot cong do dung thu khong
+#:      phai ban giao thi ⛔ khong canh giu ban giao.
+#:
+#: 🔴 Va no la BAN GIAO: `thi_hanh.la_ban_giao` chuyen tu `RENDER` sang day, nen
+#:    `.mp4`/`.srt` cua no ⛔ khong co han, con cua `render` thi co
+#:    (`assets.HAN_TRUNG_GIAN`). Thieu buoc chuyen do thi video cua khach tu bien
+#:    mat sau 30 ngay — chinh cai bay `thi_hanh` ghi lai o pha 27.
+IMAGE_FINISH = "image_finish"
 QC = "qc"
 #: 🔑 Do ban long tieng bang MODEL tren card (ASR+WER/CER, SQUIM, MetricX) —
 #:    lan `gpu`, giua QC tat dinh va QC bang LLM/VLM. Xem
@@ -391,9 +405,30 @@ CHUOI: tuple[GiaiDoan, ...] = (
                  "(giai_doan_ket_xuat.py:191)"),
              ma_loi=RONG_TUONG_MINH,
              do=("vmaf",)),
-    GiaiDoan(QC, "asv_media", "asv_media.qc", sau=(RENDER,),
+    # 🔑 **GIAI DOAN 2.** Dung `asv_media` (lan ffmpeg) va xin GPU y het `render`:
+    #    no cung ma hoa lai ca luong hinh. ⛔ Khong the `-c copy` — GOP cua chuoi
+    #    nay do duoc la 8,333 giay, nen mot cho cat lech toi 8 giay.
+    GiaiDoan(IMAGE_FINISH, "asv_media", "asv_media.image_finish", sau=(RENDER,),
              tien_quyet=(
-                 "co ban ket xuat mp4 cua render + du tai lieu thuong nguon (ke "
+                 "co MP4 cua render, va ffprobe doc duoc thoi luong cua no — ke "
+                 "cat dung tren truc cua TEP THAT, khong tren mot ban khai "
+                 "thuong nguon (giai_doan_hinh_anh.py:_ke_cat)",
+                 "ban bien tap cua edit_plan + chi muc canh: thieu MOT trong hai "
+                 "thi ⛔ khong cat gi — mac dinh cua ca he la GIU, vi 'bo la hanh "
+                 "dong phai co can cu' (ban_bien_tap._quyet_dinh_mot_canh)",
+                 "ke hoach thoi gian cua timing_align: 'co thoai' doc tieng VIET "
+                 "DA SINH o day, ⛔ khong doc ban chep loi NGUON "
+                 "(ke_cat.khe_thoai_tu_ke_hoach)",
+                 "tran 5 % la BAT BIEN O BIEN: `ke_cat.kiem` NEM khi vuot, nen "
+                 "mot ke cat hong ⛔ khong bao gio ton tai (ke_cat.py)",
+                 "cua so `cat_dau_cuoi` cua khach GIAO SAU ke cat, va CO Y nam "
+                 "ngoai tran 5 % — no la yeu cau ro rang cua khach, ⛔ khong phai "
+                 "mot phep phan doan (giai_doan_hinh_anh._cua_so_khach)"),
+             ma_loi=RONG_TUONG_MINH,
+             do=("ti_le_cat_vs_tran", "do_dai_ra_khop_ke_cat")),
+    GiaiDoan(QC, "asv_media", "asv_media.qc", sau=(IMAGE_FINISH,),
+             tien_quyet=(
+                 "co ban giao mp4 cua image_finish + du tai lieu thuong nguon (ke "
                  "hoach, ban dung) (giai_doan_qc.py:74,79)",
                  "ban ra VA ban nguon phai giai ma duoc — mot tep hong nem tho o "
                  "day, khong suy giam (giai_doan_qc.py:98)",
@@ -403,6 +438,8 @@ CHUOI: tuple[GiaiDoan, ...] = (
                  "(giai_doan_qc.py:103 · tach_tieng.py:282)",
                  "ban dung khai cach render; thieu thi MAC DINH ve SAO_CHEP "
                  "(giai_doan_qc.py:113)",
+                 "do dai MONG DOI doc ke cat cua image_finish khi co, ⛔ khong "
+                 "doan tu chinh tep dang do (giai_doan_qc._thoi_luong_mong_doi)",
                  "ffmpeg co bo loc libvmaf + mo hinh, neu khong T18 thanh "
                  "khong_kha_dung (giai_doan_qc.py:245)",
                  "giai doan nay KHONG tu lam hong lan chay: nguoi goi doc "

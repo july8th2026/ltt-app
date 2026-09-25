@@ -974,6 +974,15 @@ msgstr "A logo in the manifest has no storage key."
 msgid "Bản dựng có lớp phủ chữ nhưng không khai chiều cao khung hình."
 msgstr "The manifest has text overlays but does not declare the frame height."
 
+#: apps/auto_scan_video/ban_dung.py
+msgid "Bản dựng có biên tập tốc độ không hợp lệ."
+msgstr "The manifest has an invalid speed edit."
+
+#: apps/auto_scan_video/ban_dung.py
+#, python-brace-format
+msgid "Bản dựng giai đoạn 1 mang trường biên tập không thuộc về nó: {ds}."
+msgstr "The stage-1 manifest carries an edit field that does not belong to it: {ds}."
+
 #: apps/auto_scan_video
 msgid "Bản dựng có mốc thời gian âm."
 msgstr "The render manifest has a negative timestamp."
@@ -4620,6 +4629,15 @@ msgstr "The floor price cannot be higher than the cap."
 msgid "Giá trị"
 msgstr "Value"
 
+#: apps/auto_scan_video/tach_tieng.py
+#, python-brace-format
+msgid "Giá trị âm lượng lớp không hợp lệ: {ten}."
+msgstr "Invalid layer volume: {ten}."
+
+#: apps/auto_scan_video/am_thanh.py
+msgid "Giá trị lặp nhạc nền không hợp lệ."
+msgstr "Invalid background-music loop value."
+
 #, python-brace-format
 msgid "Giá trị âm thanh không hợp lệ: {ten}."
 msgstr "Invalid audio setting: {ten}."
@@ -5424,6 +5442,28 @@ msgstr "The audio settings contain unknown fields: {ds}."
 
 msgid "Hồ sơ âm thanh không đọc được."
 msgstr "The audio settings could not be read."
+
+#: apps/auto_scan_video/tach_tieng.py
+#, python-brace-format
+msgid "Hồ sơ lớp nền có trường lạ: {ds}."
+msgstr "The background-layer profile contains unknown fields: {ds}."
+
+#: apps/auto_scan_video/tach_tieng.py
+msgid "Hồ sơ lớp nền không đọc được."
+msgstr "The background-layer profile could not be read."
+
+#: apps/auto_scan_video/am_thanh.py
+#, python-brace-format
+msgid "Hồ sơ nhạc nền có trường lạ: {ds}."
+msgstr "The background-music profile contains unknown fields: {ds}."
+
+#: apps/auto_scan_video/am_thanh.py
+msgid "Hồ sơ nhạc nền không đọc được."
+msgstr "The background-music profile could not be read."
+
+#: apps/auto_scan_video/am_master.py
+msgid "Hồ sơ nhạc nền và tệp nhạc nền phải cùng có hoặc cùng vắng mặt."
+msgstr "The background-music profile and the background-music file must be both present or both absent."
 
 #: server/templates/_platform_footer.html:5
 msgid "Hỗ trợ"
@@ -7848,6 +7888,9 @@ msgstr "The model did not return readable JSON."
 msgid "Model không trả về bảng phán đoán."
 msgstr "The model did not return a verdict table."
 
+msgid "Model trả về phán đoán thiếu hoặc sai dạng trường \"loi\" (nhận %(kieu)s) — không chấm được, không được coi là đạt."
+msgstr "The model's verdict is missing or has a wrongly-shaped \"loi\" field (got %(kieu)s) — it cannot be graded, and must not be treated as passing."
+
 msgid "Model không trả về bảng đoạn."
 msgstr "The model did not return a segment table."
 
@@ -9350,6 +9393,10 @@ msgstr "The background track has the wrong channel count."
 #: apps/auto_scan_video
 msgid "Nhạc nền sai tần số lấy mẫu."
 msgstr "The background track has the wrong sample rate."
+
+#: apps/auto_scan_video/am_thanh.py
+msgid "Nhạc nền trỏ tới một tệp không hợp lệ."
+msgstr "Background music points to an invalid file."
 
 msgid "Nhạc nền so với lời thoại"
 msgstr "Background music relative to dialogue"
@@ -11036,6 +11083,16 @@ msgstr "The number of text files ({co}) does not match the overlays in the manif
 #, python-brace-format
 msgid "Số tệp logo ({co}) không khớp số logo trong bản dựng ({can})."
 msgstr "The number of logo files ({co}) does not match the logos in the manifest ({can})."
+
+#: apps/auto_scan_video/giai_doan_hinh_anh.py
+#, python-brace-format
+msgid "Số tệp chữ ({co}) không khớp số lớp phủ trong yêu cầu ({can})."
+msgstr "The number of text files ({co}) does not match the overlays in the request ({can})."
+
+#: apps/auto_scan_video/giai_doan_hinh_anh.py
+#, python-brace-format
+msgid "Số tệp logo ({co}) không khớp số logo trong yêu cầu ({can})."
+msgstr "The number of logo files ({co}) does not match the logos in the request ({can})."
 
 #: apps/auto_scan_video
 #, python-brace-format
@@ -15946,6 +16003,20 @@ msgstr "Apply"
 msgid "Âm lượng"
 msgstr "Volume"
 
+#: apps/auto_scan_video/tach_tieng.py
+#, python-brace-format
+msgid "Âm lượng lớp {ten} phải từ {a} đến {b}."
+msgstr "Layer volume {ten} must be between {a} and {b}."
+
+#: apps/auto_scan_video/am_thanh.py
+msgid "Âm lượng nhạc nền không hợp lệ."
+msgstr "Invalid background-music volume."
+
+#: apps/auto_scan_video/am_thanh.py
+#, python-brace-format
+msgid "Âm lượng nhạc nền phải từ {a} đến {b}."
+msgstr "Background-music volume must be between {a} and {b}."
+
 #: apps/ltt_voice
 msgid "Âm lượng rất nhỏ. Hãy thu lại gần micro hơn."
 msgstr "The level is very low. Record closer to the microphone."
@@ -16846,6 +16917,10 @@ msgstr "Stopped"
 
 msgid "Đã tắt nhạc nền thì không còn gì để hạ theo lời thoại."
 msgstr "With the music turned off there is nothing to lower under the dialogue."
+
+#: apps/auto_scan_video/tach_tieng.py
+msgid "Đã tắt hoặc hạ về 0 cả ba lớp — không còn gì để làm nhạc nền."
+msgstr "All three layers are off or at 0 — there is nothing left to make the background."
 
 msgid "Đã xong"
 msgstr "Done"
@@ -20418,6 +20493,10 @@ msgstr "Trim frame edges (%)"
 msgid "Cắt khung, phóng to, đổi tỉ lệ và đổi tốc độ chỉ dùng được với kiểu xử lý có biên tập lại hình."
 msgstr "Cropping, zooming, changing the aspect ratio and changing the speed only work with a mode that re-edits the picture."
 
+#: apps/auto_scan_video/ban_dung.py
+msgid "Đổi tốc độ chỉ dùng được với kiểu xử lý có biên tập lại hình."
+msgstr "Changing the speed only works with a mode that re-edits the picture."
+
 msgid "Cách đổi tỉ lệ khung hình không hợp lệ."
 msgstr "Invalid aspect-ratio method."
 
@@ -20477,6 +20556,11 @@ msgstr "Speed"
 
 msgid "Tệp kết quả khung {a}, bản dựng khai {b}."
 msgstr "Output frame is {a}, the render manifest declares {b}."
+
+#: apps/auto_scan_video/giai_doan_hinh_anh.py
+#, python-brace-format
+msgid "Tệp kết quả khung {a}, kế cắt khai {b}."
+msgstr "Output frame is {a}, the cut plan declares {b}."
 
 msgid "Phải"
 msgstr "Right"
@@ -21531,3 +21615,78 @@ msgstr "candidate(s)"
 
 msgid "gate mode không hợp lệ: "
 msgstr "invalid gate mode: "
+
+msgid "Kế cắt không biết thời lượng video."
+msgstr "The cut plan does not know the video duration."
+
+msgid "Kế cắt có khoảng rỗng hoặc ngược."
+msgstr "The cut plan has an empty or reversed interval."
+
+msgid "Kế cắt có hai khoảng chồng lấn."
+msgstr "The cut plan has two overlapping intervals."
+
+msgid "Kế cắt vượt ra ngoài thời lượng video."
+msgstr "The cut plan runs past the end of the video."
+
+msgid "Kế cắt bỏ {da:.1f}% video, vượt trần {tran:.0f}%. Tiêu chí cắt đang chọn quá nhiều — hãy siết tiêu chí, đừng nới trần."
+msgstr "The cut plan drops {da:.1f}% of the video, over the {tran:.0f}% cap. The cut criterion is selecting too much - tighten the criterion, do not raise the cap."
+
+msgid "Chưa có bản kết xuất của giai đoạn 1."
+msgstr "The stage 1 render is not available yet."
+
+msgid "Không đọc được thời lượng bản kết xuất giai đoạn 1."
+msgstr "Could not read the duration of the stage 1 render."
+
+msgid "Giai đoạn hình ảnh quá hạn."
+msgstr "The image stage timed out."
+
+msgid "Kế cắt không còn khoảng nào để giao."
+msgstr "The cut plan leaves no footage to deliver."
+
+msgid "Tệp sau khi cắt dài {co:.2f} s nhưng kế cắt nói {can:.2f} s."
+msgstr "The cut file is {co:.2f} s long but the cut plan says {can:.2f} s."
+
+msgid "Hoàn thiện hình ảnh"
+msgstr "Finishing the picture"
+
+msgid "Đang dựng kế cắt"
+msgstr "Building the cut plan"
+
+msgid "Đang cắt và ghép lại"
+msgstr "Cutting and rejoining"
+
+msgid "Trộn lớp nền"
+msgstr "Mix background layers"
+
+msgid "Bản nền được tách làm ba lớp riêng: nhạc, tiếng động, và giọng nói gốc. Chỉnh từng lớp nếu bản mặc định chưa vừa ý."
+msgstr "The background track is split into three separate layers: music, sound effects, and the original voice. Adjust each layer if the default mix isn't quite right."
+
+msgid "Giữ nhạc nền"
+msgstr "Keep background music"
+
+msgid "Trống, giai điệu của video gốc."
+msgstr "Drums and melody from the original video."
+
+msgid "Tiếng động"
+msgstr "Sound effects"
+
+msgid "Giữ tiếng động"
+msgstr "Keep sound effects"
+
+msgid "Tiếng bước chân, va chạm, môi trường xung quanh."
+msgstr "Footsteps, impacts, ambient sound."
+
+msgid "Giữ giọng nói gốc"
+msgstr "Keep the original voice"
+
+msgid "⚠️ Đây là lời thoại gốc (thường là tiếng nước ngoài), không chỉ tiếng thở hay tiếng cười — nó sẽ chồng lên giọng lồng tiếng Việt. Mặc định tắt vì sản phẩm hứa một giọng tiếng Việt duy nhất."
+msgstr "⚠️ This is the original dialogue (usually a foreign language), not just breathing or laughter — it will overlap the Vietnamese dub. Off by default: the product promises a single Vietnamese voice."
+
+msgid "Âm lượng giọng nói gốc"
+msgstr "Original voice volume"
+
+msgid "Quality gates passed: PSNR{0}dB"
+msgstr "Quality gates passed: PSNR{0}dB"
+
+msgid "chất lượng..."
+msgstr "quality..."

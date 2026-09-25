@@ -57,6 +57,29 @@ def _doc_json(kho: Storage, khoa: str) -> dict:
         return json.loads(f.read().decode("utf-8"))
 
 
+def _thoi_luong_mong_doi(ke_hoach: dict, goi_ke_cat: dict) -> float:
+    """Do dai (giay) ma TEP DUOC DO phai co, truoc phep chia `toc_do`.
+
+    ⭐ MOT noi tra loi cau hoi nay, va no tra loi tu mot BAN KHAI:
+
+        co ke cat  -> `ke_cat.KeCat.ban_do().thoi_luong_ra`
+        khong      -> `tong_ms` cua ke hoach (= do dai nguon, giai doan 1 khong cat)
+
+    ⛔ **⛔ Khong doan tu tep dang do.** Suy do dai mong doi tu chinh tep la bien
+       mot phep kiem thanh mot phep tu khang dinh — no se xanh voi MOI tep.
+
+    ⚠️ Doc lai thi kiem lai (I8): `ke_cat.kiem` chay o day nua, nen mot ke cat
+       vuot tran 5 % ⛔ khong the di qua cong nay bang cach duoc ghi ra tep.
+    """
+    from . import ke_cat as _kc
+
+    if goi_ke_cat:
+        ke = _kc.KeCat.tu_dict(goi_ke_cat)
+        _kc.kiem(ke)
+        return float(ke.ban_do().thoi_luong_ra)
+    return float(ke_hoach.get("tong_ms") or 0) / 1000.0
+
+
 def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     """Do ban ra so voi muoi hai dung sai. Tra ve bao cao, KHONG nem.
 
@@ -69,9 +92,21 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
        mot lop ngoai le khong ai nem van la mot lop phai phan loai, va lan theo
        no thi thay no la ma chet. Da go.
     """
-    khoa_ra = _khoa_theo_duoi(db, run, pipeline.RENDER, ".mp4")
+    # 🔴 **Do tep cua IMAGE_FINISH — tep KHACH NHAN (b4 hai giai doan, 25/09).**
+    #    `render` giao mot ban trung gian chua qua phep cat cua giai doan 2. Do
+    #    ban trung gian la chung nhan mot tep ⛔ khong ai duoc giao, tuc mot cong
+    #    ⛔ khong canh giu ban giao.
+    khoa_ra = _khoa_theo_duoi(db, run, pipeline.IMAGE_FINISH, ".mp4")
     if not khoa_ra:
         raise ThieuBanRa(_t('Chưa có bản kết xuất để kiểm.'))
+    # ⭐ Ke cat nam trong `outputs` cua `image_finish`, ⛔ khong thanh artifact:
+    #    moi artifact cua giai doan do la BAN GIAO (`han=None`), va mot bao cao
+    #    van hanh ⛔ khong duoc nam trong kho cua khach mai mai.
+    from . import features as _ft
+    _s_if = _ft.giai_doan_theo_ten(db, run.id, pipeline.IMAGE_FINISH)
+    _out_if = (_s_if.outputs or {}) if _s_if else {}
+    goi_kc = _out_if.get("ke_cat") or {}
+    khoang_gd2 = _out_if.get("khoang_giu") or ()
     khoa_kh = _khoa_theo_duoi(db, run, pipeline.TIMING_ALIGN, ".json")
     khoa_ke = _khoa_theo_duoi(db, run, pipeline.VOICE_SYNTHESIS, ".json")
     khoa_ban = _khoa_theo_duoi(db, run, pipeline.COMPOSE, ".json")
@@ -108,17 +143,23 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         #    thuc su duoc render, va neu hai nguon lech nhau thi cai dung la cai
         #    da chay. Suy lai o day se cho QC do mot lan chay khac voi lan chay
         #    that.
-        from . import ban_do_thoi_gian, che_do_render as cdr
+        from . import che_do_render as cdr
 
         cach = str((ban_dung.get("hinh") or {}).get("cach_render") or cdr.SAO_CHEP)
 
-        # Thoi luong MONG DOI: preset cat ngan hon nguon dung bang phan da cat,
-        # va do la muc dich cua san pham chu khong phai mot khiem khuyet.
-        bdo = ban_do_thoi_gian.BanDoThoiGian.tu_dict(ke_hoach.get("ban_do") or {})
+        # ── Thoi luong MONG DOI (b4 hai giai doan, 25/09) ───────────────────
+        #
+        # 🔴 Truoc b4, dong nay doc `ke_hoach["ban_do"].thoi_luong_ra` — ngan hon
+        #    nguon dung bang phan `edit_plan` da cat. Nay giai doan 1 ⛔ KHONG cat
+        #    gi, nen mong doi la **do dai nguon**, cho CA HAI preset. Cat canh o
+        #    giai doan 2 (`giai_doan_hinh_anh`), va cong nay do dung tep ma giai
+        #    doan 2 giao.
+        #
         # ⭐ asv-final: truc bien tap -> ban ra la mot phep chia cho `toc_do`.
         from .bien_tap import moc_ban_ra
-        mong_doi = moc_ban_ra(float(bdo.thoi_luong_ra or 0.0),
-                              (ban_dung.get("hinh") or {}).get("bien_tap"))
+        mong_doi = moc_ban_ra(
+            _thoi_luong_mong_doi(ke_hoach, goi_kc),
+            (ban_dung.get("hinh") or {}).get("bien_tap"))
 
         bam_ra = bam_nguon = ""
         if cach != cdr.CAT_MA_HOA_LAI:
@@ -167,9 +208,9 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         if cach == cdr.CAT_MA_HOA_LAI:
             if bao:
                 bao(85, _t('Đang đo chất lượng hình (VMAF)'))
-            vmaf = _do_vmaf(kho, ban_dung.get("hinh") or {}, thu_muc,
+            vmaf = _do_vmaf(kho, ban_dung.get("hinh") or {}, thu_muc, run=run,
                             duong_nguon=duong_nguon, duong_ra=duong_ra,
-                            tt_ra=tt_ra)
+                            tt_ra=tt_ra, khoang_gd2=khoang_gd2)
 
         bao_cao = qc.kiem(
             tt_ra=tt_ra, tt_nguon=tt_nguon, am_luong=am_luong,
@@ -215,33 +256,64 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     }
 
 
-def _do_vmaf(kho: Storage, hinh: dict, thu_muc: Path, *, duong_nguon: str,
-             duong_ra: str, tt_ra: dict) -> dict:
-    """Dung lai DUNG tep phu cua RENDER (chu, logo, `.ass`) roi do VMAF.
+def _do_vmaf(kho: Storage, hinh: dict, thu_muc: Path, *, run, duong_nguon: str,
+             duong_ra: str, tt_ra: dict, khoang_gd2=()) -> dict:
+    """Dung lai DUNG dau vao ma GD2 that su dung (chu, logo, `.ass`) roi do VMAF.
 
-    ⭐ Ba tep phu di cung ba ham `giai_doan_ket_xuat` dung — cung dau vao, cung
-       chuoi loc (`qc.loc_tham_chieu`, `test_2012` chot bang nhau voi render).
+    🔴 **Logo/lop_phu/khung/lat-guong/dich-mau doc tu `cai_dat.doc(run)`, ⛔
+       khong tu `hinh` (gd2-diem-anh, 25/09).** `hinh` (ban dung GD1) khong con
+       mang chung — chung thuc thi o GD2, dung `cai_dat` truc tiep. Doc SAI
+       nguon o day se lam tham chieu VMAF thieu hoac sai cac bien doi do, va
+       T18 bao mot diem cua mot chuoi loc KHONG PHAI chuoi GD2 that dung.
+
+    ⭐ `.ass` sinh tu su kien DA DOI MOC qua `doi_moc_su_kien` — dung ham, dung
+       `ban_do` voi GD2 that (`giai_doan_hinh_anh._sinh_srt` dung chung).
+
     ⛔ Khong do duoc => `{"loi": ...}` => T18 `khong_kha_dung`; khong lui ve
        mot uoc luong tu che.
     """
-    from . import lop_phu as _lp, phu_de as _pd
+    from . import bien_tap as _bt, giai_doan_hinh_anh as _gdha
+    from . import hinh_hoc as _hh, lop_phu as _lp, phu_de as _pd
+    from .ban_do_thoi_gian import BanDoThoiGian
     from .giai_doan_ket_xuat import _tai_ve
 
     try:
+        cai = cai_dat.doc(run)
+        ds_logo = list(cai.logo or ())
+        lop_phu_ds = list(cai.lop_phu or ())
+        bt_gd2 = _gdha.loc_bien_tap_gd2(cai.bien_tap)
+
         tm = thu_muc / "vmaf"
         tm.mkdir(exist_ok=True)
-        duong_chu = _lp.viet_tep_chu(list(hinh.get("lop_phu") or ()), tm)
+        duong_chu = _lp.viet_tep_chu(lop_phu_ds, tm)
         duong_logo = []
-        for i, lg in enumerate(hinh.get("logo") or ()):
+        for i, lg in enumerate(ds_logo):
             khoa = str(lg["khoa"])
             duong_logo.append(_tai_ve(
                 kho, khoa, tm / f"logo{i}{Path(khoa).suffix or '.png'}"))
+
         ho_so_pd = hinh.get("phu_de") or None
-        duong_ass = _pd.viet_tep_ass(
-            ho_so_pd, (ho_so_pd or {}).get("su_kien") or [], tm,
-            rong=int(hinh.get("rong_khung") or 0),
-            cao=int(hinh.get("cao_khung") or 0))
-        loc = qc.loc_tham_chieu(hinh, duong_chu=duong_chu, duong_ass=duong_ass)
+        duong_ass = ""
+        if _pd.co_dot_vao_hinh(ho_so_pd):
+            khoang_gd2_f = [(float(b), float(k)) for b, k in (khoang_gd2 or ())]
+            ban_do = BanDoThoiGian.tu_khoang(
+                khoang_gd2_f,
+                thoi_luong_nguon=max((k for _, k in khoang_gd2_f), default=0.0))
+            su_kien = _gdha.doi_moc_su_kien(ho_so_pd.get("su_kien") or [], ban_do)
+            rong_nguon = int(hinh.get("rong_khung") or 0)
+            cao_nguon = int(hinh.get("cao_khung") or 0)
+            rong_ra, cao_ra = (
+                _hh.khung_bien_tap(rong_nguon, cao_nguon, bt_gd2)["ra"]
+                if bt_gd2 and set(bt_gd2) & set(_bt.TRUONG_HINH_HOC)
+                else (rong_nguon, cao_nguon))
+            duong_ass = _pd.viet_tep_ass(ho_so_pd, su_kien, tm,
+                                         rong=rong_ra, cao=cao_ra)
+        # ⭐ Tham chieu chay qua CUNG phep cat cua giai doan 2 — xem
+        #    `qc.loc_tham_chieu`. Thieu no thi hai ben lech tung khung va T18
+        #    bao `hong` du bo ma hoa khong lam gi sai.
+        loc = qc.loc_tham_chieu(hinh, duong_chu=duong_chu, duong_ass=duong_ass,
+                                khoang_giu=khoang_gd2, ds_logo=ds_logo,
+                                lop_phu=lop_phu_ds, bien_tap=bt_gd2)
         return qc.do_vmaf(duong_nguon=duong_nguon, duong_ra=duong_ra,
                           loc_hinh=loc, duong_logo=duong_logo,
                           rong=int(tt_ra.get("rong") or 0),

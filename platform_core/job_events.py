@@ -143,6 +143,48 @@ def event_write_failures() -> int:
     return _event_write_failures
 
 
+def append_progress_counter(
+    db: DbSession, job: Job, event_code: str = "progress_counter", *,
+    da_xong: int, tong: int, don_vi: str, visibility: str = INTERNAL,
+) -> JobEvent:
+    """Nhịp tiến độ TRONG một giai đoạn — mang bộ đếm, không chỉ dấu thời gian.
+
+    🔑 BẤT BIẾN Ở BIÊN (khuôn `ke_cat.kiem()`): đây là nơi DUY NHẤT ghi loại
+       event này, nên `if` ở đây canh được MỌI người gọi — một `if` ở chỗ gọi
+       chỉ canh một chỗ gọi.
+
+    ⛔ NÉM nếu thiếu `da_xong`/`tong`: một nhịp tim lease chứng minh TIẾN TRÌNH
+       còn sống, ⛔ không chứng minh VIỆC đang tiến — heartbeat 60s của
+       `advance` 37.010 lượt/52 phút là "còn sống và quay tại chỗ", một dấu
+       thời gian không tự phân biệt được nó với "đang làm việc".
+
+    ⛔ NÉM nếu `da_xong` lùi so với lần ghi trước CỦA CÙNG JOB (một job = một
+       `(run_id, stage, attempt)`, xem `jobs.py:526`): bộ đếm việc không được
+       giật lùi trong một lượt chạy.
+    """
+    if da_xong is None or tong is None:
+        raise ValueError("nhip tien do thieu bo dem da_xong/tong")
+    da_xong = int(da_xong)
+    tong = int(tong)
+    if da_xong < 0 or tong < 0:
+        raise ValueError(f"nhip tien do am: da_xong={da_xong} tong={tong}")
+    truoc = db.execute(
+        select(JobEvent.details)
+        .where(JobEvent.job_id == job.id, JobEvent.event_code == event_code)
+        .order_by(JobEvent.sequence.desc()).limit(1)
+    ).scalars().first()
+    if truoc is not None:
+        cu = int((truoc or {}).get("da_xong") or 0)
+        if da_xong < cu:
+            raise ValueError(
+                f"nhip tien do lui: da_xong={da_xong} < lan truoc={cu} "
+                f"(job {job.id})")
+    return append(
+        db, job, event_code, visibility=visibility,
+        details={"da_xong": da_xong, "tong": tong, "don_vi": str(don_vi or "")[:40]},
+    )
+
+
 def timeline(db: DbSession, job_id: str, *, include_internal: bool = False,
              limit: int = 200) -> list[JobEvent]:
     stmt = select(JobEvent).where(JobEvent.job_id == job_id)

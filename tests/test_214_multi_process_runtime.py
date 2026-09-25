@@ -135,8 +135,23 @@ def _child(url: str, data_dir: str, send_log: str, seconds: float,
 
 @pytest.fixture()
 def scratch(tmp_path):
-    """CSDL sạch, thư mục dữ liệu riêng, và dọn sau khi xong."""
-    engine = sa.create_engine(PG_URL, future=True)
+    """CSDL sạch, thư mục dữ liệu riêng, và dọn sau khi xong.
+
+    🔴 **`engine` PHẢI là `dbmod.get_engine()`, KHÔNG phải một `sa.create_engine(PG_URL)`
+       rời.** Đo 25/09: một engine rời đọc `search_path` từ `PGOPTIONS` (biến môi
+       trường `tests/conftest.py::pytest_sessionstart` đặt cho cô lập theo LÀN —
+       `asv_<làn>,public`), nên `create_all` tạo bảng vào schema của làn. Nhưng mọi
+       thao tác của ứng dụng (`mo_cu_tru_3090`, `job_submit`, …) đi qua
+       `platform_core.db.get_session()` → `get_engine()`, và `_connect_args()` của
+       hàm đó gán tường minh `options="-c timezone=UTC"` — tham số `options` tường
+       minh THAY THẾ hẳn `PGOPTIONS`, không cộng vào, nên connection đó luôn thấy
+       `search_path` mặc định (`"$user", public`). Hai engine trỏ hai schema khác
+       nhau ⇒ bảng tạo ở `asv_<làn>` mà mọi lần đọc lại tìm ở `public`: mọi bảng bị,
+       không riêng `gpu_residency` — nó chỉ là bảng ĐẦU TIÊN mà `scratch` chạm tới
+       (`mo_cu_tru_3090` ngay sau `create_all`). `tests/test_1720_wf_dong_co_pg.py`
+       không dính vì nó dùng `dbmod.get_engine()` cho cả `create_all` lẫn phần còn
+       lại — tự nhất quán dù `search_path` là gì.
+    """
     import platform_core.db as dbmod
     dbmod.reset_engine()
     os.environ["LTT_DATABASE_URL"] = PG_URL
@@ -145,9 +160,9 @@ def scratch(tmp_path):
     import platform_core.models  # noqa: F401
     from platform_core.db import Base
 
+    engine = dbmod.get_engine()
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
-    dbmod.reset_engine()
     # Job anh gianh `anh_3090` tu dual-model 5.5, va luat 0 fail-closed: khong co
     # dong `gpu_residency` thi worker chi tra job ve hang doi. Cac job o day la
     # `thumbnail.generate`. Ly do day du: `tests/conftest.py::mo_cu_tru_3090`.
@@ -162,7 +177,6 @@ def scratch(tmp_path):
                "send_log": str(send_log)}
     finally:
         Base.metadata.drop_all(engine)
-        engine.dispose()
         dbmod.reset_engine()
         send_log.unlink(missing_ok=True)
 

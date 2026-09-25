@@ -690,8 +690,14 @@ def test_ca_luot_chay_chi_giu_credit_MOT_lan_va_quyet_toan_dung_so_do_duoc(db):
 def _dat_thoi_luong_nguon(db, run, giay: float) -> None:
     """Dung HAI su that ma luat thu tien (25/09/2026) doi hoi:
 
-        `media_prepare.thoi_luong`   do dai video NGUON -> `gia.tinh_credit`
-        `render.khoa_asset` co .mp4  HIEN VAT -> co gi giao cho khach khong (N-57)
+        `media_prepare.thoi_luong`         do dai video NGUON -> `gia.tinh_credit`
+        `image_finish.khoa_asset` co .mp4  HIEN VAT -> co gi giao cho khach (N-57)
+
+    🔴 **`image_finish`, ⛔ khong con `render` (b4 hai giai doan, 25/09).** `render`
+       nay giao mot ban TRUNG GIAN — no chua qua phep cat cua giai doan 2 — nen
+       `features.khoa_ket_qua` doc `IMAGE_FINISH`. Dat hien vat o `render` la dung
+       cai bay N-57 tu chieu nguoc: mot lan chay ⛔ khong co gi giao cho khach van
+       trong nhu co.
 
     ⚠️ Thieu mot trong hai thi `quyet_toan` roi ve mot duong KHAC — duong lui theo
        `credit_held`, hoac duong *"khong co hien vat ⇒ thu 0"*. Ca hai deu hop le,
@@ -703,10 +709,10 @@ def _dat_thoi_luong_nguon(db, run, giay: float) -> None:
     gd = features.giai_doan_theo_ten(db, run.id, pipeline.MEDIA_PREPARE)
     features.cap_nhat_giai_doan(db, gd, outputs={"stage": pipeline.MEDIA_PREPARE,
                                                  "thoi_luong": float(giay)})
-    rd = features.giai_doan_theo_ten(db, run.id, pipeline.RENDER)
+    rd = features.giai_doan_theo_ten(db, run.id, pipeline.IMAGE_FINISH)
     features.cap_nhat_giai_doan(
         db, rd, status=STAGE_SUCCEEDED,
-        outputs={"stage": pipeline.RENDER, "dat": True,
+        outputs={"stage": pipeline.IMAGE_FINISH, "dat": True,
                  "khoa_asset": [f"asv/{run.owner_id}/{run.id}/long-tieng.mp4"]})
     db.flush()
 

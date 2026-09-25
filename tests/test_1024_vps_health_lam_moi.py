@@ -126,7 +126,16 @@ def test_periodic_refresh_never_demotes_and_isolates_failures(db):
     rows = db.execute(select(VpsProfileHealth).where(
         VpsProfileHealth.infrastructure_profile_id == ovh.id)).scalars().all()
     assert {r.component for r in rows} == set(profiles.REQUIRED_HEALTH_COMPONENTS)
-    assert all(r.status == "CRITICAL" and "secret" not in r.summary for r in rows)
+    # ⚠️ 25/09/2026: từng chốt `r.status == "CRITICAL"`. Đổi sang `UNKNOWN` vì
+    #    trong vòng này **không thành phần nào được đo** — `preflight` nổ ở
+    #    `provider.health()` TRƯỚC đó (khoá OVH hết hạn), nên khai `compute`
+    #    (Proxmox hoàn toàn khoẻ) là hỏng là nói một điều ta chưa hề biết.
+    #
+    # ⛔ Và nó KHÔNG nới cửa bán: `profiles.health_prerequisites` chặn ở
+    #    `row.status != "HEALTHY"`, không đòi `CRITICAL`. Dòng dưới chốt cả hai vế
+    #    để một lần "dọn dẹp" không thể lặng lẽ biến `UNKNOWN` thành "ổn".
+    assert all(r.status == "UNKNOWN" and r.status != "HEALTHY"
+               and "secret" not in r.summary for r in rows)
 
 
 def test_failed_periodic_preflight_keeps_default_but_closes_selection(db):

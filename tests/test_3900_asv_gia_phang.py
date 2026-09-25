@@ -281,12 +281,17 @@ def test_DONE_va_QC_DAT_ma_KHONG_co_tep_nao_giao_thi_thu_0(db, kho_tam):
                              trang_thai=sd.DA_GIAO, don_vi=sd.KY_TU,
                              so_luong=420.0, credit=5, ma_dispatch="t3900:n57"))
 
-    # ⭐ `render` XONG va QC `dat` — dung hinh dang cua ca that. Chi `khoa_asset`
-    #    la rong.
-    gd = features.giai_doan_theo_ten(db, run.id, pipeline.RENDER)
+    # ⭐ Giai doan BAN GIAO xong va QC `dat` — dung hinh dang cua ca that. Chi
+    #    `khoa_asset` la rong.
+        # 🔴 **Hien vat giao duoc nam o `IMAGE_FINISH`, ⛔ khong con o `RENDER`
+    #    (b4 hai giai doan, 25/09).** `render` giao mot ban TRUNG GIAN — chua
+    #    qua phep cat cua giai doan 2 — nen `features.khoa_ket_qua` doc
+    #    `IMAGE_FINISH`. Gieo hien vat o `render` la lam bai nay di duong
+    #    *"khong co hien vat ⇒ thu 0"*, tuc xanh vi mot ly do KHAC.
+    gd = features.giai_doan_theo_ten(db, run.id, pipeline.IMAGE_FINISH)
     features.cap_nhat_giai_doan(
         db, gd, status=STAGE_SUCCEEDED,
-        outputs={"stage": pipeline.RENDER, "khoa_asset": [], "dat": True})
+        outputs={"stage": pipeline.IMAGE_FINISH, "khoa_asset": [], "dat": True})
     db.commit()
 
     assert features.tong_da_dung(db, run) == 5, "ca thu nay khong con y nghia"
@@ -317,10 +322,10 @@ def test_khoa_asset_chi_co_SRT_cung_KHONG_phai_da_giao_hang(db, kho_tam):
     from apps.auto_scan_video.tables import STAGE_SUCCEEDED
 
     run = _tao_run(db, giu=50)
-    gd = features.giai_doan_theo_ten(db, run.id, pipeline.RENDER)
+    gd = features.giai_doan_theo_ten(db, run.id, pipeline.IMAGE_FINISH)
     features.cap_nhat_giai_doan(
         db, gd, status=STAGE_SUCCEEDED,
-        outputs={"stage": pipeline.RENDER, "dat": True,
+        outputs={"stage": pipeline.IMAGE_FINISH, "dat": True,
                  "khoa_asset": ["asv/uA/x/long-tieng.srt"]})
     db.commit()
 
@@ -383,10 +388,10 @@ def _dat_lan_chay_da_giao(db, run, giay: float) -> None:
     gd = features.giai_doan_theo_ten(db, run.id, pipeline.MEDIA_PREPARE)
     features.cap_nhat_giai_doan(db, gd, outputs={"stage": pipeline.MEDIA_PREPARE,
                                                  "thoi_luong": float(giay)})
-    rd = features.giai_doan_theo_ten(db, run.id, pipeline.RENDER)
+    rd = features.giai_doan_theo_ten(db, run.id, pipeline.IMAGE_FINISH)
     features.cap_nhat_giai_doan(
         db, rd, status=STAGE_SUCCEEDED,
-        outputs={"stage": pipeline.RENDER, "dat": True,
+        outputs={"stage": pipeline.IMAGE_FINISH, "dat": True,
                  "khoa_asset": [f"asv/{run.owner_id}/{run.id}/long-tieng.mp4"]})
     db.flush()
 

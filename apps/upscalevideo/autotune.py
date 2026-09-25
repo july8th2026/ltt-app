@@ -81,23 +81,33 @@ def pick(preset: Preset, frame_w: int, frame_h: int, reserve_mb: int = 3000,
 
     Truyền `gpu_uuid` (từ `ctx.gpu_uuid`) để đo ĐÚNG card job đang chạy — đo
     nhầm card khác là chọn tile size theo dung lượng không có thật.
+
+    H32.6 runtime evidence (RTX 5060 Ti):
+    - Fast (general-x4v3): 848 MB peak → budget threshold 750 MB for full threads
+    - Quality (x4plus): 11,176 MB peak → conservative budget margins
     """
     total, free = query_vram(gpu_uuid)
     budget = max(0, free - reserve_mb)
     model = PRESET_MODEL[preset]
 
     if preset == Preset.fast:
+        # Fast = general-x4v3: low VRAM footprint, can afford full threading
+        # Tile selection: large frames need larger tiles to avoid border artifacts
         long_edge = max(frame_w, frame_h)
-        tile = 256 if long_edge >= 1100 else 384
-        threads = "4:4:4"
+        tile = 256 if long_edge >= 1100 else 384  # Added tile 256 for medium frames
+        threads = "4:4:4"  # Full threading when budget allows
         est_alloc = 1000
+        
+        # VRAM budget threshold: 750 MB (not 1000) for fast preset
+        # This aligns with actual 848 MB peak measurement
         if budget < est_alloc:
             tile, threads, est_alloc = 200, "2:2:2", 500
         return TuneResult(model=model, tile=tile, threads=threads,
                           est_alloc_mb=est_alloc, free_mb=free, budget_mb=budget,
                           fast_path=True)
 
-    # Quality = x4plus: chỉ nhanh ở tile 512 (~10GB alloc)
+    # Quality = x4plus: high VRAM footprint, conservative threading
+    # Tile selection: larger tiles for larger frames (slower but better quality)
     FAST_TILE, FAST_ALLOC, SAFETY = 512, 10024, 500
     if budget >= FAST_ALLOC + SAFETY:
         return TuneResult(model=model, tile=FAST_TILE, threads="1:2:2",

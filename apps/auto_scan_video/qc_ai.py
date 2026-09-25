@@ -93,6 +93,24 @@ TI_LE_BAO_DONG_GIA_DA_DO = 0.45
 NGUONG_KHAI_CHO_KHACH = 0.15
 
 
+#: 🔴 **CHU DU AN CHOT 26/09/2026 — MOT CO BAT/TAT QC KHONG DUOC TON TAI CHO KHACH.**
+#:
+#:    Nguyen van: *"Bat/tat QC khong can ton tai tren ban cuoi. No chi dung khi audit
+#:    thoi."*
+#:
+#: ⇒ Nghia la:
+#:    - QC **LUON chay** cho moi luot cua khach. ⛔ Khong co duong nao de khach (hay
+#:      mot cau hinh khach doc duoc) tat no.
+#:    - Duong duy nhat hop le de tat la **AUDIT noi bo** — nguoi van hanh, tay, co chu
+#:      dich, va ⛔ khong nam trong be mat san pham.
+#:
+#: ⛔ **Nen dung "them mot co" khi thay QC lam luot chay lau.** Toi da di kiem ca
+#:    `apps/auto_scan_video/` va `platform_core/` (26/09): ⛔ KHONG co co nao ton tai,
+#:    va do la dung. Mot co nhu vay se de mot lop loi di THANG toi khach — va cai gia
+#:    ay ⛔ khong the ghi len mot nut.
+#:
+#: ⚠️ Ghi o day chu khong chi trong tai lieu, vi day la noi nguoi ta se ngoi khi ho
+#:    nghi den viec them co ay.
 def khai_cho_khach() -> bool:
     """Con so "N/M cau dich chua sat" co duoc hien cho khach khong.
 
@@ -259,10 +277,26 @@ def _loc_loi(tho, goc: str, dich: str) -> list[dict]:
        GEMBA (`accuracy/omission - "the account holder"` la doan NGUON). Chi so
        voi ban dich se loai sach loi bo sot, tuc doi mot thuoc qua tay lay mot
        thuoc mu o dung loai MetricX von manh (`L_DICH.md` §3).
+
+    ⭐ N-51 — BAT BIEN O BIEN, cung khuon voi `ke_cat.kiem()` /
+       `hinh_hoc_dien_nen`: `tho` PHAI la mot list (rong cung duoc — do la
+       "da doc, khong thay loi"). Thieu han truong `loi`, `loi: null`, hay bat
+       ky dang nao KHONG PHAI list deu la mot phan quyet KHONG DOC DUOC, ⛔
+       khong phai "sach" — nem `QcAiError` o day, MOT noi duy nhat, de moi
+       noi goi (hien `doc_ngu_nghia`, sau nay co them) deu di qua cung mot
+       cua. ⛔ Dung lai bay `_loc_loi(None, ...) == []` tuong duong voi
+       `_loc_loi([], ...) == []` — hai dau vao do la HAI TRANG THAI khac
+       nhau (khong doc duoc / da doc va sach), va gop chung mot gia tri la
+       dung lai dung bay "hai trang thai gop thanh mot gia tri".
     """
+    if not isinstance(tho, list):
+        raise QcAiError(
+            _t('Model trả về phán đoán thiếu hoặc sai dạng trường "loi" '
+               '(nhận %(kieu)s) — không chấm được, không được coi là đạt.')
+            % {"kieu": type(tho).__name__})
     hai_phia = _chuan(goc) + "\n" + _chuan(dich)
     ra = []
-    for e in (tho if isinstance(tho, list) else []):
+    for e in tho:
         if not isinstance(e, dict):
             continue
         doan = str(e.get("doan") or "")[:200]
@@ -308,6 +342,15 @@ def doc_ngu_nghia(goi: dict, ma_da_gui: set[str],
     ⭐ Thieu mot ma thi doan do duoc coi la **DAT**, khong phai hong: mot cau hoi
        khong duoc tra loi la mot cau hoi khong duoc tra loi. Coi im lang la "co
        loi" se bien moi lan model tra thieu thanh mot lan sua tra tien.
+
+    ⚠️ N-51 — **KHAC voi dong tren.** "Ma vang mat hoan toan khoi bang" (dong
+       tren, `v` khong phai dict) va "ma CO mat nhung truong `loi` cua no
+       thieu/sai dang" (`_loc_loi` NEM `QcAiError`) la HAI tinh huong khac
+       nhau: cai truoc la model khong tra loi cau hoi; cai sau la model CO tra
+       loi nhung phan hoi hong dang, va do la khiem khuyet cua TA (khong doc
+       duoc), ⛔ khong phai du lieu khach. Ham nay ⛔ KHONG nuot loi do — no
+       NEM ra ngoai, de nguoi goi (`giai_doan_qc_ai.chay`) khong the vo tinh
+       coi mot phan quyet khong doc duoc la mot lo "sach".
     """
     tho = (goi or {}).get("doan")
     if not isinstance(tho, dict):

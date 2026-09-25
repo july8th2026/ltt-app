@@ -246,11 +246,30 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             db.commit()
             lc.xong_mot()
             continue
+        except qc_ai.QcAiError:
+            # 🔴 N-51 — FAIL-CLOSED, va day la quyet dinh SAN PHAM chu khong
+            #    phai ma: mot phan quyet KHONG DOC DUOC (model CO tra loi,
+            #    nhung hong dang — vd thieu/sai truong `loi`) ⛔ KHONG duoc
+            #    di chung duong voi nhanh `Exception` ben duoi ("lo hong binh
+            #    thuong, bo qua lang le, coi nhu sach"). Do la khiem khuyet
+            #    cua TA, ⛔ khong phai loi du lieu khach — nen no phai NEM
+            #    tiep ra ngoai, lam HONG giai doan nay, di CUNG DUONG voi
+            #    nhanh `hong` cua `jobs.py` ("QC hong"), ⛔ khong phai cung
+            #    duong voi "QC dat". Giai doan hong -> job runner tu retry ->
+            #    het luot thi STAGE_FAILED_TERMINAL -> `run.error` ghi ro
+            #    (tien to trong thong diep `QcAiError`) -> `features.quyet_toan`
+            #    (co san, KHONG doc lai o day) tu lo khong tinh tien mot ban
+            #    giao khong co phan quyet dang tin.
+            log.error("qc ngu nghia lo %s: phan quyet KHONG DOC DUOC (N-51) "
+                      "— lam hong giai doan, khong coi la dat", ma_lo)
+            raise
         except Exception as exc:            # noqa: BLE001
             # ⚠️ Mot lo hong khong duoc lam hong ca lan chay — cung nguyen tac
             #    voi `_doc_cac_canh`. Khong co phan quyet nghia la KHONG co
             #    khiem khuyet, tuc khong sinh viec sua: im lang khong duoc doc
             #    thanh "co loi".
+            #    ⚠️ `qc_ai.QcAiError` KHONG roi vao day — xem nhanh rieng o
+            #    tren (N-51): no phai lam hong giai doan, khong duoc bo qua.
             log.warning("qc ngu nghia lo %s hong (%s) — bo lo nay",
                         ma_lo, type(exc).__name__)
             db.commit()
@@ -359,6 +378,30 @@ def _bien_tap_cua_ban_dung(ban_dung: dict) -> dict | None:
     return (ban_dung.get("hinh") or {}).get("bien_tap")
 
 
+def _ban_do_cua_tep_soat(db, kho: Storage, run, ke_hoach: dict):
+    """Ban do thoi gian cua TEP BAN GIAO — cho noi nam o do, ⛔ khong o `render`.
+
+    🔴 **b4 hai giai doan (25/09): doc ke cat cua `IMAGE_FINISH`.** Truoc b4, ham
+       nay doc `ke_hoach["ban_do"]` — cac canh `edit_plan` giu, tren tep cua
+       `render`. Nay `render` ⛔ khong cat gi, nen cho noi chi ton tai o tep cua
+       giai doan 2, va lop soat hinh phai xem DUNG tep do.
+
+    ⭐ ⛔ Khong cat gi ⇒ ban do dong nhat ⇒ `cac_cho_noi` tra rong, va bao cao noi
+       ro *"ban do chi co mot khoang giu"*. Do la mot SU THAT cua lan chay, ⛔
+       khong phai mot truong hop chua xu ly.
+    """
+    from . import ban_do_thoi_gian as _bdtg, features as _ft, ke_cat as _kc
+
+    tong = float(ke_hoach.get("tong_ms") or 0) / 1000.0
+    s_if = _ft.giai_doan_theo_ten(db, run.id, pipeline.IMAGE_FINISH)
+    goi = ((s_if.outputs or {}) if s_if else {}).get("ke_cat") or {}
+    if goi:
+        ke = _kc.KeCat.tu_dict(goi)
+        _kc.kiem(ke)                  # doc lai thi kiem lai (I8)
+        return ke.ban_do()
+    return _bdtg.BanDoThoiGian.giu_nguyen(tong)
+
+
 def _soat_hinh(db, kho: Storage, *, run, lc, tu_vi_tri: int, ctx=None,
                bao=None) -> tuple[list[dict], dict]:
     """Hoi VLM ve TUNG cho noi cua tep DA RENDER. `(phan quyet, tom tat)`.
@@ -386,22 +429,31 @@ def _soat_hinh(db, kho: Storage, *, run, lc, tu_vi_tri: int, ctx=None,
     from pathlib import Path
     import tempfile
 
-    from . import (ban_do_thoi_gian as bdtg, bien_tap, canh as canh_mod,
-                   features, su_dung as sd)
+    from . import (bien_tap, canh as canh_mod, features, su_dung as sd)
     from .giai_doan_media import _duong_doc_duoc
 
-    khoa_ra = _khoa_theo_duoi(db, run, pipeline.RENDER, ".mp4")
+    # 🔴 Rut khung tu TEP BAN GIAO (`image_finish`), ⛔ khong tu `render`: cau hoi
+    #    la *"cho noi nay, NHU KHACH SE NHIN THAY, co dut mach khong"*, va cho noi
+    #    chi ton tai sau khi giai doan 2 da cat.
+    khoa_ra = _khoa_theo_duoi(db, run, pipeline.IMAGE_FINISH, ".mp4")
     khoa_kh = _khoa_theo_duoi(db, run, pipeline.TIMING_ALIGN, ".json")
     khoa_bd = _khoa_theo_duoi(db, run, pipeline.COMPOSE, ".json")
     khoa_ep = _khoa_theo_duoi(db, run, pipeline.EDIT_PLAN, ".json")
-    thieu = [t for t, k in (("render", khoa_ra), ("timing_align", khoa_kh),
+    thieu = [t for t, k in (("image_finish", khoa_ra), ("timing_align", khoa_kh),
                             ("compose", khoa_bd)) if not k]
     if thieu:
         return [], {"khong_kha_dung": f"thieu ban ra cua {', '.join(thieu)}"}
 
     ke_hoach = _doc_json(kho, khoa_kh)
     ban_dung = _doc_json(kho, khoa_bd)
-    bdo = bdtg.BanDoThoiGian.tu_dict(ke_hoach.get("ban_do") or {})
+    # ── Ban do cua TEP DANG SOAT (b4 hai giai doan, 25/09) ─────────────────
+    #
+    # 🔴 Truoc b4, dong nay doc `ke_hoach["ban_do"]` — cac canh `edit_plan` giu.
+    #    Nay giai doan 1 ⛔ KHONG cat gi, nen tep cua RENDER co dung MOT khoang
+    #    giu va ⛔ khong mot cho noi nao ton tai o day. Cat canh chuyen xuong
+    #    giai doan 2 (`giai_doan_hinh_anh`), va lop soat hinh nay doc ke cat cua
+    #    giai doan do — xem `_ke_cat_da_giao`.
+    bdo = _ban_do_cua_tep_soat(db, kho, run, ke_hoach)
     ho_so_bt = _bien_tap_cua_ban_dung(ban_dung)
     td = float(bien_tap.toc_do(ho_so_bt) or 1.0)
 

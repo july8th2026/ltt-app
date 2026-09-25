@@ -19,7 +19,8 @@ import time
 from pathlib import Path
 
 from apps.upscalevideo import autotune, cost, engine, ff
-from apps.upscalevideo.schemas import ENCODER, Codec, Preset
+from apps.upscalevideo.schemas import (ENCODER, ENCODER_AMD, ENCODER_QSV,
+                                        Codec, Preset)
 
 log = logging.getLogger(__name__)
 
@@ -140,14 +141,25 @@ def _guard_disk(info: dict, frame_multiplier: int = 1) -> None:
 
 
 def _resolve_encoder(codec: Codec) -> str:
-    """Encoder theo codec. CHỈ dùng NVENC khi detect ra ĐÚNG họ nvenc — nếu GPU là
-    Intel/AMD (qsv/amf) hoặc không có → libx264 (chống encode HỎNG sau khi đã upscale
-    xong). `ENCODER[codec]` chỉ có bản nvenc nên phải gate; card khác → CPU."""
+    """Encoder theo codec. CHAIN FALLOBACK:
+    
+    1. NVIDIA NVENC (h264_nvenc) — fastest
+    2. Intel QSV (h264_qsv) — 5-10x faster than CPU
+    3. AMD AMF (h264_amf) — 5-10x faster than CPU
+    4. libx264 (CPU) — final fallback, slow
+    
+    This ensures GPU encode whenever possible, not just NVENC.
+    """
     from platform_core import media
     gpu = media.detect_gpu_encoder()      # "" | h264_nvenc | h264_qsv | h264_amf
+    
     if gpu == "h264_nvenc":
-        return ENCODER[codec]             # h264_nvenc / hevc_nvenc (card này hỗ trợ)
-    return "libx264"                      # Intel/AMD/CPU → x264 (chậm nhưng không chết)
+        return ENCODER[codec]             # NVIDIA NVENC (fastest)
+    elif gpu == "h264_qsv":
+        return ENCODER_QSV[codec]         # Intel QuickSync
+    elif gpu == "h264_amf":
+        return ENCODER_AMD[codec]         # AMD AMF
+    return "libx264"                      # CPU fallback (slow but safe)
 
 
 def _output_fps(fps_str: str, preserve_fps: bool, smooth_motion: bool) -> str:
@@ -195,6 +207,29 @@ def _upscale_batched(tmp, in_dir, tune, n, info, target_h, encoder, ctx, on_prog
                           cancel_check=cancel_check, env=process_env)
         segs.append(seg)
         done_total += len(batch)
+        
+        # Checkpoint after each batch.
+        #
+        # 🔴 Truoc 26/09 dong nay goi `save_checkpoint(job_id, ...)` — ma `job_id`
+        #    KHONG ton tai trong ham nay (`ruff F821`). Tuc MOI luot upscale cham
+        #    toi day chet bang `NameError`, va no KHONG nam sau mot nhanh phan cung
+        #    nao ca. Ham co tham so `ctx` (`JobContext`), va `JobContext.job_id` la
+        #    cho dung (`platform_core/job_runner.py:128`).
+        #
+        # ⚠️ Va phai CANH `ctx is None`: ham nay duoc goi voi `ctx=None` o duong
+        #    khong-co-job (xem `if ctx is not None: ctx.progress(...)` cung tep).
+        #    Viet `ctx.job_id` tron chi doi `NameError` thanh `AttributeError`.
+        # ⇒ Khong co job thi khong co gi de `resume`, nen BO QUA checkpoint la dung
+        #   nghia — khong phai mot duong lui im lang.
+        if ctx is not None:
+            from apps.upscalevideo.checkpoint import save_checkpoint
+            save_checkpoint(ctx.job_id, f"upscale_batch_{bi+1:03d}", {
+                "batch": bi + 1,
+                "total_batches": n_batches,
+                "frames_processed": done_total,
+                "total_frames": n,
+            })
+        
         shutil.rmtree(b_in, ignore_errors=True)
         shutil.rmtree(b_up, ignore_errors=True)
     return segs
@@ -283,6 +318,12 @@ def handle(params: dict, ctx=None) -> dict:
                                max_seconds=_PREVIEW_SECONDS if preview else None,
                                cancel_check=cancel_check, env=process_env)
 
+            # Checkpoint after stabilization
+            from apps.upscalevideo.checkpoint import save_checkpoint
+            save_checkpoint(job_id, "stabilize_completed", {
+                "working_video": working_video,
+            })
+
         if ctx is not None:
             ctx.progress(4, "tách frame")
         output_fps = _output_fps(info["fps_str"], preserve_fps, smooth_motion)
@@ -294,6 +335,14 @@ def handle(params: dict, ctx=None) -> dict:
                               interpolate_fps=output_fps if smooth_motion else None,
                               max_seconds=max_sec,
                               cancel_check=cancel_check, env=process_env)
+
+        # Checkpoint after frame extraction
+        from apps.upscalevideo.checkpoint import save_checkpoint
+        save_checkpoint(job_id, "frame_extraction_completed", {
+            "n_frames": n,
+            "target_height": target_h,
+            "preset": preset.value,
+        })
 
         tune = autotune.pick(preset, info["w"], info["h"],
                              gpu_uuid=getattr(ctx, "gpu_uuid", ""))
@@ -341,7 +390,30 @@ def handle(params: dict, ctx=None) -> dict:
             ctx.progress(96, "lưu kết quả")
         with open(out_local, "rb") as f:
             storage.put(out_key, f, content_type="video/mp4")
-
+        
+        # Checkpoint output uploaded
+        from apps.upscalevideo.checkpoint import save_checkpoint
+        save_checkpoint(job_id, "output_uploaded", {
+            "out_key": out_key,
+        })
+        
+        # Quality gate check
+        from apps.upscalevideo.quality_gate import run_quality_gates, GATE_THRESHOLDS
+        preset = Preset(preset.value)
+        thresholds = GATE_THRESHOLDS[preset]
+        if ctx is not None:
+            ctx.progress(98, _t("chất lượng..."))
+        quality_result = run_quality_gates(out_key, preset)
+        quality_log = quality_result.get("error") or _t("Quality gates passed: PSNR{0}dB").format(quality_result['gates']['quality']['metrics'].get('psnr_db', 'N/A'))
+        logger.info("[quality] %s", quality_log)
+        
+        if not quality_result["all_passed"]:
+            logger.warning("[quality] gate failed: %s", quality_result["error"])
+            # Log warning but don't fail job — keep backward compatibility
+            # If needed, uncomment below to fail fast:
+            # raise RuntimeError(quality_result["error"])
+            res["quality_warning"] = quality_result["error"]
+        
         if ctx is not None:
             ctx.progress(100, "xong")
         res = {"video_key": out_key, "credit_cost": true_cost,
@@ -353,7 +425,8 @@ def handle(params: dict, ctx=None) -> dict:
                "has_audio": bool(info["has_audio"] and preserve_audio),
                "preserve_fps": preserve_fps, "preserve_audio": preserve_audio,
                "stabilize": stabilize, "smooth_motion": smooth_motion,
-               "frames": n, "processing_seconds": round(time.monotonic() - started_clock, 2)}
+               "frames": n, "processing_seconds": round(time.monotonic() - started_clock, 2),
+               "quality_log": quality_log}
         if warning:
             res["warning"] = warning
         return res

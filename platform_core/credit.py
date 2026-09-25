@@ -109,6 +109,28 @@ def nap(db: DbSession, user_id: str, amount: int, note: str = "") -> CreditEntry
     return _ghi(db, user_id=user_id, delta=amount, kind=CREDIT_TOPUP, note=note)
 
 
+def tru_co_but_toan(db: DbSession, user_id: str, amount: int, *, kind: str,
+                    note: str = "") -> "CreditEntry | None":
+    """Như `tru`, nhưng trả về **chính bút toán** thay vì một `bool`.
+
+    🔴 Vì sao cần: một `bool` không dùng được làm **bằng chứng**. `billing.mo_chu_ky`
+       phải chứng minh được là tiền đã rời tài khoản trước khi cấp thêm thời gian
+       đã trả phí, và nó không thể tin lời người gọi — nó phải tra lại trong sổ.
+       Một `bool` thì người gọi vứt đi được (và đã vứt: `billing.py` bỏ qua giá trị
+       trả về suốt, nên `tru` thất bại vẫn mở một chu kỳ miễn phí).
+
+    ⭐ Có `_khoa_so_du_user` — khác bản `tru` cũ. Đây là một phép **đọc rồi ghi**
+       trên số dư, đúng cái khe mà `giu_cho` đã phải khoá từ đầu: không khoá thì
+       một `giu_cho` song song chen vào giữa `so_du()` và `_ghi()`.
+    """
+    if amount <= 0:
+        raise ValueError("so credit tru phai duong")
+    _khoa_so_du_user(db, user_id)
+    if so_du(db, user_id) < amount:
+        return None
+    return _ghi(db, user_id=user_id, delta=-amount, kind=str(kind)[:16], note=note)
+
+
 def tru(db: DbSession, user_id: str, amount: int, *, kind: str,
         note: str = "") -> bool:
     """Trừ một khoản phí trực tiếp. Trả **True nếu đủ số dư và đã trừ**, **False
@@ -117,13 +139,39 @@ def tru(db: DbSession, user_id: str, amount: int, *, kind: str,
     Khác `giu_cho`/`quyet_toan` (dành cho một lượt job có thể hoàn): đây là phí đã
     xảy ra — thuê bao một tháng đã dùng thì không hoàn. `kind` do nơi gọi truyền
     (vd `CREDIT_NEXUS_BILL`) để sổ credit vẫn không biết gì về từng miền.
+
+    ⚠️ Nơi gọi nào cần **bằng chứng** đã trừ (để mở một chu kỳ có phí, ghi một hoá
+       đơn) thì dùng `tru_co_but_toan`: một `bool` vứt đi được, một bút toán thì
+       tra lại được.
     """
-    if amount <= 0:
-        raise ValueError("so credit tru phai duong")
-    if so_du(db, user_id) < amount:
-        return False
-    _ghi(db, user_id=user_id, delta=-amount, kind=str(kind)[:16], note=note)
-    return True
+    return tru_co_but_toan(db, user_id, amount, kind=kind, note=note) is not None
+
+
+def da_thu_cho_job(db: DbSession, job_id: str) -> int:
+    """Số credit **thực thu** cho job này; `0` khi chưa kết sổ hoặc không có job.
+
+    Đây là một trong hai dạng bằng chứng mà `billing.mo_chu_ky` chấp nhận. Nó đọc
+    kết quả quyết toán **đã chốt**, nên một job đang chạy hay một job đã hoàn đều
+    trả `0` — tức không mở được chu kỳ có phí.
+    """
+    if not job_id:
+        return 0
+    kq = _ket_qua_da_chot(db, str(job_id))
+    return int(kq.charged_credit) if kq is not None else 0
+
+
+def so_da_tru_cua_but_toan(db: DbSession, but_toan_id: str, user_id: str) -> int:
+    """Số credit mà **đúng bút toán này** đã trừ của **đúng người này**; `0` nếu không.
+
+    Kiểm cả chủ sở hữu và dấu: một bút toán CỘNG tiền (nạp, hoàn) ⛔ không phải
+    bằng chứng đã trả phí, và bút toán của người khác thì càng không.
+    """
+    if not but_toan_id:
+        return 0
+    e = db.get(CreditEntry, str(but_toan_id))
+    if e is None or str(e.user_id) != str(user_id) or int(e.delta) >= 0:
+        return 0
+    return -int(e.delta)
 
 
 def hoan_phi(db: DbSession, user_id: str, amount: int, *, kind: str,

@@ -1,0 +1,9 @@
+#!/bin/sh
+# Tracked hook (xem tools/i18n_merge_driver.py cho ly do). Kich hoat qua
+# `git config core.hooksPath tools/githooks` -- lenh `cai-dat` cua driver
+# lam viec do, MOT LAN cho ca repo (config dung chung giua moi worktree).
+#
+# git chi chay hook nay khi merge THANH CONG (khong chay neu con xung dot),
+# dung luc chung ta can: dam .mo vua duoc driver sinh lai khong "cu hon"
+# .po ve mtime do thu tu checkout khong on dinh.
+python tools/i18n_merge_driver.py touch-fresh 2>/dev/null || true

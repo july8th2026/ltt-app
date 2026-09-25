@@ -46,7 +46,8 @@ from . import dich_vu_tao, hop_dong_v4, features, gia, pipeline, quan_sat
 from . import bien_tap as bien_tap_mod
 from . import (am_thanh as am_thanh_mod, cai_dat as cai_dat_mod, logo as logo_mod,
                lop_phu as lop_phu_mod, ngon_ngu as ngon_ngu_mod,
-               nguon_loi as nguon_loi_mod, phu_de as phu_de_mod)
+               nguon_loi as nguon_loi_mod, phu_de as phu_de_mod,
+               tach_tieng as tach_tieng_mod)
 from .manifest import MANIFEST
 
 log = logging.getLogger(__name__)
@@ -110,6 +111,9 @@ NHAN_GIAI_DOAN = {
     pipeline.TIMING_ALIGN: N_('Khớp thời điểm'),
     pipeline.COMPOSE: N_('Dựng bản ghép'),
     pipeline.RENDER: N_('Kết xuất video'),
+    # ⭐ GIAI ĐOẠN 2 (b4, 25/09). Nhãn nói **việc gì đang xảy ra** với video của
+    #    khách, không nói tên kỹ thuật `image_finish`.
+    pipeline.IMAGE_FINISH: N_('Hoàn thiện hình ảnh'),
     pipeline.QC: N_('Kiểm chất lượng'),
     pipeline.QC_DO_LUONG: N_('Nghe lại giọng đọc'),
     # ⭐ Nhãn nói **việc gì đang xảy ra**, không nói tên kỹ thuật `qc_ai`.
@@ -228,6 +232,7 @@ def _ngu_canh_studio(db, u, loi: str = "", nap_lai: dict | None = None) -> dict:
         "phu_de": phu_de_mod.cho_giao_dien(),
         "am_thanh": am_thanh_mod.cho_giao_dien(),
         "bien_tap": bien_tap_mod.cho_giao_dien(),
+        "lop": tach_tieng_mod.cho_giao_dien_lop(),
         "logo_toi_da": logo_mod.SO_LOGO_TOI_DA,
         "logo_tran_mb": features.tran_logo_byte() // (1024 * 1024),
         "nhan_trang_thai": NHAN_TRANG_THAI,
@@ -312,6 +317,9 @@ async def tao(request: Request,
               phu_de: str = Form(""),
               am_thanh: str = Form(""),  # JSON ho so am thanh (V6 pha 23); rong = mac dinh
               bien_tap: str = Form(""),  # JSON cat khung/zoom/ti le/toc do (asv-final)
+              #: Ho so BA LOP nen (B2+B5): giong/nhac/vfx, moi lop bat/gain rieng.
+              #: Rong = mac dinh (giong TAT, nhac+vfx BAT o gain 1,0).
+              lop: str = Form(""),
               csrf_token: str = Form(""),
               _g: None = Depends(_cong_co),
                 user: str = Depends(require_login),
@@ -332,7 +340,7 @@ async def tao(request: Request,
             "giong_id": giong_id, "ngon_ngu_nguon": ngon_ngu_nguon,
             "ngon_ngu_dich": ngon_ngu_dich, "vung": vung, "cat": cat,
             "lop_phu": lop_phu, "tu_dien": tu_dien, "phu_de": phu_de,
-            "am_thanh": am_thanh, "bien_tap": bien_tap,
+            "am_thanh": am_thanh, "bien_tap": bien_tap, "lop": lop,
             "nguon_loi": nguon_loi})
     except dich_vu_tao.LoiCaiDat as exc:
         return _lai_voi_loi(request, db, u, str(exc))

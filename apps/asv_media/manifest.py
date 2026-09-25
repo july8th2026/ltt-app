@@ -104,6 +104,7 @@ MANIFEST = AppManifest(
         "asv_media.timing_align",
         "asv_media.compose",
         "asv_media.render",
+        "asv_media.image_finish",
         "asv_media.qc",
     ),
     requires=("ffmpeg",),
@@ -119,7 +120,10 @@ MANIFEST = AppManifest(
     #:    dung de loc thi ban khai nay se lam moi job cua `asv_media` vo hinh
     #:    voi moi worker tren doi hinh chia lan, dung cai bay docstring dau tep
     #:    mo ta.
-    gpu_vram_mb={"asv_media.render": 500},
+    #: ⭐ `image_finish` (GIAI DOAN 2, b4 25/09) xin CUNG con so: no cung ma hoa
+    #:    lai ca luong hinh bang cung bo ma hoa. ⛔ Khong the `-c copy` — GOP do
+    #:    duoc la 8,333 giay nen mot cho cat lech toi 8 giay.
+    gpu_vram_mb={"asv_media.render": 500, "asv_media.image_finish": 500},
 
     #: Tran thoi gian theo tung giai doan. Nhat job mo coi chi bat worker
     #: **chet**; mot job **treo** ma van dap nhip se giu suat vo han.
@@ -130,6 +134,7 @@ MANIFEST = AppManifest(
         "asv_media.timing_align": 1800,
         "asv_media.compose": 300,
         "asv_media.render": 3600,
+        "asv_media.image_finish": 3600,
         "asv_media.qc": 600,
     },
     notes="Pha 05: handler GIA. Khong goi engine that.",

@@ -57,7 +57,8 @@ def _gieo(db, owner_id, ma, trang_thai, so_xong, *, loi="", ket_qua=False,
         st = T.AsvStage(run_id=ma, owner_id=owner_id, stage=t, status=tt,
                         attempt=1, error=(loi if tt == "failed_terminal" else ""),
                         started_at=bay_gio - dt.timedelta(minutes=phut_truoc - i))
-        if ket_qua and t == pipeline.RENDER and tt == T.STAGE_SUCCEEDED:
+        # 🔴 Ban giao la `IMAGE_FINISH` (b4 25/09): `render` giao ban trung gian.
+        if ket_qua and t == pipeline.IMAGE_FINISH and tt == T.STAGE_SUCCEEDED:
             st.outputs = {"khoa_asset": [f"v/{ma}-ra.mp4"]}
             db.add(T.AsvAsset(owner_id=owner_id, run_id=ma, created_by_stage=t,
                               kind="video", storage_key=f"v/{ma}-ra.mp4",

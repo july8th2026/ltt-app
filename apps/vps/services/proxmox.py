@@ -436,6 +436,13 @@ class ProxmoxClient:
             ra = ra["data"]
         return ra if isinstance(ra, dict) else {}
 
+    def doc_firewall_cum(self) -> dict:
+        """`/cluster/firewall/options`. Tang cao nhat cua phep AND ba tang."""
+        ra = self._goi("GET", "/cluster/firewall/options")
+        if isinstance(ra, dict) and isinstance(ra.get("data"), dict):
+            ra = ra["data"]
+        return ra if isinstance(ra, dict) else {}
+
     def nong_dia(self, vmid: int, dia: str, them: str) -> Any:
         """Nới một đĩa của VM. `them` dạng `+20G`. Proxmox không cho thu nhỏ."""
         return self._goi("PUT",
@@ -527,3 +534,51 @@ def client_tu_moi_truong(env: dict | None = None, *, session: Any = None
                          ) -> ProxmoxClient:
     """Đường tắt hay dùng: đọc môi trường rồi dựng client."""
     return ProxmoxClient(doc_cau_hinh(env), session=session)
+
+
+def tuong_lua_hieu_luc(client, vmid: int) -> tuple[bool, str]:
+    """Tuong lua cua VM nay co THAT SU chan spoof khong. `(hieu_luc, ly_do_ho)`.
+
+    ## Vi sao khong doc mot co
+
+    Proxmox chi ap luat cua mot VM khi **ca ba** cung bat:
+
+        cluster/firewall/options.enable = 1     # tang cum
+        net<i> ... firewall=1                   # co tren NIC
+        qemu/<vmid>/firewall/options.enable = 1 # tang VM
+
+    🔴 Do 25/09/2026 tren hai may khach dang chay: tang VM bat (`enable=1`,
+       `ipfilter=1`, `macfilter=1`) nhung **cum khong co khoa `enable`** va NIC la
+       `firewall=0`. ⇒ Moi thu da dat la **no-op hoan toan**. Va cong cu cua ta in
+       `firewall dat` vi no doc **mot co** roi ket luan ve **mot tinh chat**.
+
+    ⚠️ Vi sao khong ai thay: hai tang tat thi may khach **van chay binh thuong**.
+       Mot cau hinh bao mat khong co hieu luc trong **y het** mot cau hinh dang bao
+       ve tot — chi khac luc co nguoi that di thu.
+
+    ## Neu DU cac tang dang ho, ⛔ khong dung o tang dau tien
+
+    Bao mot tang roi de nguoi ta bat xong, chay lai, lai bao tang ke — ba luot cho
+    mot viec, va giua cac luot ho tuong minh da xong.
+    """
+    ho: list[str] = []
+    cum = client.doc_firewall_cum()
+    if str(cum.get("enable", 0)) not in ("1", "True"):
+        ho.append("cum chua bat (cluster/firewall/options.enable)")
+
+    cau_hinh = client._goi(
+        "GET", f"/nodes/{client.config.node}/qemu/{int(vmid)}/config")
+    if isinstance(cau_hinh, dict) and isinstance(cau_hinh.get("data"), dict):
+        cau_hinh = cau_hinh["data"]
+    nic = str((cau_hinh or {}).get("net0", ""))
+    if "firewall=1" not in nic:
+        ho.append("nic net0 co firewall=0")
+
+    tuy_chon = client.doc_firewall(vmid)
+    if str(tuy_chon.get("enable", 0)) not in ("1", "True"):
+        ho.append("vm chua bat (qemu/<id>/firewall/options.enable)")
+    # `ipfilter` la thu ta dat de chan spoof. Tuong lua chay ma no tat thi tuong
+    # lua co hieu luc nhung **cau tra loi cho nguoi doc van la KHONG**.
+    if str(tuy_chon.get("ipfilter", 0)) not in ("1", "True"):
+        ho.append("ipfilter tat")
+    return (not ho), ", ".join(ho)

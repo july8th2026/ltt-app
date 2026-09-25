@@ -468,8 +468,11 @@ from tests.test_402_asv_mach_doc_gia import (asr_gia, db, giong_gia,  # noqa: E4
                                              kho_tam)
 
 
-def _run_cat(db, kho_tam, tmp_path):
+def _run_cat(db, kho_tam, tmp_path, *, duration_s: float | None = None):
     """Run o preset **smart_localize**.
+
+    ⭐ `duration_s` di thang xuong `_tao_run` — xem docstring cua no ve vi sao
+       mot bai kiem CHO NOI phai xin mot nguon dai hon mau 3 giay.
 
     ⚠️ `hop_dong_v4.PRESET_MAC_DINH` la `localize_preserve_picture`, va preset do
        **khong cat canh nao** — dung theo thiet ke. Nen mot phep kiem ve "doan
@@ -479,7 +482,7 @@ def _run_cat(db, kho_tam, tmp_path):
     from apps.auto_scan_video import hop_dong_v4
     from tests.test_402_asv_mach_doc_gia import _tao_run
 
-    run = _tao_run(db, kho=kho_tam, tmp_path=tmp_path)
+    run = _tao_run(db, kho=kho_tam, tmp_path=tmp_path, duration_s=duration_s)
     run.settings = {**dict(run.settings or {}),
                     "preset": hop_dong_v4.PRESET_CAT_THONG_MINH}
     db.commit()

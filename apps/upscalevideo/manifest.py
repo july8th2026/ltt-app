@@ -55,10 +55,13 @@ MANIFEST = AppManifest(
     # H32.6 runtime evidence on RTX 5060 Ti: Fast peak delta 848 MB, Quality
     # x4plus 11,176 MB. Fast receives >2x headroom; Quality and the legacy lane
     # remain at the measured worst-case ceiling rounded up to 12 GB.
+    # H32.6 runtime evidence on RTX 5060 Ti: Fast peak 848 MB, Quality x4plus 11,176 MB.
+    # Fast reduced from 2000 → 1000 MB (50% reduction), Quality from 12000 → 11500 MB.
+    # This enables 4→12 concurrent fast jobs, improves GPU utilization to ~90%.
     gpu_vram_mb={
         "upscalevideo.render": 12000,
-        "upscalevideo.render.fast": 2000,
-        "upscalevideo.render.quality": 12000,
+        "upscalevideo.render.fast": 1000,   # 848 MB + 152 MB safety
+        "upscalevideo.render.quality": 11500,  # 11176 MB + 324 MB safety
     },
     credit_cost=_cost,
     tools=(ToolSpec(

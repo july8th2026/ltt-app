@@ -72,12 +72,17 @@ TRAN_CHONG_LAN_MS = 200
 #:    đổi. Và cache vẫn không thể nói dối: với một lượt chạy **không gộp** kế hoạch
 #:    ra **y hệt từng mili-giây** (`test_4700` chốt), còn với một lượt **có gộp**
 #:    thì `ban_ke.json` khác ⇒ `checksum` của nó khác ⇒ `van_tay_ke_hoach` đã khác.
-#:    ⇒ Nâng số này chỉ để "cho chắc" là ném đi mọi cache đúng **và** làm đỏ
-#:    `test_448` (nghiệm thu E2E chốt phiên bản engine của mỗi giai đoạn) — tức
-#:    đòi một lượt ASV thật cho một thay đổi không đổi một byte đầu ra nào.
-PHIEN_BAN_THOI_GIAN = 1
+#:
+#: 🔴 **1 → 2 (b4 hai giai đoạn, 25/09): `ban_do` RỜI KHỎI hàm này.** Lần này thì
+#:    PHẢI nâng, và lý do ngược hẳn đoạn trên: kế hoạch ra **khác** — mọi mốc giờ
+#:    nằm trên trục NGUỒN, và trường `ban_do` không còn trong tệp. Một kế hoạch
+#:    cũ và một kế hoạch mới cho cùng đầu vào là hai tệp khác nhau, nên một cache
+#:    cũ dùng lại được là một cache nói dối.
+PHIEN_BAN_THOI_GIAN = 2
 
-SCHEMA_KE_HOACH = 1
+#: ⬆️ 1 → 2: bỏ trường `ban_do` (b4 hai giai đoạn). `kiem()` đọc số này, nên một
+#:    kế hoạch của lượt chạy cũ bị TỪ CHỐI thay vì được đọc thiếu một trường.
+SCHEMA_KE_HOACH = 2
 
 
 class ThoiGianError(ValueError):
@@ -119,13 +124,12 @@ def _tang_toc_can(dai_ms: int, ngan_sach_ms: int) -> float:
 
 def lap_ke_hoach(muc: list[dict], thoi_luong_tieng: dict, *,
                  tong_giay: float, che_do: str = "fit_original",
-                 ban_do=None, nhom_gop: dict | None = None) -> dict:
+                 nhom_gop: dict | None = None) -> dict:
     """Dựng kế hoạch đặt từng đoạn. Không chạm tệp nào.
 
     `muc`             các mục của `content.json` (có `ma`, `bat`, `ket`)
     `thoi_luong_tieng` `{ma: giây}` — độ dài THẬT của tệp tiếng đã sinh
     `tong_giay`       thời lượng video nguồn
-    `ban_do`          `BanDoThoiGian` — đổi mốc NGUỒN sang mốc BẢN RA
     `nhom_gop`        `{ma đi theo: ma đứng đầu}` của các **khe đã gộp**
                       (`nan_thoi_luong`). Rỗng/None = lượt chạy không gộp gì,
                       và khi đó hàm này chạy y hệt bản trước một mili-giây.
@@ -150,17 +154,25 @@ def lap_ke_hoach(muc: list[dict], thoi_luong_tieng: dict, *,
        một phần của một tệp (đó chính là phép **cắt trả về** đã làm bot Viral
        phải tắt phép gộp — `nan_thoi_luong.gop_khe`). Bỏ đầu ⇒ bỏ cả nhóm.
 
-    🔴 **`ban_do` là thứ pha 16 thêm vào, và thiếu nó thì preset cắt sai âm
-       thầm.** Trước đó hàm này lập kế hoạch trên trục thời gian của **nguồn**:
-       đoạn bắt đầu ở giây 120 thì đặt quanh giây 120. Đúng cho preset giữ hình,
-       nơi luồng hình được sao chép nguyên vẹn.
+    ## 🔴 `ban_do` ĐÃ RỜI KHỎI hàm này (b4 hai giai đoạn, 25/09)
 
-       Với `smart_localize` thì cảnh bị cắt **biến mất khỏi bản ra**, nên giây
-       120 của nguồn có thể là giây 74 của bản ra — hoặc không tồn tại. Sai số
-       đó **tích luỹ** theo từng cảnh bị cắt.
+    Bản trước nhận một `BanDoThoiGian` để đổi mốc NGUỒN sang mốc BẢN RA, vì cảnh
+    bị cắt **biến mất khỏi bản ra**: giây 120 của nguồn có thể là giây 74 của bản
+    ra — hoặc không tồn tại — và sai số đó **tích luỹ** theo từng cảnh bị cắt.
 
-    ⭐ `ban_do=None` giữ nguyên hành vi cũ (bản đồ đồng nhất), nên preset giữ
-       hình không đổi một mili giây nào.
+    Chủ dự án chốt 25/09 đổi **thứ tự** chứ không đổi phép đổi mốc: cắt cảnh nằm
+    SAU render (`ke_cat.py`, giai đoạn 2). Nên ở đây:
+
+        giai đoạn 1  =  MP4 tiếng Việt, TOÀN BỘ độ dài gốc, không cắt gì
+        ⇒ trục kế hoạch **LÀ** trục nguồn, cho CẢ HAI preset
+
+    ⭐ Và đó là cái được: phép đổi mốc không được *quản lý tốt hơn*, nó **không
+       còn chỗ để sinh ra**. Một tham số biến mất là một lớp lỗi biến mất — chứ
+       không phải một lớp lỗi được kiểm nhiều hơn.
+
+    ⛔ Hai preset vì thế đi **y hệt** một đường ở đây, và `test_4801` ghim điều
+       đó bằng máy chứ không bằng giao ước: `lap_ke_hoach` không còn một tham số
+       nào để mà nhánh theo preset.
 
     Trả về kế hoạch: mỗi đoạn có `dat_tai_ms`, `he_so_toc`, `cat_bot_ms`, và
     `troi_sau_ms` để đọc được diễn biến của món nợ.
@@ -170,39 +182,17 @@ def lap_ke_hoach(muc: list[dict], thoi_luong_tieng: dict, *,
     if che_do not in ("fit_original", "natural"):
         raise ThoiGianError(f"che do thoi gian khong hop le: {che_do!r}")
 
-    # ⭐ Không có bản đồ = bản đồ đồng nhất. Viết ra một lần thay vì rải
-    #    `if ban_do` khắp thân hàm: một nhánh điều kiện lặp lại là một nhánh sẽ
-    #    bị quên ở một chỗ.
-    if ban_do is None:
-        from .ban_do_thoi_gian import BanDoThoiGian
-
-        ban_do = BanDoThoiGian.giu_nguyen(tong_giay)
-
-    # ── Đổi mốc sang trục BẢN RA, MỘT lần, ở MỘT chỗ ──────────────────────
+    # ── Mốc của NGUỒN, và ở giai đoạn 1 đó cũng là mốc của bản ra ─────────
     #
-    # ⛔ `ra()` chứ không `ra_gan_nhat()` cho mốc **bắt đầu**: một câu thoại
-    #    thuộc cảnh đã cắt phải **biến mất**, không được trôi sang cảnh khác. Ép
-    #    nó về mốc gần nhất là đổi một mất mát NHÌN THẤY được thành một lỗi KHÓ
-    #    TÌM — nghe thấy một câu trả lời cho một câu hỏi không còn.
-    bat_ra: list[int] = []
-    ket_ra: list[int] = []
-    for m in muc:
-        rb = ban_do.ra(float(m["bat"]))
-        if rb is None:
-            raise ThoiGianError(
-                _t('Đoạn {ma} thuộc phần đã cắt nhưng vẫn có tiếng.')
-                .format(ma=m.get("ma")))
-        rk = ban_do.ra(float(m["ket"]))
-        if rk is None:
-            # Đoạn bắt đầu trong phần giữ và kết thúc trong phần cắt: khe của nó
-            # kết thúc ở chỗ nối. Ở đây `ra_gan_nhat` là đúng — ta đang cắt ngắn
-            # một khe, không phải di dời một câu.
-            rk = ban_do.ra_gan_nhat(float(m["ket"]))
-        bat_ra.append(_ms(rb))
-        ket_ra.append(_ms(max(rb, rk)))
+    # 🔑 Không một phép đổi nào ở đây nữa. Giai đoạn 1 giao **toàn bộ độ dài
+    #    gốc**, nên trục kế hoạch và trục nguồn là MỘT — xem docstring.
+    #
+    # ⚠️ `max(bat, ket)` vẫn ở lại: một mục có `ket < bat` là dữ liệu hỏng của
+    #    thượng nguồn, và kẹp nó ở đây rẻ hơn để nó lan vào `ngan_sach_doan`.
+    bat_ra = [_ms(float(m["bat"])) for m in muc]
+    ket_ra = [max(b, _ms(float(m["ket"]))) for b, m in zip(bat_ra, muc, strict=True)]
 
-    # Tổng thời lượng của **BẢN RA**, không phải của nguồn.
-    tong_ms = _ms(ban_do.thoi_luong_ra)
+    tong_ms = _ms(tong_giay)
     ke: list[dict] = []
     troi = 0                    # 🔑 nợ trôi, mang theo suốt bài
     so_cat = 0
@@ -336,10 +326,11 @@ def lap_ke_hoach(muc: list[dict], thoi_luong_tieng: dict, *,
         "schema": SCHEMA_KE_HOACH,
         "che_do": che_do,
         "tong_ms": tong_ms,
-        # 🔑 Bản đồ đi **cùng** kế hoạch, không nằm rời: một kế hoạch đặt đoạn ở
-        #    giây 74 vô nghĩa nếu không biết giây 74 của bản ra ứng với đâu
-        #    trong nguồn. Hai nửa tách rời là hai nửa sẽ lệch phiên bản.
-        "ban_do": ban_do.sang_dict(),
+        # ⛔ **Trường `ban_do` ĐÃ BỊ BỎ, và bỏ chứ không để rỗng.** Một khoá
+        #    `"ban_do": {}` luôn có mặt sẽ trông như một bản đồ đã được tính và
+        #    ra kết quả trống — tức đúng cái bẫy "hai trạng thái một giá trị".
+        #    Giai đoạn 2 (`ke_cat.KeCat.ban_do`) là chủ sở hữu duy nhất của phép
+        #    đổi mốc, và nó đổi mốc trên MỘT tệp đã xong.
         "thoi_luong_nguon_ms": _ms(tong_giay),
         "ket_cuoi_ms": ket_cuoi,
         "so_doan": len(ke),

@@ -48,12 +48,15 @@ def test_moi_giai_doan_khai_du_ba_truong_hop_dong():
     assert P.thieu_khai() == []
 
 
-def test_du_12_mat_xich_va_khong_giai_doan_nao_bi_bo_ngoai_phep_kiem():
+def test_du_13_mat_xich_va_khong_giai_doan_nao_bi_bo_ngoai_phep_kiem():
     """⛔ Mot phep kiem quet-tat-ca chet bang cach quet it hon nguoi doc tuong.
 
     Con so 12 la con so cua bang cong o plan `2026-09-24-thang-cong-asv.md`.
+
+    ⭐ 12 -> 13 o b4 (25/09): `IMAGE_FINISH` — GIAI DOAN 2, thao tac hinh anh
+       tren MP4 da xong. Xem `docs/superpowers/plans/2026-09-25-asv-hai-giai-doan.md`.
     """
-    assert len(P.CHUOI) == 12, [g.ten for g in P.CHUOI]
+    assert len(P.CHUOI) == 13, [g.ten for g in P.CHUOI]
     assert len(P.TEN_GIAI_DOAN) == len(set(P.TEN_GIAI_DOAN))
 
 

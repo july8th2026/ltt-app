@@ -235,9 +235,18 @@ def refresh_active_profiles(db, *, run=None) -> dict[str, bool]:
             for component in profiles.REQUIRED_HEALTH_COMPONENTS:
                 db.add(VpsProfileHealth(
                     infrastructure_profile_id=row.id, component=component,
-                    status="CRITICAL", observed_at=now, generated_at=now,
-                    # ⛔ Van CRITICAL (cua ban phai dong), nhung dong chu KHONG
-                    #    duoc noi rang thanh phan nay hong — no chua he duoc do.
+                    # ⭐ `UNKNOWN`, khong phai `CRITICAL`. Hai dieu khac nhau:
+                    #    `CRITICAL` = da do va no hong; `UNKNOWN` = chua do duoc.
+                    #    Khong mot thanh phan nao trong vong nay duoc do — preflight
+                    #    no TRUOC do (khoa OVH chet 25/09 lam `provider.health()`
+                    #    nem), nen khai `compute` (Proxmox hoan toan khoe) la
+                    #    CRITICAL la noi mot dieu ta chua he biet.
+                    #
+                    # ⛔ Va no KHONG noi cua ban them mot milimet:
+                    #    `profiles._danh_gia` doi `row.status != "HEALTHY"` la chan
+                    #    (profiles.py:150) — no khong doi `CRITICAL`. Nen day la
+                    #    mot thay doi ve SU THAT, khong phai ve CHINH SACH.
+                    status="UNKNOWN", observed_at=now, generated_at=now,
                     summary=("khong do duoc thanh phan nay; preflight dung som: "
                              + nguyen_nhan_ngan(exc))))
             row.last_health_at = now

@@ -42,12 +42,21 @@ def _ban(*, so_lop: int = 2, tong_giay: float = 2.0,
 
 
 def _ban_cat(**kw) -> dict:
-    """Cung ban dung, nhung khai preset CAT (ma hoa lai)."""
+    """Cung ban dung, nhung khai preset CAT (ma hoa lai).
+
+    🔴 **`bien_tap.toc_do` (gd2-diem-anh, 25/09): bat buoc de GD1 THAT SU ma
+       hoa lai.** Tu khi logo/lop_phu/khung/lat-guong/dich-mau chuyen xuong
+       GD2, mot preset CAT khong `vung` va khong doi toc do khong con gi de
+       lam o GD1 — `ket_xuat.dung_lenh` se REMUX (xem `ket_xuat.co_viec`).
+       Bai nay kiem tra hanh vi cua duong MA HOA LAI, nen no can mot ly do
+       that de di duong do.
+    """
     from apps.auto_scan_video import che_do_render as cdr
 
     ban = _ban(**kw)
     ban["hinh"].update({"cach_render": cdr.CAT_MA_HOA_LAI, "bo_ma_hoa": "libx264",
-                        "khoang_giu": [[0.0, 2.0]]})
+                        "khoang_giu": [[0.0, 2.0]],
+                        "bien_tap": {"toc_do": 1.1}})
     return ban
 
 
@@ -139,13 +148,16 @@ def test_cach_render_KHONG_HOP_LE_bi_tu_choi():
 
 
 def test_preset_CAT_ma_hoa_lai_va_KHONG_dung_copy():
-    """Va chieu nguoc lai: preset cat khong duoc am tham dung `copy`."""
+    """Va chieu nguoc lai: preset cat, VA GD1 co viec (bien_tap toc_do), khong
+    duoc am tham dung `copy`."""
     from apps.auto_scan_video import che_do_render as cdr
 
     ban = _ban()
     ban["hinh"]["cach_render"] = cdr.CAT_MA_HOA_LAI
     ban["hinh"]["bo_ma_hoa"] = "libx264"
     ban["hinh"]["khoang_giu"] = [[0.0, 5.0], [10.0, 20.0]]
+    # 🔴 gd2-diem-anh: khong `vung`/`toc_do` thi GD1 REMUX (xem `_ban_cat`).
+    ban["hinh"]["bien_tap"] = {"toc_do": 1.1}
     cmd = _lenh(ban)
     assert "libx264" in cmd
     assert "-filter_complex" in cmd

@@ -211,6 +211,12 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         if ctx is not None and getattr(ctx, "progress", None):
             ctx.progress(5 + int(85 * dau / max(1, len(doan_giu))),
                          _t('Đang viết lời thoại'))
+        # ⭐ Nhip tien do MANG BO DEM (log van hanh, 25/09) — xem giai thich o
+        #    `giai_doan_giong.py`. Giai doan nay ngan hon (~5 phut do duoc,
+        #    docs/NHAT_KY.md muc 8), va moi lo nhay `DOAN_MOI_LO=12` don vi
+        #    mot luc nen mac dinh 30s/5 don vi da du thua — khong can chinh.
+        if ctx is not None and getattr(ctx, "progress_counter", None):
+            ctx.progress_counter(dau, len(doan_giu), don_vi="doan")
 
         ma_da_gui = {str(d.get("ma") or "") for d in lo}
         messages = long_tieng.loi_nhac(

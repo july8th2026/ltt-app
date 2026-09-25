@@ -12,6 +12,100 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-25 (đêm) — ASV **HAI GIAI ĐOẠN**: cắt cảnh chuyển xuống SAU render
+
+Làn `b4-hai-giai-doan`, plan `docs/superpowers/plans/2026-09-25-asv-hai-giai-doan.md`.
+Chủ dự án chốt: **GĐ1** = voice, ra MP4 tiếng Việt **toàn bộ độ dài gốc**, không
+cắt gì · **GĐ2** = hình ảnh, thao tác trên MP4 **đã xong**.
+
+### Vì sao đúng — và cái được KHÔNG phải "kiểm kỹ hơn"
+
+`ban_do_thoi_gian.py` mở đầu bằng chính vấn đề: *"cảnh bị cắt biến mất khỏi bản
+ra, nên giây 120 của nguồn có thể là giây 74 của bản ra — hoặc không tồn tại …
+sai số đó tích luỹ theo từng cảnh bị cắt."* Kho **đã biết** và giải bằng một lớp
+đổi mốc. Thứ tự mới **xoá chỗ cho sai số sinh ra**: `loc_cat_hai_dong` `trim` cả
+hình lẫn tiếng trong **cùng một** `concat=v=1:a=1`, nên một giây hình và một giây
+tiếng biến mất **cùng nhau** — không phép ánh xạ nào ở giữa để mà lệch.
+
+⭐ Lợi ích **thứ hai**, không ai nêu trước khi làm: câu hỏi *"đoạn này có lời
+thoại không"* ở GĐ1 chỉ trả lời được bằng bản chép lời **NGUỒN**. Nhưng tiếng
+Việt không nằm đúng chỗ tiếng gốc nằm (`lap_ke_hoach` đổi mốc, `nan_cho_vua` kéo
+giãn, `gop_khe` dồn câu). Ở GĐ2 `ke_cat` đọc **kế hoạch thời gian** — tiếng Việt
+ĐÃ SINH. ⇒ Luật *"chỉ cắt vùng không có lời thoại"* trước đây **không thể** được
+thi hành đúng; bây giờ thì được.
+
+### Cái giá — đã đo, ⛔ không phải một lần xoá tệp
+
+`ban_do_thoi_gian` có **mười** người dùng. Điều phối nói hớ *"trở thành thừa"*
+trước khi `grep`. Kết quả thật: module **ở lại**, người dùng **đổi chủ**. Đã
+thôi: `thoi_gian` · `giai_doan_thoi_gian` · `giai_doan_ban_dung` · `am_master`.
+Còn: `ke_cat` (chủ sở hữu mới) · `giai_doan_hinh_anh` · `giai_doan_qc_ai` ·
+`che_do_render` · `loi` (chỉ phân loại). `tu_ban_bien_tap` — mắt xích làm phép
+cắt chạy trước khi có tiếng — **đã xoá**, kèm chú thích vì sao ở chỗ nó từng nằm.
+
+### Trần 5 % là BẤT BIẾN Ở BIÊN, không phải một `if`
+
+`ke_cat.kiem()` **ném** khi vượt `TRAN_CAT_TI_LE`, và `chon()` gọi `kiem()` trước
+khi trả về ⇒ một `KeCat` vượt trần **không bao giờ tồn tại** (khuôn
+`hinh_hoc_dien_nen` + `ban_dung.kiem`). Thứ tự ưu tiên khi đụng trần: **kém nhất
+trước** — 5 % là ngân sách khan hiếm nên phải chi ở chỗ mỗi giây mua được nhiều
+chất lượng nhất; *"dài nhất trước"* để một đoạn 60 giây hơi kém ăn hết ngân sách
+cả phim.
+
+⛔ Và ⛔ **không im lặng cắt ít đi**: mỗi ứng viên bị loại vào `bo_qua` kèm lý do
+(`co_thoai` / `vuot_tran` / `qua_ngan`), `tom_tat()` khai `giay_muon_cat` +
+`dung_o_tran`. Nhờ đó một lượt cắt 5 % **vì trần** phân biệt được với một lượt
+cắt 5 % vì tiêu chí chỉ đòi bấy nhiêu — chính bẫy *"hai trạng thái một giá trị"*.
+
+### Sáu sự thật cơ học phát hiện khi làm, ⛔ không đoán ra được
+
+1. 🔴 **`la_ban_giao` là một luật của cả GIAI ĐOẠN, không của từng artifact.**
+   Bản đầu xuất `ke_cat.json` thành artifact thứ ba của `image_finish` ⇒ nó mang
+   `han=None` như video, tức **một báo cáo vận hành nằm trong kho khách mãi mãi**.
+   `test_451` bắt được. ⇒ Kế cắt chuyển vào `tom_tat` (`asv_stage.outputs`).
+2. 🔴 **`che_do_cho(preset)` ⛔ không được nới thành hàm của tập tính năng.**
+   `test_3801` + `test_3900` ghim chữ ký một tham số, vì bảng **giá phẳng** điều
+   khiển bằng PRESET. Đổi nó là đổi GIÁ ⇒ thuộc chủ dự án. Nên GĐ1 giữ nguyên
+   ánh xạ preset → chế độ; chỉ `khoang_giu` thành cả video.
+3. ⚠️ **Đưa `cat_dau_cuoi` xuống GĐ2 ⛔ không được nới luật L3 của nó.** Cả kế cắt
+   tự động lẫn cửa sổ của khách nằm trong **một** `if cach == CAT_MA_HOA_LAI`:
+   `THAO_TAC_CHO_PHEP[PRESET_GIU_HINH]` là tuple RỖNG — *"không được làm"*.
+4. 🔴 **T18 (VMAF) đo tham chiếu = nguồn chạy qua chuỗi lọc render.** Sau khi cắt
+   ở GĐ2, tham chiếu **không** qua phép cắt ⇒ hai bên lệch từng khung ⇒ T18 báo
+   `hong` trên một bản giao mà bộ mã hoá **không sai gì** (đo thật: VMAF rác ⇒
+   run `failed_terminal`). Sửa: `image_finish` **khai** `khoang_giu` thật vào
+   `outputs`, `qc.loc_tham_chieu` nhận nó. ⭐ Ghép được vì GĐ1 giữ **mọi** khung:
+   *"GĐ1 rồi GĐ2" = "chỉ GĐ2"* trên trục nguồn. Sau sửa: VMAF 92,58.
+5. 🔴 **Một tệp video ⛔ không thể dài đúng một số thập phân bất kỳ.** Kế cắt khai
+   `thoi_luong_ra` bằng một **tổng số học** (23,100 s); `concat` giao khung trọn
+   vẹn (23,167 s ở 12 fps). `DAI_HON_CHO_PHEP_S` = 0,01 được tính cho sai số
+   **làm tròn bản đồ** (1e-4) nên nó ⛔ không bao giờ bao được một khung ⇒ T2
+   `hong`. Sửa **hai** nửa: `-t` dập tắt sự *tích luỹ* (một khung cho CẢ tệp,
+   ⛔ không phải một khung cho MỖI chỗ nối), và T2 cộng `1/fps` **đo từ chính
+   tệp**. ⛔ `LECH_THOI_LUONG_S` (0,5 s — lời hứa sản phẩm) **đứng yên**.
+6. 🔴 **Trần 5 % làm một fixture cũ BẤT KHẢ, và phép tính nói rõ vì sao.** `n`
+   cảnh **đều nhau**, nhận `k` cảnh ⇒ `k·T/n ≤ 0,05·T` ⟺ `k ≤ 0,05·n` — **độ dài
+   nguồn triệt tiêu**. Nên bảy cảnh đều ⛔ không bao giờ cho một chỗ nối nào, dù
+   video dài bao nhiêu. ⇒ `test_2121` đổi sang cảnh **không đều** (ba cảnh cắt
+   0,3 s trên nguồn 24 s) — cũng là hình dạng THẬT: cảnh bị đề nghị bỏ thường là
+   cảnh **ngắn**. ⛔ Không nới trần để fixture cũ vừa.
+
+### Cái CHƯA làm — khai ra thay vì để người đọc tưởng
+
+`logo · watermark · phụ đề · lật gương · dịch màu · zoom` **vẫn** chạy ở `render`
+của GĐ1. Ở thứ tự mới điều đó vẫn đúng: chúng đốt vào **điểm ảnh**, nên cắt sau
+đó bỏ khung nào thì bỏ luôn lớp phủ trên khung ấy. Cái giá đo được: một lượt có
+phép đổi điểm ảnh **mã hoá lại HAI lần**. Chuyển xuống GĐ2 chạm `ban_dung`,
+`ket_xuat.dung_lenh`, `phu_de` (PlayRes) và bảng giá phẳng ⇒ một tái cấu trúc
+riêng, ⛔ không gộp vào đây.
+
+### ⚠️ Đỏ CÓ SẴN trên `main`, ⛔ không phải của làn này
+
+Đo trên cây tháo rời ở `df71c094`:
+`test_453::test_KHONG_co_nang_luc_mo_coi_MOI` (`gop_khe` ⛔ không có người gọi
+nào — làn `b2-gop-khe` khai *"điều khiển thật"* nhưng `grep "gop_khe("` chỉ ra
+định nghĩa) và `test_430::test_quyet_toan_di_qua_cung_mot_cua`. Đã lập việc riêng.
+
 ## 2026-09-25 (tối) — **Workflow V2 vòng hoàn thiện: 4/4 plan đóng, 17 làn** · và một khuôn lặp SÁU lần
 
 Plan `docs/superpowers/plans/2026-09-25-wf-v2-VAN-HANH.md`. Chủ dự án chốt năm
@@ -222,6 +316,17 @@ bắt đầu. Bằng chứng khớp với khảo sát cùng ngày của làn kh�
   là lỗi chắc chắn. Đây đúng là việc `R4_TIMELINE_NOI_BO.md` §21.5 đã ghi là
   đang **bị chặn** (cần một lượt TTS thật để đối chiếu). Chi tiết + điều kiện
   nối thật: docstring đầu `nan_thoi_luong.py`.
+
+  ⭐ **ĐÍNH CHÍNH (25/09, làn `phien/khep-hai-do`): dòng "CHƯA nối vào đường
+  sinh tiếng thật" ở trên nay ĐÃ CŨ.** Làn `b2-gop-khe` (25/09) nối thuật toán
+  của `gop_khe` vào `giai_doan_giong.chay()` thật — nhưng qua `nhom_chi_so()`
+  (module tự gọi đây là "lớp LÕI, `gop_khe` chỉ là một cách đọc nó") +
+  `_gop_mot_nhom()` riêng của `giai_doan_giong`, ĐÚNG cách né vỡ ADR-003 mà
+  đoạn trên lo: một dòng `ban_ke` cho MỖI `ma` gốc vẫn được giữ, không cần sửa
+  `giai_doan_noi_dung.py`. Hàm `gop_khe` (hàm, không phải thuật toán) vẫn
+  không có người gọi trực tiếp trong mã sản phẩm — nó là oracle độc lập cho
+  `test_2062`/`test_4700`, hàm thấp hơn `nhom_chi_so` mới là đường thật. Xem
+  `tests/test_453_asv_v4_nang_luc_mo_coi.py:MO_COI_DA_BIET["gop_khe"]`.
 
 **Kết quả:** `test_453` xanh bằng mã thật (không `--accept`, không thêm
 `MO_COI_DA_BIET`). Canh chỗ trống cho 4 tên đã xoá:

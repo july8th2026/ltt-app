@@ -233,16 +233,18 @@ def kiem(bd: BanDoThoiGian) -> None:
     #   dung that (`tu_khoang`), chu khong gia vo la mot nhanh ma.
 
 
-def tu_ban_bien_tap(ban, chi_muc, *, thoi_luong_nguon: float) -> BanDoThoiGian:
-    """Ban do suy ra tu `BanBienTap` + `ChiMucCanh`.
-
-    ⭐ Doc canh DUOC GIU tu chi muc chu khong tu ban: ban noi *canh nao* duoc
-       giu, chi muc noi *canh do la khoang thoi gian nao*. Mot quyet dinh
-       "giu canh_0007" khong dat duoc len truc thoi gian neu thieu nua kia.
-    """
-    giu = set(getattr(ban, "cac_ma_giu", ()) or ())
-    khoang = [(float(c.bat), float(c.ket))
-              for c in (getattr(chi_muc, "canh", ()) or ()) if c.ma in giu]
-    bd = BanDoThoiGian.tu_khoang(khoang, thoi_luong_nguon=thoi_luong_nguon)
-    kiem(bd)
-    return bd
+# 🔴 **`tu_ban_bien_tap` DA BI XOA o b4 hai giai doan (25/09).**
+#
+#    No doi `BanBienTap` + `ChiMucCanh` thanh mot ban do, va no la MAT XICH lam
+#    phep cat chay TRUOC khi co tieng: `giai_doan_thoi_gian._ban_do` goi no, roi
+#    `lap_ke_hoach` phai doi moi moc cua ke hoach tieng theo ban do do. Chinh
+#    docstring dau tep nay ghi cai gia: *"sai so tich luy theo tung canh bi cat"*.
+#
+# ⭐ Chu du an chot doi THU TU: cat canh nam SAU render (`ke_cat.py`). Ban do van
+#    can — nhung nguoi dung cua no da doi. Nay ⛔ khong ai dung mot ban do suy tu
+#    ban bien tap nua; `ke_cat.KeCat.ban_do()` suy no tu ke cat, tren truc cua
+#    MOT tep da xong.
+#
+# ⛔ Ghi lai o day chu khong xoa lang le: mot ham bien mat khong loi giai thich
+#    se duoc mot pha sau "viet lai" khi ho gap dung bai toan ma no giai — va lan
+#    do ho se cam no lai vao dung cho da duoc go ra.

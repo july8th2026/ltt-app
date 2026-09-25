@@ -26,7 +26,7 @@ bien nam trong handler HTTP la mot bat bien khong ap dung cho worker.
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import logging
 
@@ -143,22 +143,58 @@ def tao_run(db: Session, *, owner_id: str, source_key: str, settings: dict,
         # `ThieuCreditError` -> caller rollback -> khong con run lan stage nao.
         credit.giu_cho(db, owner_id, uoc_luong_credit, run.id)
 
-    _nop_dieu_phoi(db, run, ly_do="tao")
+    _nop_dieu_phoi(db, run, ly_do="tao", gen=0)
     db.flush()
     return run
 
 
-def _nop_dieu_phoi(db: Session, run: AsvRun, *, ly_do: str) -> None:
-    """Nop mot luot `advance`. Dedupe theo `(run, ly_do)` de khong fan-out.
+def _nop_dieu_phoi(db: Session, run: AsvRun, *, ly_do: str, gen: int = 0,
+                   cho_giay: float = 0.0):
+    """Nop mot luot `advance`. Dedupe theo `(run, gen, ly_do)` de khong fan-out.
 
     ⚠️ Job dieu phoi **khong** giu credit — no dung `jobs.submit`. No la mot job
        dieu khien, khong phai mot giai doan tinh tien.
+
+    🔴 **`gen`, KHONG mang `ctx.job_id`** (sua NHAT_KY.md 2026-09-25 (chieu)
+       muc 5 — 37.010 job `advance`/52,5 phut, ~11,7/giay, khuon test sinh 11).
+       Ban cu dung `ctx.job_id` cua job GOI ham nay lam hau to khoa dedupe.
+       `ctx.job_id` LUON KHAC nhau moi luot ⇒ khoa LUON moi ⇒ `jobs.submit`
+       khong bao gio tim thay job trung ⇒ dedupe khong bao gio chan — hai luot
+       `advance` CHONG NHAU (mot giai doan dang chay o noi khac, ca hai deu
+       thay "chua co gi de nop") deu tu tao job KE TIEP rieng, fan-out thay vi
+       gop lam mot.
+
+       `gen` la so hop, TANG DUNG 1 moi lan tu nop lai (goi noi tang tu
+       `params["gen"]` cua chinh job dang chay — xem `_advance`). Vi vay:
+         - khoa cua no LUON khac khoa cua chinh no da dung de duoc tao ra
+           (gen+1 != gen) ⇒ KHONG tu-khop chinh minh ⇒ chuoi khong bao gio
+           dung im (khac voi mot khoa CO DINH, se tu khop job dang RUNNING).
+         - hai luot CHONG NHAU cung doc `params["gen"]` GIONG NHAU (cung mot
+           the he — vi du hai job trung nhau cho CUNG mot tick) tinh ra CUNG
+           mot khoa ⇒ luot thu hai nhan lai dung job luot dau da tao, khong
+           tao job moi. Xem `tests/test_2161_asv_vong_quay_advance_dedupe.py`.
+
+    🟡 **`cho_giay` — can gat GIAM DAU, khong phai goc.** Chi ap dung khi luot
+       NAY khong nop duoc giai doan nao (dang cho mot giai doan o noi khac
+       xong) — hen job ke tiep chay som nhat sau tung do giay
+       (`NHIP_DIEU_PHOI_S`). Duong nop that (`da_nop` khac rong) giu do tre
+       0 — do la mot tinh chat SAN PHAM da do (NHAT_KY.md muc 6: 0,0 s giua
+       cac giai doan), khong phai mot lo hong can va.
     """
-    jobs.submit(db, user_id=run.owner_id, app_slug=SLUG,
-                job_type=JOB_DIEU_PHOI,
-                params={"run_id": run.id, "owner_id": run.owner_id},
-                dedupe_key=f"asv:advance:{run.id}:{ly_do}",
-                max_attempts=3)
+    job = jobs.submit(db, user_id=run.owner_id, app_slug=SLUG,
+                      job_type=JOB_DIEU_PHOI,
+                      params={"run_id": run.id, "owner_id": run.owner_id,
+                              "gen": int(gen)},
+                      dedupe_key=f"asv:advance:{run.id}:{gen}:{ly_do}",
+                      max_attempts=3)
+    if cho_giay > 0:
+        # `jobs._aware`: SQLite tra naive, Postgres tra aware -- chuan hoa
+        # truoc khi so sanh (khuon co san, dung lai chu khong tu viet).
+        muon_nhat = _now() + timedelta(seconds=cho_giay)
+        hien_tai = jobs._aware(job.next_run_at)
+        if hien_tai is None or hien_tai < muon_nhat:
+            job.next_run_at = muon_nhat
+    return job
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1020,11 +1056,15 @@ def the_lich_su(db: Session, owner_id: str, *, toi_da: int = 20) -> list[dict]:
 def khoa_ket_qua(db: Session, run: AsvRun) -> str:
     """Khoa luu tru cua ban long tieng, hoac chuoi rong.
 
-    ⚠️ Doc tu `outputs` cua giai doan RENDER chu khong quet kho theo tien to:
-       mot phep quet tien to se tim thay ca artifact cua mot lan chay lai da bi
-       thay the, va phuc vu nham ban cu.
+    🔴 **Doc `IMAGE_FINISH`, ⛔ khong con `RENDER` (b4 hai giai doan, 25/09).**
+       `render` nay giao mot ban TRUNG GIAN: no chua qua phep cat cua giai doan 2.
+       Tro vao no la giao cho khach mot tep dai hon ban da duoc QC chung nhan.
+
+    ⚠️ Doc tu `outputs` cua giai doan do chu khong quet kho theo tien to: mot
+       phep quet tien to se tim thay ca artifact cua mot lan chay lai da bi thay
+       the, va phuc vu nham ban cu.
     """
-    s = giai_doan_theo_ten(db, run.id, pipeline.RENDER)
+    s = giai_doan_theo_ten(db, run.id, pipeline.IMAGE_FINISH)
     if s is None or s.status != STAGE_SUCCEEDED:
         return ""
     return next((k for k in ((s.outputs or {}).get("khoa_asset") or [])
@@ -1043,11 +1083,16 @@ def khoa_phu_de(db: Session, run: AsvRun) -> str:
        cua khach co. Nen tep phu de duoc tinh, duoc luu **vinh vien**, va khong
        ai tai ve duoc — dung hinh dang mot **o chet** (`L_GUI.md` §1).
 
-    ⚠️ Cung khuon voi `khoa_ket_qua`: doc `outputs` cua RENDER chu khong quet kho
-       theo tien to. Mot phep quet se tim thay ca `.srt` cua mot lan chay lai da
-       bi thay the, va giao ban phu de KHONG khop voi video dang phuc vu.
+    ⚠️ Cung khuon voi `khoa_ket_qua`: doc `outputs` cua IMAGE_FINISH (b4 25/09)
+       chu khong quet kho theo tien to. Mot phep quet se tim thay ca `.srt` cua
+       mot lan chay lai da bi thay the, va giao ban phu de KHONG khop voi video
+       dang phuc vu.
+
+    🔴 Va phai la `IMAGE_FINISH`: `.srt` cua `render` nam tren truc GD1, nen sau
+       khi cat no **tre** dung bang phan da cat. Giai doan 2 sinh lai no bang
+       `giai_doan_hinh_anh.doi_moc_su_kien`.
     """
-    s = giai_doan_theo_ten(db, run.id, pipeline.RENDER)
+    s = giai_doan_theo_ten(db, run.id, pipeline.IMAGE_FINISH)
     if s is None or s.status != STAGE_SUCCEEDED:
         return ""
     return next((k for k in ((s.outputs or {}).get("khoa_asset") or [])

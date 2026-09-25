@@ -10,12 +10,17 @@ khách bật lật gương, trả tiền, và lần chạy lại **trả về t�
 không cảnh báo, chỉ một lượt chạy "nhanh bất thường". `assets.py` gọi đúng tên
 cái bẫy đó: *"sót tham số = serve nhầm"*.
 
-⚠️ Và vân tay của giai đoạn RENDER có **hai** nguồn độc lập, nên bài này ghim cả
-hai:
+🔴 **Cập nhật gd2-diem-anh (25/09): lật gương/dịch màu CHUYỂN nhà.** Chúng
+   không còn là một trường của `hinh.bien_tap` ở GD1 (`ban_dung`) — GD1
+   (`_kiem_bien_tap`) giờ NÉM nếu thấy chúng. Vân tay phải ghim là vân tay của
+   `giai_doan_hinh_anh.van_tay` (GD2), nơi chúng THỰC THI.
+
+⚠️ Và vân tay của giai đoạn IMAGE_FINISH (GD2) có **hai** nguồn độc lập, nên
+bài này ghim cả hai:
 
 | nguồn | đổi khi nào | ai giữ |
 |---|---|---|
-| checksum bản dựng | khách đổi **hồ sơ** (bật/tắt cờ) | `ban_dung` (cờ nằm trong `bien_tap`) |
+| tham số `bien_tap` truyền vào `van_tay()` | khách đổi **hồ sơ** (bật/tắt cờ) | `giai_doan_hinh_anh.van_tay` |
 | `PHIEN_BAN_CHE_DO` | ta đổi **mã sinh lệnh** | `che_do_render` |
 
 ⛔ Chỉ ghim một cái là để hở cái kia: một lần chạy **không** bật cờ nào vẫn đi
@@ -27,57 +32,34 @@ import pytest
 
 from apps.auto_scan_video import bien_tap as bt
 from apps.auto_scan_video import che_do_render as cdr
+from apps.auto_scan_video import giai_doan_hinh_anh as gdha
 from apps.auto_scan_video import hop_dong_v4
+from apps.auto_scan_video import ke_cat as kc
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  1. Vân tay — câu hỏi cuối
 # ══════════════════════════════════════════════════════════════════════════════
 
-def _ban(*, bien_tap=None, che_do=None):
-    """Bản dựng tối thiểu qua ĐÚNG hàm sản phẩm.
-
-    ⚠️ `ban_dung.dung` gọi `kiem()` ở dòng cuối, nên một bản dựng không thi hành
-       được **không bao giờ tồn tại** — nó chết ngay lúc dựng.
-    """
-    from apps.auto_scan_video import ban_dung as bd
-
-    return bd.dung(
-        khoa_video="v/1.mp4", khoa_nen="a/nen.wav", khoa_master="a/master.wav",
-        ke_hoach={"doan": [], "tong_ms": 5000}, ban_ke_tieng={"doan": []},
-        phien_ban_ffmpeg="n7.0", tong_giay=5.0,
-        che_do=che_do or cdr.CAT_MA_HOA_LAI, bo_ma_hoa="libx264",
-        khoang_giu=[(0.0, 5.0)], preset=hop_dong_v4.PRESET_CAT_THONG_MINH,
-        rong_khung=1280, cao_khung=720, bien_tap=bien_tap)
-
-
-def _van_tay_ban_dung(ho_so: dict | None) -> str:
-    """Vân tay của giai đoạn RENDER, rút gọn đúng phần phụ thuộc hồ sơ.
-
-    ⭐ Dựng bản dựng THẬT rồi băm nó, chứ không băm hồ sơ trực tiếp: đường thật
-       đi qua `ban_dung.dung`, và một bài băm thẳng hồ sơ sẽ vẫn xanh kể cả khi
-       `dung()` đánh rơi cờ trên đường vào bản dựng.
-    """
-    import hashlib
-    import json
-
-    ban = _ban(bien_tap=ho_so)
-    return hashlib.sha256(
-        json.dumps(ban, sort_keys=True).encode("utf-8")).hexdigest()
+def _van_tay(bien_tap: dict | None) -> str:
+    """Vân tay của GD2 (`giai_doan_hinh_anh.van_tay`) — nơi lật gương/dịch màu
+    THỰC THI từ 25/09, qua ĐÚNG hàm sản phẩm."""
+    ke = kc.chon([], thoi_luong=5.0)
+    return gdha.van_tay("k/gd1.mp4", ke, None, "libx264", bien_tap=bien_tap)
 
 
 def test_bat_LAT_GUONG_thi_van_tay_PHAI_doi():
     """🔴 Bài quan trọng nhất của tệp. Hỏng bài này = khách trả tiền, nhận tệp cũ."""
-    khong = _van_tay_ban_dung(None)
-    co = _van_tay_ban_dung({"lat_guong": True})
+    khong = _van_tay(None)
+    co = _van_tay({"lat_guong": True})
     assert co != khong, (
         "bat lat guong ma van tay KHONG doi — mot lan chay lai se tra ve tep cu, "
         "va no khong bao gio no")
 
 
 def test_bat_DICH_MAU_thi_van_tay_PHAI_doi():
-    khong = _van_tay_ban_dung(None)
-    co = _van_tay_ban_dung({"dich_mau": True})
+    khong = _van_tay(None)
+    co = _van_tay({"dich_mau": True})
     assert co != khong
 
 
@@ -85,19 +67,37 @@ def test_HAI_co_cho_ba_van_tay_KHAC_nhau():
     """⚠️ Đối chứng cho hai bài trên: nếu hồ sơ bị nuốt ở đâu đó, cả ba sẽ bằng
     nhau và hai bài trên vẫn có thể xanh nhờ một khác biệt tình cờ khác.
     """
-    vt = {ten: _van_tay_ban_dung(ho) for ten, ho in (
+    vt = {ten: _van_tay(ho) for ten, ho in (
         ("khong", None), ("lat", {"lat_guong": True}),
         ("mau", {"dich_mau": True}),
         ("ca_hai", {"lat_guong": True, "dich_mau": True}))}
     assert len(set(vt.values())) == 4, f"co van tay trung nhau: {vt}"
 
 
+def test_GD1_NEM_neu_con_lat_guong_dich_mau_trong_bien_tap():
+    """🔴 GD1 (`ban_dung`) KHÔNG còn được phép mang hai cờ này — nếu người gọi
+    (`giai_doan_ban_dung.py`) quên lọc, đó là lỗi cần NÉM ngay, không lặng lẽ
+    render thiếu."""
+    from apps.auto_scan_video import ban_dung as bd
+
+    ban = bd.dung(
+        khoa_video="v/1.mp4", khoa_nen="a/nen.wav", khoa_master="a/master.wav",
+        ke_hoach={"doan": [], "tong_ms": 5000}, ban_ke_tieng={"doan": []},
+        phien_ban_ffmpeg="n7.0", tong_giay=5.0,
+        che_do=cdr.CAT_MA_HOA_LAI, bo_ma_hoa="libx264",
+        khoang_giu=[(0.0, 5.0)], preset=hop_dong_v4.PRESET_CAT_THONG_MINH,
+        rong_khung=1280, cao_khung=720)
+    ban["hinh"]["bien_tap"] = {"lat_guong": True}
+    with pytest.raises(bd.BanDungError, match="không thuộc về nó"):
+        bd.kiem(ban)
+
+
 def test_PHIEN_BAN_CHE_DO_da_len_khi_chuoi_loc_doi():
     """🔑 Nửa thứ hai của vân tay, và là nửa **không** phụ thuộc hồ sơ khách.
 
-    Một lần chạy không bật cờ nào vẫn đi qua mã sinh lệnh MỚI (`loc_cat_noi` đã
-    đổi cách nối nhãn). Bản dựng của nó không đổi một byte, nên thứ DUY NHẤT nói
-    ra rằng lệnh ffmpeg được sinh bởi mã khác là con số này.
+    Một lần chạy không bật cờ nào vẫn đi qua mã sinh lệnh MỚI (`loc_cat_hai_dong`
+    đổi cách nối nhãn/chang diem anh). Vân tay ke_cat của nó không đổi một byte,
+    nên thứ DUY NHẤT nói ra rằng lệnh ffmpeg được sinh bởi mã khác là con số này.
 
     ⛔ Ghim `>= 8` chứ không `== 8`: bài này chốt rằng số đã đi qua mốc của làn
        `asv-gui`, không khoá cứng một giá trị mà làn sau phải sửa.
@@ -255,20 +255,28 @@ def test_preset_GIU_HINH_tu_choi_hai_co_NGAY_O_CUA():
             bt.tu_form(json.dumps(ho), preset=hop_dong_v4.PRESET_GIU_HINH)
 
 
-def test_ban_dung_SAO_CHEP_mang_hai_co_thi_bi_NEM():
-    """Tầng 3/3 — và là tầng duy nhất `ket_xuat` thật sự đi qua.
-
-    ⛔ Chỉ chặn ở giao diện thì một yêu cầu dựng tay vẫn tới được, và `ket_xuat`
-       sẽ **lặng lẽ bỏ qua** cờ rồi giao một video không lật gì — khách trả tiền
-       cho một thứ không xảy ra.
+def test_GD2_chi_ap_lat_guong_dich_mau_o_duong_CAT():
+    """Tầng cuối, GIỜ Ở GD2: `giai_doan_hinh_anh.chay()` chỉ đọc
+    `cai.bien_tap`/`cai.logo`/`cai.lop_phu` BÊN TRONG `if cach ==
+    cdr.CAT_MA_HOA_LAI` — dựng tay một yêu cầu giữ hình vẫn không tới được hai
+    cờ này, đúng khuôn `test_GD2_chi_cat_o_duong_CAT__va_KHONG_tin_giao_dien`
+    của `test_4801` (ke_cat/cat_dau_cuoi.giao).
     """
-    from apps.auto_scan_video import ban_dung as bd
+    import ast
+    import inspect
+    from pathlib import Path
 
-    ban = _ban(bien_tap={"lat_guong": True})
-    # Đổi cách render sang `sao_chep` như một yêu cầu dựng tay sẽ làm.
-    ban["hinh"]["cach_render"] = cdr.SAO_CHEP
-    with pytest.raises(bd.BanDungError):
-        bd.kiem(ban)
+    van = Path(inspect.getfile(gdha)).read_text(encoding="utf-8")
+    cay = ast.parse(van)
+    trong_if: set[str] = set()
+    for nut in ast.walk(cay):
+        if not isinstance(nut, ast.If) or "CAT_MA_HOA_LAI" not in ast.unparse(nut.test):
+            continue
+        than = ast.unparse(ast.Module(body=nut.body, type_ignores=[]))
+        for ten in ("cai.logo", "cai.lop_phu", "loc_bien_tap_gd2"):
+            if ten in than:
+                trong_if.add(ten)
+    assert trong_if == {"cai.logo", "cai.lop_phu", "loc_bien_tap_gd2"}, trong_if
 
 
 def test_hai_co_KHONG_day_lan_chay_sang_duong_DAT_hon():

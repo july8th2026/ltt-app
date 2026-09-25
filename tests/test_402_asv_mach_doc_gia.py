@@ -108,8 +108,17 @@ def giong_gia(monkeypatch, tmp_path):
     return True
 
 
-def _tao_run(db, owner="uA", giu=10, *, kho=None, tmp_path=None):
+def _tao_run(db, owner="uA", giu=10, *, kho=None, tmp_path=None,
+             duration_s: float | None = None):
     """Tao mot run kem TEP NGUON THAT.
+
+    🔑 **`duration_s` (b4 hai giai doan, 25/09): mot phep cat hop le co DO DAI
+       TOI THIEU, nen no co mot DO DAI NGUON toi thieu.**
+
+       `ke_cat.TRAN_CAT_TI_LE` = 5 % va `ke_cat.TOI_THIEU_GIAY` = 0,2 s ⇒ tren
+       mau 3 giay mac dinh, ngan sach cat la 0,15 s — DUOI muc toi thieu, nen
+       ⛔ khong mot cho noi nao co the ton tai. Mot bai kiem ve CHO NOI vi the
+       phai xin mot nguon dai hon; ⛔ khong duoc noi tran de mau ngan vua.
 
     ⚠️ Tu pha 08, `MEDIA_PREPARE` la engine that: no soi tep, thi hanh chinh
        sach dau vao va tach tieng. Mot `source_key` gia se lam giai doan dau
@@ -128,7 +137,8 @@ def _tao_run(db, owner="uA", giu=10, *, kho=None, tmp_path=None):
     # Tu tao thu muc tam thay vi doi `tmp_path` tu moi phep kiem: nguon la chi
     # tiet cua ban dung, khong phai thu phep kiem nao dang noi ve.
     thu_muc = Path(tmp_path) if tmp_path else Path(tempfile.mkdtemp(prefix="asv-t-"))
-    khoa = nap_nguon_vao_kho(kho or get_storage(), thu_muc, owner_id=owner)
+    kw = {"duration_s": float(duration_s)} if duration_s else {}
+    khoa = nap_nguon_vao_kho(kho or get_storage(), thu_muc, owner_id=owner, **kw)
     run = features.tao_run(db, owner_id=owner, source_key=khoa,
                            settings={"giong_id": "Minh Đức", "timing_mode": "fit_original"},
                            uoc_luong_credit=giu)
@@ -142,15 +152,38 @@ def _chay_het_hang_doi(db, *, nang_luc=None, toi_da=200) -> int:
     Dong vai worker THAT: dung `jobs.claim` + `resolve_handler`, nen phep dinh
     tuyen theo `manifest.requires` la phep dinh tuyen that chu khong phai mot
     ban gia lap.
+
+    ⚠️ **Keo job HEN ve NGAY thay vi dung som (25/09, vong-quay-advance).** Ham
+       nay chay TUAN TU, khong that su doi — mot job `next_run_at` o tuong lai
+       (vd. backoff `auto_scan_video.advance` khi khong con gi de nop, xem
+       `apps/auto_scan_video/jobs.py`) se khong bao gio den han trong mot luot
+       chay khong ton thoi gian THAT. Nhanh nay chi kich hoat khi `claim` tra
+       `None` MA van co job QUEUED dang hen — vo hai voi moi bai kiem khac
+       dang dung ham nay (khong ai trong so do tung tao job hen truoc gio nay),
+       cung khuon voi cach `test_449_asv_v4_hong_va_phuc_hoi.py` tu keo tay
+       mot job hen rieng le.
     """
+    from datetime import datetime, timezone
+
+    from sqlalchemy import select
+
     from platform_core import jobs
     from platform_core.job_runner import JobContext
+    from platform_core.models import JOB_QUEUED, Job
 
     dem = 0
     for _ in range(toi_da):
         job = jobs.claim(db, worker_id="w-thu", capabilities=nang_luc)
         if job is None:
-            break
+            hen = db.execute(
+                select(Job).where(Job.status == JOB_QUEUED)
+                .order_by(Job.next_run_at).limit(1)
+            ).scalars().first()
+            if hen is None:
+                break
+            hen.next_run_at = datetime.now(timezone.utc)
+            db.commit()
+            continue
         db.commit()
         handler = jobs.resolve_handler(job.job_type)
         ctx = JobContext(job.id)
@@ -225,7 +258,13 @@ def test_run_chay_het_CA_CHUOI_va_ve_done(db, kho_tam, tmp_path, asr_gia, dich_g
     # ⚠️ **11 -> 12 (22/09, asv-final).** `qc_do_luong` (lan `gpu`: ASR+WER,
     #    SQUIM, MetricX) chen GIUA `qc` va `qc_ai`. Thieu venv do luong thi no
     #    van `succeeded` voi moi bo do `khong_kha_dung` — dung canh o day.
-    assert len(ds) == len(pipeline.CHUOI) == 12
+    #
+    # ⚠️ **12 -> 13 (25/09, b4 hai giai doan).** `image_finish` chen GIUA `render`
+    #    va `qc`: chu du an chot tach GIAI DOAN 1 (voice, ra MP4 toan bo do dai
+    #    goc) khoi GIAI DOAN 2 (hinh anh, thao tac tren MP4 da xong). No o TRUOC
+    #    `qc` vi cong chat luong phai do **tep khach nhan**, va no la BAN GIAO
+    #    (`thi_hanh.la_ban_giao`).
+    assert len(ds) == len(pipeline.CHUOI) == 13
     assert sorted(xong) == sorted(pipeline.TEN_GIAI_DOAN), (
         f"chua xong het: thieu {set(pipeline.TEN_GIAI_DOAN) - set(xong)}")
     assert run.status == RUN_DONE

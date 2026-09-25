@@ -251,6 +251,24 @@ def phan_hoi_ngoai_dich(thao_tac, messages):
         return {"noi_dung": json.dumps(
             {"dat": True, "do_tin": 0.9, "ly_do": ""}, ensure_ascii=False),
             "su_dung": None}
+    if ma == ai.QC_NGU_NGHIA.ma:
+        # ⭐ N-51 (25/09): TRUOC day, thieu nhanh nay lam moi loi goi
+        #    `QC_NGU_NGHIA` roi xuong ban gia DICH chung o `cua_ai_gia`
+        #    (dung khoa `chu`/`cam_xuc`, khong co `loi`) — mot phan hoi SAI
+        #    HINH DANG hoan toan. `qc_ai._loc_loi` khi do NUOT no lang le
+        #    (`_loc_loi(None, ...) == []`) va cham `dat=True`: dung dung
+        #    dang N-51 minh hoa, chi la o BAN GIA thay vi o model that. Sau
+        #    khi `_loc_loi` NEM cho dang sai (fail-closed), ban gia nay PHAI
+        #    tra dung hop dong (`doc_ngu_nghia`: `loi` la list, rong = sach)
+        #    cho MOI ma duoc hoi, neu khong MOI phep kiem chay het chuoi qua
+        #    QC_AI se hong vi mot ly do khong lien quan gi den thu dang do.
+        #    Mac dinh SACH cung ly do voi QC_HINH o tren: phep kiem nao can
+        #    chieu HONG thi tu dat ban gia rieng.
+        goi = json.loads(messages[-1]["content"])
+        return {"noi_dung": json.dumps(
+            {"doan": {str(d.get("ma") or ""): {"loi": []}
+                      for d in goi.get("doan") or []}}, ensure_ascii=False),
+            "su_dung": None}
     return None
 
 

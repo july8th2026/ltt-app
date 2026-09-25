@@ -357,48 +357,36 @@ def test_PHIEN_BAN_CHE_DO_CO_vao_van_tay_cua_tep_ra():
 #  §5  Ba tang cuong che "khong the co o preset giu hinh"
 # ══════════════════════════════════════════════════════════════════════════════
 
-def test_ban_dung_TU_CHOI_lop_phu_o_duong_sao_chep():
-    """Tang 2. Cung rang buoc VAT LY voi vung che: `drawtext` la mot bo loc, bo
-    loc doi hoi giai ma, `-c:v copy` khong giai ma khung nao."""
+def test_ban_dung_KHONG_CON_biet_lop_phu__gd2_diem_anh():
+    """🔴 gd2-diem-anh (25/09): `lop_phu` ROI khoi schema cua GD1.
+
+    Truoc lan nay, tang 2/3 la `ban_dung.kiem()` tu choi lop_phu o duong
+    `sao_chep`. Lop phu chu gio thuc thi HOAN TOAN o GD2
+    (`giai_doan_hinh_anh.py`, doc `cai_dat.doc(run).lop_phu`) — GD1 khong con
+    biet khoa nay ton tai, nen mot `hinh.lop_phu` la mot truong LA voi
+    `ban_dung.kiem()`, khong phai mot vi pham duoc dat ten.
+    """
     ban = {"schema": ban_dung.SCHEMA_BAN_DUNG,
            "hinh": {"khoa": "v", "che_do": ban_dung.CHE_DO_HINH,
                     "cach_render": cdr.SAO_CHEP,
-                    "lop_phu": [_lop()], "cao_khung": 360},
-           "tieng": {"nen": {"khoa": "n"}, "master": {"khoa": "m"}, "lop": []}}
-    with pytest.raises(ban_dung.BanDungError) as e:
-        ban_dung.kiem(ban)
-    assert "Lớp phủ" in str(e.value)
-
-
-def test_ban_dung_TU_CHOI_lop_phu_khong_co_cao_khung():
-    """🔴 Thieu no thi lan chay hong o TRINH RENDER — sau khi da chiem mot suat
-    ffmpeg va tai vai tram MB."""
-    ban = {"schema": ban_dung.SCHEMA_BAN_DUNG,
-           "hinh": {"khoa": "v", "che_do": ban_dung.CHE_DO_HINH,
-                    "cach_render": cdr.CAT_MA_HOA_LAI,
+                    # ⭐ Mot khoa "la" (khong con nam trong hop dong GD1) —
+                    #    `kiem()` KHONG doc no nua, nen no khong nem du
+                    #    `cach_render` la `sao_chep` va truoc day dieu nay bi
+                    #    cam.
                     "lop_phu": [_lop()], "cao_khung": 0},
            "tieng": {"nen": {"khoa": "n"}, "master": {"khoa": "m"}, "lop": []}}
-    with pytest.raises(ban_dung.BanDungError) as e:
-        ban_dung.kiem(ban)
-    assert "chiều cao khung hình" in str(e.value)
+    ban_dung.kiem(ban)          # ⛔ khong nem — schema khong con doc truong nay
 
 
-def test_hai_cau_TU_CHOI_khac_nhau_cho_vung_va_cho_lop_phu():
-    """⛔ Khong gop hai chot lam mot dieu kien `or`. Khach ve mot O CHE va khach
-    go mot DONG CHU la hai viec, va mot cau chung chung buoc ho phai doan."""
-    def _ban(**hinh):
-        h = {"khoa": "v", "che_do": ban_dung.CHE_DO_HINH,
-             "cach_render": cdr.SAO_CHEP}
-        h.update(hinh)
-        return {"schema": ban_dung.SCHEMA_BAN_DUNG, "hinh": h,
-                "tieng": {"nen": {"khoa": "n"}, "master": {"khoa": "m"},
-                          "lop": []}}
+def test_GD2_chan_lop_phu_o_duong_sao_chep__cung_tang_voi_khung_va_logo():
+    """Tang moi (thay `ban_dung.kiem` da mat): xem
+    `test_3801::test_GD2_chi_ap_lat_guong_dich_mau_o_duong_CAT` — mot bai AST
+    DUY NHAT chot ca `cai.logo`/`cai.lop_phu`/`bien_tap` cung nam trong MOT
+    `if cach == CAT_MA_HOA_LAI`. Bai o day chi tham chieu, khong lap lai."""
+    from tests.test_3801_asv_lat_guong_va_dich_mau import (
+        test_GD2_chi_ap_lat_guong_dich_mau_o_duong_CAT as _bai_goc)
 
-    with pytest.raises(ban_dung.BanDungError) as a:
-        ban_dung.kiem(_ban(vung=[{"loai": "lam_mo"}]))
-    with pytest.raises(ban_dung.BanDungError) as b:
-        ban_dung.kiem(_ban(lop_phu=[_lop()], cao_khung=360))
-    assert str(a.value) != str(b.value)
+    _bai_goc()
 
 
 def test_giao_dien_khoa_cong_cu_theo_preset():
@@ -468,31 +456,25 @@ def test_giao_dien_KHONG_dung_o_nhieu_dong():
 #  §6  CO AI DANG DI TREN DUONG KHONG
 # ══════════════════════════════════════════════════════════════════════════════
 
-def test_dung_lenh_THUC_SU_mang_drawtext_ra_ffmpeg(tmp_path):
-    """🔑 Khong doc AST, doc **dong lenh ffmpeg that su duoc dung**.
+def test_dung_lenh_THUC_SU_mang_drawtext_ra_ffmpeg():
+    """🔑 Khong doc AST, doc **dong lenh ffmpeg that su duoc dung** — GIO O GD2
+    (`giai_doan_hinh_anh.dung_lenh`, gd2-diem-anh 25/09).
 
     ⛔ Mot phep kiem AST hoi *"co dong ma do khong"*; cau can hoi la *"dong ma
        do co CHAY khong"*. `test_465` da tra gia cho bai hoc ay: mot ban tiem
        `None if True else _do_am_luong(...)` giu nut goi trong cay AST va ca 12
        bai van xanh.
     """
+    from apps.auto_scan_video import giai_doan_hinh_anh as gdha
+
     ds = lp.chuan_hoa([_lop(chu="Dang ky")])
-    duong = lp.viet_tep_chu(ds, tmp_path)
-    ban = {"schema": ban_dung.SCHEMA_BAN_DUNG,
-           "preset": hop_dong_v4.PRESET_CAT_THONG_MINH,
-           "hinh": {"khoa": "v", "che_do": ban_dung.CHE_DO_HINH,
-                    "cach_render": cdr.CAT_MA_HOA_LAI, "bo_ma_hoa": "libx264",
-                    "khoang_giu": [[0.0, 10.0]], "vung": [],
-                    "lop_phu": ds, "cao_khung": 720},
-           "tieng": {"master": {"khoa": "m"}, "nen": {"khoa": "n"}, "lop": [],
-                     "tan_so": 48000, "so_kenh": 2},
-           "ra": {"container": "mp4", "codec_tieng": "aac",
-                  "bitrate_tieng": "192k", "faststart": True,
-                  "thoi_luong_giay": 10.0},
-           "cong_cu": {"ffmpeg": "n7.0"}}
-    cmd = ket_xuat.dung_lenh(ban, ffmpeg_bin="ffmpeg", duong_video="v.mp4",
-                             duong_master="m.wav", duong_lop=[],
-                             duong_ra="r.mp4", duong_chu=duong)
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmp:
+        duong = lp.viet_tep_chu(ds, tmp)
+        cmd = gdha.dung_lenh("gd1.mp4", "r.mp4", khoang=[(0.0, 10.0)],
+                             bo_ma_hoa="libx264", ffmpeg_bin="ffmpeg",
+                             rong_nguon=1280, cao_nguon=720,
+                             lop_phu=ds, duong_chu=duong, cao_khung=720)
     loc = cmd[cmd.index("-filter_complex") + 1]
     assert "drawtext=" in loc
     assert "textfile=" in loc
@@ -501,56 +483,57 @@ def test_dung_lenh_THUC_SU_mang_drawtext_ra_ffmpeg(tmp_path):
 
 def test_thieu_tep_chu_thi_NEM_chu_khong_bo_qua(tmp_path):
     """⛔ Lech so luong hay lech thu tu deu KHONG lam ffmpeg hong — chung chi lam
-    ban ra sai: dong chu thu nhat mang noi dung cua dong thu hai."""
+    ban ra sai: dong chu thu nhat mang noi dung cua dong thu hai. GIO O GD2."""
+    from apps.auto_scan_video import giai_doan_hinh_anh as gdha
+
     ds = lp.chuan_hoa([_lop(), _lop(chu="dong hai")])
-    ban = {"schema": ban_dung.SCHEMA_BAN_DUNG,
-           "preset": hop_dong_v4.PRESET_CAT_THONG_MINH,
-           "hinh": {"khoa": "v", "che_do": ban_dung.CHE_DO_HINH,
-                    "cach_render": cdr.CAT_MA_HOA_LAI, "bo_ma_hoa": "libx264",
-                    "khoang_giu": [[0.0, 10.0]], "vung": [],
-                    "lop_phu": ds, "cao_khung": 720},
-           "tieng": {"master": {"khoa": "m"}, "nen": {"khoa": "n"}, "lop": [],
-                     "tan_so": 48000, "so_kenh": 2},
-           "ra": {"container": "mp4", "codec_tieng": "aac",
-                  "bitrate_tieng": "192k", "faststart": True,
-                  "thoi_luong_giay": 10.0},
-           "cong_cu": {"ffmpeg": "n7.0"}}
     with pytest.raises(ket_xuat.KetXuatError):
-        ket_xuat.dung_lenh(ban, ffmpeg_bin="ffmpeg", duong_video="v.mp4",
-                           duong_master="m.wav", duong_lop=[],
-                           duong_ra="r.mp4", duong_chu=[str(tmp_path / "a.txt")])
+        gdha.dung_lenh("gd1.mp4", "r.mp4", khoang=[(0.0, 10.0)],
+                       bo_ma_hoa="libx264", ffmpeg_bin="ffmpeg",
+                       rong_nguon=1280, cao_nguon=720,
+                       lop_phu=ds, duong_chu=[str(tmp_path / "a.txt")],
+                       cao_khung=720)
 
 
-def test_giai_doan_ban_dung_CHUYEN_lop_phu_tu_cai_dat():
-    """Nua con lai cua cau hoi: co ai **dat** `lop_phu` vao ban dung khong.
+def test_giai_doan_hinh_anh_CHUYEN_lop_phu_tu_cai_dat():
+    """Nua con lai cua cau hoi: co ai **dat** `lop_phu` vao lenh render khong —
+    GIO O GD2, ⛔ khong con o COMPOSE (gd2-diem-anh 25/09).
 
     ⚠️ Doc AST o day la du, va chi du, vi bai tren da chot dau kia cua duong:
-       ban dung CO `lop_phu` thi dong lenh CO `drawtext`. Hai bai cong lai phu
-       het doan duong; mot minh bai nay thi khong.
+       goi `dung_lenh` voi `lop_phu` thi dong lenh CO `drawtext`. Hai bai cong
+       lai phu het doan duong; mot minh bai nay thi khong.
     """
     import ast
     import inspect
 
-    from apps.auto_scan_video import giai_doan_ban_dung as gdb
+    from apps.auto_scan_video import giai_doan_hinh_anh as gdha
 
-    cay = ast.parse(inspect.getsource(gdb.chay))
+    cay = ast.parse(inspect.getsource(gdha.chay))
     kw = {k.arg for n in ast.walk(cay) if isinstance(n, ast.Call)
           for k in n.keywords if k.arg}
     assert "lop_phu" in kw and "cao_khung" in kw
+    # ⛔ Doi chung: COMPOSE (`giai_doan_ban_dung.py`) KHONG con truyen no.
+    from apps.auto_scan_video import giai_doan_ban_dung as gdb
+    kw2 = {k.arg for n in ast.walk(ast.parse(inspect.getsource(gdb.chay)))
+          if isinstance(n, ast.Call) for k in n.keywords if k.arg}
+    assert "lop_phu" not in kw2
 
 
-def test_giai_doan_ket_xuat_GHI_tep_chu_truoc_khi_goi():
+def test_giai_doan_hinh_anh_GHI_tep_chu_truoc_khi_goi():
     import ast
     import inspect
 
-    from apps.auto_scan_video import giai_doan_ket_xuat as gdk
+    from apps.auto_scan_video import giai_doan_hinh_anh as gdha
 
-    van = inspect.getsource(gdk)
+    van = inspect.getsource(gdha)
     assert "viet_tep_chu" in van
     cay = ast.parse(van)
     goi = {n.func.attr for n in ast.walk(cay)
            if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)}
     assert "viet_tep_chu" in goi
+    # ⛔ Doi chung: GD1 (`giai_doan_ket_xuat.py`) KHONG con goi no.
+    from apps.auto_scan_video import giai_doan_ket_xuat as gdk
+    assert "viet_tep_chu" not in inspect.getsource(gdk)
 
 
 # ══════════════════════════════════════════════════════════════════════════════

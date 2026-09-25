@@ -164,7 +164,13 @@ def test_thu_mot_chu_ky_CHUP_bang_thong_TRUOC_khi_dat_lai():
     #    `_dat_lai_bang_thong` nhưng KHÔNG ghi sự kiện. Đo thứ tự trên cả hàm sẽ
     #    so lần đọc của nhánh thu tiền với lần đặt lại của nhánh miễn phí — hai
     #    thứ không liên quan, và phép kiểm đỏ dù mã đúng. Đã dính đúng thế.
-    khoi = khoi[khoi.index("credit.tru("):]
+    # ⚠️ Neo `credit.tru` KHÔNG kèm dấu mở ngoặc. Ngày 25/09/2026 nhánh thu tiền
+    #    đổi sang `credit.tru_co_but_toan(` (cần chính bút toán làm **bằng chứng**
+    #    cho `mo_chu_ky`, vì một `bool` thì vứt đi được — và nó đã bị vứt). Neo cũ
+    #    `credit.tru(` biến mất, và phép kiểm đỏ **dù bất biến còn nguyên**. Một
+    #    bánh cóc đọc văn bản nguồn thì neo của nó phải chịu được việc đổi tên,
+    #    nếu không nó đo CÁCH GÕ thay vì đo tính chất.
+    khoi = khoi[khoi.index("credit.tru"):]
 
     i_doc = khoi.find("may.bang_thong_byte")
     i_dat = khoi.find("_dat_lai_bang_thong(may)")

@@ -1,1 +1,13 @@
 ho_so_he_thong.txt -whitespace
+
+# .mo la hien vat dung san tu .po (xem tools/i18n.py, dong 5-13). Ban than no
+# la nhi phan nen git khong 3-way merge duoc -> xung dot O MOI lan hai phien
+# them chuoi dich khac nhau. `merge=ltt_mo` tro toi driver
+# `tools/i18n_merge_driver.py`, driver do SINH LAI .mo tu .po da gop thay vi
+# chon ours/theirs (ca hai deu sai, .mo la dan xuat cua .po).
+#
+# Driver PHAI duoc cai qua `python tools/i18n_merge_driver.py cai-dat`
+# (mot lan, tu BAT KY cay nao — .git/config va hooksPath dung chung giua moi
+# worktree nen no ap dung ngay cho CA repo, xem docstring trong tep driver).
+# Chua cai -> git rot ve xung dot nhi phan NHU HIEN NAY (khong te hon).
+locale/**/*.mo merge=ltt_mo
