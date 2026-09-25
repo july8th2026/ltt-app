@@ -97,10 +97,18 @@ def enforce_body_limit(request, config: PublicApiConfig) -> None:
     except (TypeError, ValueError) as exc:
         raise errors.invalid_request("Content-Length is not a number.") from exc
     if declared > config.max_body_bytes:
-        # 🔴 XƯNG TÊN TRẦN. Bốn trần khác nhau cùng có thể chặn một request
-        #    (body-bytes, token vào, token ra, cửa sổ ngữ cảnh) và tất cả đều trả
-        #    413. Không nói rõ trần nào thì bên gọi — và cả người sửa lỗi — phải
-        #    đoán; ngày 30/08 việc đoán đó tốn nhiều lượt đo mới ra.
+        # 🔴 XƯNG TÊN TRẦN. Ngày 30/08 bốn trần khác nhau (body-bytes, token
+        #    vào, token ra, cửa sổ ngữ cảnh) từng CÙNG trả 413, và không trần
+        #    nào tự xưng tên — bên gọi, và cả người sửa lỗi, phải đoán.
+        #
+        # ⛔ CẬP NHẬT 22/09 (R-08, `server/api/su_kien_loi.py`): ba trần TOKEN
+        #    (vào/ra/ngữ cảnh) đã CHUYỂN sang HTTP 400 với câu đúng khuôn
+        #    client thật đọc được (`prompt is too long: N tokens > M maximum`,
+        #    `limit_name="input_tokens"`) để Claude Code/Codex tự nén — client
+        #    thật không nhận ra 413 cho lỗi token (xem tài liệu ở đó). CHỈ còn
+        #    ĐÚNG MỘT trần trả 413 thật: body-bytes, ở đây. Đoạn chú thích cũ
+        #    nói "bốn trần cùng 413" không còn đúng mã đang chạy — giữ lại vì
+        #    lịch sử, nhưng đừng lần theo nó để tìm trần token: nó không ở 413.
         raise errors.payload_too_large(
             "Request body exceeds the limit for this endpoint.",
             limit_name="body_bytes",

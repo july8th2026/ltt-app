@@ -382,8 +382,49 @@ NGAN_SACH_HEP_NHAT = min(h.token_budget for h in HO_SO.values())
 TOKEN_VAO_TRAN = CUA_SO_MODEL - TOKEN_RA_TRAN - DEM_UOC      # 186_368
 
 #: Số byte JSON cho mỗi token khi hội thoại đi trên dây. Đo 30/08 trên thân
-#: request thật của Codex (kể cả dấu ngoặc, escape và định nghĩa tool).
-BYTE_MOI_TOKEN_JSON = 4.5
+#: request thật của Codex (kể cả dấu ngoặc, escape và định nghĩa tool): 4,5.
+#:
+#: 🔴 NÂNG 4,5 → 6,0 ngày 25/09/2026 — LỖI THỨ HAI CỦA CÙNG MỘT LỚP.
+#:
+#:    Sự cố production: `POST /api/v1/messages` thân **1.150.067 B** ăn 413 ở
+#:    trần khi đó **1.048.576 B** (1 MiB, `DEFAULT_MAX_BODY_BYTES` không bị ghi
+#:    đè) — khách nén hội thoại **4 lần liên tiếp vẫn 413**, không có đường ra.
+#:
+#:    Soi ngược: thân đó tương ứng gần đúng trọn ngân sách ƯỚC của model cửa sổ
+#:    rộng nhất — `227.328` token (`max(CUA_SO_THEO_MODEL) − TOKEN_RA_TRAN −
+#:    DEM_UOC`). `1.150.067 / 227.328 = 5,059` byte/token — **VƯỢT** giả định
+#:    4,5 cũ. Với 4,5, `BODY_BYTES_TOI_THIEU` tính ra ~999 KB — chỉ nhỏ hơn trần
+#:    mặc định 1 MiB đúng **2,4%**, tức phép kiểm `test_334` XANH nhờ MỘT biên
+#:    sai số mỏng hơn cả cách làm tròn, không nhờ con số đúng.
+#:
+#:    ⭐ ĐO LẠI, KHÔNG BỐC SỐ (script đo lưu ở nhật ký sự cố 25/09): dùng chính
+#:    bộ ước `platform_core/llm/uoc_token.py` (`uoc_than`/`gom_than`, KHÔNG tự
+#:    viết bộ đếm) trên các mẫu dựng từ tài liệu tiếng Việt + mã nguồn thật của
+#:    kho này, theo hai hình dạng:
+#:      * hội thoại vài khối văn bản LỚN (tài liệu/tệp mã nguyên khối) — ước
+#:        median ≈ 2,65 · p90 ≈ 3,05 byte/token;
+#:      * phiên agent nhiều lượt NHỎ xen kẽ tool_use/tool_result (hình dạng
+#:        THẬT của LTTCODE — nhiều JSON khung: id, role, cache_control, tên
+#:        công cụ — ăn byte mà không sinh thêm token) — tới **4,35** byte/token
+#:        ở 500 lượt.
+#:    Tỉ lệ đo được TĂNG THEO số lượt càng nhỏ mỗi lượt (khung JSON chiếm tỉ
+#:    trọng lớn hơn nội dung), và ca sản xuất thật (5,059) còn vượt cả kịch bản
+#:    "khung dày" đo được — tức mẫu ở trên vẫn CHƯA nắm hết hình dạng thật (có
+#:    thể tên tệp/đường dẫn dài hơn, escape sâu hơn, khối suy nghĩ dài hơn giả
+#:    lập). Không có bằng chứng trần trên; 5,059 là SÀN đã đo được trên chính
+#:    production.
+#:
+#:    ✅ CHỌN 6,0 = 5,059 (SÀN đo thật) × ~1,19 biên — vượt rõ mọi kịch bản tự
+#:    dựng (4,35) LẪN sự cố thật (5,059), không phải một biên tượng trưng.
+#:    `test_4200_tran_body_du_byte_token.py` ghim cả số ĐO (5,059) lẫn số CHỐT
+#:    (6,0) để không ai hạ lại xuống dưới sự cố đã xảy ra mà không biết.
+#:
+#: ⛔ VẪN CHƯA TÍNH ẢNH. Ảnh gửi kèm là base64 (~1,37× byte gốc) và
+#:    `ANH_BYTE_TOI_DA` = 12 MiB/ảnh, `SO_ANH_TOI_DA` = 4 ảnh — MỘT ảnh đơn đã
+#:    vượt xa mọi trần thân tính từ hằng số này. Hằng số này chỉ chừa đủ cho
+#:    HỘI THOẠI CHỮ; trần thân thật ở `platform_core/public_api/config.py`
+#:    cộng thêm biên riêng cho việc đó (xem chú thích ở đó).
+BYTE_MOI_TOKEN_JSON = 6.0
 
 #: Trần thân request **tối thiểu** phải cho phép, để `TOKEN_VAO_TRAN` không bị
 #: chặn bởi kích thước byte trước khi ai kịp đếm token.
