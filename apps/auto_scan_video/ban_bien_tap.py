@@ -52,6 +52,23 @@ NGUONG_BO = 0.65
 #: Nguong bo mot canh CO loi thoai. Xem docstring dau tep.
 #:
 #: ⚠️ Cao hon co y, khong phai "de cho chac". Hai thiet hai khong ngang nhau.
+#:
+#: 🔴 **TU 25/09 (b4 hai giai doan) NO ⛔ KHONG CON QUYET DINH BAN RA.**
+#:
+#:    Chu du an chot: *"CHI cat vung KHONG co loi thoai"*. `ke_cat.co_thoai`
+#:    **LOAI** moi ung vien chong lan mot khe tieng, ⛔ BAT KE `do_tin` bao nhieu
+#:    — `test_4800::test_doan_CHONG_LAN_khe_tieng_bi_LOAI__khong_bi_thu_hep` chot
+#:    dieu do o `diem_kem = 0,99`, tuc **tren** nguong nay.
+#:
+#: ⇒ Nen con so nay ⛔ khong con la mot cong; no la mot nguong **DE XUAT**. Va no
+#:   van co gia tri: mot canh bi de xuat bo roi bi `ke_cat` loai se hien trong
+#:   `bo_qua` voi `ly_do = "co_thoai"` — do la tin hieu van hanh ve viec tieu chi
+#:   dang doi cat vao cho co tieng.
+#:
+#: ⚠️ Va hai ben hoi HAI CAU KHAC NHAU, nen ⛔ khong gop duoc:
+#:       `ban_bien_tap._co_thoai`   ban chep loi NGUON  (truoc khi dich)
+#:       `ke_cat.co_thoai`          tieng VIET DA SINH  (sau TTS + nan + gop khe)
+#:   Cau thu hai la cau chu du an chot, va chi o thu tu moi no moi tra loi duoc.
 NGUONG_BO_CO_THOAI = 0.85
 
 #: San: phai giu it nhat ngan nay ti le thoi luong nguon.
@@ -62,6 +79,13 @@ NGUONG_BO_CO_THOAI = 0.85
 SAN_GIU_LAI = 0.5
 
 #: Tran: cat qua nhieu cung dang ngo nhu cat qua it.
+#:
+#: ⚠️ **⛔ KHONG phai tran cua BAN RA (b4, 25/09).** Tran ban ra la
+#:    `ke_cat.TRAN_CAT_TI_LE` = **0,05** — muoi lan chat hon. Hai con so nay
+#:    ⛔ khong phai hai ban sao cua mot luat: con so o day gac **phan doan cua
+#:    VLM** (*"doi bo hon nua phim thi phan doan hong"*), con `ke_cat` gac
+#:    **thiet hai** khach nhan. Mot ban bien tap doi cat 40 % la hop le o day va
+#:    se bi `ke_cat` dung o 5 %, co KHAI RA (`bo_qua`, `dung_o_tran`).
 TRAN_CAT = 0.5
 
 
