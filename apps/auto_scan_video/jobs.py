@@ -55,18 +55,22 @@ def handle(params: dict, ctx=None) -> dict:
     owner_id = str(params.get("owner_id") or "")
     if not run_id or not owner_id:
         raise ValueError("thieu run_id/owner_id cho auto_scan_video.advance")
+    # `gen` = the he cua CHINH job nay (features._nop_dieu_phoi da ghi luc nop).
+    # `_advance` doc no de tinh the he KE TIEP — xem docstring `_nop_dieu_phoi`
+    # ve vi sao KHONG con dung `ctx.job_id` (NHAT_KY.md 2026-09-25 chieu muc 5).
+    gen = int(params.get("gen") or 0)
 
-    gen = get_session()
-    db = next(gen)
+    sess = get_session()
+    db = next(sess)
     try:
-        ket_qua = _advance(db, run_id=run_id, owner_id=owner_id, ctx=ctx)
+        ket_qua = _advance(db, run_id=run_id, owner_id=owner_id, gen=gen, ctx=ctx)
         db.commit()
         return ket_qua
     finally:
         db.close()
 
 
-def _advance(db, *, run_id: str, owner_id: str, ctx=None) -> dict:
+def _advance(db, *, run_id: str, owner_id: str, gen: int = 0, ctx=None) -> dict:
     # 🔑 Khoa dong run TRUOC MOI THU. Day la nua thu hai cua I13: mot job con ve
     #    dich muon khong the lam song lai mot run da huy, vi luot advance ke tiep
     #    doc thay `cancelled` va dung ngay.
@@ -99,8 +103,10 @@ def _advance(db, *, run_id: str, owner_id: str, ctx=None) -> dict:
         #    va chi khi khong con gi de sua moi quyet toan.
         dat_lai = _sua_chua_neu_can(db, run, theo_ten)
         if dat_lai:
-            hau_to = getattr(ctx, "job_id", None) or "tay"
-            features._nop_dieu_phoi(db, run, ly_do=f"sua:{hau_to}")
+            # `gen + 1`, khong `ctx.job_id` — xem docstring `_nop_dieu_phoi`.
+            # Duong sua chua vua NOP duoc viec that (dat lai giai doan), nen
+            # KHONG do tre, giong duong `da_nop` ben duoi.
+            features._nop_dieu_phoi(db, run, ly_do="sua", gen=gen + 1)
             return {"run_id": run.id, "status": run.status,
                     "sua_chua": sorted(set(dat_lai))}
 
@@ -129,10 +135,17 @@ def _advance(db, *, run_id: str, owner_id: str, ctx=None) -> dict:
 
     da_nop = _nop_giai_doan_san_sang(db, run, theo_ten, da_xong)
 
-    # Con viec -> hen luot sau. `ctx.job_id` vao khoa dedupe nen moi luot tao
-    # dung mot luot ke tiep, khong bao gio fan-out.
-    hau_to = getattr(ctx, "job_id", None) or "tay"
-    features._nop_dieu_phoi(db, run, ly_do=f"sau:{hau_to}")
+    # Con viec -> hen luot sau. Dedupe theo `(run, gen+1)` — KHONG con mang
+    # `ctx.job_id` (xem docstring `_nop_dieu_phoi`): hai luot `advance` CHONG
+    # NHAU cung the he `gen` gio GOP thanh mot job ke tiep, khong fan-out.
+    #
+    # 🟡 Do tre CHI khi luot NAY khong nop duoc giai doan nao (`da_nop` rong —
+    #    dang cho mot giai doan o noi khac xong, dung khuon 37.010 job/52,5
+    #    phut da do). Nop duoc that (`da_nop` khac rong) thi KHONG do tre: do
+    #    la duong nop binh thuong, va thoi gian chet giua giai doan ⇒ giai
+    #    doan hien la 0,0 s — mot tinh chat san pham, dung lam cham no.
+    cho_giay = 0.0 if da_nop else features.NHIP_DIEU_PHOI_S
+    features._nop_dieu_phoi(db, run, ly_do="sau", gen=gen + 1, cho_giay=cho_giay)
 
     return {"run_id": run.id, "status": run.status,
             "da_nop": da_nop, "da_xong": sorted(da_xong)}
