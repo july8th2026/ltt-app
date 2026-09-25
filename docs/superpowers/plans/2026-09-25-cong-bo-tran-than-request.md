@@ -59,8 +59,31 @@ không có gì để trích dẫn"*. Cùng một hình dạng. Hook đã sẵn.
 - [ ] **Thứ tự ưu tiên:** header (mới nhất) > trần học từ 413 > hằng dự phòng.
       ⛔ Đừng bỏ đường học-từ-413 — xem Việc 3.
 
-⭐ **Đây là chỗ trả tiền:** sau việc này, *"một 413 mỗi lần mở app"* **biến mất** — client biết trần
-từ **phản hồi đầu tiên**, không cần va vào tường lần nào.
+⭐ **Đây là chỗ trả tiền:** sau việc này, *"một 413 mỗi lần mở app"* **gần như biến mất** — client
+biết trần từ **lượt trao đổi đầu tiên**.
+
+### ⛔ ĐÍNH CHÍNH (25/09, làn nghiệm thu bắt được)
+
+Bản đầu của mục này — và ghi chú phát hành 0.2.16 tôi viết theo nó — nói *"biết trần ngay từ
+**phản hồi** đầu tiên"*. **Hứa nhiều hơn thứ bản vá làm được.**
+
+Mã thật chỉ đọc header từ phản hồi **`/api/v1/messages`**, **không** đọc từ lượt gọi catalog lúc
+khởi động. ⇒ Lượt **đầu tiên của một tiến trình mới** mà đã vượt trần thì **vẫn ăn một 413 thật**.
+
+🔴 **Và nó suýt làm hỏng cả phép nghiệm thu.** Tôi viết phép kiểm theo **điều tôi tin bản vá làm**
+thay vì **điều mã làm**: *"phiên mới tinh, gửi ngay một lượt vượt trần"*. Trên một tiến trình mới
+thì **cả bản cũ lẫn bản mới đều phải ra mạng** ⇒ phép kiểm **xanh trên cả hai**, và bản vá sẽ được
+phát hành kèm một lời hứa không ai kiểm.
+
+**Phép đúng là HAI LƯỢT** (lượt 1 nhỏ dạy trần, lượt 2 vượt trần), **kèm nền so sánh đo trên chính
+bản cũ**: 0.2.15 lượt 2 → 413 mạng thật **1,4 s, có `requestId`**. Dấu hiệu phân biệt chắc nhất là
+**`requestId`** — chỉ máy chủ sinh ra nó, nên có `requestId` nghĩa là **đã ra mạng**.
+
+> Bài học, cùng họ với cả ngày hôm nay: **phép kiểm viết theo niềm tin về mã sẽ xác nhận niềm tin
+> đó, không xác nhận mã.** Nền so sánh trên bản cũ là thứ duy nhất tách được hai điều ấy.
+
+- [ ] **Việc kế (nhỏ):** đọc header **ở mọi phản hồi `/api/v1/*`**, kể cả lượt gọi catalog lúc khởi
+      động — khi đó lời hứa *"biết trần từ khi mở app"* mới đúng theo nghĩa đen.
 
 ---
 ## Việc 3 — 413 KHÔNG phân tích được (LTTCODE)
