@@ -228,3 +228,129 @@ def test_suy_giam_khong_duoc_xep_thanh_loi():
     khai = transcription._khai_suy_giam_can_chinh()
     assert khai["muc"] == "suy_giam"
     assert khai["muc"] != "error"
+
+
+# ── Ham moi PATH cua NEN TANG, va banh coc dem cho goi `ffmpeg` tran ─────────
+
+def test_ham_moi_o_platform_core_sua_os_environ_tai_cho(monkeypatch, tmp_path):
+    """`env=None` ⇒ sua `os.environ` tai cho (dung o diem khoi dong dich vu).
+
+    ⭐ Mot cho, ⛔ khong ~30 ban va: tien trinh con THUA KE PATH.
+    """
+    from platform_core import media
+
+    ff = _moi_truong_localsystem(monkeypatch, tmp_path)
+    assert not _thu_muc_co_ffmpeg(os.environ["PATH"])
+
+    media.bao_dam_ffmpeg_tren_path()
+
+    assert str(ff.parent) in _thu_muc_co_ffmpeg(os.environ["PATH"])
+    # Idempotent: PATH co tran do dai tren Windows.
+    truoc = os.environ["PATH"]
+    media.bao_dam_ffmpeg_tren_path()
+    media.bao_dam_ffmpeg_tren_path()
+    assert os.environ["PATH"] == truoc
+
+
+def test_ham_moi_khong_dung_os_environ_khi_duoc_truyen_env(monkeypatch, tmp_path):
+    from platform_core import media
+
+    _moi_truong_localsystem(monkeypatch, tmp_path)
+    goc = os.environ["PATH"]
+
+    ra = media.bao_dam_ffmpeg_tren_path({"PATH": str(tmp_path / "rieng")})
+
+    assert _thu_muc_co_ffmpeg(ra["PATH"])
+    assert os.environ["PATH"] == goc, "⛔ khong duoc dung vao tien trinh hien tai"
+
+
+def test_ham_moi_khong_nem_khi_khong_co_ffmpeg(monkeypatch, tmp_path):
+    from platform_core import media
+
+    monkeypatch.setenv("PATH", str(tmp_path / "trong"))
+    monkeypatch.setattr("platform_core.media._locate", lambda *a, **k: None)
+    assert isinstance(media.bao_dam_ffmpeg_tren_path({}), dict)
+
+
+def _dem(nguon: str) -> int:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+    import check_ffmpeg_tran as bc
+    return len(bc.cho_goi_tran(nguon))
+
+
+def test_banh_coc_bat_DONG_LENH_tran():
+    """Ba hinh dang that trong kho — ca ba phai bi dem."""
+    assert _dem('subprocess.run(["ffmpeg", "-y", "-i", src, dst])') == 1
+    assert _dem('cmd = [\n    "ffprobe",\n    "-v", "error",\n]\nrun(cmd)') == 1
+    assert _dem('shutil.which("ffmpeg") is not None') == 1
+    # `argv` KHONG co co nao, nhung di THANG vao mot ham sinh tien trinh con.
+    assert _dem('subprocess.Popen(["ffmpeg", vao, ra])') == 1
+
+
+def test_banh_coc_KHONG_bat_ban_khai_va_chu_thich():
+    """🔑 Doc AST nen mot BAN KHAI va mot CAU VAN ⛔ khong bi dem nhu dong lenh.
+
+    Day la ly do ⛔ khong dung `grep`: mot phep so chuoi dem ca ba dong duoi, va
+    mot banh coc dem lan hai loai vat the thi con so cua no ⛔ khong noi ve gi ca.
+    """
+    assert _dem('requires=("ffmpeg",)') == 0                      # manifest app
+    assert _dem('"evaluators": ("ffprobe", "pillow")') == 0        # registry bo do
+    assert _dem('ho_so["ffmpeg"] = phien_ban') == 0                # khoa tu dien
+    assert _dem('"""Goi ffmpeg tran thi hong: ["ffmpeg", "-y"]."""') == 0
+    assert _dem('# ["ffmpeg", "-i", x] la cach SAI') == 0
+    assert _dem('cmd = [media.ffmpeg_bin(), "-y", "-i", src]') == 0  # thuoc dung
+
+
+def test_banh_coc_mien_tru_mo_dun_da_co_thuoc():
+    """Mo-dun tu goi ham moi ⇒ da co thuoc ⇒ tu rung khoi moc, ⛔ khong ai gõ tay."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+    import check_ffmpeg_tran as bc
+
+    assert bc.co_thuoc("media.bao_dam_ffmpeg_tren_path()\nrun(['ffmpeg', '-y'])")
+    assert not bc.co_thuoc("run(['ffmpeg', '-y'])")
+
+
+def test_banh_coc_dat_moc_tren_cay_hien_tai():
+    """Moc phai DAT ngay bay gio — neu khong, no khong phai mot moc."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+    import check_ffmpeg_tran as bc
+
+    hien_tai = bc.quet()
+    moc = bc.doc_moc()
+    assert moc, "thieu tools/check_ffmpeg_tran.moc"
+    moi = {d: len(v) for d, v in hien_tai.items()
+           if d not in moc or len(v) > moc[d]}
+    assert not moi, f"cho goi `ffmpeg` tran MOI (thuoc: bao_dam_ffmpeg_tren_path): {moi}"
+
+
+def test_banh_coc_do_khi_them_mot_cho_moi():
+    """⭐ Phep kiem cho chinh BANH COC — no CO bat duoc mot cho moi khong?
+
+    ⛔ Mot banh coc chua bao gio thay do la mot banh coc chua duoc chung minh.
+    Bom truc tiep vao `so_voi_moc` ⇒ ⛔ khong ghi gi vao cay.
+    """
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+    import check_ffmpeg_tran as bc
+
+    moc = {"apps/a/x.py": 2}
+
+    # a) THEM mot cho o tep da co trong moc.
+    tang, _ = bc.so_voi_moc({"apps/a/x.py": [(1, "ffmpeg"), (2, "ffmpeg"),
+                                             (9, "ffprobe")]}, moc)
+    assert tang and "apps/a/x.py" in tang[0] and "dong 9" in tang[0]
+
+    # b) Mot TEP MOI hoan toan.
+    tang, _ = bc.so_voi_moc({"apps/a/x.py": [(1, "ffmpeg"), (2, "ffmpeg")],
+                             "apps/b/moi.py": [(7, "ffmpeg")]}, moc)
+    assert any("TEP MOI" in d and "apps/b/moi.py" in d for d in tang)
+
+    # c) 🔴 Don mot cho o tep A va them mot cho o tep B trong CUNG mot luot:
+    #    mot banh coc dem theo TONG se im lang (tong khong doi). Theo TEP thi khong.
+    tang, giam = bc.so_voi_moc({"apps/a/x.py": [(1, "ffmpeg")],
+                                "apps/b/moi.py": [(7, "ffmpeg")]}, moc)
+    assert any("apps/b/moi.py" in d for d in tang), "⛔ tong khong doi van phai DO"
+    assert any("apps/a/x.py" in d for d in giam)
+
+    # d) Khong doi ⇒ xanh.
+    tang, giam = bc.so_voi_moc({"apps/a/x.py": [(1, "ffmpeg"), (2, "ffmpeg")]}, moc)
+    assert not tang and not giam

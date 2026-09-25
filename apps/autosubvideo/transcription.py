@@ -446,29 +446,15 @@ def _them_ffmpeg_vao_path(env: dict) -> dict:
        hữu gói đó và một lần `pip install` xoá bản vá, im lặng, trả lại đúng
        hướng hỏng này. Sửa ở **mã của ta**, ở đúng chỗ dựng môi trường con.
 
-    ⭐ Khuôn này **đã có trong kho** — `apps/taoclipngan/jobs.py:63-69` làm y hệt
-       cho engine `cutclipshort` (cũng tự dò ffmpeg qua PATH). ⛔ Đừng đẻ cách
-       thứ hai; khác biệt duy nhất ở đây là ta sửa env của **tiến trình con**
-       chứ không sửa `os.environ` của worker.
+    ⭐ **Phép mồi PATH sống ở `platform_core.media.bao_dam_ffmpeg_tren_path`**,
+       ⛔ không ở đây: khuyết tật này là của **nền tảng** (~30 chỗ trong kho gọi
+       `ffmpeg` trần, ở nhiều app khác nhau — `tools/check_ffmpeg_tran.py` đếm),
+       ⛔ không phải của ASV. Hàm ở đây chỉ **áp nó cho env của tiến trình con**
+       mà ta sắp sinh; nền tảng mồi `os.environ` một lần lúc khởi động.
     """
     from platform_core import media
 
-    truoc: list[str] = []
-    dang_co = (env.get("PATH") or "").split(os.pathsep)
-    for lay in (media.ffmpeg_bin, media.ffprobe_bin):   # ffprobe có thể ở dir khác
-        try:
-            thu_muc = os.path.dirname(lay())
-        except (media.MediaError, OSError):
-            # ⛔ Không ném: thiếu ffmpeg thì nhánh lui (cũng cần ffmpeg) sẽ hỏng
-            #    ở chỗ ĐỌC TỆP, nơi thông báo nói đúng chuyện — không phải ở đây.
-            continue
-        if thu_muc and thu_muc not in dang_co and thu_muc not in truoc:
-            truoc.append(thu_muc)
-    if truoc:
-        # ⚠️ Idempotent: `PATH` trên Windows có trần độ dài, và hàm này được gọi
-        #    một lần mỗi lượt chạy — chèn trùng thì sau N lượt là một PATH rác.
-        env["PATH"] = os.pathsep.join([*truoc, *(d for d in dang_co if d)])
-    return env
+    return media.bao_dam_ffmpeg_tren_path(env)
 
 
 def _env_ghim_gpu(gpu_uuid: str) -> dict:

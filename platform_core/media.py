@@ -76,6 +76,61 @@ def has_ffmpeg() -> bool:
         return False
 
 
+def bao_dam_ffmpeg_tren_path(env: Optional[dict] = None) -> dict:
+    """Mồi `PATH`: sau lời gọi này, một tiến trình con gọi **`ffmpeg` trần** tìm thấy nó.
+
+    `env=None` ⇒ sửa **`os.environ`** tại chỗ (dùng một lần lúc dịch vụ khởi
+    động; mọi tiến trình con sinh ra sau đó thừa kế). Truyền một `dict` ⇒ sửa
+    **bản sao đó** và trả về, không đụng tiến trình hiện tại.
+
+    🔴 **VÌ SAO CÓ HÀM NÀY — `N-59`, và nó ⛔ KHÔNG phải lỗi của một app.**
+
+    `ffmpeg` trên máy này cài **theo người dùng** (WinGet), nên nó chỉ nằm trên
+    **USER Path**. Đo 25/09/2026:
+
+        MACHINE Path có thư mục chứa ffmpeg.exe : False
+        USER    Path có thư mục chứa ffmpeg.exe : True
+
+    `LTTStudioWorker` chạy dưới **LocalSystem** ⇒ nhận **MACHINE Path** ⇒ ⛔ không
+    bao giờ thấy thư mục đó. Lời gọi đi qua `ffmpeg_bin()`/`ffprobe_bin()` miễn
+    nhiễm, vì `LTT_FFMPEG`/`LTT_FFPROBE` là đường dẫn **tuyệt đối**.
+
+    ⛔ **Nhưng mọi chỗ gọi `ffmpeg` TRẦN thì hỏng — và có ~30 chỗ như thế**, ở
+    `auto_scan_video`, `asv_gpu`, `audio_pause`, `video_assembly`, `qualitylab`,
+    `tools/`, cùng gói `whisperx` trong venv sidecar (`whisperx/audio.py`) mà ta
+    ⛔ **không sở hữu** nên ⛔ không được vá. Tất cả hỏng **cùng một cách**:
+    `FileNotFoundError: [WinError 2]`, thường bị một tay bắt rộng nuốt thành một
+    dòng log, và **lượt chạy vẫn báo thành công**.
+
+    ⭐ **Nên thuốc là MỘT chỗ, ⛔ không phải ~30 bản vá.** Tiến trình con thừa kế
+    `PATH`, nên mồi một lần lúc khởi động là đủ cho **cả ~30** — và ⛔ không bỏ
+    sót chỗ thứ 31, thứ mà 30 bản vá chắc chắn bỏ sót.
+    `tools/check_ffmpeg_tran.py` là bánh cóc giữ con số đó ⛔ không tăng.
+
+    ⚠️ **Idempotent**: gọi N lần ⛔ không chèn N bản sao. `PATH` trên Windows có
+    trần độ dài, và một `PATH` dài dần qua mỗi lượt là một lỗi chỉ hiện ra sau
+    nhiều giờ chạy.
+
+    ⛔ **Không ném khi thiếu ffmpeg.** Thiếu thật thì chỗ **dùng** ffmpeg phải
+    báo, ở đó thông điệp nói đúng chuyện (`MediaError` của `ffmpeg_bin`); một
+    ngoại lệ từ hàm mồi chỉ làm hỏng bước khởi động và che nguyên nhân.
+    """
+    tai_cho = env is None
+    moi_truong = os.environ if tai_cho else dict(env or {})
+    dang_co = [d for d in (moi_truong.get("PATH") or "").split(os.pathsep) if d]
+    them: list[str] = []
+    for lay in (ffmpeg_bin, ffprobe_bin):      # ffprobe có thể ở thư mục khác
+        try:
+            thu_muc = os.path.dirname(lay())
+        except (MediaError, OSError):
+            continue
+        if thu_muc and thu_muc not in dang_co and thu_muc not in them:
+            them.append(thu_muc)
+    if them:
+        moi_truong["PATH"] = os.pathsep.join([*them, *dang_co])
+    return dict(os.environ) if tai_cho else moi_truong
+
+
 # ── P5: đọc metadata video (đo duration để GIỮ CHỖ credit) ────────────────────
 
 def is_remote_source(src: str) -> bool:
