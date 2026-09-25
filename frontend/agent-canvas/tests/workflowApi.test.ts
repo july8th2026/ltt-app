@@ -1,87 +1,29 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { approveRun, cancelRunV3, createAutosave, createRun,
+import { cancelRunV3, createAutosave,
   createRunV3, goiYBieuThuc,
-  fromV3, loadRun, loadRunHistory, loadRunV3, loadWorkflowV3,
-  publishWorkflowV3, restoreRunAsWorkflow,
-  RUN_V3_KET_THUC,
-  saveWorkflow, saveWorkflowV3, toV3,
+  fromV3, loadRunV3, loadWorkflowV3,
+  publishWorkflowV3, RUN_V3_KET_THUC,
+  saveWorkflowV3, toV3,
   WorkflowCompileError, WorkflowConflictError,
-  type AgentRun, type RunV3, type Workflow } from '../src/workflowApi'
+  type RunV3 } from '../src/workflowApi'
 
 const workflowApiSource = readFileSync(
   join(import.meta.dirname, '../src/workflowApi.ts'), 'utf8')
 
-const workflow = { id: 'w1', name: 'A', revision: 3, status: 'draft', estimated: 0,
-  canvas: { version: 2, goal: 'g', budget_max_credit: 10, active_page_id: 'page-1',
-    pages: [{ id: 'page-1', name: 'Page 1', nodes: [], edges: [],
-      viewport: { x: 0, y: 0, zoom: 1 }, frames: [], notes: [], comments: [] }] } } satisfies Workflow
-
 afterEach(() => { vi.restoreAllMocks(); vi.useRealTimers() })
 
+// ⏭️ 24/09 (lan `p10-don`) + 25/09 (lan `wfa`, task A6): cum v2
+//    (`saveWorkflow`/`createRun`/`approveRun`/`loadRun`/`loadRunHistory`/
+//    `restoreRunAsWorkflow`/…) bi XOA khoi `workflowApi.ts` — khong con ai
+//    goi tu `src/**`, va cua may chu cua no dong tu P8 task 5 (`tests/
+//    test_2934`). Cac bai kiem CSRF/If-Match/409/422 cho no da co ban tuong
+//    duong o cum v3 duoi day (`saveWorkflowV3`, `publishWorkflowV3`,
+//    `createRunV3`) — xoa han thay vi sua header. Banh coc chan cum v2 quay
+//    lai qua frontend: `tests/test_3521`. Banh coc TAP HOP ham workflowApi.ts
+//    con song: `tests/test_4105_wf_v2_pa_don_ma_chet.py`.
 describe('workflow API', () => {
-  it('uses CSRF and If-Match without sending client price', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify(workflow), { status: 200,
-        headers: { 'Content-Type': 'application/json' } }))
-    await saveWorkflow(workflow, 'csrf-test')
-    const init = fetchMock.mock.calls[0][1]!
-    expect(new Headers(init.headers).get('If-Match')).toBe('"3"')
-    expect(new Headers(init.headers).get('X-CSRF-Token')).toBe('csrf-test')
-    expect(init.body).not.toContain('estimated')
-  })
-
-  it('surfaces revision conflicts', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 409 }))
-    await expect(saveWorkflow(workflow, 'csrf-test')).rejects.toBeInstanceOf(WorkflowConflictError)
-  })
-
-  it('doc duoc thong_diep khi loi 422 tra detail la dict (Task 7 publish)', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(
-      JSON.stringify({ detail: { ma: 'khong_bao_gia_duoc', node_id: 'a',
-        thong_diep: 'a: khong co cong cu' } }),
-      { status: 422, headers: { 'Content-Type': 'application/json' } }))
-    // Truoc ban sua: `new Error({...})` -> message la "[object Object]".
-    await expect(saveWorkflow(workflow, 'csrf-test'))
-      .rejects.toThrow('a: khong co cong cu')
-  })
-
-  it('binds run creation to workflow revision and approval to quote hash', async () => {
-    const run = { id: 'r1', version: 1, status: 'awaiting_approval', plan: { steps: [] },
-      checkpoint: {}, estimated: 5, actual: 0, quote_hash: 'abc', decisions: [], artifacts: [] } satisfies AgentRun
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(
-      JSON.stringify(run), { status: 200, headers: { 'Content-Type': 'application/json' } }))
-    await createRun(workflow, 'csrf-test', { mode: 'selection', node_ids: ['n1'] })
-    expect(new Headers(fetchMock.mock.calls[0][1]?.headers).get('If-Match')).toBe('"3"')
-    expect(fetchMock.mock.calls[0][1]?.body).toBe(JSON.stringify({ scope: { mode: 'selection', node_ids: ['n1'] }, use_cache: true }))
-    await approveRun(run, 'csrf-test')
-    expect(fetchMock.mock.calls[1][1]?.body).toBe(JSON.stringify({ version: 1, quote_hash: 'abc' }))
-    await approveRun(run, 'csrf-test', '2026-08-04T02:00:00.000Z')
-    expect(fetchMock.mock.calls[2][1]?.body).toContain('2026-08-04T02:00:00.000Z')
-  })
-
-  // ⏭️ 24/09 (lan `p10-don`): ba ve `cloneWorkflow` / `exportWorkflow` /
-  //    `importWorkflow` da RA khoi bai nay vi ba ham do bi XOA khoi
-  //    `workflowApi.ts` — cua may chu cua chung dong tu P8 task 5
-  //    (`tests/test_2934`), nen chung goi vao cho khong con ton tai.
-  //    Banh coc chan chung quay lai: `tests/test_3521`.
-  it('loads owner run history/detail', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async input => {
-      const url = String(input)
-      const body = url.endsWith('/runs') ? { items: [{ id: 'r1' }] }
-        : url.endsWith('/runs/r1') ? { id: 'r1' } : workflow
-      return new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } })
-    })
-    await expect(loadRunHistory()).resolves.toEqual([{ id: 'r1' }])
-    await expect(loadRun('r1')).resolves.toMatchObject({ id: 'r1' })
-    await restoreRunAsWorkflow({id:'r1'} as AgentRun,'csrf-test')
-    expect(fetchMock.mock.calls.map(call => String(call[0]))).toEqual([
-      '/agent/api/runs', '/agent/api/runs/r1',
-      '/agent/api/runs/r1/restore-workflow'])
-    expect(new Headers(fetchMock.mock.calls[2][1]?.headers).get('X-CSRF-Token')).toBe('csrf-test')
-  })
-
   it('debounces autosave and persists only latest value', async () => {
     vi.useFakeTimers()
     const save = vi.fn(async (_value: number) => {})
@@ -396,7 +338,10 @@ describe('Accept: application/json tren moi loi goi API', () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ node_id: 'n1', muc: [], ham: [], loi: null }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }))
-    await goiYBieuThuc('w1', 'n1', workflow.canvas, 'csrf-test')
+    const canvasThu = { version: 2 as const, goal: 'g', budget_max_credit: 10,
+      active_page_id: 'page-1', pages: [{ id: 'page-1', name: 'Page 1', nodes: [],
+        edges: [], viewport: { x: 0, y: 0, zoom: 1 }, frames: [], notes: [], comments: [] }] }
+    await goiYBieuThuc('w1', 'n1', canvasThu, 'csrf-test')
     const [url, init] = fetchMock.mock.calls[0]
     expect(String(url)).toBe('/agent/api/v3/workflows/w1/bieu-thuc/goi-y')
     expect(init?.method).toBe('POST')
@@ -407,23 +352,19 @@ describe('Accept: application/json tren moi loi goi API', () => {
     expect(JSON.parse(String(init?.body)).document.version).toBe(3)
   })
 
-  it('PUT (saveWorkflow) gui Accept ma khong de de ghi Content-Type', async () => {
+  it('PUT (saveWorkflowV3) gui Accept ma khong de de ghi Content-Type', async () => {
+    const rawV3Toi = { id: 'w3', name: 'W3', published_version_id: '', revision: 4,
+      document: { version: 3 as const, goal: '', budget_max_credit: 0,
+        active_page_id: 'p1', pages: [{ id: 'p1', name: 'P', nodes: [], edges: [],
+          viewport: { x: 0, y: 0, zoom: 1 }, frames: [], notes: [], comments: [] }] } }
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify(workflow), { status: 200,
+      new Response(JSON.stringify(rawV3Toi), { status: 200,
         headers: { 'Content-Type': 'application/json' } }))
-    await saveWorkflow(workflow, 'csrf-test')
+    await saveWorkflowV3({ id: 'w3', name: 'W3', status: 'draft', revision: 4,
+      estimated: 0, canvas: fromV3(rawV3Toi.document) }, 'csrf-test')
     const headers = new Headers(fetchMock.mock.calls[0][1]!.headers)
     expect(headers.get('Accept')).toBe('application/json')
     expect(headers.get('Content-Type')).toBe('application/json')
-  })
-
-  it('GET qua request() (khong headers rieng, vd loadRunHistory) van gui Accept', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ items: [] }), { status: 200,
-        headers: { 'Content-Type': 'application/json' } }))
-    await loadRunHistory()
-    expect(new Headers(fetchMock.mock.calls[0][1]?.headers).get('Accept'))
-      .toBe('application/json')
   })
 
   it('poll v3 (loadRunV3, vong 1,5s) gui Accept — dung ca khi Sec-Fetch-* bi lot', async () => {

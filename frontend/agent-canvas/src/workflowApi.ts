@@ -37,22 +37,6 @@ export type Workflow = {
   canvas: CanvasDocument
 }
 
-export type AgentRun = {
-  id: string
-  version: number
-  status: string
-  plan: { steps: { id: string }[] }
-  checkpoint: Record<string, Record<string, unknown>>
-  estimated: number
-  actual: number
-  quote_hash: string
-  decisions: Record<string, unknown>[]
-  artifacts?: { step_id: string; name: string; url: string }[]
-  scheduled_at?: string
-}
-export type AgentRunSummary=Pick<AgentRun,'id'|'version'|'status'|'estimated'|'actual'>&{
-  created_at:string;finished_at:string}
-
 export class WorkflowConflictError extends Error {}
 
 /** Lỗi biên dịch/báo giá do máy chủ trả ở `422 {ma,node_id,thong_diep}`.
@@ -223,10 +207,6 @@ export function fromV3(canvas: CanvasDocumentV3): CanvasDocument {
       viewport: page.viewport ?? { x: 0, y: 0, zoom: 1 },
       frames: page.frames ?? [], notes: page.notes ?? [], comments: page.comments ?? [],
       edges: (page.edges ?? []).map(edgeFromV3) })) }
-}
-
-function normalizeWorkflow(workflow: Workflow): Workflow {
-  return { ...workflow, canvas: normalizeCanvas(workflow.canvas as CanvasDocument | LegacyCanvasDocument) }
 }
 
 // ── Cua v3: `workflow_draft` (Dot 5.2 phan D) ──────────────────────────────
@@ -404,87 +384,6 @@ export async function baoGiaDoThi(workflowId: string, canvas: CanvasDocument,
   ) as Promise<BangGiaSong>
 }
 
-export async function loadOrCreateWorkflow(csrfToken: string): Promise<Workflow> {
-  const listing = await request('/agent/api/workflows')
-  if (listing.items.length) return normalizeWorkflow(await request(`/agent/api/workflows/${listing.items[0].id}`))
-  return normalizeWorkflow(await request('/agent/api/workflows', { method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-    body: JSON.stringify({ name: 'Workflow mới', canvas: {
-      version: 2, goal: '', budget_max_credit: 50, active_page_id: 'page-1',
-      pages: [{ id: 'page-1', name: 'Page 1', nodes: [], edges: [],
-        viewport: { x: 0, y: 0, zoom: 1 }, frames: [], notes: [], comments: [],
-        view: { grid: true, connections: true, minimap: true } }],
-    } }) }))
-}
-
-export async function saveWorkflow(
-  workflow: Workflow,
-  csrfToken: string,
-  signal?: AbortSignal,
-): Promise<Workflow> {
-  const response = await apiFetch(`/agent/api/workflows/${workflow.id}`, {
-    method: 'PUT',
-    credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken,
-      'If-Match': `"${workflow.revision}"` },
-    body: JSON.stringify({ name: workflow.name, canvas: workflow.canvas }),
-    signal,
-  })
-  return normalizeWorkflow(await decode(response))
-}
-
-export async function validateWorkflow(workflow: Workflow, csrfToken: string) {
-  return request(`/agent/api/workflows/${workflow.id}/validate`, { method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken,
-      'If-Match': `"${workflow.revision}"` }, body: '{}' })
-}
-
-export type RunScope = { mode: 'full'|'node'|'selection'|'frame'; node_id?: string;
-  node_ids?: string[]; frame_id?: string }
-
-export async function createRun(workflow: Workflow, csrfToken: string,
-                                scope: RunScope = { mode: 'full' }, useCache = true): Promise<AgentRun> {
-  return request(`/agent/api/workflows/${workflow.id}/runs`, { method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken,
-      'If-Match': `"${workflow.revision}"` }, body: JSON.stringify({ scope, use_cache: useCache }) })
-}
-
-export async function approveRun(run: AgentRun, csrfToken: string,
-                                 scheduledAt = ''): Promise<AgentRun> {
-  return request(`/agent/api/runs/${run.id}/approve`, { method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-    body: JSON.stringify({ version: run.version, quote_hash: run.quote_hash,
-      scheduled_at: scheduledAt || undefined }) })
-}
-
-export async function tickRun(run: AgentRun, csrfToken: string): Promise<AgentRun> {
-  return request(`/agent/api/runs/${run.id}/tick`, { method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: '{}' })
-}
-
-export async function cancelRun(run: AgentRun, csrfToken: string): Promise<AgentRun> {
-  return request(`/agent/api/runs/${run.id}/cancel`, { method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: '{}' })
-}
-
-export async function runAgain(run: AgentRun, csrfToken: string): Promise<AgentRun> {
-  return request(`/agent/api/runs/${run.id}/again`, { method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: '{}' })
-}
-
-export async function restoreRunAsWorkflow(run:AgentRun,csrfToken:string):Promise<Workflow>{
-  return normalizeWorkflow(await request(`/agent/api/runs/${run.id}/restore-workflow`,{method:'POST',
-    headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken},body:'{}'}))
-}
-
-export async function loadRunHistory():Promise<AgentRunSummary[]>{
-  return (await request('/agent/api/runs')).items
-}
-
-export async function loadRun(id:string):Promise<AgentRun>{
-  return request(`/agent/api/runs/${id}`)
-}
-
 export function createAutosave<T>(
   save: (value: T) => Promise<void>,
   delayMs = 800,
@@ -612,3 +511,4 @@ export async function cancelRunV3(runId: string,
     method: 'POST', headers: { 'Content-Type': 'application/json',
       'X-CSRF-Token': csrfToken }, body: '{}' }) as Promise<RunV3>
 }
+
