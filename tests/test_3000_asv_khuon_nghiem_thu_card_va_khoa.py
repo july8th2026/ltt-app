@@ -288,6 +288,59 @@ def test_vong_lap_worker_cua_khuon_NGU_ngoai_khoi_khoa():
         f"'giu khoa luc CHO', dung dieu luat 23/09 cam")
 
 
+def test_MOI_bai_CHAY_THAT_phai_TRUYEN_khoa_vao_mot_luot():
+    """🔴 Canh **DAY NOI**, khong canh co che. Lo hong 25/09/2026.
+
+    `test_vong_lap_worker_...` o tren canh rang `_chay_hang_doi` **dung** khoa
+    dung cach *khi duoc dua khoa*. ⛔ Khong ai canh rang nguoi goi **CO dua**.
+    Va do la chinh xac cho da hong: hai bai chay that trong `test_448`
+    (`test_NGHIEM_THU_ca_hai_preset...` va `test_G17_hai_preset_tren_PHIM_KHACH_THAT`)
+    goi `_mot_luot` **khong kem `khoa`** ⇒ nhan mac dinh `khoa=None` ⇒ demucs +
+    ASR + model that chay tren may **dung chung va la may production** ma
+    ⛔ khong giu `cpu_nhieu` mot giay nao.
+
+    ⭐ Hinh dang dang nho, va no xay ra HAI lan trong mot ngay 25/09: *"co che
+       ton tai"* bi doc thanh *"co che duoc dung"*. Lan kia: `quan_sat.py` 751
+       dong doc `job_events`, ma `job_events.append` duoc goi **0 lan** trong ca
+       `apps/auto_scan_video/`. Nguoi doc xay xong, nguoi ghi chua noi.
+
+    ⇒ Nen phep kiem nay hoi mot cau KHAC cau o tren: ⛔ khong phai *"khoa duoc
+      dung dung cach khong"* ma *"co ai dua khoa vao khong"*.
+    """
+    import ast
+    import inspect
+
+    from tests import test_448_asv_v4_e2e_nghiem_thu as t448
+
+    #: Bai CHAY THAT = bai co the dot demucs/ASR/model that. ⛔ Mot bai chi doc
+    #: bang chung da luu thi khong can khoa, va ep no giu khoa la lam cham ca may
+    #: cho mot viec khong ton CPU.
+    CHAY_THAT = ("test_NGHIEM_THU_ca_hai_preset_ra_video_dung_duoc",
+                 "test_G17_hai_preset_tren_PHIM_KHACH_THAT")
+
+    thieu: list[str] = []
+    for ten in CHAY_THAT:
+        ham = getattr(t448, ten, None)
+        assert ham is not None, (
+            f"`{ten}` khong con ton tai — doi ten mot bai chay that thi phai doi "
+            f"ca ban khai o day, ⛔ dung de phep kiem nay xanh vi TRONG")
+        than = ast.parse(inspect.getsource(ham).lstrip())
+        for nut in ast.walk(than):
+            if not isinstance(nut, ast.Call):
+                continue
+            goi = nut.func
+            if not (isinstance(goi, ast.Name) and goi.id == "_mot_luot"):
+                continue
+            if not any(kw.arg == "khoa" for kw in nut.keywords):
+                thieu.append(f"{ten}:{getattr(nut, 'lineno', -1)}")
+
+    assert not thieu, (
+        "loi goi `_mot_luot` KHONG truyen `khoa=` trong mot bai CHAY THAT "
+        f"({thieu}) — mac dinh `khoa=None` nghia la ⛔ KHONG khoa gi, va bai nay "
+        "dot demucs/ASR tren may production dung chung. Thuoc: "
+        "`with fx.KhoaTheoPha(PHIEN_KHOA) as khoa_may:` roi truyen `khoa=khoa_may`")
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 #  §3. Mot NHAN khong duoc dung lam duong dan, va buoc giu tang vat khong duoc
 #      xoa bao cao cua lan chay

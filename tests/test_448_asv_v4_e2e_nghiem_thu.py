@@ -96,6 +96,10 @@ BAO_CAO = (Path(os.environ[BIEN_RA]) if os.environ.get(BIEN_RA)
                  / "nghiem_thu_hien_hanh.json"))
 
 SCHEMA = "asv.v4.nghiem_thu.1"
+#: Ten phien cho `fx.KhoaTheoPha`. Mot cai ten LA mot loi khai: phien khac chay
+#: `cua_so_yen.py trang-thai` phai doc ra duoc **ai** dang giu `cpu_nhieu` va vi
+#: sao — mot ten rong bien mot khoa thanh mot cai chan vo danh.
+PHIEN_KHOA = os.environ.get("LTT_ASV_NT_PHIEN") or "asv-nghiem-thu-448"
 
 #: Nang luc cua worker chay nghiem thu. Bon lan gop lam mot vi day la MOT may.
 NANG_LUC = {"api", "ffmpeg", "gpu", "voice"}
@@ -648,14 +652,33 @@ def test_NGHIEM_THU_ca_hai_preset_ra_video_dung_duoc(moi_truong, tmp_path,
     dem_model = fx.dat_cua_model(monkeypatch, su_that=su_that)
     dem_giong = fx.dat_cua_giong(monkeypatch, tmp_path / "tieng")
 
+    # 🔴 **`khoa` PHAI co o day (25/09/2026).** Bai nay chay demucs + ASR + model
+    #    THAT tren mot may **dung chung va la may production**. Truoc do no goi
+    #    `_mot_luot` khong kem `khoa`, tuc nhan mac dinh `khoa=None` — ma
+    #    `_chay_hang_doi` ghi ro `None` la *"dung cho cac bai chay tren dau vao
+    #    NHE"*. Bai nay ⛔ khong nhe.
+    #
+    # ⚠️ `KhoaTheoPha` boc **tung pha tinh** roi nha ngay, ⛔ khong boc ca luot:
+    #    phan lon thoi gian cua luot la CHO may B/sidecar (`voice_synthesis`
+    #    1.610 s tuong / 24,9 s CPU = 0,015 loi), va giu `cpu_nhieu` trong luc cho
+    #    la dung cai luat 23/09 cam. Duong ong da co san — `_chay_hang_doi` goi
+    #    `khoa.quanh_job(job.job_type)` cho **tung** job.
+    #
+    # ⛔ Va `giu_suot=("postgres_test",)` CO Y khong co o day, khac `test_3001`:
+    #    khoa do phai duoc giu TRUOC khi fixture `moi_truong` chay `drop_all`,
+    #    nen no phai la mot fixture xep truoc — ⛔ khong dat duoc tu trong than
+    #    bai. Do la mot cau hoi RIENG (xem ghi chu o `KhoaTheoPha` ve
+    #    `pg_scratch` cap ten CSDL rieng moi lan tu 24/09), ⛔ khong gop vao day.
     luot = []
-    for nhan, preset in (("giu_hinh", hop_dong_v4.PRESET_GIU_HINH),
-                         ("cat_thong_minh", hop_dong_v4.PRESET_CAT_THONG_MINH)):
-        luot.append(_mot_luot(
-            a, csrf_a, b, Path(su_that.duong), tmp_path,
-            nhan=nhan, preset=preset,
-            che_do_giong=hop_dong_v4.CHE_DO_GIONG_TU_CHON,
-            giong_id="Minh Đức", su_that=su_that))
+    with fx.KhoaTheoPha(PHIEN_KHOA) as khoa_may:
+        for nhan, preset in (("giu_hinh", hop_dong_v4.PRESET_GIU_HINH),
+                             ("cat_thong_minh",
+                              hop_dong_v4.PRESET_CAT_THONG_MINH)):
+            luot.append(_mot_luot(
+                a, csrf_a, b, Path(su_that.duong), tmp_path,
+                nhan=nhan, preset=preset,
+                che_do_giong=hop_dong_v4.CHE_DO_GIONG_TU_CHON,
+                giong_id="Minh Đức", su_that=su_that, khoa=khoa_may))
 
     bao_cao = {
         "schema": SCHEMA,
@@ -1335,25 +1358,33 @@ def test_G17_hai_preset_tren_PHIM_KHACH_THAT(moi_truong, tmp_path, monkeypatch):
     fx.dat_cua_model(monkeypatch, su_that=None)
     fx.dat_cua_giong(monkeypatch, tmp_path / "tieng")
 
+    # 🔴 Cung ly do voi `test_NGHIEM_THU...` o tren, va o day **nang hon**: day la
+    #    PHIM KHACH THAT, nhieu tep × hai preset ⇒ nhieu luot demucs/ASR lien tiep
+    #    tren may production. `khoa=None` (mac dinh) o day la lo hong to nhat trong
+    #    ca tep. ⛔ Khong `giu_suot=("postgres_test",)` — xem ghi chu o tren.
     luot = []
-    for tep in phim:
-        goc_s = round(float(fx.soi(str(tep))["format"]["duration"]), 3)
-        for nhan, preset in (("giu_hinh", hop_dong_v4.PRESET_GIU_HINH),
-                             ("cat_thong_minh", hop_dong_v4.PRESET_CAT_THONG_MINH)):
-            kq = _mot_luot(
-                # ⚠️ CHO THU BA cua cung mot bay, va o day no CHUA do — `nhan`
-                #    tai G17 la `giu_hinh`/`cat_thong_minh` (hop le) va `tep.stem`
-                #    la ten tep (hop le). Nhung G17 lai truyen
-                #    `nhan=f"{tep.name}::{nhan}"` xuong `_mot_luot`, tuc no VAN
-                #    chay qua dong `ra_{nhan}.mp4` — va do la cho da do that.
-                #    Sua ca hai, khong doi cho thu ba do lan thu ba.
-                a, csrf_a, b, tep, tmp_path / _ten_an_toan(f"{tep.stem}_{nhan}"),
-                nhan=f"{tep.name}::{nhan}", preset=preset,
-                che_do_giong=hop_dong_v4.CHE_DO_GIONG_TU_CHON,
-                giong_id="Minh Đức")
-            kq["nguon_that"] = {"ten": tep.name, "byte": tep.stat().st_size,
-                                "thoi_luong": goc_s}
-            luot.append(kq)
+    with fx.KhoaTheoPha(PHIEN_KHOA) as khoa_may:
+        for tep in phim:
+            goc_s = round(float(fx.soi(str(tep))["format"]["duration"]), 3)
+            for nhan, preset in (
+                    ("giu_hinh", hop_dong_v4.PRESET_GIU_HINH),
+                    ("cat_thong_minh", hop_dong_v4.PRESET_CAT_THONG_MINH)):
+                kq = _mot_luot(
+                    # ⚠️ CHO THU BA cua cung mot bay, va o day no CHUA do —
+                    #    `nhan` tai G17 la `giu_hinh`/`cat_thong_minh` (hop le)
+                    #    va `tep.stem` la ten tep (hop le). Nhung G17 lai truyen
+                    #    `nhan=f"{tep.name}::{nhan}"` xuong `_mot_luot`, tuc no
+                    #    VAN chay qua dong `ra_{nhan}.mp4` — va do la cho da do
+                    #    that. Sua ca hai, khong doi cho thu ba do lan thu ba.
+                    a, csrf_a, b, tep,
+                    tmp_path / _ten_an_toan(f"{tep.stem}_{nhan}"),
+                    nhan=f"{tep.name}::{nhan}", preset=preset,
+                    che_do_giong=hop_dong_v4.CHE_DO_GIONG_TU_CHON,
+                    giong_id="Minh Đức", khoa=khoa_may)
+                kq["nguon_that"] = {"ten": tep.name,
+                                    "byte": tep.stat().st_size,
+                                    "thoi_luong": goc_s}
+                luot.append(kq)
 
     # ── Chot ────────────────────────────────────────────────────────────────
     for kq in luot:
