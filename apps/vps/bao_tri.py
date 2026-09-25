@@ -959,7 +959,22 @@ def _chup_anh_den_han(db, client, *, now=None) -> int:
     from apps.vps.services import sao_luu
     from apps.vps.tables import VpsInstance
 
-    if db is None or client is None:
+    # 🔴 Bản cũ: `if db is None or client is None: return 0`. Đo 25/09/2026 — cả
+    #    vòng lặp này là **mã chết**: `mot_luot` truyền `client = None` một cách
+    #    CỐ Ý (chú thích của nó: *"Never route pinned resources through the
+    #    global/default compute endpoint"* — mỗi máy ghim một hồ sơ riêng, nên
+    #    không có và không được có client dùng chung). Trang bán khoe "Ảnh chụp
+    #    hằng tuần", trang máy khoe "Ảnh chụp gần nhất", và không ảnh nào từng
+    #    được chụp.
+    #
+    # ⚠️ Cửa đó cũng KHÔNG bảo vệ thêm gì: thân vòng lặp đã tự phân giải client
+    #    THEO TỪNG MÁY rồi mới `if selected is None: continue`. Nó chỉ chặn trước
+    #    khi tới chỗ đã được bảo vệ — một cửa hỏi SAI CÂU.
+    #
+    # ⛔ Giữ `db is None`: không có CSDL thì thật sự không làm gì được. Và ý định
+    #    cũ ("chưa chụp thì không đánh dấu đã chụp") vẫn nguyên, nó nằm ở
+    #    `continue` trong thân vòng — xem `test_4011`.
+    if db is None:
         return 0
 
     da_chup = 0

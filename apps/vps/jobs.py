@@ -1309,11 +1309,36 @@ def _dung_lai(params: dict, ctx=None) -> dict:
 # ── vps.destroy ─────────────────────────────────────────────────────────────
 
 def _xoa_may(params: dict, ctx=None) -> dict:
-    """Xoá vĩnh viễn. Không hoàn tác được — người gọi phải chắc đã tới mốc V8."""
+    """Xoá vĩnh viễn. Không hoàn tác được — người gọi phải chắc đã tới mốc V8.
+
+    ## Thứ tự ở đây là chuyện tiền, không phải chuyện gọn gàng
+
+    🔴 Rà soát 25/09/2026: hàm này có `try/finally` và **không có `except`**, và
+       nó chốt `DA_XOA` + `commit` ở **cuối**, sau ba bước dọn dẹp. Nên một lỗi ở
+       bất kỳ bước nào sau khi VM đã bị phá (`_nha_tai_nguyen` nâng
+       `MutationNeedsReview` khi còn IP `QUARANTINED`; cổng vào hoặc nhà cung cấp
+       không trả lời) làm `commit` **không bao giờ chạy** ⇒ bản ghi giữ nguyên
+       `dang_chay` trong khi VM đã không còn tồn tại.
+
+       `billing.den_han_thu` thu đúng những máy ở `("dang_chay", "da_tat")` ⇒
+       khách bị thu **1.490 credit mỗi 30 ngày cho một VM không tồn tại**, và ⛔
+       không vòng quét nào nộp lại job xoá, vì với CSDL thì máy vẫn đang chạy.
+
+    ⇒ Tách hai câu hỏi mà bản cũ trả lời bằng MỘT lần `commit`:
+
+       * *VM còn không?* — đã trả lời **không đảo ngược được** ở bước 20. Chốt nó
+         và `commit` **ngay**, để dòng tiền dừng bằng mọi giá.
+       * *IP đã trả về nhà cung cấp chưa?* — làm sau; hỏng thì nổ lên trên để có
+         người xem, nhưng ⛔ không được làm máy **sống lại trong sổ sách**.
+
+    ⚠️ Đổi lại: một máy `da_xoa` có thể còn tài nguyên chưa trả, nên cửa thoát sớm
+       phải hỏi cả hai điều. Thoát sớm chỉ vì `trang_thai == "da_xoa"` là để IP rò
+       **vĩnh viễn** (~$3/tháng chảy mãi, và `bao_tri` không có đường bắt nó).
+    """
     db, gen = _mo_db()
     try:
         may = _lay_may(db, params.get("instance_id"))
-        if may.trang_thai == "da_xoa":
+        if may.trang_thai == "da_xoa" and not _con_tai_nguyen_chua_tra(db, may):
             return {"instance_id": may.id, "da_xoa_truoc_do": True}
 
         profile = _profile_for_job(db, may)
@@ -1324,6 +1349,19 @@ def _xoa_may(params: dict, ctx=None) -> dict:
             _xoa_vm_co_journal(
                 db, may, client, ctx, operation_id=operation_id)
 
+        # ⭐ CHỐT NGAY, TRƯỚC khi dọn. Máy đã đi rồi: quan sát là `tat` thật,
+        #    không phải `khong_ro` — VM không còn tồn tại thì không có gì để
+        #    không rõ. Và `commit` ở đây là thứ chặn dòng tiền; mọi bước sau chỉ
+        #    còn là dọn kho.
+        if may.trang_thai != "da_xoa":
+            trang_thai_may.dat(may, vong_doi=trang_thai_may.DA_XOA,
+                               dien_mong_muon=trang_thai_may.TAT,
+                               dien_quan_sat=trang_thai_may.TAT,
+                               tac_vu=trang_thai_may.KHONG_CO)
+            provisioning.ghi_su_kien(db, may.id, "da_xoa",
+                                     boi=str(params.get("boi") or "he_thong"))
+            db.commit()
+
         _bao(ctx, 78, "dang go cho dia chi")
         _profile_for_job(db, may)
         _go_cho_dhcp(may, profile)
@@ -1333,19 +1371,25 @@ def _xoa_may(params: dict, ctx=None) -> dict:
         _bao(ctx, 80, "dang tra dia chi cong khai")
         _tra_ip_cong_khai(db, may, profile)
         _nha_tai_nguyen(db, may)
-        # Máy đã đi rồi: quan sát là `tat` thật, không phải `khong_ro` — VM không
-        # còn tồn tại thì không có gì để không rõ.
-        trang_thai_may.dat(may, vong_doi=trang_thai_may.DA_XOA,
-                           dien_mong_muon=trang_thai_may.TAT,
-                           dien_quan_sat=trang_thai_may.TAT,
-                           tac_vu=trang_thai_may.KHONG_CO)
-        provisioning.ghi_su_kien(db, may.id, "da_xoa",
-                                 boi=str(params.get("boi") or "he_thong"))
         db.commit()
         _bao(ctx, 100, "xong")
         return {"instance_id": may.id, "vmid": may.vmid}
     finally:
         gen.close()
+
+
+def _con_tai_nguyen_chua_tra(db, may: VpsInstance) -> bool:
+    """Máy này còn IP nào chưa trả về kho không.
+
+    Dùng ở cửa thoát sớm của `_xoa_may`: một máy `da_xoa` mà còn IP dính vào thì
+    lượt chạy lại **phải đi tiếp vào phần dọn**, không được coi là xong.
+    """
+    from sqlalchemy import select
+
+    from apps.vps.tables import VpsIp
+
+    return any(db.execute(select(VpsIp).where(
+        VpsIp.instance_id == may.id)).scalars())
 
 
 def _go_cho_dhcp(may: VpsInstance, profile=None) -> None:
