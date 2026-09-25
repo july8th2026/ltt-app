@@ -9,6 +9,56 @@ Hình ảnh / nội dung video: ⛔ chưa xử lý sâu, chỉ báo cáo.
 
 ---
 
+## 🔴 CHỦ DỰ ÁN CHỐT LẠI 25/09 (sáng) — **HOÀN THIỆN DÂY TRUYỀN TRƯỚC**
+
+> *"Ta mất 3 ngày loanh quanh rồi. Hoàn thiện dây truyền. Nâng cấp, sửa chỗ yếu sau."*
+
+⛔ **Mục này THẮNG thứ tự pha A–F bên dưới.** Ba ngày vừa qua phần lớn dùng để **mài thước
+đo** (bộ chấm, sentinel, DEMETR, trần giọng). Thước đã đủ dùng; dây truyền thì **chưa chạy
+liền mạch một lần nào**.
+
+### Thứ tự DUY NHẤT từ giờ
+
+```
+1. GỘP  het ma ASV dang rai tren cac nhanh -> main   (test NHAM xanh la du, ⛔ KHONG gate)
+2. CHAY THAT mot video ngan tu dau den cuoi -> tim CHO VO dau tien
+3. Sua cho vo. Lap lai 2-3 cho toi khi ra duoc mot ban long tieng hoan chinh
+4. E1 ghim bo can chu sach giay phep (MOT dong) -> chay lai E2E de so
+5. Moi thu khac: ghi so, lam SAU
+```
+
+### ⛔ ĐÃ DỪNG — ⛔ đừng ai nhặt lại mà không hỏi
+
+| việc | trạng thái | vì sao dừng |
+|---|---|---|
+| **C2** chấm ESA 60 mục | bộ mù đã dựng, khoá đã niêm phong, **chờ** | hiệu chuẩn thước, ⛔ không phải dây truyền |
+| **Phép nghe 12 cặp** của chủ dự án | **bỏ** | giữ `TRAN_TANG_TOC = 1,15` y nguyên, ⛔ không chạm |
+| **B5** bảng từ | **hoãn** | nâng cấp chất lượng, ⛔ không chặn dây truyền |
+| **B2** đo lại A/B `y_canh` | **hoãn** | cần lượt ghép cặp cùng phiên mới có nghĩa |
+| 32/35 họ lỗi DEMETR chưa đo | **hoãn** | 3 họ đã đủ để biết bộ chấm có đối chiếu nguồn |
+
+### ⭐ Kết quả ĐÃ chốt được trước khi dừng — ⛔ đừng đo lại
+
+- **Bộ chấm CÓ đối chiếu nguồn thật**: `bo_sot` hai phía **15/15**, giấu nguồn **0/15**.
+  Và `53 %` sống sót khi giấu nguồn là đặc tính của **họ lỗi đem tiêm**, ⛔ không phải của bộ chấm.
+- **Bộ đo tốc độ ⛔ KHÔNG mù**: `CER(1,80)/CER(1,00) = 2,26×`.
+- 🔴 **Mô hình `3,284 âm tiết/giây` làm bài toán nén trông TO GẤP 3,4 LẦN thực tế**
+  (v1: `75,6 %` theo mô hình vs `22,0 %` đo thật). Production ⛔ **không** dùng mô hình này
+  (`nan_cho_vua.py` nấc 1 đo trên tệp thật) ⇒ ⛔ không có lỗi sản phẩm, chỉ có **phân tích phồng**.
+- 🔴 **Bậc thang bốn nấc ĐÃ CHẠY trong production** (`nan_cho_vua.py`). Ba trong bốn "cần gạt"
+  của §D3 là **trùng**; chỉ `gop_khe` là mới. ⇒ D3 nhỏ hơn plan viết.
+- 🔴 **`he_so_toc` ⛔ KHÔNG BAO GIỜ vượt `TRAN_TANG_TOC`** (`thoi_gian.py:199` kẹp). Đếm
+  "vượt trần" từ nó là hỏi một câu **đã bị đóng đinh là 0**. Thước đúng: `can` **trước** khi
+  kẹp, và `cat_bot_ms > 0` — cột duy nhất **khách nghe được** (mất chữ, ⛔ không phải "giọng nhanh").
+
+### Nợ đã ghi sổ, làm sau dây truyền
+
+`N-44` `san_sang()` trả lý do · `N-45` + `DUNG_SAI_DAI` (**khoá lẫn nhau**, sửa một cái làm
+sập app) · `N-46` lease herd ⛔ không jitter · `N-47` `toc_do.hop_le()` kẹp im lặng ·
+gập `nan_thoi_luong` vào `nan_cho_vua`.
+
+---
+
 ## ⭐ BỐN LUẬT — áp cho MỌI làn, đọc trước mỗi phiên
 
 ### L1 · Cổng
