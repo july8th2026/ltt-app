@@ -3577,6 +3577,18 @@ button.lv-the-song.nghe-loi,.lv-chon-nghe.nghe-loi{
 .asv-lop{pointer-events:none}
 .asv-dang-ve .asv-lop{pointer-events:auto;cursor:crosshair}
 .asv-dang-ve{outline:2px solid var(--focus-ring);outline-offset:-2px}
+/* ── Lop KEO-THA logo (V6) ────────────────────────────────────────────────
+ * ⚠️ Lop nay nam TREN `#asv-lop`, nen no phai trong suot voi con tro — neu
+ *    khong, no nuot moi cu keo ve vung che va ca dieu khien cua `<video>`.
+ *    Chi ban than cac diem keo bat con tro. */
+.asv-lop-logo{pointer-events:none;z-index:2}
+.asv-lg-keo{pointer-events:auto;cursor:grab}
+.asv-lg-keo:active{cursor:grabbing}
+.asv-lg-hop{fill:none;stroke:var(--accent2,var(--brand-hover));stroke-width:2;
+  stroke-dasharray:6 4;vector-effect:non-scaling-stroke}
+/* ⛔ Khi dang ve VUNG CHE thi tat cac diem keo logo: hai cong cu cung doi mot
+ *    cu keo tren cung mot khung hinh la mot cho khach bam nham chac chan. */
+.asv-dang-ve .asv-lg-keo{pointer-events:none}
 
 .asv-an-input{position:absolute;width:1px;height:1px;padding:0;margin:-1px;
   overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
@@ -3707,6 +3719,13 @@ button.lv-the-song.nghe-loi,.lv-chon-nghe.nghe-loi{
  *    1 p…`. Một con số bị cắt giữa chừng đọc tệ hơn một dòng thứ hai. */
 .asv-dem .asv-uoc dd{max-width:none;overflow:visible;text-overflow:clip;
   white-space:normal}
+/* Luat lam tron: mot CAU, nen no chiem ca dong va khong bi cat. Khach phai doc
+ * duoc no TRUOC khi bam — mot con so nhay ra sau khi tru tien la cach nhanh
+ * nhat de mat long tin. */
+.asv-dem-luat{flex:1 1 100%}
+.asv-dem-luat dd{max-width:none;overflow:visible;text-overflow:clip;
+  white-space:normal;font-size:12px;font-weight:400}
+.asv-dem-luat dd:empty{display:none}
 .asv-thanh-nut{display:flex;flex-direction:column;gap:4px;align-items:flex-end;
   min-width:0}
 .asv-thanh-nut .asv-ghi-chu{margin:0;text-align:right}

@@ -77,6 +77,20 @@
              chuan hoa — khong co phep doi don vi nao de lam sai. #}
           <svg id="asv-lop" class="asv-lop" viewBox="0 0 1 1"
                preserveAspectRatio="none" hidden aria-hidden="true"></svg>
+          {# 🔴 **Lop THU HAI, va do la ca thiet ke — khong phai mot ban sao.**
+
+               `#asv-lop` co DUNG MOT chu: `asv/vung.js`, va no xoa sach roi
+               dung lai toan bo con cua minh moi lan `veLai()`. Ve diem keo cua
+               logo vao chinh lop ay la hai module cung ghi mot cay DOM — dung
+               ho loi ma lan nay da phai dong lai mot lan roi (`#asv-batdau`).
+
+             ⭐ Mot phan tu, mot chu. `asv/logo.js` so huu lop nay.
+
+             ⚠️ `pointer-events` lam hai lop song chung duoc: lop logo trong
+                suot voi con tro TRU cac diem keo cua no, nen mot cu keo tren
+                khung hinh trong van roi xuong `#asv-lop` de ve vung che. #}
+          <svg id="asv-lop-logo" class="asv-lop asv-lop-logo" viewBox="0 0 1 1"
+               preserveAspectRatio="none" hidden aria-hidden="true"></svg>
         </div>
 
         <label class="btn ghost asv-chon-tep" for="asv-video">
@@ -801,7 +815,19 @@
           {# ⛔ Truoc khi co video thi KHONG hien mot con so nao. Mot con so hien
              truoc khi biet do dai la mot con so bia. #}
           <dd><span id="asv-uoc-tien" class="asv-uoc-tien">—</span>
-              <span id="asv-uoc-gio" class="asv-ghi-chu"></span></dd>
+              <span id="asv-uoc-gio" class="asv-ghi-chu"></span></dd></div>
+        {# 🔴 **Luat lam tron o CHO BAM, khong o mot trang bang gia.**
+
+             Chu du an chot cung luc voi con so: *"phai hien cho khach thay luat
+             lam tron TRUOC khi ho bam — mot con so nhay ra sau khi tru tien la
+             cach nhanh nhat de mat long tin."*
+
+           ⭐ Cau den TU `gia.luat_lam_tron()` qua `/uoc-tinh`, ⛔ khong go vao
+              Jinja va cung khong nam trong `.js`: don gia duoc dien vao cau luc
+              chay, nen mot ban chep o day se troi ngay lan dau ai do sua gia. #}
+        <div class="asv-dem-luat">
+          <dt class="asv-an-doc">{{ _("Cách tính") }}</dt>
+          <dd class="asv-ghi-chu" id="asv-uoc-luat"></dd>
         </div>
       </dl>
       <div class="asv-thanh-nut">

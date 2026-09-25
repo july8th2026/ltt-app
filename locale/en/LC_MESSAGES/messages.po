@@ -21428,3 +21428,15 @@ msgstr "“Keep the picture” copies every pixel untouched, so it cannot crop, 
 
 msgid "Tính theo độ dài video gốc: {don_gia} credit mỗi phút, làm tròn lên phút bắt đầu, tối thiểu 1 phút. Ví dụ video 3 phút 10 giây tính là 4 phút."
 msgstr "Charged by the length of the source video: {don_gia} credit per minute, rounded up to the next whole minute, minimum 1 minute. For example a 3 min 10 s video counts as 4 minutes."
+
+msgid "%(p)s phút × %(g)s credit = %(c)s credit"
+msgstr "%(p)s min × %(g)s credit = %(c)s credit"
+
+msgid "Chưa đo được độ dài video nên chưa tính được hoá đơn. Số giữ chỗ ở trên là mức tối đa."
+msgstr "The video length has not been measured yet, so the invoice cannot be worked out. The amount held above is the maximum."
+
+msgid "Cách tính"
+msgstr "How it is charged"
+
+msgid "Ảnh logo không hợp lệ."
+msgstr "That logo image is not valid."

@@ -832,16 +832,45 @@ def gan_logo(db: Session, kho, *, run: AsvRun,
         # Kiem SOM de cau tu choi noi ve ANH chu khong ve "artifact"; `assets`
         # se kiem lai tren ban staging, va hai lan kiem la co y — cai o day cho
         # khach doc, cai o kia la hang rao.
-        kieu_that, _co = image_input.validate_reference(du_lieu, kieu)
+        #
+        # 🔴 **`ValueError` phai thanh `AsvError`, neu khong khach nhan MOT TRANG
+        #    500.** Do tren trinh duyet that (asv-gui 25/09): mot logo 40x20 —
+        #    duoi san 64x64 cua nen tang — lam `validate_reference` nem
+        #    `ValueError`, va ca hai duong tao lan chay chi bat `features.AsvError`
+        #    (`routes.py:371`, `routes.py:429`). Ket qua: tep hop le ve moi mat
+        #    khac, mot cai favicon lam khach nhan *"May chu gap su co"*.
+        #
+        # ⛔ Va do la mot cau tra loi SAI ve ai co loi: loi nam o tep khach chon,
+        #    va ho sua duoc trong ba giay — neu ta noi ra. Chu thich ngay tren
+        #    hua dieu do tu dau ("cau tu choi noi ve ANH"); no chi chua duoc noi.
+        #
+        # ⭐ Chuyen tiep NGUYEN cau cua nen tang, ⛔ khong go lai san `64x64`:
+        #    luat song o `platform_core.image_input`, va mot ban thu hai o day se
+        #    troi ngay lan dau ai do doi con so ay.
+        try:
+            kieu_that, _co = image_input.validate_reference(du_lieu, kieu)
+        except ValueError as exc:
+            raise AsvError(str(exc)) from exc
         duoi = {"image/png": "png", "image/jpeg": "jpg",
                 "image/webp": "webp"}.get(kieu_that, "png")
         vt = assets.bam(du_lieu)[:32]
         khoa_tam = assets.khoa_staging(owner_id=run.owner_id, run_id=run.id,
                                        stage="logo", van_tay=vt, duoi=duoi)
         kho.put(khoa_tam, io.BytesIO(du_lieu), content_type=kieu_that)
-        tai_san = assets.promote_va_ghi(
-            db, kho, owner_id=run.owner_id, run_id=run.id, stage="logo",
-            van_tay=vt, kind=KIND_ANH, duoi=duoi, staging_key=khoa_tam)
+        # ⚠️ `AssetError` cung phai thanh `AsvError` — cung ly do voi phep kiem
+        #    som o tren: route chi bat `AsvError`, nen mot `AssetError` lot ra la
+        #    mot trang 500.
+        #
+        # ⛔ Nhung KHONG chuyen tiep thong diep cua no: `AssetError` mang khoa
+        #    luu tru trong cau chu (`artifact anh khong hop le: asv-staging/...`).
+        #    Do la duong dan noi bo, va man hinh cua khach CO Y khong doc chu tu
+        #    do cua tang duoi — cung luat `quan_sat.tom_tat_loi_cho_khach` dung.
+        try:
+            tai_san = assets.promote_va_ghi(
+                db, kho, owner_id=run.owner_id, run_id=run.id, stage="logo",
+                van_tay=vt, kind=KIND_ANH, duoi=duoi, staging_key=khoa_tam)
+        except assets.AssetError as exc:
+            raise AsvError(_t('Ảnh logo không hợp lệ.')) from exc
         ra.append(tai_san.storage_key)
     return ra
 
