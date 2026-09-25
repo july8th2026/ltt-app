@@ -1,0 +1,225 @@
+{
+  "goal": "Đọc Sheet mỗi sáng, lấy READY, tạo video, chờ tôi duyệt",
+  "hop_le": false,
+  "loi": [
+    {
+      "ma": "node_khong_ton_tai",
+      "thong_diep": "node_khong_ton_tai: core.http@1",
+      "node_id": "fetch_sheet"
+    }
+  ],
+  "document": {
+    "version": 3,
+    "pages": [
+      {
+        "id": "p1",
+        "name": "Trang 1",
+        "nodes": [
+          {
+            "id": "fetch_sheet",
+            "type": "core.http@1",
+            "type_version": 1,
+            "position": {
+              "x": 0,
+              "y": 0
+            },
+            "label": "",
+            "params": {
+              "url": "https://api.example.com/sheet/daily_ready",
+              "than": "",
+              "cach": "GET"
+            },
+            "credential_ref": "",
+            "settings": {}
+          },
+          {
+            "id": "parse_data",
+            "type": "core.transform@1",
+            "type_version": 1,
+            "position": {
+              "x": 280,
+              "y": 0
+            },
+            "label": "",
+            "params": {
+              "gia_tri": "JSON.parse(fetch_sheet.than)"
+            },
+            "credential_ref": "",
+            "settings": {}
+          },
+          {
+            "id": "filter_ready",
+            "type": "core.filter@1",
+            "type_version": 1,
+            "position": {
+              "x": 560,
+              "y": 0
+            },
+            "label": "",
+            "params": {
+              "items": "parse_data.gia_tri",
+              "dieu_kien": "item.status == 'READY'"
+            },
+            "credential_ref": "",
+            "settings": {}
+          },
+          {
+            "id": "loop_videos",
+            "type": "core.foreach@1",
+            "type_version": 1,
+            "position": {
+              "x": 840,
+              "y": 0
+            },
+            "label": "",
+            "params": {
+              "items": "filter_ready.results",
+              "max_items": 100,
+              "parallelism": 4
+            },
+            "credential_ref": "",
+            "settings": {}
+          },
+          {
+            "id": "generate_video",
+            "type": "app.video.generate@1",
+            "type_version": 1,
+            "position": {
+              "x": 1120,
+              "y": 0
+            },
+            "label": "",
+            "params": {
+              "prompt": "item.title",
+              "model": "seedance-v1"
+            },
+            "credential_ref": "",
+            "settings": {}
+          },
+          {
+            "id": "collect_results",
+            "type": "core.foreach_end@1",
+            "type_version": 1,
+            "position": {
+              "x": 1400,
+              "y": 0
+            },
+            "label": "",
+            "params": {
+              "foreach": "loop_videos"
+            },
+            "credential_ref": "",
+            "settings": {}
+          },
+          {
+            "id": "human_review",
+            "type": "core.human@1",
+            "type_version": 1,
+            "position": {
+              "x": 0,
+              "y": 160
+            },
+            "label": "",
+            "params": {
+              "cau_hoi": "Xác nhận video đã tạo"
+            },
+            "credential_ref": "",
+            "settings": {}
+          },
+          {
+            "id": "output_result",
+            "type": "core.output@1",
+            "type_version": 1,
+            "position": {
+              "x": 280,
+              "y": 160
+            },
+            "label": "",
+            "params": {
+              "ten": "video_keys",
+              "gia_tri": "collect_results.results"
+            },
+            "credential_ref": "",
+            "settings": {}
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source_node": "fetch_sheet",
+            "target_node": "parse_data",
+            "source_port": "than",
+            "target_port": "gia_tri",
+            "kind": "json",
+            "condition": ""
+          },
+          {
+            "id": "e2",
+            "source_node": "parse_data",
+            "target_node": "filter_ready",
+            "source_port": "gia_tri",
+            "target_port": "items",
+            "kind": "json",
+            "condition": ""
+          },
+          {
+            "id": "e3",
+            "source_node": "filter_ready",
+            "target_node": "loop_videos",
+            "source_port": "results",
+            "target_port": "items",
+            "kind": "json",
+            "condition": ""
+          },
+          {
+            "id": "e4",
+            "source_node": "loop_videos",
+            "target_node": "generate_video",
+            "source_port": "results",
+            "target_port": "in",
+            "kind": "json",
+            "condition": ""
+          },
+          {
+            "id": "e5",
+            "source_node": "generate_video",
+            "target_node": "collect_results",
+            "source_port": "video_key",
+            "target_port": "in",
+            "kind": "json",
+            "condition": ""
+          },
+          {
+            "id": "e6",
+            "source_node": "collect_results",
+            "target_node": "human_review",
+            "source_port": "results",
+            "target_port": "in",
+            "kind": "json",
+            "condition": ""
+          },
+          {
+            "id": "e7",
+            "source_node": "human_review",
+            "target_node": "output_result",
+            "source_port": "du_lieu",
+            "target_port": "gia_tri",
+            "kind": "json",
+            "condition": ""
+          }
+        ],
+        "viewport": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        }
+      }
+    ]
+  },
+  "model": "H:/LTT_LLM/models/Qwen3.5-9B-Q6_K-unsloth.gguf",
+  "su_dung": {
+    "token_vao": 6632,
+    "token_ra": 2990
+  },
+  "thoi_gian_s": 53.249672174453735
+}

@@ -45,24 +45,27 @@ log = logging.getLogger(__name__)
 #: ⚠️ Khong bao gio boc `str(exc)` tho vao day.
 LOI_CHUNG = "giai doan nay khong hoan tat"
 
-#: Nhan TIENG VIET cho tung nang luc tinh tien (V6 pha 30). Khoa la `nang_luc` ghi
-#: o so cai; ma la cua ta, khong phai cua khach. Nang luc chua co nhan hien la
-#: "Viec khac" — thay vi lo ma noi bo ra man khach.
-NHAN_NANG_LUC = {
-    "tong_hop_tieng": N_("Đọc lời lồng tiếng"),
-    "dich_thuat": N_("Dịch"),
-    "chuyen_loi_thoai": N_("Viết lời thoại tiếng Việt"),
-    "rut_ngan_cho_vua": N_("Rút gọn cho vừa thời lượng"),
-    "doc_canh": N_("Xem từng cảnh"),
-    "ho_so_noi_dung": N_("Phân tích nội dung"),
-    "qc_ngu_nghia": N_("Kiểm tra nghĩa bản dịch"),
-    "qc_hinh": N_("Kiểm tra hình ảnh"),
-    "sua_chua": N_("Vòng sửa tự động"),
-    "sua_chua_con_lai": N_("Ghi nhận lỗi còn lại"),
-}
-NHAN_NANG_LUC_KHAC = N_("Việc khác")
-NHAN_DON_VI = {"token": N_("token"), "giay": N_("giây"), "ky_tu": N_("ký tự"),
-               "khung_hinh": N_("khung hình"), "luot": N_("lượt")}
+# ⭐ **`NHAN_NANG_LUC` / `NHAN_NANG_LUC_KHAC` / `NHAN_DON_VI` da bi XOA — 25/09/2026.**
+#
+#    Ba bang nhan tieng Viet ("Doc loi long tieng", "Dich", "token", "giay"...)
+#    ton tai de in **hoa don theo nang luc** cua khach (V6 pha 30). Gia phang thay
+#    hoa don do bang MOT dong (`gia.hoa_don`), nen ⛔ khong con man hinh nao in nhan.
+#
+# 🔑 Da doc truoc khi xoa, ⛔ khong doan — ba cho, va ca ba deu am:
+#      `su_dung.so_ke`                     tra ve `nang_luc` THO, ⛔ khong nhan
+#      `dong_thoi_gian(cho_van_hanh=True)` nhet `so_ke` vao nguyen ven
+#      `asv_chi_tiet.html` khoi van hanh   in `giai_doan`/`run_id`/`credit_*`/
+#                                          `ket_xuat` — ⛔ khong he doc `so_ke`
+#    Khong mot template, route, public API hay man quan tri nao doc ba bang nay.
+#
+# ⚠️ Va banh coc `test_482::test_moi_nang_luc_TINH_TIEN_trong_ma_deu_co_NHAN` da bi
+#    xoa **cung luc**, co chu dinh: giu mot phep kiem gac mot **nghia vu ma** thi te
+#    hon xoa ca hai. No van xanh, van bat moi nang luc moi phai dich mot cau — cho
+#    mot man hinh ⛔ khong con ton tai.
+#
+# ⇒ Ngay nao co mot man VAN HANH thuc su muon doc ten nang luc bang tieng Viet:
+#   dung lai bang **o do**, cho nguoi doc that, ⛔ dung khoi phuc mot bang chung.
+#   Nguoi van hanh doc `nang_luc` tho duoc — do la ngon ngu cua ho.
 
 
 def _giay(bat, ket) -> float | None:

@@ -16,33 +16,6 @@ from __future__ import annotations
 from platform_core.i18n import N_
 from platform_core.registry import AppManifest
 
-#: Gia tam cho pha 05: chuoi giai doan van la job GIA, khong goi provider nao,
-#: khong dung GPU. Mot gia khac 0 de duong tien duoc chay that (giu -> quyet
-#: toan -> hoan), nhung du nho de mot lan thu nghiem khong ton gi dang ke.
-#:
-#: ⚠️ Bang gia THAT thuoc pha 21. Dat mot cong thuc "nhin cho giong that" o day
-#:    la mot loi hua ma pha sau phai go.
-#:
-#: 🔴 MOT DIEU PHAI BIET TRUOC KHI VIET BANG GIA THAT (RISK-12-03).
-#:
-#:    `apps/ltt_voice/manifest.py:41 _gia()` uoc theo so ky tu **DA CHUAN HOA**,
-#:    khong theo van ban tho. Vi du chinh no ghi: `"1.500.000 dong"` la 14 ky tu
-#:    nhung doc ra `"mot trieu nam tram nghin dong"` — **no hon hai lan**.
-#:
-#:    Nen neu Auto Scan uoc chi phi TTS tu do dai ban dich THO, uoc luong se
-#:    thap co he thong. Va uoc thap khong phai mot lech nho: `credit_held` be
-#:    hon thuc te lam `features.kiem_tran_chi` **danh hong mot lan chay dang
-#:    giua chung** — mot that bai chinh sach sach se, nhung la mot trai nghiem
-#:    te hoan toan tranh duoc.
-#:
-#: ⇒ Uoc TTS phai dem tren `giong_noi.chuan_hoa_van_ban(...)`, dung ham da co.
-#:
-#: ⭐ Va luu y phan thu hai cua chinh docstring do: `ltt_voice` uoc bang **ky tu
-#:    da chuan hoa** nhung quyet toan bang **giay tieng that su sinh ra** (do
-#:    bang ffprobe). Do dung la ADR-001 D4 — do duoc, khong tinh lai — nen huong
-#:    quyet toan cua ta da khop san voi ho.
-GIA_THU_MOI_RUN = 1
-
 
 def _gia(params: dict) -> int:
     """Gia cua job DIEU PHOI. Luon 0 — no khong lam viec tinh tien duoc.

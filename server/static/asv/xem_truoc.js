@@ -24,6 +24,7 @@
   var tenTep = document.getElementById("asv-tep-ten");
   var uocTien = document.getElementById("asv-uoc-tien");
   var uocGio = document.getElementById("asv-uoc-gio");
+  var uocLuat = document.getElementById("asv-uoc-luat");
   var oVe = document.getElementById("asv-ve");
 
   function moTep() {
@@ -35,7 +36,10 @@
     video.src = URL.createObjectURL(f);
     video.hidden = false;
     video.controls = true;
-    if (lop) lop.hidden = false;
+    /* ⚠️ `ASV.an` chu khong `.hidden`: `#asv-lop` la mot `<svg>`, va `hidden` la
+     *    thuoc tinh cua `HTMLElement` — gan no tren SVG tao mot thuoc tinh JS
+     *    thua va KHONG go thuoc tinh HTML. Xem ghi chu dai o `asv/nen.js`. */
+    ASV.an(lop, false);
     if (rong) rong.hidden = true;
 
     var mb = (f.size / (1024 * 1024)).toFixed(1);
@@ -102,10 +106,25 @@
         return r.ok ? r.json() : null;
       }).then(function (d) {
         if (!d) return;
-        // ⭐ Hien mot KHOANG, va can tren la thu khach thuc su doi mat.
-        chu(uocTien, "~" + d.credit_thap + "–" + d.credit_cao
-                     + " " + t("credit"));
+        /* 🔴 **MOT con so, va ⛔ KHONG con dau `~`** (gia phang, 25/09).
+         *
+         *    Ban cu in `"~" + credit_thap + "–" + credit_cao`. Duoi gia phang
+         *    hai khoa do BANG NHAU, nen man hinh hien `~40–40`: mot khoang co
+         *    be rong bang khong, ma van xin loi truoc bang mot dau `~`.
+         *
+         * ⛔ Va dau `~` la mot loi NOI SAI, khong chi la mot thua thai: no bao
+         *    khach *"ang chung"* trong khi ta biet dung con so — gia la mot ham
+         *    cua do dai video nguon, va do dai do da do xong truoc khi ho bam.
+         *
+         * ⚠️ Doc `d.credit` chu khong `d.credit_thap`: hai khoa cu con song o
+         *    may chu CHI de giao dien kip doi. Doc khoa cu la giu chung song. */
+        chu(uocTien, d.credit + " " + t("credit"));
         chu(uocGio, t("khoang") + " " + ASV.phutGiay(d.thoi_gian_giay));
+        /* ⭐ Luat lam tron di KEM con so — yeu cau cua chu du an, khong phai mot
+         *    tien ich: mot con so nhay ra SAU khi da tru tien la cach nhanh nhat
+         *    de mat long tin. Cau da dich san o may chu (`gia.luat_lam_tron()`),
+         *    nen o day khong co chuoi tieng Viet nao. */
+        chu(uocLuat, d.luat_lam_tron || "");
       }).catch(function () {
         /* ⛔ Nuot CO CHU DICH: uoc gia hong khong duoc chan khach bat dau.
            Ho van thay so giu cho that o trang chi tiet. */

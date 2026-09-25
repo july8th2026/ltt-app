@@ -57,6 +57,31 @@ window.ASV = (function () {
 
   function chu(el, s) { if (el) el.textContent = s; }
 
+  /* 🔴 **An/hien bang THUOC TINH, khong bang `.hidden` — va day la mot lo da
+   *    CHAY TREN SAN PHAM, khong phai mot phong xa.**
+   *
+   *    `hidden` la mot IDL attribute cua **`HTMLElement`**. `<svg>` la
+   *    `SVGElement` (khong ke thua `HTMLElement`), nen `svg.hidden = false`
+   *    **khong** go thuoc tinh HTML — no tao mot thuoc tinh JS thua tren doi
+   *    tuong. Thuoc tinh `hidden` viet trong template thi con nguyen.
+   *
+   *    Cong them luat `.asv-trang [hidden]{display:none!important}` cua chinh
+   *    kho nay, ket qua la: **lop ve vung che (`#asv-lop`) khong bao gio hien**.
+   *    `xem_truoc.js` goi `lop.hidden = false`, `vung.js` ve `<rect>` vao trong
+   *    no, moi dong JS deu chay dung — va khach khong the ve mot vung nao.
+   *
+   * ⛔ Do la mot loi KHONG KEU: khong ngoai le, khong canh bao, `lop.hidden`
+   *    doc lai van tra ve `false` (no doc chinh thuoc tinh thua vua tao). Chi
+   *    `getAttribute("hidden")` hay mot phep do kich thuoc moi noi ra su that.
+   *
+   * ⭐ Thuoc tinh thi dung cho CA HAI ho phan tu, nen ham nay khong phai hoi
+   *    "day co phai SVG khong" — no chi don gian la cach dung. */
+  function an(el, an_di) {
+    if (!el) return;
+    if (an_di) el.setAttribute("hidden", "");
+    else el.removeAttribute("hidden");
+  }
+
   function phutGiay(giay) {
     var g = Math.max(0, Math.round(giay));
     var p = Math.floor(g / 60);
@@ -146,6 +171,7 @@ window.ASV = (function () {
 
     t: t,
     chu: chu,
+    an: an,
     phutGiay: phutGiay,
     pt: pt,
 

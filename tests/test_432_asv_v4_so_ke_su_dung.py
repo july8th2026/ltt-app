@@ -507,6 +507,13 @@ def test_ghi_su_dung_KHONG_bi_ngan_sach_tu_choi(db):
     su_dung.ghi(db, run, stage=pipeline.VOICE_SYNTHESIS, item_key="s1",
                 su_dung=_giao(credit=50))
     assert features.tong_da_dung(db, run) == 50, "phai ghi that, du vuot hold"
+
+    # ⭐ Mot lan chay DA GIAO, 10 phut nguon: gia phang 100 credit tren mot hold 5.
+    #    (Khong dung hai su that o `_dat_thoi_luong_nguon` thi `quyet_toan` di duong
+    #     "khong co hien vat ⇒ thu 0" va bai nay xanh ma khong cham phep `min`.)
+    _dat_thoi_luong_nguon(db, run, 600.0)
+    assert gia.tinh_credit(600.0) > 5, "ca thu nay khong con y nghia"
+
     # Va tran tren van la muc da giu khi chot.
     features.quyet_toan(db, run, trang_thai_cuoi=RUN_DONE)
     assert run.credit_actual == 5
@@ -681,16 +688,26 @@ def test_ca_luot_chay_chi_giu_credit_MOT_lan_va_quyet_toan_dung_so_do_duoc(db):
 
 
 def _dat_thoi_luong_nguon(db, run, giay: float) -> None:
-    """Dat ho so soi cua `media_prepare` — noi gia phang doc do dai video NGUON.
+    """Dung HAI su that ma luat thu tien (25/09/2026) doi hoi:
 
-    ⭐ Tu 25/09/2026 so THU la `gia.tinh_credit(do dai nguon)`, nen mot bai kiem ve
-       tien phai noi do dai la bao nhieu. Khong dat thi `quyet_toan` roi ve duong
-       lui (*"thu theo `credit_held`"*) — mot duong **hop le nhung khong phai duong
-       dang duoc kiem**, va mot bai xanh nho duong lui la mot bai xanh gia.
+        `media_prepare.thoi_luong`   do dai video NGUON -> `gia.tinh_credit`
+        `render.khoa_asset` co .mp4  HIEN VAT -> co gi giao cho khach khong (N-57)
+
+    ⚠️ Thieu mot trong hai thi `quyet_toan` roi ve mot duong KHAC — duong lui theo
+       `credit_held`, hoac duong *"khong co hien vat ⇒ thu 0"*. Ca hai deu hop le,
+       nhung chung ⛔ khong phai duong dang duoc kiem, va mot bai xanh nho mot duong
+       khac la mot bai xanh gia.
     """
+    from apps.auto_scan_video.tables import STAGE_SUCCEEDED
+
     gd = features.giai_doan_theo_ten(db, run.id, pipeline.MEDIA_PREPARE)
     features.cap_nhat_giai_doan(db, gd, outputs={"stage": pipeline.MEDIA_PREPARE,
                                                  "thoi_luong": float(giay)})
+    rd = features.giai_doan_theo_ten(db, run.id, pipeline.RENDER)
+    features.cap_nhat_giai_doan(
+        db, rd, status=STAGE_SUCCEEDED,
+        outputs={"stage": pipeline.RENDER, "dat": True,
+                 "khoa_asset": [f"asv/{run.owner_id}/{run.id}/long-tieng.mp4"]})
     db.flush()
 
 

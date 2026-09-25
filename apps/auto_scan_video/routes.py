@@ -665,7 +665,17 @@ def uoc_tinh(request: Request, giay: float = 0.0,
         #    la mot trang hien `undefined`). Khoang da sup thanh mot DIEM, nen ca
         #    hai bang dung con so that — ⛔ khong phai mot khoang bia ra quanh no.
         #
-        # ⇒ Khi `asv-gui` chuyen sang `credit` + `luat_lam_tron`, xoa hai dong nay.
+        # ⭐ **25/09 chieu: `asv-gui` DA chuyen** (`server/static/asv/xem_truoc.js`
+        #    doc `d.credit` + `d.luat_lam_tron`; `test_3802` chot rang no ⛔ khong
+        #    doc hai khoa nay nua). `grep` ca kho: ⛔ khong con nguoi doc.
+        #
+        # ⇒ Hai dong nay **da xoa duoc**, va nen xoa: mot khoa ten `thap`/`cao`
+        #   cho mot con so DON la mot khoa noi doi ve hinh dang cua gia.
+        #
+        # ⛔ Chua xoa trong lan nay, co chu dinh: mot trinh duyet con giu ban JS cu
+        #    trong cache se in `~undefined–undefined` **tren mot man hinh tien**.
+        #    Cai gia cua viec doi mot nhip la hai dong; cai gia cua viec doi sai la
+        #    mot con so tien sai truoc mat khach. Xoa o lan don dep ke tiep.
         "credit_thap": xem["credit"], "credit_cao": xem["credit"],
     })
 
