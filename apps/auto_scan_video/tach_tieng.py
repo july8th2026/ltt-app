@@ -57,7 +57,7 @@ from platform_core import media
 from platform_core.i18n import _ as _t
 
 from .demucs_runner import ThieuCard
-from .nhap_media import DaHuy, MediaError, _chay, phien_ban_ffmpeg
+from .nhap_media import DaHuy, MediaError, _chay
 
 log = logging.getLogger(__name__)
 
