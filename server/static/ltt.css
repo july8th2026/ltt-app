@@ -3573,6 +3573,11 @@ button.lv-the-song.nghe-loi,.lv-chon-nghe.nghe-loi{
   stroke:var(--brand-hover);stroke-width:.004;vector-effect:non-scaling-stroke}
 .asv-hop-danh_dau_phu_de{fill:var(--status-warning);fill-opacity:.2;
   stroke:var(--status-warning)}
+/* `dien_nen` (V5, xoa han bang dien nen) — mau RIENG voi `lam_mo`: khach can
+   biet hai loai xu ly KHAC nhau (che kin vs dien nen), khong chi mot nhan
+   chu. `--accent2` dung lai tu lop keo-tha logo ben duoi. */
+.asv-hop-dien_nen{fill:var(--accent2,var(--brand-hover));fill-opacity:.18;
+  stroke:var(--accent2,var(--brand-hover))}
 /* Chi bat con tro khi DANG ve — ngoai luc do, dieu khien cua `<video>` phai bam duoc. */
 .asv-lop{pointer-events:none}
 .asv-dang-ve .asv-lop{pointer-events:auto;cursor:crosshair}
@@ -3589,6 +3594,24 @@ button.lv-the-song.nghe-loi,.lv-chon-nghe.nghe-loi{
 /* ⛔ Khi dang ve VUNG CHE thi tat cac diem keo logo: hai cong cu cung doi mot
  *    cu keo tren cung mot khung hinh la mot cho khach bam nham chac chan. */
 .asv-dang-ve .asv-lg-keo{pointer-events:none}
+
+/* ── Lop DE XUAT — `do_vung.de_xuat()` qua `asv/de_xuat.js` ───────────────────────
+ * Cung khuon voi `.asv-lop-logo`: lop trong suot voi con tro TRU chinh hop de
+ * xuat, de mot cu keo tren khung hinh trong van roi xuong `#asv-lop`. */
+.asv-lop-de-xuat{pointer-events:none;z-index:3}
+.asv-dx-hop{fill:none;stroke-width:2;stroke-dasharray:4 3;
+  vector-effect:non-scaling-stroke;pointer-events:auto;cursor:grab}
+.asv-dx-hop:active{cursor:grabbing}
+.asv-dx-hop-logo_tinh{stroke:var(--brand-hover)}
+.asv-dx-hop-dai_chu{stroke:var(--status-warning)}
+.asv-dang-ve .asv-dx-hop{pointer-events:none}
+
+.asv-dx{margin-bottom:10px}
+.asv-dx-chi-tiet{margin:6px 0}
+.asv-dx-chi-tiet summary{cursor:pointer;font-size:13px;color:var(--muted)}
+.asv-dx-canh{color:var(--status-warning)}
+.asv-dx-ds{margin-top:8px}
+.asv-dx-hang{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
 .asv-an-input{position:absolute;width:1px;height:1px;padding:0;margin:-1px;
   overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}

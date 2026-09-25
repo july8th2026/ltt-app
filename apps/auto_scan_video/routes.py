@@ -27,7 +27,9 @@ vi **chuoi la co dinh** — khong co do thi de dung, khong co node de keo tha
 """
 from __future__ import annotations
 
+import json
 import logging
+import os
 import tempfile
 from pathlib import Path
 
@@ -42,7 +44,8 @@ from server.auth.session import require_login
 from server.deps import get_db, user_hien_tai
 from server.templating import templates
 
-from . import dich_vu_tao, hop_dong_v4, features, gia, pipeline, quan_sat
+from . import (dich_vu_tao, do_vung, hop_dong_v4, features, gia, pipeline,
+               quan_sat, vung_che)
 from . import bien_tap as bien_tap_mod
 from . import (am_thanh as am_thanh_mod, cai_dat as cai_dat_mod, logo as logo_mod,
                lop_phu as lop_phu_mod, ngon_ngu as ngon_ngu_mod,
@@ -216,6 +219,9 @@ def _ngu_canh_studio(db, u, loi: str = "", nap_lai: dict | None = None) -> dict:
         #: ⛔ Lay TU hop dong, khong go chuoi `"smart_localize"` vao template:
         #:    mot chuoi go tay o giao dien la mot cho se lech khi hop dong doi.
         "preset_can_cho_vung": hop_dong_v4.PRESET_CAT_THONG_MINH,
+        #: San vung toi da — giao dien doc de khoa nut "Nhan" khi da day, thay
+        #: vi go lai 12 o day (khop `vung_che.SO_VUNG_TOI_DA`).
+        "vung_toi_da": vung_che.SO_VUNG_TOI_DA,
         #: ── Ba han muc cua lop phu chu, LAY TU MODULE ─────────────────────
         #:
         #: ⛔ Khong go `3` va `80` vao template. Do la cach mot han muc troi im
@@ -814,6 +820,90 @@ def _run_cua_toi(db, run_id: str, u):
     except features.AsvError:
         raise HTTPException(status_code=404,
                             detail=_t('Không tìm thấy lần chạy.')) from None
+
+
+@router.post("/tai-len/{upload_id}/de-xuat-vung")
+def de_xuat_vung(request: Request, upload_id: str,
+                 tranh: str = Form(""), csrf_token: str = Form(""),
+                 _g: None = Depends(_cong_co), user: str = Depends(require_login),
+                 db: Session = Depends(get_db)):
+    """MOT be mat GOI `do_vung.de_xuat` — thuat toan khong doi o day.
+
+    ## Vi sao dung o day: day la ĐIỂM DUY NHẤT co tep cuc bo TRUOC khi tao lan chay
+
+    Video chi nam tren may chu SAU khi tai len ben vung xong (`/tai-len/.../xong`,
+    trang thai READY) — duong multipart nho thi tep chi song trong THAN cua
+    chinh request `POST /tao`, bien mat ngay sau, nen khong co diem nao goi
+    `do_vung` duoc cho duong do. Giao dien (`asv/de_xuat.js`) chi hien nut "Dò
+    vùng cần che" khi tep di duoc duong ben vung.
+
+    ## ⛔ KHONG bao gio ghi thang vao `vung_che`
+
+    Day CHI la mot DE XUAT — dung nguyen `do_vung.de_xuat()`, `trang_thai` +
+    `vung` + `so_khung` + `ly_do` di THANG ra giao dien khong sua doi. Khach
+    phai bam NHAN hoac KEO SUA o `#asv-lop-de-xuat` truoc khi mot hop vao
+    `vung[]` that (`asv/vung.js:themVungDeXuat`). Xem docstring dai o
+    `do_vung.de_xuat` — day la luat "GIAI DOAN 2" chot 25/09.
+
+    `tranh` — JSON mang cac cap `[y0, y1]` cua vung khach ĐÃ vẽ (bất kỳ loại
+       nào), để V4b tránh chồng lên chúng (BẤT BIẾN 2 của `do_vung.py`). Rỗng =
+       chưa vẽ gì.
+    """
+    if not verify_csrf_token(request, csrf_token):
+        raise HTTPException(status_code=400, detail=_t('Phiên đã hết hạn.'))
+    u = user_hien_tai(request)
+    if u is None:
+        raise HTTPException(status_code=401)
+
+    from platform_core import upload_sessions
+    from platform_core.models import UPLOAD_READY
+    from platform_core.storage import get_storage
+
+    phien = upload_sessions.owned(db, session_id=str(upload_id or ""),
+                                  user_id=u.id, app_slug=features.SLUG)
+    if phien is None or phien.status != UPLOAD_READY:
+        raise HTTPException(status_code=404, detail=_t(
+            'Chưa tải lên xong — hãy đợi tải lên hoàn tất rồi thử lại.'))
+
+    tranh_tuples: list[tuple[float, float]] = []
+    try:
+        tho_tranh = json.loads(tranh) if tranh else []
+    except (TypeError, ValueError):
+        tho_tranh = []
+    if isinstance(tho_tranh, list):
+        for cap in tho_tranh:
+            try:
+                y0, y1 = float(cap[0]), float(cap[1])
+            except (TypeError, ValueError, IndexError, KeyError):
+                continue
+            tranh_tuples.append((y0, y1))
+
+    kho = get_storage()
+    duong = kho.local_path(phien.staging_key)
+    tmp_path = ""
+    try:
+        if not duong:
+            # Kho tu xa (R2): tai VE mot ban cuc bo tam thoi — `do_vung` mo
+            # video bang `cv2.VideoCapture`, no doi mot DUONG TEP tren dia.
+            suffix = Path(str(phien.filename or "video.mp4")).suffix or ".mp4"
+            with tempfile.NamedTemporaryFile(
+                    prefix="asv-dovung-", suffix=suffix, delete=False) as tmp:
+                tmp_path = tmp.name
+                with kho.open(phien.staging_key) as nguon:
+                    while True:
+                        khoi = nguon.read(1024 * 1024)
+                        if not khoi:
+                            break
+                        tmp.write(khoi)
+            duong = tmp_path
+        ra = do_vung.de_xuat(duong, tranh=tuple(tranh_tuples))
+    finally:
+        if tmp_path:
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
+    return JSONResponse(ra)
 
 
 # ── Tai len NHIEU PHAN (tiep tuc duoc sau khi dut) ──────────────────────────

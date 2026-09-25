@@ -21657,3 +21657,9 @@ msgstr "⚠️ This is the original dialogue (usually a foreign language), not j
 
 msgid "Âm lượng giọng nói gốc"
 msgstr "Original voice volume"
+
+# Them boi phien VPS 26/09: chuoi nay tu commit 151acbb4 (lan
+# upscalevideo) va no chan banh coc `check_dich_thieu` => chan commit cua
+# MOI phien. Chuoi goc da la tieng Anh nen ban EN giu nguyen van.
+msgid "Quality gates passed: PSNR{0}dB"
+msgstr "Quality gates passed: PSNR{0}dB"

@@ -112,6 +112,55 @@ cua no len vung khach da ve. Ta giu dung the: `tranh` cua `do_dai_chu`.
 Ke ca 48 khung van chi 1,7 % cua nen 115 s. ⇒ Ket qua run ray thi **tang khung**;
 cac nguong duoi day la so Viral da tra gia de hoc, ⛔ dung go lai bang tay.
 
+## ⚠️ V4c — LOGO DI CHUYEN: ⛔ KHONG ho tro, va day la hai ly do — chot ke hoach
+
+`docs/superpowers/plans/2026-09-25-asv-hai-giai-doan.md` chot V4c la
+**"C — khong lay"**, hai ly do DOC LAP (⛔ dung lat lai chi vi mot trong hai
+nghe yeu hon o lan doc sau):
+
+1. **Chi phi 5–10×** so voi V4a/V4b — bam theo mot logo doi vi tri qua tung
+   khung doi hoi mot bo theo doi (tracker) rieng, ⛔ khong con la "OpenCV thuan,
+   0 model" nhu hai bo tren.
+2. 🔴 **No ⛔ khong phai mot bo TU DO** — thuat toan tham chieu cua Viral doi
+   khach **KHOANH O TRUOC** roi moi bam THEO o do qua cac khung; ⭐ Viral **tu
+   thu va tu loai** huong nay. Tuc du co lam, day van ⛔ khong phai "V4a nhung
+   theo doi duoc vi tri" — no la mot tinh nang KHAC (theo doi mot vung khach da
+   chi), va lop giao dien "de xuat -> khach nhan/keo/bo" cua tep nay khong co
+   cho cho no.
+
+⭐ **Da DO, ⛔ khong doan**: `do_logo_tinh` TU AN TOAN voi logo di chuyen, va do
+la mot he qua TRUC TIEP cua chinh cong `NGUONG_STD` no da co — ⛔ khong phai
+mot co che moi. Do tren clip tong hop (logo TRUOT ngang lien tuc qua 6 giay,
+cung nen dong nhu `test_4301`):
+
+    | clip                | `do_logo_tinh` tra ve      |
+    |----------------------|----------------------------|
+    | logo TINH (doi chung)| MOT hop, dung goc `tr`      |
+    | logo DI CHUYEN        | **RONG** (`vung=()`)       |
+
+Ly do bang so: `std` (phuong sai theo truc THOI GIAN, xem V4a o tren) do TAI
+TUNG O LUOI CO DINH cua grid da ha (`BE_RONG_LOGO`). Logo di chuyen nghia la
+mot o luoi cho no CHI che mot phan thoi gian — pixel o do doi giua "co logo"
+va "nen dong phia sau" qua cac khung, nen `std` TANG VOT qua truc **cung** truc
+ma logo tinh giu THAP. Cong `std < NGUONG_STD` (8,0) — vi do CHINH la dinh
+nghia cua "logo", khong phai mot ngoai le rieng cho ca nay — tu loai no truoc
+khi toi duoc cac cong con lai (Laplacian, vi tri, dien tich). Phep kiem:
+`tests/test_4803_asv_v4c_logo_dong_khong_ho_tro.py`.
+
+⚠️ **Ket qua tren la RONG (`khong_co` neu di qua `de_xuat()`), ⛔ khong phai
+`khong_do_duoc`.** Dung lam ro: rong o day nghia la *"bo do CHAY THAT ma
+khong thay gi"* — dung hanh vi BAT BIEN 1 mo ta o tren, ⛔ khong phai mot
+ngoai le rieng cho logo dong. `de_xuat()` ⛔ khong can mot nhanh rieng de "chan"
+V4c: no ⛔ chua bao gio hop lai duoc mot hop cho ca nay.
+
+⛔ **Va do la MOT DIEM DO, ⛔ khong phai mot lo hong da vieng kin.** Nguong 8,0
+   la hang so Viral da tra gia de hoc (BAT BIEN 3 o duoi) — mot logo di chuyen
+   RAT CHAM (vai pixel/giay) van co the giu `std` duoi nguong o mot vai o luoi
+   bien, va khi do V4a se bao mot hop TINH cho mot vi tri **chi dung trong mot
+   phan thoi gian**. `de_xuat()` ⛔ khong phat hien duoc ca do — day chinh la
+   ly do man hinh la mot ĐE XUAT khach phai nhin va nhan/bo, ⛔ khong bao gio
+   tu dong che (xem muc 2 o duoi).
+
 ## ⛔ Vi sao KHONG dung lai khung `canh.rut_khung` da trich
 
 Đ1 §9: `canh` cho ra JPEG chat luong 4 **da ha ve canh dai 512**, lay tai **giua

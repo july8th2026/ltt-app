@@ -27,7 +27,11 @@
 
   var CANH_TOI_THIEU = 0.01;   // khop `vung_che.CANH_TOI_THIEU`
 
-  function veLai() {
+  /* Ve LAI CHI cac hop tren SVG — tach khoi `veLai()` vi o so toa do (them o
+   * pha nay, xem `oGioToaDo`) can cap nhat khung hinh SAU MOI KY TU go, va
+   * dung lai ca `veDanhSachVung()` cho viec do se huy `<input>` dang go va mat
+   * tieu diem — dung loi da tranh o `oGio` cho `tu_giay`/`den_giay`. */
+  function veHop() {
     if (!lop) return;
     while (lop.firstChild) lop.removeChild(lop.firstChild);
     vung.forEach(function (v) {
@@ -39,6 +43,10 @@
       r.setAttribute("class", "asv-hop asv-hop-" + v.loai);
       lop.appendChild(r);
     });
+  }
+
+  function veLai() {
+    veHop();
     veDanhSachVung();
     dongBoVung();
   }
@@ -98,6 +106,41 @@
     return l;
   }
 
+  /* O SO cho MOT canh toa do (0..100%) — duong SUA CHINH XAC, doc duoc bang
+   * trinh doc man hinh, cho mot de xuat `do_vung` hoi lech. `veHop()` CHI (⛔
+   * khong `veLai()`) — ve lai ca danh sach se huy `<input>` dang go, cung ly
+   * do voi `oGio`. `oVt` la nhan vi tri cua CHINH hang nay, sua truc tiep. */
+  function oGioToaDo(v, khoa, nhan, oVt) {
+    var l = document.createElement("label");
+    l.className = "asv-vung-gio";
+    var s = document.createElement("span");
+    s.textContent = nhan;
+    var i = document.createElement("input");
+    i.type = "number";
+    i.min = "0";
+    i.max = "100";
+    i.step = "1";
+    i.className = "asv-cat-so";
+    i.value = String(pt(v[khoa]));
+    i.addEventListener("input", function () {
+      var x = parseFloat(i.value);
+      if (!isFinite(x)) return;
+      // Kep [0,1] o hien thi — may chu (`vung_che._so`) la cho phat bieu DUY
+      // NHAT cua luat gia tri; o day chi tranh mot hop lat nguoc khi go.
+      v[khoa] = Math.min(1, Math.max(0, x / 100));
+      veHop();
+      dongBoVung();
+      if (oVt) {
+        oVt.textContent = t("vung_vi_tri", {
+          x: pt(v.x0), x2: pt(v.x1), y: pt(v.y0), y2: pt(v.y1)
+        });
+      }
+    });
+    l.appendChild(s);
+    l.appendChild(i);
+    return l;
+  }
+
   function veDanhSachVung() {
     if (!dsVung) return;
     while (dsVung.firstChild) dsVung.removeChild(dsVung.firstChild);
@@ -117,6 +160,13 @@
       dauMuc.appendChild(ten);
       dauMuc.appendChild(oVt);
 
+      var toaDoGio = document.createElement("div");
+      toaDoGio.className = "asv-vung-gio-o";
+      toaDoGio.appendChild(oGioToaDo(v, "x0", t("vung_trai"), oVt));
+      toaDoGio.appendChild(oGioToaDo(v, "x1", t("vung_phai"), oVt));
+      toaDoGio.appendChild(oGioToaDo(v, "y0", t("vung_tren"), oVt));
+      toaDoGio.appendChild(oGioToaDo(v, "y1", t("vung_duoi"), oVt));
+
       var gio = document.createElement("div");
       gio.className = "asv-vung-gio-o";
       gio.appendChild(oGio(v, "tu_giay", t("vung_tu_giay")));
@@ -132,6 +182,7 @@
       });
 
       li.appendChild(dauMuc);
+      li.appendChild(toaDoGio);
       li.appendChild(gio);
       li.appendChild(xoa);
       dsVung.appendChild(li);
@@ -216,6 +267,33 @@
   var nhomVung = document.getElementById("asv-nhom-vung");
   var chanVung = document.getElementById("asv-vung-chan");
   var thanhVung = document.querySelector(".asv-vung-thanh");
+
+  /* `data-toi-da` do template phat — lay TU `vung_che.SO_VUNG_TOI_DA`, khong
+     go tay mot so thu hai o day. Cung khuon voi `LG_TOI_DA` o `asv/logo.js`. */
+  var VUNG_TOI_DA = nhomVung
+    ? (parseInt(nhomVung.getAttribute("data-toi-da"), 10) || 12) : 12;
+
+  /* ── Be mat cho `asv/de_xuat.js` (v4-be-mat-de-xuat) ──────────────────────
+   *
+   * 🔑 Mot khi khach bam "Nhan" tren mot de xuat cua `do_vung`, no phai vao
+   *    ĐUNG mot cho — mang `vung` nay — de di ca duong sau: dong bo `#asv-vung`
+   *    JSON, hien trong danh sach, sua duoc bang o so/nut Xoa o TREN, va di
+   *    qua CUNG `vung_che.chuan_hoa` ma may chu dung. ⛔ Khong dung mot mang
+   *    RIENG cho "vung da nhan" — hai mang la hai nguon chan ly se lech.
+   */
+  ASV.themVungDeXuat = function (v) {
+    if (vung.length >= VUNG_TOI_DA) return false;
+    vung.push({loai: v.loai, x0: v.x0, y0: v.y0, x1: v.x1, y1: v.y1});
+    veLai();
+    return true;
+  };
+
+  /* `tranh` cho `do_vung.do_dai_chu` (BAT BIEN 2 cua `do_vung.py`): cap
+     `[y0, y1]` cua MOI vung khach da ve, bat ke loai — dai chu tu do khong
+     duoc trung >= 50% len bat ky vung nao trong so nay. */
+  ASV.layTranhVung = function () {
+    return vung.map(function (v) { return [v.y0, v.y1]; });
+  };
 
   function capNhatVungTheoPreset() {
     if (!nhomVung) return;

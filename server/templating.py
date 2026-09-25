@@ -88,7 +88,12 @@ ASV_STUDIO_JS = ("asv/nen.js", "asv/xem_truoc.js", "asv/giong.js",
                  "asv/vung.js", "asv/cat.js", "asv/lop_phu.js",
                  "asv/logo.js", "asv/phu_de.js", "asv/am_thanh.js",
                  "asv/bien_tap.js", "asv/lop_nen.js", "asv/tai_len.js",
-                 "asv/thanh.js")
+                 #: `de_xuat.js` doc `ASV.taiLenSom`/`ASV.benVungDuocKhong`
+                 #: (`tai_len.js`) va `ASV.themVungDeXuat`/`ASV.layTranhVung`
+                 #: (`vung.js`) — CA HAI chi luc SU KIEN nen thu tu nap khong
+                 #: bat buoc phai sau chung (xem docstring `asv/nen.js`), nhung
+                 #: dat sau ca hai cho de doc.
+                 "asv/de_xuat.js", "asv/thanh.js")
 
 TAI_SAN_CO_VERSION = ("ltt.css", "sao_chep.js", "cam_chon.js", "chon_tep.js",
                       "voice.js", "dev_playground.js", "nhip_job.js",

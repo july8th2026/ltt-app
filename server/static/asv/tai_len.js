@@ -259,6 +259,39 @@
 
   var dangTai = false;
 
+  /* Tai len SOM, KHONG nop form (`asv/de_xuat.js` can mot tep cuc bo TRUOC khi
+   * khach bam "Bat dau" de goi `do_vung.de_xuat`). Dung lai `taiNhieuPhan`, chi
+   * khac buoc cuoi: khong `form.submit()`. Sau khi xong, `oUploadId.value` da
+   * co nen submit that se DI THANG, khong tai lan hai. That bai o day ⛔ khong
+   * lui ve multipart nhu `taiThatBai` — quet la TUY CHON, hong thi van ve tay
+   * duoc, ⛔ khong bi day sang duong khac ho khong xin. */
+  ASV.benVungDuocKhong = benVungDuocKhong;
+
+  ASV.taiLenSom = function (f) {
+    if (oUploadId && oUploadId.value) {
+      return Promise.resolve(oUploadId.value);
+    }
+    if (!f || dangTai) {
+      return Promise.reject(new Error("dang-ban"));
+    }
+    if (!benVungDuocKhong(f)) {
+      return Promise.reject(new Error("khong-ben-vung"));
+    }
+    dangTai = true;
+    datTienDo(0);
+    return taiNhieuPhan(f).then(function (uploadId) {
+      dangTai = false;
+      oUploadId.value = uploadId;
+      oTep.disabled = true;      // cung mot luat voi duong nop that: xem dau tep
+      chu(ttTai, t("tai_xong"));
+      return uploadId;
+    }, function (err) {
+      dangTai = false;
+      chu(ttTai, t("tai_hong"));
+      throw err;
+    });
+  };
+
   if (nutTaiLai) {
     nutTaiLai.addEventListener("click", function () {
       nutTaiLai.hidden = true;
