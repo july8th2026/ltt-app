@@ -21270,4 +21270,25 @@ lượng trên clip thật, override cache dir, và huỷ hợp tác job render.
 
 **Chưa làm:** Kiểm UI thật trên production (luật 7 — cần Chrome thật mở CDP
 `--remote-debugging-port=9222`, tài khoản test). Pha 1–4 chờ duyệt + gộp main.
-**Commit:** pha 0 (0.1–0.4) chưa — chờ kiểm UI thật rồi commit.
+**Commit:** pha 0 (0.1–0.4) đã: `e8b4ef1d` (26/09 02:1x, toàn hook pre-commit
+xanh khi commit; dòng "chưa" bên trên viết lúc chưa commit — coi như đã xong).
+
+## 2026-09-26 — TCN nextgen: gộp `main` + `pre-commit --all-files`
+
+- `main` tiến 52 commit trong lúc làm pha 0 ⇒ gộp về
+  `phien/tcn-nextgen`: merge commit **`7b40f961`**. Xung dich duy nhất
+  `messages.po` (append-vs-append) — giữ cả hai bên, kiểm tập hợp:
+  worktree ⊇ (branch ∪ main), 0 msgid mất. `upscalevideo/jobs.py` sửa thêm
+  1 chuỗi main chưa bọc `_()` ("chất lượng...").
+- `tools/check_ruff.moc`: tiếp nhận lại mốc (512→945) — ratchet đếm TOÀN
+  KHO, main thêm 52 commit có mã mới; 4 lỗi F821/F841 trong
+  `upscalevideo/jobs.py` là code của main, file của nhánh này ruff sạch.
+- `pre-commit run --all-files` trên `7b40f961`: **7/7 hook Passed**.
+- **🔴 Phát hiện cho chủ khu `auto_scan_video` (phiên V4, commit `777c2609`):**
+  `main` ĐỎ trên `check_dich_thieu` — `777c2609` thêm 23 chuỗi `_()` vào
+  `asv_trang_chinh.html` nhưng KHÔNG thêm vào `.po` (23 mục `VANG` mới,
+  ratchet 319→342). Ratchet khoá TẬP HỢP và `--accept` chỉ được GIẢM ⇒ không
+  tiếp nhận hộ được. Nhánh tcn-nextgen KHÔNG gộp thêm `777c2609` (để nguyên
+  nợ đỏ của phiên V4 cho chính phiên đó trả, theo §10.4 — lỗi khu người thì
+  nhắn chủ khu, không tự sửa). Gộp lại khi chủ khu đã thêm 23 msgid vào
+  `locale/en/LC_MESSAGES/messages.po`.
