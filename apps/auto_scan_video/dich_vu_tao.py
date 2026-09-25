@@ -275,4 +275,4 @@ def tao_run_tu_run_cu(db, kho, *, owner_id: str, run_id_nguon: str,
         raise LoiCaiDat(str(exc)) from exc
     return features.tao_run(
         db, owner_id=owner_id, source_key=cu.source_key, settings=settings,
-        uoc_luong_credit=gia.uoc_credit(float(tt.get("thoi_luong") or 0)))
+        uoc_luong_credit=gia.tinh_credit(float(tt.get("thoi_luong") or 0)))

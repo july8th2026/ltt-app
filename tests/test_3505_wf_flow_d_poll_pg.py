@@ -4,22 +4,56 @@
 |---|---|---|
 | D | trigger poll → filter → app | **chỉ bản ghi mới tạo run; poll lần hai không trùng** |
 
-## ⚠️ Phạm vi — đọc trước khi coi đây là "FLOW D đạt"
+## 25/09 (làn P-B2) — đổi từ piece GIẢ sang piece THẬT, và ranh giới còn lại
 
-Phép này dùng **piece giả** cho lớp poll, ⛔ không phải Google Sheets thật.
-Điều đó **cố ý**, và nó thu hẹp kết luận một cách cụ thể:
+Bản trước tệp này dùng `@ltt/piece-gia` cho lớp poll — một piece **tự khai**
+là POLLING, không tra được ở đâu ngoài kho này. Đo 24/09 (giữ nguyên ở dưới,
+đã xác nhận lại 25/09 bằng `node src/xuat_catalog.js --liet-ke`): piece
+`@activepieces/piece-google-sheets@0.17.0` khai **4** trigger —
 
-- ✅ Nó đo thứ FLOW D nói là phải đo: *chỉ bản ghi mới tạo run*, *lần poll thứ
-  hai không tạo run trùng*, và cả hai lớp khử trùng cùng lúc trên **PostgreSQL
-  thật** (nơi `ux_workflow_run_idem` thật sự ép, còn SQLite thì nuốt bề rộng
-  `String(120)`).
-- ⛔ Nó **không** đo rằng piece `google-sheets` trả về đúng hình dạng ta nghĩ.
-  Không đo được: cần một service account của khách.
-- 🔴 Và **quan trọng hơn**: đo 24/09 cho thấy piece `google-sheets` ở bản đã
-  ghim **KHÔNG có trigger POLLING nào về dòng mới** — `google-sheets-new-or-
-  updated-row` là `WEBHOOK`, mà trigger webhook của piece **ngoài phạm vi**
-  (spec §11.4). Nên "trigger poll Sheets" của spec §18.5 **không tồn tại** ở
-  bản này; hai trigger POLLING duy nhất là `new-spreadsheet` và `new-worksheet`.
+    google-sheets-new-or-updated-row : WEBHOOK
+    googlesheets_new_row_added       : WEBHOOK
+    new-spreadsheet                  : POLLING
+    new-worksheet                    : POLLING
+
+— tức **không có** trigger POLLING nào về "dòng mới" (spec §18.5 kỳ vọng),
+nhưng có ĐÚNG hai trigger POLLING thật của piece này: `new-spreadsheet` và
+`new-worksheet`. Theo thứ tự ưu tiên "trigger poll của Sheets nếu có" (đã có),
+tệp này giờ dùng **`new-spreadsheet` thật** — piece + tên trigger tra được
+trong `connector_runner/catalog.json` (`trigger.piece.google_sheets.
+new_spreadsheet`) và trong bản `@activepieces/piece-google-sheets` đã cài.
+
+### Lỗ hổng thật đã lộ ra khi đổi piece: thiếu `onEnable`
+
+`new-spreadsheet` dùng `DedupeStrategy.TIMEBASED` (`pollingHelper` của
+Activepieces, port ở `packages/pieces/common/src/lib/polling/index.ts`):
+`run()`/`poll()` của piece **ném** `"lastPoll doesn't exist in the store."`
+nếu chưa có `onEnable` seed mốc `lastPoll` vào store trước. `poll_connector.py`
+(bản trước 25/09) không bao giờ gọi `onEnable` — vô hại với `@ltt/piece-gia`
+(không có ràng buộc này) nhưng **vỡ ngay lượt poll đầu tiên** với bất kỳ piece
+TIMEBASED thật nào. Vá: `poll_connector.bat()` + `poll_connector.tao_trigger()`
+(gọi `onEnable` một lần lúc tạo/bật trigger) — xem lớp test *THẬT* ở cuối tệp,
+chạy `runner.js` thật (không `goi=` giả) và chứng minh cả lỗ hổng lẫn bản vá.
+
+### Ranh giới còn lại — CHƯA đo được, và vì sao
+
+- ✅ Đo THẬT (không cần credential): piece thật, qua **`runner.js` thật**
+  trong AppContainer, seed `lastPoll` lúc `onEnable`; và piece TỪ CHỐI `run()`
+  nếu thiếu bước đó — cả hai xảy ra **trước** khi piece gọi Drive API, nên
+  không cần mạng/OAuth (spike 25/09, xem `test_THAT_...` cuối tệp).
+- ⛔ **Chưa đo được**: `new-spreadsheet` trả về đúng hình dạng bản ghi Drive
+  thật. Cần **service account** hoặc OAuth2 của một Google account thật — kho
+  này chưa có, và việc này **không tự tạo bí mật** (chủ dự án chốt). Đo 25/09:
+  gọi `run()` sau khi đã `onEnable`, với `auth=None`, ném NGAY (không treo
+  mạng) `"Cannot read properties of null (reading 'type')"` — tức dừng đúng ở
+  ranh giới credential, không phải một lỗi mạng mơ hồ.
+- Lớp khử trùng CSDL (phần lớn tệp này, các test `test_FLOW_D_*` /
+  `test_STORE_MAT_*` / …) vẫn dùng `goi=` đứng thay `_goi_runner` — nó đo
+  **đúng thứ nó khai**: logic khử trùng ở tầng CSDL của TA, không phải hành vi
+  mạng của piece. `goi=` giờ mô phỏng hình dạng bản ghi Drive
+  (`{"id": ..., "data": {...}}`-like) thay vì hình dạng tuỳ ý cũ, nhưng đây
+  **vẫn** là một số liệu MÔ PHỎNG — chỉ lớp test *THẬT* cuối tệp chạm code
+  piece thật.
 
 ## Vì sao PostgreSQL
 
@@ -119,14 +153,29 @@ def _publish_wf(db):
     return w
 
 
-def _trigger_poll(db, w, chu_ky_s=300):
+#: Piece + trigger THẬT (khớp `connector_runner/allowlist.json` +
+#: `catalog.json`), ⛔ không phải `@ltt/piece-gia` tự khai của bản trước
+#: 25/09 — xem đầu tệp. Đây là trigger POLLING thật DUY NHẤT của Sheets có
+#: thể lọt allowlist (ưu tiên "trigger poll của Sheets nếu có").
+PIECE_THAT = "@activepieces/piece-google-sheets"
+PHIEN_BAN_THAT = "0.17.0"
+TRIGGER_THAT = "new-spreadsheet"
+
+
+def _trigger_poll(db, w, chu_ky_s=300, *, goi_bat=None):
+    """Tạo trigger `PIECE_POLL` với piece THẬT.
+
+    ⭐ Dùng `poll_connector.tao_trigger` (⛔ không `trigger.tao` trần): nó gọi
+       `bat()` (`onEnable`) một lần lúc tạo — đúng hợp đồng piece TIMEBASED
+       thật đòi hỏi (xem đầu tệp). `goi_bat=lambda *_: []` cho các test khử
+       trùng CSDL ở dưới, vốn tự thay `_goi_runner` qua tham số `goi=` của
+       `mot_luot_poll` nên không cần `onEnable` chạm runner thật.
+    """
     from platform_core.workflow import poll_connector as pc
-    from platform_core.workflow import trigger as tg
-    cau_hinh = pc.tao_cau_hinh(
-        piece="@ltt/piece-gia", piece_version="0.0.0",
-        ten_trigger="poll_gia", chu_ky_s=chu_ky_s)
-    t = tg.tao(db, workflow_id=w.id, owner_id="u1", kind=pc.KIND,
-               cau_hinh=cau_hinh)
+    t = pc.tao_trigger(
+        db, workflow_id=w.id, owner_id="u1", piece=PIECE_THAT,
+        piece_version=PHIEN_BAN_THAT, ten_trigger=TRIGGER_THAT,
+        chu_ky_s=chu_ky_s, goi_bat=goi_bat or (lambda *_a, **_k: []))
     db.commit()
     return t
 
@@ -268,8 +317,8 @@ def test_chu_ky_duoi_300s_bi_TU_CHOI_luc_TAO(db):
     """⛔ Từ chối lúc CHẠY thì khách đã lưu được một thứ không chạy."""
     from platform_core.workflow import poll_connector as pc
     with pytest.raises(pc.LoiPoll):
-        pc.tao_cau_hinh(piece="@ltt/piece-gia", piece_version="0.0.0",
-                        ten_trigger="poll_gia", chu_ky_s=5)
+        pc.tao_cau_hinh(piece=PIECE_THAT, piece_version=PHIEN_BAN_THAT,
+                        ten_trigger=TRIGGER_THAT, chu_ky_s=5)
 
 
 def test_ban_den_han_DI_QUA_duong_poll_va_day_lich(db):
@@ -309,3 +358,116 @@ def test_ban_den_han_DI_QUA_duong_poll_va_day_lich(db):
     #    o day phai chuan hoa, y het duong san xuat.
     from platform_core.workflow.ban_trigger import _tho
     assert _tho(t.next_fire_at) is not None and _tho(t.next_fire_at) > luc
+
+
+# ── THẬT: piece thật, runner.js thật, KHÔNG `goi=` giả ──────────────────────
+#
+# ⭐ Khác hẳn mọi test phía trên: các test dưới đây KHÔNG truyền `goi=` cho
+#   `mot_luot_poll`/`bat`, nên `_goi_runner`/`_goi_on_enable` thật sự gọi
+#   `connector.chay()` → AppContainer → `runner.js` thật → mã đã BUNDLE của
+#   `@activepieces/piece-google-sheets@0.17.0`. Đây là nơi lỗ hổng "thiếu
+#   onEnable" thật sự lộ ra (và được vá) — không phải một khẳng định trong
+#   docstring.
+#
+# ⛔ Cần AppContainer (Windows + quyền tạo vỏ) — cùng khuôn `test_3500`. Không
+#   dựng được vỏ ⇒ SKIP có lý do, ⛔ không FAIL: một máy dev thiếu quyền quản
+#   trị không chứng minh được gì về đúng/sai của cơ chế, nó chỉ nói "chưa đo".
+
+CAN_VO = pytest.mark.skipif(
+    __import__("sys").platform != "win32", reason="AppContainer chi co tren Windows")
+
+TEN_VO_3505 = "ltt-conn-test-3505"
+
+
+@pytest.fixture(scope="module")
+def vo_that():
+    from platform_core.workflow import connector, vo_boc
+    try:
+        connector.chuan_bi_vo(TEN_VO_3505)
+    except Exception as loi:  # noqa: BLE001
+        pytest.skip(f"khong dung duoc vo AppContainer: {loi}")
+    yield TEN_VO_3505
+    try:
+        connector.go_vo(TEN_VO_3505)
+    except Exception:  # noqa: BLE001
+        pass
+    vo_boc.xoa_vo(TEN_VO_3505)
+
+
+@CAN_VO
+def test_THAT_onEnable_seed_lastPoll_KHONG_can_mang(db, vo_that):
+    """`bat()` (→ OP `trigger_on_enable`) chạy piece THẬT, seed `lastPoll`.
+
+    🔴 Đây là phép chứng minh bản vá: bản `poll_connector.py` trước 25/09
+       KHÔNG có `bat()`/`tao_trigger()` — trigger PIECE_POLL tạo bằng
+       `trigger.tao()` trần không bao giờ seed `lastPoll`, nên lượt poll đầu
+       tiên của một piece TIMEBASED thật luôn vỡ (xem test kế tiếp).
+    """
+    from platform_core.workflow import connector_store as store
+    from platform_core.workflow import poll_connector as pc
+
+    w = _publish_wf(db)
+    t = pc.tao_trigger(
+        db, workflow_id=w.id, owner_id="u1", piece=PIECE_THAT,
+        piece_version=PHIEN_BAN_THAT, ten_trigger=TRIGGER_THAT,
+        chu_ky_s=300)
+    db.commit()
+    da_luu = store.doc(db, owner_id="u1", pham_vi=store.pham_vi_trigger(t.id))
+    assert "lastPoll" in da_luu, (
+        f"onEnable that KHONG seed duoc lastPoll: {da_luu!r}")
+    assert isinstance(da_luu["lastPoll"], int) and da_luu["lastPoll"] > 0
+
+
+@CAN_VO
+def test_THAT_poll_TRUOC_khi_bat_NEM_LoiPoll_khong_tao_run(db, vo_that):
+    """Piece TIMEBASED thật từ chối `run()` khi store CHƯA có `lastPoll`.
+
+    ⭐ Chứng minh lỗ hổng ĐÃ ĐÓNG theo hướng ngược: tạo trigger bằng
+       `trigger.tao()` TRẦN (⛔ không qua `pc.tao_trigger`/`bat`, mô phỏng
+       đúng bản trước bản vá) rồi poll ngay — piece thật phải ném, và
+       `mot_luot_poll` phải để lỗi đó NỔI LÊN (`LoiPoll`), ⛔ không âm thầm
+       trả `0` (0 run mới) — vì `0` ở đây sẽ trông giống hệt "không có bản ghi
+       mới", một kết luận SAI.
+    """
+    from platform_core.workflow import poll_connector as pc
+    from platform_core.workflow import trigger as tg
+    from datetime import datetime, timezone
+
+    w = _publish_wf(db)
+    cau_hinh = pc.tao_cau_hinh(piece=PIECE_THAT, piece_version=PHIEN_BAN_THAT,
+                               ten_trigger=TRIGGER_THAT, chu_ky_s=300)
+    t = tg.tao(db, workflow_id=w.id, owner_id="u1", kind=pc.KIND,
+              cau_hinh=cau_hinh)
+    db.commit()
+    luc = datetime.now(timezone.utc).replace(tzinfo=None)
+    with pytest.raises(pc.LoiPoll, match="lastPoll"):
+        pc.mot_luot_poll(db, t, moc=luc)
+
+
+@CAN_VO
+def test_THAT_poll_SAU_khi_bat_dung_o_ranh_gioi_credential(db, vo_that):
+    """Sau `bat()`, piece thật gọi tiếp `items()` (API Drive) — cần `auth`.
+
+    ⛔ Kho này CHƯA có service account/OAuth Google thật (chủ dự án chốt:
+       không tự tạo bí mật) — phép này đo ĐÚNG ranh giới đó, ⛔ không giả vờ
+       vượt qua nó. Thông điệp lỗi phải là lỗi THIẾU AUTH (`'type'` — piece
+       đọc `auth.type`), ⛔ không phải hết giờ mạng: chứng minh runner dừng
+       lại TRƯỚC khi treo, đúng như spike 25/09 đã đo.
+    """
+    from platform_core.workflow import poll_connector as pc
+    from datetime import datetime, timezone
+
+    w = _publish_wf(db)
+    t = pc.tao_trigger(
+        db, workflow_id=w.id, owner_id="u1", piece=PIECE_THAT,
+        piece_version=PHIEN_BAN_THAT, ten_trigger=TRIGGER_THAT,
+        chu_ky_s=300)
+    db.commit()
+    luc = datetime.now(timezone.utc).replace(tzinfo=None)
+    with pytest.raises(pc.LoiPoll) as loi:
+        pc.mot_luot_poll(db, t, moc=luc)
+    thong_diep = str(loi.value)
+    assert "lastPoll" not in thong_diep, (
+        "van con ket luan chua bat duoc onEnable — bat() da chay o test nay")
+    assert "type" in thong_diep, (
+        f"ky vong loi THIEU AUTH (doc auth.type), duoc: {thong_diep!r}")

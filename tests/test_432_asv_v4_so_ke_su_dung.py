@@ -28,7 +28,7 @@ import pathlib
 
 import pytest
 
-from apps.auto_scan_video import features, pipeline, su_dung
+from apps.auto_scan_video import features, gia, pipeline, su_dung
 from apps.auto_scan_video.tables import (RUN_DONE, AsvRun, AsvStage, AsvUsage,
                                          AsvWorkItem)
 
@@ -641,11 +641,24 @@ def test_ca_luot_chay_chi_giu_credit_MOT_lan_va_quyet_toan_dung_so_do_duoc(db):
     assert features.tong_da_dung(db, run) == 47
     su_dung.doi_soat(db, run)
 
-    # (3)(4) quyet toan thu dung 47, hoan 153
+    # (3) 🔑 **Tu 25/09/2026 so THU khong con la tong do duoc — gia PHANG.**
+    #
+    #     `media_prepare` la noi do dai video nguon duoc do, va gia la
+    #     `10 credit x so phut nguon` (`gia.tinh_credit`). Nen bai nay dat mot ho
+    #     so soi THAT vao day thay vi de `quyet_toan` roi ve duong lui.
+    #
+    # ⭐ Va do dai duoc chon co chu dinh de gia phang (50) **khac** tong do duoc
+    #    (47): hai con so bang nhau thi bai nay khong phan biet duoc "thu theo gia
+    #    phang" voi "thu theo so cai".
+    _dat_thoi_luong_nguon(db, run, 300.0)
+    phai_thu = gia.tinh_credit(300.0)
+    assert phai_thu != 47, "ca thu nay khong con phan biet duoc hai cong thuc"
+
+    # (4) quyet toan thu dung gia phang, hoan phan du
     features.quyet_toan(db, run, trang_thai_cuoi=RUN_DONE)
     db.commit()
 
-    assert run.credit_actual == 47
+    assert run.credit_actual == phai_thu
 
     # ⚠️ `so_da_giu` KHONG ve 0 sau quyet toan, va do la dung: no cong moi but
     #    toan `CREDIT_HOLD` — mot **so sach lich su**, khong phai "con giu bao
@@ -655,16 +668,39 @@ def test_ca_luot_chay_chi_giu_credit_MOT_lan_va_quyet_toan_dung_so_do_duoc(db):
     assert credit._da_ket_so(db, run.id), "quyet toan phai de lai but toan ket so"
 
     # ⭐ Bang chung THAT rang phan khong dung da duoc hoan nam o SO DU.
-    assert credit.so_du(db, "u-tich-hop") == truoc - 47, (
+    assert credit.so_du(db, "u-tich-hop") == truoc - phai_thu, (
         "phan khong dung phai duoc hoan — khach khong tra cho thu khong chay")
 
+    # 🔑 **So cai VAN ghi dung chi phi noi bo, va no khac so da thu.** Do la diem
+    #    quan trong nhat cua bai nay sau 25/09: gia phang doi thu duoc THU, ⛔ khong
+    #    doi thu duoc DO. Nguoi van hanh van doc duoc 47 de biet lan chay nay dot
+    #    bao nhieu, trong khi khach chi tra gia phang.
     ke = su_dung.so_ke(db, run)
     assert ke["tong"]["credit"] == 47
     assert ke["tong"]["da_giao"] == 3 and ke["tong"]["tu_choi"] == 1
 
 
+def _dat_thoi_luong_nguon(db, run, giay: float) -> None:
+    """Dat ho so soi cua `media_prepare` — noi gia phang doc do dai video NGUON.
+
+    ⭐ Tu 25/09/2026 so THU la `gia.tinh_credit(do dai nguon)`, nen mot bai kiem ve
+       tien phai noi do dai la bao nhieu. Khong dat thi `quyet_toan` roi ve duong
+       lui (*"thu theo `credit_held`"*) — mot duong **hop le nhung khong phai duong
+       dang duoc kiem**, va mot bai xanh nho duong lui la mot bai xanh gia.
+    """
+    gd = features.giai_doan_theo_ten(db, run.id, pipeline.MEDIA_PREPARE)
+    features.cap_nhat_giai_doan(db, gd, outputs={"stage": pipeline.MEDIA_PREPARE,
+                                                 "thoi_luong": float(giay)})
+    db.flush()
+
+
 def test_hai_khach_chay_cung_luc_khong_cham_vao_so_cua_nhau(db):
-    """Cach ly chu so huu o duong tien THAT, khong chi o truy van so cai."""
+    """Cach ly chu so huu o duong tien THAT, khong chi o truy van so cai.
+
+    ⭐ Hai video co do dai KHAC nhau (gia phang ⇒ hai so tien khac nhau), nen mot
+       lan roi so cua nguoi nay sang nguoi kia se lo ra thanh mot con so sai — chu
+       khong bi che bang hai con so tinh co bang nhau.
+    """
     from platform_core import credit
 
     from apps.auto_scan_video import pipeline as pl
@@ -679,6 +715,11 @@ def test_hai_khach_chay_cung_luc_khong_cham_vao_so_cua_nhau(db):
                           settings={"giong_id": "Minh Đức"}, uoc_luong_credit=100)
     db.commit()
 
+    _dat_thoi_luong_nguon(db, ra, 60.0)        # 1 phut
+    _dat_thoi_luong_nguon(db, rb, 540.0)       # 9 phut
+    thu_a, thu_b = gia.tinh_credit(60.0), gia.tinh_credit(540.0)
+    assert thu_a != thu_b
+
     su_dung.ghi(db, ra, stage=pl.VOICE_SYNTHESIS, item_key="s1",
                 su_dung=_giao(credit=10))
     su_dung.ghi(db, rb, stage=pl.VOICE_SYNTHESIS, item_key="s1",
@@ -689,8 +730,8 @@ def test_hai_khach_chay_cung_luc_khong_cham_vao_so_cua_nhau(db):
     features.quyet_toan(db, rb, trang_thai_cuoi=RUN_DONE)
     db.commit()
 
-    assert credit.so_du(db, "u-a") == 500 - 10
-    assert credit.so_du(db, "u-b") == 500 - 90
+    assert credit.so_du(db, "u-a") == 500 - thu_a
+    assert credit.so_du(db, "u-b") == 500 - thu_b
 
 
 def test_vuot_hold_thi_khach_chi_tra_TOI_DA_phan_da_giu(db):
@@ -714,6 +755,13 @@ def test_vuot_hold_thi_khach_chi_tra_TOI_DA_phan_da_giu(db):
                 su_dung=_giao(credit=90))
     db.flush()
     assert features.tong_da_dung(db, run) == 90, "so cai phai ghi that"
+
+    # ⭐ Tu 25/09 chan tren duoc thu bang GIA PHANG vuot hold, ⛔ khong bang so cai:
+    #    mot video 60 phut o day cho gia phang 600 credit tren mot hold 30. (Khong
+    #    dat do dai thi `quyet_toan` roi ve duong lui va bai nay xanh ma khong he
+    #    cham vao phep `min` dang duoc kiem.)
+    _dat_thoi_luong_nguon(db, run, 3600.0)
+    assert gia.tinh_credit(3600.0) > 30, "ca thu nay khong con y nghia"
 
     features.quyet_toan(db, run, trang_thai_cuoi=RUN_DONE)
     db.commit()

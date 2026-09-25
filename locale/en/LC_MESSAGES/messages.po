@@ -21425,3 +21425,6 @@ msgstr "colour shift"
 
 msgid "Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên không thể cắt khung, phóng to, đổi tỉ lệ, lật gương, dịch màu hay đổi tốc độ. Chọn “Rút gọn có biên tập” nếu bạn muốn biên tập khung hình."
 msgstr "“Keep the picture” copies every pixel untouched, so it cannot crop, zoom, change aspect ratio, mirror, shift colour or change speed. Choose “Trim and edit” if you want to edit the frame."
+
+msgid "Tính theo độ dài video gốc: {don_gia} credit mỗi phút, làm tròn lên phút bắt đầu, tối thiểu 1 phút. Ví dụ video 3 phút 10 giây tính là 4 phút."
+msgstr "Charged by the length of the source video: {don_gia} credit per minute, rounded up to the next whole minute, minimum 1 minute. For example a 3 min 10 s video counts as 4 minutes."

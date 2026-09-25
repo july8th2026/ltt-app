@@ -113,21 +113,51 @@ def _khoi(van):
 
 
 def test_HOAN_LAI_chi_hien_SAU_quyet_toan_va_KHOP_cong_thuc(moi_truong, tmp_path):
+    """## ⭐ 25/09/2026 — `_tao_va_quyet_toan` HUY lan chay, va HUY thi KHONG thu
+
+    Gia phang chot *"khong giao duoc thi khong thu"* (`features.CHI_THU_KHI_GIAO_DUOC`
+    — so loi `N-21`). Lan chay o day ket bang `/huy`, nen so thu la **0** va toan bo
+    hold quay ve, du so cai da ghi 3 credit chi phi noi bo.
+
+    🔑 Bat bien duoc chot khong doi: *"Hoan lai" chi hien SAU quyet toan*, va ba con
+       so tren man **khop nhau** (`giu = tinh + hoan`).
+    """
     _app, a, csrf, _b, _cb = moi_truong
     truoc, sau, giu = _tao_va_quyet_toan(a, csrf, tmp_path)
     assert "Hoàn lại" not in _khoi(truoc) and "khi lần chạy kết thúc" in _khoi(truoc)
     k = _khoi(sau)
-    tinh = min(3, giu)
+    tinh = 0
     assert f"Đã giữ khi tạo lần chạy: {giu} credit" in k
     assert f"Đã tính: {tinh} credit" in k
     assert f"Hoàn lại: {giu - tinh} credit" in k
 
 
-def test_bang_theo_NANG_LUC_khong_lo_ma_noi_bo(moi_truong, tmp_path):
+def test_khoi_chi_phi_khong_lo_ma_noi_bo(moi_truong, tmp_path):
+    """## ⭐ 25/09/2026 — bang theo NANG LUC ra khoi hoa don khach
+
+    Bai cu chot rang khoi chi phi hien *"Doc loi long tieng 420 ky tu 2"* — mot dong
+    cua bang `chi_phi_theo_nang_luc`. Gia phang tinh `10 credit x so phut video
+    nguon`, nen bang do da roi khoi `quan_sat.tom_tat_cho_khach`: mot bang nam dong
+    cho mot con so phang la mot bang **noi doi ve cach tinh**.
+
+    ⚠️ **Nua VANG MAT cua bai nay khong tu do duoc.** *"Do vang mat thi xoa cung
+       xanh"* — nen nua **CO MAT** duoc do o tang dich vu, noi ⛔ khong can mot
+       template: `tests/test_3900_asv_gia_phang.py::test_HOA_DON_khach_la_MOT_dong_*`
+       chot rang `tom_tat_cho_khach()["hoa_don"]` mang dung so phut, don gia, credit
+       va cau luat lam tron.
+
+    🔴 **Con lai o day la nua ⛔ KHONG duoc mat di**: khoi chi phi cua khach ⛔ khong
+       bao gio duoc lo mot ma noi bo nao — ke ca khi ai do noi mot truong moi vao.
+
+    ⇒ Lan `asv-gui` so huu `asv_chi_tiet.html` va se noi dong hoa don moi vao khoi
+      `#asv-chi-phi`. Bai nay ⛔ khong chan viec do; no chan viec lam do kem mot ma
+      noi bo.
+    """
     _app, a, csrf, _b, _cb = moi_truong
     _truoc, sau, _giu = _tao_va_quyet_toan(a, csrf, tmp_path)
     k = _khoi(sau)
-    assert "Đọc lời lồng tiếng 420 ký tự 2" in k
-    assert "Việc khác 1 lượt 1" in k
-    for noi_bo in ("tong_hop_tieng", "ma_la_chua_co_nhan", "ltt_voice", "ltt_llm"):
+    assert "Đọc lời lồng tiếng 420 ký tự" not in k, (
+        "bang theo nang luc con o hoa don khach — xem `gia.py` muc gia phang")
+    for noi_bo in ("tong_hop_tieng", "ma_la_chua_co_nhan", "ltt_voice", "ltt_llm",
+                   "sao_chep", "cat_ma_hoa_lai", "smart_localize"):
         assert noi_bo not in k, noi_bo
