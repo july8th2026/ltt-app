@@ -1,0 +1,1325 @@
+{
+ "⭐ nhan_cau_hinh": {
+  "model": "ltt-3.5",
+  "model_id": "qwen35-api",
+  "nhiet_do": 0.0,
+  "ep_luoc_do": true,
+  "so_luot": 1,
+  "so_luot_CO_y_canh": 2,
+  "doan_moi_lo": 12,
+  "so_dong": 100,
+  "dai_dong_flores": [
+   0,
+   99
+  ],
+  "split_flores": "dev",
+  "⚠️ rang_buoc_do_dai": "KHONG RANG BUOC — co y. `ket` suy tu do dai NGUON (len(zh)/1.5) de `do_dai_toi_da` khong bao gio cham. FLORES khong co thoi luong; mot tran do dai o day se bien chrF++ thanh phep do DO NEN. (Ban dau dat ket=6.0 => tran 18 am tiet => ban ra ngan hon tham chieu 2,4 lan.)",
+  "loi_nhac": 4,
+  "⚠️": "MOI phan tu cua `cac_luot` la MOT LUOT KHAC NHAU tren CUNG mot dong FLORES — ⛔ khong phai ba phim, ⛔ khong phai ba cau hinh. Duong dich KHONG tai lap duoc (B2_DICH §7.8c).",
+  "⛔ dap_an": "`tham_chieu_vi` la ban dich NGUOI cua FLORES. No ⛔ KHONG di vao loi nhac — chi cot `zh` duoc gui."
+ },
+ "so_o_rong": 0,
+ "giay": 1049.2,
+ "muc": [
+  {
+   "ma": "flores_0000",
+   "dong_flores": 0,
+   "nguon_zh": "周一，斯坦福大学医学院的科学家宣布，他们发明了一种可以将细胞按类型分类的新型诊断工具：一种可打印的微型芯片。这种芯片可以使用标准喷墨打印机制造，每片价格可能在一美分左右。",
+   "tham_chieu_vi": "Vào hôm thứ Hai, các nhà khoa học thuộc Trường Y Đại học Stanford đã công bố phát minh một dụng cụ chẩn đoán mới có thể phân loại tế bào: một con chíp nhỏ có thể sản xuất bằng máy in phun tiêu chuẩn với giá khoảng một xu Mỹ mỗi chiếc.",
+   "cac_luot": [
+    "Thứ Hai, các nhà khoa học tại Viện Y khoa Đại học Stanford công bố, họ đã phát minh ra một công cụ chẩn đoán mới có thể phân loại tế bào theo từng loại: một vi mạch có thể in. Vi mạch này có thể được sản xuất bằng máy in phun tiêu chuẩn, giá mỗi chiếc có thể chỉ khoảng một xu."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Thứ Hai, các nhà khoa học tại Viện Y khoa Đại học Stanford công bố, họ đã phát minh ra một công cụ chẩn đoán mới có thể phân loại tế bào theo từng loại: một vi mạch in được. Chip này có thể dùng máy in phun thông thường làm ra, giá mỗi cái có thể chỉ khoảng một xu Mỹ.",
+    "Thứ Hai, các nhà khoa học tại Viện Y khoa Đại học Stanford công bố, họ đã phát minh ra một công cụ chẩn đoán mới có thể phân loại tế bào theo từng loại: một vi mạch in được. Chip này có thể dùng máy in phun thông thường làm ra, giá mỗi cái có thể chỉ khoảng một xu Mỹ."
+   ]
+  },
+  {
+   "ma": "flores_0001",
+   "dong_flores": 1,
+   "nguon_zh": "主要研究人员表示，这可以让低收入国家/地区的患者尽早发现癌症、肺结核、艾滋病和疟疾。在这些国家/地区，乳腺癌等疾病的生存率可能仅为富裕国家的一半。",
+   "tham_chieu_vi": "Các nhà nghiên cứu chính nói rằng điều này có thể giúp phát hiện sớm bệnh ung thư, bệnh lao, HIV và bệnh sốt rét cho bệnh nhân ở các nước có thu nhập thấp, nơi mà tỷ lệ sống sót khi mắc phải những bệnh như ung thư vú có thể chỉ bằng một nửa tỷ lệ đó ở những nước giàu.",
+   "cac_luot": [
+    "Các nhà nghiên cứu chính cho biết, điều này giúp bệnh nhân ở các quốc gia thu nhập thấp phát hiện sớm ung thư, lao, AIDS và sốt rét. Tại những quốc gia này, tỷ lệ sống sót của các bệnh như ung thư vú có thể chỉ bằng một nửa so với các nước giàu."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Các nhà nghiên cứu chính cho biết, điều này giúp bệnh nhân ở các quốc gia thu nhập thấp phát hiện sớm ung thư, lao, AIDS và sốt rét. Tại những quốc gia này, tỷ lệ sống sót của bệnh nhân ung thư vú có thể chỉ bằng một nửa so với các nước giàu.",
+    "Các nhà nghiên cứu chính cho biết, điều này giúp bệnh nhân ở các quốc gia thu nhập thấp phát hiện sớm ung thư, lao, AIDS và sốt rét. Tại những quốc gia này, tỷ lệ sống sót của bệnh nhân ung thư vú có thể chỉ bằng một nửa so với các nước giàu."
+   ]
+  },
+  {
+   "ma": "flores_0002",
+   "dong_flores": 2,
+   "nguon_zh": "当地时间上午 9:30 左右 (UTC 0230)，JAS 39C 鹰狮战斗机撞上跑道并发生爆炸，导致机场关闭，商业航班无法正常起降。",
+   "tham_chieu_vi": "Chiếc JAS 39C Gripen đâm xuống đường băng vào khoảng 9:30 sáng giờ địa phương (0230 UTC) và nổ tung, khiến cho phi trường phải đóng cửa các chuyến bay thương mại.",
+   "cac_luot": [
+    "Khoảng 9 giờ 30 sáng (UTC 0230), máy bay chiến đấu JAS 39C Gripen đâm vào đường băng và nổ, khiến sân bay đóng cửa, các chuyến bay thương mại không thể cất hạ cánh bình thường."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Khoảng 9 giờ 30 sáng (UTC 0230), máy bay chiến đấu JAS 39C Gripen đâm vào đường băng và nổ, khiến sân bay đóng cửa, các chuyến bay thương mại không thể cất hạ cánh.",
+    "Khoảng 9 giờ 30 sáng (UTC 0230), máy bay chiến đấu JAS 39C Gripen đâm vào đường băng và nổ, khiến sân bay đóng cửa, các chuyến bay thương mại không thể cất hạ cánh."
+   ]
+  },
+  {
+   "ma": "flores_0003",
+   "dong_flores": 3,
+   "nguon_zh": "涉事飞行员是空军中队长迪罗里·帕塔维 (Dilokrit Pattavee)。",
+   "tham_chieu_vi": "Viên phi công được xác định là Chỉ huy đội bay Dilokrit Pattavee.",
+   "cac_luot": [
+    "Phi công liên quan là Trung đội trưởng Không quân Dilokrit Pattavee."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Phi công liên quan là Trung đội trưởng Không quân Dilokrit Pattavee.",
+    "Phi công liên quan là Trung đội trưởng Không quân Dilokrit Pattavee."
+   ]
+  },
+  {
+   "ma": "flores_0004",
+   "dong_flores": 4,
+   "nguon_zh": "当地媒体报道，一辆机场消防车在响应火警时翻了车。",
+   "tham_chieu_vi": "Truyền thông địa phương đưa tin một phương tiện chữa cháy sân bay đã tới khi trả lời.",
+   "cac_luot": [
+    "Báo chí địa phương cho biết, một xe cứu hỏa sân bay bị lật khi đang ứng phó với vụ cháy."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Báo chí địa phương cho biết, một xe cứu hỏa sân bay bị lật khi đang ứng phó với vụ cháy.",
+    "Báo chí địa phương cho biết, một xe cứu hỏa sân bay bị lật khi đang ứng phó với vụ cháy."
+   ]
+  },
+  {
+   "ma": "flores_0005",
+   "dong_flores": 5,
+   "nguon_zh": "三个赛季前，28岁的比达尔（Vidal）从塞维利亚队加盟巴萨。",
+   "tham_chieu_vi": "Ba mùa trước, Vidal đã rời Sevilla để gia nhập Barca ở độ tuổi 28.",
+   "cac_luot": [
+    "Ba mùa giải trước, Vidal 28 tuổi gia nhập Barca từ Sevilla."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Ba mùa giải trước, Vidal 28 tuổi gia nhập Barca từ Sevilla.",
+    "Ba mùa giải trước, Vidal 28 tuổi gia nhập Barca từ Sevilla."
+   ]
+  },
+  {
+   "ma": "flores_0006",
+   "dong_flores": 6,
+   "nguon_zh": "自从转会到加泰罗尼亚的首府球队，维达尔已经为俱乐部踢了 49 场比赛。",
+   "tham_chieu_vi": "Từ khi chuyển đến thủ phủ của xứ Catalan, Vidal đã chơi 49 trận đấu cho câu lạc bộ.",
+   "cac_luot": [
+    "Kể từ khi chuyển đến đội bóng thủ phủ Catalonia, Vidal đã thi đấu cho câu lạc bộ 49 trận."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Kể từ khi chuyển đến đội bóng thủ phủ Catalonia, Vidal đã thi đấu cho câu lạc bộ 49 trận.",
+    "Kể từ khi chuyển đến đội bóng thủ phủ Catalonia, Vidal đã thi đấu cho câu lạc bộ 49 trận."
+   ]
+  },
+  {
+   "ma": "flores_0007",
+   "dong_flores": 7,
+   "nguon_zh": "抗议活动于当地时间 11:00 (UTC+1) 左右在白厅 (Whitehall) 开始，白厅对面是首相官邸唐宁街的入口处，由警察看守。",
+   "tham_chieu_vi": "Cuộc biểu tình bắt đầu vào khoảng 11:00 giờ sáng giờ địa phương (UTC + 1) tại Bạch Sảnh, đối diện lối vào có cảnh sát bảo vệ của phố Downing, nơi cư ngụ chính thức của Thủ tướng.",
+   "cac_luot": [
+    "Hoạt động biểu tình bắt đầu khoảng 11 giờ (UTC+1) tại Whitehall, đối diện với lối vào Downing Street, nơi có trụ sở của Thủ tướng, được cảnh sát canh giữ."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Hoạt động biểu tình bắt đầu khoảng 11 giờ (UTC+1) tại Whitehall, đối diện với lối vào Downing Street, nơi có trụ sở của Thủ tướng, được cảnh sát canh giữ.",
+    "Hoạt động biểu tình bắt đầu khoảng 11 giờ (UTC+1) tại Whitehall, đối diện với lối vào Downing Street, nơi có trụ sở của Thủ tướng, được cảnh sát canh giữ."
+   ]
+  },
+  {
+   "ma": "flores_0008",
+   "dong_flores": 8,
+   "nguon_zh": "11 点刚过，抗议者便堵住了白厅北行车道的交通。",
+   "tham_chieu_vi": "Ngay sau 11 giờ những người biểu tình đã chặn xe trên đường phía bắc ở Whitehall.",
+   "cac_luot": [
+    "Vừa qua 11 giờ, người biểu tình đã chặn đường giao thông phía bắc Whitehall."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Vừa qua 11 giờ, người biểu tình đã chặn đường giao thông phía bắc Whitehall.",
+    "Vừa qua 11 giờ, người biểu tình đã chặn đường giao thông phía bắc Whitehall."
+   ]
+  },
+  {
+   "ma": "flores_0009",
+   "dong_flores": 9,
+   "nguon_zh": "11 点 20 分，警察要求抗议者退回到人行道，并告知抗议者，在行使抗议权利时，务必考虑到越来越拥堵的公共交通问题。",
+   "tham_chieu_vi": "Vào lúc 11:20, cảnh sát đã yêu cầu người biểu tình lùi vào vỉa hè và nói rằng họ có quyền biểu tình nhưng không được gây ách tắc giao thông.",
+   "cac_luot": [
+    "Khoảng 11 giờ 20, cảnh sát yêu cầu người biểu tình lui về vỉa hè và thông báo, khi thực hiện quyền biểu tình, cần cân nhắc vấn đề giao thông công cộng ngày càng tắc nghẽn."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Khoảng 11 giờ 20, cảnh sát yêu cầu người biểu tình lui về vỉa hè và thông báo, khi thực hiện quyền biểu tình, cần cân nhắc vấn đề giao thông công cộng ngày càng ùn tắc.",
+    "Khoảng 11 giờ 20, cảnh sát yêu cầu người biểu tình lui về vỉa hè và thông báo, khi thực hiện quyền biểu tình, cần cân nhắc vấn đề giao thông công cộng ngày càng ùn tắc."
+   ]
+  },
+  {
+   "ma": "flores_0010",
+   "dong_flores": 10,
+   "nguon_zh": "11 点 29 分左右，抗议人群向前行进至白厅，经过特拉法尔加广场、斯特兰德大街、奥德维奇、京士威，向霍尔本行进，保守党正在当地的 Grand Connaught Rooms 酒店举行春季论坛。",
+   "tham_chieu_vi": "Khoảng 11 giờ 29 phút, nhóm biểu tình di chuyển đến Bạch Sảnh, đi qua Quảng trường Trafalgar, dọc theo đường Strand, qua đường Aldwych và theo đường Kingsway tiến ra đường Holborn, nơi Đảng Bảo Thủ đang tổ chức Diễn đàn Mùa xuân tại khách sạn Grand Connaught Rooms.",
+   "cac_luot": [
+    "Khoảng 11 giờ 29, đám đông biểu tình tiến về phía Whitehall, đi qua Trafalgar Square, Strand, Aldwych, King's Cross, hướng về Holborn, trong khi Đảng Bảo thủ đang tổ chức diễn đàn mùa xuân tại khách sạn Grand Connaught Rooms địa phương."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Khoảng 11 giờ 29, đám đông biểu tình tiến về phía Whitehall, đi qua Trafalgar Square, Strand, Aldwych, King's Cross, hướng về Holborn, trong khi Đảng Bảo thủ đang tổ chức diễn đàn mùa xuân tại khách sạn Grand Connaught Rooms địa phương.",
+    "Khoảng 11 giờ 29, đám đông biểu tình tiến về phía Whitehall, đi qua Trafalgar Square, Strand, Aldwych, King's Cross, hướng về Holborn, trong khi Đảng Bảo thủ đang tổ chức diễn đàn mùa xuân tại khách sạn Grand Connaught Rooms địa phương."
+   ]
+  },
+  {
+   "ma": "flores_0011",
+   "dong_flores": 11,
+   "nguon_zh": "纳达尔（Nadal）与加拿大人的交手记录是 7-2。",
+   "tham_chieu_vi": "Thành tích đối đầu của Nadal trước đối thủ người Canada này là 7-2.",
+   "cac_luot": [
+    "Tỷ lệ thắng thua giữa Nadal và người Canada là 7-2."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Tỷ lệ thắng thua giữa Nadal và người Canada là 7-2.",
+    "Tỷ lệ thắng thua giữa Nadal và người Canada là 7-2."
+   ]
+  },
+  {
+   "ma": "flores_0012",
+   "dong_flores": 12,
+   "nguon_zh": "不久前，他在布里斯班公开赛上败于拉奥尼奇。",
+   "tham_chieu_vi": "Gần đây anh ấy đã thua Raonic ở giải Brisbane Mở rộng",
+   "cac_luot": [
+    "Gần đây, anh ấy thua tại giải Brisbane Open trước Lajovic."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Gần đây, anh ấy thua tại giải Brisbane Open trước Lajovic.",
+    "Gần đây, anh ấy thua tại giải Brisbane Open trước Lajovic."
+   ]
+  },
+  {
+   "ma": "flores_0013",
+   "dong_flores": 13,
+   "nguon_zh": "纳达尔（Nadal ）在比赛中把 88% 的净胜分收入囊中，在第一个发球局赢得 76 分。",
+   "tham_chieu_vi": "Nadal bỏ túi 88% số điểm lên lưới trong trận đấu thắng 76 điểm trong lượt giao bóng đầu tiên.",
+   "cac_luot": [
+    "Trong trận đấu, Nadal kiểm soát 88% điểm quyết định, thắng 76 điểm ở serve đầu."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Trong trận đấu, Nadal kiểm soát 88% điểm quyết định, thắng 76 điểm ở serve đầu.",
+    "Trong trận đấu, Nadal kiểm soát 88% điểm quyết định, thắng 76 điểm ở serve đầu."
+   ]
+  },
+  {
+   "ma": "flores_0014",
+   "dong_flores": 14,
+   "nguon_zh": "赛后，红土之王拉斐尔·纳达尔称：“我很开心重返能这项重大赛事的决赛，我会尽全力争取夺冠。”",
+   "tham_chieu_vi": "Sau trận đấu, Ông vua sân đất nện nói rằng “Tôi rất vui khi được trở lại ở vòng đấu cuối của sự kiện đặc biệt quan trọng này. Tôi ở đây để cố gắng giành chiến thắng.”",
+   "cac_luot": [
+    "Sau đó, Vua Đất Đỏ Rafael Nadal nói: 'Rất vui quay lại chung kết giải lớn, tôi sẽ hết sức để giành cúp.'"
+   ],
+   "cac_luot_CO_y_canh": [
+    "Sau đó, Vua Đất Đỏ Rafael Nadal nói: 'Rất vui quay lại chung kết giải lớn, tôi sẽ hết sức để giành cúp.'",
+    "Sau đó, Vua Đất Đỏ Rafael Nadal nói: 'Rất vui quay lại chung kết giải lớn, tôi sẽ hết sức để giành cúp.'"
+   ]
+  },
+  {
+   "ma": "flores_0015",
+   "dong_flores": 15,
+   "nguon_zh": "“巴拿马文件” 是巴拿马莫萨克·冯塞卡律师事务所 (Mossack Fonseca) 约 1,000 万份文件的总称，这些文件在 2016 年春季被爆料给媒体。",
+   "tham_chieu_vi": "\"Hồ sơ Panama\" là thuật ngữ chung cho khoảng mười triệu tài liệu từ hãng luật Panama Mossack Fonseca, bị rò rỉ với báo chí vào mùa xuân 2016.",
+   "cac_luot": [
+    "Tài liệu Panama là tên gọi chung khoảng 10 triệu hồ sơ từ công ty luật Mossack Fonseca ở Panama, bị tiết lộ cho báo chí vào mùa xuân 2016."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Tài liệu Panama là tên gọi chung khoảng 10 triệu hồ sơ từ công ty luật Mossack Fonseca ở Panama, bị tiết lộ cho báo chí vào mùa xuân 2016.",
+    "Tài liệu Panama là tên gọi chung khoảng 10 triệu hồ sơ từ công ty luật Mossack Fonseca ở Panama, bị tiết lộ cho báo chí vào mùa xuân 2016."
+   ]
+  },
+  {
+   "ma": "flores_0016",
+   "dong_flores": 16,
+   "nguon_zh": "文件显示，十四家银行帮助富有的客户隐藏了数十亿美元的财富来逃避税收和其它监管。",
+   "tham_chieu_vi": "Các hồ sơ cho thấy mười bốn ngân hàng đã giúp các khách hàng giàu có giấu hàng tỷ đô la Mỹ tài sản để trốn thuế và các quy định khác.",
+   "cac_luot": [
+    "Hồ sơ cho thấy 14 ngân hàng giúp khách hàng giàu có giấu hàng chục tỷ đô la để trốn thuế và né quy định."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Hồ sơ cho thấy 14 ngân hàng giúp khách hàng giàu có giấu hàng chục tỷ đô la để trốn thuế và né quy định.",
+    "Hồ sơ cho thấy 14 ngân hàng giúp khách hàng giàu có giấu hàng chục tỷ đô la để trốn thuế và né quy định."
+   ]
+  },
+  {
+   "ma": "flores_0017",
+   "dong_flores": 17,
+   "nguon_zh": "英国《卫报》指出，在用于实现这一目标的 1200 家空壳公司中，德意志银行控制了大约三分之一。",
+   "tham_chieu_vi": "Nhật báo The Guardian của Vương quốc Anh cho rằng công ty cổ phần ngân hàng Đức Deutsche Bank kiểm soát khoảng một phần ba trong số 1200 công ty dầu khí được sử dụng để đạt được điều này.",
+   "cac_luot": [
+    "Báo The Guardian Anh chỉ ra, trong 1200 công ty rỗng không dùng để đạt mục tiêu, Deutsche Bank kiểm soát khoảng một phần ba."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Báo The Guardian Anh chỉ ra, trong 1200 công ty rỗng không dùng để đạt mục tiêu, Deutsche Bank kiểm soát khoảng một phần ba.",
+    "Báo The Guardian Anh chỉ ra, trong 1200 công ty rỗng không dùng để đạt mục tiêu, Deutsche Bank kiểm soát khoảng một phần ba."
+   ]
+  },
+  {
+   "ma": "flores_0018",
+   "dong_flores": 18,
+   "nguon_zh": "世界各地都发生了抗议活动，有几起刑事诉讼，冰岛和巴基斯坦政府的领导人都辞职了。",
+   "tham_chieu_vi": "Biểu tình nổ ra trên toàn thế giới, một số vụ truy tố hình sự và các nhà lãnh đạo của chính phủ Iceland và Pakistan đều đã từ chức.",
+   "cac_luot": [
+    "Toàn cầu nổ ra biểu tình, có vụ kiện hình sự, lãnh đạo Iceland và Pakistan từ chức."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Toàn cầu nổ ra biểu tình, có vụ kiện hình sự, lãnh đạo Iceland và Pakistan từ chức.",
+    "Toàn cầu nổ ra biểu tình, có vụ kiện hình sự, lãnh đạo Iceland và Pakistan từ chức."
+   ]
+  },
+  {
+   "ma": "flores_0019",
+   "dong_flores": 19,
+   "nguon_zh": "马生于香港，曾就读于纽约大学和哈佛大学法学院，还一度持有美国永久居民身份证“绿卡”。",
+   "tham_chieu_vi": "Sinh trưởng ở Hồng Kông, Ma theo học Trường Đại học New York và Trường luật Harvard và từng được cấp “thẻ xanh” của Mỹ dành cho người thường trú.",
+   "cac_luot": [
+    "Mã sinh ở Hồng Kông, từng học Đại học New York và Harvard, từng có thẻ xanh Mỹ."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Mã sinh ở Hồng Kông, từng học Đại học New York và Harvard, từng có thẻ xanh Mỹ.",
+    "Mã sinh ở Hồng Kông, từng học Đại học New York và Harvard, từng có thẻ xanh Mỹ."
+   ]
+  },
+  {
+   "ma": "flores_0020",
+   "dong_flores": 20,
+   "nguon_zh": "谢长廷在选举期间暗示，马英九在遇到危机时可能会逃离台湾。",
+   "tham_chieu_vi": "Hsieh ám chỉ trong thời gian bầu cử rằng Ma có thể sẽ chạy trốn khỏi nước này trong thời gian khủng hoảng.",
+   "cac_luot": [
+    "Thiếu tướng Trần trong chiến dịch bầu cử gợi ý Mã sẽ bỏ chạy khỏi Đài Loan khi gặp khủng hoảng."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Thiếu tướng Trần trong chiến dịch bầu cử gợi ý Mã sẽ bỏ chạy khỏi Đài Loan khi gặp khủng hoảng.",
+    "Thiếu tướng Trần trong chiến dịch bầu cử gợi ý Mã sẽ bỏ chạy khỏi Đài Loan khi gặp khủng hoảng."
+   ]
+  },
+  {
+   "ma": "flores_0021",
+   "dong_flores": 21,
+   "nguon_zh": "谢长廷还声称马英九虽然很上镜，但中看不中用。",
+   "tham_chieu_vi": "Hsieh cũng lập luận rằng ông Ma lịch lãm là kiểu người chú trọng đến vẻ bề ngoài hơn là nội dung bên trong.",
+   "cac_luot": [
+    "Trần còn nói Mã tuy nổi tiếng nhưng chỉ đẹp mà không có dụng."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Trần còn nói Mã tuy nổi tiếng nhưng chỉ đẹp mà không có dụng.",
+    "Trần còn nói Mã tuy nổi tiếng nhưng chỉ đẹp mà không có dụng."
+   ]
+  },
+  {
+   "ma": "flores_0022",
+   "dong_flores": 22,
+   "nguon_zh": "尽管受到这些指责，马英九在一次演讲中主张与中国大陆建立更加紧密的联系，并轻松获胜。",
+   "tham_chieu_vi": "Bất chấp các cáo buộc này, Ma vẫn dành chiến thắng đáng kể về chính sách ủng hộ quan hệ thắt chặt hơn với Trung Quốc Đại lục.",
+   "cac_luot": [
+    "Dù bị chỉ trích, Mã trong bài phát biểu kêu gọi liên kết chặt chẽ hơn với Trung Quốc và thắng dễ dàng."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Dù bị chỉ trích, Mã trong bài phát biểu kêu gọi liên kết chặt chẽ hơn với Trung Quốc và thắng dễ dàng.",
+    "Dù bị chỉ trích, Mã trong bài phát biểu kêu gọi liên kết chặt chẽ hơn với Trung Quốc và thắng dễ dàng."
+   ]
+  },
+  {
+   "ma": "flores_0023",
+   "dong_flores": 23,
+   "nguon_zh": "今日最佳选手是来自华盛顿首都队的亚历克斯·奥韦奇金。",
+   "tham_chieu_vi": "Cầu thủ xuất sắc nhất của ngày hôm nay là Alex Ovechkin của đội Washington Capitals.",
+   "cac_luot": [
+    "Vận động viên xuất sắc nhất hôm nay là Alex Ovechkin từ đội Washington Capitals."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Vận động viên xuất sắc nhất hôm nay là Alex Ovechkin từ đội Washington Capitals.",
+    "Vận động viên xuất sắc nhất hôm nay là Alex Ovechkin từ đội Washington Capitals."
+   ]
+  },
+  {
+   "ma": "flores_0024",
+   "dong_flores": 24,
+   "nguon_zh": "在华盛顿队以 5-3 的比分战胜亚特兰大鸫鸟队的比赛中，他贡献了 2 个进球和 2 次助攻。",
+   "tham_chieu_vi": "Anh ấy có 2 bàn thắng và 2 bàn kiến tạo trong chiến thắng 5-3 trước Atlanta Thrashers của Washington.",
+   "cac_luot": [
+    "Trong trận Washington đánh bại Atlanta 5-3, anh ghi 2 bàn và 2 assist."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Trong trận Washington đánh bại Atlanta 5-3, anh ghi 2 bàn và 2 assist.",
+    "Trong trận Washington đánh bại Atlanta 5-3, anh ghi 2 bàn và 2 assist."
+   ]
+  },
+  {
+   "ma": "flores_0025",
+   "dong_flores": 25,
+   "nguon_zh": "奥韦奇金（Ovechkin）当晚的第一个助攻，来自新秀尼克拉斯·贝克斯特伦 (Nicklas Backstrom) 的制胜一球;",
+   "tham_chieu_vi": "Đường chuyền yểm trợ đầu tiên của Ovechkin được ấn định chiến thắng bởi tân binh Nicklas Backstrom;",
+   "cac_luot": [
+    "Assist đầu của Ovechkin đến từ bàn thắng của Nicklas Backstrom."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Assist đầu của Ovechkin đến từ bàn thắng của Nicklas Backstrom.",
+    "Assist đầu của Ovechkin đến từ bàn thắng của Nicklas Backstrom."
+   ]
+  },
+  {
+   "ma": "flores_0026",
+   "dong_flores": 26,
+   "nguon_zh": "他当晚的第二个进球是他本赛季的第60个进球，成为自1995-96赛季以来首位在一个赛季中打进60个或更多进球的球员——在1995-96赛季，亚罗米尔·雅格和马里奥·拉缪都达到了这一里程碑。",
+   "tham_chieu_vi": "Bàn thắng thứ hai trong đêm là bàn thứ 60 của anh ấy trong mùa giải này và anh ta trở thành cầu thủ đầu tiên ghi 60 bàn thắng trở lên trong một mùa giải kể từ năm 1995-1996 khi Jaromir Jagr và Mario Lemieux lần lượt đạt kỷ lục đó.",
+   "cac_luot": [
+    "Bàn thứ hai là bàn thứ 60 mùa giải, anh trở thành người đầu tiên ghi 60+ từ 1995-96."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Bàn thứ hai là bàn thứ 60 mùa giải, anh trở thành người đầu tiên ghi 60+ từ 1995-96.",
+    "Bàn thứ hai là bàn thứ 60 mùa giải, anh trở thành người đầu tiên ghi 60+ từ 1995-96."
+   ]
+  },
+  {
+   "ma": "flores_0027",
+   "dong_flores": 27,
+   "nguon_zh": "巴滕位列 2008 年全美最富有 400 人榜单第 190 位，预计其财富达到约 23 亿美元。",
+   "tham_chieu_vi": "Batten được xếp hạng thứ 190 trong danh sách 400 người Mỹ giàu nhất thế giới năm 2008 với khối tài sản ước tính là 2,3 tỷ đô.",
+   "cac_luot": [
+    "Batten đứng thứ 190 trong danh sách 400 người giàu nhất Mỹ năm 2008, tài sản ước 2,3 tỷ USD."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Batten đứng thứ 190 trong danh sách 400 người giàu nhất Mỹ năm 2008, tài sản ước 2,3 tỷ USD.",
+    "Batten đứng thứ 190 trong danh sách 400 người giàu nhất Mỹ năm 2008, tài sản ước 2,3 tỷ USD."
+   ]
+  },
+  {
+   "ma": "flores_0028",
+   "dong_flores": 28,
+   "nguon_zh": "他在 1950 年毕业于弗吉尼亚大学艺术与科学学院，并且是该校的重要捐赠者。",
+   "tham_chieu_vi": "Ông tốt nghiệp trường Nghệ thuật và Khoa học, thuộc Đại học Virginia vào năm 1950 và là nhà tài trợ quan trọng cho ngôi trường này.",
+   "cac_luot": [
+    "Anh tốt nghiệp Đại học Virginia năm 1950 và là nhà tài trợ lớn của trường."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Anh tốt nghiệp Đại học Virginia năm 1950 và là nhà tài trợ lớn của trường.",
+    "Anh tốt nghiệp Đại học Virginia năm 1950 và là nhà tài trợ lớn của trường."
+   ]
+  },
+  {
+   "ma": "flores_0029",
+   "dong_flores": 29,
+   "nguon_zh": "伊拉克的阿布格莱布监狱在一次暴乱中着火。",
+   "tham_chieu_vi": "Nhà tù Abu Ghraib của Iraq đã bị đốt cháy trong cuộc bạo loạn.",
+   "cac_luot": [
+    "Nhà tù Abu Ghraib ở Iraq bốc cháy trong một cuộc bạo loạn."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Nhà tù Abu Ghraib ở Iraq bốc cháy trong một cuộc bạo loạn.",
+    "Nhà tù Abu Ghraib ở Iraq bốc cháy trong một cuộc bạo loạn."
+   ]
+  },
+  {
+   "ma": "flores_0030",
+   "dong_flores": 30,
+   "nguon_zh": "美军接管后，该监狱发现了虐囚事件，自此变得声名狼藉。",
+   "tham_chieu_vi": "Nhà tù này trở nên nổi tiếng kể từ vụ việc ngược đãi tù nhân bị phát hiện sau khi quân Hoa Kỳ tiếp quản.",
+   "cac_luot": [
+    "Sau khi quân đội Mỹ tiếp quản, nơi đây phát hiện hành vi ngược đãi tù nhân, trở nên xấu tiếng."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Sau khi quân đội Mỹ tiếp quản, nơi đây phát hiện hành vi ngược đãi tù nhân, trở nên xấu tiếng.",
+    "Sau khi quân đội Mỹ tiếp quản, nơi đây phát hiện hành vi ngược đãi tù nhân, trở nên xấu tiếng."
+   ]
+  },
+  {
+   "ma": "flores_0031",
+   "dong_flores": 31,
+   "nguon_zh": "在 2008 年新加坡大奖赛上，费尔南多·阿隆索提前进站后，小皮奎特发生撞车，迫使安全车出场。",
+   "tham_chieu_vi": "Piquet Jr. gặp tai nạn vào năm 2008 tại Singapore Grand Prix ngay sau khi Fernando Alonso tấp sớm vào điểm dừng kỹ thuật, mang ra một chiếc xe an toàn.",
+   "cac_luot": [
+    "Tại Singapore Grand Prix 2008, Alonso vào pit sớm, Piquet Jr. va chạm, an toàn xe xuất hiện."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Tại Singapore Grand Prix 2008, Alonso vào pit sớm, Piquet Jr. va chạm, an toàn xe xuất hiện.",
+    "Tại Singapore Grand Prix 2008, Alonso vào pit sớm, Piquet Jr. va chạm, an toàn xe xuất hiện."
+   ]
+  },
+  {
+   "ma": "flores_0032",
+   "dong_flores": 32,
+   "nguon_zh": "当位于阿隆索前面的赛车在安全车的引领下进行加油时，他趁机抢先，最终赢得了胜利。",
+   "tham_chieu_vi": "Khi những chiếc xe phía trước phải vào nạp nhiên liệu theo lệnh của xe bảo đảm an toàn, Alonso đã vượt lên để giành chiến thắng.",
+   "cac_luot": [
+    "Khi xe trước Alonso đang tiếp nhiên liệu dưới xe an toàn, anh ấy vượt lên và giành chiến thắng."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Khi xe trước Alonso đang tiếp nhiên liệu dưới xe an toàn, anh ấy vượt lên và giành chiến thắng.",
+    "Khi xe trước Alonso đang tiếp nhiên liệu dưới xe an toàn, anh ấy vượt lên và giành chiến thắng."
+   ]
+  },
+  {
+   "ma": "flores_0033",
+   "dong_flores": 33,
+   "nguon_zh": "小皮奎特在 2009 年匈牙利大奖赛之后被解雇。",
+   "tham_chieu_vi": "Piquet Jr. bị sa thải sau cuộc đua Grand Prix Hungary năm 2009.",
+   "cac_luot": [
+    "Piquet Jr. bị sa thải sau Grand Prix Hungary năm 2009."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Piquet Jr. bị sa thải sau Grand Prix Hungary năm 2009.",
+    "Piquet Jr. bị sa thải sau Grand Prix Hungary năm 2009."
+   ]
+  },
+  {
+   "ma": "flores_0034",
+   "dong_flores": 34,
+   "nguon_zh": "正值上午 8 点 46 分，整座城市陷入了寂静，标示了第一架飞机撞上目标的确切时间。",
+   "tham_chieu_vi": "Đúng 8 giờ 46 phút sáng, sự câm lặng bao trùm khắp thành phố, đánh dấu khoảnh khắc chiếc máy bay phản lực đầu tiên đâm trúng mục tiêu.",
+   "cac_luot": [
+    "Vào lúc 8 giờ 46 phút sáng, thành phố im lặng, đánh dấu thời điểm máy bay đầu tiên đâm vào mục tiêu."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Vào lúc 8 giờ 46 phút sáng, thành phố im lặng, đánh dấu thời điểm máy bay đầu tiên đâm vào mục tiêu.",
+    "Vào lúc 8 giờ 46 phút sáng, thành phố im lặng, đánh dấu thời điểm máy bay đầu tiên đâm vào mục tiêu."
+   ]
+  },
+  {
+   "ma": "flores_0035",
+   "dong_flores": 35,
+   "nguon_zh": "两束光被临时造出，彻夜指向天空。",
+   "tham_chieu_vi": "Hai chùm sáng được dựng lên để thắp sáng bầu trời về đêm.",
+   "cac_luot": [
+    "Hai luồng ánh sáng được tạo ra tạm thời, hướng về bầu trời suốt đêm."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Hai luồng ánh sáng được tạo ra tạm thời, hướng về bầu trời suốt đêm.",
+    "Hai luồng ánh sáng được tạo ra tạm thời, hướng về bầu trời suốt đêm."
+   ]
+  },
+  {
+   "ma": "flores_0036",
+   "dong_flores": 36,
+   "nguon_zh": "该地点正在建设五座新摩天大楼，中间有一个交通中心和纪念公园。",
+   "tham_chieu_vi": "Công tác thi công đang được triển khai trên công trường cho năm cao ốc mới, ở giữa là một trung tâm vận tải và công viên tưởng niệm.",
+   "cac_luot": [
+    "Tại địa điểm này, hiện đang có kế hoạch xây dựng tổng cộng năm tòa nhà chọc trời mới sừng sững lên bầu trời cao vút. Ở chính giữa khu vực rộng lớn đó là một trung tâm giao thông hiện đại và một công viên kỷ niệm trang trọng, xanh mát, nơi mọi người có thể thư giãn."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Tại địa điểm này, hiện đang có kế hoạch xây dựng tổng cộng năm tòa nhà chọc trời mới sừng sững lên bầu trời cao vút. Ở chính giữa khu vực rộng lớn đó là một trung tâm giao thông và công viên kỷ niệm.",
+    "Tại địa điểm này, hiện đang có kế hoạch xây dựng tổng cộng năm tòa nhà chọc trời mới sừng sững lên bầu trời cao vút. Ở chính giữa khu vực rộng lớn đó là một trung tâm giao thông và công viên kỷ niệm."
+   ]
+  },
+  {
+   "ma": "flores_0037",
+   "dong_flores": 37,
+   "nguon_zh": "PBS 电视台的这个节目荣获二十多项艾美奖，其播出历史仅次于《芝麻街》和《罗杰斯先生的左邻右舍》。",
+   "tham_chieu_vi": "Chương trình của đài PBS đã thu về hơn hai chục giải thưởng Emmy và thời gian phát sóng của nó chỉ đứng sau Sesame Street và Mister Rogers' Neighborhood.",
+   "cac_luot": [
+    "Chương trình truyền hình của đài PBS này đã nhận được hơn hai mươi giải thưởng Emmy danh giá. Lịch sử phát sóng của nó đứng thứ hai chỉ sau chương trình芝麻街 và chương trình Hàng xóm bên trái của ông Rogers."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Chương trình truyền hình của đài PBS này đã nhận được hơn hai mươi giải thưởng Emmy danh giá. Lịch sử phát sóng của nó đứng thứ hai chỉ sau chương trình芝麻街 và c",
+    "Chương trình truyền hình của đài PBS này đã nhận được hơn hai mươi giải thưởng Emmy danh giá. Lịch sử phát sóng của nó đứng thứ hai chỉ sau chương trình芝麻街 và c"
+   ]
+  },
+  {
+   "ma": "flores_0038",
+   "dong_flores": 38,
+   "nguon_zh": "每集节目都会聚焦于特定图书中的某个主题，并通过多个故事对该主题展开探索活动。",
+   "tham_chieu_vi": "Mỗi tập trong chương trình sẽ tập trung vào một chủ đề trong một cuốn sách cụ thể, sau đó sẽ khám phá chủ đề đó qua nhiều câu chuyện khác nhau.",
+   "cac_luot": [
+    "Mỗi tập chương trình đều tập trung vào một chủ đề cụ thể có trong cuốn sách nào đó. Thông qua nhiều câu chuyện khác nhau, chương trình sẽ mở rộng và khám phá sâu hơn về chủ đề đó."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Mỗi tập chương trình đều tập trung vào một chủ đề cụ thể có trong cuốn sách nào đó. Thông qua nhiều câu chuyện khác nhau, chương trình sẽ mở rộng và khám phá sâu hơn về chủ đề đó.",
+    "Mỗi tập chương trình đều tập trung vào một chủ đề cụ thể có trong cuốn sách nào đó. Thông qua nhiều câu chuyện khác nhau, chương trình sẽ mở rộng và khám phá sâu hơn về chủ đề đó."
+   ]
+  },
+  {
+   "ma": "flores_0039",
+   "dong_flores": 39,
+   "nguon_zh": "每期节目还会向孩子们提供建议，向推荐他们在去图书馆时应当查阅的书籍。",
+   "tham_chieu_vi": "Mỗi chương trình cũng sẽ đưa ra đề xuất về những cuốn sách mà trẻ em nên tìm đọc khi đến thư viện.",
+   "cac_luot": [
+    "Mỗi tập chương trình còn cung cấp lời khuyên cho các em nhỏ. Nó hướng dẫn các em nên tìm đọc những cuốn sách nào khi đến thư viện để tham khảo."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Mỗi tập chương trình còn cung cấp lời khuyên cho các em nhỏ. Nó hướng dẫn các em nên tìm đọc những cuốn sách nào khi đến thư viện để tham khảo.",
+    "Mỗi tập chương trình còn cung cấp lời khuyên cho các em nhỏ. Nó hướng dẫn các em nên tìm đọc những cuốn sách nào khi đến thư viện để tham khảo."
+   ]
+  },
+  {
+   "ma": "flores_0040",
+   "dong_flores": 40,
+   "nguon_zh": "来自水牛城 WNED 电台（“阅读彩虹”节目的主电台）的约翰·格兰特 (John Grant) 说：“阅读彩虹教会了孩子们为什么要阅读，……还有对阅读的热爱——（该节目）鼓励孩子们拿起书来潜心阅读。”",
+   "tham_chieu_vi": "John Grant, đến từ WNED Buffalo (ga cơ sở của Reading Rainbow) nói rằng “Reading Rainbow dạy những đưa trẻ tại sao nên đọc,...sự yêu thích đọc sách - [chương trình] khuyến khích trẻ nhặt một cuốn sách lên và đọc.”",
+   "cac_luot": [
+    "John Grant từ đài WNED Buffalo nói rằng chương trình Đọc Cầu Vồng đã dạy các em lý do tại sao cần phải đọc sách. Nó còn khơi dậy niềm yêu thích với việc đọc và khuyến khích các em cầm sách lên đọc chăm chú."
+   ],
+   "cac_luot_CO_y_canh": [
+    "John Grant từ đài WNED Buffalo nói rằng chương trình Đọc Cầu Vồng đã dạy các em lý do tại sao cần phải đọc sách. Nó còn khơi dậy niềm yêu thích với việc đọc và khuyến khích các em cầm sách lên đọc.",
+    "John Grant từ đài WNED Buffalo nói rằng chương trình Đọc Cầu Vồng đã dạy các em lý do tại sao cần phải đọc sách. Nó còn khơi dậy niềm yêu thích với việc đọc và khuyến khích các em cầm sách lên đọc."
+   ]
+  },
+  {
+   "ma": "flores_0041",
+   "dong_flores": 41,
+   "nguon_zh": "约翰·格兰特等人认为，该节目之所以停播，是因为资金短缺，以及教育节目制作理念发生了转变。",
+   "tham_chieu_vi": "Một số người, bao gồm cả John Grant, tin rằng cả tình trạng khủng hoảng tài trợ và sự thay đổi trong triết lý thiết kế chương trình truyền hình giáo dục đã góp phần dẫn đến sự chấm dứt của chương trình này.",
+   "cac_luot": [
+    "Theo John Grant và những người khác, lý do chương trình này ngừng phát sóng là do thiếu hụt nguồn tài chính. Bên cạnh đó, quan điểm về việc sản xuất chương trình giáo dục cũng đã có sự thay đổi."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Theo John Grant và những người khác, lý do chương trình này ngừng phát sóng là do thiếu hụt nguồn tài chính. Bên cạnh đó, quan điểm về việc sản xuất chương trình cũng đã thay đổi.",
+    "Theo John Grant và những người khác, lý do chương trình này ngừng phát sóng là do thiếu hụt nguồn tài chính. Bên cạnh đó, quan điểm về việc sản xuất chương trình cũng đã thay đổi."
+   ]
+  },
+  {
+   "ma": "flores_0042",
+   "dong_flores": 42,
+   "nguon_zh": "预报员称，这场位于佛得角群岛以西 645 英里（1040 公里）的风暴可能在对陆地地区造成威胁之前就会自行消散。",
+   "tham_chieu_vi": "Theo thông tin dự báo thời tiết, cơn bão hiện ở cách đảo Cape Verde 645 dặm (1040 km) về phía tây, có thể sẽ tan trước khi gây ảnh hưởng đến bất cứ khu vực nào trong đất liền.",
+   "cac_luot": [
+    "Theo các nhà dự báo, cơn bão này nằm cách quần đảo Cape Verde 645 dặm về phía tây. Có khả năng cơn bão sẽ tự tan biến trước khi gây ra mối đe dọa nào cho vùng đất liền."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Theo các nhà dự báo, cơn bão này nằm cách quần đảo Cape Verde 645 dặm về phía tây. Có khả năng cơn bão sẽ tự tan biến trước khi gây ra mối đe dọa nào cho vùng đất liền.",
+    "Theo các nhà dự báo, cơn bão này nằm cách quần đảo Cape Verde 645 dặm về phía tây. Có khả năng cơn bão sẽ tự tan biến trước khi gây ra mối đe dọa nào cho vùng đất liền."
+   ]
+  },
+  {
+   "ma": "flores_0043",
+   "dong_flores": 43,
+   "nguon_zh": "“弗雷德”目前正以每小时 105 英里（每小时 165 公里）的风速向西北方向移动。",
+   "tham_chieu_vi": "Fred hiện có sức gió 105 dặm/giờ (165 km/h) và đang di chuyển theo hướng tây bắc.",
+   "cac_luot": [
+    "Hiện tại, Fred đang di chuyển về hướng tây bắc với tốc độ 105 dặm mỗi giờ. Tốc độ này tương đương với 165 km mỗi giờ, một con số rất đáng kể."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Hiện tại, Fred đang di chuyển về hướng tây bắc với tốc độ 105 dặm mỗi giờ. Tốc độ này tương đương với 165 km mỗi giờ, một con số rất đáng kể.",
+    "Hiện tại, Fred đang di chuyển về hướng tây bắc với tốc độ 105 dặm mỗi giờ. Tốc độ này tương đương với 165 km mỗi giờ, một con số rất đáng kể."
+   ]
+  },
+  {
+   "ma": "flores_0044",
+   "dong_flores": 44,
+   "nguon_zh": "“弗雷德”是卫星图像问世以来，在大西洋南部和东部记录到的最强热带气旋，也是有记录以来西经 35° 以东地区的第三大飓风。",
+   "tham_chieu_vi": "Fred là gió xoáy nhiệt đới mạnh nhất từng được ghi nhận cho tới nay ở phía nam và đông Atlantic kể từ hiện sự kiện ảnh vệ tinh và chỉ cơn bão lớn số ba được ghi nhận ở phía đông 35° Tây.",
+   "cac_luot": [
+    "Fred được ghi nhận là cơn bão nhiệt đới mạnh nhất từng được ghi lại qua hình ảnh vệ tinh ở khu vực phía nam và đông Đại Tây Dương. Đây cũng là cơn bão lớn thứ ba ở khu vực phía đông kinh tuyến 35 độ Tây."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Fred được ghi nhận là cơn bão nhiệt đới mạnh nhất từng được ghi lại qua hình ảnh vệ tinh ở khu vực phía nam và đông Đại Tây Dương. Đây cũng là cơn bão lớn thứ ba ở khu vực này.",
+    "Fred được ghi nhận là cơn bão nhiệt đới mạnh nhất từng được ghi lại qua hình ảnh vệ tinh ở khu vực phía nam và đông Đại Tây Dương. Đây cũng là cơn bão lớn thứ ba ở khu vực này."
+   ]
+  },
+  {
+   "ma": "flores_0045",
+   "dong_flores": 45,
+   "nguon_zh": "1759 年 9 月 24 日，阿瑟·吉尼斯在爱尔兰都柏林为圣詹姆斯之门啤酒厂签署了一份 9000 年的租约。",
+   "tham_chieu_vi": "Vào 24 tháng Chín năm 1759, Arthur Guinness ký hợp đồng thuê 9.000 năm cho St James' Gate Brewery tại Dublin, Ireland.",
+   "cac_luot": [
+    "Vào ngày 24 tháng 9 năm 1759, Arthur Guinness đã ký một hợp đồng thuê nhà 9000 năm tại Dublin, Ireland cho nhà máy bia St James's Gate."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Vào ngày 24 tháng 9 năm 1759, Arthur Guinness đã ký một hợp đồng thuê nhà 9000 năm tại Dublin, Ireland cho nhà máy bia St James's Gate.",
+    "Vào ngày 24 tháng 9 năm 1759, Arthur Guinness đã ký một hợp đồng thuê nhà 9000 năm tại Dublin, Ireland cho nhà máy bia St James's Gate."
+   ]
+  },
+  {
+   "ma": "flores_0046",
+   "dong_flores": 46,
+   "nguon_zh": "250 年后，健力士已经成长为年营业额 100 亿欧元（147亿美元）的全球性企业。",
+   "tham_chieu_vi": "250 năm sau, Guinness đã phát triển thành một doanh nghiệp toàn cầu với doanh thu hơn 10 tỷ Euro (tương đương với 14,7 tỷ USD) mỗi năm.",
+   "cac_luot": [
+    "Sau 250 năm, Guinness đã phát triển thành một doanh nghiệp toàn cầu với doanh thu hàng năm lên tới 100 triệu Euro. Con số này tương đương với 147 triệu đô la Mỹ."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Sau 250 năm, Guinness đã phát triển thành một doanh nghiệp toàn cầu với doanh thu hàng năm lên tới 100 triệu Euro. Con số này tương đương với 147 triệu đô la Mỹ.",
+    "Sau 250 năm, Guinness đã phát triển thành một doanh nghiệp toàn cầu với doanh thu hàng năm lên tới 100 triệu Euro. Con số này tương đương với 147 triệu đô la Mỹ."
+   ]
+  },
+  {
+   "ma": "flores_0047",
+   "dong_flores": 47,
+   "nguon_zh": "今天，A1GP 新西兰队副驾驶约翰·里德 (Jonny Reid) 在合法驾驶的情况下，成为在有 48 年历史的新西兰奥克兰海港大桥上行驶最快的人，从而创造了历史。",
+   "tham_chieu_vi": "Jonny Reid, phụ lái trong đội đua A1GP của New Zealand, hôm nay đã làm nên lịch sử khi trở thành người chạy nhanh nhất, một cách hợp pháp, qua Cầu Cảng Auckland 48 năm tuổi ở New Zealand.",
+   "cac_luot": [
+    "Hôm nay, John Reid, người đồng đội của đội A1GP New Zealand, đã trở thành người lái xe nhanh nhất trên cầu cảng Auckland. Ông đã làm điều này trong tình trạng lái xe hợp pháp và đã tạo ra một kỷ lục lịch sử."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Hôm nay, John Reid, người đồng đội của đội A1GP New Zealand, đã trở thành người lái xe nhanh nhất trên cầu cảng Auckland. Ông đã làm điều này trong tình trạng lái xe hợp pháp.",
+    "Hôm nay, John Reid, người đồng đội của đội A1GP New Zealand, đã trở thành người lái xe nhanh nhất trên cầu cảng Auckland. Ông đã làm điều này trong tình trạng lái xe hợp pháp."
+   ]
+  },
+  {
+   "ma": "flores_0048",
+   "dong_flores": 48,
+   "nguon_zh": "瑞德先生最终驾驶新西兰 A1GP 汽车“黑美人”，以超过 160 千米每小时的速度七次穿过桥梁。",
+   "tham_chieu_vi": "Ông Reid đã lái thành công chiếc A1GP New Zealand, Black Beauty, với vận tốc trên 160km/h qua cầu bảy lần.",
+   "cac_luot": [
+    "Ông Reid cuối cùng lái chiếc xe A1GP của New Zealand \"Hắc Mỹ Nhân\", với tốc độ hơn 160 km/h, bảy lần vượt qua cầu."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Ông Reid cuối cùng lái chiếc xe A1GP của New Zealand \"Hắc Mỹ Nhân\", với tốc độ hơn 160 km/h, bảy lần vượt qua cầu.",
+    "Ông Reid cuối cùng lái chiếc xe A1GP của New Zealand \"Hắc Mỹ Nhân\", với tốc độ hơn 160 km/h, bảy lần vượt qua cầu."
+   ]
+  },
+  {
+   "ma": "flores_0049",
+   "dong_flores": 49,
+   "nguon_zh": "由于“黑美人”的底盘过低，新西兰警方没法用测速雷达枪来检测里德先生的车速。警方唯一一次成功检测到里德先生的车速，是在他将车速降到 160 公里/小时的时候。",
+   "tham_chieu_vi": "Cảnh sát New Zealand gặp khó khi sử dụng súng bắn tốc độ để đo tốc độ của ông Reid đã đi và chiếc Black Beauty quá thấp, và thời điểm cảnh sát xoay sở để đo được tốc độ của ông Reid là khi ông ta giảm tốc xuống còn 160km/h.",
+   "cac_luot": [
+    "Vì \"Hắc Mỹ Nhân\" có gầm quá thấp, cảnh sát New Zealand không thể dùng radar để đo tốc độ của ông Reid. Lần duy nhất họ đo được là khi ông giảm tốc xuống 160 km/h."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Vì \"Hắc Mỹ Nhân\" có gầm quá thấp, cảnh sát New Zealand không thể dùng radar để đo tốc độ của ông Reid. Lần duy nhất họ đo được là khi ông giảm tốc xuống 160 km/h.",
+    "Vì \"Hắc Mỹ Nhân\" có gầm quá thấp, cảnh sát New Zealand không thể dùng radar để đo tốc độ của ông Reid. Lần duy nhất họ đo được là khi ông giảm tốc xuống 160 km/h."
+   ]
+  },
+  {
+   "ma": "flores_0050",
+   "dong_flores": 50,
+   "nguon_zh": "在过去的 3 个月里，超过 80 名被捕者在没有被正式起诉的情况下从中央拘留所释放。",
+   "tham_chieu_vi": "Trong vòng 3 tháng qua, đã có hơn 80 người bị bắt được thả ra khỏi trụ sở của Central Booking và không bị buộc tội chính thức.",
+   "cac_luot": [
+    "Trong 3 tháng qua, hơn 80 người bị bắt đã được thả ra khỏi nhà tù trung ương mà không bị truy tố chính thức."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Trong 3 tháng qua, hơn 80 người bị bắt đã được thả ra khỏi nhà tù trung ương mà không bị truy tố chính thức.",
+    "Trong 3 tháng qua, hơn 80 người bị bắt đã được thả ra khỏi nhà tù trung ương mà không bị truy tố chính thức."
+   ]
+  },
+  {
+   "ma": "flores_0051",
+   "dong_flores": 51,
+   "nguon_zh": "今年 4 月，格林法官针对该机构颁布了一项临时禁令，强制释放那些被关押 24 小时以上，却没有得到法庭专员听证的人。",
+   "tham_chieu_vi": "Tháng Tư năm nay, thẩm phán Glynn đã ban hành lệnh cấm tạm thời với cơ sở này để thi hành việc thả những người bị giữ hơn 24 giờ sau khi bị bắt mà không nhận được phiên điều trần nào từ ủy viên tòa án.",
+   "cac_luot": [
+    "Tháng 4 năm nay, Thẩm phán Green đã ra lệnh tạm thời buộc cơ quan này phải thả những người bị giam hơn 24 giờ mà không được nghe trình bày của quan tòa."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Tháng 4 năm nay, Thẩm phán Green đã ra lệnh tạm thời buộc cơ quan này phải thả những người bị giam hơn 24 giờ mà không được nghe trình bày của quan tòa.",
+    "Tháng 4 năm nay, Thẩm phán Green đã ra lệnh tạm thời buộc cơ quan này phải thả những người bị giam hơn 24 giờ mà không được nghe trình bày của quan tòa."
+   ]
+  },
+  {
+   "ma": "flores_0052",
+   "dong_flores": 52,
+   "nguon_zh": "如果获得批准，法庭专员即可设定保释金，并最终确定执行逮捕的警员提出的指控。这些指控随后会录入该州的计算机系统，以便在其中对案件进行追踪。",
+   "tham_chieu_vi": "Người được ủy quyền nộp tiền bảo lãnh, nếu được chấp thuận, và hợp thức hóa các khoản phí được cảnh sát thực hiện bắt giữ đệ trình lên. Các khoản phí này sau đó được nhập vào hệ thống máy tính của bang nơi vụ án được theo dõi.",
+   "cac_luot": [
+    "Nếu được phê duyệt, quan tòa sẽ ấn định tiền bảo lãnh và xác định các cáo buộc của cảnh sát thực thi. Những cáo buộc này sẽ được nhập vào hệ thống máy tính của tiểu bang để theo dõi."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Nếu được phê duyệt, quan tòa sẽ ấn định tiền bảo lãnh và xác định các cáo buộc của cảnh sát thực thi. Những cáo buộc này sẽ được nhập vào hệ thống máy tính của.",
+    "Nếu được phê duyệt, quan tòa sẽ ấn định tiền bảo lãnh và xác định các cáo buộc của cảnh sát thực thi. Những cáo buộc này sẽ được nhập vào hệ thống máy tính của."
+   ]
+  },
+  {
+   "ma": "flores_0053",
+   "dong_flores": 53,
+   "nguon_zh": "听证会也会根据嫌疑人的权利，定下快速审判的日期。",
+   "tham_chieu_vi": "Phiên tòa cũng đánh dấu ngày dành cho quyền được xử nhanh của nghi phạm.",
+   "cac_luot": [
+    "Các phiên tòa cũng sẽ ấn định ngày xét xử nhanh dựa trên quyền lợi của bị cáo."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Các phiên tòa cũng sẽ ấn định ngày xét xử nhanh dựa trên quyền lợi của bị cáo.",
+    "Các phiên tòa cũng sẽ ấn định ngày xét xử nhanh dựa trên quyền lợi của bị cáo."
+   ]
+  },
+  {
+   "ma": "flores_0054",
+   "dong_flores": 54,
+   "nguon_zh": "澳大利亚财务部长、最有可能接替总理约翰·霍华德担任自由党领袖的彼得·科斯特洛，对澳大利亚的核电工业表示支持。",
+   "tham_chieu_vi": "Peter Costello, Bộ trưởng Ngân khố Úc và là người có khả năng giành thắng lợi nhất trước Thủ tướng John Howard với tư cách là lãnh đạo đảng Tự Do, đã dành sự ủng hộ của mình cho ngành công nghiệp điện hạt nhân ở Úc.",
+   "cac_luot": [
+    "Bộ trưởng Tài chính Australia, Peter Costello, người có khả năng nhất thay thế Thủ tướng John Howard làm lãnh đạo Đảng Tự do, đã bày tỏ sự ủng hộ đối với ngành công nghiệp điện hạt nhân của Australia."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Bộ trưởng Tài chính Australia, Peter Costello, người có khả năng nhất thay thế Thủ tướng John Howard làm lãnh đạo Đảng Tự do, đã bày tỏ sự ủng hộ đối với ngành.",
+    "Bộ trưởng Tài chính Australia, Peter Costello, người có khả năng nhất thay thế Thủ tướng John Howard làm lãnh đạo Đảng Tự do, đã bày tỏ sự ủng hộ đối với ngành."
+   ]
+  },
+  {
+   "ma": "flores_0055",
+   "dong_flores": 55,
+   "nguon_zh": "科斯特洛先生说，当核能发电在经济上有可行性的时候，澳大利亚应当推进核电的使用。",
+   "tham_chieu_vi": "Ông Costello nói rằng khi việc phát điện bằng năng lượng nguyên tử trở nên khả thi về mặt kinh tế, Australia nên theo đuổi việc sử dụng năng lượng này.",
+   "cac_luot": [
+    "Ông Costello nói rằng khi sản xuất điện hạt nhân có tính khả thi về kinh tế, Australia nên thúc đẩy việc sử dụng điện hạt nhân."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Ông Costello nói rằng khi sản xuất điện hạt nhân có tính khả thi về kinh tế, Australia nên thúc đẩy việc sử dụng điện hạt nhân.",
+    "Ông Costello nói rằng khi sản xuất điện hạt nhân có tính khả thi về kinh tế, Australia nên thúc đẩy việc sử dụng điện hạt nhân."
+   ]
+  },
+  {
+   "ma": "flores_0056",
+   "dong_flores": 56,
+   "nguon_zh": "“如果可以用于商业目的，我们就应该推广这种方式。也就是说，原则上不存在反对核能的理由。”科斯特洛先生说道。",
+   "tham_chieu_vi": "\"Nếu nó được thương mại hóa, chúng ta nên sử dụng nó. Tức là, không có sự phản đối nào về nguyên tắc đối với năng lượng nguyên tử, ông Costello nói.\"",
+   "cac_luot": [
+    "\"Nếu có thể dùng cho mục đích thương mại, chúng ta nên khuyến khích cách này. Nói cách khác, về nguyên tắc không có lý do nào phản đối năng lượng hạt nhân.\" Ông Costello nói."
+   ],
+   "cac_luot_CO_y_canh": [
+    "\"Nếu có thể dùng cho mục đích thương mại, chúng ta nên khuyến khích cách này. Nói cách khác, về nguyên tắc không có lý do nào phản đối năng lượng hạt nhân.\" Ông",
+    "\"Nếu có thể dùng cho mục đích thương mại, chúng ta nên khuyến khích cách này. Nói cách khác, về nguyên tắc không có lý do nào phản đối năng lượng hạt nhân.\" Ông"
+   ]
+  },
+  {
+   "ma": "flores_0057",
+   "dong_flores": 57,
+   "nguon_zh": "安莎通讯社表示：“警方对多起高层遇袭事件感到担忧，担心这类事件可能会引发一场全面继任战争。",
+   "tham_chieu_vi": "Theo Ansa: \"cảnh sát lo ngại một số vụ đụng độ cấp cao có thể châm ngòi cho một cuộc chiến giành quyền thừa kế.",
+   "cac_luot": [
+    "Cơ quan thông tin Ansa cho biết: \"Cảnh sát lo ngại về nhiều vụ tấn công vào các cấp lãnh đạo, sợ rằng những vụ việc này có thể dẫn đến một cuộc chiến tranh kế vị toàn diện.\""
+   ],
+   "cac_luot_CO_y_canh": [
+    "Cơ quan thông tin Ansa cho biết: \"Cảnh sát lo ngại về nhiều vụ tấn công vào các cấp lãnh đạo, sợ rằng những vụ việc này có thể dẫn đến một cuộc chiến tranh kế v",
+    "Cơ quan thông tin Ansa cho biết: \"Cảnh sát lo ngại về nhiều vụ tấn công vào các cấp lãnh đạo, sợ rằng những vụ việc này có thể dẫn đến một cuộc chiến tranh kế v"
+   ]
+  },
+  {
+   "ma": "flores_0058",
+   "dong_flores": 58,
+   "nguon_zh": "警方表示，洛皮科洛之所以能占上风，是因为他曾是普罗文扎诺在巴勒莫的得力助手。他经验丰富，赢得了老一辈黑帮老大们的尊重，这些人奉行普罗文扎诺的政策，在增强帮派势力的同时，尽可能保持低调。",
+   "tham_chieu_vi": "Cảnh sát cho biết, Lo Piccolo được trao quyền lực vì tên này từng là cánh tay phải đắc lực của Provenzano tại Palermo. Ngoài ra, kinh nghiệm dày dặn đã giúp Lo Piccolo chiếm được sự tín nhiệm từ thế hệ các bố già do những kẻ này cùng theo đuổi chính sách của Provenzano trong việc duy trì tốc độ chậm nhất có thể trong quá trình củng cố mạng lưới quyền lực.",
+   "cac_luot": [
+    "Cảnh sát cho biết, Lopikolo có thể chiếm ưu thế vì ông từng là trợ thủ đắc lực của Provenzano tại Palermo. Ông giàu kinh nghiệm, được các ông lớn băng đảng thế hệ cũ tôn trọng."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Cảnh sát cho biết, Lopikolo có thể chiếm ưu thế vì ông từng là trợ thủ đắc lực của Provenzano tại Palermo. Ông giàu kinh nghiệm, được các ông lớn băng đảng thế",
+    "Cảnh sát cho biết, Lopikolo có thể chiếm ưu thế vì ông từng là trợ thủ đắc lực của Provenzano tại Palermo. Ông giàu kinh nghiệm, được các ông lớn băng đảng thế"
+   ]
+  },
+  {
+   "ma": "flores_0059",
+   "dong_flores": 59,
+   "nguon_zh": "1992 年，普罗文扎诺（Provenzano）结束了由里亚纳发动的反政府的战争，这场战争夺去了黑手党十字军乔瓦尼·法尔科内（Giovanni Falcone）和保罗·博尔塞利诺（Paolo Borsellino）的生命，随后这些老大们就被他控制住了。“",
+   "tham_chieu_vi": "Những ông trùm này đã từng nằm dưới trướng của Provenzano khi gã đặt dấu chấm hết cho cuộc chiến do Riina dấy lên chống lại nhà nước. Cuộc chiến đó đã cướp đi sinh mạng của hai người hùng chống Mafia là Giovanni Falcone và Paolo Borsellino vào năm 1992\".",
+   "cac_luot": [
+    "Năm 1992, Provenzano đã kết thúc cuộc chiến chống chính phủ do Rianna khởi xướng, cuộc chiến này cướp đi sinh mạng của hai chiến binh mafia Giovanni Falcone và Paolo Borsellino, sau đó ông ta đã kiểm soát được những ông lớn này."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Năm 1992, Provenzano đã kết thúc cuộc chiến chống chính phủ do Rianna khởi xướng, cuộc chiến này cướp đi sinh mạng của hai chiến binh mafia Giovanni Falcone và",
+    "Năm 1992, Provenzano đã kết thúc cuộc chiến chống chính phủ do Rianna khởi xướng, cuộc chiến này cướp đi sinh mạng của hai chiến binh mafia Giovanni Falcone và"
+   ]
+  },
+  {
+   "ma": "flores_0060",
+   "dong_flores": 60,
+   "nguon_zh": "苹果公司的首席执行官史蒂夫·乔布斯走上舞台，从他的牛仔裤口袋里掏出 iPhone，揭开了这款设备的神秘面纱。",
+   "tham_chieu_vi": "Giám đốc điều hành của Apple Steve Jobs công bố thiết bị bằng cách bước ra sân khấu và lấy chiếc iPhone ra khỏi túi quần jean của ông ấy.",
+   "cac_luot": [
+    "Giám đốc điều hành Apple Steve Jobs bước lên sân khấu, lấy iPhone từ túi quần jeans, hé lộ bí mật của thiết bị này."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Giám đốc điều hành Apple Steve Jobs bước lên sân khấu, lấy iPhone từ túi quần jeans, hé lộ bí mật của thiết bị này.",
+    "Giám đốc điều hành Apple Steve Jobs bước lên sân khấu, lấy iPhone từ túi quần jeans, hé lộ bí mật của thiết bị này."
+   ]
+  },
+  {
+   "ma": "flores_0061",
+   "dong_flores": 61,
+   "nguon_zh": "在他时长 2 小时的演讲中，他声称：“现在苹果要重新发明手机，我们现在要创造历史。”",
+   "tham_chieu_vi": "Trong bài diễn văn kéo dài 2 tiếng của mình, ông đã phát biểu “Ngày nay Apple đang phát minh lại điện thoại. Chúng tôi sẽ tạo nên lịch sử ngay hôm nay”.",
+   "cac_luot": [
+    "Trong bài phát biểu kéo dài 2 giờ, ông tuyên bố: 'Bây giờ Apple sẽ tái phát minh điện thoại, chúng ta sẽ tạo ra lịch sử.'"
+   ],
+   "cac_luot_CO_y_canh": [
+    "Trong bài phát biểu kéo dài 2 giờ, ông tuyên bố: 'Bây giờ Apple sẽ tái phát minh điện thoại, chúng ta sẽ tạo ra lịch sử.'",
+    "Trong bài phát biểu kéo dài 2 giờ, ông tuyên bố: 'Bây giờ Apple sẽ tái phát minh điện thoại, chúng ta sẽ tạo ra lịch sử.'"
+   ]
+  },
+  {
+   "ma": "flores_0062",
+   "dong_flores": 62,
+   "nguon_zh": "巴西是世界上最大的罗马天主教国家，而该国的罗马天主教会向来反对同性婚姻合法化。",
+   "tham_chieu_vi": "Brazil là nước Công giáo La Mã lớn nhất trên Trái Đất và Nhà thờ Công giáo La Mã luôn phản đối hợp pháp hóa kết hôn đồng giới tại nước này.",
+   "cac_luot": [
+    "Brazil là quốc gia có dân số Công giáo Rôma lớn nhất, và Giáo hội Công giáo tại đây luôn phản đối hôn nhân đồng tính hợp pháp."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Brazil là quốc gia có dân số Công giáo Rôma lớn nhất, và Giáo hội Công giáo tại đây luôn phản đối hôn nhân đồng tính hợp pháp.",
+    "Brazil là quốc gia có dân số Công giáo Rôma lớn nhất, và Giáo hội Công giáo tại đây luôn phản đối hôn nhân đồng tính hợp pháp."
+   ]
+  },
+  {
+   "ma": "flores_0063",
+   "dong_flores": 63,
+   "nguon_zh": "10 年来，巴西国民议会一直就其合法性进行讨论，目前这种民间婚姻只在南里奥格兰德 (Rio Grande do Sul) 是合法的。",
+   "tham_chieu_vi": "Quốc Hội của Brazil đã tranh luận về việc hợp pháp hóa trong 10 năm, và hôn nhân dân sự hiện tại chỉ hợp pháp tại Rio Grande do Sul.",
+   "cac_luot": [
+    "Trong 10 năm qua, Quốc hội Brazil đã thảo luận về tính hợp pháp của vấn đề này, hiện tại hôn nhân dân sự chỉ hợp pháp tại Rio Grande do Sul."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Trong 10 năm qua, Quốc hội Brazil đã thảo luận về tính hợp pháp của vấn đề này, hiện tại hôn nhân dân sự chỉ hợp pháp tại Rio Grande do Sul.",
+    "Trong 10 năm qua, Quốc hội Brazil đã thảo luận về tính hợp pháp của vấn đề này, hiện tại hôn nhân dân sự chỉ hợp pháp tại Rio Grande do Sul."
+   ]
+  },
+  {
+   "ma": "flores_0064",
+   "dong_flores": 64,
+   "nguon_zh": "最初的法案由前圣保罗市长玛尔塔·苏普里希草拟。这项经过修改的立法提案，目前由罗伯托·杰斐逊负责。",
+   "tham_chieu_vi": "Dự luật ban đầu được soạn thảo bởi cựu Thị trưởng Sao Paolo, Marta Suplicy. Luật đề xuất, sau khi sửa đổi thì giờ đang nằm trong tay của Roberto Jefferson.",
+   "cac_luot": [
+    "Dự luật ban đầu do Thị trưởng thành phố São Paulo Marta Suplicy soạn thảo. Dự án sửa đổi hiện do Roberto Jefferson phụ trách."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Dự luật ban đầu do Thị trưởng thành phố São Paulo Marta Suplicy soạn thảo. Dự án sửa đổi hiện do Roberto Jefferson phụ trách.",
+    "Dự luật ban đầu do Thị trưởng thành phố São Paulo Marta Suplicy soạn thảo. Dự án sửa đổi hiện do Roberto Jefferson phụ trách."
+   ]
+  },
+  {
+   "ma": "flores_0065",
+   "dong_flores": 65,
+   "nguon_zh": "抗议者希望在请愿书上收集 120 万个签名，并在十一月提交给国民议会。",
+   "tham_chieu_vi": "Những người biểu tình hy vọng có thể thu thập được 1,2 triệu chữ ký để trình lên Quốc Hội vào tháng 11.",
+   "cac_luot": [
+    "Người biểu tình hy vọng thu thập 1,2 triệu chữ ký trên đơn kiến nghị và nộp cho Quốc hội vào tháng 11."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Người biểu tình hy vọng thu thập 1,2 triệu chữ ký trên đơn kiến nghị và nộp cho Quốc hội vào tháng 11.",
+    "Người biểu tình hy vọng thu thập 1,2 triệu chữ ký trên đơn kiến nghị và nộp cho Quốc hội vào tháng 11."
+   ]
+  },
+  {
+   "ma": "flores_0066",
+   "dong_flores": 66,
+   "nguon_zh": "显然，很多家庭都在寻求法律帮助，以反对这种驱逐行为。为此，东湾社区法律中心于3月20日举行会议，帮助房屋诈骗的受害者。",
+   "tham_chieu_vi": "Sau khi sự việc trở nên rõ ràng là nhiều gia đình đang tìm sự trợ giúp về pháp lý để tranh đấu chống lại việc bị đuổi nhà, một buổi họp đã được tổ chức vào ngày 20 tháng Ba tại Trung tâm Luật Cộng đồng East Bay dành cho những nạn nhân của vụ lừa đảo về nhà ở này.",
+   "cac_luot": [
+    "Rõ ràng, nhiều gia đình đang tìm kiếm sự hỗ trợ pháp lý để phản đối hành động trục xuất này. Trung tâm Luật cộng đồng Đông Bay tổ chức họp vào ngày 20 tháng 3."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Rõ ràng, nhiều gia đình đang tìm kiếm sự hỗ trợ pháp lý để phản đối hành động trục xuất này. Trung tâm Luật cộng đồng Đông Bay tổ chức họp vào ngày 20 tháng 3.",
+    "Rõ ràng, nhiều gia đình đang tìm kiếm sự hỗ trợ pháp lý để phản đối hành động trục xuất này. Trung tâm Luật cộng đồng Đông Bay tổ chức họp vào ngày 20 tháng 3."
+   ]
+  },
+  {
+   "ma": "flores_0067",
+   "dong_flores": 67,
+   "nguon_zh": "房客们开始聊起身边趣闻，这时大部分涉事家庭突然意识到，OHA 的卡罗琳·威尔逊私吞了他们的押金，溜出城去了。",
+   "tham_chieu_vi": "Khi những người thuê nhà kể lại chuyện xảy ra với họ, hầu hết các gia đình có liên quan chợt nhận ra Carolyn Wilson của Cơ quan Nhà ở Oakland (OHA) đã lấy cắp tiền đặt cọc của họ và trốn khỏi thị trấn.",
+   "cac_luot": [
+    "Các cư dân bắt đầu trò chuyện về chuyện đời thường, khi đó hầu hết các gia đình liên quan nhận ra Carolyn Wilson của OHA đã chiếm giữ tiền đặt cọc của họ và bỏ đi."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Các cư dân bắt đầu trò chuyện về chuyện đời thường, khi đó hầu hết các gia đình liên quan nhận ra Carolyn Wilson của OHA đã chiếm giữ tiền đặt cọc của họ và bỏ đi.",
+    "Các cư dân bắt đầu trò chuyện về chuyện đời thường, khi đó hầu hết các gia đình liên quan nhận ra Carolyn Wilson của OHA đã chiếm giữ tiền đặt cọc của họ và bỏ đi."
+   ]
+  },
+  {
+   "ma": "flores_0068",
+   "dong_flores": 68,
+   "nguon_zh": "Lockwood Gardens 的租户认为，可能还有 40户 甚至更多的家庭面临被驱逐的命运，因为他们了解到，奥克兰住房管理局的警察还在调查奥克兰其他可能陷入房屋骗局的公房。",
+   "tham_chieu_vi": "Những người thuê nhà ở Lockwood Gardens tin rằng có khoảng 40 gia đình nữa hoặc nhiều hơn có thể sẽ bị đuổi, vì họ được biết cảnh sát OHA cũng đang điều tra những khu nhà công cộng khác ở Oakland có thể là nạn nhân trong vụ lừa đảo về nhà ở này.",
+   "cac_luot": [
+    "Các cư dân Lockwood Gardens cho rằng, có thể còn 40 hộ hoặc nhiều hơn nữa đối mặt với nguy cơ bị trục xuất, vì họ biết cơ quan cảnh sát đang điều tra các trường hợp lừa đảo nhà ở khác tại Oakland."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Các cư dân Lockwood Gardens cho rằng, có thể còn 40 hộ hoặc nhiều hơn nữa đối mặt với nguy cơ bị trục xuất, vì họ biết cơ quan cảnh sát đang điều tra các trường hợp tương tự.",
+    "Các cư dân Lockwood Gardens cho rằng, có thể còn 40 hộ hoặc nhiều hơn nữa đối mặt với nguy cơ bị trục xuất, vì họ biết cơ quan cảnh sát đang điều tra các trường hợp tương tự."
+   ]
+  },
+  {
+   "ma": "flores_0069",
+   "dong_flores": 69,
+   "nguon_zh": "乐队取消了演出活动，并向粉丝们表示了歉意。该场演出原本应在毛伊岛战争纪念体育场举行，预计将有 9000 人参与其中。",
+   "tham_chieu_vi": "Nhóm nhạc đã hủy buổi diễn tại Sân vận động Tưởng niệm Chiến Tranh của Maui vốn đã được dựng với sức chứa 9.000 người và xin lỗi người hâm mộ.",
+   "cac_luot": [
+    "Ban nhạc hủy bỏ buổi biểu diễn và xin lỗi người hâm mộ. Buổi diễn dự kiến sẽ diễn ra tại Sân vận động Tưởng niệm Chiến tranh Maui, với khoảng 9.000 người tham dự."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Ban nhạc hủy bỏ buổi biểu diễn và xin lỗi người hâm mộ. Buổi diễn dự kiến sẽ diễn ra tại Sân vận động Tưởng niệm Chiến tranh Maui, với khoảng 9.000 người tham dự.",
+    "Ban nhạc hủy bỏ buổi biểu diễn và xin lỗi người hâm mộ. Buổi diễn dự kiến sẽ diễn ra tại Sân vận động Tưởng niệm Chiến tranh Maui, với khoảng 9.000 người tham dự."
+   ]
+  },
+  {
+   "ma": "flores_0070",
+   "dong_flores": 70,
+   "nguon_zh": "乐队的经纪公司是香港管理公司（HK management Inc.），该公司在 9 月 20 日最初取消演出活动时并未给出原因，转天却将之归咎于后勤保障原因。",
+   "tham_chieu_vi": "HK Management Inc., công ty quản lý của ban nhạc, lúc đầu đã không đưa ra lý do nào khi hủy bỏ vào ngày 20 tháng Chín nhưng lại đổ lỗi cho các lý do về hậu cần sân bãi vào ngày hôm sau.",
+   "cac_luot": [
+    "Công ty quản lý của ban nhạc là HK Management Inc. Ban đầu hủy buổi diễn vào ngày 20 tháng 9 mà không giải thích, sau đó đổ lỗi cho lý do hậu cần."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Công ty quản lý của ban nhạc là HK Management Inc. Ban đầu hủy buổi diễn vào ngày 20 tháng 9 mà không giải thích, sau đó đổ lỗi cho lý do hậu cần.",
+    "Công ty quản lý của ban nhạc là HK Management Inc. Ban đầu hủy buổi diễn vào ngày 20 tháng 9 mà không giải thích, sau đó đổ lỗi cho lý do hậu cần."
+   ]
+  },
+  {
+   "ma": "flores_0071",
+   "dong_flores": 71,
+   "nguon_zh": "希腊著名律师萨基斯·科查吉欧格鲁 (Sakis Kechagioglou) 和乔治·尼可拉考普洛斯 (George Nikolakopoulos) 因被判贪污和腐败被关押在雅典的 Korydallus 监狱。",
+   "tham_chieu_vi": "Các luật sư nổi tiếng Hy Lạp là Sakis Kechagioglou và George Nikolakopoulos đã bị giam tại nhà tù Korydallus, Athens vì tội nhận hối lộ và tham nhũng.",
+   "cac_luot": [
+    "Luật sư nổi tiếng Hy Lạp Sakis Kechagioglou và George Nikolakopoulos bị giam giữ tại nhà tù Korydallus ở Athens vì bị kết án tham nhũng và hối lộ."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Luật sư nổi tiếng Hy Lạp Sakis Kechagioglou và George Nikolakopoulos bị giam giữ tại nhà tù Korydallus ở Athens vì bị kết án tham nhũng và hối lộ.",
+    "Luật sư nổi tiếng Hy Lạp Sakis Kechagioglou và George Nikolakopoulos bị giam giữ tại nhà tù Korydallus ở Athens vì bị kết án tham nhũng và hối lộ."
+   ]
+  },
+  {
+   "ma": "flores_0072",
+   "dong_flores": 72,
+   "nguon_zh": "因此，随着法官、律师、法务官和检察官前几年的非法勾当曝光于世，在希腊法律界引发了一场大丑闻。",
+   "tham_chieu_vi": "Kết quả, một vụ bê bối lớn trong cộng đồng tư pháp Hy Lạp đã được phanh phui nhờ sự phơi bày những hành động phi pháp của các quan tòa, luật sư, cố vấn pháp luật và đại diện luật pháp trong những năm trước đó.",
+   "cac_luot": [
+    "Do đó, khi các hoạt động phi pháp của thẩm phán, luật sư, quan chức pháp lý và kiểm sát viên vài năm trước bị phơi bày, đã gây ra một vụ bê bối lớn trong giới luật pháp Hy Lạp."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Do đó, khi các hoạt động phi pháp của thẩm phán, luật sư, quan chức pháp lý và kiểm sát viên vài năm trước bị phơi bày, đã gây ra một vụ bê bối lớn trong giới luật sư Hy Lạp.",
+    "Do đó, khi các hoạt động phi pháp của thẩm phán, luật sư, quan chức pháp lý và kiểm sát viên vài năm trước bị phơi bày, đã gây ra một vụ bê bối lớn trong giới luật sư Hy Lạp."
+   ]
+  },
+  {
+   "ma": "flores_0073",
+   "dong_flores": 73,
+   "nguon_zh": "几周前，议员兼律师马基斯·特里安塔菲洛普洛斯在阿尔法电视台的热门电视节目《Zoungla》中公布了这一消息，随后彼得罗斯·曼图瓦洛斯因其办公室成员涉嫌非法贪污受贿而被革职。",
+   "tham_chieu_vi": "Cách đây vài tuần, sau khi thông tin được nhà báo Makis Triantafylopoulos loan truyền trong chương trình truyền hình nổi tiếng của anh là \"Zoungla\" trên đài Alpha TV, Nghị viên kiêm luật sư Petros Mantouvalos đã bị bãi nhiệm vì các nhân viên trong văn phòng ông có liên quan với hành vi tham nhũng và hối lộ.",
+   "cac_luot": [
+    "Vài tuần trước, nghị sĩ kiêm luật sư Markis Triantafyllos trên chương trình truyền hình Alpha TV Zoungla đã tiết lộ tin này, sau đó Petros Mantouvalos bị sa thải do thành viên văn phòng bị nghi ngờ tham nhũng."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Vài tuần trước, nghị sĩ kiêm luật sư Markis Triantafyllos trên chương trình truyền hình Alpha TV Zoungla đã tiết lộ tin này, sau đó Petros Mantouvalos bị sa thải vì các thành viên trong văn phòng của ông bị nghi ngờ tham nhũng và nhận hối lộ.",
+    "Vài tuần trước, nghị sĩ kiêm luật sư Markis Triantafyllos trên chương trình truyền hình Alpha TV Zoungla đã tiết lộ tin này, sau đó Petros Mantouvalos bị sa thải vì các thành viên trong văn phòng của ông bị nghi ngờ tham nhũng và nhận hối lộ."
+   ]
+  },
+  {
+   "ma": "flores_0074",
+   "dong_flores": 74,
+   "nguon_zh": "此外，最高法官埃万杰洛斯·卡卢西斯因腐败和堕落行为被判入狱。",
+   "tham_chieu_vi": "Ngoài ra, thẩm phán hàng đầu Evangelos Kalousis đã phải ngồi tù sau khi bị kết tội tham nhũng và có hành vi suy đồi.",
+   "cac_luot": [
+    "Ngoài ra, Thẩm phán tối cao Evangelos Kalousis bị kết án tù vì hành vi tham nhũng và suy đồi."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Ngoài ra, Thẩm phán tối cao Evangelos Kalousis bị kết án tù vì hành vi tham nhũng và suy đồi.",
+    "Ngoài ra, Thẩm phán tối cao Evangelos Kalousis bị kết án tù vì hành vi tham nhũng và suy đồi."
+   ]
+  },
+  {
+   "ma": "flores_0075",
+   "dong_flores": 75,
+   "nguon_zh": "罗伯茨断然拒绝谈论生命从何时开始的问题。这是考虑堕胎伦理时的一个重要问题，他说，评论可能发生的案件细节是不道德的。",
+   "tham_chieu_vi": "Roberts thẳng thắn từ chối nói về thời điểm anh ấy tin cuộc sống bắt đầu, một câu hỏi quan trọng khi xem xét tính đạo đức của việc phá thai, và cho rằng bình luận về những chi tiết của các trường hợp như thế là vô đạo đức.",
+   "cac_luot": [
+    "Roberts từ chối thảo luận về vấn đề sự sống bắt đầu từ khi nào. Đây là vấn đề quan trọng khi xem xét đạo đức phá thai, ông nói, bình luận về chi tiết vụ án là không đạo đức."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Roberts từ chối thảo luận về vấn đề sự sống bắt đầu từ khi nào. Đây là vấn đề quan trọng khi xem xét đạo đức phá thai, ông nói, bình luận về chi tiết vụ án là không đạo đức.",
+    "Roberts từ chối thảo luận về vấn đề sự sống bắt đầu từ khi nào. Đây là vấn đề quan trọng khi xem xét đạo đức phá thai, ông nói, bình luận về chi tiết vụ án là không đạo đức."
+   ]
+  },
+  {
+   "ma": "flores_0076",
+   "dong_flores": 76,
+   "nguon_zh": "然而，他重申了先前的声明，即罗伊诉韦德案（Roe v. Wade）是“美国的既定法律”，并强调最高法院作出一致性裁决的重要性。",
+   "tham_chieu_vi": "Tuy nhiên, ông ấy lập lại tuyên bố của mình trước đó rằng Roe v. Wade là \"toàn bộ luật trong nước đã định\", nhấn mạnh tầm quan trọng về tính nhất quán của quyết định của Tòa án Tối cao.",
+   "cac_luot": [
+    "Tuy nhiên, ông khẳng định lại tuyên bố trước đó rằng Roe v Wade là luật lệ đã thiết lập của Mỹ, và nhấn mạnh tầm quan trọng của phán quyết nhất quán từ Tối cao Pháp viện."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Tuy nhiên, ông khẳng định lại tuyên bố trước đó rằng Roe v Wade là luật lệ đã thiết lập của Mỹ, và nhấn mạnh tầm quan trọng của phán quyết nhất quán từ Tối cao Pháp viện.",
+    "Tuy nhiên, ông khẳng định lại tuyên bố trước đó rằng Roe v Wade là luật lệ đã thiết lập của Mỹ, và nhấn mạnh tầm quan trọng của phán quyết nhất quán từ Tối cao Pháp viện."
+   ]
+  },
+  {
+   "ma": "flores_0077",
+   "dong_flores": 77,
+   "nguon_zh": "他还确认，他赞成默示隐私权，而这默示隐私权是罗伊（Roe）案件的裁决依据。",
+   "tham_chieu_vi": "Ông cũng xác nhận việc bản thân tin vào quyền riêng tư mặc nhiên mà quyết định Roe lấy làm căn cứ.",
+   "cac_luot": [
+    "Ông cũng xác nhận ông ủng hộ quyền riêng tư ngụ ý, và quyền riêng tư ngụ ý này là cơ sở cho phán quyết vụ Roe."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Ông cũng xác nhận ông ủng hộ quyền riêng tư ngụ ý, và quyền riêng tư ngụ ý này là cơ sở cho phán quyết vụ Roe.",
+    "Ông cũng xác nhận ông ủng hộ quyền riêng tư ngụ ý, và quyền riêng tư ngụ ý này là cơ sở cho phán quyết vụ Roe."
+   ]
+  },
+  {
+   "ma": "flores_0078",
+   "dong_flores": 78,
+   "nguon_zh": "马鲁基多尔 (Maroochydore) 已经遥遥领先，以六分的优势领先第二名的努沙 (Noosa)。",
+   "tham_chieu_vi": "Maroochydore đứng đầu bảng xếp hạng, cách biệt sáu điểm so với Noosa ở vị trí thứ nhì.",
+   "cac_luot": [
+    "Maroochydore đang dẫn đầu với lợi thế sáu điểm so với đội thứ hai Noosa."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Maroochydore đang dẫn đầu với lợi thế sáu điểm so với đội thứ hai Noosa.",
+    "Maroochydore đang dẫn đầu với lợi thế sáu điểm so với đội thứ hai Noosa."
+   ]
+  },
+  {
+   "ma": "flores_0079",
+   "dong_flores": 79,
+   "nguon_zh": "双方在主要的半决赛中较量。努萨以 11 分的优势获胜。",
+   "tham_chieu_vi": "Hai bên đối đầu nhau trong trận bán kết mà Noosa đã giành chiến thắng với cách biệt 11 điểm.",
+   "cac_luot": [
+    "Hai bên đã gặp nhau trong trận bán kết chính. Noosa chiến thắng với lợi thế mười một điểm."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Hai bên đã gặp nhau trong trận bán kết chính. Noosa chiến thắng với lợi thế mười một điểm.",
+    "Hai bên đã gặp nhau trong trận bán kết chính. Noosa chiến thắng với lợi thế mười một điểm."
+   ]
+  },
+  {
+   "ma": "flores_0080",
+   "dong_flores": 80,
+   "nguon_zh": "马鲁基多尔 (Maroochydore) 随后在预决赛中击败了卡布尔彻 (Caboolture)。",
+   "tham_chieu_vi": "Maroochydore sau đó đã đánh bại Caboolture trong trận Chung kết Sơ bộ.",
+   "cac_luot": [
+    "Maroochydore sau đó đã đánh bại Caboolture trong trận bán kết phụ."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Maroochydore sau đó đã đánh bại Caboolture trong trận bán kết phụ.",
+    "Maroochydore sau đó đã đánh bại Caboolture trong trận bán kết phụ."
+   ]
+  },
+  {
+   "ma": "flores_0081",
+   "dong_flores": 81,
+   "nguon_zh": "伊氏西爪龙属于驰龙科，是迅猛龙的表亲。",
+   "tham_chieu_vi": "Hesperonychus elizabethae là một loài thuộc họ Dromaeosauridae và là anh em họ của Velociraptor.",
+   "cac_luot": [
+    "Ishiisaurus thuộc họ Deinonychosauria, là họ hàng của Velociraptor."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Ishiisaurus thuộc họ Deinonychosauria, là họ hàng của Velociraptor.",
+    "Ishiisaurus thuộc họ Deinonychosauria, là họ hàng của Velociraptor."
+   ]
+  },
+  {
+   "ma": "flores_0082",
+   "dong_flores": 82,
+   "nguon_zh": "据说，这种全身长满羽毛的温血猛禽像迅猛龙一样，用带爪子的两条腿直立行走。",
+   "tham_chieu_vi": "Loài chim săn mồi máu nóng, nhiều lông này được cho là đi thẳng bằng hai chân với móng vuốt như loài Khủng long ăn thịt.",
+   "cac_luot": [
+    "Theo đó, loài chim săn mồi có máu nóng này toàn thân phủ lông, giống Velociraptor, đi thẳng đứng bằng hai chân có vuốt."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Theo đó, loài chim săn mồi có máu nóng này toàn thân phủ lông, giống Velociraptor, đi thẳng đứng bằng hai chân có vuốt.",
+    "Theo đó, loài chim săn mồi có máu nóng này toàn thân phủ lông, giống Velociraptor, đi thẳng đứng bằng hai chân có vuốt."
+   ]
+  },
+  {
+   "ma": "flores_0083",
+   "dong_flores": 83,
+   "nguon_zh": "它的第二只爪子要大一些，因此得名“赫斯佩罗龙”，意思是“西方的爪”。",
+   "tham_chieu_vi": "Móng vuốt thứ hai của nó lớn hơn, là nguyên nhân cho cái tên Hesperonychus có nghĩa là \"móng vuốt phía tây\".",
+   "cac_luot": [
+    "Chiếc vuốt thứ hai của nó lớn hơn, do đó được đặt tên là Hesperonychus, có nghĩa là vuốt phía Tây."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Chiếc vuốt thứ hai của nó lớn hơn, do đó được đặt tên là Hesperonychus, có nghĩa là vuốt phía Tây.",
+    "Chiếc vuốt thứ hai của nó lớn hơn, do đó được đặt tên là Hesperonychus, có nghĩa là vuốt phía Tây."
+   ]
+  },
+  {
+   "ma": "flores_0084",
+   "dong_flores": 84,
+   "nguon_zh": "不只是碎冰，极端的天气状况也让救援工作困难重重。",
+   "tham_chieu_vi": "Ngoài đá vụn, điều kiện thời tiết khắc nghiệt đã và đang gây cản trở các nỗ lực cứu hộ.",
+   "cac_luot": [
+    "Không chỉ là băng vụn, thời tiết cực đoan khiến công tác cứu hộ gặp khó khăn."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Không chỉ là băng vụn, thời tiết cực đoan khiến công tác cứu hộ gặp khó khăn.",
+    "Không chỉ là băng vụn, thời tiết cực đoan khiến công tác cứu hộ gặp khó khăn."
+   ]
+  },
+  {
+   "ma": "flores_0085",
+   "dong_flores": 85,
+   "nguon_zh": "皮特曼认为天气情况要到下周才能改善。",
+   "tham_chieu_vi": "Theo Pittman, tình hình có thể chưa được cải thiện cho đến tuần sau.",
+   "cac_luot": [
+    "Ông Pittman cho rằng tình hình thời tiết sẽ cải thiện vào tuần sau."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Ông Pittman cho rằng tình hình thời tiết sẽ cải thiện vào tuần sau.",
+    "Ông Pittman cho rằng tình hình thời tiết sẽ cải thiện vào tuần sau."
+   ]
+  },
+  {
+   "ma": "flores_0086",
+   "dong_flores": 86,
+   "nguon_zh": "皮特曼（Pittman）认为，这样的积冰的数量和厚度，是猎海豹船在过去 15 年以来遇到的最坏情况。",
+   "tham_chieu_vi": "Số lượng và độ dày của lớp băng, theo Pittman, ở mức tồi tệ nhất trong 15 năm qua đối với tàu săn hải cẩu.",
+   "cac_luot": [
+    "Ông Pittman cho rằng lượng băng tích tụ và độ dày là mức tồi tệ nhất trong 15 năm qua."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Ông Pittman cho rằng lượng băng tích tụ và độ dày là mức tồi tệ nhất trong 15 năm qua.",
+    "Ông Pittman cho rằng lượng băng tích tụ và độ dày là mức tồi tệ nhất trong 15 năm qua."
+   ]
+  },
+  {
+   "ma": "flores_0087",
+   "dong_flores": 87,
+   "nguon_zh": "今天红湖社区为杰夫·韦斯 (Jeff Weise) 和九名受害者中的三人举行葬礼时有消息称，另一名与 3 月 21 日校园枪击案有关的学生已被捕。",
+   "tham_chieu_vi": "Hôm nay, giữa tang lễ của Jeff Weise và ba người khác trong số chín nạn nhân, cộng đồng Red Lake nhận được tin một học sinh nữa đã bị bắt vì có liên quan đến vụ xả súng ở trường học vào ngày 21 tháng 3.",
+   "cac_luot": [
+    "Hôm nay, cộng đồng Red Lake tổ chức tang lễ cho Jeff Weise và ba trong chín nạn nhân."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Hôm nay, cộng đồng Red Lake tổ chức tang lễ cho Jeff Weise và ba trong chín nạn nhân.",
+    "Hôm nay, cộng đồng Red Lake tổ chức tang lễ cho Jeff Weise và ba trong chín nạn nhân."
+   ]
+  },
+  {
+   "ma": "flores_0088",
+   "dong_flores": 88,
+   "nguon_zh": "除了确认今天的逮捕外，官方几乎没有发布任何其他信息。",
+   "tham_chieu_vi": "Nhà chức trách không cung cấp nhiều thông tin chính thức ngoài việc xác nhận vụ bắt giữ ngày hôm nay.",
+   "cac_luot": [
+    "Theo đó, một học sinh khác liên quan đến vụ xả súng ngày 21 tháng 3 đã bị bắt."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Theo đó, một học sinh khác liên quan đến vụ xả súng ngày 21 tháng 3 đã bị bắt.",
+    "Theo đó, một học sinh khác liên quan đến vụ xả súng ngày 21 tháng 3 đã bị bắt."
+   ]
+  },
+  {
+   "ma": "flores_0089",
+   "dong_flores": 89,
+   "nguon_zh": "不过，一位知情人士向《明尼阿波利斯星坛报》透露，凶手是红湖部落（Red Lake Tribal）主席弗洛伊德·乔丹（Floyd Jourdain）之子，16 岁的路易斯·乔丹（Louis Jourdain）。",
+   "tham_chieu_vi": "Tuy nhiên, một nguồn tin đã được kiểm tra đã tiết lộ với tờ Minneapolis Star-Tribune rằng đó là Louis Jourdain, con trai 16 tuổi của Người đứng đầu bộ lạc Red Lake, Floyd Jourdain.",
+   "cac_luot": [
+    "Ngoài việc xác nhận vụ bắt giữ, chính quyền chưa công bố thêm thông tin nào."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Ngoài việc xác nhận vụ bắt giữ, chính quyền chưa công bố thêm thông tin nào.",
+    "Ngoài việc xác nhận vụ bắt giữ, chính quyền chưa công bố thêm thông tin nào."
+   ]
+  },
+  {
+   "ma": "flores_0090",
+   "dong_flores": 90,
+   "nguon_zh": "目前既不知道将会被指控何种罪名，也不知道当局是如何认定这个男孩有犯罪嫌疑的，但联邦法院已经开始进行少年犯诉讼程序。",
+   "tham_chieu_vi": "Hiện vẫn chưa biết những cáo trạng nào sẽ được đặt ra hay điều gì đã giúp cơ quan thẩm quyền tìm ra cậu bé nhưng tòa thanh thiếu niên đã bắt đầu các thủ tục ở tòa án liên bang.",
+   "cac_luot": [
+    "Một nguồn tin cho biết thủ phạm là con trai Floyd Jourdain, chủ tịch bộ tộc Red Lake."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Một nguồn tin cho biết thủ phạm là con trai Floyd Jourdain, chủ tịch bộ tộc Red Lake.",
+    "Một nguồn tin cho biết thủ phạm là con trai Floyd Jourdain, chủ tịch bộ tộc Red Lake."
+   ]
+  },
+  {
+   "ma": "flores_0091",
+   "dong_flores": 91,
+   "nguon_zh": "洛丁（Lodin）还表示，官员们决定取消第二轮选举，是为了给阿富汗人节省再次选举的开支，同时避免选举的安全风险。",
+   "tham_chieu_vi": "Lodin cũng cho biết các quan chức quyết định hủy bầu cử bổ sung để tiết kiệm chi phí cho người dân Afghanistan và tránh rủi ro an ninh của cuộc bầu cử này.",
+   "cac_luot": [
+    "Thủ phạm là Louis Jourdain, 16 tuổi, con trai của chủ tịch bộ tộc Red Lake."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Thủ phạm là Louis Jourdain, 16 tuổi, con trai của chủ tịch bộ tộc Red Lake.",
+    "Thủ phạm là Louis Jourdain, 16 tuổi, con trai của chủ tịch bộ tộc Red Lake."
+   ]
+  },
+  {
+   "ma": "flores_0092",
+   "dong_flores": 92,
+   "nguon_zh": "外交官们表示在阿富汗宪法中发现了足够多的歧义，因此没有必要举办决胜选举。",
+   "tham_chieu_vi": "Các nhà ngoại giao cho biết họ đã tìm ra những điểm mơ hồ trong hiến pháp Afghanistan đủ để xác định việc dồn phiếu là không cần thiết.",
+   "cac_luot": [
+    "Hiện chưa rõ sẽ bị cáo buộc tội gì, cũng như cơ quan chức năng xác định tội danh như thế nào."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Hiện chưa rõ sẽ bị cáo buộc tội gì, cũng như cơ quan chức năng xác định tội danh như thế nào.",
+    "Hiện chưa rõ sẽ bị cáo buộc tội gì, cũng như cơ quan chức năng xác định tội danh như thế nào."
+   ]
+  },
+  {
+   "ma": "flores_0093",
+   "dong_flores": 93,
+   "nguon_zh": "这与先前的报道相矛盾，先前的报道称取消决选本来是违反宪法的。",
+   "tham_chieu_vi": "Điều này trái ngược với những báo cáo trước đây cho rằng việc hủy bỏ vòng bầu cử chung kết là vi hiến.",
+   "cac_luot": [
+    "Tuy nhiên, tòa án liên bang đã bắt đầu tiến hành thủ tục tố tụng cho người chưa thành niên."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Tuy nhiên, tòa án liên bang đã bắt đầu tiến hành thủ tục tố tụng cho người chưa thành niên.",
+    "Tuy nhiên, tòa án liên bang đã bắt đầu tiến hành thủ tục tố tụng cho người chưa thành niên."
+   ]
+  },
+  {
+   "ma": "flores_0094",
+   "dong_flores": 94,
+   "nguon_zh": "飞机是飞往伊尔库茨克（Irkutsk）的，并且由内政部队负责驾驶。",
+   "tham_chieu_vi": "Chiếc phi cơ bay đến Irkutsk dưới sự điều khiển của quân nội địa.",
+   "cac_luot": [
+    "Lodin cho biết, chính quyền quyết định hủy bỏ vòng bầu cử thứ hai nhằm tiết kiệm chi phí."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Lodin cho biết, chính quyền quyết định hủy bỏ vòng bầu cử thứ hai nhằm tiết kiệm chi phí.",
+    "Lodin cho biết, chính quyền quyết định hủy bỏ vòng bầu cử thứ hai nhằm tiết kiệm chi phí."
+   ]
+  },
+  {
+   "ma": "flores_0095",
+   "dong_flores": 95,
+   "nguon_zh": "已经展开调查。",
+   "tham_chieu_vi": "Một cuộc điều tra đã được tổ chức để tìm hiểu nguyên nhân tai nạn.",
+   "cac_luot": [
+    "Đồng thời, nhằm tránh rủi ro về an ninh trong quá trình bầu cử."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Đồng thời, nhằm tránh rủi ro về an ninh trong quá trình bầu cử.",
+    "Đồng thời, nhằm tránh rủi ro về an ninh trong quá trình bầu cử."
+   ]
+  },
+  {
+   "ma": "flores_0096",
+   "dong_flores": 96,
+   "nguon_zh": "伊尔-76 自 20 世纪 70 年代以来，一直是俄罗斯和苏联军队的主要组成部分，上个月在俄罗斯已经发生过一起严重事故。",
+   "tham_chieu_vi": "Il-76 là hành phần chính trong cả quân đội Nga và Xô Viết kể từ những năm 1970 và đã gặp một tai nạn nghiêm trọng tại Nga tháng trước.",
+   "cac_luot": [
+    "Máy bay vận tải quân sự Il-76 từ những năm 70 của thế kỷ 20 trở lại đây luôn là thành phần chủ lực của quân đội Nga và Liên Xô. Tháng trước, tại Nga đã xảy ra một vụ tai nạn nghiêm trọng liên quan đến loại máy bay này."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Máy bay vận tải quân sự Il-76 từ thập niên 70 của thế kỷ 20 trở lại đây luôn là thành phần chủ lực của quân đội Nga và Liên Xô. Tháng trước, tại Nga đã xảy ra một vụ tai nạn nghiêm trọng.",
+    "Máy bay vận tải quân sự Il-76 từ thập niên 70 của thế kỷ 20 trở lại đây luôn là thành phần chủ lực của quân đội Nga và Liên Xô. Tháng trước, tại Nga đã xảy ra một vụ tai nạn nghiêm trọng."
+   ]
+  },
+  {
+   "ma": "flores_0097",
+   "dong_flores": 97,
+   "nguon_zh": "10 月 7 日，一台发动机在飞机起飞时脱离，未造成人员伤亡。该事故后，俄罗斯短暂停飞了伊尔-76。",
+   "tham_chieu_vi": "Vào ngày 7 tháng 10, một động cơ bị tách rời khi cất cánh, không có thương tích nào xảy ra. Sau tai nạn đó, Nga nhanh chóng cấm bay đối với những chiếc Il-76.",
+   "cac_luot": [
+    "Ngày 7 tháng 10, một động cơ đã tách khỏi máy bay khi đang cất cánh, may mắn là không có thương vong nào xảy ra. Sau vụ việc này, Nga đã tạm thời ngừng hoạt động bay của máy bay Il-76."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Ngày 7 tháng 10, một động cơ đã tách khỏi máy bay khi đang cất cánh, may mắn là không có thương vong nào xảy ra. Sau vụ việc này, Nga đã tạm thời ngừng hoạt động loại máy bay này.",
+    "Ngày 7 tháng 10, một động cơ đã tách khỏi máy bay khi đang cất cánh, may mắn là không có thương vong nào xảy ra. Sau vụ việc này, Nga đã tạm thời ngừng hoạt động loại máy bay này."
+   ]
+  },
+  {
+   "ma": "flores_0098",
+   "dong_flores": 98,
+   "nguon_zh": "在阿拉斯加费尔班克斯（Fairbanks）南部发生数千桶原油泄漏后，横贯阿拉斯加、长达800英里的输油管道系统被关闭。",
+   "tham_chieu_vi": "\"800 dặm của Hệ thống đường ống xuyên Alaska đã bị đóng sau sự cố tràn hàng ngàn thùng dầu thô ở phía nam Fairbanks Alaska.\"",
+   "cac_luot": [
+    "Sau khi hàng ngàn thùng dầu thô bị rò rỉ ở phía nam Fairbanks, Alaska, hệ thống đường ống dẫn dầu dài 800 dặm chạy xuyên qua Alaska đã bị đóng cửa để xử lý sự cố nghiêm trọng này."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Sau khi hàng ngàn thùng dầu thô bị rò rỉ ở phía nam Fairbanks, Alaska, hệ thống đường ống dẫn dầu dài 800 dặm chạy xuyên qua Alaska đã bị đóng cửa để xử lý sự cố.",
+    "Sau khi hàng ngàn thùng dầu thô bị rò rỉ ở phía nam Fairbanks, Alaska, hệ thống đường ống dẫn dầu dài 800 dặm chạy xuyên qua Alaska đã bị đóng cửa để xử lý sự cố."
+   ]
+  },
+  {
+   "ma": "flores_0099",
+   "dong_flores": 99,
+   "nguon_zh": "消防指挥系统的例行测试引发了一场电力故障，故障使得安全阀开启，导致原油于格里利堡（Fort Greely）第 9 泵站附近溢出。",
+   "tham_chieu_vi": "Sự cố mất điện sau khi kiểm tra định kỳ hệ thống cứu hỏa khiến cho các van xả mở và dầu thô tràn ra gần trạm bơm số 9 ở Fort Greely.",
+   "cac_luot": [
+    "Một sự cố điện xảy ra trong quá trình kiểm tra hệ thống chỉ huy cứu hỏa đã khiến van an toàn mở ra, dẫn đến việc dầu tràn ra gần trạm bơm số 9 tại Fort Greely."
+   ],
+   "cac_luot_CO_y_canh": [
+    "Một sự cố điện xảy ra trong quá trình kiểm tra hệ thống chỉ huy cứu hỏa đã khiến van an toàn mở ra, dẫn đến việc dầu tràn ra gần trạm bơm số 9 tại Fort Greely.",
+    "Một sự cố điện xảy ra trong quá trình kiểm tra hệ thống chỉ huy cứu hỏa đã khiến van an toàn mở ra, dẫn đến việc dầu tràn ra gần trạm bơm số 9 tại Fort Greely."
+   ]
+  }
+ ]
+}

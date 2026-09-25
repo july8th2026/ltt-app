@@ -487,10 +487,13 @@ def test_don_vi_bi_TRANH_CHAP_khong_giet_ca_vong_sua(db, monkeypatch):
 
     that = su_dung.mo_lai_don_vi
 
-    def gia(db_, run_, *, stage, item_key):
+    # ⚠️ Chu ky phai BAM theo `su_dung.mo_lai_don_vi`. `y_canh` them 25/09
+    #    (noi LY DO bi che vao luot dich lai) da lam ban gia nay do bang
+    #    `TypeError` o `jobs.py:344` — mot thong diep KHONG tro vao cho that.
+    def gia(db_, run_, *, stage, item_key, y_canh=None):
         if item_key == "seg_a":
             raise su_dung.XungDotDonVi("tien trinh khac dang cham")
-        return that(db_, run_, stage=stage, item_key=item_key)
+        return that(db_, run_, stage=stage, item_key=item_key, y_canh=y_canh)
 
     monkeypatch.setattr(su_dung, "mo_lai_don_vi", gia)
 

@@ -406,6 +406,63 @@ class KeHoachSua:
         return hashlib.sha256(goi.encode("utf-8")).hexdigest()[:32]
 
 
+#: Do dai toi da cua MOI truong trong `y_canh`. ⛔ Cat, khong de loi nhac phinh
+#: theo van tu do cua bo cham.
+Y_CANH_TOI_DA = 160
+
+
+def y_canh_cho(kk: "KhiemKhuyet") -> dict:
+    """`y_canh` co DINH DANG KIEM SOAT cho mot khiem khuyet. ⛔ Khong van tho.
+
+    🔴 **Ba rang buoc, va ca ba deu tu mot bai hoc da tra gia:**
+
+    1. ⭐ **DOAN TRICH, ⛔ khong phai nhan tran.** *"sai thuc the"* gan nhu vo
+       dung; *"`壁球` dich thanh «quan vot»"* thi dung duoc. Cung bai hoc voi bo
+       do chu Han (`long_tieng.chu_han_lot`): *mot co noi CO GI DO sai; mot doan
+       trich noi SAI O DAU*.
+    2. ⚠️ **Vi du trong loi nhac la MENH LENH NGAM** (`B2_DICH.md` §4c). `y_canh`
+       di **thang** vao loi nhac, nen **hinh dang** cua no dang day model. ⇒ Khai
+       ba truong co ten, cat do dai, ⛔ khong do van tho cua bo cham vao.
+    3. 🔴 **Bo cham dang TRUOT CONG** — bao dong gia da do duoc. ⇒ `y_canh` mang
+       theo bao dong gia, va do la ly do `long_tieng.QUY_TAC_Y_CANH` noi
+       *"kiem lai, neu dung thi GIU NGUYEN"* chu ⛔ **khong** ra lenh *"sua"*.
+
+    ⛔ Tra `{}` khi khong co gi dung duoc — mot `y_canh` rong ⛔ khong duoc nhet
+       vao loi nhac (xem `long_tieng.loi_nhac`).
+    """
+    ra: dict = {}
+    ly = " ".join(str(kk.ly_do or "").split())[:Y_CANH_TOI_DA]
+    if ly:
+        ra["nghi_ngo"] = ly
+    bc = kk.bang_chung or {}
+    nguon = " ".join(str(bc.get("nguon") or "").split())[:Y_CANH_TOI_DA]
+    dich = " ".join(str(bc.get("dich") or "").split())[:Y_CANH_TOI_DA]
+    if nguon:
+        ra["trich_nguon"] = nguon
+    if dich:
+        ra["trich_ban_cu"] = dich
+    return ra
+
+
+def y_canh_theo_don_vi(ke: KeHoachSua, giai_doan: str) -> dict[str, dict]:
+    """`{ma: y_canh}` cho cac don vi se duoc lam lai o `giai_doan`.
+
+    ⛔ Chi lay khiem khuyet **dang tin**, va chi cua dung `giai_doan` do —
+       `gon_theo_don_vi` da chon giai doan SOM NHAT cho moi ma, nen o day phai
+       loc lai cho khop, neu khong mot doan sua o `voice_synthesis` se mang theo
+       mot `y_canh` cua `content_process`.
+    """
+    gon = gon_theo_don_vi(ke)
+    ra: dict[str, dict] = {}
+    for k in ke.dang_tin:
+        if not k.ma or gon.get(k.ma) != giai_doan or k.giai_doan != giai_doan:
+            continue
+        y = y_canh_cho(k)
+        if y:
+            ra[k.ma] = y
+    return ra
+
+
 def lap_ke_hoach(*, qc_giong=None, qc_ngu_nghia=None, qc_hinh=None,
                  cac_nan=None, vong: int = 0) -> KeHoachSua:
     """Gom moi nguon khiem khuyet thanh MOT ke hoach.

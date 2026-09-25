@@ -246,6 +246,12 @@ def loi_nhac(lo: list[dict], *, tat_ca: list[dict], ngon_ngu_goc: str,
     # ⛔ Quy tac ten rieng CHI cho dich `vi` — xem `QUY_TAC_TEN_RIENG_VI`.
     ten_rieng = (QUY_TAC_TEN_RIENG_VI["content"]
                  if ngon_ngu.chuan_dich(ngon_ngu_dich) == ngon_ngu.VI else "")
+    # ⛔ **Luat `y_canh` chi xuat hien khi LO NAY that su co doan mang no.**
+    #    Mot lo ⛔ khong co `y_canh` phai cho ra loi nhac **y het ban nen** —
+    #    neu khong, ta lam ban duong THUONG de phuc vu duong SUA, va moi so do
+    #    cu cua duong thuong het so sanh duoc.
+    y_canh_luat = QUY_TAC_Y_CANH["content"] if any("y_canh" in m for m in muc) else ""
+
     he_thong = (
         f"Ban la bien tap vien long tieng {c['tieng']}. Ban KHONG dich tung chu: "
         f"ban viet lai cau thoai sao cho {c['nguoi']} nghe thay tu nhien, dung y, "
@@ -259,7 +265,7 @@ def loi_nhac(lo: list[dict], *, tat_ca: list[dict], ngon_ngu_goc: str,
         "va sap nghe, sau khi da cat.\n"
         "- Xung ho va giong dieu hop voi `giong` da chon.\n"
         "- Khong them thong tin khong co trong cau goc.\n"
-        + ten_rieng + QUY_TAC_TU_KHAI["content"] +
+        + ten_rieng + QUY_TAC_TU_KHAI["content"] + y_canh_luat +
         f"- `cam_xuc` phai la MOT trong: {', '.join(CAM_XUC)}.\n"
         f"- `kieu_noi` phai la MOT trong: {', '.join(KIEU_NOI)}.\n"
         "Tra ve DUY NHAT mot doi tuong JSON:\n"
@@ -313,6 +319,40 @@ def _chuoi_ngan(x) -> list[str]:
             ra.append(t)
     return ra
 
+
+#: 🔴 **QUY TAC `y_canh` — NGHI NGO, ⛔ KHONG PHAI PHAN QUYET.**
+#:
+#: ⭐ Truoc 25/09 tham so `y_canh` **da ton tai** o `loi_nhac` va loi nhac **da
+#: co cho nhet no**, nhung ⛔ **khong mot nguoi goi nao truyen** (`grep` ca
+#: `apps/`). ⇒ Vong sua dich lai doan bi che bang loi nhac **y het lan dau**:
+#: ⛔ khong mot bit nao ve *vi sao no bi che*. ⇒ No ⛔ khong phai mot vong
+#: **sua** — no la mot lan **rut tham lai**, va do chinh la co che giai thich
+#: **N-02 (85 → 85)** (`B2_DICH.md` §7.10).
+#:
+#: 🔴 **Vi sao loi cau chu la "kiem lai", ⛔ khong phai "hay sua".**
+#: Bo cham dang **truot cong**: bao dong gia da do duoc. ⇒ `y_canh` **se** mang
+#: theo bao dong gia. Ra lenh *"sua loi nay"* cho mot doan **von dung** la cach
+#: chac chan nhat **bien mot bao dong gia thanh mot hong that**.
+#: ⇒ Cau chu phai cho model mot **duong lui**: doc lai, va **giu nguyen** neu no
+#: thay ban cu da dung.
+#:
+#: 🔴 **Cau "KHONG duoc THEM chi tiet moi" den tu mot CHE DO HONG DA DO** (§7.12).
+#: O lan cham mu dau tien, mot ban CO `y_canh` bien `提炼枪` — mot token **da
+#: hong do ASR** — thanh *"sung MAY"*: no **BIA** mot chi tiet cau goc khong noi.
+#: ⇒ ⭐ Mot goi y *"cho nay co van de"* co the day model **them thong tin no
+#: khong co**, thay vi **kiem lai**. Rang buoc "nghi ngo, khong phai phan quyet"
+#: dung huong nhung **chua du manh** — phai cam **cu the hoa them** tuong minh.
+QUY_TAC_Y_CANH = {"role": "system", "content": (
+    "- Mot so doan co truong `y_canh`: mot buoc kiem chat luong DA NGHI NGO "
+    "doan do.\n"
+    "  Day la NGHI NGO, KHONG phai phan quyet — buoc kiem do CO BAO DONG GIA.\n"
+    "  Hay doc lai cau goc va `trich_ban_cu`. Neu ban cu DA DUNG thi GIU "
+    "NGUYEN no.\n"
+    "  Chi viet khac di khi ban TU THAY no that su sai, va khi do hay sua DUNG "
+    "cho sai.\n"
+    "  KHONG duoc doi mot cau dang dung chi vi no bi nghi ngo.\n"
+    "  KHONG duoc THEM chi tiet moi. Neu ban khong chac, hay GIU nguyen muc cu "
+    "the cua ban cu — dung cu the hoa them mot thu ma cau goc khong noi.\n")}
 
 #: 🔑 **BAT BIEN O BIEN: ban ghi tieng Viet ⛔ khong duoc chua chu Han.**
 #:

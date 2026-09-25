@@ -1,0 +1,169 @@
+{
+ "⭐ huong_dan": "Moi muc co MOT cau nguon `zh` va HAI ban dich. Voi tung muc: ban nao TOT HON, hay NGANG NHAU? Kem DOAN TRICH + ly do. Khong trich duoc => khong tinh la loi. Nghi ngo => ghi 'bien'.",
+ "⛔ khong_co_gi_trong_day_noi_ve_nhanh": true,
+ "so_muc": 27,
+ "muc": [
+  {
+   "ma": "44ccb6deca",
+   "zh": "这人的操作你们可千万别学啊,楼下还有脚步,他们不敢上来,那我们就直接掐雷。",
+   "ban_1": "Đừng học kiểu này, nghe thấy bước chân dưới lầu, họ không dám lên, ta cứ đặt mìn.",
+   "ban_2": "Đừng học theo người này nhé, nghe tiếng bước chân dưới lầu rồi, họ không dám lên, ta sẽ trực tiếp đặt mìn."
+  },
+  {
+   "ma": "e44f480e4e",
+   "zh": "这才是让人羡慕的生活。",
+   "ban_1": "Đây mới là cuộc sống đáng mơ ước.",
+   "ban_2": "Đây mới là cuộc sống đáng mơ ước."
+  },
+  {
+   "ma": "20be9679fe",
+   "zh": "这里要注意,不要把大量的时间用在补人身上。",
+   "ban_1": "Chú ý, đừng tốn thời gian cứu người.",
+   "ban_2": "Chỗ này chú ý, đừng tốn thời gian cứu người."
+  },
+  {
+   "ma": "6635ef5b1f",
+   "zh": "这人肯定会往里面冲,架着门口往左边走,用提炼枪让他来接子弹。",
+   "ban_1": "Anh ta chắc chắn sẽ lao vào, chặn cửa đi sang trái, dùng súng bắt anh ta hứng đạn.",
+   "ban_2": "Hắn sẽ lao vào, ta chặn cửa bên trái, dùng súng máy để hắn hứng đạn."
+  },
+  {
+   "ma": "d500490e84",
+   "zh": "趁敌人还没上来,咱们直接趴下,用盒子当掩体,他就发现不了我们。",
+   "ban_1": "Chờ địch chưa lên, ta nằm xuống, dùng hộp làm che chắn, hắn không thấy.",
+   "ban_2": "Khi địch chưa lên, ta nằm xuống, dùng hộp che chắn, anh ta sẽ không phát hiện."
+  },
+  {
+   "ma": "3362066af2",
+   "zh": "师傅手中的剪刀顺着肠壁游走,",
+   "ban_1": "Kéo dao theo thành ruột.",
+   "ban_2": "Kẻ làm bếp cầm kéo lướt dọc ruột."
+  },
+  {
+   "ma": "c1b717247a",
+   "zh": "看到没有,这就是纯白给。",
+   "ban_1": "Nhìn xem, đây là kiểu chơi trắng tay.",
+   "ban_2": "Thấy chưa, đây là trắng tay."
+  },
+  {
+   "ma": "ee086c7544",
+   "zh": "去腥除味的两瓶烧酒也紧随其后,",
+   "ban_1": "Hai chai rượu soju khử mùi cũng theo sau.",
+   "ban_2": "Hai chai rượu đi theo để khử mùi."
+  },
+  {
+   "ma": "57b5aaa245",
+   "zh": "师傅手中的剪刀顺着肠壁游走,",
+   "ban_1": "Kẻ làm bếp cầm kéo lướt dọc ruột.",
+   "ban_2": "Kéo dao theo thành ruột."
+  },
+  {
+   "ma": "802b4f66a5",
+   "zh": "牛肠也由于热胀冷缩而迅速收紧,",
+   "ban_1": "Ruột bò co lại nhanh vì nhiệt độ.",
+   "ban_2": "Ruột bò cũng co lại vì nhiệt độ."
+  },
+  {
+   "ma": "a19eba8b89",
+   "zh": "这才是让人羡慕的生活。",
+   "ban_1": "Đây mới là cuộc sống đáng mơ ước.",
+   "ban_2": "Đây mới là cuộc sống đáng mơ ước."
+  },
+  {
+   "ma": "45b1b6131b",
+   "zh": "趁敌人还没上来,咱们直接趴下,用盒子当掩体,他就发现不了我们。",
+   "ban_1": "Chờ địch chưa lên, ta nằm xuống, dùng hộp làm che chắn, hắn không thấy.",
+   "ban_2": "Khi địch chưa lên, ta nằm xuống, dùng hộp che chắn, anh ta sẽ không phát hiện."
+  },
+  {
+   "ma": "3381001f62",
+   "zh": "这里要注意,不要把大量的时间用在补人身上。",
+   "ban_1": "Chỗ này chú ý, đừng tốn thời gian cứu người.",
+   "ban_2": "Chú ý, đừng tốn thời gian cứu người."
+  },
+  {
+   "ma": "ca7631c0c4",
+   "zh": "这里要注意,不要把大量的时间用在补人身上。",
+   "ban_1": "Chỗ này chú ý, đừng tốn thời gian cứu người.",
+   "ban_2": "Chú ý, đừng tốn thời gian cứu người."
+  },
+  {
+   "ma": "d7c1681982",
+   "zh": "去腥除味的两瓶烧酒也紧随其后,",
+   "ban_1": "Hai chai rượu soju khử mùi cũng theo sau.",
+   "ban_2": "Hai chai rượu đi theo để khử mùi."
+  },
+  {
+   "ma": "d8602c1db5",
+   "zh": "看到没有,这就是纯白给。",
+   "ban_1": "Thấy chưa, đây là trắng tay.",
+   "ban_2": "Nhìn xem, đây là kiểu chơi trắng tay."
+  },
+  {
+   "ma": "af9e26289a",
+   "zh": "这才是让人羡慕的生活。",
+   "ban_1": "Đây mới là cuộc sống đáng mơ ước.",
+   "ban_2": "Đây mới là cuộc sống đáng mơ ước."
+  },
+  {
+   "ma": "261c2391c8",
+   "zh": "看到没有,这就是纯白给。",
+   "ban_1": "Thấy chưa, đây là trắng tay.",
+   "ban_2": "Nhìn xem, đây là kiểu chơi trắng tay."
+  },
+  {
+   "ma": "7b2d4af573",
+   "zh": "这人肯定会往里面冲,架着门口往左边走,用提炼枪让他来接子弹。",
+   "ban_1": "Anh ta chắc chắn sẽ lao vào, chặn cửa đi sang trái, dùng súng bắt anh ta hứng đạn.",
+   "ban_2": "Hắn sẽ lao vào, ta chặn cửa bên trái, dùng súng máy để hắn hứng đạn."
+  },
+  {
+   "ma": "83d2215196",
+   "zh": "去腥除味的两瓶烧酒也紧随其后,",
+   "ban_1": "Hai chai rượu đi theo để khử mùi.",
+   "ban_2": "Hai chai rượu soju khử mùi cũng theo sau."
+  },
+  {
+   "ma": "d3bae4a881",
+   "zh": "这人肯定会往里面冲,架着门口往左边走,用提炼枪让他来接子弹。",
+   "ban_1": "Hắn sẽ lao vào, ta chặn cửa bên trái, dùng súng máy để hắn hứng đạn.",
+   "ban_2": "Anh ta chắc chắn sẽ lao vào, chặn cửa đi sang trái, dùng súng bắt anh ta hứng đạn."
+  },
+  {
+   "ma": "7036214f99",
+   "zh": "这人的操作你们可千万别学啊,楼下还有脚步,他们不敢上来,那我们就直接掐雷。",
+   "ban_1": "Đừng học theo người này nhé, nghe tiếng bước chân dưới lầu rồi, họ không dám lên, ta sẽ trực tiếp đặt mìn.",
+   "ban_2": "Đừng học kiểu này, nghe thấy bước chân dưới lầu, họ không dám lên, ta cứ đặt mìn."
+  },
+  {
+   "ma": "5b7e705eb6",
+   "zh": "这人的操作你们可千万别学啊,楼下还有脚步,他们不敢上来,那我们就直接掐雷。",
+   "ban_1": "Đừng học kiểu này, nghe thấy bước chân dưới lầu, họ không dám lên, ta cứ đặt mìn.",
+   "ban_2": "Đừng học theo người này nhé, nghe tiếng bước chân dưới lầu rồi, họ không dám lên, ta sẽ trực tiếp đặt mìn."
+  },
+  {
+   "ma": "2d6e1de648",
+   "zh": "牛肠也由于热胀冷缩而迅速收紧,",
+   "ban_1": "Ruột bò co lại nhanh vì nhiệt độ.",
+   "ban_2": "Ruột bò cũng co lại vì nhiệt độ."
+  },
+  {
+   "ma": "bb67d55b72",
+   "zh": "师傅手中的剪刀顺着肠壁游走,",
+   "ban_1": "Kéo dao theo thành ruột.",
+   "ban_2": "Kẻ làm bếp cầm kéo lướt dọc ruột."
+  },
+  {
+   "ma": "2e865a050c",
+   "zh": "趁敌人还没上来,咱们直接趴下,用盒子当掩体,他就发现不了我们。",
+   "ban_1": "Khi địch chưa lên, ta nằm xuống, dùng hộp che chắn, anh ta sẽ không phát hiện.",
+   "ban_2": "Chờ địch chưa lên, ta nằm xuống, dùng hộp làm che chắn, hắn không thấy."
+  },
+  {
+   "ma": "ff0f7af8e5",
+   "zh": "牛肠也由于热胀冷缩而迅速收紧,",
+   "ban_1": "Ruột bò cũng co lại vì nhiệt độ.",
+   "ban_2": "Ruột bò co lại nhanh vì nhiệt độ."
+  }
+ ]
+}
