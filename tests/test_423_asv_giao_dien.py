@@ -10,6 +10,7 @@ FFmpeg / CUDA / Sheets / duong dan noi bo.*
 from __future__ import annotations
 
 import json
+import os
 import re
 
 import pytest
@@ -62,8 +63,28 @@ def moi_truong(tmp_path, monkeypatch):
         # ⚠️ CSDL nhap song qua nhieu lan chay, nen phai don TRUOC. Khong don thi
         #    `tao_nguoi_dung` o duoi va cham UNIQUE email cua lan chay truoc, va
         #    thong bao do khong nhac gi toi viec CSDL con du lieu cu.
-        dbmod.Base.metadata.drop_all(dbmod.get_engine())
-    dbmod.Base.metadata.create_all(dbmod.get_engine())
+        #
+        # 🔴 **GIU KHOA `postgres_test` QUANH DDL (N-53, 25/09).** `conftest.py`
+        #    bo khoa nay khoi `_KHOA_PHIEN` tu 24/09 voi ly do "moi lan da co
+        #    schema RIENG (`pg_scratch.schema_lan`), khong con gi de tranh". Do
+        #    THAT 25/09 (lan `asv-day-truyen`) noi nguoc lai: `drop_all()` o day
+        #    treo **20 phut** cho mot khoa bang, ke ca khi schema cua lan nay la
+        #    RIENG va MOI (chua ai dung). ⛔ **KHONG THAY the lam sao ma van con
+        #    tranh chap** — nghi ngo la `search_path=<lan>,public` khien mot
+        #    schema RONG roi ve `public` cho ca doc lan ghi. Chua chung minh het,
+        #    nhung do da CO va lap lai duoc, nen o day GIU LAI khoa nay bat ke ly
+        #    do cu con dung hay khong: `postgres_test` la tai nguyen DOC QUYEN
+        #    (khac `cpu_nhieu` chia suc tinh) — giu suot pha DDL la DUNG, va no
+        #    la thu duy nhat chan `drop_all` xoa CSDL scratch cua mot lan/phien
+        #    khac ngay duoi chan ho (nguy hiem hon treo).
+        from tools.cua_so_yen import CuaSoYen
+        with CuaSoYen(os.environ.get("LTT_PHIEN") or f"pytest:{os.getpid()}",
+                     "moi_truong: drop_all+create_all Postgres",
+                     tai_nguyen=("postgres_test",)):
+            dbmod.Base.metadata.drop_all(dbmod.get_engine())
+            dbmod.Base.metadata.create_all(dbmod.get_engine())
+    else:
+        dbmod.Base.metadata.create_all(dbmod.get_engine())
     db = next(dbmod.get_session())
     from platform_core import credit
     from platform_core.users import tao_nguoi_dung

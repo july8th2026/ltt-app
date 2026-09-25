@@ -504,17 +504,25 @@ def timeout_xau_nhat(thao_tac: ThaoTac) -> float:
     """Thoi gian XAU NHAT (giay) cua MOT lan `goi_tinh_tien(thao_tac)`.
 
     Khai `NGAN_SACH_RA` thi lay timeout do; khong thi la mac dinh cua
-    `dieu_phoi.goi(timeout_s)` — doc bang `inspect`, khong go lai so. Nhan so
-    provider vi `dieu_phoi` thu lan luot tung cai. `lat_cat` dung de tinh du
-    phong; o day vi chi `ai.py` duoc cham `dieu_phoi` (`test_434`).
-    """
-    import inspect
+    `dieu_phoi.TIMEOUT_GOI_MAC_DINH`. Nhan so provider vi `dieu_phoi` thu lan
+    luot tung cai. `lat_cat` dung de tinh du phong; o day vi chi `ai.py` duoc
+    cham `dieu_phoi` (`test_434`).
 
+    🔴 **CHUA DUNG `inspect.signature(dieu_phoi.goi)` NUA (N-52, 25/09).** Ban cu
+       doc mac dinh bang cach soi CHU KY HAM cua `dieu_phoi.goi` — dung y "mot
+       so, mot cho khai", nhung sai cho: chu ky ham la thu fixture/wrapper/mock
+       THAY duoc, va mot fixture E2E that da thay (`tests/fixtures/asv_e2e.py
+       ::dat_cua_model`) bang mot ham KHONG co tham so `timeout_s` -> `KeyError`
+       ngay giai doan dau tien goi AI. Doc HANG SO truc tiep tu `dieu_phoi` thi
+       thay `goi` bao nhieu lan cung khong anh huong: khong con gi de soi.
+    ⛔ **KHONG doc `getattr`/`.get(...)` co fallback im lang.** Mot fallback se
+       lam timeout am thanh sai gia tri ma khong ai biet khi `dieu_phoi` doi ten
+       hang so — cung ho "kep im lang" (N-47) va "fail-open" (N-51).
+    """
     from platform_core.llm import dieu_phoi
 
     _tran, cho = ngan_sach_cho(thao_tac)
-    moi = float(cho) if cho else float(
-        inspect.signature(dieu_phoi.goi).parameters["timeout_s"].default)
+    moi = float(cho) if cho else dieu_phoi.TIMEOUT_GOI_MAC_DINH
     return moi * max(1, len(THU_TU_PROVIDER))
 
 

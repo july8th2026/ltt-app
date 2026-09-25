@@ -51,6 +51,23 @@ log = logging.getLogger(__name__)
 #: thì thêm vào đây, **không** viết thêm một nhánh `if` ở dưới.
 PROVIDER_OPENAI = ("ltt_llm",)
 
+#: Timeout MẶC ĐỊNH (giây) của một lần `goi()`, khi bên gọi không tự khai.
+#:
+#: 🔑 **Một số, MỘT chỗ khai — và chỗ khai này KHÔNG PHẢI chữ ký hàm.**
+#:    Trước 25/09 hằng số này chỉ tồn tại như `default=` của tham số `timeout_s`
+#:    ở `goi()` bên dưới, và `apps/auto_scan_video/ai.py::timeout_xau_nhat` đọc
+#:    nó lại bằng `inspect.signature(goi).parameters["timeout_s"].default` — một
+#:    kiểu "một số, một chỗ khai" ĐÚNG Ý nhưng SAI CHỖ: chữ ký hàm là thứ
+#:    fixture/wrapper/mock THAY được (và một fixture kiểm E2E thật đã thay,
+#:    N-52). `inspect` qua chữ ký một hàm ĐÃ BỊ THAY thì đọc chữ ký của BẢN
+#:    THAY, không phải giá trị thật — `KeyError` khi bản thay thiếu tham số đó.
+#:    ⇒ Hạ hằng số ra khỏi `default=`, để nó đứng một mình cạnh `goi()`. Sau đó
+#:    thay `goi` bao nhiêu lần cũng không ảnh hưởng: không còn gì để soi bằng
+#:    `inspect`, và không còn cách nào cho một giá trị sai lọt qua ÂM THẦM
+#:    (⛔ đừng thêm `.get(...)`/fallback ở phía đọc — N-47, N-51 cùng họ "kẹp/
+#:    fail-open im lặng").
+TIMEOUT_GOI_MAC_DINH = 120.0
+
 # 🔴 `PROVIDER_GEMINI` ĐÃ GỠ 09/09/2026 (AI CLEAN REBUILD V2 pha 07) cùng hàm
 #    `_goi_gemini` và nhánh `if` của nó trong vòng lặp bên dưới.
 #
@@ -227,7 +244,7 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
         temperature: Optional[float] = None,
         reasoning_effort: Optional[str] = None,
         them: Optional[dict] = None,
-        timeout_s: float = 120.0, on_dispatch=None,
+        timeout_s: float = TIMEOUT_GOI_MAC_DINH, on_dispatch=None,
         on_rejected=None, ma_luot: str = "") -> KetQuaChat:
     """Gọi model theo **thứ tự provider bên gọi khai**, bỏ qua provider đang bận.
 

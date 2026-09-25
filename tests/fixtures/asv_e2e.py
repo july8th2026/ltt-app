@@ -581,9 +581,19 @@ def dat_cua_model(monkeypatch, *, su_that: SuThat | None = None):
             su_dung=cong_vlm.SuDung(token_vao=len(van) // 4,
                                     token_ra=len(van) // 4, dang_tin=True))
 
-    def gia(db, *, messages, thu_tu_provider, model_theo_provider=None,
-            max_tokens=None, temperature=None, on_dispatch=None,
-            on_rejected=None, **kw):
+    # 🔴 CHU KY PHAI KHOP HET voi `dieu_phoi.goi` that (N-52, 25/09): mot ban
+    #    thay THIEU mot tham so la mot LOI NOI DOI ve ham no thay, ke ca khi
+    #    khong ai gap ngay. Ca do that: ban truoc thieu `timeout_s`, va
+    #    `ai.timeout_xau_nhat` (luc do con doc bang `inspect.signature`) an vao
+    #    dung cho thieu do -> `KeyError` giua luot E2E that. `ai.py` nay da bo
+    #    `inspect` (doc hang so `dieu_phoi.TIMEOUT_GOI_MAC_DINH` truc tiep), nen
+    #    loi nay khong con tai dien duoc — nhung chu ky van phai khop, vi day la
+    #    BAN THAY cho ham that o CUA tinh tien.
+    def gia(db, *, messages, thu_tu_provider,
+            category=None, model=None, model_theo_provider=None,
+            tools=None, max_tokens=None, temperature=None,
+            reasoning_effort=None, them=None,
+            timeout_s=None, on_dispatch=None, on_rejected=None, ma_luot=""):
         # ⭐ Nen tang goi `on_dispatch` NGAY TRUOC khi ra mang. Goi lai o day de
         #    ngu nghia dispatch ben vung (I5) van duoc chay that.
         # ⚠️ MOT tham so — dung nhu `dieu_phoi.goi:210` goi. Ban dau o day
