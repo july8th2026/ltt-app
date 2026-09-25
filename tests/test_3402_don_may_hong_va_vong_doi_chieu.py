@@ -151,6 +151,9 @@ def test_vong_bao_tri_THAT_SU_chay_phep_soi_do_dien(db, monkeypatch):
     monkeypatch.setattr(doi_chieu, "quet",
                         lambda db_, client: da_quet.append(client) or doi_chieu.KetQua())
     monkeypatch.setattr(bao_tri, "_doi_chieu_profiles", lambda db_: 0)
+    # Phep soi thu tu (25/09) cung cham Proxmox; probe nay dung client gia la mot
+    # chuoi nen phai tat no tuong minh, giong moi ham cham CSDL khac o day.
+    monkeypatch.setattr(bao_tri, "_kiem_chuan_hoa_dinh_ky", lambda *a, **k: 0)
     monkeypatch.setattr(bao_tri.backend_factory, "compute_backend",
                         lambda profile: type("B", (), {"client": "proxmox-that"})())
     for ten in ("_thu_tien_den_han", "_treo_may_het_han", "_dong_bo_bang_thong",

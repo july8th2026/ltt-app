@@ -554,7 +554,13 @@ def test_cau_hinh_qemu_cam_MOT_card_vao_bridge_co_lap():
     """Máy khách không được có card ra LAN nhà — chỉ một đường, qua vmbr1."""
     from apps.vps.services import mang
     c = mang.cau_hinh_qemu(mang.mang_cho_may(_gw_mang(), "10.51.0.50"))
-    assert c["net0"] == f"{mang.MO_HINH_CARD},bridge=vmbr1,firewall=0,mtu=1420"
+    # 🔴 `firewall=1` tu 25/09/2026 (truoc do la `0`). Do that tren hai may khach:
+    #    voi `firewall=0`, `ipfilter`/`macfilter` cua Proxmox **khong toi noi**, nen
+    #    mot khach ARP/IP spoof duoc khach khac tren cung `vmbr1`.
+    # ⛔ Bat co nay KHONG loc goi: `jobs._firewall_may_khach()` dat ca hai policy
+    #    ACCEPT tuong minh (Proxmox mac dinh `policy_in=DROP` — de nguyen mac dinh
+    #    la cat mang cua moi khach bang mot ban va an ninh).
+    assert c["net0"] == f"{mang.MO_HINH_CARD},bridge=vmbr1,firewall=1,mtu=1420"
     assert mang.MO_HINH_CARD != "virtio", (
         "virtio treo tren cum long trong VMware — xem chu thich MO_HINH_CARD")
     assert c["ipconfig0"] == "ip=10.51.0.50/24,gw=10.51.0.1"

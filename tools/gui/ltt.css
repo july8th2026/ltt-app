@@ -3679,22 +3679,59 @@ button.lv-the-song.nghe-loi,.lv-chon-nghe.nghe-loi{
 .asv-chi-may{display:none}
 
 /* ── Thanh hanh dong ─────────────────────────────────────────────────────── */
-.asv-thanh{display:flex;align-items:center;justify-content:space-between;gap:18px;
-  flex-wrap:wrap;border-top:1px solid var(--line);padding-top:16px}
-.asv-uoc{display:flex;flex-direction:column;gap:2px;min-width:0}
+/* 🔴 `position:sticky` o MOI be ngang, khong chi <= 640px.
+ *
+ *    Man Studio dai hon mot khung nhin ngay khi khach mo `Tuy chon nang cao`,
+ *    nen tren man hinh rong chi phi va nut Bat dau cuon ra ngoai tam mat — dung
+ *    luc khach quyet thi con so ho can de quyet khong con tren man hinh.
+ *
+ * ⚠️ `bottom:0`, ⛔ KHONG `bottom:-20px`. Do lai tren trinh duyet that (1280x900):
+ *    mot gia tri am day day thanh XUONG DUOI mep khung nhin dung bang so do, nen
+ *    dong cuoi cua ba bo dem bi cat — tuc chinh con so khach can de quyet lai la
+ *    thu khong doc duoc. `margin-bottom:-20px` van giu de thanh om sat mep the o
+ *    vi tri tinh; hai thu do doc lap. */
+.asv-thanh{position:sticky;bottom:0;z-index:5;
+  display:flex;align-items:flex-end;justify-content:space-between;gap:18px;
+  flex-wrap:wrap;border-top:1px solid var(--line2);background:var(--panel);
+  margin:16px -20px -20px;padding:14px 20px calc(14px + var(--ltt-day-an-toan))}
+/* Ba bo dem song. `dl` chu khong ba `<span>`: moi con so CO mot nhan, va cap
+ * nhan/gia tri la dung nghia cua `dt`/`dd`. */
+.asv-dem{display:flex;flex-wrap:wrap;gap:4px 22px;margin:0;min-width:0}
+.asv-dem > div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.asv-dem dt{color:var(--muted);font-size:11px;text-transform:uppercase;
+  letter-spacing:.08em}
+.asv-dem dd{margin:0;min-width:0;max-width:34ch;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:600}
+/* ⚠️ Ô CHI PHÍ mang HAI giá trị (credit + thời gian), nên cắt bằng `…` ở đây
+ *    nuốt đúng nửa sau — đo trên trình duyệt thật ở 375px: `~5–6 credit khoảng
+ *    1 p…`. Một con số bị cắt giữa chừng đọc tệ hơn một dòng thứ hai. */
+.asv-dem .asv-uoc dd{max-width:none;overflow:visible;text-overflow:clip;
+  white-space:normal}
+.asv-thanh-nut{display:flex;flex-direction:column;gap:4px;align-items:flex-end;
+  min-width:0}
+.asv-thanh-nut .asv-ghi-chu{margin:0;text-align:right}
+/* Cau "vi sao chua bam duoc" — canh bao, khong phai ghi chu chim. */
+.asv-vi-sao{color:var(--warn,var(--accent2))}
 .asv-uoc-tien{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
-.asv-uoc .asv-ghi-chu{margin:0}
 .asv-dang-gui{opacity:.7}
 
 /* ── Lich su: THE, khong phai bang ───────────────────────────────────────── */
 .asv-the-ds{list-style:none;margin:0;padding:0;display:flex;
   flex-direction:column;gap:8px}
-.asv-the a{display:flex;align-items:center;justify-content:space-between;gap:12px;
+/* ⚠️ `flex-wrap` + `margin-left:auto` chu khong `space-between`: the nay mang
+   BON su that ke tu lan `asv-gui` (trang thai · cap ngon ngu · kieu xu ly ·
+   gio), va bon mon `space-between` o 375px day chung sat vao nhau roi tran
+   ngang. Wrap thi chung xuong dong, va `auto` giu gio luon o cuoi dong. */
+.asv-the a{display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap;
   padding:12px 14px;border:1px solid var(--line);border-radius:var(--radius-md);
   background:var(--panel);text-decoration:none;color:inherit;
   transition:border-color var(--motion-fast),background var(--motion-fast)}
 .asv-the a:hover{border-color:var(--line2);background:var(--panel2)}
-.asv-the-gio{color:var(--muted);font-size:13px}
+.asv-the-gio{color:var(--muted);font-size:13px;margin-left:auto}
+/* Cap ngon ngu la thu khach quet mat tim truoc, nen no dam hon kieu xu ly. */
+.asv-the-lan{font-size:13px;font-weight:600;white-space:nowrap}
+.asv-the-preset{color:var(--muted);font-size:13px;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .asv-tt-queued,.asv-tt-running{border-color:var(--brand-border);color:var(--accent2)}
 .asv-tt-cancelled{color:var(--dim)}
 
@@ -3757,9 +3794,13 @@ button.lv-the-song.nghe-loi,.lv-chon-nghe.nghe-loi{
   .asv-doi-chieu{grid-template-columns:1fr}
 }
 @media (max-width:640px){
-  .asv-thanh{position:sticky;bottom:0;z-index:5;background:var(--panel);
-    margin:0 -20px -20px;padding:14px 20px calc(14px + var(--ltt-day-an-toan));
-    border-top:1px solid var(--line2)}
+  /* ⚠️ Thanh da dinh o luat chung; o day chi con viec XEP LAI cho hep: nut
+   *    chiem ca dong, va ba bo dem xuong duoi nhan cua chinh chung. */
+  .asv-thanh{bottom:0;flex-direction:column;align-items:stretch;gap:12px}
+  .asv-thanh-nut{align-items:stretch}
+  .asv-thanh-nut .asv-ghi-chu{text-align:left}
+  .asv-dem{gap:4px 16px}
+  .asv-dem dd{max-width:22ch}
   .asv-thanh .btn{flex:1 1 100%}
   /* ⭐ Ve hop chinh xac bang ngon tay tren 375px cho ket qua te hon han. Mot
    *    cong cu chinh xac GIA con te hon khong co cong cu — nen o day no thanh

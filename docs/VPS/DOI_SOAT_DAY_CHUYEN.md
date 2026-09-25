@@ -75,7 +75,7 @@ nên IP đổi là đỏ) · RDP có còn thông. Đo 24/09: **PASS**.
 | H3 | Hai policy không cắt mạng khách | như trên | `policy_in`/`policy_out` = **ACCEPT** |
 | H4 | `net0` bật cờ firewall | `qm config` | `firewall=1` (nếu `0` thì H2 **không tới nơi**) |
 | H5 | rDNS cho IP đã bán | `GET /ip/<ip>%2F32/reverse/<ip>` ở OVH | có `reverse` |
-| H6 | Máy mới tự đúng | `test_3502` đọc AST `_tao_may` | gọi cả hai bước mới |
+| H6 | Máy mới tự đúng | `test_4002` đọc AST `_tao_may` | gọi cả hai bước mới |
 
 ```bash
 python tools/vps_chuan_hoa.py        # báo cáo

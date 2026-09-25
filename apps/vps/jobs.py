@@ -1081,7 +1081,7 @@ def _cau_hinh_may_trong(may: VpsInstance, plan, img, iso: str) -> dict:
 #:
 #: ⚠️ Proxmox mac dinh `policy_in = DROP` khi bat firewall. De nguyen mac dinh la
 #:    **cat mang cua moi khach** bang mot ban va an ninh. Nen hai policy phai
-#:    ACCEPT TUONG MINH, va `test_3500` chot dung dieu do.
+#:    ACCEPT TUONG MINH, va `test_4000` chot dung dieu do.
 def _firewall_may_khach() -> dict:
     return {"enable": 1, "policy_in": "ACCEPT", "policy_out": "ACCEPT",
             "ipfilter": 1, "macfilter": 1}
