@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import threading
 
-from platform_core.i18n import N_
+from platform_core.i18n import N_, _ as _t
 
 BRAND_PRESETS = {
     "auto": {"label": N_("Tự động theo thể loại"), "overrides": {}},
@@ -17,6 +17,94 @@ BRAND_PRESETS = {
 }
 PLATFORMS = ("tiktok", "youtube_shorts", "instagram_reels")
 ANALYSIS_ENGINES = ("scene", "motion", "speech", "audio", "visual", "content")
+
+
+def candidate_gate_dict(cand) -> dict:
+    """Ánh xạ `CandidateClip` → dict cho `QualityGate` (engine cutclipshort).
+
+    Thang chuẩn của gate (`cutclipshort/evaluation/gate.py`): điểm chất lượng
+    0-100 (`hook_score`, `completeness_score`, `pacing_score`, `audio_score`,
+    `score`), `intent_confidence` 0-1, `duration` giây, `cluster_id` int.
+    `CandidateScore` lưu 0-1 → nhân 100. Trừ trường nào thiếu thì gate tự
+    dùng mặc định (50) — không raise.
+    """
+    score = getattr(cand, "score", None)
+    rng = getattr(cand, "time_range", None)
+
+    def _pct(name: str) -> float:
+        try:
+            return round(float(getattr(score, name, 0) or 0) * 100, 1)
+        except (TypeError, ValueError):
+            return 50.0
+
+    try:
+        duration = round(float(getattr(rng, "duration", 0) or 0), 2)
+    except (TypeError, ValueError):
+        duration = 0.0
+    try:
+        cluster = int(getattr(cand, "cluster_id", -1))
+    except (TypeError, ValueError):
+        cluster = -1
+    return {
+        "candidate_id": str(getattr(cand, "candidate_id", "") or ""),
+        "hook_score": _pct("hook_strength"),
+        "completeness_score": _pct("completeness"),
+        "pacing_score": _pct("pacing"),
+        "audio_score": _pct("audio_quality"),
+        "score": _pct("overall"),
+        "clip_intent": str(getattr(cand, "clip_intent", "unknown") or "unknown"),
+        "intent_confidence": float(getattr(cand, "intent_confidence", 0) or 0),
+        "duration": duration,
+        "has_speech": bool(getattr(cand, "has_speech", True)),
+        "cluster_id": cluster,
+        "risk_flags": [str(x) for x in (getattr(cand, "risk_flags", None) or [])],
+    }
+
+
+def apply_quality_gate(candidates: list, mode: str) -> tuple[list, dict]:
+    """Chạy quality gate v3 trên danh sách ứng viên đã xếp hạng.
+
+    `mode="block"` — loại clip bị hard veto (hook<0.20, intent yếu, cắt giữa
+    chừng, <5s, trùng cluster). Rỗng hoàn toàn → giữ top-1 + `qa["fallback"]`
+    (không bao giờ trả rỗng).
+    `mode="warn"` — không loại gì; toàn bộ quyết định nằm trong `qa`.
+
+    Trả về `(kept, qa)`: `kept` = danh sách ứng viên còn lại theo thứ tự hạng
+    gốc; `qa` = khối JSON gọn để ghi vào manifest `clips.json`.
+    """
+    if mode not in ("block", "warn"):
+        raise ValueError(f"{_t('gate mode không hợp lệ: ')}{mode!r}")
+    if not candidates:
+        return [], {"mode": mode, "checked": 0, "fallback": True,
+                    "vetoed": {}, "warnings": {}, "scores": {}}
+    from cutclipshort.evaluation.gate import QualityGate
+
+    gate = QualityGate()
+    results = gate.batch_check([candidate_gate_dict(c) for c in candidates],
+                               enforce_cluster_unique=True)
+    qa: dict = {"mode": mode, "checked": len(candidates), "fallback": False,
+                "vetoed": {}, "warnings": {}, "scores": {}}
+    for cand in candidates:
+        cid = str(getattr(cand, "candidate_id", "") or "")
+        res = results.get(cid)
+        if res is None:
+            continue
+        qa["scores"][cid] = res.score
+        if res.vetoed:
+            qa["vetoed"][cid] = list(res.veto_reasons)
+        if res.soft_fail_reasons:
+            qa["warnings"][cid] = list(res.soft_fail_reasons)
+
+    if mode != "block":
+        return list(candidates), qa
+
+    kept = [c for c in candidates
+            if not results.get(str(getattr(c, "candidate_id", "") or "")).vetoed]
+    if not kept:
+        # Không clip nào qua được gate → giữ ứng viên hạng nhất, đánh dấu fallback
+        kept = list(candidates[:1])
+        qa["fallback"] = True
+    return kept, qa
 
 
 class AnalysisProgressTracker:
@@ -88,6 +176,51 @@ def score_rationale(candidate) -> dict:
             "risk_flags": [str(x)[:160] for x in
                            (getattr(explanation, "risk_flags", []) if explanation else
                             getattr(candidate, "risk_flags", []))][:12]}
+
+
+#: Ngưỡng một từ được coi là ghi lời kém (whisper: từ thật thường > 0.5,
+#: từ ảo do nhiễu/nhạc thường gần 0). Dùng cho chỉ số độ tin cậy ghi lời.
+NGUONG_TU_YEUNGHI = 0.5
+
+
+def _du_lay_words(item) -> list:
+    """Lấy danh sách từ (dict) từ một caption segment (dict hoặc object)."""
+    words = item.get("words") if isinstance(item, dict) else getattr(item, "words", None)
+    return [w for w in (words or []) if isinstance(w, dict) and "confidence" in w]
+
+
+def tin_cay_ghi_loi(caption_segments, total_words: int | None = None) -> dict | None:
+    """Độ tin cậy ghi lời của MỘT clip, từ confidence từng từ của whisper.
+
+    Trả về dict ``{"value": float 0-1, "words": int, "low_words": int,
+    "low_ratio": float}`` hoặc ``None`` khi clip không có word-level
+    confidence (segment rỗng, hoặc bản ghi cũ chưa có khối ``words``) —
+    UI ẩn chỉ số chứ không giả số. ``total_words`` (toàn job) nếu được
+    truyền thì bổ sung vào kết quả để UI nêu rõ mẫu đo.
+
+    Đây là số đo TÍN NHIỆM từ confidence, KHÔNG phải WER (không có bản
+    tham chiếu để so); giữ tên "độ tin cậy ghi lời" để không hứa đo
+    sai số mà chưa có corpus chuẩn.
+    """
+    confs: list[float] = []
+    for seg in (caption_segments or []):
+        for w in _du_lay_words(seg):
+            try:
+                confs.append(float(w.get("confidence")))
+            except (TypeError, ValueError):
+                continue
+    if not confs:
+        return None
+    low = sum(1 for c in confs if c < NGUONG_TU_YEUNGHI)
+    out = {
+        "value": round(sum(confs) / len(confs), 3),
+        "words": len(confs),
+        "low_words": low,
+        "low_ratio": round(low / len(confs), 3),
+    }
+    if total_words is not None:
+        out["total_words"] = int(total_words)
+    return out
 
 
 def platform_copy(title: str, description: str, hashtags, platforms) -> dict:

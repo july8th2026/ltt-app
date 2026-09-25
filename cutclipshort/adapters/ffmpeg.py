@@ -11,7 +11,7 @@ import logging
 import os
 import subprocess
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from cutclipshort.adapters.base import BaseAdapter
 from cutclipshort.errors import AdapterError
@@ -91,6 +91,7 @@ class FFmpegAdapter(BaseAdapter):
         target_fps: float = 0.0,
         extra_args: list[str] | None = None,
         timeout: float | None = None,
+        cancel_check: Callable[[], bool] | None = None,
     ) -> Path:
         """Encode video with specified settings.
 
@@ -98,6 +99,8 @@ class FFmpegAdapter(BaseAdapter):
             max_bitrate: VBV max bitrate (e.g. "10M"). Empty = no cap.
             bufsize: VBV buffer size (e.g. "20M"). Empty = 2x maxrate.
             target_fps: Output FPS. 0 = keep original.
+            cancel_check: Cooperative cancel; True → kill ffmpeg tree + raise
+                PipelineCancelledError (Phase 0.3).
         """
         args = [self.executable, "-y"]
 
@@ -147,7 +150,7 @@ class FFmpegAdapter(BaseAdapter):
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
         try:
-            self._run_command(args, timeout=timeout)
+            self._run_command(args, timeout=timeout, cancel_check=cancel_check)
         except AdapterError as e:
             raise AdapterError(
                 f"Encode video thất bại: {input_path.name} → {output_path.name}. "
@@ -178,6 +181,7 @@ class FFmpegAdapter(BaseAdapter):
         target_fps: float = 0.0,
         extra_args: list[str] | None = None,
         timeout: float | None = None,
+        cancel_check: Callable[[], bool] | None = None,
     ) -> Path:
         """2-pass ABR encoding for optimal quality within bitrate budget."""
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -212,7 +216,7 @@ class FFmpegAdapter(BaseAdapter):
         args1.append("NUL" if os.name == "nt" else "/dev/null")
 
         try:
-            self._run_command(args1, timeout=timeout)
+            self._run_command(args1, timeout=timeout, cancel_check=cancel_check)
         except AdapterError as e:
             raise AdapterError(
                 f"2-pass (pass 1) thất bại: {input_path.name}. Chi tiết: {e}",
@@ -252,7 +256,7 @@ class FFmpegAdapter(BaseAdapter):
         args2.append(str(output_path))
 
         try:
-            self._run_command(args2, timeout=timeout)
+            self._run_command(args2, timeout=timeout, cancel_check=cancel_check)
         except AdapterError as e:
             raise AdapterError(
                 f"2-pass (pass 2) thất bại: {input_path.name}. Chi tiết: {e}",

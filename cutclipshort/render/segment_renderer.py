@@ -8,8 +8,9 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
+from cutclipshort.errors import PipelineCancelledError
 from cutclipshort.render.filter_chain import (
     build_audio_filters,
     build_video_filters,
@@ -119,6 +120,7 @@ def render_segment(
     output_path: Path,
     render_settings: RenderSettings,
     is_preview: bool = False,
+    cancel_check: Callable[[], bool] | None = None,
 ) -> Path:
     """Render a single clip segment to a video file.
 
@@ -128,6 +130,7 @@ def render_segment(
         output_path: Where to write the output.
         render_settings: Encoding settings.
         is_preview: If True, use fast preview settings.
+        cancel_check: Cooperative cancel (Phase 0.3) — giết cây ffmpeg khi True.
 
     Returns:
         Path to the rendered file.
@@ -290,8 +293,7 @@ def render_segment(
         if (not is_preview
                 and render_settings.size_control_enabled
                 and render_settings.encoding_mode == "2pass_abr"
-                and video_bitrate_kbps > 0):
-            ffmpeg.encode_2pass(
+                and video_bitrate_kbps > 0):            ffmpeg.encode_2pass(
                 input_path=source_path,
                 output_path=output_path,
                 target_bitrate=f"{video_bitrate_kbps}k",
@@ -307,6 +309,7 @@ def render_segment(
                 duration=clip.source_range.duration,
                 max_bitrate=max_bitrate_str,
                 target_fps=target_fps,
+                cancel_check=cancel_check,
             )
         else:
             ffmpeg.encode(
@@ -326,7 +329,10 @@ def render_segment(
                 max_bitrate=max_bitrate_str,
                 bufsize=bufsize_str,
                 target_fps=target_fps,
+                cancel_check=cancel_check,
             )
+    except PipelineCancelledError:
+        raise
     except Exception as e:
         logger.error(
             "Render clip %s thất bại: %s (codec=%s, %dx%d, %.1f-%.1fs)",
@@ -352,6 +358,7 @@ def render_segment(
             vf=vf,
             af=af,
             target_fps=target_fps,
+            cancel_check=cancel_check,
         )
 
     logger.info("Segment rendered: %s (%.1f MB)", output_path.name,
@@ -368,6 +375,7 @@ def _verify_and_reencode(
     af: str,
     target_fps: float,
     attempt: int = 0,
+    cancel_check: Callable[[], bool] | None = None,
 ) -> Path:
     """Check file size and re-encode with tighter params if over budget."""
     actual_mb = output_path.stat().st_size / (1024 * 1024)
@@ -441,7 +449,10 @@ def _verify_and_reencode(
             max_bitrate=f"{tighter_bitrate}k",
             bufsize=f"{tighter_bitrate * 2}k",
             target_fps=target_fps,
+            cancel_check=cancel_check,
         )
+    except PipelineCancelledError:
+        raise
     except Exception as e:
         logger.error("Re-encode attempt %d failed: %s", attempt + 1, e)
         return output_path
@@ -455,6 +466,7 @@ def _verify_and_reencode(
         af=af,
         target_fps=target_fps,
         attempt=attempt + 1,
+        cancel_check=cancel_check,
     )
 
 

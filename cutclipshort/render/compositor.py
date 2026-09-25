@@ -117,6 +117,7 @@ class Compositor:
             output_path=output_path,
             render_settings=settings,
             is_preview=is_preview,
+            cancel_check=cancel_check,
         )
         _progress(0.60)
 

@@ -1,0 +1,322 @@
+{
+  "廉价的牛肠经过复杂的加工后竟然成了韩国人补充能量的救赎 #烤牛肠 #地方特色美食 #舌尖上的美食 #美食.mp4": {
+    "thoi_gian_s": 788.1,
+    "n_candidates": 2,
+    "n_clips_plan": 2,
+    "warn": {
+      "mode": "warn",
+      "checked": 2,
+      "fallback": false,
+      "vetoed": {
+        "c001": [
+          "Opening quá yếu (hook=17/100)",
+          "Cắt giữa chừng (completion=12/100)",
+          "Không rõ mục đích (intent=unknown, conf=0.20)"
+        ],
+        "c002": [
+          "Opening quá yếu (hook=8/100)",
+          "Cắt giữa chừng (completion=15/100)",
+          "Không rõ mục đích (intent=unknown, conf=0.20)"
+        ]
+      },
+      "warnings": {
+        "c001": [
+          "Kết thúc yếu (payoff=12/100)",
+          "Rủi ro: very_weak_hook, incomplete_ending"
+        ],
+        "c002": [
+          "Kết thúc yếu (payoff=15/100)",
+          "Rủi ro: very_weak_hook, incomplete_ending"
+        ]
+      },
+      "scores": {
+        "c001": 46.7,
+        "c002": 46.1
+      }
+    },
+    "block_vetoed": {
+      "c001": [
+        "Opening quá yếu (hook=17/100)",
+        "Cắt giữa chừng (completion=12/100)",
+        "Không rõ mục đích (intent=unknown, conf=0.20)"
+      ],
+      "c002": [
+        "Opening quá yếu (hook=8/100)",
+        "Cắt giữa chừng (completion=15/100)",
+        "Không rõ mục đích (intent=unknown, conf=0.20)"
+      ]
+    },
+    "block_kept": [
+      "c001"
+    ],
+    "block_fallback": true,
+    "top5": [
+      {
+        "id": "c001",
+        "range": [
+          148.7,
+          187.2
+        ],
+        "overall": 0.401,
+        "hook": 0.167,
+        "intent": "unknown",
+        "conf": 0.2
+      },
+      {
+        "id": "c002",
+        "range": [
+          114.4,
+          148.7
+        ],
+        "overall": 0.4,
+        "hook": 0.085,
+        "intent": "unknown",
+        "conf": 0.2
+      }
+    ]
+  },
+  "暴雨天野外露营搭建帐篷生活度过雨天享受户外露营 #暴雨露营 #帐篷露营 #户外露营.mp4": {
+    "thoi_gian_s": 782.5,
+    "n_candidates": 2,
+    "n_clips_plan": 2,
+    "warn": {
+      "mode": "warn",
+      "checked": 2,
+      "fallback": false,
+      "vetoed": {
+        "c001": [
+          "Cắt giữa chừng (completion=12/100)",
+          "Không rõ mục đích (intent=unknown, conf=0.20)"
+        ],
+        "c002": [
+          "Cắt giữa chừng (completion=12/100)",
+          "Không rõ mục đích (intent=unknown, conf=0.20)"
+        ]
+      },
+      "warnings": {
+        "c001": [
+          "Kết thúc yếu (payoff=12/100)",
+          "Rủi ro: very_weak_hook, incomplete_ending"
+        ],
+        "c002": [
+          "Kết thúc yếu (payoff=12/100)",
+          "Rủi ro: very_weak_hook, incomplete_ending"
+        ]
+      },
+      "scores": {
+        "c001": 48.1,
+        "c002": 47.9
+      }
+    },
+    "block_vetoed": {
+      "c001": [
+        "Cắt giữa chừng (completion=12/100)",
+        "Không rõ mục đích (intent=unknown, conf=0.20)"
+      ],
+      "c002": [
+        "Cắt giữa chừng (completion=12/100)",
+        "Không rõ mục đích (intent=unknown, conf=0.20)"
+      ]
+    },
+    "block_kept": [
+      "c001"
+    ],
+    "block_fallback": true,
+    "top5": [
+      {
+        "id": "c001",
+        "range": [
+          62.2,
+          100.9
+        ],
+        "overall": 0.463,
+        "hook": 0.214,
+        "intent": "unknown",
+        "conf": 0.2
+      },
+      {
+        "id": "c002",
+        "range": [
+          0.0,
+          38.0
+        ],
+        "overall": 0.462,
+        "hook": 0.2,
+        "intent": "unknown",
+        "conf": 0.2
+      }
+    ]
+  },
+  "深度解析丨跳伞慢了该怎么打教你用细节操作来化解危机 #和平精英夏日航海 #和平精英夏日探险.mp4": {
+    "thoi_gian_s": 456.8,
+    "n_candidates": 2,
+    "n_clips_plan": 2,
+    "warn": {
+      "mode": "warn",
+      "checked": 2,
+      "fallback": false,
+      "vetoed": {
+        "c001": [
+          "Cắt giữa chừng (completion=12/100)",
+          "Không rõ mục đích (intent=unknown, conf=0.20)"
+        ],
+        "c002": [
+          "Cắt giữa chừng (completion=12/100)",
+          "Không rõ mục đích (intent=unknown, conf=0.20)"
+        ]
+      },
+      "warnings": {
+        "c001": [
+          "Kết thúc yếu (payoff=12/100)",
+          "Rủi ro: incomplete_ending"
+        ],
+        "c002": [
+          "Kết thúc yếu (payoff=12/100)",
+          "Rủi ro: very_weak_hook, incomplete_ending"
+        ]
+      },
+      "scores": {
+        "c001": 51.8,
+        "c002": 48.1
+      }
+    },
+    "block_vetoed": {
+      "c001": [
+        "Cắt giữa chừng (completion=12/100)",
+        "Không rõ mục đích (intent=unknown, conf=0.20)"
+      ],
+      "c002": [
+        "Cắt giữa chừng (completion=12/100)",
+        "Không rõ mục đích (intent=unknown, conf=0.20)"
+      ]
+    },
+    "block_kept": [
+      "c001"
+    ],
+    "block_fallback": true,
+    "top5": [
+      {
+        "id": "c001",
+        "range": [
+          73.3,
+          104.8
+        ],
+        "overall": 0.517,
+        "hook": 0.367,
+        "intent": "unknown",
+        "conf": 0.2
+      },
+      {
+        "id": "c002",
+        "range": [
+          0.0,
+          38.0
+        ],
+        "overall": 0.462,
+        "hook": 0.203,
+        "intent": "unknown",
+        "conf": 0.2
+      }
+    ]
+  },
+  "真人气枪游戏红蓝双方对决.mp4": {
+    "thoi_gian_s": 886.0,
+    "n_candidates": 3,
+    "n_clips_plan": 3,
+    "warn": {
+      "mode": "warn",
+      "checked": 3,
+      "fallback": false,
+      "vetoed": {
+        "c001": [
+          "Cắt giữa chừng (completion=8/100)",
+          "Không rõ mục đích (intent=unknown, conf=0.20)"
+        ],
+        "c002": [
+          "Opening quá yếu (hook=7/100)",
+          "Cắt giữa chừng (completion=12/100)",
+          "Không rõ mục đích (intent=unknown, conf=0.20)"
+        ],
+        "c003": [
+          "Opening quá yếu (hook=7/100)",
+          "Cắt giữa chừng (completion=8/100)",
+          "Không rõ mục đích (intent=unknown, conf=0.20)"
+        ]
+      },
+      "warnings": {
+        "c001": [
+          "Kết thúc yếu (payoff=8/100)",
+          "Rủi ro: very_weak_hook, incomplete_ending"
+        ],
+        "c002": [
+          "Kết thúc yếu (payoff=12/100)",
+          "Rủi ro: very_weak_hook, incomplete_ending"
+        ],
+        "c003": [
+          "Kết thúc yếu (payoff=8/100)",
+          "Rủi ro: very_weak_hook, incomplete_ending"
+        ]
+      },
+      "scores": {
+        "c001": 47.1,
+        "c002": 42.6,
+        "c003": 45.1
+      }
+    },
+    "block_vetoed": {
+      "c001": [
+        "Cắt giữa chừng (completion=8/100)",
+        "Không rõ mục đích (intent=unknown, conf=0.20)"
+      ],
+      "c002": [
+        "Opening quá yếu (hook=7/100)",
+        "Cắt giữa chừng (completion=12/100)",
+        "Không rõ mục đích (intent=unknown, conf=0.20)"
+      ],
+      "c003": [
+        "Opening quá yếu (hook=7/100)",
+        "Cắt giữa chừng (completion=8/100)",
+        "Không rõ mục đích (intent=unknown, conf=0.20)"
+      ]
+    },
+    "block_kept": [
+      "c001"
+    ],
+    "block_fallback": true,
+    "top5": [
+      {
+        "id": "c001",
+        "range": [
+          120.1,
+          157.8
+        ],
+        "overall": 0.459,
+        "hook": 0.224,
+        "intent": "unknown",
+        "conf": 0.2
+      },
+      {
+        "id": "c002",
+        "range": [
+          0.0,
+          18.5
+        ],
+        "overall": 0.411,
+        "hook": 0.066,
+        "intent": "unknown",
+        "conf": 0.2
+      },
+      {
+        "id": "c003",
+        "range": [
+          19.5,
+          58.3
+        ],
+        "overall": 0.392,
+        "hook": 0.067,
+        "intent": "unknown",
+        "conf": 0.2
+      }
+    ]
+  }
+}

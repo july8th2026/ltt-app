@@ -19,7 +19,7 @@ import logging
 import time
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any, Callable
+from typing import Callable
 
 from cutclipshort.core.config import AppConfig
 from cutclipshort.core.event_bus import EventBus
@@ -43,6 +43,7 @@ def run_full_analysis(
     engines_to_run: list[str] | None = None,
     cancel_check: Callable[[], bool] | None = None,
     progress_callback: Callable[[str, float], None] | None = None,
+    cache_dir: Path | None = None,
 ) -> AnalysisResult:
     """Run full analysis pipeline on a video.
 
@@ -56,12 +57,19 @@ def run_full_analysis(
     Args:
         video_path: Path to source video file.
         project_dir: Root directory for this project.
-        genre: Content genre (affects content classification thresholds).
+        genre: Content genre. NOTE: accepted for API stability; the analysis
+            engines do NOT read it (verified — no engine uses genre). Genre
+            only shapes EDITORIAL (run_editorial) and scoring, which run
+            after this function returns.
         config: App config (uses defaults if None).
         event_bus: Event bus for progress events (creates one if None).
         engines_to_run: If set, only run these engines. None = all.
         cancel_check: Callable returning True to abort.
         progress_callback: Called with (engine_name, pct) during analysis.
+        cache_dir: If set, analysis cache (re-generable engine outputs) is
+            stored here instead of under ``project_dir/cache``. Use this to
+            share the analysis cache across jobs for the same source video
+            (key it by source hash). Everything else stays in ``project_dir``.
 
     Returns:
         AnalysisResult with all engine outputs aggregated.
@@ -70,7 +78,9 @@ def run_full_analysis(
 
     config = config or AppConfig()
     event_bus = event_bus or EventBus()
-    paths = ProjectPaths(project_dir)
+    paths = ProjectPaths(project_dir, cache_dir=cache_dir)
+    if cache_dir is not None:
+        Path(cache_dir).mkdir(parents=True, exist_ok=True)
     paths.create_all()
 
     run_log = RunLogger(paths, project_dir.name)

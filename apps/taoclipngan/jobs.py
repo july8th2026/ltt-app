@@ -88,6 +88,7 @@ def handle(params: dict, ctx=None) -> dict:
         min_dur, max_dur, target_n = 15.0, 60.0, 3
     target_n = max(1, min(target_n, 10))
     from apps.taoclipngan.features import (AnalysisProgressTracker,
+                                           apply_quality_gate,
                                            brand_overrides, clean_brand,
                                            clean_platforms, platform_copy,
                                            score_rationale)
@@ -124,15 +125,24 @@ def handle(params: dict, ctx=None) -> dict:
             return {"clips": data.get("clips", []), "credit_cost": data.get("credit_cost")
                     or cost.uoc_luong_credit(true_dur, tier, len(data.get("clips", []))),
                     "brand_preset": data.get("brand_preset", brand_preset),
-                    "platforms": data.get("platforms", platforms)}
+                    "platforms": data.get("platforms", platforms),
+                    "qa": data.get("qa") or {}}
 
         # ── 1. PHÂN TÍCH (whisper + scene + yolo + audio…) ────────────────────
+        # Cache cross-job (T6): phân tích là hàm của (file nguồn, tier, version
+        # engine) — KHÔNG của job/user. Để cache/ sống ngoài tempdir (bị rmtree
+        # cuối job) theo source_hash bền, job kế cùng video + tier ăn cache hit.
+        # project_dir vẫn ở tempdir: candidates/plans/logs là của TỪNG job.
         from cutclipshort.core.analysis_runner import run_full_analysis
         from cutclipshort.core.config import AppConfig
+        from cutclipshort.storage.media_index import compute_source_hash
+        from platform_core.runtime_paths import data_path
 
         config = AppConfig()
         config.set_quality_tier(tier)
         config.set("analysis", "whisper_language", language)
+        _shared_cache = Path(data_path("tcn_cache",
+                                      compute_source_hash(src)[:24]))
 
         analysis_progress = AnalysisProgressTracker()
 
@@ -144,7 +154,9 @@ def handle(params: dict, ctx=None) -> dict:
         if ctx is not None:
             ctx.progress(5, "phân tích video (chép lời…)")
         analysis = run_full_analysis(video_path=src, project_dir=project_dir,
-                                     genre=genre, config=config, progress_callback=_acb)
+                                     genre=genre, config=config,
+                                     progress_callback=_acb,
+                                     cache_dir=_shared_cache)
 
         # ── 2. EDITORIAL (chọn highlight) ─────────────────────────────────────
         if ctx is not None:
@@ -161,8 +173,35 @@ def handle(params: dict, ctx=None) -> dict:
             analysis=analysis, constraints=constraints, genre=genre,
             user_overrides=brand_overrides(brand_preset), tier_name=tier)
 
+        # ── 2.5 QUALITY GATE (veto clip kém trước render) ─────────────────────
+        # lifecycle="released" → block (loại clip bị veto, bổ sung từ hạng kế
+        # tiếp); "development" → warn (chỉ ghi lý do vào manifest, render nguyên
+        # vẹn). `apply_quality_gate` là hàm thuần trong features.py — test được
+        # mà không cần worker/GPU.
+        from apps.taoclipngan.manifest import MANIFEST as _TCN_MANIFEST
+        _gate_mode = "block" if _TCN_MANIFEST.lifecycle == "released" else "warn"
+        kept_candidates, qa = apply_quality_gate(candidates, _gate_mode)
+        if _gate_mode == "block":
+            # plan.clips có spec của TẤT CẢ candidate theo thứ tự hạng (build
+            # edit_plan.py dựng cho từng candidate) → lọc bỏ clip bị veto là
+            # đủ: top-N lấy lại từ hạng kế tiếp tự động. Không thể rỗng:
+            # apply_quality_gate luôn giữ ≥1 (fallback top-1).
+            _kept_ids = {str(getattr(c, "candidate_id", "")) for c in kept_candidates}
+            edit_plan.clips = [s for s in edit_plan.clips if s.clip_id in _kept_ids]
+        if ctx is not None:
+            ctx.progress(64, f"gate: {len(qa['vetoed'])} veto / {len(candidates)} {_t('ứng viên')}")
+        log.info("[taoclipngan] quality gate mode=%s: %d/%d veto, fallback=%s",
+                 _gate_mode, len(qa["vetoed"]), len(candidates), qa["fallback"])
+
         # ── 3. RENDER N clip ──────────────────────────────────────────────────
+        # Huỷ hợp tác (Phase 0.3): worker đọc trạng thái job mỗi 0.5s trong
+        # vòng poll của ffmpeg; job bị HUỶ → adapter giết cây ffmpeg.exe và
+        # ném PipelineCancelledError → dịch thành JobCancelled (nền tảng hoàn
+        # credit, không fail job).
         from cutclipshort.render.segment_renderer import render_segment
+        from cutclipshort.errors import PipelineCancelledError
+        from platform_core.job_runner import JobCancelled
+        _cancel = (getattr(ctx, "is_cancelled", None) if ctx is not None else None)
         from cutclipshort.types import RenderSettings
         rs = RenderSettings(prefer_nvenc=True, nvenc_preset="p5", crf="18",
                             pixel_format="yuv420p", audio_codec="aac",
@@ -179,7 +218,12 @@ def handle(params: dict, ctx=None) -> dict:
             local = render_dir / f"clip_{i:02d}.mp4"
             try:
                 out_path = render_segment(clip=clip_spec, source_path=src,
-                                          output_path=local, render_settings=rs)
+                                          output_path=local, render_settings=rs,
+                                          cancel_check=_cancel)
+            except PipelineCancelledError:
+                # Job đã bị HUỶ: ffmpeg tree đã bị giết ở adapter. Dịch thành
+                # JobCancelled để job_runner xử lý huỷ (hoàn credit, không fail).
+                raise JobCancelled() from None
             except Exception as e:  # noqa: BLE001
                 log.warning("[taoclipngan] render clip %d lỗi: %s", i, e)
                 continue
@@ -191,11 +235,15 @@ def handle(params: dict, ctx=None) -> dict:
             score = round(float(getattr(getattr(cand, "score", None), "overall", 0) or 0), 3) if cand else 0
             rng = getattr(clip_spec, "source_range", None)
             dur = round(float(getattr(rng, "end", 0) - getattr(rng, "start", 0)), 1) if rng else 0
+            _cap_segs = list(getattr(clip_spec, "caption_segments", None) or [])
             captions = [{"start": round(float(getattr(seg, "start", 0)), 3),
                          "end": round(float(getattr(seg, "end", 0)), 3),
                          "text": str(getattr(seg, "text", ""))[:1000],
-                         "speaker": str(getattr(seg, "speaker", "") or "")[:80]}
-                        for seg in (getattr(clip_spec, "caption_segments", None) or [])]
+                         "speaker": str(getattr(seg, "speaker", "") or "")[:80],
+                         "words": [{"word": str(getattr(w, "word", ""))[:120],
+                                    "confidence": round(float(getattr(w, "confidence", 0.0) or 0.0), 3)}
+                                   for w in (getattr(seg, "words", None) or [])]}
+                        for seg in _cap_segs]
             description = (getattr(cand, "seo_description", "") or "") if cand else ""
             hashtags = list(getattr(cand, "suggested_hashtags", []) or []) if cand else []
             clips_out.append({"video_key": ckey, "title": title[:120], "score": score,
@@ -212,19 +260,29 @@ def handle(params: dict, ctx=None) -> dict:
         if not clips_out:
             raise RuntimeError(_t('Không dựng được clip nào từ video (thử video khác/tier khác).'))
 
+        # Độ tin cậy ghi lời theo clip (whisper word-level; không phải WER —
+        # chưa có corpus tham chiếu). Clip nào không có từ confidence → None,
+        # UI tự ẩn.
+        from apps.taoclipngan.features import tin_cay_ghi_loi
+        total_words = sum(len(seg.get("words") or [])
+                          for c in clips_out for seg in c["transcript"])
+        for clip in clips_out:
+            clip["transcript_confidence"] = tin_cay_ghi_loi(clip["transcript"], total_words)
+
         credit_cost = cost.uoc_luong_credit(true_dur, tier, len(clips_out))
         # Lưu manifest kết quả (idempotent resume).
         import io as _io
         storage.put(manifest_key,
                     _io.BytesIO(json.dumps({"clips": clips_out, "credit_cost": credit_cost,
                                            "brand_preset": brand_preset,
-                                           "platforms": platforms},
+                                           "platforms": platforms,
+                                           "qa": qa},
                                            ensure_ascii=False).encode("utf-8")),
                     content_type="application/json")
         if ctx is not None:
             ctx.progress(100, f"xong — {len(clips_out)} clip")
         return {"clips": clips_out, "credit_cost": credit_cost, "tier": tier,
                 "genre": genre, "aspect_ratio": aspect, "n_clips": len(clips_out),
-                "brand_preset": brand_preset, "platforms": platforms}
+                "brand_preset": brand_preset, "platforms": platforms, "qa": qa}
     finally:
         shutil.rmtree(tmp, ignore_errors=True)

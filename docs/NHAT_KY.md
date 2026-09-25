@@ -21087,3 +21087,82 @@ backup `D:\LTTBackups` có khôi phục được không — đo thật, không t
 **Tài liệu:** `docs/RUNBOOK_KHOI_PHUC.md` (mới) +
 `docs/reports/dien-tap-khoi-phuc-2026-09-23.md` (báo cáo + rủi ro off-site:
 backup nằm cùng máy với dữ liệu, `D:\LTTBackups`).
+
+## 2026-09-25 — TCN nextgen: Pha 0.1–0.3 (quality gate, cache dir, huỷ hợp tác ffmpeg)
+
+Nhánh `phien/tcn-nextgen` (worktree `D:\LTTSTUDIOSAPP-tcn-nextgen`, BASE
+`af2b2d0c`). App `taoclipngan` nâng cấp engine `cutclipshort`: chạy gate chất
+lượng trên clip thật, override cache dir, và huỷ hợp tác job render.
+
+**Pha 0.1 — Gate chất lượng + lifecycle** ✅ (đã nghiệm thu 25/09)
+- `cutclipshort/evaluation/gate.py`: đánh giá hook/completion/payoff/intent theo
+  clip; `lifecycle="development"` (mặc định của taoclipngan) ⇒ **warn mode**: log
+  veto, render hết; `lifecycle="released"` ⇒ block veto + `block_fallback`.
+- Nghiệm thu trên 4 video thật (GPU, whisper large-v3, 7m37–14m46/video):
+  `_EVIDENCE/gate_chay_thuc.json` — 4/4 video có `block_kept` (c001) và
+  `block_fallback=true` khi mọi candidate bị veto (nội dung tiếng Trung,
+  `intent=unknown conf=0.20` — đúng hành vi fallback). Log: `temp_videos/chay_thuc_gate.log`.
+- `tests/test_4900_tcn_quality_gate.py` xanh.
+
+**Pha 0.2 — Cache dir override** ✅
+- `cutclipshort/storage/paths.py` + `core/analysis_runner.py`: nhận `cache_dir`
+  override (job chạy trong temp dir, không đụng `~/.cutclipshort`).
+- `tests/test_4901_tcn_cache_dir_override.py` — 2 test xanh.
+
+**Pha 0.3 — Huỷ hợp tác + giết cây ffmpeg** ✅
+- `cutclipshort/adapters/base.py::_run_command()` chia 2 đường: có `cancel_check`
+  ⇒ `Popen` + poll 0.5s, khi cancel ⇒ `_giết_cay_tien_trinh` (psutil duyệt cây
+  cha-con → `taskkill /T /F` → `proc.kill()` fallback) rồi ném
+  `PipelineCancelledError`; không có ⇒ giữ đường `subprocess.run` cũ nguyên vẹn
+  (tương thích ngược).
+- `ffmpeg.py::encode/encode_2pass` nhận `cancel_check`; `segment_renderer.py::render_segment`
+  + `_verify_and_reencode` (cả pass 2pass lẫn re-encode) truyền xuống, re-raise
+  `PipelineCancelledError` trước `except` chung; `compositor.py` nối tiếp.
+- `apps/taoclipngan/jobs.py`: `ctx.is_cancelled` → `cancel_check`;
+  `PipelineCancelledError` → `JobCancelled` (nền tảng hoàn credit, job không fail).
+- `tests/test_4902_tcn_cancel_ffmpeg.py` — 5 test xanh (tự sinh tiến trình con
+  bằng `python.exe`, không đọc trạng thái máy): giết cây kéo theo con-cháu;
+  cancel giữa chừng ném đúng exception + con chết; không cancel chạy tới hết;
+  không `cancel_check` giữ hành vi cũ; `encode/encode_2pass` truyền cờ xuống.
+
+**Pha 0.4 — Độ tin cậy ghi lời theo clip (hiển thị UI)** ✅
+- ⭐ **Quyết định phạm vi (chủ dự án chốt 26/09, hỏi `ask_user_question`):**
+  "WER tiếng Việt" thu gọn thành **hiển thị độ tin cậy ghi lời theo clip** —
+  ⛔ không thêm metric WER thật. Lý do: WER chuẩn cần bản tham chiếu (corpus
+  chuẩn tiếng Việt) mà repo chưa có; và công thức credit đã chốt
+  `phút × tier × 5 + clip × 5` (KHÔNG tính theo lượt) nên phép đo WER self-
+  consistency (chạy 2 lần ASR) sẽ gấp đôi GPU ⇒ vỡ công thức. Confidence
+  từng từ của Whisper **đã có sẵn** trong `speech.json` (không tốn thêm GPU),
+  chỉ việc nối ra UI. Đặt tên trung thực "độ tin cậy ghi lời", ⛔ không gọi
+  là WER (chưa có corpus để đo sai số).
+- `apps/taoclipngan/features.py`: `tin_cay_ghi_loi(caption_segments,
+  total_words=None)` — gộp confidence từng từ → `{"value" 0-1, "words",
+  "low_words", "low_ratio"}`; segment không có khối `words` (bản ghi cũ) ⇒
+  trả `None` (UI ẩn, không giả số). Ngưỡng từ nghi ngờ `NGUONG_TU_YEUNGHI=0.5`.
+- `apps/taoclipngan/jobs.py`: `caption` thêm khối `words` (word+confidence);
+  sau khi dựng `clips_out` gắn `transcript_confidence` cho MỖI clip.
+- `apps/taoclipngan/templates/taoclipngan.html`: badge cạnh mỗi clip
+  (`tcn-tc` cao/trung/thap theo ngưỡng 0.80/0.55) + dòng giải thích trong
+  khối transcript; `<style>` scope riêng trong app (⛔ không đụng `ltt.css`
+  dùng chung).
+- `locale/en/LC_MESSAGES/messages.po`: +7 msgid (append cuối, giữ LF, không
+  BOM); kiểm 0 msgid mới trùng.
+- `tests/test_4903_tcn_tin_cay_ghi_loi.py` — 6 test xanh (dict tự dựng,
+  không đọc trạng thái máy): clip sạch; đếm từ dưới ngưỡng; None khi rỗng;
+  bỏ từ thiếu confidence; gộp nhiều segment; hằng ngưỡng đúng.
+
+**Lệnh đã chạy (kết quả thật):**
+- `python -m pytest tests/test_4900_tcn_quality_gate.py tests/test_4901_tcn_cache_dir_override.py tests/test_4902_tcn_cancel_ffmpeg.py -q`
+  ⇒ **15 passed** (chạy 25/09 23:2x, 3,62s).
+- `python -m ruff check apps/taoclipngan/jobs.py tests/test_4902_tcn_cancel_ffmpeg.py`
+  ⇒ **All checks passed** (cutclipshort nằm trong `exclude` của `ruff.toml` —
+  vendor engine, không thuộc phạm vi gate).
+- GPU: `temp_videos/chay_thuc_gate.py` 4 video, exit 0, 25/09 22:35.
+- `python -m pytest tests/test_4903_tcn_tin_cay_ghi_loi.py tests/test_4900_tcn_quality_gate.py tests/test_4901_tcn_cache_dir_override.py tests/test_4902_tcn_cancel_ffmpeg.py tests/test_123_taoclipngan_features.py tests/test_84_taoclipngan.py tests/test_122_taoclipngan_ui.py -q`
+  ⇒ **39 passed** (26/09 00:4x).
+- `python -m ruff check apps/taoclipngan/features.py apps/taoclipngan/jobs.py tests/test_4903_tcn_tin_cay_ghi_loi.py`
+  ⇒ **All checks passed**.
+
+**Chưa làm:** Kiểm UI thật trên production (luật 7 — cần Chrome thật mở CDP
+`--remote-debugging-port=9222`, tài khoản test). Pha 1–4 chờ duyệt + gộp main.
+**Commit:** pha 0 (0.1–0.4) chưa — chờ kiểm UI thật rồi commit.

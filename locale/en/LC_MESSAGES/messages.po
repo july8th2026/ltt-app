@@ -21504,3 +21504,30 @@ msgstr "Who allowed a third-party npm package to run on this machine, which vers
 
 msgid "Sổ kiểm toán của marketplace: ai yêu cầu, ai duyệt, ai từ chối, ai thu hồi, lúc nào — kể cả những lượt thất bại. Cùng lý do với `nhat_ky_admin`: một nhật ký kiểm toán xoá được thì không phải nhật ký kiểm toán."
 msgstr "The marketplace audit log: who requested, who approved, who rejected, who revoked, and when - including failed attempts. Same reason as `nhat_ky_admin`: an audit log you can delete is not an audit log."
+
+msgid "Tin cậy ghi lời"
+msgstr "Transcript reliability"
+
+msgid "Đo trên"
+msgstr "Measured on"
+
+msgid "từ trong clip"
+msgstr "words in clip"
+
+msgid "từ nghi ngờ"
+msgstr "uncertain words"
+
+msgid "Ghi lời"
+msgstr "Transcript"
+
+msgid "từ dưới ngưỡng tin cậy"
+msgstr "words below the confidence threshold"
+
+msgid "Tin cậy ghi lời tính từ độ tin cậy từng từ của Whisper; không phải WER — chưa có bản tham chiếu tiếng Việt chuẩn."
+msgstr "Transcript reliability, computed from Whisper's per-word confidence; not a WER - no standard Vietnamese reference transcript yet."
+
+msgid "ứng viên"
+msgstr "candidate(s)"
+
+msgid "gate mode không hợp lệ: "
+msgstr "invalid gate mode: "

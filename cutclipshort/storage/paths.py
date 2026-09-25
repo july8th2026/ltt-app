@@ -68,10 +68,16 @@ from cutclipshort.constants import PROJECT_FILE
 
 
 class ProjectPaths:
-    """Resolves all paths within a project directory."""
+    """Resolves all paths within a project directory.
 
-    def __init__(self, project_dir: Path) -> None:
+    ``cache_dir`` may be pointed at a location OUTSIDE the project tree
+    (cross-job analysis cache keyed by source hash). Everything else always
+    stays under ``project_dir``.
+    """
+
+    def __init__(self, project_dir: Path, cache_dir: Path | None = None) -> None:
         self._root = project_dir
+        self._cache_dir_override = cache_dir
 
     @property
     def root(self) -> Path:
@@ -106,7 +112,13 @@ class ProjectPaths:
 
     @property
     def cache_dir(self) -> Path:
-        """Return path to analysis cache directory."""
+        """Return path to analysis cache directory.
+
+        Honors the cross-job override when one was supplied; otherwise
+        stays under the project tree.
+        """
+        if self._cache_dir_override is not None:
+            return self._cache_dir_override
         return self._root / "cache"
 
     @property
