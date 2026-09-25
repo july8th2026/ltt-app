@@ -143,6 +143,96 @@ Thuốc chuẩn của cộng đồng: **jitter ngẫu nhiên** trên khoảng re
 
 ⛔ Chưa vá — ghi sổ, hạng A.
 
+## 2026-09-25 — VPS so voi Vultr: do ba nguon, va chuan hoa danh tinh may
+
+Chu du an hoi *"VPS cua ta co doc lap va sach nhu Vultr khong, de van hanh tai
+khoan mang xa hoi"*. Do that tren hai may khach (VM 204, 208), cong vao, va OVH.
+
+### Ket qua do — cai gi da ngang, cai gi chua
+
+**Ngang hoac hon:** moi may co MAC/SMBIOS UUID/serial dia/serial may **rieng va
+on dinh qua lan cai lai** (`dinh_danh.py` lam dung tu truoc). Va khach **tu cai
+Windows tu ISO**, khong clone template — nen machine SID, HWID, MachineGuid deu
+sinh moi. Do la nguon kinh dien cua "cac may giong nhau", va ta khong dinh.
+
+**Chua ngang, ba cho do duoc:**
+
+| | Truoc | Vultr |
+|---|---|---|
+| CPU model | *khong khai* ⇒ `kvm64` generic, giong het nhau | model that |
+| `ipfilter`/`macfilter` | **tat** (`net0 … firewall=0`) | co |
+| PTR (rDNS) | **khong IP nao co** | co mac dinh |
+
+⚠️ Va mot cho de hieu nham trong tai lieu cua chinh ta: `vmbr1 … (co lap,
+bridge-ports none)` — "co lap" o do nghia la **tach khoi LAN nha**, ⛔ khong
+phai tach cac khach khoi nhau. Hai may khach chung mot mien broadcast L2.
+
+### Chu du an chot pham vi, va mot phan bien dung
+
+Chot: **chuan muc van hanh + an ninh**. ⛔ Khong lam phan che dau vet nha cung
+cap (giu tien to `LTT-` o serial; `dinh_danh.smbios1` da chot tu truoc rang
+⛔ khong gia `manufacturer`/`product`).
+
+⭐ Va chu du an bac bo de xuat "VLAN moi khach" cua toi bang mot cau dung:
+*"may cung LAN vat ly la chuyen binh thuong"*. Dung — va toi da **gop hai muc
+tieu khac nhau vao mot danh sach**: VLAN thuoc **an ninh giua khach**, ⛔ khong
+thuoc **chong bi nhom**. Nen tang gi cung khong doi duoc cach YouTube nhin IP.
+Thay VLAN bang `ipfilter`/`macfilter`: cung xu rui ro ARP/IP spoofing, chi phi
+nho hon nhieu.
+
+⛔ Va phan phai noi thang: **IP datacenter la IP datacenter**. `ip-api` tra
+`hosting: true` cho ca ta lan Vultr. Doi nha cung cap VPS khong doi duoc dieu
+do; thu doi duoc nam o tang trinh duyet, khong o tang ao hoa.
+
+### Da lam
+
+- `jobs._cau_hinh_may_trong` dat `cpu: host`; `mang.cau_hinh_qemu` dat
+  `net0 … firewall=1`; `jobs._firewall_may_khach()` dat `ipfilter`/`macfilter`
+  voi **hai policy ACCEPT tuong minh** (Proxmox mac dinh `policy_in=DROP` — de
+  mac dinh la cat mang cua moi khach bang mot ban va an ninh).
+- `services/rdns.py` + `dns_cloudflare.py` + `ovh.dat_reverse`. Token Cloudflare
+  pham vi hep (`lttstudios.com` — DNS:Edit), chuyen vao `secrets` **qua
+  clipboard**, gia tri khong di qua hoi thoai lan nao.
+- `tools/vps_chuan_hoa.py` keo may da co ve chuan. Da chay that.
+- `bao_tri._kiem_chuan_hoa` — may lech chuan hien ra moi ngay, tang canh bao,
+  ⛔ khong chan ban. Moc RIENG (`_moc_chuan_hoa`).
+
+### Ba bay cua OVH, do het bang thu that
+
+1. **Doi forward-confirm**: POST reverse khi chua co A record ⇒ 400.
+2. **Tu choi ten co DAU CHAM CUOI**, va bao *"Cannot check if ...com. resolves
+   to <ip>"* — mot thong diep **chi sai cho**: no day nguoi doc di tim loi o DNS
+   trong khi A record da resolve dung. Cung ten khong dau cham: **200 OK ngay**.
+3. **409 "already setted"** bi `_request` gop thanh mot `OvhError` khong mang ma
+   so ⇒ "da dat roi" va "that bai" ra cung ket qua.
+
+### ⭐ Ba lan suyt tu lua trong mot buoi, cung mot ho
+
+| | Phep do noi | Su that |
+|---|---|---|
+| `doc_firewall` boc khoa `data` **lan hai** | "chua dat" | da dat dung |
+| `409 already setted` | "hong" | da xong |
+| `socket.gethostbyaddr` tra dung ten | "PTR xong" | **8.8.8.8 / 1.1.1.1 / 9.9.9.9 deu khong tra gi** |
+
+Ca thu ba dang ke nhat: resolver he thong **da co** ket qua tu cache/ISP, nen no
+⛔ khong dai dien cho nguoi ngoai — ma cau hoi la *"the gioi co thay khong"*.
+`trang_thai_ptr` nay tra **ba** trang thai (`DA_THAY`/`DANG_LAN`/`CHUA_DAT`) va
+hoi resolver **cong khai**; `test_4001` chot bang AST rang ⛔ khong ai doi lai
+`gethostbyaddr` trong mot lan "don code".
+
+⇒ Cau chan doan chung (phien wf-v2 gom lai): **"thu toi dang hoi co SAN o cho
+toi dang dung khong?"** Co ⇒ phep do khong the tra loi cau dang hoi, du con so
+no tra ve dung va trong thuyet phuc.
+
+### Dai so test va nhau — lan thu HAI trong hai ngay
+
+`cay_rieng.py` cap dai theo **anh chup luc tao**, ⛔ khong giu cho: lan nay cap
+3500-3599 khi cao nhat la 3400, roi lan wf gop `main` mang theo 3500-3505. Doi
+sang **4000-4003** va **khai bang loi** trong plan; lan wf-v2 khai 4100-4199.
+⭐ Va ho tim ra mot cach re hon de xuat cua toi: **tao cac cay tuan tu o phien
+dieu phoi** roi moi bung agent vao — thu tu goi chan duoc phan lon ca va, khong
+phai sua cong cu chung giua luc nhieu lan dang chay.
+
 ## 2026-09-24 (tối) — Deploy wf-v2: cửa OAuth mở, và **production ngừng 7 phút** vì một gói không ai khai
 
 Plan `2026-09-24-wf-v2-MASTER.md` đạt **13/14 phase** — toàn bộ làn P2→P11 đã gộp `main`,
