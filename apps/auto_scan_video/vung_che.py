@@ -66,14 +66,30 @@ LOAI_LAM_MO = "lam_mo"
 #:    mang mot y nghia AM: *dung ve gi o day*.
 LOAI_DANH_DAU_PHU_DE = "danh_dau_phu_de"
 
-LOAI: tuple[str, ...] = (LOAI_LAM_MO, LOAI_DANH_DAU_PHU_DE)
+#: XOA HAN vung bang DIEN NEN thay vi de lai mot o mo (V5).
+#:
+#: 🔑 Ky thuat: lay mot dai MONG (<= `CHE_KEO_HS_MAX` px) ngay ben ngoai vung,
+#:    lat doc roi gian phu tron vung, hoa mep. **ffmpeg thuan** — 0 model,
+#:    0 trong so, 0 VRAM (`che_do_render._loc_dien_nen`).
+#:
+#: ⭐ Va no **KHONG dat hon** `lam_mo`: do that Đ1
+#:    (`docs/auto_scan_video_final/L_DO_VUNG.md` §4.4) tren hai phim that cho
+#:    **−0,5 s dong ho tuong** quy ve phim 107 s. `boxblur` cua ta chay MOT
+#:    luong, con `crop`+`vflip`+`scale` chay SIMD nhieu luong. ⇒ ⛔ Dung dung
+#:    chi phi lam ly do de gioi han loai nay.
+LOAI_DIEN_NEN = "dien_nen"
 
-#: ⛔ Danh sach nay CO Y ngan. Cac loai vung khac cua he thong tham chieu — xoa
-#:    bang dien nen, tu do logo, logo cua toi, chu watermark — deu dang `DEFER`
-#:    trong `FEATURE_PARITY_MATRIX.md`, hai vi chua do VRAM va hai vi nam trong
-#:    `HAU_MVP`. Them mot ma vao day ma khong do truoc la mo mot job GPU khong
-#:    khai — dung dieu `pipeline.py` da ghi la mot chot tai, khong phai mot chi
-#:    tiet toi uu.
+LOAI: tuple[str, ...] = (LOAI_LAM_MO, LOAI_DANH_DAU_PHU_DE, LOAI_DIEN_NEN)
+
+#: ⛔ Danh sach nay CO Y ngan. Cac loai vung khac cua he thong tham chieu — tu
+#:    do logo, logo cua toi, chu watermark — deu dang `DEFER` trong
+#:    `FEATURE_PARITY_MATRIX.md`. Them mot ma vao day ma khong do truoc la mo
+#:    mot job GPU khong khai — dung dieu `pipeline.py` da ghi la mot chot tai,
+#:    khong phai mot chi tiet toi uu.
+#:
+#: ⭐ `dien_nen` vao duoc **vi da do**: Đ1 tra loi ca hai cau (CPU + VRAM) trong
+#:    `L_DO_VUNG.md`. Cai tung chan no 17 ngay la mot GIA THIET chua ai kiem
+#:    (*"chua do VRAM"* bi doc thanh *"co the ton VRAM"*) — xem plan §3.3.
 
 #: So vung toi da mot lan chay. Khong phai mot gioi han ky thuat — mot man hinh
 #: co hai muoi o che la mot man hinh khach da lac huong, va moi vung la mot bo

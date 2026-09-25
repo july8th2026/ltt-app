@@ -354,7 +354,18 @@ def loc_tham_chieu(hinh: dict, *, duong_chu: list[str], duong_ass: str) -> str:
         cao_khung=int(hinh.get("cao_khung") or 0),
         ds_logo=list(hinh.get("logo") or ()),
         rong_khung=int(hinh.get("rong_khung") or 0),
-        chi_so_logo_dau=CHI_SO_LOGO_DAU, duong_ass=duong_ass)
+        chi_so_logo_dau=CHI_SO_LOGO_DAU, duong_ass=duong_ass,
+        # 🔴 Hai truong nay THIEU cho toi 25/09, va cau docstring o tren
+        #    (*"dung DUNG tham so ket_xuat.dung_lenh dua cho loc_cat_noi"*) khong
+        #    dung. No chua bao gio no vi ca hai duong tieu thu deu ngu: chang
+        #    KHUNG chi doc chung khi ho so bien tap co hinh hoc, va chang VUNG
+        #    thi truoc V5 khong doc kich thuoc nguon bao gio.
+        #
+        # ⛔ `dien_nen` (V5) tinh bang PIXEL cua khung NGUON => thieu hai truong
+        #    nay thi ban tham chieu VMAF nem, hoac te hon: dung mot hinh hoc khac
+        #    ban render that va bao mot diem VMAF cua mot chuoi loc KHAC.
+        rong_nguon=int(hinh.get("rong_khung") or 0),
+        cao_nguon=int(hinh.get("cao_khung") or 0))
 
 
 def chon_mo_hinh_vmaf(rong: int, cao: int) -> tuple[str, str]:
