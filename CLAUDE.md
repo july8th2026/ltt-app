@@ -32,23 +32,17 @@ docs/00_LTT_OPERATING_CONTRACT.md      ← đọc trước việc thực chất
 
    ```
    TRONG PHIÊN    test NHẮM cụm vừa sửa: thanh_phan.py --test <tp> -> python -m pytest <tệp> -q
-                  cần gate -> CHỈ L1 (gate.py --doi) hoặc L2 (gate.py --pham-vi <tp>)
-                  ⛔ KHÔNG L3 giữa các pha (không rải rác, không "chốt pha")
-                  ⛔ L1/L2 KHÔNG BAO GIỜ tự nâng lên L3 (chốt 24/09): không thu hẹp
-                     được thì HẠ CẤP xuống `nhanh` — giữ mọi bước tĩnh, bỏ bộ test
-                     đầy đủ, và KHAI RA rằng bộ test không được phủ
+                  ⛔ KHÔNG chạy gate — không L1, không L2, không L3 (chủ dự án chốt 25/09)
    GẶP LỖI        sửa TẠI CHỖ -> chạy lại ĐÚNG phép đã đỏ -> đi tiếp
-   GỘP main       giữa phiên: test nhắm xanh là ĐỦ — ⛔ không L3 để gộp
-   XONG MỘT PHASE test nhắm xanh -> gộp `main` -> phase kế. ⛔ KHÔNG gate để
-                  "đóng phase" (chủ dự án chốt 24/09: **L1 chỉ chạy ở CUỐI PLAN**)
-   KẾT THÚC PHIÊN (hết PHIÊN LÀM VIỆC — ⛔ không phải hết một phase, task,
-                  nhánh hay một lần gộp `main`)
+   GỘP main       test nhắm xanh là ĐỦ. Gộp xong -> `pre-commit run --all-files`
+                  (N-56: merge KHÔNG chạy bánh cóc; gate nay hiếm nên đây là lưới duy nhất)
+   XONG MỘT PHASE test nhắm xanh -> gộp `main` -> phase kế. ⛔ KHÔNG gate để "đóng phase"
+   CUỐI PLAN      MỘT lần, MỘT cấp: gate.py --doi (L1) HOẶC gate.py --pham-vi <tp> (L2)
                   commit hết -> build frontend nếu đổi -> kiểm máy (luật 3)
-                  -> python tools\gate.py (L3) MỘT lần, không ghi vào cây trong lúc chạy
-   L3 ĐỎ          sửa tại chỗ -> chạy lại đúng phép đỏ (gate in sẵn) -> KHÉP gate.py --doi --tu <sha L3>
-   DEPLOY         được deploy BẤT CỨ LÚC NÀO việc xây dựng cần — kể cả giữa phiên — khi đã có
-                  gate xanh trên đúng SHA deploy: giữa phiên L1/L2 · tổng kết phiên L3 (xanh/đỏ đã khép)
-                  ⛔ không chạy L3 để deploy · test nhắm một mình không đủ để deploy
+                  -> chạy, không ghi vào cây trong lúc chạy
+   GATE ĐỎ        sửa tại chỗ -> chạy lại đúng phép đỏ (gate in sẵn) -> KHÉP gate.py --doi --tu <sha>
+   DEPLOY         cần gate XANH trên đúng SHA deploy. Gate nay chỉ có ở CUỐI PLAN
+                  => deploy giữa plan phải HỎI chủ dự án. ⛔ Test nhắm một mình không đủ.
    ```
 
    ⛔ **Một L3 mỗi nhánh** — `gate.py` từ chối L3 thứ hai kể cả sau L3 xanh, và từ chối
