@@ -229,8 +229,16 @@ def lenh_theo_doi(args) -> int:
     dbmod.get_engine()
     phien = dbmod._session_factory()     # noqa: SLF001 - khong co cua cong khai
     xong = False
+    # ⭐ DIEU KIEN DO, lay mau moi nhip. `QUY_TAC_CHAY_LENH_NANG.md` §2b: cot
+    #    `giay CPU` tra loi *"ton bao nhieu suc tinh"* va mien nhiem voi hang
+    #    xom; cot `dong ho tuong` chi co nghia KEM theo tai nen luc do. Khong
+    #    ghi tai nen thi mot con so tuong la mot con so khong ai doc lai duoc.
+    import psutil
+    psutil.cpu_percent(None)             # moc dau cho lan lay mau ke tiep
+    nen: list[float] = []
     try:
         while time.monotonic() < het:
+            nen.append(psutil.cpu_percent(None))
             s = phien
             s.rollback()
             run = s.execute(text(
@@ -272,7 +280,8 @@ def lenh_theo_doi(args) -> int:
                     pid = _pid_cua(wid)
                     cpu, n = cpu_cay(pid) if pid else (0.0, 0)
                     ho.update(worker_id=wid, pid=pid, cpu_dau=cpu,
-                              tuong_dau=time.time(), so_tien_trinh_dau=n)
+                              tuong_dau=time.time(), so_tien_trinh_dau=n,
+                              nen_tu=len(nen))
                 if j.status in ("done", "error", "cancelled"):
                     pid = int(ho.get("pid") or _pid_cua(wid))
                     cpu, n = cpu_cay(pid) if pid else (0.0, 0)
@@ -292,6 +301,9 @@ def lenh_theo_doi(args) -> int:
                     ho["trang_thai"] = j.status
                     ho["lan_thu"] = f"{j.attempts}/{j.max_attempts}"
                     ho["loi_job"] = j.error or ""
+                    mau = nen[int(ho.get("nen_tu") or 0):] or [0.0]
+                    ho["cpu_nen_tb"] = round(sum(mau) / len(mau), 1)
+                    ho["cpu_nen_dinh"] = round(max(mau), 1)
                 ghi("stage", ten=j.step_id, job=j.status, lan=j.attempts,
                     worker=wid, cpu=ho.get("cpu_giay", ""),
                     tuong=ho.get("tuong_giay", ""), loi=(j.error or "")[:300])
@@ -334,12 +346,20 @@ def lenh_theo_doi(args) -> int:
     # ── bang ket qua ──────────────────────────────────────────────────────────
     ten = _ten_giai_doan()
     print("\n== GIAI DOAN ==")
+    print("⛔ Hai cot, khong trung binh: `CPU s` = suc tinh (mien nhiem hang "
+          "xom); `tuong s` + `CPU nen %` = dieu kien do.")
     print(f"{'giai doan':16} {'job':10} {'CPU s':>9} {'tuong s':>9} "
-          f"{'lan thu':>8}  worker")
+          f"{'loi tb':>7} {'CPU nen %':>10} {'lan thu':>8}  worker")
     for g in ten:
         h = do.get(g, {})
+        cpu = h.get("cpu_giay")
+        tuong = h.get("tuong_giay")
+        loi_tb = (round(cpu / tuong, 2) if isinstance(cpu, (int, float))
+                  and isinstance(tuong, (int, float)) and tuong else "-")
         print(f"{g:16} {str(h.get('trang_thai','(chua chay)')):10} "
-              f"{h.get('cpu_giay','-')!s:>9} {h.get('tuong_giay','-')!s:>9} "
+              f"{cpu if cpu is not None else '-'!s:>9} "
+              f"{tuong if tuong is not None else '-'!s:>9} "
+              f"{loi_tb!s:>7} {h.get('cpu_nen_tb','-')!s:>10} "
               f"{h.get('lan_thu','-')!s:>8}  {h.get('worker_id','')}")
         if h.get("loi_job"):
             print(f"    LOI: {h['loi_job'][:500]}")
