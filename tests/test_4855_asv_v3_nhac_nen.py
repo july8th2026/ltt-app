@@ -91,7 +91,17 @@ def nen_lo_im_lang(tmp_path_factory):
     return t, nen, lo
 
 
-def _ho_so(khoa="asv/oA/rA/timing_align/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.mp3",
+#: ⚠️ **Khoa kho GIA phai chua mot chu KHONG-hex (25/09/2026).**
+#:
+#:    Ban dau hai khoa nay la `"a"*32` va `"b"*32` — va `tools/scan_source_secrets.py`
+#:    bao chung la bi mat, vi luat `bare_32_char_hex` la `[0-9a-f]{32}` tron va `a`/`b`
+#:    DEU la chu so hex. Gate do o buoc quet bi mat.
+#:
+#: ⛔ Dung "lam cho im" bang cach mien tru tep nay khoi may quet: mot ngoai le se song
+#:    mai va che mot bi mat THAT sau nay. Thay vao do dat ten khoa co chu `z` (khong
+#:    phai hex) va TU NOI RA no la khoa gia — nguoi sau doc la hieu, va may quet khong
+#:    con gi de nham.
+def _ho_so(khoa="asv/oA/rA/timing_align/khoagia_nhac_nen_KHONG_bi_mat_z1.mp3",
            *, am_luong_nen=None, lap=None) -> dict:
     nhac_nen = {"khoa": khoa}
     if am_luong_nen is not None:
@@ -226,7 +236,7 @@ def test_van_tay_master_DOI_khi_KHOA_hoac_AM_LUONG_NEN_doi():
     assert voi_nhac != goc
 
     khac_khoa = am_master.van_tay_master(
-        **kw, am_thanh=_ho_so("asv/oA/rA/s/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.mp3"))
+        **kw, am_thanh=_ho_so("asv/oA/rA/s/khoagia_nhac_khac_KHONG_bi_mat_z2.mp3"))
     assert khac_khoa != voi_nhac
 
     khac_am_luong = am_master.van_tay_master(**kw, am_thanh=_ho_so(am_luong_nen=0.8))
