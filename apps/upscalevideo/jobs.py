@@ -407,7 +407,7 @@ def handle(params: dict, ctx=None) -> dict:
         #    Khong mat cua kiem ngam nao: `quality_gate.py:77` tu tra bang do, nen
         #    `KeyError` cho mot preset la van xay ra o trong `run_quality_gates`.
         if ctx is not None:
-            ctx.progress(98, "chất lượng...")
+            ctx.progress(98, _t("chất lượng..."))
         quality_result = run_quality_gates(out_key, preset)
         quality_log = quality_result.get("error") or _t("Quality gates passed: PSNR{0}dB").format(quality_result['gates']['quality']['metrics'].get('psnr_db', 'N/A'))
         log.info("[quality] %s", quality_log)

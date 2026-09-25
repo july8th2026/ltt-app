@@ -21753,3 +21753,9 @@ msgstr "Detect again"
 #: apps/auto_scan_video/templates/asv_trang_chinh.html
 msgid "Chi tiết kỹ thuật"
 msgstr "Technical details"
+
+msgid "Chưa tải lên xong — hãy đợi tải lên hoàn tất rồi thử lại."
+msgstr "Upload not finished yet — please wait for the upload to complete, then try again."
+
+msgid "Điền nền (xoá hẳn)"
+msgstr "Fill background (remove completely)"
