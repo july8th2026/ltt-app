@@ -29,7 +29,9 @@
   {# ── Chi phi (V6 pha 30) ──────────────────────────────────────────────────
      🔴 `quan_sat.tom_tat_cho_khach` da tinh san bang nay tu V4 — va KHONG AI
         GOI no. Khach tra tien ma khong thay minh tra cho viec gi.
-     ⭐ Theo NANG LUC (doc loi, dich, xem canh), khong theo ten nha cung cap.
+     ⭐ 25/09: gia PHANG thay bang ke theo nang luc bang MOT dong hoa don
+        (`so_phut x don_gia = credit`) — khach tu nhan lai duoc con so ay tu do
+        dai video ho dang nhin, thu ma mot bang ke theo nang luc khong cho phep.
      ⛔ "Hoan lai" chi hien sau khi quyet toan — truoc do con so con dang tang. #}
   {% if chi_phi %}
   <details class="asv-nang-cao" id="asv-chi-phi">
@@ -43,22 +45,39 @@
         <li class="asv-ghi-chu">{{ _("Phần chưa dùng được hoàn lại khi lần chạy kết thúc.") }}</li>
       {% endif %}
     </ul>
-    {% if chi_phi.chi_phi_theo_nang_luc %}
-      <div class="u-cuon-ngang">
-        <table class="asv-bang">
-          <thead><tr><th>{{ _("Việc") }}</th><th>{{ _("Khối lượng") }}</th><th>{{ _("Credit") }}</th></tr></thead>
-          <tbody>
-          {% for m in chi_phi.chi_phi_theo_nang_luc %}
-            <tr><td>{{ _(m.nhan) }}</td>
-                <td>{{ "%g"|format(m.so_luong) }} {{ _(m.nhan_don_vi) if m.nhan_don_vi else "" }}</td>
-                <td>{{ m.credit }}</td></tr>
-          {% endfor %}
-          </tbody>
-        </table>
-      </div>
+    {# 🔴 **Khoi nay da BIEN MAT IM LANG mot lan, va no bien mat o cho dat nhat.**
+
+         Ban truoc doc `chi_phi.chi_phi_theo_nang_luc`. Gia phang (25/09) bo
+         khoa do, va Jinja tra `Undefined` cho mot khoa vang — `Undefined` la
+         falsy, nen `{% if %}` chon nhanh `else` va ca BANG HOA DON tu an.
+         ⛔ Trang khong vo, khong mot loi nao, khong ai biet: khach chi khong
+         con thay minh tra bao nhieu.
+
+       ⭐ Ban nay doc `chi_phi.hoa_don`, mot dict LUON co mat (`quan_sat` dung no
+          vo dieu kien), nen ca `{% if %}` duoi day hoi mot cau CO NGHIA —
+          *"da do duoc do dai chua"* — chu khong hoi *"khoa nay con ton tai
+          khong"*. Mot cau hoi ve DU LIEU thi khach doc duoc cau tra loi; mot
+          cau hoi ve SU TON TAI CUA KHOA thi khong. #}
+    {% set hd = chi_phi.hoa_don %}
+    {% if hd.da_do_do_dai %}
+      {# ⭐ MOT dong hoa don, dung cong thuc khach tu nhan lai duoc tu do dai
+         video ho dang nhin: `<so phut> x <don gia> = <credit>`. #}
+      <p class="asv-hoa-don">
+        <strong>{{ _("%(p)s phút × %(g)s credit = %(c)s credit") % {
+          "p": hd.so_phut, "g": hd.don_gia, "c": hd.credit} }}</strong>
+      </p>
     {% else %}
-      <p class="asv-ghi-chu">{{ _("Chưa có việc nào được tính tiền.") }}</p>
+      {# 🔴 `so_phut`/`credit` la `None` o day — ⛔ KHONG bia "1 phut".
+           *"chua do duoc do dai"* khac *"video dai 0 giay"*, va gop hai trang
+           thai vao mot gia tri la mot ho loi da co ten trong kho nay. Khach van
+           doc duoc `credit_da_giu` ngay ben tren, nen ho khong bi bo trong. #}
+      <p class="asv-ghi-chu">
+        {{ _("Chưa đo được độ dài video nên chưa tính được hoá đơn. Số giữ chỗ ở trên là mức tối đa.") }}
+      </p>
     {% endif %}
+    {# ⭐ Luat lam tron hien o CA HAI nhanh: khach chua do duoc do dai van can
+       biet minh se bi tinh theo luat nao. #}
+    <p class="asv-ghi-chu">{{ hd.luat_lam_tron }}</p>
   </details>
   {% endif %}
 

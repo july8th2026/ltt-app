@@ -211,14 +211,27 @@ def tu_form(chuoi: str, *, preset: str) -> dict | None:
     return ra
 
 
-def doi_diem_anh(ho_so: dict | None) -> bool:
-    """Ho so nay co doi DIEM ANH khong (khac: chi doi moc thoi gian).
+# 🔴 **`doi_diem_anh` da bi XOA (asv-gui, 25/09) — va no la mot mon no CUA
+#    CHINH LAN NAY, khong phai cua ai khac.**
+#
+#    Ban dau tep nay co mot ham `doi_diem_anh(ho_so) -> bool`, kem docstring noi
+#    *"mot cho tra loi, vi hai noi hoi"*. `test_453` do, va phep do dung: **khong
+#    noi nao hoi ca.**
+#
+#    · `che_do_render` KHONG hoi no. No hoi mot cau HEP hon — *"ho so nay co
+#      truong HINH HOC nao khong"* (`TRUONG_HINH_HOC`) — de biet co phai goi
+#      `hinh_hoc.khung_bien_tap` hay khong. Hai cau hoi khac nhau, va tra loi
+#      cau rong cho mot nguoi hoi cau hep se keo `khung_bien_tap` (ham NEM khi
+#      chua biet kich thuoc nguon) vao mot lan chay chi lat guong.
+#    · Giao dien khong hoi no: `bien_tap.js` doc thang cac o.
+#    · Va tang gia thi khong con hoi nua — gia PHANG (25/09) tinh theo do dai
+#      video nguon, ⛔ khong theo tap nang luc. Nguoi hoi cuoi cung bien mat
+#      cung luc voi bang gia cu.
+#
+# ⛔ Nen no khong duoc them vao `MO_COI_DA_BIET`, va cung khong duoc "noi vao
+#    mach" bang mot loi goi dat cho co: ca hai deu la mua su yen tam bang tin
+#    dung gia. Mot ham khong ai goi la ma chet — xoa la viec dung.
 
-    🔑 Mot cho tra loi, vi hai noi hoi: `che_do_render` hoi de dung chuoi loc,
-       va giao dien hoi de biet co phai noi *"se phai ma hoa lai"* hay khong.
-    """
-    return bool(set(ho_so or {}) & (set(TRUONG_HINH_HOC)
-                                    | {"lat_guong", "dich_mau"}))
 
 
 def toc_do(ho_so: dict | None) -> float:

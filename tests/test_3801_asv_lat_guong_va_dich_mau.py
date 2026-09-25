@@ -291,13 +291,25 @@ def test_hai_co_KHONG_day_lan_chay_sang_duong_DAT_hon():
     assert list(inspect.signature(cdr.che_do_cho).parameters) == ["preset"]
 
 
-def test_doi_diem_anh_tra_loi_cho_CA_HAI_nguoi_hoi():
-    assert bt.doi_diem_anh({"lat_guong": True})
-    assert bt.doi_diem_anh({"dich_mau": True})
-    assert bt.doi_diem_anh({"zoom": {"he_so": 1.2}})
-    # ⚠️ `toc_do` đổi MỐC THỜI GIAN, không đổi điểm ảnh.
-    assert not bt.doi_diem_anh({"toc_do": 1.25})
-    assert not bt.doi_diem_anh(None)
+def test_KHONG_de_lai_mot_nang_luc_MO_COI_ten_doi_diem_anh():
+    """🔴 Bài này thay cho một bài đã bị **xoá cùng hàm nó đo**.
+
+    Bản đầu của làn này viết `bien_tap.doi_diem_anh(ho_so) -> bool` kèm docstring
+    *"một chỗ trả lời, vì hai nơi hỏi"*. `test_453` đỏ, và phép đo **đúng**:
+    không nơi nào hỏi cả. `che_do_render` hỏi một câu **hẹp hơn**
+    (`TRUONG_HINH_HOC`), giao diện đọc thẳng các ô, và tầng giá thì không còn
+    hỏi nữa — giá phẳng tính theo độ dài video nguồn, ⛔ không theo tập năng lực.
+
+    ⇒ Hàm bị **xoá**, ⛔ không thêm vào `MO_COI_DA_BIET` và ⛔ không "nối vào
+      mạch" bằng một lời gọi đặt cho có. Cả hai cách sau đều là mua sự yên tâm
+      bằng tín dụng giả.
+
+    ⚠️ Bài này ghim chiều NGƯỢC LẠI để món nợ không lặng lẽ quay về: một lần
+       "tiện tay" thêm lại hàm ấy sẽ phải đọc docstring này trước.
+    """
+    assert not hasattr(bt, "doi_diem_anh"), (
+        "`doi_diem_anh` da quay lai — no tung mo coi mot lan; neu lan nay co "
+        "nguoi goi that thi sua bai kiem nay VA noi ro ai goi")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
