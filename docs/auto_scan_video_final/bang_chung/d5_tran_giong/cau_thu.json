@@ -1,0 +1,98 @@
+{
+ "phep_do": "D5 tran tang toc — sinh cung mot cau o nhieu toc do, do CER vong ASR + DNSMOS",
+ "toc_do": [
+  1.0,
+  1.15,
+  1.25,
+  1.35,
+  1.45
+ ],
+ "ghi_chu_toc_do": "1,00 la DOI CHUNG. Neu CER o 1,15 khong khac 1,00 thi tran hien tai CHAT VO CO.",
+ "nguon_cau": "ban dich nen that (b2_dich_nen), khe SAU khi gop <=5; uu tien khe CAN NEN NHAT",
+ "cau": [
+  {
+   "ma": "v3/seg_0031",
+   "he_so_can_nen": 1.812,
+   "am_tiet": 29,
+   "khe_s": 4.874,
+   "chu": "Trực tiếp hạ gục. Cuối cùng hỏi các bạn một câu, nếu khi tấn công tòa nhà gặp loại này bị kẹt cầu thang, các bạn sẽ làm sao?"
+  },
+  {
+   "ma": "v3/seg_0011",
+   "he_so_can_nen": 1.656,
+   "am_tiet": 90,
+   "khe_s": 16.554,
+   "chu": "Đùa thôi, hộp không thể làm che chắn được. Ở đây mình cố tình đi thêm hai bước vào góc tường mới nằm xuống, để khóa góc nhìn của địch, khiến hắn không thể thấy vị trí ta ngay lập tức. Lúc này các bạn nghe kỹ, dưới lầu lại có người đến rồi. Khi uống thuốc đừng đứng yên, địch chưa đến, ta có thể chiếm vị trí thuận lợi trước. Chỉ cần ta chiếm được lợi thế địa hình, dù có bao nhiêu người đến cũng không sợ."
+  },
+  {
+   "ma": "v3/seg_0006",
+   "he_so_can_nen": 1.627,
+   "am_tiet": 95,
+   "khe_s": 17.784,
+   "chu": "Nhảy dù chậm sẽ làm ta mất cơ hội tấn công, tiếp theo kẻ khác sẽ liên tục tấn công, nhất định phải bảo vệ tòa nhà. Tay trượt rồi, xin lỗi. Có tiếng bước chân trên cầu thang, tình trạng máu của ta hiện tại có thể nói là khởi đầu bi kịch. Nếu muốn hoàn thành phản sát cực hạn, thì thao tác tiếp theo các bạn nhất định phải học. Chờ khi địch chưa lên, mình trực tiếp nằm xuống, dùng hộp làm che chắn, hắn sẽ không phát hiện ra ta."
+  },
+  {
+   "ma": "v2/seg_0056",
+   "he_so_can_nen": 1.598,
+   "am_tiet": 46,
+   "khe_s": 8.766,
+   "chu": "Sau khi dọn sạch sẽ thì nấu một nồi cơm, Dùng bếp trong nhà chiên nướng xúc xích, Bữa tối lớn của tối nay đã hoàn thành, Ăn bữa ăn lớn và cũng sắp xếp thêm món ngon cho Cún, Sau khi ăn no uống đủ,"
+  },
+  {
+   "ma": "v2/seg_0012",
+   "he_so_can_nen": 1.559,
+   "am_tiet": 41,
+   "khe_s": 8.006,
+   "chu": "Thiết kế độc đáo như thể đang ở giữa thiên nhiên, Tiểu Mỹ điều chỉnh vị trí lều một cách đơn giản, Cuộn lại tấm rèm cửa lều, Bước vào trong lều, Ánh sáng tự nhiên từ bên ngoài chiếu vào,"
+  },
+  {
+   "ma": "v3/seg_0016",
+   "he_so_can_nen": 1.542,
+   "am_tiet": 79,
+   "khe_s": 15.604,
+   "chu": "Các bạn chơi đừng lao nhanh thế, tốc độ càng nhanh thì thời gian phản ứng mất càng nhiều. Một khi ta kéo ra, người này hầu như không có thời gian phản ứng. Có thấy không, đây là trắng tay. Lúc này tiếng bước chân ngoài càng nhiều, đều là lao về phía ta, tận dụng lúc này nhanh chóng bổ sung người. Ở đây cần chú ý, đừng dùng quá nhiều thời gian để bổ sung người."
+  },
+  {
+   "ma": "v3/seg_0021",
+   "he_so_can_nen": 1.535,
+   "am_tiet": 89,
+   "khe_s": 17.651,
+   "chu": "Chưa xử lý xong thì quay lại ngay, cẩn thận người phía sau. Thật sự cao thủ bao giờ cũng không tấn công mù quáng, trước hết cài mồi giả xem hắn sẽ phản ứng thế nào. Người này rất vững tay, có vẻ như gặp cao thủ rồi. À không, anh này hóa ra là đến cứu người. Cách chơi của người này các bạn tuyệt đối đừng học nhé, dưới lầu còn tiếng bước chân, họ không dám lên, thì chúng ta cứ trực tiếp cài mồi."
+  },
+  {
+   "ma": "v2/seg_0032",
+   "he_so_can_nen": 1.296,
+   "am_tiet": 89,
+   "khe_s": 20.913,
+   "chu": "Tiếp theo mang các thiết bị cắm trại trong xe từ cốp sau vào lều. Bắt đầu dựng các thiết bị cắm trại. Tiểu Mỹ trước tiên đặt ghế sofa hơi vào trong lều, bơm khí để hoàn thành lắp đặt ghế. Trên chỉ cần trải tấm thảm êm ái mềm mại, cùng chiếc gối đàn hồi tốt, là có thể tiện lợi nằm nghỉ bất cứ lúc nào. Không gian phía trước cô gái dựng thêm bàn ghế xếp cắm trại, cùng tủ đựng đồ chứa vật tư."
+  },
+  {
+   "ma": "v1/seg_0050",
+   "he_so_can_nen": 1.139,
+   "am_tiet": 61,
+   "khe_s": 16.308,
+   "chu": "Còn xử lý ruột bò lớn thì cần cách thức hoang dã hơn. Ruột bò trải phẳng ra, chà xát điên cuồng dưới vòi nước, đảm bảo không còn sót lại bất kỳ tạp chất nào ở bất kỳ vị trí nào. Sau khi rửa sạch, rắc một lớp bột mì dày lên, xoa đi xoa lại, chà đi chà lại."
+  },
+  {
+   "ma": "v1/seg_0016",
+   "he_so_can_nen": 1.053,
+   "am_tiet": 58,
+   "khe_s": 16.768,
+   "chu": "Táo, cát, hành tây và các món phụ khác đều bỏ vào nồi, Hai chai rượu đi kèm để khử mùi cũng theo sau, Nấu nhỏ lửa một tiếng đồng hồ cho đến khi rau củ mềm nhừ, Hương thơm của thực vật hòa tan hoàn toàn vào nước, Đây chính là bí quyết rửa sạch bò ruột."
+  },
+  {
+   "ma": "v1/seg_0039",
+   "he_so_can_nen": 0.978,
+   "am_tiet": 16,
+   "khe_s": 4.982,
+   "chu": "như vậy khi nướng mỡ mới thấm ra được, ăn vào mới đủ độ béo ngậy."
+  },
+  {
+   "ma": "v2/seg_0037",
+   "he_so_can_nen": 0.882,
+   "am_tiet": 23,
+   "khe_s": 7.937,
+   "chu": "Để tiện sinh hoạt nấu ăn, trước tiên dựng bếp xong. Một gian bếp nhỏ đơn giản, đầy đủ nồi niêu xoong chảo."
+  }
+ ]
+}

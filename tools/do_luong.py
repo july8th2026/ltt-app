@@ -853,31 +853,103 @@ NGUONG_PHAN_DOAN = {
     #     NGƯỠNG của ta.
     "do_dai_toi_da_s": 7.0,
     "ti_le_vi_pham_toi_da": 0.05,
-    # (c) ONSET — mặt trước nay KHÔNG AI CHẤM, và là mốc chi phối KHỚP MÔI.
+    # (c) ONSET — mặt trước, mốc chi phối KHỚP MÔI.
     #     `pyannote` đếm ranh giới bằng `[segment.end ...][:-1]` ⇒ mọi onset
     #     sau khoảng lặng bị bỏ im lặng.
     "onset_dung_sai_s": 0.3,
-    "onset_do_nhay_toi_thieu": 0.80,
+    # ⭐ CỔNG (25/09): **ĐỘ CHÍNH XÁC**, ⛔ không phải độ nhạy. Xem `_HAI_CAU_HOI`.
+    "onset_do_chinh_xac_toi_thieu": 0.80,
+    # 🔴 CỔNG ĐÃ RÚT 25/09 — giữ hằng số để truy vết, ⛔ KHÔNG dùng làm phán quyết.
+    #    Nó hỏi *"ta có cắt ĐỦ 107 chỗ phụ đề cắt không"*, mà 107 là đơn vị
+    #    **hiển thị** (trần ~16 ký tự/dòng), ⛔ không phải đơn vị **lời nói**.
+    "onset_do_nhay_toi_thieu__DA_RUT": 0.80,
+    "onset_do_nhay_toi_thieu": 0.80,   # ⛔ chỉ còn cho phép kiểm lịch sử
 }
 
-#: Lưới thời gian của chân lý nền OCR (`l_ocr_gt_v2.json`: *"Mốc = lưới 0,5 s"*).
-#: 🔴 Hệ quả phải nói to: chân lý nền chỉ phân giải tới **±0,25 s**. Đo dung sai
-#: **0,3 s** trên nó là đo dưới khả năng phân giải của chính thước đo — phần lớn
-#: "trượt" sẽ là LƯỢNG TỬ HOÁ của chân lý nền, ⛔ không phải lỗi của hệ thống.
-#: ⇒ luôn báo KÈM mức 0,5 s, và đó mới là con số phán quyết được.
-LUOI_CHAN_LY_NEN_S = 0.5
+#: ⭐ HAI CÂU HỎI, viết cạnh nhau — vì 25/09 ta ĐỔI CÂU HỎI, ⛔ không phải sửa thước.
+_HAI_CAU_HOI = """
+  CÂU CŨ (⛔ đã rút khỏi cổng) : "ta có cắt ĐỦ chỗ mà phụ đề cắt không?"
+     -> độ nhạy onset so với 107 dòng hardsub. Đo được 0,692 = 74/107 ĐÚNG BẰNG.
+     ⛔ SAI MỤC ĐÍCH: 107 là số dòng HIỂN THỊ (trần ~16 ký tự/dòng), ⛔ không phải
+        số lần người ta NGỪNG NÓI. Đòi khớp nó là đòi băm nhỏ không vì lý do nào —
+        đúng cái bẫy đã giết thước `lech_doan` (cắt máy móc mỗi 2 s cho điểm XANH).
+
+  CÂU MỚI (cổng)              : "mọi chỗ ta CẮT có trúng ranh giới thật không?"
+     -> độ CHÍNH XÁC onset. ⭐ Trả lời đúng thứ lồng tiếng sợ: **cắt giữa câu**.
+
+  ⭐ 0,692 ⛔ KHÔNG bị xoá. Nó là một SỰ THẬT — *"ASV cắt ÍT hơn phụ đề, và MỌI chỗ
+     nó cắt đều trúng"* — chỉ ⛔ không phải một KHUYẾT TẬT.
+"""
+
+class ThieuBanKhai(ValueError):
+    """Dữ liệu ⛔ không tự khai một tính chất mà thước BẮT BUỘC phải biết."""
 
 
-def doc_doan_b1(tep: pathlib.Path) -> list[tuple[float, float]]:
-    """`[(bắt, kết)]` từ một tệp `b1_chep_loi_moi/*.json` (whisperx)."""
+# 🔴 SỬA 25/09 — `LUOI_CHAN_LY_NEN_S = 0.5` **ĐÃ BỎ**, và đây là lý do.
+#
+# Lưới thời gian là một tính chất **CỦA CHÂN LÝ NỀN**, ⛔ không phải của thước.
+# Nó từng là một hằng số mô-đun, nên:
+#
+#   * `kiem_nguong_voi_toi` gọi `doi_chung_he_hoan_hao(ref, dung_sai)` mà ⛔ KHÔNG
+#     truyền `luoi` ⇒ mọi phép tính trần đều **giả định 0,5 s**;
+#   * thay chân lý nền bằng bản mịn hơn (OCR 10 fps ⇒ lưới 0,1 s) thì thước
+#     **vẫn in `0,606 — KHÔNG VỚI TỚI ĐƯỢC`** — 🔴 nói dối theo đúng chiều cũ,
+#     trên một chân lý nền ⛔ không còn khuyết tật ấy.
+#
+# ⭐ Đây đúng khuôn *"hai chỗ khai một điều"*: lưới **thuộc về dữ liệu**, mà lại
+#    nằm ở **mã**. Cơ học thắng giao ước — nên ta chuyển nó về đúng chỗ.
+#
+# ⛔ Và ⛔ KHÔNG có mặc định: tệp chân lý nền ⛔ không khai `luoi_s` ⇒ **TỪ CHỐI
+#    chạy**. Một mặc định 0,5 ở đây là một quyết định về **phán quyết của cổng**
+#    mà ⛔ không ai ký tên — đúng thứ `ho_so.py` của `platform_core.stt` đã cấm
+#    cho tham số STT.
+
+
+def doc_doan_b1(tep: pathlib.Path) -> dict:
+    """Một tệp `b1_chep_loi_moi/*.json` → `{doan, canh_chinh, engine}`.
+
+    🔴 `canh_chinh` là BẮT BUỘC (N-27, 25/09). Ba tệp bằng chứng 24/09 đều là
+    `whisperx`/`aligned`, còn nhánh `fallback_unaligned` có **0 bằng chứng** —
+    nhưng thước lại in một con số **không kèm tên nhánh**, nên người đọc tưởng
+    nó nói về "hệ thống".
+
+    ⛔ Đo MỘT nhánh rồi khai như TRUNG LẬP là mất khả năng phân biệt, ⛔ không
+    phải sai số. Nên nhánh phải **đi kèm con số**, và tệp ⛔ không khai thì
+    ⛔ không đo.
+    """
     d = doc_json(tep)
-    return [(float(s["bat"]), float(s["ket"])) for s in d["doan"]]
+    nhanh = str(d.get("canh_chinh") or "").strip()
+    if not nhanh:
+        raise ThieuBanKhai(
+            f"{tep.name} ⛔ không khai `canh_chinh` — thước ⛔ không biết nó đang "
+            "đo nhánh nào (`aligned` hay `fallback_unaligned`). ⛔ Không mặc định.")
+    return {
+        "doan": [(float(s["bat"]), float(s["ket"])) for s in d["doan"]],
+        "chu": [str(s.get("chu") or "") for s in d["doan"]],
+        "canh_chinh": nhanh,
+        "engine": str(d.get("engine") or "").strip() or "⛔ không khai",
+    }
 
 
-def doc_chan_ly_nen_ocr(tep: pathlib.Path) -> list[tuple[float, float]]:
-    """`[(bắt, kết)]` từ `l_ocr_gt_v2.json` — đọc tay, lưới 0,5 s."""
+def doc_chan_ly_nen_ocr(tep: pathlib.Path) -> dict:
+    """Chân lý nền phân đoạn → `{dong, luoi, cach_lam}`.
+
+    🔴 `luoi_s` là BẮT BUỘC. Trần của thước tính từ nó (`doi_chung_he_hoan_hao`),
+    nên một tệp ⛔ không khai lưới làm mọi phán quyết về ngưỡng trở nên vô nghĩa.
+    """
     d = doc_json(tep)
-    return [(float(r[0]), float(r[1])) for r in d["dong"]]
+    if "luoi_s" not in d:
+        raise ThieuBanKhai(
+            f"{tep.name} ⛔ không khai `luoi_s` (lưới thời gian, giây). Trần của "
+            "thước tính từ lưới ⇒ ⛔ không đoán, ⛔ không mặc định 0,5.")
+    luoi = float(d["luoi_s"])
+    if luoi <= 0:
+        raise ThieuBanKhai(f"{tep.name} khai `luoi_s`={luoi} — phải > 0.")
+    return {
+        "dong": [(float(r[0]), float(r[1])) for r in d["dong"]],
+        "luoi": luoi,
+        "cach_lam": str(d.get("cach_lam") or ""),
+    }
 
 
 def khop_onset(
@@ -1009,7 +1081,7 @@ def doi_chung_bam_deu(
 def doi_chung_he_hoan_hao(
     ref: Sequence[tuple[float, float]],
     dung_sai: float,
-    luoi: float = LUOI_CHAN_LY_NEN_S,
+    luoi: float,
     lan: int = 4000,
     hat: int = 20260924,
 ) -> dict:
@@ -1044,10 +1116,15 @@ def doi_chung_he_hoan_hao(
 
 
 def kiem_nguong_voi_toi(
-    ref: Sequence[tuple[float, float]], dung_sai: float, nguong: float
+    ref: Sequence[tuple[float, float]], dung_sai: float, nguong: float, luoi: float
 ) -> dict:
-    """`dat=False` ⇒ ngưỡng này ⛔ KHÔNG hệ nào với tới được, kể cả hệ hoàn hảo."""
-    tran = doi_chung_he_hoan_hao(ref, dung_sai)
+    """`dat=False` ⇒ ngưỡng này ⛔ KHÔNG hệ nào với tới được, kể cả hệ hoàn hảo.
+
+    ⚠️ `luoi` là **tham số bắt buộc**, ⛔ không phải hằng số mô-đun: trần thay đổi
+       theo lưới của chính chân lý nền đang dùng. Xem khối chú thích ở
+       `doc_chan_ly_nen_ocr`.
+    """
+    tran = doi_chung_he_hoan_hao(ref, dung_sai, luoi)
     return {
         **tran,
         "nguong": nguong,
@@ -1070,21 +1147,84 @@ def kiem_nguong_voi_toi(
 CHAN_LY_NEN_PHAN_DOAN = "docs/auto_scan_video_final/l_ocr_gt_v2.json"
 
 
+def do_khong_can_nen(doan: Sequence[tuple[float, float]],
+                     chu: Sequence[str] | None = None) -> dict:
+    """⭐ Thước ⛔ KHÔNG đọc chân lý nền một lần nào.
+
+    ⇒ Bài toán **lưới**, **bias mốc**, và **107-vs-74** đều ⛔ không tồn tại ở đây:
+      ⛔ không có gì để lệch với, vì ⛔ không có bên thứ hai.
+
+    ⚠️ ⛔ **KHÔNG có ngưỡng nào trong hàm này.** Ngưỡng CPS/CPL/LPB công bố
+       (Netflix TTSG: 9 ký tự/giây, 16 ký tự/dòng) là ngưỡng cho **PHỤ ĐỀ** —
+       chúng nói về **tốc độ ĐỌC của mắt người xem**. Lồng tiếng ràng buộc bởi
+       **tốc độ NÓI** và bởi lời **tiếng Việt** (dài 3,5–4,5× văn Hán) mà ở bước
+       này ⛔ **chưa tồn tại**. ⇒ Mượn ngưỡng mà ⛔ không mượn điều kiện là đúng
+       lỗi `N-34`. Số ở đây **báo cáo**, ⛔ chưa phán quyết.
+
+    ⛔ CPL/LPB ⛔ **không tính được** trên artifact này: bản ghi ⛔ không có cấu
+       trúc DÒNG (ngắt dòng sinh ở `phu_de.py`, một artifact khác). Khai vắng
+       mặt thay vì bịa một con số.
+    """
+    if not doan:
+        return {"n": 0}
+    dai = sorted(float(k) - float(b) for b, k in doan)
+    tt = sorted(doan)
+    ho = [round(float(tt[i + 1][0]) - float(tt[i][1]), 3) for i in range(len(tt) - 1)]
+    ra = {
+        "n": len(dai),
+        "khe_trung_vi_s": round(float(np.median(dai)), 3),
+        "khe_p05_s": round(float(np.percentile(dai, 5)), 3),
+        "khe_p95_s": round(float(np.percentile(dai, 95)), 3),
+        "khe_ngan_nhat_s": round(dai[0], 3),
+        "khe_dai_nhat_s": round(dai[-1], 3),
+        # Hai mốc Netflix TTSG — ⭐ ĐẾM, ⛔ không phán quyết (xem docstring).
+        "so_khe_duoi_5_6_s": sum(1 for d in dai if d < 5 / 6),
+        "so_khe_tren_7_s": sum(1 for d in dai if d > 7.0),
+        "so_cho_chong_lan": sum(1 for g in ho if g < -1e-6),
+        "ho_trung_vi_s": round(float(np.median(ho)), 3) if ho else None,
+        # ⛔ Vắng mặt, và nói ra vì sao:
+        "CPL": "⛔ không tính được — bản ghi không có cấu trúc dòng",
+        "LPB": "⛔ không tính được — bản ghi không có cấu trúc dòng",
+    }
+    if chu is not None and len(chu) == len(doan):
+        cps = [len(str(c)) / max(1e-6, float(k) - float(b))
+               for c, (b, k) in zip(chu, doan, strict=True) if str(c)]
+        if cps:
+            ra["CPS_nguon_trung_vi"] = round(float(np.median(cps)), 2)
+            ra["CPS_nguon_p95"] = round(float(np.percentile(cps, 95)), 2)
+            ra["CPS_ghi_chu"] = (
+                "ký tự HÁN trên giây — đây là tốc độ NÓI của nguồn, ⛔ KHÔNG so "
+                "được với 9 kt/s của Netflix (đó là tốc độ ĐỌC của phụ đề đích)")
+    return ra
+
+
 def lenh_phan_doan(tep_hyp: pathlib.Path, tep_ref: pathlib.Path) -> dict:
     """BA số cạnh nhau + BỐN đối chứng + trần của thước. ⛔ Không điểm tổng hợp."""
-    ref = doc_chan_ly_nen_ocr(tep_ref)
+    nen = doc_chan_ly_nen_ocr(tep_ref)
+    ref, luoi = nen["dong"], nen["luoi"]
+    b1 = doc_doan_b1(tep_hyp)
     cua_so = (min(b for b, _ in ref), max(k for _, k in ref))
-    hyp = [
-        (b, k) for b, k in doc_doan_b1(tep_hyp) if k > cua_so[0] and b < cua_so[1]
-    ]
+    hyp = [(b, k) for b, k in b1["doan"] if k > cua_so[0] and b < cua_so[1]]
     ban = {
-        "bản của ta (whisperx)": hyp,
+        f"bản của ta ({b1['engine']}/{b1['canh_chinh']})": hyp,
         "ĐC gộp tất": doi_chung_gop_tat(hyp),
         "ĐC băm 2 s": doi_chung_bam_deu(hyp, 2.0),
         "ĐC khối 30 s": doi_chung_bam_deu(hyp, 30.0),
     }
-    ra: dict = {"cua_so": cua_so, "n_ref": len(ref), "n_hyp": len(hyp), "muc": {}}
-    for ds in (NGUONG_PHAN_DOAN["onset_dung_sai_s"], LUOI_CHAN_LY_NEN_S):
+    ra: dict = {
+        "cua_so": cua_so, "n_ref": len(ref), "n_hyp": len(hyp),
+        # 🔴 Con số này chỉ nói về MỘT nhánh engine. Tên nhánh đi KÈM, ⛔ không
+        #    để người đọc tưởng nó trung lập (N-27).
+        "canh_chinh": b1["canh_chinh"], "engine": b1["engine"],
+        "luoi_chan_ly_nen": luoi, "chan_ly_nen": tep_ref.name,
+        # ⭐ Nhánh ⛔ KHÔNG đọc chân lý nền — chạy trên TOÀN BỘ bản ghi, ⛔ không
+        #    bị cắt theo cửa sổ của nền, vì nó ⛔ không cần nền.
+        "khong_can_nen": do_khong_can_nen(b1["doan"], b1["chu"]),
+        "muc": {},
+    }
+    # Hai mức: ngưỡng đã viết, và **chính lưới của chân lý nền** (⛔ không phải
+    # một hằng số 0,5 gõ cứng — lưới nay đến từ tệp).
+    for ds in (NGUONG_PHAN_DOAN["onset_dung_sai_s"], luoi):
         khoi = {
             ten: {
                 "a_ranh_gioi": ranh_gioi_pyannote(ref, seg, ds),
@@ -1094,19 +1234,46 @@ def lenh_phan_doan(tep_hyp: pathlib.Path, tep_ref: pathlib.Path) -> dict:
             for ten, seg in ban.items()
         }
         khoi["__tran__"] = kiem_nguong_voi_toi(
-            ref, ds, NGUONG_PHAN_DOAN["onset_do_nhay_toi_thieu"]
+            ref, ds, NGUONG_PHAN_DOAN["onset_do_nhay_toi_thieu"], luoi
         )
+        # 🔴 Trần ở trên nói về ĐỘ NHẠY (số đã RÚT khỏi cổng). Cổng thật là độ
+        #    CHÍNH XÁC, và nó ⛔ không bị lưới chân lý nền chặn trần như vậy.
         ra["muc"][ds] = khoi
     return ra
 
 
 def _in_phan_doan(r: dict) -> None:
     print("╔═ THƯỚC PHÂN ĐOẠN B1 — BA SỐ CẠNH NHAU, ⛔ không điểm tổng hợp ═╗")
-    print(f"  chân lý nền {r['n_ref']} dòng, cửa sổ {r['cua_so'][0]:.1f}-{r['cua_so'][1]:.1f} s"
-          f" · bản của ta {r['n_hyp']} đoạn trong cửa sổ")
+    print(f"  chân lý nền {r['chan_ly_nen']} · {r['n_ref']} dòng · lưới "
+          f"{r['luoi_chan_ly_nen']} s · cửa sổ "
+          f"{r['cua_so'][0]:.1f}-{r['cua_so'][1]:.1f} s")
+    print(f"  bản của ta {r['n_hyp']} đoạn trong cửa sổ")
+    print(f"  🔴 NHÁNH ĐƯỢC ĐO: {r['engine']} / canh_chinh={r['canh_chinh']}"
+          " — con số dưới đây CHỈ nói về nhánh này.")
+    print("     ⛔ Nhánh `fallback_unaligned` có 0 bằng chứng (N-27, 25/09):"
+          " ⛔ đừng đọc thành 'hệ thống'.")
     print("  ⚠️ MỘT phim (v2), MỘT chân lý nền."
           " ⛔ v4 không có dữ liệu phân đoạn ở đâu cả.")
-    print()
+    print(_HAI_CAU_HOI)
+    kn = r.get("khong_can_nen") or {}
+    if kn.get("n"):
+        print("─" * 78)
+        print("THƯỚC ⛔ KHÔNG ĐỌC CHÂN LÝ NỀN "
+              "(⇒ ⛔ không có lưới, ⛔ không có bias, ⛔ không có 107-vs-74)")
+        print(f"  {kn['n']} khe · trung vị {kn['khe_trung_vi_s']} s · "
+              f"p05 {kn['khe_p05_s']} s · p95 {kn['khe_p95_s']} s · "
+              f"ngắn nhất {kn['khe_ngan_nhat_s']} s · dài nhất {kn['khe_dai_nhat_s']} s")
+        print(f"  khe < 5/6 s: {kn['so_khe_duoi_5_6_s']} · khe > 7 s: "
+              f"{kn['so_khe_tren_7_s']} · chồng lấn: {kn['so_cho_chong_lan']} · "
+              f"hở trung vị {kn['ho_trung_vi_s']} s")
+        if "CPS_nguon_trung_vi" in kn:
+            print(f"  CPS nguồn: trung vị {kn['CPS_nguon_trung_vi']} · "
+                  f"p95 {kn['CPS_nguon_p95']} ký tự/giây")
+            print(f"  ⚠️ {kn['CPS_ghi_chu']}")
+        print(f"  CPL/LPB: {kn['CPL']}")
+        print("  ⛔ CHƯA CÓ NGƯỠNG cho lồng tiếng — ngưỡng phụ đề (9 kt/s, "
+              "16 kt/dòng) ⛔ KHÔNG chép sang (N-34).")
+        print()
     for ds, khoi in r["muc"].items():
         tran = khoi["__tran__"]
         print("═" * 78)
@@ -1117,15 +1284,21 @@ def _in_phan_doan(r: dict) -> None:
         print(f"  ngưỡng {tran['nguong']:.2f} ⇒ "
               f"{'✅ với tới được' if tran['voi_toi_duoc'] else '🔴 KHÔNG VỚI TỚI ĐƯỢC'}"
               f" — {tran['ghi_chu']}")
-        print(f"  {'bản':26s}{'(a) ranh giới F1':>18s}{'(b) vi phạm >7 s':>18s}"
-              f"{'(c) onset độ nhạy':>20s}")
+        print("  🔴 Trần ở trên nói về ĐỘ NHẠY — số ĐÃ RÚT khỏi cổng (25/09)."
+              " Cổng nay là ĐỘ CHÍNH XÁC.")
+        print(f"  {'bản':30s}{'(a) F1':>9s}{'(b) >7 s':>12s}"
+              f"{'(c) CHÍNH XÁC ⇒CỔNG':>22s}{'(c2) độ nhạy ⛔ko cổng':>24s}")
         for ten, o in khoi.items():
             if ten == "__tran__":
                 continue
             a, b, c = o["a_ranh_gioi"], o["b_do_dai"], o["c_onset"]
             cn = (f"{c['do_nhay']['ti_le']:.3f} [{c['do_nhay']['ktc'][0]:.2f};"
                   f"{c['do_nhay']['ktc'][1]:.2f}]") if c["do_nhay"] else "—"
-            print(f"  {ten:26s}{a['f1']:18.3f}{b['vi_pham']:>10}/{b['n']:<7}{cn:>20s}")
+            cx = (f"{c['do_chinh_xac']['ti_le']:.3f} "
+                  f"[{c['do_chinh_xac']['ktc'][0]:.2f};"
+                  f"{c['do_chinh_xac']['ktc'][1]:.2f}]") if c["do_chinh_xac"] else "—"
+            print(f"  {ten:30s}{a['f1']:9.3f}{b['vi_pham']:>6}/{b['n']:<5}"
+                  f"{cx:>22s}{cn:>24s}")
         print()
 
 

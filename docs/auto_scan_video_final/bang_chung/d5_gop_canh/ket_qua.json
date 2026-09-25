@@ -1,0 +1,107 @@
+{
+ "v1": {
+  "so_canh": 125,
+  "thoi_luong_s": 265.0,
+  "so_khe_goc": 82,
+  "canh_co_khe": 73,
+  "canh_chi_MOT_khe": 64,
+  "gop<=2": {
+   "so_khe": 82,
+   "vua": 62,
+   "khe_dai_nhat_s": 6.52,
+   "khe_trung_vi_s": 3.11,
+   "khe_tren_7s": 0
+  },
+  "gop<=3": {
+   "so_khe": 82,
+   "vua": 62,
+   "khe_dai_nhat_s": 6.52,
+   "khe_trung_vi_s": 3.11,
+   "khe_tren_7s": 0
+  },
+  "gop<=5": {
+   "so_khe": 82,
+   "vua": 62,
+   "khe_dai_nhat_s": 6.52,
+   "khe_trung_vi_s": 3.11,
+   "khe_tren_7s": 0
+  },
+  "gop TU DO trong canh": {
+   "so_khe": 82,
+   "vua": 62,
+   "khe_dai_nhat_s": 6.52,
+   "khe_trung_vi_s": 3.11,
+   "khe_tren_7s": 0
+  }
+ },
+ "v2": {
+  "so_canh": 100,
+  "thoi_luong_s": 190.0,
+  "so_khe_goc": 74,
+  "canh_co_khe": 64,
+  "canh_chi_MOT_khe": 55,
+  "gop<=2": {
+   "so_khe": 73,
+   "vua": 14,
+   "khe_dai_nhat_s": 6.75,
+   "khe_trung_vi_s": 1.76,
+   "khe_tren_7s": 0
+  },
+  "gop<=3": {
+   "so_khe": 73,
+   "vua": 14,
+   "khe_dai_nhat_s": 6.75,
+   "khe_trung_vi_s": 1.76,
+   "khe_tren_7s": 0
+  },
+  "gop<=5": {
+   "so_khe": 73,
+   "vua": 14,
+   "khe_dai_nhat_s": 6.75,
+   "khe_trung_vi_s": 1.76,
+   "khe_tren_7s": 0
+  },
+  "gop TU DO trong canh": {
+   "so_khe": 73,
+   "vua": 14,
+   "khe_dai_nhat_s": 6.75,
+   "khe_trung_vi_s": 1.76,
+   "khe_tren_7s": 0
+  }
+ },
+ "v3": {
+  "so_canh": 18,
+  "thoi_luong_s": 106.8,
+  "so_khe_goc": 31,
+  "canh_co_khe": 16,
+  "canh_chi_MOT_khe": 9,
+  "gop<=2": {
+   "so_khe": 26,
+   "vua": 6,
+   "khe_dai_nhat_s": 8.48,
+   "khe_trung_vi_s": 3.76,
+   "khe_tren_7s": 2
+  },
+  "gop<=3": {
+   "so_khe": 24,
+   "vua": 6,
+   "khe_dai_nhat_s": 10.57,
+   "khe_trung_vi_s": 3.63,
+   "khe_tren_7s": 3
+  },
+  "gop<=5": {
+   "so_khe": 23,
+   "vua": 6,
+   "khe_dai_nhat_s": 13.34,
+   "khe_trung_vi_s": 3.66,
+   "khe_tren_7s": 3
+  },
+  "gop TU DO trong canh": {
+   "so_khe": 23,
+   "vua": 6,
+   "khe_dai_nhat_s": 13.34,
+   "khe_trung_vi_s": 3.66,
+   "khe_tren_7s": 3
+  }
+ }
+}
