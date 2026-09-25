@@ -129,9 +129,15 @@ def dung_cai_dat(db, *, owner_id: str, tho: Mapping) -> dict:
         raise LoiCaiDat(str(exc)) from None
 
     # Nguon loi thoai (auto|embedded|ocr|asr) — kiem o CUA, truoc credit.
-    # ⭐ Duong YEU CAU MOI ⇒ mac dinh HIEN HANH (`asr` tu 24/09). Khac han duong
-    #    DOC ho so da luu, noi khoa vang mat nghia la `auto` — xem
-    #    `nguon_loi.CHE_DO_HO_SO_CU`.
+    # ⭐ Duong YEU CAU MOI ⇒ mac dinh HIEN HANH (`asr` tu 24/09, `3d6feea3`).
+    #    Khac han duong DOC ho so da luu, noi khoa vang mat nghia la `auto` —
+    #    xem `nguon_loi.CHE_DO_HO_SO_CU`.
+    #
+    # 🔴 **Kiem xong phai GHI.** Tu 23/09 toi truoc ban sua `331b9ca3`, `nl`
+    #    duoc duyet o day roi khong bao gio duoc dat vao `cai_dat` ben duoi —
+    #    mot dieu khien CHET: khach chon "chi dung ASR" hay "chi dung OCR",
+    #    cua nhan, lan chay van di duong `auto`. Ban vá đó (đường ghi ở dưới)
+    #    van giu nguyen o day — chi PHAN TINH `nl` la doi tu `3d6feea3`.
     nl = (str(tho.get("nguon_loi") or "").strip().lower()
           or nguon_loi_mod.CHE_DO_MAC_DINH)
     if nl and nl not in nguon_loi_mod.CHE_DO_HOP_LE:
@@ -218,6 +224,10 @@ def dung_cai_dat(db, *, owner_id: str, tho: Mapping) -> dict:
                # ⚠️ Bi danh cu, xem `cai_dat.KHOA_BI_DANH_GIONG`.
                "voice_id": giong_id}
     # ⛔ L4 cua `cat_dau_cuoi` + luat `KHOA_THUA`: khong dung thi KHONG ghi khoa.
+    #    `cai_dat.chuan_hoa` (dong 203-205) tu bo `nguon_loi` khi no bang mac
+    #    dinh, nen o day chi can dua gia tri da duyet qua.
+    if nl:
+        cai_dat["nguon_loi"] = nl
     if cua_so_cat:
         cai_dat["cat"] = [cua_so_cat[0], cua_so_cat[1]]
     if ds_lop_phu:

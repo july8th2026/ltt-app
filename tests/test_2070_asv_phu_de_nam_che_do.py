@@ -16,6 +16,7 @@
 """
 from __future__ import annotations
 
+import io
 import re
 import sys
 from pathlib import Path
@@ -263,3 +264,42 @@ def test_giao_dien_co_o_nguon_chu_goi_y_va_xem_truoc():
     assert "/phu-de/xem-truoc" in html
     js = (GOC / "server/static/asv/phu_de.js").read_text(encoding="utf-8")
     assert "danh_dau_phu_de" in js and "data-duong" in js
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Tep `.srt` ban giao — loai artifact
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_loai_artifact_SUBTITLE_co_trong_KINDS_va_co_phep_kiem(tmp_path):
+    """🔴 **Do that o nghiem thu cuoi 23/09, luot C.**
+
+    `giai_doan_ket_xuat.chay` phat `kind: "subtitle"` cho tep `.srt` tu pha 14,
+    nhung `tables.KINDS` khong he co ma do — nen `assets.kiem_hop_le` nem
+    `loai artifact khong biet: 'subtitle'` va `render` chet `failed_terminal`
+    sau khi chin giai doan da xanh. Tuc `xuat_srt: true` **chua bao gio** chay
+    duoc dau-cuoi: mot tinh nang CHET, khong phai mot tinh nang hong.
+
+    ⛔ Va phep kiem nay chot CA HAI nua, dung theo canh bao o `KIND_ANH`: mot ma
+       loai moi ma khong co phep kiem noi dung la mot loai artifact khong ai soi
+       — bat bien I8 ("DONE nghia la co mot ket qua HOP LE") mat hieu luc cho
+       dung loai do.
+    """
+    from platform_core.storage import LocalStorage
+
+    from apps.auto_scan_video import assets
+    from apps.auto_scan_video.tables import KINDS, KIND_PHU_DE
+
+    assert KIND_PHU_DE in KINDS
+
+    kho = LocalStorage(str(tmp_path / "kho"))
+    tot = "1\n00:00:00,000 --> 00:00:01,200\nXin chào\n"
+    kho.put("a.srt", io.BytesIO(tot.encode("utf-8")), content_type="application/x-subrip")
+    co, checksum = assets.kiem_hop_le(kho, "a.srt", kind=KIND_PHU_DE)
+    assert co == len(tot.encode("utf-8")) and checksum
+
+    # ⛔ Mot tep KHONG rong nhung khong co cue nao van phai bi tu choi: do la
+    #    hinh dang cua "da viet tep, chua kip ghi gi", va `not du_lieu` o tren
+    #    khong bat duoc no.
+    kho.put("b.srt", io.BytesIO(b"khong phai srt\n"), content_type="application/x-subrip")
+    with pytest.raises(assets.AssetError, match="khong co muc nao"):
+        assets.kiem_hop_le(kho, "b.srt", kind=KIND_PHU_DE)

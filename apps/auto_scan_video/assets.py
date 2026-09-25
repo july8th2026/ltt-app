@@ -52,7 +52,7 @@ from platform_core.i18n import _ as _t
 from platform_core.storage import Storage, StorageError
 
 from .tables import (ASSET_CORRUPT, ASSET_EXPIRED, ASSET_MISSING, ASSET_OK,
-                     KINDS, KIND_ANH, AsvAsset)
+                     KINDS, KIND_ANH, KIND_PHU_DE, AsvAsset)
 
 #: Han luu tru mac dinh cua artifact TRUNG GIAN. Ngan hon vong doi mot du an,
 #: vi chung la vat lieu chu khong phai san pham; ban giao cho khach la
@@ -333,6 +333,24 @@ def kiem_hop_le(kho: Storage, khoa: str, *, kind: str) -> tuple[int, str]:
             json.loads(du_lieu.decode("utf-8"))
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise AssetError(f"artifact JSON hong: {khoa}") from exc
+
+    if kind == KIND_PHU_DE:
+        # ⭐ Dung lai `nguon_loi.doc_srt` — bo doc SRT DUY NHAT cua app (no da
+        #    doc phu de nhung o duong dinh tuyen nguon loi). Viet mot bo doc thu
+        #    hai o day la mo mot cho cho hai cau tra loi lech nhau ve cung mot
+        #    tep.
+        from .nguon_loi import doc_srt
+
+        try:
+            van = du_lieu.decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise AssetError(f"artifact phu de khong phai UTF-8: {khoa}") from exc
+        if not doc_srt(van):
+            # ⛔ KHONG cho qua mot tep `.srt` khong co muc nao. Do la hinh dang
+            #    cua "da viet tep, chua kip ghi cue" — dung loai that bai ma I8
+            #    ton tai de chan, chi la no khong rong nen `not du_lieu` o tren
+            #    khong bat duoc.
+            raise AssetError(f"artifact phu de khong co muc nao: {khoa}")
 
     if kind == KIND_ANH:
         # 🔑 Kiem bang CHU KY + kich thuoc diem anh, khong bang duoi tep hay
