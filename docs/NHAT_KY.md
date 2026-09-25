@@ -317,6 +317,17 @@ bắt đầu. Bằng chứng khớp với khảo sát cùng ngày của làn kh�
   đang **bị chặn** (cần một lượt TTS thật để đối chiếu). Chi tiết + điều kiện
   nối thật: docstring đầu `nan_thoi_luong.py`.
 
+  ⭐ **ĐÍNH CHÍNH (25/09, làn `phien/khep-hai-do`): dòng "CHƯA nối vào đường
+  sinh tiếng thật" ở trên nay ĐÃ CŨ.** Làn `b2-gop-khe` (25/09) nối thuật toán
+  của `gop_khe` vào `giai_doan_giong.chay()` thật — nhưng qua `nhom_chi_so()`
+  (module tự gọi đây là "lớp LÕI, `gop_khe` chỉ là một cách đọc nó") +
+  `_gop_mot_nhom()` riêng của `giai_doan_giong`, ĐÚNG cách né vỡ ADR-003 mà
+  đoạn trên lo: một dòng `ban_ke` cho MỖI `ma` gốc vẫn được giữ, không cần sửa
+  `giai_doan_noi_dung.py`. Hàm `gop_khe` (hàm, không phải thuật toán) vẫn
+  không có người gọi trực tiếp trong mã sản phẩm — nó là oracle độc lập cho
+  `test_2062`/`test_4700`, hàm thấp hơn `nhom_chi_so` mới là đường thật. Xem
+  `tests/test_453_asv_v4_nang_luc_mo_coi.py:MO_COI_DA_BIET["gop_khe"]`.
+
 **Kết quả:** `test_453` xanh bằng mã thật (không `--accept`, không thêm
 `MO_COI_DA_BIET`). Canh chỗ trống cho 4 tên đã xoá:
 `test_2062...::test_2062_BA_can_gat_TRUNG_da_XOA_khong_song_lai`. Test nhắm:

@@ -247,6 +247,26 @@ MO_COI_DA_BIET = frozenset({
     "tong_credit",
     "cua_so_ngu_canh", "dung_gpu", "van_tay_che_do", "van_tay_van_ban",
     "tu_json", "doc_wav", "ghi_wav",
+
+    # ── `gop_khe` (`nan_thoi_luong.py:326`, 25/09, lan `b2-gop-khe`) — THUAT
+    #    TOAN dang CHAY THAT, HAM thi khong co nguoi goi truc tiep.
+    #
+    #    `giai_doan_giong.chay()` (dong ~149) goi `nan_thoi_luong.nhom_chi_so()`
+    #    — chinh module tu goi no la "lop LOI, `gop_khe` chi la mot cach doc
+    #    no" (xem docstring `nhom_chi_so`) — roi tu ghep tung nhom bang
+    #    `_gop_mot_nhom()` cua rieng no, vi no can biet nhom gom nhung `ma`
+    #    NAO (de ghi MOT dong `ban_ke` cho MOI `ma` goc, bat bien cua
+    #    `giai_doan_thoi_gian.py:88-89`) chu khong chi can do dai khe da gop.
+    #    `gop_khe` la lop vo boc mong quanh `nhom_chi_so` tra thang ve
+    #    `list[Khe]` da gop — giu lai lam oracle doc lap cho
+    #    `test_2062_asv_nan_thoi_luong.py` / `test_4700_asv_gop_khe_that.py`
+    #    (kiem dung THUAT TOAN gop, tach khoi logic ghep `ban_ke` cua
+    #    `giai_doan_giong`), khong phai vi con thieu mot cho goi.
+    #
+    #    ⭐ DIEU KIEN GO RA: mot duong san pham can thang `list[Khe]` da gop
+    #       (khong can chi so tung `ma`) va goi `gop_khe` truc tiep — hoac
+    #       `gop_khe` bi XOA vi `nhom_chi_so` + `_gop_mot_nhom` da du dung.
+    "gop_khe",
 })
 
 

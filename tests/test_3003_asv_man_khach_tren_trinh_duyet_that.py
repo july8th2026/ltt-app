@@ -19,6 +19,21 @@ không"*.
     2. **không lỗi console**, không request nào hỏng;
     3. khối bằng chứng **mở sẵn** — phải bấm mới thấy thì khách sẽ không thấy.
 
+## 🔴 25/09: con số 44 bị LẬT NGƯỢC 24/09 — đây là kỳ vọng CŨ, không phải lỗi GUI
+
+`test_3002` đã lật `test_man_khach_KHONG_con_noi_44_tren_95_vi_THUOC_DO_HONG` từ
+24/09 (`5ff00f26`): `qc_ai.khai_cho_khach()` giờ trả `False` MẶC ĐỊNH — bộ chấm
+ngữ nghĩa gán 45,0% cho cả bản dịch NGƯỜI CHUYÊN NGHIỆP nên không phân biệt được
+bản của ta với một bản hoàn hảo, và chủ dự án chốt KHÔNG khai con số đó cho khách
+tới khi báo động giả đo được xuống dưới 15%. Tệp này (`test_3003`, tạo cùng ngày
+24/09 lúc 10:23, TRƯỚC lúc `5ff00f26` commit 19:07) chưa từng được cập nhật theo
+lượt lật đó — `test_khach_DOC_DUOC_con_so_44_tren_man_hinh` gốc đòi khối "Soát
+nghĩa bản dịch" hiện với 44/95, điều mà `khai_cho_khach() is False` cấm hẳn ở
+tầng template (`{% if bang_chung.ngu_nghia %}`), bất kể seed dữ liệu gì. Đã đổi
+tên + LẬT CHIỀU bài đó cho khớp `test_3002`, giữ nguyên phần giá trị riêng của
+tệp này: xác minh bằng CHROMIUM THẬT (không phải `in html`) rằng khối đó thật sự
+KHÔNG hiện trên màn hình.
+
 ## ⚠️ Phần này KHÔNG đóng, và phải nói ra
 
 Phần còn lại của luật 7 là *"chốt trên `https://app.lttstudios.com`"* (loopback bỏ
@@ -115,17 +130,34 @@ def _o_chua(page, chu: str):
     return None
 
 
-def test_khach_DOC_DUOC_con_so_44_tren_man_hinh(trang_that):
-    """⛔ `is_visible`, không phải `"44" in html`.
+def test_khach_KHONG_thay_con_so_44_vi_THUOC_DO_HONG(trang_that):
+    """🔴 N-03 bị LẬT NGƯỢC 24/09 (`5ff00f26`, xem docstring đầu tệp và
+    `test_3002...test_man_khach_KHONG_con_noi_44_tren_95_vi_THUOC_DO_HONG`) —
+    CHƯA đóng, chỉ đổi CHIỀU: khối "Soát nghĩa bản dịch" ⛔ KHÔNG được phép hiện,
+    vì bộ chấm ngữ nghĩa (`TI_LE_BAO_DONG_GIA_DA_DO=45%`) không phân biệt được
+    bản dịch của ta với một bản dịch hoàn hảo của người.
 
-    Một con số bị `overflow:hidden` cắt, hay nằm trong `<details>` đóng, thì có
-    trong HTML mà **không có trên màn hình**.
+    ⭐ Cổng là một PHÉP TÍNH từ số đã đo (`qc_ai.khai_cho_khach`), không phải cờ
+       bật tay — hạ được báo động giả xuống ngưỡng thì cổng tự bật True và
+       CHÍNH bài này tự đỏ. Lúc đó lật bài về bản N-03 gốc (đòi Chromium thật
+       ĐỌC ĐƯỢC 44/95 trên màn hình), ⛔ đừng chỉ xoá phép kiểm.
     """
+    from apps.auto_scan_video import qc_ai
+
+    assert qc_ai.khai_cho_khach() is False, (
+        "Bao dong gia da ve duoi nguong — lat bai nay ve ban N-03 goc (doi "
+        "Chromium that DOC DUOC 44/95 tren man hinh), dung xoa no.")
     page, _loi, _hong = trang_that
+    # ⛔ `is_visible`, khong phai `"44" not in html`: phai xac minh bang CHINH
+    #    Chromium rang khoi do khong ANH HUONG man hinh that, khong chi rang no
+    #    vang trong HTML tinh — dung ly do tep nay ton tai (xem docstring dau
+    #    tep). Neu template render khoi do o dang AN (vd trong <details> dong)
+    #    thay vi bo hoan toan, `_o_chua` (loc `is_visible()`) van tra None dung.
     o = _o_chua(page, "Soát nghĩa bản dịch")
-    assert o is not None, "khoi 'Soat nghia ban dich' KHONG hien tren man hinh"
-    van = o.evaluate("e => e.closest('li') ? e.closest('li').innerText : e.innerText")
-    assert "44" in van and "95" in van, van
+    assert o is None, (
+        "khoi 'Soat nghia ban dich' HIEN tren man hinh THAT trong khi "
+        "qc_ai.khai_cho_khach() con dang False — template co the dang khong "
+        "doc cong khai_cho_khach()")
 
 
 def test_khach_DOC_DUOC_so_85_muc_con_chua_sua(trang_that):
