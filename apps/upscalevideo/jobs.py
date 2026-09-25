@@ -19,7 +19,8 @@ import time
 from pathlib import Path
 
 from apps.upscalevideo import autotune, cost, engine, ff
-from apps.upscalevideo.schemas import ENCODER, Codec, Preset
+from apps.upscalevideo.schemas import (ENCODER, ENCODER_AMD, ENCODER_QSV,
+                                        Codec, Preset)
 
 log = logging.getLogger(__name__)
 
@@ -207,14 +208,27 @@ def _upscale_batched(tmp, in_dir, tune, n, info, target_h, encoder, ctx, on_prog
         segs.append(seg)
         done_total += len(batch)
         
-        # Checkpoint after each batch
-        from apps.upscalevideo.checkpoint import save_checkpoint
-        save_checkpoint(job_id, f"upscale_batch_{bi+1:03d}", {
-            "batch": bi + 1,
-            "total_batches": n_batches,
-            "frames_processed": done_total,
-            "total_frames": n,
-        })
+        # Checkpoint after each batch.
+        #
+        # 🔴 Truoc 26/09 dong nay goi `save_checkpoint(job_id, ...)` — ma `job_id`
+        #    KHONG ton tai trong ham nay (`ruff F821`). Tuc MOI luot upscale cham
+        #    toi day chet bang `NameError`, va no KHONG nam sau mot nhanh phan cung
+        #    nao ca. Ham co tham so `ctx` (`JobContext`), va `JobContext.job_id` la
+        #    cho dung (`platform_core/job_runner.py:128`).
+        #
+        # ⚠️ Va phai CANH `ctx is None`: ham nay duoc goi voi `ctx=None` o duong
+        #    khong-co-job (xem `if ctx is not None: ctx.progress(...)` cung tep).
+        #    Viet `ctx.job_id` tron chi doi `NameError` thanh `AttributeError`.
+        # ⇒ Khong co job thi khong co gi de `resume`, nen BO QUA checkpoint la dung
+        #   nghia — khong phai mot duong lui im lang.
+        if ctx is not None:
+            from apps.upscalevideo.checkpoint import save_checkpoint
+            save_checkpoint(ctx.job_id, f"upscale_batch_{bi+1:03d}", {
+                "batch": bi + 1,
+                "total_batches": n_batches,
+                "frames_processed": done_total,
+                "total_frames": n,
+            })
         
         shutil.rmtree(b_in, ignore_errors=True)
         shutil.rmtree(b_up, ignore_errors=True)
