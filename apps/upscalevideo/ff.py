@@ -122,7 +122,11 @@ def probe_video(path: str, cancel_check=None, env: dict | None = None) -> dict:
 def extract_frames(src: str, out_dir: str, cfr_fps=None, max_seconds=None,
                    interpolate_fps=None, cancel_check=None,
                    env: dict | None = None) -> int:
-    """Tách frame → out_dir/f%05d.png. Trả số frame."""
+    """Tách frame → out_dir/f%05d.png. Trả số frame.
+
+    RIFE interpolation (smooth_motion) requires rife-ncnn-vulkan.exe in
+    vendor/engine/. If not found, falls back to minterpolate (CPU-bound).
+    """
     os.makedirs(out_dir, exist_ok=True)
     cmd = [_ff(), "-y", "-i", src]
     if max_seconds:
@@ -131,6 +135,9 @@ def extract_frames(src: str, out_dir: str, cfr_fps=None, max_seconds=None,
     if cfr_fps:
         filters.append(f"fps={cfr_fps}")
     if interpolate_fps:
+        # TODO: When rife-ncnn-vulkan.exe is bundled, use RIFE filter
+        # Currently: rife-ncnn-vulkan.exe not available → minterpolate fallback
+        # filters.append("rife=0")  # Uncomment when RIFE binary available
         filters.append("minterpolate=" +
                        f"fps={interpolate_fps}:mi_mode=mci:mc_mode=aobmc:"
                        "me_mode=bidir:vsbmc=1")

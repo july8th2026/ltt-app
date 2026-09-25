@@ -24,6 +24,9 @@ from apps.upscalevideo.schemas import TuneResult
 
 logger = logging.getLogger(__name__)
 
+# Model cache: model_name -> (param_path, bin_path)
+_model_cache = {}
+
 _STALL_TIMEOUT_S = 300.0
 
 _ENGINE_DIR = Path(__file__).resolve().parent / "vendor" / "engine"

@@ -23,7 +23,10 @@ class Codec(str, Enum):
     hevc = "hevc"       # H.265 — file nhỏ hơn ~30%
 
 
+# NVENC encoder mappings (NVIDIA, Intel, AMD)
 ENCODER = {Codec.h264: "h264_nvenc", Codec.hevc: "hevc_nvenc"}
+ENCODER_QSV = {Codec.h264: "h264_qsv", Codec.hevc: "hevc_qsv"}  # Intel QuickSync
+ENCODER_AMD = {Codec.h264: "h264_amf", Codec.hevc: "hevc_amf"}  # AMD AMF
 ALLOWED_HEIGHTS = (1080, 1440, 2160)
 
 
