@@ -340,6 +340,24 @@ def phan_loai(exc: BaseException) -> str:
     if isinstance(exc, (BanDoError, MasterError)):
         return NGUOI_DUNG
 
+    # ── Ke cat cua GIAI DOAN 2 (b4, 25/09) ──────────────────────────────────
+    #
+    # ⛔ `NGUOI_DUNG` — that bai CUOI CUNG, dung thu lai. Va ca hai dang cua
+    #    `KeCatError` deu tat dinh:
+    #
+    #      vuot tran 5 %   -> cung mot tieu chi tren cung mot ban bien tap se
+    #                         chon dung nhung canh do o lan thu hai
+    #      ke cat hong     -> mau thuan trong chinh du lieu (khoang chong lan,
+    #                         vuot thoi luong). Khong tu lanh.
+    #
+    # 🔴 Va o day thu lai **te hon vo ich**: moi luot ton mot suat ffmpeg ma hoa
+    #    lai ca luong hinh. Thong bao cua `ke_cat.kiem` noi ca hai con so va bao
+    #    phai SIET TIEU CHI — do la viec cua nguoi van hanh, khong phai cua mot
+    #    vong `retry`.
+    from .ke_cat import KeCatError
+    if isinstance(exc, KeCatError):
+        return NGUOI_DUNG
+
     # ── Nan cho vua (pha 15) ────────────────────────────────────────────────
     #
     # ⭐ `TAM_THOI` — va o day thu lai la viec dung chu khong phai mot cho hong

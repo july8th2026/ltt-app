@@ -32,8 +32,8 @@ from pathlib import Path
 from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
 
-from . import (am_master, assets, ban_do_thoi_gian, hop_dong_v4,
-               nan_thoi_luong, nhap_media, pipeline, thoi_gian, van_ban)
+from . import (am_master, assets, hop_dong_v4, nan_thoi_luong, nhap_media,
+               pipeline, thoi_gian, van_ban)
 from .giai_doan_media import ThieuNguon
 
 log = logging.getLogger(__name__)
@@ -99,14 +99,17 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     #    BA cua `gia.CHE_DO_MAC_DINH`, va mot trong ba ban do da lech.
     from . import cai_dat as cd
     che_do = cd.doc(run).timing_mode
-    ban_do = _ban_do(db, kho, run, tong_giay=tong_giay)
     # ⭐ Khe da GOP (`nan_thoi_luong.gop_khe`): MOT tep tieng, NHIEU `ma`. Cac
     #    `ma` di theo phai duoc dat LIEN NHAU thay vi o moc goc cua chung —
     #    `thoi_gian.lap_ke_hoach` doi hoi `nhom_gop` de biet dieu do. Rong khi
     #    lan chay khong gop gi, va khi do ke hoach khong doi mot mili-giay.
+    # 🔴 **KHONG mot tham so nao doc preset o day (b4 hai giai doan, 25/09).**
+    #    Giai doan 1 giao MP4 tieng Viet **toan bo do dai goc**, nen hai preset
+    #    di y het mot duong voice. Cat canh nam o giai doan 2 (`ke_cat.py`), sau
+    #    render, tren mot tep da xong. `test_4801` ghim menh de nay bang may.
     ke_hoach = thoi_gian.lap_ke_hoach(
         tl_vb.get("muc") or [], do_dai, tong_giay=tong_giay, che_do=che_do,
-        ban_do=ban_do, nhom_gop=nan_thoi_luong.nhom_theo_ma(ban_ke))
+        nhom_gop=nan_thoi_luong.nhom_theo_ma(ban_ke))
 
     goi = json.dumps(ke_hoach, sort_keys=True, ensure_ascii=False).encode("utf-8")
     vt = thoi_gian.van_tay_ke_hoach(checksum_van_ban=cs_vb, ban_ke_tieng=cs_ke,
@@ -127,7 +130,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         ctx.progress(50, _t('Đang trộn bản phối'))
 
     khoa_master, do_duoc, vt_master, he_so_da_kep = _dung_ban_phoi(
-        db, kho, run, ke_hoach=ke_hoach, ban_ke=ban_ke, ban_do=ban_do,
+        db, kho, run, ke_hoach=ke_hoach, ban_ke=ban_ke, tong_giay=tong_giay,
         van_tay_ke_hoach=vt, ctx=ctx)
     phan.append({"staging_key": khoa_master, "kind": "audio", "duoi": "wav",
                  "van_tay": vt_master})
@@ -135,10 +138,11 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     if ctx is not None and getattr(ctx, "progress", None):
         ctx.progress(95, _t('Đang lưu kết quả'))
 
-    tom_tat = {**thoi_gian.tom_tat(ke_hoach),
-              "ban_do": ban_do.sang_dict(),
-              "so_cho_noi": ban_do.so_cho_noi,
-              "master": do_duoc}
+    # ⛔ `ban_do` / `so_cho_noi` DA ROI KHOI bao cao nay: o giai doan 1 khong co
+    #    cho noi nao — luong hinh di nguyen ven. Hai khoa luon bang `0`/dong nhat
+    #    se lam moi bao cao van hanh noi rang "da kiem cho noi" trong khi khong
+    #    cho noi nao ton tai. Giai doan 2 khai chung (`ke_cat.tom_tat`).
+    tom_tat = {**thoi_gian.tom_tat(ke_hoach), "master": do_duoc}
     # ⛔ Chi ghi khoa nay khi CO kep (N-55) — mot danh sach rong luon co mat se
     #    lam moi bao cao cu (chua tung kep) khac bao cao moi mot cach vo nghia.
     if he_so_da_kep:
@@ -146,36 +150,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     return {"phan": phan, "tom_tat": tom_tat}
 
 
-def _ban_do(db, kho: Storage, run, *, tong_giay: float):
-    """Ban do thoi gian cua run: preset giu hinh -> dong nhat; preset cat -> tu ban.
-
-    ⭐ Doc tu artifact cua `EDIT_PLAN` chu khong tinh lai: ban bien tap la mot
-       **quyet dinh da chot**, va tinh lai mot quyet dinh la mo duong cho hai
-       cau tra loi khac nhau cho cung mot cau hoi.
-    """
-    from . import ban_bien_tap, cai_dat as cd, canh as canh_mod, features
-
-    preset = cd.doc(run).preset
-    if preset == hop_dong_v4.PRESET_GIU_HINH:
-        # ⛔ Preset giu hinh **sao chep** luong hinh: khong canh nao bi cat, nen
-        #    ban do la dong nhat. Doc ban bien tap o day khong sai nhung thua —
-        #    va mot duong thua la mot duong co the hong.
-        return ban_do_thoi_gian.BanDoThoiGian.giu_nguyen(tong_giay)
-
-    gd = features.giai_doan_theo_ten(db, run.id, pipeline.EDIT_PLAN)
-    khoa = next((k for k in (((gd.outputs or {}) if gd else {})
-                             .get("khoa_asset") or []) if k.endswith(".json")), "")
-    if not khoa:
-        raise ThieuDauVao(_t('Chưa có bản biên tập để dựng bản đồ thời gian.'))
-    goi = _doc_json(kho, khoa)
-    return ban_do_thoi_gian.tu_ban_bien_tap(
-        ban_bien_tap.BanBienTap.tu_dict(goi.get("ban") or {}),
-        canh_mod.tu_dict(goi.get("chi_muc") or {}),
-        thoi_luong_nguon=tong_giay)
-
-
 def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
-                   ban_do, van_tay_ke_hoach: str, ctx=None):
+                   tong_giay: float, van_tay_ke_hoach: str, ctx=None):
     """Tron nen + cac doan tieng theo ke hoach.
 
     Tra `(khoa, do_duoc, van_tay, da_kep)` — `da_kep` (N-55) liet ke moi doan
@@ -248,14 +224,17 @@ def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
     if not dat:
         raise ThieuDauVao(_t('Kế hoạch thời gian không còn đoạn nào có tiếng.'))
 
-    tong_giay_ra = float(ban_do.thoi_luong_ra)
+    # 🔑 `tong_giay` la do dai NGUON, va o giai doan 1 do cung la do dai ban
+    #    phoi: khong canh nao bi cat. Truoc b4 dong nay doc `ban_do.thoi_luong_ra`
+    #    — mot con so NHO hon khi preset cat — va do la dung SU GHEP NOI ma thu
+    #    tu moi xoa bo.
+    tong_giay_ra = float(tong_giay)
     # V6 pha 23: ho so am thanh cua khach — vao van tay VA vao chuoi tron.
     from . import am_thanh, cai_dat as cd
     am = am_thanh.tu_cai_dat(cd.doc(run).am_thanh)
     vt = am_master.van_tay_master(
         van_tay_nen=khoa_nen.rsplit("/", 1)[-1][:32],
         van_tay_ke_hoach=van_tay_ke_hoach,
-        van_tay_ban_do=ban_do.van_tay(),
         phien_ban_ffmpeg_=nhap_media.phien_ban_ffmpeg(),
         am_thanh=am)
 

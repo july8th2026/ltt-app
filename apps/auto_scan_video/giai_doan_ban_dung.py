@@ -191,8 +191,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     # ⭐ Ca hai suy tu **khai bao** (preset) va tu **ban do** ma pha 16 da luu
     #    cung ke hoach — khong tinh lai tu du lieu. Tinh lai mot quyet dinh da
     #    chot la mo duong cho hai cau tra loi khac nhau cho cung mot cau hoi.
-    from . import (ban_do_thoi_gian, cai_dat as cd, cat_dau_cuoi,
-                   che_do_render as cdr)
+    from . import cai_dat as cd, che_do_render as cdr
 
     # 🔑 MOT ban doc cho ca giai doan. Truoc pha 07 cho nay doc
     #    `run.settings` NAM lan rieng le, moi lan mot mac dinh cua
@@ -200,29 +199,22 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     cai = cd.doc(run)
     preset = cai.preset
     cach = cdr.che_do_cho(preset)
-    ban_do = ban_do_thoi_gian.BanDoThoiGian.tu_dict(ke_hoach.get("ban_do") or {})
-    khoang = list(ban_do.giu)
 
-    # ── Cua so cat dau/cuoi (V6 pha 10) ────────────────────────────────────
+    # ── 🔴 GIAI DOAN 1 ⛔ KHONG CAT GI (chu du an chot 25/09) ────────────────
     #
-    # ⭐ Mot phep GIAO tai dung mot diem, va no phai o **sau** `ban_do.giu`:
-    #    ban bien tap la quyet dinh hinh anh co tham quyen (xem `pipeline.py`,
-    #    `V4-R07`), con cua so cat la mot lop THU HEP dat len tren no. Lam nguoc
-    #    lai — cat truoc roi moi hoi ban do — la de khach vut mat mot canh ma
-    #    chinh sach da quyet giu, roi khong ai ghi lai chuyen do.
+    #    Truoc b4, doan nay doc `ke_hoach["ban_do"]` (cac canh `edit_plan` quyet
+    #    dinh giu) roi GIAO voi cua so `cat_dau_cuoi` cua khach. Ca hai phep cat
+    #    da chuyen xuong **giai doan 2** (`ke_cat.py` + `giai_doan_hinh_anh.py`),
+    #    thao tac tren MP4 da xong.
     #
-    # ⚠️ CHI o duong cat, cung khuon ba tang voi `vung` phia duoi. Nhung ly do
-    #    thi KHAC, va cho khac nhau moi la cho quan trong: vung che khong the co
-    #    o `-c:v copy` vi mot rang buoc VAT LY (khong khung hinh nao duoc giai
-    #    ma), con trim thi `-ss`/`-to` lam duoc — no bi cam vi mot quyet dinh
-    #    SAN PHAM (`DUNG_SAI_DO_DAI_S`: video ra dai bang video vao).
+    # ⭐ Nen o day chi con MOT khoang: ca video. Voi duong `CAT_MA_HOA_LAI` no
+    #    thanh `trim=0:T` + `concat n=1` — mot cho noi **khong** ton tai, nen
+    #    khong mot khung hinh nao bi mat va khong mot moc nao phai doi.
     #
-    # ⛔ Va o day khong tin giao dien: giao dien an hai tay cam khi preset la
-    #    giu hinh, nhung mot yeu cau dung tay van toi duoc.
-    if cach == cdr.CAT_MA_HOA_LAI:
-        khoang = cat_dau_cuoi.giao(
-            khoang, cai.cat,
-            float(ke_hoach.get("tong_ms") or 0) / 1000.0)
+    # ⛔ Va day la ly do `thoi_gian.lap_ke_hoach` khong con tham so `ban_do`:
+    #    trong giai doan 1, truc ke hoach LA truc nguon cho CA HAI preset.
+    tong_giay_kh = float(ke_hoach.get("tong_ms") or 0) / 1000.0
+    khoang = [(0.0, tong_giay_kh)]
 
     # 🔴 **Doc `ctx.gpu_uuid` O DAY la mot phep do sai cho, va no da lam
     #    B24-01 khong the sua duoc bang mot dong khai bao.**

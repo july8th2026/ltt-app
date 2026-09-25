@@ -1020,11 +1020,15 @@ def the_lich_su(db: Session, owner_id: str, *, toi_da: int = 20) -> list[dict]:
 def khoa_ket_qua(db: Session, run: AsvRun) -> str:
     """Khoa luu tru cua ban long tieng, hoac chuoi rong.
 
-    ⚠️ Doc tu `outputs` cua giai doan RENDER chu khong quet kho theo tien to:
-       mot phep quet tien to se tim thay ca artifact cua mot lan chay lai da bi
-       thay the, va phuc vu nham ban cu.
+    🔴 **Doc `IMAGE_FINISH`, ⛔ khong con `RENDER` (b4 hai giai doan, 25/09).**
+       `render` nay giao mot ban TRUNG GIAN: no chua qua phep cat cua giai doan 2.
+       Tro vao no la giao cho khach mot tep dai hon ban da duoc QC chung nhan.
+
+    ⚠️ Doc tu `outputs` cua giai doan do chu khong quet kho theo tien to: mot
+       phep quet tien to se tim thay ca artifact cua mot lan chay lai da bi thay
+       the, va phuc vu nham ban cu.
     """
-    s = giai_doan_theo_ten(db, run.id, pipeline.RENDER)
+    s = giai_doan_theo_ten(db, run.id, pipeline.IMAGE_FINISH)
     if s is None or s.status != STAGE_SUCCEEDED:
         return ""
     return next((k for k in ((s.outputs or {}).get("khoa_asset") or [])
@@ -1043,11 +1047,16 @@ def khoa_phu_de(db: Session, run: AsvRun) -> str:
        cua khach co. Nen tep phu de duoc tinh, duoc luu **vinh vien**, va khong
        ai tai ve duoc — dung hinh dang mot **o chet** (`L_GUI.md` §1).
 
-    ⚠️ Cung khuon voi `khoa_ket_qua`: doc `outputs` cua RENDER chu khong quet kho
-       theo tien to. Mot phep quet se tim thay ca `.srt` cua mot lan chay lai da
-       bi thay the, va giao ban phu de KHONG khop voi video dang phuc vu.
+    ⚠️ Cung khuon voi `khoa_ket_qua`: doc `outputs` cua IMAGE_FINISH (b4 25/09)
+       chu khong quet kho theo tien to. Mot phep quet se tim thay ca `.srt` cua
+       mot lan chay lai da bi thay the, va giao ban phu de KHONG khop voi video
+       dang phuc vu.
+
+    🔴 Va phai la `IMAGE_FINISH`: `.srt` cua `render` nam tren truc GD1, nen sau
+       khi cat no **tre** dung bang phan da cat. Giai doan 2 sinh lai no bang
+       `giai_doan_hinh_anh.doi_moc_su_kien`.
     """
-    s = giai_doan_theo_ten(db, run.id, pipeline.RENDER)
+    s = giai_doan_theo_ten(db, run.id, pipeline.IMAGE_FINISH)
     if s is None or s.status != STAGE_SUCCEEDED:
         return ""
     return next((k for k in ((s.outputs or {}).get("khoa_asset") or [])

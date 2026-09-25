@@ -50,6 +50,7 @@ TEN_MODULE = {
     P.TIMING_ALIGN: "giai_doan_thoi_gian",
     P.COMPOSE: "giai_doan_ban_dung",
     P.RENDER: "giai_doan_ket_xuat",
+    P.IMAGE_FINISH: "giai_doan_hinh_anh",
     P.QC: "giai_doan_qc",
     P.QC_DO_LUONG: "giai_doan_qc_do_luong",
     P.QC_AI: "giai_doan_qc_ai",

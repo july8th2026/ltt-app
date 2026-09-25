@@ -110,6 +110,9 @@ NHAN_GIAI_DOAN = {
     pipeline.TIMING_ALIGN: N_('Khớp thời điểm'),
     pipeline.COMPOSE: N_('Dựng bản ghép'),
     pipeline.RENDER: N_('Kết xuất video'),
+    # ⭐ GIAI ĐOẠN 2 (b4, 25/09). Nhãn nói **việc gì đang xảy ra** với video của
+    #    khách, không nói tên kỹ thuật `image_finish`.
+    pipeline.IMAGE_FINISH: N_('Hoàn thiện hình ảnh'),
     pipeline.QC: N_('Kiểm chất lượng'),
     pipeline.QC_DO_LUONG: N_('Nghe lại giọng đọc'),
     # ⭐ Nhãn nói **việc gì đang xảy ra**, không nói tên kỹ thuật `qc_ai`.

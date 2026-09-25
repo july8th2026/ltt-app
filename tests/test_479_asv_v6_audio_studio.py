@@ -84,7 +84,7 @@ def test_ho_so_MAC_DINH_ra_DUNG_chuoi_truoc_pha_23():
 
 
 def test_van_tay_ban_phoi_DOI_theo_ho_so_am_thanh():
-    kw = dict(van_tay_nen="n", van_tay_ke_hoach="k", van_tay_ban_do="b",
+    kw = dict(van_tay_nen="n", van_tay_ke_hoach="k",
               phien_ban_ffmpeg_="f")
     mac = am_master.van_tay_master(**kw)
     assert mac == am_master.van_tay_master(**kw, am_thanh=dict(am_thanh.MAC_DINH))

@@ -53,6 +53,7 @@ MODULE = {
     P.TIMING_ALIGN: "giai_doan_thoi_gian.py",
     P.COMPOSE: "giai_doan_ban_dung.py",
     P.RENDER: "giai_doan_ket_xuat.py",
+    P.IMAGE_FINISH: "giai_doan_hinh_anh.py",
     P.QC: "giai_doan_qc.py",
     P.QC_DO_LUONG: "giai_doan_qc_do_luong.py",
     P.QC_AI: "giai_doan_qc_ai.py",

@@ -38,6 +38,7 @@ from apps.auto_scan_video.demucs_runner import ThieuCard
 from apps.auto_scan_video.long_tieng import LongTiengError, ThieuDoan
 from apps.auto_scan_video.am_master import MasterError
 from apps.auto_scan_video.ban_do_thoi_gian import BanDoError
+from apps.auto_scan_video.ke_cat import KeCatError
 from apps.auto_scan_video.che_do_render import CheDoError
 from apps.auto_scan_video.qc_ai import QcAiError
 from apps.auto_scan_video.sua_chua import SuaChuaError
@@ -89,6 +90,14 @@ BANG = {
     #    luot chay lai deu cho cung mot ket qua — cung mot cua so tren cung mot
     #    ban do. Khach cho ba lan de nhan cung mot cau tra loi.
     CatLoi: loi.NGUOI_DUNG,
+    # 🔑 `KeCatError` (b4 hai giai doan, 25/09) di toi `phan_loai` TU TRONG mot
+    #    job: `giai_doan_hinh_anh._ke_cat` goi `ke_cat.chon`, va `chon` goi
+    #    `kiem` — no NEM khi ke cat vuot tran 5 %.
+    # ⛔ Roi xuong `retry` thi ba luot deu hong y het (cung tieu chi, cung ban
+    #    bien tap) va MOI luot ton mot suat ffmpeg ma hoa lai ca luong hinh.
+    #    Thong bao noi phai SIET TIEU CHI — viec cua nguoi van hanh, khong phai
+    #    cua mot vong thu lai.
+    KeCatError: loi.NGUOI_DUNG,
     # 🔑 `PhuDeLoi` (V6 pha 14) di toi `phan_loai` qua **HAI** duong, va duong
     #    thu hai moi la ly do dong nay ton tai:
     #
@@ -390,6 +399,10 @@ def test_moi_lop_ngoai_le_cua_app_deu_duoc_phan_loai():
         #    nguon thieu, va `THIEU_THUONG_NGUON` cho dung hanh vi — khong thu
         #    lai o tang job, vi lan hoi lai da xay ra trong chinh giai doan.
         "ThieuBangChungCanh",
+        # 🔑 Cung khuon (b4 25/09): `ThieuBanRaGd1` (image_finish) ke thua
+        #    `ThieuNguon` — da co trong BANG. "Chua co MP4 cua giai doan 1" DUNG
+        #    la mot thuong nguon thieu.
+        "ThieuBanRaGd1",
         # 🔑 Chi song trong `giai_doan_giong._viet_lai`, bi bat ngay tai cho de
         #    dung bac thang nan — khong bao gio len toi bien cua nen tang.
         "_KhongNanDuoc",

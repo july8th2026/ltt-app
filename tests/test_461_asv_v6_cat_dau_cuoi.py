@@ -47,7 +47,14 @@ _nop = _sp._nop
 _settings = _sp._settings
 
 GOC = Path(__file__).resolve().parents[1]
-DUONG_GIAI_DOAN = GOC / "apps" / "auto_scan_video" / "giai_doan_ban_dung.py"
+#: 🔴 **b4 hai giai doan (25/09): cua so cat chuyen sang GIAI DOAN 2.**
+#:    Truoc do no duoc GIAO voi `ban_do.giu` trong `giai_doan_ban_dung` (COMPOSE).
+#:    Nay giai doan 1 ⛔ khong cat gi — no giao MP4 tieng Viet **toan bo do dai
+#:    goc** — nen moi phep cat, ke ca cua so cua khach, nam o `giai_doan_hinh_anh`.
+#:
+#: ⭐ Ba tang o §3 ⛔ khong bi noi long, chi doi cho: luat L3 (*"CHI o preset
+#:    cat"*) van duoc cuong che bang mot `if` so `cach` voi che do cat.
+DUONG_GIAI_DOAN = GOC / "apps" / "auto_scan_video" / "giai_doan_hinh_anh.py"
 DUONG_ROUTES = GOC / "apps" / "auto_scan_video" / "routes.py"
 DUONG_MAU = GOC / "apps" / "auto_scan_video" / "templates" / "asv_trang_chinh.html"
 
@@ -185,7 +192,7 @@ def _goi_ten(cay: ast.AST) -> set[str]:
     return ra
 
 
-def test_giai_doan_ban_dung_THUC_SU_goi_giao():
+def test_giai_doan_hinh_anh_THUC_SU_goi_giao():
     """⛔ Day la phep kiem bat "nang luc dung, khong ai di tren duong".
 
     Khong dem chuoi: doc AST. Mot chu thich nhac ten `cat_dau_cuoi` khong lam

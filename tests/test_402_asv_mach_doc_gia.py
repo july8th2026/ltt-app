@@ -225,7 +225,13 @@ def test_run_chay_het_CA_CHUOI_va_ve_done(db, kho_tam, tmp_path, asr_gia, dich_g
     # ⚠️ **11 -> 12 (22/09, asv-final).** `qc_do_luong` (lan `gpu`: ASR+WER,
     #    SQUIM, MetricX) chen GIUA `qc` va `qc_ai`. Thieu venv do luong thi no
     #    van `succeeded` voi moi bo do `khong_kha_dung` — dung canh o day.
-    assert len(ds) == len(pipeline.CHUOI) == 12
+    #
+    # ⚠️ **12 -> 13 (25/09, b4 hai giai doan).** `image_finish` chen GIUA `render`
+    #    va `qc`: chu du an chot tach GIAI DOAN 1 (voice, ra MP4 toan bo do dai
+    #    goc) khoi GIAI DOAN 2 (hinh anh, thao tac tren MP4 da xong). No o TRUOC
+    #    `qc` vi cong chat luong phai do **tep khach nhan**, va no la BAN GIAO
+    #    (`thi_hanh.la_ban_giao`).
+    assert len(ds) == len(pipeline.CHUOI) == 13
     assert sorted(xong) == sorted(pipeline.TEN_GIAI_DOAN), (
         f"chua xong het: thieu {set(pipeline.TEN_GIAI_DOAN) - set(xong)}")
     assert run.status == RUN_DONE

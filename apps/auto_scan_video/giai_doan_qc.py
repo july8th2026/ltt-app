@@ -57,6 +57,31 @@ def _doc_json(kho: Storage, khoa: str) -> dict:
         return json.loads(f.read().decode("utf-8"))
 
 
+def _thoi_luong_mong_doi(kho: Storage, ke_hoach: dict, khoa_ke_cat: str) -> float:
+    """Do dai (giay) ma TEP DUOC DO phai co, truoc phep chia `toc_do`.
+
+    ⭐ MOT noi tra loi cau hoi nay, va no tra loi tu mot BAN KHAI:
+
+        co ke cat  -> `ke_cat.KeCat.ban_do().thoi_luong_ra`
+        khong      -> `tong_ms` cua ke hoach (= do dai nguon, giai doan 1 khong cat)
+
+    ⛔ **⛔ Khong doan tu tep dang do.** Suy do dai mong doi tu chinh tep la bien
+       mot phep kiem thanh mot phep tu khang dinh — no se xanh voi MOI tep.
+
+    ⚠️ Doc lai thi kiem lai (I8): `ke_cat.kiem` chay o day nua, nen mot ke cat
+       vuot tran 5 % ⛔ khong the di qua cong nay bang cach duoc ghi ra tep.
+    """
+    from . import ke_cat as _kc
+
+    if khoa_ke_cat:
+        goi = (_doc_json(kho, khoa_ke_cat) or {}).get("ke_cat") or {}
+        if goi:
+            ke = _kc.KeCat.tu_dict(goi)
+            _kc.kiem(ke)
+            return float(ke.ban_do().thoi_luong_ra)
+    return float(ke_hoach.get("tong_ms") or 0) / 1000.0
+
+
 def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     """Do ban ra so voi muoi hai dung sai. Tra ve bao cao, KHONG nem.
 
@@ -69,9 +94,14 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
        mot lop ngoai le khong ai nem van la mot lop phai phan loai, va lan theo
        no thi thay no la ma chet. Da go.
     """
-    khoa_ra = _khoa_theo_duoi(db, run, pipeline.RENDER, ".mp4")
+    # 🔴 **Do tep cua IMAGE_FINISH — tep KHACH NHAN (b4 hai giai doan, 25/09).**
+    #    `render` giao mot ban trung gian chua qua phep cat cua giai doan 2. Do
+    #    ban trung gian la chung nhan mot tep ⛔ khong ai duoc giao, tuc mot cong
+    #    ⛔ khong canh giu ban giao.
+    khoa_ra = _khoa_theo_duoi(db, run, pipeline.IMAGE_FINISH, ".mp4")
     if not khoa_ra:
         raise ThieuBanRa(_t('Chưa có bản kết xuất để kiểm.'))
+    khoa_kc = _khoa_theo_duoi(db, run, pipeline.IMAGE_FINISH, ".json")
     khoa_kh = _khoa_theo_duoi(db, run, pipeline.TIMING_ALIGN, ".json")
     khoa_ke = _khoa_theo_duoi(db, run, pipeline.VOICE_SYNTHESIS, ".json")
     khoa_ban = _khoa_theo_duoi(db, run, pipeline.COMPOSE, ".json")
@@ -108,17 +138,23 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         #    thuc su duoc render, va neu hai nguon lech nhau thi cai dung la cai
         #    da chay. Suy lai o day se cho QC do mot lan chay khac voi lan chay
         #    that.
-        from . import ban_do_thoi_gian, che_do_render as cdr
+        from . import che_do_render as cdr
 
         cach = str((ban_dung.get("hinh") or {}).get("cach_render") or cdr.SAO_CHEP)
 
-        # Thoi luong MONG DOI: preset cat ngan hon nguon dung bang phan da cat,
-        # va do la muc dich cua san pham chu khong phai mot khiem khuyet.
-        bdo = ban_do_thoi_gian.BanDoThoiGian.tu_dict(ke_hoach.get("ban_do") or {})
+        # ── Thoi luong MONG DOI (b4 hai giai doan, 25/09) ───────────────────
+        #
+        # 🔴 Truoc b4, dong nay doc `ke_hoach["ban_do"].thoi_luong_ra` — ngan hon
+        #    nguon dung bang phan `edit_plan` da cat. Nay giai doan 1 ⛔ KHONG cat
+        #    gi, nen mong doi la **do dai nguon**, cho CA HAI preset. Cat canh o
+        #    giai doan 2 (`giai_doan_hinh_anh`), va cong nay do dung tep ma giai
+        #    doan 2 giao.
+        #
         # ⭐ asv-final: truc bien tap -> ban ra la mot phep chia cho `toc_do`.
         from .bien_tap import moc_ban_ra
-        mong_doi = moc_ban_ra(float(bdo.thoi_luong_ra or 0.0),
-                              (ban_dung.get("hinh") or {}).get("bien_tap"))
+        mong_doi = moc_ban_ra(
+            _thoi_luong_mong_doi(kho, ke_hoach, khoa_kc),
+            (ban_dung.get("hinh") or {}).get("bien_tap"))
 
         bam_ra = bam_nguon = ""
         if cach != cdr.CAT_MA_HOA_LAI:

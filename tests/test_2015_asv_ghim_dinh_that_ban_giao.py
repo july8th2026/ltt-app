@@ -203,7 +203,7 @@ def test_kiem_ban_ra_KHONG_co_ghim_thi_van_tu_do_lay(tmp_path):
 def test_van_tay_master_doi_khi_cach_dung_ban_phoi_doi():
     """⛔ Thieu buoc tang nay thi mot ban phoi CHUA GHIM duoc dung lai tu cache."""
     assert am_master.PHIEN_BAN_MASTER >= 3
-    vt = dict(van_tay_nen="a", van_tay_ke_hoach="b", van_tay_ban_do="c",
+    vt = dict(van_tay_nen="a", van_tay_ke_hoach="b",
               phien_ban_ffmpeg_="d")
     truoc = am_master.van_tay_master(**vt)
     goc = am_master.PHIEN_BAN_MASTER

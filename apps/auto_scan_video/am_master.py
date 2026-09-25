@@ -52,7 +52,7 @@ log = logging.getLogger(__name__)
 #: ⬆️ 2 -> 3 (asv-final, R-03): ban phoi ket thuc bang mot bo HAN DINH THAT o
 #:    tran DO DUOC (`ghim_tran_phoi`) thay vi tin mot bien du doan truoc. Ban
 #:    phoi doi byte ⇒ bat buoc bump.
-PHIEN_BAN_MASTER = 3
+PHIEN_BAN_MASTER = 4
 
 #: So doan tieng moi lo. Xem ghi chu dau tep ve vi sao khong lam mot lan.
 #:
@@ -699,17 +699,26 @@ def _am_day_du(am: dict | None) -> dict:
 
 
 def van_tay_master(*, van_tay_nen: str, van_tay_ke_hoach: str,
-                   van_tay_ban_do: str, phien_ban_ffmpeg_: str,
+                   phien_ban_ffmpeg_: str,
                    am_thanh: dict | None = None) -> str:
     """Van tay cua ban phoi.
 
-    Nam thanh phan, thieu bat cu cai nao deu lam cache noi doi: ban nen · ke
-    hoach dat doan · ban do cat · phien ban cong cu · phien ban ma.
+    Bon thanh phan, thieu bat cu cai nao deu lam cache noi doi: ban nen · ke
+    hoach dat doan · phien ban cong cu · phien ban ma (+ ho so am thanh).
+
+    🔴 **`van_tay_ban_do` DA ROI KHOI day (b4 hai giai doan, 25/09).** Ban phoi
+       cua giai doan 1 phu am cho **toan bo** do dai goc, nen khong con mot ban
+       do cat nao de bam. Giu mot tham so luon nhan cung mot gia tri se lam
+       nguoi doc sau tuong ban phoi con phu thuoc cach cat — va ho se di tim
+       phep cat o giai doan sai.
+
+    ⚠️ `PHIEN_BAN_MASTER` 3 -> 4 vi the: mot ban phoi cua thu tu CU (do dai =
+       phan con lai sau cat) ⛔ khong duoc dung lai cho lan chay moi (do dai =
+       nguon).
     """
     goi = json.dumps({
         "nen": van_tay_nen,
         "ke_hoach": van_tay_ke_hoach,
-        "ban_do": van_tay_ban_do,
         "ffmpeg": phien_ban_ffmpeg_,
         "nen_giam_db": NEN_GIAM_DB,
         "lufs": lufs_dich(),

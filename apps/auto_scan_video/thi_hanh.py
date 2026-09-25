@@ -33,7 +33,8 @@ from platform_core.storage import get_storage
 
 from . import (assets, cache_chung, features, giai_doan_am_thanh, giai_doan_ban_dung,
                giai_doan_ban_bien_tap,
-               giai_doan_chep_loi, giai_doan_giong, giai_doan_ket_xuat,
+               giai_doan_chep_loi, giai_doan_giong, giai_doan_hinh_anh,
+               giai_doan_ket_xuat,
                giai_doan_media, giai_doan_noi_dung, giai_doan_qc, giai_doan_qc_ai,
                giai_doan_thoi_gian, lat_cat, loi, pipeline)
 from .tables import STAGE_QUEUED, STAGE_RUNNING, STAGE_SUCCEEDED
@@ -170,6 +171,15 @@ def phien_ban_engine(stage_ten: str) -> str:
     if stage_ten == pipeline.RENDER:
         from . import ket_xuat
         return f"ket_xuat/{ket_xuat.PHIEN_BAN_KET_XUAT}"
+    if stage_ten == pipeline.IMAGE_FINISH:
+        # 🔑 Ba con so, ba thu doi doc lap: ma giai doan, CHINH SACH cat (tran +
+        #    thu tu uu tien), va ma sinh chuoi loc. Thieu bat ky cai nao thi doi
+        #    no xong cache van khop, va lan chay dung lai mot ban giao cat theo
+        #    luat CU.
+        from . import che_do_render, giai_doan_hinh_anh, ke_cat
+        return (f"hinh_anh/{giai_doan_hinh_anh.PHIEN_BAN_HINH_ANH}"
+                f"/ke_cat/{ke_cat.PHIEN_BAN_KE_CAT}"
+                f"/che_do/{che_do_render.PHIEN_BAN_CHE_DO}")
     if stage_ten == pipeline.QC:
         from . import qc
         return f"qc/{qc.PHIEN_BAN_QC}"
@@ -458,6 +468,8 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
             ra = giai_doan_ban_dung.chay(db, kho, run=run, ctx=ctx)
         elif ten == pipeline.RENDER:
             ra = giai_doan_ket_xuat.chay(db, kho, run=run, ctx=ctx)
+        elif ten == pipeline.IMAGE_FINISH:
+            ra = giai_doan_hinh_anh.chay(db, kho, run=run, ctx=ctx)
         elif ten == pipeline.QC:
             ra = giai_doan_qc.chay(db, kho, run=run, ctx=ctx)
         elif ten == pipeline.QC_DO_LUONG:
@@ -483,7 +495,12 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
         #   nay la mot bo quet dung ap dung sai chinh sach — va no im lang cho
         #   30 ngay truoc khi ai do phat hien.
         khoa_ra: list[str] = []
-        la_ban_giao = ten == pipeline.RENDER
+        # 🔴 **BAN GIAO la IMAGE_FINISH, ⛔ khong con la RENDER (b4, 25/09).**
+        #    `render` nay chi giao mot ban trung gian: no chua qua phep cat cua
+        #    giai doan 2. Neu dong nay con tro vao `RENDER` thi tep khach thuc su
+        #    tai ve mang `HAN_TRUNG_GIAN = 30 ngay` — tuc mot lenh xoa video cua
+        #    khach sau mot thang, im lang.
+        la_ban_giao = ten == pipeline.IMAGE_FINISH
         for phan in ra["phan"]:
             asset = assets.promote_va_ghi(
                 db, kho, owner_id=owner_id, run_id=run_id, stage=ten,

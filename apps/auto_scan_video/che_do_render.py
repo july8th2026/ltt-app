@@ -794,6 +794,52 @@ def loc_cat_noi(khoang: list[tuple[float, float]], vung=(), *,
     return ";".join(phan)
 
 
+#: Nhan ra cua `loc_cat_hai_dong`. Hang so co ten vi hai noi doc chung: ham dung
+#: chuoi loc, va ham dung argv (`-map`).
+NHAN_HINH_RA = "vr"
+NHAN_TIENG_RA = "ar"
+
+
+def loc_cat_hai_dong(khoang: list[tuple[float, float]]) -> str:
+    """`filter_complex` cat cac khoang duoc giu roi noi lai — **CA HINH VA TIENG**.
+
+    🔴 **Day la cho khac han `loc_cat_noi`, va khac biet ay LA ca giai doan 2.**
+
+        `loc_cat_noi`      chi HINH. Tieng ⛔ khong di qua: ban phoi cua pha 16 da
+                           duoc dung theo dung nhung khoang do va chuan am mot
+                           lan roi, nen cho no qua `concat` lan nua la tron hai
+                           quyet dinh am thanh o hai cho.
+        `loc_cat_hai_dong` CA HAI, trong MOT `concat`. Dau vao la MP4 **da xong**
+                           cua giai doan 1: hinh va tieng cua no la hai dong cua
+                           MOT tep, tren MOT truc thoi gian.
+
+    ⭐ Va do la ly do thu tu moi xoa duoc mot lop loi thay vi quan ly no: cat
+       `[10;20)` tren mot tep da xong thi giay hinh thu 15 va giay tieng thu 15
+       **bien mat cung nhau**, vi chung la cung mot `trim`. ⛔ Khong mot phep anh
+       xa nao o giua de ma lech, nen mot doan tieng bi cut ⛔ khong the sinh ra.
+
+    ⚠️ `asetpts=PTS-STARTPTS` la bat buoc, cung ly do voi `setpts` cua hinh: sau
+       `atrim`, moc cua manh thu hai van la moc GOC, va `concat` noi khong ke ho
+       ⇒ manh do se nam sai cho. Thieu mot trong hai dong thi HINH va TIENG lech
+       nhau dung bang do dai phan bi cat — hong theo kieu nghe thay duoc.
+    """
+    if not khoang:
+        raise CheDoError(_t('Không có khoảng nào để cắt nối.'))
+    phan = []
+    for i, (b, k) in enumerate(khoang):
+        if k <= b:
+            raise CheDoError(_t('Khoảng cắt nối rỗng hoặc ngược.'))
+        b, k = float(b), float(k)
+        phan.append(f"[0:v]trim=start={b:.6f}:end={k:.6f},"
+                    f"setpts=PTS-STARTPTS[v{i}]")
+        phan.append(f"[0:a]atrim=start={b:.6f}:end={k:.6f},"
+                    f"asetpts=PTS-STARTPTS[a{i}]")
+    nhan = "".join(f"[v{i}][a{i}]" for i in range(len(khoang)))
+    phan.append(f"{nhan}concat=n={len(khoang)}:v=1:a=1"
+                f"[{NHAN_HINH_RA}][{NHAN_TIENG_RA}]")
+    return ";".join(phan)
+
+
 def loc_toc_do_tieng(bien_tap, nhan_vao: str = "1:a", nhan_ra: str = "a_ra") -> str:
     """Ve TIENG cua toc do: `atempo` tren BAN PHOI. Rong khi khong doi toc do.
 

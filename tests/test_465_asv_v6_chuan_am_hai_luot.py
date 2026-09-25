@@ -89,7 +89,7 @@ def test_PHIEN_BAN_MASTER_da_len_bac():
 
 def test_van_tay_master_DOI_theo_phien_ban():
     """Doi chung cho bai tren: bump chi co nghia neu no that su vao van tay."""
-    goc = dict(van_tay_nen="a", van_tay_ke_hoach="b", van_tay_ban_do="c",
+    goc = dict(van_tay_nen="a", van_tay_ke_hoach="b",
                phien_ban_ffmpeg_="n7.0")
     truoc = am.van_tay_master(**goc)
     cu = am.PHIEN_BAN_MASTER

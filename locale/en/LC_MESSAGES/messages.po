@@ -21519,3 +21519,27 @@ msgstr "The cut plan runs past the end of the video."
 
 msgid "Kế cắt bỏ {da:.1f}% video, vượt trần {tran:.0f}%. Tiêu chí cắt đang chọn quá nhiều — hãy siết tiêu chí, đừng nới trần."
 msgstr "The cut plan drops {da:.1f}% of the video, over the {tran:.0f}% cap. The cut criterion is selecting too much - tighten the criterion, do not raise the cap."
+
+msgid "Chưa có bản kết xuất của giai đoạn 1."
+msgstr "The stage 1 render is not available yet."
+
+msgid "Không đọc được thời lượng bản kết xuất giai đoạn 1."
+msgstr "Could not read the duration of the stage 1 render."
+
+msgid "Giai đoạn hình ảnh quá hạn."
+msgstr "The image stage timed out."
+
+msgid "Kế cắt không còn khoảng nào để giao."
+msgstr "The cut plan leaves no footage to deliver."
+
+msgid "Tệp sau khi cắt dài {co:.2f} s nhưng kế cắt nói {can:.2f} s."
+msgstr "The cut file is {co:.2f} s long but the cut plan says {can:.2f} s."
+
+msgid "Hoàn thiện hình ảnh"
+msgstr "Finishing the picture"
+
+msgid "Đang dựng kế cắt"
+msgstr "Building the cut plan"
+
+msgid "Đang cắt và ghép lại"
+msgstr "Cutting and rejoining"
