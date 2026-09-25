@@ -34,6 +34,17 @@ const KIEU = {
   CUSTOM: 'json',
   COLOR: 'string',
   FILE: 'string',
+  // ⭐ `DYNAMIC` (Activepieces `packages/pieces/community/framework/src/lib/
+  //    property/input/dynamic-prop.ts`, tag 0.32.0): gia tri thuc thi cua no
+  //    la `DynamicPropsValue = Type.Record(Type.String(), DynamicProp)` --
+  //    tuc VE MAT DAY, no la mot JSON object phang, giong het `OBJECT`. Cai
+  //    "dong" (`props(propsValue, ctx) -> Promise<Record<string, DynamicProp>>`)
+  //    chi quyet dinh CANH BAO/GOI Y hinh dang cua object do luc SOAN (piece
+  //    tu goi API de biet co nhung cot nao) -- runner cua ta khong dung UI
+  //    dong cua Activepieces (spec Sec11.1: goi thang `action.run(ctx)`), nen
+  //    o day chi anh xa DUNG kieu day: 'json'. Nguoi soan tu dien object
+  //    (vd `{"A": "gia tri"}` cho Google Sheets `insert_row`/`update_row`).
+  DYNAMIC: 'json',
 };
 
 //: Prop chi de HIEN THI, khong phai o nhap -> bo han, khong tinh la "khong
@@ -84,6 +95,16 @@ function motProp(ten, p) {
   }
   if (p.type === 'FILE') {
     rule.description = ('[artifact_ref] ' + (rule.description || '')).trim();
+  }
+  if (p.type === 'DYNAMIC') {
+    // `refreshers` (framework `DynamicProperties.refreshers: string[]`) la
+    // ten cac tham so KHAC ma piece doc de quyet dinh hinh dang object -- ghi
+    // ra de nguoi soan biet dien object nay THEO gi, ⛔ khong doan.
+    const ref = Array.isArray(p.refreshers) ? p.refreshers.join(', ') : '';
+    rule.description = (
+      '[JSON dong -- phu thuoc: ' + (ref || 'khong ro') + '] '
+      + (rule.description || '')
+    ).trim();
   }
   return rule;
 }

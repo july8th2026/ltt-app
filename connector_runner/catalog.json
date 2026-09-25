@@ -1,5 +1,5 @@
 {
- "sinh_luc": "2026-09-24T09:37:15.776Z",
+ "sinh_luc": "2026-09-25T08:17:39.966Z",
  "pieces": [
   {
    "ten": "@activepieces/piece-slack",
@@ -90,6 +90,29 @@
    ],
    "so_action": 61,
    "so_trigger": 4
+  },
+  {
+   "ten": "@activepieces/piece-google-drive",
+   "version": "0.9.2",
+   "displayName": "Google Drive",
+   "logoUrl": "https://cdn.activepieces.com/pieces/google-drive.png",
+   "auth": [
+    {
+     "ap": "OAUTH2",
+     "kieu": "oauth2",
+     "props": []
+    },
+    {
+     "ap": "CUSTOM_AUTH",
+     "kieu": "piece_custom",
+     "props": [
+      "serviceAccount",
+      "userEmail"
+     ]
+    }
+   ],
+   "so_action": 53,
+   "so_trigger": 3
   }
  ],
  "nodes": [
@@ -517,6 +540,116 @@
    "prop_bo_qua": []
   },
   {
+   "type": "piece.google_sheets.insert_row",
+   "type_version": 1,
+   "piece": "@activepieces/piece-google-sheets",
+   "piece_version": "0.17.0",
+   "op": "run_action",
+   "name": "insert_row",
+   "title": "Add Row",
+   "description": "Add a new row of data to a specific spreadsheet.",
+   "icon": "https://cdn.activepieces.com/pieces/google-sheets.png",
+   "params": {
+    "spreadsheetId": {
+     "type": "string",
+     "required": true,
+     "description": "[tuy chon dong cua piece] The spreadsheet to work in."
+    },
+    "sheetId": {
+     "type": "string",
+     "required": true,
+     "description": "[tuy chon dong cua piece] The tab inside that spreadsheet."
+    },
+    "includeTeamDrives": {
+     "type": "bool",
+     "required": false,
+     "description": "Also include spreadsheets stored in shared drives.",
+     "default": false
+    },
+    "first_row_headers": {
+     "type": "bool",
+     "required": false,
+     "description": "Enter values by column name instead of left to right.",
+     "default": false
+    },
+    "as_string": {
+     "type": "bool",
+     "required": false,
+     "description": "Store dates and formulas as plain text instead of evaluating them."
+    },
+    "values": {
+     "type": "json",
+     "required": true,
+     "description": "[JSON dong -- phu thuoc: sheetId, spreadsheetId, first_row_headers] The values to add"
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "oauth2",
+    "piece_custom"
+   ],
+   "gia": 0,
+   "side_effect": "external",
+   "prop_bo_qua": []
+  },
+  {
+   "type": "piece.google_sheets.update_row",
+   "type_version": 1,
+   "piece": "@activepieces/piece-google-sheets",
+   "piece_version": "0.17.0",
+   "op": "run_action",
+   "name": "update_row",
+   "title": "Update Row",
+   "description": "Update the data in an existing row.",
+   "icon": "https://cdn.activepieces.com/pieces/google-sheets.png",
+   "params": {
+    "spreadsheetId": {
+     "type": "string",
+     "required": true,
+     "description": "[tuy chon dong cua piece] The spreadsheet to work in."
+    },
+    "sheetId": {
+     "type": "string",
+     "required": true,
+     "description": "[tuy chon dong cua piece] The tab inside that spreadsheet."
+    },
+    "includeTeamDrives": {
+     "type": "bool",
+     "required": false,
+     "description": "Also include spreadsheets stored in shared drives.",
+     "default": false
+    },
+    "row_id": {
+     "type": "number",
+     "required": true,
+     "description": "The row number to update"
+    },
+    "first_row_headers": {
+     "type": "bool",
+     "required": false,
+     "description": "Enter values by column name instead of left to right.",
+     "default": false
+    },
+    "values": {
+     "type": "json",
+     "required": true,
+     "description": "[JSON dong -- phu thuoc: sheetId, spreadsheetId, first_row_headers] The values to add"
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "oauth2",
+    "piece_custom"
+   ],
+   "gia": 0,
+   "side_effect": "external",
+   "prop_bo_qua": []
+  },
+  {
    "type": "trigger.piece.google_sheets.new_spreadsheet",
    "type_version": 1,
    "piece": "@activepieces/piece-google-sheets",
@@ -545,18 +678,312 @@
    "gia": 0,
    "side_effect": "none",
    "prop_bo_qua": []
-  }
- ],
- "bo_qua": [
-  {
-   "piece": "@activepieces/piece-google-sheets",
-   "name": "insert_row",
-   "vi_sao": "tham_so_bat_buoc_khong_anh_xa:values:DYNAMIC"
   },
   {
-   "piece": "@activepieces/piece-google-sheets",
-   "name": "update_row",
-   "vi_sao": "tham_so_bat_buoc_khong_anh_xa:values:DYNAMIC"
+   "type": "piece.google_drive.drive_upload_file",
+   "type_version": 1,
+   "piece": "@activepieces/piece-google-drive",
+   "piece_version": "0.9.2",
+   "op": "run_action",
+   "name": "drive_upload_file",
+   "title": "Upload File",
+   "description": "Upload a file in your Google Drive",
+   "icon": "https://cdn.activepieces.com/pieces/google-drive.png",
+   "params": {
+    "file_name": {
+     "type": "string",
+     "required": true,
+     "description": "The name of the file"
+    },
+    "file": {
+     "type": "string",
+     "required": true,
+     "description": "[artifact_ref] The file URL or base64 to upload"
+    },
+    "parent_folder_id": {
+     "type": "string",
+     "required": false,
+     "description": "The ID of the folder to upload the file into. Leave empty to upload to the root of My Drive. Resolve a folder ID with `drive_search_files`."
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "oauth2",
+    "piece_custom"
+   ],
+   "gia": 0,
+   "side_effect": "external",
+   "prop_bo_qua": []
+  },
+  {
+   "type": "piece.google_drive.drive_create_folder",
+   "type_version": 1,
+   "piece": "@activepieces/piece-google-drive",
+   "piece_version": "0.9.2",
+   "op": "run_action",
+   "name": "drive_create_folder",
+   "title": "Create Folder",
+   "description": "Create a new empty folder in your Google Drive",
+   "icon": "https://cdn.activepieces.com/pieces/google-drive.png",
+   "params": {
+    "folder_name": {
+     "type": "string",
+     "required": true,
+     "description": "The name of the new folder"
+    },
+    "parent_folder_id": {
+     "type": "string",
+     "required": false,
+     "description": "The ID of the folder to create the new folder inside. Leave empty to create it in the root of My Drive. Resolve a folder ID with `drive_search_files`."
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "oauth2",
+    "piece_custom"
+   ],
+   "gia": 0,
+   "side_effect": "external",
+   "prop_bo_qua": []
+  },
+  {
+   "type": "piece.google_drive.drive_list_files",
+   "type_version": 1,
+   "piece": "@activepieces/piece-google-drive",
+   "piece_version": "0.9.2",
+   "op": "run_action",
+   "name": "drive_list_files",
+   "title": "List Folder Contents",
+   "description": "List files from a Google Drive folder",
+   "icon": "https://cdn.activepieces.com/pieces/google-drive.png",
+   "params": {
+    "folder_id": {
+     "type": "string",
+     "required": true,
+     "description": "The ID of the folder to list. Resolve it via `drive_search_files` (or any other source)."
+    },
+    "include_trashed": {
+     "type": "bool",
+     "required": false,
+     "description": "Include new files that have been trashed.",
+     "default": false
+    },
+    "depth_level": {
+     "type": "number",
+     "required": false,
+     "description": "How many levels deep to search for files. 1 = current folder only, 2 = current + next level, etc.",
+     "default": 1
+    },
+    "download_files": {
+     "type": "bool",
+     "required": false,
+     "description": "Download all file contents in a list",
+     "default": false
+    },
+    "include_team_drives": {
+     "type": "bool",
+     "required": false,
+     "description": "Determines if folders from Team Drives should be included in the results.",
+     "default": false
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "oauth2",
+    "piece_custom"
+   ],
+   "gia": 0,
+   "side_effect": "external",
+   "prop_bo_qua": []
+  },
+  {
+   "type": "piece.google_drive.drive_download_file",
+   "type_version": 1,
+   "piece": "@activepieces/piece-google-drive",
+   "piece_version": "0.9.2",
+   "op": "run_action",
+   "name": "drive_download_file",
+   "title": "Download File Content",
+   "description": "Read a selected file from google drive file",
+   "icon": "https://cdn.activepieces.com/pieces/google-drive.png",
+   "params": {
+    "file_id": {
+     "type": "string",
+     "required": true,
+     "description": "The ID of the file to download. Resolve it via `drive_search_files` or `drive_get_file`."
+    },
+    "destination_file_name": {
+     "type": "string",
+     "required": false
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "oauth2",
+    "piece_custom"
+   ],
+   "gia": 0,
+   "side_effect": "external",
+   "prop_bo_qua": []
+  },
+  {
+   "type": "piece.google_drive.drive_get_file",
+   "type_version": 1,
+   "piece": "@activepieces/piece-google-drive",
+   "piece_version": "0.9.2",
+   "op": "run_action",
+   "name": "drive_get_file",
+   "title": "Get File or Folder",
+   "description": "Get a file folder for files/sub-folders",
+   "icon": "https://cdn.activepieces.com/pieces/google-drive.png",
+   "params": {
+    "file_id": {
+     "type": "string",
+     "required": true,
+     "description": "The ID of the file/folder to fetch. Resolve it via `drive_search_files` or `drive_list_files`."
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "oauth2",
+    "piece_custom"
+   ],
+   "gia": 0,
+   "side_effect": "external",
+   "prop_bo_qua": []
+  },
+  {
+   "type": "trigger.piece.google_drive.new_file",
+   "type_version": 1,
+   "piece": "@activepieces/piece-google-drive",
+   "piece_version": "0.9.2",
+   "op": "run_trigger",
+   "name": "new_file",
+   "kind": "trigger",
+   "title": "New File",
+   "description": "Trigger when a new file is uploaded.",
+   "icon": "https://cdn.activepieces.com/pieces/google-drive.png",
+   "params": {
+    "parentFolder": {
+     "type": "string",
+     "required": false,
+     "description": "[tuy chon dong cua piece] The Drive folder to target. Leave empty to use the root of My Drive. Type in the box to search your Drive by folder name. If the folder still isn't listed, switch this field to 'Dynamic value' (the toggle next to the field) and paste the folder ID — you can copy it from the folder's URL in Drive, after /folders/ (e.g. https://drive.google.com/drive/folders/<FOLDER_ID>)."
+    },
+    "include_team_drives": {
+     "type": "bool",
+     "required": false,
+     "description": "Determines if folders from Team Drives should be included in the results.",
+     "default": false
+    },
+    "include_file_content": {
+     "type": "bool",
+     "required": false,
+     "description": "Include the file content in the output. This will increase the time taken to fetch the files and might cause issues with large files.",
+     "default": false
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "oauth2",
+    "piece_custom"
+   ],
+   "gia": 0,
+   "side_effect": "none",
+   "prop_bo_qua": []
+  },
+  {
+   "type": "trigger.piece.google_drive.new_folder",
+   "type_version": 1,
+   "piece": "@activepieces/piece-google-drive",
+   "piece_version": "0.9.2",
+   "op": "run_trigger",
+   "name": "new_folder",
+   "kind": "trigger",
+   "title": "New Folder",
+   "description": "Trigger when a new folder is created or uploaded.",
+   "icon": "https://cdn.activepieces.com/pieces/google-drive.png",
+   "params": {
+    "parentFolder": {
+     "type": "string",
+     "required": false,
+     "description": "[tuy chon dong cua piece] The Drive folder to target. Leave empty to use the root of My Drive. Type in the box to search your Drive by folder name. If the folder still isn't listed, switch this field to 'Dynamic value' (the toggle next to the field) and paste the folder ID — you can copy it from the folder's URL in Drive, after /folders/ (e.g. https://drive.google.com/drive/folders/<FOLDER_ID>)."
+    },
+    "include_team_drives": {
+     "type": "bool",
+     "required": false,
+     "description": "Determines if folders from Team Drives should be included in the results.",
+     "default": false
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "oauth2",
+    "piece_custom"
+   ],
+   "gia": 0,
+   "side_effect": "none",
+   "prop_bo_qua": []
+  },
+  {
+   "type": "trigger.piece.google_drive.new_or_updated_file",
+   "type_version": 1,
+   "piece": "@activepieces/piece-google-drive",
+   "piece_version": "0.9.2",
+   "op": "run_trigger",
+   "name": "new_or_updated_file",
+   "kind": "trigger",
+   "title": "New or Updated File",
+   "description": "Trigger when a file is created or updated, checked on a schedule. Each event carries a Change Type of created or updated, and several edits between two checks arrive as a single event. Renaming a file counts as an update. Trashing a file is not an event, and neither is restoring one from the bin nor moving an existing file into the watched folder. Selecting a parent folder watches its direct child",
+   "icon": "https://cdn.activepieces.com/pieces/google-drive.png",
+   "params": {
+    "parentFolder": {
+     "type": "string",
+     "required": false,
+     "description": "[tuy chon dong cua piece] The Drive folder to target. Leave empty to use the root of My Drive. Type in the box to search your Drive by folder name. If the folder still isn't listed, switch this field to 'Dynamic value' (the toggle next to the field) and paste the folder ID — you can copy it from the folder's URL in Drive, after /folders/ (e.g. https://drive.google.com/drive/folders/<FOLDER_ID>)."
+    },
+    "include_team_drives": {
+     "type": "bool",
+     "required": false,
+     "description": "Determines if folders from Team Drives should be included in the results.",
+     "default": false
+    },
+    "include_file_content": {
+     "type": "bool",
+     "required": false,
+     "description": "Include the file content in the output. This will increase the time taken to fetch the files and might cause issues with large files. If a download fails the event still arrives, carrying a File Content Error instead of the content.",
+     "default": false
+    }
+   },
+   "returns": {
+    "ket_qua": "json"
+   },
+   "auth": [
+    "oauth2",
+    "piece_custom"
+   ],
+   "gia": 0,
+   "side_effect": "none",
+   "prop_bo_qua": [
+    [
+     "file_types",
+     "khong_anh_xa:STATIC_MULTI_SELECT_DROPDOWN"
+    ]
+   ]
   }
- ]
+ ],
+ "bo_qua": []
 }
