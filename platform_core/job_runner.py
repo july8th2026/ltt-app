@@ -2027,6 +2027,20 @@ def run_forever(worker_id: str, *, stop=None, maintenance: bool = True,
     log.info("worker %s bat dau%s", worker_id,
              f" (nang luc: {sorted(capabilities)})" if capabilities else "")
 
+    # 🔴 MOI `PATH` MOT LAN, ngay day, TRUOC moi job (N-59).
+    #
+    #    `ffmpeg` tren may nay cai theo NGUOI DUNG (WinGet) nen chi nam tren
+    #    USER Path. Worker chay duoi `LocalSystem` => nhan MACHINE Path => moi
+    #    tien trinh con goi `ffmpeg` TRAN deu nem `WinError 2`, va hong IM LANG
+    #    o moi noi nguoi goi bat `Exception`.
+    #
+    #    ⭐ MOT lan o day du cho ca 63 cho (24 tep, `video_assembly` chiem 31):
+    #    tien trinh con THUA KE `PATH`. ⛔ Dung di sua 63 cho — do la 63 lan lam
+    #    viec ma mot lan da xong, va van bo sot cho thu 64.
+    #    Banh coc `tools/check_ffmpeg_tran.py` chan cho thu 64.
+    from platform_core import media as _media
+    _media.bao_dam_ffmpeg_tren_path()
+
     luong = None
     if maintenance:
         luong = threading.Thread(target=_vong_bao_tri, args=(stop,),
