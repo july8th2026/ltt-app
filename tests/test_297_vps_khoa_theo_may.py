@@ -193,6 +193,8 @@ def _maintenance_probe(db, monkeypatch):
     monkeypatch.setattr(bao_tri, "_kiem_cong_dinh_ky", soi_cong)
     monkeypatch.setattr(bao_tri, "_kiem_chuan_hoa_dinh_ky",
                         lambda *a, **k: calls.append("soi_chuan") or 0)
+    monkeypatch.setattr(bao_tri, "_tu_bat_lai_dinh_ky",
+                        lambda *a, **k: calls.append("tu_bat") or 0)
     return bao_tri.mot_luot(db), calls
 
 
@@ -218,6 +220,9 @@ def test_vong_bao_tri_CO_goi_doi_chieu(monkeypatch):
     assert calls.count("soi_cong") == 1, "vong bao tri khong chay phep kiem cong quan tri"
     # Phep soi thu tu (25/09): may co con lech chuan danh tinh khong.
     assert calls.count("soi_chuan") == 1, "vong bao tri khong chay phep kiem chuan hoa"
+    # 25/09: vong tu bat lai may "muon chay ma dang tat" — mot may khach nam tat
+    # la mat dich vu DANG TINH TIEN, nen no chay moi luot chu khong moi ngay.
+    assert calls.count("tu_bat") == 1, "vong bao tri khong chay phep tu bat lai"
 
 
 def test_doi_chieu_chay_HANG_NGAY_chu_khong_hang_gio():

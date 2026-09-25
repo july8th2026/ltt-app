@@ -119,6 +119,11 @@ SU_KIEN = {
     "xin_bat": N_("Yêu cầu bật máy"),
     "xin_tat": N_("Yêu cầu tắt máy"),
     "xin_tat_cung": N_("Yêu cầu tắt cứng"),
+    # 25/09: khach khong con tat may, nhung van can duong cuu ho khi may
+    # treo. Khac `tat_cung` o KET QUA: may bat lai ngay, khong nam tat.
+    "xin_khoi_dong_lai_cung": N_("Yêu cầu khởi động lại cứng"),
+    "khoi_dong_lai_cung": N_("Máy đã khởi động lại cứng"),
+    "khoi_dong_lai_cung_that_bai": N_("Khởi động lại cứng thất bại"),
     "xin_khoi_dong_lai": N_("Yêu cầu khởi động lại"),
     "xin_khoi_phuc": N_("Yêu cầu khôi phục ảnh chụp"),
     "tao_xong": N_("Máy đã sẵn sàng"),

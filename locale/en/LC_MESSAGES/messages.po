@@ -21478,3 +21478,12 @@ msgstr "How it is charged"
 
 msgid "Ảnh logo không hợp lệ."
 msgstr "That logo image is not valid."
+
+msgid "Yêu cầu khởi động lại cứng"
+msgstr "Hard restart requested"
+
+msgid "Máy đã khởi động lại cứng"
+msgstr "The machine was hard-restarted"
+
+msgid "Khởi động lại cứng thất bại"
+msgstr "Hard restart failed"

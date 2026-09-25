@@ -70,5 +70,12 @@ def test_force_stop_route_exists_and_uses_the_audited_command():
     from apps.vps.services import dieu_khien
 
     paths = {getattr(r, "path", "") for r in routes.router.routes}
-    assert "/{instance_id}/tat-cung" in paths
+    # 🔴 25/09/2026: khach KHONG con route `/tat-cung`. "VPS luon mo" — duong cuu
+    #    ho khi may treo nay la `/khoi-dong-lai-cung`, khac o KET QUA: may bat lai
+    #    ngay thay vi nam tat. Mot host reboot da de hai may khach tat 17,4 gio.
+    assert "/{instance_id}/tat-cung" not in paths
+    assert "/{instance_id}/khoi-dong-lai-cung" in paths
+    # ⛔ Bo nut cua KHACH khong phai bo kha nang cua HE THONG: treo het han, cach
+    #    ly va xoa may deu can `tat_cung`, va chung van goi qua `dieu_khien`.
     assert "tat_cung" in dieu_khien.LENH
+    assert "khoi_dong_lai_cung" in dieu_khien.LENH
