@@ -21759,3 +21759,6 @@ msgstr "Upload not finished yet — please wait for the upload to complete, then
 
 msgid "Điền nền (xoá hẳn)"
 msgstr "Fill background (remove completely)"
+
+msgid "chất lượng..."
+msgstr "quality..."
