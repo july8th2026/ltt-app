@@ -25,8 +25,6 @@ tới được tay khách không"* — câu hỏi duy nhất một ô chết kh�
 """
 from __future__ import annotations
 
-import pytest
-
 from tests import test_423_asv_giao_dien as _mt
 
 moi_truong = _mt.moi_truong
