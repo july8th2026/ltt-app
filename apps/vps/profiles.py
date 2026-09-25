@@ -93,7 +93,22 @@ ACTIVATION_MAX_AGE_SECONDS = 300
 #: ⭐ Hai cửa sổ cho hai thứ khác nhau. Cửa sổ chặt nói *"bằng chứng phải vừa được
 #:    đo xong"* — điều đó nói về **phép đo của ta**, thứ chạy được ngay trước khi
 #:    bấm. Nó ⛔ không có quyền đòi máy B chạy nhanh hơn thiết kế của nó.
-ACTIVATION_GENERATED_MAX_AGE_SECONDS = RUNTIME_MAX_AGE_SECONDS
+#: ⚠️ `RUNTIME_COLLECTOR_SECONDS + RUNTIME_SYNC_SECONDS`, ⛔ KHONG phai
+#:    `RUNTIME_MAX_AGE_SECONDS`. Ban dau toi dat bang `RUNTIME_MAX_AGE_SECONDS`
+#:    (4200 s) va no lam do `test_1010::test_fresh_observation_of_old_generation
+#:    _does_not_unlock_profile` — mot bat bien CO Y: mot quan sat tuoi ve mot ban
+#:    sinh CU thi khong duoc mo khoa ho so.
+#:
+#: 🔴 Toi da sua mot cua bat kha thi thanh mot cua qua rong. 4200 s la nguong
+#:    **binh thuong**, va no tha cho **HAI** chu ky bi nho (`2*1800 + 600`) — dung
+#:    cho vận hanh lien tuc, sai cho mot quyet dinh bat ban.
+#:
+#: ⇒ Bat ban tha **KHONG** chu ky nao: `1800 + 600 = 2400 s` la tuoi te nhat cua
+#:   ban sinh MOI NHAT (mot chu ky sinh cong thoi gian guong ve). Luon thoa duoc,
+#:   va chat hon nguong binh thuong. Mot ban sinh cu hon the la may B **da nho it
+#:   nhat mot luot**, va luc do khong phai luc bat ban.
+ACTIVATION_GENERATED_MAX_AGE_SECONDS = (RUNTIME_COLLECTOR_SECONDS
+                                        + RUNTIME_SYNC_SECONDS)
 
 
 class ProfileNotReady(RuntimeError):
