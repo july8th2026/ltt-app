@@ -93,15 +93,32 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass, replace
 
+from apps.auto_scan_video import ngon_ngu as _ngon_ngu
+
 #: Toc do noi cua giong TTS ta dang dung, am tiet/giay.
-#: ⭐ DO tren 18 doan TTS that (`fix_toc_do/vong_dau_moi_v*.json`:
-#: `am_tiet / giay_am`), trung vi; dai [3,00 ; 3,71].
+#:
+#: 🔑 **MOT CHO KHAI**: doc thang `ngon_ngu.NHIP[VI]`. ⛔ Dung go lai so.
+#:
+#: ⭐ Doi chieu 25/09 — hai phep do DOC LAP, CUNG dai luong, va chung DONG Y:
+#:
+#:      3,284   dai [3,00 ; 3,71]   18 doan TTS that (`fix_toc_do/vong_dau_moi_v*.json`)
+#:      3,35    dai [3,04 ; 3,51]   giong san pham, do lai 23/09/2026
+#:
+#:    Hai dai chong nhau gan het, hai trung vi lech 2% ⇒ **trong nhieu**. Giu ban
+#:    **moi hon** va **da noi vao san pham** (`nan_cho_vua.loi_nhac_nan` qua
+#:    `ngon_ngu.HE_SO_MUC_TIEU`). Con so `3,284` nghi huu — lich su giu o day.
+#:
 #: ⛔ Khong phai 9 ky tu/giay cua Netflix — do la toc do **DOC** cua phu de.
-#: ⚠️ 25/09: `ngon_ngu.NHIP[VI]` (3,35, do lai 23/09/2026 tren chinh giong san
-#:    pham) la con so **moi hon** cho CUNG dai luong. Hang nay CHUA doi chieu
-#:    lai voi no — ai dung `xep_bac`/`gop_khe` cho mot quyet dinh that (⛔ khong
-#:    phai bao cao) phai doi chieu TRUOC. Xem `test_2062_toc_do_noi_la_so_DO_DUOC`.
-AM_TIET_MOI_GIAY = 3.284
+#: ⛔ Va khong phai `4,5` — con so cu do da **lam hong mot lan chay that**
+#:    (xem `ngon_ngu.NHIP`).
+#:
+#: 🔴 **MOT MAU THUAN CON MO, 25/09 — doc truoc khi tin bat ky ket luan nen nao:**
+#:    lan `D5` do trung vi **4,228** (dai [3,13 ; 4,72]) tren WAV da sinh, tuc
+#:    **NGOAI ca hai dai tren**. Ba phep do khong the cung dung.
+#:    ⇒ Nghi phan: `D5` do WAV **da bi tang toc**, hoac dem am tiet khac cach.
+#:    ⚠️ Moi ket luan dua tren `4,228` — nhat la *"bai toan nen nho hon 3,4 lan"* —
+#:       **CHUA duoc coi la da chot** cho toi khi doi chieu xong.
+AM_TIET_MOI_GIAY = _ngon_ngu.NHIP[_ngon_ngu.VI]
 
 
 class BacNan:
