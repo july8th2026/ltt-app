@@ -137,12 +137,21 @@ from apps.auto_scan_video import ngon_ngu as _ngon_ngu
 #: ⛔ Va khong phai `4,5` — con so cu do da **lam hong mot lan chay that**
 #:    (xem `ngon_ngu.NHIP`).
 #:
-#: 🔴 **MOT MAU THUAN CON MO, 25/09 — doc truoc khi tin bat ky ket luan nen nao:**
-#:    lan `D5` do trung vi **4,228** (dai [3,13 ; 4,72]) tren WAV da sinh, tuc
-#:    **NGOAI ca hai dai tren**. Ba phep do khong the cung dung.
-#:    ⇒ Nghi phan: `D5` do WAV **da bi tang toc**, hoac dem am tiet khac cach.
-#:    ⚠️ Moi ket luan dua tren `4,228` — nhat la *"bai toan nen nho hon 3,4 lan"* —
-#:       **CHUA duoc coi la da chot** cho toi khi doi chieu xong.
+#: ⭐ **MAU THUAN 4,228 DA KHEP, 25/09 — ba phep do DEU DUNG, khac MAU SO:**
+#:    lan `D5` do trung vi **4,228** (dai [3,13 ; 4,72]); mot phep do doc lap sau do
+#:    cho **4,167** (dai [3,65 ; 4,67]) — hai so nay khop nhau, va ca hai chia cho
+#:    thoi luong **CHI PHAN CO TIENG** (da tru khoang lang trong doan). Con `3,284`
+#:    va `3,35` chia cho thoi luong **DONG HO** (ke ca khoang lang ben trong).
+#:    ⇒ ⛔ Khong phai *"mot trong ba sai"*: chung do HAI dai luong khac nhau.
+#:       Ti so 4,17 / 3,35 ≈ 1,24 chinh la ti le khoang lang noi tai cua giong doc.
+#:
+#: 🔑 `giay_can()` duoi day chia am tiet ra **giay DONG HO** (no so voi `ngan_sach_s`,
+#:    mot khoang thoi gian tren timeline) ⇒ **PHAI** dung nhip dong ho `3,35`.
+#:    ⛔ Cam thay bang `4,17`: se doi hoi ban ghi ngan hon that ~24%, tuc **bo sot**
+#:       nhung doan that su can nen. Nhip chi-phan-co-tieng chi dung khi mau so cung
+#:       la thoi luong da tru khoang lang — o day **khong phai**.
+#: ⛔ Va ket luan cu *"bai toan nen nho hon 3,4 lan"* da **BI BO** (do tren mot mau
+#:    so khac roi so voi ngan sach dong ho — sai chieu, khong phai sai so).
 AM_TIET_MOI_GIAY = _ngon_ngu.NHIP[_ngon_ngu.VI]
 
 
