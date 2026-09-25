@@ -62,14 +62,25 @@ khoá đã báo `TREO`.
 Không cần: báo trước và chờ xác nhận, bọc lệnh qua `nhat_ky_chay.py`, luật "ai bấm
 sau thì lùi". (`nhat_ky_chay.py` vẫn dùng được khi bạn **muốn** để lại vết.)
 
-## 2b. Phép đo của bạn có hỏng khi máy bị tranh không?
+## 2b. HAI cửa vào khoá — chỉ cần MỘT cửa mở là phải xin
 
-Hỏi câu này **trước** khi xin khoá. Nó quyết định khoá là bắt buộc hay là lãng phí.
+🔴 **`§2b` CỘNG THÊM một lý do xin khoá. Nó KHÔNG gỡ lý do của `§1`.**
 
-| Bạn đang đo | Tranh chấp làm gì | Khoá |
+```
+Cua 1 — CO DOT CPU KHONG?      (§1: >= 2 loi hoac > 30 giay)   -> KHOA
+Cua 2 — CON SO CO HONG KHI BI TRANH KHONG?  (do DO TRE)        -> KHOA
+ca hai deu DONG                                                 -> chay tu do
+```
+
+⚠️ **Bẫy đã mắc thật (25/09):** một lượt E2E đo **độ trôi** (tất định ⇒ cửa 2 đóng) nhưng
+**đốt ~3 lõi suốt một giờ** (cửa 1 **mở**). Đọc `§2b` một mình rồi thả khoá là sai — cửa 1
+vẫn mở. ⇒ Lượt kiểu đó đi đường **`§4b`**: **ngoài khoá, nhưng chặn lõi**, chứ không phải
+khoá độc quyền và cũng không phải thả tự do.
+
+| Bạn đang đo | Tranh chấp làm gì | Cửa 2 |
 |---|---|---|
-| **độ trễ** — giây mỗi giai đoạn, tốc độ sản xuất | **sai số** | bắt buộc |
-| **đại lượng tất định** — số đoạn, độ trôi, chrF++, CER, độ phủ | chỉ **chậm** | không cần |
+| **độ trễ** — giây mỗi giai đoạn, tốc độ sản xuất | **sai số** | mở ⇒ khoá |
+| **đại lượng tất định** — số đoạn, độ trôi, chrF++, CER, độ phủ | chỉ **chậm** | đóng |
 
 ⭐ **Nâng cấp: đo bằng `giây CPU` thay cho `đồng hồ tường`, rồi câu hỏi trên biến mất.**
 Máy bận thì lượt chạy kéo dài, nhưng nó **không tiêu thêm chu kỳ** — nên `giây CPU` trả
