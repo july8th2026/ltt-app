@@ -155,7 +155,38 @@ năng lực : chạy thử thật một lượt nhỏ              ⛔ đừng �
   báo cổng). ⛔ Không bọc `log.*` — dịch log là nhiễu. `check_i18n.py` hiện đếm
   cả log ⇒ nếu nó báo tăng vì log thì **BÁO**, đừng bọc bừa để làm đẹp con số.
 
-## 5.7 Báo cáo
+## 5.7 ⛔ TIÊM LỖI thì đừng hoàn nguyên bằng `git checkout --`
+
+Tiêm lỗi là bắt buộc (§5.5), nhưng cách **hoàn nguyên** mới là chỗ chết người.
+
+`git checkout -- <tệp>` khôi phục tệp về **HEAD**. Nếu việc của bạn **chưa
+commit**, lệnh đó xoá sạch nó cùng với stub vừa tiêm — và git ⛔ không hỏi lại.
+
+Gặp thật trong phiên này: một agent tiêm stub `_warmup_model` để chứng minh test
+biết đỏ, rồi `git checkout -- engine.py` để dọn. HEAD lúc đó **chưa có** phần
+xoá warmup của chính nó ⇒ mất trắng. Nó phát hiện nhờ `git diff --stat` ra số
+dòng **không tương xứng**, và phải làm lại từ đầu.
+
+⇒ Hoàn nguyên bằng **bản sao tệp** (`shutil.copy2` trước khi tiêm, chép ngược
+sau khi xong). `git diff --stat` sau mỗi lần hoàn nguyên: số dòng phải **khớp
+với sửa đổi thật của bạn**, ⛔ không phải 0 và ⛔ không phải cả tệp.
+
+## 5.8 ⛔ Đừng `git commit` khi còn agent đang GHI trong cùng worktree
+
+`pre-commit` **stash MỌI tệp chưa staged** trước khi chạy hook, rồi restore sau.
+Nếu một agent đang ghi đúng tệp đó trong cửa sổ ấy, công việc của nó có thể bị
+giật mất hoặc bị ghi đè — và hook còn có thể **tự sửa tệp** (sinh lại `.mo`),
+khiến lượt commit đỏ vì lý do chẳng liên quan gì đến thứ bạn đang commit.
+
+Gặp thật trong phiên này: đang commit một tài liệu thì `pre-commit` stash
+`tools/bench_upscale.py` mà một agent đang sửa dở. Lần đó tệp còn nguyên (kiểm
+bằng `ast.parse`), nhưng đó là **may**, không phải **an toàn**.
+
+⇒ Điều phối **xếp hàng** các lượt commit: chờ agent báo xong rồi mới commit.
+Cần commit gấp thì chỉ commit khi `git status` **không còn tệp chưa staged nào
+thuộc làn đang chạy**.
+
+## 5.9 Báo cáo
 
 - Nói rõ **cái KHÔNG xác định được**. Một lỗ hổng được khai báo tốt hơn một bảng
   đầy đủ mà bịa.
