@@ -161,10 +161,25 @@ def test_tu_form_lop_MOT_PHAN_duoc_dien_day_du_va_LUY_DANG():
     from apps.auto_scan_video import tach_tieng
 
     ra = tach_tieng.tu_form_lop(json.dumps({"nhac_gain": 1.3}))
-    assert ra == {"giong_bat": False, "giong_gain": 1.0,
-                  "nhac_bat": True, "nhac_gain": 1.3,
-                  "vfx_bat": True, "vfx_gain": 1.0}
+
+    # ⭐ **ĐỌC mặc định, ⛔ KHÔNG chép nó.** Bản trước ghim tay
+    #    `"giong_gain": 1.0`, nên khi chủ dự án chốt gain giọng gốc mặc định
+    #    **−10 dB** (`0.30`, commit `d10e4324`) thì bài này đỏ — ⛔ không vì hành
+    #    vi sai, mà vì **hai chỗ khai một điều và ⛔ không ai bắt khớp**.
+    #
+    # ⚠️ Ý định của bài ⛔ không phải *"mặc định bằng bao nhiêu"* — đó là việc của
+    #    `tach_tieng.LOP_MAC_DINH`. Ý định là: **một phần được điền ĐẦY ĐỦ, và
+    #    giá trị người dùng gửi THẮNG mặc định**. Đọc mặc định giữ đúng ý định ấy
+    #    và làm bài miễn nhiễm với mọi lần đổi con số về sau.
+    assert ra == {**tach_tieng.LOP_MAC_DINH, "nhac_gain": 1.3}
+
+    # Vế **luỹ đẳng**: chuẩn hoá một lần nữa ⛔ không đổi gì.
     assert tach_tieng.chuan_hoa_lop(ra) == ra
+
+    # ⭐ Và vế **người dùng THẮNG mặc định** phải đo tường minh — nếu chỉ so với
+    #    `{**LOP_MAC_DINH, ...}` thì một bản `tu_form_lop` bỏ qua hẳn đầu vào
+    #    vẫn có thể xanh khi mặc định tình cờ trùng giá trị gửi lên.
+    assert ra["nhac_gain"] == 1.3 != tach_tieng.LOP_MAC_DINH["nhac_gain"]
 
 
 @pytest.mark.parametrize("xau", [
