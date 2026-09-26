@@ -228,3 +228,22 @@ def test_van_tay_long_tieng_DOI_khi_doi_dich():
     kw = dict(checksum_ban_ghi="c", van_tay_ban="b", ma_giong="g", provider="p", model="m")
     assert (long_tieng.van_tay_long_tieng(**kw, ngon_ngu_dich="vi")
             != long_tieng.van_tay_long_tieng(**kw, ngon_ngu_dich="en"))
+
+
+def test_giay_can_cong_thoi_gian_cho_DAU_CAU():
+    from apps.auto_scan_video import ngon_ngu
+    from apps.auto_scan_video.nan_thoi_luong import Khe
+
+    k = Khe(ma="seg_0001", bat=0.0, ket=5.0, moc_sau=6.0, am_tiet=10,
+            chu="Hom nay troi mua, chung toi dung leu.")
+    khong_dau = 10 / ngon_ngu.NHIP[ngon_ngu.VI]
+    assert k.giay_can(dau_cau=0) == pytest.approx(khong_dau, abs=1e-9)
+    # hai dau cau: mot dau phay + mot dau cham
+    assert k.giay_can() == pytest.approx(
+        khong_dau + 2 * ngon_ngu.GIAY_MOI_DAU_CAU, abs=1e-9)
+
+
+def test_giay_can_khong_dem_KHOANG_TRANG():
+    """⛔ Ta KHÔNG mượn hằng số 0,15 s/khoảng trắng của VideoLingo — chưa đo."""
+    from apps.auto_scan_video import ngon_ngu
+    assert not hasattr(ngon_ngu, "GIAY_MOI_KHOANG_TRANG")
