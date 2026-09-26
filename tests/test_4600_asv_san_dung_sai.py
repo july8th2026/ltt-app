@@ -330,10 +330,71 @@ def test_buoc_0_5_GHI_giay_TUNG_VONG_vao_outputs(
 # ══════════════════════════════════════════════════════════════════════════════
 
 def test_doan_con_lech_sau_tang_toc_phai_duoc_GHI_LAI():
-    """(c) chấp nhận thì phải NÓI RA. Một đoạn lệch bị bỏ im lặng là thứ tệ nhất."""
+    """(c) chấp nhận thì phải NÓI RA. Một đoạn lệch bị bỏ im lặng là thứ tệ nhất.
+
+    ⚠️ Task 16 (R4): đây là lưới PHỤ — chỉ soi TÊN KHOÁ còn tồn tại trong mã
+    nguồn, ⛔ không gọi hàm nên không bắt được ai âm thầm ghi `0`/hằng số giả
+    mà vẫn giữ đúng tên. Lưới CHÍNH là hành vi thật của hàm THUẦN
+    `dem_lech_cuoi`, xem `test_dem_lech_cuoi_*` bên dưới.
+    """
     import inspect
     from apps.auto_scan_video import giai_doan_thoi_gian
 
     ma = inspect.getsource(giai_doan_thoi_gian)
     assert "so_doan_lech_cuoi" in ma
     assert "giay_lech_cuoi" in ma
+
+
+def test_dem_lech_cuoi_KHONG_doan_nao_lech_tra_khong():
+    """Khong doan nao bi kep (h_ap == h_can) -> (0, 0.0), du giay > khe."""
+    from apps.auto_scan_video.giai_doan_thoi_gian import dem_lech_cuoi
+
+    doan = [{"ma": "1", "giay": 3.0, "khe": 2.0, "he_so_co_gian": 1.5}]
+    he_so_theo_ma = {"1": 1.5}  # khong bi kep: h_ap == he_so_co_gian
+    assert dem_lech_cuoi(doan, he_so_theo_ma) == (0, 0.0)
+
+
+def test_dem_lech_cuoi_hai_doan_lech_dem_dung_ca_so_luong_va_giay():
+    """Hai doan bi kep ve tran ky thuat -> dem dung SO doan va TONG giay lech."""
+    from apps.auto_scan_video.giai_doan_thoi_gian import dem_lech_cuoi
+
+    doan = [
+        # can h=3.0 (giay/khe = 6.0/2.0) nhung bi kep con 2.0 -> giay_sau=3.0 > khe=2.0
+        {"ma": "1", "giay": 6.0, "khe": 2.0, "he_so_co_gian": 3.0},
+        # can h=4.0 (giay/khe = 8.0/2.0) nhung bi kep con 2.0 -> giay_sau=4.0 > khe=2.0
+        {"ma": "2", "giay": 8.0, "khe": 2.0, "he_so_co_gian": 4.0},
+    ]
+    he_so_theo_ma = {"1": 2.0, "2": 2.0}
+    so_doan, giay_lech = dem_lech_cuoi(doan, he_so_theo_ma)
+    assert so_doan == 2
+    assert giay_lech == pytest.approx((3.0 - 2.0) + (4.0 - 2.0))
+
+
+def test_dem_lech_cuoi_doan_vua_dung_khe_KHONG_tinh_la_lech_bien():
+    """Doan bi kep nhung sau khi ap h_ap, giay_sau VUA BANG khe -> khong dem (bien)."""
+    from apps.auto_scan_video.giai_doan_thoi_gian import dem_lech_cuoi
+
+    # giay=4.0, khe=2.0 -> can h=2.0, dung bang tran ky thuat nen h_ap == h
+    # (khong bi kep) -> giay_sau = 4.0/2.0 = 2.0 = khe, dung bien, khong lech.
+    doan = [{"ma": "1", "giay": 4.0, "khe": 2.0, "he_so_co_gian": 2.0}]
+    he_so_theo_ma = {"1": 2.0}
+    assert dem_lech_cuoi(doan, he_so_theo_ma) == (0, 0.0)
+
+
+def test_dem_lech_cuoi_khong_kep_van_khong_lech_du_sai_so_lam_tron_dau_phay_dong():
+    """Doan KHONG bi kep (h_ap == he_so_co_gian) van phai tra (0, 0.0), du phep
+    chia lai `giay/h_ap` co the lech `khe` vai phan-trieu-ty giay vi sai so lam
+    tron IEEE-754 (hai lan chia khac nhau tren cung so). Day la ca THAT: voi
+    `giay=39.443985390643014, khe=31.184951350854007` thi `h = giay/khe` khong
+    bi kep, nhung `giay/h` tinh lai LON HON `khe` dung `3.55e-15`. Neu ai xoa
+    guard `if h_ap == h: continue` thi bai nay DO."""
+    from apps.auto_scan_video.giai_doan_thoi_gian import dem_lech_cuoi, he_so_ap
+
+    giay, khe = 39.443985390643014, 31.184951350854007
+    h = giay / khe
+    assert h != khe  # phep chia lai (giay / h) > khe mot chut do lam tron
+    assert giay / h > khe
+    h_ap = he_so_ap(h, tran_ky_thuat=2.0)
+    assert h_ap == h, "gia thiet cua ca nay: khong bi kep"
+    doan = [{"ma": "1", "giay": giay, "khe": khe, "he_so_co_gian": h}]
+    assert dem_lech_cuoi(doan, {"1": h_ap}) == (0, 0.0)
