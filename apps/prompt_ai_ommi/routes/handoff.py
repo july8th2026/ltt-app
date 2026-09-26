@@ -42,6 +42,15 @@ def _handoff_params(db, owner_id: str, project, scene: dict, kind: str,
                   "aspect_ratio": str((project.payload or {}).get("brief", {}).get(
                       "aspect_ratio") or "16:9"),
                   "count": _as_int(body.get("count"), 1, 1, 4)}
+    # 🚧 SHIM, khong phai duong song. Nhanh nay chi con TEST goi toi:
+    #    route `/handoff/video` moi (dang ky TRUOC `/handoff/{kind}`) da che
+    #    duong HTTP cua no, va khach di qua VE `ommi_handoff`.
+    # No ton tai de `tests/test_5132_*` va `tests/test_5133_*` cua Pha 1 chay
+    #    NGUYEN khong sua mot dong — do la LUOI duy nhat chung minh phep chuyen
+    #    sang `services/handoff_stage.py` khong doi hanh vi (luoi N-1).
+    # ⛔ CHET O PHA 3: khi lan C noi `handoff` sang `ommi_brief`, hai test kia
+    #    duoc thay bang ban tuong duong tren duong moi, roi nhanh nay va
+    #    `_refs_tu_binding` di cung nhau. No D-1 (dieu phoi chot 26/09).
     elif kind == "video":
         tool_name = "video.generate"
         brief = (project.payload or {}).get("brief") or {}
@@ -86,6 +95,77 @@ def _handoff_params(db, owner_id: str, project, scene: dict, kind: str,
         if aspects and params["aspect_ratio"] not in aspects:
             params["aspect_ratio"] = "16:9" if "16:9" in aspects else aspects[0]
     return tool_name, params
+
+
+# ── Duong VIDEO (Pha 2): dung VE roi de khach tu sua o `taovideo` ───────────
+#
+# ⚠️ Hai route nay phai dang ky TRUOC `/handoff/{kind}` o duoi: Starlette khop
+#    theo THU TU dang ky, nen mot `/handoff/{kind}` dung truoc se nuot
+#    `/handoff/video`. Doi cho hai khoi la doi hanh vi cua khach ma khong mot
+#    dong nao trong khoi thay doi — dung kieu hong khong ai doc ra trong diff.
+#
+# Duong `{kind}` cu VAN giu nhanh `video` trong `_handoff_params` (test Pha 1
+# goi thang bang Python). Ve HTTP thi nhanh do khong con voi tay toi duoc: mot
+# khach bam giao bai video nay di qua VE, khong tu nop job thay khach nua.
+
+def _scene_or_404(project, scene_id: str) -> dict:
+    scenes = list((project.payload or {}).get("scenes") or [])
+    scene = next((item for item in scenes if item.get("id") == scene_id), None)
+    if scene is None:
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy cảnh.'))
+    return scene
+
+
+@router.post("/api/projects/{project_id}/handoff/video", status_code=201)
+async def handoff_video(request: Request, project_id: str,
+                        _identity: str = Depends(require_login),
+                        db: Session = Depends(get_db)):
+    body = await request.json(); _csrf(request, body); user = _user(request)
+    _require_run_enabled(user)
+    project = _owned_production(db, project_id, user.id)
+    scene = _scene_or_404(project, str(body.get("scene_id") or ""))
+
+    from apps.prompt_ai_ommi.services import handoff_stage as hs
+    overrides = {khoa: body.get(khoa) for khoa in
+                 ("model", "resolution", "duration", "generate_audio")
+                 if khoa in body}
+    payload = hs.dung_payload(db, project=project, scene=scene,
+                              owner_id=user.id, overrides=overrides)
+    ve = hs.tao_ve(db, project_id=project.id,
+                   scene_id=str(scene.get("id") or ""), payload=payload)
+    db.commit()
+    return {"ticket_id": ve.id, "expires_at": ve.expires_at.isoformat(),
+            "open_url": f"/taovideo/?tu_studio={ve.id}",
+            "skipped": payload["skipped"],
+            "skipped_over_limit": payload["skipped_over_limit"]}
+
+
+@router.get("/api/handoff/{ticket_id}/payload")
+def handoff_payload(request: Request, ticket_id: str,
+                    _identity: str = Depends(require_login),
+                    db: Session = Depends(get_db)):
+    user = _user(request)
+    from apps.prompt_ai_ommi.services import handoff_stage as hs
+    row = hs.tim_ve(db, ticket_id)
+    if row is None:
+        raise HTTPException(status_code=404,
+                            detail=_t('Vé giao bài không hợp lệ.'))
+    # Quyen kiem qua DU AN so huu — `ommi_handoff` co y khong nhan doi
+    # `owner_id`. Ai khong phai chu thi thay 404, khong 403: mot 403 xac nhan
+    # cho nguoi la rang ve nay CO that.
+    _owned_production(db, row.project_id, user.id)
+    try:
+        payload = hs.doc_va_tieu_ve(db, row)
+    except hs.VeDaDung:
+        db.rollback()
+        raise HTTPException(status_code=409,
+                            detail=_t('Vé giao bài đã được dùng.')) from None
+    except hs.VeHetHan:
+        db.rollback()
+        raise HTTPException(status_code=410,
+                            detail=_t('Vé giao bài đã hết hạn.')) from None
+    db.commit()
+    return payload
 
 
 @router.post("/api/projects/{project_id}/handoff/{kind}", status_code=201)
