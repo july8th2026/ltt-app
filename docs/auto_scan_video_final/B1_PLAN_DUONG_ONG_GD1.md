@@ -367,3 +367,77 @@ Chủ dự án chốt **-10 dB**. Thang trượt là **biên độ tuyến tính
 
 ⇒ Chọn **(i)**: lệch **0,46 dB** so với yêu cầu — dưới ngưỡng nghe ra được, và ⛔
 không phải đụng giao diện. Muốn đúng -10 dB thì đường (ii).
+
+---
+
+## §11 QUYẾT ĐỊNH — MỘT đường duy nhất: voice → voice (26/09)
+
+Chủ dự án chốt: *"Hệ thống của ta chỉ đi theo đúng 1 đường là voice to voice, ⛔ không
+đọc chữ trên video để thành text rồi dịch, ⛔ không cần cơ chế đó."* Và khi được hỏi có
+bỏ cả `embedded` (luồng text trong container) không: **"Bỏ cả 2."**
+
+| chế độ `nguon_loi` | nó làm gì | phán quyết |
+|---|---|---|
+| `asr` | whisper đọc **tiếng nói** → text | ✅ **đường DUY NHẤT** |
+| `ocr` | RapidOCR đọc **chữ Hán đốt vào hình** → text | ⛔ **BỎ** |
+| `embedded` | đọc **luồng text trong container** → text | ⛔ **BỎ** |
+| `auto` | thử `embedded` → `ocr` → `asr` | ⛔ **BỎ** — nó tồn tại chỉ để chọn giữa các đường |
+
+### 🔑 LÝ DO của chủ dự án — đọc cái này trước khi ai nghĩ tới việc THÊM LẠI
+
+Chủ dự án nói nguyên văn (26/09): *"Bản chất ⛔ không phải video nào cũng có sub, cơ chế
+đọc theo sub rất dễ bị **chồng chéo** và nhiều **vấn đề phát sinh**. Để sạch nhất chỉ đi
+theo luồng voice."*
+
+Rã ra thành ba mệnh đề **kiểm được**, để lần sau ai muốn thêm lại thì phải bác được cả ba:
+
+1. **Nguồn sub ⛔ không phổ quát.** Một đường chỉ chạy được trên **một phần** vật liệu thì
+   nó ⛔ không thể là đường chính — nó chỉ là một nhánh, và mọi nhánh phải được **chọn**,
+   mà việc chọn chính là chỗ sinh lỗi (`auto` từng làm **cả bốn** phim mẫu đi đường phụ
+   mà ⛔ không ai định).
+2. **Hai nguồn chữ cho cùng một đoạn là hai chỗ khai một điều.** Hardsub và ASR cho ra
+   hai bản chữ **khác nhau** cho cùng một giây phim, kèm hai trục thời gian khác nhau.
+   ⇒ Đúng họ lỗi mà kho này đã trả giá nhiều lần: *hai chỗ khai một điều mà ⛔ không ai
+   bắt khớp*.
+3. **Một đường ⇒ một chỗ để soi khi hỏng.** Ba đường nghĩa là một triệu chứng có **ba**
+   nguyên nhân khả dĩ, và người soi phải loại trừ trước khi chẩn đoán. Đó là cái giá
+   ⛔ không hiện ra trong bất kỳ phép đo hiệu năng nào, nhưng nó là cái giá **đắt nhất**
+   khi có khách thật.
+
+⇒ ⛔ **Không thêm lại một nguồn chữ thứ hai** mà chưa trả lời được cả ba mệnh đề trên.
+
+### Vì sao quyết định này là một việc DỌN, ⛔ không phải một việc bỏ tính năng
+
+⭐ Kho **đã ghi lại** quyết định voice→voice từ **24/09** (`nguon_loi.py`, chú thích của
+`CHE_DO_MAC_DINH`), nhưng hôm đó **chỉ đổi mặc định**: hai đường kia vẫn sống và khách
+vẫn bấm được qua nhóm nút *"Lời thoại gốc lấy từ đâu"*. ⇒ Một quyết định đã chốt mà
+⛔ không dọn đường cũ **để lại đúng loại nhầm lẫn** mà R6 tồn tại để tìm.
+
+🔑 Và chính chú thích đó nói ra một điều nặng hơn: *"với `auto` thì **cả bốn** phim mẫu
+đi đường `ocr` … tức đường `asr` — **luồng CHÍNH** — **chưa từng chạy thật một lần
+nào**, và mọi con số của ba lượt nghiệm thu đều nói về đường **PHỤ**."* ⇒ Xoá đường phụ
+⛔ không làm mất bằng chứng — nó **làm rõ** rằng bằng chứng cũ ⛔ chưa bao giờ nói về
+luồng chính.
+
+### Rủi ro di trú: ĐÃ ĐO, gần bằng KHÔNG
+
+```
+nguon_loi trong 8 lan chay da luu trong CSDL production:  {'asr': 8}
+```
+
+⇒ ⛔ **Không lượt chạy thật nào** dùng `ocr`/`embedded`/`auto`.
+
+⚠️ Chỗ duy nhất phải cẩn thận: **hồ sơ đã lưu** của khách có thể còn giữ giá trị cũ.
+`chuan_che_do` phải **quy về `asr`** kèm một dòng log, ⛔ **KHÔNG ném** — một khách mở lại
+trang ⛔ không được gặp lỗi vì một chế độ ta vừa bỏ.
+
+### Hai ranh giới ⛔ KHÔNG được xoá lẫn
+
+1. **Dò VỊ TRÍ dải chữ** (`do_vung`, tính năng *làm mờ sub gốc*) là việc **GIỮ**. Đọc
+   **CHỮ** (`ocr`) là việc **BỎ**. Chúng dùng chung vài module nên rất dễ xoá lẫn.
+2. `docs/auto_scan_video_final/L_OCR.md` là **bằng chứng đã trả tiền** cho một phép đo
+   thật ⇒ **dán nhãn** *"đường đã bỏ 26/09, giữ làm bằng chứng lịch sử"*, ⛔ đừng xoá.
+
+⇒ Thi hành ở **Task 21**, chạy **một mình** (chạm 12 module + 59 tệp test), sau khi các
+làn 17/18/19/20 gộp xong.
+
