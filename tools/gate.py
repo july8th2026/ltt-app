@@ -787,6 +787,17 @@ def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
         #    MOI — bo qua tro thanh mot thu duoc khai bao, khong phai mot thu
         #    xay ra.
         Step("bo qua im lang", [sys.executable, "tools/check_bo_qua.py"], ROOT),
+        # Phu thuoc npm DA KHAI ma chua duoc cai o cay nay. Them 25/09/2026 sau
+        # khi CUNG mot cau hoi can SAU lan trong mot ngay:
+        #   pywin32 -> connector node_modules -> isolated-vm -> luoc do CSDL
+        #           -> jsondiffpatch -> phan loai luu tru
+        # Moi lan: "thu nay chay duoc o day vi o day no dung tu mot NGUON KHAC
+        # voi production". Lan dau lam production sap 7 phut; lan `jsondiffpatch`
+        # lam mat mot luot gate 21,8 phut voi thong diep `Failed to resolve
+        # import` — mot cau KHONG noi cho nguoi doc biet phai lam gi.
+        # ⭐ Buoc nay in thang `cd <thu muc> && npm ci`.
+        Step("phu thuoc npm da cai",
+             [sys.executable, "tools/check_phu_thuoc_npm.py"], ROOT),
         # Ky tu dieu khien vo hinh trong tai lieu. `test_61` da quet dai nay tu
         # lau va van quet — buoc nay KHONG thay no, no bit hai lo khac:
         #   - pham vi: `test_61` dung `glob("*.md")` KHONG de quy, nen no phu 43
