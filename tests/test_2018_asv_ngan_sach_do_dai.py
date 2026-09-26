@@ -661,3 +661,59 @@ def test_CHAN2_khoi_nan_NHUONG_duoc_giua_cac_lo(db, kho_tam,
     assert nan_dau == 2, (
         "1.500 s/lo tren ngan sach 4.590 s - du phong 1.980 s ⇒ DUNG hai lo "
         "vua luot dau; da lam %d" % nan_dau)
+
+
+# ── CHAN 3 ───────────────────────────────────────────────────────────────────
+
+def test_CHAN3_hai_ATTEMPT_cho_HAI_ma_dispatch_khac_nhau(db, kho_tam,
+                                                         vong_giong):  # noqa: F811
+    """🔴 CHAN 3 — chay lai giai doan lam MAT mot dong so cai.
+
+    `item_key = f"nan_lo:{luot}:{so_lo}:{lan}"` va `UNIQUE(run_id, ma_dispatch)`
+    ⛔ KHONG gom `attempt`. `features._dat_lai_giai_doan` xoa `outputs` ⇒ con tro
+    lat cat mat ⇒ `lc.luot` ve 0, nen lan chay sau sinh **dung `ma_dispatch`
+    cu**: `su_dung.ghi` nem `DaGhiRoi`, `goi_tinh_tien` chi `log.info`, va cac
+    loi goi may B THAT cua lan chay do bien mat khoi so cai.
+
+    ⚠️ Ta xoa ban ghi `chu_da_nan` giua hai lan chay — do la chinh canh ma rang
+       buoc nay phai song sot: mot lo da goi may B ma `commit` chua kip landing
+       (bi giet giua `goi_tinh_tien` va `db.commit()`) se duoc XIN LAI o lan chay
+       sau, va lan xin lai ay la tien THAT.
+    """
+    from apps.auto_scan_video import (features, giai_doan_giong as gd,
+                                      giong_noi, pipeline)
+
+    phong = vong_giong
+    run = phong.dat(5)
+    phong.tts_hong = True
+
+    def _mot_lan(lan_thu: int) -> None:
+        gdoan = phong.giai_doan()
+        gdoan.attempt = int(lan_thu)
+        db.commit()
+        with pytest.raises(giong_noi.GiongError):
+            phong.chay_mot_luot()
+        db.rollback()
+        # Mo phong "bi giet truoc khi `commit` cua lo landing": ban ghi cau da
+        # nan khong con, nen lan chay sau PHAI xin lai — va phai ghi so duoc.
+        # ⛔ `getattr` co mac dinh: bai nay phai do duoc CA tren ban ma chua co
+        #    `KHOA_CHU_NAN` — neu khong no do vi `AttributeError` (mot loi HINH
+        #    DANG) chu khong vi `ma_dispatch` trung (loi THAT dang do).
+        khoa = getattr(gd, "KHOA_CHU_NAN", "chu_da_nan")
+        for it in features.cac_don_vi(db, run.id, pipeline.VOICE_SYNTHESIS):
+            if khoa in (it.outputs or {}):
+                it.outputs = {k: v for k, v in (it.outputs or {}).items()
+                              if k != khoa}
+        db.commit()
+
+    _mot_lan(1)
+    _mot_lan(2)
+
+    assert len(phong.nan) == 2, "phai co DUNG hai luot xin (mot moi attempt)"
+    dong = _dong_nan(db, run)
+    ma = sorted(str(d.ma_dispatch) for d in dong)
+    assert len(dong) == 2 and len(set(ma)) == 2, (
+        "hai `attempt` khac nhau cho ra %d dong so cai (%s) — `ma_dispatch` "
+        "trung, nen mot luot goi may B DA TRA TIEN bien mat khoi so cai" % (
+            len(dong), ma))
+    assert any(":a1:" in x for x in ma) and any(":a2:" in x for x in ma), ma

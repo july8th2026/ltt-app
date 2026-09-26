@@ -239,6 +239,24 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                                 * lat_cat.timeout_goi_ai(_ai.RUT_NGAN_CHO_VUA)
                                 + lat_cat.DU_PHONG_NGOAI_GOI_S))
     da_lat = _doc_lat(db, run, lc) if lc.noi_tiep else {}
+    # 🔴 **`attempt` cua dong giai doan — vao `item_key` cua luot nan.**
+    #
+    #    `su_dung.ghi` chan trung bang `UNIQUE(run_id, ma_dispatch)`, va rang
+    #    buoc ay ⛔ KHONG gom `attempt`. `features._dat_lai_giai_doan` xoa
+    #    `outputs` ⇒ con tro lat cat mat ⇒ `lc.luot` ve 0, nen mot lan chay lai
+    #    sinh **dung `ma_dispatch` cu**: `su_dung.ghi` nem `DaGhiRoi`, `ai.
+    #    goi_tinh_tien` chi `log.info`, va hang chuc loi goi may B THAT bien mat
+    #    khoi so cai.
+    #
+    # ⭐ `attempt` la con so dung: `_dat_lai_giai_doan` khai bang chu rang no
+    #    ⛔ KHONG dat lai `attempt` (*"so lan thu la mot su that ve lich su cua
+    #    lan chay"*), va `features.danh_dau_dang_chay` chi tang no khi ⛔ KHONG
+    #    phai mot luot noi tiep. Tuc: mot lan chay lai = mot `attempt` moi; mot
+    #    lat cat noi tiep = cung `attempt`, va `luot` lo phan phan biet chung.
+    from . import features as _features
+
+    _gd = _features.giai_doan_theo_ten(db, run.id, pipeline.VOICE_SYNTHESIS)
+    lan_thu = int(getattr(_gd, "attempt", 0) or 0)
 
     # ══ [A] DOAN NAO DA TRA TIEN ROI — quet MOT lan, TRUOC khi tieu mot dong ══
     #
@@ -372,7 +390,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         #    timeout_goi_ai` = 360 s. Nhuong theo con so LON hon la nhuong SOM
         #    hon can — giu ve phia an toan, cung lap luan voi chu thich
         #    `du_phong_s` o `lat_cat.mo` ngay tren.
-        _nan_lo(db, run, doan_tran, luot=lc.luot, ctx=ctx,
+        _nan_lo(db, run, doan_tran, luot=lc.luot, lan_thu=lan_thu, ctx=ctx,
                 truoc_lo=lambda: lc.kiem(vi_tri=lc.vi_tri), sau_lo=_chot_lo)
         dong_ho["giay_llm_nan"] += time.monotonic() - _t0
 
@@ -839,8 +857,8 @@ def _ke_nan(kq) -> dict:
 LAN_XIN_NAN_LO = 3
 
 
-def _nan_lo(db, run, cac: list[dict], *, luot: int = 0, ctx=None,
-            truoc_lo=None, sau_lo=None) -> dict[str, str]:
+def _nan_lo(db, run, cac: list[dict], *, luot: int = 0, lan_thu: int = 0,
+            ctx=None, truoc_lo=None, sau_lo=None) -> dict[str, str]:
     """Xin model viet lai NHIEU doan trong 1..N loi goi. Tra ve `{ma: chu moi}`.
 
     🔑 **Ke nhiem cua `_viet_lai` (bo 26/09).** Ban cu xin MOT doan mot loi goi
@@ -860,9 +878,21 @@ def _nan_lo(db, run, cac: list[dict], *, luot: int = 0, ctx=None,
        ma tu cache cua cua LLM, nen phai doi mot byte de pha cache. ⛔ Khong doi
        NOI DUNG: doi noi dung la doi phep thu, con ta dang hoi LAI cung mot cau.
 
-    ⚠️ `item_key` mang `luot` (so lat cat): mot lat noi tiep xin lai cho cac doan
-       CHUA doc, va do la tien THAT tieu lan hai — mot `ma_dispatch` trung se bi
-       `UNIQUE(run_id, ma_dispatch)` chan va lan tieu ay bien mat khoi so cai.
+    ⚠️ `item_key` mang CA BA toa do cua mot luot xin: `lan_thu` (`attempt` cua
+       dong giai doan), `luot` (so lat cat) va `(so_lo, lan)`. Moi cai phan biet
+       mot thu khac nhau, va thieu bat cu cai nao la mat mot dong so cai:
+
+         `lan_thu`  mot lan CHAY LAI giai doan — `_dat_lai_giai_doan` xoa
+                    `outputs` nen `luot` ve 0, va khong co `lan_thu` thi luot
+                    nan cua lan chay moi mang dung `ma_dispatch` cu;
+         `luot`     mot lat cat NOI TIEP xin cho cac doan chua doc;
+         `so_lo`    lo nao trong luot nay;
+         `lan`      lan xin lai thu bao nhieu cua chinh lo do (`LAN_XIN_NAN_LO`).
+
+    ⛔ Khuon `a{attempt}` giong `jobs.khoa_dedupe` (`asv:{run}:{ten}:a{attempt}`)
+       va `qc_ai` (`{ma_dv}:lai{lan}`): mot hau to cho MOI chieu tu do, ⛔ khong
+       phai mot ma bam tron tat ca lai — mot `item_key` doc duoc la thu mot nguoi
+       van hanh truy duoc ve dung luot goi da tieu tien.
     """
     import dataclasses
 
@@ -904,7 +934,8 @@ def _nan_lo(db, run, cac: list[dict], *, luot: int = 0, ctx=None,
                 goi = ai.doc_ket_qua(
                     ai.goi_tinh_tien(db, run, ai.RUT_NGAN_CHO_VUA, tin,
                                      stage=pipeline.VOICE_SYNTHESIS,
-                                     item_key=f"nan_lo:{luot}:{so_lo}:{lan}",
+                                     item_key=(f"nan_lo:a{lan_thu}:{luot}"
+                                               f":{so_lo}:{lan}"),
                                      ctx=ctx),
                     doc_bang)
             except (ai.AiError, ai.AiMoHo, giong_noi.MayBan,
