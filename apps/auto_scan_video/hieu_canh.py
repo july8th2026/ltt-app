@@ -76,6 +76,11 @@ class HieuCanhError(ValueError):
 class HieuCanh:
     """Ket qua doc MOT canh. Moi truong deu la thu VLM tra ve, da kiem."""
 
+
+    #: Xuất xứ của `do_tin` — xem `BangChungCanh.NGUON_BANG_CHUNG`.
+    #: ⚠️ Lớp này hiện ⛔ KHÔNG có người dựng nào trong `apps/` (Task 22 xoá
+    #:    `doc_hieu_canh`); trường này để bản khai đúng nếu đường VLM sống lại.
+    NGUON_BANG_CHUNG = "do tin VLM (chu quan)"
     ma_canh: str
     loai: str = ""
     chu_the: tuple[str, ...] = ()

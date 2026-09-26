@@ -270,6 +270,17 @@ class BangChungCanh:
        DUA vao dataclass nay no moi mang ten khoa dung chung.
     """
 
+
+    #: 🔑 **Xuất xứ của con số, để bản khai ⛔ không nói dối.** `do_tin` ở đây là
+    #:    một **tỉ lệ đo bằng ffmpeg**; ở `hieu_canh.HieuCanh` nó là **độ tin của
+    #:    VLM**. Hai đại lượng khác bản chất dùng chung một tên khoá (hợp đồng
+    #:    duck-type), nên chỗ duy nhất nói được sự thật là **một trường xuất xứ**.
+    #:
+    #: 🔴 Trước 27/09 `_quyet_dinh_mot_canh` ghi cứng *"VLM đề xuất bỏ"* cho MỌI
+    #:    quyết định. Từ Task 22, `hieu_canh.doc_hieu_canh` đã bị xoá và ⛔ KHÔNG
+    #:    mã sản phẩm nào còn dựng `HieuCanh` — nên câu ấy **luôn sai**, và nó đi
+    #:    vào **artifact của KHÁCH**.
+    NGUON_BANG_CHUNG = "phep do ffmpeg (blackdetect+freezedetect)"
     ma_canh: str
     de_xuat: str
     do_tin: float

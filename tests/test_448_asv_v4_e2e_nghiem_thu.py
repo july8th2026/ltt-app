@@ -1499,11 +1499,35 @@ def test_G17_hai_preset_tren_PHIM_KHACH_THAT(moi_truong, tmp_path, monkeypatch):
     # ⚠️ Chot nay chi co nghia neu chu du an tha dung loai clip duoc yeu cau, nen
     #    thong bao phai noi ro khi no do la ban NGUON khong hop le, khong phai
     #    san pham hong — hai ket luan rat khac nhau tu cung mot dong do.
+    # ⚠️ **Task 26 (27/09): chốt này là một câu về VẬT LIỆU, ⛔ không phải về sản
+    #    phẩm — nên khi nó không đúng thì đây là `skip` CÓ TÊN, ⛔ không phải `fail`.**
+    #
+    # 🔴 Cùng hình dạng lỗi Task 26 vừa gỡ ở `test_preset_CAT_...`: ở đó kỳ vọng
+    #    *"cắt ≥ 1"* hoá ra là **chính sách của BẢN GIẢ VLM** (`de_xuat="bo"` cho mọi
+    #    cảnh không thoại), còn hợp đồng thật chỉ cắt cảnh **không thoại VÀ hình
+    #    kém**. Một phim khách thật hoàn toàn có thể ⛔ **không có** cảnh nào như vậy
+    #    — và khi đó `so_cat = 0` là câu trả lời **ĐÚNG**.
+    #
+    # ⭐ Để `fail` thì dòng tóm tắt đọc y như *"sản phẩm hỏng"*, trong khi sự thật là
+    #    *"vật liệu ⛔ không có gì đáng cắt"* — hai kết luận rất khác nhau từ cùng một
+    #    con số. Và chính tệp này đã chốt nguyên tắc: thiếu vật liệu thì **`skip` phải
+    #    NÓI TÊN thứ còn thiếu**.
     cat = [k for k in luot if k["nhan"].endswith("cat_thong_minh")]
-    assert any(int(k["ban_bien_tap"].get("so_cat") or 0) > 0 for k in cat), (
-        "khong clip nao bi cat canh nao. Neu san pham dung, thi ban nguon khong "
-        "co canh nao dang cat — G17 can mot clip CO canh dang cat, khong phai "
-        "mot clip bat ky")
+    for k in cat:
+        bt = k["ban_bien_tap"]
+        # Hai vế của HỢP ĐỒNG thì vẫn là `assert` — chúng ⛔ không phụ thuộc vật liệu.
+        assert bt.get("canh_hong") == [], (
+            f"{k['nhan']}: co canh KHONG DO DUOC hinh — {bt.get('canh_hong')}")
+        assert (int(bt.get("so_giu") or 0) + int(bt.get("so_cat") or 0)
+                == int(bt.get("so_canh") or 0)), bt
+    if not any(int(k["ban_bien_tap"].get("so_cat") or 0) > 0 for k in cat):
+        pytest.skip(
+            "G17 chua chung minh duoc duong CAT tren phim khach that: "
+            + ", ".join(f"{k['nhan']}={k['ban_bien_tap'].get('so_canh')} canh, "
+                        f"cat {k['ban_bien_tap'].get('so_cat')}" for k in cat)
+            + " — moi clip deu KHONG co canh vua 'khong thoai' vua 'hinh kem'. "
+              "Can mot clip CO canh dang cat; day la thieu VAT LIEU, "
+              "⛔ khong phai san pham hong")
 
     duong = Path(os.environ.get("LTT_ASV_G17_RA")
                  or (tmp_path / "g17_phim_that.json"))
