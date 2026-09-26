@@ -104,9 +104,15 @@ def test_TIEM_LOI_thieu_mot_goi_thi_bao_DUNG_thu_muc_va_lenh_sua(tmp_path):
 def test_chay_that_tren_kho_nay_PASS_hoac_noi_ro_vi_sao():
     """Chạy công cụ trên chính kho này. ⛔ Không đòi PASS mù: nếu nó FAIL thì
     thông điệp **phải** kèm câu lệnh `npm ci` cho từng thư mục."""
-    ra = subprocess.run([sys.executable, str(CONG_CU)],
-                        cwd=ROOT, capture_output=True, text=True)
-    out = ra.stdout
+    # ⭐ `encoding="utf-8"` o CA HAI dau ong, dung quy uoc `gate.py:1219` da
+    #    dung. Bo no ra thi luong doc giai ma bang cp1252 mac dinh, nem
+    #    `UnicodeDecodeError` NGAY TRONG luong doc, va `ra.stdout` thanh `None`
+    #    — mot phep do khong co cau tra loi, khong phai mot cau tra loi xau.
+    #    Da can that 26/09: sua ben GHI sang UTF-8 xong thi ben DOC vo.
+    ra = subprocess.run([sys.executable, str(CONG_CU)], cwd=ROOT,
+                        capture_output=True, text=True,
+                        encoding="utf-8", errors="replace")
+    out = ra.stdout or ""
     assert "RESULT:" in out, out[-500:]
     if "RESULT: FAIL" in out:
         assert "npm ci" in out, "FAIL ma khong noi cach sua"
