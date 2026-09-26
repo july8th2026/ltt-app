@@ -19,7 +19,8 @@
 
   <section class="tv-compose" id="tv-compose" aria-label="{{ _('Thiết lập tạo video') }}">
     <button class="tv-compose-close" type="button" aria-label="{{ _('Đóng bảng tạo video') }}">✕ <span>{{ _("Đóng bảng tạo video") }}</span></button>
-    <form method="post" action="{{ app.route_prefix }}/queue" id="sdform" enctype="multipart/form-data">
+    <form method="post" action="{{ app.route_prefix }}/queue" id="sdform" enctype="multipart/form-data"
+          data-tu-studio="{{ tu_studio_ticket_id|default('') }}">
       <div class="tv-compose-scroll">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <input type="hidden" name="quote_has_video" value="0">
@@ -108,5 +109,38 @@
   (function(){var grid=q('.tv-grid'),buttons=[].slice.call(document.querySelectorAll('[data-view]'));function setView(view){view=view==='list'?'list':'grid';grid.classList.toggle('list-view',view==='list');buttons.forEach(function(button){button.setAttribute('aria-pressed',String(button.dataset.view===view))});try{localStorage.setItem('ltt.taovideo.view',view)}catch(_){}}buttons.forEach(function(button){button.addEventListener('click',function(){setView(button.dataset.view)})});try{setView(localStorage.getItem('ltt.taovideo.view')||'grid')}catch(_){setView('grid')}})();
   document.body.addEventListener('htmx:beforeRequest',function(e){if(e.detail.elt===estimateWrap)quoteBusy()});document.body.addEventListener('htmx:afterRequest',function(e){if(e.detail.elt===estimateWrap)quoteDone(!!e.detail.successful)});document.body.addEventListener('htmx:sendError',function(e){if(e.detail.elt===estimateWrap)quoteDone(false)});
   drawer.addEventListener('click',function(){compose.classList.contains('open')?closeCompose():openCompose()});closeButton.addEventListener('click',closeCompose);scrim.addEventListener('click',closeCompose);document.querySelectorAll('[data-open-compose]').forEach(function(b){b.addEventListener('click',openCompose)});document.querySelectorAll('[data-open-assets]').forEach(function(link){link.addEventListener('click',function(){var assets=q('#tv-assets');assets.open=true})});document.addEventListener('keydown',function(e){if(e.key==='Escape'&&compose.classList.contains('open'))closeCompose()});if(compact.addEventListener)compact.addEventListener('change',syncComposeMode);else compact.addListener(syncComposeMode);syncComposeMode();window.addEventListener('beforeunload',function(){previewUrls.forEach(function(url){URL.revokeObjectURL(url)})});
+  (function(){
+    // Giao bai tu PROMPT AI OMMI: `?tu_studio=<ve>` -> tu dien form.
+    // Ve dung MOT lan va het han 30 phut, nen tai lai trang voi cung ve se tra
+    // 409/410: bat im lang va de khach dung form tay binh thuong.
+    var form=q('#sdform'),veId=(form.dataset.tuStudio||'').trim();
+    if(!veId)return;
+    var csrfEl=form.querySelector('[name=csrf_token]'),csrf=csrfEl?csrfEl.value:'';
+    function dien(name,value){var el=form.querySelector('[name='+name+']');if(el&&value!==''&&value!==null&&value!==undefined)el.value=value}
+    function an(name,value){var el=document.createElement('input');el.type='hidden';el.name=name;el.value=value;form.appendChild(el)}
+    fetch('/prompt-ai-ommi/api/handoff/'+encodeURIComponent(veId)+'/payload',{credentials:'same-origin'})
+      .then(function(r){if(!r.ok)throw new Error('ve khong dung duoc');return r.json()})
+      .then(function(payload){return fetch('/taovideo/prefill',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({csrf_token:csrf,payload:payload})}).then(function(r){if(!r.ok)throw new Error('prefill that bai');return r.json()})})
+      .then(function(data){
+        var v=data.values||{};
+        var model=q('input[name=model][value="'+CSS.escape(String(v.model||''))+'"]');
+        if(model){model.checked=true;rep()}
+        dien('prompt',v.prompt);dien('resolution',v.resolution);dien('duration',v.duration);
+        dien('aspect_ratio',v.aspect_ratio);dien('camera',v.camera);dien('motion',v.motion);dien('visual_style',v.visual_style);
+        var audio=form.querySelector('[name=generate_audio]');if(audio)audio.checked=!!v.generate_audio;
+        // Giao bai luon MOT video: mot `upload_session` chi promote duoc mot
+        // lan, nen hai variant khong the dung chung mot ve anh.
+        var countEl=form.querySelector('[name=count]');if(countEl){countEl.value='1'}
+        (data.ref_keys||[]).forEach(function(ref){an('prefill_upload_ids',ref.upload_id);an('prefill_roles',ref.role);an('prefill_handles',ref.handle)});
+        var note=document.createElement('p');note.className='dim';note.id='tv-tu-studio-note';
+        var so=(data.ref_keys||[]).length,boQua=data.bo_qua||0;
+        note.textContent=so?('Da nap '+so+' anh tham chieu tu PROMPT AI'+(boQua?(' ('+boQua+' tham chieu khong tu dinh kem duoc)'):'')+' \u2014 kiem tra lai truoc khi tao video.'):'Da nap noi dung tu PROMPT AI \u2014 kiem tra lai truoc khi tao video.';
+        var hint=q('#promptbox');if(hint)hint.appendChild(note);
+        openCompose();
+        // Bao gia phai tinh lai theo gia tri vua dien, KHONG theo gia tri cu.
+        countEl&&countEl.dispatchEvent(new Event('change',{bubbles:true}));
+      })
+      .catch(function(){/* ve het han/da dung — im lang, khach vao tay binh thuong */});
+  })();
 })();</script>
 {% endblock %}
