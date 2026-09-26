@@ -331,7 +331,14 @@ def test_vong_nan_toi_da_la_MOT():
 
 
 def test_he_so_toc_KHONG_bi_kep_ve_tran():
-    """Chủ dự án chốt: vượt trần thoải mái. Trần còn là CẢNH BÁO, ⛔ không phải cổng."""
+    """Chủ dự án chốt: vượt trần thoải mái. Trần còn là CẢNH BÁO, ⛔ không phải cổng.
+
+    ⚠️ Task 16 (R4): đây là lưới PHỤ — kiểm cách VIẾT mã (không gọi cả `min`
+    lẫn `max` trong CÙNG module), ⛔ không gọi hàm nên không bắt được ai viết
+    lại phép kẹp bằng `sorted()`, `.clip()`, hay `if/else` mà vẫn né được cả
+    hai tên gọi. Lưới CHÍNH là hành vi thật của hàm THUẦN `he_so_ap`, xem
+    `test_he_so_ap_*` bên dưới.
+    """
     import ast
     import inspect
     from apps.auto_scan_video import giai_doan_thoi_gian
@@ -343,6 +350,28 @@ def test_he_so_toc_KHONG_bi_kep_ve_tran():
                if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
     assert "min" not in ten_goi or "max" not in ten_goi, (
         "van con phep kep he_so_co_gian ve [1/tran, tran]")
+
+
+def test_he_so_ap_duoi_tran_ky_thuat_KHONG_bi_kep_ve_tran_chinh_sach():
+    """h=1.10 < TRAN_TANG_TOC(1.15) va < tran ky thuat -> tra dung 1.10."""
+    from apps.auto_scan_video.giai_doan_thoi_gian import he_so_ap
+
+    assert he_so_ap(1.10, tran_ky_thuat=2.0) == pytest.approx(1.10)
+
+
+def test_he_so_ap_vuot_tran_CHINH_SACH_van_di_qua_khong_bi_kep():
+    """h=1.50 vuot TRAN_TANG_TOC(1.15, chinh sach san pham) nhung duoi tran ky
+    thuat -> chu du an chot: van tra dung 1.50, KHONG bi kep ve 1.15."""
+    from apps.auto_scan_video.giai_doan_thoi_gian import he_so_ap
+
+    assert he_so_ap(1.50, tran_ky_thuat=2.0) == pytest.approx(1.50)
+
+
+def test_he_so_ap_vuot_tran_KY_THUAT_bi_chan_dung_gia_tri_tran():
+    """h=3.00 vuot ca tran ky thuat cua atempo (2.0) -> CHAN cung dung 2.0."""
+    from apps.auto_scan_video.giai_doan_thoi_gian import he_so_ap
+
+    assert he_so_ap(3.00, tran_ky_thuat=2.0) == pytest.approx(2.0)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
