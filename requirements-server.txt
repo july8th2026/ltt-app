@@ -23,10 +23,24 @@ sentry-sdk>=2.22,<3.0
 # moi truong lam phu thuoc bac cau cua `chromadb` (pip show: 4.26.0) -- khai
 # tuong minh vi nay la phu thuoc TRUC TIEP cua nen tang, khong con la an theo.
 jsonschema>=4.26,<5.0
-yt-dlp>=2026.3.17,<2027.0  # Agent Social Video: Python API only; no shell/netrc/exec options
-yt-dlp-ejs>=0.8.0,<0.9     # video_crawler: giai thu thach JS YouTube (khop solver yt-dlp 2026.03.17 - nang CUNG yt-dlp)
+yt-dlp>=2026.7.4,<2027.0   # Agent Social Video: Python API only; no shell/netrc/exec options
+#: San 2026.7.4 la san DA DO, khong phai san chon theo changelog: do tren venv
+#: production 26/09/2026, ban do nhan `0.10 <= curl_cffi < 0.16`. San cu 2026.3.17
+#: chi nhan `< 0.15` => giu san cu thi mot lan cai sach co the lay ban tu choi
+#: curl_cffi 0.15 va tat ca duong impersonate.
+yt-dlp-ejs>=0.8.0,<0.9     # video_crawler: giai thu thach JS YouTube — nang CUNG yt-dlp
+#: `0.8.0` chay DUOC voi yt-dlp `2026.7.4`: do tren venv production 26/09/2026,
+#: noi duong YouTube dang phuc vu that. Nen san yt-dlp len 2026.7.4 KHONG keo
+#: theo mot lan nang ejs. (Chu thich cu ghi "khop solver 2026.03.17" — dung cho
+#: san CU, khong con la mo ta hien trang.)
 xhshow>=0.2.0,<0.3         # video_crawler: ky x-s Xiaohongshu thuan Python (MIT; keo pycryptodome BSD)
-curl_cffi>=0.10,<0.15      # video_crawler: yt-dlp impersonate=chrome cho bilibili.tv/facebook (yt_dlp/networking/_curlcffi.py chi nhan 0.10<=v<0.15)
+curl_cffi>=0.15,<0.16      # video_crawler: yt-dlp impersonate=chrome cho bilibili.tv/facebook
+#: 🔴 San >=0.15 la de DONG `PYSEC-2026-2431` (= `CVE-2026-33752`, SSRF qua redirect);
+#: ban sua la 0.15.0. Noi TRAN mot minh KHONG dong lo — phai nang SAN.
+#: Tran <0.16 la tran cua yt-dlp, KHONG phai cua ta: `_curlcffi.py:36` tu choi
+#: `>= 0.16` bang `ImportError`, tuc mat ca duong impersonate chu khong chi mot site.
+#: ⚠️ Chu thich cu o day noi *"chi nhan 0.10<=v<0.15"* — dung cho venv PHAT TRIEN
+#: (yt-dlp 2026.3.17), SAI cho production (2026.7.4). Do lai neu doi san yt-dlp.
 
 # CSDL (H1.1). psycopg 3 ban "binary" mang theo thu vien libpq da bien dich
 # san -- tren Windows dieu do tranh phai cai PostgreSQL client rieng chi de
