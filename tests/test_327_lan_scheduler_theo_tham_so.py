@@ -120,11 +120,15 @@ def test_video_upscale_xin_dung_VRAM_cua_preset_no_chay():
     lan_fast = tool.lane_for({"preset": "fast"})
     lan_quality = tool.lane_for({"preset": "quality"})
 
-    assert man.vram_for(lan_fast) == 2000, (
+    # H32.6 (2026-09-25, docs/UPSCALE_V2/01_HARDWARE_TRUTH.md): ban khai da
+    # giam theo do that (fast 848MB -> xin 1000, quality 11.176MB -> xin
+    # 11500). Phep kiem nay van giu nguyen viec no bao ve: fast/quality PHAI
+    # khac lan legacy (12000) va khac nhau, khong phai con so 2000/12000 cu.
+    assert man.vram_for(lan_fast) == 1000, (
         f"job fast xin {man.vram_for(lan_fast)}MB — do that la 848MB")
-    assert man.vram_for(lan_quality) == 12000
+    assert man.vram_for(lan_quality) == 11500
     # Va mac dinh (khach khong khai preset) phai la lan NHE, khong phai lan cu.
-    assert man.vram_for(tool.lane_for({})) == 2000
+    assert man.vram_for(tool.lane_for({})) == 1000
 
 
 def test_duong_web_va_duong_api_chon_CUNG_mot_lan():
@@ -162,9 +166,10 @@ def test_hai_tool_ANH_EM_khong_duoc_chay_hai_hanh_vi_khac_nhau():
         assert v == i, f"{preset}: video->{v} nhung image->{i}"
 
     # Va mac dinh cua CA HAI phai la lan nhe.
+    # H32.6 (2026-09-25): ban khai giam 2000->1000 theo do that 848MB.
     for ten in ("video.upscale", "image.upscale"):
         lane = tools[ten].lane_for({})
-        assert man.vram_for(lane) == 2000, (
+        assert man.vram_for(lane) == 1000, (
             f"{ten} mac dinh xin {man.vram_for(lane)}MB — do that la 848MB")
 
 
