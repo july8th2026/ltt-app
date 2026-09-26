@@ -216,9 +216,20 @@ class GwnatGatewayClient(GatewayClient):
         self.helper = helper
 
     def _goi(self, action: str, *args: str) -> str:
-        if action not in {"health", "list", "ensure", "remove"}:
+        # ⛔ Danh sach cho phep, khong phai mot chuoi tu do: helper la duong DUY
+        #    NHAT ma ung dung cham vao gateway, va gateway ganh TOAN BO luu luong
+        #    khach. Mo no thanh shell tu do la bo mat cai rao do.
+        if action not in {"health", "list", "ensure", "remove", "dem"}:
             raise GatewayError("hanh dong gwnat khong hop le")
         return self._chay([self.helper, action, *args])
+
+    def dem_tho(self) -> str:
+        """JSON tho cua chain dem (R26). Nguoi doc parse: `bang_thong_gwnat`.
+
+        Tra JSON chu khong phai van ban nguoi-doc: mot phep do parse dinh dang
+        nguoi-doc chet im lang khi dinh dang doi (da mat mot ngay vi `nslookup`).
+        """
+        return self._goi("dem")
 
     def con_song(self) -> bool:
         return self._goi("health").strip().endswith("ok")

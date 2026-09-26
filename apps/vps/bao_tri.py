@@ -143,17 +143,34 @@ def _dong_bo_bang_thong(db, profile=None, *, now=None) -> int:
     from sqlalchemy import select
 
     from apps.vps import bang_thong
+    from apps.vps.services import bang_thong_gwnat
     from apps.vps.services import router as bo_dinh_tuyen
+    from apps.vps.services.gateway import GatewayError
     from apps.vps.tables import VpsInstance
 
     try:
-        rt = (backend_factory.router_backend(profile) if profile is not None
-              else bo_dinh_tuyen.client_tu_moi_truong())
+        # ⭐ R26: ho so OVH do bang thong o GATEWAY, khong o router VM199 — luu
+        #    luong VPS OVH khong di qua VM199 (gateway cua may khach la host
+        #    Proxmox, NAT o gateway OVH), nen doc o router cho ra **0 vinh vien**
+        #    va lop ham toc khong bao gio co so de so voi han muc.
+        #    Giao dien giong het nen khong mot dong nao duoi day phai doi.
+        rt = (bang_thong_gwnat.tu_profile(profile) if profile is not None else None)
+        if rt is None:
+            rt = (backend_factory.router_backend(profile) if profile is not None
+                  else bo_dinh_tuyen.client_tu_moi_truong())
         so_lieu = rt.doc_bang_thong()
         dang_ham = rt.danh_sach_giam_toc()
-    except bo_dinh_tuyen.SshLenhError as exc:
-        # Bắt HẸP. Router không trả lời thì bỏ lượt đo này; bộ đếm trên router
-        # vẫn chạy tiếp, nên lượt sau cộng bù đủ — không mất gì.
+    except (bo_dinh_tuyen.SshLenhError, GatewayError,
+            bang_thong_gwnat.BangThongGwNatError) as exc:
+        # Bắt HẸP — ⛔ không `except Exception`. Ba lớp này là "phía kia không trả
+        # lời": SSH router, helper gateway, và JSON gateway sai định dạng.
+        #
+        # ⚠️ 26/09/2026: khi thêm đường đo ở gateway, `except` này còn bắt MỘT lớp
+        #    (`SshLenhError` của router) ⇒ gateway không trả lời sẽ **làm vỡ cả vòng
+        #    bảo trì**, không chỉ bỏ một lượt đo. Một `except` hẹp là đúng, nhưng
+        #    hẹp hơn tập lỗi thật thì nó thành một cửa không ai đi qua.
+        #
+        # Bỏ lượt đo là không mất gì: bộ đếm phía kia vẫn chạy, lượt sau cộng bù đủ.
         log.warning("VPS bao tri: khong doc duoc bang thong: %s", exc)
         return 0
 
