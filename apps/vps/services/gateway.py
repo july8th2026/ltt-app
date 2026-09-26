@@ -40,7 +40,22 @@ TIMEOUT_GIAY = 60
 
 
 class GatewayError(RuntimeError):
-    """Không chạy được lệnh trên cổng vào, hoặc cổng vào trả lỗi."""
+    """Không chạy được lệnh trên cổng vào, hoặc cổng vào trả lỗi.
+
+    `status` là **mã thoát của lệnh trên cổng vào**, hoặc `None` khi lỗi xảy ra
+    trước khi có lệnh nào chạy (thiếu cấu hình, không thấy khoá SSH).
+
+    🔴 26/09/2026: đây là lớp nối cuối cùng còn thiếu `.status`, và `dns_cloudflare`
+       vừa cho thấy cái giá: người gọi ⛔ không phân biệt được hai tình huống khác
+       loại nên phải **mò chuỗi** trong thông điệp. Với cổng vào, mã thoát còn nói
+       thêm một điều cụ thể: helper `ltt-gwnat` trả `4` cho *"xung đột quyền sở hữu
+       mapping"* và `5` cho *"địa chỉ được bảo vệ"* — hai thứ đòi hai hành động khác
+       nhau, và cả hai ⛔ không phải "thử lại".
+    """
+
+    def __init__(self, *args, status: int | None = None):
+        super().__init__(*args)
+        self.status = status
 
 
 @dataclass(frozen=True)
@@ -102,7 +117,8 @@ class GatewayClient:
             ) from exc
         if r.returncode != 0:
             # Never propagate remote output: it can contain expanded secrets.
-            raise GatewayError(f"cong vao tra ma {r.returncode}")
+            raise GatewayError(f"cong vao tra ma {r.returncode}",
+                               status=int(r.returncode))
         return r.stdout
 
     def _bash(self, kich_ban: str) -> str:
