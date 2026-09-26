@@ -34,6 +34,7 @@ from apps.vps.manifest import MANIFEST
 from apps.vps.services import (billing, console, dieu_khien,
                                nguon_luc, provisioning, sao_luu, thao_tac,
                                backend_factory)
+from apps.vps.services import proxmox as proxmox_mod
 from apps.vps.services.proxmox import (ChuaCauHinh, ProxmoxError)
 from apps.vps.tables import (VpsEvent, VpsInfrastructureProfile,
                              VpsInstance, VpsIp)
@@ -481,6 +482,26 @@ def tao_may(request: Request,
     if not kq.ban_duoc:
         log.warning("vps: tu choi tao may (%s)", kq.cau_cho_van_hanh)
         return _ve_trang(kq.cau_cho_khach)
+
+    # ⛔ KHÁCH THỨ HAI trên một node chưa cách ly thật thì KHÔNG bán. Kiểm ở đây —
+    #    trước khi ghi gì vào CSDL và trước khi giữ chỗ credit — vì một lượt bị từ
+    #    chối ⛔ không được để lại máy hay khoản giữ nào.
+    #
+    #    Chủ hiện tại ⛔ không bị chặn: rủi ro là cross-tenant. Xem `cach_ly.py`
+    #    để biết vì sao mốc là "khách thứ hai" chứ không phải "bật ngay".
+    from apps.vps import cach_ly
+    chan, ly_do_cach_ly = cach_ly.chan_khach_moi(
+        db, profile, user_id,
+        do_hieu_luc=lambda vmid: proxmox_mod.tuong_lua_hieu_luc(
+            backend_factory.compute_backend(profile).client, vmid))
+    if chan:
+        # ⚠️ Câu cho KHÁCH giữ nguyên câu chung, và đó là CỐ Ý — khác mọi chỗ khác
+        #    trong tệp này nơi tôi đòi thông điệp phải nêu đúng nguyên nhân. Nói với
+        #    một khách lạ rằng *"node này chưa bật chống giả mạo"* là **chỉ cho họ
+        #    cách khai thác nó**. Nguyên nhân chính xác đi vào log cho người vận
+        #    hành, nơi nó thuộc về.
+        log.warning("vps: tu choi tao may cho khach moi — %s", ly_do_cach_ly)
+        return _ve_trang(_t("Vùng bạn chọn hiện không nhận máy mới."))
 
     # Tên: bỏ trống thì tự sinh. Kiểm TRƯỚC khi ghi gì vào CSDL — một tên trùng
     # phát hiện sau khi đã trừ tiền là một lỗi phải hoàn tiền để sửa.

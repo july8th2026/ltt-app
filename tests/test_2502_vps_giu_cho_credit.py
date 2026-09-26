@@ -130,3 +130,85 @@ def test_may_hong_khong_co_su_kien_thu_phi_nen_khong_bi_hoan_lan_hai(db):
     loai = {e.loai for e in db.execute(
         select(VpsEvent).where(VpsEvent.instance_id == "i-hong")).scalars()}
     assert "thu_phi" not in loai
+
+
+# ── Chuỗi THẬT: giữ chỗ → quyết toán → đọc lại bằng chứng → mở chu kỳ ────────
+
+def test_bang_chung_doc_lai_duoc_NGAY_trong_cung_transaction(db):
+    """⭐ Mắt nối mà `mo_chu_ky` dựa vào, đo bằng CSDL thật chứ không con giả.
+
+    Từ 25/09/2026 `billing.mo_chu_ky` ⛔ không còn tin lời người gọi: nó tra sổ
+    credit qua `credit.da_thu_cho_job`. Cả chuỗi chạy **trong một transaction**:
+    `quyet_toan` ghi bút toán rồi `flush()`, và ngay dòng sau `mo_chu_ky` phải
+    đọc lại được nó.
+
+    🔴 Nếu đọc lại KHÔNG thấy thì `mo_chu_ky` nâng `ChuaThanhToanError` **sau khi
+       khách đã bị trừ tiền** ⇒ mọi lượt tạo VPS hỏng ở bước cuối, và hỏng ở chỗ
+       đắt nhất. Tôi đã suy luận là nó thấy (SQLAlchemy nhìn thấy hàng đã flush
+       trong cùng session), nhưng một suy luận về sổ tiền thì ⛔ không đủ — nên có
+       ca này.
+    """
+    _nap(db, 5000)
+    _job(db)
+    credit.giu_cho(db, USER, 1490, JOB)
+    db.flush()
+    da_thu = credit.quyet_toan(db, USER, JOB, 1490).charged_credit
+    db.flush()
+
+    assert credit.da_thu_cho_job(db, JOB) == da_thu == 1490, (
+        "doc lai bang chung trong cung transaction phai thay dung so da thu")
+
+
+def test_mo_chu_ky_di_qua_duoc_voi_bang_chung_that(db):
+    """Cả chuỗi, không monkeypatch gì: `mo_chu_ky` phải mở được và phát `thu_phi`."""
+    from apps.vps.services import billing
+
+    _nap(db, 5000)
+    _job(db)
+    credit.giu_cho(db, USER, 1490, JOB)
+    db.flush()
+    da_thu = credit.quyet_toan(db, USER, JOB, 1490).charged_credit
+    db.flush()
+
+    class _May:
+        id = "may-2502"
+        user_id = USER
+        plan_id = "vps-nho"
+        dia_them_gb = 0
+        bang_thong_byte = 0
+        paid_until = None
+        xoa_sau = None
+
+    su_kien: list = []
+    goc = billing.ghi_su_kien
+    billing.ghi_su_kien = lambda db_, may_id, ten, **kw: su_kien.append(ten)
+    try:
+        ra = billing.mo_chu_ky(db, _May(), gia=da_thu,
+                               bang_chung=f"job:{JOB}")
+    finally:
+        billing.ghi_su_kien = goc
+    assert ra == 1490 and su_kien == ["thu_phi"]
+
+
+def test_bang_chung_cua_JOB_KHAC_thi_bi_tu_choi(db):
+    """⛔ Không phải "có bút toán nào đó" là đủ — phải là bút toán CỦA job này."""
+    from apps.vps.services import billing
+
+    _nap(db, 5000)
+    _job(db)
+    credit.giu_cho(db, USER, 1490, JOB)
+    db.flush()
+    credit.quyet_toan(db, USER, JOB, 1490)
+    db.flush()
+
+    class _May:
+        id = "may-2502"
+        user_id = USER
+        plan_id = "vps-nho"
+        dia_them_gb = 0
+        bang_thong_byte = 0
+        paid_until = None
+        xoa_sau = None
+
+    with pytest.raises(billing.ChuaThanhToanError):
+        billing.mo_chu_ky(db, _May(), gia=1490, bang_chung="job:job-khac")
