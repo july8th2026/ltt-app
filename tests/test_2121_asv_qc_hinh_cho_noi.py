@@ -266,26 +266,34 @@ def test_cho_noi_HONG_sinh_vong_sua_NHAM_DUNG_CHO_va_CO_TRAN(
     assert ma_canh and all(m.startswith("canh_") for m in ma_canh), ma_canh
     assert {k["loai"] for k in ke["khiem_khuyet"]} == {sc.CAT_SAI}
 
-    # 🔴 **Va vong sua da HOI LAI THAT — day moi la menh de dat gia.**
+    # 🔴 **26/09/2026 — MENH DE THU BA DOI CHIEU, va no la mot SU THAT SAN PHAM
+    #    phai duoc noi ra chu khong duoc de im.**
     #
-    #    Mo lai mot don vi la de. Cai kho la bao dam luot hoi lai KHONG tra ve
-    #    ket qua cache cu: cung van tay = cung khoa = cung phan doan vua bi bao
-    #    la sai (M-07 cua duong GIONG). `_ma_don_vi_goi` dua so VONG SUA vao
-    #    `item_key`, nen mot but toan `doc_canh` mang hau to `:sua1` la bang
-    #    chung CO HOC rang mot luot goi MOI da xay ra cho dung canh do.
+    #    Ban cu chot: *vong sua da HOI LAI THAT* — mot but toan `doc_canh` mang
+    #    hau to `:sua1` chung minh mot luot goi VLM MOI da xay ra cho dung canh
+    #    do, voi mot cau KHAC (muoi vong sua trong van tay), vi hoi y nguyen cau
+    #    cu thi model tra loi y nhu cu (M-07 cua duong GIONG).
+    #
+    # ⭐ Tu 26/09 `edit_plan` phan quyet bang **phep do tat dinh** (B1 §9b), nen:
+    #      · ⛔ KHONG con luot goi nao — `doc_canh` phai RONG;
+    #      · ⛔ KHONG con don vi tinh tien theo canh;
+    #      · va vong sua `cat_sai` cho ra **DUNG phan quyet cu** — tat dinh nghia
+    #        la cung dau vao cho cung ket qua.
+    #
+    # ⚠️ **Tuc vong sua `cat_sai` nay hom nay la MOT VONG VO HIEU QUA.** Do la he
+    #    qua truc tiep cua §9b (*"tat dinh thang khon, vi cat la thao tac KHONG
+    #    DAO DUOC tren ban giao khach"*) — mot y kien khac cho cung mot video la
+    #    dung thu khong ai giai thich duoc cho khach. Cai vong nay chi lay lai
+    #    y nghia neu sau nay co mot nac VLM **tuy chon** (§9b, doan cuoi).
     doc_canh = {k for t, k in da_goi if t == ai.DOC_CANH.ma}
-    for m in ma_canh:
-        assert m in doc_canh, (m, sorted(doc_canh))          # luot dau
-        assert f"{m}:sua1" in doc_canh, (m, sorted(doc_canh))  # luot VONG SUA
+    assert doc_canh == set(), (
+        f"edit_plan lai goi VLM: {sorted(doc_canh)} — xem test_3912 §1")
 
-    # ...va no hoi bang mot cau KHAC: van tay don vi phai mang muoi cua vong sua.
-    from apps.auto_scan_video import features, hieu_canh as hc
+    from apps.auto_scan_video import features
     for m in ma_canh:
-        it = features.don_vi_theo_khoa(db, run.id, pipeline.EDIT_PLAN, m)
-        assert it is not None and "xem_lai" not in str(it.fingerprint or ""), (
-            "van tay la mot bam — khong doc duoc muoi tu no")
-        # Chot gian tiep nhung chat: van tay MOI khac van tay khong muoi.
-        assert hc.van_tay_canh(m, "", 0, 0.0) != str(it.fingerprint or "")
+        assert features.don_vi_theo_khoa(db, run.id, pipeline.EDIT_PLAN,
+                                         m) is None, (
+            "edit_plan lai mo don vi tinh tien theo canh")
 
 
 def test_lat_cat_vong_HINH_nhuong_roi_NOI_TIEP_khong_hoi_lai(

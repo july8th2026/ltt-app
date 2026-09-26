@@ -216,10 +216,17 @@ def test_bo_do_lech_bat_giai_doan_bi_sua_VA_giai_doan_ke_no(run_xong, db):
 
     lech = thi_hanh.giai_doan_lech_van_tay(db, run_xong)
     assert pipeline.TRANSCRIBE in lech, "dong bi gia mao phai duoc phat hien"
-    # ⚠️ **Giai doan ke ngay sau `transcribe` doi o pha 12**: `edit_plan` duoc
-    #    chen vao giua de dong `V4-R07`. Phep kiem nay chot "mot buoc, khong bac
-    #    cau", nen no phai hoi giai doan ke NGAY — va cai ten do doi theo chuoi.
-    assert pipeline.EDIT_PLAN in lech, "giai doan ke ngay phai lech theo"
+    # ⚠️ **Giai doan ke ngay sau `transcribe` da doi HAI lan**: pha 12 chen
+    #    `edit_plan` vao giua (de dong `V4-R07`), roi 26/09/2026 dua no xuong GD2
+    #    (sau `render`, B1 §9a) nen `content_process` lai la buoc ke ngay.
+    #
+    # ⭐ Phep kiem nay chot "MOT buoc, khong bac cau" — nen no phai hoi giai doan
+    #    ke NGAY, va cai ten do doi theo chuoi. ⛔ Khong go ten cung: doc tu
+    #    chinh `CHUOI` thi no ⛔ khong the troi khoi san pham lan thu ba.
+    ke_ngay = pipeline.TEN_GIAI_DOAN[
+        pipeline.TEN_GIAI_DOAN.index(pipeline.TRANSCRIBE) + 1]
+    assert ke_ngay == pipeline.CONTENT_PROCESS, ke_ngay
+    assert ke_ngay in lech, "giai doan ke ngay phai lech theo"
     assert pipeline.RENDER not in lech, (
         "bo do dang doc bac cau — no chi nen doc mot buoc, va tang tren moi lo "
         "khep kin (xem `test_advance_TU_DAT_LAI_giai_doan_lech...`)")

@@ -183,10 +183,20 @@ def test_khong_day_nguoc_len_giai_doan_SOM_HON_can_thiet(db):
     assert pipeline.VOICE_SYNTHESIS in dat_lai, (
         "chua co viec sua nao xay ra — phan con lai cua bai nay se xanh rong")
 
-    for ten in (pipeline.CONTENT_PROCESS, pipeline.EDIT_PLAN,
-                pipeline.TRANSCRIBE, pipeline.MEDIA_PREPARE):
+    for ten in (pipeline.CONTENT_PROCESS, pipeline.TRANSCRIBE,
+                pipeline.MEDIA_PREPARE):
         assert ten not in dat_lai, (
             f"{ten} bi lam lai cho mot khiem khuyet no khong gay ra")
+
+    # ⭐ **`EDIT_PLAN` ROI KHOI danh sach tren (26/09, B1 §9a)**, va do la HE QUA
+    #    DUNG chu khong phai mot noi long: no da xuong GD2, chay SAU `render`.
+    #    Doi tieng ⇒ `render` ra tep khac ⇒ ke cat dung tren mot truc khac ⇒ phan
+    #    quyet cat phai lam lai. ⛔ Giu no ngoai tap dat lai moi la loi: khach se
+    #    nhan mot ban cat theo mot ban ra khong con ton tai.
+    assert pipeline.EDIT_PLAN in dat_lai, (
+        "edit_plan phai lam lai: no dung SAU render, va tieng vua doi")
+    # Va no van dung HA NGUON cua `voice_synthesis`, ⛔ khong phai thuong nguon.
+    assert pipeline.EDIT_PLAN in pipeline.ha_nguon_cua(pipeline.VOICE_SYNTHESIS)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
