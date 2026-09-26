@@ -25,10 +25,27 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-if hasattr(sys.stdout, "buffer"):
-    import io
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8",
-                                  errors="replace", line_buffering=True)
+
+def _boc_stdout_utf8() -> None:
+    """Bọc `sys.stdout` sang UTF-8 — **chỉ khi chạy như một CLI**.
+
+    🔴 **Trước 26/09/2026 đoạn này nằm ở MỨC MODULE, và nó là một cái bẫy.** Bất
+       kỳ ai `import tools.asv_soi` trong `pytest` đều làm vỡ bộ bắt đầu ra của
+       pytest: `TextIOWrapper` giữ một tham chiếu riêng tới `sys.stdout.buffer`,
+       nên khi pytest đóng bộ bắt của nó, mọi lệnh `print` sau đó ném
+       `ValueError: I/O operation on closed file`.
+
+    ⭐ Tìm ra bằng một ca THẬT: `tools/asv_doi_soat.py` chép khuôn của tệp này và
+       ba phép kiểm của nó lỗi ngay — cùng lỗi mà điều phối đã đụng khi thử
+       `exec` tệp này trong một tiến trình khác.
+
+    ⇒ Một thao tác chỉ đúng khi là CLI thì phải nằm TRONG `main()`, ⛔ không nằm
+      ở mức module: mức module chạy cả khi người ta chỉ muốn một cái tên.
+    """
+    if hasattr(sys.stdout, "buffer"):
+        import io
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8",
+                                      errors="replace", line_buffering=True)
 
 
 def _utc(gt: datetime | None) -> datetime | None:
@@ -153,6 +170,7 @@ def _bang(dong: dict) -> str:
 
 
 def main(argv: list[str]) -> int:
+    _boc_stdout_utf8()
     if len(argv) != 2:
         print(__doc__)
         return 2
