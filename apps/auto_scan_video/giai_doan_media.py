@@ -15,6 +15,7 @@ Hai artifact ra:
 """
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import tempfile
@@ -46,7 +47,17 @@ def _duong_doc_duoc(kho: Storage, khoa: str, thu_muc: Path) -> str:
     #
     # ⭐ Va no hong theo kieu te nhat: khong loi, khong cham, chi la may bat dau
     #    swap khi hai lan chay trung nhau.
-    dich = thu_muc / "nguon.bin"
+    # 🔴 N-58 (26/09/2026): `thu_muc` CÓ THỂ chưa tồn tại. `giai_doan_thoi_gian.py`
+    #    truyền một thư mục CON (`t{lô}_{mã}`) và ⛔ không tạo nó, nên `open(..., "wb")`
+    #    ném `Errno 2` ở đoạn ĐẦU TIÊN — 3/3 lượt production chết ở đây.
+    #    ⭐ `giai_doan_qc_do_luong.py:161` thì `tm.mkdir()` trước khi gọi ⇒ hợp đồng
+    #    "người gọi phải tạo thư mục" chưa bao giờ được gác. Gác ở BIÊN, một lần.
+    thu_muc.mkdir(parents=True, exist_ok=True)
+    # 🔴 N-59: tên tệp phải DẪN XUẤT TỪ KHOÁ. Với tên cố định `nguon.bin`, hai khoá
+    #    khác nhau vào cùng một thư mục ghi đè nhau — và `giai_doan_qc.py:130-131`
+    #    làm đúng điều đó, khiến QC so bản ra với CHÍNH NÓ. Lỗi IM LẶNG.
+    #    ⛔ Không ai phụ thuộc chuỗi "nguon.bin" (đã grep cả kho).
+    dich = thu_muc / (hashlib.sha1(khoa.encode("utf-8")).hexdigest()[:16] + ".bin")
     with kho.open(khoa) as f, open(dich, "wb") as ra:
         while True:
             khoi = f.read(assets.KHOI_DOC)

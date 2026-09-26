@@ -117,11 +117,14 @@ DUNG_SAI_NGAN = 0.35
 #:    cho toi khi vua" tren mot dich vu tra tien la mot hoa don khong co day, va
 #:    `V4_RESOURCE_CPU_GPU_POLICY` cam "no infinite loop" bang chu.
 #:
-#: ⭐ 2 chu khong phai 5: do dai cau ra khong hoi tu — model rut ngan mot cau hai
-#:    lan thuong dung o mot do dai no cho la tu nhien, va lan thu ba tra ve gan
-#:    y het lan thu hai. Tra tien cho ba lan de doi lay mot ket qua bang lan hai
-#:    la lang phi co the doan truoc.
-VONG_TOI_DA = 2
+#: 🔑 **1 tu 26/09/2026** (truoc: 2). Ba can cu, ⛔ khong phai mot linh cam:
+#:    - chu thich cua chinh `loi_nhac_nan` noi *"do la ly do vong thu hai
+#:      thuong khong can den"* — vi loi nhac da dua mot muc tieu DO DUOC;
+#:    - `VideoLingo` (18,5k★, Apache-2.0) da bo han vong hai: `##! No longer
+#:      perform secondary trim`;
+#:    - do 26/09: mot loi goi nan mat **15,6-17,7 giay**, nen vong hai la 16
+#:      giay cho mot xac suat nho.
+VONG_TOI_DA = 1
 
 #: Tran co gian thoi gian o nac 3. Muon nguyen tu `thoi_gian.TRAN_TANG_TOC` —
 #: mot con so, mot cho khai.

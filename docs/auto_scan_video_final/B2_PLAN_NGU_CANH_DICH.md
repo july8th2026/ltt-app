@@ -9,6 +9,55 @@
 
 ---
 
+## 🔴 §0 ĐỊNH CHÍNH LỚN (26/09, sau khi agent Task 11 soi ra) — §1 ĐỌC SAI MODULE
+
+⛔ **Toàn bộ §1 dưới đây phân tích `dich_thuat.py`, và module đó là ĐƯỜNG CHẾT.**
+Chính kho nói ra bằng chữ:
+
+```
+thi_hanh.py:124   "dich_thuat.dich_ban_ghi khong con nguoi goi nao tu do."
+van_ban.py:78     "Phien ban loi nhac cua dich_thuat._loi_nhac (⛔ duong CHET ...)"
+```
+
+Đường dịch **THẬT** của `content_process` là `long_tieng.loi_nhac` +
+`ai.goi_tinh_tien(ai.CHUYEN_LOI_THOAI, ...)`. Và nó **đã có gần hết** những thứ §1
+báo là thiếu:
+
+| §1 nói "thiếu" | sự thật ở `long_tieng.py` |
+|---|---|
+| lô 20 đoạn | **`DOAN_MOI_LO = 12`** — nhỏ hơn *có ý*, vì mỗi đoạn ở đây **mang theo ngữ cảnh** (`long_tieng.py:79-85`) |
+| ⛔ không có số giây | 🔴 **ĐÃ CÓ**: mỗi mục mang `thoi_luong_giay` (`long_tieng.py:233`). **C3 của plan này ĐÃ ĐƯỢC LÀM RỒI** |
+| ⛔ không có ngữ cảnh trước/sau | **ĐÃ CÓ**: `ngu_canh_ke(tat_ca, vi_tri, ke=NGU_CANH_KE)` đưa các đoạn **giữ lại** liền trước/sau, *theo thứ tự bản ra* (`long_tieng.py:197-206`) |
+| ⛔ không có ngân sách độ dài | **ĐÃ CÓ**: tính từ `ngon_ngu.ngan_sach_do_dai` với nhịp **đã đo** 3,35 âm tiết/giây (`long_tieng.py:52`) |
+| ⛔ không chống lẫn id | **ĐÃ CÓ**: ghép theo **mã**, ⛔ không theo vị trí, và xử ca *"gửi 12 nhận 11"* (`long_tieng.py:29`) |
+| ⛔ không nhất quán thuật ngữ | **ĐÃ CÓ** một luật riêng cho ca *"hơi buồn / buồn man mác / sad / u sầu"* (`long_tieng.py:38`) |
+| tăng `PHIEN_BAN_LOI_NHAC_DICH` | ⛔ **SAI HẰNG SỐ** — đó là phiên bản của lời nhắc **CHẾT**. Đường sống có hằng số riêng (`long_tieng.py:49`) |
+
+### 🔑 Điều gì trong §1 vẫn ĐÚNG
+
+**Cửa sổ ngữ cảnh là bản GỐC, ⛔ không phải bản ĐÃ DỊCH.** `ngu_canh_ke` trả
+`d["chu"]` — chữ **nguồn** của các đoạn kề. ⇒ Lô 2 thấy *câu tiếng Trung* của lô 1,
+nhưng ⛔ **không thấy lô 1 đã dịch `你` thành "cháu"**. Nên **chẩn đoán cốt lõi vẫn
+sống**: ranh giới lô là một bức tường **cho QUYẾT ĐỊNH dịch**, dù ⛔ không phải cho
+ngữ cảnh nội dung.
+
+Và **hồ sơ dịch toàn cục** thật sự thiếu: `y_canh` là ghi chú **theo từng đoạn**
+(`QUY_TAC_Y_CANH`), ⛔ không phải một bảng đại từ chốt **một lần cho cả video**. ⇒
+`ho_so_dich` (Task 11) ⛔ **không** trùng `y_canh`.
+
+### ⚠️ Vì sao tôi sai, và bài học
+
+Tôi `grep dich_thuat`, đọc kỹ module đó, **nhưng ⛔ không bao giờ kiểm AI GỌI nó**.
+Đúng cái bẫy đã ghi trong sổ dự án: *"đọc thứ đại diện thay vì đọc thứ thật — thứ
+tôi đang hỏi có SẴN ở chỗ tôi đang đứng không?"* Một module đọc rất thuyết phục vẫn
+có thể ⛔ không nằm trên đường nào.
+
+⇒ **Luật thêm vào cho mọi phân tích sau:** trước khi kết luận về một module, chạy
+`grep -rn "<ten_module>\." --include=*.py apps/` và **đếm người gọi**. ⛔ Không có
+người gọi thì ⛔ không có kết luận.
+
+---
+
 ## 1. Hiện trạng — đã gom lô, nhưng ⛔ KHÔNG mang ngữ cảnh qua ranh giới lô
 
 Đọc `apps/auto_scan_video/dich_thuat.py`, ⛔ không suy diễn:

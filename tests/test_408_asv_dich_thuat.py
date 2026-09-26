@@ -524,3 +524,62 @@ def test_DOI_CHUNG_tang_hang_DICH_thi_van_tay_LONG_TIENG_khong_nhuc_nhich(monkey
     assert _vt() != truoc, (
         "⛔ vế đối chứng hỏng: đổi lời nhắc của CHÍNH nó mà vân tay không đổi "
         "— bài này đang đo chính nó")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Task 5 — doi_soat: sau phep DEM tren mot luot chay (khong can ban tham chieu)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_doi_soat_phan_biet_CHUA_DO_voi_BANG_KHONG():
+    """⛔ `0` và "chưa đo được" là HAI trạng thái. Gộp chúng là mất khả năng phân biệt."""
+    from tools.asv_doi_soat import doi_soat
+
+    rong = doi_soat({"giai_doan": []})
+    assert rong["sai_so_p90"] is None, "khong co cap (doan, that) thi phai la None"
+    assert rong["so_doan_nan_oan"] is None
+
+
+def test_doi_soat_tinh_sai_so_tu_cap_doan_va_that():
+    from tools.asv_doi_soat import doi_soat
+
+    dong = {"giai_doan": [{"giai_doan": "voice_synthesis", "tom_tat": {
+        "luot_doc": [{"ma": "seg_0001", "giay_doan": 2.0, "giay": 2.0},
+                     {"ma": "seg_0002", "giay_doan": 2.0, "giay": 3.0}],
+        "so_doan_nan_oan": 1}}]}
+    ra = doi_soat(dong)
+    # |2-2|/2 = 0 ; |3-2|/3 = 0,3333 -> p50 = 0,1667 (trung binh hai gia tri)
+    assert ra["sai_so_max"] == pytest.approx(1 / 3, abs=1e-6)
+    assert ra["ti_le_doan_ngan"] == pytest.approx(0.5, abs=1e-6)
+    assert ra["so_doan_nan_oan"] == 1
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Task 11 — ho_so_dich: MOT loi goi cho CA video
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_ho_so_dich_tra_ve_DU_nam_khoa():
+    from apps.auto_scan_video import ho_so_dich
+
+    goi = {"noi_dung": '{"the_loai":"vlog","so_nguoi_noi":1,'
+                       '"bang_dai_tu":{"A->KHAN":{"toi":"minh","goi":"cac ban"}},'
+                       '"bang_ten_rieng":{"光子":"Quang Tu"},"giong_van":"than mat"}'}
+    ra = ho_so_dich._doc(goi["noi_dung"])
+    assert ra["the_loai"] == "vlog"
+    assert ra["bang_dai_tu"]["A->KHAN"]["goi"] == "cac ban"
+    assert ra["bang_ten_rieng"]["光子"] == "Quang Tu"
+
+
+def test_ho_so_dich_MOT_loi_goi_cho_ca_video():
+    """⛔ Khong duoc goi theo lo: ho so la cau hoi TOAN CUC."""
+    import ast
+    import inspect
+
+    from apps.auto_scan_video import ho_so_dich
+
+    cay = ast.parse(inspect.getsource(ho_so_dich))
+    vong = [n for n in ast.walk(cay) if isinstance(n, (ast.For, ast.While))]
+    trong_vong = any(
+        isinstance(c, ast.Call) and isinstance(c.func, ast.Attribute)
+        and c.func.attr == "goi"
+        for v in vong for c in ast.walk(v))
+    assert not trong_vong, "loi goi model nam trong mot vong lap"

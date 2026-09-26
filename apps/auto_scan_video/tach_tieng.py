@@ -122,8 +122,16 @@ GAIN_LON_NHAT = 2.0
 #: nay: "nhac" va "vfx" bat o gain 1,0 (== STEM_GIU khong nhan gi them),
 #: "giong" TAT (== STEM_BO, bi bo hoan toan). Doi bo nay la doi ban ra cua moi
 #: lan chay khong chon gi khac — phai di kem mot cache-bump (xem PHIEN_BAN_TACH).
+#
+# 🔑 **`giong_gain = 0.30` = −10,46 dB (chu du an chot 26/09/2026).**
+#    Truoc do la `1.0` = **0 dB**: khach vua bat "giu giong noi goc" la loi
+#    thoai goc tro lai **am luong DAY**, doi dau truc dien voi giong long
+#    tieng Viet. Nhan CO canh bao se chong — nhung gia tri mac dinh lam no
+#    te nhat co the.
+#    ⚠️ Thang truot la **bien do tuyen tinh**, ⛔ khong phai dB, va `step="5"`
+#    nen −10 dB (= 0,316) ⛔ khong nam tren luoi. `0.30` lech 0,46 dB.
 LOP_MAC_DINH = {
-    "giong_bat": False, "giong_gain": 1.0,
+    "giong_bat": False, "giong_gain": 0.30,
     "nhac_bat": True, "nhac_gain": 1.0,
     "vfx_bat": True, "vfx_gain": 1.0,
 }
