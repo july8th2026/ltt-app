@@ -107,6 +107,11 @@ ignore_imports =
     # nen khong khai truoc duoc.
     apps.prompt_ai_ommi.routes.handoff -> apps.taovideo.refs
     apps.prompt_ai_ommi.services.bat_bien -> apps.taovideo.refs
+    # Pha 2 CHUYEN logic dung anh tu route sang service. Trong luc chuyen,
+    # CA HAI cho deu import that, nen ca hai deu phai khai -- import-linter
+    # tu choi mien tru CHET, nen khong bo som duoc.
+    # KHONG: Khi pha 2 gop xong va route khong con import: BO dong routes.handoff.
+    apps.prompt_ai_ommi.services.handoff_stage -> apps.taovideo.refs
 
 
 [importlinter:contract:server-khong-phu-thuoc-app-cu-the]

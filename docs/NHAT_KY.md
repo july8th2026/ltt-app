@@ -40,6 +40,35 @@ kiem `(entry / "tables.py").exists()` — mot TEP. Do duoc: 0 bang `ommi_*` vao
 `revision --autogenerate` ke tiep sinh **DROP TABLE cho ca 14 bang**. Sua o
 `platform_core/registry.py` (bo sung hop dong chung: app nao tach package cung vap).
 
+### ✅ Task 9 DA XONG — app da bat tren production (26/09, 22:0x)
+
+Chu du an cap quyen cho dieu phoi tu chay. Da lam, va da NGHIEM THU tren domain
+cong khai chu khong chi doc cau hinh:
+
+| Phep | Ket qua |
+|---|---|
+| Job dang bay truoc khi restart Worker | **0** (56.891 job da xong) -- an toan |
+| `AppEnvironmentExtra` sau khi dat | 105 phan tu, **1 rong**, **104 bien that** (truoc: 103) |
+| Tap ten bien vs `app.env` | **thieu 0 / thua 0** -- khong mat bien nao |
+| `health/ready` | 200 |
+| POST endpoint co `_require_run_enabled`, project id BIA | **404** (khong phai 503) ⇒ cua DA MO |
+| Console tren `https://app.lttstudios.com/prompt-ai-ommi` | **0 loi** |
+| Network | `/api/overview` 200, khong request nao do |
+
+Duong dang nhap: **ve SSO mot lan** (`setup/ve_dang_nhap_thu.ps1`) -- tinh nang
+san co cua san pham, song 90 giay, dung mot lan, chi cho duoi `.local`.
+⛔ Khong go mat khau, ⛔ khong tu ky cookie phien.
+
+Bang chung: `docs/APP_AUDIT/prompt-ai-ommi/2026-09-26-pha1/evidence/`.
+
+⭐ **Mot bai hoc do luong ngay trong luot nay:** doc `$e.Count` cua
+`AppEnvironmentExtra` tra **104** ca truoc va sau khi them mot bien, nen toi tuong
+vua LAM MAT mot bien tren production. Su that: `REG_MULTI_SZ` co mot phan tu
+**RONG** o cuoi, va no bi dem nhu mot bien. Phep do dung la dem **phan tu khong
+rong**, roi `Compare-Object` tap TEN voi `app.env`. Cung ho
+`hai-trang-thai-gop-thanh-mot-gia-tri`: mot gia tri rong va mot bien that bi gop
+vao cung mot con dem.
+
 ### ⭐ Chieu THU NAM cua tranh chap index — dieu phoi va agent dung chung MOT index
 
 Muc "Cay chinh: KHONG phai mot tranh chap, ma BON chieu doc lap" hom nay ghi
