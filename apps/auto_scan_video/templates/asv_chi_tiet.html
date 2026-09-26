@@ -110,7 +110,11 @@
         {%- else %}{{ _("Tự nhận ra") }}{% endif %}
         → {{ _(ngon_ngu_nhan.get(cai.ngon_ngu_dich, cai.ngon_ngu_dich)) }}
       </li>
-      <li>{{ _("Nguồn lời thoại") }}: {{ _(nguon_loi_nhan.get(cai.nguon_loi, cai.nguon_loi)) }}</li>
+      {#- ⛔ Dòng "Nguồn lời thoại" đã rút 26/09 (Task 21): một đường duy nhất
+          voice→voice ⇒ hồ sơ không còn khóa này. Nguồn THẬT đã dùng vẫn hiện ở
+          `Bằng chứng chất lượng` (`quan_sat.bang_chung_chat_luong`) — đó là chỗ
+          trả lời câu *"lần chạy này lấy lời từ đâu"*, khác với màn này (*"khách
+          đã chọn gì"*). -#}
       <li>{{ _("Giọng đọc") }}: {{ cai.giong_id or "—" }}</li>
       <li>{{ _("Vùng che") }}:
         {% if cai.vung %}{{ cai.vung | length }}{% else %}{{ _("không có") }}{% endif %}

@@ -118,7 +118,7 @@ def dau_vao_noi_dung(db, run, ten: str) -> dict | None:
         from . import tach_tieng
         return {"nguon": ck, "lop": tach_tieng.tu_cai_dat_lop(cd.doc(run).lop)}
     if ten == pipeline.TRANSCRIBE:
-        from . import cai_dat as cd, nguon_loi as nl
+        from . import cai_dat as cd
         from .giai_doan_chep_loi import MODEL_ASR
 
         ck = _checksum_tieng_asr(db, run)
@@ -130,18 +130,12 @@ def dau_vao_noi_dung(db, run, ten: str) -> dict | None:
               # TRANSCRIBE chot cap ngon ngu (ngon_ngu.kiem_nguon_da_doan);
               # dung lai cheo dich la bo qua phep chot do.
               "ngon_ngu_dich": cai.ngon_ngu_dich,
-              # Dinh tuyen nguon loi (22/09): che do + engine OCR.
-              "nguon_loi": nl.chuan_che_do(cai.nguon_loi),
-              "dinh_tuyen": nl.PHIEN_BAN_DINH_TUYEN}
-        if dv["nguon_loi"] != nl.ASR:
-            # 🔑 Dinh tuyen DOC VIDEO (luong phu de, dai hardsub): ban tieng
-            #    trung ma hinh khac (vd. cung am thanh, khac phu de dot) la
-            #    ban ghi khac. Thieu checksum video ⇒ khong chia se.
-            media = features.giai_doan_theo_ten(db, run.id, pipeline.MEDIA_PREPARE)
-            ck_v = str(((media.outputs if media else None) or {}).get("checksum_nguon") or "")
-            if not ck_v:
-                return None
-            dv["video"] = ck_v
+              }
+        # ⛔ Task 21 (26/09): BO `nguon_loi` + `dinh_tuyen` khoi dau vao, va bo
+        #    ca `video`. TRANSCRIBE nay chi doc BAN TIENG (voice->voice) — no
+        #    ⛔ khong mo video mot lan nao, nen checksum HINH khong con la mot
+        #    dau vao cua no. Giu lai se lam hai lan chay cung am thanh, khac hinh
+        #    KHONG chia se duoc mot ket qua giong het nhau.
         return dv
     return None
 

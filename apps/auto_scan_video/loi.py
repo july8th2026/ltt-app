@@ -178,11 +178,10 @@ def phan_loai(exc: BaseException) -> str:
     if isinstance(exc, NgonNguError):
         return NGUOI_DUNG
 
-    # 🔑 Khach EP mot nguon loi (phu de nhung / OCR) ma video khong co no.
-    #    Doi thiet lap thi duoc; chay lai y nguyen thi hong y het.
-    from .nguon_loi import KhongCoNguon
-    if isinstance(exc, KhongCoNguon):
-        return NGUOI_DUNG
+    # ⛔ `KhongCoNguon` DA XOA 26/09 (Task 21). No chi phat sinh khi khach EP mot
+    #    nguon loi (phu de nhung / OCR) ma video khong co no — va tu 26/09 khong
+    #    con nguon nao de EP: MOT duong duy nhat voice->voice. ⛔ Dung thay no bang
+    #    mot nhanh phong thu; khong co gi nem no nua.
 
     # ── Vung che (V5) ───────────────────────────────────────────────────────
     #

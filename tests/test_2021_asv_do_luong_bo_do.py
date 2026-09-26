@@ -119,7 +119,10 @@ def test_model_asr_chua_ghim_thi_KHONG_KHA_DUNG():
 
 #: Mọi script chạy **bên trong** `qc-venv` (`venv.chay` gọi chúng như tiến trình
 #: con). ⛔ Không đoán theo tên: thiếu một dòng ở đây là im lặng bỏ qua một runner.
-RUNNER = ("gioi_runner.py", "giong_runner.py", "squim_runner.py", "ocr_khung.py",
+#: ⛔ `ocr_khung.py` đã rút 26/09 (Task 21): đường OCR hardsub bỏ, một đường
+#: duy nhất voice→voice. Nó là runner duy nhất ⛔ KHÔNG mang đuôi `_runner.py`,
+#: nên nó cũng biến khỏi phép `| {"ocr_khung.py"}` ngay dưới.
+RUNNER = ("gioi_runner.py", "giong_runner.py", "squim_runner.py",
           "_metricx/chay.py")
 
 _GOC_DO = pathlib.Path(venv.__file__).parent
@@ -131,7 +134,7 @@ def test_MOI_runner_qc_venv_deu_co_mat_trong_bang():
     #    (`mo()`, `ghi()`, `khong_kha_dung()`) ma cac runner goi. Bo no ra la co
     #    y, va ghi ra day de lan sau khong ai "sua" bang cach them no vao bang.
     that = {p.name for p in _GOC_DO.glob("*_runner.py")
-            if p.name != "_runner.py"} | {"ocr_khung.py"}
+            if p.name != "_runner.py"}
     khai = {pathlib.PurePosixPath(r).name for r in RUNNER}
     assert that <= khai, f"runner chua khai trong RUNNER: {sorted(that - khai)}"
     for r in RUNNER:
