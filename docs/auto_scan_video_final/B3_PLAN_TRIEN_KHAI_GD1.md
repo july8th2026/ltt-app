@@ -1468,6 +1468,62 @@ làm đỏ nó nữa — và đó mới là điều nó vốn muốn chốt.
 
 ---
 
+## SOÁT SAU CÙNG — sáu chiều, TRƯỚC khi chạy một job test nào
+
+> Chủ dự án chốt 26/09: *"sau task 10 cần dà soát lại toàn bộ code + logic vận hành
+> thực tế, kiểm tra xem có bug, sai lệch nào cần điều chỉnh không **trước khi** chạy
+> một job test"*, và thêm: *"tài liệu cũ, code cũ gây chồng chéo logic từng bước cần
+> phải dọn sạch sẽ, tránh gây bug chồng chéo làm ảnh hưởng vận hành và soát lỗi"*.
+
+⭐ **Sáu chiều dưới đây ⛔ không phải tự nghĩ ra — chúng là sáu loại lỗi mà CHÍNH phiên
+này đã sinh ra trong một ngày.** Soát theo chiều mình đã vấp bắt được nhiều hơn soát
+chung chung.
+
+| # | chiều | câu hỏi phải trả lời | ca thật đã xảy ra hôm nay |
+|---|---|---|---|
+| **R1** | đường sống hay đường chết | Mã mới **có thật sự được gọi** không? AI gọi nó? | `dich_thuat.py` là đường chết mà điều phối phân tích suốt · `so_doan_nan_oan` tăng trong hàm nhưng ⛔ không bao giờ xuất ra |
+| **R2** | bút toán credit + `lat_cat` | Đoạn **đã trả tiền** có bị bắt đọc lại? Điểm chốt theo đoạn còn nguyên nghĩa? Vân tay có đổi khi câu đổi? | Task 12 dựng lại vòng lõi của giai đoạn có bút toán thật |
+| **R3** | hình dạng ở BIÊN | Khoá nào **ghi ở đây, đọc ở kia** bằng **tên khác** / **tầng khác**? | `tom_tat` bị đổ **phẳng** vào `outputs` · ba khoá `timing_align` nằm **lồng** trong `outputs["master"]` · `luot_doc` thật là `tung_luot_doc` |
+| **R4** | phép kiểm có đo đúng thứ nó nói | Bài nào **xanh giả** — đo **cách gõ**, dùng **fixture bịa**, hoặc ⛔ **không thể đỏ**? | `assert '"so_doan_nan_oan"' in ma` · fixture `dong` bịa cho `asv_doi_soat` |
+| **R5** | hằng số & mẫu số | Hằng số nào bị **gõ lại** hai chỗ? Phép chia nào **sai mẫu số**? Số nào **chưa đo** mà đang dùng như đã đo? | `lech` chia cho `khe` chứ không `giay` · `GIAY_MOI_DAU_CAU = 0.10` chưa đo trên giọng của ta · `TRAN_TANG_TOC` mượn từ Subdub |
+| **R6** | **chồng chéo: mã cũ + tài liệu cũ** | Còn đường nào **hai chỗ cùng quyết một việc**? Tài liệu nào **mô tả đường ống CŨ** nên người đọc sau sẽ kết luận sai? | ⇒ xem danh sách dưới |
+
+### R6 — danh sách khởi điểm (đã có bằng chứng, ⛔ không phải phỏng đoán)
+
+| nghi vấn | bằng chứng đã có | phán quyết cần |
+|---|---|---|
+| `dich_thuat.py` toàn bộ | `thi_hanh.py:124` *"không còn người gọi nào"* · `van_ban.py:78` *"đường CHẾT"* | xoá module + `PHIEN_BAN_LOI_NHAC_DICH`, hay giữ có nhãn? |
+| `van_ban.PHIEN_BAN_LOI_NHAC_DICH` | hằng số phiên bản của một lời nhắc **chết** | nếu xoá module thì xoá luôn |
+| nhánh cắt trong `edit_plan` vs `ke_cat` ở GĐ2 | **hai chỗ** cùng quyết việc cắt | sau Task 10 còn chồng không? |
+| `nan_thoi_luong` vs `nan_cho_vua` | 3/4 cần gạt **đã xoá 25/09** vì trùng; còn `gop_khe` | còn chỗ trùng nào mới sinh sau Task 12? |
+| `_viet_lai`, `_KhongNanDuoc` | Task 12 xoá; người kế nhiệm là `_nan_lo` | còn tài liệu/chú thích nào trỏ tới chúng? |
+| tài liệu mô tả bậc thang **cũ** (`TTS → LLM → TTS`) | Task 12 đảo thứ tự | `docs/auto_scan_video*/`, `B2_DICH.md`, `LOI_TONG.md`… tệp nào nói sai? |
+| `dong_ho` chỉ hai đồng hồ | nay có ba số (`so_doan_nan_oan`) | chú thích *"hai con số này"* còn đúng? |
+
+🔑 **Vì sao R6 ⛔ không phải việc dọn cho đẹp:** điều phối đã **đọc `dich_thuat.py`, tin
+nó, và báo chủ dự án một phân tích sai** — rồi chủ dự án ra quyết định sản phẩm dựa
+trên đó. Một module chết và một tài liệu cũ ⛔ không nằm im: chúng **dạy sai** cho
+người đọc kế tiếp, kể cả một agent. ⇒ Cùng loại lỗi với mã sai, ⛔ không nhẹ hơn.
+
+⛔ **Và luật cho R6: ⛔ ĐỪNG XOÁ theo cảm giác "trông như chết".** Kho này có ca ngược:
+`hieu_canh.py` trông như chỉ phục vụ `edit_plan`, nhưng nó **còn** phục vụ
+`HO_SO_NOI_DUNG` cho đường chọn giọng. ⇒ Mỗi đề nghị xoá phải kèm
+`grep -rn "<ten>" --include=*.py apps/ platform_core/ server/ tools/ tests/` và **số
+người gọi = 0**.
+
+### Hợp đồng báo cáo cho cả sáu chiều
+
+1. Mỗi phát hiện phải có **kịch bản hỏng cụ thể**: *đầu vào nào → sai ở đâu*. ⛔ Không
+   nhận *"chỗ này có thể có vấn đề"*.
+2. Một kết luận **`KHÔNG CÓ`** vẫn phải kèm **đã soát những gì** (tên hàm, tệp:dòng).
+   ⛔ Không nhận *"tôi xem rồi, ổn"*.
+3. Điều phối **tự xác minh từng phát hiện** trước khi sửa — hôm nay đã có **ba** lần
+   báo cáo của agent chỉ đúng **một phần**, và cả ba lần **đọc mã thật** mới ra sự thật.
+
+⇒ ⛔ **Chỉ khi cả sáu lượt soát khép xong mới chạy MỘT job test.**
+
+---
+
 ## Nghiệm thu — sau Task 1, và lại sau Task 8
 
 1. Gộp `main`, chạy `pre-commit run --all-files`.
