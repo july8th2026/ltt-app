@@ -246,12 +246,14 @@ CHUOI: tuple[GiaiDoan, ...] = (
                  "media_prepare: chay lai media_prepare ma khong vo hieu buoc nay "
                  "thi no doc ban tieng cua luot TRUOC (features.py:263)",
                  # 🔴 TIEN DE IM LANG — Q7: san pham la voice->voice.
-                 "duong `asr` doi nguon CO TIENG NOI; hardsub chi de DOI CHIEU. "
-                 "Mac dinh `auto` uu tien embedded -> ocr -> asr, nen tren phim co "
-                 "hardsub duong asr KHONG chay (nguon_loi.dinh_tuyen)",
-                 "che do khac `asr` doi nguon loi that su co (phu de nhung / "
-                 "hardsub); nguoc lai nl.KhongCoNguon "
-                 "(giai_doan_chep_loi.py:136)",
+                 #    ⭐ 26/09 (Task 21): `embedded`/`ocr`/`auto` DA BO. Tien de cu
+                 #    ("mac dinh `auto` nen duong asr KHONG chay") da HET, va thay
+                 #    vao do la mot tien de MOI, nang hon: nay ⛔ khong con duong
+                 #    nao doc chu tren hinh, nen mot phim ⛔ KHONG CO TIENG NOI cho
+                 #    ra ban ghi RONG chu khong lui sang hardsub.
+                 "duong `asr` doi nguon CO TIENG NOI; phim khong co tieng noi ⇒ "
+                 "ban ghi rong, ⛔ KHONG con duong hardsub de lui sang "
+                 "(nguon_loi.py: MOT duong duy nhat, 26/09)",
                  "cap ngon ngu hop le: nguon thuoc (zh,en,vi) hoac `auto`, dich "
                  "thuoc (vi,en) — chot NGAY SAU asr, truoc moi buoc tra tien "
                  "(ngon_ngu.py:37,38 · giai_doan_chep_loi.py:155)"),

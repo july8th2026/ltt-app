@@ -62,7 +62,7 @@ Gia phang dung khi **phan lon luot chay di duong re**. Hai duong:
 
 ⛔ **KHONG phai** *"co bao nhieu % luot bi mot CO TINH NANG day sang duong dat?"*
    — cau do sai ve co che. Cac co bien tap (`vung_che`, `lop_phu`, `logo`,
-   `phu_de_cung`, `bien_tap`, va `lat_guong`/`dich_mau` cua lan `asv-hinh`) bi
+   `phu_de` dot hinh, `bien_tap`, va `lat_guong`/`dich_mau` cua lan `asv-hinh`) bi
    `ban_dung.kiem` **tu choi** tren duong `SAO_CHEP`; chung chi ton tai o
    `PRESET_CAT_THONG_MINH`, **noi da ma hoa lai san**. Mot co nhu vay chi them
    mot bo loc mot-vao-mot-ra tren mot duong **von da** dat ⇒ no khong doi duong.

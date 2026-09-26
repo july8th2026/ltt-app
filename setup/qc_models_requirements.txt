@@ -25,9 +25,16 @@ jiwer==4.0.0
 faster-whisper==1.2.1
 ctranslate2==4.8.1
 av==18.1.0
-# OCR hardsub (dinh tuyen nguon loi, lan ocr 23/09) - chay CPU, khong gianh card.
-rapidocr==3.9.2
-onnxruntime==1.30.0
+# ⛔ `rapidocr==3.9.2` + `onnxruntime==1.30.0` DA RUT 26/09 (Task 21): duong OCR
+#    hardsub bi bo, MOT duong duy nhat voice->voice (apps/auto_scan_video/
+#    nguon_loi.py). ⛔ KHONG goi nao con lai trong venv nay dung onnxruntime
+#    (`grep -rn onnx apps/asv_gpu/` => 0 ket qua, do 26/09).
+#
+# ⚠️ Bang ANH CHUP CAY BAC CAU o cuoi tep vi the LAC HAU tu 26/09: no do ban
+#    venv CON rapidocr, nen no con `flatbuffers`/`pyclipper`/`shapely`/
+#    `opencv-python`/`protobuf` — cay bac cau cua rapidocr+onnxruntime. ⛔ Dung
+#    sua tay con so "15 + 35 = 50" o do: no la mot so DO, va sua tay lam no
+#    thanh mot so BIA. No se duoc do lai o lan `cai_qc_models.ps1` ke tiep.
 # Cham MOS de XEP HANG giong (lan do-giong 23/09) - MIT ca ma lan weights.
 # Weights di kem goi (distillmos/weights/distill_mos_v7.pt), khong tai them.
 distillmos==0.9.1
