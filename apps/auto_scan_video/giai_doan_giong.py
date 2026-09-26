@@ -41,7 +41,7 @@ from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
 
 from . import (assets, giong_noi, lat_cat, nan_cho_vua, nan_thoi_luong,
-               pipeline, su_dung, van_ban)
+               pipeline, su_dung, thoi_gian, van_ban)
 from .giai_doan_media import ThieuNguon
 
 log = logging.getLogger(__name__)
@@ -146,9 +146,17 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     #    `giai_doan_thoi_gian.py:88-89` ⛔ khong bi pha. Va phu de van la mot o
     #    cho MOI `ma` goc: o phu de chi chua 84 ky tu, con tran gop la 220
     #    (`nan_thoi_luong.TRAN_KY_TU_GOP`).
+    khes = _khe_bao_cao_tu_muc(muc_goc)
     nhom = nan_thoi_luong.nhom_chi_so(
-        _khe_bao_cao_tu_muc(muc_goc), tran_tang_toc=nan_cho_vua.tran_co_gian())
+        khes, tran_tang_toc=nan_cho_vua.tran_co_gian())
     muc = [_gop_mot_nhom([muc_goc[k] for k in g]) for g in nhom]
+
+    # ⭐ CÙNG các `Khe` vừa dựng cho `nhom_chi_so` — chúng đã mang `moc_sau`, tức
+    #    biên có thật kế tiếp. ⛔ Không dựng lần hai: hai bản sao của cùng một mốc
+    #    là chỗ sẽ trôi.
+    ngan_sach_theo_ma = {
+        k.ma: thoi_gian.ngan_sach_nan_s(k.khe_s, k.ngan_sach_s) for k in khes
+    }
 
     ref_b64, preset = giong_noi.giai_giong(
         db, owner_id=run.owner_id, voice_id=ma_giong,
@@ -177,7 +185,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     #
     # ⭐ Hai con so nay di vao `tom_tat`, tuc vao bang chung cua MOI luot chay
     #    ve sau. "Cham" khong con la mot cam giac.
-    dong_ho = {"giay_tts": 0.0, "giay_llm_nan": 0.0}
+    dong_ho = {"giay_tts": 0.0, "giay_llm_nan": 0.0, "so_doan_nan_oan": 0}
 
     # 🔑 LAT CAT (`lat_cat.py`): ~2.000 doan cua 120 phut video khong vua MOT
     #    job. Don vi te nhat = (VONG_TOI_DA + 1) luot TTS + VONG_TOI_DA lan xin
@@ -209,6 +217,14 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                 ctx.progress_counter(i, len(muc), don_vi="doan")
 
             khe = nan_cho_vua.khe_cua(m)
+            # 🔴 HAI con số, HAI câu hỏi — ⛔ đừng gộp lại:
+            #    `khe`       = khe của chính đoạn (`ket - bat`) → dùng để BÁO CÁO
+            #                  (`ket_luan`, `ban_ghi_luot_doc`, `tom_tat`).
+            #    `ngan_sach` = khe + phần khoảng lặng mượn được → dùng cho CỬA
+            #                  TIÊU TIỀN. Đây là con số mà `timing_align` thật sự
+            #                  thực thi, nên nó là con số đúng để quyết có trả
+            #                  tiền cho một lượt LLM hay không.
+            ngan_sach = ngan_sach_theo_ma.get(str(m["ma"]), khe)
 
             # ⭐ Doan DA SINH o luot truoc cua CUNG lat cat: dung lai y nguyen
             #    ban ke cua luot do (ke ca cau da nan + so vong). Di duong cache
@@ -314,7 +330,12 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                 #    NGAN van "khong vua" (no vao `tom_tat` nhu the), nhung
                 #    ⛔ khong duoc goi model keo dai — `thoi_gian.lap_ke_hoach`
                 #    da biet nuot khoang lang, va 0/5 he khao sat co ve nay.
-                if not nan_cho_vua.nen_viet_lai(giay, khe):
+                #
+                # ⭐ Đ4: đoạn "tràn khe nhưng vừa ngân sách" — mỗi đoạn như vậy
+                #    TRƯỚC bản sửa là một lượt LLM tiêu OAN. Đếm để chứng minh.
+                if giay > khe and giay <= ngan_sach:
+                    dong_ho["so_doan_nan_oan"] += 1
+                if not nan_cho_vua.nen_viet_lai(giay, ngan_sach):
                     break
                 if so_vong >= nan_cho_vua.VONG_TOI_DA:
                     break
