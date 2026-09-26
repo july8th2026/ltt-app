@@ -12,6 +12,57 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-26 (chiều, sau) — Gói Nhỏ lên **2 vCPU / 4 GB**; và "cấu hình" ⛔ không phải "đang chạy"
+
+Chủ dự án dùng thật và báo lại: Windows Server 2016 trên 1 vCPU / 2 GB **nặng
+đến mức không dùng được**. 2 GB đúng là yêu cầu tối thiểu của Microsoft cho bản
+Core — nhưng ⭐ *"đủ tối thiểu để CÀI được"* ⛔ không phải *"đủ để DÙNG được"*, và
+`os_images` chỉ gác được vế đầu.
+
+| Gói | Trước | Sau |
+|---|---|---|
+| Nhỏ | 1 vCPU / 2 GB / 40 GB / **149k** | 2 vCPU / 4 GB / 40 GB / **159k** |
+| Vừa | 2 vCPU / 4 GB / 60 GB / **179k** | *(cấu hình giữ nguyên)* / **209k** |
+| Lớn | 4 vCPU / 8 GB / 80 GB / 329k | giữ nguyên |
+
+Sửa **tại chỗ** chứ ⛔ không thêm gói mới — trái luật mặc định ghi trong docstring
+`Plan` — vì đã **đếm trước**: đúng MỘT người đang thuê VPS (`akakenly.design`), và
+đó là chính chủ dự án. Docstring nay ghi lại điều kiện ấy; có khách thật rồi thì
+quay về luật mặc định. Gói Vừa nay ⛔ **không** mở thêm bản Windows nào so với gói
+Nhỏ, nên mô tả đổi theo: nó bán **đĩa và băng thông**.
+
+### 🔴 Cái bẫy của buổi này: tôi đọc SỔ rồi nói "khớp"
+
+Công cụ vừa viết đọc `GET .../qemu/<id>/config`, thấy `cores=2, memory=4096`, in
+**"khớp"**. Nhưng hai máy khách **vẫn đang chạy 1 vCPU / 2 GB**: cấu hình đã được
+đổi, mà QEMU **chốt CPU/RAM lúc tiến trình khởi động**, và hai máy đã chạy liên
+tục 25 giờ.
+
+⭐ *"Thứ tôi đang hỏi có SẴN ở chỗ tôi đang đứng không?"* Câu hỏi là **khách đang
+   được cấp bao nhiêu**; `config` trả lời một câu KHÁC — *"lần boot sau sẽ là bao
+   nhiêu"*. Hai câu chỉ trùng khi ⛔ không ai sửa gì kể từ lần bật máy.
+
+Nay báo cáo đối chiếu **cả hai** và có trạng thái thứ ba: `CHO KHOI DONG LAI`.
+Kèm hai bất biến: `0` là *không đo được* ⛔ không phải *máy có 0 vCPU*; và ⛔
+**không** được dùng `status/reboot` để áp CPU/RAM — nó khởi động lại **guest**
+trong cùng tiến trình QEMU cũ, nên máy boot lại mà vẫn giữ số cũ.
+
+### Lỗ hở đã vá: sổ và máy thật ⛔ không ai bắt khớp
+
+`jobs._cau_hinh_may_trong` đặt `cores`/`memory` **một lần, lúc tạo máy**; ⛔ không
+đường nào đọc lại. Từ giây bảng giá đổi, `billing` thu theo **gói** còn khách
+nhận theo **máy** — và ⛔ không cửa nào nói ra. Nay `bao_tri.lech_cau_hinh_goi`
+**đo**, `tools/vps_ap_cau_hinh_goi.py` **sửa** (chỉ khi có người bấm `--ap`). Tách
+đôi vì một vòng bảo trì tự khởi động lại máy khách là một **sự cố**, ⛔ không phải
+một lần sửa.
+
+**Đã áp cho hai máy đang sống** (chủ dự án đồng ý khởi động lại ngay): vm 204 và
+vm 208 nay chạy đúng 2 vCPU / 4096 MB, RDP mở lại sau ~90 giây.
+
+⚠️ Ghi lại một bẫy công cụ: `i18n.py trich` quét **cả cây**, kể cả sửa đổi đang dở
+của làn khác — một lượt chạy làm `.po` đổi **44.477 dòng** và `.mo` **teo 80 KB**.
+Thêm hai chuỗi thì thêm **tay** vào `.po` rồi `bien-dich`.
+
 ## 2026-09-26 (chiều) — Cách ly khách-với-khách: **đo bằng gói thật**, có đối chứng
 
 Tường lửa `vmbr1` bật sáng nay mới chỉ là **cấu hình**. Hôm nay đo xem nó có thật sự
