@@ -34,7 +34,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as DbSession
 
 from platform_core import gpu as gpu_mod
-from platform_core.models import GpuLease
+from platform_core.models import (JOB_CANCELLED, JOB_DONE, JOB_ERROR, GpuLease,
+                                  Job)
 
 log = logging.getLogger(__name__)
 
@@ -99,6 +100,30 @@ ORPHAN_TIMEOUT = timedelta(minutes=10)
 # lượng còn trống là công thức chắc chắn OOM.
 HEADROOM_MB = 1024
 
+#: Đếm được, không chỉ log. Ba đại lượng này đều từng là **sự vắng mặt của bản
+#: ghi**, nên không phép đo nào bắt được chúng (Task 23, 26/09/2026):
+#:
+#:   ``release_khong_thay_dong``  `release` chạy mà dòng đã biến mất — trước đây
+#:                               là một no-op IM LẶNG (`if obj is not None:` rồi
+#:                               thôi). Nó đã che một lease bị rò suốt một lượt.
+#:   ``release_loi``             `release` NÉM (ví dụ `database is locked`).
+#:   ``thu_hoi_job_da_xong``     thu hồi theo luật "job đã kết thúc".
+#:   ``thu_hoi_het_nhip``        thu hồi theo `ORPHAN_TIMEOUT` (worker đã chết).
+#:
+#: ⚠️ Hai cột thu hồi phải TÁCH: gộp lại thì "worker chết" và "worker xong rồi
+#:    nhưng không xoá được dòng" lại về chung một con số, đúng cái lẫn lộn mà
+#:    Task 23 phải gỡ.
+THONG_KE: dict[str, int] = {
+    "release_khong_thay_dong": 0,
+    "release_loi": 0,
+    "thu_hoi_job_da_xong": 0,
+    "thu_hoi_het_nhip": 0,
+}
+
+#: Trạng thái job mà sau đó ⛔ KHÔNG còn ai dùng card nữa. Lấy CHÍNH hằng số của
+#: `models`, ⛔ không gõ lại ba chuỗi — hai chỗ khai cùng một điều thì sẽ trôi.
+_JOB_DA_XONG = frozenset({JOB_CANCELLED, JOB_DONE, JOB_ERROR})
+
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
@@ -108,18 +133,90 @@ def host_name() -> str:
     return socket.gethostname()
 
 
+def lease_cua_job(db: DbSession, job_id: str) -> list[GpuLease]:
+    """Mọi lease còn mang `job_id` này, trên máy này.
+
+    ⭐ **Đây là phép đo của một bất biến ở biên**, ⛔ không phải một tiện ích:
+       *sau khi một job kết thúc, ⛔ không được còn lease nào mang `job_id` của
+       nó.* Một phép kiểm cơ học thắng một lời dặn dò — và trước Task 23 bất biến
+       ấy chỉ tồn tại trong docstring của `hold()`, nên nó vỡ suốt một lượt
+       nghiệm thu mà ⛔ không ai đo được.
+    """
+    if not job_id:
+        return []
+    return list(db.execute(select(GpuLease).where(
+        GpuLease.host == host_name(), GpuLease.job_id == job_id)).scalars().all())
+
+
+def _job_da_ket_thuc(db: DbSession, job_id: str) -> bool:
+    """Job của lease này đã ở trạng thái cuối chưa. Fail-CLOSED khi không biết.
+
+    ⭐ Đây là **nửa còn lại** của `ORPHAN_TIMEOUT`, ⛔ không phải bản thay thế:
+
+        job còn `queued`/`running`  → chỉ nhịp đập nói được nó sống (một job nạp
+                                      model 8 phút ⛔ không ghi dòng nào) ⇒ giữ
+                                      nguyên 10 phút, ⛔ không rút ngắn.
+        job đã `done`/`error`/`cancelled`
+                                    → ⛔ KHÔNG còn ai dùng card, và ⛔ không còn
+                                      ai đập nhịp ⇒ dòng lease là RÁC ⇒ thu hồi
+                                      NGAY.
+
+    🔴 Vì sao thiếu nó lại đắt tới vậy (đo 26/09/2026): hệ thống ⛔ không phân
+       biệt được *"worker đã chết"* với *"worker xong rồi nhưng ⛔ không xoá được
+       dòng"*. Hai cảnh đó trông y như nhau, nên **cả hai** phải chờ hết 10 phút.
+       Ba giai đoạn GPU × hai preset ⇒ tới ~60 phút **thuần chờ** mỗi lượt nghiệm
+       thu, và triệu chứng biểu hiện thành *"treo, CPU bằng 0"*.
+
+    ⛔ `job_id` rỗng (giành card ⛔ không kèm job) hoặc ⛔ không đọc được bảng
+       `jobs` ⇒ trả False. Fail-closed: thà chờ 10 phút còn hơn cướp card của một
+       job có thể đang chạy.
+    """
+    if not job_id:
+        return False
+    try:
+        st = db.execute(select(Job.status).where(
+            Job.id == job_id)).scalar_one_or_none()
+    except Exception as e:                  # noqa: BLE001
+        # Ví dụ CSDL của phép kiểm chỉ có bảng `gpu_leases`. Phải `rollback`:
+        # sau một câu lệnh lỗi, session còn lại là session KHÔNG dùng được, và
+        # nhánh mồ côi theo nhịp đập ngay bên dưới sẽ chết theo.
+        db.rollback()
+        log.debug("gpu_lease: khong doc duoc trang thai job %s: %s", job_id[:8], e)
+        return False
+    if st is None:
+        # Job biến mất (bị xoá) — ⛔ không kết luận, để `ORPHAN_TIMEOUT` xử.
+        return False
+    return str(st) in _JOB_DA_XONG
+
+
 def reclaim_orphans(db: DbSession, *, timeout: timedelta = ORPHAN_TIMEOUT) -> int:
-    """Xoá lease của worker đã chết. Trả số lease thu hồi được."""
+    """Xoá lease ⛔ không còn ai dùng. Trả số lease thu hồi được.
+
+    HAI luật, hai lý do khác nhau — xem `_job_da_ket_thuc`:
+
+    1. **job đã kết thúc** ⇒ rác, thu hồi ngay (⛔ không chờ nhịp đập);
+    2. **hết hạn nhịp đập** (`ORPHAN_TIMEOUT`) ⇒ worker đã chết.
+    """
     cutoff = _now() - timeout
     rows = db.execute(select(GpuLease).where(GpuLease.host == host_name())).scalars().all()
     n = 0
     for row in rows:
+        if _job_da_ket_thuc(db, row.job_id):
+            log.warning("Thu hoi lease GPU cua job DA KET THUC: %s (job=%s, "
+                        "worker=%s) — job xong ma lease con treo nghia la "
+                        "`release` da khong toi duoc CSDL",
+                        row.gpu_uuid[:20], row.job_id[:8], row.worker_id)
+            THONG_KE["thu_hoi_job_da_xong"] += 1
+            db.delete(row)
+            n += 1
+            continue
         hb = row.heartbeat_at
         if hb is not None and hb.tzinfo is None:        # SQLite trả naive
             hb = hb.replace(tzinfo=timezone.utc)
         if hb is None or hb < cutoff:
             log.warning("Thu hồi lease GPU mồ côi: %s (job=%s, worker=%s)",
                         row.gpu_uuid[:20], row.job_id[:8], row.worker_id)
+            THONG_KE["thu_hoi_het_nhip"] += 1
             db.delete(row)
             n += 1
     if n:
@@ -223,8 +320,29 @@ def heartbeat(db: DbSession, lease: GpuLease) -> None:
     db.commit()
 
 
-def release(db: DbSession, lease: GpuLease) -> None:
-    """Trả chỗ. Gọi được nhiều lần mà không sao."""
+def release(db: DbSession, lease: GpuLease) -> bool:
+    """Trả chỗ. Gọi được nhiều lần mà không sao. Trả **True nếu lượt này xoá dòng**.
+
+    ⚠️ `False` nghĩa là *"⛔ không có dòng nào để xoá"*, ⛔ không phải *"xong rồi"*.
+       Gộp hai ca vào một giá trị (`None` cho cả hai, như bản trước Task 23) là
+       mất đúng khả năng phân biệt cần để chẩn đoán: dòng biến mất trước khi ta
+       xoá chỉ có hai nguồn, và **cả hai đều đáng biết** —
+
+         · `reclaim_orphans` đã dọn trước ⇒ lease của ta **bị người khác thu
+           hồi** trong lúc job còn chạy (ca nguy hiểm: card có thể đã bị cấp cho
+           job khác);
+         · `release` bị gọi hai lần ⇒ một đường mã gọi thừa.
+
+    🔴 Bản cũ là `if obj is not None:` rồi thôi — một **no-op im lặng**, và nó đã
+       che một lease bị rò suốt cả một lượt nghiệm thu (Task 23, 26/09/2026). Nay
+       nó log ở mức cảnh báo VÀ đếm được (`THONG_KE`).
+
+    ⛔ **⛔ Không bọc try/except quanh `commit`, và ⛔ không retry.** Người gọi
+       (`job_runner._giu_gpu`) chỉ commit transaction của **nó** SAU KHI hàm này
+       trả về, nên nếu `DELETE` đang bị chặn bởi chính transaction đó thì chờ lâu
+       hơn chỉ là chờ lâu hơn. Ném ra để người gọi xử; thu hồi thật là việc của
+       `reclaim_orphans` luật "job đã kết thúc".
+    """
     cm = _claims()
     tok = _claim_tokens.pop(lease.id, None)
     if cm is not None and tok:
@@ -233,10 +351,21 @@ def release(db: DbSession, lease: GpuLease) -> None:
         except Exception as e:
             log.debug("gpu_lease/claims bo qua loi: %s", e)
     obj = db.get(GpuLease, lease.id)
-    if obj is not None:
+    if obj is None:
+        THONG_KE["release_khong_thay_dong"] += 1
+        log.warning("Tra GPU: KHONG thay dong lease %s (job %s) de xoa — hoac "
+                    "`reclaim_orphans` da thu hoi no khi job con chay, hoac "
+                    "`release` bi goi hai lan. Ca hai deu can xem lai.",
+                    str(lease.id)[:8], str(getattr(lease, "job_id", ""))[:8])
+        return False
+    try:
         db.delete(obj)
         db.commit()
-        log.info("Trả GPU %s (job %s)", obj.gpu_uuid[:20], obj.job_id[:8])
+    except Exception:
+        THONG_KE["release_loi"] += 1
+        raise
+    log.info("Trả GPU %s (job %s)", obj.gpu_uuid[:20], obj.job_id[:8])
+    return True
 
 
 @contextmanager
