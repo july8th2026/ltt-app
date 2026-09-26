@@ -51,6 +51,35 @@ DEFAULT_TTL = timedelta(minutes=2)
 MAINTENANCE = "maintenance"
 WEB = "web"
 
+#: Nhịp tim im lâu hơn mốc này thì dòng lease được coi là **rác**, bất kể tên.
+#:
+#: 🔴 VÌ SAO CẦN MỘT MỐC THỨ HAI, KHI ĐÃ CÓ `DEFAULT_TTL`
+#:
+#:    `reclaim_expired` nhắm **đúng một tên** — cái tên mà người gọi đang xin. Đủ
+#:    cho việc giành lại một *vai trò* (`maintenance`, `web`): luôn có người xin
+#:    lại nó. ⛔ Không đủ cho lease mang tên **sinh ra từ nội dung**:
+#:    `asvcc:<băm>` chỉ được xin lại nếu có người nộp đúng nội dung ấy lần nữa.
+#:    Không ai xin lại ⇒ ⛔ **không bao giờ** có ai dọn.
+#:
+#:    Đo trên CSDL production 26/09: `asvcc:82839212a287…` nằm lại **hơn một
+#:    ngày**, nhịp tim dừng từ 25/09 15:57, tiến trình chủ (25716) đã chết —
+#:    trong khi dòng `maintenance` cạnh nó có nhịp tim tươi. Cơ chế nhịp tim
+#:    chạy; thiếu là bước DỌN.
+#:
+#: ⚠️ VÌ SAO RỘNG (2 giờ) CHỨ KHÔNG PHẢI `DEFAULT_TTL`
+#:
+#:    Người quét **không biết TTL riêng của từng lease**, nên nó phải rộng hơn
+#:    TTL dài nhất trong kho — hiện là `apps/vps/jobs.KHOA_MAY_TTL` = **45 phút**,
+#:    và đường đó ⛔ **không đập nhịp**: nhịp tim đứng yên từ lúc giành. Lấy mốc
+#:    hẹp thì người quét **cướp** khoá của một job cài VPS đang chạy, và hai job
+#:    cùng làm việc trên một máy — đúng sự cố 25/08 mà khoá ấy sinh ra để chặn.
+#:    `tests/test_3061::test_BANH_COC_nguong_quet_RONG_hon_moi_TTL_trong_kho` đọc
+#:    mọi `leases.acquire(..., ttl=…)` trong kho và chốt điều đó bằng máy.
+#:
+#: ⭐ Cùng khuôn `platform_core/gpu_lease.ORPHAN_TIMEOUT` (10 phút) — ở đó mốc hẹp
+#:    được vì mọi chủ lease GPU đều đập nhịp.
+ORPHAN_TIMEOUT = timedelta(hours=2)
+
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
@@ -84,6 +113,37 @@ def reclaim_expired(db: DbSession, *, name: str,
     return True
 
 
+def reclaim_orphans(db: DbSession, *, timeout: timedelta = ORPHAN_TIMEOUT) -> int:
+    """Xoá MỌI lease mà chủ đã im nhịp quá `timeout`. Trả số lease thu hồi được.
+
+    ⭐ Cùng khuôn `gpu_lease.reclaim_orphans` — cố ý giống hệt, kể cả tên và chữ
+       ký. Hai khuôn cho cùng một việc là hai chỗ sẽ lệch nhau;
+       `tests/test_3061::test_dung_lai_KHUON_cua_gpu_lease` chốt hình dạng ấy.
+
+    🔴 Khác `reclaim_expired` ở **phạm vi**, không ở thuật toán: hàm kia hỏi *"cái
+       tên TÔI đang xin có rảnh chưa"*, hàm này hỏi *"còn dòng nào là rác không"*.
+       Thiếu hàm này thì lease mang tên sinh từ nội dung (`asvcc:<băm>`) nằm lại
+       vĩnh viễn, vì ⛔ không ai xin lại đúng cái tên đó.
+
+    ⛔ Quét **không lọc theo máy** — khác `gpu_lease` (GPU thuộc một máy). Lease
+       singleton là hợp đồng giữa mọi tiến trình của cả cụm, nên một dòng của máy
+       khác đã im nhịp 2 giờ cũng là rác, và để lại thì chính nó chặn cụm.
+    """
+    cutoff = _now() - timeout
+    n = 0
+    for row in db.execute(select(SingletonLease)).scalars().all():
+        beat = _aware(row.heartbeat_at) or _aware(row.acquired_at)
+        if beat is not None and beat >= cutoff:
+            continue
+        log.warning("thu hoi lease mo coi %r cua %s (im nhip tu %s)",
+                    row.name, row.holder, beat)
+        db.delete(row)
+        n += 1
+    if n:
+        db.commit()
+    return n
+
+
 def acquire(db: DbSession, *, name: str, holder: str = "",
             ttl: timedelta = DEFAULT_TTL) -> SingletonLease | None:
     """Giành lease `name`. Trả None khi tiến trình khác đang giữ.
@@ -92,6 +152,11 @@ def acquire(db: DbSession, *, name: str, holder: str = "",
     người chạy việc này không". Caller đợi lượt sau.
     """
     who = holder or holder_id()
+    # ⭐ Đúng chỗ `gpu_lease.acquire` gọi `reclaim_orphans` (dòng 151): mọi lượt
+    #    giành là một dịp quét, nên ⛔ không cần thêm một vòng nền thứ hai — và
+    #    `leases.MAINTENANCE` được xin lại mỗi chu kỳ bảo trì, nên cụm luôn có
+    #    người quét kể cả khi không app nào chạy.
+    reclaim_orphans(db)
     reclaim_expired(db, name=name, ttl=ttl)
 
     row = SingletonLease(name=str(name), holder=who,
@@ -142,5 +207,6 @@ def current_holder(db: DbSession, *, name: str) -> str:
     return str(row.holder) if row is not None else ""
 
 
-__all__ = ["DEFAULT_TTL", "MAINTENANCE", "WEB", "acquire", "current_holder",
-           "heartbeat", "holder_id", "reclaim_expired", "release"]
+__all__ = ["DEFAULT_TTL", "MAINTENANCE", "ORPHAN_TIMEOUT", "WEB", "acquire",
+           "current_holder", "heartbeat", "holder_id", "reclaim_expired",
+           "reclaim_orphans", "release"]
