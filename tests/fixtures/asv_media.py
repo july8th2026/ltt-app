@@ -316,7 +316,12 @@ def _canh_gia(messages) -> dict:
 
     ⚠️ Tin nhan co the la da phuong thuc (mot phan van ban + N phan anh). Gop
        cac phan van ban lai roi doc doi tuong JSON dau tien — do la `tin_hieu`
-       ma `loi_nhac_canh` gui.
+       ma loi nhac `doc_canh` gui.
+
+    ⚠️ **26/09/2026 (Task 22) — NGU DONG, co y giu.** `hieu_canh.loi_nhac_canh`
+       da bi xoa (Task 10 thay VLM bang phep do tat dinh o `edit_plan`), nen ⛔
+       khong luot E2E nao con goi `DOC_CANH`. Ban gia o lai vi ban khai
+       `ai.DOC_CANH` o lai; ⭐ dieu kien xoa: ngay no roi khoi `ai.THAO_TAC`.
     """
     import json
 

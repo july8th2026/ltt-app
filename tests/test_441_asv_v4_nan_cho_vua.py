@@ -147,13 +147,19 @@ def test_CAN_SUA_khong_duoc_tinh_la_DAT():
 def test_loi_nhac_mang_theo_do_dai_DA_DO_DUOC():
     """🔑 Khac biet giua "hay viet ngan hon" va "cau nay doc ra 4,8 giay, khe co
     3,2 giay" — cai sau la mot muc tieu kiem duoc, va la ly do vong thu hai
-    thuong khong can den."""
+    thuong khong can den.
+
+    ⚠️ **26/09 (Task 22) — DUONG doi, Y DINH giu.** Bai nay do `loi_nhac_nan`
+       (mot doan mot luot); ham do bi xoa sau khi Task 12 chuyen `giai_doan_giong`
+       sang LO. Doi tuong do bay gio la `loi_nhac_nan_lo`, va `muc_tieu_giay`
+       duoc **dat lai** vao ban lo — no tung bi bo roi im lang o `96e27cff`.
+    """
     import json
 
-    m = {"ma": "seg_0001", "goc": "source", "bat": 0.0, "ket": 3.2}
-    msgs = nan.loi_nhac_nan(m, chu_hien_tai="cau dai", giay_do_duoc=4.8, khe=3.2)
-    goi = json.loads(msgs[-1]["content"])
-    assert goi["doc_ra_het_giay"] == 4.8
+    msgs = nan.loi_nhac_nan_lo([{"ma": "seg_0001", "chu": "cau dai",
+                                 "giay_doc": 4.8, "khe": 3.2}])
+    goi = json.loads(msgs[-1]["content"])["seg_0001"]
+    assert goi["doc_ra_giay"] == 4.8
     assert goi["khe_giay"] == 3.2
     assert 0 < goi["muc_tieu_giay"] < 3.2, (
         "muc tieu phai THAP hon khe — vua khit la vua du de mot dao dong nho "
@@ -165,23 +171,20 @@ def test_loi_nhac_chi_con_MOT_viec_la_RUT_NGAN():
     NGAN nhan loi nhac *"VIET DAY DAN HON"*.
 
     Ve "viet lai cho DAI ra" da bo (0/5 he khao sat co no; lap luan da nam san
-    trong `nan_cho_vua` tu truoc). `loi_nhac_nan` nay NEM neu bi goi cho mot doan
+    trong `nan_cho_vua` tu truoc). `loi_nhac_nan_lo` NEM neu bi goi cho mot doan
     khong dai hon khe — bat bien o BIEN, khong chi o vong lap. Chi tiet:
     `tests/test_4600_asv_san_dung_sai.py`.
+
+    ⚠️ 26/09 (Task 22): bat bien nay chuyen tu `loi_nhac_nan` (da xoa) sang
+       `loi_nhac_nan_lo` — ban lo tung ⛔ KHONG co chan nao o bien.
     """
-    m = {"ma": "s", "goc": "g", "bat": 0.0, "ket": 3.0}
-    dai = nan.loi_nhac_nan(m, chu_hien_tai="x", giay_do_duoc=5.0, khe=3.0)[0]["content"]
-    assert "RUT NGAN" in dai
+    dai = nan.loi_nhac_nan_lo([{"ma": "s", "chu": "x", "giay_doc": 5.0,
+                                "khe": 3.0}])[0]["content"]
+    assert "RUT NGAN" in dai or "NGAN hon" in dai
     assert "DAY DAN HON" not in dai
     with pytest.raises(nan.NanError):
-        nan.loi_nhac_nan(m, chu_hien_tai="x", giay_do_duoc=1.0, khe=3.0)
-
-
-def test_model_tra_ve_rong_thi_NEM():
-    with pytest.raises(nan.NanError):
-        nan.doc_nan({"doan": {"chu": "   "}})
-    with pytest.raises(nan.NanError):
-        nan.doc_nan({})
+        nan.loi_nhac_nan_lo([{"ma": "s", "chu": "x", "giay_doc": 1.0,
+                              "khe": 3.0}])
 
 
 # ══════════════════════════════════════════════════════════════════════════════

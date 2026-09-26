@@ -411,14 +411,37 @@ def test_NAM_TRUONG_HOP_cua_pha_26_khong_con_mo_coi():
 
     ⛔ Hai truong hop con lai (`B23-01`, `B24-01`) phep kiem nay **khong** bat
        duoc — ca hai deu CO nguoi goi, loi nam ben trong. Doc docstring dau tep.
+
+    🔴 **26/09/2026 (Task 22) — bai nay DOI CACH DO, vi ban cu da thanh mot phep
+       DO SU VANG MAT.**
+
+       Ban cu chot `"loi_nhac_canh" not in mo_coi` va `"doc_hieu_canh" not in
+       mo_coi` voi ly do *"`giai_doan_ban_bien_tap` goi that"*. Task 10
+       (`defba7b2`) thay VLM bang phep do TAT DINH o `edit_plan` va Task 22 XOA
+       hai ham ay ⇒ ca hai khang dinh cu van XANH, nhung **vi mot ly do khac
+       han**: mot ten khong ton tai thi khong bao gio nam trong tap mo coi.
+       Do dung la bay `banh-coc-do-vang-mat-thi-xoa-cung-xanh`.
+
+    ⇒ Bai nay gio doi HAI dieu, va chung loai tru nhau: moi ten phai **hoac** co
+      nguoi goi that, **hoac** khong con ton tai. Trang thai bi cam la
+      *"con ton tai ma khong ai goi"* — va them mot dieu nua: ten do cung ⛔
+      khong duoc len `MO_COI_DA_BIET`, vi "thanh mot mon no da biet" ⛔ khong
+      phai mot cach dong mot truong hop kiem toan.
     """
     mo_coi = set(_mo_coi())
-    # VLM: `loi_nhac_canh` va `doc_hieu_canh` nay duoc `giai_doan_ban_bien_tap`
-    # goi that.
-    assert "loi_nhac_canh" not in mo_coi
-    assert "doc_hieu_canh" not in mo_coi
-    # Bo quet artifact het han.
+    tat_ca = set(_ham_cong_khai_cua_asv())
+    for ten in ("loi_nhac_canh", "doc_hieu_canh"):
+        assert ten not in mo_coi, f"{ten} ton tai ma khong co nguoi goi"
+        assert ten not in MO_COI_DA_BIET, (
+            f"{ten} bi dua vao banh coc thay vi duoc noi vao mach hay xoa")
+        # ⭐ Va noi RO no da duoc dong bang duong nao — de ban ghi cua kho khop
+        #    voi su that, thay vi chi khop voi mot dau xanh.
+        assert ten not in tat_ca, (
+            f"{ten} da song lai: neu no co nguoi goi that thi doi khang dinh "
+            f"nay, ⛔ dung de bai kiem xanh nho su vang mat")
+    # Bo quet artifact het han — truong hop nay duoc dong bang cach NOI VAO MACH.
     assert "quet_het_han" not in mo_coi
+    assert "quet_het_han" in tat_ca, "bo quet het han bien mat — doi bai kiem"
 
 
 def test_moi_ten_trong_banh_coc_deu_la_ham_CO_THAT():

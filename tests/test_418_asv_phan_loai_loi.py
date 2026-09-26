@@ -147,6 +147,15 @@ BANG = {
     ThieuDoan: loi.NGUOI_DUNG,
     # ⭐ Khac hai lop tren: model tra ve mot cau viet lai khong doc duoc la mot
     #    truot ngau nhien, khong phai mot loi hop dong. Lan sau thuong duoc.
+    #
+    # 🔴 **26/09/2026 (Task 22) — NGHIA doi, hang KHONG doi.** Nguoi nem cu
+    #    (`doc_nan`: *"model tra ve mot cau viet lai khong doc duoc"*) da bi xoa
+    #    cung `loi_nhac_nan`; nguoi nem CON LAI la chan o BIEN cua
+    #    `loi_nhac_nan_lo` (*chi RUT NGAN*) — mot vi pham hop dong TAT DINH.
+    #    ⇒ `TAM_THOI` gio chi la LUOI CUOI: `giai_doan_giong._nan_lo` bat ngay
+    #    tai cho va giu cau goc, nen ⛔ khong duong chay nao voi toi hang nay.
+    #    Giu nguyen co y — doi hanh vi cho mot ca khong the xay ra la them mot
+    #    mon no khac. Lap luan day du + dieu kien sua lai: `loi.py` §nan cho vua.
     NanError: loi.TAM_THOI,
     # ⭐ TAM_THOI — thua mot cuoc dua khong phai mot loi. `XungDotDonVi` nghia
     #    la mot tien trinh khac vua ghi dong don vi viec nay giua chung: du lieu
@@ -249,6 +258,11 @@ BANG = {
     #: 🔴 Cho de xep nham nhat trong bang. `HieuCanhError` nghia la model
     #:    DA CHAY, DA tinh tien, va tra ve phan hoi sai luoc do. Thu lai la
     #:    **tra tien lan hai cho mot canh da tra tien**.
+    #:
+    #: ⚠️ 26/09 (Task 22): nguoi nem ⛔ khong con la `doc_hieu_canh` (da xoa cung
+    #:    duong VLM cua `edit_plan`) ma la `doc_ho_so` — duong HO SO NOI DUNG,
+    #:    con song. Lap luan tren ⛔ khong doi: van la mot luot model DA tra tien
+    #:    tra ve sai luoc do.
     #:
     #: ⚠️ Khac han `ai.LuocDoSai` (TAM_THOI): o do phep doc JSON that bai o
     #:    tang VAN CHUYEN, truoc khi ta biet noi dung co nghia gi. O day ta

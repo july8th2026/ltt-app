@@ -298,8 +298,57 @@ def _khung(so: int = 2) -> tuple[bytes, ...]:
     return tuple(ra)
 
 
+def _loi_nhac_doc_canh(ngu_canh: str, khung: tuple[bytes, ...]) -> list:
+    """Loi nhac THAM DO cho `ai.DOC_CANH` — cua CHINH cong cu nay.
+
+    🔴 **26/09/2026 — vi sao no o day chu khong o `apps/`.** Truoc hom nay cong
+       cu goi `hieu_canh.loi_nhac_canh`. Task 10 (`defba7b2`) thay VLM bang phep
+       do TAT DINH o `edit_plan`, nen loi nhac ay mat nguoi goi san pham cuoi
+       cung va da bi XOA (Task 22). Nhung `DOC_CANH` la thao tac THI GIAC duy
+       nhat ma cong cu nay do duoc bang **khung hinh that** qua `ai.goi`, va
+       chinh no tra loi cau hoi cua tep nay: *"cong noi bo tra ve truong `model`
+       nao cho mot cau hoi thi giac"*.
+
+    ⇒ Loi nhac la mot **phep tham do cua nguoi van hanh**, cung loai voi
+      `CAU_HOI_ENTROPY` o pha TEMP — nen no thuoc ve `tools/`. ⛔ Dung dua no
+      tro lai `apps/`: mot loi nhac trong `apps/` ma khong giai doan nao soan la
+      dung mon no ma `tests/test_453` tu ton tai de bat.
+
+    ⚠️ Hinh dang PHANG + `de_xuat` la MA chep y nguyen — giu dung hop dong
+       `DOC_CANH.truong_bat_buoc == ("de_xuat", "do_tin")`, neu khong phep do se
+       dem mot `LuocDoSai` cua CHINH TA thanh mot loi cua cong.
+    """
+    import base64
+
+    van = (
+        "Doc canh c1 cua mot video. "
+        f"Co {len(khung)} khung hinh dai dien. "
+        'Tin hieu do duoc: {"co_mat": true, "chu_tren_hinh": true}. '
+        f"Loi thoai trong canh: {ngu_canh or '(khong co loi thoai)'}\n"
+        "Tra ve DUY NHAT mot doi tuong JSON, DUNG khung nay "
+        "(mot doi tuong, KHONG phai mang, KHONG boc them lop nao):\n"
+        '{"loai": "...", "chu_the": ["..."], "hanh_dong": "...", '
+        '"cam_xuc": "...", "quan_trong": 0.0, '
+        '"de_xuat": "giu", "do_tin": 0.0, '
+        '"ly_do": "...", "canh_bao": ["..."]}\n'
+        "`quan_trong` va `do_tin` la so trong [0,1].\n"
+        "`de_xuat` phai la DUNG mot trong ba MA sau, chep y nguyen, khong dich, "
+        'khong them dau tieng Viet: "giu" | "bo" | "khong_chac".\n'
+        "Khong them van ban nao ngoai JSON.")
+    if not khung:
+        return [{"role": "user", "content": van}]
+    phan: list = [{"type": "text", "text": van}]
+    for b in khung:
+        if not b:
+            continue
+        b64 = base64.b64encode(b).decode("ascii")
+        phan.append({"type": "image_url",
+                     "image_url": {"url": f"data:image/jpeg;base64,{b64}"}})
+    return [{"role": "user", "content": phan}]
+
+
 def _loi_nhac(thao_tac_ma: str, doan: list[dict]) -> list:
-    from apps.auto_scan_video import hieu_canh, long_tieng, qc_ai
+    from apps.auto_scan_video import long_tieng, qc_ai
 
     if thao_tac_ma == "chuyen_loi_thoai":
         return long_tieng.loi_nhac(
@@ -310,9 +359,8 @@ def _loi_nhac(thao_tac_ma: str, doan: list[dict]) -> list:
             [{"ma": d["ma"], "goc": d["chu"], "chu": d["vi_tham_chieu"]}
              for d in doan], ngon_ngu_dich="vi")
     if thao_tac_ma == "doc_canh":
-        return hieu_canh.loi_nhac_canh(
-            "c1", " ".join(d["chu"] for d in doan[:4]), 2,
-            {"co_mat": True, "chu_tren_hinh": True}, _khung(2))
+        return _loi_nhac_doc_canh(" ".join(d["chu"] for d in doan[:4]),
+                                 _khung(2))
     raise SystemExit(f"chua co loi nhac cho {thao_tac_ma}")
 
 

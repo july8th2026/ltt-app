@@ -5,18 +5,29 @@ lan dau chay that (pha 11).
      phan biet dat gia: mot canh **da doc va tra ve rac** khac han mot canh
      **chua doc**. Cai dau da ton tien va phai vao so cai; cai sau thi chua.
 
-**§2 checkpoint theo CANH** — mot lan VLM hong o canh 47 khong duoc bat 46 canh
-     truoc chay lai; chung da tra tien roi.
-
-**§3 ngu canh CO CHAN** — cua so thi giac do duoc 65.536 token. Gui ca ban chep
-     loi kem moi canh cham tran do theo cach te nhat: xanh o canh 1, 413 o canh
-     40, sau khi da tra tien cho 39 canh.
-
 **§4 duong tinh tien DANG SONG** — 🔑 pha 06 va pha 08 deu ghi no rang "chua co
      gi goi `su_dung.ghi`". Pha 11 la nguoi goi tra tien dau tien, nen day la
      cho tra no do. So cai phai ghi o **ca ba** nhanh: da giao, tu choi, mo ho.
 
 ⛔ Khong phep kiem nao goi model that.
+
+🔴 **26/09/2026 (Task 22) — §2 va §3 DA BI XOA, va day la cai gia, ghi ra:**
+
+   * **§2 checkpoint theo CANH** (*"mot lan VLM hong o canh 47 khong duoc bat 46
+     canh truoc chay lai"*) do bang `hieu_canh.van_tay_canh`. Task 10
+     (`defba7b2`) thay VLM bang phep do TAT DINH o `edit_plan`, nen ⛔ khong con
+     mot diem chot theo canh nao — tuc ⛔ khong con gi de mat, va bat bien F-10
+     (van tay khoa theo `[bat, ket]`) mat **doi tuong do**, khong mat hieu luc.
+     Doi chung CON LAI: `test_2121` chot `edit_plan` ⛔ khong con luot goi VLM
+     nao, tuc lop rui ro nay bi dong o TANG TREN.
+   * **§3 ngu canh CO CHAN** (`ngu_canh_cho_canh` + `NGU_CANH_MOI_CANH`) do tran
+     ky tu gui kem MOT CANH. ⛔ Khong ai gui canh nua. Luat *"cat o ranh doan,
+     ⛔ dung cat giua cau"* con song o `ho_so_noi_dung.tom_tat_ban_ghi`, va
+     `test_2006::test_tom_tat_cat_o_ranh_DOAN_chu_khong_giua_cau` do no.
+   * **§1 mat ba bai ve `doc_hieu_canh`** (luoc do nghiem ngat cua doc-canh) vi
+     ham do bi xoa. Hai bai CON LAI cua §1 do dung phep kiem luoc do ay tren
+     `doc_ho_so` — bo doc con song cua tep nay — nen tinh chat *"phan hoi sai
+     luoc do thi NEM"* van co nguoi do.
 """
 from __future__ import annotations
 
@@ -62,10 +73,11 @@ def _run(db, *, owner="u1", held=1000) -> AsvRun:
 def _kq(noi_dung: str) -> dict:
     """Boc mot chuoi thanh KET QUA cua `ai.goi`.
 
-    ⭐ `doc_hieu_canh` nhan ca ket qua chu khong nhan rieng `noi_dung`, va do
-       la ban sua 09/09: boc `noi_dung` ra bang tay lam mat `finish_reason`,
-       tuc lam mat thu duy nhat phan biet "model tra sai" voi "model het tran
-       token giua khoi suy nghi".
+    ⭐ `doc_ho_so` nhan ca ket qua chu khong nhan rieng `noi_dung`, va do la ban
+       sua 09/09: boc `noi_dung` ra bang tay lam mat `finish_reason`, tuc lam mat
+       thu duy nhat phan biet "model tra sai" voi "model het tran token giua
+       khoi suy nghi". (Bo doc kia, `doc_hieu_canh`, chiu cung ban sua ay va da
+       bi xoa 26/09 — Task 22.)
 
     ⚠️ `finish_reason="stop"` o day la co y: cac ca duoi day deu la model DA
        tra loi xong roi tra sai, khong phai bi cat.
@@ -74,13 +86,18 @@ def _kq(noi_dung: str) -> dict:
 
 
 def _canh_ok(**k) -> str:
-    """Mot phan hoi VLM dung hinh dang ma `loi_nhac_canh` YEU CAU.
+    """Mot phan hoi hop le cua thao tac `ai.DOC_CANH` — hinh dang PHANG.
 
     🔴 Ban nay tung boc trong mot khoa `canh` — mot hinh dang khong loi nhac nao
        hoi va khong model nao duoc bao tra ve. Tuc bo test tu cung cap dau vao
        cho mot nhanh chi ton tai de chieu no, va nhanh THAT (phan hoi phang, thu
        ma loi dan mo ta) khong duoc mot phep kiem nao chay qua. Pha 27 bo lop
        boc o ca ba cho: loi dan, khai bao `DOC_CANH`, va o day.
+
+    ⚠️ 26/09 (Task 22): loi nhac `doc_canh` cua `apps/` da bi xoa cung duong VLM
+       cua `edit_plan`; ban khai `DOC_CANH` thi con (nguoi do la
+       `tools/do_llm_cong_asv.py`). O day chuoi nay chi con phuc vu §4 — mot
+       **phan hoi hop le** de duong TINH TIEN co gi ma ghi so cai.
     """
     d = {"loai": "phong van", "chu_the": ["nguoi dan"], "hanh_dong": "noi",
          "cam_xuc": "binh tinh", "quan_trong": 0.8, "de_xuat": "giu",
@@ -109,41 +126,6 @@ def _tiem_goi(monkeypatch, *, noi_dung="", loi=None, do=None):
 #  §1  Luoc do nghiem ngat
 # ══════════════════════════════════════════════════════════════════════════════
 
-def test_doc_duoc_phan_hoi_dung_luoc_do():
-    h = hc.doc_hieu_canh(_kq(_canh_ok()), "canh_0001")
-    assert h.ma_canh == "canh_0001" and h.de_xuat == hc.GIU
-    assert h.quan_trong == 0.8 and h.do_tin == 0.9
-    assert h.chu_the == ("nguoi dan",)
-
-
-@pytest.mark.parametrize("xau, vi_sao", [
-    (_canh_ok(de_xuat="bia_ra"), "de_xuat ngoai tap hop"),
-    (_canh_ok(quan_trong=5), "quan_trong ngoai [0,1]"),
-    (_canh_ok(quan_trong=-1), "quan_trong am"),
-    (_canh_ok(do_tin="rat tin"), "do_tin khong phai so"),
-    (_canh_ok(chu_the="mot chuoi"), "chu_the khong phai mang"),
-    (_canh_ok(canh_bao={"a": 1}), "canh_bao khong phai mang"),
-    ('{}', "thieu de_xuat va do_tin"),
-    ('{"de_xuat": "giu"}', "co de_xuat nhung thieu do_tin"),
-    ('{"canh": {"de_xuat": "giu", "do_tin": 0.9}}',
-     "phan hoi boc trong mot khoa `canh` — hinh dang khong ai hoi"),
-    ("khong phai json", "khong co JSON nao"),
-])
-def test_phan_hoi_sai_luoc_do_thi_NEM(xau, vi_sao):
-    """⛔ Mot truong thieu thanh `None` di tiep se lo ra o pha 12 duoi dang
-    "khong canh nao duoc giu" — mot thong bao khong lien quan gi den nguyen
-    nhan, va nguoi doc se di tim o nham cho."""
-    with pytest.raises((hc.HieuCanhError, ai.LuocDoSai)):
-        hc.doc_hieu_canh(_kq(xau), "canh_0001")
-
-
-def test_truong_qua_dai_bi_CAT_chu_khong_bi_tu_choi():
-    """⭐ Mot cau `ly_do` 5.000 ky tu khong lam hong ket qua — no chi la mot
-    model noi nhieu. Cat va di tiep; tu choi o day la vut ca canh."""
-    h = hc.doc_hieu_canh(_kq(_canh_ok(ly_do="x" * 5000)), "c1")
-    assert len(h.ly_do) <= 500
-
-
 def test_ho_so_LOC_ve_dung_ba_mat_cua_catalog():
     """🔴 Mot mat thu tu se cho ra mot bo loc khong bao gio khop — cung ly do
     voi `rang_giong` pha 09."""
@@ -158,90 +140,6 @@ def test_ho_so_LOC_ve_dung_ba_mat_cua_catalog():
 def test_ho_so_thieu_truong_bat_buoc_thi_NEM():
     with pytest.raises((hc.HieuCanhError, ai.LuocDoSai)):
         hc.doc_ho_so(_kq('{"the_loai": "tai lieu"}'))   # thieu `nhip`
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-#  §2  Ngu canh co chan
-# ══════════════════════════════════════════════════════════════════════════════
-
-def test_chi_lay_loi_thoai_TRONG_canh():
-    """⭐ Mot canh 4 giay khong can biet phut thu 30 noi gi — gui no la tra tien
-    token cho mot thu model se bo qua."""
-    bg = {"doan": [{"bat": 0, "ket": 3, "chu": "trong canh."},
-                   {"bat": 50, "ket": 52, "chu": "xa lac."}]}
-    assert hc.ngu_canh_cho_canh(bg, 0.0, 5.0) == "trong canh."
-
-
-def test_ngu_canh_bi_CHAN_do_dai():
-    bg = {"doan": [{"bat": 0, "ket": 100, "chu": "cau. " * 2000}]}
-    ra = hc.ngu_canh_cho_canh(bg, 0.0, 100.0)
-    assert len(ra) <= hc.NGU_CANH_MOI_CANH
-
-
-def test_cat_o_dau_CAU_chu_khong_giua_tu():
-    """⚠️ Mot cau cut lam model doan tiep phan thieu, va no doan bang token cua
-    khach."""
-    bg = {"doan": [{"bat": 0, "ket": 9, "chu": ("mot cau hoan chinh. " * 200)}]}
-    ra = hc.ngu_canh_cho_canh(bg, 0.0, 9.0, toi_da=100)
-    assert ra.endswith("."), f"cat giua chung: {ra[-30:]!r}"
-
-
-def test_tran_ngu_canh_hop_ly_so_voi_cua_so_THI_GIAC():
-    """Cua so thi giac KHONG duoc lon hon cua so van ban.
-
-    🔴 DẤU `<` ĐỔI THÀNH `<=` NGÀY 12/09/2026 (D02, dual-model 2.3), và đó
-       là sửa **chiều đo**, không phải nới lỏng.
-
-       Bất biến cần canh là: *đừng xếp một lô khung hình theo trần của model
-       VĂN BẢN*, tức cửa sổ thị giác **không được lớn hơn**. Dấu `<` đòi
-       thêm một điều khác hẳn — *hai model phải khác cỡ* — và điều đó chỉ
-       đúng chừng nào hai hồ sơ còn nạp `-c` khác nhau. `qwen38-vision` đã gỡ;
-       hai model công khai nay chạy cùng một ngữ cảnh engine, nên dấu `<`
-       đỏ vì bản khai ĐÚNG — và cách duy nhất làm nó xanh lại là khai sai
-       một trong hai con số.
-    """
-    assert hc.NGU_CANH_MOI_CANH <= 4000
-    # Ràng buộc thật: ngân sách ngữ cảnh mỗi cảnh phải lọt cửa sổ của **chính
-    # model thao tác này gọi**, không phải của model kia.
-    cua = ai.cua_so_ngu_canh(ai.DOC_CANH)
-    assert 0 < hc.NGU_CANH_MOI_CANH < cua, (
-        f"ngan sach moi canh {hc.NGU_CANH_MOI_CANH} khong lot cua so {cua}")
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-#  §3  Van tay: doi prompt = mat cache
-# ══════════════════════════════════════════════════════════════════════════════
-
-def test_van_tay_ON_DINH_voi_cung_dau_vao():
-    a = hc.van_tay_canh("c1", "ngu canh", 2, 0.4)
-    assert a == hc.van_tay_canh("c1", "ngu canh", 2, 0.4)
-
-
-@pytest.mark.parametrize("doi", [
-    {"ma_canh": "c2"}, {"ngu_canh": "khac"}, {"so_khung": 3}, {"nguong": 0.5},
-])
-def test_doi_bat_ky_dau_vao_nao_thi_van_tay_DOI(doi):
-    goc = dict(ma_canh="c1", ngu_canh="x", so_khung=2, nguong_canh=0.4)
-    moi = dict(goc)
-    moi.update({("nguong_canh" if k == "nguong" else k): v
-                for k, v in doi.items()})
-    assert hc.van_tay_canh(**goc) != hc.van_tay_canh(**moi)
-
-
-def test_doi_PHIEN_BAN_PROMPT_thi_van_tay_DOI(monkeypatch):
-    """⛔ Thieu no thi doi mot cau prompt xong, cache van khop, va lan chay dung
-    lai ket qua sinh boi prompt CU — mot thay doi san pham khong bao gio toi
-    khach."""
-    a = hc.van_tay_canh("c1", "x", 2, 0.4)
-    monkeypatch.setattr(hc, "PHIEN_BAN_HIEU_CANH", hc.PHIEN_BAN_HIEU_CANH + 1)
-    assert hc.van_tay_canh("c1", "x", 2, 0.4) != a
-
-
-def test_van_tay_gom_CA_phien_ban_cua_cua_goi(monkeypatch):
-    """Hai phien ban doi doc lap: cau hoi (pha 11) va cua goi (pha 08)."""
-    a = hc.van_tay_canh("c1", "x", 2, 0.4)
-    monkeypatch.setattr(ai, "PHIEN_BAN_LUOC_DO", ai.PHIEN_BAN_LUOC_DO + 1)
-    assert hc.van_tay_canh("c1", "x", 2, 0.4) != a
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -404,4 +302,10 @@ def test_hieu_canh_di_qua_CUA_GOI_chu_khong_tu_goi_dieu_phoi():
 def test_prompt_thuoc_ve_ASV_khong_phai_nen_tang():
     """§ranh gioi pha 08: ASV so huu prompt/luoc do; nen tang so huu van chuyen."""
     van = (APP / "hieu_canh.py").read_text(encoding="utf-8")
-    assert "def loi_nhac_canh" in van and "def loi_nhac_ho_so" in van
+    # ⚠️ **26/09/2026 — `def loi_nhac_canh` da ROI khoi khang dinh nay.** Task 10
+    #    (`defba7b2`) thay VLM bang phep do TAT DINH o `edit_plan`, nen loi nhac
+    #    doc-canh khong con nguoi goi san pham va da bi xoa (Task 22). Y dinh
+    #    cua bai kiem — *"loi nhac thuoc ve ASV, khong thuoc nen tang"* — duoc
+    #    giu bang loi nhac CON LAI cua tep nay (`loi_nhac_ho_so`, duong chon
+    #    giong), ⛔ khong bang mot ten ham da khong con.
+    assert "def loi_nhac_ho_so" in van
