@@ -515,6 +515,14 @@ def lenh_worker(args) -> int:
 
     `maintenance=False`: khong chay vong bao tri — viec nen da co dich vu
     production lam, va hai vong cung quet la hai lan cung mot viec.
+
+    🔴 **B6 (25/09): `capabilities` KHONG con mac dinh `None`.** `None` la
+       "da nang" — nhat DUOC MOI job tren toan nen tang (VPS, video crawler,
+       billing, ...), khong chi ASV. Chay 8 tien trinh nhu vay song song tren
+       may PRODUCTION la giam sat rieng cua ta tranh viec voi dich vu that.
+       Mac dinh nay hep lai con dung 4 nang luc ASV/LTT-VOICE dung
+       (`NANG_LUC` — giong `tests/test_448...NANG_LUC`): `--nang-luc all` xin
+       lai hanh vi cu neu that su can no.
     """
     import logging
     import socket
@@ -530,10 +538,13 @@ def lenh_worker(args) -> int:
 
     het = time.monotonic() + args.giay
     wid = f"{socket.gethostname()}:{os.getpid()}"
+    nang_luc = None if args.nang_luc == "all" else {
+        t.strip() for t in args.nang_luc.split(",") if t.strip()}
     print("WORKER RIENG:", wid, "| python:", sys.executable, flush=True)
     print("PATH co ffmpeg:", _tim_ffmpeg(), flush=True)
+    print("NANG LUC:", nang_luc if nang_luc else "(da nang — MOI job)", flush=True)
     run_forever(wid, stop=lambda: time.monotonic() > het, maintenance=False,
-                capabilities=None)
+                capabilities=nang_luc)
     return 0
 
 
@@ -595,6 +606,9 @@ def main() -> int:
 
     w = sub.add_parser("worker")
     w.add_argument("--giay", type=float, default=3600.0)
+    w.add_argument("--nang-luc", dest="nang_luc", default="api,ffmpeg,gpu,voice",
+                   help="danh sach nang luc cach nhau bang phay, hoac 'all' "
+                        "cho worker da nang (nhat MOI job tren nen tang)")
     w.set_defaults(fn=lenh_worker)
 
     args = ap.parse_args()

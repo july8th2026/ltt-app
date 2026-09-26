@@ -100,6 +100,13 @@ MIEN_TRU_HTTP = {
     "apps/vps/services/vultr.py",
     # → OVH: mua máy chủ cho bán VPS — cùng loại với Proxmox/Vultr
     "apps/vps/services/ovh.py",
+    # → Cloudflare DNS: đặt A record cho IP khách, bắt buộc phải có TRƯỚC khi OVH
+    #   nhận PTR (OVH đòi forward-confirm). Cùng loại với Proxmox/Vultr/OVH: hạ
+    #   tầng BÁN VPS, không phải nhà cung cấp AI.
+    #   ⚠️ 26/09/2026: tệp này thiếu ở đây từ lúc tôi tạo nó (25/09), nên
+    #   `test_1006` đỏ suốt và **không ai thấy** — bánh cóc không chạy pytest, và
+    #   gate thì nay hiếm. Đúng ca "`main` xanh là một giả thuyết".
+    "apps/vps/services/dns_cloudflare.py",
     # → máy thật chạy WanGP (LTT VIDEO) — nội bộ
     "apps/lttvideo/cong/may_that.py",
     # → SearXNG tự host trên loopback CỦA CHÍNH TA (WSL, 127.0.0.1:8888) — tìm web cho LTTCODE

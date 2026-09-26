@@ -223,16 +223,23 @@ def test_chay_lai_voi_cai_dat_nay_NAP_ca_ba_o_moi(moi_truong, tmp_path):
 # ══════════════════════════════════════════════════════════════════════════════
 
 def test_routes_va_module_JS_van_trong_tran():
-    """⛔ `test_423` chot 900 dong / 30 handler cho `routes.py`, `test_468` chot
-    320 dong moi module JS. Ba o moi phai vua trong do."""
+    """⛔ `test_423` chot 900 dong / 30 handler cho `routes.py`. Tran JS dung
+    CHUNG hang so voi `test_468` (`TRAN_DONG`) thay vi chep lai mot con so
+    rieng — ban cu cua bai nay khai 320 trong khi `test_468` da nang co CAN
+    CU len 360 (lan `v4-be-mat-de-xuat`, xem docstring o do), va khong ai bat
+    khop hai noi: dung mot ca hai lan choi tep `tai_len.js` phinh ra do dung
+    lai bien dong rieng cua no thay vi tach them mot module (`hai-cho-khai-
+    cung-mot-dieu-khong-ai-bat-khop`)."""
     import pathlib
+
+    from tests.test_468_asv_v6_kien_truc_gui import TRAN_DONG
 
     goc = pathlib.Path(__file__).resolve().parent.parent
     ma = (goc / "apps/auto_scan_video/routes.py").read_text(encoding="utf-8")
     assert len(ma.splitlines()) < 900
 
     for tep in (goc / "server/static/asv").glob("*.js"):
-        assert len(tep.read_text(encoding="utf-8").splitlines()) <= 320, tep.name
+        assert len(tep.read_text(encoding="utf-8").splitlines()) <= TRAN_DONG, tep.name
 
 
 def test_CAU_hien_cho_khach_KHONG_nam_trong_js():

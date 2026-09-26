@@ -59,7 +59,9 @@ log = logging.getLogger(__name__)
 
 #: Doi so nay la vo hieu MOI khoa dung chung da ghi. Nang khi doi cach dung khoa
 #: hoac khi mot giai doan duoc chia se bat dau doc them mot dau vao.
-PHIEN_BAN_CACHE_CHUNG = 2      # 2 (22/09): TRANSCRIBE doc them video nguon (dinh tuyen)
+PHIEN_BAN_CACHE_CHUNG = 3      # 2 (22/09): TRANSCRIBE doc them video nguon (dinh tuyen)
+                               # 3 (26/09): AUDIO_PREPARE doc them ho so BA LOP
+                               #   (`lop`, B2) — xem `dau_vao_noi_dung` ben duoi
 
 #: Giai doan duoc chia se. Chi nhung giai doan (a) dat — GPU/CPU nang — va (b) co
 #: dau vao noi dung xac dinh duoc. `media_prepare` re va la cho TINH checksum;
@@ -101,7 +103,20 @@ def dau_vao_noi_dung(db, run, ten: str) -> dict | None:
         # da duoc MEDIA_PREPARE tinh (`giai_doan_media`) va ghi vao tom tat.
         media = features.giai_doan_theo_ten(db, run.id, pipeline.MEDIA_PREPARE)
         ck = str(((media.outputs if media else None) or {}).get("checksum_nguon") or "")
-        return {"nguon": ck} if ck else None
+        if not ck:
+            return None
+        # 🔴 B2 (25/09) them ho so BA LOP (`lop`): `giai_doan_am_thanh.chay` doc
+        #    no de biet gain tung lop luc TRON nen (`tach_tieng.tron_nen`), nen
+        #    ban nen (`bed.wav`) ra KHAC nhau theo `lop` du CUNG mot nguon.
+        #    Thieu dong nay: hai lan chay cung video, khac gain, se dung chung
+        #    MOT bed.wav — cua BAT KY lan nao chay truoc — va lan sau nhan sai
+        #    am luong ma khong ai bao. `tu_cai_dat_lop` chuan hoa `None`/ho so
+        #    THUA ve DUNG mot dang (khuon `van_tay_tach`), nen hai ho so tuong
+        #    duong ve gia tri (vd `None` va ho so MAC_DINH day du) van chia se
+        #    duoc, dung nhu tren mot lan chay don (`assets.cache_dung_duoc`).
+        from . import cai_dat as cd
+        from . import tach_tieng
+        return {"nguon": ck, "lop": tach_tieng.tu_cai_dat_lop(cd.doc(run).lop)}
     if ten == pipeline.TRANSCRIBE:
         from . import cai_dat as cd, nguon_loi as nl
         from .giai_doan_chep_loi import MODEL_ASR

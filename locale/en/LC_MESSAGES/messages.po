@@ -21685,8 +21685,107 @@ msgstr "⚠️ This is the original dialogue (usually a foreign language), not j
 msgid "Âm lượng giọng nói gốc"
 msgstr "Original voice volume"
 
+# Them boi phien VPS 26/09: chuoi nay tu commit 151acbb4 (lan
+# upscalevideo) va no chan banh coc `check_dich_thieu` => chan commit cua
+# MOI phien. Chuoi goc da la tieng Anh nen ban EN giu nguyen van.
 msgid "Quality gates passed: PSNR{0}dB"
 msgstr "Quality gates passed: PSNR{0}dB"
+
+# Them boi phien dich-v4 26/09: 21 muc VANG cho tinh nang tu do vung che
+# (logo/watermark tinh, dai chu goc/phu de cung) o apps/auto_scan_video/templates/asv_trang_chinh.html.
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Trái (%)"
+msgstr "Left (%)"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Phải (%)"
+msgstr "Right (%)"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Trên (%)"
+msgstr "Top (%)"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Dưới (%)"
+msgstr "Bottom (%)"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Dò vùng cần che (tự động)"
+msgstr "Detect masked regions (automatic)"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Hãy chọn video trước."
+msgstr "Please select a video first."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Định dạng hoặc kích thước này không tự dò được — bạn vẫn tự khoanh vùng ở dưới như bình thường."
+msgstr "This format or size can't be auto-detected — you can still mark regions manually below as usual."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Đang tải video lên để dò…"
+msgstr "Uploading video for detection…"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Đang dò vùng cần che…"
+msgstr "Detecting masked regions…"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Không dò được — bạn vẫn tự khoanh vùng ở dưới như bình thường."
+msgstr "Detection failed — you can still mark regions manually below as usual."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+#, python-format
+msgid "Đã quét xong — tìm thấy %(so)s vùng nghi ngờ logo hoặc dải chữ gốc. Xem từng vùng bên dưới: Nhận, sửa toạ độ, hoặc Bỏ."
+msgstr "Scan complete — found %(so)s suspected logo or hardcoded-subtitle regions. Review each one below: Accept, adjust the coordinates, or Discard."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Đã quét xong, không thấy logo tĩnh hay dải chữ gốc nào cần che."
+msgstr "Scan complete — no static logo or hardcoded subtitle band found that needs masking."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+#, python-format
+msgid "Chưa dò được: %(ly_do)s Bạn vẫn tự khoanh vùng ở dưới như bình thường."
+msgstr "Detection unavailable: %(ly_do)s You can still mark regions manually below as usual."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+#, python-format
+msgid "Đã đọc %(logo)s khung hình (logo) · %(dai)s khung hình (dải chữ)."
+msgstr "Read %(logo)s frames (logo) · %(dai)s frames (subtitle band)."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Logo / watermark tĩnh"
+msgstr "Static logo / watermark"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Dải chữ gốc (phụ đề cứng)"
+msgstr "Original text band (hardcoded subtitles)"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Nhận"
+msgstr "Accept"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Bỏ"
+msgstr "Discard"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+#, python-format
+msgid "Vùng che đã đầy (tối đa %(n)s) — hãy bỏ bớt trước khi nhận thêm."
+msgstr "Masked regions are full (max %(n)s) — remove one before accepting more."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Dò lại"
+msgstr "Detect again"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Chi tiết kỹ thuật"
+msgstr "Technical details"
+
+msgid "Chưa tải lên xong — hãy đợi tải lên hoàn tất rồi thử lại."
+msgstr "Upload not finished yet — please wait for the upload to complete, then try again."
+
+msgid "Điền nền (xoá hẳn)"
+msgstr "Fill background (remove completely)"
 
 msgid "chất lượng..."
 msgstr "quality..."

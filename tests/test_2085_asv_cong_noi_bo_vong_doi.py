@@ -111,16 +111,33 @@ def giai_doan_gia(monkeypatch):
 
 
 def chay_hang_doi(db, *, dung_khi=None, toi_da=300) -> int:
-    """Nhat + chay job nhu worker that. `dung_khi(db)` True -> dung som."""
+    """Nhat + chay job nhu worker that. `dung_khi(db)` True -> dung som.
+
+    ⚠️ `jobs.claim` tra `None` khi hang doi RONG **hoac** khi job con lai chi
+       la mot luot `advance` da tu hen HOAN (`NHIP_DIEU_PHOI_S`, dang cho mot
+       giai doan khac dang chay xong — xem `features._nop_dieu_phoi`). Worker
+       THAT se ngu roi thu lai; o day khong co thoi gian thuc troi qua, nen
+       truoc khi ket luan "het viec" phai keo `next_run_at` cua job QUEUED
+       den han SOM NHAT ve hien tai (mo phong "da doi du lau") roi thu claim
+       lai — neu khong, mot chuoi con dang cho mot job SIBLING no vua tu nop
+       (chua toi luot claim) se bi bao sai la da xong het.
+    """
     from platform_core import jobs
     from platform_core.job_runner import JobContext
+    from platform_core.models import JOB_QUEUED, Job
 
     dem = 0
     for _ in range(toi_da):
         job = jobs.claim(db, worker_id="w-cong",
                          capabilities={"api", "ffmpeg", "gpu", "voice"})
         if job is None:
-            break
+            cho = (db.query(Job).filter(Job.status == JOB_QUEUED)
+                     .order_by(Job.next_run_at).first())
+            if cho is None:
+                break
+            cho.next_run_at = jobs._bay_gio()
+            db.commit()
+            continue
         db.commit()
         ctx = JobContext(job.id)
         ctx.job_type = job.job_type

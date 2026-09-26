@@ -21,6 +21,7 @@ from apps.auto_scan_video.phu_de import PhuDeLoi
 from apps.auto_scan_video.logo import LogoLoi
 from apps.auto_scan_video.am_thanh import AmThanhLoi
 from apps.auto_scan_video.bien_tap import BienTapLoi
+from apps.auto_scan_video.tach_tieng import LopNenLoi
 from apps.auto_scan_video.tu_dien import TuDienLoi
 from apps.auto_scan_video.vung_che import VungLoi
 from apps.auto_scan_video.ban_ghi import BanGhiError
@@ -132,6 +133,11 @@ BANG = {
     AmThanhLoi: loi.NGUOI_DUNG,
     # asv-final: ho so bien tap khung/toc do — cung nhom, cung ly do.
     BienTapLoi: loi.NGUOI_DUNG,
+    # B2 (25/09) — ho so BA LOP nen: `tach_tieng.tu_cai_dat_lop` duyet lai ho
+    # so da luu TU TRONG job `audio_prepare`, ngay truoc khi tron nen. Cung
+    # nhom, cung ly do voi `AmThanhLoi`/`BienTapLoi`: mot ho so gain hong thi
+    # ba luot `retry` hong y het.
+    LopNenLoi: loi.NGUOI_DUNG,
     # ⭐ THU LAI la viec dung: nen tang co the cap mot card KHAC lan sau. Truoc
     #    pha 13 truong hop nay khong nem gi ca — no **im lang chay CPU**, cham
     #    hon 9,5 lan, va giu suat `tach_nguon_cuc_bo` suot ~37 phut o tran 2 gio.
@@ -384,6 +390,13 @@ def test_moi_lop_ngoai_le_cua_app_deu_duoc_phan_loai():
         "AsvError", "KhongTimThay", "XungDot",   # tang route, khong len toi bien
         "AssetError",                            # bi doi loai truoc khi len bien
         "DaHuy",                                 # nhanh rieng cua job_runner
+        # 🔑 `PhienChuaSan` (de_xuat_vung.py, tach tu routes.py 26/09): nem
+        #    trong `de_xuat_cho_phien`, va `routes.de_xuat_vung` bat no NGAY
+        #    trong than request (`except de_xuat_vung_mod.PhienChuaSan` ->
+        #    HTTP 404) — cung khuon voi `AsvError`/`KhongTimThay`/`XungDot`
+        #    ngay tren: loi nghiep vu o tang route, khong bao gio bay ra tu
+        #    than mot giai doan job nen khong bao gio toi `job_runner`/`retry`.
+        "PhienChuaSan",
         # 🔑 Chi song trong TIEN TRINH CON demucs. Chot an toan cua pha 13 nem no
         #    khi mot phep kiem cham toi model that; production khong bao gio co
         #    `PYTEST_CURRENT_TEST` nen no khong the len toi bien cua nen tang.

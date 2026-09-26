@@ -12,6 +12,121 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-26 (khuya) — ĐÓNG PLAN ASV: 75 commit, và **bảy lỗi thật** do gate trả về
+
+Phiên điều phối, 13 làn. `main` đi **75 commit** so với bản đang chạy production
+(`df71c094`), **72 lượt gộp**.
+
+### Hạng mục đã xong
+
+**Plan hai giai đoạn** B0–B5 xong (B6 đo được phần cốt lõi, xem dưới). **Plan từ
+Viral**: V1 lật gương · V2 dịch màu · V3 **nhạc nền khách tải lên** · V4a/V4b **tự dò
+logo + dải chữ gốc, đã nối vào sản phẩm** · V5 **điền nền** (`che_keo`) · V6 kéo-thả.
+V4c chốt **`C — không lấy`** và đóng tử tế (xem dưới). Đ1 đã đo và chốt.
+
+**Nợ hạ tầng đóng trong phiên:** `N-57` giao hàng rỗng · `N-51` QC fail-open · vòng quay
+**37.010 job `advance`** · log vận hành (`asv_soi.py` + sự kiện biên giai đoạn + nhịp
+tiến độ mang **bộ đếm việc**) · `timing_align`/`image_finish` phân loại khoá sai ·
+`messages.mo` **merge driver** · bảy bánh cóc về mốc.
+
+### 🔑 Bảy lỗi THẬT mà chỉ gate (427 tệp test, 17 phút) trả về được
+
+Mỗi làn chạy **test nhắm** của mình và **đều xanh**. Bảy lỗi dưới đây chỉ lộ khi **chạy
+cùng nhau** — tức bài học *"làn xanh riêng, đỏ khi gộp"* xảy ra **hai lần** trong một
+phiên, và cả hai lần cùng một bài (`test_418`) bắt được.
+
+1. **Đầu độc cache, im lặng hoàn toàn.** Khoá cache **dùng chung giữa các lần** của
+   `AUDIO_PREPARE` không chứa `lop` ⇒ hai lượt **cùng video** với **gain lớp khác nhau**
+   dùng **chung** một `bed.wav` đã cache. Khách kéo thanh trượt mà nhận âm thanh của lượt
+   khác. ⭐ Nó nằm **sau một phép kiểm CÙN** (*"tach_nguon không đọc thiết lập nào"*) —
+   bài đó vừa **báo động giả** vừa **che** một lỗi thật ngay cạnh.
+2. **Một "lưới thứ hai" tự mở đường hỏng mới.** `_nop_dieu_phoi` khi `cho_giay > 0` chỉ
+   **ĐẨY** `next_run_at`, không bao giờ **kéo lại**. Ghép với khoá dedupe mới
+   `(run_id, gen)` — thứ gộp **hai** chuỗi thành **một** job — thì chuỗi có **việc thật**
+   thừa hưởng độ hoãn của chuỗi **không có việc** ⇒ **job KẸT**. Tôi cảnh đúng nơi nhưng
+   **sai hình dạng**: tưởng cái giá là CHẬM, thật ra là KẸT.
+3. **`res` dùng trước khi tạo** (`upscalevideo/jobs.py`): khối cổng chất lượng ghi
+   `res["quality_warning"]` **trước** khi `res` tồn tại ⇒ `NameError` **mỗi khi một cổng
+   hỏng**, tức đúng ở **đường lỗi**.
+4. **`save_checkpoint(job_id, …)`** với `job_id` không tồn tại, và **không** nằm trong
+   `if ctx is not None` ⇒ **mọi** lượt upscale nhiều-batch chết ngay sau batch đầu.
+5. **`LopNenLoi` chưa phân loại** ⇒ thừa hưởng nhánh mặc định **`retry`**: một lỗi **tất
+   định** bị thử lại mãi.
+6. **Vân tay nhét `outputs` THÔ** (`thi_hanh._gom_dau_vao`): `audio_prepare` trả `tom_tat`
+   chứa **chẩn đoán đổi giữa hai lần thử**, nên mỗi lần thử lại làm vân tay `transcribe`
+   **trôi** ⇒ bị đặt lại oan ⇒ gọi lại WhisperX. Đo trên 8 worker thật: `audio_prepare`
+   **56 lần**, `transcribe` **40 lần**, **2.059 job / 2.794 s** cho một phim 190 s.
+   ⭐ Bản sửa là **chính mô hình kho đã tự ghi** (`features.py:327`): *"vân tay gồm VÂN
+   TAY của các giai đoạn trước"* — hàm đang **vi phạm mô hình của chính nó**.
+7. **`loudnorm` hai lượt, hai miền khác nhau**: lượt **ĐO** thành công và trả
+   `measured_I` **vượt miền `[-99,0]` của chính `loudnorm`**; chỉ lượt **ÁP** mới ném ⇒
+   một hồ sơ **hợp lệ** làm **cả lần chạy chết**.
+
+### Số đo thật
+
+| | |
+|---|---|
+| Nghiệm thu GĐ1, phim 190 s | **1.367,8 s = 7,20×** (một vòng sửa) |
+| Nghiệm thu GĐ1, phim 275 s | **1.920,9 s = 6,98×** (một vòng sửa) |
+| Phần **ĐỢI** trong lượt chạy | **70%** (`content_process` 0,023 lõi · `voice_synthesis` 0,029 lõi) |
+| Vòng quay `advance` sau sửa, **8 worker thật** | `dang_song` **≤ 2**, phần lớn **= 1** (cũ: 11,7 job/giây) |
+| `gop_khe` trên vật liệu thật | ASR **74 đoạn → 63** lượt TTS |
+| `image_finish` sau khi dời phép đổi điểm ảnh | **5,95–6,21 lõi** ⇒ chuyển sang `PHA_NANG_CPU` |
+| Lượt có phép đổi điểm ảnh | **2 → 1** lần mã hoá (đếm lời gọi encode, không suy luận) |
+
+⚠️ **Và câu *"vài tiếng không xong một video"* có đáp án, nhưng không phải đáp án tôi
+tưởng:** lượt 52,5 phút cũ **chưa bao giờ tới `render`** — nó **chết** ở
+`audio_prepare`/`timing_align`, và "52,5 phút" là thời gian một **vòng quay `advance`
+chạy không tải** (37.010 job rác). ⇒ **Không tồn tại** một con số "cũ" nào hoàn tất để
+so. 7,20× là **lần đầu** có một con số.
+
+### Còn đỏ, có chủ ý: `test_448` ×2
+
+Bản ghi nghiệm thu (`ghi_luc 2026-09-25T12:07:36`) **thiếu HẲN** hai giai đoạn mới
+`image_finish` và `qc_ai` — chúng **chưa từng chạy**. ⇒ Không phải lệch một con số có thể
+vá; nó là bản ghi cho **một kiến trúc KHÁC**. Chỉ khép được bằng một lượt nghiệm thu
+**thật** (`@NANG`, whisper large-v3 + demucs, khoá `cpu_nhieu` toàn máy), và lượt đó đã
+**hỏng hạ tầng 2/2 lần** (worker mồ côi · `ReadTimeoutError` từ sidecar WhisperX ·
+`sqlite3 database is locked` với 8 tiến trình). ⛔ Không nới, không xoá, không sửa mốc.
+
+### Quyết định của chủ dự án trong phiên
+
+- **Trần cắt 5% = GIỮ**, sau khi đã thấy cái giá (video 190 s ⇒ ngân sách **9,5 giây**;
+  một ca thật: tiêu chí đòi cắt **50%**, trần chặn còn **4,17%**, loại 11 đoạn). ⇒ Nó là
+  **lan can**, không phải **ngân sách bỏ cảnh yếu** — đã ghi vào `ke_cat.py`.
+- **Cờ bật/tắt QC KHÔNG được tồn tại cho khách**; chỉ dùng khi **audit**. Đã kiểm: không
+  có cờ nào tồn tại, và ghi quyết định ngay trên `qc_ai.khai_cho_khach()`.
+- **ADR-V5: KÝ** (§3–§5 khớp logic vận hành), cộng **§6b** ghi phần đã bị **thực tế vượt
+  qua** — câu *"chặn bước 14 và 16"* là một **cửa hỏi bằng chứng mà hệ đã thôi sản xuất**.
+  ⚠️ Và ghi rõ `music_replace` (giữ đóng — nền tảng cấp nhạc, chi phí **pháp lý**)
+  **KHÁC** `nhac_nen` (đã làm — **khách tự tải**).
+
+### Việc của chủ dự án
+
+- 🔴 **Xoay `LTT_CF_DNS_TOKEN`**: một làn dùng `set -x` và echo một dòng chứa token ra
+  log **cục bộ**. Nó kill lệnh, xoá tệp, viết lại không `set -x`, không rời máy, không
+  commit — nhưng không chứng minh được không còn dấu vết (bộ đệm terminal, tệp tạm).
+- **CVE `curl-cffi` `PYSEC-2026-2431`** (= `CVE-2026-33752`, SSRF qua redirect): bản sửa
+  `0.15.0`. ⭐ Production đang chạy `yt-dlp 2026.7.4` (**không** phải `2026.3.17` như chú
+  thích spec) và bản đó **đã nới trần** `< 0.16` ⇒ đường rẻ nhất là đổi **một** trần
+  `<0.15` → `<0.16`, không cần đụng `yt-dlp`/`yt-dlp-ejs`. ⚠️ Cố ý **KHÔNG** gộp vào lượt
+  deploy này: dòng ghim **y hệt** ở production và HEAD ⇒ deploy **không thêm phơi nhiễm**,
+  còn nâng gói chưa đo hai đường crawl thì có.
+- **`index` +7 của mypy** ở `apps/upscalevideo/quality_gate.py`: không chứng minh được an
+  toàn, và vùng mã đó hôm nay đã có **ba `NameError` + một lỗi thứ tự**.
+
+### ⭐ Bốn ca "hai chỗ khai một điều" trong MỘT phiên — và một thang thuốc
+
+| ca | thứ giữ hai bản khớp nhau | kết quả |
+|---|---|---|
+| `LOP_STEM` vs `STEM_GIU` | **khẳng định ở mức module** (vỡ lúc import) | ✅ không thể trôi |
+| `ltt.css` nguồn vs bản đóng gói | **một bước gate đếm băm** | ✅ bị bắt |
+| `TRAN_DONG` vs số chép tay ở `test_2100` | **không có gì** | 🔴 đã trôi; bản **chép tay** là bản **sai** |
+| `messages.mo` vs `.po` | trước: không gì · nay: **merge driver** | 🔴 xung đột **4 lần** mới có thuốc |
+
+🔑 Thuốc **không phải** một dòng dặn dò: nó là **đọc thay vì chép**, hoặc **một phép đo
+(băm)**, hoặc **một khẳng định làm vỡ lúc import**. Cả ba **cơ học**; lời nhắc thì không.
+
 ## 2026-09-25 (đêm) — ASV **HAI GIAI ĐOẠN**: cắt cảnh chuyển xuống SAU render
 
 Làn `b4-hai-giai-doan`, plan `docs/superpowers/plans/2026-09-25-asv-hai-giai-doan.md`.

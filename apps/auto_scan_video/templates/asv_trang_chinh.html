@@ -91,6 +91,15 @@
                 khung hinh trong van roi xuong `#asv-lop` de ve vung che. #}
           <svg id="asv-lop-logo" class="asv-lop asv-lop-logo" viewBox="0 0 1 1"
                preserveAspectRatio="none" hidden aria-hidden="true"></svg>
+          {# Lop THU BA — de xuat cua `do_vung.de_xuat()`, so huu boi
+             `asv/de_xuat.js`. Cung khuon `#asv-lop-logo`: pointer-events chi
+             bat o TUNG hop de xuat, ⛔ khong bat ca lop — nguoc lai no nuot
+             moi cu keo ve vung che THAT o `#asv-lop` ben duoi. Rieng khoi
+             `#asv-lop`: `veLai()` cua `vung.js` xoa sach CON cua no moi lan
+             goi, ve de xuat vao chung se bi don sach ngay lan sua vung ke
+             tiep — dung ho loi ma `#asv-lop-logo` da phai dong mot lan. #}
+          <svg id="asv-lop-de-xuat" class="asv-lop asv-lop-de-xuat" viewBox="0 0 1 1"
+               preserveAspectRatio="none" hidden aria-hidden="true"></svg>
         </div>
 
         <label class="btn ghost asv-chon-tep" for="asv-video">
@@ -473,7 +482,7 @@
             xong, thay no trong "Cai dat da dung", roi nhan mot video khong che
             gi. `ban_dung.kiem` chan o may chu; cho nay chan o mat khach. #}
       <div class="asv-nhom" id="asv-nhom-vung"
-           data-preset-can="{{ preset_can_cho_vung }}">
+           data-preset-can="{{ preset_can_cho_vung }}" data-toi-da="{{ vung_toi_da }}">
         <h3>{{ _("Vùng che") }}</h3>
         <p class="asv-ghi-chu">
           {{ _("Vẽ một khung lên video để che logo hoặc phụ đề gốc. Kéo trên khung hình ở trên.") }}
@@ -481,6 +490,29 @@
         <p class="asv-ghi-chu asv-vung-chan" id="asv-vung-chan" hidden>
           {{ _("Vùng che cần kiểu xử lý “Rút gọn có biên tập”, vì phải dựng lại hình mới che được. Kiểu “Giữ nguyên hình ảnh” sao chép nguyên khung hình nên không sửa được điểm ảnh nào.") }}
         </p>
+
+        {# ══ De xuat tu dong (`do_vung.de_xuat`, v4-be-mat-de-xuat) ══════════
+           🔴 CHI la mot DE XUAT — xem docstring dai o `do_vung.py` muc 2 "Noi
+              dang GOI Y, KHONG tu dong che". Khong hop nao o day di thang vao
+              `vung[]` that; khach phai bam "Nhan" (hoac tu ve nhu cu o duoi)
+              truoc. `asv/de_xuat.js` so huu toan bo khoi nay.
+
+           ⚠️ Chi hien duoc khi tep di duong TAI LEN BEN VUNG (`benVungDuocKhong`
+              cua `asv/tai_len.js`) — do la DIEM DUY NHAT may chu co tep cuc
+              bo TRUOC khi lan chay duoc tao. Kieu/kich thuoc khac thi nut an,
+              va khach van ve tay binh thuong o duoi — KHONG co gi vo. #}
+        <div class="asv-dx" id="asv-dx">
+          <button type="button" class="btn ghost" id="asv-dx-nut">
+            {{ _("Dò vùng cần che (tự động)") }}
+          </button>
+          <p class="asv-ghi-chu" id="asv-dx-tt" aria-live="polite" hidden></p>
+          <details class="asv-dx-chi-tiet" id="asv-dx-chi-tiet" hidden>
+            <summary>{{ _("Chi tiết kỹ thuật") }}</summary>
+            <p class="asv-ghi-chu" id="asv-dx-so-khung"></p>
+          </details>
+          <ul class="asv-vung-ds asv-dx-ds" id="asv-dx-ds"></ul>
+        </div>
+
         <div class="asv-vung-thanh" role="group" aria-label="{{ _('Công cụ vùng che') }}">
           <button type="button" class="btn ghost asv-vung-che-nut" data-loai="lam_mo">
             {{ _("Thêm vùng làm mờ") }}
@@ -1000,11 +1032,32 @@
   "cat_con_lai": {{ _("Đoạn giữ lại dài %(giay)s.")|tojson }},
   "vung_loai_lam_mo": {{ _("Làm mờ")|tojson }},
   "vung_loai_danh_dau_phu_de": {{ _("Đánh dấu phụ đề gốc")|tojson }},
+  "vung_loai_dien_nen": {{ _("Điền nền (xoá hẳn)")|tojson }},
   "vung_tu_giay": {{ _("Từ giây")|tojson }},
   "vung_den_giay": {{ _("Đến giây")|tojson }},
   "vung_ca_video": {{ _("cả video")|tojson }},
   "vung_xoa_mot": {{ _("Xoá vùng này")|tojson }},
   "vung_vi_tri": {{ _("ở %(x)s%%–%(x2)s%% ngang, %(y)s%%–%(y2)s%% dọc")|tojson }},
+  "vung_trai": {{ _("Trái (%)")|tojson }},
+  "vung_phai": {{ _("Phải (%)")|tojson }},
+  "vung_tren": {{ _("Trên (%)")|tojson }},
+  "vung_duoi": {{ _("Dưới (%)")|tojson }},
+  "dx_nut": {{ _("Dò vùng cần che (tự động)")|tojson }},
+  "dx_can_video": {{ _("Hãy chọn video trước.")|tojson }},
+  "dx_khong_ben_vung": {{ _("Định dạng hoặc kích thước này không tự dò được — bạn vẫn tự khoanh vùng ở dưới như bình thường.")|tojson }},
+  "dx_dang_tai": {{ _("Đang tải video lên để dò…")|tojson }},
+  "dx_dang_quet": {{ _("Đang dò vùng cần che…")|tojson }},
+  "dx_loi": {{ _("Không dò được — bạn vẫn tự khoanh vùng ở dưới như bình thường.")|tojson }},
+  "dx_co": {{ _("Đã quét xong — tìm thấy %(so)s vùng nghi ngờ logo hoặc dải chữ gốc. Xem từng vùng bên dưới: Nhận, sửa toạ độ, hoặc Bỏ.")|tojson }},
+  "dx_khong_co": {{ _("Đã quét xong, không thấy logo tĩnh hay dải chữ gốc nào cần che.")|tojson }},
+  "dx_khong_do_duoc": {{ _("Chưa dò được: %(ly_do)s Bạn vẫn tự khoanh vùng ở dưới như bình thường.")|tojson }},
+  "dx_so_khung": {{ _("Đã đọc %(logo)s khung hình (logo) · %(dai)s khung hình (dải chữ).")|tojson }},
+  "dx_nguon_logo_tinh": {{ _("Logo / watermark tĩnh")|tojson }},
+  "dx_nguon_dai_chu": {{ _("Dải chữ gốc (phụ đề cứng)")|tojson }},
+  "dx_nhan": {{ _("Nhận")|tojson }},
+  "dx_bo": {{ _("Bỏ")|tojson }},
+  "dx_het_cho": {{ _("Vùng che đã đầy (tối đa %(n)s) — hãy bỏ bớt trước khi nhận thêm.")|tojson }},
+  "dx_lai": {{ _("Dò lại")|tojson }},
   "lp_chua_co": {{ _("Chưa có dòng chữ nào.")|tojson }},
   "lp_dem": {{ _("%(so)s dòng chữ.")|tojson }},
   "lp_chu": {{ _("Nội dung")|tojson }},

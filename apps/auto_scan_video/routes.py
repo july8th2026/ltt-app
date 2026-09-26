@@ -42,8 +42,10 @@ from server.auth.session import require_login
 from server.deps import get_db, user_hien_tai
 from server.templating import templates
 
-from . import dich_vu_tao, hop_dong_v4, features, gia, pipeline, quan_sat
+from . import (dich_vu_tao, hop_dong_v4, features, gia, pipeline,
+               quan_sat, vung_che)
 from . import bien_tap as bien_tap_mod
+from . import de_xuat_vung as de_xuat_vung_mod
 from . import (am_thanh as am_thanh_mod, cai_dat as cai_dat_mod, logo as logo_mod,
                lop_phu as lop_phu_mod, ngon_ngu as ngon_ngu_mod,
                nguon_loi as nguon_loi_mod, phu_de as phu_de_mod,
@@ -216,6 +218,9 @@ def _ngu_canh_studio(db, u, loi: str = "", nap_lai: dict | None = None) -> dict:
         #: ⛔ Lay TU hop dong, khong go chuoi `"smart_localize"` vao template:
         #:    mot chuoi go tay o giao dien la mot cho se lech khi hop dong doi.
         "preset_can_cho_vung": hop_dong_v4.PRESET_CAT_THONG_MINH,
+        #: San vung toi da — giao dien doc de khoa nut "Nhan" khi da day, thay
+        #: vi go lai 12 o day (khop `vung_che.SO_VUNG_TOI_DA`).
+        "vung_toi_da": vung_che.SO_VUNG_TOI_DA,
         #: ── Ba han muc cua lop phu chu, LAY TU MODULE ─────────────────────
         #:
         #: ⛔ Khong go `3` va `80` vao template. Do la cach mot han muc troi im
@@ -814,6 +819,31 @@ def _run_cua_toi(db, run_id: str, u):
     except features.AsvError:
         raise HTTPException(status_code=404,
                             detail=_t('Không tìm thấy lần chạy.')) from None
+
+
+@router.post("/tai-len/{upload_id}/de-xuat-vung")
+def de_xuat_vung(request: Request, upload_id: str,
+                 tranh: str = Form(""), csrf_token: str = Form(""),
+                 _g: None = Depends(_cong_co), user: str = Depends(require_login),
+                 db: Session = Depends(get_db)):
+    """MOT be mat GOI `de_xuat_vung_mod.de_xuat_cho_phien` — CSRF, dang nhap,
+    goi tang dich vu, dich ngoai le thanh ma HTTP; khong gi khac.
+
+    Logic that (doc phien, tai tep tam khi kho tu xa, goi `do_vung.de_xuat`,
+    luat "GIAI DOAN 2" chi de xuat khong tu ghi `vung_che`) nam ca o
+    `apps/auto_scan_video/de_xuat_vung.py` — doc docstring o do.
+    """
+    if not verify_csrf_token(request, csrf_token):
+        raise HTTPException(status_code=400, detail=_t('Phiên đã hết hạn.'))
+    u = user_hien_tai(request)
+    if u is None:
+        raise HTTPException(status_code=401)
+    try:
+        ra = de_xuat_vung_mod.de_xuat_cho_phien(db, upload_id, u.id, tranh)
+    except de_xuat_vung_mod.PhienChuaSan:
+        raise HTTPException(status_code=404, detail=_t(
+            'Chưa tải lên xong — hãy đợi tải lên hoàn tất rồi thử lại.')) from None
+    return JSONResponse(ra)
 
 
 # ── Tai len NHIEU PHAN (tiep tuc duoc sau khi dut) ──────────────────────────

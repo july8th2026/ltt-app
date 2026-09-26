@@ -28,14 +28,20 @@ TINH = GOC / "server" / "templating.py"
 THU_MUC = GOC / "server" / "static" / "asv"
 MAU = GOC / "apps" / "auto_scan_video" / "templates" / "asv_trang_chinh.html"
 
-#: Tran dong cho MOT module. Do nhat hien tai la `asv/vung.js` = 237 dong, nen
-#: 320 cho du dat de khong bao dong gia va van con xa 1.154.
+#: Tran dong cho MOT module. Do nhat hien tai la `asv/tai_len.js` = 350 dong
+#: (lan `v4-be-mat-de-xuat`, them `taiLenSom`/`benVungDuocKhong` de
+#: `asv/de_xuat.js` tai tep duoc TRUOC khi nop form), nen 360 cho du dat.
 #:
 #: ⚠️ Con so nay khong phai mot y kien tham my. No la thu duy nhat ngan mot
 #:    module lon dan tro lai thanh chinh cai tep pha 06 vua go — va no phai bi
 #:    NHIN LAI, khong duoc NOI RA, moi khi co ai cham tran. Noi tran la bo mat
 #:    cau hoi ma banh coc dang hoi.
-TRAN_DONG = 320
+#:
+#: ⭐ Lan nay DA nhin lai truoc khi nang: tach tiep doi mo THEM be mat cheo
+#:    module — `dangTai`/`oUploadId`/`oTep`/`taiNhieuPhan` deu la bien dong
+#:    rieng cua `tai_len.js`, dung chung voi nhanh nop form hien co — dung cai
+#:    `§2` ben duoi dang canh, nen nang tran la lua chon re hon o day.
+TRAN_DONG = 360
 
 
 def _ds() -> tuple[str, ...]:
@@ -168,15 +174,24 @@ def test_be_mat_cong_khai_ngoai_nen_la_TOI_THIEU():
        treo het ham cua no len `ASV`, ta co lai mot khong gian ten phinh — dung
        cai giant form cu, chi khac la no mang dau cham.
 
-    ⭐ Hom nay dung MOT: `asv/xem_truoc.js` phai biet tep se di duong nao truoc
-       khi do kich thuoc, va cau tra loi song o `asv/tai_len.js`.
+    ⭐ Hom nay dung NAM: `asv/xem_truoc.js` phai biet tep se di duong nao truoc
+       khi do kich thuoc, va cau tra loi song o `asv/tai_len.js`
+       (`benVungKieuDuocKhong`). Bon ten con lai la lan `v4-be-mat-de-xuat`
+       (noi `do_vung.de_xuat()` vao san pham):
+
+         `taiLenSom`/`benVungDuocKhong`   `tai_len.js` -> `de_xuat.js`
+             tai video len SOM (truoc khi nop form) de `do_vung` co tep cuc bo
+         `themVungDeXuat`/`layTranhVung`  `vung.js` -> `de_xuat.js`
+             khach "Nhan" mot de xuat -> vao DUNG mot mang `vung`, khong tao
+             mot nguon chan ly thu hai; `layTranhVung` cho `do_dai_chu(tranh=)`
     """
     treo = set()
     for m in _ds():
         if m == "asv/nen.js":
             continue
         treo |= set(re.findall(r"ASV\.([A-Za-z_][A-Za-z0-9_]*)\s*=", asv_js.doc(m)))
-    assert treo == {"benVungKieuDuocKhong"}, (
+    assert treo == {"benVungKieuDuocKhong", "benVungDuocKhong", "taiLenSom",
+                    "themVungDeXuat", "layTranhVung"}, (
         f"be mat cheo module da rong ra: {sorted(treo)}. Moi ten them vao day "
         "la mot rang buoc moi giua hai tep vua duoc tach roi")
 

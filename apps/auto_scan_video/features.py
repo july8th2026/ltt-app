@@ -194,6 +194,29 @@ def _nop_dieu_phoi(db: Session, run: AsvRun, *, ly_do: str, gen: int = 0,
         hien_tai = jobs._aware(job.next_run_at)
         if hien_tai is None or hien_tai < muon_nhat:
             job.next_run_at = muon_nhat
+    else:
+        # 🔴 Sua (test_2085, 26/09): `jobs.submit` dedupe theo `(user, key,
+        #    trang_thai queued/running)` — no KHONG biet gi ve `cho_giay`. Hai
+        #    luot `advance` doc lap (vd. chuoi truoc va sau mot `retry_run`)
+        #    co the cung tinh ra dung MOT khoa `(run, gen+1, "sau")` o hai
+        #    THOI DIEM khac nhau: luot truoc thay `da_nop` rong (chua co gi
+        #    san sang) va hoan job do 2 giay (`NHIP_DIEU_PHOI_S`); luot sau —
+        #    doc trang thai MOI hon, thay mot giai doan da that su san sang
+        #    (`da_nop` khac rong) — deduped vao DUNG job do, nhung nhanh
+        #    `if cho_giay > 0` o tren khong chay (`cho_giay` cua luot nay la
+        #    0.0) nen do hoan 2 giay cua luot truoc **khong bao gio duoc keo
+        #    lai**. Ket qua: mot cong viec THAT (co giai doan cho nop) bi giu
+        #    cho het do tre cua mot luot khac da khong nop duoc gi — chuoi
+        #    dung im 2 giay moi tick thay vi 0,0 s, va trong test (khong co
+        #    thoi gian troi qua that) no dung IM HAN.
+        #
+        # ⇒ Doi xung voi nhanh tren: luot nao doc thay viec that (`cho_giay
+        #    <= 0`) thi PHAI duoc chay ngay, ke ca khi no deduped vao mot job
+        #    ma mot luot khac da hoan.
+        hien_tai = jobs._aware(job.next_run_at)
+        bay_gio = _now()
+        if hien_tai is not None and hien_tai > bay_gio:
+            job.next_run_at = bay_gio
     return job
 
 

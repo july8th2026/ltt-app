@@ -60,18 +60,41 @@ def test_LECH_CO_Y_6_ban_nen_giu_44k1_cua_htdemucs_chu_khong_48k():
     assert "aformat=" in inspect.getsource(am_master.bieu_thuc_lo)
 
 
-def test_LECH_CO_Y_1_khong_phoi_lai_tung_stem():
+def test_LECH_CO_Y_1_gain_theo_LOP_khong_theo_TUNG_STEM_rieng():
     """Ban di san cho moi stem mot `volume=<gain>` rieng (`audio.py:107`).
 
     ⛔ Ta KHONG lam vay, va do la mot khac biet **san pham**: ban di san dang
        lam mot ban phoi sang tao. MVP nay hua *giu lai nhac nen va tieng dong*,
        nen no phai giu nguyen tuong quan giua cac nhac cu ma tac gia da dung.
-       Mot he so `drums_gain=0.7` la ta tu quyet dinh ban nhac cua khach nen
-       nghe the nao.
+       Mot he so `drums_gain=0.7` rieng voi `bass_gain` la ta tu quyet dinh
+       ban nhac cua khach nen nghe the nao.
+
+    ⚠️ Dao nguoc 26/09, kem ly do — khong xoa. Ban goc doi CHINH XAC khong bao
+       gio co `volume=` trong `tron_nen`; B2 (25/09, chu du an chot "3 lop
+       dieu khien duoc") lam dieu do het dung: mot `nhac_gain=1,5` HOP LE gio
+       THAT SU sinh `volume=1.5` (`tach_tieng.bieu_thuc_nen`, tach khoi
+       `tron_nen` de KIEM duoc ma khong chay ffmpeg — `test_2171`).
+
+       Cai CON DUNG, va hep hon: gain la CUA LOP (`giong`/`nhac`/`vfx`),
+       khong CUA TUNG STEM — `LOP_STEM["nhac"]` gom hai stem (`drums`,`bass`)
+       va CA HAI luon nhan CUNG mot `nhac_gain`. Khong co khoa `drums_gain`
+       hay `bass_gain` rieng trong schema (`LOP_MAC_DINH`), nen khong co
+       duong nao de mot khach doi tuong quan GIUA drums va bass — dung tinh
+       than ma phep kiem nay tu dau da gac.
     """
-    ma = inspect.getsource(tach_tieng.tron_nen)
-    assert "volume=" not in ma, (
-        "dang phoi lai tung stem — doi tuong quan nhac cu cua tac gia")
+    from apps.auto_scan_video.tach_tieng import LOP_MAC_DINH, bieu_thuc_nen
+
+    # Schema chi co gain THEO LOP, khong co khoa rieng cho tung stem.
+    assert {k for k in LOP_MAC_DINH if k.endswith("_gain")} == {
+        "giong_gain", "nhac_gain", "vfx_gain"}
+
+    # Va hanh vi thuc: drums + bass (cung lop "nhac") luon nhan CUNG mot gain.
+    duong_stem = {"drums": "/d.wav", "bass": "/b.wav", "other": "/o.wav",
+                 "vocals": "/v.wav"}
+    _, loc = bieu_thuc_nen(duong_stem, {"nhac_gain": 0.42})
+    assert loc.count("volume=0.42") == 2, (
+        "drums va bass khong cung mot gain — dang phoi lai tung stem, doi "
+        "tuong quan nhac cu cua tac gia")
 
 
 def test_LECH_CO_Y_2_loudnorm_ngay_trong_cung_luot_ffmpeg():
@@ -79,10 +102,21 @@ def test_LECH_CO_Y_2_loudnorm_ngay_trong_cung_luot_ffmpeg():
 
     Ta gop `loudnorm` vao cung mot lan chay: it hon mot vong giai ma/ma hoa, va
     it hon mot tep tam co the thanh rac khi worker chet giua chung.
+
+    ⚠️ Dao nguoc 26/09, kem ly do — khong xoa. B2 (25/09) tach chuoi loc filter
+       (amix + loudnorm) ra ham rieng `bieu_thuc_nen`, DE KIEM DUOC MA KHONG
+       CHAY FFMPEG (`test_2171`) — nen chu "loudnorm" khong con nam trong VAN
+       BAN NGUON cua `tron_nen`. HANH VI khong doi: `tron_nen` goi
+       `bieu_thuc_nen` roi dua THANG ket qua vao CUNG mot `-filter_complex`
+       cua CUNG mot lan goi `_chay`. Bat bien that su la "MOT lan ffmpeg",
+       khong phai "chu `loudnorm` nam trong ham nao".
     """
-    ma = inspect.getsource(tach_tieng.tron_nen)
-    assert "loudnorm" in ma
-    assert ma.count("_chay(") == 1, "da tach thanh hai luot ffmpeg"
+    ma_loc = inspect.getsource(tach_tieng.bieu_thuc_nen)
+    assert "loudnorm" in ma_loc
+
+    ma_tron = inspect.getsource(tach_tieng.tron_nen)
+    assert "bieu_thuc_nen(" in ma_tron, "chuoi loc khong con di qua tron_nen"
+    assert ma_tron.count("_chay(") == 1, "da tach thanh hai luot ffmpeg"
 
 
 def test_stem_GIU_LAI_dung_ba_cai():

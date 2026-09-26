@@ -26,7 +26,7 @@ from pathlib import Path
 from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
 
-from . import assets, cai_dat, lat_cat, nhap_media, tach_tieng
+from . import assets, lat_cat, nhap_media, tach_tieng
 from .giai_doan_media import ThieuNguon, _duong_doc_duoc
 
 
@@ -53,7 +53,14 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     # Ho so BA LOP (B2 tach + B5 GUI) khach chon cho ban nen nay, hoac
     # `None` = mac dinh (giong TAT, nhac+vfx BAT o gain 1,0) — xem
     # `tach_tieng.LOP_STEM`/`chuan_hoa_lop`.
-    lop = cai_dat.doc(run).lop
+    #
+    # ⚠️ Import cuc bo, alias `cd` (khuon `giai_doan_chep_loi.chay`): `test_478`
+    #    quet AST tim `X.doc(run)` voi `X` la mot bien gan tu `cd.doc(...)` de
+    #    chot TAP HOP thiet lap giai doan nay doc — dung alias khac se lam phep
+    #    quet mu, tuc mot phep doc thiet lap moi co the lot qua ma khong ai bat
+    #    duoc no thieu mat trong khoa dung chung (`cache_chung.dau_vao_noi_dung`).
+    from . import cai_dat as cd
+    lop = cd.doc(run).lop
 
     with tempfile.TemporaryDirectory(prefix="asv-audio-") as tam:
         thu_muc = Path(tam)
