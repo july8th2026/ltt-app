@@ -84,8 +84,28 @@ GOC = Path(__file__).resolve().parent.parent
 
 
 def _git(*args: str) -> subprocess.CompletedProcess:
+    """Chay `git` va doc dau ra bang **UTF-8 tuong minh**.
+
+    🔴 `text=True` MOT MINH la mot cai bay tren Windows: Python giai ma theo
+       locale (`cp1252` tren may nay), con `.po` cua kho la UTF-8 co tieng Viet.
+
+    ⛔ Va no ⛔ KHONG no ra ngoai. `UnicodeDecodeError` xay ra trong luong doc
+      cua `subprocess`, bi nuot, va `run()` tra ve:
+
+          returncode = 0        <- "thanh cong"
+          stdout     = None     <- khong co gi
+
+      Nguoi goi thay `returncode == 0` nen di tiep, roi chet o
+      `r.stdout.encode(...)` cach do 50 dong voi `AttributeError: 'NoneType'`.
+      ⇒ Trinh gop `.po` **chet tren moi lan chay** o may nay, va thong bao loi
+        ⛔ khong he chi ve nguyen nhan.
+
+    Do 26/09/2026 sau khi mot luot giai xung dot `.po` bang tay lam mat ba dong
+    trong ngan cach giua cac muc (`59d7e296`) — viec le ra ⛔ khong ai phai lam
+    neu trinh gop nay chay duoc.
+    """
     return subprocess.run(["git", *args], capture_output=True, text=True,
-                          cwd=str(GOC))
+                          encoding="utf-8", cwd=str(GOC))
 
 
 def _bien_dich_po_bytes(po_text: str) -> bytes | None:
@@ -156,13 +176,21 @@ def driver(argv: list[str]) -> int:
                     f"{nhan} ({rev[:8]}), bo qua\n")
                 return 1
             dich = td / f"{nhan}.po"
+            if r.stdout is None:
+                # ⛔ `returncode == 0` mà `stdout is None` la mot trang thai
+                #    THAT — xem `_git()`. Dung lai o day thay vi de no thanh
+                #    `AttributeError` khong noi len dieu gi.
+                sys.stderr.write(
+                    f"i18n_merge_driver: doc {nhan} that bai (git tra 0 nhung "
+                    f"khong co dau ra — thuong la loi giai ma)\n")
+                return 1
             dich.write_bytes(r.stdout.encode("utf-8"))
             duong_tam[nhan] = dich
 
         gop = subprocess.run(
             ["git", "merge-file", "-p", str(duong_tam["ours"]),
              str(duong_tam["base"]), str(duong_tam["theirs"])],
-            capture_output=True, text=True)
+            capture_output=True, text=True, encoding="utf-8")
         if gop.returncode != 0:
             # `.po` THAT SU xung dot (hai phien sua cung mot cho). Khong
             # doan — de git bao xung dot nhi phan nhu cu tren CA HAI tep.
@@ -221,7 +249,8 @@ def cai_dat() -> int:
     try:
         r = subprocess.run(["git", "rev-parse", "--path-format=absolute",
                             "--git-common-dir"], cwd=str(GOC),
-                           capture_output=True, text=True, timeout=10)
+                           capture_output=True, text=True, encoding="utf-8",
+                           timeout=10)
         dich_hook = Path(r.stdout.strip()) / "hooks" / "post-merge"
         dich_hook.parent.mkdir(parents=True, exist_ok=True)
         dich_hook.write_bytes(goc_hook.read_bytes())
