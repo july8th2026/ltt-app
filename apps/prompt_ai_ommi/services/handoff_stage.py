@@ -25,10 +25,11 @@ Phan CHUNG cua hai duong — "mot binding anh -> mot ref hoac mot dong
 from __future__ import annotations
 
 import re
+from datetime import datetime, timedelta, timezone
 
 from apps.prompt_ai_ommi.services import bindings as bindings_svc
 from apps.prompt_ai_ommi.services.bat_bien import bat_bien_giao_bai
-from apps.prompt_ai_ommi.tables import OmmiResourceVariant
+from apps.prompt_ai_ommi.tables import OmmiHandoff, OmmiResourceVariant
 from apps.taovideo.refs import (MAX_INLINE_BYTES, image_role, image_to_inline,
                                 normalize_image)
 
@@ -36,6 +37,9 @@ from apps.taovideo.refs import (MAX_INLINE_BYTES, image_role, image_to_inline,
 #: phai loi — cat bot va noi ro la da cat.
 TRAN_ANH = 9
 TRAN_VIDEO = 3
+
+#: Vong doi ve giao bai (spec Sec 4.2 Pha 2).
+VE_HET_HAN_PHUT = 30
 
 #: Tien to the MOI (phia `taovideo`) va nhan ngoac vuong cua ban goc.
 _TIEN_TO_TAG = {"image": "IMG", "video": "VID"}
@@ -359,3 +363,63 @@ def _mo_ta_phong_cach(brief: dict) -> str:
     from apps.prompt_ai_ommi.services.composer import style_description
     return style_description(str(brief.get("style_id") or "cinematic"),
                              str(brief.get("style_custom") or ""))
+
+
+# ── Pha 2: ve giao bai dung MOT lan ─────────────────────────────────────────
+
+class HandoffError(RuntimeError):
+    """Loi vong doi ve giao bai."""
+
+
+class VeKhongHopLe(HandoffError):
+    """Ve khong ton tai hoac khong thuoc ve nguoi goi — route tra 404."""
+
+
+class VeDaDung(HandoffError):
+    """`used_at` khac NULL — route tra 409."""
+
+
+class VeHetHan(HandoffError):
+    """Qua `expires_at` — route tra 410."""
+
+
+def _co_mui_gio(dt: datetime) -> datetime:
+    """SQLite tra `datetime` KHONG mui gio du cot khai `timezone=True`.
+
+    So mot `datetime` naive voi mot aware nem `TypeError`, va do la mot 500
+    chi xuat hien tren SQLite — khong tren Postgres production. Chuan hoa o
+    day, mot cho.
+    """
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+
+
+def tao_ve(db, *, project_id: str, scene_id: str, payload: dict,
+           target_app_slug: str = "taovideo") -> OmmiHandoff:
+    now = datetime.now(timezone.utc)
+    row = OmmiHandoff(project_id=project_id, scene_id=scene_id,
+                      target_app_slug=target_app_slug, payload=payload,
+                      expires_at=now + timedelta(minutes=VE_HET_HAN_PHUT))
+    db.add(row)
+    db.flush()
+    return row
+
+
+def tim_ve(db, ticket_id: str) -> OmmiHandoff | None:
+    return db.get(OmmiHandoff, ticket_id)
+
+
+def doc_va_tieu_ve(db, row: OmmiHandoff) -> dict:
+    """Doc payload va TIEU ve trong cung mot luot.
+
+    Dat `used_at` TRUOC khi tra ve, khong sau: ben goi co the nem giua duong,
+    va mot ve doc duoc hai lan la mot ve khong dung mot lan.
+    """
+    if row is None:
+        raise VeKhongHopLe("Ve giao bai khong hop le.")
+    if row.used_at is not None:
+        raise VeDaDung("Ve giao bai da duoc dung.")
+    if _co_mui_gio(row.expires_at) <= datetime.now(timezone.utc):
+        raise VeHetHan("Ve giao bai da het han.")
+    row.used_at = datetime.now(timezone.utc)
+    db.flush()
+    return dict(row.payload or {})
