@@ -453,6 +453,40 @@ Hàm suy ra phải **tất định**, không dùng LLM, không dùng thứ tự 
 **Trần**: 9 ảnh + 3 video. Vượt trần: **không lỗi**, cắt bớt và đếm vào
 `skipped_over_limit` (giữ đúng hành vi bản gốc, §9 báo cáo đối chiếu).
 
+### 6.2c 🔴 `params` CHỈ được chứa khoá có trong `params_schema` — nếu không là 422
+
+Bổ sung 26/09 **sau khi làn B₁ thi hành và bắt được lỗi này trong chính plan pha 1**.
+
+`platform_core/agent/tools.py:114-116` từ chối **mọi** khoá lạ:
+
+```python
+unknown = sorted(set(params) - set(schema))
+if unknown:
+    raise ToolParamsError(f"tham số không được phép: {', '.join(unknown)}")
+```
+
+`routes/handoff.py` đổi `ToolParamsError` thành **HTTP 422**. Plan pha 1 bản đầu nhét
+`skipped_over_limit` vào `params` ⇒ **mọi** lượt giao bài video trả 422. Không ai thấy
+vì **test của chính plan gọi `_handoff_params` trực tiếp**, không đi qua
+`validate_tool_params` — đúng bài học `doc-thu-dai-dien-thay-vi-doc-thu-that`:
+phép đo trả lời chính xác một câu **khác**.
+
+⇒ **Luật, áp cho cả pha 2:**
+
+| Trường | Ở đâu |
+|---|---|
+| `prompt`, `model`, `resolution`, `duration`, `aspect_ratio`, `generate_audio`, `camera`, `motion`, `visual_style`, `seed`, `image_key(s)`, `video_key`, `audio_key`, `refs` | **`params`** — đúng và chỉ các khoá của `apps/taovideo/manifest.py::params_schema` |
+| `tag_map`, `skipped`, `skipped_over_limit` | **`payload`** ở cấp ngoài (`ommi_handoff.payload`), ⛔ **KHÔNG** trong `params` |
+
+Hình dạng ở §6.2 đã đúng — `skipped`/`skipped_over_limit` nằm **ngang** với `params`,
+không **trong** nó. Pha 1 không có chỗ mang chúng (hàm trả `(str, dict)`), nên pha 1
+dồn cả ca vượt trần vào `skipped` kèm lý do, và **không** trả ra cho khách; pha 2 mới
+có `payload` để mang.
+
+**Phép kiểm bắt buộc (pha 1 đã có, pha 2 phải có lại):** `set(params)` ⊆
+`set(params_schema)` — gọi **qua** `validate_tool_params`, ⛔ không gọi trực tiếp
+`_handoff_params` rồi tuyên bố xanh.
+
 ### 6.3 Luật đánh số thẻ (copy từ bản gốc, đã đo)
 
 1. Hai bộ đếm **độc lập**: `image` → `@IMG_1, @IMG_2…`; `video` → `@VID_1…`.

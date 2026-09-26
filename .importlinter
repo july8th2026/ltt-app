@@ -95,6 +95,18 @@ ignore_imports =
     #    (`BE_MAT_CONG_KHAI`). Ba cho, ba cong cu khac nhau -- bo cho nao
     #    cung mat mot lop bao ve. Xem dau tep vi sao giu ca hai cong cu.
     apps.prompt_ai_ommi.services.bindings -> apps.taovideo.refs
+    #
+    # `routes/handoff.py` va `services/bat_bien.py` dung lai bo gia tri role
+    # va nguong 8 MiB cua `refs.py` thay vi chep lai. Chep lai la hai cho
+    # khai cung mot dieu; lech nhau thi ben nhan tu choi anh ma khach khong
+    # hieu vi sao.
+    #
+    # LUU Y: mien tru o day khai theo MODULE. Them mot module cua
+    # prompt_ai_ommi goi sang refs la them mot dong o day -- va import-linter
+    # TU CHOI mien tru chua co import that (`No matches for ignored import`),
+    # nen khong khai truoc duoc.
+    apps.prompt_ai_ommi.routes.handoff -> apps.taovideo.refs
+    apps.prompt_ai_ommi.services.bat_bien -> apps.taovideo.refs
 
 
 [importlinter:contract:server-khong-phu-thuoc-app-cu-the]
