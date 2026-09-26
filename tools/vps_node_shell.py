@@ -1,25 +1,38 @@
-"""Chay lenh shell tren node Proxmox qua `termproxy` — khong can mat khau root.
+"""⛔ CONG CU NAY KHONG CHAY DUOC LENH. Giu lai lam bang chung, dung tin no.
 
-    python tools\\vps_node_shell.py "lvs vmdata"
-    python tools\\vps_node_shell.py --tep viec.sh
+## 🔴 Ban goc khai mot dieu SAI, va khai rat chac
 
-## Vi sao co tep nay
+Docstring cu viet: *"termproxy la mot shell **root** tren node. **Da thu that**"*.
+Do 26/09/2026 — doc dung 8 giay dau cua websocket, thu ma ban goc `ra.clear()` roi
+bo di ma khong ai xem:
 
-Mot so viec ha tang khong lam duoc qua REST API: cat mot LV, `mkfs`, sua
-`/etc/fstab`. Truoc day toi ghi trong ke hoach rang chung "can shell root tren
-node, chua co" — **do la mot ket luan sai va toi da khong kiem truoc khi viet**.
+    'OKpve login: '
 
-Token `vpsapp@pve!ltt` mo duoc `/nodes/<node>/termproxy`, va termproxy la mot
-shell **root** tren node. Da thu that: `POST /nodes/pve/termproxy` tra ve ve, va
-`POST /storage` (`Sys.Modify`) cung duoc chap nhan.
+⇒ Termproxy cua NODE cho mot man hinh **dang nhap**, khong phai mot shell. Moi dong
+  lenh gui vao bi go vao cho **ten dang nhap**, roi no cho mat khau — mat khau root
+  cua host thi ta khong co. Nen cong cu **chua bao gio chay duoc mot lenh nao**.
 
-## Canh bao
+Vi sao khong ai thay: ban goc thoat vong doc **ngay khi thay dau hieu ket thuc lan
+dau** — tuc ngay o dong terminal VONG LAI lenh minh vua gui — roi in phan truoc do.
+Ket qua la no in lai dung dong lenh, trong y nhu mot dau ra rong. Toi sua vong doc
+(doi dau hieu lan thu HAI) va van khong co gi: luc ay moi ra la khong co shell.
 
-Day la shell ROOT tren node dang chay 8 may that cua chu nha. Khong co buoc hoi
-lai, khong co hoan tac. Lenh go vao day chay ngay.
+⚠️ No con gay hai theo mot huong khac: ban ra soat 25/09 xep cong cu nay la mot
+   **rui ro an ninh** ("shell root tren node, khong hoi lai, khong hoan tac"). Rui
+   ro do **khong ton tai**. Mot loi khai sai trong tai lieu tao ra ca mot muc rui ro
+   gia — va no lam nguoi doc sau bot chu y cho nhung rui ro that.
 
-Nen: doc truoc khi ghi, dung `--kho` cho lenh chi doc, va dung no cho viec da
-nghi ky chu khong phai de do dam.
+## Muon co shell that thi lam gi
+
+- Hau het viec ha tang lam duoc qua REST API. Tai ISO chang han: `download-url` doi
+  `Sys.Modify` tren `/`, nhung `upload` chi doi `Datastore.AllocateTemplate` ⇒ tai
+  ve may minh roi `curl -F` len (da lam duoc 26/09; `urllib` bi ngat giua duong).
+- Viec that su can shell: can mat khau root cua host hoac mot khoa SSH them vao
+  node — ca hai la viec cua chu du an.
+
+⇒ Tep nay giu lai vi no ghi mot **ket luan sai da tung duoc tin**, va vi vong doc
+  websocket trong no dung duoc cho console cua **GUEST** (`qemu/<vmid>/termproxy` —
+  console that cua may khach, khong phai man hinh dang nhap cua host).
 """
 from __future__ import annotations
 
@@ -143,8 +156,14 @@ def main() -> int:
     # ⇒ Doan GIUA hai dau hieu moi la dau ra. Con mot dau hieu (shell khong vong
     #   lai) thi doan dau la dau ra.
     phan = ra.split(XONG)
-    dau_ra = phan[1] if len(phan) >= 3 else phan[0]
-    print(dau_ra.replace("\r\n", "\n").strip())
+    if len(phan) < 3:
+        # Chi MOT dau hieu = chi co dong VONG LAI; lenh chua he chay.
+        print("KHONG CHAY DUOC LENH. Termproxy cua node cho mot man hinh "
+              "dang nhap ('pve login:'), khong phai shell — xem docstring "
+              "dau tep.", file=sys.stderr)
+        print("  (nhan duoc: " + repr(ra[:120]) + ")", file=sys.stderr)
+        return 3
+    print(phan[1].replace(chr(13) + chr(10), chr(10)).strip())
     return 0
 
 

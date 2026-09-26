@@ -219,9 +219,23 @@ class GwnatGatewayClient(GatewayClient):
         # ⛔ Danh sach cho phep, khong phai mot chuoi tu do: helper la duong DUY
         #    NHAT ma ung dung cham vao gateway, va gateway ganh TOAN BO luu luong
         #    khach. Mo no thanh shell tu do la bo mat cai rao do.
-        if action not in {"health", "list", "ensure", "remove", "dem"}:
+        if action not in {"health", "list", "ensure", "remove", "dem",
+                          "ham", "bo_ham", "dang_ham"}:
             raise GatewayError("hanh dong gwnat khong hop le")
         return self._chay([self.helper, action, *args])
+
+    def dat_giam_toc_tho(self, ip_noi_bo: str, bat: bool) -> str:
+        """Them/bo mot dia chi khoi set `giam_toc`. Chay lai duoc.
+
+        ⛔ Helper tu choi dia chi KHONG co trong bang mapping (ma thoat 4): mot IP
+           la trong set do la mot cai phanh dat len luu luong khong ai kiem soat.
+        """
+        _kiem_dia_chi(ip_noi_bo)
+        return self._goi("ham" if bat else "bo_ham", ip_noi_bo)
+
+    def dang_giam_toc_tho(self) -> str:
+        """JSON tho cua set `giam_toc`."""
+        return self._goi("dang_ham")
 
     def dem_tho(self) -> str:
         """JSON tho cua chain dem (R26). Nguoi doc parse: `bang_thong_gwnat`.

@@ -25,12 +25,15 @@ NAT xảy ra ở gateway OVH (`51.79.166.36`).
 ⇒ Một table RIÊNG (`ip ltt_dem`), chain `filter hook forward` (thấy MỌI gói),
   `policy accept`, và **chỉ có luật counter** — nên nó ⛔ không thể làm rơi gói nào.
 
-## ⚠️ Lớp hãm tốc CHƯA có ở gateway này
+## Lớp hãm tốc: một `set` RỖNG là một cái phanh chưa đạp
 
-Hãm cần một verdict `drop`/`limit`, tức mất tính chất *"không thể làm rơi gói"* ở
-trên. Nên nó là một bước riêng, có nghiệm thu riêng. Tới lúc đó `dat_giam_toc`
-**nói to** chứ ⛔ không im lặng trả về — một lớp bảo vệ im lặng không làm gì là
-đúng cái khuôn đã gây ra R26.
+Hãm cần một verdict `drop`, tức bảng đếm mất tính chất *"không thể làm rơi gói"*.
+Nên nó đi sau, và nó an toàn được vì: hai luật `limit rate over ... drop` chỉ khớp
+các địa chỉ **trong set `giam_toc`**, và set đó **rỗng** khi triển khai ⇒ luật không
+khớp gì. Rủi ro chỉ xuất hiện đúng lúc một khách thật vượt hạn mức.
+
+⛔ Và helper từ chối mọi địa chỉ **không có trong bảng mapping** (mã thoát 4): một IP
+   lạ trong set đó là một cái phanh đặt lên lưu lượng không ai kiểm soát được.
 """
 from __future__ import annotations
 
@@ -122,22 +125,35 @@ class BangThongGwNat:
         return None
 
     def danh_sach_giam_toc(self) -> set[str]:
-        return set()
+        """Dia chi dang bi ham, doc tu set `giam_toc` o gateway.
+
+        ⛔ Doc lai phia BEN KIA thay vi tin cot trong CSDL: set nft song trong bo
+           nho, gateway nap lai ruleset la set rong — va luc do may dang bi ham
+           **het bi ham** trong khi CSDL van ghi la co. Cung nguyen tac voi
+           `danh_sach_duong`.
+        """
+        try:
+            doc = json.loads(self._gw.dang_giam_toc_tho() or "{}")
+        except json.JSONDecodeError as exc:
+            raise BangThongGwNatError(
+                f"gateway tra ve khong phai JSON cho set giam_toc ({exc})") from exc
+        ra: set[str] = set()
+        for muc in doc.get("nftables", []):
+            for e in (muc.get("set") or {}).get("elem") or []:
+                gia = e.get("elem", {}).get("val") if isinstance(e, dict) else e
+                if isinstance(gia, str) and gia:
+                    ra.add(gia)
+        return ra
 
     def dat_giam_toc(self, ip_noi_bo: str, bat: bool) -> None:
-        """⚠️ CHƯA có ở gateway này — và nó **nói to** chứ không im lặng trả về.
+        """Bat/tat ham toc cho mot may. Chay lai duoc.
 
-        Hãm cần một verdict `drop`/`limit` trong chain đếm, tức mất tính chất "không
-        thể làm rơi gói" mà bảng `ltt_dem` đang có. Nên nó là một bước riêng.
-
-        🔴 Một lớp bảo vệ im lặng không làm gì là **đúng cái khuôn đã gây ra R26**:
-           hai lớp hãm tốc cùng im, và không ai biết trong nhiều tuần.
+        Ham chu KHONG cat: trang ban hua *"vuot han muc thi bi giam toc, khong bi
+        tinh them tien"*. Luat o gateway la `limit rate over 1 mbytes/second drop`,
+        va TCP tu lui toc khi mat goi — nen no la mot cai phanh, khong phai mot buc
+        tuong. ⛔ Cat han bien mot loi hua thanh mot loi noi doi.
         """
-        if bat:
-            log.warning(
-                "VPS bang thong: may %s VUOT han muc nhung gateway OVH CHUA co "
-                "lop ham toc — can xu ly bang tay; xem bang_thong_gwnat.py",
-                ip_noi_bo)
+        self._gw.dat_giam_toc_tho(ip_noi_bo, bool(bat))
 
 
 def tu_profile(profile):

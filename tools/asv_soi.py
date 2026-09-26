@@ -85,6 +85,21 @@ def _dong_dau(dong: dict) -> str:
     if nhip:
         e = nhip[-1]
         ct = e.get("chi_tiet") or {}
+        # 🔴 **Do 26/09 tren lan chay that: dong nay tung noi "5,2 phut khong
+        #    nhich" ve mot luot DANG KHOE.** `voice_synthesis` phat
+        #    `progress_counter` DUNG MOT LAN (doan 1/63) roi chi phat `progress`
+        #    (6% -> 7% -> 9% -> 10%), nen "cach day" tinh theo bo dem bi gia
+        #    hang phut trong khi giai doan van chay.
+        #
+        # ⛔ Day la kieu sai TE NHAT cua mot lop quan sat: no khong bo sot loi,
+        #    no **bao dong gia** — va bao dong gia la thu lam nguoi ta thoi tin
+        #    ca cai bang. Nen "cach day" phai lay SU KIEN MOI NHAT bat ke loai,
+        #    con bo dem chi de tra lop **so luong**.
+        e_moi = su_kien[-1]
+        tre = ""
+        if e_moi is not e and e_moi.get("luc"):
+            tre = (f" (bo dem khong phat lai tu do; hoat dong moi nhat:"
+                   f" '{e_moi.get('ma')}' cach day {_ago(e_moi.get('luc'))})")
         # ⭐ SO hai mau so, dung chi in mot cai. Mot cau dan do ("nho rang
         #    hai so nay khac nhau") la thu nguoi ta doc mot lan roi quen; mot
         #    phep so chay moi lan goi thi khong quen duoc.
@@ -101,7 +116,8 @@ def _dong_dau(dong: dict) -> str:
         return (
             f"DANG CHAY {ten_dang_chay} — TIEN BO LAN CUOI CACH DAY "
             f"{_ago(e.get('luc'))} ({ct.get('da_xong', '?')}/"
-            f"{ct.get('tong', '?')} {ct.get('don_vi') or 'don vi'})." + canh)
+            f"{ct.get('tong', '?')} {ct.get('don_vi') or 'don vi'})."
+            + tre + canh)
     if su_kien:
         e = su_kien[-1]
         return (

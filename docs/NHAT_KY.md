@@ -12,6 +12,129 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-26 — VPS: khoá OVH hết hạn phơi BỐN lỗ tiền, và chúng cùng MỘT khuôn
+
+Phiên VPS. Gốc của cả ngày là một dòng trong tài liệu của chủ dự án:
+`H:\PROXMOX\01-TAI-LIEU\11-API-OVH.md` ghi **"Hết hạn: 25/09/2026"** cho consumer
+key OVH, và ⛔ **không hệ thống nào đọc ngày đó**. Khoá chết đúng ngày ⇒ cửa hàng
+hiện *"Hệ thống đang bảo trì, tạm chưa nhận máy mới"*.
+
+Khoá đã cấp lại qua `/auth/credential` (giữ nguyên application key/secret) và lần
+này **không có hạn** — `expiration: null`. Công cụ: `tools\vps_ovh_khoa_moi.py`;
+khoá do OVH sinh, ghi thẳng vào `app.env`, ⛔ không đi qua hội thoại.
+
+### Khoá chết là một mũi tiêm lỗi rất tốt
+
+Nó phơi ra **bốn lỗ tiền và ba vòng quét chết**, tất cả cùng một khuôn:
+**một cửa đòi bằng chứng mà hệ đã thôi (hoặc chưa từng) sản xuất.**
+
+| Lỗ | Hậu quả | Commit |
+|---|---|---|
+| Nút **"Cài lại"** mở chu kỳ mà route ⛔ không giữ chỗ credit | +30 ngày **miễn phí**, lặp vô hạn, kèm `thu_phi` nói dối | `684c8315` |
+| `credit.tru` trả `False` mà giá trị bị **vứt** | chu kỳ mở không có bút toán | `684c8315` |
+| `_xoa_may` ⛔ không có `except`, chốt `DA_XOA` ở **cuối** | thu 1.490 credit cho VM **đã bị phá** | `3aadf5d2` |
+| Băng thông đọc ở router VM199 — lưu lượng OVH ⛔ không qua đó | hạn mức 100/150/250 GB **không thể thực thi** | `73d50ed2` |
+
+Thuốc ⛔ không phải vá từng người gọi: `billing.mo_chu_ky` nay **tự tra sổ credit**
+và từ chối mở chu kỳ có phí khi không tra ra bút toán. Bằng chứng có đúng hai dạng
+(`job:<id>` / `but_toan:<id>`), cả hai bị **tra lại**. Người gọi ⛔ không nói dối
+được, vì nó không còn được hỏi.
+
+⭐ Và **cả bốn lỗ đều có một phép kiểm XANH nằm cạnh**. Tệ nhất: `test_289` chốt
+đúng cái cửa chết lại, bằng chính hình dạng mà đường chạy thật luôn đi qua — nó xanh
+mãi vì nó **chứng minh đúng cái nó gây ra**. Cùng khuôn ở `test_1014`/`test_1024`
+(tự đặt `generated_at=now()`, hình dạng production ⛔ không bao giờ có).
+
+### Ba vòng quét chưa bao giờ chạy
+
+- **Chụp ảnh hằng tuần**: `mot_luot` truyền `client=None` **cố ý** (mỗi máy ghim hồ
+  sơ riêng), còn `_chup_anh_den_han` mở đầu bằng `if client is None: return 0`.
+  Trang bán khoe *"Ảnh chụp hằng tuần"* và ⛔ chưa ảnh nào từng được chụp. Sau khi
+  sửa, production tự tạo ngay: `ltt20260926_0509` trên cả VM 204 và 208.
+- **Đường bật lại hồ sơ bị hạ**: đòi bản sinh máy B tươi **< 300 s** trong khi máy B
+  sinh mỗi **1800 s** ⇒ điều kiện **không thể thoả**, và một khoá hết hạn **đóng cửa
+  hàng vĩnh viễn**. Sửa: `2400 s = 1800 + 600` (tha **không** chu kỳ nào). ⚠️ Lần
+  đầu tôi sửa **quá tay** (4200 s — ngưỡng bình thường, tha **hai** chu kỳ) và làm
+  đổ một bất biến cố ý; `aafb2b2c` khép.
+- **Đối chiếu hồ sơ Vultr 0 máy 0 IP**: 2 dòng WARNING mỗi 10 phút, nhiều ngày — một
+  **báo động giả vĩnh viễn**, và cái giá là *người đọc thôi đọc WARNING*.
+
+### Ba lần suýt kết luận sai, và cả ba do đọc thứ đại diện
+
+1. `vps_chuan_hoa.py` in `firewall dat` vì nó đọc **cờ ở tầng VM**. Proxmox đòi
+   **AND ba tầng** (cụm · cờ trên NIC · tuỳ chọn VM), và hai tầng đang tắt ⇒ mọi
+   `ipfilter`/`macfilter` là **no-op**. Tôi đã **báo với chủ dự án là "đã áp"**.
+2. Bảng sức khoẻ ghi giờ **UTC**, log ghi giờ **địa phương**. Hàng `05:09` trông như
+   7 tiếng trước, hoá ra là `12:09` — lượt vừa chạy.
+3. `--exclude` của ruff **ghi đè** `ruff.toml` thay vì cộng thêm ⇒ xoá sạch `core/`
+   (15.668 dòng đóng băng) và `cutclipshort`; bánh cóc đỏ với `F401 408→498`,
+   `F821 0→5`. Tôi kịp đi quy kết cho một merge **trước khi** đo lại. `--extend-exclude`.
+
+⭐ Khuôn chung: **chỗ nào mình sắp nói "cái này hỏng" thì đọc chú thích tại chỗ
+trước** — trong kho này mọi cửa fail-open và mọi vùng miễn trừ đều **tự khai bằng
+chữ** (`ruff.toml:46-53`, `DUNG_CHUNG`, `"fail-open co chu y"`).
+
+### `vps_node_shell.py` khai sai về chính nó
+
+Docstring viết *"termproxy là một shell **root** trên node. **Đã thử thật**"*. Đo:
+termproxy của node trả `'OKpve login: '` — một **màn hình đăng nhập**. Công cụ **chưa
+bao giờ chạy được một lệnh nào**; mọi dòng lệnh bị gõ vào chỗ tên đăng nhập và host
+trả `Password:`. ⚠️ Bản rà soát 25/09 xếp nó là một **rủi ro an ninh**; rủi ro đó
+⛔ không tồn tại. Một lời khai sai trong tài liệu tạo ra cả một mục rủi ro giả.
+
+### R26 — băng thông: điểm đo mới ở gateway OVH
+
+Table **riêng** `ip ltt_dem`, chain `filter hook forward`, `policy accept`, chỉ có
+luật counter ⇒ ⛔ không thể làm rơi gói nào. ⛔ **KHÔNG** đặt trong `gwnat` vì hai lý
+do độc lập: helper **xoá rồi dựng lại** cả table đó mỗi lần mapping đổi; và chain
+`nat` chỉ thấy **gói đầu tiên** của mỗi kết nối ⇒ counter ở đó đếm **số kết nối**,
+⛔ không phải byte — nó sẽ cho một con số gần 0 *trong khi trông như đã sửa xong*.
+
+Đo production: `10.50.0.50` → **239.754 byte**, `10.50.0.52` → **78.545 byte** (trước
+đó `0` vĩnh viễn). Và bộ đếm **nhích** với lưu lượng thật: đọc hai lần, giữa hai lần
+tạo lưu lượng → `+2.115` / `+1.387` byte.
+
+Helper `ltt-gwnat` (172 dòng, gánh **toàn bộ** lưu lượng khách) trước đó ⛔ không có
+nguồn trong quản lý phiên bản. Nay ở `setup/cong_vao_ovh/ltt-gwnat`.
+
+### Cách ly khách↔khách: 2/10, và cửa chặn bán đã dựng
+
+Node hiện **2 máy, cùng một chủ** ⇒ mọi rủi ro cross-tenant **chưa tồn tại**. Nên mốc
+đúng ⛔ không phải *"bật tường lửa ngay"* (ngắt máy chủ dự án đang làm việc cho một
+rủi ro chưa có; và `ipfilter` với ipset **rỗng** **cắt mạng máy khách** — tài liệu
+Proxmox: IP chỉ được tự thêm cho **container**). Mốc đúng: ⛔ **không được có khách
+thứ hai trong lúc còn hở** — và nó phải **cơ học** (`587703e2`), vì một việc "cần làm
+trước khi có khách thật" mà chỉ nằm trong đầu người thì **sẽ** bị quên.
+
+⚠️ Tra cộng đồng (diễn đàn Proxmox, luồng 155335): với `policy_in: ACCEPT` thì
+`ipfilter` **không filter**; và một nhân viên Proxmox xác nhận lỗi *"packets sometimes
+passing"*, vá ở kernel netfilter **11/09/2025**, đang backport. ⇒ ⛔ Không được tuyên
+bố cách ly từ **cấu hình**; phải có phép thử giữa hai máy thật.
+
+🔴 **Và việc PTR hôm 25/09 có thể đã làm dấu hiệu gom nhóm TỆ HƠN**: hậu tố dùng
+chung `*.vps.lttstudios.com` là một **khoá gom nhóm hoàn hảo** (một luật `endswith`
+gom trọn khách hàng), và zone A record công khai thì **liệt kê được** toàn bộ IP
+khách. Trước đó không có PTR — một điểm trừ nhẹ. Ba đường xử ở
+`docs/VPS/RA_SOAT_2026-09-26.md`; **chủ dự án chọn**.
+
+### Bảng điểm đầy đủ và việc còn mở
+
+`docs/VPS/RA_SOAT_2026-09-26.md` — mỗi hạng mục còn mở trỏ tới **một lệnh chạy
+được**, ⛔ không phải một ô tích (ba hàng trong bảng H của `DOI_SOAT_DAY_CHUYEN.md`
+đã trôi trong hai ngày).
+
+### Đo được: `main` có bao nhiêu bài đỏ
+
+Chạy cả bộ trên cây chính (26 phút 45): **15 đỏ / 18.102 xanh**. Chạy lại **từng bài
+một**: còn **12 đỏ thật** — 3 bài kia chỉ xanh khi chạy một mình. Trong 12 bài, **2 là
+của tôi** (một bài do `dns_cloudflare.py` thiếu trong `MIEN_TRU_HTTP` — đỏ suốt một
+ngày và ⛔ không ai thấy, vì bánh cóc ⛔ không chạy pytest và gate nay hiếm).
+
+Một giờ sau, đo lại 10 bài không phải của tôi: **5 đã tự xanh** (các làn dọn mốc).
+⇒ **Một lượt đo là một ảnh chụp, ⛔ không phải một trạng thái.**
+
+---
+
 ## 2026-09-26 (khuya) — ĐÓNG PLAN ASV: 75 commit, và **bảy lỗi thật** do gate trả về
 
 Phiên điều phối, 13 làn. `main` đi **75 commit** so với bản đang chạy production

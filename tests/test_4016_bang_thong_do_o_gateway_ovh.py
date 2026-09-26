@@ -112,23 +112,91 @@ def test_doc_bang_thong_qua_client():
     assert ra["10.50.0.50"] == (114510, 124592)
 
 
-def test_ham_toc_CHUA_co_thi_phai_NOI_TO(caplog):
-    """⛔ Một lớp bảo vệ im lặng không làm gì là đúng khuôn đã gây ra R26 —
-    hai lớp hãm tốc cùng im, và không ai biết trong nhiều tuần."""
-    import logging
+SET_JSON = """
+{"nftables": [
+  {"metainfo": {"version": "1.0.6"}},
+  {"set": {"family": "ip", "name": "giam_toc", "table": "ltt_dem",
+           "type": "ipv4_addr", "handle": 22,
+           "elem": ["10.50.0.52", {"elem": {"val": "10.50.0.50"}}]}}
+]}
+"""
 
-    with caplog.at_level(logging.WARNING):
-        bt.BangThongGwNat(_GwGia()).dat_giam_toc("10.50.0.52", True)
-    assert any("VUOT han muc" in r.message or "VUOT han muc" in r.getMessage()
-               for r in caplog.records), "phai canh bao khi khong ham duoc"
+SET_RONG = ('{"nftables": [{"set": {"family": "ip", "name": "giam_toc", '
+            '"table": "ltt_dem", "type": "ipv4_addr", "handle": 22}}]}')
 
 
-def test_bo_ham_thi_KHONG_on_ao(caplog):
-    import logging
+class _GwHam(_GwGia):
+    """Ghi lai loi goi de chot ta gui dung gi cho helper."""
 
-    with caplog.at_level(logging.WARNING):
-        bt.BangThongGwNat(_GwGia()).dat_giam_toc("10.50.0.52", False)
-    assert not caplog.records, "bo ham la chuyen binh thuong, dung canh bao"
+    def __init__(self, set_json=SET_JSON):
+        super().__init__()
+        self.da_goi: list[tuple[str, bool]] = []
+        self._set = set_json
+
+    def dat_giam_toc_tho(self, ip, bat):
+        self.da_goi.append((ip, bat))
+        return "ok"
+
+    def dang_giam_toc_tho(self):
+        return self._set
+
+
+def test_bat_ham_goi_dung_helper():
+    gw = _GwHam()
+    bt.BangThongGwNat(gw).dat_giam_toc("10.50.0.52", True)
+    assert gw.da_goi == [("10.50.0.52", True)]
+
+
+def test_bo_ham_goi_dung_helper():
+    gw = _GwHam()
+    bt.BangThongGwNat(gw).dat_giam_toc("10.50.0.52", False)
+    assert gw.da_goi == [("10.50.0.52", False)]
+
+
+def test_doc_danh_sach_dang_ham_ca_hai_dang_phan_tu():
+    """nft in phan tu set theo HAI dang (chuoi tran, hoac `{"elem": {"val": ...}}`)
+    tuy phien ban va tuy co counter. ⛔ Doc mot dang la bo sot im lang."""
+    ra = bt.BangThongGwNat(_GwHam()).danh_sach_giam_toc()
+    assert ra == {"10.50.0.52", "10.50.0.50"}
+
+
+def test_set_RONG_thi_tra_tap_rong_chu_khong_nem():
+    """Set rong la trang thai BINH THUONG (khong ai bi ham) — ⛔ khong phai loi."""
+    assert bt.BangThongGwNat(_GwHam(SET_RONG)).danh_sach_giam_toc() == set()
+
+
+def test_set_khong_phai_JSON_thi_NEM():
+    """⛔ Tra tap rong o day = "khong ai bi ham", va lop bao ve bien mat im lang."""
+    import pytest as _p
+
+    with _p.raises(bt.BangThongGwNatError):
+        bt.BangThongGwNat(_GwHam("nft: command not found")).danh_sach_giam_toc()
+
+
+def test_ham_la_PHANH_chu_khong_phai_TUONG():
+    """Luat o gateway phai la `limit rate over ... drop`, ⛔ khong phai `drop` tran.
+
+    Trang ban hua *"vuot han muc thi bi giam toc, khong bi tinh them tien"*. Cat han
+    bien mot loi hua thanh mot loi noi doi — nen chot no o ngay nguon helper.
+    """
+    from pathlib import Path as _P
+
+    helper = _P("setup/cong_vao_ovh/ltt-gwnat").read_text(encoding="utf-8")
+    assert "limit rate over" in helper
+    for dong in helper.splitlines():
+        if "@giam_toc" in dong and "nft add rule" in dong:
+            assert "limit rate over" in dong, f"luat cat han: {dong.strip()}"
+
+
+def test_helper_TU_CHOI_dia_chi_ngoai_mapping():
+    """⛔ Mot IP la trong set `giam_toc` la mot cai phanh dat len luu luong khong ai
+    kiem soat duoc. Da do that tren gateway: ma thoat 4."""
+    from pathlib import Path as _P
+
+    helper = _P("setup/cong_vao_ovh/ltt-gwnat").read_text(encoding="utf-8")
+    khoi = helper[helper.index("ham|bo_ham)"):]
+    khoi = khoi[:khoi.index("dang_ham)")]
+    assert "mapping_for_private" in khoi and "khong co trong mapping" in khoi
 
 
 # ── `tu_profile` chỉ nhận đúng hồ sơ dùng gateway gwnat ─────────────────────
