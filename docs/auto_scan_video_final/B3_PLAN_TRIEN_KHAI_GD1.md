@@ -1417,8 +1417,28 @@ moc_sau(i)              =  bat(i+1)                    [bien co that ke tiep]
 3. Chạy **một** phim thật qua web, rồi
    `python tools\asv_doi_soat.py <run_id>` và ghi tám con số vào `docs/NHAT_KY.md`.
 
-**Cổng quyết định:** `so_doan_nan_oan` **> 0** ở lần đo sau Task 1, và **= 0** ở lần
-đo sau Task 3. ⛔ Một phép đo không đỏ được trước khi sửa thì ⛔ không chứng minh gì.
+**Cổng quyết định — ⚠️ ĐÃ SỬA 26/09, bản đầu đặt SAI CHIỀU:**
+
+🔴 Bản đầu viết *"`so_doan_nan_oan` > 0 trước Task 3 và **= 0** sau"*. **Sai.** Task 3
+**vừa** thêm bộ đếm **vừa** bịt lỗ, nên bộ đếm ⛔ không bao giờ quan sát được lỗ lúc nó
+còn hở. Và tệ hơn: `so_doan_nan_oan` đếm các đoạn nằm trong dải `(khe, ngân sách]` —
+những đoạn đó **vẫn tồn tại** sau bản sửa, chỉ là chúng ⛔ không còn gọi LLM. ⇒ Đòi nó
+về `0` là đòi một điều **sai**, và một agent trung thực sẽ hoặc bó tay hoặc bóp con số.
+
+⭐ **Chiều đúng:** `so_doan_nan_oan` là **số đoạn được CỨU**, ⛔ không phải số đoạn hỏng.
+
+| đo cái gì | TRƯỚC Task 3 | SAU Task 3 |
+|---|---|---|
+| `so_doan_nan_oan` | ⛔ chưa có bộ đếm | **> 0** ⇒ dải không rỗng ⇒ bản sửa **có giá trị**, và con số **lượng hoá** nó |
+| `giay_llm_nan` (đã có sẵn) | đo trên hai lượt chạy **hiện tại** | phải **GIẢM** |
+| `so_doan_nan_oan == 0` | — | ⇒ dải rỗng ⇒ bản sửa ⛔ **không cứu được gì**, phải xem lại giả thuyết |
+
+⇒ Phép đo "trước" là **`giay_llm_nan` của hai lượt chạy `asvr_ba490300` và
+`asvr_94b94b29`** (nộp 26/09, TRƯỚC khi Task 3 được deploy). Đó là lý do hai lượt ấy
+phải chạy xong **trước** khi gộp Task 3.
+
+⛔ Một phép đo không đỏ được trước khi sửa thì ⛔ không chứng minh gì — nhưng một phép
+đo **đặt sai chiều** thì còn tệ hơn: nó làm người ta sửa đúng mà tưởng mình sai.
 
 ---
 
