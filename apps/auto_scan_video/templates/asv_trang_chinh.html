@@ -250,8 +250,11 @@
                       data-nguon="{{ 'mau' if g.la_mau else 'rieng' }}"
                       data-gioi="{{ g.gioi }}" data-vung="{{ g.vung }}"
                       data-phong-cach="{{ g.phong_cach }}"
-                      {# ⭐ Rỗng = giọng nhân bản của khách; `giong.js` KHÔNG ẩn
-                         chúng theo làn. Xem `gia.giong_cho_giao_dien`. #}
+                      {# ⭐ Rỗng = **thật sự chưa rõ làn**, và chỉ khi đó
+                         `giong.js` mới không ẩn theo làn. ⛔ Trước 26/09 câu
+                         này nói "rỗng = giọng nhân bản của khách" — sai, và nó
+                         làm cả kho giọng dùng chung lọt qua bộ lọc rồi ăn 400
+                         ở cửa nộp. Xem `gia.giong_cho_giao_dien`. #}
                       data-lan="{{ g.ngon_ngu }}"
                       {% if g.duong_nghe %}data-nghe="{{ g.duong_nghe }}"{% endif %}
                       >{{ g.ten }}{% if not g.duong_nghe %} · {{ _("chưa có mẫu nghe") }}{% endif %}</option>
