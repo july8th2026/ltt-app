@@ -254,3 +254,35 @@ def test_he_so_toc_KHONG_bi_kep_ve_tran():
                if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
     assert "min" not in ten_goi or "max" not in ten_goi, (
         "van con phep kep he_so_co_gian ve [1/tran, tran]")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §7  Task 12 — dao thu tu: uoc luong TRUOC, nan theo LO, TTS MOT luot
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_loi_nhac_nan_LO_mang_ngu_canh_truoc_sau():
+    """Rút một câu mà ⛔ không biết câu kế nói gì thì dễ rút mất chủ ngữ mà câu
+    sau đang trỏ tới."""
+    from apps.auto_scan_video.nan_cho_vua import loi_nhac_nan_lo
+
+    cac = [{"ma": "seg_0002", "chu": "Cau hai rat dai",
+            "giay_doc": 4.8, "khe": 3.2,
+            "truoc": "Cau mot", "sau": "Cau ba"}]
+    tin = loi_nhac_nan_lo(cac)
+    ca = " ".join(m["content"] for m in tin)
+    assert "seg_0002" in ca and "3.2" in ca and "4.8" in ca
+    assert "Cau mot" in ca and "Cau ba" in ca
+
+
+def test_giai_doan_giong_KHONG_con_vong_while_quanh_TTS():
+    """[F] chạy MỘT lượt: text đã chốt ở [E]."""
+    import ast
+
+    from apps.auto_scan_video import giai_doan_giong
+
+    cay = ast.parse(inspect.getsource(giai_doan_giong))
+    for v in [n for n in ast.walk(cay) if isinstance(n, ast.While)]:
+        trong = {c.func.attr for c in ast.walk(v)
+                 if isinstance(c, ast.Call) and isinstance(c.func, ast.Attribute)}
+        assert "doc_mot_doan" not in trong, (
+            "TTS van nam trong mot vong `while` — bac thang chua duoc dao")

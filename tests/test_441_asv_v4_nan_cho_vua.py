@@ -17,6 +17,12 @@ from apps.auto_scan_video import nan_cho_vua as nan
 # 🔴 Cac phep kiem chay het chuoi cham toi `audio_prepare`.
 from tests.rao_chan_nang import demucs_gia_lap  # noqa: F401
 
+#: MOT muc dau vao cua `giai_doan_giong._nan_lo` — hinh dang ma
+#: `nan_cho_vua.loi_nhac_nan_lo` doi: `ma`, `chu`, `giay_doc`, `khe`, `truoc`,
+#: `sau`. Dung cho nhom B (tran + ranh gioi loi), noi ta chi can MOT doan tran.
+_MUC_TRAN = {"ma": "seg_0001", "chu": "mot cau dai", "giay_doc": 4.0,
+             "khe": 2.0, "truoc": "", "sau": ""}
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  A. Chinh sach
@@ -227,8 +233,22 @@ def test_vong_nan_co_TRAN_CUNG(tmp_path, monkeypatch, db, kho_tam, asr_gia,
 
     May sinh tieng o day luon tra ve 9 giay — khong lan viet lai nao cuu duoc.
     Neu vong khong co tran, phep kiem nay khong bao gio ket thuc.
+
+    ⚠️ **Tran DOI HINH tu 26/09 (Task 12), y dinh thi khong doi.** Truoc do bac
+       thang nan nam TRONG vong TTS va tran la `VONG_TOI_DA` **moi doan**; nay
+       `giai_doan_giong._nan_lo` xin theo LO, nen tran la
+       `LAN_XIN_NAN_LO` luot xin **moi lo**, va so lo la
+       `ceil(so doan tran / dich_thuat.DOAN_MOI_LO)`. ⛔ Con so o duoi DOC tu
+       chinh cac hang so ay, ⛔ khong go tay.
+
+    ⭐ Va bai nay chot them mot menh de MANH HON ma ban cu ⛔ khong the chot:
+       **so luot goi may sinh tieng = so khe doc**, tuc mot doan khong vua
+       ⛔ khong con lam sinh ra luot TTS thu hai.
     """
-    from apps.auto_scan_video import ai, features, giai_doan_giong, pipeline
+    import math
+
+    from apps.auto_scan_video import (ai, dich_thuat, features,
+                                      giai_doan_giong, pipeline)
     from apps.auto_scan_video.tables import AsvRun
     from tests.test_402_asv_mach_doc_gia import _chay_het_hang_doi, _tao_run
 
@@ -240,12 +260,14 @@ def test_vong_nan_co_TRAN_CUNG(tmp_path, monkeypatch, db, kho_tam, asr_gia,
         # ⚠️ `noi_dung` la CHUOI (pha 22): cua that tra ve nguyen van phan
         #    hoi cua model, va `ai.doc_json` moi la bo doc.
         import json
+        goi = json.loads(messages[-1]["content"])
         if thao_tac is ai.RUT_NGAN_CHO_VUA:
             dem["n"] += 1
-            than = {"doan": {"chu": "cau ngan hon lan %d" % dem["n"]}}
+            # ⭐ Hinh dang LO: mot doi tuong PHANG, khoa la ma doan — dung thu
+            #    `nan_cho_vua.loi_nhac_nan_lo` dan model tra ve.
+            than = {ma: "cau ngan hon lan %d" % dem["n"] for ma in goi}
             return {"noi_dung": json.dumps(than, ensure_ascii=False),
                     "su_dung": None}
-        goi = json.loads(messages[-1]["content"])
         from apps.auto_scan_video import long_tieng
         than = {"doan": {
             str(d["ma"]): {"chu": "loi thoai cua %s" % d["ma"],
@@ -264,12 +286,19 @@ def test_vong_nan_co_TRAN_CUNG(tmp_path, monkeypatch, db, kho_tam, asr_gia,
     gd = features.giai_doan_theo_ten(db, run.id, pipeline.VOICE_SYNTHESIS)
     assert gd is not None
     tt = (gd.outputs or {})
+    so_khe_doc = max(1, int(tt.get("so_doan") or 1))
+    tran = (giai_doan_giong.LAN_XIN_NAN_LO
+            * math.ceil(so_khe_doc / dich_thuat.DOAN_MOI_LO))
     assert dem["n"] > 0, "chua vong nan nao chay — phep kiem khong do duoc gi"
-    assert dem["n"] <= nan.VONG_TOI_DA * max(1, tt.get("so_doan", 1)), (
-        "goi viet lai %d lan, vuot tran %d vong moi doan"
-        % (dem["n"], nan.VONG_TOI_DA))
+    assert dem["n"] <= tran, (
+        "goi viet lai %d lan, vuot tran %d (%d luot xin moi lo)"
+        % (dem["n"], tran, giai_doan_giong.LAN_XIN_NAN_LO))
     assert tt.get("so_can_sua", 0) > 0, (
         "tieng luon 9 giay ma khong doan nao bi danh la CAN_SUA")
+    # ⭐ Day la cai tran THAT su dat tien: may sinh tieng. Mot khe doc = mot luot.
+    assert int(tt.get("so_luot_doc") or 0) == so_khe_doc, (
+        "so luot TTS (%s) khac so khe doc (%s) — bac thang lai nhan luot doc len"
+        % (tt.get("so_luot_doc"), so_khe_doc))
 
 
 def test_chay_lai_KHONG_doc_lai_va_KHONG_ghi_so_lan_hai(
@@ -407,9 +436,15 @@ def test_may_BAN_khong_giet_giai_doan_giong(monkeypatch):
     ⛔ Dung dieu docstring cua `_viet_lai` cam: *"mot lan xin viet lai hong
        khong duoc lam hong ca giai doan"*. Bac thang nan con mot nac nua.
 
-    ⭐ Bai nay chot HANH VI o ranh gioi: mot lan goi model bao BAN phai bien
-       thanh `_KhongNanDuoc` — tin hieu ma vong lap doc duoc — chu khong bay ra
-       ngoai duoi bat ky lop nao.
+    ⭐ Bai nay chot HANH VI o ranh gioi: mot lan goi model bao BAN ⛔ khong duoc
+       bay ra ngoai duoi bat ky lop nao.
+
+    ⚠️ **Duong goi doi 26/09 (Task 12), y dinh thi khong doi.** `_viet_lai` (nem
+       `_KhongNanDuoc` cho vong lap doc) da bo; nguoi ke nhiem la
+       `giai_doan_giong._nan_lo`, va no bao "khong nan duoc" bang cach **KHONG
+       tra ve ma do** — nguoi goi giu cau goc va `ket_luan` xep doan vao
+       `CO_GIAN`/`CAN_SUA`. Nen menh de kiem duoc o day la: **tra ve rong, va
+       ⛔ khong nem**.
     """
     from apps.auto_scan_video import ai, giai_doan_giong as gd
     from apps.auto_scan_video.giong_noi import MayBan
@@ -419,14 +454,18 @@ def test_may_BAN_khong_giet_giai_doan_giong(monkeypatch):
 
     monkeypatch.setattr(ai, "goi_tinh_tien", ban)
 
-    with pytest.raises(gd._KhongNanDuoc):
-        gd._viet_lai(None, None, {"ma": "seg_0001"}, chu="mot cau dai",
-                     giay=4.0, khe=2.0, so_vong=0, ctx=None)
+    ra = gd._nan_lo(None, None, [_MUC_TRAN], ctx=None)
+    assert ra == {}, "may BAN ma van tra ve mot cau viet lai: %r" % (ra,)
 
 
-def test_loi_THAT_van_thanh_KhongNanDuoc_nhu_cu(monkeypatch):
+def test_loi_THAT_van_la_SUY_GIAM_CO_GHI_SO_nhu_cu(monkeypatch):
     """⚠️ Nua khong the thieu: ban va tren khong duoc bien tay bat thanh
     `except Exception`. Mot loi THAT cua model van phai di dung duong cu.
+
+    ⚠️ Ten cu la `test_loi_THAT_van_thanh_KhongNanDuoc_nhu_cu` — doi 26/09 vi
+       `_KhongNanDuoc` khong con ton tai, va mot ten khang dinh mot lop ngoai le
+       da bi xoa la mot ten noi doi. Co che moi: `_nan_lo` bo qua ma do, nguoi
+       goi giu cau goc; suy giam van CO GHI SO qua `tom_tat`.
     """
     from apps.auto_scan_video import ai, giai_doan_giong as gd
 
@@ -435,9 +474,8 @@ def test_loi_THAT_van_thanh_KhongNanDuoc_nhu_cu(monkeypatch):
 
     monkeypatch.setattr(ai, "goi_tinh_tien", hong)
 
-    with pytest.raises(gd._KhongNanDuoc):
-        gd._viet_lai(None, None, {"ma": "seg_0001"}, chu="mot cau dai",
-                     giay=4.0, khe=2.0, so_vong=0, ctx=None)
+    ra = gd._nan_lo(None, None, [_MUC_TRAN], ctx=None)
+    assert ra == {}, "loi that ma van tra ve mot cau viet lai: %r" % (ra,)
 
 
 def test_loi_LA_thi_KHONG_bi_nuot(monkeypatch):
@@ -454,6 +492,5 @@ def test_loi_LA_thi_KHONG_bi_nuot(monkeypatch):
     monkeypatch.setattr(ai, "goi_tinh_tien", la)
 
     with pytest.raises(KeyError):
-        gd._viet_lai(None, None, {"ma": "seg_0001"}, chu="mot cau dai",
-                     giay=4.0, khe=2.0, so_vong=0, ctx=None)
+        gd._nan_lo(None, None, [_MUC_TRAN], ctx=None)
 
