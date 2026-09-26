@@ -96,21 +96,22 @@ ignore_imports =
     #    cung mat mot lop bao ve. Xem dau tep vi sao giu ca hai cong cu.
     apps.prompt_ai_ommi.services.bindings -> apps.taovideo.refs
     #
-    # `routes/handoff.py` va `services/bat_bien.py` dung lai bo gia tri role
-    # va nguong 8 MiB cua `refs.py` thay vi chep lai. Chep lai la hai cho
-    # khai cung mot dieu; lech nhau thi ben nhan tu choi anh ma khach khong
-    # hieu vi sao.
+    # `services/bat_bien.py` va `services/handoff_stage.py` dung lai bo gia
+    # tri role va nguong 8 MiB cua `refs.py` thay vi chep lai. Chep lai la hai
+    # cho khai cung mot dieu; lech nhau thi ben nhan tu choi anh ma khach
+    # khong hieu vi sao.
     #
     # LUU Y: mien tru o day khai theo MODULE. Them mot module cua
     # prompt_ai_ommi goi sang refs la them mot dong o day -- va import-linter
     # TU CHOI mien tru chua co import that (`No matches for ignored import`),
-    # nen khong khai truoc duoc.
-    apps.prompt_ai_ommi.routes.handoff -> apps.taovideo.refs
+    # nen khong khai truoc duoc; no cung TU CHOI mien tru CHET, nen khong giu
+    # lai duoc mot dong sau khi module do thoi import.
+    #
+    # Pha 2 da CHUYEN logic dung anh tu `routes/handoff.py` sang
+    # `services/handoff_stage.py`; route chi con re-export ten cu, khong con
+    # import `refs` nua, nen dong `routes.handoff` da bi bo cung mot commit
+    # voi phep chuyen (bo rieng la hook do o mot trong hai chieu).
     apps.prompt_ai_ommi.services.bat_bien -> apps.taovideo.refs
-    # Pha 2 CHUYEN logic dung anh tu route sang service. Trong luc chuyen,
-    # CA HAI cho deu import that, nen ca hai deu phai khai -- import-linter
-    # tu choi mien tru CHET, nen khong bo som duoc.
-    # KHONG: Khi pha 2 gop xong va route khong con import: BO dong routes.handoff.
     apps.prompt_ai_ommi.services.handoff_stage -> apps.taovideo.refs
 
 
