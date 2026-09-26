@@ -374,3 +374,67 @@ def test_tien_trinh_con_KHONG_song_lau_hon_tran_job(monkeypatch):
         dh.t += 600                                   # da troi 10 phut
         han = lat_cat.han_tien_trinh_con(ten, mac_dinh)
         assert 600 + han <= lat_cat.HE_SO_TRAN * tran, (ten, han)
+
+
+def test_2050_can_gat_moc_lat_CHI_THU_NHO_duoc(monkeypatch):
+    """🔴 **Duong lat cat chua tung chay tren mot job THAT** — moi bang chung ve no
+       den tu **dong ho gia** (chu thich cua `lat_cat.dong_ho` noi thang the). Va ba
+       loi TIEN cua Task 19 deu **chi hien khi co lat cat**, nen mot lan chay that
+       tren video 107 giay ⛔ khong phu duoc ban sua nao trong ba.
+
+    ⇒ `luot_muc_tieu_s()` cho phep mot lan chay THAT di qua duong ay.
+
+    ⛔ Va chieu NOI RA bi khoa bang MA, ⛔ khong bang loi dan: ly do cua
+       `LUOT_MUC_TIEU_S` la *"mot job giu suat `llm_remote` hang gio la chan moi run
+       khac"*. Mot can gat noi duoc moc ay len se bien mot bien moi truong go sai
+       thanh mot lan chan CA HE.
+    """
+    from apps.auto_scan_video import lat_cat as lc
+
+    monkeypatch.delenv(lc.BIEN_MUC_TIEU, raising=False)
+    assert lc.luot_muc_tieu_s() == float(lc.LUOT_MUC_TIEU_S)
+
+    # THU NHO: nhan.
+    monkeypatch.setenv(lc.BIEN_MUC_TIEU, "60")
+    assert lc.luot_muc_tieu_s() == 60.0
+
+    # ⭐ NOI RA: TU CHOI — day la ve chiu luc cua bai nay.
+    monkeypatch.setenv(lc.BIEN_MUC_TIEU, str(lc.LUOT_MUC_TIEU_S * 10))
+    assert lc.luot_muc_tieu_s() == float(lc.LUOT_MUC_TIEU_S), (
+        "can gat NOI duoc moc lat => mot job co the giu suat llm_remote hang gio")
+
+    # Duoi san: kep ve san, ⛔ khong nhan 0.001 giay.
+    monkeypatch.setenv(lc.BIEN_MUC_TIEU, "0.001")
+    assert lc.luot_muc_tieu_s() == float(lc.SAN_MUC_TIEU_S)
+
+    # Rac / khong duong: mac dinh, va ⛔ KHONG nem — mot bien go sai ⛔ khong duoc
+    # lam sap worker production.
+    for xau in ("khong-phai-so", "", "  ", "-5", "0"):
+        monkeypatch.setenv(lc.BIEN_MUC_TIEU, xau)
+        assert lc.luot_muc_tieu_s() == float(lc.LUOT_MUC_TIEU_S), xau
+
+
+def test_2050_nen_nhuong_THAT_SU_doc_can_gat_chu_khong_doc_hang_so(monkeypatch):
+    """⚠️ Mot can gat ⛔ **khong ai doc** la mot can gat trang tri — va kho nay da
+       tra gia cho dung ho loi do ("hai cho khai mot dieu ma ⛔ khong ai bat khop").
+
+    Nen bai nay ⛔ khong kiem ham doc; no kiem **`nen_nhuong()`** doi hanh vi theo
+    bien moi truong. Neu `nen_nhuong` con doc hang so `LUOT_MUC_TIEU_S` thi bai do.
+    """
+    from apps.auto_scan_video import lat_cat as lc
+
+    gia = {"t": 0.0}
+    monkeypatch.setattr(lc, "dong_ho", lambda: gia["t"])
+
+    # Tran rat lon => ve "het ngan sach" KHONG the la thu lam nhuong; chi con moc mem.
+    l = lc.LatCat(ten="voice_synthesis", van_tay="vt", phien="p", luot=0,
+                  vi_tri=0, trang_thai={}, tran_s=10 ** 9, du_phong_s=0.0,
+                  bat_dau=0.0, da_lam=1)   # da tien mot don vi => duoc nhuong
+
+    monkeypatch.setenv(lc.BIEN_MUC_TIEU, "60")
+    gia["t"] = 59.0
+    assert l.nen_nhuong() is False, "chua toi moc 60s ma da nhuong"
+    gia["t"] = 61.0
+    assert l.nen_nhuong() is True, (
+        "qua moc 60s ma KHONG nhuong => nen_nhuong dang doc hang so, "
+        "khong doc can gat")
