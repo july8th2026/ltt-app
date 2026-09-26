@@ -323,3 +323,227 @@ def test_than_worker_o_cap_module_de_windows_spawn_duoc():
     assert callable(jw._chay_mot_worker)
     assert jw._chay_mot_worker.__qualname__ == "_chay_mot_worker", (
         "hàm bị lồng trong hàm khác -> multiprocessing spawn không pickle được")
+
+
+# ───────────────────────────────────────────────────────────────────────────────
+# Task 23 — HAI cách hỏng khiến một giai đoạn GPU đứng im mà CPU bằng 0
+#
+# Cả hai đều biểu hiện y hệt nhau ("treo"), nên phải chốt RIÊNG từng cái:
+#
+#   1. lease của một job ĐÃ XONG không được nhả ⇒ giai đoạn sau chờ hết hạn
+#      mồ côi 10 phút (đo 26/09: ba giai đoạn × hai preset ⇒ ~60 phút thuần chờ);
+#   2. nền tảng cấp card cho một tiến trình KHÔNG dùng được CUDA ⇒ giai đoạn
+#      hỏng trong ~0 giây ⇒ hoãn ⇒ mà hoãn không tính là một lần thử ⇒ quay vòng
+#      vô hạn.
+# ───────────────────────────────────────────────────────────────────────────────
+
+
+def test_lease_cua_job_DA_XONG_khong_chan_giai_doan_GPU_ke_tiep(db, monkeypatch):
+    """Một lease mà job của nó đã kết thúc là RÁC — thu hồi NGAY, không chờ nhịp.
+
+    🔴 Đo trong lượt nghiệm thu ASV 26/09: lease của `audio_prepare` sống thọ hơn
+       job **10 phút**, rồi lease của `transcribe` cũng vậy. Giai đoạn GPU kế
+       tiếp nằm chờ `ORPHAN_TIMEOUT` với CPU ≈ 0 — biểu hiện thành *"treo"*.
+
+    ⛔ KHÔNG hạ `ORPHAN_TIMEOUT` để chữa: nó đang bảo vệ một job nạp model 8 phút
+       không ghi gì cả, đúng cái `_giu_gpu` docstring nói là đang tránh.
+
+    ⭐ Thứ thiếu là **khả năng phân biệt**: "worker đã chết" và "worker xong rồi
+       nhưng không xoá được dòng" trước đây trông y như nhau, nên cả hai phải
+       chờ 10 phút. Trạng thái job trả lời được câu đó ngay.
+
+    ⚠️ `heartbeat_at` ở đây MỚI TOANH, nên `ORPHAN_TIMEOUT` không cứu được —
+       phép kiểm đo đúng cái nó khai.
+    """
+    monkeypatch.setattr(gpu_mod, "list_gpus", lambda: [_gpu(0, "GPU-a")])
+    from platform_core import gpu_lease as gl
+    from platform_core.models import JOB_DONE, GpuLease
+
+    ja = _submit(db)
+    lease = gl.acquire(db, worker_id="w1", job_id=ja.id, need_mb=4000)
+    assert lease is not None, "fixture hỏng: không giành được card giả"
+    ja.status = JOB_DONE
+    db.commit()
+    db.expire_all()
+    assert db.query(GpuLease).count() == 1, "dựng cảnh sai: lease phải còn treo"
+
+    sau = gl.acquire(db, worker_id="w2", job_id="job-ke-tiep", need_mb=4000)
+    assert sau is not None, (
+        "card duy nhất bị giữ bởi lease của một job ĐÃ kết thúc ⇒ giai đoạn GPU "
+        f"kế tiếp phải chờ hết {gl.ORPHAN_TIMEOUT} mồ côi. Đo 26/09: ~60 phút "
+        "thuần chờ mỗi lượt nghiệm thu ASV, biểu hiện thành 'treo, CPU bằng 0'")
+    db.expire_all()
+    assert db.query(GpuLease).filter(GpuLease.job_id == ja.id).count() == 0, (
+        "BẤT BIẾN Ở BIÊN: job đã kết thúc thì không được còn lease mang job_id "
+        "của nó")
+
+
+def test_job_con_RUNNING_thi_lease_KHONG_bi_thu_hoi(db, monkeypatch):
+    """Nửa còn lại của bất biến, và là nửa đắt hơn nếu làm sai.
+
+    Một job đang chạy ⛔ không được mất card: hai tiến trình cùng nạp model lên
+    một card là OOM giữa job của khách. Chỉ nhịp đập nói được một job còn sống —
+    một job nạp model 8 phút không ghi dòng nào.
+    """
+    monkeypatch.setattr(gpu_mod, "list_gpus", lambda: [_gpu(0, "GPU-a")])
+    from platform_core import gpu_lease as gl
+    from platform_core.models import JOB_RUNNING
+
+    ja = _submit(db)
+    ja.status = JOB_RUNNING
+    db.commit()
+    assert gl.acquire(db, worker_id="w1", job_id=ja.id, need_mb=4000) is not None
+
+    assert gl.reclaim_orphans(db) == 0, "thu hồi lease của một job ĐANG CHẠY"
+    assert gl.acquire(db, worker_id="w2", job_id="khac", need_mb=4000) is None, (
+        "cấp card đang bị một job đang chạy giữ — đúng cuộc đua mà gpu_lease "
+        "sinh ra để diệt")
+
+
+def test_release_bi_CHAN_thi_giai_doan_sau_van_duoc_card(db, monkeypatch):
+    """Tái hiện ĐÚNG đường đã đo, và không qua `release` sửa được.
+
+    🔑 `_giu_gpu` mở một session RIÊNG (kết nối riêng) cho lease, còn vòng worker
+       dùng session của nó. `jobs.complete()` chỉ `db.flush()` — KHÔNG commit —
+       nên lúc ra khỏi `with _giu_gpu`, session của vòng worker đang giữ khoá
+       ghi, `DELETE` của `release` nhận `database is locked`, và `_giu_gpu` NUỐT
+       ngoại lệ (`log.exception` rồi đi tiếp).
+
+    ⛔ Nên retry trong `release` KHÔNG phải bản sửa: người gọi chỉ commit **sau
+       khi** `release` trả về, nên chờ lâu hơn chỉ là chờ lâu hơn.
+
+    ⚠️ Phép kiểm này mất ~5 giây: đó là `busy_timeout` mặc định của SQLite, tức
+       chính con số của cảnh thật. Không rút ngắn bằng cách giả lập ngoại lệ —
+       một `raise` giả không chứng minh được đường này còn tồn tại.
+    """
+    monkeypatch.setattr(gpu_mod, "list_gpus", lambda: [_gpu(0, "GPU-a")])
+    import platform_core.job_runner as jr
+    from platform_core import gpu_lease as gl
+    from platform_core.models import JOB_DONE, GpuLease
+
+    ja = _submit(db)
+    with jr._giu_gpu("w1", ja.id, "x.y", 4000) as (lease, het_gpu):
+        assert lease is not None and het_gpu is False
+        ja.status = JOB_DONE          # y hệt `jobs.complete`: ghi rồi flush,
+        db.flush()                    # KHÔNG commit ⇒ giữ khoá ghi
+    db.commit()
+    db.expire_all()
+
+    assert db.query(GpuLease).filter(GpuLease.job_id == ja.id).count() == 1, (
+        "phép kiểm này KHÔNG còn tái hiện được cảnh cần đo (release bị chặn) — "
+        "nó sẽ xanh vì lý do khác, sửa lại cách dựng cảnh")
+
+    sau = gl.acquire(db, worker_id="w2", job_id="job-sau", need_mb=4000)
+    assert sau is not None, (
+        "release bị chặn ⇒ card khoá tới hết hạn mồ côi. Đây là 10 phút chờ mỗi "
+        "giai đoạn GPU trong lượt nghiệm thu ASV")
+    db.expire_all()
+    assert db.query(GpuLease).filter(GpuLease.job_id == ja.id).count() == 0
+
+
+def test_khong_dung_duoc_CUDA_thi_KHONG_xin_card(db, monkeypatch):
+    """Đừng xin một tài nguyên mình không dùng được.
+
+    🔴 Đo 26/09 trên máy A trước khi cài CUDA: `torch 2.11.0+cpu` cho
+       `cuda.is_available() = False`, `device_count = 0`, mà `gpu_lease.acquire`
+       VẪN cấp lease (vì `nvidia-smi` thấy card). Hệ quả chuỗi:
+       `ctx.has_gpu = True` ⇒ `demucs_runner --buoc-gpu` trả `{"thieu_card":
+       true}` ⇒ giai đoạn hỏng trong ~0 giây ⇒ hoãn ⇒ **hoãn không tính là một
+       lần thử** (`attempts=0 / max_attempts=1`) ⇒ quay vòng vô hạn, CPU ≈ 0.
+
+    ⛔ Phép kiểm KHÔNG được hỏi `torch.cuda.is_available()` thật: máy A nay trả
+       True, nên phép kiểm sẽ im lặng không đo gì. Monkeypatch nó thành False —
+       đó là cách có được phép đỏ trên một máy ĐÃ có CUDA.
+    """
+    torch = pytest.importorskip("torch")
+    monkeypatch.setattr(gpu_mod, "list_gpus", lambda: [_gpu(0, "GPU-a")])
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: False)
+    import platform_core.job_runner as jr
+    from platform_core.models import JOB_DONE, GpuLease, Job, JobEvent
+
+    monkeypatch.setattr(jr, "_vram_can", lambda jt: 4000)
+    thay: dict = {}
+
+    def _handler(params, ctx):
+        # Đọc bằng session RIÊNG: lease do `acquire` commit nên nó thấy được.
+        import platform_core.db as dbmod
+        gen = dbmod.get_session(); s = next(gen)
+        try:
+            thay["lease"] = s.query(GpuLease).count()
+        finally:
+            try: next(gen)
+            except StopIteration: pass
+        thay["uuid"] = ctx.gpu_uuid
+        thay["has_gpu"] = ctx.has_gpu
+        return {"ok": 1}
+
+    monkeypatch.setattr(jr.jobq, "resolve_handler", lambda jt: _handler)
+    j = _submit(db); jid = j.id
+    assert jr._chay_mot_job("w1") is True
+
+    assert "uuid" in thay, (
+        "handler không chạy — worker hoãn job thay vì chạy CPU. Hoãn không tính "
+        "là một lần thử, nên đây là một vòng lặp vô hạn im lặng")
+    assert thay["lease"] == 0, (
+        "cấp lease GPU cho một tiến trình KHÔNG dùng được CUDA: card bị khoá cho "
+        "một job chắc chắn không dùng được nó")
+    assert thay["uuid"] == "" and thay["has_gpu"] is False, (
+        f"ctx vẫn khai có card ({thay}) ⇒ handler bật đường --buoc-gpu và hỏng "
+        "trong 0 giây")
+
+    db.expire_all()
+    assert db.get(Job, jid).status == JOB_DONE
+
+    # ⭐ Tụt xuống CPU phải được KHAI RA. Một lần tụt IM LẶNG "tắc cả hàng đợi
+    #    chứ không chỉ làm chậm một job" (docstring `demucs_runner.chon_thiet_bi`
+    #    — và cảnh báo đó ĐÚNG). Thứ phải bỏ là vòng lặp vô hạn, không phải sự
+    #    phân biệt.
+    ev = db.query(JobEvent).filter(
+        JobEvent.job_id == jid,
+        JobEvent.event_code == jr.EVENT_GPU_KHONG_DUNG_DUOC).all()
+    assert len(ev) == 1, f"lần tụt xuống CPU không được ghi lại: {ev}"
+    assert ev[0].level == "warning", f"ghi ở mức {ev[0].level}, không phải cảnh báo"
+    assert "cuda" in str(ev[0].details).lower(), (
+        f"event không nói VÌ SAO tụt xuống CPU: {ev[0].details}")
+
+
+def test_hoan_vi_tai_nguyen_co_TRAN_chu_khong_quay_vong_vo_han(db, monkeypatch):
+    """Hoãn không tăng `attempts` ⇒ phải có trần, nếu không nó không bao giờ lộ.
+
+    Một job hỏng thẳng thì có người đọc được. Một job hoãn mãi thì `attempts=0`,
+    `status=queued`, CPU ≈ 0 — không ai biết nó tồn tại. Trần biến vòng lặp im
+    lặng thành một thất bại **đọc được**, và hoàn tiền phần đang giữ.
+    """
+    monkeypatch.setattr(gpu_mod, "list_gpus", lambda: [_gpu(0, "GPU-a")])
+    import platform_core.job_runner as jr
+    from platform_core import gpu_lease as gl
+    from platform_core.models import (JOB_ERROR, JOB_QUEUED, JOB_RUNNING,
+                                      Job)
+
+    monkeypatch.setattr(jr, "_vram_can", lambda jt: 4000)
+    monkeypatch.setattr(jr, "TRAN_HOAN_TAI_NGUYEN", 3)
+
+    # Card duy nhất bị một job ĐANG CHẠY giữ ⇒ mọi lượt đều phải hoãn.
+    jk = _submit(db); jk.status = JOB_RUNNING; db.commit()
+    gl.acquire(db, worker_id="w-khac", job_id=jk.id, need_mb=4000)
+
+    j = _submit(db, max_attempts=1); jid = j.id
+    # ⚠️ Kéo `next_run_at` về quá khứ mỗi lượt: `claim` lọc theo mốc đó, nên
+    #    không kéo thì vòng lặp chỉ hoãn được ĐÚNG MỘT lần rồi quay không — một
+    #    kiểu "hết giờ" đọc y hệt "đã tới trần". Ngủ 20 giây thật thì phép kiểm
+    #    này mất hai phút.
+    from datetime import datetime, timedelta, timezone
+    for _ in range(6):
+        jr._chay_mot_job("w1")
+        db.commit()
+        db.expire_all()
+        jb = db.get(Job, jid)
+        if jb.status == JOB_QUEUED:
+            jb.next_run_at = datetime.now(timezone.utc) - timedelta(minutes=1)
+            db.commit()
+    db.expire_all()
+    job = db.get(Job, jid)
+    assert job.status == JOB_ERROR, (
+        f"job hoãn quá trần vẫn ở {job.status} — vòng lặp vô hạn im lặng")
+    assert "gpu" in (job.error or "").lower() or "tài nguyên" in (job.error or "").lower(), (
+        f"thông báo không nói job chết vì tài nguyên: {job.error!r}")
