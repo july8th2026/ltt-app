@@ -706,28 +706,36 @@ def test_don_so_cu_xoa_dung_thu_muc_qua_han_giu_thu_muc_moi(tmp_path, monkeypatc
 
 
 # ---------------------------------------------------------------------------
-# F. Warmup (ISSUE D/E/F)
+# F. Warmup DA BI GO + rac dependency + cache chet + ghim GPU that (ISSUE D/E/F)
 # ---------------------------------------------------------------------------
 
-def test_warmup_model_truyen_g_va_env_giong_job_that(monkeypatch):
-    """`_warmup_model` PHAI truyen `-g <gpu_index>` VA `env=` cho subprocess
-    con — warmup khong ghim card thi tren may co iGPU Intel co the ham nong
-    SAI CARD (ISSUE E), vo ich va con lam ban card khac."""
-    from apps.upscalevideo import engine
+def test_warmup_da_bi_go_khoi_engine():
+    """`_warmup_model` + `_model_warmup_cache` KHONG duoc con trong `engine.py`.
 
-    bat: dict = {}
+    Quyet dinh do luong (26/09/2026, khong phai so thich): warmup goi
+    `subprocess.run` CHO THOAT HAN truoc khi job that spawn mot `Popen` MOI
+    (`run_upscale`) nen KHONG tien trinh nao song sot giua hai lan — warmup
+    KHONG THE giu model trong VRAM theo kien truc. Do A/B xen ke n=13/canh
+    tren may nay cho moi delta <1% VA dau trai chieu giua ttff/upscale
+    (nhieu, khong phai tin hieu) — xem
+    `docs/UPSCALE_V2_CORRECTION/08_BENCHMARK_RESULTS.md`. Neu ai them lai
+    warmup ma khong co phep do MOI bac bo ket qua tren, day la mot
+    "optimization" chua duoc do, dung tinh than cua chinh test nay.
 
-    def _fake_run(args, **kwargs):
-        bat["args"] = args
-        bat["kwargs"] = kwargs
-        return None
-    monkeypatch.setattr(engine.subprocess, "run", _fake_run)
-
-    engine._warmup_model("realesr-general-x4v3", gpu_index=3, env={"X": "1"})
-
-    args = bat["args"]
-    assert any(args[i:i + 2] == ["-g", "3"] for i in range(len(args) - 1))
-    assert bat["kwargs"]["env"] == {"X": "1"}
+    Dung `ast` (khong phai substring) de MOT comment nhac ten `_warmup_model`
+    (nhu comment giai thich o dau `engine.py`) khong lam test rot sai."""
+    tree = _tree("apps/upscalevideo/engine.py")
+    ten_ham = set()
+    ten_gan = set()
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            ten_ham.add(node.name)
+        elif isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name):
+                    ten_gan.add(target.id)
+    assert "_warmup_model" not in ten_ham
+    assert "_model_warmup_cache" not in ten_gan
 
 
 def test_engine_khong_import_numpy_cv2():
@@ -760,27 +768,45 @@ def test_engine_khong_con_bien_model_cache_chet():
     assert "_model_cache" not in ten_gan
 
 
-def test_engine_khoa_cache_ham_nong_la_ten_model_tran_khong_phai_fstring_tile():
-    """Chon phuong an RE: gia PHU HOP hanh vi (goi duong warmup that) can mock
-    ca `model_available`+`_warmup_model`+subprocess — nang hon can thiet cho
-    mot bat bien tinh. Thay vao do doc AST: buoc gan duy nhat vao
-    `_model_warmup_cache[...]` phai dung mot `ast.Name` tran (bien model) lam
-    khoa, KHONG phai JoinedStr (f-string) chua "tile" — khoa kieu
-    `f"{model}_tile{tune.tile}_j{tune.threads}"` cua ban cu gan nhu KHONG BAO
-    GIO trung vi tile/threads doi theo VRAM song moi job (ISSUE D)."""
-    tree = _tree("apps/upscalevideo/engine.py")
-    gan_vao_cache = []
-    for node in ast.walk(tree):
-        if (isinstance(node, ast.Assign) and len(node.targets) == 1
-                and isinstance(node.targets[0], ast.Subscript)
-                and isinstance(node.targets[0].value, ast.Name)
-                and node.targets[0].value.id == "_model_warmup_cache"):
-            gan_vao_cache.append(node.targets[0].slice)
+def test_run_upscale_that_truyen_g_va_env_cho_popen(tmp_path, monkeypatch):
+    """`run_upscale` (lan spawn THAT, `Popen`) PHAI truyen `-g <gpu_index>`
+    VA `env=` nguyen ven — day la mot BAT BIEN AN TOAN that (khong phai
+    warmup): may nay co iGPU Intel, mot engine khong ghim card co the chay
+    tren SAI CARD. Go warmup KHONG duoc lam mat phep do nay (warmup vốn tu
+    mock rieng no o `_warmup_model`, gio da go)."""
+    from apps.upscalevideo import engine
+    from apps.upscalevideo.schemas import TuneResult
 
-    assert gan_vao_cache, "khong tim thay gan nao vao _model_warmup_cache[...]"
-    for khoa in gan_vao_cache:
-        assert isinstance(khoa, ast.Name), ast.dump(khoa)
-        assert not isinstance(khoa, ast.JoinedStr)
+    bat: dict = {}
+
+    class _GiaProcess:
+        returncode = 0
+
+        def wait(self, timeout=None):
+            return self.returncode
+
+        def kill(self):
+            pass
+
+    def _fake_popen(args, **kwargs):
+        bat["args"] = args
+        bat["kwargs"] = kwargs
+        return _GiaProcess()
+
+    monkeypatch.setattr(engine.subprocess, "Popen", _fake_popen)
+    monkeypatch.setattr(engine, "_count_png", lambda _d: 1)
+
+    tune = TuneResult(model="realesr-general-x4v3", tile=384, threads="1:2:2",
+                      est_alloc_mb=1000, free_mb=12000, budget_mb=9000,
+                      fast_path=True)
+    env = {"CUDA_VISIBLE_DEVICES": "GPU-lease"}
+    trang = engine.run_upscale(str(tmp_path / "in"), str(tmp_path / "out"),
+                               tune, 1, gpu_index=2, env=env)
+
+    assert trang == "done"
+    args = bat["args"]
+    assert any(args[i:i + 2] == ["-g", "2"] for i in range(len(args) - 1))
+    assert bat["kwargs"]["env"] is env
 
 
 # ---------------------------------------------------------------------------

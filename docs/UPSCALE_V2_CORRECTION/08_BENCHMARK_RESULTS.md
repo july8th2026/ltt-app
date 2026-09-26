@@ -176,3 +176,53 @@ diễn thay vì đo:
    `06_BASELINE_AFTER_BAD_UPDATE.md` mục 5 (`KHÔNG CÓ MẪU`, không phải
    `CHƯA ĐO`: thêm phép đo sẽ không lấp được ô này, chỉ thêm SAMPLE MỚI mới
    lấp được).
+
+---
+
+# F. ⭐ ĐÃ ĐO (2026-09-26) — phân rã theo pha: **PNG I/O KHÔNG phải nút thắt**
+
+Phép đo thật đầu tiên của đợt sửa, sau khi chủ dự án dừng bot GEMINI và một
+tiến trình `realesrgan` **mồ côi** bị dọn (ISSUE L tận mắt).
+
+**Xuất xứ:** `git_head=ab094099` · engine SHA256 `07e49f7c…b1a0c` · driver 616.92
+· RTX 5060 Ti · ffmpeg 8.0.1 · video **v3** (836×576, 30 fps) · `--max-frames 200`
+· preset **fast** · autotune chọn thật: `tile=384 threads=4:4:4 est=1000
+budget=11560 fast_path=True`.
+
+| Pha | giây | % tổng |
+|---|---:|---:|
+| **upscale + encode (tầng SR)** | **335,09** | **96,7 %** |
+| frame_extraction | 10,58 | 3,1 % |
+| concat | 0,51 | 0,15 % |
+| upload (đĩa local thay R2) | 0,07 | 0,02 % |
+| probe | 0,05 | 0,01 % |
+| source_copy | 0,02 | 0,01 % |
+| **tổng** | **346,67** | 100 % |
+
+## Quyết định rút ra: ⛔ KHÔNG viết lại đường PNG
+
+Mandate §22: *"Không rewrite pipeline nếu SR stage chiếm >90 % và I/O không đáng
+kể."* Đo được **96,7 %** ⇒ điều kiện thoả.
+
+Kể cả khi **xoá sạch** mọi chi phí I/O (bất khả), tổng chỉ giảm **≤ 3,3 %**.
+So với rủi ro viết lại một đường đang chạy cho khách, đây là việc **không đáng
+làm** — và nó là một quyết định *không làm gì*, dựa trên số.
+
+⛔ Điều này **bác** hạng mục ưu tiên P1 của báo cáo cũ:
+`docs/UPSCALE_V2/04_BOTTLENECKS.md` xếp *"PNG Disk I/O — 2-3x faster extraction,
+⭐⭐⭐⭐"*. Trần lợi ích thật là **3,3 %**, không phải "2-3×".
+
+⚠️ **Phạm vi của kết luận này** (⛔ đừng đọc rộng hơn): preset **fast**, nguồn
+**836×576**, **200 khung**, đích mặc định, ⛔ không stabilize, ⛔ không
+smooth_motion. `smooth_motion` nhân số khung nguồn lên nên tỉ lệ I/O **có thể**
+khác — `CHƯA ĐO`. Preset `quality` chậm hơn nhiều ở tầng SR nên tỉ lệ I/O chỉ
+còn nhỏ hơn, không lớn hơn.
+
+## Tải nền trong lúc đo — vì sao vẫn tin được con số này
+
+`gpu_util` trung bình 76,2 % · nhiệt trung bình 66,7 °C (đỉnh 74) · VRAM đỉnh
+2 410 MiB · `cpu_giay_process_tree` 159,9 s · 839 mẫu.
+
+Đây là con số **tỉ lệ giữa các pha trong CÙNG một lượt chạy**, nên tranh chấp
+bên ngoài kéo dài **cả** tử số lẫn mẫu số — tỉ lệ 96,7 % bền với nhiễu, khác
+với con số **tuyệt đối** (xem mục A, đã bị nhiễu làm hỏng).
