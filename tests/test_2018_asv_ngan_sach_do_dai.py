@@ -178,6 +178,36 @@ def test_ai_goi_TRUYEN_muc_nghi_cua_thao_tac_xuong_dieu_phoi():
     assert "reasoning_effort" in ma and "thao_tac.muc_nghi" in ma
 
 
+def test_cua_TIEU_TIEN_phai_doc_NGAN_SACH_khong_doc_khe_cua():
+    """🔴 Đ4: đoạn vừa được nếu mượn khoảng lặng thì ⛔ KHÔNG được gọi LLM.
+
+    Chốt bằng AST: `nen_viet_lai` trong `giai_doan_giong` ⛔ không được nhận biến
+    tên `khe`. Một phép kiểm hành vi ở đây phải dựng cả máy sinh tiếng; một phép
+    kiểm hình dạng thì bắt đúng cái sai và ⛔ không đòi GPU.
+    """
+    import ast
+
+    cay = ast.parse(inspect.getsource(giai_doan_giong))
+    goi = [n for n in ast.walk(cay)
+           if isinstance(n, ast.Call)
+           and isinstance(n.func, ast.Attribute)
+           and n.func.attr == "nen_viet_lai"]
+    assert goi, "khong tim thay loi goi nen_viet_lai"
+    for n in goi:
+        ten = [a.id for a in n.args if isinstance(a, ast.Name)]
+        assert "khe" not in ten, (
+            "cua tieu tien van doc `khe` (= ket - bat). Phai doc `ngan_sach` "
+            "(da gom khoang lang muon duoc) — xem thoi_gian.ngan_sach_nan_s")
+        assert "ngan_sach" in ten, "cua tieu tien chua doc ngan_sach"
+
+
+def test_dong_ho_giai_doan_giong_co_bo_dem_nan_oan():
+    """Đ4 phải ĐẾM ĐƯỢC, ⛔ không phải suy ra từ log."""
+    ma = inspect.getsource(giai_doan_giong)
+    assert '"so_doan_nan_oan"' in ma, (
+        "thieu bo dem D4: so doan `giay > khe` NHUNG `giay <= ngan_sach`")
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 #  §5  `thoi_gian.ngan_sach_nan_s` — MOT nguon cho ngan sach BAC THANG NAN
 # ══════════════════════════════════════════════════════════════════════════════
