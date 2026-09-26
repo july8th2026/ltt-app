@@ -83,9 +83,15 @@ def test_ngan_sach_NHAM_THAP_hon_khe_va_he_so_o_MOT_cho():
     """`HE_SO_MUC_TIEU` la nguon duy nhat — `nan_cho_vua` khong go lai 0,92."""
     assert 0.8 <= nn.HE_SO_MUC_TIEU < 1.0
     assert nn.ngan_sach_do_dai(10.0, "vi") < round(10.0 * nn.NHIP["vi"])
-    ma = inspect.getsource(nan_cho_vua.loi_nhac_nan)
+    # ⚠️ **26/09 (Task 22) — DUONG doi, Y DINH giu.** `loi_nhac_nan` da bi xoa;
+    #    loi nhac NAN con lai la `loi_nhac_nan_lo`. Va pham vi ROI RA: chot tren
+    #    CA MODULE thay vi mot ham, vi mon no dung la mot ban lo **khong he doc**
+    #    `HE_SO_MUC_TIEU` — mot phep kiem nham vao MOT ten ham khong bat duoc
+    #    dieu do (ho `banh-coc-do-cach-go`).
+    ma = inspect.getsource(nan_cho_vua.loi_nhac_nan_lo)
     assert "ngon_ngu.HE_SO_MUC_TIEU" in ma
-    assert "* 0.92" not in ma and "*0.92" not in ma
+    ca_module = inspect.getsource(nan_cho_vua)
+    assert "* 0.92" not in ca_module and "*0.92" not in ca_module
 
 
 def test_ngan_sach_tu_choi_dich_ngoai_hop_dong():
@@ -129,13 +135,23 @@ def test_loi_nhac_VIET_DAU_mang_tran_dem_duoc_cho_TUNG_doan():
 
 
 def test_loi_nhac_NAN_mang_CUNG_tran_voi_pha_viet_dau():
-    """Hai pha nham hai dich khac nhau tren cung mot khe thi vong hai khong hoi tu."""
+    """Hai pha nham hai dich khac nhau tren cung mot khe thi vong hai khong hoi tu.
+
+    🔴 **26/09 (Task 22) — DUONG doi, Y DINH giu, va bai nay DA DO khi doi.**
+
+       Bai cu do `loi_nhac_nan` (mot doan mot luot). Task 12 (`96e27cff`) chuyen
+       `giai_doan_giong` sang `loi_nhac_nan_lo`, va ban lo ⛔ **khong mang
+       `do_dai_toi_da` lan `muc_tieu_giay`** — tuc bat bien nay bi bo roi im lang
+       trong khi bai kiem van xanh vi no do **ham cu**, thu khong con ai goi.
+       Day dung la hinh dang `doc-thu-dai-dien-thay-vi-doc-thu-that`.
+    """
     khe = 13.818
-    he_thong, nguoi_dung = _than(nan_cho_vua.loi_nhac_nan(
-        {"ma": "a", "goc": "x"}, chu_hien_tai="y", giay_do_duoc=18.0, khe=khe))
+    he_thong, nguoi_dung = _than(nan_cho_vua.loi_nhac_nan_lo(
+        [{"ma": "a", "chu": "y", "giay_doc": 18.0, "khe": khe}]))
     assert "do_dai_toi_da" in he_thong
-    assert nguoi_dung["do_dai_toi_da"] == nn.ngan_sach_do_dai(khe, "vi")
-    assert nguoi_dung["muc_tieu_giay"] == round(khe * nn.HE_SO_MUC_TIEU, 2)
+    muc = nguoi_dung["a"]
+    assert muc["do_dai_toi_da"] == nn.ngan_sach_do_dai(khe, "vi")
+    assert muc["muc_tieu_giay"] == round(khe * nn.HE_SO_MUC_TIEU, 2)
 
 
 def test_loi_nhac_en_KHONG_mang_don_vi_tieng_Viet():

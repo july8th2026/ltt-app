@@ -35,8 +35,6 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 
-from platform_core.i18n import _ as _t
-
 #: Doi bat cu thu gi o duoi thi tang so nay. Vao van tay cua doan.
 #:
 #: 2 (23/09/2026): loi nhac nan mang `do_dai_toi_da` (tran DEM DUOC, cung nguon
@@ -49,10 +47,17 @@ from platform_core.i18n import _ as _t
 #: khong con la TTS ma la `nan_thoi_luong.Khe.giay_can` (xem `giai_doan_giong`
 #: khoi `[B]`). Doi chinh sach, nen tang theo dung hop dong cua hang so nay.
 #:
+#: 5 (26/09/2026, Task 22): `loi_nhac_nan` (mot doan mot luot) BI XOA, va ba bat
+#: bien cua no chuyen sang `loi_nhac_nan_lo` — `ngon_ngu_dich` duoc DUNG that,
+#: `do_dai_toi_da` (cung nguon voi pha viet dau), `muc_tieu_giay`
+#: (`HE_SO_MUC_TIEU`). Noi dung loi nhac doi ⇒ tang so nay theo hop dong.
+#:
 #: ⚠️ Chu thich "vao van tay cua doan" o tren KHONG dung hom nay: `_van_tay` cua
 #:    `giai_doan_giong` bam `ma + chu + giong + preset + tu_dien`, khong bam con
-#:    so nay (do duoc 25/09 bang `grep`). Ghi lai, khong sua o day — ngoai pham vi.
-PHIEN_BAN_NAN = 4
+#:    so nay (do duoc 25/09 bang `grep`, do lai 26/09 van vay). ⇒ Lan tang nay
+#:    **vo hieu cache cua KHONG giai doan nao** — do la cai gia CUA CHINH mon no
+#:    ay (mot loi nhac doi ma cache khong biet), khong phai cai gia cua Task 22.
+PHIEN_BAN_NAN = 5
 
 #: Vuot bao nhieu phan khe thi phai nan. Xem ghi chu dau tep ve tinh khong doi xung.
 #:
@@ -122,8 +127,9 @@ DUNG_SAI_NGAN = 0.35
 #:    `V4_RESOURCE_CPU_GPU_POLICY` cam "no infinite loop" bang chu.
 #:
 #: 🔑 **1 tu 26/09/2026** (truoc: 2). Ba can cu, ⛔ khong phai mot linh cam:
-#:    - chu thich cua chinh `loi_nhac_nan` noi *"do la ly do vong thu hai
-#:      thuong khong can den"* — vi loi nhac da dua mot muc tieu DO DUOC;
+#:    - chu thich cua `loi_nhac_nan` (da xoa 26/09, Task 22) noi *"do la ly do
+#:      vong thu hai thuong khong can den"* — vi loi nhac da dua mot muc tieu DO
+#:      DUOC, va `loi_nhac_nan_lo` nay giu dung muc tieu ay (`muc_tieu_giay`);
 #:    - `VideoLingo` (18,5k★, Apache-2.0) da bo han vong hai: `##! No longer
 #:      perform secondary trim`;
 #:    - do 26/09: mot loi goi nan mat **15,6-17,7 giay**, nen vong hai la 16
@@ -286,83 +292,75 @@ def co_gian_du_khong(giay: float, khe: float) -> tuple[bool, float]:
 #  Loi nhac viet lai
 # ══════════════════════════════════════════════════════════════════════════════
 
-def loi_nhac_nan(m: dict, *, chu_hien_tai: str, giay_do_duoc: float,
-                 khe: float, ngon_ngu_dich: str = "vi") -> list[dict]:
-    """Loi nhac cho `ai.RUT_NGAN_CHO_VUA`. MOT doan, khong phai mot lo.
-
-    🔑 Dua vao ca **do dai da DO DUOC**, khong chi khe muc tieu. Do la khac biet
-       giua "hay viet ngan hon" va "cau nay doc ra 4,8 giay, khe co 3,2 giay, hay
-       viet lai cho khoang 3,0 giay": cai sau cho model mot muc tieu kiem duoc,
-       va no la ly do vong thu hai thuong khong can den.
-
-    🔴 **BAT BIEN O BIEN (25/09): chi RUT NGAN.** Ve "viet lai cho DAI ra" da bo
-       (`nen_viet_lai`), va cho nay NEM chu khong am tham soan mot loi nhac keo
-       dai: mot cai chan o vong lap ma khong co chan o bien la mot cai chan mot
-       nguoi goi moi se di vong qua ma khong ai thay. Nem o day thi hoa don noi
-       ra ngay — con nuot thi no chi hien len o bang gia cuoi thang.
-    """
-    if float(giay_do_duoc) <= float(khe):
-        raise NanError(
-            "loi_nhac_nan chi RUT NGAN: doc ra %.3fs <= khe %.3fs. Ve viet lai "
-            "cho dai ra da bo 25/09 — xem `nen_viet_lai`"
-            % (float(giay_do_duoc), float(khe)))
-    viec = "RUT NGAN"
-    from . import ngon_ngu
-    c = ngon_ngu.cum(ngon_ngu_dich)
-    he_thong = (
-        f"Ban la bien tap vien long tieng {c['tieng']}. Mot cau da viet **khong vua**"
-        " khe thoi gian cua no.\n"
-        f"Viec cua ban: {viec} cau do, giu NGUYEN y nghia va thai do.\n"
-        "Quy tac:\n"
-        "- Khong bo mat thong tin nao trong cau.\n"
-        "- Khong them thong tin khong co trong cau.\n"
-        f"- Van phai la {c['tieng']} noi tu nhien, khong phai van viet rut gon.\n"
-        f"- Nham dung `muc_tieu_giay`; {c['nhip_moi_giay']}.\n"
-        # 🔑 Cung mot TRAN DEM DUOC voi pha viet dau (`long_tieng.loi_nhac`).
-        #    Hai pha nham hai dich khac nhau tren cung mot khe la cach chac chan
-        #    nhat de vong hai khong hoi tu.
-        f"- **KHONG QUA `do_dai_toi_da` {c['don_vi']}** — dem lai truoc khi tra ve.\n"
-        'Tra ve DUY NHAT: {"doan": {"chu": "..."}}')
-    nguoi_dung = json.dumps({
-        "ma": str(m.get("ma") or ""),
-        "goc": str(m.get("goc") or ""),
-        "chu_hien_tai": str(chu_hien_tai or ""),
-        "doc_ra_het_giay": round(float(giay_do_duoc), 2),
-        "khe_giay": round(float(khe), 2),
-        # Nham thap hon khe mot chut: vua khit la vua **du** de mot dao dong nho
-        # cua may sinh tieng lam no tran ra lai.
-        #
-        # 🔴 `ngon_ngu.HE_SO_MUC_TIEU`, khong phai mot `0.92` go tay. Truoc
-        #    23/09 con so nay chi ton tai o day, va pha viet dau khong he co no.
-        "muc_tieu_giay": round(max(0.3, float(khe) * ngon_ngu.HE_SO_MUC_TIEU), 2),
-        "do_dai_toi_da": ngon_ngu.ngan_sach_do_dai(khe, ngon_ngu_dich),
-    }, ensure_ascii=False, sort_keys=True)
-    return [{"role": "system", "content": he_thong},
-            {"role": "user", "content": nguoi_dung}]
-
-
 def loi_nhac_nan_lo(cac: list[dict], *, ngon_ngu_dich: str = "vi") -> list[dict]:
     """MOT lời nhắc cho NHIỀU đoạn cần rút ngắn.
 
     🔴 **Bản cũ `loi_nhac_nan` là MỘT đoạn một lời gọi**, và đo 26/09: mỗi lời gọi
-       **15,6–17,7 giây**. Hàng chục đoạn ⇒ hàng chục lần khứ hồi.
+       **15,6–17,7 giây**. Hàng chục đoạn ⇒ hàng chục lần khứ hồi. Bản đó đã bị
+       **XOÁ 26/09** (Task 22) sau khi `giai_doan_giong` chuyển hẳn sang lô.
 
     ⭐ Mỗi mục mang `truoc`/`sau` để model thấy ngữ cảnh: rút một câu mà ⛔ không
        biết câu kế nói gì thì dễ rút mất chủ ngữ mà câu sau đang trỏ tới.
 
     ⚠️ Khoá JSON là **mã đoạn**, và người gọi phải kiểm `set(cần) − set(nhận)` —
        mượn ba lớp chống lẫn id của `VideoLingo` (Apache-2.0).
+
+    🔑 **BA bất biến thừa kế từ `loi_nhac_nan` khi hàm đó bị xoá (26/09, Task 22).**
+       Cả ba đã được `test_2000`/`test_2018`/`test_441`/`test_4600` ghim từ trước
+       trên hàm CŨ, và bản lô ⛔ không có cái nào — tức Task 12 đã **bỏ rơi** chúng,
+       ⛔ không phải bỏ có chủ ý (không một chú thích nào của nó nói đã bỏ):
+
+       1. **`ngon_ngu_dich` phải ĐƯỢC DÙNG.** Bản lô nhận tham số rồi **vứt im
+          lặng** — mọi lời nhắc đều nói "cau tieng Viet" kể cả khi đích là `en`
+          (hỏng đúng `test_2000::test_loi_nhac_en_KHONG_con_mot_chu_tieng_Viet_nao`).
+          Đây là hình dạng `cho-noi-hai-module-vut-truong-im-lang`.
+       2. **`do_dai_toi_da` — MỘT trần ĐẾM ĐƯỢC, cùng nguồn với pha VIẾT ĐẦU**
+          (`long_tieng.loi_nhac`, qua `ngon_ngu.ngan_sach_do_dai`). Hai pha nhắm
+          hai đích khác nhau trên cùng một khe thì vòng hai ⛔ không hội tụ.
+       3. **`muc_tieu_giay` lấy `ngon_ngu.HE_SO_MUC_TIEU`**, ⛔ không gõ tay 0,92:
+          vừa khít là vừa **đủ** để một dao động nhỏ của máy sinh tiếng làm câu
+          tràn ra lại.
+
+    🔴 **BẤT BIẾN Ở BIÊN: chỉ RÚT NGẮN.** Vế "viết lại cho DÀI ra" đã bỏ 25/09
+       (`nen_viet_lai`), và chỗ này NÉM chứ ⛔ không âm thầm soạn một lời nhắc kéo
+       dài. Một cái chặn ở vòng lặp mà ⛔ không có chặn ở biên là một cái chặn mà
+       một người gọi mới sẽ đi vòng qua ⛔ không ai thấy.
     """
-    bang = {d["ma"]: {"chu": d["chu"],
-                      "doc_ra_giay": round(float(d["giay_doc"]), 2),
-                      "khe_giay": round(float(d["khe"]), 2),
-                      "cau_truoc": d.get("truoc", ""),
-                      "cau_sau": d.get("sau", "")}
-            for d in cac}
+    from . import ngon_ngu
+
+    c = ngon_ngu.cum(ngon_ngu_dich)
+    bang: dict = {}
+    for d in cac:
+        khe = float(d["khe"])
+        giay = float(d["giay_doc"])
+        if giay <= khe:
+            raise NanError(
+                "loi_nhac_nan_lo chi RUT NGAN: doan %s doc ra %.3fs <= khe "
+                "%.3fs. Ve viet lai cho dai ra da bo 25/09 — xem `nen_viet_lai`"
+                % (str(d.get("ma") or ""), giay, khe))
+        bang[d["ma"]] = {
+            "chu": d["chu"],
+            "doc_ra_giay": round(giay, 2),
+            "khe_giay": round(khe, 2),
+            # Nham THAP hon khe mot chut — xem bat bien 3 o docstring.
+            "muc_tieu_giay": round(max(0.3, khe * ngon_ngu.HE_SO_MUC_TIEU), 2),
+            "do_dai_toi_da": ngon_ngu.ngan_sach_do_dai(khe, ngon_ngu_dich),
+            "cau_truoc": d.get("truoc", ""),
+            "cau_sau": d.get("sau", ""),
+        }
     return [
         {"role": "system", "content": (
-            "Moi muc duoi day la mot cau tieng Viet doc ra DAI HON khe thoi gian "
-            "cua no. Viet lai NGAN hon de doc vua `khe_giay`, giu nguyen y.\n"
+            f"Moi muc duoi day la mot cau {c['tieng']} doc ra DAI HON khe thoi "
+            f"gian cua no. Viet lai NGAN hon de doc vua `khe_giay`, giu nguyen "
+            f"y va thai do.\n"
+            f"- Khong bo mat thong tin nao trong cau.\n"
+            f"- Khong them thong tin khong co trong cau.\n"
+            f"- Van phai la {c['tieng']} noi tu nhien, khong phai van viet rut "
+            f"gon.\n"
+            f"- Nham dung `muc_tieu_giay`; {c['nhip_moi_giay']}.\n"
+            # 🔑 Cung mot TRAN DEM DUOC voi pha viet dau (`long_tieng.loi_nhac`).
+            f"- **KHONG QUA `do_dai_toi_da` {c['don_vi']}** — dem lai truoc khi "
+            f"tra ve.\n"
             "Tra ve DUY NHAT mot doi tuong JSON, khoa la ma doan, gia tri la cau "
             "moi. Phai co DU moi ma. Khong them ma moi, khong giai thich.\n"
             "`cau_truoc` va `cau_sau` chi de hieu ngu canh — KHONG dich chung.")},
@@ -373,10 +371,11 @@ def loi_nhac_nan_lo(cac: list[dict], *, ngon_ngu_dich: str = "vi") -> list[dict]
 def doc_nan_lo(goi: dict, *, can: set[str]) -> dict[str, str]:
     """Doc phan hoi LO cua `loi_nhac_nan_lo` -> `{ma: cau moi}`. ⛔ Khong nem.
 
-    ⭐ Song sinh cua `doc_nan`, va no o canh `loi_nhac_nan_lo` co y: loi nhac va
-       nguoi doc phan hoi cua no phai nam CANH NHAU, vi chung khai cung mot hinh
-       dang. Hai tep xa nhau la cach `DOC_CANH` tung khai `("canh",)` cho mot loi
-       nhac chua bao gio co khoa `canh` (xem `ai.py`).
+    ⭐ No o canh `loi_nhac_nan_lo` co y: loi nhac va nguoi doc phan hoi cua no
+       phai nam CANH NHAU, vi chung khai cung mot hinh dang. Hai tep xa nhau la
+       cach `DOC_CANH` tung khai `("canh",)` cho mot loi nhac chua bao gio co
+       khoa `canh` (xem `ai.py`). (Song sinh cu — `doc_nan`, mot doan mot luot —
+       da bi xoa 26/09 cung `loi_nhac_nan`, Task 22.)
 
     ⛔ **Loc theo `can`, ⛔ khong nhan bua moi khoa model tra ve.** Mot `ma` la
        xuoc, mot `ma` bia ra, hay mot khoa cua lo KHAC deu se ghi de len cau cua
@@ -399,19 +398,6 @@ def doc_nan_lo(goi: dict, *, can: set[str]) -> dict[str, str]:
         if chu:
             ra[ma] = chu
     return ra
-
-
-def doc_nan(goi: dict) -> str:
-    """Lay cau da viet lai. Nem neu model khong tra ve gi dung duoc."""
-    doan = (goi or {}).get("doan")
-    chu = ""
-    if isinstance(doan, dict):
-        chu = str(doan.get("chu") or "").strip()
-    elif isinstance(doan, str):
-        chu = doan.strip()
-    if not chu:
-        raise NanError(_t('Model không trả về câu đã viết lại.'))
-    return chu
 
 
 def ket_luan(ma: str, *, chu: str, giay: float, khe: float,

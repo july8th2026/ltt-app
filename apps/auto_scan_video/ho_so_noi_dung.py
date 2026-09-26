@@ -147,8 +147,9 @@ def tom_tat_ban_ghi(ban_ghi: dict, *, toi_da: int = TOM_TAT_TOI_DA) -> str:
     """Van ban thoai noi lien, cat theo tran ky tu.
 
     ⚠️ Cat o ranh DOAN chu khong giua cau: mot cau cut moi model doan tiep phan
-       thieu, va no doan bang token cua khach (cung ly do voi
-       `hieu_canh.ngu_canh_cho_canh`).
+       thieu, va no doan bang token cua khach. (Ban sinh doi
+       `hieu_canh.ngu_canh_cho_canh` — cat theo CANH — da bi xoa 26/09 cung
+       duong VLM cua `edit_plan`, Task 22; luat thi con, va no o day.)
     """
     ra: list[str] = []
     con = max(0, int(toi_da))

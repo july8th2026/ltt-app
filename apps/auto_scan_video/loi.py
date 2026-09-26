@@ -375,15 +375,22 @@ def phan_loai(exc: BaseException) -> str:
 
     # ── Nan cho vua (pha 15) ────────────────────────────────────────────────
     #
-    # ⭐ `TAM_THOI` — va o day thu lai la viec dung chu khong phai mot cho hong
-    #    ve phia an toan: `NanError` chi xay ra khi model tra ve mot cau viet lai
-    #    khong doc duoc. Model la ngau nhien, nen lan sau thuong duoc.
+    # 🔴 **26/09/2026 (Task 22) — NGHIA cua `NanError` da DOI, hang nay thi
+    #    KHONG.** `doc_nan` (bo doc mot-doan: "model tra ve mot cau viet lai
+    #    khong doc duoc") da bi xoa cung `loi_nhac_nan`; nguoi nem CON LAI la
+    #    chan o BIEN cua `loi_nhac_nan_lo` (*chi RUT NGAN*), tuc mot vi pham HOP
+    #    DONG tat dinh — thu lai cho ra dung ket qua do.
     #
-    # ⚠️ Nhung trong duong chay that no gan nhu khong bao gio len toi day:
-    #    `giai_doan_giong._viet_lai` bat no ngay tai cho va **dung bac thang**,
-    #    vi mot lan xin viet lai hong khong duoc phep lam hong ca giai doan —
-    #    cau hien tai van doc duoc, chi la khong vua, va con mot nac (co gian)
-    #    nua truoc khi phai bo cuoc.
+    # ⚠️ Giu `TAM_THOI` **co y**, va day la cai gia duoc ghi ra: `TAM_THOI` nay
+    #    chi con la LUOI CUOI. `giai_doan_giong._nan_lo` bat `NanError` ngay tai
+    #    cho va giu cau goc (soan loi nhac nam TRONG `try` tu 26/09), nen nhanh
+    #    nay ⛔ khong con duong nao voi toi tu duong chay that. Doi no sang
+    #    `NGUOI_DUNG` la doi HANH VI cho mot ca khong the xay ra, ⛔ khong co
+    #    phep do nao doi.
+    #
+    # ⭐ DIEU KIEN SUA LAI: ngay co mot nguoi goi `loi_nhac_nan_lo` **ngoai**
+    #    `_nan_lo` (khong bat tai cho) — luc do vi pham hop dong phai la
+    #    `NGUOI_DUNG`, vi ba luot `retry` se nem lai y nguyen.
     from .nan_cho_vua import NanError
     if isinstance(exc, NanError):
         return TAM_THOI

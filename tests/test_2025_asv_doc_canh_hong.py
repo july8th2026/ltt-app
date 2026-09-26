@@ -7,12 +7,29 @@ va moi luot hong deu la mot phan hoi HTTP thanh cong co hinh dang sai —
 5 lan `"giữ"` (co dau), 2 lan tra ve mot MANG, 1 lan boc `{"objects": [...]}`.
 So lieu day du: `docs/auto_scan_video_final/L_FIX_TOC_DO.md`.
 
-  §1 `chuan_de_xuat`     — `"giữ"` la CUNG mot gia tri voi `giu`, khong phai rac
-  §2 loi nhac            — mot KHUNG JSON, va `de_xuat` la MA chep y nguyen
   §3 thu lai             — phan hoi sai hinh dang duoc hoi lai MOT lan
   §4 do phu bang chung   — `smart_localize` khong duoc am tham thanh "giu het"
 
 ⛔ Khong phep kiem nao o day goi model that.
+
+🔴 **26/09/2026 (Task 22) — §1 va §2 DA BI XOA. Cai gia, ghi ra:**
+
+   * **§1 `chuan_de_xuat`** (*`"giữ"` co dau la CUNG mot gia tri voi `giu`*) do
+     mot ham chi ton tai de phuc vu `doc_hieu_canh`; ca hai bi xoa cung duong
+     VLM cua `edit_plan` (Task 10, `defba7b2`). ⭐ **Do phu KHONG mat:** phep bo
+     dau that nam o `hieu_canh.chuan_ma` — van song — va nguoi dung CON LAI cua
+     no (`qc_ai.chuan_dat`) duoc `test_2120` do bang **dung bo mau tieng Viet co
+     dau** (`"đạt"`, `"Đạt"`, `"không đạt"`, `"KHÔNG"`) cong bo mau rac
+     (`"co le"`, `0.5`, `[]`). Tuc bai hoc R-05 con nguyen nguoi do, chi doi
+     cua vao.
+   * **§2 loi nhac** (*khung JSON, `de_xuat` la MA chep y nguyen*) do
+     `hieu_canh.loi_nhac_canh` — da xoa. ⚠️ **Do phu MAT that o day**: loi nhac
+     `doc_canh` duy nhat con lai la phep tham do trong
+     `tools/do_llm_cong_asv.py`, va ⛔ khong phep kiem nao doc no. Cai gia dung
+     bang mot cau: neu ai do lam hong loi nhac tham do ay thi bo do cong LLM se
+     dem mot `LuocDoSai` cua CHINH TA thanh mot loi cua cong — mot so lieu van
+     hanh sai, ⛔ khong phai mot hoa don cua khach. ⭐ DIEU KIEN DONG LAI: ngay
+     mot giai doan san pham lai soan loi nhac `doc_canh`.
 """
 from __future__ import annotations
 
@@ -27,70 +44,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from apps.auto_scan_video import (ai, canh as canh_mod,  # noqa: E402
                                   giai_doan_ban_bien_tap as gdbbt,
-                                  hieu_canh as hc, hop_dong_v4)
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-#  §1  `de_xuat` co dau van la `de_xuat`
-# ══════════════════════════════════════════════════════════════════════════════
-
-@pytest.mark.parametrize("tho,ra", [
-    # 🔴 Nam luot THAT cua phim nghiem thu tra ve dung chuoi nay.
-    ("giữ", "giu"), ("GIỮ", "giu"), (" Giữ ", "giu"),
-    ("bỏ", "bo"), ("Không chắc", "khong_chac"), ("khong chac", "khong_chac"),
-    ("khong-chac", "khong_chac"),
-    ("giu", "giu"), ("bo", "bo"), ("khong_chac", "khong_chac"),
-])
-def test_de_xuat_co_dau_DUOC_nhan_dung_gia_tri(tho, ra):
-    assert hc.chuan_de_xuat(tho) == ra
-
-
-@pytest.mark.parametrize("tho", ["bu", "", None, "maybe", "đỏ", "giu_lai", 1])
-def test_gia_tri_LA_van_bi_TU_CHOI(tho):
-    """⛔ Chuan hoa nhan dien, khong doan. `"bu"` (1/18 luot that) van la loi."""
-    assert hc.chuan_de_xuat(tho) == ""
-
-
-def test_doc_hieu_canh_NHAN_phan_hoi_co_dau_va_TU_CHOI_gia_tri_la():
-    goc = {"loai": "a", "chu_the": [], "hanh_dong": "", "cam_xuc": "",
-           "quan_trong": 0.8, "de_xuat": "giữ", "do_tin": 0.9,
-           "ly_do": "", "canh_bao": []}
-    import json
-    h = hc.doc_hieu_canh({"noi_dung": json.dumps(goc, ensure_ascii=False)}, "c1")
-    assert h.de_xuat == hc.GIU
-
-    goc["de_xuat"] = "bu"
-    with pytest.raises(hc.HieuCanhError):
-        hc.doc_hieu_canh({"noi_dung": json.dumps(goc, ensure_ascii=False)}, "c1")
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-#  §2  Loi nhac: mot KHUNG, khong phai mot cau ke ten khoa
-# ══════════════════════════════════════════════════════════════════════════════
-
-def test_loi_nhac_canh_DUA_KHUNG_JSON_va_cam_MANG():
-    van = hc.loi_nhac_canh("canh_0001", "xin chao", 2, {"a": 1})[0]["content"]
-    assert '"de_xuat"' in van and '"do_tin"' in van and '"quan_trong"' in van
-    assert "KHONG phai mang" in van
-    for ma in hc.DE_XUAT:
-        assert f'"{ma}"' in van
-
-
-def test_loi_nhac_canh_NOI_RO_de_xuat_la_MA_khong_phai_chu_tieng_Viet():
-    van = hc.loi_nhac_canh("canh_0001", "", 0, {})[0]["content"]
-    assert "khong them dau tieng Viet" in van
-
-
-def test_doi_loi_nhac_lam_DOI_van_tay_canh():
-    """⛔ Giu van tay = lan chay sau dung lai ket qua sinh boi loi nhac CU."""
-    assert hc.PHIEN_BAN_HIEU_CANH >= 4
-    a = hc.van_tay_canh("c1", "x", 2, 0.65)
-    truoc = hc.PHIEN_BAN_HIEU_CANH
-    try:
-        hc.PHIEN_BAN_HIEU_CANH = truoc + 1
-        assert hc.van_tay_canh("c1", "x", 2, 0.65) != a
-    finally:
-        hc.PHIEN_BAN_HIEU_CANH = truoc
+                                  hop_dong_v4)
 
 
 # ══════════════════════════════════════════════════════════════════════════════

@@ -927,10 +927,18 @@ def _nan_lo(db, run, cac: list[dict], *, luot: int = 0, lan_thu: int = 0,
         can = {str(d["ma"]) for d in lo}
         con = list(lo)
         for lan in range(LAN_XIN_NAN_LO):
-            tin = nan_cho_vua.loi_nhac_nan_lo(con, ngon_ngu_dich=ngon_ngu_dich)
-            if lan:
-                tin[-1]["content"] += " " * lan
             try:
+                # ⭐ **Soan loi nhac NAM TRONG `try` (26/09, Task 22).**
+                #    `loi_nhac_nan_lo` co mot chan o BIEN (chi RUT NGAN) va no
+                #    NEM `NanError` — bat bien do thua ke tu `loi_nhac_nan` da
+                #    xoa. `nen_viet_lai` o khoi `[B]` bao dam moi muc o day deu
+                #    dai hon khe, nen chan ay ⛔ khong bao gio no tren duong
+                #    thuc; nhung neu no no, mot lo nan hong ⛔ khong duoc lam
+                #    chet ca giai doan — cung lap luan voi tay bat duoi day.
+                tin = nan_cho_vua.loi_nhac_nan_lo(con,
+                                                  ngon_ngu_dich=ngon_ngu_dich)
+                if lan:
+                    tin[-1]["content"] += " " * lan
                 goi = ai.doc_ket_qua(
                     ai.goi_tinh_tien(db, run, ai.RUT_NGAN_CHO_VUA, tin,
                                      stage=pipeline.VOICE_SYNTHESIS,

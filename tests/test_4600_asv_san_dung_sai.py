@@ -167,16 +167,29 @@ def test_loi_nhac_NEM_neu_bi_goi_cho_mot_doan_NGAN():
     Mot cai chan o vong lap ma ⛔ khong co chan o bien la mot cai chan mot nguoi
     goi moi se di vong qua ma ⛔ khong ai thay — ho
     `cho-noi-hai-module-vut-truong-im-lang`.
+
+    🔴 **26/09 (Task 22) — va chinh dieu docstring nay canh bao DA XAY RA.**
+       Chan o bien nam o `loi_nhac_nan`; Task 12 (`96e27cff`) them mot nguoi goi
+       MOI (`loi_nhac_nan_lo`) ⛔ khong co chan nao, va bai kiem van xanh vi no
+       do ham CU. Task 22 xoa ham cu va dat chan vao ban lo.
     """
-    m = {"ma": "s", "goc": "g", "bat": 0.0, "ket": 10.0}
+    def _muc(giay, khe):
+        return [{"ma": "s", "chu": "x", "giay_doc": giay, "khe": khe}]
+
     with pytest.raises(nan.NanError):
-        nan.loi_nhac_nan(m, chu_hien_tai="x", giay_do_duoc=1.0, khe=10.0)
+        nan.loi_nhac_nan_lo(_muc(1.0, 10.0))
     # Bang nhau cung khong phai viec cua no.
     with pytest.raises(nan.NanError):
-        nan.loi_nhac_nan(m, chu_hien_tai="x", giay_do_duoc=10.0, khe=10.0)
+        nan.loi_nhac_nan_lo(_muc(10.0, 10.0))
+    # ⛔ Va MOT muc xau trong mot LO tot cung phai no: nuot rieng muc do la am
+    #    tham xin nan mot doan ta khong he xin — cua chan phai o tung MUC.
+    with pytest.raises(nan.NanError):
+        nan.loi_nhac_nan_lo(
+            [{"ma": "a", "chu": "x", "giay_doc": 14.0, "khe": 10.0},
+             {"ma": "b", "chu": "y", "giay_doc": 1.0, "khe": 10.0}])
     # ... va chieu DAI van di duong cu.
-    msgs = nan.loi_nhac_nan(m, chu_hien_tai="x", giay_do_duoc=14.0, khe=10.0)
-    assert "RUT NGAN" in msgs[0]["content"]
+    msgs = nan.loi_nhac_nan_lo(_muc(14.0, 10.0))
+    assert "NGAN hon" in msgs[0]["content"]
     assert "DAY DAN HON" not in msgs[0]["content"], (
         "ve keo dai da bo ma loi nhac van con nhac den no")
 

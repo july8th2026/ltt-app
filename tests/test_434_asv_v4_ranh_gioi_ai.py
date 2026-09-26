@@ -729,11 +729,13 @@ def test_KHONG_giai_doan_nao_con_boc_noi_dung_ra_khoi_kq_bang_tay():
     🔴 **Ban dau phep kiem nay chi soi doi so cua `doc_json`, va no HEP hon
        chinh menh de no tuyen bo.**
 
-       `giai_doan_ban_bien_tap.py:211` viet
+       `giai_doan_ban_bien_tap.py:211` hoi ay viet
        `hc.doc_hieu_canh(kq.get("noi_dung") or "", c.ma)` — cung mot cach boc,
        cung mot mat mat, nhung ten ham la `doc_hieu_canh` nen no di qua. Mot
        banh coc chi bao ve thu no nhin thay, va cai no nhin thay o day la MOT
-       TEN HAM chu khong phai MOT HANH VI.
+       TEN HAM chu khong phai MOT HANH VI. (Ca hai — dong goi do va
+       `doc_hieu_canh` — da bien mat 26/09 cung duong VLM cua `edit_plan`;
+       menh de duoi day thi khong phu thuoc vao chung.)
 
     ⇒ Menh de dung la: **khong tep nao cua ASV duoc go `kq.get("noi_dung")`**,
       bat ke sau do dua cho ai. Ban viet lai nay KHO xanh hon ban cu — no bat
