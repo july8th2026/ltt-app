@@ -154,6 +154,22 @@ def test_tom_tat_cua_lan_cho_di_theo_KHONG_mang_khoa_asset_cu(db, kho, tmp_path,
 
 # ══ 2. TU CHOI dung lai ═════════════════════════════════════════════════════
 
+def test_LOP_KHAC_thi_audio_prepare_TINH_LAI(db, kho, tmp_path, asr_gia, dem_engine):
+    """🔴 B2 (25/09): ban nen (`bed.wav`) phu thuoc `lop`, nen dung chung cache
+       giua hai lan chay khac gain se tra ve am luong SAI ma khong ai bao.
+       Phep kiem nay chung minh `cache_chung.dau_vao_noi_dung` da mang `lop`
+       vao khoa (sua cung lan voi `test_478::test_audio_prepare_CHI_doc_LOP...`).
+    """
+    r1, r2 = _hai_lan_chay(db, kho, tmp_path, lop={"vfx_gain": 0.5})
+    for t in BA:
+        _chay(db, r2, t)
+    assert dem_engine["audio_prepare"] == 2, (
+        "hai lan chay khac gain van dung chung mot bed.wav")
+    assert not _gd(db, r2, "audio_prepare").outputs.get("tu_cache_chung")
+    assert (_gd(db, r1, "audio_prepare").outputs["khoa_chung"]
+            != _gd(db, r2, "audio_prepare").outputs["khoa_chung"])
+
+
 def test_khach_KHAC_cung_noi_dung_van_TINH_LAI(db, kho, tmp_path, asr_gia, dem_engine):
     """⛔ I19: checksum trung la su that ve noi dung, khong phai giay phep."""
     r1, r2 = _hai_lan_chay(db, kho, tmp_path, owner2="uB")
@@ -264,7 +280,59 @@ def test_chep_loi_CHI_doc_nhung_thiet_lap_NAM_TRONG_khoa():
     assert doc <= {"ngon_ngu_nguon", "ngon_ngu_dich", "nguon_loi"}, doc
 
 
-def test_tach_nguon_KHONG_doc_thiet_lap_nao():
-    van = (GOC / "apps/auto_scan_video/giai_doan_am_thanh.py").read_text(encoding="utf-8")
-    assert not _thuoc_tinh_cua_cai_dat(GOC / "apps/auto_scan_video/giai_doan_am_thanh.py")
-    assert ".settings" not in van and "cai_dat" not in van
+def test_audio_prepare_CHI_doc_LOP_va_no_nam_trong_khoa():
+    """⚠️ Dao nguoc 26/09, kem ly do — khong xoa.
+
+    Ban goc (truoc B2, 25/09) cua phep kiem nay ten
+    `test_tach_nguon_KHONG_doc_thiet_lap_nao` va doi CHINH XAC KHONG doc gi:
+    dung truoc B2, `audio_prepare` chi phu thuoc `run.source_key`, nen ban nen
+    (`bed.wav`) hoan toan xac dinh boi NOI DUNG — khoa dung chung an toan chi
+    voi checksum nguon.
+
+    B2 (25/09, chu du an chot "3 lop dieu khien duoc") lam bat bien do HET
+    HIEU LUC that su: `giai_doan_am_thanh.chay` nay PHAI doc ho so BA LOP
+    (`lop`) de biet gain tung lop luc tron nen — giu nguyen bat bien cu se
+    chan luon ca tinh nang hop le. Giu no khong xoa se AN mot lo that: neu
+    `cache_chung.dau_vao_noi_dung` (giai doan nay duoc CHIA SE xuyen lan chay,
+    xem dau tep) khong dua `lop` vao khoa, hai lan chay cung video nhung khac
+    gain se dung chung MOT bed.wav — cua BAT KY lan nao tinh truoc — va lan
+    sau nhan sai am luong ma khong ai bao (dung sua o `cache_chung.py` cung
+    lan nay, xem chu thich tai do).
+
+    Bat bien MOI, hep hon: giai doan nay CHI duoc doc DUNG `lop`, va no PHAI
+    nam trong khoa dung chung — dung khuon `test_chep_loi_CHI_doc...` ngay
+    tren.
+    """
+    doc = _thuoc_tinh_cua_cai_dat(GOC / "apps/auto_scan_video/giai_doan_am_thanh.py")
+    assert doc, "bo phan tich khong thay phep doc thiet lap nao — xanh rong"
+    assert doc <= {"lop"}, doc
+
+    from apps.auto_scan_video import cache_chung
+    import inspect
+    ma_khoa = inspect.getsource(cache_chung.dau_vao_noi_dung)
+    assert '"lop"' in ma_khoa, (
+        "giai doan doc `lop` nhung khoa dung chung khong mang no — hai lan "
+        "chay khac gain se dung chung mot bed.wav")
+
+
+def test_tach_nguon_KHONG_nhan_LOP_chi_tron_nen_moi_nhan():
+    """Cau hoi thiet ke B2: gain ap o buoc TRON (`tron_nen`), khong o buoc
+    TACH (`tach_nguon`) — vi tach ra stem la viec KHONG phu thuoc khach dat
+    gain bao nhieu; chi ban PHOI (tron) moi phu thuoc.
+
+    Kiem CAU TRUC loi goi trong `giai_doan_am_thanh.chay`, khong chi tin
+    docstring: `tach_nguon(...)` khong duoc mang tu khoa `lop`, con
+    `tron_nen(...)` PHAI mang.
+    """
+    import ast
+
+    cay = ast.parse((GOC / "apps/auto_scan_video/giai_doan_am_thanh.py")
+                    .read_text(encoding="utf-8"))
+    goi = {n.func.attr: {kw.arg for kw in n.keywords}
+           for n in ast.walk(cay) if isinstance(n, ast.Call)
+           and isinstance(n.func, ast.Attribute)
+           and n.func.attr in ("tach_nguon", "tron_nen")}
+    assert "lop" not in goi.get("tach_nguon", set()), (
+        "tach_nguon nhan `lop` — gain dang ap sai cho, o buoc TACH thay vi TRON")
+    assert "lop" in goi.get("tron_nen", set()), (
+        "tron_nen KHONG nhan `lop` — het cach ap gain tung lop luc tron")

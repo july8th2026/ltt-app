@@ -290,6 +290,22 @@ def phan_loai(exc: BaseException) -> str:
     if isinstance(exc, BienTapLoi):
         return NGUOI_DUNG
 
+    # ── Ho so BA LOP nen (B2, 25/09) ─────────────────────────────────────────
+    #
+    # Cung nhom, cung ly do co hoc voi `AmThanhLoi`/`BienTapLoi` ngay tren:
+    # `tach_tieng.tu_cai_dat_lop` (qua `chuan_hoa_lop`) duyet lai ho so da luu
+    # TU TRONG job `audio_prepare`, ngay truoc khi tron nen
+    # (`giai_doan_am_thanh.chay` -> `tach_tieng.tron_nen`).
+    #
+    # ⛔ Mot ho so `lop` da luu ma khong con hop le (gia tri gain ngoai
+    #    [0,2], hoac ca ba lop deu tat/ve 0 — khong con gi de tron) se hong
+    #    y het o ca ba luot `retry`: cung mot ho so, cung mot phep duyet
+    #    TAT DINH. `test_418` vua bat duoc dung cho nay khi B2 them lop
+    #    ngoai le nay ma quen phan loai — no se im lang thua ke `retry`.
+    from .tach_tieng import LopNenLoi
+    if isinstance(exc, LopNenLoi):
+        return NGUOI_DUNG
+
     # ── QC bang AI va ke hoach sua (pha 19) ─────────────────────────────────
     #
     # ⛔ `NGUOI_DUNG` — that bai cuoi cung. Ca hai deu la mau thuan trong du lieu
