@@ -58,6 +58,7 @@ tham chieu, ⛔ khong can ai cham.
 from __future__ import annotations
 
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -150,6 +151,147 @@ def doi_soat(outputs_theo_giai_doan: dict[str, dict]) -> dict:
         "so_doan_lech_cuoi": master.get("so_doan_lech_cuoi"),
         "giay_lech_cuoi": master.get("giay_lech_cuoi"),
     }
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  G1/G2 — nhat quan dai tu va ten rieng (Task 13)
+# ══════════════════════════════════════════════════════════════════════════════
+
+#: Tu xung ho tieng Viet, CHIA THEO VAI — **du lieu ngon ngu**, ⛔ khong phai
+#: phan quyet chat luong. Nen no duoc phep go ra, va no kiem duoc bang cach soi
+#: lai tren ban ghi that.
+#:
+#: 🔴 **Vi sao phai chia vai (do duoc 26/09).** Ban dac ta dau lay mot **TAP
+#:    theo CAU**: `frozenset` moi tu xung ho xuat hien trong cau ay, roi dem so
+#:    tap phan biet. Tren mot tai lieu HOAN TOAN NHAT QUAN:
+#:
+#:      "Chao cac ban"           -> {ban, cac ban}
+#:      "Hom nay minh di cam"    -> {minh}
+#:
+#:    ⇒ hai tap, tuc `so_bo_dai_tu == 2`, tuc **bao dong gia**. Hai loi rieng
+#:    biet gop lai: (i) mot cau chi noi ngoi THU NHAT va mot cau chi noi ngoi
+#:    THU HAI thi ⛔ khong he mau thuan — tap theo cau tron hai VAI lam mot;
+#:    (ii) `ban` la con cua `cac ban`, nen mot lan xung ho dung dem thanh hai.
+#:
+#: ⚠️ `THAN_TOC` la mot vai RIENG vi tieng Viet dung cung mot tu cho ca nguoi
+#:    noi va nguoi nghe (`em` tu goi minh / goi nguoi khac). Nhap chung vao ngoi
+#:    thu nhat hay thu hai deu sinh bao dong gia, va **bao dong gia lam nguoi ta
+#:    TAT cong**.
+NGOI_MOT = ("toi", "to", "minh", "tao")
+NGOI_HAI = ("ban", "cau", "may", "quy vi", "cac ban")
+THAN_TOC = ("ong", "ba", "anh", "chi", "em", "chau", "con", "co", "chu", "bac")
+
+#: Hop cua ba vai — giu ten cu de mot phep kiem/tai lieu tro vao no khong chet.
+TU_XUNG_HO = NGOI_MOT + NGOI_HAI + THAN_TOC
+
+#: Chu cai ⛔ KHONG co trong bang chu cai tieng Viet.
+CHU_NGOAI = "fjwz"
+
+_NGUYEN_AM = set("aeiouy")
+
+
+def _bo_dau(v: str) -> str:
+    import unicodedata
+    return "".join(c for c in unicodedata.normalize("NFD", v.lower())
+                   if unicodedata.category(c) != "Mn")
+
+
+def _la_am_tiet_viet(t: str) -> bool:
+    """`t` (da bo dau, chu thuong) co the la MOT am tiet tieng Viet khong.
+
+    ⭐ Hai dau hieu CO HOC, ⛔ khong can tu dien:
+       - chua `f`/`j`/`w`/`z` ⇒ ⛔ khong phai chu tieng Viet;
+       - co HAI nhom nguyen am cach nhau boi phu am ⇒ ⛔ khong phai mot am tiet
+         (`photon` = `o` + `t` + `o`). Tieng Viet viet roi tung am tiet, nen moi
+         **token** cua mot cau tieng Viet phai la mot am tiet.
+    """
+    if not t or any(c in CHU_NGOAI for c in t):
+        return False
+    nhom = 0
+    truoc_la_nguyen_am = False
+    for c in t:
+        la = c in _NGUYEN_AM
+        if la and not truoc_la_nguyen_am:
+            nhom += 1
+        truoc_la_nguyen_am = la
+    return nhom <= 1
+
+
+def _cum_hoa(cau: str) -> list[str]:
+    """Cac cum token LIEN TIEP bat dau bang chu HOA trong `cau`.
+
+    ⭐ Ten rieng la thu duy nhat viet hoa giua cau trong tieng Viet, va mot ten
+       Viet gom nhieu am tiet deu viet hoa (`Quang Tu`).
+    """
+    tok = [t for t in re.split(r"[^0-9A-Za-zÀ-ỹ]+", cau) if t]
+    cum: list[str] = []
+    dang: list[str] = []
+    for t in tok:
+        if t[:1].isupper():
+            dang.append(t)
+        elif dang:
+            cum.append(" ".join(dang))
+            dang = []
+    if dang:
+        cum.append(" ".join(dang))
+    return cum
+
+
+def nhat_quan(cac_cau: list[str], *,
+              ten_goc: dict[str, str] | None = None) -> dict:
+    """G1 + G2 — dem MAU THUAN, ⛔ khong cham chat luong.
+
+    🔑 ⛔ Khong can ban tham chieu va ⛔ khong can ai cham: hai con so nay dem
+       mau thuan BEN TRONG mot tai lieu, nen chung di vong qua vong tron LLM
+       dang khoa bo do dich (`B2_DO_DICH_THAM_CHIEU.md`).
+
+    `so_bo_dai_tu` — dat = `1`: ca video dung MOT bo xung ho. Con so la so cach
+    goi PHAN BIET nhieu nhat ma mot VAI phai ganh; ⛔ khong phai so tap theo cau
+    (xem `NGOI_MOT`).
+
+    `vi_pham_ten_rieng` — dat = `0`. Hai the, va the (b) la the ma ban dac ta
+    dau thieu:
+      (a) mot ten da chot ⛔ khong xuat hien lan nao ⇒ mot dang KHAC da duoc dung;
+      (b) tai lieu co mot cum viet hoa ⛔ khong khop ten nao da chot VA ⛔ khong
+          doc duoc nhu tieng Viet (`Photon`) ⇒ mot ten goc da ra HAI dang. Chi
+          the (a) thi `["Quang Tu den roi", "Photon da di"]` **dat**, du no la
+          dung ca mau thuan G2 ton tai de bat.
+    """
+    # ── G1: moi VAI duoc phep co dung MOT cach goi ───────────────────────────
+    theo_vai: dict[str, set[str]] = {"mot": set(), "hai": set(), "than_toc": set()}
+    for cau in cac_cau:
+        v = f" {_bo_dau(cau)} "
+        thay = {t for t in TU_XUNG_HO if f" {t} " in v}
+        # ⭐ Khop DAI NHAT: `ban` la con cua `cac ban`, va mot lan xung ho ⛔
+        #    khong duoc dem thanh hai cach goi.
+        thay = {t for t in thay
+                if not any(u != t and f" {t} " in f" {u} " for u in thay)}
+        for t in thay:
+            if t in NGOI_MOT:
+                theo_vai["mot"].add(t)
+            elif t in NGOI_HAI:
+                theo_vai["hai"].add(t)
+            else:
+                theo_vai["than_toc"].add(t)
+    so_bo = max((len(s) for s in theo_vai.values()), default=0)
+
+    # ── G2: mot ten goc ⇒ dung MOT dang Viet ────────────────────────────────
+    vi_pham = 0
+    da_chot = {_bo_dau(d) for d in (ten_goc or {}).values() if d}
+    for _goc, dang in (ten_goc or {}).items():
+        d = _bo_dau(dang)
+        co = sum(1 for cau in cac_cau if d in _bo_dau(cau))
+        if co == 0 and cac_cau:
+            vi_pham += 1
+    if da_chot:
+        for cau in cac_cau:
+            for cum in _cum_hoa(cau):
+                c = _bo_dau(cum)
+                if any(c in d or d in c for d in da_chot):
+                    continue  # khop mot ten da chot ⇒ khong phai mau thuan
+                if not all(_la_am_tiet_viet(t) for t in c.split()):
+                    vi_pham += 1
+    return {"so_bo_dai_tu": so_bo or 1, "vi_pham_ten_rieng": vi_pham}
 
 
 # ══════════════════════════════════════════════════════════════════════════════

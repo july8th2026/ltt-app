@@ -788,6 +788,71 @@ def test_doi_soat_KHONG_doc_khoa_cua_dong_thoi_gian():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+#  Task 13 — G1/G2: nhat quan dai tu va ten rieng
+#
+#  🔑 G1/G2 ⛔ khong can ban tham chieu va ⛔ khong can ai cham — chung dem MAU
+#     THUAN ben trong mot tai lieu, nen chung di vong qua vong tron LLM dang
+#     khoa bo do dich.
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_G1_bat_duoc_dai_tu_DOI_giua_video():
+    from tools.asv_doi_soat import nhat_quan
+
+    on = ["Chao cac ban", "Hom nay minh di cam", "Cac ban thay the nao"]
+    assert nhat_quan(on)["so_bo_dai_tu"] == 1
+
+    doi = ["Chao cac ban", "Hom nay toi di cam", "Cac cau thay the nao"]
+    assert nhat_quan(doi)["so_bo_dai_tu"] > 1
+
+
+def test_G2_bat_duoc_mot_ten_goc_ra_HAI_dang_Viet():
+    from tools.asv_doi_soat import nhat_quan
+
+    ra = nhat_quan(["Quang Tu den roi", "Photon da di"],
+                   ten_goc={"光子": "Quang Tu"})
+    assert ra["vi_pham_ten_rieng"] >= 1
+
+
+def test_G1_hai_VAI_khac_nhau_KHONG_phai_mau_thuan():
+    """🔴 Bản đặc tả đầu BÁO ĐỘNG GIẢ ở đây, và báo động giả làm người ta TẮT cổng.
+
+    Một câu chỉ nói ngôi THỨ NHẤT và một câu chỉ nói ngôi THỨ HAI ⛔ không hề
+    mâu thuẫn. Một `frozenset` theo CÂU trộn hai vai làm một nên đếm ra `2`.
+    """
+    from tools.asv_doi_soat import nhat_quan
+
+    assert nhat_quan(["Hom nay minh di cam", "Cac ban thay the nao"]
+                     )["so_bo_dai_tu"] == 1
+    # ⭐ Doi CHINH mot vai thi phai do: `minh` -> `toi` o ngoi thu nhat.
+    assert nhat_quan(["Hom nay minh di cam", "Toi ve roi"]
+                     )["so_bo_dai_tu"] == 2
+
+
+def test_G1_khop_DAI_NHAT_mot_lan_xung_ho_khong_dem_thanh_hai():
+    """`ban` là con của `cac ban` — ⛔ một lần xưng hô không được đếm thành hai."""
+    from tools.asv_doi_soat import nhat_quan
+
+    assert nhat_quan(["Chao cac ban"])["so_bo_dai_tu"] == 1
+
+
+def test_G2_ten_Viet_dung_dang_da_chot_thi_KHONG_bi_dem_vi_pham():
+    """⭐ Vế ĐỐI CHỨNG: không có nó thì `>= 1` ở trên có thể chỉ là đếm mọi câu."""
+    from tools.asv_doi_soat import nhat_quan
+
+    ra = nhat_quan(["Quang Tu den roi", "Quang Tu di cam", "Hom nay troi mua"],
+                   ten_goc={"光子": "Quang Tu"})
+    assert ra["vi_pham_ten_rieng"] == 0
+
+
+def test_G2_ten_da_chot_KHONG_xuat_hien_lan_nao_van_la_vi_pham():
+    """Vế (a) — dạng mâu thuẫn mà bản đặc tả đầu bắt được, ⛔ không được mất."""
+    from tools.asv_doi_soat import nhat_quan
+
+    ra = nhat_quan(["Anh ay den roi"], ten_goc={"光子": "Quang Tu"})
+    assert ra["vi_pham_ten_rieng"] >= 1
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 #  Task 11 — ho_so_dich: MOT loi goi cho CA video
 # ══════════════════════════════════════════════════════════════════════════════
 
