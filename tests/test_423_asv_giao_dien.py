@@ -416,3 +416,96 @@ def test_uoc_gia_o_TANG_DICH_VU_khong_o_route():
     assert "tinh_credit" not in goi, "route tu tinh gia thay vi hoi tang dich vu"
     assert "so_phut_tinh_tien" not in goi
     assert "tinh_credit" in inspect.getsource(features.tao_run_tu_tai_len)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §N  LÀN ĐI THEO DANH MỤC — bất biến ở BIÊN (26/09/2026)
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# 🔴 **Lỗi thật, tìm được bằng một lượt bấm như khách trên production.** Khách
+#    chọn video, ⛔ không chạm ô giọng, bấm "Bắt đầu" → **400**:
+#    *"Giọng này thuộc làn Tiếng Anh, nhưng văn bản là Tiếng Việt."*
+#
+#    Chuỗi nhân quả, và nó dài hơn một dòng:
+#      1. `doc_man_api.ma_giong_cua_toi` chỉ trả `{ma, ten}` — **đánh rơi**
+#         `voice_profile.ngon_ngu`;
+#      2. `gia.giong_cua_toi` chép đúng hai trường đó;
+#      3. `gia.giong_cho_giao_dien` tra làn CHỈ ở `giong_mau` ⇒ cả kho giọng
+#         dùng chung ra `data-lan=""`;
+#      4. `giong.js` đọc `""` là *chưa rõ làn ⇒ KHÔNG lọc* (đúng luật của nó);
+#      5. `<select>` không có `selected` nào ⇒ trình duyệt chọn **option 0** —
+#         một giọng `en` — trong khi `ngon_ngu_dich` mặc định là `vi`;
+#      6. `giong_noi.giai_giong` từ chối. **Cổng chặn đúng.**
+#
+# ⭐ Nên phép kiểm này ⛔ không kiểm câu từ chối (nó đã đúng). Nó kiểm **trường
+#    có đi qua biên hay không** — vì lưới lọc phía trình duyệt đã được dựng đúng
+#    từ trước, nó chỉ bị **bỏ đói một trường**. Cùng thang thuốc với
+#    `tham_chieu.py::tuy_chon_giong_mau`, nơi luật này đã được viết ra một lần.
+
+
+def _them_giong_en(app, email: str) -> str:
+    """Một hàng `voice_profile` THẬT, `active`, làn `en`, thuộc `email`."""
+    from platform_core import db as dbmod
+    from apps.ltt_voice.tables import VoiceProfile
+    from platform_core.users import User
+    from sqlalchemy import select as _select
+
+    db = next(dbmod.get_session())
+    try:
+        u = db.execute(_select(User).where(User.email == email)).scalar_one()
+        g = VoiceProfile(owner_id=str(u.id), ten_hien_thi="Adrian (bai kiem)",
+                         ngon_ngu="en", trang_thai="active")
+        db.add(g)
+        db.commit()
+        return g.public_id
+    finally:
+        db.close()
+
+
+def test_danh_muc_giong_MANG_lan__khong_duoc_danh_roi(moi_truong):
+    """Tầng dịch vụ: một giọng làn `en` phải ra `ngon_ngu="en"`, ⛔ không `""`.
+
+    `""` có nghĩa **thật sự chưa rõ làn**. Một hàng CSDL mang `en` mà danh mục
+    khai `""` là một lời khai SAI, và cái giá là bước 4 ở trên.
+    """
+    _app, _a, _ca, _b, _cb = moi_truong
+    ma = _them_giong_en(_app, "asv-a@example.com")
+
+    from platform_core import db as dbmod
+    from platform_core.users import User
+    from sqlalchemy import select as _select
+    from apps.auto_scan_video import gia
+
+    db = next(dbmod.get_session())
+    try:
+        u = db.execute(_select(User).where(
+            User.email == "asv-a@example.com")).scalar_one()
+        ds = gia.giong_cho_giao_dien(db, str(u.id))
+    finally:
+        db.close()
+
+    muc = next((g for g in ds if g["ma"] == ma), None)
+    assert muc is not None, "giong vua tao khong co trong danh muc"
+    assert muc["ngon_ngu"] == "en", (
+        "danh muc danh roi LAN: giao dien se khong loc duoc, va khach an 400 "
+        "o cua nop")
+
+
+def test_data_lan_theo_danh_muc__den_duoc_tan_template(moi_truong):
+    """Và nó phải đi hết đường tới `data-lan` trong HTML.
+
+    ⭐ Kiểm ở tầng HTTP chứ không dừng ở hàm: giữa hàm và trình duyệt còn một
+       template, và một template đánh rơi thuộc tính thì bộ lọc vẫn mù — đúng
+       cùng một hậu quả, khác một chỗ.
+    """
+    _app, a, _ca, _b, _cb = moi_truong
+    ma = _them_giong_en(_app, "asv-a@example.com")
+
+    trang = a.get("/auto-scan-video")
+    assert trang.status_code == 200
+    o = re.search(r'<option value="%s"(.*?)>' % re.escape(ma), trang.text,
+                  re.S)
+    assert o, "khong thay <option> cua giong vua tao"
+    assert 'data-lan="en"' in o.group(1), (
+        "option thieu `data-lan` dung: `giong.js` doc \"\" la *chua ro lan* "
+        "va se KHONG an giong lech lan")

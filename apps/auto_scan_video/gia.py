@@ -314,11 +314,19 @@ def giong_cua_toi(db, owner_id: str) -> list[dict]:
     #    va cai thu nhat lam sai thi hau qua la khach dung giong cua nguoi khac.
     ra = []
     for g in ma_giong_cua_toi(db, owner_id) or []:
-        # ⛔ Chi lay HAI truong. Chep nguyen doi tuong cua app kia sang day la de
-        #    mot truong noi bo cua ho lot ra giao dien cua ta o lan doi sau.
+        # ⛔ Chi lay BA truong da khai. Chep nguyen doi tuong cua app kia sang
+        #    day la de mot truong noi bo cua ho lot ra giao dien cua ta o lan
+        #    doi sau.
+        #
+        # 🔴 `ngon_ngu` la truong THU BA, va no o day vi mot loi THAT: thieu no,
+        #    `giong_cho_giao_dien` phat `data-lan=""` cho ca kho giong dung
+        #    chung, `giong.js` doc "" la *chua ro lan ⇒ khong loc*, va khach
+        #    bam "Bat dau" voi mot giong `en` trong khi dich la `vi` — an 400 o
+        #    `giong_noi.giai_giong`. Cong chan DUNG; danh muc danh roi lan.
         ma = str((g or {}).get("ma") or "")
         if ma:
-            ra.append({"ma": ma, "ten": str(g.get("ten") or "") or "—"})
+            ra.append({"ma": ma, "ten": str(g.get("ten") or "") or "—",
+                       "ngon_ngu": str(g.get("ngon_ngu") or "")})
     return ra
 
 
@@ -479,12 +487,16 @@ def giong_cho_giao_dien(db, owner_id: str) -> list[dict]:
                 #    phai loc truoc — nguoc lai khach doi dich sang `en`, thay
                 #    nguyen 20 giong `vi`, bam Gui va an mot cau tu choi.
                 #
-                # ⚠️ Giong NHAN BAN cua khach khong co truong nay, va do la co
-                #    y: lan cua chung do `ltt_voice` chot luc goi
-                #    (`giong_noi.giai_giong(..., ngon_ngu=)`), khong phai mot
-                #    nhan doc san. Chung tra ve `""` va giao dien KHONG an
-                #    chung — an mot giong rieng di la dieu khach khong doi va
-                #    khong co cach nao doan la vi sao.
+                # 🔴 **SUA 26/09/2026.** Dong cu o day noi giong NHAN BAN
+                #    "khong co truong nay, va do la co y". Menh de do SAI, va
+                #    no da tra gia: hang `voice_profile` CO cot `ngon_ngu`, va
+                #    `giong_noi.giai_giong` doc dung cot do de TU CHOI. Bo
+                #    trong lan o danh muc khong lam cua nop de dai hon — no chi
+                #    day cau tu choi tu luc CHON xuong luc BAM.
+                #
+                # ⇒ Lan cua giong khach di qua `giong_cua_toi` (truong thu ba).
+                #    `""` con lai la *that su chua ro* — va MOT giong chua ro
+                #    lan thi khong bi an, dung nhu truoc.
                 "ngon_ngu": str(getattr(g, "ngon_ngu", "") or ""),
             }
     except Exception as exc:      # noqa: BLE001
@@ -517,7 +529,13 @@ def giong_cho_giao_dien(db, owner_id: str) -> list[dict]:
         muc = {"ma": ma, "ten": muc_goc["ten"], "la_mau": ma in thuoc_tinh,
                "gioi": tt.get("gioi", ""), "vung": tt.get("vung", ""),
                "phong_cach": tt.get("phong_cach", ""),
-               "ngon_ngu": tt.get("ngon_ngu", "")}
+               # ⭐ HAI nguon, mot thu tu: giong MAU lay lan tu `giong_mau`,
+               #    giong cua khach / kho chung lay tu chinh hang CSDL
+               #    (`voice_profile.ngon_ngu`) — dung cot ma `lan_ngon_ngu`
+               #    doc de phan quyet. `""` con lai nghia la *that su chua ro*,
+               #    ⛔ khong con nghia "giong nhan ban" nhu truoc 26/09.
+               "ngon_ngu": (tt.get("ngon_ngu", "")
+                            or str(muc_goc.get("ngon_ngu") or ""))}
         if ma in duong:
             muc["duong_nghe"] = duong[ma]
         ra.append(muc)

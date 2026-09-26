@@ -88,7 +88,23 @@ def ma_giong_cua_toi(db, owner_id: str) -> list:
     except Exception:  # noqa: BLE001
         log.exception("khong doc duoc danh sach giong")
         return []
-    return [{"ma": g.public_id, "ten": g.ten_hien_thi}
+    # 🔴 **LÀN ĐI THEO DANH MỤC** — cùng luật đã ghi ở `tham_chieu.py`
+    #    (`tuy_chon_giong_mau`): danh mục nào đánh rơi làn thì bên gọi chỉ còn
+    #    hai đường, mời khách chọn một giọng mà cửa nộp sẽ **từ chối**, hoặc
+    #    chép tay một danh sách VI/EN của riêng nó.
+    #
+    #    Và đường thứ nhất đã xảy ra THẬT (26/09/2026): ASV dựng ô chọn giọng từ
+    #    hàm này, không có làn nên `giong.js` không lọc được, khách bấm "Bắt đầu"
+    #    với giọng `en` đầu danh sách trong khi đích là `vi`, và ăn **400** ở
+    #    `giong_noi.giai_giong`. Lưới lọc phía trình duyệt đã có sẵn và đúng —
+    #    nó chỉ bị bỏ đói một trường.
+    #
+    # ⭐ `chuan_lan` chứ không `str(...)`: thẩm quyền chốt làn là `lan_ngon_ngu`,
+    #    nên giá trị lạ trong cột (`"xx"`, hàng nhập từ kho cũ) phải ra `""` =
+    #    *chưa rõ*, ⛔ không ra một làn thứ ba mà bên gọi không biết đọc.
+    from . import lan_ngon_ngu
+    return [{"ma": g.public_id, "ten": g.ten_hien_thi,
+             "ngon_ngu": lan_ngon_ngu.chuan_lan(g.ngon_ngu)}
             for g in cac if g.trang_thai == "active"]
 
 
