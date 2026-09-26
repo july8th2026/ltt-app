@@ -101,6 +101,7 @@ Mọi bảng: `id: Mapped[str] = mapped_column(String(36), primary_key=True, def
 
 | Cột | Kiểu | Ghi chú |
 |---|---|---|
+| `owner_id` | `String(36)`, index, not null | ⭐ **Bo sung 26/09 sau khi lan M1 thi hanh**: moi ham cua `services/bindings.py` nhan `owner_id` (quyen so huu kiem o tang service). Spec ban dau thieu cot nay |
 | `project_id` | `String(36)`, index, not null | `AppProject.id` |
 | `scene_id` | `String(36)`, nullable, index | **id của CẢNH KỊCH BẢN** — xem §4.3. `NULL` = binding cấp project. ⛔ **Không bao giờ** là id khung hình storyboard |
 | `tag` | `String(16)`, not null | `@IMAGE_1`, `@VIDEO_2`… (chữ hoa, có `@`) |
@@ -336,6 +337,7 @@ bắt buộc — chỗ tạo phải cho phép truyền id vào.
 
 | Tệp | Trách nhiệm |
 |---|---|
+| ⭐ `Base` va `_uuid` | **Do duoc 26/09 sau khi lan M1 thi hanh**: `Base` den tu **`platform_core.db`** (MOT `Base` dung chung cho ca nen tang), khong tu tep nao cua app. `_uuid()` va `_now()` dinh nghia trong `apps/prompt_ai_ommi/tables/tai_nguyen.py`. ⛔ Model moi phai `from platform_core.db import Base`, ⛔ KHONG `from ...tables.tai_nguyen import Base` |
 | `apps/prompt_ai_ommi/services/bindings.py` | Sinh/đọc/đồng bộ `ommi_binding`. **Chỉ** việc thẻ↔variant. ⭐ **Chữ ký công khai — CHỐT 26/09 sau soát liên pha.** Mọi tham số sau `db` là **keyword-only**, và mọi hàm nhận `owner_id` (quyền sở hữu kiểm ở tầng service, không ở route):<br>`list_bindings(db, *, project_id: str, owner_id: str, scene_id: str \| None = None) -> list[OmmiBinding]`<br>`replace_bindings(db, *, project_id: str, owner_id: str, scene_id: str \| None, items: list[dict]) -> tuple[list[OmmiBinding], int]` (đánh số lại toàn bộ theo §6.3; `int` là số bản ghi đổi)<br>`delete_binding(db, *, project_id: str, owner_id: str, scene_id: str \| None, tag: str) -> list[OmmiBinding]`<br>`binding_lines(db, *, project_id: str, owner_id: str, scene_id: str \| None = None) -> list[dict]` (dòng mô tả cho `ASSET_LIST`/`VIDEO_LIST`)<br>`class BindingError(ValueError)` · `class BindingNotFound(LookupError)`<br>⚠️ **Không có `co_binding`.** `has_binding` của §8 suy ra bằng `bool(list_bindings(db, project_id=…, owner_id=…, scene_id=…))`.<br>⛔ Tên tiếng Việt (`doc_bindings`/`dat_bindings`/`co_binding`) trong bản spec đầu là **SAI** — đã bỏ. Soát liên pha 26/09 bắt được: plan pha 1 cài đặt bộ tên trên, plan pha 3 gọi bộ tên kia. |
 | `apps/prompt_ai_ommi/services/handoff_stage.py` | Dựng `payload` giao bài (gọi `apps.taovideo.refs`), tạo/tiêu vé `ommi_handoff` |
 | `apps/prompt_ai_ommi/routes/bindings.py` | Endpoint bindings |

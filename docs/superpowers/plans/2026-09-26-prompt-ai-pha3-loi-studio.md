@@ -227,7 +227,8 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 ## Task M1: Model CSDL của pha 3
 
 **Files:**
-- Create: `apps/prompt_ai_ommi/tables/brief.py`, `tables/canh.py`, `tables/iteration.py`, `tables/nhan_vat.py`
+- Modify (làn M₁ pha 1 đã tạo sẵn dạng rỗng-có-mốc): `apps/prompt_ai_ommi/tables/brief.py`, `tables/iteration.py`, `tables/nhan_vat.py`
+- Create: `apps/prompt_ai_ommi/tables/canh.py` (⭐ pha 1 KHÔNG tạo tệp này)
 - Modify: `apps/prompt_ai_ommi/tables/__init__.py`
 - Test: `tests/test_5300_pha3_schema.py` (thêm vào tệp của M0)
 
@@ -324,7 +325,8 @@ from datetime import datetime, timezone
 from sqlalchemy import Boolean, DateTime, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from apps.prompt_ai_ommi.tables.tai_nguyen import Base, _uuid
+from platform_core.db import Base
+from apps.prompt_ai_ommi.tables.tai_nguyen import _uuid
 
 
 def _now() -> datetime:
@@ -366,7 +368,7 @@ class OmmiBrief(Base):
         DateTime(timezone=True), default=_now, onupdate=_now, nullable=False)
 ```
 
-⚠️ `Base` và `_uuid` import từ `tables/tai_nguyen.py` — **một** `Base` cho cả app. Hai `Base` là hai metadata, và migration sẽ chỉ thấy một nửa số bảng.
+⚠️ `Base` đến từ **`platform_core.db`** — MỘT `Base` dùng chung cho cả nền tảng (đo được 26/09 sau khi làn M₁ thi hành). `_uuid()` và `_now()` từ `tables/tai_nguyen.py`. ⛔ Đừng `from ...tables.tai_nguyen import Base`: nó chạy được nhưng là import gián tiếp, và một ngày ai đó dọn import ở tệp đó là vỡ.
 
 - [ ] **Step 4: Tạo `tables/canh.py`**
 
@@ -388,7 +390,8 @@ from datetime import datetime, timezone
 from sqlalchemy import DateTime, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from apps.prompt_ai_ommi.tables.tai_nguyen import Base, _uuid
+from platform_core.db import Base
+from apps.prompt_ai_ommi.tables.tai_nguyen import _uuid
 
 
 class OmmiCanh(Base):
@@ -430,7 +433,8 @@ from datetime import datetime, timezone
 from sqlalchemy import Boolean, DateTime, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from apps.prompt_ai_ommi.tables.tai_nguyen import Base, _uuid
+from platform_core.db import Base
+from apps.prompt_ai_ommi.tables.tai_nguyen import _uuid
 
 
 class OmmiIteration(Base):
@@ -477,7 +481,8 @@ from datetime import datetime, timezone
 from sqlalchemy import DateTime, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from apps.prompt_ai_ommi.tables.tai_nguyen import Base, _uuid
+from platform_core.db import Base
+from apps.prompt_ai_ommi.tables.tai_nguyen import _uuid
 
 
 def _now() -> datetime:
