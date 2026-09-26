@@ -21,6 +21,22 @@ gio la `ban_bien_tap.doan_giu_lai(...)`, tuc **chi nhung doan nam trong canh con
 lai**. Mot doan thuoc canh da cat khong duoc gui di, khong duoc tra tien, va
 khong duoc xuat hien trong ban ra.
 
+## ⭐ 26/09/2026 — `edit_plan` XUONG GD2, nen o day "KHONG co ban bien tap" la HOP LE
+
+`pipeline.CHUOI` da doi: `edit_plan` chay **sau `render`** (B1 §9a). Nen khi buoc
+nay chay, ⛔ **chua co ban bien tap nao** — va do la trang thai **DUNG**, khong
+phai mot thuong nguon thieu:
+
+  * GD1 giu nguyen hinh va xuat MP4 **full do dai**; viec cat la cua GD2, tren
+    **ban ra**, voi MOT dong ho duy nhat;
+  * nem o day lam chet **MOI** luot chay (B1 §4a buoc 1, §7 dong "Bo `edit_plan`
+    lam `content_process` nem").
+
+⇒ `_doc_ban_bien_tap` tra `(None, None)` = **giu tat ca**, va ⛔ khong loc ban
+  chep loi. Cai gia: ta tra tien tieng cho phan GD2 se bo — tran cat la 5 % nen
+  phan mat <= 5 % chi phi tieng, va do la cai gia DUNG cua kien truc hai giai
+  doan (B1 §9a).
+
 ## Day la giai doan DAU TIEN tieu tien that
 
 Nen ba thu chuyen tu ly thuyet sang thuc te o day:
@@ -59,8 +75,14 @@ class ThieuBanGhi(ThieuNguon):
     """Giai doan chep loi chua sinh ra ban ghi."""
 
 
-class ThieuBanBienTap(ThieuNguon):
-    """Chua co ban bien tap nen chua biet phan nao duoc giu."""
+#: ⭐ Van tay cua "KHONG co ban bien tap" — mot gia tri TUONG MINH, ⛔ khong phai
+#: chuoi rong tinh co.
+#:
+#: 🔴 `long_tieng.van_tay_long_tieng` tron `van_tay_ban` vao van tay cua ca giai
+#:    doan. Neu "khong co ban" va "co mot ban rong" cung cho ra `""` thi hai
+#:    trang thai khac nhau gop thanh MOT gia tri, va bo dem ⛔ khong phan biet
+#:    duoc chung nua. Mot ten rieng giu kha nang phan biet do.
+VAN_TAY_KHONG_CO_BAN = "khong-co-ban-bien-tap"
 
 
 def _doc_ban_ghi(db, kho: Storage, run) -> tuple[dict, str]:
@@ -82,15 +104,44 @@ def _doc_ban_ghi(db, kho: Storage, run) -> tuple[dict, str]:
     return tai_lieu, assets.bam(goi)
 
 
+def _edit_plan_chay_sau_buoc_nay() -> bool:
+    """`edit_plan` dung SAU `content_process` trong `pipeline.CHUOI` hay khong.
+
+    🔑 Doc thu tu tu **so dang ky dung chung**, ⛔ khong go tay mot cau tra loi.
+       Tu 26/09 cau tra loi la `True` (§9a), nhung viec phan quyet no o day —
+       thay vi viet cung — lam hai dieu:
+
+       1. mot ban bien tap do GD2 sinh ra ⛔ khong bao gio bi doc thanh phan
+          quyet cua GD1. Mot luot **VONG SUA** cua `content_process` chay sau khi
+          `edit_plan` da ghi artifact se THAY artifact do; loc theo no o day cho
+          ra mot ban long tieng NGAN hon ban da render — hong ma ⛔ khong loi nao
+          bao;
+       2. neu chuoi doi lai (⛔ khong ai du dinh), duong loc song lai ngay, va
+          ⛔ khong co cho thu hai nao khai thu tu.
+    """
+    ten = pipeline.TEN_GIAI_DOAN
+    return ten.index(pipeline.EDIT_PLAN) > ten.index(pipeline.CONTENT_PROCESS)
+
+
 def _doc_ban_bien_tap(db, kho: Storage, run) -> tuple[object, object]:
-    """`BanBienTap` + `ChiMucCanh` cua run. Ca hai nam trong MOT artifact."""
+    """`BanBienTap` + `ChiMucCanh` cua run, hoac `(None, None)` = **GIU TAT CA**.
+
+    ⭐ 26/09/2026: `edit_plan` da xuong GD2 (chay SAU `render`), nen tu day
+       ⛔ KHONG bao gio co ban bien tap — va do la trang thai **DUNG**, khong
+       phai loi. GD1 giu nguyen hinh va xuat MP4 full do dai; viec cat la cua
+       GD2, tren ban ra, voi MOT dong ho duy nhat. ⛔ Nem o day lam chet MOI
+       luot chay (B1 §4a buoc 1).
+    """
     from . import canh as canh_mod, features
+
+    if _edit_plan_chay_sau_buoc_nay():
+        return None, None
 
     gd = features.giai_doan_theo_ten(db, run.id, pipeline.EDIT_PLAN)
     khoa = next((k for k in (((gd.outputs or {}) if gd else {})
                              .get("khoa_asset") or []) if k.endswith(".json")), "")
     if not khoa:
-        raise ThieuBanBienTap(_t('Chưa có bản biên tập nên chưa biết giữ phần nào.'))
+        return None, None
     with kho.open(khoa) as f:
         goi = json.loads(f.read().decode("utf-8"))
 
@@ -158,11 +209,22 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     ban, chi_muc = _doc_ban_bien_tap(db, kho, run)
 
     # ⛔ Ban ghi nguon khong bi cham. `doan_giu_lai` tra ve mot BAN SAO da loc.
-    giu = ban_bien_tap.doan_giu_lai(goc, ban, chi_muc)
+    #
+    # ⭐ `(None, None)` = **GIU TAT CA** (26/09, `edit_plan` xuong GD2): ⛔ khong
+    #    loc ban chep loi, va ⛔ khong goi `doan_giu_lai` — mot "ban giu het" gia
+    #    de cho qua ham loc la mot nguoi noi thu hai ve cung mot dieu.
+    if ban is None or chi_muc is None:
+        giu, van_tay_ban = dict(goc), VAN_TAY_KHONG_CO_BAN
+    else:
+        giu, van_tay_ban = ban_bien_tap.doan_giu_lai(goc, ban, chi_muc), ban.van_tay()
     doan_giu = list(giu.get("doan") or [])
     if not doan_giu:
+        # ⭐ Hai nguyen nhan KHAC nhau, nen hai cau KHAC nhau — nhung ca hai
+        #    msgid deu DA CO trong catalog, ⛔ khong them msgid moi cho mot ca
+        #    chi doi nguyen nhan.
         raise long_tieng.LongTiengError(
-            _t('Bản biên tập không giữ lại đoạn thoại nào.'))
+            _t('Bản biên tập không giữ lại đoạn thoại nào.') if ban is not None
+            else _t('Không có đoạn nào được giữ lại để lồng tiếng.'))
 
     ma_giong, can_cu, nguon_giong = _giong_da_chot(db, run, ban_ghi=goc, ctx=ctx)
     from . import cai_dat as cd
@@ -173,16 +235,21 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     # 🔑 Task 11 — MOT lan cho CA video, truoc khi buoc vao vong lo dich tung
     #    lo. `dich_mot_lo`/`long_tieng` la VO TRANG THAI (moi lo chi thay
     #    `{ma: chu}` cua chinh no) nen quan he nhan vat phai duoc quyet MOT
-    #    LAN o day, ⛔ khong phai moi lo mot lan. `dung()` tu no rong khi hong
-    #    — ⛔ khong lam chet luot chay.
+    #    LAN o day, ⛔ khong phai moi lo mot lan.
     #
-    # ⚠️ Ho so nay CHUA duoc noi vao loi nhac (`long_tieng.loi_nhac`) — do la
-    #    viec cua buoc noi tiep theo (chua lam trong task nay). O day chi
-    #    dung ho so va ghi no vao `tom_tat` de co bang chung no da chay.
-    ho_so = ho_so_dich.dung(db, goc, ctx=ctx)
+    # ⭐ Ho so DA duoc noi vao loi nhac: `ho_so=ho_so` di vao `long_tieng.loi_nhac`
+    #    o vong lo duoi, va `loi_nhac` THAT SU dung `bang_dai_tu` /
+    #    `bang_ten_rieng` cua no (`test_408::test_loi_nhac_mang_BANG_DAI_TU...`).
+    #    Ngoai ra ho so con vao `tom_tat["ho_so_dich"]` de co bang chung no da
+    #    chay. (Chu thich truoc day khai *"CHUA duoc noi vao loi nhac"* — cau ay
+    #    dung cho buoc dau cua Task 11 va ⛔ da sai tu khi Task 7b noi xong.)
+    #
+    # ⚠️ `dung()` nem khi CUA CHAN ngan sach (`features.AsvError`) va tra ho so
+    #    RONG khi model tra rac — hai ca khac loai, xem docstring cua no.
+    ho_so = ho_so_dich.dung(db, run, goc, ctx=ctx)
 
     vt = long_tieng.van_tay_long_tieng(
-        checksum_ban_ghi=checksum, van_tay_ban=ban.van_tay(),
+        checksum_ban_ghi=checksum, van_tay_ban=van_tay_ban,
         ma_giong=ma_giong, provider=provider, model=model, ngon_ngu_dich=dich)
 
     # ⭐ Diem chot mang van tay nay. Doi giong hay doi ban bien tap => van tay
@@ -321,7 +388,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         lc.xong_mot()
 
     tai_lieu = long_tieng.dung(giu, chuyen, ma_giong=ma_giong,
-                               van_tay_ban=ban.van_tay(),
+                               van_tay_ban=van_tay_ban,
                                provider=provider, model=model,
                                ngon_ngu_dich=dich)
     long_tieng.kiem(tai_lieu, giu)

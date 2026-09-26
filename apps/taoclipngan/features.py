@@ -98,8 +98,11 @@ def apply_quality_gate(candidates: list, mode: str) -> tuple[list, dict]:
     if mode != "block":
         return list(candidates), qa
 
-    kept = [c for c in candidates
-            if not results.get(str(getattr(c, "candidate_id", "") or "")).vetoed]
+    kept = []
+    for cand in candidates:
+        res = results.get(str(getattr(cand, "candidate_id", "") or ""))
+        if res is None or not res.vetoed:
+            kept.append(cand)
     if not kept:
         # Không clip nào qua được gate → giữ ứng viên hạng nhất, đánh dấu fallback
         kept = list(candidates[:1])

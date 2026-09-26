@@ -374,12 +374,24 @@ def test_F10_moc_lam_tron_mili_giay_de_cache_KHONG_truot_vo_co():
 
 
 def test_nguoi_goi_THAT_truyen_moc_canh_vao_van_tay():
-    """Mot ban va khong co nguoi di tren duong thi khong sua gi."""
-    from apps.auto_scan_video import giai_doan_ban_bien_tap as gd
+    """🔴 **26/09/2026 — nguoi goi do DA THOI VIEC** (B1 §9b).
 
-    ma = inspect.getsource(gd._doc_cac_canh)
-    assert "bat=c.bat" in ma and "ket=c.ket" in ma
-    assert "muoi=" in ma
+    `edit_plan` ⛔ khong con goi VLM, nen ⛔ khong con ai goi `van_tay_canh` tren
+    duong chay. Bai kiem ngay tren (`van_tay_canh` on dinh voi moc lech o chu so
+    thu 15) van la hop dong cua `hieu_canh.py`, va `hieu_canh.py` van song —
+    `HO_SO_NOI_DUNG` (duong chon giong) va `tools/do_llm_cong_asv.py` doc no.
+
+    ⇒ Y dinh cu (*"mot ban va khong co nguoi di tren duong thi khong sua gi"*)
+      duoc giu bang cach chot **ai la nguoi di tren duong hom nay**, thay vi chot
+      mot nguoi goi da khong con.
+    """
+    from apps.auto_scan_video import giai_doan_ban_bien_tap as gd
+    from apps.auto_scan_video import ho_so_noi_dung
+
+    assert not hasattr(gd, "_doc_cac_canh"), (
+        "edit_plan lai goi VLM — xem test_2025 §5")
+    # `HO_SO_NOI_DUNG` la nguoi doc CON LAI cua `hieu_canh`.
+    assert "loi_nhac_ho_so" in inspect.getsource(ho_so_noi_dung)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -387,11 +399,18 @@ def test_nguoi_goi_THAT_truyen_moc_canh_vao_van_tay():
 # ══════════════════════════════════════════════════════════════════════════════
 
 def test_rut_khung_chi_co_MOT_ban_sao():
-    """⛔ `edit_plan` va `qc_ai` deu rut khung. Hai doan ma se lech nhau ve tran
-    thoi gian va ve cach bo mot khung hong."""
+    """⛔ Hai doan ma rut khung se lech nhau ve tran thoi gian va ve cach bo mot
+    khung hong.
+
+    ⭐ **26/09/2026:** `edit_plan` ⛔ khong con rut khung nao (no do bang
+       `blackdetect`/`freezedetect` tren ca tep), nen nguoi goi CON LAI la
+       `qc_ai`. Y dinh giu nguyen: chi MOT ban sao, va tran thoi gian doc tu MOT
+       nguon — chot chinh dieu do, ⛔ khong chot mot nguoi goi da khong con.
+    """
     from apps.auto_scan_video import giai_doan_ban_bien_tap as gd
 
-    assert "canh_mod.rut_khung(" in inspect.getsource(gd._rut_khung)
     assert "canh_mod.rut_khung(" in inspect.getsource(gdqa._soat_hinh)
-    # Va tran thoi gian doc tu MOT nguon.
-    assert gd.CHO_RUT_KHUNG_S is canh_mod.CHO_RUT_KHUNG_S
+    assert not hasattr(gd, "_rut_khung"), (
+        "edit_plan rut khung lai — hai ban sao se lech nhau")
+    # Tran thoi gian van la MOT hang so, o dung mot cho.
+    assert canh_mod.CHO_RUT_KHUNG_S > 0

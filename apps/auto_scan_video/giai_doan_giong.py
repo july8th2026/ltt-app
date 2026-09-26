@@ -261,6 +261,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     #    moc" (canh bao o tren): no la cung mot phep dem tren mot DANH SACH KHAC.
     khe_gop = _khe_bao_cao_tu_muc(muc)
     doan_tran: list[dict] = []
+    # ⭐ Giay UOC LUONG cua moi `ma`, tinh MOT LAN o day (`Khe.giay_can`). Loop
+    #    `[F]` doc lai qua dict nay de ghi vao `ban_ghi_luot_doc` — ⛔ KHONG
+    #    tinh lan hai, cung mot ly do voi `ngan_sach_theo_ma`/`so_vong_theo_ma`.
+    giay_uoc_theo_ma: dict[str, float] = {}
     # ⛔ `strict=True`: `khe_gop` dung TU `muc`, nen lech do dai la mot loi lap
     #    trinh — va no se lam `[B]` bo im lang cac doan o duoi, tuc bo im lang
     #    cua tieu tien cua chung.
@@ -269,6 +273,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             continue
         ngan_sach = ngan_sach_theo_ma.get(str(m["ma"]), nan_cho_vua.khe_cua(m))
         giay_doan = kg.giay_can()
+        giay_uoc_theo_ma[str(m["ma"])] = giay_doan
         if nan_cho_vua.nen_viet_lai(giay_doan, ngan_sach):
             doan_tran.append({"ma": str(m["ma"]), "chu": str(m["chu"]),
                               "giay_doc": giay_doan, "khe": ngan_sach,
@@ -424,8 +429,12 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             da_sinh += 1
             # ⭐ Buoc 0.5: ghi NGAY sau khi do, TRUOC moi quyet dinh — mot dong
             #    so lieu them ⛔ khong duoc doi mot quyet dinh nao.
-            _bg = nan_cho_vua.ban_ghi_luot_doc(m["ma"], vong=so_vong,
-                                               giay=giay, khe=khe)
+            # ⭐ `giay_doan` = uoc luong cua `[B]` (Task 12) cho CHINH `ma` nay —
+            #    mang theo de `asv_doi_soat` do duoc sai so cua bo uoc luong,
+            #    thay vi chi do "doc ra vuot khe bao nhieu" (`lech`).
+            _bg = nan_cho_vua.ban_ghi_luot_doc(
+                m["ma"], vong=so_vong, giay=giay, khe=khe,
+                giay_doan=giay_uoc_theo_ma.get(str(m["ma"])))
             luot_doc.append(_bg)
             luot_cua_doan.append(_bg)
 
@@ -538,6 +547,11 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                 #    nay cham vi cai gi"* ma khong phai do lai ngoai san pham.
                 "giay_tts": round(dong_ho["giay_tts"], 2),
                 "giay_llm_nan": round(dong_ho["giay_llm_nan"], 2),
+                # ⭐ Đ4 (xem `[F]`): so doan `giay > khe` NHUNG `giay <= ngan_sach`
+                #    — tung bi TINH TIEN OAN mot luot LLM truoc ban sua thu tu.
+                #    ⛔ Khai `dong_ho["so_doan_nan_oan"]` ma khong XUAT o day la
+                #    dung con so ⛔ khong toi duoc `asv_doi_soat` (Loi #1, 26/09).
+                "so_doan_nan_oan": dong_ho["so_doan_nan_oan"],
                 "preset": str(preset or ""),
                 "ma_giong": ma_giong,
                 **nan_cho_vua.tom_tat(cac_nan, tung_luot_doc=luot_doc),

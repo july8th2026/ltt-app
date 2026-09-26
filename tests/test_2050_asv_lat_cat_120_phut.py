@@ -322,15 +322,13 @@ def test_du_phong_lon_hon_ngan_sach_thi_HONG_NGAY_khong_de_job_bi_giet(db, monke
 def test_du_phong_moi_giai_doan_VUA_trong_tran_manifest():
     """Cau hinh that: don vi te nhat cua moi giai doan lat cat phai vua MOT job,
     neu khong `lat_cat.mo` hong ngay luc chay that."""
-    from apps.auto_scan_video import (ai, canh, giai_doan_ban_bien_tap as gbt,
+    from apps.auto_scan_video import (ai, giai_doan_ban_bien_tap as gbt,
                                       giai_doan_giong as gg, lat_cat,
                                       nan_cho_vua, pipeline)
 
     du = {
         pipeline.CONTENT_PROCESS: lat_cat.timeout_goi_ai(ai.CHUYEN_LOI_THOAI),
         pipeline.QC_AI: lat_cat.timeout_goi_ai(ai.QC_NGU_NGHIA),
-        pipeline.EDIT_PLAN: (canh.KHUNG_MOI_CANH * gbt.CHO_RUT_KHUNG_S
-                             + lat_cat.timeout_goi_ai(ai.DOC_CANH)),
         pipeline.VOICE_SYNTHESIS: ((nan_cho_vua.VONG_TOI_DA + 1) * gg._timeout_tts()
                                    + nan_cho_vua.VONG_TOI_DA
                                    * lat_cat.timeout_goi_ai(ai.RUT_NGAN_CHO_VUA)),
@@ -338,6 +336,25 @@ def test_du_phong_moi_giai_doan_VUA_trong_tran_manifest():
     for ten, giay in du.items():
         ngan_sach = lat_cat.HE_SO_TRAN * lat_cat.tran_giai_doan(ten)
         assert giay + lat_cat.DU_PHONG_NGOAI_GOI_S < ngan_sach, (ten, giay, ngan_sach)
+
+    # 🔴 **`EDIT_PLAN` ROI KHOI bang tren (26/09, B1 §9b)** va do la mot menh de,
+    #    khong phai mot cho trong: don vi cua no ⛔ khong con la mot LOI GOI, nen
+    #    ⛔ khong co `du_phong_s` cua loi goi nao de vua. No con **MOT** don vi —
+    #    chi muc canh + MOT luot ffmpeg giai ma ca tep — va han cua luot ffmpeg do
+    #    duoc KEP boi `han_tien_trinh_con`, cung khuon voi demucs/render.
+    #
+    # ⛔ Day la cho de mot tien trinh ffmpeg MO COI sinh ra: neu han lon hon tran
+    #    job thi `job_runner._het_gio` ban `os._exit(3)` truoc, va tren Windows
+    #    con ⛔ khong chet theo cha.
+    tran_ep = lat_cat.tran_giai_doan(pipeline.EDIT_PLAN)
+    lat_cat.bat_dau_luot()
+    assert gbt._han_do_hinh() <= lat_cat.HE_SO_TRAN * tran_ep, (
+        "han ffmpeg cua edit_plan vuot tran job — ffmpeg se song mo coi")
+    assert not hasattr(gbt, "CHO_RUT_KHUNG_S"), (
+        "edit_plan rut khung lai — no do bang blackdetect/freezedetect tren ca tep")
+    assert ai.DOC_CANH.can_thi_giac, (
+        "doi chung: `DOC_CANH` van la thao tac THI GIAC cua `hieu_canh`, chi la "
+        "edit_plan khong con goi no (tools/do_llm_cong_asv.py van do)")
 
 
 def test_tien_trinh_con_KHONG_song_lau_hon_tran_job(monkeypatch):

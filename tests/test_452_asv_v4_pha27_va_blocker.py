@@ -56,8 +56,14 @@ def _ten_duoc_goi(ham) -> set[str]:
 #  B22-01 — VLM chua tung duoc hoi mot cau nao
 # ══════════════════════════════════════════════════════════════════════════════
 
-def test_EDIT_PLAN_THUC_SU_goi_VLM_chu_khong_truyen_hieu_rong():
+def test_EDIT_PLAN_THUC_SU_do_canh_chu_khong_truyen_hieu_rong():
     """Tai hien: truoc pha 27 than ham `chay` chua dung mot dong `hieu = ()`.
+
+    🔴 **26/09/2026 — KY VONG DOI, Y DINH GIU.** Y dinh: *`chay` ⛔ khong duoc
+       gan `hieu` RONG vo dieu kien; phai co mot nhanh dan `hieu` toi bang chung
+       THAT.* Tu 26/09 bang chung do la **phep do tat dinh** (`_do_cac_canh`:
+       so hoc tren ban chep loi + `blackdetect` + `freezedetect`) chu khong con
+       la mot loi goi VLM — va cua tra tien bien mat cung voi no (B1 §9b).
 
     ⭐ Doc bang AST chu khong bang chuoi: mot phep tim `"hieu = ()"` se xanh tro
        lai ngay khi ai do doi khoang trang, va do la mot phep kiem do chinh tri
@@ -83,18 +89,21 @@ def test_EDIT_PLAN_THUC_SU_goi_VLM_chu_khong_truyen_hieu_rong():
     # ⭐ `hieu = ()` VAN dung o nhanh `PRESET_GIU_HINH`, va do la dung: preset
     #    giu hinh khong duoc phep cat, nen mot y kien ve viec nen cat gi la mot
     #    y kien khong duoc dung toi. Dieu phai sai la mot phep gan RONG **vo
-    #    dieu kien** — tuc khong nhanh nao dan toi mot loi goi VLM.
-    def _co_goi_doc_canh(nut) -> bool:
-        return any(getattr(getattr(c, "func", None), "id", "") == "_doc_cac_canh"
-                   or getattr(getattr(c, "func", None), "attr", "") == "_doc_cac_canh"
+    #    dieu kien** — tuc khong nhanh nao dan toi mot phep do THAT.
+    def _co_goi_do_canh(nut) -> bool:
+        return any(getattr(getattr(c, "func", None), "id", "") == "_do_cac_canh"
+                   or getattr(getattr(c, "func", None), "attr", "") == "_do_cac_canh"
                    for c in ast.walk(nut) if isinstance(c, ast.Call))
 
-    assert any(_co_goi_doc_canh(n) for n in gan_hieu), (
-        "khong nhanh nao cua `chay` dan `hieu` toi mot loi goi VLM")
+    assert any(_co_goi_do_canh(n) for n in gan_hieu), (
+        "khong nhanh nao cua `chay` dan `hieu` toi mot phep do that")
 
-    assert "_doc_cac_canh" in _ten_duoc_goi(gdbbt.chay)
-    assert "goi_tinh_tien" in _ten_duoc_goi(gdbbt._doc_cac_canh), (
-        "duong doc canh khong di qua cua tra tien")
+    assert "_do_cac_canh" in _ten_duoc_goi(gdbbt.chay)
+    # ⛔ Va duong do ⛔ KHONG duoc di qua cua tra tien: tu 26/09 giai doan nay
+    #    khong ton mot dong nao cho model.
+    assert "goi_tinh_tien" not in _ten_duoc_goi(gdbbt._do_cac_canh)
+    assert "do_hinh" in _ten_duoc_goi(gdbbt._do_cac_canh), (
+        "duong do canh khong di qua blackdetect/freezedetect")
 
 
 def test_loi_nhac_canh_GUI_KHUNG_HINH_that_dang_OpenAI():

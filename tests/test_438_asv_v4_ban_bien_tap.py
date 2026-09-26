@@ -1,9 +1,11 @@
 """Auto Scan Video V4 — BAN BIEN TAP (EditPlan), pha 12.
 
-**§1 quyet dinh hinh anh chot TRUOC khi tieu tien tieng** — 🔴 `V4-R07` (P0):
-     trong V2, `content_process` (dich ca ban chep loi bang model TRA TIEN) chay
-     o vi tri thu **4**, khi chua co ban bien tap nao. Tuc dich va tra tien cho
-     nhung cau thoai thuoc nhung canh se bi **cat bo**.
+**§1 vi tri trong chuoi** — 🔴 **DAO CHIEU 26/09/2026** (B1 §9a): buoc nay xuong
+     **GIAI DOAN 2**, chay SAU `render`. Ly do cu (`V4-R07`: *"dung dich nhung
+     cau thuoc canh se bi cat"*) het dung khi GD1 giu nguyen hinh va xuat MP4
+     full do dai — ⛔ khong con canh nao bi cat trong GD1 de tiet kiem. Cai duoc:
+     phan quyet va phep cat dung tren **cung mot dong ho**. Cai gia: tra tien
+     tieng cho <= 5 % se bi bo.
 
 **§2 `localize_preserve_picture` KHONG BAO GIO cat** — `THAO_TAC_CHO_PHEP` cua no
      la mot tuple RONG. Do la loi hua san pham, khong phai mot mac dinh mem.
@@ -42,35 +44,66 @@ def _h(i, de_xuat="bo", do_tin=0.9) -> hc.HieuCanh:
 #  §1  Vi tri trong chuoi — ban bien tap dung TRUOC moi thu tra tien
 # ══════════════════════════════════════════════════════════════════════════════
 
-def test_edit_plan_dung_TRUOC_content_process():
-    """🔴 Ca ly do ton tai cua pha 12. `V4-R07` (P0)."""
+def test_edit_plan_dung_SAU_render_chu_khong_truoc_content_process():
+    """🔴 **26/09/2026 — KY VONG DAO CHIEU** (B1 §9a). Y dinh cu con nguyen o
+    `test_doi_ban_KHONG_lam_vo_hieu_ASR_hay_tach_tieng` duoi.
+
+    Ly do CU (`V4-R07`, pha 12): *"dung dich nhung cau thuoc canh se bi cat"*.
+    Ly do do **het dung** khi chu du an chot kien truc hai giai doan — GD1 giu
+    nguyen hinh va xuat MP4 **full do dai**, nen ⛔ khong con canh nao bi cat
+    trong GD1 de tiet kiem.
+
+    ⭐ Va vi tri moi xoa mot LOP LOI: o vi tri cu, buoc nay phan quyet tren truc
+       thoi gian NGUON con `ke_cat`/`image_finish` cat tren truc BAN RA. Chay sau
+       `render` thi chi con MOT dong ho.
+
+    ⚠️ Cai gia: tra tien tieng cho phan se bi bo, <= 5 % (`ke_cat.TRAN_CAT_TI_LE`).
+    """
     ten = [g.ten for g in pipeline.CHUOI]
-    assert ten.index(pipeline.EDIT_PLAN) < ten.index(pipeline.CONTENT_PROCESS)
+    assert ten.index(pipeline.EDIT_PLAN) > ten.index(pipeline.CONTENT_PROCESS)
+    assert ten.index(pipeline.EDIT_PLAN) > ten.index(pipeline.RENDER)
+    assert ten.index(pipeline.EDIT_PLAN) < ten.index(pipeline.IMAGE_FINISH)
 
 
-def test_content_process_phu_thuoc_TRUC_TIEP_vao_edit_plan():
+def test_edit_plan_phu_thuoc_TRUC_TIEP_vao_render():
     """Khong chi dung sau — phai **an theo**, de dieu phoi vien khong nop no khi
-    ban bien tap chua `succeeded`."""
-    g = pipeline.THEO_TEN[pipeline.CONTENT_PROCESS]
-    assert pipeline.EDIT_PLAN in g.sau
+    `render` chua `succeeded`.
+
+    ⭐ Va chieu con lai cung phai dung: `image_finish` an theo `edit_plan`, neu
+       khong thi hai buoc nop duoc CUNG LUC va `image_finish` cat 0 khung im lang.
+    """
+    assert pipeline.RENDER in pipeline.THEO_TEN[pipeline.EDIT_PLAN].sau
+    assert pipeline.EDIT_PLAN in pipeline.THEO_TEN[pipeline.IMAGE_FINISH].sau
 
 
-def test_moi_giai_doan_TRA_TIEN_deu_o_HA_NGUON_cua_edit_plan():
-    """⛔ Bat bien chinh cua cong thoat: khong lan long tieng tra tien nao duoc
-    bat dau truoc khi ban bien tap hop le."""
+def test_moi_giai_doan_CAT_deu_o_HA_NGUON_cua_edit_plan():
+    """🔴 **26/09 — KY VONG DOI CHIEU.** Y dinh cu: *khong THAO TAC nao an theo
+    ban bien tap duoc bat dau truoc khi ban do hop le.*
+
+    O vi tri cu, thu an theo la cac buoc **TRA TIEN** (`content_process`,
+    `voice_synthesis`). Tu 26/09 chung dung TRUOC, va thu an theo la cac buoc
+    **CAT** — `image_finish` va moi cong chat luong do tep DA CAT.
+    """
     ha = set(pipeline.ha_nguon_cua(pipeline.EDIT_PLAN))
-    for tra_tien in (pipeline.CONTENT_PROCESS, pipeline.VOICE_SYNTHESIS):
-        assert tra_tien in ha, f"{tra_tien} khong an theo ban bien tap"
+    for an_theo in (pipeline.IMAGE_FINISH, pipeline.QC, pipeline.QC_DO_LUONG,
+                    pipeline.QC_AI):
+        assert an_theo in ha, f"{an_theo} khong an theo ban bien tap"
 
 
 def test_doi_ban_KHONG_lam_vo_hieu_ASR_hay_tach_tieng():
-    """Yeu cau 7: doi ban chi vo hieu HA NGUON, khong dung toi thuong nguon."""
+    """Yeu cau 7: doi ban chi vo hieu HA NGUON, khong dung toi thuong nguon.
+
+    ⭐ Tu 26/09 bat bien nay MANH hon han: ca duong long tieng (`content_process`,
+       `voice_synthesis`, `timing_align`, `compose`, `render`) nam THUONG NGUON,
+       nen doi ban bien tap ⛔ khong con lam chay lai mot lan tra tien nao.
+    """
     ha = set(pipeline.ha_nguon_cua(pipeline.EDIT_PLAN))
     for thuong_nguon in (pipeline.MEDIA_PREPARE, pipeline.AUDIO_PREPARE,
-                         pipeline.TRANSCRIBE):
+                         pipeline.TRANSCRIBE, pipeline.CONTENT_PROCESS,
+                         pipeline.VOICE_SYNTHESIS, pipeline.RENDER):
         assert thuong_nguon not in ha, (
             f"{thuong_nguon} bi vo hieu khi doi ban — do la chay lai mot lan "
-            f"chep loi da tra tien vi mot quyet dinh hinh anh")
+            f"da tra tien vi mot quyet dinh hinh anh")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
