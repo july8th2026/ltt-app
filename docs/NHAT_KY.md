@@ -47,6 +47,30 @@ Kèm hai bất biến: `0` là *không đo được* ⛔ không phải *máy có
 **không** được dùng `status/reboot` để áp CPU/RAM — nó khởi động lại **guest**
 trong cùng tiến trình QEMU cũ, nên máy boot lại mà vẫn giữ số cũ.
 
+### ⏳ CHƯA deploy — chờ làn ASV (chủ dự án chốt 26/09)
+
+Giá mới đang nằm trên `main` nhưng **chưa lên production** — `app.lttstudios.com`
+vẫn bán 149k/179k (bản đang chạy `dff24d4b`, dựng 15:28).
+
+Deploy xuất `git archive` HEAD cây chính, nên nó mang theo **19 commit** của mọi
+phiên. Làn Auto Scan Video **chặn**, với lý do cụ thể: Task 12 vừa dựng lại vòng
+lõi `voice_synthesis` (chạm `lat_cat` và vân tay, tức chạm đường bút toán credit)
+và **chưa chạy worker thật lần nào**; còn 4 task, 2 đang bay; và app ASV **đang
+mở cho khách**.
+
+Chủ dự án chọn **chờ** — giá mới chỉ ảnh hưởng lượt **mua mới**, mà hiện chưa có
+khách VPS nào ngoài chính chủ dự án, nên chờ gần như không mất gì.
+
+⭐ Đường *"nhánh phát hành từ `dff24d4b` + cherry-pick"* đã xét và **bỏ**, vì một
+   lý do cơ học chứ ⛔ không phải cẩn thận chung chung: `setup/2-cai-dat.ps1:81`
+   **từ chối chạy từ git worktree**, và `$VAN_CHUYEN` chép `apps/*/vendor` +
+   `yolov8n.pt` **từ `$src`** — một cây riêng ⛔ không có chúng, nên bản xuất sẽ
+   làm `upscalevideo` chết **im lặng** (EXITCODE=0, `/health/ready` 200,
+   `nghiem_thu_deploy` báo "thiếu 0" vì nó chỉ đếm `.py`).
+
+**Đo bởi:** phiên "Phục hồi VPS ngừng hoạt động", 26/09/2026. Gỡ chặn khi làn ASV
+báo xong 13/13 — lúc đó bốn commit VPS đi kèm luôn, ⛔ không cần làm gì thêm.
+
 ### Lỗ hở đã vá: sổ và máy thật ⛔ không ai bắt khớp
 
 `jobs._cau_hinh_may_trong` đặt `cores`/`memory` **một lần, lúc tạo máy**; ⛔ không
