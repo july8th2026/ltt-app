@@ -108,12 +108,55 @@ def phien_ban_engine(stage_ten: str) -> str:
                 f"+dinh_tuyen/{nguon_loi.PHIEN_BAN_DINH_TUYEN}"
                 f"+ocr/{ocr_khung.ENGINE}")
     if stage_ten == pipeline.EDIT_PLAN:
-        from . import ban_bien_tap, canh, giai_doan_ban_bien_tap
+        from . import ban_bien_tap, canh, giai_doan_ban_bien_tap, nhap_media
         # 🔑 Ba con so, ba thu doi doc lap: ma cua giai doan, chinh sach cat, va
         #    bo tach canh (PHIEN_BAN_CANH). Thieu bat ky cai nao thi doi no xong cache van
         #    khop, va lan chay dung lai mot ban bien tap sinh boi luat CU.
+        #
+        # 🔴 Task 20 (26/09): them PHIEN BAN FFMPEG. Tu 26/09 giai doan nay DO
+        #    hinh bang ffmpeg (`blackdetect`/`freezedetect` — xem
+        #    `giai_doan_ban_bien_tap._do_cac_canh`, `qc.BLACKDETECT`/
+        #    `FREEZEDETECT`), nen doi ffmpeg co the doi ranh gioi khoang toi/
+        #    dung hinh va qua do doi CANH NAO bi cat — dung ho voi N-21/N-23
+        #    ngay tren CONTENT_PROCESS: mot thu doi dau ra ma van tay khong
+        #    biet. Thieu dong nay, nang ffmpeg tren may khong lam
+        #    `_vo_hieu_giai_doan_da_lech` (`giai_doan_lech_van_tay`) thay doi
+        #    gi — mot `edit_plan` da `succeeded` van duoc coi la con hop le va
+        #    khong bao gio chay lai, du ffmpeg moi se do ra bang chung khac.
+        #
+        # ⚠️ KHAC voi van tay ARTIFACT cua `BanBienTap.van_tay()` (mot lan
+        #    truoc da gan ffmpeg vao `ban.ghi_chu`, `sang_dict()` bam ca no):
+        #    do la khoa LUU cua tep JSON luc `chay()` THAT su chay, khong phai
+        #    dieu kien de `chay()` co duoc goi lai hay khong. Hai von KHAC
+        #    tang — vá do khong sai, nhung mot minh no khong du: no khong bao
+        #    gio lam `giai_doan_lech_van_tay` thay doi ket qua, vi ham do so
+        #    sanh CHINH chuoi ham nay tra ve.
+        #
+        # ⛔ KHONG chia theo preset o day (vd chi gan ffmpeg cho
+        #    `smart_localize`, bo qua `giu_hinh`): ham nay chi nhan `stage_ten`,
+        #    khong nhan `run`/`preset`, va `test_416::
+        #    test_doi_phien_ban_engine_thi_van_tay_PHAI_doi` thay THE CA ham
+        #    nay bang `lambda t: ...` (MOT tham so) cho MOI giai doan trong
+        #    `pipeline.CHUOI` — them tham so vao chu ky ham nay (hoac vao cach
+        #    `van_tay()` goi no) se lam `TypeError` o TAT CA giai doan, khong
+        #    chi `EDIT_PLAN`. ⇒ Chon huong AN TOAN hon: gan ffmpeg VO DIEU KIEN
+        #    cho ca hai preset. Cai gia: nang ffmpeg vo hieu CA `edit_plan` cua
+        #    `giu_hinh` — preset ⛔ khong goi `_do_cac_canh`/ffmpeg de quyet
+        #    dinh gi (`hieu, hong = (), []`) nen phan chay lai cua no la CPU
+        #    thua, khong phai tien: `edit_plan` khong tinh credit (VLM da thoi
+        #    viec o day 26/09) va scene split PySceneDetect tren cung mot
+        #    video la tat dinh — do vo hai ve huong ton them mot lan tinh, cung
+        #    huong ma `loi.py` (vd `CanhError`) da chon lam mac dinh an toan.
+        #    Va no se lam `tests/test_448_asv_v4_e2e_nghiem_thu.py::
+        #    test_phien_ban_ENGINE_trong_bao_cao_van_dung_HOM_NAY` do CHO ca
+        #    hai luot — DUNG NHU THIET KE cua chinh bai do ("doi engine la lam
+        #    do phep kiem nay, va do la luc phai chay lai nghiem thu chu khong
+        #    phai sua con so"); can mot luot nghiem thu E2E that (ngoai pham vi
+        #    lan nay, ⛔ "Khong chay luot ASV") de sinh lai
+        #    `docs/auto_scan_video_v4/evidence/nghiem_thu_hien_hanh.json`.
         return (f"ban_bien_tap/{giai_doan_ban_bien_tap.PHIEN_BAN_MA}"
-                f"/{ban_bien_tap.PHIEN_BAN_BAN}/{canh.PHIEN_BAN_CANH}")
+                f"/{ban_bien_tap.PHIEN_BAN_BAN}/{canh.PHIEN_BAN_CANH}"
+                f"/ffmpeg/{nhap_media.phien_ban_ffmpeg()}")
     if stage_ten == pipeline.CONTENT_PROCESS:
         from . import ai, van_ban
         # 🔴 **Hai dong nay tung doc mot module DA CHET, va hang so chung doc
