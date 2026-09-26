@@ -2,10 +2,15 @@
 
 ## OVERVIEW
 
-RIFE-NCNN-Vulkan sẽ thay thế minterpolate để:
-1. GPU offload (RTX 5060 Ti) — **5-10x faster**
-2. Better temporal quality
-3. Lower CPU utilization (<30%)
+⛔ SAI/CHƯA XÂY — mục "CURRENT STATUS" cuối tệp này tự ghi "Phase 2.1.1: SKIPPED".
+RIFE KHÔNG BAO GIỜ được cài đặt (`apps/upscalevideo/ff.py:138-140` chỉ còn
+`# TODO` chết); đường chạy thật vẫn luôn là `minterpolate` CPU tính đến
+2026-09-26 (ISSUE K, `docs/UPSCALE_V2_CORRECTION/07_CORRECTION_PLAN.md`).
+
+RIFE-NCNN-Vulkan sẽ thay thế minterpolate để (mục tiêu ban đầu, không đạt được):
+1. GPU offload (RTX 5060 Ti) — **5-10x faster** (ước lượng, chưa từng xây)
+2. Better temporal quality (ước lượng, chưa từng xây)
+3. Lower CPU utilization (<30%) (ước lượng, chưa từng xây)
 
 ## PHASE 2.1.1: VENDOR RIFE
 

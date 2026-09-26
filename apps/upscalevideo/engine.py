@@ -24,10 +24,13 @@ from apps.upscalevideo.schemas import TuneResult
 
 logger = logging.getLogger(__name__)
 
-# Model cache: model_name -> (param_path, bin_path)
-_model_cache = {}
+# ⛔ Bo `_model_cache`: khai roi khong doc khong ghi o bat cu dau — ma chet.
 
-# Model warmup cache: model_name -> timestamp of last warmup
+# Model da ham nong trong VONG DOI TIEN TRINH worker nay: {model: timestamp}.
+# ⚠️ Khoa la TEN MODEL, khong phai (model, tile, threads) nhu ban cu. `tile` va
+#    `threads` den tu autotune theo VRAM SONG nen doi theo tung job ⇒ khoa cu gan
+#    nhu KHONG BAO GIO trung, tuc "cache" ay chi lam warmup chay lai moi lan.
+#    Ham nong la chuyen cua DRIVER/OS, khong phu thuoc tile.
 _model_warmup_cache = {}
 
 _STALL_TIMEOUT_S = 300.0
@@ -49,32 +52,41 @@ def model_available(model: str) -> bool:
     return (m / f"{model}.param").is_file() and (m / f"{model}.bin").is_file()
 
 
-def _warmup_model(model: str) -> None:
-    """Warm up model by loading it in a separate process."""
+def _warmup_model(model: str, gpu_index: int | None = None,
+                  env: dict | None = None) -> None:
+    """Chay engine mot luot tren anh gia — de ham nong cache driver/dia cua OS.
+
+    ⚠️ Ham nay KHONG giu model trong VRAM. Tien trinh con `subprocess.run` thoat
+    han truoc khi job that chay (`run_upscale` spawn mot `Popen` MOI), nen
+    OS/driver da thu hoi context Vulkan. Loi ich duy nhat co the co la cache tep
+    model cua OS + shader cache cua driver — va do la mot dieu phai DO, khong
+    phai mot dieu duoc TUYEN BO. Xem `docs/UPSCALE_V2_CORRECTION/` ISSUE D.
+
+    ⭐ PHAI nhan `gpu_index` + `env` giong job that. Ban cu khong truyen `-g` va
+    khong truyen `env` ⇒ tren may co iGPU Intel, warmup co the chay SAI CARD
+    (dung lop su co `vulkan_device.py:9-19`, va commit `7cde3c9d` da phai sua
+    mot lan). Ham nong sai card thi vo ich, con lam ban card khac.
+    """
     import tempfile
+    from apps.upscalevideo.vulkan_device import _tiny_png
     with tempfile.TemporaryDirectory() as tmpdir:
-        # Create dummy input/output dirs
         in_dir = os.path.join(tmpdir, "in")
         out_dir = os.path.join(tmpdir, "out")
         os.makedirs(in_dir, exist_ok=True)
         os.makedirs(out_dir, exist_ok=True)
-        
-        # Create dummy frame
-        import numpy as np
-        frame = np.zeros((512, 512, 3), dtype=np.uint8)
-        frame[:, :, 0] = 128
-        frame[:, :, 1] = 128
-        frame[:, :, 2] = 128
-        import cv2
-        cv2.imwrite(os.path.join(in_dir, "frame00001.png"), frame)
-        
-        # Run engine with dummy data to warm up model
+        # ⛔ Khong dung numpy+cv2 chi de tao MOT anh den: hai dependency nang cho
+        #    mot viec `struct`+`zlib` lam duoc, va day la hai import numpy/cv2
+        #    duy nhat trong ca app (ISSUE F). `_tiny_png` da ton tai san.
+        _tiny_png(os.path.join(in_dir, "frame00001.png"))
+
         args = [str(_EXE), "-i", in_dir, "-o", out_dir, "-n", model, "-s", "4",
                 "-m", "models", "-f", "png", "-t", "384", "-j", "1"]
-        logger.debug("[engine] warming up model: %s", model)
-        subprocess.run(args, cwd=str(_ENGINE_DIR), 
-                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=60)
-        logger.debug("[engine] model warmed up: %s", model)
+        if gpu_index is not None:
+            args += ["-g", str(gpu_index)]
+        logger.debug("[engine] ham nong model %s tren gpu=%s", model, gpu_index)
+        subprocess.run(args, cwd=str(_ENGINE_DIR),
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                       timeout=60, env=env)
 
 
 def _count_png(d: str) -> int:
@@ -93,16 +105,16 @@ def run_upscale(in_dir: str, out_dir: str, tune: TuneResult, n_frames: int,
     """Upscale mọi PNG trong in_dir → out_dir. Trả "done"|"cancelled"|"timeout"|"error"."""
     os.makedirs(out_dir, exist_ok=True)
     
-    # Model warmup check
+    # Ham nong mot lan moi model moi vong doi worker (xem `_warmup_model`).
+    # Tat bang `LTT_UPSCALE_WARMUP=0` — de do duoc co/khong trong cung mot may.
     model_name = tune.model
-    warmup_cache_key = f"{model_name}_tile{tune.tile}_j{tune.threads}"
-    
-    if warmup_cache_key not in _model_warmup_cache:
+    if (os.environ.get("LTT_UPSCALE_WARMUP", "1").strip() not in ("0", "false", "no")
+            and model_name not in _model_warmup_cache):
         if model_available(model_name):
-            _warmup_model(model_name)
-            _model_warmup_cache[warmup_cache_key] = time.time()
+            _warmup_model(model_name, gpu_index=gpu_index, env=env)
+            _model_warmup_cache[model_name] = time.time()
         else:
-            logger.warning("[engine] model %s not available, skipping warmup", model_name)
+            logger.warning("[engine] khong co model %s, bo qua ham nong", model_name)
     
     args = [str(_EXE), "-i", in_dir, "-o", out_dir, "-n", tune.model, "-s", "4",
             "-m", "models", "-f", "png", "-t", str(tune.tile), "-j", tune.threads]

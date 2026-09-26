@@ -14,6 +14,8 @@ phai chat luong ban dich — ma la **dieu gi xay ra khi cuoc goi that bai**.
 """
 from __future__ import annotations
 
+import ast
+import inspect
 import json
 
 import pytest
@@ -530,27 +532,324 @@ def test_DOI_CHUNG_tang_hang_DICH_thi_van_tay_LONG_TIENG_khong_nhuc_nhich(monkey
 #  Task 5 — doi_soat: sau phep DEM tren mot luot chay (khong can ban tham chieu)
 # ══════════════════════════════════════════════════════════════════════════════
 
+#: HINH DANG THAT cua `asv_stage.outputs` — ⛔ KHONG BIA.
+#:
+#: 🔴 **Vi sao co hang so nay.** Ban truoc cua `tools/asv_doi_soat.py` doc
+#:    `gd["tom_tat"]` cua mot muc `quan_sat.dong_thoi_gian` — mot khoa ⛔ khong
+#:    ton tai — nen no tra `None` cho MOI phep do, mai mai. Bo test cu van xanh
+#:    vi fixture BIA ra dung khoa ma ma nguon muon nhan. Do dung cai bay ma
+#:    `giai_doan_noi_dung.py` (tim `cua_ai_gia`) da ghi lai.
+#:
+#: ⭐ Chep tu CSDL production 26/09/2026, ⛔ chi DOC:
+#:      run_id  = asvr_23c9aa26b48a4f78ba6e49c5ca98336   (status `succeeded`)
+#:      stage_id= asvs_b7259be34c6e4f8e807afce8f81aee8a  (stage `voice_synthesis`)
+#:    Ba ban ghi `tung_luot_doc` dau + cac khoa vo huong, nguyen van. ⛔ Khong
+#:    mang loi thoai cua khach (`ban_ghi_luot_doc` khong ghi `chu`).
+OUTPUTS_GIONG_THAT = {
+    "stage": "voice_synthesis",
+    "khoa_asset": [],
+    "so_ma_noi_dung": 78, "so_khe_da_gop": 5, "so_doan_moi_sinh": 71,
+    "so_luot_doc": 113, "so_doan_dung_lai": 0, "tong_giay": 179.2,
+    "giay_tts": 114.82, "giay_llm_nan": 217.7,
+    "preset": "", "ma_giong": "vc_fceeabc694124a51921c7558a2f50db7",
+    "so_doan": 71, "so_vua": 49, "so_co_gian": 4, "so_ngan": 7,
+    "so_can_sua": 11, "so_vong_tong": 42, "lech_lon_nhat": 0.6876,
+    "tung_doan": [
+        {"ma": "seg_0001", "trang_thai": "vua", "giay": 2.4, "khe": 2.522,
+         "lech": -0.0484, "so_vong": 1, "he_so_co_gian": 1.0},
+    ],
+    "tung_luot_doc": [
+        {"ma": "seg_0001", "vong": 0, "giay": 5.52, "khe": 2.522,
+         "lech": 1.1887, "can_nan": True, "nen_viet_lai": True},
+        {"ma": "seg_0001", "vong": 1, "giay": 2.4, "khe": 2.522,
+         "lech": -0.0484, "can_nan": False, "nen_viet_lai": False},
+        {"ma": "seg_0002", "vong": 0, "giay": 6.24, "khe": 3.763,
+         "lech": 0.6583, "can_nan": True, "nen_viet_lai": True},
+    ],
+    "so_luot_do": 113,
+}
+
+#: 🔴 **`timing_align` ⛔ CHUA MOT LAN NAO ghi `outputs` tren may nay.** Ca 8
+#:    dong `asv_stage` co `stage='timing_align'` (doc 26/09/2026) deu
+#:    `pending` / `cancelled` / `failed_terminal` voi `outputs == {}` — ke ca ba
+#:    lan chay co `voice_synthesis` **succeeded**.
+#:
+#: ⇒ Hinh dang duoi day lay tu MA GHI NO, ⛔ khong tu mot ban ghi that, va day
+#:   la loi khai ro rang ve cho lay:
+#:     `giai_doan_thoi_gian.py:159`  tom_tat = {**thoi_gian.tom_tat(ke_hoach),
+#:                                             "master": do_duoc}
+#:     `giai_doan_thoi_gian.py:307`  do_duoc["he_so_toc_da_ap"] = ...
+#:     `giai_doan_thoi_gian.py:311`  do_duoc["so_doan_lech_cuoi"] = ...
+#:     `giai_doan_thoi_gian.py:312`  do_duoc["giay_lech_cuoi"] = ...
+#:   `test_doi_soat_khoa_MASTER_dung_cho_ma_ghi_no` neo hinh dang nay vao chinh
+#:   ba dong ay, nen khi giai doan ay chay that va lech, phep kiem se do.
+OUTPUTS_THOI_GIAN_THEO_MA_GHI = {
+    "stage": "timing_align",
+    "khoa_asset": [],
+    "so_doan": 71, "so_doan_bi_cat": 0, "so_doan_tang_toc": 3,
+    "he_so_toc_lon_nhat": 1.12, "troi_toi_da_ms": 40, "ket_cuoi_ms": 179200,
+    "che_do": "giu_hinh",
+    "master": {
+        "thoi_luong": 179.2, "lech_giay": 0.0,
+        "he_so_toc_da_ap": [1.0, 1.0, 1.08, 1.12, 1.0, 1.05],
+        "so_doan_lech_cuoi": 2, "giay_lech_cuoi": 0.31,
+    },
+}
+
+
 def test_doi_soat_phan_biet_CHUA_DO_voi_BANG_KHONG():
     """⛔ `0` và "chưa đo được" là HAI trạng thái. Gộp chúng là mất khả năng phân biệt."""
     from tools.asv_doi_soat import doi_soat
 
-    rong = doi_soat({"giai_doan": []})
-    assert rong["sai_so_p90"] is None, "khong co cap (doan, that) thi phai la None"
-    assert rong["so_doan_nan_oan"] is None
+    rong = doi_soat({})
+    assert rong["sai_so_p90"] is None, "khong co luot doc nao thi phai la None"
+    assert rong["so_luot_do_duoc"] is None
+    assert rong["so_doan_lech_cuoi"] is None, "timing_align chua chay ⇒ None"
+
+    # ⭐ Ve DOI CHUNG: `0` phai di qua duoc, ⛔ khong bi bien thanh `None`.
+    co = doi_soat({"timing_align": {"master": {"so_doan_lech_cuoi": 0,
+                                               "giay_lech_cuoi": 0.0}}})
+    assert co["so_doan_lech_cuoi"] == 0
+    assert co["giay_lech_cuoi"] == 0.0
 
 
-def test_doi_soat_tinh_sai_so_tu_cap_doan_va_that():
+def test_doi_soat_doc_dung_outputs_THAT_cua_voice_synthesis():
+    """🔴 Chạy trên hình dạng CHÉP TỪ CSDL, ⛔ không phải hình dạng bịa ra."""
     from tools.asv_doi_soat import doi_soat
 
-    dong = {"giai_doan": [{"giai_doan": "voice_synthesis", "tom_tat": {
-        "luot_doc": [{"ma": "seg_0001", "giay_doan": 2.0, "giay": 2.0},
-                     {"ma": "seg_0002", "giay_doan": 2.0, "giay": 3.0}],
-        "so_doan_nan_oan": 1}}]}
-    ra = doi_soat(dong)
-    # |2-2|/2 = 0 ; |3-2|/3 = 0,3333 -> p50 = 0,1667 (trung binh hai gia tri)
-    assert ra["sai_so_max"] == pytest.approx(1 / 3, abs=1e-6)
-    assert ra["ti_le_doan_ngan"] == pytest.approx(0.5, abs=1e-6)
-    assert ra["so_doan_nan_oan"] == 1
+    ra = doi_soat({"voice_synthesis": OUTPUTS_GIONG_THAT,
+                   "timing_align": OUTPUTS_THOI_GIAN_THEO_MA_GHI})
+
+    # ⛔ `None` o day nghia la cong cu lai doc nham cho — do la chinh con bo N-5b.
+    assert ra["sai_so_max"] is not None, (
+        "doc `outputs` THAT ma van None — cong cu dang doc nham khoa")
+
+    # |lech| cua ba ban ghi that: 1,1887 · 0,0484 · 0,6583
+    assert ra["sai_so_max"] == pytest.approx(1.1887, abs=1e-6)
+    assert ra["sai_so_p50"] == pytest.approx(0.6583, abs=1e-6)
+    assert ra["so_luot_do_duoc"] == 3
+    # Mot ban ghi co `lech < 0` (doc NGAN hon khe) tren ba ⇒ 1/3
+    assert ra["ti_le_doan_ngan"] == pytest.approx(1 / 3, abs=1e-6)
+    assert ra["giay_tts"] == pytest.approx(114.82)
+    assert ra["giay_llm_nan"] == pytest.approx(217.7)
+    # `master` la mot cau truc LONG — ⛔ khong phang vao outputs
+    assert ra["so_doan_lech_cuoi"] == 2
+    assert ra["giay_lech_cuoi"] == pytest.approx(0.31)
+    # sorted = [1,00 1,00 1,00 1,05 1,08 1,12]; vt = 0,9*5 = 4,5
+    # => 1,08 + (1,12 - 1,08) * 0,5 = 1,10
+    assert ra["he_so_toc_p90"] == pytest.approx(1.10, abs=1e-6)
+
+
+def test_doi_soat_MAU_SO_la_KHE_dung_nhu_chinh_sach_nan():
+    """⚠️ `sai_so_*` phải cùng mẫu số với `can_nan`, ⛔ không phải `giay`.
+
+    Bản trước chia cho `giay` (số THẬT) ⇒ con số của nó ⛔ không so được với
+    ngưỡng nào. `nan_cho_vua.lech` chia cho `khe`, và `dung_sai_giay`/`can_nan`
+    phán quyết theo đúng mẫu số ấy.
+    """
+    from apps.auto_scan_video import nan_cho_vua
+    from tools.asv_doi_soat import doi_soat
+
+    bg = nan_cho_vua.ban_ghi_luot_doc("seg_0001", vong=0, giay=3.0, khe=2.0)
+    ra = doi_soat({"voice_synthesis": {"tung_luot_doc": [bg]}})
+    # (3 - 2) / 2 = 0,5   (⛔ KHONG (3-2)/3 = 0,3333)
+    assert ra["sai_so_max"] == pytest.approx(0.5, abs=1e-6)
+    assert ra["sai_so_max"] == pytest.approx(abs(nan_cho_vua.lech(3.0, 2.0)),
+                                             abs=1e-9)
+
+
+# ── Phep kiem CO HOC chong tai phat N-5b ────────────────────────────────────
+#
+# ⭐ Mot loi dan do ⛔ khong chan duoc lan sau; mot phep do thi co.
+
+def _dict_tom_tat_tai_return(mo_dun) -> ast.Dict:
+    """Dict la gia tri cua khoa `"tom_tat"` tai mot `return` cua `mo_dun`.
+
+    🔴 **Neo vao CHO TRA VE, ⛔ khong vao "co xuat hien trong ma nguon".**
+       `giai_doan_giong.py:188` co `dong_ho = {"so_doan_nan_oan": 0}` — mot dict
+       LOCAL — va `test_2018` chot bo dem ay bang `'"so_doan_nan_oan"' in ma`,
+       nen no XANH du con so ay ⛔ khong bao gio roi khoi ham. Mot phep do dua
+       tren van ban ma nguon ⛔ khong phan biet duoc hai thu do.
+    """
+    cay = ast.parse(inspect.getsource(mo_dun))
+    gan: dict[str, ast.Dict] = {}
+    for n in ast.walk(cay):
+        if (isinstance(n, ast.Assign) and isinstance(n.value, ast.Dict)
+                and len(n.targets) == 1 and isinstance(n.targets[0], ast.Name)):
+            gan[n.targets[0].id] = n.value
+    for n in ast.walk(cay):
+        if not (isinstance(n, ast.Return) and isinstance(n.value, ast.Dict)):
+            continue
+        for k, v in zip(n.value.keys, n.value.values, strict=True):
+            if not (isinstance(k, ast.Constant) and k.value == "tom_tat"):
+                continue
+            if isinstance(v, ast.Dict):
+                return v
+            if isinstance(v, ast.Name) and v.id in gan:
+                return gan[v.id]
+    raise AssertionError("khong thay dict `tom_tat` nao tai cho `return`")
+
+
+def _khoa_chuoi(d: ast.Dict) -> set[str]:
+    return {k.value for k in d.keys
+            if isinstance(k, ast.Constant) and isinstance(k.value, str)}
+
+
+def test_doi_soat_moi_khoa_doc_deu_CO_AI_GHI_vao_outputs():
+    """🔴 Chống tái phát N-5b: mọi khoá công cụ đọc phải THẬT SỰ tới `outputs`.
+
+    ⛔ Không đủ nếu khoá chỉ *xuất hiện* trong `apps/auto_scan_video/` — nó phải
+    nằm trong `tom_tat` **tại chỗ `return`**, vì `thi_hanh.py:589` chỉ đổ đúng
+    `tom_tat` đó vào `asv_stage.outputs`.
+    """
+    from apps.auto_scan_video import (giai_doan_giong, giai_doan_thoi_gian,
+                                      nan_cho_vua, thoi_gian)
+    from tools import asv_doi_soat as cc
+
+    # Giai doan GIONG: khoa go tuong minh tai `return` + khoa cua `**` (GOI THAT)
+    co_giong = (_khoa_chuoi(_dict_tom_tat_tai_return(giai_doan_giong))
+                | set(nan_cho_vua.tom_tat([], tung_luot_doc=[])))
+    thieu = [k for k in cc.KHOA_CAN["voice_synthesis"] if k not in co_giong]
+    assert not thieu, (
+        "cong cu doc khoa %s cua `voice_synthesis` ma ⛔ KHONG AI ghi no vao "
+        "`outputs` — day dung la con bo N-5b: mot phep do im lang tra `None` "
+        "mai mai. Khoa that su co: %s" % (thieu, sorted(co_giong)))
+
+    # Giai doan THOI GIAN
+    co_thoi = (_khoa_chuoi(_dict_tom_tat_tai_return(giai_doan_thoi_gian))
+               | set(thoi_gian.tom_tat({"doan": []})))
+    thieu = [k for k in cc.KHOA_CAN["timing_align"] if k not in co_thoi]
+    assert not thieu, (
+        "cong cu doc khoa %s cua `timing_align` ma ⛔ khong ai ghi. Khoa that "
+        "su co: %s" % (thieu, sorted(co_thoi)))
+
+    # Khoa cua MOT ban ghi `tung_luot_doc` — goi THAT ham ghi no
+    bg = nan_cho_vua.ban_ghi_luot_doc("seg_0001", vong=0, giay=3.0, khe=2.0)
+    thieu = [k for k in cc.KHOA_TRONG_LUOT_DOC if k not in bg]
+    assert not thieu, (
+        "`ban_ghi_luot_doc` ⛔ khong ghi %s — cong cu doc mot khoa khong ton "
+        "tai. No ghi: %s" % (thieu, sorted(bg)))
+
+
+def test_doi_soat_khoa_MASTER_dung_cho_ma_ghi_no():
+    """`KHOA_TRONG_MASTER` phải khớp `do_duoc[...] = ` của `giai_doan_thoi_gian`.
+
+    ⚠️ Ba con số này ⛔ CHƯA một lần nào có trong CSDL (mọi dòng `timing_align`
+    đều `pending`/`cancelled`/`failed_terminal`, đọc 26/09/2026), nên phép kiểm
+    này là thứ DUY NHẤT hôm nay gác được hình dạng của chúng.
+    """
+    from apps.auto_scan_video import giai_doan_thoi_gian
+    from tools import asv_doi_soat as cc
+
+    # Ve 1: `tom_tat["master"]` phai LA chinh bien `do_duoc` — neu khong, chuoi
+    #       tu `do_duoc[...] =` toi `outputs["master"]` bi cat va ve 2 vo nghia.
+    d = _dict_tom_tat_tai_return(giai_doan_thoi_gian)
+    ten_bien = None
+    for k, v in zip(d.keys, d.values, strict=True):
+        if isinstance(k, ast.Constant) and k.value == "master":
+            assert isinstance(v, ast.Name), (
+                "`tom_tat['master']` khong con la mot bien — ve 2 cua bai nay "
+                "khong con neo vao dau")
+            ten_bien = v.id
+    assert ten_bien, "`tom_tat` ⛔ khong con khoa `master`"
+
+    # Ve 2: moi khoa `KHOA_TRONG_MASTER` phai duoc gan vao chinh bien do
+    cay = ast.parse(inspect.getsource(giai_doan_thoi_gian))
+    da_gan = set()
+    for n in ast.walk(cay):
+        if not isinstance(n, ast.Assign):
+            continue
+        for t in n.targets:
+            if (isinstance(t, ast.Subscript) and isinstance(t.value, ast.Name)
+                    and t.value.id == ten_bien
+                    and isinstance(t.slice, ast.Constant)
+                    and isinstance(t.slice.value, str)):
+                da_gan.add(t.slice.value)
+    thieu = [k for k in cc.KHOA_TRONG_MASTER if k not in da_gan]
+    assert not thieu, (
+        "cong cu doc `outputs['master'][%s]` ma `giai_doan_thoi_gian` ⛔ khong "
+        "gan chung vao `%s`. No gan: %s" % (thieu, ten_bien, sorted(da_gan)))
+
+
+def test_doi_soat_KHONG_doc_khoa_cua_dong_thoi_gian():
+    """⛔ Con bọ N-5b bằng chữ: `dong_thoi_gian` ⛔ không có khoá `tom_tat`.
+
+    Mục `giai_doan` của dòng thời gian chỉ có `bat_dau · giai_doan ·
+    giai_doan_hong · giay · ket_thuc · loi_co_ma · so_ket_qua · trang_thai`.
+    Công cụ phải đọc `asv_stage.outputs`, ⛔ không đọc dòng thời gian.
+    """
+    from tools import asv_doi_soat as cc
+
+    ma = inspect.getsource(cc.doi_soat)
+    assert "tom_tat" not in ma, (
+        "`doi_soat` lai doc `tom_tat` — do la khoa cua GIA TRI TRA VE cua "
+        "giai doan, ⛔ khong phai mot khoa cua `outputs` hay cua dong thoi gian")
+    assert "dong_thoi_gian" not in ma
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Task 13 — G1/G2: nhat quan dai tu va ten rieng
+#
+#  🔑 G1/G2 ⛔ khong can ban tham chieu va ⛔ khong can ai cham — chung dem MAU
+#     THUAN ben trong mot tai lieu, nen chung di vong qua vong tron LLM dang
+#     khoa bo do dich.
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_G1_bat_duoc_dai_tu_DOI_giua_video():
+    from tools.asv_doi_soat import nhat_quan
+
+    on = ["Chao cac ban", "Hom nay minh di cam", "Cac ban thay the nao"]
+    assert nhat_quan(on)["so_bo_dai_tu"] == 1
+
+    doi = ["Chao cac ban", "Hom nay toi di cam", "Cac cau thay the nao"]
+    assert nhat_quan(doi)["so_bo_dai_tu"] > 1
+
+
+def test_G2_bat_duoc_mot_ten_goc_ra_HAI_dang_Viet():
+    from tools.asv_doi_soat import nhat_quan
+
+    ra = nhat_quan(["Quang Tu den roi", "Photon da di"],
+                   ten_goc={"光子": "Quang Tu"})
+    assert ra["vi_pham_ten_rieng"] >= 1
+
+
+def test_G1_hai_VAI_khac_nhau_KHONG_phai_mau_thuan():
+    """🔴 Bản đặc tả đầu BÁO ĐỘNG GIẢ ở đây, và báo động giả làm người ta TẮT cổng.
+
+    Một câu chỉ nói ngôi THỨ NHẤT và một câu chỉ nói ngôi THỨ HAI ⛔ không hề
+    mâu thuẫn. Một `frozenset` theo CÂU trộn hai vai làm một nên đếm ra `2`.
+    """
+    from tools.asv_doi_soat import nhat_quan
+
+    assert nhat_quan(["Hom nay minh di cam", "Cac ban thay the nao"]
+                     )["so_bo_dai_tu"] == 1
+    # ⭐ Doi CHINH mot vai thi phai do: `minh` -> `toi` o ngoi thu nhat.
+    assert nhat_quan(["Hom nay minh di cam", "Toi ve roi"]
+                     )["so_bo_dai_tu"] == 2
+
+
+def test_G1_khop_DAI_NHAT_mot_lan_xung_ho_khong_dem_thanh_hai():
+    """`ban` là con của `cac ban` — ⛔ một lần xưng hô không được đếm thành hai."""
+    from tools.asv_doi_soat import nhat_quan
+
+    assert nhat_quan(["Chao cac ban"])["so_bo_dai_tu"] == 1
+
+
+def test_G2_ten_Viet_dung_dang_da_chot_thi_KHONG_bi_dem_vi_pham():
+    """⭐ Vế ĐỐI CHỨNG: không có nó thì `>= 1` ở trên có thể chỉ là đếm mọi câu."""
+    from tools.asv_doi_soat import nhat_quan
+
+    ra = nhat_quan(["Quang Tu den roi", "Quang Tu di cam", "Hom nay troi mua"],
+                   ten_goc={"光子": "Quang Tu"})
+    assert ra["vi_pham_ten_rieng"] == 0
+
+
+def test_G2_ten_da_chot_KHONG_xuat_hien_lan_nao_van_la_vi_pham():
+    """Vế (a) — dạng mâu thuẫn mà bản đặc tả đầu bắt được, ⛔ không được mất."""
+    from tools.asv_doi_soat import nhat_quan
+
+    ra = nhat_quan(["Anh ay den roi"], ten_goc={"光子": "Quang Tu"})
+    assert ra["vi_pham_ten_rieng"] >= 1
 
 
 # ══════════════════════════════════════════════════════════════════════════════

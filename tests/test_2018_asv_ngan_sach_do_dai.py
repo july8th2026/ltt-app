@@ -208,6 +208,95 @@ def test_dong_ho_giai_doan_giong_co_bo_dem_nan_oan():
         "thieu bo dem D4: so doan `giay > khe` NHUNG `giay <= ngan_sach`")
 
 
+def test_tom_tat_XUAT_so_doan_nan_oan_that_su():
+    """🔴 Task 15, Lo #1 — phan biet 'da KHAI' voi 'da XUAT RA'.
+
+    Bai `test_dong_ho_giai_doan_giong_co_bo_dem_nan_oan` (ngay tren) chi kham
+    pha CHUOI `'"so_doan_nan_oan"'` co mat o dau do trong tep — no XANH du
+    chuoi ay chi la ten khoa cua `dong_ho` (dong khai `{"giay_tts": ...,
+    "so_doan_nan_oan": 0}` va dong tang `dong_ho["so_doan_nan_oan"] += 1`), du
+    con so ay KHONG BAO GIO duoc dua vao dict `tom_tat` ma `chay()` tra ve —
+    dung dieu da xay ra: `tools/asv_doi_soat.py` doc `outputs["tom_tat"]` va
+    luon nhan `None`.
+
+    Bai nay doc dung NUT AST cua dict LIEU duoc `return` lam gia tri cua khoa
+    `"tom_tat"` trong `chay()`, va khang dinh `"so_doan_nan_oan"` la MOT KHOA
+    CUA CHINH DICT DO — ⛔ khong phai "co mat trong tep". Xoa dong xuat ra
+    (`"so_doan_nan_oan": dong_ho["so_doan_nan_oan"],`) nhung GIU nguyen dong
+    khai `dong_ho` se lam bai nay DO, dung cai ma bai cu ⛔ khong lam duoc.
+    """
+    import ast
+
+    cay = ast.parse(inspect.getsource(giai_doan_giong.chay))
+    tom_tat_dict: ast.Dict | None = None
+    for node in ast.walk(cay):
+        if not isinstance(node, ast.Return) or not isinstance(node.value, ast.Dict):
+            continue
+        for k, v in zip(node.value.keys, node.value.values, strict=True):
+            if (isinstance(k, ast.Constant) and k.value == "tom_tat"
+                    and isinstance(v, ast.Dict)):
+                tom_tat_dict = v
+    assert tom_tat_dict is not None, (
+        "khong tim thay dict LIEU tra ve o khoa 'tom_tat' trong giai_doan_giong.chay")
+    khoa = {k.value for k in tom_tat_dict.keys if isinstance(k, ast.Constant)}
+    assert "so_doan_nan_oan" in khoa, (
+        "dong_ho['so_doan_nan_oan'] duoc TANG o [F] nhung ⛔ KHONG duoc xuat "
+        "vao dict 'tom_tat' — con so nay khong bao gio toi duoc asv_doi_soat")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §4b  Task 15, Lo #2 — `giay_doan` (giay UOC LUONG) trong ban ghi luot doc
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_ban_ghi_luot_doc_XUAT_giay_doan_khi_co_uoc_luong():
+    """🔴 Task 15, Lo #2 — hanh vi THAT cua `ban_ghi_luot_doc`, khong phai AST.
+
+    `nan_cho_vua.ban_ghi_luot_doc` la mot ham THUAN (khong CSDL, khong mang,
+    khong may sinh tieng) nen goi THAT no la phep kiem manh nhat co the co —
+    manh hon moi doc-ma, vi no chay dung dong `if giay_doan is not None:
+    ra["giay_doan"] = ...` thay vi chi kham pha su co mat cua no.
+
+    Truoc ban sua nay ham khong nhan tham so `giay_doan` — ban ghi mang
+    `ma · vong · giay · khe · lech · can_nan · nen_viet_lai` nhung ⛔ KHONG co
+    giay UOC LUONG, nen sai so cua bo uoc luong (Task 12) khong the do duoc:
+    `asv_doi_soat` chi doc duoc `lech = (giay - khe) / khe`, tuc "doc ra vuot
+    khe bao nhieu" — MOT dai luong KHAC voi "uoc luong sai bao nhieu so voi
+    do that".
+    """
+    co = nan_cho_vua.ban_ghi_luot_doc("seg_01", vong=0, giay=5.0, khe=4.0,
+                                      giay_doan=4.6)
+    assert co.get("giay_doan") == pytest.approx(4.6)
+
+    # ⭐ Vang mat = CHUA CO uoc luong, ⛔ khong phai "uoc luong bang 0" — dung
+    #    khuon "vang mat ≠ bang 0" ma `gia.duong_nghe` da dung (xem docstring).
+    khong = nan_cho_vua.ban_ghi_luot_doc("seg_01", vong=0, giay=5.0, khe=4.0)
+    assert "giay_doan" not in khong
+
+
+def test_giai_doan_giong_TRUYEN_giay_UOC_LUONG_vao_ban_ghi_luot_doc():
+    """Chi sua `nan_cho_vua` la chua du: `giai_doan_giong` phai THUC SU truyen
+    con so uoc luong cua `[B]` (`Khe.giay_can`, Task 12) vao loi goi
+    `ban_ghi_luot_doc` o `[F]` — neu khong, tham so moi ton tai ma khong ai
+    dung, va `giay_doan` van vang mat khoi moi ban ghi that.
+
+    Chot bang AST: tim loi goi `nan_cho_vua.ban_ghi_luot_doc(...)` va doi hoi
+    no mang keyword `giay_doan`. ⛔ Khong doi hoi ten bien cu the o phia goi —
+    chi doi hoi CO mot keyword ten `giay_doan`, de khong khoa cung mot cach
+    dat ten cu the.
+    """
+    import ast
+
+    cay = ast.parse(inspect.getsource(giai_doan_giong.chay))
+    goi = [n for n in ast.walk(cay)
+           if isinstance(n, ast.Call)
+           and isinstance(n.func, ast.Attribute)
+           and n.func.attr == "ban_ghi_luot_doc"]
+    assert goi, "khong tim thay loi goi ban_ghi_luot_doc trong chay()"
+    assert any("giay_doan" in {kw.arg for kw in n.keywords} for n in goi), (
+        "loi goi ban_ghi_luot_doc khong truyen keyword giay_doan — con so "
+        "uoc luong cua Task 12 bi bo roi tai cho noi, du ham da nhan tham so")
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 #  §5  `thoi_gian.ngan_sach_nan_s` — MOT nguon cho ngan sach BAC THANG NAN
 # ══════════════════════════════════════════════════════════════════════════════

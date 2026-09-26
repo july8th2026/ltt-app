@@ -439,7 +439,8 @@ def ket_luan(ma: str, *, chu: str, giay: float, khe: float,
                               "tran": tran_co_gian()})
 
 
-def ban_ghi_luot_doc(ma: str, *, vong: int, giay: float, khe: float) -> dict:
+def ban_ghi_luot_doc(ma: str, *, vong: int, giay: float, khe: float,
+                     giay_doan: float | None = None) -> dict:
     """MOT ban ghi cho MOT LUOT DOC — ⛔ khong phai cho mot doan.
 
     🔴 **Vi sao phai co (do duoc 25/09).** Luot `asvr_9fc9cc89` (275 s, 106 doan)
@@ -455,15 +456,27 @@ def ban_ghi_luot_doc(ma: str, *, vong: int, giay: float, khe: float) -> dict:
        khach, con day la sieu du lieu cua giai doan.
 
     `vong` = so vong NAN da chay TRUOC luot doc nay. `0` = lan doc dau tien.
+
+    `giay_doan` = giay **UOC LUONG** cua `nan_thoi_luong.Khe.giay_can` cho cung
+    `ma` nay (Task 12, `giai_doan_giong` khoi `[B]`) — ⛔ KHONG phai giay do
+    tren tep that (do la `giay`). Thieu no thi sai so cua bo uoc luong khong
+    do duoc: `lech` o day chia cho `khe` (= "doc ra vuot khe bao nhieu"), mot
+    dai luong KHAC voi "uoc lech that bao nhieu so voi do THAT". Vang mat
+    (`None`) nghia la CHUA CO uoc luong cho luot nay — theo dung khuon
+    "vang mat ≠ bang 0" ma `gia.duong_nghe` da dung; khoa ⛔ KHONG xuat hien
+    trong ban ghi thay vi mang gia tri `0.0` gia.
     """
-    return {"ma": str(ma), "vong": int(vong),
-            "giay": round(float(giay), 3), "khe": round(float(khe), 3),
-            "lech": round(lech(giay, khe), 4),
-            # ⭐ Phan quyet CUA CHINH LUOT DOC AY, dong hang voi giay cua no. Mot
-            #    luot sau doi `SAN_DUNG_SAI_GIAY` roi doc lai so cu se tinh ra
-            #    mot phan quyet KHAC — va khong biet minh dang doi nguong.
-            "can_nan": bool(can_nan(giay, khe)),
-            "nen_viet_lai": bool(nen_viet_lai(giay, khe))}
+    ra = {"ma": str(ma), "vong": int(vong),
+          "giay": round(float(giay), 3), "khe": round(float(khe), 3),
+          "lech": round(lech(giay, khe), 4),
+          # ⭐ Phan quyet CUA CHINH LUOT DOC AY, dong hang voi giay cua no. Mot
+          #    luot sau doi `SAN_DUNG_SAI_GIAY` roi doc lai so cu se tinh ra
+          #    mot phan quyet KHAC — va khong biet minh dang doi nguong.
+          "can_nan": bool(can_nan(giay, khe)),
+          "nen_viet_lai": bool(nen_viet_lai(giay, khe))}
+    if giay_doan is not None:
+        ra["giay_doan"] = round(float(giay_doan), 3)
+    return ra
 
 
 def tom_tat(cac: list[KetQuaNan], *,

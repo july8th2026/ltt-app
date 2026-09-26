@@ -83,10 +83,14 @@
 
 **Key Improvements:**
 - ✅ VRAM optimized (Fast: 1000 MB → 848 MB actual)
-- ✅ Checkpoint/resume implemented
-- ✅ GPU shared between jobs (chunked processing)
-- ✅ Model warmup on startup
-- ✅ GPU-bound smooth motion (RIFE)
+- ⛔ SAI — "Checkpoint/resume implemented": chỉ có `save_`, không ai đọc để
+  bỏ qua việc (ISSUE G, `docs/UPSCALE_V2_CORRECTION/03_CHECKPOINT_TRUTH.md`)
+- ⚠️ sửa lời — "GPU shared between jobs (chunked processing)": không phải chia
+  sẻ VRAM đồng thời; là nhả/giữ lease TUẦN TỰ giữa các batch, đồng thời GPU vẫn
+  luôn là 1 (ISSUE A)
+- ✅ Model warmup on startup (nhưng không giữ model trong VRAM — ISSUE D)
+- ⛔ SAI — "GPU-bound smooth motion (RIFE)": RIFE chưa từng cài đặt, vẫn
+  `minterpolate` CPU (ISSUE K, `ff.py:138-140`)
 
 ---
 
@@ -150,14 +154,18 @@
 
 ### 2.2 Stage Timing (Optimized)
 
-| Stage | Before | After | Improvement |
+⚠️ ƯỚC LƯỢNG / CHƯA ĐO — không có benchmark trước/sau nào chạy trong đợt sửa
+2026-09-26 (GPU đang bận việc production thật). Cột "After" dưới là ĐỀ XUẤT
+tại thời điểm viết, không phải kết quả.
+
+| Stage | Before | After (ước lượng, CHƯA ĐO) | Improvement |
 |-------|--------|-------|-------------|
 | Probe | 1-2s | 1-2s | Same |
 | Stabilize | 10-30s | 10-30s | Same (optional) |
-| Extract | 3-5min | 1-3min | -50-70% |
-| Upscale | 3-10min | 2-8min | -30-20% |
-| Encode | 10-60s | 5-30s | -50% |
-| **Total (5min video)** | **~30min** | **~12-15min** | **-60%** |
+| Extract | 3-5min | 1-3min | -50-70% (CHƯA ĐO — PNG I/O chưa tối ưu) |
+| Upscale | 3-10min | 2-8min | -30-20% (CHƯA ĐO) |
+| Encode | 10-60s | 5-30s | -50% (CHƯA ĐO) |
+| **Total (5min video)** | **~30min** | **~12-15min** | **-60% (CHƯA ĐO)** |
 
 ---
 
@@ -171,8 +179,10 @@
 | Quality | 12,000 MB | 11,500 MB | 11,176 MB | 324 MB (2.8%) |
 
 **Impact:**
-- Max concurrent Fast: 4 → 12 jobs
-- GPU utilization: 75% → 85%
+- ⛔ SAI — "Max concurrent Fast: 4 → 12 jobs" giả định kế toán VRAM cộng dồn;
+  `GpuLease.UniqueConstraint("host","gpu_uuid")` (`models.py:1037`) khoá đồng
+  thời GPU = **1**, not 12 (ISSUE A, `docs/UPSCALE_V2_CORRECTION/00_CURRENT_TRUTH.md`).
+- GPU utilization: 75% → 85% — CHƯA ĐO (không có benchmark trước/sau nào được dẫn nguồn).
 
 ### 3.2 Tile Configuration
 
@@ -185,22 +195,25 @@
 
 | Preset | Condition | Threads | VRAM Efficiency |
 |--------|-----------|---------|-----------------|
-| Fast | Budget ≥ 750 MB | 4:4:4 | Full parallelism |
-| Fast | Budget < 750 MB | 2:2:2 | Reduced VRAM |
+| Fast | Budget ≥ 750 MB ⛔ SAI — ngưỡng thật là 1000 MB (`autotune.py:99,103`, ISSUE C) | 4:4:4 | Full parallelism |
+| Fast | Budget < 750 MB ⛔ SAI — cũng 1000 MB, not 750 | 2:2:2 | Reduced VRAM |
 | Quality | Always | 1:2:2 | Conservative |
 
 ### 3.4 Concurrency Limits
 
-| Scenario | Max Jobs | GPU Util | VRAM Used | Safety Margin |
+⛔ SAI — bảng dưới đây giả định nhiều job chia sẻ VRAM trên một GPU; đồng thời
+GPU thật là **1** cho MỌI preset (ISSUE A, `models.py:1037`).
+
+| Scenario | Max Jobs (bản cũ, SAI) | GPU Util | VRAM Used | Safety Margin |
 |----------|----------|----------|-----------|---------------|
 | Fast only | 12 | 75% | 10 GB | 6 GB |
 | Quality only | 1 | 90% | 11 GB | 5 GB |
 | Mixed (Fast×8 + Quality×1) | 9 | 80% | 14 GB | 2 GB |
 
 **Production Limits:**
-- Fast: 8 concurrent (leaves safety)
-- Quality: 1 concurrent
-- Mixed: 8 total
+- Fast: ⛔ SAI — "8 concurrent (leaves safety)"; thật là **1**, not 12 (ISSUE A).
+- Quality: 1 concurrent — đúng, và là trần cho MỌI preset.
+- Mixed: ⛔ SAI — không có "8 total"; đồng thời GPU luôn là 1.
 
 ---
 
@@ -482,9 +495,12 @@ def vulkan_index_for(gpu_name: str, fallback_env: bool = True) -> int:
 ### 8.3 Concurrency Control
 
 **Policy:**
-- Fast: Max 8 concurrent (not 12 theoretical)
-- Quality: Max 1 concurrent
-- Mixed: Limit to 8 total
+- Fast: ⛔ SAI — "Max 8 concurrent (not 12 theoretical)" tự mâu thuẫn với chính
+  tài liệu này ở §3.1/§3.4 (từng khai 12) — và CẢ HAI đều sai: `GpuLease.
+  UniqueConstraint("host","gpu_uuid")` (`models.py:1037`) khoá đồng thời GPU
+  = **1**, not 12, not 8 (ISSUE A, `docs/UPSCALE_V2_CORRECTION/00_CURRENT_TRUTH.md`).
+- Quality: Max 1 concurrent — đúng, và là trần cho MỌI preset (không riêng Quality).
+- Mixed: ⛔ SAI — không có "limit to 8 total"; đồng thời GPU luôn là 1.
 
 **Rationale:**
 - Leave safety margin
@@ -497,11 +513,15 @@ def vulkan_index_for(gpu_name: str, fallback_env: bool = True) -> int:
 
 ### 9.1 Before vs After
 
+⛔ SAI trên diện rộng — đây là lời TỰ CHẤM, không phải phép đo. Xem
+`docs/UPSCALE_V2_CORRECTION/10_FINAL_SCORECARD.md` cho bản chấm lại có
+`file:line` và `CHƯA ĐO` ở mọi ô hiệu năng.
+
 | Category | Before | After | Delta |
 |----------|--------|-------|-------|
 | **Architecture** | 50/100 | 85/100 | +35 |
-| **GPU Utilization** | 40/100 | 90/100 | +50 |
-| **Speed** | 40/100 | 95/100 | +55 |
+| **GPU Utilization** | 40/100 | 90/100 | ⛔ SAI — "+50" dựa trên đồng thời 4→12/8, không tồn tại (ISSUE A, `models.py:1037`) |
+| **Speed** | 40/100 | 95/100 | ⛔ SAI — "+55" dựa một phần trên RIFE (chưa cài đặt, ISSUE K) và đồng thời GPU (ISSUE A) |
 | **Reliability** | 50/100 | 95/100 | +45 |
 | **Quality** | 80/100 | 80/100 | 0 |
 | **Maintainability** | 50/100 | 80/100 | +30 |
@@ -516,7 +536,8 @@ def vulkan_index_for(gpu_name: str, fallback_env: bool = True) -> int:
 | V1 (Current) | 507/1000 | C+ |
 | V2 (Target) | 850/1000 | A |
 
-**Improvement:** +343 points (+68%)
+**Improvement:** ⛔ SAI — "+343 points (+68%)" cộng dồn hai hàng SAI ở trên (GPU
+Utilization, Speed); not 12 job đồng thời thật, RIFE không tồn tại (ISSUE A/K).
 
 ---
 
@@ -604,12 +625,12 @@ Sidecar Worker (Python 3.11, CUDA):
 
 | Achievement | Status | Effort | Impact |
 |-------------|--------|--------|--------|
-| VRAM optimization | ✅ Phase 1 | 15 min | 3x concurrent |
-| Checkpoint/resume | ✅ Phase 3 | 4 hours | Reliability |
+| VRAM optimization | ✅ Phase 1 | 15 min | ⛔ SAI — "3x concurrent"; đồng thời GPU = 1, not 12 (ISSUE A) |
+| Checkpoint/resume | ✅ Phase 3 | 4 hours | ⛔ SAI — "resume" không tồn tại, chỉ ghi sổ (ISSUE G) |
 | Model warmup | ✅ Phase 3 | 1 hour | UX |
-| RIFE smooth motion | ✅ Phase 2 | 30 min | 5-10x speed |
-| NVENC fallback | ✅ Phase 1 | 15 min | 10x on QSV/AMD |
-| Quality gates | ✅ Phase 4 | 2 hours | Safety |
+| RIFE smooth motion | ✅ Phase 2 | 30 min | ⛔ SAI — "5-10x speed": RIFE chưa từng cài đặt (`ff.py:138-140`, ISSUE K) |
+| NVENC fallback | ✅ Phase 1 | 15 min | ⛔ SAI — "10x on QSV/AMD": MEASURED 2026-09-26, QSV/AMF FAIL hoàn toàn ở runtime; không có "10x" nào (ISSUE I, `docs/UPSCALE_V2_CORRECTION/05_ENCODER_TRUTH.md`) |
+| Quality gates | ✅ Phase 4 | 2 hours | ⛔ SAI — cổng cũ luôn fail (ISSUE H), thay bằng cổng kỹ thuật ở đợt sửa 2026-09-26 |
 
 ### 12.2 Remaining Work
 

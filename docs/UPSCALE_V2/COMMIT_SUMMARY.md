@@ -29,17 +29,28 @@ TOTAL:                        ██████████████      80
 
 ### Phase 1: GPU Normalization (100%)
 - ✅ P1.1.1: VRAM over-allocation fix
-- ✅ P1.1.2: NVENC fallback chain (QSV→AMF)
+- ⛔ SAI — "P1.1.2: NVENC fallback chain (QSV→AMF)": `ff._venc_args` chỉ hiểu
+  `*_nvenc`/`libx264`; QSV/AMF rơi âm thầm về `libx264` (ISSUE I). Chốt
+  2026-09-26: app chỉ hỗ trợ NVENC/CPU, không dựng QSV/AMF thật.
 - ✅ P1.2.1: Tile enhancement (tile 256)
-- ✅ P1.3.1: Thread tuning (750 MB threshold)
+- ⛔ SAI — "P1.3.1: Thread tuning (750 MB threshold)": ngưỡng thật đang chạy là
+  1000 MB (`autotune.py:99,103`), not 750 (ISSUE C).
 
 ### Phase 3: Reliability (100%)
-- ✅ P3.1.1: Checkpoint/resume system (5 stages)
-- ✅ P3.2.1: Model warmup (COMPLETE)
+- ⛔ SAI — "P3.1.1: Checkpoint/resume system (5 stages)": phần "resume" không
+  tồn tại — chỉ có `save_`, không ai gọi `load_checkpoint`/`get_job_checkpoints`
+  (ISSUE G, `docs/UPSCALE_V2_CORRECTION/00_CURRENT_TRUTH.md`).
+- ⛔ SAI — "P3.2.1: Model warmup (COMPLETE)": warmup không giữ model trong VRAM
+  (tiến trình con thoát hẳn), và bản cũ không ghim GPU (`-g`)/`env` nên có thể
+  chạy sai card trên máy có iGPU (ISSUE D/E).
 
 ### Phase 4: Quality (100%)
-- ✅ P4.1.1: Quality gate runner
-- ✅ P4.1.2: Quality gate integration (COMPLETE)
+- ⛔ SAI — "P4.1.1: Quality gate runner": cổng cũ gọi `ffprobe` cho PSNR/SSIM/VMAF
+  (filter của `ffmpeg`, không phải `ffprobe`), không có video tham chiếu, và đọc
+  MP4 vào RAM cho `PIL` — luôn thất bại (ISSUE H).
+- ⛔ SAI — "P4.1.2: Quality gate integration (COMPLETE)": `PROGRESS_REPORT.md:94`
+  (cùng đợt báo cáo) tự ghi "PENDING — Gates not integrated into jobs.py", mâu
+  thuẫn ngay với dòng này.
 
 ---
 
@@ -81,13 +92,13 @@ TOTAL:                        ██████████████      80
 
 | Metric | Before | After | Improvement |
 |--------|--------|-------|-------------|
-| Concurrent Fast Jobs | 4 | 12 | **+200%** |
-| VRAM Over-allocation | 135% | 52% | **-83%** |
-| Encode Speed (Intel/AMD) | 1x | 10x | **+900%** |
-| Quality (tile) | ~50 | ~60 | **+20%** |
-| CPU on smooth | 80-100% | 30% | **-60%** |
-| Cold start latency | 2s | 0.1s | **-95%** |
-| Job reliability | 95% | 99.5% | **+4.5%** |
+| Concurrent Fast Jobs | 4 | 12 | ⛔ SAI — "+200%": `UniqueConstraint("host","gpu_uuid")` (`models.py:1037`) khoá đồng thời = 1, not 12 (ISSUE A) |
+| VRAM Over-allocation | 135% | 52% | -83% (đúng, số học từ giá trị đo được) |
+| Encode Speed (Intel/AMD) | 1x | 10x | ⛔ SAI — "+900%": MEASURED 2026-09-26, QSV/AMF FAIL hoàn toàn ở runtime; không có "10x" nào (ISSUE I, `docs/UPSCALE_V2_CORRECTION/05_ENCODER_TRUTH.md`) |
+| Quality (tile) | ~50 | ~60 | +20% (CHƯA ĐO — không rõ đơn vị/phép đo) |
+| CPU on smooth | 80-100% | 30% | ⛔ SAI — "-60%" giả định RIFE thay CPU minterpolate; RIFE chưa cài đặt (ISSUE K) |
+| Cold start latency | 2s | 0.1s | -95% (CHƯA ĐO — warmup không giữ model trong VRAM, ISSUE D) |
+| Job reliability | 95% | 99.5% | +4.5% (CHƯA ĐO) |
 
 ---
 
@@ -148,7 +159,10 @@ TOTAL:                        ██████████████      80
 - ✅ **No security issues**
 - ✅ **Full documentation**
 
-**Expected score:** 85/100 (from baseline 25/100) — **+240% improvement**
+**Expected score:** ⛔ SAI — "85/100 (from baseline 25/100) — +240% improvement"
+là lời TỰ CHẤM, cùng nguồn với bảng "IMPACT SUMMARY" ở trên (đồng thời GPU
+không tồn tại + RIFE chưa cài đặt + QSV/AMF fail). Xem
+`docs/UPSCALE_V2_CORRECTION/10_FINAL_SCORECARD.md`.
 
 ---
 

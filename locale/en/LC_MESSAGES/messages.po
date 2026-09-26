@@ -21551,6 +21551,7 @@ msgstr "The fill-background region is too small on this frame. Draw a larger reg
 
 msgid "Vùng điền nền chạm cả mép trên lẫn mép dưới khung hình nên không còn dải hình nào để lấy làm nền. Hãy thu nhỏ vùng, hoặc chọn kiểu làm mờ."
 msgstr "The fill-background region touches both the top and the bottom edge of the frame, so there is no strip of picture left to use as background. Shrink the region, or choose the blur style."
+
 msgid "%(p)s phút × %(g)s credit = %(c)s credit"
 msgstr "%(p)s min × %(g)s credit = %(c)s credit"
 
@@ -21571,6 +21572,7 @@ msgstr "The machine was hard-restarted"
 
 msgid "Khởi động lại cứng thất bại"
 msgstr "Hard restart failed"
+
 msgid "Chay mot doan JavaScript tuy y trong vo cach ly hai lop (AppContainer + isolated-vm). Khong mang, khong tep, khong tien trinh con."
 msgstr "Runs an arbitrary JavaScript snippet in a two-layer isolation sandbox (AppContainer + isolated-vm). No network, no files, no child processes."
 
@@ -21789,6 +21791,210 @@ msgstr "Fill background (remove completely)"
 
 msgid "chất lượng..."
 msgstr "quality..."
+
+#: apps/upscalevideo/ff.py
+msgid "Job đã được hủy."
+msgstr "Job has been cancelled."
+
+#: apps/upscalevideo/ff.py
+#, python-brace-format
+msgid "ffprobe lỗi: {0}"
+msgstr "ffprobe error: {0}"
+
+#: apps/upscalevideo/ff.py
+#, python-brace-format
+msgid "Tách frame thất bại (rc={0}, n={1})"
+msgstr "Frame extraction failed (rc={0}, n={1})"
+
+#: apps/upscalevideo/ff.py
+#, python-brace-format
+msgid "Phân tích chống rung thất bại: {0}"
+msgstr "Stabilization analysis failed: {0}"
+
+#: apps/upscalevideo/ff.py
+#, python-brace-format
+msgid "Chống rung thất bại: {0}"
+msgstr "Stabilization failed: {0}"
+
+#: apps/upscalevideo/ff.py
+#, python-brace-format
+msgid "Encode lỗi: {0}"
+msgstr "Encoding error: {0}"
+
+#: apps/upscalevideo/ff.py
+#, python-brace-format
+msgid "Encode segment lỗi: {0}"
+msgstr "Segment encoding error: {0}"
+
+#: apps/upscalevideo/ff.py
+#, python-brace-format
+msgid "Concat/mux lỗi: {0}"
+msgstr "Concat/mux error: {0}"
+
+#: apps/upscalevideo/jobs.py
+#, python-brace-format
+msgid "nâng ảnh bằng {0}"
+msgstr "upscaling image with {0}"
+
+#: apps/upscalevideo/jobs.py
+msgid "nâng chi tiết"
+msgstr "enhancing detail"
+
+#: apps/upscalevideo/jobs.py
+#, python-brace-format
+msgid "Engine upscale ảnh thất bại ({0})."
+msgstr "Image upscale engine failed ({0})."
+
+#: apps/upscalevideo/jobs.py
+#, python-brace-format
+msgid "Không đủ credit cho video dài thật ({0} credit): {1}"
+msgstr "Not enough credit for the real video length ({0} credit): {1}"
+
+#: apps/upscalevideo/jobs.py
+#, python-brace-format
+msgid ""
+"Không đủ dung lượng đĩa tạm: cần ~{0}GB, còn ~{1}GB. Dùng video ngắn hơn "
+"hoặc giải phóng ổ đĩa."
+msgstr ""
+"Not enough temporary disk space: need ~{0}GB, only ~{1}GB free. Use a "
+"shorter video or free up disk space."
+
+#: apps/upscalevideo/jobs.py
+#, python-brace-format
+msgid ""
+"Máy đang chạy không có bộ mã hoá HEVC (H.265) bằng phần cứng, và mã hoá "
+"HEVC bằng CPU quá chậm cho dịch vụ này (có thể hàng giờ cho một video). "
+"Vui lòng chọn codec H.264 — cùng độ phân giải, cùng chất lượng hình, chỉ "
+"tệp lớn hơn một chút."
+msgstr ""
+"This machine currently has no hardware HEVC (H.265) encoder, and "
+"encoding HEVC on the CPU is far too slow for this service (it could "
+"take hours for a single video). Please choose the H.264 codec instead "
+"— same resolution, same visual quality, just a slightly larger file."
+
+#: apps/upscalevideo/jobs.py
+#, python-brace-format
+msgid "nâng nét đoạn {0}/{1}…"
+msgstr "enhancing segment {0}/{1}…"
+
+#: apps/upscalevideo/jobs.py
+#, python-brace-format
+msgid "Engine treo ở đoạn {0} (>5' không tiến triển)."
+msgstr "Engine stalled at segment {0} (no progress for over 5 minutes)."
+
+#: apps/upscalevideo/jobs.py
+#, python-brace-format
+msgid "Engine upscale đoạn {0} thất bại."
+msgstr "Upscale engine failed at segment {0}."
+
+#: apps/upscalevideo/jobs.py
+msgid "tải video"
+msgstr "downloading video"
+
+#: apps/upscalevideo/jobs.py
+msgid "phân tích và ổn định chuyển động…"
+msgstr "analyzing and stabilizing motion…"
+
+#: apps/upscalevideo/jobs.py
+msgid "tách frame"
+msgstr "extracting frames"
+
+#: apps/upscalevideo/jobs.py
+#, python-brace-format
+msgid "Nguồn VFR — đã chuẩn hoá CFR {0:.3f}fps. "
+msgstr "Variable frame rate source — normalized to {0:.3f}fps CFR. "
+
+#: apps/upscalevideo/jobs.py
+#, python-brace-format
+msgid "nâng nét {0} (tile {1})…"
+msgstr "enhancing with {0} (tile {1})…"
+
+#: apps/upscalevideo/jobs.py
+msgid "nâng nét…"
+msgstr "enhancing…"
+
+#: apps/upscalevideo/jobs.py
+#, python-brace-format
+msgid "ghép video {0}p…"
+msgstr "assembling {0}p video…"
+
+#: apps/upscalevideo/jobs.py
+#, python-brace-format
+msgid "nối {0} đoạn + audio…"
+msgstr "joining {0} segments + audio…"
+
+#: apps/upscalevideo/jobs.py
+msgid "soi đầu ra…"
+msgstr "inspecting output…"
+
+#: apps/upscalevideo/jobs.py
+#, python-brace-format
+msgid "Đầu ra không đạt kiểm kỹ thuật: {0}"
+msgstr "Output failed the technical check: {0}"
+
+#: apps/upscalevideo/jobs.py
+msgid "lưu kết quả"
+msgstr "saving result"
+
+#: apps/upscalevideo/quality_gate.py
+#, python-brace-format
+msgid "không có tệp đầu ra: {0}"
+msgstr "no output file: {0}"
+
+#: apps/upscalevideo/quality_gate.py
+#, python-brace-format
+msgid "tệp đầu ra chỉ {0} B (< {1} B)"
+msgstr "output file is only {0} B (< {1} B)"
+
+#: apps/upscalevideo/quality_gate.py
+#, python-brace-format
+msgid "ffprobe không đọc được đầu ra: {0}"
+msgstr "ffprobe could not read the output: {0}"
+
+#: apps/upscalevideo/quality_gate.py
+msgid "đầu ra không có luồng video đọc được"
+msgstr "output has no readable video stream"
+
+#: apps/upscalevideo/quality_gate.py
+msgid "đầu ra có thời lượng 0"
+msgstr "output has zero duration"
+
+#: apps/upscalevideo/quality_gate.py
+#, python-brace-format
+msgid "chiều cao sai: chờ {0}, nhận {1}"
+msgstr "wrong height: expected {0}, got {1}"
+
+#: apps/upscalevideo/quality_gate.py
+#, python-brace-format
+msgid ""
+"tỉ lệ khung sai: nguồn {0}x{1} ở {2}p phải cho rộng ~{3}px (±{4}), nhận "
+"{5}px"
+msgstr ""
+"wrong aspect ratio: source {0}x{1} at {2}p should give a width of "
+"~{3}px (±{4}), got {5}px"
+
+#: apps/upscalevideo/quality_gate.py
+msgid "không có khung nguồn để đối chiếu tỉ lệ đầu ra"
+msgstr "no source frame to compare the output aspect ratio against"
+
+#: apps/upscalevideo/quality_gate.py
+#, python-brace-format
+msgid "codec sai: encoder {0} phải cho {1}, luồng lại là {2}"
+msgstr "wrong codec: encoder {0} should produce {1}, but the stream is {2}"
+
+#: apps/upscalevideo/quality_gate.py
+#, python-brace-format
+msgid "không biết encoder {0!r} thuộc họ codec nào"
+msgstr "unknown which codec family encoder {0!r} belongs to"
+
+#: apps/upscalevideo/quality_gate.py
+#, python-brace-format
+msgid "thời lượng lệch {0:.2f}s (chờ ~{1:.2f}s, dung sai {2:.2f}s)"
+msgstr "duration off by {0:.2f}s (expected ~{1:.2f}s, tolerance {2:.2f}s)"
+
+#: apps/upscalevideo/quality_gate.py
+msgid "khách yêu cầu giữ tiếng nhưng đầu ra không có luồng audio"
+msgstr "customer asked to keep audio but the output has no audio stream"
 
 msgid "Chạy được mọi bản trong danh mục, kể cả bản có giao diện đồ hoạ. Đĩa 40 GB — vừa đủ cho Windows và vài phần mềm, chưa dư để chứa dữ liệu lớn."
 msgstr "Runs every edition in the catalogue, including the ones with a desktop. 40 GB of disk — enough for Windows and a few programs, not enough to store large data."

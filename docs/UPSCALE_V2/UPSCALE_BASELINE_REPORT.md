@@ -79,10 +79,13 @@ Note: App location subject to deployment (production may use C:\LTTPlatform)
 - Quality: 7% (adequate margin)
 
 ### Concurrency Potential
-With 16,311 MiB VRAM and conservative safety margins:
-- **Fast (848 MB peak):** Theoretical max 12 concurrent jobs
-- **Quality (11,176 MB peak):** Max 1 concurrent job
-- **Mixed (Fast×8 + Quality×1):** 8 total concurrent jobs
+⛔ SAI — "conservative safety margins" giả định kế toán VRAM cộng dồn nhiều job
+trên một GPU, điều kiến trúc không cho phép: `GpuLease.UniqueConstraint(
+"host","gpu_uuid")` (`platform_core/models.py:1037`) khoá đồng thời GPU = **1**
+bất kể VRAM còn trống bao nhiêu (ISSUE A, `docs/UPSCALE_V2_CORRECTION/00_CURRENT_TRUTH.md`).
+- **Fast (848 MB peak):** ⛔ SAI — "Theoretical max 12 concurrent jobs"; thật là **1**, not 12.
+- **Quality (11,176 MB peak):** Max 1 concurrent job — đúng, và là trần cho MỌI preset.
+- **Mixed (Fast×8 + Quality×1):** ⛔ SAI — "8 total concurrent jobs" không tồn tại; đồng thời GPU luôn là 1.
 
 ---
 

@@ -445,7 +445,7 @@ credit._hoan_credit(db, job_id, true_cost)
 
 **Solutions:**
 1. Direct FFmpeg encode (eliminate PNG step)
-2. WebP intermediate (30% smaller)
+2. WebP intermediate (30% smaller — ước lượng, CHƯA ĐO)
 3. RAM buffer for short clips (<60s)
 4. Optimize PNG compression
 
@@ -580,7 +580,14 @@ Quality (x4plus):
 
 **RTX 5060 Ti 16GB**
 
-| Preset Mix | Max Jobs | GPU Util | VRAM Used | Safety Margin |
+⛔ SAI — cả bảng dưới đây giả định kế toán VRAM cộng dồn nhiều job trên một GPU.
+`GpuLease` có `UniqueConstraint("host","gpu_uuid")` (`platform_core/models.py:1037`):
+một GPU một máy = tối đa MỘT lease sống = **1** job GPU, bất kể `vram_mb` khai bao
+nhiêu (`platform_core/gpu_lease.py:179` loại GPU đã có lease khỏi ứng viên mà
+không xét `need_mb`). "Mixed"/"Fast×N" dưới đây chưa từng và không thể chạy đồng
+thời. Xem `docs/UPSCALE_V2_CORRECTION/00_CURRENT_TRUTH.md` ISSUE A (not 12).
+
+| Preset Mix | Max Jobs (bản cũ, SAI) | GPU Util | VRAM Used | Safety Margin |
 |------------|----------|----------|-----------|---------------|
 | Fast only | 12 | 75% | 10 GB | 6 GB |
 | Quality only | 1 | 90% | 11 GB | 5 GB |
@@ -588,9 +595,9 @@ Quality (x4plus):
 | Mixed (Fast×8 + Quality×1) | 9 | 80% | 14 GB | 2 GB |
 
 **Recommendation:**
-- Fast: Max 8 concurrent (safety margin)
-- Quality: Max 1 concurrent
-- Mixed: Limit total to 8
+- Fast: ⛔ SAI — bản cũ ghi "Max 8 concurrent (safety margin)"; sự thật là **1** (ISSUE A), not 12.
+- Quality: Max 1 concurrent — đúng, và đây là trần chung cho MỌI preset (không riêng Quality).
+- Mixed: ⛔ SAI — không có khái niệm "limit total to 8"; đồng thời GPU luôn là 1.
 
 ---
 

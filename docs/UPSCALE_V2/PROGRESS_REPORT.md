@@ -78,7 +78,10 @@ Let me recount:
 **Checkpoint system:**
 - Files created: `apps/upscalevideo/checkpoint.py`
 - Checkpoint stages: probe, stabilize, frame_extraction, upscale_batch, output
-- Resume logic: implemented in jobs.py
+- ⛔ SAI — "Resume logic: implemented in jobs.py": `load_checkpoint`/
+  `get_job_checkpoints` không có caller nào trong cả kho; chỉ có `save_`, chưa
+  từng có `resume_if_partial` (ISSUE G, `docs/UPSCALE_V2_CORRECTION/00_CURRENT_TRUTH.md`).
+  Retry chạy lại 100% — resume KHÔNG tồn tại.
 
 **Model warmup:**
 - `_model_cache = {}` added to engine.py
@@ -170,11 +173,11 @@ Let me recount:
 
 | Metric | Before | After | Improvement |
 |--------|--------|-------|-------------|
-| Concurrent Fast Jobs | 4 | 12 | **+200%** |
-| VRAM Over-allocation | 135% | 52% (Fast) | **83% ↓** |
-| Encode Speed (Intel/AMD) | 1x | 10x (QSV/AMF) | **+900%** |
-| Tile Quality (Large frames) | ~50 | ~60 | **+20%** |
-| Thread Optimization | ~40% | ~60% | **+50%** |
+| Concurrent Fast Jobs | 4 | 12 | ⛔ SAI — "+200%": `UniqueConstraint("host","gpu_uuid")` (`models.py:1037`) khoá đồng thời = 1, not 12 (ISSUE A) |
+| VRAM Over-allocation | 135% | 52% (Fast) | 83% ↓ (đúng, số học từ giá trị đo được) |
+| Encode Speed (Intel/AMD) | 1x | 10x (QSV/AMF) | ⛔ SAI — "+900%": MEASURED 2026-09-26, QSV/AMF FAIL hoàn toàn ở runtime (ISSUE I, `docs/UPSCALE_V2_CORRECTION/05_ENCODER_TRUTH.md`) |
+| Tile Quality (Large frames) | ~50 | ~60 | +20% (CHƯA ĐO — không rõ đơn vị/phép đo) |
+| Thread Optimization | ~40% | ~60% | +50% (CHƯA ĐO) |
 
 ---
 
